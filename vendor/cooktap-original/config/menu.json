@@ -1,0 +1,541 @@
+{
+  "ingredients": [
+    {
+      "id": "beef_patty",
+      "name": "Beef Patty",
+      "category": "meat",
+      "baseColor": "#ffcccb",
+      "key": "b"
+    },
+    {
+      "id": "chicken_breast",
+      "name": "Chicken Breast",
+      "category": "meat",
+      "baseColor": "#ffcccb",
+      "key": "c"
+    },
+    {
+      "id": "bacon",
+      "name": "Bacon",
+      "category": "meat",
+      "baseColor": "#ffcccb",
+      "key": "n"
+    },
+    {
+      "id": "lettuce",
+      "name": "Lettuce",
+      "category": "vegetable",
+      "baseColor": "#90ee90",
+      "key": "l"
+    },
+    {
+      "id": "tomato",
+      "name": "Tomato",
+      "category": "vegetable",
+      "baseColor": "#90ee90",
+      "key": "t"
+    },
+    {
+      "id": "onion",
+      "name": "Onion",
+      "category": "vegetable",
+      "baseColor": "#90ee90",
+      "key": "o"
+    },
+    {
+      "id": "pickles",
+      "name": "Pickles",
+      "category": "vegetable",
+      "baseColor": "#90ee90",
+      "key": "p"
+    },
+    {
+      "id": "mushrooms",
+      "name": "Mushrooms",
+      "category": "vegetable",
+      "baseColor": "#90ee90",
+      "key": "m"
+    },
+    {
+      "id": "bell_pepper",
+      "name": "Bell Pepper",
+      "category": "vegetable",
+      "baseColor": "#90ee90",
+      "key": "e"
+    },
+    {
+      "id": "cheese",
+      "name": "Cheese",
+      "category": "dairy",
+      "baseColor": "#fffacd",
+      "key": "h"
+    },
+    {
+      "id": "mozzarella",
+      "name": "Mozzarella",
+      "category": "dairy",
+      "baseColor": "#fffacd",
+      "key": "z"
+    },
+    {
+      "id": "butter",
+      "name": "Butter",
+      "category": "dairy",
+      "baseColor": "#fffacd",
+      "key": "u"
+    },
+    {
+      "id": "burger_bun",
+      "name": "Burger Bun",
+      "category": "grain",
+      "baseColor": "#daa520",
+      "key": "j"
+    },
+    {
+      "id": "pizza_dough",
+      "name": "Pizza Dough",
+      "category": "grain",
+      "baseColor": "#daa520",
+      "key": "d"
+    },
+    {
+      "id": "pasta",
+      "name": "Pasta",
+      "category": "grain",
+      "baseColor": "#daa520",
+      "key": "a"
+    },
+    {
+      "id": "ketchup",
+      "name": "Ketchup",
+      "category": "sauce",
+      "baseColor": "#ff6347",
+      "key": "k"
+    },
+    {
+      "id": "mustard",
+      "name": "Mustard",
+      "category": "sauce",
+      "baseColor": "#ff6347",
+      "key": "y"
+    },
+    {
+      "id": "mayo",
+      "name": "Mayo",
+      "category": "sauce",
+      "baseColor": "#ff6347",
+      "key": "w"
+    },
+    {
+      "id": "tomato_sauce",
+      "name": "Tomato Sauce",
+      "category": "sauce",
+      "baseColor": "#ff6347",
+      "key": "s"
+    },
+    {
+      "id": "salt",
+      "name": "Salt",
+      "category": "seasoning",
+      "baseColor": "#dda0dd",
+      "key": "i"
+    },
+    {
+      "id": "pepper",
+      "name": "Pepper",
+      "category": "seasoning",
+      "baseColor": "#dda0dd",
+      "key": "r"
+    },
+    {
+      "id": "oregano",
+      "name": "Oregano",
+      "category": "seasoning",
+      "baseColor": "#dda0dd",
+      "key": "g"
+    }
+  ],
+  "tools": [
+    {
+      "id": "chop",
+      "name": "Chop",
+      "category": "cut",
+      "baseColor": "#c0c0c0",
+      "key": "x"
+    },
+    {
+      "id": "slice",
+      "name": "Slice",
+      "category": "cut",
+      "baseColor": "#c0c0c0",
+      "key": "v"
+    },
+    {
+      "id": "grill",
+      "name": "Grill",
+      "category": "cook",
+      "baseColor": "#ffa500",
+      "key": "q"
+    },
+    {
+      "id": "fry",
+      "name": "Deep Fry",
+      "category": "cook",
+      "baseColor": "#ffa500",
+      "key": "f"
+    },
+    {
+      "id": "boil",
+      "name": "Boil",
+      "category": "cook",
+      "baseColor": "#ffa500",
+      "key": ","
+    },
+    {
+      "id": "bake",
+      "name": "Bake",
+      "category": "cook",
+      "baseColor": "#ffa500",
+      "key": "."
+    },
+    {
+      "id": "mix",
+      "name": "Mix",
+      "category": "mix",
+      "baseColor": "#87ceeb",
+      "key": ";"
+    },
+    {
+      "id": "toss",
+      "name": "Toss",
+      "category": "mix",
+      "baseColor": "#87ceeb",
+      "key": "'"
+    },
+    {
+      "id": "assemble",
+      "name": "Assemble",
+      "category": "mix",
+      "baseColor": "#87ceeb",
+      "key": "["
+    },
+    {
+      "id": "plate",
+      "name": "Plate",
+      "category": "serve",
+      "baseColor": "#98fb98",
+      "key": "space"
+    }
+  ],
+  "cookingStations": {
+    "prep": {
+      "name": "Prep Station",
+      "allowedActions": ["chop", "slice", "mix", "toss", "assemble", "plate"],
+      "color": "#28a745"
+    },
+    "grill": {
+      "name": "Grill Station",
+      "allowedActions": ["grill"],
+      "color": "#fd7e14",
+      "cookingSlots": 3
+    },
+    "fryer": {
+      "name": "Deep Fryer",
+      "allowedActions": ["fry"],
+      "color": "#ffc107",
+      "cookingSlots": 2
+    },
+    "stove": {
+      "name": "Stove/Oven Station",
+      "allowedActions": ["boil", "bake"],
+      "color": "#6f42c1",
+      "cookingSlots": 4
+    }
+  },
+  "dishes": [
+    {
+      "id": "classic_burger",
+      "name": "Classic Burger",
+      "station": "prep",
+      "baseColor": "#ffb3ba",
+      "difficulty": 2,
+      "prepTime": 45,
+      "ingredients": [
+        {
+          "id": "burger_bun",
+          "required": true,
+          "prepSteps": [
+            {
+              "action": "slice",
+              "description": "Slice bun in half",
+              "key": "v"
+            }
+          ]
+        },
+        {
+          "id": "beef_patty",
+          "required": true,
+          "prepSteps": [
+            {
+              "action": "grill",
+              "description": "Grill patty",
+              "station": "grill",
+              "time": 3000,
+              "key": "q"
+            }
+          ]
+        },
+        {
+          "id": "lettuce",
+          "required": false,
+          "prepSteps": [
+            {
+              "action": "chop",
+              "description": "Chop lettuce",
+              "key": "x"
+            }
+          ]
+        },
+        {
+          "id": "tomato",
+          "required": false,
+          "prepSteps": [
+            {
+              "action": "slice",
+              "description": "Slice tomato",
+              "key": "v"
+            }
+          ]
+        },
+        {
+          "id": "cheese",
+          "required": false,
+          "prepSteps": []
+        },
+        {
+          "id": "pickles",
+          "required": false,
+          "prepSteps": []
+        },
+        {
+          "id": "ketchup",
+          "required": false,
+          "prepSteps": []
+        },
+        {
+          "id": "mustard",
+          "required": false,
+          "prepSteps": []
+        }
+      ],
+      "finalSteps": [
+        {
+          "action": "assemble",
+          "description": "Assemble burger",
+          "key": "["
+        },
+        {
+          "action": "plate",
+          "description": "Plate and serve",
+          "key": "space"
+        }
+      ]
+    },
+    {
+      "id": "margherita_pizza",
+      "name": "Margherita Pizza",
+      "station": "prep",
+      "baseColor": "#ffdfba",
+      "difficulty": 3,
+      "prepTime": 60,
+      "ingredients": [
+        {
+          "id": "pizza_dough",
+          "required": true,
+          "prepSteps": []
+        },
+        {
+          "id": "tomato_sauce",
+          "required": true,
+          "prepSteps": [
+            {
+              "action": "mix",
+              "description": "Mix sauce",
+              "key": ";"
+            }
+          ]
+        },
+        {
+          "id": "mozzarella",
+          "required": true,
+          "prepSteps": []
+        },
+        {
+          "id": "oregano",
+          "required": false,
+          "prepSteps": []
+        }
+      ],
+      "finalSteps": [
+        {
+          "action": "bake",
+          "description": "Bake pizza",
+          "station": "stove",
+          "time": 8000,
+          "key": "."
+        },
+        {
+          "action": "plate",
+          "description": "Plate and serve",
+          "key": "space"
+        }
+      ]
+    },
+    {
+      "id": "fried_chicken",
+      "name": "Fried Chicken",
+      "station": "prep",
+      "baseColor": "#ffffba",
+      "difficulty": 2,
+      "prepTime": 35,
+      "ingredients": [
+        {
+          "id": "chicken_breast",
+          "required": true,
+          "prepSteps": [
+            {
+              "action": "fry",
+              "description": "Deep fry chicken",
+              "station": "fryer",
+              "time": 4000,
+              "key": "f"
+            }
+          ]
+        },
+        {
+          "id": "salt",
+          "required": false,
+          "prepSteps": []
+        },
+        {
+          "id": "pepper",
+          "required": false,
+          "prepSteps": []
+        }
+      ],
+      "finalSteps": [
+        {
+          "action": "plate",
+          "description": "Plate and serve",
+          "key": "space"
+        }
+      ]
+    },
+    {
+      "id": "caesar_salad",
+      "name": "Caesar Salad",
+      "station": "prep",
+      "baseColor": "#baffc9",
+      "difficulty": 3,
+      "prepTime": 50,
+      "ingredients": [
+        {
+          "id": "lettuce",
+          "required": true,
+          "prepSteps": [
+            {
+              "action": "chop",
+              "description": "Chop lettuce",
+              "key": "x"
+            }
+          ]
+        },
+        {
+          "id": "chicken_breast",
+          "required": true,
+          "prepSteps": [
+            {
+              "action": "grill",
+              "description": "Grill chicken",
+              "station": "grill",
+              "time": 4000,
+              "key": "q"
+            }
+          ]
+        },
+        {
+          "id": "cheese",
+          "required": false,
+          "prepSteps": []
+        },
+        {
+          "id": "mayo",
+          "required": false,
+          "prepSteps": []
+        }
+      ],
+      "finalSteps": [
+        {
+          "action": "toss",
+          "description": "Toss salad",
+          "key": "'"
+        },
+        {
+          "action": "plate",
+          "description": "Plate and serve",
+          "key": "space"
+        }
+      ]
+    },
+    {
+      "id": "pasta_marinara",
+      "name": "Pasta Marinara",
+      "station": "prep",
+      "baseColor": "#ffb3ff",
+      "difficulty": 2,
+      "prepTime": 40,
+      "ingredients": [
+        {
+          "id": "pasta",
+          "required": true,
+          "prepSteps": [
+            {
+              "action": "boil",
+              "description": "Boil pasta",
+              "station": "stove",
+              "time": 6000,
+              "key": ","
+            }
+          ]
+        },
+        {
+          "id": "tomato_sauce",
+          "required": true,
+          "prepSteps": []
+        },
+        {
+          "id": "oregano",
+          "required": false,
+          "prepSteps": []
+        },
+        {
+          "id": "cheese",
+          "required": false,
+          "prepSteps": []
+        }
+      ],
+      "finalSteps": [
+        {
+          "action": "mix",
+          "description": "Mix pasta with sauce",
+          "key": ";"
+        },
+        {
+          "action": "plate",
+          "description": "Plate and serve",
+          "key": "space"
+        }
+      ]
+    }
+  ]
+}

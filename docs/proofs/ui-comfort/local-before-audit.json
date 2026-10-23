@@ -1,0 +1,3657 @@
+{
+  "url": "http://127.0.0.1:5230/?dev=1",
+  "sourceRevision": "c5c206b/application63d74eb",
+  "captures": [
+    {
+      "name": "852x393-boutique",
+      "title": "Boutique",
+      "panel": {
+        "x": 480,
+        "y": 62,
+        "width": 360,
+        "height": 263
+      },
+      "overflowX": false,
+      "contentHeight": 192,
+      "scrollHeight": 1385,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Bâtiments",
+          "width": 100.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Lapins",
+          "width": 97.328125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Décorations",
+          "width": 112.203125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 120 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 200 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 200 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 200 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 200 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 200 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 200 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 60 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Bâtiments\nLapins\nDécorations\nEnclos universel\nEnclos universel\n\n3 places · tous les types · stocke 600 pattes\n\nPlacer · 120 pattes\nHabitats spécialisés\nPrairie de paille\n\nPaille · 3 places · stocke 900 pattes\n\nPlacer · 200 pattes\nJardin enneigé\n\nNeige · 3 places · stocke 900 pattes\n\nPlacer · 200 pattes\nTerrier de terre\n\nTerre · 3 places · stocke 900 pattes\n\nPlacer · 200 pattes\nClairière de feu\n\nFeu · 3 places · stocke 900 pattes\n\nPlacer · 200 pattes\nAtelier de métal\n\nMétal · 3 places · stocke 900 pattes\n\nPlacer · 200 pattes\nJardin des airs\n\nVol · 3 places · stocke 900 pattes\n\nPlacer · 200 pattes\nProduction et reproduction\nFerme\n\nProduit l’herbe · maximum 2\n\nPlacer · 60 pattes"
+    },
+    {
+      "name": "852x393-boutique-lapins",
+      "title": "Boutique",
+      "panel": {
+        "x": 480,
+        "y": 62,
+        "width": 360,
+        "height": 263
+      },
+      "overflowX": false,
+      "contentHeight": 192,
+      "scrollHeight": 1012,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Bâtiments",
+          "width": 100.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Lapins",
+          "width": 97.328125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Décorations",
+          "width": 112.203125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Choisir un habitat · 80 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Choisir un habitat · 80 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Choisir un habitat · 80 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Choisir un habitat · 80 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Choisir un habitat · 80 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Choisir un habitat · 80 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Bâtiments\nLapins\nDécorations\nLapin Paille\n\nCommun · affection 1 · 12 pattes / h\n\nChoisir un habitat · 80 pattes\nLapin Neige\n\nCommun · affection 1 · 12 pattes / h\n\nChoisir un habitat · 80 pattes\nLapin Terre\n\nCommun · affection 1 · 12 pattes / h\n\nChoisir un habitat · 80 pattes\nLapin Feu\n\nCommun · affection 1 · 12 pattes / h\n\nChoisir un habitat · 80 pattes\nLapin Bélier Gris\n\nCommun · affection 1 · 12 pattes / h\n\nChoisir un habitat · 80 pattes\nLapin Volant\n\nCommun · affection 1 · 12 pattes / h\n\nChoisir un habitat · 80 pattes"
+    },
+    {
+      "name": "852x393-boutique-decorations",
+      "title": "Boutique",
+      "panel": {
+        "x": 480,
+        "y": 62,
+        "width": 360,
+        "height": 263
+      },
+      "overflowX": false,
+      "contentHeight": 192,
+      "scrollHeight": 2144,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Bâtiments",
+          "width": 100.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Lapins",
+          "width": 97.328125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Décorations",
+          "width": 112.203125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 20 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 30 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 40 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 60 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 80 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 100 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 120 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 150 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 30 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 40 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 60 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 80 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Ouvrir mon inventaire",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Bâtiments\nLapins\nDécorations\n\nObjets esthétiques, sans bonus. Chaque achat rejoint l’inventaire ; annuler sa pose ne fait pas perdre l’objet. Paiement uniquement en pattes.\n\nDécorations extérieures\nMassif de fleurs sauvages\n\n1 × 1 cases fines · 0 possédé(s)\n\nAcheter · 20 pattes\nBuisson fleuri\n\n1 × 1 cases fines · 0 possédé(s)\n\nAcheter · 30 pattes\nPetit rocher moussu\n\n1 × 1 cases fines · 0 possédé(s)\n\nAcheter · 40 pattes\nLanterne de jardin\n\n1 × 1 cases fines · 0 possédé(s)\n\nAcheter · 60 pattes\nBanc en bois\n\n2 × 1 cases fines · peut tourner · 0 possédé(s)\n\nAcheter · 80 pattes\nArche fleurie\n\n2 × 1 cases fines · peut tourner · 0 possédé(s)\n\nAcheter · 100 pattes\nPetit arbre fruitier\n\n2 × 2 cases fines · 0 possédé(s)\n\nAcheter · 120 pattes\nPetit bassin\n\n2 × 2 cases fines · 0 possédé(s)\n\nAcheter · 150 pattes\nCoussin douillet\n\n1 × 1 cases fines · 0 possédé(s)\n\nAcheter · 30 pattes\nBalle et jouets\n\n1 × 1 cases fines · 0 possédé(s)\n\nAcheter · 40 pattes\nTunnel de jeu\n\n2 × 1 cases fines · peut tourner · 0 possédé(s)\n\nAcheter · 60 pattes\nPetit parasol\n\n1 × 1 cases fines · 0 possédé(s)\n\nAcheter · 80 pattes\nOuvrir mon inventaire"
+    },
+    {
+      "name": "852x393-collection",
+      "title": "Collection · 2/15",
+      "panel": {
+        "x": 480,
+        "y": 62,
+        "width": 360,
+        "height": 263
+      },
+      "overflowX": false,
+      "contentHeight": 192,
+      "scrollHeight": 3022,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Carnet de reproduction",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Consulter l’espèce",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Consulter l’espèce",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Carnet de reproduction\nType\nTous les types\npaille\nneige\nterre\nfeu\nmétal\nvol\nRareté\nToutes les raretés\nCommun\nPeu commun\nRare\nÉpique\nLégendaire\nDécouverte\nToutes\nDécouvertes\nÀ découvrir\n\n15 espèce(s) affichée(s)\n\nLapin Paille\nConsulter l’espèce\nLapin Neige\nConsulter l’espèce\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir"
+    },
+    {
+      "name": "852x393-carnet",
+      "title": "Carnet de reproduction",
+      "panel": {
+        "x": 480,
+        "y": 62,
+        "width": 360,
+        "height": 263
+      },
+      "overflowX": false,
+      "contentHeight": 192,
+      "scrollHeight": 3487,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Retour à la collection",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Préparer cette paire au nid",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Les types nécessaires doivent être réunis par deux individus distincts. Une recette possible reste un tirage aléatoire. Les probabilités ci-dessous incluent la garantie actuelle.\n\nLa garantie choisit à parts égales parmi les six recettes ordinaires inconnues admissibles. Géant, Magicien et Dragon en sont exclus. Une recette déjà découverte peut donc être temporairement exclue de ce tirage.\n\nRetour à la collection\n?\nEspèce à découvrir\n\npaille + neige · Peu commun\n\nAffection 2 minimum pour chacun des deux parents. Croissance : 15 min.\n\nCette espèce bénéficie de la garantie ordinaire si elle est encore inconnue et admissible.\n\n1 paire(s) possédée(s) compatible(s) avec la recette\n\nLapin Paille (Enclos 1, affection 2, n° 2) × Lapin Neige (Enclos 1, affection 2, n° 3)\n\nRecette possible, résultat non garanti · 20 %\n\nPréparer cette paire au nid\n?\nEspèce à découvrir\n\npaille + terre · Peu commun\n\nAffection 2 minimum pour chacun des deux parents. Croissance : 15 min.\n\nCette espèce bénéficie de la garantie ordinaire si elle est encore inconnue et admissible.\n\nAucune paire possédée ne réunit encore ces types. Les communs sont disponibles en boutique.\n\n?\nEspèce à découvrir\n\nmétal + paille · Rare\n\nAffection 4 minimum pour chacun des deux parents. Croissance : 30 min.\n\nCette espèce bénéficie de la garantie ordinaire si elle est encore inconnue et admissible.\n\nAucune paire possédée ne réunit encore ces types. Les communs sont disponibles en boutique.\n\n?\nEspèce à découvrir\n\nvol + feu · Rare\n\nAffection 4 minimum pour chacun des deux parents. Croissance : 30 min.\n\nCette espèce bénéficie de la garantie ordinaire si elle est encore inconnue et admissible.\n\nAucune paire possédée ne réunit encore ces types. Les communs sont disponibles en boutique.\n\n?\nEspèce à découvrir\n\nfeu + neige · Rare\n\nAffection 4 minimum pour chacun des deux parents. Croissance : 30 min.\n\nCette espèce bénéficie de la garantie ordinaire si elle est encore inconnue et admissible.\n\nAucune paire possédée ne réunit encore ces types. Les communs sont disponibles en boutique.\n\n?\nEspèce à découvrir\n\npaille + feu · Rare\n\nAffection 4 minimum pour chacun des deux parents. Croissance : 30 min.\n\nCette espèce bénéficie de la garantie ordinaire si elle est encore inconnue et admissible.\n\nAucune paire possédée ne réunit encore ces types. Les communs sont disponibles en boutique.\n\n?\nEspèce à découvrir\n\nterre + paille · Épique\n\nAffection 6 minimum pour chacun des deux parents. Croissance : 60 min.\n\nHors garantie ordinaire : 5 %. Cette espèce ne bénéficie pas de la garantie de découverte.\n\nAucune paire possédée ne réunit encore ces types. Les communs sont disponibles en boutique.\n\n?\nEspèce à découvrir\n\nmétal + vol · Épique\n\nAffection 6 minimum pour chacun des deux parents. Croissance : 60 min.\n\nHors garantie ordinaire : 5 %. Cette espèce ne bénéficie pas de la garantie de découverte.\n\nAucune paire possédée ne réunit encore ces types. Les communs sont disponibles en boutique.\n\n?\nEspèce à découvrir\n\nvol + feu · Légendaire\n\nAffection 10 minimum pour chacun des deux parents. Croissance : 120 min.\n\nParents requis : Lapin Perroquet × Lapin Feu. Les types seuls ne suffisent pas.\n\nHors garantie ordinaire : 2 %. Cette espèce ne bénéficie pas de la garantie de découverte.\n\nPossédez les deux espèces requises pour préparer cette paire."
+    },
+    {
+      "name": "852x393-missions",
+      "title": "Missions",
+      "panel": {
+        "x": 480,
+        "y": 62,
+        "width": 360,
+        "height": 263
+      },
+      "overflowX": false,
+      "contentHeight": 192,
+      "scrollHeight": 458,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Principales",
+          "width": 158.5,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Quotidiennes",
+          "width": 158.5,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Réclamer · + 10 herbes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Principales\nQuotidiennes\n\nRéclamez pour continuer. Les actions anticipées comptent.\n\nUn premier repas\n\nUn lapin atteint l’affection 2.\n\nProgression : 2 / 2\n\nCondition acquise\n\nGratuit · Récompense : + 10 herbes\n\nÀ réclamer\n\nRéclamer · + 10 herbes"
+    },
+    {
+      "name": "852x393-lapin",
+      "title": "Lapin Paille",
+      "panel": {
+        "x": 480,
+        "y": 62,
+        "width": 360,
+        "height": 263
+      },
+      "overflowX": false,
+      "contentHeight": 192,
+      "scrollHeight": 561,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Nourrir · 4 herbes",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Changer d’habitat",
+          "width": 324,
+          "height": 46,
+          "disabled": true
+        },
+        {
+          "name": "Confier ce lapin",
+          "width": 324,
+          "height": 46,
+          "disabled": true
+        }
+      ],
+      "text": "paille · Commun\n\nAffection 2 / 20 · 14 pattes / h\n\nEnclos 1\n\nAprès une nourriture : affection 3, revenu 16 pattes / h.\n\nNourrir · 4 herbesChanger d’habitat\n\nAucun autre habitat compatible avec une place libre.\n\nConfier ce lapin\n\nGardez au moins un lapin de chaque espèce possédée."
+    },
+    {
+      "name": "852x393-habitat",
+      "title": "Enclos 1",
+      "panel": {
+        "x": 480,
+        "y": 62,
+        "width": 360,
+        "height": 263
+      },
+      "overflowX": false,
+      "contentHeight": 192,
+      "scrollHeight": 799,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Récolter 0 pattes",
+          "width": 324,
+          "height": 46,
+          "disabled": true
+        },
+        {
+          "name": "Voir ce lapin",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Voir ce lapin",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter un lapin",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Améliorer · 200 pattes",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Déplacer ce bâtiment",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Enclos universel · Tous les types · niveau 1\n\n28 pattes / h\n\n2 / 3 places · 0 / 600 pattes stockées\n\nRécolter 0 pattes\n\nIl faut au moins une patte entière.\n\nLapin Paille\n\nAffection 2 · 14 pattes / h\n\nVoir ce lapin\nLapin Neige\n\nAffection 2 · 14 pattes / h\n\nVoir ce lapin\nAcheter un lapin\n\nNiveau 2 : 5 places · plafond 900 pattes. Occupants, emplacement et stockage conservés.\n\nAméliorer · 200 pattesDéplacer ce bâtiment"
+    },
+    {
+      "name": "852x393-nid",
+      "title": "Nid",
+      "panel": {
+        "x": 480,
+        "y": 62,
+        "width": 360,
+        "height": 263
+      },
+      "overflowX": false,
+      "contentHeight": 192,
+      "scrollHeight": 929,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Carnet de reproduction",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Lancer la reproduction · gratuit",
+          "width": 324,
+          "height": 46,
+          "disabled": true
+        },
+        {
+          "name": "Parent A",
+          "width": 145.5,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Parent B",
+          "width": 145.5,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Parent A",
+          "width": 145.5,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Parent B",
+          "width": 145.5,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Déplacer ce bâtiment",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Parent A : à choisir · Parent B : à choisir\n\nGratuit · 20 minutes de reproduction, puis transfert manuel et croissance en nurserie.\n\nRecettes rares : affection 4 ; épiques : 6 ; Dragon : 10 chez chacun des deux parents, avec Perroquet et Feu obligatoires. Les résultats inadmissibles sont exclus ; la reproduction ordinaire reste possible dès 2.\n\nCarnet de reproduction\n\nGarantie : 0/9 échecs admissibles. Après neuf échecs, la tentative admissible suivante garantit une des six recettes ordinaires inconnues admissibles, à parts égales s’il y en a plusieurs. Un résultat ordinaire inédit réservé remet le compteur à zéro ; la découverte n’est enregistrée qu’à l’accueil.\n\nLancer la reproduction · gratuit\n\nChoisissez deux parents différents.\n\nChoisir les parents\nLapin Paille\n\nAffection 2 · 14 pattes / h\n\nEnclos 1 · Disponible\n\nParent A\nParent B\nLapin Neige\n\nAffection 2 · 14 pattes / h\n\nEnclos 1 · Disponible\n\nParent A\nParent B\nDéplacer ce bâtiment"
+    },
+    {
+      "name": "852x393-nurserie",
+      "title": "Nurserie",
+      "panel": {
+        "x": 480,
+        "y": 62,
+        "width": 360,
+        "height": 263
+      },
+      "overflowX": false,
+      "contentHeight": 152,
+      "scrollHeight": 152,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Déplacer ce bâtiment",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "La nurserie est libre. Lancez une reproduction dans le nid.\n\nDéplacer ce bâtiment"
+    },
+    {
+      "name": "852x393-amenagement",
+      "title": "Aménager · inventaire",
+      "panel": {
+        "x": 530,
+        "y": 62,
+        "width": 310,
+        "height": 263
+      },
+      "overflowX": false,
+      "contentHeight": 192,
+      "scrollHeight": 378,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter des décorations",
+          "width": 274,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Quitter le mode Aménagement",
+          "width": 274,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Touchez directement un objet posé pour le déplacer, le ranger ou le vendre. Glissez pour explorer, pincez pour zoomer. Toute pose demande une validation.\n\nAcheter des décorations\nEn réserve · 0\n\nVotre inventaire est vide. Les objets rangés réapparaissent ici.\n\nObjets posés · 0\nQuitter le mode Aménagement"
+    },
+    {
+      "name": "852x393-parametres",
+      "title": "Paramètres",
+      "panel": {
+        "x": 480,
+        "y": 62,
+        "width": 360,
+        "height": 263
+      },
+      "overflowX": false,
+      "contentHeight": 192,
+      "scrollHeight": 2598,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Sons : activés",
+          "width": 158.5,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Reprendre le guidage",
+          "width": 158.5,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Exporter la partie de test",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Importer dans la partie de test",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Recommencer la partie de test",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Exporter la source avant migration",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 5 min",
+          "width": 78.515625,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 20 min",
+          "width": 86.53125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 60 min",
+          "width": 86.53125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 360 min",
+          "width": 94.53125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 1440 min",
+          "width": 102.546875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 1000 pattes",
+          "width": 120.03125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 10000 pattes",
+          "width": 128.03125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 100 herbes",
+          "width": 115.234375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 1000 herbes",
+          "width": 123.25,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 10 cœurs",
+          "width": 102.71875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 100 cœurs",
+          "width": 110.71875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Initiation — trois aides inutilisées",
+          "width": 263.375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Initiation — aide utilisée et croissance liée",
+          "width": 298,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Début guidé — nouvelle partie, délais normaux",
+          "width": 298,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Missions — parcours initial et branches",
+          "width": 298,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Nid — parents et transfert manuel",
+          "width": 269,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Bâtiments décalés — grille fine 4 × 4",
+          "width": 279.734375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Centre seul — 3 × 3",
+          "width": 159.75,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Extension cardinale — Centre + Est",
+          "width": 269.53125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Extension diagonale — Centre + Nord-ouest",
+          "width": 298,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Forme en L — Centre + Est + Nord",
+          "width": 259.9375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Île complète — 9 × 9",
+          "width": 167.59375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Décorations proches des frontières",
+          "width": 271.734375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Prairie de départ — acheter et placer",
+          "width": 285.953125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Prairie dense — sélection et performances",
+          "width": 298,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Collection — quinze espèces et recettes",
+          "width": 298,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Reproduction — parents prêts",
+          "width": 237.65625,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Missions — récompenses à réclamer",
+          "width": 280.640625,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Habitats — sept occupants par enclos",
+          "width": 290.28125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Prairie de démonstration décorée",
+          "width": 262.703125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Habitat entouré de décorations — sept occupants",
+          "width": 298,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Exporter la partie de test",
+          "width": 202.625,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Importer dans la partie de test",
+          "width": 243,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Remettre la partie de test à zéro",
+          "width": 253.734375,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Sons : activés\nReprendre le guidage\nSauvegarde\n\nPartie enregistrée sur cet appareil.\n\nDernière sauvegarde réussie : 11/10/2026 11:00:04.\n\n2 lapins · 0 pattes en attente dans les enclos.\n\nExporter la partie de test\nImporter dans la partie de test\nRecommencer la partie de test\nExporter la source avant migration\n\nLa sauvegarde locale peut être effacée par le navigateur. Gardez un export de secours. Changer de domaine, de port ou passer à un site HTTPS nécessite un export/import.\n\nVersion : Prairie de lapins · île à neuf parcelles · v8 · build local\n\nRetour au jeu normal\n\nLaboratoire public : partie, préférences, horloge et sauvegardes de secours séparées. Aucun compte ni service en ligne. Importez volontairement un export normal pour tester une copie. Les fichiers MODE-TEST peuvent contenir des ressources ajoutées et du temps avancé.\n\nMême révision que le jeu normal : local.\n\nAvancer le temps de test\n+ 5 min+ 20 min+ 60 min+ 360 min+ 1440 min\nAjouter des ressources de test\n+ 1000 pattes+ 10000 pattes+ 100 herbes+ 1000 herbes+ 10 cœurs+ 100 cœurs\nScénarios préparés\nInitiation — trois aides inutiliséesInitiation — aide utilisée et croissance liéeDébut guidé — nouvelle partie, délais normauxMissions — parcours initial et branchesNid — parents et transfert manuelBâtiments décalés — grille fine 4 × 4Centre seul — 3 × 3Extension cardinale — Centre + EstExtension diagonale — Centre + Nord-ouestForme en L — Centre + Est + NordÎle complète — 9 × 9Décorations proches des frontièresPrairie de départ — acheter et placerPrairie dense — sélection et performancesCollection — quinze espèces et recettesReproduction — parents prêtsMissions — récompenses à réclamerHabitats — sept occupants par enclosPrairie de démonstration décoréeHabitat entouré de décorations — sept occupants\nSauvegarde de test\nExporter la partie de testImporter dans la partie de testRemettre la partie de test à zéro\n\nScénario chargé et enregistré dans la partie de test."
+    },
+    {
+      "name": "852x393-ferme",
+      "title": "Ferme",
+      "panel": {
+        "x": 480,
+        "y": 62,
+        "width": 360,
+        "height": 263
+      },
+      "overflowX": false,
+      "contentHeight": 192,
+      "scrollHeight": 383,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Terminer · 1 cœur",
+          "width": 150.96875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Récolter 20 herbes",
+          "width": 324,
+          "height": 46,
+          "disabled": true
+        },
+        {
+          "name": "Déplacer ce bâtiment",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "20 herbes en production.\n\n4 min 48 s\n\nLes cœurs permettent aussi de terminer certains délais. Tu peux toujours attendre.\n\nTerminer · 1 cœur\nRécolter 20 herbes\n\nProduction en cours.\n\nDéplacer ce bâtiment"
+    },
+    {
+      "name": "667x375-boutique",
+      "title": "Boutique",
+      "panel": {
+        "x": 361.53125,
+        "y": 62,
+        "width": 293.46875,
+        "height": 245
+      },
+      "overflowX": false,
+      "contentHeight": 174,
+      "scrollHeight": 1456,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Bâtiments",
+          "width": 125.234375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Lapins",
+          "width": 125.234375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Décorations",
+          "width": 257.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 120 pattes",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 200 pattes",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 200 pattes",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 200 pattes",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 200 pattes",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 200 pattes",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 200 pattes",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 60 pattes",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Bâtiments\nLapins\nDécorations\nEnclos universel\nEnclos universel\n\n3 places · tous les types · stocke 600 pattes\n\nPlacer · 120 pattes\nHabitats spécialisés\nPrairie de paille\n\nPaille · 3 places · stocke 900 pattes\n\nPlacer · 200 pattes\nJardin enneigé\n\nNeige · 3 places · stocke 900 pattes\n\nPlacer · 200 pattes\nTerrier de terre\n\nTerre · 3 places · stocke 900 pattes\n\nPlacer · 200 pattes\nClairière de feu\n\nFeu · 3 places · stocke 900 pattes\n\nPlacer · 200 pattes\nAtelier de métal\n\nMétal · 3 places · stocke 900 pattes\n\nPlacer · 200 pattes\nJardin des airs\n\nVol · 3 places · stocke 900 pattes\n\nPlacer · 200 pattes\nProduction et reproduction\nFerme\n\nProduit l’herbe · maximum 2\n\nPlacer · 60 pattes"
+    },
+    {
+      "name": "667x375-boutique-lapins",
+      "title": "Boutique",
+      "panel": {
+        "x": 361.53125,
+        "y": 62,
+        "width": 293.46875,
+        "height": 245
+      },
+      "overflowX": false,
+      "contentHeight": 174,
+      "scrollHeight": 1148,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Bâtiments",
+          "width": 125.234375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Lapins",
+          "width": 125.234375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Décorations",
+          "width": 257.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Choisir un habitat · 80 pattes",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Choisir un habitat · 80 pattes",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Choisir un habitat · 80 pattes",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Choisir un habitat · 80 pattes",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Choisir un habitat · 80 pattes",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Choisir un habitat · 80 pattes",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Bâtiments\nLapins\nDécorations\nLapin Paille\n\nCommun · affection 1 · 12 pattes / h\n\nChoisir un habitat · 80 pattes\nLapin Neige\n\nCommun · affection 1 · 12 pattes / h\n\nChoisir un habitat · 80 pattes\nLapin Terre\n\nCommun · affection 1 · 12 pattes / h\n\nChoisir un habitat · 80 pattes\nLapin Feu\n\nCommun · affection 1 · 12 pattes / h\n\nChoisir un habitat · 80 pattes\nLapin Bélier Gris\n\nCommun · affection 1 · 12 pattes / h\n\nChoisir un habitat · 80 pattes\nLapin Volant\n\nCommun · affection 1 · 12 pattes / h\n\nChoisir un habitat · 80 pattes"
+    },
+    {
+      "name": "667x375-boutique-decorations",
+      "title": "Boutique",
+      "panel": {
+        "x": 361.53125,
+        "y": 62,
+        "width": 293.46875,
+        "height": 245
+      },
+      "overflowX": false,
+      "contentHeight": 174,
+      "scrollHeight": 2364,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Bâtiments",
+          "width": 125.234375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Lapins",
+          "width": 125.234375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Décorations",
+          "width": 257.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 20 pattes",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 30 pattes",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 40 pattes",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 60 pattes",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 80 pattes",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 100 pattes",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 120 pattes",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 150 pattes",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 30 pattes",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 40 pattes",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 60 pattes",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 80 pattes",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Ouvrir mon inventaire",
+          "width": 257.46875,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Bâtiments\nLapins\nDécorations\n\nObjets esthétiques, sans bonus. Chaque achat rejoint l’inventaire ; annuler sa pose ne fait pas perdre l’objet. Paiement uniquement en pattes.\n\nDécorations extérieures\nMassif de fleurs sauvages\n\n1 × 1 cases fines · 0 possédé(s)\n\nAcheter · 20 pattes\nBuisson fleuri\n\n1 × 1 cases fines · 0 possédé(s)\n\nAcheter · 30 pattes\nPetit rocher moussu\n\n1 × 1 cases fines · 0 possédé(s)\n\nAcheter · 40 pattes\nLanterne de jardin\n\n1 × 1 cases fines · 0 possédé(s)\n\nAcheter · 60 pattes\nBanc en bois\n\n2 × 1 cases fines · peut tourner · 0 possédé(s)\n\nAcheter · 80 pattes\nArche fleurie\n\n2 × 1 cases fines · peut tourner · 0 possédé(s)\n\nAcheter · 100 pattes\nPetit arbre fruitier\n\n2 × 2 cases fines · 0 possédé(s)\n\nAcheter · 120 pattes\nPetit bassin\n\n2 × 2 cases fines · 0 possédé(s)\n\nAcheter · 150 pattes\nCoussin douillet\n\n1 × 1 cases fines · 0 possédé(s)\n\nAcheter · 30 pattes\nBalle et jouets\n\n1 × 1 cases fines · 0 possédé(s)\n\nAcheter · 40 pattes\nTunnel de jeu\n\n2 × 1 cases fines · peut tourner · 0 possédé(s)\n\nAcheter · 60 pattes\nPetit parasol\n\n1 × 1 cases fines · 0 possédé(s)\n\nAcheter · 80 pattes\nOuvrir mon inventaire"
+    },
+    {
+      "name": "667x375-collection",
+      "title": "Collection · 2/15",
+      "panel": {
+        "x": 361.53125,
+        "y": 62,
+        "width": 293.46875,
+        "height": 245
+      },
+      "overflowX": false,
+      "contentHeight": 174,
+      "scrollHeight": 3022,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Carnet de reproduction",
+          "width": 257.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Consulter l’espèce",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Consulter l’espèce",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Carnet de reproduction\nType\nTous les types\npaille\nneige\nterre\nfeu\nmétal\nvol\nRareté\nToutes les raretés\nCommun\nPeu commun\nRare\nÉpique\nLégendaire\nDécouverte\nToutes\nDécouvertes\nÀ découvrir\n\n15 espèce(s) affichée(s)\n\nLapin Paille\nConsulter l’espèce\nLapin Neige\nConsulter l’espèce\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir"
+    },
+    {
+      "name": "667x375-carnet",
+      "title": "Carnet de reproduction",
+      "panel": {
+        "x": 361.53125,
+        "y": 62,
+        "width": 293.46875,
+        "height": 245
+      },
+      "overflowX": false,
+      "contentHeight": 168,
+      "scrollHeight": 4077,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Retour à la collection",
+          "width": 257.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Préparer cette paire au nid",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Les types nécessaires doivent être réunis par deux individus distincts. Une recette possible reste un tirage aléatoire. Les probabilités ci-dessous incluent la garantie actuelle.\n\nLa garantie choisit à parts égales parmi les six recettes ordinaires inconnues admissibles. Géant, Magicien et Dragon en sont exclus. Une recette déjà découverte peut donc être temporairement exclue de ce tirage.\n\nRetour à la collection\n?\nRecette de Brumelin\n\npaille + neige · Peu commun\n\nUn résultat possible, sans certitude. Une naissance commune reste possible.\n\nAffection 2 minimum pour chacun des deux parents. Croissance : 15 min.\n\nCette espèce bénéficie de la garantie ordinaire si elle est encore inconnue et admissible.\n\n1 paire(s) possédée(s) compatible(s) avec la recette\n\nLapin Paille (Enclos 1, affection 2, n° 2) × Lapin Neige (Enclos 1, affection 2, n° 3)\n\nRecette possible, résultat non garanti · 20 %\n\nPréparer cette paire au nid\n?\nEspèce à découvrir\n\npaille + terre · Peu commun\n\nAffection 2 minimum pour chacun des deux parents. Croissance : 15 min.\n\nCette espèce bénéficie de la garantie ordinaire si elle est encore inconnue et admissible.\n\nAucune paire possédée ne réunit encore ces types. Les communs sont disponibles en boutique.\n\n?\nEspèce à découvrir\n\nmétal + paille · Rare\n\nAffection 4 minimum pour chacun des deux parents. Croissance : 30 min.\n\nCette espèce bénéficie de la garantie ordinaire si elle est encore inconnue et admissible.\n\nAucune paire possédée ne réunit encore ces types. Les communs sont disponibles en boutique.\n\n?\nEspèce à découvrir\n\nvol + feu · Rare\n\nAffection 4 minimum pour chacun des deux parents. Croissance : 30 min.\n\nCette espèce bénéficie de la garantie ordinaire si elle est encore inconnue et admissible.\n\nAucune paire possédée ne réunit encore ces types. Les communs sont disponibles en boutique.\n\n?\nEspèce à découvrir\n\nfeu + neige · Rare\n\nAffection 4 minimum pour chacun des deux parents. Croissance : 30 min.\n\nCette espèce bénéficie de la garantie ordinaire si elle est encore inconnue et admissible.\n\nAucune paire possédée ne réunit encore ces types. Les communs sont disponibles en boutique.\n\n?\nEspèce à découvrir\n\npaille + feu · Rare\n\nAffection 4 minimum pour chacun des deux parents. Croissance : 30 min.\n\nCette espèce bénéficie de la garantie ordinaire si elle est encore inconnue et admissible.\n\nAucune paire possédée ne réunit encore ces types. Les communs sont disponibles en boutique.\n\n?\nEspèce à découvrir\n\nterre + paille · Épique\n\nAffection 6 minimum pour chacun des deux parents. Croissance : 60 min.\n\nHors garantie ordinaire : 5 %. Cette espèce ne bénéficie pas de la garantie de découverte.\n\nAucune paire possédée ne réunit encore ces types. Les communs sont disponibles en boutique.\n\n?\nEspèce à découvrir\n\nmétal + vol · Épique\n\nAffection 6 minimum pour chacun des deux parents. Croissance : 60 min.\n\nHors garantie ordinaire : 5 %. Cette espèce ne bénéficie pas de la garantie de découverte.\n\nAucune paire possédée ne réunit encore ces types. Les communs sont disponibles en boutique.\n\n?\nEspèce à découvrir\n\nvol + feu · Légendaire\n\nAffection 10 minimum pour chacun des deux parents. Croissance : 120 min.\n\nParents requis : Lapin Perroquet × Lapin Feu. Les types seuls ne suffisent pas.\n\nHors garantie ordinaire : 2 %. Cette espèce ne bénéficie pas de la garantie de découverte.\n\nPossédez les deux espèces requises pour préparer cette paire."
+    },
+    {
+      "name": "667x375-missions",
+      "title": "Missions",
+      "panel": {
+        "x": 361.53125,
+        "y": 62,
+        "width": 293.46875,
+        "height": 245
+      },
+      "overflowX": false,
+      "contentHeight": 174,
+      "scrollHeight": 458,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Principales",
+          "width": 125.234375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Quotidiennes",
+          "width": 125.234375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Réclamer · + 10 herbes",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Principales\nQuotidiennes\n\nRéclamez pour continuer. Les actions anticipées comptent.\n\nUn premier repas\n\nUn lapin atteint l’affection 2.\n\nProgression : 2 / 2\n\nCondition acquise\n\nGratuit · Récompense : + 10 herbes\n\nÀ réclamer\n\nRéclamer · + 10 herbes"
+    },
+    {
+      "name": "667x375-lapin",
+      "title": "Lapin Paille",
+      "panel": {
+        "x": 361.53125,
+        "y": 62,
+        "width": 293.46875,
+        "height": 245
+      },
+      "overflowX": false,
+      "contentHeight": 174,
+      "scrollHeight": 614,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Nourrir · 4 herbes",
+          "width": 257.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Changer d’habitat",
+          "width": 257.46875,
+          "height": 46,
+          "disabled": true
+        },
+        {
+          "name": "Confier ce lapin",
+          "width": 257.46875,
+          "height": 46,
+          "disabled": true
+        }
+      ],
+      "text": "paille · Commun\n\nAffection 2 / 20 · 14 pattes / h\n\nEnclos 1\n\nAprès une nourriture : affection 3, revenu 16 pattes / h.\n\nNourrir · 4 herbesChanger d’habitat\n\nAucun autre habitat compatible avec une place libre.\n\nConfier ce lapin\n\nGardez au moins un lapin de chaque espèce possédée."
+    },
+    {
+      "name": "667x375-habitat",
+      "title": "Enclos 1",
+      "panel": {
+        "x": 361.53125,
+        "y": 62,
+        "width": 293.46875,
+        "height": 245
+      },
+      "overflowX": false,
+      "contentHeight": 174,
+      "scrollHeight": 841,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Récolter 0 pattes",
+          "width": 257.46875,
+          "height": 46,
+          "disabled": true
+        },
+        {
+          "name": "Voir ce lapin",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Voir ce lapin",
+          "width": 231.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter un lapin",
+          "width": 257.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Améliorer · 200 pattes",
+          "width": 257.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Déplacer ce bâtiment",
+          "width": 257.46875,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Enclos universel · Tous les types · niveau 1\n\n28 pattes / h\n\n2 / 3 places · 0 / 600 pattes stockées\n\nRécolter 0 pattes\n\nIl faut au moins une patte entière.\n\nLapin Paille\n\nAffection 2 · 14 pattes / h\n\nVoir ce lapin\nLapin Neige\n\nAffection 2 · 14 pattes / h\n\nVoir ce lapin\nAcheter un lapin\n\nNiveau 2 : 5 places · plafond 900 pattes. Occupants, emplacement et stockage conservés.\n\nAméliorer · 200 pattesDéplacer ce bâtiment"
+    },
+    {
+      "name": "667x375-nid",
+      "title": "Nid",
+      "panel": {
+        "x": 361.53125,
+        "y": 62,
+        "width": 293.46875,
+        "height": 245
+      },
+      "overflowX": false,
+      "contentHeight": 174,
+      "scrollHeight": 1010,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Carnet de reproduction",
+          "width": 257.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Lancer la reproduction · gratuit",
+          "width": 257.46875,
+          "height": 46,
+          "disabled": true
+        },
+        {
+          "name": "Parent A",
+          "width": 112.234375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Parent B",
+          "width": 112.234375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Parent A",
+          "width": 112.234375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Parent B",
+          "width": 112.234375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Déplacer ce bâtiment",
+          "width": 257.46875,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Parent A : à choisir · Parent B : à choisir\n\nGratuit · 20 minutes de reproduction, puis transfert manuel et croissance en nurserie.\n\nRecettes rares : affection 4 ; épiques : 6 ; Dragon : 10 chez chacun des deux parents, avec Perroquet et Feu obligatoires. Les résultats inadmissibles sont exclus ; la reproduction ordinaire reste possible dès 2.\n\nCarnet de reproduction\n\nGarantie : 0/9 échecs admissibles. Après neuf échecs, la tentative admissible suivante garantit une des six recettes ordinaires inconnues admissibles, à parts égales s’il y en a plusieurs. Un résultat ordinaire inédit réservé remet le compteur à zéro ; la découverte n’est enregistrée qu’à l’accueil.\n\nLancer la reproduction · gratuit\n\nChoisissez deux parents différents.\n\nChoisir les parents\nLapin Paille\n\nAffection 2 · 14 pattes / h\n\nEnclos 1 · Disponible\n\nParent A\nParent B\nLapin Neige\n\nAffection 2 · 14 pattes / h\n\nEnclos 1 · Disponible\n\nParent A\nParent B\nDéplacer ce bâtiment"
+    },
+    {
+      "name": "667x375-nurserie",
+      "title": "Nurserie",
+      "panel": {
+        "x": 361.53125,
+        "y": 62,
+        "width": 293.46875,
+        "height": 245
+      },
+      "overflowX": false,
+      "contentHeight": 152,
+      "scrollHeight": 152,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Déplacer ce bâtiment",
+          "width": 257.46875,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "La nurserie est libre. Lancez une reproduction dans le nid.\n\nDéplacer ce bâtiment"
+    },
+    {
+      "name": "667x375-amenagement",
+      "title": "Aménager · inventaire",
+      "panel": {
+        "x": 388.203125,
+        "y": 62,
+        "width": 266.796875,
+        "height": 245
+      },
+      "overflowX": false,
+      "contentHeight": 168,
+      "scrollHeight": 407,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter des décorations",
+          "width": 230.796875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Quitter le mode Aménagement",
+          "width": 230.796875,
+          "height": 57,
+          "disabled": false
+        }
+      ],
+      "text": "Touchez directement un objet posé pour le déplacer, le ranger ou le vendre. Glissez pour explorer, pincez pour zoomer. Toute pose demande une validation.\n\nAcheter des décorations\nEn réserve · 0\n\nVotre inventaire est vide. Les objets rangés réapparaissent ici.\n\nObjets posés · 0\nQuitter le mode Aménagement"
+    },
+    {
+      "name": "667x375-parametres",
+      "title": "Paramètres",
+      "panel": {
+        "x": 361.53125,
+        "y": 62,
+        "width": 293.46875,
+        "height": 245
+      },
+      "overflowX": false,
+      "contentHeight": 174,
+      "scrollHeight": 3080,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Sons : activés",
+          "width": 125.234375,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Reprendre le guidage",
+          "width": 125.234375,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Exporter la partie de test",
+          "width": 257.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Importer dans la partie de test",
+          "width": 257.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Recommencer la partie de test",
+          "width": 257.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Exporter la source avant migration",
+          "width": 257.46875,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "+ 5 min",
+          "width": 78.515625,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 20 min",
+          "width": 86.53125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 60 min",
+          "width": 86.53125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 360 min",
+          "width": 94.53125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 1440 min",
+          "width": 102.546875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 1000 pattes",
+          "width": 120.03125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 10000 pattes",
+          "width": 128.03125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 100 herbes",
+          "width": 115.234375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 1000 herbes",
+          "width": 123.25,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 10 cœurs",
+          "width": 102.71875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 100 cœurs",
+          "width": 110.71875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Initiation — trois aides inutilisées",
+          "width": 231.46875,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Initiation — aide utilisée et croissance liée",
+          "width": 231.46875,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Début guidé — nouvelle partie, délais normaux",
+          "width": 231.46875,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Missions — parcours initial et branches",
+          "width": 231.46875,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Nid — parents et transfert manuel",
+          "width": 231.46875,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Bâtiments décalés — grille fine 4 × 4",
+          "width": 231.46875,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Centre seul — 3 × 3",
+          "width": 159.75,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Extension cardinale — Centre + Est",
+          "width": 231.46875,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Extension diagonale — Centre + Nord-ouest",
+          "width": 231.46875,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Forme en L — Centre + Est + Nord",
+          "width": 231.46875,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Île complète — 9 × 9",
+          "width": 167.59375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Décorations proches des frontières",
+          "width": 231.46875,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Prairie de départ — acheter et placer",
+          "width": 231.46875,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Prairie dense — sélection et performances",
+          "width": 231.46875,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Collection — quinze espèces et recettes",
+          "width": 231.46875,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Reproduction — parents prêts",
+          "width": 231.46875,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Missions — récompenses à réclamer",
+          "width": 231.46875,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Habitats — sept occupants par enclos",
+          "width": 231.46875,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Prairie de démonstration décorée",
+          "width": 231.46875,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Habitat entouré de décorations — sept occupants",
+          "width": 231.46875,
+          "height": 74.5,
+          "disabled": false
+        },
+        {
+          "name": "Exporter la partie de test",
+          "width": 202.625,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Importer dans la partie de test",
+          "width": 231.46875,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Remettre la partie de test à zéro",
+          "width": 231.46875,
+          "height": 57,
+          "disabled": false
+        }
+      ],
+      "text": "Sons : activés\nReprendre le guidage\nSauvegarde\n\nPartie enregistrée sur cet appareil.\n\nDernière sauvegarde réussie : 11/10/2026 11:00:25.\n\n2 lapins · 0 pattes en attente dans les enclos.\n\nExporter la partie de test\nImporter dans la partie de test\nRecommencer la partie de test\nExporter la source avant migration\n\nLa sauvegarde locale peut être effacée par le navigateur. Gardez un export de secours. Changer de domaine, de port ou passer à un site HTTPS nécessite un export/import.\n\nVersion : Prairie de lapins · île à neuf parcelles · v8 · build local\n\nRetour au jeu normal\n\nLaboratoire public : partie, préférences, horloge et sauvegardes de secours séparées. Aucun compte ni service en ligne. Importez volontairement un export normal pour tester une copie. Les fichiers MODE-TEST peuvent contenir des ressources ajoutées et du temps avancé.\n\nMême révision que le jeu normal : local.\n\nAvancer le temps de test\n+ 5 min+ 20 min+ 60 min+ 360 min+ 1440 min\nAjouter des ressources de test\n+ 1000 pattes+ 10000 pattes+ 100 herbes+ 1000 herbes+ 10 cœurs+ 100 cœurs\nScénarios préparés\nInitiation — trois aides inutiliséesInitiation — aide utilisée et croissance liéeDébut guidé — nouvelle partie, délais normauxMissions — parcours initial et branchesNid — parents et transfert manuelBâtiments décalés — grille fine 4 × 4Centre seul — 3 × 3Extension cardinale — Centre + EstExtension diagonale — Centre + Nord-ouestForme en L — Centre + Est + NordÎle complète — 9 × 9Décorations proches des frontièresPrairie de départ — acheter et placerPrairie dense — sélection et performancesCollection — quinze espèces et recettesReproduction — parents prêtsMissions — récompenses à réclamerHabitats — sept occupants par enclosPrairie de démonstration décoréeHabitat entouré de décorations — sept occupants\nSauvegarde de test\nExporter la partie de testImporter dans la partie de testRemettre la partie de test à zéro\n\nScénario chargé et enregistré dans la partie de test."
+    },
+    {
+      "name": "667x375-ferme",
+      "title": "Ferme",
+      "panel": {
+        "x": 361.53125,
+        "y": 62,
+        "width": 293.46875,
+        "height": 245
+      },
+      "overflowX": false,
+      "contentHeight": 174,
+      "scrollHeight": 406,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Terminer · 1 cœur",
+          "width": 150.96875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Récolter 20 herbes",
+          "width": 257.46875,
+          "height": 46,
+          "disabled": true
+        },
+        {
+          "name": "Déplacer ce bâtiment",
+          "width": 257.46875,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "20 herbes en production.\n\n4 min 53 s\n\nLes cœurs permettent aussi de terminer certains délais. Tu peux toujours attendre.\n\nTerminer · 1 cœur\nRécolter 20 herbes\n\nProduction en cours.\n\nDéplacer ce bâtiment"
+    },
+    {
+      "name": "390x844-boutique",
+      "title": "Boutique",
+      "panel": {
+        "x": 34.8125,
+        "y": 122,
+        "width": 343.1875,
+        "height": 622
+      },
+      "overflowX": false,
+      "contentHeight": 551,
+      "scrollHeight": 1385,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Bâtiments",
+          "width": 100.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Lapins",
+          "width": 80.515625,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Décorations",
+          "width": 112.203125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 120 pattes",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 200 pattes",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 200 pattes",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 200 pattes",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 200 pattes",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 200 pattes",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 200 pattes",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 60 pattes",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Bâtiments\nLapins\nDécorations\nEnclos universel\nEnclos universel\n\n3 places · tous les types · stocke 600 pattes\n\nPlacer · 120 pattes\nHabitats spécialisés\nPrairie de paille\n\nPaille · 3 places · stocke 900 pattes\n\nPlacer · 200 pattes\nJardin enneigé\n\nNeige · 3 places · stocke 900 pattes\n\nPlacer · 200 pattes\nTerrier de terre\n\nTerre · 3 places · stocke 900 pattes\n\nPlacer · 200 pattes\nClairière de feu\n\nFeu · 3 places · stocke 900 pattes\n\nPlacer · 200 pattes\nAtelier de métal\n\nMétal · 3 places · stocke 900 pattes\n\nPlacer · 200 pattes\nJardin des airs\n\nVol · 3 places · stocke 900 pattes\n\nPlacer · 200 pattes\nProduction et reproduction\nFerme\n\nProduit l’herbe · maximum 2\n\nPlacer · 60 pattes"
+    },
+    {
+      "name": "390x844-boutique-lapins",
+      "title": "Boutique",
+      "panel": {
+        "x": 34.8125,
+        "y": 122,
+        "width": 343.1875,
+        "height": 622
+      },
+      "overflowX": false,
+      "contentHeight": 551,
+      "scrollHeight": 1012,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Bâtiments",
+          "width": 100.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Lapins",
+          "width": 80.515625,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Décorations",
+          "width": 112.203125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Choisir un habitat · 80 pattes",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Choisir un habitat · 80 pattes",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Choisir un habitat · 80 pattes",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Choisir un habitat · 80 pattes",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Choisir un habitat · 80 pattes",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Choisir un habitat · 80 pattes",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Bâtiments\nLapins\nDécorations\nLapin Paille\n\nCommun · affection 1 · 12 pattes / h\n\nChoisir un habitat · 80 pattes\nLapin Neige\n\nCommun · affection 1 · 12 pattes / h\n\nChoisir un habitat · 80 pattes\nLapin Terre\n\nCommun · affection 1 · 12 pattes / h\n\nChoisir un habitat · 80 pattes\nLapin Feu\n\nCommun · affection 1 · 12 pattes / h\n\nChoisir un habitat · 80 pattes\nLapin Bélier Gris\n\nCommun · affection 1 · 12 pattes / h\n\nChoisir un habitat · 80 pattes\nLapin Volant\n\nCommun · affection 1 · 12 pattes / h\n\nChoisir un habitat · 80 pattes"
+    },
+    {
+      "name": "390x844-boutique-decorations",
+      "title": "Boutique",
+      "panel": {
+        "x": 34.8125,
+        "y": 122,
+        "width": 343.1875,
+        "height": 622
+      },
+      "overflowX": false,
+      "contentHeight": 551,
+      "scrollHeight": 2144,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Bâtiments",
+          "width": 100.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Lapins",
+          "width": 80.515625,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Décorations",
+          "width": 112.203125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 20 pattes",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 30 pattes",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 40 pattes",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 60 pattes",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 80 pattes",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 100 pattes",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 120 pattes",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 150 pattes",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 30 pattes",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 40 pattes",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 60 pattes",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 80 pattes",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Ouvrir mon inventaire",
+          "width": 307.1875,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Bâtiments\nLapins\nDécorations\n\nObjets esthétiques, sans bonus. Chaque achat rejoint l’inventaire ; annuler sa pose ne fait pas perdre l’objet. Paiement uniquement en pattes.\n\nDécorations extérieures\nMassif de fleurs sauvages\n\n1 × 1 cases fines · 0 possédé(s)\n\nAcheter · 20 pattes\nBuisson fleuri\n\n1 × 1 cases fines · 0 possédé(s)\n\nAcheter · 30 pattes\nPetit rocher moussu\n\n1 × 1 cases fines · 0 possédé(s)\n\nAcheter · 40 pattes\nLanterne de jardin\n\n1 × 1 cases fines · 0 possédé(s)\n\nAcheter · 60 pattes\nBanc en bois\n\n2 × 1 cases fines · peut tourner · 0 possédé(s)\n\nAcheter · 80 pattes\nArche fleurie\n\n2 × 1 cases fines · peut tourner · 0 possédé(s)\n\nAcheter · 100 pattes\nPetit arbre fruitier\n\n2 × 2 cases fines · 0 possédé(s)\n\nAcheter · 120 pattes\nPetit bassin\n\n2 × 2 cases fines · 0 possédé(s)\n\nAcheter · 150 pattes\nCoussin douillet\n\n1 × 1 cases fines · 0 possédé(s)\n\nAcheter · 30 pattes\nBalle et jouets\n\n1 × 1 cases fines · 0 possédé(s)\n\nAcheter · 40 pattes\nTunnel de jeu\n\n2 × 1 cases fines · peut tourner · 0 possédé(s)\n\nAcheter · 60 pattes\nPetit parasol\n\n1 × 1 cases fines · 0 possédé(s)\n\nAcheter · 80 pattes\nOuvrir mon inventaire"
+    },
+    {
+      "name": "390x844-collection",
+      "title": "Collection · 2/15",
+      "panel": {
+        "x": 34.8125,
+        "y": 122,
+        "width": 343.1875,
+        "height": 622
+      },
+      "overflowX": false,
+      "contentHeight": 551,
+      "scrollHeight": 3022,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Carnet de reproduction",
+          "width": 307.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Consulter l’espèce",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Consulter l’espèce",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Carnet de reproduction\nType\nTous les types\npaille\nneige\nterre\nfeu\nmétal\nvol\nRareté\nToutes les raretés\nCommun\nPeu commun\nRare\nÉpique\nLégendaire\nDécouverte\nToutes\nDécouvertes\nÀ découvrir\n\n15 espèce(s) affichée(s)\n\nLapin Paille\nConsulter l’espèce\nLapin Neige\nConsulter l’espèce\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir"
+    },
+    {
+      "name": "390x844-carnet",
+      "title": "Carnet de reproduction",
+      "panel": {
+        "x": 34.8125,
+        "y": 122,
+        "width": 343.1875,
+        "height": 622
+      },
+      "overflowX": false,
+      "contentHeight": 551,
+      "scrollHeight": 3863,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Retour à la collection",
+          "width": 307.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Préparer cette paire au nid",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Les types nécessaires doivent être réunis par deux individus distincts. Une recette possible reste un tirage aléatoire. Les probabilités ci-dessous incluent la garantie actuelle.\n\nLa garantie choisit à parts égales parmi les six recettes ordinaires inconnues admissibles. Géant, Magicien et Dragon en sont exclus. Une recette déjà découverte peut donc être temporairement exclue de ce tirage.\n\nRetour à la collection\n?\nRecette de Brumelin\n\npaille + neige · Peu commun\n\nUn résultat possible, sans certitude. Une naissance commune reste possible.\n\nAffection 2 minimum pour chacun des deux parents. Croissance : 15 min.\n\nCette espèce bénéficie de la garantie ordinaire si elle est encore inconnue et admissible.\n\n1 paire(s) possédée(s) compatible(s) avec la recette\n\nLapin Paille (Enclos 1, affection 2, n° 2) × Lapin Neige (Enclos 1, affection 2, n° 3)\n\nRecette possible, résultat non garanti · 20 %\n\nPréparer cette paire au nid\n?\nEspèce à découvrir\n\npaille + terre · Peu commun\n\nAffection 2 minimum pour chacun des deux parents. Croissance : 15 min.\n\nCette espèce bénéficie de la garantie ordinaire si elle est encore inconnue et admissible.\n\nAucune paire possédée ne réunit encore ces types. Les communs sont disponibles en boutique.\n\n?\nEspèce à découvrir\n\nmétal + paille · Rare\n\nAffection 4 minimum pour chacun des deux parents. Croissance : 30 min.\n\nCette espèce bénéficie de la garantie ordinaire si elle est encore inconnue et admissible.\n\nAucune paire possédée ne réunit encore ces types. Les communs sont disponibles en boutique.\n\n?\nEspèce à découvrir\n\nvol + feu · Rare\n\nAffection 4 minimum pour chacun des deux parents. Croissance : 30 min.\n\nCette espèce bénéficie de la garantie ordinaire si elle est encore inconnue et admissible.\n\nAucune paire possédée ne réunit encore ces types. Les communs sont disponibles en boutique.\n\n?\nEspèce à découvrir\n\nfeu + neige · Rare\n\nAffection 4 minimum pour chacun des deux parents. Croissance : 30 min.\n\nCette espèce bénéficie de la garantie ordinaire si elle est encore inconnue et admissible.\n\nAucune paire possédée ne réunit encore ces types. Les communs sont disponibles en boutique.\n\n?\nEspèce à découvrir\n\npaille + feu · Rare\n\nAffection 4 minimum pour chacun des deux parents. Croissance : 30 min.\n\nCette espèce bénéficie de la garantie ordinaire si elle est encore inconnue et admissible.\n\nAucune paire possédée ne réunit encore ces types. Les communs sont disponibles en boutique.\n\n?\nEspèce à découvrir\n\nterre + paille · Épique\n\nAffection 6 minimum pour chacun des deux parents. Croissance : 60 min.\n\nHors garantie ordinaire : 5 %. Cette espèce ne bénéficie pas de la garantie de découverte.\n\nAucune paire possédée ne réunit encore ces types. Les communs sont disponibles en boutique.\n\n?\nEspèce à découvrir\n\nmétal + vol · Épique\n\nAffection 6 minimum pour chacun des deux parents. Croissance : 60 min.\n\nHors garantie ordinaire : 5 %. Cette espèce ne bénéficie pas de la garantie de découverte.\n\nAucune paire possédée ne réunit encore ces types. Les communs sont disponibles en boutique.\n\n?\nEspèce à découvrir\n\nvol + feu · Légendaire\n\nAffection 10 minimum pour chacun des deux parents. Croissance : 120 min.\n\nParents requis : Lapin Perroquet × Lapin Feu. Les types seuls ne suffisent pas.\n\nHors garantie ordinaire : 2 %. Cette espèce ne bénéficie pas de la garantie de découverte.\n\nPossédez les deux espèces requises pour préparer cette paire."
+    },
+    {
+      "name": "390x844-missions",
+      "title": "Missions",
+      "panel": {
+        "x": 34.8125,
+        "y": 122,
+        "width": 343.1875,
+        "height": 622
+      },
+      "overflowX": false,
+      "contentHeight": 458,
+      "scrollHeight": 458,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Principales",
+          "width": 150.09375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Quotidiennes",
+          "width": 150.09375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Réclamer · + 10 herbes",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Principales\nQuotidiennes\n\nRéclamez pour continuer. Les actions anticipées comptent.\n\nUn premier repas\n\nUn lapin atteint l’affection 2.\n\nProgression : 2 / 2\n\nCondition acquise\n\nGratuit · Récompense : + 10 herbes\n\nÀ réclamer\n\nRéclamer · + 10 herbes"
+    },
+    {
+      "name": "390x844-lapin",
+      "title": "Lapin Paille",
+      "panel": {
+        "x": 34.8125,
+        "y": 122,
+        "width": 343.1875,
+        "height": 622
+      },
+      "overflowX": false,
+      "contentHeight": 551,
+      "scrollHeight": 596,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Nourrir · 4 herbes",
+          "width": 307.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Changer d’habitat",
+          "width": 307.1875,
+          "height": 46,
+          "disabled": true
+        },
+        {
+          "name": "Confier ce lapin",
+          "width": 307.1875,
+          "height": 46,
+          "disabled": true
+        }
+      ],
+      "text": "paille · Commun\n\nAffection 2 / 20 · 14 pattes / h\n\nEnclos 1\n\nAprès une nourriture : affection 3, revenu 16 pattes / h.\n\nNourrir · 4 herbesChanger d’habitat\n\nAucun autre habitat compatible avec une place libre.\n\nConfier ce lapin\n\nGardez au moins un lapin de chaque espèce possédée."
+    },
+    {
+      "name": "390x844-habitat",
+      "title": "Enclos 1",
+      "panel": {
+        "x": 34.8125,
+        "y": 122,
+        "width": 343.1875,
+        "height": 622
+      },
+      "overflowX": false,
+      "contentHeight": 551,
+      "scrollHeight": 799,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Récolter 0 pattes",
+          "width": 307.1875,
+          "height": 46,
+          "disabled": true
+        },
+        {
+          "name": "Voir ce lapin",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Voir ce lapin",
+          "width": 281.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter un lapin",
+          "width": 307.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Améliorer · 200 pattes",
+          "width": 307.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Déplacer ce bâtiment",
+          "width": 307.1875,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Enclos universel · Tous les types · niveau 1\n\n28 pattes / h\n\n2 / 3 places · 0 / 600 pattes stockées\n\nRécolter 0 pattes\n\nIl faut au moins une patte entière.\n\nLapin Paille\n\nAffection 2 · 14 pattes / h\n\nVoir ce lapin\nLapin Neige\n\nAffection 2 · 14 pattes / h\n\nVoir ce lapin\nAcheter un lapin\n\nNiveau 2 : 5 places · plafond 900 pattes. Occupants, emplacement et stockage conservés.\n\nAméliorer · 200 pattesDéplacer ce bâtiment"
+    },
+    {
+      "name": "390x844-nid",
+      "title": "Nid",
+      "panel": {
+        "x": 34.8125,
+        "y": 122,
+        "width": 343.1875,
+        "height": 622
+      },
+      "overflowX": false,
+      "contentHeight": 551,
+      "scrollHeight": 952,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Carnet de reproduction",
+          "width": 307.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Lancer la reproduction · gratuit",
+          "width": 307.1875,
+          "height": 46,
+          "disabled": true
+        },
+        {
+          "name": "Parent A",
+          "width": 137.09375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Parent B",
+          "width": 137.09375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Parent A",
+          "width": 137.09375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Parent B",
+          "width": 137.09375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Déplacer ce bâtiment",
+          "width": 307.1875,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Parent A : à choisir · Parent B : à choisir\n\nGratuit · 20 minutes de reproduction, puis transfert manuel et croissance en nurserie.\n\nRecettes rares : affection 4 ; épiques : 6 ; Dragon : 10 chez chacun des deux parents, avec Perroquet et Feu obligatoires. Les résultats inadmissibles sont exclus ; la reproduction ordinaire reste possible dès 2.\n\nCarnet de reproduction\n\nGarantie : 0/9 échecs admissibles. Après neuf échecs, la tentative admissible suivante garantit une des six recettes ordinaires inconnues admissibles, à parts égales s’il y en a plusieurs. Un résultat ordinaire inédit réservé remet le compteur à zéro ; la découverte n’est enregistrée qu’à l’accueil.\n\nLancer la reproduction · gratuit\n\nChoisissez deux parents différents.\n\nChoisir les parents\nLapin Paille\n\nAffection 2 · 14 pattes / h\n\nEnclos 1 · Disponible\n\nParent A\nParent B\nLapin Neige\n\nAffection 2 · 14 pattes / h\n\nEnclos 1 · Disponible\n\nParent A\nParent B\nDéplacer ce bâtiment"
+    },
+    {
+      "name": "390x844-nurserie",
+      "title": "Nurserie",
+      "panel": {
+        "x": 34.8125,
+        "y": 122,
+        "width": 343.1875,
+        "height": 622
+      },
+      "overflowX": false,
+      "contentHeight": 152,
+      "scrollHeight": 152,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Déplacer ce bâtiment",
+          "width": 307.1875,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "La nurserie est libre. Lancez une reproduction dans le nid.\n\nDéplacer ce bâtiment"
+    },
+    {
+      "name": "390x844-amenagement",
+      "title": "Aménager · inventaire",
+      "panel": {
+        "x": 68,
+        "y": 122,
+        "width": 310,
+        "height": 622
+      },
+      "overflowX": false,
+      "contentHeight": 378,
+      "scrollHeight": 378,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter des décorations",
+          "width": 274,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Quitter le mode Aménagement",
+          "width": 274,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Touchez directement un objet posé pour le déplacer, le ranger ou le vendre. Glissez pour explorer, pincez pour zoomer. Toute pose demande une validation.\n\nAcheter des décorations\nEn réserve · 0\n\nVotre inventaire est vide. Les objets rangés réapparaissent ici.\n\nObjets posés · 0\nQuitter le mode Aménagement"
+    },
+    {
+      "name": "390x844-parametres",
+      "title": "Paramètres",
+      "panel": {
+        "x": 34.8125,
+        "y": 122,
+        "width": 343.1875,
+        "height": 622
+      },
+      "overflowX": false,
+      "contentHeight": 551,
+      "scrollHeight": 2666,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Sons : activés",
+          "width": 150.09375,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Reprendre le guidage",
+          "width": 150.09375,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Exporter la partie de test",
+          "width": 307.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Importer dans la partie de test",
+          "width": 307.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Recommencer la partie de test",
+          "width": 307.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Exporter la source avant migration",
+          "width": 307.1875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 5 min",
+          "width": 78.515625,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 20 min",
+          "width": 86.53125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 60 min",
+          "width": 86.53125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 360 min",
+          "width": 94.53125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 1440 min",
+          "width": 102.546875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 1000 pattes",
+          "width": 120.03125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 10000 pattes",
+          "width": 128.03125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 100 herbes",
+          "width": 115.234375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 1000 herbes",
+          "width": 123.25,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 10 cœurs",
+          "width": 102.71875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 100 cœurs",
+          "width": 110.71875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Initiation — trois aides inutilisées",
+          "width": 263.375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Initiation — aide utilisée et croissance liée",
+          "width": 281.1875,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Début guidé — nouvelle partie, délais normaux",
+          "width": 281.1875,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Missions — parcours initial et branches",
+          "width": 281.1875,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Nid — parents et transfert manuel",
+          "width": 269,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Bâtiments décalés — grille fine 4 × 4",
+          "width": 279.734375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Centre seul — 3 × 3",
+          "width": 159.75,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Extension cardinale — Centre + Est",
+          "width": 269.53125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Extension diagonale — Centre + Nord-ouest",
+          "width": 281.1875,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Forme en L — Centre + Est + Nord",
+          "width": 259.9375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Île complète — 9 × 9",
+          "width": 167.59375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Décorations proches des frontières",
+          "width": 271.734375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Prairie de départ — acheter et placer",
+          "width": 281.1875,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Prairie dense — sélection et performances",
+          "width": 281.1875,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Collection — quinze espèces et recettes",
+          "width": 281.1875,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Reproduction — parents prêts",
+          "width": 237.65625,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Missions — récompenses à réclamer",
+          "width": 280.640625,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Habitats — sept occupants par enclos",
+          "width": 281.1875,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Prairie de démonstration décorée",
+          "width": 262.703125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Habitat entouré de décorations — sept occupants",
+          "width": 281.1875,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Exporter la partie de test",
+          "width": 202.625,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Importer dans la partie de test",
+          "width": 243,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Remettre la partie de test à zéro",
+          "width": 253.734375,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Sons : activés\nReprendre le guidage\nSauvegarde\n\nPartie enregistrée sur cet appareil.\n\nDernière sauvegarde réussie : 11/10/2026 11:00:41.\n\n2 lapins · 0 pattes en attente dans les enclos.\n\nExporter la partie de test\nImporter dans la partie de test\nRecommencer la partie de test\nExporter la source avant migration\n\nLa sauvegarde locale peut être effacée par le navigateur. Gardez un export de secours. Changer de domaine, de port ou passer à un site HTTPS nécessite un export/import.\n\nVersion : Prairie de lapins · île à neuf parcelles · v8 · build local\n\nRetour au jeu normal\n\nLaboratoire public : partie, préférences, horloge et sauvegardes de secours séparées. Aucun compte ni service en ligne. Importez volontairement un export normal pour tester une copie. Les fichiers MODE-TEST peuvent contenir des ressources ajoutées et du temps avancé.\n\nMême révision que le jeu normal : local.\n\nAvancer le temps de test\n+ 5 min+ 20 min+ 60 min+ 360 min+ 1440 min\nAjouter des ressources de test\n+ 1000 pattes+ 10000 pattes+ 100 herbes+ 1000 herbes+ 10 cœurs+ 100 cœurs\nScénarios préparés\nInitiation — trois aides inutiliséesInitiation — aide utilisée et croissance liéeDébut guidé — nouvelle partie, délais normauxMissions — parcours initial et branchesNid — parents et transfert manuelBâtiments décalés — grille fine 4 × 4Centre seul — 3 × 3Extension cardinale — Centre + EstExtension diagonale — Centre + Nord-ouestForme en L — Centre + Est + NordÎle complète — 9 × 9Décorations proches des frontièresPrairie de départ — acheter et placerPrairie dense — sélection et performancesCollection — quinze espèces et recettesReproduction — parents prêtsMissions — récompenses à réclamerHabitats — sept occupants par enclosPrairie de démonstration décoréeHabitat entouré de décorations — sept occupants\nSauvegarde de test\nExporter la partie de testImporter dans la partie de testRemettre la partie de test à zéro\n\nScénario chargé et enregistré dans la partie de test."
+    },
+    {
+      "name": "390x844-ferme",
+      "title": "Ferme",
+      "panel": {
+        "x": 34.8125,
+        "y": 122,
+        "width": 343.1875,
+        "height": 622
+      },
+      "overflowX": false,
+      "contentHeight": 406,
+      "scrollHeight": 406,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Terminer · 1 cœur",
+          "width": 150.96875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Récolter 20 herbes",
+          "width": 307.1875,
+          "height": 46,
+          "disabled": true
+        },
+        {
+          "name": "Déplacer ce bâtiment",
+          "width": 307.1875,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "20 herbes en production.\n\n4 min 51 s\n\nLes cœurs permettent aussi de terminer certains délais. Tu peux toujours attendre.\n\nTerminer · 1 cœur\nRécolter 20 herbes\n\nProduction en cours.\n\nDéplacer ce bâtiment"
+    },
+    {
+      "name": "1280x800-boutique",
+      "title": "Boutique",
+      "panel": {
+        "x": 908,
+        "y": 70,
+        "width": 360,
+        "height": 662
+      },
+      "overflowX": false,
+      "contentHeight": 591,
+      "scrollHeight": 1385,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Bâtiments",
+          "width": 100.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Lapins",
+          "width": 97.328125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Décorations",
+          "width": 112.203125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 120 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 200 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 200 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 200 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 200 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 200 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 200 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Placer · 60 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Bâtiments\nLapins\nDécorations\nEnclos universel\nEnclos universel\n\n3 places · tous les types · stocke 600 pattes\n\nPlacer · 120 pattes\nHabitats spécialisés\nPrairie de paille\n\nPaille · 3 places · stocke 900 pattes\n\nPlacer · 200 pattes\nJardin enneigé\n\nNeige · 3 places · stocke 900 pattes\n\nPlacer · 200 pattes\nTerrier de terre\n\nTerre · 3 places · stocke 900 pattes\n\nPlacer · 200 pattes\nClairière de feu\n\nFeu · 3 places · stocke 900 pattes\n\nPlacer · 200 pattes\nAtelier de métal\n\nMétal · 3 places · stocke 900 pattes\n\nPlacer · 200 pattes\nJardin des airs\n\nVol · 3 places · stocke 900 pattes\n\nPlacer · 200 pattes\nProduction et reproduction\nFerme\n\nProduit l’herbe · maximum 2\n\nPlacer · 60 pattes"
+    },
+    {
+      "name": "1280x800-boutique-lapins",
+      "title": "Boutique",
+      "panel": {
+        "x": 908,
+        "y": 70,
+        "width": 360,
+        "height": 662
+      },
+      "overflowX": false,
+      "contentHeight": 591,
+      "scrollHeight": 1012,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Bâtiments",
+          "width": 100.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Lapins",
+          "width": 97.328125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Décorations",
+          "width": 112.203125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Choisir un habitat · 80 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Choisir un habitat · 80 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Choisir un habitat · 80 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Choisir un habitat · 80 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Choisir un habitat · 80 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Choisir un habitat · 80 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Bâtiments\nLapins\nDécorations\nLapin Paille\n\nCommun · affection 1 · 12 pattes / h\n\nChoisir un habitat · 80 pattes\nLapin Neige\n\nCommun · affection 1 · 12 pattes / h\n\nChoisir un habitat · 80 pattes\nLapin Terre\n\nCommun · affection 1 · 12 pattes / h\n\nChoisir un habitat · 80 pattes\nLapin Feu\n\nCommun · affection 1 · 12 pattes / h\n\nChoisir un habitat · 80 pattes\nLapin Bélier Gris\n\nCommun · affection 1 · 12 pattes / h\n\nChoisir un habitat · 80 pattes\nLapin Volant\n\nCommun · affection 1 · 12 pattes / h\n\nChoisir un habitat · 80 pattes"
+    },
+    {
+      "name": "1280x800-boutique-decorations",
+      "title": "Boutique",
+      "panel": {
+        "x": 908,
+        "y": 70,
+        "width": 360,
+        "height": 662
+      },
+      "overflowX": false,
+      "contentHeight": 591,
+      "scrollHeight": 2144,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Bâtiments",
+          "width": 100.46875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Lapins",
+          "width": 97.328125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Décorations",
+          "width": 112.203125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 20 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 30 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 40 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 60 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 80 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 100 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 120 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 150 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 30 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 40 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 60 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter · 80 pattes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Ouvrir mon inventaire",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Bâtiments\nLapins\nDécorations\n\nObjets esthétiques, sans bonus. Chaque achat rejoint l’inventaire ; annuler sa pose ne fait pas perdre l’objet. Paiement uniquement en pattes.\n\nDécorations extérieures\nMassif de fleurs sauvages\n\n1 × 1 cases fines · 0 possédé(s)\n\nAcheter · 20 pattes\nBuisson fleuri\n\n1 × 1 cases fines · 0 possédé(s)\n\nAcheter · 30 pattes\nPetit rocher moussu\n\n1 × 1 cases fines · 0 possédé(s)\n\nAcheter · 40 pattes\nLanterne de jardin\n\n1 × 1 cases fines · 0 possédé(s)\n\nAcheter · 60 pattes\nBanc en bois\n\n2 × 1 cases fines · peut tourner · 0 possédé(s)\n\nAcheter · 80 pattes\nArche fleurie\n\n2 × 1 cases fines · peut tourner · 0 possédé(s)\n\nAcheter · 100 pattes\nPetit arbre fruitier\n\n2 × 2 cases fines · 0 possédé(s)\n\nAcheter · 120 pattes\nPetit bassin\n\n2 × 2 cases fines · 0 possédé(s)\n\nAcheter · 150 pattes\nCoussin douillet\n\n1 × 1 cases fines · 0 possédé(s)\n\nAcheter · 30 pattes\nBalle et jouets\n\n1 × 1 cases fines · 0 possédé(s)\n\nAcheter · 40 pattes\nTunnel de jeu\n\n2 × 1 cases fines · peut tourner · 0 possédé(s)\n\nAcheter · 60 pattes\nPetit parasol\n\n1 × 1 cases fines · 0 possédé(s)\n\nAcheter · 80 pattes\nOuvrir mon inventaire"
+    },
+    {
+      "name": "1280x800-collection",
+      "title": "Collection · 2/15",
+      "panel": {
+        "x": 908,
+        "y": 70,
+        "width": 360,
+        "height": 662
+      },
+      "overflowX": false,
+      "contentHeight": 591,
+      "scrollHeight": 3022,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Carnet de reproduction",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Consulter l’espèce",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Consulter l’espèce",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Carnet de reproduction\nType\nTous les types\npaille\nneige\nterre\nfeu\nmétal\nvol\nRareté\nToutes les raretés\nCommun\nPeu commun\nRare\nÉpique\nLégendaire\nDécouverte\nToutes\nDécouvertes\nÀ découvrir\n\n15 espèce(s) affichée(s)\n\nLapin Paille\nConsulter l’espèce\nLapin Neige\nConsulter l’espèce\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir\n\n?\n???\n\nÀ découvrir"
+    },
+    {
+      "name": "1280x800-carnet",
+      "title": "Carnet de reproduction",
+      "panel": {
+        "x": 908,
+        "y": 70,
+        "width": 360,
+        "height": 662
+      },
+      "overflowX": false,
+      "contentHeight": 591,
+      "scrollHeight": 3532,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Retour à la collection",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Préparer cette paire au nid",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Les types nécessaires doivent être réunis par deux individus distincts. Une recette possible reste un tirage aléatoire. Les probabilités ci-dessous incluent la garantie actuelle.\n\nLa garantie choisit à parts égales parmi les six recettes ordinaires inconnues admissibles. Géant, Magicien et Dragon en sont exclus. Une recette déjà découverte peut donc être temporairement exclue de ce tirage.\n\nRetour à la collection\n?\nRecette de Brumelin\n\npaille + neige · Peu commun\n\nUn résultat possible, sans certitude. Une naissance commune reste possible.\n\nAffection 2 minimum pour chacun des deux parents. Croissance : 15 min.\n\nCette espèce bénéficie de la garantie ordinaire si elle est encore inconnue et admissible.\n\n1 paire(s) possédée(s) compatible(s) avec la recette\n\nLapin Paille (Enclos 1, affection 2, n° 2) × Lapin Neige (Enclos 1, affection 2, n° 3)\n\nRecette possible, résultat non garanti · 20 %\n\nPréparer cette paire au nid\n?\nEspèce à découvrir\n\npaille + terre · Peu commun\n\nAffection 2 minimum pour chacun des deux parents. Croissance : 15 min.\n\nCette espèce bénéficie de la garantie ordinaire si elle est encore inconnue et admissible.\n\nAucune paire possédée ne réunit encore ces types. Les communs sont disponibles en boutique.\n\n?\nEspèce à découvrir\n\nmétal + paille · Rare\n\nAffection 4 minimum pour chacun des deux parents. Croissance : 30 min.\n\nCette espèce bénéficie de la garantie ordinaire si elle est encore inconnue et admissible.\n\nAucune paire possédée ne réunit encore ces types. Les communs sont disponibles en boutique.\n\n?\nEspèce à découvrir\n\nvol + feu · Rare\n\nAffection 4 minimum pour chacun des deux parents. Croissance : 30 min.\n\nCette espèce bénéficie de la garantie ordinaire si elle est encore inconnue et admissible.\n\nAucune paire possédée ne réunit encore ces types. Les communs sont disponibles en boutique.\n\n?\nEspèce à découvrir\n\nfeu + neige · Rare\n\nAffection 4 minimum pour chacun des deux parents. Croissance : 30 min.\n\nCette espèce bénéficie de la garantie ordinaire si elle est encore inconnue et admissible.\n\nAucune paire possédée ne réunit encore ces types. Les communs sont disponibles en boutique.\n\n?\nEspèce à découvrir\n\npaille + feu · Rare\n\nAffection 4 minimum pour chacun des deux parents. Croissance : 30 min.\n\nCette espèce bénéficie de la garantie ordinaire si elle est encore inconnue et admissible.\n\nAucune paire possédée ne réunit encore ces types. Les communs sont disponibles en boutique.\n\n?\nEspèce à découvrir\n\nterre + paille · Épique\n\nAffection 6 minimum pour chacun des deux parents. Croissance : 60 min.\n\nHors garantie ordinaire : 5 %. Cette espèce ne bénéficie pas de la garantie de découverte.\n\nAucune paire possédée ne réunit encore ces types. Les communs sont disponibles en boutique.\n\n?\nEspèce à découvrir\n\nmétal + vol · Épique\n\nAffection 6 minimum pour chacun des deux parents. Croissance : 60 min.\n\nHors garantie ordinaire : 5 %. Cette espèce ne bénéficie pas de la garantie de découverte.\n\nAucune paire possédée ne réunit encore ces types. Les communs sont disponibles en boutique.\n\n?\nEspèce à découvrir\n\nvol + feu · Légendaire\n\nAffection 10 minimum pour chacun des deux parents. Croissance : 120 min.\n\nParents requis : Lapin Perroquet × Lapin Feu. Les types seuls ne suffisent pas.\n\nHors garantie ordinaire : 2 %. Cette espèce ne bénéficie pas de la garantie de découverte.\n\nPossédez les deux espèces requises pour préparer cette paire."
+    },
+    {
+      "name": "1280x800-missions",
+      "title": "Missions",
+      "panel": {
+        "x": 908,
+        "y": 70,
+        "width": 360,
+        "height": 662
+      },
+      "overflowX": false,
+      "contentHeight": 458,
+      "scrollHeight": 458,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Principales",
+          "width": 158.5,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Quotidiennes",
+          "width": 158.5,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Réclamer · + 10 herbes",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Principales\nQuotidiennes\n\nRéclamez pour continuer. Les actions anticipées comptent.\n\nUn premier repas\n\nUn lapin atteint l’affection 2.\n\nProgression : 2 / 2\n\nCondition acquise\n\nGratuit · Récompense : + 10 herbes\n\nÀ réclamer\n\nRéclamer · + 10 herbes"
+    },
+    {
+      "name": "1280x800-lapin",
+      "title": "Lapin Paille",
+      "panel": {
+        "x": 908,
+        "y": 70,
+        "width": 360,
+        "height": 662
+      },
+      "overflowX": false,
+      "contentHeight": 561,
+      "scrollHeight": 561,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Nourrir · 4 herbes",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Changer d’habitat",
+          "width": 324,
+          "height": 46,
+          "disabled": true
+        },
+        {
+          "name": "Confier ce lapin",
+          "width": 324,
+          "height": 46,
+          "disabled": true
+        }
+      ],
+      "text": "paille · Commun\n\nAffection 2 / 20 · 14 pattes / h\n\nEnclos 1\n\nAprès une nourriture : affection 3, revenu 16 pattes / h.\n\nNourrir · 4 herbesChanger d’habitat\n\nAucun autre habitat compatible avec une place libre.\n\nConfier ce lapin\n\nGardez au moins un lapin de chaque espèce possédée."
+    },
+    {
+      "name": "1280x800-habitat",
+      "title": "Enclos 1",
+      "panel": {
+        "x": 908,
+        "y": 70,
+        "width": 360,
+        "height": 662
+      },
+      "overflowX": false,
+      "contentHeight": 591,
+      "scrollHeight": 799,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Récolter 0 pattes",
+          "width": 324,
+          "height": 46,
+          "disabled": true
+        },
+        {
+          "name": "Voir ce lapin",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Voir ce lapin",
+          "width": 298,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter un lapin",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Améliorer · 200 pattes",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Déplacer ce bâtiment",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Enclos universel · Tous les types · niveau 1\n\n28 pattes / h\n\n2 / 3 places · 0 / 600 pattes stockées\n\nRécolter 0 pattes\n\nIl faut au moins une patte entière.\n\nLapin Paille\n\nAffection 2 · 14 pattes / h\n\nVoir ce lapin\nLapin Neige\n\nAffection 2 · 14 pattes / h\n\nVoir ce lapin\nAcheter un lapin\n\nNiveau 2 : 5 places · plafond 900 pattes. Occupants, emplacement et stockage conservés.\n\nAméliorer · 200 pattesDéplacer ce bâtiment"
+    },
+    {
+      "name": "1280x800-nid",
+      "title": "Nid",
+      "panel": {
+        "x": 908,
+        "y": 70,
+        "width": 360,
+        "height": 662
+      },
+      "overflowX": false,
+      "contentHeight": 591,
+      "scrollHeight": 929,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Carnet de reproduction",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Lancer la reproduction · gratuit",
+          "width": 324,
+          "height": 46,
+          "disabled": true
+        },
+        {
+          "name": "Parent A",
+          "width": 145.5,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Parent B",
+          "width": 145.5,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Parent A",
+          "width": 145.5,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Parent B",
+          "width": 145.5,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Déplacer ce bâtiment",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Parent A : à choisir · Parent B : à choisir\n\nGratuit · 20 minutes de reproduction, puis transfert manuel et croissance en nurserie.\n\nRecettes rares : affection 4 ; épiques : 6 ; Dragon : 10 chez chacun des deux parents, avec Perroquet et Feu obligatoires. Les résultats inadmissibles sont exclus ; la reproduction ordinaire reste possible dès 2.\n\nCarnet de reproduction\n\nGarantie : 0/9 échecs admissibles. Après neuf échecs, la tentative admissible suivante garantit une des six recettes ordinaires inconnues admissibles, à parts égales s’il y en a plusieurs. Un résultat ordinaire inédit réservé remet le compteur à zéro ; la découverte n’est enregistrée qu’à l’accueil.\n\nLancer la reproduction · gratuit\n\nChoisissez deux parents différents.\n\nChoisir les parents\nLapin Paille\n\nAffection 2 · 14 pattes / h\n\nEnclos 1 · Disponible\n\nParent A\nParent B\nLapin Neige\n\nAffection 2 · 14 pattes / h\n\nEnclos 1 · Disponible\n\nParent A\nParent B\nDéplacer ce bâtiment"
+    },
+    {
+      "name": "1280x800-nurserie",
+      "title": "Nurserie",
+      "panel": {
+        "x": 908,
+        "y": 70,
+        "width": 360,
+        "height": 662
+      },
+      "overflowX": false,
+      "contentHeight": 152,
+      "scrollHeight": 152,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Déplacer ce bâtiment",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "La nurserie est libre. Lancez une reproduction dans le nid.\n\nDéplacer ce bâtiment"
+    },
+    {
+      "name": "1280x800-amenagement",
+      "title": "Aménager · inventaire",
+      "panel": {
+        "x": 958,
+        "y": 70,
+        "width": 310,
+        "height": 662
+      },
+      "overflowX": false,
+      "contentHeight": 378,
+      "scrollHeight": 378,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Acheter des décorations",
+          "width": 274,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Quitter le mode Aménagement",
+          "width": 274,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Touchez directement un objet posé pour le déplacer, le ranger ou le vendre. Glissez pour explorer, pincez pour zoomer. Toute pose demande une validation.\n\nAcheter des décorations\nEn réserve · 0\n\nVotre inventaire est vide. Les objets rangés réapparaissent ici.\n\nObjets posés · 0\nQuitter le mode Aménagement"
+    },
+    {
+      "name": "1280x800-parametres",
+      "title": "Paramètres",
+      "panel": {
+        "x": 908,
+        "y": 70,
+        "width": 360,
+        "height": 662
+      },
+      "overflowX": false,
+      "contentHeight": 591,
+      "scrollHeight": 2598,
+      "buttons": [
+        {
+          "name": "×",
+          "width": 46,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Sons : activés",
+          "width": 158.5,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Reprendre le guidage",
+          "width": 158.5,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Exporter la partie de test",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Importer dans la partie de test",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Recommencer la partie de test",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Exporter la source avant migration",
+          "width": 324,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 5 min",
+          "width": 78.515625,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 20 min",
+          "width": 86.53125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 60 min",
+          "width": 86.53125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 360 min",
+          "width": 94.53125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 1440 min",
+          "width": 102.546875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 1000 pattes",
+          "width": 120.03125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 10000 pattes",
+          "width": 128.03125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 100 herbes",
+          "width": 115.234375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 1000 herbes",
+          "width": 123.25,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 10 cœurs",
+          "width": 102.71875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "+ 100 cœurs",
+          "width": 110.71875,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Initiation — trois aides inutilisées",
+          "width": 263.375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Initiation — aide utilisée et croissance liée",
+          "width": 298,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Début guidé — nouvelle partie, délais normaux",
+          "width": 298,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Missions — parcours initial et branches",
+          "width": 298,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Nid — parents et transfert manuel",
+          "width": 269,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Bâtiments décalés — grille fine 4 × 4",
+          "width": 279.734375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Centre seul — 3 × 3",
+          "width": 159.75,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Extension cardinale — Centre + Est",
+          "width": 269.53125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Extension diagonale — Centre + Nord-ouest",
+          "width": 298,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Forme en L — Centre + Est + Nord",
+          "width": 259.9375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Île complète — 9 × 9",
+          "width": 167.59375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Décorations proches des frontières",
+          "width": 271.734375,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Prairie de départ — acheter et placer",
+          "width": 285.953125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Prairie dense — sélection et performances",
+          "width": 298,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Collection — quinze espèces et recettes",
+          "width": 298,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Reproduction — parents prêts",
+          "width": 237.65625,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Missions — récompenses à réclamer",
+          "width": 280.640625,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Habitats — sept occupants par enclos",
+          "width": 290.28125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Prairie de démonstration décorée",
+          "width": 262.703125,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Habitat entouré de décorations — sept occupants",
+          "width": 298,
+          "height": 57,
+          "disabled": false
+        },
+        {
+          "name": "Exporter la partie de test",
+          "width": 202.625,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Importer dans la partie de test",
+          "width": 243,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Remettre la partie de test à zéro",
+          "width": 253.734375,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "text": "Sons : activés\nReprendre le guidage\nSauvegarde\n\nPartie enregistrée sur cet appareil.\n\nDernière sauvegarde réussie : 11/10/2026 11:01:06.\n\n2 lapins · 0 pattes en attente dans les enclos.\n\nExporter la partie de test\nImporter dans la partie de test\nRecommencer la partie de test\nExporter la source avant migration\n\nLa sauvegarde locale peut être effacée par le navigateur. Gardez un export de secours. Changer de domaine, de port ou passer à un site HTTPS nécessite un export/import.\n\nVersion : Prairie de lapins · île à neuf parcelles · v8 · build local\n\nRetour au jeu normal\n\nLaboratoire public : partie, préférences, horloge et sauvegardes de secours séparées. Aucun compte ni service en ligne. Importez volontairement un export normal pour tester une copie. Les fichiers MODE-TEST peuvent contenir des ressources ajoutées et du temps avancé.\n\nMême révision que le jeu normal : local.\n\nAvancer le temps de test\n+ 5 min+ 20 min+ 60 min+ 360 min+ 1440 min\nAjouter des ressources de test\n+ 1000 pattes+ 10000 pattes+ 100 herbes+ 1000 herbes+ 10 cœurs+ 100 cœurs\nScénarios préparés\nInitiation — trois aides inutiliséesInitiation — aide utilisée et croissance liéeDébut guidé — nouvelle partie, délais normauxMissions — parcours initial et branchesNid — parents et transfert manuelBâtiments décalés — grille fine 4 × 4Centre seul — 3 × 3Extension cardinale — Centre + EstExtension diagonale — Centre + Nord-ouestForme en L — Centre + Est + NordÎle complète — 9 × 9Décorations proches des frontièresPrairie de départ — acheter et placerPrairie dense — sélection et performancesCollection — quinze espèces et recettesReproduction — parents prêtsMissions — récompenses à réclamerHabitats — sept occupants par enclosPrairie de démonstration décoréeHabitat entouré de décorations — sept occupants\nSauvegarde de test\nExporter la partie de testImporter dans la partie de testRemettre la partie de test à zéro\n\nScénario chargé et enregistré dans la partie de test."
+    }
+  ],
+  "errors": [],
+  "note": "Baseline before UI/CSS edits. Real visible controls, explicit laboratory fixtures; no app hooks or storage writes.",
+  "failure": "touchscreen.tap: Target page, context or browser has been closed\n    at /workspace/work/ui-comfort/before-audit.cjs:13:393"
+}

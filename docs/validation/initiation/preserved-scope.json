@@ -1,0 +1,113 @@
+{
+  "base": "bd5dfe04e292a56fec91bd008f09ae61f1313ca2",
+  "unchanged": [
+    {
+      "path": "prairie-lapins-prototype/src/config/runtime.ts",
+      "sha": "e0593139b9f756465f6a39d5ce8db58997807b63"
+    },
+    {
+      "path": "prairie-lapins-prototype/src/config/rabbitArt.ts",
+      "sha": "9c0d492ba76215ff3ff2bc9abd0d5a3867a53234"
+    },
+    {
+      "path": "prairie-lapins-prototype/src/config/decorations.ts",
+      "sha": "95ec1b6668945627e0b05dceb0ac7682f63b8b43"
+    },
+    {
+      "path": "prairie-lapins-prototype/src/config/release.ts",
+      "sha": "d51aa671a8b68f944f8a53a1399971fdc352229b"
+    },
+    {
+      "path": "prairie-lapins-prototype/src/config/visual.ts",
+      "sha": "cea4d7622fdd3b5878e8dcb95e2b12ef79c5a84c"
+    },
+    {
+      "path": "prairie-lapins-prototype/src/config/habitats.ts",
+      "sha": "184fbcaa793f7d66179c10d6ad309273c3999960"
+    },
+    {
+      "path": "prairie-lapins-prototype/src/config/land.ts",
+      "sha": "d6b32fe0afd6a0e4b2dfc815e3a3e50a63f1ffd3"
+    },
+    {
+      "path": "prairie-lapins-prototype/src/config/missions.ts",
+      "sha": "259d173366559a92af600a93a08af93f8deeebf1"
+    },
+    {
+      "path": "prairie-lapins-prototype/src/config/balance.ts",
+      "sha": "cacfd86b2408b1d0bb05a67e35649474c13647a8"
+    },
+    {
+      "path": "prairie-lapins-prototype/src/display/decorationArt.ts",
+      "sha": "e62c31e709730504d1dce66526ddbfa09b63748c"
+    },
+    {
+      "path": "prairie-lapins-prototype/src/display/fileExport.ts",
+      "sha": "0edcaba99f8125931a205d2261b3bd639a520ce6"
+    },
+    {
+      "path": "prairie-lapins-prototype/src/display/SavePanel.ts",
+      "sha": "9983e409c2bb3ac80347cf01029ef79165f85dd7"
+    },
+    {
+      "path": "prairie-lapins-prototype/src/display/browserLifecycle.ts",
+      "sha": "cc2e56d90906a75600874be1095642ba67cba6b1"
+    },
+    {
+      "path": "prairie-lapins-prototype/src/display/meadowInput.ts",
+      "sha": "3d85e27480479c9d5b14ae97ed81aa88f2acf298"
+    },
+    {
+      "path": "prairie-lapins-prototype/src/display/BootScene.ts",
+      "sha": "301c06a31ed63b4c411147bb7a661ec08b563949"
+    },
+    {
+      "path": "prairie-lapins-prototype/src/display/habitatArt.ts",
+      "sha": "68b260ae5272f8b41215717193ba6d9ef218dbfc"
+    },
+    {
+      "path": "prairie-lapins-prototype/src/display/parcelArt.ts",
+      "sha": "d62ce14837d22fd5f8e2f0e01a65b6403757e106"
+    },
+    {
+      "path": "prairie-lapins-prototype/src/display/MeadowScene.ts",
+      "sha": "6ad4c36b51124beed9db9bcef2412168ba6b653a"
+    },
+    {
+      "path": "prairie-lapins-prototype/src/display/islandArt.ts",
+      "sha": "12bf4af9332d1b1847b5e60046dffc6647686628"
+    },
+    {
+      "path": "prairie-lapins-prototype/src/display/buildingArt.ts",
+      "sha": "43087ba39ecdaa17595ee5aadf61a8b28fe2586e"
+    },
+    {
+      "path": "prairie-lapins-prototype/src/display/rabbitLayout.ts",
+      "sha": "0ca4e7b063c939f049a855cd482c8517f3e31d4a"
+    },
+    {
+      "path": "prairie-lapins-prototype/public/assets/rabbits/terre/terre-v1.png",
+      "sha": "10843172b39411573b9ee172378c78fa9fb581e9"
+    },
+    {
+      "path": "prairie-lapins-prototype/public/assets/rabbits/belier-gris/belier-gris-v1.png",
+      "sha": "50d96a8d293f426e309d49ab6d527df563ac4ebb"
+    },
+    {
+      "path": "prairie-lapins-prototype/public/assets/rabbits/feu/feu-v1.png",
+      "sha": "0404297403fd8529f720f3a7ca9f8ccddbd55a11"
+    },
+    {
+      "path": "prairie-lapins-prototype/public/assets/rabbits/neige/neige-v1.png",
+      "sha": "88ab30f2616f37399815100bde3a0cda200f1c40"
+    },
+    {
+      "path": "prairie-lapins-prototype/public/assets/rabbits/volant/volant-v1.png",
+      "sha": "7d11f1970abaf36a83a5f0edad358633868c551d"
+    },
+    {
+      "path": "prairie-lapins-prototype/public/assets/rabbits/paille/paille-v1.png",
+      "sha": "693745f6f4a989cea8c861ec14f3c2bc88952ff5"
+    }
+  ]
+}

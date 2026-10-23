@@ -1,0 +1,129 @@
+{
+  "version": 2,
+  "lastSimulatedAt": 1791374400000,
+  "nextId": 14,
+  "pattes": 3580,
+  "grass": 188,
+  "expanded": true,
+  "buildings": [
+    {
+      "id": "building-1",
+      "kind": "enclosure",
+      "x": 0,
+      "y": 0,
+      "incomeUnits": 0,
+      "order": null,
+      "breeding": null,
+      "baby": null
+    },
+    {
+      "id": "building-4",
+      "kind": "nest",
+      "x": 1,
+      "y": 0,
+      "incomeUnits": 0,
+      "order": null,
+      "breeding": null,
+      "baby": null
+    },
+    {
+      "id": "building-5",
+      "kind": "nursery",
+      "x": 2,
+      "y": 0,
+      "incomeUnits": 0,
+      "order": null,
+      "breeding": null,
+      "baby": null
+    },
+    {
+      "id": "building-6",
+      "kind": "farm",
+      "x": 0,
+      "y": 1,
+      "incomeUnits": 0,
+      "order": null,
+      "breeding": null,
+      "baby": null
+    },
+    {
+      "id": "building-7",
+      "kind": "enclosure",
+      "x": 1,
+      "y": 1,
+      "incomeUnits": 0,
+      "order": null,
+      "breeding": null,
+      "baby": null
+    },
+    {
+      "id": "building-8",
+      "kind": "enclosure",
+      "x": 2,
+      "y": 1,
+      "incomeUnits": 0,
+      "order": null,
+      "breeding": null,
+      "baby": null
+    },
+    {
+      "id": "building-9",
+      "kind": "enclosure",
+      "x": 3,
+      "y": 0,
+      "incomeUnits": 0,
+      "order": null,
+      "breeding": null,
+      "baby": null
+    }
+  ],
+  "rabbits": [
+    {
+      "id": "rabbit-2",
+      "species": "paille",
+      "affection": 2,
+      "enclosureId": "building-1"
+    },
+    {
+      "id": "rabbit-3",
+      "species": "neige",
+      "affection": 2,
+      "enclosureId": "building-1"
+    },
+    {
+      "id": "rabbit-10",
+      "species": "terre",
+      "affection": 2,
+      "enclosureId": "building-1"
+    },
+    {
+      "id": "rabbit-11",
+      "species": "feu",
+      "affection": 2,
+      "enclosureId": "building-7"
+    },
+    {
+      "id": "rabbit-12",
+      "species": "belier-gris",
+      "affection": 2,
+      "enclosureId": "building-7"
+    },
+    {
+      "id": "rabbit-13",
+      "species": "volant",
+      "affection": 2,
+      "enclosureId": "building-7"
+    }
+  ],
+  "discovered": [
+    "paille",
+    "neige",
+    "terre",
+    "feu",
+    "belier-gris",
+    "volant"
+  ],
+  "pityFailures": 9,
+  "hearts": 12,
+  "nextHeartGiftAt": 1791460800000
+}

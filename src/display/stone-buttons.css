@@ -1,0 +1,54 @@
+/* Shared skin only: preserve all dimensions, padding, positioning and hit areas.
+   Resource readouts are intentionally excluded, including the two implemented
+   as buttons (#player-progress and .resource.hearts). Cuisine owns its existing button presentation. */
+:where(button:not(.resource):not(#player-progress):not(:where(.cuisine-root button))) { position: relative; }
+button:not(.resource):not(#player-progress):not(:where(.cuisine-root button)) {
+  --stone-face: #c6d0b6;
+  --stone-ink: #24311f;
+  --stone-edge-filter: none;
+  isolation: isolate;
+  border-color: transparent;
+  background-color: var(--stone-face);
+  background-image: linear-gradient(150deg, #ffffff24, #00000012), url('/assets/ui/stone-grain.png');
+  background-size: 100% 100%, 64px 64px;
+  background-blend-mode: normal, soft-light;
+  color: var(--stone-ink);
+  text-shadow: 0 1px #ffffff66;
+  box-shadow: inset 0 2px 1px #ffffff40, inset 0 -2px 1px #28302226;
+}
+button:not(.resource):not(#player-progress):not(:where(.cuisine-root button))::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  border: 10px solid transparent;
+  border-image: url('/assets/ui/stone-frame.png') 48 / 10px / 0 round;
+  filter: var(--stone-edge-filter);
+}
+button:not(.resource):not(#player-progress):not(:where(.cuisine-root button)):is(.secondary, .action-secondary) {
+  --stone-face: #d6d6cb;
+  --stone-ink: #343e36;
+}
+button:not(.resource):not(#player-progress):not(:where(.cuisine-root button)):is(.action-danger) {
+  --stone-face: #ddc8ba;
+  --stone-ink: #602f25;
+}
+button:not(.resource):not(#player-progress):not(:where(.cuisine-root button)):active:not(:disabled) {
+  --stone-face: #adb99b;
+  --stone-ink: #202c1c;
+  --stone-edge-filter: brightness(.82);
+  box-shadow: inset 0 3px 4px #20291e55;
+}
+button:not(.resource):not(#player-progress):not(:where(.cuisine-root button)):is(.secondary, .action-secondary):active:not(:disabled) {
+  --stone-face: #b9bcb1;
+  --stone-ink: #252f29;
+}
+button:not(.resource):not(#player-progress):not(:where(.cuisine-root button)):disabled {
+  --stone-face: #c7c8c0;
+  --stone-ink: #41473b;
+  --stone-edge-filter: grayscale(1) brightness(1.15);
+  text-shadow: none;
+  box-shadow: inset 0 1px 2px #30352e24;
+  opacity: 1;
+}

@@ -1,0 +1,158 @@
+{
+  "browser": "Chromium / WebGL, Linux, 852×393 landscape; no physical iPhone measurement",
+  "selections": [
+    {
+      "zoom": 0.8,
+      "id": "rabbit-5",
+      "title": "Lapin Paille",
+      "passed": true
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-6",
+      "title": "Lapin Neige",
+      "passed": true
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-7",
+      "title": "Lapin Terre",
+      "passed": true
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-8",
+      "title": "Brumelin",
+      "passed": true
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-9",
+      "title": "Mottelin",
+      "passed": true
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-10",
+      "title": "Lapin Feu",
+      "passed": true
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-11",
+      "title": "Lapin Bélier Gris",
+      "passed": true
+    },
+    {
+      "zoom": 1.05,
+      "id": "rabbit-5",
+      "title": "Lapin Paille",
+      "passed": true
+    },
+    {
+      "zoom": 1.05,
+      "id": "rabbit-6",
+      "title": "Lapin Neige",
+      "passed": true
+    },
+    {
+      "zoom": 1.05,
+      "id": "rabbit-7",
+      "title": "Lapin Terre",
+      "passed": true
+    },
+    {
+      "zoom": 1.05,
+      "id": "rabbit-8",
+      "title": "Brumelin",
+      "passed": true
+    },
+    {
+      "zoom": 1.05,
+      "id": "rabbit-9",
+      "title": "Mottelin",
+      "passed": true
+    },
+    {
+      "zoom": 1.05,
+      "id": "rabbit-10",
+      "title": "Lapin Feu",
+      "passed": true
+    },
+    {
+      "zoom": 1.05,
+      "id": "rabbit-11",
+      "title": "Lapin Bélier Gris",
+      "passed": true
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-5",
+      "title": "Lapin Paille",
+      "passed": true
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-6",
+      "title": "Lapin Neige",
+      "passed": true
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-7",
+      "title": "Lapin Terre",
+      "passed": true
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-8",
+      "title": "Brumelin",
+      "passed": true
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-9",
+      "title": "Mottelin",
+      "passed": true
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-10",
+      "title": "Lapin Feu",
+      "passed": true
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-11",
+      "title": "Lapin Bélier Gris",
+      "passed": true
+    }
+  ],
+  "gestures": {
+    "pan": true,
+    "pinch": true,
+    "noDragCommit": true,
+    "panelsDoNotPan": true
+  },
+  "saves": {
+    "cancelKeepsPurchase": true,
+    "photoKeepsAutosave": true,
+    "exportV5Marked": true,
+    "reload512": true
+  },
+  "density": {
+    "owned": 512,
+    "visible": 254,
+    "rabbits": 7
+  },
+  "performanceSample": {
+    "frames": 180,
+    "elapsedMs": 10154.700000000747,
+    "meanFps": 17.725782150136073,
+    "p95FrameMs": 83.30000000000291,
+    "reusedImages": true,
+    "textures": 14
+  },
+  "errors": [],
+  "failedRequests": []
+}

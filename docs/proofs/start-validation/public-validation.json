@@ -1,0 +1,863 @@
+{
+  "applicationRevision": "63d74eb39bdee654838669cbe6bc84aa68fe6ecf",
+  "sourceBase": "42b11c6c708208fa149f9305415a53b130e8ed57",
+  "pullRequest": "https://github.com/sullivanlegoff-code/Project-L/pull/14",
+  "tests": 689,
+  "typeScript": "passed",
+  "builds": 4,
+  "ci": {
+    "url": "https://github.com/sullivanlegoff-code/Project-L/actions/runs/38093458214",
+    "sourceBrowserSuites": 9,
+    "compiledBrowserSuites": 13,
+    "compiledChecks": 48
+  },
+  "publication": {
+    "url": "https://github.com/sullivanlegoff-code/Project-L/actions/runs/38093808593",
+    "publicBrowserSuites": 13,
+    "publicChecks": 48,
+    "routes": [
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "revision": "63d74eb39bdee654838669cbe6bc84aa68fe6ecf",
+        "saveFormat": 8,
+        "html": 200,
+        "application": 200,
+        "featuresChecked": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/dev/",
+        "revision": "63d74eb39bdee654838669cbe6bc84aa68fe6ecf",
+        "saveFormat": 8,
+        "html": 200,
+        "application": 200,
+        "featuresChecked": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/preview/accounts/",
+        "revision": "3e70d9e8cbe9228c63c73db007fff199199d6470",
+        "saveFormat": 4,
+        "html": 200,
+        "application": 200,
+        "featuresChecked": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/preview/decorations/",
+        "revision": "85fe255ec8e7e65213cd570f91f5bb1fe66a30d7",
+        "saveFormat": 5,
+        "html": 200,
+        "application": 200,
+        "featuresChecked": true
+      }
+    ],
+    "reports": [
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "browser": "Chromium, 852 × 393 landscape; not physical iPhone Safari",
+        "expectedRevision": "63d74eb",
+        "checks": [
+          "Normal new game: canvas, 300 pattes, 10 grass, 12 hearts, 2 rabbits, save v8.",
+          "Shop, collection, missions, settings and release identifier.",
+          "Real canvas selection and feed button: Paille affection 1→2, grass 10→8.",
+          "Export downloads valid v8 JSON; cancelling import preserves current progression.",
+          "Confirmed import writes 317 pattes and retains rabbits, grass, hearts, habitats; export roundtrip matches.",
+          "Invalid JSON is rejected without replacing the game.",
+          "Reload preserves imported progression and fed affection.",
+          "Production ?dev=1 keeps normal save, hides tools/badge and creates no development storage.",
+          "Real normal decoration purchase, cancelled placement, cancelled sale, double-confirmed atomic 50% sale and persisted reload."
+        ],
+        "screenshots": [
+          "/home/runner/work/_temp/public-browser-proof/production-initial.png",
+          "/home/runner/work/_temp/public-browser-proof/production-version.png",
+          "/home/runner/work/_temp/public-browser-proof/production-fed.png",
+          "/home/runner/work/_temp/public-browser-proof/production-imported.png",
+          "/home/runner/work/_temp/public-browser-proof/production-final.png"
+        ],
+        "downloads": [
+          {
+            "path": "/home/runner/work/_temp/public-browser-proof/production-export.json",
+            "suggestedFilename": "prairie-lapins-2026-10-10T23-08-00Z.json"
+          },
+          {
+            "path": "/home/runner/work/_temp/public-browser-proof/production-roundtrip.json",
+            "suggestedFilename": "prairie-lapins-2026-10-10T23-08-01Z.json"
+          }
+        ],
+        "errors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "passed": true,
+        "version": "Version : Prairie de lapins · île à neuf parcelles · v8 · build 63d74eb"
+      },
+      {
+        "normal": "https://sullivanlegoff-code.github.io/Project-L/",
+        "laboratory": "https://sullivanlegoff-code.github.io/Project-L/dev/",
+        "expected": "63d74eb",
+        "checks": [
+          "Normal link opens an independent fresh laboratory; normal feed/export remains intact.",
+          "All five clock advances and six resource grants leave every normal-origin key byte-for-byte unchanged.",
+          "MODE-TEST JSON export; cancelled and confirmed normal-copy imports leave the source unchanged.",
+          "Laboratory reload restores its save/clock; cancelled and confirmed reset preserve normal storage.",
+          "All sixteen confirmed scenario loads produce valid saved v8 states without writing normal keys.",
+          "Portrait mobile viewport: test resource control remains accessible, banner visible and panel unobscured.",
+          "Return/reload normal game retains its fed rabbit and resources, uses real time, and ?dev=1 cannot activate tools."
+        ],
+        "errors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "passed": true,
+        "version": "Version : Prairie de lapins · île à neuf parcelles · v8 · build 63d74eb"
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "expected": "63d74eb",
+        "browser": "Chromium mobile viewport; not physical Safari",
+        "checks": [
+          "External storage event exposes the conflict immediately; obsolete tab refuses purchase and exports its intact memory copy.",
+          "Repeated panels, viewport rotation and lifecycle events preserve ownership and resources.",
+          "Laboratory storage notifications cannot mark the normal session conflicted."
+        ],
+        "errors": [],
+        "passed": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "expected": "63d74eb",
+        "checks": [
+          {
+            "route": "normal",
+            "asset": {
+              "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+              "width": 518,
+              "height": 473,
+              "fit": "contain",
+              "corner": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "fur": [
+                254,
+                243,
+                249,
+                255
+              ]
+            },
+            "portraits": "shop, collection, portrait viewport",
+            "world": "canvas screenshot; no app hooks"
+          },
+          {
+            "route": "dev/",
+            "asset": {
+              "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+              "width": 518,
+              "height": 473,
+              "fit": "contain",
+              "corner": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "fur": [
+                254,
+                243,
+                249,
+                255
+              ]
+            },
+            "portraits": "shop, collection, portrait viewport",
+            "world": "canvas screenshot; no app hooks"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "expected": "63d74eb",
+        "checks": [
+          {
+            "route": "normal",
+            "assets": [
+              {
+                "species": "paille",
+                "hash": "005ac9f351bfe9614520b1e1998eee1421a5c6aff1c05bcf92172bbb52dd9dfe",
+                "width": 350,
+                "height": 495,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  229,
+                  211,
+                  193,
+                  255
+                ]
+              },
+              {
+                "species": "terre",
+                "hash": "1f0337f7e41ef2d0ce5f5d0114c49b9dfbc38f1bfa90d90e9a2ab7c38e88109c",
+                "width": 992,
+                "height": 907,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "neige",
+                "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+                "width": 518,
+                "height": 473,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  254,
+                  243,
+                  249,
+                  255
+                ]
+              }
+            ],
+            "portraits": "shop and portrait viewport: three originals; lab collection: three originals; normal collection: undiscovered Terre remains hidden",
+            "world": "canvas screenshot; no app hooks"
+          },
+          {
+            "route": "dev/",
+            "assets": [
+              {
+                "species": "paille",
+                "hash": "005ac9f351bfe9614520b1e1998eee1421a5c6aff1c05bcf92172bbb52dd9dfe",
+                "width": 350,
+                "height": 495,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  229,
+                  211,
+                  193,
+                  255
+                ]
+              },
+              {
+                "species": "terre",
+                "hash": "1f0337f7e41ef2d0ce5f5d0114c49b9dfbc38f1bfa90d90e9a2ab7c38e88109c",
+                "width": 992,
+                "height": 907,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "neige",
+                "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+                "width": 518,
+                "height": 473,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  254,
+                  243,
+                  249,
+                  255
+                ]
+              }
+            ],
+            "portraits": "shop and portrait viewport: three originals; lab collection: three originals; normal collection: undiscovered Terre remains hidden",
+            "world": "canvas screenshot; no app hooks"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "expected": "63d74eb",
+        "checks": [
+          {
+            "route": "normal",
+            "assets": [
+              {
+                "species": "belier-gris",
+                "hash": "5072d1f8ee2d14ac592cea8a3da933dfc11d5d08e5e435a22c41da4fd291f505",
+                "width": 527,
+                "height": 488,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  158,
+                  158,
+                  158,
+                  255
+                ]
+              },
+              {
+                "species": "feu",
+                "hash": "d080ac1a9a21e6f9c3259dc45800b0713e8b57bb853eb043aea9886cdc16e536",
+                "width": 1004,
+                "height": 827,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "volant",
+                "hash": "f49ad10d6d9c013fad098759d420a019f1c70b4c28e5f4dc0036bb4e63b641b0",
+                "width": 814,
+                "height": 966,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "paille",
+                "hash": "005ac9f351bfe9614520b1e1998eee1421a5c6aff1c05bcf92172bbb52dd9dfe",
+                "width": 350,
+                "height": 495,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  229,
+                  211,
+                  193,
+                  255
+                ]
+              },
+              {
+                "species": "terre",
+                "hash": "1f0337f7e41ef2d0ce5f5d0114c49b9dfbc38f1bfa90d90e9a2ab7c38e88109c",
+                "width": 992,
+                "height": 907,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "neige",
+                "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+                "width": 518,
+                "height": 473,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  254,
+                  243,
+                  249,
+                  255
+                ]
+              }
+            ],
+            "portraits": "shop and portrait viewport: six originals; lab collection: six originals; normal collection: undiscovered species remain hidden",
+            "world": "canvas screenshot; no app hooks"
+          },
+          {
+            "route": "dev/",
+            "assets": [
+              {
+                "species": "belier-gris",
+                "hash": "5072d1f8ee2d14ac592cea8a3da933dfc11d5d08e5e435a22c41da4fd291f505",
+                "width": 527,
+                "height": 488,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  158,
+                  158,
+                  158,
+                  255
+                ]
+              },
+              {
+                "species": "feu",
+                "hash": "d080ac1a9a21e6f9c3259dc45800b0713e8b57bb853eb043aea9886cdc16e536",
+                "width": 1004,
+                "height": 827,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "volant",
+                "hash": "f49ad10d6d9c013fad098759d420a019f1c70b4c28e5f4dc0036bb4e63b641b0",
+                "width": 814,
+                "height": 966,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "paille",
+                "hash": "005ac9f351bfe9614520b1e1998eee1421a5c6aff1c05bcf92172bbb52dd9dfe",
+                "width": 350,
+                "height": 495,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  229,
+                  211,
+                  193,
+                  255
+                ]
+              },
+              {
+                "species": "terre",
+                "hash": "1f0337f7e41ef2d0ce5f5d0114c49b9dfbc38f1bfa90d90e9a2ab7c38e88109c",
+                "width": 992,
+                "height": 907,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "neige",
+                "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+                "width": 518,
+                "height": 473,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  254,
+                  243,
+                  249,
+                  255
+                ]
+              }
+            ],
+            "portraits": "shop and portrait viewport: six originals; lab collection: six originals; normal collection: undiscovered species remain hidden",
+            "world": "canvas screenshot; no app hooks"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      },
+      {
+        "passed": true,
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "checks": [
+          "Normal real touch: fine purchase (16,12), move onto the fine grid (12,16), cancellation before purchase/move, double confirmation, unchanged occupants and save/reload.",
+          "Public laboratory fineBuildings: all building kinds offset, two parcel crossings, active farm job and seven mixed residents, reload and normal/lab isolation."
+        ],
+        "errors": []
+      },
+      {
+        "passed": true,
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "checks": [
+          "Normal overview, constant-size UI and v8 save; fine 4 × 4 preview after zooming out, cancellation preserves every object/resource; Recenter via real control.",
+          "Six public laboratory centre/partial/full × landscape/portrait configurations: overview, wheel, real touch pan/pinch, return to close view, unchanged saves and water covering bottom corners.",
+          "Expansion overview exposes the nine potential parcel positions, including eight unowned choices, without purchases.",
+          "Normal/laboratory saves remain isolated; overview state never enters the v8 game save and reload remains valid."
+        ],
+        "waterSamples": [
+          {
+            "name": "normal-overview",
+            "samples": [
+              [
+                145,
+                211,
+                206,
+                255
+              ],
+              [
+                145,
+                211,
+                206,
+                255
+              ]
+            ]
+          },
+          {
+            "name": "islandStart-852-public-overview",
+            "samples": [
+              [
+                145,
+                211,
+                206,
+                255
+              ],
+              [
+                145,
+                211,
+                206,
+                255
+              ]
+            ]
+          },
+          {
+            "name": "islandL-852-public-overview",
+            "samples": [
+              [
+                145,
+                211,
+                206,
+                255
+              ],
+              [
+                145,
+                211,
+                206,
+                255
+              ]
+            ]
+          },
+          {
+            "name": "islandFull-852-public-overview",
+            "samples": [
+              [
+                145,
+                211,
+                206,
+                255
+              ],
+              [
+                145,
+                211,
+                206,
+                255
+              ]
+            ]
+          },
+          {
+            "name": "islandStart-390-public-overview",
+            "samples": [
+              [
+                145,
+                211,
+                206,
+                255
+              ],
+              [
+                145,
+                211,
+                206,
+                255
+              ]
+            ]
+          },
+          {
+            "name": "islandL-390-public-overview",
+            "samples": [
+              [
+                145,
+                211,
+                206,
+                255
+              ],
+              [
+                145,
+                211,
+                206,
+                255
+              ]
+            ]
+          },
+          {
+            "name": "islandFull-390-public-overview",
+            "samples": [
+              [
+                145,
+                211,
+                206,
+                255
+              ],
+              [
+                145,
+                211,
+                206,
+                255
+              ]
+            ]
+          }
+        ],
+        "errors": []
+      },
+      {
+        "passed": true,
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "checks": [
+          "Normal: three starter buildings, unchanged resources, retired purchases, free launch, parents Au nid, acceleration only ends timer, pending birth survives reload, explicit transfer once under double pressure, unchanged homes.",
+          "Laboratory: zero-wallet launch with parents from two habitats, occupied nursery refuses transfer, welcoming and a further offline interval never transfer automatically, manual growth begins at click, reload and normal/lab isolation."
+        ],
+        "errors": [],
+        "browser": "Chromium touch emulation; not physical Safari"
+      },
+      {
+        "passed": true,
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "browser": "Chromium touch simulation, not physical Safari",
+        "checks": [
+          "Fresh normal touch: first meal and explicit reward, disappearance/reload, real farm placement and 20-herb harvest, two-parent shortcut targets Neige, Paille stays at affection 2. Optional crop acceleration costs one of the initial hearts.",
+          "Laboratory journey uses initial resources and successful commands; all early accomplishments claimed in order without repeats; eight parallel branches, Brumelin reward disappearance, reload and normal isolation.",
+          "Daily cards and bonus disappear only after explicit claims; empty message, unchanged rules and next-cycle reappearance through laboratory clock."
+        ],
+        "errors": []
+      },
+      {
+        "laboratoryWaitingMinutes": 30,
+        "passed": true,
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "browser": "Chromium tactile, pas Safari physique",
+        "timing": "Délais normaux dans la simulation ; horloge du laboratoire avancée explicitement, pas une mesure humaine.",
+        "checks": [
+          "Normal neuf : ressources inchangées, fiche sans action automatique, fermeture, sortie et reprise persistée.",
+          "Ferme placée par commande réelle, petite production 5 min, collection et silhouettes pendant attente, récolte et repas Neige ; rotation et rechargement, récompenses explicites disparues.",
+          "Reproduction gratuite, recette sans promesse, parents au nid après délai, transfert manuel, croissance secrète et accueil réel ; objectif libre, sept récompenses une fois et isolation normal/laboratoire.",
+          "Actions anticipées avec récompenses en attente sur petit paysage 667×375 : carte contenue et défilable, navigation et commandes de prairie accessibles, sortie possible."
+        ],
+        "errors": [],
+        "wallSeconds": 18.658
+      },
+      {
+        "passed": true,
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "browser": "Chromium tactile, pas Safari physique",
+        "timing": "Trois aides réelles ; aucune avance d’horloge. Aucun tirage contrôlé dans le navigateur.",
+        "checks": [
+          "Normal neuf : ressources inchangées, fiche sans action automatique, fermeture, sortie et reprise persistée.",
+          "Ferme placée par commande réelle, petite production aidée sans avance d’horloge, collection et silhouettes pendant attente, récolte et repas Neige ; rotation et rechargement, récompenses explicites disparues.",
+          "Reproduction gratuite, recette sans promesse, parents au nid après délai, transfert manuel, croissance secrète aidée, accueil manuel et première célébration unique ; objectif libre, sept récompenses une fois et isolation normal/laboratoire.",
+          "Actions anticipées avec récompenses en attente sur petit paysage 667×375 : carte contenue et défilable, navigation et commandes de prairie accessibles, sortie possible.",
+          "Scénario de conservation rechargé : reproduction déjà aidée, croissance du même résultat disponible, aucun droit recréé."
+        ],
+        "errors": []
+      },
+      {
+        "milestones": [
+          {
+            "step": "Départ",
+            "wallSeconds": 0.693,
+            "pattes": 300,
+            "grass": 10,
+            "hearts": 12
+          },
+          {
+            "step": "Paille et ferme, récompenses réclamées",
+            "wallSeconds": 2.507,
+            "pattes": 240,
+            "grass": 38,
+            "hearts": 12
+          },
+          {
+            "step": "Production récoltée et Neige nourri",
+            "wallSeconds": 7.657,
+            "pattes": 280,
+            "grass": 56,
+            "hearts": 12
+          },
+          {
+            "step": "Reproduction terminée gratuitement, transfert encore manuel",
+            "wallSeconds": 11.075,
+            "pattes": 280,
+            "grass": 76,
+            "hearts": 12
+          },
+          {
+            "step": "Transfert manuel et récompense",
+            "wallSeconds": 11.598,
+            "pattes": 310,
+            "grass": 76,
+            "hearts": 12
+          },
+          {
+            "step": "Accueil et sept récompenses",
+            "wallSeconds": 14.933,
+            "pattes": 360,
+            "grass": 76,
+            "hearts": 12
+          }
+        ],
+        "passed": true,
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "browser": "Chromium tactile, pas Safari physique",
+        "timing": "Durée réelle de ce script automatisé, avec chargements, captures, rechargements et interactions tactiles. Aucune mesure humaine, aucun délai normal mesuré physiquement et aucune horloge modifiée.",
+        "checks": [
+          "Ferme placée par commande réelle, petite production aidée sans avance d’horloge, collection et silhouettes pendant attente, récolte et repas Neige ; rotation et rechargement, récompenses explicites disparues.",
+          "Partie normale neuve : commandes réelles, trois aides, ressources initiales seulement, sept récompenses réclamées et retirées, interruptions et rotation.",
+          "Jeu libre : huit branches parallèles, Brumelin accessible sans promesse, Terre guidé vers un habitat sans achat automatique, aucune nouvelle fenêtre après rechargement."
+        ],
+        "errors": [],
+        "birthSpecies": "brumelin",
+        "wallSeconds": 17.62
+      }
+    ],
+    "artifacts": [
+      {
+        "id": 11685485472,
+        "name": "github-pages",
+        "size_in_bytes": 7128878,
+        "url": "https://api.github.com/repos/sullivanlegoff-code/Project-L/actions/artifacts/11685485472",
+        "archive_download_url": "https://api.github.com/repos/sullivanlegoff-code/Project-L/actions/artifacts/11685485472/zip",
+        "expired": false,
+        "created_at": "2026-10-10T23:07:00Z",
+        "expires_at": "2026-10-11T23:06:59Z",
+        "updated_at": "2026-10-10T23:07:00Z",
+        "digest": "sha256:11c4e8b6e6a32b4f6db53d9445652add1fa460277552e4c38f990592574f59da",
+        "workflow_run": {
+          "id": 38093808593,
+          "repository_id": 1410092452,
+          "head_repository_id": 1410092452,
+          "head_branch": "production",
+          "head_sha": "63d74eb39bdee654838669cbe6bc84aa68fe6ecf"
+        }
+      },
+      {
+        "id": 11685411143,
+        "name": "public-v8-validation-63d74eb39bdee654838669cbe6bc84aa68fe6ecf",
+        "size_in_bytes": 4733122,
+        "url": "https://api.github.com/repos/sullivanlegoff-code/Project-L/actions/artifacts/11685411143",
+        "archive_download_url": "https://api.github.com/repos/sullivanlegoff-code/Project-L/actions/artifacts/11685411143/zip",
+        "expired": false,
+        "created_at": "2026-10-10T23:11:05Z",
+        "expires_at": "2026-11-09T23:11:04Z",
+        "updated_at": "2026-10-10T23:11:05Z",
+        "digest": "sha256:e43c2eba7740026f53f59b95ed2e2bc9dd36830739bd208be9b69c879460e280",
+        "workflow_run": {
+          "id": 38093808593,
+          "repository_id": 1410092452,
+          "head_repository_id": 1410092452,
+          "head_branch": "production",
+          "head_sha": "63d74eb39bdee654838669cbe6bc84aa68fe6ecf"
+        }
+      }
+    ]
+  },
+  "limits": [
+    "Chromium tactile ; Safari physique non testé.",
+    "Délais normaux contrôlés par avance explicite d’horloge du laboratoire, pas par attente physique.",
+    "Temps de l’automate mesuré ; 10–15 minutes actives humaines non mesurées."
+  ],
+  "unchanged": [
+    "Revenus, prix, délais, probabilités, récompenses",
+    "Sauvegardes v8, illustrations, caméra, île et décorations",
+    "Supabase en pause, prévisualisations figées"
+  ]
+}

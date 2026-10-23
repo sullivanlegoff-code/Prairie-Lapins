@@ -1,0 +1,366 @@
+{
+  "date": "2026-10-09",
+  "timezone": "Europe/Paris",
+  "status": "published-and-verified",
+  "applicationRevision": "ecb8953ffd1b2df2e414d31bb162d60b2c9e3e79",
+  "mergedPR": {
+    "number": 3,
+    "url": "https://github.com/sullivanlegoff-code/Project-L/pull/3",
+    "merged": true
+  },
+  "sourceBeforeMerge": "cc4bfdf8d803b55c8977c022664b42e27daecb13",
+  "baseProduction": "ef2f75853dd6c4ccaab122d449dec9132a9f681d",
+  "publication": {
+    "run": 37984029226,
+    "url": "https://github.com/sullivanlegoff-code/Project-L/actions/runs/37984029226",
+    "result": "success",
+    "buildJob": 114001390334,
+    "deployJob": 114001826589,
+    "artifact": 11641473743,
+    "artifactExpiresAt": "2026-11-08T20:05:03Z"
+  },
+  "validation": {
+    "run": 37983514087,
+    "pushRun": 37983500012,
+    "result": "success",
+    "unitTests": 569,
+    "testFiles": 15,
+    "typecheck": "passed",
+    "builds": [
+      "normal v6",
+      "laboratory v6",
+      "frozen accounts v4",
+      "frozen decorations v5"
+    ],
+    "accountsFrozenUnitTests": 415,
+    "decorationFrozenUnitTests": 544,
+    "artifact": 11642701225,
+    "sourceBrowserGroups": 5,
+    "developmentFixtures": "Injected hooks exist only in intercepted local/Vite test sources; production builds and HTTPS checks have no hooks or preloaded saves."
+  },
+  "rules": {
+    "parcels": 9,
+    "cellsPerParcel": 9,
+    "initialParcel": "center",
+    "extensionCosts": [
+      500,
+      1000,
+      1500,
+      2000,
+      2500,
+      3000,
+      3500,
+      4000
+    ],
+    "freeOrder": true,
+    "decorations": 12,
+    "decorationsOutsideOnly": true,
+    "resaleRate": 0.5,
+    "heartRefund": 0,
+    "singleSaveMigrationTo": 6
+  },
+  "publicRoutes": [
+    {
+      "url": "https://sullivanlegoff-code.github.io/Project-L/",
+      "revision": "ecb8953ffd1b2df2e414d31bb162d60b2c9e3e79",
+      "saveFormat": 6,
+      "html": 200,
+      "application": 200,
+      "featuresChecked": true
+    },
+    {
+      "url": "https://sullivanlegoff-code.github.io/Project-L/dev/",
+      "revision": "ecb8953ffd1b2df2e414d31bb162d60b2c9e3e79",
+      "saveFormat": 6,
+      "html": 200,
+      "application": 200,
+      "featuresChecked": true
+    },
+    {
+      "url": "https://sullivanlegoff-code.github.io/Project-L/preview/accounts/",
+      "revision": "3e70d9e8cbe9228c63c73db007fff199199d6470",
+      "saveFormat": 4,
+      "html": 200,
+      "application": 200,
+      "featuresChecked": true
+    },
+    {
+      "url": "https://sullivanlegoff-code.github.io/Project-L/preview/decorations/",
+      "revision": "85fe255ec8e7e65213cd570f91f5bb1fe66a30d7",
+      "saveFormat": 5,
+      "html": 200,
+      "application": 200,
+      "featuresChecked": true
+    }
+  ],
+  "normalBrowser": {
+    "url": "https://sullivanlegoff-code.github.io/Project-L/",
+    "browser": "Chromium, 852 × 393 landscape; not physical iPhone Safari",
+    "expectedRevision": "ecb8953",
+    "checks": [
+      "Normal new game: canvas, 300 pattes, 10 grass, 12 hearts, 2 rabbits, save v6.",
+      "Shop, collection, missions, settings and release identifier.",
+      "Real canvas selection and feed button: Paille affection 1→2, grass 10→8.",
+      "Export downloads valid v6 JSON; cancelling import preserves current progression.",
+      "Confirmed import writes 317 pattes and retains rabbits, grass, hearts, habitats; export roundtrip matches.",
+      "Invalid JSON is rejected without replacing the game.",
+      "Reload preserves imported progression and fed affection.",
+      "Production ?dev=1 keeps normal save, hides tools/badge and creates no development storage.",
+      "Real normal decoration purchase, cancelled placement, cancelled sale, double-confirmed atomic 50% sale and persisted reload."
+    ],
+    "screenshots": [
+      "artifacts/production-initial.png",
+      "artifacts/production-version.png",
+      "artifacts/production-fed.png",
+      "artifacts/production-imported.png",
+      "artifacts/production-final.png"
+    ],
+    "downloads": [
+      {
+        "path": "artifacts/production-export.json",
+        "suggestedFilename": "prairie-lapins-2026-10-09T20-04-00Z.json"
+      },
+      {
+        "path": "artifacts/production-roundtrip.json",
+        "suggestedFilename": "prairie-lapins-2026-10-09T20-04-02Z.json"
+      }
+    ],
+    "errors": [],
+    "failedRequests": [],
+    "httpErrors": [],
+    "passed": true,
+    "version": "Version : Prairie de lapins · île à neuf parcelles · v6 · build ecb8953"
+  },
+  "laboratoryBrowser": {
+    "normal": "https://sullivanlegoff-code.github.io/Project-L/",
+    "laboratory": "https://sullivanlegoff-code.github.io/Project-L/dev/",
+    "expected": "ecb8953",
+    "checks": [
+      "Normal link opens an independent fresh laboratory; normal feed/export remains intact.",
+      "All five clock advances and six resource grants leave every normal-origin key byte-for-byte unchanged.",
+      "MODE-TEST JSON export; cancelled and confirmed normal-copy imports leave the source unchanged.",
+      "Laboratory reload restores its save/clock; cancelled and confirmed reset preserve normal storage.",
+      "All fourteen confirmed scenario loads produce valid saved v6 states without writing normal keys.",
+      "Portrait mobile viewport: test resource control remains accessible, banner visible and panel unobscured.",
+      "Return/reload normal game retains its fed rabbit and resources, uses real time, and ?dev=1 cannot activate tools."
+    ],
+    "errors": [],
+    "failedRequests": [],
+    "httpErrors": [],
+    "passed": true,
+    "version": "Version : Prairie de lapins · île à neuf parcelles · v6 · build ecb8953"
+  },
+  "ciReports": [
+    {
+      "passed": true,
+      "stored": 4,
+      "idsPreserved": true,
+      "resourcesPreserved": true,
+      "oneNotice": true,
+      "reload": true,
+      "errors": []
+    },
+    {
+      "passed": true,
+      "errors": [],
+      "cache": {
+        "cosmeticRetained": true,
+        "buildingRebuilt": true,
+        "detachedRetained": true,
+        "textureCount": 3,
+        "textureSizes": [
+          [
+            1416,
+            1248
+          ],
+          [
+            1416,
+            1248
+          ],
+          [
+            1416,
+            1248
+          ]
+        ],
+        "threeCommandsMs": 40.5
+      },
+      "checks": [
+        "central island",
+        "eight independent choices",
+        "insufficient funds",
+        "cancel purchase",
+        "diagonal purchase without intermediate",
+        "double confirmation buys once",
+        "L and complete geometry",
+        "12 exterior references",
+        "reload"
+      ]
+    },
+    {
+      "browser": "Chromium with real dispatched touch; not physical Safari",
+      "selections": [
+        {
+          "catalogId": "wildflowers",
+          "normal": true,
+          "arrangement": true,
+          "outline": true
+        },
+        {
+          "catalogId": "flowering-bush",
+          "normal": true,
+          "arrangement": true,
+          "outline": true
+        },
+        {
+          "catalogId": "moss-rock",
+          "normal": true,
+          "arrangement": true,
+          "outline": true
+        },
+        {
+          "catalogId": "garden-lantern",
+          "normal": true,
+          "arrangement": true,
+          "outline": true
+        },
+        {
+          "catalogId": "wood-bench",
+          "normal": true,
+          "arrangement": true,
+          "outline": true
+        },
+        {
+          "catalogId": "flower-arch",
+          "normal": true,
+          "arrangement": true,
+          "outline": true
+        },
+        {
+          "catalogId": "fruit-tree",
+          "normal": true,
+          "arrangement": true,
+          "outline": true
+        },
+        {
+          "catalogId": "small-pond",
+          "normal": true,
+          "arrangement": true,
+          "outline": true
+        },
+        {
+          "catalogId": "soft-cushion",
+          "normal": true,
+          "arrangement": true,
+          "outline": true
+        },
+        {
+          "catalogId": "ball-toys",
+          "normal": true,
+          "arrangement": true,
+          "outline": true
+        },
+        {
+          "catalogId": "play-tunnel",
+          "normal": true,
+          "arrangement": true,
+          "outline": true
+        },
+        {
+          "catalogId": "small-parasol",
+          "normal": true,
+          "arrangement": true,
+          "outline": true
+        }
+      ],
+      "treeZooms": [
+        0.8,
+        1.05,
+        1.65
+      ],
+      "empty": true,
+      "photo": true,
+      "pan": true,
+      "pinch": true,
+      "rabbitPriority": "paille",
+      "decorationPriorityInArrangement": true,
+      "harvestPriority": true,
+      "cancelSale": true,
+      "doubleSale": true,
+      "reload": true,
+      "inventorySale": true,
+      "errors": []
+    },
+    {
+      "url": "local-test/Project-L/",
+      "browser": "Chromium, 852 × 393 landscape; not physical iPhone Safari",
+      "expectedRevision": "22a0f16",
+      "checks": [
+        "Normal new game: canvas, 300 pattes, 10 grass, 12 hearts, 2 rabbits, save v6.",
+        "Shop, collection, missions, settings and release identifier.",
+        "Real canvas selection and feed button: Paille affection 1→2, grass 10→8.",
+        "Export downloads valid v6 JSON; cancelling import preserves current progression.",
+        "Confirmed import writes 317 pattes and retains rabbits, grass, hearts, habitats; export roundtrip matches.",
+        "Invalid JSON is rejected without replacing the game.",
+        "Reload preserves imported progression and fed affection.",
+        "Production ?dev=1 keeps normal save, hides tools/badge and creates no development storage.",
+        "Real normal decoration purchase, cancelled placement, cancelled sale, double-confirmed atomic 50% sale and persisted reload."
+      ],
+      "screenshots": [
+        "artifacts/production-initial.png",
+        "artifacts/production-version.png",
+        "artifacts/production-fed.png",
+        "artifacts/production-imported.png",
+        "artifacts/production-final.png"
+      ],
+      "downloads": [
+        {
+          "path": "artifacts/production-export.json",
+          "suggestedFilename": "prairie-lapins-2026-10-09T19-58-17Z.json"
+        },
+        {
+          "path": "artifacts/production-roundtrip.json",
+          "suggestedFilename": "prairie-lapins-2026-10-09T19-58-20Z.json"
+        }
+      ],
+      "errors": [],
+      "failedRequests": [],
+      "httpErrors": [],
+      "passed": true,
+      "version": "Version : Prairie de lapins · île à neuf parcelles · v6 · build 22a0f16"
+    },
+    {
+      "normal": "local-test/Project-L/",
+      "laboratory": "local-test/Project-L/dev/",
+      "expected": "22a0f16",
+      "checks": [
+        "Normal link opens an independent fresh laboratory; normal feed/export remains intact.",
+        "All five clock advances and six resource grants leave every normal-origin key byte-for-byte unchanged.",
+        "MODE-TEST JSON export; cancelled and confirmed normal-copy imports leave the source unchanged.",
+        "Laboratory reload restores its save/clock; cancelled and confirmed reset preserve normal storage.",
+        "All fourteen confirmed scenario loads produce valid saved v6 states without writing normal keys.",
+        "Portrait mobile viewport: test resource control remains accessible, banner visible and panel unobscured.",
+        "Return/reload normal game retains its fed rabbit and resources, uses real time, and ?dev=1 cannot activate tools."
+      ],
+      "errors": [],
+      "failedRequests": [],
+      "httpErrors": [],
+      "passed": true,
+      "version": "Version : Prairie de lapins · île à neuf parcelles · v6 · build 22a0f16"
+    }
+  ],
+  "captures": {
+    "sourceRevision": "cc4bfdf8d803b55c8977c022664b42e27daecb13",
+    "centre": "land-v6/centre.png",
+    "partial": "land-v6/partial.png",
+    "full": "land-v6/full.png",
+    "browser": "Local disposable Chromium, not physical Safari",
+    "centreViewport": "852 × 393 mobile landscape",
+    "overviewViewport": "1500 × 1300 for partial/full"
+  },
+  "emailAccounts": "paused; account branch/PR1 unchanged, no email/Supabase/SQL action",
+  "limits": [
+    "Automated Chromium checks are not physical iPhone Safari testing.",
+    "Saves remain local to each browser/device and isolated between routes.",
+    "Frozen decorations v5 and accounts v4 cannot read v6 exports; no automatic transfer or online sync."
+  ]
+}

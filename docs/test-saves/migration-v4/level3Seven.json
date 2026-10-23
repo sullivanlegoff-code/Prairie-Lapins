@@ -1,0 +1,442 @@
+{
+  "version": 4,
+  "lastSimulatedAt": 0,
+  "nextId": 60,
+  "pattes": 48500,
+  "grass": 1000,
+  "expanded": true,
+  "buildings": [
+    {
+      "id": "building-4",
+      "kind": "enclosure",
+      "x": 0,
+      "y": 0,
+      "incomeUnits": 0,
+      "order": null,
+      "breeding": null,
+      "baby": null,
+      "habitat": {
+        "type": "universal",
+        "level": 3
+      }
+    },
+    {
+      "id": "building-12",
+      "kind": "enclosure",
+      "x": 1,
+      "y": 0,
+      "incomeUnits": 0,
+      "order": null,
+      "breeding": null,
+      "baby": null,
+      "habitat": {
+        "type": "paille",
+        "level": 3
+      }
+    },
+    {
+      "id": "building-20",
+      "kind": "enclosure",
+      "x": 2,
+      "y": 0,
+      "incomeUnits": 0,
+      "order": null,
+      "breeding": null,
+      "baby": null,
+      "habitat": {
+        "type": "neige",
+        "level": 3
+      }
+    },
+    {
+      "id": "building-28",
+      "kind": "enclosure",
+      "x": 3,
+      "y": 0,
+      "incomeUnits": 0,
+      "order": null,
+      "breeding": null,
+      "baby": null,
+      "habitat": {
+        "type": "terre",
+        "level": 3
+      }
+    },
+    {
+      "id": "building-36",
+      "kind": "enclosure",
+      "x": 4,
+      "y": 0,
+      "incomeUnits": 0,
+      "order": null,
+      "breeding": null,
+      "baby": null,
+      "habitat": {
+        "type": "feu",
+        "level": 3
+      }
+    },
+    {
+      "id": "building-44",
+      "kind": "enclosure",
+      "x": 5,
+      "y": 0,
+      "incomeUnits": 0,
+      "order": null,
+      "breeding": null,
+      "baby": null,
+      "habitat": {
+        "type": "metal",
+        "level": 3
+      }
+    },
+    {
+      "id": "building-52",
+      "kind": "enclosure",
+      "x": 6,
+      "y": 0,
+      "incomeUnits": 0,
+      "order": null,
+      "breeding": null,
+      "baby": null,
+      "habitat": {
+        "type": "vol",
+        "level": 3
+      }
+    }
+  ],
+  "rabbits": [
+    {
+      "id": "rabbit-5",
+      "species": "paille",
+      "affection": 5,
+      "enclosureId": "building-4"
+    },
+    {
+      "id": "rabbit-6",
+      "species": "neige",
+      "affection": 5,
+      "enclosureId": "building-4"
+    },
+    {
+      "id": "rabbit-7",
+      "species": "terre",
+      "affection": 5,
+      "enclosureId": "building-4"
+    },
+    {
+      "id": "rabbit-8",
+      "species": "brumelin",
+      "affection": 5,
+      "enclosureId": "building-4"
+    },
+    {
+      "id": "rabbit-9",
+      "species": "mottelin",
+      "affection": 5,
+      "enclosureId": "building-4"
+    },
+    {
+      "id": "rabbit-10",
+      "species": "feu",
+      "affection": 5,
+      "enclosureId": "building-4"
+    },
+    {
+      "id": "rabbit-11",
+      "species": "belier-gris",
+      "affection": 5,
+      "enclosureId": "building-4"
+    },
+    {
+      "id": "rabbit-13",
+      "species": "paille",
+      "affection": 5,
+      "enclosureId": "building-12"
+    },
+    {
+      "id": "rabbit-14",
+      "species": "brumelin",
+      "affection": 5,
+      "enclosureId": "building-12"
+    },
+    {
+      "id": "rabbit-15",
+      "species": "mottelin",
+      "affection": 5,
+      "enclosureId": "building-12"
+    },
+    {
+      "id": "rabbit-16",
+      "species": "lunettes",
+      "affection": 5,
+      "enclosureId": "building-12"
+    },
+    {
+      "id": "rabbit-17",
+      "species": "paille",
+      "affection": 5,
+      "enclosureId": "building-12"
+    },
+    {
+      "id": "rabbit-18",
+      "species": "brumelin",
+      "affection": 5,
+      "enclosureId": "building-12"
+    },
+    {
+      "id": "rabbit-19",
+      "species": "mottelin",
+      "affection": 5,
+      "enclosureId": "building-12"
+    },
+    {
+      "id": "rabbit-21",
+      "species": "neige",
+      "affection": 5,
+      "enclosureId": "building-20"
+    },
+    {
+      "id": "rabbit-22",
+      "species": "brumelin",
+      "affection": 5,
+      "enclosureId": "building-20"
+    },
+    {
+      "id": "rabbit-23",
+      "species": "feu-glace",
+      "affection": 5,
+      "enclosureId": "building-20"
+    },
+    {
+      "id": "rabbit-24",
+      "species": "neige",
+      "affection": 5,
+      "enclosureId": "building-20"
+    },
+    {
+      "id": "rabbit-25",
+      "species": "brumelin",
+      "affection": 5,
+      "enclosureId": "building-20"
+    },
+    {
+      "id": "rabbit-26",
+      "species": "feu-glace",
+      "affection": 5,
+      "enclosureId": "building-20"
+    },
+    {
+      "id": "rabbit-27",
+      "species": "neige",
+      "affection": 5,
+      "enclosureId": "building-20"
+    },
+    {
+      "id": "rabbit-29",
+      "species": "terre",
+      "affection": 5,
+      "enclosureId": "building-28"
+    },
+    {
+      "id": "rabbit-30",
+      "species": "mottelin",
+      "affection": 5,
+      "enclosureId": "building-28"
+    },
+    {
+      "id": "rabbit-31",
+      "species": "terre",
+      "affection": 5,
+      "enclosureId": "building-28"
+    },
+    {
+      "id": "rabbit-32",
+      "species": "mottelin",
+      "affection": 5,
+      "enclosureId": "building-28"
+    },
+    {
+      "id": "rabbit-33",
+      "species": "terre",
+      "affection": 5,
+      "enclosureId": "building-28"
+    },
+    {
+      "id": "rabbit-34",
+      "species": "mottelin",
+      "affection": 5,
+      "enclosureId": "building-28"
+    },
+    {
+      "id": "rabbit-35",
+      "species": "terre",
+      "affection": 5,
+      "enclosureId": "building-28"
+    },
+    {
+      "id": "rabbit-37",
+      "species": "feu",
+      "affection": 5,
+      "enclosureId": "building-36"
+    },
+    {
+      "id": "rabbit-38",
+      "species": "perroquet",
+      "affection": 5,
+      "enclosureId": "building-36"
+    },
+    {
+      "id": "rabbit-39",
+      "species": "feu-glace",
+      "affection": 5,
+      "enclosureId": "building-36"
+    },
+    {
+      "id": "rabbit-40",
+      "species": "feu",
+      "affection": 5,
+      "enclosureId": "building-36"
+    },
+    {
+      "id": "rabbit-41",
+      "species": "perroquet",
+      "affection": 5,
+      "enclosureId": "building-36"
+    },
+    {
+      "id": "rabbit-42",
+      "species": "feu-glace",
+      "affection": 5,
+      "enclosureId": "building-36"
+    },
+    {
+      "id": "rabbit-43",
+      "species": "feu",
+      "affection": 5,
+      "enclosureId": "building-36"
+    },
+    {
+      "id": "rabbit-45",
+      "species": "belier-gris",
+      "affection": 5,
+      "enclosureId": "building-44"
+    },
+    {
+      "id": "rabbit-46",
+      "species": "lunettes",
+      "affection": 5,
+      "enclosureId": "building-44"
+    },
+    {
+      "id": "rabbit-47",
+      "species": "belier-gris",
+      "affection": 5,
+      "enclosureId": "building-44"
+    },
+    {
+      "id": "rabbit-48",
+      "species": "lunettes",
+      "affection": 5,
+      "enclosureId": "building-44"
+    },
+    {
+      "id": "rabbit-49",
+      "species": "belier-gris",
+      "affection": 5,
+      "enclosureId": "building-44"
+    },
+    {
+      "id": "rabbit-50",
+      "species": "lunettes",
+      "affection": 5,
+      "enclosureId": "building-44"
+    },
+    {
+      "id": "rabbit-51",
+      "species": "belier-gris",
+      "affection": 5,
+      "enclosureId": "building-44"
+    },
+    {
+      "id": "rabbit-53",
+      "species": "volant",
+      "affection": 5,
+      "enclosureId": "building-52"
+    },
+    {
+      "id": "rabbit-54",
+      "species": "perroquet",
+      "affection": 5,
+      "enclosureId": "building-52"
+    },
+    {
+      "id": "rabbit-55",
+      "species": "volant",
+      "affection": 5,
+      "enclosureId": "building-52"
+    },
+    {
+      "id": "rabbit-56",
+      "species": "perroquet",
+      "affection": 5,
+      "enclosureId": "building-52"
+    },
+    {
+      "id": "rabbit-57",
+      "species": "volant",
+      "affection": 5,
+      "enclosureId": "building-52"
+    },
+    {
+      "id": "rabbit-58",
+      "species": "perroquet",
+      "affection": 5,
+      "enclosureId": "building-52"
+    },
+    {
+      "id": "rabbit-59",
+      "species": "volant",
+      "affection": 5,
+      "enclosureId": "building-52"
+    }
+  ],
+  "discovered": [
+    "paille",
+    "neige",
+    "terre",
+    "brumelin",
+    "mottelin",
+    "feu",
+    "belier-gris",
+    "lunettes",
+    "feu-glace",
+    "perroquet",
+    "volant"
+  ],
+  "pityFailures": 0,
+  "hearts": 100,
+  "nextHeartGiftAt": 86400000,
+  "missions": {
+    "completed": [
+      "varied-family",
+      "strong-bonds",
+      "growing-collection",
+      "bigger-meadow",
+      "first-rare"
+    ],
+    "claimed": [],
+    "daily": {
+      "referenceAt": 0,
+      "cycleIndex": 0,
+      "progress": {
+        "collect-pattes": 0,
+        "collect-grass": 0,
+        "gain-affection": 0
+      },
+      "claimed": [],
+      "bonusClaimed": false
+    }
+  },
+  "secondExpanded": true
+}

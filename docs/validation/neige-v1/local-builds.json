@@ -1,0 +1,53 @@
+{
+  "url": "local builds: normal and laboratory",
+  "checks": [
+    {
+      "route": "normal",
+      "asset": {
+        "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+        "width": 518,
+        "height": 473,
+        "fit": "contain",
+        "corner": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "fur": [
+          254,
+          243,
+          249,
+          255
+        ]
+      },
+      "portraits": "shop, collection, portrait viewport",
+      "world": "canvas screenshot; no app hooks"
+    },
+    {
+      "route": "dev/",
+      "asset": {
+        "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+        "width": 518,
+        "height": 473,
+        "fit": "contain",
+        "corner": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "fur": [
+          254,
+          243,
+          249,
+          255
+        ]
+      },
+      "portraits": "shop, collection, portrait viewport",
+      "world": "canvas screenshot; no app hooks"
+    }
+  ],
+  "errors": [],
+  "passed": true
+}

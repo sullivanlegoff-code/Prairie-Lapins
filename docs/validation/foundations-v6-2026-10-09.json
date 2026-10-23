@@ -1,0 +1,146 @@
+{
+  "checkedAt": "2026-10-09 20:58:56 UTC",
+  "applicationRevision": "49cab78a87e4b68ca7f8ec90390980e391846cb4",
+  "sourceRevision": "e13eec7f7191d6a7c1dd3c757cfeb6a010d30f8a",
+  "verifiedSourceTree": "b0badbcc445baa24f12a1ba9336ad90c40764d1d",
+  "pullRequest": "https://github.com/sullivanlegoff-code/Project-L/pull/4",
+  "saveFormat": 6,
+  "unchanged": {
+    "content": true,
+    "economy": true,
+    "visuals": true,
+    "terrainCache": true,
+    "migrations": true,
+    "storageKeys": true
+  },
+  "ci": {
+    "tests": 582,
+    "files": 16,
+    "typecheck": "passed",
+    "builds": [
+      "normal",
+      "laboratory"
+    ],
+    "seededTraces": {
+      "seeds": [
+        17,
+        104729,
+        20261009
+      ],
+      "stepsPerSeed": 180,
+      "clock": "injected",
+      "invariants": "checked after every step"
+    },
+    "runs": [
+      {
+        "id": 37989442388,
+        "event": "push",
+        "conclusion": "success"
+      },
+      {
+        "id": 37989448529,
+        "event": "pull_request",
+        "conclusion": "success"
+      }
+    ],
+    "artifact": {
+      "id": 11644646696,
+      "url": "https://github.com/sullivanlegoff-code/Project-L/actions/runs/37989442388/artifacts/11644646696"
+    }
+  },
+  "publication": {
+    "run": 37990079926,
+    "url": "https://github.com/sullivanlegoff-code/Project-L/actions/runs/37990079926",
+    "conclusion": "success",
+    "routes": [
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "revision": "49cab78a87e4b68ca7f8ec90390980e391846cb4",
+        "saveFormat": 6,
+        "html": 200,
+        "application": 200,
+        "featuresChecked": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/dev/",
+        "revision": "49cab78a87e4b68ca7f8ec90390980e391846cb4",
+        "saveFormat": 6,
+        "html": 200,
+        "application": 200,
+        "featuresChecked": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/preview/accounts/",
+        "revision": "3e70d9e8cbe9228c63c73db007fff199199d6470",
+        "saveFormat": 4,
+        "html": 200,
+        "application": 200,
+        "featuresChecked": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/preview/decorations/",
+        "revision": "85fe255ec8e7e65213cd570f91f5bb1fe66a30d7",
+        "saveFormat": 5,
+        "html": 200,
+        "application": 200,
+        "featuresChecked": true
+      }
+    ],
+    "publicBrowserSuites": [
+      {
+        "suite": "normal",
+        "passed": true,
+        "checks": [
+          "Normal new game: canvas, 300 pattes, 10 grass, 12 hearts, 2 rabbits, save v6.",
+          "Shop, collection, missions, settings and release identifier.",
+          "Real canvas selection and feed button: Paille affection 1→2, grass 10→8.",
+          "Export downloads valid v6 JSON; cancelling import preserves current progression.",
+          "Confirmed import writes 317 pattes and retains rabbits, grass, hearts, habitats; export roundtrip matches.",
+          "Invalid JSON is rejected without replacing the game.",
+          "Reload preserves imported progression and fed affection.",
+          "Production ?dev=1 keeps normal save, hides tools/badge and creates no development storage.",
+          "Real normal decoration purchase, cancelled placement, cancelled sale, double-confirmed atomic 50% sale and persisted reload."
+        ],
+        "errors": [],
+        "failedRequests": [],
+        "httpErrors": []
+      },
+      {
+        "suite": "laboratory",
+        "passed": true,
+        "checks": [
+          "Normal link opens an independent fresh laboratory; normal feed/export remains intact.",
+          "All five clock advances and six resource grants leave every normal-origin key byte-for-byte unchanged.",
+          "MODE-TEST JSON export; cancelled and confirmed normal-copy imports leave the source unchanged.",
+          "Laboratory reload restores its save/clock; cancelled and confirmed reset preserve normal storage.",
+          "All fourteen confirmed scenario loads produce valid saved v6 states without writing normal keys.",
+          "Portrait mobile viewport: test resource control remains accessible, banner visible and panel unobscured.",
+          "Return/reload normal game retains its fed rabbit and resources, uses real time, and ?dev=1 cannot activate tools."
+        ],
+        "errors": [],
+        "failedRequests": [],
+        "httpErrors": []
+      },
+      {
+        "suite": "foundations",
+        "passed": true,
+        "checks": [
+          "External storage event exposes the conflict immediately; obsolete tab refuses purchase and exports its intact memory copy.",
+          "Repeated panels, viewport rotation and lifecycle events preserve ownership and resources.",
+          "Laboratory storage notifications cannot mark the normal session conflicted."
+        ],
+        "errors": [],
+        "failedRequests": [],
+        "httpErrors": []
+      }
+    ],
+    "artifact": {
+      "id": 11644393022,
+      "url": "https://github.com/sullivanlegoff-code/Project-L/actions/runs/37990079926/artifacts/11644393022"
+    }
+  },
+  "limitations": [
+    "Chromium does not validate physical iPhone Safari.",
+    "localStorage read/compare/write is not a cross-tab transaction; use one active tab per game."
+  ]
+}

@@ -1,0 +1,190 @@
+.cuisine-root{font-family:system-ui,-apple-system,sans-serif;color:#4a5642;background:#ece9d5;font-synthesis:none}
+.cuisine-root *{box-sizing:border-box}
+.cuisine-root button,.cuisine-root a{touch-action:manipulation}
+.cuisine-root [hidden]{display:none!important}
+.cuisine-root button:focus-visible,.cuisine-root a:focus-visible{outline:3px solid #496f84;outline-offset:4px}
+.cuisine-root{position:relative;isolation:isolate;box-sizing:border-box;height:100%;min-height:0;display:flex;flex-direction:column;overflow:hidden;padding:max(9px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));background:radial-gradient(ellipse at 35% 5%,#f8f4df,transparent 65%),linear-gradient(#e9ecd9 0%,#eee5ce 85%)}
+.cuisine-root .kitchen-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0;padding:0 5px 3px}
+.cuisine-root small{text-transform:uppercase;letter-spacing:.12em;font-size:10px;color:#798369}
+.cuisine-root h1{font-family:Georgia,serif;font-weight:500;font-size:clamp(20px,3vw,30px);margin:1px 0}
+.cuisine-root .stage-badge{border:1px solid #b9bda0;padding:7px 12px;border-radius:20px;font-size:11px;white-space:nowrap;color:#737a5f;background:#f7f2df88}
+.cuisine-root #scene-shell{flex:1;min-height:0;position:relative}
+.cuisine-root #kitchen-surface{position:absolute;inset:0;touch-action:pinch-zoom;overflow:hidden;border-radius:22px}
+.cuisine-root #kitchen-world{position:absolute}
+.cuisine-root .table-art,.cuisine-root .table-art svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.cuisine-root .kitchen-object{position:absolute;left:0;top:0;border:0;padding:0;background:none;color:#514d3e;font:inherit;touch-action:pinch-zoom;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;transform-origin:center;transition:transform .2s cubic-bezier(.2,.7,.2,1);border-radius:18px}
+.cuisine-root button.kitchen-object{cursor:grab}
+.cuisine-root .object-art{width:var(--art-width);height:var(--art-height);position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);filter:drop-shadow(0 5px 2px #6d5c3930);pointer-events:none}
+.cuisine-root .object-art svg{width:100%;height:100%;overflow:visible}
+.cuisine-root .object-label{position:absolute;left:50%;top:calc(50% + var(--label-offset));transform:translateX(-50%);font-size:11px;line-height:14px;white-space:nowrap;text-shadow:0 1px 3px #fff8dc,0 0 5px #fff8dc;pointer-events:none}
+.cuisine-root .kitchen-object.fixture .object-label{color:#74674e;font-size:10px}
+.cuisine-root .kitchen-object.grabbed{cursor:grabbing;transition:none}
+.cuisine-root .grabbed .object-art{filter:drop-shadow(0 13px 5px #4b47394d);transform:translate(-50%,-56%) scale(1.06)}
+.cuisine-root .kitchen-object[data-selected=true]:not(.grabbed) .object-art{filter:drop-shadow(0 0 3px #63845599) drop-shadow(0 5px 2px #6d5c3930)}
+.cuisine-root .drop-zone{position:absolute;border:2px dashed #827a5140;border-radius:50%;pointer-events:none;z-index:2;opacity:0;transition:opacity .12s,background .12s}
+.cuisine-root .drop-zone[data-zone^=reserve],.cuisine-root .drop-zone[data-zone=tool-rack]{opacity:.45}
+.cuisine-root .drop-zone[data-hover=valid]{opacity:1;border:3px solid #73995f;background:#c6ddb266;box-shadow:0 0 0 6px #e5f1cc55}
+.cuisine-root .drop-zone[data-hover=invalid]{opacity:1;border-color:#bd9278;background:#d7a78b30}
+.cuisine-root .kitchen-object[data-hover=invalid] .object-art{filter:drop-shadow(0 0 6px #cb9b72)}
+.cuisine-root .kitchen-object[data-feedback=accepted] .object-label{animation:cuisine-accepted .6s}
+.cuisine-root .kitchen-object[data-feedback=rejected] .object-art{animation:cuisine-refused .25s}
+@keyframes cuisine-accepted{50%{color:#3a713e;background:#eaf0cd;border-radius:12px}
+}@keyframes cuisine-refused{25%,75%{margin-left:-3px}
+50%{margin-left:3px}
+}.cuisine-root footer{display:flex;gap:15px;justify-content:space-between;align-items:center;flex-shrink:0;padding:5px 5px 0;min-height:35px}
+.cuisine-root #kitchen-message{margin:0;max-width:800px;font-size:12px;line-height:1.35;color:#667354}
+.cuisine-root nav{display:flex;gap:10px}
+.cuisine-root nav a{font-size:10px;color:#7a8069;min-height:28px;display:flex;align-items:center}
+.cuisine-root #orientation-screen{position:absolute;inset:0;z-index:2000;display:grid;place-items:center;background:radial-gradient(ellipse at top,#f8f3df,#e3e8d1);padding:max(24px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left))}
+.cuisine-root .orientation-card{text-align:center;max-width:370px;padding:28px;border:1px solid #d3d7be;border-radius:28px;background:#fffcf0;box-shadow:0 12px 45px #53604615}
+.cuisine-root .rotate-icon{display:block;font-size:64px;color:#8b9d73}
+.cuisine-root h2{font-family:Georgia,serif;font-weight:500;font-size:27px;line-height:1.2}
+.cuisine-root .orientation-card p{font-size:14px;line-height:1.5;color:#7b806a}
+.cuisine-root .orientation-note{font-size:12px;color:#8b9579}
+.cuisine-root[data-portrait=true] #scene-shell{visibility:hidden}
+@media(max-height:380px) and (orientation:landscape){.cuisine-root{padding-top:max(5px,env(safe-area-inset-top));padding-bottom:max(5px,env(safe-area-inset-bottom))}
+.cuisine-root h1{font-size:21px}
+.cuisine-root small{font-size:9px}
+.cuisine-root .stage-badge{padding:5px 9px}
+.cuisine-root footer{padding-top:2px;min-height:31px}
+.cuisine-root #kitchen-message{font-size:11px}
+.cuisine-root .object-label{font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){.cuisine-root .kitchen-object,.cuisine-root .drop-zone{transition:none}
+.cuisine-root .kitchen-object[data-feedback] .object-art,.cuisine-root .kitchen-object[data-feedback] .object-label{animation:none}
+}.cuisine-root .kitchen-object{transition:none}
+.cuisine-root .kitchen-object[data-feedback]:not(.grabbed){transition:transform .2s cubic-bezier(.2,.7,.2,1)}
+.cuisine-root .snapping .kitchen-object{transition:none!important}
+.cuisine-root footer{height:40px;min-height:40px}
+.cuisine-root #kitchen-message{flex:1;min-width:0;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.cuisine-root nav{flex-shrink:0}
+@media(prefers-reduced-motion:reduce){.cuisine-root .kitchen-object[data-feedback]{transition:none}
+}.cuisine-root .stage-badge{max-width:min(58vw,440px);white-space:normal;text-align:center;line-height:1.25;font-size:clamp(9px,1.3vw,12px)}
+.cuisine-root .kitchen-object[data-in-bowl=true]{pointer-events:none;opacity:0}
+.cuisine-root .kitchen-object[data-item=olive-oil][data-feedback=rejected] .object-art{animation:cuisine-oil-no 0.25s}
+.cuisine-root .bowl-content{position:absolute;z-index:4;pointer-events:none}
+.cuisine-root .bowl-content svg{width:100%;height:100%;overflow:visible;filter:drop-shadow(0 2px 1px #45513c20)}
+.cuisine-root .dish-content{position:absolute;z-index:4;pointer-events:none}
+.cuisine-root .dish-content svg{width:100%;height:100%;overflow:visible;filter:drop-shadow(0 2px 1px #45513c30)}
+.cuisine-root .kitchen-object[data-in-dish=true]{pointer-events:none;opacity:0}
+.cuisine-root .kitchen-object[data-item=baking-dish][data-cooking=true]::after{content:"";position:absolute;left:22%;right:22%;bottom:3px;height:5px;border-radius:5px;background:linear-gradient(90deg,#e79a58 var(--cook-progress),#f4ead2 var(--cook-progress));box-shadow:0 0 7px #f1a75e88}
+.cuisine-root .kitchen-object[data-item=oven][data-effect=oven] .object-art,.cuisine-root .kitchen-object[data-item=oven][data-cooking=true] .object-art{animation:cuisine-oven-glow 1.1s ease-in-out infinite alternate}
+.cuisine-root .kitchen-object[data-item=oven][data-cooking=true] .object-art{filter:drop-shadow(0 0 10px #f3a85d99)}
+.cuisine-root .kitchen-object[data-effect=peel] .object-art,.cuisine-root .kitchen-object[data-effect=season] .object-art{animation:cuisine-cut-pop .45s}
+.cuisine-root .kitchen-object[data-item=chicken] .season-mark{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+@keyframes cuisine-oven-glow{from{filter:drop-shadow(0 2px 2px #6d5c3930)}
+to{filter:drop-shadow(0 0 12px #e9995688)}
+}.cuisine-root .game-overlay{position:absolute;inset:0;z-index:1500;display:grid;place-items:center;padding:max(20px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) max(20px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));background:#e9ead9cf;backdrop-filter:blur(4px)}
+.cuisine-root .overlay-card{width:min(450px,100%);max-height:100%;overflow:auto;padding:clamp(20px,4vw,34px);border:1px solid #d4d5bd;border-radius:26px;background:#fffbed;box-shadow:0 15px 48px #58614722}
+.cuisine-root .overlay-card h2{margin:5px 0 18px;color:#526346}
+.cuisine-root .menu-recipe{width:100%;min-height:76px;display:grid;grid-template-columns:42px 1fr auto;align-items:center;gap:12px;text-align:left;margin-top:10px;padding:12px;border:1px solid #ccd3b9;border-radius:18px;color:#4a5642;background:#f3f3e4;touch-action:manipulation}
+.cuisine-root .menu-recipe:not(:disabled){cursor:pointer}
+.cuisine-root .menu-recipe:not(:disabled):active{transform:scale(.985);background:#e9efd9}
+.cuisine-root .menu-recipe strong,.cuisine-root .menu-recipe small{display:block}
+.cuisine-root .menu-recipe strong{font:500 19px Georgia,serif}
+.cuisine-root .menu-recipe small{margin-top:4px;font-size:11px;line-height:1.35;color:#77806a}
+.cuisine-root .recipe-emoji{font-size:28px}
+.cuisine-root .menu-recipe.unavailable{opacity:.62;background:#f2efe5}
+.cuisine-root .coming-soon{max-width:85px;text-align:right;font-size:10px;color:#80836f}
+.cuisine-root .result-card{text-align:center}
+.cuisine-root .result-icon{font-size:40px}
+.cuisine-root .result-card h2{margin-bottom:6px}
+.cuisine-root .result-card>p{font-size:13px;color:#78806c}
+.cuisine-root .result-card dl{display:flex;justify-content:center;gap:30px;margin:20px auto}
+.cuisine-root .result-card dl div{min-width:105px;padding:10px;border-radius:14px;background:#f0f0e2}
+.cuisine-root .result-card dt{font-size:11px;color:#79806d}
+.cuisine-root .result-card dd{margin:5px 0 0;font:500 20px Georgia,serif;color:#546346}
+.cuisine-root .result-actions{display:flex;justify-content:center;flex-wrap:wrap;gap:10px}
+.cuisine-root .result-actions button{min-height:46px;padding:0 16px;border:1px solid #bcc7a9;border-radius:14px;background:#e9efd9;color:#4b5c40;font:inherit;touch-action:manipulation}
+.cuisine-root .result-actions button+button{background:#f7f1df;border-color:#d3c6a6}
+.cuisine-root .orientation-screen{z-index:2000}
+@keyframes cuisine-oil-no{25%,75%{transform:translateX(-3px)}
+50%{transform:translateX(3px)}
+}
+@keyframes cuisine-cut-pop{50%{transform:scale(1.13);filter:brightness(1.12)}
+}.cuisine-root .kitchen-object[data-effect=cut] .object-art{animation:cuisine-cut-pop .45s}
+.cuisine-root .kitchen-object[data-item=olive-oil][data-effect=pour] .object-art{animation:cuisine-pour .65s ease-in-out}
+.cuisine-root .bowl-content[data-effect=dressed] svg{animation:cuisine-dressing .8s ease-out}
+@keyframes cuisine-pour{35%{transform:translate(-50%,-50%) rotate(18deg) translateY(4px)}
+70%{transform:translate(-50%,-50%) rotate(12deg)}
+}
+@keyframes cuisine-dressing{from{opacity:.2;transform:scale(.8)}
+to{opacity:1;transform:scale(1)}
+}
+@media(max-height:380px) and (orientation:landscape){.cuisine-root .overlay-card{padding:14px 22px;border-radius:20px}
+.cuisine-root .overlay-card h2{margin:2px 0 8px;font-size:22px}
+.cuisine-root .menu-recipe{min-height:58px;margin-top:6px;padding:7px 10px}
+.cuisine-root .recipe-emoji{font-size:23px}
+.cuisine-root .result-card dl{margin:10px auto}
+.cuisine-root .result-icon{font-size:29px}
+}
+@media(prefers-reduced-motion:reduce){.cuisine-root .kitchen-object[data-effect] .object-art,.cuisine-root .bowl-content[data-effect] svg{animation:none}
+}
+/* Maison du Chef Lapin interior: cream plaster wall, red trim like the roof, warm wood floor. Decorative only. */
+.cuisine-root{background:#f3e6cf}
+.cuisine-root #kitchen-surface{background-color:#f6e9d3;background-image:linear-gradient(180deg,transparent 0 67%,#c4513f 67% 68.4%,#fff1dc 68.4% 69.8%,transparent 69.8%),repeating-linear-gradient(90deg,#d2a577 0 46px,#c39467 46px 48px),radial-gradient(ellipse at 50% 15%,#fffaf0,#f6e9d3 70%);background-size:100% 100%,100% 30.2%,100% 70%;background-position:0 0,0 100%,0 0;background-repeat:no-repeat;box-shadow:inset 0 0 0 3px #a86a3e,inset 0 12px 26px #6e4b3a1f}
+.cuisine-root .stage-badge{border-color:#d9b393;background:#fff7ea;color:#7a5a43}
+.cuisine-root small{color:#9a6e52}
+.cuisine-root:not([data-recipe=chicken]) .table-art .zone-hearth{display:none}
+/* Labels keep a cream halo over the darker wood edge, red trim and brick hearth. */
+.cuisine-root .object-label{text-shadow:0 0 2px #fff8e8,0 0 4px #fff8e8,0 1px 6px #fff8e8}
+/* Maison du Chef Lapin UI polish: header guide chips, status pill, label pills, recipe cards, compact result card. */
+.cuisine-root h1{color:#5a3f30}
+.cuisine-root .stage-badge{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 6px;padding:5px 8px;border:2px solid #d9b393;border-radius:16px}
+.cuisine-root .stage-badge:empty{display:none}
+.cuisine-root .guide-step{padding:2px 8px;border-radius:10px;background:#f6e3c4;color:#6e4b3a;white-space:nowrap}
+.cuisine-root .guide-step b{color:#a8432f;font-weight:600}
+.cuisine-root .guide-sep{color:#c4a183}
+.cuisine-root #kitchen-message{padding:3px 12px;border:1px solid #e3c8a8;border-left:4px solid #a86a3e;border-radius:12px;background:#fff7ea;color:#6e4b3a;line-height:1.3}
+.cuisine-root #kitchen-message[data-tone=notice]{border-color:#e6b6a6;border-left-color:#c4513f;color:#93402f}
+.cuisine-root .object-label{padding:0 6px;border-radius:8px;background:#fff8ecdb;color:#5a4232;text-shadow:none;box-shadow:0 1px 0 #a86a3e33}
+.cuisine-root .kitchen-object.fixture .object-label{color:#6e4b3a}
+.cuisine-root .cuisine-dish{position:relative;display:block}
+.cuisine-root .cuisine-dish>svg{position:absolute;inset:0;width:100%;height:100%}
+.cuisine-root .cuisine-dish .dish-fill{position:absolute;display:block}
+.cuisine-root .cuisine-dish .dish-fill>svg{position:absolute;inset:0;display:block;width:100%;height:100%}
+.cuisine-root .cuisine-dish .dish-fill-bowl{left:14%;top:4%;width:72%;height:56%}
+.cuisine-root .cuisine-dish .dish-fill-baking{left:14%;top:8%;width:72%;height:56%}
+.cuisine-root .overlay-card{border:2px solid #d9b393;background:#fff8ec;box-shadow:0 14px 40px #6e4b3a2e}
+.cuisine-root .overlay-card>small,.cuisine-root .result-head small{color:#a8432f;letter-spacing:.1em}
+.cuisine-root .overlay-card h2{color:#5a3f30}
+.cuisine-root .menu-recipe{grid-template-columns:72px 1fr auto;border:2px solid #e3c8a8;background:#fffdf7;color:#5a3f30}
+.cuisine-root .menu-recipe:not(:disabled):active{background:#f6e3c4}
+.cuisine-root .menu-recipe strong{color:#5a3f30}
+.cuisine-root .menu-recipe small{color:#8a6a55;text-transform:none;letter-spacing:0;font-size:12px;font-weight:400}
+.cuisine-root .recipe-art{display:grid;place-items:center;width:72px;height:56px;border-radius:14px;background:#f6e3c4}
+.cuisine-root .recipe-art .cuisine-dish{width:60px;height:45px}
+.cuisine-root .recipe-go{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#c4513f;color:#fff8ec;font-size:20px;line-height:1}
+.cuisine-root .result-card{width:min(560px,100%);display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"art head" "art stats" "rabbit rewards" "actions actions";gap:8px 16px;align-items:center;text-align:left;padding:14px 20px 16px;border-color:#a86a3e}
+.cuisine-root .result-art{grid-area:art;display:grid;place-items:center;width:120px;height:96px;border-radius:50%;background:radial-gradient(circle,#fff1dc 55%,#f6e3c4 56%);box-shadow:0 0 0 3px #e0604f33}
+.cuisine-root .result-art .cuisine-dish{width:96px;height:72px;animation:cuisine-result-dish .6s cubic-bezier(.2,.8,.3,1.3) both}
+.cuisine-root .result-head{grid-area:head;min-width:0}
+.cuisine-root .result-head small{display:block;font-size:10px;text-transform:uppercase}
+.cuisine-root .result-card h2{margin:2px 0 2px;font-size:clamp(20px,3.2vw,26px);line-height:1.15}
+.cuisine-root .result-card .result-head p{margin:0;font-size:12px;color:#8a6a55}
+.cuisine-root .result-card dl{grid-area:stats;display:flex;flex-wrap:wrap;justify-content:flex-start;gap:8px;margin:0}
+.cuisine-root .result-card dl div{display:flex;align-items:baseline;gap:6px;min-width:0;padding:4px 10px;border-radius:12px;background:#f6ead6}
+.cuisine-root .result-card dt{font-size:11px;color:#8a6a55}
+.cuisine-root .result-card dd{margin:0;font:500 17px Georgia,serif;color:#5a3f30}
+.cuisine-root .result-actions{grid-area:actions;margin-top:2px}
+.cuisine-root .result-actions button{min-height:42px;border:2px solid #a86a3e;background:#c4513f;color:#fff8ec;font-weight:600}
+.cuisine-root .result-actions button+button{border-color:#d9b393;background:#fff1dc;color:#6e4b3a}
+@keyframes cuisine-result-dish{from{opacity:0;transform:scale(.6) translateY(8px)}to{opacity:1;transform:none}}
+@media(max-height:380px) and (orientation:landscape){.cuisine-root .game-overlay{padding-top:10px;padding-bottom:10px}
+.cuisine-root .result-card{padding:10px 16px 12px;gap:6px 14px}
+.cuisine-root .result-art{width:96px;height:80px}
+.cuisine-root .result-art .cuisine-dish{width:80px;height:60px}
+.cuisine-root .result-card h2{font-size:20px;margin:1px 0}
+.cuisine-root .result-actions button{min-height:38px}
+.cuisine-root .recipe-art{width:60px;height:46px}
+.cuisine-root .recipe-art .cuisine-dish{width:52px;height:39px}
+.cuisine-root .menu-recipe{grid-template-columns:60px 1fr auto}
+}
+@media(prefers-reduced-motion:reduce){.cuisine-root .result-art .cuisine-dish{animation:none}}
+@media(max-height:440px) and (orientation:landscape){.cuisine-root .recipe-card{padding:12px 20px 14px}
+.cuisine-root .recipe-card h2{margin:2px 0 4px;font-size:22px}
+.cuisine-root .recipe-card .menu-recipe{min-height:58px;margin-top:6px;padding:6px 10px}
+.cuisine-root .recipe-card .menu-recipe strong{font-size:18px}
+}
+/* Crowded top row (Économe · Sauce soja · Miel): stagger the soy label below its neighbours. Visual only. */
+.cuisine-root .kitchen-object[data-item=soy] .object-label{transform:translate(-50%,11px)}

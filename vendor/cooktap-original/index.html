@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cook Tap - Restaurant Simulator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- Header with restaurant info -->
+        <header class="game-header">
+            <h1>Cook Tap</h1>
+            <div class="stats">
+                <div class="stat">
+                    <span class="label">Score:</span>
+                    <span id="score">0</span>
+                </div>
+                <div class="stat">
+                    <span class="label">Orders:</span>
+                    <span id="orders-completed">0</span>
+                </div>
+                <div class="stat">
+                    <span class="label">Time:</span>
+                    <span id="game-time">00:00</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main game area -->
+        <main class="game-main">
+            <!-- Order queue -->
+            <section class="order-queue">
+                <h2>Orders</h2>
+                <div id="active-orders">
+                    <!-- Orders will be populated by JavaScript -->
+                </div>
+            </section>
+
+            <!-- Cooking stations -->
+            <section class="cooking-stations">
+                <div class="station" id="prep-station">
+                    <h3>Prep Station</h3>
+                    <div class="station-content">
+                        <div class="current-dish" id="prep-current-dish">
+                            <div class="dish-placeholder">Select a dish to prepare</div>
+                        </div>
+                        <div class="ingredients-panel" id="prep-ingredients">
+                            <!-- Ingredients will be populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="station" id="grill-station">
+                    <h3>Grill Station</h3>
+                    <div class="station-content">
+                        <div class="current-dish" id="grill-current-dish">
+                            <div class="dish-placeholder">Grill ready</div>
+                        </div>
+                        <div class="cooking-slots" id="grill-slots">
+                            <!-- Cooking slots will be populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="station" id="fryer-station">
+                    <h3>Deep Fryer</h3>
+                    <div class="station-content">
+                        <div class="current-dish" id="fryer-current-dish">
+                            <div class="dish-placeholder">Fryer ready</div>
+                        </div>
+                        <div class="cooking-slots" id="fryer-slots">
+                            <!-- Cooking slots will be populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="station" id="stove-station">
+                    <h3>Stove Station</h3>
+                    <div class="station-content">
+                        <div class="current-dish" id="stove-current-dish">
+                            <div class="dish-placeholder">Stove ready</div>
+                        </div>
+                        <div class="cooking-slots" id="stove-slots">
+                            <!-- Cooking slots will be populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Controls info -->
+        <footer class="controls-info">
+            <div class="controls-section">
+                <h4>Current Recipe Keys:</h4>
+                <div id="recipe-keys">
+                    <span class="key-hint">Select a dish to see controls</span>
+                </div>
+            </div>
+            <div class="controls-section">
+                <h4>General Controls:</h4>
+                        <div class="general-keys">
+            <span class="key-combo"><kbd>1-9</kbd> Select Order</span>
+            <span class="key-combo"><kbd>Space</kbd> Serve Dish</span>
+            <span class="key-combo"><kbd>Enter</kbd> Retrieve Cooked Items</span>
+            <span class="key-combo"><kbd>Delete</kbd>/<kbd>Backspace</kbd> Clean Station</span>
+            <span class="key-combo"><kbd>Esc</kbd> Cancel Current</span>
+        </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Game scripts -->
+    <script src="js/dish-system.js"></script>
+    <script src="js/cooking-stations.js"></script>
+    <script src="js/order-system.js"></script>
+    <script src="js/input-handler.js"></script>
+    <script src="js/game.js"></script>
+    
+    <script>
+        // Initialize game when page loads
+        window.dishSystem = new DishSystem();
+        
+        // Initialize game after dish system loads
+        const initializeGame = async () => {
+            const cookTap = new CookTapGame();
+            // Make cookTap available globally
+            window.cookTap = cookTap;
+            
+            // Auto-start the game after initialization
+            setTimeout(async () => {
+                if (cookTap.start) {
+                    await cookTap.start();
+                }
+            }, 500);
+        };
+        
+        initializeGame();
+    </script>
+</body>
+</html>

@@ -1,0 +1,670 @@
+[
+  {
+    "kind": "tutorial",
+    "aided": true,
+    "species": "paille",
+    "budget": [
+      {
+        "step": "D\u00e9part",
+        "minutes": 0,
+        "pattes": 300,
+        "grass": 10,
+        "hearts": 12
+      },
+      {
+        "step": "Paille et r\u00e9compense",
+        "minutes": 0,
+        "pattes": 300,
+        "grass": 18,
+        "hearts": 12
+      },
+      {
+        "step": "Ferme et r\u00e9compense",
+        "minutes": 0,
+        "pattes": 240,
+        "grass": 38,
+        "hearts": 12
+      },
+      {
+        "step": "Production lanc\u00e9e",
+        "minutes": 0,
+        "pattes": 230,
+        "grass": 38,
+        "hearts": 12
+      },
+      {
+        "step": "Herbe r\u00e9colt\u00e9e et r\u00e9compense",
+        "minutes": 0,
+        "pattes": 260,
+        "grass": 58,
+        "hearts": 12
+      },
+      {
+        "step": "Neige et r\u00e9compense",
+        "minutes": 0,
+        "pattes": 280,
+        "grass": 56,
+        "hearts": 12
+      },
+      {
+        "step": "Reproduction et r\u00e9compense",
+        "minutes": 0,
+        "pattes": 280,
+        "grass": 76,
+        "hearts": 12
+      },
+      {
+        "step": "Transfert et r\u00e9compense",
+        "minutes": 0,
+        "pattes": 310,
+        "grass": 76,
+        "hearts": 12
+      },
+      {
+        "step": "Accueil et r\u00e9compense",
+        "minutes": 0,
+        "pattes": 360,
+        "grass": 76,
+        "hearts": 12
+      }
+    ],
+    "simulationMinutes": 0
+  },
+  {
+    "kind": "tutorial",
+    "aided": true,
+    "species": "brumelin",
+    "budget": [
+      {
+        "step": "D\u00e9part",
+        "minutes": 0,
+        "pattes": 300,
+        "grass": 10,
+        "hearts": 12
+      },
+      {
+        "step": "Paille et r\u00e9compense",
+        "minutes": 0,
+        "pattes": 300,
+        "grass": 18,
+        "hearts": 12
+      },
+      {
+        "step": "Ferme et r\u00e9compense",
+        "minutes": 0,
+        "pattes": 240,
+        "grass": 38,
+        "hearts": 12
+      },
+      {
+        "step": "Production lanc\u00e9e",
+        "minutes": 0,
+        "pattes": 230,
+        "grass": 38,
+        "hearts": 12
+      },
+      {
+        "step": "Herbe r\u00e9colt\u00e9e et r\u00e9compense",
+        "minutes": 0,
+        "pattes": 260,
+        "grass": 58,
+        "hearts": 12
+      },
+      {
+        "step": "Neige et r\u00e9compense",
+        "minutes": 0,
+        "pattes": 280,
+        "grass": 56,
+        "hearts": 12
+      },
+      {
+        "step": "Reproduction et r\u00e9compense",
+        "minutes": 0,
+        "pattes": 280,
+        "grass": 76,
+        "hearts": 12
+      },
+      {
+        "step": "Transfert et r\u00e9compense",
+        "minutes": 0,
+        "pattes": 310,
+        "grass": 76,
+        "hearts": 12
+      },
+      {
+        "step": "Accueil et r\u00e9compense",
+        "minutes": 0,
+        "pattes": 360,
+        "grass": 76,
+        "hearts": 12
+      }
+    ],
+    "simulationMinutes": 0
+  },
+  {
+    "kind": "tutorial",
+    "aided": false,
+    "species": "paille",
+    "budget": [
+      {
+        "step": "D\u00e9part",
+        "minutes": 0,
+        "pattes": 300,
+        "grass": 10,
+        "hearts": 12
+      },
+      {
+        "step": "Paille et r\u00e9compense",
+        "minutes": 0,
+        "pattes": 300,
+        "grass": 18,
+        "hearts": 12
+      },
+      {
+        "step": "Ferme et r\u00e9compense",
+        "minutes": 0,
+        "pattes": 240,
+        "grass": 38,
+        "hearts": 12
+      },
+      {
+        "step": "Production lanc\u00e9e",
+        "minutes": 0,
+        "pattes": 230,
+        "grass": 38,
+        "hearts": 12
+      },
+      {
+        "step": "Herbe r\u00e9colt\u00e9e et r\u00e9compense",
+        "minutes": 5,
+        "pattes": 260,
+        "grass": 58,
+        "hearts": 12
+      },
+      {
+        "step": "Neige et r\u00e9compense",
+        "minutes": 5,
+        "pattes": 280,
+        "grass": 56,
+        "hearts": 12
+      },
+      {
+        "step": "Reproduction et r\u00e9compense",
+        "minutes": 5,
+        "pattes": 280,
+        "grass": 76,
+        "hearts": 12
+      },
+      {
+        "step": "Transfert et r\u00e9compense",
+        "minutes": 25,
+        "pattes": 310,
+        "grass": 76,
+        "hearts": 12
+      },
+      {
+        "step": "Accueil et r\u00e9compense",
+        "minutes": 30,
+        "pattes": 360,
+        "grass": 76,
+        "hearts": 12
+      }
+    ],
+    "simulationMinutes": 30
+  },
+  {
+    "kind": "tutorial",
+    "aided": false,
+    "species": "brumelin",
+    "budget": [
+      {
+        "step": "D\u00e9part",
+        "minutes": 0,
+        "pattes": 300,
+        "grass": 10,
+        "hearts": 12
+      },
+      {
+        "step": "Paille et r\u00e9compense",
+        "minutes": 0,
+        "pattes": 300,
+        "grass": 18,
+        "hearts": 12
+      },
+      {
+        "step": "Ferme et r\u00e9compense",
+        "minutes": 0,
+        "pattes": 240,
+        "grass": 38,
+        "hearts": 12
+      },
+      {
+        "step": "Production lanc\u00e9e",
+        "minutes": 0,
+        "pattes": 230,
+        "grass": 38,
+        "hearts": 12
+      },
+      {
+        "step": "Herbe r\u00e9colt\u00e9e et r\u00e9compense",
+        "minutes": 5,
+        "pattes": 260,
+        "grass": 58,
+        "hearts": 12
+      },
+      {
+        "step": "Neige et r\u00e9compense",
+        "minutes": 5,
+        "pattes": 280,
+        "grass": 56,
+        "hearts": 12
+      },
+      {
+        "step": "Reproduction et r\u00e9compense",
+        "minutes": 5,
+        "pattes": 280,
+        "grass": 76,
+        "hearts": 12
+      },
+      {
+        "step": "Transfert et r\u00e9compense",
+        "minutes": 25,
+        "pattes": 310,
+        "grass": 76,
+        "hearts": 12
+      },
+      {
+        "step": "Accueil et r\u00e9compense",
+        "minutes": 40,
+        "pattes": 360,
+        "grass": 76,
+        "hearts": 12
+      }
+    ],
+    "simulationMinutes": 40
+  },
+  {
+    "kind": "24h",
+    "aided": true,
+    "species": "paille",
+    "visits": [
+      1,
+      4,
+      8,
+      12,
+      18,
+      24
+    ],
+    "starting": {
+      "pattes": 280,
+      "grass": 86,
+      "hearts": 13
+    },
+    "end": {
+      "pattes": 1672,
+      "grass": 346,
+      "hearts": 17
+    },
+    "snapshots": [
+      {
+        "hour": 1,
+        "pattes": 304,
+        "grass": 136,
+        "hearts": 13
+      },
+      {
+        "hour": 4,
+        "pattes": 496,
+        "grass": 176,
+        "hearts": 15
+      },
+      {
+        "hour": 8,
+        "pattes": 718,
+        "grass": 216,
+        "hearts": 15
+      },
+      {
+        "hour": 12,
+        "pattes": 940,
+        "grass": 256,
+        "hearts": 15
+      },
+      {
+        "hour": 18,
+        "pattes": 1282,
+        "grass": 296,
+        "hearts": 15
+      },
+      {
+        "hour": 24,
+        "pattes": 1672,
+        "grass": 346,
+        "hearts": 17
+      }
+    ],
+    "optionalExpansionNetCost": 400
+  },
+  {
+    "kind": "24h",
+    "aided": true,
+    "species": "paille",
+    "visits": [
+      8,
+      24
+    ],
+    "starting": {
+      "pattes": 280,
+      "grass": 86,
+      "hearts": 13
+    },
+    "end": {
+      "pattes": 1576,
+      "grass": 186,
+      "hearts": 17
+    },
+    "snapshots": [
+      {
+        "hour": 8,
+        "pattes": 754,
+        "grass": 136,
+        "hearts": 15
+      },
+      {
+        "hour": 24,
+        "pattes": 1576,
+        "grass": 186,
+        "hearts": 17
+      }
+    ],
+    "optionalExpansionNetCost": 400
+  },
+  {
+    "kind": "24h",
+    "aided": true,
+    "species": "brumelin",
+    "visits": [
+      1,
+      4,
+      8,
+      12,
+      18,
+      24
+    ],
+    "starting": {
+      "pattes": 280,
+      "grass": 86,
+      "hearts": 14
+    },
+    "end": {
+      "pattes": 1672,
+      "grass": 346,
+      "hearts": 18
+    },
+    "snapshots": [
+      {
+        "hour": 1,
+        "pattes": 304,
+        "grass": 136,
+        "hearts": 14
+      },
+      {
+        "hour": 4,
+        "pattes": 496,
+        "grass": 176,
+        "hearts": 16
+      },
+      {
+        "hour": 8,
+        "pattes": 718,
+        "grass": 216,
+        "hearts": 16
+      },
+      {
+        "hour": 12,
+        "pattes": 940,
+        "grass": 256,
+        "hearts": 16
+      },
+      {
+        "hour": 18,
+        "pattes": 1282,
+        "grass": 296,
+        "hearts": 16
+      },
+      {
+        "hour": 24,
+        "pattes": 1672,
+        "grass": 346,
+        "hearts": 18
+      }
+    ],
+    "optionalExpansionNetCost": 400
+  },
+  {
+    "kind": "24h",
+    "aided": true,
+    "species": "brumelin",
+    "visits": [
+      8,
+      24
+    ],
+    "starting": {
+      "pattes": 280,
+      "grass": 86,
+      "hearts": 14
+    },
+    "end": {
+      "pattes": 1576,
+      "grass": 186,
+      "hearts": 18
+    },
+    "snapshots": [
+      {
+        "hour": 8,
+        "pattes": 754,
+        "grass": 136,
+        "hearts": 16
+      },
+      {
+        "hour": 24,
+        "pattes": 1576,
+        "grass": 186,
+        "hearts": 18
+      }
+    ],
+    "optionalExpansionNetCost": 400
+  },
+  {
+    "kind": "24h",
+    "aided": false,
+    "species": "paille",
+    "visits": [
+      1,
+      4,
+      8,
+      12,
+      18,
+      24
+    ],
+    "starting": {
+      "pattes": 280,
+      "grass": 86,
+      "hearts": 13
+    },
+    "end": {
+      "pattes": 1655,
+      "grass": 346,
+      "hearts": 17
+    },
+    "snapshots": [
+      {
+        "hour": 1,
+        "pattes": 287,
+        "grass": 136,
+        "hearts": 13
+      },
+      {
+        "hour": 4,
+        "pattes": 479,
+        "grass": 176,
+        "hearts": 15
+      },
+      {
+        "hour": 8,
+        "pattes": 701,
+        "grass": 216,
+        "hearts": 15
+      },
+      {
+        "hour": 12,
+        "pattes": 923,
+        "grass": 256,
+        "hearts": 15
+      },
+      {
+        "hour": 18,
+        "pattes": 1265,
+        "grass": 296,
+        "hearts": 15
+      },
+      {
+        "hour": 24,
+        "pattes": 1655,
+        "grass": 346,
+        "hearts": 17
+      }
+    ],
+    "optionalExpansionNetCost": 400
+  },
+  {
+    "kind": "24h",
+    "aided": false,
+    "species": "paille",
+    "visits": [
+      8,
+      24
+    ],
+    "starting": {
+      "pattes": 280,
+      "grass": 86,
+      "hearts": 13
+    },
+    "end": {
+      "pattes": 1559,
+      "grass": 186,
+      "hearts": 17
+    },
+    "snapshots": [
+      {
+        "hour": 8,
+        "pattes": 737,
+        "grass": 136,
+        "hearts": 15
+      },
+      {
+        "hour": 24,
+        "pattes": 1559,
+        "grass": 186,
+        "hearts": 17
+      }
+    ],
+    "optionalExpansionNetCost": 400
+  },
+  {
+    "kind": "24h",
+    "aided": false,
+    "species": "brumelin",
+    "visits": [
+      1,
+      4,
+      8,
+      12,
+      18,
+      24
+    ],
+    "starting": {
+      "pattes": 280,
+      "grass": 86,
+      "hearts": 14
+    },
+    "end": {
+      "pattes": 1650,
+      "grass": 346,
+      "hearts": 18
+    },
+    "snapshots": [
+      {
+        "hour": 1,
+        "pattes": 282,
+        "grass": 136,
+        "hearts": 14
+      },
+      {
+        "hour": 4,
+        "pattes": 474,
+        "grass": 176,
+        "hearts": 16
+      },
+      {
+        "hour": 8,
+        "pattes": 696,
+        "grass": 216,
+        "hearts": 16
+      },
+      {
+        "hour": 12,
+        "pattes": 918,
+        "grass": 256,
+        "hearts": 16
+      },
+      {
+        "hour": 18,
+        "pattes": 1260,
+        "grass": 296,
+        "hearts": 16
+      },
+      {
+        "hour": 24,
+        "pattes": 1650,
+        "grass": 346,
+        "hearts": 18
+      }
+    ],
+    "optionalExpansionNetCost": 400
+  },
+  {
+    "kind": "24h",
+    "aided": false,
+    "species": "brumelin",
+    "visits": [
+      8,
+      24
+    ],
+    "starting": {
+      "pattes": 280,
+      "grass": 86,
+      "hearts": 14
+    },
+    "end": {
+      "pattes": 1554,
+      "grass": 186,
+      "hearts": 18
+    },
+    "snapshots": [
+      {
+        "hour": 8,
+        "pattes": 732,
+        "grass": 136,
+        "hearts": 16
+      },
+      {
+        "hour": 24,
+        "pattes": 1554,
+        "grass": 186,
+        "hearts": 18
+      }
+    ],
+    "optionalExpansionNetCost": 400
+  }
+]

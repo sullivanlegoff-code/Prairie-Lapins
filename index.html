@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#b0d18b"><link rel="icon" href="data:,"><title>Prairie de lapins</title>
+  <script src="%BASE_URL%assets/app/standalone-zoom.js"></script>
+  <!-- app-install:start -->
+  <link rel="manifest" href="%BASE_URL%assets/app/manifest.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="%BASE_URL%assets/app/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Prairie de lapins">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <!-- app-install:end -->
+</head>
+<body>
+  <!-- Visible before any script: covers the game until « Jouer » (see src/display/loadingScreen.ts). -->
+  <section id="loading-screen" role="dialog" aria-modal="true" aria-labelledby="loading-title" data-state="loading">
+    <div class="loading-card">
+      <h1 id="loading-title">Prairie de lapins</h1>
+      <div class="loading-bar" role="progressbar" aria-label="Chargement" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
+      <ol id="loading-steps"><li>… Chargement</li></ol>
+      <p id="loading-message" role="status"></p>
+      <div class="actions"><button id="loading-play" type="button" disabled>Jouer</button><button id="loading-retry" class="secondary" type="button" hidden>Réessayer</button></div>
+    </div>
+  </section>
+  <main id="app" inert>
+    <div id="game" aria-label="Prairie : glissez pour déplacer la vue, pincez pour zoomer, touchez pour sélectionner"></div>
+    <header id="hud">
+      <button id="player-progress" type="button" disabled aria-haspopup="dialog" aria-controls="player-progress-dialog" aria-label="Niveau du joueur indisponible">
+        <span class="player-xp-track"><span id="player-xp-label">Niveau indisponible</span><span id="player-xp-bar" role="progressbar" aria-label="XP du joueur" aria-valuemin="0"><span id="player-xp-fill"></span></span></span><span id="player-level" aria-hidden="true">—</span>
+      </button>
+      <div class="resource coin-counter" aria-label="Pièces"><strong id="pattes">—</strong><img class="coin-icon" src="%BASE_URL%assets/currency/coin.png" width="28" height="28" alt="" aria-hidden="true"></div>
+      <div class="resource grass" aria-label="Herbes"><strong id="grass">—</strong><span aria-hidden="true">♧</span></div>
+      <button id="open-hearts" type="button" class="resource hearts" aria-label="Cœurs : solde et récompense">
+        <strong id="hearts">—</strong><svg aria-hidden="true" viewBox="0 0 32 32"><path d="M16 28C12 24 3 19 3 11C3 3 13 2 16 9C21 1 30 6 29 13C28 20 20 25 16 28Z" fill="#ba657e"/><path d="M8 11Q8 7 12 9" fill="none" stroke="#ffeaf0" stroke-width="2.5" stroke-linecap="round"/></svg>
+      </button>
+      <nav aria-label="Navigation principale">
+        <button id="recenter-view" type="button" class="icon secondary meadow-tool" aria-label="Recentrer la vue" title="Recentrer la vue"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="6"/><path d="M12 3V7M12 17V21M3 12H7M17 12H21"/></svg></button>
+        <button id="open-photo" type="button" class="icon secondary meadow-tool" aria-label="Mode photo" title="Mode photo"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 6L9 3H15L16 6H20Q22 6 22 8V19Q22 21 20 21H4Q2 21 2 19V8Q2 6 4 6Z"/><circle cx="12" cy="13" r="4"/><path d="M18 9H20"/></svg></button>
+        <button id="open-settings" type="button" class="icon secondary meadow-tool" aria-label="Paramètres" title="Paramètres"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 3-1 3-3 1-2 4 2 2v3l4 3 3-1 3 1 4-3v-3l2-2-2-4-3-1-1-3Z"/><circle cx="12" cy="11" r="3"/></svg></button>
+      </nav>
+    </header>
+    <span id="player-xp-feedback" role="status" hidden></span>
+    <button id="open-missions" type="button" class="secondary">Missions <span id="missions-badge" hidden aria-hidden="true"></span></button>
+    <div id="meadow-actions">
+      <button id="open-shop" type="button" class="meadow-nav"><img class="meadow-nav-icon" src="%BASE_URL%assets/ui/navigation/shop.png" width="168" height="168" alt="" aria-hidden="true" draggable="false"><span class="meadow-nav-label">Boutique</span></button>
+      <button id="open-arrange" type="button" class="secondary meadow-nav"><img class="meadow-nav-icon" src="%BASE_URL%assets/ui/navigation/arrange.png" width="168" height="168" alt="" aria-hidden="true" draggable="false"><span class="meadow-nav-label">Aménager</span></button>
+      <button id="open-collection" type="button" class="meadow-nav"><img class="meadow-nav-icon" src="%BASE_URL%assets/ui/navigation/collection.png" width="168" height="168" alt="" aria-hidden="true" draggable="false"><span class="meadow-nav-label">Collection</span></button>
+      <button id="open-preview-tools" type="button" class="secondary" hidden>Outils test</button>
+    </div>
+    <div id="arrange-banner" hidden><span>AMÉNAGEMENT · aperçu avant confirmation</span><button id="exit-arrange" class="secondary" type="button">Quitter</button></div>
+    <button id="photo-return" type="button" class="secondary" hidden>Retour au jeu</button>
+    <button id="save-warning" type="button" hidden>Vérifier la sauvegarde</button>
+    <div id="toast" role="status" hidden></div>
+    <span id="dev-badge" hidden>MODE TEST — PARTIE SÉPARÉE</span>
+    <aside id="game-panel" aria-labelledby="panel-title" hidden>
+      <div class="panel-header"><button id="panel-back" type="button" class="icon secondary" aria-label="Retour au menu précédent" title="Retour au menu précédent" hidden>‹</button><h2 id="panel-title"></h2><button id="close-panel" type="button" class="icon secondary" aria-label="Fermer le panneau">×</button></div>
+      <div id="panel-content" class="panel-scroll"></div>
+      <section id="settings-content" class="panel-scroll" hidden>
+        <section class="settings-section"><h3>Jeu</h3><button id="tutorial-toggle" class="secondary" type="button">Tutoriel</button><p class="small">Le guidage est facultatif ; toutes les fonctions restent accessibles.</p></section>
+        <section class="settings-section sound-settings"><h3>Son et accessibilité</h3><div class="sound-channel"><button id="music-toggle" class="secondary icon" type="button" aria-pressed="true" aria-label="Musique"></button><label for="music-volume">Musique</label><input id="music-volume" type="range" min="0" max="100" step="5" value="50" aria-label="Volume de la musique"><output id="music-volume-value" for="music-volume">50 %</output></div><div class="sound-channel"><button id="effects-toggle" class="secondary icon" type="button" aria-pressed="true" aria-label="Bruitages"></button><label for="effects-volume">Bruitages</label><input id="effects-volume" type="range" min="0" max="100" step="5" value="80" aria-label="Volume des bruitages"><output id="effects-volume-value" for="effects-volume">80 %</output></div><p class="small">Les transitions suivent la réduction des mouvements de votre appareil. Aucun son n’est obligatoire.</p></section>
+        <section class="settings-section">
+        <h3>Sauvegarde</h3>
+        <p id="save-status" role="status">Chargement de la partie…</p>
+        <p id="saved-at" class="small"></p>
+        <p class="small"><strong id="rabbits">—</strong> lapins · <span class="coin-amount"><strong id="stored-income">—</strong><img class="coin-icon" src="%BASE_URL%assets/currency/coin.png" width="20" height="20" alt="" aria-hidden="true"><span class="sr-only"> pièces</span></span> en attente dans les enclos.</p>
+        <div class="actions">
+          <button id="export-game" type="button">Exporter ma partie</button>
+          <button id="retry-save" type="button" hidden>Réessayer la sauvegarde</button>
+          <button id="export-unreadable" type="button" class="secondary" hidden>Exporter le contenu protégé</button>
+          <button id="download-fallback" type="button" hidden>Télécharger le JSON</button>
+        </div>
+        </section>
+        <section class="settings-section settings-danger"><h3>Remplacer la partie</h3><p class="small">Ces actions demandent une confirmation. Exportez votre partie pour en garder une copie.</p><div class="actions"><button id="import-game" type="button" class="secondary action-danger">Importer une partie</button><button id="restart-game" type="button" class="secondary action-danger">Recommencer avec confirmation</button></div></section>
+        <input id="import-file" type="file" accept=".json,application/json" hidden>
+        <p id="save-notice" role="status"></p>
+        <p class="small">La sauvegarde locale peut être effacée par le navigateur. Gardez un export de secours. Changer de domaine, de port ou passer à un site HTTPS nécessite un export/import.</p>
+        <p id="game-version" class="small"></p>
+        <section class="settings-section"><h3>Laboratoire</h3><p><a id="environment-link">Ouvrir le laboratoire de test</a></p>
+        <section id="devtools" hidden aria-label="Outils de développement"></section>
+        </section>
+      </section>
+    </aside>
+    <section id="tutorial" aria-label="Tutoriel facultatif" hidden></section>
+    <div id="portrait-notice"><div><span class="rotate-symbol" aria-hidden="true">↻</span><h2>Un peu plus de place pour vos lapins</h2><p>Tournez le téléphone en paysage.<br>Votre partie reste conservée.</p><button id="continue-portrait" type="button">Continuer en portrait</button></div></div>
+  </main>
+  <dialog id="player-level-dialog" aria-labelledby="level-up-title">
+    <h2 id="level-up-title"></h2><p>Bravo, ta prairie grandit avec toi !</p>
+    <p id="level-up-range" hidden></p><p id="level-up-reward"></p>
+    <section id="level-up-unlocks" hidden aria-label="Nouveaux contenus disponibles"></section>
+    <button id="continue-level-up" type="button">Continuer</button>
+  </dialog>
+  <dialog id="player-progress-dialog" aria-labelledby="player-detail-level">
+    <h2 id="player-detail-level">Niveau du joueur</h2>
+    <p id="player-detail-total"></p><p id="player-detail-remaining"></p>
+    <p class="small">La progression du joueur est distincte de l’affection des lapins et du niveau de leurs habitats.</p>
+    <button id="close-player-progress" type="button">Fermer</button>
+  </dialog>
+  <dialog id="game-dialog" aria-label="Confirmation ou découverte"></dialog>
+  <dialog id="import-dialog" aria-labelledby="import-title" aria-describedby="import-summary import-warning">
+    <h2 id="import-title">Importer cette partie ?</h2>
+    <p id="import-summary"></p>
+    <p id="import-warning">Cet import remplacera votre progression actuelle après enregistrement réussi. Vous pouvez exporter votre partie avant de continuer.</p>
+    <div class="actions"><button id="export-before-import" type="button" class="secondary">Exporter la partie actuelle d’abord</button><button id="confirm-import" type="button">Confirmer le remplacement</button><button id="cancel-import" type="button" class="secondary">Annuler</button></div>
+    <p id="import-error" role="alert"></p>
+  </dialog>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

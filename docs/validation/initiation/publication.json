@@ -1,0 +1,73 @@
+{
+  "applicationRevision": "f2c3ad9f360c317c7bcd7e72644ade5d5af98468",
+  "tree": "771aac52f7e078a08f141372aecc4a501df3ca15",
+  "workflowRun": 38092154903,
+  "url": "https://github.com/sullivanlegoff-code/Project-L/actions/runs/38092154903",
+  "jobs": [
+    {
+      "id": 114330618622,
+      "name": "build",
+      "conclusion": "success"
+    },
+    {
+      "id": 114330901211,
+      "name": "deploy",
+      "conclusion": "success"
+    }
+  ],
+  "tests": 682,
+  "testFiles": 24,
+  "typecheck": true,
+  "builds": 4,
+  "publicSuites": 12,
+  "publicChecks": 45,
+  "routes": [
+    {
+      "url": "https://sullivanlegoff-code.github.io/Project-L/",
+      "revision": "f2c3ad9f360c317c7bcd7e72644ade5d5af98468",
+      "saveFormat": 8,
+      "html": 200,
+      "application": 200,
+      "featuresChecked": true
+    },
+    {
+      "url": "https://sullivanlegoff-code.github.io/Project-L/dev/",
+      "revision": "f2c3ad9f360c317c7bcd7e72644ade5d5af98468",
+      "saveFormat": 8,
+      "html": 200,
+      "application": 200,
+      "featuresChecked": true
+    },
+    {
+      "url": "https://sullivanlegoff-code.github.io/Project-L/preview/accounts/",
+      "revision": "3e70d9e8cbe9228c63c73db007fff199199d6470",
+      "saveFormat": 4,
+      "html": 200,
+      "application": 200,
+      "featuresChecked": true
+    },
+    {
+      "url": "https://sullivanlegoff-code.github.io/Project-L/preview/decorations/",
+      "revision": "85fe255ec8e7e65213cd570f91f5bb1fe66a30d7",
+      "saveFormat": 5,
+      "html": 200,
+      "application": 200,
+      "featuresChecked": true
+    }
+  ],
+  "passed": true,
+  "artifacts": [
+    {
+      "id": 11684726934,
+      "name": "github-pages",
+      "expiresAt": "2026-10-11T22:39:34Z",
+      "url": "https://github.com/sullivanlegoff-code/Project-L/actions/runs/38092154903/artifacts/11684726934"
+    },
+    {
+      "id": 11684652648,
+      "name": "public-v8-validation-f2c3ad9f360c317c7bcd7e72644ade5d5af98468",
+      "expiresAt": "2026-11-09T22:43:25Z",
+      "url": "https://github.com/sullivanlegoff-code/Project-L/actions/runs/38092154903/artifacts/11684652648"
+    }
+  ]
+}

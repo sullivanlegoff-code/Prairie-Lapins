@@ -1,0 +1,9 @@
+/vendor/.cooktap-git/
+node_modules/
+dist/
+netlify-site/
+coverage/
+output/
+.env
+.env.*
+!.env.example

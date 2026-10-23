@@ -1,0 +1,109 @@
+{
+  "url": "http://127.0.0.1:5227/Project-L/dev/",
+  "version": "Version : Prairie de lapins · île à neuf parcelles · v8 · build ui-comf",
+  "fixture": "reproduction",
+  "viewportAndScroll": "Shop/rabbit852×393, collection390×844, settings667×375; content scroll starts at top via real wheel gesture.",
+  "state": {
+    "version": 8,
+    "lastSimulatedAt": 1791717236010,
+    "nextId": 6,
+    "pattes": 500000,
+    "grass": 996,
+    "buildings": [
+      {
+        "id": "building-1",
+        "kind": "enclosure",
+        "x": 16,
+        "y": 16,
+        "incomeUnits": 112,
+        "order": null,
+        "breeding": null,
+        "baby": null,
+        "habitat": {
+          "type": "universal",
+          "level": 1
+        }
+      },
+      {
+        "id": "building-4",
+        "kind": "nest",
+        "x": 12,
+        "y": 12,
+        "incomeUnits": 0,
+        "order": null,
+        "breeding": null,
+        "baby": null,
+        "habitat": null
+      },
+      {
+        "id": "building-5",
+        "kind": "nursery",
+        "x": 20,
+        "y": 12,
+        "incomeUnits": 0,
+        "order": null,
+        "breeding": null,
+        "baby": null,
+        "habitat": null
+      }
+    ],
+    "rabbits": [
+      {
+        "id": "rabbit-2",
+        "species": "paille",
+        "affection": 2,
+        "enclosureId": "building-1"
+      },
+      {
+        "id": "rabbit-3",
+        "species": "neige",
+        "affection": 2,
+        "enclosureId": "building-1"
+      }
+    ],
+    "discovered": [
+      "paille",
+      "neige"
+    ],
+    "pityFailures": 0,
+    "hearts": 100,
+    "nextHeartGiftAt": 1791803636006,
+    "missions": {
+      "events": {
+        "collectOrder": 0,
+        "breed": 0,
+        "transferBirth": 0,
+        "welcome": 0,
+        "placeDecoration": 0
+      },
+      "completed": [
+        "cozy-nest",
+        "welcome-babies",
+        "first-meal",
+        "parents-ready"
+      ],
+      "claimed": [],
+      "daily": {
+        "referenceAt": 1791717236006,
+        "cycleIndex": 0,
+        "progress": {
+          "collect-pattes": 0,
+          "collect-grass": 0,
+          "gain-affection": 2
+        },
+        "claimed": [],
+        "bonusClaimed": false
+      }
+    },
+    "acquiredParcels": [
+      "center"
+    ],
+    "decorations": []
+  },
+  "captures": [
+    "852x393-boutique-matched",
+    "852x393-lapin-matched",
+    "390x844-collection-matched",
+    "667x375-parametres-matched"
+  ]
+}

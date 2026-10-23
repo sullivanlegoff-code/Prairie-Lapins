@@ -1,0 +1,707 @@
+{
+  "source": "public/assets/buildings/farm-windmill.png",
+  "sourceSha256": "2aadc592cd0d709979fd36c583fd6dec4d53094d383f8b3bc6b91293f8854a8e",
+  "sourceBytes": 1256162,
+  "width": 1254,
+  "height": 1254,
+  "nestStrong": {
+    "grass": {
+      "median": "#d0dc82",
+      "hsv": [
+        68,
+        40.91,
+        86.27
+      ]
+    },
+    "trees": {
+      "median": "#a0ca88",
+      "hsv": [
+        98.18,
+        32.67,
+        79.22
+      ]
+    },
+    "treeShadow": {
+      "median": "#82ba7c",
+      "hsv": [
+        114.19,
+        33.33,
+        72.94
+      ]
+    },
+    "dome": {
+      "median": "#f2baac",
+      "hsv": [
+        12,
+        28.93,
+        94.9
+      ]
+    },
+    "path": {
+      "median": "#f2b892",
+      "hsv": [
+        23.75,
+        39.67,
+        94.9
+      ]
+    }
+  },
+  "original": {
+    "grass": {
+      "sample": [
+        0,
+        700,
+        600,
+        450
+      ],
+      "pixels": 57506,
+      "median": "#b3e97b",
+      "hsv": [
+        89.45,
+        47.21,
+        91.37
+      ]
+    },
+    "grassShade": {
+      "sample": [
+        0,
+        700,
+        600,
+        450
+      ],
+      "pixels": 5934,
+      "median": "#5fa455",
+      "hsv": [
+        112.41,
+        48.17,
+        64.31
+      ]
+    },
+    "trees": {
+      "sample": [
+        560,
+        160,
+        300,
+        160
+      ],
+      "pixels": 24407,
+      "median": "#92ecac",
+      "hsv": [
+        137.33,
+        38.14,
+        92.55
+      ]
+    },
+    "treeShadow": {
+      "sample": [
+        120,
+        300,
+        520,
+        420
+      ],
+      "pixels": 12246,
+      "median": "#54b084",
+      "hsv": [
+        151.3,
+        52.27,
+        69.02
+      ]
+    },
+    "roof": {
+      "sample": [
+        300,
+        380,
+        200,
+        150
+      ],
+      "pixels": 18142,
+      "median": "#d2767e",
+      "hsv": [
+        354.78,
+        43.81,
+        82.35
+      ]
+    },
+    "towerCream": {
+      "sample": [
+        300,
+        720,
+        70,
+        60
+      ],
+      "pixels": 3691,
+      "median": "#fdd4aa",
+      "hsv": [
+        30.36,
+        32.81,
+        99.22
+      ]
+    },
+    "towerBase": {
+      "sample": [
+        290,
+        800,
+        70,
+        60
+      ],
+      "pixels": 2945,
+      "median": "#fca67d",
+      "hsv": [
+        19.37,
+        50.4,
+        98.82
+      ]
+    },
+    "blades": {
+      "sample": [
+        690,
+        300,
+        140,
+        120
+      ],
+      "pixels": 5472,
+      "median": "#eeb67d",
+      "hsv": [
+        30.27,
+        47.48,
+        93.33
+      ]
+    },
+    "soil": {
+      "sample": [
+        860,
+        680,
+        160,
+        140
+      ],
+      "pixels": 22105,
+      "median": "#ac6f52",
+      "hsv": [
+        19.33,
+        52.33,
+        67.45
+      ]
+    },
+    "door": {
+      "sample": [
+        585,
+        770,
+        55,
+        95
+      ],
+      "pixels": 1148,
+      "median": "#b16546",
+      "hsv": [
+        17.38,
+        60.45,
+        69.41
+      ]
+    },
+    "outline": {
+      "sample": [
+        0,
+        0,
+        1254,
+        1254
+      ],
+      "pixels": 23809,
+      "median": "#702e16",
+      "hsv": [
+        16,
+        80.36,
+        43.92
+      ]
+    },
+    "fence": {
+      "sample": [
+        960,
+        560,
+        260,
+        320
+      ],
+      "pixels": 9292,
+      "median": "#fcf4e4",
+      "hsv": [
+        40,
+        9.52,
+        98.82
+      ]
+    },
+    "head": {
+      "sample": [
+        600,
+        520,
+        70,
+        40
+      ],
+      "pixels": 2800,
+      "median": "#fdfbf8",
+      "hsv": [
+        36,
+        1.98,
+        99.22
+      ]
+    },
+    "innerEar": {
+      "sample": [
+        590,
+        440,
+        90,
+        60
+      ],
+      "pixels": 2120,
+      "median": "#fdc1b1",
+      "hsv": [
+        12.63,
+        30.04,
+        99.22
+      ]
+    }
+  },
+  "variants": {
+    "light": {
+      "file": "public/assets/buildings/farm-windmill-light.png",
+      "strength": 0.5,
+      "bytes": 987686,
+      "savedPercent": 21.37,
+      "sha256": "9150fedf420e0b0ede7d985ad6f3b1b2ab128c7b7559c6ddf6404eeb66d8f159",
+      "alphaChanged": 0,
+      "headPixelsChanged": 0,
+      "changedRGBPixels": 684860,
+      "palette": {
+        "grass": {
+          "sample": [
+            0,
+            700,
+            600,
+            450
+          ],
+          "pixels": 57506,
+          "median": "#c4dc82",
+          "hsv": [
+            76,
+            40.91,
+            86.27
+          ]
+        },
+        "grassShade": {
+          "sample": [
+            0,
+            700,
+            600,
+            450
+          ],
+          "pixels": 5934,
+          "median": "#96ba6c",
+          "hsv": [
+            87.69,
+            41.94,
+            72.94
+          ]
+        },
+        "trees": {
+          "sample": [
+            560,
+            160,
+            300,
+            160
+          ],
+          "pixels": 24407,
+          "median": "#96de9a",
+          "hsv": [
+            123.33,
+            32.43,
+            87.06
+          ]
+        },
+        "treeShadow": {
+          "sample": [
+            120,
+            300,
+            520,
+            420
+          ],
+          "pixels": 12246,
+          "median": "#60ae74",
+          "hsv": [
+            135.38,
+            44.83,
+            68.24
+          ]
+        },
+        "roof": {
+          "sample": [
+            300,
+            380,
+            200,
+            150
+          ],
+          "pixels": 18142,
+          "median": "#d6888a",
+          "hsv": [
+            358.46,
+            36.45,
+            83.92
+          ]
+        },
+        "towerCream": {
+          "sample": [
+            300,
+            720,
+            70,
+            60
+          ],
+          "pixels": 3691,
+          "median": "#fed6b0",
+          "hsv": [
+            29.23,
+            30.71,
+            99.61
+          ]
+        },
+        "towerBase": {
+          "sample": [
+            290,
+            800,
+            70,
+            60
+          ],
+          "pixels": 2945,
+          "median": "#fcac86",
+          "hsv": [
+            19.32,
+            46.83,
+            98.82
+          ]
+        },
+        "blades": {
+          "sample": [
+            690,
+            300,
+            140,
+            120
+          ],
+          "pixels": 5472,
+          "median": "#eeb884",
+          "hsv": [
+            29.43,
+            44.54,
+            93.33
+          ]
+        },
+        "soil": {
+          "sample": [
+            860,
+            680,
+            160,
+            140
+          ],
+          "pixels": 22105,
+          "median": "#ac745a",
+          "hsv": [
+            19.02,
+            47.67,
+            67.45
+          ]
+        },
+        "door": {
+          "sample": [
+            585,
+            770,
+            55,
+            95
+          ],
+          "pixels": 1148,
+          "median": "#b26c4e",
+          "hsv": [
+            18,
+            56.18,
+            69.8
+          ]
+        },
+        "outline": {
+          "sample": [
+            0,
+            0,
+            1254,
+            1254
+          ],
+          "pixels": 23809,
+          "median": "#70341e",
+          "hsv": [
+            16.1,
+            73.21,
+            43.92
+          ]
+        },
+        "fence": {
+          "sample": [
+            960,
+            560,
+            260,
+            320
+          ],
+          "pixels": 9292,
+          "median": "#fcf4e4",
+          "hsv": [
+            40,
+            9.52,
+            98.82
+          ]
+        },
+        "head": {
+          "sample": [
+            600,
+            520,
+            70,
+            40
+          ],
+          "pixels": 2800,
+          "median": "#fdfbf8",
+          "hsv": [
+            36,
+            1.98,
+            99.22
+          ]
+        },
+        "innerEar": {
+          "sample": [
+            590,
+            440,
+            90,
+            60
+          ],
+          "pixels": 2120,
+          "median": "#fdc1b1",
+          "hsv": [
+            12.63,
+            30.04,
+            99.22
+          ]
+        }
+      }
+    },
+    "nest": {
+      "file": "public/assets/buildings/farm-windmill-nest.png",
+      "strength": 1,
+      "bytes": 954855,
+      "savedPercent": 23.99,
+      "sha256": "0c9a3c9eacc00760f209800922414db6c44d73ab8e956a701b5665600149a562",
+      "alphaChanged": 0,
+      "headPixelsChanged": 0,
+      "changedRGBPixels": 685512,
+      "palette": {
+        "grass": {
+          "sample": [
+            0,
+            700,
+            600,
+            450
+          ],
+          "pixels": 57506,
+          "median": "#ccda86",
+          "hsv": [
+            70,
+            38.53,
+            85.49
+          ]
+        },
+        "grassShade": {
+          "sample": [
+            0,
+            700,
+            600,
+            450
+          ],
+          "pixels": 5934,
+          "median": "#a0ba70",
+          "hsv": [
+            81.08,
+            39.78,
+            72.94
+          ]
+        },
+        "trees": {
+          "sample": [
+            560,
+            160,
+            300,
+            160
+          ],
+          "pixels": 24407,
+          "median": "#98d286",
+          "hsv": [
+            105.79,
+            36.19,
+            82.35
+          ]
+        },
+        "treeShadow": {
+          "sample": [
+            120,
+            300,
+            520,
+            420
+          ],
+          "pixels": 12246,
+          "median": "#6caa64",
+          "hsv": [
+            113.14,
+            41.18,
+            66.67
+          ]
+        },
+        "roof": {
+          "sample": [
+            300,
+            380,
+            200,
+            150
+          ],
+          "pixels": 18142,
+          "median": "#da9894",
+          "hsv": [
+            3.43,
+            32.11,
+            85.49
+          ]
+        },
+        "towerCream": {
+          "sample": [
+            300,
+            720,
+            70,
+            60
+          ],
+          "pixels": 3691,
+          "median": "#fed8b6",
+          "hsv": [
+            28.33,
+            28.35,
+            99.61
+          ]
+        },
+        "towerBase": {
+          "sample": [
+            290,
+            800,
+            70,
+            60
+          ],
+          "pixels": 2945,
+          "median": "#fcb48e",
+          "hsv": [
+            20.73,
+            43.65,
+            98.82
+          ]
+        },
+        "blades": {
+          "sample": [
+            690,
+            300,
+            140,
+            120
+          ],
+          "pixels": 5472,
+          "median": "#eebc8c",
+          "hsv": [
+            29.39,
+            41.18,
+            93.33
+          ]
+        },
+        "soil": {
+          "sample": [
+            860,
+            680,
+            160,
+            140
+          ],
+          "pixels": 22105,
+          "median": "#ac7a60",
+          "hsv": [
+            20.53,
+            44.19,
+            67.45
+          ]
+        },
+        "door": {
+          "sample": [
+            585,
+            770,
+            55,
+            95
+          ],
+          "pixels": 1148,
+          "median": "#b27458",
+          "hsv": [
+            18.67,
+            50.56,
+            69.8
+          ]
+        },
+        "outline": {
+          "sample": [
+            0,
+            0,
+            1254,
+            1254
+          ],
+          "pixels": 23809,
+          "median": "#703a28",
+          "hsv": [
+            15,
+            64.29,
+            43.92
+          ]
+        },
+        "fence": {
+          "sample": [
+            960,
+            560,
+            260,
+            320
+          ],
+          "pixels": 9292,
+          "median": "#fcf4e4",
+          "hsv": [
+            40,
+            9.52,
+            98.82
+          ]
+        },
+        "head": {
+          "sample": [
+            600,
+            520,
+            70,
+            40
+          ],
+          "pixels": 2800,
+          "median": "#fdfbf8",
+          "hsv": [
+            36,
+            1.98,
+            99.22
+          ]
+        },
+        "innerEar": {
+          "sample": [
+            590,
+            440,
+            90,
+            60
+          ],
+          "pixels": 2120,
+          "median": "#fdc1b1",
+          "hsv": [
+            12.63,
+            30.04,
+            99.22
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,57 @@
+# Musique de fond, son et écran de chargement
+
+## Pistes
+
+Source fournie par le propriétaire, **non modifiée** : `C:\Users\sulli\OneDrive\Bureau\project L\Music` (horodatages et tailles relus après conversion, identiques).
+
+| Source | Format source | Durée | Débit source | Taille source | Fichier du projet | Taille |
+| --- | --- | --- | --- | ---: | --- | ---: |
+| Indian vibe.mp3 | MP3 (MPEG-1 Layer III), 44,1 kHz stéréo | 5:14 | 192 kb/s CBR | 7 591 392 | `indian-vibe-1.mp3` | 5 008 420 |
+| Indian vibe 2.mp3 | idem | 5:00 | 192 kb/s CBR | 7 202 316 | `indian-vibe-2.mp3` | 4 791 761 |
+| Indian vibe 3.mp3 | idem | 5:13 | 192 kb/s CBR | 7 592 047 | `indian-vibe-3.mp3` | 4 998 823 |
+| Music chill (dragon vibe).mp3 | idem | 20:20 | 320 kb/s CBR | 48 797 823 | `dragon-chill.mp3` | 19 475 582 |
+| **Total** | | 46:47 | | **71 183 578** | | **34 274 586** |
+
+Fichiers dans `public/assets/audio/music/` : MP3 128 kb/s CBR, 44,1 kHz stéréo, durées identiques. Le MP3 est lu par Safari iOS ; il reste le format le plus sûr pour tous les navigateurs du projet.
+
+**Règle de build partagé (17 octobre 2026)** : `build:netlify` et `build:pages` produisent une seule copie des quatre pistes sous `assets/audio/music/` à la racine de leur artefact. Le script combiné fixe `VITE_SHARED_MUSIC_BASE` à la base du site : `/` pour Netlify, `/Project-L/` pour Pages. `src/main.ts` utilise cette base pour le jeu et le laboratoire, plutôt que la base propre au laboratoire (`/dev/`). Les builds isolés et le serveur de développement gardent `BASE_URL` en repli. Ne pas réintroduire des URLs `/dev/assets/audio/music/` dans le build combiné.
+
+Vite copie encore `public/` durant chaque sous-build ; le script retire ensuite uniquement les copies MP3 du laboratoire après comparaison octet par octet avec les pistes partagées. Aucun symlink, aucune recompression. `scripts/verify-shared-music.mjs`, exécuté automatiquement par le build combiné, impose exactement quatre MP3 aux chemins attendus et leur identité avec `public/`. Recontrôle manuel : `node scripts/verify-shared-music.mjs netlify-site`. L'ancien total de 68 549 172 octets d'audio devient **34 274 586 octets** ; build complet mesuré **64 286 336 octets** contre 98 560 912 avant cette optimisation.
+
+**Conversion** : aucun ffmpeg n'est installé ; l'encodeur MP3 intégré à Windows 11 (Media Foundation, API WinRT `Windows.Media.Transcoding.MediaTranscoder`, profil `MediaEncodingProfile.CreateMp3(Medium)` = 128 kb/s) a été utilisé depuis PowerShell, sans rien installer. Réencodage MP3 → MP3 (donc avec perte, comme toute recompression).
+
+**Contrôle objectif, pas une écoute** : 60 s de chaque paire (de 30 s à 90 s) décodées par Chromium (WebAudio), alignées (décalage de l'encodeur) puis comparées : rapport signal/bruit de forme d'onde 20,7 / 34,2 / 25,2 / 27,1 dB, énergie haute fréquence conservée à 98–100 %. Ces chiffres ne remplacent pas l'écoute du propriétaire. Le WebKit de Playwright sous Windows ne lit aucun MP3 (erreur 4, y compris les fichiers d'origine) : limite de ce navigateur de test, pas des fichiers.
+
+## Musique de fond
+
+- `src/audio/musicPlayer.ts` : une piste à la fois, tirée au hasard sans répéter immédiatement la précédente ; à la fin (`ended`), la suivante enchaîne directement. Avant « Jouer », seule la première piste est choisie et vérifiée (requête partielle de 64 Kio, pas de téléchargement complet) ; la suivante n'est choisie et mise en tampon qu'une fois la piste courante en lecture. Jamais plus d'un élément audio actif.
+- Démarrage uniquement dans le geste « Jouer » (exigence iOS) : le moteur Web Audio est créé et repris à ce moment-là.
+- Arrière-plan (`visibilitychange`, `pagehide`) : pause de l'élément en cours et mise en veille du contexte ; au retour (`visible`, `pageshow`), reprise du **même** élément. Si iOS refuse la reprise sans nouveau geste, le prochain toucher relance la même piste.
+- Erreur de lecture d'une piste : elle est écartée et une autre est tentée ; si toutes échouent, le jeu continue sans musique. Une musique absente au chargement n'empêche pas d'entrer.
+- `navigator.audioSession.type = 'ambient'` lorsque Safari le propose : demande de mélange avec les autres apps. Le respect du bouton silencieux dépend de Safari/iOS et reste à vérifier sur l'appareil ; ce réglage n'est pas un contournement des règles système. **Non vérifié sur l'iPhone du propriétaire.** Références : [Audio Session W3C](https://www.w3.org/TR/audio-session/) et [catégorie native ambient Apple](https://developer.apple.com/documentation/avfaudio/avaudiosession/category-swift.struct/ambient) (la catégorie native ne garantit pas à elle seule le comportement Web).
+
+## Canaux et réglages
+
+`src/audio/audioEngine.ts` : deux canaux séparés, Musique et Bruitages, chacun avec son interrupteur et son volume (gain Web Audio ; repli sur `element.volume` sans Web Audio, sachant qu'iOS ignore ce dernier). Paramètres → Son (`src/ui/soundSettings.ts`) : bouton pierre à icône (note de musique / haut-parleur, barrés quand coupés, nom accessible fixe et `aria-pressed`, état dans l'infobulle) et curseur 0–100 % par pas de 5. Valeurs par défaut : Musique 50 %, Bruitages 80 %, tous deux activés. Préférences de l'interface (pas la sauvegarde de partie), clés séparées : `prairie-lapins.ui.v1` (jeu) et `prairie-lapins.development.ui` (laboratoire). L'ancien champ `muted` signifie « Bruitages coupés ».
+
+**Bruitages existants recensés** : un seul, le « ping » de confirmation synthétisé (0,2 s, 660 → 880 Hz) joué après toute action réussie via `GameUI.execute` (achats de bâtiments, lapins, décorations, recettes, extensions ; pose et déplacement ; nourrir ; production et récolte ; reproduction et transferts ; réclamations de missions...). Il passe désormais par le canal Bruitages.
+
+## Écran de chargement
+
+`src/display/loadingScreen.ts` et `#loading-screen` dans `index.html` (visible avant tout script, au-dessus de tout, marges de sécurité respectées). Étapes réelles, dans l'ordre affiché : **Partie** (lecture et migration éventuelle de la sauvegarde par le contrôleur), **Polices** (`document.fonts.ready` ; le jeu n'utilise que des polices système), **Images du jeu** (progression du chargeur Phaser, erreurs de fichier), **Prairie** (scène créée), **Musique** (première piste vérifiée). Barre de progression pondérée (1, 1, 4, 1, 1). « Jouer » n'apparaît actif que lorsque les étapes obligatoires (Partie, Images, Prairie) sont terminées. Échec ou délai dépassé d'une étape obligatoire (Images/Prairie 45 s, Partie 15 s) : message clair et « Réessayer » (rechargement). Sauvegarde illisible ou musique absente : simple note, l'entrée reste possible. Le jeu (`#app`) est `inert` jusqu'à « Jouer ».
+
+**Fragilités de démarrage évitées** :
+- *Observée* : prairie encore vide (canevas crème) pendant le préchargement des textures Phaser ; un contrôle public l'avait même photographiée ainsi (voir `docs/farm-art.md`, run 38917275526). Elle est désormais cachée derrière l'écran, qui n'ouvre le jeu qu'une fois la scène créée.
+- *Risques supprimés par construction* : toucher le canevas ou un bouton avant les textures (sélection ou aperçu de placement sur des bâtiments encore invisibles) ; tutoriel, boîtes de dialogue (passage de niveau, sauvegarde illisible, import) ou outils du laboratoire ouverts avant que la prairie soit prête, l'interface n'étant montée qu'après « Jouer » ; premier son refusé par iOS faute de geste ; page apparemment figée pendant une migration de sauvegarde ou sur un réseau lent, sans indication ni moyen de réessayer.
+Le tutoriel et le message de bienvenue apparaissent bien **après** « Jouer » (vérifié dans `docs/loading-audio-check.cjs`).
+
+## Reprise Codex du 17 octobre 2026
+
+- Les quatre commits de Claude sont conservés : `8bbeab3` (assets), `be8d09d` (audio), `7ed87a1` (réglages), `28a7677` (chargement). Ses adaptations non commitées des contrôles navigateur sont conservées, avec le MP3 silencieux réservé aux contrôles non audio. Les annulations `ERR_ABORTED` des requêtes musicales sont recensées séparément ; les erreurs HTTP restent des échecs.
+- Corrections : une sonde musicale tardive ne peut plus perdre l'élément déjà lancé par « Jouer » ni modifier un lecteur détruit ; retrait explicite des listeners des pistes libérées ; nettoyage du timer de sonde ; annulation du corps HTTP si Range est ignoré ; erreur `NotSupportedError` de play → autre piste. Le HTML est inert dès le départ. Un rejet du démarrage affiche une erreur et Réessayer.
+- Complément `67157c5` : après une erreur de la piste courante, réutiliser la suivante déjà préparée, plutôt que la recréer tout en gardant son doublon dans la file ; cela évite une répétition immédiate à la transition suivante. Test déterministe ajouté.
+- Valeur musique conservée à **50 %**, choix de Claude pour une ambiance discrète ; bruitages **80 %**. Le seul bruitage existant est le ping, routé par le moteur partagé.
+- Mesure en lecture seule avec `node scripts/inspect-mp3.cjs <source> public/assets/audio/music` : durées source → jeu, en secondes : Indian 1 **313,652 → 313,704** ; Indian 2 **300,095 → 300,147** ; Indian 3 **313,051 → 313,104** ; Dragon **1219,944 → 1219,997**. Environ 52 ms de bourrage d'encodage, sans perte de durée. Les propriétés Windows sous-estiment certaines durées ; le tableau ci-dessus donne les durées arrondies.
+- Poids du build vérifié : **98 560 912 octets**, dont **68 549 172 octets** de MP3 (34 274 586 par route). Augmentation approximative due au chantier : **68,6 Mo** pour l'artefact complet, principalement l'audio dupliqué jeu/labo ; autour de **34,3 Mo** d'assets ajoutés par route, téléchargés progressivement. Le poids total du build n'est pas le téléchargement initial.
+- Vérifications : TypeScript réussi ; tests ciblés **26/26** (3 fichiers). Suite complète lancée **une fois**, un worker : **1160/1161**, puis correction du montage DOM de test pour simuler l'état après Jouer (retirer inert, masquer le chargement) et rejeu **88/88** de `ui-dom.test.ts`. Aucune assertion modifiée ou affaiblie. Aucun échec restant connu ; pas de seconde suite complète. Build Netlify local réussi, 32 fichiers vérifiés par route. Chromium : audio/chargement **27**, production **9**, laboratoire **7** vérifications ; WebKit Windows : politique tactile **6** groupes, deux orientations, tous réussis. Preuves dans `%TEMP%/prairie-audio-{resume,final,regression,lab,webkit}`. Les autres contrôles navigateur adaptés n'ont pas tous été rejoués.
+- Limites : une migration synchrone bloquant le thread ne peut pas être interrompue par un timer JavaScript ; les délais couvrent les étapes asynchrones et ne constituent pas un watchdog du navigateur. Si le bundle principal lui-même ne se télécharge pas, le gestionnaire d'erreur JavaScript ne peut pas s'exécuter. Les tests Windows ne valident ni le son réel iPhone ni son bouton silencieux/écran d'accueil. L'agrandissement précédent de l'île a déjà été testé avec succès sur iPhone en local, confirmé par le propriétaire.

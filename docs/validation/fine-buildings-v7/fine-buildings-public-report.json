@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "url": "http://127.0.0.1:5200/Project-L/",
+  "checks": [
+    "Normal real touch: fine purchase (13,12), move one square (14,12), cancellation before purchase/move, double confirmation, unchanged occupants and save/reload.",
+    "Public laboratory fineBuildings: all building kinds offset, two parcel crossings, active farm job and seven mixed residents, reload and normal/lab isolation."
+  ],
+  "errors": []
+}

@@ -1,0 +1,21 @@
+{
+  "passed": true,
+  "checks": [
+    "Zero-wallet launch draws and saves once under double pressure; seven residents remain counted, two illustrations move to the nest, five stay at home, no duplicate sprite, textures reused.",
+    "Parents selectable at the nest with Au nid and move/release locks; completed job survives reload; explicit transfer starts growth once and returns exact illustrations/slots to their habitat.",
+    "All seven mixed occupants remain individually selectable after their parents return."
+  ],
+  "errors": [],
+  "selections": [
+    "rabbit-6",
+    "rabbit-7",
+    "rabbit-6",
+    "rabbit-7",
+    "rabbit-8",
+    "rabbit-9",
+    "rabbit-10",
+    "rabbit-11",
+    "rabbit-12"
+  ],
+  "browser": "Chromium touch emulation; physical iPhone remains to be tested"
+}

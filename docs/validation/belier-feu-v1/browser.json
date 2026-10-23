@@ -1,0 +1,190 @@
+{
+  "passed": true,
+  "checks": [
+    "Seven mixed residents including all six common species individually selected at zoom .8, 1.05, 1.65.",
+    "Volant wing is selectable; transparent corner is rejected by the same scene hit path (isolated mask probe).",
+    "Bélier Gris, Feu and Volant profiles, shop, collection, parent selection and portrait viewport share their original PNG.",
+    "Each sprite uses its own alpha hit mask including the ears, uniform scale and unchanged whole-image motion."
+  ],
+  "selections": [
+    {
+      "zoom": 0.8,
+      "id": "rabbit-5",
+      "species": "paille"
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-6",
+      "species": "neige"
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-7",
+      "species": "terre"
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-8",
+      "species": "belier-gris"
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-9",
+      "species": "feu"
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-10",
+      "species": "volant"
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-11",
+      "species": "brumelin"
+    },
+    {
+      "zoom": 1.05,
+      "id": "rabbit-5",
+      "species": "paille"
+    },
+    {
+      "zoom": 1.05,
+      "id": "rabbit-6",
+      "species": "neige"
+    },
+    {
+      "zoom": 1.05,
+      "id": "rabbit-7",
+      "species": "terre"
+    },
+    {
+      "zoom": 1.05,
+      "id": "rabbit-8",
+      "species": "belier-gris"
+    },
+    {
+      "zoom": 1.05,
+      "id": "rabbit-9",
+      "species": "feu"
+    },
+    {
+      "zoom": 1.05,
+      "id": "rabbit-10",
+      "species": "volant"
+    },
+    {
+      "zoom": 1.05,
+      "id": "rabbit-11",
+      "species": "brumelin"
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-5",
+      "species": "paille"
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-6",
+      "species": "neige"
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-7",
+      "species": "terre"
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-8",
+      "species": "belier-gris"
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-9",
+      "species": "feu"
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-10",
+      "species": "volant"
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-11",
+      "species": "brumelin"
+    }
+  ],
+  "errors": [],
+  "browser": "Chromium touch emulation, not physical iPhone Safari",
+  "styles": [
+    {
+      "id": "rabbit-5",
+      "species": "paille",
+      "sx": 0.11428571428571428,
+      "sy": 0.11428571428571428,
+      "ears": 0,
+      "originX": 0.5,
+      "originY": 1,
+      "y": 12
+    },
+    {
+      "id": "rabbit-6",
+      "species": "neige",
+      "sx": 0.09266409266409266,
+      "sy": 0.09266409266409266,
+      "ears": 0,
+      "originX": 0.5,
+      "originY": 1,
+      "y": 12
+    },
+    {
+      "id": "rabbit-7",
+      "species": "terre",
+      "sx": 0.04838709677419355,
+      "sy": 0.04838709677419355,
+      "ears": 0,
+      "originX": 0.5,
+      "originY": 1,
+      "y": 12
+    },
+    {
+      "id": "rabbit-8",
+      "species": "belier-gris",
+      "sx": 0.09108159392789374,
+      "sy": 0.09108159392789374,
+      "ears": 0,
+      "originX": 0.5,
+      "originY": 1,
+      "y": 12
+    },
+    {
+      "id": "rabbit-9",
+      "species": "feu",
+      "sx": 0.049800796812749,
+      "sy": 0.049800796812749,
+      "ears": 0,
+      "originX": 0.5,
+      "originY": 1,
+      "y": 12
+    },
+    {
+      "id": "rabbit-10",
+      "species": "volant",
+      "sx": 0.06142506142506143,
+      "sy": 0.06142506142506143,
+      "ears": 0,
+      "originX": 0.5,
+      "originY": 1,
+      "y": 12
+    },
+    {
+      "id": "rabbit-13",
+      "species": "volant",
+      "sx": 0.06142506142506143,
+      "sy": 0.06142506142506143,
+      "ears": 0,
+      "originX": 0.5,
+      "originY": 1,
+      "y": 12
+    }
+  ]
+}

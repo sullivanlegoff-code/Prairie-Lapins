@@ -1,0 +1,27 @@
+{
+  "browser": "Chromium, disposable touch profile; 852×393 and 667×375; not physical Safari",
+  "checks": [
+    "single purchase on double confirmation",
+    "cancel purchase placement",
+    "invalid building footprint",
+    "touch placement and rotation",
+    "cancel move",
+    "commit move",
+    "store and reload identity",
+    "marked v5 export",
+    "four player scenarios",
+    "dense reload 512",
+    "compact panel and HUD",
+    "other route keys unchanged",
+    "no Supabase requests"
+  ],
+  "dense": {
+    "owned": 512,
+    "placed": 140
+  },
+  "layout": {
+    "panelFits": true,
+    "hudFits": true
+  },
+  "errors": []
+}

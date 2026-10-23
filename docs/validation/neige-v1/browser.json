@@ -1,0 +1,117 @@
+{
+  "passed": true,
+  "errors": [],
+  "checks": [
+    "All seven mixed residents of the snow habitat individually selected at zoom .8, 1.05 and 1.65.",
+    "Shared original PNG in profile, shop, collection and parent selection.",
+    "Uniform image scale and whole-image motion; portrait viewport fits the shared artwork."
+  ],
+  "selections": [
+    {
+      "zoom": 0.8,
+      "id": "rabbit-21",
+      "species": "neige"
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-22",
+      "species": "brumelin"
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-23",
+      "species": "feu-glace"
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-24",
+      "species": "neige"
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-25",
+      "species": "brumelin"
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-26",
+      "species": "feu-glace"
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-27",
+      "species": "neige"
+    },
+    {
+      "zoom": 1.05,
+      "id": "rabbit-21",
+      "species": "neige"
+    },
+    {
+      "zoom": 1.05,
+      "id": "rabbit-22",
+      "species": "brumelin"
+    },
+    {
+      "zoom": 1.05,
+      "id": "rabbit-23",
+      "species": "feu-glace"
+    },
+    {
+      "zoom": 1.05,
+      "id": "rabbit-24",
+      "species": "neige"
+    },
+    {
+      "zoom": 1.05,
+      "id": "rabbit-25",
+      "species": "brumelin"
+    },
+    {
+      "zoom": 1.05,
+      "id": "rabbit-26",
+      "species": "feu-glace"
+    },
+    {
+      "zoom": 1.05,
+      "id": "rabbit-27",
+      "species": "neige"
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-21",
+      "species": "neige"
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-22",
+      "species": "brumelin"
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-23",
+      "species": "feu-glace"
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-24",
+      "species": "neige"
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-25",
+      "species": "brumelin"
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-26",
+      "species": "feu-glace"
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-27",
+      "species": "neige"
+    }
+  ],
+  "browser": "Chromium touch emulation; not physical iPhone Safari"
+}

@@ -1,0 +1,102 @@
+{
+  "version": 4,
+  "lastSimulatedAt": 12345,
+  "nextId": 7,
+  "hearts": 12,
+  "nextHeartGiftAt": 86400000,
+  "pattes": 9750,
+  "grass": 96,
+  "expanded": false,
+  "secondExpanded": false,
+  "buildings": [
+    {
+      "id": "building-1",
+      "kind": "enclosure",
+      "x": 0,
+      "y": 0,
+      "incomeUnits": 345660,
+      "habitat": {
+        "type": "universal",
+        "level": 1
+      },
+      "order": null,
+      "breeding": null,
+      "baby": null
+    },
+    {
+      "id": "building-4",
+      "kind": "farm",
+      "x": 1,
+      "y": 0,
+      "incomeUnits": 0,
+      "habitat": null,
+      "order": {
+        "recipe": "small",
+        "startedAt": 0,
+        "endsAt": 300000
+      },
+      "breeding": null,
+      "baby": null
+    },
+    {
+      "id": "building-5",
+      "kind": "nest",
+      "x": 2,
+      "y": 0,
+      "incomeUnits": 0,
+      "habitat": null,
+      "order": null,
+      "breeding": null,
+      "baby": null
+    },
+    {
+      "id": "building-6",
+      "kind": "nursery",
+      "x": 0,
+      "y": 1,
+      "incomeUnits": 0,
+      "habitat": null,
+      "order": null,
+      "breeding": null,
+      "baby": null
+    }
+  ],
+  "rabbits": [
+    {
+      "id": "rabbit-2",
+      "species": "paille",
+      "affection": 2,
+      "enclosureId": "building-1"
+    },
+    {
+      "id": "rabbit-3",
+      "species": "neige",
+      "affection": 2,
+      "enclosureId": "building-1"
+    }
+  ],
+  "discovered": [
+    "paille",
+    "neige"
+  ],
+  "pityFailures": 0,
+  "missions": {
+    "completed": [
+      "first-farm",
+      "cozy-nest",
+      "welcome-babies"
+    ],
+    "claimed": [],
+    "daily": {
+      "referenceAt": 0,
+      "cycleIndex": 0,
+      "progress": {
+        "collect-pattes": 0,
+        "collect-grass": 0,
+        "gain-affection": 2
+      },
+      "claimed": [],
+      "bonusClaimed": false
+    }
+  }
+}

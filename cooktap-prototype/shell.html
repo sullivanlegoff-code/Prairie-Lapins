@@ -1,0 +1,17 @@
+<header class="kitchen-header"><div><small>Maison du Chef Lapin</small><h1 id="kitchen-title">Choisis une recette</h1></div><span class="stage-badge" id="recipe-guide" aria-label="Salade : mozzarella, tomate et concombre, à couper puis mettre dans le saladier avec l’huile"></span></header>
+  <section id="scene-shell" aria-label="Cuisine, objets à manipuler">
+    <div id="kitchen-surface"><div id="kitchen-world" aria-label="Table de cuisine"></div></div>
+  </section>
+  <footer><p id="kitchen-message" role="status" aria-live="polite">Choisissez la recette Salade pour commencer.</p><nav aria-label="Informations"><a href="./NOTICE.txt">Attribution</a><a href="./MIT.txt">MIT</a></nav></footer>
+  <section id="recipe-screen" class="game-overlay" role="region" aria-labelledby="recipe-title">
+    <div class="overlay-card recipe-card"><small>Maison du Chef Lapin</small><h2 id="recipe-title">Que cuisine-t-on ?</h2>
+      <button id="recipe-salad" class="menu-recipe" type="button"><span class="recipe-art" data-recipe-art="salad" aria-hidden="true"></span><span><strong>Salade fraîche</strong><small>Mozzarella, tomate, concombre et huile d’olive</small></span><span class="recipe-go" aria-hidden="true">›</span></button>
+      <button id="recipe-chicken" class="menu-recipe" type="button"><span class="recipe-art" data-recipe-art="chicken" aria-hidden="true"></span><span><strong>Poulet soja-miel</strong><small>Poulet glacé et patate douce rôtie au four</small></span><span class="recipe-go" aria-hidden="true">›</span></button>
+    </div>
+  </section>
+  <section id="result-screen" class="game-overlay" role="dialog" aria-modal="true" aria-labelledby="result-title" hidden>
+    <div class="overlay-card result-card"><span class="result-art" aria-hidden="true"></span><div class="result-head"><small>Recette réussie</small><h2 id="result-title">Salade réussie !</h2><p id="result-copy">Une salade fraîche, préparée sur la table.</p></div><dl><div><dt>Temps</dt><dd id="result-time">0,0 s</dd></div><div><dt>Actions invalides</dt><dd id="result-errors">0</dd></div></dl><div class="result-actions"><button id="recipe-replay" type="button">Rejouer</button><button id="recipe-choose" type="button">Choisir une recette</button></div></div>
+  </section>
+  <section id="orientation-screen" role="region" aria-labelledby="orientation-title" hidden>
+    <div class="orientation-card"><span class="rotate-icon" aria-hidden="true">↻</span><h2 id="orientation-title">Tournez votre appareil pour cuisiner</h2><p>Sur ordinateur, élargissez la fenêtre.</p><p>Votre préparation reste intacte.</p></div>
+  </section>

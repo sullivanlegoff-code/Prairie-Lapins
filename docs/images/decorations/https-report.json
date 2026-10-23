@@ -1,0 +1,24 @@
+{
+  "origin": "https://sullivanlegoff-code.github.io",
+  "browser": "Chromium, disposable shared-origin profile, 852×393 landscape",
+  "versions": {
+    "normal": "Version : Habitats · passe visuelle · build ae31131",
+    "laboratory": "Version : Habitats · passe visuelle · build ae31131",
+    "accounts": "Version : Habitats · passe visuelle · build 3e70d9e",
+    "decorations": "Version : Aménagement · prévisualisation v5 · build 5feff8d"
+  },
+  "checks": [
+    "four routes HTTP 200, canvas and correct versions",
+    "normal ordinary selection/feed preserved",
+    "normal ?dev=1 excludes tools",
+    "independent reloads",
+    "all non-decoration keys byte-for-byte preserved during grants/clock/prefs/scenario/buy/import/reset/photo/reload",
+    "v4 copy import with local backup and no source write",
+    "marked v5 export",
+    "account preview preserved; no authentication or emails requested"
+  ],
+  "errors": [],
+  "failedRequests": [],
+  "badResponses": [],
+  "previewOnlineRequests": []
+}

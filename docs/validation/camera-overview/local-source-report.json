@@ -1,0 +1,242 @@
+{
+  "passed": true,
+  "checks": [
+    "Six acquired-island/orientation combinations: overview plus water fits; wheel, dispatched pinch/pan, unchanged state and UI dimensions; expansion frames all nine potential parcels; Recenter restores 1.05.",
+    "21 individual resident selections after zooming out at .4/.8/1.65. Secondary names and bubble interactions disappear in overview; no enlarged neighbor hit area.",
+    "Fine 4 × 4 building preview at .4, explicit cancellation without expense or position changes.",
+    "Before capture from unchanged previous production at its actual .8 minimum."
+  ],
+  "frames": [
+    {
+      "scenario": "islandStart",
+      "zoom": 0.40728476821192056,
+      "min": 0.1648793565683646,
+      "width": 852,
+      "height": 393,
+      "lo": {
+        "x": 285.89403973509934,
+        "y": 83.99999999999999
+      },
+      "hi": {
+        "x": 566.1059602649007,
+        "y": 330
+      },
+      "insets": {
+        "left": 16,
+        "right": 16,
+        "top": 84,
+        "bottom": 63
+      },
+      "names": 0,
+      "bubbles": 0,
+      "bubblesVisible": false
+    },
+    {
+      "scenario": "islandL",
+      "zoom": 0.23473282442748092,
+      "min": 0.1648793565683646,
+      "width": 852,
+      "height": 393,
+      "lo": {
+        "x": 345.25190839694653,
+        "y": 84
+      },
+      "hi": {
+        "x": 630.6870229007634,
+        "y": 330
+      },
+      "insets": {
+        "left": 16,
+        "right": 16,
+        "top": 84,
+        "bottom": 63
+      },
+      "names": 0,
+      "bubbles": 0,
+      "bubblesVisible": false
+    },
+    {
+      "scenario": "islandFull",
+      "zoom": 0.1648793565683646,
+      "min": 0.1648793565683646,
+      "width": 852,
+      "height": 393,
+      "lo": {
+        "x": 282.2252010723861,
+        "y": 83.99999999999999
+      },
+      "hi": {
+        "x": 569.7747989276139,
+        "y": 330
+      },
+      "insets": {
+        "left": 16,
+        "right": 16,
+        "top": 84,
+        "bottom": 63
+      },
+      "names": 0,
+      "bubbles": 0,
+      "bubblesVisible": false
+    },
+    {
+      "scenario": "islandStart",
+      "zoom": 0.5203488372093024,
+      "min": 0.20527522935779816,
+      "width": 390,
+      "height": 844,
+      "lo": {
+        "x": 16,
+        "y": 303.3546511627907
+      },
+      "hi": {
+        "x": 374,
+        "y": 617.6453488372093
+      },
+      "insets": {
+        "left": 16,
+        "right": 16,
+        "top": 140,
+        "bottom": 63
+      },
+      "names": 0,
+      "bubbles": 0.28139534883720946,
+      "bubblesVisible": true
+    },
+    {
+      "scenario": "islandL",
+      "zoom": 0.2944078947368421,
+      "min": 0.20527522935779816,
+      "width": 390,
+      "height": 844,
+      "lo": {
+        "x": 16,
+        "y": 240.8717105263158
+      },
+      "hi": {
+        "x": 374,
+        "y": 549.4111842105264
+      },
+      "insets": {
+        "left": 16,
+        "right": 16,
+        "top": 140,
+        "bottom": 63
+      },
+      "names": 0,
+      "bubbles": 0,
+      "bubblesVisible": false
+    },
+    {
+      "scenario": "islandFull",
+      "zoom": 0.20527522935779816,
+      "min": 0.20527522935779816,
+      "width": 390,
+      "height": 844,
+      "lo": {
+        "x": 16,
+        "y": 307.36467889908255
+      },
+      "hi": {
+        "x": 374,
+        "y": 613.6353211009174
+      },
+      "insets": {
+        "left": 16,
+        "right": 16,
+        "top": 140,
+        "bottom": 63
+      },
+      "names": 0,
+      "bubbles": 0,
+      "bubblesVisible": false
+    }
+  ],
+  "selections": [
+    {
+      "zoom": 0.4,
+      "id": "rabbit-4"
+    },
+    {
+      "zoom": 0.4,
+      "id": "rabbit-5"
+    },
+    {
+      "zoom": 0.4,
+      "id": "rabbit-6"
+    },
+    {
+      "zoom": 0.4,
+      "id": "rabbit-7"
+    },
+    {
+      "zoom": 0.4,
+      "id": "rabbit-8"
+    },
+    {
+      "zoom": 0.4,
+      "id": "rabbit-9"
+    },
+    {
+      "zoom": 0.4,
+      "id": "rabbit-10"
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-4"
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-5"
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-6"
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-7"
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-8"
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-9"
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-10"
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-4"
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-5"
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-6"
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-7"
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-8"
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-9"
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-10"
+    }
+  ],
+  "errors": []
+}

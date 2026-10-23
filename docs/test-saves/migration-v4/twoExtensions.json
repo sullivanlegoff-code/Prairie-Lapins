@@ -1,0 +1,63 @@
+{
+  "version": 4,
+  "lastSimulatedAt": 0,
+  "nextId": 4,
+  "hearts": 12,
+  "nextHeartGiftAt": 86400000,
+  "pattes": 8500,
+  "grass": 10,
+  "expanded": true,
+  "secondExpanded": true,
+  "buildings": [
+    {
+      "id": "building-1",
+      "kind": "enclosure",
+      "x": 0,
+      "y": 0,
+      "incomeUnits": 0,
+      "habitat": {
+        "type": "universal",
+        "level": 1
+      },
+      "order": null,
+      "breeding": null,
+      "baby": null
+    }
+  ],
+  "rabbits": [
+    {
+      "id": "rabbit-2",
+      "species": "paille",
+      "affection": 1,
+      "enclosureId": "building-1"
+    },
+    {
+      "id": "rabbit-3",
+      "species": "neige",
+      "affection": 1,
+      "enclosureId": "building-1"
+    }
+  ],
+  "discovered": [
+    "paille",
+    "neige"
+  ],
+  "pityFailures": 0,
+  "missions": {
+    "completed": [
+      "bigger-meadow"
+    ],
+    "claimed": [],
+    "daily": {
+      "referenceAt": 0,
+      "cycleIndex": 0,
+      "progress": {
+        "collect-pattes": 0,
+        "collect-grass": 0,
+        "gain-affection": 0
+      },
+      "claimed": [],
+      "bonusClaimed": false
+    }
+  }
+}

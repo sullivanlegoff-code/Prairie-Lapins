@@ -1,0 +1,58 @@
+{
+  "milestones": [
+    {
+      "step": "Départ",
+      "wallSeconds": 1.905,
+      "pattes": 300,
+      "grass": 10,
+      "hearts": 12
+    },
+    {
+      "step": "Paille et ferme, récompenses réclamées",
+      "wallSeconds": 4.625,
+      "pattes": 240,
+      "grass": 38,
+      "hearts": 12
+    },
+    {
+      "step": "Production récoltée et Neige nourri",
+      "wallSeconds": 9.811,
+      "pattes": 280,
+      "grass": 56,
+      "hearts": 12
+    },
+    {
+      "step": "Reproduction terminée gratuitement, transfert encore manuel",
+      "wallSeconds": 13.326,
+      "pattes": 280,
+      "grass": 76,
+      "hearts": 12
+    },
+    {
+      "step": "Transfert manuel et récompense",
+      "wallSeconds": 14.247,
+      "pattes": 310,
+      "grass": 76,
+      "hearts": 12
+    },
+    {
+      "step": "Accueil et sept récompenses",
+      "wallSeconds": 17.086,
+      "pattes": 360,
+      "grass": 76,
+      "hearts": 12
+    }
+  ],
+  "passed": true,
+  "url": "http://127.0.0.1:5226/Project-L/",
+  "browser": "Chromium tactile, pas Safari physique",
+  "timing": "Durée réelle de ce script automatisé, avec chargements, captures, rechargements et interactions tactiles. Aucune mesure humaine, aucun délai normal mesuré physiquement et aucune horloge modifiée.",
+  "checks": [
+    "Ferme placée par commande réelle, petite production aidée sans avance d’horloge, collection et silhouettes pendant attente, récolte et repas Neige ; rotation et rechargement, récompenses explicites disparues.",
+    "Partie normale neuve : commandes réelles, trois aides, ressources initiales seulement, sept récompenses réclamées et retirées, interruptions et rotation.",
+    "Jeu libre : huit branches parallèles, Brumelin accessible sans promesse, Terre guidé vers un habitat sans achat automatique, aucune nouvelle fenêtre après rechargement."
+  ],
+  "errors": [],
+  "wallSeconds": 20.038,
+  "proofScope": "Build local compilé ; les résultats publics GitHub Pages sont publiés séparément après déploiement."
+}

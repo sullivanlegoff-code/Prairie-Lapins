@@ -1,0 +1,13 @@
+{
+  "applicationRevision": "ff8966c9d53404d8c160860fd17c6aef11912fc0",
+  "tests": 659,
+  "testFiles": 22,
+  "typecheck": true,
+  "builds": 2,
+  "missionsTouchChecks": 3,
+  "passed": true,
+  "browser": "Chromium touch simulation, not physical Safari",
+  "normalResourcesAdded": false,
+  "normalControlledRng": false,
+  "patch": "two-parent shortcut targets a rabbit still below affection 2"
+}

@@ -1,0 +1,1294 @@
+{
+  "applicationRevision": "550dceb49c4c42f54da799137dd37e0c9c9c4fe9",
+  "applicationTree": "c73d6fb2a661354f79a21677b7ca00ffe13af1b3",
+  "pullRequest": "https://github.com/sullivanlegoff-code/Project-L/pull/7",
+  "scope": [
+    "belier-gris",
+    "feu",
+    "volant"
+  ],
+  "newVolantSource": {
+    "path": "Design des lapins/volant.png",
+    "blob": "007d40a6e1a5ecefe5492999d187efb4a9fe1a82",
+    "fromCommit": "e316c14f5910acefe8e65bce704591997a376060",
+    "removedOldPath": "Design des lapins/Lapin Volant.png"
+  },
+  "ci": {
+    "run": 38045871955,
+    "job": 114195174103,
+    "artifact": 11666579253,
+    "revision": "414498f786326ad90d96f95275efaa3171fdaf06",
+    "tree": "c73d6fb2a661354f79a21677b7ca00ffe13af1b3",
+    "conclusion": "success",
+    "tests": 586,
+    "testFiles": 18,
+    "typeScript": true,
+    "normalBuild": true,
+    "laboratoryBuild": true,
+    "sevenResidentSelections": 21,
+    "zooms": [
+      0.8,
+      1.05,
+      1.65
+    ],
+    "reports": [
+      {
+        "passed": true,
+        "checks": [
+          "Seven mixed residents including all six common species individually selected at zoom .8, 1.05, 1.65.",
+          "Volant wing is selectable; transparent corner is rejected by the same scene hit path (isolated mask probe).",
+          "Bélier Gris, Feu and Volant profiles, shop, collection, parent selection and portrait viewport share their original PNG.",
+          "Each sprite uses its own alpha hit mask including the ears, uniform scale and unchanged whole-image motion."
+        ],
+        "selections": [
+          {
+            "zoom": 0.8,
+            "id": "rabbit-5",
+            "species": "paille"
+          },
+          {
+            "zoom": 0.8,
+            "id": "rabbit-6",
+            "species": "neige"
+          },
+          {
+            "zoom": 0.8,
+            "id": "rabbit-7",
+            "species": "terre"
+          },
+          {
+            "zoom": 0.8,
+            "id": "rabbit-8",
+            "species": "belier-gris"
+          },
+          {
+            "zoom": 0.8,
+            "id": "rabbit-9",
+            "species": "feu"
+          },
+          {
+            "zoom": 0.8,
+            "id": "rabbit-10",
+            "species": "volant"
+          },
+          {
+            "zoom": 0.8,
+            "id": "rabbit-11",
+            "species": "brumelin"
+          },
+          {
+            "zoom": 1.05,
+            "id": "rabbit-5",
+            "species": "paille"
+          },
+          {
+            "zoom": 1.05,
+            "id": "rabbit-6",
+            "species": "neige"
+          },
+          {
+            "zoom": 1.05,
+            "id": "rabbit-7",
+            "species": "terre"
+          },
+          {
+            "zoom": 1.05,
+            "id": "rabbit-8",
+            "species": "belier-gris"
+          },
+          {
+            "zoom": 1.05,
+            "id": "rabbit-9",
+            "species": "feu"
+          },
+          {
+            "zoom": 1.05,
+            "id": "rabbit-10",
+            "species": "volant"
+          },
+          {
+            "zoom": 1.05,
+            "id": "rabbit-11",
+            "species": "brumelin"
+          },
+          {
+            "zoom": 1.65,
+            "id": "rabbit-5",
+            "species": "paille"
+          },
+          {
+            "zoom": 1.65,
+            "id": "rabbit-6",
+            "species": "neige"
+          },
+          {
+            "zoom": 1.65,
+            "id": "rabbit-7",
+            "species": "terre"
+          },
+          {
+            "zoom": 1.65,
+            "id": "rabbit-8",
+            "species": "belier-gris"
+          },
+          {
+            "zoom": 1.65,
+            "id": "rabbit-9",
+            "species": "feu"
+          },
+          {
+            "zoom": 1.65,
+            "id": "rabbit-10",
+            "species": "volant"
+          },
+          {
+            "zoom": 1.65,
+            "id": "rabbit-11",
+            "species": "brumelin"
+          }
+        ],
+        "errors": [],
+        "browser": "Chromium touch emulation, not physical iPhone Safari",
+        "styles": [
+          {
+            "id": "rabbit-5",
+            "species": "paille",
+            "sx": 0.11428571428571428,
+            "sy": 0.11428571428571428,
+            "ears": 0,
+            "originX": 0.5,
+            "originY": 1,
+            "y": 12
+          },
+          {
+            "id": "rabbit-6",
+            "species": "neige",
+            "sx": 0.09266409266409266,
+            "sy": 0.09266409266409266,
+            "ears": 0,
+            "originX": 0.5,
+            "originY": 1,
+            "y": 12
+          },
+          {
+            "id": "rabbit-7",
+            "species": "terre",
+            "sx": 0.04838709677419355,
+            "sy": 0.04838709677419355,
+            "ears": 0,
+            "originX": 0.5,
+            "originY": 1,
+            "y": 12
+          },
+          {
+            "id": "rabbit-8",
+            "species": "belier-gris",
+            "sx": 0.09108159392789374,
+            "sy": 0.09108159392789374,
+            "ears": 0,
+            "originX": 0.5,
+            "originY": 1,
+            "y": 12
+          },
+          {
+            "id": "rabbit-9",
+            "species": "feu",
+            "sx": 0.049800796812749,
+            "sy": 0.049800796812749,
+            "ears": 0,
+            "originX": 0.5,
+            "originY": 1,
+            "y": 12
+          },
+          {
+            "id": "rabbit-10",
+            "species": "volant",
+            "sx": 0.06142506142506143,
+            "sy": 0.06142506142506143,
+            "ears": 0,
+            "originX": 0.5,
+            "originY": 1,
+            "y": 12
+          },
+          {
+            "id": "rabbit-13",
+            "species": "volant",
+            "sx": 0.06142506142506143,
+            "sy": 0.06142506142506143,
+            "ears": 0,
+            "originX": 0.5,
+            "originY": 1,
+            "y": 12
+          }
+        ]
+      },
+      {
+        "url": "http://127.0.0.1:5185/Project-L/",
+        "browser": "Chromium, 852 × 393 landscape; not physical iPhone Safari",
+        "expectedRevision": "414498f",
+        "checks": [
+          "Normal new game: canvas, 300 pattes, 10 grass, 12 hearts, 2 rabbits, save v6.",
+          "Shop, collection, missions, settings and release identifier.",
+          "Real canvas selection and feed button: Paille affection 1→2, grass 10→8.",
+          "Export downloads valid v6 JSON; cancelling import preserves current progression.",
+          "Confirmed import writes 317 pattes and retains rabbits, grass, hearts, habitats; export roundtrip matches.",
+          "Invalid JSON is rejected without replacing the game.",
+          "Reload preserves imported progression and fed affection.",
+          "Production ?dev=1 keeps normal save, hides tools/badge and creates no development storage.",
+          "Real normal decoration purchase, cancelled placement, cancelled sale, double-confirmed atomic 50% sale and persisted reload."
+        ],
+        "screenshots": [
+          "/home/runner/work/_temp/land-proof/production-initial.png",
+          "/home/runner/work/_temp/land-proof/production-version.png",
+          "/home/runner/work/_temp/land-proof/production-fed.png",
+          "/home/runner/work/_temp/land-proof/production-imported.png",
+          "/home/runner/work/_temp/land-proof/production-final.png"
+        ],
+        "downloads": [
+          {
+            "path": "/home/runner/work/_temp/land-proof/production-export.json",
+            "suggestedFilename": "prairie-lapins-2026-10-10T10-48-36Z.json"
+          },
+          {
+            "path": "/home/runner/work/_temp/land-proof/production-roundtrip.json",
+            "suggestedFilename": "prairie-lapins-2026-10-10T10-48-39Z.json"
+          }
+        ],
+        "errors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "passed": true,
+        "version": "Version : Prairie de lapins · île à neuf parcelles · v6 · build 414498f"
+      },
+      {
+        "normal": "http://127.0.0.1:5185/Project-L/",
+        "laboratory": "http://127.0.0.1:5185/Project-L/dev/",
+        "expected": "414498f",
+        "checks": [
+          "Normal link opens an independent fresh laboratory; normal feed/export remains intact.",
+          "All five clock advances and six resource grants leave every normal-origin key byte-for-byte unchanged.",
+          "MODE-TEST JSON export; cancelled and confirmed normal-copy imports leave the source unchanged.",
+          "Laboratory reload restores its save/clock; cancelled and confirmed reset preserve normal storage.",
+          "All fourteen confirmed scenario loads produce valid saved v6 states without writing normal keys.",
+          "Portrait mobile viewport: test resource control remains accessible, banner visible and panel unobscured.",
+          "Return/reload normal game retains its fed rabbit and resources, uses real time, and ?dev=1 cannot activate tools."
+        ],
+        "errors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "passed": true,
+        "version": "Version : Prairie de lapins · île à neuf parcelles · v6 · build 414498f"
+      },
+      {
+        "url": "http://127.0.0.1:5185/Project-L/",
+        "expected": "414498f",
+        "browser": "Chromium mobile viewport; not physical Safari",
+        "checks": [
+          "External storage event exposes the conflict immediately; obsolete tab refuses purchase and exports its intact memory copy.",
+          "Repeated panels, viewport rotation and lifecycle events preserve ownership and resources.",
+          "Laboratory storage notifications cannot mark the normal session conflicted."
+        ],
+        "errors": [],
+        "passed": true
+      },
+      {
+        "url": "http://127.0.0.1:5185/Project-L/",
+        "expected": "414498f",
+        "checks": [
+          {
+            "route": "normal",
+            "asset": {
+              "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+              "width": 518,
+              "height": 473,
+              "fit": "contain",
+              "corner": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "fur": [
+                254,
+                243,
+                249,
+                255
+              ]
+            },
+            "portraits": "shop, collection, portrait viewport",
+            "world": "canvas screenshot; no app hooks"
+          },
+          {
+            "route": "dev/",
+            "asset": {
+              "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+              "width": 518,
+              "height": 473,
+              "fit": "contain",
+              "corner": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "fur": [
+                254,
+                243,
+                249,
+                255
+              ]
+            },
+            "portraits": "shop, collection, portrait viewport",
+            "world": "canvas screenshot; no app hooks"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      },
+      {
+        "url": "http://127.0.0.1:5185/Project-L/",
+        "expected": "414498f",
+        "checks": [
+          {
+            "route": "normal",
+            "assets": [
+              {
+                "species": "paille",
+                "hash": "005ac9f351bfe9614520b1e1998eee1421a5c6aff1c05bcf92172bbb52dd9dfe",
+                "width": 350,
+                "height": 495,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  229,
+                  211,
+                  193,
+                  255
+                ]
+              },
+              {
+                "species": "terre",
+                "hash": "1f0337f7e41ef2d0ce5f5d0114c49b9dfbc38f1bfa90d90e9a2ab7c38e88109c",
+                "width": 992,
+                "height": 907,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "neige",
+                "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+                "width": 518,
+                "height": 473,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  254,
+                  243,
+                  249,
+                  255
+                ]
+              }
+            ],
+            "portraits": "shop and portrait viewport: three originals; lab collection: three originals; normal collection: undiscovered Terre remains hidden",
+            "world": "canvas screenshot; no app hooks"
+          },
+          {
+            "route": "dev/",
+            "assets": [
+              {
+                "species": "paille",
+                "hash": "005ac9f351bfe9614520b1e1998eee1421a5c6aff1c05bcf92172bbb52dd9dfe",
+                "width": 350,
+                "height": 495,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  229,
+                  211,
+                  193,
+                  255
+                ]
+              },
+              {
+                "species": "terre",
+                "hash": "1f0337f7e41ef2d0ce5f5d0114c49b9dfbc38f1bfa90d90e9a2ab7c38e88109c",
+                "width": 992,
+                "height": 907,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "neige",
+                "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+                "width": 518,
+                "height": 473,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  254,
+                  243,
+                  249,
+                  255
+                ]
+              }
+            ],
+            "portraits": "shop and portrait viewport: three originals; lab collection: three originals; normal collection: undiscovered Terre remains hidden",
+            "world": "canvas screenshot; no app hooks"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      },
+      {
+        "url": "http://127.0.0.1:5185/Project-L/",
+        "expected": "414498f",
+        "checks": [
+          {
+            "route": "normal",
+            "assets": [
+              {
+                "species": "belier-gris",
+                "hash": "5072d1f8ee2d14ac592cea8a3da933dfc11d5d08e5e435a22c41da4fd291f505",
+                "width": 527,
+                "height": 488,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  158,
+                  158,
+                  158,
+                  255
+                ]
+              },
+              {
+                "species": "feu",
+                "hash": "d080ac1a9a21e6f9c3259dc45800b0713e8b57bb853eb043aea9886cdc16e536",
+                "width": 1004,
+                "height": 827,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "volant",
+                "hash": "f49ad10d6d9c013fad098759d420a019f1c70b4c28e5f4dc0036bb4e63b641b0",
+                "width": 814,
+                "height": 966,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "paille",
+                "hash": "005ac9f351bfe9614520b1e1998eee1421a5c6aff1c05bcf92172bbb52dd9dfe",
+                "width": 350,
+                "height": 495,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  229,
+                  211,
+                  193,
+                  255
+                ]
+              },
+              {
+                "species": "terre",
+                "hash": "1f0337f7e41ef2d0ce5f5d0114c49b9dfbc38f1bfa90d90e9a2ab7c38e88109c",
+                "width": 992,
+                "height": 907,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "neige",
+                "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+                "width": 518,
+                "height": 473,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  254,
+                  243,
+                  249,
+                  255
+                ]
+              }
+            ],
+            "portraits": "shop and portrait viewport: six originals; lab collection: six originals; normal collection: undiscovered species remain hidden",
+            "world": "canvas screenshot; no app hooks"
+          },
+          {
+            "route": "dev/",
+            "assets": [
+              {
+                "species": "belier-gris",
+                "hash": "5072d1f8ee2d14ac592cea8a3da933dfc11d5d08e5e435a22c41da4fd291f505",
+                "width": 527,
+                "height": 488,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  158,
+                  158,
+                  158,
+                  255
+                ]
+              },
+              {
+                "species": "feu",
+                "hash": "d080ac1a9a21e6f9c3259dc45800b0713e8b57bb853eb043aea9886cdc16e536",
+                "width": 1004,
+                "height": 827,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "volant",
+                "hash": "f49ad10d6d9c013fad098759d420a019f1c70b4c28e5f4dc0036bb4e63b641b0",
+                "width": 814,
+                "height": 966,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "paille",
+                "hash": "005ac9f351bfe9614520b1e1998eee1421a5c6aff1c05bcf92172bbb52dd9dfe",
+                "width": 350,
+                "height": 495,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  229,
+                  211,
+                  193,
+                  255
+                ]
+              },
+              {
+                "species": "terre",
+                "hash": "1f0337f7e41ef2d0ce5f5d0114c49b9dfbc38f1bfa90d90e9a2ab7c38e88109c",
+                "width": 992,
+                "height": 907,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "neige",
+                "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+                "width": 518,
+                "height": 473,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  254,
+                  243,
+                  249,
+                  255
+                ]
+              }
+            ],
+            "portraits": "shop and portrait viewport: six originals; lab collection: six originals; normal collection: undiscovered species remain hidden",
+            "world": "canvas screenshot; no app hooks"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      }
+    ]
+  },
+  "limits": [
+    "Chromium touch emulation; no physical iPhone Safari test for these three new renders.",
+    "Neige, Paille and Terre were already validated on iPhone by the player."
+  ],
+  "publication": {
+    "run": 38046399231,
+    "buildJob": 114196705030,
+    "deployJob": 114196921289,
+    "artifact": 11667004162,
+    "conclusion": "success",
+    "revisions": [
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "revision": "550dceb49c4c42f54da799137dd37e0c9c9c4fe9",
+        "saveFormat": 6,
+        "html": 200,
+        "application": 200,
+        "featuresChecked": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/dev/",
+        "revision": "550dceb49c4c42f54da799137dd37e0c9c9c4fe9",
+        "saveFormat": 6,
+        "html": 200,
+        "application": 200,
+        "featuresChecked": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/preview/accounts/",
+        "revision": "3e70d9e8cbe9228c63c73db007fff199199d6470",
+        "saveFormat": 4,
+        "html": 200,
+        "application": 200,
+        "featuresChecked": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/preview/decorations/",
+        "revision": "85fe255ec8e7e65213cd570f91f5bb1fe66a30d7",
+        "saveFormat": 5,
+        "html": 200,
+        "application": 200,
+        "featuresChecked": true
+      }
+    ],
+    "browserSuites": 6,
+    "browserChecks": 25,
+    "reports": [
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "browser": "Chromium, 852 × 393 landscape; not physical iPhone Safari",
+        "expectedRevision": "550dceb",
+        "checks": [
+          "Normal new game: canvas, 300 pattes, 10 grass, 12 hearts, 2 rabbits, save v6.",
+          "Shop, collection, missions, settings and release identifier.",
+          "Real canvas selection and feed button: Paille affection 1→2, grass 10→8.",
+          "Export downloads valid v6 JSON; cancelling import preserves current progression.",
+          "Confirmed import writes 317 pattes and retains rabbits, grass, hearts, habitats; export roundtrip matches.",
+          "Invalid JSON is rejected without replacing the game.",
+          "Reload preserves imported progression and fed affection.",
+          "Production ?dev=1 keeps normal save, hides tools/badge and creates no development storage.",
+          "Real normal decoration purchase, cancelled placement, cancelled sale, double-confirmed atomic 50% sale and persisted reload."
+        ],
+        "screenshots": [
+          "/home/runner/work/_temp/public-browser-proof/production-initial.png",
+          "/home/runner/work/_temp/public-browser-proof/production-version.png",
+          "/home/runner/work/_temp/public-browser-proof/production-fed.png",
+          "/home/runner/work/_temp/public-browser-proof/production-imported.png",
+          "/home/runner/work/_temp/public-browser-proof/production-final.png"
+        ],
+        "downloads": [
+          {
+            "path": "/home/runner/work/_temp/public-browser-proof/production-export.json",
+            "suggestedFilename": "prairie-lapins-2026-10-10T10-54-09Z.json"
+          },
+          {
+            "path": "/home/runner/work/_temp/public-browser-proof/production-roundtrip.json",
+            "suggestedFilename": "prairie-lapins-2026-10-10T10-54-12Z.json"
+          }
+        ],
+        "errors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "passed": true,
+        "version": "Version : Prairie de lapins · île à neuf parcelles · v6 · build 550dceb"
+      },
+      {
+        "normal": "https://sullivanlegoff-code.github.io/Project-L/",
+        "laboratory": "https://sullivanlegoff-code.github.io/Project-L/dev/",
+        "expected": "550dceb",
+        "checks": [
+          "Normal link opens an independent fresh laboratory; normal feed/export remains intact.",
+          "All five clock advances and six resource grants leave every normal-origin key byte-for-byte unchanged.",
+          "MODE-TEST JSON export; cancelled and confirmed normal-copy imports leave the source unchanged.",
+          "Laboratory reload restores its save/clock; cancelled and confirmed reset preserve normal storage.",
+          "All fourteen confirmed scenario loads produce valid saved v6 states without writing normal keys.",
+          "Portrait mobile viewport: test resource control remains accessible, banner visible and panel unobscured.",
+          "Return/reload normal game retains its fed rabbit and resources, uses real time, and ?dev=1 cannot activate tools."
+        ],
+        "errors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "passed": true,
+        "version": "Version : Prairie de lapins · île à neuf parcelles · v6 · build 550dceb"
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "expected": "550dceb",
+        "browser": "Chromium mobile viewport; not physical Safari",
+        "checks": [
+          "External storage event exposes the conflict immediately; obsolete tab refuses purchase and exports its intact memory copy.",
+          "Repeated panels, viewport rotation and lifecycle events preserve ownership and resources.",
+          "Laboratory storage notifications cannot mark the normal session conflicted."
+        ],
+        "errors": [],
+        "passed": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "expected": "550dceb",
+        "checks": [
+          {
+            "route": "normal",
+            "asset": {
+              "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+              "width": 518,
+              "height": 473,
+              "fit": "contain",
+              "corner": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "fur": [
+                254,
+                243,
+                249,
+                255
+              ]
+            },
+            "portraits": "shop, collection, portrait viewport",
+            "world": "canvas screenshot; no app hooks"
+          },
+          {
+            "route": "dev/",
+            "asset": {
+              "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+              "width": 518,
+              "height": 473,
+              "fit": "contain",
+              "corner": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "fur": [
+                254,
+                243,
+                249,
+                255
+              ]
+            },
+            "portraits": "shop, collection, portrait viewport",
+            "world": "canvas screenshot; no app hooks"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "expected": "550dceb",
+        "checks": [
+          {
+            "route": "normal",
+            "assets": [
+              {
+                "species": "paille",
+                "hash": "005ac9f351bfe9614520b1e1998eee1421a5c6aff1c05bcf92172bbb52dd9dfe",
+                "width": 350,
+                "height": 495,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  229,
+                  211,
+                  193,
+                  255
+                ]
+              },
+              {
+                "species": "terre",
+                "hash": "1f0337f7e41ef2d0ce5f5d0114c49b9dfbc38f1bfa90d90e9a2ab7c38e88109c",
+                "width": 992,
+                "height": 907,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "neige",
+                "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+                "width": 518,
+                "height": 473,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  254,
+                  243,
+                  249,
+                  255
+                ]
+              }
+            ],
+            "portraits": "shop and portrait viewport: three originals; lab collection: three originals; normal collection: undiscovered Terre remains hidden",
+            "world": "canvas screenshot; no app hooks"
+          },
+          {
+            "route": "dev/",
+            "assets": [
+              {
+                "species": "paille",
+                "hash": "005ac9f351bfe9614520b1e1998eee1421a5c6aff1c05bcf92172bbb52dd9dfe",
+                "width": 350,
+                "height": 495,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  229,
+                  211,
+                  193,
+                  255
+                ]
+              },
+              {
+                "species": "terre",
+                "hash": "1f0337f7e41ef2d0ce5f5d0114c49b9dfbc38f1bfa90d90e9a2ab7c38e88109c",
+                "width": 992,
+                "height": 907,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "neige",
+                "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+                "width": 518,
+                "height": 473,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  254,
+                  243,
+                  249,
+                  255
+                ]
+              }
+            ],
+            "portraits": "shop and portrait viewport: three originals; lab collection: three originals; normal collection: undiscovered Terre remains hidden",
+            "world": "canvas screenshot; no app hooks"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "expected": "550dceb",
+        "checks": [
+          {
+            "route": "normal",
+            "assets": [
+              {
+                "species": "belier-gris",
+                "hash": "5072d1f8ee2d14ac592cea8a3da933dfc11d5d08e5e435a22c41da4fd291f505",
+                "width": 527,
+                "height": 488,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  158,
+                  158,
+                  158,
+                  255
+                ]
+              },
+              {
+                "species": "feu",
+                "hash": "d080ac1a9a21e6f9c3259dc45800b0713e8b57bb853eb043aea9886cdc16e536",
+                "width": 1004,
+                "height": 827,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "volant",
+                "hash": "f49ad10d6d9c013fad098759d420a019f1c70b4c28e5f4dc0036bb4e63b641b0",
+                "width": 814,
+                "height": 966,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "paille",
+                "hash": "005ac9f351bfe9614520b1e1998eee1421a5c6aff1c05bcf92172bbb52dd9dfe",
+                "width": 350,
+                "height": 495,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  229,
+                  211,
+                  193,
+                  255
+                ]
+              },
+              {
+                "species": "terre",
+                "hash": "1f0337f7e41ef2d0ce5f5d0114c49b9dfbc38f1bfa90d90e9a2ab7c38e88109c",
+                "width": 992,
+                "height": 907,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "neige",
+                "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+                "width": 518,
+                "height": 473,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  254,
+                  243,
+                  249,
+                  255
+                ]
+              }
+            ],
+            "portraits": "shop and portrait viewport: six originals; lab collection: six originals; normal collection: undiscovered species remain hidden",
+            "world": "canvas screenshot; no app hooks"
+          },
+          {
+            "route": "dev/",
+            "assets": [
+              {
+                "species": "belier-gris",
+                "hash": "5072d1f8ee2d14ac592cea8a3da933dfc11d5d08e5e435a22c41da4fd291f505",
+                "width": 527,
+                "height": 488,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  158,
+                  158,
+                  158,
+                  255
+                ]
+              },
+              {
+                "species": "feu",
+                "hash": "d080ac1a9a21e6f9c3259dc45800b0713e8b57bb853eb043aea9886cdc16e536",
+                "width": 1004,
+                "height": 827,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "volant",
+                "hash": "f49ad10d6d9c013fad098759d420a019f1c70b4c28e5f4dc0036bb4e63b641b0",
+                "width": 814,
+                "height": 966,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "paille",
+                "hash": "005ac9f351bfe9614520b1e1998eee1421a5c6aff1c05bcf92172bbb52dd9dfe",
+                "width": 350,
+                "height": 495,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  229,
+                  211,
+                  193,
+                  255
+                ]
+              },
+              {
+                "species": "terre",
+                "hash": "1f0337f7e41ef2d0ce5f5d0114c49b9dfbc38f1bfa90d90e9a2ab7c38e88109c",
+                "width": 992,
+                "height": 907,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "neige",
+                "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+                "width": 518,
+                "height": 473,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  254,
+                  243,
+                  249,
+                  255
+                ]
+              }
+            ],
+            "portraits": "shop and portrait viewport: six originals; lab collection: six originals; normal collection: undiscovered species remain hidden",
+            "world": "canvas screenshot; no app hooks"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      }
+    ]
+  }
+}

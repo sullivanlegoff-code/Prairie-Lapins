@@ -1,0 +1,133 @@
+{
+  "date": "2026-10-09",
+  "status": "published-and-verified",
+  "applicationRevision": "7da76c747de6aec72cdcd3f1281bcf66dc2078d5",
+  "mergedPR": {
+    "number": 2,
+    "url": "https://github.com/sullivanlegoff-code/Project-L/pull/2",
+    "merged": true,
+    "mergedAt": "2026-10-09T16:02:53Z"
+  },
+  "sourceBeforeMerge": "9664837cf43f3654fd3cddb03493788fc8acce77",
+  "publication": {
+    "run": 37956243641,
+    "url": "https://github.com/sullivanlegoff-code/Project-L/actions/runs/37956243641",
+    "result": "success",
+    "buildJob": 113907372669,
+    "deployJob": 113907979623,
+    "artifact": 11627499043,
+    "artifactExpiresAt": "2026-11-08T16:05:38Z"
+  },
+  "validation": {
+    "run": 37955358594,
+    "result": "success",
+    "unitTests": 544,
+    "testFiles": 14,
+    "typecheck": "passed",
+    "browserPaths": 6,
+    "artifact": 11628455918,
+    "preflightRun": 37955358771,
+    "preflight": "success",
+    "fourBuilds": "passed",
+    "accountsFrozenUnitTests": 415,
+    "decorationFrozenUnitTests": 544
+  },
+  "publicRoutes": [
+    {
+      "url": "https://sullivanlegoff-code.github.io/Project-L/",
+      "revision": "7da76c747de6aec72cdcd3f1281bcf66dc2078d5",
+      "saveFormat": 5,
+      "html": 200,
+      "application": 200,
+      "featuresChecked": true
+    },
+    {
+      "url": "https://sullivanlegoff-code.github.io/Project-L/dev/",
+      "revision": "7da76c747de6aec72cdcd3f1281bcf66dc2078d5",
+      "saveFormat": 5,
+      "html": 200,
+      "application": 200,
+      "featuresChecked": true
+    },
+    {
+      "url": "https://sullivanlegoff-code.github.io/Project-L/preview/accounts/",
+      "revision": "3e70d9e8cbe9228c63c73db007fff199199d6470",
+      "saveFormat": 4,
+      "html": 200,
+      "application": 200,
+      "featuresChecked": true
+    },
+    {
+      "url": "https://sullivanlegoff-code.github.io/Project-L/preview/decorations/",
+      "revision": "85fe255ec8e7e65213cd570f91f5bb1fe66a30d7",
+      "saveFormat": 5,
+      "html": 200,
+      "application": 200,
+      "featuresChecked": true
+    }
+  ],
+  "normalBrowser": {
+    "url": "https://sullivanlegoff-code.github.io/Project-L/",
+    "browser": "Chromium, 852 × 393 landscape; not physical iPhone Safari",
+    "expectedRevision": "7da76c7",
+    "checks": [
+      "Normal new game: canvas, 300 pattes, 10 grass, 12 hearts, 2 rabbits, save v5.",
+      "Shop, collection, missions, settings and release identifier.",
+      "Real canvas selection and feed button: Paille affection 1→2, grass 10→8.",
+      "Export downloads valid v5 JSON; cancelling import preserves current progression.",
+      "Confirmed import writes 317 pattes and retains rabbits, grass, hearts, habitats; export roundtrip matches.",
+      "Invalid JSON is rejected without replacing the game.",
+      "Reload preserves imported progression and fed affection.",
+      "Production ?dev=1 keeps normal save, hides tools/badge and creates no development storage.",
+      "Real normal decoration purchase, cancelled placement, cancelled sale, double-confirmed atomic 50% sale and persisted reload."
+    ],
+    "screenshots": [
+      "/home/runner/work/_temp/public-browser-proof/production-initial.png",
+      "/home/runner/work/_temp/public-browser-proof/production-version.png",
+      "/home/runner/work/_temp/public-browser-proof/production-fed.png",
+      "/home/runner/work/_temp/public-browser-proof/production-imported.png",
+      "/home/runner/work/_temp/public-browser-proof/production-final.png"
+    ],
+    "downloads": [
+      {
+        "path": "/home/runner/work/_temp/public-browser-proof/production-export.json",
+        "suggestedFilename": "prairie-lapins-2026-10-09T16-05-07Z.json"
+      },
+      {
+        "path": "/home/runner/work/_temp/public-browser-proof/production-roundtrip.json",
+        "suggestedFilename": "prairie-lapins-2026-10-09T16-05-08Z.json"
+      }
+    ],
+    "errors": [],
+    "failedRequests": [],
+    "httpErrors": [],
+    "passed": true,
+    "version": "Version : Prairie de lapins · quinze espèces · v5 · build 7da76c7"
+  },
+  "laboratoryBrowser": {
+    "normal": "https://sullivanlegoff-code.github.io/Project-L/",
+    "laboratory": "https://sullivanlegoff-code.github.io/Project-L/dev/",
+    "expected": "7da76c7",
+    "checks": [
+      "Normal link opens an independent fresh laboratory; normal feed/export remains intact.",
+      "All five clock advances and six resource grants leave every normal-origin key byte-for-byte unchanged.",
+      "MODE-TEST JSON export; cancelled and confirmed normal-copy imports leave the source unchanged.",
+      "Laboratory reload restores its save/clock; cancelled and confirmed reset preserve normal storage.",
+      "All eleven confirmed scenario loads produce valid saved v5 states without writing normal keys.",
+      "Portrait mobile viewport: test resource control remains accessible, banner visible and panel unobscured.",
+      "Return/reload normal game retains its fed rabbit and resources, uses real time, and ?dev=1 cannot activate tools."
+    ],
+    "errors": [],
+    "failedRequests": [],
+    "httpErrors": [],
+    "passed": true,
+    "version": "Version : Prairie de lapins · quinze espèces · v5 · build 7da76c7"
+  },
+  "emailAccounts": "paused; PR1 and account branch unchanged; no email/SQL/backend action",
+  "iPhoneFeedback": "User confirmed general operation of the fifteen-species preview and validated island/decor direction before integration. No detailed scenarios/device/Safari version inferred.",
+  "limits": [
+    "Automated post-publication interaction uses disposable Chromium, not physical Safari.",
+    "Progress remains local to each browser/device; no automatic test-save transfer.",
+    "Old clients and accounts v4 cannot open v5 files. Close old tabs, keep exports, do not clear Safari data."
+  ]
+}

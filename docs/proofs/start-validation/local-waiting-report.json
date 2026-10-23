@@ -1,0 +1,16 @@
+{
+  "laboratoryWaitingMinutes": 30,
+  "passed": true,
+  "url": "http://127.0.0.1:5226/Project-L/",
+  "browser": "Chromium tactile, pas Safari physique",
+  "timing": "Délais normaux dans la simulation ; horloge du laboratoire avancée explicitement, pas une mesure humaine.",
+  "checks": [
+    "Normal neuf : ressources inchangées, fiche sans action automatique, fermeture, sortie et reprise persistée.",
+    "Ferme placée par commande réelle, petite production 5 min, collection et silhouettes pendant attente, récolte et repas Neige ; rotation et rechargement, récompenses explicites disparues.",
+    "Reproduction gratuite, recette sans promesse, parents au nid après délai, transfert manuel, croissance secrète et accueil réel ; objectif libre, sept récompenses une fois et isolation normal/laboratoire.",
+    "Actions anticipées avec récompenses en attente sur petit paysage 667×375 : carte contenue et défilable, navigation et commandes de prairie accessibles, sortie possible."
+  ],
+  "errors": [],
+  "wallSeconds": 22.956,
+  "proofScope": "Build local compilé ; les résultats publics GitHub Pages sont publiés séparément après déploiement."
+}

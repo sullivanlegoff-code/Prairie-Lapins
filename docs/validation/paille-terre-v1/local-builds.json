@@ -1,0 +1,136 @@
+{
+  "url": "local normal and laboratory builds",
+  "expected": "local validation",
+  "checks": [
+    {
+      "route": "normal",
+      "assets": [
+        {
+          "species": "paille",
+          "hash": "005ac9f351bfe9614520b1e1998eee1421a5c6aff1c05bcf92172bbb52dd9dfe",
+          "width": 350,
+          "height": 495,
+          "fit": "contain",
+          "corner": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "fur": [
+            229,
+            211,
+            193,
+            255
+          ]
+        },
+        {
+          "species": "terre",
+          "hash": "1f0337f7e41ef2d0ce5f5d0114c49b9dfbc38f1bfa90d90e9a2ab7c38e88109c",
+          "width": 992,
+          "height": 907,
+          "fit": "contain",
+          "corner": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "fur": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "species": "neige",
+          "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+          "width": 518,
+          "height": 473,
+          "fit": "contain",
+          "corner": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "fur": [
+            254,
+            243,
+            249,
+            255
+          ]
+        }
+      ],
+      "portraits": "shop and portrait viewport: three originals; lab collection: three originals; normal collection: undiscovered Terre remains hidden",
+      "world": "canvas screenshot; no app hooks"
+    },
+    {
+      "route": "dev/",
+      "assets": [
+        {
+          "species": "paille",
+          "hash": "005ac9f351bfe9614520b1e1998eee1421a5c6aff1c05bcf92172bbb52dd9dfe",
+          "width": 350,
+          "height": 495,
+          "fit": "contain",
+          "corner": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "fur": [
+            229,
+            211,
+            193,
+            255
+          ]
+        },
+        {
+          "species": "terre",
+          "hash": "1f0337f7e41ef2d0ce5f5d0114c49b9dfbc38f1bfa90d90e9a2ab7c38e88109c",
+          "width": 992,
+          "height": 907,
+          "fit": "contain",
+          "corner": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "fur": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "species": "neige",
+          "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+          "width": 518,
+          "height": 473,
+          "fit": "contain",
+          "corner": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "fur": [
+            254,
+            243,
+            249,
+            255
+          ]
+        }
+      ],
+      "portraits": "shop and portrait viewport: three originals; lab collection: three originals; normal collection: undiscovered Terre remains hidden",
+      "world": "canvas screenshot; no app hooks"
+    }
+  ],
+  "errors": [],
+  "passed": true
+}

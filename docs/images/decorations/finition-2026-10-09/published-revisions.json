@@ -1,0 +1,39 @@
+{
+  "verifiedAt": "2026-10-09T00:49:13Z",
+  "workflow": "https://github.com/sullivanlegoff-code/Project-L/actions/runs/37866562358",
+  "method": "Read-only HTTPS checks on GitHub Actions of revision files and served application scripts; no new hosted browser test",
+  "routes": [
+    {
+      "url": "https://sullivanlegoff-code.github.io/Project-L/",
+      "revision": "ae31131f8318ffbd69794f20e57c1050694afb49",
+      "saveFormat": 4,
+      "html": 200,
+      "application": 200,
+      "featuresChecked": true
+    },
+    {
+      "url": "https://sullivanlegoff-code.github.io/Project-L/dev/",
+      "revision": "ae31131f8318ffbd69794f20e57c1050694afb49",
+      "saveFormat": 4,
+      "html": 200,
+      "application": 200,
+      "featuresChecked": true
+    },
+    {
+      "url": "https://sullivanlegoff-code.github.io/Project-L/preview/accounts/",
+      "revision": "3e70d9e8cbe9228c63c73db007fff199199d6470",
+      "saveFormat": 4,
+      "html": 200,
+      "application": 200,
+      "featuresChecked": true
+    },
+    {
+      "url": "https://sullivanlegoff-code.github.io/Project-L/preview/decorations/",
+      "revision": "2e17a88fbc4f1e20099ebd90497f0f10074776fa",
+      "saveFormat": 5,
+      "html": 200,
+      "application": 200,
+      "featuresChecked": true
+    }
+  ]
+}

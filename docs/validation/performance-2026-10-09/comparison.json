@@ -1,0 +1,67 @@
+{
+  "sourceBefore": "d7fe786fa4859ee5c8db24ac856e4baaf4045c11",
+  "applicationBefore": "db01f39215d2023b893fe266a68a2bbe1630b556",
+  "conditions": {
+    "browser": "Chromium/Linux software renderer; not physical Safari",
+    "viewport": "852\u00d7393",
+    "zoom": 1.05,
+    "animation": "normal",
+    "autosave": "unchanged 5 seconds",
+    "passiveMs": 12000,
+    "repeats": 2,
+    "captureDuringSamples": false
+  },
+  "metric": "Total frames / total elapsed; largest p95 among two runs; method instrumentation separate",
+  "rows": [
+    {
+      "scenario": "decorationStart",
+      "owned": 0,
+      "placed": 0,
+      "rabbits": 2,
+      "before": {
+        "fps": 7.246646872968351,
+        "p95WorstMs": 183.30000000000018,
+        "rendererMeanCpuMs": 4.3574468087642755
+      },
+      "after": {
+        "fps": 31.207869376341936,
+        "p95WorstMs": 50.10000000000218,
+        "rendererMeanCpuMs": 0.3123809522816113
+      }
+    },
+    {
+      "scenario": "decorationDemo",
+      "owned": 14,
+      "placed": 14,
+      "rabbits": 2,
+      "before": {
+        "fps": 4.934565177727279,
+        "p95WorstMs": 250,
+        "rendererMeanCpuMs": 9.124242424231136
+      },
+      "after": {
+        "fps": 28.380641327698754,
+        "p95WorstMs": 66.69999999999709,
+        "rendererMeanCpuMs": 0.4534031414470748
+      }
+    },
+    {
+      "scenario": "decorationDense",
+      "owned": 512,
+      "placed": 140,
+      "rabbits": 7,
+      "before": {
+        "fps": 3.824705127572424,
+        "p95WorstMs": 416.59999999999127,
+        "rendererMeanCpuMs": 9.371875000128057
+      },
+      "after": {
+        "fps": 19.50296486561629,
+        "p95WorstMs": 66.80000000000291,
+        "rendererMeanCpuMs": 0.7193548386886476
+      }
+    }
+  ],
+  "applicationAfter": "a7635ec44400dba55d2e57cdd7b94cc14e3bac46",
+  "afterSourceProvenance": "Measured against the exact application files uploaded in this revision, before commit; documentary follow-up does not change the application."
+}

@@ -1,0 +1,184 @@
+{
+  "browser": "Chromium / real touch profile; not physical Safari",
+  "beforeComparison": false,
+  "sizes": [
+    {
+      "columns": 3,
+      "zoom": 0.8,
+      "placements": [
+        {
+          "id": "building-1",
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "columns": 3,
+      "zoom": 1.05,
+      "placements": [
+        {
+          "id": "building-1",
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "columns": 3,
+      "zoom": 1.65,
+      "placements": [
+        {
+          "id": "building-1",
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "columns": 6,
+      "zoom": 0.8,
+      "placements": [
+        {
+          "id": "building-1",
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "columns": 6,
+      "zoom": 1.05,
+      "placements": [
+        {
+          "id": "building-1",
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "columns": 6,
+      "zoom": 1.65,
+      "placements": [
+        {
+          "id": "building-1",
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "columns": 9,
+      "zoom": 0.8,
+      "placements": [
+        {
+          "id": "building-1",
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "columns": 9,
+      "zoom": 1.05,
+      "placements": [
+        {
+          "id": "building-1",
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "columns": 9,
+      "zoom": 1.65,
+      "placements": [
+        {
+          "id": "building-1",
+          "x": 0,
+          "y": 0
+        }
+      ]
+    }
+  ],
+  "corners": [
+    {
+      "columns": 3,
+      "id": "decoration-4",
+      "selected": true
+    },
+    {
+      "columns": 3,
+      "id": "decoration-5",
+      "selected": true
+    },
+    {
+      "columns": 3,
+      "id": "decoration-6",
+      "selected": true
+    },
+    {
+      "columns": 3,
+      "id": "decoration-7",
+      "selected": true
+    },
+    {
+      "columns": 6,
+      "id": "decoration-4",
+      "selected": true
+    },
+    {
+      "columns": 6,
+      "id": "decoration-5",
+      "selected": true
+    },
+    {
+      "columns": 6,
+      "id": "decoration-6",
+      "selected": true
+    },
+    {
+      "columns": 6,
+      "id": "decoration-7",
+      "selected": true
+    },
+    {
+      "columns": 9,
+      "id": "decoration-4",
+      "selected": true
+    },
+    {
+      "columns": 9,
+      "id": "decoration-5",
+      "selected": true
+    },
+    {
+      "columns": 9,
+      "id": "decoration-6",
+      "selected": true
+    },
+    {
+      "columns": 9,
+      "id": "decoration-7",
+      "selected": true
+    }
+  ],
+  "actions": {
+    "placeEdges": true,
+    "selectEdges": true,
+    "movePreviewKeepsOriginal": true,
+    "cancelMove": true,
+    "commitMove": true,
+    "sellCancel": true,
+    "sellDoubleConfirmation": true,
+    "storeFree": true,
+    "reloadPlacements": true,
+    "buildingFarCorner": true,
+    "harvest": true,
+    "photo": true
+  },
+  "otherRouteKeysUnchanged": true,
+  "errors": [],
+  "supabaseRequests": []
+}

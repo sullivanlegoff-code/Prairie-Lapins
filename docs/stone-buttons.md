@@ -1,0 +1,27 @@
+# Boutons pierre — adaptation de la référence
+
+Référence intacte : `docs/references/Stone Bouton/bouton-pierre.png.png`, PNG 1066 × 511, fond blanc opaque. La planche montre des pierres gris chaud à bord sombre irrégulier, angles ébréchés, biseau clair en haut/gauche et sombre en bas/droite, fissures courtes ramifiées. Les modèles rectangulaires peu hauts sont les plus adaptés aux boutons existants.
+
+Une adaptation de cadre transparent a été générée avec l'outil intégré imagegen, pas une extraction pixel à pixel de la planche. Aucun fichier d'illustration du jeu n'est remplacé. `scripts/prepare-stone-assets.ps1 -MasterImage <PNG-généré>` recadre les marges transparentes et produit :
+- `public/assets/ui/stone-frame.png`, 256 × 256 RGBA, centre/extrémités extérieures transparents : coins fixes, fissures surtout dans les coins, bord intermédiaire peu marqué ; découpage CSS neuf zones.
+- `public/assets/ui/stone-grain.png`, 64 × 64 RGB : petit échantillon sans grande fissure de la bordure supérieure de l'adaptation, pour un grain très discret du centre. Le relief et les fissures restent dans le cadre, pas dans une grande image étirée.
+
+Prompt de génération : « Create a single square 9-slice UI STONE FRAME texture inspired by the attached grey hand-painted stone game buttons. This is an adaptation, not the reference sheet. Square canvas, one frame only, straight parallel thin sides, mildly chipped rounded corners, hand-painted warm grey stone, darker graphite outer edge, pale upper-left bevel and dark lower-right bevel giving carved shallow relief. Short fine fissures concentrated ONLY inside the four corner squares. Top/bottom/left/right middle strips must have quiet continuous low-contrast grain with NO long cracks and no distinctive repeating marks, suitable for round tiling along a button edge. Frame thickness exactly about one eighth of square width; keep entire frame inside image with tiny transparent outer margin. The central 75% square must be fully transparent, as must the exterior outside the rounded stone frame. No solid center, no white matte, no text, no glyphs, no buttons sheet, no drop shadow beyond edge. Grey neutral colors so the frame can sit over sage stone or pale limestone button centers. Deliver transparent PNG. »
+
+La génération est une proposition artistique à valider avec le propriétaire. La référence contient un fond blanc : c'est l'adaptation qui est détourée, la référence originale n'est pas altérée.
+
+## Habillage partagé
+
+`src/display/stone-buttons.css`, importé après les styles existants, vise tous les boutons sauf `.resource` et `#player-progress`. XP et cœurs sont techniquement des éléments `<button>` ouvrant leurs détails : ils sont explicitement exclus, tout comme les autres compteurs. Aucun texte, réglage de jeu ni illustration n'est modifié.
+
+Le cadre est un pseudo-élément absolu dans la boîte existante : `border-image` découpé à 48 pixels source, affiché sur 10 pixels, bords en `round`, sans centre étiré. Les fissures restent dans les coins fixes ; seuls les bords peu marqués sont répétés. Centre avec grain 64 pixels en mélange doux. Ressources : cadre **65 963 octets**, grain **4 503 octets**, total **70 466 octets**. Le centre du cadre et ses coins extérieurs ont une transparence réelle ; le grain est RGB opaque.
+
+Principal : pierre sauge `#c6d0b6`, inscription `#24311f`. Secondaire : calcaire gris `#d6d6cb`, inscription `#343e36`. Appuyé : pierre assombrie, relief rentré, sans translation ni changement de taille. Désactivé : pierre gris neutre `#c7c8c0`, inscription sombre `#41473b`, cadre éclairci et relief aplati ; pas de baisse d'opacité du texte. Les actions dangereuses gardent une teinte terre cuite. Le focus clavier conserve son contour visible. Proposition facultative pour les compteurs, non appliquée : un liseré minéral discret pourrait les assortir sans leur donner l'apparence d'actions.
+
+## Vérification et captures
+
+`docs/stone-buttons-check.cjs <URL> <dossier-externe> before|after` utilise le build local et des contextes jetables, sans modifier les sauvegardes du propriétaire. Nouvelle partie normale : écran principal, catégories de boutique, décorations avec achat désactivé au niveau 3, vraie confirmation d'achat de fleurs pour l'inventaire, puis annulation sans débit. Aucune donnée de jeu injectée. Les captures désactivées montrent un verrou de niveau réel, pas une erreur de solde fabriquée.
+
+Résultat sur les builds locaux : **55 assertions avant**, **279 après**. Familles contrôlées : icônes du haut, Missions/Boutique/Aménager/Collection, catégories, Acheter, actions de panneaux, Confirmer/Annuler et désactivés. Tailles identiques à la référence enregistrée, cibles ≥ 44 pixels, HUD sur une ligne à 390 × 844 et 844 × 390, compteurs de mêmes couleurs et sans cadre ajouté. États principal/secondaire distincts, appui distinct, focus clavier contrôlé, PNG servis et bonnes dimensions. Contraste minimal des couleurs CSS de base mesurées : **5,69:1** (ce calcul ne mesure pas chaque pixel du grain ; captures inspectées visuellement).
+
+Captures hors Git : `C:\Users\sulli\AppData\Local\Temp\prairie-stone-buttons-20261017` : huit PNG `before-*`, dix PNG `after-*` dont deux d'appui, plus géométries et rapports JSON. Aucune capture ni rapport de ce dossier n'est publié avec le jeu. L'essai iPhone du nouveau style et le choix artistique restent au propriétaire ; aucune publication nécessaire pour cet examen.

@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "url": "http://127.0.0.1:5210/Project-L/",
+  "checks": [
+    "Normal: three starter buildings, unchanged resources, retired purchases, free launch, parents Au nid, acceleration only ends timer, pending birth survives reload, explicit transfer once under double pressure, unchanged homes.",
+    "Laboratory: zero-wallet launch with parents from two habitats, occupied nursery refuses transfer, welcoming and a further offline interval never transfer automatically, manual growth begins at click, reload and normal/lab isolation."
+  ],
+  "errors": [],
+  "browser": "Chromium touch emulation; not physical Safari"
+}

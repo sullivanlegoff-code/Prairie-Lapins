@@ -1,0 +1,15 @@
+{
+  "run": 38088628704,
+  "job": 114320336406,
+  "head": "78b89c424612b437c3896556736f2a7e5a03839c",
+  "testedMerge": "c62293a5fe405877c8159ec6f207741d5c31b1a1",
+  "tree": "fa719a937338ba9ce55e7f8dc5b87d09453f1db3",
+  "tests": 668,
+  "testFiles": 23,
+  "typecheck": "passed",
+  "normalAndLaboratoryBuilds": "passed",
+  "sourceSuites": 9,
+  "builtSuites": 11,
+  "builtChecks": 39,
+  "browserErrors": 0
+}

@@ -1,0 +1,478 @@
+:root {
+  font-family: ui-rounded, 'Trebuchet MS', system-ui, -apple-system, sans-serif;
+  color: #35472f;
+  background: #fffdf5;
+  --hud-height: 70px;
+  --hud-offset: var(--hud-occupied-height, calc(var(--hud-height) + env(safe-area-inset-top)));
+  --cream: #fffaf0;
+  --cream-light: #fffdf5;
+  --cream-muted: #f5f1e3;
+  --green: #4e6d43;
+  --green-soft: #e8efd9;
+  --ink: #35472f;
+  --ink-muted: #58634f;
+  --line: #d9dcc7;
+  --gold: #8e682f;
+  --shadow: 0 8px 28px #46563224;
+}
+* { box-sizing: border-box; }
+/* Suppress accidental selection/callouts on game controls, not editable save data.
+   Canvas touch-action and internal panel scrolling retain their existing rules. */
+button, summary, #hud, #meadow-actions, #game canvas {
+  -webkit-user-select: none; user-select: none;
+}
+img, #game canvas { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+/* Suppress native double-tap zoom across the game shell; native pinch remains available outside the canvas. */
+html, body, #app { touch-action: manipulation; width: 100%; height: 100%; margin: 0; overflow: hidden; overscroll-behavior: none; }
+/* Exclude page pinch zoom in the installed app. Canvas stays none and panels
+   stay pan-y; ordinary Safari keeps the manipulation rule above. */
+html.standalone, .standalone body, .standalone #app { touch-action: pan-x pan-y; }
+#app { height: 100dvh; position: relative; }
+#game { position: absolute; inset: 0; touch-action: none; background: #fffdf5; }
+#game canvas { display: block; touch-action: none; }
+[hidden] { display: none !important; }
+
+/* The scene measures the HUD; overlay controls follow its occupied height as balances wrap. */
+#hud {
+  position: absolute; inset: 0 0 auto; min-height: var(--hud-height);
+  padding: max(9px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) 9px max(14px, env(safe-area-inset-left));
+  display: flex; align-items: center; gap: 10px; pointer-events: none; background: var(--cream-light);
+}
+#hud > * { pointer-events: auto; }
+h1:not(:where(.cuisine-root h1)) { font-size: 19px; margin: 0 12px 0 0; max-width: 150px; font-weight: 800; }
+.resource {
+  display: flex; align-items: center; gap: 6px; min-width: 106px; background: #fff2d9;
+  border: 2px solid #fffaf0; box-shadow: 0 3px 0 #71885a25; padding: 8px 12px; border-radius: 18px; white-space: nowrap;
+}
+.resource span { color: #b6854f; font-size: 23px; }
+.resource small { font-size: 11px; }
+.resource.grass { background: #f0f6dc; }
+.resource.grass span { color: #6c9957; }
+.resource.hearts { color: #673d4b; background: #f8e5eb; border-color: #fff5f7; }
+.resource.hearts svg { width: 23px; height: 23px; flex: 0 0 23px; }
+nav { display: flex; gap: 7px; margin-left: auto; }
+
+button {
+  min-width: 44px; min-height: 46px; max-width: 100%; padding: 10px 13px; font: inherit;
+  font-size: 14px; font-weight: 700; line-height: 1.25; overflow-wrap: anywhere;
+  border-radius: 13px; border: 1px solid var(--green); background: var(--green); color: #fffbed;
+  cursor: pointer; touch-action: manipulation;
+}
+button.secondary, button.action-secondary, nav button { background: #fff7e9; color: #40573b; border-color: #d8d3b9; }
+button.action-primary { background: var(--green); color: #fffbed; border-color: var(--green); }
+button.action-danger { color: #873d31; background: #fff4ee; border-color: #d6b4a7; }
+button:disabled { opacity: 1; color: #64705b; background: #eeeedf; border-color: #d6dac9; cursor: default; }
+button:active:not(:disabled) { background: #3e5935; color: #fffbed; }
+button.secondary:active:not(:disabled), button.action-secondary:active:not(:disabled), nav button:active:not(:disabled) { background: #e6edd6; color: #35472f; }
+button.action-danger:active:not(:disabled) { color: #713329; background: #f7e0d6; }
+button:focus-visible, select:focus-visible, summary:focus-visible, a:focus-visible { outline: 3px solid #a9792b; outline-offset: 3px; }
+button.icon { font-size: 25px; padding: 4px; min-width: 46px; flex-shrink: 0; }
+button.heart-spend { background: #faedf1; color: #744254; border-color: #d1a1b2; }
+button.heart-gift, button.mission-claim:not(:disabled) { background: #e6f2ce; color: #365331; border-color: #94ad76; }
+button.heart-spend:disabled { color: #725b62; background: #f0e7e9; border-color: #dbc8cd; }
+a { color: #486a39; text-underline-offset: 3px; }
+@media (hover: hover) { button:hover:not(:disabled) { box-shadow: 0 0 0 2px #9baf8433; } }
+
+/* One fixed header and one scrollable content area, independent of the meadow. */
+#game-panel {
+  position: absolute; right: max(12px, env(safe-area-inset-right));
+  top: calc(var(--hud-offset) + 8px); bottom: max(12px, env(safe-area-inset-bottom));
+  width: min(560px, 64vw); border: 2px solid #f7f3e3; background: var(--cream);
+  border-radius: 20px; box-shadow: var(--shadow); display: flex; flex-direction: column; overflow: hidden;
+  container-type: inline-size; touch-action: manipulation;
+}
+#game-panel[data-view='buyRabbit'], #game-panel[data-view='placement'], #game-panel[data-view='decorationPlacement'], #game-panel[data-view='extension'], .arranging #game-panel {
+  width: min(360px, 44vw);
+}
+.panel-header {
+  display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+  border-bottom: 1px solid var(--line); background: #fffdf5; flex-shrink: 0;
+}
+.panel-header h2 { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+#panel-back { flex-shrink: 0; }
+h2 { font-size: 19px; margin: 0; line-height: 1.2; }
+h3 { font-size: 16px; margin: 8px 0; line-height: 1.3; }
+p { line-height: 1.45; margin: 10px 0; overflow-wrap: anywhere; }
+.panel-scroll {
+  flex: 1; min-height: 0; min-width: 0; padding: 12px 14px 20px; overflow-y: auto; overflow-x: hidden;
+  overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y; font-size: 14px;
+  scrollbar-color: #b8c3a1 #f4f1e2; scroll-padding-block: 12px;
+}
+.panel-scroll > button, .card > button { width: 100%; margin-top: 8px; }
+.tabs { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 10px; }
+.tabs > button { flex: 1 1 80px; min-width: 44px; }
+.tabs > button:not(.secondary):not(.action-secondary), .tabs > button[aria-pressed='true'] { box-shadow: inset 0 0 0 1px #ffffff33; }
+.menu-toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+.menu-toolbar > button { flex: 1 1 140px; }
+.menu-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.menu-grid > :not(.card) { grid-column: 1 / -1; margin-block: 0; }
+.menu-grid > .card { margin: 0; }
+.card { padding: 12px; margin: 10px 0; min-width: 0; border: 1px solid var(--line); border-radius: 15px; background: var(--cream-muted); }
+.habitat-thumb { display: block; width: 100%; height: auto; max-height: 150px; object-fit: contain; margin: 0 auto 8px; pointer-events: none; user-select: none; -webkit-user-drag: none; }
+.card-heading { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.card-heading > div { flex: 1; min-width: 0; }
+.card-heading h3 { margin: 0 0 4px; }
+.card-heading p { font-size: 12px; margin: 5px 0; color: var(--ink-muted); }
+.portrait { display: inline-flex; width: 64px; min-width: 64px; height: 64px; justify-content: center; align-items: center; background: #e5ebd5; border-radius: 18px; flex-shrink: 0; }
+.portrait svg { width: 100%; height: 100%; }
+.portrait.large { display: flex; width: 150px; height: 140px; margin: 12px auto; background: #e9efd7; border-radius: 50%; }
+.small, .reason { font-size: 12px; line-height: 1.45; }
+.small { color: var(--ink-muted); }
+.reason { color: #854c2e; margin-top: 6px; padding: 7px 9px; border-left: 3px solid #ba9064; background: #fff5e9; border-radius: 6px; }
+.badge { display: inline-block; background: var(--green-soft); padding: 8px 10px; border-radius: 9px; font-size: 13px; }
+.actions { display: grid; gap: 9px; }
+.actions button { width: 100%; }
+.stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 12px 0; }
+.stat { padding: 10px 12px; border-radius: 12px; border: 1px solid #e0e3d0; background: #f3f6e8; min-width: 0; }
+.stat strong { display: block; font-size: 17px; line-height: 1.25; color: #365333; overflow-wrap: anywhere; }
+.stat span { display: block; font-size: 12px; color: var(--ink-muted); margin-top: 4px; line-height: 1.3; }
+.stat span:first-child { margin-top: 0; margin-bottom: 4px; }
+.rabbit-nickname { margin: 4px 0 10px; padding: 8px 12px; border: 2px solid #d8dcc4; border-radius: 14px; background: #fbf9ec; }
+.rabbit-nickname p { margin: 2px 0; }
+.rabbit-nickname-name { font-size: 20px; font-weight: 700; color: #365333; overflow-wrap: anywhere; }
+.rabbit-nickname-name.empty { font-weight: 400; font-style: italic; color: var(--ink-muted); }
+.rabbit-name-form { display: grid; gap: 6px; margin-top: 6px; }
+.rabbit-name-form input { font: inherit; padding: 8px 10px; border: 2px solid #c9cfae; border-radius: 10px; min-width: 0; }
+.rabbit-overview { display: flex; align-items: center; gap: 12px; }
+.rabbit-overview > div { flex: 1; min-width: 0; }
+.rabbit-overview > .portrait.large { flex: 0 0 150px; margin: 4px auto; }
+.rabbit-overview .stats { margin: 4px 0; }
+.rabbit-overview .stat { padding: 6px 8px; }
+.rabbit-overview .stat strong { font-size: 16px; }
+.rabbit-overview p { margin: 6px 0; }
+.rabbit-overview button { width: 100%; margin-top: 6px; }
+.initiation-aid { padding: 10px; margin-top: 12px; border: 1px solid #a8bc8d; border-radius: 12px; background: #edf5df; }
+.initiation-aid button { width: 100%; }
+.initiation-aid p { margin-bottom: 0; }
+.paid-acceleration { padding-top: 10px; margin-top: 12px; border-top: 1px solid var(--line); }
+.paid-acceleration p { font-size: 12px; color: var(--ink-muted); }
+.work-state { padding: 9px 12px; border-radius: 12px; border: 1px solid #cbd5bd; color: #405837; background: #edf3e1; margin-bottom: 12px; }
+.work-state strong { display: block; font-size: 15px; }
+.work-state p { margin: 4px 0 0; }
+.work-state[data-state='running'] { background: #fff2d6; color: #785927; border-color: #e0c994; }
+.work-state[data-state='ready'] { background: #e5f1d7; color: #365731; border-color: #a5bf8d; }
+.work-state[data-state='blocked'] { background: #fff0e7; color: #834c30; border-color: #d9b59b; }
+.timer { font-weight: 800; color: var(--gold); font-variant-numeric: tabular-nums; }
+progress { display: block; width: 100%; height: 12px; border-radius: 7px; overflow: hidden; accent-color: #86a66b; }
+progress::-webkit-progress-bar { background: #dedfce; border-radius: 7px; }
+progress::-webkit-progress-value { background: #86a66b; border-radius: 7px; }
+details { padding: 8px 0; }
+summary { cursor: pointer; min-height: 44px; padding: 12px 4px; font-weight: 700; line-height: 1.35; }
+.recipe-pair { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 4px; }
+.recipe-pair p { font-size: 12px; }
+.recipe-pair button { width: 100%; margin-top: 6px; }
+.collection-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 12px 0; }
+.collection-filters label { display: flex; flex-direction: column; gap: 5px; min-width: 0; font-size: 12px; font-weight: 700; }
+.collection-filters label:nth-child(3) { grid-column: 1 / -1; }
+.collection-filters select { width: 100%; min-width: 44px; min-height: 46px; padding: 9px 8px; font: inherit; font-size: 14px; font-weight: 400; border-radius: 11px; border: 1px solid #a6b397; background: #fffdf5; color: #354c32; touch-action: manipulation; }
+.settings-section { padding: 12px; margin: 0 0 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--cream-muted); }
+.settings-section h3 { margin-top: 0; }
+.settings-section .tabs { margin-bottom: 0; }
+.settings-danger { border-color: #dac1b2; background: #fff5ed; }
+.settings-danger summary { color: #844c34; }
+#environment-link { display: inline-flex; min-height: 44px; align-items: center; padding: 8px 0; }
+[data-status='write-error'], [data-status='read-error'], [data-status='invalid-save'], [data-status='conflict'] { color: #8b321c; }
+
+#open-missions { position: absolute; left: max(16px, env(safe-area-inset-left)); top: calc(var(--hud-offset) + 7px); display: flex; align-items: center; gap: 8px; box-shadow: 0 3px 12px #38442c20; }
+#missions-badge { min-width: 20px; padding: 2px 5px; border-radius: 12px; color: #fff; background: #876232; font-size: 11px; }
+#meadow-actions { position: absolute; left: max(16px, env(safe-area-inset-left)); top: calc(var(--hud-offset) + 60px); display: flex; flex-direction: column; gap: 7px; }
+#toast { position: absolute; left: max(16px, env(safe-area-inset-left)); top: calc(var(--hud-offset) + 166px); max-width: 44vw; padding: 11px 16px; border-radius: 14px; background: #fff8e9; color: #354b31; box-shadow: 0 4px 20px #38442c20; pointer-events: none; }
+.panel-open #toast { max-width: calc(100vw - min(560px, 64vw) - max(12px, env(safe-area-inset-right)) - max(16px, env(safe-area-inset-left)) - 12px); }
+#save-warning { position: absolute; left: max(16px, env(safe-area-inset-left)); bottom: max(12px, env(safe-area-inset-bottom)); max-width: 43vw; background: #a45b3e; z-index: 5; }
+#tutorial {
+  position: absolute; right: max(16px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom));
+  width: min(340px, 43vw); padding: 12px; border: 1px solid #e5dec9; border-radius: 16px; background: #fff9e8f5;
+  box-shadow: 0 4px 20px #38442c20; max-height: calc(100dvh - var(--hud-offset) - 28px - env(safe-area-inset-bottom)); overflow-y: auto; touch-action: pan-y; overscroll-behavior: contain;
+}
+#tutorial p { font-size: 13px; margin: 0 0 8px; }
+#tutorial button { min-height: 44px; margin: 4px 6px 0 0; }
+#tutorial strong { display: block; font-size: 14px; margin-bottom: 5px; }
+#tutorial .small { margin-top: 5px; }
+.panel-open #tutorial, .arranging #tutorial { display: none; }
+#save-warning:not([hidden]) ~ #tutorial { bottom: 80px; }
+.guide-target { outline: 2px solid #9b7135; outline-offset: 3px; }
+#arrange-banner { position: absolute; left: max(16px, env(safe-area-inset-left)); bottom: 64px; max-width: 42vw; display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 13px; background: #e4f0d6; border: 2px solid #627d55; box-shadow: 0 4px 18px #344c3620; font-size: 12px; font-weight: 700; }
+#arrange-banner button { flex-shrink: 0; }
+.decoration-icon { display: inline-flex; width: 66px; height: 66px; flex: 0 0 66px; border-radius: 16px; background: #e7ead8; }
+.decoration-icon svg { width: 100%; height: 100%; }
+.placement-valid, .placement-invalid { border-radius: 10px; padding: 10px; font-size: 13px; font-weight: 700; }
+.placement-valid { color: #385b37; background: #e5efd9; }
+.placement-invalid { color: #8b3734; background: #f5d7d0; }
+.placement-pending { color: #665c42; background: #eee8d8; border-radius: 10px; padding: 8px; font-size: 12px; }
+/* Actions follow the preview in normal flow; no sticky footer masks earlier text. */
+.decoration-placement-actions { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+.decoration-placement-actions p { margin: 0 0 6px; padding: 8px; }
+.decoration-placement-actions button { width: 100%; margin-top: 8px; }
+.placement-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.placement-choices button { font-size: 12px; padding: 7px; }
+#photo-return { position: absolute; left: max(16px, env(safe-area-inset-left)); bottom: max(12px, env(safe-area-inset-bottom)); background: #fffaf0de; opacity: .8; font-size: 12px; }
+.photo-mode #hud, .photo-mode #open-missions, .photo-mode #meadow-actions, .photo-mode #arrange-banner, .photo-mode #game-panel, .photo-mode #tutorial, .photo-mode #toast, .photo-mode #dev-badge { display: none !important; }
+.photo-mode #save-warning { left: auto; right: 12px; }
+
+#dev-badge { position: fixed; z-index: 110; bottom: 0; left: 0; right: 0; display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 13px; font-weight: 800; color: #231700; background: #ffd15b; border-top: 3px solid #a35b00; padding: 5px 8px max(5px, env(safe-area-inset-bottom)); }
+#dev-badge a { display: inline-flex; min-height: 44px; align-items: center; color: #231700; padding: 8px; text-decoration: underline; }
+.test-session #game-panel { bottom: max(68px, env(safe-area-inset-bottom)); }
+.test-session #tutorial { bottom: 68px; max-height: calc(100dvh - var(--hud-offset) - 84px - env(safe-area-inset-bottom)); }
+.test-session #arrange-banner { bottom: max(78px, env(safe-area-inset-bottom)); }
+#devtools { padding: 10px; background: #f5e5ae; border-radius: 10px; }
+#devtools button { margin: 4px 0; width: 100%; }
+#devtools h3 { margin-top: 16px; }
+#catalog-reset-notice { position: fixed; left: 5%; right: 5%; bottom: 18%; z-index: 80; padding: 16px; border-radius: 16px; background: #fff7d9; color: #354c32; box-shadow: 0 4px 20px #0003; }
+#portrait-notice { display: none; position: absolute; inset: 0; background: #e8efdbea; z-index: 10; place-items: center; padding: 28px; text-align: center; }
+#portrait-notice > div { background: #fffaed; padding: 26px; border-radius: 24px; }
+.rotate-symbol { display: block; font-size: 68px; color: #79976b; }
+dialog { width: min(92vw, 440px); max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow-y: auto; overscroll-behavior: contain; border: 2px solid #fff7e5; border-radius: 22px; color: inherit; background: var(--cream); padding: 20px; box-shadow: 0 12px 50px #2c3f3540; touch-action: pan-y; font-size: 14px; }
+dialog::backdrop { background: #273f356e; }
+/* Stable full-screen activity, outside the replaceChildren() panel rendering. */
+dialog.cuisine-activity { position: fixed; inset: 0; width: 100vw; max-width: none; height: 100dvh; max-height: none; margin: 0; padding: 0; border: 0; border-radius: 0; overflow: hidden; touch-action: manipulation; font-size: 16px; }
+dialog.cuisine-activity[open] { display: flex; flex-direction: column; }
+.cuisine-activity-controls { flex: none; display: flex; justify-content: flex-end; padding: max(4px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 4px max(12px, env(safe-area-inset-left)); }
+.cuisine-activity-host { flex: 1; min-height: 0; }
+.cuisine-activity-controls { align-items: center; gap: 12px; }
+.cuisine-companion { display: flex; align-items: center; gap: 8px; margin-right: auto; min-width: 0; max-width: 55%; color: #405944; font-size: 13px; line-height: 1.15; }
+.cuisine-companion[hidden] { display: none; }
+.cuisine-companion, .cuisine-companion * { pointer-events: none; }
+.cuisine-companion-art { display: block; flex: none; width: 40px; height: 40px; }
+.cuisine-companion-art > img, .cuisine-companion-art > svg { display: block; width: 100%; height: 100%; object-fit: contain; }
+.cuisine-companion-art { border-radius: 50%; }
+.cuisine-companion[data-reaction=positive] .cuisine-companion-art { background: #e1edc9; animation: cuisine-rabbit-positive .45s ease-out; }
+.cuisine-companion[data-reaction=mistake] .cuisine-companion-art { background: #f5dfcf; animation: cuisine-rabbit-mistake .35s ease-out; }
+.cuisine-companion[data-reaction=celebrate] .cuisine-companion-art { background: #fff0b8; box-shadow: 0 0 0 3px #dcb96666; animation: cuisine-rabbit-positive .45s ease-out; }
+@keyframes cuisine-rabbit-positive { 40% { transform: translateY(-3px) scale(1.06); } }
+@keyframes cuisine-rabbit-mistake { 30% { transform: rotate(-7deg); } 70% { transform: rotate(5deg); } }
+@media (prefers-reduced-motion: reduce) { .cuisine-companion[data-reaction] .cuisine-companion-art { animation: none; } }
+/* The selected rabbit inside the kitchen: a stool left of the worktop, in world percentages so it follows the
+   fitted 1000 × 440 scene. Decorative only (pointer-events: none); the kitchen engine never knows about it. */
+.cuisine-chef { position: absolute; left: -9%; top: 55%; width: 23%; height: 45%; pointer-events: none; }
+.cuisine-chef * { pointer-events: none; }
+.cuisine-chef-stand { position: absolute; left: 14%; right: 14%; bottom: 0; height: 30%; }
+.cuisine-chef-stand > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.cuisine-chef-rabbit { position: absolute; left: 50%; bottom: 22%; height: 78%; aspect-ratio: 352 / 500; transform: translateX(-50%); transform-origin: 50% 100%; }
+.cuisine-chef-rabbit > img, .cuisine-chef-rabbit > svg { display: block; width: 100%; height: 100%; object-fit: contain; transform: scaleX(-1); filter: drop-shadow(0 3px 2px #6e4b3a40); }
+.cuisine-chef[data-reaction=positive] .cuisine-chef-rabbit { animation: cuisine-chef-nod .45s ease-out; }
+.cuisine-chef[data-reaction=mistake] .cuisine-chef-rabbit { animation: cuisine-chef-shake .35s ease-out; }
+.cuisine-chef[data-reaction=celebrate] .cuisine-chef-rabbit { filter: drop-shadow(0 0 6px #ffd98a); }
+/* End-of-recipe tasting around the in-scene rabbit, removed by CuisineActivity after TASTING_MS or on reset/exit.
+   While it plays, the kitchen's result card waits (data-tasting on the kitchen root). */
+.cuisine-root[data-tasting] #result-screen { visibility: hidden; }
+.cuisine-chef[data-tasting] .cuisine-chef-rabbit { animation: cuisine-chef-hop 1.4s ease-in-out .45s both; }
+.cuisine-tasting { position: absolute; inset: 0; overflow: visible; }
+/* Same specificity as the kitchen's own .cuisine-root .cuisine-dish rule, plus one: the tasting dish stays absolute. */
+.cuisine-chef .cuisine-tasting .cuisine-dish { position: absolute; left: 62%; bottom: 26%; width: 42%; height: 26%; animation: cuisine-dish-in .5s ease-out both, cuisine-dish-eat 1.1s ease-in .9s forwards; transform-origin: 0 60%; }
+.cuisine-dish > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.cuisine-dish .dish-fill { position: absolute; display: block; }
+.cuisine-dish .dish-fill > svg { display: block; width: 100%; height: 100%; }
+.cuisine-dish .dish-fill-bowl { left: 14%; top: 4%; width: 72%; height: 56%; }
+.cuisine-dish .dish-fill-baking { left: 14%; top: 8%; width: 72%; height: 56%; }
+.cuisine-dish .dish-fill-baking > svg { position: absolute; inset: 0; }
+.cuisine-tasting-bubble { position: absolute; left: 56%; top: -12%; padding: 2px 9px; border: 2px solid #6e4b3a; border-radius: 12px 12px 12px 3px; background: #fffdf1; color: #a8432f; font-weight: 700; font-size: 15px; line-height: 1.2; white-space: nowrap; box-shadow: 0 3px 0 #6e4b3a22; animation: cuisine-bubble-in .3s ease-out .6s both; }
+.cuisine-tasting-heart { position: absolute; left: calc(18% + var(--heart-index) * 14%); top: 20%; color: #e2607a; font-size: 18px; line-height: 1; opacity: 0; animation: cuisine-heart-float 1s ease-out calc(.75s + var(--heart-index) * .12s) both; }
+.cuisine-tasting-heart:nth-child(even) { color: #f08aa0; font-size: 14px; margin-top: 10%; }
+@keyframes cuisine-dish-in { from { opacity: 0; transform: translate(60%, 10%) scale(.6); } to { opacity: 1; transform: none; } }
+@keyframes cuisine-dish-eat { 0% { transform: none; opacity: 1; } 55% { transform: translate(-14%, -6%) scale(.8); opacity: 1; } 100% { transform: translate(-22%, -10%) scale(.2); opacity: 0; } }
+@keyframes cuisine-bubble-in { from { opacity: 0; transform: translateY(6px) scale(.7); } to { opacity: 1; transform: none; } }
+@keyframes cuisine-heart-float { 0% { opacity: 0; transform: translateY(8px) scale(.5); } 25% { opacity: 1; } 100% { opacity: 0; transform: translateY(-34px) translateX(calc((var(--heart-index) - 2) * 4px)) scale(1.15); } }
+@keyframes cuisine-chef-hop { 0%, 100% { transform: translateX(-50%); } 18% { transform: translateX(-50%) translateY(-22%) scale(1.04); } 34% { transform: translateX(-50%) scale(1.05, .95); } 52% { transform: translateX(-50%) translateY(-14%); } 68% { transform: translateX(-50%) scale(1.03, .97); } }
+@keyframes cuisine-chef-nod { 40% { transform: translateX(-50%) translateY(-5%) scale(1.04); } }
+@keyframes cuisine-chef-shake { 30% { transform: translateX(-50%) rotate(-6deg); } 70% { transform: translateX(-50%) rotate(5deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .cuisine-chef .cuisine-chef-rabbit, .cuisine-tasting .cuisine-dish, .cuisine-tasting-bubble { animation: none !important; }
+  .cuisine-tasting-heart { animation: none; opacity: 1; transform: translateY(-12px); }
+}
+dialog > button { width: 100%; margin-top: 8px; }
+.portrait.large.first-birth-art { width: 92px; height: 86px; margin: 6px auto; }
+.first-birth-title { margin: 0 0 8px; }
+.first-birth-name, .first-birth-details { margin: 6px 0; }
+/* Art dimensions and fitting preserve the six illustrations already validated. */
+.portrait img[data-rabbit-art] { width: 100%; height: 100%; object-fit: contain; padding: 4px; box-sizing: border-box; }
+.mission-reward { animation: mission-received .35s ease-out; }
+@keyframes mission-received { from { transform: translateY(5px); opacity: .4; } to { transform: translateY(0); opacity: 1; } }
+
+@container (min-width: 390px) { .menu-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container (min-width: 450px) {
+  .collection-filters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .collection-filters label:nth-child(3) { grid-column: auto; }
+}
+@media (max-width: 1100px) { #hud h1 { display: none; } }
+@media (max-width: 900px) { #hud .resource { min-width: 0; padding: 7px 8px; gap: 4px; font-size: 14px; } #hud nav { gap: 4px; } }
+@media (max-width: 760px) { #hud .resource small { display: none; } #hud nav button { font-size: 12px; padding: 8px; } #hud nav button.icon { font-size: 23px; padding: 4px; } }
+@media (max-height: 450px) { :root { --hud-height: 62px; } #hud { gap: 6px; } #tutorial { padding: 8px 12px; } #tutorial p { font-size: 12px; } .panel-scroll { padding-top: 10px; } }
+@media (orientation: portrait) and (max-width: 980px) {
+  :root { --hud-height: 122px; }
+  #portrait-notice { display: grid; }
+  .portrait-dismissed #portrait-notice { display: none; }
+  #game-panel, #game-panel[data-view='buyRabbit'], #game-panel[data-view='placement'], #game-panel[data-view='decorationPlacement'], #game-panel[data-view='extension'], .arranging #game-panel { width: min(360px, 88vw); }
+  .rabbit-overview { flex-direction: column; align-items: stretch; }
+  .rabbit-overview > .portrait.large { flex-basis: auto; }
+  #tutorial { left: max(16px, env(safe-area-inset-left)); right: auto; max-width: 82vw; width: 310px; }
+  #arrange-banner { max-width: 88vw; }
+  .panel-open #arrange-banner { display: none; }
+  .panel-open #toast { z-index: 5; top: auto; bottom: max(16px, env(safe-area-inset-bottom)); max-width: calc(100vw - 32px - env(safe-area-inset-left) - env(safe-area-inset-right)); }
+  .test-session.panel-open #toast { bottom: max(110px, env(safe-area-inset-bottom)); }
+  .test-session #game-panel { bottom: max(100px, env(safe-area-inset-bottom)); }
+  .test-session #arrange-banner { bottom: max(110px, env(safe-area-inset-bottom)); }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } .mission-reward { animation: none; } }
+
+/* A currency amount is an indivisible inline group, never a printed symbol. */
+.sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
+.coin-amount { display: inline-flex; align-items: center; gap: .22em; white-space: nowrap; vertical-align: middle; font-variant-numeric: tabular-nums; }
+.coin-icon { display: inline-block; width: 1.35em; height: 1.35em; min-width: 1.35em; flex-shrink: 0; object-fit: contain; vertical-align: middle; }
+.coin-counter .coin-icon { width: 28px; height: 28px; min-width: 28px; }
+.coin-counter strong { font-variant-numeric: tabular-nums; }
+@media (max-width: 700px) { .coin-counter .coin-icon { width: 24px; height: 24px; min-width: 24px; } }
+
+/* The shop owns the complete viewport; the simulation remains active beneath it. */
+#game-panel.shop-fullscreen {
+  position: fixed; inset: 0; width: auto; max-width: none; border: 0; border-radius: 0;
+  z-index: 120; background: var(--cream); box-shadow: none;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  touch-action: pan-y; overscroll-behavior: none;
+}
+.shop-fullscreen .panel-header { flex-wrap: wrap; }
+.shop-resources { display: flex; gap: 12px; align-items: center; font-size: 14px; white-space: nowrap; }
+.shop-fullscreen .menu-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.shop-fullscreen .shop-category { display: flex; flex-direction: column; }
+.shop-category > button { margin-top: auto; }
+@media (max-width: 480px) {
+  .shop-fullscreen .panel-header h2 { flex-basis: calc(100% - 112px); }
+  .shop-fullscreen .shop-resources { order: 4; width: 100%; justify-content: center; }
+  .shop-fullscreen .menu-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+.shop-open #toast { z-index: 130; top: auto; bottom: max(12px, env(safe-area-inset-bottom)); max-width: calc(100vw - 32px); }
+
+/* Player progress is screen-space HUD; the existing camera framing height stays intact. */
+#player-progress {
+  --xp-frame-light: #b8b7ae;
+  --xp-frame-dark: #74756f;
+  display: grid; grid-template-columns: minmax(0, 1fr) 32px; align-items: center; gap: 5px;
+  flex: 0 0 170px; height: 44px; min-height: 44px; padding: 5px;
+  border: 2px solid #3d403a; border-radius: 11px 9px 12px 10px / 10px 11px 9px 12px;
+  background: linear-gradient(170deg, var(--xp-frame-light), #999a92 48%, var(--xp-frame-dark));
+  box-shadow: inset 0 2px 0 #deded3; color: #f4f3ea; text-shadow: none;
+}
+#player-progress:focus-visible { outline: 3px solid #46523a; outline-offset: 2px; }
+#player-progress:disabled { color: #d2d3cc; cursor: default; }
+#player-level {
+  display: grid; place-items: center; min-width: 0; height: 28px;
+  border: 0; border-radius: 0; background: none; color: inherit;
+  font-size: 24px; line-height: 1; font-weight: 900; font-variant-numeric: tabular-nums; white-space: nowrap;
+  -webkit-text-stroke: 1.5px #33372e; paint-order: stroke fill;
+}
+.player-xp-track { position: relative; display: block; min-width: 0; }
+#player-xp-label {
+  position: absolute; inset: 0; z-index: 1; display: grid; place-items: center;
+  font-size: 10px; line-height: 1; font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums;
+  -webkit-text-stroke: 1.5px #25301e; paint-order: stroke fill; pointer-events: none;
+}
+#player-xp-bar {
+  display: block; height: 22px; border: 2px solid #242a21; border-radius: 7px 6px 7px 6px;
+  background: #242a24; box-shadow: inset 0 2px 3px #10170ccc; overflow: hidden;
+}
+#player-xp-fill {
+  display: block; height: 100%; width: 0; border-top: 1px solid #ceef91;
+  background: linear-gradient(#9cd951, #74bf36 25%, #519e29);
+}
+#player-progress-dialog { touch-action: pan-y; }
+.shop-open #player-progress { visibility: hidden; }
+@media (max-width: 760px) {
+  #hud { gap: 5px; padding-left: max(10px, env(safe-area-inset-left)); padding-right: max(10px, env(safe-area-inset-right)); }
+  #player-progress { flex-basis: 96px; }
+  #player-xp-label { font-size: 10px; }
+  #hud .resource { padding: 5px; gap: 3px; font-size: 13px; }
+  #hud .coin-icon, #hud .resource.hearts svg { width: 20px; height: 20px; min-width: 20px; flex-basis: 20px; }
+  #hud .resource.grass span { font-size: 20px; }
+  #hud nav button { font-size: 11px; padding: 6px; white-space: nowrap; flex-shrink: 0; }
+}
+@media (orientation: portrait) and (max-width: 980px) {
+  #hud { align-content: flex-start; }
+  #hud nav { justify-content: space-between; }
+}
+
+#player-xp-feedback { position: absolute; left: calc(124px + env(safe-area-inset-left)); top: calc(var(--hud-offset) + 8px); z-index: 6; padding: 4px 8px; border-radius: 9px; background: #fff7df; color: #405b33; font-weight: 800; font-size: 13px; pointer-events: none; }
+#player-xp-feedback.xp-rise { animation: xp-rise 1.5s ease-out both; }
+#player-xp-bar.xp-animated #player-xp-fill { transition: width .3s ease-out; }
+#player-xp-bar.xp-level-change { animation: xp-level-pulse .4s ease-out; }
+#level-up-title { color: var(--green); }
+#level-up-reward { color: #744254; font-weight: 700; }
+.shop-open #player-xp-feedback, .photo-mode #player-xp-feedback { visibility: hidden; }
+@keyframes xp-rise { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-14px); } }
+@keyframes xp-level-pulse { 50% { box-shadow: 0 0 0 3px #cfad61; } }
+@media (prefers-reduced-motion: reduce) {
+  #player-xp-feedback.xp-rise, #player-xp-bar.xp-level-change { animation: none; }
+  #player-xp-bar.xp-animated #player-xp-fill { transition: none; }
+}
+
+/* Level locks keep readable copy and information controls at full contrast. */
+.level-locked { background: #ecebdf; border: 2px solid #8a8062; }
+.level-locked h3 { color: #4c5444; }
+.level-lock-message { display: flex; align-items: center; gap: .45rem; color: #53451f; font-weight: 700; }
+.level-lock-message[hidden] { display: none; }
+.level-lock-message svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; flex-shrink: 0; }
+.level-locked button:disabled { opacity: 1; color: #595b51; background: #dedfd3; border-color: #858575; }
+.level-access-demo { overscroll-behavior: contain; }
+.level-access-demo .card { margin: .5rem 0; padding: .65rem; }
+.level-access-demo button { min-height: 44px; margin: .2rem; }
+
+@media (max-height: 450px) and (max-width: 760px) {
+  #meadow-actions { top: calc(var(--hud-offset) + 56px); gap: 4px; }
+}
+
+/* One row in portrait, landscape and standalone mode. Unusually large balances
+   or very narrow windows can scroll horizontally, retaining every full amount. */
+:root { --hud-height: 64px; }
+#hud { flex-wrap: nowrap; gap: 8px; overflow-x: auto; overscroll-behavior-x: contain; align-content: center; }
+#hud > * { flex-shrink: 0; }
+#hud nav { width: auto; flex-wrap: nowrap; margin-left: auto; gap: 4px; }
+#hud nav button { width: 44px; min-width: 44px; height: 44px; min-height: 44px; padding: 4px; }
+#hud .resource { min-width: 0; white-space: nowrap; }
+#meadow-actions { align-items: stretch; }
+@media (max-width: 760px) {
+  #hud { gap: 3px; padding-left: max(6px, env(safe-area-inset-left)); padding-right: max(6px, env(safe-area-inset-right)); }
+  #hud #player-progress { flex: 0 1 96px; min-width: 76px; grid-template-columns: minmax(0, 1fr) 26px; gap: 3px; padding: 4px; }
+  #hud #player-level { font-size: 21px; }
+  #hud #player-xp-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  #hud .resource { padding: 3px; gap: 2px; font-size: 12px; border-radius: 12px; }
+  #hud .coin-icon, #hud .resource.hearts svg { width: 16px; height: 16px; min-width: 16px; flex-basis: 16px; }
+  #hud .resource.grass span { font-size: 18px; }
+  #hud nav { gap: 0; }
+}
+
+/* Paramètres → Son: stone icon toggle, name, volume slider and value on one row per channel. */
+.sound-channel { display: grid; grid-template-columns: auto minmax(5.5em, auto) minmax(90px, 1fr) 4.2em; align-items: center; gap: 10px; margin: 8px 0; }
+.sound-channel label { font-weight: 700; }
+.sound-channel input[type=range] { width: 100%; min-height: 44px; accent-color: #86a66b; }
+.sound-channel input[type=range]:disabled { opacity: .45; }
+.sound-channel output { text-align: right; font-variant-numeric: tabular-nums; }
+.sound-channel button.icon { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+.sound-channel button.sound-off { --stone-face: #c9c3b8; color: #6b5f52; }
+
+/* Loading screen: above everything (including the laboratory badge) until « Jouer »; safe areas respected. */
+#loading-screen { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; background: var(--cream-light);
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); touch-action: none; }
+#loading-screen[hidden] { display: none; }
+.loading-card { width: min(420px, 100%); max-height: 100%; overflow: auto; background: var(--cream); border: 2px solid #e6dcc4; border-radius: 22px; padding: 22px 24px; box-shadow: 0 6px 0 #71885a25; text-align: center; }
+.loading-card h1 { margin: 0 0 14px; max-width: none; font-size: 24px; color: var(--green); }
+.loading-bar { height: 14px; border-radius: 8px; background: #e8efd9; overflow: hidden; box-shadow: inset 0 1px 2px #28302222; }
+.loading-bar span { display: block; height: 100%; width: 0; background: #86a66b; border-radius: 8px; transition: width .2s ease-out; }
+#loading-steps { list-style: none; padding: 0; margin: 14px 0 8px; display: flex; flex-wrap: wrap; gap: 6px 12px; justify-content: center; font-size: 13px; color: #5b6b52; }
+#loading-steps li[data-state=done] { color: var(--green); }
+#loading-steps li[data-state=warning] { color: #8a6a2c; }
+#loading-steps li[data-state=failed] { color: #a54242; font-weight: 700; }
+#loading-message { min-height: 1.2em; font-size: 13px; margin: 6px 0 12px; }
+#loading-screen .actions { display: flex; gap: 10px; justify-content: center; }
+#loading-play { min-width: 160px; min-height: 48px; font-size: 18px; font-weight: 800; }
+@media (prefers-reduced-motion: reduce) { .loading-bar span { transition: none; } }
+/* Cuisine result card (host additions): selected rabbit and one chip per reward actually granted. */
+.cuisine-result-rabbit { grid-area: rabbit; display: flex; align-items: center; gap: 6px; margin: 0; max-width: 140px; color: #6e4b3a; font-size: 12px; line-height: 1.2; }
+.cuisine-result-rabbit-art { flex: none; width: 32px; height: 32px; border-radius: 50%; background: #fff0b8; box-shadow: 0 0 0 2px #dcb966; }
+.cuisine-result-rabbit-art > img, .cuisine-result-rabbit-art > svg { display: block; width: 100%; height: 100%; object-fit: contain; }
+.cuisine-reward-feedback { grid-area: rewards; display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+.cuisine-reward-chip { display: inline-flex; align-items: center; gap: 3px; padding: 3px 9px; border-radius: 12px; background: #f6ead6; color: #5a3f30; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.cuisine-reward-chip[data-kind=herbs] { background: #e3efcf; color: #3f5a35; }
+.cuisine-reward-chip[data-kind=affection] { background: #fde3d8; color: #93402f; }
+.cuisine-reward-chip[data-kind=heart] { background: #fbd9e2; color: #a83a5a; }
+.cuisine-reward-chip[data-kind=notice] { background: #fbe4dc; color: #93402f; white-space: normal; }
+/* The standalone prototype keeps its Attribution · MIT links; the integrated Cuisine does not show them. */
+.cuisine-activity .cuisine-root footer nav { display: none; }

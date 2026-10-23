@@ -1,0 +1,199 @@
+{
+  "checkedAt": "2026-10-09 21:45:47 UTC",
+  "applicationRevision": "28eb90712608aab08517cc551d0ed8d1d508f613",
+  "sourceRevision": "9936fa40e74c84edc5f19c920b87430e64f2f7ba",
+  "ciBuildRevision": "b45ec5859a1294b4be89dc71281be66151ab81a6",
+  "verifiedTree": "29b6964dfec3b2a3950c83113535c538faecf450",
+  "species": "neige",
+  "pullRequest": "https://github.com/sullivanlegoff-code/Project-L/pull/5",
+  "saveFormat": 6,
+  "source": {
+    "path": "docs/reference/neige/source.png",
+    "sha256": "b7d3db45119155de6cad4e276c6d94b509fe68d79cb20f5c1a8ab3ee6e2f0765"
+  },
+  "asset": {
+    "path": "public/assets/rabbits/neige/neige-v1.png",
+    "sha256": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+    "width": 518,
+    "height": 473,
+    "transparent": true,
+    "maxOpaqueRGBDifferenceFromOriginal": 0,
+    "uniformScale": true,
+    "wholeImageMotion": true
+  },
+  "unchanged": [
+    "other rabbits",
+    "rules",
+    "save format and keys",
+    "camera",
+    "island",
+    "decorations",
+    "Supabase pause"
+  ],
+  "ci": {
+    "tests": 584,
+    "files": 17,
+    "typecheck": "passed",
+    "normalBuild": "passed",
+    "laboratoryBuild": "passed",
+    "runs": [
+      37993979131,
+      37994018115
+    ],
+    "conclusion": "success",
+    "artifact": "https://github.com/sullivanlegoff-code/Project-L/actions/runs/37994018115/artifacts/11645989160",
+    "occupantSelections": {
+      "count": 21,
+      "residents": 7,
+      "zooms": [
+        0.8,
+        1.05,
+        1.65
+      ],
+      "mixedSpecies": [
+        "neige",
+        "brumelin",
+        "feu-glace"
+      ]
+    }
+  },
+  "publication": {
+    "run": 37994696234,
+    "url": "https://github.com/sullivanlegoff-code/Project-L/actions/runs/37994696234",
+    "conclusion": "success",
+    "routes": [
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "revision": "28eb90712608aab08517cc551d0ed8d1d508f613",
+        "saveFormat": 6,
+        "html": 200,
+        "application": 200,
+        "featuresChecked": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/dev/",
+        "revision": "28eb90712608aab08517cc551d0ed8d1d508f613",
+        "saveFormat": 6,
+        "html": 200,
+        "application": 200,
+        "featuresChecked": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/preview/accounts/",
+        "revision": "3e70d9e8cbe9228c63c73db007fff199199d6470",
+        "saveFormat": 4,
+        "html": 200,
+        "application": 200,
+        "featuresChecked": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/preview/decorations/",
+        "revision": "85fe255ec8e7e65213cd570f91f5bb1fe66a30d7",
+        "saveFormat": 5,
+        "html": 200,
+        "application": 200,
+        "featuresChecked": true
+      }
+    ],
+    "browserSuites": [
+      {
+        "suite": "normal",
+        "passed": true,
+        "checks": [
+          "Normal new game: canvas, 300 pattes, 10 grass, 12 hearts, 2 rabbits, save v6.",
+          "Shop, collection, missions, settings and release identifier.",
+          "Real canvas selection and feed button: Paille affection 1→2, grass 10→8.",
+          "Export downloads valid v6 JSON; cancelling import preserves current progression.",
+          "Confirmed import writes 317 pattes and retains rabbits, grass, hearts, habitats; export roundtrip matches.",
+          "Invalid JSON is rejected without replacing the game.",
+          "Reload preserves imported progression and fed affection.",
+          "Production ?dev=1 keeps normal save, hides tools/badge and creates no development storage.",
+          "Real normal decoration purchase, cancelled placement, cancelled sale, double-confirmed atomic 50% sale and persisted reload."
+        ],
+        "errors": []
+      },
+      {
+        "suite": "laboratory",
+        "passed": true,
+        "checks": [
+          "Normal link opens an independent fresh laboratory; normal feed/export remains intact.",
+          "All five clock advances and six resource grants leave every normal-origin key byte-for-byte unchanged.",
+          "MODE-TEST JSON export; cancelled and confirmed normal-copy imports leave the source unchanged.",
+          "Laboratory reload restores its save/clock; cancelled and confirmed reset preserve normal storage.",
+          "All fourteen confirmed scenario loads produce valid saved v6 states without writing normal keys.",
+          "Portrait mobile viewport: test resource control remains accessible, banner visible and panel unobscured.",
+          "Return/reload normal game retains its fed rabbit and resources, uses real time, and ?dev=1 cannot activate tools."
+        ],
+        "errors": []
+      },
+      {
+        "suite": "foundations",
+        "passed": true,
+        "checks": [
+          "External storage event exposes the conflict immediately; obsolete tab refuses purchase and exports its intact memory copy.",
+          "Repeated panels, viewport rotation and lifecycle events preserve ownership and resources.",
+          "Laboratory storage notifications cannot mark the normal session conflicted."
+        ],
+        "errors": []
+      },
+      {
+        "suite": "neige",
+        "passed": true,
+        "checks": [
+          {
+            "route": "normal",
+            "asset": {
+              "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+              "width": 518,
+              "height": 473,
+              "fit": "contain",
+              "corner": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "fur": [
+                254,
+                243,
+                249,
+                255
+              ]
+            },
+            "portraits": "shop, collection, portrait viewport",
+            "world": "canvas screenshot; no app hooks"
+          },
+          {
+            "route": "dev/",
+            "asset": {
+              "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+              "width": 518,
+              "height": 473,
+              "fit": "contain",
+              "corner": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "fur": [
+                254,
+                243,
+                249,
+                255
+              ]
+            },
+            "portraits": "shop, collection, portrait viewport",
+            "world": "canvas screenshot; no app hooks"
+          }
+        ],
+        "errors": []
+      }
+    ],
+    "artifact": "https://github.com/sullivanlegoff-code/Project-L/actions/runs/37994696234/artifacts/11646487897"
+  },
+  "comparison": "docs/validation/neige-v1/reference-vs-game.png",
+  "limitations": [
+    "Chromium touch emulation does not validate physical iPhone Safari."
+  ]
+}

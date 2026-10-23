@@ -1,0 +1,314 @@
+{
+  "applicationRevision": "f87f265176e9deae2215bae780ea6d22cbb0484a",
+  "checkedAt": "2026-10-09T10:24:57.441Z",
+  "workflow": "https://github.com/sullivanlegoff-code/Project-L/actions/runs/37916978330",
+  "unitTests": {
+    "files": 12,
+    "passed": 471
+  },
+  "typecheck": "passed",
+  "previewBuild": "passed",
+  "browserReports": [
+    {
+      "browser": "Chromium with real dispatched touch; not physical Safari",
+      "selections": [
+        {
+          "catalogId": "wildflowers",
+          "normal": true,
+          "arrangement": true,
+          "outline": true
+        },
+        {
+          "catalogId": "flowering-bush",
+          "normal": true,
+          "arrangement": true,
+          "outline": true
+        },
+        {
+          "catalogId": "moss-rock",
+          "normal": true,
+          "arrangement": true,
+          "outline": true
+        },
+        {
+          "catalogId": "garden-lantern",
+          "normal": true,
+          "arrangement": true,
+          "outline": true
+        },
+        {
+          "catalogId": "wood-bench",
+          "normal": true,
+          "arrangement": true,
+          "outline": true
+        },
+        {
+          "catalogId": "flower-arch",
+          "normal": true,
+          "arrangement": true,
+          "outline": true
+        },
+        {
+          "catalogId": "fruit-tree",
+          "normal": true,
+          "arrangement": true,
+          "outline": true
+        },
+        {
+          "catalogId": "small-pond",
+          "normal": true,
+          "arrangement": true,
+          "outline": true
+        },
+        {
+          "catalogId": "soft-cushion",
+          "normal": true,
+          "arrangement": true,
+          "outline": true
+        },
+        {
+          "catalogId": "ball-toys",
+          "normal": true,
+          "arrangement": true,
+          "outline": true
+        },
+        {
+          "catalogId": "play-tunnel",
+          "normal": true,
+          "arrangement": true,
+          "outline": true
+        },
+        {
+          "catalogId": "small-parasol",
+          "normal": true,
+          "arrangement": true,
+          "outline": true
+        }
+      ],
+      "treeZooms": [
+        0.8,
+        1.05,
+        1.65
+      ],
+      "empty": true,
+      "photo": true,
+      "pan": true,
+      "pinch": true,
+      "rabbitPriority": "paille",
+      "decorationPriorityInArrangement": true,
+      "harvestPriority": true,
+      "cancelSale": true,
+      "doubleSale": true,
+      "reload": true,
+      "inventorySale": true,
+      "errors": []
+    },
+    {
+      "browser": "Chromium, disposable touch profile; 852×393 and 667×375; not physical Safari",
+      "checks": [
+        "single purchase on double confirmation",
+        "cancel purchase placement",
+        "invalid building footprint",
+        "touch placement and rotation",
+        "cancel move",
+        "commit move",
+        "store and reload identity",
+        "marked v5 export",
+        "four player scenarios",
+        "dense reload 512",
+        "compact panel and HUD",
+        "other route keys unchanged",
+        "no Supabase requests"
+      ],
+      "dense": {
+        "owned": 512,
+        "placed": 140
+      },
+      "layout": {
+        "panelFits": true,
+        "hudFits": true
+      },
+      "errors": []
+    },
+    {
+      "browser": "Chromium / WebGL, Linux, 852×393 landscape; no physical iPhone measurement",
+      "selections": [
+        {
+          "zoom": 0.8,
+          "id": "rabbit-5",
+          "title": "Lapin Paille",
+          "passed": true
+        },
+        {
+          "zoom": 0.8,
+          "id": "rabbit-6",
+          "title": "Lapin Neige",
+          "passed": true
+        },
+        {
+          "zoom": 0.8,
+          "id": "rabbit-7",
+          "title": "Lapin Terre",
+          "passed": true
+        },
+        {
+          "zoom": 0.8,
+          "id": "rabbit-8",
+          "title": "Brumelin",
+          "passed": true
+        },
+        {
+          "zoom": 0.8,
+          "id": "rabbit-9",
+          "title": "Mottelin",
+          "passed": true
+        },
+        {
+          "zoom": 0.8,
+          "id": "rabbit-10",
+          "title": "Lapin Feu",
+          "passed": true
+        },
+        {
+          "zoom": 0.8,
+          "id": "rabbit-11",
+          "title": "Lapin Bélier Gris",
+          "passed": true
+        },
+        {
+          "zoom": 1.05,
+          "id": "rabbit-5",
+          "title": "Lapin Paille",
+          "passed": true
+        },
+        {
+          "zoom": 1.05,
+          "id": "rabbit-6",
+          "title": "Lapin Neige",
+          "passed": true
+        },
+        {
+          "zoom": 1.05,
+          "id": "rabbit-7",
+          "title": "Lapin Terre",
+          "passed": true
+        },
+        {
+          "zoom": 1.05,
+          "id": "rabbit-8",
+          "title": "Brumelin",
+          "passed": true
+        },
+        {
+          "zoom": 1.05,
+          "id": "rabbit-9",
+          "title": "Mottelin",
+          "passed": true
+        },
+        {
+          "zoom": 1.05,
+          "id": "rabbit-10",
+          "title": "Lapin Feu",
+          "passed": true
+        },
+        {
+          "zoom": 1.05,
+          "id": "rabbit-11",
+          "title": "Lapin Bélier Gris",
+          "passed": true
+        },
+        {
+          "zoom": 1.65,
+          "id": "rabbit-5",
+          "title": "Lapin Paille",
+          "passed": true
+        },
+        {
+          "zoom": 1.65,
+          "id": "rabbit-6",
+          "title": "Lapin Neige",
+          "passed": true
+        },
+        {
+          "zoom": 1.65,
+          "id": "rabbit-7",
+          "title": "Lapin Terre",
+          "passed": true
+        },
+        {
+          "zoom": 1.65,
+          "id": "rabbit-8",
+          "title": "Brumelin",
+          "passed": true
+        },
+        {
+          "zoom": 1.65,
+          "id": "rabbit-9",
+          "title": "Mottelin",
+          "passed": true
+        },
+        {
+          "zoom": 1.65,
+          "id": "rabbit-10",
+          "title": "Lapin Feu",
+          "passed": true
+        },
+        {
+          "zoom": 1.65,
+          "id": "rabbit-11",
+          "title": "Lapin Bélier Gris",
+          "passed": true
+        }
+      ],
+      "gestures": {
+        "pan": true,
+        "pinch": true,
+        "noDragCommit": true,
+        "panelsDoNotPan": true
+      },
+      "saves": {
+        "cancelKeepsPurchase": true,
+        "photoKeepsAutosave": true,
+        "exportV5Marked": true,
+        "reload512": true
+      },
+      "density": {
+        "owned": 512,
+        "visible": 254,
+        "rabbits": 7
+      },
+      "performanceSample": {
+        "frames": 180,
+        "elapsedMs": 9493.399999999987,
+        "meanFps": 18.96054100743677,
+        "p95FrameMs": 66.69999999999709,
+        "reusedImages": true,
+        "textures": 14
+      },
+      "errors": [],
+      "failedRequests": []
+    }
+  ],
+  "sourceChanges": {
+    "base": "b45d83d93802010423f73555c27c4da856d4a457",
+    "head": "f87f265176e9deae2215bae780ea6d22cbb0484a",
+    "files": [
+      ".github/workflows/validate-decorations.yml",
+      "prairie-lapins-prototype/docs/accounts-v5-compatibility.md",
+      "prairie-lapins-prototype/docs/decorations-browser-check.cjs",
+      "prairie-lapins-prototype/docs/decorations-flow-check.cjs",
+      "prairie-lapins-prototype/docs/decorations-selection-check.cjs",
+      "prairie-lapins-prototype/docs/decorations.md",
+      "prairie-lapins-prototype/docs/game-design.md",
+      "prairie-lapins-prototype/src/application/GameController.ts",
+      "prairie-lapins-prototype/src/config/decorations.ts",
+      "prairie-lapins-prototype/src/display/MeadowScene.ts",
+      "prairie-lapins-prototype/src/simulation/actions.ts",
+      "prairie-lapins-prototype/src/state/types.ts",
+      "prairie-lapins-prototype/src/ui/GameUI.ts",
+      "prairie-lapins-prototype/src/ui/models.ts",
+      "prairie-lapins-prototype/tests/decorations.test.ts",
+      "prairie-lapins-prototype/tests/ui-dom.test.ts"
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "url": "http://127.0.0.1:5225/Project-L/",
+  "browser": "Chromium tactile, pas Safari physique",
+  "timing": "Trois aides réelles ; aucune avance d’horloge. Aucun tirage contrôlé dans le navigateur.",
+  "checks": [
+    "Normal neuf : ressources inchangées, fiche sans action automatique, fermeture, sortie et reprise persistée.",
+    "Ferme placée par commande réelle, petite production aidée sans avance d’horloge, collection et silhouettes pendant attente, récolte et repas Neige ; rotation et rechargement, récompenses explicites disparues.",
+    "Reproduction gratuite, recette sans promesse, parents au nid après délai, transfert manuel, croissance secrète aidée, accueil manuel et première célébration unique ; objectif libre, sept récompenses une fois et isolation normal/laboratoire.",
+    "Actions anticipées avec récompenses en attente sur petit paysage 667×375 : carte contenue et défilable, navigation et commandes de prairie accessibles, sortie possible.",
+    "Scénario de conservation rechargé : reproduction déjà aidée, croissance du même résultat disponible, aucun droit recréé."
+  ],
+  "errors": []
+}

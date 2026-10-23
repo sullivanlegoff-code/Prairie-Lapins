@@ -1,0 +1,30 @@
+{
+  "applicationRevision": "85fe255ec8e7e65213cd570f91f5bb1fe66a30d7",
+  "workflow": 37949391469,
+  "conclusion": "success",
+  "published": false,
+  "backendAccessed": false,
+  "artifact": {
+    "id": 11625370804,
+    "name": "v5-integration-preflight-85fe255ec8e7e65213cd570f91f5bb1fe66a30d7",
+    "size_in_bytes": 1653944,
+    "url": "https://api.github.com/repos/sullivanlegoff-code/Project-L/actions/artifacts/11625370804",
+    "archive_download_url": "https://api.github.com/repos/sullivanlegoff-code/Project-L/actions/artifacts/11625370804/zip",
+    "expired": false,
+    "created_at": "2026-10-09T15:08:41Z",
+    "expires_at": "2026-11-08T15:08:40Z",
+    "updated_at": "2026-10-09T15:08:41Z",
+    "digest": "sha256:435d90383794053d415ada26b7aad8a3087f8d0c881e78a06776550a35167255",
+    "workflow_run": {
+      "id": 37949391469,
+      "repository_id": 1410092452,
+      "head_repository_id": 1410092452,
+      "head_branch": "feature/meadow-decoration",
+      "head_sha": "85fe255ec8e7e65213cd570f91f5bb1fe66a30d7"
+    }
+  },
+  "normalAndLabFormat": 5,
+  "decorationsFormat": 5,
+  "accountsFormat": 4,
+  "accountsRevision": "3e70d9e8cbe9228c63c73db007fff199199d6470"
+}

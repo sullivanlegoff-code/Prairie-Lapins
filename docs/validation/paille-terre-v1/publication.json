@@ -1,0 +1,259 @@
+{
+  "applicationRevision": "5248235b964947d67ae295f64d5832525d2e1d93",
+  "applicationTree": "dc6f285371c6d03e9c3226710b6914c9db952365",
+  "pullRequest": "https://github.com/sullivanlegoff-code/Project-L/pull/6",
+  "scope": [
+    "paille",
+    "terre"
+  ],
+  "unchangedSnowSha256": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+  "ci": {
+    "run": 38043020922,
+    "job": 114186890913,
+    "artifact": 11666244571,
+    "revision": "ea44c805af1c2cc953d66ec5ed38947f1f2957f2",
+    "tree": "dc6f285371c6d03e9c3226710b6914c9db952365",
+    "conclusion": "success",
+    "tests": 586,
+    "testFiles": 18,
+    "typeScript": true,
+    "normalBuild": true,
+    "laboratoryBuild": true,
+    "sevenResidentSelections": 21,
+    "zooms": [
+      0.8,
+      1.05,
+      1.65
+    ],
+    "ears": true,
+    "profiles": true,
+    "shop": true,
+    "collection": true,
+    "parents": true,
+    "portraitViewport": true,
+    "existingBrowserSuites": true
+  },
+  "publication": {
+    "run": 38043530418,
+    "buildJob": 114188367200,
+    "deployJob": 114188602999,
+    "artifact": 11667290388,
+    "conclusion": "success",
+    "routes": [
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "revision": "5248235b964947d67ae295f64d5832525d2e1d93",
+        "saveFormat": 6,
+        "html": 200,
+        "application": 200,
+        "featuresChecked": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/dev/",
+        "revision": "5248235b964947d67ae295f64d5832525d2e1d93",
+        "saveFormat": 6,
+        "html": 200,
+        "application": 200,
+        "featuresChecked": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/preview/accounts/",
+        "revision": "3e70d9e8cbe9228c63c73db007fff199199d6470",
+        "saveFormat": 4,
+        "html": 200,
+        "application": 200,
+        "featuresChecked": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/preview/decorations/",
+        "revision": "85fe255ec8e7e65213cd570f91f5bb1fe66a30d7",
+        "saveFormat": 5,
+        "html": 200,
+        "application": 200,
+        "featuresChecked": true
+      }
+    ],
+    "browserSuites": [
+      {
+        "name": "normal",
+        "passed": true,
+        "checks": 9
+      },
+      {
+        "name": "laboratory",
+        "passed": true,
+        "checks": 7
+      },
+      {
+        "name": "foundations",
+        "passed": true,
+        "checks": 3
+      },
+      {
+        "name": "snow",
+        "passed": true,
+        "checks": 2
+      },
+      {
+        "name": "paille-terre",
+        "passed": true,
+        "checks": 2,
+        "details": [
+          {
+            "route": "normal",
+            "assets": [
+              {
+                "species": "paille",
+                "hash": "005ac9f351bfe9614520b1e1998eee1421a5c6aff1c05bcf92172bbb52dd9dfe",
+                "width": 350,
+                "height": 495,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  229,
+                  211,
+                  193,
+                  255
+                ]
+              },
+              {
+                "species": "terre",
+                "hash": "1f0337f7e41ef2d0ce5f5d0114c49b9dfbc38f1bfa90d90e9a2ab7c38e88109c",
+                "width": 992,
+                "height": 907,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "neige",
+                "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+                "width": 518,
+                "height": 473,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  254,
+                  243,
+                  249,
+                  255
+                ]
+              }
+            ],
+            "portraits": "shop and portrait viewport: three originals; lab collection: three originals; normal collection: undiscovered Terre remains hidden",
+            "world": "canvas screenshot; no app hooks"
+          },
+          {
+            "route": "dev/",
+            "assets": [
+              {
+                "species": "paille",
+                "hash": "005ac9f351bfe9614520b1e1998eee1421a5c6aff1c05bcf92172bbb52dd9dfe",
+                "width": 350,
+                "height": 495,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  229,
+                  211,
+                  193,
+                  255
+                ]
+              },
+              {
+                "species": "terre",
+                "hash": "1f0337f7e41ef2d0ce5f5d0114c49b9dfbc38f1bfa90d90e9a2ab7c38e88109c",
+                "width": 992,
+                "height": 907,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "neige",
+                "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+                "width": 518,
+                "height": 473,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  254,
+                  243,
+                  249,
+                  255
+                ]
+              }
+            ],
+            "portraits": "shop and portrait viewport: three originals; lab collection: three originals; normal collection: undiscovered Terre remains hidden",
+            "world": "canvas screenshot; no app hooks"
+          }
+        ]
+      }
+    ]
+  },
+  "fidelity": {
+    "paille": {
+      "opaquePixels": 101525,
+      "maxOpaqueRgbDifference": 0
+    },
+    "terre": {
+      "opaquePixels": 522194,
+      "maxOpaqueRgbDifference": 0
+    }
+  },
+  "preserved": [
+    "other species",
+    "rules and balancing",
+    "v6 save schema and keys",
+    "camera",
+    "island",
+    "habitats",
+    "decorations",
+    "frozen preview revisions"
+  ],
+  "supabase": "paused",
+  "limitations": [
+    "Chromium touch emulation and landscape/portrait viewports; no physical iPhone Safari test",
+    "Reference/game comparisons enlarge real 150×140 portrait captures uniformly."
+  ]
+}

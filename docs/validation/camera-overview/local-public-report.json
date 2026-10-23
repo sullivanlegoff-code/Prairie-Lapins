@@ -1,0 +1,132 @@
+{
+  "passed": true,
+  "url": "http://127.0.0.1:5206/Project-L/",
+  "checks": [
+    "Normal overview, constant-size UI and v7 save; fine 4 × 4 preview after zooming out, cancellation preserves every object/resource; Recenter via real control.",
+    "Six public laboratory centre/partial/full × landscape/portrait configurations: overview, wheel, real touch pan/pinch, return to close view, unchanged saves and water covering bottom corners.",
+    "Expansion overview exposes the nine potential parcel positions, including eight unowned choices, without purchases.",
+    "Normal/laboratory saves remain isolated; overview state never enters the v7 game save and reload remains valid."
+  ],
+  "waterSamples": [
+    {
+      "name": "normal-overview",
+      "samples": [
+        [
+          145,
+          211,
+          206,
+          255
+        ],
+        [
+          145,
+          211,
+          206,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "islandStart-852-public-overview",
+      "samples": [
+        [
+          145,
+          211,
+          206,
+          255
+        ],
+        [
+          145,
+          211,
+          206,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "islandL-852-public-overview",
+      "samples": [
+        [
+          145,
+          211,
+          206,
+          255
+        ],
+        [
+          145,
+          211,
+          206,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "islandFull-852-public-overview",
+      "samples": [
+        [
+          145,
+          211,
+          206,
+          255
+        ],
+        [
+          145,
+          211,
+          206,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "islandStart-390-public-overview",
+      "samples": [
+        [
+          145,
+          211,
+          206,
+          255
+        ],
+        [
+          145,
+          211,
+          206,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "islandL-390-public-overview",
+      "samples": [
+        [
+          145,
+          211,
+          206,
+          255
+        ],
+        [
+          145,
+          211,
+          206,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "islandFull-390-public-overview",
+      "samples": [
+        [
+          145,
+          211,
+          206,
+          255
+        ],
+        [
+          145,
+          211,
+          206,
+          255
+        ]
+      ]
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,42 @@
+{
+  "applicationRevision": "85fe255ec8e7e65213cd570f91f5bb1fe66a30d7",
+  "publisherRevision": "938495e6b6ecf2c9ec24be82cd2cc112ee6573df",
+  "workflow": 37949526936,
+  "verifiedAt": "2026-10-09T15:10:44.6085557Z",
+  "method": "Public HTTP revision, HTML and served script checks from GitHub Actions; not physical Safari",
+  "catalogue": 15,
+  "routes": [
+    {
+      "url": "https://sullivanlegoff-code.github.io/Project-L/",
+      "revision": "ae31131f8318ffbd69794f20e57c1050694afb49",
+      "saveFormat": 4,
+      "html": 200,
+      "application": 200,
+      "featuresChecked": true
+    },
+    {
+      "url": "https://sullivanlegoff-code.github.io/Project-L/dev/",
+      "revision": "ae31131f8318ffbd69794f20e57c1050694afb49",
+      "saveFormat": 4,
+      "html": 200,
+      "application": 200,
+      "featuresChecked": true
+    },
+    {
+      "url": "https://sullivanlegoff-code.github.io/Project-L/preview/accounts/",
+      "revision": "3e70d9e8cbe9228c63c73db007fff199199d6470",
+      "saveFormat": 4,
+      "html": 200,
+      "application": 200,
+      "featuresChecked": true
+    },
+    {
+      "url": "https://sullivanlegoff-code.github.io/Project-L/preview/decorations/",
+      "revision": "85fe255ec8e7e65213cd570f91f5bb1fe66a30d7",
+      "saveFormat": 5,
+      "html": 200,
+      "application": 200,
+      "featuresChecked": true
+    }
+  ]
+}

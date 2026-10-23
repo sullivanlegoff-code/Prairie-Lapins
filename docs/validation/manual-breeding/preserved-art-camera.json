@@ -1,0 +1,41 @@
+{
+  "base": "64173ef1638de0bde1bbdbb105cd526e1891d283",
+  "preserved": [
+    {
+      "path": "prairie-lapins-prototype/src/config/rabbitArt.ts",
+      "sha": "9c0d492ba76215ff3ff2bc9abd0d5a3867a53234"
+    },
+    {
+      "path": "prairie-lapins-prototype/src/config/visual.ts",
+      "sha": "cea4d7622fdd3b5878e8dcb95e2b12ef79c5a84c"
+    },
+    {
+      "path": "prairie-lapins-prototype/src/ui/gestures.ts",
+      "sha": "fd675cc8b9e295910842a1e01b910ca25a2c7ddf"
+    },
+    {
+      "path": "prairie-lapins-prototype/public/assets/rabbits/belier-gris/belier-gris-v1.png",
+      "sha": "50d96a8d293f426e309d49ab6d527df563ac4ebb"
+    },
+    {
+      "path": "prairie-lapins-prototype/public/assets/rabbits/feu/feu-v1.png",
+      "sha": "0404297403fd8529f720f3a7ca9f8ccddbd55a11"
+    },
+    {
+      "path": "prairie-lapins-prototype/public/assets/rabbits/neige/neige-v1.png",
+      "sha": "88ab30f2616f37399815100bde3a0cda200f1c40"
+    },
+    {
+      "path": "prairie-lapins-prototype/public/assets/rabbits/paille/paille-v1.png",
+      "sha": "693745f6f4a989cea8c861ec14f3c2bc88952ff5"
+    },
+    {
+      "path": "prairie-lapins-prototype/public/assets/rabbits/terre/terre-v1.png",
+      "sha": "10843172b39411573b9ee172378c78fa9fb581e9"
+    },
+    {
+      "path": "prairie-lapins-prototype/public/assets/rabbits/volant/volant-v1.png",
+      "sha": "7d11f1970abaf36a83a5f0edad358633868c551d"
+    }
+  ]
+}

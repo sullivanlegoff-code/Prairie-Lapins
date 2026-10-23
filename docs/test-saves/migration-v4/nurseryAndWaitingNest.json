@@ -1,0 +1,120 @@
+{
+  "version": 4,
+  "lastSimulatedAt": 2400000,
+  "nextId": 9,
+  "hearts": 12,
+  "nextHeartGiftAt": 86400000,
+  "pattes": 9720,
+  "grass": 96,
+  "expanded": false,
+  "secondExpanded": false,
+  "buildings": [
+    {
+      "id": "building-1",
+      "kind": "enclosure",
+      "x": 0,
+      "y": 0,
+      "incomeUnits": 67200000,
+      "habitat": {
+        "type": "universal",
+        "level": 1
+      },
+      "order": null,
+      "breeding": null,
+      "baby": null
+    },
+    {
+      "id": "building-4",
+      "kind": "farm",
+      "x": 1,
+      "y": 0,
+      "incomeUnits": 0,
+      "habitat": null,
+      "order": null,
+      "breeding": null,
+      "baby": null
+    },
+    {
+      "id": "building-5",
+      "kind": "nest",
+      "x": 2,
+      "y": 0,
+      "incomeUnits": 0,
+      "habitat": null,
+      "order": null,
+      "breeding": {
+        "parents": [
+          "rabbit-2",
+          "rabbit-3"
+        ],
+        "startedAt": 1200000,
+        "endsAt": 2400000,
+        "birth": {
+          "id": "birth-8",
+          "species": "brumelin",
+          "guaranteed": false,
+          "reservedDiscovery": true
+        }
+      },
+      "baby": null
+    },
+    {
+      "id": "building-6",
+      "kind": "nursery",
+      "x": 0,
+      "y": 1,
+      "incomeUnits": 0,
+      "habitat": null,
+      "order": null,
+      "breeding": null,
+      "baby": {
+        "birth": {
+          "id": "birth-7",
+          "species": "brumelin",
+          "guaranteed": true,
+          "reservedDiscovery": true
+        },
+        "startedAt": 1200000,
+        "readyAt": 2100000
+      }
+    }
+  ],
+  "rabbits": [
+    {
+      "id": "rabbit-2",
+      "species": "paille",
+      "affection": 2,
+      "enclosureId": "building-1"
+    },
+    {
+      "id": "rabbit-3",
+      "species": "neige",
+      "affection": 2,
+      "enclosureId": "building-1"
+    }
+  ],
+  "discovered": [
+    "paille",
+    "neige"
+  ],
+  "pityFailures": 0,
+  "missions": {
+    "completed": [
+      "first-farm",
+      "cozy-nest",
+      "welcome-babies"
+    ],
+    "claimed": [],
+    "daily": {
+      "referenceAt": 0,
+      "cycleIndex": 0,
+      "progress": {
+        "collect-pattes": 0,
+        "collect-grass": 0,
+        "gain-affection": 2
+      },
+      "claimed": [],
+      "bonusClaimed": false
+    }
+  }
+}

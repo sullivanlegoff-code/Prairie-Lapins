@@ -1,0 +1,728 @@
+{
+  "passed": true,
+  "url": "https://sullivanlegoff-code.github.io/Project-L/",
+  "browser": "Chromium tactile, sans test Safari physique",
+  "checks": [
+    "Normal neuf : compteur 300, prix, missions et confirmation avec image réelle, libellé accessible pièces, aucune ancienne unité visible.",
+    "Laboratoire : vente annulée, montant regroupé, confirmation pièces/cœurs ; prix et missions lisibles en 667×375 et 390×844, groupes montant/image insécables."
+  ],
+  "audits": [
+    {
+      "name": "compteur paysage",
+      "old": [],
+      "icons": [
+        {
+          "complete": true,
+          "width": 24,
+          "height": 24,
+          "hidden": "true"
+        }
+      ],
+      "groups": [],
+      "overflow": false
+    },
+    {
+      "name": "prix",
+      "old": [],
+      "icons": [
+        {
+          "complete": true,
+          "width": 24,
+          "height": 24,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 16.1875,
+          "height": 16.1875,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 16.1875,
+          "height": 16.1875,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 16.1875,
+          "height": 16.1875,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 16.1875,
+          "height": 16.1875,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 16.1875,
+          "height": 16.1875,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 16.1875,
+          "height": 16.1875,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 16.1875,
+          "height": 16.1875,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        }
+      ],
+      "groups": [
+        {
+          "nowrap": true,
+          "text": "600 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "120 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "900 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "200 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "900 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "200 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "900 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "200 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "900 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "200 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "900 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "200 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "900 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "200 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "60 pièces"
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "name": "missions",
+      "old": [],
+      "icons": [
+        {
+          "complete": true,
+          "width": 24,
+          "height": 24,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 21.59375,
+          "height": 21.59375,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 16.1875,
+          "height": 16.1875,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 16.1875,
+          "height": 16.1875,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 16.1875,
+          "height": 16.1875,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        }
+      ],
+      "groups": [
+        {
+          "nowrap": true,
+          "text": "pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "100 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "+ 30 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "+ 30 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "+ 20 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "+ 20 pièces"
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "name": "confirmation achat",
+      "old": [],
+      "icons": [
+        {
+          "complete": true,
+          "width": 24,
+          "height": 24,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        }
+      ],
+      "groups": [
+        {
+          "nowrap": true,
+          "text": "20 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "30 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "40 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "60 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "80 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "100 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "120 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "150 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "30 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "40 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "60 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "80 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "80 pièces"
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "name": "vente paysage",
+      "old": [],
+      "icons": [
+        {
+          "complete": true,
+          "width": 24,
+          "height": 24,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 25.640625,
+          "height": 25.640625,
+          "hidden": "true"
+        }
+      ],
+      "groups": [
+        {
+          "nowrap": true,
+          "text": "40 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "40 pièces"
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "name": "confirmation mixte",
+      "old": [],
+      "icons": [
+        {
+          "complete": true,
+          "width": 24,
+          "height": 24,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        }
+      ],
+      "groups": [
+        {
+          "nowrap": true,
+          "text": "500 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "500 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "300 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "300 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "200 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "300 pièces"
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "name": "grand montant paysage",
+      "old": [],
+      "icons": [
+        {
+          "complete": true,
+          "width": 24,
+          "height": 24,
+          "hidden": "true"
+        }
+      ],
+      "groups": [],
+      "overflow": false
+    },
+    {
+      "name": "grand montant portrait",
+      "old": [],
+      "icons": [
+        {
+          "complete": true,
+          "width": 24,
+          "height": 24,
+          "hidden": "true"
+        }
+      ],
+      "groups": [],
+      "overflow": false
+    },
+    {
+      "name": "prix portrait",
+      "old": [],
+      "icons": [
+        {
+          "complete": true,
+          "width": 24,
+          "height": 24,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 16.1875,
+          "height": 16.1875,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 16.1875,
+          "height": 16.1875,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 16.1875,
+          "height": 16.1875,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 16.1875,
+          "height": 16.1875,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 16.1875,
+          "height": 16.1875,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 16.1875,
+          "height": 16.1875,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 16.1875,
+          "height": 16.1875,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        },
+        {
+          "complete": true,
+          "width": 18.890625,
+          "height": 18.890625,
+          "hidden": "true"
+        }
+      ],
+      "groups": [
+        {
+          "nowrap": true,
+          "text": "600 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "120 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "900 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "200 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "900 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "200 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "900 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "200 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "900 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "200 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "900 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "200 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "900 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "200 pièces"
+        },
+        {
+          "nowrap": true,
+          "text": "60 pièces"
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "name": "mission portrait",
+      "old": [],
+      "icons": [
+        {
+          "complete": true,
+          "width": 24,
+          "height": 24,
+          "hidden": "true"
+        }
+      ],
+      "groups": [],
+      "overflow": false
+    }
+  ],
+  "errors": []
+}

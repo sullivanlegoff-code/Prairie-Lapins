@@ -1,0 +1,123 @@
+{
+  "passed": true,
+  "checks": [
+    "v6 save migrates once to v7; decoration coordinates unchanged, raw backup retained and initial rabbit world positions unchanged.",
+    "Farm preview advances one square across parcel boundary; old placement/work kept until commit, cancellation exact, double confirm free once. Independent caches retained and building drawn once.",
+    "Water/unacquired footprint refusals and decoration obstacle preserve objects. Pan/pinch do not change the draft. Seven residents follow the moved habitat and remain individually selectable at three zooms.",
+    "Reload preserves fine coordinates, occupants and active farm job; landscape and portrait previews captured."
+  ],
+  "selections": [
+    {
+      "zoom": 0.8,
+      "id": "rabbit-4",
+      "species": "paille"
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-5",
+      "species": "neige"
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-6",
+      "species": "terre"
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-7",
+      "species": "belier-gris"
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-8",
+      "species": "feu"
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-9",
+      "species": "volant"
+    },
+    {
+      "zoom": 0.8,
+      "id": "rabbit-10",
+      "species": "brumelin"
+    },
+    {
+      "zoom": 1.05,
+      "id": "rabbit-4",
+      "species": "paille"
+    },
+    {
+      "zoom": 1.05,
+      "id": "rabbit-5",
+      "species": "neige"
+    },
+    {
+      "zoom": 1.05,
+      "id": "rabbit-6",
+      "species": "terre"
+    },
+    {
+      "zoom": 1.05,
+      "id": "rabbit-7",
+      "species": "belier-gris"
+    },
+    {
+      "zoom": 1.05,
+      "id": "rabbit-8",
+      "species": "feu"
+    },
+    {
+      "zoom": 1.05,
+      "id": "rabbit-9",
+      "species": "volant"
+    },
+    {
+      "zoom": 1.05,
+      "id": "rabbit-10",
+      "species": "brumelin"
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-4",
+      "species": "paille"
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-5",
+      "species": "neige"
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-6",
+      "species": "terre"
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-7",
+      "species": "belier-gris"
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-8",
+      "species": "feu"
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-9",
+      "species": "volant"
+    },
+    {
+      "zoom": 1.65,
+      "id": "rabbit-10",
+      "species": "brumelin"
+    }
+  ],
+  "errors": [],
+  "browser": "Chromium touch emulation, not physical Safari",
+  "cache": {
+    "terrainRetained": true,
+    "imageRetained": true,
+    "once": true
+  }
+}

@@ -1,0 +1,17 @@
+Prairie Lapins — prototype tactile de cuisine
+
+Based in part on Cook Tap: https://github.com/nascarjake/cooktap
+Source commit: 2d853495b03f837ef86bf20a591547bc1161a88f
+Upstream package author: Cook Tap Development Team; repository owner: nascarjake.
+Upstream README and package.json declare MIT. No LICENSE file or explicit
+copyright notice was supplied by upstream at this commit.
+
+The earlier prototype adapted pizza/pasta recipe data and a timing-based score
+rule. The current landscape kitchen foundation replaces that gameplay with
+locally written object state, geometry, Pointer Events and provisional SVG art.
+No upstream gameplay classes, images, fonts, audio or external assets are loaded.
+The original snapshot and notices are retained as project provenance.
+
+MIT.txt supplies the standard MIT terms corresponding to that declaration;
+it is not represented as a LICENSE file found in the upstream repository.
+Retain this attribution and these terms with copies of the adaptation.

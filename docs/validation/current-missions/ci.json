@@ -1,0 +1,39 @@
+{
+  "run": 38085602454,
+  "url": "https://github.com/sullivanlegoff-code/Project-L/actions/runs/38085602454",
+  "job": 114311383986,
+  "head": "6a3e641810c940e16467a7c0df19ce9c9a27dda3",
+  "testedMerge": "836d36193f3f3fdb82d1ea2eca814779d83f1f3c",
+  "applicationRevision": "7b743b6935e99a2dc6ac987db040d3b52d14e12e",
+  "tree": "032431498a62a327345dd3b3c472c26fa0ac2ee5",
+  "tests": 658,
+  "testFiles": 22,
+  "typecheck": true,
+  "builds": 2,
+  "sourceBrowserSuites": 9,
+  "builtBrowserSuites": 10,
+  "builtChecks": 36,
+  "errors": 0,
+  "artifacts": [
+    {
+      "id": 11682661929,
+      "name": "land-validation-836d36193f3f3fdb82d1ea2eca814779d83f1f3c",
+      "size_in_bytes": 9101362,
+      "url": "https://api.github.com/repos/sullivanlegoff-code/Project-L/actions/artifacts/11682661929",
+      "archive_download_url": "https://api.github.com/repos/sullivanlegoff-code/Project-L/actions/artifacts/11682661929/zip",
+      "expired": false,
+      "created_at": "2026-10-10T21:02:33Z",
+      "expires_at": "2026-11-09T21:02:31Z",
+      "updated_at": "2026-10-10T21:02:33Z",
+      "digest": "sha256:4c36957e7a450a4d08b5452a156e85aa05e4bee5983f4981cbda6f717eaf6fde",
+      "workflow_run": {
+        "id": 38085602454,
+        "repository_id": 1410092452,
+        "head_repository_id": 1410092452,
+        "head_branch": "feature/current-missions",
+        "head_sha": "6a3e641810c940e16467a7c0df19ce9c9a27dda3"
+      }
+    }
+  ],
+  "validated": true
+}

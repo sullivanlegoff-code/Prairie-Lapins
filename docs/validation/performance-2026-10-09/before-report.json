@@ -1,0 +1,431 @@
+{
+  "label": "before",
+  "conditions": {
+    "browser": "Chromium/Linux software renderer; not physical Safari",
+    "viewport": "852×393",
+    "zoom": 1.05,
+    "animation": "normal",
+    "autosave": "unchanged 5 seconds",
+    "passiveMs": 12000,
+    "repeats": 2,
+    "captureDuringSamples": false
+  },
+  "scenarios": [
+    {
+      "id": "decorationStart",
+      "counts": {
+        "owned": 0,
+        "placed": 0,
+        "rabbits": 2,
+        "phaserObjects": 33,
+        "textures": 16,
+        "groundCommands": 21430,
+        "activeTimers": 0,
+        "controllerListeners": 3,
+        "panel": false
+      },
+      "passive": [
+        {
+          "frames": 81,
+          "elapsedMs": 12049.6,
+          "fps": 6.722214845306068,
+          "p50": 150,
+          "p95": 183.30000000000018,
+          "p99": 183.40000000000146,
+          "max": 216.70000000000073
+        },
+        {
+          "frames": 94,
+          "elapsedMs": 12099.5,
+          "fps": 7.768916070912021,
+          "p50": 116.70000000000073,
+          "p95": 166.70000000000073,
+          "p99": 166.70000000000073,
+          "max": 183.29999999999927
+        }
+      ],
+      "withoutStaticGround": {
+        "frames": 198,
+        "elapsedMs": 4016.600000000002,
+        "fps": 49.29542399043965,
+        "p50": 16.700000000000728,
+        "p95": 33.39999999999782,
+        "p99": 50.099999999998545,
+        "max": 66.70000000000073
+      },
+      "instrumented": {
+        "frames": 45,
+        "elapsedMs": 6516.500000000004,
+        "fps": 6.905547456456683,
+        "p50": 133.40000000000146,
+        "p95": 183.1999999999971,
+        "p99": 183.40000000000146,
+        "max": 183.40000000000146
+      },
+      "costs": {
+        "scene.renderState": {
+          "calls": 1,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "scene.drawGround": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "scene.drawAnimals": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "scene.drawDecorations": {
+          "calls": 1,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "scene.drawBubbles": {
+          "calls": 1,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "scene.drawGrid": {
+          "calls": 1,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "scene.drawGhost": {
+          "calls": 1,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "scene.decorationAt": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "scene.update": {
+          "calls": 47,
+          "totalMs": 0.9999999981373549,
+          "maxMs": 0.10000000149011612
+        },
+        "renderer.render CPU submission": {
+          "calls": 47,
+          "totalMs": 204.80000001192093,
+          "maxMs": 38.20000000111759
+        },
+        "controller.refresh": {
+          "calls": 1,
+          "totalMs": 1.299999998882413,
+          "maxMs": 1.299999998882413
+        },
+        "controller.write": {
+          "calls": 1,
+          "totalMs": 0.5,
+          "maxMs": 0.5
+        },
+        "ui.render": {
+          "calls": 1,
+          "totalMs": 0.19999999925494194,
+          "maxMs": 0.19999999925494194
+        },
+        "storage.setItem": {
+          "calls": 1,
+          "totalMs": 0.09999999962747097,
+          "maxMs": 0.09999999962747097
+        }
+      },
+      "arrangementPanel": {
+        "frames": 26,
+        "elapsedMs": 4033.0999999999985,
+        "fps": 6.446653938657611,
+        "p50": 166.59999999999854,
+        "p95": 183.39999999999418,
+        "p99": 183.39999999999418,
+        "max": 183.40000000000146
+      },
+      "interaction": {
+        "handlerMs": 5.200000001117587,
+        "nextFrameMs": 10.800000000745058,
+        "panel": true
+      }
+    },
+    {
+      "id": "decorationDemo",
+      "counts": {
+        "owned": 14,
+        "placed": 14,
+        "rabbits": 2,
+        "phaserObjects": 49,
+        "textures": 17,
+        "groundCommands": 40689,
+        "activeTimers": 0,
+        "controllerListeners": 3,
+        "panel": false
+      },
+      "passive": [
+        {
+          "frames": 63,
+          "elapsedMs": 12082.800000000003,
+          "fps": 5.214023239646438,
+          "p50": 199.90000000000146,
+          "p95": 216.6999999999971,
+          "p99": 216.70000000000437,
+          "max": 233.29999999999563
+        },
+        {
+          "frames": 56,
+          "elapsedMs": 12032.800000000003,
+          "fps": 4.6539458812578935,
+          "p50": 216.60000000000582,
+          "p95": 250,
+          "p99": 266.6999999999971,
+          "max": 266.6999999999971
+        }
+      ],
+      "withoutStaticGround": {
+        "frames": 170,
+        "elapsedMs": 4016.5999999999913,
+        "fps": 42.32435393118567,
+        "p50": 16.69999999999709,
+        "p95": 50,
+        "p99": 50.10000000000582,
+        "max": 66.69999999999709
+      },
+      "instrumented": {
+        "frames": 31,
+        "elapsedMs": 6633.100000000006,
+        "fps": 4.673531229741745,
+        "p50": 216.60000000000582,
+        "p95": 250,
+        "p99": 250,
+        "max": 283.29999999998836
+      },
+      "costs": {
+        "scene.renderState": {
+          "calls": 1,
+          "totalMs": 0.10000000149011612,
+          "maxMs": 0.10000000149011612
+        },
+        "scene.drawGround": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "scene.drawAnimals": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "scene.drawDecorations": {
+          "calls": 1,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "scene.drawBubbles": {
+          "calls": 1,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "scene.drawGrid": {
+          "calls": 1,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "scene.drawGhost": {
+          "calls": 1,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "scene.decorationAt": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "scene.update": {
+          "calls": 33,
+          "totalMs": 0.900000000372529,
+          "maxMs": 0.10000000149011612
+        },
+        "renderer.render CPU submission": {
+          "calls": 33,
+          "totalMs": 301.09999999962747,
+          "maxMs": 39.79999999888241
+        },
+        "controller.refresh": {
+          "calls": 1,
+          "totalMs": 1.6000000014901161,
+          "maxMs": 1.6000000014901161
+        },
+        "controller.write": {
+          "calls": 1,
+          "totalMs": 0.599999999627471,
+          "maxMs": 0.599999999627471
+        },
+        "ui.render": {
+          "calls": 1,
+          "totalMs": 0.30000000074505806,
+          "maxMs": 0.30000000074505806
+        },
+        "storage.setItem": {
+          "calls": 1,
+          "totalMs": 0,
+          "maxMs": 0
+        }
+      },
+      "arrangementPanel": {
+        "frames": 20,
+        "elapsedMs": 4116.5,
+        "fps": 4.8584962953965745,
+        "p50": 200,
+        "p95": 250,
+        "p99": 250,
+        "max": 250
+      },
+      "interaction": {
+        "handlerMs": 4.699999999254942,
+        "nextFrameMs": 11.399999998509884,
+        "panel": true
+      }
+    },
+    {
+      "id": "decorationDense",
+      "counts": {
+        "owned": 512,
+        "placed": 140,
+        "rabbits": 7,
+        "phaserObjects": 231,
+        "textures": 17,
+        "groundCommands": 53711,
+        "activeTimers": 0,
+        "controllerListeners": 3,
+        "panel": false
+      },
+      "passive": [
+        {
+          "frames": 44,
+          "elapsedMs": 12249.5,
+          "fps": 3.591983346259031,
+          "p50": 250,
+          "p95": 416.59999999999127,
+          "p99": 500,
+          "max": 500
+        },
+        {
+          "frames": 49,
+          "elapsedMs": 12066.099999999991,
+          "fps": 4.060964188926002,
+          "p50": 233.3000000000029,
+          "p95": 366.70000000001164,
+          "p99": 400,
+          "max": 499.90000000000873
+        }
+      ],
+      "withoutStaticGround": {
+        "frames": 105,
+        "elapsedMs": 4049.7999999999884,
+        "fps": 25.92720628179177,
+        "p50": 33.39999999999418,
+        "p95": 66.70000000001164,
+        "p99": 66.70000000001164,
+        "max": 66.80000000001746
+      },
+      "instrumented": {
+        "frames": 30,
+        "elapsedMs": 6599.799999999988,
+        "fps": 4.545592290675483,
+        "p50": 216.60000000000582,
+        "p95": 250,
+        "p99": 250,
+        "max": 283.29999999998836
+      },
+      "costs": {
+        "scene.renderState": {
+          "calls": 2,
+          "totalMs": 3.899999998509884,
+          "maxMs": 2.699999999254942
+        },
+        "scene.drawGround": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "scene.drawAnimals": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "scene.drawDecorations": {
+          "calls": 2,
+          "totalMs": 0.5,
+          "maxMs": 0.30000000074505806
+        },
+        "scene.drawBubbles": {
+          "calls": 2,
+          "totalMs": 3.299999998882413,
+          "maxMs": 2.399999998509884
+        },
+        "scene.drawGrid": {
+          "calls": 2,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "scene.drawGhost": {
+          "calls": 2,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "scene.decorationAt": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "scene.update": {
+          "calls": 32,
+          "totalMs": 1.1000000014901161,
+          "maxMs": 0.10000000149011612
+        },
+        "renderer.render CPU submission": {
+          "calls": 32,
+          "totalMs": 299.9000000040978,
+          "maxMs": 11.699999999254942
+        },
+        "controller.refresh": {
+          "calls": 2,
+          "totalMs": 36.099999997764826,
+          "maxMs": 18.899999998509884
+        },
+        "controller.write": {
+          "calls": 2,
+          "totalMs": 24.90000000037253,
+          "maxMs": 12.800000000745058
+        },
+        "ui.render": {
+          "calls": 2,
+          "totalMs": 1,
+          "maxMs": 0.5
+        },
+        "storage.setItem": {
+          "calls": 2,
+          "totalMs": 0.6000000014901161,
+          "maxMs": 0.30000000074505806
+        }
+      },
+      "arrangementPanel": {
+        "frames": 18,
+        "elapsedMs": 4149.799999999988,
+        "fps": 4.337558436551172,
+        "p50": 216.70000000001164,
+        "p95": 266.6000000000058,
+        "p99": 266.6000000000058,
+        "max": 316.6000000000058
+      },
+      "interaction": {
+        "handlerMs": 17.799999998882413,
+        "nextFrameMs": 27.5,
+        "panel": true
+      }
+    }
+  ],
+  "errors": [],
+  "supabaseRequests": []
+}

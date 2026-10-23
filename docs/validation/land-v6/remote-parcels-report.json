@@ -1,0 +1,44 @@
+{
+  "passed": true,
+  "viewport": "852 × 393, Chromium touch",
+  "zoom": 1.65,
+  "checks": [
+    {
+      "parcel": "northwest",
+      "selected": true,
+      "visible": true,
+      "screen": {
+        "x": 296.78099997639663,
+        "y": 177.0596996766329
+      }
+    },
+    {
+      "parcel": "northeast",
+      "selected": true,
+      "visible": true,
+      "screen": {
+        "x": 296.7809999763965,
+        "y": 177.0596996766329
+      }
+    },
+    {
+      "parcel": "southwest",
+      "selected": true,
+      "visible": true,
+      "screen": {
+        "x": 296.78099997639663,
+        "y": 177.05969967663282
+      }
+    },
+    {
+      "parcel": "southeast",
+      "selected": true,
+      "visible": true,
+      "screen": {
+        "x": 296.7809999763965,
+        "y": 177.05969967663282
+      }
+    }
+  ],
+  "errors": []
+}

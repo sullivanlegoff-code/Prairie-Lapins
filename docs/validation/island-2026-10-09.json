@@ -1,0 +1,129 @@
+{
+  "applicationRevision": "db01f39215d2023b893fe266a68a2bbe1630b556",
+  "startingBranchRevision": "a64bb0e5949efc2e8522a822b10b0c9c8b6a955c",
+  "previewUrl": "https://sullivanlegoff-code.github.io/Project-L/preview/decorations/",
+  "validation": {
+    "run": 37921805427,
+    "job": 113791250327,
+    "conclusion": "success",
+    "tests": 474,
+    "testFiles": 12,
+    "typecheck": "success",
+    "isolatedBuild": "success",
+    "browserSuites": [
+      "island-browser-check.cjs",
+      "decorations-selection-check.cjs",
+      "decorations-flow-check.cjs",
+      "decorations-browser-check.cjs"
+    ],
+    "artifact": {
+      "id": 11612484276,
+      "name": "decorations-validation-db01f39215d2023b893fe266a68a2bbe1630b556",
+      "size_in_bytes": 3604941,
+      "url": "https://api.github.com/repos/sullivanlegoff-code/Project-L/actions/artifacts/11612484276",
+      "archive_download_url": "https://api.github.com/repos/sullivanlegoff-code/Project-L/actions/artifacts/11612484276/zip",
+      "expired": false,
+      "created_at": "2026-10-09T11:23:12Z",
+      "expires_at": "2026-11-08T11:23:10Z",
+      "updated_at": "2026-10-09T11:23:12Z",
+      "digest": "sha256:dd6b7c470c979c5f09ca0d4f130e3f626a4ae4d565f08eb4277ca8ba5f03b676",
+      "workflow_run": {
+        "id": 37921805427,
+        "repository_id": 1410092452,
+        "head_repository_id": 1410092452,
+        "head_branch": "feature/meadow-decoration",
+        "head_sha": "db01f39215d2023b893fe266a68a2bbe1630b556"
+      }
+    },
+    "browser": "Chromium, disposable real touch profiles; no physical Safari",
+    "density": {
+      "owned": 512,
+      "visible": 254,
+      "frames": 180,
+      "meanFps": 3.600676927262323,
+      "p95FrameMs": 299.9000000000233,
+      "reusedImages": true,
+      "decorationTextures": 14
+    },
+    "limitations": "Cloud stress is slow; no iPhone FPS claim or comparison across runners."
+  },
+  "publication": {
+    "checkedAt": "2026-10-09T11:13:11Z",
+    "method": "Read-only HTTP checks from the successful GitHub Actions deployment job",
+    "deploymentRun": 37922205251,
+    "deploymentCommit": "2ecc4a7dbc36a2fab6c51c280519d68e1e4af06f",
+    "applicationCommit": "db01f39215d2023b893fe266a68a2bbe1630b556",
+    "routes": [
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "revision": "ae31131f8318ffbd69794f20e57c1050694afb49",
+        "saveFormat": 4,
+        "html": 200,
+        "application": 200,
+        "featuresChecked": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/dev/",
+        "revision": "ae31131f8318ffbd69794f20e57c1050694afb49",
+        "saveFormat": 4,
+        "html": 200,
+        "application": 200,
+        "featuresChecked": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/preview/accounts/",
+        "revision": "3e70d9e8cbe9228c63c73db007fff199199d6470",
+        "saveFormat": 4,
+        "html": 200,
+        "application": 200,
+        "featuresChecked": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/preview/decorations/",
+        "revision": "db01f39215d2023b893fe266a68a2bbe1630b556",
+        "saveFormat": 5,
+        "html": 200,
+        "application": 200,
+        "featuresChecked": true
+      }
+    ]
+  },
+  "applicationFileBlobs": [
+    {
+      "path": "prairie-lapins-prototype/src/dev/scenarios.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "65b7d2c3435b1879d055d418a7bd3e849c632f03"
+    },
+    {
+      "path": "prairie-lapins-prototype/src/display/MeadowScene.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0e77f9c78677cd0bf963c6d44460fdd6a8f9a427"
+    },
+    {
+      "path": "prairie-lapins-prototype/src/display/islandArt.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "12bf4af9332d1b1847b5e60046dffc6647686628"
+    },
+    {
+      "path": "prairie-lapins-prototype/src/display/styles.css",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2e44cbd86358c2bacaf2c04304bc6b8cb95e1297"
+    },
+    {
+      "path": "prairie-lapins-prototype/src/main.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e998bc91a83b6acda9b735621ab1cf98404de8fa"
+    },
+    {
+      "path": "prairie-lapins-prototype/tests/laboratory.test.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4e605276a375116c9883f1d6ae832b1a9a66e924"
+    }
+  ]
+}

@@ -1,0 +1,141 @@
+/* Explicit opt-in: illustrated meadow navigation and monochrome HUD tools. */
+#meadow-actions {
+  --nav-side: 56px;
+  --nav-icon: 38px;
+  --nav-label: #fff1d4;
+  --nav-label-edge: #241f1a;
+  --nav-accent: #f2cf85;
+  gap: 12px; /* Reserve the lettering over the lower edge, including its stroke. */
+}
+#meadow-actions button.meadow-nav {
+  flex: none;
+  display: block;
+  width: var(--nav-side);
+  height: var(--nav-side);
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  color: var(--nav-label);
+  box-shadow: none;
+  text-shadow: none;
+  overflow: visible;
+  -webkit-tap-highlight-color: transparent;
+}
+/* The common image supplies the whole volume; disable the shared stone border. */
+#meadow-actions button.meadow-nav::before {
+  content: '';
+  inset: 0;
+  border: 0;
+  border-image: none;
+  background: url('/assets/ui/navigation/support-pebble.png') center / contain no-repeat;
+  filter: none;
+  transition: filter 80ms ease-out;
+}
+#meadow-actions .meadow-nav-icon {
+  position: absolute;
+  top: 7px;
+  left: calc((var(--nav-side) - var(--nav-icon)) / 2);
+  display: block;
+  width: var(--nav-icon);
+  height: var(--nav-icon);
+  object-fit: contain;
+  pointer-events: none;
+  transition: transform 80ms ease-out, filter 80ms ease-out;
+}
+#meadow-actions .meadow-nav-label {
+  position: absolute;
+  bottom: -3px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: block;
+  font-size: 12px;
+  line-height: 14px;
+  font-weight: 900;
+  white-space: nowrap;
+  -webkit-text-stroke: 1.6px var(--nav-label-edge);
+  paint-order: stroke fill;
+  text-shadow: 0 1px var(--nav-label-edge);
+  pointer-events: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  #meadow-actions button.meadow-nav:hover:not(:disabled)::before { filter: brightness(1.1); }
+}
+#meadow-actions button.meadow-nav:is(:active, .is-pressed):not(:disabled) {
+  background: none;
+  box-shadow: none;
+  color: var(--nav-label);
+}
+#meadow-actions button.meadow-nav:is(:active, .is-pressed):not(:disabled)::before { filter: brightness(.9); }
+#meadow-actions button.meadow-nav:is(:active, .is-pressed):not(:disabled) .meadow-nav-icon { transform: translateY(1px); }
+#meadow-actions button.meadow-nav:focus-visible { outline: 3px solid var(--nav-accent); outline-offset: 3px; }
+/* Style available to callers, without assigning a functional selection. */
+#meadow-actions button.meadow-nav.is-selected { outline: 2px solid var(--nav-accent); outline-offset: 1px; }
+#meadow-actions button.meadow-nav:disabled {
+  background: none;
+  box-shadow: none;
+  color: #ddd5c6;
+  text-shadow: none;
+  cursor: not-allowed;
+  opacity: 1;
+}
+#meadow-actions button.meadow-nav:disabled::before,
+#meadow-actions button.meadow-nav:disabled .meadow-nav-icon { filter: grayscale(.9) brightness(.8); }
+@media (prefers-reduced-motion: reduce) {
+  #meadow-actions button.meadow-nav::before,
+  #meadow-actions .meadow-nav-icon { transition: none; }
+}
+
+/* Small utility symbols reuse the same support, entirely in neutral grays. */
+#hud nav button.meadow-tool {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  min-width: 48px;
+  height: 48px;
+  min-height: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  box-shadow: none;
+  color: #e8e8e8;
+  text-shadow: none;
+  -webkit-tap-highlight-color: transparent;
+}
+#hud nav button.meadow-tool::before {
+  inset: 2px;
+  border: 0;
+  border-image: none;
+  background: url('/assets/ui/navigation/support-pebble.png') center / contain no-repeat;
+  filter: grayscale(1);
+  transition: filter 80ms ease-out;
+}
+#hud nav button.meadow-tool svg {
+  display: block;
+  width: 24px;
+  height: 24px;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+  transition: transform 80ms ease-out;
+}
+@media (hover: hover) and (pointer: fine) {
+  #hud nav button.meadow-tool:hover:not(:disabled)::before { filter: grayscale(1) brightness(1.12); }
+}
+#hud nav button.meadow-tool:is(:active, .is-pressed):not(:disabled) {
+  background: none;
+  box-shadow: none;
+  color: #e8e8e8;
+}
+#hud nav button.meadow-tool:is(:active, .is-pressed):not(:disabled)::before { filter: grayscale(1) brightness(.85); }
+#hud nav button.meadow-tool:is(:active, .is-pressed):not(:disabled) svg { transform: translateY(1px); }
+#hud nav button.meadow-tool:focus-visible { outline: 3px solid #3c3c3c; outline-offset: 1px; }
+#hud nav button.meadow-tool:disabled { background: none; box-shadow: none; color: #b8b8b8; opacity: 1; }
+#hud nav button.meadow-tool:disabled::before { filter: grayscale(1) brightness(.7); }
+@media (prefers-reduced-motion: reduce) {
+  #hud nav button.meadow-tool::before, #hud nav button.meadow-tool svg { transition: none; }
+}

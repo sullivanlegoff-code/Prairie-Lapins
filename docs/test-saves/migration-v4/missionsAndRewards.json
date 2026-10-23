@@ -1,0 +1,182 @@
+{
+  "version": 4,
+  "lastSimulatedAt": 0,
+  "nextId": 20,
+  "pattes": 48500,
+  "grass": 1020,
+  "expanded": true,
+  "buildings": [
+    {
+      "id": "building-4",
+      "kind": "enclosure",
+      "x": 0,
+      "y": 0,
+      "incomeUnits": 0,
+      "order": null,
+      "breeding": null,
+      "baby": null,
+      "habitat": {
+        "type": "universal",
+        "level": 3
+      }
+    },
+    {
+      "id": "building-12",
+      "kind": "enclosure",
+      "x": 1,
+      "y": 0,
+      "incomeUnits": 0,
+      "order": null,
+      "breeding": null,
+      "baby": null,
+      "habitat": {
+        "type": "universal",
+        "level": 3
+      }
+    },
+    {
+      "id": "building-17",
+      "kind": "farm",
+      "x": 0,
+      "y": 1,
+      "incomeUnits": 0,
+      "order": null,
+      "breeding": null,
+      "baby": null,
+      "habitat": null
+    },
+    {
+      "id": "building-18",
+      "kind": "nest",
+      "x": 1,
+      "y": 1,
+      "incomeUnits": 0,
+      "order": null,
+      "breeding": null,
+      "baby": null,
+      "habitat": null
+    },
+    {
+      "id": "building-19",
+      "kind": "nursery",
+      "x": 2,
+      "y": 1,
+      "incomeUnits": 0,
+      "order": null,
+      "breeding": null,
+      "baby": null,
+      "habitat": null
+    }
+  ],
+  "rabbits": [
+    {
+      "id": "rabbit-5",
+      "species": "paille",
+      "affection": 5,
+      "enclosureId": "building-4"
+    },
+    {
+      "id": "rabbit-6",
+      "species": "neige",
+      "affection": 5,
+      "enclosureId": "building-4"
+    },
+    {
+      "id": "rabbit-7",
+      "species": "terre",
+      "affection": 5,
+      "enclosureId": "building-4"
+    },
+    {
+      "id": "rabbit-8",
+      "species": "brumelin",
+      "affection": 5,
+      "enclosureId": "building-4"
+    },
+    {
+      "id": "rabbit-9",
+      "species": "mottelin",
+      "affection": 5,
+      "enclosureId": "building-4"
+    },
+    {
+      "id": "rabbit-10",
+      "species": "feu",
+      "affection": 5,
+      "enclosureId": "building-4"
+    },
+    {
+      "id": "rabbit-11",
+      "species": "belier-gris",
+      "affection": 5,
+      "enclosureId": "building-4"
+    },
+    {
+      "id": "rabbit-13",
+      "species": "volant",
+      "affection": 5,
+      "enclosureId": "building-12"
+    },
+    {
+      "id": "rabbit-14",
+      "species": "lunettes",
+      "affection": 5,
+      "enclosureId": "building-12"
+    },
+    {
+      "id": "rabbit-15",
+      "species": "perroquet",
+      "affection": 5,
+      "enclosureId": "building-12"
+    },
+    {
+      "id": "rabbit-16",
+      "species": "feu-glace",
+      "affection": 5,
+      "enclosureId": "building-12"
+    }
+  ],
+  "discovered": [
+    "paille",
+    "neige",
+    "terre",
+    "brumelin",
+    "mottelin",
+    "feu",
+    "belier-gris",
+    "volant",
+    "lunettes",
+    "perroquet",
+    "feu-glace"
+  ],
+  "pityFailures": 0,
+  "hearts": 100,
+  "nextHeartGiftAt": 86400000,
+  "missions": {
+    "completed": [
+      "first-farm",
+      "cozy-nest",
+      "welcome-babies",
+      "varied-family",
+      "strong-bonds",
+      "growing-collection",
+      "bigger-meadow",
+      "first-rare"
+    ],
+    "claimed": [
+      "first-farm"
+    ],
+    "daily": {
+      "referenceAt": 0,
+      "cycleIndex": 0,
+      "progress": {
+        "collect-pattes": 100,
+        "collect-grass": 40,
+        "gain-affection": 3
+      },
+      "claimed": [],
+      "bonusClaimed": false
+    }
+  },
+  "secondExpanded": true
+}

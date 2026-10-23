@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "url": "http://127.0.0.1:5216/Project-L/",
+  "browser": "Chromium touch simulation, not physical Safari",
+  "checks": [
+    "Fresh normal touch: first meal and explicit reward, disappearance/reload, real farm placement and 20-herb harvest, two-parent shortcut targets Neige, Paille stays at affection 2. Optional crop acceleration costs one of the initial hearts.",
+    "Laboratory journey uses initial resources and successful commands; all early accomplishments claimed in order without repeats; eight parallel branches, Brumelin reward disappearance, reload and normal isolation.",
+    "Daily cards and bonus disappear only after explicit claims; empty message, unchanged rules and next-cycle reappearance through laboratory clock."
+  ],
+  "errors": []
+}

@@ -1,0 +1,27 @@
+{
+  "browser": "Chromium/Linux touch, not physical Safari",
+  "catalogue": 15,
+  "filtersComposed": true,
+  "filtersRetained": true,
+  "exactDragonParents": true,
+  "actualOdds": true,
+  "drawOnce": true,
+  "persistedBirth": {
+    "id": "birth-25",
+    "species": "dragon",
+    "guaranteed": false,
+    "reservedDiscovery": false
+  },
+  "growthMinutes": 120,
+  "hiddenUntilReady": true,
+  "existingDiscoveryDialog": true,
+  "welcomeAffection": 1,
+  "reloaded": true,
+  "otherRoutesPreserved": true,
+  "viewports": [
+    "852x393",
+    "667x375"
+  ],
+  "errors": [],
+  "supabaseRequests": []
+}

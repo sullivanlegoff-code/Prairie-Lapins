@@ -1,0 +1,18 @@
+{
+  "applicationRevision": "251391c1ae16b7b1a5453be53ac8cfdb636f1848",
+  "applicationTree": "abdbd4597edab54046008caf4eb25523114cc603",
+  "previousValidatedRevision": "4feef26e7d4e9e888a301eec39554e5f4e7bea80",
+  "sourceSuitesCI": 38088628704,
+  "finalChange": "Two CSS height limits for the guidance card; one additional real-browser regression for early actions on 667×375. Domain, save, camera and artwork files unchanged.",
+  "local": {
+    "typecheck": "passed",
+    "normalBuild": "passed",
+    "laboratoryBuild": "passed",
+    "realTouchChecks": 4,
+    "errors": 0,
+    "resources": "Initial wallet and real mission rewards only; no resource grants.",
+    "random": "No controlled draw in the fresh browser journey.",
+    "time": "Laboratory clock advances normal waits; not measured human play or physical Safari."
+  },
+  "screenshots": "Compiled local normal/laboratory application from final source; live HTTPS verification recorded separately in publication.json."
+}

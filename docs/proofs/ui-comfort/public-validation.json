@@ -1,0 +1,4416 @@
+{
+  "applicationRevision": "3516218679762d9de65362cb88ca02e4b95b4380",
+  "sourceBase": "c5c206b580f94eaae3c70af31ff901482777bbde",
+  "featureHead": "7e01fcf5916b474a90bbf7ccdae61d17bf1cf1bd",
+  "tree": "35f4fd2e228b4f7e590ca5ff3f3ff5db777b8861",
+  "pullRequest": "https://github.com/sullivanlegoff-code/Project-L/pull/15",
+  "tests": 694,
+  "typeScript": "passed",
+  "ci": {
+    "url": "https://github.com/sullivanlegoff-code/Project-L/actions/runs/38138172414",
+    "jobId": 114466329722,
+    "sourceBrowserSuites": 9,
+    "compiledBrowserSuites": 14,
+    "compiledChecks": 54,
+    "uiAuditedViews": 52,
+    "artifact": {
+      "id": 11701148967,
+      "url": "https://github.com/sullivanlegoff-code/Project-L/actions/runs/38138172414/artifacts/11701148967",
+      "expiresAt": "2026-11-10T12:20:11Z"
+    }
+  },
+  "preserved": {
+    "saveFormat": 8,
+    "economy": true,
+    "probabilities": true,
+    "missionRules": true,
+    "guidanceRules": true,
+    "initiationRights": true,
+    "rabbitArt": true,
+    "island": true,
+    "camera": true,
+    "otherRepositoryBlobsUnchanged": 506
+  },
+  "browser": "Chromium tactile ; aucun essai Safari physique",
+  "viewports": [
+    [
+      852,
+      393
+    ],
+    [
+      667,
+      375
+    ],
+    [
+      390,
+      844
+    ],
+    [
+      1280,
+      800
+    ]
+  ],
+  "publication": {
+    "url": "https://github.com/sullivanlegoff-code/Project-L/actions/runs/38140077673",
+    "status": "success",
+    "buildJobId": 114471960555,
+    "deployJobId": 114472272362,
+    "publicBrowserSuites": 14,
+    "publicChecks": 54,
+    "uiAuditedViews": 52,
+    "routes": [
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "revision": "3516218679762d9de65362cb88ca02e4b95b4380",
+        "saveFormat": 8,
+        "html": 200,
+        "application": 200,
+        "featuresChecked": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/dev/",
+        "revision": "3516218679762d9de65362cb88ca02e4b95b4380",
+        "saveFormat": 8,
+        "html": 200,
+        "application": 200,
+        "featuresChecked": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/preview/accounts/",
+        "revision": "3e70d9e8cbe9228c63c73db007fff199199d6470",
+        "saveFormat": 4,
+        "html": 200,
+        "application": 200,
+        "featuresChecked": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/preview/decorations/",
+        "revision": "85fe255ec8e7e65213cd570f91f5bb1fe66a30d7",
+        "saveFormat": 5,
+        "html": 200,
+        "application": 200,
+        "featuresChecked": true
+      }
+    ],
+    "reports": [
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "browser": "Chromium, 852 × 393 landscape; not physical iPhone Safari",
+        "expectedRevision": "3516218",
+        "checks": [
+          "Normal new game: canvas, 300 pattes, 10 grass, 12 hearts, 2 rabbits, save v8.",
+          "Shop, collection, missions, settings and release identifier.",
+          "Real canvas selection and feed button: Paille affection 1→2, grass 10→8.",
+          "Export downloads valid v8 JSON; cancelling import preserves current progression.",
+          "Confirmed import writes 317 pattes and retains rabbits, grass, hearts, habitats; export roundtrip matches.",
+          "Invalid JSON is rejected without replacing the game.",
+          "Reload preserves imported progression and fed affection.",
+          "Production ?dev=1 keeps normal save, hides tools/badge and creates no development storage.",
+          "Real normal decoration purchase, cancelled placement, cancelled sale, double-confirmed atomic 50% sale and persisted reload."
+        ],
+        "screenshots": [
+          "/home/runner/work/_temp/public-browser-proof/production-initial.png",
+          "/home/runner/work/_temp/public-browser-proof/production-version.png",
+          "/home/runner/work/_temp/public-browser-proof/production-fed.png",
+          "/home/runner/work/_temp/public-browser-proof/production-imported.png",
+          "/home/runner/work/_temp/public-browser-proof/production-final.png"
+        ],
+        "downloads": [
+          {
+            "path": "/home/runner/work/_temp/public-browser-proof/production-export.json",
+            "suggestedFilename": "prairie-lapins-2026-10-11T12-41-45Z.json"
+          },
+          {
+            "path": "/home/runner/work/_temp/public-browser-proof/production-roundtrip.json",
+            "suggestedFilename": "prairie-lapins-2026-10-11T12-41-46Z.json"
+          }
+        ],
+        "errors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "passed": true,
+        "version": "Version : Prairie de lapins · île à neuf parcelles · v8 · build 3516218"
+      },
+      {
+        "normal": "https://sullivanlegoff-code.github.io/Project-L/",
+        "laboratory": "https://sullivanlegoff-code.github.io/Project-L/dev/",
+        "expected": "3516218",
+        "checks": [
+          "Normal link opens an independent fresh laboratory; normal feed/export remains intact.",
+          "All five clock advances and six resource grants leave every normal-origin key byte-for-byte unchanged.",
+          "MODE-TEST JSON export; cancelled and confirmed normal-copy imports leave the source unchanged.",
+          "Laboratory reload restores its save/clock; cancelled and confirmed reset preserve normal storage.",
+          "All sixteen confirmed scenario loads produce valid saved v8 states without writing normal keys.",
+          "Portrait mobile viewport: test resource control remains accessible, banner visible and panel unobscured.",
+          "Return/reload normal game retains its fed rabbit and resources, uses real time, and ?dev=1 cannot activate tools."
+        ],
+        "errors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "passed": true,
+        "version": "Version : Prairie de lapins · île à neuf parcelles · v8 · build 3516218"
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "expected": "3516218",
+        "browser": "Chromium mobile viewport; not physical Safari",
+        "checks": [
+          "External storage event exposes the conflict immediately; obsolete tab refuses purchase and exports its intact memory copy.",
+          "Repeated panels, viewport rotation and lifecycle events preserve ownership and resources.",
+          "Laboratory storage notifications cannot mark the normal session conflicted."
+        ],
+        "errors": [],
+        "passed": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "expected": "3516218",
+        "checks": [
+          {
+            "route": "normal",
+            "asset": {
+              "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+              "width": 518,
+              "height": 473,
+              "fit": "contain",
+              "corner": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "fur": [
+                254,
+                243,
+                249,
+                255
+              ]
+            },
+            "portraits": "shop, collection, portrait viewport",
+            "world": "canvas screenshot; no app hooks"
+          },
+          {
+            "route": "dev/",
+            "asset": {
+              "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+              "width": 518,
+              "height": 473,
+              "fit": "contain",
+              "corner": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "fur": [
+                254,
+                243,
+                249,
+                255
+              ]
+            },
+            "portraits": "shop, collection, portrait viewport",
+            "world": "canvas screenshot; no app hooks"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "expected": "3516218",
+        "checks": [
+          {
+            "route": "normal",
+            "assets": [
+              {
+                "species": "paille",
+                "hash": "005ac9f351bfe9614520b1e1998eee1421a5c6aff1c05bcf92172bbb52dd9dfe",
+                "width": 350,
+                "height": 495,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  229,
+                  211,
+                  193,
+                  255
+                ]
+              },
+              {
+                "species": "terre",
+                "hash": "1f0337f7e41ef2d0ce5f5d0114c49b9dfbc38f1bfa90d90e9a2ab7c38e88109c",
+                "width": 992,
+                "height": 907,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "neige",
+                "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+                "width": 518,
+                "height": 473,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  254,
+                  243,
+                  249,
+                  255
+                ]
+              }
+            ],
+            "portraits": "shop and portrait viewport: three originals; lab collection: three originals; normal collection: undiscovered Terre remains hidden",
+            "world": "canvas screenshot; no app hooks"
+          },
+          {
+            "route": "dev/",
+            "assets": [
+              {
+                "species": "paille",
+                "hash": "005ac9f351bfe9614520b1e1998eee1421a5c6aff1c05bcf92172bbb52dd9dfe",
+                "width": 350,
+                "height": 495,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  229,
+                  211,
+                  193,
+                  255
+                ]
+              },
+              {
+                "species": "terre",
+                "hash": "1f0337f7e41ef2d0ce5f5d0114c49b9dfbc38f1bfa90d90e9a2ab7c38e88109c",
+                "width": 992,
+                "height": 907,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "neige",
+                "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+                "width": 518,
+                "height": 473,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  254,
+                  243,
+                  249,
+                  255
+                ]
+              }
+            ],
+            "portraits": "shop and portrait viewport: three originals; lab collection: three originals; normal collection: undiscovered Terre remains hidden",
+            "world": "canvas screenshot; no app hooks"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      },
+      {
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "expected": "3516218",
+        "checks": [
+          {
+            "route": "normal",
+            "assets": [
+              {
+                "species": "belier-gris",
+                "hash": "5072d1f8ee2d14ac592cea8a3da933dfc11d5d08e5e435a22c41da4fd291f505",
+                "width": 527,
+                "height": 488,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  158,
+                  158,
+                  158,
+                  255
+                ]
+              },
+              {
+                "species": "feu",
+                "hash": "d080ac1a9a21e6f9c3259dc45800b0713e8b57bb853eb043aea9886cdc16e536",
+                "width": 1004,
+                "height": 827,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "volant",
+                "hash": "f49ad10d6d9c013fad098759d420a019f1c70b4c28e5f4dc0036bb4e63b641b0",
+                "width": 814,
+                "height": 966,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "paille",
+                "hash": "005ac9f351bfe9614520b1e1998eee1421a5c6aff1c05bcf92172bbb52dd9dfe",
+                "width": 350,
+                "height": 495,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  229,
+                  211,
+                  193,
+                  255
+                ]
+              },
+              {
+                "species": "terre",
+                "hash": "1f0337f7e41ef2d0ce5f5d0114c49b9dfbc38f1bfa90d90e9a2ab7c38e88109c",
+                "width": 992,
+                "height": 907,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "neige",
+                "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+                "width": 518,
+                "height": 473,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  254,
+                  243,
+                  249,
+                  255
+                ]
+              }
+            ],
+            "portraits": "shop and portrait viewport: six originals; lab collection: six originals; normal collection: undiscovered species remain hidden",
+            "world": "canvas screenshot; no app hooks"
+          },
+          {
+            "route": "dev/",
+            "assets": [
+              {
+                "species": "belier-gris",
+                "hash": "5072d1f8ee2d14ac592cea8a3da933dfc11d5d08e5e435a22c41da4fd291f505",
+                "width": 527,
+                "height": 488,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  158,
+                  158,
+                  158,
+                  255
+                ]
+              },
+              {
+                "species": "feu",
+                "hash": "d080ac1a9a21e6f9c3259dc45800b0713e8b57bb853eb043aea9886cdc16e536",
+                "width": 1004,
+                "height": 827,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "volant",
+                "hash": "f49ad10d6d9c013fad098759d420a019f1c70b4c28e5f4dc0036bb4e63b641b0",
+                "width": 814,
+                "height": 966,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "paille",
+                "hash": "005ac9f351bfe9614520b1e1998eee1421a5c6aff1c05bcf92172bbb52dd9dfe",
+                "width": 350,
+                "height": 495,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  229,
+                  211,
+                  193,
+                  255
+                ]
+              },
+              {
+                "species": "terre",
+                "hash": "1f0337f7e41ef2d0ce5f5d0114c49b9dfbc38f1bfa90d90e9a2ab7c38e88109c",
+                "width": 992,
+                "height": 907,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "species": "neige",
+                "hash": "b85337b3d3b3079644fb3df3e7f13f50e4226a0389a5b1a1c95fabf3f348276a",
+                "width": 518,
+                "height": 473,
+                "fit": "contain",
+                "corner": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "fur": [
+                  254,
+                  243,
+                  249,
+                  255
+                ]
+              }
+            ],
+            "portraits": "shop and portrait viewport: six originals; lab collection: six originals; normal collection: undiscovered species remain hidden",
+            "world": "canvas screenshot; no app hooks"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      },
+      {
+        "passed": true,
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "checks": [
+          "Normal real touch: fine purchase (16,12), move onto the fine grid (12,16), cancellation before purchase/move, double confirmation, unchanged occupants and save/reload.",
+          "Public laboratory fineBuildings: all building kinds offset, two parcel crossings, active farm job and seven mixed residents, reload and normal/lab isolation."
+        ],
+        "errors": []
+      },
+      {
+        "passed": true,
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "checks": [
+          "Normal overview, constant-size UI and v8 save; fine 4 × 4 preview after zooming out, cancellation preserves every object/resource; Recenter via real control.",
+          "Six public laboratory centre/partial/full × landscape/portrait configurations: overview, wheel, real touch pan/pinch, return to close view, unchanged saves and water covering bottom corners.",
+          "Expansion overview exposes the nine potential parcel positions, including eight unowned choices, without purchases.",
+          "Normal/laboratory saves remain isolated; overview state never enters the v8 game save and reload remains valid."
+        ],
+        "waterSamples": [
+          {
+            "name": "normal-overview",
+            "samples": [
+              [
+                145,
+                211,
+                206,
+                255
+              ],
+              [
+                145,
+                211,
+                206,
+                255
+              ]
+            ]
+          },
+          {
+            "name": "islandStart-852-public-overview",
+            "samples": [
+              [
+                145,
+                211,
+                206,
+                255
+              ],
+              [
+                145,
+                211,
+                206,
+                255
+              ]
+            ]
+          },
+          {
+            "name": "islandL-852-public-overview",
+            "samples": [
+              [
+                145,
+                211,
+                206,
+                255
+              ],
+              [
+                145,
+                211,
+                206,
+                255
+              ]
+            ]
+          },
+          {
+            "name": "islandFull-852-public-overview",
+            "samples": [
+              [
+                145,
+                211,
+                206,
+                255
+              ],
+              [
+                145,
+                211,
+                206,
+                255
+              ]
+            ]
+          },
+          {
+            "name": "islandStart-390-public-overview",
+            "samples": [
+              [
+                145,
+                211,
+                206,
+                255
+              ],
+              [
+                145,
+                211,
+                206,
+                255
+              ]
+            ]
+          },
+          {
+            "name": "islandL-390-public-overview",
+            "samples": [
+              [
+                145,
+                211,
+                206,
+                255
+              ],
+              [
+                145,
+                211,
+                206,
+                255
+              ]
+            ]
+          },
+          {
+            "name": "islandFull-390-public-overview",
+            "samples": [
+              [
+                145,
+                211,
+                206,
+                255
+              ],
+              [
+                145,
+                211,
+                206,
+                255
+              ]
+            ]
+          }
+        ],
+        "errors": []
+      },
+      {
+        "passed": true,
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "checks": [
+          "Normal: three starter buildings, unchanged resources, retired purchases, free launch, parents Au nid, acceleration only ends timer, pending birth survives reload, explicit transfer once under double pressure, unchanged homes.",
+          "Laboratory: zero-wallet launch with parents from two habitats, occupied nursery refuses transfer, welcoming and a further offline interval never transfer automatically, manual growth begins at click, reload and normal/lab isolation."
+        ],
+        "errors": [],
+        "browser": "Chromium touch emulation; not physical Safari"
+      },
+      {
+        "passed": true,
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "browser": "Chromium touch simulation, not physical Safari",
+        "checks": [
+          "Fresh normal touch: first meal and explicit reward, disappearance/reload, real farm placement and 20-herb harvest, two-parent shortcut targets Neige, Paille stays at affection 2. Optional crop acceleration costs one of the initial hearts.",
+          "Laboratory journey uses initial resources and successful commands; all early accomplishments claimed in order without repeats; eight parallel branches, Brumelin reward disappearance, reload and normal isolation.",
+          "Daily cards and bonus disappear only after explicit claims; empty message, unchanged rules and next-cycle reappearance through laboratory clock."
+        ],
+        "errors": []
+      },
+      {
+        "laboratoryWaitingMinutes": 30,
+        "passed": true,
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "browser": "Chromium tactile, pas Safari physique",
+        "timing": "Délais normaux dans la simulation ; horloge du laboratoire avancée explicitement, pas une mesure humaine.",
+        "checks": [
+          "Normal neuf : ressources inchangées, fiche sans action automatique, fermeture, sortie et reprise persistée.",
+          "Ferme placée par commande réelle, petite production 5 min, collection et silhouettes pendant attente, récolte et repas Neige ; rotation et rechargement, récompenses explicites disparues.",
+          "Reproduction gratuite, recette sans promesse, parents au nid après délai, transfert manuel, croissance secrète et accueil réel ; objectif libre, sept récompenses une fois et isolation normal/laboratoire.",
+          "Actions anticipées avec récompenses en attente sur petit paysage 667×375 : carte contenue et défilable, navigation et commandes de prairie accessibles, sortie possible."
+        ],
+        "errors": [],
+        "wallSeconds": 24.747
+      },
+      {
+        "passed": true,
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "browser": "Chromium tactile, pas Safari physique",
+        "timing": "Trois aides réelles ; aucune avance d’horloge. Aucun tirage contrôlé dans le navigateur.",
+        "checks": [
+          "Normal neuf : ressources inchangées, fiche sans action automatique, fermeture, sortie et reprise persistée.",
+          "Ferme placée par commande réelle, petite production aidée sans avance d’horloge, collection et silhouettes pendant attente, récolte et repas Neige ; rotation et rechargement, récompenses explicites disparues.",
+          "Reproduction gratuite, recette sans promesse, parents au nid après délai, transfert manuel, croissance secrète aidée, accueil manuel et première célébration unique ; objectif libre, sept récompenses une fois et isolation normal/laboratoire.",
+          "Actions anticipées avec récompenses en attente sur petit paysage 667×375 : carte contenue et défilable, navigation et commandes de prairie accessibles, sortie possible.",
+          "Scénario de conservation rechargé : reproduction déjà aidée, croissance du même résultat disponible, aucun droit recréé."
+        ],
+        "errors": []
+      },
+      {
+        "milestones": [
+          {
+            "step": "Départ",
+            "wallSeconds": 0.84,
+            "pattes": 300,
+            "grass": 10,
+            "hearts": 12
+          },
+          {
+            "step": "Paille et ferme, récompenses réclamées",
+            "wallSeconds": 3.573,
+            "pattes": 240,
+            "grass": 38,
+            "hearts": 12
+          },
+          {
+            "step": "Production récoltée et Neige nourri",
+            "wallSeconds": 10.273,
+            "pattes": 280,
+            "grass": 56,
+            "hearts": 12
+          },
+          {
+            "step": "Reproduction terminée gratuitement, transfert encore manuel",
+            "wallSeconds": 14.697,
+            "pattes": 280,
+            "grass": 76,
+            "hearts": 12
+          },
+          {
+            "step": "Transfert manuel et récompense",
+            "wallSeconds": 15.371,
+            "pattes": 310,
+            "grass": 76,
+            "hearts": 12
+          },
+          {
+            "step": "Accueil et sept récompenses",
+            "wallSeconds": 19.557,
+            "pattes": 360,
+            "grass": 76,
+            "hearts": 12
+          }
+        ],
+        "passed": true,
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "browser": "Chromium tactile, pas Safari physique",
+        "timing": "Durée réelle de ce script automatisé, avec chargements, captures, rechargements et interactions tactiles. Aucune mesure humaine, aucun délai normal mesuré physiquement et aucune horloge modifiée.",
+        "checks": [
+          "Ferme placée par commande réelle, petite production aidée sans avance d’horloge, collection et silhouettes pendant attente, récolte et repas Neige ; rotation et rechargement, récompenses explicites disparues.",
+          "Partie normale neuve : commandes réelles, trois aides, ressources initiales seulement, sept récompenses réclamées et retirées, interruptions et rotation.",
+          "Jeu libre : huit branches parallèles, Brumelin accessible sans promesse, Terre guidé vers un habitat sans achat automatique, aucune nouvelle fenêtre après rechargement."
+        ],
+        "errors": [],
+        "birthSpecies": "brumelin",
+        "wallSeconds": 23.349
+      },
+      {
+        "passed": true,
+        "url": "https://sullivanlegoff-code.github.io/Project-L/",
+        "browser": "Chromium tactile ; pas Safari physique",
+        "fixtures": "Scénarios existants explicitement chargés par les boutons du laboratoire. Aucun ajout de ressources en cours de parcours.",
+        "checks": [
+          "Normal neuf : guide masqué uniquement pendant le panneau ; achat/placement et confirmation décoration annulés sans dépense ; achat réussi conservé en réserve après annulation de pose ; boutique conserve catégorie et défilement.",
+          "852×393, 667×375, 390×844 et 1280×800 : onze menus, trois catégories boutique ; un panneau, fermeture accessible, cibles ≥44px et absence de débordement horizontal.",
+          "Collection/carnet : filtres et défilement conservés au Retour et à la reprise, fermeture de recette persistante, select focalisé stable pendant actualisation, résultat vide expliqué et filtres réinitialisables.",
+          "Geste tactile commencé dans un panneau : contenu défilé, panneau conservé et même région de terrain visible, sans déplacement de la prairie.",
+          "États du nid : parents Au nid, attente terminée et nurserie occupée ; transfert réellement désactivé avec motif visible et état Bloqué, aucune action automatique.",
+          "Aménagement : exemplaire posé sélectionné depuis la liste, vente secondaire confirmée puis annulée sans perte/gain, Retour à l’inventaire et rechargement conservant les objets."
+        ],
+        "menus": [
+          {
+            "size": {
+              "width": 852,
+              "height": 393
+            },
+            "name": "boutique",
+            "title": "Boutique",
+            "view": "shop",
+            "panel": {
+              "x": 294.734375,
+              "y": 70,
+              "width": 545.265625,
+              "height": 255
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Bâtiments",
+                "width": 166.421875,
+                "height": 46
+              },
+              {
+                "name": "Lapins",
+                "width": 166.421875,
+                "height": 46
+              },
+              {
+                "name": "Décorations",
+                "width": 166.421875,
+                "height": 46
+              },
+              {
+                "name": "Placer · 120 pattes",
+                "width": 224.625,
+                "height": 46
+              },
+              {
+                "name": "Placer · 200 pattes",
+                "width": 224.625,
+                "height": 46
+              },
+              {
+                "name": "Placer · 200 pattes",
+                "width": 224.640625,
+                "height": 46
+              },
+              {
+                "name": "Placer · 200 pattes",
+                "width": 224.625,
+                "height": 46
+              },
+              {
+                "name": "Placer · 200 pattes",
+                "width": 224.640625,
+                "height": 46
+              },
+              {
+                "name": "Placer · 200 pattes",
+                "width": 224.625,
+                "height": 46
+              },
+              {
+                "name": "Placer · 200 pattes",
+                "width": 224.640625,
+                "height": 46
+              },
+              {
+                "name": "Placer · 60 pattes",
+                "width": 224.625,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 852,
+              "height": 393
+            },
+            "name": "boutique-lapins",
+            "title": "Boutique",
+            "view": "shop",
+            "panel": {
+              "x": 294.734375,
+              "y": 70,
+              "width": 545.265625,
+              "height": 255
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Bâtiments",
+                "width": 166.421875,
+                "height": 46
+              },
+              {
+                "name": "Lapins",
+                "width": 166.421875,
+                "height": 46
+              },
+              {
+                "name": "Décorations",
+                "width": 166.421875,
+                "height": 46
+              },
+              {
+                "name": "Choisir un habitat · 80 pattes",
+                "width": 224.625,
+                "height": 57
+              },
+              {
+                "name": "Choisir un habitat · 80 pattes",
+                "width": 224.640625,
+                "height": 57
+              },
+              {
+                "name": "Choisir un habitat · 80 pattes",
+                "width": 224.625,
+                "height": 57
+              },
+              {
+                "name": "Choisir un habitat · 80 pattes",
+                "width": 224.640625,
+                "height": 57
+              },
+              {
+                "name": "Choisir un habitat · 80 pattes",
+                "width": 224.625,
+                "height": 57
+              },
+              {
+                "name": "Choisir un habitat · 80 pattes",
+                "width": 224.640625,
+                "height": 57
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 852,
+              "height": 393
+            },
+            "name": "boutique-decorations",
+            "title": "Boutique",
+            "view": "shop",
+            "panel": {
+              "x": 294.734375,
+              "y": 70,
+              "width": 545.265625,
+              "height": 255
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Bâtiments",
+                "width": 166.421875,
+                "height": 46
+              },
+              {
+                "name": "Lapins",
+                "width": 166.421875,
+                "height": 46
+              },
+              {
+                "name": "Décorations",
+                "width": 166.421875,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 20 pattes",
+                "width": 224.625,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 30 pattes",
+                "width": 224.640625,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 40 pattes",
+                "width": 224.625,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 60 pattes",
+                "width": 224.640625,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 80 pattes",
+                "width": 224.625,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 100 pattes",
+                "width": 224.640625,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 120 pattes",
+                "width": 224.625,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 150 pattes",
+                "width": 224.640625,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 30 pattes",
+                "width": 224.625,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 40 pattes",
+                "width": 224.640625,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 60 pattes",
+                "width": 224.625,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 80 pattes",
+                "width": 224.640625,
+                "height": 46
+              },
+              {
+                "name": "Ouvrir mon inventaire",
+                "width": 513.265625,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 852,
+              "height": 393
+            },
+            "name": "collection",
+            "title": "Collection · 2/15",
+            "view": "collection",
+            "panel": {
+              "x": 294.734375,
+              "y": 70,
+              "width": 545.265625,
+              "height": 255
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Carnet de reproduction",
+                "width": 360.59375,
+                "height": 46
+              },
+              {
+                "name": "Tous les typespailleneigeterrefeumétalvol",
+                "width": 165.75,
+                "height": 46
+              },
+              {
+                "name": "Toutes les raretésCommunPeu communRareÉpiqueLégendaire",
+                "width": 165.75,
+                "height": 46
+              },
+              {
+                "name": "ToutesDécouvertesÀ découvrir",
+                "width": 165.75,
+                "height": 46
+              },
+              {
+                "name": "Consulter l’espèce",
+                "width": 224.625,
+                "height": 46
+              },
+              {
+                "name": "Consulter l’espèce",
+                "width": 224.640625,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 852,
+              "height": 393
+            },
+            "name": "carnet",
+            "title": "Carnet de reproduction",
+            "view": "recipes",
+            "panel": {
+              "x": 294.734375,
+              "y": 70,
+              "width": 545.265625,
+              "height": 255
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "‹",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "1 paire(s) possédée(s) compatible(s) avec la recette",
+                "width": 224.625,
+                "height": 80.671875
+              },
+              {
+                "name": "Préparer cette paire au nid",
+                "width": 224.625,
+                "height": 57
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 852,
+              "height": 393
+            },
+            "name": "missions",
+            "title": "Missions",
+            "view": "missions",
+            "panel": {
+              "x": 294.734375,
+              "y": 70,
+              "width": 545.265625,
+              "height": 255
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Principales",
+                "width": 253.140625,
+                "height": 46
+              },
+              {
+                "name": "Quotidiennes",
+                "width": 253.140625,
+                "height": 46
+              },
+              {
+                "name": "Réclamer · + 10 herbes",
+                "width": 224.625,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 852,
+              "height": 393
+            },
+            "name": "lapin",
+            "title": "Lapin Paille",
+            "view": "rabbit",
+            "panel": {
+              "x": 294.734375,
+              "y": 70,
+              "width": 545.265625,
+              "height": 255
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Nourrir · 4 herbes",
+                "width": 351.265625,
+                "height": 46
+              },
+              {
+                "name": "Changer d’habitat",
+                "width": 513.265625,
+                "height": 46
+              },
+              {
+                "name": "Confier ce lapin",
+                "width": 513.265625,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 852,
+              "height": 393
+            },
+            "name": "habitat",
+            "title": "Enclos 1",
+            "view": "building",
+            "panel": {
+              "x": 294.734375,
+              "y": 70,
+              "width": 545.265625,
+              "height": 255
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Récolter 0 pattes",
+                "width": 513.265625,
+                "height": 46
+              },
+              {
+                "name": "Voir ce lapin",
+                "width": 487.265625,
+                "height": 46
+              },
+              {
+                "name": "Voir ce lapin",
+                "width": 487.265625,
+                "height": 46
+              },
+              {
+                "name": "Acheter un lapin",
+                "width": 513.265625,
+                "height": 46
+              },
+              {
+                "name": "Améliorer · 200 pattes",
+                "width": 513.265625,
+                "height": 46
+              },
+              {
+                "name": "Déplacer ce bâtiment",
+                "width": 513.265625,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 852,
+              "height": 393
+            },
+            "name": "nid",
+            "title": "Nid",
+            "view": "building",
+            "panel": {
+              "x": 294.734375,
+              "y": 70,
+              "width": 545.265625,
+              "height": 255
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Carnet de reproduction",
+                "width": 513.265625,
+                "height": 46
+              },
+              {
+                "name": "Lancer la reproduction · gratuit",
+                "width": 513.265625,
+                "height": 46
+              },
+              {
+                "name": "Parent A",
+                "width": 240.140625,
+                "height": 46
+              },
+              {
+                "name": "Parent B",
+                "width": 240.140625,
+                "height": 46
+              },
+              {
+                "name": "Parent A",
+                "width": 240.140625,
+                "height": 46
+              },
+              {
+                "name": "Parent B",
+                "width": 240.140625,
+                "height": 46
+              },
+              {
+                "name": "Déplacer ce bâtiment",
+                "width": 513.265625,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 852,
+              "height": 393
+            },
+            "name": "nurserie",
+            "title": "Nurserie",
+            "view": "building",
+            "panel": {
+              "x": 294.734375,
+              "y": 70,
+              "width": 545.265625,
+              "height": 255
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Voir le nid",
+                "width": 513.265625,
+                "height": 46
+              },
+              {
+                "name": "Déplacer ce bâtiment",
+                "width": 513.265625,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 852,
+              "height": 393
+            },
+            "name": "amenagement",
+            "title": "Aménager · inventaire",
+            "view": "arrange",
+            "panel": {
+              "x": 480,
+              "y": 70,
+              "width": 360,
+              "height": 255
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Acheter des décorations",
+                "width": 328,
+                "height": 46
+              },
+              {
+                "name": "Objets posés · 0",
+                "width": 328,
+                "height": 44
+              },
+              {
+                "name": "Quitter le mode Aménagement",
+                "width": 328,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 852,
+              "height": 393
+            },
+            "name": "parametres",
+            "title": "Paramètres",
+            "view": "settings",
+            "panel": {
+              "x": 294.734375,
+              "y": 70,
+              "width": 545.265625,
+              "height": 255
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Reprendre le guidage",
+                "width": 198.90625,
+                "height": 46
+              },
+              {
+                "name": "Sons : activés",
+                "width": 137.546875,
+                "height": 46
+              },
+              {
+                "name": "Exporter la partie de test",
+                "width": 487.265625,
+                "height": 46
+              },
+              {
+                "name": "Exporter la source avant migration",
+                "width": 487.265625,
+                "height": 46
+              },
+              {
+                "name": "Importer dans la partie de test",
+                "width": 487.265625,
+                "height": 46
+              },
+              {
+                "name": "Recommencer la partie de test",
+                "width": 487.265625,
+                "height": 46
+              },
+              {
+                "name": "Retour au jeu normal",
+                "width": 147.640625,
+                "height": 44
+              },
+              {
+                "name": "+ 5 min",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "+ 20 min",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "+ 60 min",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "+ 360 min",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "+ 1440 min",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "+ 1000 pattes",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "+ 10000 pattes",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "+ 100 herbes",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "+ 1000 herbes",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "+ 10 cœurs",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "+ 100 cœurs",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "Initiation — trois aides inutilisées",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "Initiation — aide utilisée et croissance liée",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "Début guidé — nouvelle partie, délais normaux",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "Missions — parcours initial et branches",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "Nid — parents et transfert manuel",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "Bâtiments décalés — grille fine 4 × 4",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "Centre seul — 3 × 3",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "Extension cardinale — Centre + Est",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "Extension diagonale — Centre + Nord-ouest",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "Forme en L — Centre + Est + Nord",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "Île complète — 9 × 9",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "Décorations proches des frontières",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "Prairie de départ — acheter et placer",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "Prairie dense — sélection et performances",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "Collection — quinze espèces et recettes",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "Reproduction — parents prêts",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "Missions — récompenses à réclamer",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "Habitats — sept occupants par enclos",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "Prairie de démonstration décorée",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "Habitat entouré de décorations — sept occupants",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "Exporter la partie de test",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "Importer dans la partie de test",
+                "width": 467.265625,
+                "height": 46
+              },
+              {
+                "name": "Remettre la partie de test à zéro",
+                "width": 467.265625,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 852,
+              "height": 393
+            },
+            "name": "ferme",
+            "title": "Ferme",
+            "view": "building",
+            "panel": {
+              "x": 294.734375,
+              "y": 70,
+              "width": 545.265625,
+              "height": 255
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "‹",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Récolter 20 herbes",
+                "width": 513.265625,
+                "height": 46
+              },
+              {
+                "name": "Terminer · 1 cœur",
+                "width": 168.015625,
+                "height": 46
+              },
+              {
+                "name": "Déplacer ce bâtiment",
+                "width": 513.265625,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 667,
+              "height": 375
+            },
+            "name": "boutique",
+            "title": "Boutique",
+            "view": "shop",
+            "panel": {
+              "x": 228.125,
+              "y": 70,
+              "width": 426.875,
+              "height": 237
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Bâtiments",
+                "width": 126.953125,
+                "height": 46
+              },
+              {
+                "name": "Lapins",
+                "width": 126.953125,
+                "height": 46
+              },
+              {
+                "name": "Décorations",
+                "width": 126.953125,
+                "height": 46
+              },
+              {
+                "name": "Placer · 120 pattes",
+                "width": 165.4375,
+                "height": 57
+              },
+              {
+                "name": "Placer · 200 pattes",
+                "width": 165.4375,
+                "height": 57
+              },
+              {
+                "name": "Placer · 200 pattes",
+                "width": 165.4375,
+                "height": 57
+              },
+              {
+                "name": "Placer · 200 pattes",
+                "width": 165.4375,
+                "height": 57
+              },
+              {
+                "name": "Placer · 200 pattes",
+                "width": 165.4375,
+                "height": 57
+              },
+              {
+                "name": "Placer · 200 pattes",
+                "width": 165.4375,
+                "height": 57
+              },
+              {
+                "name": "Placer · 200 pattes",
+                "width": 165.4375,
+                "height": 57
+              },
+              {
+                "name": "Placer · 60 pattes",
+                "width": 165.4375,
+                "height": 57
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 667,
+              "height": 375
+            },
+            "name": "boutique-lapins",
+            "title": "Boutique",
+            "view": "shop",
+            "panel": {
+              "x": 228.125,
+              "y": 70,
+              "width": 426.875,
+              "height": 237
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Bâtiments",
+                "width": 126.953125,
+                "height": 46
+              },
+              {
+                "name": "Lapins",
+                "width": 126.953125,
+                "height": 46
+              },
+              {
+                "name": "Décorations",
+                "width": 126.953125,
+                "height": 46
+              },
+              {
+                "name": "Choisir un habitat · 80 pattes",
+                "width": 165.4375,
+                "height": 74.5
+              },
+              {
+                "name": "Choisir un habitat · 80 pattes",
+                "width": 165.4375,
+                "height": 74.5
+              },
+              {
+                "name": "Choisir un habitat · 80 pattes",
+                "width": 165.4375,
+                "height": 74.5
+              },
+              {
+                "name": "Choisir un habitat · 80 pattes",
+                "width": 165.4375,
+                "height": 74.5
+              },
+              {
+                "name": "Choisir un habitat · 80 pattes",
+                "width": 165.4375,
+                "height": 74.5
+              },
+              {
+                "name": "Choisir un habitat · 80 pattes",
+                "width": 165.4375,
+                "height": 74.5
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 667,
+              "height": 375
+            },
+            "name": "boutique-decorations",
+            "title": "Boutique",
+            "view": "shop",
+            "panel": {
+              "x": 228.125,
+              "y": 70,
+              "width": 426.875,
+              "height": 237
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Bâtiments",
+                "width": 126.953125,
+                "height": 46
+              },
+              {
+                "name": "Lapins",
+                "width": 126.953125,
+                "height": 46
+              },
+              {
+                "name": "Décorations",
+                "width": 126.953125,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 20 pattes",
+                "width": 165.4375,
+                "height": 57
+              },
+              {
+                "name": "Acheter · 30 pattes",
+                "width": 165.4375,
+                "height": 57
+              },
+              {
+                "name": "Acheter · 40 pattes",
+                "width": 165.4375,
+                "height": 57
+              },
+              {
+                "name": "Acheter · 60 pattes",
+                "width": 165.4375,
+                "height": 57
+              },
+              {
+                "name": "Acheter · 80 pattes",
+                "width": 165.4375,
+                "height": 57
+              },
+              {
+                "name": "Acheter · 100 pattes",
+                "width": 165.4375,
+                "height": 57
+              },
+              {
+                "name": "Acheter · 120 pattes",
+                "width": 165.4375,
+                "height": 57
+              },
+              {
+                "name": "Acheter · 150 pattes",
+                "width": 165.4375,
+                "height": 57
+              },
+              {
+                "name": "Acheter · 30 pattes",
+                "width": 165.4375,
+                "height": 57
+              },
+              {
+                "name": "Acheter · 40 pattes",
+                "width": 165.4375,
+                "height": 57
+              },
+              {
+                "name": "Acheter · 60 pattes",
+                "width": 165.4375,
+                "height": 57
+              },
+              {
+                "name": "Acheter · 80 pattes",
+                "width": 165.4375,
+                "height": 57
+              },
+              {
+                "name": "Ouvrir mon inventaire",
+                "width": 394.875,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 667,
+              "height": 375
+            },
+            "name": "collection",
+            "title": "Collection · 2/15",
+            "view": "collection",
+            "panel": {
+              "x": 228.125,
+              "y": 70,
+              "width": 426.875,
+              "height": 237
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Carnet de reproduction",
+                "width": 242.203125,
+                "height": 46
+              },
+              {
+                "name": "Tous les typespailleneigeterrefeumétalvol",
+                "width": 193.4375,
+                "height": 46
+              },
+              {
+                "name": "Toutes les raretésCommunPeu communRareÉpiqueLégendaire",
+                "width": 193.4375,
+                "height": 46
+              },
+              {
+                "name": "ToutesDécouvertesÀ découvrir",
+                "width": 394.875,
+                "height": 46
+              },
+              {
+                "name": "Consulter l’espèce",
+                "width": 165.4375,
+                "height": 57
+              },
+              {
+                "name": "Consulter l’espèce",
+                "width": 165.4375,
+                "height": 57
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 667,
+              "height": 375
+            },
+            "name": "carnet",
+            "title": "Carnet de reproduction",
+            "view": "recipes",
+            "panel": {
+              "x": 228.125,
+              "y": 70,
+              "width": 426.875,
+              "height": 237
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "‹",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "1 paire(s) possédée(s) compatible(s) avec la recette",
+                "width": 165.4375,
+                "height": 99.5625
+              },
+              {
+                "name": "Préparer cette paire au nid",
+                "width": 165.4375,
+                "height": 57
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 667,
+              "height": 375
+            },
+            "name": "missions",
+            "title": "Missions",
+            "view": "missions",
+            "panel": {
+              "x": 228.125,
+              "y": 70,
+              "width": 426.875,
+              "height": 237
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Principales",
+                "width": 193.9375,
+                "height": 46
+              },
+              {
+                "name": "Quotidiennes",
+                "width": 193.9375,
+                "height": 46
+              },
+              {
+                "name": "Réclamer · + 10 herbes",
+                "width": 165.4375,
+                "height": 57
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 667,
+              "height": 375
+            },
+            "name": "lapin",
+            "title": "Lapin Paille",
+            "view": "rabbit",
+            "panel": {
+              "x": 228.125,
+              "y": 70,
+              "width": 426.875,
+              "height": 237
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Nourrir · 4 herbes",
+                "width": 232.875,
+                "height": 46
+              },
+              {
+                "name": "Changer d’habitat",
+                "width": 394.875,
+                "height": 46
+              },
+              {
+                "name": "Confier ce lapin",
+                "width": 394.875,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 667,
+              "height": 375
+            },
+            "name": "habitat",
+            "title": "Enclos 1",
+            "view": "building",
+            "panel": {
+              "x": 228.125,
+              "y": 70,
+              "width": 426.875,
+              "height": 237
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Récolter 0 pattes",
+                "width": 394.875,
+                "height": 46
+              },
+              {
+                "name": "Voir ce lapin",
+                "width": 368.875,
+                "height": 46
+              },
+              {
+                "name": "Voir ce lapin",
+                "width": 368.875,
+                "height": 46
+              },
+              {
+                "name": "Acheter un lapin",
+                "width": 394.875,
+                "height": 46
+              },
+              {
+                "name": "Améliorer · 200 pattes",
+                "width": 394.875,
+                "height": 46
+              },
+              {
+                "name": "Déplacer ce bâtiment",
+                "width": 394.875,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 667,
+              "height": 375
+            },
+            "name": "nid",
+            "title": "Nid",
+            "view": "building",
+            "panel": {
+              "x": 228.125,
+              "y": 70,
+              "width": 426.875,
+              "height": 237
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Carnet de reproduction",
+                "width": 394.875,
+                "height": 46
+              },
+              {
+                "name": "Lancer la reproduction · gratuit",
+                "width": 394.875,
+                "height": 46
+              },
+              {
+                "name": "Parent A",
+                "width": 180.9375,
+                "height": 46
+              },
+              {
+                "name": "Parent B",
+                "width": 180.9375,
+                "height": 46
+              },
+              {
+                "name": "Parent A",
+                "width": 180.9375,
+                "height": 46
+              },
+              {
+                "name": "Parent B",
+                "width": 180.9375,
+                "height": 46
+              },
+              {
+                "name": "Déplacer ce bâtiment",
+                "width": 394.875,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 667,
+              "height": 375
+            },
+            "name": "nurserie",
+            "title": "Nurserie",
+            "view": "building",
+            "panel": {
+              "x": 228.125,
+              "y": 70,
+              "width": 426.875,
+              "height": 237
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Voir le nid",
+                "width": 394.875,
+                "height": 46
+              },
+              {
+                "name": "Déplacer ce bâtiment",
+                "width": 394.875,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 667,
+              "height": 375
+            },
+            "name": "amenagement",
+            "title": "Aménager · inventaire",
+            "view": "arrange",
+            "panel": {
+              "x": 361.53125,
+              "y": 70,
+              "width": 293.46875,
+              "height": 237
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Acheter des décorations",
+                "width": 261.46875,
+                "height": 46
+              },
+              {
+                "name": "Objets posés · 0",
+                "width": 261.46875,
+                "height": 44
+              },
+              {
+                "name": "Quitter le mode Aménagement",
+                "width": 261.46875,
+                "height": 57
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 667,
+              "height": 375
+            },
+            "name": "parametres",
+            "title": "Paramètres",
+            "view": "settings",
+            "panel": {
+              "x": 228.125,
+              "y": 70,
+              "width": 426.875,
+              "height": 237
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Reprendre le guidage",
+                "width": 198.90625,
+                "height": 46
+              },
+              {
+                "name": "Sons : activés",
+                "width": 137.546875,
+                "height": 46
+              },
+              {
+                "name": "Exporter la partie de test",
+                "width": 368.875,
+                "height": 46
+              },
+              {
+                "name": "Exporter la source avant migration",
+                "width": 368.875,
+                "height": 46
+              },
+              {
+                "name": "Importer dans la partie de test",
+                "width": 368.875,
+                "height": 46
+              },
+              {
+                "name": "Recommencer la partie de test",
+                "width": 368.875,
+                "height": 46
+              },
+              {
+                "name": "Retour au jeu normal",
+                "width": 147.640625,
+                "height": 44
+              },
+              {
+                "name": "+ 5 min",
+                "width": 348.875,
+                "height": 46
+              },
+              {
+                "name": "+ 20 min",
+                "width": 348.875,
+                "height": 46
+              },
+              {
+                "name": "+ 60 min",
+                "width": 348.875,
+                "height": 46
+              },
+              {
+                "name": "+ 360 min",
+                "width": 348.875,
+                "height": 46
+              },
+              {
+                "name": "+ 1440 min",
+                "width": 348.875,
+                "height": 46
+              },
+              {
+                "name": "+ 1000 pattes",
+                "width": 348.875,
+                "height": 46
+              },
+              {
+                "name": "+ 10000 pattes",
+                "width": 348.875,
+                "height": 46
+              },
+              {
+                "name": "+ 100 herbes",
+                "width": 348.875,
+                "height": 46
+              },
+              {
+                "name": "+ 1000 herbes",
+                "width": 348.875,
+                "height": 46
+              },
+              {
+                "name": "+ 10 cœurs",
+                "width": 348.875,
+                "height": 46
+              },
+              {
+                "name": "+ 100 cœurs",
+                "width": 348.875,
+                "height": 46
+              },
+              {
+                "name": "Initiation — trois aides inutilisées",
+                "width": 348.875,
+                "height": 46
+              },
+              {
+                "name": "Initiation — aide utilisée et croissance liée",
+                "width": 348.875,
+                "height": 57
+              },
+              {
+                "name": "Début guidé — nouvelle partie, délais normaux",
+                "width": 348.875,
+                "height": 57
+              },
+              {
+                "name": "Missions — parcours initial et branches",
+                "width": 348.875,
+                "height": 46
+              },
+              {
+                "name": "Nid — parents et transfert manuel",
+                "width": 348.875,
+                "height": 46
+              },
+              {
+                "name": "Bâtiments décalés — grille fine 4 × 4",
+                "width": 348.875,
+                "height": 46
+              },
+              {
+                "name": "Centre seul — 3 × 3",
+                "width": 348.875,
+                "height": 46
+              },
+              {
+                "name": "Extension cardinale — Centre + Est",
+                "width": 348.875,
+                "height": 46
+              },
+              {
+                "name": "Extension diagonale — Centre + Nord-ouest",
+                "width": 348.875,
+                "height": 57
+              },
+              {
+                "name": "Forme en L — Centre + Est + Nord",
+                "width": 348.875,
+                "height": 46
+              },
+              {
+                "name": "Île complète — 9 × 9",
+                "width": 348.875,
+                "height": 46
+              },
+              {
+                "name": "Décorations proches des frontières",
+                "width": 348.875,
+                "height": 46
+              },
+              {
+                "name": "Prairie de départ — acheter et placer",
+                "width": 348.875,
+                "height": 46
+              },
+              {
+                "name": "Prairie dense — sélection et performances",
+                "width": 348.875,
+                "height": 57
+              },
+              {
+                "name": "Collection — quinze espèces et recettes",
+                "width": 348.875,
+                "height": 46
+              },
+              {
+                "name": "Reproduction — parents prêts",
+                "width": 348.875,
+                "height": 46
+              },
+              {
+                "name": "Missions — récompenses à réclamer",
+                "width": 348.875,
+                "height": 46
+              },
+              {
+                "name": "Habitats — sept occupants par enclos",
+                "width": 348.875,
+                "height": 46
+              },
+              {
+                "name": "Prairie de démonstration décorée",
+                "width": 348.875,
+                "height": 46
+              },
+              {
+                "name": "Habitat entouré de décorations — sept occupants",
+                "width": 348.875,
+                "height": 57
+              },
+              {
+                "name": "Exporter la partie de test",
+                "width": 348.875,
+                "height": 46
+              },
+              {
+                "name": "Importer dans la partie de test",
+                "width": 348.875,
+                "height": 46
+              },
+              {
+                "name": "Remettre la partie de test à zéro",
+                "width": 348.875,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 667,
+              "height": 375
+            },
+            "name": "ferme",
+            "title": "Ferme",
+            "view": "building",
+            "panel": {
+              "x": 228.125,
+              "y": 70,
+              "width": 426.875,
+              "height": 237
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "‹",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Récolter 20 herbes",
+                "width": 394.875,
+                "height": 46
+              },
+              {
+                "name": "Terminer · 1 cœur",
+                "width": 168.015625,
+                "height": 46
+              },
+              {
+                "name": "Déplacer ce bâtiment",
+                "width": 394.875,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 390,
+              "height": 844
+            },
+            "name": "boutique",
+            "title": "Boutique",
+            "view": "shop",
+            "panel": {
+              "x": 34.8125,
+              "y": 130,
+              "width": 343.1875,
+              "height": 614
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Bâtiments",
+                "width": 99.0625,
+                "height": 57
+              },
+              {
+                "name": "Lapins",
+                "width": 99.0625,
+                "height": 57
+              },
+              {
+                "name": "Décorations",
+                "width": 99.0625,
+                "height": 57
+              },
+              {
+                "name": "Placer · 120 pattes",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Placer · 200 pattes",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Placer · 200 pattes",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Placer · 200 pattes",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Placer · 200 pattes",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Placer · 200 pattes",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Placer · 200 pattes",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Placer · 60 pattes",
+                "width": 285.1875,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 390,
+              "height": 844
+            },
+            "name": "boutique-lapins",
+            "title": "Boutique",
+            "view": "shop",
+            "panel": {
+              "x": 34.8125,
+              "y": 130,
+              "width": 343.1875,
+              "height": 614
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Bâtiments",
+                "width": 99.0625,
+                "height": 57
+              },
+              {
+                "name": "Lapins",
+                "width": 99.0625,
+                "height": 57
+              },
+              {
+                "name": "Décorations",
+                "width": 99.0625,
+                "height": 57
+              },
+              {
+                "name": "Choisir un habitat · 80 pattes",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Choisir un habitat · 80 pattes",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Choisir un habitat · 80 pattes",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Choisir un habitat · 80 pattes",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Choisir un habitat · 80 pattes",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Choisir un habitat · 80 pattes",
+                "width": 285.1875,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 390,
+              "height": 844
+            },
+            "name": "boutique-decorations",
+            "title": "Boutique",
+            "view": "shop",
+            "panel": {
+              "x": 34.8125,
+              "y": 130,
+              "width": 343.1875,
+              "height": 614
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Bâtiments",
+                "width": 99.0625,
+                "height": 57
+              },
+              {
+                "name": "Lapins",
+                "width": 99.0625,
+                "height": 57
+              },
+              {
+                "name": "Décorations",
+                "width": 99.0625,
+                "height": 57
+              },
+              {
+                "name": "Acheter · 20 pattes",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 30 pattes",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 40 pattes",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 60 pattes",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 80 pattes",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 100 pattes",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 120 pattes",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 150 pattes",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 30 pattes",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 40 pattes",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 60 pattes",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 80 pattes",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Ouvrir mon inventaire",
+                "width": 311.1875,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 390,
+              "height": 844
+            },
+            "name": "collection",
+            "title": "Collection · 2/15",
+            "view": "collection",
+            "panel": {
+              "x": 34.8125,
+              "y": 130,
+              "width": 343.1875,
+              "height": 614
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Carnet de reproduction",
+                "width": 158.515625,
+                "height": 57
+              },
+              {
+                "name": "Tous les typespailleneigeterrefeumétalvol",
+                "width": 151.59375,
+                "height": 46
+              },
+              {
+                "name": "Toutes les raretésCommunPeu communRareÉpiqueLégendaire",
+                "width": 151.59375,
+                "height": 46
+              },
+              {
+                "name": "ToutesDécouvertesÀ découvrir",
+                "width": 311.1875,
+                "height": 46
+              },
+              {
+                "name": "Consulter l’espèce",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Consulter l’espèce",
+                "width": 285.1875,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 390,
+              "height": 844
+            },
+            "name": "carnet",
+            "title": "Carnet de reproduction",
+            "view": "recipes",
+            "panel": {
+              "x": 34.8125,
+              "y": 130,
+              "width": 343.1875,
+              "height": 614
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "‹",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "1 paire(s) possédée(s) compatible(s) avec la recette",
+                "width": 285.1875,
+                "height": 61.78125
+              },
+              {
+                "name": "Préparer cette paire au nid",
+                "width": 285.1875,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 390,
+              "height": 844
+            },
+            "name": "missions",
+            "title": "Missions",
+            "view": "missions",
+            "panel": {
+              "x": 34.8125,
+              "y": 130,
+              "width": 343.1875,
+              "height": 614
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Principales",
+                "width": 152.09375,
+                "height": 46
+              },
+              {
+                "name": "Quotidiennes",
+                "width": 152.09375,
+                "height": 46
+              },
+              {
+                "name": "Réclamer · + 10 herbes",
+                "width": 285.1875,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 390,
+              "height": 844
+            },
+            "name": "lapin",
+            "title": "Lapin Paille",
+            "view": "rabbit",
+            "panel": {
+              "x": 34.8125,
+              "y": 130,
+              "width": 343.1875,
+              "height": 614
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Nourrir · 4 herbes",
+                "width": 311.1875,
+                "height": 46
+              },
+              {
+                "name": "Changer d’habitat",
+                "width": 311.1875,
+                "height": 46
+              },
+              {
+                "name": "Confier ce lapin",
+                "width": 311.1875,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 390,
+              "height": 844
+            },
+            "name": "habitat",
+            "title": "Enclos 1",
+            "view": "building",
+            "panel": {
+              "x": 34.8125,
+              "y": 130,
+              "width": 343.1875,
+              "height": 614
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Récolter 0 pattes",
+                "width": 311.1875,
+                "height": 46
+              },
+              {
+                "name": "Voir ce lapin",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Voir ce lapin",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Acheter un lapin",
+                "width": 311.1875,
+                "height": 46
+              },
+              {
+                "name": "Améliorer · 200 pattes",
+                "width": 311.1875,
+                "height": 46
+              },
+              {
+                "name": "Déplacer ce bâtiment",
+                "width": 311.1875,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 390,
+              "height": 844
+            },
+            "name": "nid",
+            "title": "Nid",
+            "view": "building",
+            "panel": {
+              "x": 34.8125,
+              "y": 130,
+              "width": 343.1875,
+              "height": 614
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Carnet de reproduction",
+                "width": 311.1875,
+                "height": 46
+              },
+              {
+                "name": "Lancer la reproduction · gratuit",
+                "width": 311.1875,
+                "height": 46
+              },
+              {
+                "name": "Parent A",
+                "width": 139.09375,
+                "height": 46
+              },
+              {
+                "name": "Parent B",
+                "width": 139.09375,
+                "height": 46
+              },
+              {
+                "name": "Parent A",
+                "width": 139.09375,
+                "height": 46
+              },
+              {
+                "name": "Parent B",
+                "width": 139.09375,
+                "height": 46
+              },
+              {
+                "name": "Déplacer ce bâtiment",
+                "width": 311.1875,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 390,
+              "height": 844
+            },
+            "name": "nurserie",
+            "title": "Nurserie",
+            "view": "building",
+            "panel": {
+              "x": 34.8125,
+              "y": 130,
+              "width": 343.1875,
+              "height": 614
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Voir le nid",
+                "width": 311.1875,
+                "height": 46
+              },
+              {
+                "name": "Déplacer ce bâtiment",
+                "width": 311.1875,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 390,
+              "height": 844
+            },
+            "name": "amenagement",
+            "title": "Aménager · inventaire",
+            "view": "arrange",
+            "panel": {
+              "x": 34.8125,
+              "y": 130,
+              "width": 343.1875,
+              "height": 614
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Acheter des décorations",
+                "width": 311.1875,
+                "height": 46
+              },
+              {
+                "name": "Objets posés · 0",
+                "width": 311.1875,
+                "height": 44
+              },
+              {
+                "name": "Quitter le mode Aménagement",
+                "width": 311.1875,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 390,
+              "height": 844
+            },
+            "name": "parametres",
+            "title": "Paramètres",
+            "view": "settings",
+            "panel": {
+              "x": 34.8125,
+              "y": 130,
+              "width": 343.1875,
+              "height": 614
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Reprendre le guidage",
+                "width": 198.90625,
+                "height": 46
+              },
+              {
+                "name": "Sons : activés",
+                "width": 137.546875,
+                "height": 46
+              },
+              {
+                "name": "Exporter la partie de test",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Exporter la source avant migration",
+                "width": 285.1875,
+                "height": 57
+              },
+              {
+                "name": "Importer dans la partie de test",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Recommencer la partie de test",
+                "width": 285.1875,
+                "height": 46
+              },
+              {
+                "name": "Retour au jeu normal",
+                "width": 147.640625,
+                "height": 44
+              },
+              {
+                "name": "+ 5 min",
+                "width": 265.1875,
+                "height": 46
+              },
+              {
+                "name": "+ 20 min",
+                "width": 265.1875,
+                "height": 46
+              },
+              {
+                "name": "+ 60 min",
+                "width": 265.1875,
+                "height": 46
+              },
+              {
+                "name": "+ 360 min",
+                "width": 265.1875,
+                "height": 46
+              },
+              {
+                "name": "+ 1440 min",
+                "width": 265.1875,
+                "height": 46
+              },
+              {
+                "name": "+ 1000 pattes",
+                "width": 265.1875,
+                "height": 46
+              },
+              {
+                "name": "+ 10000 pattes",
+                "width": 265.1875,
+                "height": 46
+              },
+              {
+                "name": "+ 100 herbes",
+                "width": 265.1875,
+                "height": 46
+              },
+              {
+                "name": "+ 1000 herbes",
+                "width": 265.1875,
+                "height": 46
+              },
+              {
+                "name": "+ 10 cœurs",
+                "width": 265.1875,
+                "height": 46
+              },
+              {
+                "name": "+ 100 cœurs",
+                "width": 265.1875,
+                "height": 46
+              },
+              {
+                "name": "Initiation — trois aides inutilisées",
+                "width": 265.1875,
+                "height": 57
+              },
+              {
+                "name": "Initiation — aide utilisée et croissance liée",
+                "width": 265.1875,
+                "height": 57
+              },
+              {
+                "name": "Début guidé — nouvelle partie, délais normaux",
+                "width": 265.1875,
+                "height": 57
+              },
+              {
+                "name": "Missions — parcours initial et branches",
+                "width": 265.1875,
+                "height": 57
+              },
+              {
+                "name": "Nid — parents et transfert manuel",
+                "width": 265.1875,
+                "height": 57
+              },
+              {
+                "name": "Bâtiments décalés — grille fine 4 × 4",
+                "width": 265.1875,
+                "height": 57
+              },
+              {
+                "name": "Centre seul — 3 × 3",
+                "width": 265.1875,
+                "height": 46
+              },
+              {
+                "name": "Extension cardinale — Centre + Est",
+                "width": 265.1875,
+                "height": 57
+              },
+              {
+                "name": "Extension diagonale — Centre + Nord-ouest",
+                "width": 265.1875,
+                "height": 57
+              },
+              {
+                "name": "Forme en L — Centre + Est + Nord",
+                "width": 265.1875,
+                "height": 57
+              },
+              {
+                "name": "Île complète — 9 × 9",
+                "width": 265.1875,
+                "height": 46
+              },
+              {
+                "name": "Décorations proches des frontières",
+                "width": 265.1875,
+                "height": 57
+              },
+              {
+                "name": "Prairie de départ — acheter et placer",
+                "width": 265.1875,
+                "height": 57
+              },
+              {
+                "name": "Prairie dense — sélection et performances",
+                "width": 265.1875,
+                "height": 57
+              },
+              {
+                "name": "Collection — quinze espèces et recettes",
+                "width": 265.1875,
+                "height": 57
+              },
+              {
+                "name": "Reproduction — parents prêts",
+                "width": 265.1875,
+                "height": 46
+              },
+              {
+                "name": "Missions — récompenses à réclamer",
+                "width": 265.1875,
+                "height": 57
+              },
+              {
+                "name": "Habitats — sept occupants par enclos",
+                "width": 265.1875,
+                "height": 57
+              },
+              {
+                "name": "Prairie de démonstration décorée",
+                "width": 265.1875,
+                "height": 57
+              },
+              {
+                "name": "Habitat entouré de décorations — sept occupants",
+                "width": 265.1875,
+                "height": 57
+              },
+              {
+                "name": "Exporter la partie de test",
+                "width": 265.1875,
+                "height": 46
+              },
+              {
+                "name": "Importer dans la partie de test",
+                "width": 265.1875,
+                "height": 57
+              },
+              {
+                "name": "Remettre la partie de test à zéro",
+                "width": 265.1875,
+                "height": 57
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 390,
+              "height": 844
+            },
+            "name": "ferme",
+            "title": "Ferme",
+            "view": "building",
+            "panel": {
+              "x": 34.8125,
+              "y": 130,
+              "width": 343.1875,
+              "height": 614
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "‹",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Récolter 20 herbes",
+                "width": 311.1875,
+                "height": 46
+              },
+              {
+                "name": "Terminer · 1 cœur",
+                "width": 168.015625,
+                "height": 46
+              },
+              {
+                "name": "Déplacer ce bâtiment",
+                "width": 311.1875,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 1280,
+              "height": 800
+            },
+            "name": "boutique",
+            "title": "Boutique",
+            "view": "shop",
+            "panel": {
+              "x": 708,
+              "y": 78,
+              "width": 560,
+              "height": 654
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Bâtiments",
+                "width": 171.328125,
+                "height": 46
+              },
+              {
+                "name": "Lapins",
+                "width": 171.328125,
+                "height": 46
+              },
+              {
+                "name": "Décorations",
+                "width": 171.328125,
+                "height": 46
+              },
+              {
+                "name": "Placer · 120 pattes",
+                "width": 232,
+                "height": 46
+              },
+              {
+                "name": "Placer · 200 pattes",
+                "width": 232,
+                "height": 46
+              },
+              {
+                "name": "Placer · 200 pattes",
+                "width": 232,
+                "height": 46
+              },
+              {
+                "name": "Placer · 200 pattes",
+                "width": 232,
+                "height": 46
+              },
+              {
+                "name": "Placer · 200 pattes",
+                "width": 232,
+                "height": 46
+              },
+              {
+                "name": "Placer · 200 pattes",
+                "width": 232,
+                "height": 46
+              },
+              {
+                "name": "Placer · 200 pattes",
+                "width": 232,
+                "height": 46
+              },
+              {
+                "name": "Placer · 60 pattes",
+                "width": 232,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 1280,
+              "height": 800
+            },
+            "name": "boutique-lapins",
+            "title": "Boutique",
+            "view": "shop",
+            "panel": {
+              "x": 708,
+              "y": 78,
+              "width": 560,
+              "height": 654
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Bâtiments",
+                "width": 171.328125,
+                "height": 46
+              },
+              {
+                "name": "Lapins",
+                "width": 171.328125,
+                "height": 46
+              },
+              {
+                "name": "Décorations",
+                "width": 171.328125,
+                "height": 46
+              },
+              {
+                "name": "Choisir un habitat · 80 pattes",
+                "width": 232,
+                "height": 57
+              },
+              {
+                "name": "Choisir un habitat · 80 pattes",
+                "width": 232,
+                "height": 57
+              },
+              {
+                "name": "Choisir un habitat · 80 pattes",
+                "width": 232,
+                "height": 57
+              },
+              {
+                "name": "Choisir un habitat · 80 pattes",
+                "width": 232,
+                "height": 57
+              },
+              {
+                "name": "Choisir un habitat · 80 pattes",
+                "width": 232,
+                "height": 57
+              },
+              {
+                "name": "Choisir un habitat · 80 pattes",
+                "width": 232,
+                "height": 57
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 1280,
+              "height": 800
+            },
+            "name": "boutique-decorations",
+            "title": "Boutique",
+            "view": "shop",
+            "panel": {
+              "x": 708,
+              "y": 78,
+              "width": 560,
+              "height": 654
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Bâtiments",
+                "width": 171.328125,
+                "height": 46
+              },
+              {
+                "name": "Lapins",
+                "width": 171.328125,
+                "height": 46
+              },
+              {
+                "name": "Décorations",
+                "width": 171.328125,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 20 pattes",
+                "width": 232,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 30 pattes",
+                "width": 232,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 40 pattes",
+                "width": 232,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 60 pattes",
+                "width": 232,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 80 pattes",
+                "width": 232,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 100 pattes",
+                "width": 232,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 120 pattes",
+                "width": 232,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 150 pattes",
+                "width": 232,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 30 pattes",
+                "width": 232,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 40 pattes",
+                "width": 232,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 60 pattes",
+                "width": 232,
+                "height": 46
+              },
+              {
+                "name": "Acheter · 80 pattes",
+                "width": 232,
+                "height": 46
+              },
+              {
+                "name": "Ouvrir mon inventaire",
+                "width": 528,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 1280,
+              "height": 800
+            },
+            "name": "collection",
+            "title": "Collection · 2/15",
+            "view": "collection",
+            "panel": {
+              "x": 708,
+              "y": 78,
+              "width": 560,
+              "height": 654
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Carnet de reproduction",
+                "width": 375.328125,
+                "height": 46
+              },
+              {
+                "name": "Tous les typespailleneigeterrefeumétalvol",
+                "width": 170.65625,
+                "height": 46
+              },
+              {
+                "name": "Toutes les raretésCommunPeu communRareÉpiqueLégendaire",
+                "width": 170.671875,
+                "height": 46
+              },
+              {
+                "name": "ToutesDécouvertesÀ découvrir",
+                "width": 170.671875,
+                "height": 46
+              },
+              {
+                "name": "Consulter l’espèce",
+                "width": 232,
+                "height": 46
+              },
+              {
+                "name": "Consulter l’espèce",
+                "width": 232,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 1280,
+              "height": 800
+            },
+            "name": "carnet",
+            "title": "Carnet de reproduction",
+            "view": "recipes",
+            "panel": {
+              "x": 708,
+              "y": 78,
+              "width": 560,
+              "height": 654
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "‹",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "1 paire(s) possédée(s) compatible(s) avec la recette",
+                "width": 232,
+                "height": 80.671875
+              },
+              {
+                "name": "Préparer cette paire au nid",
+                "width": 232,
+                "height": 57
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 1280,
+              "height": 800
+            },
+            "name": "missions",
+            "title": "Missions",
+            "view": "missions",
+            "panel": {
+              "x": 708,
+              "y": 78,
+              "width": 560,
+              "height": 654
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Principales",
+                "width": 260.5,
+                "height": 46
+              },
+              {
+                "name": "Quotidiennes",
+                "width": 260.5,
+                "height": 46
+              },
+              {
+                "name": "Réclamer · + 10 herbes",
+                "width": 232,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 1280,
+              "height": 800
+            },
+            "name": "lapin",
+            "title": "Lapin Paille",
+            "view": "rabbit",
+            "panel": {
+              "x": 708,
+              "y": 78,
+              "width": 560,
+              "height": 654
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Nourrir · 4 herbes",
+                "width": 366,
+                "height": 46
+              },
+              {
+                "name": "Changer d’habitat",
+                "width": 528,
+                "height": 46
+              },
+              {
+                "name": "Confier ce lapin",
+                "width": 528,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 1280,
+              "height": 800
+            },
+            "name": "habitat",
+            "title": "Enclos 1",
+            "view": "building",
+            "panel": {
+              "x": 708,
+              "y": 78,
+              "width": 560,
+              "height": 654
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Récolter 0 pattes",
+                "width": 528,
+                "height": 46
+              },
+              {
+                "name": "Voir ce lapin",
+                "width": 502,
+                "height": 46
+              },
+              {
+                "name": "Voir ce lapin",
+                "width": 502,
+                "height": 46
+              },
+              {
+                "name": "Acheter un lapin",
+                "width": 528,
+                "height": 46
+              },
+              {
+                "name": "Améliorer · 200 pattes",
+                "width": 528,
+                "height": 46
+              },
+              {
+                "name": "Déplacer ce bâtiment",
+                "width": 528,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 1280,
+              "height": 800
+            },
+            "name": "nid",
+            "title": "Nid",
+            "view": "building",
+            "panel": {
+              "x": 708,
+              "y": 78,
+              "width": 560,
+              "height": 654
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Carnet de reproduction",
+                "width": 528,
+                "height": 46
+              },
+              {
+                "name": "Lancer la reproduction · gratuit",
+                "width": 528,
+                "height": 46
+              },
+              {
+                "name": "Parent A",
+                "width": 247.5,
+                "height": 46
+              },
+              {
+                "name": "Parent B",
+                "width": 247.5,
+                "height": 46
+              },
+              {
+                "name": "Parent A",
+                "width": 247.5,
+                "height": 46
+              },
+              {
+                "name": "Parent B",
+                "width": 247.5,
+                "height": 46
+              },
+              {
+                "name": "Déplacer ce bâtiment",
+                "width": 528,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 1280,
+              "height": 800
+            },
+            "name": "nurserie",
+            "title": "Nurserie",
+            "view": "building",
+            "panel": {
+              "x": 708,
+              "y": 78,
+              "width": 560,
+              "height": 654
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Voir le nid",
+                "width": 528,
+                "height": 46
+              },
+              {
+                "name": "Déplacer ce bâtiment",
+                "width": 528,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 1280,
+              "height": 800
+            },
+            "name": "amenagement",
+            "title": "Aménager · inventaire",
+            "view": "arrange",
+            "panel": {
+              "x": 908,
+              "y": 78,
+              "width": 360,
+              "height": 654
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Acheter des décorations",
+                "width": 328,
+                "height": 46
+              },
+              {
+                "name": "Objets posés · 0",
+                "width": 328,
+                "height": 44
+              },
+              {
+                "name": "Quitter le mode Aménagement",
+                "width": 328,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 1280,
+              "height": 800
+            },
+            "name": "parametres",
+            "title": "Paramètres",
+            "view": "settings",
+            "panel": {
+              "x": 708,
+              "y": 78,
+              "width": 560,
+              "height": 654
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Reprendre le guidage",
+                "width": 198.90625,
+                "height": 46
+              },
+              {
+                "name": "Sons : activés",
+                "width": 137.546875,
+                "height": 46
+              },
+              {
+                "name": "Exporter la partie de test",
+                "width": 502,
+                "height": 46
+              },
+              {
+                "name": "Exporter la source avant migration",
+                "width": 502,
+                "height": 46
+              },
+              {
+                "name": "Importer dans la partie de test",
+                "width": 502,
+                "height": 46
+              },
+              {
+                "name": "Recommencer la partie de test",
+                "width": 502,
+                "height": 46
+              },
+              {
+                "name": "Retour au jeu normal",
+                "width": 147.640625,
+                "height": 44
+              },
+              {
+                "name": "+ 5 min",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "+ 20 min",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "+ 60 min",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "+ 360 min",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "+ 1440 min",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "+ 1000 pattes",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "+ 10000 pattes",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "+ 100 herbes",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "+ 1000 herbes",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "+ 10 cœurs",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "+ 100 cœurs",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "Initiation — trois aides inutilisées",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "Initiation — aide utilisée et croissance liée",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "Début guidé — nouvelle partie, délais normaux",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "Missions — parcours initial et branches",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "Nid — parents et transfert manuel",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "Bâtiments décalés — grille fine 4 × 4",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "Centre seul — 3 × 3",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "Extension cardinale — Centre + Est",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "Extension diagonale — Centre + Nord-ouest",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "Forme en L — Centre + Est + Nord",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "Île complète — 9 × 9",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "Décorations proches des frontières",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "Prairie de départ — acheter et placer",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "Prairie dense — sélection et performances",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "Collection — quinze espèces et recettes",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "Reproduction — parents prêts",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "Missions — récompenses à réclamer",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "Habitats — sept occupants par enclos",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "Prairie de démonstration décorée",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "Habitat entouré de décorations — sept occupants",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "Exporter la partie de test",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "Importer dans la partie de test",
+                "width": 482,
+                "height": 46
+              },
+              {
+                "name": "Remettre la partie de test à zéro",
+                "width": 482,
+                "height": 46
+              }
+            ]
+          },
+          {
+            "size": {
+              "width": 1280,
+              "height": 800
+            },
+            "name": "ferme",
+            "title": "Ferme",
+            "view": "building",
+            "panel": {
+              "x": 708,
+              "y": 78,
+              "width": 560,
+              "height": 654
+            },
+            "overflowX": false,
+            "bodyOverflow": false,
+            "controls": [
+              {
+                "name": "‹",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "×",
+                "width": 46,
+                "height": 46
+              },
+              {
+                "name": "Récolter 20 herbes",
+                "width": 528,
+                "height": 46
+              },
+              {
+                "name": "Terminer · 1 cœur",
+                "width": 168.015625,
+                "height": 46
+              },
+              {
+                "name": "Déplacer ce bâtiment",
+                "width": 528,
+                "height": 46
+              }
+            ]
+          }
+        ],
+        "errors": [],
+        "navigation": {
+          "collectionScroll": 1304,
+          "bookScroll": 1800,
+          "reopenedBookScroll": 1800
+        }
+      }
+    ],
+    "artifact": {
+      "id": 11703320393,
+      "url": "https://github.com/sullivanlegoff-code/Project-L/actions/runs/38140077673/artifacts/11703320393",
+      "expiresAt": "2026-11-10T12:47:06Z"
+    }
+  },
+  "builds": 4,
+  "previewTests": {
+    "accounts": 415,
+    "decorations": 544
+  }
+}

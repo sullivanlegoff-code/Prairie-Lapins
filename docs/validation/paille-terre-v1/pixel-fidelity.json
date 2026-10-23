@@ -1,0 +1,14 @@
+{
+  "paille": {
+    "sourceCrop": "350x495+29+21",
+    "opaquePixels": 101525,
+    "maxOpaqueRgbDifference": 0,
+    "cornerAlpha": 0
+  },
+  "terre": {
+    "sourceCrop": "992x907+13+58",
+    "opaquePixels": 522194,
+    "maxOpaqueRgbDifference": 0,
+    "cornerAlpha": 0
+  }
+}

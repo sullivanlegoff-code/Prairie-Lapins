@@ -1,0 +1,94 @@
+{
+  "browser": "Chromium with real dispatched touch; not physical Safari",
+  "selections": [
+    {
+      "catalogId": "wildflowers",
+      "normal": true,
+      "arrangement": true,
+      "outline": true
+    },
+    {
+      "catalogId": "flowering-bush",
+      "normal": true,
+      "arrangement": true,
+      "outline": true
+    },
+    {
+      "catalogId": "moss-rock",
+      "normal": true,
+      "arrangement": true,
+      "outline": true
+    },
+    {
+      "catalogId": "garden-lantern",
+      "normal": true,
+      "arrangement": true,
+      "outline": true
+    },
+    {
+      "catalogId": "wood-bench",
+      "normal": true,
+      "arrangement": true,
+      "outline": true
+    },
+    {
+      "catalogId": "flower-arch",
+      "normal": true,
+      "arrangement": true,
+      "outline": true
+    },
+    {
+      "catalogId": "fruit-tree",
+      "normal": true,
+      "arrangement": true,
+      "outline": true
+    },
+    {
+      "catalogId": "small-pond",
+      "normal": true,
+      "arrangement": true,
+      "outline": true
+    },
+    {
+      "catalogId": "soft-cushion",
+      "normal": true,
+      "arrangement": true,
+      "outline": true
+    },
+    {
+      "catalogId": "ball-toys",
+      "normal": true,
+      "arrangement": true,
+      "outline": true
+    },
+    {
+      "catalogId": "play-tunnel",
+      "normal": true,
+      "arrangement": true,
+      "outline": true
+    },
+    {
+      "catalogId": "small-parasol",
+      "normal": true,
+      "arrangement": true,
+      "outline": true
+    }
+  ],
+  "treeZooms": [
+    0.8,
+    1.05,
+    1.65
+  ],
+  "empty": true,
+  "photo": true,
+  "pan": true,
+  "pinch": true,
+  "rabbitPriority": "paille",
+  "decorationPriorityInArrangement": true,
+  "harvestPriority": true,
+  "cancelSale": true,
+  "doubleSale": true,
+  "reload": true,
+  "inventorySale": true,
+  "errors": []
+}
