@@ -58,7 +58,7 @@ const {chromium}=require('playwright'),fs=require('node:fs'),path=require('node:
  const nest=()=>read().then(s=>s.buildings.find(b=>b.kind==='nest'));
  const homeMap=s=>s.rabbits.map(r=>[r.id,r.enclosureId]);
  const openNest=async()=>{const b=await nest(),target={x:buildingCenter(b).x,y:buildingCenter(b).y+58};await reset(target,1.05,{x:220,y:245});await worldTap(target);assert.equal(await page.locator('#panel-title').innerText(),'Nid');};
- const choose=async(species,slot)=>page.locator('article').filter({has:page.getByRole('heading',{name:species,exact:true})}).getByRole('button',{name:slot,exact:true}).tap();
+ const {crossParents}=require('./check-camera.cjs');
  const parentTap=async(index,name)=>{
   const n=await nest(),p=buildingCenter(n),offset=NEST_ART.parentOffsets[index];
   await worldTap({x:p.x+offset.x,y:p.y+offset.y-7*VISUAL.rabbit.scale});
@@ -85,8 +85,8 @@ const {chromium}=require('playwright'),fs=require('node:fs'),path=require('node:
    for(const [name,z] of [['far',.4],['normal',1.05],['close',1.65]]){await reset(buildingCenter(await nest()),z);await shot('nest-empty-'+size.width+'-'+name);}
   }
   await page.setViewportSize({width:852,height:393});await ready();await openNest();assert.equal(await page.locator('.work-state[data-state=free]').count(),1);
-  await choose('Lapin Bélier Gris','Parent A');await choose('Lapin Volant','Parent B');
-  const preBreed=await read();await tap('Lancer la reproduction · gratuit');let s=await read(),job=(await nest()).breeding;
+  await crossParents(page,'Lapin Bélier Gris','Lapin Volant',{tap:true,launch:false});
+  const preBreed=await read();await page.locator('#breeding-dialog button.breeding-launch').tap();let s=await read(),job=(await nest()).breeding;
   assert.deepEqual(job.parents,parents.map(r=>r.id));assert.deepEqual(homeMap(s),homeMap(initial));assert.deepEqual(s.rabbits,initial.rabbits);
   assert.equal(job.endsAt-job.startedAt,1200000);assert.equal(s.pattes,preBreed.pattes);assert.equal(s.hearts,preBreed.hearts);
   const xp=s.progression.totalXp;

@@ -60,8 +60,8 @@ const {chromium}=require('playwright'),fs=require('node:fs'),path=require('node:
    await page.evaluate(({a,b})=>{const c=document.createElement('canvas');c.id='nest-proof-grid';c.width=innerWidth;c.height=innerHeight;c.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:9999';document.body.append(c);const g=c.getContext('2d');g.strokeStyle='#ff326a';g.lineWidth=2;g.strokeRect(a.x,a.y,b.x-a.x,b.y-a.y);g.lineWidth=1;g.strokeStyle='#173e55';g.setLineDash([4,4]);for(let i=1;i<4;i++){g.beginPath();g.moveTo(a.x+(b.x-a.x)*i/4,a.y);g.lineTo(a.x+(b.x-a.x)*i/4,b.y);g.moveTo(a.x,a.y+(b.y-a.y)*i/4);g.lineTo(b.x,a.y+(b.y-a.y)*i/4);g.stroke();}g.fillStyle='#fffbea';g.fillRect(8,innerHeight-36,330,30);g.fillStyle='#243b39';g.font='12px Arial';g.fillText('Contrôle : contour rose = 4 × 4 cases du nid',14,innerHeight-17);},{a:topLeft,b:bottomRight});
    await capture('grid');await page.locator('#nest-proof-grid').evaluate(e=>e.remove());
    await reset(1.05);await tapWorld({x:center.x,y:center.y+58});check(await page.locator('#panel-title').innerText()==='Nid','nest selectable at measured location');
-   for(const [species,slot] of [['Lapin Bélier Gris','Parent A'],['Lapin Volant','Parent B']])await page.locator('article').filter({has:page.getByRole('heading',{name:species,exact:true})}).getByRole('button',{name:slot,exact:true}).click();
-   const preBreed=await read();await page.getByRole('button',{name:'Lancer la reproduction · gratuit',exact:true}).click();await close();
+   await camera.crossParents(page,'Lapin Bélier Gris','Lapin Volant',{launch:false});
+   const preBreed=await read();await page.locator('#breeding-dialog button.breeding-launch').click();await close();
    const occupied=await read(),job=occupied.buildings.find(b=>b.id===nest.id).breeding;
    check(job.parents.length===2&&job.endsAt-job.startedAt===1200000,'real breeding duration and two parents');
    assert.deepEqual(occupied.rabbits,initial.rabbits);report.checks++;check(occupied.pattes===preBreed.pattes&&occupied.hearts===preBreed.hearts,'unchanged free breeding cost');

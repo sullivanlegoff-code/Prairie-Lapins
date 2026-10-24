@@ -58,8 +58,7 @@ const babyOf=b=>[...(b?.nursery?.babies??[])].sort((x,y)=>x.slot-y.slot)[0]??nul
 
  const building=kind=>read().then(s=>s.buildings.find(b=>b.kind===kind));
  const open=async kind=>{const b=await building(kind),center=buildingCenter(b),target={x:center.x,y:center.y+58};await reset(target,1.05,{x:220,y:245});await worldTap(target);assert.equal(await page.locator('#panel-title').innerText(),kind==='nest'?'Nid':'Nurserie');};
- const choose=async(name,slot)=>page.locator('article').filter({has:page.getByRole('heading',{name,exact:true})}).getByRole('button',{name:slot,exact:true}).tap();
- const advance=async()=>{await page.locator('#open-settings').tap();await page.locator('#dev-time-60').tap();await close();};
+  const advance=async()=>{await page.locator('#open-settings').tap();await page.locator('#dev-time-60').tap();await close();};
  const views=async state=>{
   for(const size of [{width:852,height:393},{width:390,height:844}]){
    await page.setViewportSize(size);await ready();
@@ -96,7 +95,7 @@ const babyOf=b=>[...(b?.nursery?.babies??[])].sort((x,y)=>x.slot-y.slot)[0]??nul
   lab=true;await page.goto(new URL('dev/',root).href);await enterGame(page);await ready();await page.locator('#open-settings').tap();await page.locator('#dev-scenario-fineBuildings').tap();await close();await settle();
   const initial=await read(),first=await building('nursery'),farm=await building('farm'),originalNest=await building('nest');
   assert.equal(babyOf(first),null);await views('free');await open('nursery');assert.equal(await page.locator('.work-state[data-state=free]').count(),1);await panelShot('nursery-free-panel');await close();
-  await open('nest');await choose('Lapin Paille','Parent A');await choose('Lapin Neige','Parent B');await tap('Lancer la reproduction · gratuit');await close();
+  await open('nest');await camera.crossParents(page,'Lapin Paille','Lapin Neige',{tap:true});await close();
   const breeding=(await building('nest')).breeding;assert.ok(breeding);await advance();
   assert.equal(babyOf((await building('nursery'))),null,'deadline never transfers automatically');await open('nest');await tap('Envoyer dans la nurserie');await close();
   let s=await read(),baby=babyOf((await building('nursery')));assert.deepEqual(baby.birth,breeding.birth);assert.equal((await building('nest')).breeding,null);
