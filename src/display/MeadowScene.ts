@@ -1,3 +1,4 @@
+import {islandOutline, organicLoop, parcelSetKey} from './islandOutline';
 import {nestForParent} from '../simulation/breeding';
 import {RABBIT_ART, rabbitArt, type RabbitArt} from '../config/rabbitArt';
 import Phaser from 'phaser';
@@ -15,8 +16,11 @@ import {NurseryOverlays} from './nurseryOverlays';
 import {buildingAt, buildingPlacementReason, buildingFootprint, type Footprint} from '../simulation/placement';
 import {placementGrid, PLACEMENT_GRID} from './placementGrid';
 import {readyNurseryBabies} from '../simulation/nursery';
-import {drawParcelTerrain} from './parcelArt';
-import {CoastLayer} from './coastLayer';
+import {FloatingIslandLayer} from './floatingIslandLayer';
+import {ISLAND_ART} from '../config/islandArt';
+import {GRASS_TILE, islandStage, stageArt} from '../config/islandStages';
+import {IslandStageLayer, queueStage} from './islandStageLayer';
+import {SkyLayer, SKY_COLOR} from './skyLayer';
 import {PARCELS, PARCEL_IDS, expansionTarget, purchasableParcels, type ParcelId} from '../config/land';
 import {ISLAND} from '../config/islandGeometry';
 import {rabbitOffset, rabbitPosition, rabbitHit, rabbitFedLift} from './rabbitLayout';
@@ -71,7 +75,6 @@ export class MeadowScene extends Phaser.Scene {
   private nurseryOverlays: NurseryOverlays | null = null;
   private buildingTextures = new Set<string>();
   private buildingGhost: Phaser.GameObjects.Image | null = null;
-  private readonly groundTexture = 'meadow-static-ground';
   private purchase: {species: SpeciesId; selected: string | null} | null = null;
   private purchaseLabels: Phaser.GameObjects.Text[] = [];
   private arrangement = false;
@@ -79,10 +82,11 @@ export class MeadowScene extends Phaser.Scene {
   private photo = false;
   private expanding = false;
   private expansionParcelId: ParcelId | undefined;
-  private groundTextures: string[] = [];
-  private groundSignatures = new Map<string,string>();
-  private coastLayer: CoastLayer | null = null;
-  private edgeLayer: Phaser.GameObjects.Container | null = null;
+  private islandMaskGraphics: Phaser.GameObjects.Graphics | null = null;
+  private islandMask: Phaser.Display.Masks.GeometryMask | null = null;
+  private islandMaskKey = '';
+  private floatingIslandLayer: FloatingIslandLayer | null = null;
+  private islandStageLayer: IslandStageLayer | null = null;
   private decorationViews = new Map<string, Phaser.GameObjects.Image>();
   private ghostView: Phaser.GameObjects.Image | null = null;
   private decorationsLayer!: Phaser.GameObjects.Container;
@@ -97,6 +101,11 @@ export class MeadowScene extends Phaser.Scene {
   preload(): void {
     if (this.loading) { const l = this.loading; this.load.on('progress', (v: number) => l.progress(v)); this.load.on('loaderror', (file: {key: string}) => l.error(file.key)); }
     this.load.image(COIN_TEXTURE, COIN_URL);
+    for (const art of ISLAND_ART) if (!this.textures.exists(art.texture)) this.load.image(art.texture, art.url);
+    if (!this.textures.exists(GRASS_TILE.texture)) this.load.image(GRASS_TILE.texture, GRASS_TILE.url);
+    // Only the painting of the current stage is loaded at start; a later stage loads when it is bought.
+    const stage = islandStage(this.controller.getSnapshot().state?.acquiredParcels ?? []);
+    if (stage) queueStage(this, stageArt(stage));
     if (!this.textures.exists(FARM_ART.texture)) this.load.image(FARM_ART.texture, FARM_ART.url);
     if (!this.textures.exists(NEST_ART.texture)) this.load.image(NEST_ART.texture, NEST_ART.url);
     if (!this.textures.exists(NURSERY_ART.texture)) this.load.image(NURSERY_ART.texture, NURSERY_ART.url);
@@ -110,7 +119,9 @@ export class MeadowScene extends Phaser.Scene {
     }
   }
   create(): void {
-    this.cameras.main.setBackgroundColor('#91d3ce');
+    this.cameras.main.setBackgroundColor(SKY_COLOR);
+    // Owns its shutdown cleanup; independent of parcel ownership and ground projection.
+    new SkyLayer(this, toScreen(gridPoint(ISLAND.focus, ISLAND.focus)));
     // Ground layer (flat on the island, drawn in ground coordinates, one shared projection transform):
     // terrain at depth 0 and the flat overlays at depth 1. Upright layer (untransformed, anchors through
     // toScreen): buildings .1, decorations .5, decoration selection .9, markers 1, ghosts 1.5, rabbits 2,
@@ -128,7 +139,7 @@ export class MeadowScene extends Phaser.Scene {
     this.recenter();
     this.scale.on('resize', this.resize, this);
     const disposeInput = bindMeadowInput(this.game.canvas, this.view, point => this.tap(point), this.blocked, () => this.applyCamera());
-    this.events.once('shutdown', () => { this.unsubscribe?.(); disposeInput(); this.scale.off('resize', this.resize, this); this.groundTextures.forEach(key => this.textures.remove(key)); this.buildingTextures.forEach(key=>this.textures.remove(key)); this.coastLayer?.destroy(); this.coastLayer = null; this.edgeLayer = null; this.nurseryOverlays?.destroy(); this.nurseryOverlays = null; this.motions.clear(); this.pivots.clear(); });
+    this.events.once('shutdown', () => { this.unsubscribe?.(); disposeInput(); this.scale.off('resize', this.resize, this); this.buildingTextures.forEach(key=>this.textures.remove(key)); this.ground.clearMask(); this.islandMask?.destroy(); this.islandMaskGraphics?.destroy(); this.islandMask = null; this.islandMaskGraphics = null; this.floatingIslandLayer?.destroy(); this.floatingIslandLayer = null; this.islandStageLayer?.destroy(); this.islandStageLayer = null; this.nurseryOverlays?.destroy(); this.nurseryOverlays = null; this.motions.clear(); this.pivots.clear(); });
     this.loading?.ready();
   }
   recenter(): void { if (!this.cameras?.main) return; recenterCamera(this.view, this.current, this.screenChrome()); this.applyCamera(); }
@@ -153,6 +164,9 @@ export class MeadowScene extends Phaser.Scene {
     const parcels=ids.map(id=>PARCELS[id]);
     this.view.setInsets(this.framingInsets());
     const rects=parcels.map(p=>screenBounds(cellsBounds(p.x,p.y,p.x+ISLAND.parcelCells,p.y+ISLAND.parcelCells)));
+    // Extend downward AFTER projection: the rock hangs vertically in screen space.
+    const owned = ownedRegions(this.current.acquiredParcels);
+    rects.push(...owned);
     this.view.overview({left:Math.min(...rects.map(r=>r.left)),right:Math.max(...rects.map(r=>r.right)),top:Math.min(...rects.map(r=>r.top)),bottom:Math.max(...rects.map(r=>r.bottom))});
     this.applyCamera();
   }
@@ -239,7 +253,7 @@ export class MeadowScene extends Phaser.Scene {
     this.tweens.add({targets: heart, y: heart.y - 45, alpha: 0, duration: 1000, onComplete: () => heart.destroy()});
   }
   private updateVisibleRegions(): void {
-    // Each owned parcel with its drawn shore (front and left beaches, top/right rim): the pan limit reaches the coast.
+    // Owned plateaux and their hanging rock; clouds and extension sketches do not own pan regions.
     this.view.setVisibleRegions(this.expanding || !this.current ? null : ownedRegions(this.current.acquiredParcels));
   }
   private renderState(): void {
@@ -285,31 +299,57 @@ export class MeadowScene extends Phaser.Scene {
       .setTint(catalogDecorationPlacementReason(this.current!, d.catalogId, this.ghost.location, d.id) ? 0xf3a6a1 : 0xe4ffb5).setVisible(!this.photo);
   }
   private drawGround(): void {
-    // The coast layer survives layout changes (buildings, rabbits); only a new set of owned parcels rebuilds it.
-    if (this.edgeLayer) this.ground.remove(this.edgeLayer);
+    // The painted stage (or, for an island grown outside the fixed order, the generated relief) changes only with
+    // ownership and keeps the previous picture until the new one is ready. The grass tiles follow the parcels at once.
     this.ground.removeAll(true);
-    for (const key of [...this.groundTextures]) if (!this.current?.acquiredParcels.some(id => key === this.groundTexture+':'+id)) { this.textures.remove(key); this.groundSignatures.delete(key); this.groundTextures=this.groundTextures.filter(k=>k!==key); }
-    if (!this.current) { this.coastLayer?.destroy(); this.coastLayer = null; this.edgeLayer = null; return; }
-    if (!this.coastLayer) this.coastLayer = new CoastLayer(this);
-    this.edgeLayer = this.coastLayer.root;
-    this.coastLayer.request(this.current.acquiredParcels);
-    for (const id of this.current.acquiredParcels) {
-    const parcel=PARCELS[id], px=VISUAL.grid.originX+parcel.x*VISUAL.grid.width, py=VISUAL.grid.originY+parcel.y*VISUAL.grid.depth, m=VISUAL.ground.margin;
-    const g=this.add.graphics();
-    const w=ISLAND.parcelWidth+m.left+m.right,h=ISLAND.parcelDepth+m.top+m.bottom;
-    const renderer=this.game.renderer;
-    const limit=renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer ? renderer.gl.getParameter(renderer.gl.MAX_TEXTURE_SIZE) as number : 4096;
-    const resolution=Math.min(VISUAL.ground.maxResolution,limit/Math.max(w,h));
-    g.scaleCanvas(resolution,resolution);g.translateCanvas(m.left-px,m.top-py);
-    const key=this.groundTexture+':'+id;
-    // Interior pixels do not depend on neighbours. Coast geometry has its own canonical cache.
-    const signature='raised-plateau-interior';
-    const changed=this.groundSignatures.get(key)!==signature;
-    if(changed) drawParcelTerrain(g,id);
-    if(changed){if(this.textures.exists(key))this.textures.remove(key);g.generateTexture(key, Math.ceil(w * resolution), Math.ceil(h * resolution));this.groundSignatures.set(key,signature);if(!this.groundTextures.includes(key))this.groundTextures.push(key);}
-    this.ground.addAt(this.add.image(px-m.left,py-m.top,key).setOrigin(0).setScale(1/resolution),0);g.destroy();
+    if (!this.current) { this.floatingIslandLayer?.destroy(); this.floatingIslandLayer = null; this.islandStageLayer?.destroy(); this.islandStageLayer = null; return; }
+    const ids = this.current.acquiredParcels, stage = islandStage(ids);
+    if (stage) {
+      if (!this.islandStageLayer) this.islandStageLayer = new IslandStageLayer(this);
+      this.islandStageLayer.request(stage, () => { this.floatingIslandLayer?.destroy(); this.floatingIslandLayer = null; });
+      // The painted rim covers the plateau edges itself.
+      this.ground.clearMask(); this.islandMask?.destroy(); this.islandMaskGraphics?.destroy();
+      this.islandMask = null; this.islandMaskGraphics = null; this.islandMaskKey = '';
+    } else {
+      this.islandStageLayer?.clear();
+      if (!this.floatingIslandLayer) this.floatingIslandLayer = new FloatingIslandLayer(this);
+      this.floatingIslandLayer.request(ids);
+      this.maskIsland(ids);
     }
-    this.ground.addAt(this.edgeLayer, 0);
+    const scale = GRASS_TILE.worldUnits / GRASS_TILE.size;
+    for (const id of ids) {
+      const parcel = PARCELS[id], x = VISUAL.grid.originX + parcel.x * VISUAL.grid.width, y = VISUAL.grid.originY + parcel.y * VISUAL.grid.depth;
+      // Anchored on the world origin: neighbouring parcels continue the same pattern without a seam.
+      this.ground.add(this.add.tileSprite(x, y, ISLAND.parcelWidth / scale, ISLAND.parcelDepth / scale, GRASS_TILE.texture)
+        .setOrigin(0).setScale(scale).setTilePosition(x / scale, y / scale));
+    }
+  }
+  /** Rounded plateau outline for the generated relief only. */
+  private maskIsland(ids: readonly ParcelId[]): void {
+    const maskKey = parcelSetKey(ids);
+    if (maskKey !== this.islandMaskKey) {
+      const graphics = this.make.graphics({x:0,y:0});
+      graphics.fillStyle(0xffffff); graphics.beginPath();
+      for (const component of islandOutline(ids)) {
+        const loops = [...component.loops].sort((a,b)=>Number(a.hole)-Number(b.hole));
+        const vertices: number[] = [], holes: number[] = [];
+        for (const loop of loops) {
+          if(loop.hole) holes.push(vertices.length/2);
+          for(const p of organicLoop(loop).map(toScreen)) vertices.push(p.x,p.y);
+        }
+        const triangles = Phaser.Geom.Polygon.Earcut(vertices,holes,2);
+        for(let i=0;i<triangles.length;i+=3) {
+          const a=triangles[i]*2,b=triangles[i+1]*2,c=triangles[i+2]*2;
+          graphics.moveTo(vertices[a],vertices[a+1]); graphics.lineTo(vertices[b],vertices[b+1]); graphics.lineTo(vertices[c],vertices[c+1]); graphics.closePath();
+        }
+      }
+      graphics.fillPath();
+      const mask=graphics.createGeometryMask();
+      // Only the flat plateau is clipped. Upright art and interaction layers are independent.
+      this.ground.setMask(mask); this.islandMask?.destroy(); this.islandMaskGraphics?.destroy();
+      this.islandMask=mask; this.islandMaskGraphics=graphics; this.islandMaskKey=maskKey;
+    }
+    this.ground.setMask(this.islandMask!);
   }
   private buildingTexture(b: Pick<Building, 'kind' | 'habitat' | 'footprintTier'>): string {
     if (b.kind === 'farm') return FARM_ART.texture;
@@ -510,16 +550,19 @@ export class MeadowScene extends Phaser.Scene {
       return;
     }
     if (this.expanding && this.current) {
+      const available = purchasableParcels(this.current);
       for (const id of purchasableParcels(this.current)) {
         const parcel = PARCELS[id], point = gridPoint(parcel.x, parcel.y);
         const width = ISLAND.parcelWidth, height = ISLAND.parcelDepth;
         const selected = this.expansionParcelId === id;
-        if (selected) {this.grid.fillStyle(0xd8df96, .35); this.grid.fillRoundedRect(point.x + 3, point.y + 3, width - 6, height - 6, 10);}
+        const sketch = selected || (!this.expansionParcelId && id === available[0]);
+        if (sketch) {this.grid.fillStyle(0xeee9d5, .28); this.grid.fillRoundedRect(point.x + 3, point.y + 3, width - 6, height - 6, 10);}
         this.grid.lineStyle(selected ? 4 : 2, selected ? 0xf4d58b : 0xe5f3df, .8);
         this.grid.strokeRoundedRect(point.x + 3, point.y + 3, width - 6, height - 6, 10);
         const {x, y} = toScreen({x: point.x + width / 2, y: point.y + height / 2});
         this.markers.fillStyle(0xeef5d3, .85); this.markers.fillCircle(x, y, 17);
         this.markers.lineStyle(2, 0x577951); this.markers.lineBetween(x - 7, y, x + 7, y); this.markers.lineBetween(x, y - 7, x, y + 7);
+        if (sketch) this.purchaseLabels.push(this.add.text(x, y + 32, 'Terrain réservé', {fontFamily:'Arial',fontSize:'20px',color:'#57735b',backgroundColor:'#f7f4e4',padding:{x:10,y:5}}).setOrigin(.5).setDepth(3));
       }
       return;
     }

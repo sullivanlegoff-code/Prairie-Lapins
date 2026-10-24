@@ -69,7 +69,7 @@ export class MeadowCamera {
   private visibleRegions: WorldBounds[] | null = null;
   private pendingRegions: WorldBounds[] | null | undefined;
   get resizing(): boolean { return this.pendingSize !== null; }
-  /** Projected map with a water envelope; it grows with the habitat columns. */
+  /** Projected map with an outer margin; it grows with the habitat columns. */
   readonly bounds = envelope(islandScreen(grid.columns));
   private get viewport() {
     const pad = camera.overviewPadding;
@@ -77,12 +77,16 @@ export class MeadowCamera {
     const i = this.insets ?? {left: pad, right: pad, top: hud + pad, bottom: pad};
     return {x: i.left, y: i.top, width: Math.max(1, this.width - i.left - i.right), height: Math.max(1, this.height - i.top - i.bottom)};
   }
-  private fullIsland(): WorldBounds {return islandScreen(this.columns);}
-  private fitZoom(rect: WorldBounds): number {
-    const v = this.viewport, water = camera.overviewWaterMargin;
-    return Math.min(v.width / (rect.right - rect.left + 2 * water), v.height / (rect.bottom - rect.top + 2 * water));
+  private fullIsland(): WorldBounds {
+    const r = islandScreen(this.columns), m = VISUAL.ground.visualMargin, rim = VISUAL.ground.floatingRim;
+    return {left: r.left - m.left - rim, right: r.right + m.right + rim, top: r.top - m.top - rim,
+      bottom: r.bottom + m.bottom + VISUAL.ground.floatingDepth + rim};
   }
-  /** .4 on large screens; smaller when necessary to fit the full map with water. */
+  private fitZoom(rect: WorldBounds): number {
+    const v = this.viewport, margin = camera.overviewMargin;
+    return Math.min(v.width / (rect.right - rect.left + 2 * margin), v.height / (rect.bottom - rect.top + 2 * margin));
+  }
+  /** .4 on large screens; smaller when necessary to fit the full map with its outer margin. */
   get minimumZoom(): number {return Math.min(camera.minZoom, this.fitZoom(this.fullIsland()));}
   setInsets(insets: ViewInsets | null): void {
     if (this.interacting) {this.pendingInsets=insets;return;}
@@ -180,8 +184,8 @@ export class MeadowCamera {
     const v = this.viewport, dx = (v.x + v.width / 2 - this.width / 2) / this.zoom, dy = (v.y + v.height / 2 - this.height / 2) / this.zoom;
     const halfX = v.width / this.zoom / 2, halfY = v.height / this.zoom / 2;
     const x = this.x + dx, y = this.y + dy;
-    // Keep at least panKeep of the viewport of one land region (owned parcel with its shore) visible on each
-    // axis, or the whole region when it is smaller: the open sea never fills most of the screen. A viewport
+    // Keep at least panKeep of the viewport of one land region (owned parcel with its rim) visible on each
+    // axis, or the whole region when it is smaller: the open sky never fills most of the screen. A viewport
     // larger than the island is not recentred, and pinch anchors survive down to the minimum zoom.
     let nearest: Point | null = null, distance = Infinity;
     for (const region of this.visibleRegions?.length ? this.visibleRegions : [this.fullIsland()]) {

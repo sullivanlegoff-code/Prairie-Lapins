@@ -189,7 +189,7 @@ describe('two extensions, camera and placement',()=>{
   it('extends camera bounds without zoom/focus jumps; defers bounds and orientation changes during gestures',()=>{
     const c=new MeadowCamera();c.resize(844,390);c.recenter();const old={x:c.x,y:c.y,zoom:c.zoom};c.setColumns(9);
     expect({x:c.x,y:c.y,zoom:c.zoom}).toEqual(old);const nine=screenBounds(cellsBounds(0,0,9,VISUAL.grid.rows));expect(c.bounds.right).toBe(nine.right+VISUAL.camera.marginX);
-    c.pan(-10000,0);expect(c.world({x:VISUAL.camera.overviewPadding,y:195}).x).toBeCloseTo(nine.right-(844-2*VISUAL.camera.overviewPadding)*VISUAL.camera.panKeep/c.zoom,9);
+    c.pan(-10000,0);expect(c.world({x:VISUAL.camera.overviewPadding,y:195}).x).toBeCloseTo(nine.right+VISUAL.ground.visualMargin.right+VISUAL.ground.floatingRim-(844-2*VISUAL.camera.overviewPadding)*VISUAL.camera.panKeep/c.zoom,9);
     const far={x:c.x,y:c.y,zoom:c.zoom};c.interaction(true);c.setColumns(6);c.resize(390,844);
     expect({x:c.x,y:c.y,zoom:c.zoom}).toEqual(far);expect(c.width).toBe(844);c.interaction(false);expect(c.width).toBe(390);expect(c.zoom).toBe(old.zoom);
     c.setColumns(9);c.resize(844,390);c.recenter();expect({x:c.x,y:c.y,zoom:c.zoom}).toEqual(old);

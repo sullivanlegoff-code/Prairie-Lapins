@@ -21,22 +21,19 @@ export const VISUAL = {
     sixOffsets: [{x: -49, y: -8}, {x: 0, y: -8}, {x: 49, y: -8}, {x: -49, y: 34}, {x: 0, y: 34}, {x: 49, y: 34}],
     crowdedOffsets: [{x: -50, y: -17}, {x: 0, y: -17}, {x: 50, y: -17}, {x: -25, y: 9}, {x: 25, y: 9}, {x: -48, y: 34}, {x: 48, y: 34}],
   },
-  // Interior textures hold only the rectangular plateau (drawParcelTerrain clips every patch to it). The 5-unit
-  // margin covers its grass strokes' half-width and is 9 whole texels at 1.8, keeping the former texel alignment.
-  // 47.86 MiB at full 3×3, instead of 60.36 MiB with the former shore margins. Raised edges are vector geometry:
-  // their bounds do not enlarge those textures.
-  ground: {margin: {top: 5, right: 5, bottom: 5, left: 5}, maxResolution: 1.8,
-    visualMargin: {top: 16, right: 16, bottom: 128, left: 80}},
-  // Ground → screen projection (src/ui/projection.ts): the island turned θ = 4° (rows rise to the right, columns
-  // lean right) and its depth scaled by q = .84, as in docs/art-references/visuel île avec nouvel angle de caméra.png.
-  projection: {theta: 4, q: .84},
-  camera: {minZoom: .4, maxZoom: 1.65, initialZoom: 1.05, overviewWaterMargin: 80, overviewPadding: 16, frameMargin: 12, focusX: ISLAND.focus, focusY: ISLAND.focus,
-    marginX: 300, marginY: 160, hudHeight: 70, compactHudHeight: 62, portraitHudHeight: 122,
-    // Pan limit: at least this share of the viewport, on each axis, keeps showing owned land or its shore (the
-    // open sea never fills more than two thirds). Below .39 a pinch keeps its anchor down to the minimum zoom,
+  // The grass is one repeated tile; the rim and the hanging rock reach `floatingRim` beyond the plateau on the left,
+  // right and back, and `floatingDepth` below its front (the painted stages are drawn inside these margins).
+  ground: {visualMargin: {top: 16, right: 16, bottom: 128, left: 80}, floatingDepth: 580, floatingRim: 96},
+  // Front three-quarter view: horizontal rows, no rotation, and modest depth compression.
+  // Upright sprites keep their proportions; only their ground anchors follow this projection.
+  projection: {theta: 0, q: .78},
+  camera: {minZoom: .4, maxZoom: 1.65, initialZoom: 1.05, overviewMargin: 80, overviewPadding: 16, frameMargin: 12, focusX: ISLAND.focus, focusY: ISLAND.focus,
+    marginX: 300, marginY: 200, hudHeight: 70, compactHudHeight: 62, portraitHudHeight: 122,
+    // Pan limit: at least this share of the viewport, on each axis, keeps showing owned land or its rim (the
+    // open sky never fills more than two thirds). Below .39 a pinch keeps its anchor down to the minimum zoom,
     // since the HUD shifts the viewport centre by about a tenth of its height.
     panKeep: 1 / 3,
-    // Recentrer includes the raised front and left edges (ground-world units),
-    // never below readableZoom / √(owned parcels), so a small island stays readable and a large one gets an overview.
-    recenterShore: {left: 80, right: 0, top: 0, bottom: 128}, readableZoom: .6},
+    // Existing ground padding retained to preserve camera framing; rock depth is added after projection.
+    // Recenter fits the full rock. readableZoom remains the building-label threshold.
+    recenterRim: {left: 80, right: 0, top: 0, bottom: 128}, readableZoom: .6},
 } as const;

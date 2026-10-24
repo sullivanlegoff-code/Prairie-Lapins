@@ -1014,7 +1014,7 @@ export class GameUI {
     if(s.acquiredParcels.length===PARCEL_IDS.length){this.content.append(node('p',`Île entièrement agrandie · ${ISLAND.maxArea} cases.`));return;}
     const rank=s.acquiredParcels.length,access=stateLevelAccess(s,{family:'extension',rank});
     const cost=extensionPrice(s),selected=this.view?.kind==='extension'?this.view.parcelId:undefined;
-    this.content.append(node('p',s.islandStart?'Choisissez une parcelle voisine, vers le haut ou la droite, sur l’eau ou dans la liste. Chaque achat ajoute neuf cases sans déplacer vos objets.':'Choisissez librement une parcelle sur l’eau ou dans la liste. Chaque achat ajoute neuf cases sans déplacer vos objets.'));
+    this.content.append(node('p',s.islandStart?'Votre île s’agrandit toujours dans le même ordre : la prochaine parcelle est indiquée au bord de l’île et dans la liste. Chaque achat ajoute seize cases sans déplacer vos objets.':'Choisissez librement une parcelle au bord de l’île ou dans la liste. Chaque achat ajoute seize cases sans déplacer vos objets.'));
     this.content.append(node('p',`Prochaine extension : ${rank} · ${cost} pattes`));
     if(access.locked)this.content.append(node('p',`Niveau ${access.requiredLevel} requis · niveau du joueur actuel : ${access.currentLevel}`,'reason'));
     const purchasable=purchasableParcels(s);

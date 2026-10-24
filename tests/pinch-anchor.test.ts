@@ -40,7 +40,7 @@ it('follows the moving midpoint at equal finger distance, including staggered po
   expect(c.world({x:430,y:185}).x).toBeCloseTo(old.x,10);
   expect(c.world({x:430,y:185}).y).toBeCloseTo(old.y,10);
 });
-it('does not jump through the water gap between two separate owned parcels', () => {
+it('does not jump through the sky gap between two separate owned parcels', () => {
   const c=new MeadowCamera();c.resize(390,844);c.zoom=1.65;
   const regions=[{left:120,right:648,top:120,bottom:564},{left:1176,right:1704,top:1008,bottom:1452}];
   c.setVisibleRegions(regions);c.x=912;c.y=786;c.clamp();

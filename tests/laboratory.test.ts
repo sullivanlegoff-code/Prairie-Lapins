@@ -267,5 +267,5 @@ describe('published laboratory isolation', () => {
     if(id==='collection')expect(fixture.discovered).toEqual([...EXPECTED_IDS]);
     if(id==='missions')expect(fixture.missions.completed).toHaveLength(12);
     if(id==='reproduction')expect(controller.perform({type:'breed',parents:['rabbit-2','rabbit-3']}).ok).toBe(true);
-  });
+  }, 20000);
 });

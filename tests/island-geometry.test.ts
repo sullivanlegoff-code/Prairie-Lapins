@@ -32,7 +32,7 @@ describe('island geometry source (4 × 4 parcels)',()=>{
     const camera=new MeadowCamera();
     expect([camera.x,camera.y]).toEqual([120+6*176,120+6*148]);
     const map=screenBounds({left:120,right:120+2112,top:120,bottom:120+1776});
-    expect(camera.bounds).toEqual({left:map.left-300,right:map.right+300,top:map.top-160,bottom:map.bottom+160});
+    expect(camera.bounds).toEqual({left:map.left-300,right:map.right+300,top:map.top-200,bottom:map.bottom+200});
   });
   it('maps every cell to its 4 × 4 parcel, and legacy cells to their 3 × 3 parcel',()=>{
     const expected=(x:number,y:number,size:number):ParcelId|null=>{

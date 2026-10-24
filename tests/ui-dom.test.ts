@@ -1132,14 +1132,14 @@ describe('habitat upgrade level controls',()=>{
 });
 
 describe('extension rank level controls',()=>{
- it('lists only the parcels a new southwest island can buy, then the newly adjacent ones',()=>{
+ it('lists only the next parcel of the fixed order, then the following one',()=>{
   const initial=soloStart(0);initial.pattes=5000;initial.progression={totalXp:cumulativeLevelXp(4),rewardedThroughLevel:4};const {ui,controller}=setup(initial);
   const choices=()=>[...panel().querySelectorAll('button')].map(b=>b.textContent).filter(t=>t?.startsWith('Voir '));
-  ui.open({kind:'extension'});expect(choices()).toEqual(['Voir Ouest','Voir Sud']);expect(panel().textContent).toContain('vers le haut ou la droite');
-  ui.open({kind:'extension',parcelId:'center'});expect([...panel().querySelectorAll('button')].some(b=>b.textContent?.startsWith('Acheter'))).toBe(false);
-  ui.open({kind:'extension',parcelId:'west'});button('Acheter Ouest · 500 pièces').click();button('Confirmer',document.getElementById('game-dialog')!).click();
-  expect(state(controller).acquiredParcels).toEqual(['southwest','west']);
-  ui.open({kind:'extension'});expect(choices()).toEqual(['Voir Centre','Voir Nord-ouest','Voir Sud']);
+  ui.open({kind:'extension'});expect(choices()).toEqual(['Voir Sud']);expect(panel().textContent).toContain('toujours dans le même ordre');
+  ui.open({kind:'extension',parcelId:'west'});expect([...panel().querySelectorAll('button')].some(b=>b.textContent?.startsWith('Acheter'))).toBe(false);
+  ui.open({kind:'extension',parcelId:'south'});button('Acheter Sud · 500 pièces').click();button('Confirmer',document.getElementById('game-dialog')!).click();
+  expect(state(controller).acquiredParcels).toEqual(['southwest','south']);
+  ui.open({kind:'extension'});expect(choices()).toEqual(['Voir Ouest']);
  });
  it('keeps geographic choices consultable and updates the next tier immediately without XP',()=>{
   const initial=createCentreStartGame(0);initial.pattes=5000;initial.progression={totalXp:cumulativeLevelXp(4)-10,rewardedThroughLevel:3};const {ui,controller}=setup(initial);

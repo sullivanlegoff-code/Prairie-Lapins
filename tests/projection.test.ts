@@ -14,16 +14,16 @@ describe('ground ↔ screen projection', () => {
     }
     const r = cellsBounds(0, 8, 4, 12); expect(identity.screenBounds(r)).toEqual(r);
   });
-  it('uses the chosen oblique view in the game, pivoting on the map centre', () => {
-    expect(VISUAL.projection).toEqual({theta: 4, q: .84});
+  it('uses the chosen front three-quarter view in the game, pivoting on the map centre', () => {
+    expect(VISUAL.projection).toEqual({theta: 0, q: .78});
     expect(PROJECTION.identity).toBe(false);
     expect(toScreen(pivot)).toEqual(pivot);
     for (const p of [gridPoint(0, 8), finePoint(13, 41)]) { const back = toGround(toScreen(p)); expect(back.x).toBeCloseTo(p.x, 9); expect(back.y).toBeCloseTo(p.y, 9); }
-    // The camera envelope is the projected map with its water margins.
+    // The camera envelope is the projected map with its outer margins.
     const map = screenBounds(cellsBounds(0, 0, 12, 12));
-    expect(new MeadowCamera().bounds).toEqual({left: map.left - 300, right: map.right + 300, top: map.top - 160, bottom: map.bottom + 160});
+    expect(new MeadowCamera().bounds).toEqual({left: map.left - 300, right: map.right + 300, top: map.top - 200, bottom: map.bottom + 200});
   });
-  it('round-trips and keeps fine cells exact for the active oblique view (θ = 4°, q = .84)', () => {
+  it('round-trips and keeps fine cells exact for the active front view (θ = 0°, q = .78)', () => {
     const p = PROJECTION;
     expect(p.identity).toBe(false);
     for (let y = 0; y < 48; y += 5) for (let x = 0; x < 48; x += 7) {
@@ -32,11 +32,12 @@ describe('ground ↔ screen projection', () => {
       expect(fineCell(p.toGround(p.toScreen(centre)))).toEqual({x, y});
     }
   });
-  it('tilts the ground as measured on the reference: rows rise to the right, columns lean right, depth .84', () => {
+  it('keeps rows horizontal and columns vertical, with full width and depth .78', () => {
     const p = PROJECTION, a = p.toScreen(gridPoint(0, 0)), right = p.toScreen(gridPoint(1, 0)), down = p.toScreen(gridPoint(0, 1));
-    expect(Math.atan2(a.y - right.y, right.x - a.x) * 180 / Math.PI).toBeCloseTo(4, 9);
-    expect(down.x - a.x).toBeGreaterThan(0);
-    expect(Math.hypot(down.x - a.x, down.y - a.y)).toBeCloseTo(148 * .84, 9);
+    expect(right.y).toBe(a.y);
+    expect(right.x - a.x).toBe(176);
+    expect(down.x).toBe(a.x);
+    expect(down.y - a.y).toBeCloseTo(148 * .78, 9);
     expect(p.toScreen(pivot)).toEqual(pivot);
   });
   it('bounds contain every projected corner, and ground bounds of a view cover its cells', () => {

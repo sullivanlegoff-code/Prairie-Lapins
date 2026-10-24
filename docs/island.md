@@ -1,3 +1,5 @@
+> **État actuel :** l’île est une île volante peinte en neuf états, agrandie dans un ordre fixe : voir [island-stages.md](island-stages.md). Le rendu eau/sable décrit plus bas est historique.
+
 > Bilan historique v5. La livraison actuelle v6 utilise neuf parcelles et douze objets extérieurs : voir [règles et migration v6](land-v6.md). Les commandes intérieures et les deux extensions en bandes décrites ici ont été remplacées.
 
 # Île chaleureuse — prévisualisation Décorations

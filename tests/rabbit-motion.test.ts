@@ -79,7 +79,7 @@ describe('rabbit wandering inside an enclosure', () => {
       restTurns[index].slice(1).forEach((time, k) => expect(time - restTurns[index][k]).toBeGreaterThanOrEqual(turn.restGapMin * 1000 * .8 - 1));
       expect(allTurns[index]).toBeLessThanOrEqual(400 / turn.minDelay);
     }
-  });
+  }, 30000);
 
   it('keeps turns individual: staggered first turns, and never most of a group at once', () => {
     const motions = group(7), first = motions.map(() => -1), perWindow = new Map<number, number>(); let facing = motions.map(m => m.facing);

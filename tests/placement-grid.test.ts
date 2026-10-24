@@ -37,7 +37,7 @@ describe('contextual placement grid', () => {
     expect(points.some(p => p.x === 0 && p.y === 48)).toBe(true);
     expect(candidate).toEqual(original);
   });
-  it('never draws context over water, including an L bay and detached legacy land', () => {
+  it('never draws context over sky, including an L bay and detached legacy land', () => {
     for (const acquiredParcels of [['southwest'], ['southwest', 'west', 'south'], ['northwest', 'southeast']] as const) {
       const s = {acquiredParcels: [...acquiredParcels]};
       for (const active of [{x: 14, y: 30, width: 4, height: 4}, {x: 12, y: 12, width: 4, height: 4}]) {

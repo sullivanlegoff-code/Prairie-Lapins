@@ -1,13 +1,14 @@
 import {describe,it,expect} from 'vitest';
 import {MeadowCamera,gridPoint,type WorldBounds} from '../src/ui/gestures';
 import {screenBounds} from '../src/ui/projection';
+import {VISUAL} from '../src/config/visual';
 // The scene frames projected land (MeadowScene.overview): the same ground rectangles, through the game projection.
 const full:WorldBounds=screenBounds({left:120,right:2232,top:120,bottom:1896});
 const center:WorldBounds=screenBounds({left:824,right:1528,top:712,bottom:1304});
 const partial:WorldBounds=screenBounds({left:824,right:2232,top:120,bottom:1304});
 describe('overview camera, presentation only',()=>{
  for(const [width,height] of [[852,393],[390,844]]) for(const [name,rect] of [['centre',center],['partielle',partial],['complète',full]] as const){
-  it(`frames ${name} with water at ${width}×${height}`,()=>{
+  it(`frames ${name} with sky at ${width}×${height}`,()=>{
    const c=new MeadowCamera();c.resize(width,height);c.overview(rect);
    const a=c.screen({x:rect.left-80,y:rect.top-80}),b=c.screen({x:rect.right+80,y:rect.bottom+80});
    const hud=width<height?122:62;
@@ -18,7 +19,7 @@ describe('overview camera, presentation only',()=>{
  }
  it('retains .4 baseline on large screens; adapts minimum on compact screens',()=>{
   const c=new MeadowCamera();c.resize(2000,1200);expect(c.minimumZoom).toBe(.4);
-  c.resize(852,393);expect(c.minimumZoom).toBeCloseTo(Math.min(820/(full.right-full.left+160),299/(full.bottom-full.top+160)));c.scale(.001,{x:426,y:220});expect(c.zoom).toBe(c.minimumZoom);
+  c.resize(852,393);expect(c.minimumZoom).toBeCloseTo(Math.min(820/(full.right-full.left+160+80+16+2*VISUAL.ground.floatingRim),299/(full.bottom-full.top+160+16+128+VISUAL.ground.floatingDepth+2*VISUAL.ground.floatingRim)));c.scale(.001,{x:426,y:220});expect(c.zoom).toBe(c.minimumZoom);
   c.scale(1000,{x:426,y:220});expect(c.zoom).toBe(1.65);
  });
  it('fits around an open panel without changing map geometry',()=>{
@@ -42,7 +43,8 @@ describe('overview camera, presentation only',()=>{
   expect(c.screen(gridPoint(6,6)).y).toBeCloseTo(393/2+62/2);
  });
  it('does not zoom in when zooming out after an orientation change',()=>{
-  const c=new MeadowCamera();c.resize(852,330);c.overview(full);const old=c.zoom;
+  // The front view has a shorter projected map: use a short enough landscape to cross the portrait minimum.
+  const c=new MeadowCamera();c.resize(852,300);c.overview(full);const old=c.zoom;
   c.resize(390,844);expect(c.minimumZoom).toBeGreaterThan(old);c.scale(.9,{x:195,y:400});expect(c.zoom).toBe(old);
  });
  it('defers orientation and framing changes until fingers lift',()=>{
