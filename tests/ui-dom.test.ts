@@ -61,7 +61,7 @@ function setup(initial = createGame(0)) {
   const data = new Map<string, string>([[SAVE_KEY, encodeGame(initial)]]);
   const storage: SaveStorage = {getItem: key => data.get(key) ?? null, setItem: (key, value) => { data.set(key, value); }};
   const clock = {now: 0}; const controller = new GameController(storage, () => clock.now, () => .65);
-  const scene = {setRabbitPurchase: vi.fn(), overview: vi.fn(), focusDecoration: vi.fn(), setExpansion: vi.fn(), setPlacement: vi.fn(), setArrangement: vi.fn(), setDecorationSelection: vi.fn(), setPhoto: vi.fn(), reactToFeed: vi.fn(), recenter: vi.fn()} as unknown as MeadowScene;
+  const scene = {setRabbitPurchase: vi.fn(), overview: vi.fn(), focusDecoration: vi.fn(), setExpansion: vi.fn(), setPlacement: vi.fn(), setArrangement: vi.fn(), setDecorationSelection: vi.fn(), setPhoto: vi.fn(), reactToFeed: vi.fn(), recenter: vi.fn(), focusBuilding: vi.fn()} as unknown as MeadowScene;
   const prefs = new PreferenceStore('test-ui'); prefs.set({muted: true, tutorial: false});
   const ui = new GameUI(controller, scene, () => clock.now, prefs);
   const disposeSave = mountSavePanel(controller, () => ui.onReplacement());
@@ -69,6 +69,17 @@ function setup(initial = createGame(0)) {
   return {controller, ui, clock, storage, data, scene, prefs};
 }
 const panel = () => document.getElementById('panel-content')!;
+const breeding = () => document.getElementById('breeding-dialog') as HTMLDialogElement;
+/** A row of the pairing window: slot 0 is Lapin 1 (left), slot 1 is Lapin 2 (right); `name` is a name prefix or an index. */
+const breedingRow = (slot: 0 | 1, name: string | number) => {
+  const rows = [...breeding().querySelectorAll('.breeding-column')[slot].querySelectorAll<HTMLButtonElement>('button.breeding-row')];
+  return typeof name === 'number' ? rows[name] : rows.find(r => r.querySelector('strong')?.textContent?.startsWith(name))!;
+};
+/** Croiser in the nest panel, one rabbit in each list, then the red Croiser. */
+function crossFromNest(a: string | number, b: string | number, launch = true) {
+  button('Croiser').click(); breedingRow(0, a).click(); breedingRow(1, b).click();
+  if (launch) button('Croiser', breeding()).click();
+}
 /**
  * Every Common but Terre bought and housed (Paille and Neige in the first enclosure, Bélier Gris, Feu and Volant in the second, the third and fourth empty), a farm,
  * a nest, a nursery, affection 2 everywhere and a pending guarantee: the state the retired docs/test-saves/collection-ready-v2.json described, written as v16 and without Terre.
@@ -358,19 +369,20 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     expect(button('Préparer cette paire au nid', recipe()).disabled).toBe(true);
     button('Voir le parent n° 3 à nourrir', recipe()).click(); expect(panel().textContent).toContain('Affection 2 / 20');
     ui.select({kind: 'building', id: 'building-4'});
-    const parentCard = (name: string) => [...panel().querySelectorAll('article')].find(c => c.querySelector('h3')?.textContent === name)!;
-    button('Parent A', parentCard('Lapin Feu')).click(); button('Parent B', parentCard('Lapin Neige')).click();
-    expect(panel().querySelector('details')!.open).toBe(true);
-    expect(panel().querySelector('details')!.textContent).toContain(`feu · Commun : ${shareLabel(40, 80 + 20 * Object.keys(rareAdditions(['feu', 'neige'], 2, 2)).length)}`);
-    expect(panel().querySelector('details')!.textContent).not.toContain('feu + neige');
+    crossFromNest('Lapin Feu', 'Lapin Neige', false);
+    const odds = () => breeding().querySelector('.breeding-odds')!.textContent;
+    expect(breeding().querySelector('.breeding-odds')).toBeNull(); button('Probabilités', breeding()).click();
+    expect(odds()).toContain(`feu · Commun : ${shareLabel(40, 80 + 20 * Object.keys(rareAdditions(['feu', 'neige'], 2, 2)).length)}`);
+    expect(odds()).not.toContain('feu + neige');
     for (const id of ['rabbit-3', 'rabbit-11']) for (let n = 0; n < 2; n++) expect(controller.perform({type: 'feed', id}).ok).toBe(true);
-    expect(panel().querySelector('details')!.textContent).toContain(`feu + neige · Rare : ${shareLabel(20, 100 + 20 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length)}`);
-    expect(panel().querySelector('details')!.textContent).toContain(`neige · Commun : ${shareLabel(40, 100 + 20 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length)}`);
-    ui.open({kind: 'recipes'}); expect(recipe().textContent).toContain(`Recette possible, résultat non garanti · ${shareLabel(20, 100 + 20 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length)}`);
+    expect(odds()).toContain(`feu + neige · Rare : ${shareLabel(20, 100 + 20 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length)}`);
+    expect(odds()).toContain(`neige · Commun : ${shareLabel(40, 100 + 20 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length)}`);
+    breeding().close(); ui.open({kind: 'recipes'}); expect(recipe().textContent).toContain(`Recette possible, résultat non garanti · ${shareLabel(20, 100 + 20 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length)}`);
     const before = state(controller), perform = vi.spyOn(controller, 'perform');
     button('Préparer cette paire au nid', recipe()).click(); expect(perform).not.toHaveBeenCalled(); expect(state(controller)).toEqual(before);
-    expect(button('Lancer la reproduction · gratuit').disabled).toBe(false);
-    expect(panel().textContent).toContain('Parent A : Lapin Neige · Parent B : Lapin Feu');
+    // The shortcut opens the pairing window with the recipe's pair already chosen, nothing launched.
+    expect(breeding().open).toBe(true); expect(button('Croiser', breeding()).disabled).toBe(false);
+    expect(breedingRow(0, 'Lapin Neige').getAttribute('aria-pressed')).toBe('true'); expect(breedingRow(1, 'Lapin Feu').getAttribute('aria-pressed')).toBe('true');
   });
   it('keeps a guaranteed new rare hidden through reproduction and growth, then discovers it on manual welcome', () => {
     const initial = collectionReady();initial.progression={totalXp:cumulativeLevelXp(6),rewardedThroughLevel:6};
@@ -380,8 +392,8 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     ui.open({kind: 'recipes'});
     const recipe = [...panel().querySelectorAll('article')].find(c => c.textContent?.includes('feu + neige · Rare'))!;
     expect(recipe.textContent).toContain('Résultat garanti pour cette recette · 100 %');
-    button('Préparer cette paire au nid', recipe).click(); button('Lancer la reproduction · gratuit').click();
-    expect(panel().textContent).not.toContain('Lapin Feu Glacé'); expect(state(controller).pityFailures).toBe(0);
+    button('Préparer cette paire au nid', recipe).click(); button('Croiser', breeding()).click();
+    expect(breeding().open).toBe(false); expect(panel().textContent).not.toContain('Lapin Feu Glacé'); expect(state(controller).pityFailures).toBe(0);
     const saved = decodeGame(data.get(SAVE_KEY)!); expect(saved.ok && saved.state.buildings.find(b => b.breeding)?.breeding?.birth).toMatchObject({species: 'feu-glace', guaranteed: true, reservedDiscovery: true});
     clock.now += 20 * 60_000; controller.refresh();button('Envoyer dans la nurserie').click(); ui.select({kind: 'building', id: 'building-5'});
     expect(panel().textContent).not.toContain('Lapin Feu Glacé'); expect(panel().querySelector('.timer')!.textContent).toBe('30 min 0 s');
@@ -405,9 +417,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     expect(button('Récolter 20 herbes').disabled).toBe(true); clock.now += 5 * 60_000; controller.refresh(); button('Récolter 20 herbes').click();
     expect(state(controller).grass).toBe(516);
     ui.select({kind: 'building', id: find('nest').id});
-    const parentCard = (name: string) => [...panel().querySelectorAll<HTMLElement>('.card')].find(c => c.querySelector('h3')?.textContent === name)!;
-    button('Parent A', parentCard('Lapin Paille')).click(); button('Parent B', parentCard('Lapin Neige')).click();
-    button('Lancer la reproduction · gratuit').click(); expect(find('nest').breeding?.birth.species).toBe('icy'); expect(panel().textContent).not.toContain('Icy');
+    crossFromNest('Lapin Paille', 'Lapin Neige'); expect(find('nest').breeding?.birth.species).toBe('icy'); expect(panel().textContent).not.toContain('Icy');
     clock.now += 20 * 60_000; controller.refresh();ui.select({kind:'building',id:find('nest').id});button('Envoyer dans la nurserie').click(); ui.select({kind: 'building', id: find('nursery').id});
     expect(panel().textContent).toContain('secrète'); expect(panel().textContent).not.toContain('Icy');
     ui.open({kind: 'collection'}); expect(panel().textContent).not.toContain('Icy');
@@ -537,8 +547,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     ui.select({kind: 'building', id: farm.id}); button('Compléter · 0 pièces + 1 cœur').click(); confirm(); expect(state(controller).buildings.find(b => b.id === farm.id)!.order).not.toBeNull();
     controller.perform({type: 'feed', id: 'rabbit-2'}); controller.perform({type: 'feed', id: 'rabbit-3'});
     const nest = state(controller).buildings.find(b => b.kind === 'nest')!; ui.select({kind: 'building', id: nest.id});
-    const cards = [...panel().querySelectorAll('article')]; button('Parent A', cards[0]).click(); button('Parent B', panel().querySelectorAll('article')[1]).click();
-    expect(panel().textContent).not.toContain('Compléter');button('Lancer la reproduction · gratuit').click();
+    expect(panel().textContent).not.toContain('Compléter'); crossFromNest(0, 1);
     expect(state(controller).buildings.find(b => b.id === nest.id)!.breeding).not.toBeNull();
     button('Terminer · 4 cœurs').click(); confirm(); expect(panel().textContent).not.toMatch(/Frisket|Icy/);button('Envoyer dans la nurserie').click();
     clock.now = 1; const nursery = state(controller).buildings.find(b => b.kind === 'nursery')!;
@@ -815,6 +824,44 @@ describe('new collection and exact-species recipe UI', () => {
     button('Préparer cette paire au nid',card).click(); expect(document.getElementById('panel-title')!.textContent).toBe('Nid');
     expect(state(controller).buildings.find(b=>b.kind==='nest')!.breeding).toBeNull();
     expect(state(controller)).toEqual(before);
+  });
+});
+
+describe('pairing window and heart bubble', () => {
+  const nestOf = (s: GameState) => s.buildings.find(b => b.kind === 'nest')!;
+  it('opens from Croiser with every rabbit on both sides and greys a pick in the other list', () => {
+    const initial = scenarioState('reproduction', 0), {ui} = setup(initial);
+    ui.select({kind: 'building', id: nestOf(initial).id}); button('Croiser').click();
+    expect(breeding().open).toBe(true);
+    for (const slot of [0, 1] as const) expect(breeding().querySelectorAll('.breeding-column')[slot].querySelectorAll('button.breeding-row')).toHaveLength(initial.rabbits.length);
+    expect(button('Croiser', breeding()).disabled).toBe(true);
+    breedingRow(0, 0).click();
+    expect(breedingRow(0, 0).getAttribute('aria-pressed')).toBe('true'); expect(breedingRow(1, 0).disabled).toBe(true);
+    expect(breedingRow(1, 0).textContent).toContain('Déjà choisi comme lapin 1');
+    breedingRow(1, 1).click(); expect(breedingRow(0, 1).disabled).toBe(true); expect(button('Croiser', breeding()).disabled).toBe(false);
+    // A second touch on a chosen rabbit releases it, in both lists.
+    breedingRow(0, 0).click(); expect(breedingRow(0, 0).getAttribute('aria-pressed')).toBe('false'); expect(breedingRow(1, 0).disabled).toBe(false);
+    expect(button('Croiser', breeding()).disabled).toBe(true);
+    const close = breeding().querySelector<HTMLButtonElement>('button.breeding-close')!; expect(close.getAttribute('aria-label')).toBe('Fermer le croisement');
+    close.click(); expect(breeding().open).toBe(false);
+  });
+  it('launches from the red Croiser, closes the window, then sends the baby with the heart and follows it', () => {
+    const initial = scenarioState('reproduction', 0), {controller, ui, clock, scene} = setup(initial), nest = nestOf(initial);
+    const nursery = initial.buildings.find(b => b.kind === 'nursery')!;
+    ui.select({kind: 'building', id: nest.id}); crossFromNest(0, 1);
+    expect(breeding().open).toBe(false); expect(nestOf(state(controller)).breeding).not.toBeNull();
+    // Before the end the heart only opens the nest panel.
+    ui.select({kind: 'birth', id: nest.id}); expect(nestOf(state(controller)).breeding).not.toBeNull(); expect(scene.focusBuilding).not.toHaveBeenCalled();
+    clock.now += 20 * 60_000; controller.refresh();
+    ui.select({kind: 'birth', id: nest.id});
+    expect(nestOf(state(controller)).breeding).toBeNull(); expect(babyOf(state(controller).buildings.find(b => b.id === nursery.id)!)).not.toBeNull();
+    expect(scene.focusBuilding).toHaveBeenCalledWith(nursery.id);
+  });
+  it('keeps the baby at the nest and explains why when the nursery is full', () => {
+    const initial = scenarioState('manualBreeding', 3600000), {controller, ui, clock, scene} = setup(initial); clock.now = 7200000; controller.refresh();
+    const nest = nestOf(initial); ui.select({kind: 'birth', id: nest.id});
+    expect(nestOf(state(controller)).breeding).not.toBeNull(); expect(scene.focusBuilding).not.toHaveBeenCalled();
+    expect(document.getElementById('panel-title')!.textContent).toBe('Nid'); expect(panel().textContent).toContain('nurserie est pleine');
   });
 });
 

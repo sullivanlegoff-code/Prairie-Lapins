@@ -81,12 +81,14 @@ export class GameUI {
   private toast = document.getElementById('toast')!;
   private tutorial = document.getElementById('tutorial')!;
   private dialog = document.getElementById('game-dialog') as HTMLDialogElement;
+  private breedingDialog = document.getElementById('breeding-dialog') as HTMLDialogElement;
+  private breedingNestId: string | null = null;
   private gate = new ActionGate();
   private sounds: Sounds;
   private toastTimer = 0;
   private frame = 0;
   private abort = new AbortController();
-  private oddsOpen = true;
+  private oddsOpen = false;
   private collectionFilter: CollectionFilter = {};
   private recipeDetails = new Set<SpeciesId>();
   private recipeClosed = new Set<SpeciesId>();
@@ -143,6 +145,7 @@ export class GameUI {
     window.addEventListener('blur', () => { this.interactionPointers.clear(); this.flushRender(); }, options);
     document.getElementById('tutorial-toggle')!.addEventListener('click', () => { preferences.set({tutorial: !preferences.value.tutorial || preferences.value.tutorialDone, tutorialDone: false, guideConfigured: true}); this.renderPreferences(); this.renderTutorial(); }, options);
     this.dialog.addEventListener('cancel', () => { this.dialog.replaceChildren(); }, options);
+    this.breedingDialog.addEventListener('close', () => { this.breedingNestId = null; this.breedingDialog.replaceChildren(); }, options);
     this.unsubscribe = controller.subscribe(snapshot => {
       const replaced = this.snapshot && snapshot.generation !== this.snapshot.generation;
       this.snapshot = snapshot;
@@ -352,6 +355,7 @@ export class GameUI {
     }
     if (selection.kind === 'income') { this.execute({type: 'collectIncome', id: selection.id}, value => `+ ${value} pattes`); return; }
     if (selection.kind === 'grass') { this.execute({type: 'collectOrder', id: selection.id}, value => `+ ${value} herbes`); return; }
+    if (selection.kind === 'birth') { this.sendBirth(selection.id); return; }
     // A ready nursery bubble opens its ordinary actions, including during arrangement.
     if (this.arranging && selection.kind === 'building' && this.snapshot.state?.buildings.find(b => b.id === selection.id)?.kind !== 'enclosure') {
       this.open({kind: 'building', id: selection.id}); return;
@@ -369,6 +373,7 @@ export class GameUI {
     if (passive && this.interactionActive()) { this.pendingRender = true; return; }
     this.pendingRender = false;
     this.renderTutorial();
+    if (this.breedingDialog.open) this.renderBreeding();
     const available = this.snapshot.state ? availableMissionRewards(this.snapshot.state) : 0;
     const badge = document.getElementById('missions-badge')!;
     badge.hidden = !available; badge.textContent = String(available);
@@ -831,36 +836,79 @@ export class GameUI {
     }
     if (!s.buildings.some(b => b.kind === 'nursery')) { this.workState('blocked', 'Placez la nurserie offerte avant de lancer une reproduction.'); this.button(this.content, 'Placer gratuitement la nurserie', () => this.beginPlacement('nursery',undefined,undefined,true)); return; }
     this.workState('free', 'Choisissez deux parents distincts, chacun d’affection 2 minimum. Le lancement est gratuit.');
-    for (let i = 0; i < 2; i++) if (this.parents[i] && !s.rabbits.some(r => r.id === this.parents[i])) this.parents[i] = null;
-    const selected = this.parents.map(id => s.rabbits.find(r => r.id === id));
-    this.content.append(node('p', `Parent A : ${selected[0] ? SPECIES[selected[0].species].name : 'à choisir'} · Parent B : ${selected[1] ? SPECIES[selected[1].species].name : 'à choisir'}`));
     this.content.append(node('p', 'Gratuit · 20 minutes de reproduction, puis transfert manuel et croissance en nurserie.'));
+    this.button(this.content, 'Croiser', () => this.openBreeding(id));
     this.content.append(node('p', 'La reproduction est possible dès affection 2 chez chacun des deux parents. Chaque recette possède ses propres conditions ; les résultats inadmissibles sont exclus. Les conditions détaillées sont visibles dans le carnet une fois la recette connue.', 'small'));
     this.button(this.content, 'Carnet de reproduction', () => this.open({kind: 'recipes'}), null, true);
-    if (selected[0] && selected[1]) {
-      const texts = oddsTexts(oddsView(s, selected[0].species, selected[1].species, selected[0].affection, selected[1].affection));
-      this.content.append(node('p', texts.summary));
-      const details = node('details'); details.open = this.oddsOpen; details.append(node('summary', 'Probabilités de cette reproduction'));
-      for (const line of texts.excluded) this.content.append(node('p', line, 'reason'));
-      for (const line of texts.lines) details.append(node('p', line));
-      details.addEventListener('toggle', () => { if (details.isConnected) this.oddsOpen = details.open; }); this.content.append(details);
-      this.content.append(node('p', texts.guarantee, 'badge'));
-    }
     this.content.append(node('p', `Garantie : ${s.pityFailures}/9 échecs admissibles. Après neuf échecs, la tentative admissible suivante garantit une espèce non découverte parmi les résultats ordinaires explicitement éligibles à la garantie et admissibles à cette paire, à parts égales s’il y en a plusieurs ; les recettes à probabilité fixe n’en font pas partie. Un résultat inédit éligible à la garantie réservé remet le compteur à zéro ; la découverte n’est enregistrée qu’à l’accueil.`, 'small'));
-    let reason: string | null = selected[0] && selected[1] ? (rabbitAvailability(s, selected[0].id, this.now()) ?? rabbitAvailability(s, selected[1].id, this.now())) : 'Choisissez deux parents différents.';
-    if(selected[0] && selected[1] && !oddsView(s,selected[0].species,selected[1].species,selected[0].affection,selected[1].affection).possible)reason=REFUSALS.NO_BREEDING_RESULT;
-    if (this.parents[0] && this.parents[0] === this.parents[1]) reason = REFUSALS.SAME_PARENT;
-    this.button(this.content, 'Lancer la reproduction · gratuit', () => {
-      if (this.parents[0] && this.parents[1]) this.execute({type: 'breed', parents: [this.parents[0], this.parents[1]]}, 'Reproduction lancée. Le résultat reste une surprise !');
-    }, reason);
     if (s.buildings.some(b => nurseryFull(b))) this.content.append(node('p', 'La nurserie est pleine : le prochain lapereau attendra au nid si nécessaire.', 'small'));
-    this.content.append(node('h3', 'Choisir les parents'));
-    for (const r of s.rabbits) {
-      const card = this.rabbitCard(s, r.id); card.append(node('p', `${this.enclosureName(s, r.enclosureId)} · ${rabbitAvailability(s, r.id, this.now()) ?? 'Disponible'}`, 'small'));
-      const actions = node('div', '', 'tabs');
-      for (const slot of [0, 1] as const) this.button(actions, `${this.parents[slot] === r.id ? '✓ ' : ''}Parent ${slot === 0 ? 'A' : 'B'}`, () => { this.parents[slot] = r.id; this.render(); }, rabbitAvailability(s, r.id, this.now()) ?? (this.parents[1 - slot] === r.id ? 'Déjà choisi.' : null), true);
-      card.append(actions); this.content.append(card);
+  }
+  /** Heart bubble over a finished nest: the baby goes straight to the nursery and the camera follows it there. */
+  private sendBirth(nestId: string): void {
+    const s = this.snapshot.state, job = s?.buildings.find(b => b.id === nestId)?.breeding, nursery = s?.buildings.find(b => b.kind === 'nursery');
+    if (!s || !job) return;
+    // Anything that would refuse the transfer is explained in the nest panel instead.
+    if (!nursery || nurseryFull(nursery) || job.endsAt > this.now()) { this.open({kind: 'building', id: nestId}); return; }
+    this.execute({type: 'transferBirth', id: nestId, birthId: job.birth.id}, 'Lapereau envoyé dans la nurserie. Les parents retrouvent leurs habitats.', () => this.scene.focusBuilding(nursery.id));
+  }
+  /** The pairing window: Lapin 1 on the left, Lapin 2 on the right, the shared tools between, Croiser below. */
+  private openBreeding(nestId: string): void {
+    this.breedingNestId = nestId; this.renderBreeding();
+    if (!this.breedingDialog.open) this.breedingDialog.showModal();
+  }
+  private closeBreeding(): void {
+    this.breedingNestId = null;
+    if (this.breedingDialog.open) this.breedingDialog.close();
+    this.breedingDialog.replaceChildren();
+  }
+  private renderBreeding(): void {
+    const s = this.snapshot.state, nest = s?.buildings.find(b => b.id === this.breedingNestId && b.kind === 'nest');
+    if (!s || !nest || nest.breeding) { this.closeBreeding(); return; }
+    for (let i = 0; i < 2; i++) if (this.parents[i] && !s.rabbits.some(r => r.id === this.parents[i])) this.parents[i] = null;
+    const selected = this.parents.map(id => s.rabbits.find(r => r.id === id));
+    const scroll = [...this.breedingDialog.querySelectorAll<HTMLElement>('.breeding-list')].map(list => list.scrollTop);
+    const header = node('div', '', 'breeding-header');
+    header.append(node('h2', 'Choisir les parents', 'breeding-badge'));
+    header.lastElementChild!.id = 'breeding-title';
+    const close = this.button(header, '×', () => this.closeBreeding(), null, true); close.classList.add('icon', 'breeding-close'); close.setAttribute('aria-label', 'Fermer le croisement');
+    const columns = node('div', '', 'breeding-columns');
+    const column = (slot: 0 | 1) => {
+      const box = node('section', '', 'breeding-column'), list = node('div', '', 'breeding-list');
+      box.append(node('h3', `Lapin ${slot + 1}`));
+      for (const r of s.rabbits) {
+        const busy = rabbitAvailability(s, r.id, this.now()), other = this.parents[1 - slot] === r.id, chosen = this.parents[slot] === r.id;
+        const row = node('button', '', `breeding-row${chosen ? ' selected' : ''}`); row.type = 'button';
+        row.disabled = !!busy || other; row.setAttribute('aria-pressed', String(chosen));
+        const text = node('span', '', 'breeding-row-text');
+        text.append(node('strong', r.name ?? SPECIES[r.species].name), node('span', r.name ? SPECIES[r.species].name : `Affection ${r.affection}`));
+        text.append(node('small', other ? `Déjà choisi comme lapin ${2 - slot}` : busy ?? `${this.enclosureName(s, r.enclosureId)} · affection ${r.affection}`));
+        row.append(avatar(r.species), text);
+        row.addEventListener('click', () => { if (row.disabled) return; this.parents[slot] = chosen ? null : r.id; this.renderBreeding(); });
+        list.append(row);
+      }
+      box.append(list); return box;
+    };
+    const tools = node('div', '', 'breeding-tools');
+    this.button(tools, 'Carnet', () => { this.closeBreeding(); this.open({kind: 'recipes'}); }, null, true);
+    const oddsButton = this.button(tools, 'Probabilités', () => { this.oddsOpen = !this.oddsOpen; this.renderBreeding(); }, selected[0] && selected[1] ? null : 'Choisissez d’abord les deux parents.', true);
+    oddsButton.setAttribute('aria-pressed', String(this.oddsOpen));
+    columns.append(column(0), tools, column(1));
+    const footer = node('div', '', 'breeding-footer');
+    let reason: string | null = selected[0] && selected[1] ? (rabbitAvailability(s, selected[0].id, this.now()) ?? rabbitAvailability(s, selected[1].id, this.now())) : 'Choisissez un lapin dans chaque liste.';
+    if (selected[0] && selected[1]) {
+      const odds = oddsView(s, selected[0].species, selected[1].species, selected[0].affection, selected[1].affection), texts = oddsTexts(odds);
+      if (!odds.possible) reason = REFUSALS.NO_BREEDING_RESULT;
+      footer.append(node('p', texts.summary, 'small'));
+      for (const line of texts.excluded) footer.append(node('p', line, 'reason'));
+      if (this.oddsOpen) { const details = node('div', '', 'breeding-odds'); for (const line of texts.lines) details.append(node('p', line)); details.append(node('p', texts.guarantee, 'badge')); footer.append(details); }
     }
+    if (this.parents[0] && this.parents[0] === this.parents[1]) reason = REFUSALS.SAME_PARENT;
+    const launch = this.button(footer, 'Croiser', () => {
+      if (this.parents[0] && this.parents[1]) this.execute({type: 'breed', parents: [this.parents[0], this.parents[1]]}, 'Reproduction lancée. Le résultat reste une surprise !', () => this.closeBreeding());
+    }, reason);
+    launch.classList.add('breeding-launch');
+    this.breedingDialog.replaceChildren(header, columns, footer);
+    this.breedingDialog.querySelectorAll<HTMLElement>('.breeding-list').forEach((list, i) => { list.scrollTop = scroll[i] ?? 0; });
   }
   private renderNursery(s: GameState): void {
     const view = nurseryView(s, this.now()), nurseryId = s.buildings.find(b => b.kind === 'nursery')!.id;
@@ -985,7 +1033,7 @@ export class GameUI {
           }
           if (!readOnly) this.button(block, 'Préparer cette paire au nid', () => {
             if (!nest) return;
-            this.parents = [...pair.parents]; this.open({kind: 'building', id: nest.id});
+            this.parents = [...pair.parents]; this.open({kind: 'building', id: nest.id}); if (!nest.breeding) this.openBreeding(nest.id);
           }, pair.feeding.length ? 'Nourrissez les parents requis.' : pair.busy ? 'Parent occupé.' : setupReason ?? (!pair.possible ? 'Cette recette n’est pas dans le tirage actuel.' : null), true);
           details.append(block);
         }
@@ -1230,7 +1278,7 @@ export class GameUI {
     document.querySelectorAll('.guide-target').forEach(el => el.classList.remove('guide-target'));
     if (!this.preferences.value.tutorial || this.preferences.value.tutorialDone || !this.snapshot.state) return;
     const step = guidedStep(this.snapshot.state, this.preferences.value, this.now());
-    const labels: Record<string, RegExp> = {paille: /^Nourrir/, neige: /^Nourrir/, farmShop: /^Placer · 60/, production: /^Produire · 10/, harvest: /^Récolter 20/, breed: /^Lancer/, transfer: /^Envoyer dans la nurserie/, welcomeBirth: /^Accueillir/};
+    const labels: Record<string, RegExp> = {paille: /^Nourrir/, neige: /^Nourrir/, farmShop: /^Placer · 60/, production: /^Produire · 10/, harvest: /^Récolter 20/, breed: /^Croiser$/, transfer: /^Envoyer dans la nurserie/, welcomeBirth: /^Accueillir/};
     const pattern = labels[step.id];
     const target = pattern ? [...this.content.querySelectorAll('button')].find(b => pattern.test(b.textContent ?? '')) : null;
     target?.classList.add('guide-target');

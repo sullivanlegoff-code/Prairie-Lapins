@@ -1,0 +1,150 @@
+/* Pairing window opened by "Croiser" in the nest: Lapin 1 on the left, Lapin 2 on the right, shared tools
+   between them and the red Croiser action below. Rows are list entries, not stone buttons. */
+#breeding-dialog {
+  --breed-frame: #6b6e66;
+  --breed-well: #3b3e38;
+  --breed-row: #2d302b;
+  --breed-ink: #fff1d4;
+  --breed-muted: #c9c2b0;
+  --breed-pick: #9bd36f;
+  --breed-heart: #c94a6b;
+  width: min(96vw, 900px);
+  max-height: calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  padding: 34px 14px 12px;
+  overflow: visible;
+  border: 3px solid #3d403a;
+  border-radius: 18px;
+  background: linear-gradient(170deg, #8a8d83, var(--breed-frame) 40%, #595c55);
+  color: var(--breed-ink);
+  touch-action: manipulation;
+}
+#breeding-dialog[open] { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 10px; }
+
+.breeding-header { position: relative; display: flex; justify-content: center; }
+#breeding-dialog .breeding-badge {
+  position: absolute;
+  top: -58px;
+  margin: 0;
+  padding: 8px 22px 9px;
+  border: 3px solid #fff3f5;
+  border-radius: 999px;
+  background: var(--breed-heart);
+  box-shadow: 0 4px 0 #7d2a40;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 900;
+  white-space: nowrap;
+  -webkit-text-stroke: 1px #6b2236;
+  paint-order: stroke fill;
+}
+#breeding-dialog button.breeding-close.breeding-close {
+  --stone-face: #d0464c;
+  --stone-ink: #fff;
+  position: absolute;
+  top: -50px;
+  right: -26px;
+  width: 50px;
+  min-width: 50px;
+  height: 50px;
+  min-height: 50px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 1px #7a1c22;
+}
+#breeding-dialog button.breeding-close::before { border-radius: 50%; }
+
+.breeding-columns { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 10px; min-height: 0; }
+.breeding-column { display: flex; flex-direction: column; min-height: 0; padding: 6px; border-radius: 12px; background: var(--breed-well); box-shadow: inset 0 2px 4px #0006; }
+.breeding-column h3 {
+  margin: 0 0 6px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 900;
+  -webkit-text-stroke: 1.4px #1f211d;
+  paint-order: stroke fill;
+}
+.breeding-list { flex: 1; min-height: 0; max-height: min(52dvh, 430px); overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; display: grid; align-content: start; gap: 6px; padding: 2px; }
+
+#breeding-dialog button.breeding-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 64px;
+  padding: 6px 10px 6px 6px;
+  border: 2px solid #1e201c;
+  border-radius: 10px;
+  background: var(--breed-row);
+  box-shadow: inset 0 1px #ffffff14;
+  color: var(--breed-ink);
+  text-align: left;
+  text-shadow: none;
+}
+#breeding-dialog button.breeding-row::before { content: none; }
+#breeding-dialog button.breeding-row .portrait { width: 52px; min-width: 52px; height: 52px; border-radius: 10px; background: #e5ebd5; }
+#breeding-dialog button.breeding-row.selected { border-color: var(--breed-pick); box-shadow: 0 0 0 2px var(--breed-pick), inset 0 1px #ffffff14; }
+#breeding-dialog button.breeding-row:active:not(:disabled) { background: #3a3e37; box-shadow: none; }
+#breeding-dialog button.breeding-row:focus-visible { outline: 3px solid #f2cf85; outline-offset: 1px; }
+/* Taken in the other list, or not available: greyed and inert. */
+#breeding-dialog button.breeding-row:disabled { opacity: .42; filter: grayscale(1); cursor: not-allowed; }
+.breeding-row-text { display: grid; min-width: 0; line-height: 1.2; }
+.breeding-row-text strong { font-size: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.breeding-row-text span { color: var(--breed-muted); font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.breeding-row-text small { color: var(--breed-muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.breeding-row.selected .breeding-row-text strong::after { content: ' ✓'; color: var(--breed-pick); }
+
+.breeding-tools { display: flex; flex-direction: column; justify-content: center; gap: 10px; width: 112px; }
+#breeding-dialog .breeding-tools button { width: 100%; min-height: 56px; padding: 6px; font-size: 13px; font-weight: 800; }
+#breeding-dialog .breeding-tools .reason { display: none; }
+#breeding-dialog .breeding-tools button[aria-pressed='true'] { --stone-face: #b9d39b; }
+
+.breeding-footer { display: grid; justify-items: center; gap: 4px; }
+.breeding-footer p { margin: 0; max-width: 60ch; text-align: center; color: var(--breed-ink); }
+.breeding-footer .reason { color: #ffe3a6; font-weight: 700; }
+.breeding-odds { max-height: 18dvh; overflow-y: auto; padding: 6px 10px; border-radius: 10px; background: var(--breed-well); font-size: 13px; }
+.breeding-odds p { margin: 2px 0; text-align: left; }
+#breeding-dialog button.breeding-launch {
+  --stone-face: #d33f3f;
+  --stone-ink: #fff;
+  order: 3;
+  width: min(100%, 260px);
+  min-height: 52px;
+  font-size: 22px;
+  font-weight: 900;
+  text-shadow: 0 2px #7a1c1c;
+}
+#breeding-dialog button.breeding-launch:active:not(:disabled) { --stone-face: #b53232; }
+#breeding-dialog button.breeding-launch:disabled { --stone-face: #9a7b7b; --stone-ink: #f3e6e6; }
+
+/* Phones: narrower tools column and rows; the lists keep the remaining height. */
+@media (max-width: 760px), (max-height: 450px) {
+  #breeding-dialog { padding: 28px 8px 8px; }
+  #breeding-dialog[open] { gap: 6px; }
+  #breeding-dialog .breeding-badge { top: -48px; padding: 5px 16px 6px; font-size: 15px; }
+  #breeding-dialog button.breeding-close { top: -44px; right: -12px; width: 44px; min-width: 44px; height: 44px; min-height: 44px; font-size: 26px; }
+  .breeding-columns { gap: 6px; }
+  .breeding-tools { width: 78px; gap: 6px; }
+  #breeding-dialog .breeding-tools button { min-height: 46px; font-size: 10.5px; padding: 4px 2px; }
+  .breeding-column h3 { font-size: 15px; margin-bottom: 4px; }
+  #breeding-dialog button.breeding-row { min-height: 48px; gap: 6px; padding: 4px 6px 4px 4px; }
+  #breeding-dialog button.breeding-row .portrait { width: 40px; min-width: 40px; height: 40px; }
+  .breeding-row-text strong { font-size: 14px; }
+  .breeding-row-text span { font-size: 12px; }
+  .breeding-row-text small { display: none; }
+  #breeding-dialog button.breeding-launch { min-height: 44px; font-size: 18px; }
+}
+@media (max-height: 450px) {
+  .breeding-list { max-height: calc(100dvh - 190px); }
+}
+/* Narrow portrait: smaller faces and names on two lines rather than cut. */
+@media (max-width: 480px) {
+  .breeding-tools { width: 70px; }
+  #breeding-dialog .breeding-tools button { font-size: 9.5px; }
+  #breeding-dialog button.breeding-row { align-items: flex-start; }
+  #breeding-dialog button.breeding-row .portrait { width: 30px; min-width: 30px; height: 30px; border-radius: 8px; }
+  .breeding-row-text strong { font-size: 13px; white-space: normal; overflow-wrap: anywhere; }
+  .breeding-row-text span { font-size: 11px; white-space: normal; }
+}

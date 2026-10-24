@@ -42,11 +42,14 @@ function couple(level: number, recipes: GameState['recipeBook'] = []) {
   return s;
 }
 const card = (species: string) => panel().querySelector<HTMLElement>(`[data-recipe="${species}"]`)!;
+const breeding = () => document.getElementById('breeding-dialog') as HTMLDialogElement;
+/** Opens the pairing window from the nest, picks Perroquet on the left and Feu on the right, and shows the odds. */
 function nestWithParents(ui: GameUI) {
-  ui.select({kind: 'building', id: 'building-4'});
-  const parent = (name: string) => [...panel().querySelectorAll('article')].find(c => c.querySelector('h3')?.textContent === name)!;
-  button('Parent A', parent('Lapin Perroquet')).click(); button('Parent B', parent('Lapin Feu')).click();
+  ui.select({kind: 'building', id: 'building-4'}); button('Croiser').click();
+  const row = (slot: number, name: string) => [...breeding().querySelectorAll('.breeding-column')[slot].querySelectorAll<HTMLButtonElement>('button.breeding-row')].find(r => r.querySelector('strong')?.textContent?.startsWith(name))!;
+  row(0, 'Lapin Perroquet').click(); row(1, 'Lapin Feu').click(); button('Probabilités', breeding()).click();
 }
+const odds = () => [...breeding().querySelectorAll('.breeding-odds p:not(.badge)')].map(p => p.textContent);
 
 describe('notebook recipe privacy', () => {
   it('shows only public information and the coin price for an unknown recipe', () => {
@@ -81,20 +84,19 @@ describe('notebook recipe privacy', () => {
 describe('nest odds privacy', () => {
   it('groups unknown results, hides the Dragon and keeps the launch available', () => {
     const {ui} = setup(couple(14)); nestWithParents(ui);
-    const details = panel().querySelector('details')!;
-    expect([...details.querySelectorAll('p')].map(p => p.textContent)).toEqual(['Lapin Feu · feu · Commun : 49/150 (≈ 32,67 %)', 'Lapin Perroquet · vol + feu · Rare : 49/300 (≈ 16,33 %)', 'Résultats inconnus : 51 %']);
-    expect(panel().textContent).toContain('Résultats possibles : Lapin Feu, Lapin Perroquet et des résultats inconnus.');
-    for (const hidden of ['Dragon', 'Volant', 'Légendaire', 'Perroquet et Feu']) expect(panel().textContent).not.toContain(hidden);
+    expect(odds()).toEqual(['Lapin Feu · feu · Commun : 49/150 (≈ 32,67 %)', 'Lapin Perroquet · vol + feu · Rare : 49/300 (≈ 16,33 %)', 'Résultats inconnus : 51 %']);
+    expect(breeding().textContent).toContain('Résultats possibles : Lapin Feu, Lapin Perroquet et des résultats inconnus.');
+    for (const hidden of ['Dragon', 'Volant', 'Légendaire', 'Perroquet et Feu']) { expect(panel().textContent).not.toContain(hidden); expect(breeding().textContent).not.toContain(hidden); }
     expect(panel().textContent).toContain('Chaque recette possède ses propres conditions');
     expect(panel().textContent).not.toContain('Recettes rares : affection 4');
-    expect(button('Lancer la reproduction · gratuit').disabled).toBe(false);
+    expect(button('Croiser', breeding()).disabled).toBe(false);
   });
   it('names a known Dragon and groups an unknown level exclusion', () => {
     const known = setup(couple(14, ['dragon'])); nestWithParents(known.ui);
-    expect(panel().querySelector('details')!.textContent).toContain('Lapin Dragon · vol + feu · Légendaire : 2 %');
+    expect(odds()).toContain('Lapin Dragon · vol + feu · Légendaire : 2 %');
     cleanups.splice(0).reverse().forEach(cleanup => cleanup());
     const locked = setup(couple(13)); nestWithParents(locked.ui);
-    expect(panel().textContent).toContain('Certains résultats demandent un niveau supérieur · exclus du tirage actuel.');
-    expect(panel().textContent).not.toContain('Dragon');
+    expect(breeding().textContent).toContain('Certains résultats demandent un niveau supérieur · exclus du tirage actuel.');
+    expect(breeding().textContent).not.toContain('Dragon');
   });
 });

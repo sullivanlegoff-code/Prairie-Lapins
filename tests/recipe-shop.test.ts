@@ -40,13 +40,19 @@ const card = (species: string) => panel().querySelector<HTMLElement>(`[data-reci
 const buy = (species: string) => card(species)?.querySelector<HTMLButtonElement>(`[data-buy-recipe="${species}"]`) ?? null;
 const confirmButton = () => [...dialog().querySelectorAll('button')].find(b => b.textContent === 'Confirmer')!;
 const state = (c: GameController) => c.getSnapshot().state!;
+/** Opens the pairing window from the nest, picks `a` on the left and `b` on the right, and reads the odds. */
 function nestOdds(ui: GameUI, a: string, b: string) {
   document.getElementById('close-panel')!.click(); ui.select({kind: 'building', id: 'building-4'});
-  const parent = (name: string) => [...panel().querySelectorAll('article')].find(c => c.querySelector('h3')?.textContent === name)!;
-  // A remembered choice is labelled "✓ Parent A".
-  const pick = (label: string, name: string) => [...parent(name).querySelectorAll('button')].find(x => x.textContent?.replace('✓ ', '') === label)!.click();
-  pick('Parent A', a); pick('Parent B', b);
-  return [...panel().querySelector('details')!.querySelectorAll('p')].map(p => p.textContent);
+  [...panel().querySelectorAll('button')].find(x => x.textContent === 'Croiser')!.click();
+  const window = document.getElementById('breeding-dialog')!;
+  const row = (slot: number, name: string) => [...window.querySelectorAll('.breeding-column')[slot].querySelectorAll<HTMLButtonElement>('button.breeding-row')].find(r => r.querySelector('strong')?.textContent?.startsWith(name))!;
+  // A remembered pair stays selected; a second click would clear it.
+  for (const [slot, name] of [[0, a], [1, b]] as const) if (!row(slot, name).classList.contains('selected')) row(slot, name).click();
+  const odds = window.querySelector('.breeding-odds');
+  if (!odds) [...window.querySelectorAll('button')].find(x => x.textContent === 'Probabilités')!.click();
+  const lines = [...window.querySelectorAll('.breeding-odds p:not(.badge)')].map(p => p.textContent);
+  (document.getElementById('breeding-dialog') as HTMLDialogElement).close();
+  return lines;
 }
 
 describe('recipe purchase buttons', () => {
