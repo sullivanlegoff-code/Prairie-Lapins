@@ -14,7 +14,7 @@ import {HOUR} from '../src/config/balance';
 import {toV11} from './island-remap';
 function rich() {const s = createGame(0);const level=Math.max(...DECORATION_IDS.map(id=>requiredDecorationLevel(id)));s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level}; s.pattes = 100_000; return s;}
 function run(s: GameState, command: Command) {const r = act(s, command, s.lastSimulatedAt); if (!r.ok) throw Error(r.reason); return r.state;}
-function buy(s: GameState, catalogId: DecorationId = 'wildflowers') {return run(s, {type: 'buyDecoration', catalogId});}
+function buy(s: GameState, catalogId: DecorationId = 'bush') {return run(s, {type: 'buyDecoration', catalogId});}
 function pose(s: GameState, location: DecorationLocation, id = s.decorations.at(-1)!.id) {return run(s, {type: 'placeDecoration', id, location});}
 // Former strip coordinates → v10 fine cell → v11 fine cell (same arrangement, enlarged parcels).
 const outside = (x = 4, y = 0, rotation: 0 | 1 = 0): DecorationLocation => ({kind: 'outside', x:toV11(x<24?x+12:x-24,'x'), y:toV11(y+12,'y'), rotation});
@@ -32,22 +32,22 @@ function memory(raw?: string) {
 describe('decoration ownership and atomic commands', () => {
   it('buys and places atomically, records the pose, and rejects occupied or changed destinations without payment', () => {
     const s=rich(), location={kind:'outside' as const,x:25,y:23,rotation:0 as const};
-    const result=act(s,{type:'buyDecoration',catalogId:'wildflowers',location},0);
+    const result=act(s,{type:'buyDecoration',catalogId:'bush',location},0);
     expect(result.ok).toBe(true);if(!result.ok)return;
     expect(result.state.pattes).toBe(s.pattes-20);expect(result.state.decorations).toHaveLength(1);
     expect(result.state.decorations[0].location).toEqual(location);expect(result.state.missions.events.placeDecoration).toBe(1);
-    refused(result.state,{type:'buyDecoration',catalogId:'wildflowers',location},'DECORATION_OVERLAP');
-    refused(s,{type:'buyDecoration',catalogId:'wildflowers',location:{...location,x:18,y:20}},'CELL_OCCUPIED');
-    refused(s,{type:'buyDecoration',catalogId:'wildflowers',location:{...location,x:32}},'INVALID_CELL');
-    const poor={...s,pattes:19};refused(poor,{type:'buyDecoration',catalogId:'wildflowers',location},'NOT_ENOUGH_PATTES');
+    refused(result.state,{type:'buyDecoration',catalogId:'bush',location},'DECORATION_OVERLAP');
+    refused(s,{type:'buyDecoration',catalogId:'bush',location:{...location,x:18,y:20}},'CELL_OCCUPIED');
+    refused(s,{type:'buyDecoration',catalogId:'bush',location:{...location,x:32}},'INVALID_CELL');
+    const poor={...s,pattes:19};refused(poor,{type:'buyDecoration',catalogId:'bush',location},'NOT_ENOUGH_PATTES');
     expect(decodeGame(encodeGame(result.state))).toEqual({ok:true,state:result.state});
   });
   it('rolls back purchases when saving fails, then commits one copy on retry', () => {
     const m=memory(encodeGame(rich())),c=new GameController(m.storage,()=>0), before=c.getSnapshot().state!;
     m.fail.key=SAVE_KEY;
-    expect(c.perform({type:'buyDecoration',catalogId:'wildflowers',location:{kind:'outside',x:25,y:23,rotation:0}})).toEqual({ok:false,reason:'ACTION_NOT_SAVED'});
+    expect(c.perform({type:'buyDecoration',catalogId:'bush',location:{kind:'outside',x:25,y:23,rotation:0}})).toEqual({ok:false,reason:'ACTION_NOT_SAVED'});
     expect(c.getSnapshot().state).toEqual(before);
-    m.fail.key='';expect(c.perform({type:'buyDecoration',catalogId:'wildflowers',location:{kind:'outside',x:25,y:23,rotation:0}}).ok).toBe(true);
+    m.fail.key='';expect(c.perform({type:'buyDecoration',catalogId:'bush',location:{kind:'outside',x:25,y:23,rotation:0}}).ok).toBe(true);
     const loaded=new GameController(m.storage,()=>0);expect(loaded.getSnapshot().state!.decorations).toHaveLength(1);c.dispose();loaded.dispose();
   });
   it.each(DECORATION_IDS)('buys %s at its central pattes price without bonuses or birth RNG', id => {
@@ -59,13 +59,13 @@ describe('decoration ownership and atomic commands', () => {
   });
   it('permits separate copies, spends nothing on insufficiency, and never offers a hearts payment', () => {
     let s = buy(buy(rich())); expect(s.decorations.map(d => d.id)).toEqual(['decoration-4', 'decoration-5']);
-    s.pattes = 19; refused(s, {type: 'buyDecoration', catalogId: 'wildflowers'}, 'NOT_ENOUGH_PATTES');
-    refused(s, {type: 'payWithHearts', action: {type: 'buyDecoration', catalogId: 'wildflowers'}, maxHearts: 99, maxPattes: 99} as unknown as Command, 'INVALID_CHOICE');
+    s.pattes = 19; refused(s, {type: 'buyDecoration', catalogId: 'bush'}, 'NOT_ENOUGH_PATTES');
+    refused(s, {type: 'payWithHearts', action: {type: 'buyDecoration', catalogId: 'bush'}, maxHearts: 99, maxPattes: 99} as unknown as Command, 'INVALID_CHOICE');
     refused(s, {type: 'buyDecoration', catalogId: 'missing' as DecorationId}, 'INVALID_CHOICE');
   });
   it('bounds inventories without deleting old exemplars', () => {
-    const s = rich(); s.decorations = Array.from({length: MAX_DECORATIONS}, (_, i) => ({id: `decoration-${i + 4}`, catalogId: 'wildflowers', location: {kind: 'inventory'}})); s.nextId = MAX_DECORATIONS + 4;
-    expect(decodeGame(encodeGame(s)).ok).toBe(true); refused(s, {type: 'buyDecoration', catalogId: 'wildflowers'}, 'DECORATION_LIMIT');
+    const s = rich(); s.decorations = Array.from({length: MAX_DECORATIONS}, (_, i) => ({id: `decoration-${i + 4}`, catalogId: 'bush', location: {kind: 'inventory'}})); s.nextId = MAX_DECORATIONS + 4;
+    expect(decodeGame(encodeGame(s)).ok).toBe(true); refused(s, {type: 'buyDecoration', catalogId: 'bush'}, 'DECORATION_LIMIT');
   });
   it('stores and re-places the same exemplar for free, without duplication', () => {
     let s = pose(buy(rich()), outside()), original = structuredClone(s);
@@ -79,24 +79,26 @@ describe('decoration ownership and atomic commands', () => {
   it('refuses building footprints and other objects but allows crossing two free logical cells', () => {
     let s = buy(rich()); refused(s, {type: 'placeDecoration', id: 'decoration-4', location: outside(1, 1)}, 'CELL_OCCUPIED');
     s = pose(s, outside(4, 0)); s = buy(s); refused(s, {type: 'placeDecoration', id: 'decoration-5', location: outside(4, 0)}, 'DECORATION_OVERLAP');
-    s = buy(s, 'wood-bench'); s = pose(s, {kind: 'outside', x: 27, y: 22, rotation: 0});
+    s = buy(s, 'large-bookcase'); s = pose(s, {kind: 'outside', x: 27, y: 22, rotation: 0});
     expect(decorationsInCell(s, 6, 5)).toContain('decoration-6'); expect(decorationsInCell(s, 7, 5)).toEqual(['decoration-6']);
   });
-  it.each(['wood-bench', 'flower-arch', 'play-tunnel'] as const)('rotates %s with its footprint and validates the resulting edges', catalogId => {
-    let s = buy(rich(), catalogId); expect(footprint(catalogId, 0)).toEqual({width: 2, height: 1}); expect(footprint(catalogId, 1)).toEqual({width: 1, height: 2});
-    const edge = (rotation: 0 | 1 = 0): DecorationLocation => ({kind: 'outside', x: 31, y: 16, rotation});
-    refused(s, {type: 'placeDecoration', id: 'decoration-4', location: edge()}, 'INVALID_CELL');
-    s = pose(s, edge(1)); expect(s.decorations[0].location).toEqual(edge(1));
-    refused(s, {type: 'placeDecoration', id: 'decoration-4', location: edge()}, 'INVALID_CELL');
-    expect(decodeGame(encodeGame(s)).ok).toBe(true);
+  it.each(['large-bookcase', 'birthday-candle'] as const)('refuses rotation of %s and validates its complete fixed footprint at parcel edges', catalogId => {
+    let s = buy(rich(), catalogId);
+    expect(footprint(catalogId, 0)).toEqual({width: 2, height: DECORATIONS[catalogId].height});
+    const edge = {kind: 'outside', x: 31, y: 16, rotation: 0} as const;
+    refused(s, {type: 'placeDecoration', id: 'decoration-4', location: edge}, 'INVALID_CELL');
+    refused(s, {type: 'placeDecoration', id: 'decoration-4', location: {...edge,rotation:1}}, 'INVALID_CHOICE');
+    s = run(s, {type:'expand',parcelId:'east',expectedCost:500});s=pose(s,edge);
+    expect(s.decorations[0].location).toEqual(edge);
+    expect(decodeGame(encodeGame(s))).toEqual({ok:true,state:s});
   });
   it('refuses arbitrary rotations and exterior/interior mix-ups', () => {
     let s = buy(rich()); refused(s, {type: 'placeDecoration', id: 'decoration-4', location: outside(4, 0, 1)}, 'INVALID_CHOICE');
     refused(s, {type: 'placeDecoration', id: 'decoration-4', location: {kind: 'habitat', habitatId: 'building-1', slot: 0} as unknown as import('../src/state/types').DecorationLocation}, 'INVALID_CHOICE');
-    s = pose(buy(s, 'soft-cushion'), outside(5, 0));
+    s = pose(buy(s, 'bunny-slippers'), outside(5, 0));
   });
   it('blocks both buying and moving buildings before payment and stores blockers only on an explicit command', () => {
-    let s = pose(buy(rich(), 'wood-bench'), outside(7, 2));
+    let s = pose(buy(rich(), 'large-bookcase'), outside(7, 2));
     refused(s, {type: 'buyBuilding', kind: 'farm', x: 22, y: 20}, 'DECORATION_BLOCKS_BUILDING');
     refused(s, {type: 'moveBuilding', id: 'building-1', x: 26, y: 20}, 'DECORATION_BLOCKS_BUILDING');
     const original = structuredClone(s); s = run(s, {type: 'storeDecorationsInCell', x: 6, y: 5});
@@ -144,9 +146,9 @@ describe('saves and four-route boundaries', () => {
     if (fault === 'building') s.decorations[0].location = outside(0, 0);
     if (fault === 'rotation') s.decorations[0].location = outside(4, 0, 1);
 
-    if (['missing-home', 'slot', 'slot-overlap'].includes(fault)) {s.decorations[0].catalogId = 'soft-cushion'; s.decorations[0].location = {kind: 'habitat', habitatId: fault === 'missing-home' ? 'building-999' : 'building-1', slot: fault === 'slot' ? 3 : 0} as unknown as import('../src/state/types').DecorationLocation;}
+    if (['missing-home', 'slot', 'slot-overlap'].includes(fault)) {s.decorations[0].catalogId = 'bunny-slippers'; s.decorations[0].location = {kind: 'habitat', habitatId: fault === 'missing-home' ? 'building-999' : 'building-1', slot: fault === 'slot' ? 3 : 0} as unknown as import('../src/state/types').DecorationLocation;}
     if (fault === 'slot-overlap') {s.decorations.push({...s.decorations[0], id: 'decoration-5'}); s.nextId = 6;}
-    if (fault === 'quantity') {s.decorations = Array.from({length: 513}, (_, i) => ({id: `decoration-${i + 4}`, catalogId: 'wildflowers', location: {kind: 'inventory'}})); s.nextId = 517;}
+    if (fault === 'quantity') {s.decorations = Array.from({length: 513}, (_, i) => ({id: `decoration-${i + 4}`, catalogId: 'bush', location: {kind: 'inventory'}})); s.nextId = 517;}
     if (fault === 'extra-location') Object.assign(s.decorations[0].location, {habitatId: 'building-1'});
     const m = memory(), c = new GameController(m.storage, () => 0), before = m.values.get(SAVE_KEY);
     expect(c.prepareImport(JSON.stringify(s))).toEqual({ok: false, reason: 'INVALID_STATE'}); expect(m.values.get(SAVE_KEY)).toBe(before);
@@ -173,12 +175,12 @@ describe('atomic decoration resale', () => {
   });
   it('floors the central rate, including an odd purchase price', () => {
     expect(DECORATION_RESALE_RATE).toBe(.5);
-    const price = DECORATIONS.wildflowers.price;
-    try {DECORATIONS.wildflowers.price = 21; expect(decorationResalePrice('wildflowers')).toBe(10);}
-    finally {DECORATIONS.wildflowers.price = price;}
+    const price = DECORATIONS.bush.price;
+    try {DECORATIONS.bush.price = 21; expect(decorationResalePrice('bush')).toBe(10);}
+    finally {DECORATIONS.bush.price = price;}
   });
   it.each([outside(), outside(5,1)] as DecorationLocation[])('frees the placed destination %j without changing rabbits or buildings', location => {
-    const catalogId = location.kind === 'outside' ? 'wildflowers' : 'soft-cushion';
+    const catalogId = location.kind === 'outside' ? 'bush' : 'bunny-slippers';
     const s = pose(buy(buy(rich(), catalogId), catalogId), location, 'decoration-4');
     const sold = run(s, {type: 'sellDecoration', id: 'decoration-4'});
     expect(sold.decorations).toEqual([s.decorations[1]]);
@@ -186,26 +188,26 @@ describe('atomic decoration resale', () => {
     expect(sold.buildings).toEqual(s.buildings); expect(sold.rabbits).toEqual(s.rabbits);
   });
   it('refuses absent exemplars, other entity IDs, overflow and hearts wrappers atomically', () => {
-    const s = buy(rich(), 'wood-bench');
+    const s = buy(rich(), 'large-bookcase');
     for (const id of ['missing', 'building-1', 'rabbit-2']) refused(s, {type: 'sellDecoration', id}, 'NOT_FOUND');
     refused(s, {type: 'payWithHearts', action: {type: 'sellDecoration', id: 'decoration-4'}, maxHearts: 99, maxPattes: 99} as unknown as Command, 'INVALID_CHOICE');
-    s.pattes = Number.MAX_SAFE_INTEGER - 39;
+    s.pattes = Number.MAX_SAFE_INTEGER - 199;
     refused(s, {type: 'sellDecoration', id: 'decoration-4'}, 'RESOURCE_LIMIT');
     s.pattes--; expect(run(s, {type: 'sellDecoration', id: 'decoration-4'}).pattes).toBe(Number.MAX_SAFE_INTEGER);
   });
   it('saves the entire sale once and a second controller reloads the same result', () => {
-    const s = pose(buy(rich(), 'wood-bench'), outside()), m = memory(encodeGame(s)), c = new GameController(m.storage, () => 0);
+    const s = pose(buy(rich(), 'large-bookcase'), outside()), m = memory(encodeGame(s)), c = new GameController(m.storage, () => 0);
     m.writes.length = 0;
     expect(c.perform({type: 'sellDecoration', id: 'decoration-4'}).ok).toBe(true);
     const result = c.getSnapshot().state!;
-    expect(result.pattes).toBe(s.pattes + 40); expect(result.decorations).toEqual([]);
+    expect(result.pattes).toBe(s.pattes + 200); expect(result.decorations).toEqual([]);
     expect(m.writes).toEqual([SAVE_KEY]);
     expect(c.perform({type: 'sellDecoration', id: 'decoration-4'}).ok).toBe(false);
     expect(m.writes).toEqual([SAVE_KEY]); expect(c.getSnapshot().state).toEqual(result);
     expect(new GameController(m.storage, () => 0).getSnapshot().state).toEqual(result);
   });
   it.each(['quota', 'conflict', 'read'] as const)('keeps both object and payment on %s save refusal, and retries cannot replay a sale', fault => {
-    const s = pose(buy(rich(), 'wood-bench'), outside()), m = memory(encodeGame(s)), c = new GameController(m.storage, () => 0), raw = m.values.get(SAVE_KEY)!;
+    const s = pose(buy(rich(), 'large-bookcase'), outside()), m = memory(encodeGame(s)), c = new GameController(m.storage, () => 0), raw = m.values.get(SAVE_KEY)!;
     if (fault === 'quota') m.fail.key = SAVE_KEY;
     if (fault === 'conflict') m.values.set(SAVE_KEY, encodeGame({...s, grass: s.grass + 1}));
     const spy = fault === 'read' ? vi.spyOn(m.storage, 'getItem').mockImplementation(() => {throw Error('read');}) : null;
@@ -217,7 +219,7 @@ describe('atomic decoration resale', () => {
     m.fail.key = ''; spy?.mockRestore(); m.values.set(SAVE_KEY, raw);
     expect(c.retrySave()).toEqual({ok: true}); expect(c.getSnapshot().state).toEqual(s);
     expect(c.perform({type: 'sellDecoration', id: 'decoration-4'}).ok).toBe(true);
-    expect(c.getSnapshot().state!.pattes).toBe(s.pattes + 40);
-    expect(c.retrySave()).toEqual({ok: true}); expect(c.getSnapshot().state!.pattes).toBe(s.pattes + 40);
+    expect(c.getSnapshot().state!.pattes).toBe(s.pattes + 200);
+    expect(c.retrySave()).toEqual({ok: true}); expect(c.getSnapshot().state!.pattes).toBe(s.pattes + 200);
   });
 });

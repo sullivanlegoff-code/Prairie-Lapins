@@ -195,7 +195,7 @@ async function run() {
     const beforeSale = await save();
     await page.click('#open-shop');
     await page.getByRole('button',{name:'Bâtiments et décorations',exact:true}).click();await page.getByRole('button', {name: 'Décorations', exact: true}).click();
-    await page.locator('[data-catalog="wildflowers"]').getByRole('button',{name:'Acheter pour l’inventaire · 20 pièces',exact:true}).click();
+    await page.locator('[data-catalog="bush"]').getByRole('button',{name:'Acheter pour l’inventaire · 20 pièces',exact:true}).click();
     await page.locator('#game-dialog').getByRole('button', {name: 'Confirmer', exact: true}).click();
     await closePanel(); await page.click('#open-arrange');
     const bought = await save();
@@ -204,7 +204,7 @@ async function run() {
     const copy = bought.decorations.at(-1);
     await page.locator(`[data-decoration="${copy.id}"]`).getByRole('button', {name: 'Actions de cet exemplaire', exact: true}).click();
     await page.getByRole('button', {name: 'Vendre · 10 pièces', exact: true}).click();
-    assert.equal(await page.locator('#game-dialog h2').textContent(), 'Vendre Massif de fleurs sauvages pour 10 pièces ?');
+    assert.equal(await page.locator('#game-dialog h2').textContent(), 'Vendre Buisson pour 10 pièces ?');
     await page.locator('#game-dialog').getByRole('button', {name: 'Annuler', exact: true}).click();
     assert.equal((await save()).decorations.length, bought.decorations.length);
     await page.getByRole('button', {name: 'Vendre · 10 pièces', exact: true}).click();

@@ -20,15 +20,15 @@ describe('contextual placement grid', () => {
     expect(lines).toHaveLength(220);
     expect(new Set(lines.map(l => JSON.stringify(l))).size).toBe(lines.length);
   });
-  it('keeps the context proportional to a 1 × 1 decoration and a rotated 2 × 1 object', () => {
+  it('keeps the context proportional to a 1 × 1 decoration and a fixed 2 × 1 object', () => {
     const bounds = (width: number, height: number) => {
       const points = placementGrid(fresh, {x: 5, y: 37, width, height}).flatMap(l => [l.from, l.to]);
       return {width: Math.max(...points.map(p => p.x)) - Math.min(...points.map(p => p.x)),
         height: Math.max(...points.map(p => p.y)) - Math.min(...points.map(p => p.y))};
     };
     expect(bounds(1, 1)).toEqual({width: 7, height: 7});
-    const rotated = decorationFootprint('wood-bench', 1);
-    expect(bounds(rotated.width, rotated.height)).toEqual({width: 7, height: 8});
+    const rotated = decorationFootprint('large-bookcase', 0);
+    expect(bounds(rotated.width, rotated.height)).toEqual({width: 8, height: 7});
   });
   it('clips the context at the front-left map edges without changing the candidate', () => {
     const candidate = buildingFootprint({x: 0, y: 44}), original = {...candidate};

@@ -11,7 +11,7 @@ import {cycleIndexAt} from '../simulation/missions';
 import {z} from 'zod';
 import {BALANCE, CUISINE_FULL_REWARDS_PER_CYCLE, HOUR, NURSERY, ORDERS, SHOP_SPECIES, SPECIES, SPECIES_IDS, GUARANTEE_SPECIES, growthDuration} from '../config/balance';
 import type {GameState} from '../state/types';
-import {DECORATION_IDS, MAX_DECORATIONS} from '../config/decorations';
+import {DECORATION_IDS, RETIRED_DECORATION_IDS, MAX_DECORATIONS} from '../config/decorations';
 import {decorationPlacementReason} from '../simulation/decorations';
 import {ISLAND} from '../config/islandGeometry';
 
@@ -174,6 +174,11 @@ export function decodeGame(json: string): DecodeResult {
   try { raw = JSON.parse(json); } catch { return {ok: false, reason: 'INVALID_JSON'}; }
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version !== SAVE_VERSION)
     return {ok: false, reason: Number.isInteger(raw.version) && (raw.version as number) >= 1 && (raw.version as number) < SAVE_VERSION ? 'INCOMPATIBLE_CATALOG' : 'UNSUPPORTED_VERSION'};
+  // Only the explicitly retired catalogue entries are removed; unknown IDs still fail validation.
+  if (raw && typeof raw === 'object' && 'decorations' in raw && Array.isArray(raw.decorations)) {
+    raw.decorations = raw.decorations.filter(d => !d || typeof d !== 'object' ||
+      !RETIRED_DECORATION_IDS.some(id => id === d.catalogId));
+  }
   const parsed = schema.safeParse(raw);
   if (!parsed.success) return {ok: false, reason: 'INVALID_STATE'};
   const {presentationId: _presentationId, ...stored} = parsed.data;

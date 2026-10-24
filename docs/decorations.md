@@ -1,3 +1,5 @@
+> Catalogue actuel : 11 décorations peintes. Les 12 anciennes ont été supprimées ; leurs exemplaires posés ou en inventaire sont retirés des sauvegardes v16 au chargement, sans remboursement.
+
 > Bilan historique v5. La livraison actuelle v6 utilise neuf parcelles et douze objets extérieurs : voir [règles et migration v6](land-v6.md). Les commandes intérieures et les deux extensions en bandes décrites ici ont été remplacées.
 
 # Décorations — prévisualisation v5
@@ -40,24 +42,23 @@ Validation de cette reprise : **441 tests**, TypeScript, trois builds (preview e
 
 Reproduire le parcours tactile : `NODE_PATH=CHEMIN_PLAYWRIGHT PRAIRIE_CAPTURE_DIR=DOSSIER node docs/decorations-flow-check.cjs`, contre Vite en mode `decorations-preview`. Profil Chromium jetable, hooks interceptés uniquement dans le test ; aucun hook dans les builds publiés.
 
-## Catalogue original
+## Catalogue actuel
 
-Paramètres : `src/config/decorations.ts`. Illustrations SVG originales : `src/display/decorationArt.ts`, utilisées à la fois dans la boutique et comme textures Phaser mises en cache. L’image DragonVale fournie sert de référence d’intention ; aucun de ses éléments n’a été copié.
+Paramètres : `src/config/decorations.ts`. Les images peintes sont partagées entre boutique et prairie via `src/display/decorationArt.ts`. Toutes les décorations se posent dehors, sans rotation.
 
-| Identifiant stable | Objet | Pattes | Empreinte / destination |
-|---|---|---:|---|
-| `wildflowers` | Massif de fleurs sauvages | 20 | 1 × 1 extérieur |
-| `flowering-bush` | Buisson fleuri | 30 | 1 × 1 extérieur |
-| `moss-rock` | Petit rocher moussu | 40 | 1 × 1 extérieur |
-| `garden-lantern` | Lanterne de jardin | 60 | 1 × 1 extérieur |
-| `wood-bench` | Banc en bois | 80 | 2 × 1, ou 1 × 2 après rotation |
-| `flower-arch` | Arche fleurie | 100 | 2 × 1, ou 1 × 2 après rotation |
-| `fruit-tree` | Petit arbre fruitier | 120 | 2 × 2 extérieur |
-| `small-pond` | Petit bassin | 150 | 2 × 2 extérieur |
-| `soft-cushion` | Coussin douillet | 30 | Emplacement d’habitat |
-| `ball-toys` | Balle et jouets | 40 | Emplacement d’habitat |
-| `play-tunnel` | Tunnel de jeu | 60 | Emplacement d’habitat |
-| `small-parasol` | Petit parasol | 80 | Emplacement d’habitat |
+| Identifiant stable | Objet | Pattes | Empreinte | Niveau |
+|---|---|---:|---|---:|
+| `dirt-path` | Chemin en terre | 1 | 1 × 1 | 1 |
+| `bush` | Buisson | 20 | 1 × 1 | 1 |
+| `tree` | Arbre | 30 | 2 × 2 | 1 |
+| `hay-bale` | Botte de foin | 50 | 1 × 1 | 2 |
+| `bunny-slippers` | Chaussons lapins | 30 | 1 × 1 | 3 |
+| `birthday-candle` | Bougie « 1 an » | 50 | 2 × 2 | 5 |
+| `small-bookcase` | Petite bibliothèque | 160 | 1 × 1 | 6 |
+| `coconut-palm` | Cocotier | 130 | 2 × 2 | 8 |
+| `otter-plush` | Peluche de loutre géante | 200 | 2 × 2 | 10 |
+| `large-bookcase` | Grande bibliothèque | 400 | 2 × 1 | 12 |
+| `hanukkah-menorah` | Ménorah de Hanoucca | 150 | 1 × 1 | 14 |
 
 Objets esthétiques : aucun bonus, mission, revenu, affection ou changement des probabilités. Achats uniquement en pattes, jamais par complément en cœurs. Plusieurs exemplaires sont permis ; chaque achat possède son identifiant `decoration-N`. Vente d’un exemplaire placé ou en réserve : 50 % du prix d’achat en pattes, arrondi à l’entier inférieur, aucun remboursement en cœurs. Le taux est centralisé dans `DECORATION_RESALE_RATE`. Les bâtiments, habitats et lapins sont exclus. Déplacements et rangements gratuits. Hypothèse de protection des imports/appareils modestes : 512 exemplaires possédés maximum, objets rangés compris. Un refus ne détruit aucun objet.
 

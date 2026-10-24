@@ -46,7 +46,7 @@ async function run() {
     await page.evaluate(state => {const c = window.__prairieTestScene.controller, p = c.prepareImport(JSON.stringify(state)); if (!p.ok || !c.confirmImport(p.token, true).ok) throw Error('Demo import refused');}, demo);
     await screenshot('after');
     await page.locator('#open-shop').click(); await page.getByRole('button', {name: 'Décorations', exact: true}).click();
-    await page.locator('[data-catalog="wildflowers"]').evaluate(element => element.scrollIntoView({block: 'nearest'})); await screenshot('shop'); await close();
+    await page.locator('[data-catalog="bush"]').evaluate(element => element.scrollIntoView({block: 'nearest'})); await screenshot('shop'); await close();
     await load('decoratedHabitat');
     const decorated = await saved(); assert.equal(decorated.rabbits.filter(r => r.enclosureId === 'building-1').length, 7);
     for (const zoom of [.8, 1.05, 1.65]) {
@@ -81,7 +81,7 @@ async function run() {
     await page.evaluate(state => {const c = window.__prairieTestScene.controller, p = c.prepareImport(JSON.stringify({...state, decorations: []})); if (!p.ok || !c.confirmImport(p.token, true).ok) throw Error('Placement fixture refused');}, decorated);
     await page.evaluate(() => {const s = window.__prairieTestScene; s.view.recenter(); s.applyCamera();});
     await page.locator('#open-shop').click(); await page.getByRole('button', {name: 'Décorations', exact: true}).click();
-    await page.locator('[data-catalog="wildflowers"] button').click(); await page.locator('#game-dialog').getByRole('button', {name: 'Confirmer', exact: true}).click();
+    await page.locator('[data-catalog="bush"] button').click(); await page.locator('#game-dialog').getByRole('button', {name: 'Confirmer', exact: true}).click();
     const purchased = await saved(); assert.equal(purchased.decorations.length, 1); assert.equal(purchased.decorations[0].location.kind, 'inventory');
     const destination = await page.evaluate(() => window.__prairieTestScene.view.screen({x: 120 + 4.5 * 44, y: 120 + 4.5 * 37}));
     await page.mouse.click(destination.x, destination.y);
@@ -100,12 +100,12 @@ async function run() {
       const s = structuredClone(window.__prairieTestScene.current); s.expanded = true; s.secondExpanded = true;
       const occupied = (x, y) => s.buildings.some(b => b.x === Math.floor(x / 4) && b.y === Math.floor(y / 4)) || s.decorations.some(d => {
         if (d.location.kind !== 'outside') return false;
-        const l = d.location, double = ['wood-bench', 'flower-arch'].includes(d.catalogId), square = ['fruit-tree', 'small-pond'].includes(d.catalogId);
+        const l = d.location, double = ['large-bookcase', 'large-bookcase'].includes(d.catalogId), square = ['tree', 'coconut-palm'].includes(d.catalogId);
         const w = square ? 2 : double && !l.rotation ? 2 : 1, h = square ? 2 : double && l.rotation ? 2 : 1;
         return x >= l.x && x < l.x + w && y >= l.y && y < l.y + h;
       });
-      for (let y = 0; y < 8; y++) for (let x = 0; x < 36; x++) if (!occupied(x, y)) s.decorations.push({id: `decoration-${s.nextId++}`, catalogId: 'wildflowers', location: {kind: 'outside', x, y, rotation: 0}});
-      while (s.decorations.length < 512) s.decorations.push({id: `decoration-${s.nextId++}`, catalogId: 'soft-cushion', location: {kind: 'inventory'}});
+      for (let y = 0; y < 8; y++) for (let x = 0; x < 36; x++) if (!occupied(x, y)) s.decorations.push({id: `decoration-${s.nextId++}`, catalogId: 'bush', location: {kind: 'outside', x, y, rotation: 0}});
+      while (s.decorations.length < 512) s.decorations.push({id: `decoration-${s.nextId++}`, catalogId: 'bunny-slippers', location: {kind: 'inventory'}});
       const c = window.__prairieTestScene.controller, prepared = c.prepareImport(JSON.stringify(s));
       if (!prepared.ok || !c.confirmImport(prepared.token, true).ok) throw Error('Dense fixture refused');
       window.__decorationRefs = new Map(window.__prairieTestScene.decorationViews);

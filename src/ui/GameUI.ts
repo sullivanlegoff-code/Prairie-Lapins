@@ -24,7 +24,7 @@ import {BALANCE, HEARTS, NURSERY, ORDERS, SPECIES, SPECIES_IDS, SHOP_SPECIES, gr
 import type {Command, DecorationLocation, GameState, PattesCommand, TimedStage} from '../state/types';
 import {DECORATIONS, DECORATION_IDS, FINE_GRID, decorationResalePrice, type DecorationId} from '../config/decorations';
 import {catalogDecorationPlacementReason, purchaseDecorationReason} from '../simulation/decorations';
-import {decorationSvg} from '../display/decorationArt';
+import {decorationUrl} from '../display/decorationArt';
 import {quoteComplement} from '../simulation/actions';
 import {initiationAvailable} from '../simulation/initiation';
 import {nurseryBuilding, nurseryFull, nurseryUnlockQuote} from '../simulation/nursery';
@@ -580,7 +580,7 @@ export class GameUI {
   }
   private decorationCard(id: DecorationId, description = ''): HTMLElement {
     const card = this.card(DECORATIONS[id].name, description), icon = node('span', '', 'decoration-icon');
-    icon.innerHTML = decorationSvg(id); card.querySelector('.card-heading')!.prepend(icon); return card;
+    const img = document.createElement('img'); img.src = decorationUrl(id); img.alt = DECORATIONS[id].name; icon.append(img); card.querySelector('.card-heading')!.prepend(icon); return card;
   }
   private renderDecorationShop(s: GameState): void {
     this.content.append(node('p', 'Objets esthétiques, sans bonus. Acheter ouvre un aperçu gratuit : le paiement a lieu à la pose confirmée. Acheter pour l’inventaire est un achat immédiat sans placement. Les cœurs ne peuvent pas financer ces achats.', 'small'));
