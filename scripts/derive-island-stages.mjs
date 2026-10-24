@@ -1,6 +1,6 @@
 // Node built-ins only. Derives the nine painted island stages and the grass tile.
 // Each master (assets-source/island/stages/stage-<n>.png, 1.5 px per screen-world unit, aligned on the stage canvas)
-// keeps its rim, cliff and underside; inside the playable grass its alpha fades from 48 to 160 units in, so the
+// keeps its rim, cliff and underside; inside the playable grass its alpha fades from 8 to 40 units in, so the
 // painted lawn melts into the game's grass tile. Results are cut into 500 px tiles (not a power of two: clamped,
 // never wrapped, so no seam); fully transparent tiles are dropped.
 // --check re-derives everything in memory and fails on any missing or different byte.
@@ -45,7 +45,7 @@ const SOURCES = join(root, 'assets-source/island/stages'), TARGET = join(root, '
 const MANIFEST = join(root, 'src/config/islandStageArt.json');
 // Same values as src/config/islandGeometry.ts, src/config/visual.ts and src/config/islandStages.ts (checked by tests).
 const ORIGIN = 120, PARCEL_W = 704, PARCEL_D = 592, Q = .78, PIVOT_Y = ORIGIN + 12 * 148 / 2;
-export const PX_PER_UNIT = 1.5, TILE = 500, FADE = {opaque: 48, clear: 160}, MARGIN = {left: 96, right: 96, top: 96, bottom: 580};
+export const PX_PER_UNIT = 1.5, TILE = 500, FADE = {opaque: 8, clear: 40}, MARGIN = {left: 96, right: 96, top: 96, bottom: 580};
 export const GRASS = {source: 'grass-tile.png', file: 'grass-tile.webp', size: 1024, worldUnits: 352};
 const WEBP_QUALITY = .86;
 export const ORDER = ['southwest', 'south', 'west', 'center', 'southeast', 'east', 'northwest', 'north', 'northeast'];
@@ -89,9 +89,48 @@ function deriveStage(n) {
   const bytes = readFileSync(file), master = decodePng(bytes), [w, h] = geometry.size;
   if (master.width !== w || master.height !== h) throw Error(`stage-${n}.png is ${master.width}x${master.height}, expected ${w}x${h}`);
   const distance = insideDistance(geometry), pixels = Buffer.from(master.pixels);
+  // Preserve connected rim features, including their green contours. Isolated yellow lawn tips
+  // must not survive the fade as bright specks. Flood from the exterior through stone/olive pixels.
+  const feature = new Uint8Array(w * h), queue = new Int32Array(w * h); let head = 0, tail = 0;
+  const isFeature = i => {
+    const p = i * 4;
+    return master.pixels[p + 3] > 100 && (master.pixels[p + 1] <= master.pixels[p] * 1.25 || master.pixels[p + 1] <= master.pixels[p + 2] * 1.5);
+  };
   for (let i = 0; i < w * h; i++) {
-    const dist = distance[i]; if (dist < FADE.opaque) continue;
-    const keep = dist >= FADE.clear ? 0 : 1 - (dist - FADE.opaque) / (FADE.clear - FADE.opaque);
+    const p = i * 4;
+    // Pale limestone can be detached from the rim (small stones sitting in the lawn).
+    const stone = master.pixels[p] > master.pixels[p + 1] * .95 && master.pixels[p + 2] > master.pixels[p + 1] * .65;
+    if (distance[i] < 48 && (distance[i] < 0 || stone) && isFeature(i)) {feature[i] = 1; queue[tail++] = i;}
+  }
+  while (head < tail) {
+    const i = queue[head++];
+    for (const j of [i % w ? i - 1 : -1, i % w < w - 1 ? i + 1 : -1, i - w, i + w])
+      if (j >= 0 && j < w * h && !feature[j] && distance[j] < 48 && isFeature(j)) {feature[j] = 1; queue[tail++] = j;}
+  }
+  // Feather the six-pixel contour instead of retaining a hard emerald outline around stones.
+  const protectedRim = new Float32Array(feature);
+  for (let i = 0; i < w * h; i++) if (feature[i] && distance[i] >= -4 && distance[i] < 48) {
+    const x = i % w, y = Math.floor(i / w);
+    for (let dy = -6; dy <= 6; dy++) for (let dx = -6; dx <= 6; dx++)
+      if (dx * dx + dy * dy <= 36 && x + dx >= 0 && x + dx < w && y + dy >= 0 && y + dy < h) {
+        const j = (y + dy) * w + x + dx;
+        protectedRim[j] = Math.max(protectedRim[j], 1 - Math.sqrt(dx * dx + dy * dy) / 7);
+      }
+  }
+  for (let i = 0; i < w * h; i++) {
+    const dist = distance[i];
+    if (dist < 0) continue; // Never touch the exterior rim, ivy, cliff or underside.
+    const at = i * 4, r = pixels[at], g = pixels[at + 1], b = pixels[at + 2];
+    if (feature[i]) continue;
+    {
+      // Compress blade contrast into B's warm meadow palette; keep a little taller turf at the stones.
+      const light = .2126 * r + .7152 * g + .0722 * b;
+      pixels[at] = Math.round(151 + (light - 130) * .24);
+      pixels[at + 1] = Math.round(177 + (light - 130) * .28);
+      pixels[at + 2] = Math.round(91 + (light - 130) * .18);
+    }
+    if (dist < FADE.opaque) continue;
+    const keep = Math.max(protectedRim[i], dist >= FADE.clear ? 0 : 1 - (dist - FADE.opaque) / (FADE.clear - FADE.opaque));
     pixels[i * 4 + 3] = Math.round(pixels[i * 4 + 3] * keep);
   }
   const tiles = [], outputs = [];
