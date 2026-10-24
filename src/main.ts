@@ -12,6 +12,7 @@ import {DECORATIONS_PREVIEW_BUILD, LABORATORY_BUILD, sessionPolicy} from './conf
 import './display/styles.css';
 import './display/stone-buttons.css';
 import './display/meadow-navigation.css';
+import './display/breeding.css';
 import {bindAppInteractions} from './display/appInteractions';
 import {AudioEngine} from './audio/audioEngine';
 import {mountSoundSettings, channelSettings} from './ui/soundSettings';

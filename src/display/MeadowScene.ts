@@ -40,7 +40,7 @@ import {ownedRegions, recenterCamera, type ScreenChrome} from './recenter';
 import {COIN_TEXTURE, COIN_URL} from './currency';
 import {coinBubble} from './currencyPhaser';
 
-export type MeadowSelection = {kind: 'building' | 'rabbit' | 'income' | 'grass' | 'decoration'; id: string} | {kind: 'cell' | 'fineCell'; x: number; y: number} | {kind: 'extension'; parcelId?: ParcelId} | {kind: 'empty'};
+export type MeadowSelection = {kind: 'building' | 'rabbit' | 'income' | 'grass' | 'decoration' | 'birth'; id: string} | {kind: 'cell' | 'fineCell'; x: number; y: number} | {kind: 'extension'; parcelId?: ParcelId} | {kind: 'empty'};
 export interface DecorationGhost {id: string; catalogId?: DecorationId; location: DecorationLocation | null}
 /** `object` is the ground point (position, depth, scale); `body` carries the hop height, squash and mirror, apart from the shadow. */
 interface VisualRabbit {id: string; object: Phaser.GameObjects.Container; body: Phaser.GameObjects.Container; ears: Phaser.GameObjects.Ellipse[]; sprite?: Phaser.GameObjects.Image; art?: RabbitArt; base: Point; phase: number; fedUntil: number;
@@ -73,6 +73,7 @@ export class MeadowScene extends Phaser.Scene {
   private buildingsLayer!: Phaser.GameObjects.Container;
   private buildingViews = new Map<string, Phaser.GameObjects.Image>();
   private nurseryOverlays: NurseryOverlays | null = null;
+  private focusTween: Phaser.Tweens.Tween | null = null;
   private buildingTextures = new Set<string>();
   private buildingGhost: Phaser.GameObjects.Image | null = null;
   private purchase: {species: SpeciesId; selected: string | null} | null = null;
@@ -502,6 +503,27 @@ export class MeadowScene extends Phaser.Scene {
     rabbit.body.setRotation(pose.rotation).setScale(scaleX, pose.squashY)
       .setPosition(pose.squashX * p.x - (c * px - s * py), BODY_PIVOT * (1 - pose.squashY) - pose.lift + py - (s * px + c * py));
   }
+  /** A finished birth: a heart in a cream bubble; touching it sends the baby to the nursery. */
+  private heartBubble(x: number, y: number): Phaser.GameObjects.Container {
+    const g = this.add.graphics();
+    g.fillStyle(0x6e4a3a, .25); g.fillRoundedRect(-25, -21, 50, 46, 16);
+    g.fillStyle(0xfff7dc); g.lineStyle(2, 0xe7c9a4); g.fillRoundedRect(-25, -24, 50, 46, 16); g.strokeRoundedRect(-25, -24, 50, 46, 16);
+    g.fillStyle(0xd2577a); g.fillCircle(-7, -7, 8); g.fillCircle(7, -7, 8); g.fillTriangle(-14.5, -4, 14.5, -4, 0, 12);
+    g.fillStyle(0xffe3ea); g.fillCircle(-9, -10, 2.5);
+    return this.add.container(x, y, [g]).setSize(50, 46);
+  }
+  /** Glides the camera to a building, zoom unchanged; instant when reduced motion is requested. */
+  focusBuilding(id: string): void {
+    const b = this.current?.buildings.find(b => b.id === id); if (!b || !this.cameras?.main) return;
+    const from = {x: this.view.x, y: this.view.y}, to = this.view.centered(toScreen(buildingCenter(b)));
+    const go = (t: number) => { this.view.x = from.x + (to.x - from.x) * t; this.view.y = from.y + (to.y - from.y) * t; this.view.clamp(); this.applyCamera(); };
+    this.focusTween?.stop(); this.focusTween = null;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { go(1); return; }
+    this.focusTween = this.tweens.addCounter({from: 0, to: 1, duration: 650, ease: 'Sine.easeInOut',
+      // A pan or pinch by the player takes over at once.
+      onUpdate: tween => { if (this.view.busy) { tween.stop(); this.focusTween = null; return; } go(tween.getValue() ?? 1); },
+      onComplete: () => { this.focusTween = null; }});
+  }
   private drawBubbles(): void {
     this.bubbles.removeAll(true); this.bubbleHits = [];
     for (const b of this.current?.buildings ?? []) {
@@ -510,12 +532,12 @@ export class MeadowScene extends Phaser.Scene {
       let text = '', kind: 'income' | 'grass' | 'building' = 'building';
       if (b.kind === 'enclosure' && amount >= 1) { text = 'income'; kind = 'income'; }
       if (b.kind === 'farm' && b.order && b.order.endsAt <= now) { text = 'Herbe ✓'; kind = 'grass'; }
-      if (b.kind==='nest' && b.breeding && b.breeding.endsAt<=now) text='Envoyer';
+      if (b.kind==='nest' && b.breeding && b.breeding.endsAt<=now) text='birth';
       if (b.kind === 'nursery' && readyNurseryBabies(b, now).length) text = 'Prêt !'; // One bubble for any ready baby.
       if (!text) continue;
       const p = toScreen(buildingCenter(b)); p.y += b.kind === 'farm' ? FARM_ART.harvestY : b.kind==='nest' ? NEST_ART.actionY : b.kind==='nursery' ? NURSERY_ART.actionY : -72;
-      const bubble = kind === 'income' ? coinBubble(this, p.x, p.y, amount, amount >= habitatStats(b).cap) : this.add.text(p.x, p.y, text, {fontFamily: 'Arial', fontSize: '17px', color: '#3b4d2d', backgroundColor: '#fff7dc', padding: {x: 13, y: 10}}).setOrigin(.5);
-      this.bubbles.add(bubble); this.bubbleHits.push({point: p, width:bubble.width, height:bubble.height, selection: {kind, id: b.id}});
+      const bubble = kind === 'income' ? coinBubble(this, p.x, p.y, amount, amount >= habitatStats(b).cap) : text === 'birth' ? this.heartBubble(p.x, p.y) : this.add.text(p.x, p.y, text, {fontFamily: 'Arial', fontSize: '17px', color: '#3b4d2d', backgroundColor: '#fff7dc', padding: {x: 13, y: 10}}).setOrigin(.5);
+      this.bubbles.add(bubble); this.bubbleHits.push({point: p, width:bubble.width, height:bubble.height, selection: {kind: text === 'birth' ? 'birth' : kind, id: b.id}});
     }
   }
   private gridZoom = 0;

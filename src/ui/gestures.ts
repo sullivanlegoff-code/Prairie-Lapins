@@ -92,6 +92,12 @@ export class MeadowCamera {
     if (this.interacting) {this.pendingInsets=insets;return;}
     this.insets = insets;
   }
+  /** Camera position showing `point` at the centre of the visible viewport (below the HUD), at the current zoom. */
+  centered(point: Point): Point {
+    const v = this.viewport;
+    return {x: point.x - (v.x + v.width / 2 - this.width / 2) / this.zoom, y: point.y - (v.y + v.height / 2 - this.height / 2) / this.zoom};
+  }
+  get busy(): boolean { return this.interacting; }
   overview(rect: WorldBounds): void {
     if (this.interacting) return;
     const v = this.viewport;
