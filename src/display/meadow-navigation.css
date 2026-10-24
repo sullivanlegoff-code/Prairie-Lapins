@@ -139,3 +139,84 @@
 @media (prefers-reduced-motion: reduce) {
   #hud nav button.meadow-tool::before, #hud nav button.meadow-tool svg { transition: none; }
 }
+
+/* The HUD floats over the meadow: no band behind the XP bar, balances and tools. */
+#hud { background: none; }
+
+/* Balances wear the meadow navigation look: same pebble, their own icon, the amount lettered over the lower edge. */
+#hud .resource.meadow-currency {
+  --nav-side: 56px;
+  --nav-icon: 32px;
+  position: relative;
+  display: block;
+  flex: none;
+  width: var(--nav-side);
+  min-width: var(--nav-side);
+  height: var(--nav-side);
+  min-height: var(--nav-side);
+  margin: 0 4px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  box-shadow: none;
+  color: #fff1d4;
+  overflow: visible;
+  -webkit-tap-highlight-color: transparent;
+}
+#hud .resource.meadow-currency::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('/assets/ui/navigation/support-pebble.png') center / contain no-repeat;
+  pointer-events: none;
+  transition: filter 80ms ease-out;
+}
+#hud .resource.meadow-currency > :is(img, svg, span) {
+  position: absolute;
+  top: 8px;
+  left: calc((var(--nav-side) - var(--nav-icon)) / 2);
+  width: var(--nav-icon);
+  min-width: 0;
+  height: var(--nav-icon);
+  pointer-events: none;
+}
+#hud .resource.meadow-currency.grass > span {
+  display: grid;
+  place-items: center;
+  color: #8fd36a;
+  font-size: 30px;
+  line-height: 1;
+  font-weight: 900;
+  -webkit-text-stroke: 1.4px #24401a;
+  paint-order: stroke fill;
+}
+#hud .resource.meadow-currency > strong {
+  position: absolute;
+  bottom: -3px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 13px;
+  line-height: 15px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  -webkit-text-stroke: 1.6px #241f1a;
+  paint-order: stroke fill;
+  text-shadow: 0 1px #241f1a;
+  pointer-events: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  #hud button.resource.meadow-currency:hover::before { filter: brightness(1.1); }
+}
+#hud button.resource.meadow-currency:active::before { filter: brightness(.9); }
+#hud button.resource.meadow-currency:focus-visible { outline: 3px solid #f2cf85; outline-offset: 3px; }
+@media (max-width: 760px) {
+  #hud .resource.meadow-currency { --nav-side: 46px; --nav-icon: 26px; margin: 0 1px; }
+  #hud .resource.meadow-currency > :is(img, svg, span) { top: 6px; }
+  #hud .resource.meadow-currency.grass > span { font-size: 25px; }
+  #hud .resource.meadow-currency > strong { font-size: 11px; line-height: 13px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #hud .resource.meadow-currency::before { transition: none; }
+}
