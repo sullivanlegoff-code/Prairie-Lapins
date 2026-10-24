@@ -16,7 +16,7 @@ export const MAIN_MISSION_IDS = ['first-farm', 'cozy-nest', 'welcome-babies', 'v
 export type MainMissionId = typeof MAIN_MISSION_IDS[number];
 export const MAIN_MISSIONS: Record<MainMissionId, MainDefinition> = {
   'snow-habitat': {title:'Posséder un habitat Neige', description:'Acheter le Jardin enneigé et confirmer son placement.', condition:{kind:'building',building:'enclosure',habitatType:'neige'},reward:{resource:'pattes',amount:0}},
-  'welcome-snow': {title:'Accueillir Neige', description:'Accueillir Neige dans la prairie. Récompense unique de départ.',condition:{kind:'species',species:'neige'},reward:{resource:'pattes',amount:60}},
+  'welcome-snow': {title:'Accueillir Neige', description:'Accueillir Neige dans la prairie. Récompense unique de départ.',condition:{kind:'species',species:'neige'},reward:{resource:'pattes',amount:50}},
   'seven-species':{title:'Découvrir 7 espèces',description:'Découvrir 7 espèces distinctes. Le niveau du joueur détermine les achats disponibles.',condition:{kind:'discoveries',target:7},reward:{resource:'unlock',amount:0,unlock:'volant'}},
   'first-meal': {title: 'Un premier repas', description: 'Un lapin atteint l’affection 2.', condition: {kind: 'affection', target: 2}, reward: {resource: 'grass', amount: 10}},
   'first-harvest': {title: 'Première récolte', description: 'Récolter 20 herbes dans une ferme.', condition: {kind: 'event', event: 'collectOrder', target: 20}, reward: {resource: 'pattes', amount: 30}},

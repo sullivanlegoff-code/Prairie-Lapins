@@ -5,8 +5,8 @@ import type {Preferences} from './preferences';
 export type GuideTarget = 'camera' | 'snowShop' | 'rabbitShop' | 'reward' | 'paille' | 'farmShop' | 'farm' | 'collection' | 'neige' | 'nest' | 'nursery' | 'goals';
 export interface GuideStep {id: string; title: string; text: string; target: GuideTarget; done?: boolean; buildingId?: string}
 /** Interface guidance only. Rewards and accomplishments remain owned by missions/simulation. */
-export function guidedStep(s: GameState, p: Preferences, now: number): GuideStep {
-  if (s.startCourse === 'paille-solo') return soloStep(s,p,now);
+export function guidedStep(s: GameState, p: Preferences, now: number, staged = true): GuideStep {
+  if (s.startCourse === 'paille-solo') return staged ? pailleStep(s,p,now) : soloStep(s,p,now);
   const step = (id: string, title: string, text: string, target: GuideTarget): GuideStep => ({id, title, text, target});
   const events = s.missions.events;
   if (events.welcome > 0) return {...step('free', 'Votre prairie, vos envies', 'Collection, affection, nouveaux habitats : choisissez librement. Décorer et agrandir sont facultatifs.', 'goals'), done: true};
@@ -40,7 +40,7 @@ export function guidedStep(s: GameState, p: Preferences, now: number): GuideStep
 }
 
 /** New starts share all commands, jobs and rewards with the existing course. */
-function soloStep(s: GameState, p: Preferences, now: number): GuideStep {
+function soloStep(s: GameState, p: Preferences, now: number, skipFarm = false): GuideStep {
   const step=(id:string,title:string,text:string,target:GuideTarget):GuideStep=>({id,title,text,target});
   const e=s.missions.events, nest=s.buildings.find(b=>b.kind==='nest'), baby=firstNurseryBaby(nurseryBuilding(s)), full=nurseryFull(nurseryBuilding(s));
   if(e.welcome) return {...step('free','Votre prairie, vos envies',`Collection, affection et nouveaux habitats : choisissez librement. Décorer et agrandir restent facultatifs.`,'goals'),done:true};
@@ -50,7 +50,7 @@ function soloStep(s: GameState, p: Preferences, now: number): GuideStep {
   if(!e.breed && !nest?.breeding && !baby) {
     if(!snowHome) return step('snowShop','Un habitat pour Neige','Boutique → Habitats : choisissez le Jardin enneigé pour 200 pattes puis confirmez une empreinte libre. Annuler ne dépense rien.'+missing(200),'snowShop');
     if(!s.discovered.includes('neige')) return step('rabbitShop','Accueillir Neige','Boutique → Lapins : choisissez Neige pour 80 pattes, puis son habitat et confirmez l’achat.'+missing(80),'rabbitShop');
-    if(!s.missions.claimed.includes('welcome-snow')) return step('snowReward','La bienvenue de Neige','Réclamez les 60 pattes de l’accueil de Neige. Cette récompense unique prépare la ferme et la production.','reward');
+    if(!s.missions.claimed.includes('welcome-snow')) return step('snowReward','La bienvenue de Neige','Réclamez les 50 pattes de l’accueil de Neige. Cette récompense unique prépare la ferme et la production.','reward');
     const paille=s.rabbits.find(r=>r.species==='paille'), neige=s.rabbits.find(r=>r.species==='neige');
     const hungry=paille && paille.affection<2 ? paille : neige && neige.affection<2 ? neige : null;
     if(hungry) return step(hungry.species,`Le repas de ${hungry.species==='paille'?'Paille':'Neige'}`,s.grass<2 ? 'Il manque de l’herbe. Réclamez une mission prête ou produisez-en à la ferme. Nourrir reste facultatif, sans faim ni entretien obligatoire.' : 'Ouvrez sa fiche et nourrissez-le jusqu’à affection 2. L’herbe augmente l’affection, sans faim ni entretien obligatoire.',s.grass<2 ? (s.buildings.some(b=>b.kind==='farm')?'farm':'farmShop') : hungry.species==='paille'?'paille':'neige');
@@ -58,7 +58,7 @@ function soloStep(s: GameState, p: Preferences, now: number): GuideStep {
   }
   if(nest?.breeding) {
     // A completed breeding must propose the useful manual transfer, never another farm timer.
-    if(nest.breeding.endsAt>now && !e.collectOrder) {
+    if(!skipFarm && nest.breeding.endsAt>now && !e.collectOrder) {
       const farm=s.buildings.find(b=>b.kind==='farm' && b.order && b.order.endsAt<=now) ?? s.buildings.find(b=>b.kind==='farm' && b.order) ?? s.buildings.find(b=>b.kind==='farm');
       if(!farm) return step('farmShop','Une ferme pendant l’attente','Les parents sont au nid et gardent leurs places. Achetez une ferme pour 60 pattes pendant leurs 20 minutes d’attente.'+missing(60),'farmShop');
       if(!farm.order) return step('production','Une petite production','Produisez 20 herbes pour 10 pattes, après 5 minutes. La récolte reste manuelle.'+missing(10),'farm');
@@ -70,3 +70,30 @@ function soloStep(s: GameState, p: Preferences, now: number): GuideStep {
   if(baby) return step('welcomeBirth','Notre première naissance',baby.readyAt>now?'L’espèce reste secrète pendant la croissance. Attendez ou utilisez l’aide gratuite liée à cette naissance ; l’accueil reste manuel.':'Choisissez un habitat compatible pour accueillir le lapereau. Le lapereau peut rejoindre un habitat Paille ou Neige.','nursery');
   return step('breed','Une naissance à accueillir','Consultez le nid pour préparer une reproduction. Aucune espèce particulière n’est obligatoire.','nest');
 }
+
+/** Scripted solo course: actual achievements supersede any obsolete instructions. */
+function pailleStep(s: GameState, p: Preferences, now: number): GuideStep {
+  const e = s.missions.events, nest = s.buildings.find(b => b.kind === 'nest');
+  const baby = firstNurseryBaby(nurseryBuilding(s));
+  if (e.welcome || e.breed || nest?.breeding || baby) {
+    // Feeding and farming are no longer prerequisites once the birth is under way.
+    return soloStep(s, {...p, intro: true, guideCamera: true, guideCollection: true}, now, true);
+  }
+  const step = (id: string, title: string, text: string, target: GuideTarget): GuideStep => ({id, title, text, target});
+  const missing = (price: number) => s.pattes < price ? ` Il manque ${price - s.pattes} pattes. Réclame une récompense ou récolte les revenus disponibles.` : '';
+  if (!s.buildings.some(b => b.habitat?.type === 'neige')) return step('snowShop', 'Un habitat pour Neige', 'Boutique → Habitats : achète le Jardin enneigé (200 pattes), puis place-le sur une empreinte libre.' + missing(200), 'snowShop');
+  if (!s.discovered.includes('neige')) return step('rabbitShop', 'Accueillir Neige', 'Boutique → Lapins : accueille Neige (80 pattes) dans le Jardin enneigé.' + missing(80), 'rabbitShop');
+  if (!s.missions.claimed.includes('welcome-snow')) return step('snowReward', 'La bienvenue de Neige', 'Réclame les 50 pattes de la mission « Accueillir Neige » pour préparer notre ferme.', 'reward');
+  const farm = s.buildings.find(b => b.kind === 'farm' && b.order && b.order.endsAt <= now) ?? s.buildings.find(b => b.kind === 'farm' && b.order) ?? s.buildings.find(b => b.kind === 'farm');
+  if (!farm) return step('farmShop', 'Notre ferme', 'Boutique → Bâtiments : achète et place la ferme (60 pattes).' + missing(60), 'farmShop');
+  if (!e.collectOrder) {
+    if (!farm.order) return step('production', 'De l’herbe pour nous', 'Lance la petite production : 10 pattes pour 20 herbes en 5 minutes.' + missing(10), 'farm');
+    return {...step('harvest', 'Récolter notre herbe', farm.order.endsAt > now ? 'Dans la ferme, utilise l’aide gratuite de découverte ou attends, puis récolte les 20 herbes.' : 'Notre herbe est prête ! Récolte les 20 herbes dans la ferme.', 'farm'), buildingId: farm.id};
+  }
+  for (const species of ['paille', 'neige'] as const) {
+    const r = s.rabbits.find(r => r.species === species);
+    if (r && r.affection < 2) return step(species, `Le repas de ${r.name || SPECIES_NAME[species]}`, s.grass < 2 ? 'Il manque de l’herbe. Lance une production ou réclame une récompense.' : 'Ouvre la fiche de ce lapin et touche Nourrir jusqu’à affection 2.', s.grass < 2 ? 'farm' : species);
+  }
+  return step('breed', 'Retrouvons-nous au nid', `Touche le nid → Croiser, choisis ${s.rabbits.find(r => r.species === 'paille')?.name || 'Paille'} à gauche et Neige à droite, puis le bouton rouge Croiser. Les deux parents doivent être présents et à affection 2.`, 'nest');
+}
+const SPECIES_NAME = {paille: 'Paille', neige: 'Neige'};

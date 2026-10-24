@@ -1,12 +1,13 @@
 import {AudioEngine, clampVolume} from '../audio/audioEngine';
 /** UI preferences, stored per environment (game, laboratory), never in the game save. `muted` = Bruitages off. */
-export interface Preferences {muted: boolean; music: boolean; musicVolume: number; effectsVolume: number; tutorial: boolean; intro: boolean; tutorialDone: boolean; guideConfigured: boolean; guideCamera: boolean; guideCollection: boolean; guideRecipe: boolean}
+export interface Preferences {pailleScenes: number[]; pailleNamed: boolean; muted: boolean; music: boolean; musicVolume: number; effectsVolume: number; tutorial: boolean; intro: boolean; tutorialDone: boolean; guideConfigured: boolean; guideCamera: boolean; guideCollection: boolean; guideRecipe: boolean}
 export class PreferenceStore {
-  value: Preferences = {muted: false, music: true, musicVolume: .5, effectsVolume: .8, tutorial: true, intro: false, tutorialDone: false, guideConfigured: false, guideCamera: false, guideCollection: false, guideRecipe: false};
+  value: Preferences = {pailleScenes: [], pailleNamed: false, muted: false, music: true, musicVolume: .5, effectsVolume: .8, tutorial: true, intro: false, tutorialDone: false, guideConfigured: false, guideCamera: false, guideCollection: false, guideRecipe: false};
   constructor(private key: string) {
     try {
       const raw = JSON.parse(localStorage.getItem(key) ?? '{}');
-      for (const field of Object.keys(this.value) as (keyof Preferences)[]) if (typeof raw[field] === typeof this.value[field] && (typeof raw[field] !== 'number' || Number.isFinite(raw[field]))) (this.value as unknown as Record<string, unknown>)[field] = typeof raw[field] === 'number' ? clampVolume(raw[field]) : raw[field];
+      if (Array.isArray(raw.pailleScenes)) this.value.pailleScenes = raw.pailleScenes.filter((n: unknown) => Number.isInteger(n) && Number(n) >= 1 && Number(n) <= 11);
+      for (const field of Object.keys(this.value) as (keyof Preferences)[]) if (field !== 'pailleScenes' && typeof raw[field] === typeof this.value[field] && (typeof raw[field] !== 'number' || Number.isFinite(raw[field]))) (this.value as unknown as Record<string, unknown>)[field] = typeof raw[field] === 'number' ? clampVolume(raw[field]) : raw[field];
     } catch { /* Optional preferences stay usable in memory. */ }
   }
   set(patch: Partial<Preferences>): void { Object.assign(this.value, patch); try { localStorage.setItem(this.key, JSON.stringify(this.value)); } catch { /* in-memory preference */ } }
@@ -18,7 +19,7 @@ export class PreferenceStore {
     }
     if (!this.value.guideConfigured) this.set({guideConfigured: true, tutorial: fresh, tutorialDone: false, intro: false});
   }
-  restartGuidance(): void { this.set({guideConfigured: true, tutorial: true, tutorialDone: false, intro: false, guideCamera: false, guideCollection: false, guideRecipe: false}); }
+  restartGuidance(): void { this.set({pailleScenes: [], pailleNamed: false, guideConfigured: true, tutorial: true, tutorialDone: false, intro: false, guideCamera: false, guideCollection: false, guideRecipe: false}); }
 }
 /**
  * Bruitages: every short effect goes through the engine's Bruitages channel (its own switch and

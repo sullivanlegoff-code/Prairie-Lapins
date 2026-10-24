@@ -40,7 +40,7 @@ export const GUARANTEE_SPECIES: readonly SpeciesId[] = RECIPE_POLICIES.guarantee
 export const SHOP_SPECIES = SPECIES_IDS.filter(id => isSold(SPECIES[id]));
 export const RECIPE_SPECIES = SPECIES_IDS.filter(id => hasRecipe(SPECIES[id]));
 export const BALANCE = {
-  initialPattes: 300, initialGrass: 10, initialWidth: 3, height: 2, extendedWidth: 6,
+  initialPattes: 300, initialGrass: 0, initialWidth: 3, height: 2, extendedWidth: 6,
   extensionCost: 500, enclosureCapacity: 3, enclosureCap: 600,
   minAffection: 1, maxAffection: 20, breedingAffection: 2,
   incomeBase: 12, incomePerLevel: 2, foodMultiplier: 2,

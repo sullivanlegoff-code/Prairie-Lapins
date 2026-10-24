@@ -76,7 +76,7 @@ describe('controller startup and normal saves', () => {
     expect(state(reloaded)).toEqual(advance(createGame(0), 2 * HOUR));
   });
   it('does not let consumers mutate the active state through snapshots or results', () => {
-    const {controller} = fixture(); const copy = state(controller); copy.pattes = 0;
+    const {controller} = fixture(encodeGame({...createGame(0),grass:10})); const copy = state(controller); copy.pattes = 0;
     const result = controller.perform({type: 'feed', id: 'rabbit-2'});
     if ('state' in result) result.state.grass = 0;
     expect(state(controller).pattes).toBe(300); expect(state(controller).grass).toBe(8);
@@ -101,7 +101,7 @@ describe('storage failures and recovery', () => {
     expect(controller.getSnapshot()).toMatchObject({status: 'saved', dirty: false, lastSavedAt: 42});
   });
   it('rejects an XP meal on save failure while preserving time and the last successful date', () => {
-    const {controller, store, clock} = fixture(); const previous = store.value;
+    const {controller, store, clock} = fixture(encodeGame({...createGame(0),grass:10})); const previous = store.value;
     clock.now = 1000; store.failWrite = true;
     expect(controller.perform({type: 'feed', id: 'rabbit-2'})).toEqual({ok:false,reason:'ACTION_NOT_SAVED'});
     expect(state(controller).grass).toBe(10); expect(state(controller).progression.totalXp).toBe(0); expect(store.value).toBe(previous);
@@ -147,7 +147,7 @@ describe('transactional imports', () => {
     const imported = createGame(0); imported.pattes = 987;
     const prepared = controller.prepareImport(encodeGame(imported)); expect(prepared.ok).toBe(true);
     if (!prepared.ok) return;
-    expect(prepared.summary).toEqual({pattes: 987, grass: 10, hearts: 12, rabbits: 1, discovered: ['paille']});
+    expect(prepared.summary).toEqual({pattes: 987, grass: 0, hearts: 12, rabbits: 1, discovered: ['paille']});
     expect(controller.getSnapshot()).toEqual(original); expect(store.value).toBe(raw);
     clock.now = HOUR;
     const normalWrite = store.setItem.bind(store);

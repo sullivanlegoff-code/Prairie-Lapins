@@ -37,7 +37,7 @@ describe('the save boundary of the new catalogue', () => {
 
   it('does not reset again on the next load, nor after play', () => {
     const b = browser({[SAVE_KEY]: oldSave()}), c = new GameController(b.normal, () => 0);
-    expect(c.getSnapshot().catalogReset).toBe(true); expect(c.perform({type: 'feed', id: 'rabbit-2'}).ok).toBe(true); const played = state(c); c.dispose();
+    expect(c.getSnapshot().catalogReset).toBe(true); expect(c.perform({type: 'renameRabbit', id: 'rabbit-2',name:'Miel'}).ok).toBe(true); const played = state(c); c.dispose();
     const again = new GameController(b.normal, () => 0);
     expect(again.getSnapshot()).toMatchObject({status: 'saved', catalogReset: false}); expect(state(again)).toEqual(played);
     expect(b.writes.length).toBeGreaterThanOrEqual(2); again.dispose();

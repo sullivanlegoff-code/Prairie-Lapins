@@ -23,7 +23,7 @@ describe('active species and habitat level gates',()=>{
   expect(s.discovered).toEqual(['paille']);expect(s.pattes).toBe(300);
   let next=run(s,{type:'buyBuilding',kind:'enclosure',habitatType:'neige',x:18,y:24});const enclosureId=next.buildings.at(-1)!.id;
   next=run(next,{type:'buyRabbit',species:'neige',enclosureId});next=run(next,{type:'claimMainMission',id:'welcome-snow'});
-  expect(next.pattes).toBe(80);next=run(next,{type:'buyBuilding',kind:'farm',x:22,y:20});expect(next.pattes).toBe(20);
+  expect(next.pattes).toBe(70);next=run(next,{type:'buyBuilding',kind:'farm',x:22,y:20});expect(next.pattes).toBe(10);
   expect(stateLevelAccess(next,{family:'habitatPurchase',id:'paille'}).accessible).toBe(true);
  });
  it.each([['feu',5],['belier-gris',7],['volant',9]] as const)('purchase %s checks the pre-action level, including heart complements', (species,level)=>{

@@ -26,7 +26,7 @@ describe('v9 progression and level rewards', () => {
     const s = createCentreStartGame(0); expect(s.version).toBe(16);
     expect(s.progression).toEqual({totalXp: 0, rewardedThroughLevel: 1});
     expect(progressionFromXp(s.progression.totalXp).level).toBe(1);
-    expect([s.pattes,s.grass,s.hearts]).toEqual([300,10,12]);
+    expect([s.pattes,s.grass,s.hearts]).toEqual([300,0,12]);
   });
   it('grants exact hearts for one and multiple levels; keeps derived values outside the save', () => {
     const s = createCentreStartGame(0);
@@ -66,7 +66,7 @@ describe('v9 progression and level rewards', () => {
     }
   });
   it('time advance adds no XP after a real meal',()=>{
-    const s=createCentreStartGame(0),r=originalAct(s,{type:'feed',id:'rabbit-2'},0);expect(r.ok).toBe(true);
+    const s={...createCentreStartGame(0),grass:10},r=originalAct(s,{type:'feed',id:'rabbit-2'},0);expect(r.ok).toBe(true);
     if(!r.ok)throw Error(r.reason);expect(r.state.progression.totalXp).toBe(10);expect(r.state.hearts).toBe(12);
     expect(advance(r.state,HOUR).progression).toEqual(r.state.progression);
   });
@@ -97,7 +97,7 @@ describe('progression candidate persistence',()=>{
     vi.spyOn(simulation,'act').mockImplementation((s,cmd,now,rng)=>{
       const r=originalAct(s,cmd,now,rng);if(r.ok){const g=applyProgressionGain(r.state,50);if(g.ok)r.progressionGain=g.gain;}return r;
     });
-    const m=memory(),c=new GameController(m.storage,()=>0),before=c.getSnapshot().state;m.flags.fail=SAVE_KEY;
+    const m=memory(encodeGame({...createGame(0),grass:10})),c=new GameController(m.storage,()=>0),before=c.getSnapshot().state;m.flags.fail=SAVE_KEY;
     expect(c.perform({type:'feed',id:'rabbit-2'})).toEqual({ok:false,reason:'ACTION_NOT_SAVED'});expect(c.getSnapshot().state).toEqual(before);expect(c.getSnapshot().dirty).toBe(false);
     m.flags.fail='';expect(c.perform({type:'feed',id:'rabbit-2'})).toMatchObject({ok:true,progressionGain:{heartsGranted:1}});
     expect(c.getSnapshot().state).toMatchObject({grass:8,hearts:13,progression:{totalXp:60,rewardedThroughLevel:2}});c.dispose();

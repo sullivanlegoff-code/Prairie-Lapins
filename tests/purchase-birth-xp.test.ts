@@ -8,7 +8,7 @@ import {quoteComplement} from '../src/simulation/actions';
 import {SAVE_KEY} from '../src/persistence/storage';
 import type {Command,GameState} from '../src/state/types';
 import {setBaby, welcomeOf} from './nursery-baby';
-function rich(){const s=createCentreStartGame(0);delete s.levelAccessTransition;s.pattes=10000;s.purchaseUnlocks=['universal','feu','volant'];s.buildings[0].habitat!.type='universal';return s;}
+function rich(){const s=createCentreStartGame(0);s.grass=10;delete s.levelAccessTransition;s.pattes=10000;s.purchaseUnlocks=['universal','feu','volant'];s.buildings[0].habitat!.type='universal';return s;}
 function run(s:GameState,c:Command,t=s.lastSimulatedAt){const r=act(s,c,t,()=>.99);if(!r.ok)throw Error(r.reason);return r;}
 function baby(species:SpeciesId){const s=rich();setBaby(s.buildings.find(b=>b.kind==='nursery')!, {birth:{id:'birth-6',species,guaranteed:false,reservedDiscovery:false},startedAt:0,readyAt:0});s.nextId=7;return s;}
 function controller(s:GameState){const data=new Map([[SAVE_KEY,encodeGame(s)]]),flag={fail:false},events:unknown[]=[];const c=new GameController({getItem:k=>data.get(k)??null,setItem:(k,v)=>{if(flag.fail)throw Error('quota');data.set(k,v);}},()=>0);c.onProgressionGain(g=>events.push(g));return{c,data,flag,events};}

@@ -56,12 +56,12 @@ beforeEach(() => {
   HTMLDialogElement.prototype.close = function () { this.open = false; };
 });
 afterEach(() => { for (const cleanup of cleanups.splice(0).reverse()) cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
-function setup(initial = createGame(0)) {
+function setup(initial = createGame(0), laboratory = false) {
   establishHistoricalLevelRights(initial);
   const data = new Map<string, string>([[SAVE_KEY, encodeGame(initial)]]);
-  const storage: SaveStorage = {getItem: key => data.get(key) ?? null, setItem: (key, value) => { data.set(key, value); }};
+  const storage: SaveStorage = {scope:laboratory?'laboratory':'normal',getItem: key => data.get(key) ?? null, setItem: (key, value) => { data.set(key, value); }};
   const clock = {now: 0}; const controller = new GameController(storage, () => clock.now, () => .65);
-  const scene = {setRabbitPurchase: vi.fn(), overview: vi.fn(), focusDecoration: vi.fn(), setExpansion: vi.fn(), setPlacement: vi.fn(), setArrangement: vi.fn(), setDecorationSelection: vi.fn(), setPhoto: vi.fn(), reactToFeed: vi.fn(), recenter: vi.fn(), focusBuilding: vi.fn()} as unknown as MeadowScene;
+  const scene = {focusTutorialCell:vi.fn(),setTutorialCell:vi.fn(),setTutorialTarget:vi.fn(),setRabbitPurchase: vi.fn(), overview: vi.fn(), focusDecoration: vi.fn(), setExpansion: vi.fn(), setPlacement: vi.fn(), setArrangement: vi.fn(), setDecorationSelection: vi.fn(), setPhoto: vi.fn(), reactToFeed: vi.fn(), recenter: vi.fn(), focusBuilding: vi.fn()} as unknown as MeadowScene;
   const prefs = new PreferenceStore('test-ui'); prefs.set({muted: true, tutorial: false});
   const ui = new GameUI(controller, scene, () => clock.now, prefs);
   const disposeSave = mountSavePanel(controller, () => ui.onReplacement());
@@ -302,7 +302,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     // The laboratory plays its own fresh game: the southwest start, so the same spot inside it.
     expect(c.perform({type:'buyBuilding',kind:'farm',x: 6, y: 36}).ok).toBe(true);
     expect(c.perform({type:'claimMainMission',id:'first-farm'}).ok).toBe(true);
-    expect(state(c).grass).toBe(30);button('+ 1440 min',document.getElementById('devtools')!).click();
+    expect(state(c).grass).toBe(20);button('+ 1440 min',document.getElementById('devtools')!).click();
     expect(state(c).missions.daily.cycleIndex).toBe(1);expect(state(c).missions.claimed).toEqual(['first-farm']);
     expect(values.get(SAVE_KEY)).toBe(normal);dispose();c.dispose();
   });
@@ -931,7 +931,7 @@ describe('guidance card uses existing controls and missions', () => {
 
 describe('initiation presentation',()=>{
  it('shows the countdown then optional free action; closing and resuming preserves use',()=>{
-  const s=scenarioState('initiationSaved',0),{ui,controller,prefs}=setup(s);prefs.restartGuidance();
+  const s=scenarioState('initiationSaved',0),{ui,controller,prefs}=setup(s,true);prefs.restartGuidance();
   ui.open({kind:'building',id:'building-5'});
   expect(panel().textContent).toContain('espèce reste secrète');expect(panel().querySelector('progress')).not.toBeNull();
   const free=button('Terminer gratuitement — découverte du jeu');free.click();free.click();
@@ -1111,8 +1111,9 @@ describe('mobile menu continuity', () => {
    ui.open({kind:'shop',tab:'habitats'});expect(panel().querySelector('[data-level-target="universal"]')!.textContent).toContain('Niveau 6 requis');
    const available=[...panel().querySelectorAll<HTMLButtonElement>('button')].filter(b=>b.textContent?.includes('Placer · 200')&&!b.disabled);expect(available).toHaveLength(3);
  });
-it('new course mission shortcuts open the correct categories and never grant the old course a welcome reward',()=>{
- const {ui,controller,prefs}=setup(soloStart(0));prefs.restartGuidance();ui.close();button('Me guider',document.getElementById('tutorial')!).click();button('Me guider',document.getElementById('tutorial')!).click();expect(panel().textContent).toContain('Jardin enneigé');expect(panel().textContent).not.toContain('Prairie de paille');ui.open({kind:'missions',tab:'main'});button('Voir les habitats Neige').click();expect(panel().textContent).toContain('Jardin enneigé');expect(state(controller).pattes).toBe(300);
+it('new course mission shortcut uses Paille and preserves the budget',()=>{
+ const {ui,controller,prefs}=setup(soloStart(0));prefs.restartGuidance();prefs.set({pailleNamed:true,intro:true,guideCamera:true});ui.close();
+ button('Trouver un amoureux pour Paille',document.getElementById('paille-dialogue')!).click();expect(panel().textContent).toContain('Jardin enneigé');expect(state(controller).pattes).toBe(300);
 });
 
 
@@ -1150,7 +1151,7 @@ describe('mission XP exceptions in reward display',()=>{
 
 describe('decoration level acquisition UI',()=>{
  it('keeps both purchase actions locked, information accessible, scroll and navigation, and updates at level 3',()=>{
-  const initial=soloStart(0);initial.progression={totalXp:cumulativeLevelXp(3)-10,rewardedThroughLevel:2};const {ui,controller}=setup(initial);
+  const initial=soloStart(0);initial.grass=10;initial.progression={totalXp:cumulativeLevelXp(3)-10,rewardedThroughLevel:2};const {ui,controller}=setup(initial);
   ui.open({kind:'shop',tab:'decorations'});panel().scrollTop=160;const card=()=>panel().querySelector<HTMLElement>('[data-catalog="play-tunnel"]')!;
   expect(button('Acheter · 60 pièces',card()).disabled).toBe(true);expect(button('Acheter pour l’inventaire · 60 pièces',card()).disabled).toBe(true);
   expect(card().querySelectorAll('.level-lock-message')).toHaveLength(1);const before=state(controller);
@@ -1169,7 +1170,7 @@ describe('decoration level acquisition UI',()=>{
 
 describe('habitat upgrade level controls',()=>{
  it('keeps before/after details visible, blocks all payments and updates at the player threshold',()=>{
-  const initial=soloStart(0);initial.progression={totalXp:cumulativeLevelXp(3)-10,rewardedThroughLevel:2};const {ui,controller}=setup(initial);ui.open({kind:'building',id:'building-1'});
+  const initial=soloStart(0);initial.grass=10;initial.progression={totalXp:cumulativeLevelXp(3)-10,rewardedThroughLevel:2};const {ui,controller}=setup(initial);ui.open({kind:'building',id:'building-1'});
   const card=()=>panel().querySelector<HTMLElement>('[data-upgrade-habitat]')!;expect(card().textContent).toContain('places 3 → 5');expect(card().textContent).toContain('stockage 900 → 1 500');expect(card().textContent).toContain('Niveau 3 requis');expect(button('Améliorer · 300 pièces',card()).disabled).toBe(true);expect(card().textContent).not.toContain('Compléter');
   controller.perform({type:'feed',id:'rabbit-2'});expect(button('Améliorer · 300 pièces',card()).disabled).toBe(false);const xp=state(controller).progression.totalXp;button('Améliorer · 300 pièces',card()).click();button('Confirmer',document.getElementById('game-dialog')!).click();expect(state(controller).buildings[0].habitat?.level).toBe(2);expect(state(controller).progression.totalXp).toBe(xp);expect(card().textContent).toContain('Niveau 6 requis');
  });
@@ -1189,7 +1190,7 @@ describe('extension rank level controls',()=>{
   ui.open({kind:'extension'});expect(choices()).toEqual(['Voir Ouest']);
  });
  it('keeps geographic choices consultable and updates the next tier immediately without XP',()=>{
-  const initial=createCentreStartGame(0);initial.pattes=5000;initial.progression={totalXp:cumulativeLevelXp(4)-10,rewardedThroughLevel:3};const {ui,controller}=setup(initial);
+  const initial=createCentreStartGame(0);initial.grass=10;initial.pattes=5000;initial.progression={totalXp:cumulativeLevelXp(4)-10,rewardedThroughLevel:3};const {ui,controller}=setup(initial);
   ui.open({kind:'extension',parcelId:'northwest'});expect(button('Acheter Nord-ouest · 500 pièces').disabled).toBe(true);expect(panel().textContent).toContain('Niveau 4 requis');expect(button('Voir Sud-est').disabled).toBe(false);expect(panel().textContent).not.toContain('Compléter');
   controller.perform({type:'feed',id:'rabbit-2'});expect(button('Acheter Nord-ouest · 500 pièces').disabled).toBe(false);const before=state(controller);button('Acheter Nord-ouest · 500 pièces').click();button('Confirmer',document.getElementById('game-dialog')!).click();expect(state(controller).pattes).toBe(before.pattes-500);expect(state(controller).progression).toEqual(before.progression);expect(panel().textContent).toContain('Prochaine extension : 2');expect(panel().textContent).toContain('Niveau 6 requis');button('Voir Est').click();expect(button('Acheter Est · 1 000 pièces').disabled).toBe(true);
  });

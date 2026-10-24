@@ -191,6 +191,18 @@ export class MeadowScene extends Phaser.Scene {
     this.purchase = species ? {species, selected} : null;
     if (this.grid) this.drawGrid();
   }
+  private tutorialCell: {x:number;y:number}|null = null;
+  private tutorialTarget: 'birth'|null = null;
+  focusTutorialCell(cell: {x:number;y:number}): void {
+    if(!this.cameras?.main)return;
+    const point=toScreen(buildingCenter(cell));
+    const portrait=this.view.width<600;
+    this.view.x=point.x+(portrait?0:this.view.width*.18)/this.view.zoom;
+    this.view.y=point.y+(portrait?this.view.height*.2:0)/this.view.zoom;
+    this.view.clamp();this.applyCamera();
+  }
+  setTutorialCell(cell: {x:number;y:number}|null): void { this.tutorialCell = cell; if(this.grid)this.drawGrid(); }
+  setTutorialTarget(target: 'birth'|null): void { if(this.tutorialTarget === target)return; this.tutorialTarget = target; if(this.bubbles)this.drawBubbles(); }
   setPlacement(placement: Placement | null): void { this.placement = placement; if (this.grid) this.drawGrid(); }
   setArrangement(active: boolean, ghost: DecorationGhost | null = null): void {
     this.arrangement = active; this.ghost = ghost;
@@ -537,6 +549,13 @@ export class MeadowScene extends Phaser.Scene {
       if (!text) continue;
       const p = toScreen(buildingCenter(b)); p.y += b.kind === 'farm' ? FARM_ART.harvestY : b.kind==='nest' ? NEST_ART.actionY : b.kind==='nursery' ? NURSERY_ART.actionY : -72;
       const bubble = kind === 'income' ? coinBubble(this, p.x, p.y, amount, amount >= habitatStats(b).cap) : text === 'birth' ? this.heartBubble(p.x, p.y) : this.add.text(p.x, p.y, text, {fontFamily: 'Arial', fontSize: '17px', color: '#3b4d2d', backgroundColor: '#fff7dc', padding: {x: 13, y: 10}}).setOrigin(.5);
+      if (text === 'birth' && this.tutorialTarget === 'birth') {
+        const halo=this.add.graphics().lineStyle(4,0xffcf55).strokeEllipse(p.x,p.y,bubble.width+12,bubble.height+12);this.bubbles.add(halo);
+        const hand = this.add.text(p.x + 34,p.y - 28,'👇',{fontSize:'28px'}).setOrigin(.5); this.bubbles.add(hand);
+        if(!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          const tween=this.tweens.add({targets:hand,y:p.y-35,duration:500,yoyo:true,repeat:-1});hand.once('destroy',()=>tween.remove());
+        }
+      }
       this.bubbles.add(bubble); this.bubbleHits.push({point: p, width:bubble.width, height:bubble.height, selection: {kind: text === 'birth' ? 'birth' : kind, id: b.id}});
     }
   }
@@ -596,7 +615,10 @@ export class MeadowScene extends Phaser.Scene {
     const p=this.placement;
     const moving=this.current.buildings.find(b=>b.id===p.movingId), active=p.cell?{...p.cell,footprintTier:moving?.footprintTier}:moving;
     const lines=this.placementLines(active?buildingFootprint(active):null);
-    if(!p.cell){this.setGridStroke(()=>this.strokePlacementContext(lines));return;}
+    if(!p.cell){this.setGridStroke(()=>{
+      this.strokePlacementContext(lines);
+      if(this.tutorialCell) { const c=finePoint(this.tutorialCell.x,this.tutorialCell.y); this.grid.fillStyle(0xffd966,.5);this.grid.fillRect(c.x,c.y,VISUAL.grid.width,VISUAL.grid.depth);this.grid.lineStyle(3/this.view.zoom,0xffd966);this.grid.strokeRect(c.x,c.y,VISUAL.grid.width,VISUAL.grid.depth); }
+    });return;}
     const valid=!buildingPlacementReason(this.current,p.cell.x,p.cell.y,p.movingId),corner=finePoint(p.cell.x,p.cell.y),center=toScreen(buildingCenter(active!)),size=buildingFootprint(active!),cellsWide=VISUAL.grid.width*size.width/FINE_GRID,cellsDeep=VISUAL.grid.depth*size.height/FINE_GRID;
     this.setGridStroke(()=>{
       this.strokePlacementContext(lines);
