@@ -7,7 +7,7 @@ import {PROGRESSION} from '../src/config/progression';
 import {jobKey} from '../src/simulation/initiation';
 import {SAVE_KEY} from '../src/persistence/storage';
 import type {Command,GameState} from '../src/state/types';
-function parents(){const s=createGame(0);s.buildings[0].habitat!.type='universal';s.rabbits[0].affection=2;s.rabbits.push({id:'rabbit-3',species:'neige',affection:2,enclosureId:'building-1'});s.discovered.push('neige');return s;}
+function parents(){const s=createGame(0);s.grass=10;s.buildings[0].habitat!.type='universal';s.rabbits[0].affection=2;s.rabbits.push({id:'rabbit-3',species:'neige',affection:2,enclosureId:'building-1'});s.discovered.push('neige');return s;}
 const breed:Command={type:'breed',parents:['rabbit-2','rabbit-3']};
 function run(s:GameState,c:Command,t=s.lastSimulatedAt){const r=act(s,c,t,()=>.1);if(!r.ok)throw Error(r.reason);return r;}
 describe('food and launch XP candidates',()=>{
@@ -16,7 +16,7 @@ describe('food and launch XP candidates',()=>{
   expect(r.state.grass).toBe(100-2*affection);expect(r.state.rabbits[0].affection).toBe(affection+1);expect(r.state.progression.totalXp).toBe(foodXp(affection+1));expect(r.progressionGain?.xpGained).toBe(foodXp(affection+1));expect(s.rabbits[0].affection).toBe(affection);
  });
  it.each(['empty','maximum'])('refuses %s food without any change',reason=>{const s=createGame(0);if(reason==='empty')s.grass=0;else s.rabbits[0].affection=20;const r=act(s,{type:'feed',id:'rabbit-2'},0);expect(r.ok).toBe(false);expect(r.state).toEqual(s);});
- it('legitimate successive meals gain each XP, while a refused launch gives nothing',()=>{let s=createGame(0);s=run(s,{type:'feed',id:'rabbit-2'}).state;s=run(s,{type:'feed',id:'rabbit-2'}).state;expect(s.progression.totalXp).toBe(foodXp(2)+foodXp(3));const r=act(s,breed,0);expect(r.ok).toBe(false);expect(r.state).toEqual(s);});
+ it('legitimate successive meals gain each XP, while a refused launch gives nothing',()=>{let s=createGame(0);s.grass=10;s=run(s,{type:'feed',id:'rabbit-2'}).state;s=run(s,{type:'feed',id:'rabbit-2'}).state;expect(s.progression.totalXp).toBe(foodXp(2)+foodXp(3));const r=act(s,breed,0);expect(r.ok).toBe(false);expect(r.state).toEqual(s);});
  it('launches once with the actual draw, reservation, missions and occupied parents',()=>{
   const s=parents(),r=run(s,breed);expect(r.state.progression.totalXp).toBe(PROGRESSION.xp.breedingLaunch);expect(r.state.missions.events.breed).toBe(1);expect(r.state.buildings.find(b=>b.kind==='nest')!.breeding?.parents).toEqual(['rabbit-2','rabbit-3']);expect(act(r.state,breed,0)).toEqual({ok:false,state:r.state,reason:'BUSY'});
  });

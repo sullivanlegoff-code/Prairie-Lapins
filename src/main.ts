@@ -13,6 +13,7 @@ import './display/styles.css';
 import './display/stone-buttons.css';
 import './display/meadow-navigation.css';
 import './display/breeding.css';
+import './display/onboarding.css';
 import {bindAppInteractions} from './display/appInteractions';
 import {AudioEngine} from './audio/audioEngine';
 import {mountSoundSettings, channelSettings} from './ui/soundSettings';
@@ -55,7 +56,7 @@ async function boot(): Promise<() => void> {
   if (fonts) void fonts.ready.then(() => loading.done('fonts'), () => loading.warn('fonts', '')); else loading.done('fonts');
   let ui: GameUI | null = null;
   const scene = new MeadowScene(controller, selection => ui?.select(selection), () =>
-    !!document.querySelector('#game-panel.shop-fullscreen:not([hidden])') || !!document.querySelector('dialog[open]') || getComputedStyle(document.getElementById('portrait-notice')!).display !== 'none',
+    !!document.querySelector('#game-panel.shop-fullscreen:not([hidden])') || !!document.querySelector('dialog[open]:not(#paille-dialogue)') || getComputedStyle(document.getElementById('portrait-notice')!).display !== 'none',
     // Images are done only when the scene is created: Phaser reports 100 % before a late file error.
     {progress: fraction => loading.progress('textures', fraction),
       error: file => loading.fail('textures', `Une image du jeu n’a pas pu être chargée (${file}).`),

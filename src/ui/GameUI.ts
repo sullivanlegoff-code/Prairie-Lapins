@@ -22,7 +22,7 @@ import {initialMissionIds, activeMainMissions, availableMissionRewards, mainProg
 import type {GameController, Snapshot} from '../application/GameController';
 import {BALANCE, HEARTS, NURSERY, ORDERS, SPECIES, SPECIES_IDS, SHOP_SPECIES, growthDuration, type BuildingKind, type SpeciesId, type OrderId, type RabbitType} from '../config/balance';
 import type {Command, DecorationLocation, GameState, PattesCommand, TimedStage} from '../state/types';
-import {DECORATIONS, DECORATION_IDS, decorationResalePrice, type DecorationId} from '../config/decorations';
+import {DECORATIONS, DECORATION_IDS, FINE_GRID, decorationResalePrice, type DecorationId} from '../config/decorations';
 import {catalogDecorationPlacementReason, purchaseDecorationReason} from '../simulation/decorations';
 import {decorationSvg} from '../display/decorationArt';
 import {quoteComplement} from '../simulation/actions';
@@ -34,6 +34,8 @@ import type {MeadowScene, MeadowSelection} from '../display/MeadowScene';
 import {ActionGate} from './gestures';
 import {portrait} from './portraits';
 import {PreferenceStore, Sounds} from './preferences';
+import {onboardingTask} from './onboarding';
+import {PailleDialogue} from './PailleDialogue';
 import {guidedStep, type GuideStep} from './guidance';
 import {BUILDING_NAMES, REFUSALS, RARITY_NAMES, TYPE_NAMES, typeNames, recipeBook, buildingReason, collectionView, incomeWhole, moneyReason, nurseryView, occupants, oddsTexts, oddsView, placementReason, rabbitAvailability, parentBusy, releaseReason, timeLeft, type Placement, type CollectionFilter} from './models';
 
@@ -49,6 +51,9 @@ function avatar(species?: SpeciesId, large = false): HTMLElement {
   const element = node('span', '', large ? 'portrait large' : 'portrait'); element.innerHTML = portrait(species); return element;
 }
 export class GameUI {
+  private pailleDialogue: PailleDialogue;
+  private get stagedOnboarding(): boolean { return this.controller.storageScope !== 'laboratory'; }
+  private get onboardingActive(): boolean { const s = this.snapshot.state; return this.stagedOnboarding && s?.startCourse === 'paille-solo' && this.preferences.value.tutorial && !this.preferences.value.tutorialDone && !s.missions.events.welcome; }
   private shopHabitatSpecies: SpeciesId | null = null;
   private view: View = null;
   private purchaseReturn: {view: NonNullable<View>; history: NonNullable<View>[]} | null = null;
@@ -112,6 +117,9 @@ export class GameUI {
   constructor(private controller: GameController, private scene: MeadowScene, private clock: () => number, private preferences: PreferenceStore, audio?: AudioEngine,
     activityOptions: {onCuisineCompleted?: (result: RecipeCompletion) => void} = {}) {
     this.snapshot = controller.getSnapshot(); this.sounds = audio ? new Sounds(preferences, audio) : new Sounds(preferences);
+    this.pailleDialogue = new PailleDialogue(preferences, (id, name) => controller.perform({type: 'renameRabbit', id, name}).ok,
+      () => { const s = this.snapshot.state; if (!s) return; const task = onboardingTask(s,this.preferences.value,this.now()); if (task.step.done) this.preferences.set({tutorialDone:true}); this.guide(task.step); this.render(); },
+      () => { this.renderPreferences(); this.render(); }, () => this.open({kind:'settings'}, 'root'));
     this.cuisine = mountCuisineActivity(document.getElementById('app')!, {onRecipeCompleted: result => {
       const rabbit = this.cuisine.selectedRabbit;
       const granted = rabbit ? this.controller.perform({type: 'rewardCuisine', rabbitId: rabbit.id, recipeId: result.recipeId}) : {ok: false as const, reason: 'NOT_FOUND' as const};
@@ -121,6 +129,13 @@ export class GameUI {
       return `+${reward.pattes} pattes · +${reward.grass} herbe${reward.grass > 1 ? 's' : ''}${reward.affectionGranted ? ' · +1 Affection' : reward.affectionAtCap ? ' · Affection maximale' : ''}${reward.heartGranted ? ' · +1 Cœur' : ''}`;
     }, onExit: () => this.render()});
     const options = {signal: this.abort.signal};
+    const skip = node('button','Passer le tutoriel','onboarding-skip'); skip.id='onboarding-skip';
+    skip.onclick=()=>{this.preferences.set({tutorial:false});this.pailleDialogue.close();this.renderPreferences();this.render();};
+    document.getElementById('app')!.append(skip);
+    document.addEventListener('click', event => {
+      const target = (event.target as HTMLElement).closest<HTMLElement>('button, a, input, select');
+      if (this.onboardingActive && target && !this.onboardingAllowed(target)) { event.preventDefault(); event.stopImmediatePropagation(); }
+    }, {...options, capture:true});
     document.getElementById('open-arrange')!.addEventListener('click', () => this.open({kind: 'arrange'}), options);
     document.getElementById('exit-arrange')!.addEventListener('click', () => this.close(), options);
     document.getElementById('open-photo')!.addEventListener('click', () => this.setPhoto(true), options);
@@ -143,9 +158,9 @@ export class GameUI {
     window.addEventListener('pointerup', release, options); window.addEventListener('pointercancel', release, options);
     this.panel.addEventListener('focusout', () => requestAnimationFrame(() => this.flushRender()), options);
     window.addEventListener('blur', () => { this.interactionPointers.clear(); this.flushRender(); }, options);
-    document.getElementById('tutorial-toggle')!.addEventListener('click', () => { preferences.set({tutorial: !preferences.value.tutorial || preferences.value.tutorialDone, tutorialDone: false, guideConfigured: true}); this.renderPreferences(); this.renderTutorial(); }, options);
+    document.getElementById('tutorial-toggle')!.addEventListener('click', () => { preferences.set({tutorial: !preferences.value.tutorial || preferences.value.tutorialDone, tutorialDone: false, guideConfigured: true}); this.renderPreferences(); this.render(); }, options);
     this.dialog.addEventListener('cancel', () => { this.dialog.replaceChildren(); }, options);
-    this.breedingDialog.addEventListener('close', () => { this.breedingNestId = null; this.breedingDialog.replaceChildren(); }, options);
+    this.breedingDialog.addEventListener('close', () => { this.breedingNestId = null; this.breedingDialog.replaceChildren(); if(this.onboardingActive){this.pailleDialogue.invite();this.renderTutorial();} }, options);
     this.unsubscribe = controller.subscribe(snapshot => {
       const replaced = this.snapshot && snapshot.generation !== this.snapshot.generation;
       this.snapshot = snapshot;
@@ -263,7 +278,9 @@ export class GameUI {
   }
   private flushRender(): void { if (this.pendingRender && !this.interactionActive()) this.render(); }
   open(view: NonNullable<View>, navigation: 'push' | 'root' | 'tab' | 'back' = 'push'): void {
-    if (this.cuisine.active) return;
+    if (view.kind === 'settings') this.pailleDialogue.close();
+    if (this.onboardingActive && !this.onboardingViewAllowed(view)) return;
+    if (this.cuisine.active || this.pailleDialogue.element.open) return;
     if (this.dialog.open || (document.getElementById('import-dialog') as HTMLDialogElement).open) return;
     if(view.kind==='buyRabbit') {
       const state=this.controller.getSnapshot().state,target={family:'species',id:view.species,action:'purchase'} as const;
@@ -308,6 +325,11 @@ export class GameUI {
     this.scene.setExpansion(view.kind==='extension',view.kind==='extension'?view.parcelId:undefined);
   }
   close(): void {
+    if (this.onboardingActive) {
+      this.purchaseReturn=null;this.shopReturn=null;this.history=[];this.view=null;this.placement=null;this.arranging=false;
+      this.scene.setPlacement(null);this.scene.setTutorialCell(null);this.scene.setRabbitPurchase(null);
+      this.pailleDialogue.invite();this.syncArrangement();this.render();return;
+    }
     if (this.cuisine.active) { this.cuisine.close(); return; }
     if (this.dialog.open || (document.getElementById('import-dialog') as HTMLDialogElement).open) return;
     if (this.purchaseReturn) { this.cancelPurchase(); return; }
@@ -317,9 +339,10 @@ export class GameUI {
     this.rememberView(); this.history = []; this.interactionPointers.clear();
     this.scene.setExpansion(false); this.view = null; this.placement = null; this.arranging = false; this.decorationDraft = null; this.scene.setPlacement(null);
     if (previous) { this.view = previous.view; this.history = previous.history; this.arranging = previous.arranging; if (this.view) this.requestedScroll = this.scrollPositions.get(this.viewKey(this.view)) ?? 0; }
-    this.syncArrangement(); this.render();
+    this.pailleDialogue.invite(); this.syncArrangement(); this.render();
   }
   onReplacement(fresh = false): void {
+    this.pailleDialogue.close();
     this.cuisine.close(false);
     this.history = []; this.scrollPositions.clear(); this.interactionPointers.clear(); this.pendingRender = false;
     this.shopHabitatSpecies=null;
@@ -336,7 +359,20 @@ export class GameUI {
     this.view = {kind: 'settings'}; this.syncArrangement(); this.render();
   }
   select(selection: MeadowSelection): void {
-    if (this.cuisine.active) return;
+    if (this.onboardingActive) {
+      const s = this.snapshot.state!, task = onboardingTask(s,this.preferences.value,this.now());
+      const expected = task.step.target;
+      const building = 'id' in selection ? s.buildings.find(b => b.id === selection.id) : null;
+      const rabbit = 'id' in selection ? s.rabbits.find(r => r.id === selection.id) : null;
+      const allowed = selection.kind === 'empty' || this.placement && ['fineCell','cell'].includes(selection.kind) ||
+        this.view?.kind === 'buyRabbit' && building?.habitat?.type === 'neige' ||
+        selection.kind === 'grass' && task.step.id === 'harvest' && !task.waiting ||
+        selection.kind === 'birth' && task.step.id === 'transfer' && !task.waiting ||
+        selection.kind === 'building' && building?.kind === expected ||
+        selection.kind === 'rabbit' && rabbit?.species === expected;
+      if (!allowed) return;
+    }
+    if (this.cuisine.active || this.pailleDialogue.element.open) return;
     if (this.photo || this.view?.kind === 'shop') return;
     if (this.dialog.open || (document.getElementById('import-dialog') as HTMLDialogElement).open) return;
     if (this.view?.kind === 'buyRabbit') {
@@ -373,6 +409,7 @@ export class GameUI {
     if (passive && this.interactionActive()) { this.pendingRender = true; return; }
     this.pendingRender = false;
     this.renderTutorial();
+    this.applyOnboardingLock();
     if (this.breedingDialog.open) this.renderBreeding();
     const available = this.snapshot.state ? availableMissionRewards(this.snapshot.state) : 0;
     const badge = document.getElementById('missions-badge')!;
@@ -497,7 +534,15 @@ export class GameUI {
     if(!movingId && !starter && kind==='enclosure' && state && stateLevelAccess(state,target).locked){this.open({kind:'levelRequirement',target});return;}
     this.savePurchaseOrigin();
     this.arranging=true;this.decorationDraft=null;this.syncArrangement();
-    this.placement = {kind, movingId, habitatType, starter, cell: null}; this.scene.setPlacement(this.placement); this.open({kind: 'placement'});
+    this.placement = {kind, movingId, habitatType, starter, cell: null};
+    if (this.onboardingActive && state) {
+      const cell = this.onboardingFreeCell(state, this.placement);
+      if (kind === 'enclosure') this.placement.cell = cell;
+      this.scene.setTutorialCell(kind === 'farm' ? cell : null);
+      this.scene.recenter();
+    }
+    this.scene.setPlacement(this.placement); this.open({kind: 'placement'});
+    if(this.onboardingActive && state) {const cell=this.placement?.cell ?? this.onboardingFreeCell(state,{kind,cell:null});if(cell)this.scene.focusTutorialCell(cell);}
   }
   private renderPlacement(s: GameState): void {
     const p = this.placement; if (!p) { this.close(); return; }
@@ -510,7 +555,7 @@ export class GameUI {
     this.content.append(node('p', p.cell ? `Grille fine : (${p.cell.x}, ${p.cell.y}) · empreinte ${footprint}` : 'Aucune case sélectionnée.', 'badge'));
     const reason = placementReason(s, p);
     this.content.append(node('p', !p.cell ? 'Choisissez une destination.' : reason ? `× ${reason}` : `✓ Emplacement valide · empreinte ${footprint}`, !p.cell ? 'placement-pending' : reason ? 'placement-invalid' : 'placement-valid'));
-    this.button(this.content, p.movingId ? 'Confirmer le déplacement · gratuit' : p.starter ? 'Placer gratuitement' : `Acheter et placer · ${price} pattes`, () => {
+    this.button(this.content, p.movingId ? 'Confirmer le déplacement · gratuit' : p.starter ? 'Placer gratuitement' : this.onboardingActive ? `Confirmer · ${price} pattes` : `Acheter et placer · ${price} pattes`, () => {
       if (this.placement !== p || !p.cell) return;
       const cmd: Command = p.movingId ? {type: 'moveBuilding', id: p.movingId, ...p.cell} : p.starter && (p.kind==='nest'||p.kind==='nursery') ? {type:'placeStarterBuilding',kind:p.kind,...p.cell} : {type: 'buyBuilding', kind: p.kind, habitatType: p.habitatType, ...p.cell};
       this.execute(cmd, p.movingId ? 'Bâtiment déplacé.' : `${name} construit.`, value => this.finishPurchase('building', p.movingId ?? String(value)));
@@ -853,6 +898,7 @@ export class GameUI {
   }
   /** The pairing window: Lapin 1 on the left, Lapin 2 on the right, the shared tools between, Croiser below. */
   private openBreeding(nestId: string): void {
+    if (this.onboardingActive) this.parents = ['paille','neige'].map(species => this.snapshot.state!.rabbits.find(r => r.species === species)?.id ?? null) as [string|null,string|null];
     this.breedingNestId = nestId; this.renderBreeding();
     if (!this.breedingDialog.open) this.breedingDialog.showModal();
   }
@@ -860,6 +906,7 @@ export class GameUI {
     this.breedingNestId = null;
     if (this.breedingDialog.open) this.breedingDialog.close();
     this.breedingDialog.replaceChildren();
+    if(this.onboardingActive) {this.pailleDialogue.invite();this.renderTutorial();}
   }
   private renderBreeding(): void {
     const s = this.snapshot.state, nest = s?.buildings.find(b => b.id === this.breedingNestId && b.kind === 'nest');
@@ -907,7 +954,15 @@ export class GameUI {
       if (this.parents[0] && this.parents[1]) this.execute({type: 'breed', parents: [this.parents[0], this.parents[1]]}, 'Reproduction lancée. Le résultat reste une surprise !', () => this.closeBreeding());
     }, reason);
     launch.classList.add('breeding-launch');
+    if (this.onboardingActive) launch.classList.add('guide-target');
+    if(this.onboardingActive) {
+      const escape=node('div','','onboarding-escape');
+      this.button(escape,'Paramètres',()=>{this.closeBreeding();this.open({kind:'settings'});},null,true);
+      this.button(escape,'Passer le tutoriel',()=>{this.preferences.set({tutorial:false});this.closeBreeding();this.render();},null,true);
+      footer.append(escape);
+    }
     this.breedingDialog.replaceChildren(header, columns, footer);
+    this.applyOnboardingLock();
     this.breedingDialog.querySelectorAll<HTMLElement>('.breeding-list').forEach((list, i) => { list.scrollTop = scroll[i] ?? 0; });
   }
   private renderNursery(s: GameState): void {
@@ -1118,7 +1173,7 @@ export class GameUI {
     if (tab === 'main') {
       this.content.append(node('p', s.missions.claimed.includes('first-birth') ? 'Choisissez librement vos objectifs.' : 'Réclamez pour continuer. Les actions anticipées comptent.', 'small'));
       if(s.missions.claimed.includes('first-birth')) this.button(this.content,'Consulter le carnet',()=>this.open({kind:'recipes'}),null,true);
-      const active = activeMainMissions(s);
+      const active = this.onboardingActive && onboardingTask(s,this.preferences.value,this.now()).step.id === 'snowReward' ? ['welcome-snow'] as const : activeMainMissions(s);
       if (!active.length) this.content.append(node('p', 'Toutes les missions principales ont été récompensées. Profitez de votre prairie.', 'small'));
       for (const id of active) {
         const mission = MAIN_MISSIONS[id], acquired = s.missions.completed.includes(id), claimed = s.missions.claimed.includes(id);
@@ -1246,6 +1301,7 @@ export class GameUI {
     }); this.button(this.dialog, 'Annuler', () => this.dialog.close(), null, true); this.dialog.showModal();
   }
   private firstBirth(species: SpeciesId, discovered: boolean): void {
+    if (this.pailleDialogue.element.open) return;
     const info=SPECIES[species], art=avatar(species,true); art.classList.add('first-birth-art');
     this.dialog.replaceChildren(node('h2', 'Bienvenue, petit lapin !','first-birth-title'), art, node('h3',info.name,'first-birth-name'));
     if(discovered) this.dialog.append(node('p','Nouvelle espèce', 'badge first-birth-details'));
@@ -1254,11 +1310,16 @@ export class GameUI {
     this.dialog.showModal();
   }
   private discovery(species: SpeciesId): void {
+    if (this.onboardingActive || this.pailleDialogue.element.open) return;
     const info = SPECIES[species]; this.dialog.replaceChildren(node('h2', 'Nouvelle découverte !'), avatar(species, true), node('h3', info.name), node('p', `${typeNames(info.types)} · ${RARITY_NAMES[info.rarity]}`));
     this.button(this.dialog, 'Bienvenue dans la prairie', () => this.dialog.close()); this.dialog.showModal();
   }
   private guide(step: GuideStep): void {
     const s = this.snapshot.state; if (!s) return;
+    if(this.onboardingActive && step.id === 'transfer' && !onboardingTask(s,this.preferences.value,this.now()).waiting) {
+      const nest=s.buildings.find(b=>b.kind==='nest');
+      this.view=null;this.history=[];this.render();this.scene.setTutorialTarget('birth');if(nest)this.scene.focusBuilding(nest.id);return;
+    }
     if (step.target === 'camera') { this.scene.recenter(); this.preferences.set({intro: true, guideCamera: true}); this.renderTutorial(); return; }
     if (step.target === 'snowShop') { this.shopHabitatSpecies='neige'; this.open({kind:'shop',tab:'habitats'}); return; }
     if (step.target === 'rabbitShop') { this.open({kind:'shop',tab:'rabbits'}); return; }
@@ -1274,21 +1335,94 @@ export class GameUI {
     else if (kind === 'nest' || kind === 'nursery') this.open({kind: 'arrange'});
     else this.open({kind: 'shop', tab: 'buildings'});
   }
+  private onboardingViewAllowed(view: NonNullable<View>): boolean {
+    const s = this.snapshot.state!, step = onboardingTask(s,this.preferences.value,this.now()).step;
+    if (view.kind === 'settings') return true;
+    if (view.kind === 'placement') return !!this.placement;
+    if (view.kind === 'shop') return view.tab === ({snowShop:'habitats',rabbitShop:'rabbits',farmShop:'buildings'} as Record<string,string>)[step.id];
+    if (view.kind === 'buyRabbit') return step.id === 'rabbitShop' && view.species === 'neige';
+    if (view.kind === 'missions') return step.id === 'snowReward' && view.tab === 'main';
+    if (view.kind === 'rabbit') return s.rabbits.find(r => r.id === view.id)?.species === step.target;
+    if (view.kind === 'building') return s.buildings.find(b => b.id === view.id)?.kind === step.target;
+    return false;
+  }
+  private onboardingAllowed(element: HTMLElement): boolean {
+    if (element.closest('#paille-dialogue') || ['open-settings','save-warning','recenter-view','close-panel','panel-back','tutorial-toggle','onboarding-skip','continue-portrait'].includes(element.id)) return true;
+    if (element.closest('#settings-content') && this.view?.kind === 'settings') return true;
+    // Modal interruptions (level reached, confirmation, level details, import) must always be closable: their content is
+    // only reachable while open, and they may open between two renders. Only the pairing window keeps the guided rule.
+    const dialog = element.closest('dialog');
+    if (dialog && dialog.id !== 'breeding-dialog') return true;
+    return element.classList.contains('guide-target') || !!element.closest('.breeding-close, .onboarding-escape');
+  }
+  private applyOnboardingLock(): void {
+    const leaving = document.body.classList.contains('onboarding-locked') && !this.onboardingActive;
+    document.body.classList.toggle('onboarding-locked', this.onboardingActive);
+    if(leaving) { this.scene.setTutorialTarget?.(null); this.scene.setTutorialCell?.(null); }
+    if(this.onboardingActive || this.pailleDialogue.element.open) document.body.classList.add('portrait-dismissed');
+    const skip=document.getElementById('onboarding-skip'); if(skip)skip.hidden=!this.onboardingActive;
+    document.querySelectorAll<HTMLElement>('button, a, input, select').forEach(element => {
+      const locked = this.onboardingActive && !this.onboardingAllowed(element);
+      element.classList.toggle('onboarding-unavailable', locked);
+      if (locked) element.setAttribute('aria-disabled','true');
+      else if (element.classList.contains('onboarding-was-locked')) element.removeAttribute('aria-disabled');
+      element.classList.toggle('onboarding-was-locked',locked);
+    });
+  }
+  private onboardingFreeCell(s: GameState, placement: Placement): {x:number;y:number}|null {
+    // Stable scan of the starting parcel; the ordinary placement validator owns overlap and land rules.
+    const origin=PARCELS[s.islandStart ?? 'center'], size=ISLAND.parcelCells*FINE_GRID;
+    for (let y=origin.y*FINE_GRID;y<origin.y*FINE_GRID+size;y++) for(let x=origin.x*FINE_GRID;x<origin.x*FINE_GRID+size;x++) if (!placementReason(s,{...placement,cell:{x,y}})) return {x,y};
+    return null;
+  }
+  private highlightOnboarding(): void {
+    const s = this.snapshot.state!, task = onboardingTask(s,this.preferences.value,this.now());
+    const buttons = [...this.content.querySelectorAll<HTMLButtonElement>('button')];
+    let target: HTMLButtonElement | undefined;
+    if (this.view?.kind === 'placement') target = buttons.find(b => /^(Acheter et placer|Confirmer)/.test(b.textContent ?? ''));
+    else if (this.view?.kind === 'buyRabbit') target = this.rabbitDestination ? buttons.find(b => b.hasAttribute('data-confirm-purchase')) : buttons.find(b => /Jardin enneigé/.test(b.textContent ?? ''));
+    else if (this.view?.kind === 'shop') {
+      const title = ({snowShop:'Jardin enneigé',rabbitShop:SPECIES.neige.name,farmShop:'Ferme'} as Record<string,string>)[task.step.id];
+      target = [...this.content.querySelectorAll('.card')].find(card => card.querySelector('h3')?.textContent === title)?.querySelector<HTMLButtonElement>('button') ?? undefined;
+    } else if (task.step.id === 'snowReward') target = this.content.querySelector<HTMLButtonElement>('[data-mission="welcome-snow"] .mission-claim') ?? undefined;
+    else if (task.waiting) target = this.content.querySelector<HTMLButtonElement>('.initiation-aid button') ?? this.content.querySelector<HTMLButtonElement>('.paid-acceleration button') ?? undefined;
+    else if (task.step.id === 'welcomeBirth') target = buttons.find(b => !b.disabled && / · \d+\//.test(b.textContent ?? ''));
+    else {
+      const pattern = ({production:/^Produire · 10/,harvest:/^Récolter 20/,paille:/^Nourrir/,neige:/^Nourrir/,breed:/^Croiser$/,transfer:/^Envoyer dans la nurserie/} as Record<string,RegExp>)[task.step.id];
+      target = buttons.find(b => pattern?.test(b.textContent ?? ''));
+    }
+    target?.classList.add('guide-target');
+    target?.scrollIntoView?.({block:'nearest',behavior:'instant'});
+    if (this.view && this.view.kind !== 'settings' && !this.pailleDialogue.element.open) this.content.prepend(node('p', task.step.text, 'paille-task'));
+    this.scene.setTutorialTarget(task.step.id === 'transfer' && !task.waiting ? 'birth' : null);
+    this.applyOnboardingLock();
+  }
   private highlightGuideTarget(): void {
-    document.querySelectorAll('.guide-target').forEach(el => el.classList.remove('guide-target'));
+    this.content.querySelectorAll('.guide-target').forEach(el => el.classList.remove('guide-target'));
+    this.content.querySelector('.paille-task')?.remove();
+    if (this.onboardingActive) { this.highlightOnboarding(); return; }
     if (!this.preferences.value.tutorial || this.preferences.value.tutorialDone || !this.snapshot.state) return;
-    const step = guidedStep(this.snapshot.state, this.preferences.value, this.now());
+    const step = guidedStep(this.snapshot.state, this.preferences.value, this.now(), this.stagedOnboarding);
     const labels: Record<string, RegExp> = {paille: /^Nourrir/, neige: /^Nourrir/, farmShop: /^Placer · 60/, production: /^Produire · 10/, harvest: /^Récolter 20/, breed: /^Croiser$/, transfer: /^Envoyer dans la nurserie/, welcomeBirth: /^Accueillir/};
     const pattern = labels[step.id];
-    const target = pattern ? [...this.content.querySelectorAll('button')].find(b => pattern.test(b.textContent ?? '')) : null;
+    let target = pattern ? [...this.content.querySelectorAll('button')].find(b => pattern.test(b.textContent ?? '')) : null;
+    if (this.stagedOnboarding && this.snapshot.state.startCourse === 'paille-solo') {
+      if (step.id === 'snowShop' || step.id === 'rabbitShop') {
+        const title = step.id === 'snowShop' ? 'Jardin enneigé' : 'Neige';
+        target = [...this.content.querySelectorAll('.card')].find(card => card.querySelector('h3')?.textContent === title)?.querySelector('button');
+      } else if (step.id === 'snowReward') target = this.content.querySelector<HTMLButtonElement>('[data-mission="welcome-snow"] .mission-claim') ?? undefined;
+      if (this.view && !this.pailleDialogue.element.open && !step.done) this.content.prepend(node('p', step.text, 'paille-task'));
+    }
     target?.classList.add('guide-target');
   }
   private renderTutorial(): void {
     if (this.interactionPointers.size) return;
     const s = this.snapshot.state, preferences = this.preferences.value;
-    this.tutorial.replaceChildren(); this.tutorial.hidden = !s || !!this.view || !preferences.tutorial || preferences.tutorialDone;
+    const speaking = this.pailleDialogue.update(s, this.stagedOnboarding, this.now(), this.view?.kind !== 'settings');
+    if (s?.startCourse === 'paille-solo' && this.stagedOnboarding && preferences.tutorial && !preferences.tutorialDone) { this.tutorial.hidden = true; return; }
+    this.tutorial.replaceChildren(); this.tutorial.hidden = !s || speaking || !!this.view || !preferences.tutorial || preferences.tutorialDone;
     if (this.tutorial.hidden || !s) return;
-    const step = guidedStep(s, preferences, this.now()); this.tutorial.dataset.step = step.id;
+    const step = guidedStep(s, preferences, this.now(), this.stagedOnboarding); this.tutorial.dataset.step = step.id;
     const missionId = activeMainMissions(s).find(id => s.missions.completed.includes(id));
     this.tutorial.append(node('strong', missionId ? MAIN_MISSIONS[missionId].title : step.title), node('p', step.text));
     this.button(this.tutorial, 'Me guider', () => this.guide(step));
@@ -1304,5 +1438,5 @@ export class GameUI {
     if (step.done) this.button(this.tutorial, 'Terminer le guidage', () => { this.preferences.set({tutorialDone: true}); this.renderPreferences(); this.renderTutorial(); }, null, true);
     this.button(this.tutorial, 'Masquer', () => { this.preferences.set({tutorial: false}); this.renderPreferences(); this.renderTutorial(); }, null, true);
   }
-  dispose(): void { this.cuisine.dispose(); this.confirmationGeneration++; if (this.dialog.open) this.dialog.close(); this.dialog.replaceChildren(); this.unsubscribe(); this.abort.abort(); cancelAnimationFrame(this.frame); clearTimeout(this.toastTimer); this.sounds.dispose(); }
+  dispose(): void { document.getElementById('onboarding-skip')?.remove(); this.pailleDialogue.dispose(); this.cuisine.dispose(); this.confirmationGeneration++; if (this.dialog.open) this.dialog.close(); this.dialog.replaceChildren(); this.unsubscribe(); this.abort.abort(); cancelAnimationFrame(this.frame); clearTimeout(this.toastTimer); this.sounds.dispose(); }
 }
