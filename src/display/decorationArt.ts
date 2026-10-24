@@ -1,28 +1,11 @@
 import {DECORATIONS, type DecorationId} from '../config/decorations';
 /** Identical scale for the placed object and its ghost; tall silhouettes stay modest. */
-export function decorationScale(id: DecorationId): number {
-  if (id === 'fruit-tree') return .67;
-  if (id === 'flower-arch') return .72;
-  return Math.max(DECORATIONS[id].width, DECORATIONS[id].height) > 1 ? .79 : .43;
-}
-/** Original illustrations shared verbatim by the shop and the cached world textures. */
-export function decorationSvg(id: DecorationId, rotation: 0 | 1 = 0): string {
-  const flower = (x: number, y: number, color = '#e5a3b2', size = 1) => `<g transform="translate(${x} ${y}) scale(${size})"><path d="M0 0V20M0 13Q-11 3-10 14Q-4 21 0 19M0 9Q11 0 10 12Q5 17 0 17" stroke="#668257" fill="#94b779" stroke-width="2"/><g fill="${color}" stroke="#bc8092" stroke-width="1"><circle cx="-5" cy="0" r="5"/><circle cx="5" cy="0" r="5"/><circle cx="0" cy="-5" r="5"/><circle cx="0" cy="5" r="5"/></g><circle r="3" fill="#ffe4a4"/></g>`;
-  const foliage = (x: number, y: number, r: number, fill: string) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${fill}" stroke="#70885c" stroke-width="2"/>`;
-  const drawings: Record<DecorationId, string> = {
-    wildflowers: `<ellipse cx="60" cy="99" rx="27" ry="9" fill="#91b976"/>${flower(41,70,'#e7a1b5',.9)}${flower(76,62,'#b3a8cf')}${flower(58,77,'#fff1cd',1.1)}${flower(84,80,'#edbd9c',.7)}${flower(31,85,'#fff1cd',.6)}`,
-    'flowering-bush': `${foliage(46,79,20,'#94b978')}${foliage(76,80,23,'#a4c388')}${foliage(59,62,22,'#b3d297')}${flower(48,67,'#edafbf',.5)}${flower(78,80,'#edafbf',.5)}${flower(62,55,'#ffe6cf',.45)}<path d="M38 94Q60 101 89 93" fill="none" stroke="#75945e" stroke-width="3"/>`,
-    'moss-rock': `<path d="M27 86L38 62L65 53L86 67L96 91Q68 112 27 94Z" fill="#abb4ad"/><path d="M38 62L63 76L86 67M63 76L55 101" fill="none" stroke="#89978e"/><path d="M35 81Q37 64 55 64Q68 58 72 68L66 76Q50 71 43 85Z" fill="#90b47e" stroke="#70895f"/><path d="M68 90Q85 85 91 94Q79 101 63 98Z" fill="#a8c58a"/>`,
-    'garden-lantern': `<ellipse cx="60" cy="97" rx="19" ry="6" fill="#b2a077"/><path d="M60 96V50Q60 31 79 36V47" fill="none" stroke="#867956" stroke-width="5"/><path d="M69 49H91L87 70H73Z" fill="#fce3a3"/><path d="M66 49L80 38L94 49Z" fill="#c09276"/><path d="M70 72H91M80 50V70" fill="none" stroke="#978466" stroke-width="3"/><circle cx="80" cy="62" r="5" fill="#fff7cc" stroke="none"/>`,
-    'wood-bench': rotation ? `<path d="M44 55L65 42L81 87L59 101Z" fill="#c59b73"/><path d="M44 45L59 35L72 74L57 85Z" fill="#deb68a"/><path d="M50 45L62 81M55 40L67 77" stroke="#b18c6a" fill="none"/><path d="M49 59V92M75 86V104M46 49V69M63 79V99" stroke="#896d52" stroke-width="5" fill="none"/>` : `<path d="M25 79L39 70H99L85 86H25Z" fill="#c59b73"/><path d="M29 50H91V71H29Z" fill="#deb68a"/><path d="M30 59H90M30 67H90" stroke="#b18c6a" fill="none"/><path d="M31 49V93M87 49V94M35 85V104M81 86V103" stroke="#896d52" stroke-width="5" fill="none"/><path d="M23 74H40M82 74H97" fill="none" stroke="#e8c9a2" stroke-width="5"/>`,
-    'flower-arch': rotation ? `<path d="M53 100V43Q53 15 71 48V82" fill="none" stroke="#aa8970" stroke-width="8"/><path d="M54 96V45Q54 23 69 48V79" fill="none" stroke="#d8b894" stroke-width="3"/>${flower(51,39,'#edb1c0',.65)}${flower(63,29,'#ffe7b0',.7)}${flower(69,48,'#c4b6dc',.6)}<path d="M49 91Q33 72 51 61M73 76Q87 63 72 58" fill="none" stroke="#86a474" stroke-width="5"/>` : `<path d="M29 99V53Q29 19 60 19Q91 19 91 53V99" fill="none" stroke="#aa8970" stroke-width="8"/><path d="M29 94V53Q29 24 60 24Q91 24 91 53V94" fill="none" stroke="#d8b894" stroke-width="3"/><path d="M28 84Q11 60 32 54M90 86Q107 64 87 51" fill="none" stroke="#86a474" stroke-width="5"/>${flower(31,40,'#edb1c0',.7)}${flower(51,25,'#ffe7b0',.65)}${flower(74,30,'#c4b6dc',.7)}${flower(88,52,'#edb1c0',.6)}`,
-    'fruit-tree': `<path d="M58 100V54M58 75L40 54M60 65L77 46" fill="none" stroke="#967757" stroke-width="8"/>${foliage(41,44,23,'#a6c68d')}${foliage(76,44,25,'#94b879')}${foliage(58,27,23,'#b6d39c')}<g fill="#e1a389" stroke="#b98567" stroke-width="1.5"><circle cx="35" cy="44" r="6"/><circle cx="64" cy="25" r="6"/><circle cx="80" cy="53" r="6"/></g><path d="M47 101Q57 93 72 101" fill="#a8c586" stroke="#839a6b"/>`,
-    'small-pond': `<ellipse cx="60" cy="87" rx="47" ry="22" fill="#bec0a7"/><ellipse cx="60" cy="84" rx="39" ry="16" fill="#97c4cc" stroke="#809e9b"/><path d="M35 86Q42 83 51 85M63 79Q73 77 80 80" fill="none" stroke="#e2f2e7" stroke-width="3"/><ellipse cx="73" cy="90" rx="11" ry="5" fill="#a7c38c"/><path d="M68 90L72 85" stroke="#809c6d"/><circle cx="78" cy="88" r="4" fill="#e4b4c0" stroke="none"/><path d="M19 84L24 70L35 65M91 74L101 77L105 89M34 105L37 97" fill="none" stroke="#919e8c" stroke-width="3"/>`,
-    'soft-cushion': `<path d="M25 74Q27 64 42 65L89 67Q103 73 91 96L42 103Q22 102 25 74Z" fill="#d5b9d4"/><path d="M33 73Q58 88 92 76M40 93Q60 95 82 88" fill="none" stroke="#b99bbb" stroke-width="2"/><circle cx="60" cy="83" r="3" fill="#b094b2" stroke="none"/><path d="M31 72L35 76M90 73L86 78" fill="none" stroke="#f0dbee" stroke-width="3"/>`,
-    'ball-toys': `<circle cx="49" cy="80" r="23" fill="#e8b8a6"/><path d="M37 61Q35 78 55 100M29 85Q49 76 69 79" fill="none" stroke="#fff0cf" stroke-width="6"/><path d="M78 85L95 79L102 93L85 100Z" fill="#9ebdcb"/><path d="M76 90L79 105L89 109L93 103L87 94Z" fill="#dfc891"/><circle cx="42" cy="70" r="5" fill="#f4d7be" stroke="none"/>`,
-    'play-tunnel': `<path d="M22 91Q22 46 56 51L93 63Q109 72 98 100Z" fill="#a5c3be"/><ellipse cx="39" cy="88" rx="20" ry="23" fill="#83a49e"/><ellipse cx="39" cy="88" rx="14" ry="17" fill="#627d74"/><path d="M60 56Q76 68 70 95M78 61Q93 75 87 98" fill="none" stroke="#d8e3cf" stroke-width="3"/><path d="M28 71Q37 61 46 70" fill="none" stroke="#d8e3cf" stroke-width="3"/>`,
-    'small-parasol': `<path d="M60 63V101M50 103H72" fill="none" stroke="#a38466" stroke-width="4"/><path d="M22 66Q29 35 60 28Q91 36 99 66L80 72L60 66L40 73Z" fill="#edc59f"/><path d="M40 72Q42 47 60 28Q78 48 80 72L60 66Z" fill="#ecdcd4"/><path d="M60 28V66" fill="none" stroke="#c6a38a"/><circle cx="60" cy="28" r="4" fill="#a38466"/>`,
-  };
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><ellipse cx="61" cy="104" rx="${id === 'small-pond' ? 44 : id === 'fruit-tree' ? 24 : 29}" ry="7" fill="#586c48" opacity=".15"/><g stroke="#796f58" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">${drawings[id]}</g></svg>`;
+export function decorationScale(id: DecorationId, textureWidth = 120): number {
+  return DECORATIONS[id].art.worldWidth / textureWidth;
 }
 export const decorationTexture = (id: DecorationId, rotation: 0 | 1 = 0) => `decoration:${id}:${rotation}`;
+
+/** Flat tiles live above the terrain and below every upright layer. */
+export const decorationLayerDepth = (id: DecorationId): number => id === 'dirt-path' ? .05 : .5;
+export const decorationOrigin = (id: DecorationId) => DECORATIONS[id].art.anchor;
+export const decorationUrl = (id: DecorationId) => import.meta.env.BASE_URL + DECORATIONS[id].art.file;

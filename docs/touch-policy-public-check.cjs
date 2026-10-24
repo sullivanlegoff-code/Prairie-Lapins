@@ -68,7 +68,7 @@ const fs=require('node:fs'),assert=require('node:assert/strict');
   const initial=await read(false);assert.equal(initial.version,11);assert.equal(initial.pattes,300);
   await page.locator('#open-shop').tap();await tap('Bâtiments et décorations');await tap('Décorations');
   await nativeScroll('#panel-content');
-  const card=page.locator('#panel-content [data-catalog=ball-toys]');
+  const card=page.locator('#panel-content [data-catalog=hay-bale]');
   await card.getByRole('button',{name:'Acheter pour l’inventaire · 40 pièces',exact:true}).tap();
   await doubleControl(page.locator('#game-dialog').getByRole('button',{name:'Confirmer',exact:true}),'confirmation d’achat');
   const owned=await read(false);assert.equal(owned.pattes,260);assert.equal(owned.decorations.length,1);assert.equal(owned.decorations[0].location.kind,'inventory');

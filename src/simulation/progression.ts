@@ -77,6 +77,7 @@ export function validateProgressionConfig(c: ProgressionConfig = PROGRESSION): v
   for(const tier of r.decorations){integer(tier.minimumPrice,'Decoration tier');if(tier.minimumPrice<=previous)throw new RangeError('Decoration tiers must increase');previous=tier.minimumPrice;required(tier.level);}
   if(r.extensions.length!==PARCEL_IDS.length-1)throw new RangeError('Extension requirements must cover all eight purchases');
   r.extensions.forEach(required);
+  for(const id of DECORATION_IDS) if(DECORATIONS[id].level !== undefined) required(DECORATIONS[id].level!);
   for(const id of DECORATION_IDS) integer(Math.max(x.firstDecorationPlacement.minimum,Math.round(DECORATIONS[id].price/x.firstDecorationPlacement.priceDivisor)),'Decoration XP');
 }
 function levelInput(level:number,c:ProgressionConfig):void {
@@ -117,6 +118,7 @@ export function requiredHabitatUpgradeLevel(type:HabitatType,to:Exclude<HabitatL
 }
 export function requiredDecorationLevel(id:DecorationId,c:ProgressionConfig=PROGRESSION):number {
   validateProgressionConfig(c);if(!DECORATION_IDS.includes(id))throw new RangeError('Unknown decoration');
+  if(DECORATIONS[id].level !== undefined) return DECORATIONS[id].level!;
   const price=DECORATIONS[id].price;return c.requirements.decorations.filter(t=>price>=t.minimumPrice).at(-1)!.level;
 }
 export function requiredExtensionLevel(purchaseRank:number,c:ProgressionConfig=PROGRESSION):number {

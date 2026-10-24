@@ -1,0 +1,54 @@
+{
+  "dirt-path": {
+    "sourceSha1": "ace716e2025c6c1f5b9b2c5c0963a962a6c79f36",
+    "derivedSha1": "7ea74006061daa2dde795254a56586abb0abc616"
+  },
+  "bush": {
+    "sourceSha1": "c10b4f8ef7c5784ac1f107efbb7698087f244aaf",
+    "derivedSha1": "6d00530a6b4cf93ab0c728f21f77ac530a82b55d"
+  },
+  "tree": {
+    "sourceSha1": "49b63810c2830c722622fe4811e904f02cd4364d",
+    "derivedSha1": "cd509416d2e8fc941a137db79f5d0332dfd50105"
+  },
+  "hay-bale": {
+    "sourceSha1": "732a59927a40f1cf031ab2f8904077e7ce3066fb",
+    "derivedSha1": "112641fb4cb1f9172e0a495c477d385ea578cbad"
+  },
+  "bunny-slippers": {
+    "sourceSha1": "21ce2a1a341a03e2eebd0f8357b170dd4efc1f84",
+    "derivedSha1": "56c0307d04a25e54d59ac87adf2a451f907963ee"
+  },
+  "birthday-candle": {
+    "sourceSha1": "94e3067e0b653dede6df41b63c09999c0178df09",
+    "derivedSha1": "4936fe538cc2e0c226ca2ebb6c0bdc46a4f7c79d"
+  },
+  "small-bookcase": {
+    "sourceSha1": "5ac6ae397e00c48527a99f02349fc998e12b037a",
+    "derivedSha1": "ce94fd38f3cd0f6c1f3ae4860d18c475358e132c"
+  },
+  "coconut-palm": {
+    "sourceSha1": "f4ca1e048f837b3fbada2518ce084354026bd086",
+    "derivedSha1": "8cdfd248f8b54f7b3f3ca444641ca3f54ccb041a"
+  },
+  "otter-plush": {
+    "sourceSha1": "ad2e10b373152fd4d01226969463d3776d69e787",
+    "derivedSha1": "fe154f6ee000a070ed98cec739d18603341c4491"
+  },
+  "large-bookcase": {
+    "sourceSha1": "28f695494cd553ac0b930305eccc106f4fc6f97f",
+    "derivedSha1": "f61fc0e582b7c954e24592587ff80b58b743f9eb"
+  },
+  "hanukkah-menorah": {
+    "sourceSha1": "8474dfcd21b8cad8dda1271489f82156458fb58e",
+    "derivedSha1": "5b7f5a82a7b05b92dd667808aa9e5e3d53b91104"
+  },
+  "honey-pot": {
+    "sourceSha1": "2977a58fda5834435b7fb038196642acdf734d98",
+    "derivedSha1": "6bc9a88366fcdff0d93d42c8e21925e7003b1b77"
+  },
+  "robot-statue": {
+    "sourceSha1": "92b22abd562d9e30d7f624a9e5c1ff072124a88e",
+    "derivedSha1": "597d4aab8a7fe58db78c886d93a98f079b1fcd64"
+  }
+}

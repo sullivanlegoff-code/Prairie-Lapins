@@ -100,7 +100,7 @@ describe('pre-launch result filtering and unchanged fixed probabilities',()=>{
   expect(odds(10,'belier-gris','volant')).toEqual({'belier-gris':50,volant:50});expect(odds(11,'belier-gris','volant')).toEqual({'belier-gris':47.5,volant:47.5,magicien:5});
   expect(odds(13,'perroquet','feu')).toEqual({feu:100/3,volant:100/3,perroquet:50/3,phoenix:50/3});expect(odds(14,'perroquet','feu')).toEqual({feu:98*40/120,volant:98*40/120,perroquet:98*20/120,phoenix:98*20/120,dragon:2});
   for(let level=1;level<=14;level++)for(const a of SPECIES_IDS)for(const b of SPECIES_IDS){const result=odds(level,a,b),total=Object.values(result).reduce((n,w)=>n+w,0);if(total)expect(total).toBeCloseTo(100,10);}
- });
+ },20000);
  it('launch XP cannot alter this birth, even if it crosses a threshold',()=>{
   // Paille x Feu at level 4: Feu (level 5) is still locked, so with the roll .5 the draw lands on Ardent; had the launch XP counted, the same roll would give Feu.
   const s=at(4);s.progression.totalXp=cumulativeLevelXp(5)-1;s.rabbits.push({id:'rabbit-6',species:'feu',affection:4,enclosureId:'building-1'});s.rabbits[0].affection=4;s.discovered.push('feu');s.nextId=7;

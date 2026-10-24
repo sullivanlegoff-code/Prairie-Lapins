@@ -89,7 +89,7 @@ describe('technical foundation regressions', () => {
   expect(gate.run('outer',()=>{expect(gate.run('inner',action)).toBe(false);})).toBe(true);
  });
  it('validates stable catalogue references, safe costs, recipes and durations', () => {
-  expect(new Set(SPECIES_IDS).size).toBe(EXPECTED_IDS.length); expect(new Set(DECORATION_IDS).size).toBe(12);
+  expect(new Set(SPECIES_IDS).size).toBe(EXPECTED_IDS.length); expect(new Set(DECORATION_IDS).size).toBe(13);
   for(const id of SPECIES_IDS){const species=SPECIES[id];expect(species.name).toBeTruthy();expect(growthDuration(id)).toBeGreaterThan(0);expect(Number.isSafeInteger(growthDuration(id))).toBe(true);
    if(species.price!==null)expect(Number.isSafeInteger(species.price)&&species.price>=0).toBe(true);
    if(species.recipe){expect(species.recipe.minAffection).toBeGreaterThanOrEqual(BALANCE.breedingAffection);expect(species.recipe.minAffection).toBeLessThanOrEqual(BALANCE.maxAffection);for(const parent of species.recipe.parents??[])expect(SPECIES_IDS).toContain(parent);}
@@ -113,7 +113,7 @@ describe('reproducible action traces', () => {
     const stage=nest.breeding?'breeding':babyOf(nursery)?'growth':'order'; const target=stage==='breeding'?nest:stage==='growth'?nursery:farm;
     const growing=stage==='growth'?babyOf(nursery)!.birth.id:undefined, quote=quoteAcceleration(s,target.id,stage,now,growing);
     const choices:Command[]=[
-     {type:'buyDecoration',catalogId:'wildflowers'}, {type:'collectIncome',id:'building-1'}, {type:'feed',id:'rabbit-2'},
+     {type:'buyDecoration',catalogId:'bush'}, {type:'collectIncome',id:'building-1'}, {type:'feed',id:'rabbit-2'},
      {type:'startOrder',id:farm.id,recipe:'small'}, {type:'collectOrder',id:farm.id}, {type:'breed',parents:['rabbit-2','rabbit-3']},
      welcomeOf(s,'building-7'), {type:'claimHearts'}, {type:'claimMainMission',id:'first-farm'},
      {type:'expand',parcelId:PARCEL_IDS[Math.floor(random()*PARCEL_IDS.length)],expectedCost:extensionPrice(s)},

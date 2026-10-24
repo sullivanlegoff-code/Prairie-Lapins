@@ -26,7 +26,7 @@ describe('current mission journey',()=>{
   for(const id of ['discover-brumelin','discover-terre'])expect(Object.hasOwn(MAIN_MISSIONS,id),id).toBe(false);
  });
  it('does not count purchased rabbits, inventories, time, refused harvests or early transfers as events',()=>{
-  let s=createGame(0);s=run(s,{type:'buyRabbit',species:'belier-gris',enclosureId:'building-1'});s=run(s,{type:'buyDecoration',catalogId:'wildflowers'});
+  let s=createGame(0);s=run(s,{type:'buyRabbit',species:'belier-gris',enclosureId:'building-1'});s=run(s,{type:'buyDecoration',catalogId:'bush'});
   expect(s.missions.events).toEqual(emptyMainEvents());expect(s.missions.completed).toContain('varied-family');expect(s.missions.completed).not.toContain('first-birth');
   expect(act(s,{type:'collectOrder',id:'building-4'},0).ok).toBe(false);expect(advance(s,HOUR).missions.events).toEqual(emptyMainEvents());
   s=run(s,{type:'placeDecoration',id:s.decorations[0].id,location:{kind:'outside',x:18,y:28,rotation:0}});expect(s.missions.events.placeDecoration).toBe(1);

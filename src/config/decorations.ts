@@ -1,20 +1,29 @@
+/** Removed catalogue IDs: discard owned copies when decoding v16 saves, without compensation. */
+export const RETIRED_DECORATION_IDS = ['wildflowers', 'flowering-bush', 'moss-rock', 'garden-lantern', 'wood-bench', 'flower-arch', 'fruit-tree', 'small-pond', 'soft-cushion', 'ball-toys', 'play-tunnel', 'small-parasol'] as const;
 /** Stable save identifiers. Prices are pattes only; decoration has no gameplay bonus. */
-export const DECORATION_IDS = ['wildflowers', 'flowering-bush', 'moss-rock', 'garden-lantern', 'wood-bench', 'flower-arch', 'fruit-tree', 'small-pond', 'soft-cushion', 'ball-toys', 'play-tunnel', 'small-parasol'] as const;
+export const DECORATION_IDS = ['dirt-path', 'bush', 'tree', 'hay-bale', 'bunny-slippers', 'birthday-candle', 'small-bookcase', 'coconut-palm', 'otter-plush', 'large-bookcase', 'hanukkah-menorah', 'honey-pot', 'robot-statue'] as const;
 export type DecorationId = typeof DECORATION_IDS[number];
-export interface DecorationDefinition {name: string; price: number; area: 'outside'; width: number; height: number; rotates: boolean}
+export interface DecorationDefinition {name: string; price: number; area: 'outside'; width: number; height: number; rotates: boolean; level?: number; art: {
+  /** Relative to the Vite base; displayed width in world units before camera zoom. */
+  file: string; worldWidth: number;
+  /** Normalised ground contact within the cropped texture. */
+  anchor: {x: number; y: number};
+}}
 export const DECORATIONS: Record<DecorationId, DecorationDefinition> = {
-  wildflowers: {name: 'Massif de fleurs sauvages', price: 20, area: 'outside', width: 1, height: 1, rotates: false},
-  'flowering-bush': {name: 'Buisson fleuri', price: 30, area: 'outside', width: 1, height: 1, rotates: false},
-  'moss-rock': {name: 'Petit rocher moussu', price: 40, area: 'outside', width: 1, height: 1, rotates: false},
-  'garden-lantern': {name: 'Lanterne de jardin', price: 60, area: 'outside', width: 1, height: 1, rotates: false},
-  'wood-bench': {name: 'Banc en bois', price: 80, area: 'outside', width: 2, height: 1, rotates: true},
-  'flower-arch': {name: 'Arche fleurie', price: 100, area: 'outside', width: 2, height: 1, rotates: true},
-  'fruit-tree': {name: 'Petit arbre fruitier', price: 120, area: 'outside', width: 2, height: 2, rotates: false},
-  'small-pond': {name: 'Petit bassin', price: 150, area: 'outside', width: 2, height: 2, rotates: false},
-  'soft-cushion': {name: 'Coussin douillet', price: 30, area: 'outside', width: 1, height: 1, rotates: false},
-  'ball-toys': {name: 'Balle et jouets', price: 40, area: 'outside', width: 1, height: 1, rotates: false},
-  'play-tunnel': {name: 'Tunnel de jeu', price: 60, area: 'outside', width: 2, height: 1, rotates: true},
-  'small-parasol': {name: 'Petit parasol', price: 80, area: 'outside', width: 1, height: 1, rotates: false},
+  'dirt-path': {name: 'Chemin en terre', price: 1, area: 'outside', width: 1, height: 1, rotates: false, level: 1, art: {file: 'assets/decorations/dirt-path.png', worldWidth: 54, anchor: {x: .5, y: 0.5}}},
+  'bush': {name: 'Buisson', price: 20, area: 'outside', width: 1, height: 1, rotates: false, level: 1, art: {file: 'assets/decorations/bush.png', worldWidth: 44, anchor: {x: .5, y: 0.87}}},
+  'tree': {name: 'Arbre', price: 30, area: 'outside', width: 2, height: 2, rotates: false, level: 1, art: {file: 'assets/decorations/tree.png', worldWidth: 138, anchor: {x: .5, y: 0.95}}},
+  'hay-bale': {name: 'Botte de foin', price: 50, area: 'outside', width: 1, height: 1, rotates: false, level: 2, art: {file: 'assets/decorations/hay-bale.png', worldWidth: 43, anchor: {x: .5, y: 0.85}}},
+  'bunny-slippers': {name: 'Chaussons lapins', price: 30, area: 'outside', width: 1, height: 1, rotates: false, level: 3, art: {file: 'assets/decorations/bunny-slippers.png', worldWidth: 34, anchor: {x: .5, y: 0.8}}},
+  'birthday-candle': {name: 'Bougie « 1 an »', price: 50, area: 'outside', width: 2, height: 2, rotates: false, level: 5, art: {file: 'assets/decorations/birthday-candle.png', worldWidth: 82, anchor: {x: .5, y: 0.94}}},
+  'small-bookcase': {name: 'Petite bibliothèque', price: 160, area: 'outside', width: 1, height: 1, rotates: false, level: 6, art: {file: 'assets/decorations/small-bookcase.png', worldWidth: 47, anchor: {x: .5, y: 0.93}}},
+  'coconut-palm': {name: 'Cocotier', price: 130, area: 'outside', width: 2, height: 2, rotates: false, level: 8, art: {file: 'assets/decorations/coconut-palm.png', worldWidth: 150, anchor: {x: .5, y: 0.95}}},
+  'otter-plush': {name: 'Peluche de loutre géante', price: 200, area: 'outside', width: 2, height: 2, rotates: false, level: 10, art: {file: 'assets/decorations/otter-plush.png', worldWidth: 100, anchor: {x: .5, y: 0.93}}},
+  'large-bookcase': {name: 'Grande bibliothèque', price: 400, area: 'outside', width: 2, height: 1, rotates: false, level: 12, art: {file: 'assets/decorations/large-bookcase.png', worldWidth: 91, anchor: {x: .5, y: 0.93}}},
+  'hanukkah-menorah': {name: 'Ménorah de Hanoucca', price: 150, area: 'outside', width: 1, height: 1, rotates: false, level: 14, art: {file: 'assets/decorations/hanukkah-menorah.png', worldWidth: 43, anchor: {x: .5, y: 0.94}}},
+  // Owner's own artwork, shipped unchanged (only cropped and reduced like every decoration).
+  'honey-pot': {name: 'Pot de miel géant', price: 70, area: 'outside', width: 2, height: 2, rotates: false, level: 4, art: {file: 'assets/decorations/honey-pot.png', worldWidth: 95, anchor: {x: .5, y: 0.9}}},
+  'robot-statue': {name: 'Statue du robot noir et doré', price: 500, area: 'outside', width: 2, height: 2, rotates: false, level: 22, art: {file: 'assets/decorations/robot-statue.png', worldWidth: 52, anchor: {x: .5, y: 0.95}}},
 };
 export const FINE_GRID = 4;
 /** A generous bound keeps imports and low-end devices bounded; never discards owned objects. */

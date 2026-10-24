@@ -8,7 +8,7 @@ import {scenarioState} from '../src/dev/scenarios';
 import type {Command,GameState} from '../src/state/types';
 const run=(s:GameState,c:Command)=>{const r=act(s,c,s.lastSimulatedAt);if(!r.ok)throw Error(r.reason);return r.state;};
 function rich(){const s=createGame(0);const level=requiredExtensionLevel(2);s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level};s.pattes=10000;s.buildings[0].x=26;s.buildings[0].y=28;return s;}
-function decoration(s:GameState,x:number,y:number){s=run(s,{type:'buyDecoration',catalogId:'wildflowers'});return run(s,{type:'placeDecoration',id:s.decorations.at(-1)!.id,location:{kind:'outside',x,y,rotation:0}});}
+function decoration(s:GameState,x:number,y:number){s=run(s,{type:'buyDecoration',catalogId:'bush'});return run(s,{type:'placeDecoration',id:s.decorations.at(-1)!.id,location:{kind:'outside',x,y,rotation:0}});}
 describe('fine building footprints v7',()=>{
  it.each(['enclosure','farm','nest','nursery','kitchen'] as const)('buys and moves %s by one fine square across old coarse boundaries',kind=>{
   let s=rich();const before=s.pattes;s=run(s,kind==='nest'||kind==='nursery'?{type:'placeStarterBuilding',kind,x:19,y:22}:{type:'buyBuilding',kind,x:19,y:22});const b=s.buildings.at(-1)!;

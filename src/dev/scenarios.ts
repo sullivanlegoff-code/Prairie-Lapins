@@ -168,7 +168,7 @@ export function scenarioState(id: ScenarioId, now: number): GameState {
     run({type:'startOrder',id:s.buildings.at(-1)!.id,recipe:'small'});
 
     run({type:'buyBuilding',kind:'enclosure',habitatType:'vol',x:24,y:26});
-    run({type:'buyDecoration',catalogId:'flowering-bush'});
+    run({type:'buyDecoration',catalogId:'bush'});
     run({type:'placeDecoration',id:s.decorations.at(-1)!.id,location:{kind:'outside',x:23,y:22,rotation:0}});
     const checked=decodeGame(encodeGame(s));if(!checked.ok)throw Error('Invalid fine building scenario');return checked.state;
   }
@@ -177,7 +177,7 @@ export function scenarioState(id: ScenarioId, now: number): GameState {
     if (id === 'islandDiagonal') acquire('northwest');
     if (id === 'islandL') acquire('north');
     if (id === 'islandFull') for(const id of PARCEL_IDS.filter(id=>id!=='center'))acquire(id);
-    if(id==='parcelEdges'){run({type:'moveBuilding',id:'building-5',x:28,y:24});run({type:'buyDecoration',catalogId:'wood-bench'});run({type:'placeDecoration',id:s.decorations.at(-1)!.id,location:{kind:'outside',x:31,y:16,rotation:0}});}
+    if(id==='parcelEdges'){run({type:'moveBuilding',id:'building-5',x:28,y:24});run({type:'buyDecoration',catalogId:'large-bookcase'});run({type:'placeDecoration',id:s.decorations.at(-1)!.id,location:{kind:'outside',x:31,y:16,rotation:0}});}
     // Almost empty, not an automatic reset: ordinary starting habitat and two rabbits.
     const checked = decodeGame(encodeGame(s));
     if (!checked.ok) throw new Error('Invalid island scenario');
@@ -196,11 +196,14 @@ export function scenarioState(id: ScenarioId, now: number): GameState {
     }
     const outside = DECORATION_IDS.filter(id => DECORATIONS[id].area === 'outside');
     // Spacious demonstration: every catalogue entry is actually placed.
-    const positions = [[19, 25], [22, 26], [25, 25], [26, 24], [34, 25], [40, 24], [43, 25], [37, 25], [18, 27], [21, 27], [24, 27], [28, 27]];
+    const positions = [[19, 25], [22, 26], [25, 25], [28, 25], [34, 25], [40, 24], [43, 25], [37, 27], [18, 28], [22, 29], [28, 29]];
     for (const [index, catalogId] of outside.entries()) {
       run({type: 'buyDecoration', catalogId});
-      const [x, y] = positions[index];
-      run({type: 'placeDecoration', id: s.decorations.at(-1)!.id, location: {kind: 'outside', x, y, rotation: 0}});
+      const decorationId = s.decorations.at(-1)!.id;
+      // Entries beyond the hand-placed ones take the first free spot of the same neighbourhood.
+      const free = () => {for (let y = 20; y < 40; y++) for (let x = 16; x < 46; x++) if (!decorationPlacementReason(s, decorationId, {kind: 'outside', x, y, rotation: 0})) return [x, y]; throw Error(`No room for ${catalogId}`);};
+      const [x, y] = positions[index] ?? free();
+      run({type: 'placeDecoration', id: decorationId, location: {kind: 'outside', x, y, rotation: 0}});
     }
     if (id === 'decorationDense') {
       for(const id of PARCEL_IDS.filter(id=>!s.acquiredParcels.includes(id)))acquire(id);
@@ -214,7 +217,7 @@ export function scenarioState(id: ScenarioId, now: number): GameState {
         let installed = false;
         for (let index=cursor; index<ISLAND.mapFine**2 && !installed; index++) {
           const x=index%ISLAND.mapFine,y=Math.floor(index/ISLAND.mapFine);
-          const location = {kind: 'outside' as const, x, y, rotation: DECORATIONS[catalogId].rotates && s.decorations.length % 2 ? 1 as const : 0 as const};
+          const location = {kind: 'outside' as const, x, y, rotation: 0 as const};
           if (!decorationPlacementReason(s, id, location)) { run({type: 'placeDecoration', id, location}); installed = true; cursor=index+1; }
         }
         if(!installed)cursor=ISLAND.mapFine**2;

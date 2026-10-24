@@ -28,9 +28,9 @@ import {createRabbitMotion, retargetRabbitMotion, stepRabbitMotion, triggerFedRe
 import {habitatStats, habitatName, habitatEntryReason, visibleColumns} from '../simulation/habitats';
 import {HOUR, type SpeciesId} from '../config/balance';
 import type {Building, DecorationLocation, GameState} from '../state/types';
-import {DECORATIONS, DECORATION_IDS, FINE_GRID, type DecorationId} from '../config/decorations';
+import {DECORATION_IDS, FINE_GRID, type DecorationId} from '../config/decorations';
 import {catalogDecorationPlacementReason, footprint} from '../simulation/decorations';
-import {decorationSvg, decorationTexture, decorationScale} from './decorationArt';
+import {decorationTexture, decorationScale, decorationOrigin, decorationUrl, decorationLayerDepth} from './decorationArt';
 import {MeadowCamera, cellsBounds, gridCell, fineCell, finePoint, buildingCenter, gridPoint, type Point} from '../ui/gestures';
 import {groundTransform, screenBounds, toGround, toScreen} from '../ui/projection';
 import {BUILDING_NAMES, type Placement} from '../ui/models';
@@ -90,6 +90,7 @@ export class MeadowScene extends Phaser.Scene {
   private islandStageLayer: IslandStageLayer | null = null;
   private decorationViews = new Map<string, Phaser.GameObjects.Image>();
   private ghostView: Phaser.GameObjects.Image | null = null;
+  private floorDecorationsLayer!: Phaser.GameObjects.Container;
   private decorationsLayer!: Phaser.GameObjects.Container;
   private selectedDecorationId: string | null = null;
   private decorationSelection!: Phaser.GameObjects.Graphics;
@@ -114,9 +115,9 @@ export class MeadowScene extends Phaser.Scene {
     if (!this.textures.exists(KITCHEN_ART.texture)) this.load.image(KITCHEN_ART.texture, KITCHEN_ART.url);
     for (const art of HABITAT_ART_LIST) if (!this.textures.exists(art.texture)) this.load.image(art.texture, art.url);
     for (const art of RABBIT_ART) if (!this.textures.exists(art.texture)) this.load.image(art.texture, art.url);
-    for (const id of DECORATION_IDS) for (const rotation of (DECORATIONS[id].rotates ? [0, 1] : [0]) as (0 | 1)[]) {
-      const key = decorationTexture(id, rotation);
-      if (!this.textures.exists(key)) this.load.svg(key, 'data:image/svg+xml;base64,' + btoa(decorationSvg(id, rotation)), {width: 120, height: 120});
+    for (const id of DECORATION_IDS) {
+      const key = decorationTexture(id);
+      if (!this.textures.exists(key)) this.load.image(key, decorationUrl(id));
     }
   }
   create(): void {
@@ -129,6 +130,8 @@ export class MeadowScene extends Phaser.Scene {
     // labels 2.5, bubbles and availability texts 3. Depths are those of the former single-plane scene.
     this.ground = this.add.container(0, 0); this.buildingsLayer = this.add.container(0, 0).setDepth(.1); this.animals = this.add.container(0, 0).setDepth(2);
     this.nurseryOverlays = new NurseryOverlays(this, this.buildingsLayer);
+    // Flat path paintings follow the ground compression, above terrain but below every upright object.
+    this.floorDecorationsLayer = this.add.container(0, 0).setDepth(decorationLayerDepth('dirt-path'));
     this.decorationsLayer = this.add.container(0, 0).setDepth(.5);
     this.decorationSelection = this.add.graphics().setDepth(.9);
     this.labels = this.add.container(0, 0).setDepth(2.5);
@@ -230,7 +233,7 @@ export class MeadowScene extends Phaser.Scene {
    * Raster masks are cached per texture; only a tap samples pixels, never each frame. */
   private decorationAt(screen: Point): string | null {
     const world = this.view.world(screen), pad = Math.min(4 / this.view.zoom, 5);
-    const images = [...this.decorationViews.entries()].reverse().sort((a, b) => b[1].depth - a[1].depth);
+    const images = [...this.decorationViews.entries()].reverse().sort((a, b) => (b[1].parentContainer.depth - a[1].parentContainer.depth) || b[1].depth - a[1].depth);
     for (const [id, image] of images) {
       const bounds = image.getBounds();
       if (world.x < bounds.left - pad || world.x > bounds.right + pad || world.y < bounds.top - pad || world.y > bounds.bottom + pad) continue;
@@ -292,14 +295,14 @@ export class MeadowScene extends Phaser.Scene {
       const point = this.decorationPoint(d.location, d.catalogId); if (!point) continue;
       visible.add(d.id);
       let image = this.decorationViews.get(d.id);
-      if (!image) { image = this.add.image(0, 0, decorationTexture(d.catalogId)); this.decorationsLayer.add(image); this.decorationViews.set(d.id, image); }
+      if (!image) { image = this.add.image(0, 0, decorationTexture(d.catalogId)); (d.catalogId === 'dirt-path' ? this.floorDecorationsLayer : this.decorationsLayer).add(image); this.decorationViews.set(d.id, image); }
       image.setTexture(decorationTexture(d.catalogId, d.location.kind === 'outside' ? d.location.rotation : 0));
-      const scale = decorationScale(d.catalogId);
-      image.setPosition(point.x, point.y).setOrigin(.5, .87).setScale(scale).setDepth(point.y)
+      const scale = decorationScale(d.catalogId, image.frame.realWidth), anchor = decorationOrigin(d.catalogId);
+      image.setPosition(point.x, point.y).setOrigin(anchor.x, anchor.y).setScale(scale, scale * (d.catalogId === 'dirt-path' ? VISUAL.projection.q : 1)).setDepth(point.y)
         .setAlpha(this.ghost?.id === d.id ? .35 : 1);
     }
     for (const [id, image] of this.decorationViews) if (!visible.has(id)) { image.destroy(); this.decorationViews.delete(id); }
-    this.decorationsLayer.sort('depth'); this.drawDecorationSelection();
+    this.floorDecorationsLayer.sort('depth'); this.decorationsLayer.sort('depth'); this.drawDecorationSelection();
   }
   private drawGhost(): void {
     const d = this.current?.decorations.find(d => d.id === this.ghost?.id) ?? (this.ghost?.catalogId ? {id: this.ghost.id, catalogId: this.ghost.catalogId} : null);
@@ -308,7 +311,8 @@ export class MeadowScene extends Phaser.Scene {
     if (!this.ghostView) this.ghostView = this.add.image(0, 0, decorationTexture(d.catalogId)).setDepth(1.5).setAlpha(.65).setOrigin(.5, .87);
     const rotation = this.ghost.location.kind === 'outside' ? this.ghost.location.rotation : 0;
     this.ghostView.setTexture(decorationTexture(d.catalogId, rotation)).setPosition(point.x, point.y)
-      .setScale(decorationScale(d.catalogId))
+      .setOrigin(decorationOrigin(d.catalogId).x, decorationOrigin(d.catalogId).y)
+      .setScale(decorationScale(d.catalogId, this.ghostView.frame.realWidth), decorationScale(d.catalogId, this.ghostView.frame.realWidth) * (d.catalogId === 'dirt-path' ? VISUAL.projection.q : 1)).setDepth(d.catalogId === 'dirt-path' ? .06 : 1.5)
       .setTint(catalogDecorationPlacementReason(this.current!, d.catalogId, this.ghost.location, d.id) ? 0xf3a6a1 : 0xe4ffb5).setVisible(!this.photo);
   }
   private drawGround(): void {

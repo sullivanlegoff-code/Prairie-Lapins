@@ -57,7 +57,7 @@ describe('upgrading with room', () => {
 describe('upgrading without room: explicit refusal, no debit, no mutation, nothing moved', () => {
   const blockers: [string, (s: GameState) => GameState, string][] = [
     ['a building', s => { s.buildings.push(emptyBuilding('building-9', 'farm', 10, 40)); s.nextId = 10; return s; }, 'UPGRADE_BLOCKED_BUILDING'],
-    ['a decoration', s => run(run(s, {type: 'buyDecoration', catalogId: 'flowering-bush'}), {type: 'placeDecoration', id: 'decoration-' + s.nextId, location: {kind: 'outside', x: 10, y: 41, rotation: 0}}), 'UPGRADE_BLOCKED_DECORATION'],
+    ['a decoration', s => run(run(s, {type: 'buyDecoration', catalogId: 'bush'}), {type: 'placeDecoration', id: 'decoration-' + s.nextId, location: {kind: 'outside', x: 10, y: 41, rotation: 0}}), 'UPGRADE_BLOCKED_DECORATION'],
     ['land that is not owned', s => { enclosure(s).x = 12; return s; }, 'UPGRADE_BLOCKED_LAND'],
   ];
   it.each(blockers)('%s in the target footprint', (_name, block, reason) => {
@@ -105,7 +105,7 @@ describe('collisions and moves between small and large buildings', () => {
   });
 
   it('keeps decorations out of the enlarged footprint, and the enlarged footprint out of decorations', () => {
-    const s = grown(3), inside = act(run(s, {type: 'buyDecoration', catalogId: 'flowering-bush'}), {type: 'placeDecoration', id: 'decoration-' + s.nextId, location: {kind: 'outside', x: 13, y: 45, rotation: 0}}, 0);
+    const s = grown(3), inside = act(run(s, {type: 'buyDecoration', catalogId: 'bush'}), {type: 'placeDecoration', id: 'decoration-' + s.nextId, location: {kind: 'outside', x: 13, y: 45, rotation: 0}}, 0);
     expect(inside.ok).toBe(false);
   });
 });

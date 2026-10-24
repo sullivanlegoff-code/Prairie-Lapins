@@ -166,7 +166,7 @@ function place(ui: GameUI, kind: 'farm' | 'nest' | 'nursery' | 'enclosure', x: n
 describe('decoration UI transactions (simulated DOM; Phaser verified separately)', () => {
   it('closes stale confirmations when the controller replaces the game directly', () => {
     const {controller} = setup(); document.getElementById('open-shop')!.click(); button('Bâtiments et décorations').click(); button('Décorations').click();
-    const card = panel().querySelector<HTMLElement>('[data-catalog="wildflowers"]')!;
+    const card = panel().querySelector<HTMLElement>('[data-catalog="bush"]')!;
     button('Acheter pour l’inventaire · 20 pièces', card).click();
     const stale = button('Confirmer', document.getElementById('game-dialog')!);
     expect(controller.restart(true).ok).toBe(true);
@@ -178,12 +178,12 @@ describe('decoration UI transactions (simulated DOM; Phaser verified separately)
   const catalog = (id: string) => panel().querySelector<HTMLElement>(`[data-catalog="${id}"]`)!;
   it('previews without payment, cancels to the same category and commits exactly one placed copy', () => {
     const {controller,ui}=setup(); shop(); panel().scrollTop=240;
-    button('Acheter · 20 pièces',catalog('wildflowers')).click();
+    button('Acheter · 20 pièces',catalog('bush')).click();
     expect(state(controller).decorations).toEqual([]); expect(state(controller).pattes).toBe(300);
     ui.select({kind:'fineCell',x:25,y:23}); button('Annuler le placement').click();
-    expect(panel().scrollTop).toBe(240); expect(panel().querySelectorAll('[data-catalog]')).toHaveLength(12);
+    expect(panel().scrollTop).toBe(240); expect(panel().querySelectorAll('[data-catalog]')).toHaveLength(13);
     expect(state(controller).pattes).toBe(300);
-    button('Acheter · 20 pièces',catalog('wildflowers')).click();
+    button('Acheter · 20 pièces',catalog('bush')).click();
     ui.select({kind:'fineCell',x:18,y:20}); expect(button('Acheter et placer · 20 pièces').disabled).toBe(true);
     ui.select({kind:'fineCell',x:25,y:23}); const confirm=button('Acheter et placer · 20 pièces');confirm.click();confirm.click();
     expect(state(controller).pattes).toBe(280);expect(state(controller).decorations).toHaveLength(1);
@@ -192,7 +192,7 @@ describe('decoration UI transactions (simulated DOM; Phaser verified separately)
   });
   it('shows a neutral pending destination and keeps the placed list open across autosave refreshes', () => {
     const {controller, ui, clock} = setup(); shop();
-    button('Acheter pour l’inventaire · 20 pièces', catalog('wildflowers')).click(); button('Confirmer', document.getElementById('game-dialog')!).click();
+    button('Acheter pour l’inventaire · 20 pièces', catalog('bush')).click(); button('Confirmer', document.getElementById('game-dialog')!).click();
     document.getElementById('close-panel')!.click(); document.getElementById('open-arrange')!.click();button('Placer cet exemplaire').click();
     expect(panel().querySelector('.placement-pending')?.textContent).toContain('Choisissez une destination');
     expect(button('Confirmer la pose · gratuit').disabled).toBe(true);
@@ -207,13 +207,13 @@ describe('decoration UI transactions (simulated DOM; Phaser verified separately)
   });
   it('refuses insufficient resources before confirmation and preserves every owned item', () => {
     const initial = createGame(0); initial.pattes = 19; const {controller} = setup(initial); shop();
-    expect(button('Acheter · 20 pièces', catalog('wildflowers')).disabled).toBe(true); expect(catalog('wildflowers').textContent).toContain('Solde insuffisant');
-    button('Acheter · 20 pièces', catalog('wildflowers')).click(); expect((document.getElementById('game-dialog') as HTMLDialogElement).open).toBe(false); expect(state(controller)).toEqual(initial);
+    expect(button('Acheter · 20 pièces', catalog('bush')).disabled).toBe(true); expect(catalog('bush').textContent).toContain('Solde insuffisant');
+    button('Acheter · 20 pièces', catalog('bush')).click(); expect((document.getElementById('game-dialog') as HTMLDialogElement).open).toBe(false); expect(state(controller)).toEqual(initial);
   });
   it('requires explicit confirmation to move; closing a panel preserves the old location and rotation', () => {
-    const initial=createGame(0);initial.progression={totalXp:cumulativeLevelXp(3),rewardedThroughLevel:3};const {controller, ui, scene} = setup(initial); controller.perform({type: 'buyDecoration', catalogId: 'wood-bench'});
+    const initial=createGame(0);initial.pattes=1000;initial.progression={totalXp:cumulativeLevelXp(12),rewardedThroughLevel:12};const {controller, ui, scene} = setup(initial); controller.perform({type: 'buyDecoration', catalogId: 'large-bookcase'});
     controller.perform({type: 'placeDecoration', id: 'decoration-4', location: {kind: 'outside', x: 25, y: 23, rotation: 0}});
-    const original = state(controller); document.getElementById('open-arrange')!.click(); ui.select({kind: 'decoration', id: 'decoration-4'}); button('Tourner de 90°').click();
+    const original = state(controller); document.getElementById('open-arrange')!.click(); ui.select({kind: 'decoration', id: 'decoration-4'}); expect([...panel().querySelectorAll('button')].some(b=>b.textContent==='Tourner de 90°')).toBe(false);button('Déplacer').click();
     ui.select({kind: 'fineCell', x: 29, y: 20}); expect(panel().textContent).toContain('✓ Emplacement valide'); expect(state(controller)).toEqual(original);
     document.getElementById('close-panel')!.click(); expect(state(controller)).toEqual(original); expect(scene.setArrangement).toHaveBeenLastCalledWith(false, null);
     document.getElementById('open-arrange')!.click(); ui.select({kind: 'decoration', id: 'decoration-4'}); button('Déplacer').click(); ui.select({kind: 'fineCell', x: 25, y: 24});
@@ -222,15 +222,15 @@ describe('decoration UI transactions (simulated DOM; Phaser verified separately)
     ui.select({kind: 'decoration', id: 'decoration-4'}); button('Ranger dans l’inventaire').click(); expect(state(controller).decorations[0].location.kind).toBe('inventory');
   });
   it('shows overlap, building and bounds refusals without modifying the object', () => {
-    const {controller, ui} = setup(); controller.perform({type: 'buyDecoration', catalogId: 'wildflowers'});
-    controller.perform({type: 'placeDecoration', id: 'decoration-4', location: {kind: 'outside', x: 25, y: 23, rotation: 0}}); controller.perform({type: 'buyDecoration', catalogId: 'wildflowers'});
+    const {controller, ui} = setup(); controller.perform({type: 'buyDecoration', catalogId: 'bush'});
+    controller.perform({type: 'placeDecoration', id: 'decoration-4', location: {kind: 'outside', x: 25, y: 23, rotation: 0}}); controller.perform({type: 'buyDecoration', catalogId: 'bush'});
     document.getElementById('open-arrange')!.click(); button('Placer cet exemplaire').click(); const original = state(controller);
     for (const [x, y, reason] of [[25,23,'chevauche'],[18,20,'occupée'],[34,20,'disponible']] as const) {
       ui.select({kind: 'fineCell', x, y}); expect(button('Confirmer la pose · gratuit').disabled).toBe(true); expect(panel().textContent).toContain(reason); expect(state(controller)).toEqual(original);
     }
   });
   it('refuses blocking objects without automatically storing them; an explicit object action frees the footprint', () => {
-    const {controller, ui}=setup();controller.perform({type:'buyDecoration',catalogId:'wildflowers'});controller.perform({type:'placeDecoration',id:'decoration-4',location:{kind:'outside',x:25,y:23,rotation:0}});
+    const {controller, ui}=setup();controller.perform({type:'buyDecoration',catalogId:'bush'});controller.perform({type:'placeDecoration',id:'decoration-4',location:{kind:'outside',x:25,y:23,rotation:0}});
     document.getElementById('open-shop')!.click();button('Bâtiments et décorations').click();button('Placer · 60 pièces').click();ui.select({kind:'fineCell',x:22,y:20});const original=state(controller);
     expect(button('Acheter et placer · 60 pièces').disabled).toBe(true);expect(panel().textContent).toContain('chevauche une décoration');expect(panel().textContent).not.toContain('Ranger les');expect(state(controller)).toEqual(original);
     button('Annuler · aucun coût').click();document.getElementById('close-panel')!.click();ui.select({kind:'decoration',id:'decoration-4'});button('Ranger dans l’inventaire').click();
@@ -698,9 +698,9 @@ describe('direct decoration selection and confirmed resale UI', () => {
   function decorated() {
     const s = createGame(0); s.pattes = 1000; s.nextId = 7;
     s.decorations = [
-      {id: 'decoration-4', catalogId: 'wood-bench', location: {kind: 'outside', x: 25, y: 23, rotation: 1}},
-      {id: 'decoration-5', catalogId: 'soft-cushion', location: {kind: 'outside',x:18,y:28,rotation:0}},
-      {id: 'decoration-6', catalogId: 'wood-bench', location: {kind: 'inventory'}},
+      {id: 'decoration-4', catalogId: 'large-bookcase', location: {kind: 'outside', x: 25, y: 23, rotation: 0}},
+      {id: 'decoration-5', catalogId: 'bunny-slippers', location: {kind: 'outside',x:18,y:28,rotation:0}},
+      {id: 'decoration-6', catalogId: 'large-bookcase', location: {kind: 'inventory'}},
     ]; return s;
   }
   it.each(['decoration-4', 'decoration-5'])('opens the selected %s actions in normal play and deselects on empty ground', id => {
@@ -709,15 +709,15 @@ describe('direct decoration selection and confirmed resale UI', () => {
     expect(document.getElementById('game-panel')!.hidden).toBe(false);
     expect(scene.setDecorationSelection).toHaveBeenLastCalledWith(id);
     expect(scene.setArrangement).toHaveBeenLastCalledWith(false, null);
-    expect(document.getElementById('panel-title')!.textContent).toBe(id === 'decoration-4' ? 'Banc en bois' : 'Coussin douillet');
+    expect(document.getElementById('panel-title')!.textContent).toBe(id === 'decoration-4' ? 'Grande bibliothèque' : 'Chaussons lapins');
     expect(button('Déplacer').disabled).toBe(false); expect(button('Ranger dans l’inventaire').disabled).toBe(false);
-    expect([...panel().querySelectorAll('button')].some(b => b.textContent === 'Tourner de 90°')).toBe(id === 'decoration-4');
+    expect([...panel().querySelectorAll('button')].some(b => b.textContent === 'Tourner de 90°')).toBe(false);
     ui.select({kind: 'empty'}); expect(document.getElementById('game-panel')!.hidden).toBe(true);
     expect(scene.setDecorationSelection).toHaveBeenLastCalledWith(null); expect(state(controller)).toEqual(before);
   });
   it('highlights a listed placed object and clears selection without exiting arrangement on empty ground', () => {
     const {ui, scene} = setup(decorated()); document.getElementById('open-arrange')!.click();
-    button('Banc en bois · #4').click(); expect(scene.setDecorationSelection).toHaveBeenLastCalledWith('decoration-4');
+    button('Grande bibliothèque · #4').click(); expect(scene.setDecorationSelection).toHaveBeenLastCalledWith('decoration-4');
     ui.select({kind: 'empty'}); expect(document.getElementById('game-panel')!.hidden).toBe(true);
     expect(document.getElementById('arrange-banner')!.hidden).toBe(false);
     expect(scene.setDecorationSelection).toHaveBeenLastCalledWith(null); expect(scene.setArrangement).toHaveBeenLastCalledWith(true, null);
@@ -741,14 +741,14 @@ describe('direct decoration selection and confirmed resale UI', () => {
   });
   it('asks the exact sale question, cancellation preserves everything, and double confirmation sells only the selected copy', () => {
     const {ui, controller, data, scene} = setup(decorated()), before = state(controller);
-    ui.select({kind: 'decoration', id: 'decoration-4'}); button('Vendre · 40 pièces').click();
+    ui.select({kind: 'decoration', id: 'decoration-4'}); button('Vendre · 200 pièces').click();
     const dialog = document.getElementById('game-dialog')!;
-    expect(dialog.querySelector('h2')!.textContent).toBe('Vendre Banc en bois pour 40 pièces ?');
+    expect(dialog.querySelector('h2')!.textContent).toBe('Vendre Grande bibliothèque pour 200 pièces ?');
     expect(dialog.textContent).toContain('Aucun remboursement en cœurs');
     button('Annuler', dialog).click(); expect(state(controller)).toEqual(before);
-    button('Vendre · 40 pièces').click(); const confirm = button('Confirmer', dialog); confirm.click(); confirm.click();
+    button('Vendre · 200 pièces').click(); const confirm = button('Confirmer', dialog); confirm.click(); confirm.click();
     const after = state(controller);
-    expect(after).toEqual({...before, pattes: before.pattes + 40, decorations: before.decorations.slice(1)});
+    expect(after).toEqual({...before, pattes: before.pattes + 200, decorations: before.decorations.slice(1)});
     expect(JSON.parse(data.get(SAVE_KEY)!)).toEqual({...after, presentationId: controller.getSnapshot().presentationId});
     expect(document.getElementById('game-panel')!.hidden).toBe(true);
     expect(scene.setDecorationSelection).toHaveBeenLastCalledWith(null);
@@ -757,14 +757,14 @@ describe('direct decoration selection and confirmed resale UI', () => {
     const {controller, scene} = setup(decorated()), before = state(controller);
     document.getElementById('open-arrange')!.click(); button('Actions de cet exemplaire', panel().querySelector('[data-decoration="decoration-6"]')!).click();
     expect(button('Ranger dans l’inventaire').disabled).toBe(true);
-    button('Vendre · 40 pièces').click(); button('Confirmer', document.getElementById('game-dialog')!).click();
-    expect(state(controller)).toEqual({...before, pattes: before.pattes + 40, decorations: before.decorations.slice(0, 2)});
+    button('Vendre · 200 pièces').click(); button('Confirmer', document.getElementById('game-dialog')!).click();
+    expect(state(controller)).toEqual({...before, pattes: before.pattes + 200, decorations: before.decorations.slice(0, 2)});
     expect(panel().textContent).toContain('Votre inventaire est vide');
     expect(scene.setDecorationSelection).toHaveBeenLastCalledWith(null);
   });
   it('a stale sale confirmation cannot sell another exemplar or credit twice', () => {
     const {controller, ui} = setup(decorated());
-    ui.select({kind: 'decoration', id: 'decoration-4'}); button('Vendre · 40 pièces').click();
+    ui.select({kind: 'decoration', id: 'decoration-4'}); button('Vendre · 200 pièces').click();
     const confirm = button('Confirmer', document.getElementById('game-dialog')!);
     controller.perform({type: 'sellDecoration', id: 'decoration-4'}); const after = state(controller);
     confirm.click(); expect(state(controller)).toEqual(after);
@@ -774,8 +774,8 @@ describe('direct decoration selection and confirmed resale UI', () => {
     const {controller, ui, storage} = setup(decorated()), before = state(controller);
     ui.select({kind: 'decoration', id: 'decoration-4'});
     vi.spyOn(storage, 'setItem').mockImplementation(() => {throw Error('quota');});
-    button('Vendre · 40 pièces').click(); button('Confirmer', document.getElementById('game-dialog')!).click();
-    expect(state(controller)).toEqual(before); expect(panel().textContent).toContain('Vendre · 40 pièces');
+    button('Vendre · 200 pièces').click(); button('Confirmer', document.getElementById('game-dialog')!).click();
+    expect(state(controller)).toEqual(before); expect(panel().textContent).toContain('Vendre · 200 pièces');
     expect(document.getElementById('toast')!.textContent).toContain('vente n’a pas pu être sauvegardée');
   });
 });
@@ -983,12 +983,12 @@ describe('mobile menu continuity', () => {
   it('keeps shop category and scroll after a decoration purchase and canceled building placement without extra spending', () => {
     const {ui, controller} = setup(); document.getElementById('open-shop')!.click(); button('Bâtiments et décorations').click(); button('Décorations').click();
     panel().scrollTop = 240;
-    const flowers = panel().querySelector<HTMLElement>('[data-catalog="wildflowers"]')!;
+    const flowers = panel().querySelector<HTMLElement>('[data-catalog="bush"]')!;
     button('Acheter pour l’inventaire · 20 pièces', flowers).click(); button('Confirmer', document.getElementById('game-dialog')!).click();
     expect(document.getElementById('panel-title')!.textContent).toBe('Boutique');
-    expect(panel().querySelectorAll('[data-catalog]')).toHaveLength(12); expect(panel().scrollTop).toBe(240);
+    expect(panel().querySelectorAll('[data-catalog]')).toHaveLength(13); expect(panel().scrollTop).toBe(240);
     ui.close(); document.getElementById('open-shop')!.click(); button('Bâtiments et décorations').click(); button('Décorations').click();
-    expect(panel().querySelectorAll('[data-catalog]')).toHaveLength(12); expect(panel().scrollTop).toBe(240);
+    expect(panel().querySelectorAll('[data-catalog]')).toHaveLength(13); expect(panel().scrollTop).toBe(240);
     expect(state(controller).pattes).toBe(280); expect(state(controller).decorations).toHaveLength(1);
     expect(state(controller).decorations[0].location).toEqual({kind: 'inventory'});
     button('Bâtiments').click(); panel().scrollTop = 180; button('Placer · 60 pièces').click();
@@ -1152,17 +1152,17 @@ describe('mission XP exceptions in reward display',()=>{
 describe('decoration level acquisition UI',()=>{
  it('keeps both purchase actions locked, information accessible, scroll and navigation, and updates at level 3',()=>{
   const initial=soloStart(0);initial.grass=10;initial.progression={totalXp:cumulativeLevelXp(3)-10,rewardedThroughLevel:2};const {ui,controller}=setup(initial);
-  ui.open({kind:'shop',tab:'decorations'});panel().scrollTop=160;const card=()=>panel().querySelector<HTMLElement>('[data-catalog="play-tunnel"]')!;
-  expect(button('Acheter · 60 pièces',card()).disabled).toBe(true);expect(button('Acheter pour l’inventaire · 60 pièces',card()).disabled).toBe(true);
+  ui.open({kind:'shop',tab:'decorations'});panel().scrollTop=160;const card=()=>panel().querySelector<HTMLElement>('[data-catalog="bunny-slippers"]')!;
+  expect(button('Acheter · 30 pièces',card()).disabled).toBe(true);expect(button('Acheter pour l’inventaire · 30 pièces',card()).disabled).toBe(true);
   expect(card().querySelectorAll('.level-lock-message')).toHaveLength(1);const before=state(controller);
-  button('Consulter la fiche',card()).click();expect(document.body.classList.contains('shop-open')).toBe(true);expect(panel().textContent).toContain('Tunnel de jeu');expect(panel().textContent).toContain('Niveau 3 requis');expect(state(controller)).toEqual(before);
+  button('Consulter la fiche',card()).click();expect(document.body.classList.contains('shop-open')).toBe(true);expect(panel().textContent).toContain('Chaussons lapins');expect(panel().textContent).toContain('Niveau 3 requis');expect(state(controller)).toEqual(before);
   document.getElementById('panel-back')!.click();expect(panel().scrollTop).toBe(160);
-  controller.perform({type:'feed',id:'rabbit-2'});expect(button('Acheter · 60 pièces',card()).disabled).toBe(false);expect(button('Acheter pour l’inventaire · 60 pièces',card()).disabled).toBe(false);
-  button('Acheter · 60 pièces',card()).click();ui.select({kind:'fineCell',x:18,y:28});button('Annuler le placement').click();expect(panel().scrollTop).toBe(160);expect(state(controller).decorations).toEqual([]);expect(state(controller).pattes).toBe(300);
+  controller.perform({type:'feed',id:'rabbit-2'});expect(button('Acheter · 30 pièces',card()).disabled).toBe(false);expect(button('Acheter pour l’inventaire · 30 pièces',card()).disabled).toBe(false);
+  button('Acheter · 30 pièces',card()).click();ui.select({kind:'fineCell',x:18,y:28});button('Annuler le placement').click();expect(panel().scrollTop).toBe(160);expect(state(controller).decorations).toEqual([]);expect(state(controller).pattes).toBe(300);
  });
  it('invalidates an expensive inventory confirmation when replaced by a new below-level party',()=>{
   const initial=soloStart(0);initial.progression={totalXp:cumulativeLevelXp(3),rewardedThroughLevel:3};const {ui,controller}=setup(initial);
-  ui.open({kind:'shop',tab:'decorations'});const card=panel().querySelector<HTMLElement>('[data-catalog="play-tunnel"]')!;button('Acheter pour l’inventaire · 60 pièces',card).click();const stale=button('Confirmer',document.getElementById('game-dialog')!);
+  ui.open({kind:'shop',tab:'decorations'});const card=panel().querySelector<HTMLElement>('[data-catalog="bunny-slippers"]')!;button('Acheter pour l’inventaire · 30 pièces',card).click();const stale=button('Confirmer',document.getElementById('game-dialog')!);
   controller.restart(true);const fresh=state(controller);stale.click();expect(state(controller)).toEqual(fresh);expect(state(controller).decorations).toEqual([]);expect(state(controller).pattes).toBe(300);
  });
 });

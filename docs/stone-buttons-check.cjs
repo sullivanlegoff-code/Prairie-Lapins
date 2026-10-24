@@ -49,11 +49,11 @@ const {chromium}=require('playwright'),fs=require('node:fs'),path=require('node:
    await inspect('main',['#hud nav button','#open-missions','#meadow-actions>button:not([hidden])']);await capture('main');
    await page.click('#open-shop');await inspect('shop',['.shop-category button','#close-panel']);await capture('shop');
    await page.getByRole('button',{name:'Bâtiments et décorations',exact:true}).click();await page.getByRole('button',{name:'Décorations',exact:true}).click();
-   const disabled=page.locator('[data-catalog="garden-lantern"] button:disabled').first();
+   const disabled=page.locator('[data-catalog="hay-bale"] button:disabled').first();
    await disabled.scrollIntoViewIfNeeded();assert.equal(await disabled.isDisabled(),true);report.checks++;
-   await inspect('disabled',['[data-catalog="garden-lantern"] button:disabled']);await capture('disabled');
-   const inventory=page.locator('[data-catalog="wildflowers"]').getByRole('button',{name:'Acheter pour l’inventaire · 20 pièces',exact:true});
-   await inventory.scrollIntoViewIfNeeded();await inspect('purchase',['[data-catalog="wildflowers"] button']);await inventory.click();
+   await inspect('disabled',['[data-catalog="hay-bale"] button:disabled']);await capture('disabled');
+   const inventory=page.locator('[data-catalog="bush"]').getByRole('button',{name:'Acheter pour l’inventaire · 20 pièces',exact:true});
+   await inventory.scrollIntoViewIfNeeded();await inspect('purchase',['[data-catalog="bush"] button']);await inventory.click();
    await page.locator('#game-dialog[open]').waitFor();await inspect('dialog',['#game-dialog button']);
    if(phase==='after'){
     const confirm=page.locator('#game-dialog').getByRole('button',{name:'Confirmer',exact:true});

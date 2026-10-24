@@ -57,7 +57,7 @@ describe('pure player levels, unused by the current game',()=>{
   expect(()=>validateProgressionConfig()).not.toThrow();expect(SPECIES_IDS.map(id=>requiredSpeciesLevel(id))).toEqual([...HISTORICAL_LEVELS, ...NEW_RARES.map(() => STANDARD_RARE.unlockLevel)]);
   expect(HABITAT_TYPES.map(type=>requiredHabitatLevel(type))).toEqual([6,1,1,5,7,9]);
   expect(requiredHabitatUpgradeLevel('neige',2)).toBe(3);expect(requiredHabitatUpgradeLevel('metal',3)).toBe(12);expect(requiredHabitatUpgradeLevel('universal',3)).toBe(11);
-  expect(DECORATION_IDS.map(id=>requiredDecorationLevel(id))).toEqual([1,1,1,3,3,5,5,5,1,1,3,3]);
+  expect(DECORATION_IDS.map(id=>requiredDecorationLevel(id))).toEqual([1,1,1,2,3,5,6,8,10,12,14,4,22]);
   expect(Array.from({length:8},(_,i)=>requiredExtensionLevel(i+1))).toEqual([4,6,8,10,12,15,18,22]);
   for(const rank of [0,9,1.5,NaN])expect(()=>requiredExtensionLevel(rank)).toThrow(RangeError);
  });
@@ -65,7 +65,7 @@ describe('pure player levels, unused by the current game',()=>{
   expect(PROGRESSION.xp.commonPurchase).toBe(20);expect(PROGRESSION.xp.construction).toEqual({specializedHabitat:30,universalHabitat:40,farm:20});
   expect(PROGRESSION.xp.birth).toEqual({common:30,uncommon:45,rare:70,epic:110,legendary:180});expect(PROGRESSION.xp.breedingLaunch).toBe(5);
   expect(foodXp(0)).toBe(0);expect(foodXp(2)).toBe(10);expect(foodXp(20)).toBe(100);
-  expect(DECORATION_IDS.map(id=>firstDecorationPlacementXp(id))).toEqual([2,3,4,6,8,10,12,15,3,4,6,8]);
+  expect(DECORATION_IDS.map(id=>firstDecorationPlacementXp(id))).toEqual([2,2,3,5,3,5,16,13,20,40,15,7,50]);
   expect(missionClaimXp('main','first-birth')).toBe(20);expect(missionClaimXp('daily','collect-grass')).toBe(10);expect(PROGRESSION.xp.claims.dailyBonus).toBe(0);
   const c=configure({xp:{...PROGRESSION.xp,claims:{...PROGRESSION.xp.claims,mainExceptions:{'welcome-snow':0},dailyExceptions:{'collect-grass':15}}}});
   expect(missionClaimXp('main','welcome-snow',c)).toBe(0);expect(missionClaimXp('daily','collect-grass',c)).toBe(15);

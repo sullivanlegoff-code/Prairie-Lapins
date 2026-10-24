@@ -6,10 +6,10 @@ const url = process.env.PRAIRIE_TEST_URL || 'http://127.0.0.1:5183/Project-L/?de
 const out = process.env.PRAIRIE_CAPTURE_DIR || '/tmp/prairie-selection';
 const key = 'prairie-lapins.development.prairie-lapins.save.v1';
 const art = {
-  wildflowers: [58, 77], 'flowering-bush': [60, 60], 'moss-rock': [60, 77],
-  'garden-lantern': [60, 54], 'wood-bench': [60, 76], 'flower-arch': [60, 21],
-  'fruit-tree': [60, 35], 'small-pond': [60, 83], 'soft-cushion': [60, 87],
-  'ball-toys': [49, 80], 'play-tunnel': [39, 88], 'small-parasol': [60, 50],
+  bush: [58, 77], 'bush': [60, 60], 'hay-bale': [60, 77],
+  'hay-bale': [60, 54], 'large-bookcase': [60, 76], 'large-bookcase': [60, 21],
+  'tree': [60, 35], 'coconut-palm': [60, 83], 'bunny-slippers': [60, 87],
+  'hay-bale': [49, 80], 'birthday-candle': [39, 88], 'hanukkah-menorah': [60, 50],
 };
 async function run() {
   fs.mkdirSync(out, {recursive: true});
@@ -62,8 +62,8 @@ async function run() {
       assert.equal((await selected()).id, 'decoration-100', catalogId + ' normal direct selection');
       assert.ok((await selected()).visible && (await selected()).commands > 0, 'Visible outline');
       assert.equal(await page.getByRole('button', {name: 'Déplacer', exact: true}).isVisible(), true);
-      if (catalogId === 'fruit-tree') await page.screenshot({path: path.join(out, 'tree-selected.png')});
-      if (catalogId === 'soft-cushion') await page.screenshot({path: path.join(out, 'converted-object-selected.png')});
+      if (catalogId === 'tree') await page.screenshot({path: path.join(out, 'tree-selected.png')});
+      if (catalogId === 'bunny-slippers') await page.screenshot({path: path.join(out, 'converted-object-selected.png')});
       await close(); await page.locator('#open-arrange').tap(); await close();
       // Closing exits arrangement; enter then clear the panel through an empty canvas tap.
       await page.locator('#open-arrange').tap();
@@ -74,39 +74,39 @@ async function run() {
     }
     // Tree crown is well above its logical ground footprint at every supported test zoom.
     for (const zoom of [.8, 1.05, 1.65]) {
-      await fixture('fruit-tree'); const p = await target('fruit-tree', zoom); await touch(p);
+      await fixture('tree'); const p = await target('tree', zoom); await touch(p);
       assert.equal((await selected()).id, 'decoration-100', 'Crown selection at zoom ' + zoom);
     }
     // A real empty touch clears the object; photo never selects it.
-    await fixture('wood-bench'); let p = await target('wood-bench'); await touch(p);
+    await fixture('large-bookcase'); let p = await target('large-bookcase'); await touch(p);
     const empty = await page.evaluate(() => ({x: 140, y: 300}));
     await touch(empty); assert.equal((await selected()).id, null); assert.equal(await page.locator('#game-panel').isVisible(), false);
-    await page.locator('#open-photo').tap(); p = await target('wood-bench'); await touch(p);
+    await page.locator('#open-photo').tap(); p = await target('large-bookcase'); await touch(p);
     assert.equal((await selected()).id, null); assert.equal(await page.locator('#game-panel').isVisible(), false);
     await page.locator('#photo-return').tap();
     // Drag and pinch begin over the artwork without opening an object panel.
-    p = await target('wood-bench');
+    p = await target('large-bookcase');
     await cdp.send('Input.dispatchTouchEvent', {type: 'touchStart', touchPoints: [p]});
     await cdp.send('Input.dispatchTouchEvent', {type: 'touchMove', touchPoints: [{x: p.x + 70, y: p.y}]});
     await cdp.send('Input.dispatchTouchEvent', {type: 'touchEnd', touchPoints: []});
     assert.equal((await selected()).id, null); assert.equal(await page.locator('#game-panel').isVisible(), false);
-    p = await target('wood-bench');
+    p = await target('large-bookcase');
     await cdp.send('Input.dispatchTouchEvent', {type: 'touchStart', touchPoints: [{x: p.x - 20, y: p.y, id: 0}, {x: p.x + 20, y: p.y, id: 1}]});
     await cdp.send('Input.dispatchTouchEvent', {type: 'touchMove', touchPoints: [{x: p.x - 55, y: p.y, id: 0}, {x: p.x + 55, y: p.y, id: 1}]});
     await cdp.send('Input.dispatchTouchEvent', {type: 'touchEnd', touchPoints: []});
     assert.equal((await selected()).id, null); assert.equal(await page.locator('#game-panel').isVisible(), false);
     // Deliberate overlap: normal play chooses a rabbit; arrangement chooses the decoration.
-    await fixture('soft-cushion'); p = await target('soft-cushion');
+    await fixture('bunny-slippers'); p = await target('bunny-slippers');
     const rabbitName = await page.evaluate(p => {
       const s = window.__scene, world = s.view.world(p), r = s.rabbitViews[0];
       r.base = {x: world.x, y: world.y + 9.1}; r.object.setPosition(r.base.x, r.base.y);
       return s.current.rabbits.find(x => x.id === r.id).species;
     }, p);
-    await touch(p); assert.notEqual(await page.locator('#panel-title').textContent(), 'Coussin douillet'); assert.equal((await selected()).id, null);
+    await touch(p); assert.notEqual(await page.locator('#panel-title').textContent(), 'Chaussons lapins'); assert.equal((await selected()).id, null);
     await close(); await page.locator('#open-arrange').tap(); await page.evaluate(() => window.__ui.select({kind: 'empty'}));
-    p = await target('soft-cushion'); await touch(p); assert.equal((await selected()).id, 'decoration-100');
+    p = await target('bunny-slippers'); await touch(p); assert.equal((await selected()).id, 'decoration-100');
     // Harvest bubble priority, even with artwork deliberately drawn underneath the bubble.
-    await fixture('fruit-tree');
+    await fixture('tree');
     const harvest = await page.evaluate(() => {
       const s = window.__scene, state = structuredClone(s.current); state.buildings[0].incomeUnits = 10 * 3600000;
       const c = s.controller, p = c.prepareImport(JSON.stringify(state)); if (!p.ok || !c.confirmImport(p.token, true).ok) throw Error('Income fixture');
@@ -117,9 +117,9 @@ async function run() {
     await close(); // The fixture import opens Settings; close it before a real canvas touch.
     await touch(harvest.screen); assert.equal((await selected()).id, null); assert.equal((await state()).pattes, harvest.pattes + 10);
     // Sale cancellation, double confirmation, only one copy, save/reload and inventory sale.
-    await fixture('wood-bench'); p = await target('wood-bench'); await touch(p);
+    await fixture('large-bookcase'); p = await target('large-bookcase'); await touch(p);
     const before = await state(); await page.getByRole('button', {name: 'Vendre · 40 pièces', exact: true}).tap();
-    assert.equal(await page.locator('#game-dialog h2').textContent(), 'Vendre Banc en bois pour 40 pièces ?');
+    assert.equal(await page.locator('#game-dialog h2').textContent(), 'Vendre Grande bibliothèque pour 40 pièces ?');
     await page.screenshot({path: path.join(out, 'sale-confirmation.png')});
     await page.locator('#game-dialog').getByRole('button', {name: 'Annuler', exact: true}).tap();
     assert.deepEqual((await state()).decorations, before.decorations); assert.equal((await state()).pattes, before.pattes);

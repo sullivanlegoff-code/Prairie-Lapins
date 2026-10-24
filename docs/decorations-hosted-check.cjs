@@ -46,7 +46,7 @@ async function run() {
     await close(); await page.screenshot({path: path.join(out, 'published-seven.png')});
     await page.locator('#open-shop').click(); await page.getByRole('button', {name: 'Décorations', exact: true}).click();
     assert.equal(await page.locator('[data-catalog]').count(), 12);
-    await page.locator('[data-catalog="wildflowers"] button').click(); await page.locator('#game-dialog').getByRole('button', {name: 'Confirmer', exact: true}).click();
+    await page.locator('[data-catalog="bush"] button').click(); await page.locator('#game-dialog').getByRole('button', {name: 'Confirmer', exact: true}).click();
     await page.getByRole('button', {name: 'Annuler le placement', exact: true}).click(); assert.equal((await saved(preview + normal)).decorations.at(-1).location.kind, 'inventory'); await close(); await assertProtected();
     await page.reload(); await page.waitForFunction(p => JSON.parse(localStorage.getItem(p + 'prairie-lapins.save.v1')).decorations.length === 15, preview); await assertProtected();
     await page.locator('#open-settings').click();

@@ -49,7 +49,7 @@ async function run() {
     await load('decorationStart');
     assert.equal((await saved()).pattes, 300); assert.equal((await saved()).decorations.length, 0);
     await page.locator('#open-shop').tap(); await page.getByRole('button', {name: 'Décorations', exact: true}).tap();
-    await page.locator('[data-catalog="wood-bench"] button').tap();
+    await page.locator('[data-catalog="large-bookcase"] button').tap();
     // Two confirmation clicks dispatched together must still buy exactly one exemplar.
     await page.locator('#game-dialog').getByRole('button', {name: 'Confirmer', exact: true}).evaluate(b => {b.click(); b.click();});
     const purchased = await saved(); assert.equal(purchased.pattes, 220); assert.equal(purchased.decorations.length, 1);
@@ -67,17 +67,17 @@ async function run() {
     await page.getByRole('button', {name: 'Confirmer la pose · gratuit', exact: true}).tap();
     const placed = (await saved()).decorations[0]; assert.deepEqual(placed.location, {kind: 'outside', x: 5, y: 4, rotation: 1});
     await page.locator('[data-placed-list] summary').tap();
-    await page.getByRole('button', {name: 'Banc en bois · #' + id.split('-')[1], exact: true}).tap();
+    await page.getByRole('button', {name: 'Grande bibliothèque · #' + id.split('-')[1], exact: true}).tap();
     await page.getByRole('button', {name: 'Déplacer', exact: true}).tap(); await destination(8, 4);
     await page.getByRole('button', {name: 'Annuler le placement', exact: true}).tap();
     assert.deepEqual((await saved()).decorations[0], placed);
     await page.locator('[data-placed-list] summary').tap();
-    await page.getByRole('button', {name: 'Banc en bois · #' + id.split('-')[1], exact: true}).tap();
+    await page.getByRole('button', {name: 'Grande bibliothèque · #' + id.split('-')[1], exact: true}).tap();
     await page.getByRole('button', {name: 'Déplacer', exact: true}).tap(); await destination(8, 4);
     await page.getByRole('button', {name: 'Confirmer la pose · gratuit', exact: true}).tap();
     assert.deepEqual((await saved()).decorations[0].location, {kind: 'outside', x: 8, y: 4, rotation: 1});
     await page.locator('[data-placed-list] summary').tap();
-    await page.getByRole('button', {name: 'Banc en bois · #' + id.split('-')[1], exact: true}).tap();
+    await page.getByRole('button', {name: 'Grande bibliothèque · #' + id.split('-')[1], exact: true}).tap();
     await page.getByRole('button', {name: 'Ranger dans l’inventaire', exact: true}).tap();
     assert.equal((await saved()).decorations[0].location.kind, 'inventory');
     await close(); await page.reload(); await page.waitForFunction(() => window.__prairieTestScene?.current?.version === 5);

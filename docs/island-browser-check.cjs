@@ -66,7 +66,7 @@ async function run() {
         const run = command => {const r = c.perform(command); if (!r.ok) throw Error(r.reason); return r;};
         run({type: 'moveBuilding', id: 'building-1', x: 1, y: 0});
         return [[0, 0], [columns * 4 - 1, 0], [0, 7], [columns * 4 - 1, 7]].map(([x, y]) => {
-          const id = run({type: 'buyDecoration', catalogId: 'wildflowers'}).value;
+          const id = run({type: 'buyDecoration', catalogId: 'bush'}).value;
           run({type: 'placeDecoration', id, location: {kind: 'outside', x, y, rotation: 0}}); return id;
         });
       }, columns);
