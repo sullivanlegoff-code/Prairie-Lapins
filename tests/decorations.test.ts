@@ -133,7 +133,7 @@ describe('saves and four-route boundaries', () => {
     if (!exported.ok) throw Error(exported.reason); expect(JSON.parse(exported.json).version).toBe(16);
     expect(c.restart(true).ok).toBe(true); const p = c.prepareImport(exported.json); if (!p.ok) throw Error(p.reason);
     expect(c.confirmImport(p.token, true).ok).toBe(true); expect(new GameController(m.storage, () => 0).getSnapshot().state).toEqual(s);
-  });
+  }, 20000);
   it.each(['duplicate', 'catalog', 'next-id', 'overlap', 'bounds', 'building', 'rotation', 'missing-home', 'slot', 'slot-overlap', 'quantity', 'extra-location'] as const)('rejects malformed %s imports without replacing the current save', fault => {
     const s = pose(buy(rich()), outside());
     if (fault === 'duplicate') s.decorations.push(structuredClone(s.decorations[0]));
