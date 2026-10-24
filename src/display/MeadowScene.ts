@@ -1,6 +1,8 @@
 import {islandOutline, organicLoop, parcelSetKey} from './islandOutline';
 import {nestForParent} from '../simulation/breeding';
 import {RABBIT_ART, rabbitArt, type RabbitArt} from '../config/rabbitArt';
+import {RABBIT_BLINK_ART, rabbitBlinkArt, rabbitPatchPlacement} from '../config/rabbitBlinkArt';
+import {rabbitFaceSeed, rabbitFaceState} from './rabbitBlink';
 import Phaser from 'phaser';
 import {VISUAL} from '../config/visual';
 import type {GameController} from '../application/GameController';
@@ -44,6 +46,7 @@ export type MeadowSelection = {kind: 'building' | 'rabbit' | 'income' | 'grass' 
 export interface DecorationGhost {id: string; catalogId?: DecorationId; location: DecorationLocation | null}
 /** `object` is the ground point (position, depth, scale); `body` carries the hop height, squash and mirror, apart from the shadow. */
 interface VisualRabbit {id: string; object: Phaser.GameObjects.Container; body: Phaser.GameObjects.Container; ears: Phaser.GameObjects.Ellipse[]; sprite?: Phaser.GameObjects.Image; art?: RabbitArt; base: Point; phase: number; fedUntil: number;
+  face?: {seed: number; eyes: Phaser.GameObjects.Image; nose: Phaser.GameObjects.Image};
   center: Point; group: string; motion?: RabbitMotion; lift: number;
   /** Centre of the visible body in body space: the somersault turns about it, not about the feet or the picture centre. */
   pivot: Point; /** Mirror sign of the picture's native direction: -1 for art that looks left. */ native: 1 | -1}
@@ -115,6 +118,8 @@ export class MeadowScene extends Phaser.Scene {
     if (!this.textures.exists(KITCHEN_ART.texture)) this.load.image(KITCHEN_ART.texture, KITCHEN_ART.url);
     for (const art of HABITAT_ART_LIST) if (!this.textures.exists(art.texture)) this.load.image(art.texture, art.url);
     for (const art of RABBIT_ART) if (!this.textures.exists(art.texture)) this.load.image(art.texture, art.url);
+    for (const art of RABBIT_BLINK_ART) for (const patch of art.patches)
+      if (!this.textures.exists(patch.texture)) this.load.image(patch.texture, patch.url);
     for (const id of DECORATION_IDS) {
       const key = decorationTexture(id);
       if (!this.textures.exists(key)) this.load.image(key, decorationUrl(id));
@@ -450,8 +455,15 @@ export class MeadowScene extends Phaser.Scene {
           const sprite = this.add.image(0, art.groundY, art.texture).setOrigin(.5, 1);
           sprite.setScale(art.worldWidth / art.width); // Uniform scale preserves the original proportions.
           body.add(sprite);
+          const blinkArt = rabbitBlinkArt(rabbit.species);
+          const patches = blinkArt?.patches.map(patch => {
+            const placement = rabbitPatchPlacement(art, patch);
+            const image = this.add.image(placement.x, placement.y, patch.texture).setOrigin(0, 0).setScale(placement.scale).setVisible(false);
+            body.add(image); return image;
+          });
+          const face = patches ? {seed: rabbitFaceSeed(rabbit.id), eyes: patches[0], nose: patches[1]} : undefined;
           this.animals.add(object);
-          this.rabbitViews.push({id: rabbit.id, ears: [], sprite, art, ...view});
+          this.rabbitViews.push({id: rabbit.id, ears: [], sprite, art, face, ...view});
           return;
         }
         const coat = proceduralCoat(SPECIES[rabbit.species].art), color = Phaser.Display.Color.HexStringToColor(coat.body).color, patch = Phaser.Display.Color.HexStringToColor(coat.patch).color;
@@ -727,6 +739,11 @@ export class MeadowScene extends Phaser.Scene {
       }
       rabbit.lift = lift;
       this.poseBody(rabbit, {lift, squashX, squashY, facing, rotation});
+      if (rabbit.face) {
+        const state = rabbitFaceState(rabbit.face.seed, time, !rabbit.motion || rabbit.motion.mode === 'rest');
+        rabbit.face.eyes.setVisible((state & 1) !== 0);
+        rabbit.face.nose.setVisible((state & 2) !== 0);
+      }
       rabbit.ears.forEach((ear, index) => { ear.rotation = Math.sin(t * 1.4 + index) * .13; });
     }
     this.animals?.sort('depth');

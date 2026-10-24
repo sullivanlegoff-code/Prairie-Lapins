@@ -1,0 +1,470 @@
+{
+  "paille": {
+    "sprite": "assets/rabbits/paille/paille-v1.png",
+    "spriteSha1": "33f6cd9757050d7437490ba63812458401b2c620",
+    "spriteWidth": 350,
+    "spriteHeight": 495,
+    "eyes-closed": {
+      "file": "assets/rabbits/paille/paille-eyes-closed.png",
+      "x": 11,
+      "y": 112,
+      "width": 164,
+      "height": 94,
+      "source": "assets-source/rabbits/paille/eyes-closed.png",
+      "sourceSha1": "cb64d6521498e85e5acef74748d7814db1f41ba9",
+      "derivedSha1": "cb64d6521498e85e5acef74748d7814db1f41ba9"
+    },
+    "nose-twitch": {
+      "file": "assets/rabbits/paille/paille-nose-twitch.png",
+      "x": 18,
+      "y": 167,
+      "width": 54,
+      "height": 65,
+      "source": "assets-source/rabbits/paille/nose-twitch.png",
+      "sourceSha1": "8251a36726156af0741b62fbd05a8e4f8eb3acb6",
+      "derivedSha1": "8251a36726156af0741b62fbd05a8e4f8eb3acb6"
+    }
+  },
+  "neige": {
+    "sprite": "assets/rabbits/neige/neige-v1.png",
+    "spriteSha1": "35a2ef74684ce7f25f99df98aecb211cf80017cb",
+    "spriteWidth": 518,
+    "spriteHeight": 473,
+    "eyes-closed": {
+      "file": "assets/rabbits/neige/neige-eyes-closed.png",
+      "x": 347,
+      "y": 132,
+      "width": 103,
+      "height": 98,
+      "source": "assets-source/rabbits/neige/eyes-closed.png",
+      "sourceSha1": "5cf43578b10af56c3b6851e191498e396b63f867",
+      "derivedSha1": "5cf43578b10af56c3b6851e191498e396b63f867"
+    },
+    "nose-twitch": {
+      "file": "assets/rabbits/neige/neige-nose-twitch.png",
+      "x": 461,
+      "y": 195,
+      "width": 56,
+      "height": 76,
+      "source": "assets-source/rabbits/neige/nose-twitch.png",
+      "sourceSha1": "4fc319d1377419114ff62f5b9ddc31b71f1f9efd",
+      "derivedSha1": "4fc319d1377419114ff62f5b9ddc31b71f1f9efd"
+    }
+  },
+  "feu": {
+    "sprite": "assets/rabbits/feu/feu-v1.png",
+    "spriteSha1": "a5a624f2c40fd1138b9c10bc52266f1233076f69",
+    "spriteWidth": 1004,
+    "spriteHeight": 827,
+    "eyes-closed": {
+      "file": "assets/rabbits/feu/feu-eyes-closed.png",
+      "x": 699,
+      "y": 188,
+      "width": 157,
+      "height": 145,
+      "source": "assets-source/rabbits/feu/eyes-closed.png",
+      "sourceSha1": "db0bdf5b9c6c7eacd13b9decfa70e84ce8de022c",
+      "derivedSha1": "db0bdf5b9c6c7eacd13b9decfa70e84ce8de022c"
+    },
+    "nose-twitch": {
+      "file": "assets/rabbits/feu/feu-nose-twitch.png",
+      "x": 853,
+      "y": 287,
+      "width": 149,
+      "height": 137,
+      "source": "assets-source/rabbits/feu/nose-twitch.png",
+      "sourceSha1": "0937b7e92401ef603a7ff8e36f0c07d3448bab67",
+      "derivedSha1": "0937b7e92401ef603a7ff8e36f0c07d3448bab67"
+    }
+  },
+  "belier-gris": {
+    "sprite": "assets/rabbits/belier-gris/belier-gris-v1.png",
+    "spriteSha1": "a374b15b6517660becae37ff404dca1f76aad10c",
+    "spriteWidth": 527,
+    "spriteHeight": 488,
+    "eyes-closed": {
+      "file": "assets/rabbits/belier-gris/belier-gris-eyes-closed.png",
+      "x": 337,
+      "y": 62,
+      "width": 94,
+      "height": 82,
+      "source": "assets-source/rabbits/belier-gris/eyes-closed.png",
+      "sourceSha1": "f367be31d704e58334d1b095d790a41a0585434d",
+      "derivedSha1": "f367be31d704e58334d1b095d790a41a0585434d"
+    },
+    "nose-twitch": {
+      "file": "assets/rabbits/belier-gris/belier-gris-nose-twitch.png",
+      "x": 427,
+      "y": 123,
+      "width": 76,
+      "height": 75,
+      "source": "assets-source/rabbits/belier-gris/nose-twitch.png",
+      "sourceSha1": "2f8b8a4c47447f5045921c5d2a8bf41781772cd5",
+      "derivedSha1": "2f8b8a4c47447f5045921c5d2a8bf41781772cd5"
+    }
+  },
+  "volant": {
+    "sprite": "assets/rabbits/volant/volant-v1.png",
+    "spriteSha1": "0c3be6e888ae6e9593f07269cd2ae9f1f5a18647",
+    "spriteWidth": 814,
+    "spriteHeight": 966,
+    "eyes-closed": {
+      "file": "assets/rabbits/volant/volant-eyes-closed.png",
+      "x": 410,
+      "y": 117,
+      "width": 315,
+      "height": 154,
+      "source": "assets-source/rabbits/volant/eyes-closed.png",
+      "sourceSha1": "e78a211efa68453baaf474345b7de9937c4e2903",
+      "derivedSha1": "e78a211efa68453baaf474345b7de9937c4e2903"
+    },
+    "nose-twitch": {
+      "file": "assets/rabbits/volant/volant-nose-twitch.png",
+      "x": 581,
+      "y": 242,
+      "width": 95,
+      "height": 82,
+      "source": "assets-source/rabbits/volant/nose-twitch.png",
+      "sourceSha1": "4e89ee306b5c65fc9a0410ceccaab95030a1dfe4",
+      "derivedSha1": "4e89ee306b5c65fc9a0410ceccaab95030a1dfe4"
+    }
+  },
+  "frisket": {
+    "sprite": "assets/rabbits/frisket/frisket-v1.png",
+    "spriteSha1": "8c1dc945aa69e8a58e54c03f50af600c06a0482a",
+    "spriteWidth": 1227,
+    "spriteHeight": 1282,
+    "eyes-closed": {
+      "file": "assets/rabbits/frisket/frisket-eyes-closed.png",
+      "x": 630,
+      "y": 491,
+      "width": 362,
+      "height": 211,
+      "source": "assets-source/rabbits/frisket/eyes-closed.png",
+      "sourceSha1": "f8df9ac5daf340bc0e865b8460bef98b69818f6a",
+      "derivedSha1": "f8df9ac5daf340bc0e865b8460bef98b69818f6a"
+    },
+    "nose-twitch": {
+      "file": "assets/rabbits/frisket/frisket-nose-twitch.png",
+      "x": 777,
+      "y": 636,
+      "width": 156,
+      "height": 125,
+      "source": "assets-source/rabbits/frisket/nose-twitch.png",
+      "sourceSha1": "cf037cd84b1d2d4506333482840b56426d797cbc",
+      "derivedSha1": "cf037cd84b1d2d4506333482840b56426d797cbc"
+    }
+  },
+  "icy": {
+    "sprite": "assets/rabbits/icy/icy-v1.png",
+    "spriteSha1": "3d735145675d8e04cc12b38894561022ce6db33d",
+    "spriteWidth": 1215,
+    "spriteHeight": 1295,
+    "eyes-closed": {
+      "file": "assets/rabbits/icy/icy-eyes-closed.png",
+      "x": 520,
+      "y": 473,
+      "width": 457,
+      "height": 254,
+      "source": "assets-source/rabbits/icy/eyes-closed.png",
+      "sourceSha1": "ff45dc3ddefa88612bbab4075adf9a72e8e3d51e",
+      "derivedSha1": "ff45dc3ddefa88612bbab4075adf9a72e8e3d51e"
+    },
+    "nose-twitch": {
+      "file": "assets/rabbits/icy/icy-nose-twitch.png",
+      "x": 682,
+      "y": 645,
+      "width": 166,
+      "height": 126,
+      "source": "assets-source/rabbits/icy/nose-twitch.png",
+      "sourceSha1": "55d41a85b458267f9915ae9880db72a6e6bd4d37",
+      "derivedSha1": "55d41a85b458267f9915ae9880db72a6e6bd4d37"
+    }
+  },
+  "snk": {
+    "sprite": "assets/rabbits/snk/snk-v1.png",
+    "spriteSha1": "7ccc4d3ddb704e11ab87e0c8ee6a014f6b5079fd",
+    "spriteWidth": 1402,
+    "spriteHeight": 1122,
+    "eyes-closed": {
+      "file": "assets/rabbits/snk/snk-eyes-closed.png",
+      "x": 881,
+      "y": 305,
+      "width": 364,
+      "height": 196,
+      "source": "assets-source/rabbits/snk/eyes-closed.png",
+      "sourceSha1": "fd447f40bc543e0132696cd3b53b3862fa7ca32e",
+      "derivedSha1": "fd447f40bc543e0132696cd3b53b3862fa7ca32e"
+    },
+    "nose-twitch": {
+      "file": "assets/rabbits/snk/snk-nose-twitch.png",
+      "x": 1093,
+      "y": 445,
+      "width": 110,
+      "height": 119,
+      "source": "assets-source/rabbits/snk/nose-twitch.png",
+      "sourceSha1": "784e23737bfebd6f78a0e1c3947008e75fabd1a6",
+      "derivedSha1": "784e23737bfebd6f78a0e1c3947008e75fabd1a6"
+    }
+  },
+  "pic-pic": {
+    "sprite": "assets/rabbits/pic-pic/pic-pic-v1.png",
+    "spriteSha1": "c8ada5dc2c9183e706702886e163e72a14fbc3be",
+    "spriteWidth": 1254,
+    "spriteHeight": 1254,
+    "eyes-closed": {
+      "file": "assets/rabbits/pic-pic/pic-pic-eyes-closed.png",
+      "x": 609,
+      "y": 625,
+      "width": 369,
+      "height": 204,
+      "source": "assets-source/rabbits/pic-pic/eyes-closed.png",
+      "sourceSha1": "23434ef94b89107eb4d19f3bf3f684a03d31f06d",
+      "derivedSha1": "23434ef94b89107eb4d19f3bf3f684a03d31f06d"
+    },
+    "nose-twitch": {
+      "file": "assets/rabbits/pic-pic/pic-pic-nose-twitch.png",
+      "x": 777,
+      "y": 721,
+      "width": 104,
+      "height": 114,
+      "source": "assets-source/rabbits/pic-pic/nose-twitch.png",
+      "sourceSha1": "babf7767ef838874200552bf988f65aa8f83b00d",
+      "derivedSha1": "babf7767ef838874200552bf988f65aa8f83b00d"
+    }
+  },
+  "amethyste": {
+    "sprite": "assets/rabbits/amethyste/amethyste-v1.png",
+    "spriteSha1": "843a0c0b51563deb5707cf444579cc76fb7f0669",
+    "spriteWidth": 1334,
+    "spriteHeight": 1179,
+    "eyes-closed": {
+      "file": "assets/rabbits/amethyste/amethyste-eyes-closed.png",
+      "x": 874,
+      "y": 425,
+      "width": 214,
+      "height": 185,
+      "source": "assets-source/rabbits/amethyste/eyes-closed.png",
+      "sourceSha1": "2b2c30b204ac1230ee7bbe2ce809f078ef8b294e",
+      "derivedSha1": "2b2c30b204ac1230ee7bbe2ce809f078ef8b294e"
+    },
+    "nose-twitch": {
+      "file": "assets/rabbits/amethyste/amethyste-nose-twitch.png",
+      "x": 1097,
+      "y": 537,
+      "width": 160,
+      "height": 145,
+      "source": "assets-source/rabbits/amethyste/nose-twitch.png",
+      "sourceSha1": "10830b50542fffbab90e9840a6aeb4771a442fa8",
+      "derivedSha1": "10830b50542fffbab90e9840a6aeb4771a442fa8"
+    }
+  },
+  "princesse-neige": {
+    "sprite": "assets/rabbits/princesse-neige/princesse-neige-v1.png",
+    "spriteSha1": "28d521c69c248f52f9f874f6a91cd0c2c743757e",
+    "spriteWidth": 1230,
+    "spriteHeight": 1278,
+    "eyes-closed": {
+      "file": "assets/rabbits/princesse-neige/princesse-neige-eyes-closed.png",
+      "x": 689,
+      "y": 359,
+      "width": 352,
+      "height": 188,
+      "source": "assets-source/rabbits/princesse-neige/eyes-closed.png",
+      "sourceSha1": "ebb1061e6a429b9e1972b1e0cee46d7ac2ee2734",
+      "derivedSha1": "ebb1061e6a429b9e1972b1e0cee46d7ac2ee2734"
+    },
+    "nose-twitch": {
+      "file": "assets/rabbits/princesse-neige/princesse-neige-nose-twitch.png",
+      "x": 919,
+      "y": 459,
+      "width": 106,
+      "height": 132,
+      "source": "assets-source/rabbits/princesse-neige/nose-twitch.png",
+      "sourceSha1": "35162c0dd747f39a72382613f0ac15cd92d47902",
+      "derivedSha1": "35162c0dd747f39a72382613f0ac15cd92d47902"
+    }
+  },
+  "fluffy": {
+    "sprite": "assets/rabbits/fluffy/fluffy-v1.png",
+    "spriteSha1": "3c66d38c92c38f90617c20be5071dda19b23622f",
+    "spriteWidth": 1299,
+    "spriteHeight": 1211,
+    "eyes-closed": {
+      "file": "assets/rabbits/fluffy/fluffy-eyes-closed.png",
+      "x": 762,
+      "y": 262,
+      "width": 158,
+      "height": 165,
+      "source": "assets-source/rabbits/fluffy/eyes-closed.png",
+      "sourceSha1": "f58e69cbd32eb5183fc0e56451a8bd9c89679a67",
+      "derivedSha1": "f58e69cbd32eb5183fc0e56451a8bd9c89679a67"
+    },
+    "nose-twitch": {
+      "file": "assets/rabbits/fluffy/fluffy-nose-twitch.png",
+      "x": 945,
+      "y": 370,
+      "width": 147,
+      "height": 127,
+      "source": "assets-source/rabbits/fluffy/nose-twitch.png",
+      "sourceSha1": "e6042608b88e5ebbf91b8a4ef95a16b6f0d85f54",
+      "derivedSha1": "e6042608b88e5ebbf91b8a4ef95a16b6f0d85f54"
+    }
+  },
+  "virvoletant": {
+    "sprite": "assets/rabbits/virvoletant/virvoletant-v1.png",
+    "spriteSha1": "996a058e7214a006d8e655b31acbdad6e5d4bed3",
+    "spriteWidth": 1254,
+    "spriteHeight": 1254,
+    "eyes-closed": {
+      "file": "assets/rabbits/virvoletant/virvoletant-eyes-closed.png",
+      "x": 848,
+      "y": 678,
+      "width": 300,
+      "height": 130,
+      "source": "assets-source/rabbits/virvoletant/eyes-closed.png",
+      "sourceSha1": "90c944c84a4283ccee2177f210296068dd7e532d",
+      "derivedSha1": "90c944c84a4283ccee2177f210296068dd7e532d"
+    },
+    "nose-twitch": {
+      "file": "assets/rabbits/virvoletant/virvoletant-nose-twitch.png",
+      "x": 1008,
+      "y": 742,
+      "width": 105,
+      "height": 117,
+      "source": "assets-source/rabbits/virvoletant/nose-twitch.png",
+      "sourceSha1": "f67d80edba1675f48fed8b3651cddc2463dca746",
+      "derivedSha1": "f67d80edba1675f48fed8b3651cddc2463dca746"
+    }
+  },
+  "phoenix": {
+    "sprite": "assets/rabbits/phoenix/phoenix-v1.png",
+    "spriteSha1": "8b8257b6729a88f25cf6503eb0e0bf2b7b3016e0",
+    "spriteWidth": 1254,
+    "spriteHeight": 1254,
+    "eyes-closed": {
+      "file": "assets/rabbits/phoenix/phoenix-eyes-closed.png",
+      "x": 857,
+      "y": 432,
+      "width": 205,
+      "height": 179,
+      "source": "assets-source/rabbits/phoenix/eyes-closed.png",
+      "sourceSha1": "9f986283606babd28e5b753e2e8217c6998bc592",
+      "derivedSha1": "9f986283606babd28e5b753e2e8217c6998bc592"
+    },
+    "nose-twitch": {
+      "file": "assets/rabbits/phoenix/phoenix-nose-twitch.png",
+      "x": 1080,
+      "y": 528,
+      "width": 134,
+      "height": 139,
+      "source": "assets-source/rabbits/phoenix/nose-twitch.png",
+      "sourceSha1": "9e04c60d0a0207c8deb66e9d23ab778700a129f0",
+      "derivedSha1": "9e04c60d0a0207c8deb66e9d23ab778700a129f0"
+    }
+  },
+  "roukette": {
+    "sprite": "assets/rabbits/roukette/roukette-v1.png",
+    "spriteSha1": "a9bc0ecee109bf87e0045c0046b827ff06969bd8",
+    "spriteWidth": 1312,
+    "spriteHeight": 1199,
+    "eyes-closed": {
+      "file": "assets/rabbits/roukette/roukette-eyes-closed.png",
+      "x": 694,
+      "y": 508,
+      "width": 309,
+      "height": 186,
+      "source": "assets-source/rabbits/roukette/eyes-closed.png",
+      "sourceSha1": "54138a01dd71b8e78aa5c40758a24ecd72911c00",
+      "derivedSha1": "54138a01dd71b8e78aa5c40758a24ecd72911c00"
+    },
+    "nose-twitch": {
+      "file": "assets/rabbits/roukette/roukette-nose-twitch.png",
+      "x": 783,
+      "y": 621,
+      "width": 157,
+      "height": 112,
+      "source": "assets-source/rabbits/roukette/nose-twitch.png",
+      "sourceSha1": "5341ff76e78a587596445cb4bc7facf6c920fa0a",
+      "derivedSha1": "5341ff76e78a587596445cb4bc7facf6c920fa0a"
+    }
+  },
+  "wat-wat": {
+    "sprite": "assets/rabbits/wat-wat/wat-wat-v1.png",
+    "spriteSha1": "956348f7e9775f7b9ec2387001b30bcde0703403",
+    "spriteWidth": 1254,
+    "spriteHeight": 1254,
+    "eyes-closed": {
+      "file": "assets/rabbits/wat-wat/wat-wat-eyes-closed.png",
+      "x": 761,
+      "y": 431,
+      "width": 173,
+      "height": 171,
+      "source": "assets-source/rabbits/wat-wat/eyes-closed.png",
+      "sourceSha1": "05467a22d0fe352b4aa663d865536554bc378d00",
+      "derivedSha1": "05467a22d0fe352b4aa663d865536554bc378d00"
+    },
+    "nose-twitch": {
+      "file": "assets/rabbits/wat-wat/wat-wat-nose-twitch.png",
+      "x": 945,
+      "y": 532,
+      "width": 149,
+      "height": 145,
+      "source": "assets-source/rabbits/wat-wat/nose-twitch.png",
+      "sourceSha1": "bc1a5d9da319d3ef3c96d01e7f58a81912e55202",
+      "derivedSha1": "bc1a5d9da319d3ef3c96d01e7f58a81912e55202"
+    }
+  },
+  "glassofeu": {
+    "sprite": "assets/rabbits/glassofeu/glassofeu-v1.png",
+    "spriteSha1": "9911704e946555d02d4982a63f31c434723b74b2",
+    "spriteWidth": 1312,
+    "spriteHeight": 1199,
+    "eyes-closed": {
+      "file": "assets/rabbits/glassofeu/glassofeu-eyes-closed.png",
+      "x": 263,
+      "y": 558,
+      "width": 405,
+      "height": 220,
+      "source": "assets-source/rabbits/glassofeu/eyes-closed.png",
+      "sourceSha1": "579b20d7bcc93ce190ae3d25cf353ec7109b0873",
+      "derivedSha1": "579b20d7bcc93ce190ae3d25cf353ec7109b0873"
+    },
+    "nose-twitch": {
+      "file": "assets/rabbits/glassofeu/glassofeu-nose-twitch.png",
+      "x": 376,
+      "y": 674,
+      "width": 142,
+      "height": 115,
+      "source": "assets-source/rabbits/glassofeu/nose-twitch.png",
+      "sourceSha1": "2a19daf24c657ab5ffd87558d397f3292d738e93",
+      "derivedSha1": "2a19daf24c657ab5ffd87558d397f3292d738e93"
+    }
+  },
+  "plume": {
+    "sprite": "assets/rabbits/plume/plume-v1.png",
+    "spriteSha1": "0bbd35ab54087adecdff8d3d2190bb0d684bcb76",
+    "spriteWidth": 1312,
+    "spriteHeight": 1199,
+    "eyes-closed": {
+      "file": "assets/rabbits/plume/plume-eyes-closed.png",
+      "x": 846,
+      "y": 526,
+      "width": 357,
+      "height": 202,
+      "source": "assets-source/rabbits/plume/eyes-closed.png",
+      "sourceSha1": "6320189714cf1eea819be5e0d0eab576b236076a",
+      "derivedSha1": "6320189714cf1eea819be5e0d0eab576b236076a"
+    },
+    "nose-twitch": {
+      "file": "assets/rabbits/plume/plume-nose-twitch.png",
+      "x": 1048,
+      "y": 661,
+      "width": 151,
+      "height": 123,
+      "source": "assets-source/rabbits/plume/nose-twitch.png",
+      "sourceSha1": "2620a0080fe1121e1eaf0939fe4c93e6e64f0e33",
+      "derivedSha1": "2620a0080fe1121e1eaf0939fe4c93e6e64f0e33"
+    }
+  }
+}

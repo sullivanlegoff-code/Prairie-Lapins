@@ -33,3 +33,13 @@ Construire une fois à la fin ; le dossier `netlify-site/` est ignoré par Git. 
 2. Paramètres → section **« Lapins de test »** : choisir l'espèce, un habitat compatible avec place, **« Ajouter à la partie de test »**. Le lapin est un adulte à l'affection initiale ; ajouter les éléments nécessaires avec les mêmes boutons, nourrir si l'affection 2 est requise.
 3. Vérifier : sélecteur contenant l'espèce, rendu dans le monde sans découpe et à bonne échelle, portrait de collection (dimensions, description après découverte), paire préparée au Nid avec les probabilités attendues, aucune erreur de page.
 4. Un essai iPhone n'est pas systématique : seulement sur demande du propriétaire.
+
+## Clignements et truffes dans la prairie
+
+Les 18 espèces illustrées sauf Ardent disposent de deux patches RGBA natifs : `eyes-closed` et `nose-twitch`. Les espèces procédurales et Ardent conservent leur comportement. Les portraits DOM de collection, de croisement et de boutique restent inchangés.
+
+Les masters approuvés et leurs décalages sont sous `assets-source/rabbits/<id>/` (`blink.json`). `node scripts/derive-rabbit-blinks.mjs` copie les patches vers `public/assets/rabbits/` et produit `src/config/rabbitBlinkArt.json` ; `--check` contrôle les dimensions, limites, empreintes des originaux/masters et les octets dérivés sans écrire. Ne pas retoucher les sprites d’origine. L’adaptateur typé `rabbitBlinkArt.ts` valide le manifeste contre les espèces et leurs dimensions.
+
+Dans Phaser, les deux images, invisibles par défaut, appartiennent au même `body` que le sprite. Leur origine haut-gauche est placée à `(-largeur/2 + x, -hauteur + y) × échelle`, avec `groundY` ajouté en ordonnée. Elles partagent ainsi son miroir, ses compressions, sa hauteur et sa rotation, y compris pendant un salto.
+
+Le rythme pur `rabbitBlink.ts` dépend de l’identifiant et du temps de scène, sans timer/tween ni état aléatoire par image : fermeture de 110–160 ms, intervalles de 2,5–5,8 s, environ 20 % de doubles séparés de 80–110 ms. La truffe produit 2 ou 3 battements de 80–110 ms séparés de 80–110 ms, toutes les 4–10 s, uniquement au repos. Les deux rythmes sont indépendants et désynchronisés entre lapins. Le clignement reste actif avec « réduire les animations » ; le nourrissage et les mouvements conservent leur animation existante.
