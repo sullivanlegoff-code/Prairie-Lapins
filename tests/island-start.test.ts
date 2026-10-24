@@ -26,27 +26,22 @@ describe('southwest start for new games', () => {
     }
     expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: s});
   });
-  it('offers only the edge neighbours above and to the right of the start', () => {
+  it('offers only the next parcel of the fixed order: first the right-hand neighbour', () => {
     const s = createGame(0);
-    expect(purchasableParcels(s)).toEqual(['west', 'south']);
-    expect(PARCELS.west).toEqual({...PARCELS.west, x: start.x, y: start.y - 4});
+    expect(purchasableParcels(s)).toEqual(['south']);
     expect(PARCELS.south).toEqual({...PARCELS.south, x: start.x + 4, y: start.y});
   });
-  it('allows expansion toward the top', () => {
-    const s = buy(rich(createGame(0)), 'west');
-    expect(s.acquiredParcels).toEqual(['southwest', 'west']);
+  it('then grows toward the top', () => {
+    const s = buy(buy(rich(createGame(0)), 'south'), 'west');
+    expect(s.acquiredParcels).toEqual(['southwest', 'south', 'west']);
+    expect(PARCELS.west).toEqual({...PARCELS.west, x: start.x, y: start.y - 4});
   });
-  it('allows expansion toward the right', () => {
-    const s = buy(rich(createGame(0)), 'south');
-    expect(s.acquiredParcels).toEqual(['southwest', 'south']);
-  });
-  it('refuses a diagonal-only parcel atomically until it shares an edge with owned land', () => {
+  it('refuses any parcel out of order atomically, even a valid neighbour', () => {
     const s = rich(createGame(0));
+    expect(expand(s, 'west')).toEqual({ok: false, state: s, reason: 'PARCEL_UNAVAILABLE'});
     expect(expand(s, 'center')).toEqual({ok: false, state: s, reason: 'PARCEL_UNAVAILABLE'});
     expect(expand(s, 'northeast')).toEqual({ok: false, state: s, reason: 'PARCEL_UNAVAILABLE'});
-    const above = buy(s, 'west');
-    expect(purchasableParcels(above)).toContain('center');
-    expect(buy(above, 'center').acquiredParcels).toEqual(['southwest', 'west', 'center']);
+    expect(buy(s, 'south').acquiredParcels).toEqual(['southwest', 'south']);
   });
   it('never offers land left of or below the start: its left and front edges stay the island edges', () => {
     // The southwest parcel is the map's bottom-left corner, so these directions hold no parcel at all.
@@ -62,7 +57,7 @@ describe('southwest start for new games', () => {
   });
   it('still applies the existing level gate to a valid neighbour', () => {
     const s = createGame(0); s.pattes = 5_000;
-    expect(expand(s, 'west')).toMatchObject({ok: false, reason: 'LEVEL_REQUIRED'});
+    expect(expand(s, 'south')).toMatchObject({ok: false, reason: 'LEVEL_REQUIRED'});
   });
 });
 
@@ -98,7 +93,7 @@ describe('island start marker in saves', () => {
 describe('Meadow expansion markers and taps', () => {
   it('select only purchasable parcels', () => {
     const s = createGame(0);
-    expect(expansionTarget(s, 0, 4)).toBe('west');
+    expect(expansionTarget(s, 0, 4)).toBeNull();
     expect(expansionTarget(s, 4, 8)).toBe('south');
     expect(expansionTarget(s, 4, 4)).toBeNull();
     expect(expansionTarget(s, 8, 0)).toBeNull();

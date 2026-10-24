@@ -1,5 +1,6 @@
 import {FINE_GRID} from './decorations';
 import {ISLAND, parcelOrigin, type IslandGeometry} from './islandGeometry';
+import {ISLAND_ORDER} from './islandStages';
 export const PARCEL_IDS = ['center', 'northwest', 'north', 'northeast', 'west', 'east', 'southwest', 'south', 'southeast'] as const;
 export type ParcelId = typeof PARCEL_IDS[number];
 type ParcelMap = Record<ParcelId, {name: string; x: number; y: number}>;
@@ -20,17 +21,20 @@ export type LandState = {acquiredParcels: ParcelId[]; islandStart?: IslandStart}
 export const startParcel = (s: Pick<LandState, 'islandStart'>): ParcelId => s.islandStart ?? 'center';
 /**
  * Parcels an extension may buy, before price and level gates. Legacy centre-start islands keep
- * the former rule (any unowned parcel). Southwest-start islands grow only up and to the right of
- * their start parcel, and every new parcel shares an edge with owned land.
+ * the former rule (any unowned parcel). Southwest-start islands grow in the fixed ISLAND_ORDER, one
+ * painted stage after another: only the first unowned parcel of that order is offered. It always
+ * shares an edge with owned land, even on an island grown out of order before this rule.
  */
 export function purchasableParcels(s: LandState): ParcelId[] {
  const unowned=PARCEL_IDS.filter(id=>!s.acquiredParcels.includes(id));
  if(!s.islandStart)return unowned;
  const start=PARCELS[startParcel(s)];
- return unowned.filter(id=>{
+ const neighbours=unowned.filter(id=>{
   const p=PARCELS[id];
   return p.x>=start.x&&p.y<=start.y&&s.acquiredParcels.some(owned=>{const q=PARCELS[owned];return Math.abs(q.x-p.x)+Math.abs(q.y-p.y)===PARCEL_SIZE;});
  });
+ const next=ISLAND_ORDER.find(id=>!s.acquiredParcels.includes(id));
+ return next&&neighbours.includes(next)?[next]:neighbours;
 }
 /** The parcel an expansion-mode tap on this cell selects, or null when it cannot be bought. */
 export function expansionTarget(s:LandState,x:number,y:number):ParcelId|null {const id=parcelAt(x,y);return id&&purchasableParcels(s).includes(id)?id:null}

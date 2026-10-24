@@ -8,7 +8,7 @@ type CellPoint = {x: number; y: number};
 export type GridLine = {from: CellPoint; to: CellPoint};
 
 /** Fine-grid coordinates only: projection remains the ground layer's responsibility.
- * Shared edges are emitted once so their opacity does not double. No grid on water.
+ * Shared edges are emitted once so their opacity does not double. No grid outside owned land.
  */
 export function placementGrid(s: Pick<GameState, 'acquiredParcels'>, active: Footprint | null): GridLine[] {
   if (!active) return [];

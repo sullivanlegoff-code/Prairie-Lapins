@@ -57,7 +57,7 @@ describe('controller startup and normal saves', () => {
   });
   it('keeps separate time advancement after refusing an action without spending', () => {
     const {controller, store, clock} = fixture(); clock.now = HOUR;
-    const result = controller.perform({type:'expand',parcelId:'west',expectedCost:500});
+    const result = controller.perform({type:'expand',parcelId:'south',expectedCost:500});
     expect(result).toMatchObject({ok: false, reason: 'LEVEL_REQUIRED'});
     expect(state(controller).pattes).toBe(300); expect(state(controller).buildings[0].incomeUnits).toBe(12 * HOUR);
     expect(stored(store)).toEqual(state(controller)); expect(store.writes).toBe(2);
