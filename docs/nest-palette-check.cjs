@@ -55,8 +55,8 @@ const {chromium,webkit}=require('playwright'),fs=require('node:fs'),path=require
     const overviewZoom=Math.min((width-40)/(bounds.right-bounds.left+100),(height-135)/(bounds.bottom-bounds.top+100));
     await reset(overviewZoom,{x:(bounds.left+bounds.right)/2,y:(bounds.top+bounds.bottom)/2},{x:width/2,y:(height+65)/2});await capture('island');
     await reset();const target=model.screen({x:center.x,y:center.y+58});await page.touchscreen.tap(target.x,target.y);check(await page.locator('#panel-title').innerText()==='Nid','measured nest remains selectable');
-    for(const [species,slot] of [['Lapin Bélier Gris','Parent A'],['Lapin Volant','Parent B']])await page.locator('article').filter({has:page.getByRole('heading',{name:species,exact:true})}).getByRole('button',{name:slot,exact:true}).click();
-    await page.getByRole('button',{name:'Lancer la reproduction · gratuit',exact:true}).click();await close();
+    await camera.crossParents(page,'Lapin Bélier Gris','Lapin Volant',{launch:false});
+    await page.locator('#breeding-dialog button.breeding-launch').click();await close();
     const state=await read();assert.deepEqual(state.rabbits,initial.rabbits);report.checks++;check(state.buildings.find(b=>b.id===nest.id).breeding.parents.length===2,'two real parents');
     await reset(height>width?1.65:1.2);await capture('parents');
     for(const [index,name] of ['Lapin Bélier Gris','Lapin Volant'].entries()){

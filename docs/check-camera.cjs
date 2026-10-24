@@ -67,3 +67,21 @@ exports.enter = async page => {
   await page.locator('#loading-play').click();
   await page.waitForFunction(() => document.getElementById('loading-screen').hidden);
 };
+/** Pairing window (#breeding-dialog), opened from the nest panel. `slot` 0 is Lapin 1 (left), 1 is Lapin 2 (right). */
+exports.breedingRow = (page, slot, name) => page.locator('#breeding-dialog .breeding-column').nth(slot).locator('button.breeding-row')
+  .filter({has: page.locator('strong', {hasText: new RegExp('^' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '( ✓)?$')})});
+/**
+ * From an open nest panel: Croiser, `a` on the left, `b` on the right, then the red Croiser unless `launch` is false.
+ * `tap` uses touch; `double` sends two synchronous clicks to the launch button (double-press protection).
+ */
+exports.crossParents = async (page, a, b, {launch = true, tap = false, double = false} = {}) => {
+  const press = locator => tap ? locator.tap() : locator.click();
+  await press(page.locator('#panel-content').getByRole('button', {name: 'Croiser', exact: true}));
+  for (const [slot, name] of [[0, a], [1, b]]) {
+    const row = exports.breedingRow(page, slot, name);
+    if (await row.getAttribute('aria-pressed') !== 'true') await press(row);
+  }
+  if (!launch) return;
+  const button = page.locator('#breeding-dialog button.breeding-launch');
+  if (double) await button.evaluate(e => { e.click(); e.click(); }); else await press(button);
+};
