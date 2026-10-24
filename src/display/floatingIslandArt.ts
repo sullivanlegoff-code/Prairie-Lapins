@@ -55,16 +55,16 @@ export function floatingIslandArt(ids: readonly ParcelId[]): FloatingIslandArt {
       target=rim;
       const closed=[...upper,upper[0]];
       line(closed.map(p=>({x:p.x,y:p.y+11})),30,0x536b38,.12);
-      line(closed.map(p=>({x:p.x,y:p.y+7})),29,0x76b45b);
-      line(closed,29,0xa7d46e);
-      line(closed.map(p=>({x:p.x-2,y:p.y-3})),17,0xc7e58b);
-      line(closed.map(p=>({x:p.x-3,y:p.y-6})),5,0xe5f1aa,.65);
+      line(closed.map(p=>({x:p.x,y:p.y+7})),29,0x879f56);
+      line(closed,29,0xa9be6e);
+      line(closed.map(p=>({x:p.x-2,y:p.y-3})),17,0xbfd080);
+      line(closed.map(p=>({x:p.x-3,y:p.y-6})),5,0xd9df9a,.65);
       for(let i=0;i<upper.length;i++) {
         const p=upper[i],r=noise(p.x+p.y,seed);
-        ellipse(p.x+Math.sin(p.y)*2,p.y+7+r*3,17+r*17,13+r*7,0xaad774);
-        ellipse(p.x-2,p.y-1,15+r*14,10+r*5,0xc7e58b);
+        ellipse(p.x+Math.sin(p.y)*2,p.y+7+r*3,17+r*17,13+r*7,0xa9be6e);
+        ellipse(p.x-2,p.y-1,15+r*14,10+r*5,0xbfd080);
         if(i%6===0) {
-          line([{x:p.x-5,y:p.y},{x:p.x-7,y:p.y-9},{x:p.x-1,y:p.y-3},{x:p.x+4,y:p.y-11}],2,0x70a95b);
+          line([{x:p.x-5,y:p.y},{x:p.x-7,y:p.y-9},{x:p.x-1,y:p.y-3},{x:p.x+4,y:p.y-11}],2,0x7c9954);
           if(r>.40) {
             const color=r>.8?0xf4b5c5:r>.65?0xffdf87:0xfffbed;
             for(let j=0;j<5;j++) ellipse(p.x+Math.cos(j*Math.PI*.4)*3,p.y-6+Math.sin(j*Math.PI*.4)*3,4,4,color);
