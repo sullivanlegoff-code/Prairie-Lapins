@@ -20,6 +20,10 @@ import {MAX_RABBIT_NAME_LENGTH, normalizeRabbitName} from '../simulation/rabbitN
 import {HABITATS, HABITAT_TYPES, habitatLevel, habitatPrice, type HabitatType} from '../config/habitats';
 import {habitatFootprint} from '../config/habitatSizes';
 import {habitatThumbnail} from './habitatThumbnails';
+import {FARM_ART} from '../config/farmArt';
+import {NEST_ART} from '../config/nestArt';
+import {NURSERY_ART} from '../config/nurseryArt';
+import {KITCHEN_ART} from '../config/kitchenArt';
 import {upgradeFootprintReason} from '../simulation/placement';
 import {habitatStats, habitatName, habitatEntryReason, habitatAccepts, welcomeDestinations} from '../simulation/habitats';
 import {MAIN_MISSIONS, DAILY_MISSION_GAP, DAILY_MISSION_IDS, DAILY_MISSIONS, DAILY_BONUS, type Reward} from '../config/missions';
@@ -53,6 +57,12 @@ function node<K extends keyof HTMLElementTagNameMap>(tag: K, text = '', classNam
 }
 const rewardLabel = (r: Reward) => r.resource==='none' ? 'Objectif de collection accompli' : `${r.amount} ${{pattes: 'pattes', grass: 'nourriture', hearts: r.amount === 1 ? 'cœur' : 'cœurs'}[r.resource]}`;
 const heartAmount = (n: number) => `${n} ${n === 1 ? 'cœur' : 'cœurs'}`;
+/** The painted heart of the HUD, as the affection emblem: affection is there from the first meal. */
+function heartEmblem(): SVGSVGElement {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('viewBox', '0 0 32 32'); svg.setAttribute('aria-hidden', 'true');
+  svg.innerHTML = '<path d="M16 28C12 24 3 19 3 11C3 3 13 2 16 9C21 1 30 6 29 13C28 20 20 25 16 28Z" fill="#ba657e" stroke="#6e3346" stroke-width="1.5"/><path d="M8 11Q8 7 12 9" fill="none" stroke="#ffeaf0" stroke-width="2.5" stroke-linecap="round"/>';
+  return svg;
+}
 function avatar(species?: SpeciesId, large = false): HTMLElement {
   const element = node('span', '', large ? 'portrait large' : 'portrait'); element.innerHTML = portrait(species); return element;
 }
@@ -252,8 +262,26 @@ export class GameUI {
   }
   private stats(values: [string, string][]): HTMLElement {
     const group = node('div', '', 'stats');
-    for (const [label, value] of values) { const stat = node('div', '', 'stat'); stat.append(node('span', `${label} `), node('strong', value)); group.append(stat); }
+    for (const [label, value] of values) {
+      const stat = node('div', '', 'stat');
+      const emblem = node('span', '', 'stat-emblem'); emblem.setAttribute('aria-hidden', 'true');
+      if (label === 'Occupants') emblem.append(avatar('paille'));
+      else if (label === 'Affection') emblem.append(heartEmblem());
+      else {
+        const image = node('img'); image.alt = ''; image.draggable = false;
+        image.src = `${import.meta.env.BASE_URL}assets/currency/coin.png`;
+        emblem.append(image);
+      }
+      stat.append(emblem, node('span', `${label} `), node('strong', value)); group.append(stat);
+    }
     return group;
+  }
+  /** Decorative identity only; the panel's accessible title remains the original text. */
+  private menuPortrait(image: HTMLElement): void {
+    image.classList.add('menu-identity'); image.setAttribute('aria-hidden', 'true');
+    if (image instanceof HTMLImageElement) image.alt = '';
+    image.querySelectorAll('img').forEach(child => child.alt = '');
+    this.panel.querySelector('.panel-header')!.insertBefore(image, this.title);
   }
   private workState(state: 'free' | 'running' | 'ready' | 'blocked', next: string): void {
     const box = node('div', '', 'work-state'); box.dataset.state = state;
@@ -458,6 +486,7 @@ export class GameUI {
     document.getElementById('panel-back')!.hidden = !this.history.length && !fullShop;
     this.settings.hidden = this.view?.kind !== 'settings'; this.content.hidden = this.view?.kind === 'settings';
     this.content.replaceChildren(); if (!this.view) return;
+    this.panel.querySelector('.menu-identity')?.remove();
     if (this.view.kind === 'settings') { this.title.textContent = 'Paramètres'; return; }
     const s = this.snapshot.state; if (!s) { this.title.textContent = 'Partie indisponible'; return; }
     switch (this.view.kind) {
@@ -500,6 +529,10 @@ export class GameUI {
         ['buildings', 'Bâtiments et décorations', 'Production et objets pour aménager la prairie.']
       ] as const) {
         const card = this.card(title, description); card.classList.add('shop-category');
+        const art = category === 'rabbits' ? avatar('paille') : category === 'habitats' ? habitatThumbnail('universal') : node('img');
+        if (art instanceof HTMLImageElement && category !== 'habitats') { art.src = category === 'buildings' ? FARM_ART.url : NEST_ART.url; art.alt = ''; art.draggable = false; }
+        art.classList.add('category-art'); art.setAttribute('aria-hidden', 'true'); art.querySelectorAll('img').forEach(image => image.alt = '');
+        card.querySelector('.card-heading')!.prepend(art);
         this.button(card, title, () => this.open({kind: 'shop', tab: category})); this.content.append(card);
       }
       const island = this.card('Île', 'Agrandir l’île.'); island.classList.add('shop-category');
@@ -731,6 +764,13 @@ export class GameUI {
   private renderBuilding(s: GameState, id: string): void {
     const b = s.buildings.find(b => b.id === id); if (!b) { this.close(); return; }
     this.title.textContent = b.kind === 'enclosure' ? this.enclosureName(s, id) : BUILDING_NAMES[b.kind];
+    if (b.kind === 'enclosure') this.menuPortrait(habitatThumbnail(b.habitat!.type));
+    else if (b.kind === 'agency') this.menuPortrait(agencyThumbnail());
+    else if (b.kind === 'statue') this.menuPortrait(statueThumbnail());
+    else {
+      const image = node('img'); image.src = {farm: FARM_ART.url, nest: NEST_ART.url, nursery: NURSERY_ART.url, kitchen: KITCHEN_ART.url}[b.kind];
+      this.menuPortrait(image);
+    }
     if (b.kind === 'enclosure') {
       const residents = occupants(s, id), income = incomeWhole(b.incomeUnits), stats = habitatStats(b);
       this.content.append(node('p', `${habitatName(b)} · ${HABITATS[b.habitat!.type].accepted} · niveau ${b.habitat!.level}`, 'badge'));
@@ -833,6 +873,7 @@ export class GameUI {
   private renderRabbit(s: GameState, id: string): void {
     const r = s.rabbits.find(r => r.id === id); if (!r) { this.close(); return; }
     const species = SPECIES[r.species]; this.title.textContent = species.name;
+    this.menuPortrait(avatar(r.species));
     this.renderNickname(r);
     const overview = node('div', '', 'rabbit-overview'), essential = node('div');
     essential.append(this.stats([['Affection', `${r.affection} / 20`], ['Revenu', `${rabbitIncome(r.affection, r.species)} pattes / h`]]));
