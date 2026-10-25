@@ -13,8 +13,9 @@ import {habitatEntryReason} from './habitats';
 import {DAILY_MISSIONS, DAILY_MISSION_GAP, DAILY_MISSION_IDS, MAIN_MISSIONS, DAILY_BONUS, type Reward} from '../config/missions';
 import {marketPrice, marketUnlocked} from './market';
 import {affectionCap, playerLevel} from './affection';
+import {agencyBuilding, travelling} from './travel';
 import {currentDailyMission, dailyCycleStart, dailyOpensAt, openNextDailyMission, recordMissionAction} from './missions';
-import {AFFECTION_STATUE, BALANCE, HEARTS, HOUR, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
+import {AFFECTION_STATUE, BALANCE, HEARTS, HOUR, TRAVEL, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
 import {emptyBuilding} from '../state/initial';
 import {babyInNursery, findNurseryBaby, firstFreeNurserySlot, nurseryBuilding, nurseryUnlockQuote, settleNestTransfers} from './nursery';
 import type {ActionResult, Building, Command, GameState, PattesCommand, Refusal, ProgressionGain} from '../state/types';
@@ -100,7 +101,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       case 'rewardCuisine': {
         requireRule(command.recipeId === 'salad' || command.recipeId === 'chicken', 'INVALID_CHOICE');
         requireRule(s.buildings.some(b => b.kind === 'kitchen'), 'MISSING_BUILDING'); // The Kitchen is where Cuisine is played.
-        const rabbit = s.rabbits.find(r => r.id === command.rabbitId); requireRule(rabbit, 'NOT_FOUND');
+        const rabbit = s.rabbits.find(r => r.id === command.rabbitId); requireRule(rabbit, 'NOT_FOUND'); requireRule(!travelling(s, rabbit.id), 'TRAVELING');
         const cycle = s.missions.daily.cycleIndex;
         // The full-reward slots are shared by every recipe and renew with the canonical daily cycle.
         const used = s.cuisine.fullRuns?.cycle === cycle ? s.cuisine.fullRuns.used : 0, fullReward = used < CUISINE_FULL_REWARDS_PER_CYCLE;
@@ -173,6 +174,23 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(s.missions.daily.claimed.length === DAILY_MISSION_IDS.length, 'NOT_READY');
         reward(DAILY_BONUS); s.missions.daily.bonusClaimed = true; gainXp(PROGRESSION.xp.claims.dailyBonus); break;
       }
+      case 'welcomeAgency': {
+        requireRule(agencyBuilding(s), 'MISSING_BUILDING');
+        s.travel = {welcomed: true, trip: s.travel?.trip ?? null}; break;
+      }
+      case 'startTrip': {
+        requireRule(agencyBuilding(s), 'MISSING_BUILDING'); requireRule(!s.travel?.trip, 'BUSY');
+        const rabbit = s.rabbits.find(r => r.id === command.rabbitId); requireRule(rabbit, 'NOT_FOUND');
+        requireRule(!busy(rabbit.id), 'PARENT_BUSY');
+        const roll = rng(); requireRule(Number.isFinite(roll) && roll >= 0 && roll < 1, 'INVALID_RANDOM');
+        const {destination, hours} = drawTrip(roll); requireRule(Number.isSafeInteger(time + hours * HOUR), 'INVALID_TIME');
+        s.travel = {welcomed: s.travel?.welcomed ?? false, trip: {rabbitId: rabbit.id, destination, startedAt: time, endsAt: time + hours * HOUR, hearts: tripHearts(hours)}};
+        value = destination; break;
+      }
+      case 'claimTrip': {
+        const trip = s.travel?.trip; requireRule(trip && trip.endsAt <= time, 'NOT_READY');
+        credit('hearts', trip.hearts); s.travel = {welcomed: s.travel!.welcomed, trip: null}; value = trip.hearts; break;
+      }
       case 'exchangeForHeart': {
         requireRule(command.resource === 'pattes' || command.resource === 'grass', 'INVALID_CHOICE');
         requireRule(marketUnlocked(s), 'LEVEL_REQUIRED');
@@ -227,6 +245,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(HABITAT_TYPES.includes(habitatType) && (command.kind === 'enclosure' || command.habitatType === undefined), 'INVALID_CHOICE');
         requireRule(command.kind!=='enclosure' || stateLevelAccess(s,{family:'habitatPurchase',id:habitatType}).accessible,'LEVEL_REQUIRED');
         requireRule(command.kind!=='statue' || playerLevel(s)>=AFFECTION_STATUE.level,'LEVEL_REQUIRED');
+        requireRule(command.kind!=='agency' || playerLevel(s)>=TRAVEL.unlockLevel,'LEVEL_REQUIRED');
         cell(command.x, command.y); allocation(); pay(command.kind === 'enclosure' ? habitatPrice(habitatType) : config.price);
         value = id('building'); s.buildings.push(emptyBuilding(value, command.kind, command.x, command.y, habitatType));
         if (command.kind === 'farm') gainXp(PROGRESSION.xp.construction.farm);
@@ -289,7 +308,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       }
       case 'moveRabbit': {
         const rabbit = s.rabbits.find(r => r.id === command.id); requireRule(rabbit, 'NOT_FOUND');
-        requireRule(!busy(rabbit.id), 'PARENT_BUSY');
+        requireRule(!travelling(s, rabbit.id), 'TRAVELING'); requireRule(!busy(rabbit.id), 'PARENT_BUSY');
         if (rabbit.enclosureId !== command.enclosureId) { room(command.enclosureId, rabbit.species); rabbit.enclosureId = command.enclosureId; }
         break;
       }
@@ -313,7 +332,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       }
       case 'feed': {
         const rabbit = s.rabbits.find(r => r.id === command.id); requireRule(rabbit, 'NOT_FOUND');
-        requireRule(rabbit.affection < BALANCE.maxAffection, 'MAX_AFFECTION');
+        requireRule(!travelling(s, rabbit.id), 'TRAVELING'); requireRule(rabbit.affection < BALANCE.maxAffection, 'MAX_AFFECTION');
         requireRule(rabbit.affection < affectionCap(s), 'STATUE_REQUIRED');
         const cost = feedCost(rabbit.affection);
         requireRule(s.grass >= cost, 'NOT_ENOUGH_GRASS'); s.grass -= cost; rabbit.affection++; gainXp(foodXp(rabbit.affection)); break;
@@ -322,6 +341,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(command.parents[0] !== command.parents[1], 'SAME_PARENT');
         const parents = command.parents.map(key => s.rabbits.find(r => r.id === key));
         requireRule(parents[0] && parents[1], 'NOT_FOUND');
+        requireRule(parents.every(r => r && !travelling(s, r.id)), 'TRAVELING');
         requireRule(parents.every(r => r && r.affection >= BALANCE.breedingAffection), 'AFFECTION_TOO_LOW');
         const nest = s.buildings.find(b => b.kind === 'nest');
         requireRule(nest && s.buildings.some(b => b.kind === 'nursery'), 'MISSING_BUILDING');
@@ -369,7 +389,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       }
       case 'release': {
         const rabbit = s.rabbits.find(r => r.id === command.id); requireRule(rabbit, 'NOT_FOUND');
-        requireRule(!busy(rabbit.id), 'PARENT_BUSY');
+        requireRule(!travelling(s, rabbit.id), 'TRAVELING'); requireRule(!busy(rabbit.id), 'PARENT_BUSY');
         requireRule(s.rabbits.filter(r => r.species === rabbit.species).length > 1, 'LAST_OF_SPECIES');
         credit('grass', SPECIES[rabbit.species].rarity === 'common' ? BALANCE.releaseGrass.common : SPECIES[rabbit.species].rarity === 'rare' ? BALANCE.releaseGrass.rare : 0); s.rabbits = s.rabbits.filter(r => r.id !== rabbit.id); break;
       }

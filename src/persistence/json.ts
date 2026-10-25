@@ -10,7 +10,7 @@ import {type HabitatType, HABITAT_TYPES, HABITAT_LEVELS, habitatLevel} from '../
 import {MAIN_MISSION_IDS, DAILY_MISSION_GAP, DAILY_MISSION_IDS, DAILY_MISSIONS} from '../config/missions';
 import {cycleIndexAt} from '../simulation/missions';
 import {z} from 'zod';
-import {BALANCE, MARKET, CUISINE_FULL_REWARDS_PER_CYCLE, HOUR, LEGACY_ORDER_CROPS, NURSERY, ORDERS, type OrderId, SHOP_SPECIES, SPECIES, SPECIES_IDS, GUARANTEE_SPECIES, growthDuration, type SpeciesId} from '../config/balance';
+import {BALANCE, MARKET, CUISINE_FULL_REWARDS_PER_CYCLE, HOUR, LEGACY_ORDER_CROPS, TRAVEL, tripHearts, NURSERY, ORDERS, type OrderId, SHOP_SPECIES, SPECIES, SPECIES_IDS, GUARANTEE_SPECIES, growthDuration, type SpeciesId} from '../config/balance';
 import type {GameState} from '../state/types';
 import {DECORATION_IDS, RETIRED_DECORATION_IDS, MAX_DECORATIONS} from '../config/decorations';
 import {decorationPlacementReason} from '../simulation/decorations';
@@ -35,7 +35,7 @@ const footprintTier = z.union([z.literal(1), z.literal(2), z.literal(3)]);
 const nurseryBaby = z.object({slot: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)]), birth, startedAt: timestamp, readyAt: timestamp}).strict();
 const nurseryPayload = z.object({capacity: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]), babies: z.array(nurseryBaby).max(NURSERY.maxCapacity)}).strict();
 const building = z.object({
-  id: identity, kind: z.enum(['enclosure', 'farm', 'nest', 'nursery', 'kitchen', 'statue']), x: integer, y: integer, incomeUnits: integer,
+  id: identity, kind: z.enum(['enclosure', 'farm', 'nest', 'nursery', 'kitchen', 'statue', 'agency']), x: integer, y: integer, incomeUnits: integer,
   habitat: z.object({type: z.enum(HABITAT_TYPES), level: z.union([z.literal(1), z.literal(2), z.literal(3)])}).strict().nullable(),
   footprintTier: footprintTier.optional(),
   order: z.object({recipe: z.enum(Object.keys(ORDERS) as [OrderId, ...OrderId[]]), startedAt: timestamp, endsAt: timestamp, grass: integer.optional(), duration: integer.positive().optional()}).strict().nullable(),
@@ -85,6 +85,7 @@ const current = z.object({
   discovered: z.array(species).max(SPECIES_IDS.length),
   pityFailures: integer.max(BALANCE.guaranteeAttempt - 1),
   market: z.object({cycle: integer, pattes: integer.max(MARKET.maximumPerCycle), grass: integer.max(MARKET.maximumPerCycle)}).strict().optional(),
+  travel: z.object({welcomed: z.boolean(), trip: z.object({rabbitId: identity, destination: z.enum(TRAVEL.destinations), startedAt: timestamp, endsAt: timestamp, hearts: integer}).strict().nullable()}).strict().optional(),
   missions, decorations: z.array(decoration).max(MAX_DECORATIONS),
   rewardedDecorationModels: z.array(z.enum(DECORATION_IDS)).max(DECORATION_IDS.length).refine(ids => new Set(ids).size === ids.length).optional(),
   acquiredParcels: z.array(z.enum(PARCEL_IDS)).min(1).max(9),
@@ -150,9 +151,15 @@ const schema = current.superRefine((s, context) => {
         (newborn.reservedDiscovery && !GUARANTEE_SPECIES.includes(newborn.species))) issue('Birth reservation');
     }
   }
-  for (const kind of ['enclosure', 'farm', 'nest', 'nursery', 'kitchen', 'statue'] as const) {
+  for (const kind of ['enclosure', 'farm', 'nest', 'nursery', 'kitchen', 'statue', 'agency'] as const) {
     const maximum = BALANCE.buildings[kind].maximum;
     if (maximum !== null && s.buildings.filter(b => b.kind === kind).length > maximum) issue('Building limit');
+  }
+  if (s.travel?.trip) {
+    const trip = s.travel.trip, hours = (trip.endsAt - trip.startedAt) / HOUR;
+    if (!s.buildings.some(b => b.kind === 'agency') || !s.rabbits.some(r => r.id === trip.rabbitId) || !Number.isInteger(hours) || hours < TRAVEL.minHours || hours > TRAVEL.maxHours
+      || trip.hearts !== tripHearts(hours) || trip.startedAt > s.lastSimulatedAt
+      || s.buildings.some(b => b.breeding?.parents.includes(trip.rabbitId))) issue('Trip');
   }
   if (new Set(s.discovered).size !== s.discovered.length) issue('Duplicate discoveries');
   for (const r of s.rabbits) {
@@ -208,6 +215,25 @@ function migrateV17(raw: unknown): unknown {
 }
 
 /**
+ * Habitat storage became type-dependent on 25 October 2026 (lower for the first habitats). A save holding more than its habitat
+ * now stores keeps every coin: the whole coins above the cap move to the balance, the habitat stays full. Only what the former
+ * uniform caps allowed is settled; anything beyond them stays an invalid save.
+ */
+const FORMER_CAPS = {1: 2400, 2: 4000, 3: 5600} as const;
+function settleStorageCaps(raw: unknown): void {
+  if (!raw || typeof raw !== 'object' || !('buildings' in raw) || !Array.isArray(raw.buildings) || !('pattes' in raw) || !Number.isSafeInteger(raw.pattes)) return;
+  const save = raw as {pattes: number; buildings: unknown[]};
+  for (const b of save.buildings) {
+    if (!b || typeof b !== 'object') continue;
+    const {habitat, incomeUnits} = b as {habitat?: {type?: unknown; level?: unknown} | null; incomeUnits?: unknown};
+    if (!habitat || !HABITAT_TYPES.includes(habitat.type as HabitatType) || ![1, 2, 3].includes(habitat.level as number) || !Number.isSafeInteger(incomeUnits)) continue;
+    const cap = habitatLevel(habitat.type as HabitatType, habitat.level as 1 | 2 | 3).cap * HOUR, units = incomeUnits as number;
+    if (units <= cap || units > FORMER_CAPS[habitat.level as 1 | 2 | 3] * HOUR) continue;
+    save.pattes += Math.floor((units - cap) / HOUR); (b as {incomeUnits: number}).incomeUnits = cap;
+  }
+}
+
+/**
  * `INCOMPATIBLE_CATALOG`: a save written before the catalogue boundary (versions 1 to 15). It is not read further; it is neither
  * converted nor restored. `UNSUPPORTED_VERSION`: any other version this client does not know (for instance a newer one).
  */
@@ -226,6 +252,7 @@ export function decodeGame(json: string): DecodeResult {
   }
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 16) raw = migrateV16(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 17) raw = migrateV17(raw);
+  settleStorageCaps(raw);
   const parsed = schema.safeParse(raw);
   if (!parsed.success) return {ok: false, reason: 'INVALID_STATE'};
   const {presentationId: _presentationId, ...stored} = parsed.data;

@@ -12,6 +12,8 @@ import {PARCELS, PARCEL_IDS, extensionPrice, purchasableParcels, type ParcelId} 
 import {ISLAND} from '../config/islandGeometry';
 import {setCurrencyText} from '../display/currency';
 import {CROP_IDS, cropDuration, cropIcon, statueThumbnail} from '../display/food';
+import {COCO_WELCOME, HOST_NAME, agencyThumbnail, cocoPortrait, fromPlace, toPlace} from '../display/agency';
+import {travelling} from '../simulation/travel';
 import {feedReason, playerLevel} from '../simulation/affection';
 import type {Building, Rabbit} from '../state/types';
 import {MAX_RABBIT_NAME_LENGTH, normalizeRabbitName} from '../simulation/rabbitNames';
@@ -23,7 +25,7 @@ import {habitatStats, habitatName, habitatEntryReason, habitatAccepts, welcomeDe
 import {MAIN_MISSIONS, DAILY_MISSION_GAP, DAILY_MISSION_IDS, DAILY_MISSIONS, DAILY_BONUS, type Reward} from '../config/missions';
 import {initialMissionIds, activeMainMissions, availableMissionRewards, mainProgress, dailyCycleStart, dailyCycleEnd, cycleIndexAt, currentDailyMission, dailyOpensAt} from '../simulation/missions';
 import type {GameController, Snapshot} from '../application/GameController';
-import {AFFECTION_STATUE, BALANCE, HOUR, MARKET, NURSERY, ORDERS, RARE_BIRTH_BONUS, feedCost, SPECIES, SPECIES_IDS, SHOP_SPECIES, growthDuration, type BuildingKind, type SpeciesId, type RabbitType} from '../config/balance';
+import {AFFECTION_STATUE, BALANCE, HOUR, MARKET, NURSERY, ORDERS, RARE_BIRTH_BONUS, TRAVEL, feedCost, type Destination, SPECIES, SPECIES_IDS, SHOP_SPECIES, growthDuration, type BuildingKind, type SpeciesId, type RabbitType} from '../config/balance';
 import type {Command, DecorationLocation, GameState, PattesCommand, TimedStage} from '../state/types';
 import {DECORATIONS, DECORATION_IDS, FINE_GRID, ownedDecorationResalePrice, type DecorationId} from '../config/decorations';
 import {catalogDecorationPlacementReason, purchaseDecorationReason} from '../simulation/decorations';
@@ -41,7 +43,7 @@ import {PreferenceStore, Sounds} from './preferences';
 import {onboardingTask} from './onboarding';
 import {PailleDialogue} from './PailleDialogue';
 import {guidedStep, type GuideStep} from './guidance';
-import {BUILDING_NAMES, REFUSALS, RARITY_NAMES, TYPE_NAMES, typeNames, recipeBook, recipePairs, buildingReason, collectionView, incomeWhole, moneyReason, nurseryView, occupants, oddsTexts, oddsView, placementReason, rabbitAvailability, parentBusy, releaseReason, timeLeft, type Placement, type CollectionFilter} from './models';
+import {BUILDING_NAMES, REFUSALS, RARITY_NAMES, busyReason, TYPE_NAMES, typeNames, recipeBook, recipePairs, buildingReason, collectionView, incomeWhole, moneyReason, nurseryView, occupants, oddsTexts, oddsView, placementReason, rabbitAvailability, parentBusy, releaseReason, timeLeft, type Placement, type CollectionFilter} from './models';
 
 type ShopTab = 'home' | 'recipes' | 'rabbits' | 'habitats' | 'buildings' | 'decorations';
 type View = {kind:'levelRequirement';target:LevelAccessTarget} | {kind: 'missions'; tab: 'main' | 'daily'} | {kind: 'shop'; tab: ShopTab} | {kind: 'building' | 'rabbit' | 'moveRabbit' | 'decoration'; id: string} |
@@ -115,6 +117,8 @@ export class GameUI {
   private pendingRender = false;
   /** The name being typed in a rabbit's sheet: kept here, not in the DOM, so a refresh never loses the text, the caret or the focus. */
   private rename: {id: string; text: string; caret: number; error: string | null} | null = null;
+  /** Which bubble of Coco's first welcome is shown (interface only: the welcome itself is saved once finished). */
+  private agencyWelcomeStep = 0;
   private reasonId = 0;
   private lastSecond = -1;
   private confirmationGeneration = 0;
@@ -272,10 +276,10 @@ export class GameUI {
       const choose = this.button(card, 'Choisir ce lapin', () => {
         if (this.view?.kind !== 'cuisineRabbit' || this.cuisine.active) return;
         const current = this.controller.getSnapshot().state?.rabbits.find(r => r.id === rabbit.id);
-        if (!current) { this.render(); return; }
+        if (!current || travelling(this.controller.getSnapshot().state!, current.id)) { this.render(); return; }
         this.back();
         this.cuisine.open({id: current.id, species: current.species});
-      });
+      }, travelling(s, rabbit.id) ? REFUSALS.TRAVELING : null);
       choose.dataset.cuisineRabbit = rabbit.id;
       this.content.append(card);
     }
@@ -515,7 +519,7 @@ export class GameUI {
     if (tab === 'decorations') { this.renderDecorationShop(s); return; }
     if (tab === 'habitats' || tab === 'buildings') {
       const basic = habitatLevel('universal', 1);
-      const utility: Record<BuildingKind, string> = {enclosure: `${basic.capacity} places · tous les types · stocke ${basic.cap} pattes`, farm: 'Cultive la nourriture · maximum 2', kitchen: 'Cuisine - maximum 1', statue: 'Ouvre l’affection 15 à 20 à tous tes lapins · maximum 1', nest: 'Deux parents · maximum 1', nursery: 'Une place pour grandir · maximum 1'};
+      const utility: Record<BuildingKind, string> = {enclosure: `${basic.capacity} places · tous les types · stocke ${basic.cap} pattes`, farm: 'Cultive la nourriture · maximum 2', kitchen: 'Cuisine - maximum 1', statue: 'Ouvre l’affection 15 à 20 à tous tes lapins · maximum 1', agency: 'Fait voyager tes lapins · des cœurs au retour · maximum 1', nest: 'Deux parents · maximum 1', nursery: 'Une place pour grandir · maximum 1'};
       if (tab === 'habitats') {
       const universal = this.card(HABITATS.universal.name, `${utility.enclosure} · empreinte 4 × 4`); universal.prepend(habitatThumbnail('universal'));
       if(!this.shopHabitatSpecies || stateLevelAccess(s,{family:'habitatPurchase',id:'universal'}).accessible) {
@@ -532,8 +536,9 @@ export class GameUI {
       }
       } else {
       this.content.append(node('p', 'Le nid et la nurserie sont offerts et ne sont pas vendus.', 'small'));
-      for (const kind of ['farm', 'kitchen', 'statue'] as const) {
+      for (const kind of ['farm', 'kitchen', 'agency', 'statue'] as const) {
         const card = this.card(BUILDING_NAMES[kind], `${utility[kind]} · empreinte 4 × 4`);
+        if (kind === 'agency') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(agencyThumbnail()); card.append(node('p', `Dès le niveau ${TRAVEL.unlockLevel}, ${HOST_NAME} envoie tes lapins en vacances : voyages de 3 à 10 heures, cœurs en souvenir au retour.`, 'small')); }
         if (kind === 'statue') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(statueThumbnail()); card.append(node('p', `La Statue de l’Affection récompense tes soins : sans elle, l’affection s’arrête à ${AFFECTION_STATUE.cap}. Avec elle, chaque lapin peut atteindre 20, et deux parents d’affection 15 doublent leurs chances d’épique et de légendaire.`, 'small')); }
         this.button(card, `Placer · ${BALANCE.buildings[kind].price} pattes`, () => this.beginPlacement(kind), buildingReason(s, kind, true)); this.content.append(card);
       }
@@ -781,8 +786,49 @@ export class GameUI {
     } else if (b.kind === 'nest') this.renderNest(s, id);
     else if (b.kind === 'nursery') this.renderNursery(s);
     else if (b.kind === 'kitchen') this.button(this.content, 'Entrer dans la Cuisine', () => this.openCuisine());
+    else if (b.kind === 'agency') this.renderAgency(s);
     else if (b.kind === 'statue') this.content.append(node('p', `La statue veille sur la prairie : tes lapins peuvent dépasser l’affection ${AFFECTION_STATUE.cap} et atteindre 20. Deux parents d’affection 15 doublent leurs chances d’épique et de légendaire.`, 'badge'));
     this.button(this.content, 'Déplacer ce bâtiment', () => this.beginPlacement(b.kind, id), null, true);
+  }
+  /** Coco speaks in a bubble beside its portrait; the first visit is a short guided welcome, later visits are not guided. */
+  private agencyHost(line: string): HTMLElement {
+    const box = node('div', '', 'agency-host'), bubble = node('div', '', 'agency-bubble');
+    bubble.append(node('p', line)); box.append(cocoPortrait(), bubble); this.content.append(box); return bubble;
+  }
+  private renderAgency(s: GameState): void {
+    if (!s.travel?.welcomed) {
+      const step = Math.min(this.agencyWelcomeStep, COCO_WELCOME.length - 1), last = step === COCO_WELCOME.length - 1;
+      const bubble = this.agencyHost(COCO_WELCOME[step]); bubble.append(node('p', `${HOST_NAME} · ${step + 1} / ${COCO_WELCOME.length}`, 'small agency-step'));
+      this.button(bubble, last ? 'C’est parti !' : 'Suivant', () => {
+        if (!last) { this.agencyWelcomeStep = step + 1; this.render(); return; }
+        this.agencyWelcomeStep = 0; this.execute({type: 'welcomeAgency'}, `${HOST_NAME} t’ouvre son agence !`);
+      }).dataset.focus = 'agency-next';
+      return;
+    }
+    const trip = s.travel.trip, now = this.now();
+    const traveller = trip ? s.rabbits.find(r => r.id === trip.rabbitId) : undefined, name = traveller ? traveller.name || SPECIES[traveller.species].name : '';
+    if (trip && trip.endsAt <= now) {
+      this.agencyHost(`${name} est rentré ${fromPlace(trip.destination)} ! Viens l’accueillir.`);
+      const card = node('article', '', 'card agency-return'); card.dataset.trip = 'ready';
+      const words = node('div', '', 'agency-bubble traveller-bubble'); words.append(node('p', `Je me suis super amusé ${toPlace(trip.destination)} ! Je t’ai rapporté ${heartAmount(trip.hearts)} en souvenir.`));
+      const heading = node('div', '', 'card-heading'); if (traveller) heading.append(avatar(traveller.species)); heading.append(words); card.append(heading);
+      this.button(card, `Accueillir · + ${heartAmount(trip.hearts)}`, () => this.execute({type: 'claimTrip'}, value => `+ ${heartAmount(Number(value))} rapportés ${fromPlace(trip.destination)} !`)).classList.add('heart-gift');
+      this.content.append(card); return;
+    }
+    if (trip) {
+      this.agencyHost(`${name} profite de ses vacances ${toPlace(trip.destination)}. Il reviendra avec un souvenir !`);
+      const card = this.card(`${name} · en voyage`, `${trip.destination} · souvenir prévu : ${heartAmount(trip.hearts)}`, traveller?.species); card.dataset.trip = 'away'; this.content.append(card);
+      this.timer(trip.startedAt, trip.endsAt); this.content.append(node('p', orderReadyText(trip.endsAt).replace('Prête', 'Retour'), 'order-ready-time'));
+      return;
+    }
+    this.agencyHost('Où partons-nous aujourd’hui ? Choisis un voyageur : la destination reste une surprise !');
+    this.content.append(node('p', 'Un voyage à la fois, de 3 à 10 heures : 1 cœur jusqu’à 4 h, 2 jusqu’à 7 h, 3 au-delà. Le voyageur garde sa place et ses revenus.', 'small'));
+    const list = node('div', '', 'agency-travellers'); this.content.append(list);
+    for (const r of [...s.rabbits].sort((a, b) => b.affection - a.affection)) {
+      const card = this.card(r.name || SPECIES[r.species].name, `${RARITY_NAMES[SPECIES[r.species].rarity]} · affection ${r.affection}`, r.species); card.dataset.traveller = r.id;
+      this.button(card, 'Partir en voyage', () => this.execute({type: 'startTrip', rabbitId: r.id}, value => `${r.name || SPECIES[r.species].name} part en vacances ${toPlace(value as Destination)} !`), parentBusy(s, r.id, now) ? busyReason(s, r.id) : null);
+      list.append(card);
+    }
   }
   private renderRabbit(s: GameState, id: string): void {
     const r = s.rabbits.find(r => r.id === id); if (!r) { this.close(); return; }
@@ -791,17 +837,18 @@ export class GameUI {
     const overview = node('div', '', 'rabbit-overview'), essential = node('div');
     essential.append(this.stats([['Affection', `${r.affection} / 20`], ['Revenu', `${rabbitIncome(r.affection, r.species)} pattes / h`]]));
     overview.append(avatar(r.species, true), essential); this.content.append(overview);
-    const cost = feedCost(r.affection), reason = feedReason(s, r.affection);
-    if (reason !== 'MAX_AFFECTION' && reason !== 'STATUE_REQUIRED') essential.append(node('p', `Prochain repas : ${cost} nourriture → affection ${r.affection + 1}, revenu ${rabbitIncome(r.affection + 1, r.species)} pattes / h.`, 'small'));
+    const cost = feedCost(r.affection), away = travelling(s, id), reason = away ? 'TRAVELING' as const : feedReason(s, r.affection);
+    if (away) essential.append(node('p', `En voyage ${toPlace(s.travel!.trip!.destination)} · retour à l’agence`, 'badge rabbit-away'));
+    if (reason !== 'MAX_AFFECTION' && reason !== 'STATUE_REQUIRED' && reason !== 'TRAVELING') essential.append(node('p', `Prochain repas : ${cost} nourriture → affection ${r.affection + 1}, revenu ${rabbitIncome(r.affection + 1, r.species)} pattes / h.`, 'small'));
     if (r.affection === AFFECTION_STATUE.cap && reason !== 'STATUE_REQUIRED') essential.append(node('p', 'Le grand repas de l’affection 15 : un vrai festin, à la hauteur de la récompense.', 'small rabbit-milestone'));
     this.button(essential, reason === 'MAX_AFFECTION' ? 'Affection maximale' : `Nourrir · ${cost} nourriture`, () => this.execute({type: 'feed', id}, `Affection ${r.affection + 1} !`, () => this.scene.reactToFeed(id)), reason && REFUSALS[reason]).dataset.focus = 'feed';
     const bonus = RARE_BIRTH_BONUS.find(step => r.affection >= step.affection);
     if (bonus) essential.append(node('p', `Affection ${bonus.affection} : avec un partenaire d’affection ${bonus.affection} au moins, les chances d’épique et de légendaire sont multipliées par ${String(bonus.factor).replace('.', ',')}.`, 'small rabbit-bonus'));
-    if (parentBusy(s,id,this.now())) this.content.append(node('p','Au nid · place réservée dans son habitat · revenus conservés','badge'));
+    if (parentBusy(s,id,this.now()) && !travelling(s, id)) this.content.append(node('p','Au nid · place réservée dans son habitat · revenus conservés','badge'));
     this.content.append(node('p', `${typeNames(species.types)} · ${RARITY_NAMES[species.rarity]}`, 'badge'), node('p', this.enclosureName(s, r.enclosureId), 'small'));
     this.content.append(node('p', 'Nourrir augmente l’affection ; il n’y a ni faim ni entretien obligatoire.', 'small'), node('h3', 'Autres actions'));
     const hasDestination = s.buildings.some(b => b.kind === 'enclosure' && b.id !== r.enclosureId && !habitatEntryReason(s, b, r.species));
-    this.button(this.content, 'Changer d’habitat', () => this.open({kind: 'moveRabbit', id}), parentBusy(s,id,this.now()) ? REFUSALS.PARENT_BUSY : hasDestination ? null : 'Aucun autre habitat compatible avec une place libre.', true);
+    this.button(this.content, 'Changer d’habitat', () => this.open({kind: 'moveRabbit', id}), parentBusy(s,id,this.now()) ? busyReason(s, id) : hasDestination ? null : 'Aucun autre habitat compatible avec une place libre.', true);
     this.button(this.content, 'Confier ce lapin', () => this.confirm('Confier ce lapin ?', 'Ce lapin quittera définitivement ta prairie, sans remboursement.', () => this.execute({type: 'release', id}, 'Lapin confié.', () => { this.view = {kind: 'building', id: r.enclosureId}; })), releaseReason(s, id, this.now()), true).classList.add('action-danger');
   }
   /** The personal name, in a box above the portrait: the species stays in the title and the badge. Text only, never HTML. */
@@ -846,7 +893,7 @@ export class GameUI {
   private renderDestinations(s: GameState, id: string): void {
     const r = s.rabbits.find(r => r.id === id); if (!r) { this.close(); return; }
     this.title.textContent = 'Changer d’habitat';
-    if(parentBusy(s,id,this.now())) {this.content.append(node('p',REFUSALS.PARENT_BUSY,'reason'));return;}
+    if(parentBusy(s,id,this.now())) {this.content.append(node('p',busyReason(s, id),'reason'));return;}
     this.destinations(s, enclosureId => this.execute({type: 'moveRabbit', id, enclosureId}, 'Lapin déplacé.', () => { this.view = {kind: 'rabbit', id}; }), r.species, r.enclosureId);
   }
   private openRecipe(species: SpeciesId): void {
@@ -1360,7 +1407,7 @@ export class GameUI {
     const state = this.snapshot.state;
     const due = (end: number) => !!state && state.lastSimulatedAt < end && end <= this.now();
     if (state && (cycleIndexAt(state.missions.daily.referenceAt, this.now()) > state.missions.daily.cycleIndex ||
-      due(state.nextHeartGiftAt) || due(dailyOpensAt(state)) || state.buildings.some(b =>
+      due(state.nextHeartGiftAt) || due(dailyOpensAt(state)) || (!!state.travel?.trip && due(state.travel.trip.endsAt)) || state.buildings.some(b =>
         !!b.order && due(b.order.endsAt) || !!b.breeding && due(b.breeding.endsAt) || b.nursery?.babies.some(baby => due(baby.readyAt))))) {
       this.controller.refresh(); return;
     }

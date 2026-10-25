@@ -3,11 +3,13 @@ import {settleInitiation} from './initiation';
 import {habitatStats} from './habitats';
 import {updateMissions} from './missions';
 import {settleNestTransfers} from './nursery';
-import {BALANCE, HOUR, MINUTE, SPECIES, type SpeciesId, type Rarity} from '../config/balance';
+import {BALANCE, HOUR, MINUTE, SPECIES, type SpeciesId, type Rarity, INCOME_BASES, RARE_INCOME_BONUS_SPECIES} from '../config/balance';
 import type {GameState} from '../state/types';
 export function rabbitIncome(affection: number, speciesOrRarity: SpeciesId | Rarity = 'common'): number {
-  const rarity = Object.hasOwn(SPECIES, speciesOrRarity) ? SPECIES[speciesOrRarity as SpeciesId].rarity : speciesOrRarity;
-  return (rarity === 'common' ? BALANCE.incomeBase : BALANCE.incomeRareBase) + BALANCE.incomePerLevel * (affection - 1);
+  const species = Object.hasOwn(SPECIES, speciesOrRarity) ? speciesOrRarity as SpeciesId : null, rarity = species ? SPECIES[species].rarity : speciesOrRarity;
+  const base = rarity === 'common' ? INCOME_BASES.common : rarity === 'epic' ? INCOME_BASES.epic : rarity === 'legendary' ? INCOME_BASES.legendary
+    : species && RARE_INCOME_BONUS_SPECIES.includes(species) ? INCOME_BASES.rareBonus : INCOME_BASES.rare;
+  return base + BALANCE.incomePerLevel * (affection - 1);
 }
 export function validTime(now: number): boolean { return Number.isSafeInteger(now) && now >= 0; }
 /** Rebase every absolute timestamp; cycle indices and already earned resources stay unchanged. */
@@ -15,6 +17,7 @@ function rebaseClock(s: GameState, offset: number): void {
   s.lastSimulatedAt += offset;
   s.nextHeartGiftAt += offset;
   s.missions.daily.referenceAt += offset;
+  if (s.travel?.trip) { s.travel.trip.startedAt += offset; s.travel.trip.endsAt += offset; }
   for (const b of s.buildings) {
     if (b.order) { b.order.startedAt += offset; b.order.endsAt += offset; }
     if (b.breeding) { b.breeding.startedAt += offset; b.breeding.endsAt += offset; }

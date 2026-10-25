@@ -121,7 +121,7 @@ Plafond de résolution des textures et mesure de la mémoire ; diagnostic et cor
 
 ## 4. Captures de contrôle (maquette temporaire non commitée)
 
-Dossier hors Git : `C:\Users\sulli\AppData\Local\Temp\prairie-island-size-20261017\`
+Dossier hors Git : `<dossier-temporaire>\prairie-island-size-20261017\`
 
 - `actuel\` : build local `9b47b07` (jeu identique à HEAD) ;
 - `cible-plus33\` : build temporaire, révision `temp-island-plus33`, sources modifiées puis restaurées ;

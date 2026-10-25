@@ -85,8 +85,8 @@ describe('income and time', () => {
   it('computes income, caps it and collects only whole pattes', () => {
     let s = advance(createGame(0), HOUR); expect(s.buildings[0].incomeUnits).toBe(20*HOUR);
     s = run(s, {type: 'collectIncome', id: enclosure}); expect(s.pattes).toBe(370);
-    s = advance(s, 1000 * HOUR); expect(s.buildings[0].incomeUnits).toBe(2400 * HOUR);
-    s = run(s, {type: 'collectIncome', id: enclosure}); expect(s.pattes).toBe(2770);
+    s = advance(s, 1000 * HOUR); expect(s.buildings[0].incomeUnits).toBe(2100 * HOUR);
+    s = run(s, {type: 'collectIncome', id: enclosure}); expect(s.pattes).toBe(2470);
   });
   it('preserves fractional income through repeated advances and collections', () => {
     const original = createGame(0); let split = original;
@@ -278,7 +278,7 @@ describe('nursery, capacity and release', () => {
     refuses(s, welcomeOf(s, secondEnclosure(s)), 'NOT_READY', 24 * MINUTE);
     s=sendToNursery(s,20*MINUTE);s = run(s, welcomeOf(s, secondEnclosure(s)), HOUR);
     expect(s.buildings.find(b => b.id === secondEnclosure(s))!.incomeUnits).toBe(0);
-    expect(advance(s, 2 * HOUR).buildings.find(b => b.id === secondEnclosure(s))!.incomeUnits).toBe(14*HOUR);
+    expect(advance(s, 2 * HOUR).buildings.find(b => b.id === secondEnclosure(s))!.incomeUnits).toBe(17*HOUR);
   });
   it('enforces enclosure capacity for purchases, transfers and welcomes', () => {
     let s = run(setup(), {type: 'buyRabbit', species: 'neige', enclosureId: enclosure});

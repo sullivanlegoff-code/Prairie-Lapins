@@ -61,7 +61,7 @@ Depuis PowerShell, après `npm.cmd run build:netlify` :
 
 ```powershell
 npm.cmd run preview -- --outDir netlify-site --port 5186 --strictPort
-node docs/cooking-prototype-check.cjs http://127.0.0.1:5186/ C:/Users/sulli/AppData/Local/Temp/prairie-chicken-check
+node docs/cooking-prototype-check.cjs http://127.0.0.1:5186/ <dossier-temporaire>/prairie-chicken-check
 ```
 
 ## Test iPhone réel du prototype autonome (procédure)

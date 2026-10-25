@@ -32,7 +32,7 @@ Document factuel. Il complète `docs/claude-handoff-2026-10-22.md` et `AGENTS.md
 - **Dernier passage complet** (pour `bef95f1`) : `vitest run` 1880 tests / 105 fichiers verts, `tsc --noEmit` propre, `git diff --check` propre, `build:netlify` avec `verify-production` OK (production 61 fichiers, laboratoire 57), contrôle Chromium sur le build compilé (six cartes de boutique, six enclos et résidents en mouvement, achat/fantôme/sélection/déplacement, zoom maximal/pan/Recentrer, niveaux 2 et 3 inchangés, aucune erreur JavaScript).
 - **Mission `71188f1`** : 41 tests ciblés (`tests/habitat-art.test.js`, `tests/habitat-shop-art-dom.test.ts`), typecheck, `git diff --check`, `--check` positif, et trois vérifications négatives sur un dossier temporaire (source absente, dérivé absent, source altérée : code de sortie 1 à chaque fois). SHA-1 des six PNG de production identiques avant/après.
 - **Pas de suite complète ni de build après `71188f1`.**
-- Captures (dossier temporaire, hors dépôt) : `C:\Users\sulli\AppData\Local\Temp\prairie-habitat-final\` — `shop-six-cards.png`, `planche-six-habitats.png`, `ghost.png`, `max-zoom-pan.png`, `levels.png`, `selected.png`, `recentred.png`, `normal-start.png`, `final-<type>.png`, `report.json`. Elles peuvent disparaître : les régénérer si besoin.
+- Captures (dossier temporaire, hors dépôt) : `<dossier-temporaire>\prairie-habitat-final\` — `shop-six-cards.png`, `planche-six-habitats.png`, `ghost.png`, `max-zoom-pan.png`, `levels.png`, `selected.png`, `recentred.png`, `normal-start.png`, `final-<type>.png`, `report.json`. Elles peuvent disparaître : les régénérer si besoin.
 
 ## 5. Règles de reprise
 

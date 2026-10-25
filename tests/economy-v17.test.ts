@@ -7,7 +7,7 @@ import {decodeGame,encodeGame} from '../src/persistence/json';
 import {act,advance} from '../src/simulation';
 import {cumulativeLevelXp,progressionFromXp,nextLevelCost} from '../src/simulation/progression';
 import {PROGRESSION} from '../src/config/progression';
-import {GUARANTEE_SPECIES,HOUR,ORDERS} from '../src/config/balance';
+import {GUARANTEE_SPECIES,HOUR,ORDERS,RARE_INCOME_BONUS_SPECIES,SPECIES,SPECIES_IDS} from '../src/config/balance';
 import {habitatLevel,habitatPrice,HABITAT_TYPES} from '../src/config/habitats';
 function migrated(raw:unknown=fixture){const d=decodeGame(JSON.stringify(raw));expect(d.ok).toBe(true);if(!d.ok)throw Error(d.reason);return d.state;}
 describe('v16 → v17 economy migration (fixture encoded by the actual v16 writer)',()=>{
@@ -30,7 +30,7 @@ describe('v16 → v17 economy migration (fixture encoded by the actual v16 write
  it('still refuses versions 1–15, invalid v16 and future versions',()=>{for(let version=1;version<=15;version++)expect(decodeGame(JSON.stringify({version}))).toEqual({ok:false,reason:'INCOMPATIBLE_CATALOG'});expect(decodeGame('{"version":16}')).toEqual({ok:false,reason:'INVALID_STATE'});expect(decodeGame('{"version":19}')).toEqual({ok:false,reason:'UNSUPPORTED_VERSION'});});
 });
 describe('economy invariants',()=>{
- it('stores 24 hours of full rare income at every habitat level',()=>{for(const type of HABITAT_TYPES)for(const level of [1,2,3] as const){const h=habitatLevel(type,level);expect(h.cap).toBeGreaterThanOrEqual(h.capacity*33*24);expect(h.cap).toBe([2400,4000,5600][level-1]);if(level===2)expect(h.cost).toBe(habitatPrice(type)/2);}});
+ it('stores less in the first habitats at levels 1 and 2, the same maximum at level 3, and always a full night',()=>{const order=['paille','neige','feu','universal','metal','vol'] as const;for(const level of [1,2] as const){const caps=order.map(t=>habitatLevel(t,level).cap);for(let i=1;i<caps.length;i++)expect(caps[i]).toBeGreaterThan(caps[i-1]);}expect(new Set(HABITAT_TYPES.map(t=>habitatLevel(t,3).cap))).toEqual(new Set([5600]));expect(habitatLevel('vol',2).cap).toBeLessThan(habitatLevel('paille',3).cap);for(const type of HABITAT_TYPES)for(const level of [1,2,3] as const){const h=habitatLevel(type,level);expect(h.cap).toBeGreaterThanOrEqual(h.capacity*36*12);if(level===2)expect(h.cost).toBe(habitatPrice(type)/2);}});
  it('guarantees all 24 ordinary rares and excludes specials',()=>{expect(GUARANTEE_SPECIES).toHaveLength(24);expect(GUARANTEE_SPECIES).not.toContain('dragon');expect(GUARANTEE_SPECIES).not.toContain('magicien');});
  it('accumulates gifts up to three and keeps the next clock boundary',()=>{const s=migrated();for(const days of [1,2,3,10]){const now=s.nextHeartGiftAt+(days-1)*24*HOUR+HOUR;const r=act(s,{type:'claimHearts'},now);expect(r.ok).toBe(true);expect(r.state.hearts).toBe(s.hearts+Math.min(3,days)*2);expect(r.state.nextHeartGiftAt).toBe(now+23*HOUR);expect(advance(r.state,now).hearts).toBe(r.state.hearts);}});
  it('has ten crops, from short visits to the night',()=>{expect(Object.keys(ORDERS)).toEqual(['foin','pissenlit','trefle','persil','laitue','fanes','fenouil','pomme','fraise','banane']);expect(ORDERS.foin).toMatchObject({cost:10,grass:20,duration:5*60000});expect(ORDERS.banane).toMatchObject({level:19,duration:10*HOUR});});
@@ -55,6 +55,10 @@ describe('persistent economy transactions',()=>{
  });
  it('uses integer hourly income by rarity, including the provisional special-species fallback',()=>{
   for(const species of ['paille','neige','feu','belier-gris','volant'] as const)expect([rabbitIncome(1,species),rabbitIncome(20,species)]).toEqual([10,29]);
-  for(const species of ['frisket','lunettes','magicien','dragon','rare'] as const)expect([rabbitIncome(1,species),rabbitIncome(20,species)]).toEqual([14,33]);
+  // Rares: twelve of the 24, drawn at random once, earn the higher base; epics and legendaries earn more still.
+  for(const species of ['icy','ardent','rare'] as const)expect([rabbitIncome(1,species),rabbitIncome(20,species)]).toEqual([14,33]);
+  for(const species of ['frisket','lunettes'] as const)expect([rabbitIncome(1,species),rabbitIncome(20,species)]).toEqual([17,36]);
+  expect([rabbitIncome(1,'magicien'),rabbitIncome(20,'magicien'),rabbitIncome(1,'dragon'),rabbitIncome(20,'dragon')]).toEqual([20,39,26,45]);
+  const rares=SPECIES_IDS.filter(id=>SPECIES[id].rarity==='rare');expect(rares).toHaveLength(24);expect(RARE_INCOME_BONUS_SPECIES).toHaveLength(12);expect(RARE_INCOME_BONUS_SPECIES.every(id=>rares.includes(id))).toBe(true);
  });
 });

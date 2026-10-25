@@ -24,7 +24,7 @@ export const MARKET = {unlockLevel: 10, base: {pattes: 250, grass: 100}, growth:
 // The species registry lives in ./species; the public names stay available from here.
 export {SPECIES, SPECIES_IDS, LEGACY_SPECIES_IDS};
 export type {SpeciesId, RabbitType, Rarity};
-export type BuildingKind = 'enclosure' | 'farm' | 'nest' | 'nursery' | 'kitchen' | 'statue';
+export type BuildingKind = 'enclosure' | 'farm' | 'nest' | 'nursery' | 'kitchen' | 'statue' | 'agency';
 export const BREEDING_WEIGHTS = {common: 30, recipe: 30};
 /** Exact element unions only; additional elements retain the historical pool.
  * Eligibility comes from catalogue recipes, never a fixed list of results. */
@@ -43,7 +43,7 @@ export const SHOP_SPECIES = SPECIES_IDS.filter(id => isSold(SPECIES[id]));
 export const RECIPE_SPECIES = SPECIES_IDS.filter(id => hasRecipe(SPECIES[id]));
 export const BALANCE = {
   initialPattes: 350, initialGrass: 0, initialWidth: 3, height: 2, extendedWidth: 6,
-  extensionCost: 600, enclosureCapacity: 3, enclosureCap: 2400,
+  extensionCost: 600, enclosureCapacity: 3, enclosureCap: 2100,
   minAffection: 1, maxAffection: 20, breedingAffection: 2,
   incomeBase: 10, incomeRareBase: 14, incomePerLevel: 1,
   releaseGrass: {common: 10, rare: 25},
@@ -53,7 +53,8 @@ export const BALANCE = {
     enclosure: {price: 350, maximum: null}, farm: {price: 60, maximum: 2},
     nest: {price: 100, maximum: 1}, nursery: {price: 80, maximum: 1},
     kitchen: {price: 100, maximum: 1}, // Provisional building-only integration price.
-    statue: {price: 25000, maximum: 1}, // The Statue de l'Affection: see AFFECTION_STATUE.
+    statue: {price: 30000, maximum: 1}, // The Statue de l'Affection: see AFFECTION_STATUE.
+    agency: {price: 1000, maximum: 1}, // The travel agency: see TRAVEL.
   } satisfies Record<BuildingKind, {price: number; maximum: number | null}>,
 };
 /**
@@ -61,6 +62,28 @@ export const BALANCE = {
  * (the single `grass` stock); a better-liked crop costs more, takes longer, opens later and yields more per harvest,
  * so the long ones fill the gaps between the three daily sessions. `level` is the player level that opens it.
  */
+/**
+ * Hourly income at affection 1 (owner, 25 October 2026): rares no longer all earn the same. Twelve of the 24, drawn at random once
+ * on that day, earn the higher rare base; epics and legendaries earn more still. Each affection point adds `incomePerLevel`.
+ */
+export const RARE_INCOME_BONUS_SPECIES: readonly SpeciesId[] = ['amethyste', 'boudinet', 'bretonette', 'egiiipte', 'feu-glace', 'frisket', 'lunettes', 'perroquet', 'princesse-neige', 'roukette', 'virvoletant', 'wat-wat'];
+export const INCOME_BASES = {common: 10, rare: 14, rareBonus: 17, epic: 20, legendary: 26} as const;
+/**
+ * The travel agency (owner, 25 October 2026), sold among the buildings from player level 8. One rabbit travels at a time,
+ * to a destination drawn at random, for 3 to 10 whole hours (drawn with it); it brings back Hearts, more for a longer trip.
+ * The traveller keeps its place and its income at home, but cannot be fed, bred, moved or entrusted while away.
+ */
+export const TRAVEL = {
+  unlockLevel: 8, minHours: 3, maxHours: 10,
+  destinations: ['Londres', 'Vannes', 'Le Caire', 'Hammamet', 'Le Lavandou', 'Bandol', 'Lille', 'Paris', 'Marrakech'],
+} as const;
+export type Destination = typeof TRAVEL.destinations[number];
+export const tripHearts = (hours: number): number => hours <= 4 ? 1 : hours <= 7 ? 2 : 3;
+/** One draw picks both: destination index and length in hours. */
+export function drawTrip(roll: number): {destination: Destination; hours: number} {
+  const count = TRAVEL.destinations.length, lengths = TRAVEL.maxHours - TRAVEL.minHours + 1, n = Math.floor(roll * count * lengths);
+  return {destination: TRAVEL.destinations[n % count], hours: TRAVEL.minHours + Math.floor(n / count)};
+}
 export const ORDERS = {
   foin: {name: 'Foin', level: 1, cost: 10, grass: 20, duration: 5 * MINUTE},
   pissenlit: {name: 'Pissenlit', level: 1, cost: 18, grass: 40, duration: 15 * MINUTE},

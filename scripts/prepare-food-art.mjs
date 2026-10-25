@@ -14,28 +14,32 @@ export const FOOD_ART = [
   {id: 'logo', source: 'logo-a', master: 'assets-source/food/logo.png', served: 'public/assets/food/logo.png', size: 128},
   {id: 'pousse', source: 'pousse', master: 'assets-source/food/pousse.png', served: 'public/assets/food/pousse.png', size: 96},
   ...CROP_IDS.map(id => ({id, source: id, master: `assets-source/food/${id}.png`, served: `public/assets/food/${id}.png`, size: 128})),
-  {id: 'statue', source: 'statue-b', master: 'assets-source/buildings/statue-affection.png', served: 'public/assets/buildings/statue-affection.png', size: 512},
+  {id: 'statue', source: 'statue-b', master: 'assets-source/buildings/statue-affection.png', served: 'public/assets/buildings/statue-affection.png', size: 512, trim: true},
 ];
 
 /** Centred in a transparent square, so a single exact area filter scales it. */
-function square(image) {
+export function square(image) {
   const side = Math.max(image.width, image.height), pixels = Buffer.alloc(side * side * 4);
   const ox = (side - image.width) >> 1, oy = (side - image.height) >> 1;
   for (let y = 0; y < image.height; y++) image.pixels.copy(pixels, ((oy + y) * side + ox) * 4, y * image.width * 4, (y + 1) * image.width * 4);
   return {width: side, height: side, pixels};
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  const folder = process.argv[2];
-  if (!folder) throw Error('Usage: node scripts/prepare-food-art.mjs "<folder with the paintings>"');
-  for (const art of FOOD_ART) {
+/** Cut out, crop and write each master, then its served copy; a building (`trim`) keeps its own proportions. */
+export function prepareArt(folder, list) {
+  for (const art of list) {
     const image = decodeRgbPng(readFileSync(`${folder}/${art.source}.png`)); cutOut(image, 'light');
     const master = crop(image);
     for (const path of [art.master, art.served]) mkdirSync(path.slice(0, path.lastIndexOf('/')), {recursive: true});
     writeFileSync(art.master, encodePng(master));
-    // The building keeps its own proportions (a trimmed rectangle); icons stay square.
     const served = downscale(square(master), art.size);
-    writeFileSync(art.served, encodePng(art.id === 'statue' ? crop(served) : served));
+    writeFileSync(art.served, encodePng(art.trim ? crop(served) : served));
     console.log(`${art.id}: ${master.width}x${master.height} -> ${art.served}`);
   }
+}
+
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  const folder = process.argv[2];
+  if (!folder) throw Error('Usage: node scripts/prepare-food-art.mjs "<folder with the paintings>"');
+  prepareArt(folder, FOOD_ART);
 }

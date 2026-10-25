@@ -59,7 +59,7 @@ describe('species catalogue and acquisition', () => {
     expect(act(s, {type: 'buyRabbit', species, enclosureId: 'building-1'}, 0)).toEqual({ok: false, reason: 'INVALID_CHOICE', state: s});
   });
   it('keeps affection, income, building capacities, costs and established growth times', () => {
-    expect(BALANCE).toMatchObject({minAffection: 1, maxAffection: 20, enclosureCapacity: 3, enclosureCap: 2400, breedingCost: 0, breedingDuration: 20 * MINUTE});
+    expect(BALANCE).toMatchObject({minAffection: 1, maxAffection: 20, enclosureCapacity: 3, enclosureCap: 2100, breedingCost: 0, breedingDuration: 20 * MINUTE});
     expect([rabbitIncome(1), rabbitIncome(20)]).toEqual([10, 29]);
     for (const id of SHOP_SPECIES) expect(growthDuration(id)).toBe(5 * MINUTE);
   });

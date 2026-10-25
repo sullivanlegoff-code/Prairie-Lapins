@@ -1,16 +1,17 @@
 # Économie courante — partie A, sauvegarde v18
 
-Référence exécutable : `src/config/` pour les valeurs, `src/simulation/` pour les règles. Joueur cible : trois sessions de cinq minutes à 8 h, 13 h et 20 h, avec une nuit de douze heures. Les travaux prêts attendent sans péremption et les habitats couvrent au moins 24 h de revenus, même pleins de rares d’affection 20.
+Référence exécutable : `src/config/` pour les valeurs, `src/simulation/` pour les règles. Joueur cible : trois sessions de cinq minutes à 8 h, 13 h et 20 h, avec une nuit de douze heures. Les travaux prêts attendent sans péremption et les habitats couvrent au moins la nuit de 12 h de revenus à pleine capacité et à l’affection 20.
 
 Une partie neuve commence avec **350 pattes, 0 nourriture et 12 cœurs**, Paille affection 1 seul, habitat Paille, nid et nurserie offerts sur la parcelle sud-ouest (coordonnées fines 6,40 ; 2,36 ; 10,36). Le budget minimal du parcours est 350 − 200 − 80 + 50 − 60 − 10 = **50 pattes de marge**, avant les autres récompenses et revenus. Les anciens documents indiquant 10 herbes au départ, un départ central ou un format v8/v9 sont historiques.
 
 | Valeur | Règle courante |
 |---|---|
 | Revenu commun | 10 + (affection − 1), soit 10–29 pattes/h |
-| Revenu rare | 14 + (affection − 1), soit 14–33 pattes/h |
-| Épiques et Légendaires | Revenu des rares provisoirement ; arbitrage propriétaire requis. |
+| Revenu rare | 14 + (affection − 1), soit 14–33 pattes/h ; 12 rares bonus : 17–36 pattes/h |
+| Revenu épique | 20 + (affection − 1), soit 20–39 pattes/h |
+| Revenu légendaire | 26 + (affection − 1), soit 26–45 pattes/h |
 | Capacité des habitats N1/N2/N3 | 3 / 5 / 7 individus |
-| Stockage de tous les habitats N1/N2/N3 | 2 400 / 4 000 / 5 600 pattes (besoin 24 h : 2 376 / 3 960 / 5 544) |
+| Stockage de tous les habitats N1/N2/N3 | Selon le type : N1 de 1 300 à 2 900, N2 de 2 600 à 4 800 ; N3 : 5 600 pattes pour tous (détail ci-dessous) |
 | Communs Paille / Neige / Feu / Bélier Gris / Volant | 80 / 80 / 180 / 350 / 600 pattes |
 | Habitats Paille / Neige / Feu / Métal / Vol | 200 / 200 / 450 / 800 / 1 200 pattes |
 | Universel | 350 pattes |
@@ -18,7 +19,7 @@ Une partie neuve commence avec **350 pattes, 0 nourriture et 12 cœurs**, Paille
 | Amélioration N3 | 10 cœurs |
 | Extensions successives | 600 / 1 800 / 4 500 / 9 000 / 16 000 / 26 000 / 40 000 / 60 000 ; niveaux requis conservés |
 | Ferme / Cuisine | 60 / 100 pattes ; deux fermes maximum |
-| Statue de l’Affection | 25 000 pattes, niveau 15, une seule ; vendue parmi les bâtiments |
+| Statue de l’Affection | 30 000 pattes, niveau 15, une seule ; vendue parmi les bâtiments |
 
 ### Nourriture et ferme (25 octobre 2026)
 
@@ -47,13 +48,36 @@ Affection 1–20, sans faim ni dégradation. Le repas qui fait passer de *a* à 
 
 Quand les deux parents ont au moins 10 d’affection, les chances d’épique et de légendaire sont multipliées par 1,5 ; à partir de 15 pour les deux, par 2 (l’affection la plus basse des deux décide). Exemple : Magicien 5 % → 7,5 % → 10 % ; Dragon et Requin, qui demandent déjà 10, passent à 3 % puis 4 %. Les tirages restent des rapports entiers exacts, en demi-pourcentages. Rares jamais vendus. Prix des recettes payantes, Cuisine, constructions et niveaux d’accès conservés.
 
-XP : passage N → N+1 = **arrondi(90 × N^0,85)** depuis le 25 octobre 2026 (niveau 22 vers le 20e jour ; auparavant 1,15), plafond 30, un cœur par niveau. Le barème initial demandé 25 × N^1,5 faisait atteindre le niveau 5 pendant le tutoriel, 10 après 2,5 jours écoulés, 15 après 10,5 jours et 20 après 33 jours. Seuls le coefficient et l’exposant ont été ajustés pour le rythme cible. Repas : 5 XP plus 1 par tranche de 60 nourriture dépensée (30 XP pour l’affection 15) ; achat commun : 10 ; naissance commune : 10, rare : 20 (Épique 110 et Légendaire 180 conservés) ; première découverte commune : +60, rare : +250 ; lancement de reproduction : 5 ; constructions inchangées ; première pose de chaque modèle de décoration : 10, une fois par référence même après revente ; mission principale : 40, quotidienne : 50, bonus quotidien : 0.
+XP : passage N → N+1 = **arrondi(90 × N^0,85)** depuis le 25 octobre 2026 (niveau 22 vers le 20e jour ; auparavant 1,15), plafond 30, un cœur par niveau. Le barème initial demandé 25 × N^1,5 faisait atteindre le niveau 5 pendant le tutoriel, 10 après 2,5 jours écoulés, 15 après 10,5 jours et 20 après 33 jours. Seuls le coefficient et l’exposant ont été ajustés pour le rythme cible. Repas : 5 XP plus 1 par tranche de 200 nourriture dépensée (12 XP pour l’affection 15) ; achat commun : 10 ; naissance commune : 10, rare : 20 (Épique 110 et Légendaire 180 conservés) ; première découverte commune : +60, rare : +250 ; lancement de reproduction : 5 ; constructions inchangées ; première pose de chaque modèle de décoration : 10, une fois par référence même après revente ; mission principale : 40, quotidienne : 50, bonus quotidien : 0.
 
 Collection : poids ordinaires 30 par commun et 30 par rare admissible. Paille × Neige reste un tirage rare certain. Les 24 rares ordinaires actuels participent à la garantie de nouvelle espèce : après sept échecs admissibles, la huitième tentative garantit une espèce manquante admissible à la paire et au niveau. Les recettes spéciales, Épiques, Légendaires et Mythiques restent exclues. La libération d’un doublon rend 10 nourriture pour un commun ou 25 pour un rare, sans XP ; dernier individu et parent occupé restent protégés.
 
 Les quotidiennes demandent de récolter 100 pattes (récompense 60 pattes), récolter 40 nourriture (+30 nourriture) et lancer une reproduction (+40 pattes). L’identifiant historique `gain-affection` est conservé pour la troisième, dont la règle est désormais la reproduction. Bonus des trois : deux cœurs. Cadeau : deux cœurs par tranche de 24 h, cumul de trois cadeaux maximum (six cœurs), sans décaler la prochaine échéance lors d’une réclamation tardive.
 
 Migration v16 → v17 réelle et déterministe : ressources, affection, lapins, bâtiments, stock et résultats/dates des reproductions et croissances sont préservés. Le niveau et la fraction dans le niveau sont convertis depuis l’ancienne courbe 50 × N^1,6, avec arrondi inférieur à un point d’XP, sans récompense de niveau au chargement. Compteur de garantie plafonné à sept ; modèles de décoration déjà posés marqués récompensés ; quotidienne d’affection complétée reste réclamable, réclamation et bonus déjà reçus restent acquis. Versions 1–15 : rejet `INCOMPATIBLE_CATALOG` conservé. Fixture encodée par le véritable code v16 dans `tests/fixtures/economy-v16.json`.
+
+### Habitats, revenus et agence de voyage (25 octobre 2026)
+
+Le stockage dépend du type aux niveaux 1 et 2, dans l’ordre strict Paille < Neige < Feu < Universel < Métal < Vol. Au niveau 3, tous les habitats stockent 5 600 pattes. Les capacités restent 3 / 5 / 7 lapins.
+
+| Habitat | Stockage N1 | Stockage N2 | Stockage N3 |
+|---|---:|---:|---:|
+| Paille | 1 300 | 2 600 | 5 600 |
+| Neige | 1 500 | 3 000 | 5 600 |
+| Feu | 1 800 | 3 400 | 5 600 |
+| Universel | 2 100 | 3 800 | 5 600 |
+| Métal | 2 500 | 4 300 | 5 600 |
+| Vol | 2 900 | 4 800 | 5 600 |
+
+Au chargement, un ancien stock au-dessus du nouveau plafond, mais dans les anciens plafonds 2 400 / 4 000 / 5 600, est ramené au nouveau plafond ; son excédent en pièces entières est versé au solde. Un stock dépassant à la fois le plafond actuel et l’ancien est refusé. Cette conversion n’est appliquée qu’une fois, sans nouveau crédit au prochain chargement.
+
+À l’affection 1, les communs produisent 10 pattes/h, les rares 14, les épiques 20 et les légendaires 26. Douze rares tirés au sort une seule fois le 25 octobre ont une base de 17 : `amethyste`, `boudinet`, `bretonette`, `egiiipte`, `feu-glace`, `frisket`, `lunettes`, `perroquet`, `princesse-neige`, `roukette`, `virvoletant`, `wat-wat`. Chaque point d’affection au-delà de 1 ajoute une patte/h ; aucun nouveau tirage au chargement.
+
+L’agence de voyage s’achète parmi les bâtiments dès le niveau 8 pour 1 000 pattes, un exemplaire maximum. Coco, hôte non collectionnable en chemise hawaïenne et lunettes de soleil, accueille le joueur en quatre bulles la première fois. Cet accueil terminé est sauvegardé ; Coco reste ensuite présent sans répéter le guide.
+
+Un seul lapin voyage à la fois. Un parent au nid ne peut pas partir. La destination surprise et la durée entière de 3 à 10 h sont tirées ensemble parmi les 72 couples possibles : Londres, Vannes, Le Caire, Hammamet, Le Lavandou, Bandol, Lille, Paris, Marrakech. Le départ est gratuit. Le voyageur garde sa place et ses revenus dans son habitat ; il disparaît visuellement de celui-ci et ne peut être nourri, reproduire, déménager, être confié ou cuisiner jusqu’à son accueil au retour.
+
+Le voyage rapporte 1 cœur pour 3–4 h, 2 pour 5–7 h, 3 pour 8–10 h. La destination et le minuteur sont affichés pendant le voyage. À la fin, une bulle cœur apparaît sur l’agence ; le voyageur déclare « Je me suis super amusé à … » (ou « au Caire / au Lavandou »). Le bouton « Accueillir · + N cœurs » crédite le souvenir une seule fois et libère le voyageur. Le retour attend sans péremption ; aucune accélération n’est proposée. L’état est conservé dans la sauvegarde v18 et ses dates suivent le recalage de l’horloge. [Règles, textes et préparation des illustrations](travel-agency.md).
 
 ## Lapins ajoutés le 25 octobre 2026
 

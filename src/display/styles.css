@@ -509,3 +509,21 @@ dialog > button { width: 100%; margin-top: 8px; }
 .cuisine-reward-chip[data-kind=notice] { background: #fbe4dc; color: #93402f; white-space: normal; }
 /* The standalone prototype keeps its Attribution · MIT links; the integrated Cuisine does not show them. */
 .cuisine-activity .cuisine-root footer nav { display: none; }
+
+/* The travel agency: Coco beside a speech bubble, the travellers' cards below. */
+.agency-host { display: flex; align-items: center; gap: 10px; margin: 4px 0 12px; }
+.agency-host-portrait { flex: 0 0 auto; width: 104px; height: auto; object-fit: contain; filter: drop-shadow(0 4px 3px #2e3a2a40); }
+.agency-bubble { position: relative; flex: 1; min-width: 0; padding: 12px 14px; border: 3px solid #777d6c; border-radius: 18px 18px 18px 6px;
+  background: linear-gradient(135deg, #fffaeb, #f0ead8); color: #303b30; box-shadow: inset 0 2px #fffdf1, 0 4px 0 #424a3e33; }
+.agency-bubble::before { content: ''; position: absolute; left: -11px; bottom: 14px; width: 16px; height: 16px; background: #fbf6e6;
+  border-left: 3px solid #777d6c; border-bottom: 3px solid #777d6c; transform: rotate(45deg); }
+.agency-bubble p { margin: 0 0 8px; font-size: 15px; line-height: 1.45; }
+.agency-bubble p:last-of-type { margin-bottom: 0; }
+.agency-bubble > button { width: 100%; margin-top: 10px; }
+.agency-step { color: #5b6355; }
+.agency-return .card-heading { display: flex; align-items: center; gap: 12px; }
+.traveller-bubble { border-color: #b98a96; background: linear-gradient(135deg, #fff6f4, #f6e6e4); }
+.traveller-bubble::before { background: #fcf1ef; border-color: #b98a96; }
+.agency-travellers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.agency-travellers .card { margin: 0; }
+@container (max-width: 440px) { .agency-travellers { grid-template-columns: minmax(0, 1fr); } .agency-host-portrait { width: 84px; } }

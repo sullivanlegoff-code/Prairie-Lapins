@@ -20,5 +20,16 @@ export const HABITAT_LEVELS = {
 } as const;
 export const LAND = [{width: BALANCE.initialWidth, cost: 0}, {width: BALANCE.extendedWidth, cost: BALANCE.extensionCost}, {width: LEGACY_ISLAND.mapCells, cost: 1800}] as const;
 export const HABITAT_PRICES: Record<HabitatType, number> = {paille: 200, neige: 200, feu: 450, metal: 800, vol: 1200, universal: 350};
-export const habitatLevel = (type: HabitatType, level: HabitatLevel) => ({...HABITAT_LEVELS[type === 'universal' ? 'universal' : 'specialized'][level - 1], cost: level === 1 ? HABITAT_PRICES[type] : level === 2 ? HABITAT_PRICES[type] / 2 : 10});
+/**
+ * Coins a habitat stores (owner, 25 October 2026): at levels 1 and 2, the earlier a habitat opens, the less it stores — Paille
+ * stores the least and Vol the most, in their order of access (Paille, Neige, Feu, Universel, Métal, Vol). Every level-3 habitat
+ * stores the same maximum. Each one still holds the twelve-hour night of its full capacity at affection 20.
+ */
+export const HABITAT_CAPS: Record<1 | 2, Record<HabitatType, number>> & {3: number} = {
+  1: {paille: 1300, neige: 1500, feu: 1800, universal: 2100, metal: 2500, vol: 2900},
+  2: {paille: 2600, neige: 3000, feu: 3400, universal: 3800, metal: 4300, vol: 4800},
+  3: 5600,
+};
+export const habitatCap = (type: HabitatType, level: HabitatLevel): number => level === 3 ? HABITAT_CAPS[3] : HABITAT_CAPS[level][type];
+export const habitatLevel = (type: HabitatType, level: HabitatLevel) => ({...HABITAT_LEVELS[type === 'universal' ? 'universal' : 'specialized'][level - 1], cap: habitatCap(type, level), cost: level === 1 ? HABITAT_PRICES[type] : level === 2 ? HABITAT_PRICES[type] / 2 : 10});
 export const habitatPrice = (type: HabitatType) => habitatLevel(type, 1).cost;
