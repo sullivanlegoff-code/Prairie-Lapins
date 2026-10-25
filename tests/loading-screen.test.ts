@@ -35,7 +35,7 @@ describe('loading screen', () => {
     other.fail('music', 'Musique indisponible : le jeu reste jouable sans elle.'); other.done('save'); other.done('textures'); other.done('scene');
     expect(other.view().ready).toBe(true);
   });
-  it('a failed or timed-out required step shows a clear message and « Réessayer », never « Jouer »', () => {
+  it('a failed required step shows a clear message and « Réessayer », never « Jouer »', () => {
     const timers = fakeTimers(), tracker = new LoadingTracker(LOADING_STEPS, timers.api), root = document.getElementById('loading-screen')!;
     tracker.subscribe(v => renderLoading(root, v));
     tracker.done('save'); tracker.fail('textures', 'Une image du jeu n’a pas pu être chargée (farm).'); tracker.done('scene');
@@ -44,8 +44,33 @@ describe('loading screen', () => {
     expect(document.getElementById('loading-play')!.hidden).toBe(true);
     expect(document.getElementById('loading-retry')!.hidden).toBe(false);
     expect(document.getElementById('loading-message')!.textContent).toMatch(/image du jeu.*réessayez/);
-    const slow = new LoadingTracker(LOADING_STEPS, timers.api); slow.done('save'); timers.advance(45_000);
-    expect(slow.view()).toMatchObject({ready: false, failed: true}); expect(slow.view().message).toMatch(/prend trop de temps/);
+
+  });
+  it('keeps slow steps pending, offers retry and accepts late success with fake timers', () => {
+    const timers = fakeTimers(), tracker = new LoadingTracker(LOADING_STEPS, timers.api), root = document.getElementById('loading-screen')!;
+    tracker.subscribe(v => renderLoading(root, v));
+    tracker.done('save'); tracker.progress('textures', .5); timers.advance(45_000);
+    expect(tracker.view()).toMatchObject({ready: false, failed: false});
+    expect(tracker.view().steps.filter(s => s.state === 'slow').map(s => s.id)).toEqual(['textures', 'scene']);
+    expect(document.getElementById('loading-message')!.textContent).toContain('Connexion lente, le chargement continue…');
+    expect(document.getElementById('loading-retry')!.hidden).toBe(false);
+    expect(document.getElementById('loading-play')!.hidden).toBe(true);
+    tracker.progress('textures', .75);
+    expect(tracker.view().steps.find(s => s.id === 'textures')!.fraction).toBe(.75);
+    timers.advance(90_000); tracker.done('textures'); tracker.done('scene');
+    expect(tracker.view()).toMatchObject({ready: true, failed: false});
+    expect(document.getElementById('loading-retry')!.hidden).toBe(true);
+    expect(document.getElementById('loading-play')!.hidden).toBe(false);
+    expect((document.getElementById('loading-play') as HTMLButtonElement).disabled).toBe(false);
+    expect(tracker.view().message).not.toContain('Connexion lente');
+    expect(timers.count()).toBe(0);
+  });
+  it('reports a real error after timeout and does not erase it on scene creation', () => {
+    const timers = fakeTimers(), tracker = new LoadingTracker(LOADING_STEPS, timers.api);
+    tracker.done('save'); timers.advance(45_000);
+    tracker.fail('textures', 'Image introuvable.'); tracker.done('textures'); tracker.done('scene');
+    expect(tracker.view()).toMatchObject({ready: false, failed: true});
+    expect(tracker.view().message).toContain('Image introuvable.');
   });
   it('an unreadable save is reported but does not block: recovery happens in the game', () => {
     const tracker = new LoadingTracker(LOADING_STEPS, fakeTimers().api);

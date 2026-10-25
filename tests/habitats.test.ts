@@ -3,7 +3,7 @@ import {sendToNursery} from './manual-transfer';
 import {regressionStart as createGame} from './regression-start';
 import {describe, expect, it, vi} from 'vitest';
 import {HABITAT_TYPES, HABITATS, habitatLevel, type HabitatType} from '../src/config/habitats';
-import {SPECIES, SPECIES_IDS, HOUR, BALANCE} from '../src/config/balance';
+import {SPECIES, SPECIES_IDS, HOUR, MINUTE, BALANCE} from '../src/config/balance';
 import {act, advance,  decodeGame, encodeGame, pendingDiscoveries} from '../src/simulation';
 import {habitatAccepts, habitatStats, terrainWidth, visibleColumns} from '../src/simulation/habitats';
 import {quoteComplement} from '../src/simulation/actions';
@@ -123,7 +123,7 @@ describe('levels, income and payments',()=>{
     expect(s.buildings[1].incomeUnits).toBe(oldCap*HOUR);
     expect(advance(s,1001*HOUR).buildings[1].incomeUnits).toBe((oldCap+12)*HOUR);
     expect(advance(advance(s,1000*HOUR+1234),1001*HOUR)).toEqual(advance(s,1001*HOUR));
-    expect(advance(s,999*HOUR)).toEqual(s);
+    expect(advance(s,1000*HOUR-MINUTE)).toEqual(s);
   });
   it('supports exactly 3, 5 and 7 occupants without changing the per-rabbit rate or last-species protection',()=>{
     let s=rich();const id='building-1';

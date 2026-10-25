@@ -50,7 +50,8 @@ if (!failed) {
   const path = join(root, 'src/config/rabbitBlinkArt.json');
   const bytes = Buffer.from(JSON.stringify(manifest, null, 2) + '\n');
   if (check) {
-    if (!readFileSync(path).equals(bytes)) { console.error('Manifest differs'); failed = true; }
+    // A Windows checkout may turn the manifest's line endings into CRLF; only its content matters.
+    if (readFileSync(path, 'utf8').replace(/\r\n/g, '\n') !== bytes.toString()) { console.error('Manifest differs'); failed = true; }
   } else writeFileSync(path, bytes);
 }
 if (failed) process.exitCode = 1;

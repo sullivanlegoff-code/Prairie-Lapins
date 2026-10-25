@@ -61,11 +61,14 @@ describe('Cuisine reward command',()=>{
     expect(next.state.pattes).toBe(initial.pattes+5*SALAD.pattes);
     expect(next.state.grass).toBe(initial.grass+5*SALAD.grass);
     expect(next.state.hearts).toBe(initial.hearts+2);expect(next.state.progression).toEqual(initial.progression);
-    expect(next.state.missions.daily.progress['gain-affection']).toBe(0);
+    expect(other.state.missions.daily.progress['gain-affection']).toBe(2);
+    expect(early.state.missions.daily.progress['gain-affection']).toBe(2);
+    expect(next.state.missions.daily.progress['gain-affection']).toBe(1);
   });
   it('consumes the opportunity even at the cap and never exceeds 20',()=>{
     const initial=withKitchen(createGame(0));initial.rabbits[0].affection=20;
     const first=reward(initial),second=reward(first.state);
+    expect(second.state.missions.daily.progress['gain-affection']).toBe(0);
     expect(first.cuisineReward).toMatchObject({affectionGranted:false,affectionAtCap:true});
     expect(first.state.cuisine.affectionCycles[initial.rabbits[0].id]).toBe(0);
     expect(second.state.rabbits[0].affection).toBe(20);

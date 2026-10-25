@@ -136,12 +136,11 @@ export class GameController {
   perform(command: Command): ActionResult | {ok: false; reason: 'NO_GAME' | 'DISPOSED' | 'SALE_NOT_SAVED' | 'ACTION_NOT_SAVED' | 'STORAGE_CHANGED'} {
     if (this.disposed) return {ok: false, reason: 'DISPOSED'};
     if (!this.state) return {ok: false, reason: 'NO_GAME'};
-    if (this.storageChanged()) { this.emit(); return {ok: false, reason: command.type === 'sellDecoration' ? 'SALE_NOT_SAVED' : 'STORAGE_CHANGED'}; }
+    if (this.storageChanged()) { this.emit(); return {ok: false, reason: command.type === 'sellDecoration' ? 'ACTION_NOT_SAVED' : 'STORAGE_CHANGED'}; }
     const now = this.clock();
     const changed = this.updateTime(now);
     const result = act(this.state!, command, now, this.rng);
-    return this.finishAction(result, command.type === 'sellDecoration', now, changed,
-      command.type === 'rewardCuisine' || command.type === 'expand' || command.type === 'sellDecoration' || command.type === 'transferBirth' || command.type === 'initiationAid' || command.type === 'welcome' || command.type === 'upgradeHabitat' || command.type === 'renameRabbit' || command.type === 'buyBuilding' || command.type === 'buyRabbit' || command.type === 'buyDecoration' || command.type === 'buyRecipe' || command.type === 'placeDecoration' || command.type === 'claimMainMission' || command.type === 'claimDailyMission' || command.type === 'claimDailyBonus' || (command.type === 'payWithHearts' && ['buyBuilding','buyRabbit','upgradeHabitat','expand'].includes(command.action.type)));
+    return this.finishAction(result, now, changed);
   }
 
   /** Laboratory-only entry point; the normal UI never imports the test tools. */
@@ -154,18 +153,17 @@ export class GameController {
     const candidate = structuredClone(this.state!);
     const applied = amount === 50 || amount === 500 ? applyProgressionGain(candidate, amount) : {ok: false as const, reason: 'INVALID_CHOICE' as const};
     const result: ActionResult = applied.ok ? {ok: true, state: candidate, progressionGain: applied.gain} : {ok: false, state: this.state!, reason: applied.reason};
-    return this.finishAction(result, false, now, changed);
+    return this.finishAction(result, now, changed);
   }
 
-  /** Progression commits the complete candidate before adoption, including the underlying action. */
-  private finishAction(result: ActionResult, sale: boolean, now: number, changed: boolean, persistFirst = false): ActionResult | {ok: false; reason: 'SALE_NOT_SAVED' | 'ACTION_NOT_SAVED'} {
-    const progressionChanged = result.ok && JSON.stringify(result.state.progression) !== JSON.stringify(this.state!.progression);
-    if (result.ok && (persistFirst || progressionChanged)) {
+  /** Every successful command commits its complete candidate before adoption. Time alone remains best-effort. */
+  private finishAction(result: ActionResult, now: number, changed: boolean): ActionResult | {ok: false; reason: 'ACTION_NOT_SAVED'} {
+    if (result.ok) {
       const saved = this.write(result.state, now);
       if (!saved.ok) {
         this.status = saved.reason === 'STORAGE_CHANGED' ? 'conflict' : saved.reason === 'READ_FAILED' ? 'read-error' : 'write-error';
-        this.issue = saved.reason; if (!progressionChanged) this.dirty = true; this.emit();
-        return {ok: false, reason: sale ? 'SALE_NOT_SAVED' : 'ACTION_NOT_SAVED'};
+        this.issue = saved.reason; this.emit();
+        return {ok: false, reason: 'ACTION_NOT_SAVED'};
       }
       const fromLevel = progressionFromXp(this.state!.progression.totalXp).level;
       this.state = result.state; this.status = 'saved'; this.issue = null; this.dirty = false;
@@ -176,8 +174,7 @@ export class GameController {
       }
       this.emit(); return structuredClone(result);
     }
-    if (result.ok) { this.state = result.state; this.dirty = true; }
-    if (changed || result.ok) this.saveCurrent(now);
+    if (changed) this.saveCurrent(now);
     this.emit();
     return structuredClone(result);
   }

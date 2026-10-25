@@ -80,20 +80,20 @@ function pailleStep(s: GameState, p: Preferences, now: number): GuideStep {
     return soloStep(s, {...p, intro: true, guideCamera: true, guideCollection: true}, now, true);
   }
   const step = (id: string, title: string, text: string, target: GuideTarget): GuideStep => ({id, title, text, target});
-  const missing = (price: number) => s.pattes < price ? ` Il manque ${price - s.pattes} pattes. Réclame une récompense ou récolte les revenus disponibles.` : '';
-  if (!s.buildings.some(b => b.habitat?.type === 'neige')) return step('snowShop', 'Un habitat pour Neige', 'Boutique → Habitats : achète le Jardin enneigé (200 pattes), puis place-le sur une empreinte libre.' + missing(200), 'snowShop');
-  if (!s.discovered.includes('neige')) return step('rabbitShop', 'Accueillir Neige', 'Boutique → Lapins : accueille Neige (80 pattes) dans le Jardin enneigé.' + missing(80), 'rabbitShop');
-  if (!s.missions.claimed.includes('welcome-snow')) return step('snowReward', 'La bienvenue de Neige', 'Réclame les 50 pattes de la mission « Accueillir Neige » pour préparer notre ferme.', 'reward');
+  const missing = (price: number) => s.pattes < price ? ` Il manque ${price - s.pattes} pattes. Réclamez une récompense ou récoltez les revenus disponibles.` : '';
+  if (!s.buildings.some(b => b.habitat?.type === 'neige')) return step('snowShop', 'Un habitat pour Neige', 'Boutique → Habitats : achetez le Jardin enneigé (200 pattes), puis placez-le sur une empreinte libre.' + missing(200), 'snowShop');
+  if (!s.discovered.includes('neige')) return step('rabbitShop', 'Accueillir Neige', 'Boutique → Lapins : accueillez Neige (80 pattes) dans le Jardin enneigé.' + missing(80), 'rabbitShop');
+  if (!s.missions.claimed.includes('welcome-snow')) return step('snowReward', 'La bienvenue de Neige', 'Réclamez les 50 pattes de la mission « Accueillir Neige » pour préparer notre ferme.', 'reward');
   const farm = s.buildings.find(b => b.kind === 'farm' && b.order && b.order.endsAt <= now) ?? s.buildings.find(b => b.kind === 'farm' && b.order) ?? s.buildings.find(b => b.kind === 'farm');
-  if (!farm) return step('farmShop', 'Notre ferme', 'Boutique → Bâtiments : achète et place la ferme (60 pattes).' + missing(60), 'farmShop');
+  if (!farm) return step('farmShop', 'Notre ferme', 'Boutique → Bâtiments : achetez et placez la ferme (60 pattes).' + missing(60), 'farmShop');
   if (!e.collectOrder) {
-    if (!farm.order) return step('production', 'De l’herbe pour nous', 'Lance la petite production : 10 pattes pour 20 herbes en 5 minutes.' + missing(10), 'farm');
-    return {...step('harvest', 'Récolter notre herbe', farm.order.endsAt > now ? 'Dans la ferme, utilise l’aide gratuite de découverte ou attends, puis récolte les 20 herbes.' : 'Notre herbe est prête ! Récolte les 20 herbes dans la ferme.', 'farm'), buildingId: farm.id};
+    if (!farm.order) return step('production', 'De l’herbe pour nous', 'Lancez la petite production : 10 pattes pour 20 herbes en 5 minutes.' + missing(10), 'farm');
+    return {...step('harvest', 'Récolter notre herbe', farm.order.endsAt > now ? 'Dans la ferme, utilisez l’aide gratuite de découverte ou attendez, puis récoltez les 20 herbes.' : 'Notre herbe est prête ! Récoltez les 20 herbes dans la ferme.', 'farm'), buildingId: farm.id};
   }
   for (const species of ['paille', 'neige'] as const) {
     const r = s.rabbits.find(r => r.species === species);
-    if (r && r.affection < 2) return step(species, `Le repas de ${r.name || SPECIES_NAME[species]}`, s.grass < 2 ? 'Il manque de l’herbe. Lance une production ou réclame une récompense.' : 'Ouvre la fiche de ce lapin et touche Nourrir jusqu’à affection 2.', s.grass < 2 ? 'farm' : species);
+    if (r && r.affection < 2) return step(species, `Le repas de ${r.name || SPECIES_NAME[species]}`, s.grass < 2 ? 'Il manque de l’herbe. Lancez une production ou réclamez une récompense.' : 'Ouvrez la fiche de ce lapin et touchez Nourrir jusqu’à affection 2.', s.grass < 2 ? 'farm' : species);
   }
-  return step('breed', 'Retrouvons-nous au nid', `Touche le nid → Croiser, choisis ${s.rabbits.find(r => r.species === 'paille')?.name || 'Paille'} à gauche et Neige à droite, puis le bouton rouge Croiser. Les deux parents doivent être présents et à affection 2.`, 'nest');
+  return step('breed', 'Retrouvons-nous au nid', `Touchez le nid → Croiser, choisissez ${s.rabbits.find(r => r.species === 'paille')?.name || 'Paille'} à gauche et Neige à droite, puis le bouton rouge Croiser. Les deux parents doivent être présents et à affection 2.`, 'nest');
 }
 const SPECIES_NAME = {paille: 'Paille', neige: 'Neige'};

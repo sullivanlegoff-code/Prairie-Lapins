@@ -776,7 +776,7 @@ describe('direct decoration selection and confirmed resale UI', () => {
     vi.spyOn(storage, 'setItem').mockImplementation(() => {throw Error('quota');});
     button('Vendre · 200 pièces').click(); button('Confirmer', document.getElementById('game-dialog')!).click();
     expect(state(controller)).toEqual(before); expect(panel().textContent).toContain('Vendre · 200 pièces');
-    expect(document.getElementById('toast')!.textContent).toContain('vente n’a pas pu être sauvegardée');
+    expect(document.getElementById('toast')!.textContent).toContain('L’action n’a pas pu être sauvegardée');
   });
 });
 

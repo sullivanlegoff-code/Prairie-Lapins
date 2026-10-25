@@ -62,7 +62,7 @@ describe('main missions and unique rewards',()=>{
   it.each(eligibleMainMissionIds(createGame(0)))('claims %s once, credits its exact reward, and never counts the reward as daily work',id=>{
     const before=prepared(); before.missions.completed=[id];
     const s=run(before,{type:'claimMainMission',id}), reward=MAIN_MISSIONS[id].reward;
-    if(reward.resource==='unlock')expect([s.pattes,s.grass,s.hearts]).toEqual([before.pattes,before.grass,before.hearts]);else expect(s[reward.resource]).toBe(before[reward.resource]+reward.amount);expect(s.missions.claimed).toEqual([id]);
+    if(reward.resource==='none')expect([s.pattes,s.grass,s.hearts]).toEqual([before.pattes,before.grass,before.hearts]);else expect(s[reward.resource]).toBe(before[reward.resource]+reward.amount);expect(s.missions.claimed).toEqual([id]);
     expect(s.missions.daily).toEqual(before.missions.daily);
     const result=act(s,{type:'claimMainMission',id},s.lastSimulatedAt);
     expect(result).toEqual({ok:false,state:s,reason:'ALREADY_CLAIMED'});
@@ -124,8 +124,8 @@ describe('daily event accounting and fixed cycles',()=>{
   });
   it('never reopens an old cycle when the clock moves backwards',()=>{
     const s=run(advance(prepared(),DAY),{type:'feed',id:'rabbit-2'},DAY);
-    expect(advance(s,0)).toEqual(s);expect(run(s,{type:'feed',id:'rabbit-3'},0).missions.daily).toMatchObject({cycleIndex:1,progress:{'gain-affection':2}});
-    expect(act(s,{type:'claimDailyBonus',cycleStart:0},0)).toMatchObject({ok:false,reason:'CYCLE_EXPIRED'});
+    expect(advance(s,0).missions.daily).toEqual({...s.missions.daily,referenceAt:-DAY});expect(run(s,{type:'feed',id:'rabbit-3'},0).missions.daily).toMatchObject({cycleIndex:1,progress:{'gain-affection':2}});
+    expect(act(s,{type:'claimDailyBonus',cycleStart:DAY},0)).toMatchObject({ok:false,reason:'CYCLE_EXPIRED'});
   });
   it('requires all three rewards claimed before a single bonus, without counting any rewards',()=>{
     let s=dailyReady();const progress=structuredClone(s.missions.daily.progress);

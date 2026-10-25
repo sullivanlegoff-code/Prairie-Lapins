@@ -95,6 +95,7 @@ async function boot(): Promise<() => void> {
     const disposeDev = mountDev?.(controller);
     entered = () => { ui?.dispose(); soundSettings.dispose(); disposePanel(); disposeDev?.(); };
   };
+  // Restart all loaders safely, both after a real error and while a slow request is pending.
   const retry = () => location.reload();
   const playButton = document.getElementById('loading-play')!, retryButton = document.getElementById('loading-retry')!;
   playButton.addEventListener('click', play); retryButton.addEventListener('click', retry);

@@ -211,7 +211,7 @@ describe('atomic decoration resale', () => {
     if (fault === 'quota') m.fail.key = SAVE_KEY;
     if (fault === 'conflict') m.values.set(SAVE_KEY, encodeGame({...s, grass: s.grass + 1}));
     const spy = fault === 'read' ? vi.spyOn(m.storage, 'getItem').mockImplementation(() => {throw Error('read');}) : null;
-    expect(c.perform({type: 'sellDecoration', id: 'decoration-4'})).toEqual({ok: false, reason: 'SALE_NOT_SAVED'});
+    expect(c.perform({type: 'sellDecoration', id: 'decoration-4'})).toEqual({ok: false, reason: 'ACTION_NOT_SAVED'});
     expect(c.getSnapshot().state).toEqual(s);
     expect(JSON.parse(m.values.get(SAVE_KEY)!).decorations).toEqual(s.decorations);
     expect(JSON.parse(m.values.get(SAVE_KEY)!).pattes).toBe(s.pattes);

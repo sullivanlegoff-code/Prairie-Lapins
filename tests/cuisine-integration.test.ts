@@ -105,7 +105,7 @@ describe('main-game Cuisine activity', () => {
     a.refresh();a.refresh();vi.advanceTimersByTime(1000);a.refresh();
     expect(performed).toHaveBeenCalledExactlyOnceWith({type:'rewardCuisine',rabbitId:before.rabbits[0].id,recipeId:recipe});
     const paid=CUISINE_REWARDS[recipe],expected={...before,pattes:before.pattes+paid.pattes,grass:before.grass+paid.grass,hearts:before.hearts+1,
-      missions:{...before.missions,completed:[...before.missions.completed,'first-meal']},
+      missions:{...before.missions,completed:[...before.missions.completed,'first-meal'],daily:{...before.missions.daily,progress:{...before.missions.daily.progress,'gain-affection':before.missions.daily.progress['gain-affection']+1}}},
       rabbits:before.rabbits.map((r,i)=>i===0?{...r,affection:r.affection+1}:r),cuisine:{affectionCycles:{[before.rabbits[0].id]:before.missions.daily.cycleIndex},heartCycle:before.missions.daily.cycleIndex,fullRuns:{cycle:before.missions.daily.cycleIndex,used:1}}};
     expect(k.controller.getSnapshot().state).toEqual(expected);
     expect(JSON.parse(k.values.get(SAVE_KEY)!)).toMatchObject(expected);
@@ -231,8 +231,8 @@ describe('main-game Cuisine activity', () => {
     const k=setup(true,'empty'),before=structuredClone(k.controller.getSnapshot().state);
     k.ui.select({kind:'building',id:'building-100'});
     [...document.querySelectorAll<HTMLButtonElement>('#panel-content button')].find(b=>b.textContent==='Entrer dans la Cuisine')!.click();
-    expect(document.getElementById('panel-title')!.textContent).toBe('Choisis ton lapin');
-    expect(document.getElementById('panel-content')!.textContent).toContain('Tu as besoin d’un lapin pour cuisiner.');
+    expect(document.getElementById('panel-title')!.textContent).toBe('Choisissez votre lapin');
+    expect(document.getElementById('panel-content')!.textContent).toContain('Vous avez besoin d’un lapin pour cuisiner.');
     expect(document.querySelectorAll('[data-cuisine-rabbit]')).toHaveLength(0);
     expect(k.mounted).not.toHaveBeenCalled();expect(k.host.selectedRabbit).toBeNull();
     document.getElementById('panel-back')!.click();
@@ -247,7 +247,7 @@ describe('main-game Cuisine activity', () => {
     const enter=()=>[...document.querySelectorAll<HTMLButtonElement>('#panel-content button')].find(b=>b.textContent==='Entrer dans la Cuisine')!;
     const action=enter();action.click();action.click();
     expect(k.mounted).not.toHaveBeenCalled();
-    expect(document.getElementById('panel-title')!.textContent).toBe('Choisis ton lapin');
+    expect(document.getElementById('panel-title')!.textContent).toBe('Choisissez votre lapin');
     k.choose(before!.rabbits[0].id);
     expect(k.mounted).toHaveBeenCalledOnce();
     expect(document.getElementById('app')!.inert).toBe(true);
@@ -327,7 +327,7 @@ describe('main-game Cuisine activity', () => {
     activity.root.querySelector<HTMLButtonElement>('#recipe-choose')!.click();
     expect(activity.engine.snapshot().phase).toBe('choosing'); expect(k.completed).toHaveBeenCalledTimes(2);
     expect(k.controller.getSnapshot().state).toEqual({...before,pattes:before!.pattes+2*CUISINE_REWARDS.salad.pattes,grass:before!.grass+2*CUISINE_REWARDS.salad.grass,hearts:before!.hearts+1,
-      missions:{...before!.missions,completed:[...before!.missions.completed,'first-meal']},
+      missions:{...before!.missions,completed:[...before!.missions.completed,'first-meal'],daily:{...before!.missions.daily,progress:{...before!.missions.daily.progress,'gain-affection':before!.missions.daily.progress['gain-affection']+1}}},
       rabbits:before!.rabbits.map((r,i)=>i===0?{...r,affection:r.affection+1}:r),cuisine:{affectionCycles:{[before!.rabbits[0].id]:before!.missions.daily.cycleIndex},heartCycle:before!.missions.daily.cycleIndex,fullRuns:{cycle:before!.missions.daily.cycleIndex,used:2}}});
   });
   it('cleans Cuisine on UI disposal without fake completion', () => {

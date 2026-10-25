@@ -70,7 +70,7 @@ describe('hearts initialization, migration and gifts', () => {
     now = DAY; c.perform({type: 'claimHearts'}); now = HOUR;
     const reloaded = new GameController(memory.storage, () => now);
     expect(reloaded.perform({type: 'claimHearts'})).toMatchObject({ok: false, reason: 'NOT_READY'});
-    expect(current(reloaded)).toMatchObject({hearts: 14, nextHeartGiftAt: 2 * DAY, lastSimulatedAt: DAY});
+    expect(current(reloaded)).toMatchObject({hearts: 14, nextHeartGiftAt: HOUR + DAY, lastSimulatedAt: HOUR});
   });
 });
 
@@ -151,7 +151,8 @@ describe('acceleration transactions', () => {
     s = run(s, speed(s, 'building-4', 'order'));
     const raw = JSON.parse(encodeGame(s)); delete raw.hearts; expect(decodeGame(JSON.stringify(raw)).ok).toBe(false);
     raw.hearts = -1; expect(decodeGame(JSON.stringify(raw)).ok).toBe(false);
-    raw.hearts = 0; raw.nextHeartGiftAt = -1; expect(decodeGame(JSON.stringify(raw)).ok).toBe(false);
+    raw.hearts = 0; raw.nextHeartGiftAt = -1; expect(decodeGame(JSON.stringify(raw)).ok).toBe(true); // Overdue rebased timestamps may precede the epoch.
+    raw.nextHeartGiftAt = -.5; expect(decodeGame(JSON.stringify(raw)).ok).toBe(false);
     raw.nextHeartGiftAt = DAY; raw.buildings[1].order.endsAt = MINUTE;
     expect(decodeGame(JSON.stringify(raw)).ok).toBe(false); // A shortened stage cannot still be in the future.
   });
