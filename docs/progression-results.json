@@ -149,8 +149,8 @@
     {
       "step": "3 j",
       "pattes": 2093,
-      "grass": 3088,
-      "hearts": 40,
+      "grass": 509,
+      "hearts": 49,
       "level": 10,
       "species": 10,
       "speciesIds": [
@@ -217,9 +217,9 @@
     },
     {
       "step": "7 j",
-      "pattes": 14739,
-      "grass": 8195,
-      "hearts": 60,
+      "pattes": 4870,
+      "grass": 735,
+      "hearts": 123,
       "level": 14,
       "species": 15,
       "speciesIds": [
@@ -242,8 +242,8 @@
       "storedPattes": 5003,
       "remaining": {
         "commons": [],
-        "extensions": 4,
-        "extensionCost": 142000,
+        "extensions": 5,
+        "extensionCost": 151000,
         "farms": 0,
         "kitchen": false,
         "habitatUpgrades": 5,
@@ -292,9 +292,9 @@
     },
     {
       "step": "20 j",
-      "pattes": 63005,
-      "grass": 24915,
-      "hearts": 105,
+      "pattes": 4689,
+      "grass": 544,
+      "hearts": 406,
       "level": 22,
       "species": 31,
       "speciesIds": [
@@ -333,8 +333,8 @@
       "storedPattes": 9059,
       "remaining": {
         "commons": [],
-        "extensions": 0,
-        "extensionCost": 0,
+        "extensions": 4,
+        "extensionCost": 142000,
         "farms": 0,
         "kitchen": false,
         "habitatUpgrades": 3,
@@ -382,9 +382,9 @@
     },
     {
       "step": "50 j",
-      "pattes": 714994,
-      "grass": 64085,
-      "hearts": 222,
+      "pattes": 5401,
+      "grass": 630,
+      "hearts": 1132,
       "level": 29,
       "species": 33,
       "speciesIds": [
@@ -425,8 +425,8 @@
       "storedPattes": 11231,
       "remaining": {
         "commons": [],
-        "extensions": 0,
-        "extensionCost": 0,
+        "extensions": 3,
+        "extensionCost": 126000,
         "farms": 0,
         "kitchen": false,
         "habitatUpgrades": 3,
@@ -488,8 +488,9 @@
     "buyDecoration": 1,
     "upgradeHabitat": 10,
     "claimDailyBonus": 69,
-    "expand": 8,
+    "expand": 5,
+    "exchangeForHeart": 1321,
     "release": 170
   },
-  "totalActions": 5059
+  "totalActions": 6377
 }

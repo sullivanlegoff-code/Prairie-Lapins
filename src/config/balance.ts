@@ -19,6 +19,8 @@ export const HEARTS = {
   initial: 12, gift: 2, maximumGifts: 3, giftInterval: 24 * HOUR,
   accelerationStep: 5 * MINUTE, pattesPerHeart: 25,
 };
+/** Paille's counter (late game): one Heart for pattes or grass; each exchange of a daily cycle costs 25 % more, 30 at most per resource. */
+export const MARKET = {unlockLevel: 10, base: {pattes: 250, grass: 100}, growth: 1.25, maximumPerCycle: 30} as const;
 // The species registry lives in ./species; the public names stay available from here.
 export {SPECIES, SPECIES_IDS, LEGACY_SPECIES_IDS};
 export type {SpeciesId, RabbitType, Rarity};

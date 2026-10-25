@@ -21,13 +21,14 @@ import {habitatStats, habitatName, habitatEntryReason, habitatAccepts, welcomeDe
 import {MAIN_MISSIONS, DAILY_MISSION_GAP, DAILY_MISSION_IDS, DAILY_MISSIONS, DAILY_BONUS, type Reward} from '../config/missions';
 import {initialMissionIds, activeMainMissions, availableMissionRewards, mainProgress, dailyCycleStart, dailyCycleEnd, cycleIndexAt, currentDailyMission, dailyOpensAt} from '../simulation/missions';
 import type {GameController, Snapshot} from '../application/GameController';
-import {BALANCE, HOUR, NURSERY, ORDERS, SPECIES, SPECIES_IDS, SHOP_SPECIES, growthDuration, type BuildingKind, type SpeciesId, type OrderId, type RabbitType} from '../config/balance';
+import {BALANCE, HOUR, MARKET, NURSERY, ORDERS, SPECIES, SPECIES_IDS, SHOP_SPECIES, growthDuration, type BuildingKind, type SpeciesId, type OrderId, type RabbitType} from '../config/balance';
 import type {Command, DecorationLocation, GameState, PattesCommand, TimedStage} from '../state/types';
 import {DECORATIONS, DECORATION_IDS, FINE_GRID, ownedDecorationResalePrice, type DecorationId} from '../config/decorations';
 import {catalogDecorationPlacementReason, purchaseDecorationReason} from '../simulation/decorations';
 import {decorationUrl} from '../display/decorationArt';
 import {quoteComplement} from '../simulation/actions';
 import {initiationAvailable} from '../simulation/initiation';
+import {marketExchanges, marketPrice, marketUnlocked} from '../simulation/market';
 import {automaticNurseryTransfer, nurseryBuilding, nurseryFull, nurseryUnlockQuote} from '../simulation/nursery';
 import {accelerationCost, quoteAcceleration} from '../simulation/hearts';
 import {rabbitIncome} from '../simulation/time';
@@ -1268,6 +1269,21 @@ export class GameUI {
       this.content.append(node('p', 'Prochain cadeau dans :'));
       const wait = node('p', '', 'timer'); wait.dataset.end = String(s.nextHeartGiftAt); this.content.append(wait);
       wait.id = `action-reason-${++this.reasonId}`; gift.setAttribute('aria-describedby', wait.id);
+    }
+    this.renderMarket(s);
+  }
+  /** Late game: surplus pattes and grass become Hearts, each exchange of the day a little dearer. */
+  private renderMarket(s: GameState): void {
+    this.content.append(node('h3', 'Le comptoir de Paille'));
+    if (!marketUnlocked(s)) { this.content.append(node('p', `Niveau ${MARKET.unlockLevel} requis. Tu pourras y échanger tes pattes et ton herbe en trop contre des cœurs.`, 'small')); return; }
+    this.content.append(node('p', 'Échange tes pattes ou ton herbe en trop contre des cœurs. Chaque échange du jour coûte un peu plus que le précédent ; les prix reviennent au départ au prochain cycle.', 'small'));
+    for (const [resource, label, unit] of [['pattes', 'Pattes', 'pattes'], ['grass', 'Herbe', 'herbes']] as const) {
+      const price = marketPrice(s, resource), owned = resource === 'pattes' ? s.pattes : s.grass;
+      const card = this.card(`${label} → 1 cœur`, price === null ? REFUSALS.MARKET_LIMIT : `Échanges du jour : ${marketExchanges(s, resource)} / ${MARKET.maximumPerCycle}`);
+      card.dataset.market = resource;
+      if (price !== null) this.button(card, `Échanger · ${price} ${unit}`, () => this.execute({type: 'exchangeForHeart', resource, expectedCost: price}, `+ 1 cœur · − ${price} ${unit}`),
+        owned < price ? REFUSALS[resource === 'pattes' ? 'NOT_ENOUGH_PATTES' : 'NOT_ENOUGH_GRASS'] : null);
+      this.content.append(card);
     }
   }
 

@@ -11,6 +11,7 @@ import {acquiredCell, PARCEL_IDS, extensionPrice, purchasableParcels} from '../c
 import {HABITAT_TYPES, habitatLevel, habitatPrice, type HabitatLevel} from '../config/habitats';
 import {habitatEntryReason} from './habitats';
 import {DAILY_MISSIONS, DAILY_MISSION_GAP, DAILY_MISSION_IDS, MAIN_MISSIONS, DAILY_BONUS, type Reward} from '../config/missions';
+import {marketPrice, marketUnlocked} from './market';
 import {currentDailyMission, dailyCycleStart, dailyOpensAt, openNextDailyMission, recordMissionAction} from './missions';
 import {BALANCE, HEARTS, HOUR, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
 import {emptyBuilding} from '../state/initial';
@@ -170,6 +171,17 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(!s.missions.daily.bonusClaimed, 'ALREADY_CLAIMED');
         requireRule(s.missions.daily.claimed.length === DAILY_MISSION_IDS.length, 'NOT_READY');
         reward(DAILY_BONUS); s.missions.daily.bonusClaimed = true; gainXp(PROGRESSION.xp.claims.dailyBonus); break;
+      }
+      case 'exchangeForHeart': {
+        requireRule(command.resource === 'pattes' || command.resource === 'grass', 'INVALID_CHOICE');
+        requireRule(marketUnlocked(s), 'LEVEL_REQUIRED');
+        const price = marketPrice(s, command.resource); requireRule(price !== null, 'MARKET_LIMIT');
+        requireRule(price === command.expectedCost, 'PRICE_CHANGED');
+        if (command.resource === 'pattes') { requireRule(s.pattes >= price!, 'NOT_ENOUGH_PATTES'); s.pattes -= price!; }
+        else { requireRule(s.grass >= price!, 'NOT_ENOUGH_GRASS'); s.grass -= price!; }
+        credit('hearts', 1);
+        const cycle = s.missions.daily.cycleIndex, counts = s.market?.cycle === cycle ? s.market : {cycle, pattes: 0, grass: 0};
+        counts[command.resource]++; s.market = counts; value = price!; break;
       }
       case 'claimHearts': {
         requireRule(time >= s.nextHeartGiftAt, 'NOT_READY');

@@ -71,6 +71,8 @@ export interface GameState {
   /** Recipes bought or gifted. Discovered species are known without an entry here. Never affects a draw. */
   recipeBook: SpeciesId[];
   pityFailures: number;
+  /** Paille's counter: exchanges made in daily cycle `cycle`. Absent until the first exchange. */
+  market?: {cycle: number; pattes: number; grass: number};
 }
 export type Refusal = 'LEVEL_REQUIRED' | 'NO_BREEDING_RESULT' | 'PURCHASE_LOCKED' | 'DECORATION_LIMIT' | 'DECORATION_OVERLAP' | 'DECORATION_BLOCKS_BUILDING' | 'INVALID_TIME' | 'INVALID_RANDOM' | 'INVALID_CHOICE' | 'NOT_FOUND' |
   'NOT_ENOUGH_PATTES' | 'NOT_ENOUGH_GRASS' | 'INVALID_CELL' | 'CELL_OCCUPIED' |
@@ -78,7 +80,7 @@ export type Refusal = 'LEVEL_REQUIRED' | 'NO_BREEDING_RESULT' | 'PURCHASE_LOCKED
   'SAME_PARENT' | 'AFFECTION_TOO_LOW' | 'MISSING_BUILDING' | 'ALREADY_EXPANDED' | 'PARCEL_UNAVAILABLE' |
   'LAST_OF_SPECIES' | 'PARENT_BUSY' | 'NOT_ENOUGH_HEARTS' | 'ACTION_FINISHED' |
   'STALE_ACTION' | 'PRICE_CHANGED' | 'NO_MISSING_PATTES' | 'ALREADY_CLAIMED' | 'CYCLE_EXPIRED' | 'RESOURCE_LIMIT' | 'TYPE_INCOMPATIBLE' | 'MAX_HABITAT_LEVEL' | 'RECIPE_KNOWN' | 'MAX_NURSERY_CAPACITY' |
-  'UPGRADE_BLOCKED_BUILDING' | 'UPGRADE_BLOCKED_DECORATION' | 'UPGRADE_BLOCKED_LAND' | 'INVALID_NAME';
+  'UPGRADE_BLOCKED_BUILDING' | 'UPGRADE_BLOCKED_DECORATION' | 'UPGRADE_BLOCKED_LAND' | 'INVALID_NAME' | 'MARKET_LIMIT';
 export interface CuisineReward {pattes: number; grass: number; /** True for one of the cycle's full-reward slots, false for a tip. */ fullReward: boolean; affectionGranted: boolean; affectionAtCap: boolean; heartGranted: boolean}
 export type ActionResult = {ok: true; state: GameState; value?: string | number; progressionGain?: ProgressionGain; cuisineReward?: CuisineReward} |
   {ok: false; state: GameState; reason: Refusal};
@@ -115,6 +117,8 @@ export type Command = BaseCommand
   /** One permanent cushion, Hearts only. `fromCapacity` and `expectedCost` make a repeated or stale request refuse. */
   | {type: 'unlockNurserySlot'; fromCapacity: NurseryCapacity; expectedCost: number}
   | {type: 'buyRecipe'; species: SpeciesId}
+  /** One Heart from Paille's counter, at the quoted price: a stale or changed price refuses. */
+  | {type: 'exchangeForHeart'; resource: 'pattes' | 'grass'; expectedCost: number}
   /** `birthId` names the nursery baby; required for growth, ignored otherwise. */
   | {type: 'initiationAid'; id: string; stage: TimedStage; jobKey: string; birthId?: string}
   | {type: 'accelerate'; id: string; stage: TimedStage; jobKey: string; maxHearts: number; birthId?: string}

@@ -10,7 +10,7 @@ import {type HabitatType, HABITAT_TYPES, HABITAT_LEVELS, habitatLevel} from '../
 import {MAIN_MISSION_IDS, DAILY_MISSION_GAP, DAILY_MISSION_IDS, DAILY_MISSIONS} from '../config/missions';
 import {cycleIndexAt} from '../simulation/missions';
 import {z} from 'zod';
-import {BALANCE, CUISINE_FULL_REWARDS_PER_CYCLE, HOUR, NURSERY, ORDERS, SHOP_SPECIES, SPECIES, SPECIES_IDS, GUARANTEE_SPECIES, growthDuration, type SpeciesId} from '../config/balance';
+import {BALANCE, MARKET, CUISINE_FULL_REWARDS_PER_CYCLE, HOUR, NURSERY, ORDERS, SHOP_SPECIES, SPECIES, SPECIES_IDS, GUARANTEE_SPECIES, growthDuration, type SpeciesId} from '../config/balance';
 import type {GameState} from '../state/types';
 import {DECORATION_IDS, RETIRED_DECORATION_IDS, MAX_DECORATIONS} from '../config/decorations';
 import {decorationPlacementReason} from '../simulation/decorations';
@@ -84,6 +84,7 @@ const v17 = z.object({
   rabbits: z.array(rabbit).max(ISLAND.maxArea * HABITAT_LEVELS.universal[2].capacity),
   discovered: z.array(species).max(SPECIES_IDS.length),
   pityFailures: integer.max(BALANCE.guaranteeAttempt - 1),
+  market: z.object({cycle: integer, pattes: integer.max(MARKET.maximumPerCycle), grass: integer.max(MARKET.maximumPerCycle)}).strict().optional(),
   missions, decorations: z.array(decoration).max(MAX_DECORATIONS),
   rewardedDecorationModels: z.array(z.enum(DECORATION_IDS)).max(DECORATION_IDS.length).refine(ids => new Set(ids).size === ids.length).optional(),
   acquiredParcels: z.array(z.enum(PARCEL_IDS)).min(1).max(9),
@@ -113,6 +114,7 @@ const schema = v17.superRefine((s, context) => {
   if (d.cycleIndex !== cycleIndexAt(d.referenceAt, s.lastSimulatedAt)) issue('Daily cycle');
   if (new Set(d.claimed).size !== d.claimed.length || d.claimed.some(id => d.progress[id] < DAILY_MISSIONS[id].target) ||
     (d.bonusClaimed && d.claimed.length !== DAILY_MISSION_IDS.length)) issue('Daily claims');
+  if (s.market && s.market.cycle > d.cycleIndex) issue('Future market cycle');
   if (d.nextAt !== undefined && (!d.claimed.length || d.nextAt > s.lastSimulatedAt + DAILY_MISSION_GAP)) issue('Daily opening');
   if (d.referenceAt > s.lastSimulatedAt && (Object.values(d.progress).some(n => n !== 0) || d.claimed.length || d.bonusClaimed)) issue('Future cycle progress');
   if ([...Object.values(s.cuisine.affectionCycles), s.cuisine.heartCycle ?? 0, s.cuisine.fullRuns?.cycle ?? 0].some(cycle => cycle > s.missions.daily.cycleIndex)) issue('Future Cuisine cycle');
