@@ -2,6 +2,7 @@ import {establishHistoricalLevelRights} from './levelRights';
 import {settleInitiation} from './initiation';
 import {habitatStats} from './habitats';
 import {updateMissions} from './missions';
+import {settleNestTransfers} from './nursery';
 import {BALANCE, HOUR, MINUTE, SPECIES, type SpeciesId, type Rarity} from '../config/balance';
 import type {GameState} from '../state/types';
 export function rabbitIncome(affection: number, speciesOrRarity: SpeciesId | Rarity = 'common'): number {
@@ -49,7 +50,9 @@ export function advance(state: GameState, now: number): GameState {
     const boundedElapsed = rate === 0 ? 0 : Math.min(elapsed, Math.ceil((cap - enclosure.incomeUnits) / rate));
     enclosure.incomeUnits = Math.min(cap, enclosure.incomeUnits + boundedElapsed * rate);
   }
+  const freeSince = next.lastSimulatedAt;
   next.lastSimulatedAt = target;
+  settleNestTransfers(next, freeSince);
   updateMissions(next, target);
   settleInitiation(next);
   return next;
