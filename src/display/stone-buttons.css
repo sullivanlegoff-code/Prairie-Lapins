@@ -237,8 +237,8 @@ progress::-moz-progress-bar { background: linear-gradient(#bedb7b, #7fa845 38%, 
 .shop-resources > span:nth-child(2) { color: #d8f0b4; }
 .shop-resources > span:nth-child(3) { color: #ffe2e8; }
 /* The rabbit card closes with a red stone cross, top right. */
-#game-panel.rabbit-card #close-panel { --stone-face: #a3392e; --stone-ink: #fff4e6; font-size: 26px; text-shadow: 0 1px 1px #4a1611; }
-#game-panel.rabbit-card { box-shadow: 0 10px 0 #1a201c40, 0 22px 48px #0b120e80; }
+#game-panel.center-card #close-panel { --stone-face: #a3392e; --stone-ink: #fff4e6; font-size: 26px; text-shadow: 0 1px 1px #4a1611; }
+#game-panel.center-card { box-shadow: 0 10px 0 #1a201c40, 0 22px 48px #0b120e80; }
 /* Cuisine's painted ingredients are scene objects. Its menu controls and
    overlays share the shell, without applying a frame to draggable artwork. */
 .cuisine-activity .cuisine-root button:not(.kitchen-object) {

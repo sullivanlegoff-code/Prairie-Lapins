@@ -451,9 +451,9 @@ export class GameUI {
       const s = this.snapshot.state; this.shopResources.replaceChildren(node('span', `${s.pattes} pattes`), node('span', `${s.grass} nourriture`), node('span', heartAmount(s.hearts)));
     }
     this.panel.dataset.view = this.view?.kind ?? '';
-    // A rabbit's card opens in the middle of the screen, over the dimmed meadow; the guided start keeps the side panel.
-    const card = !this.onboardingActive && (this.view?.kind === 'rabbit' || this.view?.kind === 'moveRabbit');
-    this.panel.classList.toggle('rabbit-card', card); document.body.classList.toggle('rabbit-card-open', card);
+    // A rabbit's card, a building's or a habitat's menu opens in the middle of the screen, over the dimmed meadow; the guided start keeps the side panel.
+    const card = !this.onboardingActive && (this.view?.kind === 'rabbit' || this.view?.kind === 'moveRabbit' || this.view?.kind === 'building');
+    this.panel.classList.toggle('center-card', card); document.body.classList.toggle('center-card-open', card);
     const backdrop = document.getElementById('panel-backdrop'); if (backdrop) backdrop.hidden = !card;
     document.getElementById('panel-back')!.hidden = !this.history.length && !fullShop;
     this.settings.hidden = this.view?.kind !== 'settings'; this.content.hidden = this.view?.kind === 'settings';

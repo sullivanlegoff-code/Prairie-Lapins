@@ -360,12 +360,12 @@ dialog > button { width: 100%; margin-top: 8px; }
 
 /* A rabbit's card: centred over the dimmed meadow, closed by the red cross or a tap outside it. */
 #panel-backdrop { position: fixed; inset: 0; z-index: 115; background: #18211dad; touch-action: none; }
-#game-panel.rabbit-card {
+#game-panel.center-card {
   position: fixed; z-index: 116; left: 50%; top: 50%; right: auto; bottom: auto; transform: translate(-50%, -50%);
   width: min(520px, calc(100vw - 32px - env(safe-area-inset-left) - env(safe-area-inset-right)));
   max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 }
-.rabbit-card-open #toast { z-index: 130; }
+.center-card-open #toast { z-index: 130; }
 .shop-open #toast { z-index: 130; top: auto; bottom: max(12px, env(safe-area-inset-bottom)); max-width: calc(100vw - 32px); }
 
 /* Player progress is screen-space HUD; the existing camera framing height stays intact. */
