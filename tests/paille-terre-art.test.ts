@@ -10,7 +10,7 @@ describe('Paille reference artwork (Terre was removed with its catalogue)', () =
       expect(html).toContain(`width="${art.width}" height="${art.height}"`);
       expect(html).not.toContain(SNOW_ART.url);
     }
-    expect(rabbitArt('orange')).toBeUndefined();
+    expect(rabbitArt('lunettes')).toBeUndefined();
     expect(rabbitArt()).toBeUndefined();
   });
   it('preserves the validated snow scale and anchor while retaining species proportions', () => {

@@ -3,8 +3,8 @@ import {portrait, COATS} from '../src/ui/portraits';
 import {SPECIES, SPECIES_IDS, proceduralCoat, type SpeciesArt, type SpeciesDefinition} from '../src/config/species';
 import {EXPECTED_ART} from './rabbit-art-fixtures';
 
-it('preserves the four remaining historical procedural SVG portraits, Orange and the unknown portrait byte for byte', () => {
-  for (const id of ['lunettes','perroquet','feu-glace','bouee','orange',undefined] as const)
+it('preserves the four remaining historical procedural SVG portraits and the unknown portrait byte for byte', () => {
+  for (const id of ['lunettes','perroquet','feu-glace','bouee',undefined] as const)
     expect(portrait(id)).toMatchSnapshot(id ?? 'unknown');
 });
 

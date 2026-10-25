@@ -23,6 +23,8 @@ export const DESIGNS = [
   {id: 'magicien', file: 'Epic/Magicien/Magicien.png'},
   {id: 'dragon', file: 'légendaire/Dragon/Dragon.png', background: 'light'},
   {id: 'requin', file: 'légendaire/Requin/Requin.png'},
+  // Original design chosen by the owner on 25 October 2026 (concept B « Lanterne d’hiver »), generated outside the Design folder.
+  {id: 'orange', source: 'output/imagegen/orange-v1/orange-B.png', background: 'light'},
 ];
 const MARGIN = 8, LIGHT_MIN = 200, LIGHT_SPREAD = 26, CHECKER_MIN = 130, CHECKER_SPREAD = 14, CORNER_TOLERANCE = 56;
 
@@ -113,7 +115,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const [folder, ...only] = process.argv.slice(2);
   if (!folder) throw Error('Usage: node scripts/prepare-rabbit-masters.mjs "<Design des lapins folder>" [id ...]');
   for (const design of DESIGNS.filter(d => !only.length || only.includes(d.id))) {
-    const image = decodeRgbPng(readFileSync(join(folder, design.file)));
+    const image = decodeRgbPng(readFileSync(design.source ?? join(folder, design.file)));
     if (design.background) cutOut(image, design.background);
     const master = crop(image);
     mkdirSync(`assets-source/rabbits/${design.id}`, {recursive: true});

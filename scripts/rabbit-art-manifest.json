@@ -298,5 +298,15 @@
     "width": 430,
     "height": 428,
     "derivedSha1": "296e16f5f48eedbd82041000152dffcb2b46f1e6"
+  },
+  "orange": {
+    "file": "assets/rabbits/orange/orange-v1.png",
+    "sourceSha1": "ca529071dd1dcc69a1343aad1693d5990b87cc29",
+    "sourceWidth": 966,
+    "sourceHeight": 1226,
+    "worldWidth": 46,
+    "width": 339,
+    "height": 430,
+    "derivedSha1": "db499fc9db4a3bf27d8b93e9e43909a1573946a8"
   }
 }
