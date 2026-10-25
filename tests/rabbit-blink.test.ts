@@ -63,7 +63,7 @@ describe('rabbit patch adapter and body coordinates', () => {
   it('covers precisely all 18 eligible species with both patches', () => {
     expect(RABBIT_BLINK_ART).toHaveLength(18);
     // The sprites approved on 25 October 2026 do not blink yet, by the owner's choice.
-    const pending: readonly string[] = ['boudinet', 'dinono', 'egiiipte', 'piment', 'tunini', 'bretonette', 'dadi', 'maxou', 'magicien', 'dragon', 'requin'];
+    const pending: readonly string[] = ['boudinet', 'dinono', 'egiiipte', 'piment', 'tunini', 'bretonette', 'dadi', 'maxou', 'orange', 'magicien', 'dragon', 'requin'];
     for (const species of SPECIES_ENTRIES) {
       const art = rabbitBlinkArt(species.id);
       if (species.art.kind === 'static-sprite' && species.id !== 'ardent' && !pending.includes(species.id)) {
