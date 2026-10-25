@@ -154,6 +154,7 @@ export class GameUI {
     document.getElementById('open-settings')!.addEventListener('click', () => this.open({kind: 'settings'}, 'root'), options);
     document.getElementById('save-warning')!.addEventListener('click', () => this.open({kind: 'settings'}), options);
     document.getElementById('close-panel')!.addEventListener('click', () => this.close(), options);
+    document.getElementById('panel-backdrop')?.addEventListener('click', () => this.close(), options);
     document.getElementById('panel-back')!.addEventListener('click', () => this.back(), options);
     // Keep native selectors and a gesture's original controls alive during passive saves.
     this.shopResources.setAttribute('aria-label', 'Ressources');
@@ -444,6 +445,10 @@ export class GameUI {
       const s = this.snapshot.state; this.shopResources.replaceChildren(node('span', `${s.pattes} pattes`), node('span', `${s.grass} herbes`), node('span', heartAmount(s.hearts)));
     }
     this.panel.dataset.view = this.view?.kind ?? '';
+    // A rabbit's card opens in the middle of the screen, over the dimmed meadow; the guided start keeps the side panel.
+    const card = !this.onboardingActive && (this.view?.kind === 'rabbit' || this.view?.kind === 'moveRabbit');
+    this.panel.classList.toggle('rabbit-card', card); document.body.classList.toggle('rabbit-card-open', card);
+    const backdrop = document.getElementById('panel-backdrop'); if (backdrop) backdrop.hidden = !card;
     document.getElementById('panel-back')!.hidden = !this.history.length && !fullShop;
     this.settings.hidden = this.view?.kind !== 'settings'; this.content.hidden = this.view?.kind === 'settings';
     this.content.replaceChildren(); if (!this.view) return;

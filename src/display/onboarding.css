@@ -23,6 +23,17 @@
 .paille-dialogue[data-scene="5"] .paille-bubble::before { left: 23%; top: auto; bottom: -16px; transform: rotate(-45deg); }
 .paille-bubble p { font-size: clamp(17px, 2.3vw, 24px); line-height: 1.5; margin: 0 0 18px; }
 .paille-bubble { overflow-wrap: anywhere; min-width: 0; }
+.paille-bubble {
+  border: 3px solid #777d6c;
+  background: linear-gradient(135deg, #fffaeb, #f0ead8);
+  color: #303b30;
+  box-shadow: inset 0 2px #fffdf1, 0 5px 0 #424a3e, 0 12px 22px #101b243d;
+}
+.paille-bubble::before { background: #f6f0df; border-color: #777d6c; }
+.paille-task {
+  color: #35452c; background: linear-gradient(#f1f2df, #e1e7cd);
+  border-color: #919e7c; box-shadow: inset 0 1px #fff8;
+}
 .paille-task { padding: 12px; border: 2px solid #b29b70; border-radius: 12px; background: #fff9e7; font-size: 15px; line-height: 1.45; }
 .paille-bubble small { display: block; font-size: 14px; }
 .paille-continue { text-align: right; color: #6b6259; }
@@ -126,6 +137,6 @@
 
 .onboarding-locked .breeding-row.selected { opacity:1 !important; filter:none !important; }
 .onboarding-escape { display:flex; gap:8px; justify-content:center; }
-.onboarding-escape button { font-size:12px; min-height:36px; }
+.onboarding-escape button { font-size:12px; min-height:44px; }
 /* Paille's bubble is modal and carries its own Skip: hide the page one underneath rather than show it twice. */
 body:has(#paille-dialogue[open]) #onboarding-skip { display: none; }

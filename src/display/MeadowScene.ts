@@ -163,7 +163,8 @@ export class MeadowScene extends Phaser.Scene {
   }
   private framingInsets() {
     const pad=VISUAL.camera.overviewPadding, panel=document.getElementById('game-panel'), hud=document.getElementById('hud');
-    const rect=panel && !panel.hidden ? panel.getBoundingClientRect() : null;
+    // A centred rabbit card floats over the meadow and leaves the framing alone.
+    const rect=panel && !panel.hidden && !panel.classList.contains('rabbit-card') ? panel.getBoundingClientRect() : null;
     const footer=document.getElementById('dev-badge');
     const footerBottom=footer && getComputedStyle(footer).display!=='none' ? this.scale.height-footer.getBoundingClientRect().top+pad : pad;
     // In portrait the panel is a bottom sheet spanning the width: it covers the bottom, not the right.
