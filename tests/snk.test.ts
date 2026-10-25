@@ -32,7 +32,7 @@ describe('approved SNK content', () => {
     expect(validateSpeciesEntries(SPECIES_ENTRIES)).toEqual([]);
     expect(SPECIES.snk).toEqual({name: 'SNK', description, types: ['paille', 'feu'], rarity: 'rare', price: null,
       progression: {unlockLevel: 1}, acquisition: [{kind: 'recipe', requiredTypes: ['paille', 'feu'], minAffection: 2}],
-      recipe: {requiredTypes: ['paille', 'feu'], minAffection: 2}, art: {kind: 'static-sprite', file: 'assets/rabbits/snk/snk-v1.png', texture: 'rabbit-snk-original-v1', width: 1402, height: 1122, worldWidth: 56, groundY: 15.5, preloadOrder: 9}});
+      recipe: {requiredTypes: ['paille', 'feu'], minAffection: 2}, art: {kind: 'static-sprite', file: 'assets/rabbits/snk/snk-v1.png', texture: 'rabbit-snk-original-v1', width: 461, height: 369, worldWidth: 56, groundY: 15.5, preloadOrder: 9}});
     expect(SPECIES.feu.progression.unlockLevel).toBe(5); expect(growthDuration('snk')).toBe(30 * MINUTE);
     expect(RECIPE_PRICES.snk).toBeUndefined(); expect(GIFTED_RECIPES).not.toContain('snk'); expect(GUARANTEE_SPECIES).not.toContain('snk');
     expect(act(parents(), {type: 'buyRabbit', species: 'snk', enclosureId: 'building-1'}, 0)).toMatchObject({ok: false, reason: 'INVALID_CHOICE'});

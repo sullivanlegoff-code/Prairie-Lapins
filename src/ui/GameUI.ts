@@ -37,7 +37,7 @@ import {PreferenceStore, Sounds} from './preferences';
 import {onboardingTask} from './onboarding';
 import {PailleDialogue} from './PailleDialogue';
 import {guidedStep, type GuideStep} from './guidance';
-import {BUILDING_NAMES, REFUSALS, RARITY_NAMES, TYPE_NAMES, typeNames, recipeBook, buildingReason, collectionView, incomeWhole, moneyReason, nurseryView, occupants, oddsTexts, oddsView, placementReason, rabbitAvailability, parentBusy, releaseReason, timeLeft, type Placement, type CollectionFilter} from './models';
+import {BUILDING_NAMES, REFUSALS, RARITY_NAMES, TYPE_NAMES, typeNames, recipeBook, recipePairs, buildingReason, collectionView, incomeWhole, moneyReason, nurseryView, occupants, oddsTexts, oddsView, placementReason, rabbitAvailability, parentBusy, releaseReason, timeLeft, type Placement, type CollectionFilter} from './models';
 
 type ShopTab = 'home' | 'recipes' | 'rabbits' | 'habitats' | 'buildings' | 'decorations';
 type View = {kind:'levelRequirement';target:LevelAccessTarget} | {kind: 'missions'; tab: 'main' | 'daily'} | {kind: 'shop'; tab: ShopTab} | {kind: 'building' | 'rabbit' | 'moveRabbit' | 'decoration'; id: string} |
@@ -97,6 +97,7 @@ export class GameUI {
   private collectionFilter: CollectionFilter = {};
   private recipeDetails = new Set<SpeciesId>();
   private recipeClosed = new Set<SpeciesId>();
+  private recipeExpanded = new Set<SpeciesId>();
   private placedListOpen = false;
   private history: NonNullable<View>[] = [];
   private scrollPositions = new Map<string, number>();
@@ -161,7 +162,11 @@ export class GameUI {
     document.getElementById('tutorial-toggle')!.addEventListener('click', () => { preferences.set({tutorial: !preferences.value.tutorial || preferences.value.tutorialDone, tutorialDone: false, guideConfigured: true}); this.renderPreferences(); this.render(); }, options);
     this.dialog.addEventListener('cancel', () => { this.dialog.replaceChildren(); }, options);
     this.breedingDialog.addEventListener('close', () => { this.breedingNestId = null; this.breedingDialog.replaceChildren(); if(this.onboardingActive){this.pailleDialogue.invite();this.renderTutorial();} }, options);
+    let firstSnapshot = true;
     this.unsubscribe = controller.subscribe(snapshot => {
+      const unchanged = !firstSnapshot && snapshot.viewRevision === this.snapshot.viewRevision && snapshot.status === this.snapshot.status &&
+        snapshot.issue === this.snapshot.issue && snapshot.generation === this.snapshot.generation;
+      firstSnapshot = false;
       const replaced = this.snapshot && snapshot.generation !== this.snapshot.generation;
       this.snapshot = snapshot;
       if (replaced) this.onReplacement();
@@ -169,7 +174,7 @@ export class GameUI {
       const warning = document.getElementById('save-warning')!;
       warning.hidden = snapshot.status === 'saved';
       warning.textContent = snapshot.state ? 'Sauvegarde non enregistrée · Paramètres' : 'Partie non chargée · Paramètres';
-      this.render(true); this.renderTutorial();
+      if (!unchanged) { this.render(true); this.renderTutorial(); }
     });
     this.renderPreferences();
     // Countdown text is a projection of timestamps; the controller alone advances the simulation.
@@ -347,7 +352,7 @@ export class GameUI {
     this.history = []; this.scrollPositions.clear(); this.interactionPointers.clear(); this.pendingRender = false;
     this.shopHabitatSpecies=null;
     this.purchaseReturn = null; this.rabbitDestination = null; this.shopRabbitIssue = null; this.scene.setRabbitPurchase(null);
-    this.collectionFilter = {}; this.recipeDetails.clear(); this.recipeClosed.clear(); this.placedListOpen = false; this.shopReturn = null; this.content.scrollTop = 0; this.settings.scrollTop = 0;
+    this.collectionFilter = {}; this.recipeDetails.clear(); this.recipeClosed.clear(); this.recipeExpanded.clear(); this.placedListOpen = false; this.shopReturn = null; this.content.scrollTop = 0; this.settings.scrollTop = 0;
     this.content.replaceChildren();
     this.scene.setExpansion(false);
     if (fresh) this.preferences.restartGuidance();
@@ -1064,34 +1069,43 @@ export class GameUI {
       card.append(node('p', 'Reproduction : 20 min · lancement gratuit.', 'small'));
       if (info.recipe?.parents) card.append(node('p', `Parents requis : ${info.recipe.parents.map(id => SPECIES[id].name).join(' × ')}. Les types seuls ne suffisent pas.`));
       card.append(node('p', info.recipe?.probability !== undefined ? `${recipe.levelAccess.locked ? 'Après déblocage du niveau requis' : 'Si la recette est admissible'}, hors garantie ordinaire : ${info.recipe.probability} %. Cette espèce ne bénéficie pas de la garantie de découverte.` : recipeSource(info.acquisition)?.guaranteeEligible === true ? 'Cette espèce bénéficie de la garantie ordinaire si elle n’est pas encore découverte et reste admissible.' : 'Cette espèce ne bénéficie pas de la garantie de découverte.', 'small'));
-      if (!recipe.pairs.length) card.append(node('p', info.recipe?.parents ? 'Possédez les deux espèces requises pour préparer cette paire.' : 'Aucune paire possédée n’est admissible à cette recette.', 'small'));
+      if (!recipe.pairCount) card.append(node('p', info.recipe?.parents ? 'Possédez les deux espèces requises pour préparer cette paire.' : 'Aucune paire possédée n’est admissible à cette recette.', 'small'));
       else {
-        const details = node('details'); details.open = this.recipeDetails.has(recipe.species) || (!this.recipeClosed.has(recipe.species) && recipe.pairs.length <= 3);
-        details.append(node('summary', `${recipe.pairs.length} paire(s) possédée(s) compatible(s) avec la recette`));
+        const details = node('details'); details.open = this.recipeDetails.has(recipe.species) || (!this.recipeClosed.has(recipe.species) && recipe.pairCount <= 3);
+        details.append(node('summary', `${recipe.pairCount} paire(s) possédée(s) compatible(s) avec la recette`));
+        let populated = false;
+        const populate = (all = false) => {
+          if (populated && !all) return;
+          populated = true;
+          details.querySelectorAll('.recipe-pair, [data-more-pairs]').forEach(el => el.remove());
+          const pairs = recipePairs(s, recipe.species, this.now(), all ? Infinity : 3);
+          for (const pair of pairs) {
+            const names = pair.parents.map(id => {
+              const r = s.rabbits.find(r => r.id === id)!;
+              return `${SPECIES[r.species].name} (${this.enclosureName(s, r.enclosureId)}, affection ${r.affection}, n° ${id.split('-')[1]})`;
+            });
+            const block = node('div', '', 'recipe-pair'); block.append(node('p', names.join(' × ')));
+            if (pair.feeding.length) {
+              block.append(node('p', `À nourrir : affection ${recipe.minAffection} nécessaire chez les deux parents. Recette exclue actuellement.`, 'reason'));
+              if (!readOnly) for (const id of pair.feeding) this.button(block, `Voir le parent n° ${id.split('-')[1]} à nourrir`, () => this.open({kind: 'rabbit', id}), null, true);
+            } else {
+              const label = pair.blocked ? 'Aucun résultat ordinaire accessible à ce niveau' : recipe.levelAccess.locked ? `Niveau ${recipe.levelAccess.requiredLevel} requis` : pair.certain ? 'Résultat garanti pour cette recette' : pair.guaranteed ? 'Garantie partagée entre espèces non découvertes' : pair.probability === '0 %' ? 'La garantie actuelle privilégie une autre espèce non découverte' : 'Recette possible, résultat non garanti';
+              block.append(node('p', `${label} · ${pair.probability}`, 'badge'));
+              if (pair.busy) block.append(node('p', 'Un parent est occupé ; attendez sa disponibilité.', 'reason'));
+            }
+            if (!readOnly) this.button(block, 'Préparer cette paire au nid', () => {
+              if (!nest) return;
+              this.parents = [...pair.parents]; this.open({kind: 'building', id: nest.id}); if (!nest.breeding) this.openBreeding(nest.id);
+            }, pair.feeding.length ? 'Nourrissez les parents requis.' : pair.busy ? 'Parent occupé.' : setupReason ?? (!pair.possible ? 'Cette recette n’est pas dans le tirage actuel.' : null), true);
+            details.append(block);
+          }
+          if (!all && recipe.pairCount > pairs.length) this.button(details, 'Voir plus', () => { this.recipeExpanded.add(recipe.species); populate(true); }, null, true).dataset.morePairs = '';
+        };
         details.addEventListener('toggle', () => { if (details.isConnected) {
-          if (details.open) { this.recipeClosed.delete(recipe.species); this.recipeDetails.add(recipe.species); }
+          if (details.open) { this.recipeClosed.delete(recipe.species); this.recipeDetails.add(recipe.species); populate(this.recipeExpanded.has(recipe.species)); }
           else { this.recipeDetails.delete(recipe.species); this.recipeClosed.add(recipe.species); }
         } });
-        for (const pair of recipe.pairs) {
-          const names = pair.parents.map(id => {
-            const r = s.rabbits.find(r => r.id === id)!;
-            return `${SPECIES[r.species].name} (${this.enclosureName(s, r.enclosureId)}, affection ${r.affection}, n° ${id.split('-')[1]})`;
-          });
-          const block = node('div', '', 'recipe-pair'); block.append(node('p', names.join(' × ')));
-          if (pair.feeding.length) {
-            block.append(node('p', `À nourrir : affection ${recipe.minAffection} nécessaire chez les deux parents. Recette exclue actuellement.`, 'reason'));
-            if (!readOnly) for (const id of pair.feeding) this.button(block, `Voir le parent n° ${id.split('-')[1]} à nourrir`, () => this.open({kind: 'rabbit', id}), null, true);
-          } else {
-            const label = pair.blocked ? 'Aucun résultat ordinaire accessible à ce niveau' : recipe.levelAccess.locked ? `Niveau ${recipe.levelAccess.requiredLevel} requis` : pair.certain ? 'Résultat garanti pour cette recette' : pair.guaranteed ? 'Garantie partagée entre espèces non découvertes' : pair.probability === '0 %' ? 'La garantie actuelle privilégie une autre espèce non découverte' : 'Recette possible, résultat non garanti';
-            block.append(node('p', `${label} · ${pair.probability}`, 'badge'));
-            if (pair.busy) block.append(node('p', 'Un parent est occupé ; attendez sa disponibilité.', 'reason'));
-          }
-          if (!readOnly) this.button(block, 'Préparer cette paire au nid', () => {
-            if (!nest) return;
-            this.parents = [...pair.parents]; this.open({kind: 'building', id: nest.id}); if (!nest.breeding) this.openBreeding(nest.id);
-          }, pair.feeding.length ? 'Nourrissez les parents requis.' : pair.busy ? 'Parent occupé.' : setupReason ?? (!pair.possible ? 'Cette recette n’est pas dans le tirage actuel.' : null), true);
-          details.append(block);
-        }
+        if (details.open) populate(this.recipeExpanded.has(recipe.species));
         card.append(details);
       }
       this.content.append(card);
@@ -1276,7 +1290,10 @@ export class GameUI {
   }
   private updateTimers(): void {
     const state = this.snapshot.state;
-    if (state && cycleIndexAt(state.missions.daily.referenceAt, this.now()) > state.missions.daily.cycleIndex) {
+    const due = (end: number) => !!state && state.lastSimulatedAt < end && end <= this.now();
+    if (state && (cycleIndexAt(state.missions.daily.referenceAt, this.now()) > state.missions.daily.cycleIndex ||
+      due(state.nextHeartGiftAt) || state.buildings.some(b =>
+        !!b.order && due(b.order.endsAt) || !!b.breeding && due(b.breeding.endsAt) || b.nursery?.babies.some(baby => due(baby.readyAt))))) {
       this.controller.refresh(); return;
     }
     for (const aid of this.content.querySelectorAll<HTMLElement>('[data-aid-end]')) aid.hidden=Number(aid.dataset.aidEnd)<=this.now();

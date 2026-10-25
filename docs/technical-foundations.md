@@ -1,5 +1,7 @@
 # Fondations techniques v6
 
+Le pipeline actuel des sprites, les calculs DPR 3, le chargement différé de la scène et les mesures T1 sont décrits dans [Résolution des images](image-resolution.md). Les maîtres approuvés sont conservés dans `assets-source/` ; `public/` contient leurs dérivés contrôlés.
+
 Le format de sauvegarde reste v6. Aucun changement de contenu, d’équilibrage, de dessin, de migration ou de clé de stockage. Les quinze espèces, neuf parcelles et douze objets extérieurs restent disponibles. Les comptes et Supabase restent en pause.
 
 ## Responsabilités et invariants
@@ -67,3 +69,35 @@ Textes harmonisés : nombre d’espèces communes calculé depuis le catalogue ;
 - Guidage, herbe manquante : « Il manque de l’herbe. Lancez une production ou réclamez une récompense. »
 - Guidage, repas : « Ouvrez la fiche de ce lapin et touchez Nourrir jusqu’à affection 2. »
 - Guidage, nid : « Touchez le nid → Croiser, choisissez {prénom de Paille} à gauche et Neige à droite, puis le bouton rouge Croiser. Les deux parents doivent être présents et à affection 2. »
+
+
+## Fluidit? : voisins, carnet et tic passif (T2?T4)
+
+La sc?ne conserve les voisins par habitat et r?utilise leur tableau de positions. L'ordre s?quentiel des mouvements reste identique : un voisin d?j? avanc? dans l'image est observ? dans sa nouvelle position. Un changement de profondeur chez n'importe quel r?sident d?clenche le tri de toute la couche, donc aussi des r?sidents immobiles ; la reconstruction de la couche la trie ?galement.
+
+Le carnet groupe d'abord les individus par esp?ce. Les comptes de paires compatibles r?sultent des effectifs (n ? (n ? 1) / 2 pour une m?me esp?ce), sans examiner toutes les paires d'individus ni calculer leurs probabilit?s. Les sections repli?es ne construisent aucun bloc de paire. ? l'ouverture, trois paires au plus sont calcul?es, avec priorit? aux parents nourris et disponibles ; ? Voir plus ? calcule et affiche le reste. Les probabilit?s, restrictions et actions viennent des m?mes r?gles. L'?tat ouvert/repli? et le choix ? Voir plus ? survivent aux rafra?chissements et sont r?initialis?s au remplacement de partie. L'acc?s complet aux paires dans le mod?le reste disponible par un getter paresseux m?moris?.
+
+Le contr?leur compare les seules mutations possibles de advance : heure simul?e, revenus, cycle quotidien, missions termin?es, aides closes et transition des droits historiques. Le registre des achats compare aussi ses identifiants. D?s qu'un changement est d?tect?, tout le r?sultat de advance est adopt?, y compris les dates de cadeaux, les commandes, les reproductions, tous les lapereaux et les cl?s d'initiation recal?es. Un recul de plus de cinq minutes change n?cessairement l'heure simul?e : apr?s chaque avance, celle-ci est au moins ?gale ? la r?f?rence quotidienne. Aucun de ces champs recal?s n'est perdu. Les cadeaux et accueils restent des actions manuelles.
+
+La r?vision d'affichage change aux unit?s enti?res r?coltables, aux ?ch?ances et aux r?glements de missions/aides, ainsi qu'aux commandes r?ussies. Le panneau reste intact pendant un tic sans changement visible. Les compteurs, barres, boutons de cadeau et tarifs d'acc?l?ration sont projet?s chaque seconde sans reconstruction. La boucle des compteurs demande aussi une avance au franchissement d'une ?ch?ance (commande, reproduction, naissance, cadeau ou cycle quotidien) ; les actions deviennent disponibles d?s cette seconde. Une action durable reste ?crite avant adoption. Aucun tic identique ne r??crit la sauvegarde ; une avance d'horloge reste un changement durable m?me si son revenu n'atteint pas encore une unit? enti?re.
+
+PROGRESSION est valid?e puis gel?e r?cursivement au chargement du module ; les configurations personnalis?es restent valid?es ? chaque requ?te. Le catalogue est construit au chargement, sans validation ajout?e aux requ?tes.
+
+R?gressions : tests/notebook-performance.test.ts, tests/ui-dom.test.ts, tests/controller.test.ts et tests/decoration-scene.test.ts. La comparaison cibl?e est confront?e au r?sultat complet de advance pour tous les sc?narios, apr?s attente, ?ch?ances, renouvellement quotidien et recalage ; chaque ?tat sauvegard? est relu et compar?. Un test contr?le sp?cifiquement les dates de cadeau, de croissance et la cl? d'initiation apr?s recalage puis rechargement.
+
+### Mesures navigateur T2?T4
+
+Chromium 141.0.7390.37, PC Windows, viewport 1000 ? 700, DPR 1. Une seule instance ?ph?m?re, ferm?e apr?s les captures. Vite arr?t? ensuite. Baseline : seule la fonction update de HEAD est extraite par git show, transpil?e puis inject?e dans le module servi au navigateur. Les fichiers de travail et les ressources T1 restent identiques. Aucun stash. Le code extrait est conserv? dans %TEMP%/prairie-fond-3/baseline-update.js.
+
+Pour chaque sc?nario : m?mes mouvements clon?s avant chaque s?rie, boucle du jeu suspendue, appels simul?s ? 60 Hz, 500 appels de chauffe par version puis dix s?ries altern?es de 1 000 appels. Moyenne du temps CPU par appel (hors rendu GPU, hors co?t du reset, sans capture pendant la mesure).
+
+| Sc?nario | Lapins / groupes | Avant (ms) | Apr?s (ms) | Baisse |
+|---|---:|---:|---:|---:|
+| decorationDense | 7 / 1 | 0.00582 | 0.00419 | 28 % |
+| habitats | 42 / 6 | 0.04885 | 0.02381 | 51 % |
+
+Le sc?nario historique decorationDense contient seulement sept lapins dans un habitat ; habitats compl?te la mesure des groupes avec 42 lapins dans six habitats. Les valeurs tr?s courtes d?pendent du JIT et de la pr?cision de l?horloge ; elles ne mesurent ni la m?moire Safari ni les FPS sur iPhone.
+
+Reproduction : d?marrer Vite sur 127.0.0.1:5199 avec --configLoader runner, puis PLAYWRIGHT_MODULE pointant vers Playwright et node scripts/check-t2-t4.cjs. Le script ferme Chromium dans finally. Rapports et captures hors d?p?t : %TEMP%/prairie-fond-3/update-report.json, notebook-open.png et notebook-pairs.png. Les deux captures ont ?t? regard?es : carnet lisible, section ouverte avec paires, section voisine repli?e. Z?ro erreur JavaScript ; une demande audio annul?e lors du changement de sc?nario (ERR_ABORTED), sans incidence sur la mesure.
+
+Validation de cette moiti? : typecheck, 132 fichiers / 2 044 tests avec --maxWorkers 1 --testTimeout 30000 --configLoader runner, build --configLoader runner, git diff --check et les sept d?rivations --check (lapins, clignements, habitats, ?le, ?tapes d??le, d?corations, nurserie). Build r?ussi avec le signalement de chunk > 500 ko. Pas de commit, push ou staging. Les mesures PNG/RGBA de T1 restent dans docs/image-resolution.md ; aucun asset T1 modifi? par cette moiti?.

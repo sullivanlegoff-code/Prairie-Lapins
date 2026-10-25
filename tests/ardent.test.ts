@@ -31,7 +31,7 @@ describe('approved Ardent content', () => {
     expect(validateSpeciesEntries(SPECIES_ENTRIES)).toEqual([]);
     expect(SPECIES.ardent).toEqual({name: 'Ardent', description, types: ['feu', 'paille'], rarity: 'rare', price: null,
       progression: {unlockLevel: 1}, acquisition: [{kind: 'recipe', requiredTypes: ['feu', 'paille'], minAffection: 2}],
-      recipe: {requiredTypes: ['feu', 'paille'], minAffection: 2}, art: {kind: 'static-sprite', file: 'assets/rabbits/ardent/ardent-v1.png', texture: 'rabbit-ardent-original-v1', width: 1312, height: 1199, worldWidth: 52, groundY: 13, preloadOrder: 8}});
+      recipe: {requiredTypes: ['feu', 'paille'], minAffection: 2}, art: {kind: 'static-sprite', file: 'assets/rabbits/ardent/ardent-v1.png', texture: 'rabbit-ardent-original-v1', width: 461, height: 421, worldWidth: 52, groundY: 13, preloadOrder: 8}});
     expect(SPECIES.feu.progression.unlockLevel).toBe(5); expect(growthDuration('ardent')).toBe(30 * MINUTE);
     expect(RECIPE_PRICES.ardent).toBeUndefined(); expect(GIFTED_RECIPES).not.toContain('ardent'); expect(GUARANTEE_SPECIES).not.toContain('ardent');
     expect(act(parents(), {type: 'buyRabbit', species: 'ardent', enclosureId: 'building-1'}, 0)).toMatchObject({ok: false, reason: 'INVALID_CHOICE'});

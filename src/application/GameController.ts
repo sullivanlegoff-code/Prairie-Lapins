@@ -12,6 +12,8 @@ export type Operation = {ok: true} | {ok: false; reason: ControllerIssue};
 export type SaveStatus = 'saved' | 'unsaved' | 'read-error' | 'write-error' | 'invalid-save' | 'conflict';
 export interface ConfirmedProgressionGain extends ProgressionGain {presentationId: string; fromLevel: number; toLevel: number}
 export interface Snapshot {
+  /** Changes only when the time advance or a command changes player-visible data. */
+  viewRevision: number;
   presentationId?: string;
   generation: number; state: GameState | null; status: SaveStatus; issue: ControllerIssue | null;
   lastSavedAt: number | null; dirty: boolean; hasUnreadableBackup: boolean;
@@ -35,6 +37,7 @@ export class GameController {
   private pendingImport: {token: number; state: GameState} | null = null;
   private catalogReset = false;
   private generation = 0;
+  private viewRevision = 0;
   private presentationId: string = crypto.randomUUID();
   private gainListeners = new Set<(gain: ConfirmedProgressionGain) => void>();
   private stopStorage: (() => void) | undefined;
@@ -51,7 +54,7 @@ export class GameController {
   get storageScope(): 'normal' | 'laboratory' { return this.storage.scope ?? 'normal'; }
 
   getSnapshot(): Snapshot {
-    return {presentationId: this.presentationId, generation: this.generation, catalogReset: this.catalogReset, state: this.state ? structuredClone(this.state) : null, status: this.status, issue: this.issue,
+    return {viewRevision: this.viewRevision, presentationId: this.presentationId, generation: this.generation, catalogReset: this.catalogReset, state: this.state ? structuredClone(this.state) : null, status: this.status, issue: this.issue,
       lastSavedAt: this.lastSavedAt, dirty: this.dirty,
       hasUnreadableBackup: this.status === 'invalid-save' && this.storedRaw !== null};
   }
@@ -122,8 +125,26 @@ export class GameController {
   private updateTime(now: number): boolean {
     if (!this.state) return false;
     const next = advance(this.state, now);
-    const changed = JSON.stringify(next) !== JSON.stringify(this.state);
-    if (changed) { this.state = next; this.dirty = true; }
+    const previous = this.state;
+    // These are the only non-clock/income mutations in advance. Rebase changes are
+    // adopted in full whenever lastSimulatedAt changes, including every job timestamp.
+    const settlementChanged = next.missions.daily.cycleIndex !== previous.missions.daily.cycleIndex ||
+      next.missions.completed.length !== previous.missions.completed.length ||
+      next.initiation?.closed.length !== previous.initiation?.closed.length ||
+      !!next.levelAccessTransition !== !!previous.levelAccessTransition ||
+      next.purchaseUnlocks?.some((id, i) => id !== previous.purchaseUnlocks?.[i]) ||
+      next.purchaseUnlocks?.length !== previous.purchaseUnlocks?.length;
+    const changed = next.lastSimulatedAt !== previous.lastSimulatedAt || settlementChanged ||
+      next.buildings.some((b, i) => b.incomeUnits !== previous.buildings[i].incomeUnits);
+    if (changed) {
+      const crossed = (end: number) => (previous.lastSimulatedAt >= end) !== (next.lastSimulatedAt >= end);
+      const visible = settlementChanged || next.lastSimulatedAt < previous.lastSimulatedAt || crossed(previous.nextHeartGiftAt) ||
+        next.buildings.some((b, i) => Math.floor(b.incomeUnits / 3_600_000) !== Math.floor(previous.buildings[i].incomeUnits / 3_600_000) ||
+          !!b.order && crossed(b.order.endsAt) || !!b.breeding && crossed(b.breeding.endsAt) ||
+          b.nursery?.babies.some(baby => crossed(baby.readyAt)));
+      if (visible) this.viewRevision++;
+      this.state = next; this.dirty = true;
+    }
     return changed;
   }
   refresh(): void {
@@ -167,6 +188,7 @@ export class GameController {
       }
       const fromLevel = progressionFromXp(this.state!.progression.totalXp).level;
       this.state = result.state; this.status = 'saved'; this.issue = null; this.dirty = false;
+      this.viewRevision++;
       if (result.progressionGain && result.progressionGain.xpGained > 0) {
         const gain: ConfirmedProgressionGain = {...structuredClone(result.progressionGain), presentationId: this.presentationId,
           fromLevel, toLevel: progressionFromXp(this.state.progression.totalXp).level};
@@ -223,6 +245,7 @@ export class GameController {
     if (!result.ok) return result;
     this.presentationId = presentationId; this.generation++;
     this.state = candidate; this.dirty = false; this.status = 'saved'; this.issue = null;
+    this.viewRevision++;
     this.cancelImport(); this.emit(); return {ok: true};
   }
   restart(confirmed: boolean): Operation {
@@ -234,6 +257,7 @@ export class GameController {
     if (!result.ok) return result;
     this.presentationId = presentationId; this.generation++;
     this.state = candidate; this.dirty = false; this.status = 'saved'; this.issue = null;
+    this.viewRevision++;
     this.cancelImport(); this.emit(); return {ok: true};
   }
   dispose(): void { this.disposed = true; this.stopStorage?.(); this.stopStorage = undefined; this.cancelImport(); this.listeners.clear(); this.gainListeners.clear(); }

@@ -1,7 +1,7 @@
 import {islandOutline, organicLoop, parcelSetKey} from './islandOutline';
 import {nestForParent} from '../simulation/breeding';
-import {RABBIT_ART, rabbitArt, type RabbitArt} from '../config/rabbitArt';
-import {RABBIT_BLINK_ART, rabbitBlinkArt, rabbitPatchPlacement} from '../config/rabbitBlinkArt';
+import {rabbitArt, type RabbitArt} from '../config/rabbitArt';
+import {rabbitBlinkArt, rabbitPatchPlacement} from '../config/rabbitBlinkArt';
 import {rabbitFaceSeed, rabbitFaceState} from './rabbitBlink';
 import Phaser from 'phaser';
 import {VISUAL} from '../config/visual';
@@ -9,7 +9,7 @@ import type {GameController} from '../application/GameController';
 import {drawBuildingArt} from './buildingArt';
 import {drawHabitat} from './habitatArt';
 import {HABITAT_SIZE_PROPOSAL, habitatSlots} from '../config/habitatSizes';
-import {habitatArtLayout, HABITAT_ART_LIST, habitatArtFor, type HabitatArt} from '../config/habitatArt';
+import {habitatArtLayout, habitatArtFor, type HabitatArt} from '../config/habitatArt';
 import {KITCHEN_ART} from '../config/kitchenArt';
 import {FARM_ART} from '../config/farmArt';
 import {NEST_ART} from '../config/nestArt';
@@ -67,6 +67,8 @@ export class MeadowScene extends Phaser.Scene {
   /** Upright readable icons drawn over the overlay: expansion "+" badges, decoration ✓/✗ marks. */
   private markers!: Phaser.GameObjects.Graphics;
   private rabbitViews: VisualRabbit[] = [];
+  private rabbitGroups = new Map<string, VisualRabbit[]>();
+  private neighborPoints: Point[] = [];
   /** Visual-only walking state per resident, reused while the individual stays present. */
   private motions = new Map<string, {group: string; tier: number; center: Point; motion: RabbitMotion}>();
   private motionClock: number | null = null;
@@ -99,6 +101,7 @@ export class MeadowScene extends Phaser.Scene {
   private decorationSelection!: Phaser.GameObjects.Graphics;
   private decorationPixels = new Map<string, Uint8ClampedArray>();
   private unsubscribe: (() => void) | null = null;
+  private artLoading = false;
   readonly view = new MeadowCamera();
   /** Optional start-up reporting for the loading screen (texture loader progress, errors, scene ready). */
   constructor(private controller: GameController, private select: (selection: MeadowSelection) => void, private blocked: () => boolean,
@@ -116,10 +119,8 @@ export class MeadowScene extends Phaser.Scene {
     if (!this.textures.exists(NURSERY_ART.texture)) this.load.image(NURSERY_ART.texture, NURSERY_ART.url);
     NurseryOverlays.preload(this);
     if (!this.textures.exists(KITCHEN_ART.texture)) this.load.image(KITCHEN_ART.texture, KITCHEN_ART.url);
-    for (const art of HABITAT_ART_LIST) if (!this.textures.exists(art.texture)) this.load.image(art.texture, art.url);
-    for (const art of RABBIT_ART) if (!this.textures.exists(art.texture)) this.load.image(art.texture, art.url);
-    for (const art of RABBIT_BLINK_ART) for (const patch of art.patches)
-      if (!this.textures.exists(patch.texture)) this.load.image(patch.texture, patch.url);
+    for (const art of this.requiredArt(this.controller.getSnapshot().state))
+      if (!this.textures.exists(art.texture)) this.load.image(art.texture, art.url);
     for (const id of DECORATION_IDS) {
       const key = decorationTexture(id);
       if (!this.textures.exists(key)) this.load.image(key, decorationUrl(id));
@@ -211,7 +212,7 @@ export class MeadowScene extends Phaser.Scene {
   }
   setTutorialCell(cell: {x:number;y:number}|null): void { this.tutorialCell = cell; if(this.grid)this.drawGrid(); }
   setTutorialTarget(target: 'birth'|null): void { if(this.tutorialTarget === target)return; this.tutorialTarget = target; if(this.bubbles)this.drawBubbles(); }
-  setPlacement(placement: Placement | null): void { this.placement = placement; if (this.grid) this.drawGrid(); }
+  setPlacement(placement: Placement | null): void { this.placement = placement; if (this.grid) this.renderState(); }
   setArrangement(active: boolean, ghost: DecorationGhost | null = null): void {
     this.arrangement = active; this.ghost = ghost;
     if (this.grid) { this.drawDecorations(); this.drawGrid(); this.drawGhost(); }
@@ -277,7 +278,39 @@ export class MeadowScene extends Phaser.Scene {
     // Owned plateaux and their hanging rock; clouds and extension sketches do not own pan regions.
     this.view.setVisibleRegions(this.expanding || !this.current ? null : ownedRegions(this.current.acquiredParcels));
   }
+  /** DOM portraits use ordinary image requests; Phaser only decodes residents and the active habitat preview. */
+  private requiredArt(state: GameState | null): {texture: string; url: string}[] {
+    const assets = new Map<string, {texture: string; url: string}>();
+    const add = (art: {texture: string; url: string} | null | undefined) => { if (art) assets.set(art.texture, art); };
+    for (const rabbit of state?.rabbits ?? []) {
+      add(rabbitArt(rabbit.species));
+      for (const patch of rabbitBlinkArt(rabbit.species)?.patches ?? []) add(patch);
+    }
+    for (const building of state?.buildings ?? []) add(habitatArtFor(building.habitat ?? undefined, building.footprintTier));
+    if (this.placement?.kind === 'enclosure') {
+      const moving = state?.buildings.find(b => b.id === this.placement?.movingId);
+      add(habitatArtFor(moving?.habitat ?? {type: this.placement.habitatType ?? 'universal', level: 1}, moving?.footprintTier));
+    }
+    return [...assets.values()];
+  }
+  /** Keep the previous complete scene during a batch, including when state changes again during the request. */
+  private ensureArt(): boolean {
+    const missing = this.requiredArt(this.current).filter(art => !this.textures.exists(art.texture));
+    if (!missing.length) return true;
+    if (!this.artLoading) {
+      this.artLoading = true;
+      for (const art of missing) this.load.image(art.texture, art.url);
+      this.load.once('complete', () => {
+        this.artLoading = false;
+        // A failed batch retains the previous scene; the next state notification may retry it.
+        if (missing.every(art => this.textures.exists(art.texture))) this.renderState();
+      });
+      this.load.start();
+    }
+    return false;
+  }
   private renderState(): void {
+    if (!this.ensureArt()) return;
     const s = this.current;
     if (s) { this.view.setColumns(visibleColumns(s)); this.updateVisibleRegions(); this.applyCamera(); }
     const key = JSON.stringify([s?.acquiredParcels, s?.buildings.map(b => [b.id, b.kind, b.x, b.y, b.habitat, b.breeding?.parents]), s?.rabbits.map(r => [r.id, r.species, r.enclosureId])]);
@@ -493,6 +526,13 @@ export class MeadowScene extends Phaser.Scene {
       });
     }
     for (const id of [...this.motions.keys()]) if (!walkers.has(id)) this.motions.delete(id);
+    this.rabbitGroups.clear();
+    for (const rabbit of this.rabbitViews) {
+      let group = this.rabbitGroups.get(rabbit.group);
+      if (!group) { group = []; this.rabbitGroups.set(rabbit.group, group); }
+      group.push(rabbit);
+    }
+    this.animals.sort('depth');
     // A rebuilt body starts in the pose of its state, never flat in the middle of a hop or somersault.
     for (const rabbit of this.rabbitViews) {
       const pose = rabbit.motion ? rabbitPose(rabbit.motion) : {lift: 0, squashX: 1, squashY: 1, facing: 1 as const, rotation: 0};
@@ -642,6 +682,8 @@ export class MeadowScene extends Phaser.Scene {
       this.grid.lineStyle(2.5/this.view.zoom,valid?0x396447:0xa54242);this.grid.strokeRect(corner.x,corner.y,cellsWide,cellsDeep);
     });
     const habitat=p.kind==='enclosure'?(moving?.habitat??{type:p.habitatType??'universal',level:1 as const}):null;
+    const illustration=habitatArtFor(habitat ?? undefined,moving?.footprintTier);
+    if(illustration&&!this.textures.exists(illustration.texture))return;
     if(!this.buildingGhost)this.buildingGhost=this.add.image(0,0,this.buildingTexture({kind:p.kind,habitat,footprintTier:moving?.footprintTier})).setDepth(1.5).setAlpha(.55).setScale(.5);
     const tint=valid?0xe4ffb5:0xf3a6a1;
     this.buildingGhost.setTexture(this.buildingTexture({kind:p.kind,habitat,footprintTier:moving?.footprintTier})).setTint(tint).setVisible(!this.photo);
@@ -720,13 +762,21 @@ export class MeadowScene extends Phaser.Scene {
     if (this.gridStroke && this.gridZoom !== this.view.zoom) this.gridStroke();
     // Scene time since the last frame; a long gap (inactive tab) is cut short inside the motion step: no jump.
     const dt = this.motionClock === null ? 0 : time - this.motionClock; this.motionClock = time;
+    let depthChanged = false;
     for (const rabbit of this.rabbitViews) {
+      const previousDepth = rabbit.object.depth;
       const t = time / 1000 + rabbit.phase;
       let lift = 0, squashX = 1, squashY = 1, facing: 1 | -1 = 1, rotation = 0;
       if (rabbit.motion) {
         const motion = rabbit.motion;
-        const others = this.rabbitViews.flatMap(other => other === rabbit || other.group !== rabbit.group || !other.motion ? [] :
-          other.motion.mode === 'walk' ? [other.motion.local, other.motion.to] : [other.motion.local]);
+        const others = this.neighborPoints;
+        others.length = 0;
+        // Keep the original sequential update order and observe each neighbor's current mode/position.
+        for (const other of this.rabbitGroups.get(rabbit.group) ?? []) {
+          if (other === rabbit || !other.motion) continue;
+          others.push(other.motion.local);
+          if (other.motion.mode === 'walk') others.push(other.motion.to);
+        }
         stepRabbitMotion(motion, dt, others);
         const pose = rabbitPose(motion);
         ({lift, squashX, squashY, facing, rotation} = pose);
@@ -738,6 +788,7 @@ export class MeadowScene extends Phaser.Scene {
         rabbit.object.setPosition(position.x, position.y).setDepth(position.y);
       }
       rabbit.lift = lift;
+      if (rabbit.object.depth !== previousDepth) depthChanged = true;
       this.poseBody(rabbit, {lift, squashX, squashY, facing, rotation});
       if (rabbit.face) {
         const state = rabbitFaceState(rabbit.face.seed, time, !rabbit.motion || rabbit.motion.mode === 'rest');
@@ -746,6 +797,6 @@ export class MeadowScene extends Phaser.Scene {
       }
       rabbit.ears.forEach((ear, index) => { ear.rotation = Math.sin(t * 1.4 + index) * .13; });
     }
-    this.animals?.sort('depth');
+    if (depthChanged) this.animals?.sort('depth');
   }
 }

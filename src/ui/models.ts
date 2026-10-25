@@ -120,32 +120,61 @@ export function oddsTexts(odds: ReturnType<typeof oddsView>) {
     guarantee: odds.guaranteed ? 'Cette tentative garantit une espèce non découverte, à parts égales entre les résultats admissibles.' : odds.eligible ? 'Cette paire est admissible à la garantie.' : 'Cette paire ne fait pas avancer la garantie.',
   };
 }
-/** Looks at owned parents, recipes and discoveries only; never at a pending birth's identity/species. */
-export function recipeBook(s: GameState, now: number) {
-  const pools=new Map<string, ReturnType<typeof breedingPool>>();
-  return RECIPE_SPECIES.map(species => {
-    const config = SPECIES[species], minAffection = config.recipe!.minAffection, known = recipeKnown(s, species);
-    const pairs = [];
-    // Compatible owned pairs reveal the condition: computed for known recipes only.
-    if (known) for (let i = 0; i < s.rabbits.length; i++) for (let j = i + 1; j < s.rabbits.length; j++) {
-      const a = s.rabbits[i], b = s.rabbits[j];
-      if (!recipeMatches(species, a.species, b.species) || config.recipe!.probability === undefined && !ordinaryPoolAllows(species, a.species, b.species)) continue;
-      const feeding = [a, b].filter(r => r.affection < minAffection).map(r => r.id);
+/** Group compatible species before considering individuals. No odds or pair DOM yet. */
+function recipeGroups(s: GameState, species: SpeciesId) {
+  const groups = new Map<SpeciesId, GameState['rabbits']>();
+  for (const rabbit of s.rabbits) {
+    const group = groups.get(rabbit.species) ?? [];
+    if (!groups.has(rabbit.species)) groups.set(rabbit.species, group);
+    group.push(rabbit);
+  }
+  const entries = [...groups], result = [];
+  for (let i = 0; i < entries.length; i++) for (let j = i; j < entries.length; j++) {
+    const [a, first] = entries[i], [b, second] = entries[j];
+    if (recipeMatches(species, a, b) && (SPECIES[species].recipe!.probability !== undefined || ordinaryPoolAllows(species, a, b)))
+      result.push({first, second, same: i === j});
+  }
+  return result;
+}
+/** Only requested pairs get a pool/probability. Ready, fed parents come first. */
+export function recipePairs(s: GameState, species: SpeciesId, now: number, limit = Infinity): {
+  parents: [string, string]; feeding: string[]; busy: boolean; probability: string;
+  blocked: boolean; guaranteed: boolean; certain: boolean; possible: boolean;
+}[] {
+  const result: ReturnType<typeof recipePairs> = [], minimum = SPECIES[species].recipe!.minAffection;
+  if (!recipeKnown(s, species)) return result;
+  const groups = recipeGroups(s, species);
+  const rank = (r: GameState['rabbits'][number]) => r.affection < minimum ? 2 : parentBusy(s, r.id, now) ? 1 : 0;
+  const ranks = new Map(s.rabbits.map(r => [r.id, rank(r)]));
+  // Three passes avoid allocating or sorting all n*(n-1)/2 candidates.
+  for (let priority = 0; priority < 3; priority++) for (const {first, second, same} of groups)
+    for (let i = 0; i < first.length; i++) for (let j = same ? i + 1 : 0; j < second.length; j++) {
+      const a = first[i], b = second[j];
+      if (Math.max(ranks.get(a.id)!, ranks.get(b.id)!) !== priority) continue;
+      if (result.length >= limit) return result;
+      const feeding = [a, b].filter(r => r.affection < minimum).map(r => r.id);
       const busy = parentBusy(s, a.id, now) || parentBusy(s, b.id, now);
-      const key=`${a.id}:${b.id}`;
-      if(!pools.has(key))pools.set(key,breedingPool(s,a.species,b.species,a.affection,b.affection));
-      const pool=pools.get(key)!;
+      const pool = breedingPool(s, a.species, b.species, a.affection, b.affection);
       const weight = feeding.length ? 0 : pool.weights[species] ?? 0;
-      pairs.push({parents: [a.id, b.id] as [string, string], feeding, busy,
-        probability: probabilityLabel(weight, pool.total),
-        blocked: !pool.total,
+      result.push({parents: [a.id, b.id] as [string, string], feeding, busy,
+        probability: probabilityLabel(weight, pool.total), blocked: !pool.total,
         guaranteed: !feeding.length && pool.guaranteed && weight > 0,
         certain: !feeding.length && pool.guaranteed && weight === pool.total,
         possible: !feeding.length && !busy && weight > 0});
     }
-    const levelAccess = stateLevelAccess(s,{family:'species',id:species,action:'breedingResult'}), discovered = s.discovered.includes(species), types = config.types;
-    if (!known) return {species, levelAccess, known, discovered, price: recipePrice(species), types, pairs: [] as typeof pairs};
-    return {species, levelAccess, known, discovered, price: recipePrice(species), minAffection, types, pairs};
+  return result;
+}
+/** Metadata/counts do not enumerate individual pairs; full pairs remain lazy for consumers. */
+export function recipeBook(s: GameState, now: number) {
+  return RECIPE_SPECIES.map(species => {
+    const config = SPECIES[species], known = recipeKnown(s, species);
+    const pairCount = known ? recipeGroups(s, species).reduce((sum, {first, second, same}) =>
+      sum + (same ? first.length * (first.length - 1) / 2 : first.length * second.length), 0) : 0;
+    let pairs: ReturnType<typeof recipePairs> | undefined;
+    return {species, levelAccess: stateLevelAccess(s, {family:'species', id:species, action:'breedingResult'}),
+      known, discovered: s.discovered.includes(species), price: recipePrice(species), types: config.types,
+      ...(known ? {minAffection: config.recipe!.minAffection} : {}), pairCount,
+      get pairs() { return pairs ??= recipePairs(s, species, now); }};
   });
 }
 export function timeLeft(end: number, now: number): string {

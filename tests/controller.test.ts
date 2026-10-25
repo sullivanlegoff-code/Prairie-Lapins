@@ -8,6 +8,40 @@ import {act, advance,  decodeGame, encodeGame, pendingDiscoveries} from '../src/
 import {HOUR, MINUTE} from '../src/config/balance';
 import {cumulativeLevelXp} from '../src/simulation/progression';
 import type {Command, GameState} from '../src/state/types';
+import {SCENARIOS, scenarioState} from '../src/dev/scenarios';
+import {jobKey} from '../src/simulation/initiation';
+
+describe('targeted passive change detection', () => {
+  it('adopts and persists exactly advance across all fixtures, deadlines, daily renewals and clock rebases', () => {
+    const start = 1_790_000_000_000;
+    for (const id of Object.keys(SCENARIOS) as (keyof typeof SCENARIOS)[]) {
+      const initial = scenarioState(id, start);
+      const {controller, store, clock} = fixture(encodeGame(initial), start);
+      for (const now of [start, start + 5000, start + 30 * MINUTE, start + 2 * HOUR, start + 48 * HOUR, start]) {
+        const previous = state(controller), expected = advance(previous, now), writes = store.writes;
+        clock.now = now; controller.refresh();
+        expect(state(controller), id).toEqual(expected); expect(stored(store), id).toEqual(expected);
+        expect(store.writes - writes, id).toBe(Number(JSON.stringify(previous) !== JSON.stringify(expected)));
+      }
+      controller.dispose();
+    }
+  });
+  it('rebases gifts, nursery, jobs and initiation keys, then keeps their deadlines and daily cycle correct after reload', () => {
+    const start = 1_790_000_000_000;
+    const initial = scenarioState('initiationSaved', start);
+    const nursery = initial.buildings.find(b => b.nursery?.babies.length)!;
+    expect(nursery).toBeDefined();
+    const {controller, store, clock} = fixture(encodeGame(initial), start);
+    const previous = state(controller); clock.now -= 2 * HOUR; controller.refresh();
+    const next = state(controller), expected = advance(previous, clock.now);
+    expect(next).toEqual(expected); expect(next.nextHeartGiftAt).toBe(previous.nextHeartGiftAt - 2 * HOUR);
+    const baby = next.buildings.find(b => b.id === nursery.id)!.nursery!.babies[0];
+    expect(next.initiation!.growth).toBe(jobKey(next.buildings.find(b => b.id === nursery.id)!, 'growth', baby.birth.id));
+    expect(next.missions.daily.cycleIndex).toBe(previous.missions.daily.cycleIndex);
+    const reloaded = new GameController(store, () => clock.now); expect(state(reloaded)).toEqual(expected);
+    controller.dispose(); reloaded.dispose();
+  });
+});
 
 class MemoryStorage implements SaveStorage {
   value: string | null = null; reads = 0; writes = 0; failRead = false; failWrite = false;

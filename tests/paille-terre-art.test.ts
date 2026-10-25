@@ -14,7 +14,7 @@ describe('Paille reference artwork (Terre was removed with its catalogue)', () =
     expect(rabbitArt()).toBeUndefined();
   });
   it('preserves the validated snow scale and anchor while retaining species proportions', () => {
-    expect(SNOW_ART).toMatchObject({width:518, height:473, worldWidth:48, groundY:12});
+    expect(SNOW_ART).toMatchObject({width:461, height:421, worldWidth:48, groundY:12});
     expect(STRAW_ART.height / STRAW_ART.width).toBeGreaterThan(1.4);
     expect(STRAW_ART.groundY).toBe(SNOW_ART.groundY);
   });

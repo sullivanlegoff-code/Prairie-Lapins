@@ -9,7 +9,7 @@ import {PROGRESSION} from '../src/config/progression';
 import {cumulativeLevelXp} from '../src/simulation/progression';
 import {mountSavePanel} from '../src/display/SavePanel';
 const el=(id:string)=>document.getElementById(id)!;
-const snapshot=(state: Snapshot['state'], generation=0):Snapshot=>({state,generation,status:'saved',issue:null,lastSavedAt:0,dirty:false,hasUnreadableBackup:false,catalogReset:false});
+const snapshot=(state: Snapshot['state'], generation=0):Snapshot=>({viewRevision:0,state,generation,status:'saved',issue:null,lastSavedAt:0,dirty:false,hasUnreadableBackup:false,catalogReset:false});
 beforeEach(()=>{document.body.innerHTML=html.match(/<body>([\s\S]*)<\/body>/)![1].replace(/<script[\s\S]*?<\/script>/g,'');});
 describe('player progress display',()=>{
  it('uses in-level XP and updates stable controls after one and several levels',()=>{
