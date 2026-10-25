@@ -8,27 +8,33 @@ Le tutoriel de Paille est rejoué avec ses trois aides uniques, récolte/transfe
 
 Chaque visite est limitée à 45 commandes réussies, soit environ six secondes par action dans une session de cinq minutes. C’est une hypothèse de joueur organisé, pas une mesure humaine ; déplacement, consultation et choix peuvent ralentir le parcours. Les repas maximaux et les choix de parents sont explicites et reproductibles. La simulation laisse les commandes terminées attendre les visites, sans collecte pendant l’absence. Les instantanés J1/J3/etc. sont pris juste avant 8 h du jour suivant ; les pattes stockées restent à récolter. Aucun clic supplémentaire au point « 10 min ».
 
-Les premières atteintes, comptées en jours calendaires avec J1 comme jour du départ, sont **N5 à J1, session de 20 h ; N10 à J6, session de 13 h ; N15 à J23, session de 8 h ; N20 à J57, session de 8 h**. Cibles : J1/J7/J20/J50. Écarts : 0 %, −14 %, +15 %, +14 %, tous dans ±30 %. Le script vérifie cette tolérance et poursuit jusqu’à 70 jours pour mesurer le niveau 20.
+Les premières atteintes, comptées en jours calendaires avec J1 comme jour du départ, sont **N5 à J1 ; N10 à J6 ; N15 à J22 ; N20 à J55**. Cibles : J1/J7/J20/J50, toutes dans ±30 %. Le script vérifie cette tolérance et poursuit jusqu’à 70 jours pour mesurer le niveau 20. Ces résultats incluent la suite de missions durables et les prix de décorations de la partie B.
 
 | Étape | Pattes disponibles | Herbes | Cœurs | Niveau | Espèces | Pattes stockées |
 |---|---:|---:|---:|---:|---:|---:|
 | 10 min | 270 | 96 | 15 | 4 | 3 | 6 |
 | 1 j | 438 | 364 | 19 | 5 | 3 | 623 |
-| 3 j | 649 | 2956 | 21 | 7 | 8 | 2351 |
-| 7 j | 11482 | 8115 | 40 | 10 | 16 | 4475 |
-| 20 j | 154360 | 24794 | 96 | 14 | 23 | 7895 |
-| 50 j | 625972 | 64469 | 211 | 19 | 24 | 9335 |
+| 3 j | 749 | 3016 | 23 | 7 | 8 | 2351 |
+| 7 j | 12632 | 7815 | 58 | 10 | 16 | 4475 |
+| 20 j | 157956 | 24474 | 104 | 14 | 23 | 8327 |
+| 50 j | 660912 | 64119 | 234 | 19 | 24 | 9863 |
 
-Achats restants (améliorations et décoration restent des choix, sans obligation d’achat intégral) :
+Achats restants (améliorations et décorations restent des choix, sans obligation d’achat intégral ; la simulation n’achète qu’une décoration, pour sa mission) :
 
-- **10 min** : communs à accueillir : feu, belier-gris, volant ; 8 extensions (157900 pattes), 1 ferme(s), Cuisine à acheter, 2 habitats encore améliorables. Recettes payantes non révélées/achetées : lunettes, perroquet, feu-glace, bouee, magicien, dragon.
-- **1 j** : communs à accueillir : feu, belier-gris, volant ; 8 extensions (157900 pattes), 0 ferme(s), Cuisine à acheter, 2 habitats encore améliorables. Recettes payantes non révélées/achetées : lunettes, perroquet, feu-glace, bouee, magicien, dragon.
-- **3 j** : communs à accueillir : volant ; 6 extensions (155500 pattes), 0 ferme(s), Cuisine acquise, 3 habitats encore améliorables. Recettes payantes non révélées/achetées : lunettes, perroquet, bouee, magicien, dragon.
-- **7 j** : communs à accueillir : aucun ; 4 extensions (142000 pattes), 0 ferme(s), Cuisine acquise, 4 habitats encore améliorables. Recettes payantes non révélées/achetées : perroquet, bouee, magicien, dragon.
-- **20 j** : communs à accueillir : aucun ; 3 extensions (126000 pattes), 0 ferme(s), Cuisine acquise, 8 habitats encore améliorables. Recettes payantes non révélées/achetées : magicien, dragon.
-- **50 j** : communs à accueillir : aucun ; 1 extensions (60000 pattes), 0 ferme(s), Cuisine acquise, 7 habitats encore améliorables. Recettes payantes non révélées/achetées : dragon.
+- **10 min** : communs à accueillir : feu, belier-gris, volant ; 8 extensions (157 900 pattes), 1 ferme, Cuisine à acheter, 2 habitats améliorables, 12 modèles de décoration (24 650 pattes). Recettes payantes non achetées : lunettes, perroquet, feu-glace, bouee, magicien, dragon.
+- **1 j** : communs : feu, belier-gris, volant ; 8 extensions (157 900), Cuisine à acheter, 2 habitats améliorables. Mêmes recettes payantes.
+- **3 j** : communs : volant ; 6 extensions (155 500), Cuisine acquise, 3 habitats améliorables. Recettes : lunettes, perroquet, bouee, magicien, dragon.
+- **7 j** : tous les communs ; 4 extensions (142 000), 4 habitats améliorables. Recettes : perroquet, bouee, magicien, dragon.
+- **20 j** : 3 extensions (126 000), 7 habitats améliorables. Recettes : magicien, dragon.
+- **50 j** : 1 extension (60 000), 6 habitats améliorables. Recette : dragon.
 
-Le surplus tardif de pattes reste important : la partie A ne permet de retoucher que la courbe après mesure, pas les revenus/prix déjà fixés par le propriétaire. La simulation ne garantit ni la collection complète à une date, ni l’achat des huit extensions avant leur niveau requis. Un seul tirage déterministe ne représente pas toutes les chances de collection.
+Le surplus tardif de pattes reste important après la collection : les extensions sont bornées par le niveau, et les grandes décorations (24 650 pattes pour tous les modèles) restent un choix. La simulation ne garantit ni la collection complète à une date, ni l’achat des huit extensions avant leur niveau requis. Un seul tirage déterministe ne représente pas toutes les chances de collection.
+
+## Objectifs durables et lisibilité (partie B)
+
+Après les branches de départ, les missions principales s’enchaînent, deux visibles au plus, la suivante apparaissant après réclamation (40 XP chacune) : niveau 5 (2 cœurs), accueillir Feu (100 pattes), lancer une commande de nuit (60 herbes), 10 espèces (3 cœurs), un habitat niveau 2 (150 pattes), niveau 10 (3 cœurs), accueillir Bélier Gris (300 pattes), trois agrandissements (5 cœurs), 15 espèces (5 cœurs), accueillir Volant (500 pattes), niveau 15 (5 cœurs), tous les rares ordinaires (10 cœurs). Une mission déjà remplie au chargement devient réclamable, sans récompense automatique.
+
+Les 14 rares illustrés montrent gratuitement un indice de types parents (« Indice : Paille × Neige ») ; affection minimale et probabilités restent cachées. La Cuisine affiche les récompenses complètes restantes du cycle, puis le pourboire. Le cadeau de cœurs affiche les cadeaux accumulés (trois au plus). Une commande en cours indique son heure de fin. Grandes décorations : petite bibliothèque 600, cocotier 800, peluche de loutre 1 500, ménorah 2 500, grande bibliothèque 4 000, statue du robot 15 000 ; la revente reste à 50 % mais ne dépasse jamais le prix payé (ancien prix pour les exemplaires achetés avant la refonte).
 
 Migration : v16 est convertie vers v17 en conservant niveau et fraction, sans cœurs au chargement. Les formats 1–15 restent incompatibles. Les commandes v16 conservent leur quantité/durée, les naissances ne sont jamais retirées. Les tests de migration couvrent aussi la décoration et la quotidienne remplacée.
 

@@ -1,12 +1,18 @@
 import {settlePurchaseUnlocks} from './purchaseUnlocks';
-import {SPECIES} from '../config/balance';
-import {DAILY_MISSIONS, DAILY_MISSION_IDS, MAIN_MISSIONS, MAIN_MISSION_IDS, MISSION_CYCLE_DURATION, INITIAL_MISSION_IDS, SOLO_INITIAL_MISSION_IDS, BRANCH_MISSION_IDS, MAIN_EVENT_IDS, type MainMissionId} from '../config/missions';
+import {progressionFromXp} from './progression';
+import {SPECIES, SPECIES_IDS} from '../config/balance';
+import {DAILY_MISSIONS, DAILY_MISSION_IDS, MAIN_MISSIONS, MAIN_MISSION_IDS, DURABLE_MISSION_IDS, MISSION_CYCLE_DURATION, INITIAL_MISSION_IDS, SOLO_INITIAL_MISSION_IDS, BRANCH_MISSION_IDS, MAIN_EVENT_IDS, type MainMissionId} from '../config/missions';
 import type {GameState, MissionState} from '../state/types';
 
-type ObservableState = Pick<GameState, 'rabbits' | 'discovered'> & {acquiredParcels?: GameState['acquiredParcels']; expanded?: boolean} & Pick<GameState, 'startCourse'> & {missions?: Pick<MissionState, 'events'>} & {buildings: (Pick<GameState['buildings'][number], 'kind'> & {habitat?: GameState['buildings'][number]['habitat']})[]};
+type ObservableState = Pick<GameState, 'rabbits' | 'discovered'> & Partial<Pick<GameState, 'progression'>> & {acquiredParcels?: GameState['acquiredParcels']; expanded?: boolean} & Pick<GameState, 'startCourse'> & {missions?: Pick<MissionState, 'events' | 'nightOrderStarted'>} & {buildings: (Pick<GameState['buildings'][number], 'kind'> & {habitat?: GameState['buildings'][number]['habitat']})[]};
 export function mainProgress(state: ObservableState, id: MainMissionId): {value: number; target: number} {
   const c = MAIN_MISSIONS[id].condition;
   switch (c.kind) {
+    case 'level': return {value: progressionFromXp(state.progression?.totalXp ?? 0).level, target:c.target};
+    case 'extensions': return {value:Math.max(0,(state.acquiredParcels?.length ?? 1)-1),target:c.target};
+    case 'habitatLevel': return {value:Math.max(0,...state.buildings.map(b=>b.habitat?.level ?? 0)),target:c.target};
+    case 'nightOrder': return {value:Number(!!state.missions?.nightOrderStarted),target:1};
+    case 'ordinaryRares': { const ids=SPECIES_IDS.filter(id=>SPECIES[id].rarity==='rare' && SPECIES[id].acquisition.some(a=>a.kind==='recipe' && a.guaranteeEligible)); return {value:ids.filter(id=>state.discovered.includes(id)).length,target:ids.length}; }
     case 'building': return {value: state.buildings.filter(b => b.kind === c.building && (!c.habitatType || b.habitat?.type === c.habitatType)).length, target: c.target ?? 1};
     case 'discoveries': return {value: state.discovered.length, target: c.target};
     case 'affection': return {value: Math.max(0, ...state.rabbits.map(r => r.affection)), target: c.target};
@@ -21,7 +27,7 @@ export function emptyDailyProgress(): MissionState['daily']['progress'] {
   return {'collect-pattes': 0, 'collect-grass': 0, 'gain-affection': 0};
 }
 export function createMissions(state: ObservableState, referenceAt: number): MissionState {
-  return {events: emptyMainEvents(), completed: MAIN_MISSION_IDS.filter(id => { if ((id === 'snow-habitat' || id === 'welcome-snow') && state.startCourse !== 'paille-solo') return false; const p = mainProgress({...state, missions: undefined}, id); return p.value >= p.target; }), claimed: [],
+  return {events: emptyMainEvents(), completed: MAIN_MISSION_IDS.filter(id => { if ((DURABLE_MISSION_IDS as readonly string[]).includes(id)) return false; if ((id === 'snow-habitat' || id === 'welcome-snow') && state.startCourse !== 'paille-solo') return false; const p = mainProgress({...state, missions: undefined}, id); return p.value >= p.target; }), claimed: [],
     daily: {referenceAt, cycleIndex: 0, progress: emptyDailyProgress(), claimed: [], bonusClaimed: false}};
 }
 export const cycleIndexAt = (referenceAt: number, now: number) => Math.floor(Math.max(0, now - referenceAt) / MISSION_CYCLE_DURATION);
@@ -30,6 +36,7 @@ export const dailyCycleEnd = (s: GameState) => dailyCycleStart(s) + MISSION_CYCL
 /** Mutates only the transaction/advance copy; never reconstructs absent action history. */
 export function updateMissions(state: GameState, now: number): void {
   const m = state.missions, d = m.daily;
+  if (state.buildings.some(b => b.order?.recipe === 'night')) m.nightOrderStarted = true;
   const cycle = cycleIndexAt(d.referenceAt, now);
   if (cycle > d.cycleIndex) {
     d.cycleIndex = cycle; d.progress = emptyDailyProgress(); d.claimed = []; d.bonusClaimed = false;
@@ -45,12 +52,15 @@ export const emptyMainEvents = (): MissionState['events'] => ({collectOrder: 0, 
 export function initialMissionIds(s: Pick<GameState, 'startCourse'>): readonly MainMissionId[] {
   return s.startCourse === 'paille-solo' ? SOLO_INITIAL_MISSION_IDS : INITIAL_MISSION_IDS;
 }
-export function eligibleMainMissionIds(s: Pick<GameState, 'startCourse'>): readonly MainMissionId[] {
-  return [...initialMissionIds(s), ...BRANCH_MISSION_IDS];
+export function eligibleMainMissionIds(s: Pick<GameState, 'startCourse' | 'missions'>): readonly MainMissionId[] {
+  return [...initialMissionIds(s), ...BRANCH_MISSION_IDS, ...activeMainMissions(s).filter(id => (DURABLE_MISSION_IDS as readonly string[]).includes(id))];
 }
 export function activeMainMissions(s: Pick<GameState, 'missions' | 'startCourse'>): MainMissionId[] {
   const next = initialMissionIds(s).find(id => !s.missions.claimed.includes(id));
-  return next ? [next] : BRANCH_MISSION_IDS.filter(id => !s.missions.claimed.includes(id));
+  if (next) return [next];
+  const branches = BRANCH_MISSION_IDS.filter(id => !s.missions.claimed.includes(id));
+  const durable = DURABLE_MISSION_IDS.find(id => !s.missions.claimed.includes(id));
+  return [...branches, ...(durable ? [durable] : [])].slice(0,2);
 }
 /** Called once after a successful simulation action; rewards/imports are not events. */
 export function recordMissionAction(s: GameState, action: string, amount: number, placedOutside = true): boolean {

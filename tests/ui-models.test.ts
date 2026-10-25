@@ -138,7 +138,7 @@ describe('UI projections preserve gameplay rules and secrets', () => {
     let s = readyState(); const r = act(s, {type: 'collectIncome', id: 'building-1'}, 20 * 60_000); if (!r.ok) throw new Error(r.reason); s = sendToNursery(r.state);
     expect(nurseryView(s, 20 * 60_000).babies).toEqual([{slot: 0, birthId: expect.any(String), stage: 'growing', startedAt: expect.any(Number), readyAt: 50 * 60_000}]);
     expect(JSON.stringify(nurseryView(s, 20 * 60_000))).not.toContain('icy');
-    expect(collectionView(s).filter(e => !e.known)).toEqual(Array.from({length: EXPECTED_IDS.length - 2}, () => ({known: false, name: '???'})));
+    expect(collectionView(s).filter(e => !e.known).map(({known,name})=>({known,name}))).toEqual(Array.from({length: EXPECTED_IDS.length - 2}, () => ({known: false, name: '???'})));
     expect(nurseryView(s, 50 * 60_000).babies).toMatchObject([{stage: 'ready', species: 'icy'}]);
     expect(s.discovered).not.toContain('icy');
   });

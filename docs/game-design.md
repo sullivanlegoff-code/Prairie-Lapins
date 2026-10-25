@@ -38,7 +38,7 @@ Les quotidiennes demandent de récolter 100 pattes (récompense 60 pattes), réc
 
 Migration v16 → v17 réelle et déterministe : ressources, affection, lapins, bâtiments, stock et résultats/dates des reproductions et croissances sont préservés. Le niveau et la fraction dans le niveau sont convertis depuis l’ancienne courbe 50 × N^1,6, avec arrondi inférieur à un point d’XP, sans récompense de niveau au chargement. Compteur de garantie plafonné à sept ; modèles de décoration déjà posés marqués récompensés ; quotidienne d’affection complétée reste réclamable, réclamation et bonus déjà reçus restent acquis. Versions 1–15 : rejet `INCOMPATIBLE_CATALOG` conservé. Fixture encodée par le véritable code v16 dans `tests/fixtures/economy-v16.json`.
 
-Résultats, limites et achats restants : [progression du joueur](player-progression.md). Les modifications d’interface hors ferme prévues pour la partie B restent à faire, notamment l’affichage du cumul des cadeaux.
+Résultats, limites et achats restants : [progression du joueur](player-progression.md). Partie B (objectifs et lisibilité) : suite de missions principales durables, indices de types parents pour les 14 rares illustrés, compteur des récompenses complètes de la Cuisine, cumul des cadeaux de cœurs affiché, heure de fin des commandes, grandes décorations plus ambitieuses (600 à 15 000 pattes) avec revente plafonnée au prix payé. Détail : [progression du joueur](player-progression.md#objectifs-durables-et-lisibilité-partie-b).
 
 ---
 

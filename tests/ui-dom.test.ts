@@ -248,7 +248,7 @@ describe('decoration UI transactions (simulated DOM; Phaser verified separately)
     button('Acheter · 20 pièces', catalog('bush')).click(); expect((document.getElementById('game-dialog') as HTMLDialogElement).open).toBe(false); expect(state(controller)).toEqual(initial);
   });
   it('requires explicit confirmation to move; closing a panel preserves the old location and rotation', () => {
-    const initial=createGame(0);initial.pattes=1000;initial.progression={totalXp:cumulativeLevelXp(12),rewardedThroughLevel:12};const {controller, ui, scene} = setup(initial); controller.perform({type: 'buyDecoration', catalogId: 'large-bookcase'});
+    const initial=createGame(0);initial.pattes=5000;initial.progression={totalXp:cumulativeLevelXp(12),rewardedThroughLevel:12};const {controller, ui, scene} = setup(initial); controller.perform({type: 'buyDecoration', catalogId: 'large-bookcase'});
     controller.perform({type: 'placeDecoration', id: 'decoration-4', location: {kind: 'outside', x: 25, y: 23, rotation: 0}});
     const original = state(controller); document.getElementById('open-arrange')!.click(); ui.select({kind: 'decoration', id: 'decoration-4'}); expect([...panel().querySelectorAll('button')].some(b=>b.textContent==='Tourner de 90°')).toBe(false);button('Déplacer').click();
     ui.select({kind: 'fineCell', x: 29, y: 20}); expect(panel().textContent).toContain('✓ Emplacement valide'); expect(state(controller)).toEqual(original);
@@ -518,11 +518,11 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
   it('opens the hearts counter and claims a free gift only once after 24 hours', () => {
     const {controller, clock} = setup(); document.getElementById('open-hearts')!.click();
     expect(document.getElementById('hearts')!.textContent).toBe('12');
-    expect(button('Réclamer · +2 cœurs gratuits').disabled).toBe(true);
+    expect(button('Réclamer').disabled).toBe(true);
     clock.now = 24 * 3600_000; controller.refresh();
-    const claim = button('Réclamer · +2 cœurs gratuits'); claim.click(); claim.click();
+    const claim = button('Réclamer · 1 cadeau · 2 cœurs'); claim.click(); claim.click();
     expect(state(controller).hearts).toBe(14); expect(document.getElementById('hearts')!.textContent).toBe('14');
-    expect(button('Réclamer · +2 cœurs gratuits').disabled).toBe(true);
+    expect(button('Réclamer').disabled).toBe(true);
   });
   it('defers building payment to final placement, supports both cancellations and confirms only once', () => {
     const initial = createGame(0); initial.pattes = 30; const {controller, ui} = setup(initial);
@@ -778,14 +778,14 @@ describe('direct decoration selection and confirmed resale UI', () => {
   });
   it('asks the exact sale question, cancellation preserves everything, and double confirmation sells only the selected copy', () => {
     const {ui, controller, data, scene} = setup(decorated()), before = state(controller);
-    ui.select({kind: 'decoration', id: 'decoration-4'}); button('Vendre · 200 pièces').click();
+    ui.select({kind: 'decoration', id: 'decoration-4'}); button('Vendre · 400 pièces').click();
     const dialog = document.getElementById('game-dialog')!;
-    expect(dialog.querySelector('h2')!.textContent).toBe('Vendre Grande bibliothèque pour 200 pièces ?');
+    expect(dialog.querySelector('h2')!.textContent).toBe('Vendre Grande bibliothèque pour 400 pièces ?');
     expect(dialog.textContent).toContain('Aucun remboursement en cœurs');
     button('Annuler', dialog).click(); expect(state(controller)).toEqual(before);
-    button('Vendre · 200 pièces').click(); const confirm = button('Confirmer', dialog); confirm.click(); confirm.click();
+    button('Vendre · 400 pièces').click(); const confirm = button('Confirmer', dialog); confirm.click(); confirm.click();
     const after = state(controller);
-    expect(after).toEqual({...before, pattes: before.pattes + 200, decorations: before.decorations.slice(1)});
+    expect(after).toEqual({...before, pattes: before.pattes + 400, decorations: before.decorations.slice(1)});
     expect(JSON.parse(data.get(SAVE_KEY)!)).toEqual({...after, presentationId: controller.getSnapshot().presentationId});
     expect(document.getElementById('game-panel')!.hidden).toBe(true);
     expect(scene.setDecorationSelection).toHaveBeenLastCalledWith(null);
@@ -794,14 +794,14 @@ describe('direct decoration selection and confirmed resale UI', () => {
     const {controller, scene} = setup(decorated()), before = state(controller);
     document.getElementById('open-arrange')!.click(); button('Actions de cet exemplaire', panel().querySelector('[data-decoration="decoration-6"]')!).click();
     expect(button('Ranger dans l’inventaire').disabled).toBe(true);
-    button('Vendre · 200 pièces').click(); button('Confirmer', document.getElementById('game-dialog')!).click();
-    expect(state(controller)).toEqual({...before, pattes: before.pattes + 200, decorations: before.decorations.slice(0, 2)});
+    button('Vendre · 400 pièces').click(); button('Confirmer', document.getElementById('game-dialog')!).click();
+    expect(state(controller)).toEqual({...before, pattes: before.pattes + 400, decorations: before.decorations.slice(0, 2)});
     expect(panel().textContent).toContain('Ton inventaire est vide');
     expect(scene.setDecorationSelection).toHaveBeenLastCalledWith(null);
   });
   it('a stale sale confirmation cannot sell another exemplar or credit twice', () => {
     const {controller, ui} = setup(decorated());
-    ui.select({kind: 'decoration', id: 'decoration-4'}); button('Vendre · 200 pièces').click();
+    ui.select({kind: 'decoration', id: 'decoration-4'}); button('Vendre · 400 pièces').click();
     const confirm = button('Confirmer', document.getElementById('game-dialog')!);
     controller.perform({type: 'sellDecoration', id: 'decoration-4'}); const after = state(controller);
     confirm.click(); expect(state(controller)).toEqual(after);
@@ -811,8 +811,8 @@ describe('direct decoration selection and confirmed resale UI', () => {
     const {controller, ui, storage} = setup(decorated()), before = state(controller);
     ui.select({kind: 'decoration', id: 'decoration-4'});
     vi.spyOn(storage, 'setItem').mockImplementation(() => {throw Error('quota');});
-    button('Vendre · 200 pièces').click(); button('Confirmer', document.getElementById('game-dialog')!).click();
-    expect(state(controller)).toEqual(before); expect(panel().textContent).toContain('Vendre · 200 pièces');
+    button('Vendre · 400 pièces').click(); button('Confirmer', document.getElementById('game-dialog')!).click();
+    expect(state(controller)).toEqual(before); expect(panel().textContent).toContain('Vendre · 400 pièces');
     expect(document.getElementById('toast')!.textContent).toContain('L’action n’a pas pu être sauvegardée');
   });
 });

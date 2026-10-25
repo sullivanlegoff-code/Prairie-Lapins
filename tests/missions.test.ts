@@ -37,7 +37,7 @@ const state=(c:GameController)=>c.getSnapshot().state!;
 describe('main missions and unique rewards',()=>{
   it('starts eight unclaimed visible objectives and a fresh 24-hour cycle without changing initial resources',()=>{
     const s=createGame(123);
-    expect(MAIN_MISSION_IDS).toHaveLength(19);expect(s).toMatchObject({version: 17,pattes:350,grass:10,hearts:12});
+    expect(MAIN_MISSION_IDS).toHaveLength(31);expect(s).toMatchObject({version: 17,pattes:350,grass:10,hearts:12});
     expect(s.missions).toEqual({events:emptyMainEvents(),completed:[],claimed:[],daily:{referenceAt:123,cycleIndex:0,progress:emptyDailyProgress(),claimed:[],bonusClaimed:false}});
     expect(dailyCycleEnd(s)).toBe(123+DAY);
   });

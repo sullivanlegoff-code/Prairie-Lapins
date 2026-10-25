@@ -53,7 +53,7 @@ describe('decoration ownership and atomic commands', () => {
   it.each(DECORATION_IDS)('buys %s at its central pattes price without bonuses or birth RNG', id => {
     const s = rich(), rng = vi.fn(() => {throw Error('No birth draw');}), r = act(s, {type: 'buyDecoration', catalogId: id}, 0, rng);
     expect(r.ok).toBe(true); if (!r.ok) return;
-    expect(r.state).toEqual({...s, pattes: s.pattes - DECORATIONS[id].price, nextId: 5, decorations: [{id: 'decoration-4', catalogId: id, location: {kind: 'inventory'}, placementXpProcessed: false}]});
+    expect(r.state).toEqual({...s, pattes: s.pattes - DECORATIONS[id].price, nextId: 5, decorations: [{id: 'decoration-4', catalogId: id, paidPrice: DECORATIONS[id].price, location: {kind: 'inventory'}, placementXpProcessed: false}]});
     expect(r.value).toBe('decoration-4'); expect(rng).not.toHaveBeenCalled(); expect(s.decorations).toEqual([]);
     expect(decodeGame(encodeGame(r.state))).toEqual({ok: true, state: r.state});
   });
@@ -191,7 +191,7 @@ describe('atomic decoration resale', () => {
     const s = buy(rich(), 'large-bookcase');
     for (const id of ['missing', 'building-1', 'rabbit-2']) refused(s, {type: 'sellDecoration', id}, 'NOT_FOUND');
     refused(s, {type: 'payWithHearts', action: {type: 'sellDecoration', id: 'decoration-4'}, maxHearts: 99, maxPattes: 99} as unknown as Command, 'INVALID_CHOICE');
-    s.pattes = Number.MAX_SAFE_INTEGER - 199;
+    s.pattes = Number.MAX_SAFE_INTEGER - (decorationResalePrice('large-bookcase') - 1);
     refused(s, {type: 'sellDecoration', id: 'decoration-4'}, 'RESOURCE_LIMIT');
     s.pattes--; expect(run(s, {type: 'sellDecoration', id: 'decoration-4'}).pattes).toBe(Number.MAX_SAFE_INTEGER);
   });
@@ -200,7 +200,7 @@ describe('atomic decoration resale', () => {
     m.writes.length = 0;
     expect(c.perform({type: 'sellDecoration', id: 'decoration-4'}).ok).toBe(true);
     const result = c.getSnapshot().state!;
-    expect(result.pattes).toBe(s.pattes + 200); expect(result.decorations).toEqual([]);
+    expect(result.pattes).toBe(s.pattes + decorationResalePrice('large-bookcase')); expect(result.decorations).toEqual([]);
     expect(m.writes).toEqual([SAVE_KEY]);
     expect(c.perform({type: 'sellDecoration', id: 'decoration-4'}).ok).toBe(false);
     expect(m.writes).toEqual([SAVE_KEY]); expect(c.getSnapshot().state).toEqual(result);
@@ -219,7 +219,7 @@ describe('atomic decoration resale', () => {
     m.fail.key = ''; spy?.mockRestore(); m.values.set(SAVE_KEY, raw);
     expect(c.retrySave()).toEqual({ok: true}); expect(c.getSnapshot().state).toEqual(s);
     expect(c.perform({type: 'sellDecoration', id: 'decoration-4'}).ok).toBe(true);
-    expect(c.getSnapshot().state!.pattes).toBe(s.pattes + 200);
-    expect(c.retrySave()).toEqual({ok: true}); expect(c.getSnapshot().state!.pattes).toBe(s.pattes + 200);
+    expect(c.getSnapshot().state!.pattes).toBe(s.pattes + decorationResalePrice('large-bookcase'));
+    expect(c.retrySave()).toEqual({ok: true}); expect(c.getSnapshot().state!.pattes).toBe(s.pattes + decorationResalePrice('large-bookcase'));
   });
 });

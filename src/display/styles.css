@@ -111,6 +111,14 @@ p { line-height: 1.45; margin: 10px 0; overflow-wrap: anywhere; }
 .habitat-thumb { display: block; width: 100%; height: auto; max-height: 150px; object-fit: contain; margin: 0 auto 8px; pointer-events: none; user-select: none; -webkit-user-drag: none; }
 .card-heading { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .card-heading > div { flex: 1; min-width: 0; }
+.farm-orders { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.farm-orders .farm-order { margin: 0; padding: 9px; }
+.farm-order h3 { font-size: 15px; margin: 2px 0; }
+.farm-order p { margin: 6px 0; }
+.farm-order button { padding: 8px 5px; font-size: 13px; }
+.cuisine-quota { font-size: 13px; line-height: 1.25; margin: 4px 0; }
+.cuisine-activity-controls { flex-wrap: wrap; }
+.cuisine-activity-controls > .cuisine-quota { flex: 1 1 180px; }
 .card-heading h3 { margin: 0 0 4px; }
 .card-heading p { font-size: 12px; margin: 5px 0; color: var(--ink-muted); }
 .portrait { display: inline-flex; width: 64px; min-width: 64px; height: 64px; justify-content: center; align-items: center; background: #e5ebd5; border-radius: 18px; flex-shrink: 0; }

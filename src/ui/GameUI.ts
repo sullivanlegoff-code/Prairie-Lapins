@@ -1,3 +1,4 @@
+import {cuisineQuotaText, heartGift, recipeHint, orderReadyText} from './economyFeedback';
 import type {AudioEngine} from '../audio/audioEngine';
 import {mountCuisineActivity} from './CuisineActivity';
 import type {RecipeCompletion} from '../../cooktap-prototype/main';
@@ -20,9 +21,9 @@ import {habitatStats, habitatName, habitatEntryReason, habitatAccepts, welcomeDe
 import {MAIN_MISSIONS, DAILY_MISSION_IDS, DAILY_MISSIONS, DAILY_BONUS, type Reward} from '../config/missions';
 import {initialMissionIds, activeMainMissions, availableMissionRewards, mainProgress, dailyCycleStart, dailyCycleEnd, cycleIndexAt} from '../simulation/missions';
 import type {GameController, Snapshot} from '../application/GameController';
-import {BALANCE, HEARTS, NURSERY, ORDERS, SPECIES, SPECIES_IDS, SHOP_SPECIES, growthDuration, type BuildingKind, type SpeciesId, type OrderId, type RabbitType} from '../config/balance';
+import {BALANCE, NURSERY, ORDERS, SPECIES, SPECIES_IDS, SHOP_SPECIES, growthDuration, type BuildingKind, type SpeciesId, type OrderId, type RabbitType} from '../config/balance';
 import type {Command, DecorationLocation, GameState, PattesCommand, TimedStage} from '../state/types';
-import {DECORATIONS, DECORATION_IDS, FINE_GRID, decorationResalePrice, type DecorationId} from '../config/decorations';
+import {DECORATIONS, DECORATION_IDS, FINE_GRID, ownedDecorationResalePrice, type DecorationId} from '../config/decorations';
 import {catalogDecorationPlacementReason, purchaseDecorationReason} from '../simulation/decorations';
 import {decorationUrl} from '../display/decorationArt';
 import {quoteComplement} from '../simulation/actions';
@@ -128,7 +129,7 @@ export class GameUI {
       if (!granted.ok) return `Récompense non enregistrée : ${REFUSALS[granted.reason]}`;
       const reward = granted.cuisineReward!;
       return `+${reward.pattes} pattes · +${reward.grass} herbe${reward.grass > 1 ? 's' : ''}${reward.affectionGranted ? ' · +1 Affection' : reward.affectionAtCap ? ' · Affection maximale' : ''}${reward.heartGranted ? ' · +1 Cœur' : ''}`;
-    }, onExit: () => this.render()});
+    }, quotaText: () => { const state = this.controller.getSnapshot().state; return state ? cuisineQuotaText(state, this.now()) : ''; }, onExit: () => this.render()});
     const options = {signal: this.abort.signal};
     const skip = node('button','Passer le tutoriel','onboarding-skip'); skip.id='onboarding-skip';
     skip.onclick=()=>{this.preferences.set({tutorial:false});this.pailleDialogue.close();this.renderPreferences();this.render();};
@@ -257,6 +258,7 @@ export class GameUI {
   }
   private renderCuisineRabbits(s: GameState): void {
     this.title.textContent = 'Choisis ton lapin';
+    this.content.append(node('p', cuisineQuotaText(s, this.now()), 'cuisine-quota'));
     if (!s.rabbits.length) this.content.append(node('p', 'Tu as besoin d’un lapin pour cuisiner.'));
     for (const rabbit of s.rabbits) {
       const card = this.card(SPECIES[rabbit.species].name, `Affection ${rabbit.affection} · ${rabbit.id}`, rabbit.species);
@@ -637,7 +639,7 @@ export class GameUI {
     this.button(this.content, 'Déplacer', () => this.beginDecorationPlacement(id));
     if (DECORATIONS[d.catalogId].rotates && d.location.kind === 'outside') this.button(this.content, 'Tourner de 90°', () => { this.beginDecorationPlacement(id); this.rotateDecoration(); }, null, true);
     this.button(this.content, 'Ranger dans l’inventaire', () => this.execute({type: 'placeDecoration', id, location: {kind: 'inventory'}}, 'Objet rangé, toujours possédé.', () => this.finishDecorationAction()), d.location.kind === 'inventory' ? 'Cet objet est déjà dans l’inventaire.' : null, true);
-    const resale = decorationResalePrice(d.catalogId);
+    const resale = ownedDecorationResalePrice(d);
     this.button(this.content, `Vendre · ${resale} pattes`, () => this.confirm(
       `Vendre ${DECORATIONS[d.catalogId].name} pour ${resale} pattes ?`,
       'Cet exemplaire sera retiré définitivement. Aucun remboursement en cœurs.',
@@ -745,12 +747,14 @@ export class GameUI {
     } else if (b.kind === 'farm') {
       if (b.order) {
         const recipe = {grass: b.order.grass ?? ORDERS[b.order.recipe].grass}; this.workState(b.order.endsAt > this.now() ? 'running' : 'ready', b.order.endsAt > this.now() ? `${recipe.grass} herbes en production. Récolte-les après le délai.` : `${recipe.grass} herbes disponibles. Touche Récolter.`); this.timer(b.order.startedAt, b.order.endsAt);
+        if (b.order.endsAt > this.now()) this.content.append(node('p', orderReadyText(b.order.endsAt), 'order-ready-time'));
         this.button(this.content, `Récolter ${recipe.grass} herbes`, () => this.execute({type: 'collectOrder', id}, value => `+ ${value} herbes`), b.order.endsAt > this.now() ? 'Production en cours.' : null);
         this.acceleration(s, id, 'order');
-      } else { this.workState('free', 'Choisis une production. Son prix est payé au lancement ; la récolte reste manuelle.'); for (const recipe of Object.keys(ORDERS) as OrderId[]) {
+      } else { this.workState('free', 'Choisis une production. Son prix est payé au lancement ; la récolte reste manuelle.'); const choices = node('div', '', 'farm-orders'); this.content.append(choices); for (const recipe of Object.keys(ORDERS) as OrderId[]) {
         const order = ORDERS[recipe], card = this.card(`${{small: 'Petite · 5 min', medium: 'Moyenne · 30 min', large: 'Longue · 4 h', night: 'Nuit · 10 h'}[recipe]}`, `${order.grass} herbes · une seule récolte`);
+        card.classList.add('farm-order');
         this.button(card, `Produire · ${order.cost} pattes`, () => this.execute({type: 'startOrder', id, recipe}, 'Production d’herbe lancée.'), moneyReason(s, order.cost));
-        this.complement(card, s, {type: 'startOrder', id, recipe}, `Produire ${order.grass} herbes`, 'Production d’herbe lancée.'); this.content.append(card);
+        this.complement(card, s, {type: 'startOrder', id, recipe}, `Produire ${order.grass} herbes`, 'Production d’herbe lancée.'); choices.append(card);
       } }
     } else if (b.kind === 'nest') this.renderNest(s, id);
     else if (b.kind === 'nursery') this.renderNursery(s);
@@ -1037,6 +1041,7 @@ export class GameUI {
       if (entry.known && entry.description) {
         const description = node('p'); description.textContent = entry.description; card.append(description);
       }
+      const hint = entry.known ? recipeHint(entry.species) : entry.hint; if (hint) card.append(node('p', hint, 'recipe-hint'));
       if (entry.known) this.button(card, 'Consulter l’espèce', () => this.open({kind: 'species', species: entry.species}), null, true);
       else card.append(node('p', 'À découvrir', 'small'));
       this.content.append(card);
@@ -1054,6 +1059,7 @@ export class GameUI {
     for (const recipe of recipeBook(s, this.now())) {
       const info = SPECIES[recipe.species];
       const card = this.card(info.name, `${typeNames(recipe.types)} · ${RARITY_NAMES[info.rarity]}`);
+      const hint = recipeHint(recipe.species); if (hint) card.append(node('p', hint, 'recipe-hint'));
       card.dataset.recipe = recipe.species; card.dataset.recipeKnown = String(recipe.known);
       card.querySelector('.card-heading')!.prepend(avatar(recipe.discovered ? recipe.species : undefined));
       if(recipe.levelAccess.locked)card.append(node('p',`Niveau ${recipe.levelAccess.requiredLevel} requis · exclu des nouvelles reproductions.`,'reason'));
@@ -1204,6 +1210,11 @@ export class GameUI {
             const parent = s.rabbits.find(r => r.affection < 2);
             this.button(card, parent ? 'Voir le parent à nourrir' : 'Voir les lapins', () => this.open(parent ? {kind:'rabbit',id:parent.id} : {kind:'shop',tab:'rabbits'}), null, true);
           }
+          else if (c.kind === 'level') card.append(node('p', 'Prends soin de tes lapins et explore la prairie.'));
+          else if (c.kind === 'nightOrder') shortcut(card, 'farm');
+          else if (c.kind === 'habitatLevel') shortcut(card, 'enclosure');
+          else if (c.kind === 'extensions') shortcut(card, 'extension');
+          else if (c.kind === 'ordinaryRares') shortcut(card, 'collection');
           else shortcut(card, c.kind === 'building' ? c.building : c.kind === 'event' ? c.event === 'collectOrder' ? 'farm' : c.event === 'breed' ? 'nest' : 'nursery' : c.kind === 'discoveries' || c.kind === 'rare' || c.kind === 'species' ? 'collection' : c.kind);
         }
         this.content.append(card);
@@ -1230,15 +1241,22 @@ export class GameUI {
   }
   private renderHearts(s: GameState): void {
     this.title.textContent = 'Les cœurs';
+    const giftInfo = heartGift(s, this.now());
     this.content.append(node('p', `${s.hearts} cœurs disponibles`, 'badge'),
       node('p', 'Termine un délai ou complète un paiement insuffisant. Chaque dépense demande ta confirmation. Les cœurs ne remplacent pas l’herbe.'),
       node('p', 'Tu peux développer ta prairie sans cœurs. Aucun achat réel ni publicité.'),
-      node('h3', 'Ton cadeau gratuit'), node('p', `${HEARTS.gift} cœurs à réclamer toutes les ${HEARTS.giftInterval / 3_600_000} heures. Une seule récompense attend, même après plusieurs jours.`));
-    const gift = this.button(this.content, `Réclamer · +${HEARTS.gift} cœurs gratuits`, () => this.execute({type: 'claimHearts'}, `+ ${HEARTS.gift} cœurs gratuits`));
+      node('h3', 'Ton cadeau gratuit'),
+      node('p', 'Deux cœurs toutes les 24 heures, jusqu’à trois cadeaux en réserve.'),
+      node('p', giftInfo.text, 'heart-gift-count'));
+    const gift = this.button(this.content, giftInfo.gifts ? `Réclamer · ${giftInfo.text}` : 'Réclamer', () => this.execute({type: 'claimHearts'}, value => `+ ${value} cœurs gratuits`));
     gift.className = 'heart-gift'; gift.dataset.giftAt = String(s.nextHeartGiftAt);
-    const wait = node('p', '', 'timer'); wait.dataset.end = String(s.nextHeartGiftAt); this.content.append(wait);
-    wait.id = `action-reason-${++this.reasonId}`; gift.setAttribute('aria-describedby', wait.id);
+    if (!giftInfo.gifts) {
+      this.content.append(node('p', 'Prochain cadeau dans :'));
+      const wait = node('p', '', 'timer'); wait.dataset.end = String(s.nextHeartGiftAt); this.content.append(wait);
+      wait.id = `action-reason-${++this.reasonId}`; gift.setAttribute('aria-describedby', wait.id);
+    }
   }
+
   private complement(host: HTMLElement, s: GameState, action: PattesCommand, title: string, success: string, after?: (value?: string | number) => void): void {
     const quote = quoteComplement(s, action, this.now()); if (!quote.ok) return;
     const placement = this.placement, species = this.view?.kind === 'buyRabbit' ? this.view.species : null;
@@ -1297,7 +1315,14 @@ export class GameUI {
       this.controller.refresh(); return;
     }
     for (const aid of this.content.querySelectorAll<HTMLElement>('[data-aid-end]')) aid.hidden=Number(aid.dataset.aidEnd)<=this.now();
-    for (const gift of this.content.querySelectorAll<HTMLButtonElement>('[data-gift-at]')) gift.disabled = this.now() < Number(gift.dataset.giftAt);
+    for (const gift of this.content.querySelectorAll<HTMLButtonElement>('[data-gift-at]')) {
+      if (!state) continue;
+      const info = heartGift(state, this.now());
+      gift.disabled = !info.gifts;
+      gift.textContent = info.gifts ? `Réclamer · ${info.text}` : 'Réclamer';
+      const count = this.content.querySelector('.heart-gift-count');
+      if (count) count.textContent = info.text;
+    }
     for (const host of this.content.querySelectorAll<HTMLElement>('[data-accelerate-end]')) {
       const remaining = Number(host.dataset.accelerateEnd) - this.now(); host.hidden = remaining <= 0;
       const button = host.querySelector('button')!;

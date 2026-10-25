@@ -10,12 +10,14 @@ export type CuisineRabbit = Readonly<Pick<Rabbit, 'id' | 'species'>>;
 /** Stable activity layer, deliberately outside GameUI's rebuilt panel content. */
 export function mountCuisineActivity(background: HTMLElement, options: {
   onRecipeCompleted?: (result: RecipeCompletion) => string | void;
+  quotaText?: () => string;
   onExit?: () => void;
 } = {}) {
   const dialog = document.createElement('dialog'); dialog.className = 'cuisine-activity';
   dialog.setAttribute('aria-label', 'Cuisine');
   const controls = document.createElement('div'); controls.className = 'cuisine-activity-controls';
   const companion = document.createElement('div'); companion.className = 'cuisine-companion'; companion.hidden = true;
+  const quota = document.createElement('p'); quota.className = 'cuisine-quota'; quota.setAttribute('aria-live', 'polite'); controls.append(quota);
   const exit = document.createElement('button'); exit.type = 'button'; exit.dataset.cuisineExit = '';
   exit.textContent = 'Quitter Cuisine'; controls.append(companion, exit);
   const host = document.createElement('div'); host.className = 'cuisine-activity-host';
@@ -100,10 +102,12 @@ export function mountCuisineActivity(background: HTMLElement, options: {
         const name = document.createElement('span'); name.textContent = SPECIES[rabbit.species].name;
         companion.replaceChildren(art, name); companion.hidden = false;
         react('idle');
+        quota.textContent = options.quotaText?.() ?? '';
         dialog.showModal();
         activity = mountKitchen(host, {onRecipeCompleted: result => {
           taste(result.recipeId);
           const message = options.onRecipeCompleted?.(result);
+          quota.textContent = options.quotaText?.() ?? '';
           if (message && activity) {
             showRewards(message);
             const card = activity.root.querySelector('#result-screen .overlay-card')!;

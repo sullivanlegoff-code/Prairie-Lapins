@@ -381,11 +381,13 @@ describe('Cuisine tasting celebration', () => {
   };
   it('shows the pay actually earned: salad full for the five slots, then the singular tip', () => {
     const k = setup(); k.open(); const a = k.activity(); const shown: string[] = [];
+    expect(document.querySelector('.cuisine-activity .cuisine-quota')?.textContent).toContain('Encore 5');
     a.root.querySelector<HTMLButtonElement>('#recipe-salad')!.click();
     for (let run = 1; run <= 6; run++) {
       if (run > 1) a.root.querySelector<HTMLButtonElement>('#recipe-replay')!.click();
       finishSalad(a.engine); a.refresh(); a.refresh();
       shown.push(a.root.querySelector('.cuisine-reward-feedback')!.textContent!);
+      expect(document.querySelector('.cuisine-activity .cuisine-quota')?.textContent).toContain(run < 5 ? `Encore ${5-run}` : 'pourboire de 5 pattes et 1 herbe');
     }
     const herbs = a.root.querySelector<HTMLElement>('.cuisine-reward-feedback [data-kind=herbs]');
     expect(herbs?.textContent).toContain('+1 herbe'); expect(herbs?.textContent).not.toContain('herbes');

@@ -2,8 +2,8 @@
   "calendarMilestones": {
     "5": 1,
     "10": 6,
-    "15": 23,
-    "20": 57
+    "15": 22,
+    "20": 55
   },
   "method": "Seed 20261025; real act/advance; 3 sessions/day at 08/13/20, <=45 commands and <=8 meals/session; two farms, long/long/night; collection-first parent pairs; no Cuisine or paid recipes; Hearts only for permanent habitat upgrades. Day snapshots just before next 08:00. Tutorial is the first session.",
   "curve": {
@@ -21,9 +21,9 @@
   },
   "milestones": {
     "5": 0.5,
-    "10": 5.208,
-    "15": 22,
-    "20": 56
+    "10": 5,
+    "15": 21,
+    "20": 54.5
   },
   "rows": [
     {
@@ -58,7 +58,24 @@
           "magicien",
           "dragon"
         ]
-      }
+      },
+      "decorationBudget": {
+        "models": 13,
+        "pattes": 24651
+      },
+      "mainMissionsClaimed": [
+        "snow-habitat",
+        "welcome-snow",
+        "first-meal",
+        "parents-ready",
+        "at-nest",
+        "first-farm",
+        "first-harvest",
+        "to-nursery",
+        "first-birth",
+        "varied-family",
+        "two-habitats"
+      ]
     },
     {
       "step": "1 j",
@@ -92,13 +109,31 @@
           "magicien",
           "dragon"
         ]
-      }
+      },
+      "decorationBudget": {
+        "models": 13,
+        "pattes": 24651
+      },
+      "mainMissionsClaimed": [
+        "snow-habitat",
+        "welcome-snow",
+        "first-meal",
+        "parents-ready",
+        "at-nest",
+        "first-farm",
+        "first-harvest",
+        "to-nursery",
+        "first-birth",
+        "varied-family",
+        "two-habitats",
+        "strong-bonds"
+      ]
     },
     {
       "step": "3 j",
-      "pattes": 649,
-      "grass": 2956,
-      "hearts": 21,
+      "pattes": 749,
+      "grass": 3016,
+      "hearts": 23,
       "level": 7,
       "species": 8,
       "speciesIds": [
@@ -128,13 +163,38 @@
           "magicien",
           "dragon"
         ]
-      }
+      },
+      "decorationBudget": {
+        "models": 12,
+        "pattes": 24650
+      },
+      "mainMissionsClaimed": [
+        "snow-habitat",
+        "welcome-snow",
+        "first-meal",
+        "parents-ready",
+        "at-nest",
+        "first-farm",
+        "first-harvest",
+        "to-nursery",
+        "first-birth",
+        "varied-family",
+        "two-habitats",
+        "strong-bonds",
+        "growing-collection",
+        "first-decoration",
+        "bigger-meadow",
+        "level-five",
+        "welcome-fire",
+        "night-order",
+        "seven-species"
+      ]
     },
     {
       "step": "7 j",
-      "pattes": 11482,
-      "grass": 8115,
-      "hearts": 40,
+      "pattes": 12632,
+      "grass": 7815,
+      "hearts": 58,
       "level": 10,
       "species": 16,
       "speciesIds": [
@@ -169,13 +229,45 @@
           "magicien",
           "dragon"
         ]
-      }
+      },
+      "decorationBudget": {
+        "models": 12,
+        "pattes": 24650
+      },
+      "mainMissionsClaimed": [
+        "snow-habitat",
+        "welcome-snow",
+        "first-meal",
+        "parents-ready",
+        "at-nest",
+        "first-farm",
+        "first-harvest",
+        "to-nursery",
+        "first-birth",
+        "varied-family",
+        "two-habitats",
+        "strong-bonds",
+        "growing-collection",
+        "first-decoration",
+        "bigger-meadow",
+        "level-five",
+        "welcome-fire",
+        "night-order",
+        "seven-species",
+        "ten-species",
+        "habitat-two",
+        "level-ten",
+        "welcome-metal",
+        "three-extensions",
+        "fifteen-species",
+        "welcome-flight"
+      ]
     },
     {
       "step": "20 j",
-      "pattes": 154360,
-      "grass": 24794,
-      "hearts": 96,
+      "pattes": 157956,
+      "grass": 24474,
+      "hearts": 104,
       "level": 14,
       "species": 23,
       "speciesIds": [
@@ -203,25 +295,57 @@
         "phoenix",
         "bouee"
       ],
-      "storedPattes": 7895,
+      "storedPattes": 8327,
       "remaining": {
         "commons": [],
         "extensions": 3,
         "extensionCost": 126000,
         "farms": 0,
         "kitchen": false,
-        "habitatUpgrades": 8,
+        "habitatUpgrades": 7,
         "paidRecipes": [
           "magicien",
           "dragon"
         ]
-      }
+      },
+      "decorationBudget": {
+        "models": 12,
+        "pattes": 24650
+      },
+      "mainMissionsClaimed": [
+        "snow-habitat",
+        "welcome-snow",
+        "first-meal",
+        "parents-ready",
+        "at-nest",
+        "first-farm",
+        "first-harvest",
+        "to-nursery",
+        "first-birth",
+        "varied-family",
+        "two-habitats",
+        "strong-bonds",
+        "growing-collection",
+        "first-decoration",
+        "bigger-meadow",
+        "level-five",
+        "welcome-fire",
+        "night-order",
+        "seven-species",
+        "ten-species",
+        "habitat-two",
+        "level-ten",
+        "welcome-metal",
+        "three-extensions",
+        "fifteen-species",
+        "welcome-flight"
+      ]
     },
     {
       "step": "50 j",
-      "pattes": 625972,
-      "grass": 64469,
-      "hearts": 211,
+      "pattes": 660912,
+      "grass": 64119,
+      "hearts": 234,
       "level": 19,
       "species": 24,
       "speciesIds": [
@@ -250,39 +374,73 @@
         "bouee",
         "magicien"
       ],
-      "storedPattes": 9335,
+      "storedPattes": 9863,
       "remaining": {
         "commons": [],
         "extensions": 1,
         "extensionCost": 60000,
         "farms": 0,
         "kitchen": false,
-        "habitatUpgrades": 7,
+        "habitatUpgrades": 6,
         "paidRecipes": [
           "dragon"
         ]
-      }
+      },
+      "decorationBudget": {
+        "models": 12,
+        "pattes": 24650
+      },
+      "mainMissionsClaimed": [
+        "snow-habitat",
+        "welcome-snow",
+        "first-meal",
+        "parents-ready",
+        "at-nest",
+        "first-farm",
+        "first-harvest",
+        "to-nursery",
+        "first-birth",
+        "varied-family",
+        "two-habitats",
+        "strong-bonds",
+        "growing-collection",
+        "first-decoration",
+        "bigger-meadow",
+        "level-five",
+        "welcome-fire",
+        "night-order",
+        "seven-species",
+        "ten-species",
+        "habitat-two",
+        "level-ten",
+        "welcome-metal",
+        "three-extensions",
+        "fifteen-species",
+        "welcome-flight",
+        "level-fifteen",
+        "all-ordinary-rares"
+      ]
     }
   ],
   "actions": {
     "buyBuilding": 11,
-    "claimMainMission": 16,
+    "claimMainMission": 28,
     "buyRabbit": 4,
-    "startOrder": 419,
+    "startOrder": 418,
     "initiationAid": 3,
-    "collectOrder": 417,
+    "collectOrder": 416,
     "feed": 1674,
     "breed": 210,
     "claimDailyMission": 210,
     "transferBirth": 209,
     "welcome": 208,
-    "collectIncome": 1729,
+    "collectIncome": 1730,
     "claimDailyBonus": 70,
     "claimHearts": 69,
     "buyDecoration": 1,
-    "upgradeHabitat": 5,
+    "upgradeHabitat": 6,
     "expand": 7,
-    "release": 176
+    "release": 174
   },
-  "totalActions": 5438
+  "totalActions": 5448
 }

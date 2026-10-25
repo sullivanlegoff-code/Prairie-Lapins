@@ -20,7 +20,7 @@ import {chooseBirth, breedingPool, nestForParent} from './breeding';
 import {recipePrice, recipePurchaseReason} from './recipes';
 import {advance, validTime} from './time';
 import {complementCost, quoteAcceleration} from './hearts';
-import {DECORATIONS, decorationResalePrice} from '../config/decorations';
+import {DECORATIONS, ownedDecorationResalePrice} from '../config/decorations';
 import {catalogDecorationPlacementReason, decorationPlacementReason, decorationsInCell, purchaseDecorationReason} from './decorations';
 
 /** The only purchases a heart complement may cover. Recipes are never among them. */
@@ -124,13 +124,13 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
           const placement = catalogDecorationPlacementReason(s, command.catalogId, command.location); requireRule(!placement, placement ?? 'INVALID_CHOICE');
         }
         pay(DECORATIONS[command.catalogId].price); value = id('decoration');
-        s.decorations.push({id: value, catalogId: command.catalogId, location: command.location ? structuredClone(command.location) : {kind: 'inventory'}, placementXpProcessed: !!command.location});
+        s.decorations.push({id: value, catalogId: command.catalogId, paidPrice: DECORATIONS[command.catalogId].price, location: command.location ? structuredClone(command.location) : {kind: 'inventory'}, placementXpProcessed: !!command.location});
         if (command.location) decorationXp(command.catalogId); break;
       }
       case 'sellDecoration': {
         const index = s.decorations.findIndex(d => d.id === command.id);
         requireRule(index >= 0, 'NOT_FOUND');
-        const amount = decorationResalePrice(s.decorations[index].catalogId);
+        const amount = ownedDecorationResalePrice(s.decorations[index]);
         credit('pattes', amount);
         s.decorations.splice(index, 1); value = amount; break;
       }
@@ -286,6 +286,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(Object.hasOwn(ORDERS, command.recipe), 'INVALID_CHOICE');
         const recipe = ORDERS[command.recipe];
         requireRule(Number.isSafeInteger(time + recipe.duration), 'INVALID_TIME'); pay(recipe.cost);
+        if (command.recipe === 'night') s.missions.nightOrderStarted = true;
         b.order = {recipe: command.recipe, startedAt: time, endsAt: time + recipe.duration, grass: recipe.grass, duration: recipe.duration};
         if (s.initiation && !s.initiation.order && !s.initiation.closed.includes('order') && command.recipe === 'small') s.initiation.order = jobKey(b,'order');
         break;

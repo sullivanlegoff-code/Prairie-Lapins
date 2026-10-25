@@ -7,7 +7,7 @@ import type {BuildingKind, OrderId, SpeciesId} from '../config/balance';
 import type {DecorationId} from '../config/decorations';
 
 export type DecorationLocation = {kind: 'inventory'} | {kind: 'outside'; x: number; y: number; rotation: 0 | 1};
-export interface OwnedDecoration {id: string; catalogId: DecorationId; location: DecorationLocation; /** Absent on historical exemplars: already processed. */ placementXpProcessed?: boolean}
+export interface OwnedDecoration {paidPrice?: number; id: string; catalogId: DecorationId; location: DecorationLocation; /** Absent on historical exemplars: already processed. */ placementXpProcessed?: boolean}
 
 export interface Birth {
   id: string;
@@ -36,6 +36,7 @@ export interface Nursery {capacity: NurseryCapacity; babies: NurseryBaby[]}
 /** `name` is the individual's own, set by the player; absent = unnamed. Never inherited, never tied to the species. */
 export interface Rabbit { id: string; species: SpeciesId; affection: number; enclosureId: string; name?: string }
 export interface MissionState {
+  nightOrderStarted?: boolean;
   events: Record<MainEvent, number>;
   completed: MainMissionId[]; claimed: MainMissionId[];
   daily: {referenceAt: number; cycleIndex: number; progress: Record<DailyMissionId, number>; claimed: DailyMissionId[]; bonusClaimed: boolean};
