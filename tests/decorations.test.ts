@@ -53,7 +53,7 @@ describe('decoration ownership and atomic commands', () => {
   it.each(DECORATION_IDS)('buys %s at its central pattes price without bonuses or birth RNG', id => {
     const s = rich(), rng = vi.fn(() => {throw Error('No birth draw');}), r = act(s, {type: 'buyDecoration', catalogId: id}, 0, rng);
     expect(r.ok).toBe(true); if (!r.ok) return;
-    expect(r.state).toEqual({...s, pattes: s.pattes - DECORATIONS[id].price, nextId: 5, decorations: [{id: 'decoration-4', catalogId: id, location: {kind: 'inventory'}, placementXpProcessed: false}]});
+    expect(r.state).toEqual({...s, pattes: s.pattes - DECORATIONS[id].price, nextId: 5, decorations: [{id: 'decoration-4', catalogId: id, paidPrice: DECORATIONS[id].price, location: {kind: 'inventory'}, placementXpProcessed: false}]});
     expect(r.value).toBe('decoration-4'); expect(rng).not.toHaveBeenCalled(); expect(s.decorations).toEqual([]);
     expect(decodeGame(encodeGame(r.state))).toEqual({ok: true, state: r.state});
   });
@@ -88,7 +88,7 @@ describe('decoration ownership and atomic commands', () => {
     const edge = {kind: 'outside', x: 31, y: 16, rotation: 0} as const;
     refused(s, {type: 'placeDecoration', id: 'decoration-4', location: edge}, 'INVALID_CELL');
     refused(s, {type: 'placeDecoration', id: 'decoration-4', location: {...edge,rotation:1}}, 'INVALID_CHOICE');
-    s = run(s, {type:'expand',parcelId:'east',expectedCost:500});s=pose(s,edge);
+    s = run(s, {type:'expand',parcelId:'east',expectedCost:600});s=pose(s,edge);
     expect(s.decorations[0].location).toEqual(edge);
     expect(decodeGame(encodeGame(s))).toEqual({ok:true,state:s});
   });
@@ -107,9 +107,9 @@ describe('decoration ownership and atomic commands', () => {
   });
   it('unlocks 12×8, 24×8 and 36×8 while keeping building coordinates unchanged', () => {
     let s = buy(rich());const level=requiredExtensionLevel(2);s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level}; refused(s, {type: 'placeDecoration', id: 'decoration-4', location: outside(12, 0)}, 'INVALID_CELL');
-    s = run(s, {type:'expand',parcelId:'east',expectedCost:500}); s = pose(s, outside(23, 7));
+    s = run(s, {type:'expand',parcelId:'east',expectedCost:600}); s = pose(s, outside(23, 7));
     refused(s, {type: 'placeDecoration', id: 'decoration-4', location: outside(24, 0)}, 'INVALID_CELL');
-    s = run(s, {type:'expand',parcelId:'west',expectedCost:1000}); s = pose(s, outside(35, 7)); expect(s.buildings[0]).toMatchObject({x: 18, y: 20});
+    s = run(s, {type:'expand',parcelId:'west',expectedCost:1800}); s = pose(s, outside(35, 7)); expect(s.buildings[0]).toMatchObject({x: 18, y: 20});
   });
   it('leaves income, affection, gifts, missions and birth RNG behavior unchanged', () => {
     let plain = rich(); plain.grass = 100; plain = run(plain, {type: 'feed', id: 'rabbit-2'}); plain = run(plain, {type: 'feed', id: 'rabbit-3'});
@@ -132,7 +132,7 @@ describe('saves and four-route boundaries', () => {
     expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: s});
     if (id === 'decoratedHabitat' || id === 'decorationDense') expect(s.rabbits.filter(r => r.enclosureId === 'building-1')).toHaveLength(7);
     const m = memory(encodeGame(s)), c = new GameController(m.storage, () => 0), exported = c.exportGame();
-    if (!exported.ok) throw Error(exported.reason); expect(JSON.parse(exported.json).version).toBe(16);
+    if (!exported.ok) throw Error(exported.reason); expect(JSON.parse(exported.json).version).toBe(17);
     expect(c.restart(true).ok).toBe(true); const p = c.prepareImport(exported.json); if (!p.ok) throw Error(p.reason);
     expect(c.confirmImport(p.token, true).ok).toBe(true); expect(new GameController(m.storage, () => 0).getSnapshot().state).toEqual(s);
   }, 20000);
@@ -191,7 +191,7 @@ describe('atomic decoration resale', () => {
     const s = buy(rich(), 'large-bookcase');
     for (const id of ['missing', 'building-1', 'rabbit-2']) refused(s, {type: 'sellDecoration', id}, 'NOT_FOUND');
     refused(s, {type: 'payWithHearts', action: {type: 'sellDecoration', id: 'decoration-4'}, maxHearts: 99, maxPattes: 99} as unknown as Command, 'INVALID_CHOICE');
-    s.pattes = Number.MAX_SAFE_INTEGER - 199;
+    s.pattes = Number.MAX_SAFE_INTEGER - (decorationResalePrice('large-bookcase') - 1);
     refused(s, {type: 'sellDecoration', id: 'decoration-4'}, 'RESOURCE_LIMIT');
     s.pattes--; expect(run(s, {type: 'sellDecoration', id: 'decoration-4'}).pattes).toBe(Number.MAX_SAFE_INTEGER);
   });
@@ -200,7 +200,7 @@ describe('atomic decoration resale', () => {
     m.writes.length = 0;
     expect(c.perform({type: 'sellDecoration', id: 'decoration-4'}).ok).toBe(true);
     const result = c.getSnapshot().state!;
-    expect(result.pattes).toBe(s.pattes + 200); expect(result.decorations).toEqual([]);
+    expect(result.pattes).toBe(s.pattes + decorationResalePrice('large-bookcase')); expect(result.decorations).toEqual([]);
     expect(m.writes).toEqual([SAVE_KEY]);
     expect(c.perform({type: 'sellDecoration', id: 'decoration-4'}).ok).toBe(false);
     expect(m.writes).toEqual([SAVE_KEY]); expect(c.getSnapshot().state).toEqual(result);
@@ -219,7 +219,7 @@ describe('atomic decoration resale', () => {
     m.fail.key = ''; spy?.mockRestore(); m.values.set(SAVE_KEY, raw);
     expect(c.retrySave()).toEqual({ok: true}); expect(c.getSnapshot().state).toEqual(s);
     expect(c.perform({type: 'sellDecoration', id: 'decoration-4'}).ok).toBe(true);
-    expect(c.getSnapshot().state!.pattes).toBe(s.pattes + 200);
-    expect(c.retrySave()).toEqual({ok: true}); expect(c.getSnapshot().state!.pattes).toBe(s.pattes + 200);
+    expect(c.getSnapshot().state!.pattes).toBe(s.pattes + decorationResalePrice('large-bookcase'));
+    expect(c.retrySave()).toEqual({ok: true}); expect(c.getSnapshot().state!.pattes).toBe(s.pattes + decorationResalePrice('large-bookcase'));
   });
 });

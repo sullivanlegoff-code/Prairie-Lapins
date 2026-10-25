@@ -85,7 +85,7 @@ describe('recipe purchase buttons', () => {
 describe('recipe purchase flow', () => {
   it('confirms, debits once on a rapid double press, reveals the card and updates the nest without reload', () => {
     const {ui, controller, data} = setup(shop());
-    expect(nestOdds(ui, 'Lapin Paille', 'Lapin Feu')).toEqual(['Lapin Paille · paille · Commun : 2/7 (≈ 28,57 %)', 'Lapin Feu · feu · Commun : 2/7 (≈ 28,57 %)', 'Résultats inconnus : 3/7 (≈ 42,86 %)']);
+    expect(nestOdds(ui, 'Lapin Paille', 'Lapin Feu')).toEqual(["Lapin Paille · paille · Commun : 20 %","Lapin Feu · feu · Commun : 20 %","Résultats inconnus : 60 %"]);
     const before = state(controller); ui.open({kind: 'shop', tab: 'recipes'});
     buy('bouee')!.click(); buy('bouee')!.click();
     expect(dialog().open).toBe(true); expect(dialog().querySelector('h2')!.textContent).toBe('Acheter la recette : Lapin en Bouée ?');
@@ -99,7 +99,7 @@ describe('recipe purchase flow', () => {
     expect(card('bouee').textContent).toContain('Affection 4 minimum pour chacun des deux parents.');
     expect(card('bouee').textContent).toContain('paire(s) possédée(s) compatible(s)');
     const saved = decodeGame(data.get(SAVE_KEY)!); expect(saved.ok && saved.state.recipeBook).toEqual(['bouee']);
-    expect(nestOdds(ui, 'Lapin Paille', 'Lapin Feu')).toEqual(['Lapin Paille · paille · Commun : 2/7 (≈ 28,57 %)', 'Lapin Feu · feu · Commun : 2/7 (≈ 28,57 %)', 'Lapin en Bouée · paille + feu · Rare : 1/7 (≈ 14,29 %)', 'Résultats inconnus : 2/7 (≈ 28,57 %)']);
+    expect(nestOdds(ui, 'Lapin Paille', 'Lapin Feu')).toEqual(["Lapin Paille · paille · Commun : 20 %","Lapin Feu · feu · Commun : 20 %","Lapin en Bouée · paille + feu · Rare : 20 %","Résultats inconnus : 40 %"]);
     ui.open({kind: 'collection'}); [...panel().querySelectorAll('button')].find(b => b.textContent === 'Carnet de reproduction')!.click();
     expect([...card('bouee').querySelectorAll('button')].some(b => b.textContent === 'Préparer cette paire au nid')).toBe(true);
   });

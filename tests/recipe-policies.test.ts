@@ -10,7 +10,7 @@ import {breedingDistributionWeights, breedingPool} from '../src/simulation/breed
 it('keeps the independent six prices, no starting gift (Brumelin is gone) and ordered four guarantee entries', () => {
   expect(RECIPE_PRICES).toEqual({bouee:150,'feu-glace':180,lunettes:220,perroquet:250,magicien:450,dragon:900});
   expect(GIFTED_RECIPES).toEqual([]);
-  expect(GUARANTEE_SPECIES).toEqual(['lunettes','perroquet','feu-glace','bouee']);
+  expect(GUARANTEE_SPECIES).toEqual(['lunettes','perroquet','feu-glace','bouee',...SPECIES_IDS.slice(11)]);
   expect(createCentreStartGame(0).recipeBook).toEqual([]);
 });
 it('derives policies from isolated sources; absence/false grant no policy, zero is a valid sale price', () => {
@@ -34,7 +34,7 @@ it('keeps policy fields out of every compatibility recipe, including special pro
 it('does not let knowledge policy affect any pair, including historical low affection and a pending guarantee', () => {
   const originals=SPECIES_IDS.map(id=>[id,SPECIES[id].acquisition] as const);
   const distributions=()=>SPECIES_IDS.flatMap(a=>SPECIES_IDS.flatMap(b=>[1,4,10].map(affection=>breedingDistributionWeights(a,b,affection,affection))));
-  const before=distributions(),s=createCentreStartGame(0);s.pityFailures=9;
+  const before=distributions(),s=createCentreStartGame(0);s.pityFailures=7;
   const guaranteed=breedingPool(s,'paille','neige',2,2);
   try {
     for(const id of SPECIES_IDS) SPECIES[id].acquisition=SPECIES[id].acquisition.map(source=>source.kind==='recipe'?{...source,knowledgePrice:12345,giftedAtStart:false}:source);

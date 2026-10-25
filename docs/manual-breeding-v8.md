@@ -1,3 +1,5 @@
+> Historique : ce document décrit un départ ou un barème antérieur à v17, notamment les parcours `previousStart`. Référence courante : [économie v17](game-design.md) et [progression](player-progression.md).
+
 # Reproduction manuelle v8
 
 Révision applicative : `fc882e3ee4654d5b23a4f3e14318d9ff1147e9b8` · [PR nº 10](https://github.com/sullivanlegoff-code/Project-L/pull/10).

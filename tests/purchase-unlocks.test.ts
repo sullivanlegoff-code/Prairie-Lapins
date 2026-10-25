@@ -1,3 +1,4 @@
+// HISTORICAL: previousStart reproduces the retired centre-start layout; current economy rules apply.
 import {previousStart as oldGame} from './regression-start';
 import {describe,it,expect} from 'vitest';
 import {advance,decodeGame,encodeGame,act,createGame} from '../src/simulation';
@@ -29,7 +30,7 @@ describe('old purchase milestones are evidence only at the one-time transition',
  it('new missions keep XP, claims and monetary rewards, without generating mission-based rights',()=>{
   let s=createGame(0);s.discovered=[...SPECIES_IDS];s=advance(s,0);const wallet=s.pattes;
   const r=act(s,{type:'claimMainMission',id:'seven-species'},0);expect(r.ok).toBe(true);if(!r.ok)return;s=r.state;
-  expect(s.pattes).toBe(wallet);expect(s.progression.totalXp).toBe(20);expect(s.levelAccessTransition?.rights).toEqual([]);
+  expect(s.pattes).toBe(wallet);expect(s.progression.totalXp).toBe(40);expect(s.levelAccessTransition?.rights).toEqual([]);
   expect(hasPurchaseUnlock(s,'volant')).toBe(false);expect(reload(s).missions.claimed).toContain('seven-species');
   expect(act(s,{type:'claimMainMission',id:'seven-species'},0)).toMatchObject({ok:false,reason:'ALREADY_CLAIMED'});
  });

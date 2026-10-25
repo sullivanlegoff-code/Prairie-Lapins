@@ -45,7 +45,8 @@ export function parcelAt(x:number,y:number,geometry:IslandGeometry=ISLAND): Parc
  return PARCEL_IDS.find(id=>{const p=parcels[id];return x>=p.x&&x<p.x+parcel&&y>=p.y&&y<p.y+parcel})!;
 }
 export function acquiredCell(s:LandState,x:number,y:number,geometry:IslandGeometry=ISLAND):boolean {const id=parcelAt(x,y,geometry);return id!==null&&s.acquiredParcels.includes(id)}
-export const extensionPrice=(s:LandState)=>s.acquiredParcels.length*500;
+export const EXTENSION_PRICES = [600, 1800, 4500, 9000, 16000, 26000, 40000, 60000] as const;
+export const extensionPrice=(s:LandState)=>EXTENSION_PRICES[s.acquiredParcels.length-1] ?? 0;
 export function acquiredFootprint(s:LandState,x:number,y:number,width:number,height:number,geometry:IslandGeometry=ISLAND):boolean {
  if(![x,y,width,height].every(Number.isInteger)||width<1||height<1||x<0||y<0||x+width>geometry.mapFine||y+height>geometry.mapFine)return false;
  for(let row=y;row<y+height;row++)for(let col=x;col<x+width;col++)if(!acquiredCell(s,Math.floor(col/FINE_GRID),Math.floor(row/FINE_GRID),geometry))return false;

@@ -7,24 +7,12 @@ import {addXp,cumulativeLevelXp,foodXp,firstDecorationPlacementXp,missionClaimXp
   requiredDecorationLevel,requiredExtensionLevel,requiredHabitatLevel,requiredHabitatUpgradeLevel,requiredSpeciesLevel,validateProgressionConfig} from '../src/simulation/progression';
 import {HISTORICAL_LEVELS, NEW_RARES, STANDARD_RARE} from './rabbit-art-fixtures';
 function configure(patch:Partial<ProgressionConfig>={}):ProgressionConfig{return {...structuredClone(PROGRESSION),...patch};}
-describe('pure player levels, unused by the current game',()=>{
- it('starts at one, accepts zero neutrally, and never returns a reward or mutates configuration',()=>{
-  const c=configure(),before=structuredClone(c);
-  const initial={totalXp:0,level:1,xpInLevel:0,xpRequired:50,progress:0,maximum:false};
-  expect(progressionFromXp(0,c)).toEqual(initial);expect(addXp(0,0,c)).toEqual({progression:initial,crossedLevels:[]});
-  expect(c).toEqual(before);expect(PROGRESSION.rewards).toEqual({heartsPerLevel:1});expect(addXp(0,50,c)).not.toHaveProperty('hearts');
+describe('pure player progression v17',()=>{
+ it('starts at one and uses rounded configured transition costs at every boundary',()=>{
+  expect(progressionFromXp(0)).toMatchObject({level:1,xpInLevel:0,xpRequired:90});
+  for(let n=1;n<30;n++){expect(nextLevelCost(n)).toBe(Math.round(90*n**1.15));const t=cumulativeLevelXp(n+1);expect(progressionFromXp(t).level).toBe(n+1);expect(progressionFromXp(t-1).level).toBe(n);}
  });
- it('uses the rounded transition cost, with level 2 at 50 and level 3 at 202',()=>{
-  expect(nextLevelCost(1)).toBe(50);expect(nextLevelCost(2)).toBe(152);
-  expect(cumulativeLevelXp(1)).toBe(0);expect(cumulativeLevelXp(2)).toBe(50);expect(cumulativeLevelXp(3)).toBe(202);
-  for(const [xp,level,inLevel] of [[49,1,49],[50,2,0],[51,2,1],[201,2,151],[202,3,0],[203,3,1]]){
-   const p=progressionFromXp(xp);expect([p.level,p.xpInLevel]).toEqual([level,inLevel]);expect(p.totalXp).toBe(xp);expect(p.progress).toBe(inLevel/p.xpRequired!);
-  }
- });
- it('crosses several levels in order and does not repeat an already reached one',()=>{
-  const r=addXp(49,902);expect(r.progression).toMatchObject({totalXp:951,level:5,xpInLevel:0});expect(r.crossedLevels).toEqual([2,3,4,5]);
-  expect(addXp(951,0).crossedLevels).toEqual([]);expect(addXp(50,152).crossedLevels).toEqual([3]);
- });
+ it('crosses several levels exactly once',()=>{const t=cumulativeLevelXp(5),r=addXp(89,t-89);expect(r.progression).toMatchObject({totalXp:t,level:5,xpInLevel:0});expect(r.crossedLevels).toEqual([2,3,4,5]);expect(addXp(t,0).crossedLevels).toEqual([]);});
  it('caps the level and bar, keeps surplus, and recalculates after raising the maximum',()=>{
   const raised=configure({curve:{...PROGRESSION.curve,maximumLevel:40}}),xp=cumulativeLevelXp(31,raised);
   const capped=progressionFromXp(xp);expect(capped).toMatchObject({totalXp:xp,level:30,maximum:true,progress:1,xpRequired:null});
@@ -62,11 +50,11 @@ describe('pure player levels, unused by the current game',()=>{
   for(const rank of [0,9,1.5,NaN])expect(()=>requiredExtensionLevel(rank)).toThrow(RangeError);
  });
  it('holds the full requested gain schedule with ID exceptions and catalogue-derived decoration gains',()=>{
-  expect(PROGRESSION.xp.commonPurchase).toBe(20);expect(PROGRESSION.xp.construction).toEqual({specializedHabitat:30,universalHabitat:40,farm:20});
-  expect(PROGRESSION.xp.birth).toEqual({common:30,uncommon:45,rare:70,epic:110,legendary:180});expect(PROGRESSION.xp.breedingLaunch).toBe(5);
-  expect(foodXp(0)).toBe(0);expect(foodXp(2)).toBe(10);expect(foodXp(20)).toBe(100);
-  expect(DECORATION_IDS.map(id=>firstDecorationPlacementXp(id))).toEqual([2,2,3,5,3,5,16,13,20,40,15,7,50]);
-  expect(missionClaimXp('main','first-birth')).toBe(20);expect(missionClaimXp('daily','collect-grass')).toBe(10);expect(PROGRESSION.xp.claims.dailyBonus).toBe(0);
+  expect(PROGRESSION.xp.commonPurchase).toBe(10);expect(PROGRESSION.xp.construction).toEqual({specializedHabitat:30,universalHabitat:40,farm:20});
+  expect(PROGRESSION.xp.birth).toEqual({common:10,uncommon:45,rare:20,epic:110,legendary:180});expect(PROGRESSION.xp.breedingLaunch).toBe(5);
+  expect(foodXp(0)).toBe(5);expect(foodXp(2)).toBe(5);expect(foodXp(20)).toBe(5);
+  expect(DECORATION_IDS.map(id=>firstDecorationPlacementXp(id))).toEqual(DECORATION_IDS.map(()=>10));
+  expect(missionClaimXp('main','first-birth')).toBe(40);expect(missionClaimXp('daily','collect-grass')).toBe(50);expect(PROGRESSION.xp.claims.dailyBonus).toBe(0);
   const c=configure({xp:{...PROGRESSION.xp,claims:{...PROGRESSION.xp.claims,mainExceptions:{'welcome-snow':0},dailyExceptions:{'collect-grass':15}}}});
   expect(missionClaimXp('main','welcome-snow',c)).toBe(0);expect(missionClaimXp('daily','collect-grass',c)).toBe(15);
  });

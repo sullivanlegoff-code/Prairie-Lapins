@@ -45,11 +45,11 @@ describe('species catalogue and acquisition', () => {
   it('contains five base types, five shop commons and the expected reproduction recipes, without rainbow nor Terre', () => {
     expect(SPECIES_IDS).toHaveLength(EXPECTED_IDS.length); expect(SHOP_SPECIES).toHaveLength(5); expect(RECIPE_SPECIES).toHaveLength(EXPECTED_RECIPE_IDS.length);
     expect(new Set(SPECIES_IDS.flatMap(id => SPECIES[id].types))).toEqual(new Set(['paille', 'neige', 'feu', 'metal', 'vol']));
-    for (const id of SHOP_SPECIES) expect(SPECIES[id]).toMatchObject({price: 80, rarity: 'common'});
+    expect(SHOP_SPECIES.map(id=>SPECIES[id].price)).toEqual([80,80,180,350,600]);
   });
   it.each(['feu', 'belier-gris', 'volant'] as const)('purchases %s for 80 with immediate enclosure welcome and discovery', species => {
-    const s = run(createGame(0), {type: 'buyRabbit', species, enclosureId: 'building-1'});
-    expect(s).toMatchObject({pattes: 220, hearts: 12});
+    const initial=createGame(0);initial.pattes=2000;const s = run(initial, {type: 'buyRabbit', species, enclosureId: 'building-1'});
+    expect(s).toMatchObject({pattes: 2000-SPECIES[species].price!, hearts: 12});
     expect(s.rabbits[2]).toMatchObject({species, affection: 1, enclosureId: 'building-1'});
     expect(s.discovered).toContain(species);
     expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: s});
@@ -59,8 +59,8 @@ describe('species catalogue and acquisition', () => {
     expect(act(s, {type: 'buyRabbit', species, enclosureId: 'building-1'}, 0)).toEqual({ok: false, reason: 'INVALID_CHOICE', state: s});
   });
   it('keeps affection, income, building capacities, costs and established growth times', () => {
-    expect(BALANCE).toMatchObject({minAffection: 1, maxAffection: 20, enclosureCapacity: 3, enclosureCap: 600, breedingCost: 0, breedingDuration: 20 * MINUTE});
-    expect([rabbitIncome(1), rabbitIncome(20)]).toEqual([12, 50]);
+    expect(BALANCE).toMatchObject({minAffection: 1, maxAffection: 20, enclosureCapacity: 3, enclosureCap: 2400, breedingCost: 0, breedingDuration: 20 * MINUTE});
+    expect([rabbitIncome(1), rabbitIncome(20)]).toEqual([10, 29]);
     for (const id of SHOP_SPECIES) expect(growthDuration(id)).toBe(5 * MINUTE);
   });
 });
@@ -69,7 +69,7 @@ describe('exact breeding pools', () => {
   it('keeps historical weights and adds the approved Rares to matching unions', () => {
     for (const a of LEGACY_SPECIES_IDS) for (const b of LEGACY_SPECIES_IDS) {
       const key = [...new Set([...SPECIES[a].types, ...SPECIES[b].types])].sort().join(',');
-      expect(breedingWeights(a, b, 4, 20)).toEqual(key === 'neige,paille' ? {frisket:20,icy:20} : {...BREEDING_ODDS[key], ...(key.includes('paille') && key.includes('neige') ? {frisket:20, icy:20} : {}), ...(key.includes('paille') && key.includes('feu') ? {ardent:20,snk:20} : {})});
+      expect(breedingWeights(a, b, 4, 20)).toEqual(key === 'neige,paille' ? {frisket:30,icy:30} : {...BREEDING_ODDS[key], ...(key.includes('paille') && key.includes('neige') ? {frisket:30, icy:30} : {}), ...(key.includes('paille') && key.includes('feu') ? {ardent:30,snk:30} : {})});
       expect(breedingOdds(a, b, 4, 20)).toEqual(breedingOdds(a, b, 2, 2));
     }
   });
@@ -99,29 +99,29 @@ describe('exact breeding pools', () => {
       expect(Object.keys(actual).sort()).toEqual(Object.keys(weights).sort());
       for (const [id, w] of Object.entries(weights)) expect(actual[id]).toBeCloseTo(w * 100 / total, 10);
     };
-    const commons = (x: number, y: number) => ({...Object.fromEntries([a, b].map(id => [id, 40])), ...rareAdditions(elements, x, y)});
+    const commons = (x: number, y: number) => ({...Object.fromEntries([a, b].map(id => [id, 30])), ...rareAdditions(elements, x, y)});
     expectOdds(breedingOdds(a, b, 2, 2), commons(2, 2));
     expectOdds(breedingOdds(a, b, 4, 3), commons(4, 3));
-    expectOdds(breedingOdds(a, b, 4, 4), {...Object.fromEntries([a, b].map(id => [id, 40])), [rare]: 20, ...rareAdditions(elements, 4, 4)});
+    expectOdds(breedingOdds(a, b, 4, 4), {...Object.fromEntries([a, b].map(id => [id, 30])), [rare]: 30, ...rareAdditions(elements, 4, 4)});
     const low = run(couple(a, b, 2, 2), breed);
     expect(low.buildings.find(x => x.breeding)!.breeding!.birth.species).not.toBe(rare);
     expect(low.pityFailures).toBe(0);
   });
   it('normalizes a four-type pool while retaining eligible historical hybrids', () => {
-    const rares = rareAdditions(['metal', 'paille', 'feu', 'neige'], 4, 4), total = 220 + 20 * Object.keys(rares).length;
-    expect(breedingWeights('lunettes', 'feu-glace', 4, 4)).toEqual({paille: 40, neige: 40, feu: 40, 'belier-gris': 40, lunettes: 20, 'feu-glace': 20, bouee: 20, ...rares});
-    expect(breedingWeights('lunettes', 'feu-glace', 2, 4)).toEqual({paille: 40, neige: 40, feu: 40, 'belier-gris': 40, ...rares});
+    const rares = rareAdditions(['metal', 'paille', 'feu', 'neige'], 4, 4), total = 210 + 30 * Object.keys(rares).length;
+    expect(breedingWeights('lunettes', 'feu-glace', 4, 4)).toEqual({paille: 30, neige: 30, feu: 30, 'belier-gris': 30, lunettes: 30, 'feu-glace': 30, bouee: 30, ...rares});
+    expect(breedingWeights('lunettes', 'feu-glace', 2, 4)).toEqual({paille: 30, neige: 30, feu: 30, 'belier-gris': 30, ...rares});
     const odds = oddsView(knowEveryResult(createGame(0)), 'lunettes', 'feu-glace', 4, 4);
-    expect(odds.entries.filter(e => e.weight === 100 * 20 / total)).toHaveLength(3 + Object.keys(rares).length);
-    expect(odds.entries.find(e => e.description === 'feu + neige · Rare')?.probability).toBe(shareLabel(20, total));
+    expect(odds.entries.filter(e => e.weight === 100 * 30 / total)).toHaveLength(7 + Object.keys(rares).length);
+    expect(odds.entries.find(e => e.description === 'feu + neige · Rare')?.probability).toBe(shareLabel(30, total));
     expect(probabilityLabel(40, 180)).toBe('2/9 (≈ 22,22 %)');
   });
 });
 
 describe('extended guarantee and persisted rare births', () => {
   it.each(rares)('guarantees and reserves %s on the tenth eligible attempt, without discovering before welcome', (rare, a, b) => {
-    let s = couple(a, b);
-    for (let i = 0; i < 9; i++) {
+    let s = couple(a, b);s.discovered.push(...SPECIES_IDS.filter(id=>SPECIES[id].rarity==='rare'&&id!==rare));
+    for (let i = 0; i < 7; i++) {
       s = run(s, breed, s.lastSimulatedAt, 0);
       expect(s.pityFailures).toBe(i + 1);
       s = sendToNursery(s,s.lastSimulatedAt+20*MINUTE);
@@ -150,13 +150,13 @@ describe('extended guarantee and persisted rare births', () => {
     expect(welcomed.rabbits[2]).toMatchObject({id: birth.id, species: rare, affection: 1});
   });
   it('does not advance or consume a guarantee when rare recipes are excluded by affection', () => {
-    let s = couple('feu', 'neige', 4, 3); s.pityFailures = 9;
+    let s = couple('feu', 'neige', 4, 3); s.discovered.push('wat-wat','glassofeu');s.pityFailures = 7;
     s = run(s, breed);
-    expect(s.pityFailures).toBe(9); expect(s.buildings.find(b => b.breeding)!.breeding!.birth.guaranteed).toBe(false);
+    expect(s.pityFailures).toBe(7); expect(s.buildings.find(b => b.breeding)!.breeding!.birth.guaranteed).toBe(false);
     expect(pendingDiscoveries(s)).toEqual([]);
   });
   it('splits a theoretical pool of three undiscovered recipes equally after affection filtering', () => {
-    const s = createGame(0); s.pityFailures = 9;
+    const s = createGame(0); s.discovered.push(...SPECIES_IDS.slice(11));s.pityFailures = 7;
     const pool = breedingPool(s, 'lunettes', 'feu-glace', 4, 4);
     expect(pool.weights).toEqual({lunettes: 1, 'feu-glace': 1, bouee: 1}); expect(pool.total).toBe(3);
     expect([1/6, 3/6, 5/6].map(roll => chooseBirth(s, 'lunettes', 'feu-glace', roll, 4, 4).species)).toEqual(['lunettes', 'feu-glace', 'bouee']);
@@ -195,8 +195,8 @@ describe('catalogue, notebook, visuals and compatibility', () => {
     let recipe = recipeBook(s, 0).find(r => r.species === 'feu-glace')!;
     expect(recipe.pairs).toEqual([{parents: ['rabbit-2', 'rabbit-3'], feeding: ['rabbit-2'], busy: false, blocked:false, probability: '0 %', guaranteed: false, certain: false, possible: false}]);
     s.rabbits[0].affection = 4; recipe = recipeBook(s, 0).find(r => r.species === 'feu-glace')!;
-    expect(recipe.pairs[0]).toMatchObject({probability: shareLabel(20, 100 + 20 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length), guaranteed: false, possible: true});
-    s.pityFailures = 9; recipe = recipeBook(s, 0).find(r => r.species === 'feu-glace')!;
+    expect(recipe.pairs[0]).toMatchObject({probability: shareLabel(30, 90 + 30 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length), guaranteed: false, possible: true});
+    s.discovered.push('wat-wat','glassofeu');s.pityFailures = 7; recipe = recipeBook(s, 0).find(r => r.species === 'feu-glace')!;
     expect(recipe.pairs[0]).toMatchObject({probability: '100 %', guaranteed: true, certain: true});
     const busy = run(s, breed);
     expect(recipeBook(busy, 0).find(r => r.species === 'feu-glace')!.pairs[0]).toMatchObject({busy: true, possible: false});

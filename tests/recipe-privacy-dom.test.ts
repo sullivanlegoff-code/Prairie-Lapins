@@ -84,7 +84,7 @@ describe('notebook recipe privacy', () => {
 describe('nest odds privacy', () => {
   it('groups unknown results, hides the Dragon and keeps the launch available', () => {
     const {ui} = setup(couple(14)); nestWithParents(ui);
-    expect(odds()).toEqual(['Lapin Feu · feu · Commun : 49/150 (≈ 32,67 %)', 'Lapin Perroquet · vol + feu · Rare : 49/300 (≈ 16,33 %)', 'Résultats inconnus : 51 %']);
+    expect(odds()).toEqual(["Lapin Feu · feu · Commun : 24,5 %","Lapin Perroquet · vol + feu · Rare : 24,5 %","Résultats inconnus : 51 %"]);
     expect(breeding().textContent).toContain('Résultats possibles : Lapin Feu, Lapin Perroquet et des résultats inconnus.');
     for (const hidden of ['Dragon', 'Volant', 'Légendaire', 'Perroquet et Feu']) { expect(panel().textContent).not.toContain(hidden); expect(breeding().textContent).not.toContain(hidden); }
     expect(panel().textContent).toContain('Chaque recette possède ses propres conditions');

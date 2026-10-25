@@ -1,3 +1,5 @@
+> Historique : ce document décrit un départ ou un barème antérieur à v17, notamment les parcours `previousStart`. Référence courante : [économie v17](game-design.md) et [progression](player-progression.md).
+
 > Depuis l’étape 4 : [départ Paille seul, achats guidés Neige et budget](game-design.md#étape-4--départ-paille-seul). Le parcours décrit plus bas reste celui des parties créées auparavant, conservé sans récompense rétroactive.
 
 > Mise à jour : [aides d’initiation facultatives et première naissance](initiation-aids.md). Les délais normaux, le transfert manuel et les probabilités restent inchangés.

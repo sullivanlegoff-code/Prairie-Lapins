@@ -10,9 +10,9 @@ function run(s:GameState,c:Command){const r=act(s,c,s.lastSimulatedAt);if(!r.ok)
 function eligible(){const s=createCentreStartGame(0),level=progression.requiredDecorationLevel('birthday-candle');s.progression={totalXp:progression.cumulativeLevelXp(level),rewardedThroughLevel:level};return s;}
 function inventory(){return run(eligible(),{type:'buyDecoration',catalogId:'birthday-candle'}).state;}
 afterEach(()=>vi.restoreAllMocks());
-describe('per-exemplar first decoration pose XP',()=>{
+describe('per-model first decoration pose XP',()=>{
  it('buys and poses atomically, then repeated confirmations give no new gain',()=>{
-  const s=eligible(),r=run(s,{type:'buyDecoration',catalogId:'birthday-candle',location:outside});const d=r.state.decorations[0];expect(d.placementXpProcessed).toBe(true);expect(r.state.pattes).toBe(250);expect(r.state.progression.totalXp).toBe(s.progression.totalXp+progression.firstDecorationPlacementXp(d.catalogId));
+  const s=eligible(),r=run(s,{type:'buyDecoration',catalogId:'birthday-candle',location:outside});const d=r.state.decorations[0];expect(d.placementXpProcessed).toBe(true);expect(r.state.pattes).toBe(300);expect(r.state.progression.totalXp).toBe(s.progression.totalXp+progression.firstDecorationPlacementXp(d.catalogId));
   expect(run(r.state,{type:'placeDecoration',id:d.id,location:outside}).state.progression).toEqual(r.state.progression);
  });
  it('inventory purchase, export/import and reload retain unused explicit false until the first pose',()=>{
@@ -25,9 +25,9 @@ describe('per-exemplar first decoration pose XP',()=>{
   s=run(s,{type:'storeDecorationsInCell',x:5,y:7}).state;expect(s.decorations[0].location.kind).toBe('inventory');expect(s.decorations[0].placementXpProcessed).toBe(true);
   s=run(s,{type:'placeDecoration',id,location:outside}).state;s=run(s,{type:'placeDecoration',id,location:{kind:'inventory'}}).state;s=run(s,{type:'placeDecoration',id,location:outside}).state;expect(s.progression.totalXp).toBe(xp);
  });
- it('same catalogue, distinct exemplars: each first pose gains once; sale preserves XP and a new purchase has a new right',()=>{
-  let s=run(createCentreStartGame(0),{type:'buyDecoration',catalogId:'bush',location:outside}).state;s=run(s,{type:'buyDecoration',catalogId:'bush'}).state;const id=s.decorations[1].id;s=run(s,{type:'placeDecoration',id,location:{kind:'outside',x:20,y:28,rotation:0}}).state;const xp=2*progression.firstDecorationPlacementXp('bush');expect(s.progression.totalXp).toBe(xp);
-  s=run(s,{type:'sellDecoration',id}).state;expect(s.progression.totalXp).toBe(xp);s=run(s,{type:'buyDecoration',catalogId:'bush'}).state;const fresh=s.decorations.at(-1)!;expect(fresh.id).not.toBe(id);expect(fresh.placementXpProcessed).toBe(false);s=run(s,{type:'placeDecoration',id:fresh.id,location:{kind:'outside',x:20,y:28,rotation:0}}).state;expect(s.progression.totalXp).toBe(xp+progression.firstDecorationPlacementXp('bush'));
+ it('same catalogue, distinct exemplars: only the first model pose gains XP, including after resale',()=>{
+  let s=run(createCentreStartGame(0),{type:'buyDecoration',catalogId:'bush',location:outside}).state;s=run(s,{type:'buyDecoration',catalogId:'bush'}).state;const id=s.decorations[1].id;s=run(s,{type:'placeDecoration',id,location:{kind:'outside',x:20,y:28,rotation:0}}).state;const xp=progression.firstDecorationPlacementXp('bush');expect(s.progression.totalXp).toBe(xp);
+  s=run(s,{type:'sellDecoration',id}).state;expect(s.progression.totalXp).toBe(xp);s=run(s,{type:'buyDecoration',catalogId:'bush'}).state;const fresh=s.decorations.at(-1)!;expect(fresh.id).not.toBe(id);expect(fresh.placementXpProcessed).toBe(false);s=run(s,{type:'placeDecoration',id:fresh.id,location:{kind:'outside',x:20,y:28,rotation:0}}).state;expect(s.progression.totalXp).toBe(xp);
  });
  it.each(['inventory','outside'] as const)('historical %s with absent marker has no retroactive right',kind=>{
   const s=createCentreStartGame(0);s.decorations=[{id:'decoration-6',catalogId:'bush',location:kind==='inventory'?{kind}:outside}];s.nextId=7;
@@ -38,7 +38,7 @@ describe('per-exemplar first decoration pose XP',()=>{
   s.decorations[0].location=outside;expect(()=>encodeGame(s)).toThrow();
  });
  it.each(['collision','overflow','hearts'] as const)('%s refuses purchase/pose without payment or marker changes',reason=>{
-  for(const mode of ['buy','pose']){const s=mode==='pose'?inventory():createCentreStartGame(0);let location=outside;if(reason==='collision')location={kind:'outside',x:22,y:24,rotation:0};if(reason==='overflow')s.progression.totalXp=Number.MAX_SAFE_INTEGER;if(reason==='hearts'){s.progression.totalXp=49;s.progression.rewardedThroughLevel=1;s.hearts=Number.MAX_SAFE_INTEGER;}
+  for(const mode of ['buy','pose']){const s=mode==='pose'?inventory():createCentreStartGame(0);let location=outside;if(reason==='collision')location={kind:'outside',x:22,y:24,rotation:0};if(reason==='overflow')s.progression.totalXp=Number.MAX_SAFE_INTEGER;if(reason==='hearts'){s.progression.totalXp=89;s.progression.rewardedThroughLevel=1;s.hearts=Number.MAX_SAFE_INTEGER;}
   const command:Command=mode==='buy'?{type:'buyDecoration',catalogId:'bush',location}:{type:'placeDecoration',id:s.decorations[0].id,location};const before=structuredClone(s),r=act(s,command,0);expect(r.ok).toBe(false);expect(r.state).toEqual(before);expect(s).toEqual(before);}
  });
  it.each([false,true])('write failure with zeroGain=%s retains the unprocessed inventory object, then retries once',zero=>{

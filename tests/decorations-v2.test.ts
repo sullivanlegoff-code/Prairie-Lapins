@@ -9,10 +9,10 @@ import {SAVE_KEY} from '../src/persistence/storage';
 const expected = [
  ['dirt-path','Chemin en terre',1,1,1,1], ['bush','Buisson',20,1,1,1], ['tree','Arbre',30,2,2,1],
  ['hay-bale','Botte de foin',50,1,1,2], ['bunny-slippers','Chaussons lapins',30,1,1,3],
- ['birthday-candle','Bougie « 1 an »',50,2,2,5], ['small-bookcase','Petite bibliothèque',160,1,1,6],
- ['coconut-palm','Cocotier',130,2,2,8], ['otter-plush','Peluche de loutre géante',200,2,2,10],
- ['large-bookcase','Grande bibliothèque',400,2,1,12], ['hanukkah-menorah','Ménorah de Hanoucca',150,1,1,14],
- ['honey-pot','Pot de miel géant',70,2,2,4], ['robot-statue','Statue du robot noir et doré',500,2,2,22],
+ ['birthday-candle','Bougie « 1 an »',50,2,2,5], ['small-bookcase','Petite bibliothèque',600,1,1,6],
+ ['coconut-palm','Cocotier',800,2,2,8], ['otter-plush','Peluche de loutre géante',1500,2,2,10],
+ ['large-bookcase','Grande bibliothèque',4000,2,1,12], ['hanukkah-menorah','Ménorah de Hanoucca',2500,1,1,14],
+ ['honey-pot','Pot de miel géant',70,2,2,4], ['robot-statue','Statue du robot noir et doré',15000,2,2,22],
 ] as const;
 describe('approved painted decorations', () => {
  it('contains exactly the thirteen painted decorations', () => {
@@ -23,9 +23,9 @@ describe('approved painted decorations', () => {
   expect(DECORATIONS[id]).toMatchObject({name,price,width,height,level,rotates:false,area:'outside'});
   expect(requiredDecorationLevel(id)).toBe(level);
   expect(decorationResalePrice(id)).toBe(Math.floor(price/2));
-  const state=createCentreStartGame(0); state.pattes=10000; state.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level};
+  const state=createCentreStartGame(0); state.pattes=20000; state.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level};
   const bought=act(state,{type:'buyDecoration',catalogId:id},0);expect(bought.ok).toBe(true);if(!bought.ok)throw Error(bought.reason);
-  const sold=act(bought.state,{type:'sellDecoration',id:bought.state.decorations[0].id},0);expect(sold.ok).toBe(true);expect(sold.state.pattes).toBe(10000-price+Math.floor(price/2));
+  const sold=act(bought.state,{type:'sellDecoration',id:bought.state.decorations[0].id},0);expect(sold.ok).toBe(true);expect(sold.state.pattes).toBe(20000-price+Math.floor(price/2));
  });
  it('cleans retired placed and inventory copies in v16 without changing any other field, and round-trips stably', () => {
   const s=createCentreStartGame(0);
@@ -41,7 +41,7 @@ describe('approved painted decorations', () => {
   const expectedState={...baseline.state,decorations:raw.decorations.slice(-2)};
   const decoded=decodeGame(JSON.stringify(raw));
   expect(decoded).toEqual({ok:true,state:expectedState});
-  expect(expectedState.version).toBe(16);
+  expect(expectedState.version).toBe(17);
   if(!decoded.ok)throw Error(decoded.reason);
   expect(decodeGame(encodeGame(decoded.state))).toEqual(decoded);
   const data=new Map([[SAVE_KEY,JSON.stringify(raw)]]);

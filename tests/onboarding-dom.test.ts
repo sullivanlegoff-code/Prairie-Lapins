@@ -1,3 +1,4 @@
+// HISTORICAL: previousStart reproduces the retired centre-start layout; current economy rules apply.
 // @vitest-environment happy-dom
 import {afterEach, beforeEach, expect, it, vi} from 'vitest';
 import html from '../index.html?raw';
@@ -67,20 +68,20 @@ function real() {
 it.each([.1,.65])('guides every real action, roll=%s, with reloads and no controller shortcuts', roll => {
   const {state,ui,prefs,scene,controller} = setup(createGame(0),false,roll); introduction();
   const checkpoints: ReturnType<typeof state>[]=[]; const checkpoint=()=>checkpoints.push(state());
-  expect([state().pattes,state().grass]).toEqual([300,0]);
+  expect([state().pattes,state().grass]).toEqual([350,0]);
   document.getElementById('open-collection')!.click(); expect(content().textContent).toContain('Jardin enneigé');
   document.getElementById('recenter-view')!.click();expect(scene.recenter).toHaveBeenCalled();
   ui.select({kind:'rabbit',id:'rabbit-2'});document.getElementById('open-missions')!.click();
   real(); expect(content().textContent).toContain('Emplacement valide');
   const firstGhost=vi.mocked(scene.setPlacement).mock.calls.at(-1)![0]!;expect(firstGhost.cell).toEqual({x:0,y:32});
-  real();expect(state().pattes).toBe(100);checkpoint();
+  real();expect(state().pattes).toBe(150);checkpoint();
   const snow = state().buildings.find(b=>b.habitat?.type==='neige')!;
   expect(snow.x).toBeGreaterThanOrEqual(0);
-  help();real();real();real(); expect(state().pattes).toBe(20);checkpoint();
-  help();real();expect(state().pattes).toBe(70);checkpoint();
+  help();real();real();real(); expect(state().pattes).toBe(70);checkpoint();
+  help();real();expect(state().pattes).toBe(120);checkpoint();
   help();real();expect(content().textContent).toContain('Aucune case sélectionnée');expect(vi.mocked(scene.setPlacement).mock.calls.at(-1)![0]!.cell).toBeNull();
-  ui.select({kind:'fineCell',x:6,y:36});real();expect(state().pattes).toBe(10);
-  help();real();expect(state().pattes).toBe(0);checkpoint();
+  ui.select({kind:'fineCell',x:6,y:36});real();expect(state().pattes).toBe(60);
+  help();real();expect(state().pattes).toBe(50);checkpoint();
   help();real();help();real();expect(state().grass).toBe(20);checkpoint();
   help();real();expect(state().grass).toBe(18);help();real();expect(state().grass).toBe(16);checkpoint();
   help();real();
@@ -90,7 +91,7 @@ it.each([.1,.65])('guides every real action, roll=%s, with reloads and no contro
   ui.select({kind:'birth',id:'building-4'});expect(scene.focusBuilding).toHaveBeenCalledWith('building-5');
   checkpoint();help();real();checkpoint();help();real();
   expect(state().missions.events.welcome).toBe(1);expect(state().rabbits.at(-1)!.species).toBe(roll===.1?'frisket':'icy');
-  expect(state().initiation!.used).toEqual(['order','breeding','growth']);expect(state().hearts).toBe(13);
+  expect(state().initiation!.used).toEqual(['order','breeding','growth']);expect(state().hearts).toBe(14);
   help();expect(prefs.value.tutorialDone).toBe(true);expect(document.getElementById('game-panel')!.dataset.view).toBe('missions');
   document.getElementById('open-collection')!.click();expect(document.getElementById('game-panel')!.dataset.view).toBe('collection');
   ui.dispose();controller.dispose();

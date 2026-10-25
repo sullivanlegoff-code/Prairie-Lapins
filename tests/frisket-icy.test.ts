@@ -28,29 +28,29 @@ describe('approved Frisket and Icy content',()=>{
     expect(validateSpeciesEntries(SPECIES_ENTRIES)).toEqual([]);
     for(const [id,types] of [['frisket',['neige','paille']],['icy',['paille','neige']]] as const){
       expect(SPECIES[id]).toMatchObject({name:id==='icy'?'Icy':'Frisket',description:descriptions[id],types,rarity:'rare',price:null,progression:{unlockLevel:1},recipe:{requiredTypes:['paille','neige'],minAffection:2}});
-      expect(SPECIES[id].acquisition).toEqual([{kind:'recipe',requiredTypes:['paille','neige'],minAffection:2}]);
-      expect(RECIPE_PRICES[id]).toBeUndefined();expect(GIFTED_RECIPES).not.toContain(id);expect(GUARANTEE_SPECIES).not.toContain(id);
-      expect(growthDuration(id)).toBe(30*MINUTE);expect(PROGRESSION.xp.birth[SPECIES[id].rarity]).toBe(70);
+      expect(SPECIES[id].acquisition).toEqual([{kind:'recipe',guaranteeEligible:true,requiredTypes:['paille','neige'],minAffection:2}]);
+      expect(RECIPE_PRICES[id]).toBeUndefined();expect(GIFTED_RECIPES).not.toContain(id);expect(GUARANTEE_SPECIES).toContain(id);
+      expect(growthDuration(id)).toBe(30*MINUTE);expect(PROGRESSION.xp.birth[SPECIES[id].rarity]).toBe(20);
       expect(SPECIES[id].art).not.toHaveProperty('coat');
       expect(act(parents(),{type:'buyRabbit',species:id,enclosureId:'building-1'},0)).toMatchObject({ok:false,reason:'INVALID_CHOICE'});
     }
   });
   it('uses the permanent Rare-only starting pool before the historical guarantee',()=>{
-    const s=parents();expect(breedingWeights('paille','neige',2,2)).toEqual({frisket:20,icy:20});
-    expect(breedingPool(s,'paille','neige',2,2)).toMatchObject({total:40,guaranteed:false,missing:[]});
-    s.pityFailures=9;expect(breedingPool(s,'paille','neige',2,2)).toMatchObject({weights:{frisket:20,icy:20},total:40,guaranteed:false});
+    const s=parents();expect(breedingWeights('paille','neige',2,2)).toEqual({frisket:30,icy:30});
+    expect(breedingPool(s,'paille','neige',2,2)).toMatchObject({total:60,guaranteed:false,missing:['frisket','icy']});
+    s.pityFailures=7;expect(breedingPool(s,'paille','neige',2,2)).toMatchObject({weights:{frisket:1,icy:1},total:2,guaranteed:true});
   });
   it.each(['frisket','icy'] as const)('%s matches either parent order and hybrid contributions, but not missing elements or affection',id=>{
     for(const [a,b] of [['paille','neige'],['frisket','paille'],['frisket','frisket'],['lunettes','feu-glace']] as const){
       expect(recipeMatches(id,a,b)).toBe(true);expect(recipeMatches(id,b,a)).toBe(true);
-      expect(breedingWeights(a,b,2,2)[id]).toBe(20);expect(breedingWeights(b,a,2,2)[id]).toBe(20);
+      expect(breedingWeights(a,b,2,2)[id]).toBe(30);expect(breedingWeights(b,a,2,2)[id]).toBe(30);
       expect(breedingWeights(a,b,1,2)[id]).toBeUndefined();expect(breedingWeights(a,b,2,1)[id]).toBeUndefined();
     }
     for(const [a,b]of [['paille','feu'],['neige','volant'],['feu','feu']] as const){expect(recipeMatches(id,a,b)).toBe(false);expect(breedingWeights(a,b,20,20)[id]).toBeUndefined();}
   });
   it.each([['frisket',.25],['icy',.95]] as const)('%s survives breeding, transfer, Rare growth, compatible welcome and reload at every stage', (id,roll)=>{
     const rng=vi.fn(()=>roll);let s=run(parents(),{type:'breed',parents:['rabbit-2','rabbit-3']},0,rng);const birth=s.buildings.find(b=>b.kind==='nest')!.breeding!.birth;
-    expect(birth).toEqual({id:birth.id,species:id,guaranteed:false,reservedDiscovery:false});expect(s.pityFailures).toBe(0);s=reload(s);
+    expect(birth).toEqual({id:birth.id,species:id,guaranteed:false,reservedDiscovery:true});expect(s.pityFailures).toBe(0);s=reload(s);
     expect(JSON.stringify(collectionView(s))).not.toContain(descriptions[id]);
     s=reload(sendToNursery(advance(s,20*MINUTE)));expect(stateBaby(s)).toEqual({slot:0,birth,startedAt:20*MINUTE,readyAt:50*MINUTE});
     expect(nurseryView(s,20*MINUTE).babies).toEqual([{slot:0,birthId:birth.id,stage:'growing',startedAt:20*MINUTE,readyAt:50*MINUTE}]);
@@ -59,7 +59,7 @@ describe('approved Frisket and Icy content',()=>{
     home.habitat!.type='universal';const xp=s.progression.totalXp;
     s=reload(run(s,{type:'welcome',enclosureId:home.id,birthId:birth.id},50*MINUTE,rng));
     expect(s.rabbits.at(-1)).toMatchObject({species:id,affection:1,enclosureId:home.id});expect(s.discovered).toContain(id);
-    expect(s.progression.totalXp-xp).toBe(70);expect(s.pityFailures).toBe(0);expect(rng).toHaveBeenCalledTimes(1);
+    expect(s.progression.totalXp-xp).toBe(270);expect(s.pityFailures).toBe(0);expect(rng).toHaveBeenCalledTimes(1);
     expect(collectionView(s).find(e=>e.known&&e.species===id)).toEqual({known:true,species:id,name:SPECIES[id].name,description:descriptions[id]});
   });
   it('does not invent descriptions for existing species or reveal descriptions from recipe knowledge alone',()=>{

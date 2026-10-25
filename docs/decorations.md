@@ -54,13 +54,13 @@ Paramètres : `src/config/decorations.ts`. Les images peintes sont partagées en
 | `hay-bale` | Botte de foin | 50 | 1 × 1 | 2 |
 | `bunny-slippers` | Chaussons lapins | 30 | 1 × 1 | 3 |
 | `birthday-candle` | Bougie « 1 an » | 50 | 2 × 2 | 5 |
-| `small-bookcase` | Petite bibliothèque | 160 | 1 × 1 | 6 |
-| `coconut-palm` | Cocotier | 130 | 2 × 2 | 8 |
-| `otter-plush` | Peluche de loutre géante | 200 | 2 × 2 | 10 |
-| `large-bookcase` | Grande bibliothèque | 400 | 2 × 1 | 12 |
-| `hanukkah-menorah` | Ménorah de Hanoucca | 150 | 1 × 1 | 14 |
+| `small-bookcase` | Petite bibliothèque | 600 | 1 × 1 | 6 |
+| `coconut-palm` | Cocotier | 800 | 2 × 2 | 8 |
+| `otter-plush` | Peluche de loutre géante | 1 500 | 2 × 2 | 10 |
+| `large-bookcase` | Grande bibliothèque | 4 000 | 2 × 1 | 12 |
+| `hanukkah-menorah` | Ménorah de Hanoucca | 2 500 | 1 × 1 | 14 |
 
-Objets esthétiques : aucun bonus, mission, revenu, affection ou changement des probabilités. Achats uniquement en pattes, jamais par complément en cœurs. Plusieurs exemplaires sont permis ; chaque achat possède son identifiant `decoration-N`. Vente d’un exemplaire placé ou en réserve : 50 % du prix d’achat en pattes, arrondi à l’entier inférieur, aucun remboursement en cœurs. Le taux est centralisé dans `DECORATION_RESALE_RATE`. Les bâtiments, habitats et lapins sont exclus. Déplacements et rangements gratuits. Hypothèse de protection des imports/appareils modestes : 512 exemplaires possédés maximum, objets rangés compris. Un refus ne détruit aucun objet.
+Objets esthétiques : aucun bonus, mission, revenu, affection ou changement des probabilités. Achats uniquement en pattes, jamais par complément en cœurs. Plusieurs exemplaires sont permis ; chaque achat possède son identifiant `decoration-N`. Vente d’un exemplaire placé ou en réserve : 50 % du prix d’achat en pattes, arrondi à l’entier inférieur, aucun remboursement en cœurs. Le taux est centralisé dans `DECORATION_RESALE_RATE`. Depuis la refonte économique v17, la revente ne dépasse jamais le prix payé, enregistré par exemplaire (`paidPrice`) ; un exemplaire plus ancien est plafonné à son prix d’avant la refonte. Les bâtiments, habitats et lapins sont exclus. Déplacements et rangements gratuits. Hypothèse de protection des imports/appareils modestes : 512 exemplaires possédés maximum, objets rangés compris. Un refus ne détruit aucun objet.
 
 ## Utilisation et gestes
 

@@ -7,7 +7,7 @@ import type {BuildingKind, OrderId, SpeciesId} from '../config/balance';
 import type {DecorationId} from '../config/decorations';
 
 export type DecorationLocation = {kind: 'inventory'} | {kind: 'outside'; x: number; y: number; rotation: 0 | 1};
-export interface OwnedDecoration {id: string; catalogId: DecorationId; location: DecorationLocation; /** Absent on historical exemplars: already processed. */ placementXpProcessed?: boolean}
+export interface OwnedDecoration {paidPrice?: number; id: string; catalogId: DecorationId; location: DecorationLocation; /** Absent on historical exemplars: already processed. */ placementXpProcessed?: boolean}
 
 export interface Birth {
   id: string;
@@ -23,7 +23,7 @@ export interface Building {
   habitat: {type: HabitatType; level: HabitatLevel} | null;
   /** Footprint actually acquired (enclosures only): 1 = 4 × 4, 2 = 6 × 5, 3 = 8 × 6 fine cells. Absent = 1, whatever the level. Anchored at x, y. */
   footprintTier?: HabitatLevel;
-  order: {recipe: OrderId; startedAt: number; endsAt: number} | null;
+  order: {recipe: OrderId; startedAt: number; endsAt: number; grass?: number; duration?: number} | null;
   breeding: {parents: [string, string]; startedAt: number; endsAt: number; birth: Birth} | null;
   /** Present exactly on the nursery. */
   nursery: Nursery | null;
@@ -36,6 +36,7 @@ export interface Nursery {capacity: NurseryCapacity; babies: NurseryBaby[]}
 /** `name` is the individual's own, set by the player; absent = unnamed. Never inherited, never tied to the species. */
 export interface Rabbit { id: string; species: SpeciesId; affection: number; enclosureId: string; name?: string }
 export interface MissionState {
+  nightOrderStarted?: boolean;
   events: Record<MainEvent, number>;
   completed: MainMissionId[]; claimed: MainMissionId[];
   daily: {referenceAt: number; cycleIndex: number; progress: Record<DailyMissionId, number>; claimed: DailyMissionId[]; bonusClaimed: boolean};
@@ -62,7 +63,8 @@ export interface GameState {
   startCourse?: 'paille-solo';
   purchaseUnlocks?: PurchaseUnlockId[];
   initiation?: Initiation;
-  version: 16; decorations: OwnedDecoration[]; missions: MissionState; lastSimulatedAt: number; nextId: number;
+  version: 17;
+  rewardedDecorationModels?: DecorationId[]; decorations: OwnedDecoration[]; missions: MissionState; lastSimulatedAt: number; nextId: number;
   hearts: number; nextHeartGiftAt: number;
   pattes: number; grass: number; acquiredParcels: ParcelId[];
   buildings: Building[]; rabbits: Rabbit[]; discovered: SpeciesId[];

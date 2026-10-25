@@ -50,7 +50,7 @@ export function validateProgressionConfig(c: ProgressionConfig = PROGRESSION): v
   integer((c.curve.maximumLevel - 1) * cost(1,c), 'Minimum cumulative XP');
   threshold(c.curve.maximumLevel, c); // Every cost > 0 and every cumulative sum safe: thresholds strictly increase.
   const x=c.xp, r=c.requirements;
-  for (const amount of [c.rewards.heartsPerLevel, x.commonPurchase, x.construction.specializedHabitat, x.construction.universalHabitat, x.construction.farm, ...[...new Set(SPECIES_IDS.map(id=>SPECIES[id].rarity))].map(rarity=>x.birth[rarity]),
+  for (const amount of [c.rewards.heartsPerLevel, x.commonPurchase, x.discovery.common, x.discovery.rare, x.construction.specializedHabitat, x.construction.universalHabitat, x.construction.farm, ...[...new Set(SPECIES_IDS.map(id=>SPECIES[id].rarity))].map(rarity=>x.birth[rarity]),
     x.foodMultiplier, x.breedingLaunch, x.firstDecorationPlacement.minimum, x.claims.main, x.claims.daily, x.claims.dailyBonus]) integer(amount,'XP/reward amount');
   integer(x.foodMultiplier * BALANCE.maxAffection,'Maximum food XP');
   integer(x.firstDecorationPlacement.priceDivisor,'Decoration price divisor',1);
@@ -135,10 +135,10 @@ export function requiredExtensionLevel(purchaseRank:number,c:ProgressionConfig=P
   validateQueryConfig(c);integer(purchaseRank,'Extension purchase rank',1);if(purchaseRank>c.requirements.extensions.length)throw new RangeError('Extension rank out of range');return c.requirements.extensions[purchaseRank-1];
 }
 export function foodXp(affectionReached:number,c:ProgressionConfig=PROGRESSION):number {
-  validateQueryConfig(c);integer(affectionReached,'Reached affection');if(affectionReached>BALANCE.maxAffection)throw new RangeError('Affection exceeds existing maximum');return c.xp.foodMultiplier*affectionReached;
+  validateQueryConfig(c);integer(affectionReached,'Reached affection');if(affectionReached>BALANCE.maxAffection)throw new RangeError('Affection exceeds existing maximum');return c.xp.foodMultiplier;
 }
 export function firstDecorationPlacementXp(id:DecorationId,c:ProgressionConfig=PROGRESSION):number {
-  validateQueryConfig(c);if(!DECORATION_IDS.includes(id))throw new RangeError('Unknown decoration');return Math.max(c.xp.firstDecorationPlacement.minimum,Math.round(DECORATIONS[id].price/c.xp.firstDecorationPlacement.priceDivisor));
+  validateQueryConfig(c);if(!DECORATION_IDS.includes(id))throw new RangeError('Unknown decoration');return c.xp.firstDecorationPlacement.minimum;
 }
 export function missionClaimXp(kind:'main'|'daily',id:MainMissionId|DailyMissionId,c:ProgressionConfig=PROGRESSION):number {
   validateQueryConfig(c);const ids=kind==='main'?MAIN_MISSION_IDS:DAILY_MISSION_IDS;

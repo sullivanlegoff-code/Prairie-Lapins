@@ -111,7 +111,7 @@ export function scenarioState(id: ScenarioId, now: number): GameState {
   if(['parcelEdges','decorationDemo','decoratedHabitat','decorationDense'].includes(id)){const level=Math.max(...DECORATION_IDS.map(id=>requiredDecorationLevel(id)));s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level};}
   if(['fineBuildings','decorationDemo','decoratedHabitat','decorationDense'].includes(id)){const level=Math.max(requiredHabitatUpgradeLevel('universal',3),...DECORATION_IDS.map(id=>requiredDecorationLevel(id)));s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level};}
   s.purchaseUnlocks=['universal','feu','volant']; // Existing purpose-specific laboratory fixtures retain unrestricted purchase rights.
-  s.pattes = 500_000; s.grass = 1_000; s.hearts = 100;
+  s.pattes = 2_000_000; s.grass = 1_000; s.hearts = 100;
   const run = (command: Command) => {
     const result = act(s, command, now, () => .99);
     if (!result.ok) throw new Error(`Scenario action refused: ${result.reason}`);

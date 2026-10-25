@@ -20,7 +20,7 @@ import {chooseBirth, breedingPool, nestForParent} from './breeding';
 import {recipePrice, recipePurchaseReason} from './recipes';
 import {advance, validTime} from './time';
 import {complementCost, quoteAcceleration} from './hearts';
-import {DECORATIONS, decorationResalePrice} from '../config/decorations';
+import {DECORATIONS, ownedDecorationResalePrice} from '../config/decorations';
 import {catalogDecorationPlacementReason, decorationPlacementReason, decorationsInCell, purchaseDecorationReason} from './decorations';
 
 /** The only purchases a heart complement may cover. Recipes are never among them. */
@@ -83,6 +83,16 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
     requireRule(result.ok, result.ok ? 'INVALID_CHOICE' : result.reason);
     progressionGain = result.gain;
   };
+  const discover = (species: SpeciesId) => {
+    if (s.discovered.includes(species)) return 0;
+    s.discovered.push(species);
+    return SPECIES[species].rarity === 'common' ? PROGRESSION.xp.discovery.common : SPECIES[species].rarity === 'rare' ? PROGRESSION.xp.discovery.rare : 0;
+  };
+  const decorationXp = (catalogId: import('../config/decorations').DecorationId) => {
+    s.rewardedDecorationModels ??= [...new Set(state.decorations.filter(d => d.placementXpProcessed !== false).map(d => d.catalogId))];
+    if (s.rewardedDecorationModels.includes(catalogId)) return;
+    s.rewardedDecorationModels.push(catalogId); gainXp(firstDecorationPlacementXp(catalogId));
+  };
   try {
     switch (command.type) {
       case 'rewardCuisine': {
@@ -114,13 +124,13 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
           const placement = catalogDecorationPlacementReason(s, command.catalogId, command.location); requireRule(!placement, placement ?? 'INVALID_CHOICE');
         }
         pay(DECORATIONS[command.catalogId].price); value = id('decoration');
-        s.decorations.push({id: value, catalogId: command.catalogId, location: command.location ? structuredClone(command.location) : {kind: 'inventory'}, placementXpProcessed: !!command.location});
-        if (command.location) gainXp(firstDecorationPlacementXp(command.catalogId)); break;
+        s.decorations.push({id: value, catalogId: command.catalogId, paidPrice: DECORATIONS[command.catalogId].price, location: command.location ? structuredClone(command.location) : {kind: 'inventory'}, placementXpProcessed: !!command.location});
+        if (command.location) decorationXp(command.catalogId); break;
       }
       case 'sellDecoration': {
         const index = s.decorations.findIndex(d => d.id === command.id);
         requireRule(index >= 0, 'NOT_FOUND');
-        const amount = decorationResalePrice(s.decorations[index].catalogId);
+        const amount = ownedDecorationResalePrice(s.decorations[index]);
         credit('pattes', amount);
         s.decorations.splice(index, 1); value = amount; break;
       }
@@ -129,7 +139,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         const owned = s.decorations.find(d => d.id === command.id)!;
         requireRule(owned.placementXpProcessed !== false || owned.location.kind === 'inventory', 'INVALID_CHOICE');
         if (owned.placementXpProcessed === false && command.location.kind === 'outside') {
-          gainXp(firstDecorationPlacementXp(owned.catalogId)); owned.placementXpProcessed = true;
+          decorationXp(owned.catalogId); owned.placementXpProcessed = true;
         }
         owned.location = structuredClone(command.location); break;
       }
@@ -162,7 +172,8 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       case 'claimHearts': {
         requireRule(time >= s.nextHeartGiftAt, 'NOT_READY');
         requireRule(Number.isSafeInteger(time + HEARTS.giftInterval), 'INVALID_TIME');
-        credit('hearts', HEARTS.gift); s.nextHeartGiftAt = time + HEARTS.giftInterval; value = HEARTS.gift; break;
+        const gifts = Math.min(HEARTS.maximumGifts, 1 + Math.floor((time - s.nextHeartGiftAt) / HEARTS.giftInterval));
+        credit('hearts', gifts * HEARTS.gift); s.nextHeartGiftAt += (1 + Math.floor((time - s.nextHeartGiftAt) / HEARTS.giftInterval)) * HEARTS.giftInterval; value = gifts * HEARTS.gift; break;
       }
       case 'unlockNurserySlot': {
         const nursery = nurseryBuilding(s); requireRule(nursery?.nursery, 'MISSING_BUILDING');
@@ -252,8 +263,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(stateLevelAccess(s,{family:'species',id:command.species,action:'purchase'}).accessible,'LEVEL_REQUIRED'); room(command.enclosureId, command.species); allocation(); pay(price);
         value = id('rabbit');
         s.rabbits.push({id: value, species: command.species, affection: BALANCE.minAffection, enclosureId: command.enclosureId});
-        if (!s.discovered.includes(command.species)) s.discovered.push(command.species);
-        gainXp(PROGRESSION.xp.commonPurchase);
+        gainXp(PROGRESSION.xp.commonPurchase + discover(command.species));
         break;
       }
       case 'buyRecipe': {
@@ -276,13 +286,14 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(Object.hasOwn(ORDERS, command.recipe), 'INVALID_CHOICE');
         const recipe = ORDERS[command.recipe];
         requireRule(Number.isSafeInteger(time + recipe.duration), 'INVALID_TIME'); pay(recipe.cost);
-        b.order = {recipe: command.recipe, startedAt: time, endsAt: time + recipe.duration};
+        if (command.recipe === 'night') s.missions.nightOrderStarted = true;
+        b.order = {recipe: command.recipe, startedAt: time, endsAt: time + recipe.duration, grass: recipe.grass, duration: recipe.duration};
         if (s.initiation && !s.initiation.order && !s.initiation.closed.includes('order') && command.recipe === 'small') s.initiation.order = jobKey(b,'order');
         break;
       }
       case 'collectOrder': {
         const b = building(command.id, 'farm'); requireRule(b.order && b.order.endsAt <= time, 'NOT_READY');
-        value = ORDERS[b.order.recipe].grass; credit('grass', value); b.order = null; break;
+        value = b.order.grass ?? ORDERS[b.order.recipe].grass; credit('grass', value); b.order = null; break;
       }
       case 'feed': {
         const rabbit = s.rabbits.find(r => r.id === command.id); requireRule(rabbit, 'NOT_FOUND');
@@ -324,10 +335,9 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         const birth = baby.birth; value = birth.id;
         s.rabbits.push({id: birth.id, species: birth.species, affection: BALANCE.minAffection, enclosureId: command.enclosureId});
         if (!s.discovered.includes(birth.species)) {
-          s.discovered.push(birth.species);
           if (GUARANTEE_SPECIES.includes(birth.species)) s.pityFailures = 0;
         }
-        gainXp(PROGRESSION.xp.birth[SPECIES[birth.species].rarity]);
+        gainXp(PROGRESSION.xp.birth[SPECIES[birth.species].rarity] + discover(birth.species));
         nursery.nursery.babies = nursery.nursery.babies.filter(other => other !== baby);
         if(s.initiation?.birthId === birth.id) for(const stage of ['order','breeding','growth'] as const) if(!s.initiation.closed.includes(stage)) s.initiation.closed.push(stage);
         break;
@@ -343,7 +353,8 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       case 'release': {
         const rabbit = s.rabbits.find(r => r.id === command.id); requireRule(rabbit, 'NOT_FOUND');
         requireRule(!busy(rabbit.id), 'PARENT_BUSY');
-        requireRule(s.rabbits.filter(r => r.species === rabbit.species).length > 1, 'LAST_OF_SPECIES'); s.rabbits = s.rabbits.filter(r => r.id !== rabbit.id); break;
+        requireRule(s.rabbits.filter(r => r.species === rabbit.species).length > 1, 'LAST_OF_SPECIES');
+        credit('grass', SPECIES[rabbit.species].rarity === 'common' ? BALANCE.releaseGrass.common : SPECIES[rabbit.species].rarity === 'rare' ? BALANCE.releaseGrass.rare : 0); s.rabbits = s.rabbits.filter(r => r.id !== rabbit.id); break;
       }
       case 'renameRabbit': {
         // Free and purely cosmetic: no resource, XP, mission or draw is involved. The command validates the name itself.
@@ -364,7 +375,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       return sum + (before ? Math.max(0, rabbit.affection - before.affection) : 0);
     }, 0);
     requireRule(recordMissionAction(s, 'gainAffection', affectionGained), 'RESOURCE_LIMIT');
-    requireRule(recordMissionAction(s, command.type === 'buyDecoration' && command.location ? 'placeDecoration' : command.type, command.type === 'feed' ? 1 : typeof value === 'number' ? value : 0, command.type !== 'placeDecoration' || command.location.kind === 'outside'), 'RESOURCE_LIMIT');
+    requireRule(recordMissionAction(s, command.type === 'buyDecoration' && command.location ? 'placeDecoration' : command.type, command.type === 'feed' || command.type === 'breed' ? 1 : typeof value === 'number' ? value : 0, command.type !== 'placeDecoration' || command.location.kind === 'outside'), 'RESOURCE_LIMIT');
     // In particular, a welcome frees the nursery at this action's timestamp.
     return {ok: true, state: advance(s, time), ...(value === undefined ? {} : {value}), ...(progressionGain ? {progressionGain} : {}), ...(cuisineReward ? {cuisineReward} : {})};
   } catch (error) {

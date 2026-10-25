@@ -57,8 +57,8 @@ describe('published laboratory isolation', () => {
     expect(decodeGame(encodeGame(s))).toEqual({ok:true,state:s});
     const reloaded = setup();expect(reloaded.controller.getSnapshot().state).toEqual(s);
     for(const [a,b] of [['neige','volant'],['volant','neige'],['pic-pic','neige'],['neige','pic-pic']] as const) {
-      expect(breedingPool(s,a,b,2,2)).toMatchObject({weights:{neige:40,volant:40,'pic-pic':20},total:100,guaranteed:false});
-      expect(oddsView(s,a,b,2,2)).toMatchObject({entries:[{name:'Lapin Neige',weight:40,probability:'40 %'},{name:'Lapin Volant',weight:40,probability:'40 %'},{name:'Pic Pic',weight:20,probability:'20 %'}],unknown:null});
+      expect(breedingPool(s,a,b,2,2)).toMatchObject({"weights":{"neige":30,"pic-pic":30,"volant":30},"total":90,"guaranteed":false});
+      expect(oddsView(s,a,b,2,2)).toMatchObject({entries:[{name:'Lapin Neige',weight:100/3,probability:'1/3 (≈ 33,33 %)'},{name:'Lapin Volant',weight:100/3,probability:'1/3 (≈ 33,33 %)'},{name:'Pic Pic',weight:100/3,probability:'1/3 (≈ 33,33 %)'}],unknown:null});
     }
     for(const pair of [s.rabbits.slice(1),s.rabbits.slice(0,2)]) {
       expect(dev.loadScenario(controller,'picPic').ok).toBe(true);
@@ -89,8 +89,8 @@ describe('published laboratory isolation', () => {
     expect(decodeGame(encodeGame(s))).toEqual({ok:true,state:s});
     const reloaded = setup();expect(reloaded.controller.getSnapshot().state).toEqual(s);
     for(const [a,b] of [['belier-gris','feu'],['feu','belier-gris'],['amethyste','feu'],['feu','amethyste']] as const) {
-      expect(breedingPool(s,a,b,2,2)).toMatchObject({weights:{feu:40,'belier-gris':40,amethyste:20},total:100,guaranteed:false});
-      expect(oddsView(s,a,b,2,2)).toMatchObject({entries:[{name:'Lapin Feu',weight:40,probability:'40 %'},{name:'Lapin Bélier Gris',weight:40,probability:'40 %'},{name:'Améthyste',weight:20,probability:'20 %'}],unknown:null});
+      expect(breedingPool(s,a,b,2,2)).toMatchObject({"weights":{"amethyste":30,"belier-gris":30,"feu":30},"total":90,"guaranteed":false});
+      expect(oddsView(s,a,b,2,2)).toMatchObject({entries:[{name:'Lapin Feu',weight:100/3,probability:'1/3 (≈ 33,33 %)'},{name:'Lapin Bélier Gris',weight:100/3,probability:'1/3 (≈ 33,33 %)'},{name:'Améthyste',weight:100/3,probability:'1/3 (≈ 33,33 %)'}],unknown:null});
     }
     for(const pair of [s.rabbits.slice(1),s.rabbits.slice(0,2)]) {
       expect(dev.loadScenario(controller,'amethyste').ok).toBe(true);
@@ -122,8 +122,8 @@ describe('published laboratory isolation', () => {
     expect(decodeGame(encodeGame(s))).toEqual({ok:true,state:s});
     const reloaded = setup(); expect(reloaded.controller.getSnapshot().state).toEqual(s);
     for (const [a,b] of [['paille','feu'],['feu','paille'],['ardent','snk'],['snk','ardent']] as const) {
-      expect(breedingPool(s,a,b,2,2)).toMatchObject({weights:{paille:40,feu:40,ardent:20,snk:20},total:120,guaranteed:false});
-      expect(oddsView(s,a,b,2,2)).toMatchObject({entries:[{name:'Lapin Paille',weight:100/3,probability:'1/3 (≈ 33,33 %)'},{name:'Lapin Feu',weight:100/3,probability:'1/3 (≈ 33,33 %)'},{name:'Ardent',weight:100/6,probability:'1/6 (≈ 16,67 %)'},{name:'SNK',weight:100/6,probability:'1/6 (≈ 16,67 %)'}],unknown:null});
+      expect(breedingPool(s,a,b,2,2)).toMatchObject({weights:{paille:30,feu:30,ardent:30,snk:30},total:120,guaranteed:false});
+      expect(oddsView(s,a,b,2,2)).toMatchObject({"entries":[{"name":"Lapin Paille","probability":"25 %","weight":25},{"name":"Lapin Feu","probability":"25 %","weight":25},{"name":"Ardent","probability":"25 %","weight":25},{"name":"SNK","probability":"25 %","weight":25}],"unknown":null});
     }
     for (const pair of [s.rabbits.slice(2),s.rabbits.slice(0,2)]) {
       expect(dev.loadScenario(controller,'ardent').ok).toBe(true);
@@ -153,7 +153,7 @@ describe('published laboratory isolation', () => {
     expect(s.rabbits.every(r => r.enclosureId === home.id && rabbitAvailability(s, r.id, Date.now()) === null)).toBe(true);
     expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: s});
     for (const [a, b] of [['frisket', 'icy'], ['icy', 'frisket']] as const) {
-      expect(breedingPool(s, a, b, 2, 2)).toMatchObject({weights: {frisket: 20, icy: 20}, total: 40});
+      expect(breedingPool(s, a, b, 2, 2)).toMatchObject({"weights":{"frisket":30,"icy":30},"total":60});
       expect(oddsView(s, a, b, 2, 2)).toMatchObject({entries: [{name: 'Frisket', weight: 50, probability: '50 %'}, {name: 'Icy', weight: 50, probability: '50 %'}], unknown: null});
     }
     expect(controller.perform({type: 'breed', parents: s.rabbits.map(r => r.id) as [string, string]}).ok).toBe(true);
@@ -175,7 +175,7 @@ describe('published laboratory isolation', () => {
     for (const minutes of [5, 20, 60, 360, 1440]) expect(dev.advanceTime(controller, minutes).ok).toBe(true);
     for (const [resource, amounts] of Object.entries({pattes: [1000,10000], grass: [100,1000], hearts: [10,100]})) for (const amount of amounts) expect(dev.grant(controller, resource as 'pattes' | 'grass' | 'hearts', amount).ok).toBe(true);
     expect(normalSnapshot()).toEqual(before); expect(Date.now()).toBe(1_000_000);
-    expect(controller.getSnapshot().state!.pattes).toBe(11300);
+    expect(controller.getSnapshot().state!.pattes).toBe(11350);
     expect(localStorage.getItem(TEST_CLOCK_KEY)).toBe(String((5+20+60+360+1440)*60000));
     expect(dev.policy.onlineServicesAllowed).toBe(false); expect(sessionPolicy(false).kind).toBe('normal');
   });
@@ -186,9 +186,9 @@ describe('published laboratory isolation', () => {
     new PreferenceStore(dev.preferenceKey).set({muted: false, tutorial: false});
     expect(localStorage.getItem('prairie-lapins.ui.v1')).toBe(normalRaw);
     const reloaded = setup(); expect(reloaded.dev.clock()).toBe(Date.now()+3600000);
-    expect(reloaded.controller.getSnapshot().state!.pattes).toBe(1300);
+    expect(reloaded.controller.getSnapshot().state!.pattes).toBe(1350);
     const normal = new GameController(browserStorage(), Date.now); controllers.push(normal);
-    expect(normal.getSnapshot().state!.pattes).toBe(300); expect(normal.getSnapshot().state!.lastSimulatedAt).toBe(Date.now());
+    expect(normal.getSnapshot().state!.pattes).toBe(350); expect(normal.getSnapshot().state!.lastSimulatedAt).toBe(Date.now());
   });
   it('resets an incompatible laboratory save in the laboratory only, and refuses an incompatible import', () => {
     const before = normalSnapshot(), old = JSON.parse(encodeGame(createGame(Date.now()))); old.version = 15;
@@ -230,7 +230,7 @@ describe('published laboratory isolation', () => {
   it('uses controller persistence for the two XP buttons, without touching normal state', () => {
     const {dev,controller}=setup(),before=normalSnapshot();dispose.push(dev.mount(controller));
     document.getElementById('dev-xp-50')!.click();document.getElementById('dev-xp-500')!.click();
-    expect(controller.getSnapshot().state).toMatchObject({progression:{totalXp:550,rewardedThroughLevel:4},hearts:15});
+    expect(controller.getSnapshot().state).toMatchObject({"progression":{"rewardedThroughLevel":3,"totalXp":550},"hearts":14});
     expect(document.getElementById('dev-status')!.textContent).toContain('+500 XP');
     expect(normalSnapshot()).toEqual(before);
   });
@@ -238,7 +238,7 @@ describe('published laboratory isolation', () => {
     const {dev,controller}=setup();dispose.push(dev.mount(controller));dev.grant(controller,'pattes',1000);
     const confirm=vi.mocked(window.confirm).mockReturnValue(false),before=controller.getSnapshot().state;
     document.getElementById('dev-reset')!.click();document.getElementById('dev-scenario-habitats')!.click();expect(controller.getSnapshot().state).toEqual(before);
-    confirm.mockReturnValue(true);document.getElementById('dev-reset')!.click();expect(controller.getSnapshot().state!.pattes).toBe(300);
+    confirm.mockReturnValue(true);document.getElementById('dev-reset')!.click();expect(controller.getSnapshot().state!.pattes).toBe(350);
     expect(document.getElementById('dev-badge')!.hidden).toBe(false);expect(document.getElementById('dev-badge')!.textContent).toContain('MODE TEST — PARTIE SÉPARÉE');
   });
   it('exposes all seven decoration/island scenarios in the laboratory and preview and requires confirmation', () => {

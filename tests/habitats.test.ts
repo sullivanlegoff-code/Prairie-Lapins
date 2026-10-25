@@ -41,7 +41,7 @@ function memory(raw?:string){
 }
 function breedingState(){
   let s=rich();s=run(s,{type: 'placeStarterBuilding',kind:'nest',x: 22, y: 20});s=run(s,{type: 'placeStarterBuilding',kind:'nursery',x: 26, y: 20});
-  s=run(s,{type:'feed',id:'rabbit-2'});s=run(s,{type:'feed',id:'rabbit-3'});s.pityFailures=9;s.rabbits[0].species='feu';s.discovered.push('feu');s.rabbits.forEach(r=>r.affection=4); // Feu x Neige at affection 4: the guarantee reserves Feu Glacé
+  s=run(s,{type:'feed',id:'rabbit-2'});s=run(s,{type:'feed',id:'rabbit-3'});s.pityFailures=7;s.rabbits[0].species='feu';s.discovered.push('feu','wat-wat','glassofeu');s.rabbits.forEach(r=>r.affection=4); // Feu x Neige at affection 4: the guarantee reserves Feu Glacé
   return run(s,{type:'breed',parents:['rabbit-2','rabbit-3']},17);
 }
 
@@ -52,9 +52,9 @@ describe('habitat compatibility and atomic entries',()=>{
   });
   it.each(HABITAT_TYPES.filter(t=>t!=='universal'))('buys %s for 200 and welcomes its common for 80',type=>{
     let s=build(rich(),type);const home=s.buildings.at(-1)!;
-    expect(s.pattes).toBe(9800);expect(home.habitat).toEqual({type,level:1});expect(habitatStats(home)).toEqual({capacity:3,cap:900,cost:200,currency:'pattes'});
+    expect(s.pattes).toBe(10000-habitatLevel(type,1).cost);expect(home.habitat).toEqual({type,level:1});expect(habitatStats(home)).toEqual({capacity:3,cap:2400,cost:habitatLevel(type,1).cost,currency:'pattes'});
     const species=SPECIES_IDS.find(id=>SPECIES[id].price!==null&&SPECIES[id].types.includes(type))!;
-    s=run(s,{type:'buyRabbit',species,enclosureId:home.id});expect(s.pattes).toBe(9720);expect(s.rabbits.at(-1)!.enclosureId).toBe(home.id);
+    s=run(s,{type:'buyRabbit',species,enclosureId:home.id});expect(s.pattes).toBe(10000-habitatLevel(type,1).cost-SPECIES[species].price!);expect(s.rabbits.at(-1)!.enclosureId).toBe(home.id);
     expect(decode(encodeGame(s))).toEqual(s);
   });
   it('rejects an incompatible purchase before pattes or hearts, and an occupied cell before payment',()=>{
@@ -96,9 +96,9 @@ describe('habitat compatibility and atomic entries',()=>{
   it('does not backdate income when entering a specialized habitat or increasing affection',()=>{
     let s=build(rich(),'paille');const home=s.buildings.at(-1)!.id;
     s=run(s,{type:'moveRabbit',id:'rabbit-2',enclosureId:home},HOUR);
-    expect(s.buildings[0].incomeUnits).toBe(24*HOUR);expect(s.buildings[1].incomeUnits).toBe(0);
-    s=run(s,{type:'feed',id:'rabbit-2'},2*HOUR);expect(s.buildings[1].incomeUnits).toBe(12*HOUR);
-    s=advance(s,3*HOUR);expect(s.buildings[1].incomeUnits).toBe(26*HOUR);
+    expect(s.buildings[0].incomeUnits).toBe(20*HOUR);expect(s.buildings[1].incomeUnits).toBe(0);
+    s=run(s,{type:'feed',id:'rabbit-2'},2*HOUR);expect(s.buildings[1].incomeUnits).toBe(10*HOUR);
+    s=advance(s,3*HOUR);expect(s.buildings[1].incomeUnits).toBe(21*HOUR);
   });
 });
 
@@ -107,7 +107,7 @@ describe('levels, income and payments',()=>{
     let s=build(rich(),type);const home=s.buildings[1].id; s.buildings[1].incomeUnits=1234567;
     const initial=s.pattes, initialHearts=s.hearts, first:Command={type:'upgradeHabitat',id:home,fromLevel:1};
     // Independent prices: level 2 in coins (universal 200, specialized 300), level 3 in exactly ten hearts and no coin.
-    const coins=type==='universal'?200:300;
+    const coins=type==='universal'?175:225;
     s=run(s,first);expect(s.pattes).toBe(initial-coins);expect(s.hearts).toBe(initialHearts);
     expect(habitatStats(s.buildings[1])).toEqual(habitatLevel(type,2));expect(s.buildings[1].incomeUnits).toBe(1234567);
     refuse(s,first,'STALE_ACTION');
@@ -121,7 +121,7 @@ describe('levels, income and payments',()=>{
     s=run(s,{type:'upgradeHabitat',id:home,fromLevel:1},1000*HOUR);
     const oldCap=habitatLevel(type,1).cap;
     expect(s.buildings[1].incomeUnits).toBe(oldCap*HOUR);
-    expect(advance(s,1001*HOUR).buildings[1].incomeUnits).toBe((oldCap+12)*HOUR);
+    expect(advance(s,1001*HOUR).buildings[1].incomeUnits).toBe((oldCap+10)*HOUR);
     expect(advance(advance(s,1000*HOUR+1234),1001*HOUR)).toEqual(advance(s,1001*HOUR));
     expect(advance(s,1000*HOUR-MINUTE)).toEqual(s);
   });
@@ -131,7 +131,7 @@ describe('levels, income and payments',()=>{
       if(level>1)s=run(s,{type:'upgradeHabitat',id,fromLevel:(level-1) as 1|2});
       while(s.rabbits.length<habitatStats(s.buildings[0]).capacity)s=run(s,{type:'buyRabbit',species:'paille',enclosureId:id});
       refuse(s,{type:'buyRabbit',species:'paille',enclosureId:id},'CAPACITY_FULL');
-      expect(advance(s,HOUR).buildings[0].incomeUnits).toBe(s.rabbits.length*12*HOUR);
+      expect(advance(s,HOUR).buildings[0].incomeUnits).toBe(s.rabbits.length*10*HOUR);
     }
     refuse(s,{type:'release',id:'rabbit-3'},'LAST_OF_SPECIES');expect(decode(encodeGame(s))).toEqual(s);
   });
@@ -142,15 +142,15 @@ describe('levels, income and payments',()=>{
   });
   it('buys with optional heart complement only after all cell conditions and blocks a second purchase on the same cell',()=>{
     let s=rich();s.pattes=30;const action:PattesCommand={type:'buyBuilding',kind:'enclosure',habitatType:'vol',x: 22, y: 20};
-    expect(quoteComplement(s,action,0)).toEqual({ok:true,cost:200,pattes:30,hearts:7,missing:170});
+    expect(quoteComplement(s,action,0)).toEqual({ok:true,cost:1200,pattes:30,hearts:47,missing:1170});
     refuse(s,action,'NOT_ENOUGH_PATTES');const paid=complement(s,action);s=run(s,paid);
-    expect(s.pattes).toBe(0);expect(s.hearts).toBe(93);refuse(s,paid,'CELL_OCCUPIED');
+    expect(s.pattes).toBe(0);expect(s.hearts).toBe(53);refuse(s,paid,'CELL_OCCUPIED');
   });
   it('upgrades with exact complementary hearts, refuses insufficient balances and stale double pressure',()=>{
     let s=build(rich(),'feu');s.pattes=30;const action:PattesCommand={type:'upgradeHabitat',id:s.buildings[1].id,fromLevel:1};
-    const payment=complement(s,action);expect(payment).toMatchObject({maxPattes:30,maxHearts:11});
-    const poor=structuredClone(s);poor.hearts=10;refuse(poor,payment,'NOT_ENOUGH_HEARTS');
-    s=run(s,payment);expect(s).toMatchObject({pattes:0,hearts:89});expect(s.buildings[1].habitat!.level).toBe(2);refuse(s,payment,'STALE_ACTION');
+    const payment=complement(s,action);expect(payment).toMatchObject({maxPattes:30,maxHearts:8});
+    const poor=structuredClone(s);poor.hearts=7;refuse(poor,payment,'NOT_ENOUGH_HEARTS');
+    s=run(s,payment);expect(s).toMatchObject({pattes:0,hearts:92});expect(s.buildings[1].habitat!.level).toBe(2);refuse(s,payment,'STALE_ACTION');
   });
   it('growth acceleration recognizes upgraded free capacity without revealing the species in its quote',()=>{
     let s=breedingState();s=run(s,{type:'buyRabbit',species:'paille',enclosureId:'building-1'});s=sendToNursery(advance(s,20*60_000+17));
@@ -167,21 +167,21 @@ describe('levels, income and payments',()=>{
 
 describe('two extensions, camera and placement',()=>{
   it('requires the first extension, charges 500 then 1000, preserves coordinates and claims the mission only once',()=>{
-    let s=rich();refuse(s,{type:'expand',parcelId:'west',expectedCost:1000},'PRICE_CHANGED');expect(terrainWidth(s)).toBe(12);expect(visibleColumns(s)).toBe(12);
-    s=run(s,{type:'expand',parcelId:'east',expectedCost:500});s=run(s,{type:'claimMainMission',id:'bigger-meadow'});
+    let s=rich();refuse(s,{type:'expand',parcelId:'west',expectedCost:1800},'PRICE_CHANGED');expect(terrainWidth(s)).toBe(12);expect(visibleColumns(s)).toBe(12);
+    s=run(s,{type:'expand',parcelId:'east',expectedCost:600});s=run(s,{type:'claimMainMission',id:'bigger-meadow'});
     const missions=structuredClone(s.missions),pattes=s.pattes,buildings=structuredClone(s.buildings);
-    expect(terrainWidth(s)).toBe(12);expect(visibleColumns(s)).toBe(12);s=run(s,{type:'expand',parcelId:'west',expectedCost:1000});
-    expect(s.pattes).toBe(pattes-1000);expect(s.buildings).toEqual(buildings);expect(s.missions).toEqual(missions);
+    expect(terrainWidth(s)).toBe(12);expect(visibleColumns(s)).toBe(12);s=run(s,{type:'expand',parcelId:'west',expectedCost:1800});
+    expect(s.pattes).toBe(pattes-1800);expect(s.buildings).toEqual(buildings);expect(s.missions).toEqual(missions);
     expect(terrainWidth(s)).toBe(12);expect(visibleColumns(s)).toBe(12);refuse(s,{type:'claimMainMission',id:'bigger-meadow'},'ALREADY_CLAIMED');
-    refuse(s,{type:'expand',parcelId:'west',expectedCost:1000},'ALREADY_EXPANDED');refuse(s,{type:'expand',parcelId:'east',expectedCost:500},'ALREADY_EXPANDED');
+    refuse(s,{type:'expand',parcelId:'west',expectedCost:1800},'ALREADY_EXPANDED');refuse(s,{type:'expand',parcelId:'east',expectedCost:600},'ALREADY_EXPANDED');
     s=build(s,'metal',8,1);expect(decode(encodeGame(s))).toEqual(s);refuse(s,{type:'moveBuilding',id:'building-1',x: 48, y: 20},'INVALID_CELL');
   });
   it('supports second-extension hearts without paying twice',()=>{
-    let s=run(rich(),{type:'expand',parcelId:'east',expectedCost:500});s.pattes=975;const command=complement(s,{type:'expand',parcelId:'west',expectedCost:1000});s=run(s,command);
+    let s=run(rich(),{type:'expand',parcelId:'east',expectedCost:600});s.pattes=1775;const command=complement(s,{type:'expand',parcelId:'west',expectedCost:1800});s=run(s,command);
     expect(s).toMatchObject({pattes:0,hearts:99,acquiredParcels:['center','east','west']});refuse(s,command,'ALREADY_EXPANDED');
   });
   it('validates placement across 18 cells while previews do not mutate or spend',()=>{
-    const s=run(run(rich(),{type:'expand',parcelId:'east',expectedCost:500}),{type:'expand',parcelId:'west',expectedCost:1000}),before=structuredClone(s);
+    const s=run(run(rich(),{type:'expand',parcelId:'east',expectedCost:600}),{type:'expand',parcelId:'west',expectedCost:1800}),before=structuredClone(s);
     expect(placementReason(s,{kind:'enclosure',habitatType:'metal',cell:{x: 10, y: 24}})).toBeNull();
     expect(placementReason(s,{kind:'enclosure',habitatType:'metal',cell:{x: 18, y: 12}})).not.toBeNull();
     expect(placementReason(s,{kind:'enclosure',cell:null})).not.toBeNull();expect(s).toEqual(before);
@@ -205,7 +205,7 @@ describe('two extensions, camera and placement',()=>{
 
 describe('v4 validation, migrations, imports and storage',()=>{
   it('keeps claimed missions, hearts, extension, reserved birth and fractional income through a save',()=>{
-    let old=breedingState();old=run(old,{type:'expand',parcelId:'east',expectedCost:500});old=run(old,{type:'claimMainMission',id:'bigger-meadow'});old.hearts=7;old.nextHeartGiftAt=123456789;
+    let old=breedingState();old=run(old,{type:'expand',parcelId:'east',expectedCost:600});old=run(old,{type:'claimMainMission',id:'bigger-meadow'});old.hearts=7;old.nextHeartGiftAt=123456789;
     expect(decode(encodeGame(old),1000*HOUR)).toEqual(old);expect(pendingDiscoveries(old)).toEqual(['feu-glace']);
   });
   it('preserves claims on controller reload',()=>{
@@ -232,7 +232,7 @@ describe('v4 validation, migrations, imports and storage',()=>{
       case 'unknownType':raw.buildings[0].habitat.type='rainbow';break;
       case 'missingHabitat':delete raw.buildings[0].habitat;break;
       case 'utilityHabitat':raw.buildings.push({...emptyBuilding('building-4','farm',4,0),habitat:{type:'feu',level:1}});raw.nextId=5;break;
-      case 'overCap':raw.buildings[0].incomeUnits=600*HOUR+1;break;
+      case 'overCap':raw.buildings[0].incomeUnits=2400*HOUR+1;break;
       case 'overCapacity':raw.rabbits.push({...raw.rabbits[0],id:'rabbit-4'},{...raw.rabbits[0],id:'rabbit-5'});raw.nextId=6;break;
       case 'incompatible':raw.buildings[0].habitat.type='paille';break;
       case 'secondWithoutFirst':raw.secondExpanded=true;break;

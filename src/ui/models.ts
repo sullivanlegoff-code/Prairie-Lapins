@@ -1,3 +1,4 @@
+import {recipeHint} from './economyFeedback';
 import {stateLevelAccess} from '../simulation/levelRights';
 import {buildingPlacementReason} from '../simulation/placement';
 import {habitatPrice, type HabitatType} from '../config/habitats';
@@ -79,7 +80,7 @@ export type CollectionFilter = {type?: RabbitType; rarity?: Rarity; discovery?: 
 export function collectionView(s: GameState, filter: CollectionFilter = {}) {
   return SPECIES_IDS.filter(id => (!filter.type || SPECIES[id].types.includes(filter.type)) &&
     (!filter.rarity || SPECIES[id].rarity === filter.rarity) &&
-    (!filter.discovery || s.discovered.includes(id) === (filter.discovery === 'known'))).map(id => s.discovered.includes(id) ? {known: true as const, species: id, name: SPECIES[id].name, ...(SPECIES[id].description ? {description: SPECIES[id].description} : {})} : {known: false as const, name: '???'});
+    (!filter.discovery || s.discovered.includes(id) === (filter.discovery === 'known'))).map(id => s.discovered.includes(id) ? {known: true as const, species: id, name: SPECIES[id].name, ...(SPECIES[id].description ? {description: SPECIES[id].description} : {})} : {known: false as const, name: '???', ...(recipeHint(id) ? {hint: recipeHint(id)} : {})});
 }
 export const TYPE_NAMES: Record<RabbitType, string> = {paille: 'paille', neige: 'neige', feu: 'feu', metal: 'métal', vol: 'vol', 'arc-en-ciel': 'arc-en-ciel'};
 export const RARITY_NAMES: Record<Rarity, string> = mapRarities(definition => definition.label);

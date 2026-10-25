@@ -108,7 +108,7 @@ describe('touch gestures and camera', () => {
   it('uses the same camera geometry across expansion without recentering', () => {
     const c = new MeadowCamera(); c.resize(844, 390); c.pan(-200, 0);
     const point = c.screen(gridPoint(7.5, 4.5)), before = {x: c.x, y: c.y, zoom: c.zoom};
-    const s = createGame(0);const level=requiredExtensionLevel(1);s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level}; s.pattes = 500; const result = act(s, {type:'expand',parcelId:'east',expectedCost:500}, 0);
+    const s = createGame(0);const level=requiredExtensionLevel(1);s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level}; s.pattes = 600; const result = act(s, {type:'expand',parcelId:'east',expectedCost:600}, 0);
     expect(result.ok).toBe(true);
     expect(gridCell(c.world(point))).toEqual({x: 7, y: 4});
     expect({x: c.x, y: c.y, zoom: c.zoom}).toEqual(before);
@@ -138,19 +138,19 @@ describe('UI projections preserve gameplay rules and secrets', () => {
     let s = readyState(); const r = act(s, {type: 'collectIncome', id: 'building-1'}, 20 * 60_000); if (!r.ok) throw new Error(r.reason); s = sendToNursery(r.state);
     expect(nurseryView(s, 20 * 60_000).babies).toEqual([{slot: 0, birthId: expect.any(String), stage: 'growing', startedAt: expect.any(Number), readyAt: 50 * 60_000}]);
     expect(JSON.stringify(nurseryView(s, 20 * 60_000))).not.toContain('icy');
-    expect(collectionView(s).filter(e => !e.known)).toEqual(Array.from({length: EXPECTED_IDS.length - 2}, () => ({known: false, name: '???'})));
+    expect(collectionView(s).filter(e => !e.known).map(({known,name})=>({known,name}))).toEqual(Array.from({length: EXPECTED_IDS.length - 2}, () => ({known: false, name: '???'})));
     expect(nurseryView(s, 50 * 60_000).babies).toMatchObject([{stage: 'ready', species: 'icy'}]);
     expect(s.discovered).not.toContain('icy');
   });
   it('shows actual guaranteed odds without revealing an unknown species name', () => {
-    const s = createGame(0);s.progression={totalXp:cumulativeLevelXp(6),rewardedThroughLevel:6}; s.pityFailures = 9; s.recipeBook = [];
+    const s = createGame(0);s.progression={totalXp:cumulativeLevelXp(6),rewardedThroughLevel:6}; s.pityFailures = 7; s.recipeBook = [];
     s.discovered.push('feu');const odds = oddsView(s, 'feu', 'neige', 4, 4); expect(odds.guaranteed).toBe(true);
     // Unknown recipe: neither name, types nor rarity; only the exact cumulative probability.
     expect(odds.entries).toEqual([]); expect(odds.unknown).toEqual({weight: 100, probability: '100 %'});
     s.recipeBook = ['feu-glace'];
-    expect(oddsView(s, 'feu', 'neige', 4, 4).entries).toEqual([{name: 'Lapin Feu Glacé', description: 'feu + neige · Rare', weight: 100, probability: '100 %'}]);
+    expect(oddsView(s, 'feu', 'neige', 4, 4).entries).toEqual([{"description":"feu + neige · Rare","name":"Lapin Feu Glacé","probability":"1/3 (≈ 33,33 %)","weight":33.333333333333336}]);
     // Two unknown guaranteed results share the guarantee equally.
-    s.recipeBook = ['feu-glace', 'bouee'];const both = oddsView(s, 'feu-glace', 'paille', 4, 4); expect(both.entries.map(e => e.weight)).toEqual([50, 50]);
+    s.recipeBook = ['feu-glace', 'bouee'];const both = oddsView(s, 'feu-glace', 'paille', 4, 4); expect(both.entries.map(e => e.weight)).toEqual([12.5, 12.5]);
   });
   it('explains last-of-species protection and adapts the tutorial to existing progress', () => {
     const s = createGame(0); expect(releaseReason(s, 'rabbit-2', 0)).toContain('au moins un');

@@ -22,7 +22,7 @@ describe('food and launch XP candidates',()=>{
  });
  it.each(['missing','low','same'])('invalid %s parents give no XP',why=>{const s=parents();if(why==='low')s.rabbits[1].affection=1;const command:Command={type:'breed',parents:why==='same'?['rabbit-2','rabbit-2']:why==='missing'?['rabbit-2','rabbit-99']:['rabbit-2','rabbit-3']};expect(act(s,command,0)).toMatchObject({ok:false,state:s});});
  it.each(['feed','breed'] as const)('%s crosses a level with exact rewards and refuses resource overflow atomically',type=>{
-  const s=parents();s.progression.totalXp=49;const c:Command=type==='breed'?breed:{type:'feed',id:'rabbit-2'};const r=run(s,c);expect(r.state.hearts).toBe(13);expect(r.progressionGain?.rewardedLevels).toEqual([2]);expect(r.state.progression.totalXp).toBe(49+(type==='breed'?PROGRESSION.xp.breedingLaunch:foodXp(3)));
+  const s=parents();s.progression.totalXp=89;const c:Command=type==='breed'?breed:{type:'feed',id:'rabbit-2'};const r=run(s,c);expect(r.state.hearts).toBe(13);expect(r.progressionGain?.rewardedLevels).toEqual([2]);expect(r.state.progression.totalXp).toBe(89+(type==='breed'?PROGRESSION.xp.breedingLaunch:foodXp(3)));
   s.hearts=Number.MAX_SAFE_INTEGER;expect(act(s,c,0)).toEqual({ok:false,state:s,reason:'RESOURCE_LIMIT'});
  });
  it.each(['feed','breed'] as const)('%s failed save discards the entire candidate, then retries once',type=>{
@@ -38,6 +38,6 @@ describe('food and launch XP candidates',()=>{
   const s=parents();s.progression.totalXp=Number.MAX_SAFE_INTEGER;const r=act(s,type==='breed'?breed:{type:'feed',id:'rabbit-2'},0,()=>.1);expect(r).toEqual({ok:false,state:s,reason:'RESOURCE_LIMIT'});
  });
  it('aid, time, transfer and growth do not add launch XP again',()=>{
-  let s=run(parents(),breed).state;const nest=s.buildings.find(b=>b.kind==='nest')!;s=run(s,{type:'initiationAid',id:nest.id,stage:'breeding',jobKey:jobKey(nest,'breeding')!}).state;s=run(s,{type:'transferBirth',id:nest.id,birthId:s.initiation!.birthId!}).state;s=advance(s,1800000);expect(s.progression.totalXp).toBe(PROGRESSION.xp.breedingLaunch);s=run(s, welcomeOf(s, 'building-1')).state;expect(s.progression.totalXp).toBe(PROGRESSION.xp.breedingLaunch+PROGRESSION.xp.birth.rare);
+  let s=run(parents(),breed).state;const nest=s.buildings.find(b=>b.kind==='nest')!;s=run(s,{type:'initiationAid',id:nest.id,stage:'breeding',jobKey:jobKey(nest,'breeding')!}).state;s=run(s,{type:'transferBirth',id:nest.id,birthId:s.initiation!.birthId!}).state;s=advance(s,1800000);expect(s.progression.totalXp).toBe(PROGRESSION.xp.breedingLaunch);s=run(s, welcomeOf(s, 'building-1')).state;expect(s.progression.totalXp).toBe(PROGRESSION.xp.breedingLaunch+PROGRESSION.xp.birth.rare+250);
  });
 });

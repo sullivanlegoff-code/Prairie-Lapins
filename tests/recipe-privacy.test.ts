@@ -60,12 +60,9 @@ describe('nest odds privacy over every pair', () => {
   });
   it('gives a documented example: Perroquet × Feu at affection 10', () => {
     const s = game(14, 0, ['perroquet', 'feu'], []);
-    expect(oddsTexts(oddsView(s, 'perroquet', 'feu', 10, 10))).toEqual({
-      summary: 'Résultats possibles : Lapin Feu, Lapin Perroquet et des résultats inconnus.', excluded: [],
-      lines: ['Lapin Feu · feu · Commun : 49/150 (≈ 32,67 %)', 'Lapin Perroquet · vol + feu · Rare : 49/300 (≈ 16,33 %)', 'Résultats inconnus : 51 %'],
-      guarantee: 'Cette paire ne fait pas avancer la garantie.'});
+    expect(oddsTexts(oddsView(s, 'perroquet', 'feu', 10, 10))).toEqual({"excluded":[],"guarantee":"Cette paire est admissible à la garantie.","lines":["Lapin Feu · feu · Commun : 24,5 %","Lapin Perroquet · vol + feu · Rare : 24,5 %","Résultats inconnus : 51 %"],"summary":"Résultats possibles : Lapin Feu, Lapin Perroquet et des résultats inconnus."});
     s.recipeBook.push('dragon');
-    expect(oddsTexts(oddsView(s, 'perroquet', 'feu', 10, 10)).lines).toEqual(['Lapin Feu · feu · Commun : 49/150 (≈ 32,67 %)', 'Lapin Perroquet · vol + feu · Rare : 49/300 (≈ 16,33 %)', 'Lapin Dragon · vol + feu · Légendaire : 2 %', 'Résultats inconnus : 49 %']);
+    expect(oddsTexts(oddsView(s, 'perroquet', 'feu', 10, 10)).lines).toEqual(['Lapin Feu · feu · Commun : 24,5 %', 'Lapin Perroquet · vol + feu · Rare : 24,5 %', 'Lapin Dragon · vol + feu · Légendaire : 2 %', 'Résultats inconnus : 49 %']);
     const locked = game(13, 0, ['perroquet', 'feu'], []);
     expect(oddsTexts(oddsView(locked, 'perroquet', 'feu', 10, 10)).excluded).toEqual(['Certains résultats demandent un niveau supérieur · exclus du tirage actuel.']);
   });

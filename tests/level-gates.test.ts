@@ -9,7 +9,7 @@ import {breedingPool} from '../src/simulation/breeding';
 import {quoteComplement} from '../src/simulation/actions';
 import {GameController} from '../src/application/GameController';
 import {SAVE_KEY} from '../src/persistence/storage';
-import {SPECIES_IDS,type SpeciesId} from '../src/config/balance';
+import {SPECIES, SPECIES_IDS,type SpeciesId} from '../src/config/balance';
 import {PROGRESSION} from '../src/config/progression';
 import type {Command,GameState} from '../src/state/types';
 import {setBaby, welcomeOf} from './nursery-baby';
@@ -20,10 +20,10 @@ const odds=(level:number,a:SpeciesId,b:SpeciesId)=>{const pool=breedingPool(at(l
 describe('active species and habitat level gates',()=>{
  it('new start has no historical exemptions and required early purchases remain possible',()=>{
   const s=createCentreStartGame(0);expect(s.levelAccessTransition).toEqual({version:1,rights:[]});
-  expect(s.discovered).toEqual(['paille']);expect(s.pattes).toBe(300);
+  expect(s.discovered).toEqual(['paille']);expect(s.pattes).toBe(350);
   let next=run(s,{type:'buyBuilding',kind:'enclosure',habitatType:'neige',x:18,y:24});const enclosureId=next.buildings.at(-1)!.id;
   next=run(next,{type:'buyRabbit',species:'neige',enclosureId});next=run(next,{type:'claimMainMission',id:'welcome-snow'});
-  expect(next.pattes).toBe(70);next=run(next,{type:'buyBuilding',kind:'farm',x:22,y:20});expect(next.pattes).toBe(10);
+  expect(next.pattes).toBe(120);next=run(next,{type:'buyBuilding',kind:'farm',x:22,y:20});expect(next.pattes).toBe(60);
   expect(stateLevelAccess(next,{family:'habitatPurchase',id:'paille'}).accessible).toBe(true);
  });
  it.each([['feu',5],['belier-gris',7],['volant',9]] as const)('purchase %s checks the pre-action level, including heart complements', (species,level)=>{
@@ -33,8 +33,8 @@ describe('active species and habitat level gates',()=>{
   expect(before.progression.totalXp).toBe(cumulativeLevelXp(level)-1);
   const poor={...before,pattes:0,hearts:100};expect(quoteComplement(poor,command,0)).toEqual({ok:false,reason:'LEVEL_REQUIRED'});
   expect(act(poor,{type:'payWithHearts',action:command,maxHearts:100,maxPattes:0},0)).toMatchObject({ok:false,reason:'LEVEL_REQUIRED',state:poor});
-  const s=at(level);expect(run(s,command).pattes).toBe(9920);
-  const hearts={...s,pattes:0,hearts:100};const accepted=run(hearts,{type:'payWithHearts',action:command,maxHearts:4,maxPattes:0});expect(accepted.hearts).toBe(96);expect(accepted.progression.totalXp-s.progression.totalXp).toBe(20);
+  const s=at(level);expect(run(s,command).pattes).toBe(10000-SPECIES[species].price!);
+  const hearts={...s,pattes:0,hearts:100};const accepted=run(hearts,{type:'payWithHearts',action:command,maxHearts:Math.ceil(SPECIES[species].price!/25),maxPattes:0});expect(accepted.hearts).toBe(100-Math.ceil(SPECIES[species].price!/25));expect(accepted.progression.totalXp-s.progression.totalXp).toBe(70);
  });
  it.each([['universal',6],['feu',5],['vol',9]] as const)('habitat %s revalidates its level on final purchase', (habitatType,level)=>{
   const command={type:'buyBuilding',kind:'enclosure',habitatType,x:18,y:24} as const;
@@ -53,7 +53,7 @@ describe('active species and habitat level gates',()=>{
  it('keeps v9, captures only provable historical purchases and discovered breeding rights once',()=>{
   const s=at(1);delete s.levelAccessTransition;s.purchaseUnlocks=['feu'];s.discovered=['paille','neige','magicien'];s.missions.events.welcome=1;
   const migrated=reload(s);const rights=structuredClone(migrated.levelAccessTransition);
-  expect(migrated.version).toBe(16);expect(stateLevelAccess(migrated,{family:'species',id:'feu',action:'purchase'}).accessible).toBe(true);expect(stateLevelAccess(migrated,{family:'species',id:'volant',action:'purchase'}).locked).toBe(true);
+  expect(migrated.version).toBe(17);expect(stateLevelAccess(migrated,{family:'species',id:'feu',action:'purchase'}).accessible).toBe(true);expect(stateLevelAccess(migrated,{family:'species',id:'volant',action:'purchase'}).locked).toBe(true);
   expect(stateLevelAccess(migrated,{family:'species',id:'belier-gris',action:'purchase'}).accessible).toBe(true);
   expect(stateLevelAccess(migrated,{family:'habitatPurchase',id:'vol'}).accessible).toBe(true);
   expect(stateLevelAccess(migrated,{family:'habitatPurchase',id:'universal'}).locked).toBe(false); // three discoveries already proved the old milestone
@@ -93,12 +93,12 @@ describe('active species and habitat level gates',()=>{
 describe('pre-launch result filtering and unchanged fixed probabilities',()=>{
  it('preserves Paille × Neige and filters the guarantee by level',()=>{
   expect(odds(1,'paille','neige')).toEqual({frisket:50,icy:50});
-  const s=at(1);s.pityFailures=9;s.discovered=['paille','neige','feu'];let pool=breedingPool(s,'feu','neige',4,4);expect(pool.guaranteed).toBe(false);expect(pool.weights).toEqual({neige:40,'wat-wat':20,glassofeu:20});
+  const s=at(1);s.pityFailures=7;s.discovered=['paille','neige','feu','wat-wat','glassofeu'];let pool=breedingPool(s,'feu','neige',4,4);expect(pool.guaranteed).toBe(false);expect(pool.weights).toEqual({neige:30,'wat-wat':30,glassofeu:30});
   s.progression={totalXp:cumulativeLevelXp(6),rewardedThroughLevel:6};pool=breedingPool(s,'feu','neige',4,4);expect(pool.guaranteed).toBe(true);expect(pool.weights).toEqual({'feu-glace':1});
  });
  it('reserves only currently admissible specials and normalizes ordinary results',()=>{
   expect(odds(10,'belier-gris','volant')).toEqual({'belier-gris':50,volant:50});expect(odds(11,'belier-gris','volant')).toEqual({'belier-gris':47.5,volant:47.5,magicien:5});
-  expect(odds(13,'perroquet','feu')).toEqual({feu:100/3,volant:100/3,perroquet:50/3,phoenix:50/3});expect(odds(14,'perroquet','feu')).toEqual({feu:98*40/120,volant:98*40/120,perroquet:98*20/120,phoenix:98*20/120,dragon:2});
+  expect(odds(13,'perroquet','feu')).toEqual({"feu":25,"perroquet":25,"phoenix":25,"volant":25});expect(odds(14,'perroquet','feu')).toEqual({feu:98/4,volant:98/4,perroquet:98/4,phoenix:98/4,dragon:2});
   for(let level=1;level<=14;level++)for(const a of SPECIES_IDS)for(const b of SPECIES_IDS){const result=odds(level,a,b),total=Object.values(result).reduce((n,w)=>n+w,0);if(total)expect(total).toBeCloseTo(100,10);}
  },20000);
  it('launch XP cannot alter this birth, even if it crosses a threshold',()=>{

@@ -16,14 +16,14 @@ export const DECORATIONS: Record<DecorationId, DecorationDefinition> = {
   'hay-bale': {name: 'Botte de foin', price: 50, area: 'outside', width: 1, height: 1, rotates: false, level: 2, art: {file: 'assets/decorations/hay-bale.png', worldWidth: 43, anchor: {x: .5, y: 0.85}}},
   'bunny-slippers': {name: 'Chaussons lapins', price: 30, area: 'outside', width: 1, height: 1, rotates: false, level: 3, art: {file: 'assets/decorations/bunny-slippers.png', worldWidth: 34, anchor: {x: .5, y: 0.8}}},
   'birthday-candle': {name: 'Bougie « 1 an »', price: 50, area: 'outside', width: 2, height: 2, rotates: false, level: 5, art: {file: 'assets/decorations/birthday-candle.png', worldWidth: 82, anchor: {x: .5, y: 0.94}}},
-  'small-bookcase': {name: 'Petite bibliothèque', price: 160, area: 'outside', width: 1, height: 1, rotates: false, level: 6, art: {file: 'assets/decorations/small-bookcase.png', worldWidth: 47, anchor: {x: .5, y: 0.93}}},
-  'coconut-palm': {name: 'Cocotier', price: 130, area: 'outside', width: 2, height: 2, rotates: false, level: 8, art: {file: 'assets/decorations/coconut-palm.png', worldWidth: 150, anchor: {x: .5, y: 0.95}}},
-  'otter-plush': {name: 'Peluche de loutre géante', price: 200, area: 'outside', width: 2, height: 2, rotates: false, level: 10, art: {file: 'assets/decorations/otter-plush.png', worldWidth: 100, anchor: {x: .5, y: 0.93}}},
-  'large-bookcase': {name: 'Grande bibliothèque', price: 400, area: 'outside', width: 2, height: 1, rotates: false, level: 12, art: {file: 'assets/decorations/large-bookcase.png', worldWidth: 91, anchor: {x: .5, y: 0.93}}},
-  'hanukkah-menorah': {name: 'Ménorah de Hanoucca', price: 150, area: 'outside', width: 1, height: 1, rotates: false, level: 14, art: {file: 'assets/decorations/hanukkah-menorah.png', worldWidth: 43, anchor: {x: .5, y: 0.94}}},
+  'small-bookcase': {name: 'Petite bibliothèque', price: 600, area: 'outside', width: 1, height: 1, rotates: false, level: 6, art: {file: 'assets/decorations/small-bookcase.png', worldWidth: 47, anchor: {x: .5, y: 0.93}}},
+  'coconut-palm': {name: 'Cocotier', price: 800, area: 'outside', width: 2, height: 2, rotates: false, level: 8, art: {file: 'assets/decorations/coconut-palm.png', worldWidth: 150, anchor: {x: .5, y: 0.95}}},
+  'otter-plush': {name: 'Peluche de loutre géante', price: 1500, area: 'outside', width: 2, height: 2, rotates: false, level: 10, art: {file: 'assets/decorations/otter-plush.png', worldWidth: 100, anchor: {x: .5, y: 0.93}}},
+  'large-bookcase': {name: 'Grande bibliothèque', price: 4000, area: 'outside', width: 2, height: 1, rotates: false, level: 12, art: {file: 'assets/decorations/large-bookcase.png', worldWidth: 91, anchor: {x: .5, y: 0.93}}},
+  'hanukkah-menorah': {name: 'Ménorah de Hanoucca', price: 2500, area: 'outside', width: 1, height: 1, rotates: false, level: 14, art: {file: 'assets/decorations/hanukkah-menorah.png', worldWidth: 43, anchor: {x: .5, y: 0.94}}},
   // Owner's own artwork, shipped unchanged (only cropped and reduced like every decoration).
   'honey-pot': {name: 'Pot de miel géant', price: 70, area: 'outside', width: 2, height: 2, rotates: false, level: 4, art: {file: 'assets/decorations/honey-pot.png', worldWidth: 95, anchor: {x: .5, y: 0.9}}},
-  'robot-statue': {name: 'Statue du robot noir et doré', price: 500, area: 'outside', width: 2, height: 2, rotates: false, level: 22, art: {file: 'assets/decorations/robot-statue.png', worldWidth: 52, anchor: {x: .5, y: 0.95}}},
+  'robot-statue': {name: 'Statue du robot noir et doré', price: 15000, area: 'outside', width: 2, height: 2, rotates: false, level: 22, art: {file: 'assets/decorations/robot-statue.png', worldWidth: 52, anchor: {x: .5, y: 0.95}}},
 };
 export const FINE_GRID = 4;
 /** A generous bound keeps imports and low-end devices bounded; never discards owned objects. */
@@ -31,4 +31,8 @@ export const MAX_DECORATIONS = 512;
 
 /** Decorations only: refund pattes, never hearts. */
 export const DECORATION_RESALE_RATE = .5;
+const LEGACY_PRICES: Partial<Record<DecorationId, number>> = {'small-bookcase': 160, 'coconut-palm': 130, 'otter-plush': 200, 'hanukkah-menorah': 150, 'large-bookcase': 400, 'robot-statue': 500};
 export const decorationResalePrice = (id: DecorationId): number => Math.floor(DECORATIONS[id].price * DECORATION_RESALE_RATE);
+/** Old exemplars have no receipt; use the pre-refonte catalogue as their paid-price cap. */
+export const ownedDecorationResalePrice = (owned: {catalogId: DecorationId; paidPrice?: number}): number =>
+  Math.min(decorationResalePrice(owned.catalogId), owned.paidPrice ?? LEGACY_PRICES[owned.catalogId] ?? DECORATIONS[owned.catalogId].price);

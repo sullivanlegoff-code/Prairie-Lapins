@@ -43,7 +43,7 @@ describe('target-level habitat upgrades',()=>{
  it('keeps parents and fractional stock; a long absence caps at the old limit before upgrading',()=>{
   let s=state('paille',1,3);s.rabbits[0].affection=2;s.rabbits.push({id:'rabbit-6',species:'paille',affection:2,enclosureId:'building-1'});s.nextId=7;s=run(s,{type:'breed',parents:['rabbit-2','rabbit-6']});s.buildings[0].incomeUnits=HOUR/2+17;
   const command={type:'upgradeHabitat',id:'building-1',fromLevel:1} as const,next=run(s,command);expect(next.buildings[0].incomeUnits).toBe(HOUR/2+17);expect(next.rabbits).toEqual(s.rabbits);expect(next.buildings[1].breeding).toEqual(s.buildings[1].breeding);expect(next.progression).toEqual(s.progression);
-  const absent=run(s,command,1000*HOUR);expect(absent.buildings[0].incomeUnits).toBe(habitatLevel('paille',1).cap*HOUR);expect(advance(absent,1001*HOUR).buildings[0].incomeUnits).toBe((habitatLevel('paille',1).cap+28)*HOUR);
+  const absent=run(s,command,1000*HOUR);expect(absent.buildings[0].incomeUnits).toBe(habitatLevel('paille',1).cap*HOUR);expect(advance(absent,1001*HOUR).buildings[0].incomeUnits).toBe((habitatLevel('paille',1).cap+22)*HOUR);
  });
  it.each([false,true])('write refusal rolls back the upgrade and payment, hearts=%s',hearts=>{
   const s=state('paille',1,3);if(hearts)s.pattes=0;const data=new Map([[SAVE_KEY,encodeGame(s)]]);let fail=false;const c=new GameController({getItem:k=>data.get(k)??null,setItem:(k,v)=>{if(fail)throw Error('quota');data.set(k,v);}},()=>0);const events:unknown[]=[];c.onProgressionGain(g=>events.push(g));const command:Command=hearts?{type:'payWithHearts',action:{type:'upgradeHabitat',id:'building-1',fromLevel:1},maxHearts:1000,maxPattes:0}:{type:'upgradeHabitat',id:'building-1',fromLevel:1};

@@ -30,16 +30,16 @@ describe('approved Ardent content', () => {
     expect(SPECIES_IDS[13]).toBe('ardent'); expect(SPECIES_IDS).toEqual(EXPECTED_IDS);
     expect(validateSpeciesEntries(SPECIES_ENTRIES)).toEqual([]);
     expect(SPECIES.ardent).toEqual({name: 'Ardent', description, types: ['feu', 'paille'], rarity: 'rare', price: null,
-      progression: {unlockLevel: 1}, acquisition: [{kind: 'recipe', requiredTypes: ['feu', 'paille'], minAffection: 2}],
+      progression: {unlockLevel: 1}, acquisition: [{kind: 'recipe',guaranteeEligible:true, requiredTypes: ['feu', 'paille'], minAffection: 2}],
       recipe: {requiredTypes: ['feu', 'paille'], minAffection: 2}, art: {kind: 'static-sprite', file: 'assets/rabbits/ardent/ardent-v1.png', texture: 'rabbit-ardent-original-v1', width: 461, height: 421, worldWidth: 52, groundY: 13, preloadOrder: 8}});
     expect(SPECIES.feu.progression.unlockLevel).toBe(5); expect(growthDuration('ardent')).toBe(30 * MINUTE);
-    expect(RECIPE_PRICES.ardent).toBeUndefined(); expect(GIFTED_RECIPES).not.toContain('ardent'); expect(GUARANTEE_SPECIES).not.toContain('ardent');
+    expect(RECIPE_PRICES.ardent).toBeUndefined(); expect(GIFTED_RECIPES).not.toContain('ardent'); expect(GUARANTEE_SPECIES).toContain('ardent');
     expect(act(parents(), {type: 'buyRabbit', species: 'ardent', enclosureId: 'building-1'}, 0)).toMatchObject({ok: false, reason: 'INVALID_CHOICE'});
   });
   it('uses either parent order and accepts both elements on one parent, while checking both affection thresholds', () => {
     for (const [a,b] of [['paille','feu'], ['bouee','paille'], ['ardent','neige']] as const) {
       for (const [x,y] of [[a,b],[b,a]] as const) {
-        expect(recipeMatches('ardent', x, y)).toBe(true); expect(breedingWeights(x,y,2,2).ardent).toBe(20);
+        expect(recipeMatches('ardent', x, y)).toBe(true); expect(breedingWeights(x,y,2,2).ardent).toBe(30);
         expect(breedingWeights(x,y,1,2).ardent).toBeUndefined(); expect(breedingWeights(x,y,2,1).ardent).toBeUndefined();
       }
     }
@@ -48,12 +48,12 @@ describe('approved Ardent content', () => {
     }
   });
   it('preserves historical weighting and guarantee rather than extending the starting Rare-only policy', () => {
-    expect(breedingWeights('paille','feu',2,2)).toEqual({paille:40,feu:40,ardent:20,snk:20});
-    expect(breedingOdds('feu','paille',2,2)).toEqual({paille:100/3,feu:100/3,ardent:100/6,snk:100/6});
-    expect(breedingOdds('paille','feu',4,4)).toEqual({paille:200/7,feu:200/7,bouee:100/7,ardent:100/7,snk:100/7});
-    const s = parents(); s.progression = {totalXp: cumulativeLevelXp(5), rewardedThroughLevel: 5}; s.pityFailures = 9;
-    expect(breedingPool(s,'paille','feu',4,4)).toMatchObject({weights:{bouee:1},guaranteed:true});
-    expect(breedingPool(s,'paille','feu',2,2)).toMatchObject({weights:{paille:40,feu:40,ardent:20,snk:20},guaranteed:false});
+    expect(breedingWeights('paille','feu',2,2)).toEqual({paille:30,feu:30,ardent:30,snk:30});
+    expect(breedingOdds('feu','paille',2,2)).toEqual({paille:25,feu:25,ardent:25,snk:25});
+    expect(breedingOdds('paille','feu',4,4)).toEqual({paille:20,feu:20,bouee:20,ardent:20,snk:20});
+    const s = parents(); s.progression = {totalXp: cumulativeLevelXp(5), rewardedThroughLevel: 5}; s.pityFailures = 7;
+    expect(breedingPool(s,'paille','feu',4,4)).toMatchObject({weights:{bouee:1,ardent:1,snk:1},guaranteed:true});
+    expect(breedingPool(s,'paille','feu',2,2)).toMatchObject({weights:{ardent:1,snk:1},guaranteed:true});
     expect(breedingOdds('paille','neige',2,2)).toEqual({frisket:50,icy:50});
   });
   it('keeps a real Ardent birth through save/reload without redrawing, transfer, growth and compatible welcome', () => {
@@ -62,7 +62,7 @@ describe('approved Ardent content', () => {
     const controller = new GameController(storage, () => 0, rng);
     expect(controller.perform({type:'breed', parents:['rabbit-2','rabbit-3']}).ok).toBe(true);
     let born = controller.getSnapshot().state!; const birth = born.buildings.find(b => b.breeding)!.breeding!.birth;
-    expect(birth).toMatchObject({species:'ardent',guaranteed:false,reservedDiscovery:false}); expect(rng).toHaveBeenCalledTimes(1); controller.dispose();
+    expect(birth).toMatchObject({species:'ardent',guaranteed:false,reservedDiscovery:true}); expect(rng).toHaveBeenCalledTimes(1); controller.dispose();
     const noDraw = vi.fn(() => 0), reloaded = new GameController(storage, () => 0, noDraw);
     expect(reloaded.getSnapshot().state).toEqual(born); expect(noDraw).not.toHaveBeenCalled(); reloaded.dispose();
     expect(JSON.stringify(collectionView(born))).not.toContain(description);
@@ -75,7 +75,7 @@ describe('approved Ardent content', () => {
     }
     home.habitat!.type = 'universal'; const xp = born.progression.totalXp;
     born = reload(run(born,{type:'welcome',enclosureId:home.id,birthId:birth.id},50*MINUTE));
-    expect(born.rabbits.at(-1)).toMatchObject({species:'ardent',affection:1,enclosureId:home.id}); expect(born.progression.totalXp-xp).toBe(70);
+    expect(born.rabbits.at(-1)).toMatchObject({species:'ardent',affection:1,enclosureId:home.id}); expect(born.progression.totalXp-xp).toBe(270);
     expect(collectionView(born).find(e => e.known && e.species === 'ardent')).toEqual({known:true,species:'ardent',name:'Ardent',description});
   });
 });

@@ -9,7 +9,7 @@ import {GameController} from '../src/application/GameController';
 import {SAVE_KEY} from '../src/persistence/storage';
 import type {Command,GameState} from '../src/state/types';
 const location={kind:'outside',x:18,y:28,rotation:0} as const;
-function at(level:number){const s=createCentreStartGame(0);s.pattes=5000;s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level};return s;}
+function at(level:number){const s=createCentreStartGame(0);s.pattes=20000;s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level};return s;}
 const run=(s:GameState,c:Command)=>{const r=act(s,c,0);if(!r.ok)throw Error(r.reason);return r.state;};
 const reload=(s:GameState)=>{const r=decodeGame(encodeGame(s));if(!r.ok)throw Error(r.reason);return r.state;};
 describe('level gates acquire new decoration exemplars only',()=>{

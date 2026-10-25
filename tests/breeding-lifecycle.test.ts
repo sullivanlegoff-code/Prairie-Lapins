@@ -34,7 +34,7 @@ function growing() {
   s = run(s, {type: 'breed', parents: ['rabbit-2', snow]});
   // Historical already-drawn Common: retain the original compatibility/capacity regression.
   expect(nest(s).breeding!.birth.species).toBe('icy');
-  nest(s).breeding!.birth.species='neige';
+  nest(s).breeding!.birth.species='neige';nest(s).breeding!.birth.reservedDiscovery=false;nest(s).breeding!.birth.guaranteed=false;
   s = advance(s, s.lastSimulatedAt + BALANCE.breedingDuration);
   s = run(s, {type: 'transferBirth', id: nest(s).id, birthId: nest(s).breeding!.birth.id});
   return {s, snowHome, strawHome, snow};

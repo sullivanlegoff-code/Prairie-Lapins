@@ -1,3 +1,4 @@
+// HISTORICAL: previousStart reproduces the retired centre-start layout; current economy rules apply.
 // @vitest-environment happy-dom
 import {describe,it,expect} from 'vitest';
 import {act,advance,createGame,decodeGame,encodeGame} from '../src/simulation';
@@ -17,19 +18,19 @@ describe('Paille-only course: real commands and existing economy',()=>{
    const resume=()=>{const d=decodeGame(encodeGame(s));expect(d.ok).toBe(true);if(!d.ok)throw Error(d.reason);s=advance(d.state,now);};
    const claim=(id:typeof SOLO_INITIAL_MISSION_IDS[number])=>{run({type:'claimMainMission',id});expect(activeMainMissions(s)).not.toContain(id);const before=encodeGame(s);expect(act(s,{type:'claimMainMission',id},now).ok).toBe(false);expect(encodeGame(s)).toBe(before);};
    const finish=(id:string,stage:TimedStage)=>{if(aided)run({type:'initiationAid',id,stage,jobKey:s.initiation![stage]!,...(stage==='growth'?{birthId:s.initiation!.birthId!}:{})});else{const b=s.buildings.find(b=>b.id===id)!;now=stage==='order'?b.order!.endsAt:stage==='breeding'?b.breeding!.endsAt:babyOf(b)!.readyAt;resume();}};
-   expect([s.pattes,s.grass,s.hearts]).toEqual([300,0,12]);expect(s.rabbits).toEqual([{id:'rabbit-2',species:'paille',affection:1,enclosureId:'building-1'}]);expect(s.discovered).toEqual(['paille']);expect(s.buildings[0].habitat).toEqual({type:'paille',level:1});expect(s.acquiredParcels).toEqual(['southwest']);
+   expect([s.pattes,s.grass,s.hearts]).toEqual([350,0,12]);expect(s.rabbits).toEqual([{id:'rabbit-2',species:'paille',affection:1,enclosureId:'building-1'}]);expect(s.discovered).toEqual(['paille']);expect(s.buildings[0].habitat).toEqual({type:'paille',level:1});expect(s.acquiredParcels).toEqual(['southwest']);
    expect(buildingPlacementReason(s,2,40)).toBeNull();expect(buildingPlacementReason(s,6,36)).toBeNull();
    expect(guidedStep(s,p.value,now).id).toBe('snowShop');
-   run({type:'buyBuilding',kind:'enclosure',habitatType:'neige',x:2,y:40});const snow=s.buildings.at(-1)!.id;claim('snow-habitat');resume();expect(s.pattes).toBe(100);
-   expect(guidedStep(s,p.value,now).id).toBe('rabbitShop');run({type:'buyRabbit',species:'neige',enclosureId:snow});const neige=s.rabbits.at(-1)!.id;expect(s.pattes).toBe(20);expect(s.missions.events.welcome).toBe(0);
-   expect(guidedStep(s,p.value,now).id).toBe('snowReward');claim('welcome-snow');expect(s.pattes).toBe(70);resume();
-   run({type:'buyBuilding',kind:'farm',x:6,y:36});const farm=s.buildings.at(-1)!.id;claim('first-farm');run({type:'startOrder',id:farm,recipe:'small'});expect(s.pattes).toBe(0);p.set({guideCollection:true});resume();finish(farm,'order');run({type:'collectOrder',id:farm});claim('first-harvest');
+   run({type:'buyBuilding',kind:'enclosure',habitatType:'neige',x:2,y:40});const snow=s.buildings.at(-1)!.id;claim('snow-habitat');resume();expect(s.pattes).toBe(150);
+   expect(guidedStep(s,p.value,now).id).toBe('rabbitShop');run({type:'buyRabbit',species:'neige',enclosureId:snow});const neige=s.rabbits.at(-1)!.id;expect(s.pattes).toBe(70);expect(s.missions.events.welcome).toBe(0);
+   expect(guidedStep(s,p.value,now).id).toBe('snowReward');claim('welcome-snow');expect(s.pattes).toBe(120);resume();
+   run({type:'buyBuilding',kind:'farm',x:6,y:36});const farm=s.buildings.at(-1)!.id;claim('first-farm');run({type:'startOrder',id:farm,recipe:'small'});expect(s.pattes).toBe(50);p.set({guideCollection:true});resume();finish(farm,'order');run({type:'collectOrder',id:farm});claim('first-harvest');
    run({type:'feed',id:'rabbit-2'});claim('first-meal');run({type:'feed',id:neige});claim('parents-ready');expect(guidedStep(s,p.value,now).id).toBe('breed');expect(p.value.guideRecipe).toBe(false);run({type:'breed',parents:['rabbit-2',neige]});claim('at-nest');resume();
    expect(s.rabbits.map(r=>r.enclosureId)).toEqual(['building-1',snow]);expect(guidedStep(s,p.value,now).id).toBe('transfer');
    finish('building-4','breeding');expect(babyOf(s.buildings.find(b=>b.kind==='nursery')!)).toBeNull();expect(guidedStep(s,p.value,now).id).toBe('transfer');run({type:'transferBirth',id:'building-4',birthId:s.initiation!.birthId!});claim('to-nursery');expect(s.buildings.find(b=>b.kind==='nest')!.breeding).toBeNull();expect(s.rabbits.map(r=>r.enclosureId)).toEqual(['building-1',snow]);resume();finish('building-5','growth');
    // Both Rares can enter either specialized home.
    run(welcomeOf(s, roll===.65?snow:'building-1'));claim('first-birth');resume();expect(guidedStep(s,p.value,now).done).toBe(true);
-   expect(s.rabbits.at(-1)!.species).toBe(roll===.1?'frisket':'icy');expect([s.pattes,s.grass,s.hearts]).toEqual([130,66,14]);expect(s.missions.claimed).toEqual(['snow-habitat','welcome-snow','first-farm','first-harvest','first-meal','parents-ready','at-nest','to-nursery','first-birth']);expect(s.initiation!.used).toEqual(aided?['order','breeding','growth']:[]);expect(s.missions.completed).toContain('two-habitats');expect(s.missions.claimed).not.toContain('two-habitats');
+   expect(s.rabbits.at(-1)!.species).toBe(roll===.1?'frisket':'icy');expect([s.pattes,s.grass,s.hearts]).toEqual([180,66,15]);expect(s.missions.claimed).toEqual(['snow-habitat','welcome-snow','first-farm','first-harvest','first-meal','parents-ready','at-nest','to-nursery','first-birth']);expect(s.initiation!.used).toEqual(aided?['order','breeding','growth']:[]);expect(s.missions.completed).toContain('two-habitats');expect(s.missions.claimed).not.toContain('two-habitats');
   }
  });
  it('old games retain homes, rabbits, claims and rights without retroactive welcome reward',()=>{
@@ -38,6 +39,6 @@ describe('Paille-only course: real commands and existing economy',()=>{
   d.state.missions.completed.push('welcome-snow');expect(act(d.state,{type:'claimMainMission',id:'welcome-snow'},0)).toMatchObject({ok:false,reason:'NOT_READY'});
  });
  it('minimum budget needs neither income nor other rewards',()=>{
-  let s=createGame(0);const run=(c:Command)=>{const r=act(s,c,0);if(!r.ok)throw Error(r.reason);s=r.state;};run({type:'buyBuilding',kind:'enclosure',habitatType:'neige',x:2,y:40});run({type:'buyRabbit',species:'neige',enclosureId:s.buildings.at(-1)!.id});run({type:'claimMainMission',id:'welcome-snow'});expect(s.pattes).toBe(70);run({type:'buyBuilding',kind:'farm',x:6,y:36});run({type:'startOrder',id:s.buildings.at(-1)!.id,recipe:'small'});expect([s.pattes,s.hearts]).toEqual([0,13]);
+  let s=createGame(0);const run=(c:Command)=>{const r=act(s,c,0);if(!r.ok)throw Error(r.reason);s=r.state;};run({type:'buyBuilding',kind:'enclosure',habitatType:'neige',x:2,y:40});run({type:'buyRabbit',species:'neige',enclosureId:s.buildings.at(-1)!.id});run({type:'claimMainMission',id:'welcome-snow'});expect(s.pattes).toBe(120);run({type:'buyBuilding',kind:'farm',x:6,y:36});run({type:'startOrder',id:s.buildings.at(-1)!.id,recipe:'small'});expect([s.pattes,s.hearts]).toEqual([50,13]);
  });
 });

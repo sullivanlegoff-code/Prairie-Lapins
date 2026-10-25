@@ -15,9 +15,10 @@ export type HabitatCurrency = 'pattes' | 'hearts';
 /** `cost` is paid in `currency` when the level is reached: level 1 is bought, levels 2 and 3 are upgrades. Level 3 costs hearts, never coins. */
 export const HABITAT_LEVELS = {
   universal: [{capacity: BALANCE.enclosureCapacity, cap: BALANCE.enclosureCap, cost: BALANCE.buildings.enclosure.price, currency: 'pattes'},
-    {capacity: 5, cap: 900, cost: 200, currency: 'pattes'}, {capacity: 7, cap: 1200, cost: 10, currency: 'hearts'}],
-  specialized: [{capacity: 3, cap: 900, cost: 200, currency: 'pattes'}, {capacity: 5, cap: 1500, cost: 300, currency: 'pattes'}, {capacity: 7, cap: 2100, cost: 10, currency: 'hearts'}],
+    {capacity: 5, cap: 4000, cost: 175, currency: 'pattes'}, {capacity: 7, cap: 5600, cost: 10, currency: 'hearts'}],
+  specialized: [{capacity: 3, cap: 2400, cost: 200, currency: 'pattes'}, {capacity: 5, cap: 4000, cost: 100, currency: 'pattes'}, {capacity: 7, cap: 5600, cost: 10, currency: 'hearts'}],
 } as const;
-export const LAND = [{width: BALANCE.initialWidth, cost: 0}, {width: BALANCE.extendedWidth, cost: BALANCE.extensionCost}, {width: LEGACY_ISLAND.mapCells, cost: 1000}] as const;
-export const habitatLevel = (type: HabitatType, level: HabitatLevel) => HABITAT_LEVELS[type === 'universal' ? 'universal' : 'specialized'][level - 1];
+export const LAND = [{width: BALANCE.initialWidth, cost: 0}, {width: BALANCE.extendedWidth, cost: BALANCE.extensionCost}, {width: LEGACY_ISLAND.mapCells, cost: 1800}] as const;
+export const HABITAT_PRICES: Record<HabitatType, number> = {paille: 200, neige: 200, feu: 450, metal: 800, vol: 1200, universal: 350};
+export const habitatLevel = (type: HabitatType, level: HabitatLevel) => ({...HABITAT_LEVELS[type === 'universal' ? 'universal' : 'specialized'][level - 1], cost: level === 1 ? HABITAT_PRICES[type] : level === 2 ? HABITAT_PRICES[type] / 2 : 10});
 export const habitatPrice = (type: HabitatType) => habitatLevel(type, 1).cost;

@@ -42,7 +42,7 @@ function setup(capacity: NurseryCapacity) {
 function bred(s: GameState, snow: string, roll = .5): GameState {
   s = run(s, {type: 'breed', parents: ['rabbit-2', snow]}, s.lastSimulatedAt, roll);
   // Explicit historical births keep the single-type capacity and short-growth regressions.
-  nest(s).breeding!.birth.species = roll < .5 ? 'paille' : 'neige';
+  nest(s).breeding!.birth.species = roll < .5 ? 'paille' : 'neige';nest(s).breeding!.birth.reservedDiscovery=false;nest(s).breeding!.birth.guaranteed=false;
   const q = quoteAcceleration(s, nest(s).id, 'breeding', s.lastSimulatedAt); if (!q.ok) throw Error(q.reason);
   return run(s, {type: 'accelerate', id: nest(s).id, stage: 'breeding', jobKey: q.jobKey, maxHearts: q.hearts});
 }

@@ -94,16 +94,16 @@ describe('what stays reachable', () => {
   });
   it('the opening still leads to the two Rares: Paille + Neige is a 50/50 of Frisket and Icy, whatever the guarantee', () => {
     expect(breedingOdds('paille', 'neige')).toEqual({frisket: 50, icy: 50});
-    expect(breedingDistributionWeights('paille', 'neige')).toEqual({frisket: 20, icy: 20});
+    expect(breedingDistributionWeights('paille', 'neige')).toEqual({frisket: 30, icy: 30});
   });
 });
 
 describe('distributions: only the removals and their renormalisation', () => {
   // Hand-written raw weights (Commons 40 when all their elements are present, each admissible recipe 20) of the unions that used to contain Brumelin.
   it.each([
-    [['paille', 'feu-glace'], 2, 2, {paille: 40, neige: 40, feu: 40, frisket: 20, icy: 20, ardent: 20, snk: 20, 'wat-wat': 20, glassofeu: 20}],
-    [['paille', 'feu-glace'], 4, 4, {paille: 40, neige: 40, feu: 40, 'feu-glace': 20, bouee: 20, frisket: 20, icy: 20, ardent: 20, snk: 20, 'wat-wat': 20, glassofeu: 20}],
-    [['lunettes', 'feu-glace'], 4, 4, {paille: 40, neige: 40, feu: 40, 'belier-gris': 40, lunettes: 20, 'feu-glace': 20, bouee: 20, frisket: 20, icy: 20, ardent: 20, snk: 20, amethyste: 20, 'princesse-neige': 20, fluffy: 20, roukette: 20, 'wat-wat': 20, glassofeu: 20}],
+    [['paille', 'feu-glace'], 2, 2, {paille: 30, neige: 30, feu: 30, frisket: 30, icy: 30, ardent: 30, snk: 30, 'wat-wat': 30, glassofeu: 30}],
+    [['paille', 'feu-glace'], 4, 4, {paille: 30, neige: 30, feu: 30, 'feu-glace': 30, bouee: 30, frisket: 30, icy: 30, ardent: 30, snk: 30, 'wat-wat': 30, glassofeu: 30}],
+    [['lunettes', 'feu-glace'], 4, 4, {paille: 30, neige: 30, feu: 30, 'belier-gris': 30, lunettes: 30, 'feu-glace': 30, bouee: 30, frisket: 30, icy: 30, ardent: 30, snk: 30, amethyste: 30, 'princesse-neige': 30, fluffy: 30, roukette: 30, 'wat-wat': 30, glassofeu: 30}],
   ] as const)('%j at affection %i/%i keeps its raw weights, with no Brumelin and nothing redistributed', (pair, a, b, expected) => {
     expect(breedingWeights(pair[0], pair[1], a, b)).toEqual(expected);
     const total = Object.values(expected).reduce((n, w) => n + w, 0);

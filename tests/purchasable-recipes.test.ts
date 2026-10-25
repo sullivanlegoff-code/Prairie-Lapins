@@ -109,22 +109,22 @@ describe('controller purchase, reload and import', () => {
     const r = c.perform(buy('bouee')); expect(r.ok).toBe(true);
     expect(c.perform(buy('bouee'))).toMatchObject({ok: false, reason: 'RECIPE_KNOWN'});
     const saved = decodeGame(m.data.get(SAVE_KEY)!); if (!saved.ok) throw Error(saved.reason);
-    expect([saved.state.pattes, saved.state.recipeBook]).toEqual([150, ['bouee']]); c.dispose();
+    expect([saved.state.pattes, saved.state.recipeBook]).toEqual([200,["bouee"]]); c.dispose();
     const reloaded = new GameController(m.storage, () => 0);
-    expect([reloaded.getSnapshot().state!.pattes, reloaded.getSnapshot().state!.recipeBook]).toEqual([150, ['bouee']]); reloaded.dispose();
+    expect([reloaded.getSnapshot().state!.pattes, reloaded.getSnapshot().state!.recipeBook]).toEqual([200,["bouee"]]); reloaded.dispose();
   });
   it('adopts neither payment nor ownership when the save fails, then permits one purchase', () => {
     const m = start(), c = new GameController(m.storage, () => 0); m.flags.fail = SAVE_KEY;
     expect(c.perform(buy('bouee'))).toEqual({ok: false, reason: 'ACTION_NOT_SAVED'});
-    expect([c.getSnapshot().state!.pattes, c.getSnapshot().state!.recipeBook]).toEqual([300, []]);
+    expect([c.getSnapshot().state!.pattes, c.getSnapshot().state!.recipeBook]).toEqual([350,[]]);
     m.flags.fail = ''; expect(c.perform(buy('bouee')).ok).toBe(true);
-    expect([c.getSnapshot().state!.pattes, c.getSnapshot().state!.recipeBook]).toEqual([150, ['bouee']]); c.dispose();
+    expect([c.getSnapshot().state!.pattes, c.getSnapshot().state!.recipeBook]).toEqual([200,["bouee"]]); c.dispose();
   });
   it('imports an export with its recipes and no repeated payment', () => {
     const source = new GameController(start().storage, () => 0); expect(source.perform(buy('bouee')).ok).toBe(true);
     const exported = source.exportGame(); if (!exported.ok) throw Error(exported.reason); source.dispose();
     const target = new GameController(memory().storage, () => 0), prepared = target.prepareImport(exported.json);
     if (!prepared.ok) throw Error(prepared.reason); expect(target.confirmImport(prepared.token, true)).toEqual({ok: true});
-    expect([target.getSnapshot().state!.pattes, target.getSnapshot().state!.recipeBook]).toEqual([150, ['bouee']]); target.dispose();
+    expect([target.getSnapshot().state!.pattes, target.getSnapshot().state!.recipeBook]).toEqual([200,["bouee"]]); target.dispose();
   });
 });

@@ -14,10 +14,10 @@ beforeEach(()=>{document.body.innerHTML=html.match(/<body>([\s\S]*)<\/body>/)![1
 describe('player progress display',()=>{
  it('uses in-level XP and updates stable controls after one and several levels',()=>{
   const ui=mountPlayerProgression(),s=createGame(0),button=el('player-progress'),bar=el('player-xp-bar');ui.update(snapshot(s));
-  expect(el('player-level').textContent).toBe('1');expect(el('player-xp-label').textContent).toBe('0 / 50 XP');
-  applyProgressionGain(s,50);ui.update(snapshot(s));expect(el('player-level').textContent).toBe('2');expect(el('player-xp-label').textContent).toBe('0 / 152 XP');
-  applyProgressionGain(s,500);ui.update(snapshot(s));expect(el('player-level').textContent).toBe('4');expect(el('player-detail-total').textContent).toContain('550');
-  expect(bar.getAttribute('aria-valuenow')).toBe('58');expect(bar.getAttribute('aria-valuemax')).toBe('459');
+  expect(el('player-level').textContent).toBe('1');expect(el('player-xp-label').textContent).toBe('0 / 90 XP');
+  applyProgressionGain(s,90);ui.update(snapshot(s));expect(el('player-level').textContent).toBe('2');expect(el('player-xp-label').textContent).toBe('0 / 200 XP');
+  applyProgressionGain(s,900);ui.update(snapshot(s));expect(el('player-level').textContent).toBe('4');expect(el('player-detail-total').textContent).toContain('990');
+  expect(bar.getAttribute('aria-valuenow')).toBe('382');expect(bar.getAttribute('aria-valuemax')).toBe('443');
   expect(el('player-progress')).toBe(button);expect(el('player-xp-bar')).toBe(bar);expect(s.hearts).toBe(15);ui.dispose();
  });
  it('renders maximum and safe large totals without a fictitious threshold',()=>{
@@ -40,13 +40,13 @@ describe('player progress display',()=>{
  });
  it('tracks confirmed controller gains, imports and new games through SavePanel subscription, then unsubscribes',()=>{
   const values=new Map<string,string>(),c=new GameController({scope:'laboratory',getItem:k=>values.get(k)??null,setItem:(k,v)=>{values.set(k,v);}},()=>0);
-  const dispose=mountSavePanel(c);c.grantLaboratoryXp(50);expect(el('player-level').textContent).toBe('2');expect(el('hearts').textContent).toBe('13');
+  const dispose=mountSavePanel(c);c.grantLaboratoryXp(50);c.grantLaboratoryXp(50);expect(el('player-level').textContent).toBe('2');expect(el('hearts').textContent).toBe('13');
   const state=createGame(0);state.progression.totalXp=cumulativeLevelXp(5);const p=c.prepareImport(encodeGame(state));if(!p.ok)throw Error(p.reason);c.confirmImport(p.token,true);expect(el('player-level').textContent).toBe('5');expect(el('hearts').textContent).toBe('12');
-  c.restart(true);expect(el('player-xp-label').textContent).toBe('0 / 50 XP');dispose();c.grantLaboratoryXp(50);expect(el('player-level').textContent).toBe('1');c.dispose();
+  c.restart(true);expect(el('player-xp-label').textContent).toBe('0 / 90 XP');dispose();c.grantLaboratoryXp(50);expect(el('player-level').textContent).toBe('1');c.dispose();
  });
  it('does not display unconfirmed XP after a failed write',()=>{
   let fail=false;const values=new Map<string,string>(),c=new GameController({scope:'laboratory',getItem:k=>values.get(k)??null,setItem:(k,v)=>{if(fail)throw Error('quota');values.set(k,v);}},()=>0);
-  const dispose=mountSavePanel(c);fail=true;c.grantLaboratoryXp(500);expect(el('player-xp-label').textContent).toBe('0 / 50 XP');expect(el('hearts').textContent).toBe('12');dispose();c.dispose();
+  const dispose=mountSavePanel(c);fail=true;c.grantLaboratoryXp(500);expect(el('player-xp-label').textContent).toBe('0 / 90 XP');expect(el('hearts').textContent).toBe('12');dispose();c.dispose();
  });
 });
 

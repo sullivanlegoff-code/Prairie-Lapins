@@ -1,3 +1,4 @@
+// HISTORICAL: previousStart reproduces the retired centre-start layout; current economy rules apply.
 import {previousStart as createGame} from './regression-start';
 import {describe,it,expect} from 'vitest';
 import {act,advance,encodeGame,decodeGame} from '../src/simulation';

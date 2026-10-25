@@ -105,7 +105,7 @@ describe('main-game Cuisine activity', () => {
     a.refresh();a.refresh();vi.advanceTimersByTime(1000);a.refresh();
     expect(performed).toHaveBeenCalledExactlyOnceWith({type:'rewardCuisine',rabbitId:before.rabbits[0].id,recipeId:recipe});
     const paid=CUISINE_REWARDS[recipe],expected={...before,pattes:before.pattes+paid.pattes,grass:before.grass+paid.grass,hearts:before.hearts+1,
-      missions:{...before.missions,completed:[...before.missions.completed,'first-meal'],daily:{...before.missions.daily,progress:{...before.missions.daily.progress,'gain-affection':before.missions.daily.progress['gain-affection']+1}}},
+      missions:{...before.missions,completed:[...before.missions.completed,'first-meal'],daily:{...before.missions.daily,progress:{...before.missions.daily.progress,'gain-affection':before.missions.daily.progress['gain-affection']}}},
       rabbits:before.rabbits.map((r,i)=>i===0?{...r,affection:r.affection+1}:r),cuisine:{affectionCycles:{[before.rabbits[0].id]:before.missions.daily.cycleIndex},heartCycle:before.missions.daily.cycleIndex,fullRuns:{cycle:before.missions.daily.cycleIndex,used:1}}};
     expect(k.controller.getSnapshot().state).toEqual(expected);
     expect(JSON.parse(k.values.get(SAVE_KEY)!)).toMatchObject(expected);
@@ -327,7 +327,7 @@ describe('main-game Cuisine activity', () => {
     activity.root.querySelector<HTMLButtonElement>('#recipe-choose')!.click();
     expect(activity.engine.snapshot().phase).toBe('choosing'); expect(k.completed).toHaveBeenCalledTimes(2);
     expect(k.controller.getSnapshot().state).toEqual({...before,pattes:before!.pattes+2*CUISINE_REWARDS.salad.pattes,grass:before!.grass+2*CUISINE_REWARDS.salad.grass,hearts:before!.hearts+1,
-      missions:{...before!.missions,completed:[...before!.missions.completed,'first-meal'],daily:{...before!.missions.daily,progress:{...before!.missions.daily.progress,'gain-affection':before!.missions.daily.progress['gain-affection']+1}}},
+      missions:{...before!.missions,completed:[...before!.missions.completed,'first-meal'],daily:{...before!.missions.daily,progress:{...before!.missions.daily.progress,'gain-affection':before!.missions.daily.progress['gain-affection']}}},
       rabbits:before!.rabbits.map((r,i)=>i===0?{...r,affection:r.affection+1}:r),cuisine:{affectionCycles:{[before!.rabbits[0].id]:before!.missions.daily.cycleIndex},heartCycle:before!.missions.daily.cycleIndex,fullRuns:{cycle:before!.missions.daily.cycleIndex,used:2}}});
   });
   it('cleans Cuisine on UI disposal without fake completion', () => {
@@ -381,11 +381,13 @@ describe('Cuisine tasting celebration', () => {
   };
   it('shows the pay actually earned: salad full for the five slots, then the singular tip', () => {
     const k = setup(); k.open(); const a = k.activity(); const shown: string[] = [];
+    expect(document.querySelector('.cuisine-activity .cuisine-quota')?.textContent).toContain('Encore 5');
     a.root.querySelector<HTMLButtonElement>('#recipe-salad')!.click();
     for (let run = 1; run <= 6; run++) {
       if (run > 1) a.root.querySelector<HTMLButtonElement>('#recipe-replay')!.click();
       finishSalad(a.engine); a.refresh(); a.refresh();
       shown.push(a.root.querySelector('.cuisine-reward-feedback')!.textContent!);
+      expect(document.querySelector('.cuisine-activity .cuisine-quota')?.textContent).toContain(run < 5 ? `Encore ${5-run}` : 'pourboire de 5 pattes et 1 herbe');
     }
     const herbs = a.root.querySelector<HTMLElement>('.cuisine-reward-feedback [data-kind=herbs]');
     expect(herbs?.textContent).toContain('+1 herbe'); expect(herbs?.textContent).not.toContain('herbes');

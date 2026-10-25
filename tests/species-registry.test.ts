@@ -11,7 +11,7 @@ const IDS = [...EXPECTED_IDS];
 /** Where each species can be obtained, as the game offered it before sources were declared (written out independently). */
 const SHOP = {kind: 'shop', price: 80}, HISTORICAL = {kind: 'historical-breeding'};
 const HISTORICAL_ACQUISITION: Record<string, unknown> = {
-  paille: [SHOP, HISTORICAL], neige: [SHOP, HISTORICAL], feu: [SHOP, HISTORICAL], 'belier-gris': [SHOP, HISTORICAL], volant: [SHOP, HISTORICAL],
+  paille: [SHOP, HISTORICAL], neige: [SHOP, HISTORICAL], feu: [{kind:'shop',price:180}, HISTORICAL], 'belier-gris': [{kind:'shop',price:350}, HISTORICAL], volant: [{kind:'shop',price:600}, HISTORICAL],
   'lunettes': [{kind: 'recipe', knowledgePrice: 220, guaranteeEligible: true, requiredTypes: ['metal', 'paille'], minAffection: 4}],
   'perroquet': [{kind: 'recipe', knowledgePrice: 250, guaranteeEligible: true, requiredTypes: ['vol', 'feu'], minAffection: 4}],
   'feu-glace': [{kind: 'recipe', knowledgePrice: 180, guaranteeEligible: true, requiredTypes: ['feu', 'neige'], minAffection: 4}],
@@ -21,14 +21,14 @@ const HISTORICAL_ACQUISITION: Record<string, unknown> = {
 };
 
 /** Each new Rare is a reproduction-only recipe of its two required elements, with no price, gift, guarantee or fixed percentage. */
-const ACQUISITION: Record<string, unknown> = {...HISTORICAL_ACQUISITION, ...Object.fromEntries(NEW_RARES.map(r => [r.id, [{kind: 'recipe', requiredTypes: [...r.requiredTypes], minAffection: STANDARD_RARE.minAffection}]]))};
+const ACQUISITION: Record<string, unknown> = {...HISTORICAL_ACQUISITION, ...Object.fromEntries(NEW_RARES.map(r => [r.id, [{kind: 'recipe', guaranteeEligible: true, requiredTypes: [...r.requiredTypes], minAffection: STANDARD_RARE.minAffection}]]))};
 
 const HISTORICAL_DEFINITIONS = {
   paille: {art: EXPECTED_ART['paille'], name: 'Lapin Paille', types: ['paille'], rarity: 'common', price: 80, recipe: null, acquisition: ACQUISITION['paille'], progression: {unlockLevel: 1}},
   neige: {art: EXPECTED_ART['neige'], name: 'Lapin Neige', types: ['neige'], rarity: 'common', price: 80, recipe: null, acquisition: ACQUISITION['neige'], progression: {unlockLevel: 1}},
-  feu: {art: EXPECTED_ART['feu'], name: 'Lapin Feu', types: ['feu'], rarity: 'common', price: 80, recipe: null, acquisition: ACQUISITION['feu'], progression: {unlockLevel: 5}},
-  'belier-gris': {art: EXPECTED_ART['belier-gris'], name: 'Lapin Bélier Gris', types: ['metal'], rarity: 'common', price: 80, recipe: null, acquisition: ACQUISITION['belier-gris'], progression: {unlockLevel: 7}},
-  volant: {art: EXPECTED_ART['volant'], name: 'Lapin Volant', types: ['vol'], rarity: 'common', price: 80, recipe: null, acquisition: ACQUISITION['volant'], progression: {unlockLevel: 9}},
+  feu: {art: EXPECTED_ART['feu'], name: 'Lapin Feu', types: ['feu'], rarity: 'common', price: 180, recipe: null, acquisition: ACQUISITION['feu'], progression: {unlockLevel: 5}},
+  'belier-gris': {art: EXPECTED_ART['belier-gris'], name: 'Lapin Bélier Gris', types: ['metal'], rarity: 'common', price: 350, recipe: null, acquisition: ACQUISITION['belier-gris'], progression: {unlockLevel: 7}},
+  volant: {art: EXPECTED_ART['volant'], name: 'Lapin Volant', types: ['vol'], rarity: 'common', price: 600, recipe: null, acquisition: ACQUISITION['volant'], progression: {unlockLevel: 9}},
   lunettes: {art: EXPECTED_ART['lunettes'], name: 'Lapin à Lunettes', types: ['metal', 'paille'], rarity: 'rare', price: null, recipe: {requiredTypes: ['metal', 'paille'], minAffection: 4}, acquisition: ACQUISITION['lunettes'], progression: {unlockLevel: 8}},
   perroquet: {art: EXPECTED_ART['perroquet'], name: 'Lapin Perroquet', types: ['vol', 'feu'], rarity: 'rare', price: null, recipe: {requiredTypes: ['vol', 'feu'], minAffection: 4}, acquisition: ACQUISITION['perroquet'], progression: {unlockLevel: 9}},
   'feu-glace': {art: EXPECTED_ART['feu-glace'], name: 'Lapin Feu Glacé', types: ['feu', 'neige'], rarity: 'rare', price: null, recipe: {requiredTypes: ['feu', 'neige'], minAffection: 4}, acquisition: ACQUISITION['feu-glace'], progression: {unlockLevel: 6}},
@@ -55,7 +55,7 @@ describe('canonical species registry', () => {
   it('keeps the derived lists and their exact order', () => {
     expect(balance.SHOP_SPECIES).toEqual(['paille', 'neige', 'feu', 'belier-gris', 'volant']);
     expect(balance.RECIPE_SPECIES).toEqual(EXPECTED_RECIPE_IDS);
-    expect(balance.GUARANTEE_SPECIES).toEqual(['lunettes', 'perroquet', 'feu-glace', 'bouee']);
+    expect(balance.GUARANTEE_SPECIES).toEqual(["lunettes","perroquet","feu-glace","bouee","frisket","icy","ardent","snk","pic-pic","amethyste","princesse-neige","fluffy","virvoletant","phoenix","roukette","wat-wat","glassofeu","plume"]);
   });
   it('keeps LEGACY_SPECIES_IDS as the historical list: the first two ids, in order', () => {
     expect([...registry.LEGACY_SPECIES_IDS]).toEqual(IDS.slice(0, 2));
@@ -87,7 +87,7 @@ describe('acquisition is declared, not deduced', () => {
   it('derives price and recipe from the sources, without a second copy', () => {
     for (const id of IDS) {
       const sources = sourcesOf(id), shop = sources.find(source => source.kind === 'shop'), recipe = sources.find(source => source.kind === 'recipe');
-      expect(registry.SPECIES[id as registry.SpeciesId].price, id).toBe(shop ? 80 : null);
+      expect(registry.SPECIES[id as registry.SpeciesId].price, id).toBe(shop ? ({paille:80,neige:80,feu:180,'belier-gris':350,volant:600} as Record<string,number>)[id] : null);
       expect(registry.SPECIES[id as registry.SpeciesId].recipe === null, id).toBe(!recipe);
     }
     expect(registry.shopPrice([{kind: 'shop', price: 123}])).toBe(123); expect(registry.shopPrice([{kind: 'historical-breeding'}])).toBeNull();
