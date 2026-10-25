@@ -43,10 +43,10 @@ describe.each(NEW_RARES.map(sheet => [sheet.id, sheet] as const))('approved Rare
   it('is a Rare reproduction recipe with standard growth, no price, gift, guarantee, coat or fixed percentage', () => {
     expect(SPECIES_IDS).toContain(id);
     expect(SPECIES[id]).toEqual({name: sheet.name, description: sheet.description, types: [...sheet.types], rarity: 'rare', price: null,
-      progression: {unlockLevel: STANDARD_RARE.unlockLevel}, acquisition: [{kind: 'recipe', requiredTypes: [...sheet.requiredTypes], minAffection: STANDARD_RARE.minAffection}],
+      progression: {unlockLevel: STANDARD_RARE.unlockLevel}, acquisition: [{kind: 'recipe', guaranteeEligible: true, requiredTypes: [...sheet.requiredTypes], minAffection: STANDARD_RARE.minAffection}],
       recipe: {requiredTypes: [...sheet.requiredTypes], minAffection: STANDARD_RARE.minAffection}, art: sheet.art});
     expect(growthDuration(id)).toBe(STANDARD_RARE.growthMinutes * MINUTE); expect(RECIPE_PRICES[id]).toBeUndefined();
-    expect(GIFTED_RECIPES).not.toContain(id); expect(GUARANTEE_SPECIES).not.toContain(id);
+    expect(GIFTED_RECIPES).not.toContain(id); expect(GUARANTEE_SPECIES).toContain(id);
     expect(act(parentsOf(sheet), {type: 'buyRabbit', species: id, enclosureId: 'building-1'}, 0)).toMatchObject({ok: false, reason: 'INVALID_CHOICE'});
   });
   it('accepts both orders and both elements on one parent, checks both affection thresholds, and excludes missing elements', () => {
@@ -69,9 +69,9 @@ describe.each(NEW_RARES.map(sheet => [sheet.id, sheet] as const))('approved Rare
       expect(breedingPool(s, x as SpeciesId, y as SpeciesId, 2, 2)).toMatchObject({weights: expected, total, guaranteed: false});
       for (const {id: species, start, end} of segments(sheet)) for (const roll of [start, (start + end) / 2, end - Number.EPSILON]) expect(chooseBirth(s, x as SpeciesId, y as SpeciesId, roll, 2, 2).species).toBe(species);
     }
-    s.pityFailures = 9;
+    s.pityFailures = 7;
     for (const x of SPECIES_IDS) for (const y of SPECIES_IDS) {
-      const pool = breedingPool(s, x, y, 4, 4); if (pool.guaranteed) expect(pool.weights[id]).toBeUndefined();
+      const pool = breedingPool(s, x, y, 4, 4); if (pool.guaranteed && pool.missing.includes(id)) expect(pool.weights[id]).toBe(1);
     }
   });
   it('saves a single draw without rerolling, transfers, grows, welcomes compatibly and reveals the description only on discovery', () => {
@@ -80,7 +80,7 @@ describe.each(NEW_RARES.map(sheet => [sheet.id, sheet] as const))('approved Rare
     const rng = vi.fn(() => roll), data = new Map([[SAVE_KEY, encodeGame(s)]]), storage = {getItem: (k: string) => data.get(k) ?? null, setItem: (k: string, v: string) => {data.set(k, v);}};
     const controller = new GameController(storage, () => 0, rng); expect(controller.perform({type: 'breed', parents: ['rabbit-2', 'rabbit-3']}).ok).toBe(true);
     let born = controller.getSnapshot().state!; const birth = born.buildings.find(b => b.breeding)!.breeding!.birth;
-    expect(birth).toMatchObject({species: id, guaranteed: false, reservedDiscovery: false}); expect(rng).toHaveBeenCalledTimes(1); controller.dispose();
+    expect(birth).toMatchObject({species: id, guaranteed: false, reservedDiscovery: true}); expect(rng).toHaveBeenCalledTimes(1); controller.dispose();
     const noDraw = vi.fn(() => 0), reloaded = new GameController(storage, () => 0, noDraw); expect(reloaded.getSnapshot().state).toEqual(born); expect(noDraw).not.toHaveBeenCalled(); reloaded.dispose();
     expect(JSON.stringify(collectionView(born))).not.toContain(sheet.description); born = reload(sendToNursery(advance(born, 20 * MINUTE)));
     const grown = (20 + STANDARD_RARE.growthMinutes) * MINUTE;
@@ -91,7 +91,7 @@ describe.each(NEW_RARES.map(sheet => [sheet.id, sheet] as const))('approved Rare
       home.habitat!.type = type; expect(habitatEntryReason(born, home, id)).toBe([...sheet.types, 'universal'].includes(type) ? null : 'TYPE_INCOMPATIBLE');
     }
     home.habitat!.type = 'universal'; const xp = born.progression.totalXp; born = reload(run(born, {type: 'welcome', enclosureId: home.id, birthId: birth.id}, grown));
-    expect(born.rabbits.at(-1)).toMatchObject({species: id, affection: 1, enclosureId: home.id}); expect(born.progression.totalXp - xp).toBe(STANDARD_RARE.birthXp);
+    expect(born.rabbits.at(-1)).toMatchObject({species: id, affection: 1, enclosureId: home.id}); expect(born.progression.totalXp - xp).toBe(STANDARD_RARE.birthXp+250);
     expect(collectionView(born).find(e => e.known && e.species === id)).toEqual({known: true, species: id, name: sheet.name, description: sheet.description});
   });
 });

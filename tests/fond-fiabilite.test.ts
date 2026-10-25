@@ -1,3 +1,4 @@
+// HISTORICAL: previousStart reproduces the retired centre-start layout; current economy rules apply.
 import {describe, expect, it} from 'vitest';
 import {GameController} from '../src/application/GameController';
 import {act, advance, decodeGame, encodeGame} from '../src/simulation';

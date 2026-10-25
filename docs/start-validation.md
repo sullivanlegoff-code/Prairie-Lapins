@@ -1,3 +1,5 @@
+> Historique : ce document décrit un départ ou un barème antérieur à v17, notamment les parcours `previousStart`. Référence courante : [économie v17](game-design.md) et [progression](player-progression.md).
+
 # Validation du début, budget et rythme
 
 Base : dernier `production` `42b11c6`, application `f2c3ad9`, sauvegarde v8. Aucun changement des revenus, prix, délais, probabilités ou récompenses dans cette étape.

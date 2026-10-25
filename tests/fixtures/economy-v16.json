@@ -1,0 +1,163 @@
+{
+  "version": 16,
+  "lastSimulatedAt": 3600000,
+  "nextId": 10,
+  "pattes": 1234,
+  "grass": 157,
+  "hearts": 9,
+  "nextHeartGiftAt": 90000000,
+  "buildings": [
+    {
+      "id": "building-1",
+      "kind": "enclosure",
+      "x": 6,
+      "y": 40,
+      "incomeUnits": 1234567,
+      "habitat": {
+        "type": "paille",
+        "level": 1
+      },
+      "order": null,
+      "breeding": null,
+      "nursery": null
+    },
+    {
+      "id": "building-4",
+      "kind": "nest",
+      "x": 2,
+      "y": 36,
+      "incomeUnits": 0,
+      "habitat": null,
+      "order": null,
+      "breeding": {
+        "parents": [
+          "rabbit-2",
+          "rabbit-6"
+        ],
+        "startedAt": 3540000,
+        "endsAt": 4740000,
+        "birth": {
+          "id": "birth-8",
+          "species": "paille",
+          "guaranteed": false,
+          "reservedDiscovery": false
+        }
+      },
+      "nursery": null
+    },
+    {
+      "id": "building-5",
+      "kind": "nursery",
+      "x": 10,
+      "y": 36,
+      "incomeUnits": 0,
+      "habitat": null,
+      "order": null,
+      "breeding": null,
+      "nursery": {
+        "capacity": 1,
+        "babies": [
+          {
+            "slot": 0,
+            "birth": {
+              "id": "birth-9",
+              "species": "paille",
+              "guaranteed": false,
+              "reservedDiscovery": false
+            },
+            "startedAt": 3540000,
+            "readyAt": 3840000
+          }
+        ]
+      }
+    },
+    {
+      "id": "building-7",
+      "kind": "farm",
+      "x": 0,
+      "y": 32,
+      "incomeUnits": 0,
+      "habitat": null,
+      "order": {
+        "recipe": "large",
+        "startedAt": 3540000,
+        "endsAt": 7140000
+      },
+      "breeding": null,
+      "nursery": null
+    }
+  ],
+  "rabbits": [
+    {
+      "id": "rabbit-2",
+      "species": "paille",
+      "affection": 12,
+      "enclosureId": "building-1"
+    },
+    {
+      "id": "rabbit-6",
+      "species": "paille",
+      "affection": 4,
+      "enclosureId": "building-1"
+    }
+  ],
+  "discovered": [
+    "paille"
+  ],
+  "pityFailures": 9,
+  "missions": {
+    "events": {
+      "collectOrder": 0,
+      "breed": 0,
+      "transferBirth": 0,
+      "welcome": 0,
+      "placeDecoration": 0
+    },
+    "completed": [
+      "cozy-nest",
+      "welcome-babies"
+    ],
+    "claimed": [],
+    "daily": {
+      "referenceAt": 3600000,
+      "cycleIndex": 0,
+      "progress": {
+        "collect-pattes": 0,
+        "collect-grass": 0,
+        "gain-affection": 3
+      },
+      "claimed": [
+        "gain-affection"
+      ],
+      "bonusClaimed": false
+    }
+  },
+  "decorations": [],
+  "acquiredParcels": [
+    "southwest"
+  ],
+  "islandStart": "southwest",
+  "startCourse": "paille-solo",
+  "purchaseUnlocks": [],
+  "initiation": {
+    "order": null,
+    "breeding": null,
+    "growth": null,
+    "birthId": null,
+    "closed": [],
+    "used": []
+  },
+  "levelAccessTransition": {
+    "version": 1,
+    "rights": []
+  },
+  "progression": {
+    "totalXp": 2345,
+    "rewardedThroughLevel": 5
+  },
+  "recipeBook": [],
+  "cuisine": {
+    "affectionCycles": {},
+    "heartCycle": null
+  }
+}

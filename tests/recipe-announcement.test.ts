@@ -20,15 +20,15 @@ const items = () => [...el('level-up-unlocks').querySelectorAll('li')].map(li =>
 
 describe('level-up recipe announcement', () => {
   it('announces the unknown recipe made purchasable, without any condition', async () => {
-    const c = setup(createGame(0)); c.grantLaboratoryXp(50); c.grantLaboratoryXp(500); c.grantLaboratoryXp(500); await vi.advanceTimersByTimeAsync(300);
-    // The first purchasable recipe (Lapin en Bouée) opens at level 5, which 1 050 XP reach.
+    const c = setup(createGame(0)); c.grantLaboratoryXp(50); c.grantLaboratoryXp(50); c.grantLaboratoryXp(500); c.grantLaboratoryXp(500); await vi.advanceTimersByTimeAsync(300);
+    // The first purchasable recipe (Lapin en Bouée) opens at level 5, which 1 100 XP reach.
     expect(el('level-up-title').textContent).toBe('Niveau 5 atteint !');
     expect(items()).toContain('Recette en boutique · 1');
     for (const hidden of ['Affection', 'Paille + Feu', 'paille + feu', '%', 'Parents']) expect(el('level-up-unlocks').textContent).not.toContain(hidden);
   });
   it('omits recipes already known by discovery', async () => {
     const s = createGame(0); s.discovered.push('bouee');
-    const c = setup(s); c.grantLaboratoryXp(50); c.grantLaboratoryXp(500); c.grantLaboratoryXp(500); await vi.advanceTimersByTimeAsync(300);
+    const c = setup(s); c.grantLaboratoryXp(50); c.grantLaboratoryXp(50); c.grantLaboratoryXp(500); c.grantLaboratoryXp(500); await vi.advanceTimersByTimeAsync(300);
     expect(items().some(t => t.includes('en boutique · ') && t.startsWith('Recette'))).toBe(false);
   });
 });

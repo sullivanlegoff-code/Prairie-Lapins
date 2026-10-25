@@ -15,6 +15,7 @@ export interface ProgressionConfig {
   readonly rewards: {readonly heartsPerLevel: number};
   readonly xp: {
     readonly commonPurchase: number;
+    readonly discovery: {readonly common: number; readonly rare: number};
     readonly construction: {readonly specializedHabitat: number; readonly universalHabitat: number; readonly farm: number};
     readonly birth: Readonly<Record<Rarity, number>>;
     readonly foodMultiplier: number;
@@ -37,16 +38,16 @@ export interface ProgressionConfig {
 }
 export const PROGRESSION: ProgressionConfig = {
   activeLevelFamilies: {species: true, habitatPurchase: true, habitatUpgrade: true, decoration: true, extension: true},
-  curve: {initialLevel: 1, maximumLevel: 30, base: 50, exponent: 1.6},
+  curve: {initialLevel: 1, maximumLevel: 30, base: 90, exponent: 1.15},
   rewards: {heartsPerLevel: 1},
   xp: {
-    commonPurchase: 20,
+    commonPurchase: 10, discovery: {common: 60, rare: 250},
     construction: {specializedHabitat: 30, universalHabitat: 40, farm: 20},
     // Default birth XP comes from the rarities data; a custom configuration still supplies its own record.
     birth: mapRarities(definition => definition.birthXp),
     foodMultiplier: 5, breedingLaunch: 5,
-    firstDecorationPlacement: {minimum: 2, priceDivisor: 10},
-    claims: {main: 20, daily: 10, dailyBonus: 0, mainExceptions: {}, dailyExceptions: {}},
+    firstDecorationPlacement: {minimum: 10, priceDivisor: 10},
+    claims: {main: 40, daily: 50, dailyBonus: 0, mainExceptions: {}, dailyExceptions: {}},
   },
   requirements: {
     // Default levels come from each species' own definition; a custom configuration still supplies its own record.

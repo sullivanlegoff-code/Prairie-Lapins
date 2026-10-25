@@ -1,3 +1,4 @@
+import {cumulativeLevelXp, nextLevelCost} from '../simulation/progression';
 import {establishHistoricalLevelRights} from '../simulation/levelRights';
 import {PURCHASE_UNLOCK_IDS} from '../config/purchaseUnlocks';
 import {RECIPE_BOOK_SPECIES} from '../config/recipes';
@@ -16,11 +17,11 @@ import {decorationPlacementReason} from '../simulation/decorations';
 import {ISLAND} from '../config/islandGeometry';
 
 /**
- * The one save format. Version 16 is the catalogue boundary of the development saves: the species Terre, Mottelin, Géant and
- * Brumelin and the Terre habitat were removed, and no older save is converted. Versions 1 to 15 are refused as incompatible
+ * The current format is v17, with an economy migration from v16. Version 16 was the catalogue boundary of the development saves: the species Terre, Mottelin, Géant and
+ * Brumelin and the Terre habitat were removed, and saves before that catalogue boundary are not converted. Versions 1 to 15 are refused as incompatible
  * (the controller then starts a new game); they are never read, migrated or restored.
  */
-export const SAVE_VERSION = 16;
+export const SAVE_VERSION = 17;
 const integer = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
 // Rebasing a clock may move historical dates before the Unix epoch. Resources stay nonnegative.
 const timestamp = z.number().int().min(Number.MIN_SAFE_INTEGER).max(Number.MAX_SAFE_INTEGER);
@@ -35,7 +36,7 @@ const building = z.object({
   id: identity, kind: z.enum(['enclosure', 'farm', 'nest', 'nursery', 'kitchen']), x: integer, y: integer, incomeUnits: integer,
   habitat: z.object({type: z.enum(HABITAT_TYPES), level: z.union([z.literal(1), z.literal(2), z.literal(3)])}).strict().nullable(),
   footprintTier: footprintTier.optional(),
-  order: z.object({recipe: z.enum(['small', 'medium', 'large']), startedAt: timestamp, endsAt: timestamp}).strict().nullable(),
+  order: z.object({recipe: z.enum(['small', 'medium', 'large', 'night']), startedAt: timestamp, endsAt: timestamp, grass: integer.optional(), duration: integer.positive().optional()}).strict().nullable(),
   breeding: z.object({parents: z.tuple([identity, identity]), startedAt: timestamp, endsAt: timestamp, birth}).strict().nullable(),
   nursery: nurseryPayload.nullable(),
 }).strict();
@@ -74,13 +75,14 @@ const levelAccessTransition = z.object({version: z.literal(1), rights: z.array(z
     seen.add(key);
   }
 });
-const v16 = z.object({
+const v17 = z.object({
   version: z.literal(SAVE_VERSION), lastSimulatedAt: integer, nextId: integer.positive(), pattes: integer, grass: integer, hearts: integer, nextHeartGiftAt: timestamp,
   buildings: z.array(building).max(ISLAND.maxArea),
   rabbits: z.array(rabbit).max(ISLAND.maxArea * HABITAT_LEVELS.universal[2].capacity),
   discovered: z.array(species).max(SPECIES_IDS.length),
   pityFailures: integer.max(BALANCE.guaranteeAttempt - 1),
   missions, decorations: z.array(decoration).max(MAX_DECORATIONS),
+  rewardedDecorationModels: z.array(z.enum(DECORATION_IDS)).max(DECORATION_IDS.length).refine(ids => new Set(ids).size === ids.length).optional(),
   acquiredParcels: z.array(z.enum(PARCEL_IDS)).min(1).max(9),
   islandStart: z.literal('southwest').optional(),
   startCourse: z.literal('paille-solo').optional(),
@@ -91,7 +93,7 @@ const v16 = z.object({
   recipeBook: z.array(species).max(RECIPE_BOOK_SPECIES.length),
   cuisine: z.object({affectionCycles: z.record(z.string().min(1), integer), heartCycle: integer.nullable().optional(), fullRuns: z.object({cycle: integer, used: integer.max(CUISINE_FULL_REWARDS_PER_CYCLE)}).strict().optional()}).strict(),
 }).strict();
-const schema = v16.superRefine((s, context) => {
+const schema = v17.superRefine((s, context) => {
   const issue = (message: string) => context.addIssue({code: z.ZodIssueCode.custom, message});
   if (new Set(s.recipeBook).size !== s.recipeBook.length || s.recipeBook.some(id => !RECIPE_BOOK_SPECIES.includes(id))) issue('Invalid recipe book');
   if (s.decorations.some(d => d.placementXpProcessed === false && d.location.kind !== 'inventory')) issue('Unused placement XP on a placed decoration');
@@ -126,7 +128,8 @@ const schema = v16.superRefine((s, context) => {
     if ((b.kind === 'nursery') !== (b.nursery !== null)) issue('Nursery payload');
     const slots = b.nursery?.babies.map(baby => baby.slot) ?? [];
     if (b.nursery && (new Set(slots).size !== slots.length || slots.length > b.nursery.capacity || slots.some(slot => slot >= b.nursery!.capacity))) issue('Nursery slots');
-    if (b.order && (!durationValid(b.order.startedAt, b.order.endsAt, ORDERS[b.order.recipe].duration))) issue('Order timestamps');
+    if (b.order && ((b.order.grass === undefined) !== (b.order.duration === undefined))) issue('Incomplete frozen order');
+    if (b.order && (!durationValid(b.order.startedAt, b.order.endsAt, (b.order.duration ?? ORDERS[b.order.recipe].duration)))) issue('Order timestamps');
     if (b.breeding) {
       const job = b.breeding;
       if (!nursery || !durationValid(job.startedAt, job.endsAt, BALANCE.breedingDuration) || job.parents[0] === job.parents[1]) issue('Breeding timestamps or parents');
@@ -164,6 +167,28 @@ const schema = v16.superRefine((s, context) => {
   if (new Set(ids).size !== ids.length || ids.some(id => !Number.isSafeInteger(Number(id.split('-')[1])) || Number(id.split('-')[1]) >= s.nextId)) issue('Duplicate identity or invalid nextId');
 });
 
+/** Historical order payload: yields and normal durations are frozen at launch, including accelerated jobs. */
+const LEGACY_ORDERS = {small: {grass: 20, duration: 300000}, medium: {grass: 40, duration: 900000}, large: {grass: 100, duration: 3600000}} as const;
+const legacyOrder = z.object({recipe: z.enum(['small', 'medium', 'large']), startedAt: timestamp, endsAt: timestamp}).strict().nullable();
+const legacySchema = v17.omit({rewardedDecorationModels: true}).extend({version: z.literal(16), pityFailures: integer.max(9), buildings: z.array(building.extend({order: legacyOrder})).max(ISLAND.maxArea)});
+/** Only v16 crosses the economy boundary. No action, clock advancement or random draw is performed. */
+function migrateV16(raw: unknown): unknown {
+  const parsed = legacySchema.safeParse(raw);
+  if (!parsed.success) return raw;
+  const old = parsed.data;
+  const legacyCost = (n: number) => Math.round(50 * n ** 1.6);
+  let level = 1, previousThreshold = 0;
+  while (level < 30 && old.progression.totalXp >= previousThreshold + legacyCost(level)) previousThreshold += legacyCost(level++);
+  const fraction = (old.progression.totalXp - previousThreshold) / legacyCost(level);
+  const totalXp = cumulativeLevelXp(level) + (level === 30 ? old.progression.totalXp - previousThreshold : Math.floor(fraction * nextLevelCost(level)!));
+  const models = [...new Set(old.decorations.filter(d => d.location.kind === 'outside' || d.placementXpProcessed !== false).map(d => d.catalogId))];
+  const daily = old.missions.daily;
+  // A completed but unclaimed affection goal stays claimable; partial work can now finish with one breeding.
+  daily.progress['gain-affection'] = daily.progress['gain-affection'] >= 3 || daily.claimed.includes('gain-affection') ? 1 : 0;
+  return {...old, version: SAVE_VERSION, pityFailures: Math.min(old.pityFailures, 7), rewardedDecorationModels: models,
+    progression: {...old.progression, totalXp}, buildings: old.buildings.map(b => ({...b, order: b.order ? {...b.order, ...LEGACY_ORDERS[b.order.recipe]} : null}))};
+}
+
 /**
  * `INCOMPATIBLE_CATALOG`: a save written before the catalogue boundary (versions 1 to 15). It is not read further; it is neither
  * converted nor restored. `UNSUPPORTED_VERSION`: any other version this client does not know (for instance a newer one).
@@ -174,13 +199,14 @@ export function decodeGame(json: string): DecodeResult {
   if (json.length > MAX_JSON_LENGTH) return {ok: false, reason: 'FILE_TOO_LARGE'};
   let raw: unknown;
   try { raw = JSON.parse(json); } catch { return {ok: false, reason: 'INVALID_JSON'}; }
-  if (raw && typeof raw === 'object' && 'version' in raw && raw.version !== SAVE_VERSION)
-    return {ok: false, reason: Number.isInteger(raw.version) && (raw.version as number) >= 1 && (raw.version as number) < SAVE_VERSION ? 'INCOMPATIBLE_CATALOG' : 'UNSUPPORTED_VERSION'};
+  if (raw && typeof raw === 'object' && 'version' in raw && raw.version !== SAVE_VERSION && raw.version !== 16)
+    return {ok: false, reason: Number.isInteger(raw.version) && (raw.version as number) >= 1 && (raw.version as number) <= 15 ? 'INCOMPATIBLE_CATALOG' : 'UNSUPPORTED_VERSION'};
   // Only the explicitly retired catalogue entries are removed; unknown IDs still fail validation.
   if (raw && typeof raw === 'object' && 'decorations' in raw && Array.isArray(raw.decorations)) {
     raw.decorations = raw.decorations.filter(d => !d || typeof d !== 'object' ||
       !RETIRED_DECORATION_IDS.some(id => id === d.catalogId));
   }
+  if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 16) raw = migrateV16(raw);
   const parsed = schema.safeParse(raw);
   if (!parsed.success) return {ok: false, reason: 'INVALID_STATE'};
   const {presentationId: _presentationId, ...stored} = parsed.data;
@@ -196,6 +222,6 @@ export function encodeGame(state: GameState, presentationId?: string): string {
 
 /** Optional presentation metadata, separate from simulation state. Call after validating the save. */
 export function readPresentationId(json: string): string | undefined {
-  try { const raw = JSON.parse(json); const id = z.string().uuid().safeParse(raw.presentationId); return raw.version === SAVE_VERSION && id.success ? id.data : undefined; }
+  try { const raw = JSON.parse(json); const id = z.string().uuid().safeParse(raw.presentationId); return (raw.version === SAVE_VERSION || raw.version === 16) && id.success ? id.data : undefined; }
   catch { return undefined; }
 }

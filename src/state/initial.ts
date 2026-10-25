@@ -29,7 +29,7 @@ export function createCentreStartGame(now: number = Date.now()): GameState {
 function newGame(now: number, start: 'southwest' | 'center'): GameState {
   if (!Number.isSafeInteger(now) || now < 0 || !Number.isSafeInteger(now + HEARTS.giftInterval) || !Number.isSafeInteger(now + MISSION_CYCLE_DURATION)) throw new RangeError('Invalid timestamp');
   const state: Omit<GameState, 'missions'> = {
-    version: 16, ...(start === 'southwest' ? {islandStart: start} : {}), cuisine: {affectionCycles: {}, heartCycle: null}, levelAccessTransition: {version: 1, rights: []}, progression: {totalXp: 0, rewardedThroughLevel: 1}, startCourse: 'paille-solo', purchaseUnlocks: [], initiation: {order:null, breeding:null, growth:null, birthId:null, closed:[], used:[]}, decorations: [], lastSimulatedAt: now, nextId: 6,
+    version: 17, rewardedDecorationModels: [], ...(start === 'southwest' ? {islandStart: start} : {}), cuisine: {affectionCycles: {}, heartCycle: null}, levelAccessTransition: {version: 1, rights: []}, progression: {totalXp: 0, rewardedThroughLevel: 1}, startCourse: 'paille-solo', purchaseUnlocks: [], initiation: {order:null, breeding:null, growth:null, birthId:null, closed:[], used:[]}, decorations: [], lastSimulatedAt: now, nextId: 6,
     hearts: HEARTS.initial, nextHeartGiftAt: now + HEARTS.giftInterval,
     pattes: BALANCE.initialPattes, grass: BALANCE.initialGrass, acquiredParcels: [start],
     buildings: starterBuildings(start),

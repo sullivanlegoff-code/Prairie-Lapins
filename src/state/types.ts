@@ -23,7 +23,7 @@ export interface Building {
   habitat: {type: HabitatType; level: HabitatLevel} | null;
   /** Footprint actually acquired (enclosures only): 1 = 4 × 4, 2 = 6 × 5, 3 = 8 × 6 fine cells. Absent = 1, whatever the level. Anchored at x, y. */
   footprintTier?: HabitatLevel;
-  order: {recipe: OrderId; startedAt: number; endsAt: number} | null;
+  order: {recipe: OrderId; startedAt: number; endsAt: number; grass?: number; duration?: number} | null;
   breeding: {parents: [string, string]; startedAt: number; endsAt: number; birth: Birth} | null;
   /** Present exactly on the nursery. */
   nursery: Nursery | null;
@@ -62,7 +62,8 @@ export interface GameState {
   startCourse?: 'paille-solo';
   purchaseUnlocks?: PurchaseUnlockId[];
   initiation?: Initiation;
-  version: 16; decorations: OwnedDecoration[]; missions: MissionState; lastSimulatedAt: number; nextId: number;
+  version: 17;
+  rewardedDecorationModels?: DecorationId[]; decorations: OwnedDecoration[]; missions: MissionState; lastSimulatedAt: number; nextId: number;
   hearts: number; nextHeartGiftAt: number;
   pattes: number; grass: number; acquiredParcels: ParcelId[];
   buildings: Building[]; rabbits: Rabbit[]; discovered: SpeciesId[];

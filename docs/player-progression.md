@@ -1,3 +1,43 @@
+# Progression du joueur — économie v17
+
+Courbe retenue : **arrondi(90 × N^1,15)** pour passer de N à N+1, plafond 30 et un cœur par niveau. Le coefficient 25 et l’exposant 1,5 proposés initialement accéléraient trop le parcours. Toutes les autres valeurs demandées sont conservées : [règles et économie](game-design.md).
+
+Reproduction : `node docs/progression-simulation.mjs` avec Node 24. Le chargeur Node `docs/node-typescript-loader.mjs` transpose les vrais modules TypeScript via TypeScript déjà installé et les importe directement, sans serveur, Vite ni navigateur. Aucune ressource, XP, issue de tirage ou exemption de niveau n’est injectée. Graine fixe 20261025. Les données détaillées sont régénérées dans `docs/progression-results.json`.
+
+Le tutoriel de Paille est rejoué avec ses trois aides uniques, récolte/transfert/accueil et réclamations manuels, sur le véritable départ sud-ouest à 350/0/12. Les visites suivantes sont à 13 h puis 20 h, puis chaque jour à 8 h/13 h/20 h. Deux fermes dès que possible, commandes longue/longue/nuit, huit repas maximum par visite en commençant par les plus faibles affections. Les parents maximisent la probabilité d’une nouvelle espèce admissible ; les doublons les moins affectueux libèrent des places, en gardant chaque espèce. Les achats diversifient les communs, les habitats puis les extensions accessibles, avec réserve de trésorerie pour les fermes. Une décoration pour sa mission, sans boucle de vente. Cuisine achetée mais aucun mini-jeu ni recette payante joué ; cœurs dépensés uniquement pour les améliorations permanentes d’habitat, jamais pour les accélérations ou compléments.
+
+Chaque visite est limitée à 45 commandes réussies, soit environ six secondes par action dans une session de cinq minutes. C’est une hypothèse de joueur organisé, pas une mesure humaine ; déplacement, consultation et choix peuvent ralentir le parcours. Les repas maximaux et les choix de parents sont explicites et reproductibles. La simulation laisse les commandes terminées attendre les visites, sans collecte pendant l’absence. Les instantanés J1/J3/etc. sont pris juste avant 8 h du jour suivant ; les pattes stockées restent à récolter. Aucun clic supplémentaire au point « 10 min ».
+
+Les premières atteintes, comptées en jours calendaires avec J1 comme jour du départ, sont **N5 à J1, session de 20 h ; N10 à J6, session de 13 h ; N15 à J23, session de 8 h ; N20 à J57, session de 8 h**. Cibles : J1/J7/J20/J50. Écarts : 0 %, −14 %, +15 %, +14 %, tous dans ±30 %. Le script vérifie cette tolérance et poursuit jusqu’à 70 jours pour mesurer le niveau 20.
+
+| Étape | Pattes disponibles | Herbes | Cœurs | Niveau | Espèces | Pattes stockées |
+|---|---:|---:|---:|---:|---:|---:|
+| 10 min | 270 | 96 | 15 | 4 | 3 | 6 |
+| 1 j | 438 | 364 | 19 | 5 | 3 | 623 |
+| 3 j | 649 | 2956 | 21 | 7 | 8 | 2351 |
+| 7 j | 11482 | 8115 | 40 | 10 | 16 | 4475 |
+| 20 j | 154360 | 24794 | 96 | 14 | 23 | 7895 |
+| 50 j | 625972 | 64469 | 211 | 19 | 24 | 9335 |
+
+Achats restants (améliorations et décoration restent des choix, sans obligation d’achat intégral) :
+
+- **10 min** : communs à accueillir : feu, belier-gris, volant ; 8 extensions (157900 pattes), 1 ferme(s), Cuisine à acheter, 2 habitats encore améliorables. Recettes payantes non révélées/achetées : lunettes, perroquet, feu-glace, bouee, magicien, dragon.
+- **1 j** : communs à accueillir : feu, belier-gris, volant ; 8 extensions (157900 pattes), 0 ferme(s), Cuisine à acheter, 2 habitats encore améliorables. Recettes payantes non révélées/achetées : lunettes, perroquet, feu-glace, bouee, magicien, dragon.
+- **3 j** : communs à accueillir : volant ; 6 extensions (155500 pattes), 0 ferme(s), Cuisine acquise, 3 habitats encore améliorables. Recettes payantes non révélées/achetées : lunettes, perroquet, bouee, magicien, dragon.
+- **7 j** : communs à accueillir : aucun ; 4 extensions (142000 pattes), 0 ferme(s), Cuisine acquise, 4 habitats encore améliorables. Recettes payantes non révélées/achetées : perroquet, bouee, magicien, dragon.
+- **20 j** : communs à accueillir : aucun ; 3 extensions (126000 pattes), 0 ferme(s), Cuisine acquise, 8 habitats encore améliorables. Recettes payantes non révélées/achetées : magicien, dragon.
+- **50 j** : communs à accueillir : aucun ; 1 extensions (60000 pattes), 0 ferme(s), Cuisine acquise, 7 habitats encore améliorables. Recettes payantes non révélées/achetées : dragon.
+
+Le surplus tardif de pattes reste important : la partie A ne permet de retoucher que la courbe après mesure, pas les revenus/prix déjà fixés par le propriétaire. La simulation ne garantit ni la collection complète à une date, ni l’achat des huit extensions avant leur niveau requis. Un seul tirage déterministe ne représente pas toutes les chances de collection.
+
+Migration : v16 est convertie vers v17 en conservant niveau et fraction, sans cœurs au chargement. Les formats 1–15 restent incompatibles. Les commandes v16 conservent leur quantité/durée, les naissances ne sont jamais retirées. Les tests de migration couvrent aussi la décoration et la quotidienne remplacée.
+
+---
+
+# Historique de la progression avant la refonte v17
+
+Tout ce qui suit décrit les anciens barèmes, départs et migrations. Les scénarios `previousStart` sont historiques ; les simulations anciennes à 4 ou 12 visites et les mentions v8/v9 ne sont plus des projections du jeu actuel. Ils sont conservés pour la traçabilité.
+
 # Niveaux joueur / XP — configuration et persistance v9
 
 **État courant — livraison v9 :** cinq familles actives (espèces, achats d’habitats, améliorations, décorations et extensions). L’XP des actions et réclamations est sauvegardée atomiquement, les résultats de reproduction sont filtrés au lancement par niveau/droits historiques ; un résultat déjà tiré reste accueillable. Les sections Étape ci-dessous sont l’historique de construction, et non des limitations encore actives. Voir la validation finale en fin de document.

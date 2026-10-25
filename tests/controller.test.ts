@@ -1,3 +1,4 @@
+// HISTORICAL: previousStart reproduces the retired centre-start layout; current economy rules apply.
 import {previousStart} from './regression-start';
 import {createGame} from '../src/simulation';
 import {describe, expect, it} from 'vitest';
@@ -68,7 +69,7 @@ function pendingGuaranteed(): GameState {
   apply({type: 'feed', id: 'rabbit-2'}); apply({type: 'feed', id: 'rabbit-3'});
   // Feu x Neige at affection 4 and level 6: Feu Glacé is the one result the ordinary guarantee can reserve.
   s.rabbits[0].species='feu';s.discovered.push('feu');s.rabbits.forEach(r => r.affection = 4);s.progression = {totalXp: cumulativeLevelXp(6), rewardedThroughLevel: 6};
-  s.pityFailures = 9; apply({type: 'breed', parents: ['rabbit-2', 'rabbit-3']});
+  s.pityFailures = 7; apply({type: 'breed', parents: ['rabbit-2', 'rabbit-3']});
   return s;
 }
 
@@ -86,19 +87,19 @@ describe('controller startup and normal saves', () => {
   it('saves immediately after an action succeeds', () => {
     const {controller, store, clock} = fixture(); clock.now = HOUR;
     const result = controller.perform({type: 'collectIncome', id: 'building-1'});
-    expect(result.ok).toBe(true); expect(state(controller).pattes).toBe(312);
+    expect(result.ok).toBe(true); expect(state(controller).pattes).toBe(360);
     expect(store.writes).toBe(2); expect(stored(store)).toEqual(state(controller));
   });
   it('keeps separate time advancement after refusing an action without spending', () => {
     const {controller, store, clock} = fixture(); clock.now = HOUR;
-    const result = controller.perform({type:'expand',parcelId:'south',expectedCost:500});
-    expect(result).toMatchObject({ok: false, reason: 'LEVEL_REQUIRED'});
-    expect(state(controller).pattes).toBe(300); expect(state(controller).buildings[0].incomeUnits).toBe(12 * HOUR);
+    const result = controller.perform({type:'expand',parcelId:'south',expectedCost:600});
+    expect(result).toMatchObject({"ok":false,"reason":"LEVEL_REQUIRED"});
+    expect(state(controller).pattes).toBe(350); expect(state(controller).buildings[0].incomeUnits).toBe(10*HOUR);
     expect(stored(store)).toEqual(state(controller)); expect(store.writes).toBe(2);
   });
   it('does not write again when state has not evolved', () => {
     const {controller, store} = fixture(); controller.refresh(); controller.refresh();
-    controller.perform({type:'expand',parcelId:'east',expectedCost:500}); expect(store.writes).toBe(1);
+    controller.perform({type:'expand',parcelId:'east',expectedCost:600}); expect(store.writes).toBe(1);
   });
   it('does not double count after repeated resumes or clock reversals', () => {
     const {controller, store, clock} = fixture();
@@ -106,14 +107,14 @@ describe('controller startup and normal saves', () => {
     clock.now = HOUR - MINUTE; controller.refresh(); expect(state(controller).lastSimulatedAt).toBe(HOUR);
     const reloaded = new GameController(store, () => 2 * HOUR);
     reloaded.refresh(); reloaded.refresh();
-    expect(state(reloaded).buildings[0].incomeUnits).toBe(24 * HOUR);
+    expect(state(reloaded).buildings[0].incomeUnits).toBe(20*HOUR);
     expect(state(reloaded)).toEqual(advance(createGame(0), 2 * HOUR));
   });
   it('does not let consumers mutate the active state through snapshots or results', () => {
     const {controller} = fixture(encodeGame({...createGame(0),grass:10})); const copy = state(controller); copy.pattes = 0;
     const result = controller.perform({type: 'feed', id: 'rabbit-2'});
     if ('state' in result) result.state.grass = 0;
-    expect(state(controller).pattes).toBe(300); expect(state(controller).grass).toBe(8);
+    expect(state(controller).pattes).toBe(350); expect(state(controller).grass).toBe(8);
   });
 });
 
@@ -124,7 +125,7 @@ describe('storage failures and recovery', () => {
     expect(controller.getSnapshot()).toMatchObject({state: null, status: 'read-error', lastSavedAt: null});
     controller.refresh(); expect(store.value).toBe(original); expect(store.writes).toBe(0);
     store.failRead = false; expect(controller.retrySave()).toEqual({ok: true});
-    expect(state(controller).buildings[0].incomeUnits).toBe(12 * HOUR);
+    expect(state(controller).buildings[0].incomeUnits).toBe(10*HOUR);
   });
   it('keeps a first game in memory when writing fails and retries successfully', () => {
     const store = new MemoryStorage(); store.failWrite = true;
@@ -185,7 +186,7 @@ describe('transactional imports', () => {
     expect(controller.getSnapshot()).toEqual(original); expect(store.value).toBe(raw);
     clock.now = HOUR;
     const normalWrite = store.setItem.bind(store);
-    store.setItem = (key, json) => { expect(state(controller).pattes).toBe(300); normalWrite(key, json); };
+    store.setItem = (key, json) => { expect(state(controller).pattes).toBe(350); normalWrite(key, json); };
     expect(controller.confirmImport(prepared.token, true)).toEqual({ok: true});
     expect(state(controller)).toEqual(advance(imported, HOUR)); expect(stored(store)).toEqual(state(controller));
     expect(controller.getSnapshot()).toMatchObject({status: 'saved', lastSavedAt: HOUR});
@@ -198,7 +199,7 @@ describe('transactional imports', () => {
     expect(controller.confirmImport(prepared.token, true)).toEqual({ok: false, reason: 'STALE_IMPORT'});
   });
   it.each([
-    ['{', 'INVALID_JSON'], ['{"version":17}', 'UNSUPPORTED_VERSION'], ['{"version":16}', 'INVALID_STATE'], ['{"version":1}', 'INCOMPATIBLE_CATALOG'], ['{"version":15}', 'INCOMPATIBLE_CATALOG'],
+    ['{', 'INVALID_JSON'], ['{"version":18}', 'UNSUPPORTED_VERSION'], ['{"version":16}', 'INVALID_STATE'], ['{"version":1}', 'INCOMPATIBLE_CATALOG'], ['{"version":15}', 'INCOMPATIBLE_CATALOG'],
     [' '.repeat(1_000_001), 'FILE_TOO_LARGE'],
   ])('rejects a bad import with %s', (json, reason) => {
     const {controller, store} = fixture(); const previous = controller.getSnapshot(), raw = store.value;

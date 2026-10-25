@@ -30,14 +30,14 @@ function dailyReady() {
   s=run(s,{type:'collectIncome',id:'building-1'},5*HOUR);
   s=run(s,{type:'collectOrder',id:'building-4'});
   for(let i=0;i<3;i++)s=run(s,{type:'feed',id:'rabbit-2'});
-  return s;
+  s=run(s,{type:'feed',id:'rabbit-3'});s=run(s,{type:'breed',parents:['rabbit-2','rabbit-3']});return s;
 }
 const state=(c:GameController)=>c.getSnapshot().state!;
 
 describe('main missions and unique rewards',()=>{
   it('starts eight unclaimed visible objectives and a fresh 24-hour cycle without changing initial resources',()=>{
     const s=createGame(123);
-    expect(MAIN_MISSION_IDS).toHaveLength(19);expect(s).toMatchObject({version: 16,pattes:300,grass:10,hearts:12});
+    expect(MAIN_MISSION_IDS).toHaveLength(19);expect(s).toMatchObject({version: 17,pattes:350,grass:10,hearts:12});
     expect(s.missions).toEqual({events:emptyMainEvents(),completed:[],claimed:[],daily:{referenceAt:123,cycleIndex:0,progress:emptyDailyProgress(),claimed:[],bonusClaimed:false}});
     expect(dailyCycleEnd(s)).toBe(123+DAY);
   });
@@ -57,7 +57,7 @@ describe('main missions and unique rewards',()=>{
     for(let i=0;i<4;i++)s=run(s,{type:'feed',id:'rabbit-2'});
     s=run(s,{type:'release',id:'rabbit-2'});
     expect(s.rabbits.every(r=>r.affection<5)).toBe(true);expect(s.missions.completed).toContain('strong-bonds');
-    const restored=read(encodeGame(s),DAY);expect(run(restored,{type:'claimMainMission',id:'strong-bonds'}).hearts).toBe(14);
+    const restored=read(encodeGame(s),DAY);expect(run(restored,{type:'claimMainMission',id:'strong-bonds'}).hearts).toBe(13);
   });
   it.each(eligibleMainMissionIds(createGame(0)))('claims %s once, credits its exact reward, and never counts the reward as daily work',id=>{
     const before=prepared(); before.missions.completed=[id];
@@ -84,14 +84,14 @@ describe('main missions and unique rewards',()=>{
 
 describe('daily event accounting and fixed cycles',()=>{
   it('counts actual collected integer pattes, collected grass and gained levels exactly, once',()=>{
-    const ready=dailyReady();expect(ready.missions.daily.progress).toEqual({'collect-pattes':120,'collect-grass':40,'gain-affection':3});
+    const ready=dailyReady();expect(ready.missions.daily.progress).toEqual({'collect-pattes':100,'collect-grass':60,'gain-affection':1});
     const again=run(ready,{type:'collectIncome',id:'building-1'});
     expect(again.missions.daily.progress).toEqual(ready.missions.daily.progress);
     expect(act(again,{type:'collectOrder',id:'building-4'},again.lastSimulatedAt)).toMatchObject({ok:false,state:again});
   });
   it('does not count stored income, ready production, initial resources, quotes or refused actions',()=>{
     let s=prepared();s=run(s,{type:'startOrder',id:'building-4',recipe:'medium'});s=advance(s,5*HOUR);
-    expect(s.buildings[0].incomeUnits).toBe(120*HOUR);expect(s.missions.daily.progress).toEqual(emptyDailyProgress());
+    expect(s.buildings[0].incomeUnits).toBe(100*HOUR);expect(s.missions.daily.progress).toEqual(emptyDailyProgress());
     s.grass=0; expect(act(s,{type:'feed',id:'rabbit-2'},s.lastSimulatedAt)).toMatchObject({ok:false,state:s});
     expect(act(s,{type:'buyBuilding',kind:'farm',x: 18, y: 20},s.lastSimulatedAt)).toMatchObject({ok:false,state:s});
   });
@@ -103,8 +103,8 @@ describe('daily event accounting and fixed cycles',()=>{
   });
   it('assigns actions to the new cycle at the exact 24-hour boundary, not midnight',()=>{
     let s=createGame(12345);s.grass=100;
-    s=run(s,{type:'feed',id:'rabbit-2'},12345+DAY-1);expect(s.missions.daily.progress['gain-affection']).toBe(1);
-    s=run(s,{type:'feed',id:'rabbit-2'},12345+DAY);expect(s.missions.daily.progress['gain-affection']).toBe(1);
+    s=run(s,{type:'feed',id:'rabbit-2'},12345+DAY-1);expect(s.missions.daily.progress['gain-affection']).toBe(0);
+    s=run(s,{type:'feed',id:'rabbit-2'},12345+DAY);expect(s.missions.daily.progress['gain-affection']).toBe(0);
     expect(s.missions.daily).toMatchObject({referenceAt:12345,cycleIndex:1});expect(dailyCycleEnd(s)).toBe(12345+2*DAY);
   });
   it('expires unclaimed rewards and the unclaimed bonus and rejects a stale-cycle claim',()=>{
@@ -124,7 +124,7 @@ describe('daily event accounting and fixed cycles',()=>{
   });
   it('never reopens an old cycle when the clock moves backwards',()=>{
     const s=run(advance(prepared(),DAY),{type:'feed',id:'rabbit-2'},DAY);
-    expect(advance(s,0).missions.daily).toEqual({...s.missions.daily,referenceAt:-DAY});expect(run(s,{type:'feed',id:'rabbit-3'},0).missions.daily).toMatchObject({cycleIndex:1,progress:{'gain-affection':2}});
+    expect(advance(s,0).missions.daily).toEqual({...s.missions.daily,referenceAt:-DAY});expect(run(s,{type:'feed',id:'rabbit-3'},0).missions.daily).toMatchObject({"cycleIndex":1,"progress":{"gain-affection":0}});
     expect(act(s,{type:'claimDailyBonus',cycleStart:DAY},0)).toMatchObject({ok:false,reason:'CYCLE_EXPIRED'});
   });
   it('requires all three rewards claimed before a single bonus, without counting any rewards',()=>{

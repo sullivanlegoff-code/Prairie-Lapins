@@ -31,16 +31,16 @@ describe('approved SNK content', () => {
     expect(SPECIES_IDS[14]).toBe('snk'); expect(SPECIES_IDS).toEqual(EXPECTED_IDS);
     expect(validateSpeciesEntries(SPECIES_ENTRIES)).toEqual([]);
     expect(SPECIES.snk).toEqual({name: 'SNK', description, types: ['paille', 'feu'], rarity: 'rare', price: null,
-      progression: {unlockLevel: 1}, acquisition: [{kind: 'recipe', requiredTypes: ['paille', 'feu'], minAffection: 2}],
+      progression: {unlockLevel: 1}, acquisition: [{kind: 'recipe',guaranteeEligible:true, requiredTypes: ['paille', 'feu'], minAffection: 2}],
       recipe: {requiredTypes: ['paille', 'feu'], minAffection: 2}, art: {kind: 'static-sprite', file: 'assets/rabbits/snk/snk-v1.png', texture: 'rabbit-snk-original-v1', width: 461, height: 369, worldWidth: 56, groundY: 15.5, preloadOrder: 9}});
     expect(SPECIES.feu.progression.unlockLevel).toBe(5); expect(growthDuration('snk')).toBe(30 * MINUTE);
-    expect(RECIPE_PRICES.snk).toBeUndefined(); expect(GIFTED_RECIPES).not.toContain('snk'); expect(GUARANTEE_SPECIES).not.toContain('snk');
+    expect(RECIPE_PRICES.snk).toBeUndefined(); expect(GIFTED_RECIPES).not.toContain('snk'); expect(GUARANTEE_SPECIES).toContain('snk');
     expect(act(parents(), {type: 'buyRabbit', species: 'snk', enclosureId: 'building-1'}, 0)).toMatchObject({ok: false, reason: 'INVALID_CHOICE'});
   });
   it('uses either parent order and accepts both elements on one parent, while checking both affection thresholds', () => {
     for (const [a,b] of [['paille','feu'], ['bouee','paille'], ['snk','neige']] as const) {
       for (const [x,y] of [[a,b],[b,a]] as const) {
-        expect(recipeMatches('snk', x, y)).toBe(true); expect(breedingWeights(x,y,2,2).snk).toBe(20);
+        expect(recipeMatches('snk', x, y)).toBe(true); expect(breedingWeights(x,y,2,2).snk).toBe(30);
         expect(breedingWeights(x,y,1,2).snk).toBeUndefined(); expect(breedingWeights(x,y,2,1).snk).toBeUndefined();
       }
     }
@@ -49,17 +49,17 @@ describe('approved SNK content', () => {
     }
   });
   it('preserves historical weighting and guarantee rather than extending the starting Rare-only policy', () => {
-    expect(breedingWeights('paille','feu',2,2)).toEqual({paille:40,feu:40,ardent:20,snk:20});
-    expect(breedingOdds('feu','paille',2,2)).toEqual({paille:100/3,feu:100/3,ardent:100/6,snk:100/6});
-    expect(breedingOdds('paille','feu',4,4)).toEqual({paille:200/7,feu:200/7,bouee:100/7,ardent:100/7,snk:100/7});
-    const s = parents(); s.progression = {totalXp: cumulativeLevelXp(5), rewardedThroughLevel: 5}; s.pityFailures = 9;
-    expect(breedingPool(s,'paille','feu',4,4)).toMatchObject({weights:{bouee:1},guaranteed:true});
-    expect(breedingPool(s,'paille','feu',2,2)).toMatchObject({weights:{paille:40,feu:40,ardent:20,snk:20},guaranteed:false});
+    expect(breedingWeights('paille','feu',2,2)).toEqual({paille:30,feu:30,ardent:30,snk:30});
+    expect(breedingOdds('feu','paille',2,2)).toEqual({paille:25,feu:25,ardent:25,snk:25});
+    expect(breedingOdds('paille','feu',4,4)).toEqual({paille:20,feu:20,bouee:20,ardent:20,snk:20});
+    const s = parents(); s.progression = {totalXp: cumulativeLevelXp(5), rewardedThroughLevel: 5}; s.pityFailures = 7;
+    expect(breedingPool(s,'paille','feu',4,4)).toMatchObject({weights:{bouee:1,ardent:1,snk:1},guaranteed:true});
+    expect(breedingPool(s,'paille','feu',2,2)).toMatchObject({weights:{ardent:1,snk:1},guaranteed:true});
     expect(breedingOdds('paille','neige',2,2)).toEqual({frisket:50,icy:50});
   });
   it('checks exact cumulative boundaries for the four ordinary candidates', () => {
     const s = parents();
-    for (const [roll,id] of [[0,'paille'],[1/3-Number.EPSILON,'paille'],[1/3,'feu'],[2/3-Number.EPSILON,'feu'],[2/3,'ardent'],[5/6-Number.EPSILON,'ardent'],[5/6,'snk'],[1-Number.EPSILON,'snk']] as const) {
+    for (const [roll,id] of [[0,'paille'],[1/4-Number.EPSILON,'paille'],[1/4,'feu'],[2/4-Number.EPSILON,'feu'],[2/4,'ardent'],[3/4-Number.EPSILON,'ardent'],[3/4,'snk'],[1-Number.EPSILON,'snk']] as const) {
       expect(chooseBirth(s,'paille','feu',roll,2,2).species).toBe(id);
       expect(chooseBirth(s,'feu','paille',roll,2,2).species).toBe(id);
     }
@@ -70,7 +70,7 @@ describe('approved SNK content', () => {
     const controller = new GameController(storage, () => 0, rng);
     expect(controller.perform({type:'breed', parents:['rabbit-2','rabbit-3']}).ok).toBe(true);
     let born = controller.getSnapshot().state!; const birth = born.buildings.find(b => b.breeding)!.breeding!.birth;
-    expect(birth).toMatchObject({species:'snk',guaranteed:false,reservedDiscovery:false}); expect(rng).toHaveBeenCalledTimes(1); controller.dispose();
+    expect(birth).toMatchObject({species:'snk',guaranteed:false,reservedDiscovery:true}); expect(rng).toHaveBeenCalledTimes(1); controller.dispose();
     const noDraw = vi.fn(() => 0), reloaded = new GameController(storage, () => 0, noDraw);
     expect(reloaded.getSnapshot().state).toEqual(born); expect(noDraw).not.toHaveBeenCalled(); reloaded.dispose();
     expect(JSON.stringify(collectionView(born))).not.toContain(description);
@@ -83,7 +83,7 @@ describe('approved SNK content', () => {
     }
     home.habitat!.type = 'universal'; const xp = born.progression.totalXp;
     born = reload(run(born,{type:'welcome',enclosureId:home.id,birthId:birth.id},50*MINUTE));
-    expect(born.rabbits.at(-1)).toMatchObject({species:'snk',affection:1,enclosureId:home.id}); expect(born.progression.totalXp-xp).toBe(70);
+    expect(born.rabbits.at(-1)).toMatchObject({species:'snk',affection:1,enclosureId:home.id}); expect(born.progression.totalXp-xp).toBe(270);
     expect(collectionView(born).find(e => e.known && e.species === 'snk')).toEqual({known:true,species:'snk',name:'SNK',description});
   });
 });

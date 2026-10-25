@@ -24,7 +24,7 @@ describe('catalogue candidates with historical weighting', () => {
       const historical = BREEDING_ODDS[key];
       if (!historical) continue;
       for (const affection of [1,2]) {
-        const expected = key === 'neige,paille' ? (affection >= 2 ? {frisket:20,icy:20} : {}) : {...historical, ...rareAdditions(key.split(','), affection, affection)};
+        const expected = key === 'neige,paille' ? (affection >= 2 ? {frisket:30,icy:30} : {}) : {...historical, ...rareAdditions(key.split(','), affection, affection)};
         expect(Object.entries(breedingWeights(a,b,affection,affection))).toEqual(Object.entries(expected));
         const total = Object.values(expected).reduce((sum,w) => sum+w,0);
         let cursor = 0;
@@ -38,7 +38,7 @@ describe('catalogue candidates with historical weighting', () => {
   });
   it('automatically admits two Rare recipes sharing a historical union, in catalogue order and in either parent order', () => {
     for (const id of ['lunettes','perroquet'] as const) override(id, {requiredTypes: ['paille','neige'], minAffection: 4});
-    const expected = [['lunettes',20],['perroquet',20],['frisket',20],['icy',20]];
+    const expected = [['lunettes',30],['perroquet',30],['frisket',30],['icy',30]];
     expect(Object.entries(breedingWeights('paille','neige',4,4))).toEqual(expected);
     expect(Object.entries(breedingWeights('neige','paille',4,4))).toEqual(expected);
     // New recipes do not inherit the legacy affection exception.

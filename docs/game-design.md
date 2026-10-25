@@ -1,3 +1,51 @@
+# Économie courante — partie A, sauvegarde v17
+
+Référence exécutable : `src/config/` pour les valeurs, `src/simulation/` pour les règles. Joueur cible : trois sessions de cinq minutes à 8 h, 13 h et 20 h, avec une nuit de douze heures. Les travaux prêts attendent sans péremption et les habitats couvrent au moins 24 h de revenus, même pleins de rares d’affection 20.
+
+Une partie neuve commence avec **350 pattes, 0 herbe et 12 cœurs**, Paille affection 1 seul, habitat Paille, nid et nurserie offerts sur la parcelle sud-ouest (coordonnées fines 6,40 ; 2,36 ; 10,36). Le budget minimal du parcours est 350 − 200 − 80 + 50 − 60 − 10 = **50 pattes de marge**, avant les autres récompenses et revenus. Les anciens documents indiquant 10 herbes au départ, un départ central ou un format v8/v9 sont historiques.
+
+| Valeur | Règle courante |
+|---|---|
+| Revenu commun | 10 + (affection − 1), soit 10–29 pattes/h |
+| Revenu rare | 14 + (affection − 1), soit 14–33 pattes/h |
+| Magicien / Dragon | Revenu des rares provisoirement ; arbitrage propriétaire requis. Autres règles spéciales conservées. |
+| Capacité des habitats N1/N2/N3 | 3 / 5 / 7 individus |
+| Stockage de tous les habitats N1/N2/N3 | 2 400 / 4 000 / 5 600 pattes (besoin 24 h : 2 376 / 3 960 / 5 544) |
+| Communs Paille / Neige / Feu / Bélier Gris / Volant | 80 / 80 / 180 / 350 / 600 pattes |
+| Habitats Paille / Neige / Feu / Métal / Vol | 200 / 200 / 450 / 800 / 1 200 pattes |
+| Universel | 350 pattes |
+| Amélioration N2 | 50 % du prix d’achat du type |
+| Amélioration N3 | 10 cœurs |
+| Extensions successives | 600 / 1 800 / 4 500 / 9 000 / 16 000 / 26 000 / 40 000 / 60 000 ; niveaux requis conservés |
+| Ferme / Cuisine | 60 / 100 pattes ; deux fermes maximum |
+
+| Commande | Pattes | Herbes | Durée |
+|---|---:|---:|---:|
+| Petite (`small`, tutoriel) | 10 | 20 | 5 min |
+| Moyenne (`medium`) | 24 | 60 | 30 min |
+| Longue (`large`) | 60 | 180 | 4 h |
+| Nuit (`night`) | 100 | 360 | 10 h |
+
+Le prix est payé au lancement. Quantité et durée normale sont figées dans chaque commande ; une accélération change seulement sa date de fin. Une commande v16 conserve ses anciens 20/40/100 herbes et 5/15/60 minutes.
+
+Affection 1–20, repas à 2 × affection actuelle herbes (380 pour aller de 1 à 20), sans faim ni dégradation. Rares jamais vendus. Prix des recettes payantes, Cuisine, constructions et niveaux d’accès conservés.
+
+XP : passage N → N+1 = **arrondi(90 × N^1,15)**, plafond 30, un cœur par niveau. Le barème initial demandé 25 × N^1,5 faisait atteindre le niveau 5 pendant le tutoriel, 10 après 2,5 jours écoulés, 15 après 10,5 jours et 20 après 33 jours. Seuls le coefficient et l’exposant ont été ajustés pour le rythme cible. Repas : 5 XP fixes ; achat commun : 10 ; naissance commune : 10, rare : 20 (Épique 110 et Légendaire 180 conservés) ; première découverte commune : +60, rare : +250 ; lancement de reproduction : 5 ; constructions inchangées ; première pose de chaque modèle de décoration : 10, une fois par référence même après revente ; mission principale : 40, quotidienne : 50, bonus quotidien : 0.
+
+Collection : poids ordinaires 30 par commun et 30 par rare admissible. Paille × Neige reste un tirage rare certain. Les 18 rares ordinaires actuels participent à la garantie de nouvelle espèce : après sept échecs admissibles, la huitième tentative garantit une espèce manquante admissible à la paire et au niveau. Les recettes spéciales, Épiques, Légendaires et Mythiques restent exclues. La libération d’un doublon rend 10 herbes communes ou 25 rares, sans XP ; dernier individu et parent occupé restent protégés.
+
+Les quotidiennes demandent de récolter 100 pattes (récompense 60 pattes), récolter 40 herbes (+30 herbes) et lancer une reproduction (+40 pattes). L’identifiant historique `gain-affection` est conservé pour la troisième, dont la règle est désormais la reproduction. Bonus des trois : deux cœurs. Cadeau : deux cœurs par tranche de 24 h, cumul de trois cadeaux maximum (six cœurs), sans décaler la prochaine échéance lors d’une réclamation tardive.
+
+Migration v16 → v17 réelle et déterministe : ressources, affection, lapins, bâtiments, stock et résultats/dates des reproductions et croissances sont préservés. Le niveau et la fraction dans le niveau sont convertis depuis l’ancienne courbe 50 × N^1,6, avec arrondi inférieur à un point d’XP, sans récompense de niveau au chargement. Compteur de garantie plafonné à sept ; modèles de décoration déjà posés marqués récompensés ; quotidienne d’affection complétée reste réclamable, réclamation et bonus déjà reçus restent acquis. Versions 1–15 : rejet `INCOMPATIBLE_CATALOG` conservé. Fixture encodée par le véritable code v16 dans `tests/fixtures/economy-v16.json`.
+
+Résultats, limites et achats restants : [progression du joueur](player-progression.md). Les modifications d’interface hors ferme prévues pour la partie B restent à faire, notamment l’affichage du cumul des cadeaux.
+
+---
+
+# Historique des règles antérieures (non applicable à l’économie v17)
+
+Les chiffres et migrations v8/v9 ci-dessous décrivent les anciennes versions. Les parcours fondés sur `previousStart` reproduisent le départ central retiré ; ils ne décrivent pas une partie neuve. La référence courante ci-dessus les remplace.
+
 > Interface actuelle : [menus, confort tactile et comparaisons](ui-comfort.md). Navigation et styles harmonisés, sans changement de règles ou de sauvegarde.
 
 > Validation actuelle : [parcours, budget et rythme sur 24 h](start-validation.md). Les prix, revenus, probabilités et récompenses sont conservés.

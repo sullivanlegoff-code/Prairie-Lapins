@@ -19,10 +19,10 @@ function browser(initial: Record<string, string> = {}) {
 const state = (c: GameController) => c.getSnapshot().state!;
 
 describe('the save boundary of the new catalogue', () => {
-  it('writes version 16 and reads it back without any reset', () => {
-    expect(SAVE_VERSION).toBe(16);
+  it('writes version 17 and reads it back without any reset', () => {
+    expect(SAVE_VERSION).toBe(17);
     const b = browser(), first = new GameController(b.normal, () => 0);
-    expect(first.getSnapshot()).toMatchObject({status: 'saved', issue: null, catalogReset: false}); expect(JSON.parse(b.data.get(SAVE_KEY)!).version).toBe(16);
+    expect(first.getSnapshot()).toMatchObject({status: 'saved', issue: null, catalogReset: false}); expect(JSON.parse(b.data.get(SAVE_KEY)!).version).toBe(17);
     first.dispose();
     const again = new GameController(b.normal, () => HOUR); expect(again.getSnapshot()).toMatchObject({status: 'saved', catalogReset: false}); again.dispose();
   });
@@ -86,7 +86,7 @@ describe('the save boundary of the new catalogue', () => {
 
   it('refuses a newer or unknown version as unsupported, and a current-version file naming a removed species as invalid', () => {
     const b = browser(), c = new GameController(b.normal, () => 0), before = c.getSnapshot();
-    expect(c.prepareImport(oldSave(17))).toEqual({ok: false, reason: 'UNSUPPORTED_VERSION'});
+    expect(c.prepareImport(oldSave(18))).toEqual({ok:false,reason:'UNSUPPORTED_VERSION'});
     expect(c.prepareImport(oldSave(0))).toEqual({ok: false, reason: 'UNSUPPORTED_VERSION'});
     expect(c.prepareImport(oldSave(16, raw => { (raw.rabbits as {species: string}[])[0].species = 'terre'; }))).toEqual({ok: false, reason: 'INVALID_STATE'});
     expect(c.prepareImport(oldSave(16, raw => { raw.recipeBook = ['brumelin']; }))).toEqual({ok: false, reason: 'INVALID_STATE'});
@@ -101,12 +101,12 @@ describe('the save boundary of the new catalogue', () => {
     expect(b.data.get(SAVE_KEY)).toBe(raw); expect(b.writes).toEqual([]); c.dispose();
   });
 
-  it('still imports a current-version file after a reset, and exports a version 16 file', () => {
+  it('still imports a current-version file after a reset, and exports a version 17 file', () => {
     const b = browser({[SAVE_KEY]: oldSave()}), c = new GameController(b.normal, () => 0);
     const source = createGame(0); source.pattes = 4321;
     const prepared = c.prepareImport(encodeGame(source)); if (!prepared.ok) throw Error(prepared.reason);
     expect(c.confirmImport(prepared.token, true)).toEqual({ok: true}); expect(state(c).pattes).toBe(4321);
     const exported = c.exportGame(); if (!exported.ok) throw Error(exported.reason);
-    expect(JSON.parse(exported.json).version).toBe(16); expect(readPresentationId(exported.json)).toBeDefined(); c.dispose();
+    expect(JSON.parse(exported.json).version).toBe(17); expect(readPresentationId(exported.json)).toBeDefined(); c.dispose();
   });
 });

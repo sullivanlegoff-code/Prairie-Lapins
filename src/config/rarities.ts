@@ -4,9 +4,9 @@
  * here. The order is the display order (filters, catalogue). Recipe affection thresholds are breeding rules, not rarity data.
  */
 const REGISTRY = [
-  {id: 'common', label: 'Commun', growthMinutes: 5, birthXp: 30},
+  {id: 'common', label: 'Commun', growthMinutes: 5, birthXp: 10},
   {id: 'uncommon', label: 'Peu commun', growthMinutes: 15, birthXp: 45},
-  {id: 'rare', label: 'Rare', growthMinutes: 30, birthXp: 70},
+  {id: 'rare', label: 'Rare', growthMinutes: 30, birthXp: 20},
   {id: 'epic', label: 'Épique', growthMinutes: 60, birthXp: 110},
   {id: 'legendary', label: 'Légendaire', growthMinutes: 120, birthXp: 180},
 ] as const;

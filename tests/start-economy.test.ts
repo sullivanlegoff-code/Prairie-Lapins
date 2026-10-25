@@ -1,3 +1,4 @@
+// HISTORICAL: previousStart reproduces the retired centre-start layout; current economy rules apply.
 import {previousStart as createGame} from './regression-start';
 import {describe,it,expect} from 'vitest';
 import {act,advance,encodeGame,decodeGame} from '../src/simulation';
@@ -20,7 +21,7 @@ function journey(aided:boolean,roll:number){
  run({type:'startOrder',id:farm.id,recipe:'small'});checkpoint('Production lancée');resume();finish(farm.id,'order');run({type:'collectOrder',id:farm.id});claim('first-harvest');checkpoint('Herbe récoltée et récompense');
  run({type:'feed',id:'rabbit-3'});claim('parents-ready');checkpoint('Neige et récompense');run({type:'breed',parents:['rabbit-2','rabbit-3']});claim('at-nest');checkpoint('Reproduction et récompense');resume();finish('building-4','breeding');
  expect(babyOf(s.buildings.find(b=>b.kind==='nursery')!)).toBeNull();run({type:'transferBirth',id:'building-4',birthId:s.initiation!.birthId!});claim('to-nursery');checkpoint('Transfert et récompense');resume();finish('building-5','growth');run(welcomeOf(s, 'building-1'));claim('first-birth');checkpoint('Accueil et récompense');
- expect([s.pattes,s.grass,s.hearts]).toEqual([360,76,14]);expect(s.missions.claimed).toEqual([...INITIAL_MISSION_IDS]);
+ expect([s.pattes,s.grass,s.hearts]).toEqual([410,76,14]);expect(s.missions.claimed).toEqual([...INITIAL_MISSION_IDS]);
  expect(s.rabbits.at(-1)!.species).toBe(roll===.1?'frisket':'icy');expect(s.initiation!.used).toEqual(aided?['order','breeding','growth']:[]);
  return {s,now,run,resume,farmId:farm.id,budget,setTime:(t:number)=>{now=t;s=advance(s,t);},current:()=>s};
 }
@@ -35,7 +36,7 @@ describe('initial budget and explicit 24h visit schedules',()=>{
    function claimDaily(){for(const id of DAILY_MISSION_IDS){const s=current();if(s.missions.daily.progress[id]>=({ 'collect-pattes':100,'collect-grass':40,'gain-affection':3}[id])&&!s.missions.daily.claimed.includes(id))run({type:'claimDailyMission',id,cycleStart:dailyCycleStart(s)});}if(current().missions.daily.claimed.length===3&&!current().missions.daily.bonusClaimed)run({type:'claimDailyBonus',cycleStart:dailyCycleStart(current())});}
    for(let n=0;n<4;n++)run({type:'feed',id:birth});
    run({type:'buyBuilding',kind:'enclosure',habitatType:'paille',x:26,y:24});const home=current().buildings.at(-1)!.id;run({type:'buyRabbit',species:'paille',enclosureId:home});claimBranches();claimDaily();
-   const starting={pattes:current().pattes,grass:current().grass,hearts:current().hearts};expect([starting.pattes,starting.grass]).toEqual([150,86]); // 200 before the removal of the Terre discovery mission and its 50-coin reward
+   const starting={pattes:current().pattes,grass:current().grass,hearts:current().hearts};expect([starting.pattes,starting.grass]).toEqual([180,86]); // 200 before the removal of the Terre discovery mission and its 50-coin reward
    run({type:'startOrder',id:j.farmId,recipe:'medium'});const snapshots:unknown[]=[];
    // Rare natural growth ends at minute 55; the next 15-minute farm order is ready at the 2h visit.
    for(const hour of visits){j.setTime(hour*HOUR);j.resume();for(const b of current().buildings.filter(b=>b.kind==='enclosure'))run({type:'collectIncome',id:b.id});run({type:'collectOrder',id:j.farmId});claimDaily();if(hour===24)run({type:'claimHearts'});else run({type:'startOrder',id:j.farmId,recipe:'medium'});snapshots.push({hour,pattes:current().pattes,grass:current().grass,hearts:current().hearts});}

@@ -43,7 +43,7 @@ describe('enclosure footprint tiers', () => {
 describe('upgrading with room', () => {
   it('changes level, footprint and payment together at each tier, and keeps every resident and position', () => {
     const before = start(), l2 = run(before, upgrade(1)), l3 = run(l2, upgrade(2));
-    expect(enclosure(l2)).toMatchObject({x: 6, y: 40, footprintTier: 2, habitat: {type: 'paille', level: 2}}); expect(l2.pattes).toBe(before.pattes - 300); expect(l2.hearts).toBe(before.hearts);
+    expect(enclosure(l2)).toMatchObject({x: 6, y: 40, footprintTier: 2, habitat: {type: 'paille', level: 2}}); expect(l2.pattes).toBe(before.pattes - 100); expect(l2.hearts).toBe(before.hearts);
     expect(enclosure(l3)).toMatchObject({x: 6, y: 40, footprintTier: 3, habitat: {type: 'paille', level: 3}}); expect(l3.hearts).toBe(before.hearts - 10); expect(l3.pattes).toBe(l2.pattes);
     expect(l3.rabbits).toEqual(before.rabbits); expect(l3.buildings.filter(b => b.id !== 'building-1')).toEqual(before.buildings.filter(b => b.id !== 'building-1'));
   });
@@ -112,7 +112,7 @@ describe('collisions and moves between small and large buildings', () => {
 
 describe('saves: footprint tiers, and older games untouched', () => {
   it('writes and reads the tier of each enclosure exactly', () => {
-    const s = grown(3), json = encodeGame(s); expect(JSON.parse(json).version).toBe(16);
+    const s = grown(3), json = encodeGame(s); expect(JSON.parse(json).version).toBe(17);
     expect(JSON.parse(json).buildings.find((b: {id: string}) => b.id === 'building-1').footprintTier).toBe(3);
     expect(decodeGame(json)).toEqual({ok: true, state: s});
     const compact = encodeGame(grown(1)); expect(compact).not.toContain('footprintTier');
@@ -124,7 +124,7 @@ describe('saves: footprint tiers, and older games untouched', () => {
     old.buildings.push({...emptyBuilding('building-9', 'enclosure', 10, 40, 'universal'), habitat: {type: 'universal', level: 2}}); old.nextId = 10;
     const decoded = decodeGame(encodeGame(old));
     if (!decoded.ok) throw Error(decoded.reason);
-    expect(decoded.state.version).toBe(16);
+    expect(decoded.state.version).toBe(17);
     for (const key of ['buildings', 'rabbits', 'decorations', 'acquiredParcels', 'pattes', 'grass', 'hearts', 'discovered', 'nextId'] as const) expect(decoded.state[key], key).toEqual(old[key]);
     for (const b of decoded.state.buildings) { expect('footprintTier' in b).toBe(false); expect(buildingFootprint(b)).toMatchObject({width: 4, height: 4}); }
     expect(decoded.state.pattes).toBe(old.pattes); expect(decoded.state.hearts).toBe(old.hearts);

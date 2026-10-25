@@ -23,16 +23,16 @@ const read = (raw: string) => {const r = decodeGame(raw); if (!r.ok) throw Error
 
 describe('v9 progression and level rewards', () => {
   it('starts at zero without altering resources or the current course', () => {
-    const s = createCentreStartGame(0); expect(s.version).toBe(16);
+    const s = createCentreStartGame(0); expect(s.version).toBe(17);
     expect(s.progression).toEqual({totalXp: 0, rewardedThroughLevel: 1});
     expect(progressionFromXp(s.progression.totalXp).level).toBe(1);
-    expect([s.pattes,s.grass,s.hearts]).toEqual([300,0,12]);
+    expect([s.pattes,s.grass,s.hearts]).toEqual([350,0,12]);
   });
   it('grants exact hearts for one and multiple levels; keeps derived values outside the save', () => {
     const s = createCentreStartGame(0);
-    expect(applyProgressionGain(s,50)).toEqual({ok:true,gain:{xpGained:50,rewardedLevels:[2],heartsGranted:1}});
-    expect(applyProgressionGain(s,500)).toEqual({ok:true,gain:{xpGained:500,rewardedLevels:[3,4],heartsGranted:2}});
-    expect(s.hearts).toBe(15); expect(s.progression).toEqual({totalXp:550,rewardedThroughLevel:4});
+    expect(applyProgressionGain(s,90)).toEqual({ok:true,gain:{xpGained:90,rewardedLevels:[2],heartsGranted:1}});
+    expect(applyProgressionGain(s,900)).toEqual({ok:true,gain:{xpGained:900,rewardedLevels:[3,4],heartsGranted:2}});
+    expect(s.hearts).toBe(15); expect(s.progression).toEqual({totalXp:990,rewardedThroughLevel:4});
     expect(JSON.parse(encodeGame(s)).progression).toEqual(s.progression);
   });
   it('retains surplus, rewards a raised maximum only on the next positive gain and never tops up older rewards', () => {
@@ -47,7 +47,7 @@ describe('v9 progression and level rewards', () => {
     expect(applyProgressionGain(s,1,changedReward)).toEqual({ok:true,gain:{xpGained:1,rewardedLevels:[],heartsGranted:0}});expect(s.hearts).toBe(42);
   });
   it('marks a zero-heart level reward as processed',()=>{
-    const s=createCentreStartGame(0);expect(applyProgressionGain(s,50,{...PROGRESSION,rewards:{heartsPerLevel:0}}).ok).toBe(true);
+    const s=createCentreStartGame(0);expect(applyProgressionGain(s,90,{...PROGRESSION,rewards:{heartsPerLevel:0}}).ok).toBe(true);
     expect(s.progression.rewardedThroughLevel).toBe(2);expect(applyProgressionGain(s,1).ok).toBe(true);expect(s.hearts).toBe(12);
   });
   it.each([-1,0.5,NaN,Infinity,Number.MAX_SAFE_INTEGER+1])('refuses invalid XP %s without mutation', amount=>{
@@ -57,7 +57,7 @@ describe('v9 progression and level rewards', () => {
     const s=createCentreStartGame(0);s.progression.totalXp=Number.MAX_SAFE_INTEGER;
     let before=structuredClone(s);expect(applyProgressionGain(s,1)).toEqual({ok:false,reason:'RESOURCE_LIMIT'});expect(s).toEqual(before);
     s.progression.totalXp=0;s.hearts=Number.MAX_SAFE_INTEGER;before=structuredClone(s);
-    expect(applyProgressionGain(s,50)).toEqual({ok:false,reason:'RESOURCE_LIMIT'});expect(s).toEqual(before);
+    expect(applyProgressionGain(s,90)).toEqual({ok:false,reason:'RESOURCE_LIMIT'});expect(s).toEqual(before);
     expect(applyProgressionGain(s,0).ok).toBe(true);expect(s).toEqual(before);
   });
   it('rejects malformed persisted progression and unknown derived fields',()=>{
@@ -67,7 +67,7 @@ describe('v9 progression and level rewards', () => {
   });
   it('time advance adds no XP after a real meal',()=>{
     const s={...createCentreStartGame(0),grass:10},r=originalAct(s,{type:'feed',id:'rabbit-2'},0);expect(r.ok).toBe(true);
-    if(!r.ok)throw Error(r.reason);expect(r.state.progression.totalXp).toBe(10);expect(r.state.hearts).toBe(12);
+    if(!r.ok)throw Error(r.reason);expect(r.state.progression.totalXp).toBe(5);expect(r.state.hearts).toBe(12);
     expect(advance(r.state,HOUR).progression).toEqual(r.state.progression);
   });
 });
@@ -89,8 +89,8 @@ describe('progression candidate persistence',()=>{
     const m=memory(),clock={now:0},c=new GameController(m.storage,()=>clock.now),raw=m.data.get(SAVE_KEY);m.flags.fail=SAVE_KEY;clock.now=HOUR;
     expect(c.grantLaboratoryXp(50)).toEqual({ok:false,reason:'ACTION_NOT_SAVED'});
     expect(c.getSnapshot()).toMatchObject({status:'write-error',dirty:true,state:{progression:{totalXp:0,rewardedThroughLevel:1},hearts:12,lastSimulatedAt:HOUR}});
-    expect(c.getSnapshot().state!.buildings[0].incomeUnits).toBe(12*HOUR);expect(m.data.get(SAVE_KEY)).toBe(raw);
-    m.flags.fail='';expect(c.grantLaboratoryXp(50)).toMatchObject({ok:true,progressionGain:{xpGained:50,rewardedLevels:[2],heartsGranted:1}});
+    expect(c.getSnapshot().state!.buildings[0].incomeUnits).toBe(10*HOUR);expect(m.data.get(SAVE_KEY)).toBe(raw);
+    m.flags.fail='';expect(c.grantLaboratoryXp(50)).toMatchObject({ok:true,progressionGain:{xpGained:50,rewardedLevels:[],heartsGranted:0}});
     expect(read(m.data.get(SAVE_KEY)!)).toEqual(c.getSnapshot().state);c.dispose();
   });
   it('rolls back the whole normal action candidate if a future command changes progression',()=>{
@@ -99,8 +99,8 @@ describe('progression candidate persistence',()=>{
     });
     const m=memory(encodeGame({...createGame(0),grass:10})),c=new GameController(m.storage,()=>0),before=c.getSnapshot().state;m.flags.fail=SAVE_KEY;
     expect(c.perform({type:'feed',id:'rabbit-2'})).toEqual({ok:false,reason:'ACTION_NOT_SAVED'});expect(c.getSnapshot().state).toEqual(before);expect(c.getSnapshot().dirty).toBe(false);
-    m.flags.fail='';expect(c.perform({type:'feed',id:'rabbit-2'})).toMatchObject({ok:true,progressionGain:{heartsGranted:1}});
-    expect(c.getSnapshot().state).toMatchObject({grass:8,hearts:13,progression:{totalXp:60,rewardedThroughLevel:2}});c.dispose();
+    m.flags.fail='';expect(c.perform({type:'feed',id:'rabbit-2'})).toMatchObject({"ok":true,"progressionGain":{"heartsGranted":0}});
+    expect(c.getSnapshot().state).toMatchObject({grass:8,hearts:12,progression:{totalXp:55,rewardedThroughLevel:1}});c.dispose();
   });
   it('restores entire exports without merging or automatically distributing rewards',()=>{
     const m=memory(),c=new GameController(m.storage,()=>0),old=c.exportGame();if(!old.ok)throw Error(old.reason);

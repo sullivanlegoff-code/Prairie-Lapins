@@ -36,11 +36,11 @@ export const MAIN_MISSIONS: Record<MainMissionId, MainDefinition> = {
 };
 export const DAILY_MISSION_IDS = ['collect-pattes', 'collect-grass', 'gain-affection'] as const;
 export type DailyMissionId = typeof DAILY_MISSION_IDS[number];
-export type MissionEvent = 'collectIncome' | 'collectOrder' | 'gainAffection';
+export type MissionEvent = 'collectIncome' | 'collectOrder' | 'gainAffection' | 'breed';
 export const DAILY_MISSIONS: Record<DailyMissionId, {title: string; description: string; event: MissionEvent; target: number; reward: Reward}> = {
-  'collect-pattes': {title: 'Récolte de pattes', description: 'Récolter 100 pattes dans les habitats.', event: 'collectIncome', target: 100, reward: {resource: 'pattes', amount: 30}},
-  'collect-grass': {title: 'Une réserve d’herbe', description: 'Récolter 40 herbes dans les fermes.', event: 'collectOrder', target: 40, reward: {resource: 'grass', amount: 10}},
-  'gain-affection': {title: 'Des lapins choyés', description: 'Gagner 3 niveaux d’affection au total.', event: 'gainAffection', target: 3, reward: {resource: 'pattes', amount: 20}},
+  'collect-pattes': {title: 'Récolte de pattes', description: 'Récolter 100 pattes dans les habitats.', event: 'collectIncome', target: 100, reward: {resource: 'pattes', amount: 60}},
+  'collect-grass': {title: 'Une réserve d’herbe', description: 'Récolter 40 herbes dans les fermes.', event: 'collectOrder', target: 40, reward: {resource: 'grass', amount: 30}},
+  'gain-affection': {title: 'Lancer une reproduction', description: 'Lance une reproduction au nid.', event: 'breed', target: 1, reward: {resource: 'pattes', amount: 40}},
 };
 export const MISSION_CYCLE_DURATION = 24 * HOUR;
 export const DAILY_BONUS: Reward = {resource: 'hearts', amount: 2};

@@ -9,7 +9,7 @@ import type {GameState} from '../src/state/types';
 import meadowSource from '../src/display/MeadowScene.ts?raw';
 
 /** Every extension rank unlocked and enough coins: only the island rule decides. */
-const rich = (s: GameState) => {const level = requiredExtensionLevel(8); s.progression = {totalXp: cumulativeLevelXp(level), rewardedThroughLevel: level}; s.pattes = 50_000; return s;};
+const rich = (s: GameState) => {const level = requiredExtensionLevel(8); s.progression = {totalXp: cumulativeLevelXp(level), rewardedThroughLevel: level}; s.pattes = 500_000; return s;};
 const expand = (s: GameState, parcelId: ParcelId) => act(s, {type: 'expand', parcelId, expectedCost: extensionPrice(s)}, 0);
 const buy = (s: GameState, parcelId: ParcelId) => {const r = expand(s, parcelId); if (!r.ok) throw Error(`${parcelId}: ${r.reason}`); return r.state;};
 const start = PARCELS.southwest;
@@ -45,10 +45,10 @@ describe('southwest start for new games', () => {
   });
   it('never offers land left of or below the start: its left and front edges stay the island edges', () => {
     // The southwest parcel is the map's bottom-left corner, so these directions hold no parcel at all.
-    let s = rich(createGame(0)), price = 500;
+    let s = rich(createGame(0)), rank = 0;
     while (purchasableParcels(s).length) {
       for (const id of purchasableParcels(s)) expect(PARCELS[id].x >= start.x && PARCELS[id].y <= start.y).toBe(true);
-      expect(extensionPrice(s)).toBe(price); price += 500;
+      expect(extensionPrice(s)).toBe([600,1800,4500,9000,16000,26000,40000,60000][rank++]);
       s = buy(s, purchasableParcels(s).at(-1)!);
     }
     expect([...s.acquiredParcels].sort()).toEqual([...PARCEL_IDS].sort());

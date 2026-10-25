@@ -1,0 +1,288 @@
+{
+  "calendarMilestones": {
+    "5": 1,
+    "10": 6,
+    "15": 23,
+    "20": 57
+  },
+  "method": "Seed 20261025; real act/advance; 3 sessions/day at 08/13/20, <=45 commands and <=8 meals/session; two farms, long/long/night; collection-first parent pairs; no Cuisine or paid recipes; Hearts only for permanent habitat upgrades. Day snapshots just before next 08:00. Tutorial is the first session.",
+  "curve": {
+    "initialLevel": 1,
+    "maximumLevel": 30,
+    "base": 90,
+    "exponent": 1.15
+  },
+  "tutorial": {
+    "pattes": 270,
+    "grass": 96,
+    "hearts": 15,
+    "level": 4,
+    "xp": 895
+  },
+  "milestones": {
+    "5": 0.5,
+    "10": 5.208,
+    "15": 22,
+    "20": 56
+  },
+  "rows": [
+    {
+      "step": "10 min",
+      "pattes": 270,
+      "grass": 96,
+      "hearts": 15,
+      "level": 4,
+      "species": 3,
+      "speciesIds": [
+        "paille",
+        "neige",
+        "frisket"
+      ],
+      "storedPattes": 6,
+      "remaining": {
+        "commons": [
+          "feu",
+          "belier-gris",
+          "volant"
+        ],
+        "extensions": 8,
+        "extensionCost": 157900,
+        "farms": 1,
+        "kitchen": true,
+        "habitatUpgrades": 2,
+        "paidRecipes": [
+          "lunettes",
+          "perroquet",
+          "feu-glace",
+          "bouee",
+          "magicien",
+          "dragon"
+        ]
+      }
+    },
+    {
+      "step": "1 j",
+      "pattes": 438,
+      "grass": 364,
+      "hearts": 19,
+      "level": 5,
+      "species": 3,
+      "speciesIds": [
+        "paille",
+        "neige",
+        "frisket"
+      ],
+      "storedPattes": 623,
+      "remaining": {
+        "commons": [
+          "feu",
+          "belier-gris",
+          "volant"
+        ],
+        "extensions": 8,
+        "extensionCost": 157900,
+        "farms": 0,
+        "kitchen": true,
+        "habitatUpgrades": 2,
+        "paidRecipes": [
+          "lunettes",
+          "perroquet",
+          "feu-glace",
+          "bouee",
+          "magicien",
+          "dragon"
+        ]
+      }
+    },
+    {
+      "step": "3 j",
+      "pattes": 649,
+      "grass": 2956,
+      "hearts": 21,
+      "level": 7,
+      "species": 8,
+      "speciesIds": [
+        "paille",
+        "neige",
+        "frisket",
+        "icy",
+        "feu",
+        "snk",
+        "feu-glace",
+        "belier-gris"
+      ],
+      "storedPattes": 2351,
+      "remaining": {
+        "commons": [
+          "volant"
+        ],
+        "extensions": 6,
+        "extensionCost": 155500,
+        "farms": 0,
+        "kitchen": false,
+        "habitatUpgrades": 3,
+        "paidRecipes": [
+          "lunettes",
+          "perroquet",
+          "bouee",
+          "magicien",
+          "dragon"
+        ]
+      }
+    },
+    {
+      "step": "7 j",
+      "pattes": 11482,
+      "grass": 8115,
+      "hearts": 40,
+      "level": 10,
+      "species": 16,
+      "speciesIds": [
+        "paille",
+        "neige",
+        "frisket",
+        "icy",
+        "feu",
+        "snk",
+        "feu-glace",
+        "belier-gris",
+        "wat-wat",
+        "amethyste",
+        "roukette",
+        "lunettes",
+        "volant",
+        "ardent",
+        "virvoletant",
+        "princesse-neige"
+      ],
+      "storedPattes": 4475,
+      "remaining": {
+        "commons": [],
+        "extensions": 4,
+        "extensionCost": 142000,
+        "farms": 0,
+        "kitchen": false,
+        "habitatUpgrades": 4,
+        "paidRecipes": [
+          "perroquet",
+          "bouee",
+          "magicien",
+          "dragon"
+        ]
+      }
+    },
+    {
+      "step": "20 j",
+      "pattes": 154360,
+      "grass": 24794,
+      "hearts": 96,
+      "level": 14,
+      "species": 23,
+      "speciesIds": [
+        "paille",
+        "neige",
+        "frisket",
+        "icy",
+        "feu",
+        "snk",
+        "feu-glace",
+        "belier-gris",
+        "wat-wat",
+        "amethyste",
+        "roukette",
+        "lunettes",
+        "volant",
+        "ardent",
+        "virvoletant",
+        "princesse-neige",
+        "perroquet",
+        "pic-pic",
+        "plume",
+        "glassofeu",
+        "fluffy",
+        "phoenix",
+        "bouee"
+      ],
+      "storedPattes": 7895,
+      "remaining": {
+        "commons": [],
+        "extensions": 3,
+        "extensionCost": 126000,
+        "farms": 0,
+        "kitchen": false,
+        "habitatUpgrades": 8,
+        "paidRecipes": [
+          "magicien",
+          "dragon"
+        ]
+      }
+    },
+    {
+      "step": "50 j",
+      "pattes": 625972,
+      "grass": 64469,
+      "hearts": 211,
+      "level": 19,
+      "species": 24,
+      "speciesIds": [
+        "paille",
+        "neige",
+        "frisket",
+        "icy",
+        "feu",
+        "snk",
+        "feu-glace",
+        "belier-gris",
+        "wat-wat",
+        "amethyste",
+        "roukette",
+        "lunettes",
+        "volant",
+        "ardent",
+        "virvoletant",
+        "princesse-neige",
+        "perroquet",
+        "pic-pic",
+        "plume",
+        "glassofeu",
+        "fluffy",
+        "phoenix",
+        "bouee",
+        "magicien"
+      ],
+      "storedPattes": 9335,
+      "remaining": {
+        "commons": [],
+        "extensions": 1,
+        "extensionCost": 60000,
+        "farms": 0,
+        "kitchen": false,
+        "habitatUpgrades": 7,
+        "paidRecipes": [
+          "dragon"
+        ]
+      }
+    }
+  ],
+  "actions": {
+    "buyBuilding": 11,
+    "claimMainMission": 16,
+    "buyRabbit": 4,
+    "startOrder": 419,
+    "initiationAid": 3,
+    "collectOrder": 417,
+    "feed": 1674,
+    "breed": 210,
+    "claimDailyMission": 210,
+    "transferBirth": 209,
+    "welcome": 208,
+    "collectIncome": 1729,
+    "claimDailyBonus": 70,
+    "claimHearts": 69,
+    "buyDecoration": 1,
+    "upgradeHabitat": 5,
+    "expand": 7,
+    "release": 176
+  },
+  "totalActions": 5438
+}

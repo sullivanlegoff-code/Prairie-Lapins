@@ -6,7 +6,7 @@ import {quoteComplement} from '../src/simulation/actions';
 import {habitatStats} from '../src/simulation/habitats';
 
 /** Written out here, independently of the configuration it checks: capacity and price of each upgrade. */
-const COINS_LEVEL_2 = {universal: 200, paille: 300, neige: 300, terre: 300, feu: 300, metal: 300, vol: 300} as const;
+const COINS_LEVEL_2 = {universal: 175, paille: 100, neige: 100, feu: 225, metal: 400, vol: 600} as const;
 const CAPACITY = [3, 5, 7], HEARTS_LEVEL_3 = 10;
 const game = (type: HabitatType, level: 1 | 2, pattes: number, hearts: number) => {
   const s = createGame(0); s.buildings[0].habitat = {type, level}; s.rabbits = []; /* residents of other types would make a typed habitat invalid */ s.pattes = pattes; s.hearts = hearts;
@@ -22,7 +22,7 @@ describe('upgrading an enclosure: coins to level 2, exactly ten hearts to level 
       expect(habitatLevel(type, 3)).toMatchObject({cost: HEARTS_LEVEL_3, currency: 'hearts'});
       expect(habitatLevel(type, 1).currency).toBe('pattes');
     }
-    expect(HABITAT_LEVELS.universal[2].cap).toBe(1200); expect(HABITAT_LEVELS.specialized[2].cap).toBe(2100);
+    expect(HABITAT_LEVELS.universal[2].cap).toBe(5600); expect(HABITAT_LEVELS.specialized[2].cap).toBe(5600);
   });
 
   it.each(HABITAT_TYPES.map(type => [type]))('%s: level 2 costs coins only, level 3 costs exactly ten hearts and no coin', type => {

@@ -1,3 +1,4 @@
+// HISTORICAL: previousStart reproduces the retired centre-start layout; current economy rules apply.
 import {previousStart as createGame} from './regression-start';
 import {describe,it,expect,vi} from 'vitest';
 import {act,advance,decodeGame,encodeGame,rabbitIncome} from '../src/simulation';
@@ -21,7 +22,7 @@ function decode(raw:string){const r=decodeGame(raw);if(!r.ok)throw Error(r.reaso
 function memory(raw:string){const data=new Map([[SAVE_KEY,raw]]),flags={fail:false};const storage:SaveStorage={getItem:k=>data.get(k)??null,setItem:(k,v)=>{if(flags.fail&&k===SAVE_KEY)throw Error('quota');data.set(k,v)}};return {data,flags,storage};}
 describe('manual breeding v8',()=>{
  it('starts with three collision-free buildings, unchanged resources and retired possession rewards preserved but unavailable',()=>{
-  let s=createGame(0);expect([s.pattes,s.grass,s.hearts]).toEqual([300,10,12]);expect(s.buildings.map(b=>b.kind)).toEqual(['enclosure','nest','nursery']);
+  let s=createGame(0);expect([s.pattes,s.grass,s.hearts]).toEqual([350,10,12]);expect(s.buildings.map(b=>b.kind)).toEqual(['enclosure','nest','nursery']);
   for(const b of s.buildings)expect(buildingPlacementReason(s,b.x,b.y,b.id)).toBeNull();
   expect(s.missions.completed).toEqual(expect.arrayContaining(['cozy-nest','welcome-babies']));
   for(const id of ['cozy-nest','welcome-babies'] as const){expect(act(s,{type:'claimMainMission',id},0)).toMatchObject({ok:false,reason:'NOT_READY'});}

@@ -1,3 +1,4 @@
+// HISTORICAL: previousStart reproduces the retired centre-start layout; current economy rules apply.
 import {establishHistoricalLevelRights} from '../src/simulation/levelRights';
 import {cumulativeLevelXp} from '../src/simulation/progression';
 import * as progressionApi from '../src/simulation/progression';
@@ -127,7 +128,7 @@ function collectionReady(): GameState {
   for (const [x, y] of [[18, 24], [26, 24], [18, 28]]) step({type: 'buyBuilding', kind: 'enclosure', x, y});
   const second = s.buildings.filter(b => b.kind === 'enclosure')[1].id;
   for (const species of ['belier-gris', 'feu', 'volant'] as const) step({type: 'buyRabbit', species, enclosureId: second});
-  s.rabbits.forEach(r => r.affection = 2); s.hearts = 12; s.pityFailures = 9; return s;
+  s.rabbits.forEach(r => r.affection = 2); s.hearts = 12; s.pityFailures = 7; return s;
 }
 describe('reproduction text follows current recipe data', () => {
   it('explains recipe-specific thresholds in the nest without revealing unknown conditions', () => {
@@ -145,8 +146,8 @@ describe('reproduction text follows current recipe data', () => {
     const card=panel().querySelector(`[data-recipe="${id}"]`)!;
     expect(card.getAttribute('data-recipe-known')).toBe('true');
     expect(card.textContent).toContain('Affection 2 minimum pour chacun des deux parents.');
-    expect(card.textContent).toContain('Cette espèce ne bénéficie pas de la garantie de découverte.');
-    expect(card.textContent).not.toContain('Cette espèce bénéficie de la garantie ordinaire');
+    expect(card.textContent).toContain('Cette espèce bénéficie de la garantie ordinaire');
+    expect(card.textContent).not.toContain('Cette espèce ne bénéficie pas de la garantie');
     expect(panel().textContent).toContain('espèces explicitement éligibles à la garantie, non découvertes et admissibles à cette paire');
   });
   it('retains the historical guarantee indication for a known eligible recipe', () => {
@@ -195,7 +196,7 @@ function place(ui: GameUI, kind: 'farm' | 'nest' | 'nursery' | 'enclosure', x: n
   if(kind==='nest'||kind==='nursery'){document.getElementById('open-arrange')!.click();button(`Placer gratuitement : ${kind==='nest'?'Nid':'Nurserie'}`).click();ui.select({kind:'cell',x,y});button('Placer gratuitement').click();return;}
   document.getElementById('open-shop')!.click();
   button(kind === 'farm' ? 'Bâtiments et décorations' : 'Habitats').click();
-  const prices = {farm: 60, nest: 100, nursery: 80, enclosure: 120};
+  const prices = {farm: 60, nest: 100, nursery: 80, enclosure: 350};
   button(`Placer · ${prices[kind]} pièces`).click(); ui.select({kind: 'cell', x, y}); button(`Acheter et placer · ${prices[kind]} pièces`).click();
 }
 
@@ -207,7 +208,7 @@ describe('decoration UI transactions (simulated DOM; Phaser verified separately)
     const stale = button('Confirmer', document.getElementById('game-dialog')!);
     expect(controller.restart(true).ok).toBe(true);
     expect((document.getElementById('game-dialog') as HTMLDialogElement).open).toBe(false);
-    stale.click(); expect(state(controller).pattes).toBe(300); expect(state(controller).decorations).toEqual([]);
+    stale.click(); expect(state(controller).pattes).toBe(350); expect(state(controller).decorations).toEqual([]);
   });
 
   const shop = () => {document.getElementById('open-shop')!.click(); button('Bâtiments et décorations').click(); button('Décorations').click();};
@@ -215,14 +216,14 @@ describe('decoration UI transactions (simulated DOM; Phaser verified separately)
   it('previews without payment, cancels to the same category and commits exactly one placed copy', () => {
     const {controller,ui}=setup(); shop(); panel().scrollTop=240;
     button('Acheter · 20 pièces',catalog('bush')).click();
-    expect(state(controller).decorations).toEqual([]); expect(state(controller).pattes).toBe(300);
+    expect(state(controller).decorations).toEqual([]); expect(state(controller).pattes).toBe(350);
     ui.select({kind:'fineCell',x:25,y:23}); button('Annuler le placement').click();
     expect(panel().scrollTop).toBe(240); expect(panel().querySelectorAll('[data-catalog]')).toHaveLength(13);
-    expect(state(controller).pattes).toBe(300);
+    expect(state(controller).pattes).toBe(350);
     button('Acheter · 20 pièces',catalog('bush')).click();
     ui.select({kind:'fineCell',x:18,y:20}); expect(button('Acheter et placer · 20 pièces').disabled).toBe(true);
     ui.select({kind:'fineCell',x:25,y:23}); const confirm=button('Acheter et placer · 20 pièces');confirm.click();confirm.click();
-    expect(state(controller).pattes).toBe(280);expect(state(controller).decorations).toHaveLength(1);
+    expect(state(controller).pattes).toBe(330);expect(state(controller).decorations).toHaveLength(1);
     expect(state(controller).decorations[0].location).toEqual({kind:'outside',x:25,y:23,rotation:0});
     expect(document.getElementById('game-panel')!.dataset.view).toBe('decoration');
   });
@@ -308,13 +309,13 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     const {controller,ui,clock}=setup(initial);place(ui,'farm',1,0);
     controller.perform({type:'startOrder',id:'building-4',recipe:'medium'});
     clock.now=5*3600_000;controller.perform({type:'collectIncome',id:'building-1'});controller.perform({type:'collectOrder',id:'building-4'});
-    for(let i=0;i<3;i++)controller.perform({type:'feed',id:'rabbit-2'});
+    for(let i=0;i<3;i++)controller.perform({type:'feed',id:'rabbit-2'});controller.perform({type:'feed',id:'rabbit-3'});for(const [kind,x] of [['nest',26],['nursery',18]] as const)controller.perform({type:'placeStarterBuilding',kind,x,y:24});controller.perform({type:'breed',parents:['rabbit-2','rabbit-3']});
     document.getElementById('open-missions')!.click();button('Quotidiennes').click();
     const card=(id:string)=>panel().querySelector<HTMLElement>(`[data-mission="${id}"]`)!;
     expect(panel().textContent).toContain('expirent');expect(panel().querySelector('.timer')!.textContent).toBe('19 h 0 min');
     expect(button('Réclamer · + 2 cœurs',card('daily-bonus')).disabled).toBe(true);
-    for(const [id,label] of [['collect-pattes','30 pièces'],['collect-grass','10 herbes'],['gain-affection','20 pièces']])button(`Réclamer · + ${label}`,card(id)).click();
-    expect(state(controller).missions.daily.progress).toEqual({'collect-pattes':120,'collect-grass':40,'gain-affection':3});
+    for(const [id,label] of [['collect-pattes','60 pièces'],['collect-grass','30 herbes'],['gain-affection','40 pièces']])button(`Réclamer · + ${label}`,card(id)).click();
+    expect(state(controller).missions.daily.progress).toEqual({"collect-grass":60,"collect-pattes":100,"gain-affection":1});
     const bonus=button('Réclamer · + 2 cœurs',card('daily-bonus'));bonus.click();bonus.click();
     expect(state(controller).hearts).toBe(15);expect(state(controller).nextHeartGiftAt).toBe(24*3600_000);
     expect(card('daily-bonus')).toBeNull();expect(panel().querySelectorAll('article')).toHaveLength(0);
@@ -352,15 +353,15 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     const {controller, ui, scene} = setup(); const perform = vi.spyOn(controller, 'perform');
     document.getElementById('open-shop')!.click(); button('Bâtiments et décorations').click(); button('Placer · 60 pièces').click();
     ui.select({kind: 'cell', x: 22, y: 20}); button('Annuler · aucun coût').click();
-    expect(perform).not.toHaveBeenCalled(); expect(state(controller).pattes).toBe(300); expect(scene.setPlacement).toHaveBeenLastCalledWith(null);
-    place(ui, 'farm', 1, 0); expect(perform).toHaveBeenCalledOnce(); expect(state(controller).pattes).toBe(240);
-    expect(document.getElementById('pattes')!.textContent).toBe('240');
+    expect(perform).not.toHaveBeenCalled(); expect(state(controller).pattes).toBe(350); expect(scene.setPlacement).toHaveBeenLastCalledWith(null);
+    place(ui, 'farm', 1, 0); expect(perform).toHaveBeenCalledOnce(); expect(state(controller).pattes).toBe(290);
+    expect(document.getElementById('pattes')!.textContent).toBe('290');
   });
   it('disables invalid cells and insufficient resources with a readable reason', () => {
     const {ui, controller} = setup(); document.getElementById('open-shop')!.click(); button('Bâtiments et décorations').click(); button('Placer · 60 pièces').click();
     ui.select({kind: 'cell', x: 18, y: 20}); expect(button('Acheter et placer · 60 pièces').disabled).toBe(true); expect(panel().textContent).toContain('occupée');
     ui.select({kind: 'cell', x: 34, y: 20}); expect(button('Acheter et placer · 60 pièces').disabled).toBe(true);
-    expect(state(controller).pattes).toBe(300);
+    expect(state(controller).pattes).toBe(350);
   });
   it('handles a stale enabled button through the controller without spending', () => {
     const {ui, controller} = setup(); document.getElementById('open-shop')!.click(); button('Bâtiments et décorations').click(); button('Placer · 60 pièces').click();
@@ -382,12 +383,12 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     expect([...panel().querySelectorAll('h3')].filter(e => e.textContent === '???')).toHaveLength(EXPECTED_IDS.length - 2);
   });
   it.each(['feu', 'belier-gris', 'volant'] as const)('buys and welcomes %s from the five-common shop into the whole collection', species => {
-    const {controller, ui} = setup(); ui.open({kind: 'shop', tab: 'rabbits'});
+    const rich=createGame(0);rich.pattes=1000;const {controller, ui} = setup(rich); ui.open({kind: 'shop', tab: 'rabbits'});
     expect(panel().querySelectorAll('article')).toHaveLength(5);
     expect(panel().textContent).not.toMatch(/Terre|Lapin à Lunettes|Lapin Perroquet|Lapin Feu Glacé/);
     const card = [...panel().querySelectorAll('article')].find(c => c.querySelector('h3')?.textContent === SPECIES[species].name)!;
-    button('Choisir un habitat · 80 pièces', card).click(); ui.select({kind:'building',id:state(controller).buildings[0].id}); button('Confirmer l’achat · 80 pièces').click();
-    expect(state(controller).pattes).toBe(220); expect(state(controller).rabbits.at(-1)?.species).toBe(species);
+    button(`Choisir un habitat · ${SPECIES[species].price} pièces`, card).click(); ui.select({kind:'building',id:state(controller).buildings[0].id}); button(`Confirmer l’achat · ${SPECIES[species].price} pièces`).click();
+    expect(state(controller).pattes).toBe(1000-SPECIES[species].price!); expect(state(controller).rabbits.at(-1)?.species).toBe(species);
     const dialog = document.getElementById('game-dialog')!; expect(dialog.textContent).toContain(SPECIES[species].name);
     button('Bienvenue dans la prairie', dialog).click(); ui.open({kind: 'collection'});
     expect(document.getElementById('panel-title')!.textContent).toBe(`Collection · 3/${EXPECTED_IDS.length}`);
@@ -408,12 +409,12 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     crossFromNest('Lapin Feu', 'Lapin Neige', false);
     const odds = () => breeding().querySelector('.breeding-odds')!.textContent;
     expect(breeding().querySelector('.breeding-odds')).toBeNull(); button('Probabilités', breeding()).click();
-    expect(odds()).toContain(`feu · Commun : ${shareLabel(40, 80 + 20 * Object.keys(rareAdditions(['feu', 'neige'], 2, 2)).length)}`);
+    expect(odds()).toContain(`feu · Commun : ${shareLabel(30, 60 + 30 * Object.keys(rareAdditions(['feu', 'neige'], 2, 2)).length)}`);
     expect(odds()).not.toContain('feu + neige');
     for (const id of ['rabbit-3', 'rabbit-11']) for (let n = 0; n < 2; n++) expect(controller.perform({type: 'feed', id}).ok).toBe(true);
-    expect(odds()).toContain(`feu + neige · Rare : ${shareLabel(20, 100 + 20 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length)}`);
-    expect(odds()).toContain(`neige · Commun : ${shareLabel(40, 100 + 20 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length)}`);
-    breeding().close(); ui.open({kind: 'recipes'}); expect(recipe().textContent).toContain(`Recette possible, résultat non garanti · ${shareLabel(20, 100 + 20 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length)}`);
+    expect(odds()).toContain(`feu + neige · Rare : ${shareLabel(30, 90 + 30 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length)}`);
+    expect(odds()).toContain(`neige · Commun : ${shareLabel(30, 90 + 30 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length)}`);
+    breeding().close(); ui.open({kind: 'recipes'}); expect(recipe().textContent).toContain(`Recette possible, résultat non garanti · ${shareLabel(30, 90 + 30 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length)}`);
     const before = state(controller), perform = vi.spyOn(controller, 'perform');
     button('Préparer cette paire au nid', recipe()).click(); expect(perform).not.toHaveBeenCalled(); expect(state(controller)).toEqual(before);
     // The shortcut opens the pairing window with the recipe's pair already chosen, nothing launched.
@@ -423,7 +424,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
   it('keeps a guaranteed new rare hidden through reproduction and growth, then discovers it on manual welcome', () => {
     const initial = collectionReady();initial.progression={totalXp:cumulativeLevelXp(6),rewardedThroughLevel:6};
     for (const r of initial.rabbits) r.affection = 4;
-    initial.recipeBook.push('feu-glace'); // The shortcut exists only for a known recipe; the species stays undiscovered.
+    initial.discovered.push('wat-wat','glassofeu');initial.recipeBook.push('feu-glace'); // The shortcut exists only for a known recipe; the species stays undiscovered.
     const {ui, controller, clock, data} = setup(initial); clock.now = initial.lastSimulatedAt;
     ui.open({kind: 'recipes'});
     const recipe = [...panel().querySelectorAll('article')].find(c => c.textContent?.includes('feu + neige · Rare'))!;
@@ -439,7 +440,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     expect(panel().textContent).toContain('Lapin Feu Glacé'); button('Enclos 3 · 0/3').click();
     expect(dialog.textContent).toContain('Nouvelle découverte'); expect(dialog.textContent).toContain('Lapin Feu Glacé');
     button('Bienvenue dans la prairie', dialog).click(); ui.open({kind: 'collection'});
-    expect(document.getElementById('panel-title')!.textContent).toBe(`Collection · 6/${EXPECTED_IDS.length}`);
+    expect(document.getElementById('panel-title')!.textContent).toBe(`Collection · 8/${EXPECTED_IDS.length}`);
     expect(decodeGame(data.get(SAVE_KEY)!)).toEqual({ok: true, state: state(controller)});
   });
   it('completes the farming, breeding, revealing, welcoming and movement loop through UI controls', () => {
@@ -465,11 +466,11 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     const newborn = state(controller).rabbits.at(-1)!;
     ui.select({kind: 'rabbit', id: newborn.id}); expect(button('Confier ce lapin').disabled).toBe(true);
     button('Changer d’habitat').click(); button('Enclos 1 · 2/3').click(); expect(state(controller).rabbits.at(-1)!.enclosureId).toBe('building-1');
-    ui.select({kind: 'extension', parcelId:'east'}); button('Acheter Est · 500 pièces').click(); button('Confirmer', document.getElementById('game-dialog')!).click(); expect(state(controller).acquiredParcels.includes('east')).toBe(true);
+    ui.select({kind: 'extension', parcelId:'east'}); button('Acheter Est · 600 pièces').click(); button('Confirmer', document.getElementById('game-dialog')!).click(); expect(state(controller).acquiredParcels.includes('east')).toBe(true);
     ui.select({kind: 'building', id: find('farm').id}); button('Déplacer ce bâtiment').click(); ui.select({kind: 'cell', x: 42, y: 24}); button('Confirmer le déplacement · gratuit').click(); expect(find('farm').x).toBe(42);
     ui.open({kind: 'shop', tab: 'rabbits'});
     const earthCard = [...panel().querySelectorAll<HTMLElement>('.card')].find(c => c.querySelector('h3')?.textContent === 'Lapin Feu')!;
-    button('Choisir un habitat · 80 pièces', earthCard).click(); ui.select({kind:'building',id:state(controller).buildings.filter(b=>b.kind==='enclosure')[1].id}); button('Confirmer l’achat · 80 pièces').click();
+    button('Choisir un habitat · 180 pièces', earthCard).click(); ui.select({kind:'building',id:state(controller).buildings.filter(b=>b.kind==='enclosure')[1].id}); button('Confirmer l’achat · 180 pièces').click();
     expect(dialog.open).toBe(true); expect(dialog.textContent).toContain('Lapin Feu'); button('Bienvenue dans la prairie', dialog).click();
     expect(decodeGame(data.get(SAVE_KEY)!)).toEqual({ok: true, state: state(controller)});
   });
@@ -509,7 +510,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     const dialog = document.getElementById('import-dialog') as HTMLDialogElement;
     await vi.waitFor(() => expect(dialog.open).toBe(true));
     expect(document.getElementById('import-summary')!.textContent).toContain('777 pièces');
-    expect(state(controller).pattes).toBe(300); document.getElementById('cancel-import')!.click(); expect(state(controller).pattes).toBe(300);
+    expect(state(controller).pattes).toBe(350); document.getElementById('cancel-import')!.click(); expect(state(controller).pattes).toBe(350);
     select(); await vi.waitFor(() => expect(dialog.open).toBe(true)); document.getElementById('confirm-import')!.click();
     expect(state(controller).pattes).toBe(777); expect(document.getElementById('pattes')!.textContent).toBe('777');
     expect(scene.setPlacement).toHaveBeenLastCalledWith(null); expect(dialog.open).toBe(false);
@@ -542,11 +543,11 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
   });
   it('confirms the actual lower acceleration price and ignores a duplicate confirmation', () => {
     const {controller, ui, clock} = setup(); place(ui, 'farm', 1, 0); ui.select({kind: 'building', id: 'building-4'});
-    button('Produire · 18 pièces').click(); button('Terminer · 3 cœurs').click();
+    button('Produire · 24 pièces').click(); button('Terminer · 6 cœurs').click();
     const dialog = document.getElementById('game-dialog')!; expect(dialog.textContent).toContain('solde : 12');
-    clock.now = 11 * 60_000; const confirm = button('Confirmer', dialog); confirm.click(); confirm.click();
+    clock.now = 26 * 60_000; const confirm = button('Confirmer', dialog); confirm.click(); confirm.click();
     expect(state(controller).hearts).toBe(11); expect(state(controller).grass).toBe(10);
-    expect(panel().textContent).not.toContain('Terminer ·'); expect(button('Récolter 40 herbes').disabled).toBe(false);
+    expect(panel().textContent).not.toContain('Terminer ·'); expect(button('Récolter 60 herbes').disabled).toBe(false);
     expect(document.getElementById('toast')!.textContent).toContain('1 cœur');
   });
   it('does not spend after acceleration cancellation or normal completion before confirmation', () => {
@@ -567,14 +568,14 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     const initial = createGame(0);initial.progression={totalXp:cumulativeLevelXp(6),rewardedThroughLevel:6}; initial.pattes = 0; initial.hearts = 100;
     const {ui, controller, clock} = setup(initial);
     const confirm = () => button('Confirmer', document.getElementById('game-dialog')!).click();
-    ui.open({kind: 'buyRabbit', species: 'feu'}); ui.select({kind:'building',id:state(controller).buildings[0].id}); button('Compléter · 0 pièces + 4 cœurs').click(); confirm();
+    ui.open({kind: 'buyRabbit', species: 'feu'}); ui.select({kind:'building',id:state(controller).buildings[0].id}); button('Compléter · 0 pièces + 8 cœurs').click(); confirm();
     expect(state(controller).rabbits).toHaveLength(3);
     button('Bienvenue dans la prairie', document.getElementById('game-dialog')!).click();
-    ui.open({kind: 'extension',parcelId:'east'}); button('Compléter · 0 pièces + 20 cœurs').click(); confirm(); expect(state(controller).acquiredParcels.includes('east')).toBe(true);
+    ui.open({kind: 'extension',parcelId:'east'}); button('Compléter · 0 pièces + 24 cœurs').click(); confirm(); expect(state(controller).acquiredParcels.includes('east')).toBe(true);
     const build = (kind: 'farm' | 'nest' | 'nursery', price: number, hearts: number, x: number) => {
       x = toV11((x + 3) * 4, 'x'); const y = toV11(12, 'y');
       if(kind==='nest'||kind==='nursery'){document.getElementById('open-arrange')!.click();button(`Placer gratuitement : ${kind==='nest'?'Nid':'Nurserie'}`).click();ui.select({kind:'cell',x,y});button('Placer gratuitement').click();return;}
-      document.getElementById('open-shop')!.click(); button(kind === 'farm' ? 'Bâtiments et décorations' : 'Habitats').click(); button(`Placer · ${price} pièces`).click(); ui.select({kind: 'cell', x, y});
+      document.getElementById('open-shop')!.click(); button(kind === 'farm' ? 'Bâtiments et décorations' : 'Habitats').click(); button(`Placer · ${price===120?350:price} pièces`).click(); ui.select({kind: 'cell', x, y});
       button(`Compléter · 0 pièces + ${hearts} cœurs`).click(); confirm();
       expect(state(controller).buildings.find(b => b.x === x && b.y === y)?.kind).toBe(kind);
     };
@@ -629,45 +630,45 @@ describe('habitat panels and controller transactions',()=>{
   const dialog=()=>document.getElementById('game-dialog')!;
   const card=(name:string)=>[...panel().querySelectorAll<HTMLElement>('.card')].find(c=>c.querySelector('h3')?.textContent===name)!;
   it('separates the shop categories and the habitats; canceled placements/heart confirmations spend nothing',()=>{
-    const initial=createGame(0);initial.pattes=30;const {controller,ui}=setup(initial);
-    const choose=()=>{ui.open({kind:'shop',tab:'habitats'});button('Placer · 200 pièces',card('Jardin des airs')).click();};
+    const initial=createGame(0);initial.pattes=30;initial.hearts=100;const {controller,ui}=setup(initial);
+    const choose=()=>{ui.open({kind:'shop',tab:'habitats'});button('Placer · 1 200 pièces',card('Jardin des airs')).click();};
     ui.open({kind:'shop',tab:'habitats'});
     expect(panel().textContent).toContain('Enclos universel');expect(panel().textContent).toContain('Habitats spécialisés');expect(panel().textContent).not.toContain('Ferme');
     for(const name of ['Prairie de paille','Jardin enneigé','Clairière de feu','Atelier de métal','Jardin des airs']){
-      expect(card(name).textContent).toContain('3 places · stocke 900 pièces');expect(button('Placer · 200 pièces',card(name)).disabled).toBe(false);
+      expect(card(name).textContent).toContain('3 places · stocke 2\u202f400 pièces');expect(button(`Placer · ${{'Prairie de paille':'200','Jardin enneigé':'200','Clairière de feu':'450','Atelier de métal':'800','Jardin des airs':'1 200'}[name]} pièces`,card(name)).disabled).toBe(false);
     }
     choose();ui.select({kind:'cell',x: 18, y: 20});expect(panel().textContent).not.toContain('Compléter');
     ui.select({kind:'cell',x: 22, y: 20});button('Annuler · aucun coût').click();expect(state(controller)).toEqual(initial);
-    choose();ui.select({kind:'cell',x: 22, y: 20});button('Compléter · 30 pièces + 7 cœurs').click();
+    choose();ui.select({kind:'cell',x: 22, y: 20});button('Compléter · 30 pièces + 47 cœurs').click();
     button('Annuler',dialog()).click();expect(state(controller)).toEqual(initial);
-    button('Compléter · 30 pièces + 7 cœurs').click();const confirmation=button('Confirmer',dialog());confirmation.click();confirmation.click();
-    expect(state(controller)).toMatchObject({pattes:0,hearts:5});expect(state(controller).buildings[1].habitat).toEqual({type:'vol',level:1});
+    button('Compléter · 30 pièces + 47 cœurs').click();const confirmation=button('Confirmer',dialog());confirmation.click();confirmation.click();
+    expect(state(controller)).toMatchObject({pattes:0,hearts:53});expect(state(controller).buildings[1].habitat).toEqual({type:'vol',level:1});
   });
   it('shows level, type, rate, capacities and upgrade details, with explicit cancellation and one-shot confirmation',()=>{
     const initial=createGame(0);initial.progression={totalXp:cumulativeLevelXp(14),rewardedThroughLevel:14};initial.pattes=2000;initial.hearts=25;const {controller,ui,scene}=setup(initial);
     const home=()=>state(controller).buildings[0];ui.select({kind:'building',id:home().id});
-    expect(panel().textContent).toContain('Tous les types · niveau 1');expect(panel().textContent).toContain('24 pièces / h');
-    expect(panel().textContent).toContain('2 / 3');expect(panel().textContent).toContain('0 / 600');expect(panel().textContent).toContain('Niveau de l’habitat 1 → 2 : places 3 → 5 · stockage 600 → 900 pièces');
-    button('Améliorer · 200 pièces').click();button('Annuler',dialog()).click();expect(state(controller)).toEqual(initial);
-    button('Améliorer · 200 pièces').click();const confirm=button('Confirmer',dialog());confirm.click();confirm.click();
-    expect(home().habitat!.level).toBe(2);expect(state(controller).pattes).toBe(1800);expect(panel().textContent).toContain('2 / 5');expect(panel().textContent).toContain('0 / 900');
+    expect(panel().textContent).toContain('Tous les types · niveau 1');expect(panel().textContent).toContain('20 pièces / h');
+    expect(panel().textContent).toContain('2 / 3');expect(panel().textContent).toContain('0 / 2 400');expect(panel().textContent).toContain('Niveau de l’habitat 1 → 2 : places 3 → 5 · stockage 2400 → 4 000 pièces');
+    button('Améliorer · 175 pièces').click();button('Annuler',dialog()).click();expect(state(controller)).toEqual(initial);
+    button('Améliorer · 175 pièces').click();const confirm=button('Confirmer',dialog());confirm.click();confirm.click();
+    expect(home().habitat!.level).toBe(2);expect(state(controller).pattes).toBe(1825);expect(panel().textContent).toContain('2 / 5');expect(panel().textContent).toContain('0 / 4 000');
     // Level 3 is paid in exactly ten hearts, shown before confirmation; no coin is spent and no coin complement is offered.
     expect(panel().textContent).not.toContain('Compléter');expect(state(controller).hearts).toBe(25);
     button('Améliorer · 10 cœurs').click();expect(dialog().textContent).toContain('Paiement : 10 cœurs');expect(dialog().textContent).toContain('solde : 25 cœurs');expect(dialog().textContent).toContain('Aucune pièce n’est dépensée');
     button('Annuler',dialog()).click();expect(home().habitat!.level).toBe(2);expect(state(controller).hearts).toBe(25);
     button('Améliorer · 10 cœurs').click();const pay=button('Confirmer',dialog());pay.click();pay.click();
-    expect(home().habitat!.level).toBe(3);expect(state(controller).pattes).toBe(1800);expect(state(controller).hearts).toBe(15);expect(panel().textContent).toContain('Niveau maximal atteint.');
+    expect(home().habitat!.level).toBe(3);expect(state(controller).pattes).toBe(1825);expect(state(controller).hearts).toBe(15);expect(panel().textContent).toContain('Niveau maximal atteint.');
     expect(panel().textContent).not.toContain('Améliorer ·');expect(scene.recenter).not.toHaveBeenCalled();
   });
   it('announces the larger footprint, and explains an upgrade that has no room without offering to pay',()=>{
     const free=createGame(0);free.progression={totalXp:cumulativeLevelXp(14),rewardedThroughLevel:14};free.pattes=2000;
     const open=setup(free);open.ui.select({kind:'building',id:'building-1'});
-    expect(panel().textContent).toContain('emprise 4 × 4 → 6 × 5 cases, vers la droite et vers le bas');expect(button('Améliorer · 200 pièces').disabled).toBe(false);
+    expect(panel().textContent).toContain('emprise 4 × 4 → 6 × 5 cases, vers la droite et vers le bas');expect(button('Améliorer · 175 pièces').disabled).toBe(false);
     const blocked=createGame(0);blocked.progression={totalXp:cumulativeLevelXp(14),rewardedThroughLevel:14};blocked.pattes=2000;
     const home=blocked.buildings[0];blocked.buildings.push(emptyBuilding('building-9','farm',home.x+4,home.y));blocked.nextId=10;
     const shut=setup(blocked);shut.ui.select({kind:'building',id:'building-1'});
     expect(panel().textContent).toContain('Pas assez de place pour agrandir : un autre bâtiment occupe la zone voisine');
-    const offer=button('Améliorer · 200 pièces');expect(offer.disabled).toBe(true);offer.click();expect(state(shut.controller).pattes).toBe(2000);expect(state(shut.controller).buildings[0]).toMatchObject({habitat:{level:1}});expect(state(shut.controller).buildings[0].footprintTier).toBeUndefined();expect(panel().textContent).not.toContain('Compléter');
+    const offer=button('Améliorer · 175 pièces');expect(offer.disabled).toBe(true);offer.click();expect(state(shut.controller).pattes).toBe(2000);expect(state(shut.controller).buildings[0]).toMatchObject({habitat:{level:1}});expect(state(shut.controller).buildings[0].footprintTier).toBeUndefined();expect(panel().textContent).not.toContain('Compléter');
   });
   it('names the real footprint while moving an enlarged enclosure, and the compact one for an ordinary building',()=>{
     const initial=createGame(0);initial.progression={totalXp:cumulativeLevelXp(14),rewardedThroughLevel:14};
@@ -701,22 +702,22 @@ describe('habitat panels and controller transactions',()=>{
     button('Jardin enneigé 3 · 3/5').click();expect(state(controller).rabbits[1].enclosureId).toBe(snow);
   });
   it('pays specialized upgrades with an explicit heart complement and invalidates old confirmations after import',()=>{
-    const initial=createGame(0);initial.progression={totalXp:cumulativeLevelXp(14),rewardedThroughLevel:14};initial.pattes=230;initial.hearts=50;const {controller,ui}=setup(initial);
+    const initial=createGame(0);initial.progression={totalXp:cumulativeLevelXp(14),rewardedThroughLevel:14};initial.pattes=830;initial.hearts=50;const {controller,ui}=setup(initial);
     controller.perform({type:'buyBuilding',kind:'enclosure',habitatType:'metal',x: 22, y: 20});const home=state(controller).buildings[1].id;
     ui.select({kind:'building',id:home});expect(panel().textContent).toContain('Métal · niveau 1');
-    button('Compléter · 30 pièces + 11 cœurs').click();expect(dialog().textContent).toContain('places 3 → 5 · stockage 900 → 1 500');button('Confirmer',dialog()).click();
-    expect(state(controller)).toMatchObject({pattes:0,hearts:39});expect(state(controller).buildings[1].habitat!.level).toBe(2);
+    button('Compléter · 30 pièces + 15 cœurs').click();expect(dialog().textContent).toContain('places 3 → 5 · stockage 2400 → 4 000');button('Confirmer',dialog()).click();
+    expect(state(controller)).toMatchObject({pattes:0,hearts:35});expect(state(controller).buildings[1].habitat!.level).toBe(2);
     expect(panel().textContent).not.toContain('Compléter');button('Améliorer · 10 cœurs').click();const old=button('Confirmer',dialog());
     const replacement=state(controller);establishHistoricalLevelRights(replacement);const p=controller.prepareImport(encodeGame(replacement));if(!p.ok)throw Error(p.reason);controller.confirmImport(p.token,true);ui.onReplacement();old.click();
     expect(state(controller)).toEqual(replacement);
   });
   it('confirms the second expansion, supports cancellation and keeps the first-extension mission claimed',()=>{
     const initial=createGame(0);initial.progression={totalXp:cumulativeLevelXp(6),rewardedThroughLevel:6};initial.pattes=3000;const {controller,ui,scene}=setup(initial);
-    controller.perform({type:'expand',parcelId:'east',expectedCost:500});controller.perform({type:'claimMainMission',id:'bigger-meadow'});const before=state(controller);
-    ui.open({kind:'extension',parcelId:'west'});expect(panel().textContent).toContain('Ouest · + 16 cases · 1 000 pièces');
-    button('Acheter Ouest · 1 000 pièces').click();button('Annuler',dialog()).click();expect(state(controller)).toEqual(before);
-    button('Acheter Ouest · 1 000 pièces').click();const confirm=button('Confirmer',dialog());confirm.click();confirm.click();
-    expect(state(controller).acquiredParcels.includes('west')).toBe(true);expect(state(controller).pattes).toBe(before.pattes-1000);expect(state(controller).missions).toEqual(before.missions);
+    controller.perform({type:'expand',parcelId:'east',expectedCost:600});controller.perform({type:'claimMainMission',id:'bigger-meadow'});const before=state(controller);
+    ui.open({kind:'extension',parcelId:'west'});expect(panel().textContent).toContain('Ouest · + 16 cases · 1 800 pièces');
+    button('Acheter Ouest · 1 800 pièces').click();button('Annuler',dialog()).click();expect(state(controller)).toEqual(before);
+    button('Acheter Ouest · 1 800 pièces').click();const confirm=button('Confirmer',dialog());confirm.click();confirm.click();
+    expect(state(controller).acquiredParcels.includes('west')).toBe(true);expect(state(controller).pattes).toBe(before.pattes-1800);expect(state(controller).missions).toEqual(before.missions);
     expect(scene.recenter).not.toHaveBeenCalled();ui.open({kind:'extension',parcelId:'west'});expect(panel().textContent).toContain('Choisis librement');
   });
   it('uses the development storage and clock for new habitat actions without changing normal progression',()=>{
@@ -724,9 +725,9 @@ describe('habitat panels and controller transactions',()=>{
     const dev=developmentEnvironment(base),c=new GameController(dev.storage,()=>0);cleanups.push(()=>c.dispose());
     expect(c.perform({type:'buyBuilding',kind:'enclosure',habitatType:'paille',x: 0, y: 40}).ok).toBe(true);
     expect(c.grantLaboratoryXp(500).ok).toBe(true);
-    expect(c.perform({type:'payWithHearts',action:{type:'upgradeHabitat',id:'building-6',fromLevel:1},maxPattes:100,maxHearts:8}).ok).toBe(true);
+    expect(c.perform({type:'upgradeHabitat',id:'building-6',fromLevel:1}).ok).toBe(true);
     expect(state(c).buildings.find(b=>b.id==='building-6')!.habitat).toEqual({type:'paille',level:2});expect(values.get(SAVE_KEY)).toBe(normal);
-    expect(JSON.parse(values.get('prairie-lapins.development.'+SAVE_KEY)!).version).toBe(16);
+    expect(JSON.parse(values.get('prairie-lapins.development.'+SAVE_KEY)!).version).toBe(17);
   });
 });
 
@@ -936,7 +937,7 @@ describe('guidance card uses existing controls and missions', () => {
     expect(card.dataset.step).toBe('farmShop');expect(state(controller).missions.claimed).toContain('first-meal');
     button('Me guider',card).click(); expect(document.getElementById('game-panel')!.classList.contains('shop-fullscreen')).toBe(true);
     expect(panel().textContent).toContain('Ferme'); expect(panel().textContent).not.toContain('Habitats spécialisés');
-    expect(state(controller).pattes).toBe(300);
+    expect(state(controller).pattes).toBe(350);
     document.getElementById('panel-back')!.click(); expect(panel().querySelectorAll('.shop-category')).toHaveLength(5);
   });
   it('consultations done outside guidance persist; income suggestion requires a real whole pièces', () => {
@@ -946,7 +947,7 @@ describe('guidance card uses existing controls and missions', () => {
     const s=state(controller);s.buildings[0].incomeUnits=3_600_000;
     const prepared=controller.prepareImport(encodeGame(s));if(!prepared.ok)throw Error(prepared.reason);controller.confirmImport(prepared.token,true);ui.close();
     expect(document.getElementById('tutorial')!.textContent).toContain('pièces disponibles');
-    button('pièces disponibles',document.getElementById('tutorial')!).click();expect(state(controller).pattes).toBe(300);
+    button('pièces disponibles',document.getElementById('tutorial')!).click();expect(state(controller).pattes).toBe(350);
   });
   it('does not impose guidance on import and starts it only for an explicit new game', () => {
     const {ui,controller,prefs}=setup(scenarioState('guidedLegacy',0));prefs.initializeGuidance(false);ui.close();
@@ -976,7 +977,7 @@ describe('initiation presentation',()=>{
   expect(panel().textContent).not.toContain('Terminer gratuitement');
  });
  it('celebrates a common first birth once, without calling it a discovery',()=>{
-  const s=scenarioState('initiationSaved',0);const historical=babyOf(s.buildings.find(b=>b.kind==='nursery')!)!;historical.readyAt=0;historical.birth.species='paille'; // Previously drawn Common.
+  const s=scenarioState('initiationSaved',0);const historical=babyOf(s.buildings.find(b=>b.kind==='nursery')!)!;historical.readyAt=0;historical.birth.species='paille';historical.birth.reservedDiscovery=false;historical.birth.guaranteed=false; // Previously drawn Common.
   const {ui,controller}=setup(s);ui.open({kind:'building',id:'building-5'});
   button('Prairie de paille 1 · 1/3').click();
   const dialog=document.getElementById('game-dialog') as HTMLDialogElement;
@@ -1025,12 +1026,12 @@ describe('mobile menu continuity', () => {
     expect(panel().querySelectorAll('[data-catalog]')).toHaveLength(13); expect(panel().scrollTop).toBe(240);
     ui.close(); document.getElementById('open-shop')!.click(); button('Bâtiments et décorations').click(); button('Décorations').click();
     expect(panel().querySelectorAll('[data-catalog]')).toHaveLength(13); expect(panel().scrollTop).toBe(240);
-    expect(state(controller).pattes).toBe(280); expect(state(controller).decorations).toHaveLength(1);
+    expect(state(controller).pattes).toBe(330); expect(state(controller).decorations).toHaveLength(1);
     expect(state(controller).decorations[0].location).toEqual({kind: 'inventory'});
     button('Bâtiments').click(); panel().scrollTop = 180; button('Placer · 60 pièces').click();
     ui.select({kind: 'fineCell', x: 22, y: 20}); button('Annuler · aucun coût').click();
     expect(panel().textContent).toContain('Ferme'); expect(panel().scrollTop).toBe(180);
-    expect(state(controller).pattes).toBe(280); expect(state(controller).buildings).toHaveLength(1);
+    expect(state(controller).pattes).toBe(330); expect(state(controller).buildings).toHaveLength(1);
   });
 
   it('keeps native selects and pointer targets alive during passive refresh and renders the latest state after release', () => {
@@ -1136,21 +1137,21 @@ describe('mobile menu continuity', () => {
 
  it('shows level locks and information, blocks indirect shortcuts, and refreshes at the threshold',()=>{
    const initial=soloStart(0);initial.buildings[0].habitat!.type='universal';initial.grass=100;
-   initial.progression={totalXp:cumulativeLevelXp(5)-10,rewardedThroughLevel:4};
+   initial.progression={totalXp:cumulativeLevelXp(5)-5,rewardedThroughLevel:4};
    const {ui,controller}=setup(initial);ui.open({kind:'shop',tab:'rabbits'});
    const feu=()=>panel().querySelector<HTMLElement>('[data-level-target="feu"]')!;
-   expect(feu().textContent).toContain('Niveau 5 requis');expect(button('Choisir un habitat · 80 pièces',feu()).disabled).toBe(true);
+   expect(feu().textContent).toContain('Niveau 5 requis');expect(button('Choisir un habitat · 180 pièces',feu()).disabled).toBe(true);
    button('Consulter la fiche',feu()).click();expect(panel().textContent).toContain('Niveau 5 requis');
    ui.open({kind:'buyRabbit',species:'belier-gris'});expect(document.getElementById('game-panel')!.dataset.view).toBe('levelRequirement');
    ui.open({kind:'shop',tab:'rabbits'});controller.perform({type:'feed',id:'rabbit-2'});
-   expect(button('Choisir un habitat · 80 pièces',feu()).disabled).toBe(false);
+   expect(button('Choisir un habitat · 180 pièces',feu()).disabled).toBe(false);
    expect(feu().querySelector<HTMLElement>('.level-lock-message')!.hidden).toBe(true);
    ui.open({kind:'shop',tab:'habitats'});expect(panel().querySelector('[data-level-target="universal"]')!.textContent).toContain('Niveau 6 requis');
-   const available=[...panel().querySelectorAll<HTMLButtonElement>('button')].filter(b=>b.textContent?.includes('Placer · 200')&&!b.disabled);expect(available).toHaveLength(3);
+   const available=[...panel().querySelectorAll<HTMLButtonElement>('button')].filter(b=>b.textContent?.includes('Placer ·')&&!b.disabled);expect(available).toHaveLength(3);
  });
 it('new course mission shortcut uses Paille and preserves the budget',()=>{
  const {ui,controller,prefs}=setup(soloStart(0));prefs.restartGuidance();prefs.set({pailleNamed:true,intro:true,guideCamera:true});ui.close();
- button('Trouver un amoureux pour Paille',document.getElementById('paille-dialogue')!).click();expect(panel().textContent).toContain('Jardin enneigé');expect(state(controller).pattes).toBe(300);
+ button('Trouver un amoureux pour Paille',document.getElementById('paille-dialogue')!).click();expect(panel().textContent).toContain('Jardin enneigé');expect(state(controller).pattes).toBe(350);
 });
 
 
@@ -1165,10 +1166,10 @@ describe('birth XP confirmation guard',()=>{
 describe('mission XP display and claim continuity',()=>{
  it('shows XP in guide and Missions; a failed claim remains visible and the successful next claim disappears',()=>{
   const initial=createGame(0);initial.rabbits[0].affection=2;const {ui,controller,prefs,storage,clock}=setup(initial);prefs.restartGuidance();ui.close();
-  const guide=document.getElementById('tutorial')!;expect(guide.textContent).toContain('20 XP');const before=state(controller);
-  const fail=vi.spyOn(storage,'setItem').mockImplementation(()=>{throw Error('quota');});button('Réclamer · 10 herbes',guide).click();expect(state(controller)).toEqual(before);expect(guide.textContent).toContain('20 XP');fail.mockRestore();clock.now=500;vi.spyOn(performance,'now').mockReturnValue(performance.now()+500);
+  const guide=document.getElementById('tutorial')!;expect(guide.textContent).toContain('40 XP');const before=state(controller);
+  const fail=vi.spyOn(storage,'setItem').mockImplementation(()=>{throw Error('quota');});button('Réclamer · 10 herbes',guide).click();expect(state(controller)).toEqual(before);expect(guide.textContent).toContain('40 XP');fail.mockRestore();clock.now=500;vi.spyOn(performance,'now').mockReturnValue(performance.now()+500);
   button('Réclamer · 10 herbes',guide).click();expect(state(controller).missions.claimed).toContain('first-meal');expect(state(controller).progression.totalXp).toBe(before.progression.totalXp+PROGRESSION.xp.claims.main);
-  ui.open({kind:'missions',tab:'main'});expect(panel().querySelector('[data-mission="first-meal"]')).toBeNull();expect(panel().querySelector('[data-mission="first-farm"]')?.textContent).toContain('20 XP');ui.open({kind:'missions',tab:'daily'});expect(panel().querySelector('[data-mission="collect-pattes"]')?.textContent).toContain('10 XP');expect(panel().querySelector('[data-mission="daily-bonus"]')?.textContent).not.toContain('0 XP');
+  ui.open({kind:'missions',tab:'main'});expect(panel().querySelector('[data-mission="first-meal"]')).toBeNull();expect(panel().querySelector('[data-mission="first-farm"]')?.textContent).toContain('40 XP');ui.open({kind:'missions',tab:'daily'});expect(panel().querySelector('[data-mission="collect-pattes"]')?.textContent).toContain('50 XP');expect(panel().querySelector('[data-mission="daily-bonus"]')?.textContent).not.toContain('0 XP');
  });
 });
 
@@ -1188,28 +1189,28 @@ describe('mission XP exceptions in reward display',()=>{
 
 describe('decoration level acquisition UI',()=>{
  it('keeps both purchase actions locked, information accessible, scroll and navigation, and updates at level 3',()=>{
-  const initial=soloStart(0);initial.grass=10;initial.progression={totalXp:cumulativeLevelXp(3)-10,rewardedThroughLevel:2};const {ui,controller}=setup(initial);
+  const initial=soloStart(0);initial.grass=10;initial.progression={totalXp:cumulativeLevelXp(3)-5,rewardedThroughLevel:2};const {ui,controller}=setup(initial);
   ui.open({kind:'shop',tab:'decorations'});panel().scrollTop=160;const card=()=>panel().querySelector<HTMLElement>('[data-catalog="bunny-slippers"]')!;
   expect(button('Acheter · 30 pièces',card()).disabled).toBe(true);expect(button('Acheter pour l’inventaire · 30 pièces',card()).disabled).toBe(true);
   expect(card().querySelectorAll('.level-lock-message')).toHaveLength(1);const before=state(controller);
   button('Consulter la fiche',card()).click();expect(document.body.classList.contains('shop-open')).toBe(true);expect(panel().textContent).toContain('Chaussons lapins');expect(panel().textContent).toContain('Niveau 3 requis');expect(state(controller)).toEqual(before);
   document.getElementById('panel-back')!.click();expect(panel().scrollTop).toBe(160);
   controller.perform({type:'feed',id:'rabbit-2'});expect(button('Acheter · 30 pièces',card()).disabled).toBe(false);expect(button('Acheter pour l’inventaire · 30 pièces',card()).disabled).toBe(false);
-  button('Acheter · 30 pièces',card()).click();ui.select({kind:'fineCell',x:18,y:28});button('Annuler le placement').click();expect(panel().scrollTop).toBe(160);expect(state(controller).decorations).toEqual([]);expect(state(controller).pattes).toBe(300);
+  button('Acheter · 30 pièces',card()).click();ui.select({kind:'fineCell',x:18,y:28});button('Annuler le placement').click();expect(panel().scrollTop).toBe(160);expect(state(controller).decorations).toEqual([]);expect(state(controller).pattes).toBe(350);
  });
  it('invalidates an expensive inventory confirmation when replaced by a new below-level party',()=>{
   const initial=soloStart(0);initial.progression={totalXp:cumulativeLevelXp(3),rewardedThroughLevel:3};const {ui,controller}=setup(initial);
   ui.open({kind:'shop',tab:'decorations'});const card=panel().querySelector<HTMLElement>('[data-catalog="bunny-slippers"]')!;button('Acheter pour l’inventaire · 30 pièces',card).click();const stale=button('Confirmer',document.getElementById('game-dialog')!);
-  controller.restart(true);const fresh=state(controller);stale.click();expect(state(controller)).toEqual(fresh);expect(state(controller).decorations).toEqual([]);expect(state(controller).pattes).toBe(300);
+  controller.restart(true);const fresh=state(controller);stale.click();expect(state(controller)).toEqual(fresh);expect(state(controller).decorations).toEqual([]);expect(state(controller).pattes).toBe(350);
  });
 });
 
 
 describe('habitat upgrade level controls',()=>{
  it('keeps before/after details visible, blocks all payments and updates at the player threshold',()=>{
-  const initial=soloStart(0);initial.grass=10;initial.progression={totalXp:cumulativeLevelXp(3)-10,rewardedThroughLevel:2};const {ui,controller}=setup(initial);ui.open({kind:'building',id:'building-1'});
-  const card=()=>panel().querySelector<HTMLElement>('[data-upgrade-habitat]')!;expect(card().textContent).toContain('places 3 → 5');expect(card().textContent).toContain('stockage 900 → 1 500');expect(card().textContent).toContain('Niveau 3 requis');expect(button('Améliorer · 300 pièces',card()).disabled).toBe(true);expect(card().textContent).not.toContain('Compléter');
-  controller.perform({type:'feed',id:'rabbit-2'});expect(button('Améliorer · 300 pièces',card()).disabled).toBe(false);const xp=state(controller).progression.totalXp;button('Améliorer · 300 pièces',card()).click();button('Confirmer',document.getElementById('game-dialog')!).click();expect(state(controller).buildings[0].habitat?.level).toBe(2);expect(state(controller).progression.totalXp).toBe(xp);expect(card().textContent).toContain('Niveau 6 requis');
+  const initial=soloStart(0);initial.grass=10;initial.progression={totalXp:cumulativeLevelXp(3)-5,rewardedThroughLevel:2};const {ui,controller}=setup(initial);ui.open({kind:'building',id:'building-1'});
+  const card=()=>panel().querySelector<HTMLElement>('[data-upgrade-habitat]')!;expect(card().textContent).toContain('places 3 → 5');expect(card().textContent).toContain('stockage 2400 → 4 000');expect(card().textContent).toContain('Niveau 3 requis');expect(button('Améliorer · 100 pièces',card()).disabled).toBe(true);expect(card().textContent).not.toContain('Compléter');
+  controller.perform({type:'feed',id:'rabbit-2'});expect(button('Améliorer · 100 pièces',card()).disabled).toBe(false);const xp=state(controller).progression.totalXp;button('Améliorer · 100 pièces',card()).click();button('Confirmer',document.getElementById('game-dialog')!).click();expect(state(controller).buildings[0].habitat?.level).toBe(2);expect(state(controller).progression.totalXp).toBe(xp);expect(card().textContent).toContain('Niveau 6 requis');
  });
  it('explains a locked capacity upgrade and offers an actually buyable compatible habitat',()=>{
   const initial=soloStart(0);initial.rabbits.push({id:'rabbit-6',species:'paille',affection:1,enclosureId:'building-1'},{id:'rabbit-7',species:'paille',affection:1,enclosureId:'building-1'});initial.nextId=8;const {ui}=setup(initial);ui.open({kind:'shop',tab:'rabbits'});const card=panel().querySelector<HTMLElement>('[data-level-target="paille"]')!;button('Choisir un habitat · 80 pièces',card).click();expect(panel().textContent).toContain('niveau du joueur 3 requis');button('Voir les habitats compatibles').click();expect(panel().textContent).toContain('Prairie de paille');expect(panel().textContent).not.toContain('Enclos universel');expect(button('Placer · 200 pièces').disabled).toBe(false);
@@ -1222,17 +1223,17 @@ describe('extension rank level controls',()=>{
   const choices=()=>[...panel().querySelectorAll('button')].map(b=>b.textContent).filter(t=>t?.startsWith('Voir '));
   ui.open({kind:'extension'});expect(choices()).toEqual(['Voir Sud']);expect(panel().textContent).toContain('toujours dans le même ordre');
   ui.open({kind:'extension',parcelId:'west'});expect([...panel().querySelectorAll('button')].some(b=>b.textContent?.startsWith('Acheter'))).toBe(false);
-  ui.open({kind:'extension',parcelId:'south'});button('Acheter Sud · 500 pièces').click();button('Confirmer',document.getElementById('game-dialog')!).click();
+  ui.open({kind:'extension',parcelId:'south'});button('Acheter Sud · 600 pièces').click();button('Confirmer',document.getElementById('game-dialog')!).click();
   expect(state(controller).acquiredParcels).toEqual(['southwest','south']);
   ui.open({kind:'extension'});expect(choices()).toEqual(['Voir Ouest']);
  });
  it('keeps geographic choices consultable and updates the next tier immediately without XP',()=>{
-  const initial=createCentreStartGame(0);initial.grass=10;initial.pattes=5000;initial.progression={totalXp:cumulativeLevelXp(4)-10,rewardedThroughLevel:3};const {ui,controller}=setup(initial);
-  ui.open({kind:'extension',parcelId:'northwest'});expect(button('Acheter Nord-ouest · 500 pièces').disabled).toBe(true);expect(panel().textContent).toContain('Niveau 4 requis');expect(button('Voir Sud-est').disabled).toBe(false);expect(panel().textContent).not.toContain('Compléter');
-  controller.perform({type:'feed',id:'rabbit-2'});expect(button('Acheter Nord-ouest · 500 pièces').disabled).toBe(false);const before=state(controller);button('Acheter Nord-ouest · 500 pièces').click();button('Confirmer',document.getElementById('game-dialog')!).click();expect(state(controller).pattes).toBe(before.pattes-500);expect(state(controller).progression).toEqual(before.progression);expect(panel().textContent).toContain('Prochaine extension : 2');expect(panel().textContent).toContain('Niveau 6 requis');button('Voir Est').click();expect(button('Acheter Est · 1 000 pièces').disabled).toBe(true);
+  const initial=createCentreStartGame(0);initial.grass=10;initial.pattes=5000;initial.progression={totalXp:cumulativeLevelXp(4)-5,rewardedThroughLevel:3};const {ui,controller}=setup(initial);
+  ui.open({kind:'extension',parcelId:'northwest'});expect(button('Acheter Nord-ouest · 600 pièces').disabled).toBe(true);expect(panel().textContent).toContain('Niveau 4 requis');expect(button('Voir Sud-est').disabled).toBe(false);expect(panel().textContent).not.toContain('Compléter');
+  controller.perform({type:'feed',id:'rabbit-2'});expect(button('Acheter Nord-ouest · 600 pièces').disabled).toBe(false);const before=state(controller);button('Acheter Nord-ouest · 600 pièces').click();button('Confirmer',document.getElementById('game-dialog')!).click();expect(state(controller).pattes).toBe(before.pattes-600);expect(state(controller).progression).toEqual(before.progression);expect(panel().textContent).toContain('Prochaine extension : 2');expect(panel().textContent).toContain('Niveau 6 requis');button('Voir Est').click();expect(button('Acheter Est · 1 800 pièces').disabled).toBe(true);
  });
  it('invalidates a confirmation when the party is replaced and handles the fully acquired island',()=>{
-  const initial=createCentreStartGame(0);initial.pattes=5000;initial.progression={totalXp:cumulativeLevelXp(4),rewardedThroughLevel:4};const {ui,controller}=setup(initial);ui.open({kind:'extension',parcelId:'northwest'});button('Acheter Nord-ouest · 500 pièces').click();const stale=button('Confirmer',document.getElementById('game-dialog')!);controller.restart(true);const fresh=state(controller);stale.click();expect(state(controller)).toEqual(fresh);
+  const initial=createCentreStartGame(0);initial.pattes=5000;initial.progression={totalXp:cumulativeLevelXp(4),rewardedThroughLevel:4};const {ui,controller}=setup(initial);ui.open({kind:'extension',parcelId:'northwest'});button('Acheter Nord-ouest · 600 pièces').click();const stale=button('Confirmer',document.getElementById('game-dialog')!);controller.restart(true);const fresh=state(controller);stale.click();expect(state(controller)).toEqual(fresh);
   const full=scenarioState('islandFull',0),preview=controller.prepareImport(encodeGame(full));if(!preview.ok)throw Error(preview.reason);controller.confirmImport(preview.token,true);ui.open({kind:'extension'});expect(panel().textContent).toContain('Île entièrement agrandie');expect(panel().textContent).not.toContain('Niveau');expect(panel().querySelectorAll('button')).toHaveLength(0);
  });
 });

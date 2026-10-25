@@ -523,7 +523,7 @@ export class GameUI {
       }
       }
     } else for (const species of SHOP_SPECIES) {
-      const card = this.card(SPECIES[species].name, 'Commun · affection 1 · 12 pattes / h', species);
+      const card = this.card(SPECIES[species].name, 'Commun · affection 1 · 10 pattes / h', species);
       const full = !s.buildings.some(b => b.kind === 'enclosure' && !habitatEntryReason(s, b, species));
       const target={family:'species',id:species,action:'purchase'} as const;
       const action=this.button(card, `Choisir un habitat · ${SPECIES[species].price} pattes`, () => this.open({kind: 'buyRabbit', species}));
@@ -705,7 +705,7 @@ export class GameUI {
   }
   private rabbitCard(s: GameState, id: string): HTMLElement {
     const r = s.rabbits.find(r => r.id === id)!;
-    return this.card(SPECIES[r.species].name, `Affection ${r.affection} · ${rabbitIncome(r.affection)} pattes / h`, r.species);
+    return this.card(SPECIES[r.species].name, `Affection ${r.affection} · ${rabbitIncome(r.affection, r.species)} pattes / h`, r.species);
   }
   private renderBuilding(s: GameState, id: string): void {
     const b = s.buildings.find(b => b.id === id); if (!b) { this.close(); return; }
@@ -713,7 +713,7 @@ export class GameUI {
     if (b.kind === 'enclosure') {
       const residents = occupants(s, id), income = incomeWhole(b.incomeUnits), stats = habitatStats(b);
       this.content.append(node('p', `${habitatName(b)} · ${HABITATS[b.habitat!.type].accepted} · niveau ${b.habitat!.level}`, 'badge'));
-      this.content.append(this.stats([['Occupants', `${residents.length} / ${stats.capacity} places`], ['Stock', `${income} / ${stats.cap} pattes`], ['Revenu', `${residents.reduce((sum, r) => sum + rabbitIncome(r.affection), 0)} pattes / h`]]));
+      this.content.append(this.stats([['Occupants', `${residents.length} / ${stats.capacity} places`], ['Stock', `${income} / ${stats.cap} pattes`], ['Revenu', `${residents.reduce((sum, r) => sum + rabbitIncome(r.affection, r.species), 0)} pattes / h`]]));
       if (income >= stats.cap) this.content.append(node('p', 'Stock plein : récolte pour relancer les revenus.', 'reason'));
       this.button(this.content, `Récolter ${income} pattes`, () => this.execute({type: 'collectIncome', id}, value => `+ ${value} pattes`), income < 1 ? 'Il faut au moins 1 patte entière.' : null);
       for (const r of residents) { const card = this.rabbitCard(s, r.id); this.button(card, 'Voir ce lapin', () => this.open({kind: 'rabbit', id: r.id}), null, true); this.content.append(card); }
@@ -744,11 +744,11 @@ export class GameUI {
       } else this.content.append(node('p', 'Niveau maximal atteint.', 'badge'));
     } else if (b.kind === 'farm') {
       if (b.order) {
-        const recipe = ORDERS[b.order.recipe]; this.workState(b.order.endsAt > this.now() ? 'running' : 'ready', b.order.endsAt > this.now() ? `${recipe.grass} herbes en production. Récolte-les après le délai.` : `${recipe.grass} herbes disponibles. Touche Récolter.`); this.timer(b.order.startedAt, b.order.endsAt);
+        const recipe = {grass: b.order.grass ?? ORDERS[b.order.recipe].grass}; this.workState(b.order.endsAt > this.now() ? 'running' : 'ready', b.order.endsAt > this.now() ? `${recipe.grass} herbes en production. Récolte-les après le délai.` : `${recipe.grass} herbes disponibles. Touche Récolter.`); this.timer(b.order.startedAt, b.order.endsAt);
         this.button(this.content, `Récolter ${recipe.grass} herbes`, () => this.execute({type: 'collectOrder', id}, value => `+ ${value} herbes`), b.order.endsAt > this.now() ? 'Production en cours.' : null);
         this.acceleration(s, id, 'order');
       } else { this.workState('free', 'Choisis une production. Son prix est payé au lancement ; la récolte reste manuelle.'); for (const recipe of Object.keys(ORDERS) as OrderId[]) {
-        const order = ORDERS[recipe], card = this.card(`${order.grass} herbes`, `${order.duration / 60_000} minutes · une seule récolte`);
+        const order = ORDERS[recipe], card = this.card(`${{small: 'Petite · 5 min', medium: 'Moyenne · 30 min', large: 'Longue · 4 h', night: 'Nuit · 10 h'}[recipe]}`, `${order.grass} herbes · une seule récolte`);
         this.button(card, `Produire · ${order.cost} pattes`, () => this.execute({type: 'startOrder', id, recipe}, 'Production d’herbe lancée.'), moneyReason(s, order.cost));
         this.complement(card, s, {type: 'startOrder', id, recipe}, `Produire ${order.grass} herbes`, 'Production d’herbe lancée.'); this.content.append(card);
       } }
@@ -762,10 +762,10 @@ export class GameUI {
     const species = SPECIES[r.species]; this.title.textContent = species.name;
     this.renderNickname(r);
     const overview = node('div', '', 'rabbit-overview'), essential = node('div');
-    essential.append(this.stats([['Affection', `${r.affection} / 20`], ['Revenu', `${rabbitIncome(r.affection)} pattes / h`]]));
+    essential.append(this.stats([['Affection', `${r.affection} / 20`], ['Revenu', `${rabbitIncome(r.affection, r.species)} pattes / h`]]));
     overview.append(avatar(r.species, true), essential); this.content.append(overview);
     const cost = BALANCE.foodMultiplier * r.affection;
-    if (r.affection < 20) essential.append(node('p', `Prochain repas : ${cost} herbes → affection ${r.affection + 1}, revenu ${rabbitIncome(r.affection + 1)} pattes / h.`, 'small'));
+    if (r.affection < 20) essential.append(node('p', `Prochain repas : ${cost} herbes → affection ${r.affection + 1}, revenu ${rabbitIncome(r.affection + 1, r.species)} pattes / h.`, 'small'));
     this.button(essential, `Nourrir · ${cost} herbes`, () => this.execute({type: 'feed', id}, `Affection ${r.affection + 1} !`, () => this.scene.reactToFeed(id)), r.affection >= 20 ? REFUSALS.MAX_AFFECTION : s.grass < cost ? REFUSALS.NOT_ENOUGH_GRASS : null).dataset.focus = 'feed';
     if (parentBusy(s,id,this.now())) this.content.append(node('p','Au nid · place réservée dans son habitat · revenus conservés','badge'));
     this.content.append(node('p', `${typeNames(species.types)} · ${RARITY_NAMES[species.rarity]}`, 'badge'), node('p', this.enclosureName(s, r.enclosureId), 'small'));
@@ -890,7 +890,7 @@ export class GameUI {
     this.button(this.content, 'Croiser', () => this.openBreeding(id));
     this.content.append(node('p', 'La reproduction est possible dès affection 2 chez chacun des deux parents. Chaque recette possède ses propres conditions ; les résultats inadmissibles sont exclus. Les conditions détaillées sont visibles dans le carnet une fois la recette connue.', 'small'));
     this.button(this.content, 'Carnet de reproduction', () => this.open({kind: 'recipes'}), null, true);
-    this.content.append(node('p', `Garantie : ${s.pityFailures}/9 échecs admissibles. Après neuf échecs, la tentative admissible suivante garantit une espèce non découverte parmi les résultats ordinaires explicitement éligibles à la garantie et admissibles à cette paire, à parts égales s’il y en a plusieurs ; les recettes à probabilité fixe n’en font pas partie. Un résultat inédit éligible à la garantie réservé remet le compteur à zéro ; la découverte n’est enregistrée qu’à l’accueil.`, 'small'));
+    this.content.append(node('p', `Garantie : ${s.pityFailures}/7 échecs admissibles. Après sept échecs, la tentative admissible suivante garantit une espèce non découverte parmi les résultats ordinaires explicitement éligibles à la garantie et admissibles à cette paire, à parts égales s’il y en a plusieurs ; les recettes à probabilité fixe n’en font pas partie. Un résultat inédit éligible à la garantie réservé remet le compteur à zéro ; la découverte n’est enregistrée qu’à l’accueil.`, 'small'));
     if (s.buildings.some(b => nurseryFull(b))) this.content.append(node('p', 'La nurserie est pleine : le prochain lapereau attendra au nid si nécessaire.', 'small'));
   }
   /** Heart bubble over a finished nest: the baby goes straight to the nursery and the camera follows it there. */

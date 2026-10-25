@@ -2,10 +2,11 @@ import {establishHistoricalLevelRights} from './levelRights';
 import {settleInitiation} from './initiation';
 import {habitatStats} from './habitats';
 import {updateMissions} from './missions';
-import {BALANCE, HOUR, MINUTE} from '../config/balance';
+import {BALANCE, HOUR, MINUTE, SPECIES, type SpeciesId, type Rarity} from '../config/balance';
 import type {GameState} from '../state/types';
-export function rabbitIncome(affection: number): number {
-  return BALANCE.incomeBase + BALANCE.incomePerLevel * (affection - 1);
+export function rabbitIncome(affection: number, speciesOrRarity: SpeciesId | Rarity = 'common'): number {
+  const rarity = Object.hasOwn(SPECIES, speciesOrRarity) ? SPECIES[speciesOrRarity as SpeciesId].rarity : speciesOrRarity;
+  return (rarity === 'common' ? BALANCE.incomeBase : BALANCE.incomeRareBase) + BALANCE.incomePerLevel * (affection - 1);
 }
 export function validTime(now: number): boolean { return Number.isSafeInteger(now) && now >= 0; }
 /** Rebase every absolute timestamp; cycle indices and already earned resources stay unchanged. */
@@ -42,7 +43,7 @@ export function advance(state: GameState, now: number): GameState {
   const elapsed = target - next.lastSimulatedAt;
   for (const enclosure of next.buildings.filter(b => b.kind === 'enclosure')) {
     const rate = next.rabbits.filter(r => r.enclosureId === enclosure.id)
-      .reduce((sum, rabbit) => sum + rabbitIncome(rabbit.affection), 0);
+      .reduce((sum, rabbit) => sum + rabbitIncome(rabbit.affection, rabbit.species), 0);
     const cap = habitatStats(enclosure).cap * HOUR;
     // Bound multiplication before applying a potentially enormous absence.
     const boundedElapsed = rate === 0 ? 0 : Math.min(elapsed, Math.ceil((cap - enclosure.incomeUnits) / rate));

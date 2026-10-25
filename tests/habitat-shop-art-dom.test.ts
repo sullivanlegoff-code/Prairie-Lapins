@@ -63,7 +63,7 @@ describe('the habitat shop', () => {
     const locked = setup(soloStart(0)); locked.ui.open({kind: 'shop', tab: 'habitats'});
     for (const [index, type] of SIX.entries()) {
       const card = cards()[index], price = type === 'universal' ? habitatPrice('universal') : habitatLevel(type, 1).cost;
-      expect(card.textContent, type).toContain(`Placer · ${price}`);
+      expect(card.textContent, type).toContain(`Placer · ${new Intl.NumberFormat('fr-FR').format(price)}`);
       expect(card.querySelectorAll('button').length, type).toBeGreaterThanOrEqual(1);
     }
     // A new game has not reached every level: some cards are locked and say so, the others can be placed.

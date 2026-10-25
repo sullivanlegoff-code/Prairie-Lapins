@@ -16,14 +16,14 @@ export const CUISINE_TIP = {pattes: 5, grass: 1} as const;
  */
 export const NURSERY = {initialCapacity: 1, maxCapacity: 4, unlockHearts: {1: 10, 2: 25, 3: 50}} as const;
 export const HEARTS = {
-  initial: 12, gift: 2, giftInterval: 24 * HOUR,
+  initial: 12, gift: 2, maximumGifts: 3, giftInterval: 24 * HOUR,
   accelerationStep: 5 * MINUTE, pattesPerHeart: 25,
 };
 // The species registry lives in ./species; the public names stay available from here.
 export {SPECIES, SPECIES_IDS, LEGACY_SPECIES_IDS};
 export type {SpeciesId, RabbitType, Rarity};
 export type BuildingKind = 'enclosure' | 'farm' | 'nest' | 'nursery' | 'kitchen';
-export const BREEDING_WEIGHTS = {common: 40, recipe: 20};
+export const BREEDING_WEIGHTS = {common: 30, recipe: 30};
 /** Exact element unions only; additional elements retain the historical pool.
  * Eligibility comes from catalogue recipes, never a fixed list of results. */
 export const ORDINARY_POOL_POLICIES: Readonly<Record<string, {readonly recipeRarity: Rarity}>> = {
@@ -40,22 +40,24 @@ export const GUARANTEE_SPECIES: readonly SpeciesId[] = RECIPE_POLICIES.guarantee
 export const SHOP_SPECIES = SPECIES_IDS.filter(id => isSold(SPECIES[id]));
 export const RECIPE_SPECIES = SPECIES_IDS.filter(id => hasRecipe(SPECIES[id]));
 export const BALANCE = {
-  initialPattes: 300, initialGrass: 0, initialWidth: 3, height: 2, extendedWidth: 6,
-  extensionCost: 500, enclosureCapacity: 3, enclosureCap: 600,
+  initialPattes: 350, initialGrass: 0, initialWidth: 3, height: 2, extendedWidth: 6,
+  extensionCost: 600, enclosureCapacity: 3, enclosureCap: 2400,
   minAffection: 1, maxAffection: 20, breedingAffection: 2,
-  incomeBase: 12, incomePerLevel: 2, foodMultiplier: 2,
+  incomeBase: 10, incomeRareBase: 14, incomePerLevel: 1, foodMultiplier: 2,
+  releaseGrass: {common: 10, rare: 25},
   breedingCost: 0, breedingDuration: 20 * MINUTE,
-  commonGrowth: RARITIES.common.growthMinutes * MINUTE, hybridGrowth: RARITIES.uncommon.growthMinutes * MINUTE, rareGrowth: RARITIES.rare.growthMinutes * MINUTE, guaranteeAttempt: 10,
+  commonGrowth: RARITIES.common.growthMinutes * MINUTE, hybridGrowth: RARITIES.uncommon.growthMinutes * MINUTE, rareGrowth: RARITIES.rare.growthMinutes * MINUTE, guaranteeAttempt: 8,
   buildings: {
-    enclosure: {price: 120, maximum: null}, farm: {price: 60, maximum: 2},
+    enclosure: {price: 350, maximum: null}, farm: {price: 60, maximum: 2},
     nest: {price: 100, maximum: 1}, nursery: {price: 80, maximum: 1},
     kitchen: {price: 100, maximum: 1}, // Provisional building-only integration price.
   } satisfies Record<BuildingKind, {price: number; maximum: number | null}>,
 };
 export const ORDERS = {
   small: {cost: 10, grass: 20, duration: 5 * MINUTE},
-  medium: {cost: 18, grass: 40, duration: 15 * MINUTE},
-  large: {cost: 40, grass: 100, duration: 60 * MINUTE},
+  medium: {cost: 24, grass: 60, duration: 30 * MINUTE},
+  large: {cost: 60, grass: 180, duration: 4 * HOUR},
+  night: {cost: 100, grass: 360, duration: 10 * HOUR},
 };
 export type OrderId = keyof typeof ORDERS;
 export type Odds = Partial<Record<SpeciesId, number>>;

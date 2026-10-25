@@ -9,7 +9,7 @@ import type {Command,GameState} from '../src/state/types';
 const run=(s:GameState,c:Command,t=s.lastSimulatedAt)=>{const r=act(s,c,t,()=>.99);if(!r.ok)throw Error(r.reason);return r.state};
 function prepared(){let s=createGame(0);s.pattes=10000;s.grass=100;s=run(s,{type:'buyBuilding',kind:'farm',x: 22, y: 20});s=run(s,{type: 'placeStarterBuilding',kind:'nest',x: 26, y: 20});s=run(s,{type: 'placeStarterBuilding',kind:'nursery',x: 18, y: 24});s=run(s,{type:'feed',id:'rabbit-2'});return run(s,{type:'feed',id:'rabbit-3'})}
 export function representative(){
- let expanded=createGame(0);expanded.pattes=10000;const level=requiredExtensionLevel(2);expanded.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level};expanded=run(run(expanded,{type:'expand',parcelId:'east',expectedCost:500}),{type:'expand',parcelId:'west',expectedCost:1000});
+ let expanded=createGame(0);expanded.pattes=10000;const level=requiredExtensionLevel(2);expanded.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level};expanded=run(run(expanded,{type:'expand',parcelId:'east',expectedCost:600}),{type:'expand',parcelId:'west',expectedCost:1800});
  const production=advance(run(prepared(),{type:'startOrder',id:'building-4',recipe:'small'}),12345);
  let reproduction=prepared();reproduction.pityFailures=9;reproduction=run(reproduction,{type:'breed',parents:['rabbit-2','rabbit-3']});
  reproduction.buildings.find(b=>b.breeding)!.breeding!.birth={...reproduction.buildings.find(b=>b.breeding)!.breeding!.birth,species:'lunettes',guaranteed:true,reservedDiscovery:true};reproduction.pityFailures=0;

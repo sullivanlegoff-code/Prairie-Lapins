@@ -10,7 +10,7 @@ import {EXPECTED_IDS, EXPECTED_RARITIES} from './rabbit-art-fixtures';
 const ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
 const LABELS = {common: 'Commun', uncommon: 'Peu commun', rare: 'Rare', epic: 'Épique', legendary: 'Légendaire'};
 const GROWTH_MINUTES = {common: 5, uncommon: 15, rare: 30, epic: 60, legendary: 120};
-const BIRTH_XP = {common: 30, uncommon: 45, rare: 70, epic: 110, legendary: 180};
+const BIRTH_XP = {common: 10, uncommon: 45, rare: 20, epic: 110, legendary: 180};
 /** Each species' rarity, as recorded in the catalogue. */
 const RARITY_OF = EXPECTED_RARITIES;
 
@@ -39,7 +39,7 @@ describe('a custom progression keeps its own birth XP', () => {
   it('is valid, keeps its values, and leaves the default and the rarities untouched', () => {
     const defaultBefore = structuredClone(PROGRESSION), raritiesBefore = structuredClone(RARITIES), c = custom();
     expect(() => validateProgressionConfig(c)).not.toThrow(); expect(c.xp.birth).toEqual({common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5});
-    expect(PROGRESSION).toEqual(defaultBefore); expect(PROGRESSION.xp.birth.common).toBe(30); expect(RARITIES).toEqual(raritiesBefore);
+    expect(PROGRESSION).toEqual(defaultBefore); expect(PROGRESSION.xp.birth.common).toBe(10); expect(RARITIES).toEqual(raritiesBefore);
   });
   it('still rejects a configuration without the birth XP of a rarity in use', () => {
     const c = custom(); Reflect.deleteProperty(c.xp.birth, 'epic'); expect(() => validateProgressionConfig(c)).toThrow(RangeError);

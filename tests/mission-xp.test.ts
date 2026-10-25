@@ -30,7 +30,7 @@ describe('mission claim XP, not completion XP',()=>{
   const s=ready();s.buildings[0].habitat!.type='neige';s.rabbits[0].species='neige';s.discovered=['neige'];const r=run(s,{type:'claimMainMission',id:'snow-habitat'});expect(r.state.pattes).toBe(s.pattes);expect(r.state.grass).toBe(s.grass);expect(r.state.progression.totalXp).toBe(progression.missionClaimXp('main','snow-habitat'));
  });
  it('bonus keeps its actual hearts and zero XP, even after the daily claims cross a level',()=>{
-  let s=ready();s.progression.totalXp=49;for(const id of ['collect-pattes','collect-grass','gain-affection'] as const)s=run(s,{type:'claimDailyMission',id,cycleStart:0}).state;expect(s.hearts).toBe(13);
+  let s=ready();s.progression.totalXp=89;for(const id of ['collect-pattes','collect-grass','gain-affection'] as const)s=run(s,{type:'claimDailyMission',id,cycleStart:0}).state;expect(s.hearts).toBe(13);
   const xp=s.progression.totalXp,r=run(s,{type:'claimDailyBonus',cycleStart:0});expect(r.state.progression.totalXp).toBe(xp);expect(r.state.hearts).toBe(s.hearts+DAILY_BONUS.amount);expect(r.state.missions.daily.bonusClaimed).toBe(true);expect(r.progressionGain?.xpGained).toBe(0);
  });
  it.each(['main','daily','bonus'] as const)('%s failed write preserves claimability and all rewards, then reload/import gives no second gain',kind=>{
@@ -43,6 +43,6 @@ describe('mission claim XP, not completion XP',()=>{
   const before=structuredClone(s),r=act(s,command,0);expect(r.ok).toBe(false);expect(r.state).toEqual(before);expect(s).toEqual(before);
  });
  it('a level earned by a heart-paying main mission credits both rewards once',()=>{
-  const s=ready();s.rabbits[0].affection=5;s.progression.totalXp=49;const r=run(s,{type:'claimMainMission',id:'strong-bonds'});expect(r.ok).toBe(true);expect(r.state.hearts).toBe(14);expect(r.state.progression.rewardedThroughLevel).toBe(2);
+  const s=ready();s.rabbits[0].affection=5;s.progression.totalXp=89;const r=run(s,{type:'claimMainMission',id:'strong-bonds'});expect(r.ok).toBe(true);expect(r.state.hearts).toBe(14);expect(r.state.progression.rewardedThroughLevel).toBe(2);
  });
 });

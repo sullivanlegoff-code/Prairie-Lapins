@@ -25,12 +25,12 @@ function historicalWeights(a: SpeciesId, b: SpeciesId, x: number, y: number): Od
   const matches = (id: keyof typeof historical) => historical[id].types.every(t => types.has(t as never)) && Math.min(x,y) >= historical[id].affection;
   const ordinary: Odds = {...BREEDING_ODDS[key]};
   if (!Object.hasOwn(BREEDING_ODDS, key)) for (const id of SPECIES_IDS) {
-    if (['paille','neige','feu','belier-gris','volant'].includes(id) && SPECIES[id].types.every(t => types.has(t))) ordinary[id] = 40;
-    else if (id in historical && id !== 'magicien' && matches(id as keyof typeof historical)) ordinary[id] = 20;
+    if (['paille','neige','feu','belier-gris','volant'].includes(id) && SPECIES[id].types.every(t => types.has(t))) ordinary[id] = 30;
+    else if (id in historical && id !== 'magicien' && matches(id as keyof typeof historical)) ordinary[id] = 30;
   }
   // Approved additions: ordinary weight 20 each, only when both required elements and both affection thresholds hold.
   Object.assign(ordinary, rareAdditions(types, x, y));
-  if (key === 'neige,paille') return Math.min(x,y) >= 2 ? {frisket:20,icy:20} : {};
+  if (key === 'neige,paille') return Math.min(x,y) >= 2 ? {frisket:30,icy:30} : {};
   const specials: Odds = {};
   if (matches('magicien')) specials.magicien = 5;
   if ((a === 'perroquet' && b === 'feu' || a === 'feu' && b === 'perroquet') && Math.min(x,y) >= 10) specials.dragon = 2;
@@ -48,7 +48,7 @@ describe('explicit recipe requirements', () => {
     override('bouee', {requiredTypes: ['neige','metal'], minAffection: 4});
     expect(recipeMatches('bouee','paille','feu')).toBe(false);
     expect(recipeMatches('bouee','neige','belier-gris')).toBe(true);
-    expect(breedingOdds('neige','belier-gris',4,4).bouee).toBe(100 * 20 / (100 + 20 * Object.keys(rareAdditions(['neige', 'metal'], 4, 4)).length));
+    expect(breedingOdds('neige','belier-gris',4,4).bouee).toBe(100 * 30 / (90 + 30 * Object.keys(rareAdditions(['neige', 'metal'], 4, 4)).length));
     const s = regressionStart(0); s.rabbits[0].species='neige'; s.rabbits[1].species='belier-gris';
     s.discovered.push('bouee');
     expect(recipeBook(s,0).find(r => r.species === 'bouee')!.pairs).toHaveLength(1);
