@@ -328,7 +328,9 @@ export class GameUI {
     if (view.kind === 'settings') this.settings.scrollTop = this.scrollPositions.get(this.viewKey(view)) ?? 0;
 
     if (view.kind === 'collection') this.preferences.set({guideCollection: true});
+    const entersSheet = ['placement','decorationPlacement','buyRabbit'].includes(view.kind) && this.view?.kind !== view.kind;
     this.view = view; this.syncArrangement(); this.controller.refresh(); this.render();
+    if (entersSheet && !this.onboardingActive) this.scene.fitAboveSheet?.();
     this.scene.setExpansion(view.kind==='extension',view.kind==='extension'?view.parcelId:undefined);
   }
   close(): void {

@@ -8,6 +8,10 @@ Le minimum de référence est **0,4**. La limite réelle prend la plus petite va
 
 Les noms de bâtiments disparaissent progressivement entre 0,85 et 0,55. Les bulles disparaissent entre 0,7 et 0,45, avec désactivation tactile lorsqu’elles sont trop effacées. Les portraits, panneaux et boutons restent à leur taille d’écran. Les silhouettes alpha des six lapins sont inchangées ; les autres zones de sélection rétrécissent avec le dézoom. Aucune reconstruction de terrain par image ni nouveau dessin d’eau : le fond existant de la caméra couvre le viewport.
 
+### Placement en portrait (25 octobre 2026)
+
+En portrait, hors tutoriel, les panneaux qui attendent un toucher sur l’île (placement d’un bâtiment ou d’une décoration, achat d’un lapin, mode Aménager) deviennent un bandeau en bas de l’écran, d’au plus 40 % de la hauteur. À l’ouverture d’un placement, d’une pose de décoration ou d’un achat de lapin, la vue d’ensemble cadre l’île dans l’espace libre au-dessus du bandeau. Le paysage et le tutoriel gardent leur disposition. Contrôle Chromium 390 × 844 : ferme placée par un toucher au-dessus du bandeau, aucune erreur ; pas d’essai iPhone.
+
 ## Validation
 
 TypeScript, **627 tests / 20 fichiers** et builds normal/laboratoire réussis. Les nouveaux tests vérifient les six cadrages, la marge d’eau, les panneaux, l’ancrage du geste, la continuité des limites, le recentrage, l’orientation différée et l’absence de saut lors du dézoom après rotation.

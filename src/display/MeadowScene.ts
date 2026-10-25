@@ -165,9 +165,18 @@ export class MeadowScene extends Phaser.Scene {
     const pad=VISUAL.camera.overviewPadding, panel=document.getElementById('game-panel'), hud=document.getElementById('hud');
     const rect=panel && !panel.hidden ? panel.getBoundingClientRect() : null;
     const footer=document.getElementById('dev-badge');
-    const bottom=footer && getComputedStyle(footer).display!=='none' ? this.scale.height-footer.getBoundingClientRect().top+pad : pad;
-    return {left:pad,right:rect ? this.scale.width-rect.left+pad : pad,top:(hud?.getBoundingClientRect().bottom ?? 0)+pad,bottom};
+    const footerBottom=footer && getComputedStyle(footer).display!=='none' ? this.scale.height-footer.getBoundingClientRect().top+pad : pad;
+    // In portrait the panel is a bottom sheet spanning the width: it covers the bottom, not the right.
+    const sheet=this.isSheet(rect);
+    const bottom=sheet ? Math.max(footerBottom,this.scale.height-rect!.top+pad) : footerBottom;
+    return {left:pad,right:rect && !sheet ? this.scale.width-rect.left+pad : pad,top:(hud?.getBoundingClientRect().bottom ?? 0)+pad,bottom};
   }
+  /** Portrait bottom sheet: frame the island in the space left above it, so every free cell can be tapped. */
+  fitAboveSheet(): void {
+    const panel=document.getElementById('game-panel'), rect=panel && !panel.hidden ? panel.getBoundingClientRect() : null;
+    if (this.isSheet(rect)) this.overview();
+  }
+  private isSheet(rect: DOMRect | null): boolean { return !!rect && rect.width>0 && rect.left<this.scale.width/3 && rect.top>this.scale.height/3; }
   overview(): void {
     if (!this.current || !this.cameras?.main) return;
     const ids=this.expanding ? PARCEL_IDS : this.current.acquiredParcels;

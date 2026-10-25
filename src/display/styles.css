@@ -394,6 +394,13 @@ dialog > button { width: 100%; margin-top: 8px; }
   #hud nav button { font-size: 11px; padding: 6px; white-space: nowrap; flex-shrink: 0; }
 }
 @media (orientation: portrait) and (max-width: 980px) {
+  /* Views that wait for a tap on the island become a bottom sheet so the island above stays reachable. */
+  body:not(.onboarding-locked) #game-panel:is([data-view='buyRabbit'], [data-view='placement'], [data-view='decorationPlacement'], [data-view='extension']),
+  body.arranging:not(.onboarding-locked) #game-panel {
+    top: auto; left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right));
+    width: auto; max-height: min(40vh, 340px);
+  }
+  body:not(.onboarding-locked) #game-panel[data-view='placement'] .panel-scroll { padding-top: 6px; }
   #hud { align-content: flex-start; }
   #hud nav { justify-content: space-between; }
 }
