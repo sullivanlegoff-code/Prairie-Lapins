@@ -12,31 +12,31 @@ import {mapRarities} from '../config/rarities';
 export const BUILDING_NAMES: Record<BuildingKind, string> = {enclosure: 'Enclos', farm: 'Ferme', nest: 'Nid', nursery: 'Nurserie', kitchen: 'Cuisine'};
 export const REFUSALS: Record<Refusal | 'NO_GAME' | 'DISPOSED' | 'SALE_NOT_SAVED' | 'ACTION_NOT_SAVED' | 'STORAGE_CHANGED', string> = {
   LEVEL_REQUIRED:'Niveau du joueur insuffisant pour cette action.',
-  NO_BREEDING_RESULT:'Aucun résultat ordinaire accessible à ce niveau. La reproduction attend pour conserver les probabilités spéciales. Consultez le carnet.',
-  PURCHASE_LOCKED:'Cet achat est verrouillé. Consultez son niveau requis.',
-  RECIPE_KNOWN:'Cette recette est déjà dans votre carnet. Aucun nouvel achat n’est nécessaire.',
-  ACTION_NOT_SAVED: 'L’action n’a pas pu être sauvegardée. Aucun paiement ni changement validé. Réessayez après avoir résolu le problème de sauvegarde.',
-  STORAGE_CHANGED: 'Une autre fenêtre a modifié cette partie. Exportez la copie en mémoire puis rechargez la page pour continuer.',
-  SALE_NOT_SAVED: 'La vente n’a pas pu être sauvegardée. Objet et solde conservés. Réessayez après avoir résolu le problème de sauvegarde.',
+  NO_BREEDING_RESULT:'Aucun résultat ordinaire accessible à ce niveau. La reproduction attend pour conserver les probabilités spéciales. Consulte le carnet.',
+  PURCHASE_LOCKED:'Cet achat est verrouillé. Consulte son niveau requis.',
+  RECIPE_KNOWN:'Cette recette est déjà dans ton carnet. Aucun nouvel achat n’est nécessaire.',
+  ACTION_NOT_SAVED: 'L’action n’a pas pu être sauvegardée. Aucun paiement ni changement validé. Réessaie après avoir résolu le problème de sauvegarde.',
+  STORAGE_CHANGED: 'Une autre fenêtre a modifié cette partie. Exporte la copie en mémoire puis recharge la page pour continuer.',
+  SALE_NOT_SAVED: 'La vente n’a pas pu être sauvegardée. Objet et solde conservés. Réessaie après avoir résolu le problème de sauvegarde.',
   DECORATION_LIMIT: 'Inventaire limité à 512 exemplaires pour préserver les performances.',
   DECORATION_OVERLAP: 'Cette empreinte chevauche une autre décoration.',
-  DECORATION_BLOCKS_BUILDING: 'Cette empreinte chevauche une décoration. Déplacez ou rangez cet objet avant de poser le bâtiment.',
+  DECORATION_BLOCKS_BUILDING: 'Cette empreinte chevauche une décoration. Déplace ou range cet objet avant de poser le bâtiment.',
   INVALID_NAME: 'Nom refusé : 32 caractères au plus, sans retour à la ligne ni caractère de contrôle.',
-  UPGRADE_BLOCKED_BUILDING: 'Pas assez de place pour agrandir : un autre bâtiment occupe la zone voisine. Déplacez-le d’abord ; rien n’est déplacé automatiquement, rien n’est payé.',
-  UPGRADE_BLOCKED_DECORATION: 'Pas assez de place pour agrandir : une décoration occupe la zone voisine. Déplacez ou rangez-la d’abord ; rien n’est payé.',
-  UPGRADE_BLOCKED_LAND: 'Pas assez de place pour agrandir : la zone voisine n’est pas du terrain acquis. Déplacez l’enclos ou agrandissez l’île ; rien n’est payé.',
+  UPGRADE_BLOCKED_BUILDING: 'Pas assez de place pour agrandir : un autre bâtiment occupe la zone voisine. Déplace-le d’abord ; rien n’est déplacé automatiquement, rien n’est payé.',
+  UPGRADE_BLOCKED_DECORATION: 'Pas assez de place pour agrandir : une décoration occupe la zone voisine. Déplace ou range-la d’abord ; rien n’est payé.',
+  UPGRADE_BLOCKED_LAND: 'Pas assez de place pour agrandir : la zone voisine n’est pas du terrain acquis. Déplace l’enclos ou agrandis l’île ; rien n’est payé.',
   TYPE_INCOMPATIBLE: 'Type incompatible.', MAX_HABITAT_LEVEL: 'Niveau maximal atteint.', MAX_NURSERY_CAPACITY: 'Capacité maximale : les quatre couchages sont débloqués.',
-  ALREADY_CLAIMED: 'Cette récompense a déjà été réclamée.', CYCLE_EXPIRED: 'Ce cycle a expiré. Consultez les nouvelles missions.', RESOURCE_LIMIT: 'Le solde est trop élevé pour recevoir cette récompense.',
-  NOT_ENOUGH_HEARTS: 'Pas assez de cœurs. Vous pouvez continuer en attendant ou en récoltant dans les habitats.',
-  ACTION_FINISHED: 'Cette étape est déjà terminée : aucun cœur dépensé.', STALE_ACTION: 'Cette action a changé. Ouvrez à nouveau son panneau.',
-  PRICE_CHANGED: 'Le paiement a changé. Vérifiez le nouveau prix avant de confirmer.', NO_MISSING_PATTES: 'Votre solde suffit maintenant. Utilisez le paiement normal.',
-  INVALID_TIME: 'L’heure de l’appareil est invalide.', INVALID_RANDOM: 'Le tirage n’a pas pu aboutir. Réessayez.', INVALID_CHOICE: 'Ce choix n’est pas disponible.',
+  ALREADY_CLAIMED: 'Cette récompense a déjà été réclamée.', CYCLE_EXPIRED: 'Ce cycle a expiré. Consulte les nouvelles missions.', RESOURCE_LIMIT: 'Le solde est trop élevé pour recevoir cette récompense.',
+  NOT_ENOUGH_HEARTS: 'Pas assez de cœurs. Tu peux continuer en attendant ou en récoltant dans les habitats.',
+  ACTION_FINISHED: 'Cette étape est déjà terminée : aucun cœur dépensé.', STALE_ACTION: 'Cette action a changé. Ouvre à nouveau son panneau.',
+  PRICE_CHANGED: 'Le paiement a changé. Vérifie le nouveau prix avant de confirmer.', NO_MISSING_PATTES: 'Ton solde suffit maintenant. Utilise le paiement normal.',
+  INVALID_TIME: 'L’heure de l’appareil est invalide.', INVALID_RANDOM: 'Le tirage n’a pas pu aboutir. Réessaie.', INVALID_CHOICE: 'Ce choix n’est pas disponible.',
   NOT_FOUND: 'Cet élément n’est plus présent.', NOT_ENOUGH_PATTES: 'Solde insuffisant.', NOT_ENOUGH_GRASS: 'Pas assez d’herbe.',
   INVALID_CELL: 'Cette case n’est pas encore disponible.', CELL_OCCUPIED: 'Cette case est occupée.', BUILDING_LIMIT: 'Limite de bâtiments atteinte.',
   CAPACITY_FULL: 'Habitat plein.', BUSY: 'Ce bâtiment est occupé.', NOT_READY: 'Ce n’est pas encore prêt.', MAX_AFFECTION: 'Affection maximale atteinte.',
-  SAME_PARENT: 'Choisissez deux lapins différents.', AFFECTION_TOO_LOW: 'Chaque parent doit avoir au moins 2 d’affection.',
-  MISSING_BUILDING: 'Il manque un bâtiment nécessaire : nid, nurserie ou cuisine.', ALREADY_EXPANDED: 'L’extension est déjà achetée.', PARCEL_UNAVAILABLE: 'Cette parcelle n’est pas encore accessible : l’île s’agrandit dans un ordre fixe, une parcelle après l’autre.', LAST_OF_SPECIES: 'Gardez au moins un lapin de chaque espèce possédée.',
-  PARENT_BUSY: 'Au nid : ce parent reste indisponible jusqu’au transfert du lapereau dans la nurserie.', NO_GAME: 'Chargez une partie dans les paramètres.', DISPOSED: 'Rechargez la page.',
+  SAME_PARENT: 'Choisis deux lapins différents.', AFFECTION_TOO_LOW: 'Chaque parent doit avoir au moins 2 d’affection.',
+  MISSING_BUILDING: 'Il manque un bâtiment nécessaire : nid, nurserie ou cuisine.', ALREADY_EXPANDED: 'L’extension est déjà achetée.', PARCEL_UNAVAILABLE: 'Cette parcelle n’est pas encore accessible : l’île s’agrandit dans un ordre fixe, une parcelle après l’autre.', LAST_OF_SPECIES: 'Garde au moins un lapin de chaque espèce possédée.',
+  PARENT_BUSY: 'Au nid : ce parent reste indisponible jusqu’au transfert du lapereau dans la nurserie.', NO_GAME: 'Charge une partie dans les paramètres.', DISPOSED: 'Recharge la page.',
 };
 export const moneyReason = (s: GameState, price: number) => s.pattes < price ? 'Solde insuffisant.' : null;
 export const occupants = (s: GameState, id: string) => s.rabbits.filter(r => r.enclosureId === id);
@@ -54,13 +54,13 @@ export function buildingReason(s: GameState, kind: BuildingKind, ignorePrice = f
   if(kind==='enclosure') {const access=stateLevelAccess(s,{family:'habitatPurchase',id:habitatType});if(access.locked)return `Niveau ${access.requiredLevel} requis`;}
   const config = BALANCE.buildings[kind];
   if (config.maximum !== null && s.buildings.filter(b => b.kind === kind).length >= config.maximum) return REFUSALS.BUILDING_LIMIT;
-  if (s.buildings.length >= s.acquiredParcels.length * ISLAND.parcelArea) return 'Aucune case libre. Agrandissez la prairie.';
+  if (s.buildings.length >= s.acquiredParcels.length * ISLAND.parcelArea) return 'Aucune case libre. Agrandis la prairie.';
   return ignorePrice ? null : moneyReason(s, kind === 'enclosure' ? habitatPrice(habitatType) : config.price);
 }
 export type Placement = {kind: BuildingKind; movingId?: string; starter?: boolean; habitatType?: HabitatType; cell: {x: number; y: number} | null};
 export function placementReason(s: GameState, placement: Placement): string | null {
   const cell = placement.cell;
-  if (!cell) return 'Touchez un petit carré de la prairie.';
+  if (!cell) return 'Touche un petit carré de la prairie.';
   const reason = buildingPlacementReason(s, cell.x, cell.y, placement.movingId);
   if (reason) return REFUSALS[reason];
   if (placement.movingId) return null;
@@ -187,10 +187,10 @@ export const incomeWhole = (units: number) => Math.floor(units / HOUR);
 export function tutorialStep(s: GameState, intro: boolean): {text: string; rabbitId?: string; building?: BuildingKind; done?: boolean} {
   if (!intro) return {text: 'Les récoltes financent la prairie. L’herbe augmente l’affection et les revenus. Aucune faim à gérer.'};
   const candidate = ['paille', 'neige'].map(species => s.rabbits.find(r => r.species === species)).find(r => r && r.affection < 2);
-  if (candidate) return {text: 'Nourrissez les deux lapins de départ jusqu’à l’affection 2.', rabbitId: candidate.id};
-  for (const building of ['nest', 'nursery'] as const) if (!s.buildings.some(b => b.kind === building)) return {text: `Placez gratuitement votre ${BUILDING_NAMES[building].toLowerCase()} depuis Aménagement. Libérez une empreinte 4 × 4 si nécessaire.`, building};
-  if (s.buildings.some(b=>b.breeding)) return {text:'Les parents restent au nid. À la fin des 20 minutes, envoyez manuellement le lapereau dans la nurserie libre.',building:'nest'};
-  if (!s.buildings.some(b=>b.kind==='farm')) return {text:'Achetez et placez votre ferme pour produire de l’herbe.',building:'farm'};
-  if (s.buildings.some(b => b.breeding || b.nursery?.babies.length) || s.discovered.some(id => SPECIES[id].recipe !== null)) return {text: 'Votre prairie prend vie ! Revenez accueillir le lapereau après sa croissance.', done: true};
-  return {text: 'Choisissez vos deux parents dans le nid et lancez une reproduction. Vous pouvez jouer pendant l’attente.', building: 'nest'};
+  if (candidate) return {text: 'Nourris les deux lapins de départ jusqu’à l’affection 2.', rabbitId: candidate.id};
+  for (const building of ['nest', 'nursery'] as const) if (!s.buildings.some(b => b.kind === building)) return {text: `Place gratuitement ${building === 'nursery' ? 'ta' : 'ton'} ${BUILDING_NAMES[building].toLowerCase()} depuis Aménagement. Libère une empreinte 4 × 4 si nécessaire.`, building};
+  if (s.buildings.some(b=>b.breeding)) return {text:'Les parents restent au nid. À la fin des 20 minutes, envoie manuellement le lapereau dans la nurserie libre.',building:'nest'};
+  if (!s.buildings.some(b=>b.kind==='farm')) return {text:'Achète et place ta ferme pour produire de l’herbe.',building:'farm'};
+  if (s.buildings.some(b => b.breeding || b.nursery?.babies.length) || s.discovered.some(id => SPECIES[id].recipe !== null)) return {text: 'Ta prairie prend vie ! Reviens accueillir le lapereau après sa croissance.', done: true};
+  return {text: 'Choisis tes deux parents dans le nid et lance une reproduction. Tu peux jouer pendant l’attente.', building: 'nest'};
 }

@@ -90,12 +90,12 @@ export function developmentEnvironment(base: SaveStorage, options: {decorationPr
       const host = document.getElementById('devtools')!;
       host.hidden = false; host.replaceChildren();
       const intro = document.createElement('p');
-      intro.textContent = 'Laboratoire public : partie, préférences, horloge et sauvegardes de secours séparées. Aucun compte ni service en ligne. Importez volontairement un export normal pour tester une copie. Les fichiers MODE-TEST peuvent contenir des ressources ajoutées et du temps avancé.';
+      intro.textContent = 'Laboratoire public : partie, préférences, horloge et sauvegardes de secours séparées. Aucun compte ni service en ligne. Importe volontairement un export normal pour tester une copie. Les fichiers MODE-TEST peuvent contenir des ressources ajoutées et du temps avancé.';
       if (options.decorationPreview) intro.textContent = 'Prévisualisation expérimentale v8 : partie, préférences, horloge et secours distincts des trois autres versions. Aucun compte ni synchronisation. Import v4 volontaire uniquement ; les exports v8 de cette prévisualisation ne sont pas compatibles avec les versions v4.';
       host.append(intro);
       const version = document.createElement('p'); version.textContent = options.decorationPreview ? `Version expérimentale v8 · build ${BUILD_REVISION.slice(0, 7)}. Jeu normal et laboratoire en v8 ; comptes figés en v4.` : `Même révision que le jeu normal : ${BUILD_REVISION.slice(0, 7)}.`; host.append(version);
       const status = document.createElement('p'); status.setAttribute('role', 'status'); status.id = 'dev-status';
-      const resultMessage = (result: TestResult, message: string) => { status.textContent = result.ok ? message : result.reason === 'NOT_CONFIRMED' ? 'Opération annulée. La partie de test est conservée.' : 'Opération de test refusée. Vérifiez la sauvegarde et l’espace disponible ; la partie normale est conservée.'; };
+      const resultMessage = (result: TestResult, message: string) => { status.textContent = result.ok ? message : result.reason === 'NOT_CONFIRMED' ? 'Opération annulée. La partie de test est conservée.' : 'Opération de test refusée. Vérifie la sauvegarde et l’espace disponible ; la partie normale est conservée.'; };
       const section = (title: string) => { const h = document.createElement('h3'); h.textContent = title; host.append(h); };
       const button = (label: string, id: string, click: () => void) => {
         const b = document.createElement('button'); b.type = 'button'; setCurrencyText(b, label); b.id = id; b.onclick = click; host.append(b);
@@ -143,7 +143,7 @@ export function developmentEnvironment(base: SaveStorage, options: {decorationPr
       const disposeLevelDemo = options.decorationPreview ? () => {} : mountLevelAccessDemo(host);
       section('Scénarios préparés');
       for (const id of (Object.keys(SCENARIOS) as ScenarioId[])) button(SCENARIOS[id], `dev-scenario-${id}`, () => {
-        if (!window.confirm(`Charger « ${SCENARIOS[id]} » remplace seulement la partie de test. Exportez-la pour la conserver. Continuer ?`)) return;
+        if (!window.confirm(`Charger « ${SCENARIOS[id]} » remplace seulement la partie de test. Exporte-la pour la conserver. Continuer ?`)) return;
         const result = loadScenario(controller, id); if (result.ok) onReplacement(id === 'guidedStart' || id === 'initiationUnused' || id === 'initiationSaved'); resultMessage(result, 'Scénario chargé et enregistré dans la partie de test.');
       });
       section('Sauvegarde de test');

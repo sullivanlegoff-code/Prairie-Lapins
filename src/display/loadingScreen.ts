@@ -41,7 +41,7 @@ export class LoadingTracker {
     const slow = this.steps.some(s => s.state === 'slow');
     const notes = this.steps.filter(s => s.state === 'warning' && s.note).map(s => s.note);
     return {steps: this.steps.map(s => ({...s})), progress: reached / total, ready, failed: !!failed,
-      message: failed ? `${failed.note} Vérifiez la connexion puis réessayez.` : [slow ? 'Connexion lente, le chargement continue…' : '', ...notes].filter(Boolean).join(' ')};
+      message: failed ? `${failed.note} Vérifie la connexion puis réessaie.` : [slow ? 'Connexion lente, le chargement continue…' : '', ...notes].filter(Boolean).join(' ')};
   }
   dispose(): void { for (const handle of this.timers.values()) this.timersApi.clear(handle); this.timers.clear(); this.listeners.clear(); }
   private finish(id: StepId, state: StepState, note: string): void {

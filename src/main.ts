@@ -51,7 +51,7 @@ async function boot(): Promise<() => void> {
   // A game started again because the old save predates the catalogue boundary is a new start: it gets the new-game guidance.
   if (controller.getSnapshot().catalogReset) preferences.initializeGuidance(true);
   if (status === 'saved') loading.done('save');
-  else loading.warn('save', status === 'invalid-save' || status === 'read-error' ? 'Sauvegarde illisible : la récupération s’ouvrira après « Jouer ».' : 'Sauvegarde non enregistrée : vérifiez l’espace du navigateur après « Jouer ».');
+  else loading.warn('save', status === 'invalid-save' || status === 'read-error' ? 'Sauvegarde illisible : la récupération s’ouvrira après « Jouer ».' : 'Sauvegarde non enregistrée : vérifie l’espace du navigateur après « Jouer ».');
   const fonts = (document as Document & {fonts?: FontFaceSet}).fonts;
   if (fonts) void fonts.ready.then(() => loading.done('fonts'), () => loading.warn('fonts', '')); else loading.done('fonts');
   let ui: GameUI | null = null;
@@ -112,7 +112,7 @@ const ready = boot().catch(() => {
   const root = document.getElementById('loading-screen')!;
   root.hidden = false; root.dataset.state = 'failed';
   document.getElementById('app')!.inert = true;
-  document.getElementById('loading-message')!.textContent = 'Le démarrage a échoué. Réessayez ; si le problème persiste, conservez vos données et contactez le propriétaire.';
+  document.getElementById('loading-message')!.textContent = 'Le démarrage a échoué. Réessaie ; si le problème persiste, conserve tes données et contacte le propriétaire.';
   const play = document.getElementById('loading-play') as HTMLButtonElement;
   play.disabled = true; play.hidden = true;
   const retry = document.getElementById('loading-retry')!;

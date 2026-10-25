@@ -231,8 +231,8 @@ describe('main-game Cuisine activity', () => {
     const k=setup(true,'empty'),before=structuredClone(k.controller.getSnapshot().state);
     k.ui.select({kind:'building',id:'building-100'});
     [...document.querySelectorAll<HTMLButtonElement>('#panel-content button')].find(b=>b.textContent==='Entrer dans la Cuisine')!.click();
-    expect(document.getElementById('panel-title')!.textContent).toBe('Choisissez votre lapin');
-    expect(document.getElementById('panel-content')!.textContent).toContain('Vous avez besoin d’un lapin pour cuisiner.');
+    expect(document.getElementById('panel-title')!.textContent).toBe('Choisis ton lapin');
+    expect(document.getElementById('panel-content')!.textContent).toContain('Tu as besoin d’un lapin pour cuisiner.');
     expect(document.querySelectorAll('[data-cuisine-rabbit]')).toHaveLength(0);
     expect(k.mounted).not.toHaveBeenCalled();expect(k.host.selectedRabbit).toBeNull();
     document.getElementById('panel-back')!.click();
@@ -247,7 +247,7 @@ describe('main-game Cuisine activity', () => {
     const enter=()=>[...document.querySelectorAll<HTMLButtonElement>('#panel-content button')].find(b=>b.textContent==='Entrer dans la Cuisine')!;
     const action=enter();action.click();action.click();
     expect(k.mounted).not.toHaveBeenCalled();
-    expect(document.getElementById('panel-title')!.textContent).toBe('Choisissez votre lapin');
+    expect(document.getElementById('panel-title')!.textContent).toBe('Choisis ton lapin');
     k.choose(before!.rabbits[0].id);
     expect(k.mounted).toHaveBeenCalledOnce();
     expect(document.getElementById('app')!.inert).toBe(true);

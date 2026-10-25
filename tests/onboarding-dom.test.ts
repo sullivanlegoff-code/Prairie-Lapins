@@ -32,7 +32,7 @@ function setup(initial = createGame(0), laboratory = false, roll = .65) {
 const modal = () => document.getElementById('paille-dialogue') as HTMLDialogElement;
 const script = [
   ['Bienvenue sur l’île des lapins ! Cette île a été construite pour une célébration très spéciale !', 'Ici, tu vas pouvoir découvrir le merveilleux monde des lapins !', 'D’abord, donne-moi un prénom !', 'Miel, c’est un très joli prénom, il me va très bien ! Bah ouais !', 'Je m’ennuie ici, je veux que tu me trouves un amoureux !'],
-  ['J’ai une folle envie d’herbe à grignoter ! Tu me fais tourner la tête ! Bah ouais !'],
+  ['J’ai très faim ! Tu me fais tourner la tête ! Bah ouais !'],
   ['La ferme permet de nous nourrir ! J’aime manger autant que faire des bisous, c’est très important pour nous autres lapins !'],
   ['Une fois bien nourris, on peut essayer d’obtenir des lapins !'],
   ['Viens, on fait nos bails ! Bah ouais !'],

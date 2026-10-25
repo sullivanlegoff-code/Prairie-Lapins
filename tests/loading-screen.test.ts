@@ -43,7 +43,7 @@ describe('loading screen', () => {
     expect((document.getElementById('loading-play') as HTMLButtonElement).disabled).toBe(true);
     expect(document.getElementById('loading-play')!.hidden).toBe(true);
     expect(document.getElementById('loading-retry')!.hidden).toBe(false);
-    expect(document.getElementById('loading-message')!.textContent).toMatch(/image du jeu.*réessayez/);
+    expect(document.getElementById('loading-message')!.textContent).toMatch(/image du jeu.*réessaie/);
 
   });
   it('keeps slow steps pending, offers retry and accepts late success with fake timers', () => {
