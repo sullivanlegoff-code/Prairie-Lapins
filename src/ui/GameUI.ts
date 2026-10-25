@@ -11,6 +11,8 @@ import {mountLevelLock} from '../display/LevelLock';
 import {PARCELS, PARCEL_IDS, extensionPrice, purchasableParcels, type ParcelId} from '../config/land';
 import {ISLAND} from '../config/islandGeometry';
 import {setCurrencyText} from '../display/currency';
+import {CROP_IDS, cropDuration, cropIcon, statueThumbnail} from '../display/food';
+import {feedReason, playerLevel} from '../simulation/affection';
 import type {Building, Rabbit} from '../state/types';
 import {MAX_RABBIT_NAME_LENGTH, normalizeRabbitName} from '../simulation/rabbitNames';
 import {HABITATS, HABITAT_TYPES, habitatLevel, habitatPrice, type HabitatType} from '../config/habitats';
@@ -21,7 +23,7 @@ import {habitatStats, habitatName, habitatEntryReason, habitatAccepts, welcomeDe
 import {MAIN_MISSIONS, DAILY_MISSION_GAP, DAILY_MISSION_IDS, DAILY_MISSIONS, DAILY_BONUS, type Reward} from '../config/missions';
 import {initialMissionIds, activeMainMissions, availableMissionRewards, mainProgress, dailyCycleStart, dailyCycleEnd, cycleIndexAt, currentDailyMission, dailyOpensAt} from '../simulation/missions';
 import type {GameController, Snapshot} from '../application/GameController';
-import {BALANCE, HOUR, MARKET, NURSERY, ORDERS, SPECIES, SPECIES_IDS, SHOP_SPECIES, growthDuration, type BuildingKind, type SpeciesId, type OrderId, type RabbitType} from '../config/balance';
+import {AFFECTION_STATUE, BALANCE, HOUR, MARKET, NURSERY, ORDERS, RARE_BIRTH_BONUS, feedCost, SPECIES, SPECIES_IDS, SHOP_SPECIES, growthDuration, type BuildingKind, type SpeciesId, type RabbitType} from '../config/balance';
 import type {Command, DecorationLocation, GameState, PattesCommand, TimedStage} from '../state/types';
 import {DECORATIONS, DECORATION_IDS, FINE_GRID, ownedDecorationResalePrice, type DecorationId} from '../config/decorations';
 import {catalogDecorationPlacementReason, purchaseDecorationReason} from '../simulation/decorations';
@@ -47,7 +49,7 @@ type View = {kind:'levelRequirement';target:LevelAccessTarget} | {kind: 'mission
 function node<K extends keyof HTMLElementTagNameMap>(tag: K, text = '', className = ''): HTMLElementTagNameMap[K] {
   const element = document.createElement(tag); setCurrencyText(element, text); element.className = className; return element;
 }
-const rewardLabel = (r: Reward) => r.resource==='none' ? 'Objectif de collection accompli' : `${r.amount} ${{pattes: 'pattes', grass: 'herbes', hearts: r.amount === 1 ? 'cœur' : 'cœurs'}[r.resource]}`;
+const rewardLabel = (r: Reward) => r.resource==='none' ? 'Objectif de collection accompli' : `${r.amount} ${{pattes: 'pattes', grass: 'nourriture', hearts: r.amount === 1 ? 'cœur' : 'cœurs'}[r.resource]}`;
 const heartAmount = (n: number) => `${n} ${n === 1 ? 'cœur' : 'cœurs'}`;
 function avatar(species?: SpeciesId, large = false): HTMLElement {
   const element = node('span', '', large ? 'portrait large' : 'portrait'); element.innerHTML = portrait(species); return element;
@@ -132,7 +134,7 @@ export class GameUI {
       activityOptions.onCuisineCompleted?.(result);
       if (!granted.ok) return `Récompense non enregistrée : ${REFUSALS[granted.reason]}`;
       const reward = granted.cuisineReward!;
-      return `+${reward.pattes} pattes · +${reward.grass} herbe${reward.grass > 1 ? 's' : ''}${reward.affectionGranted ? ' · +1 Affection' : reward.affectionAtCap ? ' · Affection maximale' : ''}${reward.heartGranted ? ' · +1 Cœur' : ''}`;
+      return `+${reward.pattes} pattes · +${reward.grass} nourriture${reward.affectionGranted ? ' · +1 Affection' : reward.affectionAtCap ? ' · Affection maximale' : ''}${reward.heartGranted ? ' · +1 Cœur' : ''}`;
     }, quotaText: () => { const state = this.controller.getSnapshot().state; return state ? cuisineQuotaText(state, this.now()) : ''; }, onExit: () => this.render()});
     const options = {signal: this.abort.signal};
     const skip = node('button','Passer le tutoriel','onboarding-skip'); skip.id='onboarding-skip';
@@ -404,7 +406,7 @@ export class GameUI {
       return;
     }
     if (selection.kind === 'income') { this.execute({type: 'collectIncome', id: selection.id}, value => `+ ${value} pattes`); return; }
-    if (selection.kind === 'grass') { this.execute({type: 'collectOrder', id: selection.id}, value => `+ ${value} herbes`); return; }
+    if (selection.kind === 'grass') { this.execute({type: 'collectOrder', id: selection.id}, value => `+ ${value} nourriture`); return; }
     if (selection.kind === 'birth') { this.sendBirth(selection.id); return; }
     // A ready nursery bubble opens its ordinary actions, including during arrangement.
     if (this.arranging && selection.kind === 'building' && this.snapshot.state?.buildings.find(b => b.id === selection.id)?.kind !== 'enclosure') {
@@ -442,7 +444,7 @@ export class GameUI {
     document.body.classList.toggle('shop-open', fullShop);
     this.shopResources.hidden = !fullShop;
     if (fullShop && this.snapshot.state) {
-      const s = this.snapshot.state; this.shopResources.replaceChildren(node('span', `${s.pattes} pattes`), node('span', `${s.grass} herbes`), node('span', heartAmount(s.hearts)));
+      const s = this.snapshot.state; this.shopResources.replaceChildren(node('span', `${s.pattes} pattes`), node('span', `${s.grass} nourriture`), node('span', heartAmount(s.hearts)));
     }
     this.panel.dataset.view = this.view?.kind ?? '';
     // A rabbit's card opens in the middle of the screen, over the dimmed meadow; the guided start keeps the side panel.
@@ -513,7 +515,7 @@ export class GameUI {
     if (tab === 'decorations') { this.renderDecorationShop(s); return; }
     if (tab === 'habitats' || tab === 'buildings') {
       const basic = habitatLevel('universal', 1);
-      const utility: Record<BuildingKind, string> = {enclosure: `${basic.capacity} places · tous les types · stocke ${basic.cap} pattes`, farm: 'Produit l’herbe · maximum 2', kitchen: 'Cuisine - maximum 1', nest: 'Deux parents · maximum 1', nursery: 'Une place pour grandir · maximum 1'};
+      const utility: Record<BuildingKind, string> = {enclosure: `${basic.capacity} places · tous les types · stocke ${basic.cap} pattes`, farm: 'Cultive la nourriture · maximum 2', kitchen: 'Cuisine - maximum 1', statue: 'Ouvre l’affection 15 à 20 à tous tes lapins · maximum 1', nest: 'Deux parents · maximum 1', nursery: 'Une place pour grandir · maximum 1'};
       if (tab === 'habitats') {
       const universal = this.card(HABITATS.universal.name, `${utility.enclosure} · empreinte 4 × 4`); universal.prepend(habitatThumbnail('universal'));
       if(!this.shopHabitatSpecies || stateLevelAccess(s,{family:'habitatPurchase',id:'universal'}).accessible) {
@@ -530,8 +532,9 @@ export class GameUI {
       }
       } else {
       this.content.append(node('p', 'Le nid et la nurserie sont offerts et ne sont pas vendus.', 'small'));
-      for (const kind of ['farm', 'kitchen'] as const) {
+      for (const kind of ['farm', 'kitchen', 'statue'] as const) {
         const card = this.card(BUILDING_NAMES[kind], `${utility[kind]} · empreinte 4 × 4`);
+        if (kind === 'statue') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(statueThumbnail()); card.append(node('p', `La Statue de l’Affection récompense tes soins : sans elle, l’affection s’arrête à ${AFFECTION_STATUE.cap}. Avec elle, chaque lapin peut atteindre 20, et deux parents d’affection 15 doublent leurs chances d’épique et de légendaire.`, 'small')); }
         this.button(card, `Placer · ${BALANCE.buildings[kind].price} pattes`, () => this.beginPlacement(kind), buildingReason(s, kind, true)); this.content.append(card);
       }
       }
@@ -757,19 +760,28 @@ export class GameUI {
       } else this.content.append(node('p', 'Niveau maximal atteint.', 'badge'));
     } else if (b.kind === 'farm') {
       if (b.order) {
-        const recipe = {grass: b.order.grass ?? ORDERS[b.order.recipe].grass}; this.workState(b.order.endsAt > this.now() ? 'running' : 'ready', b.order.endsAt > this.now() ? `${recipe.grass} herbes en production. Récolte-les après le délai.` : `${recipe.grass} herbes disponibles. Touche Récolter.`); this.timer(b.order.startedAt, b.order.endsAt);
-        if (b.order.endsAt > this.now()) this.content.append(node('p', orderReadyText(b.order.endsAt), 'order-ready-time'));
-        this.button(this.content, `Récolter ${recipe.grass} herbes`, () => this.execute({type: 'collectOrder', id}, value => `+ ${value} herbes`), b.order.endsAt > this.now() ? 'Production en cours.' : null);
+        const crop = ORDERS[b.order.recipe], amount = b.order.grass ?? crop.grass, growing = b.order.endsAt > this.now();
+        const heading = this.card(crop.name, growing ? `${amount} nourriture en culture. Récolte après le délai.` : `${amount} nourriture prête. Touche Récolter.`);
+        heading.classList.add('farm-crop'); heading.querySelector('.card-heading')!.prepend(cropIcon(b.order.recipe)); this.content.append(heading);
+        this.workState(growing ? 'running' : 'ready', growing ? 'Les pousses grandissent dans les sillons de la ferme.' : 'La récolte attend dans les sillons de la ferme.'); this.timer(b.order.startedAt, b.order.endsAt);
+        if (growing) this.content.append(node('p', orderReadyText(b.order.endsAt), 'order-ready-time'));
+        this.button(this.content, `Récolter ${amount} nourriture`, () => this.execute({type: 'collectOrder', id}, value => `+ ${value} nourriture`), growing ? 'Culture en cours.' : null);
         this.acceleration(s, id, 'order');
-      } else { this.workState('free', 'Choisis une production. Son prix est payé au lancement ; la récolte reste manuelle.'); const choices = node('div', '', 'farm-orders'); this.content.append(choices); for (const recipe of Object.keys(ORDERS) as OrderId[]) {
-        const order = ORDERS[recipe], card = this.card(`${{small: 'Petite · 5 min', medium: 'Moyenne · 30 min', large: 'Longue · 4 h', night: 'Nuit · 10 h'}[recipe]}`, `${order.grass} herbes · une seule récolte`);
-        card.classList.add('farm-order');
-        this.button(card, `Produire · ${order.cost} pattes`, () => this.execute({type: 'startOrder', id, recipe}, 'Production d’herbe lancée.'), moneyReason(s, order.cost));
-        this.complement(card, s, {type: 'startOrder', id, recipe}, `Produire ${order.grass} herbes`, 'Production d’herbe lancée.'); choices.append(card);
-      } }
+      } else {
+        this.workState('free', 'Choisis une culture. Plus les lapins l’aiment, plus elle coûte et dure, et plus elle donne de nourriture. Le prix est payé au lancement ; la récolte reste manuelle.');
+        const choices = node('div', '', 'farm-orders'); this.content.append(choices); const level = playerLevel(s);
+        for (const recipe of CROP_IDS) {
+          const order = ORDERS[recipe], card = this.card(order.name, `${cropDuration(order.duration)} · ${order.grass} nourriture par récolte`);
+          card.classList.add('farm-order'); card.dataset.crop = recipe; card.querySelector('.card-heading')!.prepend(cropIcon(recipe));
+          if (level < order.level) { card.classList.add('farm-order-locked'); card.append(node('p', `Niveau ${order.level} requis`, 'badge')); choices.append(card); continue; }
+          this.button(card, `Cultiver · ${order.cost} pattes`, () => this.execute({type: 'startOrder', id, recipe}, 'Culture lancée.'), moneyReason(s, order.cost));
+          this.complement(card, s, {type: 'startOrder', id, recipe}, `Cultiver ${order.name.toLowerCase()} : ${order.grass} nourriture`, 'Culture lancée.'); choices.append(card);
+        }
+      }
     } else if (b.kind === 'nest') this.renderNest(s, id);
     else if (b.kind === 'nursery') this.renderNursery(s);
     else if (b.kind === 'kitchen') this.button(this.content, 'Entrer dans la Cuisine', () => this.openCuisine());
+    else if (b.kind === 'statue') this.content.append(node('p', `La statue veille sur la prairie : tes lapins peuvent dépasser l’affection ${AFFECTION_STATUE.cap} et atteindre 20. Deux parents d’affection 15 doublent leurs chances d’épique et de légendaire.`, 'badge'));
     this.button(this.content, 'Déplacer ce bâtiment', () => this.beginPlacement(b.kind, id), null, true);
   }
   private renderRabbit(s: GameState, id: string): void {
@@ -779,9 +791,12 @@ export class GameUI {
     const overview = node('div', '', 'rabbit-overview'), essential = node('div');
     essential.append(this.stats([['Affection', `${r.affection} / 20`], ['Revenu', `${rabbitIncome(r.affection, r.species)} pattes / h`]]));
     overview.append(avatar(r.species, true), essential); this.content.append(overview);
-    const cost = BALANCE.foodMultiplier * r.affection;
-    if (r.affection < 20) essential.append(node('p', `Prochain repas : ${cost} herbes → affection ${r.affection + 1}, revenu ${rabbitIncome(r.affection + 1, r.species)} pattes / h.`, 'small'));
-    this.button(essential, `Nourrir · ${cost} herbes`, () => this.execute({type: 'feed', id}, `Affection ${r.affection + 1} !`, () => this.scene.reactToFeed(id)), r.affection >= 20 ? REFUSALS.MAX_AFFECTION : s.grass < cost ? REFUSALS.NOT_ENOUGH_GRASS : null).dataset.focus = 'feed';
+    const cost = feedCost(r.affection), reason = feedReason(s, r.affection);
+    if (reason !== 'MAX_AFFECTION' && reason !== 'STATUE_REQUIRED') essential.append(node('p', `Prochain repas : ${cost} nourriture → affection ${r.affection + 1}, revenu ${rabbitIncome(r.affection + 1, r.species)} pattes / h.`, 'small'));
+    if (r.affection === AFFECTION_STATUE.cap && reason !== 'STATUE_REQUIRED') essential.append(node('p', 'Le grand repas de l’affection 15 : un vrai festin, à la hauteur de la récompense.', 'small rabbit-milestone'));
+    this.button(essential, reason === 'MAX_AFFECTION' ? 'Affection maximale' : `Nourrir · ${cost} nourriture`, () => this.execute({type: 'feed', id}, `Affection ${r.affection + 1} !`, () => this.scene.reactToFeed(id)), reason && REFUSALS[reason]).dataset.focus = 'feed';
+    const bonus = RARE_BIRTH_BONUS.find(step => r.affection >= step.affection);
+    if (bonus) essential.append(node('p', `Affection ${bonus.affection} : avec un partenaire d’affection ${bonus.affection} au moins, les chances d’épique et de légendaire sont multipliées par ${String(bonus.factor).replace('.', ',')}.`, 'small rabbit-bonus'));
     if (parentBusy(s,id,this.now())) this.content.append(node('p','Au nid · place réservée dans son habitat · revenus conservés','badge'));
     this.content.append(node('p', `${typeNames(species.types)} · ${RARITY_NAMES[species.rarity]}`, 'badge'), node('p', this.enclosureName(s, r.enclosureId), 'small'));
     this.content.append(node('p', 'Nourrir augmente l’affection ; il n’y a ni faim ni entretien obligatoire.', 'small'), node('h3', 'Autres actions'));
@@ -1263,7 +1278,7 @@ export class GameUI {
     this.title.textContent = 'Les cœurs';
     const giftInfo = heartGift(s, this.now());
     this.content.append(node('p', `${s.hearts} cœurs disponibles`, 'badge'),
-      node('p', 'Termine un délai ou complète un paiement insuffisant. Chaque dépense demande ta confirmation. Les cœurs ne remplacent pas l’herbe.'),
+      node('p', 'Termine un délai ou complète un paiement insuffisant. Chaque dépense demande ta confirmation. Les cœurs ne remplacent pas la nourriture.'),
       node('p', 'Tu peux développer ta prairie sans cœurs. Aucun achat réel ni publicité.'),
       node('h3', 'Ton cadeau gratuit'),
       node('p', 'Deux cœurs toutes les 24 heures, jusqu’à trois cadeaux en réserve.'),
@@ -1280,9 +1295,9 @@ export class GameUI {
   /** Late game: surplus pattes and grass become Hearts, each exchange of the day a little dearer. */
   private renderMarket(s: GameState): void {
     this.content.append(node('h3', 'Le comptoir de Paille'));
-    if (!marketUnlocked(s)) { this.content.append(node('p', `Niveau ${MARKET.unlockLevel} requis. Tu pourras y échanger tes pattes et ton herbe en trop contre des cœurs.`, 'small')); return; }
-    this.content.append(node('p', 'Échange tes pattes ou ton herbe en trop contre des cœurs. Chaque échange du jour coûte un peu plus que le précédent ; les prix reviennent au départ au prochain cycle.', 'small'));
-    for (const [resource, label, unit] of [['pattes', 'Pattes', 'pattes'], ['grass', 'Herbe', 'herbes']] as const) {
+    if (!marketUnlocked(s)) { this.content.append(node('p', `Niveau ${MARKET.unlockLevel} requis. Tu pourras y échanger tes pattes et ta nourriture en trop contre des cœurs.`, 'small')); return; }
+    this.content.append(node('p', 'Échange tes pattes ou ta nourriture en trop contre des cœurs. Chaque échange du jour coûte un peu plus que le précédent ; les prix reviennent au départ au prochain cycle.', 'small'));
+    for (const [resource, label, unit] of [['pattes', 'Pattes', 'pattes'], ['grass', 'Nourriture', 'nourriture']] as const) {
       const price = marketPrice(s, resource), owned = resource === 'pattes' ? s.pattes : s.grass;
       const card = this.card(`${label} → 1 cœur`, price === null ? REFUSALS.MARKET_LIMIT : `Échanges du jour : ${marketExchanges(s, resource)} / ${MARKET.maximumPerCycle}`);
       card.dataset.market = resource;
@@ -1466,7 +1481,7 @@ export class GameUI {
     else if (task.waiting) target = this.content.querySelector<HTMLButtonElement>('.initiation-aid button') ?? this.content.querySelector<HTMLButtonElement>('.paid-acceleration button') ?? undefined;
     else if (task.step.id === 'welcomeBirth') target = buttons.find(b => !b.disabled && / · \d+\//.test(b.textContent ?? ''));
     else {
-      const pattern = ({production:/^Produire · 10/,harvest:/^Récolter 20/,paille:/^Nourrir/,neige:/^Nourrir/,breed:/^Croiser$/,transfer:/^Envoyer dans la nurserie/} as Record<string,RegExp>)[task.step.id];
+      const pattern = ({production:/^Cultiver · 10/,harvest:/^Récolter 20/,paille:/^Nourrir/,neige:/^Nourrir/,breed:/^Croiser$/,transfer:/^Envoyer dans la nurserie/} as Record<string,RegExp>)[task.step.id];
       target = buttons.find(b => pattern?.test(b.textContent ?? ''));
     }
     target?.classList.add('guide-target');
@@ -1481,7 +1496,7 @@ export class GameUI {
     if (this.onboardingActive) { this.highlightOnboarding(); return; }
     if (!this.preferences.value.tutorial || this.preferences.value.tutorialDone || !this.snapshot.state) return;
     const step = guidedStep(this.snapshot.state, this.preferences.value, this.now(), this.stagedOnboarding);
-    const labels: Record<string, RegExp> = {paille: /^Nourrir/, neige: /^Nourrir/, farmShop: /^Placer · 60/, production: /^Produire · 10/, harvest: /^Récolter 20/, breed: /^Croiser$/, transfer: /^Envoyer dans la nurserie/, welcomeBirth: /^Accueillir/};
+    const labels: Record<string, RegExp> = {paille: /^Nourrir/, neige: /^Nourrir/, farmShop: /^Placer · 60/, production: /^Cultiver · 10/, harvest: /^Récolter 20/, breed: /^Croiser$/, transfer: /^Envoyer dans la nurserie/, welcomeBirth: /^Accueillir/};
     const pattern = labels[step.id];
     let target = pattern ? [...this.content.querySelectorAll('button')].find(b => pattern.test(b.textContent ?? '')) : null;
     if (this.stagedOnboarding && this.snapshot.state.startCourse === 'paille-solo') {

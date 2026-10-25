@@ -23,7 +23,7 @@ const read = (raw: string) => {const r = decodeGame(raw); if (!r.ok) throw Error
 
 describe('v9 progression and level rewards', () => {
   it('starts at zero without altering resources or the current course', () => {
-    const s = createCentreStartGame(0); expect(s.version).toBe(17);
+    const s = createCentreStartGame(0); expect(s.version).toBe(18);
     expect(s.progression).toEqual({totalXp: 0, rewardedThroughLevel: 1});
     expect(progressionFromXp(s.progression.totalXp).level).toBe(1);
     expect([s.pattes,s.grass,s.hearts]).toEqual([350,0,12]);

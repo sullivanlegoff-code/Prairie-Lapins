@@ -97,14 +97,14 @@ it('keeps DOM on an invisible time tick and updates income when a whole unit bec
 it('updates countdown text without rebuilding and refreshes the ready action at the deadline', () => {
   const initial = createGame(0);
   const farm = emptyBuilding('building-90', 'farm', 22, 20);
-  farm.order = {recipe:'small', startedAt:0, endsAt:300_000}; initial.buildings.push(farm); initial.nextId = 100;
+  farm.order = {recipe: 'foin', startedAt:0, endsAt:300_000}; initial.buildings.push(farm); initial.nextId = 100;
   const {ui, controller, clock} = setup(initial); ui.open({kind:'building', id:farm.id});
   const first = panel().firstChild;
   clock.now = 5_000; controller.refresh();
   (ui as unknown as {updateTimers():void}).updateTimers();
   expect(panel().firstChild).toBe(first); expect(panel().querySelector('.timer')!.textContent).toBe('4 min 55 s');
   clock.now = 300_000; (ui as unknown as {updateTimers():void}).updateTimers();
-  expect(panel().firstChild).not.toBe(first); expect(button('Récolter 20 herbes').disabled).toBe(false);
+  expect(panel().firstChild).not.toBe(first); expect(button('Récolter 20 nourriture').disabled).toBe(false);
 });
 const breeding = () => document.getElementById('breeding-dialog') as HTMLDialogElement;
 /** A row of the pairing window: slot 0 is Lapin 1 (left), slot 1 is Lapin 2 (right); `name` is a name prefix or an index. */
@@ -287,9 +287,9 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     const {controller,ui,data}=setup(); document.getElementById('open-missions')!.click();
     expect(panel().querySelectorAll('article')).toHaveLength(1);
     expect(panel().querySelector('[data-mission="first-meal"]')).not.toBeNull();
-    expect(button('Réclamer · + 10 herbes').disabled).toBe(true);button('Voir un lapin').click();
-    button('Nourrir · 2 herbes').click(); document.getElementById('open-missions')!.click();
-    const old=button('Réclamer · + 10 herbes');panel().scrollTop=150;old.click();old.click();expect(panel().scrollTop).toBe(0);
+    expect(button('Réclamer · + 10 nourriture').disabled).toBe(true);button('Voir un lapin').click();
+    button('Nourrir · 2 nourriture').click(); document.getElementById('open-missions')!.click();
+    const old=button('Réclamer · + 10 nourriture');panel().scrollTop=150;old.click();old.click();expect(panel().scrollTop).toBe(0);
     expect(state(controller).grass).toBe(18);expect(state(controller).missions.claimed).toEqual(['first-meal']);
     expect(panel().querySelector('[data-mission="first-meal"]')).toBeNull();
     expect(panel().querySelector('[data-mission="first-farm"]')).not.toBeNull();
@@ -301,33 +301,33 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     const {controller}=setup(initial);document.getElementById('open-missions')!.click();
     expect(panel().querySelector('[data-mission="parents-ready"]')).not.toBeNull();
     button('Voir le parent à nourrir').click();expect(document.getElementById('panel-title')!.textContent).toBe('Lapin Neige');
-    button('Nourrir · 2 herbes').click();expect(state(controller).rabbits.map(r=>r.affection)).toEqual([2,2]);
+    button('Nourrir · 2 nourriture').click();expect(state(controller).rabbits.map(r=>r.affection)).toEqual([2,2]);
     document.getElementById('open-missions')!.click();expect(button('Réclamer · + 20 pièces').disabled).toBe(false);
   });
   it('claims the three daily rewards one session at a time and the separate bonus through UI, then expires the cycle', () => {
     const initial=createGame(0);initial.grass=100;
     const {controller,ui,clock}=setup(initial);place(ui,'farm',1,0);
     const hour=3600_000,daily=()=>{document.getElementById('open-missions')!.click();button('Quotidiennes').click();};
-    controller.perform({type:'startOrder',id:'building-4',recipe:'medium'});
+    controller.perform({type:'startOrder',id:'building-4',recipe: 'pissenlit'});
     // Morning: only the first mission is open; the harvest of this session does not count for the second.
     clock.now=5*hour;controller.perform({type:'collectIncome',id:'building-1'});controller.perform({type:'collectOrder',id:'building-4'});
     for(let i=0;i<3;i++)controller.perform({type:'feed',id:'rabbit-2'});controller.perform({type:'feed',id:'rabbit-3'});for(const [kind,x] of [['nest',26],['nursery',18]] as const)controller.perform({type:'placeStarterBuilding',kind,x,y:24});
     daily();
     const card=(id:string)=>panel().querySelector<HTMLElement>(`[data-mission="${id}"]`)!;
     expect(panel().textContent).toContain('expirent');expect(panel().querySelector('.timer')!.textContent).toBe('19 h 0 min');
-    expect(card('collect-grass')).toBeNull();expect(panel().textContent).toContain('Ensuite : Une réserve d’herbe · Lancer une reproduction');
+    expect(card('collect-grass')).toBeNull();expect(panel().textContent).toContain('Ensuite : Une réserve de nourriture · Lancer une reproduction');
     expect(button('Réclamer · + 2 cœurs',card('daily-bonus')).disabled).toBe(true);
     button('Réclamer · + 60 pièces',card('collect-pattes')).click();
     expect(card('collect-grass').textContent).toContain('Ouverture dans :');expect(card('collect-grass').querySelector('.timer')!.textContent).toBe('4 h 0 min');
     expect(card('collect-grass').querySelector('.mission-claim')).toBeNull();
     // Midday: the second mission opens 4 hours after the claim.
-    clock.now=9*hour;controller.refresh();controller.perform({type:'startOrder',id:'building-4',recipe:'medium'});
+    clock.now=9*hour;controller.refresh();controller.perform({type:'startOrder',id:'building-4',recipe: 'pissenlit'});
     clock.now=9.5*hour;controller.perform({type:'collectOrder',id:'building-4'});daily();
-    button('Réclamer · + 30 herbes',card('collect-grass')).click();
+    button('Réclamer · + 30 nourriture',card('collect-grass')).click();
     // Evening: the reproduction.
     clock.now=13.5*hour;controller.refresh();controller.perform({type:'breed',parents:['rabbit-2','rabbit-3']});daily();
     button('Réclamer · + 40 pièces',card('gain-affection')).click();
-    expect(state(controller).missions.daily.progress).toEqual({"collect-grass":60,"collect-pattes":100,"gain-affection":1});
+    expect(state(controller).missions.daily.progress).toEqual({"collect-grass":40,"collect-pattes":100,"gain-affection":1});
     const bonus=button('Réclamer · + 2 cœurs',card('daily-bonus'));bonus.click();bonus.click();
     expect(state(controller).hearts).toBe(15);expect(state(controller).nextHeartGiftAt).toBe(24*hour);
     expect(card('daily-bonus')).toBeNull();expect(panel().querySelectorAll('article')).toHaveLength(0);
@@ -339,7 +339,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
   it('invalidates a mission claim button after replacement by import',()=>{
     const initial=createGame(0);initial.missions.completed=['first-farm','first-meal'];initial.missions.claimed=['first-meal'];
     const {controller,ui}=setup(initial);document.getElementById('open-missions')!.click();
-    const old=button('Réclamer · + 20 herbes',panel().querySelector('[data-mission="first-farm"]')!);
+    const old=button('Réclamer · + 20 nourriture',panel().querySelector('[data-mission="first-farm"]')!);
     const replacement=createGame(0);replacement.missions.completed=['first-farm','first-meal'];replacement.missions.claimed=['first-meal'];replacement.grass=77;
     establishHistoricalLevelRights(replacement);const p=controller.prepareImport(encodeGame(replacement));if(!p.ok)throw Error(p.reason);
     controller.confirmImport(p.token,true);ui.onReplacement();old.click();expect(state(controller)).toEqual(replacement);
@@ -395,7 +395,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
   });
   it('a double pressure on Feed performs exactly one action and updates the view', () => {
     const {ui, controller, scene} = setup(); const perform = vi.spyOn(controller, 'perform');
-    ui.select({kind: 'rabbit', id: 'rabbit-2'}); button('Nourrir · 2 herbes').click(); button('Nourrir · 4 herbes').click();
+    ui.select({kind: 'rabbit', id: 'rabbit-2'}); button('Nourrir · 2 nourriture').click(); button('Nourrir · 4 nourriture').click();
     expect(perform).toHaveBeenCalledOnce(); expect(state(controller).rabbits[0].affection).toBe(2);expect(state(controller).progression.totalXp).toBe(foodXp(2));
     expect(document.getElementById('grass')!.textContent).toBe('8'); expect(panel().textContent).toContain('Affection 2 / 20'); expect(scene.reactToFeed).toHaveBeenCalledWith('rabbit-2');
   });
@@ -468,12 +468,12 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
   it('completes the farming, breeding, revealing, welcoming and movement loop through UI controls', () => {
     const initial = createGame(0);initial.progression={totalXp:cumulativeLevelXp(6),rewardedThroughLevel:6}; initial.pattes = 10_000; initial.grass = 500;
     const {ui, controller, clock, data} = setup(initial);
-    ui.select({kind: 'rabbit', id: 'rabbit-2'}); button('Nourrir · 2 herbes').click();
-    ui.select({kind: 'rabbit', id: 'rabbit-3'}); button('Nourrir · 2 herbes').click();
+    ui.select({kind: 'rabbit', id: 'rabbit-2'}); button('Nourrir · 2 nourriture').click();
+    ui.select({kind: 'rabbit', id: 'rabbit-3'}); button('Nourrir · 2 nourriture').click();
     place(ui, 'farm', 1, 0); place(ui, 'nest', 2, 0); place(ui, 'nursery', 0, 1); place(ui, 'enclosure', 1, 1);
     const find = (kind: string) => state(controller).buildings.find(b => b.kind === kind)!;
-    ui.select({kind: 'building', id: find('farm').id}); button('Produire · 10 pièces').click();
-    expect(button('Récolter 20 herbes').disabled).toBe(true); clock.now += 5 * 60_000; controller.refresh(); button('Récolter 20 herbes').click();
+    ui.select({kind: 'building', id: find('farm').id}); button('Cultiver · 10 pièces').click();
+    expect(button('Récolter 20 nourriture').disabled).toBe(true); clock.now += 5 * 60_000; controller.refresh(); button('Récolter 20 nourriture').click();
     expect(state(controller).grass).toBe(516);
     ui.select({kind: 'building', id: find('nest').id});
     crossFromNest('Lapin Paille', 'Lapin Neige'); expect(find('nest').breeding?.birth.species).toBe('icy'); expect(panel().textContent).not.toContain('Icy');
@@ -514,9 +514,9 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
   });
   it('refreshes active panels on a controller resume', () => {
     const {controller, ui, clock} = setup(); place(ui, 'farm', 1, 0);
-    const farm = state(controller).buildings.find(b => b.kind === 'farm')!; ui.select({kind: 'building', id: farm.id}); button('Produire · 10 pièces').click();
-    expect(button('Récolter 20 herbes').disabled).toBe(true); clock.now = 3600_000; controller.refresh();
-    expect(button('Récolter 20 herbes').disabled).toBe(false); expect(panel().querySelector('.timer')!.textContent).toBe('Prêt');
+    const farm = state(controller).buildings.find(b => b.kind === 'farm')!; ui.select({kind: 'building', id: farm.id}); button('Cultiver · 10 pièces').click();
+    expect(button('Récolter 20 nourriture').disabled).toBe(true); clock.now = 3600_000; controller.refresh();
+    expect(button('Récolter 20 nourriture').disabled).toBe(false); expect(panel().querySelector('.timer')!.textContent).toBe('Prêt');
   });
   it('imports through the file input with preview, cancellation and confirmed replacement', async () => {
     const {ui, controller, scene} = setup(); ui.open({kind: 'settings'});
@@ -565,16 +565,16 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
   });
   it('confirms the actual lower acceleration price and ignores a duplicate confirmation', () => {
     const {controller, ui, clock} = setup(); place(ui, 'farm', 1, 0); ui.select({kind: 'building', id: 'building-4'});
-    button('Produire · 24 pièces').click(); button('Terminer · 6 cœurs').click();
+    button('Cultiver · 18 pièces').click(); button('Terminer · 3 cœurs').click(); // Pissenlit: 15 minutes.
     const dialog = document.getElementById('game-dialog')!; expect(dialog.textContent).toContain('solde : 12');
-    clock.now = 26 * 60_000; const confirm = button('Confirmer', dialog); confirm.click(); confirm.click();
+    clock.now = 11 * 60_000; const confirm = button('Confirmer', dialog); confirm.click(); confirm.click();
     expect(state(controller).hearts).toBe(11); expect(state(controller).grass).toBe(10);
-    expect(panel().textContent).not.toContain('Terminer ·'); expect(button('Récolter 60 herbes').disabled).toBe(false);
+    expect(panel().textContent).not.toContain('Terminer ·'); expect(button('Récolter 40 nourriture').disabled).toBe(false);
     expect(document.getElementById('toast')!.textContent).toContain('1 cœur');
   });
   it('does not spend after acceleration cancellation or normal completion before confirmation', () => {
     const {controller, ui, clock} = setup(); place(ui, 'farm', 1, 0); ui.select({kind: 'building', id: 'building-4'});
-    button('Produire · 10 pièces').click(); button('Terminer · 1 cœur').click();
+    button('Cultiver · 10 pièces').click(); button('Terminer · 1 cœur').click();
     const dialog = document.getElementById('game-dialog')!; button('Annuler', dialog).click(); expect(state(controller).hearts).toBe(12);
     button('Terminer · 1 cœur').click(); clock.now = 5 * 60_000; button('Confirmer', dialog).click();
     expect(state(controller).hearts).toBe(12); expect(document.getElementById('toast')!.textContent).toContain('aucun cœur');
@@ -584,7 +584,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     const {ui} = setup(initial); document.getElementById('open-shop')!.click(); button('Bâtiments et décorations').click(); button('Placer · 60 pièces').click(); ui.select({kind: 'cell', x: 22, y: 20});
     expect(button('Compléter · 30 pièces + 2 cœurs').disabled).toBe(true); expect(panel().textContent).toContain('Pas assez de cœurs');
     document.getElementById('close-panel')!.click(); if(document.body.classList.contains('shop-open'))document.getElementById('close-panel')!.click(); ui.select({kind: 'rabbit', id: 'rabbit-2'});
-    expect(button('Nourrir · 2 herbes').disabled).toBe(true); expect(panel().textContent).not.toContain('Compléter');
+    expect(button('Nourrir · 2 nourriture').disabled).toBe(true); expect(panel().textContent).not.toContain('Compléter');
   });
   it('offers explicit complements for rabbits, extension, farm orders and breeding', () => {
     const initial = createGame(0);initial.progression={totalXp:cumulativeLevelXp(6),rewardedThroughLevel:6}; initial.pattes = 0; initial.hearts = 100;
@@ -628,7 +628,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
   });
   it('invalidates a pending heart confirmation after a successful import', () => {
     const {controller, ui} = setup(); place(ui, 'farm', 1, 0); ui.select({kind: 'building', id: 'building-4'});
-    button('Produire · 10 pièces').click(); button('Terminer · 1 cœur').click();
+    button('Cultiver · 10 pièces').click(); button('Terminer · 1 cœur').click();
     const stale = button('Confirmer', document.getElementById('game-dialog')!);
     const replacement = createGame(0); replacement.hearts = 7;
     establishHistoricalLevelRights(replacement);const preview = controller.prepareImport(encodeGame(replacement)); if (!preview.ok) throw new Error(preview.reason);
@@ -749,7 +749,7 @@ describe('habitat panels and controller transactions',()=>{
     expect(c.grantLaboratoryXp(500).ok).toBe(true);
     expect(c.perform({type:'upgradeHabitat',id:'building-6',fromLevel:1}).ok).toBe(true);
     expect(state(c).buildings.find(b=>b.id==='building-6')!.habitat).toEqual({type:'paille',level:2});expect(values.get(SAVE_KEY)).toBe(normal);
-    expect(JSON.parse(values.get('prairie-lapins.development.'+SAVE_KEY)!).version).toBe(17);
+    expect(JSON.parse(values.get('prairie-lapins.development.'+SAVE_KEY)!).version).toBe(18);
   });
 });
 
@@ -950,11 +950,11 @@ describe('guidance card uses existing controls and missions', () => {
     const card=document.getElementById('tutorial')!;
     expect(card.dataset.step).toBe('welcome'); button('Me guider',card).click(); expect(card.dataset.step).toBe('paille');
     button('Me guider',card).click(); expect(document.getElementById('panel-title')!.textContent).toBe('Lapin Paille');
-    expect(panel().querySelector('.guide-target')?.textContent).toBe('Nourrir · 2 herbes');
+    expect(panel().querySelector('.guide-target')?.textContent).toBe('Nourrir · 2 nourriture');
     document.getElementById('close-panel')!.click(); expect(card.dataset.step).toBe('paille');
-    button('Me guider',card).click();button('Nourrir · 2 herbes').click();document.getElementById('close-panel')!.click();
-    const stale=button('Réclamer · 10 herbes',card);stale.click();stale.click(); expect(state(controller).grass).toBe(18);
-    expect(card.dataset.step).toBe('farmShop');expect(card.textContent).not.toContain('Réclamer · 10 herbes');
+    button('Me guider',card).click();button('Nourrir · 2 nourriture').click();document.getElementById('close-panel')!.click();
+    const stale=button('Réclamer · 10 nourriture',card);stale.click();stale.click(); expect(state(controller).grass).toBe(18);
+    expect(card.dataset.step).toBe('farmShop');expect(card.textContent).not.toContain('Réclamer · 10 nourriture');
     button('Masquer',card).click(); expect(card.hidden).toBe(true);document.getElementById('open-settings')!.click();document.getElementById('tutorial-toggle')!.click();ui.close();
     expect(card.dataset.step).toBe('farmShop');expect(state(controller).missions.claimed).toContain('first-meal');
     button('Me guider',card).click(); expect(document.getElementById('game-panel')!.classList.contains('shop-fullscreen')).toBe(true);
@@ -1067,12 +1067,12 @@ describe('mobile menu continuity', () => {
     expect(panel().querySelector('select[aria-label="Type"]')).toBe(select); expect(select.isConnected).toBe(true);
     select.blur(); flush(); expect(panel().querySelector('select[aria-label="Type"]')).not.toBe(select);
     ui.open({kind: 'rabbit', id: 'rabbit-2'});
-    const feed = button('Nourrir · 2 herbes');
+    const feed = button('Nourrir · 2 nourriture');
     feed.dispatchEvent(new PointerEvent('pointerdown', {bubbles: true, pointerId: 7}));
     expect(controller.perform({type: 'feed', id: 'rabbit-2'}).ok).toBe(true); controller.refresh();
-    expect(button('Nourrir · 2 herbes')).toBe(feed); expect(feed.isConnected).toBe(true);
+    expect(button('Nourrir · 2 nourriture')).toBe(feed); expect(feed.isConnected).toBe(true);
     window.dispatchEvent(new PointerEvent('pointerup', {pointerId: 7})); flush();
-    expect(panel().textContent).toContain('Affection 2 / 20'); expect(button('Nourrir · 4 herbes').isConnected).toBe(true);
+    expect(panel().textContent).toContain('Affection 2 / 20'); expect(button('Nourrir · 4 nourriture').isConnected).toBe(true);
     expect(state(controller).grass).toBe(8);
     prefs.restartGuidance(); ui.close();
     const tutorial = document.getElementById('tutorial')!, guide = button('Me guider', tutorial);
@@ -1082,7 +1082,7 @@ describe('mobile menu continuity', () => {
     expect(button('Me guider', tutorial)).toBe(guide); expect(guide.isConnected).toBe(true);
     window.dispatchEvent(new PointerEvent('pointerup', {pointerId: 8})); flush();
     expect(button('Me guider', tutorial)).not.toBe(guide);
-    expect(tutorial.textContent).not.toContain('Réclamer · 10 herbes'); expect(state(controller).grass).toBe(18);
+    expect(tutorial.textContent).not.toContain('Réclamer · 10 nourriture'); expect(state(controller).grass).toBe(18);
   });
 
   it('keeps a manually closed recipe pair list closed across passive saves and navigation', () => {
@@ -1096,15 +1096,15 @@ describe('mobile menu continuity', () => {
   it('links unavailable actions to their reason and shows shared work states without changing timers or transfer rules', () => {
     const initial = createGame(0); initial.grass = 0;
     const {ui, controller, clock} = setup(initial); ui.open({kind: 'rabbit', id: 'rabbit-2'});
-    const feed = button('Nourrir · 2 herbes'), reason = document.getElementById(feed.getAttribute('aria-describedby')!);
-    expect(feed.disabled).toBe(true); expect(reason?.textContent).toContain('Pas assez d’herbe'); expect(reason?.hidden).toBe(false);
+    const feed = button('Nourrir · 2 nourriture'), reason = document.getElementById(feed.getAttribute('aria-describedby')!);
+    expect(feed.disabled).toBe(true); expect(reason?.textContent).toContain('Pas assez de nourriture'); expect(reason?.hidden).toBe(false);
     expect(controller.perform({type: 'buyBuilding', kind: 'farm', x: 22, y: 20}).ok).toBe(true);
     const farm = state(controller).buildings.find(building => building.kind === 'farm')!;
     ui.open({kind: 'building', id: farm.id}); expect(panel().querySelector('.work-state')?.getAttribute('data-state')).toBe('free');
-    expect(controller.perform({type: 'startOrder', id: farm.id, recipe: 'small'}).ok).toBe(true);
+    expect(controller.perform({type: 'startOrder', id: farm.id, recipe: 'foin'}).ok).toBe(true);
     expect(panel().querySelector('.work-state')?.getAttribute('data-state')).toBe('running');
     clock.now = 5 * 60_000; controller.refresh(); expect(panel().querySelector('.work-state')?.getAttribute('data-state')).toBe('ready');
-    expect(state(controller).grass).toBe(0); button('Récolter 20 herbes').click();
+    expect(state(controller).grass).toBe(0); button('Récolter 20 nourriture').click();
     expect(panel().querySelector('.work-state')?.getAttribute('data-state')).toBe('free'); expect(state(controller).grass).toBe(20);
     clock.now = 3600_000;
     const occupied = scenarioState('manualBreeding', clock.now), prepared = controller.prepareImport(encodeGame(occupied));
@@ -1189,8 +1189,8 @@ describe('mission XP display and claim continuity',()=>{
  it('shows XP in guide and Missions; a failed claim remains visible and the successful next claim disappears',()=>{
   const initial=createGame(0);initial.rabbits[0].affection=2;const {ui,controller,prefs,storage,clock}=setup(initial);prefs.restartGuidance();ui.close();
   const guide=document.getElementById('tutorial')!;expect(guide.textContent).toContain('40 XP');const before=state(controller);
-  const fail=vi.spyOn(storage,'setItem').mockImplementation(()=>{throw Error('quota');});button('Réclamer · 10 herbes',guide).click();expect(state(controller)).toEqual(before);expect(guide.textContent).toContain('40 XP');fail.mockRestore();clock.now=500;vi.spyOn(performance,'now').mockReturnValue(performance.now()+500);
-  button('Réclamer · 10 herbes',guide).click();expect(state(controller).missions.claimed).toContain('first-meal');expect(state(controller).progression.totalXp).toBe(before.progression.totalXp+PROGRESSION.xp.claims.main);
+  const fail=vi.spyOn(storage,'setItem').mockImplementation(()=>{throw Error('quota');});button('Réclamer · 10 nourriture',guide).click();expect(state(controller)).toEqual(before);expect(guide.textContent).toContain('40 XP');fail.mockRestore();clock.now=500;vi.spyOn(performance,'now').mockReturnValue(performance.now()+500);
+  button('Réclamer · 10 nourriture',guide).click();expect(state(controller).missions.claimed).toContain('first-meal');expect(state(controller).progression.totalXp).toBe(before.progression.totalXp+PROGRESSION.xp.claims.main);
   ui.open({kind:'missions',tab:'main'});expect(panel().querySelector('[data-mission="first-meal"]')).toBeNull();expect(panel().querySelector('[data-mission="first-farm"]')?.textContent).toContain('40 XP');ui.open({kind:'missions',tab:'daily'});expect(panel().querySelector('[data-mission="collect-pattes"]')?.textContent).toContain('50 XP');expect(panel().querySelector('[data-mission="daily-bonus"]')?.textContent).not.toContain('0 XP');
  });
 });
@@ -1204,7 +1204,7 @@ describe('mission XP exceptions in reward display',()=>{
   const s=createGame(0);s.rabbits[0].affection=2;const {ui,controller,prefs}=setup(s);prefs.restartGuidance();ui.close();
   const guide=document.getElementById('tutorial')!;expect(guide.textContent).not.toContain('0 XP');if(xp)expect(guide.textContent).toContain(`${xp} XP`);
   ui.open({kind:'missions',tab:'main'});const card=panel().querySelector('[data-mission="first-meal"]')!;expect(card.textContent).not.toContain('0 XP');if(xp)expect(card.textContent).toContain(`${xp} XP`);
-  button('Réclamer · + 10 herbes',card).click();expect(state(controller).progression.totalXp).toBe(xp);expect(panel().querySelector('[data-mission="first-meal"]')).toBeNull();
+  button('Réclamer · + 10 nourriture',card).click();expect(state(controller).progression.totalXp).toBe(xp);expect(panel().querySelector('[data-mission="first-meal"]')).toBeNull();
  });
 });
 

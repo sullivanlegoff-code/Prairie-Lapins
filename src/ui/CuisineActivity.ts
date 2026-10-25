@@ -27,11 +27,11 @@ export function mountCuisineActivity(background: HTMLElement, options: {
   let selectedRabbit: CuisineRabbit | null = null;
   const rewardFeedback = document.createElement('p'); rewardFeedback.className = 'cuisine-reward-feedback';
   const resultRabbit = document.createElement('p'); resultRabbit.className = 'cuisine-result-rabbit';
-  /** One chip per reward (« +50 pattes · +3 herbes · … »); a refusal stays a single notice. */
+  /** One chip per reward (« +50 pattes · +3 nourriture · … »); a refusal stays a single notice. */
   function showRewards(message: string): void {
     rewardFeedback.replaceChildren(...message.split(' · ').map(part => {
       const chip = document.createElement('span'); chip.className = 'cuisine-reward-chip';
-      chip.dataset.kind = /Cœur/.test(part) ? 'heart' : /Affection/.test(part) ? 'affection' : /herbe/.test(part) ? 'herbs' : /pattes/.test(part) ? 'coins' : 'notice';
+      chip.dataset.kind = /Cœur/.test(part) ? 'heart' : /Affection/.test(part) ? 'affection' : /nourriture/.test(part) ? 'herbs' : /pattes/.test(part) ? 'coins' : 'notice';
       setCurrencyText(chip, part); return chip;
     }));
   }

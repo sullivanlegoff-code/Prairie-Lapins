@@ -181,6 +181,7 @@
   height: var(--nav-icon);
   pointer-events: none;
 }
+#hud .resource.meadow-currency.grass > img.food-logo { object-fit: contain; filter: drop-shadow(0 1px 1px #241f1a99); }
 #hud .resource.meadow-currency.grass > span {
   display: grid;
   place-items: center;

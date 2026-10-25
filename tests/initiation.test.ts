@@ -13,7 +13,7 @@ function aid(s:GameState,id:string,stage:TimedStage):Command{return {type:'initi
 function breed(){return run(ready(),{type:'breed',parents:['rabbit-2','rabbit-3']});}
 describe('initiation authorizations',()=>{
  it('only changes the exact timer, keeps resources, income, result and manual transfer',()=>{
-  let s=breed();s=run(s,{type:'buyBuilding',kind:'farm',x:22,y:20});s=run(s,{type:'startOrder',id:'building-7',recipe:'small'});
+  let s=breed();s=run(s,{type:'buyBuilding',kind:'farm',x:22,y:20});s=run(s,{type:'startOrder',id:'building-7',recipe: 'foin'});
   const before=structuredClone(s);const next=run(s,aid(s,'building-4','breeding'));
   expect(next.hearts).toBe(before.hearts);expect(next.pattes).toBe(before.pattes);expect(next.lastSimulatedAt).toBe(0);
   expect(next.buildings.find(b=>b.kind==='farm')).toEqual(before.buildings.find(b=>b.kind==='farm'));
@@ -59,9 +59,9 @@ describe('initiation authorizations',()=>{
  });
  it('small production is one exact target and requires manual harvest',()=>{
   let s=ready();s=run(s,{type:'buyBuilding',kind:'farm',x:22,y:20});const id=s.buildings.at(-1)!.id;
-  s=run(s,{type:'startOrder',id,recipe:'small'});const grass=s.grass,key=s.initiation!.order!;s=run(s,aid(s,id,'order'));
+  s=run(s,{type:'startOrder',id,recipe: 'foin'});const grass=s.grass,key=s.initiation!.order!;s=run(s,aid(s,id,'order'));
   expect(s.grass).toBe(grass);s=run(s,{type:'collectOrder',id});expect(s.grass).toBe(grass+20);
-  s=run(s,{type:'startOrder',id,recipe:'small'});expect(act(s,{type:'initiationAid',id,stage:'order',jobKey:key},0).ok).toBe(false);
+  s=run(s,{type:'startOrder',id,recipe: 'foin'});expect(act(s,{type:'initiationAid',id,stage:'order',jobKey:key},0).ok).toBe(false);
  });
  it('paid acceleration retains its price and closes associated free right',()=>{
   let s=breed();const q=quoteAcceleration(s,'building-4','breeding',0);if(!q.ok)throw Error(q.reason);

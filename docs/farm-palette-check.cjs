@@ -53,7 +53,7 @@ const {chromium,webkit}=require('playwright'),fs=require('node:fs'),path=require
     const capture=async name=>{await page.locator('#toast').waitFor({state:'hidden'});const shot=path.join(folder,`${width}x${height}-${name}.png`);await page.screenshot({path:shot});report.captures.push(shot);report.views.push({variant,width,height,name,zoom:model.zoom,farmCenter:model.screen(center)});};
     // Real controls only: start one order if the farm is free, then the existing laboratory clock.
     await reset();let p=model.screen(center);await page.touchscreen.tap(p.x,p.y);check(await page.locator('#panel-title').innerText()==='Ferme','farm remains selectable');
-    if(await page.getByRole('button',{name:'Produire · 10 pièces',exact:true}).isVisible())await page.getByRole('button',{name:'Produire · 10 pièces',exact:true}).click();
+    if(await page.getByRole('button',{name:'Cultiver · 10 pièces',exact:true}).isVisible())await page.getByRole('button',{name:'Cultiver · 10 pièces',exact:true}).click();
     await close();await page.click('#open-settings');await page.click('#dev-time-5');await close();
     await reset();p=model.screen(center);await page.touchscreen.tap(p.x,p.y);check(await page.locator('.work-state[data-state=ready]').count()===1,'harvest ready, badge shown');await close();
     const parcels=initial.acquiredParcels.map(id=>PARCELS[id]),bounds={left:Math.min(...parcels.map(p=>gridPoint(p.x,0).x)),right:Math.max(...parcels.map(p=>gridPoint(p.x+ISLAND.parcelCells,0).x)),top:Math.min(...parcels.map(p=>gridPoint(0,p.y).y)),bottom:Math.max(...parcels.map(p=>gridPoint(0,p.y+ISLAND.parcelCells).y))};

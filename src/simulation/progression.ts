@@ -1,9 +1,11 @@
-import {BALANCE, SPECIES, SPECIES_IDS, type SpeciesId} from '../config/balance';
+import {BALANCE, FEED_COSTS, SPECIES, SPECIES_IDS, type SpeciesId} from '../config/balance';
 import {DECORATIONS, DECORATION_IDS, type DecorationId} from '../config/decorations';
 import {HABITAT_TYPES, type HabitatType, type HabitatLevel} from '../config/habitats';
 import {PARCEL_IDS} from '../config/land';
 import {MAIN_MISSION_IDS, DAILY_MISSION_IDS, type MainMissionId, type DailyMissionId} from '../config/missions';
 import {PROGRESSION, LEVEL_ACCESS_FAMILIES, type ProgressionConfig} from '../config/progression';
+/** Food per extra XP point of a meal, beyond the base (simulated pacing: level 22 in about 20 days). */
+export const FOOD_PER_XP = 60;
 
 export interface PlayerProgression {
   readonly totalXp: number;
@@ -52,7 +54,7 @@ export function validateProgressionConfig(c: ProgressionConfig = PROGRESSION): v
   const x=c.xp, r=c.requirements;
   for (const amount of [c.rewards.heartsPerLevel, x.commonPurchase, x.discovery.common, x.discovery.rare, x.construction.specializedHabitat, x.construction.universalHabitat, x.construction.farm, ...[...new Set(SPECIES_IDS.map(id=>SPECIES[id].rarity))].map(rarity=>x.birth[rarity]),
     x.foodMultiplier, x.breedingLaunch, x.firstDecorationPlacement.minimum, x.claims.main, x.claims.daily, x.claims.dailyBonus]) integer(amount,'XP/reward amount');
-  integer(x.foodMultiplier * BALANCE.maxAffection,'Maximum food XP');
+  integer(x.foodMultiplier + Math.floor(Math.max(...FEED_COSTS) / FOOD_PER_XP),'Maximum food XP');
   integer(x.firstDecorationPlacement.priceDivisor,'Decoration price divisor',1);
   for (const [exceptions, ids] of [[x.claims.mainExceptions, MAIN_MISSION_IDS], [x.claims.dailyExceptions, DAILY_MISSION_IDS]] as const) {
     for (const [id, amount] of Object.entries(exceptions)) {
@@ -135,7 +137,9 @@ export function requiredExtensionLevel(purchaseRank:number,c:ProgressionConfig=P
   validateQueryConfig(c);integer(purchaseRank,'Extension purchase rank',1);if(purchaseRank>c.requirements.extensions.length)throw new RangeError('Extension rank out of range');return c.requirements.extensions[purchaseRank-1];
 }
 export function foodXp(affectionReached:number,c:ProgressionConfig=PROGRESSION):number {
-  validateQueryConfig(c);integer(affectionReached,'Reached affection');if(affectionReached>BALANCE.maxAffection)throw new RangeError('Affection exceeds existing maximum');return c.xp.foodMultiplier;
+  validateQueryConfig(c);integer(affectionReached,'Reached affection');if(affectionReached>BALANCE.maxAffection)throw new RangeError('Affection exceeds existing maximum');
+  // A meal's XP follows its food cost: the base, plus one per FOOD_PER_XP food (the step to 15 is worth 30 XP).
+  return c.xp.foodMultiplier+Math.floor((FEED_COSTS[affectionReached-1]??0)/FOOD_PER_XP);
 }
 export function firstDecorationPlacementXp(id:DecorationId,c:ProgressionConfig=PROGRESSION):number {
   validateQueryConfig(c);if(!DECORATION_IDS.includes(id))throw new RangeError('Unknown decoration');return c.xp.firstDecorationPlacement.minimum;

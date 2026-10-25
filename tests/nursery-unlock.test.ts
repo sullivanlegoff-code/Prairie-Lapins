@@ -123,7 +123,7 @@ describe('persistence', () => {
   it('keeps the unlocked capacity across save/load, still in v13 with no new field', () => {
     let s = rich(); s = run(s, unlock(s)); s = run(s, unlock(s));
     const json = encodeGame(s), raw = JSON.parse(json);
-    expect(raw.version).toBe(17); expect(raw.buildings.find((b: {kind: string}) => b.kind === 'nursery').nursery).toEqual({capacity: 3, babies: []});
+    expect(raw.version).toBe(18); expect(raw.buildings.find((b: {kind: string}) => b.kind === 'nursery').nursery).toEqual({capacity: 3, babies: []});
     expect(decodeGame(json)).toEqual({ok: true, state: s});
   });
 });

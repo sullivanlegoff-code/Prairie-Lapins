@@ -26,7 +26,7 @@ function ready(): GameState {
   s.rabbits.forEach(r => r.affection = 3);
   s.rabbits.push({...s.rabbits[0], id: 'rabbit-9'});
   const farm = emptyBuilding('building-6', 'farm', 22, 20);
-  farm.order = {recipe: 'small', startedAt: NOW - 5 * MINUTE, endsAt: NOW};
+  farm.order = {recipe: 'foin', startedAt: NOW - 5 * MINUTE, endsAt: NOW};
   const habitat = emptyBuilding('building-7', 'enclosure', 26, 24);
   const kitchen = emptyBuilding('building-8', 'kitchen', 26, 20);
   s.buildings.push(farm, habitat, kitchen);
@@ -45,7 +45,7 @@ function prepare(type: Command['type']): {state: GameState; command: Command} {
     buyRabbit: {type: 'buyRabbit', species: 'paille', enclosureId: 'building-7'},
     moveRabbit: {type: 'moveRabbit', id: 'rabbit-2', enclosureId: 'building-7'},
     collectIncome: {type: 'collectIncome', id: 'building-1'},
-    startOrder: {type: 'startOrder', id, recipe: 'small'},
+    startOrder: {type: 'startOrder', id, recipe: 'foin'},
     collectOrder: {type: 'collectOrder', id},
     feed: {type: 'feed', id: 'rabbit-2'},
     breed: {type: 'breed', parents: ['rabbit-2', 'rabbit-3']},
@@ -69,7 +69,7 @@ function prepare(type: Command['type']): {state: GameState; command: Command} {
   if (type === 'claimDailyBonus') s.missions.daily.claimed = [...DAILY_MISSION_IDS];
   if (type === 'payWithHearts') {
     s.pattes = 0;
-    return {state: s, command: {type, action: {type: 'startOrder', id, recipe: 'small'}, maxHearts: 100, maxPattes: 0}};
+    return {state: s, command: {type, action: {type: 'startOrder', id, recipe: 'foin'}, maxHearts: 100, maxPattes: 0}};
   }
   if (type === 'placeStarterBuilding') {
     s.buildings = s.buildings.filter(b => b.kind !== 'nest');
@@ -77,7 +77,7 @@ function prepare(type: Command['type']): {state: GameState; command: Command} {
   }
   if (type === 'accelerate' || type === 'initiationAid') {
     const farm = s.buildings.find(b => b.id === id)!;
-    farm.order = {recipe: 'small', startedAt: NOW, endsAt: NOW + 5 * MINUTE};
+    farm.order = {recipe: 'foin', startedAt: NOW, endsAt: NOW + 5 * MINUTE};
     const key = jobKey(farm, 'order')!; s.initiation!.order = key;
     return {state: s, command: type === 'accelerate' ? {type, id, stage: 'order', jobKey: key, maxHearts: 100} : {type, id, stage: 'order', jobKey: key}};
   }
@@ -123,7 +123,7 @@ describe('clock recovery', () => {
     s = advance(s, future);
     s.buildings[0].incomeUnits = 0; // income already collected at the future date
     const farm = s.buildings.find(b => b.kind === 'farm')!;
-    farm.order = {recipe: 'small', startedAt: future - MINUTE, endsAt: future + 4 * MINUTE};
+    farm.order = {recipe: 'foin', startedAt: future - MINUTE, endsAt: future + 4 * MINUTE};
     const nest = s.buildings[1], nursery = s.buildings[2];
     nest.breeding = {parents: ['rabbit-2', 'rabbit-3'], startedAt: future - 5 * MINUTE, endsAt: future + 15 * MINUTE,
       birth: {id: 'birth-20', species: 'paille', guaranteed: false, reservedDiscovery: false}};

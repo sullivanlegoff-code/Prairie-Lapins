@@ -17,17 +17,17 @@ export function guidedStep(s: GameState, p: Preferences, now: number, staged = t
   const baby = firstNurseryBaby(nurseryBuilding(s)), full = nurseryFull(nurseryBuilding(s));
   // Later successful actions supersede feeding steps even if an old parent has left the game.
   if (!events.breed && !breeding && !baby) {
-    if (paille && paille.affection < 2 && s.grass < 2) return step('food', 'De l’herbe pour Paille', 'Il manque de l’herbe. Réclame une mission prête ou produis-en à la ferme ; nourrir reste facultatif, sans faim à gérer.', s.buildings.some(b => b.kind === 'farm') ? 'farm' : 'farmShop');
-    if (paille && paille.affection < 2) return step('paille', 'Un premier repas pour Paille', 'Ouvre sa fiche puis nourris-le jusqu’à affection 2. L’herbe augmente l’affection ; aucune faim ni entretien obligatoire.', 'paille');
+    if (paille && paille.affection < 2 && s.grass < 2) return step('food', 'De la nourriture pour Paille', 'Il manque de la nourriture. Réclame une mission prête ou cultive-en à la ferme ; nourrir reste facultatif, sans faim à gérer.', s.buildings.some(b => b.kind === 'farm') ? 'farm' : 'farmShop');
+    if (paille && paille.affection < 2) return step('paille', 'Un premier repas pour Paille', 'Ouvre sa fiche puis nourris-le jusqu’à affection 2. La nourriture augmente l’affection ; aucune faim ni entretien obligatoire.', 'paille');
     const farm = s.buildings.find(b => b.kind === 'farm' && b.order && b.order.endsAt <= now) ?? s.buildings.find(b => b.kind === 'farm' && b.order) ?? s.buildings.find(b => b.kind === 'farm');
     if (!farm) return step('farmShop', 'Notre première ferme', 'Achète une ferme pour 60 pattes, choisis une empreinte libre puis valide. Annuler ne dépense rien.', 'farmShop');
-    if (!farm.order && !events.collectOrder) return step('production', 'Une petite production', 'La petite production coûte 10 pattes : 20 herbes après 5 minutes. Le bouton ne lance rien à ta place.', 'farm');
+    if (!farm.order && !events.collectOrder) return step('production', 'Une culture de foin', 'La culture de foin coûte 10 pattes : 20 nourriture après 5 minutes. Le bouton ne lance rien à ta place.', 'farm');
     if (!p.guideCollection) return step('collection', 'Une collection à découvrir', 'Paille et Neige sont connus. Les silhouettes représentent les espèces à découvrir ; aucune urgence pendant la production.', 'collection');
     if (!events.collectOrder) {
       const aided = initiationAvailable(s,farm.id,'order',jobKey(farm,'order') ?? '');
-      return {...step('harvest', 'Récolter l’herbe', farm.order && farm.order.endsAt > now ? `Tu peux attendre sa fin normale et consulter la collection.${aided ? ' La ferme affiche le compte à rebours et propose aussi une aide gratuite facultative.' : ''} La récolte reste manuelle.` : 'Ton herbe est prête : ouvre la ferme et récolte-la.', 'farm'), buildingId:farm.id};
+      return {...step('harvest', 'Récolter la nourriture', farm.order && farm.order.endsAt > now ? `Tu peux attendre sa fin normale et consulter la collection.${aided ? ' La ferme affiche le compte à rebours et propose aussi une aide gratuite facultative.' : ''} La récolte reste manuelle.` : 'Ta nourriture est prête : ouvre la ferme et récolte-la.', 'farm'), buildingId:farm.id};
     }
-    if (neige && neige.affection < 2 && s.grass < 2) return step('food', 'De l’herbe pour Neige', 'Il manque de l’herbe. Réclame une mission prête ou lance une autre production ; aucune dépense automatique.', 'farm');
+    if (neige && neige.affection < 2 && s.grass < 2) return step('food', 'De la nourriture pour Neige', 'Il manque de la nourriture. Réclame une mission prête ou lance une autre culture ; aucune dépense automatique.', 'farm');
     if (neige && neige.affection < 2) return step('neige', 'Le repas de Neige', 'Nourris Neige jusqu’à affection 2. Les deux individus pourront alors devenir parents.', 'neige');
     return step('breed', 'Deux parents au nid', 'Choisis Paille et Neige puis lance gratuitement : 0 patte et 0 cœur. La reproduction dure 20 minutes.', 'nest');
   }
@@ -53,7 +53,7 @@ function soloStep(s: GameState, p: Preferences, now: number, skipFarm = false): 
     if(!s.missions.claimed.includes('welcome-snow')) return step('snowReward','La bienvenue de Neige','Réclame les 50 pattes de l’accueil de Neige. Cette récompense unique prépare la ferme et la production.','reward');
     const paille=s.rabbits.find(r=>r.species==='paille'), neige=s.rabbits.find(r=>r.species==='neige');
     const hungry=paille && paille.affection<2 ? paille : neige && neige.affection<2 ? neige : null;
-    if(hungry) return step(hungry.species,`Le repas de ${hungry.species==='paille'?'Paille':'Neige'}`,s.grass<2 ? 'Il manque de l’herbe. Réclame une mission prête ou produis-en à la ferme. Nourrir reste facultatif, sans faim ni entretien obligatoire.' : 'Ouvre sa fiche et nourris-le jusqu’à affection 2. L’herbe augmente l’affection, sans faim ni entretien obligatoire.',s.grass<2 ? (s.buildings.some(b=>b.kind==='farm')?'farm':'farmShop') : hungry.species==='paille'?'paille':'neige');
+    if(hungry) return step(hungry.species,`Le repas de ${hungry.species==='paille'?'Paille':'Neige'}`,s.grass<2 ? 'Il manque de la nourriture. Réclame une mission prête ou cultive-en à la ferme. Nourrir reste facultatif, sans faim ni entretien obligatoire.' : 'Ouvre sa fiche et nourris-le jusqu’à affection 2. La nourriture augmente l’affection, sans faim ni entretien obligatoire.',s.grass<2 ? (s.buildings.some(b=>b.kind==='farm')?'farm':'farmShop') : hungry.species==='paille'?'paille':'neige');
     return step('breed','Deux parents au nid','Choisis Paille et Neige puis lance gratuitement. Ils apparaissent au nid ; leurs places et revenus restent réservés dans leurs habitats.','nest');
   }
   if(nest?.breeding) {
@@ -61,9 +61,9 @@ function soloStep(s: GameState, p: Preferences, now: number, skipFarm = false): 
     if(!skipFarm && nest.breeding.endsAt>now && !e.collectOrder) {
       const farm=s.buildings.find(b=>b.kind==='farm' && b.order && b.order.endsAt<=now) ?? s.buildings.find(b=>b.kind==='farm' && b.order) ?? s.buildings.find(b=>b.kind==='farm');
       if(!farm) return step('farmShop','Une ferme pendant l’attente','Les parents sont au nid et gardent leurs places. Achète une ferme pour 60 pattes pendant leurs 20 minutes d’attente.'+missing(60),'farmShop');
-      if(!farm.order) return step('production','Une petite production','Produis 20 herbes pour 10 pattes, après 5 minutes. La récolte reste manuelle.'+missing(10),'farm');
+      if(!farm.order) return step('production','Une culture de foin','Cultive du foin : 20 nourriture pour 10 pattes, après 5 minutes. La récolte reste manuelle.'+missing(10),'farm');
       if(!p.guideCollection) return step('collection','Une collection à découvrir','Paille et Neige sont connus. Les silhouettes montrent les autres espèces à découvrir ; aucune urgence pendant l’attente.','collection');
-      return {...step('harvest','Récolter l’herbe',farm.order.endsAt>now?'Consulte le compte à rebours dans la ferme. Attends la fin normale ou choisis l’aide gratuite facultative ; récolte ensuite manuellement.':'L’herbe est prête : ouvre la ferme et récolte-la.','farm'),buildingId:farm.id};
+      return {...step('harvest','Récolter la nourriture',farm.order.endsAt>now?'Consulte le compte à rebours dans la ferme. Attends la fin normale ou choisis l’aide gratuite facultative ; récolte ensuite manuellement.':'La nourriture est prête : ouvre la ferme et récolte-la.','farm'),buildingId:farm.id};
     }
     return step('transfer','Vers la nurserie',nest.breeding.endsAt>now?'Le nid affiche le compte à rebours. Attends ou termine gratuitement ce délai si l’aide est disponible ; le transfert reste manuel.':full?'La nurserie est pleine : accueille un lapereau prêt. Les parents attendent au nid sans perte.':'Envoie manuellement le lapereau dans la nurserie. La croissance commence maintenant ; les parents rentrent chacun dans leur habitat.',nest.breeding.endsAt<=now && full?'nursery':'nest');
   }
@@ -87,12 +87,12 @@ function pailleStep(s: GameState, p: Preferences, now: number): GuideStep {
   const farm = s.buildings.find(b => b.kind === 'farm' && b.order && b.order.endsAt <= now) ?? s.buildings.find(b => b.kind === 'farm' && b.order) ?? s.buildings.find(b => b.kind === 'farm');
   if (!farm) return step('farmShop', 'Notre ferme', 'Boutique → Bâtiments : achète et place la ferme (60 pattes).' + missing(60), 'farmShop');
   if (!e.collectOrder) {
-    if (!farm.order) return step('production', 'De l’herbe pour nous', 'Lance la petite production : 10 pattes pour 20 herbes en 5 minutes.' + missing(10), 'farm');
-    return {...step('harvest', 'Récolter notre herbe', farm.order.endsAt > now ? 'Dans la ferme, utilise l’aide gratuite de découverte ou attends, puis récolte les 20 herbes.' : 'Notre herbe est prête ! Récolte les 20 herbes dans la ferme.', 'farm'), buildingId: farm.id};
+    if (!farm.order) return step('production', 'De la nourriture pour nous', 'Lance la culture de foin : 10 pattes pour 20 nourriture en 5 minutes.' + missing(10), 'farm');
+    return {...step('harvest', 'Récolter notre nourriture', farm.order.endsAt > now ? 'Dans la ferme, utilise l’aide gratuite de découverte ou attends, puis récolte les 20 nourriture.' : 'Notre nourriture est prête ! Récolte les 20 nourriture dans la ferme.', 'farm'), buildingId: farm.id};
   }
   for (const species of ['paille', 'neige'] as const) {
     const r = s.rabbits.find(r => r.species === species);
-    if (r && r.affection < 2) return step(species, `Le repas de ${r.name || SPECIES_NAME[species]}`, s.grass < 2 ? 'Il manque de l’herbe. Lance une production ou réclame une récompense.' : 'Ouvre la fiche de ce lapin et touche Nourrir jusqu’à affection 2.', s.grass < 2 ? 'farm' : species);
+    if (r && r.affection < 2) return step(species, `Le repas de ${r.name || SPECIES_NAME[species]}`, s.grass < 2 ? 'Il manque de la nourriture. Lance une culture ou réclame une récompense.' : 'Ouvre la fiche de ce lapin et touche Nourrir jusqu’à affection 2.', s.grass < 2 ? 'farm' : species);
   }
   return step('breed', 'Retrouvons-nous au nid', `Touche le nid → Croiser, choisis ${s.rabbits.find(r => r.species === 'paille')?.name || 'Paille'} à gauche et Neige à droite, puis le bouton rouge Croiser. Les deux parents doivent être présents et à affection 2.`, 'nest');
 }

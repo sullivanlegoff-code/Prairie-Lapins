@@ -1,6 +1,7 @@
 import {BALANCE, BREEDING_WEIGHTS, ORDINARY_POOL_POLICIES, HISTORICAL_COMMON_WEIGHTS, GUARANTEE_SPECIES, SPECIES, SPECIES_IDS, type Odds, type SpeciesId} from '../config/balance';
 import {breedable, breedsHistorically, hasRecipe} from '../config/species';
 import {stateLevelAccessChecker} from './levelRights';
+import {rareBirthFactor} from './affection';
 import type {GameState} from '../state/types';
 
 /** Shared recipe identity/types; no inspection of a pending birth. */
@@ -50,9 +51,11 @@ export function breedingDistributionWeights(a: SpeciesId, b: SpeciesId, affectio
   if (!specials.length) return ordinary;
   const total = Object.values(ordinary).reduce((sum, weight) => sum + weight, 0);
   if (!total) return {}; // No ordinary mass can be distributed while preserving fixed special probabilities.
-  const remaining = 100 - specials.reduce((sum, id) => sum + SPECIES[id].recipe!.probability!, 0);
+  // In half-percent units, so the ×1.5 affection step of epic and legendary chances stays an exact integer.
+  const chance = (id: SpeciesId) => SPECIES[id].recipe!.probability! * 2 * rareBirthFactor(id, affectionA, affectionB);
+  const remaining = 200 - specials.reduce((sum, id) => sum + chance(id), 0);
   const weights: Odds = Object.fromEntries(Object.entries(ordinary).map(([id, weight]) => [id, weight * remaining]));
-  for (const id of specials) weights[id] = SPECIES[id].recipe!.probability! * total;
+  for (const id of specials) weights[id] = chance(id) * total;
   return weights;
 }
 export function breedingOdds(a: SpeciesId, b: SpeciesId, affectionA = 2, affectionB = 2): Odds {

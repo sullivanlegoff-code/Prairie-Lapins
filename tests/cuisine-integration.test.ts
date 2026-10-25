@@ -111,7 +111,7 @@ describe('main-game Cuisine activity', () => {
     expect(JSON.parse(k.values.get(SAVE_KEY)!)).toMatchObject(expected);
     const feedback=a.root.querySelector('.cuisine-reward-feedback')!;
     expect(feedback.textContent).toContain(`+${paid.pattes}`);
-    expect(feedback.textContent).toContain(`+${paid.grass} herbes`);
+    expect(feedback.textContent).toContain(`+${paid.grass} nourriture`);
     expect(feedback.querySelector('.coin-icon')).not.toBeNull();
     expect(feedback.textContent).toContain('+1 Affection');
     a.root.querySelector<HTMLButtonElement>('#recipe-replay')!.click();
@@ -387,19 +387,19 @@ describe('Cuisine tasting celebration', () => {
       if (run > 1) a.root.querySelector<HTMLButtonElement>('#recipe-replay')!.click();
       finishSalad(a.engine); a.refresh(); a.refresh();
       shown.push(a.root.querySelector('.cuisine-reward-feedback')!.textContent!);
-      expect(document.querySelector('.cuisine-activity .cuisine-quota')?.textContent).toContain(run < 5 ? `Encore ${5-run}` : 'pourboire de 5 pattes et 1 herbe');
+      expect(document.querySelector('.cuisine-activity .cuisine-quota')?.textContent).toContain(run < 5 ? `Encore ${5-run}` : 'pourboire de 5 pattes et 1 nourriture');
     }
     const herbs = a.root.querySelector<HTMLElement>('.cuisine-reward-feedback [data-kind=herbs]');
-    expect(herbs?.textContent).toContain('+1 herbe'); expect(herbs?.textContent).not.toContain('herbes');
+    expect(herbs?.textContent).toContain('+1 nourriture'); expect(herbs?.textContent).not.toContain('herbes');
     expect(shown.slice(0, 5).map(t => t.match(/\+(\d+)/)![1])).toEqual(['40', '40', '40', '40', '40']);
-    expect(shown[0]).toContain('+3 herbes'); expect(shown[5]).toContain('+5'); expect(shown[5]).toContain('+1 herbe');
+    expect(shown[0]).toContain('+3 nourriture'); expect(shown[5]).toContain('+5'); expect(shown[5]).toContain('+1 nourriture');
     expect(shown[5]).not.toContain('Cœur'); expect(shown[5]).not.toContain('+1 Affection');
     const state = k.controller.getSnapshot().state!; expect(state.cuisine.fullRuns).toEqual({cycle: state.missions.daily.cycleIndex, used: 5});
     k.exit();
   });
   it('shows the chicken pay of 60 coins on the result card', () => {
     const k = setup(); const a = play(k, 'chicken'); const feedback = a.root.querySelector('.cuisine-reward-feedback')!;
-    expect(feedback.textContent).toContain('+60'); expect(feedback.textContent).toContain('+3 herbes'); k.exit();
+    expect(feedback.textContent).toContain('+60'); expect(feedback.textContent).toContain('+3 nourriture'); k.exit();
   });
   it('starts the tasting on completion: celebrate state, Miam !, hearts and the finished Salad', () => {
     const k = setup(); const a = play(k, 'salad');

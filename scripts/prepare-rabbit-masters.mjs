@@ -59,7 +59,7 @@ export function decodeRgbPng(file) {
   return {width, height, pixels};
 }
 
-function cutOut({width, height, pixels}, mode) {
+export function cutOut({width, height, pixels}, mode) {
   const at = i => [pixels[i * 4], pixels[i * 4 + 1], pixels[i * 4 + 2]];
   let reference = [0, 0, 0];
   if (mode === 'corner') {
@@ -97,7 +97,7 @@ function cutOut({width, height, pixels}, mode) {
   }
 }
 
-function crop({width, height, pixels}) {
+export function crop({width, height, pixels}) {
   let minX = width, minY = height, maxX = -1, maxY = -1;
   for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) if (pixels[(y * width + x) * 4 + 3] >= 16) {
     if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y;

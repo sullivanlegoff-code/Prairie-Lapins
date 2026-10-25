@@ -17,7 +17,7 @@ export type MainMissionId = typeof MAIN_MISSION_IDS[number];
 export const MAIN_MISSIONS: Record<MainMissionId, MainDefinition> = {
   'level-five': {title:'Atteindre le niveau 5',description:'Atteindre le niveau 5.',condition:{kind:'level',target:5},reward:{resource:'hearts',amount:2}},
   'welcome-fire': {title:'Accueillir Feu',description:'Accueillir Feu.',condition:{kind:'species',species:'feu'},reward:{resource:'pattes',amount:100}},
-  'night-order': {title:'Lancer une commande de nuit',description:'Lancer une commande de nuit.',condition:{kind:'nightOrder'},reward:{resource:'grass',amount:60}},
+  'night-order': {title:'Une culture plus longue',description:'Lancer à la ferme une culture d’une heure ou plus.',condition:{kind:'nightOrder'},reward:{resource:'grass',amount:60}},
   'ten-species': {title:'Découvrir 10 espèces',description:'Découvrir 10 espèces.',condition:{kind:'discoveries',target:10},reward:{resource:'hearts',amount:3}},
   'habitat-two': {title:'Améliorer un habitat au niveau 2',description:'Améliorer un habitat au niveau 2.',condition:{kind:'habitatLevel',target:2},reward:{resource:'pattes',amount:150}},
   'level-ten': {title:'Atteindre le niveau 10',description:'Atteindre le niveau 10.',condition:{kind:'level',target:10},reward:{resource:'hearts',amount:3}},
@@ -31,7 +31,7 @@ export const MAIN_MISSIONS: Record<MainMissionId, MainDefinition> = {
   'welcome-snow': {title:'Accueillir Neige', description:'Accueillir Neige dans la prairie. Récompense unique de départ.',condition:{kind:'species',species:'neige'},reward:{resource:'pattes',amount:50}},
   'seven-species':{title:'Découvrir 7 espèces',description:'Découvrir 7 espèces distinctes. Le niveau du joueur détermine les achats disponibles.',condition:{kind:'discoveries',target:7},reward:{resource:'none',amount:0}},
   'first-meal': {title: 'Un premier repas', description: 'Un lapin atteint l’affection 2.', condition: {kind: 'affection', target: 2}, reward: {resource: 'grass', amount: 10}},
-  'first-harvest': {title: 'Première récolte', description: 'Récolter 20 herbes dans une ferme.', condition: {kind: 'event', event: 'collectOrder', target: 20}, reward: {resource: 'pattes', amount: 30}},
+  'first-harvest': {title: 'Première récolte', description: 'Récolter 20 nourriture dans une ferme.', condition: {kind: 'event', event: 'collectOrder', target: 20}, reward: {resource: 'pattes', amount: 30}},
   'parents-ready': {title: 'Deux parents prêts', description: 'Posséder deux lapins d’affection au moins 2.', condition: {kind: 'parents', target: 2}, reward: {resource: 'pattes', amount: 20}},
   'at-nest': {title: 'Au nid', description: 'Lancer une reproduction gratuite.', condition: {kind: 'event', event: 'breed', target: 1}, reward: {resource: 'grass', amount: 20}},
   'to-nursery': {title: 'Vers la nurserie', description: 'Transférer manuellement un lapereau dans la nurserie.', condition: {kind: 'event', event: 'transferBirth', target: 1}, reward: {resource: 'pattes', amount: 30}},
@@ -52,7 +52,7 @@ export type DailyMissionId = typeof DAILY_MISSION_IDS[number];
 export type MissionEvent = 'collectIncome' | 'collectOrder' | 'gainAffection' | 'breed';
 export const DAILY_MISSIONS: Record<DailyMissionId, {title: string; description: string; event: MissionEvent; target: number; reward: Reward}> = {
   'collect-pattes': {title: 'Récolte de pattes', description: 'Récolter 100 pattes dans les habitats.', event: 'collectIncome', target: 100, reward: {resource: 'pattes', amount: 60}},
-  'collect-grass': {title: 'Une réserve d’herbe', description: 'Récolter 40 herbes dans les fermes.', event: 'collectOrder', target: 40, reward: {resource: 'grass', amount: 30}},
+  'collect-grass': {title: 'Une réserve de nourriture', description: 'Récolter 40 nourriture dans les fermes.', event: 'collectOrder', target: 40, reward: {resource: 'grass', amount: 30}},
   'gain-affection': {title: 'Lancer une reproduction', description: 'Lance une reproduction au nid.', event: 'breed', target: 1, reward: {resource: 'pattes', amount: 40}},
 };
 export const MISSION_CYCLE_DURATION = 24 * HOUR;

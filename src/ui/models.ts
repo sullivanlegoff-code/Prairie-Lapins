@@ -2,15 +2,16 @@ import {recipeHint} from './economyFeedback';
 import {stateLevelAccess} from '../simulation/levelRights';
 import {buildingPlacementReason} from '../simulation/placement';
 import {habitatPrice, type HabitatType} from '../config/habitats';
-import {BALANCE, HOUR, SPECIES, SPECIES_IDS, RECIPE_SPECIES, type BuildingKind, type SpeciesId, type RabbitType, type Rarity} from '../config/balance';
+import {AFFECTION_STATUE, BALANCE, HOUR, SPECIES, SPECIES_IDS, RECIPE_SPECIES, type BuildingKind, type SpeciesId, type RabbitType, type Rarity} from '../config/balance';
 import {breedingPool, recipeMatches, ordinaryPoolAllows, nestForParent} from '../simulation/breeding';
+import {playerLevel} from '../simulation/affection';
 import {recipeKnown, recipePrice} from '../simulation/recipes';
 import {babiesBySlot, freeNurserySlots, nurseryBuilding, nurserySlotStates, nurseryUnlockQuote, type NurserySlotState} from '../simulation/nursery';
 import type {GameState, NurserySlot, Refusal} from '../state/types';
 import {ISLAND} from '../config/islandGeometry';
 import {mapRarities} from '../config/rarities';
 
-export const BUILDING_NAMES: Record<BuildingKind, string> = {enclosure: 'Enclos', farm: 'Ferme', nest: 'Nid', nursery: 'Nurserie', kitchen: 'Cuisine'};
+export const BUILDING_NAMES: Record<BuildingKind, string> = {enclosure: 'Enclos', farm: 'Ferme', nest: 'Nid', nursery: 'Nurserie', kitchen: 'Cuisine', statue: 'Statue de l’Affection'};
 export const REFUSALS: Record<Refusal | 'NO_GAME' | 'DISPOSED' | 'SALE_NOT_SAVED' | 'ACTION_NOT_SAVED' | 'STORAGE_CHANGED', string> = {
   LEVEL_REQUIRED:'Niveau du joueur insuffisant pour cette action.',
   NO_BREEDING_RESULT:'Aucun résultat ordinaire accessible à ce niveau. La reproduction attend pour conserver les probabilités spéciales. Consulte le carnet.',
@@ -32,9 +33,9 @@ export const REFUSALS: Record<Refusal | 'NO_GAME' | 'DISPOSED' | 'SALE_NOT_SAVED
   ACTION_FINISHED: 'Cette étape est déjà terminée : aucun cœur dépensé.', STALE_ACTION: 'Cette action a changé. Ouvre à nouveau son panneau.',
   PRICE_CHANGED: 'Le paiement a changé. Vérifie le nouveau prix avant de confirmer.', NO_MISSING_PATTES: 'Ton solde suffit maintenant. Utilise le paiement normal.',
   INVALID_TIME: 'L’heure de l’appareil est invalide.', INVALID_RANDOM: 'Le tirage n’a pas pu aboutir. Réessaie.', INVALID_CHOICE: 'Ce choix n’est pas disponible.',
-  NOT_FOUND: 'Cet élément n’est plus présent.', NOT_ENOUGH_PATTES: 'Solde insuffisant.', NOT_ENOUGH_GRASS: 'Pas assez d’herbe.', MARKET_LIMIT: 'Le comptoir a fait tous ses échanges pour aujourd’hui. Reviens au prochain cycle.',
+  NOT_FOUND: 'Cet élément n’est plus présent.', NOT_ENOUGH_PATTES: 'Solde insuffisant.', NOT_ENOUGH_GRASS: 'Pas assez de nourriture.', MARKET_LIMIT: 'Le comptoir a fait tous ses échanges pour aujourd’hui. Reviens au prochain cycle.',
   INVALID_CELL: 'Cette case n’est pas encore disponible.', CELL_OCCUPIED: 'Cette case est occupée.', BUILDING_LIMIT: 'Limite de bâtiments atteinte.',
-  CAPACITY_FULL: 'Habitat plein.', BUSY: 'Ce bâtiment est occupé.', NOT_READY: 'Ce n’est pas encore prêt.', MAX_AFFECTION: 'Affection maximale atteinte.',
+  CAPACITY_FULL: 'Habitat plein.', BUSY: 'Ce bâtiment est occupé.', NOT_READY: 'Ce n’est pas encore prêt.', MAX_AFFECTION: 'Affection maximale atteinte.', STATUE_REQUIRED: 'L’affection 15 demande la Statue de l’Affection, à construire dès le niveau 15.',
   SAME_PARENT: 'Choisis deux lapins différents.', AFFECTION_TOO_LOW: 'Chaque parent doit avoir au moins 2 d’affection.',
   MISSING_BUILDING: 'Il manque un bâtiment nécessaire : nid, nurserie ou cuisine.', ALREADY_EXPANDED: 'L’extension est déjà achetée.', PARCEL_UNAVAILABLE: 'Cette parcelle n’est pas encore accessible : l’île s’agrandit dans un ordre fixe, une parcelle après l’autre.', LAST_OF_SPECIES: 'Garde au moins un lapin de chaque espèce possédée.',
   PARENT_BUSY: 'Au nid : ce parent reste indisponible jusqu’au transfert du lapereau dans la nurserie.', NO_GAME: 'Charge une partie dans les paramètres.', DISPOSED: 'Recharge la page.',
@@ -52,6 +53,7 @@ export function releaseReason(s: GameState, id: string, now: number): string | n
 }
 export function buildingReason(s: GameState, kind: BuildingKind, ignorePrice = false, habitatType: HabitatType = 'universal'): string | null {
   if (kind === 'nest' || kind === 'nursery') return 'Cet équipement est offert et ne s’achète pas.';
+  if(kind==='statue' && playerLevel(s)<AFFECTION_STATUE.level) return `Niveau ${AFFECTION_STATUE.level} requis`;
   if(kind==='enclosure') {const access=stateLevelAccess(s,{family:'habitatPurchase',id:habitatType});if(access.locked)return `Niveau ${access.requiredLevel} requis`;}
   const config = BALANCE.buildings[kind];
   if (config.maximum !== null && s.buildings.filter(b => b.kind === kind).length >= config.maximum) return REFUSALS.BUILDING_LIMIT;
@@ -186,12 +188,12 @@ export function timeLeft(end: number, now: number): string {
 }
 export const incomeWhole = (units: number) => Math.floor(units / HOUR);
 export function tutorialStep(s: GameState, intro: boolean): {text: string; rabbitId?: string; building?: BuildingKind; done?: boolean} {
-  if (!intro) return {text: 'Les récoltes financent la prairie. L’herbe augmente l’affection et les revenus. Aucune faim à gérer.'};
+  if (!intro) return {text: 'Les récoltes financent la prairie. La nourriture augmente l’affection et les revenus. Aucune faim à gérer.'};
   const candidate = ['paille', 'neige'].map(species => s.rabbits.find(r => r.species === species)).find(r => r && r.affection < 2);
   if (candidate) return {text: 'Nourris les deux lapins de départ jusqu’à l’affection 2.', rabbitId: candidate.id};
   for (const building of ['nest', 'nursery'] as const) if (!s.buildings.some(b => b.kind === building)) return {text: `Place gratuitement ${building === 'nursery' ? 'ta' : 'ton'} ${BUILDING_NAMES[building].toLowerCase()} depuis Aménagement. Libère une empreinte 4 × 4 si nécessaire.`, building};
   if (s.buildings.some(b=>b.breeding)) return {text:'Les parents restent au nid. À la fin des 20 minutes, envoie manuellement le lapereau dans la nurserie libre.',building:'nest'};
-  if (!s.buildings.some(b=>b.kind==='farm')) return {text:'Achète et place ta ferme pour produire de l’herbe.',building:'farm'};
+  if (!s.buildings.some(b=>b.kind==='farm')) return {text:'Achète et place ta ferme pour produire de la nourriture.',building:'farm'};
   if (s.buildings.some(b => b.breeding || b.nursery?.babies.length) || s.discovered.some(id => SPECIES[id].recipe !== null)) return {text: 'Ta prairie prend vie ! Reviens accueillir le lapereau après sa croissance.', done: true};
   return {text: 'Choisis tes deux parents dans le nid et lance une reproduction. Tu peux jouer pendant l’attente.', building: 'nest'};
 }

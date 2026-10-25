@@ -76,7 +76,7 @@ const {chromium}=require('playwright'),fs=require('node:fs'),path=require('node:
   s=await read();assert.equal(s.buildings.filter(b=>b.kind==='farm').length,2);assert.equal(s.pattes,preBuy.pattes-60);assert.equal(s.progression.totalXp,preBuy.progression.totalXp+20);
   const second=s.buildings.filter(b=>b.kind==='farm').find(b=>b.id!==firstId),secondId=second.id;assert.deepEqual([second.x,second.y],[34,27]);assert.equal(second.order,null);
   await reset(buildingCenter(second),1.05,{x:220,y:275});await worldTap(buildingCenter(second));assert.equal(await page.locator('.work-state[data-state=free]').count(),1);await page.locator('#panel-content').evaluate(e=>{e.scrollTop=0;});await settle();await shot('farm-free-landscape');
-  const beforeOrder=await read();await tap('Produire · 10 pièces');const running=await read(),order=(await farm(secondId)).order;
+  const beforeOrder=await read();await tap('Cultiver · 10 pièces');const running=await read(),order=(await farm(secondId)).order;
   assert.equal(running.pattes,beforeOrder.pattes-10);assert.equal(order.endsAt-order.startedAt,300000);assert.equal(running.progression.totalXp,beforeOrder.progression.totalXp);
   assert.equal(await page.locator('.work-state[data-state=running]').count(),1);assert.ok(await page.locator('#panel-content progress').isVisible());await page.locator('#panel-content').evaluate(e=>{e.scrollTop=0;});await settle();
   assert.ok(await page.locator('#panel-content progress').evaluate(e=>{const r=e.getBoundingClientRect(),p=e.closest('.panel-scroll').getBoundingClientRect();return r.top>=p.top&&r.bottom<=p.bottom;}),'production progress stays inside the visible panel');

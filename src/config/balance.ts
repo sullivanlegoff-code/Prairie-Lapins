@@ -24,7 +24,7 @@ export const MARKET = {unlockLevel: 10, base: {pattes: 250, grass: 100}, growth:
 // The species registry lives in ./species; the public names stay available from here.
 export {SPECIES, SPECIES_IDS, LEGACY_SPECIES_IDS};
 export type {SpeciesId, RabbitType, Rarity};
-export type BuildingKind = 'enclosure' | 'farm' | 'nest' | 'nursery' | 'kitchen';
+export type BuildingKind = 'enclosure' | 'farm' | 'nest' | 'nursery' | 'kitchen' | 'statue';
 export const BREEDING_WEIGHTS = {common: 30, recipe: 30};
 /** Exact element unions only; additional elements retain the historical pool.
  * Eligibility comes from catalogue recipes, never a fixed list of results. */
@@ -45,7 +45,7 @@ export const BALANCE = {
   initialPattes: 350, initialGrass: 0, initialWidth: 3, height: 2, extendedWidth: 6,
   extensionCost: 600, enclosureCapacity: 3, enclosureCap: 2400,
   minAffection: 1, maxAffection: 20, breedingAffection: 2,
-  incomeBase: 10, incomeRareBase: 14, incomePerLevel: 1, foodMultiplier: 2,
+  incomeBase: 10, incomeRareBase: 14, incomePerLevel: 1,
   releaseGrass: {common: 10, rare: 25},
   breedingCost: 0, breedingDuration: 20 * MINUTE,
   commonGrowth: RARITIES.common.growthMinutes * MINUTE, hybridGrowth: RARITIES.uncommon.growthMinutes * MINUTE, rareGrowth: RARITIES.rare.growthMinutes * MINUTE, guaranteeAttempt: 8,
@@ -53,14 +53,38 @@ export const BALANCE = {
     enclosure: {price: 350, maximum: null}, farm: {price: 60, maximum: 2},
     nest: {price: 100, maximum: 1}, nursery: {price: 80, maximum: 1},
     kitchen: {price: 100, maximum: 1}, // Provisional building-only integration price.
+    statue: {price: 25000, maximum: 1}, // The Statue de l'Affection: see AFFECTION_STATUE.
   } satisfies Record<BuildingKind, {price: number; maximum: number | null}>,
 };
+/**
+ * The farm's ten crops (owner, 25 October 2026), from the least to the best liked by rabbits. Every crop yields food
+ * (the single `grass` stock); a better-liked crop costs more, takes longer, opens later and yields more per harvest,
+ * so the long ones fill the gaps between the three daily sessions. `level` is the player level that opens it.
+ */
 export const ORDERS = {
-  small: {cost: 10, grass: 20, duration: 5 * MINUTE},
-  medium: {cost: 24, grass: 60, duration: 30 * MINUTE},
-  large: {cost: 60, grass: 180, duration: 4 * HOUR},
-  night: {cost: 100, grass: 360, duration: 10 * HOUR},
+  foin: {name: 'Foin', level: 1, cost: 10, grass: 20, duration: 5 * MINUTE},
+  pissenlit: {name: 'Pissenlit', level: 1, cost: 18, grass: 40, duration: 15 * MINUTE},
+  trefle: {name: 'Trèfle', level: 3, cost: 30, grass: 70, duration: 30 * MINUTE},
+  persil: {name: 'Persil', level: 5, cost: 50, grass: 120, duration: HOUR},
+  laitue: {name: 'Laitue romaine', level: 7, cost: 80, grass: 200, duration: 2 * HOUR},
+  fanes: {name: 'Fanes de carotte', level: 9, cost: 120, grass: 290, duration: 3 * HOUR},
+  fenouil: {name: 'Fenouil', level: 11, cost: 160, grass: 380, duration: 4 * HOUR},
+  pomme: {name: 'Pomme', level: 13, cost: 240, grass: 560, duration: 6 * HOUR},
+  fraise: {name: 'Fraise', level: 16, cost: 330, grass: 760, duration: 8 * HOUR},
+  banane: {name: 'Banane', level: 19, cost: 450, grass: 1000, duration: 10 * HOUR},
 };
+/** Production ids of saves before the ten crops, mapped to the crop that shows them; their amount and duration stay frozen. */
+export const LEGACY_ORDER_CROPS = {small: 'foin', medium: 'trefle', large: 'fenouil', night: 'banane'} as const;
+/**
+ * Food needed to raise a rabbit's affection from `a` to `a + 1` (index a). The step 14 → 15 is a deliberate wall:
+ * affection 15 and above also needs the Statue de l'Affection.
+ */
+export const FEED_COSTS: readonly number[] = [0, 2, 4, 8, 14, 22, 32, 45, 60, 80, 110, 140, 180, 230, 1500, 400, 480, 570, 670, 800];
+export const feedCost = (affection: number): number => FEED_COSTS[affection] ?? Infinity;
+/** Affection above `cap` needs the statue, sold among the buildings from player level `level`. */
+export const AFFECTION_STATUE = {level: 15, cap: 14} as const;
+/** Epic and legendary recipe chances, multiplied when BOTH parents reach the affection (highest step applies). */
+export const RARE_BIRTH_BONUS: readonly {readonly affection: number; readonly factor: number}[] = [{affection: 15, factor: 2}, {affection: 10, factor: 1.5}];
 export type OrderId = keyof typeof ORDERS;
 export type Odds = Partial<Record<SpeciesId, number>>;
 // Historical compatibility reference for tests/consumers; production candidates come from the catalogue, never this result list.

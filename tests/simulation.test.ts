@@ -2,11 +2,12 @@ import {cumulativeLevelXp} from '../src/simulation/progression';
 import {sendToNursery} from './manual-transfer';
 import {regressionStart as legacyGame} from './regression-start';
 import {describe, expect, it} from 'vitest';
-import {HOUR, MINUTE, ORDERS, BREEDING_ODDS, SPECIES, LEGACY_SPECIES_IDS, type SpeciesId} from '../src/config/balance';
+import {FEED_COSTS, HOUR, MINUTE, ORDERS, BREEDING_ODDS, SPECIES, LEGACY_SPECIES_IDS, type SpeciesId} from '../src/config/balance';
 import {act, advance,  decodeGame, encodeGame, pendingDiscoveries, rabbitIncome} from '../src/simulation';
 import {breedingOdds, chooseBirth} from '../src/simulation/breeding';
 import type {Command, GameState, Refusal} from '../src/state/types';
 import {babyOf, welcomeOf} from './nursery-baby';
+import {emptyBuilding} from '../src/state/initial';
 
 // Isolate recipe/economy rules; active low-level filtering is covered in level-gates.test.ts.
 function createGame(now=0){const s=legacyGame(now);s.progression={totalXp:cumulativeLevelXp(14),rewardedThroughLevel:14};return s;}
@@ -137,24 +138,36 @@ describe('income and time', () => {
 describe('farming and affection', () => {
   it.each(Object.keys(ORDERS) as (keyof typeof ORDERS)[])('runs exactly one %s farm order', recipe => {
     let s = run(createGame(0), {type: 'buyBuilding', kind: 'farm', x: 22, y: 20}); const id = s.buildings[1].id;
-    s = run(s, {type: 'startOrder', id, recipe}); expect(s.pattes).toBe(290 - ORDERS[recipe].cost);
+    s.pattes = 1000; s.progression = {totalXp: cumulativeLevelXp(ORDERS[recipe].level), rewardedThroughLevel: ORDERS[recipe].level};
+    s = run(s, {type: 'startOrder', id, recipe}); expect(s.pattes).toBe(1000 - ORDERS[recipe].cost);
     refuses(s, {type: 'startOrder', id, recipe}, 'BUSY');
     refuses(s, {type: 'collectOrder', id}, 'NOT_READY', ORDERS[recipe].duration - 1);
     s = run(s, {type: 'collectOrder', id}, 100 * HOUR);
     expect(s.grass).toBe(10 + ORDERS[recipe].grass); expect(s.buildings[1].order).toBeNull();
     refuses(s, {type: 'collectOrder', id}, 'NOT_READY');
   });
+  it('opens each crop at its own player level, better-liked crops costing, lasting and yielding more', () => {
+    const s = run(createGame(0), {type: 'buyBuilding', kind: 'farm', x: 22, y: 20}); s.pattes = 1000;
+    refuses(s, {type: 'startOrder', id: s.buildings[1].id, recipe: 'banane'}, 'LEVEL_REQUIRED');
+    const crops = Object.values(ORDERS);
+    for (let i = 1; i < crops.length; i++) for (const key of ['level', 'cost', 'grass', 'duration'] as const) expect(crops[i][key]).toBeGreaterThanOrEqual(crops[i - 1][key]);
+    expect(crops).toHaveLength(10);
+  });
   it('refuses an unaffordable order', () => {
     const s = run(createGame(0), {type: 'buyBuilding', kind: 'farm', x: 22, y: 20}); s.pattes = 0;
-    refuses(s, {type: 'startOrder', id: s.buildings[1].id, recipe: 'small'}, 'NOT_ENOUGH_PATTES');
+    refuses(s, {type: 'startOrder', id: s.buildings[1].id, recipe: 'foin'}, 'NOT_ENOUGH_PATTES');
   });
-  it('requires 380 grass to reach affection 20, then refuses more food', () => {
-    let s = createGame(0); s.grass = 380;
+  it('requires 5 347 food to reach affection 20, the statue past 14, then refuses more food', () => {
+    let s = createGame(0); s.grass = 5347;
     for (let affection = 1; affection < 20; affection++) {
+      if (affection === 14) {
+        refuses(s, {type: 'feed', id: 'rabbit-2'}, 'STATUE_REQUIRED');
+        s.buildings.push(emptyBuilding(`building-${s.nextId}`, 'statue', 30, 30)); s.nextId++;
+      }
       const before = s.grass; s = run(s, {type: 'feed', id: 'rabbit-2'});
-      expect(before - s.grass).toBe(2 * affection);
+      expect(before - s.grass).toBe(FEED_COSTS[affection]);
     }
-    expect(s.grass).toBe(0); expect(s.rabbits[0].affection).toBe(20); expect(rabbitIncome(20)).toBe(29);
+    expect(FEED_COSTS[14]).toBe(1500); expect(s.grass).toBe(0); expect(s.rabbits[0].affection).toBe(20); expect(rabbitIncome(20)).toBe(29);
     refuses(s, {type: 'feed', id: 'rabbit-2'}, 'MAX_AFFECTION');
     refuses(s, {type: 'feed', id: 'rabbit-3'}, 'NOT_ENOUGH_GRASS');
   });
@@ -302,7 +315,7 @@ describe('JSON format', () => {
   it('round-trips initial state and a state with fractions, a farm order and a saved result', () => {
     expect(decodeGame(encodeGame(createGame(42)))).toEqual({ok: true, state: createGame(42)});
     let s = run(setup(), {type: 'buyBuilding', kind: 'farm', x: 22, y: 24});
-    s = run(s, {type: 'startOrder', id: s.buildings.at(-1)!.id, recipe: 'large'});
+    s = run(s, {type: 'startOrder', id: s.buildings.at(-1)!.id, recipe: 'pissenlit'});
     s = run(s, breed, 17, 0.9); expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: s});
   });
   it('rejects malformed files, unsupported versions and corrupt cross references', () => {

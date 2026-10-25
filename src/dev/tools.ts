@@ -103,7 +103,7 @@ export function developmentEnvironment(base: SaveStorage, options: {decorationPr
       section('Avancer le temps de test');
       for (const minutes of TIME_STEPS) button(`+ ${minutes} min`, `dev-time-${minutes}`, () => resultMessage(advanceTime(controller, minutes), `Horloge de test avancée de ${minutes} minutes.`));
       section('Ajouter des ressources de test');
-      const names = {pattes: 'pattes', grass: 'herbes', hearts: 'cœurs'};
+      const names = {pattes: 'pattes', grass: 'nourriture', hearts: 'cœurs'};
       for (const resource of Object.keys(RESOURCE_STEPS) as (keyof typeof RESOURCE_STEPS)[]) {
         for (const amount of RESOURCE_STEPS[resource]) button(`+ ${amount} ${names[resource]}`, `dev-grant-${resource}-${amount}`, () => resultMessage(grant(controller, resource, amount), 'Ressources ajoutées à la partie de test.'));
       }
