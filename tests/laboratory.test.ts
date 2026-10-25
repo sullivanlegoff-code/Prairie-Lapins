@@ -232,7 +232,7 @@ describe('published laboratory isolation', () => {
   it('uses controller persistence for the two XP buttons, without touching normal state', () => {
     const {dev,controller}=setup(),before=normalSnapshot();dispose.push(dev.mount(controller));
     document.getElementById('dev-xp-50')!.click();document.getElementById('dev-xp-500')!.click();
-    expect(controller.getSnapshot().state).toMatchObject({"progression":{"rewardedThroughLevel":3,"totalXp":550},"hearts":14});
+    expect(controller.getSnapshot().state).toMatchObject({"progression":{"rewardedThroughLevel":4,"totalXp":550},"hearts":15});
     expect(document.getElementById('dev-status')!.textContent).toContain('+500 XP');
     expect(normalSnapshot()).toEqual(before);
   });

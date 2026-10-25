@@ -10,7 +10,7 @@ let s=sim.createGame(0),now=0,seed=20261025,used=0,totalActions=0;
 const rng=()=>((seed=Math.imul(seed,1664525)+1013904223>>>0)/4294967296);
 const milestones={},rows=[],counts={};
 const level=()=>prog.progressionFromXp(s.progression.totalXp).level;
-function run(c,mandatory=false){if(used>=45)return false;const r=sim.act(s,c,now,rng);if(!r.ok){if(mandatory)throw Error(JSON.stringify({c,reason:r.reason}));return false;}s=r.state;used++;totalActions++;counts[c.type]=(counts[c.type]??0)+1;for(const n of [5,10,15,20])if(level()>=n&&milestones[n]===undefined)milestones[n]=Number((now/(24*H)).toFixed(3));return true;}
+function run(c,mandatory=false){if(used>=45)return false;const r=sim.act(s,c,now,rng);if(!r.ok){if(mandatory)throw Error(JSON.stringify({c,reason:r.reason}));return false;}s=r.state;used++;totalActions++;counts[c.type]=(counts[c.type]??0)+1;for(const n of [5,10,15,20,22,25,30])if(level()>=n&&milestones[n]===undefined)milestones[n]=Number((now/(24*H)).toFixed(3));return true;}
 function claim(){for(let i=0;i<20;i++){const id=missions.activeMainMissions(s).find(id=>s.missions.completed.includes(id));if(!id||!run({type:'claimMainMission',id}))break;}for(const id of balance.DAILY_MISSION_IDS??['collect-pattes','collect-grass','gain-affection']){if(s.missions.daily.progress[id]>0)run({type:'claimDailyMission',id,cycleStart:missions.dailyCycleStart(s)});}run({type:'claimDailyBonus',cycleStart:missions.dailyCycleStart(s)});}
 function spot(){for(let y=0;y<48;y++)for(let x=0;x<48;x++)if(!placement.buildingPlacementReason(s,x,y))return{x,y};return null;}
 function build(kind,habitatType){const pos=spot();return pos&&run({type:'buyBuilding',kind,...pos,...(habitatType?{habitatType}:{})});}
@@ -52,6 +52,7 @@ for(let day=0;day<70;day++){
  if([1,3,7,20,50].includes(day+1))snapshot(`${day+1} j`,(day+1)*24*H-1);
 }
 const calendarMilestones=Object.fromEntries(Object.entries(milestones).map(([n,d])=>[n,Math.floor(d)+1]));
-for(const [n,target] of [[5,1],[10,7],[15,20],[20,50]])if(Math.abs(calendarMilestones[n]-target)>target*0.3)throw Error(`Pacing outside 30% at level ${n}`);
+// Owner target (25 October 2026): level 22 in about 20 days, within 15 %.
+if(Math.abs(calendarMilestones[22]-20)>3)throw Error(`Pacing: level 22 on day ${calendarMilestones[22]}, target 20`);
 const report={calendarMilestones,method:'Seed 20261025; real act/advance; 3 sessions/day at 08/13/20, <=45 commands and <=8 meals/session; two farms, long/long/night; collection-first parent pairs; no Cuisine or paid recipes; Hearts only for permanent habitat upgrades. Day snapshots just before next 08:00. Tutorial is the first session.',curve:(await import('../src/config/progression.ts')).PROGRESSION.curve,tutorial,milestones,rows,actions:counts,totalActions};
 writeFileSync(new URL('./progression-results.json',import.meta.url),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report,null,2));
