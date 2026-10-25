@@ -230,7 +230,7 @@ describe('decoration UI transactions (simulated DOM; Phaser verified separately)
     const {controller, ui, clock} = setup(); shop();
     button('Acheter pour l’inventaire · 20 pièces', catalog('bush')).click(); button('Confirmer', document.getElementById('game-dialog')!).click();
     document.getElementById('close-panel')!.click(); document.getElementById('open-arrange')!.click();button('Placer cet exemplaire').click();
-    expect(panel().querySelector('.placement-pending')?.textContent).toContain('Choisissez une destination');
+    expect(panel().querySelector('.placement-pending')?.textContent).toContain('Choisis une destination');
     expect(button('Confirmer la pose · gratuit').disabled).toBe(true);
     ui.select({kind: 'fineCell', x: 25, y: 23}); button('Confirmer la pose · gratuit').click();
     panel().querySelector<HTMLDetailsElement>('[data-placed-list]')!.open = true;
@@ -717,7 +717,7 @@ describe('habitat panels and controller transactions',()=>{
     button('Acheter Ouest · 1 000 pièces').click();button('Annuler',dialog()).click();expect(state(controller)).toEqual(before);
     button('Acheter Ouest · 1 000 pièces').click();const confirm=button('Confirmer',dialog());confirm.click();confirm.click();
     expect(state(controller).acquiredParcels.includes('west')).toBe(true);expect(state(controller).pattes).toBe(before.pattes-1000);expect(state(controller).missions).toEqual(before.missions);
-    expect(scene.recenter).not.toHaveBeenCalled();ui.open({kind:'extension',parcelId:'west'});expect(panel().textContent).toContain('Choisissez librement');
+    expect(scene.recenter).not.toHaveBeenCalled();ui.open({kind:'extension',parcelId:'west'});expect(panel().textContent).toContain('Choisis librement');
   });
   it('uses the development storage and clock for new habitat actions without changing normal progression',()=>{
     const normal=encodeGame(createGame(0)),values=new Map([[SAVE_KEY,normal]]),base:SaveStorage={getItem:k=>values.get(k)??null,setItem:(k,v)=>{values.set(k,v);}};
@@ -795,7 +795,7 @@ describe('direct decoration selection and confirmed resale UI', () => {
     expect(button('Ranger dans l’inventaire').disabled).toBe(true);
     button('Vendre · 200 pièces').click(); button('Confirmer', document.getElementById('game-dialog')!).click();
     expect(state(controller)).toEqual({...before, pattes: before.pattes + 200, decorations: before.decorations.slice(0, 2)});
-    expect(panel().textContent).toContain('Votre inventaire est vide');
+    expect(panel().textContent).toContain('Ton inventaire est vide');
     expect(scene.setDecorationSelection).toHaveBeenLastCalledWith(null);
   });
   it('a stale sale confirmation cannot sell another exemplar or credit twice', () => {

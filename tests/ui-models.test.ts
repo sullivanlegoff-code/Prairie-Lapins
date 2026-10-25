@@ -124,7 +124,7 @@ describe('touch gestures and camera', () => {
 describe('UI projections preserve gameplay rules and secrets', () => {
   it('explains invalid placement, occupancy and price without spending', () => {
     const s = createGame(0), before = structuredClone(s);
-    expect(placementReason(s, {kind: 'farm', cell: null})).toContain('Touchez');
+    expect(placementReason(s, {kind: 'farm', cell: null})).toContain('Touche');
     expect(placementReason(s, {kind: 'farm', cell: {x: 18, y: 20}})).toContain('occupée');
     expect(placementReason(s, {kind: 'farm', cell: {x: 34, y: 20}})).toContain('disponible');
     expect(placementReason(s, {kind: 'farm', cell: {x: 22, y: 20}})).toBeNull(); expect(s).toEqual(before);

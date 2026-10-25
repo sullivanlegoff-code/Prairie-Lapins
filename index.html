@@ -23,7 +23,7 @@
     </div>
   </section>
   <main id="app" inert>
-    <div id="game" aria-label="Prairie : glissez pour déplacer la vue, pincez pour zoomer, touchez pour sélectionner"></div>
+    <div id="game" aria-label="Prairie : glisse pour déplacer la vue, pince pour zoomer, touche pour sélectionner"></div>
     <header id="hud">
       <button id="player-progress" type="button" disabled aria-haspopup="dialog" aria-controls="player-progress-dialog" aria-label="Niveau du joueur indisponible">
         <span class="player-xp-track"><span id="player-xp-label">Niveau indisponible</span><span id="player-xp-bar" role="progressbar" aria-label="XP du joueur" aria-valuemin="0"><span id="player-xp-fill"></span></span></span><span id="player-level" aria-hidden="true">—</span>
@@ -57,7 +57,7 @@
       <div id="panel-content" class="panel-scroll"></div>
       <section id="settings-content" class="panel-scroll" hidden>
         <section class="settings-section"><h3>Jeu</h3><button id="tutorial-toggle" class="secondary" type="button">Tutoriel</button><p class="small">Le guidage est facultatif ; toutes les fonctions restent accessibles.</p></section>
-        <section class="settings-section sound-settings"><h3>Son et accessibilité</h3><div class="sound-channel"><button id="music-toggle" class="secondary icon" type="button" aria-pressed="true" aria-label="Musique"></button><label for="music-volume">Musique</label><input id="music-volume" type="range" min="0" max="100" step="5" value="50" aria-label="Volume de la musique"><output id="music-volume-value" for="music-volume">50 %</output></div><div class="sound-channel"><button id="effects-toggle" class="secondary icon" type="button" aria-pressed="true" aria-label="Bruitages"></button><label for="effects-volume">Bruitages</label><input id="effects-volume" type="range" min="0" max="100" step="5" value="80" aria-label="Volume des bruitages"><output id="effects-volume-value" for="effects-volume">80 %</output></div><p class="small">Les transitions suivent la réduction des mouvements de votre appareil. Aucun son n’est obligatoire.</p></section>
+        <section class="settings-section sound-settings"><h3>Son et accessibilité</h3><div class="sound-channel"><button id="music-toggle" class="secondary icon" type="button" aria-pressed="true" aria-label="Musique"></button><label for="music-volume">Musique</label><input id="music-volume" type="range" min="0" max="100" step="5" value="50" aria-label="Volume de la musique"><output id="music-volume-value" for="music-volume">50 %</output></div><div class="sound-channel"><button id="effects-toggle" class="secondary icon" type="button" aria-pressed="true" aria-label="Bruitages"></button><label for="effects-volume">Bruitages</label><input id="effects-volume" type="range" min="0" max="100" step="5" value="80" aria-label="Volume des bruitages"><output id="effects-volume-value" for="effects-volume">80 %</output></div><p class="small">Les transitions suivent la réduction des mouvements de ton appareil. Aucun son n’est obligatoire.</p></section>
         <section class="settings-section">
         <h3>Sauvegarde</h3>
         <p id="save-status" role="status">Chargement de la partie…</p>
@@ -70,10 +70,10 @@
           <button id="download-fallback" type="button" hidden>Télécharger le JSON</button>
         </div>
         </section>
-        <section class="settings-section settings-danger"><h3>Remplacer la partie</h3><p class="small">Ces actions demandent une confirmation. Exportez votre partie pour en garder une copie.</p><div class="actions"><button id="import-game" type="button" class="secondary action-danger">Importer une partie</button><button id="restart-game" type="button" class="secondary action-danger">Recommencer avec confirmation</button></div></section>
+        <section class="settings-section settings-danger"><h3>Remplacer la partie</h3><p class="small">Ces actions demandent une confirmation. Exporte ta partie pour en garder une copie.</p><div class="actions"><button id="import-game" type="button" class="secondary action-danger">Importer une partie</button><button id="restart-game" type="button" class="secondary action-danger">Recommencer avec confirmation</button></div></section>
         <input id="import-file" type="file" accept=".json,application/json" hidden>
         <p id="save-notice" role="status"></p>
-        <p class="small">La sauvegarde locale peut être effacée par le navigateur. Gardez un export de secours. Changer de domaine, de port ou passer à un site HTTPS nécessite un export/import.</p>
+        <p class="small">La sauvegarde locale peut être effacée par le navigateur. Garde un export de secours. Changer de domaine, de port ou passer à un site HTTPS nécessite un export/import.</p>
         <p id="game-version" class="small"></p>
         <section class="settings-section"><h3>Laboratoire</h3><p><a id="environment-link">Ouvrir le laboratoire de test</a></p>
         <section id="devtools" hidden aria-label="Outils de développement"></section>
@@ -81,10 +81,10 @@
       </section>
     </aside>
     <section id="tutorial" aria-label="Tutoriel facultatif" hidden></section>
-    <div id="portrait-notice"><div><span class="rotate-symbol" aria-hidden="true">↻</span><h2>Un peu plus de place pour vos lapins</h2><p>Tournez le téléphone en paysage.<br>Votre partie reste conservée.</p><button id="continue-portrait" type="button">Continuer en portrait</button></div></div>
+    <div id="portrait-notice"><div><span class="rotate-symbol" aria-hidden="true">↻</span><h2>Un peu plus de place pour tes lapins</h2><p>Tourne le téléphone en paysage.<br>Ta partie reste conservée.</p><button id="continue-portrait" type="button">Continuer en portrait</button></div></div>
   </main>
   <dialog id="player-level-dialog" aria-labelledby="level-up-title">
-    <h2 id="level-up-title"></h2><p>Bravo, votre prairie grandit avec vous !</p>
+    <h2 id="level-up-title"></h2><p>Bravo, ta prairie grandit avec toi !</p>
     <p id="level-up-range" hidden></p><p id="level-up-reward"></p>
     <section id="level-up-unlocks" hidden aria-label="Nouveaux contenus disponibles"></section>
     <button id="continue-level-up" type="button">Continuer</button>
@@ -100,7 +100,7 @@
   <dialog id="import-dialog" aria-labelledby="import-title" aria-describedby="import-summary import-warning">
     <h2 id="import-title">Importer cette partie ?</h2>
     <p id="import-summary"></p>
-    <p id="import-warning">Cet import remplacera votre progression actuelle après enregistrement réussi. Vous pouvez exporter votre partie avant de continuer.</p>
+    <p id="import-warning">Cet import remplacera ta progression actuelle après enregistrement réussi. Tu peux exporter ta partie avant de continuer.</p>
     <div class="actions"><button id="export-before-import" type="button" class="secondary">Exporter la partie actuelle d’abord</button><button id="confirm-import" type="button">Confirmer le remplacement</button><button id="cancel-import" type="button" class="secondary">Annuler</button></div>
     <p id="import-error" role="alert"></p>
   </dialog>

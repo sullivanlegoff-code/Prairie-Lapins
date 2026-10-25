@@ -7,7 +7,7 @@ import {fileExporter} from './fileExport';
 import {formatCoinAmount, setCurrencyText} from './currency';
 
 const CATALOG_RESET_REASON = 'Cette sauvegarde vient d’une version de développement antérieure à la suppression de Terre, Mottelin, Géant et Brumelin : elle n’est plus compatible et ne peut pas être importée. La partie actuelle n’a pas été modifiée.';
-const CATALOG_RESET_NOTICE = 'Votre ancienne partie venait d’une version de développement incompatible avec le nouveau catalogue (Terre, Mottelin, Géant et Brumelin ont été retirés). Une nouvelle partie a été créée.';
+const CATALOG_RESET_NOTICE = 'Ton ancienne partie venait d’une version de développement incompatible avec le nouveau catalogue (Terre, Mottelin, Géant et Brumelin ont été retirés). Une nouvelle partie a été créée.';
 export const ERROR_MESSAGES: Record<ControllerIssue, string> = {
   INVALID_JSON: 'Ce fichier ne contient pas un JSON lisible.',
   INVALID_STATE: 'Cette sauvegarde est incohérente ou incomplète.',
@@ -15,12 +15,12 @@ export const ERROR_MESSAGES: Record<ControllerIssue, string> = {
   INCOMPATIBLE_CATALOG: CATALOG_RESET_REASON,
   FILE_TOO_LARGE: 'Le fichier dépasse la limite de 1 000 000 octets pour l’import.',
   READ_FAILED: 'Le navigateur ne permet pas de lire la sauvegarde. Aucun contenu existant n’a été écrasé.',
-  WRITE_FAILED: 'L’écriture locale a échoué. Vérifiez l’espace disponible et les autorisations du navigateur.',
-  STORAGE_CHANGED: 'La sauvegarde a changé dans un autre onglet ou contrôleur. Les écritures sont bloquées pour la protéger. Exportez cette partie puis rechargez la page.',
-  NO_GAME: 'Aucune partie n’est chargée. Importez un fichier ou confirmez un nouveau départ.',
+  WRITE_FAILED: 'L’écriture locale a échoué. Vérifie l’espace disponible et les autorisations du navigateur.',
+  STORAGE_CHANGED: 'La sauvegarde a changé dans un autre onglet ou contrôleur. Les écritures sont bloquées pour la protéger. Exporte cette partie puis recharge la page.',
+  NO_GAME: 'Aucune partie n’est chargée. Importe un fichier ou confirme un nouveau départ.',
   NOT_CONFIRMED: 'Opération annulée : la partie actuelle est conservée.',
-  STALE_IMPORT: 'Cet import n’est plus actif. Sélectionnez à nouveau le fichier.',
-  DISPOSED: 'Cette session est terminée. Rechargez la page.',
+  STALE_IMPORT: 'Cet import n’est plus actif. Sélectionne à nouveau le fichier.',
+  DISPOSED: 'Cette session est terminée. Recharge la page.',
   ENCODING_FAILED: 'La partie ne peut pas être encodée. Elle reste disponible en mémoire.',
 };
 
@@ -105,19 +105,19 @@ export function mountSavePanel(controller: GameController, onReplacement: (fresh
       if (!alive) return;
       if (outcome === 'fallback') {
         pendingDownload = {json: result.json, filename}; fallback.hidden = false;
-        say('Le partage n’a pas pu démarrer. Touchez « Télécharger le JSON » pour utiliser le téléchargement.');
+        say('Le partage n’a pas pu démarrer. Touche « Télécharger le JSON » pour utiliser le téléchargement.');
       } else say(outcome === 'cancelled' ? 'Export annulé. La partie est conservée.' :
-        outcome === 'shared' ? 'Partage effectué. Vérifiez que le fichier est conservé dans Fichiers ou à l’emplacement choisi.' :
-          'Téléchargement demandé. Vérifiez le fichier dans les téléchargements de votre navigateur.');
-    } catch { if (alive) say('L’export n’a pas pu démarrer. La partie est conservée ; vous pouvez réessayer.'); }
+        outcome === 'shared' ? 'Partage effectué. Vérifie que le fichier est conservé dans Fichiers ou à l’emplacement choisi.' :
+          'Téléchargement demandé. Vérifie le fichier dans les téléchargements de ton navigateur.');
+    } catch { if (alive) say('L’export n’a pas pu démarrer. La partie est conservée ; tu peux réessayer.'); }
   }
   const options = {signal: abort.signal};
   exportButton.addEventListener('click', () => { void exportCurrent(); }, options);
   beforeImport.addEventListener('click', () => { void exportCurrent(); }, options);
   fallback.addEventListener('click', () => {
     if (pendingDownload) {
-      try { exporter.download(pendingDownload.json, pendingDownload.filename); say('Téléchargement demandé. Vérifiez le fichier.'); }
-      catch { say('Le téléchargement a échoué. Vous pouvez réessayer.'); }
+      try { exporter.download(pendingDownload.json, pendingDownload.filename); say('Téléchargement demandé. Vérifie le fichier.'); }
+      catch { say('Le téléchargement a échoué. Tu peux réessayer.'); }
     }
   }, options);
   importButton.addEventListener('click', () => { closeImport(); input.value = ''; input.click(); }, options);
@@ -148,7 +148,7 @@ export function mountSavePanel(controller: GameController, onReplacement: (fresh
     const result = controller.retrySave(); say(result.ok ? 'Sauvegarde réussie.' : ERROR_MESSAGES[result.reason]);
   }, options);
   restart.addEventListener('click', () => {
-    const confirmed = window.confirm(environment.test ? 'Remplacer seulement la partie de test ? La partie normale est conservée. L’horloge et les préférences de test restent en place.' : 'Créer une nouvelle partie remplacera la sauvegarde actuelle. Exportez d’abord le contenu protégé si vous souhaitez le conserver. Confirmer le nouveau départ ?');
+    const confirmed = window.confirm(environment.test ? 'Remplacer seulement la partie de test ? La partie normale est conservée. L’horloge et les préférences de test restent en place.' : 'Créer une nouvelle partie remplacera la sauvegarde actuelle. Exporte d’abord le contenu protégé si tu souhaites le conserver. Confirmer le nouveau départ ?');
     if (!confirmed) { say('Nouveau départ annulé. La sauvegarde est conservée.'); return; }
     const result = controller.restart(true);
     if (result.ok) onReplacement(true);
@@ -159,7 +159,7 @@ export function mountSavePanel(controller: GameController, onReplacement: (fresh
     if (raw !== null) void exporter.export(raw, exportFilename(`prairie-lapins-sauvegarde-protegee-${new Date().toISOString().slice(0, 10)}.json`))
       .then(outcome => { if (alive) {
         if (outcome === 'fallback') { pendingDownload = {json: raw, filename: exportFilename('prairie-lapins-sauvegarde-protegee.json')}; fallback.hidden = false; }
-        say(outcome === 'cancelled' ? 'Export annulé.' : 'Export du contenu protégé demandé. Vérifiez le fichier.');
+        say(outcome === 'cancelled' ? 'Export annulé.' : 'Export du contenu protégé demandé. Vérifie le fichier.');
       } }).catch(() => { if (alive) say('L’export du contenu protégé a échoué.'); });
   }, options);
   return () => { alive = false; hudResize?.disconnect(); document.documentElement.style.removeProperty('--hud-occupied-height'); closeImport(); abort.abort(); unsubscribe(); disposeProgressionFeedback(); playerProgression.dispose(); exporter.dispose(); };
