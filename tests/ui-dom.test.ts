@@ -304,22 +304,34 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     button('Nourrir · 2 herbes').click();expect(state(controller).rabbits.map(r=>r.affection)).toEqual([2,2]);
     document.getElementById('open-missions')!.click();expect(button('Réclamer · + 20 pièces').disabled).toBe(false);
   });
-  it('claims three daily rewards and the separate bonus through UI, then expires the cycle', () => {
+  it('claims the three daily rewards one session at a time and the separate bonus through UI, then expires the cycle', () => {
     const initial=createGame(0);initial.grass=100;
     const {controller,ui,clock}=setup(initial);place(ui,'farm',1,0);
+    const hour=3600_000,daily=()=>{document.getElementById('open-missions')!.click();button('Quotidiennes').click();};
     controller.perform({type:'startOrder',id:'building-4',recipe:'medium'});
-    clock.now=5*3600_000;controller.perform({type:'collectIncome',id:'building-1'});controller.perform({type:'collectOrder',id:'building-4'});
-    for(let i=0;i<3;i++)controller.perform({type:'feed',id:'rabbit-2'});controller.perform({type:'feed',id:'rabbit-3'});for(const [kind,x] of [['nest',26],['nursery',18]] as const)controller.perform({type:'placeStarterBuilding',kind,x,y:24});controller.perform({type:'breed',parents:['rabbit-2','rabbit-3']});
-    document.getElementById('open-missions')!.click();button('Quotidiennes').click();
+    // Morning: only the first mission is open; the harvest of this session does not count for the second.
+    clock.now=5*hour;controller.perform({type:'collectIncome',id:'building-1'});controller.perform({type:'collectOrder',id:'building-4'});
+    for(let i=0;i<3;i++)controller.perform({type:'feed',id:'rabbit-2'});controller.perform({type:'feed',id:'rabbit-3'});for(const [kind,x] of [['nest',26],['nursery',18]] as const)controller.perform({type:'placeStarterBuilding',kind,x,y:24});
+    daily();
     const card=(id:string)=>panel().querySelector<HTMLElement>(`[data-mission="${id}"]`)!;
     expect(panel().textContent).toContain('expirent');expect(panel().querySelector('.timer')!.textContent).toBe('19 h 0 min');
+    expect(card('collect-grass')).toBeNull();expect(panel().textContent).toContain('Ensuite : Une réserve d’herbe · Lancer une reproduction');
     expect(button('Réclamer · + 2 cœurs',card('daily-bonus')).disabled).toBe(true);
-    for(const [id,label] of [['collect-pattes','60 pièces'],['collect-grass','30 herbes'],['gain-affection','40 pièces']])button(`Réclamer · + ${label}`,card(id)).click();
+    button('Réclamer · + 60 pièces',card('collect-pattes')).click();
+    expect(card('collect-grass').textContent).toContain('Ouverture dans :');expect(card('collect-grass').querySelector('.timer')!.textContent).toBe('4 h 0 min');
+    expect(card('collect-grass').querySelector('.mission-claim')).toBeNull();
+    // Midday: the second mission opens 4 hours after the claim.
+    clock.now=9*hour;controller.refresh();controller.perform({type:'startOrder',id:'building-4',recipe:'medium'});
+    clock.now=9.5*hour;controller.perform({type:'collectOrder',id:'building-4'});daily();
+    button('Réclamer · + 30 herbes',card('collect-grass')).click();
+    // Evening: the reproduction.
+    clock.now=13.5*hour;controller.refresh();controller.perform({type:'breed',parents:['rabbit-2','rabbit-3']});daily();
+    button('Réclamer · + 40 pièces',card('gain-affection')).click();
     expect(state(controller).missions.daily.progress).toEqual({"collect-grass":60,"collect-pattes":100,"gain-affection":1});
     const bonus=button('Réclamer · + 2 cœurs',card('daily-bonus'));bonus.click();bonus.click();
-    expect(state(controller).hearts).toBe(15);expect(state(controller).nextHeartGiftAt).toBe(24*3600_000);
+    expect(state(controller).hearts).toBe(15);expect(state(controller).nextHeartGiftAt).toBe(24*hour);
     expect(card('daily-bonus')).toBeNull();expect(panel().querySelectorAll('article')).toHaveLength(0);
-    clock.now=24*3600_000;controller.refresh();bonus.click();
+    clock.now=24*hour;controller.refresh();bonus.click();
     expect(state(controller).hearts).toBe(15);expect(state(controller).missions.daily.cycleIndex).toBe(1);
     expect(card('collect-pattes').textContent).toContain('Progression : 0 / 100');
     expect(button('Réclamer · + 2 cœurs',card('daily-bonus')).disabled).toBe(true);

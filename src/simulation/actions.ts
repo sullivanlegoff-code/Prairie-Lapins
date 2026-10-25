@@ -10,8 +10,8 @@ import {normalizeRabbitName} from './rabbitNames';
 import {acquiredCell, PARCEL_IDS, extensionPrice, purchasableParcels} from '../config/land';
 import {HABITAT_TYPES, habitatLevel, habitatPrice, type HabitatLevel} from '../config/habitats';
 import {habitatEntryReason} from './habitats';
-import {DAILY_MISSIONS, DAILY_MISSION_IDS, MAIN_MISSIONS, DAILY_BONUS, type Reward} from '../config/missions';
-import {dailyCycleStart, recordMissionAction} from './missions';
+import {DAILY_MISSIONS, DAILY_MISSION_GAP, DAILY_MISSION_IDS, MAIN_MISSIONS, DAILY_BONUS, type Reward} from '../config/missions';
+import {currentDailyMission, dailyCycleStart, dailyOpensAt, openNextDailyMission, recordMissionAction} from './missions';
 import {BALANCE, HEARTS, HOUR, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
 import {emptyBuilding} from '../state/initial';
 import {babyInNursery, findNurseryBaby, firstFreeNurserySlot, nurseryBuilding, nurseryUnlockQuote} from './nursery';
@@ -160,8 +160,10 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(command.cycleStart === dailyCycleStart(s), 'CYCLE_EXPIRED');
         const daily = s.missions.daily;
         requireRule(!daily.claimed.includes(command.id), 'ALREADY_CLAIMED');
+        requireRule(command.id === currentDailyMission(s) && time >= dailyOpensAt(s), 'NOT_READY');
         requireRule(daily.progress[command.id] >= DAILY_MISSIONS[command.id].target, 'NOT_READY');
-        reward(DAILY_MISSIONS[command.id].reward); daily.claimed.push(command.id); gainXp(missionClaimXp('daily',command.id)); break;
+        requireRule(Number.isSafeInteger(time + DAILY_MISSION_GAP), 'INVALID_TIME');
+        reward(DAILY_MISSIONS[command.id].reward); daily.claimed.push(command.id); openNextDailyMission(s, time); gainXp(missionClaimXp('daily',command.id)); break;
       }
       case 'claimDailyBonus': {
         requireRule(command.cycleStart === dailyCycleStart(s), 'CYCLE_EXPIRED');

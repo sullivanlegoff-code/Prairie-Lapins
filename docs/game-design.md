@@ -304,10 +304,12 @@ Possession, découverte et affection utilisent l’état ; récolte, reproductio
 
 | Identifiant stable | Objectif par cycle | Récompense |
 |---|---|---|
-| collect-pattes | Récolter 100 pattes dans les enclos | 30 pattes |
-| collect-grass | Récolter 40 herbes dans les fermes | 10 herbes |
-| gain-affection | Augmenter l'affection de 3 niveaux au total | 20 pattes |
+| collect-pattes | Récolter 100 pattes dans les enclos | 60 pattes |
+| collect-grass | Récolter 40 herbes dans les fermes | 30 herbes |
+| gain-affection | Lancer une reproduction au nid | 40 pattes |
 | bonus du cycle | Avoir réclamé les trois récompenses ci-dessus | 2 cœurs |
+
+Depuis le 25 octobre 2026, une quotidienne par session : les trois s'ouvrent l'une après l'autre, dans l'ordre du tableau. La première est ouverte au début du cycle ; chacune des suivantes s'ouvre **4 heures** après la réclamation de la précédente (`DAILY_MISSION_GAP`, heure d'ouverture persistée dans `daily.nextAt`, champ facultatif sans changement de version). Seule la mission ouverte progresse : une action faite avant son ouverture ne compte pas. Le panneau affiche la mission en cours, ou le temps avant son ouverture, et la liste des suivantes. Avec des sessions vers 8 h, 13 h et 20 h, le joueur réclame une mission à chaque visite et le bonus le soir. Un nouveau cycle repart de la première mission, ouverte aussitôt.
 
 Le premier cycle commence à la création ou à la migration. Durée fixe : **24 heures**. Référence persistée `referenceAt` ; cycle courant `floor((heure monotone − referenceAt) / 24 h)`. À la frontière exacte, le nouveau cycle commence avant l'action. Les cycles restent alignés sur cette référence, sans minuit local et sans décalage lors d'une réclamation. Après absence, sauter directement au cycle courant ; ne cumuler aucun cycle manqué.
 

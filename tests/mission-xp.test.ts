@@ -30,7 +30,7 @@ describe('mission claim XP, not completion XP',()=>{
   const s=ready();s.buildings[0].habitat!.type='neige';s.rabbits[0].species='neige';s.discovered=['neige'];const r=run(s,{type:'claimMainMission',id:'snow-habitat'});expect(r.state.pattes).toBe(s.pattes);expect(r.state.grass).toBe(s.grass);expect(r.state.progression.totalXp).toBe(progression.missionClaimXp('main','snow-habitat'));
  });
  it('bonus keeps its actual hearts and zero XP, even after the daily claims cross a level',()=>{
-  let s=ready();s.progression.totalXp=89;for(const id of ['collect-pattes','collect-grass','gain-affection'] as const)s=run(s,{type:'claimDailyMission',id,cycleStart:0}).state;expect(s.hearts).toBe(13);
+  let s=ready();s.progression.totalXp=89;for(const id of ['collect-pattes','collect-grass','gain-affection'] as const){const r=act(s,{type:'claimDailyMission',id,cycleStart:0},Math.max(s.lastSimulatedAt,s.missions.daily.nextAt??0));if(!r.ok)throw Error(r.reason);s=r.state;}expect(s.hearts).toBe(13);
   const xp=s.progression.totalXp,r=run(s,{type:'claimDailyBonus',cycleStart:0});expect(r.state.progression.totalXp).toBe(xp);expect(r.state.hearts).toBe(s.hearts+DAILY_BONUS.amount);expect(r.state.missions.daily.bonusClaimed).toBe(true);expect(r.progressionGain?.xpGained).toBe(0);
  });
  it.each(['main','daily','bonus'] as const)('%s failed write preserves claimability and all rewards, then reload/import gives no second gain',kind=>{

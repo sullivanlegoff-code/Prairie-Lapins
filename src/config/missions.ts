@@ -56,4 +56,6 @@ export const DAILY_MISSIONS: Record<DailyMissionId, {title: string; description:
   'gain-affection': {title: 'Lancer une reproduction', description: 'Lance une reproduction au nid.', event: 'breed', target: 1, reward: {resource: 'pattes', amount: 40}},
 };
 export const MISSION_CYCLE_DURATION = 24 * HOUR;
+/** One daily mission per session: the next one opens this long after the previous claim (target: three 5-minute sessions a day). */
+export const DAILY_MISSION_GAP = 4 * HOUR;
 export const DAILY_BONUS: Reward = {resource: 'hearts', amount: 2};

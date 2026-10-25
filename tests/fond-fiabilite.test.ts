@@ -59,7 +59,7 @@ function prepare(type: Command['type']): {state: GameState; command: Command} {
     sellDecoration: {type: 'sellDecoration', id: 'decoration-10'},
     storeDecorationsInCell: {type: 'storeDecorationsInCell', x: 4, y: 7},
     claimMainMission: {type: 'claimMainMission', id: 'first-meal'},
-    claimDailyMission: {type: 'claimDailyMission', id: 'gain-affection', cycleStart: dailyCycleStart(s)},
+    claimDailyMission: {type: 'claimDailyMission', id: 'collect-pattes', cycleStart: dailyCycleStart(s)},
     claimDailyBonus: {type: 'claimDailyBonus', cycleStart: dailyCycleStart(s)},
     claimHearts: {type: 'claimHearts'},
     buyRecipe: {type: 'buyRecipe', species: 'dragon'},
