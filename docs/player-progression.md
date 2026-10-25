@@ -8,7 +8,7 @@ Le tutoriel de Paille est rejoué avec ses trois aides uniques, récolte/transfe
 
 Chaque visite est limitée à 45 commandes réussies, soit environ six secondes par action dans une session de cinq minutes. C’est une hypothèse de joueur organisé, pas une mesure humaine ; déplacement, consultation et choix peuvent ralentir le parcours. Les repas maximaux et les choix de parents sont explicites et reproductibles. La simulation laisse les commandes terminées attendre les visites, sans collecte pendant l’absence. Les instantanés J1/J3/etc. sont pris juste avant 8 h du jour suivant ; les pattes stockées restent à récolter. Aucun clic supplémentaire au point « 10 min ».
 
-Les premières atteintes, comptées en jours calendaires avec J1 comme jour du départ, sont **N5 à J1 ; N10 à J6 ; N15 à J22 ; N20 à J55**. Cibles : J1/J7/J20/J50, toutes dans ±30 %. Le script vérifie cette tolérance et poursuit jusqu’à 70 jours pour mesurer le niveau 20. Ces résultats incluent la suite de missions durables et les prix de décorations de la partie B.
+Les premières atteintes, comptées en jours calendaires avec J1 comme jour du départ, sont **N5 à J1 ; N10 à J6 ; N15 à J20 ; N20 à J50** (relevé du 25 octobre 2026, avec les missions durables toujours visibles et une quotidienne par session ; avant : J22 et J55). Cibles : J1/J7/J20/J50, toutes dans ±30 %. Le script vérifie cette tolérance et poursuit jusqu’à 70 jours pour mesurer le niveau 20. Ces résultats incluent la suite de missions durables et les prix de décorations de la partie B.
 
 | Étape | Pattes disponibles | Herbes | Cœurs | Niveau | Espèces | Pattes stockées |
 |---|---:|---:|---:|---:|---:|---:|

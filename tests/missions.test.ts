@@ -30,7 +30,15 @@ function dailyReady() {
   s=run(s,{type:'collectIncome',id:'building-1'},5*HOUR);
   s=run(s,{type:'collectOrder',id:'building-4'});
   for(let i=0;i<3;i++)s=run(s,{type:'feed',id:'rabbit-2'});
-  s=run(s,{type:'feed',id:'rabbit-3'});s=run(s,{type:'breed',parents:['rabbit-2','rabbit-3']});return s;
+  s=run(s,{type:'feed',id:'rabbit-3'});return s;
+}
+// One daily mission per session: claim, come back when the next one opens, play it, claim.
+function playDailySessions(s: GameState) {
+  s=run(s,{type:'claimDailyMission',id:'collect-pattes',cycleStart:0});
+  const midday=s.missions.daily.nextAt!;s=run(s,{type:'startOrder',id:'building-4',recipe:'medium'},midday);s=run(s,{type:'collectOrder',id:'building-4'},midday+30*MINUTE);
+  s=run(s,{type:'claimDailyMission',id:'collect-grass',cycleStart:0});
+  s=run(s,{type:'breed',parents:['rabbit-2','rabbit-3']},s.missions.daily.nextAt!);
+  return run(s,{type:'claimDailyMission',id:'gain-affection',cycleStart:0});
 }
 const state=(c:GameController)=>c.getSnapshot().state!;
 
@@ -84,7 +92,8 @@ describe('main missions and unique rewards',()=>{
 
 describe('daily event accounting and fixed cycles',()=>{
   it('counts actual collected integer pattes, collected grass and gained levels exactly, once',()=>{
-    const ready=dailyReady();expect(ready.missions.daily.progress).toEqual({'collect-pattes':100,'collect-grass':60,'gain-affection':1});
+    // Only the open mission (the first) progresses: the harvest and the meals of this session count for nothing else.
+    const ready=dailyReady();expect(ready.missions.daily.progress).toEqual({'collect-pattes':100,'collect-grass':0,'gain-affection':0});
     const again=run(ready,{type:'collectIncome',id:'building-1'});
     expect(again.missions.daily.progress).toEqual(ready.missions.daily.progress);
     expect(act(again,{type:'collectOrder',id:'building-4'},again.lastSimulatedAt)).toMatchObject({ok:false,state:again});
@@ -98,6 +107,7 @@ describe('daily event accounting and fixed cycles',()=>{
   it('counts a production started and ready before renewal only when harvested in the new cycle',()=>{
     let s=prepared();s=run(s,{type:'startOrder',id:'building-4',recipe:'small'},DAY-20*MINUTE);
     s=advance(s,DAY);expect(s.missions.daily.progress).toEqual(emptyDailyProgress());
+    s.missions.daily.progress['collect-pattes']=100;s.missions.daily.claimed=['collect-pattes'];
     s=run(s,{type:'collectOrder',id:'building-4'},DAY+1);
     expect(s.missions.daily.cycleIndex).toBe(1);expect(s.missions.daily.progress['collect-grass']).toBe(20);
   });
@@ -111,7 +121,7 @@ describe('daily event accounting and fixed cycles',()=>{
     let s=dailyReady();const claim:Command={type:'claimDailyMission',id:'collect-grass',cycleStart:0};
     const before=structuredClone(s);
     expect(act(s,claim,DAY)).toEqual({ok:false,state:before,reason:'CYCLE_EXPIRED'});
-    for(const id of DAILY_MISSION_IDS)s=run(s,{type:'claimDailyMission',id,cycleStart:0});
+    s=playDailySessions(s);
     expect(s.missions.daily.bonusClaimed).toBe(false);const next=advance(s,DAY);
     expect(next.missions.daily).toMatchObject({cycleIndex:1,progress:emptyDailyProgress(),claimed:[],bonusClaimed:false});
     expect(next.hearts).toBe(13);expect(act(next,{type:'claimDailyBonus',cycleStart:0},DAY)).toMatchObject({ok:false,reason:'CYCLE_EXPIRED'});
@@ -128,10 +138,11 @@ describe('daily event accounting and fixed cycles',()=>{
     expect(act(s,{type:'claimDailyBonus',cycleStart:DAY},0)).toMatchObject({ok:false,reason:'CYCLE_EXPIRED'});
   });
   it('requires all three rewards claimed before a single bonus, without counting any rewards',()=>{
-    let s=dailyReady();const progress=structuredClone(s.missions.daily.progress);
+    let s=dailyReady();
     expect(act(s,{type:'claimDailyBonus',cycleStart:0},s.lastSimulatedAt)).toMatchObject({ok:false,reason:'NOT_READY'});
-    for(const id of DAILY_MISSION_IDS){s=run(s,{type:'claimDailyMission',id,cycleStart:0});expect(act(s,{type:'claimDailyMission',id,cycleStart:0},s.lastSimulatedAt)).toMatchObject({ok:false,reason:'ALREADY_CLAIMED'});}
-    expect(s.missions.daily.progress).toEqual(progress);expect(s.hearts).toBe(13);
+    s=playDailySessions(s);
+    for(const id of DAILY_MISSION_IDS)expect(act(s,{type:'claimDailyMission',id,cycleStart:0},s.lastSimulatedAt)).toMatchObject({ok:false,reason:'ALREADY_CLAIMED'});
+    expect(s.hearts).toBe(13);
     s=run(s,{type:'claimDailyBonus',cycleStart:0});expect(s.hearts).toBe(15);expect(s.nextHeartGiftAt).toBe(DAY);
     expect(act(s,{type:'claimDailyBonus',cycleStart:0},s.lastSimulatedAt)).toMatchObject({ok:false,state:s,reason:'ALREADY_CLAIMED'});
     expect(run(s,{type:'claimHearts'},DAY).hearts).toBe(17);

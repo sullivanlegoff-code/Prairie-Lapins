@@ -39,7 +39,7 @@ export interface MissionState {
   nightOrderStarted?: boolean;
   events: Record<MainEvent, number>;
   completed: MainMissionId[]; claimed: MainMissionId[];
-  daily: {referenceAt: number; cycleIndex: number; progress: Record<DailyMissionId, number>; claimed: DailyMissionId[]; bonusClaimed: boolean};
+  daily: {referenceAt: number; cycleIndex: number; progress: Record<DailyMissionId, number>; claimed: DailyMissionId[]; bonusClaimed: boolean; nextAt?: number};
 }
 export interface Initiation {
   order: string | null; breeding: string | null; growth: string | null;

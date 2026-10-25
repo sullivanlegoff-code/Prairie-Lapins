@@ -50,7 +50,7 @@ describe('persistent economy transactions',()=>{
   }
  });
  it('can complete the breeding daily when all individuals have affection 20',()=>{
-  const s=migrated();s.buildings.find(b=>b.kind==='nest')!.breeding=null;s.rabbits.forEach(r=>r.affection=20);s.missions.daily.progress['gain-affection']=0;s.missions.daily.claimed=[];
+  const s=migrated();s.buildings.find(b=>b.kind==='nest')!.breeding=null;s.rabbits.forEach(r=>r.affection=20);s.missions.daily.progress={'collect-pattes':100,'collect-grass':40,'gain-affection':0};s.missions.daily.claimed=['collect-pattes','collect-grass'];delete s.missions.daily.nextAt;
   const r=act(s,{type:'breed',parents:['rabbit-2','rabbit-6']},s.lastSimulatedAt,()=>0);expect(r.ok).toBe(true);expect(r.state.missions.daily.progress['gain-affection']).toBe(1);
  });
  it('uses integer hourly income by rarity, including the provisional special-species fallback',()=>{

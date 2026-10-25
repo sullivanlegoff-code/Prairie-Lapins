@@ -2,8 +2,8 @@
   "calendarMilestones": {
     "5": 1,
     "10": 6,
-    "15": 22,
-    "20": 55
+    "15": 20,
+    "20": 50
   },
   "method": "Seed 20261025; real act/advance; 3 sessions/day at 08/13/20, <=45 commands and <=8 meals/session; two farms, long/long/night; collection-first parent pairs; no Cuisine or paid recipes; Hearts only for permanent habitat upgrades. Day snapshots just before next 08:00. Tutorial is the first session.",
   "curve": {
@@ -13,22 +13,22 @@
     "exponent": 1.15
   },
   "tutorial": {
-    "pattes": 270,
+    "pattes": 230,
     "grass": 96,
     "hearts": 15,
     "level": 4,
-    "xp": 895
+    "xp": 845
   },
   "milestones": {
     "5": 0.5,
-    "10": 5,
-    "15": 21,
-    "20": 54.5
+    "10": 5.208,
+    "15": 19.208,
+    "20": 49.5
   },
   "rows": [
     {
       "step": "10 min",
-      "pattes": 270,
+      "pattes": 230,
       "grass": 96,
       "hearts": 15,
       "level": 4,
@@ -56,7 +56,11 @@
           "feu-glace",
           "bouee",
           "magicien",
-          "dragon"
+          "dragon",
+          "dadi",
+          "maxou",
+          "orange",
+          "requin"
         ]
       },
       "decorationBudget": {
@@ -79,7 +83,7 @@
     },
     {
       "step": "1 j",
-      "pattes": 438,
+      "pattes": 398,
       "grass": 364,
       "hearts": 19,
       "level": 5,
@@ -107,7 +111,11 @@
           "feu-glace",
           "bouee",
           "magicien",
-          "dragon"
+          "dragon",
+          "dadi",
+          "maxou",
+          "orange",
+          "requin"
         ]
       },
       "decorationBudget": {
@@ -126,14 +134,15 @@
         "first-birth",
         "varied-family",
         "two-habitats",
-        "strong-bonds"
+        "strong-bonds",
+        "level-five"
       ]
     },
     {
       "step": "3 j",
-      "pattes": 749,
+      "pattes": 709,
       "grass": 3016,
-      "hearts": 23,
+      "hearts": 21,
       "level": 7,
       "species": 8,
       "speciesIds": [
@@ -161,7 +170,11 @@
           "perroquet",
           "bouee",
           "magicien",
-          "dragon"
+          "dragon",
+          "dadi",
+          "maxou",
+          "orange",
+          "requin"
         ]
       },
       "decorationBudget": {
@@ -181,22 +194,22 @@
         "varied-family",
         "two-habitats",
         "strong-bonds",
-        "growing-collection",
-        "first-decoration",
-        "bigger-meadow",
         "level-five",
+        "growing-collection",
         "welcome-fire",
         "night-order",
+        "first-decoration",
+        "bigger-meadow",
         "seven-species"
       ]
     },
     {
       "step": "7 j",
-      "pattes": 12632,
-      "grass": 7815,
-      "hearts": 58,
+      "pattes": 13235,
+      "grass": 8205,
+      "hearts": 56,
       "level": 10,
-      "species": 16,
+      "species": 15,
       "speciesIds": [
         "paille",
         "neige",
@@ -207,15 +220,14 @@
         "feu-glace",
         "belier-gris",
         "wat-wat",
-        "amethyste",
-        "roukette",
-        "lunettes",
-        "volant",
+        "dinono",
         "ardent",
-        "virvoletant",
-        "princesse-neige"
+        "volant",
+        "lunettes",
+        "perroquet",
+        "roukette"
       ],
-      "storedPattes": 4475,
+      "storedPattes": 4391,
       "remaining": {
         "commons": [],
         "extensions": 4,
@@ -224,10 +236,13 @@
         "kitchen": false,
         "habitatUpgrades": 4,
         "paidRecipes": [
-          "perroquet",
           "bouee",
           "magicien",
-          "dragon"
+          "dragon",
+          "dadi",
+          "maxou",
+          "orange",
+          "requin"
         ]
       },
       "decorationBudget": {
@@ -247,12 +262,12 @@
         "varied-family",
         "two-habitats",
         "strong-bonds",
-        "growing-collection",
-        "first-decoration",
-        "bigger-meadow",
         "level-five",
+        "growing-collection",
         "welcome-fire",
         "night-order",
+        "first-decoration",
+        "bigger-meadow",
         "seven-species",
         "ten-species",
         "habitat-two",
@@ -265,11 +280,11 @@
     },
     {
       "step": "20 j",
-      "pattes": 157956,
-      "grass": 24474,
-      "hearts": 104,
-      "level": 14,
-      "species": 23,
+      "pattes": 137953,
+      "grass": 24949,
+      "hearts": 108,
+      "level": 15,
+      "species": 27,
       "speciesIds": [
         "paille",
         "neige",
@@ -280,32 +295,39 @@
         "feu-glace",
         "belier-gris",
         "wat-wat",
-        "amethyste",
-        "roukette",
-        "lunettes",
-        "volant",
+        "dinono",
         "ardent",
-        "virvoletant",
-        "princesse-neige",
+        "volant",
+        "lunettes",
         "perroquet",
+        "roukette",
+        "virvoletant",
         "pic-pic",
-        "plume",
-        "glassofeu",
+        "tunini",
         "fluffy",
-        "phoenix",
-        "bouee"
+        "piment",
+        "egiiipte",
+        "dadi",
+        "amethyste",
+        "bretonette",
+        "princesse-neige",
+        "maxou",
+        "plume"
       ],
-      "storedPattes": 8327,
+      "storedPattes": 8111,
       "remaining": {
         "commons": [],
-        "extensions": 3,
-        "extensionCost": 126000,
+        "extensions": 2,
+        "extensionCost": 100000,
         "farms": 0,
         "kitchen": false,
-        "habitatUpgrades": 7,
+        "habitatUpgrades": 5,
         "paidRecipes": [
+          "bouee",
           "magicien",
-          "dragon"
+          "dragon",
+          "orange",
+          "requin"
         ]
       },
       "decorationBudget": {
@@ -325,12 +347,12 @@
         "varied-family",
         "two-habitats",
         "strong-bonds",
-        "growing-collection",
-        "first-decoration",
-        "bigger-meadow",
         "level-five",
+        "growing-collection",
         "welcome-fire",
         "night-order",
+        "first-decoration",
+        "bigger-meadow",
         "seven-species",
         "ten-species",
         "habitat-two",
@@ -338,16 +360,17 @@
         "welcome-metal",
         "three-extensions",
         "fifteen-species",
-        "welcome-flight"
+        "welcome-flight",
+        "level-fifteen"
       ]
     },
     {
       "step": "50 j",
-      "pattes": 660912,
-      "grass": 64119,
-      "hearts": 234,
-      "level": 19,
-      "species": 24,
+      "pattes": 705819,
+      "grass": 64049,
+      "hearts": 223,
+      "level": 20,
+      "species": 33,
       "speciesIds": [
         "paille",
         "neige",
@@ -358,32 +381,42 @@
         "feu-glace",
         "belier-gris",
         "wat-wat",
-        "amethyste",
-        "roukette",
-        "lunettes",
-        "volant",
+        "dinono",
         "ardent",
-        "virvoletant",
-        "princesse-neige",
+        "volant",
+        "lunettes",
         "perroquet",
+        "roukette",
+        "virvoletant",
         "pic-pic",
+        "tunini",
+        "fluffy",
+        "piment",
+        "egiiipte",
+        "dadi",
+        "amethyste",
+        "bretonette",
+        "princesse-neige",
+        "maxou",
         "plume",
         "glassofeu",
-        "fluffy",
-        "phoenix",
         "bouee",
+        "boudinet",
+        "phoenix",
+        "orange",
         "magicien"
       ],
-      "storedPattes": 9863,
+      "storedPattes": 12023,
       "remaining": {
         "commons": [],
         "extensions": 1,
         "extensionCost": 60000,
         "farms": 0,
         "kitchen": false,
-        "habitatUpgrades": 6,
+        "habitatUpgrades": 5,
         "paidRecipes": [
-          "dragon"
+          "dragon",
+          "requin"
         ]
       },
       "decorationBudget": {
@@ -403,12 +436,12 @@
         "varied-family",
         "two-habitats",
         "strong-bonds",
-        "growing-collection",
-        "first-decoration",
-        "bigger-meadow",
         "level-five",
+        "growing-collection",
         "welcome-fire",
         "night-order",
+        "first-decoration",
+        "bigger-meadow",
         "seven-species",
         "ten-species",
         "habitat-two",
@@ -426,21 +459,21 @@
     "buyBuilding": 11,
     "claimMainMission": 28,
     "buyRabbit": 4,
-    "startOrder": 418,
+    "startOrder": 419,
     "initiationAid": 3,
-    "collectOrder": 416,
+    "collectOrder": 417,
     "feed": 1674,
     "breed": 210,
-    "claimDailyMission": 210,
     "transferBirth": 209,
     "welcome": 208,
-    "collectIncome": 1730,
-    "claimDailyBonus": 70,
+    "collectIncome": 1616,
+    "claimDailyMission": 209,
     "claimHearts": 69,
     "buyDecoration": 1,
-    "upgradeHabitat": 6,
-    "expand": 7,
-    "release": 174
+    "upgradeHabitat": 10,
+    "claimDailyBonus": 69,
+    "expand": 8,
+    "release": 166
   },
-  "totalActions": 5448
+  "totalActions": 5331
 }

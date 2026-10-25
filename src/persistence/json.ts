@@ -7,7 +7,7 @@ import {buildingPlacementReason} from '../simulation/placement';
 import {normalizeRabbitName} from '../simulation/rabbitNames';
 import {PARCEL_IDS, startParcel} from '../config/land';
 import {type HabitatType, HABITAT_TYPES, HABITAT_LEVELS, habitatLevel} from '../config/habitats';
-import {MAIN_MISSION_IDS, DAILY_MISSION_IDS, DAILY_MISSIONS} from '../config/missions';
+import {MAIN_MISSION_IDS, DAILY_MISSION_GAP, DAILY_MISSION_IDS, DAILY_MISSIONS} from '../config/missions';
 import {cycleIndexAt} from '../simulation/missions';
 import {z} from 'zod';
 import {BALANCE, CUISINE_FULL_REWARDS_PER_CYCLE, HOUR, NURSERY, ORDERS, SHOP_SPECIES, SPECIES, SPECIES_IDS, GUARANTEE_SPECIES, growthDuration, type SpeciesId} from '../config/balance';
@@ -53,7 +53,7 @@ const missions = z.object({
   claimed: z.array(z.enum(MAIN_MISSION_IDS)).max(MAIN_MISSION_IDS.length),
   daily: z.object({referenceAt: timestamp, cycleIndex: integer,
     progress: z.object({'collect-pattes': integer, 'collect-grass': integer, 'gain-affection': integer}).strict(),
-    claimed: z.array(z.enum(DAILY_MISSION_IDS)).max(DAILY_MISSION_IDS.length), bonusClaimed: z.boolean(),
+    claimed: z.array(z.enum(DAILY_MISSION_IDS)).max(DAILY_MISSION_IDS.length), bonusClaimed: z.boolean(), nextAt: timestamp.optional(),
   }).strict(),
 }).strict();
 const decoration = z.object({paidPrice: integer.optional(),id: z.string().regex(/^decoration-[1-9]\d*$/), catalogId: z.enum(DECORATION_IDS), placementXpProcessed: z.boolean().optional(),
@@ -113,6 +113,7 @@ const schema = v17.superRefine((s, context) => {
   if (d.cycleIndex !== cycleIndexAt(d.referenceAt, s.lastSimulatedAt)) issue('Daily cycle');
   if (new Set(d.claimed).size !== d.claimed.length || d.claimed.some(id => d.progress[id] < DAILY_MISSIONS[id].target) ||
     (d.bonusClaimed && d.claimed.length !== DAILY_MISSION_IDS.length)) issue('Daily claims');
+  if (d.nextAt !== undefined && (!d.claimed.length || d.nextAt > s.lastSimulatedAt + DAILY_MISSION_GAP)) issue('Daily opening');
   if (d.referenceAt > s.lastSimulatedAt && (Object.values(d.progress).some(n => n !== 0) || d.claimed.length || d.bonusClaimed)) issue('Future cycle progress');
   if ([...Object.values(s.cuisine.affectionCycles), s.cuisine.heartCycle ?? 0, s.cuisine.fullRuns?.cycle ?? 0].some(cycle => cycle > s.missions.daily.cycleIndex)) issue('Future Cuisine cycle');
   const ids: string[] = [];
