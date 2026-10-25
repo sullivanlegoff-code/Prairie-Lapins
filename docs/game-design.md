@@ -259,6 +259,10 @@ Monnaie facultative pour terminer un délai ou compléter les pattes manquantes 
 
 L'heure de référence est `max(heure fournie, lastSimulatedAt)`. Une horloge qui recule ne rouvre pas une récompense déjà réclamée. Les droits sont dans l'état de partie, jamais dans les préférences visuelles. Il s'agit d'un cadeau renouvelable, pas d'un système de missions.
 
+### Comptoir de Paille (fin de partie, 25 octobre 2026)
+
+Pour donner un usage aux pattes et à l'herbe accumulées, le panneau des cœurs propose dès le **niveau 10** le comptoir de Paille : un cœur contre **250 pattes** ou **100 herbes**. Dans un même cycle quotidien, chaque échange d'une ressource coûte 25 % de plus que le précédent (250, 313, 391… pattes), avec 30 échanges au plus par ressource ; les prix reviennent au départ au cycle suivant. Commande `exchangeForHeart` au prix affiché (un prix périmé est refusé), sans XP. Sauvegarde : champ facultatif `market` {cycle, pattes, grass}, sans changement de version. Dans la simulation 3 × 5 min, avec une réserve gardée de 3 000 pattes et 500 herbes, les pattes restent autour de 5 000 et l'herbe autour de 600 au lieu de s'accumuler ; les cœurs, utiles pour les accélérations, les couchages et les améliorations, s'accumulent à leur tour (environ 400 au 20e jour, 1 100 au 50e, car le joueur simulé ne les dépense que pour les améliorations d'habitat). Le niveau 22 reste atteint au 20e jour.
+
 ### Accélération
 
 Concerne une production de ferme, une reproduction ou une croissance **en cours**. À la confirmation, le contrôleur avance le temps normalement, puis la simulation recalcule le prix pour le même délai identifié. Un prix diminué est appliqué ; un prix supérieur au montant confirmé est refusé. Une étape terminée, absente ou remplacée ne peut pas être payée. Exemples : 1 min → 1 cœur ; 5 min → 1 ; 6 min → 2 ; 20 min → 4.

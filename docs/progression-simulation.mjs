@@ -1,5 +1,5 @@
 import './node-typescript-loader.mjs';
-const sim=await import('../src/simulation/index.ts'), prog=await import('../src/simulation/progression.ts'), missions=await import('../src/simulation/missions.ts'), land=await import('../src/config/land.ts'), placement=await import('../src/simulation/placement.ts'), hab=await import('../src/simulation/habitats.ts'), balance=await import('../src/config/balance.ts'), breeding=await import('../src/simulation/breeding.ts'), rights=await import('../src/simulation/levelRights.ts'), dec=await import('../src/config/decorations.ts');
+const sim=await import('../src/simulation/index.ts'), prog=await import('../src/simulation/progression.ts'), missions=await import('../src/simulation/missions.ts'), land=await import('../src/config/land.ts'), placement=await import('../src/simulation/placement.ts'), hab=await import('../src/simulation/habitats.ts'), balance=await import('../src/config/balance.ts'), breeding=await import('../src/simulation/breeding.ts'), rights=await import('../src/simulation/levelRights.ts'), dec=await import('../src/config/decorations.ts'); const market=await import('../src/simulation/market.ts');
 const {writeFileSync}=await import('node:fs');
 const H=3600000, MIN=60000;
 // First session starts at 08:00. Offsets 0, 5h, 12h then 24h give 08/13/20, including a 12h night.
@@ -47,6 +47,8 @@ for(let day=0;day<70;day++){
  for(const b of s.buildings.filter(b=>b.kind==='farm'&&!b.order)){const recipe=hour===12?'night':'large';run({type:'startOrder',id:b.id,recipe});}
  // One optional model/day, only for the main decoration mission. Never buy/sell for XP.
  if(!s.missions.claimed.includes('first-decoration')&&s.pattes>500){const catalogId=dec.DECORATION_IDS[0];outer:for(let y=32;y<48;y++)for(let x=0;x<16;x++)if(run({type:'buyDecoration',catalogId,location:{kind:'outside',x,y,rotation:0}}))break outer;}
+ // Paille's counter: keep a reserve of 3 000 pattes and 500 grass, exchange the surplus for Hearts.
+ if(market.marketUnlocked(s))for(const [resource,reserve] of [['pattes',3000],['grass',500]]){for(let price=market.marketPrice(s,resource);price!==null&&s[resource]-price>=reserve;price=market.marketPrice(s,resource))if(!run({type:'exchangeForHeart',resource,expectedCost:price}))break;}
  claim();
  }
  if([1,3,7,20,50].includes(day+1))snapshot(`${day+1} j`,(day+1)*24*H-1);
