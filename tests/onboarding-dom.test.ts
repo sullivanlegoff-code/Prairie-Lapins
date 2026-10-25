@@ -78,6 +78,8 @@ it.each([.1,.65])('guides every real action, roll=%s, with reloads and no contro
   const snow = state().buildings.find(b=>b.habitat?.type==='neige')!;
   expect(snow.x).toBeGreaterThanOrEqual(0);
   help();real();real();real(); expect(state().pattes).toBe(70);checkpoint();
+  // Playtest of 25 October 2026: the finished Neige purchase no longer stays on screen behind Paille.
+  expect(document.getElementById('game-panel')!.hidden).toBe(true);
   help();real();expect(state().pattes).toBe(120);checkpoint();
   help();real();expect(content().textContent).toContain('Aucune case sélectionnée');expect(vi.mocked(scene.setPlacement).mock.calls.at(-1)![0]!.cell).toBeNull();
   ui.select({kind:'fineCell',x:6,y:36});real();expect(state().pattes).toBe(60);
@@ -114,7 +116,8 @@ it.each([.1,.65])('guides every real action, roll=%s, with reloads and no contro
   for(const saved of checkpoints) {
     new PreferenceStore('onboarding-test').restartGuidance();const resumed=setup(saved,false,roll);
     expect(modal().open).toBe(true);expect(modal().querySelector('input')).toBeNull();
-    help();if(saved.buildings.some(b=>b.breeding && b.breeding.endsAt<=0))expect(resumed.scene.setTutorialTarget).toHaveBeenCalledWith('birth');else expect(content().querySelector('.guide-target')).toBeTruthy();resumed.ui.dispose();resumed.controller.dispose();
+    // « Rejoindre la nurserie » performs the transfer itself and follows the baby to the nursery.
+    help();if(saved.buildings.some(b=>b.breeding && b.breeding.endsAt<=0)){expect(resumed.controller.getSnapshot().state!.buildings.find(b=>b.kind==='nest')!.breeding).toBeNull();expect(resumed.scene.focusBuilding).toHaveBeenCalledWith('building-5');}else expect(content().querySelector('.guide-target')).toBeTruthy();resumed.ui.dispose();resumed.controller.dispose();
   }
 });
 it('replays the current task after reload and closing panels, retaining the name',()=>{

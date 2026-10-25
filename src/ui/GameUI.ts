@@ -74,7 +74,10 @@ export class GameUI {
     this.purchaseReturn = null; this.shopReturn = null; this.history = [];
     this.placement = null; this.scene.setPlacement(null); this.decorationDraft = null;
     this.rabbitDestination = null; this.scene.setRabbitPurchase(null);
+    const before = this.view;
     this.open({kind, id}, 'root');
+    // The guided start may refuse the new view: the finished purchase never stays on screen behind Paille.
+    if (this.view === before && this.onboardingActive) { this.view = null; this.syncArrangement(); this.render(); }
   }
   private placement: Placement | null = null;
   private parents: [string | null, string | null] = [null, null];
@@ -1370,8 +1373,9 @@ export class GameUI {
   private guide(step: GuideStep): void {
     const s = this.snapshot.state; if (!s) return;
     if(this.onboardingActive && step.id === 'transfer' && !onboardingTask(s,this.preferences.value,this.now()).waiting) {
+      // « Rejoindre la nurserie » does what it says: the same transfer as the heart bubble, then the camera follows the baby.
       const nest=s.buildings.find(b=>b.kind==='nest');
-      this.view=null;this.history=[];this.render();this.scene.setTutorialTarget('birth');if(nest)this.scene.focusBuilding(nest.id);return;
+      this.view=null;this.history=[];this.render();if(nest)this.sendBirth(nest.id);return;
     }
     if (step.target === 'camera') { this.scene.recenter(); this.preferences.set({intro: true, guideCamera: true}); this.renderTutorial(); return; }
     if (step.target === 'snowShop') { this.shopHabitatSpecies='neige'; this.open({kind:'shop',tab:'habitats'}); return; }
