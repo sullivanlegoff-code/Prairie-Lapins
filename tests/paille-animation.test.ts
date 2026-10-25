@@ -36,7 +36,7 @@ it.each([
   [1, 1, 'Ici, tu vas pouvoir', {gesture: 'hop'}],
   [1, 3, 'Miel, c’est un très joli prénom', {gesture: 'flip'}],
   [1, 4, 'Je m’ennuie ici', {hearts: true}],
-  [2, 0, 'J’ai très faim', {gesture: 'dizzy'}],
+  [2, 0, 'J’ai une folle envie d’herbe à grignoter', {gesture: 'dizzy'}],
   [3, 0, 'La ferme permet', {hearts: true}],
   [4, 0, 'Une fois bien nourris', {gesture: 'hop'}],
   [5, 0, 'Viens, on fait nos bails', {gesture: 'flip', hearts: true, neigeReply: true}],

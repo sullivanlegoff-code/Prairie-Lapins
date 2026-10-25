@@ -136,9 +136,9 @@ export class PailleDialogue {
       const submit = document.createElement('button'); submit.type = 'submit'; submit.textContent = 'Valider';
       form.append(label, input, error, submit); form.addEventListener('submit', event => {
         event.preventDefault(); const name = normalizeRabbitName(input.value);
-        if (!name) { error.textContent = name === '' ? 'Choisis un prénom : le champ est vide.' : `Choisis un prénom valide de ${MAX_RABBIT_NAME_LENGTH} caractères maximum.`; input.setAttribute('aria-invalid', 'true'); input.focus(); return; }
+        if (!name) { error.textContent = name === '' ? 'Choisissez un prénom : le champ est vide.' : `Choisissez un prénom valide de ${MAX_RABBIT_NAME_LENGTH} caractères maximum.`; input.setAttribute('aria-invalid', 'true'); input.focus(); return; }
         const rabbit = this.state?.rabbits.find(r => r.species === 'paille');
-        if (!rabbit || !this.rename(rabbit.id, name)) { error.textContent = 'Le prénom n’a pas pu être enregistré. Réessaie ou passe le tutoriel.'; return; }
+        if (!rabbit || !this.rename(rabbit.id, name)) { error.textContent = 'Le prénom n’a pas pu être enregistré. Réessayez ou passez le tutoriel.'; return; }
         this.preferences.set({pailleNamed: true}); this.line++; this.render(); this.element.focus();
       }); bubble.append(form);
     } else if (this.action) {

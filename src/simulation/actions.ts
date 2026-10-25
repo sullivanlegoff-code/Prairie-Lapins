@@ -72,7 +72,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
   };
   const busy = (rabbitId: string) => !!nestForParent(s, rabbitId);
   const reward = (r: Reward) => {
-    if(r.resource==='unlock'){value=r.unlock;return;}
+    if (r.resource === 'none') return;
     credit(r.resource, r.amount); value = r.amount;
   };
   let value: string | number | undefined;
@@ -358,6 +358,12 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       const nursery=s.buildings.find(b=>b.nursery?.babies.some(baby=>baby.birth.id===command.birthId)); if(nursery) s.initiation.growth=jobKey(nursery,'growth',command.birthId);
     }
     settleInitiation(s);
+    // Compare individuals, so only actual gains count, regardless of their source.
+    const affectionGained = s.rabbits.reduce((sum, rabbit) => {
+      const before = state.rabbits.find(previous => previous.id === rabbit.id);
+      return sum + (before ? Math.max(0, rabbit.affection - before.affection) : 0);
+    }, 0);
+    requireRule(recordMissionAction(s, 'gainAffection', affectionGained), 'RESOURCE_LIMIT');
     requireRule(recordMissionAction(s, command.type === 'buyDecoration' && command.location ? 'placeDecoration' : command.type, command.type === 'feed' ? 1 : typeof value === 'number' ? value : 0, command.type !== 'placeDecoration' || command.location.kind === 'outside'), 'RESOURCE_LIMIT');
     // In particular, a welcome frees the nursery at this action's timestamp.
     return {ok: true, state: advance(s, time), ...(value === undefined ? {} : {value}), ...(progressionGain ? {progressionGain} : {}), ...(cuisineReward ? {cuisineReward} : {})};

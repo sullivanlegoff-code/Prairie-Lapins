@@ -114,14 +114,14 @@ describe('income and time', () => {
   });
   it('ignores a reversed clock and never counts an interval twice', () => {
     let s = advance(createGame(0), HOUR);
-    expect(advance(s, 0)).toEqual(s);
-    s = run(s, {type: 'collectIncome', id: enclosure}, 0);
+    expect(advance(s, HOUR - MINUTE)).toEqual(s);
+    s = run(s, {type: 'collectIncome', id: enclosure}, HOUR - MINUTE);
     expect(s.lastSimulatedAt).toBe(HOUR);
     expect(advance(s, HOUR).buildings[0].incomeUnits).toBe(0);
     expect(advance(s, 2 * HOUR).buildings[0].incomeUnits).toBe(24 * HOUR);
   });
   it('anchors new timers to the monotonic time when the clock reverses', () => {
-    let s = advance(setup(), HOUR); s = run(s, breed, 0);
+    let s = advance(setup(), HOUR); s = run(s, breed, HOUR - MINUTE);
     expect(nest(s).breeding!.startedAt).toBe(HOUR);
     expect(nest(s).breeding!.endsAt).toBe(HOUR + 20 * MINUTE);
   });

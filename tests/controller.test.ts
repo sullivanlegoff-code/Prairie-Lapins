@@ -69,7 +69,7 @@ describe('controller startup and normal saves', () => {
   it('does not double count after repeated resumes or clock reversals', () => {
     const {controller, store, clock} = fixture();
     clock.now = HOUR; controller.refresh(); controller.refresh();
-    clock.now = HOUR / 2; controller.refresh(); expect(state(controller).lastSimulatedAt).toBe(HOUR);
+    clock.now = HOUR - MINUTE; controller.refresh(); expect(state(controller).lastSimulatedAt).toBe(HOUR);
     const reloaded = new GameController(store, () => 2 * HOUR);
     reloaded.refresh(); reloaded.refresh();
     expect(state(reloaded).buildings[0].incomeUnits).toBe(24 * HOUR);

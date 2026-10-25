@@ -1,10 +1,10 @@
 /**
  * Loading screen: real start-up steps, an honest progress value, and « Jouer » only when every
- * required step is done. A required failure or timeout offers « Réessayer »; music is optional
+ * required step is done. A required failure or slow step offers « Réessayer »; music is optional
  * and never blocks entering the game.
  */
 export type StepId = 'save' | 'fonts' | 'textures' | 'scene' | 'music';
-export type StepState = 'pending' | 'done' | 'warning' | 'failed';
+export type StepState = 'pending' | 'slow' | 'done' | 'warning' | 'failed';
 export interface StepDefinition {id: StepId; label: string; required: boolean; weight: number; timeout: number}
 export const LOADING_STEPS: readonly StepDefinition[] = [
   {id: 'save', label: 'Partie', required: true, weight: 1, timeout: 15_000},
@@ -28,29 +28,31 @@ export class LoadingTracker {
   }
   subscribe(listener: (view: LoadingView) => void): () => void { this.listeners.add(listener); listener(this.view()); return () => this.listeners.delete(listener); }
   /** Partial progress of a step (texture loader 0–1). */
-  progress(id: StepId, fraction: number): void { const s = this.get(id); if (s.state !== 'pending') return; s.fraction = Math.min(1, Math.max(0, fraction)); this.emit(); }
+  progress(id: StepId, fraction: number): void { const s = this.get(id); if (s.state !== 'pending' && s.state !== 'slow') return; s.fraction = Math.min(1, Math.max(0, fraction)); this.emit(); }
   done(id: StepId, note = ''): void { this.finish(id, 'done', note); }
   /** Finished, with something to report that does not block (unreadable save, no music...). */
   warn(id: StepId, note: string): void { this.finish(id, 'warning', note); }
   fail(id: StepId, note: string): void { const s = this.get(id); this.finish(id, s.required ? 'failed' : 'warning', note); }
   view(): LoadingView {
     const total = this.steps.reduce((n, s) => n + s.weight, 0);
-    const reached = this.steps.reduce((n, s) => n + s.weight * (s.state === 'pending' ? s.fraction : s.state === 'failed' ? 0 : 1), 0);
+    const reached = this.steps.reduce((n, s) => n + s.weight * ((s.state === 'pending' || s.state === 'slow') ? s.fraction : s.state === 'failed' ? 0 : 1), 0);
     const failed = this.steps.find(s => s.state === 'failed');
     const ready = !failed && this.steps.every(s => !s.required || s.state === 'done' || s.state === 'warning');
+    const slow = this.steps.some(s => s.state === 'slow');
     const notes = this.steps.filter(s => s.state === 'warning' && s.note).map(s => s.note);
     return {steps: this.steps.map(s => ({...s})), progress: reached / total, ready, failed: !!failed,
-      message: failed ? `${failed.note} Vérifiez la connexion puis réessayez.` : notes.join(' ')};
+      message: failed ? `${failed.note} Vérifiez la connexion puis réessayez.` : [slow ? 'Connexion lente, le chargement continue…' : '', ...notes].filter(Boolean).join(' ')};
   }
   dispose(): void { for (const handle of this.timers.values()) this.timersApi.clear(handle); this.timers.clear(); this.listeners.clear(); }
   private finish(id: StepId, state: StepState, note: string): void {
-    const s = this.get(id); if (s.state !== 'pending') return;
+    const s = this.get(id); if (s.state !== 'pending' && s.state !== 'slow') return;
     s.state = state; s.note = note; s.fraction = state === 'failed' ? 0 : 1;
     const handle = this.timers.get(id); if (handle !== undefined) this.timersApi.clear(handle); this.timers.delete(id);
     this.emit();
   }
   private timeout(id: StepId): void {
-    const s = this.get(id); if (s.state !== 'pending') return;
+    const s = this.get(id); if (s.state !== 'pending' && s.state !== 'slow') return;
+    if (s.required) { s.state = 'slow'; this.timers.delete(id); this.emit(); return; }
     this.fail(id, s.id === 'music' ? 'Musique indisponible : le jeu reste jouable sans elle.' : `Le chargement « ${s.label} » prend trop de temps.`);
   }
   private get(id: StepId): StepStatus { return this.steps.find(s => s.id === id)!; }
@@ -69,6 +71,6 @@ export function renderLoading(root: HTMLElement, view: LoadingView): void {
   }));
   root.querySelector<HTMLElement>('#loading-message')!.textContent = view.message;
   const play = root.querySelector<HTMLButtonElement>('#loading-play')!, retry = root.querySelector<HTMLButtonElement>('#loading-retry')!;
-  play.disabled = !view.ready; play.hidden = view.failed; retry.hidden = !view.failed;
+  play.disabled = !view.ready; play.hidden = !view.ready; retry.hidden = !view.failed && !view.steps.some(s => s.state === 'slow');
   root.dataset.state = view.failed ? 'failed' : view.ready ? 'ready' : 'loading';
 }

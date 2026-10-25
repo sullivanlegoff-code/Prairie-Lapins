@@ -45,7 +45,7 @@ type View = {kind:'levelRequirement';target:LevelAccessTarget} | {kind: 'mission
 function node<K extends keyof HTMLElementTagNameMap>(tag: K, text = '', className = ''): HTMLElementTagNameMap[K] {
   const element = document.createElement(tag); setCurrencyText(element, text); element.className = className; return element;
 }
-const rewardLabel = (r: Reward) => r.resource==='unlock' ? 'Objectif de collection accompli' : `${r.amount} ${{pattes: 'pattes', grass: 'herbes', hearts: r.amount === 1 ? 'cœur' : 'cœurs'}[r.resource]}`;
+const rewardLabel = (r: Reward) => r.resource==='none' ? 'Objectif de collection accompli' : `${r.amount} ${{pattes: 'pattes', grass: 'herbes', hearts: r.amount === 1 ? 'cœur' : 'cœurs'}[r.resource]}`;
 const heartAmount = (n: number) => `${n} ${n === 1 ? 'cœur' : 'cœurs'}`;
 function avatar(species?: SpeciesId, large = false): HTMLElement {
   const element = node('span', '', large ? 'portrait large' : 'portrait'); element.innerHTML = portrait(species); return element;
@@ -251,8 +251,8 @@ export class GameUI {
     this.open({kind: 'cuisineRabbit'});
   }
   private renderCuisineRabbits(s: GameState): void {
-    this.title.textContent = 'Choisis ton lapin';
-    if (!s.rabbits.length) this.content.append(node('p', 'Tu as besoin d’un lapin pour cuisiner.'));
+    this.title.textContent = 'Choisissez votre lapin';
+    if (!s.rabbits.length) this.content.append(node('p', 'Vous avez besoin d’un lapin pour cuisiner.'));
     for (const rabbit of s.rabbits) {
       const card = this.card(SPECIES[rabbit.species].name, `Affection ${rabbit.affection} · ${rabbit.id}`, rabbit.species);
       const choose = this.button(card, 'Choisir ce lapin', () => {
@@ -471,7 +471,7 @@ export class GameUI {
     if (tab === 'home') {
       for (const [category, title, description] of [
         ['recipes', 'Recettes de lapins', 'Achetez et consultez les recettes de reproduction.'],
-        ['rabbits', 'Lapins', 'Les six espèces communes à accueillir.'],
+        ['rabbits', 'Lapins', `Les ${SHOP_SPECIES.filter(id => SPECIES[id].rarity === 'common').length} espèces communes à accueillir.`],
         ['habitats', 'Habitats', 'Des places adaptées à tous les types.'],
         ['buildings', 'Bâtiments et décorations', 'Production et objets pour aménager la prairie.']
       ] as const) {
@@ -841,8 +841,8 @@ export class GameUI {
     this.title.textContent = `Acheter : ${SPECIES[species].name}`; this.content.append(avatar(species),node('p',`${SPECIES[species].price} pattes · paiement à la confirmation`,'badge'));
     const eligible=s.buildings.filter(b=>!habitatEntryReason(s,b,species));
     this.scene.setRabbitPurchase(species,this.rabbitDestination);
-    this.content.append(node('p','Choisis un habitat','badge'));
-    this.content.append(node('p','Touche un habitat encadré sur l’île, puis confirme. Glisse ou pince pour explorer. Aucun paiement avant confirmation.','small'));
+    this.content.append(node('p','Choisissez un habitat','badge'));
+    this.content.append(node('p','Touchez un habitat encadré sur l’île, puis confirmez. Glissez ou pincez pour explorer. Aucun paiement avant confirmation.','small'));
     for (const b of eligible) {
       const free=habitatStats(b).capacity-occupants(s,b.id).length;
       const button=this.button(this.content,`${this.enclosureName(s,b.id)} · ${free} place${free>1?'s':''} libre${free>1?'s':''}`,()=>this.chooseRabbitHabitat(b.id),null,true);
@@ -858,7 +858,7 @@ export class GameUI {
         if(this.view?.kind==='buyRabbit' && this.view.species===species && this.rabbitDestination===enclosure.id)this.execute(command,'Lapin acheté et accueilli.',after);
       },this.entryReason(s,enclosure,species) ?? moneyReason(s,SPECIES[species].price!)).dataset.confirmPurchase='';
       this.complement(this.content,s,command,`${SPECIES[species].name} → ${this.enclosureName(s,enclosure.id)}`,'Lapin acheté et accueilli.',after);
-    } else this.button(this.content,`Confirmer l’achat · ${SPECIES[species].price} pattes`,()=>{},'Choisis d’abord un habitat.');
+    } else this.button(this.content,`Confirmer l’achat · ${SPECIES[species].price} pattes`,()=>{},'Choisissez d’abord un habitat.');
     this.button(this.content,'Annuler · aucun coût',()=>this.cancelPurchase(),null,true);
   }
   private renderNest(s: GameState, id: string): void {
@@ -1141,7 +1141,7 @@ export class GameUI {
     const claim = (card: HTMLElement, command: Command, reward: Reward, ready: boolean, claimed: boolean) => {
       const stage = claimed ? 'Réclamée' : ready ? 'À réclamer' : 'En cours';
       const xp = command.type === 'claimMainMission' ? missionClaimXp('main',command.id) : command.type === 'claimDailyMission' ? missionClaimXp('daily',command.id) : PROGRESSION.xp.claims.dailyBonus;
-      card.append(node('p', (reward.resource==='unlock' ? 'Objectif de collection · sans monnaie supplémentaire' : reward.amount===0 ? (xp > 0 ? 'Objectif de départ' : 'Objectif de départ · sans récompense supplémentaire') : `Gratuit · Récompense : + ${rewardLabel(reward)}`) + (xp > 0 ? ` · ${xp} XP` : ''), 'small'), node('p', stage, 'badge'));
+      card.append(node('p', (reward.resource==='none' ? 'Objectif de collection · sans monnaie supplémentaire' : reward.amount===0 ? (xp > 0 ? 'Objectif de départ' : 'Objectif de départ · sans récompense supplémentaire') : `Gratuit · Récompense : + ${rewardLabel(reward)}`) + (xp > 0 ? ` · ${xp} XP` : ''), 'small'), node('p', stage, 'badge'));
       const generation = this.confirmationGeneration;
       const button = this.button(card, claimed ? 'Récompense réclamée' : reward.amount===0 ? 'Valider l’objectif' : `Réclamer · + ${rewardLabel(reward)}`, () => {
         if (!button.isConnected || generation !== this.confirmationGeneration) return;
@@ -1253,9 +1253,9 @@ export class GameUI {
       const aid=node('div', '', 'initiation-aid'); aid.dataset.aidEnd=String(quote.endsAt);
       this.content.append(aid);
       this.button(aid, 'Terminer gratuitement — découverte du jeu', () => this.execute({type:'initiationAid',id,stage,jobKey:quote.jobKey,...target}, 'Délai terminé gratuitement. La prochaine action reste manuelle.'));
-      aid.append(node('p', 'Aide facultative, une seule fois pour ce travail. Tu peux toujours attendre.'));
+      aid.append(node('p', 'Aide facultative, une seule fois pour ce travail. Vous pouvez toujours attendre.'));
     }
-    this.content.append(node('p', 'Les cœurs permettent aussi de terminer certains délais. Tu peux toujours attendre.'));
+    this.content.append(node('p', 'Les cœurs permettent aussi de terminer certains délais. Vous pouvez toujours attendre.'));
     const host = node('div', '', 'paid-acceleration'); host.dataset.accelerateEnd = String(quote.endsAt); this.content.append(host);
     this.button(host, `Terminer · ${heartAmount(quote.hearts)}`, () => {
       this.controller.refresh(); const current = this.controller.getSnapshot().state; if (!current) return;

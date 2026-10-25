@@ -22,19 +22,21 @@ import {ISLAND} from '../config/islandGeometry';
  */
 export const SAVE_VERSION = 16;
 const integer = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
+// Rebasing a clock may move historical dates before the Unix epoch. Resources stay nonnegative.
+const timestamp = z.number().int().min(Number.MIN_SAFE_INTEGER).max(Number.MAX_SAFE_INTEGER);
 const identity = z.string().regex(/^(building|rabbit|birth)-[1-9]\d*$/);
 const species = z.enum(SPECIES_IDS);
 const birth = z.object({id: identity, species, guaranteed: z.boolean(), reservedDiscovery: z.boolean()}).strict();
 // An enclosure may store the footprint tier it has acquired (1 = 4 × 4, 2 = 6 × 5, 3 = 8 × 6 fine cells). Absent means 4 × 4 at any level.
 const footprintTier = z.union([z.literal(1), z.literal(2), z.literal(3)]);
-const nurseryBaby = z.object({slot: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)]), birth, startedAt: integer, readyAt: integer}).strict();
+const nurseryBaby = z.object({slot: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)]), birth, startedAt: timestamp, readyAt: timestamp}).strict();
 const nurseryPayload = z.object({capacity: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]), babies: z.array(nurseryBaby).max(NURSERY.maxCapacity)}).strict();
 const building = z.object({
   id: identity, kind: z.enum(['enclosure', 'farm', 'nest', 'nursery', 'kitchen']), x: integer, y: integer, incomeUnits: integer,
   habitat: z.object({type: z.enum(HABITAT_TYPES), level: z.union([z.literal(1), z.literal(2), z.literal(3)])}).strict().nullable(),
   footprintTier: footprintTier.optional(),
-  order: z.object({recipe: z.enum(['small', 'medium', 'large']), startedAt: integer, endsAt: integer}).strict().nullable(),
-  breeding: z.object({parents: z.tuple([identity, identity]), startedAt: integer, endsAt: integer, birth}).strict().nullable(),
+  order: z.object({recipe: z.enum(['small', 'medium', 'large']), startedAt: timestamp, endsAt: timestamp}).strict().nullable(),
+  breeding: z.object({parents: z.tuple([identity, identity]), startedAt: timestamp, endsAt: timestamp, birth}).strict().nullable(),
   nursery: nurseryPayload.nullable(),
 }).strict();
 // A rabbit may carry the personal name its owner gave it: canonical text (trimmed, at most 32 characters, no control
@@ -45,7 +47,7 @@ const missions = z.object({
   events: z.object({collectOrder: integer.max(20), breed: integer.max(1), transferBirth: integer.max(1), welcome: integer.max(1), placeDecoration: integer.max(1)}).strict(),
   completed: z.array(z.enum(MAIN_MISSION_IDS)).max(MAIN_MISSION_IDS.length),
   claimed: z.array(z.enum(MAIN_MISSION_IDS)).max(MAIN_MISSION_IDS.length),
-  daily: z.object({referenceAt: integer, cycleIndex: integer,
+  daily: z.object({referenceAt: timestamp, cycleIndex: integer,
     progress: z.object({'collect-pattes': integer, 'collect-grass': integer, 'gain-affection': integer}).strict(),
     claimed: z.array(z.enum(DAILY_MISSION_IDS)).max(DAILY_MISSION_IDS.length), bonusClaimed: z.boolean(),
   }).strict(),
@@ -73,7 +75,7 @@ const levelAccessTransition = z.object({version: z.literal(1), rights: z.array(z
   }
 });
 const v16 = z.object({
-  version: z.literal(SAVE_VERSION), lastSimulatedAt: integer, nextId: integer.positive(), pattes: integer, grass: integer, hearts: integer, nextHeartGiftAt: integer,
+  version: z.literal(SAVE_VERSION), lastSimulatedAt: integer, nextId: integer.positive(), pattes: integer, grass: integer, hearts: integer, nextHeartGiftAt: timestamp,
   buildings: z.array(building).max(ISLAND.maxArea),
   rabbits: z.array(rabbit).max(ISLAND.maxArea * HABITAT_LEVELS.universal[2].capacity),
   discovered: z.array(species).max(SPECIES_IDS.length),

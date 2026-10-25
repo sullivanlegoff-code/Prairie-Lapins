@@ -43,7 +43,7 @@ export function pailleAnimation(scene: number, line: number): Readonly<PailleAni
 export function pailleLines(scene: number, name: string): string[] {
   switch (scene) {
     case 1: return ['Bienvenue sur l’île des lapins ! Cette île a été construite pour une célébration très spéciale !', 'Ici, tu vas pouvoir découvrir le merveilleux monde des lapins !', 'D’abord, donne-moi un prénom !', `${name}, c’est un très joli prénom, il me va très bien ! Bah ouais !`, 'Je m’ennuie ici, je veux que tu me trouves un amoureux !'];
-    case 2: return ['J’ai très faim ! Tu me fais tourner la tête ! Bah ouais !'];
+    case 2: return ['J’ai une folle envie d’herbe à grignoter ! Tu me fais tourner la tête ! Bah ouais !'];
     case 3: return ['La ferme permet de nous nourrir ! J’aime manger autant que faire des bisous, c’est très important pour nous autres lapins !'];
     case 4: return ['Une fois bien nourris, on peut essayer d’obtenir des lapins !'];
     case 5: return ['Viens, on fait nos bails ! Bah ouais !'];
