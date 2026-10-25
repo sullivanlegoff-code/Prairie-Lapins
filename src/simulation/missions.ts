@@ -58,9 +58,11 @@ export function eligibleMainMissionIds(s: Pick<GameState, 'startCourse' | 'missi
 export function activeMainMissions(s: Pick<GameState, 'missions' | 'startCourse'>): MainMissionId[] {
   const next = initialMissionIds(s).find(id => !s.missions.claimed.includes(id));
   if (next) return [next];
+  // Every claimable branch stays visible; the durable chain always keeps its slot, then one branch still in progress.
   const branches = BRANCH_MISSION_IDS.filter(id => !s.missions.claimed.includes(id));
   const durable = DURABLE_MISSION_IDS.find(id => !s.missions.claimed.includes(id));
-  return [...branches, ...(durable ? [durable] : [])].slice(0,2);
+  const ready = branches.filter(id => s.missions.completed.includes(id)), pending = branches.find(id => !s.missions.completed.includes(id));
+  return [...ready, ...(durable ? [durable] : []), ...(pending ? [pending] : [])];
 }
 /** Called once after a successful simulation action; rewards/imports are not events. */
 export function recordMissionAction(s: GameState, action: string, amount: number, placedOutside = true): boolean {

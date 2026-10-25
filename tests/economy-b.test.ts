@@ -45,7 +45,7 @@ describe('economy B durable goals', () => {
     expect(mainProgress(s,'all-ordinary-rares').target).toBe(24);
     s.discovered=s.discovered.filter(id=>id!=='bouee');expect(mainProgress(s,'all-ordinary-rares').value).toBe(23);
     expect(GUARANTEE_SPECIES).toHaveLength(24);
-    s.missions.claimed=[...SOLO_INITIAL_MISSION_IDS];expect(activeMainMissions(s)).toHaveLength(2);
+    s.missions.claimed=[...SOLO_INITIAL_MISSION_IDS];expect(activeMainMissions(s)).toEqual([...BRANCH_MISSION_IDS,'level-five']);
     expect(act(s,{type:'claimMainMission',id:'level-fifteen'},0)).toMatchObject({ok:false,reason:'NOT_READY'});
   });
   it('banks a successful night launch through harvest and reload, but never a refused order', () => {

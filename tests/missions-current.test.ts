@@ -4,7 +4,7 @@ import {welcomeOf} from './nursery-baby';
 import {describe,it,expect} from 'vitest';
 import {act,advance,encodeGame,decodeGame} from '../src/simulation';
 import {activeMainMissions,emptyMainEvents} from '../src/simulation/missions';
-import {INITIAL_MISSION_IDS,BRANCH_MISSION_IDS,MAIN_MISSIONS} from '../src/config/missions';
+import {INITIAL_MISSION_IDS,MAIN_MISSIONS} from '../src/config/missions';
 import {MINUTE,HOUR} from '../src/config/balance';
 import type {Command,GameState} from '../src/state/types';
 const run=(s:GameState,c:Command,at=s.lastSimulatedAt,roll=.9)=>{const r=act(s,c,at,()=>roll);if(!r.ok)throw Error(`${c.type}: ${r.reason}`);return r.state;};
@@ -22,7 +22,7 @@ describe('current mission journey',()=>{
  it.each([.1,.65])('banks every early successful action and unlocks independent branches after claims (roll %s, tests only)',roll=>{
   let s=earlyJourney(roll);expect([s.pattes,s.grass,s.hearts]).toEqual([280,26,14]);expect(s.missions.events).toEqual({collectOrder:20,breed:1,transferBirth:1,welcome:1,placeDecoration:0});
   for(const id of INITIAL_MISSION_IDS){expect(activeMainMissions(s)).toEqual([id]);expect(s.missions.completed).toContain(id);s=run(s,{type:'claimMainMission',id});s=reload(s);expect(act(s,{type:'claimMainMission',id},s.lastSimulatedAt)).toMatchObject({ok:false,reason:'ALREADY_CLAIMED'});}
-  expect([s.pattes,s.grass,s.hearts]).toEqual([410,76,14]);expect(activeMainMissions(s)).toEqual(BRANCH_MISSION_IDS.slice(0,2));
+  expect([s.pattes,s.grass,s.hearts]).toEqual([410,76,14]);expect(activeMainMissions(s)).toEqual(['varied-family','level-five','growing-collection']);
   // Terre and Brumelin were removed with their missions: no objective names them.
   for(const id of ['discover-brumelin','discover-terre'])expect(Object.hasOwn(MAIN_MISSIONS,id),id).toBe(false);
  });
