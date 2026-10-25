@@ -17,7 +17,7 @@ export function mountKitchenUI(root: HTMLElement, dispatch: (intent: Intention) 
   const report = (action: ActionResult) => {
     if (clearMessage) clearTimeout(clearMessage);
     status.textContent = action.message; status.dataset.tone = action.accepted ? 'ok' : 'notice';
-    if (!action.accepted) clearMessage = setTimeout(() => { status.textContent = activeRecipe === 'chicken' ? 'Prépare le poulet et la patate douce, puis place le plat complet au four.' : 'La planche accueille un ingrédient à la fois. Préparez les trois dans l’ordre de votre choix.'; delete status.dataset.tone; }, 2800);
+    if (!action.accepted) clearMessage = setTimeout(() => { status.textContent = activeRecipe === 'chicken' ? 'Prépare le poulet et la patate douce, puis place le plat complet au four.' : 'La planche accueille un ingrédient à la fois. Prépare les trois dans l’ordre de ton choix.'; delete status.dataset.tone; }, 2800);
   };
   const invoke = (intent: Intention) => { const action = dispatch(intent); report(action); return action; };
   root.querySelector('#recipe-salad')!.addEventListener('click', () => invoke({type: 'start-recipe', recipeId: 'salad'}), {signal: abort.signal});

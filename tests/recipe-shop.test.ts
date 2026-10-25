@@ -97,7 +97,7 @@ describe('recipe purchase flow', () => {
     expect(document.getElementById('toast')?.textContent ?? '').toContain('Recette ajoutée au carnet.');
     expect(card('bouee').dataset.recipeKnown).toBe('true'); expect(buy('bouee')).toBeNull();
     expect(card('bouee').textContent).toContain('Affection 4 minimum pour chacun des deux parents.');
-    expect(card('bouee').textContent).toContain('paire(s) possédée(s) compatible(s)');
+    expect(card('bouee').textContent).toMatch(/\d+ paires? possédées? compatibles? avec la recette/);
     const saved = decodeGame(data.get(SAVE_KEY)!); expect(saved.ok && saved.state.recipeBook).toEqual(['bouee']);
     expect(nestOdds(ui, 'Lapin Paille', 'Lapin Feu')).toEqual(["Lapin Paille · paille · Commun : 20 %","Lapin Feu · feu · Commun : 20 %","Lapin en Bouée · paille + feu · Rare : 20 %","Résultats inconnus : 40 %"]);
     ui.open({kind: 'collection'}); [...panel().querySelectorAll('button')].find(b => b.textContent === 'Carnet de reproduction')!.click();

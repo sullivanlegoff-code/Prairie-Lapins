@@ -1,0 +1,217 @@
+/* The meadow's field journal. Art is shared, layout and interaction stay local.
+   Never skin the HUD, navigation, stone controls or outer panel border here. */
+:root {
+  --menu-linen: url('/assets/ui/menus/linen.png');
+  --menu-oak: url('/assets/ui/menus/oak.png');
+  --menu-stitch: url('/assets/ui/menus/stitched.png');
+  --menu-sage: url('/assets/ui/menus/sage.png');
+  --menu-ink: #342f22;
+  --menu-muted: #534b38;
+}
+
+/* Linen sits inside the approved stone shell, including centered sheets. */
+#game-panel .panel-scroll,
+dialog:not(.paille-dialogue):not(.cuisine-activity),
+.cuisine-activity .cuisine-root :is(.overlay-card, .orientation-card) {
+  background-color: #f4e8cd;
+  background-image: radial-gradient(ellipse at 48% 25%, #fff9e52b 30%, #80602a22 100%), var(--menu-linen);
+  background-size: 100% 100%, 192px 192px;
+  color: var(--menu-ink);
+}
+#game-panel .panel-scroll { padding: 16px 14px 24px; }
+#game-panel :is(.small, .card-heading p), dialog .small { color: var(--menu-muted); }
+#game-panel p { line-height: 1.5; }
+.menu-identity {
+  display: block; flex: 0 0 52px; width: 52px; height: 52px; min-width: 0;
+  max-height: none; margin: -5px 2px; object-fit: contain; border-radius: 0;
+  background: none; filter: drop-shadow(0 3px 2px #151d1866); pointer-events: none;
+}
+.menu-identity :is(img, svg) { width: 100%; height: 100%; object-fit: contain; }
+
+/* Three nine-slice materials: oak actions, sewn information, sage state. */
+#game-panel :is(.card, .settings-section, .rabbit-nickname),
+dialog .card {
+  border: 18px solid transparent; border-image: var(--menu-stitch) 32 fill / 18px / 0 stretch;
+  border-radius: 8px; padding: 7px 8px 9px;
+  background: none; color: var(--menu-ink);
+  box-shadow: 0 4px 5px #66421d25;
+}
+#game-panel :is(.shop-category, .card:has(> .action-primary), .card:has(> .mission-claim)) {
+  border-image: var(--menu-oak) 64 fill / 22px / 0 stretch;
+  border-width: 22px; padding: 4px 6px 7px;
+}
+#game-panel :is(.level-locked, .farm-order-locked, .card:has(.portrait > svg)) {
+  border-image: var(--menu-stitch) 32 fill / 18px / 0 stretch;
+  background: #aaa38b24; background-blend-mode: multiply;
+}
+#game-panel .card-heading {
+  border: 0; padding-bottom: 12px; margin-bottom: 8px;
+  background: linear-gradient(90deg, transparent, #96753d80 12%, #96753d80 88%, transparent) bottom / 100% 1px no-repeat;
+}
+#game-panel .card-heading h3 { margin: 0 0 5px; color: #393d24; font-size: 17px; }
+#game-panel .card-heading p { font-size: 13px; }
+#game-panel .category-art {
+  display: block; flex: 0 0 66px; width: 66px; height: 66px; min-width: 0;
+  max-height: none; margin: 0; background: none; object-fit: contain; border-radius: 0;
+  filter: drop-shadow(0 3px 2px #71512630);
+}
+#game-panel .category-art :is(img, svg) { width: 100%; height: 100%; object-fit: contain; }
+
+/* Section headings are pinned sage ribbons, not another cream rectangle. */
+#game-panel :is(.panel-scroll, .menu-grid, .settings-section) > h3,
+#game-panel .card > h3,
+.breeding-column > h3 {
+  width: fit-content; max-width: 100%; position: relative; box-sizing: border-box;
+  padding: 8px 20px; margin: 12px 0 10px;
+  border: 9px solid transparent; border-image: var(--menu-sage) 28 fill / 9px / 0 stretch;
+  background: none; color: #252c18; font-size: 16px; font-weight: 800;
+  text-shadow: 0 1px #f5f1c77a; box-shadow: 0 3px 2px #54442726;
+}
+#game-panel .settings-section > h3 { margin-top: 0; }
+
+/* A visible emblem gives each number an identity; labels stay in the DOM. */
+#game-panel .stats { gap: 10px; }
+#game-panel .stat {
+  position: relative; display: grid; align-content: center;
+  grid-template-columns: 38px minmax(0, 1fr); column-gap: 8px;
+  min-height: 72px; padding: 8px 6px; border: 10px solid transparent;
+  border-image: var(--menu-oak) 40 fill / 10px / 0 stretch;
+  border-radius: 4px; background: none; box-shadow: 0 3px 3px #66421d25;
+}
+#game-panel .stat > span:not(.stat-emblem) {
+  grid-column: 2; margin: 0 0 3px; font-size: 12px; font-weight: 700; color: #54452d;
+}
+#game-panel .stat strong { grid-column: 2; color: #30391f; font-size: 17px; font-variant-numeric: tabular-nums; }
+#game-panel .stat > .stat-emblem {
+  grid-row: 1 / 3; grid-column: 1; align-self: center; display: grid; place-items: center;
+  width: 38px; height: 42px; margin: 0; filter: drop-shadow(0 2px 1px #64452035);
+}
+.stat-emblem > :is(img, svg) { width: 100%; height: 100%; object-fit: contain; }
+.stat-emblem .portrait { width: 38px; height: 38px; min-width: 0; background: none; }
+.stat-emblem .portrait img { width: 100%; height: 100%; object-fit: contain; }
+#game-panel .rabbit-nickname { position: relative; padding-left: 15px; }
+#game-panel .rabbit-nickname-name { color: #3b4228; }
+#game-panel .rabbit-nickname .small { font-weight: 700; }
+#game-panel .rabbit-overview > .portrait.large {
+  background: radial-gradient(ellipse at center, #d9dfb9 20%, #ece8c2 62%, transparent 64%);
+  filter: drop-shadow(0 4px 3px #6b52231a);
+}
+
+/* Carton labels with a sewn rim; long copy uses the same stock as a note. */
+#game-panel :is(.badge, .timer, .reason, .work-state, .initiation-aid, .placement-valid, .placement-invalid, .placement-pending),
+dialog :is(.badge, .timer, .reason) {
+  border: 8px solid transparent; border-image: var(--menu-stitch) 28 fill / 8px / 0 stretch;
+  border-radius: 2px; background: none; padding: 5px 10px;
+  color: #44452a; box-shadow: 0 2px 2px #644a2020;
+}
+#game-panel .badge { font-weight: 700; }
+#game-panel :is(.work-state, .placement-valid) {
+  border-image: var(--menu-sage) 32 fill / 10px / 0 stretch;
+  padding: 10px 14px; color: #252d1b;
+}
+#game-panel .work-state strong { font-size: 16px; }
+#game-panel .work-state p { margin: 5px 0 0; }
+#game-panel :is(.reason, .placement-invalid, .work-state[data-state='blocked']), dialog .reason {
+  border-image-source: var(--menu-stitch); color: #6b3020;
+}
+#game-panel .timer, dialog .timer { color: #5c3919; font-variant-numeric: tabular-nums; }
+#game-panel .tabs {
+  border: 0; border-radius: 0; padding: 6px 4px 10px; background: none;
+  box-shadow: none;
+}
+
+/* Twined stems replace hard rules. Backgrounds cannot intercept gestures. */
+#game-panel :is(.recipe-pair, .paid-acceleration, .decoration-placement-actions) {
+  border-top: 0; padding-top: 14px;
+  background: repeating-linear-gradient(145deg, #8a7048 0 2px, #d5ba7e 2px 4px, #f4e4b2 4px 5px) top / 100% 3px no-repeat;
+}
+#game-panel progress, dialog progress {
+  height: 16px; border: 3px solid #6c5736; border-radius: 8px;
+  background: #494735; box-shadow: 0 1px #fff8d7, inset 0 2px 3px #231d1580;
+}
+#game-panel progress::-webkit-progress-bar, dialog progress::-webkit-progress-bar { background: #494735; }
+#game-panel progress::-webkit-progress-value, dialog progress::-webkit-progress-value {
+  background: linear-gradient(#d6e5a5, #98b95e 35%, #607d38); box-shadow: inset 0 1px #f1edb3;
+}
+#game-panel progress::-moz-progress-bar, dialog progress::-moz-progress-bar { background: linear-gradient(#d6e5a5, #98b95e 35%, #607d38); }
+#game-panel :is(select, input:not([type='range']):not([type='checkbox'])), #import-dialog textarea {
+  min-height: 46px; border: 2px solid #8b744a; border-radius: 6px;
+  background: #fffae9; color: #342f22; box-shadow: inset 0 2px 4px #785c2929, 0 1px #fff7dd;
+}
+#game-panel :is(summary, input[type='checkbox']) { min-height: 44px; }
+#game-panel summary { align-content: center; }
+#game-panel .settings-danger { color: #632f23; }
+
+/* Coco speaks on paper; the existing tail and portrait keep their positions. */
+#game-panel .agency-bubble {
+  border: 12px solid transparent; border-image: var(--menu-stitch) 28 fill / 12px / 0 stretch;
+  border-radius: 5px; padding: 8px 10px; background: none; color: var(--menu-ink);
+  box-shadow: 0 4px 4px #644a2025;
+}
+#game-panel .agency-bubble::before { background: #f3e4c5; border-color: #ae8950; width: 12px; height: 12px; left: -16px; }
+#game-panel .traveller-bubble { border-image-source: var(--menu-oak); }
+
+/* Parent wells are pages of the same journal; approved stone rows stay intact. */
+#breeding-dialog {
+  --breed-ink: #fff1d4; --breed-muted: #e0d9c7;
+  background: radial-gradient(ellipse at 48% 25%, #fff9e52b 30%, #80602a22 100%), var(--menu-linen) #f4e8cd;
+  background-size: 100% 100%, 192px 192px;
+}
+#breeding-dialog .breeding-column, #breeding-dialog .breeding-odds {
+  background: none; border: 10px solid transparent; border-image: var(--menu-stitch) 28 fill / 10px / 0 stretch;
+  border-radius: 4px; box-shadow: 0 3px 3px #644a2020; padding: 4px;
+}
+#breeding-dialog .breeding-column > h3 { margin: 0 0 8px; width: 100%; text-align: center; -webkit-text-stroke: 0; }
+#breeding-dialog .breeding-footer p { color: #342f22; }
+#breeding-dialog .breeding-footer .reason { color: #6b3020; }
+#breeding-dialog .breeding-badge {
+  border: 10px solid transparent; border-image: var(--menu-sage) 28 fill / 10px / 0 stretch;
+  border-radius: 0; background: none; color: #252c18; -webkit-text-stroke: 0; text-shadow: 0 1px #f5f1c77a;
+}
+
+@container (max-width: 440px) {
+  #game-panel .stat { grid-template-columns: 30px minmax(0, 1fr); column-gap: 5px; padding: 6px 3px; }
+  #game-panel .stat > .stat-emblem { width: 30px; height: 34px; }
+  #game-panel .stat strong { font-size: 16px; }
+}
+@media (max-width: 480px) {
+  #game-panel .panel-scroll { padding: 12px 9px 20px; }
+  #game-panel :is(.card, .settings-section, .rabbit-nickname) { padding: 5px; }
+  #game-panel .category-art { width: 50px; height: 58px; flex-basis: 50px; }
+  #game-panel .card-heading h3 { font-size: 16px; }
+  #game-panel .stats { gap: 6px; }
+  #game-panel .rabbit-overview .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .menu-identity { width: 42px; height: 46px; flex-basis: 42px; }
+  #breeding-dialog .breeding-column { border-width: 6px; padding: 2px; }
+  #breeding-dialog .breeding-column > h3 { padding: 3px 4px; }
+}
+@media (max-height: 450px) {
+  #game-panel .panel-scroll { padding-top: 10px; }
+  #game-panel .stat { min-height: 64px; }
+  #game-panel .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  #game-panel .rabbit-overview .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #game-panel .stat { display: block; padding: 7px 5px; }
+  #game-panel .stat > span:not(.stat-emblem) { padding-right: 20px; margin-bottom: 7px; }
+  #game-panel .stat > .stat-emblem { position: absolute; top: 3px; right: 4px; width: 22px; height: 24px; }
+  #game-panel .stat-emblem .portrait { width: 22px; height: 24px; }
+  #game-panel .stat strong { font-size: 16px; }
+  #game-panel .rabbit-nickname:has(> button) { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 10px; padding: 3px 8px; }
+  #game-panel .rabbit-nickname > button { grid-column: 2; grid-row: 1 / 3; align-self: center; margin: 0; }
+  #game-panel .shop-category { border-width: 16px; padding: 2px 6px 4px; }
+  #game-panel .shop-category .card-heading { padding-bottom: 6px; margin-bottom: 6px; }
+  #game-panel .shop-category .card-heading h3 { font-size: 16px; }
+  #game-panel .shop-category .card-heading p { font-size: 12px; line-height: 1.35; margin-block: 3px; }
+  #game-panel .category-art { width: 48px; height: 48px; flex-basis: 48px; }
+  .menu-identity { height: 44px; width: 46px; flex-basis: 46px; }
+  #breeding-dialog .breeding-column > h3 { padding-block: 2px; margin-bottom: 4px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #game-panel *, dialog * { scroll-behavior: auto; }
+}
+
+@media (max-height: 450px), (max-width: 480px) {
+  #game-panel .card.compact-list-card { border-width: 11px; border-image-width: 11px; padding: 4px; }
+  #game-panel .compact-list-card .card-heading { padding-bottom: 4px; margin-bottom: 4px; gap: 6px; }
+  #game-panel .compact-list-card :is(.portrait, .crop-icon) { width: 38px; min-width: 38px; height: 38px; }
+  #game-panel .compact-list-card button { min-width: 44px; min-height: 44px; }
+}

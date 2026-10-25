@@ -175,7 +175,7 @@ export class MeadowScene extends Phaser.Scene {
   private framingInsets() {
     const pad=VISUAL.camera.overviewPadding, panel=document.getElementById('game-panel'), hud=document.getElementById('hud');
     // A centred rabbit card floats over the meadow and leaves the framing alone.
-    const rect=panel && !panel.hidden && !panel.classList.contains('rabbit-card') ? panel.getBoundingClientRect() : null;
+    const rect=panel && !panel.hidden && !panel.classList.contains('center-card') ? panel.getBoundingClientRect() : null;
     const footer=document.getElementById('dev-badge');
     const footerBottom=footer && getComputedStyle(footer).display!=='none' ? this.scale.height-footer.getBoundingClientRect().top+pad : pad;
     // In portrait the panel is a bottom sheet spanning the width: it covers the bottom, not the right.
@@ -746,7 +746,15 @@ export class MeadowScene extends Phaser.Scene {
       return;
     }
     if (this.placement || (this.arrangement && this.ghost)) { this.select({kind:'fineCell',...fineCell(ground)}); return; }
-    for (const bubble of this.bubbles.visible && this.bubbles.alpha>=.65 ? this.bubbleHits : []) { const p = this.view.screen(bubble.point); if (Math.abs(p.x - screen.x) < Math.min(39,bubble.width*this.view.zoom/2+3) && Math.abs(p.y - screen.y) < Math.min(25,bubble.height*this.view.zoom/2+3)) { this.select(bubble.selection); return; } }
+    let nearestBubble: (typeof this.bubbleHits)[number] | null = null, bubbleDistance = Infinity;
+    for (const bubble of this.bubbles.visible && this.bubbles.alpha >= .65 ? this.bubbleHits : []) {
+      const p = this.view.screen(bubble.point), dx = p.x - screen.x, dy = p.y - screen.y;
+      if (Math.abs(dx) <= Math.max(22, Math.min(39, bubble.width * this.view.zoom / 2 + 3)) &&
+          Math.abs(dy) <= Math.max(22, Math.min(25, bubble.height * this.view.zoom / 2 + 3)) && dx * dx + dy * dy < bubbleDistance) {
+        nearestBubble = bubble; bubbleDistance = dx * dx + dy * dy;
+      }
+    }
+    if (nearestBubble) { this.select(nearestBubble.selection); return; }
     if (this.expanding) {const id=this.current ? expansionTarget(this.current,cell.x,cell.y) : null;if(id)this.select({kind:'extension',parcelId:id});return;}
     if (this.placement) {this.select({kind:'fineCell',...fineCell(ground)});return;}
     if (this.arrangement) {
@@ -763,7 +771,7 @@ export class MeadowScene extends Phaser.Scene {
       const home=this.current?buildingAt(this.current,fineCell(ground)):null;
       this.select(home ? {kind: 'building', id: home.id} : {kind: 'empty'}); return;
     }
-    const closest = rabbitHit(screen, this.rabbitViews.flatMap(r => {
+    let closest = rabbitHit(screen, this.rabbitViews.flatMap(r => {
       if (r.sprite && r.art) {
         // Reference images use their own alpha silhouette, avoiding rectangular hits on adjacent residents.
         const world = this.view.world(screen);
@@ -775,6 +783,9 @@ export class MeadowScene extends Phaser.Scene {
       return [{id: r.id, point: this.view.screen(this.bodyPoint(r, 0, -7)), depth: r.object.y,
         radius: r.sprite ? Infinity : VISUAL.rabbit.hitRadius * Math.min(1,this.view.zoom/.8)}];
     }));
+    if (!closest) closest = rabbitHit(screen, this.rabbitViews.filter(r => r.sprite && r.art).map(r => ({
+      id: r.id, point: this.view.screen(this.bodyPoint(r, 0, -7)), depth: r.object.y, radius: 22
+    })));
     if (closest) { this.select({kind: 'rabbit', id: closest.id}); return; }
     const decorationId = this.decorationAt(screen);
     if (decorationId) { this.select({kind: 'decoration', id: decorationId}); return; }

@@ -31,10 +31,11 @@ beforeEach(() => {
   HTMLDialogElement.prototype.close = function () { this.open = false; };
 });
 afterEach(() => { cleanups.splice(0).reverse().forEach(dispose => dispose()); vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
-function setup(withKitchen = true, rabbits?: 'duplicates' | 'different' | 'empty' | 'cap') {
+function setup(withKitchen = true, rabbits?: 'duplicates' | 'different' | 'empty' | 'cap' | 'statue') {
   const values = new Map<string, string>();
   if (withKitchen) {
     const initial=createGame(0);
+    if (rabbits === 'statue') initial.rabbits[0].affection=14;
     if (rabbits === 'cap') initial.rabbits[0].affection=20;
     if (rabbits === 'empty') initial.rabbits=[];
     if (rabbits === 'duplicates') initial.rabbits.push({...initial.rabbits[0],id:'rabbit-101'});
@@ -78,6 +79,14 @@ function finishSalad(engine: KitchenEngine) {
   expect(drop(engine, 'olive-oil', 'bowl').accepted).toBe(true);
 }
 describe('main-game Cuisine activity', () => {
+  it('explains the statue requirement when Cuisine cannot raise affection beyond 14', () => {
+    const k=setup(true,'statue');k.open();const a=k.activity();
+    a.root.querySelector<HTMLButtonElement>('#recipe-salad')!.click();finishSalad(a.engine);a.refresh();
+    const feedback=a.root.querySelector('.cuisine-reward-feedback')!.textContent;
+    expect(feedback).toContain('La Statue de l’Affection permet de dépasser 14.');
+    expect(feedback).not.toContain('+1 Affection');
+    expect(k.controller.getSnapshot().state!.rabbits[0].affection).toBe(14);
+  });
   it('shows cap feedback without a fake daily +1 and still records the consumed opportunity',()=>{
     const k=setup(true,'cap');k.open();const a=k.activity();
     a.root.querySelector<HTMLButtonElement>('#recipe-salad')!.click();finishSalad(a.engine);a.refresh();
@@ -215,7 +224,7 @@ describe('main-game Cuisine activity', () => {
     for(const r of before.rabbits){
       const card=buttons.find(b=>b.dataset.cuisineRabbit===r.id)!.parentElement!;
       expect(card.querySelector('.portrait')).not.toBeNull();
-      expect(card.textContent).toContain(`Affection ${r.affection}`);expect(card.textContent).toContain(r.id);
+      expect(card.textContent).toContain(`Affection ${r.affection}`);expect(card.textContent).not.toContain(r.id);expect(card.textContent).toContain('Prairie de paille');
     }
     expect(k.mounted).not.toHaveBeenCalled();expect(k.host.selectedRabbit).toBeNull();
     const chosen=same.at(-1)!;

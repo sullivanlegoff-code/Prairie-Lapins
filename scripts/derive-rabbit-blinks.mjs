@@ -1,7 +1,7 @@
 // Reduce approved cropped RGBA masters on the same pixel grid as the published sprite. Node built-ins only.
 // Placement and approved hashes live beside each master in blink.json.
 // --check is read-only and verifies the complete reproducible manifest and all bytes.
-import {readFileSync, writeFileSync, mkdirSync, existsSync} from 'node:fs';
+import {readFileSync, writeFileSync, mkdirSync} from 'node:fs';
 import {resolve, dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
@@ -12,10 +12,9 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const check = process.argv.includes('--check');
 const sha1 = bytes => createHash('sha1').update(bytes).digest('hex');
 const registry = readFileSync(join(root, 'src/config/species.ts'), 'utf8');
-const species = [...registry.matchAll(/\{id: '([^']+)'[^\n]+?art: \{kind: 'static-sprite', file: '([^']+)'/g)]
-  // Ardent never blinks; sprites delivered later wait for their approved patches (blink.json beside the master).
-  .filter(([, id]) => id !== 'ardent' && existsSync(join(root, 'assets-source/rabbits', id, 'blink.json')));
-if (species.length !== 18) throw Error(`Expected 18 static sprites with blink masters, got ${species.length}`);
+// Every illustrated species must supply both masters; a missing blink.json is an error.
+const species = [...registry.matchAll(/\{id: '([^']+)'[^\n]+?art: \{kind: 'static-sprite', file: '([^']+)'/g)];
+if (species.length !== 31) throw Error(`Expected 31 static sprites with blink masters, got ${species.length}`);
 const manifest = {};
 let failed = false;
 for (const [, id, spriteFile] of species) {

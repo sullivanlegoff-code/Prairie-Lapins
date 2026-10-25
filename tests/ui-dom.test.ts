@@ -383,15 +383,17 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     controller.confirmImport(candidate.token, true); stale.click();
     expect(state(controller).buildings).toHaveLength(1); expect(state(controller).pattes).toBe(0);
   });
-  it('opens a rabbit as a centred card over the dimmed meadow, closed by its cross or a tap outside', () => {
+  it('opens a rabbit, a building or a habitat as a centred card over the dimmed meadow, closed by its cross or a tap outside', () => {
     const {ui} = setup(); const backdrop = document.getElementById('panel-backdrop')!, sheet = document.getElementById('game-panel')!;
     ui.select({kind: 'rabbit', id: 'rabbit-2'});
-    expect(sheet.classList.contains('rabbit-card')).toBe(true); expect(backdrop.hidden).toBe(false);
+    expect(sheet.classList.contains('center-card')).toBe(true); expect(backdrop.hidden).toBe(false);
     backdrop.click();
-    expect(sheet.hidden).toBe(true); expect(backdrop.hidden).toBe(true); expect(sheet.classList.contains('rabbit-card')).toBe(false);
+    expect(sheet.hidden).toBe(true); expect(backdrop.hidden).toBe(true); expect(sheet.classList.contains('center-card')).toBe(false);
     ui.select({kind: 'rabbit', id: 'rabbit-2'}); document.getElementById('close-panel')!.click();
     expect(sheet.hidden).toBe(true); expect(backdrop.hidden).toBe(true);
-    ui.open({kind: 'collection'}); expect(sheet.classList.contains('rabbit-card')).toBe(false); expect(backdrop.hidden).toBe(true);
+    ui.select({kind: 'building', id: 'building-1'}); expect(sheet.classList.contains('center-card')).toBe(true); expect(backdrop.hidden).toBe(false);
+    document.getElementById('close-panel')!.click();
+    ui.open({kind: 'collection'}); expect(sheet.classList.contains('center-card')).toBe(false); expect(backdrop.hidden).toBe(true);
   });
   it('a double pressure on Feed performs exactly one action and updates the view', () => {
     const {ui, controller, scene} = setup(); const perform = vi.spyOn(controller, 'perform');
@@ -426,7 +428,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     expect(panel().querySelectorAll('article')).toHaveLength(EXPECTED_RECIPE_IDS.length); expect(recipe().dataset.recipeKnown).toBe('true');
     expect(recipe().textContent).toContain('Affection 4 minimum'); expect(recipe().textContent).toContain('À nourrir');
     expect(button('Préparer cette paire au nid', recipe()).disabled).toBe(true);
-    button('Voir le parent n° 3 à nourrir', recipe()).click(); expect(panel().textContent).toContain('Affection 2 / 20');
+    button('Nourrir Lapin Neige · Enclos 1', recipe()).click(); expect(panel().textContent).toContain('Affection 2 / 20');
     ui.select({kind: 'building', id: 'building-4'});
     crossFromNest('Lapin Feu', 'Lapin Neige', false);
     const odds = () => breeding().querySelector('.breeding-odds')!.textContent;

@@ -117,7 +117,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         // One Heart per canonical cycle for Cuisine as a whole, whichever rabbit cooked.
         const heartGranted = s.cuisine.heartCycle !== cycle;
         if (heartGranted) { credit('hearts', 1); s.cuisine.heartCycle = cycle; }
-        cuisineReward = {pattes: paid.pattes, grass: paid.grass, fullReward, affectionGranted, affectionAtCap: rabbit.affection === BALANCE.maxAffection, heartGranted};
+        cuisineReward = {pattes: paid.pattes, grass: paid.grass, fullReward, affectionGranted, affectionAtCap: rabbit.affection === BALANCE.maxAffection, affectionStatueRequired: !affectionGranted && rabbit.affection >= AFFECTION_STATUE.cap && affectionCap(s) === AFFECTION_STATUE.cap, heartGranted};
         break;
       }
       case 'buyDecoration': {

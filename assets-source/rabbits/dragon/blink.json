@@ -1,0 +1,13 @@
+{
+  "spriteSha1": "dc002cc5ac23fd6a2fa3000a68b3769759b5ba93",
+  "eyes-closed": {
+    "x": 314,
+    "y": 98,
+    "sourceSha1": "3668d8c6876721fdc568a64d7f5e97b132656c94"
+  },
+  "nose-twitch": {
+    "x": 446,
+    "y": 169,
+    "sourceSha1": "0991f5571991388a26250fb67f5f8cabe9988359"
+  }
+}

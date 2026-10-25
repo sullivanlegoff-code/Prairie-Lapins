@@ -204,3 +204,5 @@
   #breeding-dialog .breeding-tools button { font-size: 11px; }
   .breeding-list { max-height: calc(100dvh - 220px); }
 }
+
+.breeding-row-text small.breeding-unavailable-reason { display: block; white-space: normal; font-size: 11px; line-height: 1.15; }

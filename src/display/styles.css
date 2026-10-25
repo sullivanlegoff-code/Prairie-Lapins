@@ -140,7 +140,7 @@ p { line-height: 1.45; margin: 10px 0; overflow-wrap: anywhere; }
 .rabbit-nickname-name { font-size: 20px; font-weight: 700; color: #365333; overflow-wrap: anywhere; }
 .rabbit-nickname-name.empty { font-weight: 400; font-style: italic; color: var(--ink-muted); }
 .rabbit-name-form { display: grid; gap: 6px; margin-top: 6px; }
-.rabbit-name-form input { font: inherit; padding: 8px 10px; border: 2px solid #c9cfae; border-radius: 10px; min-width: 0; }
+.rabbit-name-form input { font: inherit; font-size: 16px; padding: 8px 10px; border: 2px solid #c9cfae; border-radius: 10px; min-width: 0; }
 .rabbit-overview { display: flex; align-items: center; gap: 12px; }
 .rabbit-overview > div { flex: 1; min-width: 0; }
 .rabbit-overview > .portrait.large { flex: 0 0 150px; margin: 4px auto; }
@@ -360,12 +360,12 @@ dialog > button { width: 100%; margin-top: 8px; }
 
 /* A rabbit's card: centred over the dimmed meadow, closed by the red cross or a tap outside it. */
 #panel-backdrop { position: fixed; inset: 0; z-index: 115; background: #18211dad; touch-action: none; }
-#game-panel.rabbit-card {
+#game-panel.center-card {
   position: fixed; z-index: 116; left: 50%; top: 50%; right: auto; bottom: auto; transform: translate(-50%, -50%);
   width: min(520px, calc(100vw - 32px - env(safe-area-inset-left) - env(safe-area-inset-right)));
   max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 }
-.rabbit-card-open #toast { z-index: 130; }
+.center-card-open #toast { z-index: 130; }
 .shop-open #toast { z-index: 130; top: auto; bottom: max(12px, env(safe-area-inset-bottom)); max-width: calc(100vw - 32px); }
 
 /* Player progress is screen-space HUD; the existing camera framing height stays intact. */
@@ -527,3 +527,6 @@ dialog > button { width: 100%; margin-top: 8px; }
 .agency-travellers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .agency-travellers .card { margin: 0; }
 @container (max-width: 440px) { .agency-travellers { grid-template-columns: minmax(0, 1fr); } .agency-host-portrait { width: 84px; } }
+
+#open-hearts { position: relative; }
+#open-hearts.has-heart-gift::after { content: ""; position: absolute; top: 3px; right: 3px; width: 8px; height: 8px; border-radius: 50%; background: #ba657e; border: 1px solid #fff1d4; pointer-events: none; }
