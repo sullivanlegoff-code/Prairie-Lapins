@@ -1,8 +1,8 @@
-/* Shared skin only: preserve all dimensions, padding, positioning and hit areas.
-   Resource readouts are intentionally excluded, including the two implemented
-   as buttons (#player-progress and .resource.hearts). Cuisine owns its existing button presentation. */
-:where(button:not(.resource):not(#player-progress):not(:where(.cuisine-root button))) { position: relative; }
-button:not(.resource):not(#player-progress):not(:where(.cuisine-root button)) {
+/* Original foundation retained for the approved meadow controls below.
+   The extended menu family follows it, with explicit HUD/navigation exclusions.
+   Cuisine scene objects keep their own artwork and gesture geometry. */
+:where(button:not(.resource):not(:where(#player-progress)):not(:where(.cuisine-root button))) { position: relative; }
+button:not(.resource):not(:where(#player-progress)):not(:where(.cuisine-root button)) {
   --stone-face: #c6d0b6;
   --stone-ink: #24311f;
   --stone-edge-filter: none;
@@ -16,7 +16,7 @@ button:not(.resource):not(#player-progress):not(:where(.cuisine-root button)) {
   text-shadow: 0 1px #ffffff66;
   box-shadow: inset 0 2px 1px #ffffff40, inset 0 -2px 1px #28302226;
 }
-button:not(.resource):not(#player-progress):not(:where(.cuisine-root button))::before {
+button:not(.resource):not(:where(#player-progress)):not(:where(.cuisine-root button))::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -26,29 +26,261 @@ button:not(.resource):not(#player-progress):not(:where(.cuisine-root button))::b
   border-image: url('/assets/ui/stone-frame.png') 48 / 10px / 0 round;
   filter: var(--stone-edge-filter);
 }
-button:not(.resource):not(#player-progress):not(:where(.cuisine-root button)):is(.secondary, .action-secondary) {
+button:not(.resource):not(:where(#player-progress)):not(:where(.cuisine-root button)):is(.secondary, .action-secondary) {
   --stone-face: #d6d6cb;
   --stone-ink: #343e36;
 }
-button:not(.resource):not(#player-progress):not(:where(.cuisine-root button)):is(.action-danger) {
+button:not(.resource):not(:where(#player-progress)):not(:where(.cuisine-root button)):is(.action-danger) {
   --stone-face: #ddc8ba;
   --stone-ink: #602f25;
 }
-button:not(.resource):not(#player-progress):not(:where(.cuisine-root button)):active:not(:disabled) {
+button:not(.resource):not(:where(#player-progress)):not(:where(.cuisine-root button)):active:not(:disabled) {
   --stone-face: #adb99b;
   --stone-ink: #202c1c;
   --stone-edge-filter: brightness(.82);
   box-shadow: inset 0 3px 4px #20291e55;
 }
-button:not(.resource):not(#player-progress):not(:where(.cuisine-root button)):is(.secondary, .action-secondary):active:not(:disabled) {
+button:not(.resource):not(:where(#player-progress)):not(:where(.cuisine-root button)):is(.secondary, .action-secondary):active:not(:disabled) {
   --stone-face: #b9bcb1;
   --stone-ink: #252f29;
 }
-button:not(.resource):not(#player-progress):not(:where(.cuisine-root button)):disabled {
+button:not(.resource):not(:where(#player-progress)):not(:where(.cuisine-root button)):disabled {
   --stone-face: #c7c8c0;
   --stone-ink: #41473b;
   --stone-edge-filter: grayscale(1) brightness(1.15);
   text-shadow: none;
   box-shadow: inset 0 1px 2px #30352e24;
   opacity: 1;
+}
+
+/* Meadow UI family. Reuse the original painted pebble as a nine-slice, never
+   change the approved navigation/HUD rules. Their shared foundation above is
+   retained because their own skins rely on its positioning and stacking. */
+:root {
+  --ui-pebble: url('/assets/ui/navigation/support-pebble.png');
+  --ui-grain: url('/assets/ui/stone-grain.png');
+  --ui-cream: #fff1d4;
+  --ui-paper: #f5efde;
+  --ui-ink: #303b30;
+  --ui-muted: #51594d;
+}
+
+/* Text is kept inside the bevel. No transform on press: targets stay still. */
+button:not(.resource):not(:where(#player-progress)):not(.meadow-nav):not(.meadow-tool):not(:where(.cuisine-root button)) {
+  --stone-face: #3c5434;
+  --stone-ink: var(--ui-cream);
+  --stone-edge-filter: none;
+  min-height: 48px;
+  padding: 13px 18px;
+  border: 0;
+  border-radius: 15px 13px 16px 14px;
+  background-color: var(--stone-face);
+  background-image: linear-gradient(170deg, #ffffff0c, #00000014), var(--ui-grain);
+  color: var(--stone-ink);
+  text-shadow: 0 1px 1px #171e18;
+  box-shadow: 0 3px 2px #20262038, inset 0 3px 5px #171c1b80;
+  transition: filter 100ms ease-out;
+}
+button:not(.resource):not(:where(#player-progress)):not(.meadow-nav):not(.meadow-tool):not(:where(.cuisine-root button))::before {
+  inset: -2px; /* the pebble's transparent margin falls outside, so the face never peeks past the rim */
+  border: 10px solid transparent;
+  border-image: var(--ui-pebble) 28 / 10px / 0 stretch;
+}
+button:not(.resource):not(:where(#player-progress)):not(.meadow-nav):not(.meadow-tool):not(:where(.cuisine-root button)):is(.secondary, .action-secondary) {
+  --stone-face: #373b3b;
+  --stone-ink: var(--ui-cream);
+}
+button:not(.resource):not(:where(#player-progress)):not(.meadow-nav):not(.meadow-tool):not(:where(.cuisine-root button)).action-danger {
+  --stone-face: #793f37;
+  --stone-ink: #fff1df;
+}
+button:not(.resource):not(:where(#player-progress)):not(.meadow-nav):not(.meadow-tool):not(:where(.cuisine-root button)).heart-spend {
+  --stone-face: #704052;
+  --stone-ink: #fff0e6;
+}
+button:not(.resource):not(:where(#player-progress)):not(.meadow-nav):not(.meadow-tool):not(:where(.cuisine-root button)):is(.heart-gift, .mission-claim):not(:disabled) {
+  --stone-face: #38552d;
+  --stone-ink: #fff5da;
+}
+button:not(.resource):not(:where(#player-progress)):not(.meadow-nav):not(.meadow-tool):not(:where(.cuisine-root button)):active:not(:disabled) {
+  --stone-edge-filter: brightness(.85);
+  background-image: linear-gradient(#0003, #0003), var(--ui-grain);
+  color: var(--stone-ink);
+  box-shadow: inset 0 4px 8px #0008;
+}
+button:not(.resource):not(:where(#player-progress)):not(.meadow-nav):not(.meadow-tool):not(:where(.cuisine-root button)):disabled {
+  --stone-face: #c5c5ba;
+  --stone-ink: #43473e;
+  --stone-edge-filter: grayscale(1) brightness(.9);
+  color: var(--stone-ink);
+  text-shadow: none;
+  box-shadow: inset 0 2px 4px #30352e24;
+  opacity: 1;
+}
+@media (hover: hover) and (pointer: fine) {
+  button:not(.resource):not(:where(#player-progress)):not(.meadow-nav):not(.meadow-tool):not(:where(.cuisine-root button)):hover:not(:disabled) { filter: brightness(1.12); }
+}
+button:not(.resource):not(:where(#player-progress)):not(.meadow-nav):not(.meadow-tool):focus-visible,
+:is(#game-panel, dialog, #tutorial) :is(input, textarea, select, summary, a):focus-visible {
+  outline: 3px solid #8b551e;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px #fff1ce;
+}
+#panel-back, #close-panel { padding: 6px; min-width: 46px; min-height: 46px; color: var(--ui-cream); }
+#open-missions { color: var(--ui-cream); font-weight: 900; text-shadow: 0 1px 1px #171c18; }
+#missions-badge {
+  min-width: 22px; padding: 3px 6px; border: 1px solid #edc77e;
+  background: linear-gradient(#885820, #654319); color: #fff4d9;
+  box-shadow: inset 0 1px #ffdb8c66, 0 1px 2px #0005; text-shadow: 0 1px #382510;
+}
+
+/* A carved stone shell, a slate lintel, and warm light reading surfaces. */
+#game-panel, #game-panel.shop-fullscreen,
+dialog:not(.paille-dialogue):not(.cuisine-activity),
+#tutorial, #portrait-notice > div, .loading-card {
+  border: 12px solid transparent;
+  border-image: var(--ui-pebble) 28 / 12px / 0 stretch;
+  border-radius: 24px 21px 23px 22px;
+  background: linear-gradient(135deg, #fff8e8, var(--ui-paper));
+  background-clip: border-box;
+  color: var(--ui-ink);
+  box-shadow: 0 8px 0 #30342f24, 0 16px 32px #262e3333;
+}
+#game-panel.shop-fullscreen { border-radius: 0; }
+.panel-header {
+  padding: 8px 10px;
+  border-bottom: 3px solid #a6a394;
+  background: linear-gradient(180deg, #484c48, #303634);
+  color: var(--ui-cream);
+  box-shadow: inset 0 1px #fff3, 0 2px 3px #30352b26;
+}
+.panel-header h2, dialog:not(.paille-dialogue):not(.cuisine-activity) > h2 {
+  color: var(--ui-cream); font-weight: 900;
+  -webkit-text-stroke: 1.4px #252b25; paint-order: stroke fill;
+  text-shadow: 0 2px #202720;
+}
+dialog:not(.paille-dialogue):not(.cuisine-activity) > h2 {
+  position: sticky; top: -16px; z-index: 2;
+  margin: -8px -8px 14px; padding: 14px 12px;
+  border-radius: 10px 9px 12px 10px;
+  background: linear-gradient(#484c48, #303634);
+  border-bottom: 3px solid #a6a394;
+}
+dialog:not(.paille-dialogue):not(.cuisine-activity) { padding: 16px; }
+#player-level-dialog > #level-up-title { color: var(--ui-cream); }
+dialog::backdrop { background: #1e2929a8; }
+.panel-scroll { padding: 12px 12px 20px; scrollbar-color: #777b6d #e5dfcf; }
+.panel-scroll, dialog, #tutorial { scrollbar-width: thin; }
+.panel-scroll::-webkit-scrollbar, dialog::-webkit-scrollbar { width: 8px; }
+.panel-scroll::-webkit-scrollbar-thumb, dialog::-webkit-scrollbar-thumb { background: #777b6d; border: 2px solid #e5dfcf; border-radius: 8px; }
+.panel-scroll::-webkit-scrollbar-track, dialog::-webkit-scrollbar-track { background: #e5dfcf; }
+.card, .settings-section, .rabbit-nickname, .stat {
+  border: 2px solid #a7a597;
+  border-radius: 16px 13px 17px 14px;
+  background: linear-gradient(145deg, #f9f4e6, #e7e3d4);
+  color: var(--ui-ink);
+  box-shadow: inset 0 2px #fffaf0, inset 0 -2px #c5c2b2, 0 3px 0 #767d6630;
+}
+.card-heading { padding-bottom: 9px; border-bottom: 1px solid #b5b5a5; margin-bottom: 8px; }
+.card-heading h3, .card h3, .settings-section h3 { color: #303d2e; }
+.card-heading p, .small, .stat > span { color: var(--ui-muted); }
+.stat strong, .rabbit-nickname-name { color: #33472e; }
+.settings-danger { background: linear-gradient(145deg, #faeee4, #e9d7c9); border-color: #ad8a77; }
+.settings-danger summary { color: #743a2b; }
+.tabs { padding: 5px; border: 1px solid #a4a597; border-radius: 17px; background: #b8baad; box-shadow: inset 0 2px 4px #353b352b; }
+.tabs > button:not(.secondary):not(.action-secondary), .tabs > button[aria-pressed='true'] {
+  --stone-face: #3a542f; box-shadow: 0 0 0 2px #f0d494, 0 3px 2px #20262038;
+}
+.badge, .timer, .reason, .placement-valid, .placement-invalid, .placement-pending, .work-state, .initiation-aid {
+  border: 1px solid #a6ad93;
+  border-radius: 11px 9px 12px 10px;
+  background: linear-gradient(#eef0df, #dce3c9);
+  color: #34482f;
+  box-shadow: inset 0 1px #fff9, 0 2px 0 #626e4b20;
+}
+.badge { font-weight: 700; }
+.timer { display: inline-block; padding: 4px 8px; color: #65461e; background: linear-gradient(#fff0cd, #eddfba); border-color: #b8a06e; }
+.reason, .placement-invalid, .work-state[data-state='blocked'] { color: #723b2c; background: #f4e1d4; border-color: #bc9580; border-left-width: 4px; }
+.placement-pending, .work-state[data-state='running'] { color: #654d23; background: #eee4c9; border-color: #b4a171; }
+.placement-valid, .work-state[data-state='ready'] { color: #304a2b; background: #e0eaca; border-color: #8eaa76; }
+progress, .loading-bar {
+  height: 14px; border: 2px solid #535c4e; border-radius: 8px;
+  background: #303a2c; box-shadow: inset 0 2px 3px #0005; accent-color: #658643;
+}
+progress::-webkit-progress-bar { background: #303a2c; border-radius: 5px; }
+progress::-webkit-progress-value, .loading-bar span { background: linear-gradient(#bedb7b, #7fa845 38%, #5f8138); border-radius: 5px; box-shadow: inset 0 1px #e6f6ae; }
+progress::-moz-progress-bar { background: linear-gradient(#bedb7b, #7fa845 38%, #5f8138); border-radius: 5px; }
+.recipe-pair, .paid-acceleration, .decoration-placement-actions { border-top: 2px solid #b2b1a0; }
+.collection-filters select, .rabbit-name-form input, #import-dialog textarea {
+  min-height: 46px; border: 2px solid #7a8170; color: #303b30;
+  background: #fffbed; box-shadow: inset 0 2px 3px #424b3326;
+}
+.collection-filters select { padding-inline: 6px 2px; }
+#settings-content :is(label, select, input) { min-width: 0; max-width: 100%; }
+#settings-content select { min-height: 46px; color: #303b30; background: #fffbed; border: 2px solid #7a8170; border-radius: 9px; }
+#toast, #arrange-banner {
+  border: 7px solid transparent; border-image: var(--ui-pebble) 28 / 7px / 0 stretch;
+  border-radius: 16px; background: #343c35; color: var(--ui-cream);
+  background-clip: padding-box; box-shadow: 0 5px 12px #25332640;
+}
+#toast { font-weight: 700; }
+#photo-return { opacity: 1; }
+#portrait-notice { background: #29392dc9; overflow-y: auto; touch-action: pan-y; }
+#tutorial strong, #portrait-notice h2, .loading-card h1 { color: #33472e; }
+#tutorial p { color: #3d4738; }
+.shop-resources { flex-wrap: wrap; gap: 6px; font-variant-numeric: tabular-nums; }
+.shop-resources > span {
+  padding: 7px 10px; border: 1px solid #939487; border-radius: 11px;
+  background: #272f29; color: #fff1d4; box-shadow: inset 0 2px 3px #0005;
+  font-weight: 800; text-shadow: 0 1px #121c13;
+}
+.shop-resources > span:nth-child(2) { color: #d8f0b4; }
+.shop-resources > span:nth-child(3) { color: #ffe2e8; }
+/* The rabbit card closes with a red stone cross, top right. */
+#game-panel.rabbit-card #close-panel { --stone-face: #a3392e; --stone-ink: #fff4e6; font-size: 26px; text-shadow: 0 1px 1px #4a1611; }
+#game-panel.rabbit-card { box-shadow: 0 10px 0 #1a201c40, 0 22px 48px #0b120e80; }
+/* Cuisine's painted ingredients are scene objects. Its menu controls and
+   overlays share the shell, without applying a frame to draggable artwork. */
+.cuisine-activity .cuisine-root button:not(.kitchen-object) {
+  position: relative; isolation: isolate; min-width: 44px; min-height: 48px;
+  padding: 13px 18px; border: 0; border-radius: 14px;
+  background: linear-gradient(#ffffff0a, #00000014), #373b3b;
+  color: #fff1d4; text-shadow: 0 1px #171e18;
+  box-shadow: 0 3px 2px #20262038; opacity: 1;
+}
+.cuisine-activity .cuisine-root button:not(.kitchen-object)::before {
+  content: ''; position: absolute; inset: -2px; z-index: -1; pointer-events: none;
+  border: 10px solid transparent; border-image: var(--ui-pebble) 28 / 10px / 0 stretch;
+}
+.cuisine-activity .cuisine-root button:not(.kitchen-object):active:not(:disabled) { transform: none; filter: brightness(.85); }
+.cuisine-activity .cuisine-root button:not(.kitchen-object):disabled { background: #c5c5ba; color: #43473e; text-shadow: none; }
+.cuisine-activity .cuisine-root .menu-recipe strong { font-family: inherit; font-weight: 800; }
+.cuisine-activity .cuisine-root :is(.overlay-card, .orientation-card) {
+  border: 12px solid transparent; border-image: var(--ui-pebble) 28 / 12px / 0 stretch;
+  background: linear-gradient(135deg, #fff8e8, #f5efde); color: #303b30;
+  box-shadow: 0 12px 32px #26332c55;
+}
+.cuisine-activity .cuisine-root :is(.overlay-card, .orientation-card) :is(p, dt, dd, small) { color: #51594d; }
+.cuisine-activity .cuisine-root .menu-recipe :is(strong, small) { color: #fff1d4; }
+.cuisine-activity .cuisine-root .menu-recipe:disabled :is(strong, small) { color: #43473e; }
+.cuisine-activity .cuisine-root :is(.overlay-card, .orientation-card) h2 { font-family: inherit; font-weight: 800; color: #33472e; }
+.cuisine-activity .cuisine-root button:focus-visible { outline: 3px solid #8b551e; outline-offset: 3px; box-shadow: 0 0 0 6px #fff1ce; }
+.cuisine-activity .cuisine-root .stage-badge { background: #343c35; border-color: #939487; color: #fff1d4; }
+@media (max-width: 480px) {
+  .panel-scroll { padding: 10px 8px 18px; }
+  .shop-resources { font-size: 12px; }
+  .shop-resources > span { padding: 5px 7px; }
+  .sound-channel { grid-template-columns: 46px minmax(0, 1fr) 3.5em; gap: 6px; }
+  .sound-channel input[type=range] { grid-column: 2; grid-row: auto; min-width: 0; }
+  .sound-channel output { grid-column: 3; }
+}
+@media (max-height: 450px) {
+  .panel-header { padding: 4px 8px; }
+  #game-panel { top: calc(var(--hud-offset) + 4px); }
+  #game-panel.shop-fullscreen { top: 0; }
+  dialog:not(.paille-dialogue):not(.cuisine-activity) { padding: 12px; }
+  dialog:not(.paille-dialogue):not(.cuisine-activity) > h2 { top: -12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  button:not(.resource):not(:where(#player-progress)):not(.meadow-nav):not(.meadow-tool) { transition: none; }
 }

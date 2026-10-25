@@ -383,6 +383,16 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     controller.confirmImport(candidate.token, true); stale.click();
     expect(state(controller).buildings).toHaveLength(1); expect(state(controller).pattes).toBe(0);
   });
+  it('opens a rabbit as a centred card over the dimmed meadow, closed by its cross or a tap outside', () => {
+    const {ui} = setup(); const backdrop = document.getElementById('panel-backdrop')!, sheet = document.getElementById('game-panel')!;
+    ui.select({kind: 'rabbit', id: 'rabbit-2'});
+    expect(sheet.classList.contains('rabbit-card')).toBe(true); expect(backdrop.hidden).toBe(false);
+    backdrop.click();
+    expect(sheet.hidden).toBe(true); expect(backdrop.hidden).toBe(true); expect(sheet.classList.contains('rabbit-card')).toBe(false);
+    ui.select({kind: 'rabbit', id: 'rabbit-2'}); document.getElementById('close-panel')!.click();
+    expect(sheet.hidden).toBe(true); expect(backdrop.hidden).toBe(true);
+    ui.open({kind: 'collection'}); expect(sheet.classList.contains('rabbit-card')).toBe(false); expect(backdrop.hidden).toBe(true);
+  });
   it('a double pressure on Feed performs exactly one action and updates the view', () => {
     const {ui, controller, scene} = setup(); const perform = vi.spyOn(controller, 'perform');
     ui.select({kind: 'rabbit', id: 'rabbit-2'}); button('Nourrir · 2 herbes').click(); button('Nourrir · 4 herbes').click();

@@ -148,3 +148,59 @@
   .breeding-row-text strong { font-size: 13px; white-space: normal; overflow-wrap: anywhere; }
   .breeding-row-text span { font-size: 11px; white-space: normal; }
 }
+
+/* Match the meadow shell while keeping the two independent parent lists. */
+#breeding-dialog {
+  border: 12px solid transparent;
+  border-image: var(--ui-pebble) 28 / 12px / 0 stretch;
+  border-radius: 24px;
+  background: linear-gradient(#62675e, #4c5249);
+  background-clip: padding-box;
+  padding: 12px;
+  overflow: auto;
+  color: var(--breed-ink);
+}
+.breeding-header { align-items: center; justify-content: space-between; gap: 8px; }
+#breeding-dialog .breeding-badge {
+  position: static; white-space: normal; margin: 0; padding: 8px 12px;
+  border: 2px solid #a3a395; border-radius: 12px; background: #343b35;
+  color: #fff1d4; box-shadow: inset 0 1px #fff3, 0 2px #30372c;
+  -webkit-text-stroke: 1px #222a23;
+}
+#breeding-dialog button.breeding-close.breeding-close {
+  --stone-face: #373b3b; --stone-ink: #fff1d4;
+  position: relative; inset: auto; flex: 0 0 48px;
+  width: 48px; min-width: 48px; height: 48px; min-height: 48px;
+  border-radius: 14px; text-shadow: 0 1px #171e18;
+}
+#breeding-dialog button.breeding-row:disabled {
+  opacity: 1; filter: none; color: #d2d0c4;
+  background: #484b44; border-color: #73766c;
+}
+#breeding-dialog button.breeding-row:disabled .portrait { filter: grayscale(1); }
+#breeding-dialog button.breeding-row:disabled .breeding-row-text :is(span, small) { color: #dedbd0; }
+#breeding-dialog button.breeding-launch {
+  --stone-face: #793f37; --stone-ink: #fff1df;
+  text-shadow: 0 1px #321b16;
+}
+#breeding-dialog button.breeding-launch:disabled { --stone-face: #c5c5ba; --stone-ink: #43473e; text-shadow: none; }
+.breeding-footer .reason { color: #ffe3a6; background: #343b35; border-color: #8f927e; }
+#breeding-dialog .breeding-tools button { padding: 8px 6px; font-size: 12px; overflow-wrap: normal; hyphens: none; }
+#breeding-dialog .breeding-tools button[aria-pressed='true'] { --stone-face: #3a542f; box-shadow: 0 0 0 2px #f0d494; }
+@media (max-width: 480px) {
+  #breeding-dialog { padding: 8px; }
+  .breeding-columns { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .breeding-tools { grid-column: 1 / -1; grid-row: 2; flex-direction: row; width: auto; }
+  #breeding-dialog .breeding-tools button { width: auto; flex: 1; font-size: 12px; padding: 12px; }
+  .breeding-list { max-height: 35dvh; }
+  .breeding-row-text strong { font-size: 13px; }
+}
+@media (max-height: 450px) {
+  #breeding-dialog { padding: 6px; }
+  #breeding-dialog[open] { gap: 4px; }
+  .breeding-header { min-height: 48px; }
+  #breeding-dialog .breeding-badge { font-size: 16px; }
+  .breeding-tools { width: 104px; }
+  #breeding-dialog .breeding-tools button { font-size: 11px; }
+  .breeding-list { max-height: calc(100dvh - 220px); }
+}
