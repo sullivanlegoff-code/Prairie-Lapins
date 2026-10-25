@@ -15,9 +15,9 @@ describe('player progress display',()=>{
  it('uses in-level XP and updates stable controls after one and several levels',()=>{
   const ui=mountPlayerProgression(),s=createGame(0),button=el('player-progress'),bar=el('player-xp-bar');ui.update(snapshot(s));
   expect(el('player-level').textContent).toBe('1');expect(el('player-xp-label').textContent).toBe('0 / 90 XP');
-  applyProgressionGain(s,90);ui.update(snapshot(s));expect(el('player-level').textContent).toBe('2');expect(el('player-xp-label').textContent).toBe('0 / 200 XP');
-  applyProgressionGain(s,900);ui.update(snapshot(s));expect(el('player-level').textContent).toBe('4');expect(el('player-detail-total').textContent).toContain('990');
-  expect(bar.getAttribute('aria-valuenow')).toBe('382');expect(bar.getAttribute('aria-valuemax')).toBe('443');
+  applyProgressionGain(s,90);ui.update(snapshot(s));expect(el('player-level').textContent).toBe('2');expect(el('player-xp-label').textContent).toBe('0 / 162 XP');
+  applyProgressionGain(s,600);ui.update(snapshot(s));expect(el('player-level').textContent).toBe('4');expect(el('player-detail-total').textContent).toContain('690');
+  expect(bar.getAttribute('aria-valuenow')).toBe('209');expect(bar.getAttribute('aria-valuemax')).toBe('292');
   expect(el('player-progress')).toBe(button);expect(el('player-xp-bar')).toBe(bar);expect(s.hearts).toBe(15);ui.dispose();
  });
  it('renders maximum and safe large totals without a fictitious threshold',()=>{

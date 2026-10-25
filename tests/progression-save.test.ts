@@ -31,8 +31,8 @@ describe('v9 progression and level rewards', () => {
   it('grants exact hearts for one and multiple levels; keeps derived values outside the save', () => {
     const s = createCentreStartGame(0);
     expect(applyProgressionGain(s,90)).toEqual({ok:true,gain:{xpGained:90,rewardedLevels:[2],heartsGranted:1}});
-    expect(applyProgressionGain(s,900)).toEqual({ok:true,gain:{xpGained:900,rewardedLevels:[3,4],heartsGranted:2}});
-    expect(s.hearts).toBe(15); expect(s.progression).toEqual({totalXp:990,rewardedThroughLevel:4});
+    expect(applyProgressionGain(s,600)).toEqual({ok:true,gain:{xpGained:600,rewardedLevels:[3,4],heartsGranted:2}});
+    expect(s.hearts).toBe(15); expect(s.progression).toEqual({totalXp:690,rewardedThroughLevel:4});
     expect(JSON.parse(encodeGame(s)).progression).toEqual(s.progression);
   });
   it('retains surplus, rewards a raised maximum only on the next positive gain and never tops up older rewards', () => {

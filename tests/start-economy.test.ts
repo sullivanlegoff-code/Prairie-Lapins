@@ -21,7 +21,7 @@ function journey(aided:boolean,roll:number){
  run({type:'startOrder',id:farm.id,recipe:'small'});checkpoint('Production lancée');resume();finish(farm.id,'order');run({type:'collectOrder',id:farm.id});claim('first-harvest');checkpoint('Herbe récoltée et récompense');
  run({type:'feed',id:'rabbit-3'});claim('parents-ready');checkpoint('Neige et récompense');run({type:'breed',parents:['rabbit-2','rabbit-3']});claim('at-nest');checkpoint('Reproduction et récompense');resume();finish('building-4','breeding');
  expect(babyOf(s.buildings.find(b=>b.kind==='nursery')!)).toBeNull();run({type:'transferBirth',id:'building-4',birthId:s.initiation!.birthId!});claim('to-nursery');checkpoint('Transfert et récompense');resume();finish('building-5','growth');run(welcomeOf(s, 'building-1'));claim('first-birth');checkpoint('Accueil et récompense');
- expect([s.pattes,s.grass,s.hearts]).toEqual([410,76,14]);expect(s.missions.claimed).toEqual([...INITIAL_MISSION_IDS]);
+ expect([s.pattes,s.grass,s.hearts]).toEqual([410,76,15]);expect(s.missions.claimed).toEqual([...INITIAL_MISSION_IDS]);
  expect(s.rabbits.at(-1)!.species).toBe(roll===.1?'frisket':'icy');expect(s.initiation!.used).toEqual(aided?['order','breeding','growth']:[]);
  return {s,now,run,resume,farmId:farm.id,budget,setTime:(t:number)=>{now=t;s=advance(s,t);},current:()=>s};
 }

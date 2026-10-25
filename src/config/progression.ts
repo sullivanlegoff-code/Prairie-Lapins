@@ -38,7 +38,7 @@ export interface ProgressionConfig {
 }
 export const PROGRESSION: ProgressionConfig = {
   activeLevelFamilies: {species: true, habitatPurchase: true, habitatUpgrade: true, decoration: true, extension: true},
-  curve: {initialLevel: 1, maximumLevel: 30, base: 90, exponent: 1.15},
+  curve: {initialLevel: 1, maximumLevel: 30, base: 90, exponent: 0.85},
   rewards: {heartsPerLevel: 1},
   xp: {
     commonPurchase: 10, discovery: {common: 60, rare: 250},
