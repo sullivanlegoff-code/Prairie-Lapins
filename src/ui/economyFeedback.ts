@@ -9,7 +9,7 @@ export function cuisineRemaining(s: GameState, now: number): number {
 export function cuisineQuotaText(s: GameState, now: number): string {
   const left = cuisineRemaining(s, now);
   return left ? `Encore ${left} récompense${left > 1 ? 's' : ''} complète${left > 1 ? 's' : ''} aujourd’hui`
-    : `Récompense complète épuisée : pourboire de ${CUISINE_TIP.pattes} pattes et ${CUISINE_TIP.grass} herbe jusqu’à demain`;
+    : `Récompense complète épuisée : pourboire de ${CUISINE_TIP.pattes} pattes et ${CUISINE_TIP.grass} nourriture jusqu’à demain`;
 }
 export function heartGift(s: Pick<GameState, 'nextHeartGiftAt'>, now: number) {
   const gifts = now < s.nextHeartGiftAt ? 0 : Math.min(HEARTS.maximumGifts, 1 + Math.floor((now - s.nextHeartGiftAt) / HEARTS.giftInterval));

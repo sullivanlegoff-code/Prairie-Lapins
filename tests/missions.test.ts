@@ -26,7 +26,7 @@ function memory(raw?: string) {
   return {data,flags,storage};
 }
 function dailyReady() {
-  let s=prepared(); s=run(s,{type:'startOrder',id:'building-4',recipe:'medium'});
+  let s=prepared(); s=run(s,{type:'startOrder',id:'building-4',recipe: 'pissenlit'});
   s=run(s,{type:'collectIncome',id:'building-1'},5*HOUR);
   s=run(s,{type:'collectOrder',id:'building-4'});
   for(let i=0;i<3;i++)s=run(s,{type:'feed',id:'rabbit-2'});
@@ -35,7 +35,7 @@ function dailyReady() {
 // One daily mission per session: claim, come back when the next one opens, play it, claim.
 function playDailySessions(s: GameState) {
   s=run(s,{type:'claimDailyMission',id:'collect-pattes',cycleStart:0});
-  const midday=s.missions.daily.nextAt!;s=run(s,{type:'startOrder',id:'building-4',recipe:'medium'},midday);s=run(s,{type:'collectOrder',id:'building-4'},midday+30*MINUTE);
+  const midday=s.missions.daily.nextAt!;s=run(s,{type:'startOrder',id:'building-4',recipe: 'pissenlit'},midday);s=run(s,{type:'collectOrder',id:'building-4'},midday+30*MINUTE);
   s=run(s,{type:'claimDailyMission',id:'collect-grass',cycleStart:0});
   s=run(s,{type:'breed',parents:['rabbit-2','rabbit-3']},s.missions.daily.nextAt!);
   return run(s,{type:'claimDailyMission',id:'gain-affection',cycleStart:0});
@@ -45,7 +45,7 @@ const state=(c:GameController)=>c.getSnapshot().state!;
 describe('main missions and unique rewards',()=>{
   it('starts eight unclaimed visible objectives and a fresh 24-hour cycle without changing initial resources',()=>{
     const s=createGame(123);
-    expect(MAIN_MISSION_IDS).toHaveLength(31);expect(s).toMatchObject({version: 17,pattes:350,grass:10,hearts:12});
+    expect(MAIN_MISSION_IDS).toHaveLength(31);expect(s).toMatchObject({version: 18,pattes:350,grass:10,hearts:12});
     expect(s.missions).toEqual({events:emptyMainEvents(),completed:[],claimed:[],daily:{referenceAt:123,cycleIndex:0,progress:emptyDailyProgress(),claimed:[],bonusClaimed:false}});
     expect(dailyCycleEnd(s)).toBe(123+DAY);
   });
@@ -99,13 +99,13 @@ describe('daily event accounting and fixed cycles',()=>{
     expect(act(again,{type:'collectOrder',id:'building-4'},again.lastSimulatedAt)).toMatchObject({ok:false,state:again});
   });
   it('does not count stored income, ready production, initial resources, quotes or refused actions',()=>{
-    let s=prepared();s=run(s,{type:'startOrder',id:'building-4',recipe:'medium'});s=advance(s,5*HOUR);
+    let s=prepared();s=run(s,{type:'startOrder',id:'building-4',recipe: 'pissenlit'});s=advance(s,5*HOUR);
     expect(s.buildings[0].incomeUnits).toBe(100*HOUR);expect(s.missions.daily.progress).toEqual(emptyDailyProgress());
     s.grass=0; expect(act(s,{type:'feed',id:'rabbit-2'},s.lastSimulatedAt)).toMatchObject({ok:false,state:s});
     expect(act(s,{type:'buyBuilding',kind:'farm',x: 18, y: 20},s.lastSimulatedAt)).toMatchObject({ok:false,state:s});
   });
   it('counts a production started and ready before renewal only when harvested in the new cycle',()=>{
-    let s=prepared();s=run(s,{type:'startOrder',id:'building-4',recipe:'small'},DAY-20*MINUTE);
+    let s=prepared();s=run(s,{type:'startOrder',id:'building-4',recipe: 'foin'},DAY-20*MINUTE);
     s=advance(s,DAY);expect(s.missions.daily.progress).toEqual(emptyDailyProgress());
     s.missions.daily.progress['collect-pattes']=100;s.missions.daily.claimed=['collect-pattes'];
     s=run(s,{type:'collectOrder',id:'building-4'},DAY+1);

@@ -41,11 +41,14 @@ it('shows free hints in collection and notebook while keeping affection and odds
   for(const card of panel().querySelectorAll('[data-recipe-known="false"]')){expect(card.textContent).not.toMatch(/Affection|\d+ %/);}
   for(const id of ['bouee','feu-glace','lunettes','perroquet','magicien','dragon','dadi','maxou','orange','requin'])expect(panel().querySelector(`[data-recipe="${id}"] .recipe-hint`)).toBeNull();
 });
-it('renders four farm choices and a local completion clock for a running night order',()=>{
-  const s=createGame(0);s.pattes=1000;s.buildings.push(emptyBuilding('building-100','farm',0,32));s.nextId=101;
+it('renders the ten crops with their icon, locks the later ones and shows a local completion clock for a running crop',()=>{
+  const s=createGame(0);s.pattes=1000;s.buildings.push(emptyBuilding('building-100','farm',0,32));s.nextId=101;s.progression={totalXp:cumulativeLevelXp(5),rewardedThroughLevel:5};
   const {ui,controller}=mount(s);ui.select({kind:'building',id:'building-100'});
-  expect(panel().querySelectorAll('.farm-order')).toHaveLength(4);expect(panel().textContent).toContain('Nuit · 10 h');
-  controller.perform({type:'startOrder',id:'building-100',recipe:'night'});
+  const crops=[...panel().querySelectorAll<HTMLElement>('.farm-order')];
+  expect(crops.map(c=>c.dataset.crop)).toEqual(['foin','pissenlit','trefle','persil','laitue','fanes','fenouil','pomme','fraise','banane']);
+  expect(crops.every(c=>c.querySelector('img.crop-icon'))).toBe(true);expect(crops[9].textContent).toContain('Banane');expect(crops[9].textContent).toContain('10 h');
+  expect(crops[3].querySelector('button')?.textContent).toBe('Cultiver · 50 pièces');expect(crops[4].querySelector('button')).toBeNull();expect(crops[4].querySelector('.badge')?.textContent).toBe('Niveau 7 requis');
+  controller.perform({type:'startOrder',id:'building-100',recipe: 'persil'});
   expect(panel().querySelector('.order-ready-time')?.textContent).toMatch(/^Prête vers \d+ h \d{2}$/);
 });
 it('shows the accumulated gift amount and the timer only when none is ready',()=>{

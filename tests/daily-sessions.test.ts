@@ -16,15 +16,15 @@ function morning() {
   return s;
 }
 const farm = (s: GameState) => s.buildings.filter(b => b.kind === 'farm').at(-1)!.id;
-function harvest(s: GameState, recipe: 'small' | 'medium', at: number) {
+function harvest(s: GameState, recipe: 'foin' | 'pissenlit', at: number) {
   s = run(s, {type: 'startOrder', id: farm(s), recipe}, at);
-  return run(s, {type: 'collectOrder', id: farm(s)}, at + (recipe === 'small' ? 5 : 30) * MINUTE);
+  return run(s, {type: 'collectOrder', id: farm(s)}, at + (recipe === 'foin' ? 5 : 15) * MINUTE);
 }
 describe('daily missions spread over the sessions of a day', () => {
   it('opens only the first mission and ignores the actions made for the others', () => {
     let s = morning();
     expect(currentDailyMission(s)).toBe('collect-pattes');
-    s = harvest(s, 'small', s.lastSimulatedAt);
+    s = harvest(s, 'foin', s.lastSimulatedAt);
     expect(s.missions.daily.progress['collect-grass']).toBe(0);
     expect(act(s, {type: 'claimDailyMission', id: 'collect-grass', cycleStart: 0}, s.lastSimulatedAt)).toMatchObject({ok: false, reason: 'NOT_READY'});
     expect(availableMissionRewards(s)).toBe(1);
@@ -34,10 +34,10 @@ describe('daily missions spread over the sessions of a day', () => {
     const claimedAt = s.lastSimulatedAt;
     expect(currentDailyMission(s)).toBe('collect-grass'); expect(dailyOpensAt(s)).toBe(claimedAt + DAILY_MISSION_GAP);
     // Still in the same session: the harvest does not count yet.
-    s = harvest(s, 'small', claimedAt);
+    s = harvest(s, 'foin', claimedAt);
     expect(s.missions.daily.progress['collect-grass']).toBe(0);
-    s = harvest(s, 'medium', claimedAt + DAILY_MISSION_GAP);
-    expect(s.missions.daily.progress['collect-grass']).toBe(60);
+    s = harvest(s, 'pissenlit', claimedAt + DAILY_MISSION_GAP);
+    expect(s.missions.daily.progress['collect-grass']).toBe(40);
     s = run(s, {type: 'claimDailyMission', id: 'collect-grass', cycleStart: 0});
     expect(currentDailyMission(s)).toBe('gain-affection');
   });

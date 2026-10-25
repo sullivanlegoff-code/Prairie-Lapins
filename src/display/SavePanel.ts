@@ -133,7 +133,7 @@ export function mountSavePanel(controller: GameController, onReplacement: (fresh
     if (!prepared.ok) { say(ERROR_MESSAGES[prepared.reason]); return; }
     importToken = prepared.token;
     const s = prepared.summary;
-    setCurrencyText(summary, `${s.pattes} pattes · ${s.grass} herbes · ${s.hearts} cœurs · ${s.rabbits} ${s.rabbits===1?'lapin':'lapins'}. Espèces découvertes : ${s.discovered.map(id => SPECIES[id].name).join(', ') || 'aucune'}.`);
+    setCurrencyText(summary, `${s.pattes} pattes · ${s.grass} nourriture · ${s.hearts} cœurs · ${s.rabbits} ${s.rabbits===1?'lapin':'lapins'}. Espèces découvertes : ${s.discovered.map(id => SPECIES[id].name).join(', ') || 'aucune'}.`);
     importError.textContent = ''; dialog.showModal();
   })(); }, options);
   confirm.addEventListener('click', () => {

@@ -12,8 +12,9 @@ import {HABITAT_TYPES, habitatLevel, habitatPrice, type HabitatLevel} from '../c
 import {habitatEntryReason} from './habitats';
 import {DAILY_MISSIONS, DAILY_MISSION_GAP, DAILY_MISSION_IDS, MAIN_MISSIONS, DAILY_BONUS, type Reward} from '../config/missions';
 import {marketPrice, marketUnlocked} from './market';
+import {affectionCap, playerLevel} from './affection';
 import {currentDailyMission, dailyCycleStart, dailyOpensAt, openNextDailyMission, recordMissionAction} from './missions';
-import {BALANCE, HEARTS, HOUR, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
+import {AFFECTION_STATUE, BALANCE, HEARTS, HOUR, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
 import {emptyBuilding} from '../state/initial';
 import {babyInNursery, findNurseryBaby, firstFreeNurserySlot, nurseryBuilding, nurseryUnlockQuote, settleNestTransfers} from './nursery';
 import type {ActionResult, Building, Command, GameState, PattesCommand, Refusal, ProgressionGain} from '../state/types';
@@ -107,7 +108,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         credit('pattes', paid.pattes); credit('grass', paid.grass);
         if (fullReward) s.cuisine.fullRuns = {cycle, used: used + 1};
         const eligible = !Object.hasOwn(s.cuisine.affectionCycles, rabbit.id) || s.cuisine.affectionCycles[rabbit.id] !== cycle;
-        const affectionGranted = eligible && rabbit.affection < BALANCE.maxAffection;
+        const affectionGranted = eligible && rabbit.affection < affectionCap(s);
         if (eligible) {
           s.cuisine.affectionCycles = {...s.cuisine.affectionCycles, [rabbit.id]: cycle};
           if (affectionGranted) rabbit.affection++;
@@ -225,6 +226,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         const habitatType = command.habitatType ?? 'universal';
         requireRule(HABITAT_TYPES.includes(habitatType) && (command.kind === 'enclosure' || command.habitatType === undefined), 'INVALID_CHOICE');
         requireRule(command.kind!=='enclosure' || stateLevelAccess(s,{family:'habitatPurchase',id:habitatType}).accessible,'LEVEL_REQUIRED');
+        requireRule(command.kind!=='statue' || playerLevel(s)>=AFFECTION_STATUE.level,'LEVEL_REQUIRED');
         cell(command.x, command.y); allocation(); pay(command.kind === 'enclosure' ? habitatPrice(habitatType) : config.price);
         value = id('building'); s.buildings.push(emptyBuilding(value, command.kind, command.x, command.y, habitatType));
         if (command.kind === 'farm') gainXp(PROGRESSION.xp.construction.farm);
@@ -298,11 +300,11 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       case 'startOrder': {
         const b = building(command.id, 'farm'); requireRule(!b.order, 'BUSY');
         requireRule(Object.hasOwn(ORDERS, command.recipe), 'INVALID_CHOICE');
-        const recipe = ORDERS[command.recipe];
+        const recipe = ORDERS[command.recipe]; requireRule(playerLevel(s) >= recipe.level, 'LEVEL_REQUIRED');
         requireRule(Number.isSafeInteger(time + recipe.duration), 'INVALID_TIME'); pay(recipe.cost);
-        if (command.recipe === 'night') s.missions.nightOrderStarted = true;
+        if (recipe.duration >= HOUR) s.missions.nightOrderStarted = true; // The « longer crop » main mission.
         b.order = {recipe: command.recipe, startedAt: time, endsAt: time + recipe.duration, grass: recipe.grass, duration: recipe.duration};
-        if (s.initiation && !s.initiation.order && !s.initiation.closed.includes('order') && command.recipe === 'small') s.initiation.order = jobKey(b,'order');
+        if (s.initiation && !s.initiation.order && !s.initiation.closed.includes('order') && command.recipe === 'foin') s.initiation.order = jobKey(b,'order');
         break;
       }
       case 'collectOrder': {
@@ -312,7 +314,8 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       case 'feed': {
         const rabbit = s.rabbits.find(r => r.id === command.id); requireRule(rabbit, 'NOT_FOUND');
         requireRule(rabbit.affection < BALANCE.maxAffection, 'MAX_AFFECTION');
-        const cost = BALANCE.foodMultiplier * rabbit.affection;
+        requireRule(rabbit.affection < affectionCap(s), 'STATUE_REQUIRED');
+        const cost = feedCost(rabbit.affection);
         requireRule(s.grass >= cost, 'NOT_ENOUGH_GRASS'); s.grass -= cost; rabbit.affection++; gainXp(foodXp(rabbit.affection)); break;
       }
       case 'breed': {

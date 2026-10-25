@@ -3,6 +3,8 @@ import {welcomeOf} from './nursery-baby';
 import {act,advance,createGame,encodeGame} from '../src/simulation';
 import {GameController} from '../src/application/GameController';
 import {foodXp} from '../src/simulation/progression';
+import {AFFECTION_STATUE,feedCost} from '../src/config/balance';
+import {emptyBuilding} from '../src/state/initial';
 import {PROGRESSION} from '../src/config/progression';
 import {jobKey} from '../src/simulation/initiation';
 import {SAVE_KEY} from '../src/persistence/storage';
@@ -11,9 +13,9 @@ function parents(){const s=createGame(0);s.grass=10;s.buildings[0].habitat!.type
 const breed:Command={type:'breed',parents:['rabbit-2','rabbit-3']};
 function run(s:GameState,c:Command,t=s.lastSimulatedAt){const r=act(s,c,t,()=>.1);if(!r.ok)throw Error(r.reason);return r;}
 describe('food and launch XP candidates',()=>{
- it.each([1,2,19])('affection %i → next: actual herb cost and configured XP',affection=>{
-  const s=createGame(0);s.grass=100;s.rabbits[0].affection=affection;const r=run(s,{type:'feed',id:'rabbit-2'});
-  expect(r.state.grass).toBe(100-2*affection);expect(r.state.rabbits[0].affection).toBe(affection+1);expect(r.state.progression.totalXp).toBe(foodXp(affection+1));expect(r.progressionGain?.xpGained).toBe(foodXp(affection+1));expect(s.rabbits[0].affection).toBe(affection);
+ it.each([1,2,13,14,19])('affection %i → next: actual food cost and configured XP',affection=>{
+  const s=createGame(0);s.grass=5000;s.rabbits[0].affection=affection;if(affection>=AFFECTION_STATUE.cap)s.buildings.push(emptyBuilding(`building-${s.nextId++}`,'statue',30,30));const r=run(s,{type:'feed',id:'rabbit-2'});
+  expect(r.state.grass).toBe(5000-feedCost(affection));expect(r.state.rabbits[0].affection).toBe(affection+1);expect(r.state.progression.totalXp).toBe(foodXp(affection+1));expect(r.progressionGain?.xpGained).toBe(foodXp(affection+1));expect(s.rabbits[0].affection).toBe(affection);
  });
  it.each(['empty','maximum'])('refuses %s food without any change',reason=>{const s=createGame(0);if(reason==='empty')s.grass=0;else s.rabbits[0].affection=20;const r=act(s,{type:'feed',id:'rabbit-2'},0);expect(r.ok).toBe(false);expect(r.state).toEqual(s);});
  it('legitimate successive meals gain each XP, while a refused launch gives nothing',()=>{let s=createGame(0);s.grass=10;s=run(s,{type:'feed',id:'rabbit-2'}).state;s=run(s,{type:'feed',id:'rabbit-2'}).state;expect(s.progression.totalXp).toBe(foodXp(2)+foodXp(3));const r=act(s,breed,0);expect(r.ok).toBe(false);expect(r.state).toEqual(s);});

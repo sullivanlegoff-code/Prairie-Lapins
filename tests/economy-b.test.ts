@@ -21,7 +21,7 @@ function advanced() {
 describe('economy B durable goals', () => {
   it('loads an existing v17 without awarding resources or XP, then claims each chained reward once', () => {
     const old = advanced(); delete old.missions.nightOrderStarted;
-    old.buildings.push({...emptyBuilding('building-100','farm',0,32),order:{recipe:'night',startedAt:0,endsAt:10*HOUR}});old.nextId=101;
+    old.buildings.push({...emptyBuilding('building-100','farm',0,32),order:{recipe: 'persil',startedAt:0,endsAt:HOUR}});old.nextId=101;
     const loaded = decodeGame(encodeGame(old)); expect(loaded.ok).toBe(true); if(!loaded.ok) throw Error(loaded.reason);
     let s = loaded.state;
     expect([s.pattes,s.grass,s.hearts,s.progression]).toEqual([old.pattes,old.grass,old.hearts,old.progression]);
@@ -48,10 +48,10 @@ describe('economy B durable goals', () => {
     s.missions.claimed=[...SOLO_INITIAL_MISSION_IDS];expect(activeMainMissions(s)).toEqual([...BRANCH_MISSION_IDS,'level-five']);
     expect(act(s,{type:'claimMainMission',id:'level-fifteen'},0)).toMatchObject({ok:false,reason:'NOT_READY'});
   });
-  it('banks a successful night launch through harvest and reload, but never a refused order', () => {
-    let s=createGame(0);s.buildings.push(emptyBuilding('building-100','farm',0,32));s.nextId=101;
-    s.pattes=0;expect(act(s,{type:'startOrder',id:'building-100',recipe:'night'},0).state.missions.nightOrderStarted).toBeUndefined();
-    s.pattes=1000;const launch=act(s,{type:'startOrder',id:'building-100',recipe:'night'},0);expect(launch.ok).toBe(true);
+  it('banks a successful longer-crop launch through harvest and reload, but never a refused order', () => {
+    let s=createGame(0);s.buildings.push(emptyBuilding('building-100','farm',0,32));s.nextId=101;s.progression={totalXp:cumulativeLevelXp(5),rewardedThroughLevel:5};
+    s.pattes=0;expect(act(s,{type:'startOrder',id:'building-100',recipe: 'persil'},0).state.missions.nightOrderStarted).toBeUndefined();
+    s.pattes=1000;const launch=act(s,{type:'startOrder',id:'building-100',recipe: 'persil'},0);expect(launch.ok).toBe(true);
     const harvest=act(launch.state,{type:'collectOrder',id:'building-100'},10*HOUR);expect(harvest.ok).toBe(true);
     const load=decodeGame(encodeGame(harvest.state));expect(load.ok&&load.state.missions.nightOrderStarted).toBe(true);
   });
@@ -67,7 +67,7 @@ describe('economy B feedback and prices', () => {
     let s=createGame(0);s.buildings.push(emptyBuilding('building-100','kitchen',0,32));s.nextId=101;
     expect(cuisineRemaining(s,0)).toBe(5);
     for(let left=4;left>=0;left--){const r=act(s,{type:'rewardCuisine',rabbitId:s.rabbits[0].id,recipeId:'salad'},0);expect(r.ok).toBe(true);s=r.state;expect(cuisineRemaining(s,0)).toBe(left);}
-    expect(cuisineQuotaText(s,0)).toBe('Récompense complète épuisée : pourboire de 5 pattes et 1 herbe jusqu’à demain');
+    expect(cuisineQuotaText(s,0)).toBe('Récompense complète épuisée : pourboire de 5 pattes et 1 nourriture jusqu’à demain');
     const tip=act(s,{type:'rewardCuisine',rabbitId:s.rabbits[0].id,recipeId:'chicken'},0);expect(tip.ok&&tip.cuisineReward).toMatchObject({pattes:5,grass:1,fullReward:false});
     expect(cuisineRemaining(advance(s,24*HOUR),24*HOUR)).toBe(5);
   });

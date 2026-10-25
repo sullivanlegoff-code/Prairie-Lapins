@@ -111,7 +111,7 @@ describe('distributions: only the removals and their renormalisation', () => {
   });
   it('the unions that held Terre no longer exist, and Magicien and Dragon keep their probabilities', () => {
     expect(breedingOdds('paille', 'belier-gris', 6, 6)).toEqual({paille: 19, 'belier-gris': 19, lunettes: 19, roukette: 19, boudinet: 19, magicien: 5});
-    expect(breedingOdds('dadi', 'phoenix', 10, 10).dragon).toBe(2); expect(breedingOdds('magicien', 'belier-gris', 6, 6).magicien).toBe(5);
+    expect(breedingOdds('dadi', 'phoenix', 10, 10).dragon).toBe(3); expect(breedingOdds('dadi', 'phoenix', 15, 15).dragon).toBe(4); expect(breedingOdds('magicien', 'belier-gris', 6, 6).magicien).toBe(5); expect(breedingOdds('magicien', 'belier-gris', 10, 12).magicien).toBe(7.5); expect(breedingOdds('magicien', 'belier-gris', 15, 14).magicien).toBe(7.5); expect(breedingOdds('magicien', 'belier-gris', 15, 15).magicien).toBe(10);
     expect(breedingOdds('paille', 'paille')).toEqual({paille: 100}); expect(breedingOdds('neige', 'neige')).toEqual({neige: 100});
   });
 });

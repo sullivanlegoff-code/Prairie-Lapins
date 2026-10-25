@@ -28,7 +28,7 @@ describe('optional guided beginning, separate from game rewards', () => {
     expect(id()).toBe('welcome'); prefs.set({intro:true,guideCamera:true}); expect(id()).toBe('paille');
     perform({type:'feed',id:'rabbit-2'}); expect(id()).toBe('farmShop');
     perform({type:'buyBuilding',kind:'farm',x:22,y:20}); expect(id()).toBe('production');
-    const farm=s.buildings.at(-1)!; perform({type:'startOrder',id:farm.id,recipe:'small'});
+    const farm=s.buildings.at(-1)!; perform({type:'startOrder',id:farm.id,recipe: 'foin'});
     expect(farm.kind).toBe('farm'); expect(id()).toBe('collection'); prefs.set({guideCollection:true}); reload(); expect(id()).toBe('harvest');
     expect(guidedStep(s,prefs.value,now).text).toContain('fin normale'); now=5*60_000;
     perform({type:'collectOrder',id:farm.id}); expect(id()).toBe('neige');
@@ -54,7 +54,7 @@ describe('optional guided beginning, separate from game rewards', () => {
 it('guides to a ready second farm rather than asking for a redundant production',()=>{
  let s=createGame(0);s.rabbits[0].affection=2;
  const run=(c:Command)=>{const r=act(s,c,0);if(!r.ok)throw Error(r.reason);s=r.state;};
- run({type:'buyBuilding',kind:'farm',x:22,y:20});run({type:'buyBuilding',kind:'farm',x:18,y:24});const id=s.buildings.at(-1)!.id;run({type:'startOrder',id,recipe:'small'});
+ run({type:'buyBuilding',kind:'farm',x:22,y:20});run({type:'buyBuilding',kind:'farm',x:18,y:24});const id=s.buildings.at(-1)!.id;run({type:'startOrder',id,recipe: 'foin'});
  const p=new PreferenceStore('twofarms');p.set({intro:true,guideCamera:true,guideCollection:true});const step=guidedStep(s,p.value,0);expect(step.id).toBe('harvest');expect(step.buildingId).toBe(id);expect(step.text).toContain('aide gratuite');
 });
 it('occupied nursery sends guidance to the nursery, while natural waiting remains possible',()=>{

@@ -1,32 +1,34 @@
-# Progression du joueur — économie v17
+# Progression du joueur — économie v18 (nourriture)
 
 Courbe retenue : **arrondi(90 × N^0,85)** pour passer de N à N+1, plafond 30 et un cœur par niveau. Le 25 octobre 2026, le propriétaire a demandé d’atteindre le niveau 22 en vingt jours environ : l’exposant passe de 1,15 à 0,85 ; le premier passage (90 XP) et toutes les sources d’XP sont inchangés. Une partie existante garde son XP total et monte aussitôt aux niveaux correspondants ; comme lors d’une hausse du plafond, le chargement ne donne rien, et les cœurs des niveaux franchis sont versés au prochain gain d’XP, avec le récapitulatif habituel. Le coefficient 25 et l’exposant 1,5 proposés initialement accéléraient trop le parcours. Toutes les autres valeurs demandées sont conservées : [règles et économie](game-design.md).
 
 Reproduction : `node docs/progression-simulation.mjs` avec Node 24. Le chargeur Node `docs/node-typescript-loader.mjs` transpose les vrais modules TypeScript via TypeScript déjà installé et les importe directement, sans serveur, Vite ni navigateur. Aucune ressource, XP, issue de tirage ou exemption de niveau n’est injectée. Graine fixe 20261025. Les données détaillées sont régénérées dans `docs/progression-results.json`.
 
-Le tutoriel de Paille est rejoué avec ses trois aides uniques, récolte/transfert/accueil et réclamations manuels, sur le véritable départ sud-ouest à 350/0/12. Les visites suivantes sont à 13 h puis 20 h, puis chaque jour à 8 h/13 h/20 h. Deux fermes dès que possible, commandes longue/longue/nuit, huit repas maximum par visite en commençant par les plus faibles affections. Les parents maximisent la probabilité d’une nouvelle espèce admissible ; les doublons les moins affectueux libèrent des places, en gardant chaque espèce. Les achats diversifient les communs, les habitats puis les extensions accessibles, avec réserve de trésorerie pour les fermes. Une décoration pour sa mission, sans boucle de vente. Cuisine achetée mais aucun mini-jeu ni recette payante joué ; cœurs dépensés uniquement pour les améliorations permanentes d’habitat, jamais pour les accélérations ou compléments.
+Le tutoriel de Paille est rejoué avec ses trois aides uniques, récolte/transfert/accueil et réclamations manuels, sur le véritable départ sud-ouest à 350/0/12. Les visites suivantes sont à 13 h puis 20 h, puis chaque jour à 8 h/13 h/20 h. Deux fermes dès que possible ; chacune sème la culture la plus aimée déjà ouverte, abordable et mûre avant la visite suivante (absences de 5 h, 7 h et 12 h). Huit repas maximum par visite : chaque lapin d’abord jusqu’à l’affection 2 (pour devenir parent), puis la nourriture va aux lapins les plus aimés, vers 10 et 15. La Statue de l’Affection est achetée dès que possible ; à deux niveaux d’elle, le joueur épargne ses pattes au lieu de les échanger. Les parents maximisent la probabilité d’une nouvelle espèce admissible ; les doublons les moins affectueux libèrent des places, en gardant chaque espèce. Les achats diversifient les communs, les habitats puis les extensions accessibles, avec réserve de trésorerie pour les fermes. Une décoration pour sa mission, sans boucle de vente. Cuisine achetée mais aucun mini-jeu ni recette payante joué ; cœurs dépensés uniquement pour les améliorations permanentes d’habitat, jamais pour les accélérations ou compléments.
 
 Chaque visite est limitée à 45 commandes réussies, soit environ six secondes par action dans une session de cinq minutes. C’est une hypothèse de joueur organisé, pas une mesure humaine ; déplacement, consultation et choix peuvent ralentir le parcours. Les repas maximaux et les choix de parents sont explicites et reproductibles. La simulation laisse les commandes terminées attendre les visites, sans collecte pendant l’absence. Les instantanés J1/J3/etc. sont pris juste avant 8 h du jour suivant ; les pattes stockées restent à récolter. Aucun clic supplémentaire au point « 10 min ».
 
-Les premières atteintes, comptées en jours calendaires avec J1 comme jour du départ, sont **N5 à J1 ; N10 à J3 ; N15 à J8 ; N20 à J16 ; N22 à J20 ; N25 à J31 ; N30 à J51** (relevé du 25 octobre 2026, avec la courbe 0,85, les missions durables toujours visibles, une quotidienne par session et le transfert automatique vers la nurserie). Cible du propriétaire : niveau 22 vers J20 ; le script échoue si cette atteinte s’écarte de plus de trois jours, et poursuit jusqu’à 70 jours. Avec l’ancienne courbe 1,15 : N15 à J18 et N20 à J49. Le joueur simulé utilise le comptoir de Paille (fin de partie, voir [règles](game-design.md)) au-delà d’une réserve de 3 000 pattes et 500 herbes : sans lui, les pattes montaient à environ 63 000 au 20e jour ; avec lui, elles restent vers 5 000. Ces résultats incluent la suite de missions durables et les prix de décorations de la partie B.
+Les premières atteintes, comptées en jours calendaires avec J1 comme jour du départ, sont **N5 à J1 ; N10 à J3 ; N15 à J8 ; N20 à J16 ; N22 à J19 ; N25 à J27 ; N30 à J44** (relevé du 25 octobre 2026 après la refonte de la nourriture : dix cultures, repas plus chers, statue, XP des repas liée à leur coût). Cible du propriétaire : niveau 22 vers J20 ; le script échoue si cette atteinte s’écarte de plus de trois jours, et poursuit jusqu’à 70 jours. La **statue est achetée au 12e jour**, quatre jours après le niveau 15 : 25 000 pattes épargnées en font une vraie étape.
 
-| Étape | Pattes disponibles | Herbes | Cœurs | Niveau | Espèces | Pattes stockées |
-|---|---:|---:|---:|---:|---:|---:|
-| 10 min | 270 | 96 | 15 | 4 | 3 | 6 |
-| 1 j | 438 | 364 | 19 | 5 | 3 | 623 |
-| 3 j | 749 | 3016 | 23 | 7 | 8 | 2351 |
-| 7 j | 12632 | 7815 | 58 | 10 | 16 | 4475 |
-| 20 j | 157956 | 24474 | 104 | 14 | 23 | 8327 |
-| 50 j | 660912 | 64119 | 234 | 19 | 24 | 9863 |
+La nourriture est devenue la ressource rare : le stock retombe presque à zéro à chaque visite, car tout part dans les repas. Au 20e jour, 25 des 36 lapins ont au moins 10 d’affection et 7 au moins 15 ; au 50e, 43 sur 44 et 26. Le comptoir de Paille n’échange la nourriture qu’au-delà de 6 000 et les pattes au-delà de 3 000 (ou du prix de la statue plus 3 000 tant qu’elle manque). Les cœurs s’accumulent en fin de partie (252 au 20e jour, 814 au 50e).
 
-Achats restants (améliorations et décorations restent des choix, sans obligation d’achat intégral ; la simulation n’achète qu’une décoration, pour sa mission) :
+| Étape | Pattes disponibles | Nourriture | Cœurs | Niveau | Espèces | Pattes stockées | Affection ≥ 10 / ≥ 15 |
+|---|---:|---:|---:|---:|---:|---:|---|
+| 10 min | 230 | 96 | 18 | 5 | 3 | 6 | 0 / 0 (sur 3) |
+| 1 j | 537 | 13 | 20 | 6 | 4 | 791 | 1 / 0 (sur 4) |
+| 3 j | 1 869 | 8 | 40 | 10 | 10 | 2 615 | 3 / 0 (sur 13) |
+| 7 j | 10 365 | 2 874 | 68 | 14 | 16 | 4 907 | 10 / 0 (sur 22) |
+| 20 j | 4 020 | 0 | 252 | 22 | 32 | 10 247 | 25 / 7 (sur 36) |
+| 50 j | 4 259 | 491 | 814 | 30 | 35 | 15 659 | 43 / 26 (sur 44) |
 
-- **10 min** : communs à accueillir : feu, belier-gris, volant ; 8 extensions (157 900 pattes), 1 ferme, Cuisine à acheter, 2 habitats améliorables, 12 modèles de décoration (24 650 pattes). Recettes payantes non achetées : lunettes, perroquet, feu-glace, bouee, magicien, dragon.
-- **1 j** : communs : feu, belier-gris, volant ; 8 extensions (157 900), Cuisine à acheter, 2 habitats améliorables. Mêmes recettes payantes.
-- **3 j** : communs : volant ; 6 extensions (155 500), Cuisine acquise, 3 habitats améliorables. Recettes : lunettes, perroquet, bouee, magicien, dragon.
-- **7 j** : tous les communs ; 4 extensions (142 000), 4 habitats améliorables. Recettes : perroquet, bouee, magicien, dragon.
-- **20 j** : 3 extensions (126 000), 7 habitats améliorables. Recettes : magicien, dragon.
-- **50 j** : 1 extension (60 000), 6 habitats améliorables. Recette : dragon.
+Achats restants (améliorations et décorations restent des choix ; la simulation n’achète qu’une décoration, pour sa mission, et aucune recette payante) :
+
+- **10 min** : communs feu, belier-gris, volant ; 8 extensions (157 900 pattes), 1 ferme, Cuisine, 2 habitats améliorables, 13 modèles de décoration (24 651 pattes).
+- **1 j** : mêmes communs ; 8 extensions (157 900), Cuisine, 2 habitats améliorables.
+- **3 j** : tous les communs ; 7 extensions (157 300), 5 habitats améliorables.
+- **7 j** : 4 extensions (142 000), 4 habitats améliorables.
+- **20 j** : 2 extensions (100 000), 7 habitats améliorables ; recettes encore inconnues : dragon, maxou, requin.
+- **50 j** : 2 extensions (100 000), 7 habitats améliorables.
 
 Le surplus tardif de pattes reste important après la collection : les extensions sont bornées par le niveau, et les grandes décorations (24 650 pattes pour tous les modèles) restent un choix. La simulation ne garantit ni la collection complète à une date, ni l’achat des huit extensions avant leur niveau requis. Un seul tirage déterministe ne représente pas toutes les chances de collection.
 

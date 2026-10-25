@@ -1,8 +1,8 @@
-# Économie courante — partie A, sauvegarde v17
+# Économie courante — partie A, sauvegarde v18
 
 Référence exécutable : `src/config/` pour les valeurs, `src/simulation/` pour les règles. Joueur cible : trois sessions de cinq minutes à 8 h, 13 h et 20 h, avec une nuit de douze heures. Les travaux prêts attendent sans péremption et les habitats couvrent au moins 24 h de revenus, même pleins de rares d’affection 20.
 
-Une partie neuve commence avec **350 pattes, 0 herbe et 12 cœurs**, Paille affection 1 seul, habitat Paille, nid et nurserie offerts sur la parcelle sud-ouest (coordonnées fines 6,40 ; 2,36 ; 10,36). Le budget minimal du parcours est 350 − 200 − 80 + 50 − 60 − 10 = **50 pattes de marge**, avant les autres récompenses et revenus. Les anciens documents indiquant 10 herbes au départ, un départ central ou un format v8/v9 sont historiques.
+Une partie neuve commence avec **350 pattes, 0 nourriture et 12 cœurs**, Paille affection 1 seul, habitat Paille, nid et nurserie offerts sur la parcelle sud-ouest (coordonnées fines 6,40 ; 2,36 ; 10,36). Le budget minimal du parcours est 350 − 200 − 80 + 50 − 60 − 10 = **50 pattes de marge**, avant les autres récompenses et revenus. Les anciens documents indiquant 10 herbes au départ, un départ central ou un format v8/v9 sont historiques.
 
 | Valeur | Règle courante |
 |---|---|
@@ -18,23 +18,40 @@ Une partie neuve commence avec **350 pattes, 0 herbe et 12 cœurs**, Paille affe
 | Amélioration N3 | 10 cœurs |
 | Extensions successives | 600 / 1 800 / 4 500 / 9 000 / 16 000 / 26 000 / 40 000 / 60 000 ; niveaux requis conservés |
 | Ferme / Cuisine | 60 / 100 pattes ; deux fermes maximum |
+| Statue de l’Affection | 25 000 pattes, niveau 15, une seule ; vendue parmi les bâtiments |
 
-| Commande | Pattes | Herbes | Durée |
-|---|---:|---:|---:|
-| Petite (`small`, tutoriel) | 10 | 20 | 5 min |
-| Moyenne (`medium`) | 24 | 60 | 30 min |
-| Longue (`large`) | 60 | 180 | 4 h |
-| Nuit (`night`) | 100 | 360 | 10 h |
+### Nourriture et ferme (25 octobre 2026)
 
-Le prix est payé au lancement. Quantité et durée normale sont figées dans chaque commande ; une accélération change seulement sa date de fin. Une commande v16 conserve ses anciens 20/40/100 herbes et 5/15/60 minutes.
+L’ancienne « herbe » s’appelle désormais **nourriture** partout, avec son logo peint : une botte de foin nouée, piquée d’un brin de trèfle. Le stock reste unique (clé interne `grass`, inchangée dans les sauvegardes). Le logo accompagne chaque montant de nourriture et le mot lui-même ; il remplace le trèfle du HUD.
 
-Affection 1–20, repas à 2 × affection actuelle herbes (380 pour aller de 1 à 20), sans faim ni dégradation. Rares jamais vendus. Prix des recettes payantes, Cuisine, constructions et niveaux d’accès conservés.
+La ferme cultive dix aliments, du moins au plus aimé des lapins. Plus un aliment est aimé, plus il coûte, plus il dure, plus il s’ouvre tard et plus il donne de nourriture par récolte. Les cultures longues couvrent les absences entre les trois sessions (5 h, 7 h et la nuit de 12 h).
 
-XP : passage N → N+1 = **arrondi(90 × N^0,85)** depuis le 25 octobre 2026 (niveau 22 vers le 20e jour ; auparavant 1,15), plafond 30, un cœur par niveau. Le barème initial demandé 25 × N^1,5 faisait atteindre le niveau 5 pendant le tutoriel, 10 après 2,5 jours écoulés, 15 après 10,5 jours et 20 après 33 jours. Seuls le coefficient et l’exposant ont été ajustés pour le rythme cible. Repas : 5 XP fixes ; achat commun : 10 ; naissance commune : 10, rare : 20 (Épique 110 et Légendaire 180 conservés) ; première découverte commune : +60, rare : +250 ; lancement de reproduction : 5 ; constructions inchangées ; première pose de chaque modèle de décoration : 10, une fois par référence même après revente ; mission principale : 40, quotidienne : 50, bonus quotidien : 0.
+| Culture | Niveau | Pattes | Nourriture | Durée |
+|---|---:|---:|---:|---:|
+| Foin (`foin`, tutoriel) | 1 | 10 | 20 | 5 min |
+| Pissenlit | 1 | 18 | 40 | 15 min |
+| Trèfle | 3 | 30 | 70 | 30 min |
+| Persil | 5 | 50 | 120 | 1 h |
+| Laitue romaine | 7 | 80 | 200 | 2 h |
+| Fanes de carotte | 9 | 120 | 290 | 3 h |
+| Fenouil | 11 | 160 | 380 | 4 h |
+| Pomme | 13 | 240 | 560 | 6 h |
+| Fraise | 16 | 330 | 760 | 8 h |
+| Banane | 19 | 450 | 1 000 | 10 h |
 
-Collection : poids ordinaires 30 par commun et 30 par rare admissible. Paille × Neige reste un tirage rare certain. Les 24 rares ordinaires actuels participent à la garantie de nouvelle espèce : après sept échecs admissibles, la huitième tentative garantit une espèce manquante admissible à la paire et au niveau. Les recettes spéciales, Épiques, Légendaires et Mythiques restent exclues. La libération d’un doublon rend 10 herbes communes ou 25 rares, sans XP ; dernier individu et parent occupé restent protégés.
+Le prix est payé au lancement. Quantité et durée normale sont figées dans chaque culture ; une accélération change seulement sa date de fin. Pendant la culture, de petites pousses se dressent dans les cinq sillons de la ferme ; à maturité, l’aliment lui-même les remplace et une bulle annonce la quantité à récolter. Une commande v17 en cours devient la culture qui la montre (petite → foin, moyenne → trèfle, longue → fenouil, nuit → banane) en gardant sa quantité et sa durée d’origine ; une commande v16 conserve ses anciens 20/40/100 et 5/15/60 minutes. La mission « Une culture plus longue » (identifiant historique `night-order`) demande une culture d’une heure ou plus.
 
-Les quotidiennes demandent de récolter 100 pattes (récompense 60 pattes), récolter 40 herbes (+30 herbes) et lancer une reproduction (+40 pattes). L’identifiant historique `gain-affection` est conservé pour la troisième, dont la règle est désormais la reproduction. Bonus des trois : deux cœurs. Cadeau : deux cœurs par tranche de 24 h, cumul de trois cadeaux maximum (six cœurs), sans décaler la prochaine échéance lors d’une réclamation tardive.
+### Affection, statue et naissances rares
+
+Affection 1–20, sans faim ni dégradation. Le repas qui fait passer de *a* à *a* + 1 coûte : 2, 4, 8, 14, 22, 32, 45, 60, 80, 110, 140, 180, 230, **1 500** (14 → 15), puis 400, 480, 570, 670, 800 nourriture, soit 5 347 pour aller de 1 à 20. Sans la **Statue de l’Affection**, l’affection s’arrête à 14 (repas et Cuisine) ; un lapin déjà plus haut dans une ancienne partie garde son affection. Le repas de l’affection 15 est le plus cher de tous : une vraie récompense.
+
+Quand les deux parents ont au moins 10 d’affection, les chances d’épique et de légendaire sont multipliées par 1,5 ; à partir de 15 pour les deux, par 2 (l’affection la plus basse des deux décide). Exemple : Magicien 5 % → 7,5 % → 10 % ; Dragon et Requin, qui demandent déjà 10, passent à 3 % puis 4 %. Les tirages restent des rapports entiers exacts, en demi-pourcentages. Rares jamais vendus. Prix des recettes payantes, Cuisine, constructions et niveaux d’accès conservés.
+
+XP : passage N → N+1 = **arrondi(90 × N^0,85)** depuis le 25 octobre 2026 (niveau 22 vers le 20e jour ; auparavant 1,15), plafond 30, un cœur par niveau. Le barème initial demandé 25 × N^1,5 faisait atteindre le niveau 5 pendant le tutoriel, 10 après 2,5 jours écoulés, 15 après 10,5 jours et 20 après 33 jours. Seuls le coefficient et l’exposant ont été ajustés pour le rythme cible. Repas : 5 XP plus 1 par tranche de 60 nourriture dépensée (30 XP pour l’affection 15) ; achat commun : 10 ; naissance commune : 10, rare : 20 (Épique 110 et Légendaire 180 conservés) ; première découverte commune : +60, rare : +250 ; lancement de reproduction : 5 ; constructions inchangées ; première pose de chaque modèle de décoration : 10, une fois par référence même après revente ; mission principale : 40, quotidienne : 50, bonus quotidien : 0.
+
+Collection : poids ordinaires 30 par commun et 30 par rare admissible. Paille × Neige reste un tirage rare certain. Les 24 rares ordinaires actuels participent à la garantie de nouvelle espèce : après sept échecs admissibles, la huitième tentative garantit une espèce manquante admissible à la paire et au niveau. Les recettes spéciales, Épiques, Légendaires et Mythiques restent exclues. La libération d’un doublon rend 10 nourriture pour un commun ou 25 pour un rare, sans XP ; dernier individu et parent occupé restent protégés.
+
+Les quotidiennes demandent de récolter 100 pattes (récompense 60 pattes), récolter 40 nourriture (+30 nourriture) et lancer une reproduction (+40 pattes). L’identifiant historique `gain-affection` est conservé pour la troisième, dont la règle est désormais la reproduction. Bonus des trois : deux cœurs. Cadeau : deux cœurs par tranche de 24 h, cumul de trois cadeaux maximum (six cœurs), sans décaler la prochaine échéance lors d’une réclamation tardive.
 
 Migration v16 → v17 réelle et déterministe : ressources, affection, lapins, bâtiments, stock et résultats/dates des reproductions et croissances sont préservés. Le niveau et la fraction dans le niveau sont convertis depuis l’ancienne courbe 50 × N^1,6, avec arrondi inférieur à un point d’XP, sans récompense de niveau au chargement. Compteur de garantie plafonné à sept ; modèles de décoration déjà posés marqués récompensés ; quotidienne d’affection complétée reste réclamable, réclamation et bonus déjà reçus restent acquis. Versions 1–15 : rejet `INCOMPATIBLE_CATALOG` conservé. Fixture encodée par le véritable code v16 dans `tests/fixtures/economy-v16.json`.
 

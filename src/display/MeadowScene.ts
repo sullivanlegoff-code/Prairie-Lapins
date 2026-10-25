@@ -11,10 +11,13 @@ import {drawHabitat} from './habitatArt';
 import {HABITAT_SIZE_PROPOSAL, habitatSlots} from '../config/habitatSizes';
 import {habitatArtLayout, habitatArtFor, type HabitatArt} from '../config/habitatArt';
 import {KITCHEN_ART} from '../config/kitchenArt';
+import {STATUE_ART} from '../config/statueArt';
+import {FarmCrops} from './farmCrops';
 import {FARM_ART} from '../config/farmArt';
 import {NEST_ART} from '../config/nestArt';
 import {NURSERY_ART} from '../config/nurseryArt';
 import {NurseryOverlays} from './nurseryOverlays';
+import {foodBubble} from './currencyPhaser';
 import {buildingAt, buildingPlacementReason, buildingFootprint, type Footprint} from '../simulation/placement';
 import {placementGrid, PLACEMENT_GRID} from './placementGrid';
 import {readyNurseryBabies} from '../simulation/nursery';
@@ -28,7 +31,7 @@ import {ISLAND} from '../config/islandGeometry';
 import {rabbitOffset, rabbitPosition, rabbitHit, rabbitFedLift} from './rabbitLayout';
 import {createRabbitMotion, retargetRabbitMotion, stepRabbitMotion, triggerFedReaction, rabbitPose, type RabbitMotion} from './rabbitMotion';
 import {habitatStats, habitatName, habitatEntryReason, visibleColumns} from '../simulation/habitats';
-import {HOUR, type SpeciesId} from '../config/balance';
+import {HOUR, ORDERS, type SpeciesId} from '../config/balance';
 import type {Building, DecorationLocation, GameState} from '../state/types';
 import {DECORATION_IDS, FINE_GRID, type DecorationId} from '../config/decorations';
 import {catalogDecorationPlacementReason, footprint} from '../simulation/decorations';
@@ -39,7 +42,7 @@ import {BUILDING_NAMES, type Placement} from '../ui/models';
 import {SPECIES, proceduralCoat} from '../config/species';
 import {bindMeadowInput} from './meadowInput';
 import {ownedRegions, recenterCamera, type ScreenChrome} from './recenter';
-import {COIN_TEXTURE, COIN_URL} from './currency';
+import {COIN_TEXTURE, COIN_URL, FOOD_TEXTURE, FOOD_URL} from './currency';
 import {coinBubble} from './currencyPhaser';
 
 export type MeadowSelection = {kind: 'building' | 'rabbit' | 'income' | 'grass' | 'decoration' | 'birth'; id: string} | {kind: 'cell' | 'fineCell'; x: number; y: number} | {kind: 'extension'; parcelId?: ParcelId} | {kind: 'empty'};
@@ -78,6 +81,7 @@ export class MeadowScene extends Phaser.Scene {
   private buildingsLayer!: Phaser.GameObjects.Container;
   private buildingViews = new Map<string, Phaser.GameObjects.Image>();
   private nurseryOverlays: NurseryOverlays | null = null;
+  private farmCrops: FarmCrops | null = null;
   private focusTween: Phaser.Tweens.Tween | null = null;
   private buildingTextures = new Set<string>();
   private buildingGhost: Phaser.GameObjects.Image | null = null;
@@ -119,6 +123,9 @@ export class MeadowScene extends Phaser.Scene {
     if (!this.textures.exists(NURSERY_ART.texture)) this.load.image(NURSERY_ART.texture, NURSERY_ART.url);
     NurseryOverlays.preload(this);
     if (!this.textures.exists(KITCHEN_ART.texture)) this.load.image(KITCHEN_ART.texture, KITCHEN_ART.url);
+    if (!this.textures.exists(STATUE_ART.texture)) this.load.image(STATUE_ART.texture, STATUE_ART.url);
+    if (!this.textures.exists(FOOD_TEXTURE)) this.load.image(FOOD_TEXTURE, FOOD_URL);
+    FarmCrops.preload(this);
     for (const art of this.requiredArt(this.controller.getSnapshot().state))
       if (!this.textures.exists(art.texture)) this.load.image(art.texture, art.url);
     for (const id of DECORATION_IDS) {
@@ -136,6 +143,7 @@ export class MeadowScene extends Phaser.Scene {
     // labels 2.5, bubbles and availability texts 3. Depths are those of the former single-plane scene.
     this.ground = this.add.container(0, 0); this.buildingsLayer = this.add.container(0, 0).setDepth(.1); this.animals = this.add.container(0, 0).setDepth(2);
     this.nurseryOverlays = new NurseryOverlays(this, this.buildingsLayer);
+    this.farmCrops = new FarmCrops(this, this.buildingsLayer);
     // Flat path paintings follow the ground compression, above terrain but below every upright object.
     this.floorDecorationsLayer = this.add.container(0, 0).setDepth(decorationLayerDepth('dirt-path'));
     this.decorationsLayer = this.add.container(0, 0).setDepth(.5);
@@ -327,6 +335,7 @@ export class MeadowScene extends Phaser.Scene {
     if (key !== this.layoutKey) { this.layoutKey = key; this.drawGround(); this.drawBuildings(); this.drawAnimals(); }
     // The cushion overlays follow the canonical state and simulation time on every refresh (a no-op when nothing changed).
     this.nurseryOverlays?.sync(s);
+    this.farmCrops?.sync(s);
     this.drawDecorations(); this.drawBubbles(); this.drawGrid(); this.drawGhost(); this.updateDetails();
   }
   private decorationPoint(location: DecorationLocation, catalogId: typeof DECORATION_IDS[number]): Point | null {
@@ -421,6 +430,7 @@ export class MeadowScene extends Phaser.Scene {
     if (b.kind === 'nest') return NEST_ART.texture;
     if (b.kind === 'nursery') return NURSERY_ART.texture;
     if (b.kind === 'kitchen') return KITCHEN_ART.texture;
+    if (b.kind === 'statue') return STATUE_ART.texture;
     if (b.kind === 'enclosure') { const illustrated = habitatArtFor(b.habitat ?? undefined, b.footprintTier); if (illustrated) return illustrated.texture; }
     // The drawing follows the footprint actually acquired (tier), not the capacity level: a legacy enclosure keeps its compact look.
     const sized = b.habitat && b.footprintTier && b.footprintTier > 1 ? HABITAT_SIZE_PROPOSAL[b.footprintTier] : null;
@@ -438,7 +448,7 @@ export class MeadowScene extends Phaser.Scene {
   /** The same registration is used for placed buildings and the placement/move ghost. */
   private positionBuildingArt(image: Phaser.GameObjects.Image, x: number, y: number, kind: Building['kind'], illustrated: HabitatArt | null = null): void {
     if (illustrated) { image.setPosition(x, y).setOrigin(illustrated.anchor.x / illustrated.width, illustrated.anchor.y / illustrated.height).setScale(illustrated.worldWidth / illustrated.width); return; }
-    const art = kind === 'farm' ? FARM_ART : kind === 'nest' ? NEST_ART : kind === 'nursery' ? NURSERY_ART : kind === 'kitchen' ? KITCHEN_ART : null;
+    const art = kind === 'farm' ? FARM_ART : kind === 'nest' ? NEST_ART : kind === 'nursery' ? NURSERY_ART : kind === 'kitchen' ? KITCHEN_ART : kind === 'statue' ? STATUE_ART : null;
     image.setPosition(x, y).setOrigin(.5, art ? art.originY : .5)
       .setScale(art ? art.worldWidth / art.width : .5);
   }
@@ -452,7 +462,7 @@ export class MeadowScene extends Phaser.Scene {
       if(!image){image=this.add.image(x,y,this.buildingTexture(b));this.buildingsLayer.add(image);this.buildingViews.set(b.id,image);}
       image.setTexture(this.buildingTexture(b)).setDepth(y);
       this.positionBuildingArt(image, x, y, b.kind, b.kind === 'enclosure' ? habitatArtFor(b.habitat ?? undefined, b.footprintTier) : null);
-      const labelY=y+(b.kind==='nest'?NEST_ART.labelY:b.kind==='nursery'?NURSERY_ART.labelY:b.kind==='kitchen'?KITCHEN_ART.labelY:b.footprintTier&&b.footprintTier>1?HABITAT_SIZE_PROPOSAL[b.footprintTier].labelOffset:70);
+      const labelY=y+(b.kind==='nest'?NEST_ART.labelY:b.kind==='nursery'?NURSERY_ART.labelY:b.kind==='kitchen'?KITCHEN_ART.labelY:b.kind==='statue'?STATUE_ART.labelY:b.footprintTier&&b.footprintTier>1?HABITAT_SIZE_PROPOSAL[b.footprintTier].labelOffset:70);
       const label=this.add.text(x,labelY,b.kind==='enclosure'?habitatName(b):BUILDING_NAMES[b.kind],{fontFamily:'Arial',fontSize:'13px',color:'#435b38',padding:{x:7,y:3}}).setOrigin(.5);
       const background=this.add.graphics();background.fillStyle(0xf8f4de,.96);background.fillRoundedRect(x-label.width/2,labelY-label.height/2,label.width,label.height,7);
       this.buildingNames.add([background,label]);
@@ -609,12 +619,12 @@ export class MeadowScene extends Phaser.Scene {
       const amount = Math.floor(b.incomeUnits / HOUR);
       let text = '', kind: 'income' | 'grass' | 'building' = 'building';
       if (b.kind === 'enclosure' && amount >= 1) { text = 'income'; kind = 'income'; }
-      if (b.kind === 'farm' && b.order && b.order.endsAt <= now) { text = 'Herbe ✓'; kind = 'grass'; }
+      if (b.kind === 'farm' && b.order && b.order.endsAt <= now) { text = 'food'; kind = 'grass'; }
       if (b.kind==='nest' && b.breeding && b.breeding.endsAt<=now) text='birth';
       if (b.kind === 'nursery' && readyNurseryBabies(b, now).length) text = 'Prêt !'; // One bubble for any ready baby.
       if (!text) continue;
       const p = toScreen(buildingCenter(b)); p.y += b.kind === 'farm' ? FARM_ART.harvestY : b.kind==='nest' ? NEST_ART.actionY : b.kind==='nursery' ? NURSERY_ART.actionY : -72;
-      const bubble = kind === 'income' ? coinBubble(this, p.x, p.y, amount, amount >= habitatStats(b).cap) : text === 'birth' ? this.heartBubble(p.x, p.y) : this.add.text(p.x, p.y, text, {fontFamily: 'Arial', fontSize: '17px', color: '#3b4d2d', backgroundColor: '#fff7dc', padding: {x: 13, y: 10}}).setOrigin(.5);
+      const bubble = kind === 'income' ? coinBubble(this, p.x, p.y, amount, amount >= habitatStats(b).cap) : text === 'food' ? foodBubble(this, p.x, p.y, b.order!.grass ?? ORDERS[b.order!.recipe].grass) : text === 'birth' ? this.heartBubble(p.x, p.y) : this.add.text(p.x, p.y, text, {fontFamily: 'Arial', fontSize: '17px', color: '#3b4d2d', backgroundColor: '#fff7dc', padding: {x: 13, y: 10}}).setOrigin(.5);
       if (text === 'birth' && this.tutorialTarget === 'birth') {
         const halo=this.add.graphics().lineStyle(4,0xffcf55).strokeEllipse(p.x,p.y,bubble.width+12,bubble.height+12);this.bubbles.add(halo);
         const hand = this.add.text(p.x + 34,p.y - 28,'👇',{fontSize:'28px'}).setOrigin(.5); this.bubbles.add(hand);

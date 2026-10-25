@@ -39,11 +39,13 @@ function historicalWeights(a: SpeciesId, b: SpeciesId, x: number, y: number): Od
   const pool: Odds = key === 'neige,paille' ? (Math.min(x,y) >= 2 ? {frisket:30,icy:30} : {}) : ordinary;
   const specials: Odds = {};
   for (const special of SPECIALS) if (Math.min(x,y) >= special.affection && (special.types ? special.types.every(t => types.has(t as never))
-    : a === special.parents![0] && b === special.parents![1] || a === special.parents![1] && b === special.parents![0])) specials[special.id] = special.probability;
+    : a === special.parents![0] && b === special.parents![1] || a === special.parents![1] && b === special.parents![0]))
+    // Half-percent units; every special is epic or legendary, so both parents at 10 (15) multiply it by 1.5 (2).
+    specials[special.id] = special.probability * 2 * (Math.min(x,y) >= 15 ? 2 : Math.min(x,y) >= 10 ? 1.5 : 1);
   if (!Object.keys(specials).length) return pool;
   const total = Object.values(pool).reduce((s,w) => s+w,0);
   if (!total) return {};
-  const remaining = 100 - Object.values(specials).reduce((s,w) => s+w,0);
+  const remaining = 200 - Object.values(specials).reduce((s,w) => s+w,0);
   return Object.fromEntries([...Object.entries(pool).map(([id,w]) => [id,w*remaining]), ...Object.entries(specials).map(([id,w]) => [id,w*total])]);
 }
 describe('explicit recipe requirements', () => {

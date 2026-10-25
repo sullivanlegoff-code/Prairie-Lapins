@@ -10,7 +10,7 @@ import {regressionStart} from './regression-start';
 describe('Epic and Legendary rabbits of 25 October 2026', () => {
   it('gives Requin only to Maxou × Wat Wat at affection 10, in either order, and Dragon only to Dadi × Phoenix', () => {
     expect(recipeMatches('requin', 'maxou', 'wat-wat')).toBe(true); expect(recipeMatches('requin', 'wat-wat', 'maxou')).toBe(true);
-    expect(breedingOdds('maxou', 'wat-wat', 10, 10).requin).toBe(2); expect(breedingOdds('maxou', 'wat-wat', 10, 9).requin).toBeUndefined();
+    expect(breedingOdds('maxou', 'wat-wat', 10, 10).requin).toBe(3); expect(breedingOdds('maxou', 'wat-wat', 10, 9).requin).toBeUndefined();
     for (const a of SPECIES_IDS) for (const b of SPECIES_IDS) {
       const pair = [a, b].sort().join(' × ');
       if (pair !== 'maxou × wat-wat') expect(breedingOdds(a, b, 20, 20).requin, pair).toBeUndefined();

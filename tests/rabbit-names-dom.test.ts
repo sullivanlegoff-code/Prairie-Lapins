@@ -89,7 +89,7 @@ describe('the personal name in the rabbit sheet', () => {
     expect(field()).toBe(typed); expect(document.activeElement).toBe(typed); expect(typed.value).toBe('Mimosa'); expect(typed.selectionStart).toBe(3);
     // Even when the panel is rebuilt (an action of the same sheet), the draft comes back and the form stays open.
     typed.blur(); ui.select({kind: 'rabbit', id: 'rabbit-2'}); expect(field().value).toBe('Mimosa');
-    field().focus(); type('Mimosa 2'); button('Nourrir · 2 herbes').click();
+    field().focus(); type('Mimosa 2'); button('Nourrir · 2 nourriture').click();
     expect(field().value).toBe('Mimosa 2'); expect(state(controller).rabbits[0].name).toBeUndefined();
     button('Enregistrer').click(); expect(state(controller).rabbits[0].name).toBe('Mimosa 2');
   });

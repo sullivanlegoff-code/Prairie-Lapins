@@ -41,7 +41,7 @@ describe('approved painted decorations', () => {
   const expectedState={...baseline.state,decorations:raw.decorations.slice(-2)};
   const decoded=decodeGame(JSON.stringify(raw));
   expect(decoded).toEqual({ok:true,state:expectedState});
-  expect(expectedState.version).toBe(17);
+  expect(expectedState.version).toBe(18);
   if(!decoded.ok)throw Error(decoded.reason);
   expect(decodeGame(encodeGame(decoded.state))).toEqual(decoded);
   const data=new Map([[SAVE_KEY,JSON.stringify(raw)]]);

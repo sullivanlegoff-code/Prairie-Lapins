@@ -1,6 +1,6 @@
 import {settlePurchaseUnlocks} from './purchaseUnlocks';
 import {progressionFromXp} from './progression';
-import {SPECIES, SPECIES_IDS} from '../config/balance';
+import {HOUR, ORDERS, SPECIES, SPECIES_IDS} from '../config/balance';
 import {DAILY_MISSIONS, DAILY_MISSION_IDS, MAIN_MISSIONS, MAIN_MISSION_IDS, DURABLE_MISSION_IDS, MISSION_CYCLE_DURATION, DAILY_MISSION_GAP, INITIAL_MISSION_IDS, SOLO_INITIAL_MISSION_IDS, BRANCH_MISSION_IDS, MAIN_EVENT_IDS, type MainMissionId, type DailyMissionId} from '../config/missions';
 import type {GameState, MissionState} from '../state/types';
 
@@ -36,7 +36,8 @@ export const dailyCycleEnd = (s: GameState) => dailyCycleStart(s) + MISSION_CYCL
 /** Mutates only the transaction/advance copy; never reconstructs absent action history. */
 export function updateMissions(state: GameState, now: number): void {
   const m = state.missions, d = m.daily;
-  if (state.buildings.some(b => b.order?.recipe === 'night')) m.nightOrderStarted = true;
+  // The « longer crop » mission: any crop of an hour or more (formerly the night production).
+  if (state.buildings.some(b => b.order && (b.order.duration ?? ORDERS[b.order.recipe].duration) >= HOUR)) m.nightOrderStarted = true;
   const cycle = cycleIndexAt(d.referenceAt, now);
   if (cycle > d.cycleIndex) {
     d.cycleIndex = cycle; d.progress = emptyDailyProgress(); d.claimed = []; d.bonusClaimed = false; delete d.nextAt;

@@ -5,6 +5,7 @@ import {MISSION_CYCLE_DURATION} from '../src/config/missions';
 import {dailyCycleStart} from '../src/simulation/missions';
 import type {Command,GameState} from '../src/state/types';
 import {withKitchen} from './kitchen-fixture';
+import {emptyBuilding} from '../src/state/initial';
 
 const SALAD=CUISINE_REWARDS.salad;
 function reward(s:GameState,id=s.rabbits[0].id,now=s.lastSimulatedAt){
@@ -75,7 +76,11 @@ describe('Cuisine reward command',()=>{
     const lowered=structuredClone(second.state);lowered.rabbits[0].affection=19;
     expect(reward(lowered).state.rabbits[0].affection).toBe(19);
     const edge=withKitchen(createGame(0));edge.rabbits[0].affection=19;
+    expect(reward(edge).state.rabbits[0].affection).toBe(19); // Past 14, only the Statue de l'Affection opens the way.
+    edge.buildings.push(emptyBuilding(`building-${edge.nextId++}`,'statue',30,30));
     expect(reward(edge).state.rabbits[0].affection).toBe(20);
+    const wall=withKitchen(createGame(0));wall.rabbits[0].affection=14;
+    expect(reward(wall)).toMatchObject({cuisineReward:{affectionGranted:false}});
   });
   it.each(['pattes','grass'] as const)('rejects %s overflow atomically',resource=>{
     const s=withKitchen(createGame(0));s[resource]=Number.MAX_SAFE_INTEGER;const before=structuredClone(s);

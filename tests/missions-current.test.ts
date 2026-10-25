@@ -12,7 +12,7 @@ const reload=(s:GameState)=>{const r=decodeGame(encodeGame(s));if(!r.ok)throw Er
 function earlyJourney(roll:number){
  let s=createGame(0);s=run(s,{type:'feed',id:'rabbit-2'});s=run(s,{type:'feed',id:'rabbit-3'});
  s=run(s,{type:'buyBuilding',kind:'farm',x:22,y:20});const farm=s.buildings.at(-1)!;
- s=run(s,{type:'startOrder',id:farm.id,recipe:'small'});s=reload(s);s=run(s,{type:'collectOrder',id:farm.id},5*MINUTE);
+ s=run(s,{type:'startOrder',id:farm.id,recipe: 'foin'});s=reload(s);s=run(s,{type:'collectOrder',id:farm.id},5*MINUTE);
  s=run(s,{type:'breed',parents:['rabbit-2','rabbit-3']},5*MINUTE,roll);s=reload(s);
  const birth=s.buildings.find(b=>b.kind==='nest')!.breeding!.birth;
  s=run(s,{type:'transferBirth',id:'building-4',birthId:birth.id},25*MINUTE);s=reload(s);

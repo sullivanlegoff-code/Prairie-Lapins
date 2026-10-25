@@ -99,7 +99,7 @@ export function scenarioState(id: ScenarioId, now: number): GameState {
     const perform = (command: Command, at = origin) => { const result = act(s, command, at, () => .65); if (!result.ok) throw Error(result.reason); s=result.state; };
     perform({type:'feed',id:'rabbit-2'}); perform({type:'feed',id:'rabbit-3'});
     perform({type:'buyBuilding',kind:'farm',x:22,y:20}); const farm=s.buildings.at(-1)!;
-    perform({type:'startOrder',id:farm.id,recipe:'small'}); perform({type:'collectOrder',id:farm.id},origin+5*60_000);
+    perform({type:'startOrder',id:farm.id,recipe:'foin'}); perform({type:'collectOrder',id:farm.id},origin+5*60_000);
     perform({type:'breed',parents:['rabbit-2','rabbit-3']},origin+5*60_000);
     perform({type:'transferBirth',id:'building-4',birthId:s.buildings.find(b=>b.kind==='nest')!.breeding!.birth.id},origin+25*60_000);
     perform({type:'welcome',enclosureId:'building-1',birthId:s.buildings.find(b=>b.kind==='nursery')!.nursery!.babies[0].birth.id},origin+55*60_000);
@@ -165,7 +165,7 @@ export function scenarioState(id: ScenarioId, now: number): GameState {
     const mixed:SpeciesId[]=['paille','neige','frisket','belier-gris','feu','volant','icy'];
     s.rabbits=mixed.map(species=>({id:`rabbit-${s.nextId++}`,species,affection:4,enclosureId:'building-1'}));s.discovered=[...mixed];
     run({type:'buyBuilding',kind:'farm',x:30,y:23});
-    run({type:'startOrder',id:s.buildings.at(-1)!.id,recipe:'small'});
+    run({type:'startOrder',id:s.buildings.at(-1)!.id,recipe:'foin'});
 
     run({type:'buyBuilding',kind:'enclosure',habitatType:'vol',x:24,y:26});
     run({type:'buyDecoration',catalogId:'bush'});

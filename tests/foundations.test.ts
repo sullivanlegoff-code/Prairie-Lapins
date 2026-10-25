@@ -33,8 +33,8 @@ describe('technical foundation regressions', () => {
  it('refuses resource overflow without consuming income, harvest or gift', () => {
   let s = advance(equipped(), HOUR); s.pattes = Number.MAX_SAFE_INTEGER;
   expect(act(s,{type:'collectIncome',id:'building-1'},HOUR)).toEqual({ok:false,reason:'RESOURCE_LIMIT',state:s});
-  s.pattes = 100; s = apply(s,{type:'startOrder',id:'building-4',recipe:'small'});
-  s = advance(s, HOUR + ORDERS.small.duration); s.grass = Number.MAX_SAFE_INTEGER;
+  s.pattes = 100; s = apply(s,{type:'startOrder',id:'building-4',recipe: 'foin'});
+  s = advance(s, HOUR + ORDERS.foin.duration); s.grass = Number.MAX_SAFE_INTEGER;
   expect(act(s,{type:'collectOrder',id:'building-4'},s.lastSimulatedAt)).toEqual({ok:false,reason:'RESOURCE_LIMIT',state:s});
   s.hearts = Number.MAX_SAFE_INTEGER; s = advance(s, 24*HOUR);
   expect(act(s,{type:'claimHearts'},s.lastSimulatedAt)).toEqual({ok:false,reason:'RESOURCE_LIMIT',state:s}); invariant(s);
@@ -48,7 +48,7 @@ describe('technical foundation regressions', () => {
  });
  it('refuses unsafe job deadlines before payment or random draw', () => {
   const s = equipped(), now = Number.MAX_SAFE_INTEGER - 100; const rng = vi.fn(() => .2);
-  for (const command of [{type:'startOrder',id:'building-4',recipe:'small'}, {type:'breed',parents:['rabbit-2','rabbit-3']}] as Command[])
+  for (const command of [{type:'startOrder',id:'building-4',recipe: 'foin'}, {type:'breed',parents:['rabbit-2','rabbit-3']}] as Command[])
    expect(act(s,command,now,rng)).toEqual({ok:false,reason:'INVALID_TIME',state:s});
   expect(rng).not.toHaveBeenCalled();
  });
@@ -114,7 +114,7 @@ describe('reproducible action traces', () => {
     const growing=stage==='growth'?babyOf(nursery)!.birth.id:undefined, quote=quoteAcceleration(s,target.id,stage,now,growing);
     const choices:Command[]=[
      {type:'buyDecoration',catalogId:'bush'}, {type:'collectIncome',id:'building-1'}, {type:'feed',id:'rabbit-2'},
-     {type:'startOrder',id:farm.id,recipe:'small'}, {type:'collectOrder',id:farm.id}, {type:'breed',parents:['rabbit-2','rabbit-3']},
+     {type:'startOrder',id:farm.id,recipe: 'foin'}, {type:'collectOrder',id:farm.id}, {type:'breed',parents:['rabbit-2','rabbit-3']},
      welcomeOf(s,'building-7'), {type:'claimHearts'}, {type:'claimMainMission',id:'first-farm'},
      {type:'expand',parcelId:PARCEL_IDS[Math.floor(random()*PARCEL_IDS.length)],expectedCost:extensionPrice(s)},
      {type:'buyRabbit',species:'neige',enclosureId:'building-7'},
