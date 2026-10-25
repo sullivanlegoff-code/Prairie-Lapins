@@ -1,4 +1,4 @@
-import {NURSERY} from '../config/balance';
+import {NURSERY, growthDuration} from '../config/balance';
 import type {Building, GameState, NurseryBaby, NurseryCapacity, NurserySlot} from '../state/types';
 
 /** Pure nursery readers: the only place that knows slot rules. Readiness stays derived: `readyAt <= now`. */
@@ -23,6 +23,23 @@ export const firstFreeNurserySlot = (b: Building | undefined): NurserySlot | nul
 export const nurseryHasCapacity = (b: Building | undefined): boolean => firstFreeNurserySlot(b) !== null;
 /** A nursery with every usable cushion taken; the next birth waits in the nest. */
 export const nurseryFull = (b: Building | undefined): boolean => !!b?.nursery && !nurseryHasCapacity(b);
+/** Once the transfer has been learned (its initial mission claimed), a finished birth joins the nursery by itself. */
+export const automaticNurseryTransfer = (s: Pick<GameState, 'missions'>): boolean => s.missions.claimed.includes('to-nursery');
+/**
+ * Session rhythm: a finished birth moves to the lowest free cushion and starts growing at the end of its breeding,
+ * or at `freeSince` when the cushion was only freed later (a welcome is the only way to free one). Parents return home as
+ * with a manual transfer; a birth that finds no cushion keeps waiting at the nest. Mutates the transaction copy only.
+ */
+export function settleNestTransfers(s: GameState, freeSince: number): void {
+  if (!automaticNurseryTransfer(s)) return;
+  for (const nest of s.buildings) {
+    const job = nest.kind === 'nest' ? nest.breeding : null, nursery = nurseryBuilding(s), slot = firstFreeNurserySlot(nursery);
+    if (!job || job.endsAt > s.lastSimulatedAt || !nursery?.nursery || slot === null || findNurseryBaby(s, job.birth.id)) continue;
+    const startedAt = Math.max(job.endsAt, freeSince), readyAt = startedAt + growthDuration(job.birth.species);
+    if (!Number.isSafeInteger(readyAt)) continue;
+    nursery.nursery.babies.push({slot, birth: job.birth, startedAt, readyAt}); nest.breeding = null;
+  }
+}
 export const readyNurseryBabies = (b: Building | undefined, now: number): NurseryBaby[] => babiesBySlot(b).filter(baby => baby.readyAt <= now);
 /** The next permanent cushion unlock (one step at a time, Hearts only), or null at the maximum or without a nursery. */
 export function nurseryUnlockQuote(b: Building | undefined): {fromCapacity: NurseryCapacity; toCapacity: NurseryCapacity; hearts: number} | null {

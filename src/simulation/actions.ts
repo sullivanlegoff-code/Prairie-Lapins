@@ -14,7 +14,7 @@ import {DAILY_MISSIONS, DAILY_MISSION_GAP, DAILY_MISSION_IDS, MAIN_MISSIONS, DAI
 import {currentDailyMission, dailyCycleStart, dailyOpensAt, openNextDailyMission, recordMissionAction} from './missions';
 import {BALANCE, HEARTS, HOUR, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
 import {emptyBuilding} from '../state/initial';
-import {babyInNursery, findNurseryBaby, firstFreeNurserySlot, nurseryBuilding, nurseryUnlockQuote} from './nursery';
+import {babyInNursery, findNurseryBaby, firstFreeNurserySlot, nurseryBuilding, nurseryUnlockQuote, settleNestTransfers} from './nursery';
 import type {ActionResult, Building, Command, GameState, PattesCommand, Refusal, ProgressionGain} from '../state/types';
 import {chooseBirth, breedingPool, nestForParent} from './breeding';
 import {recipePrice, recipePurchaseReason} from './recipes';
@@ -371,6 +371,8 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       const nursery=s.buildings.find(b=>b.nursery?.babies.some(baby=>baby.birth.id===command.birthId)); if(nursery) s.initiation.growth=jobKey(nursery,'growth',command.birthId);
     }
     settleInitiation(s);
+    // A welcome, a cushion unlock or a finished acceleration can free the way for a birth waiting at the nest.
+    settleNestTransfers(s, time);
     // Compare individuals, so only actual gains count, regardless of their source.
     const affectionGained = s.rabbits.reduce((sum, rabbit) => {
       const before = state.rabbits.find(previous => previous.id === rabbit.id);

@@ -152,7 +152,7 @@ Brumelin et Mottelin restent des noms provisoires validés pour ce prototype. Un
 | Nurserie | Offerte, un exemplaire | immédiat |
 | Première extension | 500 pattes | immédiat, 6 × 2 cases |
 | Deuxième extension | 1 000 pattes | après la première, 9 × 2 cases |
-| Reproduction | Gratuit (0 patte, 0 cœur) | 20 minutes puis transfert manuel |
+| Reproduction | Gratuit (0 patte, 0 cœur) | 20 minutes puis transfert (automatique après la mission « Vers la nurserie ») |
 | Croissance d'un commun | gratuit | 5 minutes |
 | Croissance de Brumelin ou Mottelin | gratuit | 15 minutes |
 | Croissance d'un nouveau rare | gratuit | 30 minutes |
@@ -217,6 +217,8 @@ Précision pour les découvertes en attente : un résultat inédit d'une de ces 
 ### Nid et nurserie
 
 À la fin des 20 minutes, « Envoyer dans la nurserie » devient disponible. Aucun transfert automatique : délai terminé, absence, rechargement et libération de la nurserie laissent le résultat et les parents au nid. Si elle est occupée, l’interface explique le blocage. Le clic valide transfère l’identité et le résultat déjà tiré, commence la croissance à cet instant, rend les parents à leurs habitats et libère le nid en une opération sauvegardée. Un refus, une sauvegarde impossible ou une double pression ne perd ni ne duplique d’individu. L’espèce reste secrète jusqu’à la fin de croissance et la découverte est enregistrée lors de l’accueil.
+
+Depuis le 25 octobre 2026 (rythme de trois sessions de 5 minutes par jour), une fois la mission initiale « Vers la nurserie » réclamée, le transfert devient automatique : à la fin des 20 minutes, le lapereau rejoint le plus petit couchage libre, sa croissance commence à la fin de la reproduction et les parents retournent dans leurs habitats. Si la nurserie est pleine, il attend au nid et part dès qu’un accueil ou un nouveau couchage libère une place ; sa croissance commence alors à cet instant. Un lapereau lancé à une session est ainsi prêt à la suivante, où le joueur l’accueille et relance une reproduction. Le tutoriel et le transfert manuel restent inchangés avant cette mission. Aucun changement de sauvegarde.
 
 ### Collection et carnet
 

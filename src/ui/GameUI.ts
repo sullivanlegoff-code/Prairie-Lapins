@@ -28,7 +28,7 @@ import {catalogDecorationPlacementReason, purchaseDecorationReason} from '../sim
 import {decorationUrl} from '../display/decorationArt';
 import {quoteComplement} from '../simulation/actions';
 import {initiationAvailable} from '../simulation/initiation';
-import {nurseryBuilding, nurseryFull, nurseryUnlockQuote} from '../simulation/nursery';
+import {automaticNurseryTransfer, nurseryBuilding, nurseryFull, nurseryUnlockQuote} from '../simulation/nursery';
 import {accelerationCost, quoteAcceleration} from '../simulation/hearts';
 import {rabbitIncome} from '../simulation/time';
 import type {MeadowScene, MeadowSelection} from '../display/MeadowScene';
@@ -876,13 +876,13 @@ export class GameUI {
     const nest = s.buildings.find(b => b.id === id)!;
     if (nest.breeding) {
       const job=nest.breeding;
-      const nursery = s.buildings.find(b => b.kind === 'nursery'), finished = job.endsAt <= this.now();
+      const nursery = s.buildings.find(b => b.kind === 'nursery'), finished = job.endsAt <= this.now(), automatic = automaticNurseryTransfer(s);
       const reason = !nursery ? 'Place gratuitement la nurserie depuis Aménagement.' : nurseryFull(nursery) ? 'La nurserie est pleine. Accueille un lapereau prêt pour libérer une place ; parents et lapereau attendent au nid.' : null;
-      this.workState(!finished ? 'running' : reason ? 'blocked' : 'ready', !finished ? 'À la fin du délai, envoie manuellement le lapereau dans la nurserie.' : reason ?? 'Le lapereau est prêt à rejoindre la nurserie. Sa croissance commencera à ta confirmation.');
+      this.workState(!finished ? 'running' : reason ? 'blocked' : 'ready', !finished ? (automatic ? 'À la fin du délai, le lapereau rejoindra seul la nurserie si un couchage est libre, et commencera à grandir.' : 'À la fin du délai, envoie manuellement le lapereau dans la nurserie.') : reason ?? 'Le lapereau est prêt à rejoindre la nurserie. Sa croissance commencera à ta confirmation.');
       this.timer(job.startedAt, job.endsAt);
       if (!finished) this.acceleration(s, id, 'breeding');
       else this.button(this.content, 'Envoyer dans la nurserie', () => this.execute({type:'transferBirth', id, birthId:job.birth.id}, 'Lapereau envoyé dans la nurserie. Les parents retrouvent leurs habitats.'), reason);
-      this.content.append(node('p', 'Les parents restent au nid jusqu’au transfert manuel. Leurs places et revenus sont conservés dans leurs habitats. L’espèce du lapereau reste secrète jusqu’à la fin de croissance.'));
+      this.content.append(node('p', (automatic ? 'Les parents restent au nid jusqu’au départ du lapereau vers la nurserie.' : 'Les parents restent au nid jusqu’au transfert manuel.') + ' Leurs places et revenus sont conservés dans leurs habitats. L’espèce du lapereau reste secrète jusqu’à la fin de croissance.'));
       for(const parentId of job.parents) {
         const parent=s.rabbits.find(r=>r.id===parentId);
         if(parent) {const card=this.rabbitCard(s,parentId);card.append(node('p','Au nid · '+this.enclosureName(s,parent.enclosureId),'badge'));this.button(card,'Voir ce parent',()=>this.open({kind:'rabbit',id:parentId}),null,true);this.content.append(card);}
@@ -892,7 +892,7 @@ export class GameUI {
     }
     if (!s.buildings.some(b => b.kind === 'nursery')) { this.workState('blocked', 'Place la nurserie offerte avant de lancer une reproduction.'); this.button(this.content, 'Placer gratuitement la nurserie', () => this.beginPlacement('nursery',undefined,undefined,true)); return; }
     this.workState('free', 'Choisis deux parents distincts, chacun d’affection 2 minimum. Le lancement est gratuit.');
-    this.content.append(node('p', 'Gratuit · 20 minutes de reproduction, puis transfert manuel et croissance en nurserie.'));
+    this.content.append(node('p', automaticNurseryTransfer(s) ? 'Gratuit · 20 minutes de reproduction, puis le lapereau rejoint seul un couchage libre de la nurserie et grandit pendant ton absence.' : 'Gratuit · 20 minutes de reproduction, puis transfert manuel et croissance en nurserie.'));
     this.button(this.content, 'Croiser', () => this.openBreeding(id));
     this.content.append(node('p', 'La reproduction est possible dès affection 2 chez chacun des deux parents. Chaque recette possède ses propres conditions ; les résultats inadmissibles sont exclus. Les conditions détaillées sont visibles dans le carnet une fois la recette connue.', 'small'));
     this.button(this.content, 'Carnet de reproduction', () => this.open({kind: 'recipes'}), null, true);
@@ -1308,7 +1308,7 @@ export class GameUI {
       if (current.hearts < fresh.hearts) { this.notice(REFUSALS.NOT_ENOUGH_HEARTS); return; }
       const names = {order: 'cette production', breeding: 'cette reproduction', growth: 'cette croissance'};
       const effect = stage === 'order' ? 'La récolte reste manuelle.' : stage === 'growth' ? 'L’accueil reste manuel.' :
-        'Le délai se termine seulement. Le transfert dans la nurserie restera manuel, dès qu’elle sera libre.';
+        automaticNurseryTransfer(current) ? 'Le délai se termine seulement. Le lapereau rejoindra seul la nurserie dès qu’un couchage sera libre.' : 'Le délai se termine seulement. Le transfert dans la nurserie restera manuel, dès qu’elle sera libre.';
       this.confirm(`Terminer ${names[stage]} ?`, `${heartAmount(fresh.hearts)} maximum · solde : ${current.hearts} cœurs. Le prix sera recalculé à la confirmation et pourra diminuer, jamais augmenter. ${effect}`,
         () => this.execute({type: 'accelerate', id, stage, jobKey: fresh.jobKey, maxHearts: fresh.hearts, ...target}, value => `Étape terminée · ${heartAmount(Number(value))} dépensé(s).`));
     }, s.hearts < quote.hearts ? REFUSALS.NOT_ENOUGH_HEARTS : null, true).classList.add('heart-spend');
