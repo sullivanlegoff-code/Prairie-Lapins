@@ -38,13 +38,13 @@ describe('economy B durable goals', () => {
     }
     expect(activeMainMissions(s)).toEqual([]);
   });
-  it('checks every condition and counts all eighteen ordinary rares, including the paid four', () => {
+  it('checks every condition and counts all twenty-four ordinary rares, including the paid four', () => {
     const s=advanced();
     for(const id of DURABLE_MISSION_IDS){const p=mainProgress(s,id);expect(p.value,id).toBeGreaterThanOrEqual(p.target);}
     expect(mainProgress(createGame(0),'night-order').value).toBe(0);
-    expect(mainProgress(s,'all-ordinary-rares').target).toBe(18);
-    s.discovered=s.discovered.filter(id=>id!=='bouee');expect(mainProgress(s,'all-ordinary-rares').value).toBe(17);
-    expect(GUARANTEE_SPECIES).toHaveLength(18);
+    expect(mainProgress(s,'all-ordinary-rares').target).toBe(24);
+    s.discovered=s.discovered.filter(id=>id!=='bouee');expect(mainProgress(s,'all-ordinary-rares').value).toBe(23);
+    expect(GUARANTEE_SPECIES).toHaveLength(24);
     s.missions.claimed=[...SOLO_INITIAL_MISSION_IDS];expect(activeMainMissions(s)).toHaveLength(2);
     expect(act(s,{type:'claimMainMission',id:'level-fifteen'},0)).toMatchObject({ok:false,reason:'NOT_READY'});
   });
@@ -57,8 +57,8 @@ describe('economy B durable goals', () => {
   });
 });
 describe('economy B feedback and prices', () => {
-  it('gives only parent type hints for the fourteen illustrated rares', () => {
-    const hints=SPECIES_IDS.filter(id=>recipeHint(id));expect(hints).toHaveLength(14);
+  it('gives only parent type hints for the twenty illustrated rares', () => {
+    const hints=SPECIES_IDS.filter(id=>recipeHint(id));expect(hints).toHaveLength(20);
     for(const id of hints) expect(recipeHint(id)).toMatch(/^Indice : .+ × .+$/);
     for(const id of ['bouee','feu-glace','lunettes','perroquet','magicien','dragon'] as const) expect(recipeHint(id)).toBeNull();
     expect(hints.map(recipeHint).join(' ')).not.toMatch(/affection|%/i);

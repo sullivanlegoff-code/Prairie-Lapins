@@ -7,7 +7,9 @@ describe('rabbit blink artwork', () => {
   it('has useful-resolution sprites and exactly the 18 eligible aligned patch sets', () => {
     execFileSync(process.execPath, ['scripts/derive-rabbit-art.mjs', '--check'], {stdio: 'pipe'});
     execFileSync(process.execPath, ['scripts/derive-rabbit-blinks.mjs', '--check'], {stdio: 'pipe'});
-    const eligible = SPECIES_ENTRIES.filter(entry => entry.art.kind === 'static-sprite' && entry.id !== 'ardent')
+    // The sprites approved on 25 October 2026 do not blink yet, by the owner's choice.
+    const pending = ['boudinet', 'dinono', 'egiiipte', 'piment', 'tunini', 'bretonette', 'dadi', 'maxou', 'magicien', 'dragon', 'requin'];
+    const eligible = SPECIES_ENTRIES.filter(entry => entry.art.kind === 'static-sprite' && entry.id !== 'ardent' && !pending.includes(entry.id))
       .map(entry => entry.id).sort();
     const manifest = JSON.parse(readFileSync('src/config/rabbitBlinkArt.json', 'utf8'));
     expect(eligible).toEqual([

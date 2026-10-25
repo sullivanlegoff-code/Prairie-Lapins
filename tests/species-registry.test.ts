@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest';
 import {z} from 'zod';
-import {EXPECTED_ART, EXPECTED_IDS, EXPECTED_RECIPE_IDS, HISTORICAL_LEVELS, NEW_RARES, STANDARD_RARE} from './rabbit-art-fixtures';
+import {EXPECTED_ART, EXPECTED_IDS, EXPECTED_RECIPE_IDS, HISTORICAL_LEVELS, NEW_RARES, NEW_SPECIALS, STANDARD_RARE} from './rabbit-art-fixtures';
 import * as balance from '../src/config/balance';
 import * as registry from '../src/config/species';
 import {PROGRESSION, type ProgressionConfig} from '../src/config/progression';
@@ -16,12 +16,20 @@ const HISTORICAL_ACQUISITION: Record<string, unknown> = {
   'perroquet': [{kind: 'recipe', knowledgePrice: 250, guaranteeEligible: true, requiredTypes: ['vol', 'feu'], minAffection: 4}],
   'feu-glace': [{kind: 'recipe', knowledgePrice: 180, guaranteeEligible: true, requiredTypes: ['feu', 'neige'], minAffection: 4}],
   'bouee': [{kind: 'recipe', knowledgePrice: 150, guaranteeEligible: true, requiredTypes: ['paille', 'feu'], minAffection: 4}],
-  'magicien': [{kind: 'recipe', knowledgePrice: 450, requiredTypes: ['metal', 'vol'], minAffection: 6, probability: 5}],
-  dragon: [{kind: 'recipe', knowledgePrice: 900, minAffection: 10, parents: ['perroquet', 'feu'], probability: 2}],
+  // Owner's rules of 25 October 2026: Magicien becomes Paille-Metal; Dragon is born only of Dadi x Phoenix.
+  'magicien': [{kind: 'recipe', knowledgePrice: 450, requiredTypes: ['paille', 'metal'], minAffection: 6, probability: 5}],
+  dragon: [{kind: 'recipe', knowledgePrice: 900, minAffection: 10, parents: ['dadi', 'phoenix'], probability: 2}],
 };
 
 /** Each new Rare is a reproduction-only recipe of its two required elements, with no price, gift, guarantee or fixed percentage. */
-const ACQUISITION: Record<string, unknown> = {...HISTORICAL_ACQUISITION, ...Object.fromEntries(NEW_RARES.map(r => [r.id, [{kind: 'recipe', guaranteeEligible: true, requiredTypes: [...r.requiredTypes], minAffection: STANDARD_RARE.minAffection}]]))};
+const ACQUISITION: Record<string, unknown> = {...HISTORICAL_ACQUISITION, ...Object.fromEntries(NEW_RARES.map(r => [r.id, [{kind: 'recipe', guaranteeEligible: true, requiredTypes: [...r.requiredTypes], minAffection: STANDARD_RARE.minAffection}]])),
+  ...Object.fromEntries(NEW_SPECIALS.map(s => [s.id, [{kind: 'recipe', knowledgePrice: s.recipe.knowledgePrice, ...(s.recipe.requiredTypes ? {requiredTypes: [...s.recipe.requiredTypes]} : {}), minAffection: s.recipe.minAffection, ...(s.recipe.parents ? {parents: [...s.recipe.parents]} : {}), probability: s.recipe.probability}]]))};
+/** Descriptions of the pictures approved on 25 October 2026. */
+const SPECIAL_DESCRIPTIONS: Record<string, string> = {
+  magicien: 'Un lapin brun en cape et chapeau de magicien étoilés, baguette à la main.', dragon: 'Un lapin bélier rouge aux écailles de dragon, avec des cornes et des ailes.',
+  dadi: 'Un lapin blanc à casquette rouge, avec une chaîne et des baskets.', maxou: 'Un lapin dauphin gris, avec un aileron et une queue de dauphin.',
+  orange: 'Une petite lapine blanche à la robe orange.', requin: 'Un lapin bélier gris aux rayures de requin, avec un aileron bleu et un sourire pointu.',
+};
 
 const HISTORICAL_DEFINITIONS = {
   paille: {art: EXPECTED_ART['paille'], name: 'Lapin Paille', types: ['paille'], rarity: 'common', price: 80, recipe: null, acquisition: ACQUISITION['paille'], progression: {unlockLevel: 1}},
@@ -33,11 +41,14 @@ const HISTORICAL_DEFINITIONS = {
   perroquet: {art: EXPECTED_ART['perroquet'], name: 'Lapin Perroquet', types: ['vol', 'feu'], rarity: 'rare', price: null, recipe: {requiredTypes: ['vol', 'feu'], minAffection: 4}, acquisition: ACQUISITION['perroquet'], progression: {unlockLevel: 9}},
   'feu-glace': {art: EXPECTED_ART['feu-glace'], name: 'Lapin Feu Glacé', types: ['feu', 'neige'], rarity: 'rare', price: null, recipe: {requiredTypes: ['feu', 'neige'], minAffection: 4}, acquisition: ACQUISITION['feu-glace'], progression: {unlockLevel: 6}},
   bouee: {art: EXPECTED_ART['bouee'], name: 'Lapin en Bouée', types: ['paille', 'feu'], rarity: 'rare', price: null, recipe: {requiredTypes: ['paille', 'feu'], minAffection: 4}, acquisition: ACQUISITION['bouee'], progression: {unlockLevel: 5}},
-  magicien: {art: EXPECTED_ART['magicien'], name: 'Lapin Magicien', types: ['metal', 'vol'], rarity: 'epic', price: null, recipe: {requiredTypes: ['metal', 'vol'], minAffection: 6, probability: 5}, acquisition: ACQUISITION['magicien'], progression: {unlockLevel: 11}},
-  dragon: {art: EXPECTED_ART['dragon'], name: 'Lapin Dragon', types: ['vol', 'feu'], rarity: 'legendary', price: null, recipe: {minAffection: 10, parents: ['perroquet', 'feu'], probability: 2}, acquisition: ACQUISITION['dragon'], progression: {unlockLevel: 14}},
+  magicien: {art: EXPECTED_ART['magicien'], name: 'Lapin Magicien', description: SPECIAL_DESCRIPTIONS.magicien, types: ['paille', 'metal'], rarity: 'epic', price: null, recipe: {requiredTypes: ['paille', 'metal'], minAffection: 6, probability: 5}, acquisition: ACQUISITION['magicien'], progression: {unlockLevel: 11}},
+  dragon: {art: EXPECTED_ART['dragon'], name: 'Lapin Dragon', description: SPECIAL_DESCRIPTIONS.dragon, types: ['feu', 'vol'], rarity: 'legendary', price: null, recipe: {minAffection: 10, parents: ['dadi', 'phoenix'], probability: 2}, acquisition: ACQUISITION['dragon'], progression: {unlockLevel: 14}},
 };
 const DEFINITIONS = {...HISTORICAL_DEFINITIONS, ...Object.fromEntries(NEW_RARES.map(r => [r.id, {name: r.name, description: r.description, types: [...r.types], rarity: 'rare', price: null,
-  recipe: {requiredTypes: [...r.requiredTypes], minAffection: STANDARD_RARE.minAffection}, acquisition: ACQUISITION[r.id], progression: {unlockLevel: STANDARD_RARE.unlockLevel}, art: r.art}]))};
+  recipe: {requiredTypes: [...r.requiredTypes], minAffection: STANDARD_RARE.minAffection}, acquisition: ACQUISITION[r.id], progression: {unlockLevel: STANDARD_RARE.unlockLevel}, art: r.art}])),
+  ...Object.fromEntries(NEW_SPECIALS.map(s => [s.id, {name: s.name, description: SPECIAL_DESCRIPTIONS[s.id], types: [...s.types], rarity: s.rarity, price: null,
+    recipe: {...(s.recipe.requiredTypes ? {requiredTypes: [...s.recipe.requiredTypes]} : {}), minAffection: s.recipe.minAffection, ...(s.recipe.parents ? {parents: [...s.recipe.parents]} : {}), probability: s.recipe.probability},
+    acquisition: ACQUISITION[s.id], progression: {unlockLevel: s.unlockLevel}, art: s.art}]))};
 
 describe('canonical species registry', () => {
   it('lists every id in historical order followed by the approved Rares (catalogue and cumulative draw)', () => {
@@ -55,7 +66,7 @@ describe('canonical species registry', () => {
   it('keeps the derived lists and their exact order', () => {
     expect(balance.SHOP_SPECIES).toEqual(['paille', 'neige', 'feu', 'belier-gris', 'volant']);
     expect(balance.RECIPE_SPECIES).toEqual(EXPECTED_RECIPE_IDS);
-    expect(balance.GUARANTEE_SPECIES).toEqual(["lunettes","perroquet","feu-glace","bouee","frisket","icy","ardent","snk","pic-pic","amethyste","princesse-neige","fluffy","virvoletant","phoenix","roukette","wat-wat","glassofeu","plume"]);
+    expect(balance.GUARANTEE_SPECIES).toEqual(["lunettes","perroquet","feu-glace","bouee","frisket","icy","ardent","snk","pic-pic","amethyste","princesse-neige","fluffy","virvoletant","phoenix","roukette","wat-wat","glassofeu","plume","boudinet","dinono","egiiipte","piment","tunini","bretonette"]);
   });
   it('keeps LEGACY_SPECIES_IDS as the historical list: the first two ids, in order', () => {
     expect([...registry.LEGACY_SPECIES_IDS]).toEqual(IDS.slice(0, 2));
@@ -75,7 +86,7 @@ describe('canonical species registry', () => {
 });
 
 /** The table `PROGRESSION.requirements.species` held by hand before the levels moved into the registry, written out independently. */
-const LEVELS_BEFORE = Object.fromEntries(EXPECTED_IDS.map((id, i) => [id, i < HISTORICAL_LEVELS.length ? HISTORICAL_LEVELS[i] : STANDARD_RARE.unlockLevel])) as Record<registry.SpeciesId, number>;
+const LEVELS_BEFORE = Object.fromEntries(EXPECTED_IDS.map((id, i) => [id, i < HISTORICAL_LEVELS.length ? HISTORICAL_LEVELS[i] : NEW_SPECIALS.find(s => s.id === id)?.unlockLevel ?? STANDARD_RARE.unlockLevel])) as Record<registry.SpeciesId, number>;
 describe('acquisition is declared, not deduced', () => {
   const sourcesOf = (id: string) => registry.SPECIES[id as registry.SpeciesId].acquisition;
   it('gives the five Commons a shop and the transitional historical breeding, and every other species a recipe', () => {

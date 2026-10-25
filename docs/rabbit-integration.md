@@ -34,9 +34,13 @@ Construire une fois à la fin ; le dossier `netlify-site/` est ignoré par Git. 
 3. Vérifier : sélecteur contenant l'espèce, rendu dans le monde sans découpe et à bonne échelle, portrait de collection (dimensions, description après découverte), paire préparée au Nid avec les probabilités attendues, aucune erreur de page.
 4. Un essai iPhone n'est pas systématique : seulement sur demande du propriétaire.
 
+## Dessin livré avec un fond opaque
+
+Quand un design arrive en RGB (fond blanc, damier imprimé ou fond uni), l'ajouter à `DESIGNS` dans `scripts/prepare-rabbit-masters.mjs` avec son mode de fond (`light`, `checker` ou `corner`), puis lancer `node scripts/prepare-rabbit-masters.mjs "<dossier Design des lapins>" <id>`. Le script détoure le fond relié au bord, recadre au dessin avec une marge de 8 px et écrit `assets-source/rabbits/<id>/sprite.png`. Pour une nouvelle entrée de `scripts/rabbit-art-manifest.json`, il suffit d'indiquer `file` et `worldWidth` : `node scripts/derive-rabbit-art.mjs` enregistre alors le maître, ses dimensions utiles et le registre ; `--check` reste strict. Regarder le maître sur un fond coloré avant de l'intégrer.
+
 ## Clignements et truffes dans la prairie
 
-Les 18 espèces illustrées sauf Ardent disposent de deux patches RGBA natifs : `eyes-closed` et `nose-twitch`. Les espèces procédurales et Ardent conservent leur comportement. Les portraits DOM de collection, de croisement et de boutique restent inchangés.
+Les 18 espèces illustrées avant le 25 octobre 2026, sauf Ardent, disposent de deux patches RGBA natifs : `eyes-closed` et `nose-twitch`. Les espèces procédurales, Ardent et les sprites livrés le 25 octobre 2026 (Boudinet, Dinono, Egiiipte, Piment, Tunini, Bretonette, Dadi, Maxou, Magicien, Dragon, Requin) conservent leur comportement : `derive-rabbit-blinks.mjs` ne retient que les espèces qui ont un `blink.json`. Les portraits DOM de collection, de croisement et de boutique restent inchangés.
 
 Les masters approuvés et leurs décalages sont sous `assets-source/rabbits/<id>/` (`blink.json`). `node scripts/derive-rabbit-blinks.mjs` copie les patches vers `public/assets/rabbits/` et produit `src/config/rabbitBlinkArt.json` ; `--check` contrôle les dimensions, limites, empreintes des originaux/masters et les octets dérivés sans écrire. Ne pas retoucher les sprites d’origine. L’adaptateur typé `rabbitBlinkArt.ts` valide le manifeste contre les espèces et leurs dimensions.
 

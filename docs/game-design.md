@@ -8,7 +8,7 @@ Une partie neuve commence avec **350 pattes, 0 herbe et 12 cœurs**, Paille affe
 |---|---|
 | Revenu commun | 10 + (affection − 1), soit 10–29 pattes/h |
 | Revenu rare | 14 + (affection − 1), soit 14–33 pattes/h |
-| Magicien / Dragon | Revenu des rares provisoirement ; arbitrage propriétaire requis. Autres règles spéciales conservées. |
+| Épiques et Légendaires | Revenu des rares provisoirement ; arbitrage propriétaire requis. |
 | Capacité des habitats N1/N2/N3 | 3 / 5 / 7 individus |
 | Stockage de tous les habitats N1/N2/N3 | 2 400 / 4 000 / 5 600 pattes (besoin 24 h : 2 376 / 3 960 / 5 544) |
 | Communs Paille / Neige / Feu / Bélier Gris / Volant | 80 / 80 / 180 / 350 / 600 pattes |
@@ -32,11 +32,34 @@ Affection 1–20, repas à 2 × affection actuelle herbes (380 pour aller de 1 �
 
 XP : passage N → N+1 = **arrondi(90 × N^1,15)**, plafond 30, un cœur par niveau. Le barème initial demandé 25 × N^1,5 faisait atteindre le niveau 5 pendant le tutoriel, 10 après 2,5 jours écoulés, 15 après 10,5 jours et 20 après 33 jours. Seuls le coefficient et l’exposant ont été ajustés pour le rythme cible. Repas : 5 XP fixes ; achat commun : 10 ; naissance commune : 10, rare : 20 (Épique 110 et Légendaire 180 conservés) ; première découverte commune : +60, rare : +250 ; lancement de reproduction : 5 ; constructions inchangées ; première pose de chaque modèle de décoration : 10, une fois par référence même après revente ; mission principale : 40, quotidienne : 50, bonus quotidien : 0.
 
-Collection : poids ordinaires 30 par commun et 30 par rare admissible. Paille × Neige reste un tirage rare certain. Les 18 rares ordinaires actuels participent à la garantie de nouvelle espèce : après sept échecs admissibles, la huitième tentative garantit une espèce manquante admissible à la paire et au niveau. Les recettes spéciales, Épiques, Légendaires et Mythiques restent exclues. La libération d’un doublon rend 10 herbes communes ou 25 rares, sans XP ; dernier individu et parent occupé restent protégés.
+Collection : poids ordinaires 30 par commun et 30 par rare admissible. Paille × Neige reste un tirage rare certain. Les 24 rares ordinaires actuels participent à la garantie de nouvelle espèce : après sept échecs admissibles, la huitième tentative garantit une espèce manquante admissible à la paire et au niveau. Les recettes spéciales, Épiques, Légendaires et Mythiques restent exclues. La libération d’un doublon rend 10 herbes communes ou 25 rares, sans XP ; dernier individu et parent occupé restent protégés.
 
 Les quotidiennes demandent de récolter 100 pattes (récompense 60 pattes), récolter 40 herbes (+30 herbes) et lancer une reproduction (+40 pattes). L’identifiant historique `gain-affection` est conservé pour la troisième, dont la règle est désormais la reproduction. Bonus des trois : deux cœurs. Cadeau : deux cœurs par tranche de 24 h, cumul de trois cadeaux maximum (six cœurs), sans décaler la prochaine échéance lors d’une réclamation tardive.
 
 Migration v16 → v17 réelle et déterministe : ressources, affection, lapins, bâtiments, stock et résultats/dates des reproductions et croissances sont préservés. Le niveau et la fraction dans le niveau sont convertis depuis l’ancienne courbe 50 × N^1,6, avec arrondi inférieur à un point d’XP, sans récompense de niveau au chargement. Compteur de garantie plafonné à sept ; modèles de décoration déjà posés marqués récompensés ; quotidienne d’affection complétée reste réclamable, réclamation et bonus déjà reçus restent acquis. Versions 1–15 : rejet `INCOMPATIBLE_CATALOG` conservé. Fixture encodée par le véritable code v16 dans `tests/fixtures/economy-v16.json`.
+
+## Lapins ajoutés le 25 octobre 2026
+
+Décision du propriétaire, avec les dessins livrés dans `Design des lapins` (détourés et recadrés par `scripts/prepare-rabbit-masters.mjs`, puis réduits par `scripts/derive-rabbit-art.mjs`). Ils ne clignent pas encore des yeux et ne bougent pas la truffe : ce sera une mission suivante.
+
+| Espèce | Types | Rareté | Obtention |
+|---|---|---|---|
+| Boudinet | métal + paille | rare | reproduction, éléments métal + paille, affection 2 |
+| Dinono | feu + métal | rare | reproduction, éléments feu + métal, affection 2 |
+| Egiiipte | vol + métal | rare | reproduction, éléments vol + métal, affection 2 |
+| Piment | vol + feu | rare | reproduction, éléments vol + feu, affection 2 |
+| Tunini | neige + vol | rare | reproduction, éléments neige + vol, affection 2 |
+| Bretonette | métal + vol | rare | reproduction, éléments métal + vol, affection 2 |
+| Dadi | neige + vol | épique | 5 %, éléments neige + vol, affection 6, niveau 11 |
+| Maxou | neige + vol | épique | 5 %, éléments neige + vol, affection 6, niveau 11 |
+| Orange | paille + neige | épique | 5 %, éléments paille + neige, affection 6, niveau 11 |
+| Lapin Magicien | paille + métal (avant : métal + vol) | épique | 5 %, éléments paille + métal, affection 6, niveau 11 |
+| Lapin Dragon | feu + vol | légendaire | 2 %, uniquement Dadi × Phoenix, affection 10, niveau 14 |
+| Lapin Requin | neige + métal | légendaire | 2 %, uniquement Maxou × Wat Wat, affection 10, niveau 14 |
+
+Les six rares suivent la règle standard des rares (garantie comprise, indice de types gratuit). Le propriétaire a fixé les types des Épiques et les parents des Légendaires ; pour le reste (5 %, affection 6, niveau 11, connaissance à 450 pattes ; 2 %, affection 10, niveau 14, connaissance à 900), ils reprennent provisoirement les seules règles existantes, celles de Magicien et de Dragon, en attendant son arbitrage. Un Magicien déjà logé sous ses anciens types (habitat Vol) reste où il est au chargement ; les nouveaux placements suivent ses types actuels.
+
+Orange garde un rendu procédural : le dessin livré reproduit un personnage protégé (Miffy), qui ne peut pas entrer dans ce dépôt public. Un design original est à fournir.
 
 Résultats, limites et achats restants : [progression du joueur](player-progression.md). Partie B (objectifs et lisibilité) : suite de missions principales durables, indices de types parents pour les 14 rares illustrés, compteur des récompenses complètes de la Cuisine, cumul des cadeaux de cœurs affiché, heure de fin des commandes, grandes décorations plus ambitieuses (600 à 15 000 pattes) avec revente plafonnée au prix payé. Détail : [progression du joueur](player-progression.md#objectifs-durables-et-lisibilité-partie-b).
 

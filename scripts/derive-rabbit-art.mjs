@@ -15,14 +15,18 @@ let registry = readFileSync(registryPath, 'utf8');
 for (const [id, entry] of Object.entries(manifest)) {
   try {
     const bytes = readFileSync(`assets-source/rabbits/${id}/sprite.png`);
-    if (sha1(bytes) !== entry.sourceSha1) throw Error('source SHA-1 differs');
     const source = decodePng(bytes);
+    // A new entry only states its file and world width; writing records the master and its useful dimensions.
+    if (!check && entry.sourceSha1 === undefined)
+      Object.assign(entry, {sourceSha1: sha1(bytes), sourceWidth: source.width, sourceHeight: source.height});
+    if (sha1(bytes) !== entry.sourceSha1) throw Error('source SHA-1 differs');
     if (source.width !== entry.sourceWidth || source.height !== entry.sourceHeight) throw Error('source dimensions differ');
     // 150x140 portrait, including 4px padding on each side; world squash max 1.06.
     const usefulWidth = Math.max(entry.worldWidth * 1.3 * 1.06 * 1.65 * 3, Math.min(142 * 3, 132 * 3 * source.width / source.height));
     const width = Math.min(source.width, Math.ceil(usefulWidth * 1.08));
     const height = Math.min(source.height, Math.round(source.height * width / source.width));
     const derived = encodePng(resizeRegion(source, source.width, source.height, width, height));
+    if (!check && entry.width === undefined) Object.assign(entry, {width, height});
     if (entry.width !== width || entry.height !== height) throw Error('dimensions differ from useful-resolution calculation');
     const pattern = new RegExp(`(\\{id: '${id}'[^\\n]+?width: )\\d+(, height: )\\d+(, worldWidth: )([\\d.]+)`);
     const metadata = registry.match(pattern);

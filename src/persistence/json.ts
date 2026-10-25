@@ -10,7 +10,7 @@ import {type HabitatType, HABITAT_TYPES, HABITAT_LEVELS, habitatLevel} from '../
 import {MAIN_MISSION_IDS, DAILY_MISSION_IDS, DAILY_MISSIONS} from '../config/missions';
 import {cycleIndexAt} from '../simulation/missions';
 import {z} from 'zod';
-import {BALANCE, CUISINE_FULL_REWARDS_PER_CYCLE, HOUR, NURSERY, ORDERS, SHOP_SPECIES, SPECIES, SPECIES_IDS, GUARANTEE_SPECIES, growthDuration} from '../config/balance';
+import {BALANCE, CUISINE_FULL_REWARDS_PER_CYCLE, HOUR, NURSERY, ORDERS, SHOP_SPECIES, SPECIES, SPECIES_IDS, GUARANTEE_SPECIES, growthDuration, type SpeciesId} from '../config/balance';
 import type {GameState} from '../state/types';
 import {DECORATION_IDS, RETIRED_DECORATION_IDS, MAX_DECORATIONS} from '../config/decorations';
 import {decorationPlacementReason} from '../simulation/decorations';
@@ -22,6 +22,8 @@ import {ISLAND} from '../config/islandGeometry';
  * (the controller then starts a new game); they are never read, migrated or restored.
  */
 export const SAVE_VERSION = 17;
+/** Types a species had before the owner changed them: a rabbit already housed under its old types may stay where it is. */
+const LEGACY_TYPES: Partial<Record<SpeciesId, readonly HabitatType[]>> = {magicien: ['metal', 'vol']};
 const integer = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
 // Rebasing a clock may move historical dates before the Unix epoch. Resources stay nonnegative.
 const timestamp = z.number().int().min(Number.MIN_SAFE_INTEGER).max(Number.MAX_SAFE_INTEGER);
@@ -155,7 +157,7 @@ const schema = v17.superRefine((s, context) => {
     if (r.id.startsWith('building-') || !s.discovered.includes(r.species) ||
       !s.buildings.some(b => b.kind === 'enclosure' && b.id === r.enclosureId)) issue('Rabbit identity or enclosure or discovery');
     const home = s.buildings.find(b => b.id === r.enclosureId);
-    if (home?.habitat) { const type: HabitatType = home.habitat.type; if (type !== 'universal' && !SPECIES[r.species].types.includes(type)) issue('Incompatible rabbit'); }
+    if (home?.habitat) { const type: HabitatType = home.habitat.type; if (type !== 'universal' && !SPECIES[r.species].types.includes(type) && !LEGACY_TYPES[r.species]?.includes(type)) issue('Incompatible rabbit'); }
   }
   for (const b of s.buildings) {
     const capacity = b.habitat ? habitatLevel(b.habitat.type, b.habitat.level).capacity : BALANCE.enclosureCapacity;

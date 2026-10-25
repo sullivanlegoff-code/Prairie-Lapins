@@ -24,7 +24,7 @@ describe('the breeding engine honours the declared acquisition sources', () => {
   // Hand-written expectations: Neige × Feu (union feu,neige) holds two Commons at 40 and the recipes of Feu Glacé (needs affection 4), Wat Wat and Glassofeu at 20.
   it('controls: the current tables give the historical weights, in order', () => {
     expect(breedingWeights('neige', 'feu', 4, 4)).toEqual({neige:30,feu:30,'feu-glace':30,'wat-wat':30,glassofeu:30}); expect(Object.keys(breedingWeights('neige', 'feu', 4, 4))).toEqual(['neige','feu','feu-glace','wat-wat','glassofeu']);
-    expect(breedingWeights('paille', 'feu', 4, 4)).toEqual({paille: 30, feu: 30, bouee: 30, ardent: 30, snk: 30}); expect(breedingOdds('belier-gris', 'volant', 6, 6)).toEqual({'belier-gris': 47.5, volant: 47.5, magicien: 5});
+    expect(breedingWeights('paille', 'feu', 4, 4)).toEqual({paille: 30, feu: 30, bouee: 30, ardent: 30, snk: 30}); expect(breedingOdds('paille', 'belier-gris', 6, 6)).toEqual({paille: 19, 'belier-gris': 19, lunettes: 19, roukette: 19, boudinet: 19, magicien: 5});
   });
   it('excludes a species made shop-only from a historical table, keeping the others in order and weight', () => {
     shopOnly('feu-glace'); expect(breedingWeights('neige', 'feu', 4, 4)).toEqual({neige:30,feu:30,'wat-wat':30,glassofeu:30}); expect(Object.keys(breedingWeights('neige', 'feu', 4, 4))).toEqual(['neige','feu','wat-wat','glassofeu']);
@@ -35,8 +35,8 @@ describe('the breeding engine honours the declared acquisition sources', () => {
     shopOnly('bouee'); expect(breedingWeights('paille', 'feu', 4, 4)).toEqual({paille: 30, ardent: 30, snk: 30});
   });
   it('excludes a special recipe whose source is no longer declared, and does not reserve its probability', () => {
-    shopOnly('magicien'); expect(breedingOdds('belier-gris', 'volant', 6, 6)).toEqual({'belier-gris': 50, volant: 50});
-    shopOnly('dragon'); expect(breedingOdds('perroquet', 'feu', 10, 10).dragon).toBeUndefined();
+    shopOnly('magicien'); expect(breedingOdds('paille', 'belier-gris', 6, 6)).toEqual({paille: 20, 'belier-gris': 20, lunettes: 20, roukette: 20, boudinet: 20});
+    shopOnly('dragon'); expect(breedingOdds('dadi', 'phoenix', 10, 10).dragon).toBeUndefined();
   });
   it('keeps a species without breeding source out of the guarantee, and the guarantee still works for the others', () => {
     const s = game('feu', 'neige', 4); s.pityFailures = 7;

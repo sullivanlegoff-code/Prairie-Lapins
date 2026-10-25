@@ -8,9 +8,9 @@ import {createCentreStartGame} from '../src/state/initial';
 import {breedingDistributionWeights, breedingPool} from '../src/simulation/breeding';
 
 it('keeps the independent six prices, no starting gift (Brumelin is gone) and ordered four guarantee entries', () => {
-  expect(RECIPE_PRICES).toEqual({bouee:150,'feu-glace':180,lunettes:220,perroquet:250,magicien:450,dragon:900});
+  expect(RECIPE_PRICES).toEqual({bouee:150,'feu-glace':180,lunettes:220,perroquet:250,magicien:450,dragon:900,dadi:450,maxou:450,orange:450,requin:900});
   expect(GIFTED_RECIPES).toEqual([]);
-  expect(GUARANTEE_SPECIES).toEqual(['lunettes','perroquet','feu-glace','bouee',...SPECIES_IDS.slice(11)]);
+  expect(GUARANTEE_SPECIES).toEqual(['lunettes','perroquet','feu-glace','bouee',...SPECIES_IDS.filter(id=>SPECIES[id].rarity==='rare').slice(4)]);
   expect(createCentreStartGame(0).recipeBook).toEqual([]);
 });
 it('derives policies from isolated sources; absence/false grant no policy, zero is a valid sale price', () => {

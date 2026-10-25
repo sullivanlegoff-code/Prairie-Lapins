@@ -20,7 +20,7 @@ import {EXPECTED_IDS} from './rabbit-art-fixtures';
 function createGame(now=0){const s=legacyGame(now);s.progression={totalXp:cumulativeLevelXp(14),rewardedThroughLevel:14};return s;}
 const rows = [
  ['bouee', 'paille', 'feu', 4, 30],
- ['magicien', 'belier-gris', 'volant', 6, 60], ['dragon', 'perroquet', 'feu', 10, 120],
+ ['magicien', 'paille', 'belier-gris', 6, 60], ['dragon', 'dadi', 'phoenix', 10, 120],
 ] as const;
 function run(s: GameState, command: Command, now=s.lastSimulatedAt, roll=.999) {
  const result=act(s,command,now,()=>roll); if(!result.ok)throw Error(result.reason);return result.state;
@@ -38,32 +38,33 @@ describe('approved three-species rules',()=>{
   const low=couple(a,b,2),before=structuredClone(low);const result=act(low,breed,0,()=>0);expect(result.ok).toBe(true);
   if(result.ok){expect(result.state.pattes).toBe(low.pattes);expect(result.state.buildings.find(x=>x.breeding)!.breeding!.birth.species).not.toBe(id)}
   expect(low).toEqual(before);expect(act(low,{type:'buyRabbit',species:id,enclosureId:'building-1'},0)).toMatchObject({ok:false,reason:'INVALID_CHOICE',state:low});
-  expect(COATS[id]).toEqual({body:COATS[id].body,patch:COATS[id].body});
+  if(id==='bouee')expect(COATS[id]).toEqual({body:COATS[id].body,patch:COATS[id].body});else expect(SPECIES[id].art.kind).toBe('static-sprite');
  });
  it('matches the three approved distributions exactly',()=>{
   expect(breedingOdds('paille','feu',4,4)).toEqual({"ardent":20,"bouee":20,"feu":20,"paille":20,"snk":20});
-  expect(breedingOdds('belier-gris','volant',6,6)).toEqual({'belier-gris':47.5,volant:47.5,magicien:5});
-  expect(breedingOdds('perroquet','feu',10,10)).toEqual({feu:98/4,volant:98/4,perroquet:98/4,phoenix:98/4,dragon:2});
+  expect(breedingOdds('paille','belier-gris',6,6)).toEqual({paille:19,'belier-gris':19,lunettes:19,roukette:19,boudinet:19,magicien:5});
+  // Dadi x Phoenix: eleven ordinary results share 88 %, beside Dragon (2 %) and the two Neige-Vol epics (5 % each).
+  expect(breedingOdds('dadi','phoenix',10,10)).toEqual({neige:8,feu:8,volant:8,perroquet:8,'feu-glace':8,'pic-pic':8,phoenix:8,'wat-wat':8,glassofeu:8,piment:8,tunini:8,dragon:2,dadi:5,maxou:5});
  });
  it('reserves a special once and allocates exactly the remainder to ordinary results',()=>{
   const odds=breedingOdds('magicien','belier-gris',6,6);expect(odds.magicien).toBe(5);
   expect(Object.entries(odds).filter(([id])=>id!=='magicien').reduce((n,[,p])=>n+p,0)).toBeCloseTo(95,10);
-  const dragon=breedingOdds('perroquet','feu',10,10);expect(dragon.dragon).toBe(2);
+  const dragon=breedingOdds('dadi','phoenix',10,10);expect(dragon.dragon).toBe(2);
   expect(Object.entries(dragon).filter(([id])=>id!=='dragon').reduce((n,[,p])=>n+p,0)).toBeCloseTo(98,10);
  });
- it('still reserves simultaneous specials once each, with a synthetic second special (no pair of the catalogue holds two)',()=>{
+ it('still reserves simultaneous specials once each, with a synthetic second special',()=>{
   const original=SPECIES.lunettes;
   try {
-   const acquisition=[{kind:'recipe' as const,requiredTypes:['metal','vol'] as ('metal'|'vol')[],minAffection:6,probability:3}];
+   const acquisition=[{kind:'recipe' as const,requiredTypes:['metal','paille'] as ('metal'|'paille')[],minAffection:6,probability:3}];
    SPECIES.lunettes={...original,acquisition,recipe:recipeOf(acquisition)};
-   const odds=breedingOdds('belier-gris','volant',6,6);expect(odds.magicien).toBe(5);expect(odds.lunettes).toBe(3);
+   const odds=breedingOdds('paille','belier-gris',6,6);expect(odds.magicien).toBe(5);expect(odds.lunettes).toBe(3);
    expect(Object.entries(odds).filter(([id])=>!['lunettes','magicien'].includes(id)).reduce((n,[,p])=>n+p,0)).toBeCloseTo(92,10);
   } finally {SPECIES.lunettes=original;}
  });
  it('requires exact Dragon species in either order, regardless of other type-compatible unions',()=>{
-  expect(recipeMatches('dragon','perroquet','feu')).toBe(true);expect(recipeMatches('dragon','feu','perroquet')).toBe(true);
-  for(const [a,b]of [['volant','feu'],['perroquet','perroquet'],['dragon','feu'],['perroquet','feu-glace']]as const){expect(breedingOdds(a,b,20,20).dragon).toBeUndefined();expect(recipeMatches('dragon',a,b)).toBe(false)}
-  const s=couple('perroquet','feu',10);expect(act(s,{type:'breed',parents:['rabbit-2','rabbit-2']},0)).toMatchObject({ok:false,reason:'SAME_PARENT',state:s});
+  expect(recipeMatches('dragon','dadi','phoenix')).toBe(true);expect(recipeMatches('dragon','phoenix','dadi')).toBe(true);
+  for(const [a,b]of [['volant','feu'],['dadi','dadi'],['maxou','phoenix'],['dadi','piment'],['perroquet','feu']]as const){expect(breedingOdds(a,b,20,20).dragon).toBeUndefined();expect(recipeMatches('dragon',a,b)).toBe(false)}
+  const s=couple('dadi','phoenix',10);expect(act(s,{type:'breed',parents:['rabbit-2','rabbit-2']},0)).toMatchObject({ok:false,reason:'SAME_PARENT',state:s});
  });
  it('checks symmetry, normalization, eligibility and actual midpoint draws for every pair at threshold boundaries',()=>{
   for(let i=0;i<SPECIES_IDS.length;i++)for(let j=i;j<SPECIES_IDS.length;j++)for(const levels of [[2,2],[4,3],[4,4],[6,5],[6,6],[10,9],[10,10],[20,20]]){
@@ -75,11 +76,11 @@ describe('approved three-species rules',()=>{
 });
 describe('ordinary guarantee excludes epic and legendary discoveries',()=>{
  it('adds only Bouée to the existing guarantee',()=>{
-  expect(GUARANTEE_SPECIES).toEqual(["lunettes","perroquet","feu-glace","bouee","frisket","icy","ardent","snk","pic-pic","amethyste","princesse-neige","fluffy","virvoletant","phoenix","roukette","wat-wat","glassofeu","plume"]);
+  expect(GUARANTEE_SPECIES).toEqual(["lunettes","perroquet","feu-glace","bouee","frisket","icy","ardent","snk","pic-pic","amethyste","princesse-neige","fluffy","virvoletant","phoenix","roukette","wat-wat","glassofeu","plume","boudinet","dinono","egiiipte","piment","tunini","bretonette"]);
   const s=couple('paille','feu',4);s.discovered.push('ardent','snk');s.pityFailures=7;expect(chooseBirth(s,'paille','feu',.999,4,4)).toMatchObject({"species":"bouee","guaranteed":true,"reservedDiscovery":true,"pityFailures":0});
  });
  it('guarantee entirely replaces special and ordinary draws',()=>{
-  const s=couple('magicien','paille',6);s.discovered.push('plume','roukette','virvoletant');s.pityFailures=7;const p=breedingPool(s,'magicien','paille',6,6);
+  const s=couple('magicien','paille',6);s.discovered.push('roukette','boudinet');s.pityFailures=7;const p=breedingPool(s,'magicien','paille',6,6);
   expect(p.weights).toEqual({lunettes:1});for(const roll of [0,.5,.999])expect(chooseBirth(s,'magicien','paille',roll,6,6)).toMatchObject({"species":"lunettes","guaranteed":true});
  });
  it('epic birth and welcome count as an eligible failure and do not reset the ordinary counter',()=>{
@@ -88,7 +89,7 @@ describe('ordinary guarantee excludes epic and legendary discoveries',()=>{
   s=sendToNursery(s,20*MINUTE);s=run(s, welcomeOf(s, 'building-1'),80*MINUTE);expect(s.discovered).toContain('magicien');expect(s.pityFailures).toBe(4);
  });
  it('does not count a special-only eligible pair, even with a pending ordinary guarantee',()=>{
-  const s=couple('belier-gris','volant',6);s.pityFailures=7;expect(chooseBirth(s,'belier-gris','volant',.999,6,6)).toMatchObject({species:'magicien',guaranteed:false,reservedDiscovery:false,pityFailures:7});
+  const s=couple('paille','belier-gris',6);s.discovered.push('lunettes','roukette','boudinet');s.pityFailures=7;expect(chooseBirth(s,'paille','belier-gris',.999,6,6)).toMatchObject({species:'magicien',guaranteed:false,reservedDiscovery:false,pityFailures:7});
  });
  it.each(['magicien','dragon']as const)('refuses a forged guarantee reservation for %s',id=>{
   const [_,a,b,level]=rows.find(r=>r[0]===id)!;const s=run(couple(a,b,level),breed);
@@ -97,7 +98,7 @@ describe('ordinary guarantee excludes epic and legendary discoveries',()=>{
 });
 describe('saved births, delays, compatibility and collection',()=>{
  it.each(rows)('%s draws once, stays hidden, grows after transfer, and welcomes at affection one',(id,a,b,level,minutes)=>{
-  const source=couple(a,b,level),rng=vi.fn(()=>id==='bouee' ? .5 : .999),map=new Map([[SAVE_KEY,encodeGame(source)]]),storage={getItem:(k:string)=>map.get(k)??null,setItem:(k:string,v:string)=>{map.set(k,v)}};
+  const source=couple(a,b,level),rng=vi.fn(()=>id==='bouee' ? .5 : id==='dragon' ? .89 : .999),map=new Map([[SAVE_KEY,encodeGame(source)]]),storage={getItem:(k:string)=>map.get(k)??null,setItem:(k:string,v:string)=>{map.set(k,v)}};
   const c=new GameController(storage,()=>0,rng);expect(c.perform(breed).ok).toBe(true);expect(rng).toHaveBeenCalledTimes(1);
   const saved=c.getSnapshot().state!,birth=saved.buildings.find(b=>b.breeding)!.breeding!.birth;expect(birth.species).toBe(id);c.dispose();
   const noDraw=vi.fn(()=>0),reload=new GameController(storage,()=>0,noDraw);expect(reload.getSnapshot().state).toEqual(saved);expect(noDraw).not.toHaveBeenCalled();reload.dispose();
@@ -108,7 +109,8 @@ describe('saved births, delays, compatibility and collection',()=>{
   const welcomed=run(growing, welcomeOf(growing, 'building-1'),(20+minutes)*MINUTE);expect(welcomed.rabbits.at(-1)).toMatchObject({species:id,affection:1});expect(rabbitIncome(1)).toBe(10);
  });
  it('starts the full Dragon growth only after an occupied nursery is freed',()=>{
-  let s=sendToNursery(advance(run(couple('perroquet','feu',10),breed,0,0),20*MINUTE));s=run(s,breed);s=advance(s,200*MINUTE);
+  // In the Dadi x Phoenix pool, Dragon holds the draws in [0.88, 0.90).
+  let s=sendToNursery(advance(run(couple('dadi','phoenix',10),breed,0,0),20*MINUTE));s=run(s,breed,s.lastSimulatedAt,.89);s=advance(s,200*MINUTE);
   expect(s.buildings.find(b=>b.breeding)!.breeding!.birth.species).toBe('dragon');s=run(s, welcomeOf(s, 'building-1'));expect(stateBaby(s)).toBeNull();s=sendToNursery(s);
   expect(stateBaby(s)).toMatchObject({startedAt:200*MINUTE,readyAt:320*MINUTE});
  });
@@ -117,14 +119,14 @@ describe('saved births, delays, compatibility and collection',()=>{
   for(const type of ['universal','paille','neige','feu','metal','vol']as const){home.habitat!.type=type;expect(habitatEntryReason(s,home,id)).toBe(type==='universal'||SPECIES[id].types.includes(type)?null:'TYPE_INCOMPATIBLE')}
  });
  it('notebook shares actual odds, explains exact parents and suppresses specials under guarantee',()=>{
-  const s=knowEveryResult(couple('perroquet','feu',10)),entry=recipeBook(s,0).find(r=>r.species==='dragon')!;expect(entry.pairs).toHaveLength(1);expect(entry.pairs[0]).toMatchObject({probability:'2 %',possible:true,guaranteed:false});
-  expect(oddsView(s,'perroquet','feu',10,10).entries.map(e=>e.probability)).toEqual(["24,5 %","24,5 %","24,5 %","24,5 %","2 %"]);
+  const s=knowEveryResult(couple('dadi','phoenix',10)),entry=recipeBook(s,0).find(r=>r.species==='dragon')!;expect(entry.pairs).toHaveLength(1);expect(entry.pairs[0]).toMatchObject({probability:'2 %',possible:true,guaranteed:false});
+  expect(oddsView(s,'dadi','phoenix',10,10).entries.map(e=>e.probability)).toEqual([...Array(11).fill('8 %'),'2 %','5 %','5 %']);
   const wrong=couple('volant','feu',10);expect(recipeBook(wrong,0).find(r=>r.species==='dragon')!.pairs).toEqual([]);
   const guarantee=knowRecipes(couple('magicien','paille',6));guarantee.pityFailures=9;expect(recipeBook(guarantee,0).find(r=>r.species==='magicien')!.pairs[0]).toMatchObject({probability:'0 %',possible:false});
  });
  it('filters compose by type, rarity and public discoveries without reading pending births',()=>{
-  const s=createGame(0);expect(collectionView(s)).toHaveLength(EXPECTED_IDS.length);expect(collectionView(s,{rarity:'epic'})).toHaveLength(1);
-  expect(collectionView(s,{rarity:'epic',type:'vol'})).toEqual([{known:false,name:'???'}]);expect(collectionView(s,{rarity:'epic',discovery:'known'})).toEqual([]);
+  const s=createGame(0);expect(collectionView(s)).toHaveLength(EXPECTED_IDS.length);expect(collectionView(s,{rarity:'epic'})).toHaveLength(4);
+  expect(collectionView(s,{rarity:'epic',type:'vol'})).toEqual([{known:false,name:'???'},{known:false,name:'???'}]);expect(collectionView(s,{rarity:'epic',discovery:'known'})).toEqual([]);
   expect(collectionView(s,{type:'paille',discovery:'known'})).toEqual([{known:true,species:'paille',name:'Lapin Paille'}]);
  });
  it('prepares every species and actual parent pairs only in a validated explicit test scenario',()=>{

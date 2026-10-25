@@ -18,8 +18,14 @@ afterEach(() => {for (const [id, definition] of saved) SPECIES[id] = definition;
 const historical = {
   lunettes: {types: ['metal', 'paille'], affection: 4}, perroquet: {types: ['vol', 'feu'], affection: 4},
   'feu-glace': {types: ['feu', 'neige'], affection: 4}, bouee: {types: ['paille', 'feu'], affection: 4},
-  magicien: {types: ['metal', 'vol'], affection: 6},
+  magicien: {types: ['paille', 'metal'], affection: 6},
 };
+/** Fixed-probability specials, in catalogue order: element recipes (Epics) and exact parents (Legendaries), approved 25 October 2026. */
+const SPECIALS: {id: SpeciesId; probability: number; affection: number; types?: string[]; parents?: [SpeciesId, SpeciesId]}[] = [
+  {id: 'magicien', probability: 5, affection: 6, types: ['paille', 'metal']}, {id: 'dragon', probability: 2, affection: 10, parents: ['dadi', 'phoenix']},
+  {id: 'dadi', probability: 5, affection: 6, types: ['neige', 'vol']}, {id: 'maxou', probability: 5, affection: 6, types: ['neige', 'vol']},
+  {id: 'orange', probability: 5, affection: 6, types: ['paille', 'neige']}, {id: 'requin', probability: 2, affection: 10, parents: ['maxou', 'wat-wat']},
+];
 function historicalWeights(a: SpeciesId, b: SpeciesId, x: number, y: number): Odds {
   const types = new Set([...SPECIES[a].types, ...SPECIES[b].types]), key = [...types].sort().join(',');
   const matches = (id: keyof typeof historical) => historical[id].types.every(t => types.has(t as never)) && Math.min(x,y) >= historical[id].affection;
@@ -30,13 +36,15 @@ function historicalWeights(a: SpeciesId, b: SpeciesId, x: number, y: number): Od
   }
   // Approved additions: ordinary weight 20 each, only when both required elements and both affection thresholds hold.
   Object.assign(ordinary, rareAdditions(types, x, y));
-  if (key === 'neige,paille') return Math.min(x,y) >= 2 ? {frisket:30,icy:30} : {};
+  const pool: Odds = key === 'neige,paille' ? (Math.min(x,y) >= 2 ? {frisket:30,icy:30} : {}) : ordinary;
   const specials: Odds = {};
-  if (matches('magicien')) specials.magicien = 5;
-  if ((a === 'perroquet' && b === 'feu' || a === 'feu' && b === 'perroquet') && Math.min(x,y) >= 10) specials.dragon = 2;
-  if (!Object.keys(specials).length) return ordinary;
-  const total = Object.values(ordinary).reduce((s,w) => s+w,0), remaining = 100 - Object.values(specials).reduce((s,w) => s+w,0);
-  return Object.fromEntries([...Object.entries(ordinary).map(([id,w]) => [id,w*remaining]), ...Object.entries(specials).map(([id,w]) => [id,w*total])]);
+  for (const special of SPECIALS) if (Math.min(x,y) >= special.affection && (special.types ? special.types.every(t => types.has(t as never))
+    : a === special.parents![0] && b === special.parents![1] || a === special.parents![1] && b === special.parents![0])) specials[special.id] = special.probability;
+  if (!Object.keys(specials).length) return pool;
+  const total = Object.values(pool).reduce((s,w) => s+w,0);
+  if (!total) return {};
+  const remaining = 100 - Object.values(specials).reduce((s,w) => s+w,0);
+  return Object.fromEntries([...Object.entries(pool).map(([id,w]) => [id,w*remaining]), ...Object.entries(specials).map(([id,w]) => [id,w*total])]);
 }
 describe('explicit recipe requirements', () => {
   it('preserves all other unions and applies the exact starting Rare pool in every ordered integer distribution', () => {
@@ -58,9 +66,9 @@ describe('explicit recipe requirements', () => {
   });
   it('accepts four elements contributed by two dual-type parents', () => {
     override('bouee', {requiredTypes: ['paille','neige','metal','vol'], minAffection: 4});
-    expect(recipeMatches('bouee','frisket','magicien')).toBe(true);
+    expect(recipeMatches('bouee','frisket','bretonette')).toBe(true);
     expect(recipeMatches('bouee','frisket','volant')).toBe(false);
-    expect(breedingOdds('frisket','magicien',4,4).bouee).toBeGreaterThan(0);
+    expect(breedingOdds('frisket','bretonette',4,4).bouee).toBeGreaterThan(0);
   });
   it('combines exact parents and elements with AND, symmetrically', () => {
     override('dragon', {parents: ['perroquet','feu'], requiredTypes: ['vol','feu'], minAffection: 10, probability: 2});

@@ -57,8 +57,9 @@ describe('published laboratory isolation', () => {
     expect(decodeGame(encodeGame(s))).toEqual({ok:true,state:s});
     const reloaded = setup();expect(reloaded.controller.getSnapshot().state).toEqual(s);
     for(const [a,b] of [['neige','volant'],['volant','neige'],['pic-pic','neige'],['neige','pic-pic']] as const) {
-      expect(breedingPool(s,a,b,2,2)).toMatchObject({"weights":{"neige":30,"pic-pic":30,"volant":30},"total":90,"guaranteed":false});
-      expect(oddsView(s,a,b,2,2)).toMatchObject({entries:[{name:'Lapin Neige',weight:100/3,probability:'1/3 (≈ 33,33 %)'},{name:'Lapin Volant',weight:100/3,probability:'1/3 (≈ 33,33 %)'},{name:'Pic Pic',weight:100/3,probability:'1/3 (≈ 33,33 %)'}],unknown:null});
+      expect(breedingPool(s,a,b,2,2)).toMatchObject({"weights":{"neige":30,"pic-pic":30,"tunini":30,"volant":30},"total":120,"guaranteed":false});
+      // Tunini, still undiscovered, shares the same union and appears as the unknown result.
+      expect(oddsView(s,a,b,2,2)).toMatchObject({entries:[{name:'Lapin Neige',weight:25,probability:'25 %'},{name:'Lapin Volant',weight:25,probability:'25 %'},{name:'Pic Pic',weight:25,probability:'25 %'}],unknown:{weight:25,probability:'25 %'}});
     }
     for(const pair of [s.rabbits.slice(1),s.rabbits.slice(0,2)]) {
       expect(dev.loadScenario(controller,'picPic').ok).toBe(true);
@@ -89,8 +90,9 @@ describe('published laboratory isolation', () => {
     expect(decodeGame(encodeGame(s))).toEqual({ok:true,state:s});
     const reloaded = setup();expect(reloaded.controller.getSnapshot().state).toEqual(s);
     for(const [a,b] of [['belier-gris','feu'],['feu','belier-gris'],['amethyste','feu'],['feu','amethyste']] as const) {
-      expect(breedingPool(s,a,b,2,2)).toMatchObject({"weights":{"amethyste":30,"belier-gris":30,"feu":30},"total":90,"guaranteed":false});
-      expect(oddsView(s,a,b,2,2)).toMatchObject({entries:[{name:'Lapin Feu',weight:100/3,probability:'1/3 (≈ 33,33 %)'},{name:'Lapin Bélier Gris',weight:100/3,probability:'1/3 (≈ 33,33 %)'},{name:'Améthyste',weight:100/3,probability:'1/3 (≈ 33,33 %)'}],unknown:null});
+      expect(breedingPool(s,a,b,2,2)).toMatchObject({"weights":{"amethyste":30,"belier-gris":30,"dinono":30,"feu":30},"total":120,"guaranteed":false});
+      // Dinono, still undiscovered, shares the same union and appears as the unknown result.
+      expect(oddsView(s,a,b,2,2)).toMatchObject({entries:[{name:'Lapin Feu',weight:25,probability:'25 %'},{name:'Lapin Bélier Gris',weight:25,probability:'25 %'},{name:'Améthyste',weight:25,probability:'25 %'}],unknown:{weight:25,probability:'25 %'}});
     }
     for(const pair of [s.rabbits.slice(1),s.rabbits.slice(0,2)]) {
       expect(dev.loadScenario(controller,'amethyste').ok).toBe(true);

@@ -65,7 +65,8 @@ describe('approved Frisket and Icy content',()=>{
   it('does not invent descriptions for existing species or reveal descriptions from recipe knowledge alone',()=>{
     const s=parents();s.recipeBook.push('frisket','icy');
     expect(JSON.stringify(collectionView(s))).not.toContain(descriptions.frisket);expect(JSON.stringify(collectionView(s))).not.toContain(descriptions.icy);
-    for(const id of SPECIES_IDS.slice(0,11))expect(SPECIES[id]).not.toHaveProperty('description');
+    // Magicien and Dragon received approved pictures, and with them a description of what they show.
+    for(const id of SPECIES_IDS.slice(0,11).filter(id=>id!=='magicien'&&id!=='dragon'))expect(SPECIES[id]).not.toHaveProperty('description');
   });
   it('validates an optional description without accepting blank or non-text content',()=>{
     const original=SPECIES_ENTRIES[0];for(const description of ['', ' ', 42])expect(validateSpeciesEntries([{...original,description}])).toContainEqual(expect.objectContaining({species:'paille',field:'description'}));

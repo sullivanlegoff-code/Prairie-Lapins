@@ -62,9 +62,11 @@ describe('deterministic rabbit expressions', () => {
 describe('rabbit patch adapter and body coordinates', () => {
   it('covers precisely all 18 eligible species with both patches', () => {
     expect(RABBIT_BLINK_ART).toHaveLength(18);
+    // The sprites approved on 25 October 2026 do not blink yet, by the owner's choice.
+    const pending: readonly string[] = ['boudinet', 'dinono', 'egiiipte', 'piment', 'tunini', 'bretonette', 'dadi', 'maxou', 'magicien', 'dragon', 'requin'];
     for (const species of SPECIES_ENTRIES) {
       const art = rabbitBlinkArt(species.id);
-      if (species.art.kind === 'static-sprite' && species.id !== 'ardent') {
+      if (species.art.kind === 'static-sprite' && species.id !== 'ardent' && !pending.includes(species.id)) {
         expect(art?.patches.map(patch => patch.kind)).toEqual(PATCH_KINDS);
         for (const patch of art!.patches) {
           expect(patch.url).toContain(`assets/rabbits/${species.id}/${species.id}-${patch.kind}.png`);
