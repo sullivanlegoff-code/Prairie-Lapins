@@ -1,0 +1,192 @@
+{
+  "paille": {
+    "file": "assets/rabbits/paille/paille-v1.png",
+    "sourceSha1": "33f6cd9757050d7437490ba63812458401b2c620",
+    "sourceWidth": 350,
+    "sourceHeight": 495,
+    "worldWidth": 40,
+    "width": 303,
+    "height": 429,
+    "derivedSha1": "336cdfb3ce1496455d589a16fe2321beedd8a6af"
+  },
+  "neige": {
+    "file": "assets/rabbits/neige/neige-v1.png",
+    "sourceSha1": "35a2ef74684ce7f25f99df98aecb211cf80017cb",
+    "sourceWidth": 518,
+    "sourceHeight": 473,
+    "worldWidth": 48,
+    "width": 461,
+    "height": 421,
+    "derivedSha1": "9054e80564b625709607213782d3d56c725a5a39"
+  },
+  "feu": {
+    "file": "assets/rabbits/feu/feu-v1.png",
+    "sourceSha1": "a5a624f2c40fd1138b9c10bc52266f1233076f69",
+    "sourceWidth": 1004,
+    "sourceHeight": 827,
+    "worldWidth": 50,
+    "width": 461,
+    "height": 380,
+    "derivedSha1": "9dbfee917d43489f21c5974e0f8433dc10c44e65"
+  },
+  "belier-gris": {
+    "file": "assets/rabbits/belier-gris/belier-gris-v1.png",
+    "sourceSha1": "a374b15b6517660becae37ff404dca1f76aad10c",
+    "sourceWidth": 527,
+    "sourceHeight": 488,
+    "worldWidth": 48,
+    "width": 461,
+    "height": 427,
+    "derivedSha1": "56cea282e1f5950aa2025709a260f278404655e5"
+  },
+  "volant": {
+    "file": "assets/rabbits/volant/volant-v1.png",
+    "sourceSha1": "0c3be6e888ae6e9593f07269cd2ae9f1f5a18647",
+    "sourceWidth": 814,
+    "sourceHeight": 966,
+    "worldWidth": 50,
+    "width": 369,
+    "height": 438,
+    "derivedSha1": "1f42481c9c60f8f7e0f42fc46bf155fae7ab9195"
+  },
+  "frisket": {
+    "file": "assets/rabbits/frisket/frisket-v1.png",
+    "sourceSha1": "8c1dc945aa69e8a58e54c03f50af600c06a0482a",
+    "sourceWidth": 1227,
+    "sourceHeight": 1282,
+    "worldWidth": 52,
+    "width": 410,
+    "height": 428,
+    "derivedSha1": "2ab799fa62d9a1663820b0594ca09b00f3a02b7b"
+  },
+  "icy": {
+    "file": "assets/rabbits/icy/icy-v1.png",
+    "sourceSha1": "3d735145675d8e04cc12b38894561022ce6db33d",
+    "sourceWidth": 1215,
+    "sourceHeight": 1295,
+    "worldWidth": 48,
+    "width": 402,
+    "height": 428,
+    "derivedSha1": "4ab069492d70bef4c856238ab08814760770d9b1"
+  },
+  "ardent": {
+    "file": "assets/rabbits/ardent/ardent-v1.png",
+    "sourceSha1": "468519a766660296d2c6ce5b3c61f1519318d7bf",
+    "sourceWidth": 1312,
+    "sourceHeight": 1199,
+    "worldWidth": 52,
+    "width": 461,
+    "height": 421,
+    "derivedSha1": "48cc0f840a9c4168f90f8bfb11d585c2a7ddfa69"
+  },
+  "snk": {
+    "file": "assets/rabbits/snk/snk-v1.png",
+    "sourceSha1": "7ccc4d3ddb704e11ab87e0c8ee6a014f6b5079fd",
+    "sourceWidth": 1402,
+    "sourceHeight": 1122,
+    "worldWidth": 56,
+    "width": 461,
+    "height": 369,
+    "derivedSha1": "0bae63a5bc973c61fcdf17a06d39cd426669293d"
+  },
+  "pic-pic": {
+    "file": "assets/rabbits/pic-pic/pic-pic-v1.png",
+    "sourceSha1": "c8ada5dc2c9183e706702886e163e72a14fbc3be",
+    "sourceWidth": 1254,
+    "sourceHeight": 1254,
+    "worldWidth": 54,
+    "width": 428,
+    "height": 428,
+    "derivedSha1": "66282311e35b0fe0b714413b674a86c3ca2c1110"
+  },
+  "amethyste": {
+    "file": "assets/rabbits/amethyste/amethyste-v1.png",
+    "sourceSha1": "843a0c0b51563deb5707cf444579cc76fb7f0669",
+    "sourceWidth": 1334,
+    "sourceHeight": 1179,
+    "worldWidth": 56,
+    "width": 461,
+    "height": 407,
+    "derivedSha1": "7835a95af10feccb5d5d3da15d3984fd94c55c69"
+  },
+  "princesse-neige": {
+    "file": "assets/rabbits/princesse-neige/princesse-neige-v1.png",
+    "sourceSha1": "28d521c69c248f52f9f874f6a91cd0c2c743757e",
+    "sourceWidth": 1230,
+    "sourceHeight": 1278,
+    "worldWidth": 50,
+    "width": 412,
+    "height": 428,
+    "derivedSha1": "fe20d12b15b382b90e217c11b98a14f7a91f3423"
+  },
+  "fluffy": {
+    "file": "assets/rabbits/fluffy/fluffy-v1.png",
+    "sourceSha1": "3c66d38c92c38f90617c20be5071dda19b23622f",
+    "sourceWidth": 1299,
+    "sourceHeight": 1211,
+    "worldWidth": 52,
+    "width": 459,
+    "height": 428,
+    "derivedSha1": "ffaee9300a4cf683953a95ea4512ed4bea34c40b"
+  },
+  "virvoletant": {
+    "file": "assets/rabbits/virvoletant/virvoletant-v1.png",
+    "sourceSha1": "996a058e7214a006d8e655b31acbdad6e5d4bed3",
+    "sourceWidth": 1254,
+    "sourceHeight": 1254,
+    "worldWidth": 52,
+    "width": 428,
+    "height": 428,
+    "derivedSha1": "d362c38d622525d343ffff4bc486c6b7b646db86"
+  },
+  "phoenix": {
+    "file": "assets/rabbits/phoenix/phoenix-v1.png",
+    "sourceSha1": "8b8257b6729a88f25cf6503eb0e0bf2b7b3016e0",
+    "sourceWidth": 1254,
+    "sourceHeight": 1254,
+    "worldWidth": 54,
+    "width": 428,
+    "height": 428,
+    "derivedSha1": "5de5571ade1bb7ea757bfb0a695bab2a8d8513ba"
+  },
+  "roukette": {
+    "file": "assets/rabbits/roukette/roukette-v1.png",
+    "sourceSha1": "a9bc0ecee109bf87e0045c0046b827ff06969bd8",
+    "sourceWidth": 1312,
+    "sourceHeight": 1199,
+    "worldWidth": 52,
+    "width": 461,
+    "height": 421,
+    "derivedSha1": "870ef00ebe4aa61be1eb9900693404e508dccf1f"
+  },
+  "wat-wat": {
+    "file": "assets/rabbits/wat-wat/wat-wat-v1.png",
+    "sourceSha1": "956348f7e9775f7b9ec2387001b30bcde0703403",
+    "sourceWidth": 1254,
+    "sourceHeight": 1254,
+    "worldWidth": 52,
+    "width": 428,
+    "height": 428,
+    "derivedSha1": "673b885b4725749339af7c5a19b7dc7ad7d311f0"
+  },
+  "glassofeu": {
+    "file": "assets/rabbits/glassofeu/glassofeu-v1.png",
+    "sourceSha1": "9911704e946555d02d4982a63f31c434723b74b2",
+    "sourceWidth": 1312,
+    "sourceHeight": 1199,
+    "worldWidth": 52,
+    "width": 461,
+    "height": 421,
+    "derivedSha1": "15f73964189640421602a82d6fec6077141dc0df"
+  },
+  "plume": {
+    "file": "assets/rabbits/plume/plume-v1.png",
+    "sourceSha1": "0bbd35ab54087adecdff8d3d2190bb0d684bcb76",
+    "sourceWidth": 1312,
+    "sourceHeight": 1199,
+    "worldWidth": 52,
+    "width": 461,
+    "height": 421,
+    "derivedSha1": "c055e22277e28026adb81579cce56e0043fe8a35"
+  }
+}

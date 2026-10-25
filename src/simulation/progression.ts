@@ -80,14 +80,24 @@ export function validateProgressionConfig(c: ProgressionConfig = PROGRESSION): v
   for(const id of DECORATION_IDS) if(DECORATIONS[id].level !== undefined) required(DECORATIONS[id].level!);
   for(const id of DECORATION_IDS) integer(Math.max(x.firstDecorationPlacement.minimum,Math.round(DECORATIONS[id].price/x.firstDecorationPlacement.priceDivisor)),'Decoration XP');
 }
+// Production configuration is immutable and checked once; caller-owned test configurations remain validated per query.
+function freezeConfig(value: unknown): void {
+  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+    for (const child of Object.values(value)) freezeConfig(child);
+    Object.freeze(value);
+  }
+}
+validateProgressionConfig(PROGRESSION);
+freezeConfig(PROGRESSION);
+function validateQueryConfig(c: ProgressionConfig): void { if (c !== PROGRESSION) validateProgressionConfig(c); }
 function levelInput(level:number,c:ProgressionConfig):void {
   integer(level,'Level',1);if(level>c.curve.maximumLevel)throw new RangeError('Level exceeds maximum');
 }
 export function nextLevelCost(level:number,c:ProgressionConfig=PROGRESSION):number|null {
-  validateProgressionConfig(c);levelInput(level,c);return level===c.curve.maximumLevel?null:cost(level,c);
+  validateQueryConfig(c);levelInput(level,c);return level===c.curve.maximumLevel?null:cost(level,c);
 }
 export function cumulativeLevelXp(level:number,c:ProgressionConfig=PROGRESSION):number {
-  validateProgressionConfig(c);levelInput(level,c);return threshold(level,c);
+  validateQueryConfig(c);levelInput(level,c);return threshold(level,c);
 }
 function progression(totalXp:number,c:ProgressionConfig):PlayerProgression {
   // Search cumulative thresholds, retaining all surplus; no saved/independent level.
@@ -98,40 +108,40 @@ function progression(totalXp:number,c:ProgressionConfig):PlayerProgression {
   return {totalXp,level,xpInLevel,xpRequired,progress:xpRequired===null?1:xpInLevel/xpRequired,maximum};
 }
 export function progressionFromXp(totalXp:number,c:ProgressionConfig=PROGRESSION):PlayerProgression {
-  integer(totalXp,'Total XP');validateProgressionConfig(c);return progression(totalXp,c);
+  integer(totalXp,'Total XP');validateQueryConfig(c);return progression(totalXp,c);
 }
 export function addXp(totalXp:number,amount:number,c:ProgressionConfig=PROGRESSION):{progression:PlayerProgression;crossedLevels:number[]} {
   integer(totalXp,'Total XP');integer(amount,'Added XP');const next=sum(totalXp,amount);
-  validateProgressionConfig(c);const before=progression(totalXp,c), after=progression(next,c), crossedLevels:number[]=[];
+  validateQueryConfig(c);const before=progression(totalXp,c), after=progression(next,c), crossedLevels:number[]=[];
   for(let level=before.level+1;level<=after.level;level++)crossedLevels.push(level);
   return {progression:after,crossedLevels};
 }
 /** Configuration queries only: these are not purchase permissions. */
 export function requiredSpeciesLevel(id:SpeciesId,c:ProgressionConfig=PROGRESSION):number {
-  validateProgressionConfig(c);if(!SPECIES_IDS.includes(id))throw new RangeError('Unknown species');return c.requirements.species[id];
+  validateQueryConfig(c);if(!SPECIES_IDS.includes(id))throw new RangeError('Unknown species');return c.requirements.species[id];
 }
 export function requiredHabitatLevel(type:HabitatType,c:ProgressionConfig=PROGRESSION):number {
-  validateProgressionConfig(c);if(!HABITAT_TYPES.includes(type))throw new RangeError('Unknown habitat');return habitatRequirement(type,c);
+  validateQueryConfig(c);if(!HABITAT_TYPES.includes(type))throw new RangeError('Unknown habitat');return habitatRequirement(type,c);
 }
 export function requiredHabitatUpgradeLevel(type:HabitatType,to:Exclude<HabitatLevel,1>,c:ProgressionConfig=PROGRESSION):number {
   const base=requiredHabitatLevel(type,c);if(to!==2&&to!==3)throw new RangeError('Upgrade target must be 2 or 3');return base+c.requirements.habitatUpgradeOffsets[to];
 }
 export function requiredDecorationLevel(id:DecorationId,c:ProgressionConfig=PROGRESSION):number {
-  validateProgressionConfig(c);if(!DECORATION_IDS.includes(id))throw new RangeError('Unknown decoration');
+  validateQueryConfig(c);if(!DECORATION_IDS.includes(id))throw new RangeError('Unknown decoration');
   if(DECORATIONS[id].level !== undefined) return DECORATIONS[id].level!;
   const price=DECORATIONS[id].price;return c.requirements.decorations.filter(t=>price>=t.minimumPrice).at(-1)!.level;
 }
 export function requiredExtensionLevel(purchaseRank:number,c:ProgressionConfig=PROGRESSION):number {
-  validateProgressionConfig(c);integer(purchaseRank,'Extension purchase rank',1);if(purchaseRank>c.requirements.extensions.length)throw new RangeError('Extension rank out of range');return c.requirements.extensions[purchaseRank-1];
+  validateQueryConfig(c);integer(purchaseRank,'Extension purchase rank',1);if(purchaseRank>c.requirements.extensions.length)throw new RangeError('Extension rank out of range');return c.requirements.extensions[purchaseRank-1];
 }
 export function foodXp(affectionReached:number,c:ProgressionConfig=PROGRESSION):number {
-  validateProgressionConfig(c);integer(affectionReached,'Reached affection');if(affectionReached>BALANCE.maxAffection)throw new RangeError('Affection exceeds existing maximum');return c.xp.foodMultiplier*affectionReached;
+  validateQueryConfig(c);integer(affectionReached,'Reached affection');if(affectionReached>BALANCE.maxAffection)throw new RangeError('Affection exceeds existing maximum');return c.xp.foodMultiplier*affectionReached;
 }
 export function firstDecorationPlacementXp(id:DecorationId,c:ProgressionConfig=PROGRESSION):number {
-  validateProgressionConfig(c);if(!DECORATION_IDS.includes(id))throw new RangeError('Unknown decoration');return Math.max(c.xp.firstDecorationPlacement.minimum,Math.round(DECORATIONS[id].price/c.xp.firstDecorationPlacement.priceDivisor));
+  validateQueryConfig(c);if(!DECORATION_IDS.includes(id))throw new RangeError('Unknown decoration');return Math.max(c.xp.firstDecorationPlacement.minimum,Math.round(DECORATIONS[id].price/c.xp.firstDecorationPlacement.priceDivisor));
 }
 export function missionClaimXp(kind:'main'|'daily',id:MainMissionId|DailyMissionId,c:ProgressionConfig=PROGRESSION):number {
-  validateProgressionConfig(c);const ids=kind==='main'?MAIN_MISSION_IDS:DAILY_MISSION_IDS;
+  validateQueryConfig(c);const ids=kind==='main'?MAIN_MISSION_IDS:DAILY_MISSION_IDS;
   if(!(ids as readonly string[]).includes(id))throw new RangeError('Unknown mission for this category');
   return kind==='main'?(c.xp.claims.mainExceptions[id as MainMissionId]??c.xp.claims.main):(c.xp.claims.dailyExceptions[id as DailyMissionId]??c.xp.claims.daily);
 }

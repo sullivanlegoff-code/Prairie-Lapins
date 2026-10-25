@@ -1,11 +1,12 @@
-// Copy approved, cropped RGBA patches at native sprite resolution. Node built-ins only.
+// Reduce approved cropped RGBA masters on the same pixel grid as the published sprite. Node built-ins only.
 // Placement and approved hashes live beside each master in blink.json.
 // --check is read-only and verifies the complete reproducible manifest and all bytes.
 import {readFileSync, writeFileSync, mkdirSync} from 'node:fs';
 import {resolve, dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
-import {decodePng} from './derive-nursery-overlays.mjs';
+import {decodePng, encodePng} from './derive-nursery-overlays.mjs';
+import {resizeRegion} from './resize-rgba.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const check = process.argv.includes('--check');
@@ -21,9 +22,10 @@ for (const [, id, spriteFile] of species) {
     const sourceDir = join(root, 'assets-source/rabbits', id);
     const placement = JSON.parse(readFileSync(join(sourceDir, 'blink.json'), 'utf8'));
     const sprite = readFileSync(join(root, 'public', spriteFile));
-    const original = decodePng(sprite);
-    if (sha1(sprite) !== placement.spriteSha1) throw Error('original sprite SHA-1 differs');
-    const entry = {sprite: spriteFile, spriteSha1: sha1(sprite), spriteWidth: original.width, spriteHeight: original.height};
+    const master = readFileSync(join(sourceDir, 'sprite.png'));
+    const original = decodePng(master), loaded = decodePng(sprite);
+    if (sha1(master) !== placement.spriteSha1) throw Error('original sprite SHA-1 differs');
+    const entry = {sprite: spriteFile, spriteSha1: sha1(sprite), spriteWidth: loaded.width, spriteHeight: loaded.height};
     for (const kind of ['eyes-closed', 'nose-twitch']) {
       const source = `assets-source/rabbits/${id}/${kind}.png`;
       const bytes = readFileSync(join(root, source));
@@ -33,13 +35,15 @@ for (const [, id, spriteFile] of species) {
       if (![x, y].every(Number.isInteger) || x < 0 || y < 0 || x + patch.width > original.width || y + patch.height > original.height)
         throw Error(`${kind}: patch outside original sprite`);
       if (!patch.pixels.some((v, i) => i % 4 === 3 && v > 0)) throw Error(`${kind}: empty patch`);
+      const resized = resizeRegion(patch, original.width, original.height, loaded.width, loaded.height, x, y);
+      const derived = encodePng(resized);
       const file = `assets/rabbits/${id}/${id}-${kind}.png`;
-      entry[kind] = {file, x, y, width: patch.width, height: patch.height, source, sourceSha1: sha1(bytes), derivedSha1: sha1(bytes)};
+      entry[kind] = {file, x: resized.x, y: resized.y, width: resized.width, height: resized.height, source, sourceSha1: sha1(bytes), derivedSha1: sha1(derived)};
       if (check) {
-        if (!readFileSync(join(root, 'public', file)).equals(bytes)) throw Error(`${kind}: derivative differs`);
+        if (!readFileSync(join(root, 'public', file)).equals(derived)) throw Error(`${kind}: derivative differs`);
       } else {
         mkdirSync(dirname(join(root, 'public', file)), {recursive: true});
-        writeFileSync(join(root, 'public', file), bytes);
+        writeFileSync(join(root, 'public', file), derived);
       }
     }
     manifest[id] = entry;

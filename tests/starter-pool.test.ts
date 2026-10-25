@@ -1,7 +1,7 @@
 ﻿import {describe,it,expect,vi,afterEach} from 'vitest';
 import {SPECIES,MINUTE,type SpeciesId} from '../src/config/balance';
 import {breedingWeights,breedingOdds,breedingPool,chooseBirth} from '../src/simulation/breeding';
-import {PROGRESSION} from '../src/config/progression';
+import * as progressionQueries from '../src/simulation/progression';
 import {cumulativeLevelXp} from '../src/simulation/progression';
 import {act,advance,encodeGame,decodeGame} from '../src/simulation';
 import {recipeBook,oddsView} from '../src/ui/models';
@@ -32,14 +32,16 @@ describe('exact starting element-union pool',()=>{
   SPECIES.lunettes={...SPECIES.lunettes,rarity:'uncommon'};expect(breedingWeights('paille','neige',3,3)).toEqual({frisket:20,icy:20});
  });
  it('keeps result level filtering effective after pool selection',()=>{
-  const s=prepared(),levels=PROGRESSION.requirements.species as Record<SpeciesId,number>,frisket=levels.frisket,icy=levels.icy;
+  const s=prepared(),levels: Partial<Record<SpeciesId,number>>={};
+  const required=progressionQueries.requiredSpeciesLevel;
+  const query=vi.spyOn(progressionQueries,'requiredSpeciesLevel').mockImplementation((id,c)=>levels[id]??required(id,c));
   try {
    levels.frisket=6;
    expect(breedingPool(s,'paille','neige')).toMatchObject({weights:{icy:20},total:20,excluded:[{species:'frisket',requiredLevel:6}]});
    levels.icy=6;
    expect(breedingPool(s,'paille','neige')).toMatchObject({weights:{},total:0});
    expect(()=>chooseBirth(s,'paille','neige',0)).toThrow('No admissible breeding result');
-  } finally {levels.frisket=frisket;levels.icy=icy;}
+  } finally {query.mockRestore();}
  });
  it('keeps third-element historical pools and their guarantee',()=>{
   // Paille x Feu Glacé: union feu,neige,paille, no special policy; raw weights 40 for the Commons, 20 for each admissible recipe.

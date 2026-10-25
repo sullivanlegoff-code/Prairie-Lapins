@@ -69,6 +69,42 @@ function setup(initial = createGame(0), laboratory = false) {
   return {controller, ui, clock, storage, data, scene, prefs};
 }
 const panel = () => document.getElementById('panel-content')!;
+it('builds no pairs in collapsed sections, shows three on opening, and reveals the rest on demand', () => {
+  const initial = createGame(0); initial.recipeBook.push('frisket');
+  initial.rabbits.forEach(r => r.species = 'frisket');
+  initial.discovered = ['frisket'];
+  initial.rabbits.push({...initial.rabbits[0], id: 'rabbit-90'}, {...initial.rabbits[0], id: 'rabbit-91'});
+  initial.nextId = 100; initial.buildings[0].habitat!.level = 2;
+  const {ui, controller, clock} = setup(initial); ui.open({kind:'recipes'});
+  const details = () => panel().querySelector<HTMLDetailsElement>('[data-recipe="frisket"] details')!;
+  expect(details().open).toBe(false); expect(details().querySelectorAll('.recipe-pair')).toHaveLength(0);
+  details().open = true; details().dispatchEvent(new Event('toggle'));
+  expect(details().querySelectorAll('.recipe-pair')).toHaveLength(3);
+  button('Voir plus', details()).click();
+  expect(details().querySelectorAll('.recipe-pair')).toHaveLength(6);
+  expect(details().querySelector('[data-more-pairs]')).toBeNull();
+  clock.now = 3_600_000; controller.refresh();
+  expect(details().querySelectorAll('.recipe-pair')).toHaveLength(6);
+});
+it('keeps DOM on an invisible time tick and updates income when a whole unit becomes collectable', () => {
+  const {ui, controller, clock} = setup(); ui.open({kind:'building', id:'building-1'});
+  const first = panel().firstChild;
+  clock.now = 5_000; controller.refresh(); expect(panel().firstChild).toBe(first);
+  clock.now = 3_600_000; controller.refresh(); expect(panel().firstChild).not.toBe(first);
+  expect(panel().textContent).toContain('Récolter');
+});
+it('updates countdown text without rebuilding and refreshes the ready action at the deadline', () => {
+  const initial = createGame(0);
+  const farm = emptyBuilding('building-90', 'farm', 22, 20);
+  farm.order = {recipe:'small', startedAt:0, endsAt:300_000}; initial.buildings.push(farm); initial.nextId = 100;
+  const {ui, controller, clock} = setup(initial); ui.open({kind:'building', id:farm.id});
+  const first = panel().firstChild;
+  clock.now = 5_000; controller.refresh();
+  (ui as unknown as {updateTimers():void}).updateTimers();
+  expect(panel().firstChild).toBe(first); expect(panel().querySelector('.timer')!.textContent).toBe('4 min 55 s');
+  clock.now = 300_000; (ui as unknown as {updateTimers():void}).updateTimers();
+  expect(panel().firstChild).not.toBe(first); expect(button('Récolter 20 herbes').disabled).toBe(false);
+});
 const breeding = () => document.getElementById('breeding-dialog') as HTMLDialogElement;
 /** A row of the pairing window: slot 0 is Lapin 1 (left), slot 1 is Lapin 2 (right); `name` is a name prefix or an index. */
 const breedingRow = (slot: 0 | 1, name: string | number) => {
@@ -1003,7 +1039,8 @@ describe('mobile menu continuity', () => {
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { frames.push(callback); return 0; });
     const flush = () => { for (const callback of frames.splice(0)) callback(0); };
     const select = panel().querySelector<HTMLSelectElement>('select[aria-label="Type"]')!;
-    select.focus(); clock.now = 5000; controller.refresh();
+    // Cross a displayed income unit so the existing viewRevision optimization requests a deferred render.
+    select.focus(); clock.now = 3_600_000; controller.refresh();
     expect(panel().querySelector('select[aria-label="Type"]')).toBe(select); expect(select.isConnected).toBe(true);
     select.blur(); flush(); expect(panel().querySelector('select[aria-label="Type"]')).not.toBe(select);
     ui.open({kind: 'rabbit', id: 'rabbit-2'});
