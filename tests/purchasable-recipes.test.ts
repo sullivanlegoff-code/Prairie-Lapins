@@ -23,7 +23,7 @@ function memory(raw: string | null = null) {
 
 describe('recipe catalogue', () => {
   it('preserves the six sold recipes and the unpriced new Rares, with no gifted recipe (Brumelin is gone)', () => {
-    expect(RECIPE_PRICES).toEqual({bouee: 150, 'feu-glace': 180, lunettes: 220, perroquet: 250, magicien: 450, dragon: 900});
+    expect(RECIPE_PRICES).toEqual({bouee: 150, 'feu-glace': 180, lunettes: 220, perroquet: 250, magicien: 450, dragon: 900, dadi: 450, maxou: 450, orange: 450, requin: 900});
     expect(GIFTED_RECIPES).toEqual([]);
     for (const id of SPECIES_IDS) {
       const priced = RECIPE_PRICES[id] !== undefined, gifted = GIFTED_RECIPES.includes(id);

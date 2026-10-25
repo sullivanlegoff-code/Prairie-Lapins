@@ -31,7 +31,7 @@ describe('v16 → v17 economy migration (fixture encoded by the actual v16 write
 });
 describe('economy invariants',()=>{
  it('stores 24 hours of full rare income at every habitat level',()=>{for(const type of HABITAT_TYPES)for(const level of [1,2,3] as const){const h=habitatLevel(type,level);expect(h.cap).toBeGreaterThanOrEqual(h.capacity*33*24);expect(h.cap).toBe([2400,4000,5600][level-1]);if(level===2)expect(h.cost).toBe(habitatPrice(type)/2);}});
- it('guarantees all 18 ordinary rares and excludes specials',()=>{expect(GUARANTEE_SPECIES).toHaveLength(18);expect(GUARANTEE_SPECIES).not.toContain('dragon');expect(GUARANTEE_SPECIES).not.toContain('magicien');});
+ it('guarantees all 24 ordinary rares and excludes specials',()=>{expect(GUARANTEE_SPECIES).toHaveLength(24);expect(GUARANTEE_SPECIES).not.toContain('dragon');expect(GUARANTEE_SPECIES).not.toContain('magicien');});
  it('accumulates gifts up to three and keeps the next clock boundary',()=>{const s=migrated();for(const days of [1,2,3,10]){const now=s.nextHeartGiftAt+(days-1)*24*HOUR+HOUR;const r=act(s,{type:'claimHearts'},now);expect(r.ok).toBe(true);expect(r.state.hearts).toBe(s.hearts+Math.min(3,days)*2);expect(r.state.nextHeartGiftAt).toBe(now+23*HOUR);expect(advance(r.state,now).hearts).toBe(r.state.hearts);}});
  it('has four orders covering short visits and the night',()=>{expect(Object.keys(ORDERS)).toEqual(['small','medium','large','night']);expect(ORDERS.night).toEqual({cost:100,grass:360,duration:10*HOUR});});
 });

@@ -842,7 +842,7 @@ describe('new collection and exact-species recipe UI', () => {
   };
   it('composes filters, keeps them across refresh and shows an actionable empty result', () => {
     const {controller, ui} = setup(scenarioState('collection', 0)); ui.open({kind: 'collection'});
-    change('Rareté', 'epic'); expect(panel().querySelectorAll('article')).toHaveLength(1);
+    change('Rareté', 'epic'); expect(panel().querySelectorAll('article')).toHaveLength(4);
     expect(panel().textContent).not.toContain('Lapin Géant'); expect(panel().textContent).toContain('Lapin Magicien');
     change('Type', 'feu'); expect(panel().querySelectorAll('article')).toHaveLength(0);
     expect(panel().textContent).toContain('Aucune espèce'); controller.refresh();
@@ -855,7 +855,7 @@ describe('new collection and exact-species recipe UI', () => {
   it('explains Dragon species, threshold, duration, exclusion from guarantee and real two-percent pairs', () => {
     const {controller,ui} = setup(scenarioState('collection',0)); const before = structuredClone(state(controller));
     ui.open({kind:'recipes'}); const card = [...panel().querySelectorAll('article')].find(c=>c.querySelector('h3')?.textContent==='Lapin Dragon')!;
-    expect(card.textContent).toContain('Lapin Perroquet × Lapin Feu'); expect(card.textContent).toContain('Les types seuls ne suffisent pas');
+    expect(card.textContent).toContain('Dadi × Phoenix'); expect(card.textContent).toContain('Les types seuls ne suffisent pas');
     expect(card.textContent).toContain('Affection 10 minimum'); expect(card.textContent).toContain('120 min'); expect(card.textContent).toContain('ne bénéficie pas');
     expect(card.textContent).toContain('2 %'); expect(state(controller)).toEqual(before);
     button('Préparer cette paire au nid',card).click(); expect(document.getElementById('panel-title')!.textContent).toBe('Nid');

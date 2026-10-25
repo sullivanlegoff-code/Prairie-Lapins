@@ -97,8 +97,9 @@ describe('pre-launch result filtering and unchanged fixed probabilities',()=>{
   s.progression={totalXp:cumulativeLevelXp(6),rewardedThroughLevel:6};pool=breedingPool(s,'feu','neige',4,4);expect(pool.guaranteed).toBe(true);expect(pool.weights).toEqual({'feu-glace':1});
  });
  it('reserves only currently admissible specials and normalizes ordinary results',()=>{
-  expect(odds(10,'belier-gris','volant')).toEqual({'belier-gris':50,volant:50});expect(odds(11,'belier-gris','volant')).toEqual({'belier-gris':47.5,volant:47.5,magicien:5});
-  expect(odds(13,'perroquet','feu')).toEqual({"feu":25,"perroquet":25,"phoenix":25,"volant":25});expect(odds(14,'perroquet','feu')).toEqual({feu:98/4,volant:98/4,perroquet:98/4,phoenix:98/4,dragon:2});
+  expect(odds(10,'paille','belier-gris')).toEqual({paille:20,'belier-gris':20,lunettes:20,roukette:20,boudinet:20});expect(odds(11,'paille','belier-gris')).toEqual({paille:19,'belier-gris':19,lunettes:19,roukette:19,boudinet:19,magicien:5});
+  expect(odds(13,'dadi','phoenix').dragon).toBeUndefined();expect(odds(13,'dadi','phoenix').dadi).toBe(5);
+  expect(odds(14,'dadi','phoenix')).toEqual({neige:8,feu:8,volant:8,perroquet:8,'feu-glace':8,'pic-pic':8,phoenix:8,'wat-wat':8,glassofeu:8,piment:8,tunini:8,dragon:2,dadi:5,maxou:5});
   for(let level=1;level<=14;level++)for(const a of SPECIES_IDS)for(const b of SPECIES_IDS){const result=odds(level,a,b),total=Object.values(result).reduce((n,w)=>n+w,0);if(total)expect(total).toBeCloseTo(100,10);}
  },20000);
  it('launch XP cannot alter this birth, even if it crosses a threshold',()=>{
@@ -109,9 +110,14 @@ describe('pre-launch result filtering and unchanged fixed probabilities',()=>{
   expect(reload(next).buildings.find(b=>b.kind==='nest')!.breeding).toEqual(next.buildings.find(b=>b.kind==='nest')!.breeding);
  });
  it('with no ordinary fallback, refuses before RNG, XP or work, even for a historically discovered special',()=>{
+  // Every union of the catalogue now holds a level-1 result: withdraw the Paille-Metal ones here to recreate a pool without ordinary fallback.
+  const saved=(['paille','roukette','boudinet'] as const).map(id=>[id,SPECIES[id].acquisition] as const);
+  for(const [id] of saved)SPECIES[id].acquisition=[{kind:'shop',price:80}];
+  try {
   const s=at(1);s.discovered.push('magicien');s.rabbits=[{id:'rabbit-2',species:'magicien',affection:6,enclosureId:'building-1'},{id:'rabbit-6',species:'magicien',affection:6,enclosureId:'building-1'}];s.nextId=7;delete s.levelAccessTransition;establishHistoricalLevelRights(s);
   const rng=vi.fn(()=>.99),r=act(s,{type:'breed',parents:['rabbit-2','rabbit-6']},0,rng);expect(r).toEqual({ok:false,state:s,reason:'NO_BREEDING_RESULT'});expect(rng).not.toHaveBeenCalled();expect(s.progression.totalXp).toBe(0);
   s.progression={totalXp:cumulativeLevelXp(7),rewardedThroughLevel:7};const pool=breedingPool(s,'magicien','magicien',6,6);expect(pool.weights.magicien!*100/pool.total).toBe(5);
+  } finally {for(const [id,acquisition] of saved)SPECIES[id].acquisition=acquisition;}
  });
  it('write failure leaves purchase refused and no XP, then permits a single retry',()=>{
   const s=at(5),values=new Map([[SAVE_KEY,encodeGame(s)]]);let fail=false;const c=new GameController({getItem:k=>values.get(k)??null,setItem:(k,v)=>{if(fail)throw Error('quota');values.set(k,v);}},()=>0);const events=vi.fn();c.onProgressionGain(events);

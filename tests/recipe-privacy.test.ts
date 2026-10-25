@@ -37,7 +37,8 @@ describe('nest odds privacy over every pair', () => {
         const hidden = [...unknown, ...pool.excluded.map(e => e.species).filter(id => !recipeKnown(s, id))];
         const all = [texts.summary, texts.guarantee, ...texts.excluded, ...texts.lines];
         for (const id of hidden) {
-          for (const text of all) expect(text).not.toContain(description(id));
+          // Two species may share a description (Lunettes and Boudinet are both "métal + paille · Rare"): a known line then shows it legitimately.
+          if (!known.some(k => description(k) === description(id))) for (const text of all) expect(text).not.toContain(description(id));
           for (const text of texts.excluded) expect(text.startsWith(`${SPECIES[id].name} :`)).toBe(false);
         }
         expect(texts.excluded).toEqual([...pool.excluded.filter(e => recipeKnown(s, e.species)).map(e => `${SPECIES[e.species].name} : Niveau ${e.requiredLevel} requis · exclu du tirage actuel.`),
@@ -58,21 +59,21 @@ describe('nest odds privacy over every pair', () => {
       if (pool.total) expect(texts.summary).toBe(`Résultats possibles : ${[...new Set((Object.keys(pool.weights) as SpeciesId[]).map(id => SPECIES[id].name))].join(', ')}.`);
     }
   });
-  it('gives a documented example: Perroquet × Feu at affection 10', () => {
-    const s = game(14, 0, ['perroquet', 'feu'], []);
-    expect(oddsTexts(oddsView(s, 'perroquet', 'feu', 10, 10))).toEqual({"excluded":[],"guarantee":"Cette paire est admissible à la garantie.","lines":["Lapin Feu · feu · Commun : 24,5 %","Lapin Perroquet · vol + feu · Rare : 24,5 %","Résultats inconnus : 51 %"],"summary":"Résultats possibles : Lapin Feu, Lapin Perroquet et des résultats inconnus."});
+  it('gives a documented example: Dadi × Phoenix at affection 10', () => {
+    const s = game(14, 0, ['dadi', 'phoenix'], []);
+    expect(oddsTexts(oddsView(s, 'dadi', 'phoenix', 10, 10))).toEqual({"excluded":[],"guarantee":"Cette paire est admissible à la garantie.","lines":["Phoenix · feu + vol · Rare : 8 %","Dadi · neige + vol · Épique : 5 %","Résultats inconnus : 87 %"],"summary":"Résultats possibles : Phoenix, Dadi et des résultats inconnus."});
     s.recipeBook.push('dragon');
-    expect(oddsTexts(oddsView(s, 'perroquet', 'feu', 10, 10)).lines).toEqual(['Lapin Feu · feu · Commun : 24,5 %', 'Lapin Perroquet · vol + feu · Rare : 24,5 %', 'Lapin Dragon · vol + feu · Légendaire : 2 %', 'Résultats inconnus : 49 %']);
-    const locked = game(13, 0, ['perroquet', 'feu'], []);
-    expect(oddsTexts(oddsView(locked, 'perroquet', 'feu', 10, 10)).excluded).toEqual(['Certains résultats demandent un niveau supérieur · exclus du tirage actuel.']);
+    expect(oddsTexts(oddsView(s, 'dadi', 'phoenix', 10, 10)).lines).toEqual(['Phoenix · feu + vol · Rare : 8 %', 'Lapin Dragon · feu + vol · Légendaire : 2 %', 'Dadi · neige + vol · Épique : 5 %', 'Résultats inconnus : 85 %']);
+    const locked = game(13, 0, ['dadi', 'phoenix'], []);
+    expect(oddsTexts(oddsView(locked, 'dadi', 'phoenix', 10, 10)).excluded).toEqual(['Certains résultats demandent un niveau supérieur · exclus du tirage actuel.']);
   });
 });
 
 describe('notebook model', () => {
   it('exposes conditions and compatible pairs only for known recipes', () => {
-    const s = game(14, 0, ['perroquet', 'feu'], []);
+    const s = game(14, 0, ['dadi', 'phoenix'], []);
     s.buildings[0].habitat!.type = 'universal';
-    s.rabbits = [{id: 'rabbit-2', species: 'perroquet', affection: 10, enclosureId: 'building-1'}, {id: 'rabbit-6', species: 'feu', affection: 10, enclosureId: 'building-1'}]; s.nextId = 7;
+    s.rabbits = [{id: 'rabbit-2', species: 'dadi', affection: 10, enclosureId: 'building-1'}, {id: 'rabbit-6', species: 'phoenix', affection: 10, enclosureId: 'building-1'}]; s.nextId = 7;
     const dragon = () => recipeBook(s, 0).find(r => r.species === 'dragon')!;
     expect(dragon()).toMatchObject({known: false, discovered: false, price: 900, pairs: []}); expect(dragon()).not.toHaveProperty('minAffection');
     s.recipeBook.push('dragon');

@@ -36,10 +36,10 @@ it('renders two goals, then reveals the next durable goal only after claiming',(
   expect(panel().textContent).toContain('Accueillir Feu');
 });
 it('shows free hints in collection and notebook while keeping affection and odds hidden',()=>{
-  const {ui}=mount(createGame(0));ui.open({kind:'collection'});expect(panel().querySelectorAll('.recipe-hint')).toHaveLength(14);
-  ui.open({kind:'recipes'});expect(panel().querySelectorAll('.recipe-hint')).toHaveLength(14);
+  const {ui}=mount(createGame(0));ui.open({kind:'collection'});expect(panel().querySelectorAll('.recipe-hint')).toHaveLength(20);
+  ui.open({kind:'recipes'});expect(panel().querySelectorAll('.recipe-hint')).toHaveLength(20);
   for(const card of panel().querySelectorAll('[data-recipe-known="false"]')){expect(card.textContent).not.toMatch(/Affection|\d+ %/);}
-  for(const id of ['bouee','feu-glace','lunettes','perroquet','magicien','dragon'])expect(panel().querySelector(`[data-recipe="${id}"] .recipe-hint`)).toBeNull();
+  for(const id of ['bouee','feu-glace','lunettes','perroquet','magicien','dragon','dadi','maxou','orange','requin'])expect(panel().querySelector(`[data-recipe="${id}"] .recipe-hint`)).toBeNull();
 });
 it('renders four farm choices and a local completion clock for a running night order',()=>{
   const s=createGame(0);s.pattes=1000;s.buildings.push(emptyBuilding('building-100','farm',0,32));s.nextId=101;

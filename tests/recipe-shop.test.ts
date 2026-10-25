@@ -139,9 +139,9 @@ describe('level announcement count', () => {
   it('counts unknown sold recipes newly purchasable, excluding bought or discovered ones', () => {
     const s = shop(1);
     expect(newlyPurchasableRecipes(s, levelUnlockContents(s, 4, 5))).toBe(1);
-    expect(newlyPurchasableRecipes(s, levelUnlockContents(s, 1, 14))).toBe(6);
+    expect(newlyPurchasableRecipes(s, levelUnlockContents(s, 1, 14))).toBe(10);
     expect(newlyPurchasableRecipes(s, levelUnlockContents(s, 1, 2))).toBe(0);
     s.discovered.push('bouee'); s.recipeBook.push('lunettes');
-    expect(newlyPurchasableRecipes(s, levelUnlockContents(s, 1, 14))).toBe(4);
+    expect(newlyPurchasableRecipes(s, levelUnlockContents(s, 1, 14))).toBe(8);
   });
 });

@@ -34,20 +34,20 @@ const buttons = (scope: ParentNode = panel()) => [...scope.querySelectorAll<HTML
 function button(text: string, scope: ParentNode = panel()) {
   const found = buttons(scope).find(b => b.textContent === text); if (!found) throw new Error(`Button missing: ${text}\n${scope.textContent}`); return found;
 }
-/** Perroquet and Feu at affection 10, in the new game's universal habitat, with its nest and nursery. */
+/** Dadi and Phoenix, the Dragon parents, at affection 10, in the new game's universal habitat, with its nest and nursery. */
 function couple(level: number, recipes: GameState['recipeBook'] = []) {
   const s = createGame(0); s.progression = {totalXp: cumulativeLevelXp(level), rewardedThroughLevel: level};
-  s.buildings[0].habitat!.type = 'universal'; s.nextId = 7; s.discovered = ['perroquet', 'feu']; s.recipeBook = [...recipes];
-  s.rabbits = [{id: 'rabbit-2', species: 'perroquet', affection: 10, enclosureId: 'building-1'}, {id: 'rabbit-6', species: 'feu', affection: 10, enclosureId: 'building-1'}];
+  s.buildings[0].habitat!.type = 'universal'; s.nextId = 7; s.discovered = ['dadi', 'phoenix']; s.recipeBook = [...recipes];
+  s.rabbits = [{id: 'rabbit-2', species: 'dadi', affection: 10, enclosureId: 'building-1'}, {id: 'rabbit-6', species: 'phoenix', affection: 10, enclosureId: 'building-1'}];
   return s;
 }
 const card = (species: string) => panel().querySelector<HTMLElement>(`[data-recipe="${species}"]`)!;
 const breeding = () => document.getElementById('breeding-dialog') as HTMLDialogElement;
-/** Opens the pairing window from the nest, picks Perroquet on the left and Feu on the right, and shows the odds. */
+/** Opens the pairing window from the nest, picks Dadi on the left and Phoenix on the right, and shows the odds. */
 function nestWithParents(ui: GameUI) {
   ui.select({kind: 'building', id: 'building-4'}); button('Croiser').click();
   const row = (slot: number, name: string) => [...breeding().querySelectorAll('.breeding-column')[slot].querySelectorAll<HTMLButtonElement>('button.breeding-row')].find(r => r.querySelector('strong')?.textContent?.startsWith(name))!;
-  row(0, 'Lapin Perroquet').click(); row(1, 'Lapin Feu').click(); button('Probabilités', breeding()).click();
+  row(0, 'Dadi').click(); row(1, 'Phoenix').click(); button('Probabilités', breeding()).click();
 }
 const odds = () => [...breeding().querySelectorAll('.breeding-odds p:not(.badge)')].map(p => p.textContent);
 
@@ -56,14 +56,14 @@ describe('notebook recipe privacy', () => {
     const {ui} = setup(couple(14)); ui.open({kind: 'recipes'});
     const dragon = card('dragon');
     expect(dragon.dataset.recipeKnown).toBe('false');
-    expect(dragon.textContent).toContain('Lapin Dragon'); expect(dragon.textContent).toContain('vol + feu · Légendaire');
+    expect(dragon.textContent).toContain('Lapin Dragon'); expect(dragon.textContent).toContain('feu + vol · Légendaire');
     expect(dragon.textContent).toContain('Recette inconnue · niveau 14 atteint · 900 pièces');
     expect(dragon.textContent).toContain('Conditions détaillées et paires conseillées visibles une fois la recette connue.');
     expect(dragon.querySelector('img.coin-icon')).not.toBeNull(); expect(dragon.textContent).not.toMatch(/pattes?/);
-    for (const hidden of ['Perroquet', 'Affection', '2 %', 'Parents requis', 'garantie', 'paire possédée']) expect(dragon.textContent).not.toContain(hidden);
+    for (const hidden of ['Phoenix', 'Affection', '2 %', 'Parents requis', 'garantie', 'paire possédée']) expect(dragon.textContent).not.toContain(hidden);
     // Step 3: the purchase button is the only action; no shortcut before the recipe is known.
     expect(buttons(dragon).map(b => b.textContent)).toEqual(['Acheter · 900 pièces']);
-    expect(panel().textContent).not.toContain('Lapin Perroquet × Lapin Feu');
+    expect(panel().textContent).not.toContain('Dadi × Phoenix');
     for (const old of ['Géant, Magicien et Dragon', 'recettes ordinaires inconnues']) expect(panel().textContent).not.toContain(old);
   });
   it('shows the level lock on an unknown recipe below its level', () => {
@@ -74,7 +74,7 @@ describe('notebook recipe privacy', () => {
     const {ui} = setup(couple(14, ['dragon'])); ui.open({kind: 'recipes'});
     const dragon = card('dragon');
     expect(dragon.dataset.recipeKnown).toBe('true');
-    expect(dragon.textContent).toContain('Parents requis : Lapin Perroquet × Lapin Feu. Les types seuls ne suffisent pas.');
+    expect(dragon.textContent).toContain('Parents requis : Dadi × Phoenix. Les types seuls ne suffisent pas.');
     expect(dragon.textContent).toContain('Affection 10 minimum pour chacun des deux parents.');
     expect(dragon.textContent).toContain('hors garantie ordinaire : 2 %');
     expect(button('Préparer cette paire au nid', dragon).disabled).toBe(false);
@@ -84,16 +84,16 @@ describe('notebook recipe privacy', () => {
 describe('nest odds privacy', () => {
   it('groups unknown results, hides the Dragon and keeps the launch available', () => {
     const {ui} = setup(couple(14)); nestWithParents(ui);
-    expect(odds()).toEqual(["Lapin Feu · feu · Commun : 24,5 %","Lapin Perroquet · vol + feu · Rare : 24,5 %","Résultats inconnus : 51 %"]);
-    expect(breeding().textContent).toContain('Résultats possibles : Lapin Feu, Lapin Perroquet et des résultats inconnus.');
-    for (const hidden of ['Dragon', 'Volant', 'Légendaire', 'Perroquet et Feu']) { expect(panel().textContent).not.toContain(hidden); expect(breeding().textContent).not.toContain(hidden); }
+    expect(odds()).toEqual(["Phoenix · feu + vol · Rare : 8 %","Dadi · neige + vol · Épique : 5 %","Résultats inconnus : 87 %"]);
+    expect(breeding().textContent).toContain('Résultats possibles : Phoenix, Dadi et des résultats inconnus.');
+    for (const hidden of ['Dragon', 'Volant', 'Légendaire', 'Maxou']) { expect(panel().textContent).not.toContain(hidden); expect(breeding().textContent).not.toContain(hidden); }
     expect(panel().textContent).toContain('Chaque recette possède ses propres conditions');
     expect(panel().textContent).not.toContain('Recettes rares : affection 4');
     expect(button('Croiser', breeding()).disabled).toBe(false);
   });
   it('names a known Dragon and groups an unknown level exclusion', () => {
     const known = setup(couple(14, ['dragon'])); nestWithParents(known.ui);
-    expect(odds()).toContain('Lapin Dragon · vol + feu · Légendaire : 2 %');
+    expect(odds()).toContain('Lapin Dragon · feu + vol · Légendaire : 2 %');
     cleanups.splice(0).reverse().forEach(cleanup => cleanup());
     const locked = setup(couple(13)); nestWithParents(locked.ui);
     expect(breeding().textContent).toContain('Certains résultats demandent un niveau supérieur · exclus du tirage actuel.');

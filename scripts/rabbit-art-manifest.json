@@ -188,5 +188,115 @@
     "width": 461,
     "height": 421,
     "derivedSha1": "c055e22277e28026adb81579cce56e0043fe8a35"
+  },
+  "boudinet": {
+    "file": "assets/rabbits/boudinet/boudinet-v1.png",
+    "sourceSha1": "e87f8aeae38d555e5ee7c54330e82e09f147088e",
+    "sourceWidth": 846,
+    "sourceHeight": 798,
+    "worldWidth": 52,
+    "width": 454,
+    "height": 428,
+    "derivedSha1": "0639da75727975d7901403bc7c77ca641641a6eb"
+  },
+  "dinono": {
+    "file": "assets/rabbits/dinono/dinono-v1.png",
+    "sourceSha1": "5a0ad52d5934a74ab72ead418aa9ea10fd4334fe",
+    "sourceWidth": 1272,
+    "sourceHeight": 1071,
+    "worldWidth": 56,
+    "width": 461,
+    "height": 388,
+    "derivedSha1": "72b7ed168c1e0e904397d1190114da0727639ce5"
+  },
+  "egiiipte": {
+    "file": "assets/rabbits/egiiipte/egiiipte-v1.png",
+    "sourceSha1": "6f9a57b6e9cfc8fcfac8270751e1ee5ae72c29d4",
+    "sourceWidth": 840,
+    "sourceHeight": 799,
+    "worldWidth": 52,
+    "width": 450,
+    "height": 428,
+    "derivedSha1": "0578c8f345f45a42e25f979f679050ec247d154b"
+  },
+  "piment": {
+    "file": "assets/rabbits/piment/piment-v1.png",
+    "sourceSha1": "ce64af98f2031c28cefcd6303d7066bf670cc0ae",
+    "sourceWidth": 1252,
+    "sourceHeight": 987,
+    "worldWidth": 58,
+    "width": 461,
+    "height": 363,
+    "derivedSha1": "d78efe4fd73cb003b57d1ddecb7a6e66085eb198"
+  },
+  "tunini": {
+    "file": "assets/rabbits/tunini/tunini-v1.png",
+    "sourceSha1": "cf2ebee90316b486e0d4d4424a660dacff0e66fd",
+    "sourceWidth": 795,
+    "sourceHeight": 930,
+    "worldWidth": 52,
+    "width": 384,
+    "height": 449,
+    "derivedSha1": "6159ed08a3fe20ed770ae9748048693f060b692b"
+  },
+  "bretonette": {
+    "file": "assets/rabbits/bretonette/bretonette-v1.png",
+    "sourceSha1": "7b3693047852833acced5937a3415df74ce53e97",
+    "sourceWidth": 975,
+    "sourceHeight": 956,
+    "worldWidth": 56,
+    "width": 437,
+    "height": 428,
+    "derivedSha1": "e0b3434084a0fc5131c76d355535ecc79d7d0bfb"
+  },
+  "dadi": {
+    "file": "assets/rabbits/dadi/dadi-v1.png",
+    "sourceSha1": "4f208304352223daba1f9fd2eb01f9ec3d353208",
+    "sourceWidth": 262,
+    "sourceHeight": 364,
+    "worldWidth": 42,
+    "width": 262,
+    "height": 364,
+    "derivedSha1": "4f208304352223daba1f9fd2eb01f9ec3d353208"
+  },
+  "maxou": {
+    "file": "assets/rabbits/maxou/maxou-v1.png",
+    "sourceSha1": "abb4d7bf7957b29489ca6802e0c9926a7dbbfe1b",
+    "sourceWidth": 1273,
+    "sourceHeight": 1142,
+    "worldWidth": 56,
+    "width": 461,
+    "height": 414,
+    "derivedSha1": "e43958e4ed3e6281a593fb7821bc5b062ce6565f"
+  },
+  "magicien": {
+    "file": "assets/rabbits/magicien/magicien-v1.png",
+    "sourceSha1": "8928528688f9397d2cdb27ead8c3c4fa89770983",
+    "sourceWidth": 1033,
+    "sourceHeight": 1159,
+    "worldWidth": 52,
+    "width": 384,
+    "height": 431,
+    "derivedSha1": "540a03bae746a7ebae8a09fc941bb135a72b12e6"
+  },
+  "dragon": {
+    "file": "assets/rabbits/dragon/dragon-v1.png",
+    "sourceSha1": "dc002cc5ac23fd6a2fa3000a68b3769759b5ba93",
+    "sourceWidth": 496,
+    "sourceHeight": 508,
+    "worldWidth": 54,
+    "width": 418,
+    "height": 428,
+    "derivedSha1": "510afa2b4cd1df64b7a4a253be62b56f42ee75fa"
+  },
+  "requin": {
+    "file": "assets/rabbits/requin/requin-v1.png",
+    "sourceSha1": "b2fa26cff409d71bf56877920c8380680c242271",
+    "sourceWidth": 1099,
+    "sourceHeight": 1094,
+    "worldWidth": 56,
+    "width": 430,
+    "height": 428,
+    "derivedSha1": "296e16f5f48eedbd82041000152dffcb2b46f1e6"
   }
 }
