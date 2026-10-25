@@ -5,7 +5,7 @@ Les crédits Netlify sont limités : tout se teste localement par défaut. Une c
 Depuis PowerShell :
 
 ```powershell
-Set-Location C:\Users\sulli\Documents\Project-L\prairie-lapins-prototype
+Set-Location <racine-du-depot>
 ipconfig
 npm run dev -- --port 5173 --strictPort
 ```

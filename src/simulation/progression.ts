@@ -5,7 +5,7 @@ import {PARCEL_IDS} from '../config/land';
 import {MAIN_MISSION_IDS, DAILY_MISSION_IDS, type MainMissionId, type DailyMissionId} from '../config/missions';
 import {PROGRESSION, LEVEL_ACCESS_FAMILIES, type ProgressionConfig} from '../config/progression';
 /** Food per extra XP point of a meal, beyond the base (simulated pacing: level 22 in about 20 days). */
-export const FOOD_PER_XP = 60;
+export const FOOD_PER_XP = 200;
 
 export interface PlayerProgression {
   readonly totalXp: number;
@@ -138,7 +138,7 @@ export function requiredExtensionLevel(purchaseRank:number,c:ProgressionConfig=P
 }
 export function foodXp(affectionReached:number,c:ProgressionConfig=PROGRESSION):number {
   validateQueryConfig(c);integer(affectionReached,'Reached affection');if(affectionReached>BALANCE.maxAffection)throw new RangeError('Affection exceeds existing maximum');
-  // A meal's XP follows its food cost: the base, plus one per FOOD_PER_XP food (the step to 15 is worth 30 XP).
+  // A meal's XP follows its food cost: the base, plus one per FOOD_PER_XP food (the step to 15 is worth 12 XP).
   return c.xp.foodMultiplier+Math.floor((FEED_COSTS[affectionReached-1]??0)/FOOD_PER_XP);
 }
 export function firstDecorationPlacementXp(id:DecorationId,c:ProgressionConfig=PROGRESSION):number {

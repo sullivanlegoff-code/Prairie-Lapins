@@ -4,7 +4,7 @@ Le propriétaire reprend maintenant avec Claude. Un seul agent travaille sur le 
 
 ## Point de reprise
 
-- Projet actif : `C:\Users\sulli\Documents\Project-L\prairie-lapins-prototype` ; racine Git : dossier parent.
+- Projet actif : `<racine-du-depot>` ; racine Git : dossier parent.
 - Branche : `feature/purchasable-recipes`.
 - Dernier commit de code et build jeu/laboratoire : **e99dab8d42f5cc34a0629ce4e9fcf7f46e8ac993**.
 - Le commit contenant ce document est documentaire seulement ; il ne nécessite pas une reconstruction du jeu.

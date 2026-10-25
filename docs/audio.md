@@ -2,7 +2,7 @@
 
 ## Pistes
 
-Source fournie par le propriétaire, **non modifiée** : `C:\Users\sulli\OneDrive\Bureau\project L\Music` (horodatages et tailles relus après conversion, identiques).
+Source fournie par le propriétaire, **non modifiée** : `<profil-utilisateur>\OneDrive\Bureau\project L\Music` (horodatages et tailles relus après conversion, identiques).
 
 | Source | Format source | Durée | Débit source | Taille source | Fichier du projet | Taille |
 | --- | --- | --- | --- | ---: | --- | ---: |

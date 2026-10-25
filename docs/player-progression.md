@@ -8,18 +8,18 @@ Le tutoriel de Paille est rejoué avec ses trois aides uniques, récolte/transfe
 
 Chaque visite est limitée à 45 commandes réussies, soit environ six secondes par action dans une session de cinq minutes. C’est une hypothèse de joueur organisé, pas une mesure humaine ; déplacement, consultation et choix peuvent ralentir le parcours. Les repas maximaux et les choix de parents sont explicites et reproductibles. La simulation laisse les commandes terminées attendre les visites, sans collecte pendant l’absence. Les instantanés J1/J3/etc. sont pris juste avant 8 h du jour suivant ; les pattes stockées restent à récolter. Aucun clic supplémentaire au point « 10 min ».
 
-Les premières atteintes, comptées en jours calendaires avec J1 comme jour du départ, sont **N5 à J1 ; N10 à J3 ; N15 à J8 ; N20 à J16 ; N22 à J19 ; N25 à J27 ; N30 à J44** (relevé du 25 octobre 2026 après la refonte de la nourriture : dix cultures, repas plus chers, statue, XP des repas liée à leur coût). Cible du propriétaire : niveau 22 vers J20 ; le script échoue si cette atteinte s’écarte de plus de trois jours, et poursuit jusqu’à 70 jours. La **statue est achetée au 12e jour**, quatre jours après le niveau 15 : 25 000 pattes épargnées en font une vraie étape.
+Les premières atteintes, comptées en jours calendaires avec J1 comme jour du départ, sont **N5 à J1 ; N10 à J3 ; N15 à J8 ; N20 à J17 ; N22 à J20 ; N25 à J30 ; N30 à J49** (relevé du 25 octobre 2026 après la refonte de la nourriture, le stockage par type d’habitat et les revenus des rares tirés au sort, des épiques et des légendaires). Cible du propriétaire : niveau 22 vers J20 ; le script échoue si cette atteinte s’écarte de plus de trois jours, et poursuit jusqu’à 70 jours. La **statue (30 000 pattes) est achetée au 12e jour**, quatre jours après le niveau 15. Pour tenir ce rythme malgré les revenus plus élevés, la statue est passée de 25 000 à 30 000 pattes et un repas rapporte 5 XP plus 1 par tranche de 200 nourriture. Le joueur simulé n’utilise pas l’agence de voyage : elle ne donne que des cœurs, déjà abondants en fin de partie.
 
-La nourriture est devenue la ressource rare : le stock retombe presque à zéro à chaque visite, car tout part dans les repas. Au 20e jour, 25 des 36 lapins ont au moins 10 d’affection et 7 au moins 15 ; au 50e, 43 sur 44 et 26. Le comptoir de Paille n’échange la nourriture qu’au-delà de 6 000 et les pattes au-delà de 3 000 (ou du prix de la statue plus 3 000 tant qu’elle manque). Les cœurs s’accumulent en fin de partie (252 au 20e jour, 814 au 50e).
+La nourriture est la ressource rare : le stock retombe presque à zéro à chaque visite, car tout part dans les repas. Au 20e jour, 22 des 35 lapins ont au moins 10 d’affection et 7 au moins 15 ; au 50e, 40 sur 41 et 27. Le comptoir de Paille n’échange la nourriture qu’au-delà de 6 000 et les pattes au-delà de 3 000 (ou du prix de la statue plus 3 000 tant qu’elle manque). Les cœurs s’accumulent en fin de partie (254 au 20e jour, 825 au 50e).
 
 | Étape | Pattes disponibles | Nourriture | Cœurs | Niveau | Espèces | Pattes stockées | Affection ≥ 10 / ≥ 15 |
 |---|---:|---:|---:|---:|---:|---:|---|
 | 10 min | 230 | 96 | 18 | 5 | 3 | 6 | 0 / 0 (sur 3) |
-| 1 j | 537 | 13 | 20 | 6 | 4 | 791 | 1 / 0 (sur 4) |
-| 3 j | 1 869 | 8 | 40 | 10 | 10 | 2 615 | 3 / 0 (sur 13) |
-| 7 j | 10 365 | 2 874 | 68 | 14 | 16 | 4 907 | 10 / 0 (sur 22) |
-| 20 j | 4 020 | 0 | 252 | 22 | 32 | 10 247 | 25 / 7 (sur 36) |
-| 50 j | 4 259 | 491 | 814 | 30 | 35 | 15 659 | 43 / 26 (sur 44) |
+| 1 j | 573 | 13 | 20 | 6 | 4 | 827 | 1 / 0 (sur 4) |
+| 3 j | 374 | 1 | 40 | 10 | 10 | 2 723 | 3 / 0 (sur 13) |
+| 7 j | 10 414 | 2 690 | 69 | 14 | 16 | 5 183 | 10 / 0 (sur 22) |
+| 20 j | 6 223 | 43 | 254 | 22 | 31 | 10 151 | 22 / 7 (sur 35) |
+| 50 j | 7 208 | 330 | 825 | 30 | 35 | 15 791 | 40 / 27 (sur 41) |
 
 Achats restants (améliorations et décorations restent des choix ; la simulation n’achète qu’une décoration, pour sa mission, et aucune recette payante) :
 

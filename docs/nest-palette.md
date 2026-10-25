@@ -74,7 +74,7 @@ export const NEST_PALETTE: 'v2' | 'light' | 'medium' | 'strong' = 'strong';
 
 ## Comparaisons locales
 
-`node docs/nest-palette-check.cjs http://localhost:5174/ C:/Users/sulli/AppData/Local/Temp/prairie-nest-palette-20261017`
+`node docs/nest-palette-check.cjs http://localhost:5174/ <dossier-temporaire>/prairie-nest-palette-20261017`
 
 Le script ouvre le build compilé avec le scénario existant Bâtiments décalés du laboratoire dans des contextes neufs. Il remplace uniquement la réponse PNG du nid par la variante locale, sans changer de code de jeu ni écrire une sauvegarde normale. Quatre sous-dossiers : `current`, `light`, `medium`, `strong`. Chaque dossier contient île entière (ferme, nid, nurserie) et nid avec deux parents, en 390 × 844 et 844 × 390 : **16 PNG**. Cadrages/zooms identiques entre variantes, vérifiés ; parents sélectionnés séparément via les vrais contrôles. PNG décodés aussi par WebKit Windows, sans assimiler cela à Safari iPhone.
 
@@ -82,4 +82,4 @@ Résultat : **103 contrôles réussis**, 16 captures, aucune erreur navigateur. 
 
 ## Tests
 
-`npm.cmd run typecheck` réussi. **Une seule suite complète** : `npm.cmd test -- --maxWorkers=1 --reporter=json --outputFile=C:/Users/sulli/AppData/Local/Temp/prairie-nest-palette-20261017/tests.json` : **1090/1090 réussis, 52 fichiers, aucun délai dépassé**, aucune relance ciblée nécessaire. Le nombre de workers est limité pour réduire la contention ; les assertions, le code des tests et le délai de 5000 ms restent inchangés. La session précédente avait neuf expirations dans `simulation`, `decorations`, `collection`, `new-species`, `foundations`, `laboratory`, `purchasable-recipes`, `recipe-privacy` ; toutes passent cette fois. Ce résultat est compatible avec l'hypothèse de concurrence CPU précédente, sans en prouver à lui seul la cause.
+`npm.cmd run typecheck` réussi. **Une seule suite complète** : `npm.cmd test -- --maxWorkers=1 --reporter=json --outputFile=<dossier-temporaire>/prairie-nest-palette-20261017/tests.json` : **1090/1090 réussis, 52 fichiers, aucun délai dépassé**, aucune relance ciblée nécessaire. Le nombre de workers est limité pour réduire la contention ; les assertions, le code des tests et le délai de 5000 ms restent inchangés. La session précédente avait neuf expirations dans `simulation`, `decorations`, `collection`, `new-species`, `foundations`, `laboratory`, `purchasable-recipes`, `recipe-privacy` ; toutes passent cette fois. Ce résultat est compatible avec l'hypothèse de concurrence CPU précédente, sans en prouver à lui seul la cause.

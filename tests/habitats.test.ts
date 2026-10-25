@@ -52,7 +52,7 @@ describe('habitat compatibility and atomic entries',()=>{
   });
   it.each(HABITAT_TYPES.filter(t=>t!=='universal'))('buys %s for 200 and welcomes its common for 80',type=>{
     let s=build(rich(),type);const home=s.buildings.at(-1)!;
-    expect(s.pattes).toBe(10000-habitatLevel(type,1).cost);expect(home.habitat).toEqual({type,level:1});expect(habitatStats(home)).toEqual({capacity:3,cap:2400,cost:habitatLevel(type,1).cost,currency:'pattes'});
+    expect(s.pattes).toBe(10000-habitatLevel(type,1).cost);expect(home.habitat).toEqual({type,level:1});expect(habitatStats(home)).toEqual({capacity:3,cap:habitatLevel(type,1).cap,cost:habitatLevel(type,1).cost,currency:'pattes'});
     const species=SPECIES_IDS.find(id=>SPECIES[id].price!==null&&SPECIES[id].types.includes(type))!;
     s=run(s,{type:'buyRabbit',species,enclosureId:home.id});expect(s.pattes).toBe(10000-habitatLevel(type,1).cost-SPECIES[species].price!);expect(s.rabbits.at(-1)!.enclosureId).toBe(home.id);
     expect(decode(encodeGame(s))).toEqual(s);
