@@ -428,7 +428,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     expect(panel().querySelectorAll('article')).toHaveLength(EXPECTED_RECIPE_IDS.length); expect(recipe().dataset.recipeKnown).toBe('true');
     expect(recipe().textContent).toContain('Affection 4 minimum'); expect(recipe().textContent).toContain('À nourrir');
     expect(button('Préparer cette paire au nid', recipe()).disabled).toBe(true);
-    button('Voir le parent n° 3 à nourrir', recipe()).click(); expect(panel().textContent).toContain('Affection 2 / 20');
+    button('Nourrir Lapin Neige · Enclos 1', recipe()).click(); expect(panel().textContent).toContain('Affection 2 / 20');
     ui.select({kind: 'building', id: 'building-4'});
     crossFromNest('Lapin Feu', 'Lapin Neige', false);
     const odds = () => breeding().querySelector('.breeding-odds')!.textContent;

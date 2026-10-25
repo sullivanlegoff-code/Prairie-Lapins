@@ -208,3 +208,10 @@ dialog :is(.badge, .timer, .reason) {
 @media (prefers-reduced-motion: reduce) {
   #game-panel *, dialog * { scroll-behavior: auto; }
 }
+
+@media (max-height: 450px), (max-width: 480px) {
+  #game-panel .card.compact-list-card { border-width: 11px; border-image-width: 11px; padding: 4px; }
+  #game-panel .compact-list-card .card-heading { padding-bottom: 4px; margin-bottom: 4px; gap: 6px; }
+  #game-panel .compact-list-card :is(.portrait, .crop-icon) { width: 38px; min-width: 38px; height: 38px; }
+  #game-panel .compact-list-card button { min-width: 44px; min-height: 44px; }
+}

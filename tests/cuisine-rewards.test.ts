@@ -44,7 +44,7 @@ describe('Cuisine reward command',()=>{
     expect(r.state.pattes).toBe(before.pattes+CUISINE_REWARDS[recipeId].pattes);expect(r.state.grass).toBe(before.grass+CUISINE_REWARDS[recipeId].grass);
     expect(r.state.rabbits).toEqual(before.rabbits.map(r=>({...r,affection:r.affection+1})));
     expect(r.state.hearts).toBe(before.hearts+1);expect(r.state.cuisine.heartCycle).toBe(0);expect(r.state.progression).toEqual(before.progression);
-    expect(r.cuisineReward).toEqual({...CUISINE_REWARDS[recipeId],fullReward:true,affectionGranted:true,affectionAtCap:false,heartGranted:true});
+    expect(r.cuisineReward).toEqual({...CUISINE_REWARDS[recipeId],fullReward:true,affectionGranted:true,affectionAtCap:false,affectionStatueRequired:false,heartGranted:true});
     expect(s).toEqual(before);
   });
   it('tracks same-species individuals by exact id and becomes eligible at the canonical cycle boundary',()=>{
@@ -80,7 +80,10 @@ describe('Cuisine reward command',()=>{
     edge.buildings.push(emptyBuilding(`building-${edge.nextId++}`,'statue',30,30));
     expect(reward(edge).state.rabbits[0].affection).toBe(20);
     const wall=withKitchen(createGame(0));wall.rabbits[0].affection=14;
-    expect(reward(wall)).toMatchObject({cuisineReward:{affectionGranted:false}});
+    const blocked=reward(wall);
+    expect(blocked).toMatchObject({cuisineReward:{affectionGranted:false,affectionStatueRequired:true}});
+    wall.buildings.push(emptyBuilding(`building-${wall.nextId++}`,'statue',30,30));
+    expect(reward(wall)).toMatchObject({cuisineReward:{affectionGranted:true,affectionStatueRequired:false}});
   });
   it.each(['pattes','grass'] as const)('rejects %s overflow atomically',resource=>{
     const s=withKitchen(createGame(0));s[resource]=Number.MAX_SAFE_INTEGER;const before=structuredClone(s);
@@ -113,7 +116,7 @@ describe('Cuisine reward command',()=>{
       expect(r.state.pattes).toBe(before.pattes+SALAD.pattes);expect(r.state.grass).toBe(before.grass+SALAD.grass);
       expect(r.state.rabbits[0].affection).toBe(4);expect(r.state.hearts).toBe(before.hearts+1);
       expect(r.state.cuisine).toEqual({affectionCycles:{[s.rabbits[0].id]:0},heartCycle:0,fullRuns:{cycle:0,used:1}});
-      expect(r.cuisineReward).toEqual({...SALAD,fullReward:true,affectionGranted:true,affectionAtCap:false,heartGranted:true});
+      expect(r.cuisineReward).toEqual({...SALAD,fullReward:true,affectionGranted:true,affectionAtCap:false,affectionStatueRequired:false,heartGranted:true});
       const again=reward(r.state);expect(again.cuisineReward).toMatchObject({affectionGranted:false,heartGranted:false});
     });
   });

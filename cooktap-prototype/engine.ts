@@ -122,9 +122,9 @@ export class KitchenEngine {
       if (this.phase !== 'choosing' || this.paused) return this.finish({accepted: false, message: 'Cette recette n’est pas disponible.'}, false);
       this.resetState(); this.recipe = intent.recipeId; this.phase = 'playing';
       for (const i of this.items) i.visible = visibleFor(intent.recipeId, i.id);
-      return {accepted: true, message: intent.recipeId === 'salad' ? 'Préparez les trois ingrédients, puis ajoutez l’huile.' : 'Prépare le poulet et la patate douce, puis enfourne le plat.'};
+      return {accepted: true, message: intent.recipeId === 'salad' ? 'Prépare les trois ingrédients, puis ajoutez l’huile.' : 'Prépare le poulet et la patate douce, puis enfourne le plat.'};
     }
-    if (intent.type === 'choose-recipe') { this.phase = 'choosing'; this.recipe = null; for (const i of this.items) i.visible = false; return {accepted: true, message: 'Choisissez une recette.'}; }
+    if (intent.type === 'choose-recipe') { this.phase = 'choosing'; this.recipe = null; for (const i of this.items) i.visible = false; return {accepted: true, message: 'Choisis une recette.'}; }
     if (intent.type === 'reset-recipe') {
       if (!this.recipe) return this.finish({accepted: false, message: 'Aucune recette à recommencer.'}, false);
       const recipe = this.recipe; this.resetState(); this.recipe = recipe; this.phase = 'playing';

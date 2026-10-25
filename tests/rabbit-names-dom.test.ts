@@ -18,8 +18,9 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup.splice(0).forEach(fn => fn()); vi.unstubAllGlobals(); });
 /** Two Paille rabbits in the same habitat, so that two individuals of one species can be told apart. */
-function setup() {
+function setup(customize: (s: GameState) => void = () => {}) {
   const s: GameState = createGame(0); s.rabbits.push({id: 'rabbit-3', species: 'paille', affection: 1, enclosureId: 'building-1'});
+  customize(s);
   const data = new Map([[SAVE_KEY, encodeGame(s)]]);
   const controller = new GameController({getItem: k => data.get(k) ?? null, setItem: (k, v) => { data.set(k, v); }}, () => 0);
   const prefs = new PreferenceStore('test-rabbit-names'); prefs.set({tutorial: false});
@@ -35,10 +36,11 @@ const field = () => panel().querySelector<HTMLInputElement>('input[data-focus="r
 function type(text: string) { const input = field(); input.value = text; input.setSelectionRange(text.length, text.length); input.dispatchEvent(new Event('input', {bubbles: true})); }
 
 describe('the personal name in the rabbit sheet', () => {
-  it('shows the name box above the portrait, "Sans nom" by default, with the species kept in the title', () => {
+  it('shows the name box after the feeding action, "Sans nom" by default, with the species kept in the title', () => {
     const {ui} = setup(); ui.select({kind: 'rabbit', id: 'rabbit-2'});
     expect(box().textContent).toContain('Sans nom'); expect(document.getElementById('panel-title')!.textContent).toBe('Lapin Paille');
-    const overview = panel().querySelector('.rabbit-overview')!; expect(box().compareDocumentPosition(overview) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const overview = panel().querySelector('.rabbit-overview')!; expect(overview.compareDocumentPosition(box()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(button('Nourrir · 2 nourriture').compareDocumentPosition(box()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(overview.querySelector('[data-rabbit-art], svg, img')).not.toBeNull(); expect(button('Donner un nom')).toBeTruthy();
   });
 
@@ -94,15 +96,64 @@ describe('the personal name in the rabbit sheet', () => {
     button('Enregistrer').click(); expect(state(controller).rabbits[0].name).toBe('Mimosa 2');
   });
 
-  it('drops the draft when the sheet is left, and shows personal names nowhere else', () => {
+  it('drops the draft when the sheet is left, and shows personal names in individual lists', () => {
     const {ui, controller} = setup(); ui.select({kind: 'rabbit', id: 'rabbit-2'});
     button('Donner un nom').click(); type('Brouillon'); ui.select({kind: 'rabbit', id: 'rabbit-3'}); expect(panel().querySelector('input')).toBeNull();
     ui.select({kind: 'rabbit', id: 'rabbit-2'}); expect(panel().querySelector('input')).toBeNull();
     button('Donner un nom').click(); type('Secret'); button('Enregistrer').click(); expect(state(controller).rabbits[0].name).toBe('Secret');
-    ui.select({kind: 'building', id: 'building-1'}); expect(panel().textContent).not.toContain('Secret');
+    ui.select({kind: 'building', id: 'building-1'}); expect(panel().querySelector('.compact-list-card .card-heading h3')!.textContent).toBe('Secret');
+    expect(panel().querySelector('.compact-list-card .card-heading p')!.textContent).toContain('Lapin Paille');
     ui.open({kind: 'collection'}); expect(panel().textContent).not.toContain('Secret');
     ui.open({kind: 'species', species: 'paille'}); expect(panel().textContent).not.toContain('Secret');
     ui.open({kind: 'recipes'}); expect(panel().textContent).not.toContain('Secret');
     ui.select({kind: 'building', id: 'building-4'}); expect(panel().textContent).not.toContain('Secret');
+  });
+});
+
+
+describe('audit corrections in individual lists and habitat actions', () => {
+  it('creates the claim button disabled before any timer update', () => {
+    const {ui} = setup();
+    vi.spyOn(ui as unknown as {updateTimers(): void}, 'updateTimers').mockImplementation(() => {});
+    ui.open({kind:'hearts'});
+    expect(panel().querySelector<HTMLButtonElement>('[data-gift-at]')!.disabled).toBe(true);
+  });
+
+  it('disables claiming immediately without a gift and enables it when a gift is ready', () => {
+    const {ui, controller} = setup(s => { s.nextHeartGiftAt = 0; });
+    ui.open({kind:'hearts'});
+    expect(panel().querySelector<HTMLButtonElement>('[data-gift-at]')!.disabled).toBe(false);
+    expect(document.getElementById('open-hearts')!.classList.contains('has-heart-gift')).toBe(true);
+    panel().querySelector<HTMLButtonElement>('[data-gift-at]')!.click();
+    expect(state(controller).nextHeartGiftAt).toBeGreaterThan(0);
+    expect(panel().querySelector<HTMLButtonElement>('[data-gift-at]')!.disabled).toBe(true);
+    expect(document.getElementById('open-hearts')!.classList.contains('has-heart-gift')).toBe(false);
+    ui.close(); ui.open({kind:'hearts'});
+    expect(panel().querySelector<HTMLButtonElement>('[data-gift-at]')!.disabled).toBe(true);
+  });
+  it('places the upgrade after collection and before occupants, with a clear empty-stock reason', () => {
+    const {ui} = setup(); ui.select({kind:'building',id:'building-1'});
+    const upgrade = panel().querySelector('[data-upgrade-habitat]')!;
+    const collect = [...panel().querySelectorAll('button')].find(b => b.textContent!.startsWith('Récolter'))!;
+    const resident = [...panel().querySelectorAll('.card')].find(c => c.textContent!.includes('Voir ce lapin'))!;
+    expect(collect.disabled).toBe(true);
+    expect(document.getElementById(collect.getAttribute('aria-describedby')!)!.textContent).toBe('La récolte sera disponible à partir d’une pièce.');
+    expect(collect.compareDocumentPosition(upgrade) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(upgrade.compareDocumentPosition(resident) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    for (const tile of panel().querySelectorAll('.stat')) {
+      if (/Stock|Revenu/.test(tile.textContent!)) {
+        expect(tile.querySelectorAll('img')).toHaveLength(1);
+        expect(tile.querySelector('.sr-only')!.textContent).toContain('pièces');
+      }
+    }
+  });
+  it.each(['cuisineRabbit','moveRabbit','building'] as const)('shows personal name, species and habitat without technical ids in %s', kind => {
+    const {ui} = setup(s => { s.rabbits[0].name = 'Mimosa'; });
+    if (kind === 'moveRabbit') ui.open({kind,id:'rabbit-2'}); else if (kind === 'building') ui.open({kind,id:'building-1'}); else ui.open({kind});
+    const card = panel().querySelector('.compact-list-card')!;
+    expect(card.querySelector('h3')!.textContent).toBe('Mimosa');
+    expect(card.querySelector('.card-heading p')!.textContent).toContain('Lapin Paille');
+    expect(card.textContent).toContain('Prairie de paille');
+    expect(panel().textContent).not.toMatch(/rabbit-\d+|building-\d+/);
   });
 });

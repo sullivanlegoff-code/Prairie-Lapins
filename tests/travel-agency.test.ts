@@ -225,6 +225,7 @@ describe('agency interface and French text', () => {
     expect(panel().querySelector('.agency-step')).toBeNull();
     panel().querySelector<HTMLButtonElement>('[data-traveller="rabbit-2"] button')!.click();
     expect(panel().querySelector('[data-trip="away"]')!.textContent).toContain('Londres');
+    expect(panel().querySelector('.agency-host')!.textContent).toContain('Un souvenir t’attend au retour !');
     expect(panel().querySelector('.timer')).not.toBeNull();
     const travelling = controller.getSnapshot().state!;
     // A fresh UI/controller loaded from the save must not repeat Coco’s welcome.
@@ -234,7 +235,8 @@ describe('agency interface and French text', () => {
     expect(panel().querySelector('.agency-step')).toBeNull();
     clock.now = travelling.travel!.trip!.endsAt;
     reloaded.ui.select({kind: 'building', id});
-    expect(panel().querySelector('.traveller-bubble')!.textContent).toContain('Je me suis super amusé à Londres !');
+    expect(panel().querySelector('.agency-host')!.textContent).toBe('De retour de Londres : voici Lapin Paille ! Viens l’accueillir.');
+    expect(panel().querySelector('.traveller-bubble')!.textContent).toContain('Ces vacances à Londres étaient super !');
     const button = panel().querySelector<HTMLButtonElement>('.agency-return button')!;
     expect(button.textContent).toBe('Accueillir · + 1 cœur'); button.click();
     const returned = reloaded.controller.getSnapshot().state!;

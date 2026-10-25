@@ -110,7 +110,7 @@ export function developmentEnvironment(base: SaveStorage, options: {decorationPr
       section('Progression de test');
       for (const amount of [50, 500]) button(`+${amount} XP`, `dev-xp-${amount}`, () => {
         const result = controller.grantLaboratoryXp(amount);
-        resultMessage(result, result.ok && result.progressionGain ? `+${result.progressionGain.xpGained} XP · niveaux récompensés : ${result.progressionGain.rewardedLevels.join(', ') || 'aucun'} · +${result.progressionGain.heartsGranted} cœur(s).` : 'Progression enregistrée.');
+        resultMessage(result, result.ok && result.progressionGain ? `+${result.progressionGain.xpGained} XP · niveaux récompensés : ${result.progressionGain.rewardedLevels.join(', ') || 'aucun'} · +${result.progressionGain.heartsGranted} cœur${result.progressionGain.heartsGranted > 1 ? 's' : ''}.` : 'Progression enregistrée.');
       });
       section('Recettes de test');
       button('Réinitialiser les recettes achetées', 'dev-reset-recipes', () => resultMessage(resetRecipes(controller), 'Recettes achetées oubliées, sans remboursement. Les espèces découvertes restent connues.'));

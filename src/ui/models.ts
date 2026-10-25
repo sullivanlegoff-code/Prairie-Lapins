@@ -30,7 +30,7 @@ export const REFUSALS: Record<Refusal | 'NO_GAME' | 'DISPOSED' | 'SALE_NOT_SAVED
   UPGRADE_BLOCKED_LAND: 'Pas assez de place pour agrandir : la zone voisine n’est pas du terrain acquis. Déplace l’enclos ou agrandis l’île ; rien n’est payé.',
   TYPE_INCOMPATIBLE: 'Type incompatible.', MAX_HABITAT_LEVEL: 'Niveau maximal atteint.', MAX_NURSERY_CAPACITY: 'Capacité maximale : les quatre couchages sont débloqués.',
   ALREADY_CLAIMED: 'Cette récompense a déjà été réclamée.', CYCLE_EXPIRED: 'Ce cycle a expiré. Consulte les nouvelles missions.', RESOURCE_LIMIT: 'Le solde est trop élevé pour recevoir cette récompense.',
-  NOT_ENOUGH_HEARTS: 'Pas assez de cœurs. Tu peux continuer en attendant ou en récoltant dans les habitats.',
+  NOT_ENOUGH_HEARTS: 'Pas assez de cœurs. Consulte ton cadeau gratuit et les autres récompenses dans le menu Cœurs.',
   ACTION_FINISHED: 'Cette étape est déjà terminée : aucun cœur dépensé.', STALE_ACTION: 'Cette action a changé. Ouvre à nouveau son panneau.',
   PRICE_CHANGED: 'Le paiement a changé. Vérifie le nouveau prix avant de confirmer.', NO_MISSING_PATTES: 'Ton solde suffit maintenant. Utilise le paiement normal.',
   INVALID_TIME: 'L’heure de l’appareil est invalide.', INVALID_RANDOM: 'Le tirage n’a pas pu aboutir. Réessaie.', INVALID_CHOICE: 'Ce choix n’est pas disponible.',
