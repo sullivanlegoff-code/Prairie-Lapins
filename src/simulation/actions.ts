@@ -414,7 +414,9 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         const rabbit = s.rabbits.find(r => r.id === command.id); requireRule(rabbit, 'NOT_FOUND');
         requireRule(!travelling(s, rabbit.id), 'TRAVELING'); requireRule(!busy(rabbit.id), 'PARENT_BUSY');
         requireRule(s.rabbits.filter(r => r.species === rabbit.species).length > 1, 'LAST_OF_SPECIES');
-        credit('grass', SPECIES[rabbit.species].rarity === 'common' ? BALANCE.releaseGrass.common : SPECIES[rabbit.species].rarity === 'rare' ? BALANCE.releaseGrass.rare : 0); s.rabbits = s.rabbits.filter(r => r.id !== rabbit.id); break;
+        credit('grass', SPECIES[rabbit.species].rarity === 'common' ? BALANCE.releaseGrass.common : SPECIES[rabbit.species].rarity === 'rare' ? BALANCE.releaseGrass.rare : 0); s.rabbits = s.rabbits.filter(r => r.id !== rabbit.id);
+        delete s.cuisine.affectionCycles[rabbit.id];
+        break;
       }
       case 'renameRabbit': {
         // Free and purely cosmetic: no resource, XP, mission or draw is involved. The command validates the name itself.

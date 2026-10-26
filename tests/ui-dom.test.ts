@@ -27,6 +27,7 @@ import {NURSERY, SPECIES} from '../src/config/balance';
 import {babyOf, setBaby} from './nursery-baby';
 import {EXPECTED_IDS, EXPECTED_RECIPE_IDS, rareAdditions, shareLabel} from './rabbit-art-fixtures';
 import {emptyBuilding} from '../src/state/initial';
+import {habitatCap} from '../src/config/habitats';
 
 const cleanups: (() => void)[] = [];
 it('buys, places and selects Cuisine without opening the cooking activity', () => {
@@ -86,6 +87,26 @@ it('builds no pairs in collapsed sections, shows three on opening, and reveals t
   expect(details().querySelector('[data-more-pairs]')).toBeNull();
   clock.now = 3_600_000; controller.refresh();
   expect(details().querySelectorAll('.recipe-pair')).toHaveLength(6);
+});
+it('refreshes an open daily panel at its isolated next opening', () => {
+  const initial = createGame(0);
+  for (const b of initial.buildings) if (b.habitat) b.incomeUnits = habitatCap(b.habitat.type, b.habitat.level) * 3_600_000;
+  initial.missions.daily.progress['collect-pattes'] = 100;
+  const claimed = act(initial, {type: 'claimDailyMission', id: 'collect-pattes', cycleStart: 0}, 0);
+  if (!claimed.ok) throw Error(claimed.reason);
+  const {controller, clock} = setup(claimed.state);
+  const end = claimed.state.missions.daily.nextAt!;
+  clock.now = end - 1; controller.refresh();
+  document.getElementById('open-missions')!.click(); button('Quotidiennes').click();
+  expect(panel().querySelector('[data-mission="collect-grass"]')!.textContent).toContain('Ouverture dans :');
+  const revision = controller.getSnapshot().viewRevision;
+  const before = controller.getSnapshot().state!;
+  clock.now = end; controller.refresh();
+  expect(controller.getSnapshot().state).toEqual({...before, lastSimulatedAt: end});
+  expect(controller.getSnapshot().viewRevision).toBe(revision + 1);
+  const card = panel().querySelector('[data-mission="collect-grass"]')!;
+  expect(card.textContent).not.toContain('Ouverture dans :');
+  expect(card.querySelector('.mission-claim')).not.toBeNull();
 });
 it('keeps DOM on an invisible time tick and updates income when a whole unit becomes collectable', () => {
   const {ui, controller, clock} = setup(); ui.open({kind:'building', id:'building-1'});

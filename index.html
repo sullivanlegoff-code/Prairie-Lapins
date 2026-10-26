@@ -1,6 +1,44 @@
 <!doctype html>
 <html lang="fr">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#b0d18b"><link rel="icon" href="data:,"><title>Prairie de lapins</title>
+  <script id="boot-fallback">
+    (function () {
+      var timer;
+      function booted() {
+        var root = document.getElementById('loading-screen');
+        return root && root.dataset.booted === 'true';
+      }
+      function stop() {
+        clearTimeout(timer);
+        window.removeEventListener('error', resourceError, true);
+        window.removeEventListener('prairie-booted', stop);
+      }
+      function fail() {
+        stop();
+        if (booted()) return;
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', fail, {once: true});
+          return;
+        }
+        var root = document.getElementById('loading-screen');
+        root.hidden = false; root.dataset.state = 'failed';
+        document.getElementById('loading-message').textContent = "Le jeu n'a pas pu se charger. Vérifie ta connexion puis réessaie.";
+        var play = document.getElementById('loading-play');
+        play.disabled = true; play.hidden = true;
+        var retry = document.getElementById('loading-retry');
+        retry.hidden = false; retry.disabled = false;
+        retry.onclick = function () { location.reload(); };
+      }
+      function resourceError(event) {
+        var target = event.target;
+        if (target && (target.tagName === 'SCRIPT' && target.type === 'module' ||
+            target.tagName === 'LINK' && target.rel === 'modulepreload')) fail();
+      }
+      window.addEventListener('error', resourceError, true);
+      window.addEventListener('prairie-booted', stop);
+      timer = setTimeout(fail, 25000);
+    }());
+  </script>
   <script src="%BASE_URL%assets/app/standalone-zoom.js"></script>
   <!-- app-install:start -->
   <link rel="manifest" href="%BASE_URL%assets/app/manifest.webmanifest">

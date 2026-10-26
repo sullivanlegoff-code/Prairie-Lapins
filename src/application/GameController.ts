@@ -101,6 +101,7 @@ export class GameController {
     let json: string;
     try { json = encodeGame(candidate, presentationId); }
     catch { return {ok: false, reason: 'ENCODING_FAILED'}; }
+    if (json.length > MAX_JSON_LENGTH) return {ok: false, reason: 'FILE_TOO_LARGE'};
     // Also prevents a superseded controller from silently overwriting a successful import.
     let raw: string | null;
     try { raw = this.storage.getItem(SAVE_KEY); }
@@ -139,6 +140,8 @@ export class GameController {
     if (changed) {
       const crossed = (end: number) => (previous.lastSimulatedAt >= end) !== (next.lastSimulatedAt >= end);
       const visible = settlementChanged || next.lastSimulatedAt < previous.lastSimulatedAt || crossed(previous.nextHeartGiftAt) ||
+        previous.travel?.trips.some(trip => crossed(trip.endsAt)) ||
+        previous.missions.daily.nextAt !== undefined && crossed(previous.missions.daily.nextAt) ||
         next.buildings.some((b, i) => Math.floor(b.incomeUnits / 3_600_000) !== Math.floor(previous.buildings[i].incomeUnits / 3_600_000) ||
           !!b.order && crossed(b.order.endsAt) || !!b.breeding && crossed(b.breeding.endsAt) ||
           b.nursery?.babies.some(baby => crossed(baby.readyAt)));
@@ -216,7 +219,9 @@ export class GameController {
     this.refresh();
     try {
       const date = new Date(this.clock()).toISOString().replaceAll(':', '-').replace(/\.\d{3}Z$/, 'Z');
-      return {ok: true, json: encodeGame(this.state, this.presentationId), filename: `prairie-lapins-${date}.json`};
+      const json = encodeGame(this.state, this.presentationId);
+      if (json.length > MAX_JSON_LENGTH) return {ok: false, reason: 'FILE_TOO_LARGE'};
+      return {ok: true, json, filename: `prairie-lapins-${date}.json`};
     } catch { return {ok: false, reason: 'ENCODING_FAILED'}; }
   }
   unreadableBackup(): string | null { return this.status === 'invalid-save' ? this.storedRaw : null; }

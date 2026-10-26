@@ -24,6 +24,8 @@ import {MUSIC_TRACKS} from './config/music';
 import {LoadingTracker, renderLoading, startLoadingMessages} from './display/loadingScreen';
 
 async function boot(): Promise<() => void> {
+  document.getElementById('loading-screen')!.dataset.booted = 'true';
+  window.dispatchEvent(new Event('prairie-booted'));
   // Loading screen first: the game receives no interaction until « Jouer ».
   const loadingRoot = document.getElementById('loading-screen')!, app = document.getElementById('app')!;
   app.inert = true;

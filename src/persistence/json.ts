@@ -316,13 +316,16 @@ export function decodeGame(json: string): DecodeResult {
   if (!parsed.success) return {ok: false, reason: 'INVALID_STATE'};
   const {presentationId: _presentationId, ...stored} = parsed.data;
   const state: GameState = {...stored, cuisine: {...stored.cuisine, heartCycle: stored.cuisine.heartCycle ?? null}};
+  const rabbitIds = new Set(state.rabbits.map(rabbit => rabbit.id));
+  for (const id of Object.keys(state.cuisine.affectionCycles))
+    if (!rabbitIds.has(id)) delete state.cuisine.affectionCycles[id];
   establishHistoricalLevelRights(state);
   updateMissions(state, state.lastSimulatedAt);
   return {ok: true, state};
 }
 export function encodeGame(state: GameState, presentationId?: string): string {
   const parsed = schema.parse({...state, ...(presentationId ? {presentationId} : {})});
-  return JSON.stringify(parsed, null, 2);
+  return JSON.stringify(parsed);
 }
 
 /** Optional presentation metadata, separate from simulation state. Call after validating the save. */

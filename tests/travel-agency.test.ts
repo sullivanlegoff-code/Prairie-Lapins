@@ -206,6 +206,21 @@ function mount(s: GameState, clock = {now: 0}) {
 }
 
 describe('agency interface and French text', () => {
+  it('refreshes an open agency panel at an isolated return deadline', () => {
+    let s = agency(); s = run(s, {type: 'welcomeAgency'});
+    s = run(s, {type: 'startTrip', rabbitId: s.rabbits[0].id});
+    for (const b of s.buildings) if (b.habitat) b.incomeUnits = habitatCap(b.habitat.type, b.habitat.level) * HOUR;
+    const end = s.travel!.trips[0].endsAt, clock = {now: end - 1};
+    const {ui, controller} = mount(s, clock);
+    ui.select({kind: 'building', id: s.buildings.find(b => b.kind === 'agency')!.id});
+    expect(panel().querySelector('.agency-return button')).toBeNull();
+    const revision = controller.getSnapshot().viewRevision;
+    const before = controller.getSnapshot().state!;
+    clock.now = end; controller.refresh();
+    expect(controller.getSnapshot().state).toEqual({...before, lastSimulatedAt: end});
+    expect(controller.getSnapshot().viewRevision).toBe(revision + 1);
+    expect(panel().querySelector<HTMLButtonElement>('.agency-return button')!.disabled).toBe(false);
+  });
   it('lists independent returns, keeps Coco and confirms the next Heart upgrade', () => {
     let s = secondRabbit(agency()); const id = s.buildings.at(-1)!.id;
     s.hearts = 200; s = run(s, {type: 'welcomeAgency'});

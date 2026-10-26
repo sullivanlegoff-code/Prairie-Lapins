@@ -44,9 +44,10 @@ describe('daily missions spread over the sessions of a day', () => {
   it('a new cycle restarts at the first mission, open at once, and saves keep the opening time', () => {
     let s = run(morning(), {type: 'claimDailyMission', id: 'collect-pattes', cycleStart: 0});
     const decoded = decodeGame(encodeGame(s)); expect(decoded.ok && decoded.state.missions.daily.nextAt).toBe(s.missions.daily.nextAt);
-    const opening = `"nextAt": ${s.missions.daily.nextAt}`, raw = encodeGame(s);
-    expect(raw).toContain(opening);
-    expect(decodeGame(raw.replace(opening, `"nextAt": ${s.lastSimulatedAt + DAILY_MISSION_GAP + 1}`)).ok).toBe(false);
+    const raw = JSON.parse(encodeGame(s));
+    expect(raw.missions.daily.nextAt).toBe(s.missions.daily.nextAt);
+    raw.missions.daily.nextAt = s.lastSimulatedAt + DAILY_MISSION_GAP + 1;
+    expect(decodeGame(JSON.stringify(raw))).toEqual({ok: false, reason: 'INVALID_STATE'});
     s = advance(s, DAY);
     expect(s.missions.daily.nextAt).toBeUndefined(); expect(currentDailyMission(s)).toBe('collect-pattes');
   });
