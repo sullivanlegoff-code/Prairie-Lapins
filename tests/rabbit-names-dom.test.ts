@@ -33,6 +33,29 @@ const state = (c: GameController) => c.getSnapshot().state!;
 const button = (text: string) => [...panel().querySelectorAll<HTMLButtonElement>('button')].find(b => b.textContent === text) ?? (() => { throw new Error(`Button missing: ${text}\n${panel().textContent}`); })();
 const box = () => panel().querySelector<HTMLElement>('[data-rabbit-nickname]')!;
 const field = () => panel().querySelector<HTMLInputElement>('input[data-focus="rabbit-name"]')!;
+describe('qualitative reproduction chance in the rabbit sheet', () => {
+  it.each([[9, 'Normale', 1], [10, 'Légèrement meilleure', 2], [15, 'Meilleure', 3]] as const)('affection %s displays %s without numbers', (affection, label, active) => {
+    const {ui} = setup(s => { s.rabbits[0].affection = affection; });
+    ui.open({kind: 'rabbit', id: 'rabbit-2'});
+    const chance = panel().querySelector('.rabbit-birth-chance')!;
+    expect(chance.textContent).toBe(`Chance de reproduction${label}`);
+    expect(chance.textContent).not.toMatch(/[\d%×]/);
+    const indicator = chance.querySelector('.birth-chance-indicator')!;
+    expect(indicator.getAttribute('aria-hidden')).toBe('true');
+    expect(indicator.children).toHaveLength(3);
+    expect(indicator.querySelectorAll('.is-active')).toHaveLength(active);
+  });
+  it('keeps manual habitat collection available at one patte with the habitat name in its menu', () => {
+    const {ui, controller} = setup(s => { s.buildings[0].incomeUnits = 3_600_000; });
+    const before = state(controller).pattes;
+    ui.open({kind: 'building', id: 'building-1'});
+    expect(document.getElementById('panel-title')!.textContent).toContain('Prairie de paille');
+    const collect = [...panel().querySelectorAll<HTMLButtonElement>('button')].find(b => b.textContent!.startsWith('Récolter'))!;
+    expect(collect.disabled).toBe(false); collect.click();
+    expect(state(controller).pattes).toBe(before + 1);
+    expect(state(controller).buildings[0].incomeUnits).toBe(0);
+  });
+});
 function type(text: string) { const input = field(); input.value = text; input.setSelectionRange(text.length, text.length); input.dispatchEvent(new Event('input', {bubbles: true})); }
 
 describe('the personal name in the rabbit sheet', () => {

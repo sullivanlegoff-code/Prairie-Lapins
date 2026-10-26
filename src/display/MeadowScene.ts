@@ -7,6 +7,7 @@ import {rabbitBlinkArt, rabbitPatchPlacement} from '../config/rabbitBlinkArt';
 import {rabbitFaceSeed, rabbitFaceState} from './rabbitBlink';
 import Phaser from 'phaser';
 import {VISUAL} from '../config/visual';
+import {shouldShowIncomeBubble} from './incomeBubble';
 import type {GameController} from '../application/GameController';
 import {drawBuildingArt} from './buildingArt';
 import {drawHabitat} from './habitatArt';
@@ -34,7 +35,7 @@ import {PARCELS, PARCEL_IDS, expansionTarget, purchasableParcels, type ParcelId}
 import {ISLAND} from '../config/islandGeometry';
 import {rabbitOffset, rabbitPosition, rabbitHit, rabbitFedLift} from './rabbitLayout';
 import {createRabbitMotion, retargetRabbitMotion, stepRabbitMotion, triggerFedReaction, rabbitPose, type RabbitMotion} from './rabbitMotion';
-import {habitatStats, habitatName, habitatEntryReason, visibleColumns} from '../simulation/habitats';
+import {habitatStats, habitatEntryReason, visibleColumns} from '../simulation/habitats';
 import {HOUR, ORDERS, type SpeciesId} from '../config/balance';
 import type {Building, DecorationLocation, GameState} from '../state/types';
 import {DECORATION_IDS, FINE_GRID, type DecorationId} from '../config/decorations';
@@ -42,7 +43,7 @@ import {catalogDecorationPlacementReason, footprint} from '../simulation/decorat
 import {decorationTexture, decorationScale, decorationOrigin, decorationUrl, decorationLayerDepth} from './decorationArt';
 import {MeadowCamera, cellsBounds, gridCell, fineCell, finePoint, buildingCenter, gridPoint, type Point} from '../ui/gestures';
 import {groundTransform, screenBounds, toGround, toScreen} from '../ui/projection';
-import {BUILDING_NAMES, type Placement} from '../ui/models';
+import type {Placement} from '../ui/models';
 import {SPECIES, proceduralCoat} from '../config/species';
 import {bindMeadowInput} from './meadowInput';
 import {ownedRegions, recenterCamera, type ScreenChrome} from './recenter';
@@ -66,8 +67,6 @@ export class MeadowScene extends Phaser.Scene {
   private ground!: Phaser.GameObjects.Container;
   private animals!: Phaser.GameObjects.Container;
   private bubbles!: Phaser.GameObjects.Container;
-  private labels!: Phaser.GameObjects.Container;
-  private buildingNames: Phaser.GameObjects.Container | null = null;
   /** Flat overlays on the ground (cell highlights, grids, footprints, parcel outlines), in the ground layer. */
   private grid!: Phaser.GameObjects.Graphics;
   /** Ground layer above the sprites: holds `grid`, so it shares the ground transform yet keeps its draw order. */
@@ -149,7 +148,7 @@ export class MeadowScene extends Phaser.Scene {
     // Ground layer (flat on the island, drawn in ground coordinates, one shared projection transform):
     // terrain at depth 0 and the flat overlays at depth 1. Upright layer (untransformed, anchors through
     // toScreen): buildings .1, decorations .5, decoration selection .9, markers 1, ghosts 1.5, rabbits 2,
-    // labels 2.5, bubbles and availability texts 3. Depths are those of the former single-plane scene.
+    // bubbles and availability texts 3. Depths are those of the former single-plane scene.
     this.ground = this.add.container(0, 0); this.buildingsLayer = this.add.container(0, 0).setDepth(.1); this.animals = this.add.container(0, 0).setDepth(2);
     this.nurseryOverlays = new NurseryOverlays(this, this.buildingsLayer);
     this.farmCrops = new FarmCrops(this, this.buildingsLayer);
@@ -157,7 +156,6 @@ export class MeadowScene extends Phaser.Scene {
     this.floorDecorationsLayer = this.add.container(0, 0).setDepth(decorationLayerDepth('dirt-path'));
     this.decorationsLayer = this.add.container(0, 0).setDepth(.5);
     this.decorationSelection = this.add.graphics().setDepth(.9);
-    this.labels = this.add.container(0, 0).setDepth(2.5);
     this.grid = this.add.graphics(); this.groundOverlay = this.add.container(0, 0, [this.grid]).setDepth(1);
     this.markers = this.add.graphics().setDepth(1); this.bubbles = this.add.container(0, 0).setDepth(3);
     for (const layer of [this.ground, this.groundOverlay]) layer.setPosition(groundTransform.x, groundTransform.y).setRotation(groundTransform.rotation).setScale(groundTransform.scaleX, groundTransform.scaleY);
@@ -209,8 +207,6 @@ export class MeadowScene extends Phaser.Scene {
   }
   private updateDetails(): void {
     const fade=(low:number,high:number)=>Phaser.Math.Clamp((this.view.zoom-low)/(high-low),0,1);
-    // Names fully shown from the fresh-island framing (readableZoom .6) upward; gone in a large-island overview.
-    this.buildingNames?.setAlpha(fade(.4,.6));
     this.bubbles?.setAlpha(fade(.45,.7)).setVisible(!this.photo && this.view.zoom>.45);
   }
   private resize(): void { this.view.setInsets(this.framingInsets()); this.view.resize(this.scale.width, this.scale.height); this.applyCamera(); }
@@ -463,8 +459,6 @@ export class MeadowScene extends Phaser.Scene {
       .setScale(art ? art.worldWidth / art.width : .5);
   }
   private drawBuildings(): void {
-    this.labels.removeAll(true);
-    this.buildingNames=this.add.container(0,0);this.labels.add(this.buildingNames);
     const present = new Set<string>();
     for (const b of this.current?.buildings ?? []) {
       present.add(b.id);const p=toScreen(buildingCenter(b)),x=p.x,y=p.y;
@@ -472,10 +466,6 @@ export class MeadowScene extends Phaser.Scene {
       if(!image){image=this.add.image(x,y,this.buildingTexture(b));this.buildingsLayer.add(image);this.buildingViews.set(b.id,image);}
       image.setTexture(this.buildingTexture(b)).setDepth(y);
       this.positionBuildingArt(image, x, y, b.kind, b.kind === 'enclosure' ? habitatArtFor(b.habitat ?? undefined, b.footprintTier) : null);
-      const labelY=y+(b.kind==='nest'?NEST_ART.labelY:b.kind==='nursery'?NURSERY_ART.labelY:b.kind==='kitchen'?KITCHEN_ART.labelY:b.kind==='statue'?STATUE_ART.labelY:b.kind==='agency'?AGENCY_ART.labelY:b.footprintTier&&b.footprintTier>1?HABITAT_SIZE_PROPOSAL[b.footprintTier].labelOffset:70);
-      const label=this.add.text(x,labelY,b.kind==='enclosure'?habitatName(b):BUILDING_NAMES[b.kind],{fontFamily:'Arial',fontSize:'13px',color:'#435b38',padding:{x:7,y:3}}).setOrigin(.5);
-      const background=this.add.graphics();background.fillStyle(0xf8f4de,.96);background.fillRoundedRect(x-label.width/2,labelY-label.height/2,label.width,label.height,7);
-      this.buildingNames.add([background,label]);
     }
     for(const [id,image] of this.buildingViews)if(!present.has(id)){image.destroy();this.buildingViews.delete(id);}
     this.buildingsLayer.sort('depth');
@@ -641,7 +631,7 @@ export class MeadowScene extends Phaser.Scene {
       const now = this.current!.lastSimulatedAt;
       const amount = Math.floor(b.incomeUnits / HOUR);
       let text = '', kind: 'income' | 'grass' | 'building' = 'building';
-      if (b.kind === 'enclosure' && amount >= 1) { text = 'income'; kind = 'income'; }
+      if (b.kind === 'enclosure' && shouldShowIncomeBubble(amount, habitatStats(b).cap)) { text = 'income'; kind = 'income'; }
       if (b.kind === 'farm' && b.order && b.order.endsAt <= now) { text = 'food'; kind = 'grass'; }
       if (b.kind==='nest' && b.breeding && b.breeding.endsAt<=now) text='birth';
       if (b.kind === 'nursery' && readyNurseryBabies(b, now).length) text = 'Prêt !';

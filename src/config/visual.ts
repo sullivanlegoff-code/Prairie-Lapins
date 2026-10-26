@@ -1,4 +1,6 @@
 import {ISLAND} from './islandGeometry';
+/** Habitat income remains collectable from its menu below this display threshold. */
+export const INCOME_BUBBLE_THRESHOLD = 200;
 /** Presentation only. Never persisted; logical cells and economy remain unchanged. */
 export const VISUAL = {
   grid: {originX: ISLAND.originX, originY: ISLAND.originY, width: ISLAND.cellWidth, depth: ISLAND.cellDepth, columns: ISLAND.mapCells, rows: ISLAND.mapCells},
@@ -34,6 +36,6 @@ export const VISUAL = {
     // since the HUD shifts the viewport centre by about a tenth of its height.
     panKeep: 1 / 3,
     // Existing ground padding retained to preserve camera framing; rock depth is added after projection.
-    // Recenter fits the full rock. readableZoom remains the building-label threshold.
+    // Recenter fits the full rock. readableZoom is the reference zoom for camera framing tests.
     recenterRim: {left: 80, right: 0, top: 0, bottom: 128}, readableZoom: .6},
 } as const;

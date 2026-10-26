@@ -152,6 +152,11 @@ dialog :is(.badge, .timer, .reason) {
   color: #44452a; box-shadow: 0 2px 2px #644a2020;
 }
 #game-panel .badge { font-weight: 700; }
+#game-panel .rabbit-birth-chance { display: grid; gap: 5px; margin: 10px 0; font-size: 14px; }
+.rabbit-birth-chance strong { color: #30391f; overflow-wrap: anywhere; }
+.birth-chance-indicator { display: flex; gap: 5px; }
+.birth-chance-indicator > span { width: 22px; height: 6px; border: 1px solid #687451; border-radius: 3px; background: #eee9d7; }
+.birth-chance-indicator > .is-active { background: #687451; }
 #game-panel :is(.work-state, .placement-valid) {
   border-image: var(--menu-sage) 32 fill / 10px / 0 stretch;
   padding: 10px 14px; color: #252d1b;
