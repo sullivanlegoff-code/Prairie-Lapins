@@ -10,6 +10,7 @@ import {previousStart as currentStart} from './regression-start';
 import {regressionStart as createGame} from './regression-start';
 // @vitest-environment happy-dom
 import html from '../index.html?raw';
+// @ts-expect-error -- the browser tsconfig has no Node types; Vitest runs this file in Node (`?raw` CSS imports come back empty).
 import {readFileSync} from 'node:fs';
 const breedingCss = readFileSync('src/display/breeding.css', 'utf8');
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
