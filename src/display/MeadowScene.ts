@@ -278,6 +278,27 @@ export class MeadowScene extends Phaser.Scene {
     this.view.clamp();this.applyCamera();
   }
   setTutorialCell(cell: {x:number;y:number}|null): void { this.tutorialCell = cell; if(this.grid)this.drawGrid(); }
+  private tutorialHand: Phaser.GameObjects.Graphics | null = null;
+  /** The guide's arrow above the suggested cell while no cell is chosen: the yellow arrow of the rabbit move, without any emoji font. */
+  private syncTutorialHand(): void {
+    const cell = this.tutorialCell && this.placement && !this.placement.cell && !this.photo ? this.tutorialCell : null;
+    if (!cell) { this.tutorialHand?.destroy(); this.tutorialHand = null; return; }
+    const key = `${cell.x},${cell.y}`;
+    if (this.tutorialHand?.getData('cell') === key) return;
+    this.tutorialHand?.destroy();
+    const p = toScreen(finePoint(cell.x + FINE_GRID / 2, cell.y + FINE_GRID / 2));
+    const arrow = this.tutorialHand = this.add.graphics().setDepth(3).setData('cell', key).setData('anchor', p);
+    const points = [{x:-9,y:-20},{x:9,y:-20},{x:9,y:0},{x:19,y:0},{x:0,y:19},{x:-19,y:0},{x:-9,y:0}];
+    arrow.fillStyle(0xf4d58b).lineStyle(3, 0x396447).fillPoints(points, true).strokePoints(points, true);
+    this.placeTutorialHand(this.time.now);
+  }
+  /** Constant on-screen size whatever the zoom, gently bouncing above the cell (still with reduced motion). */
+  private placeTutorialHand(time: number): void {
+    const arrow = this.tutorialHand; if (!arrow) return;
+    const p = arrow.getData('anchor') as Point, k = 1 / this.view.zoom;
+    const bounce = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : Math.sin(time / 250) * 5;
+    arrow.setScale(k).setPosition(p.x, p.y - (34 + bounce) * k);
+  }
   setTutorialTarget(target: 'birth'|null): void { if(this.tutorialTarget === target)return; this.tutorialTarget = target; if(this.bubbles)this.drawBubbles(); }
   setPlacement(placement: Placement | null): void { this.placement = placement; if (this.grid) this.renderState(); }
   setArrangement(active: boolean, ghost: DecorationGhost | null = null): void {
@@ -332,6 +353,7 @@ export class MeadowScene extends Phaser.Scene {
   }
   setPhoto(active: boolean): void {
     this.photo = active;
+    this.syncTutorialHand();
     this.syncProgressBars();
     this.drawDecorationSelection();
     this.bubbles?.setVisible(!active); this.grid?.setVisible(!active); this.markers?.setVisible(!active); this.ghostView?.setVisible(!active); this.buildingGhost?.setVisible(!active && !!this.placement?.cell); this.nurseryOverlays?.setGhostVisible(!active && this.placement?.kind==='nursery' && !!this.placement.cell); this.updateDetails();
@@ -710,6 +732,7 @@ export class MeadowScene extends Phaser.Scene {
     this.gridStroke();
   }
   private drawGrid(): void {
+    this.syncTutorialHand();
     this.grid.clear(); this.markers.clear(); this.buildingGhost?.setVisible(false); this.nurseryOverlays?.hideGhost(); this.gridZoom = this.view.zoom; this.gridStroke = null;
     this.purchaseLabels.splice(0).forEach(label => label.destroy());
     if (this.purchase && this.current) {
@@ -872,6 +895,7 @@ export class MeadowScene extends Phaser.Scene {
   }
   update(time: number): void {
     this.drawRabbitDrops(time);
+    this.placeTutorialHand(time);
     if (this.time.now - this.progressUpdatedAt >= 100) this.syncProgressBars();
     // A pinch changes the zoom on every pointer event: re-stroke the cached overlay at most once per frame.
     if (this.gridStroke && this.gridZoom !== this.view.zoom) this.gridStroke();

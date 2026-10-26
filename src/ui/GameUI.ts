@@ -1725,7 +1725,8 @@ export class GameUI {
     const s = this.snapshot.state!, task = onboardingTask(s,this.preferences.value,this.now());
     const buttons = [...this.content.querySelectorAll<HTMLButtonElement>('button')];
     let target: HTMLButtonElement | undefined;
-    if (this.view?.kind === 'placement') target = buttons.find(b => /^(Acheter et placer|Confirmer)/.test(b.textContent ?? ''));
+    // Until a cell is chosen the confirmation stays disabled: the hand points at the yellow square on the island instead (scene).
+    if (this.view?.kind === 'placement') target = buttons.find(b => !b.disabled && /^(Acheter et placer|Confirmer)/.test(b.textContent ?? ''));
     else if (this.view?.kind === 'buyRabbit') target = this.rabbitDestination ? buttons.find(b => b.hasAttribute('data-confirm-purchase')) : buttons.find(b => /Jardin enneigé/.test(b.textContent ?? ''));
     else if (this.view?.kind === 'shop') {
       const title = ({snowShop:'Jardin enneigé',rabbitShop:SPECIES.neige.name,farmShop:'Ferme'} as Record<string,string>)[task.step.id];
