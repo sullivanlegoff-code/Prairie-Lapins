@@ -9,6 +9,31 @@
   --menu-muted: #534b38;
 }
 
+/* Element medallions retain a literal, screen-reader-only name. */
+.element-icon { display: inline-flex; width: 22px; height: 22px; vertical-align: middle; }
+.element-icon img { width: 100%; height: 100%; object-fit: contain; }
+#game-panel.center-card[data-elements] #panel-content > .badge .element-icon { width: 28px; height: 28px; }
+[data-rarity] { --rarity-ink: #634a2e; --rarity-line: #a58a67; --rarity-paper: #f4e8d4; }
+[data-rarity="rare"] { --rarity-ink: #244e75; --rarity-line: #7299b8; --rarity-paper: #e4eff7; }
+[data-rarity="epic"] { --rarity-ink: #62387c; --rarity-line: #a084b5; --rarity-paper: #f1e7f6; }
+[data-rarity="legendary"] { --rarity-ink: #695019; --rarity-line: #bd9643; --rarity-paper: #fbefcb; }
+[data-rarity="mythic"] { --rarity-ink: #583c69; --rarity-line: #a183aa; --rarity-paper: #f6eaf5; }
+.portrait[data-rarity] { outline: 2px solid var(--rarity-line); outline-offset: 2px; border-radius: 18px; }
+.portrait[data-rarity="legendary"] { box-shadow: 0 0 9px 3px #d7ad4a35; }
+.portrait[data-rarity="mythic"] { background-image: linear-gradient(125deg, #f6d6d4, #f9e8bb, #d6edd9, #d4e5f7, #e8d8f3); }
+.rarity-label { display: inline-block; padding: 1px 7px; border-radius: 10px; color: var(--rarity-ink); background: var(--rarity-paper); border: 1px solid var(--rarity-line); font-size: .9em; }
+/* Opaque pastel paper under dark ink: every endpoint exceeds 4.5:1, including muted text.
+   Tiny scattered seeds suggest the field journal; the element palette supplies their tint. */
+#game-panel.center-card[data-elements] .panel-scroll,
+#game-panel .card[data-elements] {
+  color: var(--menu-ink);
+  background-color: var(--element-from);
+  background-image: radial-gradient(ellipse at 4px 5px, #6550300a 0 1px, transparent 2px), linear-gradient(115deg, var(--element-from), var(--element-to));
+  background-size: 19px 23px, 100% 100%;
+}
+/* The opaque fill of nine-slice frames would hide the element wash. Keep the stitched edge. */
+#game-panel .card[data-elements] { border-image-source: var(--menu-stitch); border-image-slice: 32; }
+
 /* Linen sits inside the approved stone shell, including centered sheets. */
 #game-panel .panel-scroll,
 dialog:not(.paille-dialogue):not(.cuisine-activity),

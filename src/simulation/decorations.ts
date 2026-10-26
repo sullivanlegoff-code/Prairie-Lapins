@@ -13,7 +13,8 @@ export function purchaseDecorationReason(s: GameState, catalogId: DecorationId):
   if (!Object.hasOwn(DECORATIONS, catalogId)) return 'INVALID_CHOICE';
   if (stateLevelAccess(s,{family:'decoration',id:catalogId}).locked) return 'LEVEL_REQUIRED';
   if (s.decorations.length >= MAX_DECORATIONS || !Number.isSafeInteger(s.nextId + 1)) return 'DECORATION_LIMIT';
-  return s.pattes < DECORATIONS[catalogId].price ? 'NOT_ENOUGH_PATTES' : null;
+  const d = DECORATIONS[catalogId];
+  return d.heartPrice !== undefined ? (s.hearts < d.heartPrice ? 'NOT_ENOUGH_HEARTS' : null) : s.pattes < d.price ? 'NOT_ENOUGH_PATTES' : null;
 }
 /** Used by commands, imports, ghosts and fine-grid feedback. Moving excludes only itself. */
 export function decorationPlacementReason(s: PlacementState, id: string, location: DecorationLocation, geometry: IslandGeometry = ISLAND): Refusal | null {

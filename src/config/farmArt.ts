@@ -1,4 +1,4 @@
-/** Presentation only: one shared static texture. No footprint, camera or saved-state data. */
+/** Presentation only: two registered textures sharing the same furrows. No footprint, camera or saved-state data. */
 export const FARM_PALETTE: 'original' | 'light' | 'nest' = 'nest';
 const FARM_FILE = {original: 'farm-windmill', light: 'farm-windmill-light', nest: 'farm-windmill-nest'}[FARM_PALETTE];
 export const FARM_ART = {
@@ -14,3 +14,5 @@ export const FARM_ART = {
    */
   furrows: {T: [910, 645], L: [680, 735], R: [1180, 810], rows: 5, perRow: 5, along: [.3, .86], sproutSize: 46, ripeSize: 62},
 } as const;
+
+export const FARM_LEVEL_1_ART = {...FARM_ART, texture: "farm-level-1", url: import.meta.env.BASE_URL + "assets/buildings/farm-level-1.png"} as const;

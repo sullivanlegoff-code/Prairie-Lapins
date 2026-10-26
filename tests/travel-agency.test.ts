@@ -87,22 +87,22 @@ describe('travel agency rules', () => {
       {type: 'moveRabbit', id: 'rabbit-2', enclosureId: home}, {type: 'release', id: 'rabbit-2'},
       {type: 'rewardCuisine', rabbitId: 'rabbit-2', recipeId: 'salad'},
     ];
-    for (const now of [0, s.travel!.trip!.endsAt]) for (const command of blocked)
+    for (const now of [0, s.travel!.trips[0]!.endsAt]) for (const command of blocked)
       expect(act(s, command, now)).toMatchObject({ok: false, reason: 'TRAVELING'});
     expect(advance(s, HOUR).rabbits[0].enclosureId).toBe(home);
     expect(advance(s, HOUR).buildings[0].incomeUnits).toBe(22 * HOUR);
-    expect(act(s, {type: 'claimTrip'}, 3 * HOUR - 1)).toMatchObject({ok: false, reason: 'NOT_READY'});
+    expect(act(s, {type: 'claimTrip', rabbitId: 'rabbit-2'}, 3 * HOUR - 1)).toMatchObject({ok: false, reason: 'NOT_READY'});
     const hearts = s.hearts;
-    s = run(s, {type: 'claimTrip'}, 3 * HOUR);
+    s = run(s, {type: 'claimTrip', rabbitId: 'rabbit-2'}, 3 * HOUR);
     expect(s.hearts).toBe(hearts + 1);
-    expect(s.travel!.trip).toBeNull();
-    expect(act(s, {type: 'claimTrip'}, 3 * HOUR)).toMatchObject({ok: false, reason: 'NOT_READY'});
-    expect(run(s, {type: 'startTrip', rabbitId: 'rabbit-2'}).travel!.trip).not.toBeNull();
+    expect(s.travel!.trips).toHaveLength(0);
+    expect(act(s, {type: 'claimTrip', rabbitId: 'rabbit-2'}, 3 * HOUR)).toMatchObject({ok: false, reason: 'NOT_READY'});
+    expect(run(s, {type: 'startTrip', rabbitId: 'rabbit-2'}).travel!.trips).toHaveLength(1);
   });
 
   it.each([0, .5, 1 - Number.EPSILON])('credits the exact souvenir at return (roll %s)', roll => {
-    const s = run(agency(), {type: 'startTrip', rabbitId: 'rabbit-2'}, 0, roll), trip = s.travel!.trip!;
-    expect(run(s, {type: 'claimTrip'}, trip.endsAt).hearts - s.hearts).toBe(tripHearts((trip.endsAt - trip.startedAt) / HOUR));
+    const s = run(agency(), {type: 'startTrip', rabbitId: 'rabbit-2'}, 0, roll), trip = s.travel!.trips[0]!;
+    expect(run(s, {type: 'claimTrip', rabbitId: 'rabbit-2'}, trip.endsAt).hearts - s.hearts).toBe(tripHearts((trip.endsAt - trip.startedAt) / HOUR));
   });
 
   it('reports TRAVELING for breeding even when the traveller has affection 1', () => {
@@ -121,14 +121,14 @@ describe('travel agency rules', () => {
     const s = run(agency(), {type: 'startTrip', rabbitId: 'rabbit-2'});
     expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: s});
     const mutations: ((s: GameState) => void)[] = [
-      s => { s.travel!.trip!.endsAt = 3 * HOUR + 1; },
-      s => { s.travel!.trip!.endsAt = 2 * HOUR; },
-      s => { s.travel!.trip!.endsAt = 11 * HOUR; },
-      s => { s.travel!.trip!.hearts = 3; },
-      s => { s.travel!.trip!.rabbitId = 'rabbit-999'; },
+      s => { s.travel!.trips[0]!.endsAt = 3 * HOUR + 1; },
+      s => { s.travel!.trips[0]!.endsAt = 2 * HOUR; },
+      s => { s.travel!.trips[0]!.endsAt = 11 * HOUR; },
+      s => { s.travel!.trips[0]!.hearts = 3; },
+      s => { s.travel!.trips[0]!.rabbitId = 'rabbit-999'; },
       s => { s.buildings = s.buildings.filter(b => b.kind !== 'agency'); },
-      s => { s.travel!.trip!.destination = 'inconnue' as typeof TRAVEL.destinations[number]; },
-      s => { s.travel!.trip!.startedAt++; s.travel!.trip!.endsAt++; },
+      s => { s.travel!.trips[0]!.destination = 'inconnue' as typeof TRAVEL.destinations[number]; },
+      s => { s.travel!.trips[0]!.startedAt++; s.travel!.trips[0]!.endsAt++; },
     ];
     for (const mutate of mutations) {
       const bad = structuredClone(s); mutate(bad);
@@ -143,10 +143,10 @@ describe('travel agency rules', () => {
   it('preserves remaining travel time after a large backward clock change, including after reload', () => {
     const s = run(agency(10 * HOUR), {type: 'startTrip', rabbitId: 'rabbit-2'});
     const rebased = advance(s, HOUR);
-    expect(rebased.travel!.trip).toMatchObject({startedAt: HOUR, endsAt: 4 * HOUR});
+    expect(rebased.travel!.trips[0]).toMatchObject({startedAt: HOUR, endsAt: 4 * HOUR});
     expect(decodeGame(encodeGame(rebased))).toEqual({ok: true, state: rebased});
-    expect(act(rebased, {type: 'claimTrip'}, 4 * HOUR - 1)).toMatchObject({ok: false, reason: 'NOT_READY'});
-    expect(run(rebased, {type: 'claimTrip'}, 4 * HOUR).hearts).toBe(s.hearts + 1);
+    expect(act(rebased, {type: 'claimTrip', rabbitId: 'rabbit-2'}, 4 * HOUR - 1)).toMatchObject({ok: false, reason: 'NOT_READY'});
+    expect(run(rebased, {type: 'claimTrip', rabbitId: 'rabbit-2'}, 4 * HOUR).hearts).toBe(s.hearts + 1);
   });
 });
 
@@ -206,6 +206,47 @@ function mount(s: GameState, clock = {now: 0}) {
 }
 
 describe('agency interface and French text', () => {
+  it('lists independent returns, keeps Coco and confirms the next Heart upgrade', () => {
+    let s = secondRabbit(agency()); const id = s.buildings.at(-1)!.id;
+    s.hearts = 200; s = run(s, {type: 'welcomeAgency'});
+    s = run(s, {type: 'upgradeAgency', id, fromLevel: 1});
+    for (const rabbit of s.rabbits) s = run(s, {type: 'startTrip', rabbitId: rabbit.id});
+    const clock = {now: 3 * HOUR}, {ui, controller} = mount(s, clock);
+    ui.select({kind: 'building', id});
+    expect(panel().querySelectorAll('.agency-return')).toHaveLength(2);
+    expect(panel().querySelectorAll('.traveller-bubble')).toHaveLength(2);
+    expect(panel().querySelectorAll('.agency-host-portrait')).toHaveLength(1);
+    expect(panel().querySelector('.agency-travellers')).toBeNull();
+    panel().querySelector<HTMLButtonElement>('.agency-return button')!.click();
+    expect(controller.getSnapshot().state!.travel!.trips).toHaveLength(1);
+    expect(controller.getSnapshot().state!.grass).toBe(75);
+    expect(panel().querySelectorAll('[data-traveller]')).toHaveLength(1);
+    const before = controller.getSnapshot().state!.hearts;
+    [...panel().querySelectorAll<HTMLButtonElement>('.heart-spend')].find(b => b.textContent!.includes('Améliorer'))!.click();
+    expect(controller.getSnapshot().state!.hearts).toBe(before);
+    const confirm = [...document.querySelectorAll<HTMLButtonElement>('#game-dialog button')].find(b => b.textContent === 'Confirmer');
+    confirm!.click();
+    expect(controller.getSnapshot().state!.buildings.at(-1)!.agencyLevel).toBe(3);
+    expect(controller.getSnapshot().state!.hearts).toBe(before - 120);
+  });
+  it('locks advanced crops, confirms farm expansion during a crop, and explains precious resale', () => {
+    let s = atLevel(22); s.hearts = 200; s = run(s, {type: 'buyBuilding', kind: 'farm', ...free(s)});
+    const id = s.buildings.at(-1)!.id; s.startCourse = undefined;
+    const {ui, controller} = mount(s); ui.select({kind: 'building', id});
+    expect(panel().querySelectorAll('.farm-order-locked')).toHaveLength(5);
+    expect(panel().querySelector('[data-crop="fanes"]')!.textContent).toContain('Ferme niveau 2');
+    panel().querySelector<HTMLButtonElement>('[data-crop="foin"] button')!.click();
+    expect(controller.getSnapshot().state!.buildings.at(-1)!.order).not.toBeNull();
+    [...panel().querySelectorAll<HTMLButtonElement>('.heart-spend')].find(b => b.textContent!.includes('Améliorer'))!.click();
+    expect(controller.getSnapshot().state!.hearts).toBe(200);
+    [...document.querySelectorAll<HTMLButtonElement>('#game-dialog button')].find(b => b.textContent === 'Confirmer')!.click();
+    expect(controller.getSnapshot().state!.hearts).toBe(170);
+    expect(controller.getSnapshot().state!.buildings.at(-1)!.farmLevel).toBe(2);
+    controller.perform({type: 'buyDecoration', catalogId: 'robot-statue'});
+    ui.select({kind: 'decoration', id: controller.getSnapshot().state!.decorations[0].id});
+    const sell = [...panel().querySelectorAll<HTMLButtonElement>('button')].find(b => b.textContent!.startsWith('Vendre'))!;
+    expect(sell.disabled).toBe(true); expect(panel().textContent).toContain('Objet précieux : il ne se revend pas.');
+  });
   it('uses the correct prepositions for all destinations', () => {
     expect(TRAVEL.destinations.map(toPlace)).toEqual(['à Londres', 'à Vannes', 'au Caire', 'à Hammamet', 'au Lavandou', 'à Bandol', 'à Lille', 'à Paris', 'à Marrakech']);
     expect(TRAVEL.destinations.map(fromPlace)).toEqual(['de Londres', 'de Vannes', 'du Caire', 'd’Hammamet', 'du Lavandou', 'de Bandol', 'de Lille', 'de Paris', 'de Marrakech']);
@@ -233,7 +274,7 @@ describe('agency interface and French text', () => {
     const reloaded = mount(travelling, clock);
     reloaded.ui.select({kind: 'building', id});
     expect(panel().querySelector('.agency-step')).toBeNull();
-    clock.now = travelling.travel!.trip!.endsAt;
+    clock.now = travelling.travel!.trips[0]!.endsAt;
     reloaded.ui.select({kind: 'building', id});
     expect(panel().querySelector('.agency-host')!.textContent).toBe('De retour de Londres : voici Lapin Paille ! Viens l’accueillir.');
     expect(panel().querySelector('.traveller-bubble')!.textContent).toContain('Ces vacances à Londres étaient super !');
@@ -241,7 +282,7 @@ describe('agency interface and French text', () => {
     expect(button.textContent).toBe('Accueillir · + 1 cœur'); button.click();
     const returned = reloaded.controller.getSnapshot().state!;
     expect(returned.hearts).toBe(travelling.hearts + 1);
-    expect(returned.travel).toEqual({welcomed: true, trip: null});
+    expect(returned.travel).toEqual({welcomed: true, trips: []});
     expect(decodeGame(encodeGame(returned))).toEqual({ok: true, state: returned});
     expect(panel().querySelector('.agency-host-portrait')).not.toBeNull();
     expect(panel().querySelector('.agency-step')).toBeNull();

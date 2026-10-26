@@ -60,7 +60,7 @@ describe('saves before the ten crops', () => {
     for (const [recipe, crop, grass, duration] of [['small', 'foin', 20, 5 * MINUTE], ['medium', 'trefle', 60, 30 * MINUTE], ['large', 'fenouil', 180, 4 * HOUR], ['night', 'banane', 360, 10 * HOUR]] as const) {
       legacy.buildings.at(-1).order = {recipe, startedAt: 0, endsAt: duration};
       const decoded = decodeGame(JSON.stringify(legacy)); if (!decoded.ok) throw Error(decoded.reason);
-      expect(decoded.state.version).toBe(18);
+      expect(decoded.state.version).toBe(19);
       expect(decoded.state.buildings.at(-1)!.order).toEqual({recipe: crop, startedAt: 0, endsAt: duration, grass, duration});
     }
   });

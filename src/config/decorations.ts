@@ -1,9 +1,9 @@
 /** Removed catalogue IDs: discard owned copies when decoding v16 saves, without compensation. */
 export const RETIRED_DECORATION_IDS = ['wildflowers', 'flowering-bush', 'moss-rock', 'garden-lantern', 'wood-bench', 'flower-arch', 'fruit-tree', 'small-pond', 'soft-cushion', 'ball-toys', 'play-tunnel', 'small-parasol'] as const;
-/** Stable save identifiers. Prices are pattes only; decoration has no gameplay bonus. */
+/** Stable save identifiers. Precious objects have a Heart price; decoration has no gameplay bonus. */
 export const DECORATION_IDS = ['dirt-path', 'bush', 'tree', 'hay-bale', 'bunny-slippers', 'birthday-candle', 'small-bookcase', 'coconut-palm', 'otter-plush', 'large-bookcase', 'hanukkah-menorah', 'honey-pot', 'robot-statue'] as const;
 export type DecorationId = typeof DECORATION_IDS[number];
-export interface DecorationDefinition {name: string; price: number; area: 'outside'; width: number; height: number; rotates: boolean; level?: number; art: {
+export interface DecorationDefinition {name: string; price: number; heartPrice?: number; area: 'outside'; width: number; height: number; rotates: boolean; level?: number; art: {
   /** Relative to the Vite base; displayed width in world units before camera zoom. */
   file: string; worldWidth: number;
   /** Normalised ground contact within the cropped texture. */
@@ -23,16 +23,17 @@ export const DECORATIONS: Record<DecorationId, DecorationDefinition> = {
   'hanukkah-menorah': {name: 'Ménorah de Hanoucca', price: 2500, area: 'outside', width: 1, height: 1, rotates: false, level: 14, art: {file: 'assets/decorations/hanukkah-menorah.png', worldWidth: 43, anchor: {x: .5, y: 0.94}}},
   // Owner's own artwork, shipped unchanged (only cropped and reduced like every decoration).
   'honey-pot': {name: 'Pot de miel géant', price: 70, area: 'outside', width: 2, height: 2, rotates: false, level: 4, art: {file: 'assets/decorations/honey-pot.png', worldWidth: 95, anchor: {x: .5, y: 0.9}}},
-  'robot-statue': {name: 'Statue du robot noir et doré', price: 15000, area: 'outside', width: 2, height: 2, rotates: false, level: 22, art: {file: 'assets/decorations/robot-statue.png', worldWidth: 52, anchor: {x: .5, y: 0.95}}},
+  'robot-statue': {name: 'Statue du robot noir et doré', price: 15000, heartPrice: 80, area: 'outside', width: 2, height: 2, rotates: false, level: 22, art: {file: 'assets/decorations/robot-statue.png', worldWidth: 52, anchor: {x: .5, y: 0.95}}},
 };
 export const FINE_GRID = 4;
 /** A generous bound keeps imports and low-end devices bounded; never discards owned objects. */
 export const MAX_DECORATIONS = 512;
 
-/** Decorations only: refund pattes, never hearts. */
+/** Decorations only: refund pattes for historical coin receipts only, never hearts. */
 export const DECORATION_RESALE_RATE = .5;
 const LEGACY_PRICES: Partial<Record<DecorationId, number>> = {'small-bookcase': 160, 'coconut-palm': 130, 'otter-plush': 200, 'hanukkah-menorah': 150, 'large-bookcase': 400, 'robot-statue': 500};
 export const decorationResalePrice = (id: DecorationId): number => Math.floor(DECORATIONS[id].price * DECORATION_RESALE_RATE);
 /** Old exemplars have no receipt; use the pre-refonte catalogue as their paid-price cap. */
-export const ownedDecorationResalePrice = (owned: {catalogId: DecorationId; paidPrice?: number}): number =>
+export const ownedDecorationResalePrice = (owned: {catalogId: DecorationId; paidPrice?: number; paidHearts?: number}): number =>
+  owned.paidHearts !== undefined ? 0 :
   Math.min(decorationResalePrice(owned.catalogId), owned.paidPrice ?? LEGACY_PRICES[owned.catalogId] ?? DECORATIONS[owned.catalogId].price);

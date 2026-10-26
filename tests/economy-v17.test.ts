@@ -12,8 +12,8 @@ import {habitatLevel,habitatPrice,HABITAT_TYPES} from '../src/config/habitats';
 function migrated(raw:unknown=fixture){const d=decodeGame(JSON.stringify(raw));expect(d.ok).toBe(true);if(!d.ok)throw Error(d.reason);return d.state;}
 describe('v16 → v17 economy migration (fixture encoded by the actual v16 writer)',()=>{
  it('preserves balances, individuals, stored income and exact pending births without a draw',()=>{
-  const s=migrated();expect(s.version).toBe(18);for(const key of ['pattes','grass','hearts','rabbits','discovered','recipeBook','lastSimulatedAt','nextId','nextHeartGiftAt'] as const)expect(s[key]).toEqual(fixture[key]);
-  expect(s.buildings.map(b=>({...b,order:null}))).toEqual(fixture.buildings.map(b=>({...b,order:null})));expect(s.pityFailures).toBe(7);
+  const s=migrated();expect(s.version).toBe(19);for(const key of ['pattes','grass','hearts','rabbits','discovered','recipeBook','lastSimulatedAt','nextId','nextHeartGiftAt'] as const)expect(s[key]).toEqual(fixture[key]);
+  expect(s.buildings.map(b=>({...b,order:null}))).toEqual(fixture.buildings.map(b=>({...b,...(b.kind==='farm'?{farmLevel:2}:{}),order:null})));expect(s.pityFailures).toBe(7);
   expect(decodeGame(encodeGame(s))).toEqual({ok:true,state:s});
  });
  it('preserves level and fractional progress with at most one XP rounding; no loading Hearts',()=>{
@@ -27,7 +27,7 @@ describe('v16 → v17 economy migration (fixture encoded by the actual v16 write
  });
  it.each([0,1,2,3,20])('converts old affection progress %s and preserves claimed/earned rewards',progress=>{const raw=structuredClone(fixture);raw.missions.daily.progress['gain-affection']=progress;raw.missions.daily.claimed=[];expect(migrated(raw).missions.daily.progress['gain-affection']).toBe(progress>=3?1:0);const s=migrated();expect(s.missions.daily.claimed).toEqual(['gain-affection']);expect(act(s,{type:'claimDailyMission',id:'gain-affection',cycleStart:s.missions.daily.referenceAt},s.lastSimulatedAt)).toMatchObject({ok:false,reason:'ALREADY_CLAIMED'});});
  it('marks historically placed decoration models, including already stored exemplars',()=>{const raw=structuredClone(fixture) as unknown as Record<string,unknown>;raw.decorations=[{id:'decoration-10',catalogId:'bush',location:{kind:'inventory'},placementXpProcessed:true}];raw.nextId=11;expect(migrated(raw).rewardedDecorationModels).toEqual(['bush']);});
- it('still refuses versions 1–15, invalid v16 and future versions',()=>{for(let version=1;version<=15;version++)expect(decodeGame(JSON.stringify({version}))).toEqual({ok:false,reason:'INCOMPATIBLE_CATALOG'});expect(decodeGame('{"version":16}')).toEqual({ok:false,reason:'INVALID_STATE'});expect(decodeGame('{"version":19}')).toEqual({ok:false,reason:'UNSUPPORTED_VERSION'});});
+ it('still refuses versions 1–15, invalid v16 and future versions',()=>{for(let version=1;version<=15;version++)expect(decodeGame(JSON.stringify({version}))).toEqual({ok:false,reason:'INCOMPATIBLE_CATALOG'});expect(decodeGame('{"version":16}')).toEqual({ok:false,reason:'INVALID_STATE'});expect(decodeGame('{"version":20}')).toEqual({ok:false,reason:'UNSUPPORTED_VERSION'});});
 });
 describe('economy invariants',()=>{
  it('stores less in the first habitats at levels 1 and 2, the same maximum at level 3, and always a full night',()=>{const order=['paille','neige','feu','universal','metal','vol'] as const;for(const level of [1,2] as const){const caps=order.map(t=>habitatLevel(t,level).cap);for(let i=1;i<caps.length;i++)expect(caps[i]).toBeGreaterThan(caps[i-1]);}expect(new Set(HABITAT_TYPES.map(t=>habitatLevel(t,3).cap))).toEqual(new Set([5600]));expect(habitatLevel('vol',2).cap).toBeLessThan(habitatLevel('paille',3).cap);for(const type of HABITAT_TYPES)for(const level of [1,2,3] as const){const h=habitatLevel(type,level);expect(h.cap).toBeGreaterThanOrEqual(h.capacity*36*12);if(level===2)expect(h.cost).toBe(habitatPrice(type)/2);}});
@@ -40,7 +40,7 @@ describe('persistent economy transactions',()=>{
  it('loads and rewrites a real v16 through the controller, with no reset or extra Hearts on repeated loads',()=>{
   const data=new Map([[SAVE_KEY,JSON.stringify(fixture)]]),storage={getItem:(k:string)=>data.get(k)??null,setItem:(k:string,v:string)=>{data.set(k,v);}};
   const first=new GameController(storage,()=>fixture.lastSimulatedAt),state=first.getSnapshot().state!;
-  expect(first.getSnapshot()).toMatchObject({status:'saved',catalogReset:false});expect(state.rabbits).toEqual(fixture.rabbits);expect(state.hearts).toBe(fixture.hearts);expect(JSON.parse(data.get(SAVE_KEY)!).version).toBe(18);first.dispose();
+  expect(first.getSnapshot()).toMatchObject({status:'saved',catalogReset:false});expect(state.rabbits).toEqual(fixture.rabbits);expect(state.hearts).toBe(fixture.hearts);expect(JSON.parse(data.get(SAVE_KEY)!).version).toBe(19);first.dispose();
   const second=new GameController(storage,()=>fixture.lastSimulatedAt);expect(second.getSnapshot().state).toEqual(state);second.dispose();
  });
  it('pays herbs, never XP, for duplicate releases and retains both refusal rules',()=>{

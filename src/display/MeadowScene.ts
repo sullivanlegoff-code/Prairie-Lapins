@@ -1,3 +1,5 @@
+import {deriveArdentFlames, ardentFlamePose} from './ardentFlames';
+import {elementUrl} from './rabbitPresentation';
 import {islandOutline, organicLoop, parcelSetKey} from './islandOutline';
 import {nestForParent} from '../simulation/breeding';
 import {rabbitArt, type RabbitArt} from '../config/rabbitArt';
@@ -15,7 +17,7 @@ import {STATUE_ART} from '../config/statueArt';
 import {AGENCY_ART} from '../config/agencyArt';
 import {travelling, tripReady} from '../simulation/travel';
 import {FarmCrops} from './farmCrops';
-import {FARM_ART} from '../config/farmArt';
+import {FARM_ART, FARM_LEVEL_1_ART} from '../config/farmArt';
 import {NEST_ART} from '../config/nestArt';
 import {NURSERY_ART} from '../config/nurseryArt';
 import {NurseryOverlays} from './nurseryOverlays';
@@ -44,13 +46,14 @@ import {BUILDING_NAMES, type Placement} from '../ui/models';
 import {SPECIES, proceduralCoat} from '../config/species';
 import {bindMeadowInput} from './meadowInput';
 import {ownedRegions, recenterCamera, type ScreenChrome} from './recenter';
-import {COIN_TEXTURE, COIN_URL, FOOD_TEXTURE, FOOD_URL} from './currency';
+import {COIN_TEXTURE, COIN_URL, FOOD_TEXTURE, FOOD_URL, HEART_TEXTURE, HEART_URL} from './currency';
 import {coinBubble} from './currencyPhaser';
 
 export type MeadowSelection = {kind: 'building' | 'rabbit' | 'income' | 'grass' | 'decoration' | 'birth'; id: string} | {kind: 'cell' | 'fineCell'; x: number; y: number} | {kind: 'extension'; parcelId?: ParcelId} | {kind: 'empty'};
 export interface DecorationGhost {id: string; catalogId?: DecorationId; location: DecorationLocation | null}
 /** `object` is the ground point (position, depth, scale); `body` carries the hop height, squash and mirror, apart from the shadow. */
 interface VisualRabbit {id: string; object: Phaser.GameObjects.Container; body: Phaser.GameObjects.Container; ears: Phaser.GameObjects.Ellipse[]; sprite?: Phaser.GameObjects.Image; art?: RabbitArt; base: Point; phase: number; fedUntil: number;
+  flames?: Phaser.GameObjects.Image;
   face?: {seed: number; eyes: Phaser.GameObjects.Image; nose: Phaser.GameObjects.Image};
   center: Point; group: string; motion?: RabbitMotion; lift: number;
   /** Centre of the visible body in body space: the somersault turns about it, not about the feet or the picture centre. */
@@ -115,11 +118,14 @@ export class MeadowScene extends Phaser.Scene {
   preload(): void {
     if (this.loading) { const l = this.loading; this.load.on('progress', (v: number) => l.progress(v)); this.load.on('loaderror', (file: {key: string}) => l.error(file.key)); }
     this.load.image(COIN_TEXTURE, COIN_URL);
+    this.load.image(HEART_TEXTURE, HEART_URL);
+    for (const type of ['paille', 'neige', 'feu', 'metal', 'vol'] as const) this.load.image(`element-${type}`, elementUrl(type));
     for (const art of ISLAND_ART) if (!this.textures.exists(art.texture)) this.load.image(art.texture, art.url);
     if (!this.textures.exists(GRASS_TILE.texture)) this.load.image(GRASS_TILE.texture, GRASS_TILE.url);
     // Only the painting of the current stage is loaded at start; a later stage loads when it is bought.
     const stage = islandStage(this.controller.getSnapshot().state?.acquiredParcels ?? []);
     if (stage) queueStage(this, stageArt(stage));
+    if (!this.textures.exists(FARM_LEVEL_1_ART.texture)) this.load.image(FARM_LEVEL_1_ART.texture, FARM_LEVEL_1_ART.url);
     if (!this.textures.exists(FARM_ART.texture)) this.load.image(FARM_ART.texture, FARM_ART.url);
     if (!this.textures.exists(NEST_ART.texture)) this.load.image(NEST_ART.texture, NEST_ART.url);
     if (!this.textures.exists(NURSERY_ART.texture)) this.load.image(NURSERY_ART.texture, NURSERY_ART.url);
@@ -334,7 +340,7 @@ export class MeadowScene extends Phaser.Scene {
     if (!this.ensureArt()) return;
     const s = this.current;
     if (s) { this.view.setColumns(visibleColumns(s)); this.updateVisibleRegions(); this.applyCamera(); }
-    const key = JSON.stringify([s?.acquiredParcels, s?.buildings.map(b => [b.id, b.kind, b.x, b.y, b.habitat, b.breeding?.parents]), s?.rabbits.map(r => [r.id, r.species, r.enclosureId]), s?.travel?.trip?.rabbitId]);
+    const key = JSON.stringify([s?.acquiredParcels, s?.buildings.map(b => [b.id, b.kind, b.x, b.y, b.habitat, b.farmLevel, b.agencyLevel, b.breeding?.parents]), s?.rabbits.map(r => [r.id, r.species, r.enclosureId]), s?.travel?.trips.map(t => t.rabbitId)]);
     if (key !== this.layoutKey) { this.layoutKey = key; this.drawGround(); this.drawBuildings(); this.drawAnimals(); }
     // The cushion overlays follow the canonical state and simulation time on every refresh (a no-op when nothing changed).
     this.nurseryOverlays?.sync(s);
@@ -428,8 +434,8 @@ export class MeadowScene extends Phaser.Scene {
     }
     this.ground.setMask(this.islandMask!);
   }
-  private buildingTexture(b: Pick<Building, 'kind' | 'habitat' | 'footprintTier'>): string {
-    if (b.kind === 'farm') return FARM_ART.texture;
+  private buildingTexture(b: Pick<Building, 'kind' | 'habitat' | 'footprintTier' | 'farmLevel'>): string {
+    if (b.kind === 'farm') return b.farmLevel === 2 ? FARM_ART.texture : FARM_LEVEL_1_ART.texture;
     if (b.kind === 'nest') return NEST_ART.texture;
     if (b.kind === 'nursery') return NURSERY_ART.texture;
     if (b.kind === 'kitchen') return KITCHEN_ART.texture;
@@ -512,6 +518,20 @@ export class MeadowScene extends Phaser.Scene {
           const sprite = this.add.image(0, art.groundY, art.texture).setOrigin(.5, 1);
           sprite.setScale(art.worldWidth / art.width); // Uniform scale preserves the original proportions.
           body.add(sprite);
+          let flames: Phaser.GameObjects.Image | undefined;
+          if (rabbit.species === 'ardent') {
+            const key = 'ardent-flame-overlay';
+            if (!this.textures.exists(key)) {
+              const canvas = this.textures.createCanvas(key, art.width, art.height)!;
+              const context = canvas.context;
+              context.drawImage(this.textures.get(art.texture).getSourceImage() as HTMLImageElement, 0, 0);
+              const pixels = context.getImageData(0, 0, art.width, art.height);
+              pixels.data.set(deriveArdentFlames(pixels.data, art.width, art.height));
+              context.putImageData(pixels, 0, 0); canvas.refresh();
+            }
+            flames = this.add.image(0, art.groundY, key).setOrigin(.5, 1).setScale(sprite.scaleX).setAlpha(.24);
+            body.add(flames);
+          }
           const blinkArt = rabbitBlinkArt(rabbit.species);
           const patches = blinkArt?.patches.map(patch => {
             const placement = rabbitPatchPlacement(art, patch);
@@ -520,7 +540,7 @@ export class MeadowScene extends Phaser.Scene {
           });
           const face = patches ? {seed: rabbitFaceSeed(rabbit.id), eyes: patches[0], nose: patches[1]} : undefined;
           this.animals.add(object);
-          this.rabbitViews.push({id: rabbit.id, ears: [], sprite, art, face, ...view});
+          this.rabbitViews.push({id: rabbit.id, ears: [], sprite, art, face, flames, ...view});
           return;
         }
         const coat = proceduralCoat(SPECIES[rabbit.species].art), color = Phaser.Display.Color.HexStringToColor(coat.body).color, patch = Phaser.Display.Color.HexStringToColor(coat.patch).color;
@@ -600,9 +620,8 @@ export class MeadowScene extends Phaser.Scene {
     const g = this.add.graphics();
     g.fillStyle(0x6e4a3a, .25); g.fillRoundedRect(-25, -21, 50, 46, 16);
     g.fillStyle(0xfff7dc); g.lineStyle(2, 0xe7c9a4); g.fillRoundedRect(-25, -24, 50, 46, 16); g.strokeRoundedRect(-25, -24, 50, 46, 16);
-    g.fillStyle(0xd2577a); g.fillCircle(-7, -7, 8); g.fillCircle(7, -7, 8); g.fillTriangle(-14.5, -4, 14.5, -4, 0, 12);
-    g.fillStyle(0xffe3ea); g.fillCircle(-9, -10, 2.5);
-    return this.add.container(x, y, [g]).setSize(50, 46);
+    const icon = this.add.image(0, -3, HEART_TEXTURE).setDisplaySize(32, 32);
+    return this.add.container(x, y, [g, icon]).setSize(50, 46);
   }
   /** Glides the camera to a building, zoom unchanged; instant when reduced motion is requested. */
   focusBuilding(id: string): void {
@@ -694,7 +713,7 @@ export class MeadowScene extends Phaser.Scene {
   private drawBuildingGrid(): void {
     if(!this.current || !this.placement)return;
     const p=this.placement;
-    const moving=this.current.buildings.find(b=>b.id===p.movingId), active=p.cell?{...p.cell,footprintTier:moving?.footprintTier}:moving;
+    const moving=this.current.buildings.find(b=>b.id===p.movingId), active=p.cell?{...p.cell,footprintTier:moving?.footprintTier,farmLevel:moving?.farmLevel}:moving;
     const lines=this.placementLines(active?buildingFootprint(active):null);
     if(!p.cell){this.setGridStroke(()=>{
       this.strokePlacementContext(lines);
@@ -709,9 +728,9 @@ export class MeadowScene extends Phaser.Scene {
     const habitat=p.kind==='enclosure'?(moving?.habitat??{type:p.habitatType??'universal',level:1 as const}):null;
     const illustration=habitatArtFor(habitat ?? undefined,moving?.footprintTier);
     if(illustration&&!this.textures.exists(illustration.texture))return;
-    if(!this.buildingGhost)this.buildingGhost=this.add.image(0,0,this.buildingTexture({kind:p.kind,habitat,footprintTier:moving?.footprintTier})).setDepth(1.5).setAlpha(.55).setScale(.5);
+    if(!this.buildingGhost)this.buildingGhost=this.add.image(0,0,this.buildingTexture({kind:p.kind,habitat,footprintTier:moving?.footprintTier,farmLevel:moving?.farmLevel})).setDepth(1.5).setAlpha(.55).setScale(.5);
     const tint=valid?0xe4ffb5:0xf3a6a1;
-    this.buildingGhost.setTexture(this.buildingTexture({kind:p.kind,habitat,footprintTier:moving?.footprintTier})).setTint(tint).setVisible(!this.photo);
+    this.buildingGhost.setTexture(this.buildingTexture({kind:p.kind,habitat,footprintTier:moving?.footprintTier,farmLevel:moving?.farmLevel})).setTint(tint).setVisible(!this.photo);
     this.positionBuildingArt(this.buildingGhost, center.x, center.y, p.kind, habitatArtFor(habitat ?? undefined, moving?.footprintTier));
     // The nursery's preview carries its four cushion states, with the ghost base's own opacity and valid/invalid tint.
     if(p.kind==='nursery')this.nurseryOverlays?.showGhost(this.current,moving??null,center,{alpha:this.buildingGhost.alpha,tint},!this.photo);
@@ -826,6 +845,10 @@ export class MeadowScene extends Phaser.Scene {
       rabbit.lift = lift;
       if (rabbit.object.depth !== previousDepth) depthChanged = true;
       this.poseBody(rabbit, {lift, squashX, squashY, facing, rotation});
+      if (rabbit.flames && rabbit.sprite) {
+        const pose = ardentFlamePose(rabbit.id, time, matchMedia('(prefers-reduced-motion: reduce)').matches);
+        rabbit.flames.setPosition(pose.x, rabbit.art!.groundY).setScale(rabbit.sprite.scaleX, rabbit.sprite.scaleY * pose.stretch).setAlpha(pose.alpha);
+      }
       if (rabbit.face) {
         const state = rabbitFaceState(rabbit.face.seed, time, !rabbit.motion || rabbit.motion.mode === 'rest');
         rabbit.face.eyes.setVisible((state & 1) !== 0);

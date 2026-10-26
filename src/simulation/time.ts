@@ -17,7 +17,7 @@ function rebaseClock(s: GameState, offset: number): void {
   s.lastSimulatedAt += offset;
   s.nextHeartGiftAt += offset;
   s.missions.daily.referenceAt += offset;
-  if (s.travel?.trip) { s.travel.trip.startedAt += offset; s.travel.trip.endsAt += offset; }
+  for (const trip of s.travel?.trips ?? []) { trip.startedAt += offset; trip.endsAt += offset; }
   for (const b of s.buildings) {
     if (b.order) { b.order.startedAt += offset; b.order.endsAt += offset; }
     if (b.breeding) { b.breeding.startedAt += offset; b.breeding.endsAt += offset; }

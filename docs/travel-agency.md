@@ -1,15 +1,31 @@
-# Agence de voyage — 25 octobre 2026
+# Agence de voyage — 26 octobre 2026
+
+## Améliorations en cœurs (v19)
+
+| Niveau de l’agence | Amélioration | Capacité | Nourriture au retour |
+|---|---:|---:|---:|
+| 1, à l’achat | — | 1 voyage | aucune |
+| 2 | 40 cœurs | 2 voyages | 25 par heure de voyage |
+| 3 | 120 cœurs | 3 voyages | 25 par heure de voyage |
+
+`upgradeAgency {id, fromLevel}` paie uniquement en cœurs, sans complément ni accélération ni niveau joueur supplémentaire. `agencyLevel?: 2 | 3` absent signifie niveau 1. Une requête répétée portant l’ancien niveau est refusée. L’amélioration reste possible avec des voyageurs absents.
+
+Chaque départ fige sa nourriture dans `Trip.grass?` : 75 à 250 nourriture aux niveaux 2 et 3, aucune pour un départ au niveau 1, même si l’agence est améliorée ensuite. `travel.trips: Trip[]` garde un voyage par individu ; `claimTrip {rabbitId}` accueille uniquement ce voyageur et crédite une seule fois cœurs et nourriture. Un retour prêt occupe sa place jusqu’à l’accueil.
+
+L’interface liste tous les voyages et retours, chacun avec destination, minuteur ou bulle « Ces vacances … étaient super ! » et bouton Accueillir. Elle propose ensuite un voyageur disponible s’il reste une place, puis l’amélioration en cœurs avec confirmation. Coco reste présent après son guide initial. La bulle cœur dans la prairie signifie qu’au moins un retour est prêt.
+
+La sauvegarde v19 valide la capacité de l’agence, les voyageurs distincts, présents et absents du nid, ainsi que les récompenses figées. Tous les voyages suivent le recalage de l’horloge et le rafraîchissement des minuteurs. La migration depuis v18 conserve le voyage historique dans un tableau, sans lui attribuer de nourriture rétroactive.
 
 ## Règles
 
 L’agence de voyage s’achète parmi les bâtiments dès le niveau 8 pour 1 000 pattes, un exemplaire maximum. Coco, hôte non collectionnable en chemise hawaïenne et lunettes de soleil, accueille le joueur en quatre bulles la première fois. Cet accueil terminé est sauvegardé ; Coco reste ensuite présent sans répéter le guide.
 
-Un seul lapin voyage à la fois. Un parent au nid ne peut pas partir. La destination surprise et la durée entière de 3 à 10 h sont tirées ensemble parmi les 72 couples possibles : Londres, Vannes, Le Caire, Hammamet, Le Lavandou, Bandol, Lille, Paris, Marrakech. Le départ est gratuit. Le voyageur garde sa place et ses revenus dans son habitat ; il disparaît visuellement de celui-ci et ne peut être nourri, reproduire, déménager, être confié ou cuisiner jusqu’à son accueil au retour.
+Un, deux ou trois lapins voyagent à la fois selon le niveau de l’agence. Un parent au nid ne peut pas partir. La destination surprise et la durée entière de 3 à 10 h sont tirées ensemble parmi les 72 couples possibles : Londres, Vannes, Le Caire, Hammamet, Le Lavandou, Bandol, Lille, Paris, Marrakech. Le départ est gratuit. Le voyageur garde sa place et ses revenus dans son habitat ; il disparaît visuellement de celui-ci et ne peut être nourri, reproduire, déménager, être confié ou cuisiner jusqu’à son accueil au retour.
 
-Le voyage rapporte 1 cœur pour 3–4 h, 2 pour 5–7 h, 3 pour 8–10 h. La destination et le minuteur sont affichés pendant le voyage. À la fin, une bulle cœur apparaît sur l’agence ; le voyageur déclare « Je me suis super amusé à … » (ou « au Caire / au Lavandou »). Le bouton « Accueillir · + N cœurs » crédite le souvenir une seule fois et libère le voyageur. Le retour attend sans péremption ; aucune accélération n’est proposée. L’état est conservé dans la sauvegarde v18 et ses dates suivent le recalage de l’horloge.
+Le voyage rapporte 1 cœur pour 3–4 h, 2 pour 5–7 h, 3 pour 8–10 h. La destination et le minuteur sont affichés pendant le voyage. À la fin, une bulle cœur apparaît sur l’agence ; le voyageur déclare « Ces vacances à … étaient super ! » (ou « au Caire / au Lavandou »). Le bouton « Accueillir · + N cœurs » crédite le souvenir une seule fois et libère le voyageur. Le retour attend sans péremption ; aucune accélération n’est proposée. L’état est conservé dans la sauvegarde v19 et ses dates suivent le recalage de l’horloge.
 
 
-Les 72 couples destination/durée sont équiprobables. La sauvegarde v18 conserve `travel: {welcomed, trip}` ; le voyage contient l’identité du lapin, la destination, les dates et les cœurs. Validation : agence et lapin présents, aucun parent simultanément au nid, destination connue, durée entière entre 3 et 10 h, souvenir conforme et départ non futur. Les dates du voyage sont recalées avec les autres travaux si l’horloge recule fortement.
+Les 72 couples destination/durée sont équiprobables. La sauvegarde v19 conserve `travel: {welcomed, trips}` ; le voyage contient l’identité du lapin, la destination, les dates et les cœurs. Validation : agence et lapin présents, aucun parent simultanément au nid, destination connue, durée entière entre 3 et 10 h, souvenir conforme et départ non futur. Les dates du voyage sont recalées avec les autres travaux si l’horloge recule fortement.
 
 ## Textes et accueil
 
@@ -25,7 +41,7 @@ Ensuite : « Où partons-nous aujourd’hui ? Choisis un voyageur : la destinati
 Départ : « {lapin} part en vacances {à/au destination} ! ».
 Voyage en cours : « {lapin} profite de ses vacances {à/au destination}. Il reviendra avec un souvenir ! ».
 Retour de Coco : « {lapin} est rentré {de/du/d’ destination} ! Viens l’accueillir. ».
-Bulle du voyageur : « Je me suis super amusé {à/au destination} ! Je t’ai rapporté {N cœur/cœurs} en souvenir. ».
+Bulle du voyageur : « Ces vacances {à/au destination} étaient super ! Je t’ai rapporté {N cœur/cœurs} en souvenir. ».
 Bouton : « Accueillir · + {N cœur/cœurs} ».
 Refus : « Ce lapin est en voyage. Accueille-le à l’agence à son retour. ».
 

@@ -3,13 +3,13 @@
     "5": 1,
     "10": 3,
     "15": 8,
-    "20": 17,
-    "22": 20,
-    "25": 30,
-    "30": 49
+    "20": 16,
+    "22": 19,
+    "25": 28,
+    "30": 46
   },
   "statueDay": 12,
-  "method": "Seed 20261025; real act/advance; 3 sessions/day at 08/13/20, <=45 commands and <=8 meals/session; two farms, each sowing the best-liked unlocked crop ripe by the next visit; the statue as soon as affordable; collection-first parent pairs; no Cuisine or paid recipes; Hearts only for permanent habitat upgrades. Day snapshots just before next 08:00. Tutorial is the first session.",
+  "method": "Seed 20261025; real act/advance; 3 sessions/day at 08/13/20, <=45 commands and <=8 meals/session; two farms, each sowing the best-liked unlocked crop ripe by the next visit; the statue as soon as affordable; collection-first parent pairs; no Cuisine or paid recipes; Hearts for permanent farm, agency and habitat upgrades. Day snapshots just before next 08:00. Tutorial is the first session.",
   "curve": {
     "initialLevel": 1,
     "maximumLevel": 30,
@@ -21,16 +21,16 @@
     "grass": 96,
     "hearts": 18,
     "level": 5,
-    "xp": 885
+    "xp": 887
   },
   "milestones": {
     "5": 0,
     "10": 2.5,
     "15": 7.208,
-    "20": 16,
-    "22": 19.208,
-    "25": 29.5,
-    "30": 48.5
+    "20": 15.5,
+    "22": 18.5,
+    "25": 27.208,
+    "30": 45.208
   },
   "rows": [
     {
@@ -78,7 +78,8 @@
       },
       "decorationBudget": {
         "models": 13,
-        "pattes": 24651
+        "pattes": 9651,
+        "hearts": 80
       },
       "mainMissionsClaimed": [
         "snow-habitat",
@@ -141,7 +142,8 @@
       },
       "decorationBudget": {
         "models": 12,
-        "pattes": 24650
+        "pattes": 9650,
+        "hearts": 80
       },
       "mainMissionsClaimed": [
         "snow-habitat",
@@ -162,9 +164,9 @@
     },
     {
       "step": "3 j",
-      "pattes": 374,
-      "grass": 1,
-      "hearts": 40,
+      "pattes": 686,
+      "grass": 4,
+      "hearts": 10,
       "level": 10,
       "species": 10,
       "affection": {
@@ -181,17 +183,17 @@
         "feu",
         "snk",
         "belier-gris",
+        "volant",
         "feu-glace",
-        "wat-wat",
-        "volant"
+        "wat-wat"
       ],
-      "storedPattes": 2723,
+      "storedPattes": 2747,
       "remaining": {
         "commons": [],
         "extensions": 6,
         "extensionCost": 155500,
         "farms": 0,
-        "kitchen": false,
+        "kitchen": true,
         "habitatUpgrades": 5,
         "paidRecipes": [
           "lunettes",
@@ -207,7 +209,8 @@
       },
       "decorationBudget": {
         "models": 12,
-        "pattes": 24650
+        "pattes": 9650,
+        "hearts": 80
       },
       "mainMissionsClaimed": [
         "snow-habitat",
@@ -237,16 +240,16 @@
     },
     {
       "step": "7 j",
-      "pattes": 10414,
-      "grass": 2690,
-      "hearts": 69,
+      "pattes": 10167,
+      "grass": 1235,
+      "hearts": 10,
       "level": 14,
       "species": 16,
       "affection": {
         "≥10": 10,
         "≥15": 0,
         "max": 14,
-        "rabbits": 22
+        "rabbits": 21
       },
       "speciesIds": [
         "paille",
@@ -256,17 +259,17 @@
         "feu",
         "snk",
         "belier-gris",
+        "volant",
         "feu-glace",
         "wat-wat",
-        "volant",
         "dinono",
         "virvoletant",
         "phoenix",
-        "plume",
+        "lunettes",
         "roukette",
         "princesse-neige"
       ],
-      "storedPattes": 5183,
+      "storedPattes": 5027,
       "remaining": {
         "commons": [],
         "extensions": 4,
@@ -275,7 +278,6 @@
         "kitchen": false,
         "habitatUpgrades": 5,
         "paidRecipes": [
-          "lunettes",
           "perroquet",
           "bouee",
           "magicien",
@@ -288,7 +290,8 @@
       },
       "decorationBudget": {
         "models": 12,
-        "pattes": 24650
+        "pattes": 9650,
+        "hearts": 80
       },
       "mainMissionsClaimed": [
         "snow-habitat",
@@ -321,16 +324,16 @@
     },
     {
       "step": "20 j",
-      "pattes": 6223,
-      "grass": 43,
-      "hearts": 254,
+      "pattes": 7390,
+      "grass": 327,
+      "hearts": 179,
       "level": 22,
-      "species": 31,
+      "species": 32,
       "affection": {
-        "≥10": 22,
-        "≥15": 7,
+        "≥10": 25,
+        "≥15": 6,
         "max": 20,
-        "rabbits": 35
+        "rabbits": 38
       },
       "speciesIds": [
         "paille",
@@ -340,49 +343,50 @@
         "feu",
         "snk",
         "belier-gris",
+        "volant",
         "feu-glace",
         "wat-wat",
-        "volant",
         "dinono",
         "virvoletant",
         "phoenix",
-        "plume",
+        "lunettes",
         "roukette",
         "princesse-neige",
-        "egiiipte",
-        "pic-pic",
-        "magicien",
-        "orange",
-        "ardent",
-        "glassofeu",
-        "fluffy",
-        "perroquet",
-        "lunettes",
         "tunini",
-        "amethyste",
-        "boudinet",
-        "bretonette",
+        "egiiipte",
         "piment",
-        "bouee"
+        "orange",
+        "magicien",
+        "bouee",
+        "pic-pic",
+        "dadi",
+        "ardent",
+        "boudinet",
+        "amethyste",
+        "fluffy",
+        "glassofeu",
+        "plume",
+        "bretonette",
+        "perroquet"
       ],
-      "storedPattes": 10151,
+      "storedPattes": 11123,
       "remaining": {
         "commons": [],
         "extensions": 2,
         "extensionCost": 100000,
         "farms": 0,
         "kitchen": false,
-        "habitatUpgrades": 7,
+        "habitatUpgrades": 5,
         "paidRecipes": [
           "dragon",
-          "dadi",
           "maxou",
           "requin"
         ]
       },
       "decorationBudget": {
         "models": 12,
-        "pattes": 24650
+        "pattes": 9650,
+        "hearts": 80
       },
       "mainMissionsClaimed": [
         "snow-habitat",
@@ -417,16 +421,16 @@
     },
     {
       "step": "50 j",
-      "pattes": 7208,
-      "grass": 330,
-      "hearts": 825,
+      "pattes": 5642,
+      "grass": 87,
+      "hearts": 743,
       "level": 30,
       "species": 35,
       "affection": {
-        "≥10": 40,
+        "≥10": 39,
         "≥15": 27,
         "max": 20,
-        "rabbits": 41
+        "rabbits": 40
       },
       "speciesIds": [
         "paille",
@@ -436,48 +440,49 @@
         "feu",
         "snk",
         "belier-gris",
+        "volant",
         "feu-glace",
         "wat-wat",
-        "volant",
         "dinono",
         "virvoletant",
         "phoenix",
-        "plume",
+        "lunettes",
         "roukette",
         "princesse-neige",
-        "egiiipte",
-        "pic-pic",
-        "magicien",
-        "orange",
-        "ardent",
-        "glassofeu",
-        "fluffy",
-        "perroquet",
-        "lunettes",
         "tunini",
-        "amethyste",
-        "boudinet",
-        "bretonette",
+        "egiiipte",
         "piment",
+        "orange",
+        "magicien",
         "bouee",
-        "maxou",
+        "pic-pic",
         "dadi",
-        "requin",
-        "dragon"
+        "ardent",
+        "boudinet",
+        "amethyste",
+        "fluffy",
+        "glassofeu",
+        "plume",
+        "bretonette",
+        "perroquet",
+        "maxou",
+        "dragon",
+        "requin"
       ],
-      "storedPattes": 15791,
+      "storedPattes": 15563,
       "remaining": {
         "commons": [],
         "extensions": 2,
         "extensionCost": 100000,
         "farms": 0,
         "kitchen": false,
-        "habitatUpgrades": 7,
+        "habitatUpgrades": 4,
         "paidRecipes": []
       },
       "decorationBudget": {
         "models": 12,
-        "pattes": 24650
+        "pattes": 9650,
+        "hearts": 80
       },
       "mainMissionsClaimed": [
         "snow-habitat",
@@ -512,25 +517,26 @@
     }
   ],
   "actions": {
-    "buyBuilding": 12,
+    "buyBuilding": 11,
     "claimMainMission": 28,
     "buyRabbit": 4,
     "startOrder": 419,
     "initiationAid": 3,
     "collectOrder": 417,
-    "feed": 1618,
+    "feed": 1646,
     "breed": 210,
     "transferBirth": 1,
     "welcome": 209,
-    "collectIncome": 1700,
+    "collectIncome": 1566,
     "claimDailyMission": 209,
     "buyDecoration": 1,
     "claimHearts": 69,
     "expand": 6,
-    "upgradeHabitat": 7,
+    "upgradeHabitat": 8,
     "claimDailyBonus": 69,
-    "exchangeForHeart": 909,
-    "release": 173
+    "upgradeFarm": 2,
+    "exchangeForHeart": 918,
+    "release": 174
   },
-  "totalActions": 6064
+  "totalActions": 5970
 }

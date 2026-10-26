@@ -9,7 +9,7 @@ import {GameController} from '../src/application/GameController';
 import {SAVE_KEY} from '../src/persistence/storage';
 import type {Command,GameState} from '../src/state/types';
 const location={kind:'outside',x:18,y:28,rotation:0} as const;
-function at(level:number){const s=createCentreStartGame(0);s.pattes=20000;s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level};return s;}
+function at(level:number){const s=createCentreStartGame(0);s.pattes=20000;s.hearts=200;s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level};return s;}
 const run=(s:GameState,c:Command)=>{const r=act(s,c,0);if(!r.ok)throw Error(r.reason);return r.state;};
 const reload=(s:GameState)=>{const r=decodeGame(encodeGame(s));if(!r.ok)throw Error(r.reason);return r.state;};
 describe('level gates acquire new decoration exemplars only',()=>{
@@ -18,7 +18,7 @@ describe('level gates acquire new decoration exemplars only',()=>{
   for(const placed of [false,true]){
    const command:Command={type:'buyDecoration',catalogId:id,...(placed?{location}:{})};
    if(level>1){const s=at(level-1);s.progression.totalXp=cumulativeLevelXp(level)-1;const before=structuredClone(s);expect(act(s,command,0)).toEqual({ok:false,state:before,reason:'LEVEL_REQUIRED'});expect(s).toEqual(before);}
-   const s=at(level),next=run(s,command);expect(next.pattes).toBe(s.pattes-DECORATIONS[id].price);expect(next.decorations).toHaveLength(1);
+   const s=at(level),next=run(s,command);expect(next.pattes).toBe(s.pattes-(DECORATIONS[id].heartPrice ? 0 : DECORATIONS[id].price));expect(next.hearts).toBe(s.hearts-(DECORATIONS[id].heartPrice??0));expect(next.decorations).toHaveLength(1);
    expect(next.decorations[0].placementXpProcessed).toBe(placed);
    expect(next.progression.totalXp-s.progression.totalXp).toBe(placed?firstDecorationPlacementXp(id):0);
    if(placed)expect(run(next,{type:'placeDecoration',id:next.decorations[0].id,location}).progression).toEqual(next.progression);

@@ -49,7 +49,7 @@ h1:not(:where(.cuisine-root h1)) { font-size: 19px; margin: 0 12px 0 0; max-widt
 .resource.grass { background: #f0f6dc; }
 .resource.grass span { color: #6c9957; }
 .resource.hearts { color: #673d4b; background: #f8e5eb; border-color: #fff5f7; }
-.resource.hearts svg { width: 23px; height: 23px; flex: 0 0 23px; }
+.resource.hearts .heart-icon { width: 23px; height: 23px; flex: 0 0 23px; }
 nav { display: flex; gap: 7px; margin-left: auto; }
 
 button {
@@ -407,7 +407,7 @@ dialog > button { width: 100%; margin-top: 8px; }
   #player-progress { flex-basis: 96px; }
   #player-xp-label { font-size: 10px; }
   #hud .resource { padding: 5px; gap: 3px; font-size: 13px; }
-  #hud .coin-icon, #hud .resource.hearts svg { width: 20px; height: 20px; min-width: 20px; flex-basis: 20px; }
+  #hud .coin-icon, #hud .resource.hearts .heart-icon { width: 20px; height: 20px; min-width: 20px; flex-basis: 20px; }
   #hud .resource.grass span { font-size: 20px; }
   #hud nav button { font-size: 11px; padding: 6px; white-space: nowrap; flex-shrink: 0; }
 }
@@ -467,7 +467,7 @@ dialog > button { width: 100%; margin-top: 8px; }
   #hud #player-level { font-size: 21px; }
   #hud #player-xp-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
   #hud .resource { padding: 3px; gap: 2px; font-size: 12px; border-radius: 12px; }
-  #hud .coin-icon, #hud .resource.hearts svg { width: 16px; height: 16px; min-width: 16px; flex-basis: 16px; }
+  #hud .coin-icon, #hud .resource.hearts .heart-icon { width: 16px; height: 16px; min-width: 16px; flex-basis: 16px; }
   #hud .resource.grass span { font-size: 18px; }
   #hud nav { gap: 0; }
 }
@@ -530,3 +530,6 @@ dialog > button { width: 100%; margin-top: 8px; }
 
 #open-hearts { position: relative; }
 #open-hearts.has-heart-gift::after { content: ""; position: absolute; top: 3px; right: 3px; width: 8px; height: 8px; border-radius: 50%; background: #ba657e; border: 1px solid #fff1d4; pointer-events: none; }
+
+.heart-amount { display: inline-flex; align-items: center; gap: .22em; white-space: nowrap; vertical-align: middle; }
+.heart-icon { width: 1.35em; height: 1.35em; object-fit: contain; vertical-align: middle; flex-shrink: 0; }

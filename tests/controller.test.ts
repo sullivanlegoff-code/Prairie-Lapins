@@ -199,7 +199,7 @@ describe('transactional imports', () => {
     expect(controller.confirmImport(prepared.token, true)).toEqual({ok: false, reason: 'STALE_IMPORT'});
   });
   it.each([
-    ['{', 'INVALID_JSON'], ['{"version":19}', 'UNSUPPORTED_VERSION'], ['{"version":16}', 'INVALID_STATE'], ['{"version":1}', 'INCOMPATIBLE_CATALOG'], ['{"version":15}', 'INCOMPATIBLE_CATALOG'],
+    ['{', 'INVALID_JSON'], ['{"version":20}', 'UNSUPPORTED_VERSION'], ['{"version":16}', 'INVALID_STATE'], ['{"version":1}', 'INCOMPATIBLE_CATALOG'], ['{"version":15}', 'INCOMPATIBLE_CATALOG'],
     [' '.repeat(1_000_001), 'FILE_TOO_LARGE'],
   ])('rejects a bad import with %s', (json, reason) => {
     const {controller, store} = fixture(); const previous = controller.getSnapshot(), raw = store.value;
