@@ -34,4 +34,4 @@ Remplace ces valeurs par celles du joueur **uniquement dans le SQL Editor**, jam
 
 Surveille la consommation et les quotas Free dans le tableau de bord, ainsi que les éventuelles interruptions de service. Aucun abonnement payant, serveur supplémentaire ou Realtime n'est requis. La sauvegarde est déclenchée par les actions du joueur, sans interrogation périodique du serveur. Une connexion et chaque récupération relisent le serveur ; pour vérifier une autre session déjà ouverte, reconnecte le compte ou utilise les mécanismes de reprise lorsqu'une erreur est affichée.
 
-Le projet neuf n'a pas été créé ni validé depuis cet environnement. La désactivation effective des e-mails, le hachage pgcrypto, la récupération sur un autre appareil et les limites actuelles de l'offre Free restent à vérifier par le propriétaire. Garde des exports JSON indépendants.
+Mise en service réelle effectuée le 26 octobre 2026 en suivant ce guide : voir [accounts.md](accounts.md#mise-en-service-réelle--26-octobre-2026). Garde des exports JSON indépendants.
