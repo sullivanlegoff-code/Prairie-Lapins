@@ -79,8 +79,8 @@ export function mountSavePanel(controller: GameController, onReplacement: (fresh
       const dismiss = document.createElement('button'); dismiss.type = 'button'; dismiss.textContent = 'Compris'; dismiss.onclick = () => message.remove(); message.append(dismiss);
     }
     get('pattes').textContent = state ? formatCoinAmount(state.pattes) : '—';
-    get('hearts').textContent = state ? String(state.hearts) : '—';
-    get('grass').textContent = state ? String(state.grass) : '—';
+    get('hearts').textContent = state ? formatCoinAmount(state.hearts) : '—';
+    get('grass').textContent = state ? formatCoinAmount(state.grass) : '—';
     if (!hudResize) measureHud();
     get('rabbits').textContent = state ? String(state.rabbits.length) : '—';
     get('stored-income').textContent = state ? formatCoinAmount(Math.floor(state.buildings.reduce((sum, b) => sum + b.incomeUnits, 0) / HOUR)) : '—';
