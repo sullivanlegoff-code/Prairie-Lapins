@@ -46,4 +46,14 @@ Le dimensionnement vise au plus dix joueurs simultanés sur un projet Supabase F
 
 Les tests locaux utilisent PGlite, des rôles `anon`/`authenticated` et un `auth.uid()` simulé. Ils couvrent les droits, l'isolation, CAS, l'idempotence, les formats, la rétention, la synchronisation avec faux serveur et les formulaires sous happy-dom. PGlite installé ne fournit pas pgcrypto : la fonction de réinitialisation est vérifiée pour ses droits et la longueur minimale ; le hachage réel reste à vérifier sur Supabase.
 
-**Aucun vrai projet Supabase n'a été contacté.** Les écrans du tableau de bord, la configuration d'authentification, les jetons expirés réels, les quotas Free actuels, les coupures réseau réelles et les fermetures de Safari/iPhone n'ont pas été validés. Aucun navigateur ni serveur local n'a été ouvert. Un essai réel sur deux appareils reste indispensable avant de promettre aux joueurs une récupération fiable. Aucune solution ne garantit de « ne jamais perdre » une partie : conserve des exports indépendants.
+## Mise en service réelle — 26 octobre 2026
+
+Projet Supabase Free neuf créé par le propriétaire (région Europe), SQL `001_cloud_saves.sql` exécuté une fois, « Confirm email » désactivé. Configuration publique dans `.env.local` (ignoré par Git) ; build `c79f701` publié sur Netlify et vérifié en ligne (`build-revision.txt` du jeu et du laboratoire).
+
+Contrôles réels :
+
+- Accès anonymes au vrai projet (contrôle Claude) : lecture de `prairie_saves` refusée (42501), RPC `prairie_commit` refusée (42501), schéma `prairie_private` non exposé (PGRST106).
+- pgcrypto disponible dans `extensions` (requête de contrôle exécutée par le propriétaire).
+- Essais du propriétaire sur iPhone et ordinateur : création de compte, association, « Sauvegardé en ligne » et nouvelle révision après une action ; réinitialisation du mot de passe par `reset_player_password` puis connexion ; récupération de la même partie sur l'ordinateur ; deux appareils ouverts, comportement jugé normal par le propriétaire ; déconnexion puis reconnexion.
+
+Non validé : jetons expirés après une longue absence, coupure réseau réelle pendant un envoi, quotas Free sur la durée. Aucune solution ne garantit de « ne jamais perdre » une partie : conserve des exports indépendants.
