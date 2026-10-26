@@ -7,6 +7,7 @@ export const FARM_ART = {
   width: 1254, height: 1254,
   worldWidth: 156, originY: .70,
   harvestY: 38,
+  progress: {x: 0, y: 25, width: 46, height: 5},
   /**
    * The dirt field, in texture pixels: five furrows parallel to T → R, stacked from T toward L. While a crop grows, small sprouts
    * stand along them; once ripe, the crop's own icon replaces every sprout. `along` keeps the plants clear of the windmill's

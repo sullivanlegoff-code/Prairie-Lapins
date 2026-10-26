@@ -22,6 +22,8 @@ import {FARM_ART, FARM_LEVEL_1_ART} from '../config/farmArt';
 import {NEST_ART} from '../config/nestArt';
 import {NURSERY_ART} from '../config/nurseryArt';
 import {NurseryOverlays} from './nurseryOverlays';
+import {progressBars} from './progressBars';
+import {ProgressBarViews} from './progressBarViews';
 import {foodBubble} from './currencyPhaser';
 import {buildingAt, buildingPlacementReason, buildingFootprint, type Footprint} from '../simulation/placement';
 import {placementGrid, PLACEMENT_GRID} from './placementGrid';
@@ -85,6 +87,10 @@ export class MeadowScene extends Phaser.Scene {
   private buildingsLayer!: Phaser.GameObjects.Container;
   private buildingViews = new Map<string, Phaser.GameObjects.Image>();
   private nurseryOverlays: NurseryOverlays | null = null;
+  private progressViews: ProgressBarViews | null = null;
+  private simulationReceivedAt = 0;
+  private progressUpdatedAt = -Infinity;
+  private progressNow = 0;
   private farmCrops: FarmCrops | null = null;
   private focusTween: Phaser.Tweens.Tween | null = null;
   private buildingTextures = new Set<string>();
@@ -151,6 +157,8 @@ export class MeadowScene extends Phaser.Scene {
     // bubbles and availability texts 3. Depths are those of the former single-plane scene.
     this.ground = this.add.container(0, 0); this.buildingsLayer = this.add.container(0, 0).setDepth(.1); this.animals = this.add.container(0, 0).setDepth(2);
     this.nurseryOverlays = new NurseryOverlays(this, this.buildingsLayer);
+    this.progressViews = new ProgressBarViews(this);
+    this.events.once('shutdown', () => { this.progressViews?.destroy(); this.progressViews = null; });
     this.farmCrops = new FarmCrops(this, this.buildingsLayer);
     // Flat path paintings follow the ground compression, above terrain but below every upright object.
     this.floorDecorationsLayer = this.add.container(0, 0).setDepth(decorationLayerDepth('dirt-path'));
@@ -160,7 +168,10 @@ export class MeadowScene extends Phaser.Scene {
     this.markers = this.add.graphics().setDepth(1); this.bubbles = this.add.container(0, 0).setDepth(3);
     for (const layer of [this.ground, this.groundOverlay]) layer.setPosition(groundTransform.x, groundTransform.y).setRotation(groundTransform.rotation).setScale(groundTransform.scaleX, groundTransform.scaleY);
     this.resize();
-    this.unsubscribe = this.controller.subscribe(snapshot => { this.current = snapshot.state; this.renderState(); });
+    this.unsubscribe = this.controller.subscribe(snapshot => {
+      this.current = snapshot.state; this.simulationReceivedAt = this.time.now;
+      this.progressNow = this.current?.lastSimulatedAt ?? 0; this.renderState();
+    });
     this.recenter();
     this.scale.on('resize', this.resize, this);
     const disposeInput = bindMeadowInput(this.game.canvas, this.view, point => this.tap(point), this.blocked, () => this.applyCamera());
@@ -288,6 +299,7 @@ export class MeadowScene extends Phaser.Scene {
   }
   setPhoto(active: boolean): void {
     this.photo = active;
+    this.syncProgressBars();
     this.drawDecorationSelection();
     this.bubbles?.setVisible(!active); this.grid?.setVisible(!active); this.markers?.setVisible(!active); this.ghostView?.setVisible(!active); this.buildingGhost?.setVisible(!active && !!this.placement?.cell); this.nurseryOverlays?.setGhostVisible(!active && this.placement?.kind==='nursery' && !!this.placement.cell); this.updateDetails();
   }
@@ -341,6 +353,7 @@ export class MeadowScene extends Phaser.Scene {
     // The cushion overlays follow the canonical state and simulation time on every refresh (a no-op when nothing changed).
     this.nurseryOverlays?.sync(s);
     this.farmCrops?.sync(s);
+    this.syncProgressBars();
     this.drawDecorations(); this.drawBubbles(); this.drawGrid(); this.drawGhost(); this.updateDetails();
   }
   private decorationPoint(location: DecorationLocation, catalogId: typeof DECORATION_IDS[number]): Point | null {
@@ -625,10 +638,9 @@ export class MeadowScene extends Phaser.Scene {
       onUpdate: tween => { if (this.view.busy) { tween.stop(); this.focusTween = null; return; } go(tween.getValue() ?? 1); },
       onComplete: () => { this.focusTween = null; }});
   }
-  private drawBubbles(): void {
+  private drawBubbles(now = this.simulationNow()): void {
     this.bubbles.removeAll(true); this.bubbleHits = [];
     for (const b of this.current?.buildings ?? []) {
-      const now = this.current!.lastSimulatedAt;
       const amount = Math.floor(b.incomeUnits / HOUR);
       let text = '', kind: 'income' | 'grass' | 'building' = 'building';
       if (b.kind === 'enclosure' && shouldShowIncomeBubble(amount, habitatStats(b).cap)) { text = 'income'; kind = 'income'; }
@@ -802,7 +814,24 @@ export class MeadowScene extends Phaser.Scene {
     const building=this.current?buildingAt(this.current,fineCell(ground)):null;
     this.select(building ? {kind: 'building', id: building.id} : {kind: 'empty'});
   }
+  /** Interpolate the canonical simulation clock; resynchronise on every snapshot, including laboratory time changes. */
+  private simulationNow(): number {
+    return (this.current?.lastSimulatedAt ?? 0) + Math.max(0, this.time.now - this.simulationReceivedAt);
+  }
+  private syncProgressBars(): void {
+    const s = this.current;
+    const now = this.simulationNow();
+    // Hand over to the existing bubble at the same instant the last segment disappears.
+    const crossed = (end: number) => this.progressNow < end && end <= now;
+    if (s?.buildings.some(b => (b.kind === 'nest' && b.breeding && crossed(b.breeding.endsAt)) ||
+      (b.kind === 'farm' && b.order && crossed(b.order.endsAt)) ||
+      (b.kind === 'nursery' && b.nursery?.babies.some(baby => crossed(baby.readyAt))))) this.drawBubbles(now);
+    this.progressNow = now;
+    this.progressViews?.sync(progressBars(s, {photo: this.photo, movingId: this.placement?.movingId}, now), s?.buildings.map(b => b.id) ?? []);
+    this.progressUpdatedAt = this.time.now;
+  }
   update(time: number): void {
+    if (this.time.now - this.progressUpdatedAt >= 100) this.syncProgressBars();
     // A pinch changes the zoom on every pointer event: re-stroke the cached overlay at most once per frame.
     if (this.gridStroke && this.gridZoom !== this.view.zoom) this.gridStroke();
     // Scene time since the last frame; a long gap (inactive tab) is cut short inside the motion step: no jump.
