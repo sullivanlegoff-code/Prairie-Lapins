@@ -14,5 +14,5 @@ export const NEST_ART = {
   parentOffsets: [{x: -52, y: 2}, {x: 68, y: 2}],
   // Label 9 units in front of the footprint's front edge, as before the projection.
   actionY: 46, labelY: 73,
-  progress: {x: 0, y: 27, width: 46, height: 5},
+  progress: {x: 0, y: 27, width: 54, height: 7},
 } as const;

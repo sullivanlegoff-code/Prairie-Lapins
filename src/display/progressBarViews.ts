@@ -25,10 +25,11 @@ export class ProgressBarViews {
       view.signature = signature;
       const w = bar.width, h = bar.height, inset = 1, fill = (w - 2 * inset) * bar.fraction;
       g.clear();
-      g.fillStyle(0x354b36, .18).fillRoundedRect(-w / 2, -h / 2 + 1.2, w, h, h / 2);
-      g.fillStyle(0xfff7dc, .96).fillRoundedRect(-w / 2, -h / 2, w, h, h / 2);
-      g.fillStyle(0xd4dfbd, 1).fillRoundedRect(-w / 2 + inset, -h / 2 + inset, w - 2 * inset, h - 2 * inset, (h - 2 * inset) / 2);
-      if (fill > 0) g.fillStyle(0x73945b, 1).fillRoundedRect(-w / 2 + inset, -h / 2 + inset, fill, h - 2 * inset, Math.min(fill, h - 2 * inset) / 2);
+      // A dark rim keeps the thin bar readable on the pale paths and cushions.
+      g.fillStyle(0x354b36, .25).fillRoundedRect(-w / 2, -h / 2 + 1.2, w, h, h / 2);
+      g.fillStyle(0x4d5f37, .9).fillRoundedRect(-w / 2, -h / 2, w, h, h / 2);
+      g.fillStyle(0xf6efd6, 1).fillRoundedRect(-w / 2 + inset, -h / 2 + inset, w - 2 * inset, h - 2 * inset, (h - 2 * inset) / 2);
+      if (fill > 0) g.fillStyle(0x5e9a3a, 1).fillRoundedRect(-w / 2 + inset, -h / 2 + inset, fill, h - 2 * inset, Math.min(fill, h - 2 * inset) / 2);
     }
   }
   destroy(): void { for (const view of this.views.values()) view.graphics.destroy(); this.views.clear(); }

@@ -42,7 +42,7 @@ const SOURCE_FRAME = 1254;
  */
 export const NURSERY_OVERLAY_ART = {
   // Base-PNG pixels from each cushion centre, below the reclining baby; scales with its row.
-  progress: {dy: 128, width: 230, height: 32},
+  progress: {dy: 128, width: 250, height: 44},
   baby: {texture: 'nursery-v2-baby', url: import.meta.env.BASE_URL + 'assets/buildings/nursery-v2-baby-192.png', width: 192, height: 192, sourceSize: SOURCE_FRAME,
     originX: 630 / 1254, originY: 629 / 1254, scale: .245, angle: -78, dy: 2},
   veil: {texture: 'nursery-v2-veil', url: import.meta.env.BASE_URL + 'assets/buildings/nursery-v2-veil-192.png', width: 192, height: 192, sourceSize: SOURCE_FRAME,
