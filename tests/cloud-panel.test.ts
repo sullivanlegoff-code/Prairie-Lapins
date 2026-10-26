@@ -3,6 +3,7 @@ import {afterEach, expect, it, vi} from 'vitest';
 import type {SupabaseClient} from '@supabase/supabase-js';
 import {authMessage, mountAccountPanel} from '../src/cloud/accountPanel';
 import {cloudConfig, UNAVAILABLE} from '../src/cloud/config';
+import {accountKnown} from '../src/cloud/accountState';
 import {fixture, remote} from './cloud-fixtures';
 import shell from '../src/main.ts?raw';
 
@@ -84,4 +85,42 @@ it('une session expirée demande une reconnexion ; une déconnexion explicite ig
   p.authSession(true); await tick(); expect(p.root.textContent).toContain('Sauvegardé en ligne');
   p.button('Se déconnecter').click(); await tick(); p.authSession(true); await tick();
   expect(p.root.querySelector('form')!.hidden).toBe(false); expect(p.root.querySelector<HTMLElement>('[data-signout]')!.hidden).toBe(true);
+});
+it('affiche et masque les deux mots de passe et rétablit le masquage après connexion et déconnexion', async () => {
+  const p = await panel(); p.button('Créer mon compte').click();
+  const password = p.root.querySelector<HTMLInputElement>('[name=password]')!;
+  const confirmation = p.root.querySelector<HTMLInputElement>('[name=confirmation]')!;
+  const visibility = p.button('Afficher');
+  expect(visibility.getAttribute('aria-pressed')).toBe('false');
+  visibility.click();
+  expect([password.type, confirmation.type]).toEqual(['text', 'text']);
+  expect(visibility.textContent).toBe('Masquer'); expect(visibility.getAttribute('aria-pressed')).toBe('true');
+  visibility.click(); expect([password.type, confirmation.type]).toEqual(['password', 'password']);
+  visibility.click(); p.input('email', 'lapin@example.invalid'); p.input('password', 'abcdefgh'); p.input('confirmation', 'abcdefgh');
+  await p.submit();
+  expect(accountKnown(p.storage)).toBe(true);
+  expect([password.type, confirmation.type]).toEqual(['password', 'password']);
+  expect(visibility.getAttribute('aria-pressed')).toBe('false'); expect(password.value).toBe('');
+  visibility.click(); p.button('Se déconnecter').click(); await tick();
+  expect([password.type, confirmation.type]).toEqual(['password', 'password']);
+  expect(visibility.textContent).toBe('Afficher'); expect(visibility.getAttribute('aria-pressed')).toBe('false');
+  expect(accountKnown(p.storage)).toBe(false);
+});
+it('la demande du rappel choisit le mode création de compte', async () => {
+  const p = await panel();
+  p.root.dispatchEvent(new Event('create-account'));
+  expect(p.root.querySelector('[data-confirm]')!.hasAttribute('hidden')).toBe(false);
+  expect(p.root.querySelector('[type=submit]')!.textContent).toBe('Créer mon compte');
+  expect(document.activeElement).toBe(p.root.querySelector('[name=email]'));
+  // Une deuxième invitation conserve le mode création.
+  p.root.dispatchEvent(new Event('create-account'));
+  expect(p.root.querySelector('[type=submit]')!.textContent).toBe('Créer mon compte');
+});
+it('conserve la demande de création pendant le chargement du client', async () => {
+  const mounting = panel();
+  document.querySelector<HTMLElement>('section')!.dataset.createAccount = 'true';
+  const p = await mounting;
+  expect(p.root.querySelector('[type=submit]')!.textContent).toBe('Créer mon compte');
+  expect(document.activeElement).toBe(p.root.querySelector('[name=email]'));
+  expect(p.root.dataset.createAccount).toBeUndefined();
 });

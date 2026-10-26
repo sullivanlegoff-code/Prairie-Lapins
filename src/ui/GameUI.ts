@@ -1,3 +1,6 @@
+import {accountKnown} from '../cloud/accountState';
+import {cloudConfig} from '../cloud/config';
+import {AccountReminder} from './accountReminder';
 import {decorateRabbitText, rabbitTheme, clearRabbitTheme} from '../display/rabbitPresentation';
 import {heartIcon} from '../display/currency';
 import {cuisineQuotaText, heartGift, recipeHint, orderReadyText} from './economyFeedback';
@@ -66,6 +69,7 @@ function avatar(species?: SpeciesId, large = false): HTMLElement {
   const element = node('span', '', large ? 'portrait large' : 'portrait'); element.innerHTML = portrait(species); if (species) rabbitTheme(element, species); return element;
 }
 export class GameUI {
+  private accountReminder: AccountReminder;
   private pailleDialogue: PailleDialogue;
   private get stagedOnboarding(): boolean { return this.controller.storageScope !== 'laboratory'; }
   private get onboardingActive(): boolean { const s = this.snapshot.state; return this.stagedOnboarding && s?.startCourse === 'paille-solo' && this.preferences.value.tutorial && !this.preferences.value.tutorialDone && !s.missions.events.welcome; }
@@ -136,7 +140,7 @@ export class GameUI {
   private photo = false;
   private cuisine: ReturnType<typeof mountCuisineActivity>;
   constructor(private controller: GameController, private scene: MeadowScene, private clock: () => number, private preferences: PreferenceStore, audio?: AudioEngine,
-    activityOptions: {onCuisineCompleted?: (result: RecipeCompletion) => void} = {}) {
+    activityOptions: {onlineServicesAllowed?: boolean; accountKnown?: () => boolean; onCuisineCompleted?: (result: RecipeCompletion) => void} = {}) {
     this.snapshot = controller.getSnapshot(); this.sounds = audio ? new Sounds(preferences, audio) : new Sounds(preferences);
     this.pailleDialogue = new PailleDialogue(preferences, (id, name) => controller.perform({type: 'renameRabbit', id, name}).ok,
       () => { const s = this.snapshot.state; if (!s) return; const task = onboardingTask(s,this.preferences.value,this.now()); if (task.step.done) this.preferences.set({tutorialDone:true}); this.guide(task.step); this.render(); },
@@ -197,11 +201,26 @@ export class GameUI {
       warning.textContent = snapshot.state ? 'Sauvegarde non enregistrée · Paramètres' : 'Partie non chargée · Paramètres';
       if (!unchanged) { this.render(true); this.renderTutorial(); }
     });
+    this.accountReminder = new AccountReminder(preferences,
+      () => activityOptions.onlineServicesAllowed !== false && controller.storageScope !== 'laboratory' &&
+        new URLSearchParams(location.search).get('dev') !== '1' && !!cloudConfig() && !(activityOptions.accountKnown ?? accountKnown)(),
+      // Only Paille's guided start postpones it; the optional guide card may stay visible all game long.
+      () => this.onboardingActive,
+      () => {
+        this.open({kind: 'settings'}, 'root');
+        const account = document.getElementById('account-content');
+        if (account) {
+          account.dataset.createAccount = 'true';
+          account.dispatchEvent(new Event('create-account'));
+          account.scrollIntoView?.({block: 'start'});
+          account.querySelector<HTMLInputElement>('[name=email]')?.focus({preventScroll: true});
+        }
+      });
     this.renderPreferences();
     // Countdown text is a projection of timestamps; the controller alone advances the simulation.
     const animate = () => {
       const second = Math.floor(this.clock() / 1000);
-      if (second !== this.lastSecond && !document.hidden) { this.lastSecond = second; this.updateTimers(); }
+      if (second !== this.lastSecond && !document.hidden) { this.lastSecond = second; this.updateTimers(); this.accountReminder.flush(); }
       this.frame = requestAnimationFrame(animate);
     };
     this.frame = requestAnimationFrame(animate);
@@ -224,10 +243,12 @@ export class GameUI {
   }
   private execute(command: Command, success: string | ((value?: string | number) => string), after?: (value?: string | number) => void): void {
     this.gate.run(JSON.stringify(command), () => {
+      const fireBreeding = command.type === 'breed' && command.parents.some(id => this.snapshot.state?.rabbits.some(r => r.id === id && r.species === 'feu'));
       const result = this.controller.perform(command);
       if (!result.ok) { this.notice(REFUSALS[result.reason]); this.render(); return; }
       this.sounds.ping(); const message=typeof success === 'function' ? success(result.value) : success;
       this.notice(message); after?.(result.value); this.render();
+      if (fireBreeding) this.accountReminder.request();
     });
   }
   private levelAction(card:HTMLElement, action:HTMLButtonElement | readonly HTMLButtonElement[], s:GameState, target:LevelAccessTarget):void {
@@ -1656,5 +1677,5 @@ export class GameUI {
     if (step.done) this.button(this.tutorial, 'Terminer le guidage', () => { this.preferences.set({tutorialDone: true}); this.renderPreferences(); this.renderTutorial(); }, null, true);
     this.button(this.tutorial, 'Masquer', () => { this.preferences.set({tutorial: false}); this.renderPreferences(); this.renderTutorial(); }, null, true);
   }
-  dispose(): void { document.getElementById('onboarding-skip')?.remove(); this.pailleDialogue.dispose(); this.cuisine.dispose(); this.confirmationGeneration++; if (this.dialog.open) this.dialog.close(); this.dialog.replaceChildren(); this.unsubscribe(); this.abort.abort(); cancelAnimationFrame(this.frame); clearTimeout(this.toastTimer); this.sounds.dispose(); }
+  dispose(): void { this.accountReminder.dispose(); document.getElementById('onboarding-skip')?.remove(); this.pailleDialogue.dispose(); this.cuisine.dispose(); this.confirmationGeneration++; if (this.dialog.open) this.dialog.close(); this.dialog.replaceChildren(); this.unsubscribe(); this.abort.abort(); cancelAnimationFrame(this.frame); clearTimeout(this.toastTimer); this.sounds.dispose(); }
 }

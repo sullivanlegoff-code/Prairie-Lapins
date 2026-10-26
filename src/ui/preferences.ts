@@ -1,8 +1,8 @@
 import {AudioEngine, clampVolume} from '../audio/audioEngine';
 /** UI preferences, stored per environment (game, laboratory), never in the game save. `muted` = Bruitages off. */
-export interface Preferences {pailleScenes: number[]; pailleNamed: boolean; muted: boolean; music: boolean; musicVolume: number; effectsVolume: number; tutorial: boolean; intro: boolean; tutorialDone: boolean; guideConfigured: boolean; guideCamera: boolean; guideCollection: boolean; guideRecipe: boolean}
+export interface Preferences {accountReminderShown: boolean; pailleScenes: number[]; pailleNamed: boolean; muted: boolean; music: boolean; musicVolume: number; effectsVolume: number; tutorial: boolean; intro: boolean; tutorialDone: boolean; guideConfigured: boolean; guideCamera: boolean; guideCollection: boolean; guideRecipe: boolean}
 export class PreferenceStore {
-  value: Preferences = {pailleScenes: [], pailleNamed: false, muted: false, music: true, musicVolume: .5, effectsVolume: .8, tutorial: true, intro: false, tutorialDone: false, guideConfigured: false, guideCamera: false, guideCollection: false, guideRecipe: false};
+  value: Preferences = {accountReminderShown: false, pailleScenes: [], pailleNamed: false, muted: false, music: true, musicVolume: .5, effectsVolume: .8, tutorial: true, intro: false, tutorialDone: false, guideConfigured: false, guideCamera: false, guideCollection: false, guideRecipe: false};
   constructor(private key: string) {
     try {
       const raw = JSON.parse(localStorage.getItem(key) ?? '{}');
