@@ -82,6 +82,13 @@ export function triggerFedReaction(m: RabbitMotion): void {
   m.mode = 'fed'; m.elapsed = 0; m.from = {...m.local}; m.to = {...m.local};
 }
 
+/** Dadi's arrival is an intentional in-place somersault, using the usual body pose and landing. */
+export function triggerWelcomeSalto(m: RabbitMotion, reducedMotion: boolean): void {
+  if (reducedMotion) return;
+  m.mode = 'salto'; m.elapsed = 0; m.duration = CONFIG().salto.duration * 1000;
+  m.from = {...m.local}; m.to = {...m.local};
+}
+
 function startWalk(m: RabbitMotion, target: Point): void {
   const {speed} = CONFIG(), dx = target.x - m.local.x, dy = target.y - m.local.y, distance = Math.hypot(dx, dy);
   m.mode = 'walk'; m.elapsed = 0; m.from = {...m.local}; m.to = {...target};

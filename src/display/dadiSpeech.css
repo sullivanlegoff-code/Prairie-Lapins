@@ -1,0 +1,13 @@
+.dadi-speech {
+  position: absolute; z-index: 4; transform: translate(-50%, -100%); pointer-events: none;
+  width: max-content; max-width: min(240px, calc(100% - 24px)); box-sizing: border-box;
+  padding: 10px 14px; border: 2px solid #76634e; border-radius: 17px;
+  background: #fff9e9; color: #40372c; box-shadow: 0 3px 0 #493b2526;
+  font: 600 16px/1.35 ui-rounded, 'Trebuchet MS', system-ui, sans-serif; text-align: center; overflow-wrap: anywhere;
+}
+.dadi-speech[hidden] { display: none; }
+.dadi-speech::after {
+  content: ''; position: absolute; left: var(--dadi-tail, 50%); bottom: -7px;
+  width: 10px; height: 10px; background: #fff9e9; border-right: 2px solid #76634e;
+  border-bottom: 2px solid #76634e; transform: translateX(-50%) rotate(45deg);
+}

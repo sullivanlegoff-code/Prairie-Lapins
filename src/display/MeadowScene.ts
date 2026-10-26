@@ -5,6 +5,8 @@ import {nestForParent} from '../simulation/breeding';
 import {rabbitArt, type RabbitArt} from '../config/rabbitArt';
 import {rabbitBlinkArt, rabbitPatchPlacement} from '../config/rabbitBlinkArt';
 import {rabbitFaceSeed, rabbitFaceState} from './rabbitBlink';
+import {DadiReactions} from './dadiReactions';
+import {DadiSpeech, dadiHeadVisible} from './dadiSpeech';
 import Phaser from 'phaser';
 import {VISUAL} from '../config/visual';
 import {shouldShowIncomeBubble} from './incomeBubble';
@@ -36,7 +38,7 @@ import {SkyLayer, SKY_COLOR} from './skyLayer';
 import {PARCELS, PARCEL_IDS, expansionTarget, purchasableParcels, type ParcelId} from '../config/land';
 import {ISLAND} from '../config/islandGeometry';
 import {rabbitOffset, rabbitPosition, rabbitHit, rabbitFedLift} from './rabbitLayout';
-import {createRabbitMotion, retargetRabbitMotion, stepRabbitMotion, triggerFedReaction, rabbitPose, type RabbitMotion} from './rabbitMotion';
+import {createRabbitMotion, retargetRabbitMotion, stepRabbitMotion, triggerFedReaction, triggerWelcomeSalto, rabbitPose, type RabbitMotion} from './rabbitMotion';
 import {habitatStats, habitatEntryReason, visibleColumns} from '../simulation/habitats';
 import {HOUR, ORDERS, type SpeciesId} from '../config/balance';
 import type {Building, DecorationLocation, GameState} from '../state/types';
@@ -81,6 +83,8 @@ export class MeadowScene extends Phaser.Scene {
   /** Visual-only walking state per resident, reused while the individual stays present. */
   private motions = new Map<string, {group: string; tier: number; center: Point; motion: RabbitMotion}>();
   private motionClock: number | null = null;
+  private dadi = new DadiReactions();
+  private dadiSpeech: DadiSpeech | null = null;
   private pivots = new Map<string, Point>();
   private bubbleHits: {point: Point; width: number; height: number; selection: MeadowSelection}[] = [];
   private layoutKey = '';
@@ -171,9 +175,20 @@ export class MeadowScene extends Phaser.Scene {
     this.markers = this.add.graphics().setDepth(1); this.bubbles = this.add.container(0, 0).setDepth(3);
     for (const layer of [this.ground, this.groundOverlay]) layer.setPosition(groundTransform.x, groundTransform.y).setRotation(groundTransform.rotation).setScale(groundTransform.scaleX, groundTransform.scaleY);
     this.resize();
+    this.dadiSpeech = new DadiSpeech(this.game.canvas.parentElement!);
     this.unsubscribe = this.controller.subscribe(snapshot => {
+      this.dadi.sync(snapshot.state, snapshot.generation);
       this.current = snapshot.state; this.simulationReceivedAt = this.time.now;
       this.progressNow = this.current?.lastSimulatedAt ?? 0; this.renderState();
+    });
+    const stopCommands = this.controller.onConfirmedCommand(command => this.dadi.confirmed(command));
+    const clearDadi = () => { this.dadi.clearSpeech(); this.dadiSpeech?.hide(); };
+    const dadiVisibility = () => { if (document.hidden) clearDadi(); };
+    document.addEventListener('visibilitychange', dadiVisibility);
+    window.addEventListener('pagehide', clearDadi);
+    this.events.once('shutdown', () => {
+      stopCommands(); this.dadi.reset(); this.dadiSpeech?.destroy(); this.dadiSpeech = null;
+      document.removeEventListener('visibilitychange', dadiVisibility); window.removeEventListener('pagehide', clearDadi);
     });
     this.recenter();
     this.scale.on('resize', this.resize, this);
@@ -353,6 +368,7 @@ export class MeadowScene extends Phaser.Scene {
   }
   setPhoto(active: boolean): void {
     this.photo = active;
+    if (active) { this.dadi.clearSpeech(); this.dadiSpeech?.hide(); }
     this.syncTutorialHand();
     this.syncProgressBars();
     this.drawDecorationSelection();
@@ -363,6 +379,10 @@ export class MeadowScene extends Phaser.Scene {
     rabbit.fedUntil = this.time.now + 900; if (rabbit.motion) triggerFedReaction(rabbit.motion);
     const heart = this.add.text(rabbit.object.x, rabbit.object.y - 40, '♥', {fontSize: '28px', color: '#d9788d'}).setDepth(5).setOrigin(.5);
     this.tweens.add({targets: heart, y: heart.y - 45, alpha: 0, duration: 1000, onComplete: () => heart.destroy()});
+  }
+  private dadiHead(rabbit: VisualRabbit): Point {
+    const height = rabbit.art ? rabbit.art.height * rabbit.art.worldWidth / rabbit.art.width - rabbit.art.groundY : 45;
+    return this.view.screen({x: rabbit.object.x, y: rabbit.object.y - (height + rabbit.lift) * VISUAL.rabbit.scale});
   }
   private updateVisibleRegions(): void {
     // Owned plateaux and their hanging rock; clouds and extension sketches do not own pan regions.
@@ -901,6 +921,18 @@ export class MeadowScene extends Phaser.Scene {
     if (this.gridStroke && this.gridZoom !== this.view.zoom) this.gridStroke();
     // Scene time since the last frame; a long gap (inactive tab) is cut short inside the motion step: no jump.
     const dt = this.motionClock === null ? 0 : time - this.motionClock; this.motionClock = time;
+    let dadi: ReturnType<DadiReactions['step']> = {speech: null, started: null}, dadiObscured = false;
+    const dadiBounds = this.dadiSpeech ? {width: this.scale.width, height: this.scale.height, top: document.getElementById('hud')?.getBoundingClientRect().bottom ?? 0} : null;
+    if (this.dadiSpeech) {
+      const active = !this.photo && !document.hidden && document.getElementById('loading-screen')?.hidden !== false;
+      dadiObscured = document.getElementById('game-panel')?.hidden === false || !!document.querySelector('dialog[open]');
+      const visible = this.rabbitViews.filter(r => dadiHeadVisible(this.dadiHead(r), dadiBounds!)).map(r => r.id);
+      dadi = this.dadi.step(dadiObscured ? 0 : dt, active, dadiObscured ? [] : visible);
+      if (dadi.started?.salto) {
+        const motion = this.rabbitViews.find(r => r.id === dadi.started!.id)?.motion;
+        if (motion) triggerWelcomeSalto(motion, matchMedia('(prefers-reduced-motion: reduce)').matches);
+      }
+    }
     let depthChanged = false;
     for (const rabbit of this.rabbitViews) {
       const previousDepth = rabbit.object.depth;
@@ -941,5 +973,8 @@ export class MeadowScene extends Phaser.Scene {
       rabbit.ears.forEach((ear, index) => { ear.rotation = Math.sin(t * 1.4 + index) * .13; });
     }
     if (depthChanged) this.animals?.sort('depth');
+    const speaker = dadi.speech && this.rabbitViews.find(r => r.id === dadi.speech!.id);
+    const head = speaker ? this.dadiHead(speaker) : null;
+    this.dadiSpeech?.show(dadiObscured ? null : dadi.speech, head, dadiBounds!);
   }
 }
