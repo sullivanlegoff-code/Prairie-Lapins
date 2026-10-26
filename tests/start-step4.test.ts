@@ -10,6 +10,9 @@ import {buildingPlacementReason} from '../src/simulation/placement';
 import {previousStart} from './regression-start';
 import type {Command,TimedStage} from '../src/state/types';
 import {babyOf, welcomeOf} from './nursery-baby';
+import {habitatPrice} from '../src/config/habitats';
+import {SPECIES} from '../src/config/balance';
+import {progressionFromXp} from '../src/simulation/progression';
 describe('Paille-only course: real commands and existing economy',()=>{
  it.each([true,false])('aided=%s, Frisket and Icy, explicit claims and resumes',aided=>{
   for(const roll of [.1,.65]){
@@ -30,7 +33,19 @@ describe('Paille-only course: real commands and existing economy',()=>{
    finish('building-4','breeding');expect(babyOf(s.buildings.find(b=>b.kind==='nursery')!)).toBeNull();expect(guidedStep(s,p.value,now).id).toBe('transfer');run({type:'transferBirth',id:'building-4',birthId:s.initiation!.birthId!});claim('to-nursery');expect(s.buildings.find(b=>b.kind==='nest')!.breeding).toBeNull();expect(s.rabbits.map(r=>r.enclosureId)).toEqual(['building-1',snow]);resume();finish('building-5','growth');
    // Both Rares can enter either specialized home.
    run(welcomeOf(s, roll===.65?snow:'building-1'));claim('first-birth');resume();expect(guidedStep(s,p.value,now).done).toBe(true);
-   expect(s.rabbits.at(-1)!.species).toBe(roll===.1?'frisket':'icy');expect([s.pattes,s.grass,s.hearts]).toEqual([180,66,15]);expect(s.missions.claimed).toEqual(['snow-habitat','welcome-snow','first-farm','first-harvest','first-meal','parents-ready','at-nest','to-nursery','first-birth']);expect(s.initiation!.used).toEqual(aided?['order','breeding','growth']:[]);expect(s.missions.completed).toContain('two-habitats');expect(s.missions.claimed).not.toContain('two-habitats');
+   expect(s.rabbits.at(-1)!.species).toBe(roll===.1?'frisket':'icy');expect([s.pattes,s.grass,s.hearts]).toEqual([760,66,15]);expect(s.missions.claimed).toEqual(['snow-habitat','welcome-snow','first-farm','first-harvest','first-meal','parents-ready','at-nest','to-nursery','first-birth']);expect(s.initiation!.used).toEqual(aided?['order','breeding','growth']:[]);expect(s.missions.completed).toContain('two-habitats');expect(s.missions.claimed).not.toContain('two-habitats');
+   expect(SOLO_INITIAL_MISSION_IDS.at(-1)).toBe('first-birth');
+   run({type:'claimMainMission',id:'varied-family'});resume();
+   expect(progressionFromXp(s.progression.totalXp).level).toBe(5);
+   // Three discovered species suffice: the old five-species purchase lock does not apply to new games.
+   expect(s.discovered).toHaveLength(3);
+   const spot=Array.from({length:48*48},(_,i)=>({x:i%48,y:Math.floor(i/48)})).find(pos=>!buildingPlacementReason(s,pos.x,pos.y))!;
+   const wallet=[s.pattes,s.hearts];
+   run({type:'buyBuilding',kind:'enclosure',habitatType:'feu',...spot});const fire=s.buildings.at(-1)!;
+   run({type:'buyRabbit',species:'feu',enclosureId:fire.id});resume();
+   expect([s.pattes,s.hearts]).toEqual([wallet[0]-habitatPrice('feu')-SPECIES.feu.price!,wallet[1]]);
+   expect(s.rabbits.some(r=>r.species==='feu'&&r.enclosureId===fire.id)).toBe(true);
+   expect(s.acquiredParcels).toEqual(['southwest']);
   }
  });
  it('old games retain homes, rabbits, claims and rights without retroactive welcome reward',()=>{

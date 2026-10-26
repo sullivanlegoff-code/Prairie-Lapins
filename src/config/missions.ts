@@ -1,5 +1,5 @@
-import {HOUR, type BuildingKind} from './balance';
-import type {HabitatType} from './habitats';
+import {HOUR, SPECIES, type BuildingKind} from './balance';
+import {habitatPrice, type HabitatType} from './habitats';
 
 export type Reward = {resource: 'pattes' | 'grass' | 'hearts'; amount: number} | {resource: 'none'; amount: 0};
 export type MainCondition = {kind: 'building'; building: BuildingKind; habitatType?: HabitatType; target?: number} | {kind: 'discoveries' | 'affection'; target: number} | {kind: 'extension' | 'rare'} | {kind: 'level' | 'extensions' | 'habitatLevel'; target: number} | {kind: 'ordinaryRares' | 'nightOrder'} | {kind: 'species'; species: 'neige' | 'feu' | 'belier-gris' | 'volant'} | {kind: 'parents'; target: number} | {kind: 'event'; event: MainEvent; target: number};
@@ -35,7 +35,8 @@ export const MAIN_MISSIONS: Record<MainMissionId, MainDefinition> = {
   'parents-ready': {title: 'Deux parents prêts', description: 'Posséder deux lapins d’affection au moins 2.', condition: {kind: 'parents', target: 2}, reward: {resource: 'pattes', amount: 20}},
   'at-nest': {title: 'Au nid', description: 'Lancer une reproduction gratuite.', condition: {kind: 'event', event: 'breed', target: 1}, reward: {resource: 'grass', amount: 20}},
   'to-nursery': {title: 'Vers la nurserie', description: 'Transférer manuellement un lapereau dans la nurserie.', condition: {kind: 'event', event: 'transferBirth', target: 1}, reward: {resource: 'pattes', amount: 30}},
-  'first-birth': {title: 'Première naissance', description: 'Accueillir un lapereau issu d’une reproduction.', condition: {kind: 'event', event: 'welcome', target: 1}, reward: {resource: 'pattes', amount: 50}},
+  // The final tutorial reward alone funds the Fire home and its common rabbit, at current shop prices.
+  'first-birth': {title: 'Première naissance', description: 'Accueillir un lapereau issu d’une reproduction.', condition: {kind: 'event', event: 'welcome', target: 1}, reward: {resource: 'pattes', amount: habitatPrice('feu') + SPECIES.feu.price!}},
   'two-habitats': {title: 'Deux habitats', description: 'Posséder deux habitats.', condition: {kind: 'building', building: 'enclosure', target: 2}, reward: {resource: 'grass', amount: 30}},
   'first-decoration': {title: 'Décorer la prairie', description: 'Poser une décoration extérieure, un objectif facultatif.', condition: {kind: 'event', event: 'placeDecoration', target: 1}, reward: {resource: 'pattes', amount: 20}},
   'first-farm': {title: 'Notre ferme', description: 'Posséder une ferme.', condition: {kind: 'building', building: 'farm'}, reward: {resource: 'grass', amount: 20}},
