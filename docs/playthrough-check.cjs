@@ -5,6 +5,7 @@
 // Préparation : `npm run build -- --configLoader runner`, puis servir dist/ sur 127.0.0.1:5199 :
 //   node node_modules/vite/bin/vite.js preview --outDir dist --port 5199 --strictPort --host 127.0.0.1
 // Usage : PLAYWRIGHT_MODULE=<chemin absolu de node_modules/playwright> node docs/playthrough-check.cjs <dossier de sortie hors dépôt> [largeur=844] [hauteur=390] [étapes=120]
+// FEU=1 : après le tutoriel, achète la Clairière de feu puis le Lapin Feu avec les seules récompenses (log « feuStart » → « feuEnd »).
 // Résultat : <dossier>/step-NNN.png et <dossier>/log.json (état lu dans la sauvegarde à chaque étape, erreurs JavaScript).
 const {chromium} = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const fs = require('fs');
@@ -49,8 +50,8 @@ fs.mkdirSync(out, {recursive: true});
     }
     else if (state.target) { await page.evaluate(() => { const visible = el => el && el.offsetParent !== null; [...document.querySelectorAll('dialog[open] .guide-target'), ...document.querySelectorAll('.guide-target')].find(el => visible(el) && !el.disabled && el.getAttribute('aria-disabled') !== 'true').click(); }); }
     else if (state.dialog) { const btn = await page.$('dialog[open]:not(#paille-dialogue) button:not([disabled])'); if (btn) await btn.click(); }
-    else if (state.panel === 'Missions' && await page.evaluate(() => [...document.querySelectorAll('#panel-content button')].some(b => /^Réclamer/.test(b.textContent) && !b.disabled))) {
-      const label = await page.evaluate(() => { const b = [...document.querySelectorAll('#panel-content button')].find(b => /^Réclamer/.test(b.textContent) && !b.disabled); b.click(); return b.textContent; });
+    else if (state.panel === 'Missions' && await page.evaluate(() => [...document.querySelectorAll('#panel-content button')].some(b => /^(Réclamer|Valider l’objectif)/.test(b.textContent) && !b.disabled))) {
+      const label = await page.evaluate(() => { const b = [...document.querySelectorAll('#panel-content button')].find(b => /^(Réclamer|Valider l’objectif)/.test(b.textContent) && !b.disabled); b.click(); return b.textContent; });
       log.push({claimed: label});
       if (await page.isVisible('#continue-level-up').catch(() => false)) await page.click('#continue-level-up');
     }
@@ -68,6 +69,41 @@ fs.mkdirSync(out, {recursive: true});
     else { log.push({noTarget: true}); }
     await page.waitForTimeout(700);
   }
+  if (process.env.FEU === '1') try {
+    // Phase 2 : le joueur a fini le tutoriel avec ses seules récompenses ; il doit pouvoir acheter la Clairière de feu puis le Lapin Feu.
+    const shot = async name => page.screenshot({path: `${out}/feu-${name}.png`});
+    const texts = () => page.evaluate(() => [...document.querySelectorAll('#panel-content button')].map(b => (b.disabled ? '[x] ' : '') + b.textContent.replace(/\s+/g, ' ').trim()).slice(0, 40));
+    const save = () => page.evaluate(() => { const s = JSON.parse(localStorage.getItem('prairie-lapins.save.v1')); return {p: s.pattes, level: s.progression.totalXp, rabbits: s.rabbits.map(r => r.species), habitats: s.buildings.filter(b => b.habitat).map(b => b.habitat.type)}; });
+    const clickText = async (re, scope = '#panel-content') => { const ok = await page.evaluate(([src, scope]) => { const re = new RegExp(src); const b = [...document.querySelectorAll(scope + ' button')].find(b => re.test(b.textContent) && !b.disabled && b.offsetParent); if (b) { b.click(); return b.textContent.replace(/\s+/g, ' ').trim(); } return null; }, [re.source, scope]); log.push({feu: ok ?? 'introuvable: ' + re}); await page.waitForTimeout(500); return ok; };
+    const close = async () => { for (let i = 0; i < 3 && await page.isVisible('#continue-level-up'); i++) { await page.click('#continue-level-up'); await page.waitForTimeout(400); } if (await page.isVisible('#close-panel')) await page.click('#close-panel'); await page.waitForTimeout(300); for (let i = 0; i < 3 && await page.isVisible('#continue-level-up'); i++) { await page.click('#continue-level-up'); await page.waitForTimeout(400); } };
+    await close(); log.push({feuStart: await save()});
+    await page.click('#open-shop'); await page.waitForTimeout(600); log.push({shop: await texts()}); await shot('1-boutique');
+    // Habitats : la carte de la Clairière de feu (titre « Clairière de feu »).
+    const card = async (title, tab) => { if (tab) await clickText(tab); return page.evaluate(title => { const c = [...document.querySelectorAll('#panel-content .card, #panel-content .shop-category')].find(c => new RegExp(title).test(c.textContent)); if (!c) return null; const b = c.querySelector('button'); return {text: b?.textContent.replace(/\s+/g, ' ').trim(), disabled: b?.disabled}; }, title); };
+    log.push({glade: await card('Clairière de feu')});
+    let ok = await page.evaluate(() => { const c = [...document.querySelectorAll('#panel-content .card, #panel-content .shop-category')].find(c => /Clairière de feu/.test(c.textContent)); const b = c?.querySelector('button:not(:disabled)'); if (b) { b.click(); return true; } return false; });
+    await page.waitForTimeout(700);
+    if (!ok) { await clickText(/^Bâtiments|^Habitats/); log.push({shopTab: await texts()}); ok = await page.evaluate(() => { const c = [...document.querySelectorAll('#panel-content .card, #panel-content .shop-category')].find(c => /Clairière de feu/.test(c.textContent)); const b = c?.querySelector('button:not(:disabled)'); if (b) { b.click(); return true; } return false; }); await page.waitForTimeout(700); }
+    log.push({gladeCardClicked: ok, panel: await page.textContent('#panel-title')}); await shot('2-placement');
+    // Placement : toucher l'île jusqu'à ce que « Confirmer » soit actif, puis confirmer.
+    const area = await page.evaluate(() => { const c = document.querySelector('#game canvas').getBoundingClientRect(), p = document.getElementById('game-panel').getBoundingClientRect(); return {w: Math.min(c.width, p.left || c.width), h: c.height}; });
+    let placed = false;
+    for (let y = 60; y < area.h - 20 && !placed; y += 9) for (let x = 20; x < area.w - 20 && !placed; x += 9) {
+      await page.mouse.click(x, y); await page.waitForTimeout(40);
+      placed = await page.evaluate(() => [...document.querySelectorAll('#panel-content button')].some(b => /^(Confirmer|Acheter et placer)/.test(b.textContent) && !b.disabled));
+    }
+    log.push({gladePlacementPossible: placed}); await shot('3-case');
+    if (placed) { await clickText(/^(Confirmer|Acheter et placer)/); await page.waitForTimeout(800); }
+    await close(); log.push({afterGlade: await save()}); await shot('4-clairiere');
+    // Lapin Feu : boutique, onglet Lapins, carte « Lapin Feu », choisir l'habitat Feu, confirmer.
+    await page.click('#open-shop'); await page.waitForTimeout(500); await clickText(/^Lapins/);
+    log.push({rabbitShop: await texts()}); await shot('5-lapins');
+    const feuCard = await page.evaluate(() => { const c = [...document.querySelectorAll('#panel-content .card')].find(c => c.querySelector('h3')?.textContent === 'Lapin Feu'); const b = c?.querySelector('button'); if (b && !b.disabled) { b.click(); return b.textContent.replace(/\s+/g, ' ').trim(); } return b ? '[désactivé] ' + b.textContent.replace(/\s+/g, ' ').trim() : null; });
+    await page.waitForTimeout(600); log.push({feuCard}); log.push({destinations: await texts()}); await shot('6-destination');
+    await clickText(/Clairière de feu|feu/i); log.push({afterDestination: await texts()});
+    await clickText(/^Confirmer l’achat/); await page.waitForTimeout(900);
+    await close(); log.push({feuEnd: await save()}); await shot('7-fin');
+  } catch (e) { log.push({feuError: String(e).slice(0, 400)}); await page.screenshot({path: `${out}/feu-erreur.png`}).catch(() => {}); }
   fs.writeFileSync(`${out}/log.json`, JSON.stringify({log, errors}, null, 1));
   console.log(JSON.stringify({steps: log.length, errors: errors.slice(0, 10), last: log.slice(-4)}, null, 1));
   await browser.close();

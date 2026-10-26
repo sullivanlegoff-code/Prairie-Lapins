@@ -1,0 +1,10 @@
+{
+  "source": "assets-source/loading/morning-path.png",
+  "target": "public/assets/loading/morning-path.webp",
+  "width": 1672,
+  "height": 941,
+  "quality": 0.82,
+  "sourceSha256": "b9a0aed480f88c0b8847716fb5a1b03649f8aed781877a7de8fed706dbe65aee",
+  "derivedSha256": "3ef32cbb76ee4982649da6a85f018db24b172c70a63d2c7a95a2b19c4ba47e7c",
+  "bytes": 338942
+}
