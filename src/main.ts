@@ -32,6 +32,8 @@ async function boot(): Promise<() => void> {
   const base = browserStorage();
   let storage = base, clock = Date.now, preferenceKey = 'prairie-lapins.ui.v1';
   let mountDev: ((controller: GameController) => () => void) | undefined;
+  /** Laboratory: after a scenario or a tool replaces the test game, frame the new island. */
+  let recenterAfterLab: (() => void) | undefined;
   const testMode = DECORATIONS_PREVIEW_BUILD || LABORATORY_BUILD || (import.meta.env.DEV && new URLSearchParams(location.search).get('dev') === '1');
   const policy = sessionPolicy(testMode);
   const environmentLink = document.getElementById('environment-link') as HTMLAnchorElement;
@@ -39,7 +41,7 @@ async function boot(): Promise<() => void> {
   environmentLink.textContent = testMode ? 'Retour au jeu normal' : 'Ouvrir le laboratoire de test';
   if (DECORATIONS_PREVIEW_BUILD || LABORATORY_BUILD || (import.meta.env.DEV && new URLSearchParams(location.search).get('dev') === '1')) {
     const {developmentEnvironment} = await import('./dev/tools');
-    const dev = developmentEnvironment(base, {decorationPreview: DECORATIONS_PREVIEW_BUILD}); storage = dev.storage; clock = dev.clock; preferenceKey = dev.preferenceKey; mountDev = controller => dev.mount(controller, fresh => ui?.onReplacement(fresh));
+    const dev = developmentEnvironment(base, {decorationPreview: DECORATIONS_PREVIEW_BUILD}); storage = dev.storage; clock = dev.clock; preferenceKey = dev.preferenceKey; mountDev = controller => dev.mount(controller, fresh => { ui?.onReplacement(fresh); recenterAfterLab?.(); });
   }
   // No online adapter exists yet. This policy is the boundary for future clients.
   if (policy.kind === 'laboratory') document.title = 'MODE TEST — Prairie de lapins';
@@ -62,6 +64,7 @@ async function boot(): Promise<() => void> {
     {progress: fraction => loading.progress('textures', fraction),
       error: file => loading.fail('textures', `Une image du jeu n’a pas pu être chargée (${file}).`),
       ready: () => { loading.done('textures'); loading.done('scene'); }});
+  recenterAfterLab = () => scene.recenter();
   const game = new Phaser.Game({
     type: Phaser.AUTO, parent: 'game', backgroundColor: '#fffdf5', transparent: true,
     scale: {mode: Phaser.Scale.RESIZE, width: '100%', height: '100%'}, scene: [scene],

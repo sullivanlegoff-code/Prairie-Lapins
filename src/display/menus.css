@@ -9,6 +9,21 @@
   --menu-muted: #534b38;
 }
 
+/* Laboratory pages reuse the journal paper and the existing stone button skin. */
+#devtools { color: var(--menu-ink); background: #f4e8cd var(--menu-linen); }
+#devtools details { margin: 10px 0; padding: 8px; border: 1px solid #a58a67; border-radius: 8px; }
+#devtools summary { min-height: 44px; align-content: center; cursor: pointer; font-weight: bold; overflow-wrap: anywhere; }
+#devtools :is(button, select, input) { min-height: 44px; max-width: 100%; box-sizing: border-box; font-size: 16px; }
+#devtools label { display: grid; gap: 6px; min-width: 0; margin: 8px 0; }
+#devtools :is(select, input) { width: 100%; color: var(--menu-ink); background-color: #fff9e9; border: 1px solid #a58a67; border-radius: 6px; padding: 8px; }
+#devtools .lab-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #a58a6755; }
+#devtools .lab-row > label { flex: 1 1 120px; }
+#devtools .lab-row > span:not(.portrait) { flex: 1 1 120px; overflow-wrap: anywhere; }
+#devtools .lab-row > button { flex: 1 1 120px; width: auto; }
+#devtools .portrait { flex: 0 0 54px; }
+#dev-status { position: sticky; bottom: 0; padding: 10px; background: #fff9e9; border: 1px solid #a58a67; border-radius: 8px; overflow-wrap: anywhere; }
+#dev-status:empty { display: none; }
+
 /* Element medallions retain a literal, screen-reader-only name. */
 .element-icon { display: inline-flex; width: 22px; height: 22px; vertical-align: middle; }
 .element-icon img { width: 100%; height: 100%; object-fit: contain; }

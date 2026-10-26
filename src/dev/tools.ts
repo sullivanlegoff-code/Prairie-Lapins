@@ -1,3 +1,4 @@
+import {mountLabPanel} from './labPanel';
 import {mountLevelAccessDemo} from './levelAccessDemo';
 import type {GameController, Operation} from '../application/GameController';
 import type {SaveStorage} from '../persistence/storage';
@@ -96,27 +97,17 @@ export function developmentEnvironment(base: SaveStorage, options: {decorationPr
       const version = document.createElement('p'); version.textContent = options.decorationPreview ? `Version expérimentale v8 · build ${BUILD_REVISION.slice(0, 7)}. Jeu normal et laboratoire en v8 ; comptes figés en v4.` : `Même révision que le jeu normal : ${BUILD_REVISION.slice(0, 7)}.`; host.append(version);
       const status = document.createElement('p'); status.setAttribute('role', 'status'); status.id = 'dev-status';
       const resultMessage = (result: TestResult, message: string) => { status.textContent = result.ok ? message : result.reason === 'NOT_CONFIRMED' ? 'Opération annulée. La partie de test est conservée.' : 'Opération de test refusée. Vérifie la sauvegarde et l’espace disponible ; la partie normale est conservée.'; };
-      const section = (title: string) => { const h = document.createElement('h3'); h.textContent = title; host.append(h); };
+      let target: HTMLElement = host;
+      const section = (title: string) => { const d = document.createElement('details'); const summary = document.createElement('summary'); summary.textContent = title; d.append(summary); host.append(d); target = d; };
       const button = (label: string, id: string, click: () => void) => {
-        const b = document.createElement('button'); b.type = 'button'; setCurrencyText(b, label); b.id = id; b.onclick = click; host.append(b);
+        const b = document.createElement('button'); b.type = 'button'; setCurrencyText(b, label); b.id = id; b.onclick = click; target.append(b);
       };
       section('Avancer le temps de test');
       for (const minutes of TIME_STEPS) button(`+ ${minutes} min`, `dev-time-${minutes}`, () => resultMessage(advanceTime(controller, minutes), `Horloge de test avancée de ${minutes} minutes.`));
-      section('Ajouter des ressources de test');
-      const names = {pattes: 'pattes', grass: 'nourriture', hearts: 'cœurs'};
-      for (const resource of Object.keys(RESOURCE_STEPS) as (keyof typeof RESOURCE_STEPS)[]) {
-        for (const amount of RESOURCE_STEPS[resource]) button(`+ ${amount} ${names[resource]}`, `dev-grant-${resource}-${amount}`, () => resultMessage(grant(controller, resource, amount), 'Ressources ajoutées à la partie de test.'));
-      }
-      section('Progression de test');
-      for (const amount of [50, 500]) button(`+${amount} XP`, `dev-xp-${amount}`, () => {
-        const result = controller.grantLaboratoryXp(amount);
-        resultMessage(result, result.ok && result.progressionGain ? `+${result.progressionGain.xpGained} XP · niveaux récompensés : ${result.progressionGain.rewardedLevels.join(', ') || 'aucun'} · +${result.progressionGain.heartsGranted} cœur${result.progressionGain.heartsGranted > 1 ? 's' : ''}.` : 'Progression enregistrée.');
-      });
-      section('Recettes de test');
-      button('Réinitialiser les recettes achetées', 'dev-reset-recipes', () => resultMessage(resetRecipes(controller), 'Recettes achetées oubliées, sans remboursement. Les espèces découvertes restent connues.'));
-      section('Lapins de test');
+      const disposePanel = mountLabPanel(host, controller, state => replaceTestState(controller, state), (_ok, message) => { status.textContent = message; }, onReplacement);
+      section('Placement manuel — habitat existant');
       const field = (label: string, id: string) => {
-        const wrap = document.createElement('label'); wrap.textContent = label + ' '; const select = document.createElement('select'); select.id = id; wrap.append(select); host.append(wrap); return select;
+        const wrap = document.createElement('label'); wrap.textContent = label + ' '; const select = document.createElement('select'); select.id = id; wrap.append(select); target.append(wrap); return select;
       };
       const speciesSelect = field('Espèce', 'dev-rabbit-species'), homeSelect = field('Habitat', 'dev-rabbit-home');
       for (const id of SPECIES_IDS) { const o = document.createElement('option'); o.value = id; o.textContent = `${SPECIES[id].name} · ${SPECIES[id].rarity}`; speciesSelect.append(o); }
@@ -138,17 +129,17 @@ export function developmentEnvironment(base: SaveStorage, options: {decorationPr
         if (result.ok) onReplacement();
         resultMessage(result, `${SPECIES[species].name} ajouté à la partie de test (adulte, sans coût).`);
       };
-      host.append(addButton);
+      target.append(addButton);
       const stopWatchingHomes = controller.subscribe(snapshot => refreshHomes(snapshot.state));
-      const disposeLevelDemo = options.decorationPreview ? () => {} : mountLevelAccessDemo(host);
+      const disposeLevelDemo = options.decorationPreview ? () => {} : mountLevelAccessDemo(target);
       section('Scénarios préparés');
       for (const id of (Object.keys(SCENARIOS) as ScenarioId[])) button(SCENARIOS[id], `dev-scenario-${id}`, () => {
         if (!window.confirm(`Charger « ${SCENARIOS[id]} » remplace seulement la partie de test. Exporte-la pour la conserver. Continuer ?`)) return;
-        const result = loadScenario(controller, id); if (result.ok) onReplacement(id === 'guidedStart' || id === 'initiationUnused' || id === 'initiationSaved'); resultMessage(result, 'Scénario chargé et enregistré dans la partie de test.');
+        const result = loadScenario(controller, id); if (result.ok) onReplacement(id === 'freshStart' || id === 'guidedStart' || id === 'initiationUnused' || id === 'initiationSaved'); resultMessage(result, 'Scénario chargé et enregistré dans la partie de test.');
       });
       section('Sauvegarde de test');
-      button('Exporter la partie de test', 'dev-export', () => document.getElementById('export-game')!.click());
-      button('Importer dans la partie de test', 'dev-import', () => document.getElementById('import-game')!.click());
+      button('Exporter la partie de test', 'dev-export', () => { document.getElementById('export-game')!.click(); status.textContent = 'Export de la partie de test demandé.'; });
+      button('Importer dans la partie de test', 'dev-import', () => { document.getElementById('import-game')!.click(); status.textContent = 'Choisis une sauvegarde à importer dans ta partie de test.'; });
       button('Remettre la partie de test à zéro', 'dev-reset', () => {
         const result = controller.restart(window.confirm('Remplacer seulement la partie de test par une nouvelle partie ? La partie normale et les autres sauvegardes sont conservées. L’horloge et les préférences de test restent en place.'));
         if (result.ok) onReplacement(); resultMessage(result, 'Nouvelle partie de test enregistrée.');
@@ -162,6 +153,6 @@ export function developmentEnvironment(base: SaveStorage, options: {decorationPr
       const back = document.createElement('a'); back.textContent = 'Retour au jeu normal';
       back.href = options.decorationPreview ? import.meta.env.BASE_URL + '../../' : import.meta.env.MODE === 'laboratory' ? import.meta.env.BASE_URL + '../' : import.meta.env.BASE_URL;
       badge.append(back);
-      return () => { stopWatchingHomes(); disposeLevelDemo(); if (shortcut) { shortcut.hidden = true; shortcut.onclick = null; } host.replaceChildren(); host.hidden = true; badge.hidden = true; document.body.classList.remove('test-session'); };
+      return () => { stopWatchingHomes(); disposePanel(); disposeLevelDemo(); if (shortcut) { shortcut.hidden = true; shortcut.onclick = null; } host.replaceChildren(); host.hidden = true; badge.hidden = true; document.body.classList.remove('test-session'); };
     }};
 }
