@@ -1,3 +1,5 @@
+import {decorateRabbitText, rabbitTheme, clearRabbitTheme} from '../display/rabbitPresentation';
+import {heartIcon} from '../display/currency';
 import {cuisineQuotaText, heartGift, recipeHint, orderReadyText} from './economyFeedback';
 import type {AudioEngine} from '../audio/audioEngine';
 import {mountCuisineActivity} from './CuisineActivity';
@@ -53,18 +55,15 @@ type ShopTab = 'home' | 'recipes' | 'rabbits' | 'habitats' | 'buildings' | 'deco
 type View = {kind:'levelRequirement';target:LevelAccessTarget} | {kind: 'missions'; tab: 'main' | 'daily'} | {kind: 'shop'; tab: ShopTab} | {kind: 'building' | 'rabbit' | 'moveRabbit' | 'decoration'; id: string} |
   {kind: 'buyRabbit' | 'species'; species: SpeciesId} | {kind:'extension';parcelId?:ParcelId} | {kind: 'cuisineRabbit' | 'collection' | 'settings' | 'placement' | 'hearts' | 'recipes' | 'arrange' | 'decorationPlacement'} | null;
 function node<K extends keyof HTMLElementTagNameMap>(tag: K, text = '', className = ''): HTMLElementTagNameMap[K] {
-  const element = document.createElement(tag); setCurrencyText(element, text); element.className = className; return element;
+  const element = document.createElement(tag); setCurrencyText(element, text); decorateRabbitText(element); element.className = className; return element;
 }
 const rewardLabel = (r: Reward) => r.resource==='none' ? 'Objectif de collection accompli' : `${r.amount} ${{pattes: 'pattes', grass: 'nourriture', hearts: r.amount === 1 ? 'cœur' : 'cœurs'}[r.resource]}`;
 const heartAmount = (n: number) => `${n} ${n === 1 ? 'cœur' : 'cœurs'}`;
 /** The painted heart of the HUD, as the affection emblem: affection is there from the first meal. */
-function heartEmblem(): SVGSVGElement {
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('viewBox', '0 0 32 32'); svg.setAttribute('aria-hidden', 'true');
-  svg.innerHTML = '<path d="M16 28C12 24 3 19 3 11C3 3 13 2 16 9C21 1 30 6 29 13C28 20 20 25 16 28Z" fill="#ba657e" stroke="#6e3346" stroke-width="1.5"/><path d="M8 11Q8 7 12 9" fill="none" stroke="#ffeaf0" stroke-width="2.5" stroke-linecap="round"/>';
-  return svg;
-}
+function heartEmblem(): HTMLImageElement { return heartIcon(); }
+
 function avatar(species?: SpeciesId, large = false): HTMLElement {
-  const element = node('span', '', large ? 'portrait large' : 'portrait'); element.innerHTML = portrait(species); return element;
+  const element = node('span', '', large ? 'portrait large' : 'portrait'); element.innerHTML = portrait(species); if (species) rabbitTheme(element, species); return element;
 }
 export class GameUI {
   private pailleDialogue: PailleDialogue;
@@ -255,7 +254,7 @@ export class GameUI {
     this.shopHabitatSpecies=species;this.open({kind:'shop',tab:'habitats'});
   }
   private card(title: string, description = '', species?: SpeciesId): HTMLElement {
-    const card = node('article', '', 'card');
+    const card = node('article', '', 'card'); if (species) rabbitTheme(card, species);
     const heading = node('div', '', 'card-heading'); if (species) heading.append(avatar(species));
     const text = node('div'); text.append(node('h3', title)); if (description) text.append(node('p', description)); heading.append(text); card.append(heading);
     return card;
@@ -484,6 +483,7 @@ export class GameUI {
     this.panel.dataset.view = this.view?.kind ?? '';
     // A rabbit's card, a building's or a habitat's menu opens in the middle of the screen, over the dimmed meadow; the guided start keeps the side panel.
     const card = !this.onboardingActive && (this.view?.kind === 'rabbit' || this.view?.kind === 'moveRabbit' || this.view?.kind === 'building');
+    clearRabbitTheme(this.panel);
     this.panel.classList.toggle('center-card', card); document.body.classList.toggle('center-card-open', card);
     const backdrop = document.getElementById('panel-backdrop'); if (backdrop) backdrop.hidden = !card;
     document.getElementById('panel-back')!.hidden = !this.history.length && !fullShop;
@@ -580,7 +580,7 @@ export class GameUI {
       }
       }
     } else for (const species of SHOP_SPECIES) {
-      const card = this.card(SPECIES[species].name, 'Commun · affection 1 · 10 pattes / h', species);
+      const card = this.card(SPECIES[species].name, `${typeNames(SPECIES[species].types)} · ${RARITY_NAMES[SPECIES[species].rarity]} · affection 1 · 10 pattes / h`, species);
       const full = !s.buildings.some(b => b.kind === 'enclosure' && !habitatEntryReason(s, b, species));
       const target={family:'species',id:species,action:'purchase'} as const;
       const action=this.button(card, `Choisir un habitat · ${SPECIES[species].price} pattes`, () => this.open({kind: 'buyRabbit', species}));
@@ -891,6 +891,7 @@ export class GameUI {
   }
   private renderRabbit(s: GameState, id: string): void {
     const r = s.rabbits.find(r => r.id === id); if (!r) { this.close(); return; }
+    rabbitTheme(this.panel, r.species);
     const species = SPECIES[r.species]; this.title.textContent = species.name;
     this.menuPortrait(avatar(r.species));
     const overview = node('div', '', 'rabbit-overview'), essential = node('div');

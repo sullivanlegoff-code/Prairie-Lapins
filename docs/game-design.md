@@ -516,3 +516,7 @@ Le guidage mène aux catégories Habitats puis Lapins, avec placement/accueil co
 Budget sans revenus/cœurs : 300 − 200 − 80 + 60 = 80 ; ferme 60 et petite production 10 laissent 10 sans autre récompense. Avec tous les objectifs initiaux réclamés, après les deux repas et une première naissance : 140 pièces, 76 herbes, 12 cœurs (sans branches ni quotidiennes). Délais normaux : petite production 5 min en parallèle de reproduction 20 min ; croissance commune 5 min, Brumelin 15 min. Aucun prix, revenu, résultat ou probabilité changé. Emplacements libres possibles sur le centre : Neige (12,16) ou (20,16), ferme (16,12).
 
 Laboratoire : « Début guidé — nouvelle partie » et aides inutilisées reprennent le nouveau départ exact ; conservation des aides prépare la croissance liée avec achats réels et récompense unique. « Début guidé précédent — compatibilité » garde l’ancien départ pour vérifier sa continuité.
+
+## Chargement (26 octobre 2026)
+
+Le moteur Phaser (environ 1,2 Mo minifié) est servi dans son propre fichier, séparé du code du jeu (environ 530 Ko) : `vite.config.ts`, `manualChunks`. Les deux se chargent en parallèle et le moteur, qui change rarement, reste en cache. L’écran de chargement n’active « Jouer » qu’une fois toutes les textures chargées (îles, bâtiments, lapins, icônes) ; il peut donc durer un peu plus longtemps sur une connexion lente, sans écran blanc ensuite.
