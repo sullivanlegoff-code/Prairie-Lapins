@@ -67,15 +67,16 @@ for (const path of files) {
   assert.ok(name === 'index.html' || name === 'build-revision.txt' || name === '.nojekyll' || name.startsWith('assets/'), `Unexpected published file: ${name}`);
   if (!/\.(html|js|css)$/.test(path)) continue;
   const text = readFileSync(path, 'utf8');
-  assert.ok(!/http:\/\/(localhost|127\.0\.0\.1|192\.168\.)/.test(text), 'Local-server URL found in build');
+  // The Supabase SDK ships GoTrue's unused default URL; the game always passes its project URL.
+  assert.ok(!/http:\/\/(localhost|127\.0\.0\.1|192\.168\.)/.test(text.replaceAll('"http://localhost:9999"', '')), 'Local-server URL found in build');
   if (path.endsWith('.js')) {
     scripts += text;
-    if (!laboratory) for (const marker of ['prairie-lapins.development.', 'developmentEnvironment', 'dev-time-', 'dev-grant-', 'dev-scenario-', 'dev-xp-', 'dev-add-rabbit', 'Lapins de test', 'nurseryUnlocks', 'nurseryStates']) {
+    if (!laboratory) for (const marker of ['prairie-lapins.development.', 'developmentEnvironment', 'dev-time-', 'dev-grant-', 'dev-scenario-', 'dev-xp-', 'dev-resource-', 'Boutique de test', 'dev-add-rabbit', 'Lapins de test', 'nurseryUnlocks', 'nurseryStates']) {
       assert.ok(!text.includes(marker), `Development tool found in normal build: ${marker}`);
     }
   }
 }
-if (laboratory) for (const marker of ['prairie-lapins.development.', 'dev-time-', 'dev-grant-', 'dev-scenario-', 'dev-xp-', 'dev-add-rabbit', 'Lapins de test']) assert.ok(scripts.includes(marker), `Missing laboratory tool: ${marker}`);
+if (laboratory) for (const marker of ['prairie-lapins.development.', 'dev-time-', 'dev-resource-', 'dev-section-', 'dev-scenario-', 'Boutique de test', 'dev-add-rabbit']) assert.ok(scripts.includes(marker), `Missing laboratory tool: ${marker}`);
 if (laboratory) for (const marker of ['islandStart', 'islandExpanded', 'islandFull', 'decorationStart', 'decorationDemo', 'decoratedHabitat', 'decorationDense', 'Collection — toutes les espèces et recettes', 'nurseryUnlocks', 'nurseryStates', 'Nurserie — déblocages', 'Nurserie — quatre états']) assert.ok(scripts.includes(marker), `Missing laboratory scenario: ${marker}`);
 const farm = readFileSync(join(root, 'assets/buildings/farm-windmill.png'));
 assert.equal(farm.subarray(0,8).toString('hex'), '89504e470d0a1a0a', 'Farm must be a PNG');
