@@ -57,10 +57,11 @@ describe('economy B durable goals', () => {
   });
 });
 describe('economy B feedback and prices', () => {
-  it('gives only parent type hints for the nineteen illustrated rares', () => {
-    const hints=SPECIES_IDS.filter(id=>recipeHint(id));expect(hints).toHaveLength(19);
+  it('gives only parent type hints for the twenty illustrated rares, including Bouee', () => {
+    const hints=SPECIES_IDS.filter(id=>recipeHint(id));expect(hints).toHaveLength(20);
     for(const id of hints) expect(recipeHint(id)).toMatch(/^Indice : .+ × .+$/);
-    for(const id of ['bouee','dinono','magicien','dragon'] as const) expect(recipeHint(id)).toBeNull();
+    expect(recipeHint('bouee')).toBe('Indice : Feu × Métal');
+    for(const id of ['dinono','magicien','dragon'] as const) expect(recipeHint(id)).toBeNull();
     expect(hints.map(recipeHint).join(' ')).not.toMatch(/affection|%/i);
   });
   it('shows all five slots, then the unchanged tip, and renews at the canonical cycle', () => {

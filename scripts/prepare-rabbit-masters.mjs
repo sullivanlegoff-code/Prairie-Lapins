@@ -25,7 +25,11 @@ export const DESIGNS = [
   {id: 'requin', file: 'légendaire/Requin/Requin.png'},
   // Original design chosen by the owner on 25 October 2026 (concept B « Lanterne d’hiver »), generated outside the Design folder.
   {id: 'orange', source: 'output/imagegen/orange-v1/orange-B.png', background: 'light'},
+  // Original design chosen by the owner on 26 October 2026 (concept B « Cocktail »), generated outside the Design folder.
+  {id: 'bouee', source: 'output/imagegen/bouee-v2/bouee-B.png', background: 'light'},
 ];
+// Bouee's left ear encloses a pocket of background: seed only that pocket, preserving the ring's white dots.
+export const BACKGROUND_SEEDS = {bouee: [[490, 570]]};
 const MARGIN = 8, LIGHT_MIN = 200, LIGHT_SPREAD = 26, CHECKER_MIN = 130, CHECKER_SPREAD = 14, CORNER_TOLERANCE = 56;
 
 /** 8-bit RGB or RGBA, non-interlaced; returns RGBA. */
@@ -59,7 +63,7 @@ export function decodeRgbPng(file) {
   return {width, height, pixels};
 }
 
-export function cutOut({width, height, pixels}, mode) {
+export function cutOut({width, height, pixels}, mode, backgroundSeeds = []) {
   const at = i => [pixels[i * 4], pixels[i * 4 + 1], pixels[i * 4 + 2]];
   let reference = [0, 0, 0];
   if (mode === 'corner') {
@@ -79,6 +83,7 @@ export function cutOut({width, height, pixels}, mode) {
   const seed = i => { if (!removed[i] && distance(i) === 0) { removed[i] = 1; queue.push(i); } };
   for (let x = 0; x < width; x++) { seed(x); seed((height - 1) * width + x); }
   for (let y = 0; y < height; y++) { seed(y * width); seed(y * width + width - 1); }
+  for (const [x, y] of backgroundSeeds) seed(y * width + x);
   while (queue.length) {
     const i = queue.pop(), x = i % width, y = (i - x) / width;
     if (x > 0) seed(i - 1); if (x < width - 1) seed(i + 1); if (y > 0) seed(i - width); if (y < height - 1) seed(i + width);
@@ -116,7 +121,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   if (!folder) throw Error('Usage: node scripts/prepare-rabbit-masters.mjs "<Design des lapins folder>" [id ...]');
   for (const design of DESIGNS.filter(d => !only.length || only.includes(d.id))) {
     const image = decodeRgbPng(readFileSync(design.source ?? join(folder, design.file)));
-    if (design.background) cutOut(image, design.background);
+    if (design.background) cutOut(image, design.background, BACKGROUND_SEEDS[design.id]);
     const master = crop(image);
     mkdirSync(`assets-source/rabbits/${design.id}`, {recursive: true});
     writeFileSync(`assets-source/rabbits/${design.id}/sprite.png`, encodePng(master));

@@ -5,7 +5,8 @@ const HISTORICAL_ART = {
   'belier-gris': {kind: 'static-sprite', file: 'assets/rabbits/belier-gris/belier-gris-v1.png', texture: 'rabbit-belier-gris-original-v1', width: 461, height: 427, worldWidth: 48, groundY: 12, preloadOrder: 3},
   feu: {kind: 'static-sprite', file: 'assets/rabbits/feu/feu-v1.png', texture: 'rabbit-feu-original-v1', width: 461, height: 380, worldWidth: 50, groundY: 12, preloadOrder: 4},
   volant: {kind: 'static-sprite', file: 'assets/rabbits/volant/volant-v1.png', texture: 'rabbit-volant-original-v1', width: 369, height: 438, worldWidth: 50, groundY: 12, preloadOrder: 5},
-  bouee: {kind: 'procedural', coat: {body: '#ef9a55', patch: '#aab3c2'}}, // Magicien and Dragon received approved sprites (owner, 25 October 2026).
+  // Original concept B « Cocktail » chosen by the owner on 26 October 2026; right-facing, with sunglasses.
+  bouee: {kind: 'static-sprite', file: 'assets/rabbits/bouee/bouee-v1.png', texture: 'rabbit-bouee-original-v1', width: 425, height: 428, worldWidth: 54, groundY: 12, preloadOrder: 32},
   magicien: {kind: 'static-sprite', file: 'assets/rabbits/magicien/magicien-v1.png', texture: 'rabbit-magicien-original-v1', width: 384, height: 431, worldWidth: 52, groundY: 12, preloadOrder: 28},
   dragon: {kind: 'static-sprite', file: 'assets/rabbits/dragon/dragon-v1.png', texture: 'rabbit-dragon-original-v1', width: 418, height: 428, worldWidth: 54, groundY: 12, preloadOrder: 29},
 } as const;

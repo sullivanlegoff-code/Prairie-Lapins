@@ -1,4 +1,5 @@
 // Node built-ins only. Approved masters, useful DPR-3 dimensions, reproducible SHA-1.
+// Usage: node scripts/derive-rabbit-art.mjs [--check] [id ...] (all rabbits by default).
 import {readFileSync, writeFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
@@ -6,6 +7,7 @@ import {decodePng, encodePng} from './derive-nursery-overlays.mjs';
 import {resizeRegion} from './resize-rgba.mjs';
 process.chdir(fileURLToPath(new URL('..', import.meta.url)));
 const check = process.argv.includes('--check');
+const only = process.argv.slice(2).filter(arg => arg !== '--check');
 const manifestPath = 'scripts/rabbit-art-manifest.json';
 const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
 export const sha1 = bytes => createHash('sha1').update(bytes).digest('hex');
@@ -13,6 +15,7 @@ let failed = false;
 const registryPath = 'src/config/species.ts';
 let registry = readFileSync(registryPath, 'utf8');
 for (const [id, entry] of Object.entries(manifest)) {
+  if (only.length && !only.includes(id)) continue;
   try {
     const bytes = readFileSync(`assets-source/rabbits/${id}/sprite.png`);
     const source = decodePng(bytes);

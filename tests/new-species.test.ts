@@ -11,7 +11,6 @@ import {SAVE_KEY} from '../src/persistence/storage';
 import {collectionView, oddsView, recipeBook, nurseryView} from '../src/ui/models';
 import {knowEveryResult, knowRecipes} from './recipe-knowledge';
 import {habitatEntryReason} from '../src/simulation/habitats';
-import {COATS} from '../src/ui/portraits';
 import {scenarioState} from '../src/dev/scenarios';
 import type {GameState, Command} from '../src/state/types';
 import {stateBaby, welcomeOf} from './nursery-baby';
@@ -38,7 +37,7 @@ describe('approved three-species rules',()=>{
   const low=couple(a,b,2),before=structuredClone(low);const result=act(low,breed,0,()=>0);expect(result.ok).toBe(true);
   if(result.ok){expect(result.state.pattes).toBe(low.pattes);expect(result.state.buildings.find(x=>x.breeding)!.breeding!.birth.species).not.toBe(id)}
   expect(low).toEqual(before);expect(act(low,{type:'buyRabbit',species:id,enclosureId:'building-1'},0)).toMatchObject({ok:false,reason:'INVALID_CHOICE',state:low});
-  if(id==='bouee')expect(COATS[id]).toEqual({body:COATS[id].body,patch:'#aab3c2'});else expect(SPECIES[id].art.kind).toBe('static-sprite');
+  expect(SPECIES[id].art.kind).toBe('static-sprite');
  });
  it('matches the three approved distributions exactly',()=>{
   expect(breedingOdds('paille','feu',4,4)).toEqual({ardent:25,feu:25,paille:25,snk:25});

@@ -17,7 +17,7 @@ describe('catalogue v20', () => {
     expect(SPECIES_IDS.indexOf('dinono')).toBe(SPECIES_IDS.indexOf('orange') + 1);
   });
   it('puts rare Fire/Metal Bouee in the former Dinono slot', () => {
-    expect(SPECIES.bouee).toMatchObject({types: ['feu', 'metal'], rarity: 'rare', progression: {unlockLevel: 1}, art: {kind: 'procedural'}});
+    expect(SPECIES.bouee).toMatchObject({types: ['feu', 'metal'], rarity: 'rare', progression: {unlockLevel: 1}, art: {kind: 'static-sprite', file: 'assets/rabbits/bouee/bouee-v1.png'}});
     expect(recipeSource(SPECIES.bouee.acquisition)).toEqual({kind: 'recipe', requiredTypes: ['feu', 'metal'], minAffection: 2, guaranteeEligible: true});
     const index = SPECIES_IDS.indexOf('bouee');
     expect(SPECIES_IDS.slice(index - 1, index + 2)).toEqual(['boudinet', 'bouee', 'egiiipte']);
