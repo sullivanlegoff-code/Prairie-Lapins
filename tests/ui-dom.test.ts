@@ -10,6 +10,8 @@ import {previousStart as currentStart} from './regression-start';
 import {regressionStart as createGame} from './regression-start';
 // @vitest-environment happy-dom
 import html from '../index.html?raw';
+import {readFileSync} from 'node:fs';
+const breedingCss = readFileSync('src/display/breeding.css', 'utf8');
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {GameController} from '../src/application/GameController';
 import {REFUSALS} from '../src/ui/models';
@@ -23,7 +25,7 @@ import type {Command, GameState} from '../src/state/types';
 import {developmentEnvironment} from '../src/dev/tools';
 import {SAVE_KEY, type SaveStorage} from '../src/persistence/storage';
 import {scenarioState} from '../src/dev/scenarios';
-import {NURSERY, SPECIES} from '../src/config/balance';
+import {BALANCE, NURSERY, SPECIES, SPECIES_IDS} from '../src/config/balance';
 import {babyOf, setBaby} from './nursery-baby';
 import {EXPECTED_IDS, EXPECTED_RECIPE_IDS, rareAdditions, shareLabel} from './rabbit-art-fixtures';
 import {emptyBuilding} from '../src/state/initial';
@@ -567,6 +569,23 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     expect(dialog.open).toBe(true); expect(dialog.textContent).toContain('Lapin Feu'); button('Bienvenue dans la prairie', dialog).click();
     expect(decodeGame(data.get(SAVE_KEY)!)).toEqual({ok: true, state: state(controller)});
   });
+  it.each(SPECIES_IDS.filter((id, index, ids) => ids.findIndex(other => SPECIES[other].rarity === SPECIES[id].rarity) === index))('announces and credits the exact release food for %s', species => {
+    const initial = createGame(0);
+    initial.rabbits = [0, 1].map(i => ({id: `rabbit-${i + 2}`, species, affection: 2, enclosureId: initial.buildings[0].id}));
+    initial.discovered = [species];
+    const rarity = SPECIES[species].rarity;
+    const food = rarity === 'common' ? BALANCE.releaseGrass.common : rarity === 'rare' ? BALANCE.releaseGrass.rare : 0;
+    const {ui, controller} = setup(initial), before = state(controller).grass;
+    ui.select({kind: 'rabbit', id: 'rabbit-2'}); button('Confier ce lapin').click();
+    const dialog = document.getElementById('game-dialog')!;
+    expect(dialog.textContent).toContain(`Ce lapin quittera définitivement ta prairie. Tu reçois ${food} nourriture en remerciement.`);
+    expect(dialog.textContent).not.toContain('sans remboursement');
+    expect(state(controller).grass).toBe(before);
+    button('Confirmer', dialog).click();
+    expect(document.getElementById('toast')!.textContent).toBe(`Lapin confié · +${food} nourriture`);
+    expect(state(controller).grass).toBe(before + food);
+    expect(state(controller).rabbits.map(r => r.id)).toEqual(['rabbit-3']);
+  });
   it('requires confirmation to release an eligible duplicate and keeps the last representative', () => {
     const initial = createGame(0); initial.pattes = 1000;
     const {ui, controller} = setup(initial); document.getElementById('open-shop')!.click(); button('Lapins').click();
@@ -960,6 +979,49 @@ describe('new collection and exact-species recipe UI', () => {
 
 describe('pairing window and heart bubble', () => {
   const nestOf = (s: GameState) => s.buildings.find(b => b.kind === 'nest')!;
+  it('keeps keyboard focus on the same rabbit and column after selecting and deselecting', () => {
+    const initial = scenarioState('reproduction', 0), {ui, controller} = setup(initial);
+    ui.select({kind: 'building', id: nestOf(initial).id}); button('Croiser').click();
+    for (const slot of [0, 1] as const) {
+      const row = breedingRow(slot, slot); row.focus();
+      // A native button emits click (detail 0) on keyboard activation; happy-dom does not synthesize it from keydown.
+      row.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter', bubbles: true}));
+      row.dispatchEvent(new MouseEvent('click', {bubbles: true, detail: 0}));
+      expect(breedingRow(slot, slot)).not.toBe(row);
+      expect(document.activeElement).toBe(breedingRow(slot, slot));
+      expect(breedingRow(slot, slot).getAttribute('aria-pressed')).toBe('true');
+      controller.refresh();
+      expect(document.activeElement).toBe(breedingRow(slot, slot));
+    }
+    breedingRow(1, 1).dispatchEvent(new MouseEvent('click', {bubbles: true, detail: 0}));
+    expect(document.activeElement).toBe(breedingRow(1, 1));
+    expect(breedingRow(1, 1).getAttribute('aria-pressed')).toBe('false');
+  });
+  it('keeps the focus on the chosen parent after a keyboard selection rebuilds the window', () => {
+    const initial = scenarioState('reproduction', 0), {ui} = setup(initial);
+    ui.select({kind: 'building', id: nestOf(initial).id}); button('Croiser').click();
+    const row = breedingRow(0, 0), key = row.dataset.focus; row.focus(); row.click();
+    expect(row.isConnected).toBe(false);
+    expect((document.activeElement as HTMLElement).dataset.focus).toBe(key);
+    expect(breeding().contains(document.activeElement)).toBe(true);
+  });
+  it('keeps disabled-parent reasons visible on a single compact line despite the mobile small rule', () => {
+    const initial = scenarioState('reproduction', 0); initial.rabbits[1].affection = 1;
+    const {ui} = setup(initial);
+    ui.select({kind: 'building', id: nestOf(initial).id}); button('Croiser').click();
+    breedingRow(0, 0).click();
+    for (const row of [breedingRow(1, 0), breedingRow(0, 1)]) {
+      expect(row.disabled).toBe(true);
+      const reason = row.querySelector('small.breeding-unavailable-reason');
+      expect(reason?.textContent).toMatch(/Déjà choisi|Affection 2 nécessaire/);
+    }
+    // The more specific exception overrides the mobile `.breeding-row-text small { display: none }`.
+    const rule = breedingCss.match(/\.breeding-row-text small\.breeding-unavailable-reason\s*\{([^}]+)\}/)![1];
+    expect(rule).toMatch(/display:\s*block/);
+    expect(rule).toMatch(/white-space:\s*nowrap/);
+    expect(rule).toMatch(/font-size:\s*12px/);
+    expect(breedingCss).toMatch(/:disabled \.breeding-row-text :is\(span, small\)\s*\{\s*color:\s*#dedbd0/);
+  });
   it('opens from Croiser with every rabbit on both sides and greys a pick in the other list', () => {
     const initial = scenarioState('reproduction', 0), {ui} = setup(initial);
     ui.select({kind: 'building', id: nestOf(initial).id}); button('Croiser').click();

@@ -40,7 +40,7 @@ import type {Command, DecorationLocation, GameState, PattesCommand, TimedStage} 
 import {DECORATIONS, DECORATION_IDS, FINE_GRID, ownedDecorationResalePrice, type DecorationId} from '../config/decorations';
 import {catalogDecorationPlacementReason, purchaseDecorationReason} from '../simulation/decorations';
 import {decorationUrl} from '../display/decorationArt';
-import {quoteComplement} from '../simulation/actions';
+import {quoteComplement, releaseGrass} from '../simulation/actions';
 import {initiationAvailable} from '../simulation/initiation';
 import {marketExchanges, marketPrice, marketUnlocked} from '../simulation/market';
 import {automaticNurseryTransfer, nurseryBuilding, nurseryFull, nurseryUnlockQuote} from '../simulation/nursery';
@@ -983,7 +983,8 @@ export class GameUI {
     this.content.append(node('p', 'Nourrir augmente l’affection ; il n’y a ni faim ni entretien obligatoire.', 'small'), node('h3', 'Autres actions'));
     const hasDestination = rabbitDropTargets(s, id, this.now()).length > 0;
     this.button(this.content, 'Déplacer', () => this.beginRabbitMove(id), parentBusy(s,id,this.now()) ? busyReason(s, id) : hasDestination ? null : 'Aucun autre habitat compatible avec une place libre.', true);
-    this.button(this.content, 'Confier ce lapin', () => this.confirm('Confier ce lapin ?', 'Ce lapin quittera définitivement ta prairie, sans remboursement.', () => this.execute({type: 'release', id}, 'Lapin confié.', () => { this.view = {kind: 'building', id: r.enclosureId}; })), releaseReason(s, id, this.now()), true).classList.add('action-danger');
+    const food = releaseGrass(r.species);
+    this.button(this.content, 'Confier ce lapin', () => this.confirm('Confier ce lapin ?', `Ce lapin quittera définitivement ta prairie. Tu reçois ${food} nourriture en remerciement.`, () => this.execute({type: 'release', id}, `Lapin confié · +${food} nourriture`, () => { this.view = {kind: 'building', id: r.enclosureId}; })), releaseReason(s, id, this.now()), true).classList.add('action-danger');
   }
   /** The personal name, in a box after the feeding action: the species stays in the title and the badge. Text only, never HTML. */
   private renderNickname(r: Rabbit): void {
@@ -1178,11 +1179,14 @@ export class GameUI {
     if (!s || !nest || nest.breeding) { this.closeBreeding(); return; }
     for (let i = 0; i < 2; i++) if (this.parents[i] && !s.rabbits.some(r => r.id === this.parents[i])) this.parents[i] = null;
     const selected = this.parents.map(id => s.rabbits.find(r => r.id === id));
+    const focused = this.breedingDialog.contains(document.activeElement) ? document.activeElement as HTMLElement : null;
+    const focusKey = focused?.dataset.focus;
     const scroll = [...this.breedingDialog.querySelectorAll<HTMLElement>('.breeding-list')].map(list => list.scrollTop);
     const header = node('div', '', 'breeding-header');
     header.append(node('h2', 'Choisir les parents', 'breeding-badge'));
     header.lastElementChild!.id = 'breeding-title';
     const close = this.button(header, '×', () => this.closeBreeding(), null, true); close.classList.add('icon', 'breeding-close'); close.setAttribute('aria-label', 'Fermer le croisement');
+    close.dataset.focus = 'breeding-close';
     const columns = node('div', '', 'breeding-columns');
     const column = (slot: 0 | 1) => {
       const box = node('section', '', 'breeding-column'), list = node('div', '', 'breeding-list');
@@ -1190,6 +1194,7 @@ export class GameUI {
       for (const r of s.rabbits) {
         const busy = rabbitAvailability(s, r.id, this.now()), other = this.parents[1 - slot] === r.id, chosen = this.parents[slot] === r.id;
         const row = node('button', '', `breeding-row${chosen ? ' selected' : ''}`); row.type = 'button';
+        row.dataset.focus = `breeding-parent-${slot}-${r.id}`;
         row.disabled = !!busy || other; row.setAttribute('aria-pressed', String(chosen));
         const text = node('span', '', 'breeding-row-text');
         text.append(node('strong', r.name ?? SPECIES[r.species].name), node('span', r.name ? SPECIES[r.species].name : `Affection ${r.affection}`));
@@ -1205,6 +1210,7 @@ export class GameUI {
     this.button(tools, 'Carnet', () => { this.closeBreeding(); this.open({kind: 'recipes'}); }, null, true);
     const oddsButton = this.button(tools, 'Probabilités', () => { this.oddsOpen = !this.oddsOpen; this.renderBreeding(); }, selected[0] && selected[1] ? null : 'Choisis d’abord les deux parents.', true);
     oddsButton.setAttribute('aria-pressed', String(this.oddsOpen));
+    oddsButton.dataset.focus = 'breeding-odds';
     columns.append(column(0), tools, column(1));
     const footer = node('div', '', 'breeding-footer');
     let reason: string | null = selected[0] && selected[1] ? (rabbitAvailability(s, selected[0].id, this.now()) ?? rabbitAvailability(s, selected[1].id, this.now())) : 'Choisis un lapin dans chaque liste.';
@@ -1229,6 +1235,10 @@ export class GameUI {
     }
     this.breedingDialog.replaceChildren(header, columns, footer);
     this.applyOnboardingLock();
+    if (focused) {
+      const equivalent = [...this.breedingDialog.querySelectorAll<HTMLButtonElement>('button[data-focus]')].find(button => button.dataset.focus === focusKey && !button.disabled);
+      (equivalent ?? (!launch.disabled ? launch : this.breedingDialog.querySelector<HTMLButtonElement>('button:not(:disabled)')))?.focus({preventScroll: true});
+    }
     this.breedingDialog.querySelectorAll<HTMLElement>('.breeding-list').forEach((list, i) => { list.scrollTop = scroll[i] ?? 0; });
   }
   private renderNursery(s: GameState): void {
