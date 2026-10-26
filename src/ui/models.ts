@@ -14,6 +14,8 @@ import {mapRarities} from '../config/rarities';
 
 export const BUILDING_NAMES: Record<BuildingKind, string> = {enclosure: 'Enclos', farm: 'Ferme', nest: 'Nid', nursery: 'Nurserie', kitchen: 'Cuisine', statue: 'Statue de l’Affection', agency: 'Agence de voyage'};
 export const REFUSALS: Record<Refusal | 'NO_GAME' | 'DISPOSED' | 'SALE_NOT_SAVED' | 'ACTION_NOT_SAVED' | 'STORAGE_CHANGED', string> = {
+  HABITAT_NOT_EMPTY: 'Cet habitat doit être vide.',
+  LAST_HABITAT: 'Garde au moins un habitat.',
   LEVEL_REQUIRED:'Niveau du joueur insuffisant pour cette action.',
   NO_BREEDING_RESULT:'Aucun résultat ordinaire accessible à ce niveau. La reproduction attend pour conserver les probabilités spéciales. Consulte le carnet.',
   PURCHASE_LOCKED:'Cet achat est verrouillé. Consulte son niveau requis.',

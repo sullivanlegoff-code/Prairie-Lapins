@@ -31,7 +31,7 @@ import {NEST_ART} from '../config/nestArt';
 import {NURSERY_ART} from '../config/nurseryArt';
 import {KITCHEN_ART} from '../config/kitchenArt';
 import {upgradeFootprintReason} from '../simulation/placement';
-import {habitatStats, habitatName, habitatEntryReason, habitatAccepts, welcomeDestinations} from '../simulation/habitats';
+import {habitatStats, habitatName, habitatEntryReason, habitatAccepts, welcomeDestinations, removeHabitatReason} from '../simulation/habitats';
 import {MAIN_MISSIONS, DAILY_MISSION_GAP, DAILY_MISSION_IDS, DAILY_MISSIONS, DAILY_BONUS, type Reward} from '../config/missions';
 import {initialMissionIds, activeMainMissions, availableMissionRewards, mainProgress, dailyCycleStart, dailyCycleEnd, cycleIndexAt, currentDailyMission, dailyOpensAt} from '../simulation/missions';
 import type {GameController, Snapshot} from '../application/GameController';
@@ -862,6 +862,16 @@ export class GameUI {
         if(access.accessible&&!inHearts&&!room)this.complement(card,s,command,`Améliorer : ${description}`,'Habitat amélioré.');
         this.content.append(card);
       } else this.content.append(node('p', 'Niveau maximal atteint.', 'badge'));
+      const removalReason = removeHabitatReason(s, id);
+      this.button(this.content, 'Retirer cet habitat', () => {
+        this.controller.refresh();
+        const current = this.controller.getSnapshot().state; if (!current) return;
+        const reason = removeHabitatReason(current, id);
+        if (reason) { this.notice(REFUSALS[reason]); this.render(); return; }
+        const stock = incomeWhole(current.buildings.find(b => b.id === id)!.incomeUnits);
+        this.confirm('Retirer cet habitat ?', `Tu récoltes ${stock} pattes. Le prix d'achat et les améliorations ne sont pas remboursés.`,
+          () => this.execute({type: 'removeHabitat', id}, 'Habitat retiré.', () => this.close()));
+      }, removalReason ? REFUSALS[removalReason] : null, true).classList.add('action-danger');
       for (const r of residents) { const card = this.rabbitCard(s, r.id); this.button(card, 'Voir ce lapin', () => this.open({kind: 'rabbit', id: r.id}), null, true); this.content.append(card); }
       if (residents.length < stats.capacity) this.button(this.content, 'Acheter un lapin', () => this.open({kind: 'shop', tab: 'rabbits'}), null, true);
     } else if (b.kind === 'farm') {

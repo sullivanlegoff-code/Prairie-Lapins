@@ -190,6 +190,39 @@ function button(text: string, scope: ParentNode = panel()): HTMLButtonElement {
   if (!result) throw new Error(`Button missing: ${text}\n${scope.textContent}`); return result;
 }
 function state(controller: GameController): GameState { return controller.getSnapshot().state!; }
+it('confirms an empty habitat removal, credits the announced stock, closes the menu and saves', () => {
+  const initial = createGame(0);
+  const habitat = emptyBuilding('building-90', 'enclosure', 22, 20, 'paille');
+  habitat.incomeUnits = 7 * 3_600_000 + 123;
+  initial.buildings.push(habitat); initial.nextId = 100;
+  const {ui, controller, data} = setup(initial);
+  ui.open({kind: 'building', id: habitat.id});
+  const remove = button('Retirer cet habitat');
+  expect(remove.disabled).toBe(false);
+  expect(remove.classList.contains('action-secondary')).toBe(true);
+  expect(remove.classList.contains('action-danger')).toBe(true);
+  remove.click();
+  const dialog = document.getElementById('game-dialog')!;
+  expect(dialog.querySelector('h2')!.textContent).toBe('Retirer cet habitat ?');
+  expect(dialog.querySelector('p')!.textContent).toBe("Tu récoltes 7 pièces. Le prix d'achat et les améliorations ne sont pas remboursés.");
+  expect(state(controller).buildings.some(b => b.id === habitat.id)).toBe(true);
+  button('Annuler', dialog).click();
+  expect(state(controller).buildings.some(b => b.id === habitat.id)).toBe(true);
+  button('Retirer cet habitat').click(); button('Confirmer', dialog).click();
+  expect(state(controller).pattes).toBe(initial.pattes + 7);
+  expect(state(controller).buildings.some(b => b.id === habitat.id)).toBe(false);
+  expect(document.getElementById('toast')!.textContent).toBe('Habitat retiré.');
+  expect(document.getElementById('game-panel')!.hidden).toBe(true);
+  expect(decodeGame(data.get(SAVE_KEY)!)).toEqual({ok: true, state: state(controller)});
+});
+it.each([false, true])('disables habitat removal with a reason (empty: %s)', empty => {
+  const initial = createGame(0);
+  if (empty) initial.rabbits = [];
+  const {ui} = setup(initial);
+  ui.open({kind: 'building', id: initial.buildings[0].id});
+  expect(button('Retirer cet habitat').disabled).toBe(true);
+  expect(panel().textContent).toContain(empty ? 'Garde au moins un habitat.' : 'Cet habitat doit être vide.');
+});
 function place(ui: GameUI, kind: 'farm' | 'nest' | 'nursery' | 'enclosure', x: number, y: number) {
   // Former 3 × 3-parcel column/row, placed at its v11 fine cell (same arrangement, enlarged parcels).
   x=toV11((x<6?x+3:x-6)*4,'x');y=toV11((y+3)*4,'y');

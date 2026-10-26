@@ -5,11 +5,11 @@ import {applyProgressionGain} from './progressionRewards';
 import {eligibleMainMissionIds} from './missions';
 import {stateLevelAccess} from './levelRights';
 import {jobKey, initiationAvailable, settleInitiation} from './initiation';
-import {buildingPlacementReason, upgradeFootprintReason} from './placement';
+import {buildingPlacementReason, buildingFootprint, decorationsInFootprint, upgradeFootprintReason} from './placement';
 import {normalizeRabbitName} from './rabbitNames';
 import {acquiredCell, PARCEL_IDS, extensionPrice, purchasableParcels} from '../config/land';
 import {HABITAT_TYPES, habitatLevel, habitatPrice, type HabitatLevel} from '../config/habitats';
-import {habitatEntryReason} from './habitats';
+import {habitatEntryReason, removeHabitatReason} from './habitats';
 import {DAILY_MISSIONS, DAILY_MISSION_GAP, DAILY_MISSION_IDS, MAIN_MISSIONS, DAILY_BONUS, type Reward} from '../config/missions';
 import {marketPrice, marketUnlocked} from './market';
 import {affectionCap, playerLevel} from './affection';
@@ -328,6 +328,15 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       case 'collectIncome': {
         const b = building(command.id, 'enclosure'); value = Math.floor(b.incomeUnits / HOUR);
         credit('pattes', value); b.incomeUnits -= value * HOUR; break;
+      }
+      case 'removeHabitat': {
+        const b = building(command.id, 'enclosure');
+        const reason = removeHabitatReason(s, b.id); requireRule(!reason, reason ?? 'INVALID_CHOICE');
+        value = Math.floor(b.incomeUnits / HOUR); credit('pattes', value);
+        const stored = new Set(decorationsInFootprint(s, buildingFootprint(b)));
+        for (const d of s.decorations) if (stored.has(d.id)) d.location = {kind: 'inventory'};
+        s.buildings = s.buildings.filter(other => other.id !== b.id);
+        break;
       }
       case 'startOrder': {
         const b = building(command.id, 'farm'); requireRule(!b.order, 'BUSY');
