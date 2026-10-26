@@ -38,13 +38,13 @@ describe('economy B durable goals', () => {
     }
     expect(activeMainMissions(s)).toEqual([]);
   });
-  it('checks every condition and counts all twenty-four ordinary rares, including the paid four', () => {
+  it('checks every condition and counts all twenty ordinary rares', () => {
     const s=advanced();
     for(const id of DURABLE_MISSION_IDS){const p=mainProgress(s,id);expect(p.value,id).toBeGreaterThanOrEqual(p.target);}
     expect(mainProgress(createGame(0),'night-order').value).toBe(0);
-    expect(mainProgress(s,'all-ordinary-rares').target).toBe(24);
-    s.discovered=s.discovered.filter(id=>id!=='bouee');expect(mainProgress(s,'all-ordinary-rares').value).toBe(23);
-    expect(GUARANTEE_SPECIES).toHaveLength(24);
+    expect(mainProgress(s,'all-ordinary-rares').target).toBe(20);
+    s.discovered=s.discovered.filter(id=>id!=='bouee');expect(mainProgress(s,'all-ordinary-rares').value).toBe(19);
+    expect(GUARANTEE_SPECIES).toHaveLength(20);
     s.missions.claimed=[...SOLO_INITIAL_MISSION_IDS];expect(activeMainMissions(s)).toEqual([...BRANCH_MISSION_IDS,'level-five']);
     expect(act(s,{type:'claimMainMission',id:'level-fifteen'},0)).toMatchObject({ok:false,reason:'NOT_READY'});
   });
@@ -57,10 +57,10 @@ describe('economy B durable goals', () => {
   });
 });
 describe('economy B feedback and prices', () => {
-  it('gives only parent type hints for the twenty illustrated rares', () => {
-    const hints=SPECIES_IDS.filter(id=>recipeHint(id));expect(hints).toHaveLength(20);
+  it('gives only parent type hints for the nineteen illustrated rares', () => {
+    const hints=SPECIES_IDS.filter(id=>recipeHint(id));expect(hints).toHaveLength(19);
     for(const id of hints) expect(recipeHint(id)).toMatch(/^Indice : .+ × .+$/);
-    for(const id of ['bouee','feu-glace','lunettes','perroquet','magicien','dragon'] as const) expect(recipeHint(id)).toBeNull();
+    for(const id of ['bouee','dinono','magicien','dragon'] as const) expect(recipeHint(id)).toBeNull();
     expect(hints.map(recipeHint).join(' ')).not.toMatch(/affection|%/i);
   });
   it('shows all five slots, then the unchanged tip, and renews at the canonical cycle', () => {

@@ -7,10 +7,10 @@ import {validateSpeciesEntries} from '../src/config/validateSpecies';
 import {createCentreStartGame} from '../src/state/initial';
 import {breedingDistributionWeights, breedingPool} from '../src/simulation/breeding';
 
-it('keeps the independent six prices, no starting gift (Brumelin is gone) and ordered four guarantee entries', () => {
-  expect(RECIPE_PRICES).toEqual({bouee:150,'feu-glace':180,lunettes:220,perroquet:250,magicien:450,dragon:900,dadi:450,maxou:450,orange:450,requin:900});
+it('keeps the independent seven special prices, no starting gift and ordered ordinary guarantee entries', () => {
+  expect(RECIPE_PRICES).toEqual({magicien: 450, dragon: 900, dadi: 450, maxou: 450, orange: 450, dinono: 450, requin: 900});
   expect(GIFTED_RECIPES).toEqual([]);
-  expect(GUARANTEE_SPECIES).toEqual(['lunettes','perroquet','feu-glace','bouee',...SPECIES_IDS.filter(id=>SPECIES[id].rarity==='rare').slice(4)]);
+  expect(GUARANTEE_SPECIES).toEqual(["frisket","icy","ardent","snk","pic-pic","amethyste","princesse-neige","fluffy","virvoletant","phoenix","roukette","wat-wat","glassofeu","plume","boudinet","bouee","egiiipte","piment","tunini","bretonette"]);
   expect(createCentreStartGame(0).recipeBook).toEqual([]);
 });
 it('derives policies from isolated sources; absence/false grant no policy, zero is a valid sale price', () => {
@@ -26,8 +26,8 @@ it('derives policies from isolated sources; absence/false grant no policy, zero 
   expect(entries).toEqual(before);
 });
 it('keeps policy fields out of every compatibility recipe, including special probabilities', () => {
-  const source: Acquisition = {kind:'recipe',requiredTypes:['vol','feu'],parents:['perroquet','feu'],minAffection:10,probability:2,knowledgePrice:900,giftedAtStart:false,guaranteeEligible:false};
-  expect(recipeOf([source])).toEqual({requiredTypes:['vol','feu'],parents:['perroquet','feu'],minAffection:10,probability:2});
+  const source: Acquisition = {kind:'recipe',requiredTypes:['vol','feu'],parents:['phoenix','feu'],minAffection:10,probability:2,knowledgePrice:900,giftedAtStart:false,guaranteeEligible:false};
+  expect(recipeOf([source])).toEqual({requiredTypes:['vol','feu'],parents:['phoenix','feu'],minAffection:10,probability:2});
   for(const id of SPECIES_IDS) for(const field of ['knowledgePrice','giftedAtStart','guaranteeEligible'])
     if(SPECIES[id].recipe) expect(SPECIES[id].recipe).not.toHaveProperty(field);
 });

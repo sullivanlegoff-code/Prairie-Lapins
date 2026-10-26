@@ -58,13 +58,13 @@ function nestOdds(ui: GameUI, a: string, b: string) {
 describe('recipe purchase buttons', () => {
   it('offers a coin-only button on unknown recipes whose level is reached, never on known ones', () => {
     // No recipe is gifted any more: a bought recipe is the known one here.
-    const initial = shop(); initial.recipeBook = ['lunettes'];
+    const initial = shop(); initial.recipeBook = ['magicien'];
     const {ui} = setup(initial); ui.open({kind: 'shop', tab: 'recipes'});
     expect(card('dragon').textContent).toContain('Recette inconnue · niveau 14 atteint · 900 pièces');
     expect(buy('dragon')!.textContent).toBe('Acheter · 900 pièces'); expect(buy('dragon')!.querySelector('img.coin-icon')).not.toBeNull();
-    expect(buy('dragon')!.disabled).toBe(false); expect(buy('lunettes')).toBeNull();
-    expect(card('lunettes').dataset.recipeKnown).toBe('true');
-    for (const species of Object.keys(RECIPE_PRICES).filter(species => species !== 'lunettes')) expect(buy(species)).not.toBeNull();
+    expect(buy('dragon')!.disabled).toBe(false); expect(buy('magicien')).toBeNull();
+    expect(card('magicien').dataset.recipeKnown).toBe('true');
+    for (const species of Object.keys(RECIPE_PRICES).filter(species => species !== 'magicien')) expect(buy(species)).not.toBeNull();
     expect(panel().textContent).not.toMatch(/pattes?/); expect(panel().querySelector('.heart-spend')).toBeNull();
   });
   it('shows the level once and no active button below the required level', () => {
@@ -74,46 +74,46 @@ describe('recipe purchase buttons', () => {
     expect(texts.filter(t => t?.includes('14'))).toHaveLength(1); expect(buy('dragon')).toBeNull(); expect(buy('magicien')).not.toBeNull();
   });
   it('disables an unaffordable recipe with a clear reason and never offers hearts', () => {
-    const {ui, controller} = setup(shop(14, 160)); ui.open({kind: 'shop', tab: 'recipes'});
-    expect(buy('bouee')!.disabled).toBe(false); expect(buy('feu-glace')!.disabled).toBe(true);
-    expect(card('feu-glace').querySelector('.reason')!.textContent).toBe('Solde insuffisant.');
+    const {ui, controller} = setup(shop(14, 500)); ui.open({kind: 'shop', tab: 'recipes'});
+    expect(buy('dinono')!.disabled).toBe(false); expect(buy('dragon')!.disabled).toBe(true);
+    expect(card('dragon').querySelector('.reason')!.textContent).toBe('Solde insuffisant.');
     expect(state(controller).hearts).toBe(100); expect(panel().querySelector('.heart-spend')).toBeNull();
-    buy('feu-glace')!.click(); expect(dialog().open).toBe(false); expect(state(controller).pattes).toBe(160);
+    buy('dragon')!.click(); expect(dialog().open).toBe(false); expect(state(controller).pattes).toBe(500);
   });
 });
 
 describe('recipe purchase flow', () => {
   it('confirms, debits once on a rapid double press, reveals the card and updates the nest without reload', () => {
     const {ui, controller, data} = setup(shop());
-    expect(nestOdds(ui, 'Lapin Paille', 'Lapin Feu')).toEqual(["Lapin Paille · paille · Commun : 20 %","Lapin Feu · feu · Commun : 20 %","Résultats inconnus : 60 %"]);
+    expect(nestOdds(ui, 'Lapin Bélier Gris', 'Lapin Feu')).toEqual(["Lapin Feu · feu · Commun : 37/160 (≈ 23,13 %)","Lapin Bélier Gris · métal · Commun : 37/160 (≈ 23,13 %)","Résultats inconnus : 53,75 %"]);
     const before = state(controller); ui.open({kind: 'shop', tab: 'recipes'});
-    buy('bouee')!.click(); buy('bouee')!.click();
-    expect(dialog().open).toBe(true); expect(dialog().querySelector('h2')!.textContent).toBe('Acheter la recette : Lapin en Bouée ?');
-    expect(dialog().querySelector('p')!.textContent).toBe('150 pièces. Révèle les conditions d’obtention et les paires conseillées. Ne donne aucun lapin et ne garantit aucune naissance.');
+    buy('dinono')!.click(); buy('dinono')!.click();
+    expect(dialog().open).toBe(true); expect(dialog().querySelector('h2')!.textContent).toBe('Acheter la recette : Dinono ?');
+    expect(dialog().querySelector('p')!.textContent).toBe('450 pièces. Révèle les conditions d’obtention et les paires conseillées. Ne donne aucun lapin et ne garantit aucune naissance.');
     const confirm = confirmButton(); confirm.click(); confirm.click();
     const after = state(controller);
-    expect(after.pattes).toBe(before.pattes - 150); expect(after.recipeBook).toEqual(['bouee']);
+    expect(after.pattes).toBe(before.pattes - 450); expect(after.recipeBook).toEqual(['dinono']);
     expect(after.progression).toEqual(before.progression); expect(after.missions).toEqual(before.missions); expect(after.rabbits).toEqual(before.rabbits);
     expect(document.getElementById('toast')?.textContent ?? '').toContain('Recette ajoutée au carnet.');
-    expect(card('bouee').dataset.recipeKnown).toBe('true'); expect(buy('bouee')).toBeNull();
-    expect(card('bouee').textContent).toContain('Affection 4 minimum pour chacun des deux parents.');
-    expect(card('bouee').textContent).toMatch(/\d+ paires? possédées? compatibles? avec la recette/);
-    const saved = decodeGame(data.get(SAVE_KEY)!); expect(saved.ok && saved.state.recipeBook).toEqual(['bouee']);
-    expect(nestOdds(ui, 'Lapin Paille', 'Lapin Feu')).toEqual(["Lapin Paille · paille · Commun : 20 %","Lapin Feu · feu · Commun : 20 %","Lapin en Bouée · paille + feu · Rare : 20 %","Résultats inconnus : 40 %"]);
+    expect(card('dinono').dataset.recipeKnown).toBe('true'); expect(buy('dinono')).toBeNull();
+    expect(card('dinono').textContent).toContain('Affection 6 minimum pour chacun des deux parents.');
+    expect(card('dinono').textContent).toMatch(/\d+ paires? possédées? compatibles? avec la recette/);
+    const saved = decodeGame(data.get(SAVE_KEY)!); expect(saved.ok && saved.state.recipeBook).toEqual(['dinono']);
+    expect(nestOdds(ui, 'Lapin Bélier Gris', 'Lapin Feu')).toEqual(["Lapin Feu · feu · Commun : 37/160 (≈ 23,13 %)","Lapin Bélier Gris · métal · Commun : 37/160 (≈ 23,13 %)","Dinono · feu + métal · Épique : 7,5 %","Résultats inconnus : 46,25 %"]);
     ui.open({kind: 'collection'}); [...panel().querySelectorAll('button')].find(b => b.textContent === 'Carnet de reproduction')!.click();
-    expect([...card('bouee').querySelectorAll('button')].some(b => b.textContent === 'Préparer cette paire au nid')).toBe(true);
+    expect([...card('dinono').querySelectorAll('button')].some(b => b.textContent === 'Préparer cette paire au nid')).toBe(true);
   });
   it('keeps payment, recipe and card unchanged when the save fails, then buys once', () => {
     let clock = 0; vi.spyOn(performance, 'now').mockImplementation(() => clock);
     const {ui, controller, flags} = setup(shop()); ui.open({kind: 'shop', tab: 'recipes'});
-    flags.fail = true; buy('bouee')!.click(); confirmButton().click();
+    flags.fail = true; buy('dinono')!.click(); confirmButton().click();
     expect(document.getElementById('toast')?.textContent).toBe(REFUSALS.ACTION_NOT_SAVED);
     expect([state(controller).pattes, state(controller).recipeBook]).toEqual([5000, []]);
-    expect(card('bouee').dataset.recipeKnown).toBe('false'); expect(buy('bouee')).not.toBeNull();
-    flags.fail = false; buy('bouee')!.click(); confirmButton().click();
+    expect(card('dinono').dataset.recipeKnown).toBe('false'); expect(buy('dinono')).not.toBeNull();
+    flags.fail = false; buy('dinono')!.click(); confirmButton().click();
     expect(state(controller).pattes).toBe(5000); // Same command inside the 350 ms double-tap window: ignored.
-    clock += 1000; buy('bouee')!.click(); confirmButton().click();
-    expect([state(controller).pattes, state(controller).recipeBook]).toEqual([4850, ['bouee']]);
+    clock += 1000; buy('dinono')!.click(); confirmButton().click();
+    expect([state(controller).pattes, state(controller).recipeBook]).toEqual([4550, ['dinono']]);
   });
   it('keeps the purchase on reload and on import, without a second payment', () => {
     const first = setup(shop()); first.ui.open({kind: 'shop', tab: 'recipes'}); buy('dragon')!.click(); confirmButton().click();
@@ -138,10 +138,10 @@ describe('no heart path for recipes', () => {
 describe('level announcement count', () => {
   it('counts unknown sold recipes newly purchasable, excluding bought or discovered ones', () => {
     const s = shop(1);
-    expect(newlyPurchasableRecipes(s, levelUnlockContents(s, 4, 5))).toBe(1);
-    expect(newlyPurchasableRecipes(s, levelUnlockContents(s, 1, 14))).toBe(10);
+    expect(newlyPurchasableRecipes(s, levelUnlockContents(s, 4, 5))).toBe(0);
+    expect(newlyPurchasableRecipes(s, levelUnlockContents(s, 1, 14))).toBe(6);
     expect(newlyPurchasableRecipes(s, levelUnlockContents(s, 1, 2))).toBe(0);
-    s.discovered.push('bouee'); s.recipeBook.push('lunettes');
-    expect(newlyPurchasableRecipes(s, levelUnlockContents(s, 1, 14))).toBe(8);
+    s.discovered.push('dinono'); s.recipeBook.push('magicien');
+    expect(newlyPurchasableRecipes(s, levelUnlockContents(s, 1, 14))).toBe(5);
   });
 });

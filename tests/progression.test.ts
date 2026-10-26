@@ -5,7 +5,7 @@ import {DECORATION_IDS} from '../src/config/decorations';
 import {HABITAT_TYPES} from '../src/config/habitats';
 import {addXp,cumulativeLevelXp,foodXp,firstDecorationPlacementXp,missionClaimXp,nextLevelCost,progressionFromXp,
   requiredDecorationLevel,requiredExtensionLevel,requiredHabitatLevel,requiredHabitatUpgradeLevel,requiredSpeciesLevel,validateProgressionConfig} from '../src/simulation/progression';
-import {HISTORICAL_LEVELS, NEW_RARES, NEW_SPECIALS, STANDARD_RARE} from './rabbit-art-fixtures';
+import {HISTORICAL_LEVELS, NEW_RARES, NEW_SPECIALS} from './rabbit-art-fixtures';
 function configure(patch:Partial<ProgressionConfig>={}):ProgressionConfig{return {...structuredClone(PROGRESSION),...patch};}
 describe('pure player progression v17',()=>{
  it('starts at one and uses rounded configured transition costs at every boundary',()=>{
@@ -42,7 +42,7 @@ describe('pure player progression v17',()=>{
   }
  });
  it('resolves all existing species, habitats, upgrades, decorative prices and extension ranks',()=>{
-  expect(()=>validateProgressionConfig()).not.toThrow();expect(SPECIES_IDS.map(id=>requiredSpeciesLevel(id))).toEqual([...HISTORICAL_LEVELS, ...NEW_RARES.map(() => STANDARD_RARE.unlockLevel), ...NEW_SPECIALS.map(s => s.unlockLevel)]);
+  expect(()=>validateProgressionConfig()).not.toThrow();expect(SPECIES_IDS.map(id=>requiredSpeciesLevel(id))).toEqual([...HISTORICAL_LEVELS, ...NEW_RARES.flatMap(r => r.id === 'egiiipte' ? [1, 1] : [1]), ...NEW_SPECIALS.map(s => s.unlockLevel)]);
   expect(HABITAT_TYPES.map(type=>requiredHabitatLevel(type))).toEqual([6,1,1,5,7,9]);
   expect(requiredHabitatUpgradeLevel('neige',2)).toBe(3);expect(requiredHabitatUpgradeLevel('metal',3)).toBe(12);expect(requiredHabitatUpgradeLevel('universal',3)).toBe(11);
   expect(DECORATION_IDS.map(id=>requiredDecorationLevel(id))).toEqual([1,1,1,2,3,5,6,8,10,12,14,4,22]);

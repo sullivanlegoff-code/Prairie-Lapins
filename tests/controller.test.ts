@@ -199,7 +199,7 @@ describe('transactional imports', () => {
     expect(controller.confirmImport(prepared.token, true)).toEqual({ok: false, reason: 'STALE_IMPORT'});
   });
   it.each([
-    ['{', 'INVALID_JSON'], ['{"version":20}', 'UNSUPPORTED_VERSION'], ['{"version":16}', 'INVALID_STATE'], ['{"version":1}', 'INCOMPATIBLE_CATALOG'], ['{"version":15}', 'INCOMPATIBLE_CATALOG'],
+    ['{', 'INVALID_JSON'], ['{"version":21}', 'UNSUPPORTED_VERSION'], ['{"version":16}', 'INVALID_STATE'], ['{"version":1}', 'INCOMPATIBLE_CATALOG'], ['{"version":15}', 'INCOMPATIBLE_CATALOG'],
     [' '.repeat(1_000_001), 'FILE_TOO_LARGE'],
   ])('rejects a bad import with %s', (json, reason) => {
     const {controller, store} = fixture(); const previous = controller.getSnapshot(), raw = store.value;
@@ -247,10 +247,10 @@ describe('transactional imports', () => {
     clock.now = 35 * MINUTE; controller.refresh();
     const restored = new GameController(store, () => clock.now);
     expect(state(restored)).toEqual(advance(original, clock.now));
-    expect(pendingDiscoveries(state(restored))).toEqual(['feu-glace']);
-    expect(state(restored).discovered).not.toContain('feu-glace'); expect(state(restored).pityFailures).toBe(0);
+    expect(pendingDiscoveries(state(restored))).toEqual(['wat-wat']);
+    expect(state(restored).discovered).not.toContain('wat-wat'); expect(state(restored).pityFailures).toBe(0);
     expect(state(restored).buildings.find(b => b.kind === 'nest')!.breeding!.birth)
-      .toMatchObject({species: 'feu-glace', guaranteed: true, reservedDiscovery: true});
+      .toMatchObject({species: 'wat-wat', guaranteed: true, reservedDiscovery: true});
   });
   it('prevents an older controller from overwriting a newly imported game', () => {
     const {controller, store, clock} = fixture(); const second = new GameController(store, () => clock.now);

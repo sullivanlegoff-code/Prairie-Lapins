@@ -12,10 +12,7 @@ const IDS = [...EXPECTED_IDS];
 const SHOP = {kind: 'shop', price: 80}, HISTORICAL = {kind: 'historical-breeding'};
 const HISTORICAL_ACQUISITION: Record<string, unknown> = {
   paille: [SHOP, HISTORICAL], neige: [SHOP, HISTORICAL], feu: [{kind:'shop',price:180}, HISTORICAL], 'belier-gris': [{kind:'shop',price:350}, HISTORICAL], volant: [{kind:'shop',price:600}, HISTORICAL],
-  'lunettes': [{kind: 'recipe', knowledgePrice: 220, guaranteeEligible: true, requiredTypes: ['metal', 'paille'], minAffection: 4}],
-  'perroquet': [{kind: 'recipe', knowledgePrice: 250, guaranteeEligible: true, requiredTypes: ['vol', 'feu'], minAffection: 4}],
-  'feu-glace': [{kind: 'recipe', knowledgePrice: 180, guaranteeEligible: true, requiredTypes: ['feu', 'neige'], minAffection: 4}],
-  'bouee': [{kind: 'recipe', knowledgePrice: 150, guaranteeEligible: true, requiredTypes: ['paille', 'feu'], minAffection: 4}],
+  'bouee': [{kind: 'recipe', guaranteeEligible: true, requiredTypes: ['feu', 'metal'], minAffection: 2}],
   // Owner's rules of 25 October 2026: Magicien becomes Paille-Metal; Dragon is born only of Dadi x Phoenix.
   'magicien': [{kind: 'recipe', knowledgePrice: 450, requiredTypes: ['paille', 'metal'], minAffection: 6, probability: 5}],
   dragon: [{kind: 'recipe', knowledgePrice: 900, minAffection: 10, parents: ['dadi', 'phoenix'], probability: 2}],
@@ -28,6 +25,7 @@ const ACQUISITION: Record<string, unknown> = {...HISTORICAL_ACQUISITION, ...Obje
 const SPECIAL_DESCRIPTIONS: Record<string, string> = {
   magicien: 'Un lapin brun en cape et chapeau de magicien étoilés, baguette à la main.', dragon: 'Un lapin bélier rouge aux écailles de dragon, avec des cornes et des ailes.',
   dadi: 'Un lapin blanc à casquette rouge, avec une chaîne et des baskets.', maxou: 'Un lapin dauphin gris, avec un aileron et une queue de dauphin.',
+  dinono: 'Un lapin bélier dans un déguisement de dinosaure vert, avec des pointes orange sur le dos.',
   orange: 'Une petite lapine blanche à la robe orange.', requin: 'Un lapin bélier gris aux rayures de requin, avec un aileron bleu et un sourire pointu.',
 };
 
@@ -37,10 +35,7 @@ const HISTORICAL_DEFINITIONS = {
   feu: {art: EXPECTED_ART['feu'], name: 'Lapin Feu', types: ['feu'], rarity: 'common', price: 180, recipe: null, acquisition: ACQUISITION['feu'], progression: {unlockLevel: 5}},
   'belier-gris': {art: EXPECTED_ART['belier-gris'], name: 'Lapin Bélier Gris', types: ['metal'], rarity: 'common', price: 350, recipe: null, acquisition: ACQUISITION['belier-gris'], progression: {unlockLevel: 7}},
   volant: {art: EXPECTED_ART['volant'], name: 'Lapin Volant', types: ['vol'], rarity: 'common', price: 600, recipe: null, acquisition: ACQUISITION['volant'], progression: {unlockLevel: 9}},
-  lunettes: {art: EXPECTED_ART['lunettes'], name: 'Lapin à Lunettes', types: ['metal', 'paille'], rarity: 'rare', price: null, recipe: {requiredTypes: ['metal', 'paille'], minAffection: 4}, acquisition: ACQUISITION['lunettes'], progression: {unlockLevel: 8}},
-  perroquet: {art: EXPECTED_ART['perroquet'], name: 'Lapin Perroquet', types: ['vol', 'feu'], rarity: 'rare', price: null, recipe: {requiredTypes: ['vol', 'feu'], minAffection: 4}, acquisition: ACQUISITION['perroquet'], progression: {unlockLevel: 9}},
-  'feu-glace': {art: EXPECTED_ART['feu-glace'], name: 'Lapin Feu Glacé', types: ['feu', 'neige'], rarity: 'rare', price: null, recipe: {requiredTypes: ['feu', 'neige'], minAffection: 4}, acquisition: ACQUISITION['feu-glace'], progression: {unlockLevel: 6}},
-  bouee: {art: EXPECTED_ART['bouee'], name: 'Lapin en Bouée', types: ['paille', 'feu'], rarity: 'rare', price: null, recipe: {requiredTypes: ['paille', 'feu'], minAffection: 4}, acquisition: ACQUISITION['bouee'], progression: {unlockLevel: 5}},
+  bouee: {art: EXPECTED_ART['bouee'], name: 'Lapin en Bouée', types: ['feu', 'metal'], rarity: 'rare', price: null, recipe: {requiredTypes: ['feu', 'metal'], minAffection: 2}, acquisition: ACQUISITION['bouee'], progression: {unlockLevel: 1}},
   magicien: {art: EXPECTED_ART['magicien'], name: 'Lapin Magicien', description: SPECIAL_DESCRIPTIONS.magicien, types: ['paille', 'metal'], rarity: 'epic', price: null, recipe: {requiredTypes: ['paille', 'metal'], minAffection: 6, probability: 5}, acquisition: ACQUISITION['magicien'], progression: {unlockLevel: 11}},
   dragon: {art: EXPECTED_ART['dragon'], name: 'Lapin Dragon', description: SPECIAL_DESCRIPTIONS.dragon, types: ['feu', 'vol'], rarity: 'legendary', price: null, recipe: {minAffection: 10, parents: ['dadi', 'phoenix'], probability: 2}, acquisition: ACQUISITION['dragon'], progression: {unlockLevel: 14}},
 };
@@ -66,7 +61,7 @@ describe('canonical species registry', () => {
   it('keeps the derived lists and their exact order', () => {
     expect(balance.SHOP_SPECIES).toEqual(['paille', 'neige', 'feu', 'belier-gris', 'volant']);
     expect(balance.RECIPE_SPECIES).toEqual(EXPECTED_RECIPE_IDS);
-    expect(balance.GUARANTEE_SPECIES).toEqual(["lunettes","perroquet","feu-glace","bouee","frisket","icy","ardent","snk","pic-pic","amethyste","princesse-neige","fluffy","virvoletant","phoenix","roukette","wat-wat","glassofeu","plume","boudinet","dinono","egiiipte","piment","tunini","bretonette"]);
+    expect(balance.GUARANTEE_SPECIES).toEqual(["frisket","icy","ardent","snk","pic-pic","amethyste","princesse-neige","fluffy","virvoletant","phoenix","roukette","wat-wat","glassofeu","plume","boudinet","bouee","egiiipte","piment","tunini","bretonette"]);
   });
   it('keeps LEGACY_SPECIES_IDS as the historical list: the first two ids, in order', () => {
     expect([...registry.LEGACY_SPECIES_IDS]).toEqual(IDS.slice(0, 2));
@@ -80,7 +75,7 @@ describe('canonical species registry', () => {
     expect(schema.safeParse('arc-en-ciel').success).toBe(false); expect(schema.safeParse('').success).toBe(false);
   });
   it('gives each definition its own mutable type list, as before', () => {
-    const first = registry.SPECIES.lunettes.types, second = registry.SPECIES.perroquet.types;
+    const first = registry.SPECIES.boudinet.types, second = registry.SPECIES.phoenix.types;
     expect(first).not.toBe(second); expect(Array.isArray(first)).toBe(true);
   });
 });

@@ -7,12 +7,12 @@ const owner = '00000000-0000-4000-8000-000000000001';
 const row = () => ({owner_id: owner, state: createGame(1_790_000_000_000), revision: 5, operation_id: crypto.randomUUID(), saved_at: '2026-10-26T10:00:00.000Z'});
 it('valide les lignes et accepte les anciennes versions via les migrations du jeu', () => {
   const r = row();
-  expect(remoteSave(r, owner).state.version).toBe(19);
+  expect(remoteSave(r, owner).state.version).toBe(20);
   const v18 = {...r.state, version: 18};
-  expect(remoteSave({...r, state: v18}, owner).state.version).toBe(19);
+  expect(remoteSave({...r, state: v18}, owner).state.version).toBe(20);
   expect(() => remoteSave({...r, owner_id: 'autre'}, owner)).toThrow();
   expect(() => remoteSave({...r, state: {...r.state, grass: -1}}, owner)).toThrow();
-  expect(() => remoteSave({...r, state: {...r.state, version: 20}}, owner)).toThrow(/version plus récente/);
+  expect(() => remoteSave({...r, state: {...r.state, version: 21}}, owner)).toThrow(/version plus récente/);
   expect(() => remoteSave({...r, revision: Number.MAX_SAFE_INTEGER + 1}, owner)).toThrow();
 });
 it('le gateway traduit les erreurs, valide le reçu et transmet les paramètres exacts au RPC', async () => {

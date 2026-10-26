@@ -1,3 +1,22 @@
+# Catalogue courant et migration v20 - 26 octobre 2026
+
+Le registre `src/config/species.ts` contient 32 espèces. Les notes de publication plus bas sont des archives.
+
+| Lapin | Types | Rareté | Recette | Niveau |
+|---|---|---|---|---:|
+| Dinono | feu + métal | épique | types feu + métal, affection 6, probabilité 5 %, connaissance 450 pattes, sans garantie | 1 |
+| Lapin en Bouée | feu + métal | rare | types feu + métal, affection 2, garantie ordinaire, sans prix de connaissance | 1 |
+
+Bouée remplace Dinono entre Boudinet et Egiiipte dans l'ordre du registre et du tirage. Dinono rejoint les épiques après Orange. Son illustration et sa description sont conservées ; aucun invariant n'impose le niveau 11 à tous les épiques, donc son niveau 1 reste inchangé. Bouée conserve son rendu procédural, avec un pelage orange et gris métallique en attendant le futur dessin.
+
+Les trois espèces sans sprite sont retirées du catalogue. En v16-v19, `lunettes` devient `boudinet`, `feu-glace` devient `glassofeu` et `perroquet` devient `phoenix`. Le lecteur convertit les adultes, y compris en voyage, et les naissances du nid/de la nurserie ; il conserve identités, noms, affection, habitats, trajets et dates. Il nettoie découvertes, carnet et droits historiques de niveau ; seul un adulte possédé converti ajoute sa nouvelle espèce aux découvertes. Une naissance reste cachée jusqu'à l'accueil. Les réservations ordinaires de Dinono sont annulées sans retirer le lapereau ni rallonger une croissance déjà lancée.
+
+Une Bouée déjà logée en habitat paille y reste : la validation applique la tolérance historique `LEGACY_TYPES`, déjà utilisée pour Magicien. Les nouveaux placements suivent les types courants feu/métal (`habitatAccepts`). L'objectif historique `first-rare` reste lisible et demande une espèce rare quelconque ; `all-ordinary-rares` suit les 20 rares garantissables du registre, sans Dinono. Les neuf rares survivants de la liste de revenus bonifiés gardent leur bonus, sans nouveau tirage.
+
+Les exports sont en v20 ; la chaîne v16-v19 est conservée, les versions 1-15 restent incompatibles. Les fichiers de `docs/test-saves/` restent intacts.
+
+---
+
 # Livraison normale v5 publiée — 9 octobre 2026
 
 **PR nº 2 fusionnée dans `production`** : application `7da76c747de6aec72cdcd3f1281bcf66dc2078d5`. [Publication et contrôles HTTPS réussis](https://github.com/sullivanlegoff-code/Project-L/actions/runs/37956243641), [preuve durable](validation/production-v5-2026-10-09.json), [captures et rapports publics](https://github.com/sullivanlegoff-code/Project-L/actions/runs/37956243641/artifacts/11627499043) conservés jusqu’au 8 novembre 2026.

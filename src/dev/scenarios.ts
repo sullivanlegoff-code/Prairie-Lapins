@@ -147,7 +147,7 @@ export function scenarioState(id: ScenarioId, now: number): GameState {
     s.rabbits = []; s.buildings = []; s.discovered = [];
     const rows = [
       {level: 1 as const, x: 18, species: ['paille', 'neige', 'feu'] as const},
-      {level: 2 as const, x: 25, species: ['belier-gris', 'volant', 'lunettes', 'perroquet', 'amethyste'] as const},
+      {level: 2 as const, x: 25, species: ['belier-gris', 'volant', 'boudinet', 'phoenix', 'amethyste'] as const},
       {level: 3 as const, x: 34, species: ['ardent', 'snk', 'glassofeu', 'phoenix', 'plume', 'pic-pic', 'fluffy'] as const},
     ];
     for (const row of rows) {

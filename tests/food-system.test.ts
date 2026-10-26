@@ -46,7 +46,7 @@ describe('the Statue de l’Affection', () => {
 describe('epic and legendary chances grow with both parents’ affection', () => {
   it('multiplies by 1.5 from 10 and by 2 from 15, on the lower parent, for epic and legendary only', () => {
     expect([rareBirthFactor('magicien', 9, 20), rareBirthFactor('magicien', 10, 14), rareBirthFactor('magicien', 15, 15), rareBirthFactor('dragon', 15, 20)]).toEqual([1, 1.5, 2, 2]);
-    expect(rareBirthFactor('lunettes', 20, 20)).toBe(1); expect(SPECIES.lunettes.rarity).toBe('rare');
+    expect(rareBirthFactor('boudinet', 20, 20)).toBe(1); expect(SPECIES.boudinet.rarity).toBe('rare');
     expect(breedingOdds('magicien', 'belier-gris', 9, 9).magicien).toBe(5);
     expect(breedingOdds('magicien', 'belier-gris', 10, 10).magicien).toBe(7.5);
     expect(breedingOdds('magicien', 'belier-gris', 20, 15).magicien).toBe(10);
@@ -60,7 +60,7 @@ describe('saves before the ten crops', () => {
     for (const [recipe, crop, grass, duration] of [['small', 'foin', 20, 5 * MINUTE], ['medium', 'trefle', 60, 30 * MINUTE], ['large', 'fenouil', 180, 4 * HOUR], ['night', 'banane', 360, 10 * HOUR]] as const) {
       legacy.buildings.at(-1).order = {recipe, startedAt: 0, endsAt: duration};
       const decoded = decodeGame(JSON.stringify(legacy)); if (!decoded.ok) throw Error(decoded.reason);
-      expect(decoded.state.version).toBe(19);
+      expect(decoded.state.version).toBe(20);
       expect(decoded.state.buildings.at(-1)!.order).toEqual({recipe: crop, startedAt: 0, endsAt: duration, grass, duration});
     }
   });

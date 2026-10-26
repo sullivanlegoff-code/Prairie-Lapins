@@ -15,7 +15,7 @@ function game(level: number, pity: number, discovered: SpeciesId[], recipes: Spe
 const knowledge: [string, SpeciesId[], SpeciesId[]][] = [
   ['no recipe', [], []],
   ['new game', ['paille'], []],
-  ['mixed', ['paille', 'neige', 'feu', 'perroquet'], ['lunettes', 'magicien', 'dragon']],
+  ['mixed', ['paille', 'neige', 'feu', 'phoenix'], ['boudinet', 'magicien', 'dragon']],
 ];
 
 describe('nest odds privacy over every pair', () => {
@@ -61,9 +61,9 @@ describe('nest odds privacy over every pair', () => {
   });
   it('gives a documented example: Dadi × Phoenix at affection 10', () => {
     const s = game(14, 0, ['dadi', 'phoenix'], []);
-    expect(oddsTexts(oddsView(s, 'dadi', 'phoenix', 10, 10))).toEqual({"excluded":[],"guarantee":"Cette paire est admissible à la garantie.","lines":["Phoenix · feu + vol · Rare : 41/550 (≈ 7,45 %)","Dadi · neige + vol · Épique : 7,5 %","Résultats inconnus : 1871/2200 (≈ 85,05 %)"],"summary":"Résultats possibles : Phoenix, Dadi et des résultats inconnus."});
+    expect(oddsTexts(oddsView(s, 'dadi', 'phoenix', 10, 10))).toEqual({"excluded":[],"guarantee":"Cette paire est admissible à la garantie.","lines":["Phoenix · feu + vol · Rare : 41/450 (≈ 9,11 %)","Dadi · neige + vol · Épique : 7,5 %","Résultats inconnus : 1501/1800 (≈ 83,39 %)"],"summary":"Résultats possibles : Phoenix, Dadi et des résultats inconnus."});
     s.recipeBook.push('dragon');
-    expect(oddsTexts(oddsView(s, 'dadi', 'phoenix', 10, 10)).lines).toEqual(['Phoenix · feu + vol · Rare : 41/550 (≈ 7,45 %)', 'Lapin Dragon · feu + vol · Légendaire : 3 %', 'Dadi · neige + vol · Épique : 7,5 %', 'Résultats inconnus : 361/440 (≈ 82,05 %)']);
+    expect(oddsTexts(oddsView(s, 'dadi', 'phoenix', 10, 10)).lines).toEqual(['Phoenix · feu + vol · Rare : 41/450 (≈ 9,11 %)', 'Lapin Dragon · feu + vol · Légendaire : 3 %', 'Dadi · neige + vol · Épique : 7,5 %', 'Résultats inconnus : 1447/1800 (≈ 80,39 %)']);
     const locked = game(13, 0, ['dadi', 'phoenix'], []);
     expect(oddsTexts(oddsView(locked, 'dadi', 'phoenix', 10, 10)).excluded).toEqual(['Certains résultats demandent un niveau supérieur · exclus du tirage actuel.']);
   });

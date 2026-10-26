@@ -27,7 +27,7 @@ describe('consumers read the rarities module', () => {
   it('RARITY_NAMES keeps its labels and its order (the catalogue filter lists them in this order)', () => { expect(RARITY_NAMES).toEqual(LABELS); expect(Object.keys(RARITY_NAMES)).toEqual(ORDER); });
   it('growthDuration gives every species the growth of its rarity', () => {
     for (const id of Object.keys(RARITY_OF) as SpeciesId[]) expect(growthDuration(id), id).toBe(GROWTH_MINUTES[RARITY_OF[id] as keyof typeof GROWTH_MINUTES] * MINUTE);
-    expect(growthDuration('paille')).toBe(5 * MINUTE); expect(growthDuration('lunettes')).toBe(30 * MINUTE);
+    expect(growthDuration('paille')).toBe(5 * MINUTE); expect(growthDuration('boudinet')).toBe(30 * MINUTE);
     expect(growthDuration('magicien')).toBe(60 * MINUTE); expect(growthDuration('dragon')).toBe(120 * MINUTE);
   });
   it('BALANCE keeps its three growth fields', () => { expect([BALANCE.commonGrowth, BALANCE.hybridGrowth, BALANCE.rareGrowth]).toEqual([5 * MINUTE, 15 * MINUTE, 30 * MINUTE]); });

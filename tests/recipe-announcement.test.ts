@@ -3,6 +3,7 @@ import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import html from '../index.html?raw';
 import {GameController} from '../src/application/GameController';
 import {createGame, encodeGame} from '../src/simulation';
+import {cumulativeLevelXp} from '../src/simulation/progression';
 import {SAVE_KEY} from '../src/persistence/storage';
 import {mountSavePanel} from '../src/display/SavePanel';
 import type {GameState} from '../src/state/types';
@@ -20,15 +21,15 @@ const items = () => [...el('level-up-unlocks').querySelectorAll('li')].map(li =>
 
 describe('level-up recipe announcement', () => {
   it('announces the unknown recipe made purchasable, without any condition', async () => {
-    const c = setup(createGame(0)); c.grantLaboratoryXp(50); c.grantLaboratoryXp(50); c.grantLaboratoryXp(500); c.grantLaboratoryXp(500); await vi.advanceTimersByTimeAsync(300);
-    // The first purchasable recipe (Lapin en Bouée) opens at level 5, which 1 100 XP reach.
-    expect(el('level-up-title').textContent).toBe('Niveau 5 atteint !');
-    expect(items()).toContain('Recette en boutique · 1');
+    const c = setup({...createGame(0), progression: {totalXp: cumulativeLevelXp(10), rewardedThroughLevel: 10}}); c.grantLaboratoryXp(500); c.grantLaboratoryXp(500); await vi.advanceTimersByTimeAsync(300);
+    // The four existing level-11 Epics unlock together; Dinono stays at level 1.
+    expect(el('level-up-title').textContent).toBe('Niveau 11 atteint !');
+    expect(items()).toContain('Recettes en boutique · 4');
     for (const hidden of ['Affection', 'Paille + Feu', 'paille + feu', '%', 'Parents']) expect(el('level-up-unlocks').textContent).not.toContain(hidden);
   });
   it('omits recipes already known by discovery', async () => {
-    const s = createGame(0); s.discovered.push('bouee');
-    const c = setup(s); c.grantLaboratoryXp(50); c.grantLaboratoryXp(50); c.grantLaboratoryXp(500); c.grantLaboratoryXp(500); await vi.advanceTimersByTimeAsync(300);
+    const s = createGame(0); s.discovered.push('magicien', 'dadi', 'maxou', 'orange');
+    const c = setup({...s, progression: {totalXp: cumulativeLevelXp(10), rewardedThroughLevel: 10}}); c.grantLaboratoryXp(500); c.grantLaboratoryXp(500); await vi.advanceTimersByTimeAsync(300);
     expect(items().some(t => t.includes('en boutique · ') && t.startsWith('Recette'))).toBe(false);
   });
 });

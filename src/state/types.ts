@@ -64,7 +64,7 @@ export interface GameState {
   startCourse?: 'paille-solo';
   purchaseUnlocks?: PurchaseUnlockId[];
   initiation?: Initiation;
-  version: 19;
+  version: 20;
   rewardedDecorationModels?: DecorationId[]; decorations: OwnedDecoration[]; missions: MissionState; lastSimulatedAt: number; nextId: number;
   hearts: number; nextHeartGiftAt: number;
   pattes: number; grass: number; acquiredParcels: ParcelId[];

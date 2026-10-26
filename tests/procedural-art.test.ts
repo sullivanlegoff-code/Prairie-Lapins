@@ -3,8 +3,8 @@ import {portrait, COATS} from '../src/ui/portraits';
 import {SPECIES, SPECIES_IDS, proceduralCoat, type SpeciesArt, type SpeciesDefinition} from '../src/config/species';
 import {EXPECTED_ART} from './rabbit-art-fixtures';
 
-it('preserves the four remaining historical procedural SVG portraits and the unknown portrait byte for byte', () => {
-  for (const id of ['lunettes','perroquet','feu-glace','bouee',undefined] as const)
+it('preserves the remaining procedural SVG portraits and the unknown portrait byte for byte', () => {
+  for (const id of ['bouee',undefined] as const)
     expect(portrait(id)).toMatchSnapshot(id ?? 'unknown');
 });
 
@@ -21,14 +21,14 @@ it('rejects incomplete procedural data in types and at runtime, without a generi
   const absent: SpeciesArt = {kind: 'procedural'};
   // @ts-expect-error Both required colours must be present.
   const partial: SpeciesArt = {kind: 'procedural', coat: {body: '#123456'}};
-  const original = SPECIES.lunettes.art;
+  const original = SPECIES.bouee.art;
   try {
     for (const art of [absent, partial]) {
       expect(() => proceduralCoat(art)).toThrow(RangeError);
-      SPECIES.lunettes.art = art;
-      expect(() => portrait('lunettes')).toThrow(RangeError);
+      SPECIES.bouee.art = art;
+      expect(() => portrait('bouee')).toThrow(RangeError);
     }
-  } finally { SPECIES.lunettes.art = original; }
+  } finally { SPECIES.bouee.art = original; }
 });
 it('renders an isolated static-sprite definition without any coat or compatibility entry', async () => {
   const art = {kind: 'static-sprite', file: 'assets/rabbits/paille/paille-v1.png', texture: 'synthetic-static',

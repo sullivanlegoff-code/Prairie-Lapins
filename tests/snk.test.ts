@@ -28,7 +28,7 @@ function parents() {
 }
 describe('approved SNK content', () => {
   it('keeps SNK in its original position, with explicit recipe, Rare policies and no undecided acquisition policies or coat', () => {
-    expect(SPECIES_IDS[14]).toBe('snk'); expect(SPECIES_IDS).toEqual(EXPECTED_IDS);
+    expect(SPECIES_IDS[10]).toBe('snk'); expect(SPECIES_IDS).toEqual(EXPECTED_IDS);
     expect(validateSpeciesEntries(SPECIES_ENTRIES)).toEqual([]);
     expect(SPECIES.snk).toEqual({name: 'SNK', description, types: ['paille', 'feu'], rarity: 'rare', price: null,
       progression: {unlockLevel: 1}, acquisition: [{kind: 'recipe',guaranteeEligible:true, requiredTypes: ['paille', 'feu'], minAffection: 2}],
@@ -51,9 +51,9 @@ describe('approved SNK content', () => {
   it('preserves historical weighting and guarantee rather than extending the starting Rare-only policy', () => {
     expect(breedingWeights('paille','feu',2,2)).toEqual({paille:30,feu:30,ardent:30,snk:30});
     expect(breedingOdds('feu','paille',2,2)).toEqual({paille:25,feu:25,ardent:25,snk:25});
-    expect(breedingOdds('paille','feu',4,4)).toEqual({paille:20,feu:20,bouee:20,ardent:20,snk:20});
+    expect(breedingOdds('paille','feu',4,4)).toEqual({paille:25,feu:25,ardent:25,snk:25});
     const s = parents(); s.progression = {totalXp: cumulativeLevelXp(5), rewardedThroughLevel: 5}; s.pityFailures = 7;
-    expect(breedingPool(s,'paille','feu',4,4)).toMatchObject({weights:{bouee:1,ardent:1,snk:1},guaranteed:true});
+    expect(breedingPool(s,'paille','feu',4,4)).toMatchObject({weights:{ardent:1,snk:1},guaranteed:true});
     expect(breedingPool(s,'paille','feu',2,2)).toMatchObject({weights:{ardent:1,snk:1},guaranteed:true});
     expect(breedingOdds('paille','neige',2,2)).toEqual({frisket:50,icy:50});
   });

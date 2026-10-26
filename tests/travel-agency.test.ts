@@ -173,9 +173,9 @@ describe('habitat storage and species income', () => {
     const s = createGame(0); s.rabbits = []; s.buildings[0].habitat!.type = 'vol'; s.buildings[0].incomeUnits = 2900 * HOUR;
     expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: s});
   });
-  it('has exactly twelve unique bonus rares at 17/h; other rares earn 14, epics 20, legendaries 26', () => {
-    expect(RARE_INCOME_BONUS_SPECIES).toHaveLength(12);
-    expect(new Set(RARE_INCOME_BONUS_SPECIES).size).toBe(12);
+  it('has exactly nine unique bonus rares at 17/h; other rares earn 14, epics 20, legendaries 26', () => {
+    expect(RARE_INCOME_BONUS_SPECIES).toHaveLength(9);
+    expect(new Set(RARE_INCOME_BONUS_SPECIES).size).toBe(9);
     for (const id of RARE_INCOME_BONUS_SPECIES) expect(SPECIES[id].rarity).toBe('rare');
     for (const id of SPECIES_IDS) {
       const rarity = SPECIES[id].rarity;

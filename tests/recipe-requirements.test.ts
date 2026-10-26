@@ -15,24 +15,18 @@ function override(id: SpeciesId, recipe: Recipe) {
 afterEach(() => {for (const [id, definition] of saved) SPECIES[id] = definition; saved.clear();});
 
 /** Frozen historical recipe requirements, independent of displayed result types. */
-const historical = {
-  lunettes: {types: ['metal', 'paille'], affection: 4}, perroquet: {types: ['vol', 'feu'], affection: 4},
-  'feu-glace': {types: ['feu', 'neige'], affection: 4}, bouee: {types: ['paille', 'feu'], affection: 4},
-  magicien: {types: ['paille', 'metal'], affection: 6},
-};
+
 /** Fixed-probability specials, in catalogue order: element recipes (Epics) and exact parents (Legendaries), approved 25 October 2026. */
 const SPECIALS: {id: SpeciesId; probability: number; affection: number; types?: string[]; parents?: [SpeciesId, SpeciesId]}[] = [
   {id: 'magicien', probability: 5, affection: 6, types: ['paille', 'metal']}, {id: 'dragon', probability: 2, affection: 10, parents: ['dadi', 'phoenix']},
   {id: 'dadi', probability: 5, affection: 6, types: ['neige', 'vol']}, {id: 'maxou', probability: 5, affection: 6, types: ['neige', 'vol']},
-  {id: 'orange', probability: 5, affection: 6, types: ['paille', 'neige']}, {id: 'requin', probability: 2, affection: 10, parents: ['maxou', 'wat-wat']},
+  {id: 'orange', probability: 5, affection: 6, types: ['paille', 'neige']}, {id: 'dinono', probability: 5, affection: 6, types: ['feu', 'metal']}, {id: 'requin', probability: 2, affection: 10, parents: ['maxou', 'wat-wat']},
 ];
 function historicalWeights(a: SpeciesId, b: SpeciesId, x: number, y: number): Odds {
   const types = new Set([...SPECIES[a].types, ...SPECIES[b].types]), key = [...types].sort().join(',');
-  const matches = (id: keyof typeof historical) => historical[id].types.every(t => types.has(t as never)) && Math.min(x,y) >= historical[id].affection;
   const ordinary: Odds = {...BREEDING_ODDS[key]};
   if (!Object.hasOwn(BREEDING_ODDS, key)) for (const id of SPECIES_IDS) {
     if (['paille','neige','feu','belier-gris','volant'].includes(id) && SPECIES[id].types.every(t => types.has(t))) ordinary[id] = 30;
-    else if (id in historical && id !== 'magicien' && matches(id as keyof typeof historical)) ordinary[id] = 30;
   }
   // Approved additions: ordinary weight 20 each, only when both required elements and both affection thresholds hold.
   Object.assign(ordinary, rareAdditions(types, x, y));
@@ -73,12 +67,12 @@ describe('explicit recipe requirements', () => {
     expect(breedingOdds('frisket','bretonette',4,4).bouee).toBeGreaterThan(0);
   });
   it('combines exact parents and elements with AND, symmetrically', () => {
-    override('dragon', {parents: ['perroquet','feu'], requiredTypes: ['vol','feu'], minAffection: 10, probability: 2});
-    expect(recipeMatches('dragon','perroquet','feu')).toBe(true); expect(recipeMatches('dragon','feu','perroquet')).toBe(true);
+    override('dragon', {parents: ['phoenix','feu'], requiredTypes: ['vol','feu'], minAffection: 10, probability: 2});
+    expect(recipeMatches('dragon','phoenix','feu')).toBe(true); expect(recipeMatches('dragon','feu','phoenix')).toBe(true);
     expect(recipeMatches('dragon','volant','feu')).toBe(false);
-    override('dragon', {parents: ['perroquet','feu'], requiredTypes: ['neige'], minAffection: 10, probability: 2});
-    expect(recipeMatches('dragon','perroquet','feu')).toBe(false); expect(recipeMatches('dragon','feu','perroquet')).toBe(false);
-    expect(breedingOdds('perroquet','feu',20,20).dragon).toBeUndefined();
+    override('dragon', {parents: ['phoenix','feu'], requiredTypes: ['neige'], minAffection: 10, probability: 2});
+    expect(recipeMatches('dragon','phoenix','feu')).toBe(false); expect(recipeMatches('dragon','feu','phoenix')).toBe(false);
+    expect(breedingOdds('phoenix','feu',20,20).dragon).toBeUndefined();
   });
   it.each([undefined, []])('rejects a conditionless recipe (%s), without any result-type fallback', requiredTypes => {
     const recipe = {minAffection: 4, requiredTypes};

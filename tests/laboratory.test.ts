@@ -90,7 +90,7 @@ describe('published laboratory isolation', () => {
     expect(decodeGame(encodeGame(s))).toEqual({ok:true,state:s});
     const reloaded = setup();expect(reloaded.controller.getSnapshot().state).toEqual(s);
     for(const [a,b] of [['belier-gris','feu'],['feu','belier-gris'],['amethyste','feu'],['feu','amethyste']] as const) {
-      expect(breedingPool(s,a,b,2,2)).toMatchObject({"weights":{"amethyste":30,"belier-gris":30,"dinono":30,"feu":30},"total":120,"guaranteed":false});
+      expect(breedingPool(s,a,b,2,2)).toMatchObject({"weights":{"amethyste":30,"belier-gris":30,"bouee":30,"feu":30},"total":120,"guaranteed":false});
       // Dinono, still undiscovered, shares the same union and appears as the unknown result.
       expect(oddsView(s,a,b,2,2)).toMatchObject({entries:[{name:'Lapin Feu',weight:25,probability:'25 %'},{name:'Lapin Bélier Gris',weight:25,probability:'25 %'},{name:'Améthyste',weight:25,probability:'25 %'}],unknown:{weight:25,probability:'25 %'}});
     }

@@ -26,16 +26,16 @@ it('uses collapsible laboratory sections, exact resources, all species, affectio
       const section = document.getElementById(`dev-section-${id}`) as HTMLDetailsElement;
       expect(section.querySelector('summary')).not.toBeNull(); section.open = true;
     }
-    expect(host.querySelectorAll('[id^="dev-add-"]')).toHaveLength(36); // 35 species and the existing manual control.
+    expect(host.querySelectorAll('[id^="dev-add-"]')).toHaveLength(33); // 35 species and the existing manual control.
     set('resource-pattes', '42'); click('set-pattes'); expect(controller.getSnapshot().state!.pattes).toBe(42); expect(status()).toContain('exactement');
     const before = controller.getSnapshot().state; set('resource-pattes', '-1'); click('set-pattes'); expect(controller.getSnapshot().state).toEqual(before); expect(status()).toContain('entier');
     set('level', '30'); click('set-level'); expect(controller.getSnapshot().state!.progression).toEqual({totalXp: cumulativeLevelXp(30), rewardedThroughLevel: 30});
-    set('shop-affection', '15'); click('all-rabbits'); expect(controller.getSnapshot().state!.discovered).toHaveLength(35); expect(status()).toContain('sans statue'); expect(status()).toContain('universel niveau 3'); expect(status()).toContain('extension');
+    set('shop-affection', '15'); click('all-rabbits'); expect(controller.getSnapshot().state!.discovered).toHaveLength(32); expect(status()).toContain('sans statue'); expect(status()).toContain('universel niveau 3'); expect(status()).toContain('extension');
     set('affection-rabbit', 'rabbit-2'); set('affection-value', '20'); click('set-affection'); expect(controller.getSnapshot().state!.rabbits[0].affection).toBe(20);
     set('build-kind', 'agency'); click('build'); expect(controller.getSnapshot().state!.buildings.some(b => b.kind === 'agency')).toBe(true);
     click('all-decorations'); expect(controller.getSnapshot().state!.decorations.some(d => d.catalogId === 'robot-statue')).toBe(true);
     prefs.set({tutorial: false, tutorialDone: true}); click('tutorial'); expect(prefs.value).toMatchObject({tutorial: true, tutorialDone: false});
-    click('scenario-completeGame'); expect(controller.getSnapshot().state!.rabbits).toHaveLength(35);
+    click('scenario-completeGame'); expect(controller.getSnapshot().state!.rabbits).toHaveLength(32);
     click('finish-timers'); expect(controller.getSnapshot().state!.travel!.trips.every(t => t.endsAt <= Date.now())).toBe(true); expect(status()).toContain('Rien n’est encaissé');
     expect(decodeGame(encodeGame(controller.getSnapshot().state!))).toEqual({ok: true, state: controller.getSnapshot().state});
     click('scenario-freshStart'); expect(prefs.value.tutorial).toBe(true); expect(controller.getSnapshot().state!.rabbits).toHaveLength(1);

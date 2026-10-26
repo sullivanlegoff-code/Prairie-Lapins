@@ -20,7 +20,7 @@ describe('purchase and birth XP in the same candidate',()=>{
   const s=rich(),r=run(s,kind==='farm'?{type:'buyBuilding',kind,x:18,y:24}:{type:'buyBuilding',kind:'enclosure',habitatType:kind,x:18,y:24});
   expect(r.state.progression.totalXp).toBe(kind==='farm'?PROGRESSION.xp.construction.farm:kind==='universal'?PROGRESSION.xp.construction.universalHabitat:PROGRESSION.xp.construction.specializedHabitat);expect(r.state.buildings).toHaveLength(4);
  });
- it.each(['paille','lunettes','bouee','magicien','dragon'] as SpeciesId[])('welcomes an existing pending %s for its real rarity, once',species=>{
+ it.each(['paille','boudinet','bouee','magicien','dragon'] as SpeciesId[])('welcomes an existing pending %s for its real rarity, once',species=>{
   const s=baby(species),r=run(s, welcomeOf(s, 'building-1'));expect(r.state.progression.totalXp).toBe(PROGRESSION.xp.birth[SPECIES[species].rarity]+(SPECIES[species].rarity==='rare'?250:0));expect(r.state.rabbits.at(-1)?.id).toBe('birth-6');expect(r.state.missions.events.welcome).toBe(1);expect(r.state.discovered).toContain(species);const again=act(r.state, welcomeOf(r.state, 'building-1'),0);expect(again.ok).toBe(false);expect(again.state).toEqual(r.state);
  });
  it.each([{type:'buyRabbit',species:'neige',enclosureId:'building-1'},{type:'buyBuilding',kind:'enclosure',habitatType:'neige',x:18,y:24},{type:'buyBuilding',kind:'farm',x:18,y:24}] as Command[])('heart complement grants the same XP once for $type',cmd=>{

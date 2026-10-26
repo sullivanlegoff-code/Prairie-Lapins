@@ -63,10 +63,10 @@ export const BALANCE = {
  * so the long ones fill the gaps between the three daily sessions. `level` is the player level that opens it.
  */
 /**
- * Hourly income at affection 1 (owner, 25 October 2026): rares no longer all earn the same. Twelve of the 24, drawn at random once
- * on that day, earn the higher rare base; epics and legendaries earn more still. Each affection point adds `incomePerLevel`.
+ * Hourly income at affection 1 (owner, 25 October 2026): rares no longer all earn the same. Nine surviving species from the twelve drawn once
+ * on that day earn the higher rare base; epics and legendaries earn more still. Each affection point adds `incomePerLevel`.
  */
-export const RARE_INCOME_BONUS_SPECIES: readonly SpeciesId[] = ['amethyste', 'boudinet', 'bretonette', 'egiiipte', 'feu-glace', 'frisket', 'lunettes', 'perroquet', 'princesse-neige', 'roukette', 'virvoletant', 'wat-wat'];
+export const RARE_INCOME_BONUS_SPECIES: readonly SpeciesId[] = ['amethyste', 'boudinet', 'bretonette', 'egiiipte', 'frisket', 'princesse-neige', 'roukette', 'virvoletant', 'wat-wat'];
 export const INCOME_BASES = {common: 10, rare: 14, rareBonus: 17, epic: 20, legendary: 26} as const;
 /**
  * The travel agency (owner, 25 October 2026), sold among the buildings from player level 8. One rabbit travels at a time,

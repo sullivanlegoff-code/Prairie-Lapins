@@ -45,17 +45,17 @@ const state=(c:GameController)=>c.getSnapshot().state!;
 describe('main missions and unique rewards',()=>{
   it('starts eight unclaimed visible objectives and a fresh 24-hour cycle without changing initial resources',()=>{
     const s=createGame(123);
-    expect(MAIN_MISSION_IDS).toHaveLength(31);expect(s).toMatchObject({version: 19,pattes:350,grass:10,hearts:12});
+    expect(MAIN_MISSION_IDS).toHaveLength(31);expect(s).toMatchObject({version: 20,pattes:350,grass:10,hearts:12});
     expect(s.missions).toEqual({events:emptyMainEvents(),completed:[],claimed:[],daily:{referenceAt:123,cycleIndex:0,progress:emptyDailyProgress(),claimed:[],bonusClaimed:false}});
     expect(dailyCycleEnd(s)).toBe(123+DAY);
   });
   it('recognizes affection and rare discovery from current state, never from a pending birth',()=>{
-    let s=prepared();s.rabbits[0].affection=5;s.discovered.push('lunettes');
+    let s=prepared();s.rabbits[0].affection=5;s.discovered.push('boudinet');
     s=read(encodeGame(s),HOUR);
     expect(s.missions.completed).toContain('strong-bonds');expect(mainProgress(s,'first-rare').value).toBe(1); // 'first-rare' is a retired objective: its condition is still read from the discoveries.
     // A rare result still waiting in the nest is not a discovery.
     let waiting=prepared();waiting.rabbits.forEach(r=>r.affection=2);waiting=run(waiting,{type:'breed',parents:['rabbit-2','rabbit-3']});
-    const birth=waiting.buildings.find(b=>b.breeding)!.breeding!.birth;birth.species='lunettes';birth.reservedDiscovery=true;
+    const birth=waiting.buildings.find(b=>b.breeding)!.breeding!.birth;birth.species='boudinet';birth.reservedDiscovery=true;
     const loaded=read(encodeGame(waiting),HOUR);
     expect(mainProgress(loaded,'first-rare').value).toBe(0);expect(loaded.discovered).toEqual(waiting.discovered);
   });

@@ -45,7 +45,7 @@ export const MAIN_MISSIONS: Record<MainMissionId, MainDefinition> = {
   'strong-bonds': {title: 'Des liens plus forts', description: 'Avoir un lapin d’affection 5.', condition: {kind: 'affection', target: 5}, reward: {resource: 'hearts', amount: 1}},
   'growing-collection': {title: 'Collection naissante', description: 'Avoir découvert 5 espèces.', condition: {kind: 'discoveries', target: 5}, reward: {resource: 'hearts', amount: 2}},
   'bigger-meadow': {title: 'Une prairie plus grande', description: 'Avoir acheté la première extension.', condition: {kind: 'extension'}, reward: {resource: 'pattes', amount: 100}},
-  'first-rare': {title: 'Première espèce rare', description: 'Découvrir Lunettes, Perroquet ou Feu Glacé.', condition: {kind: 'rare'}, reward: {resource: 'hearts', amount: 3}},
+  'first-rare': {title: 'Première espèce rare', description: 'Découvrir une espèce rare.', condition: {kind: 'rare'}, reward: {resource: 'hearts', amount: 3}},
 };
 export const DAILY_MISSION_IDS = ['collect-pattes', 'collect-grass', 'gain-affection'] as const;
 export type DailyMissionId = typeof DAILY_MISSION_IDS[number];

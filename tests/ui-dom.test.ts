@@ -151,18 +151,18 @@ describe('reproduction text follows current recipe data', () => {
     expect(panel().textContent).toContain('espèces explicitement éligibles à la garantie, non découvertes et admissibles à cette paire');
   });
   it('retains the historical guarantee indication for a known eligible recipe', () => {
-    const known=createGame(0);known.recipeBook=['lunettes'];const {ui}=setup(known);ui.open({kind:'recipes'});
-    expect(panel().querySelector('[data-recipe="lunettes"]')!.textContent).toContain('Cette espèce bénéficie de la garantie ordinaire si elle n’est pas encore découverte et reste admissible.');
+    const known=createGame(0);known.recipeBook=['boudinet'];const {ui}=setup(known);ui.open({kind:'recipes'});
+    expect(panel().querySelector('[data-recipe="boudinet"]')!.textContent).toContain('Cette espèce bénéficie de la garantie ordinaire si elle n’est pas encore découverte et reste admissible.');
   });
   it('reads explicit eligibility rather than inferring it from the absence of a fixed probability', () => {
-    const original=SPECIES.lunettes.acquisition;
+    const original=SPECIES.boudinet.acquisition;
     try {
-      SPECIES.lunettes.acquisition=original.map(source=>source.kind==='recipe'?{...source,guaranteeEligible:false}:source);
-      const known=createGame(0);known.recipeBook=['lunettes'];const {ui}=setup(known);ui.open({kind:'recipes'});
-      const card=panel().querySelector('[data-recipe="lunettes"]')!;
+      SPECIES.boudinet.acquisition=original.map(source=>source.kind==='recipe'?{...source,guaranteeEligible:false}:source);
+      const known=createGame(0);known.recipeBook=['boudinet'];const {ui}=setup(known);ui.open({kind:'recipes'});
+      const card=panel().querySelector('[data-recipe="boudinet"]')!;
       expect(card.textContent).toContain('Cette espèce ne bénéficie pas de la garantie de découverte.');
       expect(card.textContent).not.toContain('Cette espèce bénéficie de la garantie ordinaire');
-    } finally {SPECIES.lunettes.acquisition=original;}
+    } finally {SPECIES.boudinet.acquisition=original;}
   });
   it('keeps unknown recipe conditions hidden without exposing thresholds or guarantee policy', () => {
     const {ui}=setup();ui.open({kind:'recipes'});
@@ -420,25 +420,26 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
   });
   it('explains feeding in the notebook, previews 50/50 then 40/40/20, and prepares parents without launching', () => {
     const initial = collectionReady();initial.progression={totalXp:cumulativeLevelXp(6),rewardedThroughLevel:6}; initial.pityFailures = 0;
-    initial.recipeBook.push('feu-glace'); // Bought recipe of a still undiscovered species.
+    initial.rabbits.find(r => r.id === 'rabbit-3')!.affection = 1;
+    initial.recipeBook.push('glassofeu'); // Known recipe of a still undiscovered species.
     const {ui, controller} = setup(initial);
     const recipe = () => [...panel().querySelectorAll('article')].find(c => c.textContent?.includes('feu + neige · Rare'))!;
     ui.open({kind: 'collection'}); button('Carnet de reproduction').click();
     // Validated rule: recipe names are public in the notebook; the collection keeps its "???".
     expect(panel().querySelectorAll('article')).toHaveLength(EXPECTED_RECIPE_IDS.length); expect(recipe().dataset.recipeKnown).toBe('true');
-    expect(recipe().textContent).toContain('Affection 4 minimum'); expect(recipe().textContent).toContain('À nourrir');
+    expect(recipe().textContent).toContain('Affection 2 minimum'); expect(recipe().textContent).toContain('À nourrir');
     expect(button('Préparer cette paire au nid', recipe()).disabled).toBe(true);
-    button('Nourrir Lapin Neige · Enclos 1', recipe()).click(); expect(panel().textContent).toContain('Affection 2 / 20');
+    button('Nourrir Lapin Neige · Enclos 1', recipe()).click(); button('Nourrir · 2 nourriture').click(); expect(panel().textContent).toContain('Affection 2 / 20');
     ui.select({kind: 'building', id: 'building-4'});
     crossFromNest('Lapin Feu', 'Lapin Neige', false);
     const odds = () => breeding().querySelector('.breeding-odds')!.textContent;
     expect(breeding().querySelector('.breeding-odds')).toBeNull(); button('Probabilités', breeding()).click();
     expect(odds()).toContain(`feu · Commun : ${shareLabel(30, 60 + 30 * Object.keys(rareAdditions(['feu', 'neige'], 2, 2)).length)}`);
-    expect(odds()).not.toContain('feu + neige');
+    expect(odds()).toContain('feu + neige');
     for (const id of ['rabbit-3', 'rabbit-11']) for (let n = 0; n < 2; n++) expect(controller.perform({type: 'feed', id}).ok).toBe(true);
-    expect(odds()).toContain(`feu + neige · Rare : ${shareLabel(30, 90 + 30 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length)}`);
-    expect(odds()).toContain(`neige · Commun : ${shareLabel(30, 90 + 30 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length)}`);
-    breeding().close(); ui.open({kind: 'recipes'}); expect(recipe().textContent).toContain(`Recette possible, résultat non garanti · ${shareLabel(30, 90 + 30 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length)}`);
+    expect(odds()).toContain(`feu + neige · Rare : ${shareLabel(30, 60 + 30 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length)}`);
+    expect(odds()).toContain(`neige · Commun : ${shareLabel(30, 60 + 30 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length)}`);
+    breeding().close(); ui.open({kind: 'recipes'}); expect(recipe().textContent).toContain(`Recette possible, résultat non garanti · ${shareLabel(30, 60 + 30 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length)}`);
     const before = state(controller), perform = vi.spyOn(controller, 'perform');
     button('Préparer cette paire au nid', recipe()).click(); expect(perform).not.toHaveBeenCalled(); expect(state(controller)).toEqual(before);
     // The shortcut opens the pairing window with the recipe's pair already chosen, nothing launched.
@@ -448,23 +449,23 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
   it('keeps a guaranteed new rare hidden through reproduction and growth, then discovers it on manual welcome', () => {
     const initial = collectionReady();initial.progression={totalXp:cumulativeLevelXp(6),rewardedThroughLevel:6};
     for (const r of initial.rabbits) r.affection = 4;
-    initial.discovered.push('wat-wat','glassofeu');initial.recipeBook.push('feu-glace'); // The shortcut exists only for a known recipe; the species stays undiscovered.
+    initial.discovered.push('wat-wat');initial.recipeBook.push('glassofeu'); // The shortcut exists only for a known recipe; the species stays undiscovered.
     const {ui, controller, clock, data} = setup(initial); clock.now = initial.lastSimulatedAt;
     ui.open({kind: 'recipes'});
     const recipe = [...panel().querySelectorAll('article')].find(c => c.textContent?.includes('feu + neige · Rare'))!;
     expect(recipe.textContent).toContain('Résultat garanti pour cette recette · 100 %');
     button('Préparer cette paire au nid', recipe).click(); button('Croiser', breeding()).click();
-    expect(breeding().open).toBe(false); expect(panel().textContent).not.toContain('Lapin Feu Glacé'); expect(state(controller).pityFailures).toBe(0);
-    const saved = decodeGame(data.get(SAVE_KEY)!); expect(saved.ok && saved.state.buildings.find(b => b.breeding)?.breeding?.birth).toMatchObject({species: 'feu-glace', guaranteed: true, reservedDiscovery: true});
+    expect(breeding().open).toBe(false); expect(panel().textContent).not.toContain('Glassofeu'); expect(state(controller).pityFailures).toBe(0);
+    const saved = decodeGame(data.get(SAVE_KEY)!); expect(saved.ok && saved.state.buildings.find(b => b.breeding)?.breeding?.birth).toMatchObject({species: 'glassofeu', guaranteed: true, reservedDiscovery: true});
     clock.now += 20 * 60_000; controller.refresh();button('Envoyer dans la nurserie').click(); ui.select({kind: 'building', id: 'building-5'});
-    expect(panel().textContent).not.toContain('Lapin Feu Glacé'); expect(panel().querySelector('.timer')!.textContent).toBe('30 min 0 s');
+    expect(panel().textContent).not.toContain('Glassofeu'); expect(panel().querySelector('.timer')!.textContent).toBe('30 min 0 s');
     button('Terminer · 6 cœurs').click(); const dialog = document.getElementById('game-dialog')!;
-    expect(dialog.textContent).not.toContain('Lapin Feu Glacé'); button('Confirmer', dialog).click();
-    expect(state(controller).hearts).toBe(6); expect(state(controller).discovered).not.toContain('feu-glace');
-    expect(panel().textContent).toContain('Lapin Feu Glacé'); button('Enclos 3 · 0/3').click();
-    expect(dialog.textContent).toContain('Nouvelle découverte'); expect(dialog.textContent).toContain('Lapin Feu Glacé');
+    expect(dialog.textContent).not.toContain('Glassofeu'); button('Confirmer', dialog).click();
+    expect(state(controller).hearts).toBe(6); expect(state(controller).discovered).not.toContain('glassofeu');
+    expect(panel().textContent).toContain('Glassofeu'); button('Enclos 3 · 0/3').click();
+    expect(dialog.textContent).toContain('Nouvelle découverte'); expect(dialog.textContent).toContain('Glassofeu');
     button('Bienvenue dans la prairie', dialog).click(); ui.open({kind: 'collection'});
-    expect(document.getElementById('panel-title')!.textContent).toBe(`Collection · 8/${EXPECTED_IDS.length}`);
+    expect(document.getElementById('panel-title')!.textContent).toBe(`Collection · 7/${EXPECTED_IDS.length}`);
     expect(decodeGame(data.get(SAVE_KEY)!)).toEqual({ok: true, state: state(controller)});
   });
   it('completes the farming, breeding, revealing, welcoming and movement loop through UI controls', () => {
@@ -751,7 +752,7 @@ describe('habitat panels and controller transactions',()=>{
     expect(c.grantLaboratoryXp(500).ok).toBe(true);
     expect(c.perform({type:'upgradeHabitat',id:'building-6',fromLevel:1}).ok).toBe(true);
     expect(state(c).buildings.find(b=>b.id==='building-6')!.habitat).toEqual({type:'paille',level:2});expect(values.get(SAVE_KEY)).toBe(normal);
-    expect(JSON.parse(values.get('prairie-lapins.development.'+SAVE_KEY)!).version).toBe(19);
+    expect(JSON.parse(values.get('prairie-lapins.development.'+SAVE_KEY)!).version).toBe(20);
   });
 });
 
@@ -866,9 +867,10 @@ describe('new collection and exact-species recipe UI', () => {
   };
   it('composes filters, keeps them across refresh and shows an actionable empty result', () => {
     const {controller, ui} = setup(scenarioState('collection', 0)); ui.open({kind: 'collection'});
-    change('Rareté', 'epic'); expect(panel().querySelectorAll('article')).toHaveLength(4);
+    change('Rareté', 'epic'); expect(panel().querySelectorAll('article')).toHaveLength(5);
     expect(panel().textContent).not.toContain('Lapin Géant'); expect(panel().textContent).toContain('Lapin Magicien');
-    change('Type', 'feu'); expect(panel().querySelectorAll('article')).toHaveLength(0);
+    change('Type', 'feu'); expect(panel().querySelectorAll('article')).toHaveLength(1); expect(panel().textContent).toContain('Dinono');
+    change('Découverte', 'unknown'); expect(panel().querySelectorAll('article')).toHaveLength(0);
     expect(panel().textContent).toContain('Aucune espèce'); controller.refresh();
     expect(panel().querySelector<HTMLSelectElement>('select[aria-label="Rareté"]')!.value).toBe('epic');
     button('Réinitialiser les filtres').click(); expect(panel().querySelectorAll('article')).toHaveLength(EXPECTED_IDS.length);
@@ -1012,14 +1014,14 @@ describe('initiation presentation',()=>{
  });
 });
 it('labels an actual first discovery of a species at its first birth',()=>{
- const s=scenarioState('initiationSaved',0);const baby=babyOf(s.buildings.find(b=>b.kind==='nursery')!)!;baby.readyAt=0;baby.birth.species='lunettes';
+ const s=scenarioState('initiationSaved',0);const baby=babyOf(s.buildings.find(b=>b.kind==='nursery')!)!;baby.readyAt=0;baby.birth.species='boudinet';
  const {ui}=setup(s);ui.open({kind:'building',id:'building-5'});button('Prairie de paille 1 · 1/3').click();
- const dialog=document.getElementById('game-dialog')!;expect(dialog.textContent).toContain('Nouvelle espèce');expect(dialog.textContent).toContain('Lapin à Lunettes');expect(dialog.textContent).not.toContain('Consulter');
+ const dialog=document.getElementById('game-dialog')!;expect(dialog.textContent).toContain('Nouvelle espèce');expect(dialog.textContent).toContain('Boudinet');expect(dialog.textContent).not.toContain('Consulter');
 });
 it('offers a notebook shortcut after guidance ends',()=>{
- const s=scenarioState('missionJourney',0);s.recipeBook=['lunettes'];s.progression={totalXp:cumulativeLevelXp(6),rewardedThroughLevel:6};s.missions.claimed=['first-meal','first-farm','first-harvest','parents-ready','at-nest','to-nursery','first-birth'];
+ const s=scenarioState('missionJourney',0);s.recipeBook=['boudinet'];s.progression={totalXp:cumulativeLevelXp(6),rewardedThroughLevel:6};s.missions.claimed=['first-meal','first-farm','first-harvest','parents-ready','at-nest','to-nursery','first-birth'];
  const {ui,prefs,controller}=setup(s);prefs.set({tutorialDone:true,tutorial:false});const wallet=state(controller).pattes;
- ui.open({kind:'missions',tab:'main'});button('Consulter le carnet').click();expect(state(controller).pattes).toBe(wallet);const recipe=panel().querySelector('[data-recipe="lunettes"]')!;expect(recipe.querySelector('h3')!.textContent).toBe('Lapin à Lunettes');expect(recipe.querySelector('details')).toBeNull();expect(recipe.textContent).toContain('Aucune paire possédée n’est admissible');
+ ui.open({kind:'missions',tab:'main'});button('Consulter le carnet').click();expect(state(controller).pattes).toBe(wallet);const recipe=panel().querySelector('[data-recipe="boudinet"]')!;expect(recipe.querySelector('h3')!.textContent).toBe('Boudinet');expect(recipe.querySelector('details')).toBeNull();expect(recipe.textContent).toContain('Aucune paire possédée n’est admissible');
 });
 
 describe('mobile menu continuity', () => {
@@ -1029,12 +1031,12 @@ describe('mobile menu continuity', () => {
     const select = panel().querySelector<HTMLSelectElement>('select[aria-label="Type"]')!;
     select.value = 'paille'; select.dispatchEvent(new Event('change'));
     panel().scrollTop = 180;
-    const lunettes = [...panel().querySelectorAll<HTMLElement>('article')].find(card => card.querySelector('h3')?.textContent === 'Lapin à Lunettes')!;
+    const magicien = [...panel().querySelectorAll<HTMLElement>('article')].find(card => card.querySelector('h3')?.textContent === 'Lapin Magicien')!;
     const before = encodeGame(state(controller));
-    button('Consulter l’espèce', lunettes).click(); panel().scrollTop = 75;
+    button('Consulter l’espèce', magicien).click(); panel().scrollTop = 75;
     button('Consulter la recette').click();
     document.getElementById('panel-back')!.click();
-    expect(document.getElementById('panel-title')!.textContent).toBe('Lapin à Lunettes'); expect(panel().scrollTop).toBe(75);
+    expect(document.getElementById('panel-title')!.textContent).toBe('Lapin Magicien'); expect(panel().scrollTop).toBe(75);
     document.getElementById('panel-back')!.click();
     expect(document.getElementById('panel-title')!.textContent).toBe(`Collection · ${EXPECTED_IDS.length}/${EXPECTED_IDS.length}`);
     expect(panel().querySelector<HTMLSelectElement>('select[aria-label="Type"]')!.value).toBe('paille'); expect(panel().scrollTop).toBe(180);

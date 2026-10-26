@@ -41,7 +41,7 @@ function memory(raw?:string){
 }
 function breedingState(){
   let s=rich();s=run(s,{type: 'placeStarterBuilding',kind:'nest',x: 22, y: 20});s=run(s,{type: 'placeStarterBuilding',kind:'nursery',x: 26, y: 20});
-  s=run(s,{type:'feed',id:'rabbit-2'});s=run(s,{type:'feed',id:'rabbit-3'});s.pityFailures=7;s.rabbits[0].species='feu';s.discovered.push('feu','wat-wat','glassofeu');s.rabbits.forEach(r=>r.affection=4); // Feu x Neige at affection 4: the guarantee reserves Feu Glacé
+  s=run(s,{type:'feed',id:'rabbit-2'});s=run(s,{type:'feed',id:'rabbit-3'});s.pityFailures=7;s.rabbits[0].species='feu';s.discovered.push('feu','wat-wat');s.rabbits.forEach(r=>r.affection=4); // Feu x Neige at affection 4: the guarantee reserves Feu Glacé
   return run(s,{type:'breed',parents:['rabbit-2','rabbit-3']},17);
 }
 
@@ -80,12 +80,12 @@ describe('habitat compatibility and atomic entries',()=>{
   it('welcomes a reserved hybrid into either matching type, rejects an incompatible nursery destination without loss',()=>{
     let s=breedingState();s=build(s,'paille',0,1);s=build(s,'neige',1,1);s=sendToNursery(s,20*60_000+17);s=advance(s,50*60_000+17);
     const nursery=s.buildings.find(b=>b.kind==='nursery')!,birth=structuredClone(babyOf(nursery)!.birth);
-    expect(birth.species).toBe('feu-glace');
+    expect(birth.species).toBe('glassofeu');
     refuse(s, welcomeOf(s, s.buildings[3].id),'TYPE_INCOMPATIBLE');
-    expect(pendingDiscoveries(s)).toEqual(['feu-glace']);
+    expect(pendingDiscoveries(s)).toEqual(['glassofeu']);
     s=run(s, welcomeOf(s, s.buildings[4].id));
-    expect(s.rabbits.at(-1)).toMatchObject({id:birth.id,species:'feu-glace',enclosureId:s.buildings[4].id});
-    expect(s.discovered).toContain('feu-glace');expect(pendingDiscoveries(s)).toEqual([]);
+    expect(s.rabbits.at(-1)).toMatchObject({id:birth.id,species:'glassofeu',enclosureId:s.buildings[4].id});
+    expect(s.discovered).toContain('glassofeu');expect(pendingDiscoveries(s)).toEqual([]);
   });
   it('moves an occupied specialized building without changing income, occupants, level or affinity',()=>{
     let s=build(rich(),'paille');const home=s.buildings.at(-1)!.id;
@@ -206,7 +206,7 @@ describe('two extensions, camera and placement',()=>{
 describe('v4 validation, migrations, imports and storage',()=>{
   it('keeps claimed missions, hearts, extension, reserved birth and fractional income through a save',()=>{
     let old=breedingState();old=run(old,{type:'expand',parcelId:'east',expectedCost:600});old=run(old,{type:'claimMainMission',id:'bigger-meadow'});old.hearts=7;old.nextHeartGiftAt=123456789;
-    expect(decode(encodeGame(old),1000*HOUR)).toEqual(old);expect(pendingDiscoveries(old)).toEqual(['feu-glace']);
+    expect(decode(encodeGame(old),1000*HOUR)).toEqual(old);expect(pendingDiscoveries(old)).toEqual(['glassofeu']);
   });
   it('preserves claims on controller reload',()=>{
     let s=breedingState();if(!s.missions.completed.includes('cozy-nest'))s.missions.completed.push('cozy-nest');s.missions.claimed.push('cozy-nest');s.pattes+=30;s.hearts=7;

@@ -17,13 +17,13 @@ import {decorationPlacementReason} from '../simulation/decorations';
 import {ISLAND} from '../config/islandGeometry';
 
 /**
- * The current format is v19 (farm and agency levels, concurrent trips, Heart receipts), migrated through v18 and v17 from v16 (economy migration). Version 16 was the catalogue boundary of the development saves: the species Terre, Mottelin, Géant and
+ * The current format is v20 (catalogue conversion), after v19 (farm and agency levels, concurrent trips, Heart receipts), migrated through v18 and v17 from v16 (economy migration). Version 16 was the catalogue boundary of the development saves: the species Terre, Mottelin, Géant and
  * Brumelin and the Terre habitat were removed, and saves before that catalogue boundary are not converted. Versions 1 to 15 are refused as incompatible
  * (the controller then starts a new game); they are never read, migrated or restored.
  */
-export const SAVE_VERSION = 19;
+export const SAVE_VERSION = 20;
 /** Types a species had before the owner changed them: a rabbit already housed under its old types may stay where it is. */
-const LEGACY_TYPES: Partial<Record<SpeciesId, readonly HabitatType[]>> = {magicien: ['metal', 'vol']};
+const LEGACY_TYPES: Partial<Record<SpeciesId, readonly HabitatType[]>> = {magicien: ['metal', 'vol'], bouee: ['paille', 'feu']};
 const integer = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
 // Rebasing a clock may move historical dates before the Unix epoch. Resources stay nonnegative.
 const timestamp = z.number().int().min(Number.MIN_SAFE_INTEGER).max(Number.MAX_SAFE_INTEGER);
@@ -147,7 +147,9 @@ const schema = current.superRefine((s, context) => {
       // Completed jobs may reference parents that were moved or entrusted: the birth and the surviving individuals are preserved.
     }
     const babies = b.nursery?.babies ?? [];
-    for (const baby of babies) if (!durationValid(baby.startedAt, baby.readyAt, growthDuration(baby.birth.species))) issue('Growth timestamps');
+    // A Dinono already growing before v20 keeps its former Rare duration through later saves.
+    for (const baby of babies) if (!durationValid(baby.startedAt, baby.readyAt, growthDuration(baby.birth.species)) &&
+      !(baby.birth.species === 'dinono' && durationValid(baby.startedAt, baby.readyAt, 30 * 60_000))) issue('Growth timestamps');
     for (const newborn of [...babies.map(baby => baby.birth), b.breeding?.birth]) if (newborn) {
       ids.push(newborn.id);
       if (!newborn.id.startsWith('birth-') || (newborn.guaranteed && !newborn.reservedDiscovery) ||
@@ -224,8 +226,48 @@ const v18Schema = current.extend({version: z.literal(18), travel: oldTravel, bui
 function migrateV18(raw: unknown): unknown {
   const parsed = v18Schema.safeParse(raw); if (!parsed.success) return raw;
   const old = parsed.data;
-  return {...old, version: SAVE_VERSION, buildings: old.buildings.map(b => b.kind === 'farm' ? {...b, farmLevel: 2} : b),
+  return {...old, version: 19, buildings: old.buildings.map(b => b.kind === 'farm' ? {...b, farmLevel: 2} : b),
     ...(old.travel ? {travel: {welcomed: old.travel.welcomed, trips: old.travel.trip ? [old.travel.trip] : []}} : {})};
+}
+
+/** Only known retired IDs are converted before the older schemas validate against the current catalogue. */
+const RETIRED_SPECIES = {lunettes: 'boudinet', 'feu-glace': 'glassofeu', perroquet: 'phoenix'} as const;
+/** Knowledge prices of the retired recipes when they were sold: a player who bought one gets the pattes back. */
+const RETIRED_RECIPE_PRICES: Record<keyof typeof RETIRED_SPECIES, number> = {lunettes: 220, 'feu-glace': 180, perroquet: 250};
+function migrateRetiredSpecies(raw: unknown): void {
+  if (!raw || typeof raw !== 'object') return;
+  const save = raw as Record<string, unknown>;
+  if (![16, 17, 18, 19].includes(save.version as number)) return;
+  const replacement = (id: unknown): SpeciesId | undefined => typeof id === 'string' && Object.hasOwn(RETIRED_SPECIES, id)
+    ? RETIRED_SPECIES[id as keyof typeof RETIRED_SPECIES] : undefined;
+  const converted: SpeciesId[] = [];
+  const convert = (value: unknown) => {
+    if (!value || typeof value !== 'object') return;
+    const rabbit = value as Record<string, unknown>, id = replacement(rabbit.species);
+    if (id) rabbit.species = id;
+    // Dinono's former ordinary reservation cannot guarantee an Epic. Keep the birth and its dates.
+    if (rabbit.species === 'dinono') { rabbit.guaranteed = false; rabbit.reservedDiscovery = false; }
+  };
+  if (Array.isArray(save.rabbits)) for (const rabbit of save.rabbits) {
+    // Adults have no reservation fields.
+    if (rabbit && typeof rabbit === 'object') {
+      const id = replacement(rabbit.species);
+      if (id) { rabbit.species = id; converted.push(id); }
+    }
+  }
+  if (Array.isArray(save.buildings)) for (const b of save.buildings) {
+    if (!b || typeof b !== 'object') continue;
+    convert(b.breeding?.birth);
+    if (Array.isArray(b.nursery?.babies)) for (const baby of b.nursery.babies) convert(baby?.birth);
+  }
+  // Travellers reference the converted adults by ID, so their trips remain unchanged.
+  if (Array.isArray(save.recipeBook) && Number.isSafeInteger(save.pattes)) for (const id of save.recipeBook)
+    if (replacement(id)) save.pattes = (save.pattes as number) + RETIRED_RECIPE_PRICES[id as keyof typeof RETIRED_SPECIES];
+  for (const key of ['discovered', 'recipeBook']) if (Array.isArray(save[key]))
+    save[key] = save[key].filter(id => !replacement(id));
+  if (Array.isArray(save.discovered)) for (const id of converted) if (!save.discovered.includes(id)) save.discovered.push(id);
+  const transition = save.levelAccessTransition as {rights?: {target?: {family?: string; id?: string}}[]} | undefined;
+  if (Array.isArray(transition?.rights)) transition.rights = transition.rights.filter(right => right?.target?.family !== 'species' || !replacement(right.target.id));
 }
 
 /**
@@ -257,16 +299,18 @@ export function decodeGame(json: string): DecodeResult {
   if (json.length > MAX_JSON_LENGTH) return {ok: false, reason: 'FILE_TOO_LARGE'};
   let raw: unknown;
   try { raw = JSON.parse(json); } catch { return {ok: false, reason: 'INVALID_JSON'}; }
-  if (raw && typeof raw === 'object' && 'version' in raw && raw.version !== SAVE_VERSION && raw.version !== 18 && raw.version !== 17 && raw.version !== 16)
+  if (raw && typeof raw === 'object' && 'version' in raw && raw.version !== SAVE_VERSION && raw.version !== 19 && raw.version !== 18 && raw.version !== 17 && raw.version !== 16)
     return {ok: false, reason: Number.isInteger(raw.version) && (raw.version as number) >= 1 && (raw.version as number) <= 15 ? 'INCOMPATIBLE_CATALOG' : 'UNSUPPORTED_VERSION'};
   // Only the explicitly retired catalogue entries are removed; unknown IDs still fail validation.
   if (raw && typeof raw === 'object' && 'decorations' in raw && Array.isArray(raw.decorations)) {
     raw.decorations = raw.decorations.filter(d => !d || typeof d !== 'object' ||
       !RETIRED_DECORATION_IDS.some(id => id === d.catalogId));
   }
+  migrateRetiredSpecies(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 16) raw = migrateV16(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 17) raw = migrateV17(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 18) raw = migrateV18(raw);
+  if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 19) raw.version = SAVE_VERSION;
   settleStorageCaps(raw);
   const parsed = schema.safeParse(raw);
   if (!parsed.success) return {ok: false, reason: 'INVALID_STATE'};
@@ -283,6 +327,6 @@ export function encodeGame(state: GameState, presentationId?: string): string {
 
 /** Optional presentation metadata, separate from simulation state. Call after validating the save. */
 export function readPresentationId(json: string): string | undefined {
-  try { const raw = JSON.parse(json); const id = z.string().uuid().safeParse(raw.presentationId); return [SAVE_VERSION, 18, 17, 16].includes(raw.version) && id.success ? id.data : undefined; }
+  try { const raw = JSON.parse(json); const id = z.string().uuid().safeParse(raw.presentationId); return [SAVE_VERSION, 19, 18, 17, 16].includes(raw.version) && id.success ? id.data : undefined; }
   catch { return undefined; }
 }

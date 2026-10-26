@@ -1,4 +1,23 @@
-# Économie courante — partie A, sauvegarde v19
+# Catalogue courant et migration v20 - 26 octobre 2026
+
+Le registre `src/config/species.ts` contient 32 espèces. Les notes de publication plus bas sont des archives.
+
+| Lapin | Types | Rareté | Recette | Niveau |
+|---|---|---|---|---:|
+| Dinono | feu + métal | épique | types feu + métal, affection 6, probabilité 5 %, connaissance 450 pattes, sans garantie | 1 |
+| Lapin en Bouée | feu + métal | rare | types feu + métal, affection 2, garantie ordinaire, sans prix de connaissance | 1 |
+
+Bouée remplace Dinono entre Boudinet et Egiiipte dans l'ordre du registre et du tirage. Dinono rejoint les épiques après Orange. Son illustration et sa description sont conservées ; aucun invariant n'impose le niveau 11 à tous les épiques, donc son niveau 1 reste inchangé. Bouée conserve son rendu procédural, avec un pelage orange et gris métallique en attendant le futur dessin.
+
+Les trois espèces sans sprite sont retirées du catalogue. En v16-v19, `lunettes` devient `boudinet`, `feu-glace` devient `glassofeu` et `perroquet` devient `phoenix`. Le lecteur convertit les adultes, y compris en voyage, et les naissances du nid/de la nurserie ; il conserve identités, noms, affection, habitats, trajets et dates. Il nettoie découvertes, carnet et droits historiques de niveau ; seul un adulte possédé converti ajoute sa nouvelle espèce aux découvertes. Une naissance reste cachée jusqu'à l'accueil. Les réservations ordinaires de Dinono sont annulées sans retirer le lapereau ni rallonger une croissance déjà lancée.
+
+Une Bouée déjà logée en habitat paille y reste : la validation applique la tolérance historique `LEGACY_TYPES`, déjà utilisée pour Magicien. Les nouveaux placements suivent les types courants feu/métal (`habitatAccepts`). L'objectif historique `first-rare` reste lisible et demande une espèce rare quelconque ; `all-ordinary-rares` suit les 20 rares garantissables du registre, sans Dinono. Les neuf rares survivants de la liste de revenus bonifiés gardent leur bonus, sans nouveau tirage.
+
+Les exports sont en v20 ; la chaîne v16-v19 est conservée, les versions 1-15 restent incompatibles. Les fichiers de `docs/test-saves/` restent intacts.
+
+---
+
+# Économie courante — partie A, sauvegarde v20
 
 ### Dépenses permanentes en cœurs — 26 octobre 2026
 
@@ -81,7 +100,7 @@ Le stockage dépend du type aux niveaux 1 et 2, dans l’ordre strict Paille < N
 
 Au chargement, un ancien stock au-dessus du nouveau plafond, mais dans les anciens plafonds 2 400 / 4 000 / 5 600, est ramené au nouveau plafond ; son excédent en pièces entières est versé au solde. Un stock dépassant à la fois le plafond actuel et l’ancien est refusé. Cette conversion n’est appliquée qu’une fois, sans nouveau crédit au prochain chargement.
 
-À l’affection 1, les communs produisent 10 pattes/h, les rares 14, les épiques 20 et les légendaires 26. Douze rares tirés au sort une seule fois le 25 octobre ont une base de 17 : `amethyste`, `boudinet`, `bretonette`, `egiiipte`, `feu-glace`, `frisket`, `lunettes`, `perroquet`, `princesse-neige`, `roukette`, `virvoletant`, `wat-wat`. Chaque point d’affection au-delà de 1 ajoute une patte/h ; aucun nouveau tirage au chargement.
+À l’affection 1, les communs produisent 10 pattes/h, les rares 14, les épiques 20 et les légendaires 26. Neuf rares survivants du tirage unique du 25 octobre ont une base de 17 : `amethyste`, `boudinet`, `bretonette`, `egiiipte`, `frisket`, `princesse-neige`, `roukette`, `virvoletant`, `wat-wat`. Chaque point d’affection au-delà de 1 ajoute une patte/h ; aucun nouveau tirage au chargement.
 
 L’agence de voyage s’achète parmi les bâtiments dès le niveau 8 pour 1 000 pattes, un exemplaire maximum. Coco, hôte non collectionnable en chemise hawaïenne et lunettes de soleil, accueille le joueur en quatre bulles la première fois. Cet accueil terminé est sauvegardé ; Coco reste ensuite présent sans répéter le guide.
 
@@ -96,7 +115,8 @@ Décision du propriétaire, avec les dessins livrés dans `Design des lapins` (d
 | Espèce | Types | Rareté | Obtention |
 |---|---|---|---|
 | Boudinet | métal + paille | rare | reproduction, éléments métal + paille, affection 2 |
-| Dinono | feu + métal | rare | reproduction, éléments feu + métal, affection 2 |
+| Dinono | feu + métal | épique | reproduction, éléments feu + métal, affection 6, 5 %, connaissance 450 |
+| Lapin en Bouée | feu + métal | rare | reproduction, éléments feu + métal, affection 2, garantie |
 | Egiiipte | vol + métal | rare | reproduction, éléments vol + métal, affection 2 |
 | Piment | vol + feu | rare | reproduction, éléments vol + feu, affection 2 |
 | Tunini | neige + vol | rare | reproduction, éléments neige + vol, affection 2 |

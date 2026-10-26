@@ -147,10 +147,10 @@ describe('UI projections preserve gameplay rules and secrets', () => {
     s.discovered.push('feu');const odds = oddsView(s, 'feu', 'neige', 4, 4); expect(odds.guaranteed).toBe(true);
     // Unknown recipe: neither name, types nor rarity; only the exact cumulative probability.
     expect(odds.entries).toEqual([]); expect(odds.unknown).toEqual({weight: 100, probability: '100 %'});
-    s.recipeBook = ['feu-glace'];
-    expect(oddsView(s, 'feu', 'neige', 4, 4).entries).toEqual([{"description":"feu + neige · Rare","name":"Lapin Feu Glacé","probability":"1/3 (≈ 33,33 %)","weight":33.333333333333336}]);
+    s.recipeBook = ['glassofeu'];
+    expect(oddsView(s, 'feu', 'neige', 4, 4).entries).toEqual([{"description":"feu + neige · Rare","name":"Glassofeu","probability":"50 %","weight":50}]);
     // Two unknown guaranteed results share the guarantee equally.
-    s.recipeBook = ['feu-glace', 'bouee'];const both = oddsView(s, 'feu-glace', 'paille', 4, 4); expect(both.entries.map(e => e.weight)).toEqual([12.5, 12.5]);
+    s.recipeBook = ['glassofeu', 'wat-wat'];const both = oddsView(s, 'feu', 'neige', 4, 4); expect(both.entries.map(e => e.weight)).toEqual([50, 50]);
   });
   it('explains last-of-species protection and adapts the tutorial to existing progress', () => {
     const s = createGame(0); expect(releaseReason(s, 'rabbit-2', 0)).toContain('au moins un');

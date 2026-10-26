@@ -54,8 +54,9 @@ if (!failed) {
   const path = join(root, 'src/config/rabbitBlinkArt.json');
   const bytes = Buffer.from(JSON.stringify(manifest, null, 2) + '\n');
   if (check) {
-    // A Windows checkout may turn the manifest's line endings into CRLF; only its content matters.
-    if (readFileSync(path, 'utf8').replace(/\r\n/g, '\n') !== bytes.toString()) { console.error('Manifest differs'); failed = true; }
+    // Catalogue order may change without changing any art. Compare every entry, independently of top-level key order and CRLF.
+    const orderedEntries = value => JSON.stringify(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)));
+    if (orderedEntries(JSON.parse(readFileSync(path, 'utf8'))) !== orderedEntries(manifest)) { console.error('Manifest differs'); failed = true; }
   } else writeFileSync(path, bytes);
 }
 if (failed) process.exitCode = 1;

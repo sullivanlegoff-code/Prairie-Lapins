@@ -49,7 +49,7 @@ const current = (c: GameController) => c.getSnapshot().state!;
 
 describe('hearts initialization, migration and gifts', () => {
   it('creates 12 hearts and a first gift exactly 24 hours after creation', () => {
-    expect(createGame(123)).toMatchObject({version: 19, hearts: 12, nextHeartGiftAt: 123 + DAY});
+    expect(createGame(123)).toMatchObject({version: 20, hearts: 12, nextHeartGiftAt: 123 + DAY});
   });
   it('refuses a gift before 24 hours, allows the boundary once and schedules from the claim', () => {
     const initial = createGame(0);
@@ -120,7 +120,7 @@ describe('acceleration transactions', () => {
     expect(stateBaby(result.state)).toBeNull();
     const baby = stateBaby(sendToNursery(result.state))!;
     expect(baby).toEqual({slot: 0, birth, startedAt: MINUTE, readyAt: 31 * MINUTE});
-    expect(result.state.discovered).not.toContain(birth.species); expect(pendingDiscoveries(result.state)).toEqual(["wat-wat"]);
+    expect(result.state.discovered).not.toContain(birth.species); expect(pendingDiscoveries(result.state)).toEqual(["glassofeu"]);
     expect(result.state.pityFailures).toBe(0);
     expect(decodeGame(encodeGame(result.state))).toEqual({ok: true, state: result.state});
   });
@@ -207,6 +207,6 @@ describe('imports and exports', () => {
     const preview = c.prepareImport(encodeGame(s)); if (!preview.ok) throw new Error(preview.reason);
     expect(preview.summary.hearts).toBe(3); expect(c.confirmImport(preview.token, true)).toEqual({ok: true});
     expect(current(c).hearts).toBe(3); const exported = c.exportGame(); if (!exported.ok) throw new Error(exported.reason);
-    expect(JSON.parse(exported.json)).toMatchObject({version: 19, hearts: 3});
+    expect(JSON.parse(exported.json)).toMatchObject({version: 20, hearts: 3});
   });
 });
