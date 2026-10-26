@@ -5,7 +5,9 @@ import {decodeGame, encodeGame} from '../persistence/json';
 import type {GameState} from '../state/types';
 import {CloudError, OUTDATED, type CloudGateway, type CommitRequest, type RemoteSave} from './gateway';
 
-export const CLOUD_KEY = 'prairie-lapins.cloud.v1', BACKUP_KEY = 'prairie-lapins.cloud.backup.v1';
+import {CLOUD_KEY} from './accountState';
+export {CLOUD_KEY} from './accountState';
+export const BACKUP_KEY = 'prairie-lapins.cloud.backup.v1';
 interface Link {owner: string; revision: number; baseline: string; syncedAt: string | null; pending: CommitRequest | null}
 export type SyncStatus = 'disconnected' | 'checking' | 'choice' | 'conflict' | 'saved' | 'waiting' | 'sending' | 'offline' | 'session' | 'error' | 'local-error' | 'outdated';
 export interface SyncView {status: SyncStatus; syncedAt: string | null; remote: RemoteSave | null; message?: string}

@@ -57,3 +57,9 @@ Contrôles réels :
 - Essais du propriétaire sur iPhone et ordinateur : création de compte, association, « Sauvegardé en ligne » et nouvelle révision après une action ; réinitialisation du mot de passe par `reset_player_password` puis connexion ; récupération de la même partie sur l'ordinateur ; deux appareils ouverts, comportement jugé normal par le propriétaire ; déconnexion puis reconnexion.
 
 Non validé : jetons expirés après une longue absence, coupure réseau réelle pendant un envoi, quotas Free sur la durée. Aucune solution ne garantit de « ne jamais perdre » une partie : conserve des exports indépendants.
+
+## Rappel de création de compte
+
+Après une reproduction réussie avec un Lapin Feu (espèce `feu`), une invitation unique par appareil te propose d’associer ta partie à ton e-mail. « Associer mon e-mail » ouvre les Paramètres sur Sauvegarde en ligne, en mode création de compte ; « Plus tard » ou Échap ferme définitivement ce rappel. Le drapeau `accountReminderShown` appartient aux préférences, pas à la sauvegarde de partie.
+
+Le rappel attend la fermeture des autres dialogues. Si le guidage de Paille occupe l’écran, il attend une prochaine reproduction avec un Lapin Feu. Il reste absent si une liaison cloud existe (quel que soit son propriétaire), si une session est connectée, sans configuration en ligne, au laboratoire, avec `?dev=1` et dans l’aperçu décorations. La détection du compte ne charge pas le SDK. Le bouton « Afficher » / « Masquer » agit sur les deux champs de mot de passe ; une connexion ou déconnexion rétablit le masquage.

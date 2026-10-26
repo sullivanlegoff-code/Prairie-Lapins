@@ -1,3 +1,4 @@
+import {accountKnown} from './cloud/accountState';
 import Phaser from 'phaser';
 import {MeadowScene} from './display/MeadowScene';
 import {GameController} from './application/GameController';
@@ -89,7 +90,7 @@ async function boot(): Promise<() => void> {
     if (!loading.view().ready || entered) return;
     music.start();
     loadingRoot.hidden = true; app.inert = false; loading.dispose(); unrender();
-    ui = new GameUI(controller, scene, clock, preferences, audio);
+    ui = new GameUI(controller, scene, clock, preferences, audio, {onlineServicesAllowed: policy.onlineServicesAllowed && !LABORATORY_BUILD && !DECORATIONS_PREVIEW_BUILD, accountKnown: () => accountKnown(storage)});
     const soundSettings = mountSoundSettings(document, preferences, {onChange: (channel, enabled, volume) => {
       audio.configure(channel, {enabled, volume});
       if (channel === 'music') { music.setEnabled(enabled); music.refreshVolume(); }

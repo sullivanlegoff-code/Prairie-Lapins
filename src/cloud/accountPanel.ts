@@ -1,3 +1,4 @@
+import {setAccountSession} from './accountState';
 import type {SupabaseClient} from '@supabase/supabase-js';
 import type {GameController} from '../application/GameController';
 import type {SaveStorage} from '../persistence/storage';
@@ -59,6 +60,7 @@ export async function mountAccountPanel(root: HTMLElement, controller: GameContr
     <form><label>Adresse e-mail<input name="email" type="email" autocomplete="email" required></label>
     <label>Mot de passe<input name="password" type="password" autocomplete="current-password" required></label>
     <label data-confirm hidden>Confirme ton mot de passe<input name="confirmation" type="password" autocomplete="new-password"></label>
+    <button type="button" data-visibility class="secondary" aria-pressed="false">Afficher</button>
     <button type="submit">Se connecter</button><button type="button" data-toggle class="secondary">Créer mon compte</button>
     <p class="small">Mot de passe oublié ? Contacte le propriétaire pour qu'il le réinitialise. Aucun e-mail ne sera envoyé.</p></form>
     <div data-choices></div><div class="actions"><button data-retry type="button" class="secondary" hidden>Réessayer</button>
@@ -67,6 +69,16 @@ export async function mountAccountPanel(root: HTMLElement, controller: GameContr
   const form = get<HTMLFormElement>('form'), email = get<HTMLInputElement>('[name=email]'), password = get<HTMLInputElement>('[name=password]'), confirmation = get<HTMLInputElement>('[name=confirmation]');
   const error = get('[data-error]'), toggle = get<HTMLButtonElement>('[data-toggle]'), submit = get<HTMLButtonElement>('[type=submit]');
   const retry = get<HTMLButtonElement>('[data-retry]'), signout = get<HTMLButtonElement>('[data-signout]');
+  const visibility = get<HTMLButtonElement>('[data-visibility]');
+  function hidePassword() {
+    password.type = confirmation.type = 'password';
+    visibility.textContent = 'Afficher'; visibility.setAttribute('aria-pressed', 'false');
+  }
+  visibility.onclick = () => {
+    const visible = password.type === 'password';
+    password.type = confirmation.type = visible ? 'text' : 'password';
+    visibility.textContent = visible ? 'Masquer' : 'Afficher'; visibility.setAttribute('aria-pressed', String(visible));
+  };
   let client: SupabaseClient;
   try { client = await (options.create ?? create)(config); }
   catch { error.textContent = 'Le service est indisponible. Réessaie en rechargeant la page.'; return () => {}; }
@@ -108,6 +120,8 @@ export async function mountAccountPanel(root: HTMLElement, controller: GameContr
   function session(user: {id: string; email?: string} | null) {
     if (!alive) return;
     const next = user?.id ?? null;
+    setAccountSession(root, !!next);
+    hidePassword();
     if (next === owner) {
       if (next && sync.getView().status === 'session') void sync.connect(next);
       return;
@@ -128,11 +142,19 @@ export async function mountAccountPanel(root: HTMLElement, controller: GameContr
     if (!alive || initial !== sequence) return;
     if (err) error.textContent = authMessage(err); else session(data.session?.user ?? null);
   }).catch(() => { if (alive) error.textContent = authMessage({}); });
-  toggle.onclick = () => {
-    signup = !signup; get('[data-confirm]').hidden = !signup; confirmation.required = signup;
+  function setSignup(value: boolean) {
+    signup = value; get('[data-confirm]').hidden = !signup; confirmation.required = signup;
     password.autocomplete = signup ? 'new-password' : 'current-password'; password.minLength = signup ? 8 : 0;
     submit.textContent = signup ? 'Créer mon compte' : 'Se connecter'; toggle.textContent = signup ? 'Se connecter' : 'Créer mon compte'; error.textContent = '';
   };
+  toggle.onclick = () => setSignup(!signup);
+  const createAccount = () => {
+    setSignup(true); delete root.dataset.createAccount;
+    root.scrollIntoView?.({block: 'start'});
+    email.focus({preventScroll: true});
+  };
+  root.addEventListener('create-account', createAccount);
+  if (root.dataset.createAccount === 'true') createAccount();
   form.onsubmit = event => {
     event.preventDefault(); if (busy) return;
     if (signup && password.value.length < 8) { error.textContent = authMessage({code: 'weak_password'}); return; }
@@ -152,6 +174,7 @@ export async function mountAccountPanel(root: HTMLElement, controller: GameContr
     })();
   };
   signout.onclick = () => {
+    setAccountSession(root, false); hidePassword(); password.value = ''; confirmation.value = '';
     signedOut = true; sequence++; sync.disconnect(); owner = null; address = ''; render(sync.getView());
     void client.auth.signOut({scope: 'local'}).then(({error: err}) => { if (alive && err) error.textContent = authMessage(err); })
       .catch(() => { if (alive) error.textContent = authMessage({}); });
@@ -161,6 +184,7 @@ export async function mountAccountPanel(root: HTMLElement, controller: GameContr
   const hide = () => { void sync.flush(); }, online = () => { void sync.retry(); };
   document.addEventListener('visibilitychange', background); window.addEventListener('pagehide', hide); window.addEventListener('online', online);
   return () => {
+    setAccountSession(root, false); root.removeEventListener('create-account', createAccount);
     alive = false; sequence++; stop(); stopController(); sync.dispose(); listener.subscription.unsubscribe();
     document.removeEventListener('visibilitychange', background); window.removeEventListener('pagehide', hide); window.removeEventListener('online', online);
     root.replaceChildren();
