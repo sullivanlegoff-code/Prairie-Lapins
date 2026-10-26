@@ -1,5 +1,7 @@
 # Laboratoire complet — 26 octobre 2026
 
+Le laboratoire n'a jamais accès aux comptes ni à la sauvegarde en ligne et n'initialise jamais le SDK Supabase.
+
 Ouvre le jeu local avec `?dev=1`, puis **Paramètres → laboratoire**. Dans le build de test (`/dev/`), ouvre simplement **Paramètres**. Le jeu normal publié n’inclut pas ces outils : son paramètre `?dev=1` ne les active pas. Le mécanisme d’import conditionnel existant est conservé. Partie, horloge, préférences et secours restent isolés sous le préfixe du laboratoire. Aucun transfert depuis ta vraie partie n’est automatique.
 
 Les outils sont organisés en sections repliables, avec champs et sélecteurs adaptés au téléphone, cibles d’au moins 44 px, papier du carnet et boutons en pierre existants. Chaque action affiche un résultat dans le statut du laboratoire. Les modifications d’état passent par `replaceTestState` et l’import transactionnel : validation et sauvegarde avant remplacement, sans récompense d’import.
