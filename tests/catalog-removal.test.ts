@@ -12,6 +12,7 @@ import {SCENARIOS, scenarioState, type ScenarioId} from '../src/dev/scenarios';
 import {createGame} from '../src/simulation';
 import {breedingDistributionWeights, breedingOdds, breedingWeights} from '../src/simulation/breeding';
 import {collectionView, recipeBook} from '../src/ui/models';
+import {DECORATIONS} from '../src/config/decorations';
 
 const REMOVED = ['terre', 'mottelin', 'geant', 'brumelin', 'lunettes', 'feu-glace', 'perroquet'];
 const REMOVED_WORDS = /Terre|Mottelin|Brumelin|Lapin Géant|terre|mottelin|brumelin|geant|lunettes|perroquet|feu-glace/;
@@ -31,7 +32,15 @@ describe('Terre, Mottelin, Géant and Brumelin are gone from every catalogue', (
     expect(Object.keys(HABITATS)).not.toContain('terre'); expect(Object.keys(PROGRESSION.requirements.habitatCommons)).not.toContain('terre');
     expect(MAIN_MISSION_IDS as readonly string[]).not.toContain('discover-terre'); expect(MAIN_MISSION_IDS as readonly string[]).not.toContain('discover-brumelin');
     expect(BRANCH_MISSION_IDS as readonly string[]).not.toContain('discover-terre'); expect(BRANCH_MISSION_IDS as readonly string[]).not.toContain('discover-brumelin');
-    expect(JSON.stringify(MAIN_MISSIONS)).not.toMatch(REMOVED_WORDS);
+    for (const [id, mission] of Object.entries(MAIN_MISSIONS)) {
+      expect(id).not.toMatch(REMOVED_WORDS);
+      if (mission.condition.kind === 'decoration') {
+        // Approved decoration names such as « Chemin en terre » are unrelated to the removed rabbit/type.
+        const name = DECORATIONS[mission.condition.model].name;
+        expect(mission.title).toContain(name); expect(mission.description).toContain(name);
+        expect(JSON.stringify({...mission, title: mission.title.replaceAll(name, '[décoration]'), description: mission.description.replaceAll(name, '[décoration]')})).not.toMatch(REMOVED_WORDS);
+      } else expect(JSON.stringify(mission)).not.toMatch(REMOVED_WORDS);
+    }
     for (const id of SPECIES_IDS) {
       const recipe = SPECIES[id].recipe; expect(JSON.stringify([SPECIES[id].types, recipe?.requiredTypes, recipe?.parents]), id).not.toMatch(REMOVED_WORDS);
     }

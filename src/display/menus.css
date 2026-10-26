@@ -272,3 +272,6 @@ dialog :is(.badge, .timer, .reason) {
 .account-reminder p { line-height: 1.5; }
 .account-reminder .actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .account-reminder button { min-height: 44px; max-width: 100%; }
+#game-panel .mission-filters { display: flex; flex-wrap: wrap; gap: 6px; grid-column: 1 / -1; }
+#game-panel .mission-filters button { flex: 1 1 120px; font-size: 14px; }
+#game-panel [data-mission-status="claimed"] { opacity: .8; }

@@ -22,7 +22,8 @@ import {babyOf, stateBaby, welcomeOf} from './nursery-baby';
 const run = (s: GameState, command: Command, now = s.lastSimulatedAt) => {
   const r = act(s, command, now, () => .99); if (!r.ok) throw Error(r.reason); return r.state;
 };
-const rich = () => {const s=createGame(0);const level=Math.max(...HABITAT_TYPES.map(type=>requiredHabitatUpgradeLevel(type,3)));s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level};s.pattes=10000;s.grass=1000;s.hearts=100;return s;};
+// This high-level fixture starts with its observable missions settled, as a real loaded game does.
+const rich = () => {const s=createGame(0);const level=Math.max(...HABITAT_TYPES.map(type=>requiredHabitatUpgradeLevel(type,3)));s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level};s.pattes=10000;s.grass=1000;s.hearts=100;return advance(s,0);};
 // Former strip column/row → v10 fine cell → v11 fine cell (same arrangement, enlarged parcels).
 const build = (s: GameState, type: HabitatType, x=1, y=0) => run(s,{type:'buyBuilding',kind:'enclosure',habitatType:type,x:toV11((x<6?x+3:x-6) * 4,'x'),y:toV11((y+3) * 4,'y')});
 function refuse(s: GameState, c: Command, reason: Refusal, now=s.lastSimulatedAt) {

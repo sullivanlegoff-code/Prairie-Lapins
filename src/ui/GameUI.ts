@@ -33,7 +33,7 @@ import {KITCHEN_ART} from '../config/kitchenArt';
 import {upgradeFootprintReason} from '../simulation/placement';
 import {habitatStats, habitatName, habitatEntryReason, habitatAccepts, welcomeDestinations, removeHabitatReason} from '../simulation/habitats';
 import {MAIN_MISSIONS, DAILY_MISSION_GAP, DAILY_MISSION_IDS, DAILY_MISSIONS, DAILY_BONUS, type Reward} from '../config/missions';
-import {initialMissionIds, activeMainMissions, availableMissionRewards, mainProgress, dailyCycleStart, dailyCycleEnd, cycleIndexAt, currentDailyMission, dailyOpensAt} from '../simulation/missions';
+import {initialMissionIds, activeMainMissions, visibleMainMissions, mainCatalogueUnlocked, availableMissionRewards, mainProgress, dailyCycleStart, dailyCycleEnd, cycleIndexAt, currentDailyMission, dailyOpensAt} from '../simulation/missions';
 import type {GameController, Snapshot} from '../application/GameController';
 import {AFFECTION_STATUE, BALANCE, HOUR, MARKET, NURSERY, ORDERS, RARE_BIRTH_BONUS, TRAVEL, feedCost, type Destination, SPECIES, SPECIES_IDS, SHOP_SPECIES, growthDuration, type BuildingKind, type SpeciesId, type RabbitType} from '../config/balance';
 import type {Command, DecorationLocation, GameState, PattesCommand, TimedStage} from '../state/types';
@@ -75,7 +75,7 @@ export class GameUI {
   private accountReminder: AccountReminder;
   private pailleDialogue: PailleDialogue;
   private get stagedOnboarding(): boolean { return this.controller.storageScope !== 'laboratory'; }
-  private get onboardingActive(): boolean { const s = this.snapshot.state; return this.stagedOnboarding && s?.startCourse === 'paille-solo' && this.preferences.value.tutorial && !this.preferences.value.tutorialDone && !s.missions.events.welcome; }
+  private get onboardingActive(): boolean { const s = this.snapshot.state; return this.stagedOnboarding && s?.startCourse === 'paille-solo' && !mainCatalogueUnlocked(s) && this.preferences.value.tutorial && !this.preferences.value.tutorialDone && !s.missions.events.welcome; }
   private shopHabitatSpecies: SpeciesId | null = null;
   private view: View = null;
   private purchaseReturn: {view: NonNullable<View>; history: NonNullable<View>[]} | null = null;
@@ -127,6 +127,7 @@ export class GameUI {
   private recipeDetails = new Set<SpeciesId>();
   private recipeClosed = new Set<SpeciesId>();
   private recipeExpanded = new Set<SpeciesId>();
+  private missionFilter: 'all' | 'ready' | 'pending' | 'claimed' = 'all';
   private placedListOpen = false;
   private history: NonNullable<View>[] = [];
   private scrollPositions = new Map<string, number>();
@@ -370,7 +371,7 @@ export class GameUI {
   }
   private flushRender(): void { if (this.pendingRender && !this.interactionActive()) this.render(); }
   open(view: NonNullable<View>, navigation: 'push' | 'root' | 'tab' | 'back' = 'push'): void {
-    if (view.kind === 'settings') this.pailleDialogue.close();
+    if (view.kind === 'settings' || this.snapshot.state && mainCatalogueUnlocked(this.snapshot.state)) this.pailleDialogue.close();
     if (this.onboardingActive && !this.onboardingViewAllowed(view)) return;
     if (this.cuisine.active || this.pailleDialogue.element.open) return;
     if (this.dialog.open || (document.getElementById('import-dialog') as HTMLDialogElement).open) return;
@@ -448,7 +449,7 @@ export class GameUI {
     this.history = []; this.scrollPositions.clear(); this.interactionPointers.clear(); this.pendingRender = false;
     this.shopHabitatSpecies=null;
     this.purchaseReturn = null; this.rabbitDestination = null; this.shopRabbitIssue = null; this.scene.setRabbitPurchase(null);
-    this.collectionFilter = {}; this.recipeDetails.clear(); this.recipeClosed.clear(); this.recipeExpanded.clear(); this.placedListOpen = false; this.shopReturn = null; this.content.scrollTop = 0; this.settings.scrollTop = 0;
+    this.collectionFilter = {}; this.recipeDetails.clear(); this.recipeClosed.clear(); this.recipeExpanded.clear(); this.missionFilter = 'all'; this.placedListOpen = false; this.shopReturn = null; this.content.scrollTop = 0; this.settings.scrollTop = 0;
     this.content.replaceChildren();
     this.scene.setExpansion(false);
     if (fresh) this.preferences.restartGuidance();
@@ -575,7 +576,11 @@ export class GameUI {
     const placedList = this.content.querySelector<HTMLDetailsElement>('[data-placed-list]');
     if (placedList) placedList.open = placedListOpen;
     this.content.scrollTop = scroll;
-    if (focusId) for (const el of this.content.querySelectorAll<HTMLElement>('[data-focus]')) if (el.dataset.focus === focusId) el.focus({preventScroll: true});
+    if (focusId) {
+      const target = [...this.content.querySelectorAll<HTMLElement>('[data-focus]')].find(el => el.dataset.focus === focusId);
+      if (target && !(target instanceof HTMLButtonElement && target.disabled)) target.focus({preventScroll: true});
+      else if (this.view?.kind === 'missions') this.content.querySelector<HTMLElement>(`[data-mission-filter="${this.missionFilter}"]`)?.focus({preventScroll: true});
+    }
     if (this.rename && focusId === 'rabbit-name') this.content.querySelector<HTMLInputElement>('input[data-focus="rabbit-name"]')?.setSelectionRange(this.rename.caret, this.rename.caret);
     this.updateTimers(); this.highlightGuideTarget();
   }
@@ -1435,19 +1440,24 @@ export class GameUI {
       b.setAttribute('aria-pressed', String(tab === key));
     }
     this.content.append(tabs);
-    const claim = (card: HTMLElement, command: Command, reward: Reward, ready: boolean, claimed: boolean) => {
+    const claim = (card: HTMLElement, command: Command, reward: Reward, ready: boolean, claimed: boolean, extraRewards: readonly Reward[] = []) => {
       const stage = claimed ? 'Réclamée' : ready ? 'À réclamer' : 'En cours';
       const xp = command.type === 'claimMainMission' ? missionClaimXp('main',command.id) : command.type === 'claimDailyMission' ? missionClaimXp('daily',command.id) : PROGRESSION.xp.claims.dailyBonus;
-      card.append(node('p', (reward.resource==='none' ? 'Objectif de collection · sans monnaie supplémentaire' : reward.amount===0 ? (xp > 0 ? 'Objectif de départ' : 'Objectif de départ · sans récompense supplémentaire') : `Gratuit · Récompense : + ${rewardLabel(reward)}`) + (xp > 0 ? ` · ${xp} XP` : ''), 'small'), node('p', stage, 'badge'));
+      const resources = [reward, ...extraRewards].filter(r => r.resource !== 'none' && r.amount > 0);
+      const resourceText = resources.map(rewardLabel).join(' · + ');
+      const xpOnly = command.type === 'claimMainMission' && MAIN_MISSIONS[command.id].claimXp !== undefined && !resources.length && xp > 0;
+      const message = resources.length ? `Récompense reçue · + ${resourceText}${xp > 0 ? ` · + ${xp} XP` : ''}` : xpOnly ? `Récompense reçue · + ${xp} XP` : 'Objectif validé.';
+      card.append(node('p', (resources.length ? `Gratuit · Récompense : + ${resourceText}` : xp > 0 ? 'Récompense :' : 'Objectif de collection · sans récompense supplémentaire') + (xp > 0 ? ` ${resources.length ? '· ' : ''}${xp} XP` : ''), 'small'), node('p', stage, 'badge'));
       const generation = this.confirmationGeneration;
-      const button = this.button(card, claimed ? 'Récompense réclamée' : reward.amount===0 ? 'Valider l’objectif' : `Réclamer · + ${rewardLabel(reward)}`, () => {
+      const button = this.button(card, claimed ? 'Récompense réclamée' : xpOnly ? `Réclamer · ${xp} XP` : resources.length ? `Réclamer · + ${resourceText}` : 'Valider l’objectif', () => {
         if (!button.isConnected || generation !== this.confirmationGeneration) return;
-        this.execute(command, reward.amount===0 ? 'Objectif validé.' : `Récompense reçue · + ${rewardLabel(reward)}`, () => {
-          if (command.type === 'claimMainMission' && (initialMissionIds(this.snapshot.state!) as readonly string[]).includes(command.id)) this.content.scrollTop = 0;
+        this.execute(command, message, () => {
+          if (command.type === 'claimMainMission' && !mainCatalogueUnlocked(this.snapshot.state!) && (initialMissionIds(this.snapshot.state!) as readonly string[]).includes(command.id)) this.content.scrollTop = 0;
           void this.toast.offsetWidth; this.toast.classList.add('mission-reward');
         });
       }, claimed ? 'Déjà réclamée.' : !ready ? 'Objectif à compléter.' : null);
       button.classList.add('mission-claim');
+      button.dataset.focus = `mission-claim-${'id' in command ? command.id : 'daily-bonus'}`;
     };
     const progress = (card: HTMLElement, value: number, target: number) => {
       const bar = node('progress'); bar.max = target; bar.value = Math.min(value, target); bar.setAttribute('aria-label', `Progression : ${value} sur ${target}`);
@@ -1468,16 +1478,29 @@ export class GameUI {
       }, null, true);
     };
     if (tab === 'main') {
-      this.content.append(node('p', s.missions.claimed.includes('first-birth') ? 'Choisis librement tes objectifs.' : 'Réclame pour continuer. Les actions anticipées comptent.', 'small'));
+      const unlocked = mainCatalogueUnlocked(s);
+      this.content.append(node('p', unlocked ? 'Toutes tes missions sont visibles. Choisis ton prochain objectif ; tes découvertes et tes premières décorations comptent déjà.' : s.missions.claimed.includes('first-birth') ? 'Choisis librement tes objectifs. Toutes les missions seront visibles au niveau 7.' : 'Réclame pour continuer. Les actions anticipées comptent.', 'small'));
       if(s.missions.claimed.includes('first-birth')) this.button(this.content,'Consulter le carnet',()=>this.open({kind:'recipes'}),null,true);
-      const active = this.onboardingActive && onboardingTask(s,this.preferences.value,this.now()).step.id === 'snowReward' ? ['welcome-snow'] as const : activeMainMissions(s);
-      if (!active.length) this.content.append(node('p', 'Toutes les missions principales ont été récompensées. Profite de ta prairie.', 'small'));
+      const catalogue = !unlocked && this.onboardingActive && onboardingTask(s,this.preferences.value,this.now()).step.id === 'snowReward' ? ['welcome-snow'] as const : visibleMainMissions(s);
+      const status = (id: typeof catalogue[number]) => s.missions.claimed.includes(id) ? 'claimed' : s.missions.completed.includes(id) ? 'ready' : 'pending';
+      if (unlocked) {
+        const filters = node('div', '', 'mission-filters'); filters.setAttribute('aria-label', 'Filtrer les missions principales');
+        for (const [filter, label] of [['all', 'Toutes'], ['ready', 'À réclamer'], ['pending', 'En cours'], ['claimed', 'Terminées']] as const) {
+          const count = filter === 'all' ? catalogue.length : catalogue.filter(id => status(id) === filter).length;
+          const b = this.button(filters, `${label} (${count})`, () => { this.missionFilter = filter; this.render(); }, null, filter !== this.missionFilter);
+          b.dataset.missionFilter = filter; b.dataset.focus = `mission-filter-${filter}`; b.setAttribute('aria-pressed', String(filter === this.missionFilter));
+        }
+        this.content.append(filters);
+      }
+      const active = unlocked && this.missionFilter !== 'all' ? catalogue.filter(id => status(id) === this.missionFilter) : catalogue;
+      if (!active.length) this.content.append(node('p', unlocked ? 'Aucune mission dans cette sélection.' : 'Toutes les missions principales ont été récompensées. Profite de ta prairie.', 'small'));
       for (const id of active) {
         const mission = MAIN_MISSIONS[id], acquired = s.missions.completed.includes(id), claimed = s.missions.claimed.includes(id);
         const p = mainProgress(s, id), card = this.card(mission.title, mission.description); card.dataset.mission = id;
+        card.dataset.missionStatus = status(id);
         progress(card, acquired ? p.target : Math.min(p.value, p.target), p.target);
         if (acquired) card.append(node('p', 'Condition acquise', 'small'));
-        claim(card, {type: 'claimMainMission', id}, mission.reward, acquired, claimed);
+        claim(card, {type: 'claimMainMission', id}, mission.reward, acquired, claimed, mission.extraRewards);
         if (!acquired) {
           const c = mission.condition;
           if (id === 'snow-habitat') this.button(card,'Voir les habitats Neige',()=>{this.shopHabitatSpecies='neige';this.open({kind:'shop',tab:'habitats'});},null,true);
@@ -1492,6 +1515,9 @@ export class GameUI {
           else if (c.kind === 'habitatLevel') shortcut(card, 'enclosure');
           else if (c.kind === 'extensions') shortcut(card, 'extension');
           else if (c.kind === 'ordinaryRares') shortcut(card, 'collection');
+          else if (c.kind === 'decoration') this.button(card, 'Voir les décorations', () => this.open({kind: 'shop', tab: 'decorations'}), null, true);
+          else if (c.kind === 'buildingLevel') shortcut(card, c.building);
+          else if (c.kind === 'paidRecipe') this.button(card, 'Voir les recettes de la boutique', () => this.open({kind: 'shop', tab: 'recipes'}), null, true);
           else shortcut(card, c.kind === 'building' ? c.building : c.kind === 'event' ? c.event === 'collectOrder' ? 'farm' : c.event === 'breed' ? 'nest' : 'nursery' : c.kind === 'discoveries' || c.kind === 'rare' || c.kind === 'species' ? 'collection' : c.kind);
         }
         this.content.append(card);
@@ -1768,7 +1794,7 @@ export class GameUI {
   private renderTutorial(): void {
     if (this.interactionPointers.size) return;
     const s = this.snapshot.state, preferences = this.preferences.value;
-    const speaking = this.pailleDialogue.update(s, this.stagedOnboarding, this.now(), this.view?.kind !== 'settings');
+    const speaking = this.pailleDialogue.update(s, this.stagedOnboarding, this.now(), this.view?.kind !== 'settings' && !(s && mainCatalogueUnlocked(s) && this.view));
     if (s?.startCourse === 'paille-solo' && this.stagedOnboarding && preferences.tutorial && !preferences.tutorialDone) { this.tutorial.hidden = true; return; }
     this.tutorial.replaceChildren(); this.tutorial.hidden = !s || speaking || !!this.view || !preferences.tutorial || preferences.tutorialDone;
     if (this.tutorial.hidden || !s) return;
@@ -1778,10 +1804,13 @@ export class GameUI {
     this.button(this.tutorial, 'Me guider', () => this.guide(step));
     if (missionId) {
       const mission = MAIN_MISSIONS[missionId];
-      this.button(this.tutorial, mission.reward.amount === 0 ? 'Valider l’objectif' : `Réclamer · ${rewardLabel(mission.reward)}`, () => this.execute({type: 'claimMainMission', id: missionId}, mission.reward.amount===0 ? 'Objectif validé.' : `Récompense : ${rewardLabel(mission.reward)}`));
       const xp = missionClaimXp('main',missionId);
+      const resources = [mission.reward, ...(mission.extraRewards ?? [])].filter(r => r.resource !== 'none' && r.amount > 0).map(rewardLabel).join(' · ');
+      const xpOnly = !resources && mission.claimXp !== undefined && xp > 0;
+      const label = resources || (xpOnly ? `${xp} XP` : '');
+      this.button(this.tutorial, label ? `Réclamer · ${label}` : 'Valider l’objectif', () => this.execute({type: 'claimMainMission', id: missionId}, label ? `Récompense : ${label}` : 'Objectif validé.'));
       this.tutorial.append(node('p', mission.title, 'small'));
-      if (xp > 0) this.tutorial.append(node('p', `Récompense : ${mission.reward.amount > 0 ? rewardLabel(mission.reward) + ' · ' : ''}${xp} XP`, 'small'));
+      if (resources || xp > 0) this.tutorial.append(node('p', `Récompense : ${resources}${resources && xp > 0 ? ' · ' : ''}${xp > 0 ? `${xp} XP` : ''}`, 'small'));
     }
     const income = s.buildings.find(b => b.kind === 'enclosure' && incomeWhole(b.incomeUnits) >= 1);
     if (income) this.button(this.tutorial, 'Pattes disponibles', () => this.open({kind: 'building', id: income.id}), null, true);

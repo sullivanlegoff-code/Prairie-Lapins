@@ -93,7 +93,9 @@ describe('recipe purchase flow', () => {
     const confirm = confirmButton(); confirm.click(); confirm.click();
     const after = state(controller);
     expect(after.pattes).toBe(before.pattes - 450); expect(after.recipeBook).toEqual(['dinono']);
-    expect(after.progression).toEqual(before.progression); expect(after.missions).toEqual(before.missions); expect(after.rabbits).toEqual(before.rabbits);
+    expect(after.progression).toEqual(before.progression);
+    expect(after.missions).toEqual({...before.missions, completed: [...before.missions.completed, 'first-paid-recipe']});
+    expect(after.missions.completed.filter(id => id === 'first-paid-recipe')).toHaveLength(1); expect(after.rabbits).toEqual(before.rabbits);
     expect(document.getElementById('toast')?.textContent ?? '').toContain('Recette ajoutée au carnet.');
     expect(card('dinono').dataset.recipeKnown).toBe('true'); expect(buy('dinono')).toBeNull();
     expect(card('dinono').textContent).toContain('Affection 6 minimum pour chacun des deux parents.');

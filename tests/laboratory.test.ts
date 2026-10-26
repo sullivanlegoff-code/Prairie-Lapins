@@ -267,7 +267,10 @@ describe('published laboratory isolation', () => {
     const fixture=controller.getSnapshot().state!;expect(decodeGame(encodeGame(fixture))).toEqual({ok:true,state:fixture});
     if(id==='habitats')for(const home of fixture.buildings)expect(fixture.rabbits.filter(r=>r.enclosureId===home.id)).toHaveLength(7);
     if(id==='collection')expect(fixture.discovered).toEqual([...EXPECTED_IDS]);
-    if(id==='missions')expect(fixture.missions.completed).toHaveLength(12);
+    if(id==='missions'){
+      expect(fixture.missions.completed).toHaveLength(36);
+      expect(fixture.missions.completed).toEqual(expect.arrayContaining(['level-five','discover-paille','habitat-level-three']));
+    }
     if(id==='reproduction')expect(controller.perform({type:'breed',parents:['rabbit-2','rabbit-3']}).ok).toBe(true);
   }, 20000);
 });

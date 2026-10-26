@@ -2,7 +2,7 @@ import {BALANCE, FEED_COSTS, SPECIES, SPECIES_IDS, type SpeciesId} from '../conf
 import {DECORATIONS, DECORATION_IDS, type DecorationId} from '../config/decorations';
 import {HABITAT_TYPES, type HabitatType, type HabitatLevel} from '../config/habitats';
 import {PARCEL_IDS} from '../config/land';
-import {MAIN_MISSION_IDS, DAILY_MISSION_IDS, type MainMissionId, type DailyMissionId} from '../config/missions';
+import {MAIN_MISSIONS, MAIN_MISSION_IDS, DAILY_MISSION_IDS, type MainMissionId, type DailyMissionId} from '../config/missions';
 import {PROGRESSION, LEVEL_ACCESS_FAMILIES, type ProgressionConfig} from '../config/progression';
 /** Food per extra XP point of a meal, beyond the base (simulated pacing: level 22 in about 20 days). */
 export const FOOD_PER_XP = 200;
@@ -147,5 +147,5 @@ export function firstDecorationPlacementXp(id:DecorationId,c:ProgressionConfig=P
 export function missionClaimXp(kind:'main'|'daily',id:MainMissionId|DailyMissionId,c:ProgressionConfig=PROGRESSION):number {
   validateQueryConfig(c);const ids=kind==='main'?MAIN_MISSION_IDS:DAILY_MISSION_IDS;
   if(!(ids as readonly string[]).includes(id))throw new RangeError('Unknown mission for this category');
-  return kind==='main'?(c.xp.claims.mainExceptions[id as MainMissionId]??c.xp.claims.main):(c.xp.claims.dailyExceptions[id as DailyMissionId]??c.xp.claims.daily);
+  return kind==='main'?(c.xp.claims.mainExceptions[id as MainMissionId]??MAIN_MISSIONS[id as MainMissionId].claimXp??c.xp.claims.main):(c.xp.claims.dailyExceptions[id as DailyMissionId]??c.xp.claims.daily);
 }

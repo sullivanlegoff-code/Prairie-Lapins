@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {act} from '../src/simulation';
+import {act, advance} from '../src/simulation';
 import {createCentreStartGame} from '../src/state/initial';
 import {decodeGame, encodeGame} from '../src/persistence/json';
 import {breedingPool, chooseBirth} from '../src/simulation/breeding';
@@ -45,13 +45,14 @@ describe('recipe catalogue', () => {
 });
 
 describe('buyRecipe', () => {
-  it('debits coins once and records ownership without rabbit, birth, discovery, XP or mission progress', () => {
-    const s = atLevel(createCentreStartGame(0), 11); s.pattes = 1000; const before = structuredClone(s);
+  it('debits coins once, completes only the notebook milestone and records ownership without rabbit, birth, discovery or XP', () => {
+    const s = advance(atLevel(createCentreStartGame(0), 11), 0); s.pattes = 1000; const before = structuredClone(s);
     const r = act(s, buy('magicien'), 0); if (!r.ok) throw Error(r.reason);
     expect(r.state.pattes).toBe(before.pattes - 450); expect(r.state.recipeBook).toEqual(['magicien']);
     expect(r.progressionGain).toBeUndefined(); expect(r.value).toBeUndefined();
     const {pattes: _p, recipeBook: _b, ...rest} = r.state, {pattes: _p0, recipeBook: _b0, ...restBefore} = before;
-    expect(rest).toEqual(restBefore); expect(s).toEqual(before);
+    expect(rest).toEqual({...restBefore, missions: {...before.missions, completed: [...before.missions.completed, 'first-paid-recipe']}});
+    expect(r.state.missions.completed.filter(id => id === 'first-paid-recipe')).toHaveLength(1); expect(s).toEqual(before);
     const again = act(r.state, buy('magicien'), 0);
     expect(again).toEqual({ok: false, state: r.state, reason: 'RECIPE_KNOWN'}); expect(again.state.pattes).toBe(before.pattes - 450);
   });

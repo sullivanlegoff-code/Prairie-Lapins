@@ -223,7 +223,8 @@ describe('catalogue, notebook, visuals and compatibility', () => {
     expect(pens.length * 7).toBeGreaterThanOrEqual(SPECIES_IDS.length);
     complete.rabbits = SPECIES_IDS.map((species, index) => ({id: `rabbit-${complete.nextId++}`, species, affection: 1, enclosureId: pens[index % pens.length].id}));
     complete.discovered = [...SPECIES_IDS]; complete.hearts = 7; complete.pityFailures = 0; complete.missions = createMissions(complete, complete.lastSimulatedAt);
-    const current = createGame(complete.lastSimulatedAt);establishHistoricalLevelRights(current);const saved = memory(encodeGame(current));
+    Object.assign(complete, advance(complete, complete.lastSimulatedAt)); // Bank the newly observable catalogue, with no resource/XP reward on import.
+    const current = advance(createGame(complete.lastSimulatedAt), complete.lastSimulatedAt);establishHistoricalLevelRights(current);const saved = memory(encodeGame(current));
     const c = new GameController(saved.storage, () => complete.lastSimulatedAt);
     const preview = c.prepareImport(encodeGame(complete)); if (!preview.ok) throw Error(preview.reason);
     expect(c.getSnapshot().state).toEqual(current);

@@ -20,7 +20,7 @@ import {GameUI} from '../src/ui/GameUI';
 import {PreferenceStore} from '../src/ui/preferences';
 import {mountSavePanel} from '../src/display/SavePanel';
 import type {MeadowScene} from '../src/display/MeadowScene';
-import {act, encodeGame, decodeGame} from '../src/simulation';
+import {act, advance, encodeGame, decodeGame} from '../src/simulation';
 import {toV11} from './island-remap';
 import type {Command, GameState} from '../src/state/types';
 import {developmentEnvironment} from '../src/dev/tools';
@@ -758,7 +758,9 @@ describe('habitat panels and controller transactions',()=>{
     expect(state(controller)).toMatchObject({pattes:0,hearts:53});expect(state(controller).buildings[1].habitat).toEqual({type:'vol',level:1});
   });
   it('shows level, type, rate, capacities and upgrade details, with explicit cancellation and one-shot confirmation',()=>{
-    const initial=createGame(0);initial.progression={totalXp:cumulativeLevelXp(14),rewardedThroughLevel:14};initial.pattes=2000;initial.hearts=25;const {controller,ui,scene}=setup(initial);
+    const initial=createGame(0);initial.progression={totalXp:cumulativeLevelXp(14),rewardedThroughLevel:14};initial.pattes=2000;initial.hearts=25;
+    Object.assign(initial, advance(initial, 0)); // Settle the full level-7 mission catalogue before asserting that cancellation changes nothing.
+    const {controller,ui,scene}=setup(initial);
     const home=()=>state(controller).buildings[0];ui.select({kind:'building',id:home().id});
     expect(panel().textContent).toContain('Tous les types · niveau 1');expect(panel().textContent).toContain('20 pièces / h');
     expect(panel().textContent).toContain('2 / 3');expect(panel().textContent).toContain('0 / 2 100');expect(panel().textContent).toContain('Niveau de l’habitat 1 → 2 : places 3 → 5 · stockage 2100 → 3 800 pièces');
@@ -793,6 +795,7 @@ describe('habitat panels and controller transactions',()=>{
   });
   it.each([[9,true],[10,false]])('offers the ten-heart upgrade with %i hearts: disabled=%s, and a refused click spends nothing',(hearts,disabled)=>{
     const initial=createGame(0);initial.progression={totalXp:cumulativeLevelXp(14),rewardedThroughLevel:14};initial.buildings[0].habitat={type:'universal',level:2};initial.pattes=500;initial.hearts=hearts;
+    Object.assign(initial, advance(initial, 0)); // Loading settles completed missions; the refused upgrade itself must remain inert.
     const {controller,ui}=setup(initial);ui.select({kind:'building',id:state(controller).buildings[0].id});
     const offer=button('Améliorer · 10 cœurs');expect(offer.disabled).toBe(disabled);expect(panel().textContent).not.toContain('Compléter');
     if(disabled){offer.click();expect(state(controller)).toEqual(initial);expect(state(controller).hearts).toBe(9);}

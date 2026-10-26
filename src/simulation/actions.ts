@@ -10,7 +10,7 @@ import {normalizeRabbitName} from './rabbitNames';
 import {acquiredCell, PARCEL_IDS, extensionPrice, purchasableParcels} from '../config/land';
 import {HABITAT_TYPES, habitatLevel, habitatPrice, type HabitatLevel} from '../config/habitats';
 import {habitatEntryReason, removeHabitatReason} from './habitats';
-import {DAILY_MISSIONS, DAILY_MISSION_GAP, DAILY_MISSION_IDS, MAIN_MISSIONS, DAILY_BONUS, type Reward} from '../config/missions';
+import {DAILY_MISSIONS, DAILY_MISSION_GAP, DAILY_MISSION_IDS, MAIN_MISSIONS, DAILY_BONUS, mainMissionRewards, type Reward} from '../config/missions';
 import {marketPrice, marketUnlocked} from './market';
 import {affectionCap, playerLevel} from './affection';
 import {agencyBuilding, travelling} from './travel';
@@ -163,7 +163,8 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(Object.hasOwn(MAIN_MISSIONS, command.id), 'INVALID_CHOICE');
         requireRule(!s.missions.claimed.includes(command.id), 'ALREADY_CLAIMED');
         requireRule((eligibleMainMissionIds(s) as readonly string[]).includes(command.id) && s.missions.completed.includes(command.id), 'NOT_READY');
-        reward(MAIN_MISSIONS[command.id].reward); s.missions.claimed.push(command.id); gainXp(missionClaimXp('main',command.id)); break;
+        for (const component of mainMissionRewards(MAIN_MISSIONS[command.id])) reward(component);
+        s.missions.claimed.push(command.id); gainXp(missionClaimXp('main',command.id)); break;
       }
       case 'claimDailyMission': {
         requireRule(Object.hasOwn(DAILY_MISSIONS, command.id), 'INVALID_CHOICE');

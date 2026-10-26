@@ -12,7 +12,7 @@ import {scenarioState} from '../src/dev/scenarios';
 import {HOUR} from '../src/config/balance';
 
 import {toV11} from './island-remap';
-function rich() {const s = createGame(0);const level=Math.max(...DECORATION_IDS.map(id=>requiredDecorationLevel(id)));s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level}; s.pattes = 100_000; s.hearts = 1000; return s;}
+function rich() {const s = createGame(0);const level=Math.max(...DECORATION_IDS.map(id=>requiredDecorationLevel(id)));s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level}; s.pattes = 100_000; s.hearts = 1000; return advance(s,0);}
 function run(s: GameState, command: Command) {const r = act(s, command, s.lastSimulatedAt); if (!r.ok) throw Error(r.reason); return r.state;}
 function buy(s: GameState, catalogId: DecorationId = 'bush') {return run(s, {type: 'buyDecoration', catalogId});}
 function pose(s: GameState, location: DecorationLocation, id = s.decorations.at(-1)!.id) {return run(s, {type: 'placeDecoration', id, location});}

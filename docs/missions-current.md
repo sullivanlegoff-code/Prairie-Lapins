@@ -1,4 +1,41 @@
-# Missions actuelles et accès à Feu
+# Missions principales, découvertes et étapes de la prairie
+
+## Catalogue complet dès le niveau 7 — 26 octobre 2026
+
+Avant le niveau 7, le parcours et les récompenses de départ restent inchangés. Dès le niveau 7, la liste présente **toutes les missions du parcours**, y compris celles déjà réclamées : 93 dans une partie Paille solo, 91 dans une ancienne partie normale. Les trois anciens objectifs retirés restent exclus ; les deux récompenses solo de Neige ne sont pas ajoutées au parcours normal. Le registre de sauvegarde accepte 96 identifiants au total, anciens et nouveaux, toujours en v20.
+
+La vue s’ouvre sur **Toutes**. Les filtres **À réclamer**, **En cours** et **Terminées** affichent chacun leur nombre. Les cartes montrent progression et récompenses complètes ; leurs raccourcis mènent à la collection, aux décorations, aux recettes ou au bâtiment concerné. Les réclamations conservent le défilement au niveau 7 et plus. Un ancien guide non terminé ne verrouille plus les menus à partir de ce niveau ; ses paroles restent inchangées et attendent la fermeture des menus.
+
+### Une mission par découverte
+
+Les 32 espèces actuelles ont une mission stable `discover-<species>`. La récompense est manuelle et unique, même après avoir confié le dernier lapin de cette espèce. Les découvertes déjà enregistrées comptent, sans devoir obtenir à nouveau le lapin. Une naissance encore au nid ou à la nurserie ne compte pas comme une découverte.
+
+| Rareté | Pièces | Nourriture | Cœurs | XP à la réclamation |
+|---|---:|---:|---:|---:|
+| Commun | 20 | 10 | 0 | 0 |
+| Rare | 40 | 20 | 0 | 0 |
+| Épique | 60 | 30 | 1 | 0 |
+| Légendaire | 80 | 40 | 2 | 0 |
+
+Le catalogue actuel ne contient pas d’espèce Peu commune ; cette rareté utiliserait le petit montant des Communs. Les XP de découverte et de naissance déjà attribués par les actions ne sont pas doublés par ces réclamations.
+
+### Une mission par modèle décoratif
+
+Les 13 modèles ont chacun une mission `decorate-<model>`, pour **10 XP** à réclamer après leur première pose. Cette petite prime est distincte des 10 XP de première pose déjà attribués par le jeu. Acheter en inventaire avec `placementXpProcessed: false` ne termine pas la mission. Déplacer, ranger, reposer, vendre et racheter le même modèle ne donnent jamais une nouvelle prime.
+
+L’historique `rewardedDecorationModels` est conservé même après vente. À défaut, un objet encore posé ou marqué comme déjà traité témoigne de son historique. Les sauvegardes sans cet historique et sans marqueur explicite suivent la convention historique déjà utilisée par les XP de décoration : marqueur absent = exemplaire traité. Aucune nouvelle action passée n’est ajoutée au journal ; aucune récompense n’est versée pendant le chargement.
+
+### Vingt étapes marquantes
+
+Chaque nouvelle étape rapporte **20 XP**, une fois, à sa réclamation : construire Cuisine, agence et Statue de l’Affection ; posséder une deuxième ferme ; améliorer une ferme au niveau 2 et un habitat au niveau 3 ; ouvrir les places 2, 3 et 4 de la nurserie ; améliorer l’agence aux niveaux 2 et 3 ; atteindre affection 10, 15 et 20 ; atteindre niveaux 20, 22, 25 et 30 ; acquérir les huit extensions ; avoir une recette vendue en boutique dans son carnet.
+
+Les conditions se lisent dans la vraie sauvegarde. Pour le carnet, une recette déjà connue compte aussi : certaines anciennes recettes ont pu être offertes, donc cette mission ne prétend pas reconstituer un paiement historique. Les conditions terminées restent acquises même si le lapin ou le bâtiment quitte ensuite la prairie.
+
+### Paiement et compatibilité
+
+Une réclamation verse tous ses composants et ses XP dans **la même transaction sauvegardée**. Un débordement de ressource, un refus ou une écriture refusée ne verse rien et ne consomme pas la mission. Rechargement et import préservent les réclamations, sans versement supplémentaire. Les anciens montants et identifiants ne changent pas, notamment les 630 pièces de `first-birth`. Les quotidiennes gardent leur cycle, leurs délais et leurs récompenses.
+
+Les fonctions de catalogue visible et d’objectifs actifs sont séparées : une mission réclamée reste consultable mais ne revient jamais dans les badges, les commandes réclamables ou les choix du simulateur.
 
 ## Décision du propriétaire — 26 octobre 2026
 
@@ -8,7 +45,7 @@ Le paiement reste manuel, unique, à la réclamation. Un joueur qui a déjà ré
 
 ## Parcours initiaux
 
-Un seul objectif initial est affiché à la fois : le premier non réclamé. Les actions anticipées réussies restent enregistrées. L'interface guidée termine le tutoriel lors de l'accueil du premier lapereau ; les récompenses nécessitent toujours une réclamation explicite dans les missions.
+Avant le niveau 7, un seul objectif initial est affiché à la fois : le premier non réclamé. Les actions anticipées réussies restent enregistrées. L'interface guidée termine le tutoriel lors de l'accueil du premier lapereau ; les récompenses nécessitent toujours une réclamation explicite dans les missions.
 
 | Identifiant | Objectif | Récompense |
 |---|---|---|

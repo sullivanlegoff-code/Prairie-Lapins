@@ -10,7 +10,7 @@ import {babyOf, welcomeOf} from './nursery-baby';
 import {emptyBuilding} from '../src/state/initial';
 
 // Isolate recipe/economy rules; active low-level filtering is covered in level-gates.test.ts.
-function createGame(now=0){const s=legacyGame(now);s.progression={totalXp:cumulativeLevelXp(14),rewardedThroughLevel:14};return s;}
+function createGame(now=0){const s=legacyGame(now);s.progression={totalXp:cumulativeLevelXp(14),rewardedThroughLevel:14};return advance(s,now);}
 const enclosure = 'building-1';
 function run(s: GameState, command: Command, now = s.lastSimulatedAt, roll = 0): GameState {
   const result = act(s, command, now, () => roll);

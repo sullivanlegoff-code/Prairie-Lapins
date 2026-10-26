@@ -1,6 +1,6 @@
-# Progression du joueur — économie v20 (dépenses en cœurs)
+# Progression du joueur — économie v20 (missions et dépenses en cœurs)
 
-Courbe retenue : **arrondi(90 × N^0,85)** pour passer de N à N+1, plafond 30 et un cœur par niveau. Le 25 octobre 2026, le propriétaire a demandé d’atteindre le niveau 22 en vingt jours environ : l’exposant passe de 1,15 à 0,85 ; le premier passage (90 XP) et toutes les sources d’XP sont inchangés. Une partie existante garde son XP total et monte aussitôt aux niveaux correspondants ; comme lors d’une hausse du plafond, le chargement ne donne rien, et les cœurs des niveaux franchis sont versés au prochain gain d’XP, avec le récapitulatif habituel. Le coefficient 25 et l’exposant 1,5 proposés initialement accéléraient trop le parcours. Toutes les autres valeurs demandées sont conservées : [règles et économie](game-design.md).
+Courbe retenue : **arrondi(90 × N^0,85)** pour passer de N à N+1, plafond 30 et un cœur par niveau. Le 25 octobre 2026, le propriétaire a demandé d’atteindre le niveau 22 en vingt jours environ : l’exposant est passé de 1,15 à 0,85 ; le premier passage (90 XP) et les anciennes sources d’XP sont inchangés. Le 26 octobre, le catalogue des missions s’ouvre entièrement au niveau 7 : chaque découverte rapporte des ressources sans XP de mission supplémentaire ; chaque modèle décoratif posé rapporte une prime unique de 10 XP à réclamer, distincte des XP de pose ; vingt nouvelles étapes rapportent chacune 20 XP. Les anciennes récompenses restent inchangées. Voir [les missions actuelles](missions-current.md). Une partie existante garde son XP total ; chargement et import ne versent aucune prime. Les cœurs d’un niveau franchi sont traités par le gain d’XP confirmé habituel.
 
 Reproduction : `node docs/progression-simulation.mjs` avec Node 24. Le chargeur Node `docs/node-typescript-loader.mjs` transpose les vrais modules TypeScript via TypeScript déjà installé et les importe directement, sans serveur, Vite ni navigateur. Aucune ressource, XP, issue de tirage ou exemption de niveau n’est injectée. Graine fixe 20261025. Les données détaillées sont régénérées dans `docs/progression-results.json`.
 
@@ -8,18 +8,18 @@ Le tutoriel de Paille est rejoué avec ses trois aides uniques, récolte/transfe
 
 Chaque visite est limitée à 45 commandes réussies, soit environ six secondes par action dans une session de cinq minutes. C’est une hypothèse de joueur organisé, pas une mesure humaine ; déplacement, consultation et choix peuvent ralentir le parcours. Les repas maximaux et les choix de parents sont explicites et reproductibles. La simulation laisse les commandes terminées attendre les visites, sans collecte pendant l’absence. Les instantanés J1/J3/etc. sont pris juste avant 8 h du jour suivant ; les pattes stockées restent à récolter. Aucun clic supplémentaire au point « 10 min ».
 
-Les premières atteintes, comptées en jours calendaires avec J1 comme jour du départ, sont **N5 à J1 ; N10 à J3 ; N15 à J7 ; N20 à J16 ; N22 à J20 ; N25 à J30 ; N30 à J48** (simulation du 26 octobre 2026, sauvegarde v20, statue à 60 cœurs). La Statue de l’Affection est achetée après sept jours écoulés, soit J8. Les deux fermes sont améliorées (60 cœurs au total). Le joueur simulé ne construit pas d’agence ; le script sait l’améliorer si elle est présente. Aucun prix de culture, revenu ou barème d’XP n’a changé pour ce changement de monnaie.
+Les premières atteintes, comptées en jours calendaires avec J1 comme jour du départ, sont **N5 à J1 ; N10 à J3 ; N15 à J7 ; N20 à J16 ; N22 à J20 ; N25 à J30 ; N30 à J48** (simulation du 26 octobre 2026, sauvegarde v20, nouveau catalogue et statue à 60 cœurs). La Statue de l’Affection est achetée après **8,5 jours écoulés, soit J9**. Les deux fermes sont améliorées (60 cœurs au total). Le joueur simulé ne construit pas d’agence ; le script sait l’améliorer si elle est présente. Les prix, revenus, tirages et anciens barèmes d’XP restent identiques. Les nouvelles primes de mission sont incluses dans ces mesures.
 
-À 20 jours, 25 des 41 lapins ont au moins 10 d’affection et sept au moins 15 ; à 50 jours, 47 sur 48 et 27. Les cœurs restants sont 183 à 20 jours et 759 à 50 jours, pour 6 259 actions réussies sur 70 jours. Le comptoir conserve les réserves de **6 000 nourriture et 3 000 pattes**, sans ancienne réserve de pièces pour la statue. Les résultats détaillés sont dans `docs/progression-results.json`.
+À 20 jours, 25 des 36 lapins ont au moins 10 d’affection et huit au moins 15 ; à 50 jours, 41 sur 42 et 30. Les cœurs restants sont **187 à 20 jours et 763 à 50 jours**, pour **6 324 actions réussies sur 70 jours**. Le comptoir conserve les réserves de **6 000 nourriture et 3 000 pattes**, sans ancienne réserve de pièces pour la statue. Les réclamations du catalogue sont de vraies commandes et comptent dans le plafond de 45 actions par visite ; les objectifs terminés déjà réclamés sont exclus de ses choix. Les résultats détaillés sont dans `docs/progression-results.json`.
 
 | Étape | Pattes disponibles | Nourriture | Cœurs | Niveau | Espèces | Pattes stockées | Affection ≥ 10 / ≥ 15 |
 |---|---:|---:|---:|---:|---:|---:|---|
 | 10 min | 810 | 96 | 18 | 5 | 3 | 6 | 0 / 0 (sur 3) |
-| 1 j | 633 | 15 | 23 | 7 | 5 | 947 | 1 / 0 (sur 5) |
-| 3 j | 897 | 2 | 10 | 10 | 10 | 2 459 | 3 / 0 (sur 12) |
-| 7 j | 5 044 | 720 | 65 | 15 | 17 | 5 243 | 11 / 0 (sur 22) |
-| 20 j | 6 974 | 37 | 183 | 22 | 28 | 11 735 | 25 / 7 (sur 41) |
-| 50 j | 5 104 | 1 135 | 759 | 30 | 32 | 17 915 | 47 / 27 (sur 48) |
+| 1 j | 4 | 67 | 23 | 7 | 5 | 947 | 1 / 0 (sur 5) |
+| 3 j | 1 674 | 10 | 10 | 10 | 10 | 2 471 | 4 / 0 (sur 12) |
+| 7 j | 4 628 | 2 790 | 45 | 15 | 17 | 5 267 | 11 / 0 (sur 22) |
+| 20 j | 4 752 | 6 | 187 | 22 | 30 | 11 063 | 25 / 8 (sur 36) |
+| 50 j | 5 639 | 38 | 763 | 30 | 32 | 16 211 | 41 / 30 (sur 42) |
 
 Les achats restants de chaque instantané figurent dans les champs `remaining` et `decorationBudget` du rapport JSON. Ils utilisent le catalogue v20 ; les améliorations et décorations restent des choix du joueur.
 

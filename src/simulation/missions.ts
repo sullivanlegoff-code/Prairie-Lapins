@@ -1,16 +1,20 @@
 import {settlePurchaseUnlocks} from './purchaseUnlocks';
 import {progressionFromXp} from './progression';
 import {HOUR, ORDERS, SPECIES, SPECIES_IDS} from '../config/balance';
-import {DAILY_MISSIONS, DAILY_MISSION_IDS, MAIN_MISSIONS, MAIN_MISSION_IDS, DURABLE_MISSION_IDS, MISSION_CYCLE_DURATION, DAILY_MISSION_GAP, INITIAL_MISSION_IDS, SOLO_INITIAL_MISSION_IDS, BRANCH_MISSION_IDS, MAIN_EVENT_IDS, type MainMissionId, type DailyMissionId} from '../config/missions';
+import {DAILY_MISSIONS, DAILY_MISSION_IDS, MAIN_MISSIONS, MAIN_MISSION_IDS, NEW_MAIN_MISSION_IDS, DURABLE_MISSION_IDS, MISSION_CYCLE_DURATION, DAILY_MISSION_GAP, INITIAL_MISSION_IDS, SOLO_INITIAL_MISSION_IDS, BRANCH_MISSION_IDS, MAIN_EVENT_IDS, type MainMissionId, type DailyMissionId} from '../config/missions';
+import {RECIPE_PRICES} from '../config/recipes';
 import type {GameState, MissionState} from '../state/types';
 
-type ObservableState = Pick<GameState, 'rabbits' | 'discovered'> & Partial<Pick<GameState, 'progression'>> & {acquiredParcels?: GameState['acquiredParcels']; expanded?: boolean} & Pick<GameState, 'startCourse'> & {missions?: Pick<MissionState, 'events' | 'nightOrderStarted'>} & {buildings: (Pick<GameState['buildings'][number], 'kind'> & {habitat?: GameState['buildings'][number]['habitat']})[]};
+type ObservableState = Pick<GameState, 'rabbits' | 'discovered'> & Partial<Pick<GameState, 'progression' | 'decorations' | 'rewardedDecorationModels' | 'recipeBook'>> & {acquiredParcels?: GameState['acquiredParcels']; expanded?: boolean} & Pick<GameState, 'startCourse'> & {missions?: Pick<MissionState, 'events' | 'nightOrderStarted'>} & {buildings: (Pick<GameState['buildings'][number], 'kind'> & Partial<Pick<GameState['buildings'][number], 'habitat' | 'farmLevel' | 'agencyLevel' | 'nursery'>>)[]};
 export function mainProgress(state: ObservableState, id: MainMissionId): {value: number; target: number} {
   const c = MAIN_MISSIONS[id].condition;
   switch (c.kind) {
     case 'level': return {value: progressionFromXp(state.progression?.totalXp ?? 0).level, target:c.target};
     case 'extensions': return {value:Math.max(0,(state.acquiredParcels?.length ?? 1)-1),target:c.target};
     case 'habitatLevel': return {value:Math.max(0,...state.buildings.map(b=>b.habitat?.level ?? 0)),target:c.target};
+    case 'buildingLevel': return {value: Math.max(0, ...state.buildings.filter(b => b.kind === c.building).map(b => c.building === 'farm' ? b.farmLevel ?? 1 : c.building === 'agency' ? b.agencyLevel ?? 1 : b.nursery?.capacity ?? 1)), target: c.target};
+    case 'decoration': return {value: Number(state.rewardedDecorationModels?.includes(c.model) || state.decorations?.some(d => d.catalogId === c.model && (d.location.kind === 'outside' || d.placementXpProcessed === true || state.rewardedDecorationModels === undefined && d.placementXpProcessed !== false))), target: 1};
+    case 'paidRecipe': return {value: Number(state.recipeBook?.some(id => RECIPE_PRICES[id] !== undefined)), target: 1};
     case 'nightOrder': return {value:Number(!!state.missions?.nightOrderStarted),target:1};
     case 'ordinaryRares': { const ids=SPECIES_IDS.filter(id=>SPECIES[id].rarity==='rare' && SPECIES[id].acquisition.some(a=>a.kind==='recipe' && a.guaranteeEligible)); return {value:ids.filter(id=>state.discovered.includes(id)).length,target:ids.length}; }
     case 'building': return {value: state.buildings.filter(b => b.kind === c.building && (!c.habitatType || b.habitat?.type === c.habitatType)).length, target: c.target ?? 1};
@@ -27,7 +31,7 @@ export function emptyDailyProgress(): MissionState['daily']['progress'] {
   return {'collect-pattes': 0, 'collect-grass': 0, 'gain-affection': 0};
 }
 export function createMissions(state: ObservableState, referenceAt: number): MissionState {
-  return {events: emptyMainEvents(), completed: MAIN_MISSION_IDS.filter(id => { if ((DURABLE_MISSION_IDS as readonly string[]).includes(id)) return false; if ((id === 'snow-habitat' || id === 'welcome-snow') && state.startCourse !== 'paille-solo') return false; const p = mainProgress({...state, missions: undefined}, id); return p.value >= p.target; }), claimed: [],
+  return {events: emptyMainEvents(), completed: MAIN_MISSION_IDS.filter(id => { if ((DURABLE_MISSION_IDS as readonly string[]).includes(id) || (NEW_MAIN_MISSION_IDS as readonly string[]).includes(id)) return false; if ((id === 'snow-habitat' || id === 'welcome-snow') && state.startCourse !== 'paille-solo') return false; const p = mainProgress({...state, missions: undefined}, id); return p.value >= p.target; }), claimed: [],
     daily: {referenceAt, cycleIndex: 0, progress: emptyDailyProgress(), claimed: [], bonusClaimed: false}};
 }
 export const cycleIndexAt = (referenceAt: number, now: number) => Math.floor(Math.max(0, now - referenceAt) / MISSION_CYCLE_DURATION);
@@ -53,10 +57,20 @@ export const emptyMainEvents = (): MissionState['events'] => ({collectOrder: 0, 
 export function initialMissionIds(s: Pick<GameState, 'startCourse'>): readonly MainMissionId[] {
   return s.startCourse === 'paille-solo' ? SOLO_INITIAL_MISSION_IDS : INITIAL_MISSION_IDS;
 }
-export function eligibleMainMissionIds(s: Pick<GameState, 'startCourse' | 'missions'>): readonly MainMissionId[] {
+type MainMissionState = Pick<GameState, 'startCourse' | 'missions'> & Partial<Pick<GameState, 'progression'>>;
+export const mainCatalogueUnlocked = (s: Partial<Pick<GameState, 'progression'>>): boolean => progressionFromXp(s.progression?.totalXp ?? 0).level >= 7;
+/** Initial rewards belong to their original course; a normal legacy start never gains the solo Neige rewards. */
+export const catalogueMainMissionIds = (s: Pick<GameState, 'startCourse'>): MainMissionId[] => [...initialMissionIds(s), ...BRANCH_MISSION_IDS, ...DURABLE_MISSION_IDS, ...NEW_MAIN_MISSION_IDS];
+/** Includes finished objectives for browsing; retired identifiers are never part of this catalogue. */
+export function visibleMainMissions(s: MainMissionState): readonly MainMissionId[] {
+  return mainCatalogueUnlocked(s) ? catalogueMainMissionIds(s) : activeMainMissions(s);
+}
+export function eligibleMainMissionIds(s: MainMissionState): readonly MainMissionId[] {
+  if (mainCatalogueUnlocked(s)) return catalogueMainMissionIds(s);
   return [...initialMissionIds(s), ...BRANCH_MISSION_IDS, ...activeMainMissions(s).filter(id => (DURABLE_MISSION_IDS as readonly string[]).includes(id))];
 }
-export function activeMainMissions(s: Pick<GameState, 'missions' | 'startCourse'>): MainMissionId[] {
+export function activeMainMissions(s: MainMissionState): MainMissionId[] {
+  if (mainCatalogueUnlocked(s)) return catalogueMainMissionIds(s).filter(id => !s.missions.claimed.includes(id));
   const next = initialMissionIds(s).find(id => !s.missions.claimed.includes(id));
   if (next) return [next];
   // Every claimable branch stays visible; the durable chain always keeps its slot, then one branch still in progress.
