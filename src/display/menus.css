@@ -9,6 +9,13 @@
   --menu-muted: #534b38;
 }
 
+#account-content :is(button, input) { min-height: 44px; max-width: 100%; box-sizing: border-box; font-size: 16px; }
+#account-content label { display: grid; gap: 6px; margin: 10px 0; }
+#account-content input { width: 100%; padding: 8px; color: var(--menu-ink); background: #fff9e9; border: 1px solid #a58a67; border-radius: 6px; }
+#account-content [data-choices] { display: grid; gap: 8px; }
+#account-content :is([data-error], [data-status], [data-email]) { overflow-wrap: anywhere; }
+#account-content [data-error]:empty { display: none; }
+
 /* Laboratory pages reuse the journal paper and the existing stone button skin. */
 #devtools { color: var(--menu-ink); background: #f4e8cd var(--menu-linen); }
 #devtools details { margin: 10px 0; padding: 8px; border: 1px solid #a58a67; border-radius: 8px; }

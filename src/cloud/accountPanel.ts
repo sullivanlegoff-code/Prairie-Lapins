@@ -1,0 +1,168 @@
+import type {SupabaseClient} from '@supabase/supabase-js';
+import type {GameController} from '../application/GameController';
+import type {SaveStorage} from '../persistence/storage';
+import type {GameState} from '../state/types';
+import {progressionFromXp} from '../simulation/progression';
+import {cloudConfig, UNAVAILABLE, type CloudConfig} from './config';
+import {SupabaseGateway, type CloudGateway} from './gateway';
+import {CloudSync, type SyncView} from './sync';
+
+export function authMessage(error: {code?: string; message?: string; status?: number}): string {
+  const code = error.code ?? '', message = (error.message ?? '').toLowerCase();
+  if (code === 'invalid_credentials' || message.includes('invalid login')) return 'Ton adresse e-mail ou ton mot de passe est incorrect.';
+  if (['user_already_exists', 'email_exists'].includes(code) || message.includes('already registered')) return 'Cette adresse e-mail est déjà utilisée. Connecte-toi à ton compte.';
+  if (code === 'weak_password' || message.includes('password')) return 'Choisis un mot de passe de 8 caractères minimum.';
+  if (error.status === 429 || code.includes('rate_limit')) return 'Tu as fait trop de tentatives. Attends un peu avant de réessayer.';
+  if (code === 'email_not_confirmed') return "La confirmation d'e-mail est activée dans Supabase : le propriétaire doit la désactiver";
+  if (code === 'email_address_invalid' || message.includes('invalid email')) return 'Vérifie ton adresse e-mail.';
+  return 'Le service est indisponible. Ta partie reste sur cet appareil. Réessaie plus tard.';
+}
+const plural = (n: number, one: string, many = one + 's') => `${n} ${n > 1 ? many : one}`;
+export function summary(s: GameState | null): string {
+  return s ? `Niveau ${progressionFromXp(s.progression.totalXp).level} · ${s.pattes} pièces · ${s.grass} nourriture · ${s.hearts} cœurs · ${plural(s.rabbits.length, 'lapin')} · ${plural(s.discovered.length, 'espèce découverte', 'espèces découvertes')}` : 'Aucune partie';
+}
+export function syncMessage(v: SyncView): string {
+  switch (v.status) {
+    case 'saved': return `Sauvegardé en ligne${v.syncedAt ? ' · ' + new Date(v.syncedAt).toLocaleString('fr-FR') : ''}`;
+    case 'checking': return 'Vérification de ta partie en ligne…';
+    case 'waiting': return 'Tes progrès seront envoyés dans quelques secondes…';
+    case 'sending': return 'Envoi en cours…';
+    case 'offline': return 'Hors ligne : tes progrès sont gardés sur cet appareil et seront envoyés plus tard.';
+    case 'local-error': return "Ta sauvegarde locale est en erreur. Répare-la dans « Sauvegarde » avant l'envoi en ligne.";
+    case 'session': return 'Ta session a expiré. Reconnecte-toi ; ta partie reste sur cet appareil.';
+    case 'choice': return 'Choisis la partie à associer à ton compte.';
+    case 'conflict': return 'Ta partie a changé ici et en ligne. Choisis celle que tu veux garder. Aucune fusion ne sera faite.';
+    case 'error': case 'outdated': return v.message ?? 'La sauvegarde en ligne est bloquée. Exporte ta partie et réessaie.';
+    default: return '';
+  }
+}
+interface Options {
+  config?: CloudConfig | null; policy: {onlineServicesAllowed: boolean}; onReplacement(): void;
+  create?: (config: CloudConfig) => Promise<SupabaseClient>; gateway?: CloudGateway;
+}
+async function create(config: CloudConfig): Promise<SupabaseClient> {
+  const {createClient} = await import('@supabase/supabase-js');
+  return createClient(config.url, config.key, {auth: {persistSession: true, autoRefreshToken: true,
+    detectSessionInUrl: false, storageKey: `prairie-lapins.auth.${config.ref}`}});
+}
+export async function mountAccountPanel(root: HTMLElement, controller: GameController, storage: SaveStorage, options: Options): Promise<() => void> {
+  if (!options.policy.onlineServicesAllowed || controller.storageScope === 'laboratory') return () => {};
+  root.hidden = false;
+  const config = options.config === undefined ? cloudConfig() : options.config;
+  if (!config) {
+    root.replaceChildren(); const heading = document.createElement('h3'), p = document.createElement('p');
+    heading.textContent = 'Sauvegarde en ligne'; p.textContent = UNAVAILABLE; root.append(heading, p); return () => {};
+  }
+  root.innerHTML = `<h3>Sauvegarde en ligne</h3>
+    <p class="small">Associe ta partie à ton adresse e-mail pour la retrouver sur un autre appareil ou si ton navigateur l'efface.</p>
+    <p data-email></p><p data-status role="status" aria-live="polite"></p><p data-error role="alert"></p>
+    <form><label>Adresse e-mail<input name="email" type="email" autocomplete="email" required></label>
+    <label>Mot de passe<input name="password" type="password" autocomplete="current-password" required></label>
+    <label data-confirm hidden>Confirme ton mot de passe<input name="confirmation" type="password" autocomplete="new-password"></label>
+    <button type="submit">Se connecter</button><button type="button" data-toggle class="secondary">Créer mon compte</button>
+    <p class="small">Mot de passe oublié ? Contacte le propriétaire pour qu'il le réinitialise. Aucun e-mail ne sera envoyé.</p></form>
+    <div data-choices></div><div class="actions"><button data-retry type="button" class="secondary" hidden>Réessayer</button>
+    <button data-signout type="button" class="secondary" hidden>Se déconnecter</button></div>`;
+  const get = <T extends HTMLElement>(selector: string) => root.querySelector<T>(selector)!;
+  const form = get<HTMLFormElement>('form'), email = get<HTMLInputElement>('[name=email]'), password = get<HTMLInputElement>('[name=password]'), confirmation = get<HTMLInputElement>('[name=confirmation]');
+  const error = get('[data-error]'), toggle = get<HTMLButtonElement>('[data-toggle]'), submit = get<HTMLButtonElement>('[type=submit]');
+  const retry = get<HTMLButtonElement>('[data-retry]'), signout = get<HTMLButtonElement>('[data-signout]');
+  let client: SupabaseClient;
+  try { client = await (options.create ?? create)(config); }
+  catch { error.textContent = 'Le service est indisponible. Réessaie en rechargeant la page.'; return () => {}; }
+  const sync = new CloudSync(controller, storage, options.gateway ?? new SupabaseGateway(client), options.onReplacement, undefined, options.policy);
+  let alive = true, signup = false, busy = false, signedOut = false, owner: string | null = null, address = '', sequence = 0;
+  let selected: 'remote' | 'local' | null = null;
+  function render(v: SyncView) {
+    if (!alive) return;
+    form.hidden = !!owner && v.status !== 'session';
+    get('[data-email]').textContent = address;
+    get('[data-status]').textContent = syncMessage(v);
+    retry.hidden = !['offline', 'error', 'local-error'].includes(v.status);
+    signout.hidden = !owner;
+    const choices = get('[data-choices]'); choices.replaceChildren();
+    if (!['choice', 'conflict'].includes(v.status)) { selected = null; return; }
+    const local = document.createElement('p'), remote = document.createElement('p');
+    local.textContent = 'Sur cet appareil : ' + summary(controller.getSnapshot().state);
+    remote.textContent = 'En ligne : ' + summary(v.remote?.state ?? null); choices.append(local, remote);
+    const button = (label: string, f: () => void) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'secondary'; b.textContent = label; b.onclick = f; choices.append(b); };
+    if (selected) {
+      const warning = document.createElement('p');
+      warning.textContent = selected === 'remote' ? 'Confirme le remplacement de la partie de cet appareil. Une copie de secours locale sera conservée.'
+        : v.remote ? "Confirme le remplacement de la partie en ligne. L'ancienne restera dans l'historique serveur." : "Confirme l'association de cette partie à ton compte.";
+      choices.append(warning);
+      button('Confirmer mon choix', () => { const choice = selected!; selected = null; void sync.choose(choice, true); });
+      button('Annuler', () => { selected = null; render(sync.getView()); });
+    } else {
+      if (v.remote) button('Récupérer ma partie en ligne', () => { selected = 'remote'; render(sync.getView()); });
+      button(v.remote ? 'Garder la partie de cet appareil' : 'Associer cette partie à mon compte', () => { selected = 'local'; render(sync.getView()); });
+    }
+  }
+  const stop = sync.subscribe(render);
+  let lastSummary = summary(controller.getSnapshot().state);
+  const stopController = controller.subscribe(snapshot => {
+    const current = summary(snapshot.state);
+    if (current !== lastSummary && ['choice', 'conflict'].includes(sync.getView().status)) render(sync.getView());
+    lastSummary = current;
+  });
+  function session(user: {id: string; email?: string} | null) {
+    if (!alive) return;
+    const next = user?.id ?? null;
+    if (next === owner) {
+      if (next && sync.getView().status === 'session') void sync.connect(next);
+      return;
+    }
+    sequence++; owner = next; address = user?.email ?? ''; selected = null;
+    password.value = ''; confirmation.value = '';
+    if (next) void sync.connect(next); else sync.disconnect();
+    render(sync.getView());
+  }
+  const {data: listener} = client.auth.onAuthStateChange((_event, s) => {
+    if (signedOut && s) return;
+    const expired = !!owner && !s;
+    session(s?.user ?? null);
+    if (expired) sync.expire();
+  });
+  const initial = sequence;
+  void client.auth.getSession().then(({data, error: err}) => {
+    if (!alive || initial !== sequence) return;
+    if (err) error.textContent = authMessage(err); else session(data.session?.user ?? null);
+  }).catch(() => { if (alive) error.textContent = authMessage({}); });
+  toggle.onclick = () => {
+    signup = !signup; get('[data-confirm]').hidden = !signup; confirmation.required = signup;
+    password.autocomplete = signup ? 'new-password' : 'current-password'; password.minLength = signup ? 8 : 0;
+    submit.textContent = signup ? 'Créer mon compte' : 'Se connecter'; toggle.textContent = signup ? 'Se connecter' : 'Créer mon compte'; error.textContent = '';
+  };
+  form.onsubmit = event => {
+    event.preventDefault(); if (busy) return;
+    if (signup && password.value.length < 8) { error.textContent = authMessage({code: 'weak_password'}); return; }
+    if (signup && password.value !== confirmation.value) { error.textContent = 'Les deux mots de passe sont différents.'; return; }
+    busy = true; submit.disabled = true; toggle.disabled = true; error.textContent = '';
+    const attempt = sequence;
+    void (async () => {
+      try {
+        const credentials = {email: email.value.trim(), password: password.value};
+        const result = signup ? await client.auth.signUp(credentials) : await client.auth.signInWithPassword(credentials);
+        if (!alive || attempt !== sequence) return;
+        if (result.error) { if (attempt === sequence) error.textContent = authMessage(result.error); }
+        else if (!result.data.session) error.textContent = "La confirmation d'e-mail est activée dans Supabase : le propriétaire doit la désactiver";
+        else { signedOut = false; password.value = ''; confirmation.value = ''; session(result.data.session.user); }
+      } catch { if (alive) error.textContent = authMessage({}); }
+      finally { busy = false; if (alive) { submit.disabled = false; toggle.disabled = false; } }
+    })();
+  };
+  signout.onclick = () => {
+    signedOut = true; sequence++; sync.disconnect(); owner = null; address = ''; render(sync.getView());
+    void client.auth.signOut({scope: 'local'}).then(({error: err}) => { if (alive && err) error.textContent = authMessage(err); })
+      .catch(() => { if (alive) error.textContent = authMessage({}); });
+  };
+  retry.onclick = () => { void sync.retry(); };
+  const background = () => { if (document.hidden) void sync.flush(); else void sync.retry(); };
+  const hide = () => { void sync.flush(); }, online = () => { void sync.retry(); };
+  document.addEventListener('visibilitychange', background); window.addEventListener('pagehide', hide); window.addEventListener('online', online);
+  return () => {
+    alive = false; sequence++; stop(); stopController(); sync.dispose(); listener.subscription.unsubscribe();
+    document.removeEventListener('visibilitychange', background); window.removeEventListener('pagehide', hide); window.removeEventListener('online', online);
+    root.replaceChildren();
+  };
+}

@@ -43,7 +43,6 @@ async function boot(): Promise<() => void> {
     const {developmentEnvironment} = await import('./dev/tools');
     const dev = developmentEnvironment(base, {decorationPreview: DECORATIONS_PREVIEW_BUILD}); storage = dev.storage; clock = dev.clock; preferenceKey = dev.preferenceKey; mountDev = controller => dev.mount(controller, fresh => { ui?.onReplacement(fresh); recenterAfterLab?.(); });
   }
-  // No online adapter exists yet. This policy is the boundary for future clients.
   if (policy.kind === 'laboratory') document.title = 'MODE TEST — Prairie de lapins';
   let fresh = false;
   try { fresh = storage.getItem('prairie-lapins.save.v1') === null; } catch { /* Never impose guidance on an unreadable save. */ }
@@ -97,7 +96,25 @@ async function boot(): Promise<() => void> {
     }});
     const disposePanel = mountSavePanel(controller, fresh => ui?.onReplacement(fresh), {test: testMode, decorationPreview: DECORATIONS_PREVIEW_BUILD, preferenceKey});
     const disposeDev = mountDev?.(controller);
-    entered = () => { ui?.dispose(); soundSettings.dispose(); disposePanel(); disposeDev?.(); };
+    let disposeAccount: (() => void) | undefined, accountAlive = true;
+    if (!LABORATORY_BUILD && !DECORATIONS_PREVIEW_BUILD && policy.onlineServicesAllowed && controller.storageScope !== 'laboratory' && new URLSearchParams(location.search).get('dev') !== '1') {
+      const root = document.getElementById('account-content')!;
+      void import('./cloud/config').then(async ({cloudConfig, UNAVAILABLE}) => {
+        if (!accountAlive) return;
+        const config = cloudConfig();
+        if (config) {
+          const {mountAccountPanel} = await import('./cloud/accountPanel');
+          if (!accountAlive) return;
+          const dispose = await mountAccountPanel(root, controller, storage, {config, policy, onReplacement: () => ui?.onReplacement()});
+          if (accountAlive) disposeAccount = dispose; else dispose();
+        } else {
+          root.hidden = false;
+          const heading = document.createElement('h3'), message = document.createElement('p');
+          heading.textContent = 'Sauvegarde en ligne'; message.textContent = UNAVAILABLE; root.append(heading, message);
+        }
+      }).catch(() => { if (accountAlive) { root.hidden = false; root.textContent = 'Le service est indisponible. Exporte ta partie pour en garder une copie.'; } });
+    }
+    entered = () => { accountAlive = false; disposeAccount?.(); ui?.dispose(); soundSettings.dispose(); disposePanel(); disposeDev?.(); };
   };
   // Restart all loaders safely, both after a real error and while a slow request is pending.
   const retry = () => location.reload();
