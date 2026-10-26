@@ -57,6 +57,8 @@ import {BUILDING_NAMES, REFUSALS, RARITY_NAMES, busyReason, TYPE_NAMES, typeName
 type ShopTab = 'home' | 'recipes' | 'rabbits' | 'habitats' | 'buildings' | 'decorations';
 type View = {kind:'levelRequirement';target:LevelAccessTarget} | {kind: 'missions'; tab: 'main' | 'daily'} | {kind: 'shop'; tab: ShopTab} | {kind: 'building' | 'rabbit' | 'moveRabbit' | 'decoration'; id: string} |
   {kind: 'buyRabbit' | 'species'; species: SpeciesId} | {kind:'extension';parcelId?:ParcelId} | {kind: 'cuisineRabbit' | 'collection' | 'settings' | 'placement' | 'hearts' | 'recipes' | 'arrange' | 'decorationPlacement'} | null;
+/** Views drawn as a centred card over the dimmed meadow. Placement, purchase, extension and arrangement views keep the side sheet: they need the island visible. */
+const CENTER_CARD_VIEWS: readonly NonNullable<View>['kind'][] = ['rabbit', 'moveRabbit', 'building', 'missions', 'collection', 'recipes', 'hearts', 'species', 'levelRequirement'];
 function node<K extends keyof HTMLElementTagNameMap>(tag: K, text = '', className = ''): HTMLElementTagNameMap[K] {
   const element = document.createElement(tag); setCurrencyText(element, text); decorateRabbitText(element); element.className = className; return element;
 }
@@ -115,6 +117,8 @@ export class GameUI {
   private toastTimer = 0;
   private frame = 0;
   private abort = new AbortController();
+  /** The control focused when a menu opened from the meadow; it gets the focus back when that menu closes. */
+  private returnFocus: HTMLElement | null = null;
   private oddsOpen = false;
   private collectionFilter: CollectionFilter = {};
   private recipeDetails = new Set<SpeciesId>();
@@ -175,6 +179,11 @@ export class GameUI {
     document.getElementById('close-panel')!.addEventListener('click', () => this.close(), options);
     document.getElementById('panel-backdrop')?.addEventListener('click', () => this.close(), options);
     document.getElementById('panel-back')!.addEventListener('click', () => this.back(), options);
+    // Escape closes the open menu like its cross; fields and dialogs that handle Escape themselves have already consumed it.
+    document.addEventListener('keydown', event => {
+      if (event.key !== 'Escape' || event.defaultPrevented || !this.view || document.querySelector('dialog[open]')) return;
+      event.preventDefault(); this.close();
+    }, options);
     // Keep native selectors and a gesture's original controls alive during passive saves.
     this.shopResources.setAttribute('aria-label', 'Ressources');
     this.shopResources.hidden = true; this.panel.querySelector('.panel-header')!.insertBefore(this.shopResources, document.getElementById('close-panel'));
@@ -389,6 +398,7 @@ export class GameUI {
     this.requestedScroll = this.scrollPositions.get(this.viewKey(view)) ?? 0;
     if (view.kind === 'settings') this.settings.scrollTop = this.scrollPositions.get(this.viewKey(view)) ?? 0;
 
+    if (!this.view && document.activeElement instanceof HTMLElement && document.activeElement !== document.body) this.returnFocus = document.activeElement;
     if (view.kind === 'collection') this.preferences.set({guideCollection: true});
     const entersSheet = ['placement','decorationPlacement','buyRabbit'].includes(view.kind) && this.view?.kind !== view.kind;
     this.view = view; this.syncArrangement(); this.controller.refresh(); this.render();
@@ -411,6 +421,9 @@ export class GameUI {
     this.scene.setExpansion(false); this.view = null; this.placement = null; this.arranging = false; this.decorationDraft = null; this.scene.setPlacement(null);
     if (previous) { this.view = previous.view; this.history = previous.history; this.arranging = previous.arranging; if (this.view) this.requestedScroll = this.scrollPositions.get(this.viewKey(this.view)) ?? 0; }
     this.pailleDialogue.invite(); this.syncArrangement(); this.render();
+    // Back to the control that opened the menu (Settings, Missions…), for keyboards and screen readers.
+    if (!this.view && this.returnFocus?.isConnected) this.returnFocus.focus({preventScroll: true});
+    if (!this.view) this.returnFocus = null;
   }
   onReplacement(fresh = false): void {
     this.pailleDialogue.close();
@@ -502,8 +515,9 @@ export class GameUI {
       const s = this.snapshot.state; this.shopResources.replaceChildren(node('span', `${s.pattes} pattes`), node('span', `${s.grass} nourriture`), node('span', heartAmount(s.hearts)));
     }
     this.panel.dataset.view = this.view?.kind ?? '';
-    // A rabbit's card, a building's or a habitat's menu opens in the middle of the screen, over the dimmed meadow; the guided start keeps the side panel.
-    const card = !this.onboardingActive && (this.view?.kind === 'rabbit' || this.view?.kind === 'moveRabbit' || this.view?.kind === 'building');
+    // Settings, the list menus, a rabbit's card and a building's menu open in the middle of the screen, over the dimmed meadow, with
+    // the full height to scroll (a phone in landscape left the side panel about 240 px). The guided start keeps the side panel, except Settings.
+    const card = !!this.view && (this.view.kind === 'settings' || (!this.onboardingActive && CENTER_CARD_VIEWS.includes(this.view.kind)));
     clearRabbitTheme(this.panel);
     this.panel.classList.toggle('center-card', card); document.body.classList.toggle('center-card-open', card);
     const backdrop = document.getElementById('panel-backdrop'); if (backdrop) backdrop.hidden = !card;

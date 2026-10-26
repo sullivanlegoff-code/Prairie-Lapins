@@ -393,7 +393,21 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     expect(sheet.hidden).toBe(true); expect(backdrop.hidden).toBe(true);
     ui.select({kind: 'building', id: 'building-1'}); expect(sheet.classList.contains('center-card')).toBe(true); expect(backdrop.hidden).toBe(false);
     document.getElementById('close-panel')!.click();
-    ui.open({kind: 'collection'}); expect(sheet.classList.contains('center-card')).toBe(false); expect(backdrop.hidden).toBe(true);
+    // Arrangement needs the island visible: it keeps the side sheet.
+    ui.open({kind: 'arrange'}); expect(sheet.classList.contains('center-card')).toBe(false); expect(backdrop.hidden).toBe(true);
+  });
+  it('opens Settings and the list menus centred over the dimmed meadow; Escape or a tap outside closes them and gives the focus back', () => {
+    const {ui} = setup(); const backdrop = document.getElementById('panel-backdrop')!, sheet = document.getElementById('game-panel')!;
+    const opener = document.getElementById('open-settings') as HTMLButtonElement;
+    opener.focus(); opener.click();
+    expect(document.getElementById('settings-content')!.hidden).toBe(false);
+    expect(sheet.classList.contains('center-card')).toBe(true); expect(backdrop.hidden).toBe(false);
+    document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', cancelable: true}));
+    expect(sheet.hidden).toBe(true); expect(backdrop.hidden).toBe(true); expect(document.activeElement).toBe(opener);
+    opener.click(); backdrop.click(); expect(sheet.hidden).toBe(true);
+    for (const view of [{kind: 'missions', tab: 'main'}, {kind: 'collection'}, {kind: 'recipes'}, {kind: 'hearts'}] as const) {
+      ui.open(view); expect(sheet.classList.contains('center-card')).toBe(true); expect(backdrop.hidden).toBe(false); ui.close();
+    }
   });
   it('a double pressure on Feed performs exactly one action and updates the view', () => {
     const {ui, controller, scene} = setup(); const perform = vi.spyOn(controller, 'perform');
