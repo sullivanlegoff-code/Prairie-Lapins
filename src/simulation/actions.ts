@@ -253,7 +253,12 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(command.kind!=='enclosure' || stateLevelAccess(s,{family:'habitatPurchase',id:habitatType}).accessible,'LEVEL_REQUIRED');
         requireRule(command.kind!=='statue' || playerLevel(s)>=AFFECTION_STATUE.level,'LEVEL_REQUIRED');
         requireRule(command.kind!=='agency' || playerLevel(s)>=TRAVEL.unlockLevel,'LEVEL_REQUIRED');
-        cell(command.x, command.y); allocation(); pay(command.kind === 'enclosure' ? habitatPrice(habitatType) : config.price);
+        cell(command.x, command.y); allocation();
+        if (command.kind === 'statue') {
+          requireRule(!payment && !quoteOnly, 'INVALID_CHOICE');
+          requireRule(s.hearts >= AFFECTION_STATUE.heartPrice, 'NOT_ENOUGH_HEARTS');
+          s.hearts -= AFFECTION_STATUE.heartPrice;
+        } else pay(command.kind === 'enclosure' ? habitatPrice(habitatType) : config.price);
         value = id('building'); s.buildings.push(emptyBuilding(value, command.kind, command.x, command.y, habitatType));
         if (command.kind === 'farm') gainXp(PROGRESSION.xp.construction.farm);
         else if (command.kind === 'enclosure') gainXp(habitatType === 'universal' ? PROGRESSION.xp.construction.universalHabitat : PROGRESSION.xp.construction.specializedHabitat);

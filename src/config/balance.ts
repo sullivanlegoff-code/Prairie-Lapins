@@ -53,9 +53,9 @@ export const BALANCE = {
     enclosure: {price: 350, maximum: null}, farm: {price: 60, maximum: 2},
     nest: {price: 100, maximum: 1}, nursery: {price: 80, maximum: 1},
     kitchen: {price: 100, maximum: 1}, // Provisional building-only integration price.
-    statue: {price: 30000, maximum: 1}, // The Statue de l'Affection: see AFFECTION_STATUE.
+    statue: {price: 60, currency: 'hearts', maximum: 1}, // Hearts only, never a coin purchase or complement.
     agency: {price: 1000, maximum: 1}, // The travel agency: see TRAVEL.
-  } satisfies Record<BuildingKind, {price: number; maximum: number | null}>,
+  } satisfies Record<BuildingKind, {price: number; currency?: 'hearts'; maximum: number | null}>,
 };
 /**
  * The farm's ten crops (owner, 25 October 2026), from the least to the best liked by rabbits. Every crop yields food
@@ -105,7 +105,7 @@ export const LEGACY_ORDER_CROPS = {small: 'foin', medium: 'trefle', large: 'feno
 export const FEED_COSTS: readonly number[] = [0, 2, 4, 8, 14, 22, 32, 45, 60, 80, 110, 140, 180, 230, 1500, 400, 480, 570, 670, 800];
 export const feedCost = (affection: number): number => FEED_COSTS[affection] ?? Infinity;
 /** Affection above `cap` needs the statue, sold among the buildings from player level `level`. */
-export const AFFECTION_STATUE = {level: 15, cap: 14} as const;
+export const AFFECTION_STATUE = {level: 15, cap: 14, heartPrice: BALANCE.buildings.statue.price} as const;
 /** Epic and legendary recipe chances, multiplied when BOTH parents reach the affection (highest step applies). */
 export const RARE_BIRTH_BONUS: readonly {readonly affection: number; readonly factor: number}[] = [{affection: 15, factor: 2}, {affection: 10, factor: 1.5}];
 export type OrderId = keyof typeof ORDERS;

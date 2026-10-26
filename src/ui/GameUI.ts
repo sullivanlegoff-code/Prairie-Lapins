@@ -633,7 +633,9 @@ export class GameUI {
         const card = this.card(BUILDING_NAMES[kind], `${utility[kind]} · empreinte 4 × 4`);
         if (kind === 'agency') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(agencyThumbnail()); card.append(node('p', `Dès le niveau ${TRAVEL.unlockLevel}, ${HOST_NAME} envoie tes lapins en vacances : voyages de 3 à 10 heures, cœurs en souvenir au retour.`, 'small')); }
         if (kind === 'statue') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(statueThumbnail()); card.append(node('p', `La Statue de l’Affection récompense tes soins : sans elle, l’affection s’arrête à ${AFFECTION_STATUE.cap}. Avec elle, chaque lapin peut atteindre 20, et deux parents d’affection 15 doublent leurs chances d’épique et de légendaire.`, 'small')); }
-        this.button(card, `Placer · ${BALANCE.buildings[kind].price} pattes`, () => this.beginPlacement(kind), buildingReason(s, kind, true)); this.content.append(card);
+        if (kind === 'statue') card.append(node('p', `Ton solde : ${heartAmount(s.hearts)}. Économise tes cœurs pour la construire.`, 'small'));
+        const price = kind === 'statue' ? heartAmount(AFFECTION_STATUE.heartPrice) : `${BALANCE.buildings[kind].price} pattes`;
+        this.button(card, `Placer · ${price}`, () => this.beginPlacement(kind), buildingReason(s, kind, true)); this.content.append(card);
       }
       }
     } else for (const species of SHOP_SPECIES) {
@@ -665,21 +667,22 @@ export class GameUI {
   }
   private renderPlacement(s: GameState): void {
     const p = this.placement; if (!p) { this.close(); return; }
-    const price = p.kind === 'enclosure' ? habitatPrice(p.habitatType ?? 'universal') : BALANCE.buildings[p.kind].price;
+    const price = p.kind === 'statue' ? heartAmount(AFFECTION_STATUE.heartPrice) : `${p.kind === 'enclosure' ? habitatPrice(p.habitatType ?? 'universal') : BALANCE.buildings[p.kind].price} pattes`;
     const name = p.kind === 'enclosure' ? HABITATS[p.habitatType ?? s.buildings.find(b => b.id === p.movingId)?.habitat?.type ?? 'universal'].name : BUILDING_NAMES[p.kind];
     this.title.textContent = `${p.movingId ? 'Déplacer' : 'Placer'} : ${name}`;
+    if (p.kind === 'statue' && !p.movingId) this.content.append(node('p', `Prix : ${price} · ton solde : ${heartAmount(s.hearts)}. Le paiement a lieu seulement quand tu confirmes l’emplacement.`, 'small'));
     // The footprint shown is the building's real one: an enlarged enclosure keeps its tier when it moves.
     const size = habitatFootprint(s.buildings.find(b => b.id === p.movingId)?.footprintTier), footprint = `${size.width} × ${size.depth}`;
     this.content.append(node('p', `Touche un petit carré pour choisir le coin de l’empreinte ${footprint}. Déplacement par pas d’un carré. Glisse ou pince pour ajuster la vue.`));
     this.content.append(node('p', p.cell ? `Grille fine : (${p.cell.x}, ${p.cell.y}) · empreinte ${footprint}` : 'Aucune case sélectionnée.', 'badge'));
     const reason = placementReason(s, p);
     this.content.append(node('p', !p.cell ? 'Choisis une destination.' : reason ? `× ${reason}` : `✓ Emplacement valide · empreinte ${footprint}`, !p.cell ? 'placement-pending' : reason ? 'placement-invalid' : 'placement-valid'));
-    this.button(this.content, p.movingId ? 'Confirmer le déplacement · gratuit' : p.starter ? 'Placer gratuitement' : this.onboardingActive ? `Confirmer · ${price} pattes` : `Acheter et placer · ${price} pattes`, () => {
+    this.button(this.content, p.movingId ? 'Confirmer le déplacement · gratuit' : p.starter ? 'Placer gratuitement' : this.onboardingActive ? `Confirmer · ${price}` : `Acheter et placer · ${price}`, () => {
       if (this.placement !== p || !p.cell) return;
       const cmd: Command = p.movingId ? {type: 'moveBuilding', id: p.movingId, ...p.cell} : p.starter && (p.kind==='nest'||p.kind==='nursery') ? {type:'placeStarterBuilding',kind:p.kind,...p.cell} : {type: 'buyBuilding', kind: p.kind, habitatType: p.habitatType, ...p.cell};
       this.execute(cmd, p.movingId ? 'Bâtiment déplacé.' : `${name} construit.`, value => this.finishPurchase('building', p.movingId ?? String(value)));
     }, placementReason(s, p));
-    if (!p.movingId && !p.starter && p.cell) this.complement(this.content, s, {type: 'buyBuilding', kind: p.kind, habitatType: p.habitatType, ...p.cell},
+    if (p.kind !== 'statue' && !p.movingId && !p.starter && p.cell) this.complement(this.content, s, {type: 'buyBuilding', kind: p.kind, habitatType: p.habitatType, ...p.cell},
       `Acheter et placer : ${name} (grille fine ${p.cell.x}, ${p.cell.y})`, `${name} construit.`,
       value => this.finishPurchase('building', p.movingId ?? String(value)));
     this.button(this.content, 'Annuler · aucun coût', () => this.cancelPurchase(), null, true);

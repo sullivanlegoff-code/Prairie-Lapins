@@ -50,7 +50,7 @@ Une partie neuve commence avec **350 pattes, 0 nourriture et 12 cœurs**, Paille
 | Amélioration N3 | 10 cœurs |
 | Extensions successives | 600 / 1 800 / 4 500 / 9 000 / 16 000 / 26 000 / 40 000 / 60 000 ; niveaux requis conservés |
 | Ferme / Cuisine | 60 / 100 pattes ; deux fermes maximum |
-| Statue de l’Affection | 30 000 pattes, niveau 15, une seule ; vendue parmi les bâtiments |
+| Statue de l’Affection | 60 cœurs exclusivement, niveau 15, une seule ; vendue parmi les bâtiments, placement confirmé avant paiement |
 
 ### Nourriture et ferme (25 octobre 2026)
 

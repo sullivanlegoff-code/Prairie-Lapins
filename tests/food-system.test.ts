@@ -19,12 +19,12 @@ const free = (s: GameState) => { for (let y = 0; y < 48; y++) for (let x = 0; x 
 
 describe('the Statue de l’Affection', () => {
   it('is sold among the buildings from level 15, once, at its price', () => {
-    const early = atLevel(14); early.pattes = 100_000;
+    const early = atLevel(14); early.pattes = 100_000; early.hearts = 100;
     expect(act(early, {type: 'buyBuilding', kind: 'statue', ...free(early)}, 0)).toMatchObject({ok: false, reason: 'LEVEL_REQUIRED'});
-    let s = atLevel(AFFECTION_STATUE.level); s.pattes = BALANCE.buildings.statue.price - 1; const at = free(s);
-    expect(act(s, {type: 'buyBuilding', kind: 'statue', ...at}, 0)).toMatchObject({ok: false, reason: 'NOT_ENOUGH_PATTES'});
-    s.pattes = 2 * BALANCE.buildings.statue.price;
-    s = run(s, {type: 'buyBuilding', kind: 'statue', ...at}); expect(s.pattes).toBe(BALANCE.buildings.statue.price);
+    let s = atLevel(AFFECTION_STATUE.level); s.pattes = 100_000; s.hearts = AFFECTION_STATUE.heartPrice - 1; const at = free(s);
+    expect(act(s, {type: 'buyBuilding', kind: 'statue', ...at}, 0)).toMatchObject({ok: false, reason: 'NOT_ENOUGH_HEARTS'});
+    s.pattes = 0; s.hearts = 2 * AFFECTION_STATUE.heartPrice;
+    s = run(s, {type: 'buyBuilding', kind: 'statue', ...at}); expect(s.hearts).toBe(AFFECTION_STATUE.heartPrice); expect(s.pattes).toBe(0);
     expect(act(s, {type: 'buyBuilding', kind: 'statue', ...free(structuredClone(s))}, 0)).toMatchObject({ok: false, reason: 'BUILDING_LIMIT'});
     expect(affectionCap(s)).toBe(BALANCE.maxAffection);
     expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: s});

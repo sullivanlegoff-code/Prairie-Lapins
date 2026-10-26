@@ -8,8 +8,8 @@
     "25": 30,
     "30": 48
   },
-  "statueDay": 12,
-  "method": "Seed 20261025; real act/advance; 3 sessions/day at 08/13/20, <=45 commands and <=8 meals/session; two farms, each sowing the best-liked unlocked crop ripe by the next visit; the statue as soon as affordable; collection-first parent pairs; no Cuisine or paid recipes; Hearts for permanent farm, agency and habitat upgrades. Day snapshots just before next 08:00. Tutorial is the first session.",
+  "statueDay": 7,
+  "method": "Seed 20261025; real act/advance; 3 sessions/day at 08/13/20, <=45 commands and <=8 meals/session; two farms, each sowing the best-liked unlocked crop ripe by the next visit; save Hearts from level 13 for the 60-Heart statue plus six in reserve, buy from level 15; collection-first parent pairs; no Cuisine or paid recipes; Hearts for permanent farm, agency and habitat upgrades after the statue reserve. Counter reserves: 3000 coins and 6000 food. Day snapshots just before next 08:00. Tutorial is the first session.",
   "curve": {
     "initialLevel": 1,
     "maximumLevel": 30,
@@ -35,9 +35,9 @@
     "10": 2.5,
     "15": 6.5,
     "20": 15,
-    "22": 19,
-    "25": 29,
-    "30": 47.208
+    "22": 19.5,
+    "25": 29.5,
+    "30": 47.5
   },
   "rows": [
     {
@@ -242,9 +242,9 @@
     },
     {
       "step": "7 j",
-      "pattes": 12051,
-      "grass": 1620,
-      "hearts": 12,
+      "pattes": 5044,
+      "grass": 720,
+      "hearts": 65,
       "level": 15,
       "species": 17,
       "affection": {
@@ -275,8 +275,8 @@
       "storedPattes": 5243,
       "remaining": {
         "commons": [],
-        "extensions": 4,
-        "extensionCost": 142000,
+        "extensions": 5,
+        "extensionCost": 151000,
         "farms": 0,
         "kitchen": false,
         "habitatUpgrades": 5,
@@ -327,14 +327,14 @@
     },
     {
       "step": "20 j",
-      "pattes": 6526,
-      "grass": 709,
-      "hearts": 179,
+      "pattes": 6974,
+      "grass": 37,
+      "hearts": 183,
       "level": 22,
-      "species": 30,
+      "species": 28,
       "affection": {
-        "≥10": 27,
-        "≥15": 6,
+        "≥10": 25,
+        "≥15": 7,
         "max": 20,
         "rabbits": 41
       },
@@ -357,29 +357,29 @@
         "phoenix",
         "pic-pic",
         "egiiipte",
-        "magicien",
-        "boudinet",
         "tunini",
+        "boudinet",
+        "magicien",
         "dinono",
-        "maxou",
-        "amethyste",
         "plume",
-        "dadi",
+        "amethyste",
         "glassofeu",
+        "maxou",
         "fluffy",
-        "piment",
-        "orange"
+        "piment"
       ],
-      "storedPattes": 12227,
+      "storedPattes": 11735,
       "remaining": {
         "commons": [],
-        "extensions": 2,
-        "extensionCost": 100000,
+        "extensions": 3,
+        "extensionCost": 126000,
         "farms": 0,
         "kitchen": false,
         "habitatUpgrades": 7,
         "paidRecipes": [
           "dragon",
+          "dadi",
+          "orange",
           "requin"
         ]
       },
@@ -421,9 +421,9 @@
     },
     {
       "step": "50 j",
-      "pattes": 8386,
-      "grass": 464,
-      "hearts": 760,
+      "pattes": 5104,
+      "grass": 1135,
+      "hearts": 759,
       "level": 30,
       "species": 32,
       "affection": {
@@ -451,29 +451,29 @@
         "phoenix",
         "pic-pic",
         "egiiipte",
-        "magicien",
-        "boudinet",
         "tunini",
+        "boudinet",
+        "magicien",
         "dinono",
-        "maxou",
-        "amethyste",
         "plume",
-        "dadi",
+        "amethyste",
         "glassofeu",
+        "maxou",
         "fluffy",
         "piment",
         "orange",
+        "dadi",
         "requin",
         "dragon"
       ],
-      "storedPattes": 18071,
+      "storedPattes": 17915,
       "remaining": {
         "commons": [],
-        "extensions": 2,
-        "extensionCost": 100000,
+        "extensions": 3,
+        "extensionCost": 126000,
         "farms": 0,
         "kitchen": false,
-        "habitatUpgrades": 6,
+        "habitatUpgrades": 7,
         "paidRecipes": []
       },
       "decorationBudget": {
@@ -520,11 +520,11 @@
     "startOrder": 419,
     "initiationAid": 3,
     "collectOrder": 417,
-    "feed": 1615,
+    "feed": 1600,
     "breed": 210,
     "transferBirth": 1,
     "welcome": 209,
-    "collectIncome": 1903,
+    "collectIncome": 1871,
     "claimDailyMission": 209,
     "buyDecoration": 1,
     "claimHearts": 69,
@@ -533,7 +533,7 @@
     "claimDailyBonus": 69,
     "upgradeFarm": 2,
     "release": 166,
-    "exchangeForHeart": 910
+    "exchangeForHeart": 953
   },
-  "totalActions": 6263
+  "totalActions": 6259
 }

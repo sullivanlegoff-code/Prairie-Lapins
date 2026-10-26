@@ -64,7 +64,9 @@ export function buildingReason(s: GameState, kind: BuildingKind, ignorePrice = f
   const config = BALANCE.buildings[kind];
   if (config.maximum !== null && s.buildings.filter(b => b.kind === kind).length >= config.maximum) return REFUSALS.BUILDING_LIMIT;
   if (s.buildings.length >= s.acquiredParcels.length * ISLAND.parcelArea) return 'Aucune case libre. Agrandis la prairie.';
-  return ignorePrice ? null : moneyReason(s, kind === 'enclosure' ? habitatPrice(habitatType) : config.price);
+  if (ignorePrice) return null;
+  if (kind === 'statue') return s.hearts < AFFECTION_STATUE.heartPrice ? REFUSALS.NOT_ENOUGH_HEARTS : null;
+  return moneyReason(s, kind === 'enclosure' ? habitatPrice(habitatType) : config.price);
 }
 export type Placement = {kind: BuildingKind; movingId?: string; starter?: boolean; habitatType?: HabitatType; cell: {x: number; y: number} | null};
 export function placementReason(s: GameState, placement: Placement): string | null {
