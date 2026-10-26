@@ -126,13 +126,15 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
           requireRule(command.location.kind === 'outside', 'INVALID_CHOICE');
           const placement = catalogDecorationPlacementReason(s, command.catalogId, command.location); requireRule(!placement, placement ?? 'INVALID_CHOICE');
         }
-        pay(DECORATIONS[command.catalogId].price); value = id('decoration');
-        s.decorations.push({id: value, catalogId: command.catalogId, paidPrice: DECORATIONS[command.catalogId].price, location: command.location ? structuredClone(command.location) : {kind: 'inventory'}, placementXpProcessed: !!command.location});
+        const definition = DECORATIONS[command.catalogId];
+        if (definition.heartPrice !== undefined) s.hearts -= definition.heartPrice; else pay(definition.price); value = id('decoration');
+        s.decorations.push({id: value, catalogId: command.catalogId, ...(definition.heartPrice !== undefined ? {paidHearts: definition.heartPrice} : {paidPrice: definition.price}), location: command.location ? structuredClone(command.location) : {kind: 'inventory'}, placementXpProcessed: !!command.location});
         if (command.location) decorationXp(command.catalogId); break;
       }
       case 'sellDecoration': {
         const index = s.decorations.findIndex(d => d.id === command.id);
         requireRule(index >= 0, 'NOT_FOUND');
+        requireRule(s.decorations[index].paidHearts === undefined, 'INVALID_CHOICE');
         const amount = ownedDecorationResalePrice(s.decorations[index]);
         credit('pattes', amount);
         s.decorations.splice(index, 1); value = amount; break;
@@ -176,20 +178,20 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       }
       case 'welcomeAgency': {
         requireRule(agencyBuilding(s), 'MISSING_BUILDING');
-        s.travel = {welcomed: true, trip: s.travel?.trip ?? null}; break;
+        s.travel = {welcomed: true, trips: s.travel?.trips ?? []}; break;
       }
       case 'startTrip': {
-        requireRule(agencyBuilding(s), 'MISSING_BUILDING'); requireRule(!s.travel?.trip, 'BUSY');
+        requireRule(agencyBuilding(s), 'MISSING_BUILDING'); requireRule((s.travel?.trips.length ?? 0) < (agencyBuilding(s)!.agencyLevel ?? 1), 'BUSY');
         const rabbit = s.rabbits.find(r => r.id === command.rabbitId); requireRule(rabbit, 'NOT_FOUND');
-        requireRule(!busy(rabbit.id), 'PARENT_BUSY');
+        requireRule(!travelling(s, rabbit.id), 'TRAVELING'); requireRule(!busy(rabbit.id), 'PARENT_BUSY');
         const roll = rng(); requireRule(Number.isFinite(roll) && roll >= 0 && roll < 1, 'INVALID_RANDOM');
         const {destination, hours} = drawTrip(roll); requireRule(Number.isSafeInteger(time + hours * HOUR), 'INVALID_TIME');
-        s.travel = {welcomed: s.travel?.welcomed ?? false, trip: {rabbitId: rabbit.id, destination, startedAt: time, endsAt: time + hours * HOUR, hearts: tripHearts(hours)}};
+        s.travel = {welcomed: s.travel?.welcomed ?? false, trips: [...(s.travel?.trips ?? []), {rabbitId: rabbit.id, destination, startedAt: time, endsAt: time + hours * HOUR, hearts: tripHearts(hours), ...(agencyBuilding(s)!.agencyLevel ? {grass: hours * 25} : {})}]};
         value = destination; break;
       }
       case 'claimTrip': {
-        const trip = s.travel?.trip; requireRule(trip && trip.endsAt <= time, 'NOT_READY');
-        credit('hearts', trip.hearts); s.travel = {welcomed: s.travel!.welcomed, trip: null}; value = trip.hearts; break;
+        const trip = s.travel?.trips.find(t => t.rabbitId === command.rabbitId); requireRule(trip && trip.endsAt <= time, 'NOT_READY');
+        credit('hearts', trip.hearts); credit('grass', trip.grass ?? 0); s.travel!.trips = s.travel!.trips.filter(t => t.rabbitId !== command.rabbitId); value = trip.hearts; break;
       }
       case 'exchangeForHeart': {
         requireRule(command.resource === 'pattes' || command.resource === 'grass', 'INVALID_CHOICE');
@@ -272,6 +274,17 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         nursery.nursery.babies.push({slot, birth, startedAt: time, readyAt: time + duration});
         nest.breeding = null; value = birth.id; break;
       }
+      case 'upgradeFarm': {
+        const b = building(command.id, 'farm'); requireRule(!b.farmLevel, 'STALE_ACTION');
+        requireRule(playerLevel(s) >= ORDERS.fanes.level, 'LEVEL_REQUIRED');
+        requireRule(s.hearts >= 30, 'NOT_ENOUGH_HEARTS'); s.hearts -= 30; b.farmLevel = 2; break;
+      }
+      case 'upgradeAgency': {
+        const b = building(command.id, 'agency'), level = b.agencyLevel ?? 1;
+        requireRule(level === command.fromLevel, 'STALE_ACTION'); requireRule(level < 3, 'INVALID_CHOICE');
+        const cost = level === 1 ? 40 : 120;
+        requireRule(s.hearts >= cost, 'NOT_ENOUGH_HEARTS'); s.hearts -= cost; b.agencyLevel = level === 1 ? 2 : 3; break;
+      }
       case 'upgradeHabitat': {
         const b = building(command.id, 'enclosure');
         requireRule(b.habitat && b.habitat.level === command.fromLevel, 'STALE_ACTION');
@@ -320,6 +333,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         const b = building(command.id, 'farm'); requireRule(!b.order, 'BUSY');
         requireRule(Object.hasOwn(ORDERS, command.recipe), 'INVALID_CHOICE');
         const recipe = ORDERS[command.recipe]; requireRule(playerLevel(s) >= recipe.level, 'LEVEL_REQUIRED');
+        requireRule(b.farmLevel === 2 || ORDERS[command.recipe].level < ORDERS.fanes.level, 'INVALID_CHOICE');
         requireRule(Number.isSafeInteger(time + recipe.duration), 'INVALID_TIME'); pay(recipe.cost);
         if (recipe.duration >= HOUR) s.missions.nightOrderStarted = true; // The « longer crop » main mission.
         b.order = {recipe: command.recipe, startedAt: time, endsAt: time + recipe.duration, grass: recipe.grass, duration: recipe.duration};

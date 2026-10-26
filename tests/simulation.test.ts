@@ -139,6 +139,7 @@ describe('farming and affection', () => {
   it.each(Object.keys(ORDERS) as (keyof typeof ORDERS)[])('runs exactly one %s farm order', recipe => {
     let s = run(createGame(0), {type: 'buyBuilding', kind: 'farm', x: 22, y: 20}); const id = s.buildings[1].id;
     s.pattes = 1000; s.progression = {totalXp: cumulativeLevelXp(ORDERS[recipe].level), rewardedThroughLevel: ORDERS[recipe].level};
+    s.buildings.find(b => b.id === id)!.farmLevel = 2;
     s = run(s, {type: 'startOrder', id, recipe}); expect(s.pattes).toBe(1000 - ORDERS[recipe].cost);
     refuses(s, {type: 'startOrder', id, recipe}, 'BUSY');
     refuses(s, {type: 'collectOrder', id}, 'NOT_READY', ORDERS[recipe].duration - 1);

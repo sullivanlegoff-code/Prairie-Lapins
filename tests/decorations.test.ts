@@ -12,7 +12,7 @@ import {scenarioState} from '../src/dev/scenarios';
 import {HOUR} from '../src/config/balance';
 
 import {toV11} from './island-remap';
-function rich() {const s = createGame(0);const level=Math.max(...DECORATION_IDS.map(id=>requiredDecorationLevel(id)));s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level}; s.pattes = 100_000; return s;}
+function rich() {const s = createGame(0);const level=Math.max(...DECORATION_IDS.map(id=>requiredDecorationLevel(id)));s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level}; s.pattes = 100_000; s.hearts = 1000; return s;}
 function run(s: GameState, command: Command) {const r = act(s, command, s.lastSimulatedAt); if (!r.ok) throw Error(r.reason); return r.state;}
 function buy(s: GameState, catalogId: DecorationId = 'bush') {return run(s, {type: 'buyDecoration', catalogId});}
 function pose(s: GameState, location: DecorationLocation, id = s.decorations.at(-1)!.id) {return run(s, {type: 'placeDecoration', id, location});}
@@ -50,10 +50,10 @@ describe('decoration ownership and atomic commands', () => {
     m.fail.key='';expect(c.perform({type:'buyDecoration',catalogId:'bush',location:{kind:'outside',x:25,y:23,rotation:0}}).ok).toBe(true);
     const loaded=new GameController(m.storage,()=>0);expect(loaded.getSnapshot().state!.decorations).toHaveLength(1);c.dispose();loaded.dispose();
   });
-  it.each(DECORATION_IDS)('buys %s at its central pattes price without bonuses or birth RNG', id => {
+  it.each(DECORATION_IDS)('buys %s at its configured currency price without bonuses or birth RNG', id => {
     const s = rich(), rng = vi.fn(() => {throw Error('No birth draw');}), r = act(s, {type: 'buyDecoration', catalogId: id}, 0, rng);
     expect(r.ok).toBe(true); if (!r.ok) return;
-    expect(r.state).toEqual({...s, pattes: s.pattes - DECORATIONS[id].price, nextId: 5, decorations: [{id: 'decoration-4', catalogId: id, paidPrice: DECORATIONS[id].price, location: {kind: 'inventory'}, placementXpProcessed: false}]});
+    expect(r.state).toEqual({...s, pattes: s.pattes - (DECORATIONS[id].heartPrice ? 0 : DECORATIONS[id].price), hearts: s.hearts - (DECORATIONS[id].heartPrice ?? 0), nextId: 5, decorations: [{id: 'decoration-4', catalogId: id, ...(DECORATIONS[id].heartPrice ? {paidHearts: DECORATIONS[id].heartPrice} : {paidPrice: DECORATIONS[id].price}), location: {kind: 'inventory'}, placementXpProcessed: false}]});
     expect(r.value).toBe('decoration-4'); expect(rng).not.toHaveBeenCalled(); expect(s.decorations).toEqual([]);
     expect(decodeGame(encodeGame(r.state))).toEqual({ok: true, state: r.state});
   });
@@ -132,7 +132,7 @@ describe('saves and four-route boundaries', () => {
     expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: s});
     if (id === 'decoratedHabitat' || id === 'decorationDense') expect(s.rabbits.filter(r => r.enclosureId === 'building-1')).toHaveLength(7);
     const m = memory(encodeGame(s)), c = new GameController(m.storage, () => 0), exported = c.exportGame();
-    if (!exported.ok) throw Error(exported.reason); expect(JSON.parse(exported.json).version).toBe(18);
+    if (!exported.ok) throw Error(exported.reason); expect(JSON.parse(exported.json).version).toBe(19);
     expect(c.restart(true).ok).toBe(true); const p = c.prepareImport(exported.json); if (!p.ok) throw Error(p.reason);
     expect(c.confirmImport(p.token, true).ok).toBe(true); expect(new GameController(m.storage, () => 0).getSnapshot().state).toEqual(s);
   }, 20000);
@@ -167,6 +167,7 @@ describe('saves and four-route boundaries', () => {
 describe('atomic decoration resale', () => {
   it.each(DECORATION_IDS)('sells exactly one inventory %s with the configured pattes refund only', catalogId => {
     const s = buy(buy(rich(), catalogId), catalogId), before = structuredClone(s);
+    if (DECORATIONS[catalogId].heartPrice) { refused(s, {type: 'sellDecoration', id: s.decorations[0].id}, 'INVALID_CHOICE'); expect(s).toEqual(before); return; }
     const sold = run(s, {type: 'sellDecoration', id: s.decorations[0].id});
     expect(sold).toEqual({...before, pattes: before.pattes + decorationResalePrice(catalogId), decorations: [before.decorations[1]]});
     expect(s).toEqual(before);

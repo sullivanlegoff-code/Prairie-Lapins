@@ -5,7 +5,7 @@ const H=3600000, MIN=60000;
 // First session starts at 08:00. Offsets 0, 5h, 12h then 24h give 08/13/20, including a 12h night.
 // At most 45 successful commands/session (about 6 seconds/command); eight meals maximum.
 // Collection first: diversify parents, keep at least one of every species, release low-affection duplicates
-// when a home is full. Buy the second farm early; no Cuisine rewards or paid recipes; Hearts only for permanent habitat upgrades.
+// when a home is full. Buy the second farm early; no Cuisine rewards or paid recipes; Hearts for permanent farm, agency and habitat upgrades.
 let s=sim.createGame(0),now=0,seed=20261025,used=0,totalActions=0,statueDay=null;
 const rng=()=>((seed=Math.imul(seed,1664525)+1013904223>>>0)/4294967296);
 const milestones={},rows=[],counts={};
@@ -28,7 +28,7 @@ run({type:'initiationAid',id:'building-4',stage:'breeding',jobKey:s.initiation.b
 run({type:'initiationAid',id:'building-5',stage:'growth',jobKey:s.initiation.growth,birthId:s.initiation.birthId},true);const baby=s.buildings.find(b=>b.kind==='nursery').nursery.babies[0];run({type:'welcome',birthId:baby.birth.id,enclosureId:room(baby.birth.species).id},true);claim();
 const tutorial={pattes:s.pattes,grass:s.grass,hearts:s.hearts,level:level(),xp:s.progression.totalXp};
 function remaining(){return {commons:balance.SHOP_SPECIES.filter(id=>!s.discovered.includes(id)),extensions:8-(s.acquiredParcels.length-1),extensionCost:land.EXTENSION_PRICES.slice(s.acquiredParcels.length-1).reduce((a,b)=>a+b,0),farms:2-s.buildings.filter(b=>b.kind==='farm').length,kitchen:!s.buildings.some(b=>b.kind==='kitchen'),habitatUpgrades:s.buildings.filter(b=>b.habitat&&b.habitat.level<3).length,paidRecipes:balance.SPECIES_IDS.filter(id=>balance.SPECIES[id].acquisition.some(a=>a.kind==='recipe'&&a.knowledgePrice!==undefined)&&!s.recipeBook.includes(id)&&!s.discovered.includes(id))};}
-function decorationBudget(){const missing=dec.DECORATION_IDS.filter(id=>!s.decorations.some(d=>d.catalogId===id));return {models:missing.length,pattes:missing.reduce((sum,id)=>sum+dec.DECORATIONS[id].price,0)};}
+function decorationBudget(){const missing=dec.DECORATION_IDS.filter(id=>!s.decorations.some(d=>d.catalogId===id));return {models:missing.length,pattes:missing.reduce((sum,id)=>sum+(dec.DECORATIONS[id].heartPrice?0:dec.DECORATIONS[id].price),0),hearts:missing.reduce((sum,id)=>sum+(dec.DECORATIONS[id].heartPrice??0),0)};}
 const affectionSpread=v=>({'≥10':v.rabbits.filter(r=>r.affection>=10).length,'≥15':v.rabbits.filter(r=>r.affection>=15).length,max:Math.max(...v.rabbits.map(r=>r.affection)),rabbits:v.rabbits.length});
 function snapshot(label,t){const v=sim.advance(s,t);rows.push({step:label,pattes:v.pattes,grass:v.grass,hearts:v.hearts,level:level(),species:v.discovered.length,affection:affectionSpread(v),speciesIds:[...v.discovered],storedPattes:Math.floor(v.buildings.reduce((a,b)=>a+b.incomeUnits,0)/H),remaining:remaining(),decorationBudget:decorationBudget(),mainMissionsClaimed:[...s.missions.claimed]});}
 snapshot('10 min',10*MIN);
@@ -37,6 +37,9 @@ for(let day=0;day<70;day++){
  for(const b of s.buildings.filter(b=>b.kind==='enclosure'))run({type:'collectIncome',id:b.id});
  for(const b of s.buildings.filter(b=>b.order&&b.order.endsAt<=now))run({type:'collectOrder',id:b.id});
  run({type:'claimHearts'});claim();
+ for(const b of s.buildings.filter(b=>b.kind==='farm'&&!b.farmLevel))run({type:'upgradeFarm',id:b.id});
+ for(const b of s.buildings.filter(b=>b.kind==='agency'&&(b.agencyLevel??1)<3))run({type:'upgradeAgency',id:b.id,fromLevel:b.agencyLevel??1});
+
  for(const b of s.buildings.filter(b=>b.nursery))for(const baby of [...b.nursery.babies].filter(b=>b.readyAt<=now)){const dest=home(baby.birth.species);if(dest)run({type:'welcome',birthId:baby.birth.id,enclosureId:dest.id});}
  const nest=s.buildings.find(b=>b.kind==='nest');if(nest.breeding?.endsAt<=now)run({type:'transferBirth',id:nest.id,birthId:nest.breeding.birth.id});claim();
  if(s.acquiredParcels.length<9&&s.pattes>=land.extensionPrice(s)+800)run({type:'expand',parcelId:land.purchasableParcels(s)[0],expectedCost:land.extensionPrice(s)});
@@ -50,7 +53,7 @@ for(let day=0;day<70;day++){
  if(!s.buildings.some(b=>b.breeding)){const parents=s.rabbits.filter(r=>r.affection>=2);let best=null,bestScore=-Infinity;for(let a=0;a<parents.length;a++)for(let b=a+1;b<parents.length;b++){const p=breeding.breedingPool(s,parents[a].species,parents[b].species,parents[a].affection,parents[b].affection);if(!p.total)continue;const chance=Object.entries(p.weights).filter(([id])=>!s.discovered.includes(id)).reduce((a,[,v])=>a+v,0)/p.total;const score=chance+(p.eligible?0.001:0);if(score>bestScore){bestScore=score;best=[parents[a].id,parents[b].id];}}if(best)run({type:'breed',parents:best});}
  // The best-liked crop that is unlocked, affordable and ripe by the next visit (gaps of 5, 7 and 12 hours).
  const gap=({0:5,5:7,12:12})[hour]*H;
- for(const b of s.buildings.filter(b=>b.kind==='farm'&&!b.order)){const recipe=Object.keys(balance.ORDERS).filter(id=>{const c=balance.ORDERS[id];return c.duration<=gap&&c.level<=level()&&c.cost<=s.pattes;}).at(-1);if(recipe)run({type:'startOrder',id:b.id,recipe});}
+ for(const b of s.buildings.filter(b=>b.kind==='farm'&&!b.order)){const recipe=Object.keys(balance.ORDERS).filter(id=>{const c=balance.ORDERS[id];return (b.farmLevel===2||c.level<balance.ORDERS.fanes.level)&&c.duration<=gap&&c.level<=level()&&c.cost<=s.pattes;}).at(-1);if(recipe)run({type:'startOrder',id:b.id,recipe});}
  // One optional model/day, only for the main decoration mission. Never buy/sell for XP.
  if(!s.missions.claimed.includes('first-decoration')&&s.pattes>500){const catalogId=dec.DECORATION_IDS[0];outer:for(let y=32;y<48;y++)for(let x=0;x<16;x++)if(run({type:'buyDecoration',catalogId,location:{kind:'outside',x,y,rotation:0}}))break outer;}
  // Paille's counter: keep a reserve of 3 000 pattes (more while saving for the statue) and 6 000 food, exchange the surplus for Hearts.
@@ -62,7 +65,7 @@ for(let day=0;day<70;day++){
  if([1,3,7,20,50].includes(day+1))snapshot(`${day+1} j`,(day+1)*24*H-1);
 }
 const calendarMilestones=Object.fromEntries(Object.entries(milestones).map(([n,d])=>[n,Math.floor(d)+1]));
-const report={calendarMilestones,statueDay,method:'Seed 20261025; real act/advance; 3 sessions/day at 08/13/20, <=45 commands and <=8 meals/session; two farms, each sowing the best-liked unlocked crop ripe by the next visit; the statue as soon as affordable; collection-first parent pairs; no Cuisine or paid recipes; Hearts only for permanent habitat upgrades. Day snapshots just before next 08:00. Tutorial is the first session.',curve:(await import('../src/config/progression.ts')).PROGRESSION.curve,tutorial,milestones,rows,actions:counts,totalActions};
+const report={calendarMilestones,statueDay,method:'Seed 20261025; real act/advance; 3 sessions/day at 08/13/20, <=45 commands and <=8 meals/session; two farms, each sowing the best-liked unlocked crop ripe by the next visit; the statue as soon as affordable; collection-first parent pairs; no Cuisine or paid recipes; Hearts for permanent farm, agency and habitat upgrades. Day snapshots just before next 08:00. Tutorial is the first session.',curve:(await import('../src/config/progression.ts')).PROGRESSION.curve,tutorial,milestones,rows,actions:counts,totalActions};
 writeFileSync(new URL('./progression-results.json',import.meta.url),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report,null,2));
 // Owner target (25 October 2026): level 22 in about 20 days, within 15 %.
 if(Math.abs(calendarMilestones[22]-20)>3)throw Error(`Pacing: level 22 on day ${calendarMilestones[22]}, target 20`);

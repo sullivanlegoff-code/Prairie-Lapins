@@ -20,7 +20,7 @@ import {MAX_RABBIT_NAME_LENGTH, normalizeRabbitName} from '../simulation/rabbitN
 import {HABITATS, HABITAT_TYPES, habitatLevel, habitatPrice, type HabitatType} from '../config/habitats';
 import {habitatFootprint} from '../config/habitatSizes';
 import {habitatThumbnail} from './habitatThumbnails';
-import {FARM_ART} from '../config/farmArt';
+import {FARM_ART, FARM_LEVEL_1_ART} from '../config/farmArt';
 import {NEST_ART} from '../config/nestArt';
 import {NURSERY_ART} from '../config/nurseryArt';
 import {KITCHEN_ART} from '../config/kitchenArt';
@@ -245,7 +245,7 @@ export class GameUI {
       if(info.recipe)this.button(this.content,'Consulter la recette',()=>this.openRecipe(target.id),null,true);
     } else if(target.family==='decoration'){
       const d=DECORATIONS[target.id];
-      this.content.append(this.decorationCard(target.id,`${d.price} pattes · empreinte ${d.width} × ${d.height}${d.rotates?' · rotation possible':''}`));
+      this.content.append(this.decorationCard(target.id,`${d.heartPrice !== undefined ? heartAmount(d.heartPrice) : `${d.price} pattes`} · empreinte ${d.width} × ${d.height}${d.rotates?' · rotation possible':''}`));
       this.content.append(node('p','Les exemplaires déjà possédés restent utilisables. Le niveau limite uniquement les nouveaux achats.','small'));
     } else if(target.family==='habitatPurchase')this.content.append(this.card(HABITATS[target.id].name,HABITATS[target.id].accepted));
     this.content.append(node('p',`Niveau du joueur : ${access.currentLevel} · Niveau ${access.requiredLevel} requis`,'badge'),node('p',access.historicalException?'Droit historique conservé pour cette action.':access.accessible?'Niveau suffisant. Les ressources, la compatibilité et les places restent à vérifier.':'Progresse en jouant et en réclamant tes récompenses de missions. Les cœurs ne contournent pas ce niveau.','small'));
@@ -555,7 +555,7 @@ export class GameUI {
     if (tab === 'decorations') { this.renderDecorationShop(s); return; }
     if (tab === 'habitats' || tab === 'buildings') {
       const basic = habitatLevel('universal', 1);
-      const utility: Record<BuildingKind, string> = {enclosure: `${basic.capacity} places · tous les types · stocke ${basic.cap} pattes`, farm: 'Cultive la nourriture · maximum 2', kitchen: 'Cuisine - maximum 1', statue: 'Ouvre l’affection 15 à 20 à tous tes lapins · maximum 1', agency: 'Fait voyager tes lapins · des cœurs au retour · maximum 1', nest: 'Deux parents · maximum 1', nursery: 'Une place pour grandir · maximum 1'};
+      const utility: Record<BuildingKind, string> = {enclosure: `${basic.capacity} places · tous les types · stocke ${basic.cap} pattes`, farm: 'Ferme niveau 1 : 5 cultures · maximum 2', kitchen: 'Cuisine - maximum 1', statue: 'Ouvre l’affection 15 à 20 à tous tes lapins · maximum 1', agency: 'Fait voyager tes lapins · des cœurs au retour · maximum 1', nest: 'Deux parents · maximum 1', nursery: 'Une place pour grandir · maximum 1'};
       if (tab === 'habitats') {
       const universal = this.card(HABITATS.universal.name, `${utility.enclosure} · empreinte 4 × 4`); universal.prepend(habitatThumbnail('universal'));
       if(!this.shopHabitatSpecies || stateLevelAccess(s,{family:'habitatPurchase',id:'universal'}).accessible) {
@@ -645,7 +645,7 @@ export class GameUI {
     const img = document.createElement('img'); img.src = decorationUrl(id); img.alt = DECORATIONS[id].name; icon.append(img); card.querySelector('.card-heading')!.prepend(icon); return card;
   }
   private renderDecorationShop(s: GameState): void {
-    this.content.append(node('p', 'Objets esthétiques, sans bonus. Acheter ouvre un aperçu gratuit : le paiement a lieu à la pose confirmée. Acheter pour l’inventaire est un achat immédiat sans placement. Les cœurs ne peuvent pas financer ces achats.', 'small'));
+    this.content.append(node('p', 'Objets esthétiques, sans bonus. Acheter ouvre un aperçu gratuit : le paiement a lieu à la pose confirmée. Acheter pour l’inventaire est un achat immédiat sans placement. Les objets précieux se paient en cœurs.', 'small'));
     this.content.append(node('h3', 'Décorations extérieures'));
       for (const id of DECORATION_IDS) {
         const d = DECORATIONS[id], count = s.decorations.filter(owned => owned.catalogId === id).length;
@@ -653,12 +653,12 @@ export class GameUI {
         card.dataset.catalog = id;
         const target={family:'decoration',id} as const,access=stateLevelAccess(s,target);
         const reason = access.locked ? null : purchaseDecorationReason(s, id);
-        const buy=this.button(card, `Acheter · ${d.price} pattes`, () => {
+        const buy=this.button(card, `Acheter · ${d.heartPrice !== undefined ? heartAmount(d.heartPrice) : `${d.price} pattes`}`, () => {
           this.savePurchaseOrigin(); this.placement = null; this.scene.setPlacement(null);
           this.decorationDraft = {id:'purchase-preview',catalogId:id,location:null,rotation:0};
           this.open({kind:'decorationPlacement'});
         }, reason ? REFUSALS[reason] : null);
-        const inventory=this.button(card, `Acheter pour l’inventaire · ${d.price} pattes`, () => this.confirm(`Acheter : ${d.name} ?`, `${d.price} pattes. Achat immédiat pour l’inventaire, sans placement.`, () => this.execute({type:'buyDecoration',catalogId:id}, 'Objet acheté et conservé dans ton inventaire.')), reason ? REFUSALS[reason] : null, true);
+        const inventory=this.button(card, `Acheter pour l’inventaire · ${d.heartPrice !== undefined ? heartAmount(d.heartPrice) : `${d.price} pattes`}`, () => this.confirm(`Acheter : ${d.name} ?`, `${d.heartPrice !== undefined ? heartAmount(d.heartPrice) : `${d.price} pattes`}. Achat immédiat pour l’inventaire, sans placement.`, () => this.execute({type:'buyDecoration',catalogId:id}, 'Objet acheté et conservé dans ton inventaire.')), reason ? REFUSALS[reason] : null, true);
         this.levelAction(card,[buy,inventory],s,target);
         this.content.append(card);
       }
@@ -699,7 +699,7 @@ export class GameUI {
       `Vendre ${DECORATIONS[d.catalogId].name} pour ${resale} pattes ?`,
       'Cet exemplaire sera retiré définitivement. Aucun remboursement en cœurs.',
       () => this.execute({type: 'sellDecoration', id}, value => `Objet vendu · + ${value} pattes.`, () => this.finishDecorationAction())
-    ), Number.isSafeInteger(s.pattes + resale) ? null : REFUSALS.RESOURCE_LIMIT, true).classList.add('action-danger');
+    ), d.paidHearts !== undefined ? 'Objet précieux : il ne se revend pas.' : Number.isSafeInteger(s.pattes + resale) ? null : REFUSALS.RESOURCE_LIMIT, true).classList.add('action-danger');
     this.button(this.content, 'Mon inventaire', () => this.open({kind: 'arrange'}), null, true);
   }
   private finishDecorationAction(): void {
@@ -737,13 +737,13 @@ export class GameUI {
     this.content.append(node('p', draft.catalogId ? 'Aperçu gratuit · aucun achat avant validation.' : d.location.kind === 'inventory' ? 'En cas d’annulation, l’objet reste dans ton inventaire.' : 'En cas d’annulation, l’objet reste à son emplacement actuel.', 'small'));
     if (DECORATIONS[d.catalogId].rotates) this.button(this.content, `Tourner de 90° · orientation ${draft.rotation ? 'verticale' : 'horizontale'}`, () => this.rotateDecoration(), null, true);
     const definition = DECORATIONS[d.catalogId];
-    this.content.append(node('p', `${definition.width} × ${definition.height} cases fines · ${draft.catalogId ? `${definition.price} pattes` : 'pose gratuite'}`, 'badge'));
+    this.content.append(node('p', `${definition.width} × ${definition.height} cases fines · ${draft.catalogId ? `${definition.heartPrice !== undefined ? heartAmount(definition.heartPrice) : `${definition.price} pattes`}` : 'pose gratuite'}`, 'badge'));
     const reason = draft.location ? catalogDecorationPlacementReason(s, d.catalogId, draft.location, draft.catalogId ? undefined : d.id) ?? (draft.catalogId ? purchaseDecorationReason(s,d.catalogId) : null) : null;
     const actions = node('div', '', 'decoration-placement-actions');
     const status = node('p', !draft.location ? 'Choisis une destination · aucun objet posé' : reason ? `× ${REFUSALS[reason]}` : draft.catalogId ? '✓ Emplacement valide · paiement à la validation' : '✓ Emplacement valide · pose gratuite', !draft.location ? 'placement-pending' : reason ? 'placement-invalid' : 'placement-valid');
     status.setAttribute('role', 'status'); actions.append(status);
     const choices = node('div', '', 'placement-choices'); actions.append(choices);
-    const confirm = this.button(choices, draft.catalogId ? `Acheter et placer · ${definition.price} pattes` : 'Confirmer la pose · gratuit', () => {
+    const confirm = this.button(choices, draft.catalogId ? `Acheter et placer · ${definition.heartPrice !== undefined ? heartAmount(definition.heartPrice) : `${definition.price} pattes`}` : 'Confirmer la pose · gratuit', () => {
       if (this.decorationDraft !== draft || !draft.location || draft.location.kind !== 'outside') return;
       const command: Command = draft.catalogId ? {type:'buyDecoration',catalogId:d.catalogId,location:structuredClone(draft.location)} : {type:'placeDecoration',id:d.id,location:structuredClone(draft.location)};
       this.execute(command, 'Décoration installée.', value => draft.catalogId ? this.finishPurchase('decoration',String(value)) : this.open({kind:'arrange'}));
@@ -772,7 +772,7 @@ export class GameUI {
     else if (b.kind === 'agency') this.menuPortrait(agencyThumbnail());
     else if (b.kind === 'statue') this.menuPortrait(statueThumbnail());
     else {
-      const image = node('img'); image.src = {farm: FARM_ART.url, nest: NEST_ART.url, nursery: NURSERY_ART.url, kitchen: KITCHEN_ART.url}[b.kind];
+      const image = node('img'); image.src = {farm: b.farmLevel === 2 ? FARM_ART.url : FARM_LEVEL_1_ART.url, nest: NEST_ART.url, nursery: NURSERY_ART.url, kitchen: KITCHEN_ART.url}[b.kind];
       this.menuPortrait(image);
     }
     if (b.kind === 'enclosure') {
@@ -822,11 +822,13 @@ export class GameUI {
         for (const recipe of CROP_IDS) {
           const order = ORDERS[recipe], card = this.card(order.name, `${cropDuration(order.duration)} · ${order.grass} nourriture par récolte`); card.classList.add('compact-list-card');
           card.classList.add('farm-order'); card.dataset.crop = recipe; card.querySelector('.card-heading')!.prepend(cropIcon(recipe));
+          if (!b.farmLevel && order.level >= ORDERS.fanes.level) { card.classList.add('farm-order-locked'); card.append(node('p', 'Ferme niveau 2', 'badge')); choices.append(card); continue; }
           if (level < order.level) { card.classList.add('farm-order-locked'); card.append(node('p', `Niveau ${order.level} requis`, 'badge')); choices.append(card); continue; }
           this.button(card, `Cultiver · ${order.cost} pattes`, () => this.execute({type: 'startOrder', id, recipe}, 'Culture lancée.'), moneyReason(s, order.cost));
           this.complement(card, s, {type: 'startOrder', id, recipe}, `Cultiver ${order.name.toLowerCase()} : ${order.grass} nourriture`, 'Culture lancée.'); choices.append(card);
         }
       }
+      if (!b.farmLevel) this.heartUpgrade(s, 'Agrandir la ferme', 'Le moulin et cinq nouvelles cultures : fanes de carotte, fenouil, pomme, fraise et banane.', 30, {type: 'upgradeFarm', id}, playerLevel(s) < ORDERS.fanes.level ? 'Niveau 9 requis' : null);
     } else if (b.kind === 'nest') this.renderNest(s, id);
     else if (b.kind === 'nursery') this.renderNursery(s);
     else if (b.kind === 'kitchen') this.button(this.content, 'Entrer dans la Cuisine', () => this.openCuisine());
@@ -849,31 +851,43 @@ export class GameUI {
       }).dataset.focus = 'agency-next';
       return;
     }
-    const trip = s.travel.trip, now = this.now();
-    const traveller = trip ? s.rabbits.find(r => r.id === trip.rabbitId) : undefined, name = traveller ? traveller.name || SPECIES[traveller.species].name : '';
-    if (trip && trip.endsAt <= now) {
-      this.agencyHost(`De retour ${fromPlace(trip.destination)} : voici ${name} ! Viens l’accueillir.`);
-      const card = node('article', '', 'card agency-return'); card.dataset.trip = 'ready';
-      const words = node('div', '', 'agency-bubble traveller-bubble'); words.append(node('p', `Ces vacances ${toPlace(trip.destination)} étaient super ! Je t’ai rapporté ${heartAmount(trip.hearts)} en souvenir.`));
-      const heading = node('div', '', 'card-heading'); if (traveller) heading.append(avatar(traveller.species)); heading.append(words); card.append(heading);
-      this.button(card, `Accueillir · + ${heartAmount(trip.hearts)}`, () => this.execute({type: 'claimTrip'}, value => `+ ${heartAmount(Number(value))} rapportés ${fromPlace(trip.destination)} !`)).classList.add('heart-gift');
-      this.content.append(card); return;
+    const now = this.now(), agency = s.buildings.find(b => b.kind === 'agency')!, level = agency.agencyLevel ?? 1;
+    const onlyTrip = s.travel.trips.length === 1 ? s.travel.trips[0] : undefined;
+    const onlyRabbit = onlyTrip ? s.rabbits.find(r => r.id === onlyTrip.rabbitId) : undefined;
+    const onlyName = onlyRabbit ? onlyRabbit.name || SPECIES[onlyRabbit.species].name : '';
+    this.agencyHost(onlyTrip ? onlyTrip.endsAt <= now ? `De retour ${fromPlace(onlyTrip.destination)} : voici ${onlyName} ! Viens l’accueillir.` : `${onlyName} profite de ses vacances ${toPlace(onlyTrip.destination)}. Un souvenir t’attend au retour !` : 'Où partons-nous aujourd’hui ? Choisis un voyageur : la destination reste une surprise !');
+    this.content.append(node('p', `Agence niveau ${level} : ${level} voyage${level > 1 ? 's' : ''} à la fois, de 3 à 10 heures : 1 cœur jusqu’à 4 h, 2 jusqu’à 7 h, 3 au-delà. Le voyageur garde sa place et ses revenus.${level >= 2 ? ' Chaque voyage rapporte aussi 25 nourriture par heure.' : ''}`, 'small'));
+    for (const trip of s.travel.trips) {
+      const traveller = s.rabbits.find(r => r.id === trip.rabbitId)!, name = traveller.name || SPECIES[traveller.species].name;
+      const food = trip.grass ? ` et ${trip.grass} nourriture` : '';
+      if (trip.endsAt <= now) {
+        const card = node('article', '', 'card agency-return'); card.dataset.trip = 'ready';
+        const words = node('div', '', 'agency-bubble traveller-bubble'); words.append(node('p', `Ces vacances ${toPlace(trip.destination)} étaient super ! Je t’ai rapporté ${heartAmount(trip.hearts)}${food} en souvenir.`));
+        const heading = node('div', '', 'card-heading'); heading.append(avatar(traveller.species), words); card.append(heading);
+        this.button(card, `Accueillir · + ${heartAmount(trip.hearts)}${food}`, () => this.execute({type: 'claimTrip', rabbitId: trip.rabbitId}, `+ ${heartAmount(trip.hearts)}${food} rapportés ${fromPlace(trip.destination)} !`)).classList.add('heart-gift');
+        this.content.append(card);
+      } else {
+        const card = this.card(`${name} · en voyage`, `${trip.destination} · souvenir prévu : ${heartAmount(trip.hearts)}${food}`, traveller.species); card.dataset.trip = 'away'; this.content.append(card);
+        this.timer(trip.startedAt, trip.endsAt); this.content.append(node('p', orderReadyText(trip.endsAt).replace('Prête', 'Retour'), 'order-ready-time'));
+      }
     }
-    if (trip) {
-      this.agencyHost(`${name} profite de ses vacances ${toPlace(trip.destination)}. Un souvenir t’attend au retour !`);
-      const card = this.card(`${name} · en voyage`, `${traveller?.name ? SPECIES[traveller.species].name + ' · ' : ''}${trip.destination} · souvenir prévu : ${heartAmount(trip.hearts)}`, traveller?.species); card.dataset.trip = 'away'; this.content.append(card);
-      this.timer(trip.startedAt, trip.endsAt); this.content.append(node('p', orderReadyText(trip.endsAt).replace('Prête', 'Retour'), 'order-ready-time'));
-      return;
+    if (s.travel.trips.length < level) {
+      this.content.append(node('p', 'Jusqu’à son retour, le voyageur ne pourra ni manger, ni aller au nid, ni cuisiner, ni déménager.', 'small'));
+      const list = node('div', '', 'agency-travellers'); this.content.append(list);
+      for (const r of [...s.rabbits].filter(r => !travelling(s, r.id)).sort((a, b) => b.affection - a.affection)) {
+        const card = this.card(r.name || SPECIES[r.species].name, `${r.name ? SPECIES[r.species].name + ' · ' : ''}${RARITY_NAMES[SPECIES[r.species].rarity]} · affection ${r.affection}`, r.species); card.dataset.traveller = r.id; card.classList.add('compact-list-card');
+        this.button(card, 'Partir en voyage', () => this.execute({type: 'startTrip', rabbitId: r.id}, value => `${r.name || SPECIES[r.species].name} part en vacances ${toPlace(value as Destination)} !`), parentBusy(s, r.id, now) ? busyReason(s, r.id) : null); list.append(card);
+      }
     }
-    this.agencyHost('Où partons-nous aujourd’hui ? Choisis un voyageur : la destination reste une surprise !');
-    this.content.append(node('p', 'Un voyage à la fois, de 3 à 10 heures : 1 cœur jusqu’à 4 h, 2 jusqu’à 7 h, 3 au-delà. Le voyageur garde sa place et ses revenus.', 'small'));
-    this.content.append(node('p', 'Jusqu’à son retour, le voyageur ne pourra ni manger, ni aller au nid, ni cuisiner, ni déménager.', 'small'));
-    const list = node('div', '', 'agency-travellers'); this.content.append(list);
-    for (const r of [...s.rabbits].sort((a, b) => b.affection - a.affection)) {
-      const card = this.card(r.name || SPECIES[r.species].name, `${r.name ? SPECIES[r.species].name + ' · ' : ''}${RARITY_NAMES[SPECIES[r.species].rarity]} · affection ${r.affection}`, r.species); card.dataset.traveller = r.id; card.classList.add('compact-list-card');
-      this.button(card, 'Partir en voyage', () => this.execute({type: 'startTrip', rabbitId: r.id}, value => `${r.name || SPECIES[r.species].name} part en vacances ${toPlace(value as Destination)} !`), parentBusy(s, r.id, now) ? busyReason(s, r.id) : null);
-      list.append(card);
-    }
+    if (level < 3) this.heartUpgrade(s, 'Agrandir l’agence', level === 1 ? 'Deux voyages à la fois et 25 nourriture par heure de voyage.' : 'Trois voyages à la fois, avec la nourriture au retour.', level === 1 ? 40 : 120, {type: 'upgradeAgency', id: agency.id, fromLevel: level});
+  }
+  private heartUpgrade(s: GameState, title: string, description: string, cost: number, command: Command, reason: string | null = null): void {
+    const card = this.card(title, description);
+    this.button(card, `Améliorer · ${heartAmount(cost)}`, () => {
+      this.controller.refresh(); const fresh = this.controller.getSnapshot().state; if (!fresh) return;
+      if (fresh.hearts < cost) { this.notice(REFUSALS.NOT_ENOUGH_HEARTS); return; }
+      this.confirm(`${title} ?`, `${description} Paiement : ${heartAmount(cost)} · solde : ${fresh.hearts} cœurs.`, () => this.execute(command, 'Amélioration terminée.'));
+    }, reason ?? (s.hearts < cost ? REFUSALS.NOT_ENOUGH_HEARTS : null), true).classList.add('heart-spend'); this.content.append(card);
   }
   private renderRabbit(s: GameState, id: string): void {
     const r = s.rabbits.find(r => r.id === id); if (!r) { this.close(); return; }
@@ -883,7 +897,7 @@ export class GameUI {
     essential.append(this.stats([['Affection', `${r.affection} / 20`], ['Revenu', `${rabbitIncome(r.affection, r.species)} pattes / h`]]));
     overview.append(avatar(r.species, true), essential); this.content.append(overview);
     const cost = feedCost(r.affection), away = travelling(s, id), reason = away ? 'TRAVELING' as const : feedReason(s, r.affection);
-    if (away) essential.append(node('p', `En voyage ${toPlace(s.travel!.trip!.destination)} · retour à l’agence`, 'badge rabbit-away'));
+    if (away) essential.append(node('p', `En voyage ${toPlace(s.travel!.trips.find(t => t.rabbitId === id)!.destination)} · retour à l’agence`, 'badge rabbit-away'));
     if (reason !== 'MAX_AFFECTION' && reason !== 'STATUE_REQUIRED' && reason !== 'TRAVELING') essential.append(node('p', `Prochain repas : ${cost} nourriture → affection ${r.affection + 1}, revenu ${rabbitIncome(r.affection + 1, r.species)} pattes / h.`, 'small'));
     if (r.affection === AFFECTION_STATUE.cap && reason !== 'STATUE_REQUIRED') essential.append(node('p', 'Le grand repas de l’affection 15 : un vrai festin, à la hauteur de la récompense.', 'small rabbit-milestone'));
     this.button(essential, reason === 'MAX_AFFECTION' ? 'Affection maximale' : `Nourrir · ${cost} nourriture`, () => this.execute({type: 'feed', id}, `Affection ${r.affection + 1} !`, () => this.scene.reactToFeed(id)), reason && REFUSALS[reason]).dataset.focus = 'feed';
@@ -1470,7 +1484,7 @@ export class GameUI {
     heartsButton.setAttribute('aria-label', hasGift ? 'Cœurs · cadeau disponible' : 'Cœurs');
     const due = (end: number) => !!state && state.lastSimulatedAt < end && end <= this.now();
     if (state && (cycleIndexAt(state.missions.daily.referenceAt, this.now()) > state.missions.daily.cycleIndex ||
-      due(state.nextHeartGiftAt) || due(dailyOpensAt(state)) || (!!state.travel?.trip && due(state.travel.trip.endsAt)) || state.buildings.some(b =>
+      due(state.nextHeartGiftAt) || due(dailyOpensAt(state)) || (state.travel?.trips.some(t => due(t.endsAt)) ?? false) || state.buildings.some(b =>
         !!b.order && due(b.order.endsAt) || !!b.breeding && due(b.breeding.endsAt) || b.nursery?.babies.some(baby => due(baby.readyAt))))) {
       this.controller.refresh(); return;
     }

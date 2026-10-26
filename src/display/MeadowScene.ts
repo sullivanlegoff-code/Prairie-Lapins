@@ -15,7 +15,7 @@ import {STATUE_ART} from '../config/statueArt';
 import {AGENCY_ART} from '../config/agencyArt';
 import {travelling, tripReady} from '../simulation/travel';
 import {FarmCrops} from './farmCrops';
-import {FARM_ART} from '../config/farmArt';
+import {FARM_ART, FARM_LEVEL_1_ART} from '../config/farmArt';
 import {NEST_ART} from '../config/nestArt';
 import {NURSERY_ART} from '../config/nurseryArt';
 import {NurseryOverlays} from './nurseryOverlays';
@@ -120,6 +120,7 @@ export class MeadowScene extends Phaser.Scene {
     // Only the painting of the current stage is loaded at start; a later stage loads when it is bought.
     const stage = islandStage(this.controller.getSnapshot().state?.acquiredParcels ?? []);
     if (stage) queueStage(this, stageArt(stage));
+    if (!this.textures.exists(FARM_LEVEL_1_ART.texture)) this.load.image(FARM_LEVEL_1_ART.texture, FARM_LEVEL_1_ART.url);
     if (!this.textures.exists(FARM_ART.texture)) this.load.image(FARM_ART.texture, FARM_ART.url);
     if (!this.textures.exists(NEST_ART.texture)) this.load.image(NEST_ART.texture, NEST_ART.url);
     if (!this.textures.exists(NURSERY_ART.texture)) this.load.image(NURSERY_ART.texture, NURSERY_ART.url);
@@ -334,7 +335,7 @@ export class MeadowScene extends Phaser.Scene {
     if (!this.ensureArt()) return;
     const s = this.current;
     if (s) { this.view.setColumns(visibleColumns(s)); this.updateVisibleRegions(); this.applyCamera(); }
-    const key = JSON.stringify([s?.acquiredParcels, s?.buildings.map(b => [b.id, b.kind, b.x, b.y, b.habitat, b.breeding?.parents]), s?.rabbits.map(r => [r.id, r.species, r.enclosureId]), s?.travel?.trip?.rabbitId]);
+    const key = JSON.stringify([s?.acquiredParcels, s?.buildings.map(b => [b.id, b.kind, b.x, b.y, b.habitat, b.farmLevel, b.agencyLevel, b.breeding?.parents]), s?.rabbits.map(r => [r.id, r.species, r.enclosureId]), s?.travel?.trips.map(t => t.rabbitId)]);
     if (key !== this.layoutKey) { this.layoutKey = key; this.drawGround(); this.drawBuildings(); this.drawAnimals(); }
     // The cushion overlays follow the canonical state and simulation time on every refresh (a no-op when nothing changed).
     this.nurseryOverlays?.sync(s);
@@ -428,8 +429,8 @@ export class MeadowScene extends Phaser.Scene {
     }
     this.ground.setMask(this.islandMask!);
   }
-  private buildingTexture(b: Pick<Building, 'kind' | 'habitat' | 'footprintTier'>): string {
-    if (b.kind === 'farm') return FARM_ART.texture;
+  private buildingTexture(b: Pick<Building, 'kind' | 'habitat' | 'footprintTier' | 'farmLevel'>): string {
+    if (b.kind === 'farm') return b.farmLevel === 2 ? FARM_ART.texture : FARM_LEVEL_1_ART.texture;
     if (b.kind === 'nest') return NEST_ART.texture;
     if (b.kind === 'nursery') return NURSERY_ART.texture;
     if (b.kind === 'kitchen') return KITCHEN_ART.texture;
@@ -694,7 +695,7 @@ export class MeadowScene extends Phaser.Scene {
   private drawBuildingGrid(): void {
     if(!this.current || !this.placement)return;
     const p=this.placement;
-    const moving=this.current.buildings.find(b=>b.id===p.movingId), active=p.cell?{...p.cell,footprintTier:moving?.footprintTier}:moving;
+    const moving=this.current.buildings.find(b=>b.id===p.movingId), active=p.cell?{...p.cell,footprintTier:moving?.footprintTier,farmLevel:moving?.farmLevel}:moving;
     const lines=this.placementLines(active?buildingFootprint(active):null);
     if(!p.cell){this.setGridStroke(()=>{
       this.strokePlacementContext(lines);
@@ -709,9 +710,9 @@ export class MeadowScene extends Phaser.Scene {
     const habitat=p.kind==='enclosure'?(moving?.habitat??{type:p.habitatType??'universal',level:1 as const}):null;
     const illustration=habitatArtFor(habitat ?? undefined,moving?.footprintTier);
     if(illustration&&!this.textures.exists(illustration.texture))return;
-    if(!this.buildingGhost)this.buildingGhost=this.add.image(0,0,this.buildingTexture({kind:p.kind,habitat,footprintTier:moving?.footprintTier})).setDepth(1.5).setAlpha(.55).setScale(.5);
+    if(!this.buildingGhost)this.buildingGhost=this.add.image(0,0,this.buildingTexture({kind:p.kind,habitat,footprintTier:moving?.footprintTier,farmLevel:moving?.farmLevel})).setDepth(1.5).setAlpha(.55).setScale(.5);
     const tint=valid?0xe4ffb5:0xf3a6a1;
-    this.buildingGhost.setTexture(this.buildingTexture({kind:p.kind,habitat,footprintTier:moving?.footprintTier})).setTint(tint).setVisible(!this.photo);
+    this.buildingGhost.setTexture(this.buildingTexture({kind:p.kind,habitat,footprintTier:moving?.footprintTier,farmLevel:moving?.farmLevel})).setTint(tint).setVisible(!this.photo);
     this.positionBuildingArt(this.buildingGhost, center.x, center.y, p.kind, habitatArtFor(habitat ?? undefined, moving?.footprintTier));
     // The nursery's preview carries its four cushion states, with the ghost base's own opacity and valid/invalid tint.
     if(p.kind==='nursery')this.nurseryOverlays?.showGhost(this.current,moving??null,center,{alpha:this.buildingGhost.alpha,tint},!this.photo);

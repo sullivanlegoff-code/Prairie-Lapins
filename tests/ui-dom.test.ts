@@ -751,7 +751,7 @@ describe('habitat panels and controller transactions',()=>{
     expect(c.grantLaboratoryXp(500).ok).toBe(true);
     expect(c.perform({type:'upgradeHabitat',id:'building-6',fromLevel:1}).ok).toBe(true);
     expect(state(c).buildings.find(b=>b.id==='building-6')!.habitat).toEqual({type:'paille',level:2});expect(values.get(SAVE_KEY)).toBe(normal);
-    expect(JSON.parse(values.get('prairie-lapins.development.'+SAVE_KEY)!).version).toBe(18);
+    expect(JSON.parse(values.get('prairie-lapins.development.'+SAVE_KEY)!).version).toBe(19);
   });
 });
 

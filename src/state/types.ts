@@ -7,7 +7,7 @@ import type {BuildingKind, Destination, OrderId, SpeciesId} from '../config/bala
 import type {DecorationId} from '../config/decorations';
 
 export type DecorationLocation = {kind: 'inventory'} | {kind: 'outside'; x: number; y: number; rotation: 0 | 1};
-export interface OwnedDecoration {paidPrice?: number; id: string; catalogId: DecorationId; location: DecorationLocation; /** Absent on historical exemplars: already processed. */ placementXpProcessed?: boolean}
+export interface OwnedDecoration {paidHearts?: number; paidPrice?: number; id: string; catalogId: DecorationId; location: DecorationLocation; /** Absent on historical exemplars: already processed. */ placementXpProcessed?: boolean}
 
 export interface Birth {
   id: string;
@@ -17,6 +17,7 @@ export interface Birth {
 }
 /** x/y: integer fine-grid top-left; footprint 4 × 4. */
 export interface Building {
+  farmLevel?: 2; agencyLevel?: 2 | 3;
   id: string; kind: BuildingKind; x: number; y: number;
   /** Exact numerator: one patte = HOUR units. Never round each update. */
   incomeUnits: number;
@@ -63,7 +64,7 @@ export interface GameState {
   startCourse?: 'paille-solo';
   purchaseUnlocks?: PurchaseUnlockId[];
   initiation?: Initiation;
-  version: 18;
+  version: 19;
   rewardedDecorationModels?: DecorationId[]; decorations: OwnedDecoration[]; missions: MissionState; lastSimulatedAt: number; nextId: number;
   hearts: number; nextHeartGiftAt: number;
   pattes: number; grass: number; acquiredParcels: ParcelId[];
@@ -73,10 +74,10 @@ export interface GameState {
   pityFailures: number;
   /** Paille's counter: exchanges made in daily cycle `cycle`. Absent until the first exchange. */
   market?: {cycle: number; pattes: number; grass: number};
-  /** The travel agency: Coco's first welcome given, and the trip under way (ready to welcome back once `endsAt <= now`). */
-  travel?: {welcomed: boolean; trip: Trip | null};
+  /** The travel agency: Coco's first welcome given, and the trips under way (ready to welcome back once `endsAt <= now`). */
+  travel?: {welcomed: boolean; trips: Trip[]};
 }
-export interface Trip {rabbitId: string; destination: Destination; startedAt: number; endsAt: number; hearts: number}
+export interface Trip {grass?: number; rabbitId: string; destination: Destination; startedAt: number; endsAt: number; hearts: number}
 export type Refusal = 'LEVEL_REQUIRED' | 'NO_BREEDING_RESULT' | 'PURCHASE_LOCKED' | 'DECORATION_LIMIT' | 'DECORATION_OVERLAP' | 'DECORATION_BLOCKS_BUILDING' | 'INVALID_TIME' | 'INVALID_RANDOM' | 'INVALID_CHOICE' | 'NOT_FOUND' |
   'NOT_ENOUGH_PATTES' | 'NOT_ENOUGH_GRASS' | 'INVALID_CELL' | 'CELL_OCCUPIED' |
   'BUILDING_LIMIT' | 'CAPACITY_FULL' | 'BUSY' | 'NOT_READY' | 'MAX_AFFECTION' |
@@ -122,7 +123,7 @@ export type Command = BaseCommand
   | {type: 'buyRecipe'; species: SpeciesId}
   /** One Heart from Paille's counter, at the quoted price: a stale or changed price refuses. */
   | {type: 'exchangeForHeart'; resource: 'pattes' | 'grass'; expectedCost: number}
-  | {type: 'welcomeAgency'} | {type: 'startTrip'; rabbitId: string} | {type: 'claimTrip'}
+  | {type: 'welcomeAgency'} | {type: 'startTrip'; rabbitId: string} | {type: 'claimTrip'; rabbitId: string} | {type: 'upgradeFarm'; id: string} | {type: 'upgradeAgency'; id: string; fromLevel: 1 | 2 | 3}
   /** `birthId` names the nursery baby; required for growth, ignored otherwise. */
   | {type: 'initiationAid'; id: string; stage: TimedStage; jobKey: string; birthId?: string}
   | {type: 'accelerate'; id: string; stage: TimedStage; jobKey: string; maxHearts: number; birthId?: string}

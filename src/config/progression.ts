@@ -45,7 +45,7 @@ export const PROGRESSION: ProgressionConfig = {
     construction: {specializedHabitat: 30, universalHabitat: 40, farm: 20},
     // Default birth XP comes from the rarities data; a custom configuration still supplies its own record.
     birth: mapRarities(definition => definition.birthXp),
-    foodMultiplier: 5, breedingLaunch: 5,
+    foodMultiplier: 6, breedingLaunch: 5,
     firstDecorationPlacement: {minimum: 10, priceDivisor: 10},
     claims: {main: 40, daily: 50, dailyBonus: 0, mainExceptions: {}, dailyExceptions: {}},
   },
