@@ -21,13 +21,14 @@ import {AudioEngine} from './audio/audioEngine';
 import {mountSoundSettings, channelSettings} from './ui/soundSettings';
 import {MusicPlayer} from './audio/musicPlayer';
 import {MUSIC_TRACKS} from './config/music';
-import {LoadingTracker, renderLoading} from './display/loadingScreen';
+import {LoadingTracker, renderLoading, startLoadingMessages} from './display/loadingScreen';
 
 async function boot(): Promise<() => void> {
   // Loading screen first: the game receives no interaction until « Jouer ».
   const loadingRoot = document.getElementById('loading-screen')!, app = document.getElementById('app')!;
   app.inert = true;
   const loading = new LoadingTracker(), unrender = loading.subscribe(view => renderLoading(loadingRoot, view));
+  const stopMessages = startLoadingMessages(loadingRoot);
   const disposeInteractions = bindAppInteractions(document);
   document.getElementById('game-version')!.textContent = `Version : ${RELEASE_LABEL} · build ${BUILD_REVISION.slice(0, 7)}`;
   const base = browserStorage();
@@ -89,7 +90,7 @@ async function boot(): Promise<() => void> {
   const play = () => {
     if (!loading.view().ready || entered) return;
     music.start();
-    loadingRoot.hidden = true; app.inert = false; loading.dispose(); unrender();
+    loadingRoot.hidden = true; app.inert = false; loading.dispose(); unrender(); stopMessages();
     ui = new GameUI(controller, scene, clock, preferences, audio, {onlineServicesAllowed: policy.onlineServicesAllowed && !LABORATORY_BUILD && !DECORATIONS_PREVIEW_BUILD, accountKnown: () => accountKnown(storage)});
     const soundSettings = mountSoundSettings(document, preferences, {onChange: (channel, enabled, volume) => {
       audio.configure(channel, {enabled, volume});

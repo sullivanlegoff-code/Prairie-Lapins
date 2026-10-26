@@ -496,7 +496,18 @@ dialog > button { width: 100%; margin-top: 8px; }
 #loading-message { min-height: 1.2em; font-size: 13px; margin: 6px 0 12px; }
 #loading-screen .actions { display: flex; gap: 10px; justify-content: center; }
 #loading-play { min-width: 160px; min-height: 48px; font-size: 18px; font-weight: 800; }
-@media (prefers-reduced-motion: reduce) { .loading-bar span { transition: none; } }
+#loading-tip { margin: -6px 0 14px; font-size: 14px; font-style: italic; color: #5b6b52; min-height: 2.6em; overflow-wrap: anywhere; }
+/* Paille dashes across the bottom of the screen, behind the card if they meet: X travel and hops are separate properties. */
+.loading-card { position: relative; z-index: 1; }
+.loading-runner { position: absolute; left: 0; right: 0; bottom: max(18px, env(safe-area-inset-bottom)); height: 82px; overflow: hidden; pointer-events: none; }
+.loading-runner img { position: absolute; left: 0; bottom: 0; width: auto; height: 62px; transform-origin: 50% 100%;
+  animation: paille-dash 1.8s linear infinite, paille-hop .2s ease-in-out infinite alternate; }
+@keyframes paille-dash { 0% { translate: -70px 0; } 72%, 100% { translate: calc(100vw + 30px) 0; } }
+@keyframes paille-hop { from { transform: scaleX(-1) translateY(0) scale(1.07, .9); } to { transform: scaleX(-1) translateY(-18px) scale(.95, 1.06); } }
+@media (prefers-reduced-motion: reduce) {
+  .loading-bar span { transition: none; }
+  .loading-runner img { animation: paille-dash 10s linear infinite; transform: scaleX(-1); }
+}
 /* Cuisine result card (host additions): selected rabbit and one chip per reward actually granted. */
 .cuisine-result-rabbit { grid-area: rabbit; display: flex; align-items: center; gap: 6px; margin: 0; max-width: 140px; color: #6e4b3a; font-size: 12px; line-height: 1.2; }
 .cuisine-result-rabbit-art { flex: none; width: 32px; height: 32px; border-radius: 50%; background: #fff0b8; box-shadow: 0 0 0 2px #dcb966; }
