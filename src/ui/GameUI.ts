@@ -11,6 +11,8 @@ import type {RecipeCompletion} from '../../cooktap-prototype/main';
 import {missionClaimXp} from '../simulation/progression';
 import {PROGRESSION} from '../config/progression';
 import {recipeSource} from '../config/species';
+import {RECIPE_PRICES} from '../config/recipes';
+import {recipeKnown} from '../simulation/recipes';
 import {stateLevelAccess} from '../simulation/levelRights';
 import type {LevelAccessTarget} from '../simulation/levelAccess';
 import {mountLevelLock} from '../display/LevelLock';
@@ -127,11 +129,14 @@ export class GameUI {
   private recipeDetails = new Set<SpeciesId>();
   private recipeClosed = new Set<SpeciesId>();
   private recipeExpanded = new Set<SpeciesId>();
+  private recipeRulesOpen = new Set<SpeciesId>();
   private missionFilter: 'all' | 'ready' | 'pending' | 'claimed' = 'all';
   private placedListOpen = false;
   private history: NonNullable<View>[] = [];
   private scrollPositions = new Map<string, number>();
   private requestedScroll: number | null = null;
+  private requestedFocus: string | null = null;
+  private requestedRecipeFocus: SpeciesId | null = null;
   private shopReturn: {view: View; history: NonNullable<View>[]; arranging: boolean} | null = null;
   private shopResources = node('div', '', 'shop-resources');
   private interactionPointers = new Set<number>();
@@ -449,7 +454,7 @@ export class GameUI {
     this.history = []; this.scrollPositions.clear(); this.interactionPointers.clear(); this.pendingRender = false;
     this.shopHabitatSpecies=null;
     this.purchaseReturn = null; this.rabbitDestination = null; this.shopRabbitIssue = null; this.scene.setRabbitPurchase(null);
-    this.collectionFilter = {}; this.recipeDetails.clear(); this.recipeClosed.clear(); this.recipeExpanded.clear(); this.missionFilter = 'all'; this.placedListOpen = false; this.shopReturn = null; this.content.scrollTop = 0; this.settings.scrollTop = 0;
+    this.collectionFilter = {}; this.recipeDetails.clear(); this.recipeClosed.clear(); this.recipeExpanded.clear(); this.recipeRulesOpen.clear(); this.requestedFocus = null; this.requestedRecipeFocus = null; this.missionFilter = 'all'; this.placedListOpen = false; this.shopReturn = null; this.content.scrollTop = 0; this.settings.scrollTop = 0;
     this.content.replaceChildren();
     this.scene.setExpansion(false);
     if (fresh) this.preferences.restartGuidance();
@@ -527,7 +532,8 @@ export class GameUI {
     const placedListOpen = this.content.querySelector<HTMLDetailsElement>('[data-placed-list]')?.open ?? this.placedListOpen;
     this.placedListOpen = placedListOpen;
     if (this.rename && !(this.view?.kind === 'rabbit' && this.view.id === this.rename.id)) this.rename = null;
-    const focusId = (document.activeElement as HTMLElement | null)?.dataset.focus;
+    const focusId = this.requestedFocus ?? (document.activeElement as HTMLElement | null)?.dataset.focus;
+    this.requestedFocus = null;
     this.panel.hidden = !this.view;
     document.body.classList.toggle('panel-open', !!this.view);
     const fullShop = this.view?.kind === 'shop' || this.view?.kind==='levelRequirement' && this.view.target.family==='decoration' && this.history.some(view=>view.kind==='shop');
@@ -579,7 +585,14 @@ export class GameUI {
     if (focusId) {
       const target = [...this.content.querySelectorAll<HTMLElement>('[data-focus]')].find(el => el.dataset.focus === focusId);
       if (target && !(target instanceof HTMLButtonElement && target.disabled)) target.focus({preventScroll: true});
+      else if (focusId.startsWith('recipe-action-')) this.content.querySelector<HTMLElement>(`[data-focus="recipe-title-${focusId.slice('recipe-action-'.length)}"]`)?.focus({preventScroll: true});
       else if (this.view?.kind === 'missions') this.content.querySelector<HTMLElement>(`[data-mission-filter="${this.missionFilter}"]`)?.focus({preventScroll: true});
+    }
+    if (this.requestedRecipeFocus && this.view.kind === 'recipes') {
+      const target = this.content.querySelector<HTMLElement>(`[data-recipe="${this.requestedRecipeFocus}"]`);
+      this.requestedRecipeFocus = null;
+      target?.scrollIntoView?.({block: 'start'});
+      target?.querySelector<HTMLElement>('[data-focus]')?.focus({preventScroll: true});
     }
     if (this.rename && focusId === 'rabbit-name') this.content.querySelector<HTMLInputElement>('input[data-focus="rabbit-name"]')?.setSelectionRange(this.rename.caret, this.rename.caret);
     this.updateTimers(); this.highlightGuideTarget();
@@ -604,7 +617,7 @@ export class GameUI {
       this.button(island, 'Île', () => this.open({kind: 'extension'})); this.content.append(island);
       return;
     }
-    if (tab === 'recipes') { this.renderRecipes(s, true); return; }
+    if (tab === 'recipes') { this.renderRecipeShop(s); return; }
     this.content.append(node('h3', {rabbits: 'Lapins', habitats: 'Habitats', buildings: 'Bâtiments et décorations', decorations: 'Bâtiments et décorations'}[tab]));
     if (tab === 'buildings' || tab === 'decorations') {
       const tabs = node('div', '', 'tabs');
@@ -1086,8 +1099,7 @@ export class GameUI {
     this.destinations(s, enclosureId => this.dropRabbit(id, enclosureId), r.species, r.enclosureId);
   }
   private openRecipe(species: SpeciesId): void {
-    this.recipeDetails.add(species); this.open({kind:'recipes'});
-    this.content.querySelector<HTMLElement>(`[data-recipe="${species}"]`)?.scrollIntoView?.({block:'start'});
+    this.recipeDetails.add(species); this.requestedRecipeFocus = species; this.open({kind:'recipes'});
   }
   private chooseRabbitHabitat(id: string): void {
     this.rabbitDestination=id;this.render();
@@ -1323,7 +1335,35 @@ export class GameUI {
       this.content.append(card);
     }
   }
-  private renderRecipes(s: GameState, readOnly = false): void {
+  private renderRecipeShop(s: GameState): void {
+    this.title.textContent = 'Recettes de lapins';
+    const intro = node('section', '', 'recipe-shop-intro');
+    intro.append(node('p', 'Une recette révèle les parents et leurs conditions. Le lapin reste à obtenir au nid.'));
+    this.button(intro, 'Ouvrir mon carnet', () => this.open({kind: 'recipes'}), null, true);
+    this.content.append(intro);
+    // Catalogue order stays stable after a purchase; the shop never builds or inspects parent pairs.
+    for (const species of SPECIES_IDS.filter(id => RECIPE_PRICES[id] !== undefined)) {
+      const info = SPECIES[species], known = recipeKnown(s, species), price = RECIPE_PRICES[species]!;
+      const access = stateLevelAccess(s, {family: 'species', id: species, action: 'breedingResult'});
+      const card = this.card(info.name, `${typeNames(info.types)} · ${RARITY_NAMES[info.rarity]}`);
+      card.classList.add('compact-list-card', 'recipe-shop-card');
+      card.dataset.recipe = species; card.dataset.recipeKnown = String(known);
+      card.dataset.recipeState = known ? 'known' : access.locked ? 'locked' : 'available';
+      card.querySelector('.card-heading')!.prepend(avatar(s.discovered.includes(species) ? species : undefined));
+      if (known) {
+        card.append(node('p', 'Dans ton carnet', 'badge'));
+        const consult = this.button(card, 'Consulter et préparer', () => this.openRecipe(species), null, true);
+        consult.dataset.consultRecipe = species; consult.dataset.focus = `recipe-action-${species}`;
+      } else if (access.locked) {
+        card.append(node('p', `Niveau ${access.requiredLevel} requis`, 'reason'), node('p', `Prix : ${price} pattes`, 'small'));
+      } else {
+        card.append(node('p', 'À découvrir', 'badge'));
+        this.recipePurchase(card, s, species, price);
+      }
+      this.content.append(card);
+    }
+  }
+  private renderRecipes(s: GameState): void {
     this.title.textContent = 'Carnet de reproduction';
     this.content.append(node('p', 'Les types nécessaires doivent être réunis par deux individus distincts. Une recette possible reste un tirage aléatoire.'));
     const explanation = node('details'); explanation.append(node('summary', 'Comprendre les probabilités'),
@@ -1331,7 +1371,7 @@ export class GameUI {
       node('p', 'Une espèce découverte révèle sa recette. Une recette inconnue n’empêche aucune reproduction : seules ses conditions détaillées restent cachées.'),
       node('p', 'La garantie choisit à parts égales parmi les espèces explicitement éligibles à la garantie, non découvertes et admissibles à cette paire. Les recettes à probabilité fixe n’en font pas partie. Pendant une tentative garantie, une espèce déjà découverte est donc temporairement exclue du tirage.'));
     this.content.append(explanation);
-    if (!readOnly && !this.history.length) this.button(this.content, 'Retour à la collection', () => this.open({kind: 'collection'}), null, true);
+    if (!this.history.length) this.button(this.content, 'Retour à la collection', () => this.open({kind: 'collection'}), null, true);
     const nest = s.buildings.find(b => b.kind === 'nest'), nursery = s.buildings.find(b => b.kind === 'nursery');
     const setupReason = !nest || !nursery ? 'Place les équipements offerts depuis Aménagement.' : nest.breeding ? 'Le nid est occupé.' : null;
     if (setupReason) this.content.append(node('p', setupReason, 'reason'));
@@ -1340,6 +1380,8 @@ export class GameUI {
       const card = this.card(info.name, `${typeNames(recipe.types)} · ${RARITY_NAMES[info.rarity]}`);
       const hint = recipeHint(recipe.species); if (hint) card.append(node('p', hint, 'recipe-hint'));
       card.dataset.recipe = recipe.species; card.dataset.recipeKnown = String(recipe.known);
+      const heading = card.querySelector<HTMLElement>('h3')!;
+      heading.tabIndex = -1; heading.dataset.focus = `recipe-title-${recipe.species}`;
       card.querySelector('.card-heading')!.prepend(avatar(recipe.discovered ? recipe.species : undefined));
       if(recipe.levelAccess.locked)card.append(node('p',`Niveau ${recipe.levelAccess.requiredLevel} requis · exclu des nouvelles reproductions.`,'reason'));
       if (!recipe.known) {
@@ -1353,7 +1395,12 @@ export class GameUI {
       card.append(node('p', `Affection ${recipe.minAffection} minimum pour chacun des deux parents. Croissance : ${growthDuration(recipe.species) / 60_000} min.`));
       card.append(node('p', 'Reproduction : 20 min · lancement gratuit.', 'small'));
       if (info.recipe?.parents) card.append(node('p', `Parents requis : ${info.recipe.parents.map(id => SPECIES[id].name).join(' × ')}. Les types seuls ne suffisent pas.`));
-      card.append(node('p', info.recipe?.probability !== undefined ? `${recipe.levelAccess.locked ? 'Après déblocage du niveau requis' : 'Si la recette est admissible'}, hors garantie ordinaire : ${info.recipe.probability} %. Cette espèce ne bénéficie pas de la garantie de découverte.` : recipeSource(info.acquisition)?.guaranteeEligible === true ? 'Cette espèce bénéficie de la garantie ordinaire si elle n’est pas encore découverte et reste admissible.' : 'Cette espèce ne bénéficie pas de la garantie de découverte.', 'small'));
+      const rules = node('details', '', 'recipe-rules');
+      rules.open = this.recipeRulesOpen.has(recipe.species);
+      rules.addEventListener('toggle', () => { if (rules.isConnected) {
+        if (rules.open) this.recipeRulesOpen.add(recipe.species); else this.recipeRulesOpen.delete(recipe.species);
+      } });
+      rules.append(node('summary', 'En savoir plus'), node('p', info.recipe?.probability !== undefined ? `${recipe.levelAccess.locked ? 'Après déblocage du niveau requis' : 'Si la recette est admissible'}, hors garantie ordinaire : ${info.recipe.probability} %. Cette espèce ne bénéficie pas de la garantie de découverte.` : recipeSource(info.acquisition)?.guaranteeEligible === true ? 'Cette espèce bénéficie de la garantie ordinaire si elle n’est pas encore découverte et reste admissible.' : 'Cette espèce ne bénéficie pas de la garantie de découverte.', 'small'));
       if (!recipe.pairCount) card.append(node('p', info.recipe?.parents ? 'Possède les deux espèces requises pour préparer cette paire.' : 'Aucune paire possédée n’est admissible à cette recette.', 'small'));
       else {
         const details = node('details'); details.open = this.recipeDetails.has(recipe.species) || (!this.recipeClosed.has(recipe.species) && recipe.pairCount <= 3);
@@ -1372,7 +1419,7 @@ export class GameUI {
             const block = node('div', '', 'recipe-pair'); block.append(node('p', names.join(' × ')));
             if (pair.feeding.length) {
               block.append(node('p', `À nourrir : affection ${recipe.minAffection} nécessaire chez les deux parents. Recette exclue actuellement.`, 'reason'));
-              if (!readOnly) for (const id of pair.feeding) {
+              for (const id of pair.feeding) {
                 const parent = s.rabbits.find(r => r.id === id)!;
                 this.button(block, `Nourrir ${parent.name || SPECIES[parent.species].name} · ${this.enclosureName(s, parent.enclosureId)}`, () => this.open({kind: 'rabbit', id}), null, true);
               }
@@ -1381,7 +1428,7 @@ export class GameUI {
               block.append(node('p', `${label} · ${pair.probability}`, 'badge'));
               if (pair.busy) block.append(node('p', 'Un parent est occupé ; attends sa disponibilité.', 'reason'));
             }
-            if (!readOnly) this.button(block, 'Préparer cette paire au nid', () => {
+            this.button(block, 'Préparer cette paire au nid', () => {
               if (!nest) return;
               this.parents = [...pair.parents]; this.open({kind: 'building', id: nest.id}); if (!nest.breeding) this.openBreeding(nest.id);
             }, pair.feeding.length ? 'Nourris les parents requis.' : pair.busy ? 'Parent occupé.' : setupReason ?? (!pair.possible ? 'Cette recette n’est pas dans le tirage actuel.' : null), true);
@@ -1396,15 +1443,16 @@ export class GameUI {
         if (details.open) populate(this.recipeExpanded.has(recipe.species));
         card.append(details);
       }
-      this.content.append(card);
+      card.append(rules); this.content.append(card);
     }
   }
   /** Same confirmation model as the other direct card purchases; coins only, never a heart complement. */
   private recipePurchase(card: HTMLElement, s: GameState, species: SpeciesId, price: number): void {
-    const name = SPECIES[species].name;
-    this.button(card, `Acheter · ${price} pattes`, () => this.confirm(`Acheter la recette : ${name} ?`,
+    const name = SPECIES[species].name, focus = `recipe-action-${species}`;
+    const buy = this.button(card, `Acheter la recette · ${price} pattes`, () => this.confirm(`Acheter la recette : ${name} ?`,
       `${price} pattes. Révèle les conditions d’obtention et les paires conseillées. Ne donne aucun lapin et ne garantit aucune naissance.`,
-      () => this.execute({type: 'buyRecipe', species}, 'Recette ajoutée au carnet.', () => this.recipeDetails.add(species))), moneyReason(s, price)).dataset.buyRecipe = species;
+      () => this.execute({type: 'buyRecipe', species}, 'Recette ajoutée au carnet.', () => this.recipeDetails.add(species)), focus), moneyReason(s, price));
+    buy.dataset.buyRecipe = species; buy.dataset.focus = focus;
   }
   private renderSpecies(s: GameState, species: SpeciesId): void {
     if (!s.discovered.includes(species)) { this.view = {kind: 'collection'}; this.renderCollection(s); return; }
@@ -1665,14 +1713,24 @@ export class GameUI {
     for (const label of this.content.querySelectorAll<HTMLElement>('.timer')) label.textContent = timeLeft(Number(label.dataset.end), this.now());
     for (const progress of this.content.querySelectorAll<HTMLProgressElement>('progress[data-start][data-end]')) progress.value = this.now() >= Number(progress.dataset.end) ? 1 : Math.max(0, Math.min(1, (this.now() - Number(progress.dataset.start)) / Math.max(1, Number(progress.dataset.end) - Number(progress.dataset.start))));
   }
-  private confirm(title: string, message: string, action: () => void): void {
+  private confirm(title: string, message: string, action: () => void, returnFocus?: string): void {
     if (this.dialog.open) return;
     const generation = ++this.confirmationGeneration; let used = false;
+    const restore = () => { if (returnFocus) { this.requestedFocus = returnFocus; this.render(); } };
+    const cleanup = () => { this.dialog.removeEventListener('cancel', cancel); this.dialog.removeEventListener('close', cleanup); };
+    const cancel = (event?: Event) => {
+      if (used || generation !== this.confirmationGeneration) return;
+      event?.preventDefault(); used = true; cleanup(); this.dialog.close(); restore();
+    };
     this.dialog.replaceChildren(node('h2', title), node('p', message));
     this.button(this.dialog, 'Confirmer', () => {
       if (used || !this.dialog.open || generation !== this.confirmationGeneration) return;
-      used = true; this.dialog.close(); action();
-    }); this.button(this.dialog, 'Annuler', () => this.dialog.close(), null, true); this.dialog.showModal();
+      used = true; cleanup(); this.dialog.close();
+      if (returnFocus) this.requestedFocus = returnFocus;
+      action(); restore();
+    }); this.button(this.dialog, 'Annuler', () => cancel(), null, true);
+    this.dialog.addEventListener('cancel', cancel); this.dialog.addEventListener('close', cleanup, {once: true});
+    this.dialog.showModal();
   }
   private firstBirth(species: SpeciesId, discovered: boolean): void {
     if (this.pailleDialogue.element.open) return;

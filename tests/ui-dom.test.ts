@@ -1155,7 +1155,7 @@ it('labels an actual first discovery of a species at its first birth',()=>{
 it('offers a notebook shortcut after guidance ends',()=>{
  const s=scenarioState('missionJourney',0);s.recipeBook=['boudinet'];s.progression={totalXp:cumulativeLevelXp(6),rewardedThroughLevel:6};s.missions.claimed=['first-meal','first-farm','first-harvest','parents-ready','at-nest','to-nursery','first-birth'];
  const {ui,prefs,controller}=setup(s);prefs.set({tutorialDone:true,tutorial:false});const wallet=state(controller).pattes;
- ui.open({kind:'missions',tab:'main'});button('Consulter le carnet').click();expect(state(controller).pattes).toBe(wallet);const recipe=panel().querySelector('[data-recipe="boudinet"]')!;expect(recipe.querySelector('h3')!.textContent).toBe('Boudinet');expect(recipe.querySelector('details')).toBeNull();expect(recipe.textContent).toContain('Aucune paire possédée n’est admissible');
+ ui.open({kind:'missions',tab:'main'});button('Consulter le carnet').click();expect(state(controller).pattes).toBe(wallet);const recipe=panel().querySelector('[data-recipe="boudinet"]')!;expect(recipe.querySelector('h3')!.textContent).toBe('Boudinet');expect(recipe.querySelector('details:not(.recipe-rules)')).toBeNull();expect(recipe.querySelector<HTMLDetailsElement>('.recipe-rules')!.open).toBe(false);expect(recipe.textContent).toContain('Aucune paire possédée n’est admissible');
 });
 
 describe('mobile menu continuity', () => {

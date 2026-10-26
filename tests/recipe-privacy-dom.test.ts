@@ -62,7 +62,7 @@ describe('notebook recipe privacy', () => {
     expect(dragon.querySelector('img.coin-icon')).not.toBeNull(); expect(dragon.textContent).not.toMatch(/pattes?/);
     for (const hidden of ['Phoenix', 'Affection', '2 %', 'Parents requis', 'garantie', 'paire possédée']) expect(dragon.textContent).not.toContain(hidden);
     // Step 3: the purchase button is the only action; no shortcut before the recipe is known.
-    expect(buttons(dragon).map(b => b.textContent)).toEqual(['Acheter · 900 pièces']);
+    expect(buttons(dragon).map(b => b.textContent)).toEqual(['Acheter la recette · 900 pièces']);
     expect(panel().textContent).not.toContain('Dadi × Phoenix');
     for (const old of ['Géant, Magicien et Dragon', 'recettes ordinaires inconnues']) expect(panel().textContent).not.toContain(old);
   });
