@@ -504,7 +504,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     button('Bienvenue dans la prairie', dialog).click();
     const newborn = state(controller).rabbits.at(-1)!;
     ui.select({kind: 'rabbit', id: newborn.id}); expect(button('Confier ce lapin').disabled).toBe(true);
-    button('Changer d’habitat').click(); button('Enclos 1 · 2/3').click(); expect(state(controller).rabbits.at(-1)!.enclosureId).toBe('building-1');
+    button('Déplacer').click(); [...document.querySelectorAll<HTMLButtonElement>('#rabbit-move-banner button')].find(b => b.textContent === 'Choisir dans une liste')!.click(); button('Enclos 1 · 2/3').click(); expect(state(controller).rabbits.at(-1)!.enclosureId).toBe('building-1');
     ui.select({kind: 'extension', parcelId:'east'}); button('Acheter Est · 600 pièces').click(); button('Confirmer', document.getElementById('game-dialog')!).click(); expect(state(controller).acquiredParcels.includes('east')).toBe(true);
     ui.select({kind: 'building', id: find('farm').id}); button('Déplacer ce bâtiment').click(); ui.select({kind: 'cell', x: 42, y: 24}); button('Confirmer le déplacement · gratuit').click(); expect(find('farm').x).toBe(42);
     ui.open({kind: 'shop', tab: 'rabbits'});
@@ -736,7 +736,7 @@ describe('habitat panels and controller transactions',()=>{
     ui.select({kind:'building',id:snow});expect(button('Confirmer l’achat · 80 pièces').disabled).toBe(true);
     button('Annuler · aucun coût').click();expect(document.body.classList.contains('shop-open')).toBe(true);expect(panel().textContent).toContain('Lapins');document.getElementById('close-panel')!.click();
     controller.perform({type:'upgradeHabitat',id:snow,fromLevel:1});
-    ui.select({kind:'rabbit',id:'rabbit-3'});button('Changer d’habitat').click();
+    ui.select({kind:'rabbit',id:'rabbit-3'});button('Déplacer').click(); [...document.querySelectorAll<HTMLButtonElement>('#rabbit-move-banner button')].find(b => b.textContent === 'Choisir dans une liste')!.click();
     expect(panel().textContent).toContain('Feu');expect(button('Clairière de feu 2 · 0/3').disabled).toBe(true);
     button('Jardin enneigé 3 · 3/5').click();expect(state(controller).rabbits[1].enclosureId).toBe(snow);
   });
@@ -947,7 +947,7 @@ describe('manual nest UI and free equipment recovery',()=>{
   const initial=scenarioState('reproduction',0);initial.pattes=0;initial.hearts=0;
   const {controller,ui,clock}=setup(initial);const nid=initial.buildings.find(b=>b.kind==='nest')!,nursery=initial.buildings.find(b=>b.kind==='nursery')!;
   controller.perform({type:'breed',parents:['rabbit-2','rabbit-3']});clock.now=3600000;controller.refresh();
-  ui.select({kind:'rabbit',id:'rabbit-2'});expect(panel().textContent).toContain('Au nid');expect(button('Changer d’habitat').disabled).toBe(true);expect(button('Confier ce lapin').disabled).toBe(true);
+  ui.select({kind:'rabbit',id:'rabbit-2'});expect(panel().textContent).toContain('Au nid');expect(button('Déplacer').disabled).toBe(true);expect(button('Confier ce lapin').disabled).toBe(true);
   ui.select({kind:'building',id:nid.id});expect(button('Envoyer dans la nurserie').disabled).toBe(false);expect(babyOf(state(controller).buildings.find(b=>b.id===nursery.id)!)).toBeNull();
   const transfer=button('Envoyer dans la nurserie');transfer.click();transfer.click();expect(state(controller).buildings.find(b=>b.id===nid.id)!.breeding).toBeNull();expect(babyOf(state(controller).buildings.find(b=>b.id===nursery.id)!)!.startedAt).toBe(clock.now);expect(panel().textContent).not.toContain('Envoyer dans la nurserie');
  });

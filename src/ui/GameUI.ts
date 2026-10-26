@@ -1,3 +1,4 @@
+import {rabbitDropTargets} from './rabbitDropTargets';
 import {accountKnown} from '../cloud/accountState';
 import {cloudConfig} from '../cloud/config';
 import {AccountReminder} from './accountReminder';
@@ -99,6 +100,8 @@ export class GameUI {
     // The guided start may refuse the new view: the finished purchase never stays on screen behind Paille.
     if (this.view === before && this.onboardingActive) { this.view = null; this.syncArrangement(); this.render(); }
   }
+  private movingRabbit: string | null = null;
+  private moveBanner = node('div', '', 'rabbit-move-banner');
   private placement: Placement | null = null;
   private parents: [string | null, string | null] = [null, null];
   private snapshot: Snapshot;
@@ -157,6 +160,16 @@ export class GameUI {
       const reward = granted.cuisineReward!;
       return `+${reward.pattes} pattes · +${reward.grass} nourriture${reward.affectionGranted ? ' · +1 Affection' : reward.affectionAtCap ? ' · Affection maximale' : reward.affectionStatueRequired ? ' · La Statue de l’Affection permet de dépasser 14.' : ''}${reward.heartGranted ? ' · +1 Cœur' : ''}`;
     }, quotaText: () => { const state = this.controller.getSnapshot().state; return state ? cuisineQuotaText(state, this.now()) : ''; }, onExit: () => this.render()});
+    this.moveBanner.id = 'rabbit-move-banner'; this.moveBanner.hidden = true;
+    this.moveBanner.setAttribute('role', 'region'); this.moveBanner.setAttribute('aria-label', 'Déplacer un lapin');
+    const moveLabel = node('span'); moveLabel.setAttribute('role', 'status'); this.moveBanner.append(moveLabel);
+    this.button(this.moveBanner, 'Choisir dans une liste', () => {
+      const id = this.movingRabbit; if (!id) return;
+      this.clearRabbitMove(); this.open({kind: 'moveRabbit', id}, 'root');
+      this.content.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
+    }, null, true);
+    this.button(this.moveBanner, 'Annuler', () => this.cancelRabbitMove(), null, true);
+    document.getElementById('app')!.append(this.moveBanner);
     const options = {signal: this.abort.signal};
     const skip = node('button','Passer le tutoriel','onboarding-skip'); skip.id='onboarding-skip';
     skip.onclick=()=>{this.preferences.set({tutorial:false});this.pailleDialogue.close();this.renderPreferences();this.render();};
@@ -181,8 +194,9 @@ export class GameUI {
     document.getElementById('panel-back')!.addEventListener('click', () => this.back(), options);
     // Escape closes the open menu like its cross; fields and dialogs that handle Escape themselves have already consumed it.
     document.addEventListener('keydown', event => {
-      if (event.key !== 'Escape' || event.defaultPrevented || !this.view || document.querySelector('dialog[open]')) return;
-      event.preventDefault(); this.close();
+      if (event.key !== 'Escape' || event.defaultPrevented || document.querySelector('dialog[open]')) return;
+      if (this.movingRabbit) { event.preventDefault(); this.cancelRabbitMove(); return; }
+      if (this.view) { event.preventDefault(); this.close(); }
     }, options);
     // Keep native selectors and a gesture's original controls alive during passive saves.
     this.shopResources.setAttribute('aria-label', 'Ressources');
@@ -379,6 +393,7 @@ export class GameUI {
     }
     if (!['placement','decorationPlacement','buyRabbit'].includes(view.kind) && this.view && ['placement','decorationPlacement','buyRabbit'].includes(this.view.kind)) this.purchaseReturn = null;
     if (view.kind !== 'buyRabbit') this.scene.setRabbitPurchase(null);
+    this.clearRabbitMove();
     this.rememberView();
     const enteringShop = view.kind === 'shop' && this.view?.kind !== 'shop' && navigation !== 'back';
     if (enteringShop) this.shopReturn = {view: this.view, history: [...this.history], arranging: this.arranging};
@@ -406,6 +421,7 @@ export class GameUI {
     this.scene.setExpansion(view.kind==='extension',view.kind==='extension'?view.parcelId:undefined);
   }
   close(): void {
+    if (this.movingRabbit) { this.cancelRabbitMove(); return; }
     if (this.onboardingActive) {
       this.purchaseReturn=null;this.shopReturn=null;this.history=[];this.view=null;this.placement=null;this.arranging=false;
       this.scene.setPlacement(null);this.scene.setTutorialCell(null);this.scene.setRabbitPurchase(null);
@@ -426,6 +442,7 @@ export class GameUI {
     if (!this.view) this.returnFocus = null;
   }
   onReplacement(fresh = false): void {
+    this.clearRabbitMove();
     this.pailleDialogue.close();
     this.cuisine.close(false);
     this.history = []; this.scrollPositions.clear(); this.interactionPointers.clear(); this.pendingRender = false;
@@ -459,6 +476,10 @@ export class GameUI {
     if (this.cuisine.active || this.pailleDialogue.element.open) return;
     if (this.photo || this.view?.kind === 'shop') return;
     if (this.dialog.open || (document.getElementById('import-dialog') as HTMLDialogElement).open) return;
+    if (this.movingRabbit) {
+      if (selection.kind === 'building') this.dropRabbit(this.movingRabbit, selection.id);
+      return;
+    }
     if (this.view?.kind === 'buyRabbit') {
       const state = this.controller.getSnapshot().state, species = this.view.species;
       if (state && selection.kind === 'building' && state.buildings.some(b => b.id === selection.id && !habitatEntryReason(state,b,species))) {
@@ -492,6 +513,7 @@ export class GameUI {
   private render(passive = false): void {
     if (passive && this.interactionActive()) { this.pendingRender = true; return; }
     this.pendingRender = false;
+    this.syncRabbitMove();
     this.renderTutorial();
     this.applyOnboardingLock();
     if (this.breedingDialog.open) this.renderBreeding();
@@ -949,8 +971,8 @@ export class GameUI {
     if (parentBusy(s,id,this.now()) && !travelling(s, id)) this.content.append(node('p','Au nid · place réservée dans son habitat · revenus conservés','badge'));
     this.content.append(node('p', `${typeNames(species.types)} · ${RARITY_NAMES[species.rarity]}`, 'badge'), node('p', this.enclosureName(s, r.enclosureId), 'small'));
     this.content.append(node('p', 'Nourrir augmente l’affection ; il n’y a ni faim ni entretien obligatoire.', 'small'), node('h3', 'Autres actions'));
-    const hasDestination = s.buildings.some(b => b.kind === 'enclosure' && b.id !== r.enclosureId && !habitatEntryReason(s, b, r.species));
-    this.button(this.content, 'Changer d’habitat', () => this.open({kind: 'moveRabbit', id}), parentBusy(s,id,this.now()) ? busyReason(s, id) : hasDestination ? null : 'Aucun autre habitat compatible avec une place libre.', true);
+    const hasDestination = rabbitDropTargets(s, id, this.now()).length > 0;
+    this.button(this.content, 'Déplacer', () => this.beginRabbitMove(id), parentBusy(s,id,this.now()) ? busyReason(s, id) : hasDestination ? null : 'Aucun autre habitat compatible avec une place libre.', true);
     this.button(this.content, 'Confier ce lapin', () => this.confirm('Confier ce lapin ?', 'Ce lapin quittera définitivement ta prairie, sans remboursement.', () => this.execute({type: 'release', id}, 'Lapin confié.', () => { this.view = {kind: 'building', id: r.enclosureId}; })), releaseReason(s, id, this.now()), true).classList.add('action-danger');
   }
   /** The personal name, in a box after the feeding action: the species stays in the title and the badge. Text only, never HTML. */
@@ -984,6 +1006,51 @@ export class GameUI {
     this.button(form, 'Enregistrer', save); this.button(form, 'Annuler', cancel, null, true);
     box.append(form); this.content.append(box);
   }
+  private beginRabbitMove(id: string): void {
+    const s = this.controller.getSnapshot().state;
+    if (!s || this.onboardingActive || this.pailleDialogue.element.open || this.cuisine.active || this.photo ||
+      this.placement || this.decorationDraft || this.arranging || document.querySelector('dialog[open]') ||
+      !rabbitDropTargets(s, id, this.now()).length) return;
+    this.close(); this.movingRabbit = id; this.history = []; this.render();
+    this.scene.zoomForRabbitMove?.();
+    this.moveBanner.querySelector<HTMLButtonElement>('button')?.focus({preventScroll: true});
+  }
+  private clearRabbitMove(): void {
+    this.movingRabbit = null; this.moveBanner.hidden = true; this.scene.setRabbitDropTargets?.(null);
+  }
+  private cancelRabbitMove(message?: string): void {
+    const id = this.movingRabbit; if (!id) return;
+    this.clearRabbitMove();
+    if (this.snapshot.state?.rabbits.some(r => r.id === id)) this.open({kind: 'rabbit', id}, 'root');
+    else this.render();
+    this.content.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus({preventScroll: true});
+    if (message) this.notice(message);
+  }
+  private syncRabbitMove(): void {
+    const id = this.movingRabbit; if (!id) return;
+    const s = this.snapshot.state, rabbit = s?.rabbits.find(r => r.id === id);
+    if (!s || !rabbit || parentBusy(s, id, this.now()) || this.onboardingActive || this.pailleDialogue.element.open) {
+      this.cancelRabbitMove(s && rabbit ? busyReason(s, id) : 'Ce lapin n’est plus disponible.'); return;
+    }
+    this.moveBanner.hidden = false;
+    this.moveBanner.querySelector('span')!.textContent = `Choisis un habitat pour ${rabbit.name || SPECIES[rabbit.species].name}`;
+    this.scene.setRabbitDropTargets?.(rabbitDropTargets(s, id, this.now()));
+  }
+  private dropRabbit(id: string, enclosureId: string): void {
+    this.controller.refresh();
+    if (this.view?.kind !== 'moveRabbit' && this.movingRabbit !== id) return;
+    const s = this.controller.getSnapshot().state, rabbit = s?.rabbits.find(r => r.id === id);
+    if (!s || !rabbit) return;
+    if (parentBusy(s, id, this.now())) { this.notice(busyReason(s, id)); return; }
+    if (!rabbitDropTargets(s, id, this.now()).includes(enclosureId)) {
+      const b = s.buildings.find(b => b.id === enclosureId);
+      if (b?.kind === 'enclosure') this.notice(`Cet habitat ne peut pas accueillir ce lapin. ${b.id === rabbit.enclosureId ? 'Habitat actuel.' : this.entryReason(s, b, rabbit.species) ?? ''}`);
+      return;
+    }
+    this.execute({type: 'moveRabbit', id, enclosureId}, 'Lapin déplacé.', () => {
+      this.clearRabbitMove(); this.view = {kind: 'rabbit', id};
+    });
+  }
   private destinations(s: GameState, choose: (id: string) => void, species: SpeciesId, currentId?: string, price?: number): void {
     for (const b of s.buildings.filter(b => b.kind === 'enclosure')) {
       const count = occupants(s, b.id).length;
@@ -994,10 +1061,10 @@ export class GameUI {
   }
   private renderDestinations(s: GameState, id: string): void {
     const r = s.rabbits.find(r => r.id === id); if (!r) { this.close(); return; }
-    this.title.textContent = 'Changer d’habitat';
+    this.title.textContent = 'Déplacer';
     this.content.append(this.rabbitCard(s, id));
     if(parentBusy(s,id,this.now())) {this.content.append(node('p',busyReason(s, id),'reason'));return;}
-    this.destinations(s, enclosureId => this.execute({type: 'moveRabbit', id, enclosureId}, 'Lapin déplacé.', () => { this.view = {kind: 'rabbit', id}; }), r.species, r.enclosureId);
+    this.destinations(s, enclosureId => this.dropRabbit(id, enclosureId), r.species, r.enclosureId);
   }
   private openRecipe(species: SpeciesId): void {
     this.recipeDetails.add(species); this.open({kind:'recipes'});
@@ -1697,5 +1764,5 @@ export class GameUI {
     if (step.done) this.button(this.tutorial, 'Terminer le guidage', () => { this.preferences.set({tutorialDone: true}); this.renderPreferences(); this.renderTutorial(); }, null, true);
     this.button(this.tutorial, 'Masquer', () => { this.preferences.set({tutorial: false}); this.renderPreferences(); this.renderTutorial(); }, null, true);
   }
-  dispose(): void { this.accountReminder.dispose(); document.getElementById('onboarding-skip')?.remove(); this.pailleDialogue.dispose(); this.cuisine.dispose(); this.confirmationGeneration++; if (this.dialog.open) this.dialog.close(); this.dialog.replaceChildren(); this.unsubscribe(); this.abort.abort(); cancelAnimationFrame(this.frame); clearTimeout(this.toastTimer); this.sounds.dispose(); }
+  dispose(): void { this.clearRabbitMove(); this.moveBanner.remove(); this.accountReminder.dispose(); document.getElementById('onboarding-skip')?.remove(); this.pailleDialogue.dispose(); this.cuisine.dispose(); this.confirmationGeneration++; if (this.dialog.open) this.dialog.close(); this.dialog.replaceChildren(); this.unsubscribe(); this.abort.abort(); cancelAnimationFrame(this.frame); clearTimeout(this.toastTimer); this.sounds.dispose(); }
 }

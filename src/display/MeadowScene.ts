@@ -48,7 +48,7 @@ import {groundTransform, screenBounds, toGround, toScreen} from '../ui/projectio
 import type {Placement} from '../ui/models';
 import {SPECIES, proceduralCoat} from '../config/species';
 import {bindMeadowInput} from './meadowInput';
-import {ownedRegions, recenterCamera, type ScreenChrome} from './recenter';
+import {buildingFrame, ownedRegions, recenterCamera, type ScreenChrome} from './recenter';
 import {COIN_TEXTURE, COIN_URL, FOOD_TEXTURE, FOOD_URL, HEART_TEXTURE, HEART_URL} from './currency';
 import {coinBubble} from './currencyPhaser';
 
@@ -95,6 +95,9 @@ export class MeadowScene extends Phaser.Scene {
   private focusTween: Phaser.Tweens.Tween | null = null;
   private buildingTextures = new Set<string>();
   private buildingGhost: Phaser.GameObjects.Image | null = null;
+  private rabbitDrops: string[] | null = null;
+  private dropArrows: Phaser.GameObjects.Graphics | null = null;
+  private dropHits: {id: string; point: Point}[] = [];
   private purchase: {species: SpeciesId; selected: string | null} | null = null;
   private purchaseLabels: Phaser.GameObjects.Text[] = [];
   private arrangement = false;
@@ -175,7 +178,7 @@ export class MeadowScene extends Phaser.Scene {
     this.recenter();
     this.scale.on('resize', this.resize, this);
     const disposeInput = bindMeadowInput(this.game.canvas, this.view, point => this.tap(point), this.blocked, () => this.applyCamera());
-    this.events.once('shutdown', () => { this.unsubscribe?.(); disposeInput(); this.scale.off('resize', this.resize, this); this.buildingTextures.forEach(key=>this.textures.remove(key)); this.ground.clearMask(); this.islandMask?.destroy(); this.islandMaskGraphics?.destroy(); this.islandMask = null; this.islandMaskGraphics = null; this.floatingIslandLayer?.destroy(); this.floatingIslandLayer = null; this.islandStageLayer?.destroy(); this.islandStageLayer = null; this.nurseryOverlays?.destroy(); this.nurseryOverlays = null; this.motions.clear(); this.pivots.clear(); });
+    this.events.once('shutdown', () => { this.rabbitDrops = null; this.dropHits = []; this.dropArrows?.destroy(); this.dropArrows = null; this.unsubscribe?.(); disposeInput(); this.scale.off('resize', this.resize, this); this.buildingTextures.forEach(key=>this.textures.remove(key)); this.ground.clearMask(); this.islandMask?.destroy(); this.islandMaskGraphics?.destroy(); this.islandMask = null; this.islandMaskGraphics = null; this.floatingIslandLayer?.destroy(); this.floatingIslandLayer = null; this.islandStageLayer?.destroy(); this.islandStageLayer = null; this.nurseryOverlays?.destroy(); this.nurseryOverlays = null; this.motions.clear(); this.pivots.clear(); });
     this.loading?.ready();
   }
   recenter(): void { if (!this.cameras?.main) return; recenterCamera(this.view, this.current, this.screenChrome()); this.applyCamera(); }
@@ -229,6 +232,36 @@ export class MeadowScene extends Phaser.Scene {
     else if(parcelId){const p=PARCELS[parcelId],point=toScreen(gridPoint(p.x+ISLAND.parcelCells/2,p.y+ISLAND.parcelCells/2));this.view.x=point.x;this.view.y=point.y;this.view.clamp();this.applyCamera();}
     else if(was&&!active)this.recenter();
     if(this.grid)this.drawGrid();
+  }
+  /** Steps back to show more of the island (about 30 % wider, at most the .55 overview); gesture camera limits still own the minimum. */
+  zoomForRabbitMove(): void {
+    if (!this.cameras?.main) return;
+    this.focusTween?.stop(); this.focusTween = null;
+    const from = this.view.zoom, to = Math.max(this.view.minimumZoom, Math.min(from * .7, .55));
+    if (to >= from) return;
+    const go = (t: number) => { this.view.zoom = from + (to - from) * t; this.view.clamp(); this.applyCamera(); };
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { go(1); return; }
+    this.focusTween = this.tweens.addCounter({from: 0, to: 1, duration: 650, ease: 'Sine.easeInOut',
+      onUpdate: tween => { if (this.view.busy) { tween.stop(); this.focusTween = null; return; } go(tween.getValue() ?? 1); },
+      onComplete: () => { this.focusTween = null; }});
+  }
+  setRabbitDropTargets(ids: string[] | null): void {
+    this.rabbitDrops = ids;
+    if (!ids) { this.dropArrows?.clear(); this.dropHits = []; this.focusTween?.stop(); this.focusTween = null; }
+  }
+  private drawRabbitDrops(time: number): void {
+    if (!this.rabbitDrops) return;
+    const g = this.dropArrows ??= this.add.graphics().setDepth(10);
+    g.clear(); this.dropHits = [];
+    const k = 1 / this.view.zoom;
+    const bounce = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : Math.sin(time / 360) * 3;
+    for (const id of this.rabbitDrops) {
+      const b = this.current?.buildings.find(b => b.id === id); if (!b) continue;
+      const frame = buildingFrame(b), x = toScreen(buildingCenter(b)).x, y = frame.top - (22 + bounce) * k;
+      const points = [{x:-6,y:-13},{x:6,y:-13},{x:6,y:0},{x:13,y:0},{x:0,y:13},{x:-13,y:0},{x:-6,y:0}].map(p => ({x:x+p.x*k,y:y+p.y*k}));
+      g.fillStyle(0xf4d58b); g.lineStyle(2*k, 0x396447); g.fillPoints(points, true); g.strokePoints(points, true);
+      this.dropHits.push({id, point:{x,y}});
+    }
   }
   setRabbitPurchase(species: SpeciesId | null, selected: string | null = null): void {
     this.purchase = species ? {species, selected} : null;
@@ -761,6 +794,13 @@ export class MeadowScene extends Phaser.Scene {
     // Cells are read on the ground plane; rabbits, bubbles and decorations are hit where they are drawn.
     const world = this.view.world(screen), ground = toGround(world), cell = gridCell(ground);
     if (this.photo) return;
+    if (this.rabbitDrops) {
+      const arrow = this.dropHits.find(h => Math.abs(world.x-h.point.x)*this.view.zoom <= 22 && Math.abs(world.y-h.point.y)*this.view.zoom <= 22);
+      const b = this.current ? buildingAt(this.current, fineCell(ground)) : null;
+      const id = arrow?.id ?? (b?.kind === 'enclosure' ? b.id : null);
+      if (id) this.select({kind:'building',id});
+      return;
+    }
     if (this.purchase) {
       const b = this.current ? buildingAt(this.current, fineCell(ground)) : null;
       if (b && !habitatEntryReason(this.current!, b, this.purchase.species)) this.select({kind:'building',id:b.id});
@@ -831,6 +871,7 @@ export class MeadowScene extends Phaser.Scene {
     this.progressUpdatedAt = this.time.now;
   }
   update(time: number): void {
+    this.drawRabbitDrops(time);
     if (this.time.now - this.progressUpdatedAt >= 100) this.syncProgressBars();
     // A pinch changes the zoom on every pointer event: re-stroke the cached overlay at most once per frame.
     if (this.gridStroke && this.gridZoom !== this.view.zoom) this.gridStroke();
