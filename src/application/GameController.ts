@@ -133,7 +133,15 @@ export class GameController {
     if (!this.state) return false;
     const next = advance(this.state, now);
     const previous = this.state;
-    // These are the only non-clock/income mutations in advance. Rebase changes are
+    // Transfers change birth placement even when no resource or deadline becomes visible.
+    const birthPlacementChanged = next.buildings.some((b, i) => {
+      const before = previous.buildings[i];
+      return b.breeding?.birth.id !== before.breeding?.birth.id ||
+        b.nursery?.babies.length !== before.nursery?.babies.length ||
+        b.nursery?.babies.some((baby, slot) => baby.birth.id !== before.nursery?.babies[slot]?.birth.id ||
+          baby.slot !== before.nursery?.babies[slot]?.slot);
+    });
+    // These are the only other non-clock/income mutations in advance. Rebase changes are
     // adopted in full whenever lastSimulatedAt changes, including every job timestamp.
     const settlementChanged = next.missions.daily.cycleIndex !== previous.missions.daily.cycleIndex ||
       next.missions.completed.length !== previous.missions.completed.length ||
@@ -141,11 +149,11 @@ export class GameController {
       !!next.levelAccessTransition !== !!previous.levelAccessTransition ||
       next.purchaseUnlocks?.some((id, i) => id !== previous.purchaseUnlocks?.[i]) ||
       next.purchaseUnlocks?.length !== previous.purchaseUnlocks?.length;
-    const changed = next.lastSimulatedAt !== previous.lastSimulatedAt || settlementChanged ||
+    const changed = next.lastSimulatedAt !== previous.lastSimulatedAt || settlementChanged || birthPlacementChanged ||
       next.buildings.some((b, i) => b.incomeUnits !== previous.buildings[i].incomeUnits);
     if (changed) {
       const crossed = (end: number) => (previous.lastSimulatedAt >= end) !== (next.lastSimulatedAt >= end);
-      const visible = settlementChanged || next.lastSimulatedAt < previous.lastSimulatedAt || crossed(previous.nextHeartGiftAt) ||
+      const visible = settlementChanged || birthPlacementChanged || next.lastSimulatedAt < previous.lastSimulatedAt || crossed(previous.nextHeartGiftAt) ||
         previous.travel?.trips.some(trip => crossed(trip.endsAt)) ||
         previous.missions.daily.nextAt !== undefined && crossed(previous.missions.daily.nextAt) ||
         next.buildings.some((b, i) => Math.floor(b.incomeUnits / 3_600_000) !== Math.floor(previous.buildings[i].incomeUnits / 3_600_000) ||
