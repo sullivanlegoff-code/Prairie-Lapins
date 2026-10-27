@@ -1,4 +1,4 @@
-# Comptes et sauvegarde en ligne — format v19
+# Comptes et sauvegarde en ligne — format v20
 
 Dans **Paramètres → Sauvegarde en ligne**, tu peux créer un compte avec ton adresse e-mail et un mot de passe de huit caractères minimum, puis associer ta partie. Aucun e-mail, lien magique ou code n'est envoyé. Pour un mot de passe oublié, contacte le propriétaire : il le réinitialise dans le SQL Editor suivant [le guide d'installation](supabase-setup.md).
 
@@ -10,11 +10,15 @@ Ta partie jouée reste enregistrée dans le navigateur, sous la même clé `prai
 - Premier lien avec une partie en ligne : les deux résumés affichent niveau, pièces, nourriture, cœurs, lapins et espèces découvertes. Tu confirmes soit **Récupérer ma partie en ligne**, soit **Garder la partie de cet appareil**. Cette dernière action remplace la partie du compte.
 - Appareil déjà associé au même compte : le serveur est relu. Si sa révision est identique, les changements locaux reprennent leur envoi. Si seule la partie distante a changé, elle est récupérée automatiquement. Si les deux parties ont changé, les envois sont bloqués jusqu'à ton choix confirmé. Aucune fusion n'est effectuée.
 
-Avant tout remplacement local, le contenu précédent est écrit intégralement dans `prairie-lapins.cloud.backup.v1`. Si cette écriture échoue, le remplacement est refusé. Il s'agit d'un seul secours, remplacé à la récupération suivante, pas d'un gestionnaire de points de restauration. Pour le récupérer, le propriétaire peut extraire cette valeur du stockage du navigateur et l'enregistrer comme fichier JSON, puis utiliser l'import habituel. L'export courant concerne la partie jouée, pas ce secours.
+Avant tout remplacement local, le contenu précédent est écrit intégralement dans `prairie-lapins.cloud.backup.v1`. Si cette écriture échoue, le remplacement est refusé. Il s'agit d'un seul secours, remplacé à la récupération suivante, pas d'un gestionnaire de points de restauration. Dans **Paramètres → Sauvegarde en ligne**, **Télécharger la copie de secours** permet de conserver ce fichier. Pour le récupérer, utilise ensuite **Importer une partie**, dans la section **Remplacer la partie** des Paramètres : son contenu est validé et son résumé affiché avant ta confirmation. L'export courant concerne la partie jouée, pas ce secours.
+
+Si la liaison locale au compte est illisible, **Réparer la liaison** propose une confirmation. Le contenu exact de l'ancienne liaison, y compris un éventuel envoi en attente, est archivé sous une clé distincte `prairie-lapins.cloud.link-backup.v1.<identifiant>`. Si cet archivage échoue, rien n'est vidé. La réparation ne remplace pas la partie ni la copie de secours : elle relit le serveur et te demande de comparer les parties avant de choisir. Les archives de liaison ne sont pas des parties directement importables ; elles restent disponibles pour un diagnostic si nécessaire.
 
 ## Envois et statuts
 
 Les changements sont groupés : un envoi intervient quatre secondes après le premier changement à transmettre, puis un autre si tu as joué pendant l'envoi. Le jeu tente aussi un envoi au passage en arrière-plan et à la fermeture de la page ; un navigateur peut interrompre cette tentative. L'indicateur se trouve uniquement dans Paramètres.
+
+Les lectures et envois sans réponse sont interrompus après vingt secondes. La partie reste locale et la reprise réutilise le même identifiant d'opération et le même contenu pour éviter un double enregistrement. Une réponse tardive ne modifie pas le statut d'un nouvel envoi.
 
 - **Sauvegardé en ligne · date heure** : le serveur a confirmé la partie.
 - **Envoi en cours…** ou attente : les progrès sont locaux et attendent leur confirmation distante.
@@ -26,7 +30,7 @@ Les changements sont groupés : un envoi intervient quatre secondes après le pr
 
 La déconnexion arrête les envois et conserve la partie sur l'appareil. Revenir au même compte reprend la vérification. Changer de compte impose un nouveau choix. Évite de jouer simultanément dans plusieurs onglets ou appareils : le jeu refuse les écritures locales concurrentes détectées et le serveur refuse une révision devenue obsolète.
 
-L'empreinte compare les progrès persistants : ressources, individus, constructions, commandes, voyages, achats et récompenses. Elle exclut le temps simulé, les revenus en attente, les quotidiennes recalculées, les droits dérivés, les missions devenues prêtes et l'expiration des aides. Une naissance conserve son identité dans l'empreinte lors de son transfert automatique du nid à la nurserie. Ces changements passifs sont recalculés au chargement ; le seul passage du temps ne provoque pas d'envoi. L'état complet v19 reste envoyé après un changement du joueur.
+L'empreinte compare les progrès persistants : ressources, individus, constructions, commandes, voyages, achats et récompenses. Elle exclut le temps simulé, les revenus en attente, les quotidiennes recalculées, les droits dérivés, les missions devenues prêtes et l'expiration des aides. Une naissance conserve son identité dans l'empreinte lors de son transfert automatique du nid à la nurserie. Ces changements passifs sont recalculés au chargement ; le seul passage du temps ne provoque pas d'envoi. L'état complet v20 reste envoyé après un changement du joueur.
 
 ## Sécurité et limites
 
@@ -34,7 +38,7 @@ Le client Supabase est chargé à la demande après **Jouer**, seulement avec un
 
 La clé publishable est publique. Aucun secret serveur n'est nécessaire dans le navigateur ni dans le dépôt. La session persistante dispose de sa propre clé `prairie-lapins.auth.<ref>`. Sur un appareil partagé, déconnecte-toi ; la partie locale reste néanmoins accessible à la personne qui utilise ce navigateur. Les joueurs ne doivent jamais partager leurs mots de passe.
 
-Les politiques RLS autorisent chaque compte authentifié à lire seulement sa sauvegarde et son historique. Aucune écriture directe n'est autorisée, aucun accès anonyme. L'unique RPC vérifie `auth.uid()`, verrouille le propriétaire, contrôle la révision attendue (CAS), borne la taille à 1 000 000 octets et protège les formats supérieurs. La validation détaillée du jeu reste dans `decodeGame`, avec migrations v16 → v19 ; le serveur n'est pas un système anti-triche.
+Les politiques RLS autorisent chaque compte authentifié à lire seulement sa sauvegarde et son historique. Aucune écriture directe n'est autorisée, aucun accès anonyme. L'unique RPC vérifie `auth.uid()`, verrouille le propriétaire, contrôle la révision attendue (CAS), borne la taille à 1 000 000 octets et protège les formats supérieurs. La validation détaillée du jeu reste dans `decodeGame`, avec migrations v16 → v20 ; le serveur n'est pas un système anti-triche.
 
 Les 64 derniers reçus d'opérations permettent de rejouer une requête dont la réponse s'est perdue, avec le même identifiant et le même contenu, sans nouvelle révision. Après éviction d'un reçu, le contrôle de révision empêche un ancien envoi d'écraser les progrès plus récents. Les réponses d'une ancienne identité sont ignorées.
 
