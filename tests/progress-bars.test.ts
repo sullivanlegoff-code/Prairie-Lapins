@@ -94,19 +94,31 @@ describe('bars from canonical jobs', () => {
   });
 });
 
-it('reuses passive Graphics across frames, hiding and restoring, then destroys removed buildings', () => {
-  const graphics = {name: '', setDepth: vi.fn(), setName: vi.fn(), setVisible: vi.fn(), setPosition: vi.fn(),
-    clear: vi.fn(), fillStyle: vi.fn(), fillRoundedRect: vi.fn(), destroy: vi.fn()};
-  for (const method of Object.values(graphics)) if (typeof method === 'function') method.mockReturnValue(graphics);
-  graphics.setName.mockImplementation((name: string) => { graphics.name = name; return graphics; });
-  const scene = {add: {graphics: vi.fn(() => graphics)}}, views = new ProgressBarViews(scene as unknown as Phaser.Scene);
-  const bar = {key: 'farm:crop', buildingId: 'farm', x: 0, y: 0, width: 46, height: 5, fraction: 0};
-  views.sync([bar], ['farm']); views.sync([{...bar, fraction: .5}], ['farm']);
+it('reuses active Graphics but releases finished trips and recreates temporarily hidden bars', () => {
+  const makeGraphics = () => {
+    const graphics = {name: '', setDepth: vi.fn(), setName: vi.fn(), setVisible: vi.fn(), setPosition: vi.fn(),
+      clear: vi.fn(), fillStyle: vi.fn(), fillRoundedRect: vi.fn(), destroy: vi.fn()};
+    for (const method of Object.values(graphics)) if (typeof method === 'function') method.mockReturnValue(graphics);
+    graphics.setName.mockImplementation((name: string) => { graphics.name = name; return graphics; });
+    return graphics;
+  };
+  const scene = {add: {graphics: vi.fn(makeGraphics)}}, views = new ProgressBarViews(scene as unknown as Phaser.Scene);
+  const bar = {key: 'agency:trip-a', buildingId: 'agency', x: 0, y: 0, width: 46, height: 5, fraction: 0};
+  views.sync([bar], ['agency']); views.sync([{...bar, fraction: .5}], ['agency']);
+  const first = scene.add.graphics.mock.results[0].value;
   expect(scene.add.graphics).toHaveBeenCalledTimes(1);
-  expect(graphics.clear).toHaveBeenCalledTimes(2);
-  views.sync([], ['farm']); expect(graphics.setVisible).toHaveBeenLastCalledWith(false);
-  views.sync([{...bar, fraction: .5}], ['farm']); expect(graphics.setVisible).toHaveBeenLastCalledWith(true);
-  expect(graphics.clear).toHaveBeenCalledTimes(2);
-  views.sync([], []); expect(graphics.destroy).toHaveBeenCalledTimes(1);
-  views.destroy(); expect(graphics.destroy).toHaveBeenCalledTimes(1);
+  expect(first.clear).toHaveBeenCalledTimes(2);
+  views.sync([{...bar, key: 'agency:trip-b'}], ['agency']);
+  expect(first.destroy).toHaveBeenCalledTimes(1);
+  const second = scene.add.graphics.mock.results[1].value;
+  views.sync([], ['agency']); expect(second.destroy).toHaveBeenCalledTimes(1);
+  views.sync([{...bar, key: 'agency:trip-b', fraction: .5}], ['agency']);
+  expect(scene.add.graphics).toHaveBeenCalledTimes(3);
+  const restored = scene.add.graphics.mock.results[2].value;
+  expect(restored.setVisible).toHaveBeenLastCalledWith(true);
+  views.sync([{...bar, key: 'agency:trip-b', fraction: .5}], ['agency']);
+  expect(restored.clear).toHaveBeenCalledTimes(1);
+  views.sync([], []); expect(restored.destroy).toHaveBeenCalledTimes(1);
+  views.destroy();
+  for (const graphics of [first, second, restored]) expect(graphics.destroy).toHaveBeenCalledTimes(1);
 });

@@ -89,6 +89,30 @@ describe('visible rabbit life, independent of saves and gameplay random', () => 
     }
     expect(starts.size).toBe(3); expect(Math.max(...starts.values())-Math.min(...starts.values())).toBeGreaterThan(30_000);
   });
+  it('ends both partners activities when one leaves the screen during a kiss', () => {
+    const life = new RabbitLife(timing({socialGap: [100, 100]})), rabbits = [rabbit('a', -20), rabbit('b', 20)];
+    for (let frame = 0; frame < 100 && rabbits[0].motion.mode !== 'kiss'; frame++) tick(life, rabbits);
+    expect(rabbits.every(r => r.motion.mode === 'kiss')).toBe(true);
+    rabbits[1].visible = false;
+    tick(life, rabbits);
+    expect(rabbits.every(r => !['meet', 'kiss'].includes(r.motion.mode))).toBe(true);
+    for (let frame = 0; frame < 30; frame++) tick(life, rabbits);
+    expect(rabbits[0].motion.mode).not.toBe('kiss');
+  });
+  it('waits one second before retrying a zoom or meeting without eligible residents', () => {
+    const zoom = new RabbitLife(timing({zoomGap: [100, 100]})), solo = rabbit('runner');
+    solo.motion.mode = 'fed'; zoom.step(100, [solo], true, false);
+    solo.motion.mode = 'rest'; zoom.step(900, [solo], true, false);
+    expect(solo.motion.mode).toBe('rest');
+    zoom.step(100, [solo], true, false); expect(solo.motion.mode).toBe('zoom');
+
+    const social = new RabbitLife(timing({socialGap: [100, 100]})), rabbits = [rabbit('a', -20)];
+    social.step(100, rabbits, true, false);
+    rabbits.push(rabbit('b', 20)); social.step(900, rabbits, true, false);
+    expect(rabbits.every(r => r.motion.mode === 'rest')).toBe(true);
+    social.step(100, rabbits, true, false);
+    expect(rabbits.every(r => r.motion.mode === 'meet')).toBe(true);
+  });
   it('cancels a meeting when a partner changes enclosure, and reduced motion allows only calm naps', () => {
     const life = new RabbitLife(timing({zoomGap: [100, 100], socialGap: [100, 100], sleepGap: [500, 500]}));
     const rabbits = [rabbit('a', -20), rabbit('b', 20)];

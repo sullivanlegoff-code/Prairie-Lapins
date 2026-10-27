@@ -2,6 +2,8 @@
 
 ## État courant au 27 octobre 2026
 
+Révision complémentaire : rencontres annulées pour les deux partenaires si l'un sort du champ (évite le sautillage bloqué), délai d'une seconde avant de retenter une activité sans candidat, destruction des anciennes barres de voyage plutôt que cache illimité. Types et 122 tests ciblés réussis ; détails dans docs/audit-2026-10-27.md. Aucun changement des règles d'économie, d'XP ou de sauvegarde. Aucune suite complète ni simulation de progression.
+
 Vie des lapins : zoomies rares, un seul lapin à la fois dans la prairie ; siestes de 60 secondes visibles, yeux fermés existants et petit Zz… sans bulle ; rencontres avec approche, sautillage et cœurs. Présentation seulement, aucun changement de sauvegarde, économie ou RNG de reproduction. Détails : docs/rabbit-life-current.md. Types et 43 tests ciblés réussis (vie, mouvements, clignements, Dadi). Ancienne attente du test Dadi actualisée : un tirage de revenu à l’accueil, aucun tirage supplémentaire par les animations. Captures de présentation forcée dans le vrai rendu, hors Git : output/validation/rabbit-life-2026-10-27/. Aucun essai iPhone.
 
 Suite à la précision du propriétaire : plein écran demandé par le manifeste et sur Jouer pour les appareils tactiles compatibles ; zone système iOS translucide plutôt que bande opaque. Safari dans un onglet reste soumis aux barres natives ; privilégier le lancement depuis l’écran d’accueil, sans promettre de supprimer les icônes système. Une barre de temps par voyage en cours apparaît sous l’agence, avec relais immédiat par la bulle à l’arrivée. Types et 19 tests ciblés réussis ; captures locales sous output/validation/fullscreen-travel-2026-10-27/. Aucun essai iPhone.

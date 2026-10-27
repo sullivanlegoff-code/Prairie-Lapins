@@ -72,6 +72,8 @@ export class RabbitLife {
       if (this.zoom) this.interrupt(this.zoom.id);
       if (this.pair) this.endPair();
     }
+    // A meeting needs both partners on screen; do not leave one hopping alone at the edge.
+    if (this.pair && (!live.get(this.pair.a)?.visible || !live.get(this.pair.b)?.visible)) this.endPair();
     // A suspended tab must never skip a whole nap or burst. Ordinary long frames are bounded too.
     const ms = active && Number.isFinite(dt) && dt >= 0 && dt <= 1000 ? dt : 0;
     const seen = input.filter(r => r.visible && !priority.includes(r.id));
@@ -108,7 +110,7 @@ export class RabbitLife {
           startRabbitActivity(rabbit.motion, 'zoom', {x: p.x < (zone.minX + zone.maxX) / 2 ? zone.maxX - 3 : zone.minX + 3,
             y: p.y < (zone.minY + zone.maxY) / 2 ? zone.maxY - 2 : zone.minY + 2});
           this.zoom = {id: rabbit.id, remaining: this.between([5000, 8000])};
-        }
+        } else this.zoomIn = 1000;
       }
     }
     if (this.pair) {
@@ -143,6 +145,8 @@ export class RabbitLife {
           startRabbitActivity(b.motion, 'meet', {x: x + (left ? 12 : -12), y});
           this.pair = {a: a.id, b: b.id, elapsed: 0, kissing: false}; break;
         }
+        // No compatible pair yet: retry shortly instead of scanning every rendered frame.
+        if (!this.pair) this.socialIn = 1000;
       }
     }
   }

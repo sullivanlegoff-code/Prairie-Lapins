@@ -9,8 +9,7 @@ export class ProgressBarViews {
   sync(bars: readonly ProgressBar[], buildingIds: readonly string[]): void {
     const present = new Set(buildingIds), visible = new Set(bars.map(bar => bar.key));
     for (const [key, view] of this.views) {
-      if (!present.has(view.graphics.name)) { view.graphics.destroy(); this.views.delete(key); }
-      else if (!visible.has(key)) view.graphics.setVisible(false);
+      if (!present.has(view.graphics.name) || !visible.has(key)) { view.graphics.destroy(); this.views.delete(key); }
     }
     for (const bar of bars) {
       let view = this.views.get(bar.key);
