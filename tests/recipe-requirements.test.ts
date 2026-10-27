@@ -31,6 +31,9 @@ function historicalWeights(a: SpeciesId, b: SpeciesId, x: number, y: number): Od
   // Approved additions: ordinary weight 20 each, only when both required elements and both affection thresholds hold.
   Object.assign(ordinary, rareAdditions(types, x, y));
   const pool: Odds = key === 'neige,paille' ? (Math.min(x,y) >= 2 ? {frisket:30,icy:30} : {}) : ordinary;
+  // Owner rule: preserve the independent historical oracle for every mixed pair, but remove common outcomes from two common parents.
+  if (SPECIES[a].rarity === 'common' && SPECIES[b].rarity === 'common')
+    for (const id of Object.keys(pool) as SpeciesId[]) if (SPECIES[id].rarity === 'common') delete pool[id];
   const specials: Odds = {};
   for (const special of SPECIALS) if (Math.min(x,y) >= special.affection && (special.types ? special.types.every(t => types.has(t as never))
     : a === special.parents![0] && b === special.parents![1] || a === special.parents![1] && b === special.parents![0]))
@@ -52,7 +55,7 @@ describe('explicit recipe requirements', () => {
     override('bouee', {requiredTypes: ['neige','metal'], minAffection: 4});
     expect(recipeMatches('bouee','paille','feu')).toBe(false);
     expect(recipeMatches('bouee','neige','belier-gris')).toBe(true);
-    expect(breedingOdds('neige','belier-gris',4,4).bouee).toBe(100 * 30 / (90 + 30 * Object.keys(rareAdditions(['neige', 'metal'], 4, 4)).length));
+    expect(breedingOdds('neige','belier-gris',4,4).bouee).toBe(100 * 30 / (30 + 30 * Object.keys(rareAdditions(['neige', 'metal'], 4, 4)).length));
     const s = regressionStart(0); s.rabbits[0].species='neige'; s.rabbits[1].species='belier-gris';
     s.discovered.push('bouee');
     expect(recipeBook(s,0).find(r => r.species === 'bouee')!.pairs).toHaveLength(1);

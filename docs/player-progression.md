@@ -8,18 +8,18 @@ Le tutoriel de Paille est rejoué avec ses trois aides uniques, récolte/transfe
 
 Chaque visite est limitée à 45 commandes réussies, soit environ six secondes par action dans une session de cinq minutes. C’est une hypothèse de joueur organisé, pas une mesure humaine ; déplacement, consultation et choix peuvent ralentir le parcours. Les repas maximaux et les choix de parents sont explicites et reproductibles. La simulation laisse les commandes terminées attendre les visites, sans collecte pendant l’absence. Les instantanés J1/J3/etc. sont pris juste avant 8 h du jour suivant ; les pattes stockées restent à récolter. Aucun clic supplémentaire au point « 10 min ».
 
-Les premières atteintes, comptées en jours calendaires avec J1 comme jour du départ, sont **N5 à J1 ; N10 à J3 ; N15 à J7 ; N20 à J16 ; N22 à J20 ; N25 à J30 ; N30 à J48** (simulation du 26 octobre 2026, sauvegarde v20, nouveau catalogue et statue à 60 cœurs). La Statue de l’Affection est achetée après **8,5 jours écoulés, soit J9**. Les deux fermes sont améliorées (60 cœurs au total). Le joueur simulé ne construit pas d’agence ; le script sait l’améliorer si elle est présente. Les prix, revenus, tirages et anciens barèmes d’XP restent identiques. Les nouvelles primes de mission sont incluses dans ces mesures.
+Les premières atteintes, comptées en jours calendaires avec J1 comme jour du départ, sont **N5 à J1 ; N10 à J2 ; N15 à J6 ; N20 à J14 ; N22 à J20 ; N25 à J29 ; N30 à J47** (simulation du 27 octobre 2026, sauvegarde v20, nouveau catalogue et statue à 60 cœurs). Depuis ce jour, deux parents communs ne donnent plus de commun : les premières découvertes arrivent plus tôt, sans modifier les paires mixtes, les probabilités fixes ni les bonus d'affection. Les naissances déjà tirées sont conservées. La Statue de l’Affection est achetée après **6,208 jours écoulés, soit J7**. Les deux fermes sont améliorées (60 cœurs au total). Le joueur simulé ne construit pas d’agence ; le script sait l’améliorer si elle est présente. Les prix, revenus et anciens barèmes d’XP restent identiques. Les nouvelles primes de mission sont incluses dans ces mesures.
 
-À 20 jours, 25 des 36 lapins ont au moins 10 d’affection et huit au moins 15 ; à 50 jours, 41 sur 42 et 30. Les cœurs restants sont **187 à 20 jours et 763 à 50 jours**, pour **6 324 actions réussies sur 70 jours**. Le comptoir conserve les réserves de **6 000 nourriture et 3 000 pattes**, sans ancienne réserve de pièces pour la statue. Les réclamations du catalogue sont de vraies commandes et comptent dans le plafond de 45 actions par visite ; les objectifs terminés déjà réclamés sont exclus de ses choix. Les résultats détaillés sont dans `docs/progression-results.json`.
+À 20 jours, 26 des 35 lapins ont au moins 10 d’affection et huit au moins 15 ; à 50 jours, 40 sur 41 et 29. Les cœurs restants sont **199 à 20 jours et 764 à 50 jours**, pour **6 242 actions réussies sur 70 jours**. Le comptoir conserve les réserves de **6 000 nourriture et 3 000 pattes**, sans ancienne réserve de pièces pour la statue. Les réclamations du catalogue sont de vraies commandes et comptent dans le plafond de 45 actions par visite ; les objectifs terminés déjà réclamés sont exclus de ses choix. Les résultats détaillés sont dans `docs/progression-results.json`.
 
 | Étape | Pattes disponibles | Nourriture | Cœurs | Niveau | Espèces | Pattes stockées | Affection ≥ 10 / ≥ 15 |
 |---|---:|---:|---:|---:|---:|---:|---|
 | 10 min | 810 | 96 | 18 | 5 | 3 | 6 | 0 / 0 (sur 3) |
 | 1 j | 4 | 67 | 23 | 7 | 5 | 947 | 1 / 0 (sur 5) |
-| 3 j | 1 674 | 10 | 10 | 10 | 10 | 2 471 | 4 / 0 (sur 12) |
-| 7 j | 4 628 | 2 790 | 45 | 15 | 17 | 5 267 | 11 / 0 (sur 22) |
-| 20 j | 4 752 | 6 | 187 | 22 | 30 | 11 063 | 25 / 8 (sur 36) |
-| 50 j | 5 639 | 38 | 763 | 30 | 32 | 16 211 | 41 / 30 (sur 42) |
+| 3 j | 2 486 | 38 | 11 | 11 | 13 | 2 819 | 4 / 0 (sur 13) |
+| 7 j | 3 652 | 1 | 17 | 16 | 20 | 5 927 | 10 / 1 (sur 24) |
+| 20 j | 3 513 | 183 | 199 | 22 | 30 | 10 943 | 26 / 8 (sur 35) |
+| 50 j | 6 587 | 22 | 764 | 30 | 32 | 15 935 | 40 / 29 (sur 41) |
 
 Les achats restants de chaque instantané figurent dans les champs `remaining` et `decorationBudget` du rapport JSON. Ils utilisent le catalogue v20 ; les améliorations et décorations restent des choix du joueur.
 

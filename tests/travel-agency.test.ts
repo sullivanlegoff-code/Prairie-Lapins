@@ -113,6 +113,7 @@ describe('travel agency rules', () => {
 
   it('does not let a parent at the nest leave', () => {
     let s = secondRabbit(agency());
+    s.rabbits[1].species = 'frisket'; s.discovered.push('frisket');
     s = run(s, {type: 'breed', parents: ['rabbit-2', s.rabbits[1].id]});
     expect(act(s, {type: 'startTrip', rabbitId: 'rabbit-2'}, 0)).toMatchObject({ok: false, reason: 'PARENT_BUSY'});
   });
@@ -135,6 +136,7 @@ describe('travel agency rules', () => {
       expect(decodeGame(JSON.stringify(bad))).toEqual({ok: false, reason: 'INVALID_STATE'});
     }
     let nested = secondRabbit(agency());
+    nested.rabbits[1].species = 'frisket'; nested.discovered.push('frisket');
     nested = run(nested, {type: 'breed', parents: ['rabbit-2', nested.rabbits[1].id]});
     nested.travel = structuredClone(s.travel);
     expect(decodeGame(JSON.stringify(nested))).toEqual({ok: false, reason: 'INVALID_STATE'});

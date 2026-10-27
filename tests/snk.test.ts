@@ -48,18 +48,18 @@ describe('approved SNK content', () => {
       expect(recipeMatches('snk',a,b)).toBe(false); expect(breedingWeights(a,b,20,20).snk).toBeUndefined();
     }
   });
-  it('preserves historical weighting and guarantee rather than extending the starting Rare-only policy', () => {
-    expect(breedingWeights('paille','feu',2,2)).toEqual({paille:30,feu:30,ardent:30,snk:30});
-    expect(breedingOdds('feu','paille',2,2)).toEqual({paille:25,feu:25,ardent:25,snk:25});
-    expect(breedingOdds('paille','feu',4,4)).toEqual({paille:25,feu:25,ardent:25,snk:25});
+  it('gives only the two Rares to two commons (owner decision of 27 October 2026), like Paille × Neige', () => {
+    expect(breedingWeights('paille','feu',2,2)).toEqual({ardent:30,snk:30});
+    expect(breedingOdds('feu','paille',2,2)).toEqual({ardent:50,snk:50});
+    expect(breedingOdds('paille','feu',4,4)).toEqual({ardent:50,snk:50});
     const s = parents(); s.progression = {totalXp: cumulativeLevelXp(5), rewardedThroughLevel: 5}; s.pityFailures = 7;
     expect(breedingPool(s,'paille','feu',4,4)).toMatchObject({weights:{ardent:1,snk:1},guaranteed:true});
     expect(breedingPool(s,'paille','feu',2,2)).toMatchObject({weights:{ardent:1,snk:1},guaranteed:true});
     expect(breedingOdds('paille','neige',2,2)).toEqual({frisket:50,icy:50});
   });
-  it('checks exact cumulative boundaries for the four ordinary candidates', () => {
+  it('checks exact cumulative boundaries for the two Rare candidates', () => {
     const s = parents();
-    for (const [roll,id] of [[0,'paille'],[1/4-Number.EPSILON,'paille'],[1/4,'feu'],[2/4-Number.EPSILON,'feu'],[2/4,'ardent'],[3/4-Number.EPSILON,'ardent'],[3/4,'snk'],[1-Number.EPSILON,'snk']] as const) {
+    for (const [roll,id] of [[0,'ardent'],[1/2-Number.EPSILON,'ardent'],[1/2,'snk'],[1-Number.EPSILON,'snk']] as const) {
       expect(chooseBirth(s,'paille','feu',roll,2,2).species).toBe(id);
       expect(chooseBirth(s,'feu','paille',roll,2,2).species).toBe(id);
     }

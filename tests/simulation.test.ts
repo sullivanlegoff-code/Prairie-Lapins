@@ -2,7 +2,7 @@ import {cumulativeLevelXp} from '../src/simulation/progression';
 import {sendToNursery} from './manual-transfer';
 import {regressionStart as legacyGame} from './regression-start';
 import {describe, expect, it} from 'vitest';
-import {FEED_COSTS, HOUR, MINUTE, ORDERS, BREEDING_ODDS, SPECIES, LEGACY_SPECIES_IDS, type SpeciesId} from '../src/config/balance';
+import {FEED_COSTS, HOUR, MINUTE, ORDERS, SPECIES, LEGACY_SPECIES_IDS, type SpeciesId} from '../src/config/balance';
 import {act, advance,  decodeGame, encodeGame, pendingDiscoveries, rabbitIncome} from '../src/simulation';
 import {breedingOdds, chooseBirth} from '../src/simulation/breeding';
 import type {Command, GameState, Refusal} from '../src/state/types';
@@ -176,8 +176,9 @@ describe('farming and affection', () => {
 
 describe('breeding probabilities and pity', () => {
   it('matches the approved probability tables that remain (Terre, Mottelin and Brumelin were removed)', () => {
-    expect(breedingOdds('paille', 'paille')).toEqual({paille: 100});
-    expect(breedingOdds('neige', 'neige')).toEqual({neige: 100});
+    // Two commons never give a common (owner decision of 27 October 2026): two of one element give nothing.
+    expect(breedingOdds('paille', 'paille')).toEqual({});
+    expect(breedingOdds('neige', 'neige')).toEqual({});
     expect(breedingOdds('paille', 'neige')).toEqual({frisket:50,icy:50});
   });
   it('covers all 3 unordered pairs of the remaining historical species, with exact weights and symmetric rules', () => {
@@ -185,8 +186,9 @@ describe('breeding probabilities and pity', () => {
       const a = LEGACY_SPECIES_IDS[i], b = LEGACY_SPECIES_IDS[j]; const odds = breedingOdds(a, b);
       expect(odds).toEqual(breedingOdds(b, a));
       const key = [...new Set([...SPECIES[a].types, ...SPECIES[b].types])].sort().join(',');
-      const expected = key === 'neige,paille' ? {frisket:30,icy:30} : {...BREEDING_ODDS[key], ...(key.includes('paille') && key.includes('neige') ? {frisket:30, icy:30} : {})};
+      const expected = key === 'neige,paille' ? {frisket:30,icy:30} : {};
       const total = Object.values(expected).reduce((sum,w) => sum+w,0);
+      if (!total) { expect(odds).toEqual({}); continue; }
       expect(odds).toEqual(Object.fromEntries(Object.entries(expected).map(([id,w]) => [id,w*100/total])));
       const counts: Partial<Record<SpeciesId, number>> = {};
       for (let point = 0; point < total; point++) {
@@ -212,11 +214,12 @@ describe('breeding probabilities and pity', () => {
   });
   it('does not count ineligible attempts, including already discovered hybrids', () => {
     const s = createGame(0); s.pityFailures = 7;
-    expect(chooseBirth(s, 'neige', 'neige', 0).pityFailures).toBe(7);
+    expect(() => chooseBirth(s, 'neige', 'neige', 0)).toThrow('No admissible breeding result'); expect(s.pityFailures).toBe(7);
     s.discovered.push('frisket','icy'); expect(chooseBirth(s, 'paille', 'neige', 0).pityFailures).toBe(7);
   });
   it('guarantees the tenth eligible attempt after nine actual failures', () => {
-    let s = setup(); s.rabbits[0].species='feu'; s.discovered.push('feu','wat-wat'); s.rabbits.forEach(r => r.affection = 4);
+    // A known Rare × Common keeps ordinary Common failures available; two Commons now always give non-Common results.
+    let s = setup(); s.rabbits[0].species='wat-wat'; s.discovered.push('wat-wat'); s.rabbits.forEach(r => r.affection = 4);
     for (let attempt = 1; attempt <= 7; attempt++) {
       s = run(s, breed, s.lastSimulatedAt, 0); expect(s.pityFailures).toBe(attempt);
       s=sendToNursery(s,s.lastSimulatedAt+20*MINUTE);s = run(s, welcomeOf(s, secondEnclosure(s)), s.lastSimulatedAt + 5 * MINUTE);
@@ -257,7 +260,7 @@ describe('breeding probabilities and pity', () => {
     const decoded = decodeGame(encodeGame(s)); expect(decoded).toEqual({ok: true, state: s});
     s = run(s, welcomeOf(s, secondEnclosure(s)), HOUR);
     expect(s.pityFailures).toBe(0); expect(s.discovered).toContain('glassofeu');
-    expect(babyOf(nursery(s))).toBeNull();s=sendToNursery(s);expect(babyOf(nursery(s))!.birth.species).toBe('neige');
+    expect(babyOf(nursery(s))).toBeNull();s=sendToNursery(s);expect(babyOf(nursery(s))!.birth.species).toBe('wat-wat');
   });
 });
 

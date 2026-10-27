@@ -489,7 +489,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     expect(document.getElementById('panel-title')!.textContent).toBe(`Collection · 3/${EXPECTED_IDS.length}`);
     expect(panel().textContent).toContain(SPECIES[species].name); expect(panel().querySelectorAll('article')).toHaveLength(EXPECTED_IDS.length);
   });
-  it('explains feeding in the notebook, previews 50/50 then 40/40/20, and prepares parents without launching', () => {
+  it('explains feeding in the notebook, previews only non-common results for two commons, and prepares parents without launching', () => {
     const initial = collectionReady();initial.progression={totalXp:cumulativeLevelXp(6),rewardedThroughLevel:6}; initial.pityFailures = 0;
     initial.rabbits.find(r => r.id === 'rabbit-3')!.affection = 1;
     initial.recipeBook.push('glassofeu'); // Known recipe of a still undiscovered species.
@@ -505,12 +505,12 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     crossFromNest('Lapin Feu', 'Lapin Neige', false);
     const odds = () => breeding().querySelector('.breeding-odds')!.textContent;
     expect(breeding().querySelector('.breeding-odds')).toBeNull(); button('Probabilités', breeding()).click();
-    expect(odds()).toContain(`feu · Commun : ${shareLabel(30, 60 + 30 * Object.keys(rareAdditions(['feu', 'neige'], 2, 2)).length)}`);
+    expect(odds()).not.toContain('Commun');
     expect(odds()).toContain('feu + neige');
     for (const id of ['rabbit-3', 'rabbit-11']) for (let n = 0; n < 2; n++) expect(controller.perform({type: 'feed', id}).ok).toBe(true);
-    expect(odds()).toContain(`feu + neige · Rare : ${shareLabel(30, 60 + 30 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length)}`);
-    expect(odds()).toContain(`neige · Commun : ${shareLabel(30, 60 + 30 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length)}`);
-    breeding().close(); ui.open({kind: 'recipes'}); expect(recipe().textContent).toContain(`Recette possible, résultat non garanti · ${shareLabel(30, 60 + 30 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length)}`);
+    expect(odds()).toContain(`feu + neige · Rare : ${shareLabel(30, 30 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length)}`);
+    expect(odds()).not.toContain('Commun');
+    breeding().close(); ui.open({kind: 'recipes'}); expect(recipe().textContent).toContain(`Recette possible, résultat non garanti · ${shareLabel(30, 30 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length)}`);
     const before = state(controller), perform = vi.spyOn(controller, 'perform');
     button('Préparer cette paire au nid', recipe()).click(); expect(perform).not.toHaveBeenCalled(); expect(state(controller)).toEqual(before);
     // The shortcut opens the pairing window with the recipe's pair already chosen, nothing launched.

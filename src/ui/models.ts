@@ -3,7 +3,7 @@ import {stateLevelAccess} from '../simulation/levelRights';
 import {buildingPlacementReason} from '../simulation/placement';
 import {habitatPrice, type HabitatType} from '../config/habitats';
 import {AFFECTION_STATUE, BALANCE, HOUR, TRAVEL, SPECIES, SPECIES_IDS, RECIPE_SPECIES, type BuildingKind, type SpeciesId, type RabbitType, type Rarity} from '../config/balance';
-import {breedingPool, recipeMatches, ordinaryPoolAllows, nestForParent} from '../simulation/breeding';
+import {bothCommon, breedingPool, recipeMatches, ordinaryPoolAllows, nestForParent} from '../simulation/breeding';
 import {playerLevel} from '../simulation/affection';
 import {travelling} from '../simulation/travel';
 import {recipeKnown, recipePrice} from '../simulation/recipes';
@@ -13,10 +13,11 @@ import {ISLAND} from '../config/islandGeometry';
 import {mapRarities} from '../config/rarities';
 
 export const BUILDING_NAMES: Record<BuildingKind, string> = {enclosure: 'Enclos', farm: 'Ferme', nest: 'Nid', nursery: 'Nurserie', kitchen: 'Cuisine', statue: 'Statue de l’Affection', agency: 'Agence de voyage'};
-export const REFUSALS: Record<Refusal | 'NO_GAME' | 'DISPOSED' | 'SALE_NOT_SAVED' | 'ACTION_NOT_SAVED' | 'STORAGE_CHANGED', string> = {
+export const REFUSALS: Record<Refusal | 'SAME_COMMON_ELEMENT' | 'NO_GAME' | 'DISPOSED' | 'SALE_NOT_SAVED' | 'ACTION_NOT_SAVED' | 'STORAGE_CHANGED', string> = {
   HABITAT_NOT_EMPTY: 'Cet habitat doit être vide.',
   LAST_HABITAT: 'Garde au moins un habitat.',
   LEVEL_REQUIRED:'Niveau du joueur insuffisant pour cette action.',
+  SAME_COMMON_ELEMENT:'Deux lapins communs du même élément ne donnent rien. Associe deux éléments différents.',
   NO_BREEDING_RESULT:'Aucun résultat ordinaire accessible à ce niveau. La reproduction attend pour conserver les probabilités spéciales. Consulte le carnet.',
   PURCHASE_LOCKED:'Cet achat est verrouillé. Consulte son niveau requis.',
   RECIPE_KNOWN:'Cette recette est déjà dans ton carnet. Aucun nouvel achat n’est nécessaire.',
@@ -109,7 +110,9 @@ export function oddsView(s: GameState, a: SpeciesId, b: SpeciesId, affectionA = 
   const pool = breedingPool(s, a, b, affectionA, affectionB);
   const ids = Object.keys(pool.weights) as SpeciesId[], known = (id: SpeciesId) => recipeKnown(s, id);
   const unknownWeight = ids.filter(id => !known(id)).reduce((sum, id) => sum + pool.weights[id]!, 0);
-  return {eligible: pool.eligible, guaranteed: pool.guaranteed, possible: pool.total > 0,
+  // Two commons of the same element have no rare to give, and they never give a common: the window says so instead of a level hint.
+  const sameCommonElement = pool.total === 0 && bothCommon(a, b) && new Set([...SPECIES[a].types, ...SPECIES[b].types]).size === 1;
+  return {eligible: pool.eligible, guaranteed: pool.guaranteed, possible: pool.total > 0, sameCommonElement,
     excluded: pool.excluded.filter(e => known(e.species)), hiddenExcluded: pool.excluded.some(e => !known(e.species)),
     entries: ids.filter(known).map(id => ({
       name: SPECIES[id].name,
@@ -124,7 +127,7 @@ export function oddsTexts(odds: ReturnType<typeof oddsView>) {
   const names = [...new Set(odds.entries.map(e => e.name))].join(', ');
   const listed = !odds.unknown ? names : names ? `${names} et des résultats inconnus` : 'inconnus';
   return {
-    summary: odds.possible ? `Résultats possibles : ${listed}.` : REFUSALS.NO_BREEDING_RESULT,
+    summary: odds.possible ? `Résultats possibles : ${listed}.` : odds.sameCommonElement ? REFUSALS.SAME_COMMON_ELEMENT : REFUSALS.NO_BREEDING_RESULT,
     excluded: [...odds.excluded.map(e => `${SPECIES[e.species].name} : Niveau ${e.requiredLevel} requis · exclu du tirage actuel.`),
       ...(odds.hiddenExcluded ? ['Certains résultats demandent un niveau supérieur · exclus du tirage actuel.'] : [])],
     lines: [...odds.entries.map(e => `${e.name} · ${e.description} : ${e.probability}`), ...(odds.unknown ? [`Résultats inconnus : ${odds.unknown.probability}`] : [])],

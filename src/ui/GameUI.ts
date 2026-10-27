@@ -1236,7 +1236,7 @@ export class GameUI {
     let reason: string | null = selected[0] && selected[1] ? (rabbitAvailability(s, selected[0].id, this.now()) ?? rabbitAvailability(s, selected[1].id, this.now())) : 'Choisis un lapin dans chaque liste.';
     if (selected[0] && selected[1]) {
       const odds = oddsView(s, selected[0].species, selected[1].species, selected[0].affection, selected[1].affection), texts = oddsTexts(odds);
-      if (!odds.possible) reason = REFUSALS.NO_BREEDING_RESULT;
+      if (!odds.possible) reason = odds.sameCommonElement ? REFUSALS.SAME_COMMON_ELEMENT : REFUSALS.NO_BREEDING_RESULT;
       footer.append(node('p', texts.summary, 'small'));
       for (const line of texts.excluded) footer.append(node('p', line, 'reason'));
       if (this.oddsOpen) { const details = node('div', '', 'breeding-odds'); for (const line of texts.lines) details.append(node('p', line)); details.append(node('p', texts.guarantee, 'badge')); footer.append(details); }

@@ -4,7 +4,7 @@ import {regressionStart as legacyGame} from './regression-start';
 import {describe, expect, it, vi} from 'vitest';
 import {recipeOf} from '../src/config/species';
 import {GUARANTEE_SPECIES, MINUTE, SPECIES, SPECIES_IDS, growthDuration, type SpeciesId} from '../src/config/balance';
-import {breedingOdds, breedingPool, chooseBirth, recipeMatches} from '../src/simulation/breeding';
+import {bothCommon, breedingOdds, breedingPool, chooseBirth, recipeMatches} from '../src/simulation/breeding';
 import {act, advance,  decodeGame, encodeGame, pendingDiscoveries, rabbitIncome} from '../src/simulation';
 import {GameController} from '../src/application/GameController';
 import {SAVE_KEY} from '../src/persistence/storage';
@@ -40,8 +40,9 @@ describe('approved three-species rules',()=>{
   expect(SPECIES[id].art.kind).toBe('static-sprite');
  });
  it('matches the three approved distributions exactly',()=>{
-  expect(breedingOdds('paille','feu',4,4)).toEqual({ardent:25,feu:25,paille:25,snk:25});
-  expect(breedingOdds('paille','belier-gris',6,6)).toEqual({paille:23.75,'belier-gris':23.75,roukette:23.75,boudinet:23.75,magicien:5});
+  // Two commons never give a common (owner decision of 27 October 2026): only the Rares of the union, and the epic, remain.
+  expect(breedingOdds('paille','feu',4,4)).toEqual({ardent:50,snk:50});
+  expect(breedingOdds('paille','belier-gris',6,6)).toEqual({roukette:47.5,boudinet:47.5,magicien:5});
   // Dadi x Phoenix at affection 10: the ×1.5 step lifts Dragon to 3 % and the two Neige-Vol epics to 7.5 % each; eleven ordinary results share the 82 % left.
   const pair=breedingOdds('dadi','phoenix',10,10);expect(pair).toMatchObject({dragon:3,dadi:7.5,maxou:7.5});
   for(const id of ['neige','feu','volant','pic-pic','phoenix','wat-wat','glassofeu','piment','tunini'] as const)expect(pair[id]).toBeCloseTo(82/9,10);
@@ -70,7 +71,9 @@ describe('approved three-species rules',()=>{
  it('checks symmetry, normalization, eligibility and actual midpoint draws for every pair at threshold boundaries',()=>{
   for(let i=0;i<SPECIES_IDS.length;i++)for(let j=i;j<SPECIES_IDS.length;j++)for(const levels of [[2,2],[4,3],[4,4],[6,5],[6,6],[10,9],[10,10],[20,20]]){
    const a=SPECIES_IDS[i],b=SPECIES_IDS[j],[x,y]=levels,s=createGame(0),pool=breedingPool(s,a,b,x,y);
-   expect(pool.weights).toEqual(breedingPool(s,b,a,y,x).weights);expect(Object.values(breedingOdds(a,b,x,y)).reduce((n,p)=>n+p,0)).toBeCloseTo(100,12);
+   expect(pool.weights).toEqual(breedingPool(s,b,a,y,x).weights);const empty=bothCommon(a,b)&&a===b;expect(pool.total===0).toBe(empty);expect(Object.values(breedingOdds(a,b,x,y)).reduce((n,p)=>n+p,0)).toBeCloseTo(empty?0:100,12);
+   // Two commons never give a common; two commons of one element give nothing at all.
+   if(bothCommon(a,b)){expect(Object.keys(pool.weights).every(id=>SPECIES[id as SpeciesId].rarity!=='common')).toBe(true);if(SPECIES[a].types[0]===SPECIES[b].types[0])expect(empty).toBe(true);}
    let cursor=0;for(const [id,w]of Object.entries(pool.weights)){expect(chooseBirth(s,a,b,(cursor+w/2)/pool.total,x,y).species).toBe(id);cursor+=w}
   }
  },30000);
