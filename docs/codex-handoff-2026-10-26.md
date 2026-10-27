@@ -1,4 +1,29 @@
-# Passation Claude → Codex — 26 octobre 2026
+# Passation Claude → Codex — 26 octobre 2026, mise à jour le 27
+
+## État courant au 27 octobre 2026
+
+Branche : `feature/missions-octobre-2`, sans fusion dans `main` ni push. Le propriétaire demande maintenant le dossier complet pour publier lui-même sur Netlify. Préserver `.claude/`, `.env.local` et `output/` ; seul `.claude/` apparaît comme non suivi.
+
+Travaux terminés depuis la passation initiale :
+
+| Commit | Livraison |
+|---|---|
+| `65b3952` | Dadi : phrase d'accueil et salto existant, répliques aléatoires toutes les dix minutes de prairie active, phrase au nid quand Dadi est parent. Réactions après sauvegarde réussie ; bulles différées derrière les menus. |
+| `74b6e4c` | Statue de l'Affection : 60 cœurs exclusivement, niveau 15, déplacement gratuit, anciennes statues conservées. |
+| `3842c1f` | Catalogue complet dès le niveau 7 : 32 découvertes, 13 premières poses par modèle et 20 jalons supplémentaires ; filtres et récompenses uniques, historique v20 conservé. |
+| `fff3e6e` | Boutique de sept recettes distincte du carnet ; achat, consultation ciblée et préparation de paire, avec focus et défilement conservés. |
+| `c4b78bf` | Chargement peint : concept A « Le sentier du matin » choisi par le propriétaire, fond WebP de 338 942 octets, Paille ralenti à trois secondes, dix messages inchangés. |
+| `f8a69b4` | Deux parents communs ne produisent plus de commun. Même élément sans recette : lancement refusé gratuitement. Paires mixtes, taux fixes, bonus d'affection et naissances déjà tirées conservés. |
+
+Validation réellement effectuée sur les derniers changements fonctionnels : types, **2 502 tests dans 166 fichiers**, builds jeu et laboratoire, `git diff --check` : OK. Simulation : niveau 22 à J20, mêmes courbe, graine et trois sessions quotidiennes ; statue à J7. Voir `docs/progression-results.json`.
+
+Chromium : chargement sur 844 × 390, 667 × 375, 568 × 320 et 390 × 844 ; messages, réduction des mouvements, échec/Réessayer et défilement tactile contrôlés. Achat de recette et vrai croisement de deux communs donnant Bouée ; catalogue de 93 missions et filtres ; phrases de Dadi à l'accueil et au nid. Aucune erreur JavaScript constatée. Preuves locales ignorées : `output/validation/acceptance-2026-10-27/`. Le salto est couvert par les tests de mouvement, mais n'est pas attesté par l'unique capture d'accueil. Aucun essai iPhone pendant cette reprise.
+
+À la demande du propriétaire, les contrôles ont été réduits : pas de nouveau parcours automatique jusqu'à Feu. L'ancien message de commit du chargement ne constitue pas à lui seul une preuve de ce parcours ; le script peut enregistrer une erreur de phase Feu sans échouer, donc inspecter `feuError` et `feuEnd` si on le réutilise.
+
+Livraison Netlify : `npm run build:netlify` reconstruit le jeu, `/dev/` et le prototype cuisine avec les vérifications de production intégrées. La révision locale de l'artefact se lit dans `netlify-site/build-revision.txt` et celle du laboratoire dans `netlify-site/dev/build-revision.txt`. Seuls l'URL et la clé publishable déjà présentes dans `.env.local` doivent être intégrées. Le propriétaire glisse le dossier complet `netlify-site/` dans Deploys ; aucune publication par l'assistant.
+
+Les sections ci-dessous conservent l'état historique avant ces missions.
 
 Document factuel. Les règles permanentes sont dans `AGENTS.md` (racine du dépôt). Les anciennes passations (`docs/claude-handoff-2026-10-22.md`, `docs/codex-handoff-2026-10-23.md`) décrivent un état dépassé : ne t'y fie que pour l'historique.
 
