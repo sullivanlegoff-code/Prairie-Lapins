@@ -5,6 +5,7 @@ import {GameController} from './application/GameController';
 import {bindLifecycle} from './application/lifecycle';
 import {browserStorage} from './persistence/browserStorage';
 import {browserLifecycle} from './display/browserLifecycle';
+import {bindAppViewport} from './display/appViewport';
 import {mountSavePanel} from './display/SavePanel';
 import {GameUI} from './ui/GameUI';
 import {PreferenceStore} from './ui/preferences';
@@ -74,6 +75,10 @@ async function boot(): Promise<() => void> {
     scale: {mode: Phaser.Scale.RESIZE, width: '100%', height: '100%'}, scene: [scene],
     render: {antialias: true}, input: {activePointers: 3},
   });
+  const disposeViewport = bindAppViewport(() => {
+    // RESIZE reads parentSize, so measure it before refreshing the canvas/bounds.
+    if (game.isBooted) { game.scale.getParentBounds(); game.scale.refresh(); }
+  });
   const audio = new AudioEngine();
   for (const channel of ['music', 'effects'] as const) audio.configure(channel, channelSettings(preferences, channel));
   // Musique: only the first track is probed now; nothing sounds before « Jouer ».
@@ -128,7 +133,7 @@ async function boot(): Promise<() => void> {
   const dismissPortrait = () => document.body.classList.add('portrait-dismissed');
   document.getElementById('continue-portrait')!.addEventListener('click', dismissPortrait);
   return () => {
-    entered?.(); loading.dispose(); music.dispose(); audio.dispose(); disposeInteractions(); lifecycle.stop(); controller.dispose(); game.destroy(true);
+    entered?.(); loading.dispose(); music.dispose(); audio.dispose(); disposeViewport(); disposeInteractions(); lifecycle.stop(); controller.dispose(); game.destroy(true);
     document.removeEventListener('visibilitychange', background); window.removeEventListener('pagehide', hidden); window.removeEventListener('pageshow', shown);
     document.removeEventListener('pointerdown', retryMusic, {capture: true}); playButton.removeEventListener('click', play); retryButton.removeEventListener('click', retry);
     document.getElementById('continue-portrait')!.removeEventListener('click', dismissPortrait);
