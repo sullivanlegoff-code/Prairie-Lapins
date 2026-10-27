@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {RabbitLife, NAP_MS, type LifeResident, type LifeTiming} from '../src/display/rabbitLife';
+import {RabbitLife, LIFE_TIMING, NAP_MS, NEST_KISS_MS, type LifeResident, type LifeTiming} from '../src/display/rabbitLife';
 import {createRabbitMotion, motionZone, rabbitPose, stepRabbitMotion, triggerFedReaction} from '../src/display/rabbitMotion';
 
 const quiet = 1e9;
@@ -13,7 +13,7 @@ function timing(overrides: Partial<LifeTiming> = {}): LifeTiming {
 }
 function tick(life: RabbitLife, rabbits: LifeResident[], ms = 100, active = true, reduce = false) {
   life.step(ms, rabbits, active, reduce);
-  if (active) rabbits.filter(r => r.visible).forEach(r => stepRabbitMotion(r.motion, ms));
+  if (active) rabbits.filter(r => r.visible && (!r.nest || r.motion.mode !== 'rest')).forEach(r => stepRabbitMotion(r.motion, ms));
 }
 
 describe('visible rabbit life, independent of saves and gameplay random', () => {
@@ -71,23 +71,76 @@ describe('visible rabbit life, independent of saves and gameplay random', () => 
     expect(kissed).toBe(true);
     rabbits.splice(1, 1); tick(life, rabbits); expect(rabbits[0].motion.mode).not.toBe('kiss');
   });
-  it('waits for the social interval after landing and spreads first naps between neighbours', () => {
-    const life = new RabbitLife(timing({socialGap: [1000, 1000]})), rabbits = [rabbit('a', -20), rabbit('b', 20)];
-    let kissed = false, ended = false;
-    for (let frame = 0; frame < 150; frame++) {
-      tick(life, rabbits);
-      if (rabbits[0].motion.mode === 'kiss') kissed = true;
-      else if (kissed) { ended = true; break; }
-    }
-    expect(ended).toBe(true);
-    for (let i = 0; i < 9; i++) { tick(life, rabbits); expect(rabbits.every(r => !['kiss','meet'].includes(r.motion.mode))).toBe(true); }
-    const sleepy = new RabbitLife(timing({sleepGap:[300_000,600_000]})), neighbours = ['rabbit-2','rabbit-3','rabbit-4'].map(id => rabbit(id));
+  it('spreads early first naps between neighbours, with at most two sleepers', () => {
+    const sleepy = new RabbitLife(), neighbours = ['rabbit-2','rabbit-3','rabbit-4'].map(id => rabbit(id));
     const starts = new Map<string,number>();
-    for (let now = 1000; now <= 240_000 && starts.size < 3; now += 1000) {
+    for (let now = 1000; now <= 120_000 && starts.size < 3; now += 1000) {
       sleepy.step(1000, neighbours, true, true);
       neighbours.forEach(r => { if(r.motion.mode==='sleep'&&!starts.has(r.id))starts.set(r.id,now); });
+      expect(neighbours.filter(r => r.motion.mode === 'sleep').length).toBeLessThanOrEqual(2);
     }
     expect(starts.size).toBe(3); expect(Math.max(...starts.values())-Math.min(...starts.values())).toBeGreaterThan(30_000);
+    expect(Math.min(...starts.values())).toBeLessThanOrEqual(45_000);
+  });
+  it('starts zooms every ninety visible seconds from the first, even with a sleepy small group', () => {
+    const life = new RabbitLife({...LIFE_TIMING, socialGap: [quiet, quiet]}), rabbits = [rabbit('solo')];
+    const starts: number[] = []; let running = false;
+    for (let now = 100; now <= 181_000; now += 100) {
+      tick(life, rabbits);
+      const zoom = rabbits[0].motion.mode === 'zoom';
+      if (zoom && !running) starts.push(now); running = zoom;
+    }
+    expect(starts).toEqual([90_000, 180_000]);
+  });
+  it('offers enclosure kisses within a minute and does not let naps block both partners', () => {
+    const life = new RabbitLife(), rabbits = [rabbit('a', -20), rabbit('b', 20)];
+    const starts: number[] = []; let meeting = false;
+    for (let now = 100; now <= 150_000; now += 100) {
+      tick(life, rabbits);
+      const meet = ['meet', 'kiss'].includes(rabbits[0].motion.mode);
+      if (meet && !meeting) starts.push(now); meeting = meet;
+    }
+    expect(starts.length).toBeGreaterThanOrEqual(2);
+    expect(starts[0]).toBeLessThanOrEqual(60_000);
+    expect(starts.slice(1).every((start, i) => start - starts[i] <= 60_000)).toBe(true);
+  });
+  it('counts hidden sleepers toward the cap, releases removed rabbits and lets feeding wake one', () => {
+    const life = new RabbitLife(timing({sleepGap: [100, 100]})), rabbits = [rabbit('a'), rabbit('b'), rabbit('c')];
+    tick(life, rabbits); expect(rabbits.filter(r => r.motion.mode === 'sleep')).toHaveLength(2);
+    rabbits[0].visible = false; tick(life, rabbits);
+    expect(rabbits[2].motion.mode).not.toBe('sleep');
+    rabbits.push(rabbit('newcomer')); tick(life, rabbits);
+    expect(rabbits.filter(r => r.motion.mode === 'sleep')).toHaveLength(2);
+    expect(rabbits[3].motion.mode).not.toBe('sleep');
+    rabbits.shift(); tick(life, rabbits);
+    expect(rabbits.slice(0, 2).every(r => r.motion.mode === 'sleep')).toBe(true);
+    expect(rabbits[2].motion.mode).not.toBe('sleep');
+    life.interrupt('b'); triggerFedReaction(rabbits[0].motion); tick(life, rabbits);
+    expect(rabbits[0].motion.mode).toBe('fed');
+  });
+  it('makes nest parents meet every thirty seconds, return home and pause behind menus', () => {
+    const life = new RabbitLife(), parents = [rabbit('a', -52, 'nest'), rabbit('b', 68, 'nest')];
+    parents.forEach(r => { r.nest = true; r.motion.layout = {zone: {minX: -80, maxX: 90, minY: -15, maxY: 20}, roamScale: 0}; });
+    for (let i = 0; i < 100; i++) tick(life, parents, 100, false);
+    expect(parents.every(r => r.motion.mode === 'rest')).toBe(true);
+    const starts: number[] = []; let meeting = false, kissed = false, returned = false;
+    for (let now = 100; now <= NEST_KISS_MS * 2 + 100; now += 100) {
+      tick(life, parents);
+      const meet = ['meet', 'kiss'].includes(parents[0].motion.mode);
+      if (meet && !meeting) starts.push(now); meeting = meet;
+      if (parents[0].motion.mode === 'kiss') {
+        kissed = true;
+        expect(Math.abs(parents[0].motion.local.x - parents[1].motion.local.x)).toBeLessThanOrEqual(28);
+      }
+      if (kissed && parents.every(r => r.motion.mode === 'rest' && r.motion.local.x === r.motion.home.x)) returned = true;
+    }
+    expect(starts).toEqual([30_000, 60_000]); expect(kissed).toBe(true); expect(returned).toBe(true);
+    parents[1].visible = false; tick(life, parents);
+    expect(parents.every(r => !['meet','kiss'].includes(r.motion.mode))).toBe(true);
+    parents[1].visible = true;
+    for (let i = 0; i < 400; i++) tick(life, parents, 100, true, true);
+    expect(parents.every(r => !['meet','kiss','sleep','zoom'].includes(r.motion.mode))).toBe(true);
+    life.reset();
   });
   it('ends both partners activities when one leaves the screen during a kiss', () => {
     const life = new RabbitLife(timing({socialGap: [100, 100]})), rabbits = [rabbit('a', -20), rabbit('b', 20)];

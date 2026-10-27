@@ -1,12 +1,14 @@
 import {endRabbitActivity, motionZone, startRabbitActivity, type RabbitMotion} from './rabbitMotion';
 import {rabbitFaceSeed} from './rabbitBlink';
 
-export interface LifeResident {id: string; group: string; motion: RabbitMotion; visible: boolean}
+export interface LifeResident {id: string; group: string; motion: RabbitMotion; visible: boolean; nest?: boolean}
 export interface LifeTiming {zoomGap: readonly [number, number]; sleepGap: readonly [number, number]; socialGap: readonly [number, number]}
-export const LIFE_TIMING: LifeTiming = {zoomGap: [240_000, 480_000], sleepGap: [300_000, 600_000], socialGap: [90_000, 180_000]};
+export const LIFE_TIMING: LifeTiming = {zoomGap: [90_000, 90_000], sleepGap: [60_000, 120_000], socialGap: [30_000, 60_000]};
 export const NAP_MS = 60_000;
+export const NEST_KISS_MS = 30_000;
 type Individual = {group: string; motion: RabbitMotion; napIn: number; sleeping: number | null};
 type Pair = {a: string; b: string; elapsed: number; kissing: boolean};
+type Nest = {ids: string; due: number; pair: Pair | null};
 const available = (m: RabbitMotion) => m.mode === 'rest' || m.mode === 'walk';
 const special = (m: RabbitMotion) => ['sleep', 'zoom', 'meet', 'kiss'].includes(m.mode);
 function napPhase(id: string): number {
@@ -24,8 +26,9 @@ export class RabbitLife {
   private socialIn: number;
   private zoom: {id: string; remaining: number} | null = null;
   private pair: Pair | null = null;
+  private nests = new Map<string, Nest>();
   constructor(private timing: LifeTiming = LIFE_TIMING) {
-    this.zoomIn = this.between([Math.min(timing.zoomGap[0], 120_000), Math.min(timing.zoomGap[1], 300_000)]);
+    this.zoomIn = this.between(timing.zoomGap);
     this.socialIn = this.between(timing.socialGap);
   }
   private between(range: readonly [number, number]): number {
@@ -34,26 +37,31 @@ export class RabbitLife {
   }
   reset(): void {
     for (const r of this.residents.values()) if (special(r.motion)) endRabbitActivity(r.motion);
-    this.residents.clear(); this.zoom = null; this.pair = null;
-    this.zoomIn = this.between([Math.min(this.timing.zoomGap[0], 120_000), Math.min(this.timing.zoomGap[1], 300_000)]);
+    this.residents.clear(); this.zoom = null; this.pair = null; this.nests.clear();
+    this.zoomIn = this.between(this.timing.zoomGap);
     this.socialIn = this.between(this.timing.socialGap);
   }
   /** User actions and Dadi's confirmed dialogue always take precedence. */
   interrupt(id: string): void {
     const r = this.residents.get(id);
-    if (!(r && (special(r.motion) || r.sleeping !== null)) && this.zoom?.id !== id && !this.pairIds().includes(id)) return;
+    const nest = [...this.nests.values()].find(n => n.pair && [n.pair.a, n.pair.b].includes(id));
+    if (!(r && (special(r.motion) || r.sleeping !== null)) && this.zoom?.id !== id && !this.pairIds().includes(id) && !nest) return;
     if (r) {
       if (special(r.motion)) endRabbitActivity(r.motion);
       r.sleeping = null; r.napIn = this.between(this.timing.sleepGap);
     }
-    if (this.zoom?.id === id) { this.zoom = null; this.zoomIn = this.between(this.timing.zoomGap); }
+    if (this.zoom?.id === id) this.zoom = null;
     if (this.pair && [this.pair.a, this.pair.b].includes(id)) this.endPair();
+    if (nest) { this.finishPair(nest.pair!); nest.pair = null; }
   }
-  private endPair(): void {
-    if (this.pair) for (const id of [this.pair.a, this.pair.b]) {
+  private finishPair(pair: Pair): void {
+    for (const id of [pair.a, pair.b]) {
       const r = this.residents.get(id); if (r && ['meet', 'kiss'].includes(r.motion.mode)) endRabbitActivity(r.motion);
     }
-    this.pair = null; this.socialIn = this.between(this.timing.socialGap);
+  }
+  private endPair(): void {
+    if (this.pair) this.finishPair(this.pair);
+    this.pair = null;
   }
   step(dt: number, input: readonly LifeResident[], active: boolean, reducedMotion: boolean, priority: readonly string[] = []): void {
     const live = new Map(input.map(r => [r.id, r]));
@@ -64,7 +72,7 @@ export class RabbitLife {
     for (const r of input) if (!this.residents.has(r.id)) {
       // Independent first nap, so no freshly drawn habitat falls asleep in unison.
       const phase = napPhase(r.id);
-      const firstMin = Math.min(this.timing.sleepGap[0], 60_000), firstMax = Math.min(this.timing.sleepGap[1], 240_000);
+      const firstMin = Math.min(this.timing.sleepGap[0], 15_000), firstMax = Math.min(this.timing.sleepGap[1], 45_000);
       this.residents.set(r.id, {group: r.group, motion: r.motion, napIn: firstMin + phase * (firstMax - firstMin), sleeping: null});
     }
     for (const id of priority) this.interrupt(id);
@@ -76,40 +84,47 @@ export class RabbitLife {
     if (this.pair && (!live.get(this.pair.a)?.visible || !live.get(this.pair.b)?.visible)) this.endPair();
     // A suspended tab must never skip a whole nap or burst. Ordinary long frames are bounded too.
     const ms = active && Number.isFinite(dt) && dt >= 0 && dt <= 1000 ? dt : 0;
-    const seen = input.filter(r => r.visible && !priority.includes(r.id));
+    this.stepNests(ms, input, reducedMotion, priority);
+    const seen = input.filter(r => !r.nest && r.visible && !priority.includes(r.id));
     if (!ms || !seen.length) return;
+    if (!reducedMotion) { this.zoomIn -= ms; this.socialIn -= ms; }
+    let sleepers = [...this.residents.values()].filter(r => r.sleeping !== null && r.motion.mode === 'sleep').length;
     for (const rabbit of seen) {
       const r = this.residents.get(rabbit.id)!;
       if (r.sleeping !== null) {
         if (r.motion.mode !== 'sleep') { r.sleeping = null; r.napIn = this.between(this.timing.sleepGap); }
         else {
           r.sleeping -= ms;
-          if (r.sleeping <= 0) { endRabbitActivity(r.motion); r.sleeping = null; r.napIn = this.between(this.timing.sleepGap); }
+          if (r.sleeping <= 0) { endRabbitActivity(r.motion); r.sleeping = null; r.napIn = this.between(this.timing.sleepGap); sleepers--; }
         }
       } else {
         r.napIn -= ms;
-        if (r.napIn <= 0 && r.motion.mode === 'rest' && this.zoom?.id !== rabbit.id && !this.pairIds().includes(rabbit.id)) {
-          startRabbitActivity(r.motion, 'sleep'); r.sleeping = NAP_MS;
+        if (sleepers < 2 && r.napIn <= 0 && r.motion.mode === 'rest' && this.zoom?.id !== rabbit.id && !this.pairIds().includes(rabbit.id)) {
+          startRabbitActivity(r.motion, 'sleep'); r.sleeping = NAP_MS; sleepers++;
         }
       }
     }
     const zoomResident = this.zoom && live.get(this.zoom.id);
     if (this.zoom) {
-      if (!zoomResident || zoomResident.motion.mode !== 'zoom') { this.zoom = null; this.zoomIn = this.between(this.timing.zoomGap); }
+      if (!zoomResident || zoomResident.motion.mode !== 'zoom') this.zoom = null;
       else if (zoomResident.visible) {
         this.zoom.remaining -= ms;
         if (this.zoom.remaining <= 0) this.interrupt(zoomResident.id);
       }
     } else if (!reducedMotion) {
-      this.zoomIn -= ms;
       if (this.zoomIn <= 0) {
-        const eligible = seen.filter(r => available(r.motion) && !this.pairIds().includes(r.id));
+        let eligible = seen.filter(r => available(r.motion) && !this.pairIds().includes(r.id));
+        if (!eligible.length) {
+          const sleeper = seen.find(r => r.motion.mode === 'sleep');
+          if (sleeper) { this.interrupt(sleeper.id); eligible = [sleeper]; }
+        }
         const rabbit = eligible[Math.floor(this.between([0, eligible.length]))];
         if (rabbit) {
           const zone = motionZone(rabbit.motion), p = rabbit.motion.local;
           startRabbitActivity(rabbit.motion, 'zoom', {x: p.x < (zone.minX + zone.maxX) / 2 ? zone.maxX - 3 : zone.minX + 3,
             y: p.y < (zone.minY + zone.maxY) / 2 ? zone.maxY - 2 : zone.minY + 2});
           this.zoom = {id: rabbit.id, remaining: this.between([5000, 8000])};
+          this.zoomIn = this.between(this.timing.zoomGap);
         } else this.zoomIn = 1000;
       }
     }
@@ -126,9 +141,8 @@ export class RabbitLife {
         } else if (this.pair.elapsed >= (this.pair.kissing ? 1500 : 20_000)) this.endPair();
       }
     } else if (!reducedMotion) {
-      this.socialIn -= ms;
       if (this.socialIn <= 0) {
-        const availableResidents = seen.filter(r => available(r.motion) && r.id !== this.zoom?.id);
+        const availableResidents = seen.filter(r => (available(r.motion) || r.motion.mode === 'sleep') && r.id !== this.zoom?.id);
         const offset = Math.floor(this.between([0, availableResidents.length]));
         const candidates = [...availableResidents.slice(offset), ...availableResidents.slice(0, offset)];
         for (const a of candidates) {
@@ -141,12 +155,48 @@ export class RabbitLife {
           const x = Math.max(minX + 14, Math.min(maxX - 14, (a.motion.local.x + b.motion.local.x) / 2));
           const y = Math.max(minY + 2, Math.min(maxY - 2, (a.motion.local.y + b.motion.local.y) / 2));
           const left = a.motion.local.x <= b.motion.local.x;
+          if (a.motion.mode === 'sleep') this.interrupt(a.id);
+          if (b.motion.mode === 'sleep') this.interrupt(b.id);
           startRabbitActivity(a.motion, 'meet', {x: x + (left ? -12 : 12), y});
           startRabbitActivity(b.motion, 'meet', {x: x + (left ? 12 : -12), y});
-          this.pair = {a: a.id, b: b.id, elapsed: 0, kissing: false}; break;
+          this.pair = {a: a.id, b: b.id, elapsed: 0, kissing: false};
+          this.socialIn = this.between(this.timing.socialGap); break;
         }
         // No compatible pair yet: retry shortly instead of scanning every rendered frame.
         if (!this.pair) this.socialIn = 1000;
+      }
+    }
+  }
+  private stepNests(ms: number, input: readonly LifeResident[], reduced: boolean, priority: readonly string[]): void {
+    const groups = new Map<string, LifeResident[]>();
+    for (const r of input) if (r.nest) { const group = groups.get(r.group) ?? []; group.push(r); groups.set(r.group, group); }
+    for (const [id, nest] of this.nests) if (!groups.has(id) || groups.get(id)!.map(r => r.id).join(':') !== nest.ids) {
+      if (nest.pair) this.finishPair(nest.pair);
+      this.nests.delete(id);
+    }
+    for (const [id, parents] of groups) {
+      if (parents.length !== 2) continue;
+      let nest = this.nests.get(id);
+      if (!nest) { nest = {ids: parents.map(r => r.id).join(':'), due: NEST_KISS_MS, pair: null}; this.nests.set(id, nest); }
+      const [a, b] = parents, visible = parents.every(r => r.visible && !priority.includes(r.id));
+      if (reduced || !visible) { if (nest.pair) this.finishPair(nest.pair); nest.pair = null; continue; }
+      if (!ms) continue;
+      nest.due -= ms;
+      if (nest.pair) {
+        const pair = nest.pair;
+        if (!parents.every(r => ['meet', 'kiss'].includes(r.motion.mode))) { this.finishPair(pair); nest.pair = null; continue; }
+        pair.elapsed += ms;
+        if (!pair.kissing && parents.every(r => r.motion.elapsed >= r.motion.duration)) {
+          parents.forEach(r => startRabbitActivity(r.motion, 'kiss'));
+          a.motion.facing = a.motion.local.x <= b.motion.local.x ? 1 : -1; b.motion.facing = a.motion.facing === 1 ? -1 : 1;
+          pair.kissing = true; pair.elapsed = 0;
+        } else if (pair.elapsed >= (pair.kissing ? 1500 : 20_000)) { this.finishPair(pair); nest.pair = null; }
+      } else if (nest.due <= 0 && parents.every(r => available(r.motion))) {
+        const x = (a.motion.home.x + b.motion.home.x) / 2, y = (a.motion.home.y + b.motion.home.y) / 2;
+        const left = a.motion.local.x <= b.motion.local.x;
+        startRabbitActivity(a.motion, 'meet', {x: x + (left ? -12 : 12), y});
+        startRabbitActivity(b.motion, 'meet', {x: x + (left ? 12 : -12), y});
+        nest.pair = {a: a.id, b: b.id, elapsed: 0, kissing: false}; nest.due = NEST_KISS_MS;
       }
     }
   }

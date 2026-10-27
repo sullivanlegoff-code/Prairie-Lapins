@@ -62,7 +62,7 @@ export interface DecorationGhost {id: string; catalogId?: DecorationId; location
 interface VisualRabbit {id: string; object: Phaser.GameObjects.Container; body: Phaser.GameObjects.Container; ears: Phaser.GameObjects.Ellipse[]; sprite?: Phaser.GameObjects.Image; art?: RabbitArt; base: Point; phase: number; fedUntil: number;
   flames?: Phaser.GameObjects.Image;
   face?: {seed: number; eyes: Phaser.GameObjects.Image; nose: Phaser.GameObjects.Image};
-  center: Point; group: string; motion?: RabbitMotion; lift: number;
+  center: Point; group: string; motion?: RabbitMotion; nest?: boolean; lift: number;
   /** Centre of the visible body in body space: the somersault turns about it, not about the feet or the picture centre. */
   pivot: Point; /** Mirror sign of the picture's native direction: -1 for art that looks left. */ native: 1 | -1}
 /** Local y of the ground contact the body is compressed against, so its feet stay put. */
@@ -585,21 +585,22 @@ export class MeadowScene extends Phaser.Scene {
         const offset = enclosure.kind==='nest' ? NEST_ART.parentOffsets[index] : illustratedLayout ? illustratedLayout.slots[Math.min(index, illustratedLayout.slots.length - 1)] : proposed ? habitatSlots(tier as 2 | 3, residents.length)[Math.min(index, residents.length - 1)] : rabbitOffset(index, residents.length);
         const layout = illustratedLayout ? {zone: illustratedLayout.zone, roamScale: illustratedLayout.roamScale} : proposed ? {zone: proposed.zone, roamScale: proposed.roamScale} : undefined;
         const base = {x: center.x + offset.x, y: center.y + offset.y};
-        // Enclosure residents wander around their slot (local to the centre); nest parents keep their spot.
+        // Nest parents keep persistent clocks too, but only move for their brief kisses and return.
         let motion: RabbitMotion | undefined;
-        if (enclosure.kind === 'enclosure') {
+        {
+          const motionLayout = enclosure.kind === 'nest' ? {zone: {minX: -80, maxX: 90, minY: -15, maxY: 20}, roamScale: 0} : layout;
           // Same enclosure: keep the individual's place (a resident added or removed only walks it back); another enclosure: start afresh at its slot.
           const known = this.motions.get(rabbit.id);
           if (known && known.group === enclosure.id) {
             motion = known.motion;
-            if (known.tier !== tier || JSON.stringify(motion.layout?.zone) !== JSON.stringify(layout?.zone)) this.life.interrupt(rabbit.id);
+            if (known.tier !== tier || JSON.stringify(motion.layout?.zone) !== JSON.stringify(motionLayout?.zone)) this.life.interrupt(rabbit.id);
             // An upgrade moves the footprint's centre but not the ground: keep the rabbit where it stands, then it walks to its new place.
             if (known.tier !== tier) {
               const dx = known.center.x - center.x, dy = known.center.y - center.y;
               for (const point of [motion.local, motion.from, motion.to]) { point.x += dx; point.y += dy; }
             }
-            retargetRabbitMotion(motion, offset, residents.length, layout); known.tier = tier; known.center = center;
-          } else { motion = createRabbitMotion(rabbit.id, offset, residents.length, layout); this.motions.set(rabbit.id, {group: enclosure.id, tier, center, motion}); }
+            retargetRabbitMotion(motion, offset, residents.length, motionLayout); known.tier = tier; known.center = center;
+          } else { motion = createRabbitMotion(rabbit.id, offset, residents.length, motionLayout); this.motions.set(rabbit.id, {group: enclosure.id, tier, center, motion}); }
           walkers.add(rabbit.id);
         }
         const start = motion ? {x: center.x + motion.local.x, y: center.y + motion.local.y} : base;
@@ -607,7 +608,7 @@ export class MeadowScene extends Phaser.Scene {
         const body = this.add.container(0, 0), shadow = this.add.ellipse(0, 10, 35, 12, 0x6b7755, .16);
         object.add([shadow, body]);
         const art = rabbitArt(rabbit.species);
-        const view = {object, body, center, group: enclosure.id, motion, lift: 0, pivot: art ? this.spritePivot(art) : {x: 0, y: -3}, native: art ? art.facing : 1 as const, base, phase: index * 2 + Number(rabbit.id.split('-')[1]), fedUntil: 0};
+        const view = {object, body, center, group: enclosure.id, motion, nest: enclosure.kind === 'nest', lift: 0, pivot: art ? this.spritePivot(art) : {x: 0, y: -3}, native: art ? art.facing : 1 as const, base, phase: index * 2 + Number(rabbit.id.split('-')[1]), fedUntil: 0};
         if (art) {
           const sprite = this.add.image(0, art.groundY, art.texture).setOrigin(.5, 1);
           sprite.setScale(art.worldWidth / art.width); // Uniform scale preserves the original proportions.
@@ -956,7 +957,7 @@ export class MeadowScene extends Phaser.Scene {
       document.getElementById('game-panel')?.hidden !== false && !document.querySelector('dialog[open]') && !this.placement && !this.arrangement;
     const bounds = {width: this.scale.width, height: this.scale.height, top: document.getElementById('hud')?.getBoundingClientRect().bottom ?? 0};
     const visibleResidents = new Set(this.rabbitViews.filter(r => r.motion && dadiHeadVisible(this.dadiHead(r), bounds)).map(r => r.id));
-    this.life.step(dt, this.rabbitViews.flatMap(r => r.motion ? [{id: r.id, group: r.group, motion: r.motion, visible: visibleResidents.has(r.id)}] : []),
+    this.life.step(dt, this.rabbitViews.flatMap(r => r.motion ? [{id: r.id, group: r.group, motion: r.motion, nest: r.nest, visible: visibleResidents.has(r.id)}] : []),
       lifeActive, reducedMotion, dadi.speech ? [dadi.speech.id] : []);
     this.lifeViews?.begin(this.rabbitViews.map(r => r.id));
     let depthChanged = false;
@@ -975,7 +976,7 @@ export class MeadowScene extends Phaser.Scene {
           if (other.motion.mode === 'walk') others.push(other.motion.to);
         }
         const activity = ['sleep', 'zoom', 'meet', 'kiss'].includes(motion.mode);
-        if (!activity || lifeActive && visibleResidents.has(rabbit.id)) stepRabbitMotion(motion, dt, others);
+        if ((!rabbit.nest || motion.mode !== 'rest') && (!activity || lifeActive && visibleResidents.has(rabbit.id))) stepRabbitMotion(motion, dt, others);
         const pose = rabbitPose(motion);
         ({lift, squashX, squashY, facing, rotation} = pose);
         // The ground point drives position and depth; the hop only lifts the body.
