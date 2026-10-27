@@ -6,7 +6,7 @@ import type {Point} from '../ui/gestures';
  * space as `rabbitOffset`). Nothing here is persisted, and nothing uses the breeding random generator: every
  * individual draws from its own small generator seeded by its identifier.
  */
-export type MotionMode = 'rest' | 'walk' | 'hop' | 'salto' | 'fed';
+export type MotionMode = 'rest' | 'walk' | 'hop' | 'salto' | 'fed' | 'sleep' | 'zoom' | 'meet' | 'kiss';
 export interface RabbitMotion {
   mode: MotionMode;
   /** Milliseconds spent in the current mode (rest counts down in `wait`). */
@@ -72,6 +72,11 @@ export function retargetRabbitMotion(m: RabbitMotion, home: Point, count: number
   m.home = {...home}; m.count = count; m.layout = layout;
   // A somersault or a feeding reaction finishes first; the end of the somersault walks it back if needed.
   if (m.mode === 'fed' || m.mode === 'salto') return;
+  if (['sleep', 'zoom', 'meet', 'kiss'].includes(m.mode)) {
+    const zone = motionZone(m);
+    for (const point of [m.local, m.from, m.to]) { point.x = clamp(point.x, zone.minX, zone.maxX); point.y = clamp(point.y, zone.minY, zone.maxY); }
+    return;
+  }
   const box = allowedBox(home, count, layout), inside = m.local.x >= box.minX && m.local.x <= box.maxX && m.local.y >= box.minY && m.local.y <= box.maxY;
   if (!inside) startWalk(m, {x: clamp(m.local.x, box.minX, box.maxX), y: clamp(m.local.y, box.minY, box.maxY)});
 }
@@ -96,6 +101,21 @@ function startWalk(m: RabbitMotion, target: Point): void {
   m.steps = Math.max(1, Math.round(distance / CONFIG().stepLength));
   // The body turns only when a walk starts, and only for a real horizontal move: no flicker.
   if (Math.abs(dx) > CONFIG().turnThreshold) turnTo(m, dx > 0 ? 1 : -1);
+}
+/** Presentation activities may use the whole fenced area, without changing an individual's home slot. */
+export function motionZone(m: RabbitMotion): Box { return m.layout?.zone ?? CONFIG().hard; }
+export function startRabbitActivity(m: RabbitMotion, mode: 'sleep' | 'zoom' | 'meet' | 'kiss', target?: Point): void {
+  m.mode = mode; m.elapsed = 0; m.from = {...m.local}; m.to = target ? {...target} : {...m.local};
+  m.duration = Math.max(250, Math.hypot(m.to.x - m.from.x, m.to.y - m.from.y) / (mode === 'zoom' ? 78 : 14) * 1000);
+  m.steps = Math.max(1, Math.round(Math.hypot(m.to.x - m.from.x, m.to.y - m.from.y) / CONFIG().stepLength));
+  if (Math.abs(m.to.x - m.from.x) > 2) turnTo(m, m.to.x > m.from.x ? 1 : -1);
+}
+/** End an activity in place, then gently return to the usual roaming zone if necessary. */
+export function endRabbitActivity(m: RabbitMotion): void {
+  const box = allowedBox(m.home, m.count, m.layout);
+  if (m.local.x < box.minX || m.local.x > box.maxX || m.local.y < box.minY || m.local.y > box.maxY)
+    startWalk(m, {x: clamp(m.local.x, box.minX, box.maxX), y: clamp(m.local.y, box.minY, box.maxY)});
+  else startRest(m);
 }
 /** Every change of direction restarts both the minimum delay and the schedule of the next spontaneous turn. */
 function turnTo(m: RabbitMotion, facing: 1 | -1): void {
@@ -142,7 +162,20 @@ function pickTarget(m: RabbitMotion, others: readonly Point[]): Point | null {
 export function stepRabbitMotion(m: RabbitMotion, dtMs: number, others: readonly Point[] = []): void {
   let remaining = clamp(dtMs, 0, CONFIG().maxStep * 1000);
   for (let guard = 0; remaining > 0 && guard < 8; guard++) {
-    if (m.mode === 'fed') {
+    if (m.mode === 'sleep' || m.mode === 'kiss') {
+      m.elapsed += remaining; tick(m, remaining); remaining = 0;
+    } else if (m.mode === 'zoom' || m.mode === 'meet') {
+      const step = Math.min(remaining, Math.max(0, m.duration - m.elapsed)); m.elapsed += step; remaining -= step; tick(m, step);
+      const u = clamp(m.elapsed / m.duration, 0, 1), eased = m.mode === 'zoom' ? u : u * u * (3 - 2 * u);
+      m.local = {x: m.from.x + (m.to.x - m.from.x) * eased, y: m.from.y + (m.to.y - m.from.y) * eased};
+      if (m.elapsed >= m.duration) {
+        if (m.mode === 'meet') { remaining = 0; }
+        else {
+          const zone = motionZone(m), target = {x: between(m, zone.minX + 3, zone.maxX - 3), y: between(m, zone.minY + 2, zone.maxY - 2)};
+          startRabbitActivity(m, 'zoom', target);
+        }
+      }
+    } else if (m.mode === 'fed') {
       const step = Math.min(remaining, FED_MS - m.elapsed); m.elapsed += step; remaining -= step; tick(m, step);
       if (m.elapsed >= FED_MS) startRest(m, .25);
     } else if (m.mode === 'rest') {
@@ -189,9 +222,11 @@ export function rabbitPose(m: RabbitMotion): RabbitPose {
     // One smooth turn while airborne; exactly upright (0) at take-off and at landing.
     rotation = u >= 1 ? 0 : m.facing * Math.PI * 2 * turn * turn * (3 - 2 * turn);
     if (turn >= 1) rotation = 0;
-  } else if (m.mode === 'walk') {
+  } else if (m.mode === 'walk' || m.mode === 'zoom' || m.mode === 'meet') {
     const u = clamp(m.elapsed / m.duration, 0, 1);
-    lift = walkBob * Math.abs(Math.sin(Math.PI * m.steps * u));
+    lift = (m.mode === 'zoom' ? 2.5 : walkBob) * Math.abs(Math.sin(Math.PI * m.steps * u));
+  } else if (m.mode === 'kiss') {
+    lift = Math.abs(Math.sin(m.elapsed / 1500 * Math.PI * 3)) * 4;
   } else if (m.mode === 'fed') {
     lift = Math.abs(Math.sin(m.elapsed / 1000 * 14)) * motion.hop;
   }

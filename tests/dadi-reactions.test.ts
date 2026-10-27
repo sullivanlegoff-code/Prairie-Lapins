@@ -38,6 +38,9 @@ describe('Dadi reacts only to confirmed commands', () => {
     s.buildings.find(b => b.kind === 'nursery')!.nursery!.babies.push({slot: 0, birth: {id: babyId, species: 'dadi', guaranteed: false, reservedDiscovery: false}, startedAt: 0, readyAt: 0});
     const f = bind(s);
     expect(f.controller.perform({type: 'welcome', birthId: babyId, enclosureId: 'building-1'}).ok).toBe(true);
+    // The individual income roll is drawn once on welcome; presentation must draw nothing more.
+    expect(f.rng).toHaveBeenCalledTimes(1);
+    expect(f.controller.getSnapshot().state!.rabbits.find(r => r.id === babyId)!.incomeRoll).toBe(9000);
     expect(f.dadi.step(0, true, [babyId]).started).toEqual({id: babyId, text: DADI_WELCOME, salto: true});
     f.controller.refresh();
     expect(f.dadi.step(0, true, [babyId]).started).toBeNull();
@@ -46,7 +49,8 @@ describe('Dadi reacts only to confirmed commands', () => {
     expect(f.dadi.step(0, true, [babyId]).speech).toBeNull();
     const reloaded = bind(f.controller.getSnapshot().state!);
     expect(reloaded.dadi.step(0, true, [babyId]).speech).toBeNull();
-    expect(f.rng).not.toHaveBeenCalled(); f.dispose(); reloaded.dispose();
+    expect(f.rng).toHaveBeenCalledTimes(1);
+    expect(reloaded.rng).not.toHaveBeenCalled(); f.dispose(); reloaded.dispose();
   });
   it('speaks at the nest only if Dadi is a parent; failed and unsaved commands produce no reaction', () => {
     const f = bind(resident());
