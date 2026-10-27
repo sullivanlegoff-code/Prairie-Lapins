@@ -3,13 +3,29 @@ import {settleInitiation} from './initiation';
 import {habitatStats} from './habitats';
 import {updateMissions} from './missions';
 import {settleNestTransfers} from './nursery';
-import {BALANCE, HOUR, MINUTE, SPECIES, type SpeciesId, type Rarity, INCOME_BASES, RARE_INCOME_BONUS_SPECIES} from '../config/balance';
-import type {GameState} from '../state/types';
-export function rabbitIncome(affection: number, speciesOrRarity: SpeciesId | Rarity = 'common'): number {
+import {BALANCE, HOUR, MINUTE, SPECIES, type SpeciesId, type Rarity} from '../config/balance';
+import type {GameState, Rabbit} from '../state/types';
+/** Stable fallback for historical rabbits: loading never rerolls an individual's income. */
+export function historicalIncomeRoll(rabbit: Pick<Rabbit, 'id' | 'species'>): number {
+  let hash = 2166136261;
+  for (const character of `${rabbit.id}:${rabbit.species}`) hash = Math.imul(hash ^ character.charCodeAt(0), 16777619) >>> 0;
+  return hash % 10001;
+}
+export function drawIncomeRoll(rabbit: Pick<Rabbit, 'id' | 'species'>, rng: () => number): number {
+  if (SPECIES[rabbit.species].rarity === 'common') return historicalIncomeRoll(rabbit);
+  const roll = rng();
+  return Number.isFinite(roll) && roll >= 0 && roll < 1 ? Math.floor(roll * 10001) : historicalIncomeRoll(rabbit);
+}
+export function individualIncomeRoll(rabbit: Pick<Rabbit, 'id' | 'species' | 'incomeRoll'>): number {
+  return rabbit.incomeRoll ?? historicalIncomeRoll(rabbit);
+}
+/** Whole coins/hour; round once per individual, never at each simulation tick. */
+export function rabbitIncome(affection: number, speciesOrRarity: SpeciesId | Rarity = 'common', incomeRoll = 5000): number {
   const species = Object.hasOwn(SPECIES, speciesOrRarity) ? speciesOrRarity as SpeciesId : null, rarity = species ? SPECIES[species].rarity : speciesOrRarity;
-  const base = rarity === 'common' ? INCOME_BASES.common : rarity === 'epic' ? INCOME_BASES.epic : rarity === 'legendary' ? INCOME_BASES.legendary
-    : species && RARE_INCOME_BONUS_SPECIES.includes(species) ? INCOME_BASES.rareBonus : INCOME_BASES.rare;
-  return base + BALANCE.incomePerLevel * (affection - 1);
+  if (rarity === 'common') return BALANCE.incomeBase + BALANCE.incomePerLevel * (affection - 1);
+  const luck = incomeRoll / 10000;
+  const rare = 10 + 10 * luck + (affection - 1) * (60 + 20 * luck) / 9;
+  return Math.round(rare * (rarity === 'epic' ? 1.3 : rarity === 'legendary' ? 1.5 : 1));
 }
 export function validTime(now: number): boolean { return Number.isSafeInteger(now) && now >= 0; }
 /** Rebase every absolute timestamp; cycle indices and already earned resources stay unchanged. */
@@ -48,7 +64,7 @@ export function advance(state: GameState, now: number): GameState {
   const elapsed = target - next.lastSimulatedAt;
   for (const enclosure of next.buildings.filter(b => b.kind === 'enclosure')) {
     const rate = next.rabbits.filter(r => r.enclosureId === enclosure.id)
-      .reduce((sum, rabbit) => sum + rabbitIncome(rabbit.affection, rabbit.species), 0);
+      .reduce((sum, rabbit) => sum + rabbitIncome(rabbit.affection, rabbit.species, individualIncomeRoll(rabbit)), 0);
     const cap = habitatStats(enclosure).cap * HOUR;
     // Bound multiplication before applying a potentially enormous absence.
     const boundedElapsed = rate === 0 ? 0 : Math.min(elapsed, Math.ceil((cap - enclosure.incomeUnits) / rate));

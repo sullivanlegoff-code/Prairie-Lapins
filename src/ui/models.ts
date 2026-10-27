@@ -1,3 +1,4 @@
+import {farmLimit} from '../config/balance';
 import {recipeHint} from './economyFeedback';
 import {stateLevelAccess} from '../simulation/levelRights';
 import {buildingPlacementReason} from '../simulation/placement';
@@ -61,6 +62,7 @@ export function buildingReason(s: GameState, kind: BuildingKind, ignorePrice = f
   if(kind==='statue' && playerLevel(s)<AFFECTION_STATUE.level) return `Niveau ${AFFECTION_STATUE.level} requis`;
   if(kind==='agency' && playerLevel(s)<TRAVEL.unlockLevel) return `Niveau ${TRAVEL.unlockLevel} requis`;
   if(kind==='enclosure') {const access=stateLevelAccess(s,{family:'habitatPurchase',id:habitatType});if(access.locked)return `Niveau ${access.requiredLevel} requis`;}
+  if (kind === 'farm' && playerLevel(s) < 15 && s.buildings.filter(b => b.kind === 'farm').length >= farmLimit(playerLevel(s))) return `Niveau ${farmLimit(playerLevel(s)) === 2 ? 12 : 15} requis pour une ferme supplémentaire`;
   const config = BALANCE.buildings[kind];
   if (config.maximum !== null && s.buildings.filter(b => b.kind === kind).length >= config.maximum) return REFUSALS.BUILDING_LIMIT;
   if (s.buildings.length >= s.acquiredParcels.length * ISLAND.parcelArea) return 'Aucune case libre. Agrandis la prairie.';

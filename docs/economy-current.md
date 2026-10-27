@@ -1,19 +1,23 @@
-# Revenus et stocks actuels — 27 octobre 2026
+# Revenus, habitats et fermes - 27 octobre 2026
 
-Tous les revenus horaires sont multipliés par cinquante, y compris le gain par point d’affection. À affection 1 : commun 500 pièces/h ; rare 700 ; rare avec bonus 850 ; épique 1000 ; légendaire 1300. Chaque point d’affection supplémentaire ajoute 50 pièces/h. Les espèces bénéficiant du bonus rare sont inchangées.
+Le barème x50 est remplacé par les valeurs du propriétaire.
 
-Trois lapins Paille d’affection 10 produisent ensemble 2850 pièces/h et remplissent leur habitat Paille de niveau 1, stock maximal 950, en exactement vingt minutes. Le revenu s’arrête lorsque le stock est plein ; la récolte le relance.
+Chaque rare a un tirage individuel permanent : 10 à 20 pièces/h à affection 1, 70 à 100 à affection 10. Progression linéaire entre ces points, puis même pente au-delà. Les épiques gagnent 30 % de plus, les légendaires 50 % de plus que cette référence rare. Revenu horaire arrondi une seule fois à la pièce la plus proche, sans perte fractionnelle à chaque mise à jour.
 
-| Niveau d’habitat | Paille | Neige | Feu | Universel | Métal | Vol |
+Anciens individus : tirage déterministe fondé sur identifiant et espèce, ensuite sauvegardé. Nouveaux non communs : tirage à l'accueil avec l'aléatoire du jeu, sans changer le tirage d'espèce du croisement. Communs : retour au barème antérieur, 10/h à affection 1 puis +1 par affection.
+
+| Niveau | Paille | Neige | Feu | Métal | Vol | Universel |
 |---|---:|---:|---:|---:|---:|---:|
-| 1 |950|1100|1300|1500|1800|2200|
-| 2 |1800|2100|2500|2900|3500|4300|
-| 3 |2700|3100|3600|4100|4700|5500|
+| 1 |100|125|150|175|200|200|
+| 2 |300|350|400|450|500|500|
+| 3 |1250|1250|1250|1250|1250|1250|
 
-Les stocks augmentent avec le niveau et dans l’ordre des types ci-dessus, y compris au niveau 3. Chaque plafond est inférieur au précédent plafond publié de ce même habitat. Places, prix, XP et règles d’affection restent inchangés. Il n’existe plus de garantie de stockage d’une nuit complète.
+Universel non précisé : aligné sur Vol. Places et prix inchangés. Ancien surplus de stock conservé au portefeuille avec fractions restantes exactes ; normalisation idempotente, limites historiques et protection des entiers conservées.
 
-Au chargement ou à l’import, les anciennes pièces stockées sont conservées : l’excédent passe au portefeuille, arrondi à la pièce supérieure et soustrait exactement du stock. La fraction restante est donc préservée. Seuls les stocks compatibles avec les plafonds historiques publiés (uniformes ou par type) sont acceptés. Un dépassement de la limite entière du portefeuille refuse la sauvegarde plutôt que de perdre des pièces. Le chargement suivant de la sauvegarde normalisée ne verse aucun supplément.
+Deux fermes restent disponibles comme avant, troisième au niveau 12, quatrième au niveau 15. Améliorer une ferme réduit de 20 % la durée des nouvelles cultures et ouvre toujours les cinq cultures avancées ; rendement inchangé. Cultures en cours : durées conservées.
 
-Reproduction : deux parents communs mono-types de même type peuvent donner leur commun. Toute autre paire, y compris un parent rare, exclut les résultats communs. Les probabilités spéciales fixes, les bonus d’affection et les naissances déjà enregistrées sont conservés.
+Dadi : type 1 Feu, type 2 Métal ; recette demandant ces deux éléments. Les anciens logements Neige/Vol restent valides, sans transformer les habitats ni déplacer les autres lapins. Nouvelles arrivées et déplacements : Feu/Métal/Universel uniquement.
 
-Validation limitée aux types et aux tests ciblés de revenus, stocks, migration et reproduction. Aucun recalcul ni contrôle de l’effet sur la progression n’est effectué à la demande du propriétaire ; les anciennes mesures restent des données historiques.
+Reproduction inchangée : commun autorisé seulement entre deux communs mono-types de même type ; anciennes naissances conservées.
+
+Aucune simulation ni vérification de l'effet sur la progression, selon la demande du propriétaire. Les anciens résultats restent historiques et ne valident pas ces nouvelles valeurs.

@@ -1,3 +1,4 @@
+import {farmLimit, farmDuration} from '../config/balance';
 import {rabbitDropTargets} from './rabbitDropTargets';
 import {accountKnown} from '../cloud/accountState';
 import {cloudConfig} from '../cloud/config';
@@ -47,7 +48,7 @@ import {initiationAvailable} from '../simulation/initiation';
 import {marketExchanges, marketPrice, marketUnlocked} from '../simulation/market';
 import {automaticNurseryTransfer, nurseryBuilding, nurseryFull, nurseryUnlockQuote} from '../simulation/nursery';
 import {accelerationCost, quoteAcceleration} from '../simulation/hearts';
-import {rabbitIncome} from '../simulation/time';
+import {rabbitIncome, individualIncomeRoll} from '../simulation/time';
 import type {MeadowScene, MeadowSelection} from '../display/MeadowScene';
 import {ActionGate} from './gestures';
 import {portrait} from './portraits';
@@ -630,7 +631,7 @@ export class GameUI {
     if (tab === 'decorations') { this.renderDecorationShop(s); return; }
     if (tab === 'habitats' || tab === 'buildings') {
       const basic = habitatLevel('universal', 1);
-      const utility: Record<BuildingKind, string> = {enclosure: `${basic.capacity} places · tous les types · stocke ${basic.cap} pattes`, farm: 'Ferme niveau 1 : 5 cultures · maximum 2', kitchen: 'Cuisine - maximum 1', statue: 'Ouvre l’affection 15 à 20 à tous tes lapins · maximum 1', agency: 'Fait voyager tes lapins · des cœurs au retour · maximum 1', nest: 'Deux parents · maximum 1', nursery: 'Une place pour grandir · maximum 1'};
+      const utility: Record<BuildingKind, string> = {enclosure: `${basic.capacity} places · tous les types · stocke ${basic.cap} pattes`, farm: `Ferme niveau 1 : 5 cultures \u00b7 maximum ${farmLimit(playerLevel(s))} actuellement \u00b7 3 au niveau 12, 4 au niveau 15`, kitchen: 'Cuisine - maximum 1', statue: 'Ouvre l’affection 15 à 20 à tous tes lapins · maximum 1', agency: 'Fait voyager tes lapins · des cœurs au retour · maximum 1', nest: 'Deux parents · maximum 1', nursery: 'Une place pour grandir · maximum 1'};
       if (tab === 'habitats') {
       const universal = this.card(HABITATS.universal.name, `${utility.enclosure} · empreinte 4 × 4`); universal.prepend(habitatThumbnail('universal'));
       if(!this.shopHabitatSpecies || stateLevelAccess(s,{family:'habitatPurchase',id:'universal'}).accessible) {
@@ -840,7 +841,7 @@ export class GameUI {
   }
   private rabbitCard(s: GameState, id: string): HTMLElement {
     const r = s.rabbits.find(r => r.id === id)!;
-    const card = this.card(r.name || SPECIES[r.species].name, `${r.name ? SPECIES[r.species].name + ' · ' : ''}${this.enclosureName(s, r.enclosureId)} · Affection ${r.affection} · ${rabbitIncome(r.affection, r.species)} pattes / h`, r.species);
+    const card = this.card(r.name || SPECIES[r.species].name, `${r.name ? SPECIES[r.species].name + ' · ' : ''}${this.enclosureName(s, r.enclosureId)} · Affection ${r.affection} · ${rabbitIncome(r.affection, r.species, individualIncomeRoll(r))} pattes / h`, r.species);
     card.classList.add('compact-list-card'); return card;
   }
   private renderBuilding(s: GameState, id: string): void {
@@ -856,7 +857,7 @@ export class GameUI {
     if (b.kind === 'enclosure') {
       const residents = occupants(s, id), income = incomeWhole(b.incomeUnits), stats = habitatStats(b);
       this.content.append(node('p', `${habitatName(b)} · ${HABITATS[b.habitat!.type].accepted} · niveau ${b.habitat!.level}`, 'badge'));
-      this.content.append(this.stats([['Occupants', `${residents.length} / ${stats.capacity} places`], ['Stock', `${income} / ${stats.cap} pattes`], ['Revenu', `${residents.reduce((sum, r) => sum + rabbitIncome(r.affection, r.species), 0)} pattes / h`]]));
+      this.content.append(this.stats([['Occupants', `${residents.length} / ${stats.capacity} places`], ['Stock', `${income} / ${stats.cap} pattes`], ['Revenu', `${residents.reduce((sum, r) => sum + rabbitIncome(r.affection, r.species, individualIncomeRoll(r)), 0)} pattes / h`]]));
       if (income >= stats.cap) this.content.append(node('p', 'Stock plein : récolte pour relancer les revenus.', 'reason'));
       this.button(this.content, `Récolter ${income} pattes`, () => this.execute({type: 'collectIncome', id}, value => `+ ${value} pattes`), income < 1 ? 'La récolte sera disponible à partir d’une pièce.' : null);
       if (b.habitat!.level < 3) {
@@ -908,7 +909,7 @@ export class GameUI {
         this.workState('free', 'Choisis une culture. Plus les lapins l’aiment, plus elle coûte et dure, et plus elle donne de nourriture. Le prix est payé au lancement ; la récolte reste manuelle.');
         const choices = node('div', '', 'farm-orders'); this.content.append(choices); const level = playerLevel(s);
         for (const recipe of CROP_IDS) {
-          const order = ORDERS[recipe], card = this.card(order.name, `${cropDuration(order.duration)} · ${order.grass} nourriture par récolte`); card.classList.add('compact-list-card');
+          const order = ORDERS[recipe], card = this.card(order.name, `${cropDuration(farmDuration(order.duration, b.farmLevel))} · ${order.grass} nourriture par récolte`); card.classList.add('compact-list-card');
           card.classList.add('farm-order'); card.dataset.crop = recipe; card.querySelector('.card-heading')!.prepend(cropIcon(recipe));
           if (!b.farmLevel && order.level >= ORDERS.fanes.level) { card.classList.add('farm-order-locked'); card.append(node('p', 'Ferme niveau 2', 'badge')); choices.append(card); continue; }
           if (level < order.level) { card.classList.add('farm-order-locked'); card.append(node('p', `Niveau ${order.level} requis`, 'badge')); choices.append(card); continue; }
@@ -916,7 +917,7 @@ export class GameUI {
           this.complement(card, s, {type: 'startOrder', id, recipe}, `Cultiver ${order.name.toLowerCase()} : ${order.grass} nourriture`, 'Culture lancée.'); choices.append(card);
         }
       }
-      if (!b.farmLevel) this.heartUpgrade(s, 'Agrandir la ferme', 'Le moulin et cinq nouvelles cultures : fanes de carotte, fenouil, pomme, fraise et banane.', 30, {type: 'upgradeFarm', id}, playerLevel(s) < ORDERS.fanes.level ? 'Niveau 9 requis' : null);
+      if (!b.farmLevel) this.heartUpgrade(s, 'Agrandir la ferme', 'Des cultures 20 % plus rapides, le moulin et cinq nouvelles cultures : fanes de carotte, fenouil, pomme, fraise et banane.', 30, {type: 'upgradeFarm', id}, playerLevel(s) < ORDERS.fanes.level ? 'Niveau 9 requis' : null);
     } else if (b.kind === 'nest') this.renderNest(s, id);
     else if (b.kind === 'nursery') this.renderNursery(s);
     else if (b.kind === 'kitchen') this.button(this.content, 'Entrer dans la Cuisine', () => this.openCuisine());
@@ -983,11 +984,11 @@ export class GameUI {
     const species = SPECIES[r.species]; this.title.textContent = species.name;
     this.menuPortrait(avatar(r.species));
     const overview = node('div', '', 'rabbit-overview'), essential = node('div');
-    essential.append(this.stats([['Affection', `${r.affection} / 20`], ['Revenu', `${rabbitIncome(r.affection, r.species)} pattes / h`]]));
+    essential.append(this.stats([['Affection', `${r.affection} / 20`], ['Revenu', `${rabbitIncome(r.affection, r.species, individualIncomeRoll(r))} pattes / h`]]));
     overview.append(avatar(r.species, true), essential); this.content.append(overview);
     const cost = feedCost(r.affection), away = travelling(s, id), reason = away ? 'TRAVELING' as const : feedReason(s, r.affection);
     if (away) essential.append(node('p', `En voyage ${toPlace(s.travel!.trips.find(t => t.rabbitId === id)!.destination)} · retour à l’agence`, 'badge rabbit-away'));
-    if (reason !== 'MAX_AFFECTION' && reason !== 'STATUE_REQUIRED' && reason !== 'TRAVELING') essential.append(node('p', `Prochain repas : ${cost} nourriture → affection ${r.affection + 1}, revenu ${rabbitIncome(r.affection + 1, r.species)} pattes / h.`, 'small'));
+    if (reason !== 'MAX_AFFECTION' && reason !== 'STATUE_REQUIRED' && reason !== 'TRAVELING') essential.append(node('p', `Prochain repas : ${cost} nourriture → affection ${r.affection + 1}, revenu ${rabbitIncome(r.affection + 1, r.species, individualIncomeRoll(r))} pattes / h.`, 'small'));
     if (r.affection === AFFECTION_STATUE.cap && reason !== 'STATUE_REQUIRED') essential.append(node('p', 'Le grand repas de l’affection 15 : un vrai festin, à la hauteur de la récompense.', 'small rabbit-milestone'));
     this.button(essential, reason === 'MAX_AFFECTION' ? 'Affection maximale' : `Nourrir · ${cost} nourriture`, () => this.execute({type: 'feed', id}, `Affection ${r.affection + 1} !`, () => this.scene.reactToFeed(id)), reason && REFUSALS[reason]).dataset.focus = 'feed';
     this.renderNickname(r);

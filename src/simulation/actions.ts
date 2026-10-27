@@ -15,13 +15,13 @@ import {marketPrice, marketUnlocked} from './market';
 import {affectionCap, playerLevel} from './affection';
 import {agencyBuilding, travelling} from './travel';
 import {currentDailyMission, dailyCycleStart, dailyOpensAt, openNextDailyMission, recordMissionAction} from './missions';
-import {AFFECTION_STATUE, BALANCE, HEARTS, HOUR, TRAVEL, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
+import {AFFECTION_STATUE, farmLimit, farmDuration, BALANCE, HEARTS, HOUR, TRAVEL, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
 import {emptyBuilding} from '../state/initial';
 import {babyInNursery, findNurseryBaby, firstFreeNurserySlot, nurseryBuilding, nurseryUnlockQuote, settleNestTransfers} from './nursery';
 import type {ActionResult, Building, Command, GameState, PattesCommand, Refusal, ProgressionGain} from '../state/types';
 import {chooseBirth, breedingPool, nestForParent} from './breeding';
 import {recipePrice, recipePurchaseReason} from './recipes';
-import {advance, validTime} from './time';
+import {advance, validTime, drawIncomeRoll} from './time';
 import {complementCost, quoteAcceleration} from './hearts';
 import {DECORATIONS, ownedDecorationResalePrice} from '../config/decorations';
 import {catalogDecorationPlacementReason, decorationPlacementReason, decorationsInCell, purchaseDecorationReason} from './decorations';
@@ -249,6 +249,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(command.kind !== 'nest' && command.kind !== 'nursery', 'INVALID_CHOICE');
         const config = BALANCE.buildings[command.kind];
         requireRule(config.maximum === null || s.buildings.filter(b => b.kind === command.kind).length < config.maximum, 'BUILDING_LIMIT');
+        requireRule(command.kind !== 'farm' || s.buildings.filter(b => b.kind === 'farm').length < farmLimit(playerLevel(s)), 'LEVEL_REQUIRED');
         const habitatType = command.habitatType ?? 'universal';
         requireRule(HABITAT_TYPES.includes(habitatType) && (command.kind === 'enclosure' || command.habitatType === undefined), 'INVALID_CHOICE');
         requireRule(command.kind!=='enclosure' || stateLevelAccess(s,{family:'habitatPurchase',id:habitatType}).accessible,'LEVEL_REQUIRED');
@@ -354,9 +355,10 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(Object.hasOwn(ORDERS, command.recipe), 'INVALID_CHOICE');
         const recipe = ORDERS[command.recipe]; requireRule(playerLevel(s) >= recipe.level, 'LEVEL_REQUIRED');
         requireRule(b.farmLevel === 2 || ORDERS[command.recipe].level < ORDERS.fanes.level, 'INVALID_CHOICE');
-        requireRule(Number.isSafeInteger(time + recipe.duration), 'INVALID_TIME'); pay(recipe.cost);
+        const duration = farmDuration(recipe.duration, b.farmLevel);
+        requireRule(Number.isSafeInteger(time + duration), 'INVALID_TIME'); pay(recipe.cost);
         if (recipe.duration >= HOUR) s.missions.nightOrderStarted = true; // The « longer crop » main mission.
-        b.order = {recipe: command.recipe, startedAt: time, endsAt: time + recipe.duration, grass: recipe.grass, duration: recipe.duration};
+        b.order = {recipe: command.recipe, startedAt: time, endsAt: time + duration, grass: recipe.grass, duration};
         if (s.initiation && !s.initiation.order && !s.initiation.closed.includes('order') && command.recipe === 'foin') s.initiation.order = jobKey(b,'order');
         break;
       }
@@ -404,7 +406,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(baby, 'STALE_ACTION');
         requireRule(baby.readyAt <= time, 'NOT_READY'); room(command.enclosureId, baby.birth.species);
         const birth = baby.birth; value = birth.id;
-        s.rabbits.push({id: birth.id, species: birth.species, affection: BALANCE.minAffection, enclosureId: command.enclosureId});
+        s.rabbits.push({id: birth.id, species: birth.species, affection: BALANCE.minAffection, enclosureId: command.enclosureId, ...(SPECIES[birth.species].rarity === 'common' ? {} : {incomeRoll: drawIncomeRoll(birth, rng)})});
         if (!s.discovered.includes(birth.species)) {
           if (GUARANTEE_SPECIES.includes(birth.species)) s.pityFailures = 0;
         }

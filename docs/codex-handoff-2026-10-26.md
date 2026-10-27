@@ -2,7 +2,7 @@
 
 ## État courant au 27 octobre 2026
 
-**Dernière demande du propriétaire :** résultats communs permis uniquement entre deux communs du même type ; revenus multipliés par 50 et plafonds abaissés, croissants par type et niveau. Trois Paille d’affection 10 remplissent le niveau 1 (950 pièces) en 20 minutes. Les anciennes pièces stockées sont conservées au chargement. Voir `docs/economy-current.md`. Validation volontairement limitée : types et 42 tests ciblés réussis ; aucune suite complète ni simulation de progression, conformément à sa demande explicite. Les anciennes mesures J20 ci-dessous ne valident donc pas cette nouvelle économie. Certains anciens tests non exécutés contiennent encore les anciens barèmes numériques.
+**Dernier changement :** le barème x50 est remplacé : rares individuels 10-20/h à affection 1, 70-100/h à affection 10 ; épiques +30 %, légendaires +50 %, tirage individuel permanent. Stocks N1 100/125/150/175/200, N2 300/350/400/450/500 (Paille/Neige/Feu/Métal/Vol), N3 1250 partout ; Universel suit Vol. Troisième ferme niveau 12, quatrième niveau 15 ; ferme améliorée : durées des nouvelles cultures x0,8. Dadi Feu/Métal, anciens logements conservés. Voir `docs/economy-current.md`. Aucune simulation de progression demandée. Validation actuelle : types et 21 tests ciblés réussis (revenus, sauvegardes, fermes, Dadi et reproduction commune), git diff --check propre. Aucune suite complète ni contrôle navigateur ; les anciennes validations ci-dessous restent historiques.
 
 Branche : `feature/missions-octobre-2`, sans fusion dans `main` ni push. Le propriétaire demande maintenant le dossier complet pour publier lui-même sur Netlify. Préserver `.claude/`, `.env.local` et `output/` ; seul `.claude/` apparaît comme non suivi.
 

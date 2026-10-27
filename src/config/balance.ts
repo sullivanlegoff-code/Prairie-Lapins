@@ -43,14 +43,14 @@ export const SHOP_SPECIES = SPECIES_IDS.filter(id => isSold(SPECIES[id]));
 export const RECIPE_SPECIES = SPECIES_IDS.filter(id => hasRecipe(SPECIES[id]));
 export const BALANCE = {
   initialPattes: 350, initialGrass: 0, initialWidth: 3, height: 2, extendedWidth: 6,
-  extensionCost: 600, enclosureCapacity: 3, enclosureCap: 1500,
+  extensionCost: 600, enclosureCapacity: 3, enclosureCap: 200,
   minAffection: 1, maxAffection: 20, breedingAffection: 2,
-  incomeBase: 500, incomeRareBase: 700, incomePerLevel: 50,
+  incomeBase: 10, incomeRareBase: 10, incomePerLevel: 1,
   releaseGrass: {common: 10, rare: 25},
   breedingCost: 0, breedingDuration: 20 * MINUTE,
   commonGrowth: RARITIES.common.growthMinutes * MINUTE, hybridGrowth: RARITIES.uncommon.growthMinutes * MINUTE, rareGrowth: RARITIES.rare.growthMinutes * MINUTE, guaranteeAttempt: 8,
   buildings: {
-    enclosure: {price: 350, maximum: null}, farm: {price: 60, maximum: 2},
+    enclosure: {price: 350, maximum: null}, farm: {price: 60, maximum: 4},
     nest: {price: 100, maximum: 1}, nursery: {price: 80, maximum: 1},
     kitchen: {price: 100, maximum: 1}, // Provisional building-only integration price.
     statue: {price: 60, currency: 'hearts', maximum: 1}, // Hearts only, never a coin purchase or complement.
@@ -62,13 +62,13 @@ export const BALANCE = {
  * (the single `grass` stock); a better-liked crop costs more, takes longer, opens later and yields more per harvest,
  * so the long ones fill the gaps between the three daily sessions. `level` is the player level that opens it.
  */
-/**
- * Hourly income at affection 1: all bases and affection increments multiplied by fifty on 27 October 2026.
- * Rares no longer all earn the same. Nine surviving species from the twelve drawn once
- * on that day earn the higher rare base; epics and legendaries earn more still. Each affection point adds `incomePerLevel`.
- */
-export const RARE_INCOME_BONUS_SPECIES: readonly SpeciesId[] = ['amethyste', 'boudinet', 'bretonette', 'egiiipte', 'frisket', 'princesse-neige', 'roukette', 'virvoletant', 'wat-wat'];
-export const INCOME_BASES = {common: 500, rare: 700, rareBonus: 850, epic: 1000, legendary: 1300} as const;
+/** Individual rare income uses a saved roll, not a species-wide bonus. */
+export const RARE_INCOME_BONUS_SPECIES: readonly SpeciesId[] = [];
+export const INCOME_BASES = {common: 10, rare: 10, rareBonus: 10, epic: 13, legendary: 15} as const;
+/** Keep the first two farms available; later slots follow player progression. */
+export const farmLimit = (level: number): number => level >= 15 ? 4 : level >= 12 ? 3 : 2;
+/** Upgrading shortens new crops by 20%; already running crops retain their frozen duration. */
+export const farmDuration = (duration: number, farmLevel?: 2): number => farmLevel === 2 ? Math.ceil(duration * 0.8) : duration;
 /**
  * The travel agency (owner, 25 October 2026), sold among the buildings from player level 8. One rabbit travels at a time,
  * to a destination drawn at random, for 3 to 10 whole hours (drawn with it); it brings back Hearts, more for a longer trip.

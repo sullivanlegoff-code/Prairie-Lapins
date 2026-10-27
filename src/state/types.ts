@@ -35,7 +35,8 @@ export type NurserySlot = 0 | 1 | 2 | 3;
 export interface NurseryBaby {slot: NurserySlot; birth: Birth; startedAt: number; readyAt: number}
 export interface Nursery {capacity: NurseryCapacity; babies: NurseryBaby[]}
 /** `name` is the individual's own, set by the player; absent = unnamed. Never inherited, never tied to the species. */
-export interface Rabbit { id: string; species: SpeciesId; affection: number; enclosureId: string; name?: string }
+/** incomeRoll: one permanent individual draw, from 0 to 10000. Missing on historical saves. */
+export interface Rabbit { incomeRoll?: number; id: string; species: SpeciesId; affection: number; enclosureId: string; name?: string }
 export interface MissionState {
   nightOrderStarted?: boolean;
   events: Record<MainEvent, number>;

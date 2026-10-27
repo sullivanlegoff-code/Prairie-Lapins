@@ -1,3 +1,4 @@
+import {historicalIncomeRoll} from '../simulation/time';
 import {cumulativeLevelXp, nextLevelCost} from '../simulation/progression';
 import {establishHistoricalLevelRights} from '../simulation/levelRights';
 import {PURCHASE_UNLOCK_IDS} from '../config/purchaseUnlocks';
@@ -23,7 +24,7 @@ import {ISLAND} from '../config/islandGeometry';
  */
 export const SAVE_VERSION = 20;
 /** Types a species had before the owner changed them: a rabbit already housed under its old types may stay where it is. */
-const LEGACY_TYPES: Partial<Record<SpeciesId, readonly HabitatType[]>> = {magicien: ['metal', 'vol'], bouee: ['paille', 'feu']};
+const LEGACY_TYPES: Partial<Record<SpeciesId, readonly HabitatType[]>> = {magicien: ['metal', 'vol'], bouee: ['paille', 'feu'], dadi: ['neige', 'vol']};
 const integer = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
 // Rebasing a clock may move historical dates before the Unix epoch. Resources stay nonnegative.
 const timestamp = z.number().int().min(Number.MIN_SAFE_INTEGER).max(Number.MAX_SAFE_INTEGER);
@@ -46,7 +47,7 @@ const building = z.object({
 // A rabbit may carry the personal name its owner gave it: canonical text (trimmed, at most 32 characters, no control
 // character), absent when unnamed. Names are individual: they are never inherited and never belong to the species.
 const rabbitName = z.string().refine(name => name !== '' && normalizeRabbitName(name) === name, 'Invalid rabbit name');
-const rabbit = z.object({id: identity, species, affection: z.number().int().min(BALANCE.minAffection).max(BALANCE.maxAffection), enclosureId: identity, name: rabbitName.optional()}).strict();
+const rabbit = z.object({incomeRoll: z.number().int().min(0).max(10000).optional(), id: identity, species, affection: z.number().int().min(BALANCE.minAffection).max(BALANCE.maxAffection), enclosureId: identity, name: rabbitName.optional()}).strict();
 const missions = z.object({
   nightOrderStarted: z.boolean().optional(),
   events: z.object({collectOrder: integer.max(20), breed: integer.max(1), transferBirth: integer.max(1), welcome: integer.max(1), placeDecoration: integer.max(1)}).strict(),
@@ -324,6 +325,7 @@ export function decodeGame(json: string): DecodeResult {
   if (!parsed.success) return {ok: false, reason: 'INVALID_STATE'};
   const {presentationId: _presentationId, ...stored} = parsed.data;
   const state: GameState = {...stored, cuisine: {...stored.cuisine, heartCycle: stored.cuisine.heartCycle ?? null}};
+  for (const rabbit of state.rabbits) if (SPECIES[rabbit.species].rarity !== 'common') rabbit.incomeRoll ??= historicalIncomeRoll(rabbit);
   const rabbitIds = new Set(state.rabbits.map(rabbit => rabbit.id));
   for (const id of Object.keys(state.cuisine.affectionCycles))
     if (!rabbitIds.has(id)) delete state.cuisine.affectionCycles[id];
