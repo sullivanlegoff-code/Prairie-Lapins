@@ -1,6 +1,6 @@
 # Recettes de reproduction — parcours actuel
 
-Depuis le 27 octobre 2026, **deux parents communs ne donnent jamais de lapin commun**. Deux communs d'éléments différents utilisent les recettes admissibles de leur union ; deux communs du même élément ne disposent d'aucun résultat actuel et le nid demande d'associer deux éléments différents. Le refus ne lance aucun tirage, ne dépense rien et ne donne ni XP ni progression de mission. Dès qu'au moins un parent n'est pas commun, les tables restent inchangées.
+Décision précisée le 27 octobre 2026 : **aucune paire ne donne de lapin commun, sauf deux parents eux-mêmes communs du même type**. Par exemple, deux Feu peuvent donner Feu. Les paires mixtes et les paires rares, épiques ou légendaires excluent également les résultats communs. Les autres résultats doivent toujours respecter leurs recettes et leurs conditions existantes.
 
 Les probabilités fixes des Épiques et Légendaires, leurs bonus d'affection et la garantie ordinaire conservent leurs règles. Une recette spéciale n'est jamais ramenée à 100 % faute de résultat ordinaire : le lancement est alors refusé. Une naissance déjà tirée et enregistrée avant ce changement, même commune, conserve son identité, son espèce et sa croissance et reste accueillable.
 

@@ -2,6 +2,8 @@
 
 ## État courant au 27 octobre 2026
 
+**Dernière demande du propriétaire :** résultats communs permis uniquement entre deux communs du même type ; revenus multipliés par 50 et plafonds abaissés, croissants par type et niveau. Trois Paille d’affection 10 remplissent le niveau 1 (950 pièces) en 20 minutes. Les anciennes pièces stockées sont conservées au chargement. Voir `docs/economy-current.md`. Validation volontairement limitée : types et 42 tests ciblés réussis ; aucune suite complète ni simulation de progression, conformément à sa demande explicite. Les anciennes mesures J20 ci-dessous ne valident donc pas cette nouvelle économie. Certains anciens tests non exécutés contiennent encore les anciens barèmes numériques.
+
 Branche : `feature/missions-octobre-2`, sans fusion dans `main` ni push. Le propriétaire demande maintenant le dossier complet pour publier lui-même sur Netlify. Préserver `.claude/`, `.env.local` et `output/` ; seul `.claude/` apparaît comme non suivi.
 
 Travaux terminés depuis la passation initiale :

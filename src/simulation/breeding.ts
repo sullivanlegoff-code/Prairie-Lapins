@@ -27,18 +27,20 @@ export function ordinaryPoolAllows(id: SpeciesId, a: SpeciesId, b: SpeciesId): b
 function ordinaryPolicyAllows(id: SpeciesId, policy: typeof ORDINARY_POOL_POLICIES[string] | undefined): boolean {
   return !policy || hasRecipe(SPECIES[id]) && SPECIES[id].rarity === policy.recipeRarity;
 }
-/** Owner decision of 27 October 2026: two common parents never give a common rabbit. */
-export const bothCommon = (a: SpeciesId, b: SpeciesId): boolean => SPECIES[a].rarity === 'common' && SPECIES[b].rarity === 'common';
+/** Common results are allowed only for two Common, single-type parents of the same type. */
+export const commonResultAllowed = (a: SpeciesId, b: SpeciesId): boolean =>
+  SPECIES[a].rarity === 'common' && SPECIES[b].rarity === 'common'
+  && SPECIES[a].types.length === 1 && SPECIES[b].types.length === 1 && SPECIES[a].types[0] === SPECIES[b].types[0];
 /** Catalogue eligibility is independent of weight selection; catalogue order also defines cumulative draw order. */
 export function breedingWeights(a: SpeciesId, b: SpeciesId, affectionA = 2, affectionB = 2): Odds {
   const types = new Set([...SPECIES[a].types, ...SPECIES[b].types]);
   const key = [...types].sort().join(',');
   const policy = ORDINARY_POOL_POLICIES[key];
-  const commonParents = bothCommon(a, b);
+  const allowCommon = commonResultAllowed(a, b);
   const weights: Odds = {};
   for (const id of SPECIES_IDS) {
     const species = SPECIES[id];
-    if (commonParents && species.rarity === 'common') continue;
+    if (!allowCommon && species.rarity === 'common') continue;
     if (!ordinaryPolicyAllows(id, policy)) continue;
     const historical = !policy && breedsHistorically(species) && species.types.every(type => types.has(type));
     const recipe = !historical && hasRecipe(species) && species.recipe!.probability === undefined

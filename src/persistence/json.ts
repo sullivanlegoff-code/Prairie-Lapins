@@ -271,11 +271,15 @@ function migrateRetiredSpecies(raw: unknown): void {
 }
 
 /**
- * Habitat storage became type-dependent on 25 October 2026 (lower for the first habitats). A save holding more than its habitat
- * now stores keeps every coin: the whole coins above the cap move to the balance, the habitat stays full. Only what the former
- * uniform caps allowed is settled; anything beyond them stays an invalid save.
+ * Settle only stock allowed by a published historical cap. Move whole coins to the wallet,
+ * including one coin for a fractional excess, subtracting exactly the same units from stock.
+ * This preserves every fractional unit and is idempotent after the normalized save is written.
  */
 const FORMER_CAPS = {1: 2400, 2: 4000, 3: 5600} as const;
+const FORMER_TYPED_CAPS: Record<1 | 2, Record<HabitatType, number>> = {
+  1: {paille: 1300, neige: 1500, feu: 1800, universal: 2100, metal: 2500, vol: 2900},
+  2: {paille: 2600, neige: 3000, feu: 3400, universal: 3800, metal: 4300, vol: 4800},
+};
 function settleStorageCaps(raw: unknown): void {
   if (!raw || typeof raw !== 'object' || !('buildings' in raw) || !Array.isArray(raw.buildings) || !('pattes' in raw) || !Number.isSafeInteger(raw.pattes)) return;
   const save = raw as {pattes: number; buildings: unknown[]};
@@ -284,8 +288,12 @@ function settleStorageCaps(raw: unknown): void {
     const {habitat, incomeUnits} = b as {habitat?: {type?: unknown; level?: unknown} | null; incomeUnits?: unknown};
     if (!habitat || !HABITAT_TYPES.includes(habitat.type as HabitatType) || ![1, 2, 3].includes(habitat.level as number) || !Number.isSafeInteger(incomeUnits)) continue;
     const cap = habitatLevel(habitat.type as HabitatType, habitat.level as 1 | 2 | 3).cap * HOUR, units = incomeUnits as number;
-    if (units <= cap || units > FORMER_CAPS[habitat.level as 1 | 2 | 3] * HOUR) continue;
-    save.pattes += Math.floor((units - cap) / HOUR); (b as {incomeUnits: number}).incomeUnits = cap;
+    const level = habitat.level as 1 | 2 | 3;
+    const formerCap = Math.max(FORMER_CAPS[level], level === 3 ? 5600 : FORMER_TYPED_CAPS[level][habitat.type as HabitatType]);
+    if (units <= cap || units > formerCap * HOUR) continue;
+    const coins = Math.ceil((units - cap) / HOUR);
+    if (!Number.isSafeInteger(save.pattes + coins)) continue; // Keep the invalid excess: schema refuses overflow without loss.
+    save.pattes += coins; (b as {incomeUnits: number}).incomeUnits = units - coins * HOUR;
   }
 }
 

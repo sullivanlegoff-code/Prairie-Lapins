@@ -4,7 +4,7 @@ import {regressionStart as legacyGame} from './regression-start';
 import {describe, expect, it, vi} from 'vitest';
 import {recipeOf} from '../src/config/species';
 import {GUARANTEE_SPECIES, MINUTE, SPECIES, SPECIES_IDS, growthDuration, type SpeciesId} from '../src/config/balance';
-import {bothCommon, breedingOdds, breedingPool, chooseBirth, recipeMatches} from '../src/simulation/breeding';
+import {commonResultAllowed, breedingOdds, breedingPool, chooseBirth, recipeMatches} from '../src/simulation/breeding';
 import {act, advance,  decodeGame, encodeGame, pendingDiscoveries, rabbitIncome} from '../src/simulation';
 import {GameController} from '../src/application/GameController';
 import {SAVE_KEY} from '../src/persistence/storage';
@@ -40,13 +40,14 @@ describe('approved three-species rules',()=>{
   expect(SPECIES[id].art.kind).toBe('static-sprite');
  });
  it('matches the three approved distributions exactly',()=>{
-  // Two commons never give a common (owner decision of 27 October 2026): only the Rares of the union, and the epic, remain.
+  // Different-type Common parents give only the Rares of the union and eligible specials.
   expect(breedingOdds('paille','feu',4,4)).toEqual({ardent:50,snk:50});
   expect(breedingOdds('paille','belier-gris',6,6)).toEqual({roukette:47.5,boudinet:47.5,magicien:5});
-  // Dadi x Phoenix at affection 10: the ×1.5 step lifts Dragon to 3 % and the two Neige-Vol epics to 7.5 % each; eleven ordinary results share the 82 % left.
+  // Dadi x Phoenix at affection 10: six ordinary Rares share 82 %, with fixed specials 3 %, 7.5 %, 7.5 %.
   const pair=breedingOdds('dadi','phoenix',10,10);expect(pair).toMatchObject({dragon:3,dadi:7.5,maxou:7.5});
-  for(const id of ['neige','feu','volant','pic-pic','phoenix','wat-wat','glassofeu','piment','tunini'] as const)expect(pair[id]).toBeCloseTo(82/9,10);
-  expect(Object.keys(pair)).toHaveLength(12);
+  for(const id of ['neige','feu','volant'] as const)expect(pair[id]).toBeUndefined();
+  for(const id of ['pic-pic','phoenix','wat-wat','glassofeu','piment','tunini'] as const)expect(pair[id]).toBeCloseTo(82/6,10);
+  expect(Object.keys(pair)).toHaveLength(9);
  });
  it('reserves a special once and allocates exactly the remainder to ordinary results',()=>{
   const odds=breedingOdds('magicien','belier-gris',6,6);expect(odds.magicien).toBe(5);
@@ -71,9 +72,8 @@ describe('approved three-species rules',()=>{
  it('checks symmetry, normalization, eligibility and actual midpoint draws for every pair at threshold boundaries',()=>{
   for(let i=0;i<SPECIES_IDS.length;i++)for(let j=i;j<SPECIES_IDS.length;j++)for(const levels of [[2,2],[4,3],[4,4],[6,5],[6,6],[10,9],[10,10],[20,20]]){
    const a=SPECIES_IDS[i],b=SPECIES_IDS[j],[x,y]=levels,s=createGame(0),pool=breedingPool(s,a,b,x,y);
-   expect(pool.weights).toEqual(breedingPool(s,b,a,y,x).weights);const empty=bothCommon(a,b)&&a===b;expect(pool.total===0).toBe(empty);expect(Object.values(breedingOdds(a,b,x,y)).reduce((n,p)=>n+p,0)).toBeCloseTo(empty?0:100,12);
-   // Two commons never give a common; two commons of one element give nothing at all.
-   if(bothCommon(a,b)){expect(Object.keys(pool.weights).every(id=>SPECIES[id as SpeciesId].rarity!=='common')).toBe(true);if(SPECIES[a].types[0]===SPECIES[b].types[0])expect(empty).toBe(true);}
+   expect(pool.weights).toEqual(breedingPool(s,b,a,y,x).weights);expect(Object.values(breedingOdds(a,b,x,y)).reduce((n,p)=>n+p,0)).toBeCloseTo(100,12);
+   if(!commonResultAllowed(a,b))expect(Object.keys(pool.weights).every(id=>SPECIES[id as SpeciesId].rarity!=='common')).toBe(true);
    let cursor=0;for(const [id,w]of Object.entries(pool.weights)){expect(chooseBirth(s,a,b,(cursor+w/2)/pool.total,x,y).species).toBe(id);cursor+=w}
   }
  },30000);
@@ -110,7 +110,7 @@ describe('saved births, delays, compatibility and collection',()=>{
   expect(nurseryView(growing,20*MINUTE).babies).toEqual([{slot: 0, birthId: expect.any(String), stage: 'growing', startedAt: expect.any(Number), readyAt:(20+minutes)*MINUTE}]);expect(collectionView(growing).filter(e=>e.known).map(e=>e.name)).not.toContain(SPECIES[id].name);
   expect(decodeGame(encodeGame(growing))).toEqual({ok:true,state:growing});
   expect(nurseryView(growing,(20+minutes)*MINUTE).babies).toMatchObject([{stage:'ready',species:id}]);
-  const welcomed=run(growing, welcomeOf(growing, 'building-1'),(20+minutes)*MINUTE);expect(welcomed.rabbits.at(-1)).toMatchObject({species:id,affection:1});expect(rabbitIncome(1)).toBe(10);
+  const welcomed=run(growing, welcomeOf(growing, 'building-1'),(20+minutes)*MINUTE);expect(welcomed.rabbits.at(-1)).toMatchObject({species:id,affection:1});expect(rabbitIncome(1)).toBe(500);
  });
  it('starts the full Dragon growth only after an occupied nursery is freed',()=>{
   // In the Dadi x Phoenix pool at affection 10, Dragon holds the draws in [0.82, 0.85).
@@ -124,7 +124,7 @@ describe('saved births, delays, compatibility and collection',()=>{
  });
  it('notebook shares actual odds, explains exact parents and suppresses specials under guarantee',()=>{
   const s=knowEveryResult(couple('dadi','phoenix',10)),entry=recipeBook(s,0).find(r=>r.species==='dragon')!;expect(entry.pairs).toHaveLength(1);expect(entry.pairs[0]).toMatchObject({probability:'3 %',possible:true,guaranteed:false});
-  expect(oddsView(s,'dadi','phoenix',10,10).entries.map(e=>e.probability)).toEqual([...Array(9).fill('41/450 (≈ 9,11 %)'),'3 %','7,5 %','7,5 %']);
+  expect(oddsView(s,'dadi','phoenix',10,10).entries.map(e=>e.probability)).toEqual([...Array(6).fill('41/300 (≈ 13,67 %)'),'3 %','7,5 %','7,5 %']);
   const wrong=couple('volant','feu',10);expect(recipeBook(wrong,0).find(r=>r.species==='dragon')!.pairs).toEqual([]);
   const guarantee=knowRecipes(couple('magicien','paille',6));guarantee.pityFailures=9;expect(recipeBook(guarantee,0).find(r=>r.species==='magicien')!.pairs[0]).toMatchObject({probability:'0 %',possible:false});
  });

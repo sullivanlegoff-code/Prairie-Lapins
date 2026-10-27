@@ -1,16 +1,17 @@
 // @vitest-environment happy-dom
 import html from '../index.html?raw';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
-import {BALANCE, HOUR, MINUTE, SPECIES, SPECIES_IDS, type SpeciesId} from '../src/config/balance';
+import {BALANCE, HISTORICAL_COMMON_WEIGHTS, HOUR, MINUTE, SPECIES, SPECIES_IDS, type SpeciesId} from '../src/config/balance';
 import {createCentreStartGame} from '../src/state/initial';
 import {act, decodeGame, encodeGame} from '../src/simulation';
-import {breedingDistributionWeights, breedingPool, chooseBirth} from '../src/simulation/breeding';
+import {breedingDistributionWeights, breedingPool, breedingWeights, chooseBirth, commonResultAllowed} from '../src/simulation/breeding';
 import {cumulativeLevelXp} from '../src/simulation/progression';
+import {stateLevelAccess} from '../src/simulation/levelRights';
 import {GameController} from '../src/application/GameController';
 import {SAVE_KEY} from '../src/persistence/storage';
 import {GameUI} from '../src/ui/GameUI';
 import {PreferenceStore} from '../src/ui/preferences';
-import {oddsTexts, oddsView, REFUSALS} from '../src/ui/models';
+import {oddsTexts, oddsView} from '../src/ui/models';
 import type {Command, GameState} from '../src/state/types';
 import type {MeadowScene} from '../src/display/MeadowScene';
 
@@ -33,7 +34,16 @@ beforeEach(() => {
 });
 afterEach(() => { cleanups.splice(0).reverse().forEach(f => f()); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
-describe('two Common parents never produce a Common', () => {
+describe('Common results require two Common parents of the same single type', () => {
+  it('excludes Commons for every other catalogue pair at every affection threshold', () => {
+    for (const a of SPECIES_IDS) for (const b of SPECIES_IDS) for (const affection of [2, 6, 10, 15, 20]) {
+      const allowed = SPECIES[a].rarity === 'common' && SPECIES[b].rarity === 'common'
+        && SPECIES[a].types.length === 1 && SPECIES[b].types.length === 1 && SPECIES[a].types[0] === SPECIES[b].types[0];
+      expect(commonResultAllowed(a,b)).toBe(allowed);
+      const commons = Object.keys(breedingWeights(a,b,affection,affection)).filter(id => SPECIES[id as SpeciesId].rarity === 'common');
+      expect(commons).toEqual(allowed ? [a] : []);
+    }
+  });
   it('checks every Common pair, levels, affection bonuses, guarantee and actual cumulative interval boundaries', () => {
     expect(SPECIES_IDS.filter(id => SPECIES[id].rarity === 'common')).toEqual([...COMMONS]);
     let pairs = 0, draws = 0;
@@ -42,8 +52,14 @@ describe('two Common parents never produce a Common', () => {
         const a = COMMONS[i], b = COMMONS[j], s = parents(a, b, affection, level); s.pityFailures = pity;
         const pool = breedingPool(s, a, b, affection, affection); pairs++;
         expect(pool.weights).toEqual(breedingPool(s, b, a, affection, affection).weights);
-        expect(Object.keys(pool.weights).some(id => SPECIES[id as SpeciesId].rarity === 'common')).toBe(false);
-        if (a === b) { expect(pool).toMatchObject({weights: {}, total: 0, eligible: false, guaranteed: false}); continue; }
+        const sameCommonAccessible = a === b && stateLevelAccess(s,{family:'species',id:a,action:'breedingResult'}).accessible;
+        expect(Object.keys(pool.weights).some(id => SPECIES[id as SpeciesId].rarity === 'common')).toBe(sameCommonAccessible);
+        if (a === b) {
+          const weight = HISTORICAL_COMMON_WEIGHTS[a] ?? 30;
+          if (!sameCommonAccessible) { expect(pool).toMatchObject({weights:{},total:0,eligible:false,guaranteed:false}); continue; }
+          expect(pool).toMatchObject({weights: {[a]: weight}, total: weight, eligible: false, guaranteed: false});
+          expect(chooseBirth(s,a,b,.99,affection,affection).species).toBe(a); continue;
+        }
         expect(pool.total).toBeGreaterThan(0);
         let cursor = 0;
         for (const [id, weight] of Object.entries(pool.weights)) {
@@ -63,15 +79,18 @@ describe('two Common parents never produce a Common', () => {
       }
     expect(pairs).toBe(15 * 9 * 5 * 2); expect(draws).toBeGreaterThan(1000);
   }, 30_000);
-  it.each(COMMONS)('%s with another individual of the same element refuses atomically before RNG, saving or events', species => {
+  it.each(COMMONS)('%s with another individual of the same element launches a real Common birth', species => {
     const initial = parents(species, species), stored = new Map([[SAVE_KEY, encodeGame(initial)]]), writes = vi.fn();
     const rng = vi.fn(() => .5), controller = new GameController({getItem: key => stored.get(key) ?? null, setItem: (key, value) => { writes(); stored.set(key, value); }}, () => 0, rng);
     const events = vi.fn(), gains = vi.fn(); controller.onConfirmedCommand(events); controller.onProgressionGain(gains);
     const before = controller.getSnapshot().state!, json = stored.get(SAVE_KEY); writes.mockClear();
-    expect(controller.perform(command)).toMatchObject({ok: false, reason: 'NO_BREEDING_RESULT'});
-    expect(controller.getSnapshot().state).toEqual(before); expect(stored.get(SAVE_KEY)).toBe(json);
-    expect(rng).not.toHaveBeenCalled(); expect(writes).not.toHaveBeenCalled(); expect(events).not.toHaveBeenCalled(); expect(gains).not.toHaveBeenCalled();
-    expect(oddsTexts(oddsView(before, species, species, 2, 2)).summary).toBe(REFUSALS.SAME_COMMON_ELEMENT);
+    expect(controller.perform(command).ok).toBe(true);
+    const after = controller.getSnapshot().state!;
+    expect(after.buildings.find(b=>b.kind==='nest')!.breeding!.birth.species).toBe(species);
+    expect(after.pattes).toBe(before.pattes); expect(after.grass).toBe(before.grass); expect(after.hearts).toBe(before.hearts);
+    expect(stored.get(SAVE_KEY)).not.toBe(json);
+    expect(rng).toHaveBeenCalledOnce(); expect(writes).toHaveBeenCalledOnce(); expect(events).toHaveBeenCalledOnce();
+    expect(oddsTexts(oddsView(before, species, species, 2, 2)).summary).toContain('Résultats possibles');
     controller.dispose();
   });
   it('keeps exact fixed special chances at all affection bonus thresholds after removing common results', () => {
@@ -89,12 +108,12 @@ describe('two Common parents never produce a Common', () => {
     // Removing every ordinary candidate cannot turn a fixed 5% special into a 100% result.
     expect(breedingDistributionWeights('paille', 'belier-gris', 6, 6, id => id === 'magicien')).toEqual({});
   });
-  it('preserves mixed-parent distributions, including Common results and the exact Dragon reserve', () => {
-    expect(breedingDistributionWeights('neige', 'pic-pic', 2, 2)).toEqual({neige: 30, volant: 30, 'pic-pic': 30, tunini: 30});
+  it('removes Common results from mixed pairs while preserving the exact Dragon reserve', () => {
+    expect(breedingDistributionWeights('neige', 'pic-pic', 2, 2)).toEqual({'pic-pic': 30, tunini: 30});
     const s = parents('dadi', 'phoenix', 10), pool = breedingPool(s, 'dadi', 'phoenix', 10, 10);
     expect(pool.weights.dragon! * 100 / pool.total).toBe(3);
-    for (const id of ['neige', 'feu', 'volant'] as const) expect(pool.weights[id]! * 100 / pool.total).toBeCloseTo(82 / 9, 12);
-    expect(chooseBirth(s, 'dadi', 'phoenix', 0, 10, 10).species).toBe('neige');
+    for (const id of ['neige', 'feu', 'volant'] as const) expect(pool.weights[id]).toBeUndefined();
+    expect(SPECIES[chooseBirth(s, 'dadi', 'phoenix', 0, 10, 10).species].rarity).not.toBe('common');
   });
   it.each(['nest', 'nursery'] as const)('welcomes a Common birth already saved in the %s without redrawing or converting it', stage => {
     const s = parents('paille', 'paille'), birth = {id: `birth-${s.nextId++}`, species: 'paille' as const, guaranteed: false, reservedDiscovery: false};
@@ -112,7 +131,7 @@ describe('two Common parents never produce a Common', () => {
     expect(welcomed.state.rabbits.find(r => r.id === birth.id)).toMatchObject({species: 'paille', affection: 1, enclosureId: 'building-1'});
     expect(rng).not.toHaveBeenCalled(); expect(decodeGame(encodeGame(welcomed.state)).ok).toBe(true); controller.dispose();
   });
-  it('explains the empty same-element Common pair in the nest window and disables the free launch', () => {
+  it('allows two same-element Commons in the nest window and launches only on the final click', () => {
     const initial = parents('paille', 'paille'), data = new Map([[SAVE_KEY, encodeGame(initial)]]);
     const controller = new GameController({getItem: key => data.get(key) ?? null, setItem: (key, value) => { data.set(key, value); }}, () => 0);
     const scene = {setRabbitPurchase: vi.fn(), setExpansion: vi.fn(), setPlacement: vi.fn(), setArrangement: vi.fn(), setDecorationSelection: vi.fn(), setPhoto: vi.fn(), recenter: vi.fn()} as unknown as MeadowScene;
@@ -123,8 +142,9 @@ describe('two Common parents never produce a Common', () => {
     const dialog = document.getElementById('breeding-dialog') as HTMLDialogElement;
     for (const [slot, id] of [[0, 'rabbit-2'], [1, 'rabbit-6']] as const) dialog.querySelector<HTMLButtonElement>(`[data-focus="breeding-parent-${slot}-${id}"]`)!.click();
     const launch = [...dialog.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === 'Croiser')!;
-    expect(launch.disabled).toBe(true); expect(dialog.textContent).toContain(REFUSALS.SAME_COMMON_ELEMENT);
+    expect(launch.disabled).toBe(false); expect(dialog.textContent).toContain('Résultats possibles');
     const perform = vi.spyOn(controller, 'perform'), before = controller.getSnapshot().state!; launch.click();
-    expect(perform).not.toHaveBeenCalled(); expect(controller.getSnapshot().state).toEqual(before);
+    expect(perform).toHaveBeenCalledOnce(); expect(before.buildings.find(b=>b.kind==='nest')!.breeding).toBeNull();
+    expect(controller.getSnapshot().state!.buildings.find(b=>b.kind==='nest')!.breeding!.birth.species).toBe('paille');
   });
 });

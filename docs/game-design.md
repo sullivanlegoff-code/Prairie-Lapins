@@ -1,5 +1,7 @@
 # Catalogue courant et migration v20 - 26 octobre 2026
 
+**Actualisation du 27 octobre :** les revenus et les 18 plafonds applicables sont détaillés dans [l’économie actuelle](economy-current.md). Les barèmes de revenus, de stockage et les mesures de progression datés plus bas sont historiques. Aucun recalcul de progression n’a été effectué, à la demande du propriétaire. La règle de reproduction actuelle exclut tout résultat commun, sauf entre deux parents communs du même type ; voir [les recettes actuelles](recipes-current.md).
+
 Le registre `src/config/species.ts` contient 32 espèces. Les notes de publication plus bas sont des archives.
 
 | Lapin | Types | Rareté | Recette | Niveau |
