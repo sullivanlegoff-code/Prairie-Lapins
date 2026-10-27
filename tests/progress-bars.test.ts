@@ -74,6 +74,24 @@ describe('bars from canonical jobs', () => {
     expect(progressBars(s)).toHaveLength(2);
     expect(progressBars(null)).toEqual([]);
   });
+  it('agency: gives each traveller a stable row, follows saved deadlines and hands over at arrival', () => {
+    const s = state(), agency = emptyBuilding('agency-test', 'agency', 0, 0);
+    s.buildings=[agency];
+    s.travel={welcomed:true,trips:[
+      {rabbitId:'a',destination:'Paris',startedAt:100,endsAt:200,hearts:1},
+      {rabbitId:'b',destination:'Vannes',startedAt:125,endsAt:225,hearts:2},
+      {rabbitId:'c',destination:'Lille',startedAt:0,endsAt:300,hearts:3},
+    ]};
+    const bars=progressBars(s);
+    expect(bars.map(bar=>bar.key)).toEqual(['agency-test:trip-a','agency-test:trip-b','agency-test:trip-c']);
+    expect(bars.map(bar=>bar.fraction)).toEqual([.5,.25,.5]);
+    expect(bars[1].y-bars[0].y).toBeGreaterThan(bars[0].height);
+    expect(progressBars(s,{},200).map(bar=>bar.key)).toEqual(['agency-test:trip-b','agency-test:trip-c']);
+    expect(progressBars(s,{photo:true})).toEqual([]);
+    expect(progressBars(s,{movingId:agency.id})).toEqual([]);
+    expect(progressBars(s,{},300)).toEqual([]);
+    s.travel.trips=[];expect(progressBars(s)).toEqual([]);
+  });
 });
 
 it('reuses passive Graphics across frames, hiding and restoring, then destroys removed buildings', () => {

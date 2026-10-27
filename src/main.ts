@@ -6,6 +6,7 @@ import {bindLifecycle} from './application/lifecycle';
 import {browserStorage} from './persistence/browserStorage';
 import {browserLifecycle} from './display/browserLifecycle';
 import {bindAppViewport} from './display/appViewport';
+import {requestMobileFullscreen} from './display/fullscreen';
 import {mountSavePanel} from './display/SavePanel';
 import {GameUI} from './ui/GameUI';
 import {PreferenceStore} from './ui/preferences';
@@ -98,6 +99,7 @@ async function boot(): Promise<() => void> {
   const play = () => {
     if (!loading.view().ready || entered) return;
     music.start();
+    requestMobileFullscreen();
     loadingRoot.hidden = true; app.inert = false; loading.dispose(); unrender(); stopMessages();
     ui = new GameUI(controller, scene, clock, preferences, audio, {onlineServicesAllowed: policy.onlineServicesAllowed && !LABORATORY_BUILD && !DECORATIONS_PREVIEW_BUILD, accountKnown: () => accountKnown(storage)});
     const soundSettings = mountSoundSettings(document, preferences, {onChange: (channel, enabled, volume) => {

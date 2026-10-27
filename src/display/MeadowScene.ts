@@ -908,7 +908,8 @@ export class MeadowScene extends Phaser.Scene {
     const crossed = (end: number) => this.progressNow < end && end <= now;
     if (s?.buildings.some(b => (b.kind === 'nest' && b.breeding && crossed(b.breeding.endsAt)) ||
       (b.kind === 'farm' && b.order && crossed(b.order.endsAt)) ||
-      (b.kind === 'nursery' && b.nursery?.babies.some(baby => crossed(baby.readyAt))))) this.drawBubbles(now);
+      (b.kind === 'nursery' && b.nursery?.babies.some(baby => crossed(baby.readyAt)))) ||
+      s?.travel?.trips.some(trip => crossed(trip.endsAt))) this.drawBubbles(now);
     this.progressNow = now;
     this.progressViews?.sync(progressBars(s, {photo: this.photo, movingId: this.placement?.movingId}, now), s?.buildings.map(b => b.id) ?? []);
     this.progressUpdatedAt = this.time.now;

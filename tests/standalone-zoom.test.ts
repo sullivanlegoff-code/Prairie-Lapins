@@ -2,19 +2,20 @@
 import {expect, it} from 'vitest';
 import script from '../public/assets/app/standalone-zoom.js?raw';
 
-function setup(apple = false, display = false) {
+function setup(apple = false, display = false, full = false) {
   const root = document.implementation.createHTMLDocument();
   root.head.innerHTML='<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">';
   root.body.innerHTML='<div id="game"><canvas></canvas></div><button>Menu</button><div class="panel-scroll"></div>';
   const media = Object.assign(new EventTarget(), {matches:display});
-  const host = Object.assign(new EventTarget(), {navigator:{standalone:apple},matchMedia:()=>media});
+  const fullscreen = Object.assign(new EventTarget(), {matches:full});
+  const host = Object.assign(new EventTarget(), {navigator:{standalone:apple},matchMedia:(query:string)=>query.includes('fullscreen') ? fullscreen : media});
   new Function('window','document',script)(host,root);
   const emit=(selector:string,type:string,touches=1)=>{
     const event=new Event(type,{bubbles:true,cancelable:true});
     Object.defineProperty(event,'touches',{value:Array.from({length:touches},()=>({}))});
     root.querySelector(selector)!.dispatchEvent(event);return event;
   };
-  return {root,media,host,emit,viewport:root.querySelector<HTMLMetaElement>('meta')!};
+  return {root,media,fullscreen,host,emit,viewport:root.querySelector<HTMLMetaElement>('meta')!};
 }
 for (const [apple,display] of [[true,false],[false,true]]) {
   it(`locks only page zoom in standalone (Apple=${apple}, display=${display}), including resume`,()=>{
@@ -50,6 +51,14 @@ it('updates the policy when display mode changes without a reload',()=>{
   const {media,viewport,root}=setup();media.matches=true;media.dispatchEvent(new Event('change'));
   expect(viewport.content).toContain('user-scalable=no');
   media.matches=false;media.dispatchEvent(new Event('change'));
+  expect(viewport.content).not.toContain('user-scalable');
+  expect(root.documentElement.classList.contains('standalone')).toBe(false);
+});
+it('preserves installed-app gestures when fullscreen is the display mode',()=>{
+  const {fullscreen,viewport,root,emit}=setup(false,false,true);
+  expect(root.documentElement.classList.contains('standalone')).toBe(true);
+  expect(emit('button','touchmove',2).defaultPrevented).toBe(true);
+  fullscreen.matches=false;fullscreen.dispatchEvent(new Event('change'));
   expect(viewport.content).not.toContain('user-scalable');
   expect(root.documentElement.classList.contains('standalone')).toBe(false);
 });

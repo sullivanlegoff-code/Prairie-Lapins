@@ -2,6 +2,8 @@
 
 ## État courant au 27 octobre 2026
 
+Suite à la précision du propriétaire : plein écran demandé par le manifeste et sur Jouer pour les appareils tactiles compatibles ; zone système iOS translucide plutôt que bande opaque. Safari dans un onglet reste soumis aux barres natives ; privilégier le lancement depuis l’écran d’accueil, sans promettre de supprimer les icônes système. Une barre de temps par voyage en cours apparaît sous l’agence, avec relais immédiat par la bulle à l’arrivée. Types et 19 tests ciblés réussis ; captures locales sous output/validation/fullscreen-travel-2026-10-27/. Aucun essai iPhone.
+
 Audit suivant : cadrage mobile/rotation et couleur native corrigés ; transfert automatique nid→nurserie désormais visible immédiatement dans les panneaux. Types et 26 tests ciblés réussis. Détails et limites : docs/audit-2026-10-27.md. Aucun essai iPhone. Les valeurs économiques ci-dessous restent inchangées.
 
 **Dernier changement :** le barème x50 est remplacé : rares individuels 10-20/h à affection 1, 70-100/h à affection 10 ; épiques +30 %, légendaires +50 %, tirage individuel permanent. Stocks N1 100/125/150/175/200, N2 300/350/400/450/500 (Paille/Neige/Feu/Métal/Vol), N3 1250 partout ; Universel suit Vol. Troisième ferme niveau 12, quatrième niveau 15 ; ferme améliorée : durées des nouvelles cultures x0,8. Dadi Feu/Métal, anciens logements conservés. Voir `docs/economy-current.md`. Aucune simulation de progression demandée. Validation actuelle : types et 21 tests ciblés réussis (revenus, sauvegardes, fermes, Dadi et reproduction commune), git diff --check propre. Aucune suite complète ni contrôle navigateur ; les anciennes validations ci-dessous restent historiques.

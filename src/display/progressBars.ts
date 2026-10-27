@@ -1,5 +1,6 @@
 import {FARM_ART} from '../config/farmArt';
 import {NEST_ART} from '../config/nestArt';
+import {AGENCY_ART} from '../config/agencyArt';
 import {NURSERY_OVERLAY_ART, NURSERY_ROW_SCALE, NURSERY_SLOT_ANCHORS} from '../config/nurseryArt';
 import {babiesBySlot} from '../simulation/nursery';
 import type {GameState} from '../state/types';
@@ -20,7 +21,7 @@ export function progressFraction(now: number, start: number, end: number): numbe
 }
 
 /** Pure presentation at simulation time. Coordinates are projected world units, independent of camera zoom. */
-export function progressBars(state: Pick<GameState, 'buildings' | 'lastSimulatedAt'> | null,
+export function progressBars(state: (Pick<GameState, 'buildings' | 'lastSimulatedAt'> & Pick<Partial<GameState>, 'travel'>) | null,
   visibility: ProgressVisibility = {}, now = state?.lastSimulatedAt ?? 0): ProgressBar[] {
   if (!state || visibility.photo) return [];
   const bars: ProgressBar[] = [];
@@ -34,6 +35,13 @@ export function progressBars(state: Pick<GameState, 'buildings' | 'lastSimulated
     };
     if (b.kind === 'nest' && b.breeding) add('breeding', b.breeding.startedAt, b.breeding.endsAt, NEST_ART.progress);
     if (b.kind === 'farm' && b.order) add('crop', b.order.startedAt, b.order.endsAt, FARM_ART.progress);
+    if (b.kind === 'agency') {
+      const art = AGENCY_ART.progress;
+      for (const [row, trip] of (state.travel?.trips ?? []).entries()) {
+        add(`trip-${trip.rabbitId}`, trip.startedAt, trip.endsAt,
+          {x: art.x, y: art.y + row * art.gap, width: art.width, height: art.height});
+      }
+    }
     if (b.kind === 'nursery' && b.nursery) for (const baby of babiesBySlot(b)) {
       if (baby.slot >= b.nursery.capacity) continue;
       const anchor = NURSERY_SLOT_ANCHORS[baby.slot], row = NURSERY_ROW_SCALE[anchor.row], art = NURSERY_OVERLAY_ART.progress;
