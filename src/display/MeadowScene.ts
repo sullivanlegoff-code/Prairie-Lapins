@@ -585,10 +585,11 @@ export class MeadowScene extends Phaser.Scene {
         const offset = enclosure.kind==='nest' ? NEST_ART.parentOffsets[index] : illustratedLayout ? illustratedLayout.slots[Math.min(index, illustratedLayout.slots.length - 1)] : proposed ? habitatSlots(tier as 2 | 3, residents.length)[Math.min(index, residents.length - 1)] : rabbitOffset(index, residents.length);
         const layout = illustratedLayout ? {zone: illustratedLayout.zone, roamScale: illustratedLayout.roamScale} : proposed ? {zone: proposed.zone, roamScale: proposed.roamScale} : undefined;
         const base = {x: center.x + offset.x, y: center.y + offset.y};
-        // Nest parents keep persistent clocks too, but only move for their brief kisses and return.
+        // Nest parents keep persistent motions for walks, tricks, races and kisses.
         let motion: RabbitMotion | undefined;
         {
-          const motionLayout = enclosure.kind === 'nest' ? {zone: {minX: -80, maxX: 90, minY: -15, maxY: 20}, roamScale: 0} : layout;
+          // Cover the whole nest zone, so a snapshot does not retarget a lively parent back to its slot.
+          const motionLayout = enclosure.kind === 'nest' ? {zone: {minX: -80, maxX: 90, minY: -15, maxY: 20}, roamScale: 12} : layout;
           // Same enclosure: keep the individual's place (a resident added or removed only walks it back); another enclosure: start afresh at its slot.
           const known = this.motions.get(rabbit.id);
           if (known && known.group === enclosure.id) {
@@ -976,7 +977,8 @@ export class MeadowScene extends Phaser.Scene {
           if (other.motion.mode === 'walk') others.push(other.motion.to);
         }
         const activity = ['sleep', 'zoom', 'meet', 'kiss'].includes(motion.mode);
-        if ((!rabbit.nest || motion.mode !== 'rest') && (!activity || lifeActive && visibleResidents.has(rabbit.id))) stepRabbitMotion(motion, dt, others);
+        if (rabbit.nest ? lifeActive && visibleResidents.has(rabbit.id) && motion.mode !== 'rest' && (!reducedMotion || motion.mode === 'walk' || motion.mode === 'salto' || motion.mode === 'fed') :
+          !activity || lifeActive && visibleResidents.has(rabbit.id)) stepRabbitMotion(motion, dt, others);
         const pose = rabbitPose(motion);
         ({lift, squashX, squashY, facing, rotation} = pose);
         // The ground point drives position and depth; the hop only lifts the body.

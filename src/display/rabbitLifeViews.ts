@@ -1,5 +1,6 @@
 import type Phaser from 'phaser';
 import {HEART_TEXTURE} from './currency';
+import {KISS_MS} from './rabbitMotion';
 
 /** Small, passive signs over the head. No bubble, DOM overlay or gameplay reward. */
 export class RabbitLifeViews {
@@ -21,7 +22,7 @@ export class RabbitLifeViews {
       view.sleep.setPosition(x + 9 * scale, y - 3 * scale).setScale(scale).setVisible(true);
     } else {
       view.hearts ??= [-1, 1].map(() => this.scene.add.image(0, 0, HEART_TEXTURE).setDisplaySize(12, 12).setDepth(3.2));
-      const u = Math.min(1, elapsed / 1500);
+      const u = Math.min(1, elapsed / KISS_MS);
       view.hearts.forEach((heart, index) => heart.setPosition(x + (index ? 8 : -8) * scale, y - (5 + u * 10 + index * 5) * scale)
         .setDisplaySize(12 * scale, 12 * scale).setAlpha(Math.min(1, (1 - u) * 4)).setVisible(true));
     }

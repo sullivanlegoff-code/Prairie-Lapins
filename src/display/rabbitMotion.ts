@@ -26,6 +26,7 @@ export interface RabbitPose {lift: number; squashX: number; squashY: number; fac
 const CONFIG = () => VISUAL.rabbit.roam;
 /** Four half-periods of |sin(14 t)|: the hop after feeding ends exactly on the ground. */
 export const FED_MS = 4 * Math.PI / 14 * 1000;
+export const KISS_MS = 4000;
 
 function seedOf(id: string): number {
   let h = 2166136261;
@@ -94,7 +95,7 @@ export function triggerWelcomeSalto(m: RabbitMotion, reducedMotion: boolean): vo
   m.from = {...m.local}; m.to = {...m.local};
 }
 
-function startWalk(m: RabbitMotion, target: Point): void {
+export function startWalk(m: RabbitMotion, target: Point): void {
   const {speed} = CONFIG(), dx = target.x - m.local.x, dy = target.y - m.local.y, distance = Math.hypot(dx, dy);
   m.mode = 'walk'; m.elapsed = 0; m.from = {...m.local}; m.to = {...target};
   m.duration = Math.max(250, distance / (speed / m.tempo) * 1000);
@@ -226,7 +227,7 @@ export function rabbitPose(m: RabbitMotion): RabbitPose {
     const u = clamp(m.elapsed / m.duration, 0, 1);
     lift = (m.mode === 'zoom' ? 2.5 : walkBob) * Math.abs(Math.sin(Math.PI * m.steps * u));
   } else if (m.mode === 'kiss') {
-    lift = Math.abs(Math.sin(m.elapsed / 1500 * Math.PI * 3)) * 4;
+    lift = Math.abs(Math.sin(m.elapsed / KISS_MS * Math.PI * 8)) * 4;
   } else if (m.mode === 'fed') {
     lift = Math.abs(Math.sin(m.elapsed / 1000 * 14)) * motion.hop;
   }

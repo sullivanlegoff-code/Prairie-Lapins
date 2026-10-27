@@ -2,6 +2,8 @@
 
 ## État courant au 27 octobre 2026
 
+Dernière demande : parents très actifs dans le nid (marches 2–4 s, saltos 4–8 s, petites courses 3–4 s avec verrou global partagé). Approche du bisou toutes les 15 s, atterrissage préservé, retour avant nouvelles figures. Tous les bisous, nid et enclos, durent désormais 4 s avec sauts/cœurs synchronisés. Types et 45 tests ciblés distincts réussis ; économie/sauvegardes inchangées. Voir docs/rabbit-life-current.md. Aucun essai iPhone.
+
 Fréquences ajustées à la demande du propriétaire : zoomies dès 90 secondes puis toutes les 90 secondes ; occasions de bisous enclos toutes les 30–60 secondes ; approche/bisou des parents dans le nid toutes les 30 secondes, retour strict à leur place. Siestes plus fréquentes (premières occasions 15–45 secondes, suivantes 1–2 minutes), jusqu'à 60 secondes, maximum deux dormeurs même hors champ ; une rencontre/course peut les réveiller. Horloges de présentation persistantes, aucun changement de sauvegarde ou d'économie. Types et 44 tests ciblés réussis (vie 12, mouvements 21, Dadi 11). Voir docs/rabbit-life-current.md ; aucun essai iPhone.
 
 Révision complémentaire : rencontres annulées pour les deux partenaires si l'un sort du champ (évite le sautillage bloqué), délai d'une seconde avant de retenter une activité sans candidat, destruction des anciennes barres de voyage plutôt que cache illimité. Types et 122 tests ciblés réussis ; détails dans docs/audit-2026-10-27.md. Aucun changement des règles d'économie, d'XP ou de sauvegarde. Aucune suite complète ni simulation de progression.

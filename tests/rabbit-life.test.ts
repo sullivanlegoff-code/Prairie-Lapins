@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest';
 import {RabbitLife, LIFE_TIMING, NAP_MS, NEST_KISS_MS, type LifeResident, type LifeTiming} from '../src/display/rabbitLife';
-import {createRabbitMotion, motionZone, rabbitPose, stepRabbitMotion, triggerFedReaction} from '../src/display/rabbitMotion';
+import {createRabbitMotion, KISS_MS, motionZone, rabbitPose, stepRabbitMotion, triggerFedReaction} from '../src/display/rabbitMotion';
 
 const quiet = 1e9;
 function rabbit(id: string, x = 0, group = 'home'): LifeResident {
@@ -13,7 +13,8 @@ function timing(overrides: Partial<LifeTiming> = {}): LifeTiming {
 }
 function tick(life: RabbitLife, rabbits: LifeResident[], ms = 100, active = true, reduce = false) {
   life.step(ms, rabbits, active, reduce);
-  if (active) rabbits.filter(r => r.visible && (!r.nest || r.motion.mode !== 'rest')).forEach(r => stepRabbitMotion(r.motion, ms));
+  if (active) rabbits.filter(r => r.visible && (!r.nest || r.motion.mode !== 'rest' &&
+    (!reduce || ['walk', 'salto', 'fed'].includes(r.motion.mode)))).forEach(r => stepRabbitMotion(r.motion, ms));
 }
 
 describe('visible rabbit life, independent of saves and gameplay random', () => {
@@ -118,28 +119,57 @@ describe('visible rabbit life, independent of saves and gameplay random', () => 
     life.interrupt('b'); triggerFedReaction(rabbits[0].motion); tick(life, rabbits);
     expect(rabbits[0].motion.mode).toBe('fed');
   });
-  it('makes nest parents meet every thirty seconds, return home and pause behind menus', () => {
+  it('makes nest parents meet every fifteen seconds, kiss for four seconds and return before new tricks', () => {
     const life = new RabbitLife(), parents = [rabbit('a', -52, 'nest'), rabbit('b', 68, 'nest')];
-    parents.forEach(r => { r.nest = true; r.motion.layout = {zone: {minX: -80, maxX: 90, minY: -15, maxY: 20}, roamScale: 0}; });
+    parents.forEach(r => { r.nest = true; r.motion.layout = {zone: {minX: -80, maxX: 90, minY: -15, maxY: 20}, roamScale: 12}; });
     for (let i = 0; i < 100; i++) tick(life, parents, 100, false);
     expect(parents.every(r => r.motion.mode === 'rest')).toBe(true);
-    const starts: number[] = []; let meeting = false, kissed = false, returned = false;
-    for (let now = 100; now <= NEST_KISS_MS * 2 + 100; now += 100) {
+    const starts: number[] = []; let meeting = false, kissed = false, returned = false, kissFrames = 0;
+    const modes = [new Set<string>(), new Set<string>()];
+    for (let now = 100; now <= NEST_KISS_MS * 4; now += 100) {
       tick(life, parents);
+      parents.forEach((r, i) => {
+        modes[i].add(r.motion.mode);
+        const p = r.motion.local, zone = motionZone(r.motion);
+        expect(p.x >= zone.minX && p.x <= zone.maxX && p.y >= zone.minY && p.y <= zone.maxY).toBe(true);
+      });
       const meet = ['meet', 'kiss'].includes(parents[0].motion.mode);
       if (meet && !meeting) starts.push(now); meeting = meet;
       if (parents[0].motion.mode === 'kiss') {
         kissed = true;
+        kissFrames++;
         expect(Math.abs(parents[0].motion.local.x - parents[1].motion.local.x)).toBeLessThanOrEqual(28);
+        expect(parents.every(r => r.motion.mode === 'kiss')).toBe(true);
       }
+      if (kissed && !returned && !['kiss','meet'].includes(parents[0].motion.mode) && parents.some(r => r.motion.mode === 'walk' && r.motion.to.x === r.motion.home.x))
+        expect(parents.every(r => !['salto','zoom'].includes(r.motion.mode))).toBe(true);
       if (kissed && parents.every(r => r.motion.mode === 'rest' && r.motion.local.x === r.motion.home.x)) returned = true;
     }
-    expect(starts).toEqual([30_000, 60_000]); expect(kissed).toBe(true); expect(returned).toBe(true);
+    expect(starts).toEqual([15_000, 30_000, 45_000, 60_000]); expect(kissed).toBe(true); expect(returned).toBe(true);
+    expect(kissFrames).toBe(3 * KISS_MS / 100);
+    modes.forEach(m => { expect(m.has('walk')).toBe(true); expect(m.has('salto')).toBe(true); });
+    expect(modes.some(m => m.has('zoom'))).toBe(true);
     parents[1].visible = false; tick(life, parents);
     expect(parents.every(r => !['meet','kiss'].includes(r.motion.mode))).toBe(true);
     parents[1].visible = true;
     for (let i = 0; i < 400; i++) tick(life, parents, 100, true, true);
     expect(parents.every(r => !['meet','kiss','sleep','zoom'].includes(r.motion.mode))).toBe(true);
+    life.reset();
+  });
+  it('shares the running lock with enclosures and pauses nest activity clocks and poses', () => {
+    const life = new RabbitLife(timing({zoomGap: [100, 100]}));
+    const parents = [rabbit('parent-a', -52, 'nest'), rabbit('parent-b', 68, 'nest')];
+    parents.forEach(r => { r.nest = true; r.motion.layout = {zone: {minX: -80, maxX: 90, minY: -15, maxY: 20}, roamScale: 12}; });
+    const rabbits = [...parents, rabbit('resident')];
+    for (let frame = 0; frame < 800; frame++) {
+      tick(life, rabbits);
+      expect(rabbits.filter(r => r.motion.mode === 'zoom').length).toBeLessThanOrEqual(1);
+    }
+    const before = parents.map(r => ({mode:r.motion.mode, local:{...r.motion.local}, elapsed:r.motion.elapsed}));
+    for (let i = 0; i < 100; i++) tick(life, rabbits, 100, false);
+    expect(parents.map(r => ({mode:r.motion.mode, local:{...r.motion.local}, elapsed:r.motion.elapsed}))).toEqual(before);
+    parents.splice(1, 1); tick(life, parents);
+    expect(parents[0].motion.mode).not.toBe('kiss');
     life.reset();
   });
   it('ends both partners activities when one leaves the screen during a kiss', () => {
