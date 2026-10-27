@@ -18,6 +18,14 @@ function tick(life: RabbitLife, rabbits: LifeResident[], ms = 100, active = true
 }
 
 describe('visible rabbit life, independent of saves and gameplay random', () => {
+  it('releases the global running lock when an enclosure runner leaves the screen', () => {
+    const life = new RabbitLife(timing({zoomGap: [100, 100]})), rabbits = [rabbit('a'), rabbit('b', 0, 'other')];
+    tick(life, rabbits);
+    const runner = rabbits.find(r => r.motion.mode === 'zoom')!;
+    const other = rabbits.find(r => r !== runner)!;
+    runner.visible = false; tick(life, rabbits);
+    expect(runner.motion.mode).not.toBe('zoom'); expect(other.motion.mode).toBe('zoom');
+  });
   it('allows one zoomer globally, explores the whole fenced zone, and stays bounded', () => {
     const life = new RabbitLife(timing({zoomGap: [100, 100]}));
     const rabbits = [rabbit('a', -30), rabbit('b', 30), rabbit('c', 0, 'other')];

@@ -16,6 +16,8 @@ describe('habitat income reminders', () => {
     const scene = new MeadowScene({} as never, () => {}, () => false) as any;
     scene.time = {now: 0};
     scene.current = createGame(0); scene.current.buildings[0].incomeUnits = amount * HOUR;
+    // Level 2 has room above 200: this case exercises the reminder threshold, not a full level-1 stock.
+    scene.current.buildings[0].habitat!.level = 2;
     scene.bubbles = {removeAll: vi.fn(), add: vi.fn()};
     vi.mocked(coinBubble).mockClear();
     scene.drawBubbles();

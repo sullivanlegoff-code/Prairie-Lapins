@@ -90,7 +90,8 @@ export class RabbitLife {
     // A nest can be the only visible group: release its global running lock there too.
     if (this.zoom) {
       const runner = live.get(this.zoom.id);
-      if (!runner || runner.motion.mode !== 'zoom') this.zoom = null;
+      if (runner && !runner.visible) this.interrupt(runner.id);
+      else if (!runner || runner.motion.mode !== 'zoom') this.zoom = null;
       else if (runner.visible) {
         this.zoom.remaining -= ms;
         if (this.zoom.remaining <= 0) this.interrupt(runner.id);

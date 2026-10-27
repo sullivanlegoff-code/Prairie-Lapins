@@ -24,7 +24,8 @@ import {travelling, tripReady} from '../simulation/travel';
 import {FarmCrops} from './farmCrops';
 import {FARM_ART, FARM_LEVEL_1_ART} from '../config/farmArt';
 import {NEST_ART} from '../config/nestArt';
-import {NURSERY_ART} from '../config/nurseryArt';
+import {NURSERY_ART, NURSERY_OVERLAY_ART} from '../config/nurseryArt';
+import {CROP_IDS, CROP_TEXTURE, CROP_URL, SPROUT_TEXTURE, SPROUT_URL} from './food';
 import {NurseryOverlays} from './nurseryOverlays';
 import {progressBars} from './progressBars';
 import {ProgressBarViews} from './progressBarViews';
@@ -128,12 +129,22 @@ export class MeadowScene extends Phaser.Scene {
   private decorationPixels = new Map<string, Uint8ClampedArray>();
   private unsubscribe: (() => void) | null = null;
   private artLoading = false;
+  private failedArt = new Set<string>();
+  private artComplete: (() => void) | null = null;
+  private sceneReady = false;
   readonly view = new MeadowCamera();
   /** Optional start-up reporting for the loading screen (texture loader progress, errors, scene ready). */
   constructor(private controller: GameController, private select: (selection: MeadowSelection) => void, private blocked: () => boolean,
-    private loading?: {progress(fraction: number): void; error(file: string): void; ready(): void}) { super('Meadow'); }
+    private loading?: {progress(fraction: number): void; error(file: string): void; ready(): void; runtime?(status: 'loading' | 'failed' | 'ready', retry: () => void): void}) { super('Meadow'); }
   preload(): void {
-    if (this.loading) { const l = this.loading; this.load.on('progress', (v: number) => l.progress(v)); this.load.on('loaderror', (file: {key: string}) => l.error(file.key)); }
+    this.sceneReady = false;
+    if (this.loading) {
+      const l = this.loading;
+      const progress = (v: number) => { if (!this.sceneReady) l.progress(v); };
+      const error = (file: {key: string}) => { if (!this.sceneReady) l.error(file.key); };
+      this.load.on('progress', progress); this.load.on('loaderror', error);
+      this.events.once('shutdown', () => { this.load.off('progress', progress); this.load.off('loaderror', error); });
+    }
     this.load.image(COIN_TEXTURE, COIN_URL);
     this.load.image(HEART_TEXTURE, HEART_URL);
     for (const type of ['paille', 'neige', 'feu', 'metal', 'vol'] as const) this.load.image(`element-${type}`, elementUrl(type));
@@ -142,24 +153,18 @@ export class MeadowScene extends Phaser.Scene {
     // Only the painting of the current stage is loaded at start; a later stage loads when it is bought.
     const stage = islandStage(this.controller.getSnapshot().state?.acquiredParcels ?? []);
     if (stage) queueStage(this, stageArt(stage));
-    if (!this.textures.exists(FARM_LEVEL_1_ART.texture)) this.load.image(FARM_LEVEL_1_ART.texture, FARM_LEVEL_1_ART.url);
-    if (!this.textures.exists(FARM_ART.texture)) this.load.image(FARM_ART.texture, FARM_ART.url);
-    if (!this.textures.exists(NEST_ART.texture)) this.load.image(NEST_ART.texture, NEST_ART.url);
-    if (!this.textures.exists(NURSERY_ART.texture)) this.load.image(NURSERY_ART.texture, NURSERY_ART.url);
-    NurseryOverlays.preload(this);
-    if (!this.textures.exists(KITCHEN_ART.texture)) this.load.image(KITCHEN_ART.texture, KITCHEN_ART.url);
-    if (!this.textures.exists(STATUE_ART.texture)) this.load.image(STATUE_ART.texture, STATUE_ART.url);
-    if (!this.textures.exists(AGENCY_ART.texture)) this.load.image(AGENCY_ART.texture, AGENCY_ART.url);
     if (!this.textures.exists(FOOD_TEXTURE)) this.load.image(FOOD_TEXTURE, FOOD_URL);
-    FarmCrops.preload(this);
     for (const art of this.requiredArt(this.controller.getSnapshot().state))
       if (!this.textures.exists(art.texture)) this.load.image(art.texture, art.url);
-    for (const id of DECORATION_IDS) {
-      const key = decorationTexture(id);
-      if (!this.textures.exists(key)) this.load.image(key, decorationUrl(id));
-    }
   }
   create(): void {
+    this.sceneReady = true;
+    this.events.once('shutdown', () => {
+      this.sceneReady = false;
+      if (this.artComplete) this.load.off('complete', this.artComplete);
+      this.artComplete = null; this.artLoading = false; this.failedArt.clear();
+      this.loading?.runtime?.('ready', () => {});
+    });
     this.cameras.main.setBackgroundColor(SKY_COLOR);
     // Owns its shutdown cleanup; independent of parcel ownership and ground projection.
     new SkyLayer(this, toScreen(gridPoint(ISLAND.focus, ISLAND.focus)));
@@ -184,6 +189,7 @@ export class MeadowScene extends Phaser.Scene {
     this.lifeViews = new RabbitLifeViews(this);
     this.unsubscribe = this.controller.subscribe(snapshot => {
       if (this.lifeGeneration !== snapshot.generation) {
+        this.failedArt.clear();
         this.life.reset(); this.lifeViews?.begin([]); this.motions.clear(); this.layoutKey = '';
         this.lifeGeneration = snapshot.generation;
       }
@@ -329,7 +335,7 @@ export class MeadowScene extends Phaser.Scene {
   setPlacement(placement: Placement | null): void { this.placement = placement; if (this.grid) this.renderState(); }
   setArrangement(active: boolean, ghost: DecorationGhost | null = null): void {
     this.arrangement = active; this.ghost = ghost;
-    if (this.grid) { this.drawDecorations(); this.drawGrid(); this.drawGhost(); }
+    if (this.grid) this.renderState();
   }
   focusDecoration(id: string): void {
     const d=this.current?.decorations.find(d=>d.id===id);if(!d)return;
@@ -379,6 +385,8 @@ export class MeadowScene extends Phaser.Scene {
   }
   setPhoto(active: boolean): void {
     this.photo = active;
+    if (active) this.loading?.runtime?.('ready', () => {});
+    else this.ensureArt();
     if (active) { this.dadi.clearSpeech(); this.dadiSpeech?.hide(); this.lifeViews?.begin([]); }
     this.syncTutorialHand();
     this.syncProgressBars();
@@ -408,28 +416,55 @@ export class MeadowScene extends Phaser.Scene {
       add(rabbitArt(rabbit.species));
       for (const patch of rabbitBlinkArt(rabbit.species)?.patches ?? []) add(patch);
     }
-    for (const building of state?.buildings ?? []) add(habitatArtFor(building.habitat ?? undefined, building.footprintTier));
-    if (this.placement?.kind === 'enclosure') {
+    const buildingArt = (building: Pick<Building, 'kind' | 'habitat' | 'footprintTier' | 'farmLevel'>) => {
+      if (building.kind === 'enclosure') add(habitatArtFor(building.habitat ?? undefined, building.footprintTier));
+      else if (building.kind === 'farm') {
+        add(building.farmLevel === 2 ? FARM_ART : FARM_LEVEL_1_ART);
+        add({texture: SPROUT_TEXTURE, url: SPROUT_URL});
+        for (const id of CROP_IDS) add({texture: CROP_TEXTURE(id), url: CROP_URL(id)});
+      } else if (building.kind === 'nursery') {
+        add(NURSERY_ART); add(NURSERY_OVERLAY_ART.baby); add(NURSERY_OVERLAY_ART.veil); add(NURSERY_OVERLAY_ART.lock);
+      } else add(({nest: NEST_ART, kitchen: KITCHEN_ART, statue: STATUE_ART, agency: AGENCY_ART})[building.kind]);
+    };
+    for (const building of state?.buildings ?? []) buildingArt(building);
+    if (this.placement) {
       const moving = state?.buildings.find(b => b.id === this.placement?.movingId);
-      add(habitatArtFor(moving?.habitat ?? {type: this.placement.habitatType ?? 'universal', level: 1}, moving?.footprintTier));
+      buildingArt(moving ?? {kind: this.placement.kind, habitat: this.placement.kind === 'enclosure' ? {type: this.placement.habitatType ?? 'universal', level: 1} : null});
     }
+    const decoration = (id: DecorationId, rotation: 0 | 1) => {
+      add({texture: decorationTexture(id), url: decorationUrl(id)});
+      if (rotation) add({texture: decorationTexture(id, rotation), url: decorationUrl(id)});
+    };
+    for (const d of state?.decorations ?? []) if (d.location.kind === 'outside') decoration(d.catalogId, d.location.rotation);
+    const ghost = state?.decorations.find(d => d.id === this.ghost?.id)?.catalogId ?? this.ghost?.catalogId;
+    if (ghost && this.ghost?.location?.kind === 'outside') decoration(ghost, this.ghost.location.rotation);
     return [...assets.values()];
   }
   /** Keep the previous complete scene during a batch, including when state changes again during the request. */
   private ensureArt(): boolean {
     const missing = this.requiredArt(this.current).filter(art => !this.textures.exists(art.texture));
-    if (!missing.length) return true;
+    if (!missing.length) { this.loading?.runtime?.('ready', () => this.retryArt()); return true; }
+    if (missing.some(art => this.failedArt.has(art.texture))) { if (!this.photo) this.loading?.runtime?.('failed', () => this.retryArt()); return false; }
+    if (!this.photo) this.loading?.runtime?.('loading', () => this.retryArt());
     if (!this.artLoading) {
       this.artLoading = true;
+      const generation = this.lifeGeneration;
       for (const art of missing) this.load.image(art.texture, art.url);
-      this.load.once('complete', () => {
+      this.artComplete = () => {
+        this.artComplete = null;
         this.artLoading = false;
-        // A failed batch retains the previous scene; the next state notification may retry it.
-        if (missing.every(art => this.textures.exists(art.texture))) this.renderState();
-      });
+        if (!this.sceneReady) return;
+        if (generation === this.lifeGeneration) for (const art of missing) if (!this.textures.exists(art.texture)) this.failedArt.add(art.texture);
+        this.renderState();
+      };
+      this.load.once('complete', this.artComplete);
       this.load.start();
     }
     return false;
+  }
+  private retryArt(): void {
+    if (this.artLoading || !this.sceneReady) return;
+    this.failedArt.clear(); this.renderState();
   }
   private renderState(): void {
     if (!this.ensureArt()) return;
@@ -470,6 +505,8 @@ export class MeadowScene extends Phaser.Scene {
     const d = this.current?.decorations.find(d => d.id === this.ghost?.id) ?? (this.ghost?.catalogId ? {id: this.ghost.id, catalogId: this.ghost.catalogId} : null);
     const point = d && this.ghost?.location ? this.decorationPoint(this.ghost.location, d.catalogId) : null;
     if (!d || !point || !this.ghost?.location) { this.ghostView?.setVisible(false); return; }
+    const ghostRotation = this.ghost.location.kind === 'outside' ? this.ghost.location.rotation : 0;
+    if (!this.textures.exists(decorationTexture(d.catalogId)) || !this.textures.exists(decorationTexture(d.catalogId, ghostRotation))) { this.ghostView?.setVisible(false); return; }
     if (!this.ghostView) this.ghostView = this.add.image(0, 0, decorationTexture(d.catalogId)).setDepth(1.5).setAlpha(.65).setOrigin(.5, .87);
     const rotation = this.ghost.location.kind === 'outside' ? this.ghost.location.rotation : 0;
     this.ghostView.setTexture(decorationTexture(d.catalogId, rotation)).setPosition(point.x, point.y)
@@ -824,6 +861,7 @@ export class MeadowScene extends Phaser.Scene {
     const habitat=p.kind==='enclosure'?(moving?.habitat??{type:p.habitatType??'universal',level:1 as const}):null;
     const illustration=habitatArtFor(habitat ?? undefined,moving?.footprintTier);
     if(illustration&&!this.textures.exists(illustration.texture))return;
+    if(this.requiredArt(this.current).some(art=>!this.textures.exists(art.texture)))return;
     if(!this.buildingGhost)this.buildingGhost=this.add.image(0,0,this.buildingTexture({kind:p.kind,habitat,footprintTier:moving?.footprintTier,farmLevel:moving?.farmLevel})).setDepth(1.5).setAlpha(.55).setScale(.5);
     const tint=valid?0xe4ffb5:0xf3a6a1;
     this.buildingGhost.setTexture(this.buildingTexture({kind:p.kind,habitat,footprintTier:moving?.footprintTier,farmLevel:moving?.farmLevel})).setTint(tint).setVisible(!this.photo);

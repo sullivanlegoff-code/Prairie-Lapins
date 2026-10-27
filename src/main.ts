@@ -1,6 +1,7 @@
 import {accountKnown} from './cloud/accountState';
 import Phaser from 'phaser';
 import {MeadowScene} from './display/MeadowScene';
+import {mountArtStatus} from './display/artStatus';
 import {GameController} from './application/GameController';
 import {bindLifecycle} from './application/lifecycle';
 import {browserStorage} from './persistence/browserStorage';
@@ -64,11 +65,13 @@ async function boot(): Promise<() => void> {
   const fonts = (document as Document & {fonts?: FontFaceSet}).fonts;
   if (fonts) void fonts.ready.then(() => loading.done('fonts'), () => loading.warn('fonts', '')); else loading.done('fonts');
   let ui: GameUI | null = null;
+  const artStatus = mountArtStatus(app);
   const scene = new MeadowScene(controller, selection => ui?.select(selection), () =>
     !!document.querySelector('#game-panel.shop-fullscreen:not([hidden])') || !!document.querySelector('dialog[open]:not(#paille-dialogue)') || getComputedStyle(document.getElementById('portrait-notice')!).display !== 'none',
     // Images are done only when the scene is created: Phaser reports 100 % before a late file error.
     {progress: fraction => loading.progress('textures', fraction),
-      error: file => loading.fail('textures', `Une image du jeu n’a pas pu être chargée (${file}).`),
+      error: () => loading.fail('textures', 'Une image du jeu n’a pas pu être chargée.'),
+      runtime: (status, retry) => artStatus.update(status, retry),
       ready: () => { loading.done('textures'); loading.done('scene'); }});
   recenterAfterLab = () => scene.recenter();
   const game = new Phaser.Game({
@@ -135,7 +138,7 @@ async function boot(): Promise<() => void> {
   const dismissPortrait = () => document.body.classList.add('portrait-dismissed');
   document.getElementById('continue-portrait')!.addEventListener('click', dismissPortrait);
   return () => {
-    entered?.(); loading.dispose(); music.dispose(); audio.dispose(); disposeViewport(); disposeInteractions(); lifecycle.stop(); controller.dispose(); game.destroy(true);
+    entered?.(); loading.dispose(); music.dispose(); audio.dispose(); disposeViewport(); disposeInteractions(); lifecycle.stop(); controller.dispose(); game.destroy(true); artStatus.dispose();
     document.removeEventListener('visibilitychange', background); window.removeEventListener('pagehide', hidden); window.removeEventListener('pageshow', shown);
     document.removeEventListener('pointerdown', retryMusic, {capture: true}); playButton.removeEventListener('click', play); retryButton.removeEventListener('click', retry);
     document.getElementById('continue-portrait')!.removeEventListener('click', dismissPortrait);
