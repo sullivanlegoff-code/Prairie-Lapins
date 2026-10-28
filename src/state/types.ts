@@ -112,6 +112,8 @@ export type BaseCommand =
 export type PattesCommand = Extract<BaseCommand, {type: 'buyBuilding' | 'buyRabbit' | 'expand' | 'startOrder' | 'upgradeHabitat'}>;
 export type TimedStage = 'order' | 'breeding' | 'growth';
 export type Command = BaseCommand
+  | {type:'claimDiscovery'; id:string}
+  | {type:'translateDecorations'; ids:string[]; dx:number; dy:number}
   | {type: 'rewardCuisine'; rabbitId: Rabbit['id']; recipeId: 'salad' | 'chicken'}
   | {type: 'buyDecoration'; catalogId: DecorationId; location?: Extract<DecorationLocation, {kind: 'outside'}>}
   | {type: 'placeDecoration'; id: string; location: DecorationLocation}

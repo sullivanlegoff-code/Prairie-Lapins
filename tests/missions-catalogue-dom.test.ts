@@ -40,6 +40,15 @@ const claim = (id: string) => card(id).querySelector<HTMLButtonElement>('.missio
 const open = () => document.getElementById('open-missions')!.click();
 
 describe('browsing all main missions from level seven', () => {
+  it('opens the album and recurring discoveries without spending, and exposes decoration collections',()=>{
+    const {ui,controller}=setup(state());ui.open({kind:'collection'});
+    const click=(label:string)=>{const b=[...panel().querySelectorAll('button')].find(b=>b.textContent===label);expect(b).toBeDefined();b!.click();};
+    click('Album et souvenirs');expect(panel().textContent).toContain('Cartes de voyage');expect(panel().textContent).toContain('Marrakech');
+    click('Rendez-vous et découvertes');expect(panel().textContent).toContain('Fête des récoltes');
+    const before=controller.getSnapshot().state!.pattes;click('Observer');expect(controller.getSnapshot().state!.cozy!.discoveries).toHaveLength(1);expect(controller.getSnapshot().state!.pattes).toBe(before);
+    ui.open({kind:'shop',tab:'decorations'});click('Coin lecture');expect(panel().querySelectorAll('[data-catalog]')).toHaveLength(3);
+    ui.open({kind:'arrange'});click('Déplacer un ensemble');expect(panel().textContent).toContain('Confirmer le déplacement');
+  });
   it('puts rewards first, started objectives before untouched ones and claimed objectives last without hiding the catalogue', () => {
     const s = state(); s.missions.completed.push('discover-paille'); s.missions.claimed.push('discover-paille'); setup(s); open();
     const ids = cards().map(c => c.dataset.mission);

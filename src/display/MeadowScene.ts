@@ -9,6 +9,10 @@ import {DadiReactions} from './dadiReactions';
 import {DadiSpeech, dadiHeadVisible} from './dadiSpeech';
 import {RabbitLife} from './rabbitLife';
 import {RabbitLifeViews} from './rabbitLifeViews';
+import {CozyInteraction, type InteractionKind} from './cozyInteraction';
+import {bestFriend} from '../simulation/cozy';
+import {currentDiscovery} from '../config/cozyContent';
+import {discoveryAvailable} from '../simulation/cozyActivities';
 import Phaser from 'phaser';
 import {VISUAL} from '../config/visual';
 import {shouldShowIncomeBubble} from './incomeBubble';
@@ -57,7 +61,7 @@ import {buildingFrame, ownedRegions, recenterCamera, type ScreenChrome} from './
 import {COIN_TEXTURE, COIN_URL, FOOD_TEXTURE, FOOD_URL, HEART_TEXTURE, HEART_URL} from './currency';
 import {coinBubble} from './currencyPhaser';
 
-export type MeadowSelection = {kind: 'building' | 'rabbit' | 'income' | 'grass' | 'decoration' | 'birth'; id: string} | {kind: 'cell' | 'fineCell'; x: number; y: number} | {kind: 'extension'; parcelId?: ParcelId} | {kind: 'empty'};
+export type MeadowSelection = {kind: 'building' | 'rabbit' | 'income' | 'grass' | 'decoration' | 'birth' | 'discovery'; id: string} | {kind: 'cell' | 'fineCell'; x: number; y: number} | {kind: 'extension'; parcelId?: ParcelId} | {kind: 'empty'};
 export interface DecorationGhost {id: string; catalogId?: DecorationId; location: DecorationLocation | null}
 /** `object` is the ground point (position, depth, scale); `body` carries the hop height, squash and mirror, apart from the shadow. */
 interface VisualRabbit {id: string; object: Phaser.GameObjects.Container; body: Phaser.GameObjects.Container; ears: Phaser.GameObjects.Ellipse[]; sprite?: Phaser.GameObjects.Image; art?: RabbitArt; base: Point; phase: number; fedUntil: number;
@@ -89,6 +93,13 @@ export class MeadowScene extends Phaser.Scene {
   private dadi = new DadiReactions();
   private dadiSpeech: DadiSpeech | null = null;
   private life = new RabbitLife();
+  private cozyInteraction = new CozyInteraction();
+  private friends = new Map<string,string|null>();
+  private interactionIn = 45000;
+  private discoveryImage: Phaser.GameObjects.Image | null = null;
+  private discoveryId = '';
+  private discoveryLocation: DecorationLocation | null = null;
+  private discoveryUpdatedAt = -Infinity;
   private lifeViews: RabbitLifeViews | null = null;
   private lifeGeneration: number | null = null;
   private pivots = new Map<string, Point>();
@@ -189,12 +200,15 @@ export class MeadowScene extends Phaser.Scene {
     this.lifeViews = new RabbitLifeViews(this);
     this.unsubscribe = this.controller.subscribe(snapshot => {
       if (this.lifeGeneration !== snapshot.generation) {
+        this.cozyInteraction.reset(); this.interactionIn = 45000; this.discoveryUpdatedAt = -Infinity;
+        this.discoveryImage?.destroy(); this.discoveryImage = null;
         this.failedArt.clear();
         this.life.reset(); this.lifeViews?.begin([]); this.motions.clear(); this.layoutKey = '';
         this.lifeGeneration = snapshot.generation;
       }
       this.dadi.sync(snapshot.state, snapshot.generation);
       this.current = snapshot.state; this.simulationReceivedAt = this.time.now;
+      this.friends=new Map((snapshot.state?.rabbits??[]).map(r=>[r.id,bestFriend(snapshot.state!,r.id)]));
       this.progressNow = this.current?.lastSimulatedAt ?? 0; this.renderState();
     });
     const stopCommands = this.controller.onConfirmedCommand(command => this.dadi.confirmed(command));
@@ -204,6 +218,7 @@ export class MeadowScene extends Phaser.Scene {
     window.addEventListener('pagehide', clearDadi);
     this.events.once('shutdown', () => {
       stopCommands(); this.dadi.reset(); this.dadiSpeech?.destroy(); this.dadiSpeech = null;
+      this.cozyInteraction.reset(); this.discoveryImage?.destroy(); this.discoveryImage = null;
       this.life.reset(); this.lifeViews?.destroy(); this.lifeViews = null;
       document.removeEventListener('visibilitychange', dadiVisibility); window.removeEventListener('pagehide', clearDadi);
     });
@@ -214,6 +229,59 @@ export class MeadowScene extends Phaser.Scene {
     this.loading?.ready();
   }
   recenter(): void { if (!this.cameras?.main) return; recenterCamera(this.view, this.current, this.screenChrome()); this.applyCamera(); }
+  /** Snapshot after the next rendered frame, so WebGL never exports an empty back buffer. */
+  capturePhoto(): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      if (!this.sceneReady) { reject(new Error('La prairie est encore en préparation.')); return; }
+      const generation = this.lifeGeneration;
+      const timeout = window.setTimeout(() => reject(new Error('La photo n’a pas pu être prise. Réessaie.')), 5000);
+      try {
+        this.game.renderer.snapshot(image => {
+          if (!this.sceneReady || generation !== this.lifeGeneration) { clearTimeout(timeout); reject(new Error('La partie a changé.')); return; }
+          if (!(image instanceof HTMLImageElement)) { clearTimeout(timeout); reject(new Error('Photo indisponible.')); return; }
+          const canvas = document.createElement('canvas'); canvas.width = image.naturalWidth || image.width; canvas.height = image.naturalHeight || image.height;
+          try { canvas.getContext('2d')!.drawImage(image, 0, 0); canvas.toBlob(blob => { clearTimeout(timeout); blob ? resolve(blob) : reject(new Error('Photo indisponible.')); }, 'image/png'); }
+          catch (error) { clearTimeout(timeout); reject(error); }
+        }, 'image/png');
+      } catch (error) { clearTimeout(timeout); reject(error); }
+    });
+  }
+  interactionDecoration(id: string): boolean {
+    if (!this.current || this.cozyInteraction.active || matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+    const d = this.current.decorations.find(d => d.id === id);
+    const kinds: Partial<Record<DecorationId, InteractionKind>> = {'hay-bale':'play','otter-plush':'cuddle','bunny-slippers':'cuddle','small-bookcase':'read','large-bookcase':'read'};
+    const kind = d && kinds[d.catalogId], point = d && this.decorationPoint(d.location, d.catalogId);
+    if (!kind || !point) return false;
+    const candidates = this.rabbitViews.filter(r => !r.nest && r.motion && ['rest','walk'].includes(r.motion.mode) &&
+      Math.hypot(r.center.x - point.x, r.center.y - point.y) < 160 && !travelling(this.current!,r.id));
+    candidates.sort((a,b) => Math.hypot(a.object.x-point.x,a.object.y-point.y)-Math.hypot(b.object.x-point.x,b.object.y-point.y));
+    const rabbit = candidates[0]; if (!rabbit?.motion) return false;
+    this.life.interrupt(rabbit.id);
+    return this.cozyInteraction.start(rabbit.id,id,rabbit.motion,{x:point.x-rabbit.center.x,y:point.y-rabbit.center.y},kind);
+  }
+  private syncDiscovery(): void {
+    const s = this.current, now = this.simulationNow(), discovery = currentDiscovery(now);
+    this.discoveryUpdatedAt = this.time.now;
+    if (!s || !discoveryAvailable(s,now,discovery.id)) { this.discoveryImage?.destroy(); this.discoveryImage=null; return; }
+    if(this.discoveryImage&&this.discoveryLocation&&catalogDecorationPlacementReason(s,discovery.art,this.discoveryLocation)){this.discoveryImage.destroy();this.discoveryImage=null;}
+    if (this.discoveryId !== discovery.id) { this.discoveryImage?.destroy(); this.discoveryImage=null; this.discoveryId=discovery.id; }
+    if (!this.discoveryImage) {
+      const texture=decorationTexture(discovery.art);
+      if (!this.textures.exists(texture)) { this.ensureArt(); return; }
+      let point: Point | null=null;
+      for (const parcelId of s.acquiredParcels) {
+        const parcel=PARCELS[parcelId];
+        for(let y=parcel.y*FINE_GRID+1;y<(parcel.y+ISLAND.parcelCells)*FINE_GRID-2&&!point;y+=2)
+          for(let x=parcel.x*FINE_GRID+1;x<(parcel.x+ISLAND.parcelCells)*FINE_GRID-2&&!point;x+=2) {
+            const location={kind:'outside' as const,x,y,rotation:0 as const};
+            if(!catalogDecorationPlacementReason(s,discovery.art,location)) { point=this.decorationPoint(location,discovery.art); this.discoveryLocation=location; }
+          }
+        if(point)break;
+      }
+      if(point) { this.discoveryImage=this.add.image(point.x,point.y,texture).setDepth(1.8); this.discoveryImage.setDisplaySize(36,36*this.discoveryImage.height/this.discoveryImage.width); }
+    }
+    this.discoveryImage?.setVisible(!this.photo&&!this.arrangement&&!this.placement&&!this.expanding);
+  }
   /** CSS-pixel chrome measured from the DOM; the same reading is reproduced by the browser checks. */
   private screenChrome(): ScreenChrome {
     const visible = (id: string) => {const e = document.getElementById(id); return e && !e.hidden && getComputedStyle(e).display !== 'none' ? e.getBoundingClientRect() : null;};
@@ -436,6 +504,7 @@ export class MeadowScene extends Phaser.Scene {
       if (rotation) add({texture: decorationTexture(id, rotation), url: decorationUrl(id)});
     };
     for (const d of state?.decorations ?? []) if (d.location.kind === 'outside') decoration(d.catalogId, d.location.rotation);
+    if (state) { const discovery=currentDiscovery(state.lastSimulatedAt); if(discoveryAvailable(state,state.lastSimulatedAt,discovery.id)) decoration(discovery.art,0); }
     const ghost = state?.decorations.find(d => d.id === this.ghost?.id)?.catalogId ?? this.ghost?.catalogId;
     if (ghost && this.ghost?.location?.kind === 'outside') decoration(ghost, this.ghost.location.rotation);
     return [...assets.values()];
@@ -893,6 +962,10 @@ export class MeadowScene extends Phaser.Scene {
     // Cells are read on the ground plane; rabbits, bubbles and decorations are hit where they are drawn.
     const world = this.view.world(screen), ground = toGround(world), cell = gridCell(ground);
     if (this.photo) return;
+    if (this.discoveryImage?.visible && !this.placement && !this.arrangement && !this.rabbitDrops && !this.purchase && !this.expanding) {
+      const p=this.view.screen({x:this.discoveryImage.x,y:this.discoveryImage.y});
+      if(Math.abs(p.x-screen.x)<=24&&Math.abs(p.y-screen.y)<=24){this.select({kind:'discovery',id:this.discoveryId});return;}
+    }
     if (this.rabbitDrops) {
       const arrow = this.dropHits.find(h => Math.abs(world.x-h.point.x)*this.view.zoom <= 22 && Math.abs(world.y-h.point.y)*this.view.zoom <= 22);
       const b = this.current ? buildingAt(this.current, fineCell(ground)) : null;
@@ -971,6 +1044,7 @@ export class MeadowScene extends Phaser.Scene {
     this.progressUpdatedAt = this.time.now;
   }
   update(time: number): void {
+    if (this.time.now-this.discoveryUpdatedAt>=1000) this.syncDiscovery();
     this.drawRabbitDrops(time);
     this.placeTutorialHand(time);
     if (this.time.now - this.progressUpdatedAt >= 100) this.syncProgressBars();
@@ -985,6 +1059,7 @@ export class MeadowScene extends Phaser.Scene {
       dadiObscured = document.getElementById('game-panel')?.hidden === false || !!document.querySelector('dialog[open]');
       const visible = this.rabbitViews.filter(r => dadiHeadVisible(this.dadiHead(r), dadiBounds!)).map(r => r.id);
       dadi = this.dadi.step(dadiObscured ? 0 : dt, active, dadiObscured ? [] : visible);
+      if(dadi.started?.id===this.cozyInteraction.active?.id)this.cozyInteraction.reset();
       if (dadi.started?.salto) {
         this.life.interrupt(dadi.started.id);
         const motion = this.rabbitViews.find(r => r.id === dadi.started!.id)?.motion;
@@ -996,7 +1071,10 @@ export class MeadowScene extends Phaser.Scene {
       document.getElementById('game-panel')?.hidden !== false && !document.querySelector('dialog[open]') && !this.placement && !this.arrangement;
     const bounds = {width: this.scale.width, height: this.scale.height, top: document.getElementById('hud')?.getBoundingClientRect().bottom ?? 0};
     const visibleResidents = new Set(this.rabbitViews.filter(r => r.motion && dadiHeadVisible(this.dadiHead(r), bounds)).map(r => r.id));
-    this.life.step(dt, this.rabbitViews.flatMap(r => r.motion ? [{id: r.id, group: r.group, motion: r.motion, nest: r.nest, visible: visibleResidents.has(r.id)}] : []),
+    const visitor=this.cozyInteraction.active;
+    this.cozyInteraction.step(dt,lifeActive,!!visitor&&visibleResidents.has(visitor.id)&&this.rabbitViews.some(r=>r.id===visitor.id&&r.motion===visitor.motion&&!r.nest)&&!!this.current?.decorations.some(d=>d.id===visitor.objectId&&d.location.kind==='outside'),reducedMotion);
+    if(lifeActive&&!reducedMotion&&dt>=0&&dt<=1000){this.interactionIn-=dt;if(this.interactionIn<=0){this.interactionIn=90000;for(const d of this.current?.decorations??[])if(this.interactionDecoration(d.id))break;}}
+    this.life.step(dt, this.rabbitViews.flatMap(r => r.motion ? [{id: r.id, group: r.group, motion: r.motion, nest: r.nest, friendId:this.friends.get(r.id),occupied:this.cozyInteraction.active?.id===r.id, visible: visibleResidents.has(r.id)}] : []),
       lifeActive, reducedMotion, dadi.speech ? [dadi.speech.id] : []);
     this.lifeViews?.begin(this.rabbitViews.map(r => r.id));
     let depthChanged = false;

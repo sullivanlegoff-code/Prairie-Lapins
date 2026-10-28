@@ -1,5 +1,6 @@
 import {foodXp, firstDecorationPlacementXp, missionClaimXp} from './progression';
 import {rememberBirth, rememberTrip} from './cozy';
+import {claimDiscovery,advanceCozyEvent,translatedDecorations} from './cozyActivities';
 import {PROGRESSION} from '../config/progression';
 import {CUISINE_REWARDS, CUISINE_TIP, CUISINE_FULL_REWARDS_PER_CYCLE} from '../config/balance';
 import {applyProgressionGain} from './progressionRewards';
@@ -104,6 +105,10 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
   };
   try {
     switch (command.type) {
+      case 'claimDiscovery': requireRule(claimDiscovery(s,time,command.id),'STALE_ACTION'); break;
+      case 'translateDecorations': {
+        const moved=translatedDecorations(s,command.ids,command.dx,command.dy);requireRule(!moved.reason,moved.reason ?? 'INVALID_CHOICE');s.decorations=moved.decorations;break;
+      }
       case 'rewardCuisine': {
         requireRule(command.recipeId === 'salad' || command.recipeId === 'chicken', 'INVALID_CHOICE');
         requireRule(s.buildings.some(b => b.kind === 'kitchen'), 'MISSING_BUILDING'); // The Kitchen is where Cuisine is played.
@@ -457,6 +462,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
     requireRule(recordMissionAction(s, 'gainAffection', affectionGained), 'RESOURCE_LIMIT');
     requireRule(recordMissionAction(s, command.type === 'buyDecoration' && command.location ? 'placeDecoration' : command.type, command.type === 'feed' || command.type === 'breed' ? 1 : typeof value === 'number' ? value : 0, command.type !== 'placeDecoration' || command.location.kind === 'outside'), 'RESOURCE_LIMIT');
     // In particular, a welcome frees the nursery at this action's timestamp.
+    advanceCozyEvent(s,command,time);
     return {ok: true, state: advance(s, time), ...(value === undefined ? {} : {value}), ...(progressionGain ? {progressionGain} : {}), ...(cuisineReward ? {cuisineReward} : {})};
   } catch (error) {
     if (error instanceof Quoted) return {ok: true, state, value: error.price};

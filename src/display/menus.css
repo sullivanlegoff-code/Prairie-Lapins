@@ -283,6 +283,7 @@ dialog :is(.badge, .timer, .reason) {
 #game-panel .mission-filters button { flex: 1 1 120px; font-size: 14px; }
 #game-panel [data-mission-status="claimed"] { opacity: .8; }
 #game-panel .farm-orders > :is([data-replant], .reason) { grid-column: 1 / -1; }
+.cozy-group-preview { position: relative; width: min(100%, 340px); max-height: 260px; margin: 12px auto; background: #e5ead7; border: 1px solid #9ca980; }
 #game-panel .farm-orders > [data-replant] { min-height: 44px; width: 100%; }
 #game-panel[data-view='missions'] .mission-tabs { display: flex; gap: 6px; margin: 0; }
 #game-panel[data-view='missions'] .mission-tabs button { flex: 1; min-height: 44px; margin: 0; padding: 6px; font-size: 13px; }

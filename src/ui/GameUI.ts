@@ -1,4 +1,7 @@
 import {farmLimit, farmDuration} from '../config/balance';
+import {bestFriend} from '../simulation/cozy';
+import {DECORATION_COLLECTIONS,TRAVEL_STORIES,COZY_EVENTS,DISCOVERIES,currentCozyEvent,currentDiscovery} from '../config/cozyContent';
+import {discoveryAvailable,translatedDecorations} from '../simulation/cozyActivities';
 import {rabbitDropTargets} from './rabbitDropTargets';
 import {accountKnown} from '../cloud/accountState';
 import {cloudConfig} from '../cloud/config';
@@ -55,14 +58,15 @@ import {portrait} from './portraits';
 import {PreferenceStore, Sounds} from './preferences';
 import {onboardingTask} from './onboarding';
 import {PailleDialogue} from './PailleDialogue';
+import {mountPhotoControls} from './photoControls';
 import {guidedStep, type GuideStep} from './guidance';
 import {BUILDING_NAMES, REFUSALS, RARITY_NAMES, busyReason, TYPE_NAMES, typeNames, recipeBook, recipePairs, buildingReason, collectionView, incomeWhole, moneyReason, nurseryView, occupants, oddsTexts, oddsView, placementReason, rabbitAvailability, parentBusy, releaseReason, timeLeft, type Placement, type CollectionFilter} from './models';
 
 type ShopTab = 'home' | 'recipes' | 'rabbits' | 'habitats' | 'buildings' | 'decorations';
-type View = {kind:'levelRequirement';target:LevelAccessTarget} | {kind: 'missions'; tab: 'main' | 'daily'} | {kind: 'shop'; tab: ShopTab} | {kind: 'building' | 'rabbit' | 'moveRabbit' | 'decoration'; id: string} |
+type View = {kind:'album'|'cozyEvents'|'decorationGroup'} | {kind:'levelRequirement';target:LevelAccessTarget} | {kind: 'missions'; tab: 'main' | 'daily'} | {kind: 'shop'; tab: ShopTab} | {kind: 'building' | 'rabbit' | 'moveRabbit' | 'decoration'; id: string} |
   {kind: 'buyRabbit' | 'species'; species: SpeciesId} | {kind:'extension';parcelId?:ParcelId} | {kind: 'cuisineRabbit' | 'collection' | 'settings' | 'placement' | 'hearts' | 'recipes' | 'arrange' | 'decorationPlacement'} | null;
 /** Views drawn as a centred card over the dimmed meadow. Placement, purchase, extension and arrangement views keep the side sheet: they need the island visible. */
-const CENTER_CARD_VIEWS: readonly NonNullable<View>['kind'][] = ['rabbit', 'moveRabbit', 'building', 'missions', 'collection', 'recipes', 'hearts', 'species', 'levelRequirement'];
+const CENTER_CARD_VIEWS: readonly NonNullable<View>['kind'][] = ['album','cozyEvents','decorationGroup','rabbit', 'moveRabbit', 'building', 'missions', 'collection', 'recipes', 'hearts', 'species', 'levelRequirement'];
 function node<K extends keyof HTMLElementTagNameMap>(tag: K, text = '', className = ''): HTMLElementTagNameMap[K] {
   const element = document.createElement(tag); setCurrencyText(element, text); decorateRabbitText(element); element.className = className; return element;
 }
@@ -75,6 +79,10 @@ function avatar(species?: SpeciesId, large = false): HTMLElement {
   const element = node('span', '', large ? 'portrait large' : 'portrait'); element.innerHTML = portrait(species); if (species) rabbitTheme(element, species); return element;
 }
 export class GameUI {
+  private photoControls: ReturnType<typeof mountPhotoControls>;
+  private decorationCollection='';
+  private decorationGroup=new Set<string>();
+  private groupOffset={x:0,y:0};
   private accountReminder: AccountReminder;
   private pailleDialogue: PailleDialogue;
   private get stagedOnboarding(): boolean { return this.controller.storageScope !== 'laboratory'; }
@@ -160,6 +168,7 @@ export class GameUI {
   constructor(private controller: GameController, private scene: MeadowScene, private clock: () => number, private preferences: PreferenceStore, audio?: AudioEngine,
     activityOptions: {onlineServicesAllowed?: boolean; accountKnown?: () => boolean; onCuisineCompleted?: (result: RecipeCompletion) => void} = {}) {
     this.snapshot = controller.getSnapshot(); this.sounds = audio ? new Sounds(preferences, audio) : new Sounds(preferences);
+    this.photoControls=mountPhotoControls(document.getElementById('app')!,()=>this.scene.capturePhoto());
     this.pailleDialogue = new PailleDialogue(preferences, (id, name) => controller.perform({type: 'renameRabbit', id, name}).ok,
       () => { const s = this.snapshot.state; if (!s) return; const task = onboardingTask(s,this.preferences.value,this.now()); if (task.step.done) this.preferences.set({tutorialDone:true}); this.guide(task.step); this.render(); },
       () => { this.renderPreferences(); this.render(); }, () => this.open({kind:'settings'}, 'root'));
@@ -471,6 +480,7 @@ export class GameUI {
     this.arranging = false; this.decorationDraft = null; this.setPhoto(false); this.syncArrangement();
     this.parents = [null, null]; this.placement = null; this.scene.setPlacement(null);
     this.lastFarmCrop.clear(); this.parentSearch = ''; this.parentElement = ''; this.parentsAvailableOnly = false;
+    this.decorationGroup.clear();this.groupOffset={x:0,y:0};this.decorationCollection='';
     if (this.dialog.open) this.dialog.close(); this.dialog.replaceChildren();
     this.view = {kind: 'settings'}; this.syncArrangement(); this.render();
   }
@@ -491,6 +501,7 @@ export class GameUI {
     if (this.cuisine.active || this.pailleDialogue.element.open) return;
     if (this.photo || this.view?.kind === 'shop') return;
     if (this.dialog.open || (document.getElementById('import-dialog') as HTMLDialogElement).open) return;
+    if(selection.kind==='discovery'){this.discover(selection.id);return;}
     if (this.movingRabbit) {
       if (selection.kind === 'building') this.dropRabbit(this.movingRabbit, selection.id);
       return;
@@ -566,6 +577,9 @@ export class GameUI {
     if (this.view.kind === 'settings') { this.title.textContent = 'Paramètres'; return; }
     const s = this.snapshot.state; if (!s) { this.title.textContent = 'Partie indisponible'; return; }
     switch (this.view.kind) {
+      case 'album': this.renderAlbum(s);break;
+      case 'cozyEvents': this.renderCozyEvents(s);break;
+      case 'decorationGroup': this.renderDecorationGroup(s);break;
       case 'cuisineRabbit': this.renderCuisineRabbits(s); break;
       case 'missions': this.renderMissions(s, this.view.tab); break;
       case 'hearts': this.renderHearts(s); break;
@@ -725,16 +739,68 @@ export class GameUI {
     if (active && document.querySelector('dialog[open]')) return;
     if (active) this.close();
     this.photo = active; document.body.classList.toggle('photo-mode', active);
-    document.getElementById('photo-return')!.hidden = !active; this.scene.setPhoto(active);
+    document.getElementById('photo-return')!.hidden = !active; this.scene.setPhoto(active); this.photoControls.setVisible(active);
   }
   private decorationCard(id: DecorationId, description = ''): HTMLElement {
     const card = this.card(DECORATIONS[id].name, description), icon = node('span', '', 'decoration-icon');
     const img = document.createElement('img'); img.src = decorationUrl(id); img.alt = DECORATIONS[id].name; icon.append(img); card.querySelector('.card-heading')!.prepend(icon); return card;
   }
+  public discover(id:string):void { this.execute({type:'claimDiscovery',id},'Un souvenir ajouté à ton album.'); }
+  private renderAlbum(s:GameState):void {
+    this.title.textContent='Album et souvenirs';
+    this.button(this.content,'Rendez-vous et découvertes',()=>this.open({kind:'cozyEvents'}),null,true);
+    this.button(this.content,'Prendre une photo',()=>{this.close();this.setPhoto(true);},null,true);
+    this.content.append(node('h3','Tes moments partagés'));
+    const memories=[...(s.cozy?.album??[])].reverse();
+    if(!memories.length)this.content.append(node('p','Les prochaines naissances, amitiés et aventures trouveront leur place ici.'));
+    for(const memory of memories){const card=this.card(new Date(memory.at).toLocaleDateString('fr-FR'),memory.text);card.dataset.memory=memory.key;this.content.append(card);}
+    this.content.append(node('h3','Cartes de voyage'));
+    for(const destination of TRAVEL.destinations){const visits=s.cozy?.souvenirs.find(v=>v.destination===destination)?.visits??0;
+      const card=this.card(destination,`${Math.min(3,visits)}/3 souvenirs · ${visits} visite${visits>1?'s':''}`);
+      TRAVEL_STORIES[destination].forEach((story,i)=>card.append(node('p',visits>i?story:`Souvenir ${i+1} · à découvrir lors d’un retour de voyage`,'small')));this.content.append(card);
+    }
+  }
+  private renderCozyEvents(s:GameState):void {
+    this.title.textContent='Rendez-vous de la prairie';const active=currentCozyEvent(this.now());
+    this.content.append(node('p','Les thèmes reviennent tous les trois mois. Tes progrès restent acquis, même quand tu fais une pause.'));
+    for(const event of COZY_EVENTS){const progress=s.cozy?.events.find(p=>p.id===event.id);const card=this.card(event.name,event.description);
+      card.append(node('p',`${progress?.progress??0}/${event.target} · ${progress?.completed?'Carte obtenue':active.id===event.id?'En ce moment':'De retour bientôt'}`,'badge'));this.content.append(card);}
+    this.content.append(node('h3','Petites découvertes'));
+    const current=currentDiscovery(this.now());
+    this.content.append(node('p','Une petite surprise change toutes les quatre heures. Retrouve-la dans la prairie, ou découvre-la ici. Chaque souvenir reste dans ta collection.','small'));
+    for(const d of DISCOVERIES){const found=s.cozy?.discoveries.includes(d.id);const card=this.decorationCard(d.art,found?d.text:d.id===current.id?'Une surprise t’attend maintenant.':'Cette découverte reviendra.');
+      card.querySelector('h3')!.textContent=d.name;
+      if(discoveryAvailable(s,this.now(),d.id))this.button(card,'Observer',()=>this.discover(d.id));else card.append(node('p',found?'Souvenir découvert':'À retrouver','small'));this.content.append(card);}
+    this.button(this.content,'Ouvrir l’album',()=>this.open({kind:'album'}),null,true);
+  }
+  private renderDecorationGroup(s:GameState):void {
+    this.title.textContent='Déplacer un ensemble';
+    this.content.append(node('p','Choisis jusqu’à 64 objets posés. Les flèches préparent le déplacement ; Confirmer déplace tout ensemble gratuitement.'));
+    const placed=s.decorations.filter(d=>d.location.kind==='outside');
+    this.decorationGroup=new Set([...this.decorationGroup].filter(id=>placed.some(d=>d.id===id)));
+    for(const d of placed){const button=this.button(this.content,`${this.decorationGroup.has(d.id)?'✓ ':''}${DECORATIONS[d.catalogId].name} · #${d.id.split('-')[1]}`,()=>{if(this.decorationGroup.has(d.id))this.decorationGroup.delete(d.id);else if(this.decorationGroup.size<64)this.decorationGroup.add(d.id);this.render();},null,true);button.setAttribute('aria-pressed',String(this.decorationGroup.has(d.id)));}
+    const controls=node('div','','mission-filters');for(const [label,x,y]of [['←',-1,0],['↑',0,-1],['↓',0,1],['→',1,0]] as const)this.button(controls,label,()=>{this.groupOffset.x+=x;this.groupOffset.y+=y;this.render();});this.content.append(controls);
+    const selected=placed.filter(d=>this.decorationGroup.has(d.id));
+    const preview=node('div','','cozy-group-preview');preview.setAttribute('aria-label','Aperçu des positions après déplacement');
+    if(selected.length){const locations=selected.map(d=>d.location as Extract<DecorationLocation,{kind:'outside'}>);const minX=Math.min(...locations.map(l=>l.x)),minY=Math.min(...locations.map(l=>l.y));const width=Math.max(...locations.map((l,i)=>l.x+DECORATIONS[selected[i].catalogId].width))-minX,height=Math.max(...locations.map((l,i)=>l.y+DECORATIONS[selected[i].catalogId].height))-minY;
+      preview.style.aspectRatio=`${Math.max(width,1)} / ${Math.max(height,1)}`;
+      selected.forEach((d,i)=>{const l=locations[i],definition=DECORATIONS[d.catalogId],img=node('img');img.src=decorationUrl(d.catalogId);img.alt=`${definition.name} : ${l.x+this.groupOffset.x}, ${l.y+this.groupOffset.y}`;img.style.cssText=`position:absolute;left:${(l.x-minX)/width*100}%;top:${(l.y-minY)/height*100}%;width:${definition.width/width*100}%;height:${definition.height/height*100}%;object-fit:contain`;preview.append(img);});
+    }this.content.append(preview,node('p',`Décalage : ${this.groupOffset.x}, ${this.groupOffset.y} cases fines · ${selected.length} objets`));
+    const command={type:'translateDecorations' as const,ids:[...this.decorationGroup],dx:this.groupOffset.x,dy:this.groupOffset.y};
+    const result=translatedDecorations(s,command.ids,command.dx,command.dy);
+    this.button(this.content,'Confirmer le déplacement',()=>this.execute(command,'Ensemble déplacé.',()=>{this.groupOffset={x:0,y:0};}),result.reason?REFUSALS[result.reason]:null);
+    this.button(this.content,'Annuler',()=>{this.decorationGroup.clear();this.groupOffset={x:0,y:0};this.open({kind:'arrange'});},null,true);
+  }
   private renderDecorationShop(s: GameState): void {
+    const filters=node('div','','mission-filters');
+    for(const collection of [{id:'',name:'Toutes'},...DECORATION_COLLECTIONS])this.button(filters,collection.name,()=>{this.decorationCollection=collection.id;this.render();},null,this.decorationCollection!==collection.id);
+    this.content.append(filters);
+    const selected=DECORATION_COLLECTIONS.find(c=>c.id===this.decorationCollection);
+    if(selected){this.content.append(node('p',`${selected.description} · ${selected.items.filter(id=>s.decorations.some(d=>d.catalogId===id)).length}/${selected.items.length} modèles possédés`));}
     this.content.append(node('p', 'Objets esthétiques, sans bonus. Acheter ouvre un aperçu gratuit : le paiement a lieu à la pose confirmée. Acheter pour l’inventaire est un achat immédiat sans placement. Les objets précieux se paient en cœurs.', 'small'));
     this.content.append(node('h3', 'Décorations extérieures'));
       for (const id of DECORATION_IDS) {
+        if(selected&&!selected.items.includes(id))continue;
         const d = DECORATIONS[id], count = s.decorations.filter(owned => owned.catalogId === id).length;
         const card = this.decorationCard(id, `${d.width} × ${d.height} cases fines${d.rotates ? ' · peut tourner' : ''} · ${count} possédé${count > 1 ? 's' : ''}`);
         card.dataset.catalog = id;
@@ -752,6 +818,7 @@ export class GameUI {
     this.button(this.content, 'Ouvrir mon inventaire', () => this.open({kind: 'arrange'}), null, true);
   }
   private renderInventory(s: GameState): void {
+    this.button(this.content,'Déplacer un ensemble',()=>{this.decorationGroup.clear();this.groupOffset={x:0,y:0};this.open({kind:'decorationGroup'});},null,true);
     this.title.textContent = 'Aménager · inventaire';
     for (const kind of ['nest','nursery'] as const) if (!s.buildings.some(b=>b.kind===kind)) {
       const card=this.card(`${BUILDING_NAMES[kind]} offert`, 'Libère une empreinte 4 × 4 sur le terrain acquis, puis place gratuitement cet équipement. Aucun objet ne sera déplacé automatiquement.');
@@ -779,6 +846,7 @@ export class GameUI {
     this.content.append(this.decorationCard(d.catalogId, `Exemplaire ${id.split('-')[1]} · déplacements gratuits`));
     this.content.append(node('p', d.location.kind === 'inventory' ? 'Possédé · en réserve dans l’inventaire' : 'Possédé · posé dans la prairie', 'badge'));
     this.button(this.content, 'Déplacer', () => this.beginDecorationPlacement(id));
+    if(d.location.kind==='outside'&&['hay-bale','otter-plush','bunny-slippers','small-bookcase','large-bookcase'].includes(d.catalogId))this.button(this.content,'Appeler un lapin',()=>{const ok=this.scene.interactionDecoration?.(id);if(ok)this.close();else this.notice('Place cet objet près d’un habitat avec un lapin disponible.');},null,true);
     if (DECORATIONS[d.catalogId].rotates && d.location.kind === 'outside') this.button(this.content, 'Tourner de 90°', () => { this.beginDecorationPlacement(id); this.rotateDecoration(); }, null, true);
     this.button(this.content, 'Ranger dans l’inventaire', () => this.execute({type: 'placeDecoration', id, location: {kind: 'inventory'}}, 'Objet rangé, toujours possédé.', () => this.finishDecorationAction()), d.location.kind === 'inventory' ? 'Cet objet est déjà dans l’inventaire.' : null, true);
     const resale = ownedDecorationResalePrice(d);
@@ -946,6 +1014,7 @@ export class GameUI {
     bubble.append(node('p', line)); box.append(cocoPortrait(), bubble); this.content.append(box); return bubble;
   }
   private renderAgency(s: GameState): void {
+    this.button(this.content,'Souvenirs de voyage',()=>this.open({kind:'album'}),null,true);
     if (!s.travel?.welcomed) {
       const step = Math.min(this.agencyWelcomeStep, COCO_WELCOME.length - 1), last = step === COCO_WELCOME.length - 1;
       const bubble = this.agencyHost(COCO_WELCOME[step]); bubble.append(node('p', `${HOST_NAME} · ${step + 1} / ${COCO_WELCOME.length}`, 'small agency-step'));
@@ -998,6 +1067,9 @@ export class GameUI {
     rabbitTheme(this.panel, r.species);
     const species = SPECIES[r.species]; this.title.textContent = species.name;
     this.menuPortrait(avatar(r.species));
+    const friend=s.rabbits.find(other=>other.id===bestFriend(s,r.id));
+    if(friend)this.button(this.content,`Complice : ${friend.name??SPECIES[friend.species].name}`,()=>this.open({kind:'rabbit',id:friend.id}),null,true);
+    else this.content.append(node('p','En partageant leur habitat, tes lapins apprennent à devenir complices.','small'));
     const overview = node('div', '', 'rabbit-overview'), essential = node('div');
     essential.append(this.stats([['Affection', `${r.affection} / 20`], ['Revenu', `${rabbitIncome(r.affection, r.species, individualIncomeRoll(r))} pattes / h`]]));
     overview.append(avatar(r.species, true), essential); this.content.append(overview);
@@ -1341,6 +1413,7 @@ export class GameUI {
     }, s.hearts < next.hearts ? REFUSALS.NOT_ENOUGH_HEARTS : null, true).classList.add('heart-spend');
   }
   private renderCollection(s: GameState): void {
+    this.button(this.content,'Album et souvenirs',()=>this.open({kind:'album'}),null,true);
     this.title.textContent = `Collection · ${s.discovered.length}/${SPECIES_IDS.length}`;
     const toolbar = node('div', '', 'menu-toolbar');
     this.button(toolbar, 'Carnet de reproduction', () => this.open({kind: 'recipes'}), null, true); this.content.append(toolbar);
@@ -1526,6 +1599,7 @@ export class GameUI {
     }
     if (tab === 'main' && s.missions.claimed.includes('first-birth')) this.button(tabs, 'Consulter le carnet', () => this.open({kind: 'recipes'}), null, true);
     tabs.classList.add('mission-tabs');
+    this.button(tabs,'Rendez-vous',()=>this.open({kind:'cozyEvents'}),null,true);
     this.content.append(tabs);
     const claim = (card: HTMLElement, command: Command, reward: Reward, ready: boolean, claimed: boolean, extraRewards: readonly Reward[] = []) => {
       const stage = claimed ? 'Réclamée' : ready ? 'À réclamer' : 'En cours';
@@ -1919,5 +1993,5 @@ export class GameUI {
     if (step.done) this.button(this.tutorial, 'Terminer le guidage', () => { this.preferences.set({tutorialDone: true}); this.renderPreferences(); this.renderTutorial(); }, null, true);
     this.button(this.tutorial, 'Masquer', () => { this.preferences.set({tutorial: false}); this.renderPreferences(); this.renderTutorial(); }, null, true);
   }
-  dispose(): void { this.clearRabbitMove(); this.moveBanner.remove(); this.accountReminder.dispose(); document.getElementById('onboarding-skip')?.remove(); this.pailleDialogue.dispose(); this.cuisine.dispose(); this.confirmationGeneration++; if (this.dialog.open) this.dialog.close(); this.dialog.replaceChildren(); this.unsubscribe(); this.abort.abort(); cancelAnimationFrame(this.frame); clearTimeout(this.toastTimer); this.sounds.dispose(); }
+  dispose(): void { this.photoControls.dispose(); this.clearRabbitMove(); this.moveBanner.remove(); this.accountReminder.dispose(); document.getElementById('onboarding-skip')?.remove(); this.pailleDialogue.dispose(); this.cuisine.dispose(); this.confirmationGeneration++; if (this.dialog.open) this.dialog.close(); this.dialog.replaceChildren(); this.unsubscribe(); this.abort.abort(); cancelAnimationFrame(this.frame); clearTimeout(this.toastTimer); this.sounds.dispose(); }
 }

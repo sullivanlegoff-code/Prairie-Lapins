@@ -53,7 +53,7 @@ describe('active species and habitat level gates',()=>{
  it('keeps v9, captures only provable historical purchases and discovered breeding rights once',()=>{
   const s=at(1);delete s.levelAccessTransition;s.purchaseUnlocks=['feu'];s.discovered=['paille','neige','magicien'];s.missions.events.welcome=1;
   const migrated=reload(s);const rights=structuredClone(migrated.levelAccessTransition);
-  expect(migrated.version).toBe(20);expect(stateLevelAccess(migrated,{family:'species',id:'feu',action:'purchase'}).accessible).toBe(true);expect(stateLevelAccess(migrated,{family:'species',id:'volant',action:'purchase'}).locked).toBe(true);
+  expect(migrated.version).toBe(21);expect(stateLevelAccess(migrated,{family:'species',id:'feu',action:'purchase'}).accessible).toBe(true);expect(stateLevelAccess(migrated,{family:'species',id:'volant',action:'purchase'}).locked).toBe(true);
   expect(stateLevelAccess(migrated,{family:'species',id:'belier-gris',action:'purchase'}).accessible).toBe(true);
   expect(stateLevelAccess(migrated,{family:'habitatPurchase',id:'vol'}).accessible).toBe(true);
   expect(stateLevelAccess(migrated,{family:'habitatPurchase',id:'universal'}).locked).toBe(false); // three discoveries already proved the old milestone

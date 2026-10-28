@@ -1,7 +1,7 @@
 import {canSalto, endRabbitActivity, KISS_MS, motionZone, startRabbitActivity, startWalk, triggerWelcomeSalto, type RabbitMotion} from './rabbitMotion';
 import {rabbitFaceSeed} from './rabbitBlink';
 
-export interface LifeResident {id: string; group: string; motion: RabbitMotion; visible: boolean; nest?: boolean}
+export interface LifeResident {id: string; group: string; motion: RabbitMotion; visible: boolean; nest?: boolean; friendId?: string | null; occupied?: boolean}
 export interface LifeTiming {zoomGap: readonly [number, number]; sleepGap: readonly [number, number]; socialGap: readonly [number, number]}
 export const LIFE_TIMING: LifeTiming = {zoomGap: [90_000, 90_000], sleepGap: [60_000, 120_000], socialGap: [30_000, 60_000]};
 export const NAP_MS = 60_000;
@@ -98,7 +98,7 @@ export class RabbitLife {
       }
     }
     this.stepNests(ms, input, reducedMotion, priority);
-    const seen = input.filter(r => !r.nest && r.visible && !priority.includes(r.id));
+    const seen = input.filter(r => !r.nest && !r.occupied && r.visible && !priority.includes(r.id));
     if (!ms || !seen.length) return;
     if (!reducedMotion) { this.zoomIn -= ms; this.socialIn -= ms; }
     let sleepers = [...this.residents.values()].filter(r => r.sleeping !== null && r.motion.mode === 'sleep').length;
@@ -113,6 +113,12 @@ export class RabbitLife {
       } else {
         r.napIn -= ms;
         if (sleepers < 2 && r.napIn <= 0 && r.motion.mode === 'rest' && this.zoom?.id !== rabbit.id && !this.pairIds().includes(rabbit.id)) {
+          const friend = seen.find(other => other.id === rabbit.friendId && other.group === rabbit.group && other.motion.mode === 'sleep');
+          if (friend && !reducedMotion) {
+            const zone = motionZone(r.motion), p = friend.motion.local;
+            const target = {x: Math.max(zone.minX + 4, Math.min(zone.maxX - 4, p.x + (p.x < 0 ? 24 : -24))), y: Math.max(zone.minY + 4, Math.min(zone.maxY - 4, p.y))};
+            if (Math.hypot(r.motion.local.x - target.x, r.motion.local.y - target.y) > 8) { startWalk(r.motion, target); continue; }
+          }
           startRabbitActivity(r.motion, 'sleep'); r.sleeping = NAP_MS; sleepers++;
         }
       }
@@ -152,7 +158,7 @@ export class RabbitLife {
         const offset = Math.floor(this.between([0, availableResidents.length]));
         const candidates = [...availableResidents.slice(offset), ...availableResidents.slice(0, offset)];
         for (const a of candidates) {
-          const b = candidates.find(b => b.id !== a.id && b.group === a.group);
+          const b = candidates.find(b => b.id === a.friendId && b.group === a.group) ?? candidates.find(b => b.id !== a.id && b.group === a.group);
           if (!b) continue;
           const zone = motionZone(a.motion), other = motionZone(b.motion);
           const minX = Math.max(zone.minX, other.minX), maxX = Math.min(zone.maxX, other.maxX);

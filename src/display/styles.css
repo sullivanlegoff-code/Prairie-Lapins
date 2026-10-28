@@ -550,4 +550,9 @@ dialog > button { width: 100%; margin-top: 8px; }
 .rabbit-move-banner { position: fixed; z-index: 25; bottom: max(16px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100% - 24px); display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; padding: 8px 12px; border: 2px solid #577951; border-radius: 16px; background: #f4f1da; color: #304c36; box-shadow: 0 3px 10px #243c3026; }
 .rabbit-move-banner[hidden] { display: none; }
 #meadow-art-status { z-index: 131; }
+#photo-controls { position: absolute; right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); z-index: 30; max-width: min(60vw, 430px); padding: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; background: #fff9e9; color: #342f22; border-radius: 12px; }
+#photo-controls[hidden] { display: none; }
+#photo-controls :is(button,a) { min-height: 44px; padding: 8px; box-sizing: border-box; }
+#photo-controls a { color: #294f32; }
+#photo-controls span { font-size: 13px; }
 .rabbit-move-banner button { min-height: 44px; min-width: 44px; }

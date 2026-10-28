@@ -21,6 +21,7 @@ export function recordMemory(s: GameState, memory: Memory): void {
 const name = (s: GameState, id: string) => {const r = s.rabbits.find(r => r.id === id); return r ? r.name ?? SPECIES[r.species].name : 'Un lapin';};
 /** Accumulate only time actually shared in an enclosure, with no economic effects. */
 export function advanceFriendships(s: GameState, elapsed: number, now: number): void {
+  if (!s.cozy && (elapsed <= 0 || s.rabbits.length < 2)) return;
   const c = cozyState(s), ids = new Set(s.rabbits.map(r => r.id));
   c.bonds = c.bonds.filter(b => ids.has(b.a) && ids.has(b.b));
   const busy = new Set([...(s.travel?.trips.map(t => t.rabbitId) ?? []), ...s.buildings.flatMap(b => b.breeding?.parents ?? [])]);

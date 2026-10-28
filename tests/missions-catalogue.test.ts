@@ -85,7 +85,7 @@ describe('full main mission catalogue from level seven', () => {
     const loaded = advance(reload(s), 0);
     expect(loaded.missions.completed).toEqual(expect.arrayContaining(['discover-dadi', 'decorate-bush']));
     expect({pattes: loaded.pattes, grass: loaded.grass, hearts: loaded.hearts, progression: loaded.progression}).toEqual(before);
-    expect(loaded.missions.claimed).toEqual(s.missions.claimed); expect(loaded.version).toBe(20);
+    expect(loaded.missions.claimed).toEqual(s.missions.claimed); expect(loaded.version).toBe(21);
   });
   it('recovers historical placement markers, but an explicitly unplaced inventory copy does not complete its mission', () => {
     const s = atLevel(); delete s.rewardedDecorationModels;

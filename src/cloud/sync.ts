@@ -37,8 +37,9 @@ export function fingerprint(state: GameState): string {
   const births = s.buildings.flatMap(b => [
     ...(b.breeding ? [b.breeding.birth] : []), ...(b.nursery?.babies.map(x => x.birth) ?? []),
   ]).sort((a, b) => a.id.localeCompare(b.id));
-  const {lastSimulatedAt: _time, purchaseUnlocks: _unlocks, levelAccessTransition: _rights, missions, initiation, buildings, ...rest} = s;
-  return JSON.stringify({...rest, births,
+  const {lastSimulatedAt: _time, purchaseUnlocks: _unlocks, levelAccessTransition: _rights, missions, initiation, buildings, cozy, ...rest} = s;
+  // Shared time is passive, like income. The full bonds and album still travel with the next action save.
+  return JSON.stringify({...rest, births, cozy: {souvenirs: cozy?.souvenirs ?? [], discoveries: cozy?.discoveries ?? [], events: cozy?.events ?? [], album: cozy?.album.filter(m => m.kind !== 'friendship') ?? []},
     missions: {events: missions.events, claimed: missions.claimed, nightOrderStarted: missions.nightOrderStarted},
     initiation: initiation ? {used: initiation.used, birthId: initiation.birthId} : null,
     buildings: buildings.map(({incomeUnits: _income, breeding, nursery, ...b}) => ({...b,
