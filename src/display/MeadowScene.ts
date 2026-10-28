@@ -809,13 +809,13 @@ export class MeadowScene extends Phaser.Scene {
     this.pivots.set(art.texture, pivot); return pivot;
   }
   /** Body pose: mirror, compression against the ground contact, height, and a rotation about the body centre that keeps that centre in place. */
-  private poseBody(rabbit: VisualRabbit, pose: {lift: number; squashX: number; squashY: number; facing: 1 | -1; rotation: number}): void {
+  private poseBody(rabbit: VisualRabbit, pose: {lift: number; squashX: number; squashY: number; facing: 1 | -1; rotation: number; nuzzle?: number}): void {
     const scaleX = pose.facing * rabbit.native * pose.squashX, p = rabbit.pivot, c = Math.cos(pose.rotation), s = Math.sin(pose.rotation);
     const px = scaleX * p.x, py = pose.squashY * p.y;
     // The visible centre stays where the picture's own orientation puts it: turning mirrors the body about that centre
     // (asymmetric transparent margins cause no sideways jump), and the rotation of a somersault keeps it in place too.
     rabbit.body.setRotation(pose.rotation).setScale(scaleX, pose.squashY)
-      .setPosition(pose.squashX * p.x - (c * px - s * py), BODY_PIVOT * (1 - pose.squashY) - pose.lift + py - (s * px + c * py));
+      .setPosition(pose.squashX * p.x - (c * px - s * py) + pose.facing * (pose.nuzzle ?? 0), BODY_PIVOT * (1 - pose.squashY) - pose.lift + py - (s * px + c * py));
   }
   /** A finished birth: a heart in a cream bubble; touching it sends the baby to the nursery. */
   private heartBubble(x: number, y: number): Phaser.GameObjects.Container {
@@ -1081,7 +1081,7 @@ export class MeadowScene extends Phaser.Scene {
     for (const rabbit of this.rabbitViews) {
       const previousDepth = rabbit.object.depth;
       const t = time / 1000 + rabbit.phase;
-      let lift = 0, squashX = 1, squashY = 1, facing: 1 | -1 = 1, rotation = 0;
+      let lift = 0, squashX = 1, squashY = 1, facing: 1 | -1 = 1, rotation = 0, nuzzle = 0;
       if (rabbit.motion) {
         const motion = rabbit.motion;
         const others = this.neighborPoints;
@@ -1097,6 +1097,7 @@ export class MeadowScene extends Phaser.Scene {
           !activity || lifeActive && visibleResidents.has(rabbit.id)) stepRabbitMotion(motion, dt, others);
         const pose = rabbitPose(motion);
         ({lift, squashX, squashY, facing, rotation} = pose);
+        nuzzle = pose.nuzzle ?? 0;
         // The ground point drives position and depth; the hop only lifts the body.
         rabbit.object.setPosition(rabbit.center.x + motion.local.x, rabbit.center.y + motion.local.y).setDepth(rabbit.center.y + motion.local.y);
       } else {
@@ -1106,7 +1107,7 @@ export class MeadowScene extends Phaser.Scene {
       }
       rabbit.lift = lift;
       if (rabbit.object.depth !== previousDepth) depthChanged = true;
-      this.poseBody(rabbit, {lift, squashX, squashY, facing, rotation});
+      this.poseBody(rabbit, {lift, squashX, squashY, facing, rotation, nuzzle});
       if (rabbit.flames && rabbit.sprite) {
         const pose = ardentFlamePose(rabbit.id, time, matchMedia('(prefers-reduced-motion: reduce)').matches);
         rabbit.flames.setPosition(pose.x, rabbit.art!.groundY).setScale(rabbit.sprite.scaleX, rabbit.sprite.scaleY * pose.stretch).setAlpha(pose.alpha);

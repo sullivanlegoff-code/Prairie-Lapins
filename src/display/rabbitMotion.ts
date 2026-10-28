@@ -21,12 +21,12 @@ export interface RabbitMotion {
   layout?: MotionLayout;
 }
 /** What the body does above the ground point: height, slight compression and mirror. */
-export interface RabbitPose {lift: number; squashX: number; squashY: number; facing: 1 | -1; /** Radians about the body centre, in the facing direction; 0 when upright. */ rotation: number}
+export interface RabbitPose {lift: number; squashX: number; squashY: number; facing: 1 | -1; /** Radians about the body centre, in the facing direction; 0 when upright. */ rotation: number; nuzzle?: number}
 
 const CONFIG = () => VISUAL.rabbit.roam;
 /** Four half-periods of |sin(14 t)|: the hop after feeding ends exactly on the ground. */
 export const FED_MS = 4 * Math.PI / 14 * 1000;
-export const KISS_MS = 4000;
+export const KISS_MS = 3000;
 
 function seedOf(id: string): number {
   let h = 2166136261;
@@ -227,7 +227,13 @@ export function rabbitPose(m: RabbitMotion): RabbitPose {
     const u = clamp(m.elapsed / m.duration, 0, 1);
     lift = (m.mode === 'zoom' ? 2.5 : walkBob) * Math.abs(Math.sin(Math.PI * m.steps * u));
   } else if (m.mode === 'kiss') {
-    lift = Math.abs(Math.sin(m.elapsed / KISS_MS * Math.PI * 8)) * 4;
+    const u = clamp(m.elapsed / KISS_MS, 0, 1);
+    // Three soft nose touches, held close like a cuddle, with grounded paws.
+    if (u > 0 && u < 1) {
+      const embrace = Math.sin(Math.PI * u), contact = Math.sin(Math.PI * 3 * u) ** 2;
+      return {lift: contact * .5, squashX: 1 + contact * .025, squashY: 1 - contact * .02,
+        facing: m.facing, rotation: m.facing * (.07 * embrace + .025 * contact), nuzzle: 1.2 * embrace + 1.8 * contact};
+    }
   } else if (m.mode === 'fed') {
     lift = Math.abs(Math.sin(m.elapsed / 1000 * 14)) * motion.hop;
   }

@@ -127,7 +127,7 @@ describe('visible rabbit life, independent of saves and gameplay random', () => 
     life.interrupt('b'); triggerFedReaction(rabbits[0].motion); tick(life, rabbits);
     expect(rabbits[0].motion.mode).toBe('fed');
   });
-  it('makes nest parents meet every fifteen seconds, kiss for four seconds and return before new tricks', () => {
+  it('makes nest parents meet every fifteen seconds, kiss for three seconds and return before new tricks', () => {
     const life = new RabbitLife(), parents = [rabbit('a', -52, 'nest'), rabbit('b', 68, 'nest')];
     parents.forEach(r => { r.nest = true; r.motion.layout = {zone: {minX: -80, maxX: 90, minY: -15, maxY: 20}, roamScale: 12}; });
     for (let i = 0; i < 100; i++) tick(life, parents, 100, false);

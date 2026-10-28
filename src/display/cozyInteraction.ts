@@ -1,4 +1,4 @@
-import {endRabbitActivity, motionZone, startRabbitActivity, triggerWelcomeSalto, type RabbitMotion} from './rabbitMotion';
+import {endRabbitActivity, KISS_MS, motionZone, startRabbitActivity, triggerWelcomeSalto, type RabbitMotion} from './rabbitMotion';
 import type {Point} from '../ui/gestures';
 
 export type InteractionKind = 'play' | 'cuddle' | 'read';
@@ -28,6 +28,6 @@ export class CozyInteraction {
       if (a.kind === 'play') triggerWelcomeSalto(a.motion, false);
       else startRabbitActivity(a.motion, a.kind === 'cuddle' ? 'kiss' : 'meet');
     }
-    if (a.elapsed >= (a.phase === 'approach' ? 20000 : 4000)) this.reset();
+    if (a.elapsed >= (a.phase === 'approach' ? 20000 : a.kind === 'cuddle' ? KISS_MS : 4000)) this.reset();
   }
 }
