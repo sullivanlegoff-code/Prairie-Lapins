@@ -1,5 +1,9 @@
 # Vie visuelle des lapins
 
+Dernier ajustement : les bisous durent **3 secondes** dans les enclos, le nid et les câlins aux objets. Trois petits contacts de truffe remplacent les sautillages, avec une légère inclinaison et compression du corps ; les cœurs restent présents. Les fréquences et les retours aux positions habituelles sont conservés. Types et 38 tests ciblés réussis. Révision fonctionnelle : `d689325`.
+
+Construction Netlify complète réussie à cette révision. Chromium : rencontre naturelle dans le nid, deux partenaires encore en bisou à 1,5 seconde et sortis de cet état à 3,2 secondes ; cœurs visibles, capture relue et aucune erreur JavaScript. Preuves locales : `output/validation/tender-kisses/`. Aucun essai iPhone. Les descriptions de quatre secondes conservées plus bas sont historiques.
+
 Ces comportements restent dans la scène : aucun effet sur l'affection, les revenus, les croisements ou la sauvegarde. Ils utilisent un aléatoire visuel indépendant.
 
 - **Zoomies** : un seul lapin à la fois dans toute la prairie. Premier départ après 90 secondes de prairie visible, puis un départ toutes les 90 secondes si un candidat est disponible ; course de 5 à 8 secondes dans la zone sûre complète de son enclos, puis retour doux vers son emplacement habituel. L'intervalle se compte depuis le départ, sans ajouter la durée de la course.
