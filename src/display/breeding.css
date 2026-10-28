@@ -18,14 +18,13 @@
   color: var(--breed-ink);
   touch-action: manipulation;
 }
-#breeding-dialog[open] { display: grid; grid-template-rows: auto auto minmax(96px, 1fr) auto; gap: 10px; overflow-y: auto; }
+#breeding-dialog[open] { display: grid; grid-template-rows: auto auto minmax(112px, 1fr) auto; gap: 10px; overflow-y: auto; }
 .breeding-filters { display: flex; align-items: center; gap: 6px; min-width: 0; }
 #breeding-dialog .breeding-filters :is(input, select, button) { box-sizing: border-box; min-width: 44px; min-height: 44px; margin: 0; font-size: 16px; }
 .breeding-filters input { flex: 1; width: 0; padding: 6px; }
 .breeding-filters select { flex: 0 1 155px; width: 30%; padding: 4px; }
 #breeding-dialog .breeding-filters button { padding: 6px; font-size: 13px; }
 #breeding-dialog .breeding-filters button[aria-pressed='true'] { box-shadow: 0 0 0 2px #f0d494; }
-#breeding-dialog .breeding-selection { flex: 0 0 auto; margin: 0 0 4px; text-align: center; font-size: 12px; font-weight: bold; overflow-wrap: anywhere; }
 
 .breeding-header { position: relative; display: flex; justify-content: center; }
 #breeding-dialog .breeding-badge {

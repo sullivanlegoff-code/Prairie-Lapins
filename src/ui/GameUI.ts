@@ -1243,7 +1243,6 @@ export class GameUI {
     const column = (slot: 0 | 1) => {
       const box = node('section', '', 'breeding-column'), list = node('div', '', 'breeding-list');
       box.append(node('h3', `Lapin ${slot + 1}`));
-      if (selected[slot]) box.append(node('p', selected[slot]!.name ?? SPECIES[selected[slot]!.species].name, 'breeding-selection'));
       for (const r of s.rabbits) {
         const busy = rabbitAvailability(s, r.id, this.now()), other = this.parents[1 - slot] === r.id, chosen = this.parents[slot] === r.id;
         if (!chosen && (query && !searchable(`${r.name ?? ''} ${SPECIES[r.species].name}`).includes(query) ||
