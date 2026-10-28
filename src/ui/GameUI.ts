@@ -118,6 +118,10 @@ export class GameUI {
   private dialog = document.getElementById('game-dialog') as HTMLDialogElement;
   private breedingDialog = document.getElementById('breeding-dialog') as HTMLDialogElement;
   private breedingNestId: string | null = null;
+  private parentSearch = '';
+  private parentElement: RabbitType | '' = '';
+  private parentsAvailableOnly = false;
+  private lastFarmCrop = new Map<string, NonNullable<Building['order']>['recipe']>();
   private gate = new ActionGate();
   private sounds: Sounds;
   private toastTimer = 0;
@@ -274,8 +278,11 @@ export class GameUI {
   private execute(command: Command, success: string | ((value?: string | number) => string), after?: (value?: string | number) => void): void {
     this.gate.run(JSON.stringify(command), () => {
       const fireBreeding = command.type === 'breed' && command.parents.some(id => this.snapshot.state?.rabbits.some(r => r.id === id && r.species === 'feu'));
+      const crop = command.type === 'collectOrder' ? this.snapshot.state?.buildings.find(b => b.id === command.id)?.order?.recipe : undefined;
       const result = this.controller.perform(command);
       if (!result.ok) { this.notice(REFUSALS[result.reason]); this.render(); return; }
+      if (command.type === 'collectOrder' && crop) this.lastFarmCrop.set(command.id, crop);
+      if (command.type === 'startOrder') this.lastFarmCrop.set(command.id, command.recipe);
       this.sounds.ping(); const message=typeof success === 'function' ? success(result.value) : success;
       this.notice(message); after?.(result.value); this.render();
       if (fireBreeding) this.accountReminder.request();
@@ -463,6 +470,7 @@ export class GameUI {
     this.confirmationGeneration++;
     this.arranging = false; this.decorationDraft = null; this.setPhoto(false); this.syncArrangement();
     this.parents = [null, null]; this.placement = null; this.scene.setPlacement(null);
+    this.lastFarmCrop.clear(); this.parentSearch = ''; this.parentElement = ''; this.parentsAvailableOnly = false;
     if (this.dialog.open) this.dialog.close(); this.dialog.replaceChildren();
     this.view = {kind: 'settings'}; this.syncArrangement(); this.render();
   }
@@ -908,6 +916,13 @@ export class GameUI {
       } else {
         this.workState('free', 'Choisis une culture. Plus les lapins l’aiment, plus elle coûte et dure, et plus elle donne de nourriture. Le prix est payé au lancement ; la récolte reste manuelle.');
         const choices = node('div', '', 'farm-orders'); this.content.append(choices); const level = playerLevel(s);
+        const previous = this.lastFarmCrop.get(id);
+        if (previous) {
+          const crop = ORDERS[previous];
+          const reason = !b.farmLevel && crop.level >= ORDERS.fanes.level ? 'Ferme niveau 2 requis.' : level < crop.level ? `Niveau ${crop.level} requis.` : moneyReason(s, crop.cost);
+          const replant = this.button(choices, `Replanter ${crop.name.toLowerCase()} · ${crop.cost} pattes`, () => this.execute({type: 'startOrder', id, recipe: previous}, 'Culture relancée.'), reason);
+          replant.dataset.replant = previous;
+        }
         for (const recipe of CROP_IDS) {
           const order = ORDERS[recipe], card = this.card(order.name, `${cropDuration(farmDuration(order.duration, b.farmLevel))} · ${order.grass} nourriture par récolte`); card.classList.add('compact-list-card');
           card.classList.add('farm-order'); card.dataset.crop = recipe; card.querySelector('.card-heading')!.prepend(cropIcon(recipe));
@@ -1202,18 +1217,37 @@ export class GameUI {
     const selected = this.parents.map(id => s.rabbits.find(r => r.id === id));
     const focused = this.breedingDialog.contains(document.activeElement) ? document.activeElement as HTMLElement : null;
     const focusKey = focused?.dataset.focus;
+    const caret = focused instanceof HTMLInputElement && focused.type === 'search' ? [focused.selectionStart, focused.selectionEnd] as const : null;
+    const dialogScroll = this.breedingDialog.scrollTop;
     const scroll = [...this.breedingDialog.querySelectorAll<HTMLElement>('.breeding-list')].map(list => list.scrollTop);
     const header = node('div', '', 'breeding-header');
     header.append(node('h2', 'Choisir les parents', 'breeding-badge'));
     header.lastElementChild!.id = 'breeding-title';
     const close = this.button(header, '×', () => this.closeBreeding(), null, true); close.classList.add('icon', 'breeding-close'); close.setAttribute('aria-label', 'Fermer le croisement');
     close.dataset.focus = 'breeding-close';
+    const filters = node('div', '', 'breeding-filters');
+    const search = node('input'); search.type = 'search'; search.placeholder = 'Nom ou espèce'; search.setAttribute('aria-label', 'Rechercher un parent par nom ou espèce');
+    search.value = this.parentSearch; search.dataset.focus = 'parent-search';
+    search.addEventListener('input', () => { this.parentSearch = search.value; this.renderBreeding(); });
+    const element = node('select'); element.setAttribute('aria-label', 'Élément des parents'); element.dataset.focus = 'parent-element';
+    const all = node('option', 'Tous les éléments'); all.value = ''; element.append(all);
+    for (const type of Object.keys(TYPE_NAMES) as RabbitType[]) { const option = node('option', TYPE_NAMES[type]); option.value = type; element.append(option); }
+    element.value = this.parentElement;
+    element.addEventListener('change', () => { this.parentElement = element.value as RabbitType | ''; this.renderBreeding(); });
+    const available = this.button(filters, 'Disponibles', () => { this.parentsAvailableOnly = !this.parentsAvailableOnly; this.renderBreeding(); }, null, true);
+    available.dataset.focus = 'parent-available'; available.setAttribute('aria-pressed', String(this.parentsAvailableOnly));
+    filters.prepend(search, element);
+    const searchable = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('fr');
+    const query = searchable(this.parentSearch.trim());
     const columns = node('div', '', 'breeding-columns');
     const column = (slot: 0 | 1) => {
       const box = node('section', '', 'breeding-column'), list = node('div', '', 'breeding-list');
       box.append(node('h3', `Lapin ${slot + 1}`));
+      if (selected[slot]) box.append(node('p', selected[slot]!.name ?? SPECIES[selected[slot]!.species].name, 'breeding-selection'));
       for (const r of s.rabbits) {
         const busy = rabbitAvailability(s, r.id, this.now()), other = this.parents[1 - slot] === r.id, chosen = this.parents[slot] === r.id;
+        if (!chosen && (query && !searchable(`${r.name ?? ''} ${SPECIES[r.species].name}`).includes(query) ||
+          this.parentElement && !(SPECIES[r.species].types as readonly RabbitType[]).includes(this.parentElement) || this.parentsAvailableOnly && (!!busy || other))) continue;
         const row = node('button', '', `breeding-row${chosen ? ' selected' : ''}`); row.type = 'button';
         row.dataset.focus = `breeding-parent-${slot}-${r.id}`;
         row.disabled = !!busy || other; row.setAttribute('aria-pressed', String(chosen));
@@ -1225,6 +1259,7 @@ export class GameUI {
         row.addEventListener('click', () => { if (row.disabled) return; this.parents[slot] = chosen ? null : r.id; this.renderBreeding(); });
         list.append(row);
       }
+      if (!list.childElementCount) list.append(node('p', 'Aucun lapin pour ces filtres.', 'small'));
       box.append(list); return box;
     };
     const tools = node('div', '', 'breeding-tools');
@@ -1254,13 +1289,15 @@ export class GameUI {
       this.button(escape,'Passer le tutoriel',()=>{this.preferences.set({tutorial:false});this.closeBreeding();this.render();},null,true);
       footer.append(escape);
     }
-    this.breedingDialog.replaceChildren(header, columns, footer);
+    this.breedingDialog.replaceChildren(header, filters, columns, footer);
     this.applyOnboardingLock();
     if (focused) {
-      const equivalent = [...this.breedingDialog.querySelectorAll<HTMLButtonElement>('button[data-focus]')].find(button => button.dataset.focus === focusKey && !button.disabled);
+      const equivalent = [...this.breedingDialog.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLButtonElement>('[data-focus]')].find(control => control.dataset.focus === focusKey && !control.disabled);
       (equivalent ?? (!launch.disabled ? launch : this.breedingDialog.querySelector<HTMLButtonElement>('button:not(:disabled)')))?.focus({preventScroll: true});
+      if (equivalent instanceof HTMLInputElement && caret && caret[0] !== null && caret[1] !== null) equivalent.setSelectionRange(caret[0], caret[1]);
     }
     this.breedingDialog.querySelectorAll<HTMLElement>('.breeding-list').forEach((list, i) => { list.scrollTop = scroll[i] ?? 0; });
+    this.breedingDialog.scrollTop = dialogScroll;
   }
   private renderNursery(s: GameState): void {
     const view = nurseryView(s, this.now()), nurseryId = s.buildings.find(b => b.kind === 'nursery')!.id;
@@ -1488,6 +1525,8 @@ export class GameUI {
       const b = this.button(tabs, label, () => this.open({kind: 'missions', tab: key}, 'tab'), null, tab !== key);
       b.setAttribute('aria-pressed', String(tab === key));
     }
+    if (tab === 'main' && s.missions.claimed.includes('first-birth')) this.button(tabs, 'Consulter le carnet', () => this.open({kind: 'recipes'}), null, true);
+    tabs.classList.add('mission-tabs');
     this.content.append(tabs);
     const claim = (card: HTMLElement, command: Command, reward: Reward, ready: boolean, claimed: boolean, extraRewards: readonly Reward[] = []) => {
       const stage = claimed ? 'Réclamée' : ready ? 'À réclamer' : 'En cours';
@@ -1528,8 +1567,7 @@ export class GameUI {
     };
     if (tab === 'main') {
       const unlocked = mainCatalogueUnlocked(s);
-      this.content.append(node('p', unlocked ? 'Toutes tes missions sont visibles. Choisis ton prochain objectif ; tes découvertes et tes premières décorations comptent déjà.' : s.missions.claimed.includes('first-birth') ? 'Choisis librement tes objectifs. Toutes les missions seront visibles au niveau 7.' : 'Réclame pour continuer. Les actions anticipées comptent.', 'small'));
-      if(s.missions.claimed.includes('first-birth')) this.button(this.content,'Consulter le carnet',()=>this.open({kind:'recipes'}),null,true);
+      this.content.append(node('p', unlocked ? 'Tes récompenses et objectifs en progression passent en premier.' : s.missions.claimed.includes('first-birth') ? 'Choisis librement tes objectifs. Toutes les missions seront visibles au niveau 7.' : 'Réclame pour continuer. Les actions anticipées comptent.', 'small mission-intro'));
       const catalogue = !unlocked && this.onboardingActive && onboardingTask(s,this.preferences.value,this.now()).step.id === 'snowReward' ? ['welcome-snow'] as const : visibleMainMissions(s);
       const status = (id: typeof catalogue[number]) => s.missions.claimed.includes(id) ? 'claimed' : s.missions.completed.includes(id) ? 'ready' : 'pending';
       if (unlocked) {
@@ -1541,12 +1579,18 @@ export class GameUI {
         }
         this.content.append(filters);
       }
-      const active = unlocked && this.missionFilter !== 'all' ? catalogue.filter(id => status(id) === this.missionFilter) : catalogue;
+      const active = [...(unlocked && this.missionFilter !== 'all' ? catalogue.filter(id => status(id) === this.missionFilter) : catalogue)];
+      if (unlocked) {
+        const rank = (id: typeof catalogue[number]) => status(id) === 'ready' ? 0 : status(id) === 'claimed' ? 3 : mainProgress(s, id).value > 0 ? 1 : 2;
+        active.sort((a, b) => rank(a) - rank(b));
+      }
       if (!active.length) this.content.append(node('p', unlocked ? 'Aucune mission dans cette sélection.' : 'Toutes les missions principales ont été récompensées. Profite de ta prairie.', 'small'));
       for (const id of active) {
         const mission = MAIN_MISSIONS[id], acquired = s.missions.completed.includes(id), claimed = s.missions.claimed.includes(id);
         const p = mainProgress(s, id), card = this.card(mission.title, mission.description); card.dataset.mission = id;
         card.dataset.missionStatus = status(id);
+        card.classList.add('compact-list-card');
+        if (unlocked && !acquired && !claimed && mainProgress(s, id).value > 0) card.classList.add('mission-progressing');
         progress(card, acquired ? p.target : Math.min(p.value, p.target), p.target);
         if (acquired) card.append(node('p', 'Condition acquise', 'small'));
         claim(card, {type: 'claimMainMission', id}, mission.reward, acquired, claimed, mission.extraRewards);

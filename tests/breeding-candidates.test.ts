@@ -25,7 +25,9 @@ describe('catalogue candidates with historical weighting', () => {
       if (!historical) continue;
       for (const affection of [1,2]) {
         const expected = key === 'neige,paille' ? (affection >= 2 ? {frisket:30,icy:30} : {}) : {...historical, ...rareAdditions(key.split(','), affection, affection)};
-        if (SPECIES[a].rarity === 'common' && SPECIES[b].rarity === 'common')
+        const sameCommonType = SPECIES[a].rarity === 'common' && SPECIES[b].rarity === 'common' &&
+          SPECIES[a].types.length === 1 && SPECIES[b].types.length === 1 && SPECIES[a].types[0] === SPECIES[b].types[0];
+        if (!sameCommonType)
           for (const id of Object.keys(expected) as SpeciesId[]) if (SPECIES[id].rarity === 'common') delete expected[id];
         expect(Object.entries(breedingWeights(a,b,affection,affection))).toEqual(Object.entries(expected));
         const total = Object.values(expected).reduce((sum,w) => sum+w,0);

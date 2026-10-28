@@ -40,6 +40,15 @@ const claim = (id: string) => card(id).querySelector<HTMLButtonElement>('.missio
 const open = () => document.getElementById('open-missions')!.click();
 
 describe('browsing all main missions from level seven', () => {
+  it('puts rewards first, started objectives before untouched ones and claimed objectives last without hiding the catalogue', () => {
+    const s = state(); s.missions.completed.push('discover-paille'); s.missions.claimed.push('discover-paille'); setup(s); open();
+    const ids = cards().map(c => c.dataset.mission);
+    expect(ids).toHaveLength(93);
+    expect(cards()[0].dataset.missionStatus).toBe('ready');
+    expect(ids.indexOf('level-ten')).toBeLessThan(ids.indexOf('at-nest'));
+    expect(ids.at(-1)).toBe('discover-paille');
+    expect(card('level-ten').classList.contains('mission-progressing')).toBe(true);
+  });
   it('keeps the small initial view below seven, then opens all 93 solo objectives by default', () => {
     const young = setup(state(6)); open(); expect(cards().map(c => c.dataset.mission)).toEqual(['snow-habitat']); expect(filter('all')).toBeNull();
     young.ui.dispose(); young.controller.dispose(); cleanups.splice(0);
