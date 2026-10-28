@@ -1,4 +1,5 @@
 import {establishHistoricalLevelRights} from './levelRights';
+import {advanceFriendships} from './cozy';
 import {settleInitiation} from './initiation';
 import {habitatStats} from './habitats';
 import {updateMissions} from './missions';
@@ -71,6 +72,7 @@ export function advance(state: GameState, now: number): GameState {
     enclosure.incomeUnits = Math.min(cap, enclosure.incomeUnits + boundedElapsed * rate);
   }
   const freeSince = next.lastSimulatedAt;
+  advanceFriendships(next, elapsed, target);
   next.lastSimulatedAt = target;
   settleNestTransfers(next, freeSince);
   updateMissions(next, target);

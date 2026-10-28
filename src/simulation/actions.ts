@@ -1,4 +1,5 @@
 import {foodXp, firstDecorationPlacementXp, missionClaimXp} from './progression';
+import {rememberBirth, rememberTrip} from './cozy';
 import {PROGRESSION} from '../config/progression';
 import {CUISINE_REWARDS, CUISINE_TIP, CUISINE_FULL_REWARDS_PER_CYCLE} from '../config/balance';
 import {applyProgressionGain} from './progressionRewards';
@@ -197,6 +198,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       }
       case 'claimTrip': {
         const trip = s.travel?.trips.find(t => t.rabbitId === command.rabbitId); requireRule(trip && trip.endsAt <= time, 'NOT_READY');
+        rememberTrip(s, trip.rabbitId, trip.destination, trip.startedAt, time);
         credit('hearts', trip.hearts); credit('grass', trip.grass ?? 0); s.travel!.trips = s.travel!.trips.filter(t => t.rabbitId !== command.rabbitId); value = trip.hearts; break;
       }
       case 'exchangeForHeart': {
@@ -412,6 +414,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         }
         gainXp(PROGRESSION.xp.birth[SPECIES[birth.species].rarity] + discover(birth.species));
         nursery.nursery.babies = nursery.nursery.babies.filter(other => other !== baby);
+        rememberBirth(s, birth.id, time);
         if(s.initiation?.birthId === birth.id) for(const stage of ['order','breeding','growth'] as const) if(!s.initiation.closed.includes(stage)) s.initiation.closed.push(stage);
         break;
       }

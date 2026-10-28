@@ -50,6 +50,7 @@ export interface Initiation {
 export interface SavedProgression {totalXp: number; rewardedThroughLevel: number}
 export interface ProgressionGain {xpGained: number; rewardedLevels: number[]; heartsGranted: number}
 export interface GameState {
+  cozy?: import('../simulation/cozy').CozyState;
   /** Present only on islands started on the southwest parcel (top/right expansion); absent = legacy centre start. */
   islandStart?: IslandStart;
   /** Last canonical mission cycle consumed, keyed by the exact individual rabbit ID. */
@@ -65,7 +66,7 @@ export interface GameState {
   startCourse?: 'paille-solo';
   purchaseUnlocks?: PurchaseUnlockId[];
   initiation?: Initiation;
-  version: 20;
+  version: 21;
   rewardedDecorationModels?: DecorationId[]; decorations: OwnedDecoration[]; missions: MissionState; lastSimulatedAt: number; nextId: number;
   hearts: number; nextHeartGiftAt: number;
   pattes: number; grass: number; acquiredParcels: ParcelId[];
