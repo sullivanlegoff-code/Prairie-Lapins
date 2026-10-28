@@ -1,6 +1,12 @@
 # Passation Claude → Codex — 26 octobre 2026, mise à jour le 27
 
-## État courant au 27 octobre 2026
+## État courant au 28 octobre 2026
+
+Les six priorités du dernier audit acceptées par le propriétaire sont corrigées : délai et reprise de synchronisation, export du secours/réparation confirmée du lien, reprise des images sans répéter les achats, chargement des dessins à la demande/pièce allégée, classement des 93 missions, filtres de parents et replantation explicite. Course hors champ interrompue pour libérer le verrou global. Aucun changement d’économie, d’XP ou de format de sauvegarde. Détails et validations : `docs/audit-fixes-2026-10-28.md`. L’agent d’interface a atteint sa limite d’utilisation ; son travail a été inspecté et terminé par le coordinateur. Aucune suite exhaustive ni simulation de progression ; aucun essai iPhone ou compte réel.
+
+Commits fonctionnels de cette reprise : `afdc0e6` (sauvegardes), `2237efb` (images et course hors champ), `a44184a` (missions, parents, cultures), `07d0421` (reprise d’image devant les panneaux), `2bc2d44` (place des parents sur petit écran). Publication toujours manuelle par le propriétaire ; aucune fusion ni push.
+
+Livraison finale : `netlify-site/` reconstruit et vérifié, jeu et laboratoire à la révision fonctionnelle `2bc2d44` ; le commit suivant concerne uniquement la documentation. Chromium : missions sur trois formats mobiles, parents filtrés, récolte/replantation, échec d’image puis reprise sans répétition de l’accueil ni dépense ; aucune erreur JavaScript. Captures et rapport ignorés dans `output/validation/audit-final-2026-10-28/`. Prochaine étape conseillée : essai iPhone du propriétaire avant sa publication manuelle.
 
 Dernière demande : parents très actifs dans le nid (marches 2–4 s, saltos 4–8 s, petites courses 3–4 s avec verrou global partagé). Approche du bisou toutes les 15 s, atterrissage préservé, retour avant nouvelles figures. Tous les bisous, nid et enclos, durent désormais 4 s avec sauts/cœurs synchronisés. Types et 45 tests ciblés distincts réussis ; économie/sauvegardes inchangées. Voir docs/rabbit-life-current.md. Aucun essai iPhone.
 
