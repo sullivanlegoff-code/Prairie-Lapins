@@ -6,7 +6,7 @@ Le 29 octobre 2026, le propriétaire confirme : **« j’ai vérifié sur Netlif
 
 **Aucun problème de chargement n’est ouvert sur cette base.** Ne pas reprendre le diagnostic, corriger le jeu ni revenir sur les derniers changements à partir de ce signalement annulé. L’essai de la version publiée a été effectué par le propriétaire, pas par l’assistant. La révision exacte qu’il a publiée n’a pas été identifiée.
 
-Cette reprise est uniquement documentaire ; attendre les prochaines missions du propriétaire. Aucune modification fonctionnelle n’a été faite depuis le signalement.
+La confirmation a été enregistrée dans le commit `c13ac97`. Le propriétaire a ensuite demandé et approuvé les corrections de maniabilité du nid décrites ci-dessous.
 
 ## Consignes et état Git
 
@@ -21,7 +21,17 @@ Lire `AGENTS.md`, puis cette passation. L’ancienne `docs/codex-handoff-2026-10
 - L’agent de diagnostic `audit_kiss_regression` a été interrompu par la limite d’utilisation avant de rendre un diagnostic. Il n’a pas modifié de fichier. Le signalement étant annulé, ne pas reprendre ce diagnostic. Les agents des missions précédentes ont aussi subi des interruptions par quota, documentées dans l’historique.
 - Préserver la partie du propriétaire ; ne pas l’effacer, la réinitialiser ou la remplacer. Ne jamais demander de mot de passe ni exposer une sauvegarde réelle dans le dépôt public.
 
-## Dernières livraisons
+## Maniabilité du nid — mission du 29 octobre
+
+- Code livré dans `272984e`, sur `feature/missions-octobre-2` : deux grandes listes sans colonne centrale, outils compacts, confirmation fixe, probabilités refermables et affection visible pour les lapins renommés. La réouverture montre les parents sélectionnés ; les filtres peuvent être réinitialisés.
+- « Refaire le dernier croisement » est proposé en haut du nid libre, avec les noms des individus. Il prépare le dernier couple réellement lancé ; une confirmation « Croiser » reste nécessaire. Une sélection annulée ne remplace pas ce souvenir. Les parents absents ou indisponibles sont expliqués.
+- Le champ optionnel `lastBreedingParents` est enregistré atomiquement avec le croisement dans la sauvegarde v21, séparément du brouillon de sélection. Les sauvegardes existantes restent lisibles. Aucun changement SQL/RPC. Limite de retour arrière : une ancienne build v21 à schéma strict ne lit pas ce nouveau champ.
+- Validation finale : types, 29 tests ciblés réussis, builds jeu/laboratoire et `build:netlify` avec vérifications de production/cuisine/musiques réussis ; `git diff --check` réussi. La suite complète n’a pas été relancée.
+- Un essai plus large a révélé un échec hors nid, reproduit isolément : `tests/ui-dom.test.ts:108` compare l’état complet sans compter une milliseconde de progression d’amitié (14399999 → 14400000). Cette assertion n’a pas été modifiée.
+- Chromium sur partie fictive de sept lapins : formats 844 × 390, 568 × 320 et 390 × 844 ; captures relues, bouton Croiser visible, aucun défilement global du dialogue, parents sélectionnés visibles à la réouverture, reprise après rechargement et brouillon annulé vérifiés, aucune erreur JavaScript. Hauteurs des listes en paysage : 224 et 154 px. Preuves ignorées : `output/validation/nest-ux-2026-10-29/`.
+- `netlify-site/` reconstruit à la révision `272984eef7295bf240c8f033fbb0e83f6be032a7`, identique pour jeu et laboratoire. Aucun essai iPhone effectué par l’assistant ; aucun changement d’économie, simulation de progression, fusion, push ou publication.
+
+## Livraisons précédentes
 
 1. `c60a336` : amitiés et souvenirs persistants, format **v21**, migration automatique depuis v20 (chaîne v16–19 conservée). Le RPC Supabase accepte déjà le format et refuse les rétrogradations ; aucune migration SQL demandée.
 2. `60640ec` : album, photos PNG téléchargées séparément, 27 souvenirs textuels sur neuf destinations, six découvertes tournantes, quatre collections des décorations existantes, déplacement groupé atomique et trois fêtes récurrentes. Voir `docs/cozy-content.md` pour règles et limites.
@@ -52,4 +62,4 @@ Commandes Windows : `npx.cmd tsc --noEmit` ; vitest ciblé avec `--configLoader 
 
 Playwright est disponible dans le dépôt voisin décrit par AGENTS ; utiliser `PLAYWRIGHT_MODULE`, l’aperçu local5199 et bloquer les requêtes externes pour les parties fictives. Scripts utiles dans `output/validation/cozy/`, `tender-kisses/` et `audit-final-2026-10-28/` (échec d’image puis reprise). N’arrêter que le serveur lancé pour ce contrôle, après vérification de son PID. Aucun serveur de contrôle de cette session ne reste volontairement actif.
 
-Pour cette mise à jour documentaire : relecture et `git diff --check` uniquement ; aucun test fonctionnel, build, contrôle navigateur ou essai iPhone à relancer. Pour les prochaines missions, adapter les contrôles à la modification réellement demandée. Le jeu reste inchangé ; aucune reconstruction ni publication Netlify n’est nécessaire pour cette documentation.
+Pour une modification uniquement documentaire : relecture et `git diff --check`. Pour les prochaines missions, adapter les contrôles à la modification réellement demandée. La mission du nid est validée dans Chromium et le dossier local est construit ; le prochain contrôle conseillé est l’essai iPhone du propriétaire avant sa décision de publication.
