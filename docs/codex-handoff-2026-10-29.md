@@ -6,7 +6,7 @@ Le 29 octobre 2026, le propriétaire confirme : **« j’ai vérifié sur Netlif
 
 **Aucun problème de chargement n’est ouvert sur cette base.** Ne pas reprendre le diagnostic, corriger le jeu ni revenir sur les derniers changements à partir de ce signalement annulé. L’essai de la version publiée a été effectué par le propriétaire, pas par l’assistant. La révision exacte qu’il a publiée n’a pas été identifiée.
 
-La confirmation a été enregistrée dans le commit `c13ac97`. Le propriétaire a ensuite demandé et approuvé les corrections de maniabilité du nid décrites ci-dessous.
+La confirmation a été enregistrée dans le commit `c13ac97`. Le propriétaire a ensuite approuvé les corrections du nid, puis la planche v2 des décorations et leur intégration décrites ci-dessous.
 
 ## Consignes et état Git
 
@@ -20,6 +20,18 @@ Lire `AGENTS.md`, puis cette passation. L’ancienne `docs/codex-handoff-2026-10
 - Un seul agent qui modifie les fichiers à la fois. Les agents d’analyse peuvent lire en parallèle ; machine à mémoire limitée.
 - L’agent de diagnostic `audit_kiss_regression` a été interrompu par la limite d’utilisation avant de rendre un diagnostic. Il n’a pas modifié de fichier. Le signalement étant annulé, ne pas reprendre ce diagnostic. Les agents des missions précédentes ont aussi subi des interruptions par quota, documentées dans l’historique.
 - Préserver la partie du propriétaire ; ne pas l’effacer, la réinitialiser ou la remplacer. Ne jamais demander de mot de passe ni exposer une sauvegarde réelle dans le dépôt public.
+
+## Décorations approuvées — intégration du 29 octobre
+
+- Code livré dans `9afe739` : neuf nouveaux modèles et remplacement de l’image de l’arbre existant par sa version à guirlande de lampes-lapins. Le catalogue compte désormais 22 modèles. L’arbre conserve son identifiant, son prix de 30 pattes, son niveau 1 et ses dimensions ; les exemplaires déjà possédés sont conservés.
+- Prix choisis par le coordinateur, autorisé par le propriétaire : chaussons requins 50 (niveau 3), bouquet blanc 100 (4), gâteau chocolat « je t’aime » 150 (5), table à repasser 300 (6), rocher d’escalade 900 (8), vasque lapin 1 500 (10), microscope et cinq fioles 3 500 (15), armoire Penguin 5 000 (14), Nintendo Switch 5 000 (16). Prix en pattes, sans nouveau tarif en cœurs. Catalogue détaillé dans `docs/decorations.md`.
+- Dix masters peints avec l’outil imagegen intégré, fidèles à la planche v2 approuvée, dans `assets-source/decorations/` ; versions transparentes de 320 px maximum dans `public/assets/decorations/`. Empreintes et dérivation reproductible contrôlées pour les 22 modèles. La planche et les prompts restent ignorés dans `output/imagegen/decorations-souhaits-v2/` et `output/imagegen/decorations-production-v1/`.
+- Achat, pose, rangement et revente utilisent les règles existantes. Neuf missions « Installer » apparaissent automatiquement ; les 10 XP de première pose par modèle restent inchangés. Les quatre collections cosy conservent leurs listes. Aucune modification des coefficients économiques ou d’XP, aucune simulation de progression lancée.
+- Validation : types réussis ; 235 tests ciblés réussis dans sept fichiers, plus deux tests UI ciblés réussis par l’agent ; `build:netlify` réussi (jeu, laboratoire, cuisine et vérifications de production/musiques) ; `git diff --check` réussi. La suite complète n’a pas été relancée.
+- Trois échecs hors intégration ont été observés dans un premier lot plus large : deux traces temporelles de `tests/foundations.test.ts` (graines 104729 et 20261009), et le faux navigateur/scène incomplet de `tests/decoration-scene.test.ts:50` (`matchMedia`, puis autres dépendances de scène). Ces assertions n’ont pas été modifiées.
+- Chromium sur partie fictive, écran tactile 844 × 390 : boutique de 22 modèles, neuf achats au prix exact, neuf poses confirmées, arbre existant conservé et actualisé, dix textures rendues, rechargement identique, rangement/repose, annulation puis confirmation de revente d’un doublon, sélection par les coordonnées réelles des neuf nouvelles silhouettes. Aucune erreur JavaScript ni ressource locale manquante. Captures réellement relues ; preuves et script ignorés dans `output/validation/new-decorations-2026-10-29/`.
+- Un aperçu d’images a fait suspecter à tort un halo sur la console et les chaussons. La composition réelle des PNG dans Chromium sur fond vert a confirmé leur transparence ; les originaux propres ont été conservés sans détourage procédural.
+- `netlify-site/` construit à la révision `9afe739c49dadad7704a6d183213cd2597d945b6`, identique pour jeu et laboratoire. Aucun essai iPhone par l’assistant, aucune fusion dans main, aucun push ni publication. Les anciennes sauvegardes v21 restent acceptées ; les anciennes builds ne connaissent pas les nouveaux identifiants de décoration.
 
 ## Maniabilité du nid — mission du 29 octobre
 
@@ -62,4 +74,4 @@ Commandes Windows : `npx.cmd tsc --noEmit` ; vitest ciblé avec `--configLoader 
 
 Playwright est disponible dans le dépôt voisin décrit par AGENTS ; utiliser `PLAYWRIGHT_MODULE`, l’aperçu local5199 et bloquer les requêtes externes pour les parties fictives. Scripts utiles dans `output/validation/cozy/`, `tender-kisses/` et `audit-final-2026-10-28/` (échec d’image puis reprise). N’arrêter que le serveur lancé pour ce contrôle, après vérification de son PID. Aucun serveur de contrôle de cette session ne reste volontairement actif.
 
-Pour une modification uniquement documentaire : relecture et `git diff --check`. Pour les prochaines missions, adapter les contrôles à la modification réellement demandée. La mission du nid est validée dans Chromium et le dossier local est construit ; le prochain contrôle conseillé est l’essai iPhone du propriétaire avant sa décision de publication.
+Pour une modification uniquement documentaire : relecture et `git diff --check`. Pour les prochaines missions, adapter les contrôles à la modification réellement demandée. Le nid et les nouvelles décorations sont validés dans Chromium et le dossier local est construit ; le prochain contrôle conseillé est l’essai iPhone du propriétaire avant sa décision de publication.
