@@ -1,5 +1,7 @@
 # Passation Claude → Codex — 26 octobre 2026, mise à jour le 27
 
+**Passation la plus récente : `docs/codex-handoff-2026-10-29.md`. Problème ouvert : le propriétaire signale une partie illisible et des décors qui ne chargent pas ; diagnostic commencé, aucune correction encore apportée. Lire cette nouvelle passation en priorité.**
+
 ## État courant au 28 octobre 2026
 
 Dernier ajustement demandé : bisous de **3 secondes**, avec trois contacts de truffe, légère inclinaison et rapprochement du corps, presque sans saut ; cœurs conservés. Nid, enclos et câlins aux objets partagent la durée. Types et 38 tests ciblés réussis ; aucun changement de sauvegarde ou d’économie. Révision fonctionnelle `d689325`. Les anciennes mentions de bisous de quatre secondes ci-dessous sont historiques.
