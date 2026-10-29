@@ -13,11 +13,24 @@ const expected = [
  ['coconut-palm','Cocotier',800,2,2,8], ['otter-plush','Peluche de loutre géante',1500,2,2,10],
  ['large-bookcase','Grande bibliothèque',4000,2,1,12], ['hanukkah-menorah','Ménorah de Hanoucca',2500,1,1,14],
  ['honey-pot','Pot de miel géant',70,2,2,4], ['robot-statue','Statue du robot noir et doré',15000,2,2,22],
+ ['penguin-bookcase','Armoire de livres Penguin',5000,2,1,14], ['ironing-board','Table à repasser jaune',300,2,1,6],
+ ['climbing-rock','Rocher d’escalade',900,2,2,8], ['white-bouquet','Vase de fleurs blanches',100,1,1,4],
+ ['rabbit-fountain','Vasque lapin en pierre',1500,2,2,10], ['shark-slippers','Chaussons requins',50,1,1,3],
+ ['vintage-microscope','Vaccin contre la tuberculose',3500,2,1,15], ['game-console','Nintendo Switch',5000,2,1,16],
+ ['chocolate-cake','Gâteau chocolat « je t’aime »',150,2,2,5],
 ] as const;
 describe('approved painted decorations', () => {
- it('contains exactly the thirteen painted decorations', () => {
+ it('contains exactly the twenty-two painted decorations', () => {
   expect(DECORATION_IDS).toEqual(expected.map(row => row[0]));
   expect(Object.keys(DECORATIONS)).toEqual(expected.map(row => row[0]));
+ });
+ it('round-trips every current model in a v21 inventory without replacing existing objects', () => {
+  const s=createCentreStartGame(0);s.nextId=200;
+  const baseline=decodeGame(encodeGame(s));if(!baseline.ok)throw Error(baseline.reason);
+  const saved=baseline.state;
+  saved.decorations=DECORATION_IDS.map((catalogId,index)=>({id:`decoration-${100+index}`,catalogId,location:{kind:'inventory'},placementXpProcessed:false}));
+  expect(decodeGame(encodeGame(saved))).toEqual({ok:true,state:saved});
+  expect(saved.decorations.find(d=>d.catalogId==='tree')!.id).toBe('decoration-102');
  });
  it.each(expected)('%s has its approved price, footprint, level, and half-price resale', (id,name,price,width,height,level) => {
   expect(DECORATIONS[id]).toMatchObject({name,price,width,height,level,rotates:false,area:'outside'});

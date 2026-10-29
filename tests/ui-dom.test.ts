@@ -290,7 +290,7 @@ describe('decoration UI transactions (simulated DOM; Phaser verified separately)
     button('Acheter · 20 pièces',catalog('bush')).click();
     expect(state(controller).decorations).toEqual([]); expect(state(controller).pattes).toBe(350);
     ui.select({kind:'fineCell',x:25,y:23}); button('Annuler le placement').click();
-    expect(panel().scrollTop).toBe(240); expect(panel().querySelectorAll('[data-catalog]')).toHaveLength(13);
+    expect(panel().scrollTop).toBe(240); expect(panel().querySelectorAll('[data-catalog]')).toHaveLength(22);
     expect(state(controller).pattes).toBe(350);
     button('Acheter · 20 pièces',catalog('bush')).click();
     ui.select({kind:'fineCell',x:18,y:20}); expect(button('Acheter et placer · 20 pièces').disabled).toBe(true);
@@ -1254,9 +1254,9 @@ describe('mobile menu continuity', () => {
     const flowers = panel().querySelector<HTMLElement>('[data-catalog="bush"]')!;
     button('Acheter pour l’inventaire · 20 pièces', flowers).click(); button('Confirmer', document.getElementById('game-dialog')!).click();
     expect(document.getElementById('panel-title')!.textContent).toBe('Boutique');
-    expect(panel().querySelectorAll('[data-catalog]')).toHaveLength(13); expect(panel().scrollTop).toBe(240);
+    expect(panel().querySelectorAll('[data-catalog]')).toHaveLength(22); expect(panel().scrollTop).toBe(240);
     ui.close(); document.getElementById('open-shop')!.click(); button('Bâtiments et décorations').click(); button('Décorations').click();
-    expect(panel().querySelectorAll('[data-catalog]')).toHaveLength(13); expect(panel().scrollTop).toBe(240);
+    expect(panel().querySelectorAll('[data-catalog]')).toHaveLength(22); expect(panel().scrollTop).toBe(240);
     expect(state(controller).pattes).toBe(330); expect(state(controller).decorations).toHaveLength(1);
     expect(state(controller).decorations[0].location).toEqual({kind: 'inventory'});
     button('Bâtiments').click(); panel().scrollTop = 180; button('Placer · 60 pièces').click();

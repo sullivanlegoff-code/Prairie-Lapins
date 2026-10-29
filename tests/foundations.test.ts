@@ -89,7 +89,7 @@ describe('technical foundation regressions', () => {
   expect(gate.run('outer',()=>{expect(gate.run('inner',action)).toBe(false);})).toBe(true);
  });
  it('validates stable catalogue references, safe costs, recipes and durations', () => {
-  expect(new Set(SPECIES_IDS).size).toBe(EXPECTED_IDS.length); expect(new Set(DECORATION_IDS).size).toBe(13);
+  expect(new Set(SPECIES_IDS).size).toBe(EXPECTED_IDS.length); expect(new Set(DECORATION_IDS).size).toBe(22);
   for(const id of SPECIES_IDS){const species=SPECIES[id];expect(species.name).toBeTruthy();expect(growthDuration(id)).toBeGreaterThan(0);expect(Number.isSafeInteger(growthDuration(id))).toBe(true);
    if(species.price!==null)expect(Number.isSafeInteger(species.price)&&species.price>=0).toBe(true);
    if(species.recipe){expect(species.recipe.minAffection).toBeGreaterThanOrEqual(BALANCE.breedingAffection);expect(species.recipe.minAffection).toBeLessThanOrEqual(BALANCE.maxAffection);for(const parent of species.recipe.parents??[])expect(SPECIES_IDS).toContain(parent);}

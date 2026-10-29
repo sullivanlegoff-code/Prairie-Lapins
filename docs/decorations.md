@@ -46,7 +46,7 @@ Reproduire le parcours tactile : `NODE_PATH=CHEMIN_PLAYWRIGHT PRAIRIE_CAPTURE_DI
 
 Paramètres : `src/config/decorations.ts`. Les images peintes sont partagées entre boutique et prairie via `src/display/decorationArt.ts`. Toutes les décorations se posent dehors, sans rotation.
 
-| Identifiant stable | Objet | Pattes | Empreinte | Niveau |
+| Identifiant stable | Objet | Prix | Empreinte | Niveau |
 |---|---|---:|---|---:|
 | `dirt-path` | Chemin en terre | 1 | 1 × 1 | 1 |
 | `bush` | Buisson | 20 | 1 × 1 | 1 |
@@ -59,8 +59,23 @@ Paramètres : `src/config/decorations.ts`. Les images peintes sont partagées en
 | `otter-plush` | Peluche de loutre géante | 1 500 | 2 × 2 | 10 |
 | `large-bookcase` | Grande bibliothèque | 4 000 | 2 × 1 | 12 |
 | `hanukkah-menorah` | Ménorah de Hanoucca | 2 500 | 1 × 1 | 14 |
+| `honey-pot` | Pot de miel géant | 70 | 2 × 2 | 4 |
+| `robot-statue` | Statue du robot noir et doré | 80 cœurs | 2 × 2 | 22 |
+| `penguin-bookcase` | Armoire de livres Penguin | 5 000 | 2 × 1 | 14 |
+| `ironing-board` | Table à repasser jaune | 300 | 2 × 1 | 6 |
+| `climbing-rock` | Rocher d’escalade | 900 | 2 × 2 | 8 |
+| `white-bouquet` | Vase de fleurs blanches | 100 | 1 × 1 | 4 |
+| `rabbit-fountain` | Vasque lapin en pierre | 1 500 | 2 × 2 | 10 |
+| `shark-slippers` | Chaussons requins | 50 | 1 × 1 | 3 |
+| `vintage-microscope` | Vaccin contre la tuberculose | 3 500 | 2 × 1 | 15 |
+| `game-console` | Nintendo Switch | 5 000 | 2 × 1 | 16 |
+| `chocolate-cake` | Gâteau chocolat « je t’aime » | 150 | 2 × 2 | 5 |
 
-Objets esthétiques : aucun bonus, mission, revenu, affection ou changement des probabilités. Achats uniquement en pattes, jamais par complément en cœurs. Plusieurs exemplaires sont permis ; chaque achat possède son identifiant `decoration-N`. Vente d’un exemplaire placé ou en réserve : 50 % du prix d’achat en pattes, arrondi à l’entier inférieur, aucun remboursement en cœurs. Le taux est centralisé dans `DECORATION_RESALE_RATE`. Depuis la refonte économique v17, la revente ne dépasse jamais le prix payé, enregistré par exemplaire (`paidPrice`) ; un exemplaire plus ancien est plafonné à son prix d’avant la refonte. Les bâtiments, habitats et lapins sont exclus. Déplacements et rangements gratuits. Hypothèse de protection des imports/appareils modestes : 512 exemplaires possédés maximum, objets rangés compris. Un refus ne détruit aucun objet.
+Le catalogue compte 22 modèles. Les neuf nouveautés du 29 octobre reprennent la planche peinte v2 approuvée par le propriétaire ; l’arbre existant reçoit une guirlande de lampes blanches en forme de têtes de lapin, éclairées en jaune. Son identifiant, son prix et ses dimensions restent inchangés, y compris pour les arbres déjà possédés. Le rocher d’escalade est une pierre à prises colorées. Le microscope ancien est accompagné de cinq fioles bleue, violette, verte, jaune et rouge. Les nouveaux achats utilisent seulement les pattes ; le robot conserve son prix existant en cœurs.
+
+Ces objets utilisent les circuits existants d’achat, de pose et de vente. Chaque nouveau modèle reçoit automatiquement sa mission « Installer » et les 10 XP de première pose déjà prévus par le catalogue ; aucun coefficient de progression n’est modifié. Les quatre collections de souvenirs existantes conservent leurs listes de modèles. Les anciennes sauvegardes v21 restent acceptées ; une ancienne build ne connaît pas les neuf nouveaux identifiants.
+
+Objets esthétiques : aucun bonus de revenu, d’affection ou de probabilités. Les achats se font en pattes, sauf les objets précieux explicitement tarifés en cœurs ; aucun complément automatique en cœurs. Plusieurs exemplaires sont permis ; chaque achat possède son identifiant `decoration-N`. Vente d’un exemplaire placé ou en réserve : 50 % du prix d’achat en pattes, arrondi à l’entier inférieur, aucun remboursement en cœurs. Le taux est centralisé dans `DECORATION_RESALE_RATE`. Depuis la refonte économique v17, la revente ne dépasse jamais le prix payé, enregistré par exemplaire (`paidPrice`) ; un exemplaire plus ancien est plafonné à son prix d’avant la refonte. Les bâtiments, habitats et lapins sont exclus. Déplacements et rangements gratuits. Hypothèse de protection des imports/appareils modestes : 512 exemplaires possédés maximum, objets rangés compris. Un refus ne détruit aucun objet.
 
 ## Utilisation et gestes
 

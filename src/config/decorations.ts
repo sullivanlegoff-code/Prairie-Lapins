@@ -1,7 +1,7 @@
 /** Removed catalogue IDs: discard owned copies when decoding v16 saves, without compensation. */
 export const RETIRED_DECORATION_IDS = ['wildflowers', 'flowering-bush', 'moss-rock', 'garden-lantern', 'wood-bench', 'flower-arch', 'fruit-tree', 'small-pond', 'soft-cushion', 'ball-toys', 'play-tunnel', 'small-parasol'] as const;
 /** Stable save identifiers. Precious objects have a Heart price; decoration has no gameplay bonus. */
-export const DECORATION_IDS = ['dirt-path', 'bush', 'tree', 'hay-bale', 'bunny-slippers', 'birthday-candle', 'small-bookcase', 'coconut-palm', 'otter-plush', 'large-bookcase', 'hanukkah-menorah', 'honey-pot', 'robot-statue'] as const;
+export const DECORATION_IDS = ['dirt-path', 'bush', 'tree', 'hay-bale', 'bunny-slippers', 'birthday-candle', 'small-bookcase', 'coconut-palm', 'otter-plush', 'large-bookcase', 'hanukkah-menorah', 'honey-pot', 'robot-statue', 'penguin-bookcase', 'ironing-board', 'climbing-rock', 'white-bouquet', 'rabbit-fountain', 'shark-slippers', 'vintage-microscope', 'game-console', 'chocolate-cake'] as const;
 export type DecorationId = typeof DECORATION_IDS[number];
 export interface DecorationDefinition {name: string; price: number; heartPrice?: number; area: 'outside'; width: number; height: number; rotates: boolean; level?: number; art: {
   /** Relative to the Vite base; displayed width in world units before camera zoom. */
@@ -24,6 +24,15 @@ export const DECORATIONS: Record<DecorationId, DecorationDefinition> = {
   // Owner's own artwork, shipped unchanged (only cropped and reduced like every decoration).
   'honey-pot': {name: 'Pot de miel géant', price: 70, area: 'outside', width: 2, height: 2, rotates: false, level: 4, art: {file: 'assets/decorations/honey-pot.png', worldWidth: 95, anchor: {x: .5, y: 0.9}}},
   'robot-statue': {name: 'Statue du robot noir et doré', price: 15000, heartPrice: 80, area: 'outside', width: 2, height: 2, rotates: false, level: 22, art: {file: 'assets/decorations/robot-statue.png', worldWidth: 52, anchor: {x: .5, y: 0.95}}},
+  'penguin-bookcase': {name: 'Armoire de livres Penguin', price: 5000, area: 'outside', width: 2, height: 1, rotates: false, level: 14, art: {file: 'assets/decorations/penguin-bookcase.png', worldWidth: 96, anchor: {x: .5, y: .93}}},
+  'ironing-board': {name: 'Table à repasser jaune', price: 300, area: 'outside', width: 2, height: 1, rotates: false, level: 6, art: {file: 'assets/decorations/ironing-board.png', worldWidth: 70, anchor: {x: .5, y: .93}}},
+  'climbing-rock': {name: 'Rocher d’escalade', price: 900, area: 'outside', width: 2, height: 2, rotates: false, level: 8, art: {file: 'assets/decorations/climbing-rock.png', worldWidth: 85, anchor: {x: .5, y: .93}}},
+  'white-bouquet': {name: 'Vase de fleurs blanches', price: 100, area: 'outside', width: 1, height: 1, rotates: false, level: 4, art: {file: 'assets/decorations/white-bouquet.png', worldWidth: 40, anchor: {x: .5, y: .93}}},
+  'rabbit-fountain': {name: 'Vasque lapin en pierre', price: 1500, area: 'outside', width: 2, height: 2, rotates: false, level: 10, art: {file: 'assets/decorations/rabbit-fountain.png', worldWidth: 85, anchor: {x: .5, y: .93}}},
+  'shark-slippers': {name: 'Chaussons requins', price: 50, area: 'outside', width: 1, height: 1, rotates: false, level: 3, art: {file: 'assets/decorations/shark-slippers.png', worldWidth: 38, anchor: {x: .5, y: .8}}},
+  'vintage-microscope': {name: 'Vaccin contre la tuberculose', price: 3500, area: 'outside', width: 2, height: 1, rotates: false, level: 15, art: {file: 'assets/decorations/vintage-microscope.png', worldWidth: 78, anchor: {x: .5, y: .93}}},
+  'game-console': {name: 'Nintendo Switch', price: 5000, area: 'outside', width: 2, height: 1, rotates: false, level: 16, art: {file: 'assets/decorations/game-console.png', worldWidth: 65, anchor: {x: .5, y: .93}}},
+  'chocolate-cake': {name: 'Gâteau chocolat « je t’aime »', price: 150, area: 'outside', width: 2, height: 2, rotates: false, level: 5, art: {file: 'assets/decorations/chocolate-cake.png', worldWidth: 80, anchor: {x: .5, y: .93}}},
 };
 export const FINE_GRID = 4;
 /** A generous bound keeps imports and low-end devices bounded; never discards owned objects. */

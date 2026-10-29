@@ -45,7 +45,7 @@ describe('pure player progression v17',()=>{
   expect(()=>validateProgressionConfig()).not.toThrow();expect(SPECIES_IDS.map(id=>requiredSpeciesLevel(id))).toEqual([...HISTORICAL_LEVELS, ...NEW_RARES.flatMap(r => r.id === 'egiiipte' ? [1, 1] : [1]), ...NEW_SPECIALS.map(s => s.unlockLevel)]);
   expect(HABITAT_TYPES.map(type=>requiredHabitatLevel(type))).toEqual([6,1,1,5,7,9]);
   expect(requiredHabitatUpgradeLevel('neige',2)).toBe(3);expect(requiredHabitatUpgradeLevel('metal',3)).toBe(12);expect(requiredHabitatUpgradeLevel('universal',3)).toBe(11);
-  expect(DECORATION_IDS.map(id=>requiredDecorationLevel(id))).toEqual([1,1,1,2,3,5,6,8,10,12,14,4,22]);
+  expect(DECORATION_IDS.map(id=>requiredDecorationLevel(id))).toEqual([1,1,1,2,3,5,6,8,10,12,14,4,22,14,6,8,4,10,3,15,16,5]);
   expect(Array.from({length:8},(_,i)=>requiredExtensionLevel(i+1))).toEqual([4,6,8,10,12,15,18,22]);
   for(const rank of [0,9,1.5,NaN])expect(()=>requiredExtensionLevel(rank)).toThrow(RangeError);
  });
