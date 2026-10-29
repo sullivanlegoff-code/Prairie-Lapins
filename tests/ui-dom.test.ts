@@ -998,6 +998,36 @@ describe('new collection and exact-species recipe UI', () => {
 
 describe('pairing window and heart bubble', () => {
   const nestOf = (s: GameState) => s.buildings.find(b => b.kind === 'nest')!;
+  it('prepares the last saved pair after reload, independently from a canceled draft, and still requires confirmation', () => {
+    const initial = scenarioState('reproduction', 0);
+    initial.lastBreedingParents = [initial.rabbits[0].id, initial.rabbits[1].id];
+    initial.rabbits[0].name = 'Étoile';
+    const {ui, controller} = setup(initial);
+    ui.select({kind:'building',id:nestOf(initial).id});
+    button('Croiser').click(); breedingRow(0, 1).click();
+    breeding().querySelector<HTMLButtonElement>('.breeding-close')!.click();
+    button('Refaire le dernier croisement').click();
+    expect(breedingRow(0, 0).getAttribute('aria-pressed')).toBe('true');
+    expect(breedingRow(1, 1).getAttribute('aria-pressed')).toBe('true');
+    expect(breedingRow(0, 0).querySelector('span span')!.textContent).toContain(`affection ${initial.rabbits[0].affection}`);
+    expect(breeding().querySelector('.breeding-confirmation')!.textContent).toContain('Étoile');
+    expect(nestOf(state(controller)).breeding).toBeNull();
+    button('Probabilités', breeding()).click();
+    expect(document.activeElement?.textContent).toBe('Fermer les probabilités');
+    button('Fermer les probabilités', breeding()).click();
+    expect(document.activeElement?.textContent).toBe('Probabilités');
+    button('Croiser', breeding()).click();
+    expect(nestOf(state(controller)).breeding!.parents).toEqual(initial.lastBreedingParents);
+  });
+  it.each(['missing', 'unavailable'] as const)('explains why the last pair cannot be repeated when a parent is %s', situation => {
+    const initial = scenarioState('reproduction', 0);
+    initial.lastBreedingParents = [initial.rabbits[0].id, situation === 'missing' ? 'rabbit-999' : initial.rabbits[1].id];
+    if (situation === 'unavailable') initial.rabbits[1].affection = 1;
+    const {ui, controller} = setup(initial); ui.select({kind:'building',id:nestOf(initial).id});
+    expect(button('Refaire le dernier croisement').disabled).toBe(true);
+    expect(panel().textContent).toMatch(situation === 'missing' ? /n’est plus dans ta prairie/ : /Affection 2 nécessaire/);
+    expect(nestOf(state(controller)).breeding).toBeNull();
+  });
   it('filters parents by personal name, species, element and availability while keeping the selection and typing position', () => {
     const initial = scenarioState('reproduction', 0); initial.rabbits[0].name = 'Étoile';
     const {ui, controller, clock} = setup(initial);

@@ -50,6 +50,8 @@ export interface Initiation {
 export interface SavedProgression {totalXp: number; rewardedThroughLevel: number}
 export interface ProgressionGain {xpGained: number; rewardedLevels: number[]; heartsGranted: number}
 export interface GameState {
+  /** Last successfully launched pair; independent from the UI's draft selection. */
+  lastBreedingParents?: [string, string];
   cozy?: import('../simulation/cozy').CozyState;
   /** Present only on islands started on the southwest parcel (top/right expansion); absent = legacy centre start. */
   islandStart?: IslandStart;

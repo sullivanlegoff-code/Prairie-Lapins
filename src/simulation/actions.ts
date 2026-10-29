@@ -401,6 +401,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         value = id('birth');
         nest.breeding = {parents: [...command.parents], startedAt: time, endsAt: time + BALANCE.breedingDuration,
           birth: {id: value, species: result.species, guaranteed: result.guaranteed, reservedDiscovery: result.reservedDiscovery}};
+        s.lastBreedingParents = [...command.parents];
         if (s.initiation && !s.initiation.birthId) { s.initiation.birthId=value; s.initiation.breeding=jobKey(nest,'breeding'); }
         gainXp(PROGRESSION.xp.breedingLaunch); break;
       }

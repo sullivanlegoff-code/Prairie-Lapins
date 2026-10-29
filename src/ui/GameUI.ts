@@ -1255,8 +1255,18 @@ export class GameUI {
     }
     if (!s.buildings.some(b => b.kind === 'nursery')) { this.workState('blocked', 'Place la nurserie offerte avant de lancer une reproduction.'); this.button(this.content, 'Placer gratuitement la nurserie', () => this.beginPlacement('nursery',undefined,undefined,true)); return; }
     this.workState('free', 'Choisis deux parents distincts, chacun d’affection 2 minimum. Le lancement est gratuit.');
-    this.content.append(node('p', automaticNurseryTransfer(s) ? 'Gratuit · 20 minutes de reproduction, puis le lapereau rejoint seul un couchage libre de la nurserie et grandit pendant ton absence.' : 'Gratuit · 20 minutes de reproduction, puis transfert manuel et croissance en nurserie.'));
+    if (s.lastBreedingParents) {
+      const pair = s.lastBreedingParents.map(parentId => s.rabbits.find(r => r.id === parentId));
+      const reason = pair.some(r => !r) ? 'Un parent du dernier croisement n’est plus dans ta prairie.' :
+        rabbitAvailability(s, pair[0]!.id, this.now()) ?? rabbitAvailability(s, pair[1]!.id, this.now());
+      this.button(this.content, 'Refaire le dernier croisement', () => {
+        this.parents = [...s.lastBreedingParents!]; this.parentSearch = ''; this.parentElement = ''; this.parentsAvailableOnly = false;
+        this.openBreeding(id);
+      }, reason, true);
+      this.content.append(node('p', pair.map(r => r ? r.name ?? SPECIES[r.species].name : 'Parent absent').join(' × '), 'small'));
+    }
     this.button(this.content, 'Croiser', () => this.openBreeding(id));
+    this.content.append(node('p', automaticNurseryTransfer(s) ? 'Gratuit · 20 minutes de reproduction, puis le lapereau rejoint seul un couchage libre de la nurserie et grandit pendant ton absence.' : 'Gratuit · 20 minutes de reproduction, puis transfert manuel et croissance en nurserie.'));
     this.content.append(node('p', 'La reproduction est possible dès affection 2 chez chacun des deux parents. Chaque recette possède ses propres conditions ; les résultats inadmissibles sont exclus. Les conditions détaillées sont visibles dans le carnet une fois la recette connue.', 'small'));
     this.button(this.content, 'Carnet de reproduction', () => this.open({kind: 'recipes'}), null, true);
     this.content.append(node('p', `Garantie : ${s.pityFailures}/7 échecs admissibles. Après sept échecs, la tentative admissible suivante garantit une espèce non découverte parmi les résultats ordinaires explicitement éligibles à la garantie et admissibles à cette paire, à parts égales s’il y en a plusieurs ; les recettes à probabilité fixe n’en font pas partie. Un résultat inédit éligible à la garantie réservé remet le compteur à zéro ; la découverte n’est enregistrée qu’à l’accueil.`, 'small'));
@@ -1270,11 +1280,16 @@ export class GameUI {
     if (!nursery || nurseryFull(nursery) || job.endsAt > this.now()) { this.open({kind: 'building', id: nestId}); return; }
     this.execute({type: 'transferBirth', id: nestId, birthId: job.birth.id}, 'Lapereau envoyé dans la nurserie. Les parents retrouvent leurs habitats.', () => this.scene.focusBuilding(nursery.id));
   }
-  /** The pairing window: Lapin 1 on the left, Lapin 2 on the right, the shared tools between, Croiser below. */
+  /** Two large independent lists, compact shared tools and a pinned confirmation. */
   private openBreeding(nestId: string): void {
     if (this.onboardingActive) this.parents = ['paille','neige'].map(species => this.snapshot.state!.rabbits.find(r => r.species === species)?.id ?? null) as [string|null,string|null];
+    this.oddsOpen = false;
     this.breedingNestId = nestId; this.renderBreeding();
     if (!this.breedingDialog.open) this.breedingDialog.showModal();
+    this.breedingDialog.querySelectorAll<HTMLElement>('.breeding-list').forEach(list => {
+      const selected = list.querySelector<HTMLElement>('.selected');
+      if (selected) list.scrollTop = Math.max(0, selected.offsetTop - list.offsetTop - (list.clientHeight - selected.offsetHeight) / 2);
+    });
   }
   private closeBreeding(): void {
     this.breedingNestId = null;
@@ -1309,6 +1324,13 @@ export class GameUI {
     const available = this.button(filters, 'Disponibles', () => { this.parentsAvailableOnly = !this.parentsAvailableOnly; this.renderBreeding(); }, null, true);
     available.dataset.focus = 'parent-available'; available.setAttribute('aria-pressed', String(this.parentsAvailableOnly));
     filters.prepend(search, element);
+    if (this.parentSearch || this.parentElement || this.parentsAvailableOnly) {
+      const reset = this.button(filters, '↺', () => {
+        this.parentSearch = ''; this.parentElement = ''; this.parentsAvailableOnly = false; this.renderBreeding();
+      }, null, true);
+      reset.setAttribute('aria-label', 'Réinitialiser les filtres');
+      reset.dataset.focus = 'parent-reset';
+    }
     const searchable = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('fr');
     const query = searchable(this.parentSearch.trim());
     const columns = node('div', '', 'breeding-columns');
@@ -1323,7 +1345,7 @@ export class GameUI {
         row.dataset.focus = `breeding-parent-${slot}-${r.id}`;
         row.disabled = !!busy || other; row.setAttribute('aria-pressed', String(chosen));
         const text = node('span', '', 'breeding-row-text');
-        text.append(node('strong', r.name ?? SPECIES[r.species].name), node('span', r.name ? SPECIES[r.species].name : `Affection ${r.affection}`));
+        text.append(node('strong', r.name ?? SPECIES[r.species].name), node('span', r.name ? `${SPECIES[r.species].name} · affection ${r.affection}` : `Affection ${r.affection}`));
         text.append(node('small', other ? `Déjà choisi comme lapin ${2 - slot}` : busy ?? `${this.enclosureName(s, r.enclosureId)} · affection ${r.affection}`));
         if (row.disabled) text.lastElementChild!.classList.add('breeding-unavailable-reason');
         row.append(avatar(r.species), text);
@@ -1335,24 +1357,47 @@ export class GameUI {
     };
     const tools = node('div', '', 'breeding-tools');
     this.button(tools, 'Carnet', () => { this.closeBreeding(); this.open({kind: 'recipes'}); }, null, true);
-    const oddsButton = this.button(tools, 'Probabilités', () => { this.oddsOpen = !this.oddsOpen; this.renderBreeding(); }, selected[0] && selected[1] ? null : 'Choisis d’abord les deux parents.', true);
+    const oddsButton = this.button(tools, 'Probabilités', () => {
+      this.oddsOpen = !this.oddsOpen; this.renderBreeding();
+      this.breedingDialog.querySelector<HTMLButtonElement>(this.oddsOpen ? '[data-focus="breeding-odds-close"]' : '[data-focus="breeding-odds"]')?.focus({preventScroll: true});
+    }, selected[0] && selected[1] ? null : 'Choisis d’abord les deux parents.', true);
     oddsButton.setAttribute('aria-pressed', String(this.oddsOpen));
     oddsButton.dataset.focus = 'breeding-odds';
-    columns.append(column(0), tools, column(1));
+    columns.append(column(0), column(1));
+    const toolbar = node('div', '', 'breeding-toolbar'); toolbar.append(filters, tools);
     const footer = node('div', '', 'breeding-footer');
+    const confirmation = node('p', selected.map(r => r ? r.name ?? SPECIES[r.species].name : 'Choisis un parent').join(' × '), 'breeding-confirmation');
+    footer.append(confirmation);
+    let probabilities: HTMLElement | null = null;
     let reason: string | null = selected[0] && selected[1] ? (rabbitAvailability(s, selected[0].id, this.now()) ?? rabbitAvailability(s, selected[1].id, this.now())) : 'Choisis un lapin dans chaque liste.';
     if (selected[0] && selected[1]) {
       const odds = oddsView(s, selected[0].species, selected[1].species, selected[0].affection, selected[1].affection), texts = oddsTexts(odds);
       if (!odds.possible) reason = REFUSALS.NO_BREEDING_RESULT;
-      footer.append(node('p', texts.summary, 'small'));
-      for (const line of texts.excluded) footer.append(node('p', line, 'reason'));
-      if (this.oddsOpen) { const details = node('div', '', 'breeding-odds'); for (const line of texts.lines) details.append(node('p', line)); details.append(node('p', texts.guarantee, 'badge')); footer.append(details); }
+      if (this.oddsOpen) {
+        probabilities = node('section', '', 'breeding-probabilities');
+        probabilities.setAttribute('aria-label', 'Probabilités du croisement');
+        const top = node('div', '', 'breeding-probabilities-header'); top.append(node('h3', 'Probabilités'));
+        this.button(top, 'Fermer les probabilités', () => {
+          this.oddsOpen = false; this.renderBreeding();
+          this.breedingDialog.querySelector<HTMLButtonElement>('[data-focus="breeding-odds"]')?.focus({preventScroll: true});
+        }, null, true).dataset.focus = 'breeding-odds-close';
+        const details = node('div', '', 'breeding-odds');
+        details.append(node('p', texts.summary));
+        for (const line of texts.excluded) details.append(node('p', line, 'reason'));
+        for (const line of texts.lines) details.append(node('p', line));
+        details.append(node('p', texts.guarantee, 'badge')); probabilities.append(top, details);
+      }
     }
     if (this.parents[0] && this.parents[0] === this.parents[1]) reason = REFUSALS.SAME_PARENT;
     const launch = this.button(footer, 'Croiser', () => {
       if (this.parents[0] && this.parents[1]) this.execute({type: 'breed', parents: [this.parents[0], this.parents[1]]}, 'Reproduction lancée. Le résultat reste une surprise !', () => this.closeBreeding());
     }, reason);
     launch.classList.add('breeding-launch');
+    if (reason) {
+      const explanation = footer.querySelector<HTMLElement>('.reason');
+      confirmation.textContent = selected[0] && selected[1] ? `${confirmation.textContent} — ${reason}` : reason;
+      if (explanation) { confirmation.id = explanation.id; explanation.remove(); }
+    }
     if (this.onboardingActive) launch.classList.add('guide-target');
     if(this.onboardingActive) {
       const escape=node('div','','onboarding-escape');
@@ -1360,7 +1405,8 @@ export class GameUI {
       this.button(escape,'Passer le tutoriel',()=>{this.preferences.set({tutorial:false});this.closeBreeding();this.render();},null,true);
       footer.append(escape);
     }
-    this.breedingDialog.replaceChildren(header, filters, columns, footer);
+    this.breedingDialog.replaceChildren(header, toolbar, columns, footer);
+    if (probabilities) this.breedingDialog.append(probabilities);
     this.applyOnboardingLock();
     if (focused) {
       const equivalent = [...this.breedingDialog.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLButtonElement>('[data-focus]')].find(control => control.dataset.focus === focusKey && !control.disabled);

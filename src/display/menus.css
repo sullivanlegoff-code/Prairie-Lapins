@@ -213,7 +213,14 @@ dialog :is(.badge, .timer, .reason) {
   background: none; border: 10px solid transparent; border-image: var(--menu-stitch) 28 fill / 10px / 0 stretch;
   border-radius: 4px; box-shadow: 0 3px 3px #644a2020; padding: 4px;
 }
-#breeding-dialog .breeding-column > h3 { margin: 0 0 8px; width: 100%; text-align: center; -webkit-text-stroke: 0; }
+#breeding-dialog .breeding-column {
+  border-width: 4px; border-image-width: 4px; padding: 2px;
+}
+#breeding-dialog .breeding-column > h3 {
+  margin: 0 0 2px; padding: 0 8px; width: 100%;
+  border-width: 2px; border-image-width: 2px;
+  line-height: 18px; font-size: 14px; text-align: center; -webkit-text-stroke: 0;
+}
 #breeding-dialog .breeding-footer p { color: #342f22; }
 #breeding-dialog .breeding-footer .reason { color: #6b3020; }
 #breeding-dialog .breeding-badge {

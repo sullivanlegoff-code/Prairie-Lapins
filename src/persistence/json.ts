@@ -81,6 +81,7 @@ const levelAccessTransition = z.object({version: z.literal(1), rights: z.array(z
   }
 });
 const current = z.object({
+  lastBreedingParents: z.tuple([identity, identity]).refine(([a, b]) => a !== b && a.startsWith('rabbit-') && b.startsWith('rabbit-')).optional(),
   cozy: z.object({
     bonds: z.array(z.object({a: identity,b: identity,duration: integer.max(6*HOUR),celebrated:z.boolean()}).strict()).max(512),
     album: z.array(z.object({key:z.string().min(1).max(200),at:integer,kind:z.enum(['birth','friendship','travel','discovery','event']),text:z.string().max(300)}).strict()).max(80),
