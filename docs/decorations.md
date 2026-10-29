@@ -64,14 +64,16 @@ Paramètres : `src/config/decorations.ts`. Les images peintes sont partagées en
 | `penguin-bookcase` | Armoire de livres Penguin | 5 000 | 2 × 1 | 14 |
 | `ironing-board` | Table à repasser jaune | 300 | 2 × 1 | 6 |
 | `climbing-rock` | Rocher d’escalade | 900 | 2 × 2 | 8 |
-| `white-bouquet` | Vase de fleurs blanches | 100 | 1 × 1 | 4 |
+| `white-bouquet` | Grand vase de fleurs blanches | 100 | 1 × 1 | 4 |
 | `rabbit-fountain` | Vasque lapin en pierre | 1 500 | 2 × 2 | 10 |
 | `shark-slippers` | Chaussons requins | 50 | 1 × 1 | 3 |
 | `vintage-microscope` | Vaccin contre la tuberculose | 3 500 | 2 × 1 | 15 |
-| `game-console` | Nintendo Switch | 5 000 | 2 × 1 | 16 |
+| `game-console` | Nintendo Switch et télévision | 5 000 | 2 × 1 | 16 |
 | `chocolate-cake` | Gâteau chocolat « je t’aime » | 150 | 2 × 2 | 5 |
 
 Le catalogue compte 22 modèles. Les neuf nouveautés du 29 octobre reprennent la planche peinte v2 approuvée par le propriétaire ; l’arbre existant reçoit une guirlande de lampes blanches en forme de têtes de lapin, éclairées en jaune. Son identifiant, son prix et ses dimensions restent inchangés, y compris pour les arbres déjà possédés. Le rocher d’escalade est une pierre à prises colorées. Le microscope ancien est accompagné de cinq fioles bleue, violette, verte, jaune et rouge. Les nouveaux achats utilisent seulement les pattes ; le robot conserve son prix existant en cœurs.
+
+Les retouches demandées ensuite agrandissent les deux paires de chaussons (largeurs affichées : 68 pour les lapins et 76 pour les requins) en conservant leurs dessins. Le vase devient un grand bouquet majestueux, mêlant plusieurs fleurs blanches et davantage de végétation, affiché en largeur 100. La guirlande effectue au moins trois tours autour de l’arbre. La décoration Nintendo Switch comprend désormais une télévision portant le logo Animal Crossing ; la largeur de l’ensemble passe à 130. Identifiants, prix, niveaux et emprises au sol sont conservés pour tous les exemplaires déjà possédés.
 
 Ces objets utilisent les circuits existants d’achat, de pose et de vente. Chaque nouveau modèle reçoit automatiquement sa mission « Installer » et les 10 XP de première pose déjà prévus par le catalogue ; aucun coefficient de progression n’est modifié. Les quatre collections de souvenirs existantes conservent leurs listes de modèles. Les anciennes sauvegardes v21 restent acceptées ; une ancienne build ne connaît pas les neuf nouveaux identifiants.
 

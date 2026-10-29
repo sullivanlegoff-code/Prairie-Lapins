@@ -14,9 +14,9 @@ const expected = [
  ['large-bookcase','Grande bibliothèque',4000,2,1,12], ['hanukkah-menorah','Ménorah de Hanoucca',2500,1,1,14],
  ['honey-pot','Pot de miel géant',70,2,2,4], ['robot-statue','Statue du robot noir et doré',15000,2,2,22],
  ['penguin-bookcase','Armoire de livres Penguin',5000,2,1,14], ['ironing-board','Table à repasser jaune',300,2,1,6],
- ['climbing-rock','Rocher d’escalade',900,2,2,8], ['white-bouquet','Vase de fleurs blanches',100,1,1,4],
+ ['climbing-rock','Rocher d’escalade',900,2,2,8], ['white-bouquet','Grand vase de fleurs blanches',100,1,1,4],
  ['rabbit-fountain','Vasque lapin en pierre',1500,2,2,10], ['shark-slippers','Chaussons requins',50,1,1,3],
- ['vintage-microscope','Vaccin contre la tuberculose',3500,2,1,15], ['game-console','Nintendo Switch',5000,2,1,16],
+ ['vintage-microscope','Vaccin contre la tuberculose',3500,2,1,15], ['game-console','Nintendo Switch et télévision',5000,2,1,16],
  ['chocolate-cake','Gâteau chocolat « je t’aime »',150,2,2,5],
 ] as const;
 describe('approved painted decorations', () => {
