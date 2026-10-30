@@ -3,7 +3,7 @@ import {sendToNursery} from './manual-transfer';
 import {regressionStart as createGame} from './regression-start';
 import {describe, expect, it, vi} from 'vitest';
 import {HABITAT_TYPES, HABITATS, habitatLevel, type HabitatType} from '../src/config/habitats';
-import {SPECIES, SPECIES_IDS, HOUR, MINUTE, BALANCE} from '../src/config/balance';
+import {SPECIES, SPECIES_IDS, HOUR, MINUTE, BALANCE, growthDuration} from '../src/config/balance';
 import {act, advance,  decodeGame, encodeGame, pendingDiscoveries} from '../src/simulation';
 import {habitatAccepts, habitatStats, terrainWidth, visibleColumns} from '../src/simulation/habitats';
 import {quoteComplement} from '../src/simulation/actions';
@@ -79,7 +79,7 @@ describe('habitat compatibility and atomic entries',()=>{
     expect(s.rabbits[0].enclosureId).toBe('building-1');
   });
   it('welcomes a reserved hybrid into either matching type, rejects an incompatible nursery destination without loss',()=>{
-    let s=breedingState();s=build(s,'paille',0,1);s=build(s,'neige',1,1);s=sendToNursery(s,20*60_000+17);s=advance(s,50*60_000+17);
+    let s=breedingState();s=build(s,'paille',0,1);s=build(s,'neige',1,1);s=sendToNursery(s,growthDuration('glassofeu')+17);s=advance(s,2*growthDuration('glassofeu')+17);
     const nursery=s.buildings.find(b=>b.kind==='nursery')!,birth=structuredClone(babyOf(nursery)!.birth);
     expect(birth.species).toBe('glassofeu');
     refuse(s, welcomeOf(s, s.buildings[3].id),'TYPE_INCOMPATIBLE');
@@ -154,7 +154,7 @@ describe('levels, income and payments',()=>{
     s=run(s,payment);expect(s).toMatchObject({pattes:0,hearts:92});expect(s.buildings[1].habitat!.level).toBe(2);refuse(s,payment,'STALE_ACTION');
   });
   it('growth acceleration recognizes upgraded free capacity without revealing the species in its quote',()=>{
-    let s=breedingState();s=run(s,{type:'buyRabbit',species:'paille',enclosureId:'building-1'});s=sendToNursery(advance(s,20*60_000+17));
+    let s=breedingState();s=run(s,{type:'buyRabbit',species:'paille',enclosureId:'building-1'});s=sendToNursery(advance(s,growthDuration('glassofeu')+17));
     const nursery=s.buildings.find(b=>b.kind==='nursery')!,birth=structuredClone(babyOf(nursery)!.birth);
     expect(quoteAcceleration(s, nursery.id, 'growth', s.lastSimulatedAt, stateBaby(s)?.birth.id)).toEqual({ok:false,reason:'CAPACITY_FULL'});
     // The legacy-style start group leaves no room beside the habitat: move it to free ground before its enlarged footprint is acquired.
@@ -162,7 +162,7 @@ describe('levels, income and payments',()=>{
     s=run(s,{type:'upgradeHabitat',id:'building-1',fromLevel:1});const q=quoteAcceleration(s, nursery.id, 'growth', s.lastSimulatedAt, stateBaby(s)?.birth.id);if(!q.ok)throw Error(q.reason);
     expect(JSON.stringify(q)).not.toContain(birth.species);expect(nurseryView(s,s.lastSimulatedAt).babies.map(b=>b.stage)).toEqual(['growing']);
     s=run(s,{type:'accelerate',id:nursery.id,stage:'growth',jobKey:q.jobKey,maxHearts:q.hearts,birthId:birth.id});
-    expect(babyOf(s.buildings.find(b=>b.kind==='nursery')!)!.birth).toEqual(birth);expect(s.lastSimulatedAt).toBe(20*60_000+17);
+    expect(babyOf(s.buildings.find(b=>b.kind==='nursery')!)!.birth).toEqual(birth);expect(s.lastSimulatedAt).toBe(growthDuration('glassofeu')+17);
   });
 });
 

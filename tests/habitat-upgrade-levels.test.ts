@@ -2,7 +2,7 @@ import {describe,it,expect} from 'vitest';
 import {createGame,act,advance,encodeGame,decodeGame} from '../src/simulation';
 import {cumulativeLevelXp,requiredHabitatUpgradeLevel} from '../src/simulation/progression';
 import {HABITAT_TYPES,habitatLevel,type HabitatType} from '../src/config/habitats';
-import {BALANCE,HOUR} from '../src/config/balance';
+import {HOUR,growthDuration} from '../src/config/balance';
 import {quoteComplement} from '../src/simulation/actions';
 import {establishHistoricalLevelRights,levelUnlockContents} from '../src/simulation/levelRights';
 import {GameController} from '../src/application/GameController';
@@ -43,7 +43,7 @@ describe('target-level habitat upgrades',()=>{
  it('keeps parents and fractional stock; a long absence caps at the old limit before upgrading',()=>{
   let s=state('paille',1,3);s.rabbits[0].affection=2;s.rabbits.push({id:'rabbit-6',species:'paille',affection:2,enclosureId:'building-1'});s.nextId=8;
   // This Common birth was already drawn before the new rule; an upgrade must preserve its parents, result and income.
-  s.buildings.find(b=>b.kind==='nest')!.breeding={parents:['rabbit-2','rabbit-6'],startedAt:0,endsAt:BALANCE.breedingDuration,birth:{id:'birth-7',species:'paille',guaranteed:false,reservedDiscovery:false}};
+  s.buildings.find(b=>b.kind==='nest')!.breeding={parents:['rabbit-2','rabbit-6'],startedAt:0,endsAt:growthDuration('paille'),birth:{id:'birth-7',species:'paille',guaranteed:false,reservedDiscovery:false}};
   const saved=decodeGame(encodeGame(s));if(!saved.ok)throw Error(saved.reason);s=saved.state;s.buildings[0].incomeUnits=HOUR/2+17;
   const command={type:'upgradeHabitat',id:'building-1',fromLevel:1} as const,next=run(s,command);expect(next.buildings[0].incomeUnits).toBe(HOUR/2+17);expect(next.rabbits).toEqual(s.rabbits);expect(next.buildings[1].breeding).toEqual(s.buildings[1].breeding);expect(next.progression).toEqual(s.progression);
   const absent=run(s,command,1000*HOUR);expect(absent.buildings[0].incomeUnits).toBe(habitatLevel('paille',1).cap*HOUR);expect(advance(absent,1001*HOUR).buildings[0].incomeUnits).toBe((habitatLevel('paille',1).cap+22)*HOUR);

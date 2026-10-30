@@ -8,6 +8,7 @@ import {newlyPurchasableRecipes} from '../src/simulation/recipes';
 import {levelUnlockContents} from '../src/simulation/levelRights';
 import {scenarioState} from '../src/dev/scenarios';
 import {RECIPE_PRICES} from '../src/config/recipes';
+import {SPECIES} from '../src/config/balance';
 import {GameController} from '../src/application/GameController';
 import {GameUI} from '../src/ui/GameUI';
 import {PreferenceStore} from '../src/ui/preferences';
@@ -107,7 +108,7 @@ describe('recipe purchase buttons', () => {
     ui.open({kind: 'shop', tab: 'recipes'});
     expect(buy('dinono')).toBeNull(); expect(consult('dinono')).not.toBeNull();
     expect(card('dinono').querySelector('img[src*="rabbits/dinono"]')).not.toBeNull();
-    for (const hidden of ['Dadi', 'Phoenix', 'Affection', 'Parents requis', 'garantie', 'paire possédée', '2 %']) expect(card('dragon').textContent).not.toContain(hidden);
+    for (const hidden of ['Dadi', 'Phoenix', 'Affection', 'Parents requis', 'garantie', 'paire possédée', `${(SPECIES.dragon.acquisition[0] as {probability: number}).probability} %`]) expect(card('dragon').textContent).not.toContain(hidden);
     expect(card('dragon').querySelector('details')).toBeNull(); expect(state(controller)).toEqual(before);
   });
 });
@@ -138,7 +139,7 @@ describe('recipe purchase flow', () => {
     expect(document.activeElement).toBe(heading); expect(scroll.mock.contexts).toContain(card('dinono'));
     const advanced = card('dinono').querySelector<HTMLDetailsElement>('.recipe-rules')!;
     expect(advanced.open).toBe(false); expect(advanced.querySelector('summary')!.textContent).toBe('En savoir plus');
-    expect(advanced.textContent).toContain('hors garantie ordinaire : 5 %');
+    expect(advanced.textContent).toContain(`hors garantie ordinaire : ${(SPECIES.dinono.acquisition[0] as {probability: number}).probability} %`);
     advanced.open = true; advanced.dispatchEvent(new Event('toggle')); controller.refresh();
     expect(card('dinono').querySelector<HTMLDetailsElement>('.recipe-rules')!.open).toBe(true);
     const prepare = [...card('dinono').querySelectorAll('button')].find(b => b.textContent === 'Préparer cette paire au nid' && !b.disabled)!;
@@ -172,7 +173,7 @@ describe('recipe purchase flow', () => {
     expect(card('dinono').textContent).toContain('Affection 6 minimum pour chacun des deux parents.');
     expect(card('dinono').textContent).toMatch(/\d+ paires? possédées? compatibles? avec la recette/);
     const saved = decodeGame(data.get(SAVE_KEY)!); expect(saved.ok && saved.state.recipeBook).toEqual(['dinono']);
-    expect(nestOdds(ui, 'Lapin Bélier Gris', 'Lapin Feu')).toEqual(["Résultats possibles : Dinono et des résultats inconnus.", "Dinono · feu + métal · Épique : 7,5 %", "Résultats inconnus : 92,5 %"]);
+    expect(nestOdds(ui, 'Lapin Bélier Gris', 'Lapin Feu')).toEqual(["Résultats possibles : Dinono et des résultats inconnus.", "Dinono · feu + métal · Épique : 15 %", "Résultats inconnus : 85 %"]);
     ui.open({kind: 'collection'}); [...panel().querySelectorAll('button')].find(b => b.textContent === 'Carnet de reproduction')!.click();
     expect([...card('dinono').querySelectorAll('button')].some(b => b.textContent === 'Préparer cette paire au nid')).toBe(true);
   });

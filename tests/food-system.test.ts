@@ -47,9 +47,9 @@ describe('epic and legendary chances grow with both parents’ affection', () =>
   it('multiplies by 1.5 from 10 and by 2 from 15, on the lower parent, for epic and legendary only', () => {
     expect([rareBirthFactor('magicien', 9, 20), rareBirthFactor('magicien', 10, 14), rareBirthFactor('magicien', 15, 15), rareBirthFactor('dragon', 15, 20)]).toEqual([1, 1.5, 2, 2]);
     expect(rareBirthFactor('boudinet', 20, 20)).toBe(1); expect(SPECIES.boudinet.rarity).toBe('rare');
-    expect(breedingOdds('magicien', 'belier-gris', 9, 9).magicien).toBe(5);
-    expect(breedingOdds('magicien', 'belier-gris', 10, 10).magicien).toBe(7.5);
-    expect(breedingOdds('magicien', 'belier-gris', 20, 15).magicien).toBe(10);
+    expect(breedingOdds('magicien', 'belier-gris', 9, 9).magicien).toBe(10);
+    expect(breedingOdds('magicien', 'belier-gris', 10, 10).magicien).toBe(15);
+    expect(breedingOdds('magicien', 'belier-gris', 20, 15).magicien).toBe(20);
   });
 });
 

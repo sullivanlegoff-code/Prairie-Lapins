@@ -127,7 +127,7 @@ describe('income and time', () => {
   it('anchors new timers to the monotonic time when the clock reverses', () => {
     let s = advance(setup(), HOUR); s = run(s, breed, HOUR - MINUTE);
     expect(nest(s).breeding!.startedAt).toBe(HOUR);
-    expect(nest(s).breeding!.endsAt).toBe(HOUR + 20 * MINUTE);
+    expect(nest(s).breeding!.endsAt).toBe(HOUR + growthDuration(nest(s).breeding!.birth.species));
   });
   it('matches one long absence to many shorter resumes, exactly', () => {
     const original = run(setup(), breed, 0, 0.9);
@@ -226,7 +226,7 @@ describe('breeding probabilities and pity', () => {
     let s = setup(); s.rabbits[0].species='wat-wat'; s.rabbits[0].incomeRoll = 5000; s.discovered.push('wat-wat'); // a Rare carries its own saved roll, as every real Rare does s.rabbits.forEach(r => r.affection = 4);
     for (let attempt = 1; attempt <= 7; attempt++) {
       s = run(s, breed, s.lastSimulatedAt, 0); expect(s.pityFailures).toBe(attempt);
-      s=sendToNursery(s,s.lastSimulatedAt+20*MINUTE);s = run(s, welcomeOf(s, secondEnclosure(s)), s.lastSimulatedAt + growthDuration('wat-wat'));
+      s=sendToNursery(s,nest(s).breeding!.endsAt);s = run(s, welcomeOf(s, secondEnclosure(s)), s.lastSimulatedAt + growthDuration('wat-wat'));
       s = run(s, {type: 'release', id: s.rabbits.at(-1)!.id});
     }
     let calls = 0;
@@ -239,7 +239,7 @@ describe('breeding probabilities and pity', () => {
     const decoded = decodeGame(encodeGame(s)); expect(decoded.ok).toBe(true);
     if (decoded.ok) {
       expect(advance(decoded.state, s.lastSimulatedAt + 35 * MINUTE)).toEqual(advance(s, s.lastSimulatedAt + 35 * MINUTE));
-      const deadline=s.lastSimulatedAt+20*MINUTE;s=sendToNursery(decoded.state,deadline);s = run(s, welcomeOf(s, secondEnclosure(s)), deadline+30*MINUTE);
+      const deadline=nest(decoded.state).breeding!.endsAt;s=sendToNursery(decoded.state,deadline);s = run(s, welcomeOf(s, secondEnclosure(s)), deadline+growthDuration('glassofeu'));
     }
     expect(s.discovered).toContain('glassofeu'); expect(pendingDiscoveries(s)).toEqual([]); expect(s.pityFailures).toBe(0);
   });
@@ -256,9 +256,9 @@ describe('breeding probabilities and pity', () => {
   });
   it('keeps a guaranteed result and its counter coherent while another birth waits', () => {
     let s = setup(); s.rabbits[0].species='feu'; s.discovered.push('feu','wat-wat'); s.rabbits.forEach(r => r.affection = 4); s.pityFailures = 7;
-    s = run(s, breed, 0, 0); s = sendToNursery(advance(s, 20 * MINUTE));
+    s = run(s, breed, 0, 0); const t1 = nest(s).breeding!.endsAt; s = sendToNursery(s, t1);
     expect(babyOf(nursery(s))!.birth.guaranteed).toBe(true);
-    s = run(s, breed, 20 * MINUTE, 0);
+    s = run(s, breed, t1, 0);
     expect(nest(s).breeding!.birth.guaranteed).toBe(false); expect(s.pityFailures).toBe(1);
     s = advance(s, HOUR);
     const decoded = decodeGame(encodeGame(s)); expect(decoded).toEqual({ok: true, state: s});
@@ -270,16 +270,16 @@ describe('breeding probabilities and pity', () => {
 
 describe('nursery, capacity and release', () => {
   it('holds a second birth at the nest and starts growth exactly when space is freed', () => {
-    let s = run(setup(), breed); s = sendToNursery(advance(s, 20 * MINUTE));
-    s = run(s, breed, 20 * MINUTE, 0.65);
+    let s = run(setup(), breed); const tA = nest(s).breeding!.endsAt; s = sendToNursery(s, tA);
+    s = run(s, breed, tA, 0.65); const tB = nest(s).breeding!.endsAt;
     const blocked = advance(s, 2 * HOUR);
-    expect(babyOf(nursery(blocked))!.startedAt).toBe(20 * MINUTE);
-    expect(nest(blocked).breeding!.endsAt).toBe(40 * MINUTE);
-    let split = s; for (let t = 21 * MINUTE; t <= 2 * HOUR; t += MINUTE) split = advance(split, t);
+    expect(babyOf(nursery(blocked))!.startedAt).toBe(tA);
+    expect(nest(blocked).breeding!.endsAt).toBe(tB);
+    let split = s; for (let t = tA + MINUTE; t <= 2 * HOUR; t += MINUTE) split = advance(split, t);
     expect(split).toEqual(blocked);
     s = run(blocked, welcomeOf(blocked, secondEnclosure(blocked)), 2 * HOUR);
     expect(babyOf(nursery(s))).toBeNull();s=sendToNursery(s);expect(nest(s).breeding).toBeNull(); expect(babyOf(nursery(s))!.startedAt).toBe(2 * HOUR);
-    expect(babyOf(nursery(s))!.readyAt).toBe(2 * HOUR + 30 * MINUTE);
+    expect(babyOf(nursery(s))!.readyAt).toBe(2 * HOUR + growthDuration(babyOf(nursery(s))!.birth.species));
   });
   it('refuses welcoming early and avoids retroactive income after a late welcome', () => {
     let s = run(setup(), breed);

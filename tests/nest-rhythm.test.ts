@@ -2,7 +2,7 @@ import {describe, expect, it} from 'vitest';
 import {regressionStart as createGame} from './regression-start';
 import {stateBaby, welcomeOf} from './nursery-baby';
 import {act, advance, decodeGame, encodeGame} from '../src/simulation';
-import {BALANCE, HOUR, MINUTE, growthDuration} from '../src/config/balance';
+import {HOUR, MINUTE, growthDuration} from '../src/config/balance';
 import {INITIAL_MISSION_IDS} from '../src/config/missions';
 import type {Command, GameState} from '../src/state/types';
 
@@ -30,7 +30,7 @@ describe('nest and nursery rhythm', () => {
     s = advance(s, morning + 5 * HOUR);
     expect(nest(s).breeding).toBeNull();
     const baby = stateBaby(s)!;
-    expect(baby).toMatchObject({birth, startedAt: morning + BALANCE.breedingDuration, readyAt: morning + BALANCE.breedingDuration + growthDuration(birth.species)});
+    expect(baby).toMatchObject({birth, startedAt: morning + growthDuration(birth.species), readyAt: morning + 2 * growthDuration(birth.species)});
     // Next session: welcome the baby and start another birth at once.
     s = run(s, welcomeOf(s, 'building-1'));
     s = run(s, {type: 'breed', parents: ['rabbit-2', 'rabbit-3']});

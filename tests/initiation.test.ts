@@ -5,6 +5,7 @@ import {act,advance,encodeGame,decodeGame} from '../src/simulation';
 import {GameController} from '../src/application/GameController';
 import {SAVE_KEY} from '../src/persistence/storage';
 import {quoteAcceleration} from '../src/simulation/hearts';
+import {growthDuration} from '../src/config/balance';
 import type {GameState,Command,TimedStage} from '../src/state/types';
 import {babyOf, setBaby, welcomeOf} from './nursery-baby';
 const run=(s:GameState,c:Command,t=s.lastSimulatedAt)=>{const r=act(s,c,t,()=>.1);if(!r.ok)throw Error(r.reason);return r.state;};
@@ -54,7 +55,7 @@ describe('initiation authorizations',()=>{
   const s=breed();let raw=encodeGame(s),fail=false;
   const controller=new GameController({getItem:k=>k===SAVE_KEY?raw:null,setItem:(k,v)=>{if(fail)throw Error('denied');if(k===SAVE_KEY)raw=v;}},()=>0);
   fail=true;expect(controller.perform(aid(s,'building-4','breeding')).ok).toBe(false);
-  expect(controller.getSnapshot().state!.initiation!.used).toEqual([]);expect(controller.getSnapshot().state!.buildings.find(b=>b.kind==='nest')!.breeding!.endsAt).toBe(20*60_000);
+  expect(controller.getSnapshot().state!.initiation!.used).toEqual([]);expect(controller.getSnapshot().state!.buildings.find(b=>b.kind==='nest')!.breeding!.endsAt).toBe(growthDuration(s.buildings.find(b=>b.kind==='nest')!.breeding!.birth.species));
   fail=false;expect(controller.perform(aid(s,'building-4','breeding')).ok).toBe(true);
  });
  it('small production is one exact target and requires manual harvest',()=>{

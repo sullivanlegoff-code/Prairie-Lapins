@@ -1,5 +1,5 @@
 ﻿import {describe,it,expect,vi,afterEach} from 'vitest';
-import {SPECIES,MINUTE,type SpeciesId} from '../src/config/balance';
+import {SPECIES,growthDuration,type SpeciesId} from '../src/config/balance';
 import {breedingWeights,breedingOdds,breedingPool,chooseBirth} from '../src/simulation/breeding';
 import * as progressionQueries from '../src/simulation/progression';
 import {cumulativeLevelXp} from '../src/simulation/progression';
@@ -55,8 +55,8 @@ describe('exact starting element-union pool',()=>{
  });
  it.each(['paille','boudinet']as const)('preserves a previously drawn %s through loading, transfer, growth and welcome',id=>{
   let s=prepared();const r=act(s,{type:'breed',parents:['rabbit-2','rabbit-3']},0,()=>0);if(!r.ok)throw Error(r.reason);s=r.state;
-  const birth=s.buildings.find(b=>b.breeding)!.breeding!.birth;birth.species=id;birth.reservedDiscovery=id==='boudinet';
+  const birth=s.buildings.find(b=>b.breeding)!.breeding!.birth;birth.species=id;birth.reservedDiscovery=id==='boudinet';const job=s.buildings.find(b=>b.breeding)!.breeding!;job.startedAt=0;job.endsAt=growthDuration(id);
   const load=()=>{const d=decodeGame(encodeGame(s));expect(d.ok).toBe(true);if(!d.ok)throw Error(d.reason);expect(d.state).toEqual(s);s=d.state;};load();expect(s.buildings.find(b=>b.breeding)!.breeding!.birth).toEqual(birth);
-  s=sendToNursery(advance(s,20*MINUTE));load();expect(stateBaby(s)!.birth).toEqual(birth);s=advance(s,stateBaby(s)!.readyAt);load();const welcome=act(s,welcomeOf(s,'building-1'),s.lastSimulatedAt);expect(welcome.ok).toBe(true);if(welcome.ok){s=welcome.state;expect(s.rabbits.at(-1)!.species).toBe(id);load();}
+  s=sendToNursery(advance(s,growthDuration(id)));load();expect(stateBaby(s)!.birth).toEqual(birth);s=advance(s,stateBaby(s)!.readyAt);load();const welcome=act(s,welcomeOf(s,'building-1'),s.lastSimulatedAt);expect(welcome.ok).toBe(true);if(welcome.ok){s=welcome.state;expect(s.rabbits.at(-1)!.species).toBe(id);load();}
  });
 });

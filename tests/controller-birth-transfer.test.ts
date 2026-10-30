@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest';
 import {GameController} from '../src/application/GameController';
-import {BALANCE, HOUR} from '../src/config/balance';
+import {HOUR, growthDuration} from '../src/config/balance';
 import {habitatStats} from '../src/simulation/habitats';
 import {nestForParent} from '../src/simulation/breeding';
 import {decodeGame, encodeGame} from '../src/persistence/json';
@@ -17,7 +17,7 @@ describe('visible automatic birth transfer', () => {
     initial.missions.completed.push('to-nursery');
     initial.missions.claimed.push('to-nursery');
     initial.buildings.find(b => b.kind === 'nest')!.breeding = {
-      parents: ['rabbit-2', 'rabbit-6'], startedAt: 0, endsAt: BALANCE.breedingDuration,
+      parents: ['rabbit-2', 'rabbit-6'], startedAt: 0, endsAt: growthDuration('paille'),
       birth: {id: 'birth-7', species: 'paille', guaranteed: false, reservedDiscovery: false},
     };
     const data = new Map([[SAVE_KEY, encodeGame(initial)]]);
@@ -26,7 +26,7 @@ describe('visible automatic birth transfer', () => {
       setItem: (key, value) => {data.set(key, value);}}, () => now);
     const before = controller.getSnapshot().viewRevision;
 
-    now = BALANCE.breedingDuration - 1; controller.refresh();
+    now = growthDuration('paille') - 1; controller.refresh();
     expect(controller.getSnapshot().viewRevision).toBe(before);
     expect(nestForParent(controller.getSnapshot().state!, 'rabbit-2')).toBeDefined();
 

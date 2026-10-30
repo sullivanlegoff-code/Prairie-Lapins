@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {SPECIES, SPECIES_IDS, HOUR, MINUTE, GUARANTEE_SPECIES, TRAVEL} from '../src/config/balance';
+import {SPECIES, SPECIES_IDS, HOUR, GUARANTEE_SPECIES, TRAVEL, growthDuration} from '../src/config/balance';
 import {recipeSource} from '../src/config/species';
 import {decodeGame, encodeGame, SAVE_VERSION} from '../src/persistence/json';
 import {createGame} from '../src/simulation';
@@ -12,7 +12,7 @@ import {mainProgress} from '../src/simulation/missions';
 describe('catalogue v20', () => {
   it('aligns Dinono with type-recipe Epics while preserving its own level and art', () => {
     expect(SPECIES.dinono).toMatchObject({rarity: 'epic', types: ['feu', 'metal'], progression: {unlockLevel: 1}, art: {kind: 'static-sprite', file: 'assets/rabbits/dinono/dinono-v1.png'}});
-    expect(recipeSource(SPECIES.dinono.acquisition)).toEqual({kind: 'recipe', requiredTypes: ['feu', 'metal'], knowledgePrice: 450, minAffection: 6, probability: 5});
+    expect(recipeSource(SPECIES.dinono.acquisition)).toEqual({kind: 'recipe', requiredTypes: ['feu', 'metal'], knowledgePrice: 450, minAffection: 6, probability: 10});
     expect(GUARANTEE_SPECIES).not.toContain('dinono');
     expect(SPECIES_IDS.indexOf('dinono')).toBe(SPECIES_IDS.indexOf('orange') + 1);
   });
@@ -41,7 +41,8 @@ describe('catalogue v20', () => {
     const raw = JSON.parse(encodeGame(scenarioState('nurseryStates', HOUR))); raw.version = 19;
     const baby = raw.buildings.find((b: {kind: string}) => b.kind === 'nursery').nursery.babies[1];
     baby.birth = {...baby.birth, species, guaranteed: true, reservedDiscovery: true};
-    baby.startedAt = HOUR; baby.readyAt = HOUR + 30 * MINUTE;
+    const converted = ({lunettes: 'boudinet', 'feu-glace': 'glassofeu', perroquet: 'phoenix'} as const)[species as 'lunettes'];
+    baby.startedAt = HOUR; baby.readyAt = HOUR + growthDuration(converted);
     const result = decodeGame(JSON.stringify(raw));
     expect(result.ok).toBe(true); if (!result.ok) throw Error(result.reason);
     expect(result.state.discovered).toEqual(raw.discovered);
@@ -75,8 +76,8 @@ describe('catalogue v20', () => {
     old.levelAccessTransition.rights.push(...mapping.map(([id]) => ({target: {family: 'species', id, action: 'breedingResult'}, source: 'legacy-discovery'})));
     const nest = old.buildings.find((b: {kind: string}) => b.kind === 'nest');
     const nursery = old.buildings.find((b: {kind: string}) => b.kind === 'nursery');
-    nest.breeding = {parents: before.slice(0, 2).map(r => r.id), startedAt: HOUR, endsAt: HOUR + 20 * MINUTE, birth: {id: `birth-${old.nextId++}`, species: 'lunettes', guaranteed: true, reservedDiscovery: true}};
-    nursery.nursery = {capacity: 3, babies: mapping.slice(1).map(([id], slot) => ({slot, birth: {id: `birth-${old.nextId++}`, species: id, guaranteed: true, reservedDiscovery: true}, startedAt: HOUR, readyAt: HOUR + 30 * MINUTE}))};
+    nest.breeding = {parents: before.slice(0, 2).map(r => r.id), startedAt: HOUR, endsAt: HOUR + growthDuration('boudinet'), birth: {id: `birth-${old.nextId++}`, species: 'lunettes', guaranteed: true, reservedDiscovery: true}};
+    nursery.nursery = {capacity: 3, babies: mapping.slice(1).map(([id, replacement], slot) => ({slot, birth: {id: `birth-${old.nextId++}`, species: id, guaranteed: true, reservedDiscovery: true}, startedAt: HOUR, readyAt: HOUR + growthDuration(replacement)}))};
     const result = decodeGame(JSON.stringify(old));
     expect(result.ok).toBe(true); if (!result.ok) throw Error(result.reason);
     expect(result.state.version).toBe(SAVE_VERSION);
@@ -95,7 +96,7 @@ describe('catalogue v20', () => {
     const s = scenarioState('nurseryStates', HOUR), raw = JSON.parse(encodeGame(s)); raw.version = 19;
     raw.rabbits[0].species = 'bouee'; raw.discovered.push('bouee');
     const baby = raw.buildings.find((b: {kind: string}) => b.kind === 'nursery').nursery.babies[slot];
-    baby.startedAt = baby.readyAt - 30 * MINUTE;
+    baby.startedAt = baby.readyAt - growthDuration('dinono');
     baby.birth = {...baby.birth, species: 'dinono', guaranteed: true, reservedDiscovery: true};
     const result = decodeGame(JSON.stringify(raw));
     expect(result.ok).toBe(true); if (!result.ok) throw Error(result.reason);

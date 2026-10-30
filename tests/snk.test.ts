@@ -33,7 +33,7 @@ describe('approved SNK content', () => {
     expect(SPECIES.snk).toEqual({name: 'SNK', description, types: ['paille', 'feu'], rarity: 'rare', price: null,
       progression: {unlockLevel: 1}, acquisition: [{kind: 'recipe',guaranteeEligible:true, requiredTypes: ['paille', 'feu'], minAffection: 2}],
       recipe: {requiredTypes: ['paille', 'feu'], minAffection: 2}, art: {kind: 'static-sprite', file: 'assets/rabbits/snk/snk-v1.png', texture: 'rabbit-snk-original-v1', width: 461, height: 369, worldWidth: 56, groundY: 15.5, preloadOrder: 9}});
-    expect(SPECIES.feu.progression.unlockLevel).toBe(5); expect(growthDuration('snk')).toBe(30 * MINUTE);
+    expect(SPECIES.feu.progression.unlockLevel).toBe(5); expect(growthDuration('snk')).toBe(15 * MINUTE);
     expect(RECIPE_PRICES.snk).toBeUndefined(); expect(GIFTED_RECIPES).not.toContain('snk'); expect(GUARANTEE_SPECIES).toContain('snk');
     expect(act(parents(), {type: 'buyRabbit', species: 'snk', enclosureId: 'building-1'}, 0)).toMatchObject({ok: false, reason: 'INVALID_CHOICE'});
   });
@@ -65,7 +65,7 @@ describe('approved SNK content', () => {
     }
   });
   it('keeps a real SNK birth through save/reload without redrawing, transfer, growth and compatible welcome', () => {
-    const s = parents(), rng = vi.fn(() => .99), data = new Map([[SAVE_KEY, encodeGame(s)]]);
+    const nest = growthDuration('snk'), ready = nest + growthDuration('snk'), s = parents(), rng = vi.fn(() => .99), data = new Map([[SAVE_KEY, encodeGame(s)]]);
     const storage = {getItem: (k:string) => data.get(k) ?? null, setItem: (k:string,v:string) => {data.set(k,v);}};
     const controller = new GameController(storage, () => 0, rng);
     expect(controller.perform({type:'breed', parents:['rabbit-2','rabbit-3']}).ok).toBe(true);
@@ -74,15 +74,15 @@ describe('approved SNK content', () => {
     const noDraw = vi.fn(() => 0), reloaded = new GameController(storage, () => 0, noDraw);
     expect(reloaded.getSnapshot().state).toEqual(born); expect(noDraw).not.toHaveBeenCalled(); reloaded.dispose();
     expect(JSON.stringify(collectionView(born))).not.toContain(description);
-    born = reload(sendToNursery(advance(born, 20 * MINUTE)));
-    expect(stateBaby(born)).toEqual({slot:0,birth,startedAt:20*MINUTE,readyAt:50*MINUTE});
-    expect(nurseryView(born,20*MINUTE).babies).toEqual([{slot:0,birthId:birth.id,stage:'growing',startedAt:20*MINUTE,readyAt:50*MINUTE}]);
-    born = reload(advance(born,50*MINUTE)); const home = born.buildings[0];
+    born = reload(sendToNursery(advance(born, nest)));
+    expect(stateBaby(born)).toEqual({slot:0,birth,startedAt:nest,readyAt:ready});
+    expect(nurseryView(born,nest).babies).toEqual([{slot:0,birthId:birth.id,stage:'growing',startedAt:nest,readyAt:ready}]);
+    born = reload(advance(born,ready)); const home = born.buildings[0];
     for (const type of ['paille','feu','universal','neige','metal','vol'] as const) {
       home.habitat!.type = type; expect(habitatEntryReason(born,home,'snk')).toBe(['paille','feu','universal'].includes(type) ? null : 'TYPE_INCOMPATIBLE');
     }
     home.habitat!.type = 'universal'; const xp = born.progression.totalXp;
-    born = reload(run(born,{type:'welcome',enclosureId:home.id,birthId:birth.id},50*MINUTE));
+    born = reload(run(born,{type:'welcome',enclosureId:home.id,birthId:birth.id},ready));
     expect(born.rabbits.at(-1)).toMatchObject({species:'snk',affection:1,enclosureId:home.id}); expect(born.progression.totalXp-xp).toBe(270);
     expect(collectionView(born).find(e => e.known && e.species === 'snk')).toEqual({known:true,species:'snk',name:'SNK',description});
   });

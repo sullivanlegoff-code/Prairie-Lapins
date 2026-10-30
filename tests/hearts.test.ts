@@ -2,7 +2,7 @@ import {cumulativeLevelXp,requiredExtensionLevel} from '../src/simulation/progre
 import {sendToNursery} from './manual-transfer';
 import {regressionStart as createGame} from './regression-start';
 import {describe, expect, it, vi} from 'vitest';
-import {HOUR, MINUTE, ORDERS} from '../src/config/balance';
+import {HOUR, MINUTE, ORDERS, growthDuration} from '../src/config/balance';
 import {act, advance,  decodeGame, encodeGame, pendingDiscoveries} from '../src/simulation';
 import {quoteComplement} from '../src/simulation/actions';
 import {accelerationCost, complementCost, quoteAcceleration} from '../src/simulation/hearts';
@@ -10,6 +10,8 @@ import {GameController} from '../src/application/GameController';
 import {SAVE_KEY, type SaveStorage} from '../src/persistence/storage';
 import type {Command, GameState, PattesCommand, TimedStage} from '../src/state/types';
 import {stateBaby, welcomeOf} from './nursery-baby';
+/** End of the nest's running reproduction: its time is the growth time of its own species. */
+const nestEnd = (s: GameState) => s.buildings.find(b => b.breeding)!.breeding!.endsAt;
 
 const DAY = 24 * HOUR;
 function run(s: GameState, command: Command, now = s.lastSimulatedAt): GameState {
@@ -119,26 +121,30 @@ describe('acceleration transactions', () => {
     expect(rng).not.toHaveBeenCalled();
     expect(stateBaby(result.state)).toBeNull();
     const baby = stateBaby(sendToNursery(result.state))!;
-    expect(baby).toEqual({slot: 0, birth, startedAt: MINUTE, readyAt: 31 * MINUTE});
+    expect(baby).toEqual({slot: 0, birth, startedAt: MINUTE, readyAt: MINUTE + growthDuration(birth.species)});
     expect(result.state.discovered).not.toContain(birth.species); expect(pendingDiscoveries(result.state)).toEqual(["glassofeu"]);
     expect(result.state.pityFailures).toBe(0);
     expect(decodeGame(encodeGame(result.state))).toEqual({ok: true, state: result.state});
   });
   it('allows a running reproduction to finish into an occupied nursery wait, then transfers normally', () => {
-    let s = sendToNursery(advance(run(prepared(), breed),20 * MINUTE));
+    const first = run(prepared(), breed); const T1 = nestEnd(first);
+    let s = sendToNursery(first, T1);
     const firstBaby = stateBaby(s);
     s = run(s, breed); const birth = s.buildings.find(b => b.breeding)!.breeding!.birth;
     s = run(s, speed(s, 'building-5', 'breeding'));
     expect(stateBaby(s)).toEqual(firstBaby);
-    expect(s.buildings.find(b => b.breeding)!.breeding).toMatchObject({endsAt: 20 * MINUTE, birth});
+    expect(s.buildings.find(b => b.breeding)!.breeding).toMatchObject({endsAt: T1, birth});
     expect(quoteAcceleration(s, 'building-5', 'breeding', s.lastSimulatedAt)).toMatchObject({ok: false, reason: 'ACTION_FINISHED'});
     expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: s});
-    s = run(s, welcomeOf(s, 'building-1'), 50 * MINUTE);
+    // Welcome the first baby once it is ready, which frees the single cushion for the waiting birth.
+    const W = firstBaby!.readyAt;
+    s = run(s, welcomeOf(s, 'building-1'), W);
     expect(stateBaby(s)).toBeNull();s=sendToNursery(s);
-    expect(stateBaby(s)).toEqual({slot: 0, birth, startedAt: 50 * MINUTE, readyAt: 80 * MINUTE});
+    expect(stateBaby(s)).toEqual({slot: 0, birth, startedAt: W, readyAt: W + growthDuration(birth.species)});
   });
   it('makes growth ready without welcoming, and refuses accelerating a capacity blockage', () => {
-    let s = sendToNursery(advance(run(prepared(), breed),20 * MINUTE));
+    const first = run(prepared(), breed);
+    let s = sendToNursery(first, nestEnd(first));
     const command = speed(s, 'building-6', 'growth'), paid = run(s, command);
     expect(paid.rabbits).toHaveLength(2); expect(paid.discovered).toEqual(s.discovered);
     expect(stateBaby(paid)!.readyAt).toBe(s.lastSimulatedAt);

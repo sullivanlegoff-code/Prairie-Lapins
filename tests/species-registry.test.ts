@@ -8,19 +8,21 @@ import {requiredHabitatLevel, requiredSpeciesLevel, validateProgressionConfig} f
 
 /** The catalogue as it was before the registry extraction, written out here independently of the code it checks. */
 const IDS = [...EXPECTED_IDS];
+/** Fixed recipe chances in percent, before the affection bonus (owner, 30 October 2026): Epics 10 %, Legendaries 7 %. */
+const OWNER_PROBABILITY: Record<string, number> = {epic: 10, legendary: 7};
 /** Where each species can be obtained, as the game offered it before sources were declared (written out independently). */
 const SHOP = {kind: 'shop', price: 80}, HISTORICAL = {kind: 'historical-breeding'};
 const HISTORICAL_ACQUISITION: Record<string, unknown> = {
   paille: [SHOP, HISTORICAL], neige: [SHOP, HISTORICAL], feu: [{kind:'shop',price:180}, HISTORICAL], 'belier-gris': [{kind:'shop',price:350}, HISTORICAL], volant: [{kind:'shop',price:600}, HISTORICAL],
   'bouee': [{kind: 'recipe', guaranteeEligible: true, requiredTypes: ['feu', 'metal'], minAffection: 2}],
   // Owner's rules of 25 October 2026: Magicien becomes Paille-Metal; Dragon is born only of Dadi x Phoenix.
-  'magicien': [{kind: 'recipe', knowledgePrice: 450, requiredTypes: ['paille', 'metal'], minAffection: 6, probability: 5}],
-  dragon: [{kind: 'recipe', knowledgePrice: 900, minAffection: 10, parents: ['dadi', 'phoenix'], probability: 2}],
+  'magicien': [{kind: 'recipe', knowledgePrice: 450, requiredTypes: ['paille', 'metal'], minAffection: 6, probability: 10}],
+  dragon: [{kind: 'recipe', knowledgePrice: 900, minAffection: 10, parents: ['dadi', 'phoenix'], probability: 7}],
 };
 
 /** Each new Rare is a reproduction-only recipe of its two required elements, with no price, gift, guarantee or fixed percentage. */
 const ACQUISITION: Record<string, unknown> = {...HISTORICAL_ACQUISITION, ...Object.fromEntries(NEW_RARES.map(r => [r.id, [{kind: 'recipe', guaranteeEligible: true, requiredTypes: [...r.requiredTypes], minAffection: STANDARD_RARE.minAffection}]])),
-  ...Object.fromEntries(NEW_SPECIALS.map(s => [s.id, [{kind: 'recipe', knowledgePrice: s.recipe.knowledgePrice, ...(s.recipe.requiredTypes ? {requiredTypes: [...s.recipe.requiredTypes]} : {}), minAffection: s.recipe.minAffection, ...(s.recipe.parents ? {parents: [...s.recipe.parents]} : {}), probability: s.recipe.probability}]]))};
+  ...Object.fromEntries(NEW_SPECIALS.map(s => [s.id, [{kind: 'recipe', knowledgePrice: s.recipe.knowledgePrice, ...(s.recipe.requiredTypes ? {requiredTypes: [...s.recipe.requiredTypes]} : {}), minAffection: s.recipe.minAffection, ...(s.recipe.parents ? {parents: [...s.recipe.parents]} : {}), probability: OWNER_PROBABILITY[s.rarity]}]]))};
 /** Descriptions of the pictures approved on 25 October 2026. */
 const SPECIAL_DESCRIPTIONS: Record<string, string> = {
   magicien: 'Un lapin brun en cape et chapeau de magicien étoilés, baguette à la main.', dragon: 'Un lapin bélier rouge aux écailles de dragon, avec des cornes et des ailes.',
@@ -36,19 +38,19 @@ const HISTORICAL_DEFINITIONS = {
   'belier-gris': {art: EXPECTED_ART['belier-gris'], name: 'Lapin Bélier Gris', types: ['metal'], rarity: 'common', price: 350, recipe: null, acquisition: ACQUISITION['belier-gris'], progression: {unlockLevel: 7}},
   volant: {art: EXPECTED_ART['volant'], name: 'Lapin Volant', types: ['vol'], rarity: 'common', price: 600, recipe: null, acquisition: ACQUISITION['volant'], progression: {unlockLevel: 9}},
   bouee: {art: EXPECTED_ART['bouee'], name: 'Lapin en Bouée', description: 'Un lapin gris en vacances dans une bouée turquoise à pois blancs, avec des lunettes de soleil en cœur roses et un jus de fruit à ombrelle.', types: ['feu', 'metal'], rarity: 'rare', price: null, recipe: {requiredTypes: ['feu', 'metal'], minAffection: 2}, acquisition: ACQUISITION['bouee'], progression: {unlockLevel: 1}},
-  magicien: {art: EXPECTED_ART['magicien'], name: 'Lapin Magicien', description: SPECIAL_DESCRIPTIONS.magicien, types: ['paille', 'metal'], rarity: 'epic', price: null, recipe: {requiredTypes: ['paille', 'metal'], minAffection: 6, probability: 5}, acquisition: ACQUISITION['magicien'], progression: {unlockLevel: 11}},
-  dragon: {art: EXPECTED_ART['dragon'], name: 'Lapin Dragon', description: SPECIAL_DESCRIPTIONS.dragon, types: ['feu', 'vol'], rarity: 'legendary', price: null, recipe: {minAffection: 10, parents: ['dadi', 'phoenix'], probability: 2}, acquisition: ACQUISITION['dragon'], progression: {unlockLevel: 14}},
+  magicien: {art: EXPECTED_ART['magicien'], name: 'Lapin Magicien', description: SPECIAL_DESCRIPTIONS.magicien, types: ['paille', 'metal'], rarity: 'epic', price: null, recipe: {requiredTypes: ['paille', 'metal'], minAffection: 6, probability: 10}, acquisition: ACQUISITION['magicien'], progression: {unlockLevel: 11}},
+  dragon: {art: EXPECTED_ART['dragon'], name: 'Lapin Dragon', description: SPECIAL_DESCRIPTIONS.dragon, types: ['feu', 'vol'], rarity: 'legendary', price: null, recipe: {minAffection: 10, parents: ['dadi', 'phoenix'], probability: 7}, acquisition: ACQUISITION['dragon'], progression: {unlockLevel: 14}},
 };
 const FIXTURE_DEFINITIONS = {...HISTORICAL_DEFINITIONS, ...Object.fromEntries(NEW_RARES.map(r => [r.id, {name: r.name, description: r.description, types: [...r.types], rarity: 'rare', price: null,
   recipe: {requiredTypes: [...r.requiredTypes], minAffection: STANDARD_RARE.minAffection}, acquisition: ACQUISITION[r.id], progression: {unlockLevel: STANDARD_RARE.unlockLevel}, art: r.art}])),
   ...Object.fromEntries(NEW_SPECIALS.map(s => [s.id, {name: s.name, description: SPECIAL_DESCRIPTIONS[s.id], types: [...s.types], rarity: s.rarity, price: null,
-    recipe: {...(s.recipe.requiredTypes ? {requiredTypes: [...s.recipe.requiredTypes]} : {}), minAffection: s.recipe.minAffection, ...(s.recipe.parents ? {parents: [...s.recipe.parents]} : {}), probability: s.recipe.probability},
+    recipe: {...(s.recipe.requiredTypes ? {requiredTypes: [...s.recipe.requiredTypes]} : {}), minAffection: s.recipe.minAffection, ...(s.recipe.parents ? {parents: [...s.recipe.parents]} : {}), probability: OWNER_PROBABILITY[s.rarity]},
     acquisition: ACQUISITION[s.id], progression: {unlockLevel: s.unlockLevel}, art: s.art}]))};
 
 /** Dadi is Feu-Metal since the 27 October economy (docs/economy-current.md); the shared art fixture still describes the former Neige-Vol Dadi, so it is overridden here. */
-const DADI_ACQUISITION = [{kind: 'recipe', knowledgePrice: 450, requiredTypes: ['feu', 'metal'], minAffection: 6, probability: 5}];
+const DADI_ACQUISITION = [{kind: 'recipe', knowledgePrice: 450, requiredTypes: ['feu', 'metal'], minAffection: 6, probability: 10}];
 ACQUISITION.dadi = DADI_ACQUISITION;
-const DEFINITIONS = {...FIXTURE_DEFINITIONS, dadi: {...(FIXTURE_DEFINITIONS as Record<string, Record<string, unknown>>).dadi, types: ['feu', 'metal'], recipe: {requiredTypes: ['feu', 'metal'], minAffection: 6, probability: 5}, acquisition: DADI_ACQUISITION}};
+const DEFINITIONS = {...FIXTURE_DEFINITIONS, dadi: {...(FIXTURE_DEFINITIONS as Record<string, Record<string, unknown>>).dadi, types: ['feu', 'metal'], recipe: {requiredTypes: ['feu', 'metal'], minAffection: 6, probability: 10}, acquisition: DADI_ACQUISITION}};
 
 describe('canonical species registry', () => {
   it('lists every id in historical order followed by the approved Rares (catalogue and cumulative draw)', () => {

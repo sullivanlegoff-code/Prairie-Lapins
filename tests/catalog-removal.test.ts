@@ -119,8 +119,8 @@ describe('distributions: only the removals and their renormalisation', () => {
     expect(breedingOdds(pair[0], pair[1], a, b)).toEqual(Object.fromEntries(Object.entries(expected).map(([id, w]) => [id, w * 100 / total])));
   });
   it('the unions that held Terre no longer exist, and Magicien and Dragon keep their probabilities', () => {
-    expect(breedingOdds('paille', 'belier-gris', 6, 6)).toEqual({roukette: 47.5, boudinet: 47.5, magicien: 5});
-    expect(breedingOdds('dadi', 'phoenix', 10, 10).dragon).toBe(3); expect(breedingOdds('dadi', 'phoenix', 15, 15).dragon).toBe(4); expect(breedingOdds('magicien', 'belier-gris', 6, 6).magicien).toBe(5); expect(breedingOdds('magicien', 'belier-gris', 10, 12).magicien).toBe(7.5); expect(breedingOdds('magicien', 'belier-gris', 15, 14).magicien).toBe(7.5); expect(breedingOdds('magicien', 'belier-gris', 15, 15).magicien).toBe(10);
+    expect(breedingOdds('paille', 'belier-gris', 6, 6)).toEqual({roukette: 45, boudinet: 45, magicien: 10});
+    expect(breedingOdds('dadi', 'phoenix', 10, 10).dragon).toBe(10.5); expect(breedingOdds('dadi', 'phoenix', 15, 15).dragon).toBe(14); expect(breedingOdds('magicien', 'belier-gris', 6, 6).magicien).toBe(10); expect(breedingOdds('magicien', 'belier-gris', 10, 12).magicien).toBe(15); expect(breedingOdds('magicien', 'belier-gris', 15, 14).magicien).toBe(15); expect(breedingOdds('magicien', 'belier-gris', 15, 15).magicien).toBe(20);
     expect(breedingOdds('paille', 'paille')).toEqual({paille: 100}); expect(breedingOdds('neige', 'neige')).toEqual({neige: 100});
   });
 });

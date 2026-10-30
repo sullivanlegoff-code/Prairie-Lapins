@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import html from '../index.html?raw';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
-import {BALANCE, HISTORICAL_COMMON_WEIGHTS, HOUR, MINUTE, SPECIES, SPECIES_IDS, type SpeciesId} from '../src/config/balance';
+import {HISTORICAL_COMMON_WEIGHTS, HOUR, MINUTE, SPECIES, SPECIES_IDS, growthDuration, type SpeciesId} from '../src/config/balance';
 import {createCentreStartGame} from '../src/state/initial';
 import {act, decodeGame, encodeGame} from '../src/simulation';
 import {breedingDistributionWeights, breedingPool, breedingWeights, chooseBirth, commonResultAllowed} from '../src/simulation/breeding';
@@ -94,7 +94,7 @@ describe('Common results require two Common parents of the same single type', ()
     controller.dispose();
   });
   it('keeps exact fixed special chances at all affection bonus thresholds after removing common results', () => {
-    for (const [affection, expected] of [[6, 5], [10, 7.5], [15, 10], [20, 10]] as const) {
+    for (const [affection, expected] of [[6, 10], [10, 15], [15, 20], [20, 20]] as const) {
       const s = parents('paille', 'belier-gris', affection); s.discovered.push('roukette', 'boudinet');
       const p = breedingPool(s, 'paille', 'belier-gris', affection, affection);
       expect(p.weights.magicien! * 100 / p.total).toBe(expected);
@@ -102,23 +102,23 @@ describe('Common results require two Common parents of the same single type', ()
       expect(p.weights.boudinet! * 100 / p.total).toBe((100 - expected) / 2);
       for (const [a, b, id] of [['dadi', 'phoenix', 'dragon'], ['maxou', 'wat-wat', 'requin']] as const) {
         const pool = breedingPool(s, a, b, Math.max(10, affection), Math.max(10, affection));
-        expect(pool.weights[id]! * 100 / pool.total).toBe(affection >= 15 ? 4 : 3);
+        expect(pool.weights[id]! * 100 / pool.total).toBe(affection >= 15 ? 14 : 10.5);
       }
     }
-    // Removing every ordinary candidate cannot turn a fixed 5% special into a 100% result.
+    // Removing every ordinary candidate cannot turn a fixed 10 % special into a 100 % result.
     expect(breedingDistributionWeights('paille', 'belier-gris', 6, 6, id => id === 'magicien')).toEqual({});
   });
   it('removes Common results from mixed pairs while preserving the exact Dragon reserve', () => {
     expect(breedingDistributionWeights('neige', 'pic-pic', 2, 2)).toEqual({'pic-pic': 30, tunini: 30});
     const s = parents('dadi', 'phoenix', 10), pool = breedingPool(s, 'dadi', 'phoenix', 10, 10);
-    expect(pool.weights.dragon! * 100 / pool.total).toBe(3);
+    expect(pool.weights.dragon! * 100 / pool.total).toBe(10.5);
     for (const id of ['neige', 'feu', 'volant'] as const) expect(pool.weights[id]).toBeUndefined();
     expect(SPECIES[chooseBirth(s, 'dadi', 'phoenix', 0, 10, 10).species].rarity).not.toBe('common');
   });
   it.each(['nest', 'nursery'] as const)('welcomes a Common birth already saved in the %s without redrawing or converting it', stage => {
     const s = parents('paille', 'paille'), birth = {id: `birth-${s.nextId++}`, species: 'paille' as const, guaranteed: false, reservedDiscovery: false};
     const nest = s.buildings.find(b => b.kind === 'nest')!, nursery = s.buildings.find(b => b.kind === 'nursery')!;
-    if (stage === 'nest') nest.breeding = {parents: [...command.parents], startedAt: 0, endsAt: BALANCE.breedingDuration, birth};
+    if (stage === 'nest') nest.breeding = {parents: [...command.parents], startedAt: 0, endsAt: growthDuration('paille'), birth};
     else nursery.nursery!.babies.push({slot: 0, birth, startedAt: 0, readyAt: 5 * MINUTE});
     const json = encodeGame(s), rng = vi.fn(() => .99), data = new Map([[SAVE_KEY, json]]);
     const controller = new GameController({getItem: key => data.get(key) ?? null, setItem: (key, value) => { data.set(key, value); }}, () => HOUR, rng);

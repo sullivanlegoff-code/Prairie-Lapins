@@ -45,7 +45,7 @@ describe.each(NEW_RARES.map(sheet => [sheet.id, sheet] as const))('approved Rare
     expect(SPECIES[id]).toEqual({name: sheet.name, description: sheet.description, types: [...sheet.types], rarity: 'rare', price: null,
       progression: {unlockLevel: STANDARD_RARE.unlockLevel}, acquisition: [{kind: 'recipe', guaranteeEligible: true, requiredTypes: [...sheet.requiredTypes], minAffection: STANDARD_RARE.minAffection}],
       recipe: {requiredTypes: [...sheet.requiredTypes], minAffection: STANDARD_RARE.minAffection}, art: sheet.art});
-    expect(growthDuration(id)).toBe(STANDARD_RARE.growthMinutes * MINUTE); expect(RECIPE_PRICES[id]).toBeUndefined();
+    expect([15, 20, 25, 30].map(minutes => minutes * MINUTE)).toContain(growthDuration(id)); expect(RECIPE_PRICES[id]).toBeUndefined();
     expect(GIFTED_RECIPES).not.toContain(id); expect(GUARANTEE_SPECIES).toContain(id);
     expect(act(parentsOf(sheet), {type: 'buyRabbit', species: id, enclosureId: 'building-1'}, 0)).toMatchObject({ok: false, reason: 'INVALID_CHOICE'});
   });
@@ -75,17 +75,17 @@ describe.each(NEW_RARES.map(sheet => [sheet.id, sheet] as const))('approved Rare
     }
   });
   it('saves a single draw without rerolling, transfers, grows, welcomes compatibly and reveals the description only on discovery', () => {
-    const s = parentsOf(sheet), own = segments(sheet).find(segment => segment.id === id)!, roll = (own.start + own.end) / 2;
+    const nest = growthDuration(id), s = parentsOf(sheet), own = segments(sheet).find(segment => segment.id === id)!, roll = (own.start + own.end) / 2;
     s.recipeBook.push(id); expect(JSON.stringify(collectionView(s))).not.toContain(sheet.description);
     const rng = vi.fn(() => roll), data = new Map([[SAVE_KEY, encodeGame(s)]]), storage = {getItem: (k: string) => data.get(k) ?? null, setItem: (k: string, v: string) => {data.set(k, v);}};
     const controller = new GameController(storage, () => 0, rng); expect(controller.perform({type: 'breed', parents: ['rabbit-2', 'rabbit-3']}).ok).toBe(true);
     let born = controller.getSnapshot().state!; const birth = born.buildings.find(b => b.breeding)!.breeding!.birth;
     expect(birth).toMatchObject({species: id, guaranteed: false, reservedDiscovery: true}); expect(rng).toHaveBeenCalledTimes(1); controller.dispose();
     const noDraw = vi.fn(() => 0), reloaded = new GameController(storage, () => 0, noDraw); expect(reloaded.getSnapshot().state).toEqual(born); expect(noDraw).not.toHaveBeenCalled(); reloaded.dispose();
-    expect(JSON.stringify(collectionView(born))).not.toContain(sheet.description); born = reload(sendToNursery(advance(born, 20 * MINUTE)));
-    const grown = (20 + STANDARD_RARE.growthMinutes) * MINUTE;
-    expect(stateBaby(born)).toEqual({slot: 0, birth, startedAt: 20 * MINUTE, readyAt: grown});
-    expect(nurseryView(born, 20 * MINUTE).babies).toEqual([{slot: 0, birthId: birth.id, stage: 'growing', startedAt: 20 * MINUTE, readyAt: grown}]);
+    expect(JSON.stringify(collectionView(born))).not.toContain(sheet.description); born = reload(sendToNursery(advance(born, nest)));
+    const grown = nest + growthDuration(id);
+    expect(stateBaby(born)).toEqual({slot: 0, birth, startedAt: nest, readyAt: grown});
+    expect(nurseryView(born, nest).babies).toEqual([{slot: 0, birthId: birth.id, stage: 'growing', startedAt: nest, readyAt: grown}]);
     born = reload(advance(born, grown)); const home = born.buildings[0];
     for (const type of ['paille', 'feu', 'universal', 'neige', 'metal', 'vol'] as const) {
       home.habitat!.type = type; expect(habitatEntryReason(born, home, id)).toBe([...sheet.types, 'universal'].includes(type) ? null : 'TYPE_INCOMPATIBLE');

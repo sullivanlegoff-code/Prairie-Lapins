@@ -11,6 +11,7 @@ import { decodeGame, encodeGame} from '../src/simulation';
 import {PreferenceStore} from '../src/ui/preferences';
 import html from '../index.html?raw';
 import {breedingPool} from '../src/simulation/breeding';
+import {growthDuration} from '../src/config/balance';
 import {oddsView, rabbitAvailability} from '../src/ui/models';
 import {habitatEntryReason} from '../src/simulation/habitats';
 import {cumulativeLevelXp} from '../src/simulation/progression';
@@ -70,7 +71,7 @@ describe('published laboratory isolation', () => {
       expect(dev.loadScenario(controller,'picPic').ok).toBe(true);
       const parents=pair.map(r=>r.id) as [string,string];expect(controller.perform({type:'breed',parents}).ok).toBe(true);
       const job=controller.getSnapshot().state!.buildings.find(b=>b.breeding)!.breeding!;
-      expect(job.parents).toEqual(parents);expect(job.endsAt-job.startedAt).toBe(20*60_000);
+      expect(job.parents).toEqual(parents);expect(job.endsAt-job.startedAt).toBe(growthDuration(job.birth.species));
     }
     expect(normalSnapshot()).toEqual(before);
   });
@@ -107,7 +108,7 @@ describe('published laboratory isolation', () => {
       expect(dev.loadScenario(controller,'amethyste').ok).toBe(true);
       const parents=pair.map(r=>r.id) as [string,string];expect(controller.perform({type:'breed',parents}).ok).toBe(true);
       const job=controller.getSnapshot().state!.buildings.find(b=>b.breeding)!.breeding!;
-      expect(job.parents).toEqual(parents);expect(job.endsAt-job.startedAt).toBe(20*60_000);
+      expect(job.parents).toEqual(parents);expect(job.endsAt-job.startedAt).toBe(growthDuration(job.birth.species));
     }
     expect(normalSnapshot()).toEqual(before);
   });
@@ -145,7 +146,7 @@ describe('published laboratory isolation', () => {
       const parents = pair.map(r => r.id) as [string,string];
       expect(controller.perform({type:'breed',parents}).ok).toBe(true);
       const job = controller.getSnapshot().state!.buildings.find(b => b.breeding)!.breeding!;
-      expect(job.parents).toEqual(parents); expect(job.endsAt-job.startedAt).toBe(20*60_000);
+      expect(job.parents).toEqual(parents); expect(job.endsAt-job.startedAt).toBe(growthDuration(job.birth.species));
     }
     expect(normalSnapshot()).toEqual(before);
   });
@@ -173,7 +174,7 @@ describe('published laboratory isolation', () => {
     }
     expect(controller.perform({type: 'breed', parents: s.rabbits.map(r => r.id) as [string, string]}).ok).toBe(true);
     const job = controller.getSnapshot().state!.buildings.find(b => b.breeding)!.breeding!;
-    expect(job.endsAt - job.startedAt).toBe(20 * 60_000);
+    expect(job.endsAt - job.startedAt).toBe(growthDuration(job.birth.species));
     expect(normalSnapshot()).toEqual(before);
   });
   it('refuses a normal controller accidentally passed to test commands', () => {

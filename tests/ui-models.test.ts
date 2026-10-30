@@ -136,10 +136,10 @@ describe('UI projections preserve gameplay rules and secrets', () => {
   });
   it('does not expose the species of a hidden birth in nursery or collection models', () => {
     let s = readyState(); const r = act(s, {type: 'collectIncome', id: 'building-1'}, 20 * 60_000); if (!r.ok) throw new Error(r.reason); s = sendToNursery(r.state);
-    expect(nurseryView(s, 20 * 60_000).babies).toEqual([{slot: 0, birthId: expect.any(String), stage: 'growing', startedAt: expect.any(Number), readyAt: 50 * 60_000}]);
+    expect(nurseryView(s, 20 * 60_000).babies).toEqual([{slot: 0, birthId: expect.any(String), stage: 'growing', startedAt: expect.any(Number), readyAt: 35 * 60_000}]); // Left the nest at 20 min; Icy grows 15 min (owner's rule)
     expect(JSON.stringify(nurseryView(s, 20 * 60_000))).not.toContain('icy');
     expect(collectionView(s).filter(e => !e.known).map(({known,name})=>({known,name}))).toEqual(Array.from({length: EXPECTED_IDS.length - 2}, () => ({known: false, name: '???'})));
-    expect(nurseryView(s, 50 * 60_000).babies).toMatchObject([{stage: 'ready', species: 'icy'}]);
+    expect(nurseryView(s, 35 * 60_000).babies).toMatchObject([{stage: 'ready', species: 'icy'}]);
     expect(s.discovered).not.toContain('icy');
   });
   it('shows actual guaranteed odds without revealing an unknown species name', () => {

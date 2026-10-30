@@ -30,7 +30,7 @@ describe('approved Frisket and Icy content',()=>{
       expect(SPECIES[id]).toMatchObject({name:id==='icy'?'Icy':'Frisket',description:descriptions[id],types,rarity:'rare',price:null,progression:{unlockLevel:1},recipe:{requiredTypes:['paille','neige'],minAffection:2}});
       expect(SPECIES[id].acquisition).toEqual([{kind:'recipe',guaranteeEligible:true,requiredTypes:['paille','neige'],minAffection:2}]);
       expect(RECIPE_PRICES[id]).toBeUndefined();expect(GIFTED_RECIPES).not.toContain(id);expect(GUARANTEE_SPECIES).toContain(id);
-      expect(growthDuration(id)).toBe(30*MINUTE);expect(PROGRESSION.xp.birth[SPECIES[id].rarity]).toBe(20);
+      expect(growthDuration(id)).toBe(15*MINUTE);expect(PROGRESSION.xp.birth[SPECIES[id].rarity]).toBe(20);
       expect(SPECIES[id].art).not.toHaveProperty('coat');
       expect(act(parents(),{type:'buyRabbit',species:id,enclosureId:'building-1'},0)).toMatchObject({ok:false,reason:'INVALID_CHOICE'});
     }
@@ -49,15 +49,15 @@ describe('approved Frisket and Icy content',()=>{
     for(const [a,b]of [['paille','feu'],['neige','volant'],['feu','feu']] as const){expect(recipeMatches(id,a,b)).toBe(false);expect(breedingWeights(a,b,20,20)[id]).toBeUndefined();}
   });
   it.each([['frisket',.25],['icy',.95]] as const)('%s survives breeding, transfer, Rare growth, compatible welcome and reload at every stage', (id,roll)=>{
-    const rng=vi.fn(()=>roll);let s=run(parents(),{type:'breed',parents:['rabbit-2','rabbit-3']},0,rng);const birth=s.buildings.find(b=>b.kind==='nest')!.breeding!.birth;
+    const nest=growthDuration(id), ready=nest+growthDuration(id), rng=vi.fn(()=>roll);let s=run(parents(),{type:'breed',parents:['rabbit-2','rabbit-3']},0,rng);const birth=s.buildings.find(b=>b.kind==='nest')!.breeding!.birth;
     expect(birth).toEqual({id:birth.id,species:id,guaranteed:false,reservedDiscovery:true});expect(s.pityFailures).toBe(0);s=reload(s);
     expect(JSON.stringify(collectionView(s))).not.toContain(descriptions[id]);
-    s=reload(sendToNursery(advance(s,20*MINUTE)));expect(stateBaby(s)).toEqual({slot:0,birth,startedAt:20*MINUTE,readyAt:50*MINUTE});
-    expect(nurseryView(s,20*MINUTE).babies).toEqual([{slot:0,birthId:birth.id,stage:'growing',startedAt:20*MINUTE,readyAt:50*MINUTE}]);
-    s=reload(advance(s,50*MINUTE));const home=s.buildings.find(b=>b.kind==='enclosure')!;
+    s=reload(sendToNursery(advance(s,nest)));expect(stateBaby(s)).toEqual({slot:0,birth,startedAt:nest,readyAt:ready});
+    expect(nurseryView(s,nest).babies).toEqual([{slot:0,birthId:birth.id,stage:'growing',startedAt:nest,readyAt:ready}]);
+    s=reload(advance(s,ready));const home=s.buildings.find(b=>b.kind==='enclosure')!;
     for(const type of ['paille','neige','universal','feu']as const){home.habitat!.type=type;expect(habitatEntryReason(s,home,id)).toBe(['paille','neige','universal'].includes(type)?null:'TYPE_INCOMPATIBLE');}
     home.habitat!.type='universal';const xp=s.progression.totalXp;
-    s=reload(run(s,{type:'welcome',enclosureId:home.id,birthId:birth.id},50*MINUTE,rng));
+    s=reload(run(s,{type:'welcome',enclosureId:home.id,birthId:birth.id},ready,rng));
     expect(s.rabbits.at(-1)).toMatchObject({species:id,affection:1,enclosureId:home.id});expect(s.discovered).toContain(id);
     expect(s.progression.totalXp-xp).toBe(270);expect(s.pityFailures).toBe(0);expect(rng).toHaveBeenCalledTimes(2); // the breeding draw, then the welcome's own income roll for this Rare (drawIncomeRoll)
     expect(collectionView(s).find(e=>e.known&&e.species===id)).toEqual({known:true,species:id,name:SPECIES[id].name,description:descriptions[id]});

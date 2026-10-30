@@ -4,7 +4,7 @@ import {quoteAcceleration} from '../src/simulation/hearts';
 import {welcomeDestinations, habitatEntryReason} from '../src/simulation/habitats';
 import {buildingPlacementReason, footprintPlacementReason} from '../src/simulation/placement';
 import {cumulativeLevelXp} from '../src/simulation/progression';
-import {BALANCE, MINUTE} from '../src/config/balance';
+import {MINUTE, growthDuration} from '../src/config/balance';
 import type {HabitatType} from '../src/config/habitats';
 import type {Command, GameState} from '../src/state/types';
 import {representative} from './representative-games';
@@ -34,8 +34,8 @@ function growing() {
   s = run(s, {type: 'breed', parents: ['rabbit-2', snow]});
   // Historical already-drawn Common: retain the original compatibility/capacity regression.
   expect(nest(s).breeding!.birth.species).toBe('icy');
-  nest(s).breeding!.birth.species='neige';nest(s).breeding!.birth.reservedDiscovery=false;nest(s).breeding!.birth.guaranteed=false;
-  s = advance(s, s.lastSimulatedAt + BALANCE.breedingDuration);
+  nest(s).breeding!.birth.species='neige';nest(s).breeding!.birth.reservedDiscovery=false;nest(s).breeding!.birth.guaranteed=false;nest(s).breeding!.endsAt=nest(s).breeding!.startedAt+growthDuration('neige');
+  s = advance(s, s.lastSimulatedAt + growthDuration(nest(s).breeding!.birth.species));
   s = run(s, {type: 'transferBirth', id: nest(s).id, birthId: nest(s).breeding!.birth.id});
   return {s, snowHome, strawHome, snow};
 }
@@ -111,7 +111,7 @@ describe('breeding → nursery → welcome lifecycle', () => {
     s = advance(s, s.lastSimulatedAt + 5 * MINUTE); expect(babyOf(nursery(s))!.readyAt).toBeLessThanOrEqual(s.lastSimulatedAt);
     expect(welcomeAgrees(s)).toEqual([]);
     s = run(s, {type: 'breed', parents: ['rabbit-2', snow]}, s.lastSimulatedAt, .1);
-    s = advance(s, s.lastSimulatedAt + BALANCE.breedingDuration);
+    s = advance(s, s.lastSimulatedAt + growthDuration(nest(s).breeding!.birth.species));
     const waiting = nest(s).breeding!;
     refuses(s, {type: 'transferBirth', id: nest(s).id, birthId: waiting.birth.id}, 'BUSY');
     expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: s});
@@ -126,6 +126,8 @@ describe('breeding → nursery → welcome lifecycle', () => {
     if (!decoded.ok) throw Error(decoded.reason);
     const s = decoded.state;
     expect(babyOf(nursery(s))).toEqual(babyOf(nursery(saved))); expect(nest(s).breeding).toEqual(nest(saved).breeding);
-    expect(welcomeAgrees(s).length).toBeGreaterThan(0);
+    // The fixture's baby (rare, 25 min) is ready at its readyAt, which may be later than the saved clock: advance to it.
+    const ready = advance(s, babyOf(nursery(s))!.readyAt);
+    expect(welcomeAgrees(ready).length).toBeGreaterThan(0);
   });
 });

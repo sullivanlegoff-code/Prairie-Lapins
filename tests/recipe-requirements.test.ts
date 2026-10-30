@@ -18,9 +18,9 @@ afterEach(() => {for (const [id, definition] of saved) SPECIES[id] = definition;
 
 /** Fixed-probability specials, in catalogue order: element recipes (Epics) and exact parents (Legendaries), approved 25 October 2026. */
 const SPECIALS: {id: SpeciesId; probability: number; affection: number; types?: string[]; parents?: [SpeciesId, SpeciesId]}[] = [
-  {id: 'magicien', probability: 5, affection: 6, types: ['paille', 'metal']}, {id: 'dragon', probability: 2, affection: 10, parents: ['dadi', 'phoenix']},
-  {id: 'dadi', probability: 5, affection: 6, types: ['feu', 'metal']}, {id: 'maxou', probability: 5, affection: 6, types: ['neige', 'vol']},
-  {id: 'orange', probability: 5, affection: 6, types: ['paille', 'neige']}, {id: 'dinono', probability: 5, affection: 6, types: ['feu', 'metal']}, {id: 'requin', probability: 2, affection: 10, parents: ['maxou', 'wat-wat']},
+  {id: 'magicien', probability: 10, affection: 6, types: ['paille', 'metal']}, {id: 'dragon', probability: 7, affection: 10, parents: ['dadi', 'phoenix']},
+  {id: 'dadi', probability: 10, affection: 6, types: ['feu', 'metal']}, {id: 'maxou', probability: 10, affection: 6, types: ['neige', 'vol']},
+  {id: 'orange', probability: 10, affection: 6, types: ['paille', 'neige']}, {id: 'dinono', probability: 10, affection: 6, types: ['feu', 'metal']}, {id: 'requin', probability: 7, affection: 10, parents: ['maxou', 'wat-wat']},
 ];
 function historicalWeights(a: SpeciesId, b: SpeciesId, x: number, y: number): Odds {
   const types = new Set([...SPECIES[a].types, ...SPECIES[b].types]), key = [...types].sort().join(',');
@@ -71,10 +71,10 @@ describe('explicit recipe requirements', () => {
     expect(breedingOdds('frisket','bretonette',4,4).bouee).toBeGreaterThan(0);
   });
   it('combines exact parents and elements with AND, symmetrically', () => {
-    override('dragon', {parents: ['phoenix','feu'], requiredTypes: ['vol','feu'], minAffection: 10, probability: 2});
+    override('dragon', {parents: ['phoenix','feu'], requiredTypes: ['vol','feu'], minAffection: 10, probability: 7});
     expect(recipeMatches('dragon','phoenix','feu')).toBe(true); expect(recipeMatches('dragon','feu','phoenix')).toBe(true);
     expect(recipeMatches('dragon','volant','feu')).toBe(false);
-    override('dragon', {parents: ['phoenix','feu'], requiredTypes: ['neige'], minAffection: 10, probability: 2});
+    override('dragon', {parents: ['phoenix','feu'], requiredTypes: ['neige'], minAffection: 10, probability: 7});
     expect(recipeMatches('dragon','phoenix','feu')).toBe(false); expect(recipeMatches('dragon','feu','phoenix')).toBe(false);
     expect(breedingOdds('phoenix','feu',20,20).dragon).toBeUndefined();
   });

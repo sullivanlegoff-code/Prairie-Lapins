@@ -3,7 +3,8 @@ import {welcomeOf} from './nursery-baby';
 import {act,advance,createGame,encodeGame} from '../src/simulation';
 import {GameController} from '../src/application/GameController';
 import {foodXp} from '../src/simulation/progression';
-import {AFFECTION_STATUE,feedCost} from '../src/config/balance';
+import {AFFECTION_STATUE,feedCost,growthDuration} from '../src/config/balance';
+import {accelerationCost} from '../src/simulation/hearts';
 import {emptyBuilding} from '../src/state/initial';
 import {PROGRESSION} from '../src/config/progression';
 import {jobKey} from '../src/simulation/initiation';
@@ -32,9 +33,9 @@ describe('food and launch XP candidates',()=>{
   expect(c.perform(command)).toEqual({ok:false,reason:'ACTION_NOT_SAVED'});expect(c.getSnapshot().state).toEqual(before);expect(events).toHaveLength(0);flags.fail=false;expect(c.perform(command).ok).toBe(true);expect(events).toHaveLength(1);const saved=c.getSnapshot().state;c.dispose();const reload=new GameController({getItem:k=>data.get(k)??null,setItem:(k,v)=>{data.set(k,v);}},()=>0);expect(reload.getSnapshot().state).toEqual(saved);reload.dispose();
  });
  it('paid acceleration ends only the delay, with no extra XP',()=>{
-  let s=run(parents(),breed).state;const nest=s.buildings.find(b=>b.kind==='nest')!;const before=s.progression.totalXp;
-  s=run(s,{type:'accelerate',id:nest.id,stage:'breeding',jobKey:jobKey(nest,'breeding')!,maxHearts:4}).state;
-  expect(s.progression.totalXp).toBe(before);expect(s.hearts).toBe(8);expect(s.buildings.find(b=>b.kind==='nest')!.breeding!.endsAt).toBe(0);
+  let s=run(parents(),breed).state;const nest=s.buildings.find(b=>b.kind==='nest')!;const before=s.progression.totalXp;const cost=accelerationCost(growthDuration(nest.breeding!.birth.species));
+  s=run(s,{type:'accelerate',id:nest.id,stage:'breeding',jobKey:jobKey(nest,'breeding')!,maxHearts:cost}).state;
+  expect(s.progression.totalXp).toBe(before);expect(s.hearts).toBe(12-cost);expect(s.buildings.find(b=>b.kind==='nest')!.breeding!.endsAt).toBe(0);
  });
  it.each(['feed','breed'] as const)('%s XP overflow rolls back herbs, draw and work',type=>{
   const s=parents();s.progression.totalXp=Number.MAX_SAFE_INTEGER;const r=act(s,type==='breed'?breed:{type:'feed',id:'rabbit-2'},0,()=>.1);expect(r).toEqual({ok:false,state:s,reason:'RESOURCE_LIMIT'});

@@ -2,7 +2,7 @@ import {eligibleMainMissionIds} from '../src/simulation/missions';
 import {regressionStart as createGame} from './regression-start';
 import {describe, expect, it} from 'vitest';
 import {act, advance,  decodeGame, encodeGame} from '../src/simulation';
-import {HOUR, MINUTE} from '../src/config/balance';
+import {HOUR, MINUTE, growthDuration} from '../src/config/balance';
 import {MAIN_MISSIONS, MAIN_MISSION_IDS, ACTIVE_MAIN_MISSION_IDS, DAILY_MISSION_IDS, MISSION_CYCLE_DURATION as DAY} from '../src/config/missions';
 import {dailyCycleEnd, emptyDailyProgress, emptyMainEvents, mainProgress} from '../src/simulation/missions';
 import {GameController} from '../src/application/GameController';
@@ -56,7 +56,7 @@ describe('main missions and unique rewards',()=>{
     expect(s.missions.completed).toContain('strong-bonds');expect(mainProgress(s,'first-rare').value).toBe(1); // 'first-rare' is a retired objective: its condition is still read from the discoveries.
     // A rare result still waiting in the nest is not a discovery.
     let waiting=prepared();waiting.rabbits.forEach(r=>r.affection=2);waiting=run(waiting,{type:'breed',parents:['rabbit-2','rabbit-3']});
-    const birth=waiting.buildings.find(b=>b.breeding)!.breeding!.birth;birth.species='boudinet';birth.reservedDiscovery=true;
+    const job=waiting.buildings.find(b=>b.breeding)!.breeding!, birth=job.birth;birth.species='boudinet';birth.reservedDiscovery=true;job.endsAt=job.startedAt+growthDuration('boudinet');
     const loaded=read(encodeGame(waiting),HOUR);
     expect(mainProgress(loaded,'first-rare').value).toBe(0);expect(loaded.discovered).toEqual(waiting.discovered);
   });

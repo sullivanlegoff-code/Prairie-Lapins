@@ -8,7 +8,7 @@ import {describe, expect, it, vi} from 'vitest';
 import {BALANCE, BREEDING_WEIGHTS, HISTORICAL_COMMON_WEIGHTS, LEGACY_SPECIES_IDS, MINUTE, RECIPE_SPECIES, SHOP_SPECIES, SPECIES, SPECIES_IDS, growthDuration, type SpeciesId} from '../src/config/balance';
 import {act, advance,  decodeGame, encodeGame, pendingDiscoveries, rabbitIncome} from '../src/simulation';
 import {breedingOdds, breedingPool, breedingWeights, chooseBirth} from '../src/simulation/breeding';
-import {quoteAcceleration} from '../src/simulation/hearts';
+import {accelerationCost, quoteAcceleration} from '../src/simulation/hearts';
 import {GameController} from '../src/application/GameController';
 import {SAVE_KEY, type SaveStorage} from '../src/persistence/storage';
 import {collectionView, nurseryView, oddsView, probabilityLabel, recipeBook} from '../src/ui/models';
@@ -20,6 +20,8 @@ import {EXPECTED_IDS, EXPECTED_RECIPE_IDS, rareAdditions, shareLabel} from './ra
 
 // These recipe/economy fixtures isolate non-level conditions; level filtering has its dedicated suite.
 function createGame(now=0){const s=legacyGame(now);s.progression={totalXp:cumulativeLevelXp(14),rewardedThroughLevel:14};return s;}
+/** When the nest's birth is finished and may be transferred: the nest time is the growth time of its own species. */
+const nestDone = (s: GameState) => s.buildings.find(b => b.breeding)!.breeding!.endsAt;
 const rares = [
   ['boudinet', 'paille', 'belier-gris'], ['phoenix', 'volant', 'feu'], ['glassofeu', 'feu', 'neige'],
 ] as const;
@@ -59,7 +61,7 @@ describe('species catalogue and acquisition', () => {
     expect(act(s, {type: 'buyRabbit', species, enclosureId: 'building-1'}, 0)).toEqual({ok: false, reason: 'INVALID_CHOICE', state: s});
   });
   it('keeps affection, income, building capacities, costs and established growth times', () => {
-    expect(BALANCE).toMatchObject({minAffection: 1, maxAffection: 20, enclosureCapacity: 3, enclosureCap: BALANCE.enclosureCap, breedingCost: 0, breedingDuration: 20 * MINUTE});
+    expect(BALANCE).toMatchObject({minAffection: 1, maxAffection: 20, enclosureCapacity: 3, enclosureCap: BALANCE.enclosureCap, breedingCost: 0});
     expect([rabbitIncome(1), rabbitIncome(20)]).toEqual([10, 29]);
     for (const id of SHOP_SPECIES) expect(growthDuration(id)).toBe(5 * MINUTE);
   });
@@ -93,7 +95,7 @@ describe('exact breeding pools', () => {
         }
       }
     }
-  }, 30000);
+  }, 120000); // Every pair at four affection levels: about 5 s alone, slower under the full suite.
   it.each(rares)('admits %s only when both parents have affection 2', (rare, a, b) => {
     // Two common parents give only the matching non-common recipes; affection below 2 still excludes them.
     const elements = [...SPECIES[a].types, ...SPECIES[b].types];
@@ -132,7 +134,7 @@ describe('extended guarantee and persisted rare births', () => {
     for (let i = 0; i < 7; i++) {
       s = run(s, breed, s.lastSimulatedAt, rare === 'phoenix' ? .999 : 0);
       expect(s.pityFailures).toBe(i + 1);
-      s = sendToNursery(s,s.lastSimulatedAt+20*MINUTE);
+      s = sendToNursery(s,nestDone(s));
       s = run(s, welcomeOf(s, 'building-1'), s.lastSimulatedAt + growthDuration(knownRare[rare]));
       const duplicate = s.rabbits[2].id; s = run(s, {type: 'release', id: duplicate});
     }
@@ -143,12 +145,12 @@ describe('extended guarantee and persisted rare births', () => {
     const stored = memory(encodeGame(s)), rng = vi.fn(() => 0);
     const c = new GameController(stored.storage, () => s.lastSimulatedAt, rng);
     expect(c.getSnapshot().state).toEqual(s); expect(rng).not.toHaveBeenCalled();
-    const growing = sendToNursery(advance(s, s.lastSimulatedAt + 20 * MINUTE));
+    const growing = sendToNursery(s, nestDone(s));
     const baby = stateBaby(growing)!;
-    expect(baby.birth).toEqual(birth); expect(baby.readyAt - baby.startedAt).toBe(30 * MINUTE);
+    expect(baby.birth).toEqual(birth); expect(baby.readyAt - baby.startedAt).toBe(growthDuration(rare));
     const q = quoteAcceleration(growing, 'building-5', 'growth', growing.lastSimulatedAt, stateBaby(growing)?.birth.id);
-    expect(q).toMatchObject({ok: true, hearts: 6}); if (!q.ok) return;
-    const ready = run(growing, {type: 'accelerate', id: 'building-5', stage: 'growth', jobKey: q.jobKey, maxHearts: 6, birthId: stateBaby(growing)!.birth.id});
+    expect(q).toMatchObject({ok: true, hearts: accelerationCost(growthDuration(rare))}); if (!q.ok) return;
+    const ready = run(growing, {type: 'accelerate', id: 'building-5', stage: 'growth', jobKey: q.jobKey, maxHearts: q.hearts, birthId: stateBaby(growing)!.birth.id});
     expect(ready.hearts).toBe(growing.hearts - q.hearts); expect(ready.rabbits).toHaveLength(2); expect(ready.discovered).not.toContain(rare);
     expect(stateBaby(ready)!.birth).toEqual(birth);
     expect(decodeGame(encodeGame(ready))).toEqual({ok: true, state: ready});
@@ -174,13 +176,13 @@ describe('extended guarantee and persisted rare births', () => {
     expect(odds.entries.every(e => e.probability === shareLabel(1, 3))).toBe(true);
   });
   it('starts the full rare growth only when an occupied nursery becomes available', () => {
-    let s = sendToNursery(advance(run(couple('feu', 'neige'), breed),20 * MINUTE));
+    let s = run(couple('feu', 'neige'), breed); s = sendToNursery(s, nestDone(s));
     s = run(s, breed); const waitingBirth = s.buildings.find(b => b.breeding)!.breeding!.birth;
     s = advance(s, 120 * MINUTE);
     expect(s.buildings.find(b => b.breeding)!.breeding!.birth).toEqual(waitingBirth);
     s = run(s, welcomeOf(s, 'building-1'));
     expect(stateBaby(s)).toBeNull();s=sendToNursery(s);
-    expect(stateBaby(s)).toEqual({slot: 0, birth: waitingBirth, startedAt: 120 * MINUTE, readyAt: 150 * MINUTE});
+    expect(stateBaby(s)).toEqual({slot: 0, birth: waitingBirth, startedAt: 120 * MINUTE, readyAt: 120 * MINUTE + growthDuration(waitingBirth.species)});
   });
 });
 
@@ -193,10 +195,11 @@ describe('catalogue, notebook, visuals and compatibility', () => {
     // Equal public progression gives the same notebook whatever the secret birth.
     a.pityFailures = b.pityFailures;
     expect(recipeBook(a, 0)).toEqual(recipeBook(b, 0)); expect(recipeBook(a, 0)).toHaveLength(EXPECTED_RECIPE_IDS.length);
-    const growing = sendToNursery(advance(b, 20 * MINUTE));
-    expect(nurseryView(growing, 20 * MINUTE).babies).toEqual([{slot: 0, birthId: expect.any(String), stage: 'growing', startedAt: expect.any(Number), readyAt: 50 * MINUTE}]);
+    const T = nestDone(b), species = b.buildings.find(x => x.breeding)!.breeding!.birth.species, readyAt = T + growthDuration(species);
+    const growing = sendToNursery(b, T);
+    expect(nurseryView(growing, T).babies).toEqual([{slot: 0, birthId: expect.any(String), stage: 'growing', startedAt: T, readyAt}]);
     // The last roll draws the last candidate of the Feu + Neige pool: the latest standard Rare of that union, else Feu Glacé.
-    expect(nurseryView(growing, 50 * MINUTE).babies).toMatchObject([{stage: 'ready', species: Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).at(-1) ?? 'glassofeu'}]);
+    expect(nurseryView(growing, readyAt).babies).toMatchObject([{stage: 'ready', species: Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).at(-1) ?? 'glassofeu'}]);
   });
   it('explains feeding, compatible distinct parents, availability and possible versus guaranteed results', () => {
     const s = knowRecipes(couple('feu', 'neige', 1, 4));

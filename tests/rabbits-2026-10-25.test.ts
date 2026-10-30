@@ -10,19 +10,19 @@ import {regressionStart} from './regression-start';
 describe('Epic and Legendary rabbits of 25 October 2026', () => {
   it('gives Requin only to Maxou × Wat Wat at affection 10, in either order, and Dragon only to Dadi × Phoenix', () => {
     expect(recipeMatches('requin', 'maxou', 'wat-wat')).toBe(true); expect(recipeMatches('requin', 'wat-wat', 'maxou')).toBe(true);
-    expect(breedingOdds('maxou', 'wat-wat', 10, 10).requin).toBe(3); expect(breedingOdds('maxou', 'wat-wat', 10, 9).requin).toBeUndefined();
+    expect(breedingOdds('maxou', 'wat-wat', 10, 10).requin).toBe(10.5); expect(breedingOdds('maxou', 'wat-wat', 10, 9).requin).toBeUndefined();
     for (const a of SPECIES_IDS) for (const b of SPECIES_IDS) {
       const pair = [a, b].sort().join(' × ');
       if (pair !== 'maxou × wat-wat') expect(breedingOdds(a, b, 20, 20).requin, pair).toBeUndefined();
       if (pair !== 'dadi × phoenix') expect(breedingOdds(a, b, 20, 20).dragon, pair).toBeUndefined();
     }
   });
-  it('draws the four Epics at 5 % from their two elements, with affection 6 on both parents', () => {
+  it('draws the four Epics at 10 % from their two elements, with affection 6 on both parents', () => {
     // Dadi is Feu-Metal since the 27 October economy (docs/economy-current.md); Maxou stays Neige-Vol.
-    expect(breedingOdds('feu', 'belier-gris', 6, 6)).toMatchObject({dadi: 5, dinono: 5});
-    expect(breedingOdds('neige', 'volant', 6, 6)).toMatchObject({maxou: 5});
-    expect(breedingOdds('paille', 'neige', 6, 6)).toEqual({frisket: 47.5, icy: 47.5, orange: 5});
-    expect(breedingOdds('paille', 'belier-gris', 6, 6).magicien).toBe(5);
+    expect(breedingOdds('feu', 'belier-gris', 6, 6)).toMatchObject({dadi: 10, dinono: 10});
+    expect(breedingOdds('neige', 'volant', 6, 6)).toMatchObject({maxou: 10});
+    expect(breedingOdds('paille', 'neige', 6, 6)).toEqual({frisket: 45, icy: 45, orange: 10});
+    expect(breedingOdds('paille', 'belier-gris', 6, 6).magicien).toBe(10);
     expect(breedingOdds('feu', 'belier-gris', 6, 5).dadi).toBeUndefined();
   });
 });

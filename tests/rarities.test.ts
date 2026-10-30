@@ -9,7 +9,9 @@ import {EXPECTED_IDS, EXPECTED_RARITIES} from './rabbit-art-fixtures';
 /** What the game used before the rarity data moved into one module, written out here independently. */
 const ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
 const LABELS = {common: 'Commun', uncommon: 'Peu commun', rare: 'Rare', epic: 'Épique', legendary: 'Légendaire'};
-const GROWTH_MINUTES = {common: 5, uncommon: 15, rare: 30, epic: 60, legendary: 120};
+const GROWTH_MINUTES = {common: 5, uncommon: 15, rare: 30, epic: 180, legendary: 720};
+/** Rare species have their own fixed time (owner, 28 October 2026): 15, 20, 25 or 30 minutes; the rarity's 30 is only its nominal value. */
+const RARE_GROWTH_MINUTES = [15, 20, 25, 30];
 const BIRTH_XP = {common: 10, uncommon: 45, rare: 20, epic: 110, legendary: 180};
 /** Each species' rarity, as recorded in the catalogue. */
 const RARITY_OF = EXPECTED_RARITIES;
@@ -26,9 +28,12 @@ describe('canonical rarities', () => {
 describe('consumers read the rarities module', () => {
   it('RARITY_NAMES keeps its labels and its order (the catalogue filter lists them in this order)', () => { expect(RARITY_NAMES).toEqual(LABELS); expect(Object.keys(RARITY_NAMES)).toEqual(ORDER); });
   it('growthDuration gives every species the growth of its rarity', () => {
-    for (const id of Object.keys(RARITY_OF) as SpeciesId[]) expect(growthDuration(id), id).toBe(GROWTH_MINUTES[RARITY_OF[id] as keyof typeof GROWTH_MINUTES] * MINUTE);
-    expect(growthDuration('paille')).toBe(5 * MINUTE); expect(growthDuration('boudinet')).toBe(30 * MINUTE);
-    expect(growthDuration('magicien')).toBe(60 * MINUTE); expect(growthDuration('dragon')).toBe(120 * MINUTE);
+    for (const id of Object.keys(RARITY_OF) as SpeciesId[]) {
+      if (RARITY_OF[id] === 'rare') expect(RARE_GROWTH_MINUTES.map(m => m * MINUTE), id).toContain(growthDuration(id));
+      else expect(growthDuration(id), id).toBe(GROWTH_MINUTES[RARITY_OF[id] as keyof typeof GROWTH_MINUTES] * MINUTE);
+    }
+    expect(growthDuration('paille')).toBe(5 * MINUTE); expect(growthDuration('boudinet')).toBe(25 * MINUTE);
+    expect(growthDuration('magicien')).toBe(GROWTH_MINUTES.epic * MINUTE); expect(growthDuration('dragon')).toBe(GROWTH_MINUTES.legendary * MINUTE);
   });
   it('BALANCE keeps its three growth fields', () => { expect([BALANCE.commonGrowth, BALANCE.hybridGrowth, BALANCE.rareGrowth]).toEqual([5 * MINUTE, 15 * MINUTE, 30 * MINUTE]); });
   it('the default progression pays the birth XP of each rarity', () => { expect(PROGRESSION.xp.birth).toEqual(BIRTH_XP); expect(Object.keys(PROGRESSION.xp.birth)).toEqual(ORDER); });

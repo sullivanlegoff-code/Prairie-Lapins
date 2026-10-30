@@ -24,7 +24,7 @@ describe('the breeding engine honours the declared acquisition sources', () => {
   it('controls: two commons omit common results, while mixed parents keep historical weights in order', () => {
     expect(breedingWeights('neige', 'feu', 4, 4)).toEqual({'wat-wat':30,glassofeu:30}); expect(Object.keys(breedingWeights('neige', 'feu', 4, 4))).toEqual(['wat-wat','glassofeu']);
     expect(breedingWeights('neige', 'glassofeu', 4, 4)).toEqual({'wat-wat':30,glassofeu:30});
-    expect(breedingWeights('paille', 'feu', 4, 4)).toEqual({ardent: 30, snk: 30}); expect(breedingOdds('paille', 'belier-gris', 6, 6)).toEqual({roukette: 47.5, boudinet: 47.5, magicien: 5});
+    expect(breedingWeights('paille', 'feu', 4, 4)).toEqual({ardent: 30, snk: 30}); expect(breedingOdds('paille', 'belier-gris', 6, 6)).toEqual({roukette: 45, boudinet: 45, magicien: 10});
   });
   it('excludes a species made shop-only from a historical table, keeping the others in order and weight', () => {
     shopOnly('wat-wat'); expect(breedingWeights('neige', 'glassofeu', 4, 4)).toEqual({glassofeu:30}); expect(Object.keys(breedingWeights('neige', 'glassofeu', 4, 4))).toEqual(['glassofeu']);

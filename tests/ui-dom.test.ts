@@ -26,7 +26,8 @@ import type {Command, GameState} from '../src/state/types';
 import {developmentEnvironment} from '../src/dev/tools';
 import {SAVE_KEY, type SaveStorage} from '../src/persistence/storage';
 import {scenarioState} from '../src/dev/scenarios';
-import {BALANCE, NURSERY, SPECIES, SPECIES_IDS} from '../src/config/balance';
+import {BALANCE, MINUTE, NURSERY, SPECIES, SPECIES_IDS, growthDuration} from '../src/config/balance';
+import {accelerationCost} from '../src/simulation/hearts';
 import {babyOf, setBaby} from './nursery-baby';
 import {EXPECTED_IDS, EXPECTED_RECIPE_IDS, rareAdditions, shareLabel} from './rabbit-art-fixtures';
 import {emptyBuilding} from '../src/state/initial';
@@ -547,11 +548,11 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     button('Préparer cette paire au nid', recipe).click(); button('Croiser', breeding()).click();
     expect(breeding().open).toBe(false); expect(panel().textContent).not.toContain('Glassofeu'); expect(state(controller).pityFailures).toBe(0);
     const saved = decodeGame(data.get(SAVE_KEY)!); expect(saved.ok && saved.state.buildings.find(b => b.breeding)?.breeding?.birth).toMatchObject({species: 'glassofeu', guaranteed: true, reservedDiscovery: true});
-    clock.now += 20 * 60_000; controller.refresh();button('Envoyer dans la nurserie').click(); ui.select({kind: 'building', id: 'building-5'});
-    expect(panel().textContent).not.toContain('Glassofeu'); expect(panel().querySelector('.timer')!.textContent).toBe('30 min 0 s');
-    button('Terminer · 6 cœurs').click(); const dialog = document.getElementById('game-dialog')!;
+    clock.now += growthDuration('glassofeu'); controller.refresh();button('Envoyer dans la nurserie').click(); ui.select({kind: 'building', id: 'building-5'});
+    expect(panel().textContent).not.toContain('Glassofeu'); expect(panel().querySelector('.timer')!.textContent).toBe(`${growthDuration('glassofeu') / MINUTE} min 0 s`);
+    button(`Terminer · ${accelerationCost(growthDuration('glassofeu'))} cœurs`).click(); const dialog = document.getElementById('game-dialog')!;
     expect(dialog.textContent).not.toContain('Glassofeu'); button('Confirmer', dialog).click();
-    expect(state(controller).hearts).toBe(6); expect(state(controller).discovered).not.toContain('glassofeu');
+    expect(state(controller).hearts).toBe(12 - accelerationCost(growthDuration('glassofeu'))); expect(state(controller).discovered).not.toContain('glassofeu');
     expect(panel().textContent).toContain('Glassofeu'); button('Enclos 3 · 0/3').click();
     expect(dialog.textContent).toContain('Nouvelle découverte'); expect(dialog.textContent).toContain('Glassofeu');
     button('Bienvenue dans la prairie', dialog).click(); ui.open({kind: 'collection'});
@@ -718,7 +719,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     const nest = state(controller).buildings.find(b => b.kind === 'nest')!; ui.select({kind: 'building', id: nest.id});
     expect(panel().textContent).not.toContain('Compléter'); crossFromNest(0, 1);
     expect(state(controller).buildings.find(b => b.id === nest.id)!.breeding).not.toBeNull();
-    button('Terminer · 4 cœurs').click(); confirm(); expect(panel().textContent).not.toMatch(/Frisket|Icy/);button('Envoyer dans la nurserie').click();
+    button(`Terminer · ${accelerationCost(growthDuration(state(controller).buildings.find(b => b.kind === 'nest')!.breeding!.birth.species))} cœurs`).click(); confirm(); expect(panel().textContent).not.toMatch(/Frisket|Icy/);button('Envoyer dans la nurserie').click();
     clock.now = 1; const nursery = state(controller).buildings.find(b => b.kind === 'nursery')!;
     ui.select({kind: 'building', id: nursery.id}); expect(panel().textContent).not.toMatch(/Frisket|Icy/);
     expect(panel().textContent).not.toContain('Terminer ·'); // all three enclosure places are occupied
@@ -729,10 +730,12 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     controller.perform({type: 'feed', id: 'rabbit-2'}); controller.perform({type: 'feed', id: 'rabbit-3'});
     controller.perform({type: 'breed', parents: ['rabbit-2', 'rabbit-3']}); ui.select({kind: 'building', id: 'building-4'});
     const dialog = document.getElementById('game-dialog')!;
-    button('Terminer · 4 cœurs').click(); expect(dialog.textContent).not.toContain('Icy'); button('Confirmer', dialog).click();expect(babyOf(state(controller).buildings.find(b=>b.kind==='nursery')!)).toBeNull();button('Envoyer dans la nurserie').click();
+    // Icy is a 15-minute species: both the nest and the nursery acceleration cost the same three hearts.
+    const cost = accelerationCost(growthDuration('icy'));
+    button(`Terminer · ${cost} cœurs`).click(); expect(dialog.textContent).not.toContain('Icy'); button('Confirmer', dialog).click();expect(babyOf(state(controller).buildings.find(b=>b.kind==='nursery')!)).toBeNull();button('Envoyer dans la nurserie').click();
     ui.select({kind: 'building', id: 'building-5'}); expect(panel().textContent).not.toContain('Icy');
-    expect(state(controller).hearts).toBe(8); button('Terminer · 6 cœurs').click(); button('Confirmer', dialog).click();
-    expect(panel().textContent).toContain('Icy'); expect(state(controller).hearts).toBe(2);
+    expect(state(controller).hearts).toBe(12 - cost); button(`Terminer · ${cost} cœurs`).click(); button('Confirmer', dialog).click();
+    expect(panel().textContent).toContain('Icy'); expect(state(controller).hearts).toBe(12 - 2 * cost);
     expect(state(controller).rabbits).toHaveLength(2); expect(state(controller).discovered).not.toContain('icy');
     button('Enclos 1 · 2/3').click(); expect(state(controller).discovered).toContain('icy');
   });
@@ -988,12 +991,12 @@ describe('new collection and exact-species recipe UI', () => {
     button('Réinitialiser les filtres').click(); ui.close(); ui.open({kind: 'collection'});
     expect(panel().querySelectorAll('article')).toHaveLength(EXPECTED_IDS.length);
   });
-  it('explains Dragon species, threshold, duration, exclusion from guarantee and real two-percent pairs', () => {
+  it('explains Dragon species, threshold, duration, exclusion from guarantee and real seven-percent pairs', () => {
     const {controller,ui} = setup(scenarioState('collection',0)); const before = structuredClone(state(controller));
     ui.open({kind:'recipes'}); const card = [...panel().querySelectorAll('article')].find(c=>c.querySelector('h3')?.textContent==='Lapin Dragon')!;
     expect(card.textContent).toContain('Dadi × Phoenix'); expect(card.textContent).toContain('Les types seuls ne suffisent pas');
-    expect(card.textContent).toContain('Affection 10 minimum'); expect(card.textContent).toContain('120 min'); expect(card.textContent).toContain('ne bénéficie pas');
-    expect(card.textContent).toContain('2 %'); expect(state(controller)).toEqual(before);
+    expect(card.textContent).toContain('Affection 10 minimum'); expect(card.textContent).toContain(`${growthDuration('dragon') / MINUTE} min`); expect(card.textContent).toContain('ne bénéficie pas');
+    expect(card.textContent).toContain(`${(SPECIES.dragon.acquisition[0] as {probability: number}).probability} %`); expect(state(controller)).toEqual(before);
     button('Préparer cette paire au nid',card).click(); expect(document.getElementById('panel-title')!.textContent).toBe('Nid');
     expect(state(controller).buildings.find(b=>b.kind==='nest')!.breeding).toBeNull();
     expect(state(controller)).toEqual(before);

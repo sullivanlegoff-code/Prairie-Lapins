@@ -76,7 +76,7 @@ describe('notebook recipe privacy', () => {
     expect(dragon.dataset.recipeKnown).toBe('true');
     expect(dragon.textContent).toContain('Parents requis : Dadi × Phoenix. Les types seuls ne suffisent pas.');
     expect(dragon.textContent).toContain('Affection 10 minimum pour chacun des deux parents.');
-    expect(dragon.textContent).toContain('hors garantie ordinaire : 2 %');
+    expect(dragon.textContent).toContain('hors garantie ordinaire : 7 %');
     expect(button('Préparer cette paire au nid', dragon).disabled).toBe(false);
   });
 });
@@ -84,7 +84,7 @@ describe('notebook recipe privacy', () => {
 describe('nest odds privacy', () => {
   it('groups unknown results, hides the Dragon and keeps the launch available', () => {
     const {ui} = setup(couple(14)); nestWithParents(ui);
-    expect(odds()).toEqual(["Résultats possibles : Phoenix, Dadi et des résultats inconnus.","Phoenix · feu + vol · Rare : 41/300 (≈ 13,67 %)","Dadi · feu + métal · Épique : 7,5 %","Résultats inconnus : 473/600 (≈ 78,83 %)"]);
+    expect(odds()).toEqual(["Résultats possibles : Phoenix, Dadi et des résultats inconnus.","Phoenix · feu + vol · Rare : 119/1200 (≈ 9,92 %)","Dadi · feu + métal · Épique : 15 %","Résultats inconnus : 901/1200 (≈ 75,08 %)"]);
     expect(breeding().textContent).toContain('Résultats possibles : Phoenix, Dadi et des résultats inconnus.');
     for (const hidden of ['Dragon', 'Volant', 'Légendaire', 'Maxou']) { expect(panel().textContent).not.toContain(hidden); expect(breeding().textContent).not.toContain(hidden); }
     expect(panel().textContent).toContain('Chaque recette possède ses propres conditions');
@@ -93,7 +93,7 @@ describe('nest odds privacy', () => {
   });
   it('names a known Dragon and groups an unknown level exclusion', () => {
     const known = setup(couple(14, ['dragon'])); nestWithParents(known.ui);
-    expect(odds()).toContain('Lapin Dragon · feu + vol · Légendaire : 3 %');
+    expect(odds()).toContain('Lapin Dragon · feu + vol · Légendaire : 10,5 %');
     cleanups.splice(0).reverse().forEach(cleanup => cleanup());
     const locked = setup(couple(13)); nestWithParents(locked.ui);
     expect(breeding().textContent).toContain('Certains résultats demandent un niveau supérieur · exclus du tirage actuel.');

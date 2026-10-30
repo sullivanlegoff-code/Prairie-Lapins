@@ -97,9 +97,9 @@ describe('pre-launch result filtering and unchanged fixed probabilities',()=>{
   s.discovered=s.discovered.filter(id=>id!=='glassofeu');s.progression={totalXp:cumulativeLevelXp(6),rewardedThroughLevel:6};pool=breedingPool(s,'feu','neige',4,4);expect(pool.guaranteed).toBe(true);expect(pool.weights).toEqual({'glassofeu':1});
  });
  it('reserves only currently admissible specials and normalizes ordinary results',()=>{
-  expect(odds(10,'paille','belier-gris')).toEqual({roukette:50,boudinet:50});expect(odds(11,'paille','belier-gris')).toEqual({roukette:46.25,boudinet:46.25,magicien:7.5}); // Both parents at affection 10: the epic chance ×1.5.
-  expect(odds(13,'dadi','phoenix').dragon).toBeUndefined();expect(odds(13,'dadi','phoenix').dadi).toBe(7.5);
-  const pair=odds(14,'dadi','phoenix');expect(pair).toMatchObject({dragon:3,dadi:7.5,dinono:7.5});expect(Object.keys(pair)).toHaveLength(9);for(const id of ['amethyste','phoenix','bouee','egiiipte','piment','bretonette'])expect(pair[id]).toBeCloseTo(82/6,10);
+  expect(odds(10,'paille','belier-gris')).toEqual({roukette:50,boudinet:50});expect(odds(11,'paille','belier-gris')).toEqual({roukette:42.5,boudinet:42.5,magicien:15}); // Both parents at affection 10: the epic chance ×1.5.
+  expect(odds(13,'dadi','phoenix').dragon).toBeUndefined();expect(odds(13,'dadi','phoenix').dadi).toBe(15);
+  const pair=odds(14,'dadi','phoenix');expect(pair).toMatchObject({dragon:10.5,dadi:15,dinono:15});expect(Object.keys(pair)).toHaveLength(9);for(const id of ['amethyste','phoenix','bouee','egiiipte','piment','bretonette'])expect(pair[id]).toBeCloseTo(59.5/6,10);
   for(let level=1;level<=14;level++)for(const a of SPECIES_IDS)for(const b of SPECIES_IDS){const result=odds(level,a,b),total=Object.values(result).reduce((n,w)=>n+w,0);if(total)expect(total).toBeCloseTo(100,10);}
  },20000);
  it('launch XP cannot alter this birth, even if it crosses a threshold',()=>{
