@@ -5,6 +5,7 @@ import {describe,it,expect} from 'vitest';
 import fixture from './fixtures/economy-v16.json';
 import {decodeGame,encodeGame} from '../src/persistence/json';
 import {act,advance} from '../src/simulation';
+import {emptyDailyProgress} from '../src/simulation/missions';
 import {cumulativeLevelXp,progressionFromXp,nextLevelCost} from '../src/simulation/progression';
 import {PROGRESSION} from '../src/config/progression';
 import {GUARANTEE_SPECIES,HOUR,ORDERS,RARE_INCOME_BONUS_SPECIES,SPECIES,SPECIES_IDS} from '../src/config/balance';
@@ -50,7 +51,7 @@ describe('persistent economy transactions',()=>{
   }
  });
  it('can complete the breeding daily when all individuals have affection 20',()=>{
-  const s=migrated();s.buildings.find(b=>b.kind==='nest')!.breeding=null;s.rabbits.forEach(r=>r.affection=20);s.missions.daily.progress={'collect-pattes':100,'collect-grass':40,'gain-affection':0};s.missions.daily.claimed=['collect-pattes','collect-grass'];delete s.missions.daily.nextAt;
+  const s=migrated();s.buildings.find(b=>b.kind==='nest')!.breeding=null;s.rabbits.forEach(r=>r.affection=20);s.missions.daily.progress={...emptyDailyProgress()};s.missions.daily.claimed=[];delete s.missions.daily.nextAt;
   // A valid mixed pair keeps the daily test independent of the new refusal for two identical Commons.
   s.rabbits[1].species='frisket';s.discovered.push('frisket');
   const r=act(s,{type:'breed',parents:['rabbit-2','rabbit-6']},s.lastSimulatedAt,()=>0);expect(r.ok).toBe(true);expect(r.state.missions.daily.progress['gain-affection']).toBe(1);

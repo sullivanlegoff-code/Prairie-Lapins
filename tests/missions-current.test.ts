@@ -4,12 +4,12 @@ import {welcomeOf} from './nursery-baby';
 import {describe,it,expect} from 'vitest';
 import {act,advance,encodeGame,decodeGame} from '../src/simulation';
 import {activeMainMissions,emptyMainEvents} from '../src/simulation/missions';
-import {INITIAL_MISSION_IDS,MAIN_MISSIONS} from '../src/config/missions';
+import {DAILY_MISSIONS,INITIAL_MISSION_IDS,MAIN_MISSIONS} from '../src/config/missions';
 import {MINUTE,HOUR,SPECIES} from '../src/config/balance';
 import {habitatPrice} from '../src/config/habitats';
 import {buildingPlacementReason} from '../src/simulation/placement';
 import {progressionFromXp} from '../src/simulation/progression';
-import {dailyCycleStart} from '../src/simulation/missions';
+import {dailyCycleStart,dailyMissionsOf} from '../src/simulation/missions';
 import type {Command,GameState} from '../src/state/types';
 const run=(s:GameState,c:Command,at=s.lastSimulatedAt,roll=.9)=>{const r=act(s,c,at,()=>roll);if(!r.ok)throw Error(`${c.type}: ${r.reason}`);return r.state;};
 const reload=(s:GameState)=>{const r=decodeGame(encodeGame(s));if(!r.ok)throw Error(r.reason);return r.state;};
@@ -39,7 +39,11 @@ describe('current mission journey',()=>{
   // Existing normal games can reach level 5 through daily income claims, without buying or discovering Feu.
   for(let day=1;day<=3;day++){
    s=run(s,{type:'collectIncome',id:'building-1'},day*24*HOUR);
-   s=run(s,{type:'claimDailyMission',id:'collect-pattes',cycleStart:dailyCycleStart(s)});
+   // Whichever of the three shown missions comes first, one claim a day is what grants the XP checked here; its progress is
+   // set by hand, as the food top-up is: this journey checks the XP of the claims, not each mission's economy.
+   const id=dailyMissionsOf(s)[0];
+   s.missions.daily.progress[id]=DAILY_MISSIONS[id].target;
+   s=run(s,{type:'claimDailyMission',id,cycleStart:dailyCycleStart(s)});
   }
   expect(progressionFromXp(s.progression.totalXp).level).toBe(5);
   const spot=Array.from({length:48*48},(_,i)=>({x:i%48,y:Math.floor(i/48)})).find(p=>!buildingPlacementReason(s,p.x,p.y))!;

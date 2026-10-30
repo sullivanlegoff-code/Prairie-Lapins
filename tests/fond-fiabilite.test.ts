@@ -4,10 +4,10 @@ import {GameController} from '../src/application/GameController';
 import {act, advance, decodeGame, encodeGame} from '../src/simulation';
 import {emptyBuilding} from '../src/state/initial';
 import {HOUR, MINUTE, growthDuration} from '../src/config/balance';
-import {DAILY_MISSION_IDS, MAIN_MISSIONS} from '../src/config/missions';
+import {DAILY_MISSIONS, MAIN_MISSIONS} from '../src/config/missions';
 import {extensionPrice} from '../src/config/land';
 import {cumulativeLevelXp} from '../src/simulation/progression';
-import {dailyCycleEnd, dailyCycleStart} from '../src/simulation/missions';
+import {dailyCycleEnd, dailyCycleStart, dailyMissionsOf} from '../src/simulation/missions';
 import {rabbitIncome} from '../src/simulation/time';
 import {initiationAvailable, jobKey} from '../src/simulation/initiation';
 import {nurseryUnlockQuote} from '../src/simulation/nursery';
@@ -34,7 +34,8 @@ function ready(): GameState {
   s.decorations.push({id: 'decoration-10', catalogId: 'bush', location: {kind: 'outside', x: 16, y: 28, rotation: 0}});
   s.nextHeartGiftAt = NOW;
   s.missions.completed.push('first-meal');
-  s.missions.daily.progress = {'collect-pattes': 100, 'collect-grass': 40, 'gain-affection': 3};
+  // Day 0 shows three missions: each one is filled to its target, so that a claim is valid.
+  for (const id of dailyMissionsOf(s)) s.missions.daily.progress[id] = DAILY_MISSIONS[id].target;
   return advance(s, NOW);
 }
 function prepare(type: Command['type']): {state: GameState; command: Command} {
@@ -59,14 +60,14 @@ function prepare(type: Command['type']): {state: GameState; command: Command} {
     sellDecoration: {type: 'sellDecoration', id: 'decoration-10'},
     storeDecorationsInCell: {type: 'storeDecorationsInCell', x: 4, y: 7},
     claimMainMission: {type: 'claimMainMission', id: 'first-meal'},
-    claimDailyMission: {type: 'claimDailyMission', id: 'collect-pattes', cycleStart: dailyCycleStart(s)},
+    claimDailyMission: {type: 'claimDailyMission', id: dailyMissionsOf(s)[0], cycleStart: dailyCycleStart(s)},
     claimDailyBonus: {type: 'claimDailyBonus', cycleStart: dailyCycleStart(s)},
     claimHearts: {type: 'claimHearts'},
     buyRecipe: {type: 'buyRecipe', species: 'dragon'},
     unlockNurserySlot: {type: 'unlockNurserySlot', fromCapacity: 1, expectedCost: nurseryUnlockQuote(s.buildings[2])!.hearts},
   };
   if (type === 'startOrder' || type === 'payWithHearts') s.buildings.find(b => b.id === id)!.order = null;
-  if (type === 'claimDailyBonus') s.missions.daily.claimed = [...DAILY_MISSION_IDS];
+  if (type === 'claimDailyBonus') s.missions.daily.claimed = [...dailyMissionsOf(s)];
   if (type === 'payWithHearts') {
     s.pattes = 0;
     return {state: s, command: {type, action: {type: 'startOrder', id, recipe: 'foin'}, maxHearts: 100, maxPattes: 0}};

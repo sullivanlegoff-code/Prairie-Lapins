@@ -4,6 +4,7 @@ import {act, advance, createGame, decodeGame, encodeGame} from '../src/simulatio
 import {GameController} from '../src/application/GameController';
 import {MAX_JSON_LENGTH} from '../src/persistence/json';
 import {DAILY_MISSIONS} from '../src/config/missions';
+import {dailyMissionsOf} from '../src/simulation/missions';
 import {HOUR} from '../src/config/balance';
 
 afterEach(() => vi.restoreAllMocks());
@@ -13,8 +14,10 @@ function memory(raw: string | null = null) {
 }
 function claimedDaily(now: number) {
   const state = createGame(now);
-  state.missions.daily.progress['collect-pattes'] = DAILY_MISSIONS['collect-pattes'].target;
-  const result = act(state, {type: 'claimDailyMission', id: 'collect-pattes', cycleStart: now}, now);
+  // The first mission shown on this day is open from the start: fill it, then claim it.
+  const id = dailyMissionsOf(state)[0];
+  state.missions.daily.progress[id] = DAILY_MISSIONS[id].target;
+  const result = act(state, {type: 'claimDailyMission', id, cycleStart: now}, now);
   if (!result.ok) throw Error(result.reason);
   return result.state;
 }
@@ -23,7 +26,7 @@ it('keeps a claimed daily encodable and reloadable after a one-day clock reversa
   const storage = memory(encodeGame(initial)), controller = new GameController(storage, () => clock.now);
   clock.now -= 24 * HOUR;
   const rebased = advance(initial, clock.now);
-  expect(rebased.missions.daily.nextAt).toBe(initial.missions.daily.nextAt! - 24 * HOUR);
+  expect(rebased.missions.daily.referenceAt).toBe(initial.missions.daily.referenceAt - 24 * HOUR);
   expect(decodeGame(encodeGame(rebased))).toEqual({ok: true, state: rebased});
   expect(controller.perform({type: 'renameRabbit', id: initial.rabbits[0].id, name: 'Nuage'}).ok).toBe(true);
   const saved = controller.getSnapshot().state;

@@ -3,8 +3,8 @@ import {previousStart as createGame} from './regression-start';
 import {describe,it,expect} from 'vitest';
 import {act,advance,encodeGame,decodeGame} from '../src/simulation';
 import {HOUR,MINUTE} from '../src/config/balance';
-import {INITIAL_MISSION_IDS,DAILY_MISSION_IDS,MAIN_MISSIONS} from '../src/config/missions';
-import {dailyCycleStart} from '../src/simulation/missions';
+import {INITIAL_MISSION_IDS,DAILY_MISSIONS,MAIN_MISSIONS} from '../src/config/missions';
+import {dailyCycleStart,dailyMissionsOf} from '../src/simulation/missions';
 import {quoteAcceleration} from '../src/simulation/hearts';
 import type {Command,TimedStage} from '../src/state/types';
 import {babyOf, welcomeOf} from './nursery-baby';
@@ -33,10 +33,10 @@ describe('initial budget and explicit 24h visit schedules',()=>{
   for(const roll of [.1,.65])for(const visits of [[2,4,8,12,18,24],[8,24]]){
    const j=journey(aided,roll);const run=j.run,current=j.current;const birth=j.s.rabbits.at(-1)!.id;
    function claimBranches(){for(const id of ['varied-family','two-habitats','strong-bonds'] as const)if(current().missions.completed.includes(id)&&!current().missions.claimed.includes(id))run({type:'claimMainMission',id});}
-   function claimDaily(){for(const id of DAILY_MISSION_IDS){const s=current();if(s.missions.daily.progress[id]>=({ 'collect-pattes':100,'collect-grass':40,'gain-affection':3}[id])&&!s.missions.daily.claimed.includes(id))run({type:'claimDailyMission',id,cycleStart:dailyCycleStart(s)});}if(current().missions.daily.claimed.length===3&&!current().missions.daily.bonusClaimed)run({type:'claimDailyBonus',cycleStart:dailyCycleStart(current())});}
+   function claimDaily(){for(const id of dailyMissionsOf(current())){const s=current();if(s.missions.daily.progress[id]>=DAILY_MISSIONS[id].target&&!s.missions.daily.claimed.includes(id))run({type:'claimDailyMission',id,cycleStart:dailyCycleStart(s)});}if(current().missions.daily.claimed.length===3&&!current().missions.daily.bonusClaimed)run({type:'claimDailyBonus',cycleStart:dailyCycleStart(current())});}
    for(let n=0;n<4;n++)run({type:'feed',id:birth});
    run({type:'buyBuilding',kind:'enclosure',habitatType:'paille',x:26,y:24});const home=current().buildings.at(-1)!.id;run({type:'buyRabbit',species:'paille',enclosureId:home});claimBranches();claimDaily();
-   const starting={pattes:current().pattes,grass:current().grass,hearts:current().hearts};expect([starting.pattes,starting.grass]).toEqual([760,78]); // Final tutorial reward increased by 580 pattes; four meals cost 28 food (2+4+8+14).
+   const starting={pattes:current().pattes,grass:current().grass,hearts:current().hearts};expect([starting.pattes,starting.grass]).toEqual([870,98]); // Final tutorial reward increased by 580 pattes; four meals cost 28 food (2+4+8+14). The three shown daily claims pay 110 pattes (feed 30, welcome 40, affection 40) and the cycle bonus 20 food.
    run({type:'startOrder',id:j.farmId,recipe: 'pissenlit'});const snapshots:unknown[]=[];
    // Rare natural growth ends at minute 55; the next 15-minute farm order is ready at the 2h visit.
    for(const hour of visits){j.setTime(hour*HOUR);j.resume();for(const b of current().buildings.filter(b=>b.kind==='enclosure'))run({type:'collectIncome',id:b.id});run({type:'collectOrder',id:j.farmId});claimDaily();if(hour===24)run({type:'claimHearts'});else run({type:'startOrder',id:j.farmId,recipe: 'pissenlit'});snapshots.push({hour,pattes:current().pattes,grass:current().grass,hearts:current().hearts});}

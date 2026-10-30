@@ -54,7 +54,7 @@ describe('pure player progression v17',()=>{
   expect(PROGRESSION.xp.birth).toEqual({common:10,uncommon:45,rare:20,epic:110,legendary:180});expect(PROGRESSION.xp.breedingLaunch).toBe(5);
   expect(foodXp(0)).toBe(6);expect(foodXp(2)).toBe(6);expect(foodXp(10)).toBe(6);expect(foodXp(15)).toBe(13);expect(foodXp(20)).toBe(10);
   expect(DECORATION_IDS.map(id=>firstDecorationPlacementXp(id))).toEqual(DECORATION_IDS.map(()=>10));
-  expect(missionClaimXp('main','first-birth')).toBe(40);expect(missionClaimXp('daily','collect-grass')).toBe(50);expect(PROGRESSION.xp.claims.dailyBonus).toBe(0);
+  expect(missionClaimXp('main','first-birth')).toBe(40);expect(missionClaimXp('daily','collect-grass')).toBe(50);expect(PROGRESSION.xp.claims.dailyBonus).toBe(100);
   const c=configure({xp:{...PROGRESSION.xp,claims:{...PROGRESSION.xp.claims,mainExceptions:{'welcome-snow':0},dailyExceptions:{'collect-grass':15}}}});
   expect(missionClaimXp('main','welcome-snow',c)).toBe(0);expect(missionClaimXp('daily','collect-grass',c)).toBe(15);
  });

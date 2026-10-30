@@ -4,6 +4,8 @@ import {cumulativeLevelXp} from '../src/simulation/progression';
 import * as progressionApi from '../src/simulation/progression';
 import {foodXp} from '../src/simulation/progression';
 import {PROGRESSION} from '../src/config/progression';
+import {DAILY_MISSIONS} from '../src/config/missions';
+import {dailyCycleEnd, dailyMissionsFor, dailyMissionsOf} from '../src/simulation/missions';
 import {createGame as soloStart} from '../src/simulation';
 import {createCentreStartGame} from '../src/state/initial';
 import {previousStart as currentStart} from './regression-start';
@@ -32,7 +34,6 @@ import {babyOf, setBaby} from './nursery-baby';
 import {EXPECTED_IDS, EXPECTED_RECIPE_IDS, rareAdditions, shareLabel} from './rabbit-art-fixtures';
 import {emptyBuilding} from '../src/state/initial';
 import {habitatCap} from '../src/config/habitats';
-import {FRIENDSHIP_TIME} from '../src/simulation/cozy';
 
 const cleanups: (() => void)[] = [];
 it('buys, places and selects Cuisine without opening the cooking activity', () => {
@@ -93,28 +94,23 @@ it('builds no pairs in collapsed sections, shows three on opening, and reveals t
   clock.now = 3_600_000; controller.refresh();
   expect(details().querySelectorAll('.recipe-pair')).toHaveLength(6);
 });
-it('refreshes an open daily panel at its isolated next opening', () => {
+it('refreshes an open daily panel when the cycle renews', () => {
   const initial = createGame(0);
   for (const b of initial.buildings) if (b.habitat) b.incomeUnits = habitatCap(b.habitat.type, b.habitat.level) * 3_600_000;
-  initial.missions.daily.progress['collect-pattes'] = 100;
-  const claimed = act(initial, {type: 'claimDailyMission', id: 'collect-pattes', cycleStart: 0}, 0);
+  const id = dailyMissionsOf(initial)[0];
+  initial.missions.daily.progress[id] = DAILY_MISSIONS[id].target;
+  const claimed = act(initial, {type: 'claimDailyMission', id, cycleStart: 0}, 0);
   if (!claimed.ok) throw Error(claimed.reason);
   const {controller, clock} = setup(claimed.state);
-  const end = claimed.state.missions.daily.nextAt!;
+  const end = dailyCycleEnd(claimed.state);
   clock.now = end - 1; controller.refresh();
   document.getElementById('open-missions')!.click(); button('Quotidiennes').click();
-  expect(panel().querySelector('[data-mission="collect-grass"]')!.textContent).toContain('Ouverture dans :');
+  expect(panel().querySelector(`[data-mission="${id}"]`)!.textContent).toContain('Réclamée');
   const revision = controller.getSnapshot().viewRevision;
-  const before = controller.getSnapshot().state!;
   clock.now = end; controller.refresh();
-  // Shared friendship time keeps accumulating during the elapsed interval (cozy.ts advanceFriendships), capped at FRIENDSHIP_TIME.
-  const elapsed = end - before.lastSimulatedAt;
-  const bonds = before.cozy!.bonds.map(b => ({...b, duration: Math.min(FRIENDSHIP_TIME, b.duration + elapsed)}));
-  expect(controller.getSnapshot().state).toEqual({...before, lastSimulatedAt: end, cozy: {...before.cozy!, bonds}});
   expect(controller.getSnapshot().viewRevision).toBe(revision + 1);
-  const card = panel().querySelector('[data-mission="collect-grass"]')!;
-  expect(card.textContent).not.toContain('Ouverture dans :');
-  expect(card.querySelector('.mission-claim')).not.toBeNull();
+  expect(state(controller).missions.daily).toMatchObject({cycleIndex: 1, claimed: []});
+  for (const shown of dailyMissionsOf(state(controller))) expect(panel().querySelector(`[data-mission="${shown}"]`)!.textContent).toContain('Progression : 0 /');
 });
 it('keeps DOM on an invisible time tick and updates income when a whole unit becomes collectable', () => {
   const {ui, controller, clock} = setup(); ui.open({kind:'building', id:'building-1'});
@@ -381,37 +377,46 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     button('Nourrir · 2 nourriture').click();expect(state(controller).rabbits.map(r=>r.affection)).toEqual([2,2]);
     document.getElementById('open-missions')!.click();expect(button('Réclamer · + 20 pièces').disabled).toBe(false);
   });
-  it('claims the three daily rewards one session at a time and the separate bonus through UI, then expires the cycle', () => {
+  it('claims the three daily rewards in any order through UI, then the bonus, then expires the cycle', () => {
     const initial=createGame(0);initial.grass=100;
     const {controller,ui,clock}=setup(initial);place(ui,'farm',1,0);
     const hour=3600_000,daily=()=>{document.getElementById('open-missions')!.click();button('Quotidiennes').click();};
+    const card=(id:string)=>panel().querySelector<HTMLElement>(`[data-mission="${id}"]`)!;
+    const BONUS='Réclamer · + 2 cœurs · + 20 nourriture';
     controller.perform({type:'startOrder',id:'building-4',recipe: 'pissenlit'});
-    // Morning: only the first mission is open; the harvest of this session does not count for the second.
+    // Morning: the three shown missions of day 0 (feed-rabbit, welcome-baby, gain-affection) are all open; the harvest counts for none of them.
     clock.now=5*hour;controller.perform({type:'collectIncome',id:'building-1'});controller.perform({type:'collectOrder',id:'building-4'});
     for(let i=0;i<3;i++)controller.perform({type:'feed',id:'rabbit-2'});controller.perform({type:'feed',id:'rabbit-3'});for(const [kind,x] of [['nest',26],['nursery',18]] as const)controller.perform({type:'placeStarterBuilding',kind,x,y:24});
     daily();
-    const card=(id:string)=>panel().querySelector<HTMLElement>(`[data-mission="${id}"]`)!;
     expect(panel().textContent).toContain('expirent');expect(panel().querySelector('.timer')!.textContent).toBe('19 h 0 min');
-    expect(card('collect-grass')).toBeNull();expect(panel().textContent).toContain('Ensuite : Une réserve de nourriture · Lancer une reproduction');
-    expect(button('Réclamer · + 2 cœurs',card('daily-bonus')).disabled).toBe(true);
-    button('Réclamer · + 60 pièces',card('collect-pattes')).click();
-    expect(card('collect-grass').textContent).toContain('Ouverture dans :');expect(card('collect-grass').querySelector('.timer')!.textContent).toBe('4 h 0 min');
-    expect(card('collect-grass').querySelector('.mission-claim')).toBeNull();
-    // Midday: the second mission opens 4 hours after the claim.
-    clock.now=9*hour;controller.refresh();controller.perform({type:'startOrder',id:'building-4',recipe: 'pissenlit'});
-    clock.now=9.5*hour;controller.perform({type:'collectOrder',id:'building-4'});daily();
-    button('Réclamer · + 30 nourriture',card('collect-grass')).click();
-    // Evening: the reproduction.
-    clock.now=13.5*hour;controller.refresh();controller.perform({type:'breed',parents:['rabbit-2','rabbit-3']});daily();
+    expect(card('collect-grass')).toBeNull();expect(card('collect-pattes')).toBeNull();
+    expect(card('feed-rabbit').textContent).toContain('Progression : 3 / 3');
+    expect(button(BONUS,card('daily-bonus')).disabled).toBe(true);
+    button('Réclamer · + 30 pièces',card('feed-rabbit')).click();
+    expect(button('Récompense réclamée',card('feed-rabbit')).disabled).toBe(true);
+    // Midday: the reproduction counts for gain-affection only.
+    clock.now=9*hour;controller.refresh();controller.perform({type:'breed',parents:['rabbit-2','rabbit-3']});daily();
+    expect(card('gain-affection').textContent).toContain('Progression : 1 / 1');
     button('Réclamer · + 40 pièces',card('gain-affection')).click();
-    expect(state(controller).missions.daily.progress).toEqual({"collect-grass":40,"collect-pattes":100,"gain-affection":1});
-    const bonus=button('Réclamer · + 2 cœurs',card('daily-bonus'));bonus.click();bonus.click();
-    expect(state(controller).hearts).toBe(15);expect(state(controller).nextHeartGiftAt).toBe(24*hour);
-    expect(card('daily-bonus')).toBeNull();expect(panel().querySelectorAll('article')).toHaveLength(0);
-    clock.now=24*hour;controller.refresh();bonus.click();
-    expect(state(controller).hearts).toBe(15);expect(state(controller).missions.daily.cycleIndex).toBe(1);
-    expect(card('collect-pattes').textContent).toContain('Progression : 0 / 100');
-    expect(button('Réclamer · + 2 cœurs',card('daily-bonus')).disabled).toBe(true);
+    // Afternoon: the nest birth goes to the nursery, then is welcomed once ready; the welcome counts for welcome-baby only.
+    const nestBuilding=state(controller).buildings.find(b=>b.kind==='nest')!, job=nestBuilding.breeding!;
+    clock.now=job.endsAt;controller.refresh();controller.perform({type:'transferBirth',id:nestBuilding.id,birthId:job.birth.id});
+    const baby=state(controller).buildings.find(b=>b.kind==='nursery')!.nursery!.babies[0];
+    clock.now=baby.readyAt;controller.refresh();controller.perform({type:'welcome',enclosureId:'building-1',birthId:job.birth.id});
+    daily();
+    expect(card('welcome-baby').textContent).toContain('Progression : 1 / 1');
+    button('Réclamer · + 40 pièces',card('welcome-baby')).click();
+    // The three are claimed: the bonus opens and pays once.
+    const grass=state(controller).grass, bonus=button(BONUS,card('daily-bonus'));
+    expect(bonus.disabled).toBe(false);
+    bonus.click();
+    expect(state(controller).missions.daily.bonusClaimed).toBe(true);expect(state(controller).grass).toBe(grass+20);
+    expect(button('Récompense réclamée',card('daily-bonus')).disabled).toBe(true);
+    // Next day: a new cycle with its own three missions, all at zero, and no bonus yet.
+    clock.now=24*hour;controller.refresh();daily();
+    expect(state(controller).missions.daily).toMatchObject({cycleIndex:1,claimed:[],bonusClaimed:false});
+    for(const id of dailyMissionsOf(state(controller)))expect(card(id).textContent).toContain('Progression : 0 /');
+    expect(button(BONUS,card('daily-bonus')).disabled).toBe(true);
   });
   it('invalidates a mission claim button after replacement by import',()=>{
     const initial=createGame(0);initial.missions.completed=['first-farm','first-meal'];initial.missions.claimed=['first-meal'];
@@ -1407,7 +1412,7 @@ describe('mission XP display and claim continuity',()=>{
   const guide=document.getElementById('tutorial')!;expect(guide.textContent).toContain('40 XP');const before=state(controller);
   const fail=vi.spyOn(storage,'setItem').mockImplementation(()=>{throw Error('quota');});button('Réclamer · 10 nourriture',guide).click();expect(state(controller)).toEqual(before);expect(guide.textContent).toContain('40 XP');fail.mockRestore();clock.now=500;vi.spyOn(performance,'now').mockReturnValue(performance.now()+500);
   button('Réclamer · 10 nourriture',guide).click();expect(state(controller).missions.claimed).toContain('first-meal');expect(state(controller).progression.totalXp).toBe(before.progression.totalXp+PROGRESSION.xp.claims.main);
-  ui.open({kind:'missions',tab:'main'});expect(panel().querySelector('[data-mission="first-meal"]')).toBeNull();expect(panel().querySelector('[data-mission="first-farm"]')?.textContent).toContain('40 XP');ui.open({kind:'missions',tab:'daily'});expect(panel().querySelector('[data-mission="collect-pattes"]')?.textContent).toContain('50 XP');expect(panel().querySelector('[data-mission="daily-bonus"]')?.textContent).not.toContain('0 XP');
+  ui.open({kind:'missions',tab:'main'});expect(panel().querySelector('[data-mission="first-meal"]')).toBeNull();expect(panel().querySelector('[data-mission="first-farm"]')?.textContent).toContain('40 XP');ui.open({kind:'missions',tab:'daily'});const shown=dailyMissionsFor(0)[0];expect(panel().querySelector(`[data-mission="${shown}"]`)?.textContent).toContain(`${progressionApi.missionClaimXp('daily',shown)} XP`);expect(panel().querySelector('[data-mission="daily-bonus"]')?.textContent).toContain(`${PROGRESSION.xp.claims.dailyBonus} XP`);
  });
 });
 
