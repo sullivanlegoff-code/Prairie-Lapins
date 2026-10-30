@@ -19,6 +19,25 @@ function run(s:GameState,c:Command,now=s.lastSimulatedAt){const r=act(s,c,now,()
 function prepared(){const s=createGame(0);delete s.initiation;s.rabbits.forEach(r=>r.affection=2);s.pattes=0;s.hearts=0;return s;}
 function transfer(s:GameState,now=s.lastSimulatedAt){return run(s,{type:'transferBirth',id:nest(s).id,birthId:nest(s).breeding!.birth.id},now);}
 function decode(raw:string){const r=decodeGame(raw);if(!r.ok)throw Error(r.reason);return r.state;}
+it('saves the last successful pair through transfer/reload and accepts existing saves without it',()=>{
+  const old=prepared(); expect(decode(encodeGame(old)).lastBreedingParents).toBeUndefined();
+  expect(decodeGame(JSON.stringify({...old,lastBreedingParents:['building-1','rabbit-3']})).ok).toBe(false);
+  expect(decodeGame(JSON.stringify({...old,lastBreedingParents:['rabbit-2','rabbit-2']})).ok).toBe(false);
+  const started=run(old,breed); expect(started.lastBreedingParents).toEqual(breed.parents);
+  const restored=decode(encodeGame(transfer(advance(started,20*MINUTE))));
+  expect(restored.lastBreedingParents).toEqual(breed.parents);
+  restored.rabbits=restored.rabbits.filter(r=>r.id!==breed.parents[0]);
+  expect(decode(encodeGame(restored)).lastBreedingParents).toEqual(breed.parents);
+});
+it('never remembers a refused launch or a launch whose save failed',()=>{
+  const old=prepared(), m=memory(encodeGame(old)), c=new GameController(m.storage,()=>0);
+  expect(c.perform({type:'breed',parents:['missing','rabbit-3']}).ok).toBe(false);
+  expect(c.getSnapshot().state!.lastBreedingParents).toBeUndefined();
+  m.flags.fail=true; expect(c.perform(breed)).toEqual({ok:false,reason:'ACTION_NOT_SAVED'});
+  expect(c.getSnapshot().state!.lastBreedingParents).toBeUndefined();
+  m.flags.fail=false; expect(c.perform(breed).ok).toBe(true);
+  expect(c.getSnapshot().state!.lastBreedingParents).toEqual(breed.parents); c.dispose();
+});
 function memory(raw:string){const data=new Map([[SAVE_KEY,raw]]),flags={fail:false};const storage:SaveStorage={getItem:k=>data.get(k)??null,setItem:(k,v)=>{if(flags.fail&&k===SAVE_KEY)throw Error('quota');data.set(k,v)}};return {data,flags,storage};}
 describe('manual breeding v8',()=>{
  it('starts with three collision-free buildings, unchanged resources and retired possession rewards preserved but unavailable',()=>{

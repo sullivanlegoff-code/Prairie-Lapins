@@ -8,4 +8,6 @@ export const AGENCY_ART = {
   labelY: 76,
   /** Where Coco's « welcome back » heart bubble floats, above the door. */
   actionY: -40,
+  /** One thin progress row per traveller, below the building's path. */
+  progress: {x: 0, y: 61, width: 54, height: 7, gap: 10},
 } as const;

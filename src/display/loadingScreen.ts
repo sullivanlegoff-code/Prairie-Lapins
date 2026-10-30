@@ -3,7 +3,8 @@
  * required step is done. A required failure or slow step offers « Réessayer »; music is optional
  * and never blocks entering the game.
  */
-export type StepId = 'save' | 'fonts' | 'textures' | 'scene' | 'music';
+import {LOADING_MESSAGE_INTERVAL, LOADING_MESSAGES} from '../config/loadingMessages';
+export type StepId ='save' | 'fonts' | 'textures' | 'scene' | 'music';
 export type StepState = 'pending' | 'slow' | 'done' | 'warning' | 'failed';
 export interface StepDefinition {id: StepId; label: string; required: boolean; weight: number; timeout: number}
 export const LOADING_STEPS: readonly StepDefinition[] = [
@@ -57,6 +58,24 @@ export class LoadingTracker {
   }
   private get(id: StepId): StepStatus { return this.steps.find(s => s.id === id)!; }
   private emit(): void { const view = this.view(); for (const listener of this.listeners) listener(view); }
+}
+
+/** A random message, never the one already shown. */
+export function pickLoadingMessage(previous: string | null = null, random: () => number = Math.random, messages: readonly string[] = LOADING_MESSAGES): string {
+  const pool = messages.length > 1 ? messages.filter(message => message !== previous) : messages;
+  return pool[Math.min(pool.length - 1, Math.floor(random() * pool.length))];
+}
+/** Fills #loading-tip at once, then draws again while the screen stays up. Returns the stop function. */
+export function startLoadingMessages(root: HTMLElement, random: () => number = Math.random, timersApi: Timers = realTimers): () => void {
+  const tip = root.querySelector<HTMLElement>('#loading-tip');
+  if (!tip) return () => {};
+  let handle: unknown;
+  const show = () => {
+    tip.textContent = pickLoadingMessage(tip.textContent || null, random);
+    handle = timersApi.set(() => { if (!root.hidden) show(); }, LOADING_MESSAGE_INTERVAL);
+  };
+  show();
+  return () => timersApi.clear(handle);
 }
 
 /** Renders the tracker into the static #loading-screen markup (visible before any script runs). */

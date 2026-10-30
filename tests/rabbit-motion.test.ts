@@ -1,7 +1,7 @@
 import {describe, expect, it, vi} from 'vitest';
 import {VISUAL} from '../src/config/visual';
 import {rabbitOffset} from '../src/display/rabbitLayout';
-import {FED_MS, allowedBox, createRabbitMotion, minSeparation, rabbitPose, retargetRabbitMotion, stepRabbitMotion, triggerFedReaction, type RabbitMotion} from '../src/display/rabbitMotion';
+import {FED_MS, KISS_MS, allowedBox, createRabbitMotion, minSeparation, rabbitPose, retargetRabbitMotion, startRabbitActivity, stepRabbitMotion, triggerFedReaction, type RabbitMotion} from '../src/display/rabbitMotion';
 import type {Point} from '../src/ui/gestures';
 
 const roam = VISUAL.rabbit.roam;
@@ -15,6 +15,21 @@ function advance(motions: RabbitMotion[], dtMs: number) {
 const inside = (p: Point, box: ReturnType<typeof allowedBox>) => p.x >= box.minX - 1e-9 && p.x <= box.maxX + 1e-9 && p.y >= box.minY - 1e-9 && p.y <= box.maxY + 1e-9;
 
 describe('rabbit wandering inside an enclosure', () => {
+  it('touches noses gently for three seconds, mirrored toward the partner without moving the ground point', () => {
+    expect(KISS_MS).toBe(3000);
+    const m = createRabbitMotion('tender', {x: 0, y: 0}, 2), ground = {...m.local};
+    startRabbitActivity(m, 'kiss');
+    for (const elapsed of [0, 500, 1000, 1500, 2000, 2500, 3000]) {
+      m.elapsed = elapsed; m.facing = 1; const right = rabbitPose(m);
+      m.facing = -1; const left = rabbitPose(m);
+      expect(left.rotation + right.rotation).toBe(0);
+      expect(left.nuzzle ?? 0).toBe(right.nuzzle ?? 0);
+      expect(right.nuzzle ?? 0).toBeGreaterThanOrEqual(0); expect(right.nuzzle ?? 0).toBeLessThanOrEqual(3);
+      expect(right.lift).toBeLessThanOrEqual(.5); expect(m.local).toEqual(ground);
+      if (elapsed === 0 || elapsed === KISS_MS) expect(right).toMatchObject({lift: 0, rotation: 0, squashX: 1, squashY: 1});
+      else expect(right.nuzzle).toBeGreaterThan(0);
+    }
+  });
   it.each([1, 2, 3, 4, 5, 6, 7])('keeps every one of %i residents inside its safe zone, at every frame step', count => {
     for (const dt of [16, 100, 400]) {
       const motions = group(count);

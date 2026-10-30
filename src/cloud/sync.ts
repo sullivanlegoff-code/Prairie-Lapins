@@ -8,8 +8,10 @@ import {CloudError, OUTDATED, type CloudGateway, type CommitRequest, type Remote
 import {CLOUD_KEY} from './accountState';
 export {CLOUD_KEY} from './accountState';
 export const BACKUP_KEY = 'prairie-lapins.cloud.backup.v1';
+export const LINK_BACKUP_PREFIX = 'prairie-lapins.cloud.link-backup.v1.';
+class InvalidLink extends Error {}
 interface Link {owner: string; revision: number; baseline: string; syncedAt: string | null; pending: CommitRequest | null}
-export type SyncStatus = 'disconnected' | 'checking' | 'choice' | 'conflict' | 'saved' | 'waiting' | 'sending' | 'offline' | 'session' | 'error' | 'local-error' | 'outdated';
+export type SyncStatus = 'disconnected' | 'checking' | 'choice' | 'conflict' | 'saved' | 'waiting' | 'sending' | 'offline' | 'session' | 'error' | 'local-error' | 'outdated' | 'recovery';
 export interface SyncView {status: SyncStatus; syncedAt: string | null; remote: RemoteSave | null; message?: string}
 interface Timing {now(): number; set(callback: () => void, delay: number): unknown; clear(handle: unknown): void; uuid(): string}
 const timing: Timing = {now: Date.now, set: (f, ms) => setTimeout(f, ms), clear: h => clearTimeout(h as ReturnType<typeof setTimeout>), uuid: () => crypto.randomUUID()};
@@ -35,8 +37,9 @@ export function fingerprint(state: GameState): string {
   const births = s.buildings.flatMap(b => [
     ...(b.breeding ? [b.breeding.birth] : []), ...(b.nursery?.babies.map(x => x.birth) ?? []),
   ]).sort((a, b) => a.id.localeCompare(b.id));
-  const {lastSimulatedAt: _time, purchaseUnlocks: _unlocks, levelAccessTransition: _rights, missions, initiation, buildings, ...rest} = s;
-  return JSON.stringify({...rest, births,
+  const {lastSimulatedAt: _time, purchaseUnlocks: _unlocks, levelAccessTransition: _rights, missions, initiation, buildings, cozy, ...rest} = s;
+  // Shared time is passive, like income. The full bonds and album still travel with the next action save.
+  return JSON.stringify({...rest, births, cozy: {souvenirs: cozy?.souvenirs ?? [], discoveries: cozy?.discoveries ?? [], events: cozy?.events ?? [], album: cozy?.album.filter(m => m.kind !== 'friendship') ?? []},
     missions: {events: missions.events, claimed: missions.claimed, nightOrderStarted: missions.nightOrderStarted},
     initiation: initiation ? {used: initiation.used, birthId: initiation.birthId} : null,
     buildings: buildings.map(({incomeUnits: _income, breeding, nursery, ...b}) => ({...b,
@@ -72,15 +75,37 @@ export class CloudSync {
   private persist(link: Link): void { this.storage.setItem(CLOUD_KEY, JSON.stringify(link)); this.link = link; }
   private readLink(owner: string): Link | null {
     const raw = this.storage.getItem(CLOUD_KEY); if (!raw) return null;
-    const r = JSON.parse(raw) as Link;
-    if (r.owner !== owner) return null;
-    if (!Number.isSafeInteger(r.revision) || r.revision < 0 || typeof r.baseline !== 'string' || !(r.syncedAt === null || typeof r.syncedAt === 'string')) throw new Error('invalid cache');
-    if (r.pending) {
-      const p = r.pending, d = decodeGame(JSON.stringify(p.state));
-      if (p.owner !== owner || p.expected !== r.revision || typeof p.operation !== 'string' || !d.ok) throw new Error('invalid pending');
-      // Keep the exact request as stored, including a historical format. Never mutate a replay.
-    }
-    return r;
+    try {
+      const r = JSON.parse(raw) as Link;
+      if (!r || typeof r.owner !== 'string') throw new InvalidLink();
+      if (r.owner !== owner) return null;
+      if (!Number.isSafeInteger(r.revision) || r.revision < 0 || typeof r.baseline !== 'string' || !(r.syncedAt === null || typeof r.syncedAt === 'string')) throw new InvalidLink();
+      if (r.pending) {
+        const p = r.pending, d = decodeGame(JSON.stringify(p.state));
+        if (p.owner !== owner || p.expected !== r.revision || typeof p.operation !== 'string' || !d.ok) throw new InvalidLink();
+        // Keep the exact request as stored, including a historical format. Never mutate a replay.
+      }
+      return r;
+    } catch { throw new InvalidLink(); }
+  }
+  /** Archive before clearing a broken link; neither game nor replacement backup is touched. */
+  async repairLink(confirmed: boolean): Promise<void> {
+    if (!confirmed || !this.owner || this.view.status !== 'recovery') return;
+    const owner = this.owner;
+    try {
+      let broken = false;
+      try { this.readLink(owner); } catch (e) { if (!(e instanceof InvalidLink)) throw e; broken = true; }
+      // Another tab may already have repaired it: never clear a newly valid pending operation.
+      if (!broken) { await this.connect(owner); return; }
+      const raw = this.storage.getItem(CLOUD_KEY);
+      if (raw) {
+        const key = LINK_BACKUP_PREFIX + this.clock.uuid();
+        if (this.storage.getItem(key) !== null) throw new Error('backup collision');
+        this.storage.setItem(key, raw);
+      }
+      this.storage.setItem(CLOUD_KEY, '');
+    } catch { this.show('recovery', 'La copie de la liaison a échoué. Aucun remplacement de partie n’a été effectué. Libère un peu d’espace et réessaie.'); return; }
+    await this.connect(owner);
   }
   async connect(owner: string): Promise<void> {
     this.disconnect();
@@ -188,6 +213,7 @@ export class CloudSync {
     finally { if (gen === this.generation) { this.flight = null; this.changed(); } }
   }
   private failed(e: unknown): void {
+    if (e instanceof InvalidLink) { this.ready = false; this.show('recovery'); return; }
     const snap = this.controller.getSnapshot();
     if (snap.status !== 'saved') { this.show('local-error'); return; }
     if (e instanceof CloudError && e.code === 'outdated') { this.ready = false; this.cancelTimer(); this.show('outdated', OUTDATED); }

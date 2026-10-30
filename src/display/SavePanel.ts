@@ -13,7 +13,7 @@ export const ERROR_MESSAGES: Record<ControllerIssue, string> = {
   INVALID_STATE: 'Cette sauvegarde est incohérente ou incomplète.',
   UNSUPPORTED_VERSION: 'Cette version de sauvegarde n’est pas prise en charge par cette version du jeu.',
   INCOMPATIBLE_CATALOG: CATALOG_RESET_REASON,
-  FILE_TOO_LARGE: 'Le fichier dépasse la limite de 1 000 000 octets pour l’import.',
+  FILE_TOO_LARGE: 'La sauvegarde dépasse la limite de taille pour être relue. Réduis sa taille avant de réessayer ; ta sauvegarde précédente est conservée.',
   READ_FAILED: 'Le navigateur ne permet pas de lire la sauvegarde. Aucun contenu existant n’a été écrasé.',
   WRITE_FAILED: 'L’écriture locale a échoué. Vérifie l’espace disponible et les autorisations du navigateur.',
   STORAGE_CHANGED: 'La sauvegarde a changé dans un autre onglet ou contrôleur. Les écritures sont bloquées pour la protéger. Exporte cette partie puis recharge la page.',

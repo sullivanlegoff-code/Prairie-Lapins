@@ -40,6 +40,7 @@ export class GameController {
   private viewRevision = 0;
   private presentationId: string = crypto.randomUUID();
   private gainListeners = new Set<(gain: ConfirmedProgressionGain) => void>();
+  private commandListeners = new Set<(command: Command) => void>();
   private stopStorage: (() => void) | undefined;
   private listeners = new Set<(snapshot: Snapshot) => void>();
 
@@ -66,6 +67,11 @@ export class GameController {
   onProgressionGain(listener: (gain: ConfirmedProgressionGain) => void): () => void {
     if (this.disposed) return () => {};
     this.gainListeners.add(listener); return () => { this.gainListeners.delete(listener); };
+  }
+  /** Presentation only, after a command has been saved and subscribers see its resulting state. */
+  onConfirmedCommand(listener: (command: Command) => void): () => void {
+    if (this.disposed) return () => {};
+    this.commandListeners.add(listener); return () => { this.commandListeners.delete(listener); };
   }
   private emit(): void { for (const listener of this.listeners) listener(this.getSnapshot()); }
 
@@ -101,6 +107,7 @@ export class GameController {
     let json: string;
     try { json = encodeGame(candidate, presentationId); }
     catch { return {ok: false, reason: 'ENCODING_FAILED'}; }
+    if (json.length > MAX_JSON_LENGTH) return {ok: false, reason: 'FILE_TOO_LARGE'};
     // Also prevents a superseded controller from silently overwriting a successful import.
     let raw: string | null;
     try { raw = this.storage.getItem(SAVE_KEY); }
@@ -126,7 +133,15 @@ export class GameController {
     if (!this.state) return false;
     const next = advance(this.state, now);
     const previous = this.state;
-    // These are the only non-clock/income mutations in advance. Rebase changes are
+    // Transfers change birth placement even when no resource or deadline becomes visible.
+    const birthPlacementChanged = next.buildings.some((b, i) => {
+      const before = previous.buildings[i];
+      return b.breeding?.birth.id !== before.breeding?.birth.id ||
+        b.nursery?.babies.length !== before.nursery?.babies.length ||
+        b.nursery?.babies.some((baby, slot) => baby.birth.id !== before.nursery?.babies[slot]?.birth.id ||
+          baby.slot !== before.nursery?.babies[slot]?.slot);
+    });
+    // These are the only other non-clock/income mutations in advance. Rebase changes are
     // adopted in full whenever lastSimulatedAt changes, including every job timestamp.
     const settlementChanged = next.missions.daily.cycleIndex !== previous.missions.daily.cycleIndex ||
       next.missions.completed.length !== previous.missions.completed.length ||
@@ -134,11 +149,13 @@ export class GameController {
       !!next.levelAccessTransition !== !!previous.levelAccessTransition ||
       next.purchaseUnlocks?.some((id, i) => id !== previous.purchaseUnlocks?.[i]) ||
       next.purchaseUnlocks?.length !== previous.purchaseUnlocks?.length;
-    const changed = next.lastSimulatedAt !== previous.lastSimulatedAt || settlementChanged ||
+    const changed = next.lastSimulatedAt !== previous.lastSimulatedAt || settlementChanged || birthPlacementChanged ||
       next.buildings.some((b, i) => b.incomeUnits !== previous.buildings[i].incomeUnits);
     if (changed) {
       const crossed = (end: number) => (previous.lastSimulatedAt >= end) !== (next.lastSimulatedAt >= end);
-      const visible = settlementChanged || next.lastSimulatedAt < previous.lastSimulatedAt || crossed(previous.nextHeartGiftAt) ||
+      const visible = settlementChanged || birthPlacementChanged || next.lastSimulatedAt < previous.lastSimulatedAt || crossed(previous.nextHeartGiftAt) ||
+        previous.travel?.trips.some(trip => crossed(trip.endsAt)) ||
+        previous.missions.daily.nextAt !== undefined && crossed(previous.missions.daily.nextAt) ||
         next.buildings.some((b, i) => Math.floor(b.incomeUnits / 3_600_000) !== Math.floor(previous.buildings[i].incomeUnits / 3_600_000) ||
           !!b.order && crossed(b.order.endsAt) || !!b.breeding && crossed(b.breeding.endsAt) ||
           b.nursery?.babies.some(baby => crossed(baby.readyAt)));
@@ -161,7 +178,7 @@ export class GameController {
     const now = this.clock();
     const changed = this.updateTime(now);
     const result = act(this.state!, command, now, this.rng);
-    return this.finishAction(result, now, changed);
+    return this.finishAction(result, now, changed, command);
   }
 
   /** Laboratory-only entry point; the normal UI never imports the test tools. */
@@ -178,7 +195,7 @@ export class GameController {
   }
 
   /** Every successful command commits its complete candidate before adoption. Time alone remains best-effort. */
-  private finishAction(result: ActionResult, now: number, changed: boolean): ActionResult | {ok: false; reason: 'ACTION_NOT_SAVED'} {
+  private finishAction(result: ActionResult, now: number, changed: boolean, command?: Command): ActionResult | {ok: false; reason: 'ACTION_NOT_SAVED'} {
     if (result.ok) {
       const saved = this.write(result.state, now);
       if (!saved.ok) {
@@ -194,7 +211,9 @@ export class GameController {
           fromLevel, toLevel: progressionFromXp(this.state.progression.totalXp).level};
         for (const listener of this.gainListeners) { try { listener(structuredClone(gain)); } catch { /* Presentation cannot undo a saved command. */ } }
       }
-      this.emit(); return structuredClone(result);
+      this.emit();
+      if (command) for (const listener of this.commandListeners) { try { listener(structuredClone(command)); } catch { /* Presentation cannot undo a saved command. */ } }
+      return structuredClone(result);
     }
     if (changed) this.saveCurrent(now);
     this.emit();
@@ -216,7 +235,9 @@ export class GameController {
     this.refresh();
     try {
       const date = new Date(this.clock()).toISOString().replaceAll(':', '-').replace(/\.\d{3}Z$/, 'Z');
-      return {ok: true, json: encodeGame(this.state, this.presentationId), filename: `prairie-lapins-${date}.json`};
+      const json = encodeGame(this.state, this.presentationId);
+      if (json.length > MAX_JSON_LENGTH) return {ok: false, reason: 'FILE_TOO_LARGE'};
+      return {ok: true, json, filename: `prairie-lapins-${date}.json`};
     } catch { return {ok: false, reason: 'ENCODING_FAILED'}; }
   }
   unreadableBackup(): string | null { return this.status === 'invalid-save' ? this.storedRaw : null; }
@@ -260,5 +281,5 @@ export class GameController {
     this.viewRevision++;
     this.cancelImport(); this.emit(); return {ok: true};
   }
-  dispose(): void { this.disposed = true; this.stopStorage?.(); this.stopStorage = undefined; this.cancelImport(); this.listeners.clear(); this.gainListeners.clear(); }
+  dispose(): void { this.disposed = true; this.stopStorage?.(); this.stopStorage = undefined; this.cancelImport(); this.listeners.clear(); this.gainListeners.clear(); this.commandListeners.clear(); }
 }

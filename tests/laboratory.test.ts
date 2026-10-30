@@ -56,7 +56,12 @@ describe('published laboratory isolation', () => {
     for(const species of ['pic-pic','neige','volant'] as const) expect(habitatEntryReason(s,home,species)).toBeNull();
     expect(decodeGame(encodeGame(s))).toEqual({ok:true,state:s});
     const reloaded = setup();expect(reloaded.controller.getSnapshot().state).toEqual(s);
-    for(const [a,b] of [['neige','volant'],['volant','neige'],['pic-pic','neige'],['neige','pic-pic']] as const) {
+    // Two commons never give a common (owner decision of 27 October 2026): only the two Rares of the union remain.
+    for(const [a,b] of [['neige','volant'],['volant','neige']] as const) {
+      expect(breedingPool(s,a,b,2,2)).toMatchObject({"weights":{"pic-pic":30,"tunini":30},"total":60,"guaranteed":false});
+      expect(oddsView(s,a,b,2,2)).toMatchObject({entries:[{name:'Pic Pic',weight:50,probability:'50 %'}],unknown:{weight:50,probability:'50 %'}});
+    }
+    for(const [a,b] of [['pic-pic','neige'],['neige','pic-pic']] as const) {
       expect(breedingPool(s,a,b,2,2)).toMatchObject({"weights":{"neige":30,"pic-pic":30,"tunini":30,"volant":30},"total":120,"guaranteed":false});
       // Tunini, still undiscovered, shares the same union and appears as the unknown result.
       expect(oddsView(s,a,b,2,2)).toMatchObject({entries:[{name:'Lapin Neige',weight:25,probability:'25 %'},{name:'Lapin Volant',weight:25,probability:'25 %'},{name:'Pic Pic',weight:25,probability:'25 %'}],unknown:{weight:25,probability:'25 %'}});
@@ -89,8 +94,12 @@ describe('published laboratory isolation', () => {
     for(const species of ['amethyste','belier-gris','feu'] as const) expect(habitatEntryReason(s,home,species)).toBeNull();
     expect(decodeGame(encodeGame(s))).toEqual({ok:true,state:s});
     const reloaded = setup();expect(reloaded.controller.getSnapshot().state).toEqual(s);
-    for(const [a,b] of [['belier-gris','feu'],['feu','belier-gris'],['amethyste','feu'],['feu','amethyste']] as const) {
-      expect(breedingPool(s,a,b,2,2)).toMatchObject({"weights":{"amethyste":30,"belier-gris":30,"dinono":30,"feu":30},"total":120,"guaranteed":false});
+    for(const [a,b] of [['belier-gris','feu'],['feu','belier-gris']] as const) {
+      expect(breedingPool(s,a,b,2,2)).toMatchObject({"weights":{"amethyste":30,"bouee":30},"total":60,"guaranteed":false});
+      expect(oddsView(s,a,b,2,2)).toMatchObject({entries:[{name:'Améthyste',weight:50,probability:'50 %'}],unknown:{weight:50,probability:'50 %'}});
+    }
+    for(const [a,b] of [['amethyste','feu'],['feu','amethyste']] as const) {
+      expect(breedingPool(s,a,b,2,2)).toMatchObject({"weights":{"amethyste":30,"belier-gris":30,"bouee":30,"feu":30},"total":120,"guaranteed":false});
       // Dinono, still undiscovered, shares the same union and appears as the unknown result.
       expect(oddsView(s,a,b,2,2)).toMatchObject({entries:[{name:'Lapin Feu',weight:25,probability:'25 %'},{name:'Lapin Bélier Gris',weight:25,probability:'25 %'},{name:'Améthyste',weight:25,probability:'25 %'}],unknown:{weight:25,probability:'25 %'}});
     }
@@ -123,7 +132,11 @@ describe('published laboratory isolation', () => {
     for (const species of ['paille','feu','ardent','snk'] as const) expect(habitatEntryReason(s,home,species)).toBeNull();
     expect(decodeGame(encodeGame(s))).toEqual({ok:true,state:s});
     const reloaded = setup(); expect(reloaded.controller.getSnapshot().state).toEqual(s);
-    for (const [a,b] of [['paille','feu'],['feu','paille'],['ardent','snk'],['snk','ardent']] as const) {
+    for (const [a,b] of [['paille','feu'],['feu','paille']] as const) {
+      expect(breedingPool(s,a,b,2,2)).toMatchObject({weights:{ardent:30,snk:30},total:60,guaranteed:false});
+      expect(oddsView(s,a,b,2,2)).toMatchObject({"entries":[{"name":"Ardent","probability":"50 %","weight":50},{"name":"SNK","probability":"50 %","weight":50}],"unknown":null});
+    }
+    for (const [a,b] of [['ardent','snk'],['snk','ardent']] as const) {
       expect(breedingPool(s,a,b,2,2)).toMatchObject({weights:{paille:30,feu:30,ardent:30,snk:30},total:120,guaranteed:false});
       expect(oddsView(s,a,b,2,2)).toMatchObject({"entries":[{"name":"Lapin Paille","probability":"25 %","weight":25},{"name":"Lapin Feu","probability":"25 %","weight":25},{"name":"Ardent","probability":"25 %","weight":25},{"name":"SNK","probability":"25 %","weight":25}],"unknown":null});
     }
@@ -267,7 +280,10 @@ describe('published laboratory isolation', () => {
     const fixture=controller.getSnapshot().state!;expect(decodeGame(encodeGame(fixture))).toEqual({ok:true,state:fixture});
     if(id==='habitats')for(const home of fixture.buildings)expect(fixture.rabbits.filter(r=>r.enclosureId===home.id)).toHaveLength(7);
     if(id==='collection')expect(fixture.discovered).toEqual([...EXPECTED_IDS]);
-    if(id==='missions')expect(fixture.missions.completed).toHaveLength(12);
+    if(id==='missions'){
+      expect(fixture.missions.completed).toHaveLength(36);
+      expect(fixture.missions.completed).toEqual(expect.arrayContaining(['level-five','discover-paille','habitat-level-three']));
+    }
     if(id==='reproduction')expect(controller.perform({type:'breed',parents:['rabbit-2','rabbit-3']}).ok).toBe(true);
   }, 20000);
 });

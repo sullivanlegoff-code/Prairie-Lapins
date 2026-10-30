@@ -12,7 +12,7 @@ import {scenarioState} from '../src/dev/scenarios';
 import {HOUR} from '../src/config/balance';
 
 import {toV11} from './island-remap';
-function rich() {const s = createGame(0);const level=Math.max(...DECORATION_IDS.map(id=>requiredDecorationLevel(id)));s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level}; s.pattes = 100_000; s.hearts = 1000; return s;}
+function rich() {const s = createGame(0);const level=Math.max(...DECORATION_IDS.map(id=>requiredDecorationLevel(id)));s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level}; s.pattes = 100_000; s.hearts = 1000; return advance(s,0);}
 function run(s: GameState, command: Command) {const r = act(s, command, s.lastSimulatedAt); if (!r.ok) throw Error(r.reason); return r.state;}
 function buy(s: GameState, catalogId: DecorationId = 'bush') {return run(s, {type: 'buyDecoration', catalogId});}
 function pose(s: GameState, location: DecorationLocation, id = s.decorations.at(-1)!.id) {return run(s, {type: 'placeDecoration', id, location});}
@@ -132,7 +132,7 @@ describe('saves and four-route boundaries', () => {
     expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: s});
     if (id === 'decoratedHabitat' || id === 'decorationDense') expect(s.rabbits.filter(r => r.enclosureId === 'building-1')).toHaveLength(7);
     const m = memory(encodeGame(s)), c = new GameController(m.storage, () => 0), exported = c.exportGame();
-    if (!exported.ok) throw Error(exported.reason); expect(JSON.parse(exported.json).version).toBe(19);
+    if (!exported.ok) throw Error(exported.reason); expect(JSON.parse(exported.json).version).toBe(21);
     expect(c.restart(true).ok).toBe(true); const p = c.prepareImport(exported.json); if (!p.ok) throw Error(p.reason);
     expect(c.confirmImport(p.token, true).ok).toBe(true); expect(new GameController(m.storage, () => 0).getSnapshot().state).toEqual(s);
   }, 20000);

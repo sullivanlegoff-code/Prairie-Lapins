@@ -5,7 +5,7 @@ import {regressionStart as legacyGame} from './regression-start';
 import {createMissions} from '../src/simulation/missions';
 import {emptyBuilding} from '../src/state/initial';
 import {describe, expect, it, vi} from 'vitest';
-import {BALANCE, BREEDING_ODDS, LEGACY_SPECIES_IDS, MINUTE, RECIPE_SPECIES, SHOP_SPECIES, SPECIES, SPECIES_IDS, growthDuration, type SpeciesId} from '../src/config/balance';
+import {BALANCE, LEGACY_SPECIES_IDS, MINUTE, RECIPE_SPECIES, SHOP_SPECIES, SPECIES, SPECIES_IDS, growthDuration, type SpeciesId} from '../src/config/balance';
 import {act, advance,  decodeGame, encodeGame, pendingDiscoveries, rabbitIncome} from '../src/simulation';
 import {breedingOdds, breedingPool, breedingWeights, chooseBirth} from '../src/simulation/breeding';
 import {quoteAcceleration} from '../src/simulation/hearts';
@@ -21,7 +21,7 @@ import {EXPECTED_IDS, EXPECTED_RECIPE_IDS, rareAdditions, shareLabel} from './ra
 // These recipe/economy fixtures isolate non-level conditions; level filtering has its dedicated suite.
 function createGame(now=0){const s=legacyGame(now);s.progression={totalXp:cumulativeLevelXp(14),rewardedThroughLevel:14};return s;}
 const rares = [
-  ['lunettes', 'paille', 'belier-gris'], ['perroquet', 'volant', 'feu'], ['feu-glace', 'feu', 'neige'],
+  ['boudinet', 'paille', 'belier-gris'], ['phoenix', 'volant', 'feu'], ['glassofeu', 'feu', 'neige'],
 ] as const;
 function run(s: GameState, command: Command, now = s.lastSimulatedAt, random = .99): GameState {
   const result = act(s, command, now, () => random); if (!result.ok) throw Error(result.reason); return result.state;
@@ -69,7 +69,7 @@ describe('exact breeding pools', () => {
   it('keeps historical weights and adds the approved Rares to matching unions', () => {
     for (const a of LEGACY_SPECIES_IDS) for (const b of LEGACY_SPECIES_IDS) {
       const key = [...new Set([...SPECIES[a].types, ...SPECIES[b].types])].sort().join(',');
-      expect(breedingWeights(a, b, 4, 20)).toEqual(key === 'neige,paille' ? {frisket:30,icy:30} : {...BREEDING_ODDS[key], ...(key.includes('paille') && key.includes('neige') ? {frisket:30, icy:30} : {}), ...(key.includes('paille') && key.includes('feu') ? {ardent:30,snk:30} : {})});
+      expect(breedingWeights(a, b, 4, 20)).toEqual(key === 'neige,paille' ? {frisket:30,icy:30} : {});
       expect(breedingOdds(a, b, 4, 20)).toEqual(breedingOdds(a, b, 2, 2));
     }
   });
@@ -80,7 +80,9 @@ describe('exact breeding pools', () => {
         const weights = breedingWeights(a, b, levelA, levelB), odds = breedingOdds(a, b, levelA, levelB);
         expect(weights).toEqual(breedingWeights(b, a, levelB, levelA));
         expect(odds).toEqual(breedingOdds(b, a, levelB, levelA));
-        expect(Object.values(odds).reduce((x, y) => x + y, 0)).toBeCloseTo(100, 12);
+        const sameCommon = SPECIES[a].rarity === 'common' && a === b;
+        expect(Object.values(odds).reduce((x, y) => x + y, 0)).toBeCloseTo(sameCommon ? 0 : 100, 12);
+        if (sameCommon) expect(weights).toEqual({});
         const total = Object.values(weights).reduce((x, y) => x + y, 0); let cursor = 0;
         for (const [id, weight] of Object.entries(weights)) {
           const roll = (cursor + weight / 2) / total;
@@ -91,36 +93,39 @@ describe('exact breeding pools', () => {
       }
     }
   }, 30000);
-  it.each(rares)('admits %s only when both parents have affection 4', (rare, a, b) => {
-    // The two commons weigh 40 each; approved Rares add 20 each when their own elements and thresholds hold (Phoenix on Vol + Feu).
+  it.each(rares)('admits %s only when both parents have affection 2', (rare, a, b) => {
+    // Two common parents give only the matching non-common recipes; affection below 2 still excludes them.
     const elements = [...SPECIES[a].types, ...SPECIES[b].types];
     const expectOdds = (actual: Record<string, number>, weights: Record<string, number>) => {
       const total = Object.values(weights).reduce((sum, w) => sum + w, 0);
       expect(Object.keys(actual).sort()).toEqual(Object.keys(weights).sort());
       for (const [id, w] of Object.entries(weights)) expect(actual[id]).toBeCloseTo(w * 100 / total, 10);
     };
-    const commons = (x: number, y: number) => ({...Object.fromEntries([a, b].map(id => [id, 30])), ...rareAdditions(elements, x, y)});
-    expectOdds(breedingOdds(a, b, 2, 2), commons(2, 2));
-    expectOdds(breedingOdds(a, b, 4, 3), commons(4, 3));
-    expectOdds(breedingOdds(a, b, 4, 4), {...Object.fromEntries([a, b].map(id => [id, 30])), [rare]: 30, ...rareAdditions(elements, 4, 4)});
-    const low = run(couple(a, b, 2, 2), breed);
+    expectOdds(breedingOdds(a, b, 2, 2), rareAdditions(elements, 2, 2));
+    expectOdds(breedingOdds(a, b, 4, 3), rareAdditions(elements, 4, 3));
+    expectOdds(breedingOdds(a, b, 4, 4), {[rare]: 30, ...rareAdditions(elements, 4, 4)});
+    const low = run(couple(a, b, 2, 2), breed, 0, rare === 'phoenix' ? .999 : 0);
     expect(low.buildings.find(x => x.breeding)!.breeding!.birth.species).not.toBe(rare);
-    expect(low.pityFailures).toBe(0);
+    expect(low.pityFailures).toBe(0); expect(low.buildings.find(x => x.breeding)!.breeding!.birth.reservedDiscovery).toBe(true);
+    expect(breedingWeights(a, b, 2, 1)[rare]).toBeUndefined();
   });
   it('normalizes a four-type pool while retaining eligible historical hybrids', () => {
-    const rares = rareAdditions(['metal', 'paille', 'feu', 'neige'], 4, 4), total = 210 + 30 * Object.keys(rares).length;
-    expect(breedingWeights('lunettes', 'feu-glace', 4, 4)).toEqual({paille: 30, neige: 30, feu: 30, 'belier-gris': 30, lunettes: 30, 'feu-glace': 30, bouee: 30, ...rares});
-    expect(breedingWeights('lunettes', 'feu-glace', 2, 4)).toEqual({paille: 30, neige: 30, feu: 30, 'belier-gris': 30, ...rares});
-    const odds = oddsView(knowEveryResult(createGame(0)), 'lunettes', 'feu-glace', 4, 4);
-    expect(odds.entries.filter(e => e.weight === 100 * 30 / total)).toHaveLength(7 + Object.keys(rares).length);
-    expect(odds.entries.find(e => e.description === 'feu + neige · Rare')?.probability).toBe(shareLabel(30, total));
+    const rares = rareAdditions(['metal', 'paille', 'feu', 'neige'], 4, 4), total = 120 + 30 * Object.keys(rares).length;
+    expect(breedingWeights('boudinet', 'glassofeu', 4, 4)).toEqual({paille: 30, neige: 30, feu: 30, 'belier-gris': 30, boudinet: 30, 'glassofeu': 30, bouee: 30, ...rares});
+    expect(breedingWeights('boudinet', 'glassofeu', 2, 4)).toEqual({paille: 30, neige: 30, feu: 30, 'belier-gris': 30, ...rares});
+    const odds = oddsView(knowEveryResult(createGame(0)), 'boudinet', 'glassofeu', 4, 4);
+    expect(odds.entries.filter(e => e.weight === 100 * 30 / total)).toHaveLength(4 + Object.keys(rares).length);
+    expect(odds.entries.find(e => e.description === 'feu + neige · Rare')?.probability).toBe('6,25 %');
     expect(probabilityLabel(40, 180)).toBe('2/9 (≈ 22,22 %)');
   });
 });
 
 describe('extended guarantee and persisted rare births', () => {
   it.each(rares)('guarantees and reserves %s on the tenth eligible attempt, without discovering before welcome', (rare, a, b) => {
-    let s = couple(a, b);s.discovered.push(...SPECIES_IDS.filter(id=>SPECIES[id].rarity==='rare'&&id!==rare));
+    // A mixed pair keeps actual Common failures (5-minute growth) available for testing the unchanged guarantee.
+    const knownRare = {boudinet: 'roukette', phoenix: 'piment', glassofeu: 'wat-wat'} as const;
+    const firstCommon = SPECIES_IDS.find(id => id === a || id === b)!;
+    let s = couple(firstCommon, knownRare[rare]);s.discovered.push(...SPECIES_IDS.filter(id=>SPECIES[id].rarity==='rare'&&id!==rare&&!s.discovered.includes(id)));
     for (let i = 0; i < 7; i++) {
       s = run(s, breed, s.lastSimulatedAt, 0);
       expect(s.pityFailures).toBe(i + 1);
@@ -150,19 +155,19 @@ describe('extended guarantee and persisted rare births', () => {
     expect(welcomed.rabbits[2]).toMatchObject({id: birth.id, species: rare, affection: 1});
   });
   it('does not advance or consume a guarantee when rare recipes are excluded by affection', () => {
-    let s = couple('feu', 'neige', 4, 3); s.discovered.push('wat-wat','glassofeu');s.pityFailures = 7;
+    let s = couple('feu', 'neige', 4, 3); s.discovered.push('wat-wat', 'glassofeu');s.pityFailures = 7;
     s = run(s, breed);
     expect(s.pityFailures).toBe(7); expect(s.buildings.find(b => b.breeding)!.breeding!.birth.guaranteed).toBe(false);
     expect(pendingDiscoveries(s)).toEqual([]);
   });
   it('splits a theoretical pool of three undiscovered recipes equally after affection filtering', () => {
-    const s = createGame(0); s.discovered.push(...SPECIES_IDS.slice(11));s.pityFailures = 7;
-    const pool = breedingPool(s, 'lunettes', 'feu-glace', 4, 4);
-    expect(pool.weights).toEqual({lunettes: 1, 'feu-glace': 1, bouee: 1}); expect(pool.total).toBe(3);
-    expect([1/6, 3/6, 5/6].map(roll => chooseBirth(s, 'lunettes', 'feu-glace', roll, 4, 4).species)).toEqual(['lunettes', 'feu-glace', 'bouee']);
-    // Below affection 4 on one parent no recipe of the guarantee is admissible: the guarantee does not apply.
-    expect(breedingPool(s, 'lunettes', 'feu-glace', 4, 2)).toMatchObject({missing: [], eligible: false, guaranteed: false});
-    const odds = oddsView(knowRecipes(s), 'lunettes', 'feu-glace', 4, 4); expect(odds.entries).toHaveLength(3); expect(odds.unknown).toBeNull();
+    const s = createGame(0); s.discovered.push(...SPECIES_IDS.filter(id => !['boudinet', 'glassofeu', 'bouee'].includes(id) && !s.discovered.includes(id)));s.pityFailures = 7;
+    const pool = breedingPool(s, 'boudinet', 'glassofeu', 4, 4);
+    expect(pool.weights).toEqual({boudinet: 1, 'glassofeu': 1, bouee: 1}); expect(pool.total).toBe(3);
+    expect([1/6, 3/6, 5/6].map(roll => chooseBirth(s, 'boudinet', 'glassofeu', roll, 4, 4).species)).toEqual(['glassofeu', 'boudinet', 'bouee']);
+    // Below affection 2 on one parent no recipe of the guarantee is admissible: the guarantee does not apply.
+    expect(breedingPool(s, 'boudinet', 'glassofeu', 4, 1)).toMatchObject({missing: [], eligible: false, guaranteed: false});
+    const odds = oddsView(knowRecipes(s), 'boudinet', 'glassofeu', 4, 4); expect(odds.entries).toHaveLength(3); expect(odds.unknown).toBeNull();
     expect(odds.entries.every(e => e.probability === shareLabel(1, 3))).toBe(true);
   });
   it('starts the full rare growth only when an occupied nursery becomes available', () => {
@@ -188,25 +193,25 @@ describe('catalogue, notebook, visuals and compatibility', () => {
     const growing = sendToNursery(advance(b, 20 * MINUTE));
     expect(nurseryView(growing, 20 * MINUTE).babies).toEqual([{slot: 0, birthId: expect.any(String), stage: 'growing', startedAt: expect.any(Number), readyAt: 50 * MINUTE}]);
     // The last roll draws the last candidate of the Feu + Neige pool: the latest standard Rare of that union, else Feu Glacé.
-    expect(nurseryView(growing, 50 * MINUTE).babies).toMatchObject([{stage: 'ready', species: Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).at(-1) ?? 'feu-glace'}]);
+    expect(nurseryView(growing, 50 * MINUTE).babies).toMatchObject([{stage: 'ready', species: Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).at(-1) ?? 'glassofeu'}]);
   });
   it('explains feeding, compatible distinct parents, availability and possible versus guaranteed results', () => {
-    const s = knowRecipes(couple('feu', 'neige', 2, 4));
-    let recipe = recipeBook(s, 0).find(r => r.species === 'feu-glace')!;
-    expect(recipe.pairs).toEqual([{parents: ['rabbit-2', 'rabbit-3'], feeding: ['rabbit-2'], busy: false, blocked:false, probability: '0 %', guaranteed: false, certain: false, possible: false}]);
-    s.rabbits[0].affection = 4; recipe = recipeBook(s, 0).find(r => r.species === 'feu-glace')!;
-    expect(recipe.pairs[0]).toMatchObject({probability: shareLabel(30, 90 + 30 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length), guaranteed: false, possible: true});
-    s.discovered.push('wat-wat','glassofeu');s.pityFailures = 7; recipe = recipeBook(s, 0).find(r => r.species === 'feu-glace')!;
+    const s = knowRecipes(couple('feu', 'neige', 1, 4));
+    let recipe = recipeBook(s, 0).find(r => r.species === 'glassofeu')!;
+    expect(recipe.pairs).toEqual([{parents: ['rabbit-2', 'rabbit-3'], feeding: ['rabbit-2'], busy: false, blocked:true, probability: '0 %', guaranteed: false, certain: false, possible: false}]);
+    s.rabbits[0].affection = 4; recipe = recipeBook(s, 0).find(r => r.species === 'glassofeu')!;
+    expect(recipe.pairs[0]).toMatchObject({probability: shareLabel(30, 30 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length), guaranteed: false, possible: true});
+    s.discovered.push('wat-wat');s.pityFailures = 7; recipe = recipeBook(s, 0).find(r => r.species === 'glassofeu')!;
     expect(recipe.pairs[0]).toMatchObject({probability: '100 %', guaranteed: true, certain: true});
     const busy = run(s, breed);
-    expect(recipeBook(busy, 0).find(r => r.species === 'feu-glace')!.pairs[0]).toMatchObject({busy: true, possible: false});
-    expect(recipeBook(createGame(0), 0).find(r => r.species === 'lunettes')!.pairs).toEqual([]);
+    expect(recipeBook(busy, 0).find(r => r.species === 'glassofeu')!.pairs[0]).toMatchObject({busy: true, possible: false});
+    expect(recipeBook(createGame(0), 0).find(r => r.species === 'boudinet')!.pairs).toEqual([]);
   });
   it('defines distinct original portraits and the six requested visual markers', () => {
     expect(new Set(SPECIES_IDS.map(id => portrait(id))).size).toBe(EXPECTED_IDS.length);
     expect(COATS.feu.flame).toBe(true); expect(COATS['belier-gris']).toMatchObject({lop: true, metal: true});
-    expect(COATS.volant.wings).toBe(true); expect(COATS.lunettes.glasses).toBe(true);
-    expect(COATS.perroquet).toMatchObject({wings: true, plumage: true}); expect(COATS['feu-glace']).toMatchObject({flame: true, frost: true});
+    expect(COATS.volant.wings).toBe(true); expect(SPECIES.boudinet.art.kind).toBe('static-sprite');
+    expect(SPECIES.phoenix.art.kind).toBe('static-sprite'); expect(SPECIES.glassofeu.art.kind).toBe('static-sprite');
     expect(portrait()).not.toContain('feu'); expect(portrait()).toContain('>?</text>');
   });
   it('imports and exports a full current collection without new hearts or changed identifiers', () => {
@@ -222,7 +227,8 @@ describe('catalogue, notebook, visuals and compatibility', () => {
     expect(pens.length * 7).toBeGreaterThanOrEqual(SPECIES_IDS.length);
     complete.rabbits = SPECIES_IDS.map((species, index) => ({id: `rabbit-${complete.nextId++}`, species, affection: 1, enclosureId: pens[index % pens.length].id}));
     complete.discovered = [...SPECIES_IDS]; complete.hearts = 7; complete.pityFailures = 0; complete.missions = createMissions(complete, complete.lastSimulatedAt);
-    const current = createGame(complete.lastSimulatedAt);establishHistoricalLevelRights(current);const saved = memory(encodeGame(current));
+    Object.assign(complete, advance(complete, complete.lastSimulatedAt)); // Bank the newly observable catalogue, with no resource/XP reward on import.
+    const current = advance(createGame(complete.lastSimulatedAt), complete.lastSimulatedAt);establishHistoricalLevelRights(current);const saved = memory(encodeGame(current));
     const c = new GameController(saved.storage, () => complete.lastSimulatedAt);
     const preview = c.prepareImport(encodeGame(complete)); if (!preview.ok) throw Error(preview.reason);
     expect(c.getSnapshot().state).toEqual(current);

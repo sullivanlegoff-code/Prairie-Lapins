@@ -71,7 +71,7 @@ describe('naming a rabbit by command', () => {
 describe('saving personal names', () => {
   it('writes and reads the names exactly, and an unnamed rabbit has no field', () => {
     let s = pair(); s = run(s, rename('rabbit-2', 'Éloïse 🐰'));
-    const json = encodeGame(s), parsed = JSON.parse(json); expect(parsed.version).toBe(19);
+    const json = encodeGame(s), parsed = JSON.parse(json); expect(parsed.version).toBe(21);
     expect(parsed.rabbits.find((r: {id: string}) => r.id === 'rabbit-2').name).toBe('Éloïse 🐰'); expect('name' in parsed.rabbits.find((r: {id: string}) => r.id === 'rabbit-3')).toBe(false);
     expect(decodeGame(json)).toEqual({ok: true, state: s});
   });

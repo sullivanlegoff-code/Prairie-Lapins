@@ -36,15 +36,15 @@ describe('pure laboratory transactions', () => {
     }
     expect(() => labAction(s, {type: 'level', level: 31})).toThrow();
   });
-  it('adds every species individually and all 35 together, discovering them and creating compatible level-3 homes', () => {
+  it('adds every species individually and all 32 together, discovering them and creating compatible level-3 homes', () => {
     let s = createGame(now);
     for (const species of SPECIES_IDS) {
       s = run(s, {type: 'rabbit', species, affection: 20});
       expect(s.rabbits.at(-1)).toMatchObject({species, affection: 20});
     }
-    expect(SPECIES_IDS).toHaveLength(35);
+    expect(SPECIES_IDS).toHaveLength(32);
     const all = run(createGame(now), {type: 'allRabbits', affection: 15});
-    expect(new Set(all.rabbits.map(r => r.species)).size).toBe(35); expect(all.discovered).toHaveLength(35);
+    expect(new Set(all.rabbits.map(r => r.species)).size).toBe(32); expect(all.discovered).toHaveLength(32);
     expect(all.acquiredParcels.length).toBeGreaterThan(1);
     for (const r of all.rabbits) {
       const b = all.buildings.find(b => b.id === r.enclosureId)!;
@@ -134,7 +134,7 @@ describe('pure laboratory transactions', () => {
     const farm = finished.buildings.find(b => b.order)!; expect(act(finished, {type: 'collectOrder', id: farm.id}, now).ok).toBe(true);
   });
   it.each([0, now])('provides a valid complete endgame and a fresh tutorial scenario at %s', clock => {
-    const s = roundTrip(scenarioState('completeGame', clock)); expect(s.rabbits).toHaveLength(35); expect(s.discovered).toHaveLength(35);
+    const s = roundTrip(scenarioState('completeGame', clock)); expect(s.rabbits).toHaveLength(32); expect(s.discovered).toHaveLength(32);
     expect(s.progression.totalXp).toBe(cumulativeLevelXp(30)); expect(s.acquiredParcels).toHaveLength(9);
     expect(s.buildings.filter(b => b.farmLevel === 2)).toHaveLength(2);
     expect(s.buildings.filter(b => b.order && b.order.endsAt <= clock)).toHaveLength(1);

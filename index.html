@@ -1,6 +1,45 @@
 <!doctype html>
 <html lang="fr">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#b0d18b"><link rel="icon" href="data:,"><title>Prairie de lapins</title>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#fffdf5"><link rel="icon" href="data:,"><title>Prairie de lapins</title>
+  <script id="boot-fallback">
+    (function () {
+      var timer;
+      function booted() {
+        var root = document.getElementById('loading-screen');
+        return root && root.dataset.booted === 'true';
+      }
+      function stop() {
+        clearTimeout(timer);
+        window.removeEventListener('error', resourceError, true);
+        window.removeEventListener('prairie-booted', stop);
+      }
+      function fail() {
+        stop();
+        if (booted()) return;
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', fail, {once: true});
+          return;
+        }
+        var root = document.getElementById('loading-screen');
+        root.hidden = false; root.dataset.state = 'failed';
+        document.getElementById('loading-message').textContent = "Le jeu n'a pas pu se charger. Vérifie ta connexion puis réessaie.";
+        var play = document.getElementById('loading-play');
+        play.disabled = true; play.hidden = true;
+        var retry = document.getElementById('loading-retry');
+        retry.hidden = false; retry.disabled = false;
+        retry.onclick = function () { location.reload(); };
+      }
+      function resourceError(event) {
+        var target = event.target;
+        if (target && (target.tagName === 'SCRIPT' && target.type === 'module' ||
+            target.tagName === 'LINK' && target.rel === 'modulepreload')) fail();
+      }
+      window.addEventListener('error', resourceError, true);
+      window.addEventListener('prairie-booted', stop);
+      timer = setTimeout(fail, 25000);
+    }());
+  </script>
+  <link rel="preload" as="image" href="%BASE_URL%assets/loading/morning-path.webp" fetchpriority="high">
   <script src="%BASE_URL%assets/app/standalone-zoom.js"></script>
   <!-- app-install:start -->
   <link rel="manifest" href="%BASE_URL%assets/app/manifest.webmanifest">
@@ -8,7 +47,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Prairie de lapins">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <!-- app-install:end -->
 </head>
 <body>
@@ -16,11 +55,13 @@
   <section id="loading-screen" role="dialog" aria-modal="true" aria-labelledby="loading-title" data-state="loading">
     <div class="loading-card">
       <h1 id="loading-title">Prairie de lapins</h1>
+      <p id="loading-tip"></p>
       <div class="loading-bar" role="progressbar" aria-label="Chargement" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
       <ol id="loading-steps"><li>… Chargement</li></ol>
       <p id="loading-message" role="status"></p>
       <div class="actions"><button id="loading-play" type="button" disabled>Jouer</button><button id="loading-retry" class="secondary" type="button" hidden>Réessayer</button></div>
     </div>
+    <div class="loading-runner" aria-hidden="true"><img src="%BASE_URL%assets/rabbits/paille/paille-v1.png" alt="" width="303" height="429"></div>
   </section>
   <main id="app" inert>
     <div id="game" aria-label="Prairie : glisse pour déplacer la vue, pince pour zoomer, touche pour sélectionner"></div>

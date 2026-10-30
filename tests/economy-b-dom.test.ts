@@ -39,7 +39,8 @@ it('shows free hints in collection and notebook while keeping affection and odds
   const {ui}=mount(createGame(0));ui.open({kind:'collection'});expect(panel().querySelectorAll('.recipe-hint')).toHaveLength(20);
   ui.open({kind:'recipes'});expect(panel().querySelectorAll('.recipe-hint')).toHaveLength(20);
   for(const card of panel().querySelectorAll('[data-recipe-known="false"]')){expect(card.textContent).not.toMatch(/Affection|\d+ %/);}
-  for(const id of ['bouee','feu-glace','lunettes','perroquet','magicien','dragon','dadi','maxou','orange','requin'])expect(panel().querySelector(`[data-recipe="${id}"] .recipe-hint`)).toBeNull();
+  expect(panel().querySelector('[data-recipe="bouee"] .recipe-hint')?.textContent).toBe('Indice : Feu × Métal');
+  for(const id of ['dinono','magicien','dragon','dadi','maxou','orange','requin'])expect(panel().querySelector(`[data-recipe="${id}"] .recipe-hint`)).toBeNull();
 });
 it('renders the ten crops with their icon, locks the later ones and shows a local completion clock for a running crop',()=>{
   const s=createGame(0);s.pattes=1000;s.buildings.push(emptyBuilding('building-100','farm',0,32));s.nextId=101;s.progression={totalXp:cumulativeLevelXp(5),rewardedThroughLevel:5};

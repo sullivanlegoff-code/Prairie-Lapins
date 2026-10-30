@@ -53,7 +53,7 @@ describe('active species and habitat level gates',()=>{
  it('keeps v9, captures only provable historical purchases and discovered breeding rights once',()=>{
   const s=at(1);delete s.levelAccessTransition;s.purchaseUnlocks=['feu'];s.discovered=['paille','neige','magicien'];s.missions.events.welcome=1;
   const migrated=reload(s);const rights=structuredClone(migrated.levelAccessTransition);
-  expect(migrated.version).toBe(19);expect(stateLevelAccess(migrated,{family:'species',id:'feu',action:'purchase'}).accessible).toBe(true);expect(stateLevelAccess(migrated,{family:'species',id:'volant',action:'purchase'}).locked).toBe(true);
+  expect(migrated.version).toBe(21);expect(stateLevelAccess(migrated,{family:'species',id:'feu',action:'purchase'}).accessible).toBe(true);expect(stateLevelAccess(migrated,{family:'species',id:'volant',action:'purchase'}).locked).toBe(true);
   expect(stateLevelAccess(migrated,{family:'species',id:'belier-gris',action:'purchase'}).accessible).toBe(true);
   expect(stateLevelAccess(migrated,{family:'habitatPurchase',id:'vol'}).accessible).toBe(true);
   expect(stateLevelAccess(migrated,{family:'habitatPurchase',id:'universal'}).locked).toBe(false); // three discoveries already proved the old milestone
@@ -93,18 +93,18 @@ describe('active species and habitat level gates',()=>{
 describe('pre-launch result filtering and unchanged fixed probabilities',()=>{
  it('preserves Paille × Neige and filters the guarantee by level',()=>{
   expect(odds(1,'paille','neige')).toEqual({frisket:50,icy:50});
-  const s=at(1);s.pityFailures=7;s.discovered=['paille','neige','feu','wat-wat','glassofeu'];let pool=breedingPool(s,'feu','neige',4,4);expect(pool.guaranteed).toBe(false);expect(pool.weights).toEqual({neige:30,'wat-wat':30,glassofeu:30});
-  s.progression={totalXp:cumulativeLevelXp(6),rewardedThroughLevel:6};pool=breedingPool(s,'feu','neige',4,4);expect(pool.guaranteed).toBe(true);expect(pool.weights).toEqual({'feu-glace':1});
+  const s=at(1);s.pityFailures=7;s.discovered=['paille','neige','feu','wat-wat','glassofeu'];let pool=breedingPool(s,'feu','neige',4,4);expect(pool.guaranteed).toBe(false);expect(pool.weights).toEqual({'wat-wat':30,glassofeu:30});
+  s.discovered=s.discovered.filter(id=>id!=='glassofeu');s.progression={totalXp:cumulativeLevelXp(6),rewardedThroughLevel:6};pool=breedingPool(s,'feu','neige',4,4);expect(pool.guaranteed).toBe(true);expect(pool.weights).toEqual({'glassofeu':1});
  });
  it('reserves only currently admissible specials and normalizes ordinary results',()=>{
-  expect(odds(10,'paille','belier-gris')).toEqual({paille:20,'belier-gris':20,lunettes:20,roukette:20,boudinet:20});expect(odds(11,'paille','belier-gris')).toEqual({paille:18.5,'belier-gris':18.5,lunettes:18.5,roukette:18.5,boudinet:18.5,magicien:7.5}); // Both parents at affection 10: the epic chance ×1.5.
+  expect(odds(10,'paille','belier-gris')).toEqual({roukette:50,boudinet:50});expect(odds(11,'paille','belier-gris')).toEqual({roukette:46.25,boudinet:46.25,magicien:7.5}); // Both parents at affection 10: the epic chance ×1.5.
   expect(odds(13,'dadi','phoenix').dragon).toBeUndefined();expect(odds(13,'dadi','phoenix').dadi).toBe(7.5);
-  const pair=odds(14,'dadi','phoenix');expect(pair).toMatchObject({dragon:3,dadi:7.5,maxou:7.5});expect(Object.keys(pair)).toHaveLength(14);for(const id of ['neige','feu','volant','perroquet','feu-glace','pic-pic','phoenix','wat-wat','glassofeu','piment','tunini'])expect(pair[id]).toBeCloseTo(82/11,10);
+  const pair=odds(14,'dadi','phoenix');expect(pair).toMatchObject({dragon:3,dadi:7.5,maxou:7.5});expect(Object.keys(pair)).toHaveLength(12);for(const id of ['neige','feu','volant','pic-pic','phoenix','wat-wat','glassofeu','piment','tunini'])expect(pair[id]).toBeCloseTo(82/9,10);
   for(let level=1;level<=14;level++)for(const a of SPECIES_IDS)for(const b of SPECIES_IDS){const result=odds(level,a,b),total=Object.values(result).reduce((n,w)=>n+w,0);if(total)expect(total).toBeCloseTo(100,10);}
  },20000);
  it('launch XP cannot alter this birth, even if it crosses a threshold',()=>{
-  // Paille x Feu at level 4: Feu (level 5) is still locked, so with the roll .5 the draw lands on Ardent; had the launch XP counted, the same roll would give Feu.
-  const s=at(4);s.progression.totalXp=cumulativeLevelXp(5)-1;s.rabbits.push({id:'rabbit-6',species:'feu',affection:4,enclosureId:'building-1'});s.rabbits[0].affection=4;s.discovered.push('feu');s.nextId=7;
+  // Paille × Ardent is a mixed-rarity pair: Feu remains a possible result, locked until level 5.
+  const s=at(4);s.progression.totalXp=cumulativeLevelXp(5)-1;s.rabbits.push({id:'rabbit-6',species:'ardent',affection:4,enclosureId:'building-1'});s.rabbits[0].affection=4;s.discovered.push('ardent');s.nextId=7;
   const launched=act(s,{type:'breed',parents:['rabbit-2','rabbit-6']},0,()=>.5);if(!launched.ok)throw Error(launched.reason);const next=launched.state;
   expect(progressionFromXp(next.progression.totalXp).level).toBe(5);expect(next.buildings.find(b=>b.kind==='nest')!.breeding!.birth.species).toBe('ardent');
   expect(reload(next).buildings.find(b=>b.kind==='nest')!.breeding).toEqual(next.buildings.find(b=>b.kind==='nest')!.breeding);

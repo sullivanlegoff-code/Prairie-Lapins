@@ -62,7 +62,7 @@ describe('notebook recipe privacy', () => {
     expect(dragon.querySelector('img.coin-icon')).not.toBeNull(); expect(dragon.textContent).not.toMatch(/pattes?/);
     for (const hidden of ['Phoenix', 'Affection', '2 %', 'Parents requis', 'garantie', 'paire possédée']) expect(dragon.textContent).not.toContain(hidden);
     // Step 3: the purchase button is the only action; no shortcut before the recipe is known.
-    expect(buttons(dragon).map(b => b.textContent)).toEqual(['Acheter · 900 pièces']);
+    expect(buttons(dragon).map(b => b.textContent)).toEqual(['Acheter la recette · 900 pièces']);
     expect(panel().textContent).not.toContain('Dadi × Phoenix');
     for (const old of ['Géant, Magicien et Dragon', 'recettes ordinaires inconnues']) expect(panel().textContent).not.toContain(old);
   });
@@ -84,7 +84,7 @@ describe('notebook recipe privacy', () => {
 describe('nest odds privacy', () => {
   it('groups unknown results, hides the Dragon and keeps the launch available', () => {
     const {ui} = setup(couple(14)); nestWithParents(ui);
-    expect(odds()).toEqual(["Phoenix · feu + vol · Rare : 41/550 (≈ 7,45 %)","Dadi · neige + vol · Épique : 7,5 %","Résultats inconnus : 1871/2200 (≈ 85,05 %)"]);
+    expect(odds()).toEqual(["Phoenix · feu + vol · Rare : 41/450 (≈ 9,11 %)","Dadi · neige + vol · Épique : 7,5 %","Résultats inconnus : 1501/1800 (≈ 83,39 %)"]);
     expect(breeding().textContent).toContain('Résultats possibles : Phoenix, Dadi et des résultats inconnus.');
     for (const hidden of ['Dragon', 'Volant', 'Légendaire', 'Maxou']) { expect(panel().textContent).not.toContain(hidden); expect(breeding().textContent).not.toContain(hidden); }
     expect(panel().textContent).toContain('Chaque recette possède ses propres conditions');

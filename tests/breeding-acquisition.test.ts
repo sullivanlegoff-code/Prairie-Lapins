@@ -21,28 +21,28 @@ function game(a: SpeciesId, b: SpeciesId, affection: number): GameState {
 }
 
 describe('the breeding engine honours the declared acquisition sources', () => {
-  // Hand-written expectations: Neige × Feu (union feu,neige) holds two Commons at 40 and the recipes of Feu Glacé (needs affection 4), Wat Wat and Glassofeu at 20.
-  it('controls: the current tables give the historical weights, in order', () => {
-    expect(breedingWeights('neige', 'feu', 4, 4)).toEqual({neige:30,feu:30,'feu-glace':30,'wat-wat':30,glassofeu:30}); expect(Object.keys(breedingWeights('neige', 'feu', 4, 4))).toEqual(['neige','feu','feu-glace','wat-wat','glassofeu']);
-    expect(breedingWeights('paille', 'feu', 4, 4)).toEqual({paille: 30, feu: 30, bouee: 30, ardent: 30, snk: 30}); expect(breedingOdds('paille', 'belier-gris', 6, 6)).toEqual({paille: 19, 'belier-gris': 19, lunettes: 19, roukette: 19, boudinet: 19, magicien: 5});
+  it('controls: two commons omit common results, while mixed parents keep historical weights in order', () => {
+    expect(breedingWeights('neige', 'feu', 4, 4)).toEqual({'wat-wat':30,glassofeu:30}); expect(Object.keys(breedingWeights('neige', 'feu', 4, 4))).toEqual(['wat-wat','glassofeu']);
+    expect(breedingWeights('neige', 'glassofeu', 4, 4)).toEqual({neige:30,feu:30,'wat-wat':30,glassofeu:30});
+    expect(breedingWeights('paille', 'feu', 4, 4)).toEqual({ardent: 30, snk: 30}); expect(breedingOdds('paille', 'belier-gris', 6, 6)).toEqual({roukette: 47.5, boudinet: 47.5, magicien: 5});
   });
   it('excludes a species made shop-only from a historical table, keeping the others in order and weight', () => {
-    shopOnly('feu-glace'); expect(breedingWeights('neige', 'feu', 4, 4)).toEqual({neige:30,feu:30,'wat-wat':30,glassofeu:30}); expect(Object.keys(breedingWeights('neige', 'feu', 4, 4))).toEqual(['neige','feu','wat-wat','glassofeu']);
-    shopOnly('neige'); expect(breedingWeights('neige', 'feu', 4, 4)).toEqual({feu:30,'wat-wat':30,glassofeu:30}); expect(breedingWeights('neige', 'neige')).toEqual({});
+    shopOnly('wat-wat'); expect(breedingWeights('neige', 'glassofeu', 4, 4)).toEqual({neige:30,feu:30,glassofeu:30}); expect(Object.keys(breedingWeights('neige', 'glassofeu', 4, 4))).toEqual(['neige','feu','glassofeu']);
+    shopOnly('neige'); expect(breedingWeights('neige', 'glassofeu', 4, 4)).toEqual({feu:30,glassofeu:30}); expect(breedingWeights('neige', 'neige')).toEqual({});
   });
   it('excludes it on the generic path too, for the historical rule and for recipes', () => {
-    shopOnly('feu'); expect(breedingWeights('paille', 'feu', 4, 4)).toEqual({paille: 30, bouee: 30, ardent: 30, snk: 30});
-    shopOnly('bouee'); expect(breedingWeights('paille', 'feu', 4, 4)).toEqual({paille: 30, ardent: 30, snk: 30});
+    shopOnly('feu'); expect(breedingWeights('paille', 'ardent', 4, 4)).toEqual({paille: 30, ardent: 30, snk: 30});
+    shopOnly('ardent'); expect(breedingWeights('paille', 'ardent', 4, 4)).toEqual({paille: 30, snk: 30});
   });
   it('excludes a special recipe whose source is no longer declared, and does not reserve its probability', () => {
-    shopOnly('magicien'); expect(breedingOdds('paille', 'belier-gris', 6, 6)).toEqual({paille: 20, 'belier-gris': 20, lunettes: 20, roukette: 20, boudinet: 20});
+    shopOnly('magicien'); expect(breedingOdds('paille', 'belier-gris', 6, 6)).toEqual({roukette: 50, boudinet: 50});
     shopOnly('dragon'); expect(breedingOdds('dadi', 'phoenix', 10, 10).dragon).toBeUndefined();
   });
   it('keeps a species without breeding source out of the guarantee, and the guarantee still works for the others', () => {
     const s = game('feu', 'neige', 4); s.pityFailures = 7;
-    expect(breedingPool(s, 'feu', 'neige', 4, 4).missing).toEqual(["feu-glace","wat-wat","glassofeu"]); expect(breedingPool(s, 'feu', 'neige', 4, 4).guaranteed).toBe(true);
-    shopOnly('feu-glace'); const pool = breedingPool(s, 'feu', 'neige', 4, 4);
-    expect(pool.missing).toEqual(["wat-wat","glassofeu"]); expect(pool.eligible).toBe(true); expect(pool.guaranteed).toBe(true); expect(pool.weights).toEqual({'wat-wat':1,glassofeu:1});
+    expect(breedingPool(s, 'feu', 'neige', 4, 4).missing).toEqual(["wat-wat","glassofeu"]); expect(breedingPool(s, 'feu', 'neige', 4, 4).guaranteed).toBe(true);
+    shopOnly('wat-wat'); const pool = breedingPool(s, 'feu', 'neige', 4, 4);
+    expect(pool.missing).toEqual(["glassofeu"]); expect(pool.eligible).toBe(true); expect(pool.guaranteed).toBe(true); expect(pool.weights).toEqual({glassofeu:1});
   });
   it('refuses a breed with no result atomically: empty pool, no roll, no state change', () => {
     const s = game('paille', 'paille', 2), before = structuredClone(s);
@@ -52,10 +52,10 @@ describe('the breeding engine honours the declared acquisition sources', () => {
     if (!result.ok) expect(result.state).toEqual(before);
   });
   it('restores every override: the registry is back to the current sources', () => {
-    shopOnly('paille'); shopOnly('feu-glace');
+    shopOnly('paille'); shopOnly('wat-wat');
     for (const id of original.keys()) expect(SPECIES[id].acquisition).toEqual([{kind: 'shop', price: 80}]);
   });
 });
 describe('after the overrides are restored', () => {
-  it('the engine gives the historical results again', () => { expect(breedingWeights('neige', 'feu', 4, 4)).toEqual({neige:30,feu:30,'feu-glace':30,'wat-wat':30,glassofeu:30}); expect(SPECIES.paille.acquisition).toEqual([{kind: 'shop', price: 80}, {kind: 'historical-breeding'}]); });
+  it('the engine gives the mixed-parent historical results again', () => { expect(breedingWeights('neige', 'glassofeu', 4, 4)).toEqual({neige:30,feu:30,'wat-wat':30,glassofeu:30}); expect(SPECIES.paille.acquisition).toEqual([{kind: 'shop', price: 80}, {kind: 'historical-breeding'}]); });
 });

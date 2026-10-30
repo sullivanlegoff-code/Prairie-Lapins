@@ -15,21 +15,17 @@ export type HabitatCurrency = 'pattes' | 'hearts';
 /** `cost` is paid in `currency` when the level is reached: level 1 is bought, levels 2 and 3 are upgrades. Level 3 costs hearts, never coins. */
 export const HABITAT_LEVELS = {
   universal: [{capacity: BALANCE.enclosureCapacity, cap: BALANCE.enclosureCap, cost: BALANCE.buildings.enclosure.price, currency: 'pattes'},
-    {capacity: 5, cap: 4000, cost: 175, currency: 'pattes'}, {capacity: 7, cap: 5600, cost: 10, currency: 'hearts'}],
-  specialized: [{capacity: 3, cap: 2400, cost: 200, currency: 'pattes'}, {capacity: 5, cap: 4000, cost: 100, currency: 'pattes'}, {capacity: 7, cap: 5600, cost: 10, currency: 'hearts'}],
+    {capacity: 5, cap: 500, cost: 175, currency: 'pattes'}, {capacity: 7, cap: 1250, cost: 10, currency: 'hearts'}],
+  specialized: [{capacity: 3, cap: 100, cost: 200, currency: 'pattes'}, {capacity: 5, cap: 300, cost: 100, currency: 'pattes'}, {capacity: 7, cap: 1250, cost: 10, currency: 'hearts'}],
 } as const;
 export const LAND = [{width: BALANCE.initialWidth, cost: 0}, {width: BALANCE.extendedWidth, cost: BALANCE.extensionCost}, {width: LEGACY_ISLAND.mapCells, cost: 1800}] as const;
 export const HABITAT_PRICES: Record<HabitatType, number> = {paille: 200, neige: 200, feu: 450, metal: 800, vol: 1200, universal: 350};
-/**
- * Coins a habitat stores (owner, 25 October 2026): at levels 1 and 2, the earlier a habitat opens, the less it stores — Paille
- * stores the least and Vol the most, in their order of access (Paille, Neige, Feu, Universel, Métal, Vol). Every level-3 habitat
- * stores the same maximum. Each one still holds the twelve-hour night of its full capacity at affection 20.
- */
-export const HABITAT_CAPS: Record<1 | 2, Record<HabitatType, number>> & {3: number} = {
-  1: {paille: 1300, neige: 1500, feu: 1800, universal: 2100, metal: 2500, vol: 2900},
-  2: {paille: 2600, neige: 3000, feu: 3400, universal: 3800, metal: 4300, vol: 4800},
-  3: 5600,
+/** Owner's storage limits; the universal habitat follows Vol. */
+export const HABITAT_CAPS: Record<HabitatLevel, Record<HabitatType, number>> = {
+  1: {paille: 100, neige: 125, feu: 150, metal: 175, vol: 200, universal: 200},
+  2: {paille: 300, neige: 350, feu: 400, metal: 450, vol: 500, universal: 500},
+  3: {paille: 1250, neige: 1250, feu: 1250, metal: 1250, vol: 1250, universal: 1250},
 };
-export const habitatCap = (type: HabitatType, level: HabitatLevel): number => level === 3 ? HABITAT_CAPS[3] : HABITAT_CAPS[level][type];
+export const habitatCap = (type: HabitatType, level: HabitatLevel): number => HABITAT_CAPS[level][type];
 export const habitatLevel = (type: HabitatType, level: HabitatLevel) => ({...HABITAT_LEVELS[type === 'universal' ? 'universal' : 'specialized'][level - 1], cap: habitatCap(type, level), cost: level === 1 ? HABITAT_PRICES[type] : level === 2 ? HABITAT_PRICES[type] / 2 : 10});
 export const habitatPrice = (type: HabitatType) => habitatLevel(type, 1).cost;

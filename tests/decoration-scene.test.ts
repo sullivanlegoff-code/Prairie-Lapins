@@ -34,6 +34,7 @@ describe('painted decoration scene ordering', () => {
 
 it('sorts the whole layer when a neighbor crosses a stationary rabbit, then skips unchanged depths', () => {
  const scene = new MeadowScene({}, () => {}, () => false);
+ scene.time = {now: 0};
  const make = (id, y) => {
   const motion = motionApi.createRabbitMotion(id, {x:0,y:0}, 2);
   motion.local.y = y;

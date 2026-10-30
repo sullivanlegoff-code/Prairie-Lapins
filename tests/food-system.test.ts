@@ -19,12 +19,12 @@ const free = (s: GameState) => { for (let y = 0; y < 48; y++) for (let x = 0; x 
 
 describe('the Statue de l’Affection', () => {
   it('is sold among the buildings from level 15, once, at its price', () => {
-    const early = atLevel(14); early.pattes = 100_000;
+    const early = atLevel(14); early.pattes = 100_000; early.hearts = 100;
     expect(act(early, {type: 'buyBuilding', kind: 'statue', ...free(early)}, 0)).toMatchObject({ok: false, reason: 'LEVEL_REQUIRED'});
-    let s = atLevel(AFFECTION_STATUE.level); s.pattes = BALANCE.buildings.statue.price - 1; const at = free(s);
-    expect(act(s, {type: 'buyBuilding', kind: 'statue', ...at}, 0)).toMatchObject({ok: false, reason: 'NOT_ENOUGH_PATTES'});
-    s.pattes = 2 * BALANCE.buildings.statue.price;
-    s = run(s, {type: 'buyBuilding', kind: 'statue', ...at}); expect(s.pattes).toBe(BALANCE.buildings.statue.price);
+    let s = atLevel(AFFECTION_STATUE.level); s.pattes = 100_000; s.hearts = AFFECTION_STATUE.heartPrice - 1; const at = free(s);
+    expect(act(s, {type: 'buyBuilding', kind: 'statue', ...at}, 0)).toMatchObject({ok: false, reason: 'NOT_ENOUGH_HEARTS'});
+    s.pattes = 0; s.hearts = 2 * AFFECTION_STATUE.heartPrice;
+    s = run(s, {type: 'buyBuilding', kind: 'statue', ...at}); expect(s.hearts).toBe(AFFECTION_STATUE.heartPrice); expect(s.pattes).toBe(0);
     expect(act(s, {type: 'buyBuilding', kind: 'statue', ...free(structuredClone(s))}, 0)).toMatchObject({ok: false, reason: 'BUILDING_LIMIT'});
     expect(affectionCap(s)).toBe(BALANCE.maxAffection);
     expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: s});
@@ -46,7 +46,7 @@ describe('the Statue de l’Affection', () => {
 describe('epic and legendary chances grow with both parents’ affection', () => {
   it('multiplies by 1.5 from 10 and by 2 from 15, on the lower parent, for epic and legendary only', () => {
     expect([rareBirthFactor('magicien', 9, 20), rareBirthFactor('magicien', 10, 14), rareBirthFactor('magicien', 15, 15), rareBirthFactor('dragon', 15, 20)]).toEqual([1, 1.5, 2, 2]);
-    expect(rareBirthFactor('lunettes', 20, 20)).toBe(1); expect(SPECIES.lunettes.rarity).toBe('rare');
+    expect(rareBirthFactor('boudinet', 20, 20)).toBe(1); expect(SPECIES.boudinet.rarity).toBe('rare');
     expect(breedingOdds('magicien', 'belier-gris', 9, 9).magicien).toBe(5);
     expect(breedingOdds('magicien', 'belier-gris', 10, 10).magicien).toBe(7.5);
     expect(breedingOdds('magicien', 'belier-gris', 20, 15).magicien).toBe(10);
@@ -60,7 +60,7 @@ describe('saves before the ten crops', () => {
     for (const [recipe, crop, grass, duration] of [['small', 'foin', 20, 5 * MINUTE], ['medium', 'trefle', 60, 30 * MINUTE], ['large', 'fenouil', 180, 4 * HOUR], ['night', 'banane', 360, 10 * HOUR]] as const) {
       legacy.buildings.at(-1).order = {recipe, startedAt: 0, endsAt: duration};
       const decoded = decodeGame(JSON.stringify(legacy)); if (!decoded.ok) throw Error(decoded.reason);
-      expect(decoded.state.version).toBe(19);
+      expect(decoded.state.version).toBe(21);
       expect(decoded.state.buildings.at(-1)!.order).toEqual({recipe: crop, startedAt: 0, endsAt: duration, grass, duration});
     }
   });

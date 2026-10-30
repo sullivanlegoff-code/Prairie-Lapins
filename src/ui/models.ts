@@ -1,3 +1,4 @@
+import {farmLimit} from '../config/balance';
 import {recipeHint} from './economyFeedback';
 import {stateLevelAccess} from '../simulation/levelRights';
 import {buildingPlacementReason} from '../simulation/placement';
@@ -14,6 +15,8 @@ import {mapRarities} from '../config/rarities';
 
 export const BUILDING_NAMES: Record<BuildingKind, string> = {enclosure: 'Enclos', farm: 'Ferme', nest: 'Nid', nursery: 'Nurserie', kitchen: 'Cuisine', statue: 'Statue de l’Affection', agency: 'Agence de voyage'};
 export const REFUSALS: Record<Refusal | 'NO_GAME' | 'DISPOSED' | 'SALE_NOT_SAVED' | 'ACTION_NOT_SAVED' | 'STORAGE_CHANGED', string> = {
+  HABITAT_NOT_EMPTY: 'Cet habitat doit être vide.',
+  LAST_HABITAT: 'Garde au moins un habitat.',
   LEVEL_REQUIRED:'Niveau du joueur insuffisant pour cette action.',
   NO_BREEDING_RESULT:'Aucun résultat ordinaire accessible à ce niveau. La reproduction attend pour conserver les probabilités spéciales. Consulte le carnet.',
   PURCHASE_LOCKED:'Cet achat est verrouillé. Consulte son niveau requis.',
@@ -59,10 +62,13 @@ export function buildingReason(s: GameState, kind: BuildingKind, ignorePrice = f
   if(kind==='statue' && playerLevel(s)<AFFECTION_STATUE.level) return `Niveau ${AFFECTION_STATUE.level} requis`;
   if(kind==='agency' && playerLevel(s)<TRAVEL.unlockLevel) return `Niveau ${TRAVEL.unlockLevel} requis`;
   if(kind==='enclosure') {const access=stateLevelAccess(s,{family:'habitatPurchase',id:habitatType});if(access.locked)return `Niveau ${access.requiredLevel} requis`;}
+  if (kind === 'farm' && playerLevel(s) < 15 && s.buildings.filter(b => b.kind === 'farm').length >= farmLimit(playerLevel(s))) return `Niveau ${farmLimit(playerLevel(s)) === 2 ? 12 : 15} requis pour une ferme supplémentaire`;
   const config = BALANCE.buildings[kind];
   if (config.maximum !== null && s.buildings.filter(b => b.kind === kind).length >= config.maximum) return REFUSALS.BUILDING_LIMIT;
   if (s.buildings.length >= s.acquiredParcels.length * ISLAND.parcelArea) return 'Aucune case libre. Agrandis la prairie.';
-  return ignorePrice ? null : moneyReason(s, kind === 'enclosure' ? habitatPrice(habitatType) : config.price);
+  if (ignorePrice) return null;
+  if (kind === 'statue') return s.hearts < AFFECTION_STATUE.heartPrice ? REFUSALS.NOT_ENOUGH_HEARTS : null;
+  return moneyReason(s, kind === 'enclosure' ? habitatPrice(habitatType) : config.price);
 }
 export type Placement = {kind: BuildingKind; movingId?: string; starter?: boolean; habitatType?: HabitatType; cell: {x: number; y: number} | null};
 export function placementReason(s: GameState, placement: Placement): string | null {

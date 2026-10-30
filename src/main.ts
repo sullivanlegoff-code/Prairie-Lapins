@@ -1,10 +1,13 @@
 import {accountKnown} from './cloud/accountState';
 import Phaser from 'phaser';
 import {MeadowScene} from './display/MeadowScene';
+import {mountArtStatus} from './display/artStatus';
 import {GameController} from './application/GameController';
 import {bindLifecycle} from './application/lifecycle';
 import {browserStorage} from './persistence/browserStorage';
 import {browserLifecycle} from './display/browserLifecycle';
+import {bindAppViewport} from './display/appViewport';
+import {requestMobileFullscreen} from './display/fullscreen';
 import {mountSavePanel} from './display/SavePanel';
 import {GameUI} from './ui/GameUI';
 import {PreferenceStore} from './ui/preferences';
@@ -16,18 +19,22 @@ import './display/meadow-navigation.css';
 import './display/breeding.css';
 import './display/onboarding.css';
 import './display/menus.css';
+import './display/loading-screen.css';
 import {bindAppInteractions} from './display/appInteractions';
 import {AudioEngine} from './audio/audioEngine';
 import {mountSoundSettings, channelSettings} from './ui/soundSettings';
 import {MusicPlayer} from './audio/musicPlayer';
 import {MUSIC_TRACKS} from './config/music';
-import {LoadingTracker, renderLoading} from './display/loadingScreen';
+import {LoadingTracker, renderLoading, startLoadingMessages} from './display/loadingScreen';
 
 async function boot(): Promise<() => void> {
+  document.getElementById('loading-screen')!.dataset.booted = 'true';
+  window.dispatchEvent(new Event('prairie-booted'));
   // Loading screen first: the game receives no interaction until « Jouer ».
   const loadingRoot = document.getElementById('loading-screen')!, app = document.getElementById('app')!;
   app.inert = true;
   const loading = new LoadingTracker(), unrender = loading.subscribe(view => renderLoading(loadingRoot, view));
+  const stopMessages = startLoadingMessages(loadingRoot);
   const disposeInteractions = bindAppInteractions(document);
   document.getElementById('game-version')!.textContent = `Version : ${RELEASE_LABEL} · build ${BUILD_REVISION.slice(0, 7)}`;
   const base = browserStorage();
@@ -58,17 +65,23 @@ async function boot(): Promise<() => void> {
   const fonts = (document as Document & {fonts?: FontFaceSet}).fonts;
   if (fonts) void fonts.ready.then(() => loading.done('fonts'), () => loading.warn('fonts', '')); else loading.done('fonts');
   let ui: GameUI | null = null;
+  const artStatus = mountArtStatus(app);
   const scene = new MeadowScene(controller, selection => ui?.select(selection), () =>
     !!document.querySelector('#game-panel.shop-fullscreen:not([hidden])') || !!document.querySelector('dialog[open]:not(#paille-dialogue)') || getComputedStyle(document.getElementById('portrait-notice')!).display !== 'none',
     // Images are done only when the scene is created: Phaser reports 100 % before a late file error.
     {progress: fraction => loading.progress('textures', fraction),
-      error: file => loading.fail('textures', `Une image du jeu n’a pas pu être chargée (${file}).`),
+      error: () => loading.fail('textures', 'Une image du jeu n’a pas pu être chargée.'),
+      runtime: (status, retry) => artStatus.update(status, retry),
       ready: () => { loading.done('textures'); loading.done('scene'); }});
   recenterAfterLab = () => scene.recenter();
   const game = new Phaser.Game({
     type: Phaser.AUTO, parent: 'game', backgroundColor: '#fffdf5', transparent: true,
     scale: {mode: Phaser.Scale.RESIZE, width: '100%', height: '100%'}, scene: [scene],
     render: {antialias: true}, input: {activePointers: 3},
+  });
+  const disposeViewport = bindAppViewport(() => {
+    // RESIZE reads parentSize, so measure it before refreshing the canvas/bounds.
+    if (game.isBooted) { game.scale.getParentBounds(); game.scale.refresh(); }
   });
   const audio = new AudioEngine();
   for (const channel of ['music', 'effects'] as const) audio.configure(channel, channelSettings(preferences, channel));
@@ -89,7 +102,8 @@ async function boot(): Promise<() => void> {
   const play = () => {
     if (!loading.view().ready || entered) return;
     music.start();
-    loadingRoot.hidden = true; app.inert = false; loading.dispose(); unrender();
+    requestMobileFullscreen();
+    loadingRoot.hidden = true; app.inert = false; loading.dispose(); unrender(); stopMessages();
     ui = new GameUI(controller, scene, clock, preferences, audio, {onlineServicesAllowed: policy.onlineServicesAllowed && !LABORATORY_BUILD && !DECORATIONS_PREVIEW_BUILD, accountKnown: () => accountKnown(storage)});
     const soundSettings = mountSoundSettings(document, preferences, {onChange: (channel, enabled, volume) => {
       audio.configure(channel, {enabled, volume});
@@ -124,7 +138,7 @@ async function boot(): Promise<() => void> {
   const dismissPortrait = () => document.body.classList.add('portrait-dismissed');
   document.getElementById('continue-portrait')!.addEventListener('click', dismissPortrait);
   return () => {
-    entered?.(); loading.dispose(); music.dispose(); audio.dispose(); disposeInteractions(); lifecycle.stop(); controller.dispose(); game.destroy(true);
+    entered?.(); loading.dispose(); music.dispose(); audio.dispose(); disposeViewport(); disposeInteractions(); lifecycle.stop(); controller.dispose(); game.destroy(true); artStatus.dispose();
     document.removeEventListener('visibilitychange', background); window.removeEventListener('pagehide', hidden); window.removeEventListener('pageshow', shown);
     document.removeEventListener('pointerdown', retryMusic, {capture: true}); playButton.removeEventListener('click', play); retryButton.removeEventListener('click', retry);
     document.getElementById('continue-portrait')!.removeEventListener('click', dismissPortrait);

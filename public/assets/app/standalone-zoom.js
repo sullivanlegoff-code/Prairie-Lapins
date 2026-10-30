@@ -17,7 +17,8 @@
   const original = viewport.content;
   const locked = 'width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover';
   const media = window.matchMedia('(display-mode: standalone)');
-  const standalone = () => window.navigator.standalone === true || media.matches;
+  const fullscreen = window.matchMedia('(display-mode: fullscreen)');
+  const standalone = () => window.navigator.standalone === true || media.matches || fullscreen.matches;
   const update = () => {
     const active = standalone();
     viewport.content = active ? locked : original;
@@ -37,5 +38,6 @@
   window.addEventListener('pageshow', update);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') update(); });
   media.addEventListener('change', update);
+  fullscreen.addEventListener('change', update);
   update();
 })();

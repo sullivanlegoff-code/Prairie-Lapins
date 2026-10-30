@@ -8,8 +8,8 @@
     "derivedSha1": "6d00530a6b4cf93ab0c728f21f77ac530a82b55d"
   },
   "tree": {
-    "sourceSha1": "49b63810c2830c722622fe4811e904f02cd4364d",
-    "derivedSha1": "cd509416d2e8fc941a137db79f5d0332dfd50105"
+    "sourceSha1": "7d2378335d8e97c43f8a63f1ad5c76ad3446fc60",
+    "derivedSha1": "6463d412fa4cf926ee00ce37a9e75587b85e49f5"
   },
   "hay-bale": {
     "sourceSha1": "732a59927a40f1cf031ab2f8904077e7ce3066fb",
@@ -50,5 +50,41 @@
   "robot-statue": {
     "sourceSha1": "92b22abd562d9e30d7f624a9e5c1ff072124a88e",
     "derivedSha1": "597d4aab8a7fe58db78c886d93a98f079b1fcd64"
+  },
+  "penguin-bookcase": {
+    "sourceSha1": "3cce079aba85d4e06307c17661a6c0fe07585635",
+    "derivedSha1": "d6e71ca468215141c7ab84379f5d4f4e952dfd06"
+  },
+  "ironing-board": {
+    "sourceSha1": "28301e5cc5877e8441b7e3c471aad620e07f68d3",
+    "derivedSha1": "f9b27661103c292f41a1c8ad1397a51b663496d4"
+  },
+  "climbing-rock": {
+    "sourceSha1": "8967d098959c4c44257341e14fc275f1361604b4",
+    "derivedSha1": "a4f4a886cded7cbe57fd44ab83aba0784306b07f"
+  },
+  "white-bouquet": {
+    "sourceSha1": "eb58c59460ffbb08c94063a4dd158f9fbb7603b8",
+    "derivedSha1": "3f2bcb3c64aab218a1755c31bbd8ff3afbb59658"
+  },
+  "rabbit-fountain": {
+    "sourceSha1": "45fb8d149102d43d5190bfe5a4031ffc8bba4df7",
+    "derivedSha1": "431931c5750b9796ef8be0ab30bcf049ee35e3b2"
+  },
+  "vintage-microscope": {
+    "sourceSha1": "f7fbdfb956d0aaa00fc3ba7605109c33661e47ab",
+    "derivedSha1": "c577360b38c80cb25b34e325d85b96c024f536f5"
+  },
+  "chocolate-cake": {
+    "sourceSha1": "3100d8b2005d558102cd6c74919d5cf4f8575bdc",
+    "derivedSha1": "925c68cf86fb7e97cbf8b53be4c094b7f3e2c73a"
+  },
+  "shark-slippers": {
+    "sourceSha1": "1951fff88d68ea81363c1be3f1d6620eb47b0288",
+    "derivedSha1": "35fe5f8dcc1b8d90dada6dce87ec0c0d52f2d987"
+  },
+  "game-console": {
+    "sourceSha1": "46cbc50d2de9693228e6a4d013d2733df1988522",
+    "derivedSha1": "cd13d3adb28cafb5e2992d8f64107905d58ebf03"
   }
 }

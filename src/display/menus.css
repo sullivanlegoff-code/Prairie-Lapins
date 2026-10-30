@@ -152,6 +152,11 @@ dialog :is(.badge, .timer, .reason) {
   color: #44452a; box-shadow: 0 2px 2px #644a2020;
 }
 #game-panel .badge { font-weight: 700; }
+#game-panel .rabbit-birth-chance { display: grid; gap: 5px; margin: 10px 0; font-size: 14px; }
+.rabbit-birth-chance strong { color: #30391f; overflow-wrap: anywhere; }
+.birth-chance-indicator { display: flex; gap: 5px; }
+.birth-chance-indicator > span { width: 22px; height: 6px; border: 1px solid #687451; border-radius: 3px; background: #eee9d7; }
+.birth-chance-indicator > .is-active { background: #687451; }
 #game-panel :is(.work-state, .placement-valid) {
   border-image: var(--menu-sage) 32 fill / 10px / 0 stretch;
   padding: 10px 14px; color: #252d1b;
@@ -208,7 +213,14 @@ dialog :is(.badge, .timer, .reason) {
   background: none; border: 10px solid transparent; border-image: var(--menu-stitch) 28 fill / 10px / 0 stretch;
   border-radius: 4px; box-shadow: 0 3px 3px #644a2020; padding: 4px;
 }
-#breeding-dialog .breeding-column > h3 { margin: 0 0 8px; width: 100%; text-align: center; -webkit-text-stroke: 0; }
+#breeding-dialog .breeding-column {
+  border-width: 4px; border-image-width: 4px; padding: 2px;
+}
+#breeding-dialog .breeding-column > h3 {
+  margin: 0 0 2px; padding: 0 8px; width: 100%;
+  border-width: 2px; border-image-width: 2px;
+  line-height: 18px; font-size: 14px; text-align: center; -webkit-text-stroke: 0;
+}
 #breeding-dialog .breeding-footer p { color: #342f22; }
 #breeding-dialog .breeding-footer .reason { color: #6b3020; }
 #breeding-dialog .breeding-badge {
@@ -267,3 +279,28 @@ dialog :is(.badge, .timer, .reason) {
 .account-reminder p { line-height: 1.5; }
 .account-reminder .actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .account-reminder button { min-height: 44px; max-width: 100%; }
+#game-panel .recipe-shop-intro { grid-column: 1 / -1; }
+#game-panel .recipe-shop-intro p { margin-top: 0; }
+#game-panel .recipe-shop-card { align-content: start; }
+#game-panel .recipe-shop-card .badge { margin-block: 4px 8px; }
+#game-panel .recipe-shop-card button { width: 100%; min-height: 44px; }
+#game-panel .recipe-rules { margin-block: 10px; }
+#game-panel [data-focus^="recipe-title-"]:focus-visible { outline: 2px solid #65784c; outline-offset: 4px; border-radius: 3px; }
+#game-panel .mission-filters { display: flex; flex-wrap: wrap; gap: 6px; grid-column: 1 / -1; }
+#game-panel .mission-filters button { flex: 1 1 120px; font-size: 14px; }
+#game-panel [data-mission-status="claimed"] { opacity: .8; }
+#game-panel .farm-orders > :is([data-replant], .reason) { grid-column: 1 / -1; }
+.cozy-group-preview { position: relative; width: min(100%, 340px); max-height: 260px; margin: 12px auto; background: #e5ead7; border: 1px solid #9ca980; }
+#game-panel .farm-orders > [data-replant] { min-height: 44px; width: 100%; }
+#game-panel[data-view='missions'] .mission-tabs { display: flex; gap: 6px; margin: 0; }
+#game-panel[data-view='missions'] .mission-tabs button { flex: 1; min-height: 44px; margin: 0; padding: 6px; font-size: 13px; }
+#game-panel[data-view='missions'] .mission-intro { margin: 6px 0; }
+#game-panel[data-view='missions'] .mission-filters { flex-wrap: nowrap; gap: 4px; margin-bottom: 8px; }
+#game-panel[data-view='missions'] .mission-filters button { flex: 1 1 0; min-width: 44px; min-height: 44px; padding: 5px 2px; font-size: 13px; }
+#game-panel[data-view='missions'] .mission-progressing { outline: 2px solid #73864f; outline-offset: -3px; }
+@media (max-height: 450px) {
+  #game-panel[data-view='missions'] .panel-scroll { padding-top: 4px; }
+  #game-panel[data-view='missions'] .mission-intro { font-size: 12px; line-height: 1.3; margin-block: 4px; }
+  #game-panel[data-view='missions'] .mission-filters { margin-bottom: 4px; }
+  #game-panel[data-view='missions'] [data-mission] { margin-block: 6px; }
+}

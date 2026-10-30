@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {act, createGame, decodeGame, encodeGame} from '../src/simulation';
+import {act, advance, createGame, decodeGame, encodeGame} from '../src/simulation';
 import {cumulativeLevelXp, requiredHabitatUpgradeLevel} from '../src/simulation/progression';
 import {HABITAT_LEVELS, HABITAT_TYPES, habitatLevel, type HabitatType} from '../src/config/habitats';
 import {quoteComplement} from '../src/simulation/actions';
@@ -63,6 +63,7 @@ describe('upgrading an enclosure: coins to level 2, exactly ten hearts to level 
 
   it('does not charge an enclosure already at level 3, on load or afterwards', () => {
     const s = game('universal', 2, 100, 3); s.buildings[0].habitat = {type: 'universal', level: 3};
+    Object.assign(s, advance(s, 0)); // Observing the new level-3 milestone never charges or pays a reward.
     const decoded = decodeGame(encodeGame(s)); expect(decoded).toEqual({ok: true, state: s});
     if (decoded.ok) { expect(decoded.state.hearts).toBe(3); expect(decoded.state.pattes).toBe(100); }
   });

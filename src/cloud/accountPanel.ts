@@ -6,7 +6,8 @@ import type {GameState} from '../state/types';
 import {progressionFromXp} from '../simulation/progression';
 import {cloudConfig, UNAVAILABLE, type CloudConfig} from './config';
 import {SupabaseGateway, type CloudGateway} from './gateway';
-import {CloudSync, type SyncView} from './sync';
+import {BACKUP_KEY, CloudSync, type SyncView} from './sync';
+import {fileExporter} from '../display/fileExport';
 
 export function authMessage(error: {code?: string; message?: string; status?: number}): string {
   const code = error.code ?? '', message = (error.message ?? '').toLowerCase();
@@ -33,6 +34,7 @@ export function syncMessage(v: SyncView): string {
     case 'session': return 'Ta session a expiré. Reconnecte-toi ; ta partie reste sur cet appareil.';
     case 'choice': return 'Choisis la partie à associer à ton compte.';
     case 'conflict': return 'Ta partie a changé ici et en ligne. Choisis celle que tu veux garder. Aucune fusion ne sera faite.';
+    case 'recovery': return v.message ?? 'La liaison de cet appareil à ton compte est abîmée. Ta partie reste conservée. Tu peux réparer la liaison puis comparer les deux parties.';
     case 'error': case 'outdated': return v.message ?? 'La sauvegarde en ligne est bloquée. Exporte ta partie et réessaie.';
     default: return '';
   }
@@ -64,7 +66,12 @@ export async function mountAccountPanel(root: HTMLElement, controller: GameContr
     <button type="submit">Se connecter</button><button type="button" data-toggle class="secondary">Créer mon compte</button>
     <p class="small">Mot de passe oublié ? Contacte le propriétaire pour qu'il le réinitialise. Aucun e-mail ne sera envoyé.</p></form>
     <div data-choices></div><div class="actions"><button data-retry type="button" class="secondary" hidden>Réessayer</button>
-    <button data-signout type="button" class="secondary" hidden>Se déconnecter</button></div>`;
+    <button data-signout type="button" class="secondary" hidden>Se déconnecter</button></div>
+    <section data-backup-area hidden><h4>Copie de secours</h4>
+    <p class="small">Cette copie contient la partie de cet appareil avant sa dernière récupération en ligne. Télécharge-la, puis utilise « Importer une partie » dans la section « Remplacer la partie » des Paramètres. Tu verras son résumé avant de confirmer le remplacement.</p>
+    <button data-backup type="button" class="secondary">Télécharger la copie de secours</button>
+    <button data-backup-fallback type="button" class="secondary" hidden>Télécharger le JSON de secours</button>
+    <p data-backup-status role="status"></p></section>`;
   const get = <T extends HTMLElement>(selector: string) => root.querySelector<T>(selector)!;
   const form = get<HTMLFormElement>('form'), email = get<HTMLInputElement>('[name=email]'), password = get<HTMLInputElement>('[name=password]'), confirmation = get<HTMLInputElement>('[name=confirmation]');
   const error = get('[data-error]'), toggle = get<HTMLButtonElement>('[data-toggle]'), submit = get<HTMLButtonElement>('[type=submit]');
@@ -83,8 +90,11 @@ export async function mountAccountPanel(root: HTMLElement, controller: GameContr
   try { client = await (options.create ?? create)(config); }
   catch { error.textContent = 'Le service est indisponible. Réessaie en rechargeant la page.'; return () => {}; }
   const sync = new CloudSync(controller, storage, options.gateway ?? new SupabaseGateway(client), options.onReplacement, undefined, options.policy);
+  const exporter = fileExporter();
+  let pendingBackup: {json: string; filename: string} | null = null;
   let alive = true, signup = false, busy = false, signedOut = false, owner: string | null = null, address = '', sequence = 0;
   let selected: 'remote' | 'local' | null = null;
+  let confirmRepair = false;
   function render(v: SyncView) {
     if (!alive) return;
     form.hidden = !!owner && v.status !== 'session';
@@ -92,12 +102,25 @@ export async function mountAccountPanel(root: HTMLElement, controller: GameContr
     get('[data-status]').textContent = syncMessage(v);
     retry.hidden = !['offline', 'error', 'local-error'].includes(v.status);
     signout.hidden = !owner;
+    try { get('[data-backup-area]').hidden = storage.getItem(BACKUP_KEY) === null; }
+    catch { get('[data-backup-area]').hidden = true; }
     const choices = get('[data-choices]'); choices.replaceChildren();
+    const button = (label: string, f: () => void) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'secondary'; b.textContent = label; b.onclick = f; choices.append(b); };
+    if (v.status === 'recovery') {
+      if (confirmRepair) {
+        const warning = document.createElement('p');
+        warning.textContent = 'La liaison abîmée, y compris tout envoi en attente, sera conservée dans une copie de secours. La partie jouée ne sera pas remplacée. Tu devras ensuite choisir la partie à garder après comparaison.';
+        choices.append(warning);
+        button('Confirmer la réparation', () => { confirmRepair = false; void sync.repairLink(true); });
+        button('Annuler', () => { confirmRepair = false; render(sync.getView()); });
+      } else button('Réparer la liaison', () => { confirmRepair = true; render(sync.getView()); });
+      return;
+    }
+    confirmRepair = false;
     if (!['choice', 'conflict'].includes(v.status)) { selected = null; return; }
     const local = document.createElement('p'), remote = document.createElement('p');
     local.textContent = 'Sur cet appareil : ' + summary(controller.getSnapshot().state);
     remote.textContent = 'En ligne : ' + summary(v.remote?.state ?? null); choices.append(local, remote);
-    const button = (label: string, f: () => void) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'secondary'; b.textContent = label; b.onclick = f; choices.append(b); };
     if (selected) {
       const warning = document.createElement('p');
       warning.textContent = selected === 'remote' ? 'Confirme le remplacement de la partie de cet appareil. Une copie de secours locale sera conservée.'
@@ -180,12 +203,31 @@ export async function mountAccountPanel(root: HTMLElement, controller: GameContr
       .catch(() => { if (alive) error.textContent = authMessage({}); });
   };
   retry.onclick = () => { void sync.retry(); };
+  get<HTMLButtonElement>('[data-backup]').onclick = () => { void (async () => {
+    const status = get('[data-backup-status]');
+    try {
+      const json = storage.getItem(BACKUP_KEY);
+      if (json === null) { status.textContent = 'Aucune copie de secours n’est disponible.'; return; }
+      const filename = `prairie-lapins-copie-de-secours-${new Date().toISOString().slice(0, 10)}.json`;
+      const outcome = await exporter.export(json, filename);
+      if (!alive) return;
+      pendingBackup = outcome === 'fallback' ? {json, filename} : null;
+      get('[data-backup-fallback]').hidden = !pendingBackup;
+      status.textContent = outcome === 'cancelled' ? 'Export annulé. La copie est conservée.' : outcome === 'fallback' ? 'Touche « Télécharger le JSON de secours » pour réessayer le téléchargement.' :
+        'Export demandé. Conserve le fichier, puis utilise « Importer une partie » dans les Paramètres pour le consulter et confirmer sa récupération.';
+    } catch { if (alive) status.textContent = 'La copie n’a pas pu être exportée. Elle reste conservée ; réessaie.'; }
+  })(); };
+  get<HTMLButtonElement>('[data-backup-fallback]').onclick = () => {
+    if (!pendingBackup) return;
+    try { exporter.download(pendingBackup.json, pendingBackup.filename); get('[data-backup-status]').textContent = 'Téléchargement demandé. Vérifie le fichier dans tes téléchargements.'; }
+    catch { get('[data-backup-status]').textContent = 'Le téléchargement a échoué. Réessaie ; la copie est conservée.'; }
+  };
   const background = () => { if (document.hidden) void sync.flush(); else void sync.retry(); };
   const hide = () => { void sync.flush(); }, online = () => { void sync.retry(); };
   document.addEventListener('visibilitychange', background); window.addEventListener('pagehide', hide); window.addEventListener('online', online);
   return () => {
     setAccountSession(root, false); root.removeEventListener('create-account', createAccount);
-    alive = false; sequence++; stop(); stopController(); sync.dispose(); listener.subscription.unsubscribe();
+    alive = false; sequence++; stop(); stopController(); sync.dispose(); exporter.dispose(); listener.subscription.unsubscribe();
     document.removeEventListener('visibilitychange', background); window.removeEventListener('pagehide', hide); window.removeEventListener('online', online);
     root.replaceChildren();
   };

@@ -24,7 +24,7 @@ function parents(){let s=regressionStart(0);s.rabbits.forEach(r=>r.affection=2);
 
 describe('approved Frisket and Icy content',()=>{
   it('appends only the approved Rares, preserves displayed type order and provides no undecided policies',()=>{
-    expect(SPECIES_IDS.slice(11,13)).toEqual(['frisket','icy']);expect(SPECIES_IDS).toEqual(EXPECTED_IDS);
+    expect(SPECIES_IDS.slice(7,9)).toEqual(['frisket','icy']);expect(SPECIES_IDS).toEqual(EXPECTED_IDS);
     expect(validateSpeciesEntries(SPECIES_ENTRIES)).toEqual([]);
     for(const [id,types] of [['frisket',['neige','paille']],['icy',['paille','neige']]] as const){
       expect(SPECIES[id]).toMatchObject({name:id==='icy'?'Icy':'Frisket',description:descriptions[id],types,rarity:'rare',price:null,progression:{unlockLevel:1},recipe:{requiredTypes:['paille','neige'],minAffection:2}});
@@ -41,7 +41,7 @@ describe('approved Frisket and Icy content',()=>{
     s.pityFailures=7;expect(breedingPool(s,'paille','neige',2,2)).toMatchObject({weights:{frisket:1,icy:1},total:2,guaranteed:true});
   });
   it.each(['frisket','icy'] as const)('%s matches either parent order and hybrid contributions, but not missing elements or affection',id=>{
-    for(const [a,b] of [['paille','neige'],['frisket','paille'],['frisket','frisket'],['lunettes','feu-glace']] as const){
+    for(const [a,b] of [['paille','neige'],['frisket','paille'],['frisket','frisket'],['boudinet','glassofeu']] as const){
       expect(recipeMatches(id,a,b)).toBe(true);expect(recipeMatches(id,b,a)).toBe(true);
       expect(breedingWeights(a,b,2,2)[id]).toBe(30);expect(breedingWeights(b,a,2,2)[id]).toBe(30);
       expect(breedingWeights(a,b,1,2)[id]).toBeUndefined();expect(breedingWeights(a,b,2,1)[id]).toBeUndefined();
@@ -66,7 +66,7 @@ describe('approved Frisket and Icy content',()=>{
     const s=parents();s.recipeBook.push('frisket','icy');
     expect(JSON.stringify(collectionView(s))).not.toContain(descriptions.frisket);expect(JSON.stringify(collectionView(s))).not.toContain(descriptions.icy);
     // Magicien and Dragon received approved pictures, and with them a description of what they show.
-    for(const id of SPECIES_IDS.slice(0,11).filter(id=>id!=='magicien'&&id!=='dragon'))expect(SPECIES[id]).not.toHaveProperty('description');
+    for(const id of SPECIES_IDS.slice(0,7).filter(id=>id!=='magicien'&&id!=='dragon'))expect(SPECIES[id]).not.toHaveProperty('description');
   });
   it('validates an optional description without accepting blank or non-text content',()=>{
     const original=SPECIES_ENTRIES[0];for(const description of ['', ' ', 42])expect(validateSpeciesEntries([{...original,description}])).toContainEqual(expect.objectContaining({species:'paille',field:'description'}));

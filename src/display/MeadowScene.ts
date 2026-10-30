@@ -5,8 +5,17 @@ import {nestForParent} from '../simulation/breeding';
 import {rabbitArt, type RabbitArt} from '../config/rabbitArt';
 import {rabbitBlinkArt, rabbitPatchPlacement} from '../config/rabbitBlinkArt';
 import {rabbitFaceSeed, rabbitFaceState} from './rabbitBlink';
+import {DadiReactions} from './dadiReactions';
+import {DadiSpeech, dadiHeadVisible} from './dadiSpeech';
+import {RabbitLife} from './rabbitLife';
+import {RabbitLifeViews} from './rabbitLifeViews';
+import {CozyInteraction, type InteractionKind} from './cozyInteraction';
+import {bestFriend} from '../simulation/cozy';
+import {currentDiscovery} from '../config/cozyContent';
+import {discoveryAvailable} from '../simulation/cozyActivities';
 import Phaser from 'phaser';
 import {VISUAL} from '../config/visual';
+import {shouldShowIncomeBubble} from './incomeBubble';
 import type {GameController} from '../application/GameController';
 import {drawBuildingArt} from './buildingArt';
 import {drawHabitat} from './habitatArt';
@@ -19,8 +28,11 @@ import {travelling, tripReady} from '../simulation/travel';
 import {FarmCrops} from './farmCrops';
 import {FARM_ART, FARM_LEVEL_1_ART} from '../config/farmArt';
 import {NEST_ART} from '../config/nestArt';
-import {NURSERY_ART} from '../config/nurseryArt';
+import {NURSERY_ART, NURSERY_OVERLAY_ART} from '../config/nurseryArt';
+import {CROP_IDS, CROP_TEXTURE, CROP_URL, SPROUT_TEXTURE, SPROUT_URL} from './food';
 import {NurseryOverlays} from './nurseryOverlays';
+import {progressBars} from './progressBars';
+import {ProgressBarViews} from './progressBarViews';
 import {foodBubble} from './currencyPhaser';
 import {buildingAt, buildingPlacementReason, buildingFootprint, type Footprint} from '../simulation/placement';
 import {placementGrid, PLACEMENT_GRID} from './placementGrid';
@@ -33,8 +45,8 @@ import {SkyLayer, SKY_COLOR} from './skyLayer';
 import {PARCELS, PARCEL_IDS, expansionTarget, purchasableParcels, type ParcelId} from '../config/land';
 import {ISLAND} from '../config/islandGeometry';
 import {rabbitOffset, rabbitPosition, rabbitHit, rabbitFedLift} from './rabbitLayout';
-import {createRabbitMotion, retargetRabbitMotion, stepRabbitMotion, triggerFedReaction, rabbitPose, type RabbitMotion} from './rabbitMotion';
-import {habitatStats, habitatName, habitatEntryReason, visibleColumns} from '../simulation/habitats';
+import {createRabbitMotion, retargetRabbitMotion, stepRabbitMotion, triggerFedReaction, triggerWelcomeSalto, rabbitPose, type RabbitMotion} from './rabbitMotion';
+import {habitatStats, habitatEntryReason, visibleColumns} from '../simulation/habitats';
 import {HOUR, ORDERS, type SpeciesId} from '../config/balance';
 import type {Building, DecorationLocation, GameState} from '../state/types';
 import {DECORATION_IDS, FINE_GRID, type DecorationId} from '../config/decorations';
@@ -42,20 +54,20 @@ import {catalogDecorationPlacementReason, footprint} from '../simulation/decorat
 import {decorationTexture, decorationScale, decorationOrigin, decorationUrl, decorationLayerDepth} from './decorationArt';
 import {MeadowCamera, cellsBounds, gridCell, fineCell, finePoint, buildingCenter, gridPoint, type Point} from '../ui/gestures';
 import {groundTransform, screenBounds, toGround, toScreen} from '../ui/projection';
-import {BUILDING_NAMES, type Placement} from '../ui/models';
+import type {Placement} from '../ui/models';
 import {SPECIES, proceduralCoat} from '../config/species';
 import {bindMeadowInput} from './meadowInput';
-import {ownedRegions, recenterCamera, type ScreenChrome} from './recenter';
+import {buildingFrame, ownedRegions, recenterCamera, type ScreenChrome} from './recenter';
 import {COIN_TEXTURE, COIN_URL, FOOD_TEXTURE, FOOD_URL, HEART_TEXTURE, HEART_URL} from './currency';
 import {coinBubble} from './currencyPhaser';
 
-export type MeadowSelection = {kind: 'building' | 'rabbit' | 'income' | 'grass' | 'decoration' | 'birth'; id: string} | {kind: 'cell' | 'fineCell'; x: number; y: number} | {kind: 'extension'; parcelId?: ParcelId} | {kind: 'empty'};
+export type MeadowSelection = {kind: 'building' | 'rabbit' | 'income' | 'grass' | 'decoration' | 'birth' | 'discovery'; id: string} | {kind: 'cell' | 'fineCell'; x: number; y: number} | {kind: 'extension'; parcelId?: ParcelId} | {kind: 'empty'};
 export interface DecorationGhost {id: string; catalogId?: DecorationId; location: DecorationLocation | null}
 /** `object` is the ground point (position, depth, scale); `body` carries the hop height, squash and mirror, apart from the shadow. */
 interface VisualRabbit {id: string; object: Phaser.GameObjects.Container; body: Phaser.GameObjects.Container; ears: Phaser.GameObjects.Ellipse[]; sprite?: Phaser.GameObjects.Image; art?: RabbitArt; base: Point; phase: number; fedUntil: number;
   flames?: Phaser.GameObjects.Image;
   face?: {seed: number; eyes: Phaser.GameObjects.Image; nose: Phaser.GameObjects.Image};
-  center: Point; group: string; motion?: RabbitMotion; lift: number;
+  center: Point; group: string; motion?: RabbitMotion; nest?: boolean; lift: number;
   /** Centre of the visible body in body space: the somersault turns about it, not about the feet or the picture centre. */
   pivot: Point; /** Mirror sign of the picture's native direction: -1 for art that looks left. */ native: 1 | -1}
 /** Local y of the ground contact the body is compressed against, so its feet stay put. */
@@ -66,8 +78,6 @@ export class MeadowScene extends Phaser.Scene {
   private ground!: Phaser.GameObjects.Container;
   private animals!: Phaser.GameObjects.Container;
   private bubbles!: Phaser.GameObjects.Container;
-  private labels!: Phaser.GameObjects.Container;
-  private buildingNames: Phaser.GameObjects.Container | null = null;
   /** Flat overlays on the ground (cell highlights, grids, footprints, parcel outlines), in the ground layer. */
   private grid!: Phaser.GameObjects.Graphics;
   /** Ground layer above the sprites: holds `grid`, so it shares the ground transform yet keeps its draw order. */
@@ -80,16 +90,35 @@ export class MeadowScene extends Phaser.Scene {
   /** Visual-only walking state per resident, reused while the individual stays present. */
   private motions = new Map<string, {group: string; tier: number; center: Point; motion: RabbitMotion}>();
   private motionClock: number | null = null;
+  private dadi = new DadiReactions();
+  private dadiSpeech: DadiSpeech | null = null;
+  private life = new RabbitLife();
+  private cozyInteraction = new CozyInteraction();
+  private friends = new Map<string,string|null>();
+  private interactionIn = 45000;
+  private discoveryImage: Phaser.GameObjects.Image | null = null;
+  private discoveryId = '';
+  private discoveryLocation: DecorationLocation | null = null;
+  private discoveryUpdatedAt = -Infinity;
+  private lifeViews: RabbitLifeViews | null = null;
+  private lifeGeneration: number | null = null;
   private pivots = new Map<string, Point>();
   private bubbleHits: {point: Point; width: number; height: number; selection: MeadowSelection}[] = [];
   private layoutKey = '';
   private buildingsLayer!: Phaser.GameObjects.Container;
   private buildingViews = new Map<string, Phaser.GameObjects.Image>();
   private nurseryOverlays: NurseryOverlays | null = null;
+  private progressViews: ProgressBarViews | null = null;
+  private simulationReceivedAt = 0;
+  private progressUpdatedAt = -Infinity;
+  private progressNow = 0;
   private farmCrops: FarmCrops | null = null;
   private focusTween: Phaser.Tweens.Tween | null = null;
   private buildingTextures = new Set<string>();
   private buildingGhost: Phaser.GameObjects.Image | null = null;
+  private rabbitDrops: string[] | null = null;
+  private dropArrows: Phaser.GameObjects.Graphics | null = null;
+  private dropHits: {id: string; point: Point}[] = [];
   private purchase: {species: SpeciesId; selected: string | null} | null = null;
   private purchaseLabels: Phaser.GameObjects.Text[] = [];
   private arrangement = false;
@@ -111,12 +140,22 @@ export class MeadowScene extends Phaser.Scene {
   private decorationPixels = new Map<string, Uint8ClampedArray>();
   private unsubscribe: (() => void) | null = null;
   private artLoading = false;
+  private failedArt = new Set<string>();
+  private artComplete: (() => void) | null = null;
+  private sceneReady = false;
   readonly view = new MeadowCamera();
   /** Optional start-up reporting for the loading screen (texture loader progress, errors, scene ready). */
   constructor(private controller: GameController, private select: (selection: MeadowSelection) => void, private blocked: () => boolean,
-    private loading?: {progress(fraction: number): void; error(file: string): void; ready(): void}) { super('Meadow'); }
+    private loading?: {progress(fraction: number): void; error(file: string): void; ready(): void; runtime?(status: 'loading' | 'failed' | 'ready', retry: () => void): void}) { super('Meadow'); }
   preload(): void {
-    if (this.loading) { const l = this.loading; this.load.on('progress', (v: number) => l.progress(v)); this.load.on('loaderror', (file: {key: string}) => l.error(file.key)); }
+    this.sceneReady = false;
+    if (this.loading) {
+      const l = this.loading;
+      const progress = (v: number) => { if (!this.sceneReady) l.progress(v); };
+      const error = (file: {key: string}) => { if (!this.sceneReady) l.error(file.key); };
+      this.load.on('progress', progress); this.load.on('loaderror', error);
+      this.events.once('shutdown', () => { this.load.off('progress', progress); this.load.off('loaderror', error); });
+    }
     this.load.image(COIN_TEXTURE, COIN_URL);
     this.load.image(HEART_TEXTURE, HEART_URL);
     for (const type of ['paille', 'neige', 'feu', 'metal', 'vol'] as const) this.load.image(`element-${type}`, elementUrl(type));
@@ -125,51 +164,124 @@ export class MeadowScene extends Phaser.Scene {
     // Only the painting of the current stage is loaded at start; a later stage loads when it is bought.
     const stage = islandStage(this.controller.getSnapshot().state?.acquiredParcels ?? []);
     if (stage) queueStage(this, stageArt(stage));
-    if (!this.textures.exists(FARM_LEVEL_1_ART.texture)) this.load.image(FARM_LEVEL_1_ART.texture, FARM_LEVEL_1_ART.url);
-    if (!this.textures.exists(FARM_ART.texture)) this.load.image(FARM_ART.texture, FARM_ART.url);
-    if (!this.textures.exists(NEST_ART.texture)) this.load.image(NEST_ART.texture, NEST_ART.url);
-    if (!this.textures.exists(NURSERY_ART.texture)) this.load.image(NURSERY_ART.texture, NURSERY_ART.url);
-    NurseryOverlays.preload(this);
-    if (!this.textures.exists(KITCHEN_ART.texture)) this.load.image(KITCHEN_ART.texture, KITCHEN_ART.url);
-    if (!this.textures.exists(STATUE_ART.texture)) this.load.image(STATUE_ART.texture, STATUE_ART.url);
-    if (!this.textures.exists(AGENCY_ART.texture)) this.load.image(AGENCY_ART.texture, AGENCY_ART.url);
     if (!this.textures.exists(FOOD_TEXTURE)) this.load.image(FOOD_TEXTURE, FOOD_URL);
-    FarmCrops.preload(this);
     for (const art of this.requiredArt(this.controller.getSnapshot().state))
       if (!this.textures.exists(art.texture)) this.load.image(art.texture, art.url);
-    for (const id of DECORATION_IDS) {
-      const key = decorationTexture(id);
-      if (!this.textures.exists(key)) this.load.image(key, decorationUrl(id));
-    }
   }
   create(): void {
+    this.sceneReady = true;
+    this.events.once('shutdown', () => {
+      this.sceneReady = false;
+      if (this.artComplete) this.load.off('complete', this.artComplete);
+      this.artComplete = null; this.artLoading = false; this.failedArt.clear();
+      this.loading?.runtime?.('ready', () => {});
+    });
     this.cameras.main.setBackgroundColor(SKY_COLOR);
     // Owns its shutdown cleanup; independent of parcel ownership and ground projection.
     new SkyLayer(this, toScreen(gridPoint(ISLAND.focus, ISLAND.focus)));
     // Ground layer (flat on the island, drawn in ground coordinates, one shared projection transform):
     // terrain at depth 0 and the flat overlays at depth 1. Upright layer (untransformed, anchors through
     // toScreen): buildings .1, decorations .5, decoration selection .9, markers 1, ghosts 1.5, rabbits 2,
-    // labels 2.5, bubbles and availability texts 3. Depths are those of the former single-plane scene.
+    // bubbles and availability texts 3. Depths are those of the former single-plane scene.
     this.ground = this.add.container(0, 0); this.buildingsLayer = this.add.container(0, 0).setDepth(.1); this.animals = this.add.container(0, 0).setDepth(2);
     this.nurseryOverlays = new NurseryOverlays(this, this.buildingsLayer);
+    this.progressViews = new ProgressBarViews(this);
+    this.events.once('shutdown', () => { this.progressViews?.destroy(); this.progressViews = null; });
     this.farmCrops = new FarmCrops(this, this.buildingsLayer);
     // Flat path paintings follow the ground compression, above terrain but below every upright object.
     this.floorDecorationsLayer = this.add.container(0, 0).setDepth(decorationLayerDepth('dirt-path'));
     this.decorationsLayer = this.add.container(0, 0).setDepth(.5);
     this.decorationSelection = this.add.graphics().setDepth(.9);
-    this.labels = this.add.container(0, 0).setDepth(2.5);
     this.grid = this.add.graphics(); this.groundOverlay = this.add.container(0, 0, [this.grid]).setDepth(1);
     this.markers = this.add.graphics().setDepth(1); this.bubbles = this.add.container(0, 0).setDepth(3);
     for (const layer of [this.ground, this.groundOverlay]) layer.setPosition(groundTransform.x, groundTransform.y).setRotation(groundTransform.rotation).setScale(groundTransform.scaleX, groundTransform.scaleY);
     this.resize();
-    this.unsubscribe = this.controller.subscribe(snapshot => { this.current = snapshot.state; this.renderState(); });
+    this.dadiSpeech = new DadiSpeech(this.game.canvas.parentElement!);
+    this.lifeViews = new RabbitLifeViews(this);
+    this.unsubscribe = this.controller.subscribe(snapshot => {
+      if (this.lifeGeneration !== snapshot.generation) {
+        this.cozyInteraction.reset(); this.interactionIn = 45000; this.discoveryUpdatedAt = -Infinity;
+        this.discoveryImage?.destroy(); this.discoveryImage = null;
+        this.failedArt.clear();
+        this.life.reset(); this.lifeViews?.begin([]); this.motions.clear(); this.layoutKey = '';
+        this.lifeGeneration = snapshot.generation;
+      }
+      this.dadi.sync(snapshot.state, snapshot.generation);
+      this.current = snapshot.state; this.simulationReceivedAt = this.time.now;
+      this.friends=new Map((snapshot.state?.rabbits??[]).map(r=>[r.id,bestFriend(snapshot.state!,r.id)]));
+      this.progressNow = this.current?.lastSimulatedAt ?? 0; this.renderState();
+    });
+    const stopCommands = this.controller.onConfirmedCommand(command => this.dadi.confirmed(command));
+    const clearDadi = () => { this.dadi.clearSpeech(); this.dadiSpeech?.hide(); };
+    const dadiVisibility = () => { if (document.hidden) clearDadi(); };
+    document.addEventListener('visibilitychange', dadiVisibility);
+    window.addEventListener('pagehide', clearDadi);
+    this.events.once('shutdown', () => {
+      stopCommands(); this.dadi.reset(); this.dadiSpeech?.destroy(); this.dadiSpeech = null;
+      this.cozyInteraction.reset(); this.discoveryImage?.destroy(); this.discoveryImage = null;
+      this.life.reset(); this.lifeViews?.destroy(); this.lifeViews = null;
+      document.removeEventListener('visibilitychange', dadiVisibility); window.removeEventListener('pagehide', clearDadi);
+    });
     this.recenter();
     this.scale.on('resize', this.resize, this);
     const disposeInput = bindMeadowInput(this.game.canvas, this.view, point => this.tap(point), this.blocked, () => this.applyCamera());
-    this.events.once('shutdown', () => { this.unsubscribe?.(); disposeInput(); this.scale.off('resize', this.resize, this); this.buildingTextures.forEach(key=>this.textures.remove(key)); this.ground.clearMask(); this.islandMask?.destroy(); this.islandMaskGraphics?.destroy(); this.islandMask = null; this.islandMaskGraphics = null; this.floatingIslandLayer?.destroy(); this.floatingIslandLayer = null; this.islandStageLayer?.destroy(); this.islandStageLayer = null; this.nurseryOverlays?.destroy(); this.nurseryOverlays = null; this.motions.clear(); this.pivots.clear(); });
+    this.events.once('shutdown', () => { this.rabbitDrops = null; this.dropHits = []; this.dropArrows?.destroy(); this.dropArrows = null; this.unsubscribe?.(); disposeInput(); this.scale.off('resize', this.resize, this); this.buildingTextures.forEach(key=>this.textures.remove(key)); this.ground.clearMask(); this.islandMask?.destroy(); this.islandMaskGraphics?.destroy(); this.islandMask = null; this.islandMaskGraphics = null; this.floatingIslandLayer?.destroy(); this.floatingIslandLayer = null; this.islandStageLayer?.destroy(); this.islandStageLayer = null; this.nurseryOverlays?.destroy(); this.nurseryOverlays = null; this.motions.clear(); this.pivots.clear(); });
     this.loading?.ready();
   }
   recenter(): void { if (!this.cameras?.main) return; recenterCamera(this.view, this.current, this.screenChrome()); this.applyCamera(); }
+  /** Snapshot after the next rendered frame, so WebGL never exports an empty back buffer. */
+  capturePhoto(): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      if (!this.sceneReady) { reject(new Error('La prairie est encore en préparation.')); return; }
+      const generation = this.lifeGeneration;
+      const timeout = window.setTimeout(() => reject(new Error('La photo n’a pas pu être prise. Réessaie.')), 5000);
+      try {
+        this.game.renderer.snapshot(image => {
+          if (!this.sceneReady || generation !== this.lifeGeneration) { clearTimeout(timeout); reject(new Error('La partie a changé.')); return; }
+          if (!(image instanceof HTMLImageElement)) { clearTimeout(timeout); reject(new Error('Photo indisponible.')); return; }
+          const canvas = document.createElement('canvas'); canvas.width = image.naturalWidth || image.width; canvas.height = image.naturalHeight || image.height;
+          try { canvas.getContext('2d')!.drawImage(image, 0, 0); canvas.toBlob(blob => { clearTimeout(timeout); blob ? resolve(blob) : reject(new Error('Photo indisponible.')); }, 'image/png'); }
+          catch (error) { clearTimeout(timeout); reject(error); }
+        }, 'image/png');
+      } catch (error) { clearTimeout(timeout); reject(error); }
+    });
+  }
+  interactionDecoration(id: string): boolean {
+    if (!this.current || this.cozyInteraction.active || matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+    const d = this.current.decorations.find(d => d.id === id);
+    const kinds: Partial<Record<DecorationId, InteractionKind>> = {'hay-bale':'play','otter-plush':'cuddle','bunny-slippers':'cuddle','small-bookcase':'read','large-bookcase':'read'};
+    const kind = d && kinds[d.catalogId], point = d && this.decorationPoint(d.location, d.catalogId);
+    if (!kind || !point) return false;
+    const candidates = this.rabbitViews.filter(r => !r.nest && r.motion && ['rest','walk'].includes(r.motion.mode) &&
+      Math.hypot(r.center.x - point.x, r.center.y - point.y) < 160 && !travelling(this.current!,r.id));
+    candidates.sort((a,b) => Math.hypot(a.object.x-point.x,a.object.y-point.y)-Math.hypot(b.object.x-point.x,b.object.y-point.y));
+    const rabbit = candidates[0]; if (!rabbit?.motion) return false;
+    this.life.interrupt(rabbit.id);
+    return this.cozyInteraction.start(rabbit.id,id,rabbit.motion,{x:point.x-rabbit.center.x,y:point.y-rabbit.center.y},kind);
+  }
+  private syncDiscovery(): void {
+    const s = this.current, now = this.simulationNow(), discovery = currentDiscovery(now);
+    this.discoveryUpdatedAt = this.time.now;
+    if (!s || !discoveryAvailable(s,now,discovery.id)) { this.discoveryImage?.destroy(); this.discoveryImage=null; return; }
+    if(this.discoveryImage&&this.discoveryLocation&&catalogDecorationPlacementReason(s,discovery.art,this.discoveryLocation)){this.discoveryImage.destroy();this.discoveryImage=null;}
+    if (this.discoveryId !== discovery.id) { this.discoveryImage?.destroy(); this.discoveryImage=null; this.discoveryId=discovery.id; }
+    if (!this.discoveryImage) {
+      const texture=decorationTexture(discovery.art);
+      if (!this.textures.exists(texture)) { this.ensureArt(); return; }
+      let point: Point | null=null;
+      for (const parcelId of s.acquiredParcels) {
+        const parcel=PARCELS[parcelId];
+        for(let y=parcel.y*FINE_GRID+1;y<(parcel.y+ISLAND.parcelCells)*FINE_GRID-2&&!point;y+=2)
+          for(let x=parcel.x*FINE_GRID+1;x<(parcel.x+ISLAND.parcelCells)*FINE_GRID-2&&!point;x+=2) {
+            const location={kind:'outside' as const,x,y,rotation:0 as const};
+            if(!catalogDecorationPlacementReason(s,discovery.art,location)) { point=this.decorationPoint(location,discovery.art); this.discoveryLocation=location; }
+          }
+        if(point)break;
+      }
+      if(point) { this.discoveryImage=this.add.image(point.x,point.y,texture).setDepth(1.8); this.discoveryImage.setDisplaySize(36,36*this.discoveryImage.height/this.discoveryImage.width); }
+    }
+    this.discoveryImage?.setVisible(!this.photo&&!this.arrangement&&!this.placement&&!this.expanding);
+  }
   /** CSS-pixel chrome measured from the DOM; the same reading is reproduced by the browser checks. */
   private screenChrome(): ScreenChrome {
     const visible = (id: string) => {const e = document.getElementById(id); return e && !e.hidden && getComputedStyle(e).display !== 'none' ? e.getBoundingClientRect() : null;};
@@ -209,8 +321,6 @@ export class MeadowScene extends Phaser.Scene {
   }
   private updateDetails(): void {
     const fade=(low:number,high:number)=>Phaser.Math.Clamp((this.view.zoom-low)/(high-low),0,1);
-    // Names fully shown from the fresh-island framing (readableZoom .6) upward; gone in a large-island overview.
-    this.buildingNames?.setAlpha(fade(.4,.6));
     this.bubbles?.setAlpha(fade(.45,.7)).setVisible(!this.photo && this.view.zoom>.45);
   }
   private resize(): void { this.view.setInsets(this.framingInsets()); this.view.resize(this.scale.width, this.scale.height); this.applyCamera(); }
@@ -222,6 +332,36 @@ export class MeadowScene extends Phaser.Scene {
     else if(parcelId){const p=PARCELS[parcelId],point=toScreen(gridPoint(p.x+ISLAND.parcelCells/2,p.y+ISLAND.parcelCells/2));this.view.x=point.x;this.view.y=point.y;this.view.clamp();this.applyCamera();}
     else if(was&&!active)this.recenter();
     if(this.grid)this.drawGrid();
+  }
+  /** Steps back to show more of the island (about 30 % wider, at most the .55 overview); gesture camera limits still own the minimum. */
+  zoomForRabbitMove(): void {
+    if (!this.cameras?.main) return;
+    this.focusTween?.stop(); this.focusTween = null;
+    const from = this.view.zoom, to = Math.max(this.view.minimumZoom, Math.min(from * .7, .55));
+    if (to >= from) return;
+    const go = (t: number) => { this.view.zoom = from + (to - from) * t; this.view.clamp(); this.applyCamera(); };
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { go(1); return; }
+    this.focusTween = this.tweens.addCounter({from: 0, to: 1, duration: 650, ease: 'Sine.easeInOut',
+      onUpdate: tween => { if (this.view.busy) { tween.stop(); this.focusTween = null; return; } go(tween.getValue() ?? 1); },
+      onComplete: () => { this.focusTween = null; }});
+  }
+  setRabbitDropTargets(ids: string[] | null): void {
+    this.rabbitDrops = ids;
+    if (!ids) { this.dropArrows?.clear(); this.dropHits = []; this.focusTween?.stop(); this.focusTween = null; }
+  }
+  private drawRabbitDrops(time: number): void {
+    if (!this.rabbitDrops) return;
+    const g = this.dropArrows ??= this.add.graphics().setDepth(10);
+    g.clear(); this.dropHits = [];
+    const k = 1 / this.view.zoom;
+    const bounce = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : Math.sin(time / 360) * 3;
+    for (const id of this.rabbitDrops) {
+      const b = this.current?.buildings.find(b => b.id === id); if (!b) continue;
+      const frame = buildingFrame(b), x = toScreen(buildingCenter(b)).x, y = frame.top - (22 + bounce) * k;
+      const points = [{x:-6,y:-13},{x:6,y:-13},{x:6,y:0},{x:13,y:0},{x:0,y:13},{x:-13,y:0},{x:-6,y:0}].map(p => ({x:x+p.x*k,y:y+p.y*k}));
+      g.fillStyle(0xf4d58b); g.lineStyle(2*k, 0x396447); g.fillPoints(points, true); g.strokePoints(points, true);
+      this.dropHits.push({id, point:{x,y}});
+    }
   }
   setRabbitPurchase(species: SpeciesId | null, selected: string | null = null): void {
     this.purchase = species ? {species, selected} : null;
@@ -238,11 +378,32 @@ export class MeadowScene extends Phaser.Scene {
     this.view.clamp();this.applyCamera();
   }
   setTutorialCell(cell: {x:number;y:number}|null): void { this.tutorialCell = cell; if(this.grid)this.drawGrid(); }
+  private tutorialHand: Phaser.GameObjects.Graphics | null = null;
+  /** The guide's arrow above the suggested cell while no cell is chosen: the yellow arrow of the rabbit move, without any emoji font. */
+  private syncTutorialHand(): void {
+    const cell = this.tutorialCell && this.placement && !this.placement.cell && !this.photo ? this.tutorialCell : null;
+    if (!cell) { this.tutorialHand?.destroy(); this.tutorialHand = null; return; }
+    const key = `${cell.x},${cell.y}`;
+    if (this.tutorialHand?.getData('cell') === key) return;
+    this.tutorialHand?.destroy();
+    const p = toScreen(finePoint(cell.x + FINE_GRID / 2, cell.y + FINE_GRID / 2));
+    const arrow = this.tutorialHand = this.add.graphics().setDepth(3).setData('cell', key).setData('anchor', p);
+    const points = [{x:-9,y:-20},{x:9,y:-20},{x:9,y:0},{x:19,y:0},{x:0,y:19},{x:-19,y:0},{x:-9,y:0}];
+    arrow.fillStyle(0xf4d58b).lineStyle(3, 0x396447).fillPoints(points, true).strokePoints(points, true);
+    this.placeTutorialHand(this.time.now);
+  }
+  /** Constant on-screen size whatever the zoom, gently bouncing above the cell (still with reduced motion). */
+  private placeTutorialHand(time: number): void {
+    const arrow = this.tutorialHand; if (!arrow) return;
+    const p = arrow.getData('anchor') as Point, k = 1 / this.view.zoom;
+    const bounce = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : Math.sin(time / 250) * 5;
+    arrow.setScale(k).setPosition(p.x, p.y - (34 + bounce) * k);
+  }
   setTutorialTarget(target: 'birth'|null): void { if(this.tutorialTarget === target)return; this.tutorialTarget = target; if(this.bubbles)this.drawBubbles(); }
   setPlacement(placement: Placement | null): void { this.placement = placement; if (this.grid) this.renderState(); }
   setArrangement(active: boolean, ghost: DecorationGhost | null = null): void {
     this.arrangement = active; this.ghost = ghost;
-    if (this.grid) { this.drawDecorations(); this.drawGrid(); this.drawGhost(); }
+    if (this.grid) this.renderState();
   }
   focusDecoration(id: string): void {
     const d=this.current?.decorations.find(d=>d.id===id);if(!d)return;
@@ -292,14 +453,24 @@ export class MeadowScene extends Phaser.Scene {
   }
   setPhoto(active: boolean): void {
     this.photo = active;
+    if (active) this.loading?.runtime?.('ready', () => {});
+    else this.ensureArt();
+    if (active) { this.dadi.clearSpeech(); this.dadiSpeech?.hide(); this.lifeViews?.begin([]); }
+    this.syncTutorialHand();
+    this.syncProgressBars();
     this.drawDecorationSelection();
     this.bubbles?.setVisible(!active); this.grid?.setVisible(!active); this.markers?.setVisible(!active); this.ghostView?.setVisible(!active); this.buildingGhost?.setVisible(!active && !!this.placement?.cell); this.nurseryOverlays?.setGhostVisible(!active && this.placement?.kind==='nursery' && !!this.placement.cell); this.updateDetails();
   }
   reactToFeed(id: string): void {
     const rabbit = this.rabbitViews.find(r => r.id === id); if (!rabbit) return;
+    this.life.interrupt(id);
     rabbit.fedUntil = this.time.now + 900; if (rabbit.motion) triggerFedReaction(rabbit.motion);
     const heart = this.add.text(rabbit.object.x, rabbit.object.y - 40, '♥', {fontSize: '28px', color: '#d9788d'}).setDepth(5).setOrigin(.5);
     this.tweens.add({targets: heart, y: heart.y - 45, alpha: 0, duration: 1000, onComplete: () => heart.destroy()});
+  }
+  private dadiHead(rabbit: VisualRabbit): Point {
+    const height = rabbit.art ? rabbit.art.height * rabbit.art.worldWidth / rabbit.art.width - rabbit.art.groundY : 45;
+    return this.view.screen({x: rabbit.object.x, y: rabbit.object.y - (height + rabbit.lift) * VISUAL.rabbit.scale});
   }
   private updateVisibleRegions(): void {
     // Owned plateaux and their hanging rock; clouds and extension sketches do not own pan regions.
@@ -313,28 +484,56 @@ export class MeadowScene extends Phaser.Scene {
       add(rabbitArt(rabbit.species));
       for (const patch of rabbitBlinkArt(rabbit.species)?.patches ?? []) add(patch);
     }
-    for (const building of state?.buildings ?? []) add(habitatArtFor(building.habitat ?? undefined, building.footprintTier));
-    if (this.placement?.kind === 'enclosure') {
+    const buildingArt = (building: Pick<Building, 'kind' | 'habitat' | 'footprintTier' | 'farmLevel'>) => {
+      if (building.kind === 'enclosure') add(habitatArtFor(building.habitat ?? undefined, building.footprintTier));
+      else if (building.kind === 'farm') {
+        add(building.farmLevel === 2 ? FARM_ART : FARM_LEVEL_1_ART);
+        add({texture: SPROUT_TEXTURE, url: SPROUT_URL});
+        for (const id of CROP_IDS) add({texture: CROP_TEXTURE(id), url: CROP_URL(id)});
+      } else if (building.kind === 'nursery') {
+        add(NURSERY_ART); add(NURSERY_OVERLAY_ART.baby); add(NURSERY_OVERLAY_ART.veil); add(NURSERY_OVERLAY_ART.lock);
+      } else add(({nest: NEST_ART, kitchen: KITCHEN_ART, statue: STATUE_ART, agency: AGENCY_ART})[building.kind]);
+    };
+    for (const building of state?.buildings ?? []) buildingArt(building);
+    if (this.placement) {
       const moving = state?.buildings.find(b => b.id === this.placement?.movingId);
-      add(habitatArtFor(moving?.habitat ?? {type: this.placement.habitatType ?? 'universal', level: 1}, moving?.footprintTier));
+      buildingArt(moving ?? {kind: this.placement.kind, habitat: this.placement.kind === 'enclosure' ? {type: this.placement.habitatType ?? 'universal', level: 1} : null});
     }
+    const decoration = (id: DecorationId, rotation: 0 | 1) => {
+      add({texture: decorationTexture(id), url: decorationUrl(id)});
+      if (rotation) add({texture: decorationTexture(id, rotation), url: decorationUrl(id)});
+    };
+    for (const d of state?.decorations ?? []) if (d.location.kind === 'outside') decoration(d.catalogId, d.location.rotation);
+    if (state) { const discovery=currentDiscovery(state.lastSimulatedAt); if(discoveryAvailable(state,state.lastSimulatedAt,discovery.id)) decoration(discovery.art,0); }
+    const ghost = state?.decorations.find(d => d.id === this.ghost?.id)?.catalogId ?? this.ghost?.catalogId;
+    if (ghost && this.ghost?.location?.kind === 'outside') decoration(ghost, this.ghost.location.rotation);
     return [...assets.values()];
   }
   /** Keep the previous complete scene during a batch, including when state changes again during the request. */
   private ensureArt(): boolean {
     const missing = this.requiredArt(this.current).filter(art => !this.textures.exists(art.texture));
-    if (!missing.length) return true;
+    if (!missing.length) { this.loading?.runtime?.('ready', () => this.retryArt()); return true; }
+    if (missing.some(art => this.failedArt.has(art.texture))) { if (!this.photo) this.loading?.runtime?.('failed', () => this.retryArt()); return false; }
+    if (!this.photo) this.loading?.runtime?.('loading', () => this.retryArt());
     if (!this.artLoading) {
       this.artLoading = true;
+      const generation = this.lifeGeneration;
       for (const art of missing) this.load.image(art.texture, art.url);
-      this.load.once('complete', () => {
+      this.artComplete = () => {
+        this.artComplete = null;
         this.artLoading = false;
-        // A failed batch retains the previous scene; the next state notification may retry it.
-        if (missing.every(art => this.textures.exists(art.texture))) this.renderState();
-      });
+        if (!this.sceneReady) return;
+        if (generation === this.lifeGeneration) for (const art of missing) if (!this.textures.exists(art.texture)) this.failedArt.add(art.texture);
+        this.renderState();
+      };
+      this.load.once('complete', this.artComplete);
       this.load.start();
     }
     return false;
+  }
+  private retryArt(): void {
+    if (this.artLoading || !this.sceneReady) return;
+    this.failedArt.clear(); this.renderState();
   }
   private renderState(): void {
     if (!this.ensureArt()) return;
@@ -345,6 +544,7 @@ export class MeadowScene extends Phaser.Scene {
     // The cushion overlays follow the canonical state and simulation time on every refresh (a no-op when nothing changed).
     this.nurseryOverlays?.sync(s);
     this.farmCrops?.sync(s);
+    this.syncProgressBars();
     this.drawDecorations(); this.drawBubbles(); this.drawGrid(); this.drawGhost(); this.updateDetails();
   }
   private decorationPoint(location: DecorationLocation, catalogId: typeof DECORATION_IDS[number]): Point | null {
@@ -374,6 +574,8 @@ export class MeadowScene extends Phaser.Scene {
     const d = this.current?.decorations.find(d => d.id === this.ghost?.id) ?? (this.ghost?.catalogId ? {id: this.ghost.id, catalogId: this.ghost.catalogId} : null);
     const point = d && this.ghost?.location ? this.decorationPoint(this.ghost.location, d.catalogId) : null;
     if (!d || !point || !this.ghost?.location) { this.ghostView?.setVisible(false); return; }
+    const ghostRotation = this.ghost.location.kind === 'outside' ? this.ghost.location.rotation : 0;
+    if (!this.textures.exists(decorationTexture(d.catalogId)) || !this.textures.exists(decorationTexture(d.catalogId, ghostRotation))) { this.ghostView?.setVisible(false); return; }
     if (!this.ghostView) this.ghostView = this.add.image(0, 0, decorationTexture(d.catalogId)).setDepth(1.5).setAlpha(.65).setOrigin(.5, .87);
     const rotation = this.ghost.location.kind === 'outside' ? this.ghost.location.rotation : 0;
     this.ghostView.setTexture(decorationTexture(d.catalogId, rotation)).setPosition(point.x, point.y)
@@ -463,8 +665,6 @@ export class MeadowScene extends Phaser.Scene {
       .setScale(art ? art.worldWidth / art.width : .5);
   }
   private drawBuildings(): void {
-    this.labels.removeAll(true);
-    this.buildingNames=this.add.container(0,0);this.labels.add(this.buildingNames);
     const present = new Set<string>();
     for (const b of this.current?.buildings ?? []) {
       present.add(b.id);const p=toScreen(buildingCenter(b)),x=p.x,y=p.y;
@@ -472,10 +672,6 @@ export class MeadowScene extends Phaser.Scene {
       if(!image){image=this.add.image(x,y,this.buildingTexture(b));this.buildingsLayer.add(image);this.buildingViews.set(b.id,image);}
       image.setTexture(this.buildingTexture(b)).setDepth(y);
       this.positionBuildingArt(image, x, y, b.kind, b.kind === 'enclosure' ? habitatArtFor(b.habitat ?? undefined, b.footprintTier) : null);
-      const labelY=y+(b.kind==='nest'?NEST_ART.labelY:b.kind==='nursery'?NURSERY_ART.labelY:b.kind==='kitchen'?KITCHEN_ART.labelY:b.kind==='statue'?STATUE_ART.labelY:b.kind==='agency'?AGENCY_ART.labelY:b.footprintTier&&b.footprintTier>1?HABITAT_SIZE_PROPOSAL[b.footprintTier].labelOffset:70);
-      const label=this.add.text(x,labelY,b.kind==='enclosure'?habitatName(b):BUILDING_NAMES[b.kind],{fontFamily:'Arial',fontSize:'13px',color:'#435b38',padding:{x:7,y:3}}).setOrigin(.5);
-      const background=this.add.graphics();background.fillStyle(0xf8f4de,.96);background.fillRoundedRect(x-label.width/2,labelY-label.height/2,label.width,label.height,7);
-      this.buildingNames.add([background,label]);
     }
     for(const [id,image] of this.buildingViews)if(!present.has(id)){image.destroy();this.buildingViews.delete(id);}
     this.buildingsLayer.sort('depth');
@@ -495,17 +691,23 @@ export class MeadowScene extends Phaser.Scene {
         const offset = enclosure.kind==='nest' ? NEST_ART.parentOffsets[index] : illustratedLayout ? illustratedLayout.slots[Math.min(index, illustratedLayout.slots.length - 1)] : proposed ? habitatSlots(tier as 2 | 3, residents.length)[Math.min(index, residents.length - 1)] : rabbitOffset(index, residents.length);
         const layout = illustratedLayout ? {zone: illustratedLayout.zone, roamScale: illustratedLayout.roamScale} : proposed ? {zone: proposed.zone, roamScale: proposed.roamScale} : undefined;
         const base = {x: center.x + offset.x, y: center.y + offset.y};
-        // Enclosure residents wander around their slot (local to the centre); nest parents keep their spot.
+        // Nest parents keep persistent motions for walks, tricks, races and kisses.
         let motion: RabbitMotion | undefined;
-        if (enclosure.kind === 'enclosure') {
+        {
+          // Cover the whole nest zone, so a snapshot does not retarget a lively parent back to its slot.
+          const motionLayout = enclosure.kind === 'nest' ? {zone: {minX: -80, maxX: 90, minY: -15, maxY: 20}, roamScale: 12} : layout;
           // Same enclosure: keep the individual's place (a resident added or removed only walks it back); another enclosure: start afresh at its slot.
           const known = this.motions.get(rabbit.id);
           if (known && known.group === enclosure.id) {
             motion = known.motion;
+            if (known.tier !== tier || JSON.stringify(motion.layout?.zone) !== JSON.stringify(motionLayout?.zone)) this.life.interrupt(rabbit.id);
             // An upgrade moves the footprint's centre but not the ground: keep the rabbit where it stands, then it walks to its new place.
-            if (known.tier !== tier) motion.local = {x: motion.local.x + known.center.x - center.x, y: motion.local.y + known.center.y - center.y};
-            retargetRabbitMotion(motion, offset, residents.length, layout); known.tier = tier; known.center = center;
-          } else { motion = createRabbitMotion(rabbit.id, offset, residents.length, layout); this.motions.set(rabbit.id, {group: enclosure.id, tier, center, motion}); }
+            if (known.tier !== tier) {
+              const dx = known.center.x - center.x, dy = known.center.y - center.y;
+              for (const point of [motion.local, motion.from, motion.to]) { point.x += dx; point.y += dy; }
+            }
+            retargetRabbitMotion(motion, offset, residents.length, motionLayout); known.tier = tier; known.center = center;
+          } else { motion = createRabbitMotion(rabbit.id, offset, residents.length, motionLayout); this.motions.set(rabbit.id, {group: enclosure.id, tier, center, motion}); }
           walkers.add(rabbit.id);
         }
         const start = motion ? {x: center.x + motion.local.x, y: center.y + motion.local.y} : base;
@@ -513,7 +715,7 @@ export class MeadowScene extends Phaser.Scene {
         const body = this.add.container(0, 0), shadow = this.add.ellipse(0, 10, 35, 12, 0x6b7755, .16);
         object.add([shadow, body]);
         const art = rabbitArt(rabbit.species);
-        const view = {object, body, center, group: enclosure.id, motion, lift: 0, pivot: art ? this.spritePivot(art) : {x: 0, y: -3}, native: art ? art.facing : 1 as const, base, phase: index * 2 + Number(rabbit.id.split('-')[1]), fedUntil: 0};
+        const view = {object, body, center, group: enclosure.id, motion, nest: enclosure.kind === 'nest', lift: 0, pivot: art ? this.spritePivot(art) : {x: 0, y: -3}, native: art ? art.facing : 1 as const, base, phase: index * 2 + Number(rabbit.id.split('-')[1]), fedUntil: 0};
         if (art) {
           const sprite = this.add.image(0, art.groundY, art.texture).setOrigin(.5, 1);
           sprite.setScale(art.worldWidth / art.width); // Uniform scale preserves the original proportions.
@@ -607,13 +809,13 @@ export class MeadowScene extends Phaser.Scene {
     this.pivots.set(art.texture, pivot); return pivot;
   }
   /** Body pose: mirror, compression against the ground contact, height, and a rotation about the body centre that keeps that centre in place. */
-  private poseBody(rabbit: VisualRabbit, pose: {lift: number; squashX: number; squashY: number; facing: 1 | -1; rotation: number}): void {
+  private poseBody(rabbit: VisualRabbit, pose: {lift: number; squashX: number; squashY: number; facing: 1 | -1; rotation: number; nuzzle?: number}): void {
     const scaleX = pose.facing * rabbit.native * pose.squashX, p = rabbit.pivot, c = Math.cos(pose.rotation), s = Math.sin(pose.rotation);
     const px = scaleX * p.x, py = pose.squashY * p.y;
     // The visible centre stays where the picture's own orientation puts it: turning mirrors the body about that centre
     // (asymmetric transparent margins cause no sideways jump), and the rotation of a somersault keeps it in place too.
     rabbit.body.setRotation(pose.rotation).setScale(scaleX, pose.squashY)
-      .setPosition(pose.squashX * p.x - (c * px - s * py), BODY_PIVOT * (1 - pose.squashY) - pose.lift + py - (s * px + c * py));
+      .setPosition(pose.squashX * p.x - (c * px - s * py) + pose.facing * (pose.nuzzle ?? 0), BODY_PIVOT * (1 - pose.squashY) - pose.lift + py - (s * px + c * py));
   }
   /** A finished birth: a heart in a cream bubble; touching it sends the baby to the nursery. */
   private heartBubble(x: number, y: number): Phaser.GameObjects.Container {
@@ -635,13 +837,12 @@ export class MeadowScene extends Phaser.Scene {
       onUpdate: tween => { if (this.view.busy) { tween.stop(); this.focusTween = null; return; } go(tween.getValue() ?? 1); },
       onComplete: () => { this.focusTween = null; }});
   }
-  private drawBubbles(): void {
+  private drawBubbles(now = this.simulationNow()): void {
     this.bubbles.removeAll(true); this.bubbleHits = [];
     for (const b of this.current?.buildings ?? []) {
-      const now = this.current!.lastSimulatedAt;
       const amount = Math.floor(b.incomeUnits / HOUR);
       let text = '', kind: 'income' | 'grass' | 'building' = 'building';
-      if (b.kind === 'enclosure' && amount >= 1) { text = 'income'; kind = 'income'; }
+      if (b.kind === 'enclosure' && shouldShowIncomeBubble(amount, habitatStats(b).cap)) { text = 'income'; kind = 'income'; }
       if (b.kind === 'farm' && b.order && b.order.endsAt <= now) { text = 'food'; kind = 'grass'; }
       if (b.kind==='nest' && b.breeding && b.breeding.endsAt<=now) text='birth';
       if (b.kind === 'nursery' && readyNurseryBabies(b, now).length) text = 'Prêt !';
@@ -675,6 +876,7 @@ export class MeadowScene extends Phaser.Scene {
     this.gridStroke();
   }
   private drawGrid(): void {
+    this.syncTutorialHand();
     this.grid.clear(); this.markers.clear(); this.buildingGhost?.setVisible(false); this.nurseryOverlays?.hideGhost(); this.gridZoom = this.view.zoom; this.gridStroke = null;
     this.purchaseLabels.splice(0).forEach(label => label.destroy());
     if (this.purchase && this.current) {
@@ -728,6 +930,7 @@ export class MeadowScene extends Phaser.Scene {
     const habitat=p.kind==='enclosure'?(moving?.habitat??{type:p.habitatType??'universal',level:1 as const}):null;
     const illustration=habitatArtFor(habitat ?? undefined,moving?.footprintTier);
     if(illustration&&!this.textures.exists(illustration.texture))return;
+    if(this.requiredArt(this.current).some(art=>!this.textures.exists(art.texture)))return;
     if(!this.buildingGhost)this.buildingGhost=this.add.image(0,0,this.buildingTexture({kind:p.kind,habitat,footprintTier:moving?.footprintTier,farmLevel:moving?.farmLevel})).setDepth(1.5).setAlpha(.55).setScale(.5);
     const tint=valid?0xe4ffb5:0xf3a6a1;
     this.buildingGhost.setTexture(this.buildingTexture({kind:p.kind,habitat,footprintTier:moving?.footprintTier,farmLevel:moving?.farmLevel})).setTint(tint).setVisible(!this.photo);
@@ -759,6 +962,17 @@ export class MeadowScene extends Phaser.Scene {
     // Cells are read on the ground plane; rabbits, bubbles and decorations are hit where they are drawn.
     const world = this.view.world(screen), ground = toGround(world), cell = gridCell(ground);
     if (this.photo) return;
+    if (this.discoveryImage?.visible && !this.placement && !this.arrangement && !this.rabbitDrops && !this.purchase && !this.expanding) {
+      const p=this.view.screen({x:this.discoveryImage.x,y:this.discoveryImage.y});
+      if(Math.abs(p.x-screen.x)<=24&&Math.abs(p.y-screen.y)<=24){this.select({kind:'discovery',id:this.discoveryId});return;}
+    }
+    if (this.rabbitDrops) {
+      const arrow = this.dropHits.find(h => Math.abs(world.x-h.point.x)*this.view.zoom <= 22 && Math.abs(world.y-h.point.y)*this.view.zoom <= 22);
+      const b = this.current ? buildingAt(this.current, fineCell(ground)) : null;
+      const id = arrow?.id ?? (b?.kind === 'enclosure' ? b.id : null);
+      if (id) this.select({kind:'building',id});
+      return;
+    }
     if (this.purchase) {
       const b = this.current ? buildingAt(this.current, fineCell(ground)) : null;
       if (b && !habitatEntryReason(this.current!, b, this.purchase.species)) this.select({kind:'building',id:b.id});
@@ -812,16 +1026,62 @@ export class MeadowScene extends Phaser.Scene {
     const building=this.current?buildingAt(this.current,fineCell(ground)):null;
     this.select(building ? {kind: 'building', id: building.id} : {kind: 'empty'});
   }
+  /** Interpolate the canonical simulation clock; resynchronise on every snapshot, including laboratory time changes. */
+  private simulationNow(): number {
+    return (this.current?.lastSimulatedAt ?? 0) + Math.max(0, this.time.now - this.simulationReceivedAt);
+  }
+  private syncProgressBars(): void {
+    const s = this.current;
+    const now = this.simulationNow();
+    // Hand over to the existing bubble at the same instant the last segment disappears.
+    const crossed = (end: number) => this.progressNow < end && end <= now;
+    if (s?.buildings.some(b => (b.kind === 'nest' && b.breeding && crossed(b.breeding.endsAt)) ||
+      (b.kind === 'farm' && b.order && crossed(b.order.endsAt)) ||
+      (b.kind === 'nursery' && b.nursery?.babies.some(baby => crossed(baby.readyAt)))) ||
+      s?.travel?.trips.some(trip => crossed(trip.endsAt))) this.drawBubbles(now);
+    this.progressNow = now;
+    this.progressViews?.sync(progressBars(s, {photo: this.photo, movingId: this.placement?.movingId}, now), s?.buildings.map(b => b.id) ?? []);
+    this.progressUpdatedAt = this.time.now;
+  }
   update(time: number): void {
+    if (this.time.now-this.discoveryUpdatedAt>=1000) this.syncDiscovery();
+    this.drawRabbitDrops(time);
+    this.placeTutorialHand(time);
+    if (this.time.now - this.progressUpdatedAt >= 100) this.syncProgressBars();
     // A pinch changes the zoom on every pointer event: re-stroke the cached overlay at most once per frame.
     if (this.gridStroke && this.gridZoom !== this.view.zoom) this.gridStroke();
     // Scene time since the last frame; a long gap (inactive tab) is cut short inside the motion step: no jump.
     const dt = this.motionClock === null ? 0 : time - this.motionClock; this.motionClock = time;
+    let dadi: ReturnType<DadiReactions['step']> = {speech: null, started: null}, dadiObscured = false;
+    const dadiBounds = this.dadiSpeech ? {width: this.scale.width, height: this.scale.height, top: document.getElementById('hud')?.getBoundingClientRect().bottom ?? 0} : null;
+    if (this.dadiSpeech) {
+      const active = !this.photo && !document.hidden && document.getElementById('loading-screen')?.hidden !== false;
+      dadiObscured = document.getElementById('game-panel')?.hidden === false || !!document.querySelector('dialog[open]');
+      const visible = this.rabbitViews.filter(r => dadiHeadVisible(this.dadiHead(r), dadiBounds!)).map(r => r.id);
+      dadi = this.dadi.step(dadiObscured ? 0 : dt, active, dadiObscured ? [] : visible);
+      if(dadi.started?.id===this.cozyInteraction.active?.id)this.cozyInteraction.reset();
+      if (dadi.started?.salto) {
+        this.life.interrupt(dadi.started.id);
+        const motion = this.rabbitViews.find(r => r.id === dadi.started!.id)?.motion;
+        if (motion) triggerWelcomeSalto(motion, matchMedia('(prefers-reduced-motion: reduce)').matches);
+      }
+    }
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const lifeActive = !this.photo && !document.hidden && document.getElementById('loading-screen')?.hidden !== false &&
+      document.getElementById('game-panel')?.hidden !== false && !document.querySelector('dialog[open]') && !this.placement && !this.arrangement;
+    const bounds = {width: this.scale.width, height: this.scale.height, top: document.getElementById('hud')?.getBoundingClientRect().bottom ?? 0};
+    const visibleResidents = new Set(this.rabbitViews.filter(r => r.motion && dadiHeadVisible(this.dadiHead(r), bounds)).map(r => r.id));
+    const visitor=this.cozyInteraction.active;
+    this.cozyInteraction.step(dt,lifeActive,!!visitor&&visibleResidents.has(visitor.id)&&this.rabbitViews.some(r=>r.id===visitor.id&&r.motion===visitor.motion&&!r.nest)&&!!this.current?.decorations.some(d=>d.id===visitor.objectId&&d.location.kind==='outside'),reducedMotion);
+    if(lifeActive&&!reducedMotion&&dt>=0&&dt<=1000){this.interactionIn-=dt;if(this.interactionIn<=0){this.interactionIn=90000;for(const d of this.current?.decorations??[])if(this.interactionDecoration(d.id))break;}}
+    this.life.step(dt, this.rabbitViews.flatMap(r => r.motion ? [{id: r.id, group: r.group, motion: r.motion, nest: r.nest, friendId:this.friends.get(r.id),occupied:this.cozyInteraction.active?.id===r.id, visible: visibleResidents.has(r.id)}] : []),
+      lifeActive, reducedMotion, dadi.speech ? [dadi.speech.id] : []);
+    this.lifeViews?.begin(this.rabbitViews.map(r => r.id));
     let depthChanged = false;
     for (const rabbit of this.rabbitViews) {
       const previousDepth = rabbit.object.depth;
       const t = time / 1000 + rabbit.phase;
-      let lift = 0, squashX = 1, squashY = 1, facing: 1 | -1 = 1, rotation = 0;
+      let lift = 0, squashX = 1, squashY = 1, facing: 1 | -1 = 1, rotation = 0, nuzzle = 0;
       if (rabbit.motion) {
         const motion = rabbit.motion;
         const others = this.neighborPoints;
@@ -832,9 +1092,12 @@ export class MeadowScene extends Phaser.Scene {
           others.push(other.motion.local);
           if (other.motion.mode === 'walk') others.push(other.motion.to);
         }
-        stepRabbitMotion(motion, dt, others);
+        const activity = ['sleep', 'zoom', 'meet', 'kiss'].includes(motion.mode);
+        if (rabbit.nest ? lifeActive && visibleResidents.has(rabbit.id) && motion.mode !== 'rest' && (!reducedMotion || motion.mode === 'walk' || motion.mode === 'salto' || motion.mode === 'fed') :
+          !activity || lifeActive && visibleResidents.has(rabbit.id)) stepRabbitMotion(motion, dt, others);
         const pose = rabbitPose(motion);
         ({lift, squashX, squashY, facing, rotation} = pose);
+        nuzzle = pose.nuzzle ?? 0;
         // The ground point drives position and depth; the hop only lifts the body.
         rabbit.object.setPosition(rabbit.center.x + motion.local.x, rabbit.center.y + motion.local.y).setDepth(rabbit.center.y + motion.local.y);
       } else {
@@ -844,18 +1107,26 @@ export class MeadowScene extends Phaser.Scene {
       }
       rabbit.lift = lift;
       if (rabbit.object.depth !== previousDepth) depthChanged = true;
-      this.poseBody(rabbit, {lift, squashX, squashY, facing, rotation});
+      this.poseBody(rabbit, {lift, squashX, squashY, facing, rotation, nuzzle});
       if (rabbit.flames && rabbit.sprite) {
         const pose = ardentFlamePose(rabbit.id, time, matchMedia('(prefers-reduced-motion: reduce)').matches);
         rabbit.flames.setPosition(pose.x, rabbit.art!.groundY).setScale(rabbit.sprite.scaleX, rabbit.sprite.scaleY * pose.stretch).setAlpha(pose.alpha);
       }
       if (rabbit.face) {
         const state = rabbitFaceState(rabbit.face.seed, time, !rabbit.motion || rabbit.motion.mode === 'rest');
-        rabbit.face.eyes.setVisible((state & 1) !== 0);
-        rabbit.face.nose.setVisible((state & 2) !== 0);
+        const asleep = rabbit.motion?.mode === 'sleep';
+        rabbit.face.eyes.setVisible(asleep || (state & 1) !== 0);
+        rabbit.face.nose.setVisible(!asleep && (state & 2) !== 0);
       }
-      rabbit.ears.forEach((ear, index) => { ear.rotation = Math.sin(t * 1.4 + index) * .13; });
+      rabbit.ears.forEach((ear, index) => { ear.rotation = rabbit.motion?.mode === 'sleep' ? 0 : Math.sin(t * 1.4 + index) * .13; });
+      if (lifeActive && visibleResidents.has(rabbit.id) && (rabbit.motion?.mode === 'sleep' || rabbit.motion?.mode === 'kiss')) {
+        const head = this.dadiHead(rabbit), world = this.view.world(head);
+        this.lifeViews?.show(rabbit.id, rabbit.motion.mode, world.x, world.y, rabbit.motion.elapsed, this.view.zoom);
+      }
     }
     if (depthChanged) this.animals?.sort('depth');
+    const speaker = dadi.speech && this.rabbitViews.find(r => r.id === dadi.speech!.id);
+    const head = speaker ? this.dadiHead(speaker) : null;
+    this.dadiSpeech?.show(dadiObscured ? null : dadi.speech, head, dadiBounds!);
   }
 }

@@ -113,6 +113,7 @@ describe('travel agency rules', () => {
 
   it('does not let a parent at the nest leave', () => {
     let s = secondRabbit(agency());
+    s.rabbits[1].species = 'frisket'; s.discovered.push('frisket');
     s = run(s, {type: 'breed', parents: ['rabbit-2', s.rabbits[1].id]});
     expect(act(s, {type: 'startTrip', rabbitId: 'rabbit-2'}, 0)).toMatchObject({ok: false, reason: 'PARENT_BUSY'});
   });
@@ -135,6 +136,7 @@ describe('travel agency rules', () => {
       expect(decodeGame(JSON.stringify(bad))).toEqual({ok: false, reason: 'INVALID_STATE'});
     }
     let nested = secondRabbit(agency());
+    nested.rabbits[1].species = 'frisket'; nested.discovered.push('frisket');
     nested = run(nested, {type: 'breed', parents: ['rabbit-2', nested.rabbits[1].id]});
     nested.travel = structuredClone(s.travel);
     expect(decodeGame(JSON.stringify(nested))).toEqual({ok: false, reason: 'INVALID_STATE'});
@@ -173,9 +175,9 @@ describe('habitat storage and species income', () => {
     const s = createGame(0); s.rabbits = []; s.buildings[0].habitat!.type = 'vol'; s.buildings[0].incomeUnits = 2900 * HOUR;
     expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: s});
   });
-  it('has exactly twelve unique bonus rares at 17/h; other rares earn 14, epics 20, legendaries 26', () => {
-    expect(RARE_INCOME_BONUS_SPECIES).toHaveLength(12);
-    expect(new Set(RARE_INCOME_BONUS_SPECIES).size).toBe(12);
+  it('has exactly nine unique bonus rares at 17/h; other rares earn 14, epics 20, legendaries 26', () => {
+    expect(RARE_INCOME_BONUS_SPECIES).toHaveLength(9);
+    expect(new Set(RARE_INCOME_BONUS_SPECIES).size).toBe(9);
     for (const id of RARE_INCOME_BONUS_SPECIES) expect(SPECIES[id].rarity).toBe('rare');
     for (const id of SPECIES_IDS) {
       const rarity = SPECIES[id].rarity;
@@ -206,6 +208,21 @@ function mount(s: GameState, clock = {now: 0}) {
 }
 
 describe('agency interface and French text', () => {
+  it('refreshes an open agency panel at an isolated return deadline', () => {
+    let s = agency(); s = run(s, {type: 'welcomeAgency'});
+    s = run(s, {type: 'startTrip', rabbitId: s.rabbits[0].id});
+    for (const b of s.buildings) if (b.habitat) b.incomeUnits = habitatCap(b.habitat.type, b.habitat.level) * HOUR;
+    const end = s.travel!.trips[0].endsAt, clock = {now: end - 1};
+    const {ui, controller} = mount(s, clock);
+    ui.select({kind: 'building', id: s.buildings.find(b => b.kind === 'agency')!.id});
+    expect(panel().querySelector('.agency-return button')).toBeNull();
+    const revision = controller.getSnapshot().viewRevision;
+    const before = controller.getSnapshot().state!;
+    clock.now = end; controller.refresh();
+    expect(controller.getSnapshot().state).toEqual({...before, lastSimulatedAt: end});
+    expect(controller.getSnapshot().viewRevision).toBe(revision + 1);
+    expect(panel().querySelector<HTMLButtonElement>('.agency-return button')!.disabled).toBe(false);
+  });
   it('lists independent returns, keeps Coco and confirms the next Heart upgrade', () => {
     let s = secondRabbit(agency()); const id = s.buildings.at(-1)!.id;
     s.hearts = 200; s = run(s, {type: 'welcomeAgency'});

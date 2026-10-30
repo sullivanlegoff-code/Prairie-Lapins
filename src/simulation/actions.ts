@@ -1,27 +1,29 @@
 import {foodXp, firstDecorationPlacementXp, missionClaimXp} from './progression';
+import {rememberBirth, rememberTrip} from './cozy';
+import {claimDiscovery,advanceCozyEvent,translatedDecorations} from './cozyActivities';
 import {PROGRESSION} from '../config/progression';
 import {CUISINE_REWARDS, CUISINE_TIP, CUISINE_FULL_REWARDS_PER_CYCLE} from '../config/balance';
 import {applyProgressionGain} from './progressionRewards';
 import {eligibleMainMissionIds} from './missions';
 import {stateLevelAccess} from './levelRights';
 import {jobKey, initiationAvailable, settleInitiation} from './initiation';
-import {buildingPlacementReason, upgradeFootprintReason} from './placement';
+import {buildingPlacementReason, buildingFootprint, decorationsInFootprint, upgradeFootprintReason} from './placement';
 import {normalizeRabbitName} from './rabbitNames';
 import {acquiredCell, PARCEL_IDS, extensionPrice, purchasableParcels} from '../config/land';
 import {HABITAT_TYPES, habitatLevel, habitatPrice, type HabitatLevel} from '../config/habitats';
-import {habitatEntryReason} from './habitats';
-import {DAILY_MISSIONS, DAILY_MISSION_GAP, DAILY_MISSION_IDS, MAIN_MISSIONS, DAILY_BONUS, type Reward} from '../config/missions';
+import {habitatEntryReason, removeHabitatReason} from './habitats';
+import {DAILY_MISSIONS, DAILY_MISSION_GAP, DAILY_MISSION_IDS, MAIN_MISSIONS, DAILY_BONUS, mainMissionRewards, type Reward} from '../config/missions';
 import {marketPrice, marketUnlocked} from './market';
 import {affectionCap, playerLevel} from './affection';
 import {agencyBuilding, travelling} from './travel';
 import {currentDailyMission, dailyCycleStart, dailyOpensAt, openNextDailyMission, recordMissionAction} from './missions';
-import {AFFECTION_STATUE, BALANCE, HEARTS, HOUR, TRAVEL, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
+import {AFFECTION_STATUE, farmLimit, farmDuration, BALANCE, HEARTS, HOUR, TRAVEL, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
 import {emptyBuilding} from '../state/initial';
 import {babyInNursery, findNurseryBaby, firstFreeNurserySlot, nurseryBuilding, nurseryUnlockQuote, settleNestTransfers} from './nursery';
 import type {ActionResult, Building, Command, GameState, PattesCommand, Refusal, ProgressionGain} from '../state/types';
 import {chooseBirth, breedingPool, nestForParent} from './breeding';
 import {recipePrice, recipePurchaseReason} from './recipes';
-import {advance, validTime} from './time';
+import {advance, validTime, drawIncomeRoll} from './time';
 import {complementCost, quoteAcceleration} from './hearts';
 import {DECORATIONS, ownedDecorationResalePrice} from '../config/decorations';
 import {catalogDecorationPlacementReason, decorationPlacementReason, decorationsInCell, purchaseDecorationReason} from './decorations';
@@ -32,6 +34,15 @@ class Quoted extends Error { constructor(public price: number) { super(); } }
 class Denied extends Error { constructor(public reason: Refusal) { super(reason); } }
 function requireRule(condition: unknown, reason: Refusal): asserts condition {
   if (!condition) throw new Denied(reason);
+}
+/** Food credited when entrusting a rabbit; shared with the confirmation UI. */
+export function releaseGrass(species: SpeciesId): number {
+  const rarity = SPECIES[species].rarity;
+  return rarity === 'common' ? BALANCE.releaseGrass.common : rarity === 'rare' ? BALANCE.releaseGrass.rare : 0;
+}
+/** Pattes paid when a ready baby of this species is released from the nursery; shared with the confirmation UI. */
+export function releaseBabyPattesFor(species: SpeciesId): number {
+  return BALANCE.releaseBabyPattes[SPECIES[species].rarity];
 }
 /** Atomic action: even elapsed time is discarded on refusal; call advance separately to resume. */
 export function act(state: GameState, command: Command, now: number = Date.now(), rng: () => number = Math.random): ActionResult {
@@ -98,6 +109,10 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
   };
   try {
     switch (command.type) {
+      case 'claimDiscovery': requireRule(claimDiscovery(s,time,command.id),'STALE_ACTION'); break;
+      case 'translateDecorations': {
+        const moved=translatedDecorations(s,command.ids,command.dx,command.dy);requireRule(!moved.reason,moved.reason ?? 'INVALID_CHOICE');s.decorations=moved.decorations;break;
+      }
       case 'rewardCuisine': {
         requireRule(command.recipeId === 'salad' || command.recipeId === 'chicken', 'INVALID_CHOICE');
         requireRule(s.buildings.some(b => b.kind === 'kitchen'), 'MISSING_BUILDING'); // The Kitchen is where Cuisine is played.
@@ -158,7 +173,8 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(Object.hasOwn(MAIN_MISSIONS, command.id), 'INVALID_CHOICE');
         requireRule(!s.missions.claimed.includes(command.id), 'ALREADY_CLAIMED');
         requireRule((eligibleMainMissionIds(s) as readonly string[]).includes(command.id) && s.missions.completed.includes(command.id), 'NOT_READY');
-        reward(MAIN_MISSIONS[command.id].reward); s.missions.claimed.push(command.id); gainXp(missionClaimXp('main',command.id)); break;
+        for (const component of mainMissionRewards(MAIN_MISSIONS[command.id])) reward(component);
+        s.missions.claimed.push(command.id); gainXp(missionClaimXp('main',command.id)); break;
       }
       case 'claimDailyMission': {
         requireRule(Object.hasOwn(DAILY_MISSIONS, command.id), 'INVALID_CHOICE');
@@ -191,6 +207,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       }
       case 'claimTrip': {
         const trip = s.travel?.trips.find(t => t.rabbitId === command.rabbitId); requireRule(trip && trip.endsAt <= time, 'NOT_READY');
+        rememberTrip(s, trip.rabbitId, trip.destination, trip.startedAt, time);
         credit('hearts', trip.hearts); credit('grass', trip.grass ?? 0); s.travel!.trips = s.travel!.trips.filter(t => t.rabbitId !== command.rabbitId); value = trip.hearts; break;
       }
       case 'exchangeForHeart': {
@@ -243,12 +260,18 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(command.kind !== 'nest' && command.kind !== 'nursery', 'INVALID_CHOICE');
         const config = BALANCE.buildings[command.kind];
         requireRule(config.maximum === null || s.buildings.filter(b => b.kind === command.kind).length < config.maximum, 'BUILDING_LIMIT');
+        requireRule(command.kind !== 'farm' || s.buildings.filter(b => b.kind === 'farm').length < farmLimit(playerLevel(s)), 'LEVEL_REQUIRED');
         const habitatType = command.habitatType ?? 'universal';
         requireRule(HABITAT_TYPES.includes(habitatType) && (command.kind === 'enclosure' || command.habitatType === undefined), 'INVALID_CHOICE');
         requireRule(command.kind!=='enclosure' || stateLevelAccess(s,{family:'habitatPurchase',id:habitatType}).accessible,'LEVEL_REQUIRED');
         requireRule(command.kind!=='statue' || playerLevel(s)>=AFFECTION_STATUE.level,'LEVEL_REQUIRED');
         requireRule(command.kind!=='agency' || playerLevel(s)>=TRAVEL.unlockLevel,'LEVEL_REQUIRED');
-        cell(command.x, command.y); allocation(); pay(command.kind === 'enclosure' ? habitatPrice(habitatType) : config.price);
+        cell(command.x, command.y); allocation();
+        if (command.kind === 'statue') {
+          requireRule(!payment && !quoteOnly, 'INVALID_CHOICE');
+          requireRule(s.hearts >= AFFECTION_STATUE.heartPrice, 'NOT_ENOUGH_HEARTS');
+          s.hearts -= AFFECTION_STATUE.heartPrice;
+        } else pay(command.kind === 'enclosure' ? habitatPrice(habitatType) : config.price);
         value = id('building'); s.buildings.push(emptyBuilding(value, command.kind, command.x, command.y, habitatType));
         if (command.kind === 'farm') gainXp(PROGRESSION.xp.construction.farm);
         else if (command.kind === 'enclosure') gainXp(habitatType === 'universal' ? PROGRESSION.xp.construction.universalHabitat : PROGRESSION.xp.construction.specializedHabitat);
@@ -329,14 +352,24 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         const b = building(command.id, 'enclosure'); value = Math.floor(b.incomeUnits / HOUR);
         credit('pattes', value); b.incomeUnits -= value * HOUR; break;
       }
+      case 'removeHabitat': {
+        const b = building(command.id, 'enclosure');
+        const reason = removeHabitatReason(s, b.id); requireRule(!reason, reason ?? 'INVALID_CHOICE');
+        value = Math.floor(b.incomeUnits / HOUR); credit('pattes', value);
+        const stored = new Set(decorationsInFootprint(s, buildingFootprint(b)));
+        for (const d of s.decorations) if (stored.has(d.id)) d.location = {kind: 'inventory'};
+        s.buildings = s.buildings.filter(other => other.id !== b.id);
+        break;
+      }
       case 'startOrder': {
         const b = building(command.id, 'farm'); requireRule(!b.order, 'BUSY');
         requireRule(Object.hasOwn(ORDERS, command.recipe), 'INVALID_CHOICE');
         const recipe = ORDERS[command.recipe]; requireRule(playerLevel(s) >= recipe.level, 'LEVEL_REQUIRED');
         requireRule(b.farmLevel === 2 || ORDERS[command.recipe].level < ORDERS.fanes.level, 'INVALID_CHOICE');
-        requireRule(Number.isSafeInteger(time + recipe.duration), 'INVALID_TIME'); pay(recipe.cost);
+        const duration = farmDuration(recipe.duration, b.farmLevel);
+        requireRule(Number.isSafeInteger(time + duration), 'INVALID_TIME'); pay(recipe.cost);
         if (recipe.duration >= HOUR) s.missions.nightOrderStarted = true; // The « longer crop » main mission.
-        b.order = {recipe: command.recipe, startedAt: time, endsAt: time + recipe.duration, grass: recipe.grass, duration: recipe.duration};
+        b.order = {recipe: command.recipe, startedAt: time, endsAt: time + duration, grass: recipe.grass, duration};
         if (s.initiation && !s.initiation.order && !s.initiation.closed.includes('order') && command.recipe === 'foin') s.initiation.order = jobKey(b,'order');
         break;
       }
@@ -372,6 +405,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         value = id('birth');
         nest.breeding = {parents: [...command.parents], startedAt: time, endsAt: time + BALANCE.breedingDuration,
           birth: {id: value, species: result.species, guaranteed: result.guaranteed, reservedDiscovery: result.reservedDiscovery}};
+        s.lastBreedingParents = [...command.parents];
         if (s.initiation && !s.initiation.birthId) { s.initiation.birthId=value; s.initiation.breeding=jobKey(nest,'breeding'); }
         gainXp(PROGRESSION.xp.breedingLaunch); break;
       }
@@ -384,13 +418,24 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(baby, 'STALE_ACTION');
         requireRule(baby.readyAt <= time, 'NOT_READY'); room(command.enclosureId, baby.birth.species);
         const birth = baby.birth; value = birth.id;
-        s.rabbits.push({id: birth.id, species: birth.species, affection: BALANCE.minAffection, enclosureId: command.enclosureId});
+        s.rabbits.push({id: birth.id, species: birth.species, affection: BALANCE.minAffection, enclosureId: command.enclosureId, ...(SPECIES[birth.species].rarity === 'common' ? {} : {incomeRoll: drawIncomeRoll(birth, rng)})});
         if (!s.discovered.includes(birth.species)) {
           if (GUARANTEE_SPECIES.includes(birth.species)) s.pityFailures = 0;
         }
         gainXp(PROGRESSION.xp.birth[SPECIES[birth.species].rarity] + discover(birth.species));
         nursery.nursery.babies = nursery.nursery.babies.filter(other => other !== baby);
+        rememberBirth(s, birth.id, time);
         if(s.initiation?.birthId === birth.id) for(const stage of ['order','breeding','growth'] as const) if(!s.initiation.closed.includes(stage)) s.initiation.closed.push(stage);
+        break;
+      }
+      case 'releaseBaby': {
+        // Same rule as a welcome: only this exact ready baby, never a substitute. No habitat room is needed.
+        const baby = findNurseryBaby(s, command.birthId);
+        requireRule(baby, 'STALE_ACTION');
+        requireRule(baby.readyAt <= time, 'NOT_READY');
+        credit('pattes', releaseBabyPattesFor(baby.birth.species));
+        const nursery = nurseryBuilding(s)!;
+        nursery.nursery!.babies = nursery.nursery!.babies.filter(other => other !== baby);
         break;
       }
       case 'expand': {
@@ -405,7 +450,9 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         const rabbit = s.rabbits.find(r => r.id === command.id); requireRule(rabbit, 'NOT_FOUND');
         requireRule(!travelling(s, rabbit.id), 'TRAVELING'); requireRule(!busy(rabbit.id), 'PARENT_BUSY');
         requireRule(s.rabbits.filter(r => r.species === rabbit.species).length > 1, 'LAST_OF_SPECIES');
-        credit('grass', SPECIES[rabbit.species].rarity === 'common' ? BALANCE.releaseGrass.common : SPECIES[rabbit.species].rarity === 'rare' ? BALANCE.releaseGrass.rare : 0); s.rabbits = s.rabbits.filter(r => r.id !== rabbit.id); break;
+        credit('grass', releaseGrass(rabbit.species)); s.rabbits = s.rabbits.filter(r => r.id !== rabbit.id);
+        delete s.cuisine.affectionCycles[rabbit.id];
+        break;
       }
       case 'renameRabbit': {
         // Free and purely cosmetic: no resource, XP, mission or draw is involved. The command validates the name itself.
@@ -430,6 +477,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
     requireRule(recordMissionAction(s, 'gainAffection', affectionGained), 'RESOURCE_LIMIT');
     requireRule(recordMissionAction(s, command.type === 'buyDecoration' && command.location ? 'placeDecoration' : command.type, command.type === 'feed' || command.type === 'breed' ? 1 : typeof value === 'number' ? value : 0, command.type !== 'placeDecoration' || command.location.kind === 'outside'), 'RESOURCE_LIMIT');
     // In particular, a welcome frees the nursery at this action's timestamp.
+    advanceCozyEvent(s,command,time);
     return {ok: true, state: advance(s, time), ...(value === undefined ? {} : {value}), ...(progressionGain ? {progressionGain} : {}), ...(cuisineReward ? {cuisineReward} : {})};
   } catch (error) {
     if (error instanceof Quoted) return {ok: true, state, value: error.price};

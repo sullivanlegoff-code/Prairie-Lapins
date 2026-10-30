@@ -19,7 +19,9 @@ if (laboratory) {
   const manifestUrl = new URL(manifestLink[1], 'https://example.test');
   assert.equal(manifest.name, 'Prairie de lapins');
   assert.equal(manifest.short_name, 'Prairie');
-  assert.equal(manifest.display, 'standalone');
+  assert.equal(manifest.display, 'fullscreen');
+  assert.deepEqual(manifest.display_override, ['fullscreen', 'standalone']);
+  assert.equal(manifest.theme_color, '#fffdf5');
   assert.equal(manifest.orientation, undefined, 'No orientation lock');
   for (const key of ['id', 'start_url', 'scope']) {
     assert.ok(manifest[key].startsWith('.'), `${key} must remain relative`);
@@ -27,7 +29,7 @@ if (laboratory) {
   }
   for (const [name, content] of Object.entries({
     'apple-mobile-web-app-capable': 'yes', 'mobile-web-app-capable': 'yes',
-    'apple-mobile-web-app-title': 'Prairie de lapins', 'apple-mobile-web-app-status-bar-style': 'default',
+    'apple-mobile-web-app-title': 'Prairie de lapins', 'apple-mobile-web-app-status-bar-style': 'black-translucent',
   })) assert.ok(html.includes(`<meta name="${name}" content="${content}">`), `Missing ${name}`);
   assert.ok(html.includes('viewport-fit=cover'));
   assert.equal(manifest.icons.length, 2);

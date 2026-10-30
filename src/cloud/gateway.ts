@@ -3,6 +3,7 @@ import {decodeGame, SAVE_VERSION} from '../persistence/json';
 import type {GameState} from '../state/types';
 
 export const OUTDATED = 'Une version plus récente du jeu a enregistré ta partie : recharge la page pour mettre le jeu à jour.';
+export const CLOUD_REQUEST_TIMEOUT = 20_000;
 export class CloudError extends Error {
   constructor(public code: 'outdated' | 'invalid' | 'session' | 'network', message?: string) { super(message ?? code); }
 }
@@ -25,13 +26,31 @@ function fail(error: {status?: number; code?: string}): never {
 }
 export class SupabaseGateway implements CloudGateway {
   constructor(private client: SupabaseClient) {}
+  /** Abort the transport and settle once, even if a transport ignores cancellation. */
+  private request<T>(start: (signal: AbortSignal) => PromiseLike<T>): Promise<T> {
+    return new Promise((resolve, reject) => {
+      const controller = new AbortController();
+      let settled = false;
+      const timer = setTimeout(() => {
+        if (settled) return;
+        settled = true; controller.abort(); reject(new CloudError('network'));
+      }, CLOUD_REQUEST_TIMEOUT);
+      void Promise.resolve().then(() => start(controller.signal)).then(value => {
+        if (settled) return;
+        settled = true; clearTimeout(timer); resolve(value);
+      }, () => {
+        if (settled) return;
+        settled = true; clearTimeout(timer); reject(new CloudError('network'));
+      });
+    });
+  }
   async read(owner: string): Promise<RemoteSave | null> {
-    const {data, error} = await this.client.from('prairie_saves').select('*').eq('owner_id', owner).maybeSingle();
+    const {data, error} = await this.request(signal => this.client.from('prairie_saves').select('*').eq('owner_id', owner).abortSignal(signal).maybeSingle());
     if (error) fail(error);
     return data ? remoteSave(data, owner) : null;
   }
   async commit(r: CommitRequest): Promise<CommitResult> {
-    const {data, error} = await this.client.rpc('prairie_commit', {p_owner: r.owner, p_expected: r.expected, p_operation: r.operation, p_state: r.state});
+    const {data, error} = await this.request(signal => this.client.rpc('prairie_commit', {p_owner: r.owner, p_expected: r.expected, p_operation: r.operation, p_state: r.state}).abortSignal(signal));
     if (error) fail(error);
     if (data?.status === 'outdated') throw new CloudError('outdated', OUTDATED);
     if (data?.status === 'conflict') return {status: 'conflict', remote: data.remote ? remoteSave(data.remote, r.owner) : null};

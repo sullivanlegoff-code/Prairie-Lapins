@@ -308,5 +308,15 @@
     "width": 339,
     "height": 430,
     "derivedSha1": "db499fc9db4a3bf27d8b93e9e43909a1573946a8"
+  },
+  "bouee": {
+    "file": "assets/rabbits/bouee/bouee-v1.png",
+    "worldWidth": 54,
+    "sourceSha1": "9b08b871c6fcd80d391064aef69bf60a59fd6f5e",
+    "sourceWidth": 1191,
+    "sourceHeight": 1200,
+    "width": 425,
+    "height": 428,
+    "derivedSha1": "b5f18188e655f426e6bfd70817660953ca0f6d85"
   }
 }

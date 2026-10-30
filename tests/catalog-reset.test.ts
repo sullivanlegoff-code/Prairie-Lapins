@@ -20,9 +20,9 @@ const state = (c: GameController) => c.getSnapshot().state!;
 
 describe('the save boundary of the new catalogue', () => {
   it('writes version 17 and reads it back without any reset', () => {
-    expect(SAVE_VERSION).toBe(19);
+    expect(SAVE_VERSION).toBe(21);
     const b = browser(), first = new GameController(b.normal, () => 0);
-    expect(first.getSnapshot()).toMatchObject({status: 'saved', issue: null, catalogReset: false}); expect(JSON.parse(b.data.get(SAVE_KEY)!).version).toBe(19);
+    expect(first.getSnapshot()).toMatchObject({status: 'saved', issue: null, catalogReset: false}); expect(JSON.parse(b.data.get(SAVE_KEY)!).version).toBe(21);
     first.dispose();
     const again = new GameController(b.normal, () => HOUR); expect(again.getSnapshot()).toMatchObject({status: 'saved', catalogReset: false}); again.dispose();
   });
@@ -86,7 +86,7 @@ describe('the save boundary of the new catalogue', () => {
 
   it('refuses a newer or unknown version as unsupported, and a current-version file naming a removed species as invalid', () => {
     const b = browser(), c = new GameController(b.normal, () => 0), before = c.getSnapshot();
-    expect(c.prepareImport(oldSave(20))).toEqual({ok:false,reason:'UNSUPPORTED_VERSION'});
+    expect(c.prepareImport(oldSave(22))).toEqual({ok:false,reason:'UNSUPPORTED_VERSION'});
     expect(c.prepareImport(oldSave(0))).toEqual({ok: false, reason: 'UNSUPPORTED_VERSION'});
     expect(c.prepareImport(oldSave(16, raw => { (raw.rabbits as {species: string}[])[0].species = 'terre'; }))).toEqual({ok: false, reason: 'INVALID_STATE'});
     expect(c.prepareImport(oldSave(16, raw => { raw.recipeBook = ['brumelin']; }))).toEqual({ok: false, reason: 'INVALID_STATE'});
@@ -107,6 +107,6 @@ describe('the save boundary of the new catalogue', () => {
     const prepared = c.prepareImport(encodeGame(source)); if (!prepared.ok) throw Error(prepared.reason);
     expect(c.confirmImport(prepared.token, true)).toEqual({ok: true}); expect(state(c).pattes).toBe(4321);
     const exported = c.exportGame(); if (!exported.ok) throw Error(exported.reason);
-    expect(JSON.parse(exported.json).version).toBe(19); expect(readPresentationId(exported.json)).toBeDefined(); c.dispose();
+    expect(JSON.parse(exported.json).version).toBe(21); expect(readPresentationId(exported.json)).toBeDefined(); c.dispose();
   });
 });

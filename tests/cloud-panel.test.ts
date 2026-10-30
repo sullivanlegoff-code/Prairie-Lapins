@@ -4,6 +4,8 @@ import type {SupabaseClient} from '@supabase/supabase-js';
 import {authMessage, mountAccountPanel} from '../src/cloud/accountPanel';
 import {cloudConfig, UNAVAILABLE} from '../src/cloud/config';
 import {accountKnown} from '../src/cloud/accountState';
+import {BACKUP_KEY, CLOUD_KEY, LINK_BACKUP_PREFIX} from '../src/cloud/sync';
+import {SAVE_KEY} from '../src/persistence/storage';
 import {fixture, remote} from './cloud-fixtures';
 import shell from '../src/main.ts?raw';
 
@@ -41,6 +43,30 @@ it('sans configuration : message et aucune création du SDK ; le boot garde son 
   expect(cloudConfig({})).toBeNull(); expect(cloudConfig({VITE_SUPABASE_URL: config.url, VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_secret_FACTICE'})).toBeNull();
   expect(cloudConfig({VITE_SUPABASE_URL: config.url, VITE_SUPABASE_PUBLISHABLE_KEY: config.key})).toEqual(config);
   expect(shell.indexOf("import('./cloud/accountPanel')")).toBeGreaterThan(shell.indexOf('const play ='));
+});
+it('demande confirmation pour réparer la liaison et laisse comparer les parties sans les remplacer', async () => {
+  const p = await panel(true, {online: true}); const raw = '{liaison abîmée';
+  p.data.set(CLOUD_KEY, raw); const before = p.data.get(SAVE_KEY);
+  p.authSession(true); await tick();
+  p.button('Réparer la liaison').click();
+  expect(p.root.textContent).toContain('tout envoi en attente'); expect(p.data.get(CLOUD_KEY)).toBe(raw);
+  p.button('Annuler').click(); expect(p.data.get(CLOUD_KEY)).toBe(raw);
+  p.button('Réparer la liaison').click(); p.button('Confirmer la réparation').click(); await tick();
+  expect(p.root.textContent).toContain('Sur cet appareil'); expect(p.root.textContent).toContain('En ligne');
+  expect([...p.data].find(([key]) => key.startsWith(LINK_BACKUP_PREFIX))?.[1]).toBe(raw);
+  expect(p.data.get(SAVE_KEY)).toBe(before); expect(p.gateway.calls).toHaveLength(0); expect(p.replacement).not.toHaveBeenCalled();
+});
+it('exporte la copie de secours sans importer ni modifier les parties et libère son URL', async () => {
+  const p = await panel(); const raw = p.data.get(SAVE_KEY)!;
+  p.data.set(BACKUP_KEY, raw); p.authSession(true); await tick();
+  const create = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:secours');
+  const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+  const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+  const before = p.data.get(SAVE_KEY); p.button('Télécharger la copie de secours').click(); await tick();
+  expect(create).toHaveBeenCalledOnce(); expect(click).toHaveBeenCalledOnce();
+  expect(p.root.textContent).toContain('Importer une partie');
+  expect(p.data.get(SAVE_KEY)).toBe(before); expect(p.data.get(BACKUP_KEY)).toBe(raw); expect(p.replacement).not.toHaveBeenCalled();
+  disposals.splice(0).forEach(f => f()); expect(revoke).toHaveBeenCalledWith('blob:secours');
 });
 it('crée un compte sans e-mail, vérifie confirmation et affiche association/statut/adresse', async () => {
   const p = await panel(); p.button('Créer mon compte').click();

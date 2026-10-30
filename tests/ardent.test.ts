@@ -27,7 +27,7 @@ function parents() {
 }
 describe('approved Ardent content', () => {
   it('keeps Ardent in its original position, with explicit recipe, Rare policies and no undecided acquisition policies or coat', () => {
-    expect(SPECIES_IDS[13]).toBe('ardent'); expect(SPECIES_IDS).toEqual(EXPECTED_IDS);
+    expect(SPECIES_IDS[9]).toBe('ardent'); expect(SPECIES_IDS).toEqual(EXPECTED_IDS);
     expect(validateSpeciesEntries(SPECIES_ENTRIES)).toEqual([]);
     expect(SPECIES.ardent).toEqual({name: 'Ardent', description, types: ['feu', 'paille'], rarity: 'rare', price: null,
       progression: {unlockLevel: 1}, acquisition: [{kind: 'recipe',guaranteeEligible:true, requiredTypes: ['feu', 'paille'], minAffection: 2}],
@@ -47,17 +47,17 @@ describe('approved Ardent content', () => {
       expect(recipeMatches('ardent',a,b)).toBe(false); expect(breedingWeights(a,b,20,20).ardent).toBeUndefined();
     }
   });
-  it('preserves historical weighting and guarantee rather than extending the starting Rare-only policy', () => {
-    expect(breedingWeights('paille','feu',2,2)).toEqual({paille:30,feu:30,ardent:30,snk:30});
-    expect(breedingOdds('feu','paille',2,2)).toEqual({paille:25,feu:25,ardent:25,snk:25});
-    expect(breedingOdds('paille','feu',4,4)).toEqual({paille:20,feu:20,bouee:20,ardent:20,snk:20});
+  it('gives only the two Rares to two commons (owner decision of 27 October 2026), like Paille × Neige', () => {
+    expect(breedingWeights('paille','feu',2,2)).toEqual({ardent:30,snk:30});
+    expect(breedingOdds('feu','paille',2,2)).toEqual({ardent:50,snk:50});
+    expect(breedingOdds('paille','feu',4,4)).toEqual({ardent:50,snk:50});
     const s = parents(); s.progression = {totalXp: cumulativeLevelXp(5), rewardedThroughLevel: 5}; s.pityFailures = 7;
-    expect(breedingPool(s,'paille','feu',4,4)).toMatchObject({weights:{bouee:1,ardent:1,snk:1},guaranteed:true});
+    expect(breedingPool(s,'paille','feu',4,4)).toMatchObject({weights:{ardent:1,snk:1},guaranteed:true});
     expect(breedingPool(s,'paille','feu',2,2)).toMatchObject({weights:{ardent:1,snk:1},guaranteed:true});
     expect(breedingOdds('paille','neige',2,2)).toEqual({frisket:50,icy:50});
   });
   it('keeps a real Ardent birth through save/reload without redrawing, transfer, growth and compatible welcome', () => {
-    const s = parents(), rng = vi.fn(() => .6), data = new Map([[SAVE_KEY, encodeGame(s)]]);
+    const s = parents(), rng = vi.fn(() => .25), data = new Map([[SAVE_KEY, encodeGame(s)]]);
     const storage = {getItem: (k:string) => data.get(k) ?? null, setItem: (k:string,v:string) => {data.set(k,v);}};
     const controller = new GameController(storage, () => 0, rng);
     expect(controller.perform({type:'breed', parents:['rabbit-2','rabbit-3']}).ok).toBe(true);

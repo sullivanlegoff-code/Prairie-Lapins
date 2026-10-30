@@ -1,4 +1,27 @@
-# Économie courante — partie A, sauvegarde v19
+# Catalogue courant et migration v20 - 26 octobre 2026
+
+**Actualisation du 27 octobre :** les revenus et les 18 plafonds applicables sont détaillés dans [l’économie actuelle](economy-current.md). Les barèmes de revenus, de stockage et les mesures de progression datés plus bas sont historiques. Aucun recalcul de progression n’a été effectué, à la demande du propriétaire. La règle de reproduction actuelle exclut tout résultat commun, sauf entre deux parents communs du même type ; voir [les recettes actuelles](recipes-current.md).
+
+Le registre `src/config/species.ts` contient 32 espèces. Les notes de publication plus bas sont des archives.
+
+| Lapin | Types | Rareté | Recette | Niveau |
+|---|---|---|---|---:|
+| Dinono | feu + métal | épique | types feu + métal, affection 6, probabilité 5 %, connaissance 450 pattes, sans garantie | 1 |
+| Lapin en Bouée | feu + métal | rare | types feu + métal, affection 2, garantie ordinaire, sans prix de connaissance | 1 |
+
+Bouée remplace Dinono entre Boudinet et Egiiipte dans l'ordre du registre et du tirage. Dinono rejoint les épiques après Orange. Son illustration et sa description sont conservées ; aucun invariant n'impose le niveau 11 à tous les épiques, donc son niveau 1 reste inchangé.
+
+Bouée : design original B « Cocktail » choisi par le propriétaire le 26 octobre 2026, lapin gris en vacances, bouée turquoise à pois blancs, lunettes de soleil en cœur roses et jus de fruit à ombrelle. Comme pour Orange, master détouré par `scripts/prepare-rabbit-masters.mjs` depuis le concept hors dépôt, puis sprite dérivé de 425 × 428 px ; largeur monde 54, ancrage 12 (bas de la bouée au sol), regard à droite. Sans clignement ni truffe animée à cause des lunettes de soleil.
+
+Les trois espèces sans sprite sont retirées du catalogue. En v16-v19, `lunettes` devient `boudinet`, `feu-glace` devient `glassofeu` et `perroquet` devient `phoenix`. Le lecteur convertit les adultes, y compris en voyage, et les naissances du nid/de la nurserie ; il conserve identités, noms, affection, habitats, trajets et dates. Il nettoie découvertes, carnet et droits historiques de niveau ; seul un adulte possédé converti ajoute sa nouvelle espèce aux découvertes. Une naissance reste cachée jusqu'à l'accueil. Les réservations ordinaires de Dinono sont annulées sans retirer le lapereau ni rallonger une croissance déjà lancée.
+
+Une Bouée déjà logée en habitat paille y reste : la validation applique la tolérance historique `LEGACY_TYPES`, déjà utilisée pour Magicien. Les nouveaux placements suivent les types courants feu/métal (`habitatAccepts`). L'objectif historique `first-rare` reste lisible et demande une espèce rare quelconque ; `all-ordinary-rares` suit les 20 rares garantissables du registre, sans Dinono. Les neuf rares survivants de la liste de revenus bonifiés gardent leur bonus, sans nouveau tirage.
+
+Les exports sont en v20 ; la chaîne v16-v19 est conservée, les versions 1-15 restent incompatibles. Les fichiers de `docs/test-saves/` restent intacts.
+
+---
+
+# Économie courante — partie A, sauvegarde v20
 
 ### Dépenses permanentes en cœurs — 26 octobre 2026
 
@@ -29,7 +52,7 @@ Une partie neuve commence avec **350 pattes, 0 nourriture et 12 cœurs**, Paille
 | Amélioration N3 | 10 cœurs |
 | Extensions successives | 600 / 1 800 / 4 500 / 9 000 / 16 000 / 26 000 / 40 000 / 60 000 ; niveaux requis conservés |
 | Ferme / Cuisine | 60 / 100 pattes ; deux fermes maximum |
-| Statue de l’Affection | 30 000 pattes, niveau 15, une seule ; vendue parmi les bâtiments |
+| Statue de l’Affection | 60 cœurs exclusivement, niveau 15, une seule ; vendue parmi les bâtiments, placement confirmé avant paiement |
 
 ### Nourriture et ferme (25 octobre 2026)
 
@@ -60,7 +83,7 @@ Quand les deux parents ont au moins 10 d’affection, les chances d’épique et
 
 XP : passage N → N+1 = **arrondi(90 × N^0,85)** depuis le 25 octobre 2026 (niveau 22 vers le 20e jour ; auparavant 1,15), plafond 30, un cœur par niveau. Le barème initial demandé 25 × N^1,5 faisait atteindre le niveau 5 pendant le tutoriel, 10 après 2,5 jours écoulés, 15 après 10,5 jours et 20 après 33 jours. Seuls le coefficient et l’exposant ont été ajustés pour le rythme cible. Repas : 6 XP plus 1 par tranche de 200 nourriture dépensée (13 XP pour l’affection 15 ; base relevée de 5 à 6 le 26 octobre 2026 pour compenser la ferme de niveau 1) ; achat commun : 10 ; naissance commune : 10, rare : 20 (Épique 110 et Légendaire 180 conservés) ; première découverte commune : +60, rare : +250 ; lancement de reproduction : 5 ; constructions inchangées ; première pose de chaque modèle de décoration : 10, une fois par référence même après revente ; mission principale : 40, quotidienne : 50, bonus quotidien : 0.
 
-Collection : poids ordinaires 30 par commun et 30 par rare admissible. Paille × Neige reste un tirage rare certain. Les 24 rares ordinaires actuels participent à la garantie de nouvelle espèce : après sept échecs admissibles, la huitième tentative garantit une espèce manquante admissible à la paire et au niveau. Les recettes spéciales, Épiques, Légendaires et Mythiques restent exclues. La libération d’un doublon rend 10 nourriture pour un commun ou 25 pour un rare, sans XP ; dernier individu et parent occupé restent protégés.
+Collection : poids ordinaires 30 par commun et 30 par rare admissible. Depuis le 27 octobre 2026, deux parents communs excluent tous les résultats communs : leurs éléments différents donnent les recettes admissibles de l'union, tandis que deux communs du même élément sont refusés gratuitement. Les paires ayant au moins un parent non commun gardent leurs tables. Paille × Neige reste un tirage rare certain. Les 20 rares ordinaires actuels participent à la garantie de nouvelle espèce : après sept échecs admissibles, la huitième tentative garantit une espèce manquante admissible à la paire et au niveau. Les recettes spéciales, Épiques et Légendaires restent exclues. Les probabilités fixes et les bonus d'affection ne sont pas renormalisés par ce filtre ; sans résultat ordinaire, le lancement attend. Les naissances déjà enregistrées, même communes, ne sont pas modifiées. La libération d’un doublon rend 10 nourriture pour un commun ou 25 pour un rare, sans XP ; dernier individu et parent occupé restent protégés.
 
 Les quotidiennes demandent de récolter 100 pattes (récompense 60 pattes), récolter 40 nourriture (+30 nourriture) et lancer une reproduction (+40 pattes). L’identifiant historique `gain-affection` est conservé pour la troisième, dont la règle est désormais la reproduction. Bonus des trois : deux cœurs. Cadeau : deux cœurs par tranche de 24 h, cumul de trois cadeaux maximum (six cœurs), sans décaler la prochaine échéance lors d’une réclamation tardive.
 
@@ -81,7 +104,7 @@ Le stockage dépend du type aux niveaux 1 et 2, dans l’ordre strict Paille < N
 
 Au chargement, un ancien stock au-dessus du nouveau plafond, mais dans les anciens plafonds 2 400 / 4 000 / 5 600, est ramené au nouveau plafond ; son excédent en pièces entières est versé au solde. Un stock dépassant à la fois le plafond actuel et l’ancien est refusé. Cette conversion n’est appliquée qu’une fois, sans nouveau crédit au prochain chargement.
 
-À l’affection 1, les communs produisent 10 pattes/h, les rares 14, les épiques 20 et les légendaires 26. Douze rares tirés au sort une seule fois le 25 octobre ont une base de 17 : `amethyste`, `boudinet`, `bretonette`, `egiiipte`, `feu-glace`, `frisket`, `lunettes`, `perroquet`, `princesse-neige`, `roukette`, `virvoletant`, `wat-wat`. Chaque point d’affection au-delà de 1 ajoute une patte/h ; aucun nouveau tirage au chargement.
+À l’affection 1, les communs produisent 10 pattes/h, les rares 14, les épiques 20 et les légendaires 26. Neuf rares survivants du tirage unique du 25 octobre ont une base de 17 : `amethyste`, `boudinet`, `bretonette`, `egiiipte`, `frisket`, `princesse-neige`, `roukette`, `virvoletant`, `wat-wat`. Chaque point d’affection au-delà de 1 ajoute une patte/h ; aucun nouveau tirage au chargement.
 
 L’agence de voyage s’achète parmi les bâtiments dès le niveau 8 pour 1 000 pattes, un exemplaire maximum. Coco, hôte non collectionnable en chemise hawaïenne et lunettes de soleil, accueille le joueur en quatre bulles la première fois. Cet accueil terminé est sauvegardé ; Coco reste ensuite présent sans répéter le guide.
 
@@ -96,7 +119,8 @@ Décision du propriétaire, avec les dessins livrés dans `Design des lapins` (d
 | Espèce | Types | Rareté | Obtention |
 |---|---|---|---|
 | Boudinet | métal + paille | rare | reproduction, éléments métal + paille, affection 2 |
-| Dinono | feu + métal | rare | reproduction, éléments feu + métal, affection 2 |
+| Dinono | feu + métal | épique | reproduction, éléments feu + métal, affection 6, 5 %, connaissance 450 |
+| Lapin en Bouée | feu + métal | rare | reproduction, éléments feu + métal, affection 2, garantie |
 | Egiiipte | vol + métal | rare | reproduction, éléments vol + métal, affection 2 |
 | Piment | vol + feu | rare | reproduction, éléments vol + feu, affection 2 |
 | Tunini | neige + vol | rare | reproduction, éléments neige + vol, affection 2 |

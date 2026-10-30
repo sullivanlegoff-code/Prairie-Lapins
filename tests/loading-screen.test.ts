@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 import {describe, it, expect, beforeEach} from 'vitest';
 import html from '../index.html?raw';
-import {LoadingTracker, LOADING_STEPS, renderLoading, type LoadingView} from '../src/display/loadingScreen';
+import {LoadingTracker, LOADING_STEPS, renderLoading, pickLoadingMessage, startLoadingMessages, type LoadingView} from '../src/display/loadingScreen';
+import {LOADING_MESSAGES, LOADING_MESSAGE_INTERVAL} from '../src/config/loadingMessages';
 
 function fakeTimers() {
   const pending = new Map<number, {callback: () => void; at: number}>(); let now = 0, next = 1;
@@ -85,5 +86,34 @@ describe('loading screen', () => {
     expect(root.dataset.state).toBe('ready'); expect((document.getElementById('loading-play') as HTMLButtonElement).disabled).toBe(false);
     expect(root.querySelector('.loading-bar')!.getAttribute('aria-valuenow')).toBe('75');
     expect([...root.querySelectorAll('#loading-steps li')].map(li => (li as HTMLElement).dataset.state)).toEqual(['done', 'pending', 'done', 'done', 'pending']);
+  });
+});
+
+describe('loading messages and Paille', () => {
+  it('holds exactly the ten owner messages, verbatim', () => {
+    expect(LOADING_MESSAGES).toHaveLength(10);
+    expect(new Set(LOADING_MESSAGES).size).toBe(10);
+    expect(LOADING_MESSAGES).toContain('Hold meeeee, Love meeee, I’m your bunny!');
+    expect(LOADING_MESSAGES).toContain('Lapin ! Lapin et sourire ! Lapin, câlins et sourire !!!!!!!!');
+  });
+  it('draws from the list and never repeats the previous message', () => {
+    for (const r of [0, .3, .99]) for (const previous of LOADING_MESSAGES) {
+      const next = pickLoadingMessage(previous, () => r);
+      expect(LOADING_MESSAGES).toContain(next); expect(next).not.toBe(previous);
+    }
+  });
+  it('fills the tip at start, changes it while loading and stops once hidden', () => {
+    const timers = fakeTimers(), root = document.getElementById('loading-screen')!, tip = document.getElementById('loading-tip')!;
+    let r = 0; const stop = startLoadingMessages(root, () => r, timers.api);
+    const first = tip.textContent; expect(LOADING_MESSAGES).toContain(first);
+    r = .5; timers.advance(LOADING_MESSAGE_INTERVAL); expect(tip.textContent).not.toBe(first);
+    root.hidden = true; const shown = tip.textContent; timers.advance(LOADING_MESSAGE_INTERVAL); expect(tip.textContent).toBe(shown);
+    stop(); expect(timers.count()).toBe(0);
+    expect(document.getElementById('loading-message')!.textContent).toBe('');
+  });
+  it('shows the running Paille as decoration only', () => {
+    const runner = document.querySelector('#loading-screen .loading-runner')!;
+    expect(runner.getAttribute('aria-hidden')).toBe('true');
+    expect(runner.querySelector('img')!.getAttribute('src')).toContain('assets/rabbits/paille/paille-v1.png');
   });
 });

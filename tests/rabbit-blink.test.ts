@@ -60,11 +60,11 @@ describe('deterministic rabbit expressions', () => {
 });
 
 describe('rabbit patch adapter and body coordinates', () => {
-  it('covers precisely all 31 illustrated species with both patches', () => {
+  it('covers 31 illustrated species with both patches; Bouee wears sunglasses and has neither animation', () => {
     expect(RABBIT_BLINK_ART).toHaveLength(31);
     for (const species of SPECIES_ENTRIES) {
       const art = rabbitBlinkArt(species.id);
-      if (species.art.kind === 'static-sprite') {
+      if (species.art.kind === 'static-sprite' && species.id !== 'bouee') {
         expect(art?.patches.map(patch => patch.kind)).toEqual(PATCH_KINDS);
         for (const patch of art!.patches) {
           expect(patch.url).toContain(`assets/rabbits/${species.id}/${species.id}-${patch.kind}.png`);

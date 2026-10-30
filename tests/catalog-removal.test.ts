@@ -12,9 +12,10 @@ import {SCENARIOS, scenarioState, type ScenarioId} from '../src/dev/scenarios';
 import {createGame} from '../src/simulation';
 import {breedingDistributionWeights, breedingOdds, breedingWeights} from '../src/simulation/breeding';
 import {collectionView, recipeBook} from '../src/ui/models';
+import {DECORATIONS} from '../src/config/decorations';
 
-const REMOVED = ['terre', 'mottelin', 'geant', 'brumelin'];
-const REMOVED_WORDS = /Terre|Mottelin|Brumelin|Lapin Géant|terre|mottelin|brumelin|geant/;
+const REMOVED = ['terre', 'mottelin', 'geant', 'brumelin', 'lunettes', 'feu-glace', 'perroquet'];
+const REMOVED_WORDS = /Terre|Mottelin|Brumelin|Lapin Géant|terre|mottelin|brumelin|geant|lunettes|perroquet|feu-glace/;
 
 describe('Terre, Mottelin, Géant and Brumelin are gone from every catalogue', () => {
   it('no registry, type, habitat, art, coat, mission, unlock, recipe or progression table names them', () => {
@@ -31,7 +32,15 @@ describe('Terre, Mottelin, Géant and Brumelin are gone from every catalogue', (
     expect(Object.keys(HABITATS)).not.toContain('terre'); expect(Object.keys(PROGRESSION.requirements.habitatCommons)).not.toContain('terre');
     expect(MAIN_MISSION_IDS as readonly string[]).not.toContain('discover-terre'); expect(MAIN_MISSION_IDS as readonly string[]).not.toContain('discover-brumelin');
     expect(BRANCH_MISSION_IDS as readonly string[]).not.toContain('discover-terre'); expect(BRANCH_MISSION_IDS as readonly string[]).not.toContain('discover-brumelin');
-    expect(JSON.stringify(MAIN_MISSIONS)).not.toMatch(REMOVED_WORDS);
+    for (const [id, mission] of Object.entries(MAIN_MISSIONS)) {
+      expect(id).not.toMatch(REMOVED_WORDS);
+      if (mission.condition.kind === 'decoration') {
+        // Approved decoration names such as « Chemin en terre » are unrelated to the removed rabbit/type.
+        const name = DECORATIONS[mission.condition.model].name;
+        expect(mission.title).toContain(name); expect(mission.description).toContain(name);
+        expect(JSON.stringify({...mission, title: mission.title.replaceAll(name, '[décoration]'), description: mission.description.replaceAll(name, '[décoration]')})).not.toMatch(REMOVED_WORDS);
+      } else expect(JSON.stringify(mission)).not.toMatch(REMOVED_WORDS);
+    }
     for (const id of SPECIES_IDS) {
       const recipe = SPECIES[id].recipe; expect(JSON.stringify([SPECIES[id].types, recipe?.requiredTypes, recipe?.parents]), id).not.toMatch(REMOVED_WORDS);
     }
@@ -41,7 +50,7 @@ describe('Terre, Mottelin, Géant and Brumelin are gone from every catalogue', (
     for (const id of ['paille', 'neige', 'feu', 'belier-gris', 'volant', 'frisket', 'icy', 'magicien', 'dragon'] as const) expect(SPECIES_IDS).toContain(id);
     expect(SHOP_SPECIES).toEqual(['paille', 'neige', 'feu', 'belier-gris', 'volant']);
     expect([SPECIES.feu.progression.unlockLevel, SPECIES['belier-gris'].progression.unlockLevel, SPECIES.volant.progression.unlockLevel, SPECIES.magicien.progression.unlockLevel, SPECIES.dragon.progression.unlockLevel]).toEqual([5, 7, 9, 11, 14]);
-    expect(RECIPE_PRICES).toEqual({bouee: 150, 'feu-glace': 180, lunettes: 220, perroquet: 250, magicien: 450, dragon: 900, dadi: 450, maxou: 450, orange: 450, requin: 900});
+    expect(RECIPE_PRICES).toEqual({magicien: 450, dragon: 900, dadi: 450, maxou: 450, orange: 450, dinono: 450, requin: 900});
   });
 
   it('a new game offers no recipe at the start and its collection, notebook and odds never name a removed species', () => {
@@ -101,17 +110,17 @@ describe('what stays reachable', () => {
 describe('distributions: only the removals and their renormalisation', () => {
   // Hand-written raw weights (Commons 40 when all their elements are present, each admissible recipe 20) of the unions that used to contain Brumelin.
   it.each([
-    [['paille', 'feu-glace'], 2, 2, {paille: 30, neige: 30, feu: 30, frisket: 30, icy: 30, ardent: 30, snk: 30, 'wat-wat': 30, glassofeu: 30}],
-    [['paille', 'feu-glace'], 4, 4, {paille: 30, neige: 30, feu: 30, 'feu-glace': 30, bouee: 30, frisket: 30, icy: 30, ardent: 30, snk: 30, 'wat-wat': 30, glassofeu: 30}],
-    [['lunettes', 'feu-glace'], 4, 4, {paille: 30, neige: 30, feu: 30, 'belier-gris': 30, lunettes: 30, 'feu-glace': 30, bouee: 30, frisket: 30, icy: 30, ardent: 30, snk: 30, amethyste: 30, 'princesse-neige': 30, fluffy: 30, roukette: 30, 'wat-wat': 30, glassofeu: 30, boudinet: 30, dinono: 30}],
+    [['paille', 'glassofeu'], 2, 2, {paille: 30, neige: 30, feu: 30, frisket: 30, icy: 30, ardent: 30, snk: 30, 'wat-wat': 30, glassofeu: 30}],
+    [['paille', 'glassofeu'], 4, 4, {paille: 30, neige: 30, feu: 30, frisket: 30, icy: 30, ardent: 30, snk: 30, 'wat-wat': 30, glassofeu: 30}],
+    [['boudinet', 'glassofeu'], 4, 4, {paille: 30, neige: 30, feu: 30, 'belier-gris': 30, frisket: 30, icy: 30, ardent: 30, snk: 30, amethyste: 30, 'princesse-neige': 30, fluffy: 30, roukette: 30, 'wat-wat': 30, glassofeu: 30, boudinet: 30, bouee: 30}],
   ] as const)('%j at affection %i/%i keeps its raw weights, with no Brumelin and nothing redistributed', (pair, a, b, expected) => {
     expect(breedingWeights(pair[0], pair[1], a, b)).toEqual(expected);
     const total = Object.values(expected).reduce((n, w) => n + w, 0);
     expect(breedingOdds(pair[0], pair[1], a, b)).toEqual(Object.fromEntries(Object.entries(expected).map(([id, w]) => [id, w * 100 / total])));
   });
   it('the unions that held Terre no longer exist, and Magicien and Dragon keep their probabilities', () => {
-    expect(breedingOdds('paille', 'belier-gris', 6, 6)).toEqual({paille: 19, 'belier-gris': 19, lunettes: 19, roukette: 19, boudinet: 19, magicien: 5});
+    expect(breedingOdds('paille', 'belier-gris', 6, 6)).toEqual({roukette: 47.5, boudinet: 47.5, magicien: 5});
     expect(breedingOdds('dadi', 'phoenix', 10, 10).dragon).toBe(3); expect(breedingOdds('dadi', 'phoenix', 15, 15).dragon).toBe(4); expect(breedingOdds('magicien', 'belier-gris', 6, 6).magicien).toBe(5); expect(breedingOdds('magicien', 'belier-gris', 10, 12).magicien).toBe(7.5); expect(breedingOdds('magicien', 'belier-gris', 15, 14).magicien).toBe(7.5); expect(breedingOdds('magicien', 'belier-gris', 15, 15).magicien).toBe(10);
-    expect(breedingOdds('paille', 'paille')).toEqual({paille: 100}); expect(breedingOdds('neige', 'neige')).toEqual({neige: 100});
+    expect(breedingOdds('paille', 'paille')).toEqual({}); expect(breedingOdds('neige', 'neige')).toEqual({});
   });
 });

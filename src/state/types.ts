@@ -35,7 +35,8 @@ export type NurserySlot = 0 | 1 | 2 | 3;
 export interface NurseryBaby {slot: NurserySlot; birth: Birth; startedAt: number; readyAt: number}
 export interface Nursery {capacity: NurseryCapacity; babies: NurseryBaby[]}
 /** `name` is the individual's own, set by the player; absent = unnamed. Never inherited, never tied to the species. */
-export interface Rabbit { id: string; species: SpeciesId; affection: number; enclosureId: string; name?: string }
+/** incomeRoll: one permanent individual draw, from 0 to 10000. Missing on historical saves. */
+export interface Rabbit { incomeRoll?: number; id: string; species: SpeciesId; affection: number; enclosureId: string; name?: string }
 export interface MissionState {
   nightOrderStarted?: boolean;
   events: Record<MainEvent, number>;
@@ -49,6 +50,9 @@ export interface Initiation {
 export interface SavedProgression {totalXp: number; rewardedThroughLevel: number}
 export interface ProgressionGain {xpGained: number; rewardedLevels: number[]; heartsGranted: number}
 export interface GameState {
+  /** Last successfully launched pair; independent from the UI's draft selection. */
+  lastBreedingParents?: [string, string];
+  cozy?: import('../simulation/cozy').CozyState;
   /** Present only on islands started on the southwest parcel (top/right expansion); absent = legacy centre start. */
   islandStart?: IslandStart;
   /** Last canonical mission cycle consumed, keyed by the exact individual rabbit ID. */
@@ -64,7 +68,7 @@ export interface GameState {
   startCourse?: 'paille-solo';
   purchaseUnlocks?: PurchaseUnlockId[];
   initiation?: Initiation;
-  version: 19;
+  version: 21;
   rewardedDecorationModels?: DecorationId[]; decorations: OwnedDecoration[]; missions: MissionState; lastSimulatedAt: number; nextId: number;
   hearts: number; nextHeartGiftAt: number;
   pattes: number; grass: number; acquiredParcels: ParcelId[];
@@ -80,7 +84,7 @@ export interface GameState {
 export interface Trip {grass?: number; rabbitId: string; destination: Destination; startedAt: number; endsAt: number; hearts: number}
 export type Refusal = 'LEVEL_REQUIRED' | 'NO_BREEDING_RESULT' | 'PURCHASE_LOCKED' | 'DECORATION_LIMIT' | 'DECORATION_OVERLAP' | 'DECORATION_BLOCKS_BUILDING' | 'INVALID_TIME' | 'INVALID_RANDOM' | 'INVALID_CHOICE' | 'NOT_FOUND' |
   'NOT_ENOUGH_PATTES' | 'NOT_ENOUGH_GRASS' | 'INVALID_CELL' | 'CELL_OCCUPIED' |
-  'BUILDING_LIMIT' | 'CAPACITY_FULL' | 'BUSY' | 'NOT_READY' | 'MAX_AFFECTION' |
+  'BUILDING_LIMIT' | 'HABITAT_NOT_EMPTY' | 'LAST_HABITAT' | 'CAPACITY_FULL' | 'BUSY' | 'NOT_READY' | 'MAX_AFFECTION' |
   'SAME_PARENT' | 'AFFECTION_TOO_LOW' | 'MISSING_BUILDING' | 'ALREADY_EXPANDED' | 'PARCEL_UNAVAILABLE' |
   'LAST_OF_SPECIES' | 'PARENT_BUSY' | 'NOT_ENOUGH_HEARTS' | 'ACTION_FINISHED' |
   'STALE_ACTION' | 'PRICE_CHANGED' | 'NO_MISSING_PATTES' | 'ALREADY_CLAIMED' | 'CYCLE_EXPIRED' | 'RESOURCE_LIMIT' | 'TYPE_INCOMPATIBLE' | 'MAX_HABITAT_LEVEL' | 'RECIPE_KNOWN' | 'MAX_NURSERY_CAPACITY' |
@@ -96,12 +100,15 @@ export type BaseCommand =
   | {type: 'buyRabbit'; species: SpeciesId; enclosureId: string}
   | {type: 'moveRabbit'; id: string; enclosureId: string}
   | {type: 'collectIncome'; id: string}
+  | {type: 'removeHabitat'; id: string}
   | {type: 'startOrder'; id: string; recipe: OrderId}
   | {type: 'collectOrder'; id: string}
   | {type: 'feed'; id: string}
   | {type: 'breed'; parents: [string, string]}
   /** Welcomes this exact ready baby; another one is never substituted. */
   | {type: 'welcome'; enclosureId: string; birthId: string}
+  /** Releases this exact ready baby from the nursery for pattes: no habitat, no XP, no discovery. */
+  | {type: 'releaseBaby'; birthId: string}
   | {type: 'upgradeHabitat'; id: string; fromLevel: HabitatLevel}
   | {type: 'expand'; parcelId: ParcelId; expectedCost: number}
   | {type: 'release'; id: string}
@@ -109,6 +116,8 @@ export type BaseCommand =
 export type PattesCommand = Extract<BaseCommand, {type: 'buyBuilding' | 'buyRabbit' | 'expand' | 'startOrder' | 'upgradeHabitat'}>;
 export type TimedStage = 'order' | 'breeding' | 'growth';
 export type Command = BaseCommand
+  | {type:'claimDiscovery'; id:string}
+  | {type:'translateDecorations'; ids:string[]; dx:number; dy:number}
   | {type: 'rewardCuisine'; rabbitId: Rabbit['id']; recipeId: 'salad' | 'chicken'}
   | {type: 'buyDecoration'; catalogId: DecorationId; location?: Extract<DecorationLocation, {kind: 'outside'}>}
   | {type: 'placeDecoration'; id: string; location: DecorationLocation}

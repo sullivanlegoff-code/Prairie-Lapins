@@ -82,7 +82,9 @@ it.each([.1,.65])('guides every real action, roll=%s, with reloads and no contro
   expect(document.getElementById('game-panel')!.hidden).toBe(true);
   help();real();expect(state().pattes).toBe(120);checkpoint();
   help();real();expect(content().textContent).toContain('Aucune case sélectionnée');expect(vi.mocked(scene.setPlacement).mock.calls.at(-1)![0]!.cell).toBeNull();
-  ui.select({kind:'fineCell',x:6,y:36});real();expect(state().pattes).toBe(60);
+  // Playtest of 26 October 2026: no hand on the disabled confirmation; the scene points at the suggested cell instead.
+  expect(content().querySelector('.guide-target')).toBeNull();expect(vi.mocked(scene.setTutorialCell).mock.calls.at(-1)![0]).not.toBeNull();
+  ui.select({kind:'fineCell',x:6,y:36});expect(content().querySelector('.guide-target')?.textContent).toMatch(/^(Acheter et placer|Confirmer)/);real();expect(state().pattes).toBe(60);
   help();real();expect(state().pattes).toBe(50);checkpoint();
   help();real();help();real();expect(state().grass).toBe(20);checkpoint();
   help();real();expect(state().grass).toBe(18);help();real();expect(state().grass).toBe(16);checkpoint();

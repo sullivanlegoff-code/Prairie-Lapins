@@ -40,8 +40,8 @@ function setup(withKitchen = true, rabbits?: 'duplicates' | 'different' | 'empty
     if (rabbits === 'empty') initial.rabbits=[];
     if (rabbits === 'duplicates') initial.rabbits.push({...initial.rabbits[0],id:'rabbit-101'});
     if (rabbits === 'different') {
-      initial.rabbits.push({...initial.rabbits[0],id:'rabbit-101',species:'lunettes'});
-      if(!initial.discovered.includes('lunettes'))initial.discovered.push('lunettes');
+      initial.rabbits.push({...initial.rabbits[0],id:'rabbit-101',species:'boudinet'});
+      if(!initial.discovered.includes('boudinet'))initial.discovered.push('boudinet');
     }
     const cells=Array.from({length:48*48},(_,i)=>({x:i%48,y:Math.floor(i/48)}));
     const cell=cells.find(({x,y})=>buildingPlacementReason(initial,x,y)===null);
@@ -477,15 +477,15 @@ describe('selected rabbit inside the Cuisine scene', () => {
   const chefs = () => document.querySelectorAll<HTMLElement>('.cuisine-chef');
   it('places the selected rabbit, with its own species art, on a stool in the kitchen world', () => {
     const k = setup(true, 'different'); const target = k.controller.getSnapshot().state!.rabbits[1];
-    expect(target.species).toBe('lunettes');
+    expect(target.species).toBe('boudinet');
     k.ui.select({kind: 'building', id: 'building-100'});
     [...document.querySelectorAll<HTMLButtonElement>('#game-panel button')].find(b => b.textContent === 'Entrer dans la Cuisine')!.click();
     k.choose(target.id); const a = k.activity();
     expect(chefs()).toHaveLength(1); const chef = chefs()[0];
     expect(chef.parentElement).toBe(a.root.querySelector('#kitchen-world'));
     expect(chef.previousElementSibling).toBe(a.root.querySelector('#kitchen-world .table-art'));
-    expect(chef.dataset.chefRabbit).toBe('lunettes'); expect(chef.getAttribute('aria-hidden')).toBe('true');
-    const expected = document.createElement('span'); expected.innerHTML = portrait('lunettes');
+    expect(chef.dataset.chefRabbit).toBe('boudinet'); expect(chef.getAttribute('aria-hidden')).toBe('true');
+    const expected = document.createElement('span'); expected.innerHTML = portrait('boudinet');
     expect(chef.querySelector('.cuisine-chef-rabbit')!.innerHTML).toBe(expected.innerHTML);
     expect(chef.querySelector('.cuisine-chef-stand svg')).not.toBeNull();
   });

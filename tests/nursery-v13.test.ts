@@ -21,7 +21,7 @@ const rejected = (r: Raw) => expect(decodeGame(JSON.stringify(r))).toEqual({ok: 
 describe('Nursery v13 state', () => {
   it('starts a new game with the single nursery at capacity 1 and no baby; no other building carries a nursery payload', () => {
     const s = createGame(0);
-    expect(s.version).toBe(19);
+    expect(s.version).toBe(21);
     expect(s.buildings.filter(b => b.kind === 'nursery').map(b => b.nursery)).toEqual([{capacity: 1, babies: []}]);
     expect(s.buildings.filter(b => b.kind !== 'nursery').every(b => b.nursery === null)).toBe(true);
   });
