@@ -5,7 +5,7 @@ import {emptyBuilding} from '../src/state/initial';
 import {cumulativeLevelXp,progressionFromXp} from '../src/simulation/progression';
 import {stateLevelAccess,establishHistoricalLevelRights,levelUnlockContents} from '../src/simulation/levelRights';
 import {checkLevelAccess} from '../src/simulation/levelAccess';
-import {breedingPool} from '../src/simulation/breeding';
+import {breedingPool, chooseBirth} from '../src/simulation/breeding';
 import {quoteComplement} from '../src/simulation/actions';
 import {GameController} from '../src/application/GameController';
 import {SAVE_KEY} from '../src/persistence/storage';
@@ -99,14 +99,14 @@ describe('pre-launch result filtering and unchanged fixed probabilities',()=>{
  it('reserves only currently admissible specials and normalizes ordinary results',()=>{
   expect(odds(10,'paille','belier-gris')).toEqual({roukette:50,boudinet:50});expect(odds(11,'paille','belier-gris')).toEqual({roukette:46.25,boudinet:46.25,magicien:7.5}); // Both parents at affection 10: the epic chance ×1.5.
   expect(odds(13,'dadi','phoenix').dragon).toBeUndefined();expect(odds(13,'dadi','phoenix').dadi).toBe(7.5);
-  const pair=odds(14,'dadi','phoenix');expect(pair).toMatchObject({dragon:3,dadi:7.5,maxou:7.5});expect(Object.keys(pair)).toHaveLength(12);for(const id of ['neige','feu','volant','pic-pic','phoenix','wat-wat','glassofeu','piment','tunini'])expect(pair[id]).toBeCloseTo(82/9,10);
+  const pair=odds(14,'dadi','phoenix');expect(pair).toMatchObject({dragon:3,dadi:7.5,dinono:7.5});expect(Object.keys(pair)).toHaveLength(9);for(const id of ['amethyste','phoenix','bouee','egiiipte','piment','bretonette'])expect(pair[id]).toBeCloseTo(82/6,10);
   for(let level=1;level<=14;level++)for(const a of SPECIES_IDS)for(const b of SPECIES_IDS){const result=odds(level,a,b),total=Object.values(result).reduce((n,w)=>n+w,0);if(total)expect(total).toBeCloseTo(100,10);}
  },20000);
  it('launch XP cannot alter this birth, even if it crosses a threshold',()=>{
-  // Paille × Ardent is a mixed-rarity pair: Feu remains a possible result, locked until level 5.
+  // Paille × Ardent is a mixed pair: its Common (Feu) gives no result, so only Ardent and SNK remain, before and after the launch XP.
   const s=at(4);s.progression.totalXp=cumulativeLevelXp(5)-1;s.rabbits.push({id:'rabbit-6',species:'ardent',affection:4,enclosureId:'building-1'});s.rabbits[0].affection=4;s.discovered.push('ardent');s.nextId=7;
   const launched=act(s,{type:'breed',parents:['rabbit-2','rabbit-6']},0,()=>.5);if(!launched.ok)throw Error(launched.reason);const next=launched.state;
-  expect(progressionFromXp(next.progression.totalXp).level).toBe(5);expect(next.buildings.find(b=>b.kind==='nest')!.breeding!.birth.species).toBe('ardent');
+  expect(progressionFromXp(next.progression.totalXp).level).toBe(5);expect(next.buildings.find(b=>b.kind==='nest')!.breeding!.birth.species).toBe(chooseBirth(s,'paille','ardent',.5,4,4).species);
   expect(reload(next).buildings.find(b=>b.kind==='nest')!.breeding).toEqual(next.buildings.find(b=>b.kind==='nest')!.breeding);
  });
  it('with no ordinary fallback, refuses before RNG, XP or work, even for a historically discovered special',()=>{
@@ -116,7 +116,7 @@ describe('pre-launch result filtering and unchanged fixed probabilities',()=>{
   try {
   const s=at(1);s.discovered.push('magicien');s.rabbits=[{id:'rabbit-2',species:'magicien',affection:6,enclosureId:'building-1'},{id:'rabbit-6',species:'magicien',affection:6,enclosureId:'building-1'}];s.nextId=7;delete s.levelAccessTransition;establishHistoricalLevelRights(s);
   const rng=vi.fn(()=>.99),r=act(s,{type:'breed',parents:['rabbit-2','rabbit-6']},0,rng);expect(r).toEqual({ok:false,state:s,reason:'NO_BREEDING_RESULT'});expect(rng).not.toHaveBeenCalled();expect(s.progression.totalXp).toBe(0);
-  s.progression={totalXp:cumulativeLevelXp(7),rewardedThroughLevel:7};const pool=breedingPool(s,'magicien','magicien',6,6);expect(pool.weights.magicien!*100/pool.total).toBe(5);
+  s.progression={totalXp:cumulativeLevelXp(7),rewardedThroughLevel:7};const pool=breedingPool(s,'magicien','magicien',6,6);expect(pool.total).toBe(0); expect(pool.weights).toEqual({}); // No ordinary result: nothing to reserve the 5 % against (the old check divided by zero).
   } finally {for(const [id,acquisition] of saved)SPECIES[id].acquisition=acquisition;}
  });
  it('write failure leaves purchase refused and no XP, then permits a single retry',()=>{

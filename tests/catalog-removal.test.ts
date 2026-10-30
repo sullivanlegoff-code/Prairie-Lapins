@@ -108,11 +108,11 @@ describe('what stays reachable', () => {
 });
 
 describe('distributions: only the removals and their renormalisation', () => {
-  // Hand-written raw weights (Commons 40 when all their elements are present, each admissible recipe 20) of the unions that used to contain Brumelin.
+  // Hand-written raw weights (each admissible recipe 30; a mixed pair gives no Common result) of the unions that used to contain Brumelin.
   it.each([
-    [['paille', 'glassofeu'], 2, 2, {paille: 30, neige: 30, feu: 30, frisket: 30, icy: 30, ardent: 30, snk: 30, 'wat-wat': 30, glassofeu: 30}],
-    [['paille', 'glassofeu'], 4, 4, {paille: 30, neige: 30, feu: 30, frisket: 30, icy: 30, ardent: 30, snk: 30, 'wat-wat': 30, glassofeu: 30}],
-    [['boudinet', 'glassofeu'], 4, 4, {paille: 30, neige: 30, feu: 30, 'belier-gris': 30, frisket: 30, icy: 30, ardent: 30, snk: 30, amethyste: 30, 'princesse-neige': 30, fluffy: 30, roukette: 30, 'wat-wat': 30, glassofeu: 30, boudinet: 30, bouee: 30}],
+    [['paille', 'glassofeu'], 2, 2, {frisket: 30, icy: 30, ardent: 30, snk: 30, 'wat-wat': 30, glassofeu: 30}],
+    [['paille', 'glassofeu'], 4, 4, {frisket: 30, icy: 30, ardent: 30, snk: 30, 'wat-wat': 30, glassofeu: 30}],
+    [['boudinet', 'glassofeu'], 4, 4, {frisket: 30, icy: 30, ardent: 30, snk: 30, amethyste: 30, 'princesse-neige': 30, fluffy: 30, roukette: 30, 'wat-wat': 30, glassofeu: 30, boudinet: 30, bouee: 30}],
   ] as const)('%j at affection %i/%i keeps its raw weights, with no Brumelin and nothing redistributed', (pair, a, b, expected) => {
     expect(breedingWeights(pair[0], pair[1], a, b)).toEqual(expected);
     const total = Object.values(expected).reduce((n, w) => n + w, 0);
@@ -121,6 +121,6 @@ describe('distributions: only the removals and their renormalisation', () => {
   it('the unions that held Terre no longer exist, and Magicien and Dragon keep their probabilities', () => {
     expect(breedingOdds('paille', 'belier-gris', 6, 6)).toEqual({roukette: 47.5, boudinet: 47.5, magicien: 5});
     expect(breedingOdds('dadi', 'phoenix', 10, 10).dragon).toBe(3); expect(breedingOdds('dadi', 'phoenix', 15, 15).dragon).toBe(4); expect(breedingOdds('magicien', 'belier-gris', 6, 6).magicien).toBe(5); expect(breedingOdds('magicien', 'belier-gris', 10, 12).magicien).toBe(7.5); expect(breedingOdds('magicien', 'belier-gris', 15, 14).magicien).toBe(7.5); expect(breedingOdds('magicien', 'belier-gris', 15, 15).magicien).toBe(10);
-    expect(breedingOdds('paille', 'paille')).toEqual({}); expect(breedingOdds('neige', 'neige')).toEqual({});
+    expect(breedingOdds('paille', 'paille')).toEqual({paille: 100}); expect(breedingOdds('neige', 'neige')).toEqual({neige: 100});
   });
 });

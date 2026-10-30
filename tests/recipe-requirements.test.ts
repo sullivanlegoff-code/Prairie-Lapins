@@ -19,7 +19,7 @@ afterEach(() => {for (const [id, definition] of saved) SPECIES[id] = definition;
 /** Fixed-probability specials, in catalogue order: element recipes (Epics) and exact parents (Legendaries), approved 25 October 2026. */
 const SPECIALS: {id: SpeciesId; probability: number; affection: number; types?: string[]; parents?: [SpeciesId, SpeciesId]}[] = [
   {id: 'magicien', probability: 5, affection: 6, types: ['paille', 'metal']}, {id: 'dragon', probability: 2, affection: 10, parents: ['dadi', 'phoenix']},
-  {id: 'dadi', probability: 5, affection: 6, types: ['neige', 'vol']}, {id: 'maxou', probability: 5, affection: 6, types: ['neige', 'vol']},
+  {id: 'dadi', probability: 5, affection: 6, types: ['feu', 'metal']}, {id: 'maxou', probability: 5, affection: 6, types: ['neige', 'vol']},
   {id: 'orange', probability: 5, affection: 6, types: ['paille', 'neige']}, {id: 'dinono', probability: 5, affection: 6, types: ['feu', 'metal']}, {id: 'requin', probability: 2, affection: 10, parents: ['maxou', 'wat-wat']},
 ];
 function historicalWeights(a: SpeciesId, b: SpeciesId, x: number, y: number): Odds {
@@ -31,8 +31,9 @@ function historicalWeights(a: SpeciesId, b: SpeciesId, x: number, y: number): Od
   // Approved additions: ordinary weight 20 each, only when both required elements and both affection thresholds hold.
   Object.assign(ordinary, rareAdditions(types, x, y));
   const pool: Odds = key === 'neige,paille' ? (Math.min(x,y) >= 2 ? {frisket:30,icy:30} : {}) : ordinary;
-  // Owner rule: preserve the independent historical oracle for every mixed pair, but remove common outcomes from two common parents.
-  if (SPECIES[a].rarity === 'common' && SPECIES[b].rarity === 'common')
+  // Owner rule: common outcomes only for two Common parents of the same single type; every other pair drops them.
+  const sameCommon = SPECIES[a].rarity === 'common' && SPECIES[b].rarity === 'common' && SPECIES[a].types.length === 1 && SPECIES[a].types[0] === SPECIES[b].types[0];
+  if (!sameCommon)
     for (const id of Object.keys(pool) as SpeciesId[]) if (SPECIES[id].rarity === 'common') delete pool[id];
   const specials: Odds = {};
   for (const special of SPECIALS) if (Math.min(x,y) >= special.affection && (special.types ? special.types.every(t => types.has(t as never))

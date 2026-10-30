@@ -31,7 +31,8 @@ describe('catalogue v20', () => {
     raw.rabbits[0].species = 'lunettes'; raw.discovered = ['lunettes']; raw.recipeBook = ['lunettes'];
     const result = decodeGame(JSON.stringify(raw));
     expect(result.ok).toBe(true); if (!result.ok) throw Error(result.reason);
-    expect(result.state.rabbits[0]).toEqual({...raw.rabbits[0], species: 'boudinet'});
+    // Non-Common individuals receive their saved income roll on decode (json.ts), so it is compared separately.
+    expect(result.state.rabbits[0]).toEqual({...raw.rabbits[0], species: 'boudinet', incomeRoll: expect.any(Number)});
     expect(result.state.discovered).toEqual(['boudinet']); expect(result.state.recipeBook).toEqual([]);
     expect(result.state.pattes).toBe(raw.pattes + 220);
     expect(decodeGame(encodeGame(result.state))).toEqual(result);
@@ -98,7 +99,7 @@ describe('catalogue v20', () => {
     baby.birth = {...baby.birth, species: 'dinono', guaranteed: true, reservedDiscovery: true};
     const result = decodeGame(JSON.stringify(raw));
     expect(result.ok).toBe(true); if (!result.ok) throw Error(result.reason);
-    expect(result.state.rabbits[0]).toEqual(raw.rabbits[0]);
+    expect(result.state.rabbits[0]).toEqual({...raw.rabbits[0], incomeRoll: expect.any(Number)});
     const home = result.state.buildings.find(b => b.id === raw.rabbits[0].enclosureId)!;
     expect(habitatAccepts(home, 'bouee')).toBe(false);
     expect(result.state.buildings.find(b => b.kind === 'nursery')!.nursery!.babies[slot]).toEqual({...baby, birth: {...baby.birth, guaranteed: false, reservedDiscovery: false}});

@@ -3,7 +3,7 @@ import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import html from '../index.html?raw';
 import {act, advance, createGame, decodeGame, encodeGame} from '../src/simulation';
 import {BALANCE, HOUR, RARE_INCOME_BONUS_SPECIES, SPECIES, SPECIES_IDS, TRAVEL, drawTrip, tripHearts} from '../src/config/balance';
-import {habitatCap, type HabitatType} from '../src/config/habitats';
+import {HABITAT_CAPS, habitatCap, type HabitatType} from '../src/config/habitats';
 import {rabbitIncome} from '../src/simulation/time';
 import {buildingPlacementReason} from '../src/simulation/placement';
 import {cumulativeLevelXp} from '../src/simulation/progression';
@@ -154,10 +154,14 @@ describe('travel agency rules', () => {
 
 describe('habitat storage and species income', () => {
   const types: HabitatType[] = ['paille', 'neige', 'feu', 'universal', 'metal', 'vol'];
-  it('strictly increases by type at levels 1–2 and is equal at level 3', () => {
-    expect(types.map(t => habitatCap(t, 1))).toEqual([1300, 1500, 1800, 2100, 2500, 2900]);
-    expect(types.map(t => habitatCap(t, 2))).toEqual([2600, 3000, 3400, 3800, 4300, 4800]);
-    expect(types.map(t => habitatCap(t, 3))).toEqual(Array(6).fill(5600));
+  const specialized: HabitatType[] = ['paille', 'neige', 'feu', 'metal', 'vol'];
+  it('strictly increases by type at levels 1–2 (universal follows Vol) and is equal at level 3', () => {
+    for (const level of [1, 2] as const) {
+      const caps = specialized.map(t => habitatCap(t, level));
+      for (let i = 1; i < caps.length; i++) expect(caps[i]).toBeGreaterThan(caps[i - 1]);
+      expect(habitatCap('universal', level)).toBe(habitatCap('vol', level));
+    }
+    expect(new Set(types.map(t => habitatCap(t, 3)))).toEqual(new Set([HABITAT_CAPS[3].paille]));
   });
   it.each([1, 2, 3] as const)('settles former full storage once at level %s, without accepting excess beyond both caps', level => {
     const s = createGame(0), oldCap = {1: 2400, 2: 4000, 3: 5600}[level];
@@ -171,19 +175,17 @@ describe('habitat storage and species income', () => {
     s.buildings[0].incomeUnits++;
     expect(decodeGame(JSON.stringify(s))).toEqual({ok: false, reason: 'INVALID_STATE'});
   });
-  it('preserves larger valid new caps rather than applying the former limit', () => {
-    const s = createGame(0); s.rabbits = []; s.buildings[0].habitat!.type = 'vol'; s.buildings[0].incomeUnits = 2900 * HOUR;
+  it('preserves a store filled to the current maximum of its level', () => {
+    const s = createGame(0); s.rabbits = []; s.buildings[0].habitat = {type: 'vol', level: 3}; s.buildings[0].incomeUnits = habitatCap('vol', 3) * HOUR;
     expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: s});
   });
-  it('has exactly nine unique bonus rares at 17/h; other rares earn 14, epics 20, legendaries 26', () => {
-    expect(RARE_INCOME_BONUS_SPECIES).toHaveLength(9);
-    expect(new Set(RARE_INCOME_BONUS_SPECIES).size).toBe(9);
-    for (const id of RARE_INCOME_BONUS_SPECIES) expect(SPECIES[id].rarity).toBe('rare');
+  it('has no species-wide rare bonus: each rare rolls its own income, epics and legendaries multiply it', () => {
+    expect(RARE_INCOME_BONUS_SPECIES).toEqual([]);
     for (const id of SPECIES_IDS) {
       const rarity = SPECIES[id].rarity;
-      const base = rarity === 'common' ? 10 : rarity === 'epic' ? 20 : rarity === 'legendary' ? 26 : RARE_INCOME_BONUS_SPECIES.includes(id) ? 17 : 14;
-      expect(rabbitIncome(1, id)).toBe(base);
-      expect(rabbitIncome(20, id)).toBe(base + 19);
+      if (rarity === 'common') { expect([rabbitIncome(1, id), rabbitIncome(20, id)]).toEqual([10, 29]); continue; }
+      const multiplier = rarity === 'epic' ? 1.3 : rarity === 'legendary' ? 1.5 : 1;
+      expect([rabbitIncome(1, id, 0), rabbitIncome(1, id, 9999)]).toEqual([Math.round(10 * multiplier), Math.round(19.999 * multiplier)]);
     }
   });
 });

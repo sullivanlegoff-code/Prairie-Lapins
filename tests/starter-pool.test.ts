@@ -42,8 +42,8 @@ describe('exact starting element-union pool',()=>{
   } finally {query.mockRestore();}
  });
  it('keeps third-element historical pools and their guarantee',()=>{
-  // Paille x Feu Glacé: union feu,neige,paille, no special policy; raw weights 40 for the Commons, 20 for each admissible recipe.
-  expect(Object.entries(breedingWeights('paille','glassofeu',2,2))).toEqual([['paille',30],['neige',30],['feu',30],['frisket',30],['icy',30],['ardent',30],['snk',30],['wat-wat',30],['glassofeu',30]]);
+  // Paille x Feu Glacé: union feu,neige,paille, no special policy; a mixed pair gives no Common result, each admissible recipe weighs 30.
+  expect(Object.entries(breedingWeights('paille','glassofeu',2,2))).toEqual([['frisket',30],['icy',30],['ardent',30],['snk',30],['wat-wat',30],['glassofeu',30]]);
   const s=prepared();s.progression={totalXp:cumulativeLevelXp(14),rewardedThroughLevel:14};s.discovered.push('glassofeu');s.pityFailures=7;
   expect(breedingPool(s,'paille','glassofeu',4,4)).toMatchObject({weights:{frisket:1,icy:1,ardent:1,snk:1,'wat-wat':1},guaranteed:true});
  });

@@ -18,10 +18,12 @@ describe('Epic and Legendary rabbits of 25 October 2026', () => {
     }
   });
   it('draws the four Epics at 5 % from their two elements, with affection 6 on both parents', () => {
-    expect(breedingOdds('neige', 'volant', 6, 6)).toMatchObject({dadi: 5, maxou: 5});
+    // Dadi is Feu-Metal since the 27 October economy (docs/economy-current.md); Maxou stays Neige-Vol.
+    expect(breedingOdds('feu', 'belier-gris', 6, 6)).toMatchObject({dadi: 5, dinono: 5});
+    expect(breedingOdds('neige', 'volant', 6, 6)).toMatchObject({maxou: 5});
     expect(breedingOdds('paille', 'neige', 6, 6)).toEqual({frisket: 47.5, icy: 47.5, orange: 5});
     expect(breedingOdds('paille', 'belier-gris', 6, 6).magicien).toBe(5);
-    expect(breedingOdds('neige', 'volant', 6, 5).dadi).toBeUndefined();
+    expect(breedingOdds('feu', 'belier-gris', 6, 5).dadi).toBeUndefined();
   });
 });
 
@@ -36,7 +38,8 @@ describe('Magicien changed elements', () => {
   it('keeps a saved Magicien where its former elements placed it', () => {
     const decoded = decodeGame(encodeGame(housedInVol()));
     expect(decoded.ok).toBe(true);
-    if (decoded.ok) expect(decoded.state.rabbits).toEqual([{id: 'rabbit-2', species: 'magicien', affection: 6, enclosureId: 'building-1'}]);
+    // Non-Common individuals gain their saved income roll during decoding (json.ts), which is not part of the elements check.
+    if (decoded.ok) expect(decoded.state.rabbits).toEqual([{id: 'rabbit-2', species: 'magicien', affection: 6, enclosureId: 'building-1', incomeRoll: expect.any(Number)}]);
   });
   it('places new Magiciens only under their current Paille-Metal elements', () => {
     const s = housedInVol(), home = s.buildings[0];

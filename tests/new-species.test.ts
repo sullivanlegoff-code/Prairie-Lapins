@@ -43,10 +43,11 @@ describe('approved three-species rules',()=>{
   // Different-type Common parents give only the Rares of the union and eligible specials.
   expect(breedingOdds('paille','feu',4,4)).toEqual({ardent:50,snk:50});
   expect(breedingOdds('paille','belier-gris',6,6)).toEqual({roukette:47.5,boudinet:47.5,magicien:5});
-  // Dadi x Phoenix at affection 10: six ordinary Rares share 82 %, with fixed specials 3 %, 7.5 %, 7.5 %.
-  const pair=breedingOdds('dadi','phoenix',10,10);expect(pair).toMatchObject({dragon:3,dadi:7.5,maxou:7.5});
-  for(const id of ['neige','feu','volant'] as const)expect(pair[id]).toBeUndefined();
-  for(const id of ['pic-pic','phoenix','wat-wat','glassofeu','piment','tunini'] as const)expect(pair[id]).toBeCloseTo(82/6,10);
+  // Dadi (Feu-Metal since 27 October) x Phoenix at affection 10: six ordinary results share 82 %, with fixed specials 3 %, 7.5 %, 7.5 %.
+  const pair=breedingOdds('dadi','phoenix',10,10);expect(pair).toMatchObject({dragon:3,dadi:7.5,dinono:7.5});
+  // A mixed pair gives no Common result: feu, belier-gris and volant are absent from the pool.
+  for(const id of ['feu','belier-gris','volant'] as const)expect(pair[id]).toBeUndefined();
+  for(const id of ['bouee','egiiipte','piment','bretonette','phoenix','amethyste'] as const)expect(pair[id]).toBeCloseTo(82/6,10);
   expect(Object.keys(pair)).toHaveLength(9);
  });
  it('reserves a special once and allocates exactly the remainder to ordinary results',()=>{
@@ -110,7 +111,7 @@ describe('saved births, delays, compatibility and collection',()=>{
   expect(nurseryView(growing,20*MINUTE).babies).toEqual([{slot: 0, birthId: expect.any(String), stage: 'growing', startedAt: expect.any(Number), readyAt:(20+minutes)*MINUTE}]);expect(collectionView(growing).filter(e=>e.known).map(e=>e.name)).not.toContain(SPECIES[id].name);
   expect(decodeGame(encodeGame(growing))).toEqual({ok:true,state:growing});
   expect(nurseryView(growing,(20+minutes)*MINUTE).babies).toMatchObject([{stage:'ready',species:id}]);
-  const welcomed=run(growing, welcomeOf(growing, 'building-1'),(20+minutes)*MINUTE);expect(welcomed.rabbits.at(-1)).toMatchObject({species:id,affection:1});expect(rabbitIncome(1)).toBe(500);
+  const welcomed=run(growing, welcomeOf(growing, 'building-1'),(20+minutes)*MINUTE);expect(welcomed.rabbits.at(-1)).toMatchObject({species:id,affection:1});expect(rabbitIncome(1, id, 5000)).toBe({bouee: 15, magicien: 20, dragon: 23}[id]);
  });
  it('starts the full Dragon growth only after an occupied nursery is freed',()=>{
   // In the Dadi x Phoenix pool at affection 10, Dragon holds the draws in [0.82, 0.85).
@@ -130,7 +131,7 @@ describe('saved births, delays, compatibility and collection',()=>{
  });
  it('filters compose by type, rarity and public discoveries without reading pending births',()=>{
   const s=createGame(0);expect(collectionView(s)).toHaveLength(EXPECTED_IDS.length);expect(collectionView(s,{rarity:'epic'})).toHaveLength(5);
-  expect(collectionView(s,{rarity:'epic',type:'vol'})).toEqual([{known:false,name:'???'},{known:false,name:'???'}]);expect(collectionView(s,{rarity:'epic',discovery:'known'})).toEqual([]);
+  expect(collectionView(s,{rarity:'epic',type:'vol'})).toEqual([{known:false,name:'???'}]);expect(collectionView(s,{rarity:'epic',discovery:'known'})).toEqual([]);
   expect(collectionView(s,{type:'paille',discovery:'known'})).toEqual([{known:true,species:'paille',name:'Lapin Paille'}]);
  });
  it('prepares every species and actual parent pairs only in a validated explicit test scenario',()=>{

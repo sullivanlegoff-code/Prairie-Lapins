@@ -2,18 +2,25 @@ import {describe, expect, it} from 'vitest';
 import {labAction, completeLaboratory, type LabAction} from '../src/dev/labActions';
 import {scenarioState} from '../src/dev/scenarios';
 import {createGame, encodeGame, decodeGame, act} from '../src/simulation';
-import {SPECIES_IDS, SPECIES, HOUR, ORDERS} from '../src/config/balance';
+import {BALANCE, SPECIES_IDS, SPECIES, HOUR, ORDERS} from '../src/config/balance';
 import {HABITAT_TYPES, habitatLevel} from '../src/config/habitats';
 import {DECORATION_IDS} from '../src/config/decorations';
 import {GIFTED_RECIPES, RECIPE_BOOK_SPECIES} from '../src/config/recipes';
 import {DAILY_MISSIONS, DAILY_MISSION_IDS, MAIN_MISSION_IDS} from '../src/config/missions';
 import {cumulativeLevelXp, progressionFromXp} from '../src/simulation/progression';
+import {historicalIncomeRoll} from '../src/simulation/time';
 import {buildingFootprint, footprintPlacementReason} from '../src/simulation/placement';
 import type {GameState} from '../src/state/types';
 
 const now = 100 * HOUR;
+/** Loading fills the missing income draw of non-common rabbits exactly as json.ts does; the laboratory creates them without one. */
+function canonicalOnLoad(s: GameState): GameState {
+  const canonical = structuredClone(s);
+  for (const rabbit of canonical.rabbits) if (SPECIES[rabbit.species].rarity !== 'common') rabbit.incomeRoll ??= historicalIncomeRoll(rabbit);
+  return canonical;
+}
 function roundTrip(s: GameState): GameState {
-  expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: s}); return s;
+  expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: canonicalOnLoad(s)}); return s;
 }
 function run(s: GameState, action: LabAction): GameState {
   const before = structuredClone(s), next = labAction(s, action);
@@ -82,6 +89,8 @@ describe('pure laboratory transactions', () => {
     }
     for (const capacity of [1, 2, 3, 4] as const) { s = run(s, {type: 'nursery', capacity}); expect(s.buildings.find(b => b.nursery)!.nursery!.capacity).toBe(capacity); }
     s = run(s, {type: 'extensions'}); expect(s.acquiredParcels).toHaveLength(9); expect(s.pattes).toBe(money);
+    // Fill the farms up to the configured maximum; one more must then be refused.
+    while (s.buildings.filter(b => b.kind === 'farm').length < BALANCE.buildings.farm.maximum) s = run(s, {type: 'build', kind: 'farm'});
     expect(() => labAction(s, {type: 'build', kind: 'farm'})).toThrow();
     // The same construction action can restore a missing starter building.
     for (const kind of ['nest', 'nursery'] as const) { const missing = createGame(now); missing.buildings = missing.buildings.filter(b => b.kind !== kind); expect(run(missing, {type: 'build', kind}).buildings.some(b => b.kind === kind)).toBe(true); }

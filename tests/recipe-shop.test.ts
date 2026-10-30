@@ -152,7 +152,8 @@ describe('recipe purchase flow', () => {
   });
   it('confirms, debits once on a rapid double press, reveals the card and updates the nest without reload', () => {
     const {ui, controller, data} = setup(shop());
-    expect(nestOdds(ui, 'Lapin Bélier Gris', 'Lapin Feu')).toEqual(["Résultats inconnus : 100 %"]);
+    // The summary line now sits inside the odds block, before the probability lines.
+    expect(nestOdds(ui, 'Lapin Bélier Gris', 'Lapin Feu')).toEqual(["Résultats possibles : inconnus.", "Résultats inconnus : 100 %"]);
     const before = state(controller); ui.open({kind: 'shop', tab: 'recipes'});
     buy('dinono')!.click(); buy('dinono')!.click();
     expect(dialog().open).toBe(true); expect(dialog().querySelector('h2')!.textContent).toBe('Acheter la recette : Dinono ?');
@@ -171,7 +172,7 @@ describe('recipe purchase flow', () => {
     expect(card('dinono').textContent).toContain('Affection 6 minimum pour chacun des deux parents.');
     expect(card('dinono').textContent).toMatch(/\d+ paires? possédées? compatibles? avec la recette/);
     const saved = decodeGame(data.get(SAVE_KEY)!); expect(saved.ok && saved.state.recipeBook).toEqual(['dinono']);
-    expect(nestOdds(ui, 'Lapin Bélier Gris', 'Lapin Feu')).toEqual(["Dinono · feu + métal · Épique : 7,5 %","Résultats inconnus : 92,5 %"]);
+    expect(nestOdds(ui, 'Lapin Bélier Gris', 'Lapin Feu')).toEqual(["Résultats possibles : Dinono et des résultats inconnus.", "Dinono · feu + métal · Épique : 7,5 %", "Résultats inconnus : 92,5 %"]);
     ui.open({kind: 'collection'}); [...panel().querySelectorAll('button')].find(b => b.textContent === 'Carnet de reproduction')!.click();
     expect([...card('dinono').querySelectorAll('button')].some(b => b.textContent === 'Préparer cette paire au nid')).toBe(true);
   });

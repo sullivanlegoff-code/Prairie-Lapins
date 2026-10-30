@@ -31,6 +31,7 @@ import {babyOf, setBaby} from './nursery-baby';
 import {EXPECTED_IDS, EXPECTED_RECIPE_IDS, rareAdditions, shareLabel} from './rabbit-art-fixtures';
 import {emptyBuilding} from '../src/state/initial';
 import {habitatCap} from '../src/config/habitats';
+import {FRIENDSHIP_TIME} from '../src/simulation/cozy';
 
 const cleanups: (() => void)[] = [];
 it('buys, places and selects Cuisine without opening the cooking activity', () => {
@@ -105,7 +106,10 @@ it('refreshes an open daily panel at its isolated next opening', () => {
   const revision = controller.getSnapshot().viewRevision;
   const before = controller.getSnapshot().state!;
   clock.now = end; controller.refresh();
-  expect(controller.getSnapshot().state).toEqual({...before, lastSimulatedAt: end});
+  // Shared friendship time keeps accumulating during the elapsed interval (cozy.ts advanceFriendships), capped at FRIENDSHIP_TIME.
+  const elapsed = end - before.lastSimulatedAt;
+  const bonds = before.cozy!.bonds.map(b => ({...b, duration: Math.min(FRIENDSHIP_TIME, b.duration + elapsed)}));
+  expect(controller.getSnapshot().state).toEqual({...before, lastSimulatedAt: end, cozy: {...before.cozy!, bonds}});
   expect(controller.getSnapshot().viewRevision).toBe(revision + 1);
   const card = panel().querySelector('[data-mission="collect-grass"]')!;
   expect(card.textContent).not.toContain('Ouverture dans :');

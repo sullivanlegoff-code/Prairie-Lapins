@@ -39,11 +39,16 @@ const HISTORICAL_DEFINITIONS = {
   magicien: {art: EXPECTED_ART['magicien'], name: 'Lapin Magicien', description: SPECIAL_DESCRIPTIONS.magicien, types: ['paille', 'metal'], rarity: 'epic', price: null, recipe: {requiredTypes: ['paille', 'metal'], minAffection: 6, probability: 5}, acquisition: ACQUISITION['magicien'], progression: {unlockLevel: 11}},
   dragon: {art: EXPECTED_ART['dragon'], name: 'Lapin Dragon', description: SPECIAL_DESCRIPTIONS.dragon, types: ['feu', 'vol'], rarity: 'legendary', price: null, recipe: {minAffection: 10, parents: ['dadi', 'phoenix'], probability: 2}, acquisition: ACQUISITION['dragon'], progression: {unlockLevel: 14}},
 };
-const DEFINITIONS = {...HISTORICAL_DEFINITIONS, ...Object.fromEntries(NEW_RARES.map(r => [r.id, {name: r.name, description: r.description, types: [...r.types], rarity: 'rare', price: null,
+const FIXTURE_DEFINITIONS = {...HISTORICAL_DEFINITIONS, ...Object.fromEntries(NEW_RARES.map(r => [r.id, {name: r.name, description: r.description, types: [...r.types], rarity: 'rare', price: null,
   recipe: {requiredTypes: [...r.requiredTypes], minAffection: STANDARD_RARE.minAffection}, acquisition: ACQUISITION[r.id], progression: {unlockLevel: STANDARD_RARE.unlockLevel}, art: r.art}])),
   ...Object.fromEntries(NEW_SPECIALS.map(s => [s.id, {name: s.name, description: SPECIAL_DESCRIPTIONS[s.id], types: [...s.types], rarity: s.rarity, price: null,
     recipe: {...(s.recipe.requiredTypes ? {requiredTypes: [...s.recipe.requiredTypes]} : {}), minAffection: s.recipe.minAffection, ...(s.recipe.parents ? {parents: [...s.recipe.parents]} : {}), probability: s.recipe.probability},
     acquisition: ACQUISITION[s.id], progression: {unlockLevel: s.unlockLevel}, art: s.art}]))};
+
+/** Dadi is Feu-Metal since the 27 October economy (docs/economy-current.md); the shared art fixture still describes the former Neige-Vol Dadi, so it is overridden here. */
+const DADI_ACQUISITION = [{kind: 'recipe', knowledgePrice: 450, requiredTypes: ['feu', 'metal'], minAffection: 6, probability: 5}];
+ACQUISITION.dadi = DADI_ACQUISITION;
+const DEFINITIONS = {...FIXTURE_DEFINITIONS, dadi: {...(FIXTURE_DEFINITIONS as Record<string, Record<string, unknown>>).dadi, types: ['feu', 'metal'], recipe: {requiredTypes: ['feu', 'metal'], minAffection: 6, probability: 5}, acquisition: DADI_ACQUISITION}};
 
 describe('canonical species registry', () => {
   it('lists every id in historical order followed by the approved Rares (catalogue and cumulative draw)', () => {

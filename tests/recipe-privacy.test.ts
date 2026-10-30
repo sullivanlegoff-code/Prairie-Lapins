@@ -61,9 +61,10 @@ describe('nest odds privacy over every pair', () => {
   });
   it('gives a documented example: Dadi × Phoenix at affection 10', () => {
     const s = game(14, 0, ['dadi', 'phoenix'], []);
-    expect(oddsTexts(oddsView(s, 'dadi', 'phoenix', 10, 10))).toEqual({"excluded":[],"guarantee":"Cette paire est admissible à la garantie.","lines":["Phoenix · feu + vol · Rare : 41/450 (≈ 9,11 %)","Dadi · neige + vol · Épique : 7,5 %","Résultats inconnus : 1501/1800 (≈ 83,39 %)"],"summary":"Résultats possibles : Phoenix, Dadi et des résultats inconnus."});
+    // Six ordinary Rares share the 82 % left after the fixed specials (Dragon 3 %, Dadi 7.5 %, Dinono 7.5 %); the Commons of a mixed pair are absent.
+    expect(oddsTexts(oddsView(s, 'dadi', 'phoenix', 10, 10))).toEqual({"excluded":[],"guarantee":"Cette paire est admissible à la garantie.","lines":["Phoenix · feu + vol · Rare : 41/300 (≈ 13,67 %)","Dadi · feu + métal · Épique : 7,5 %","Résultats inconnus : 473/600 (≈ 78,83 %)"],"summary":"Résultats possibles : Phoenix, Dadi et des résultats inconnus."});
     s.recipeBook.push('dragon');
-    expect(oddsTexts(oddsView(s, 'dadi', 'phoenix', 10, 10)).lines).toEqual(['Phoenix · feu + vol · Rare : 41/450 (≈ 9,11 %)', 'Lapin Dragon · feu + vol · Légendaire : 3 %', 'Dadi · neige + vol · Épique : 7,5 %', 'Résultats inconnus : 1447/1800 (≈ 80,39 %)']);
+    expect(oddsTexts(oddsView(s, 'dadi', 'phoenix', 10, 10)).lines).toEqual(['Phoenix · feu + vol · Rare : 41/300 (≈ 13,67 %)', 'Lapin Dragon · feu + vol · Légendaire : 3 %', 'Dadi · feu + métal · Épique : 7,5 %', 'Résultats inconnus : 91/120 (≈ 75,83 %)']);
     const locked = game(13, 0, ['dadi', 'phoenix'], []);
     expect(oddsTexts(oddsView(locked, 'dadi', 'phoenix', 10, 10)).excluded).toEqual(['Certains résultats demandent un niveau supérieur · exclus du tirage actuel.']);
   });

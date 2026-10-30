@@ -2,12 +2,14 @@ import {cumulativeLevelXp} from '../src/simulation/progression';
 import {sendToNursery} from './manual-transfer';
 import {regressionStart as legacyGame} from './regression-start';
 import {describe, expect, it} from 'vitest';
-import {FEED_COSTS, HOUR, MINUTE, ORDERS, SPECIES, LEGACY_SPECIES_IDS, type SpeciesId} from '../src/config/balance';
+import {FEED_COSTS, HOUR, MINUTE, ORDERS, SPECIES, LEGACY_SPECIES_IDS, HISTORICAL_COMMON_WEIGHTS, farmDuration, growthDuration, type SpeciesId} from '../src/config/balance';
 import {act, advance,  decodeGame, encodeGame, pendingDiscoveries, rabbitIncome} from '../src/simulation';
 import {breedingOdds, chooseBirth} from '../src/simulation/breeding';
 import type {Command, GameState, Refusal} from '../src/state/types';
 import {babyOf, welcomeOf} from './nursery-baby';
 import {emptyBuilding} from '../src/state/initial';
+import {habitatStats} from '../src/simulation/habitats';
+import {individualIncomeRoll} from '../src/simulation/time';
 
 // Isolate recipe/economy rules; active low-level filtering is covered in level-gates.test.ts.
 function createGame(now=0){const s=legacyGame(now);s.progression={totalXp:cumulativeLevelXp(14),rewardedThroughLevel:14};return advance(s,now);}
@@ -66,7 +68,8 @@ describe('initial state, costs and atomic refusals', () => {
     refuses(s, {type: 'placeStarterBuilding', kind: 'nursery', x: 22, y: 24}, 'BUILDING_LIMIT');
     s = run(s, {type: 'buyBuilding', kind: 'farm', x: 22, y: 24});
     s = run(s, {type: 'buyBuilding', kind: 'farm', x: 26, y: 24});
-    refuses(s, {type: 'buyBuilding', kind: 'farm', x: 18, y: 20}, 'BUILDING_LIMIT');
+    // (18, 20) is the starting enclosure's cell; two farms are far below the maximum, so the occupied cell is the reason.
+    refuses(s, {type: 'buyBuilding', kind: 'farm', x: 18, y: 20}, 'CELL_OCCUPIED');
   });
   it('buys the extension once and unlocks the new cells', () => {
     let s = createGame(0); s.pattes = 800;
@@ -85,8 +88,8 @@ describe('income and time', () => {
   it('computes income, caps it and collects only whole pattes', () => {
     let s = advance(createGame(0), HOUR); expect(s.buildings[0].incomeUnits).toBe(20*HOUR);
     s = run(s, {type: 'collectIncome', id: enclosure}); expect(s.pattes).toBe(370);
-    s = advance(s, 1000 * HOUR); expect(s.buildings[0].incomeUnits).toBe(2100 * HOUR);
-    s = run(s, {type: 'collectIncome', id: enclosure}); expect(s.pattes).toBe(2470);
+    s = advance(s, 1000 * HOUR); const cap = habitatStats(s.buildings[0]).cap; expect(s.buildings[0].incomeUnits).toBe(cap * HOUR);
+    s = run(s, {type: 'collectIncome', id: enclosure}); expect(s.pattes).toBe(370 + cap);
   });
   it('preserves fractional income through repeated advances and collections', () => {
     const original = createGame(0); let split = original;
@@ -142,7 +145,8 @@ describe('farming and affection', () => {
     s.buildings.find(b => b.id === id)!.farmLevel = 2;
     s = run(s, {type: 'startOrder', id, recipe}); expect(s.pattes).toBe(1000 - ORDERS[recipe].cost);
     refuses(s, {type: 'startOrder', id, recipe}, 'BUSY');
-    refuses(s, {type: 'collectOrder', id}, 'NOT_READY', ORDERS[recipe].duration - 1);
+    // The farm is upgraded here: each new crop lasts 20 % less (farmDuration).
+    refuses(s, {type: 'collectOrder', id}, 'NOT_READY', farmDuration(ORDERS[recipe].duration, 2) - 1);
     s = run(s, {type: 'collectOrder', id}, 100 * HOUR);
     expect(s.grass).toBe(10 + ORDERS[recipe].grass); expect(s.buildings[1].order).toBeNull();
     refuses(s, {type: 'collectOrder', id}, 'NOT_READY');
@@ -176,9 +180,9 @@ describe('farming and affection', () => {
 
 describe('breeding probabilities and pity', () => {
   it('matches the approved probability tables that remain (Terre, Mottelin and Brumelin were removed)', () => {
-    // Two commons never give a common (owner decision of 27 October 2026): two of one element give nothing.
-    expect(breedingOdds('paille', 'paille')).toEqual({});
-    expect(breedingOdds('neige', 'neige')).toEqual({});
+    // Two single-type Commons of the same type may give that Common (docs/recipes-current.md, 27 October 2026); mixed Commons never do.
+    expect(breedingOdds('paille', 'paille')).toEqual({paille: 100});
+    expect(breedingOdds('neige', 'neige')).toEqual({neige: 100});
     expect(breedingOdds('paille', 'neige')).toEqual({frisket:50,icy:50});
   });
   it('covers all 3 unordered pairs of the remaining historical species, with exact weights and symmetric rules', () => {
@@ -186,7 +190,7 @@ describe('breeding probabilities and pity', () => {
       const a = LEGACY_SPECIES_IDS[i], b = LEGACY_SPECIES_IDS[j]; const odds = breedingOdds(a, b);
       expect(odds).toEqual(breedingOdds(b, a));
       const key = [...new Set([...SPECIES[a].types, ...SPECIES[b].types])].sort().join(',');
-      const expected = key === 'neige,paille' ? {frisket:30,icy:30} : {};
+      const expected = key === 'neige,paille' ? {frisket:30,icy:30} : key in HISTORICAL_COMMON_WEIGHTS ? ({[a]: HISTORICAL_COMMON_WEIGHTS[key]} as Partial<Record<SpeciesId, number>>) : {};
       const total = Object.values(expected).reduce((sum,w) => sum+w,0);
       if (!total) { expect(odds).toEqual({}); continue; }
       expect(odds).toEqual(Object.fromEntries(Object.entries(expected).map(([id,w]) => [id,w*100/total])));
@@ -214,15 +218,15 @@ describe('breeding probabilities and pity', () => {
   });
   it('does not count ineligible attempts, including already discovered hybrids', () => {
     const s = createGame(0); s.pityFailures = 7;
-    expect(() => chooseBirth(s, 'neige', 'neige', 0)).toThrow('No admissible breeding result'); expect(s.pityFailures).toBe(7);
+    expect(chooseBirth(s, 'neige', 'neige', 0)).toMatchObject({species: 'neige', pityFailures: 7}); expect(s.pityFailures).toBe(7);
     s.discovered.push('frisket','icy'); expect(chooseBirth(s, 'paille', 'neige', 0).pityFailures).toBe(7);
   });
   it('guarantees the tenth eligible attempt after nine actual failures', () => {
-    // A known Rare × Common keeps ordinary Common failures available; two Commons now always give non-Common results.
-    let s = setup(); s.rabbits[0].species='wat-wat'; s.discovered.push('wat-wat'); s.rabbits.forEach(r => r.affection = 4);
+    // A known Rare × Common pair gives no Common: each attempt is an ordinary, counted failure, and the babies grow as Rares.
+    let s = setup(); s.rabbits[0].species='wat-wat'; s.rabbits[0].incomeRoll = 5000; s.discovered.push('wat-wat'); // a Rare carries its own saved roll, as every real Rare does s.rabbits.forEach(r => r.affection = 4);
     for (let attempt = 1; attempt <= 7; attempt++) {
       s = run(s, breed, s.lastSimulatedAt, 0); expect(s.pityFailures).toBe(attempt);
-      s=sendToNursery(s,s.lastSimulatedAt+20*MINUTE);s = run(s, welcomeOf(s, secondEnclosure(s)), s.lastSimulatedAt + 5 * MINUTE);
+      s=sendToNursery(s,s.lastSimulatedAt+20*MINUTE);s = run(s, welcomeOf(s, secondEnclosure(s)), s.lastSimulatedAt + growthDuration('wat-wat'));
       s = run(s, {type: 'release', id: s.rabbits.at(-1)!.id});
     }
     let calls = 0;
@@ -282,7 +286,7 @@ describe('nursery, capacity and release', () => {
     refuses(s, welcomeOf(s, secondEnclosure(s)), 'NOT_READY', 24 * MINUTE);
     s=sendToNursery(s,20*MINUTE);s = run(s, welcomeOf(s, secondEnclosure(s)), HOUR);
     expect(s.buildings.find(b => b.id === secondEnclosure(s))!.incomeUnits).toBe(0);
-    expect(advance(s, 2 * HOUR).buildings.find(b => b.id === secondEnclosure(s))!.incomeUnits).toBe(17*HOUR);
+    const welcomed = s.rabbits.at(-1)!; expect(advance(s, 2 * HOUR).buildings.find(b => b.id === secondEnclosure(s))!.incomeUnits).toBe(rabbitIncome(1, welcomed.species, individualIncomeRoll(welcomed)) * HOUR);
   });
   it('enforces enclosure capacity for purchases, transfers and welcomes', () => {
     let s = run(setup(), {type: 'buyRabbit', species: 'neige', enclosureId: enclosure});

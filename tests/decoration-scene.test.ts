@@ -1,6 +1,12 @@
 ﻿// @ts-nocheck -- Phaser stand-ins exercise scene draw order without a GPU.
-import {describe, expect, it, vi} from 'vitest';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 vi.mock('phaser', () => ({default: {Scene: function Scene() {}}}));
+// MeadowScene reads the global matchMedia and document (visible page, no open panel) in update(); this suite runs without a DOM.
+beforeEach(() => {
+ vi.stubGlobal('matchMedia', () => ({matches: false}));
+ vi.stubGlobal('document', {hidden: false, getElementById: () => null, querySelector: () => null});
+});
+afterEach(() => { vi.unstubAllGlobals(); });
 import {MeadowScene} from '../src/display/MeadowScene';
 import {VISUAL} from '../src/config/visual';
 import * as motionApi from '../src/display/rabbitMotion';
@@ -35,11 +41,12 @@ describe('painted decoration scene ordering', () => {
 it('sorts the whole layer when a neighbor crosses a stationary rabbit, then skips unchanged depths', () => {
  const scene = new MeadowScene({}, () => {}, () => false);
  scene.time = {now: 0};
+ scene.scale = {width: 800, height: 600}; // Phaser scale stand-in, read by update() for the dadi bounds.
  const make = (id, y) => {
   const motion = motionApi.createRabbitMotion(id, {x:0,y:0}, 2);
   motion.local.y = y;
   const object = image(); object.setDepth(y);
-  return {object, motion, center:{x:0,y:0}, group:'home', phase:0, ears:[]};
+  return {id, object, motion, center:{x:0,y:0}, group:'home', phase:0, ears:[]};
  };
  const stationary = make('rabbit-2', 0), neighbor = make('rabbit-3', 10);
  scene.rabbitViews = [stationary, neighbor]; scene.rabbitGroups.set('home', scene.rabbitViews);

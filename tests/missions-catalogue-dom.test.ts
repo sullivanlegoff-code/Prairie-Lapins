@@ -38,6 +38,7 @@ const card = (id: string) => panel().querySelector<HTMLElement>(`[data-mission="
 const filter = (key: string) => panel().querySelector<HTMLButtonElement>(`[data-mission-filter="${key}"]`)!;
 const claim = (id: string) => card(id).querySelector<HTMLButtonElement>('.mission-claim')!;
 const open = () => document.getElementById('open-missions')!.click();
+const catalogueSize = () => catalogueMainMissionIds(state()).length;
 
 describe('browsing all main missions from level seven', () => {
   it('opens the album and recurring discoveries without spending, and exposes decoration collections',()=>{
@@ -52,17 +53,17 @@ describe('browsing all main missions from level seven', () => {
   it('puts rewards first, started objectives before untouched ones and claimed objectives last without hiding the catalogue', () => {
     const s = state(); s.missions.completed.push('discover-paille'); s.missions.claimed.push('discover-paille'); setup(s); open();
     const ids = cards().map(c => c.dataset.mission);
-    expect(ids).toHaveLength(93);
+    expect(ids).toHaveLength(catalogueSize());
     expect(cards()[0].dataset.missionStatus).toBe('ready');
     expect(ids.indexOf('level-ten')).toBeLessThan(ids.indexOf('at-nest'));
     expect(ids.at(-1)).toBe('discover-paille');
     expect(card('level-ten').classList.contains('mission-progressing')).toBe(true);
   });
-  it('keeps the small initial view below seven, then opens all 93 solo objectives by default', () => {
+  it('keeps the small initial view below seven, then opens the whole main catalogue by default', () => {
     const young = setup(state(6)); open(); expect(cards().map(c => c.dataset.mission)).toEqual(['snow-habitat']); expect(filter('all')).toBeNull();
     young.ui.dispose(); young.controller.dispose(); cleanups.splice(0);
     const s = state(); s.missions.completed.push('discover-paille'); s.missions.claimed.push('discover-paille');
-    setup(s); open(); expect(cards()).toHaveLength(93); expect(filter('all').getAttribute('aria-pressed')).toBe('true');
+    setup(s); open(); expect(cards()).toHaveLength(catalogueSize()); expect(filter('all').getAttribute('aria-pressed')).toBe('true');
     expect(card('discover-paille').dataset.missionStatus).toBe('claimed'); expect(claim('discover-paille').disabled).toBe(true);
     expect(card('level-thirty').dataset.missionStatus).toBe('pending'); expect(card('decorate-robot-statue')).not.toBeNull();
     expect(panel().textContent).toContain('10 XP'); expect(document.querySelector('dialog[open]')).toBeNull();
@@ -78,7 +79,7 @@ describe('browsing all main missions from level seven', () => {
     expect(document.getElementById('toast')!.textContent).toContain('30 nourriture'); expect(document.getElementById('toast')!.textContent).toContain('1 cœur');
     filter('claimed').click(); expect(cards().map(c => c.dataset.mission)).toEqual(['discover-dadi']);
     filter('pending').click(); expect(cards().every(c => c.dataset.missionStatus === 'pending')).toBe(true);
-    filter('all').click(); expect(cards()).toHaveLength(93); expect(filter('claimed').textContent).toBe('Terminées (1)');
+    filter('all').click(); expect(cards()).toHaveLength(catalogueSize()); expect(filter('claimed').textContent).toBe('Terminées (1)');
     controller.refresh(); expect(filter('all').getAttribute('aria-pressed')).toBe('true'); expect(document.querySelector('dialog[open]')).toBeNull();
   });
   it('keeps the scroll position when claiming an unfinished initial reward from the complete catalogue', () => {
@@ -88,7 +89,7 @@ describe('browsing all main missions from level seven', () => {
   });
   it('opens and uses filters and claims with real clicks even if an old solo guide is still at snowReward', () => {
     const s = state(); s.buildings.push(emptyBuilding('building-6', 'enclosure', 10, 40, 'neige')); s.nextId = 7; s.discovered.push('neige');
-    const {controller, prefs} = setup(s, true); open(); expect(cards()).toHaveLength(93);
+    const {controller, prefs} = setup(s, true); open(); expect(cards()).toHaveLength(catalogueSize());
     filter('ready').click(); expect(filter('ready').getAttribute('aria-pressed')).toBe('true');
     const before = controller.getSnapshot().state!.pattes; claim('discover-paille').click();
     expect(controller.getSnapshot().state!.pattes).toBe(before + 20); expect(controller.getSnapshot().state!.missions.claimed).toContain('discover-paille');

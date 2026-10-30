@@ -3,7 +3,7 @@ import {regressionStart as createGame} from './regression-start';
 import {describe, expect, it} from 'vitest';
 import {act, advance,  decodeGame, encodeGame} from '../src/simulation';
 import {HOUR, MINUTE} from '../src/config/balance';
-import {MAIN_MISSIONS, MAIN_MISSION_IDS, DAILY_MISSION_IDS, MISSION_CYCLE_DURATION as DAY} from '../src/config/missions';
+import {MAIN_MISSIONS, MAIN_MISSION_IDS, ACTIVE_MAIN_MISSION_IDS, DAILY_MISSION_IDS, MISSION_CYCLE_DURATION as DAY} from '../src/config/missions';
 import {dailyCycleEnd, emptyDailyProgress, emptyMainEvents, mainProgress} from '../src/simulation/missions';
 import {GameController} from '../src/application/GameController';
 import {SAVE_KEY, type SaveStorage} from '../src/persistence/storage';
@@ -45,7 +45,8 @@ const state=(c:GameController)=>c.getSnapshot().state!;
 describe('main missions and unique rewards',()=>{
   it('starts eight unclaimed visible objectives and a fresh 24-hour cycle without changing initial resources',()=>{
     const s=createGame(123);
-    expect(MAIN_MISSION_IDS).toHaveLength(96);expect(s).toMatchObject({version: 21,pattes:350,grass:10,hearts:12});
+    // The 102 active missions; the three retired identifiers stay readable in MAIN_MISSION_IDS.
+    expect(ACTIVE_MAIN_MISSION_IDS).toHaveLength(102);expect(MAIN_MISSION_IDS).toEqual(expect.arrayContaining([...ACTIVE_MAIN_MISSION_IDS]));expect(s).toMatchObject({version: 21,pattes:350,grass:10,hearts:12});
     expect(s.missions).toEqual({events:emptyMainEvents(),completed:[],claimed:[],daily:{referenceAt:123,cycleIndex:0,progress:emptyDailyProgress(),claimed:[],bonusClaimed:false}});
     expect(dailyCycleEnd(s)).toBe(123+DAY);
   });

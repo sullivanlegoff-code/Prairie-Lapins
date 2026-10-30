@@ -51,7 +51,7 @@ describe('permanent heart spending', () => {
     let a = setup('agency'); a = run(a, {type: 'startTrip', rabbitId: a.rabbits[0].id});
     const old = JSON.parse(encodeGame(a)); old.version = 18; old.travel = {welcomed: false, trip: old.travel.trips[0]};
     expect(decodeGame(JSON.stringify(old))).toEqual({ok: true, state: a});
-    expect(decodeGame('{"version":21}')).toEqual({ok: false, reason: 'UNSUPPORTED_VERSION'});
+    expect(decodeGame('{"version":21}')).toEqual({ok: false, reason: 'INVALID_STATE'}); // 21 is the current version: an empty save is invalid, not unsupported
   });
   it('upgrades the agency for 40 then 120 hearts and freezes food at departure', () => {
     let s = setup('agency'); const id = s.buildings.at(-1)!.id;

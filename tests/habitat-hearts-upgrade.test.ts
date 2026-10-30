@@ -1,7 +1,7 @@
 import {describe, expect, it} from 'vitest';
 import {act, advance, createGame, decodeGame, encodeGame} from '../src/simulation';
 import {cumulativeLevelXp, requiredHabitatUpgradeLevel} from '../src/simulation/progression';
-import {HABITAT_LEVELS, HABITAT_TYPES, habitatLevel, type HabitatType} from '../src/config/habitats';
+import {HABITAT_CAPS, HABITAT_LEVELS, HABITAT_TYPES, habitatLevel, type HabitatType} from '../src/config/habitats';
 import {quoteComplement} from '../src/simulation/actions';
 import {habitatStats} from '../src/simulation/habitats';
 
@@ -22,7 +22,7 @@ describe('upgrading an enclosure: coins to level 2, exactly ten hearts to level 
       expect(habitatLevel(type, 3)).toMatchObject({cost: HEARTS_LEVEL_3, currency: 'hearts'});
       expect(habitatLevel(type, 1).currency).toBe('pattes');
     }
-    expect(HABITAT_LEVELS.universal[2].cap).toBe(5600); expect(HABITAT_LEVELS.specialized[2].cap).toBe(5600);
+    expect(HABITAT_LEVELS.universal[2].cap).toBe(HABITAT_CAPS[3].universal); expect(HABITAT_LEVELS.specialized[2].cap).toBe(HABITAT_CAPS[3].paille);
   });
 
   it.each(HABITAT_TYPES.map(type => [type]))('%s: level 2 costs coins only, level 3 costs exactly ten hearts and no coin', type => {

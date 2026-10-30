@@ -5,7 +5,7 @@ import {regressionStart as legacyGame} from './regression-start';
 import {createMissions} from '../src/simulation/missions';
 import {emptyBuilding} from '../src/state/initial';
 import {describe, expect, it, vi} from 'vitest';
-import {BALANCE, LEGACY_SPECIES_IDS, MINUTE, RECIPE_SPECIES, SHOP_SPECIES, SPECIES, SPECIES_IDS, growthDuration, type SpeciesId} from '../src/config/balance';
+import {BALANCE, BREEDING_WEIGHTS, HISTORICAL_COMMON_WEIGHTS, LEGACY_SPECIES_IDS, MINUTE, RECIPE_SPECIES, SHOP_SPECIES, SPECIES, SPECIES_IDS, growthDuration, type SpeciesId} from '../src/config/balance';
 import {act, advance,  decodeGame, encodeGame, pendingDiscoveries, rabbitIncome} from '../src/simulation';
 import {breedingOdds, breedingPool, breedingWeights, chooseBirth} from '../src/simulation/breeding';
 import {quoteAcceleration} from '../src/simulation/hearts';
@@ -59,7 +59,7 @@ describe('species catalogue and acquisition', () => {
     expect(act(s, {type: 'buyRabbit', species, enclosureId: 'building-1'}, 0)).toEqual({ok: false, reason: 'INVALID_CHOICE', state: s});
   });
   it('keeps affection, income, building capacities, costs and established growth times', () => {
-    expect(BALANCE).toMatchObject({minAffection: 1, maxAffection: 20, enclosureCapacity: 3, enclosureCap: 2100, breedingCost: 0, breedingDuration: 20 * MINUTE});
+    expect(BALANCE).toMatchObject({minAffection: 1, maxAffection: 20, enclosureCapacity: 3, enclosureCap: BALANCE.enclosureCap, breedingCost: 0, breedingDuration: 20 * MINUTE});
     expect([rabbitIncome(1), rabbitIncome(20)]).toEqual([10, 29]);
     for (const id of SHOP_SPECIES) expect(growthDuration(id)).toBe(5 * MINUTE);
   });
@@ -69,7 +69,8 @@ describe('exact breeding pools', () => {
   it('keeps historical weights and adds the approved Rares to matching unions', () => {
     for (const a of LEGACY_SPECIES_IDS) for (const b of LEGACY_SPECIES_IDS) {
       const key = [...new Set([...SPECIES[a].types, ...SPECIES[b].types])].sort().join(',');
-      expect(breedingWeights(a, b, 4, 20)).toEqual(key === 'neige,paille' ? {frisket:30,icy:30} : {});
+      // Same-type legacy pairs keep their historical common result; a mixed pair of commons gives no common result.
+      expect(breedingWeights(a, b, 4, 20)).toEqual(key === 'neige,paille' ? {frisket:30,icy:30} : {[a]: HISTORICAL_COMMON_WEIGHTS[a]});
       expect(breedingOdds(a, b, 4, 20)).toEqual(breedingOdds(a, b, 2, 2));
     }
   });
@@ -81,8 +82,8 @@ describe('exact breeding pools', () => {
         expect(weights).toEqual(breedingWeights(b, a, levelB, levelA));
         expect(odds).toEqual(breedingOdds(b, a, levelB, levelA));
         const sameCommon = SPECIES[a].rarity === 'common' && a === b;
-        expect(Object.values(odds).reduce((x, y) => x + y, 0)).toBeCloseTo(sameCommon ? 0 : 100, 12);
-        if (sameCommon) expect(weights).toEqual({});
+        expect(Object.values(odds).reduce((x, y) => x + y, 0)).toBeCloseTo(Object.keys(weights).length ? 100 : 0, 12);
+        if (sameCommon) expect(weights[a]).toBe(HISTORICAL_COMMON_WEIGHTS[a] ?? BREEDING_WEIGHTS.common);
         const total = Object.values(weights).reduce((x, y) => x + y, 0); let cursor = 0;
         for (const [id, weight] of Object.entries(weights)) {
           const roll = (cursor + weight / 2) / total;
@@ -110,27 +111,29 @@ describe('exact breeding pools', () => {
     expect(breedingWeights(a, b, 2, 1)[rare]).toBeUndefined();
   });
   it('normalizes a four-type pool while retaining eligible historical hybrids', () => {
-    const rares = rareAdditions(['metal', 'paille', 'feu', 'neige'], 4, 4), total = 120 + 30 * Object.keys(rares).length;
-    expect(breedingWeights('boudinet', 'glassofeu', 4, 4)).toEqual({paille: 30, neige: 30, feu: 30, 'belier-gris': 30, boudinet: 30, 'glassofeu': 30, bouee: 30, ...rares});
-    expect(breedingWeights('boudinet', 'glassofeu', 2, 4)).toEqual({paille: 30, neige: 30, feu: 30, 'belier-gris': 30, ...rares});
+    // A mixed pair of commons gives no common result: only the standard Rares of the union remain, all at weight 30.
+    const rares = rareAdditions(['metal', 'paille', 'feu', 'neige'], 4, 4), total = 30 * Object.keys(rares).length;
+    expect(breedingWeights('boudinet', 'glassofeu', 4, 4)).toEqual({...rares});
+    expect(breedingWeights('boudinet', 'glassofeu', 2, 4)).toEqual({...rares});
     const odds = oddsView(knowEveryResult(createGame(0)), 'boudinet', 'glassofeu', 4, 4);
-    expect(odds.entries.filter(e => e.weight === 100 * 30 / total)).toHaveLength(4 + Object.keys(rares).length);
-    expect(odds.entries.find(e => e.description === 'feu + neige · Rare')?.probability).toBe('6,25 %');
+    expect(odds.entries.filter(e => e.weight === 100 * 30 / total)).toHaveLength(Object.keys(rares).length);
+    expect(odds.entries.find(e => e.description === 'feu + neige · Rare')?.probability).toBe(shareLabel(30, total));
     expect(probabilityLabel(40, 180)).toBe('2/9 (≈ 22,22 %)');
   });
 });
 
 describe('extended guarantee and persisted rare births', () => {
-  it.each(rares)('guarantees and reserves %s on the tenth eligible attempt, without discovering before welcome', (rare, a, b) => {
-    // A mixed pair keeps actual Common failures (5-minute growth) available for testing the unchanged guarantee.
+  it.each(rares)('guarantees and reserves %s on the eighth eligible attempt, without discovering before welcome', (rare, a, b) => {
+    // A mixed pair gives no Common, so each failure is a discovered Rare of the same pool (30-minute growth), which the guarantee does not reserve.
     const knownRare = {boudinet: 'roukette', phoenix: 'piment', glassofeu: 'wat-wat'} as const;
     const firstCommon = SPECIES_IDS.find(id => id === a || id === b)!;
-    let s = couple(firstCommon, knownRare[rare]);s.discovered.push(...SPECIES_IDS.filter(id=>SPECIES[id].rarity==='rare'&&id!==rare&&!s.discovered.includes(id)));
+    // As in every current save, a non-Common parent carries its saved income roll (decoding would otherwise add one).
+    let s = couple(firstCommon, knownRare[rare]);s.rabbits.forEach(r => { if (SPECIES[r.species].rarity !== 'common') r.incomeRoll = 5000; });s.discovered.push(...SPECIES_IDS.filter(id=>SPECIES[id].rarity==='rare'&&id!==rare&&!s.discovered.includes(id)));
     for (let i = 0; i < 7; i++) {
-      s = run(s, breed, s.lastSimulatedAt, 0);
+      s = run(s, breed, s.lastSimulatedAt, rare === 'phoenix' ? .999 : 0);
       expect(s.pityFailures).toBe(i + 1);
       s = sendToNursery(s,s.lastSimulatedAt+20*MINUTE);
-      s = run(s, welcomeOf(s, 'building-1'), s.lastSimulatedAt + 5 * MINUTE);
+      s = run(s, welcomeOf(s, 'building-1'), s.lastSimulatedAt + growthDuration(knownRare[rare]));
       const duplicate = s.rabbits[2].id; s = run(s, {type: 'release', id: duplicate});
     }
     s = run(s, breed, s.lastSimulatedAt, 0);
@@ -225,7 +228,8 @@ describe('catalogue, notebook, visuals and compatibility', () => {
       try { encodeGame(complete); pens.push(home); } catch { complete.buildings.pop(); complete.nextId--; }
     }
     expect(pens.length * 7).toBeGreaterThanOrEqual(SPECIES_IDS.length);
-    complete.rabbits = SPECIES_IDS.map((species, index) => ({id: `rabbit-${complete.nextId++}`, species, affection: 1, enclosureId: pens[index % pens.length].id}));
+    // Non-Common individuals carry their saved income roll, as every current save does (decoding would otherwise add one).
+    complete.rabbits = SPECIES_IDS.map((species, index) => ({id: `rabbit-${complete.nextId++}`, species, affection: 1, enclosureId: pens[index % pens.length].id, ...(SPECIES[species].rarity === 'common' ? {} : {incomeRoll: 5000})}));
     complete.discovered = [...SPECIES_IDS]; complete.hearts = 7; complete.pityFailures = 0; complete.missions = createMissions(complete, complete.lastSimulatedAt);
     Object.assign(complete, advance(complete, complete.lastSimulatedAt)); // Bank the newly observable catalogue, with no resource/XP reward on import.
     const current = advance(createGame(complete.lastSimulatedAt), complete.lastSimulatedAt);establishHistoricalLevelRights(current);const saved = memory(encodeGame(current));
