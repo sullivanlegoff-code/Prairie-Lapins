@@ -8,7 +8,7 @@ Prairie Lapins est un jeu mobile cosy de collection et d'élevage de lapins, ins
 
 - Pile : Phaser 3.90, TypeScript, Vite 7, vitest + happy-dom, zod. Supabase (`@supabase/supabase-js`) pour la sauvegarde en ligne facultative.
 - Format de sauvegarde actuel : **v21** (`src/persistence/json.ts`), migrations depuis v16, dont v20 vers v21 pour les amitiés et souvenirs. Les versions 1 à 15 sont refusées.
-- Hébergement : Netlify, site `velvety-squirrel-142402.netlify.app`. Le jeu est servi à `/`, le laboratoire à `/dev/`. **Le propriétaire publie lui-même** en glissant le dossier `netlify-site/` dans l'onglet Deploys, seulement quand il le décide.
+- Hébergement : GitHub Pages, `https://sullivanlegoff-code.github.io/Prairie-Lapins/` (laboratoire à `/dev/`). Chaque `git push` sur `main` publie le jeu pour tous les joueurs (workflow `.github/workflows/deploy-pages.yml`, voir `docs/deployment.md`). L'ancien site Netlify est désactivé depuis le 30 octobre 2026.
 - Le dépôt est **public**.
 
 ## 2. Ton rôle
@@ -50,7 +50,7 @@ Règles pour les agents :
 - Préserve les changements préexistants. Interdits : `git add -A` / `git add .`, `reset --hard`, `clean`, réécriture d'historique, changement de remotes, de visibilité ou de paramètres GitHub.
 - `.claude/` (réglages locaux de l'ancien assistant) et `output/` ne se committent jamais.
 - Le fichier `tests/__snapshots__/procedural-art.test.ts.snap` change souvent de fins de ligne (CRLF) sans changement réel. Si `git diff --ignore-cr-at-eol` est vide pour lui, restaure-le (`git restore <fichier>`) avant de committer.
-- **Workflow de commit** : travail sur une branche `feature/…` ; commits précis en français, en n'ajoutant que les fichiers concernés. **Fusion dans `main` (`git merge --no-ff`) et `git push` seulement quand le propriétaire le demande.** Pas de publication Netlify par toi.
+- **Workflow de commit** : travail sur une branche `feature/…` ; commits précis en français, en n'ajoutant que les fichiers concernés. **Fusion dans `main` (`git merge --no-ff`) et `git push` seulement quand le propriétaire le demande** : un envoi sur `main` publie le jeu.
 
 ## 5. Commandes et vérifications
 
@@ -93,5 +93,5 @@ En français, court et vérifiable :
 - les décisions que tu as prises à sa place et les questions qui restent ;
 - les défauts connus ou ce qui n'a pas pu être fait ;
 - la validation **réellement** effectuée (tests, builds, Chromium ; jamais d'iPhone sauf s'il l'a fait) ;
-- la branche, le dernier commit, l'état Git, et ce qui est (ou non) fusionné ou prêt pour Netlify ;
+- la branche, le dernier commit, l'état Git, et ce qui est (ou non) fusionné et publié sur GitHub Pages ;
 - une seule prochaine étape conseillée.
