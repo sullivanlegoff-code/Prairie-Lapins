@@ -30,8 +30,10 @@ export function advanceFriendships(s: GameState, elapsed: number, now: number): 
   for (const list of groups.values()) for (let i=0;i<list.length;i++) for(let j=i+1;j<list.length;j++) {
     const [a,b]=[list[i],list[j]].sort(); let bond=c.bonds.find(x=>x.a===a&&x.b===b);
     if(!bond){if(c.bonds.length>=512)continue; bond={a,b,duration:0,celebrated:false};c.bonds.push(bond);}
+    const before=bond.duration;
     bond.duration=Math.min(FRIENDSHIP_TIME, bond.duration+Math.max(0,Math.min(elapsed,FRIENDSHIP_TIME)));
-    if(bond.duration>=FRIENDSHIP_TIME&&!bond.celebrated){bond.celebrated=true;recordMemory(s,{key:`friend:${a}:${b}`,at:now,kind:'friendship',text:`${name(s,a)} et ${name(s,b)} sont devenus complices.`});}
+    // Dated at the instant the shared time reaches the threshold, so splitting the advance cannot move the memory.
+    if(bond.duration>=FRIENDSHIP_TIME&&!bond.celebrated){bond.celebrated=true;recordMemory(s,{key:`friend:${a}:${b}`,at:now-elapsed+(FRIENDSHIP_TIME-before),kind:'friendship',text:`${name(s,a)} et ${name(s,b)} sont devenus complices.`});}
   }
 }
 export function bestFriend(s: GameState, id: string): string | null {
