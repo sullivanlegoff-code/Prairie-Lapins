@@ -3,6 +3,7 @@ import type {SaveStorage} from '../persistence/storage';
 import {SAVE_KEY} from '../persistence/storage';
 import {decodeGame, encodeGame} from '../persistence/json';
 import type {GameState} from '../state/types';
+import type {Adjustment} from '../simulation/adjustments';
 import {CloudError, OUTDATED, type CloudGateway, type CommitRequest, type RemoteSave} from './gateway';
 
 import {CLOUD_KEY} from './accountState';
@@ -58,6 +59,7 @@ export class CloudSync {
   private failures = 0;
   private ready = false;
   private replacing = false;
+  private corrections: Adjustment[] = [];
   private view: SyncView = {status: 'disconnected', syncedAt: null, remote: null};
   private listeners = new Set<(v: SyncView) => void>();
   private unsubscribe: () => void;
@@ -117,6 +119,8 @@ export class CloudSync {
       this.link = this.readLink(owner);
       let remote = await this.gateway.read(owner);
       if (gen !== this.generation) return;
+      this.corrections = await this.loadCorrections(owner);
+      if (gen !== this.generation) return;
       // A lost reply is resolved with the identical operation before reconciliation.
       if (this.link?.pending) {
         if (this.controller.getSnapshot().status !== 'saved') { this.show('local-error'); return; }
@@ -140,7 +144,7 @@ export class CloudSync {
     } catch (e) { if (gen === this.generation) this.failed(e); }
   }
   disconnect(): void {
-    this.generation++; this.owner = null; this.ready = false; this.flight = null; this.link = null;
+    this.generation++; this.owner = null; this.ready = false; this.flight = null; this.link = null; this.corrections = [];
     this.cancelTimer(); this.view.remote = null; this.show('disconnected');
   }
   expire(): void { this.disconnect(); this.show('session'); }
@@ -180,12 +184,23 @@ export class CloudSync {
       this.persist({owner: this.owner, revision: remote.revision, baseline: fingerprint(this.local()), syncedAt: remote.savedAt, pending: null});
       this.ready = true; this.failures = 0; this.show('saved'); this.onReplacement();
     } finally { this.replacing = false; }
+    // A recovered save receives the owner's corrections it does not carry yet.
+    this.changed();
+  }
+  private async loadCorrections(owner: string): Promise<Adjustment[]> {
+    try { return await this.gateway.adjustments?.(owner) ?? []; } catch { return []; }
+  }
+  /** Applies missing owner corrections to the current local save; the normal envoi follows. */
+  private correct(): boolean {
+    return this.corrections.length > 0 && this.controller.applyAdjustments(this.corrections);
   }
   private changed(): void {
     if (!this.ready || !this.owner || !this.link || this.replacing) return;
     const snap = this.controller.getSnapshot();
     if (snap.status !== 'saved' || !snap.state) { this.cancelTimer(); this.show('local-error'); return; }
     if (this.flight !== null || ['outdated', 'error', 'session', 'offline'].includes(this.view.status)) return;
+    // The nested save notification schedules the envoi.
+    if (!this.link.pending && this.correct()) return;
     if (this.link.pending || fingerprint(snap.state) !== this.link.baseline) {
       this.show('waiting'); this.schedule(4000, () => { void this.flush(); });
     } else { this.cancelTimer(); this.show('saved'); }
@@ -227,6 +242,10 @@ export class CloudSync {
   async retry(): Promise<void> {
     this.cancelTimer();
     if (!this.owner || ['outdated', 'session', 'choice', 'conflict'].includes(this.view.status)) return;
-    if (this.ready) await this.flush(); else await this.connect(this.owner);
+    if (!this.ready) { await this.connect(this.owner); return; }
+    const owner = this.owner, gen = this.generation, corrections = await this.loadCorrections(owner);
+    if (gen !== this.generation) return;
+    this.corrections = corrections; this.changed();
+    await this.flush();
   }
 }

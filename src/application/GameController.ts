@@ -1,5 +1,6 @@
 import {progressionFromXp} from '../simulation/progression';
 import {applyProgressionGain} from '../simulation/progressionRewards';
+import {applyAdjustments, pendingAdjustments, type Adjustment} from '../simulation/adjustments';
 import {act, advance, createGame, decodeGame, encodeGame} from '../simulation';
 import {MAX_JSON_LENGTH, readPresentationId, type DecodeResult} from '../persistence/json';
 import {SAVE_KEY, type SaveStorage} from '../persistence/storage';
@@ -179,6 +180,15 @@ export class GameController {
     const changed = this.updateTime(now);
     const result = act(this.state!, command, now, this.rng);
     return this.finishAction(result, now, changed, command);
+  }
+
+  /** Owner corrections from the account (never in the laboratory). Each one applies once per save. */
+  applyAdjustments(list: readonly Adjustment[]): boolean {
+    if (this.disposed || !this.state || this.storageScope === 'laboratory' || this.status !== 'saved') return false;
+    if (!pendingAdjustments(this.state, list).length || this.storageChanged()) return false;
+    const now = this.clock(), changed = this.updateTime(now);
+    const result: ActionResult = {ok: true, state: applyAdjustments(this.state, list)};
+    return this.finishAction(result, now, changed).ok;
   }
 
   /** Laboratory-only entry point; the normal UI never imports the test tools. */

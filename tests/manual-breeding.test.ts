@@ -29,6 +29,13 @@ it('saves the last successful pair through transfer/reload and accepts existing 
   restored.rabbits=restored.rabbits.filter(r=>r.id!==breed.parents[0]);
   expect(decode(encodeGame(restored)).lastBreedingParents).toEqual(breed.parents);
 });
+it('saves a launch whose parents were born in the meadow',()=>{
+  const s=prepared(); s.rabbits[0].id='birth-90'; s.rabbits[1].id='birth-91'; s.nextId=Math.max(s.nextId,92);
+  const m=memory(encodeGame(s)), c=new GameController(m.storage,()=>0);
+  expect(c.perform({type:'breed',parents:['birth-90','birth-91']}).ok).toBe(true);
+  expect(decode(m.storage.getItem(SAVE_KEY)!).lastBreedingParents).toEqual(['birth-90','birth-91']);
+  c.dispose();
+});
 it('never remembers a refused launch or a launch whose save failed',()=>{
   const old=prepared(), m=memory(encodeGame(old)), c=new GameController(m.storage,()=>0);
   expect(c.perform({type:'breed',parents:['missing','rabbit-3']}).ok).toBe(false);

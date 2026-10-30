@@ -67,3 +67,22 @@ Non validé : jetons expirés après une longue absence, coupure réseau réelle
 Après une reproduction réussie avec un Lapin Feu (espèce `feu`), une invitation unique par appareil te propose d’associer ta partie à ton e-mail. « Associer mon e-mail » ouvre les Paramètres sur Sauvegarde en ligne, en mode création de compte ; « Plus tard » ou Échap ferme définitivement ce rappel. Le drapeau `accountReminderShown` appartient aux préférences, pas à la sauvegarde de partie.
 
 Le rappel attend la fermeture des autres dialogues. Si le guidage de Paille occupe l’écran, il attend une prochaine reproduction avec un Lapin Feu. Il reste absent si une liaison cloud existe (quel que soit son propriétaire), si une session est connectée, sans configuration en ligne, au laboratoire, avec `?dev=1` et dans l’aperçu décorations. La détection du compte ne charge pas le SDK. Le bouton « Afficher » / « Masquer » agit sur les deux champs de mot de passe ; une connexion ou déconnexion rétablit le masquage.
+
+## Corriger la partie d'un joueur (pièces, cœurs, nourriture)
+
+Ne jamais modifier `public.prairie_saves` à la main : si l'appareil du joueur a des progrès plus récents que la copie en ligne, la modification crée un conflit et peut faire perdre des jours de jeu.
+
+Installation, une seule fois : exécuter `supabase/migrations/002_adjustments.sql` dans le SQL Editor du projet `vulkepfrnnqtgijitkwg`.
+
+Ensuite, dans le SQL Editor :
+
+```sql
+-- Remettre les pièces à 100 (types : set_pattes, add_pattes, add_hearts, add_grass ; un montant négatif retire)
+select prairie_private.adjust_player('adresse@du-joueur', 'set_pattes', 100, 'Raison de la correction');
+-- Vérifier : la ligne « applied » passe à true quand le jeu l'a appliquée et envoyée
+select * from prairie_private.player_status('adresse@du-joueur');
+```
+
+Le jeu lit la correction à la connexion ou au retour dans l'application, l'applique une seule fois à la partie en cours (y compris une partie récupérée plus tard ou un fichier importé), puis l'envoie normalement. Les autres progrès du joueur sont conservés. Une correction ne s'efface pas : pour l'annuler, en ajouter une autre.
+
+Le jeu affiche aussi dans la prairie « Sauvegarde en ligne : choix à faire », « bloquée » ou « Reconnecte-toi » quand l'envoi en ligne a besoin du joueur, et désigne la partie la plus avancée lors d'un choix.

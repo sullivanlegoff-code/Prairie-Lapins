@@ -209,6 +209,7 @@ export class GameUI {
     document.getElementById('open-collection')!.addEventListener('click', () => this.open({kind: 'collection'}, 'root'), options);
     document.getElementById('open-settings')!.addEventListener('click', () => this.open({kind: 'settings'}, 'root'), options);
     document.getElementById('save-warning')!.addEventListener('click', () => this.open({kind: 'settings'}), options);
+    document.getElementById('cloud-warning')?.addEventListener('click', () => { this.open({kind: 'settings'}, 'root'); document.getElementById('account-content')?.scrollIntoView?.({block: 'start'}); }, options);
     document.getElementById('close-panel')!.addEventListener('click', () => this.close(), options);
     document.getElementById('panel-backdrop')?.addEventListener('click', () => this.close(), options);
     document.getElementById('panel-back')!.addEventListener('click', () => this.back(), options);
@@ -1266,7 +1267,10 @@ export class GameUI {
       this.content.append(node('p', pair.map(r => r ? r.name ?? SPECIES[r.species].name : 'Parent absent').join(' × '), 'small'));
     }
     this.button(this.content, 'Croiser', () => this.openBreeding(id));
-    this.content.append(node('p', automaticNurseryTransfer(s) ? 'Gratuit · 20 minutes de reproduction, puis le lapereau rejoint seul un couchage libre de la nurserie et grandit pendant ton absence.' : 'Gratuit · 20 minutes de reproduction, puis transfert manuel et croissance en nurserie.'));
+    // The nest time depends on the hidden result: announce the real range, not a fixed duration.
+    const minutes = SPECIES_IDS.map(id => growthDuration(id) / 60_000), span = (m: number) => m < 60 ? `${m} minutes` : `${m / 60} heure${m >= 120 ? 's' : ''}`;
+    const nestTime = `reproduction de ${span(Math.min(...minutes))} à ${span(Math.max(...minutes))} selon le lapereau`;
+    this.content.append(node('p', automaticNurseryTransfer(s) ? `Gratuit · ${nestTime}, puis il rejoint seul un couchage libre de la nurserie et grandit pendant ton absence.` : `Gratuit · ${nestTime}, puis transfert manuel et croissance en nurserie.`));
     this.content.append(node('p', 'La reproduction est possible dès affection 2 chez chacun des deux parents. Chaque recette possède ses propres conditions ; les résultats inadmissibles sont exclus. Les conditions détaillées sont visibles dans le carnet une fois la recette connue.', 'small'));
     this.button(this.content, 'Carnet de reproduction', () => this.open({kind: 'recipes'}), null, true);
     this.content.append(node('p', `Garantie : ${s.pityFailures}/7 échecs admissibles. Après sept échecs, la tentative admissible suivante garantit une espèce non découverte parmi les résultats ordinaires explicitement éligibles à la garantie et admissibles à cette paire, à parts égales s’il y en a plusieurs ; les recettes à probabilité fixe n’en font pas partie. Un résultat inédit éligible à la garantie réservé remet le compteur à zéro ; la découverte n’est enregistrée qu’à l’accueil.`, 'small'));
@@ -1943,7 +1947,7 @@ export class GameUI {
     return false;
   }
   private onboardingAllowed(element: HTMLElement): boolean {
-    if (element.closest('#paille-dialogue') || ['open-settings','save-warning','recenter-view','close-panel','panel-back','tutorial-toggle','onboarding-skip','continue-portrait'].includes(element.id)) return true;
+    if (element.closest('#paille-dialogue') || ['open-settings','save-warning','cloud-warning','recenter-view','close-panel','panel-back','tutorial-toggle','onboarding-skip','continue-portrait'].includes(element.id)) return true;
     if (element.closest('#settings-content') && this.view?.kind === 'settings') return true;
     // Modal interruptions (level reached, confirmation, level details, import) must always be closable: their content is
     // only reachable while open, and they may open between two renders. Only the pairing window keeps the guided rule.

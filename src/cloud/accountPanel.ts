@@ -23,6 +23,21 @@ const plural = (n: number, one: string, many = one + 's') => `${n} ${n > 1 ? man
 export function summary(s: GameState | null): string {
   return s ? `Niveau ${progressionFromXp(s.progression.totalXp).level} · ${s.pattes} pièces · ${s.grass} nourriture · ${s.hearts} cœurs · ${plural(s.rabbits.length, 'lapin')} · ${plural(s.discovered.length, 'espèce découverte', 'espèces découvertes')}` : 'Aucune partie';
 }
+/** XP first, then rabbits and species; null when equal or one side is missing. */
+export function moreAdvanced(local: GameState | null, remote: GameState | null): 'local' | 'remote' | null {
+  if (!local || !remote) return null;
+  const score = (s: GameState) => [s.progression.totalXp, s.rabbits.length, s.discovered.length];
+  const [a, b] = [score(local), score(remote)], i = a.findIndex((n, k) => n !== b[k]);
+  return i < 0 ? null : a[i] > b[i] ? 'local' : 'remote';
+}
+/** Short notice on the meadow while online saving needs the player; null when all is well. */
+export function cloudAlert(v: SyncView, signedIn: boolean): string | null {
+  if (v.status === 'session') return 'Reconnecte-toi pour sauvegarder en ligne · Paramètres';
+  if (!signedIn) return null;
+  if (v.status === 'choice' || v.status === 'conflict') return 'Sauvegarde en ligne : choix à faire · Paramètres';
+  if (['error', 'outdated', 'recovery', 'local-error'].includes(v.status)) return 'Sauvegarde en ligne bloquée · Paramètres';
+  return null;
+}
 export function syncMessage(v: SyncView): string {
   switch (v.status) {
     case 'saved': return `Sauvegardé en ligne${v.syncedAt ? ' · ' + new Date(v.syncedAt).toLocaleString('fr-FR') : ''}`;
@@ -100,6 +115,8 @@ export async function mountAccountPanel(root: HTMLElement, controller: GameContr
     form.hidden = !!owner && v.status !== 'session';
     get('[data-email]').textContent = address;
     get('[data-status]').textContent = syncMessage(v);
+    const alert = document.getElementById('cloud-warning'), alertText = cloudAlert(v, !!owner);
+    if (alert) { alert.hidden = !alertText; alert.textContent = alertText ?? ''; }
     retry.hidden = !['offline', 'error', 'local-error'].includes(v.status);
     signout.hidden = !owner;
     try { get('[data-backup-area]').hidden = storage.getItem(BACKUP_KEY) === null; }
@@ -119,12 +136,17 @@ export async function mountAccountPanel(root: HTMLElement, controller: GameContr
     confirmRepair = false;
     if (!['choice', 'conflict'].includes(v.status)) { selected = null; return; }
     const local = document.createElement('p'), remote = document.createElement('p');
-    local.textContent = 'Sur cet appareil : ' + summary(controller.getSnapshot().state);
-    remote.textContent = 'En ligne : ' + summary(v.remote?.state ?? null); choices.append(local, remote);
+    const here = controller.getSnapshot().state, online = v.remote?.state ?? null;
+    local.textContent = 'Sur cet appareil : ' + summary(here);
+    remote.textContent = 'En ligne : ' + summary(online) + (v.remote ? ` · envoyée le ${new Date(v.remote.savedAt).toLocaleString('fr-FR')}` : '');
+    choices.append(local, remote);
+    const ahead = moreAdvanced(here, online);
+    if (ahead) { const hint = document.createElement('p'); hint.className = 'small'; hint.textContent = ahead === 'local' ? 'La partie la plus avancée est celle de cet appareil.' : 'La partie la plus avancée est celle en ligne.'; choices.append(hint); }
     if (selected) {
       const warning = document.createElement('p');
       warning.textContent = selected === 'remote' ? 'Confirme le remplacement de la partie de cet appareil. Une copie de secours locale sera conservée.'
         : v.remote ? "Confirme le remplacement de la partie en ligne. L'ancienne restera dans l'historique serveur." : "Confirme l'association de cette partie à ton compte.";
+      if (ahead && ahead !== selected) warning.textContent = `Attention : la partie ${ahead === 'local' ? 'de cet appareil' : 'en ligne'} est plus avancée, tu perdrais des progrès. ` + warning.textContent;
       choices.append(warning);
       button('Confirmer mon choix', () => { const choice = selected!; selected = null; void sync.choose(choice, true); });
       button('Annuler', () => { selected = null; render(sync.getView()); });
@@ -227,6 +249,7 @@ export async function mountAccountPanel(root: HTMLElement, controller: GameContr
   document.addEventListener('visibilitychange', background); window.addEventListener('pagehide', hide); window.addEventListener('online', online);
   return () => {
     setAccountSession(root, false); root.removeEventListener('create-account', createAccount);
+    const alert = document.getElementById('cloud-warning'); if (alert) alert.hidden = true;
     alive = false; sequence++; stop(); stopController(); sync.dispose(); exporter.dispose(); listener.subscription.unsubscribe();
     document.removeEventListener('visibilitychange', background); window.removeEventListener('pagehide', hide); window.removeEventListener('online', online);
     root.replaceChildren();
