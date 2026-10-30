@@ -46,7 +46,7 @@ import type {Command, DecorationLocation, GameState, PattesCommand, TimedStage} 
 import {DECORATIONS, DECORATION_IDS, FINE_GRID, ownedDecorationResalePrice, type DecorationId} from '../config/decorations';
 import {catalogDecorationPlacementReason, purchaseDecorationReason} from '../simulation/decorations';
 import {decorationUrl} from '../display/decorationArt';
-import {quoteComplement, releaseGrass} from '../simulation/actions';
+import {quoteComplement, releaseBabyPattesFor, releaseGrass} from '../simulation/actions';
 import {initiationAvailable} from '../simulation/initiation';
 import {marketExchanges, marketPrice, marketUnlocked} from '../simulation/market';
 import {automaticNurseryTransfer, nurseryBuilding, nurseryFull, nurseryUnlockQuote} from '../simulation/nursery';
@@ -1438,6 +1438,9 @@ export class GameUI {
         const discovery = !s.discovered.includes(species), first = s.missions.events.welcome === 0 && !!s.initiation;
         this.execute({type: 'welcome', enclosureId, birthId: baby.birthId}, 'Lapereau accueilli !', () => { this.view = {kind: 'building', id: enclosureId}; if (first) this.firstBirth(species, discovery); else if (discovery) this.discovery(species); });
       }, species);
+      // Releasing needs no habitat: the baby leaves the nursery for pattes, straight from here.
+      const pattes = releaseBabyPattesFor(species);
+      this.button(this.content, `Confier ce lapereau · +${pattes} pattes`, () => this.confirm('Confier ce lapereau ?', `Ce lapereau quittera la nurserie et ne rejoindra pas ta prairie. Tu reçois ${pattes} pattes.`, () => this.execute({type: 'releaseBaby', birthId: baby.birthId}, `Lapereau confié · +${pattes} pattes`)), null, true).classList.add('action-danger');
     }
     // After the babies: their timers stay visible without scrolling in landscape.
     const slotNames = {locked: 'verrouillé', empty: 'libre', growing: 'occupé', ready: 'prêt'};

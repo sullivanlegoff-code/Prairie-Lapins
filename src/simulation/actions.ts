@@ -40,6 +40,10 @@ export function releaseGrass(species: SpeciesId): number {
   const rarity = SPECIES[species].rarity;
   return rarity === 'common' ? BALANCE.releaseGrass.common : rarity === 'rare' ? BALANCE.releaseGrass.rare : 0;
 }
+/** Pattes paid when a ready baby of this species is released from the nursery; shared with the confirmation UI. */
+export function releaseBabyPattesFor(species: SpeciesId): number {
+  return BALANCE.releaseBabyPattes[SPECIES[species].rarity];
+}
 /** Atomic action: even elapsed time is discarded on refusal; call advance separately to resume. */
 export function act(state: GameState, command: Command, now: number = Date.now(), rng: () => number = Math.random): ActionResult {
   return runAction(state, command, now, rng);
@@ -422,6 +426,16 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         nursery.nursery.babies = nursery.nursery.babies.filter(other => other !== baby);
         rememberBirth(s, birth.id, time);
         if(s.initiation?.birthId === birth.id) for(const stage of ['order','breeding','growth'] as const) if(!s.initiation.closed.includes(stage)) s.initiation.closed.push(stage);
+        break;
+      }
+      case 'releaseBaby': {
+        // Same rule as a welcome: only this exact ready baby, never a substitute. No habitat room is needed.
+        const baby = findNurseryBaby(s, command.birthId);
+        requireRule(baby, 'STALE_ACTION');
+        requireRule(baby.readyAt <= time, 'NOT_READY');
+        credit('pattes', releaseBabyPattesFor(baby.birth.species));
+        const nursery = nurseryBuilding(s)!;
+        nursery.nursery!.babies = nursery.nursery!.babies.filter(other => other !== baby);
         break;
       }
       case 'expand': {

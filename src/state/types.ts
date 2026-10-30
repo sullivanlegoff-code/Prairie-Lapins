@@ -107,6 +107,8 @@ export type BaseCommand =
   | {type: 'breed'; parents: [string, string]}
   /** Welcomes this exact ready baby; another one is never substituted. */
   | {type: 'welcome'; enclosureId: string; birthId: string}
+  /** Releases this exact ready baby from the nursery for pattes: no habitat, no XP, no discovery. */
+  | {type: 'releaseBaby'; birthId: string}
   | {type: 'upgradeHabitat'; id: string; fromLevel: HabitatLevel}
   | {type: 'expand'; parcelId: ParcelId; expectedCost: number}
   | {type: 'release'; id: string}

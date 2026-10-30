@@ -47,6 +47,8 @@ export const BALANCE = {
   minAffection: 1, maxAffection: 20, breedingAffection: 2,
   incomeBase: 10, incomeRareBase: 10, incomePerLevel: 1,
   releaseGrass: {common: 10, rare: 25},
+  /** A ready baby released from the nursery, by rarity. Common and uncommon stay provisional until the owner tunes them. */
+  releaseBabyPattes: {common: 20, uncommon: 20, rare: 100, epic: 500, legendary: 1000},
   breedingCost: 0, breedingDuration: 20 * MINUTE,
   commonGrowth: RARITIES.common.growthMinutes * MINUTE, hybridGrowth: RARITIES.uncommon.growthMinutes * MINUTE, rareGrowth: RARITIES.rare.growthMinutes * MINUTE, guaranteeAttempt: 8,
   buildings: {
