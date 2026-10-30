@@ -75,9 +75,9 @@ describe('species catalogue validation', () => {
     for (const source of [recipe, {kind: 'recipe', parents: ['sample','sample'], minAffection: 1, probability: .5}])
       expect(validateSpeciesEntries([{...entry(), acquisition: [source]}])).toEqual([]);
   });
-  it('keeps historical elements, Uncommon, common historical breeding and current upper boundaries valid', () => {
+  it('keeps historical elements, common historical breeding and current upper boundaries valid', () => {
     expect(validateSpeciesEntries([{...entry(), types: ['metal','arc-en-ciel'], acquisition: [{kind: 'shop', price: 0}, {kind: 'historical-breeding'}]},
-      {...entry('legacy'), rarity: 'uncommon', progression: {unlockLevel: 30}, acquisition: [{...recipe, minAffection: 20, probability: 99.5}]}])).toEqual([]);
+      {...entry('legacy'), rarity: 'epic', progression: {unlockLevel: 30}, acquisition: [{...recipe, minAffection: 20, probability: 99.5}]}])).toEqual([]);
   });
   it('does not require a coat on a sprite, contiguous preload orders or a nonnegative anchor', () => {
     expect(validateSpeciesEntries([{...entry(), art: {...sprite, preloadOrder: 99, groundY: -2, worldWidth: .5}}])).toEqual([]);

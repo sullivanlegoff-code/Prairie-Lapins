@@ -5,7 +5,6 @@
  */
 const REGISTRY = [
   {id: 'common', label: 'Commun', growthMinutes: 5, birthXp: 10},
-  {id: 'uncommon', label: 'Peu commun', growthMinutes: 15, birthXp: 45},
   {id: 'rare', label: 'Rare', growthMinutes: 30, birthXp: 20},
   {id: 'epic', label: 'Épique', growthMinutes: 180, birthXp: 110},
   {id: 'legendary', label: 'Légendaire', growthMinutes: 720, birthXp: 180},

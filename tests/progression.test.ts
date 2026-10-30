@@ -51,7 +51,7 @@ describe('pure player progression v17',()=>{
  });
  it('holds the full requested gain schedule with ID exceptions and catalogue-derived decoration gains',()=>{
   expect(PROGRESSION.xp.commonPurchase).toBe(10);expect(PROGRESSION.xp.construction).toEqual({specializedHabitat:30,universalHabitat:40,farm:20});
-  expect(PROGRESSION.xp.birth).toEqual({common:10,uncommon:45,rare:20,epic:110,legendary:180});expect(PROGRESSION.xp.breedingLaunch).toBe(5);
+  expect(PROGRESSION.xp.birth).toEqual({common:10,rare:20,epic:110,legendary:180});expect(PROGRESSION.xp.breedingLaunch).toBe(5);
   expect(foodXp(0)).toBe(6);expect(foodXp(2)).toBe(6);expect(foodXp(10)).toBe(6);expect(foodXp(15)).toBe(13);expect(foodXp(20)).toBe(10);
   expect(DECORATION_IDS.map(id=>firstDecorationPlacementXp(id))).toEqual(DECORATION_IDS.map(()=>10));
   expect(missionClaimXp('main','first-birth')).toBe(40);expect(missionClaimXp('daily','collect-grass')).toBe(50);expect(PROGRESSION.xp.claims.dailyBonus).toBe(100);

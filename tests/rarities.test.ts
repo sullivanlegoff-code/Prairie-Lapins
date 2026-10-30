@@ -7,12 +7,12 @@ import {RARITY_NAMES} from '../src/ui/models';
 import {EXPECTED_IDS, EXPECTED_RARITIES} from './rabbit-art-fixtures';
 
 /** What the game used before the rarity data moved into one module, written out here independently. */
-const ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
-const LABELS = {common: 'Commun', uncommon: 'Peu commun', rare: 'Rare', epic: 'Épique', legendary: 'Légendaire'};
-const GROWTH_MINUTES = {common: 5, uncommon: 15, rare: 30, epic: 180, legendary: 720};
+const ORDER = ['common', 'rare', 'epic', 'legendary'];
+const LABELS = {common: 'Commun', rare: 'Rare', epic: 'Épique', legendary: 'Légendaire'};
+const GROWTH_MINUTES = {common: 5, rare: 30, epic: 180, legendary: 720};
 /** Rare species have their own fixed time (owner, 28 October 2026): 15, 20, 25 or 30 minutes; the rarity's 30 is only its nominal value. */
 const RARE_GROWTH_MINUTES = [15, 20, 25, 30];
-const BIRTH_XP = {common: 10, uncommon: 45, rare: 20, epic: 110, legendary: 180};
+const BIRTH_XP = {common: 10, rare: 20, epic: 110, legendary: 180};
 /** Each species' rarity, as recorded in the catalogue. */
 const RARITY_OF = EXPECTED_RARITIES;
 
@@ -35,15 +35,15 @@ describe('consumers read the rarities module', () => {
     expect(growthDuration('paille')).toBe(5 * MINUTE); expect(growthDuration('boudinet')).toBe(25 * MINUTE);
     expect(growthDuration('magicien')).toBe(GROWTH_MINUTES.epic * MINUTE); expect(growthDuration('dragon')).toBe(GROWTH_MINUTES.legendary * MINUTE);
   });
-  it('BALANCE keeps its three growth fields', () => { expect([BALANCE.commonGrowth, BALANCE.hybridGrowth, BALANCE.rareGrowth]).toEqual([5 * MINUTE, 15 * MINUTE, 30 * MINUTE]); });
+  it('BALANCE keeps its two growth fields', () => { expect([BALANCE.commonGrowth, BALANCE.rareGrowth]).toEqual([5 * MINUTE, 30 * MINUTE]); });
   it('the default progression pays the birth XP of each rarity', () => { expect(PROGRESSION.xp.birth).toEqual(BIRTH_XP); expect(Object.keys(PROGRESSION.xp.birth)).toEqual(ORDER); });
 });
 
 describe('a custom progression keeps its own birth XP', () => {
-  const custom = (): ProgressionConfig => { const c = structuredClone(PROGRESSION); return {...c, xp: {...c.xp, birth: {common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5}}}; };
+  const custom = (): ProgressionConfig => { const c = structuredClone(PROGRESSION); return {...c, xp: {...c.xp, birth: {common: 1, rare: 3, epic: 4, legendary: 5}}}; };
   it('is valid, keeps its values, and leaves the default and the rarities untouched', () => {
     const defaultBefore = structuredClone(PROGRESSION), raritiesBefore = structuredClone(RARITIES), c = custom();
-    expect(() => validateProgressionConfig(c)).not.toThrow(); expect(c.xp.birth).toEqual({common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5});
+    expect(() => validateProgressionConfig(c)).not.toThrow(); expect(c.xp.birth).toEqual({common: 1, rare: 3, epic: 4, legendary: 5});
     expect(PROGRESSION).toEqual(defaultBefore); expect(PROGRESSION.xp.birth.common).toBe(10); expect(RARITIES).toEqual(raritiesBefore);
   });
   it('still rejects a configuration without the birth XP of a rarity in use', () => {

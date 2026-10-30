@@ -18,6 +18,6 @@ Deux fermes restent disponibles comme avant, troisième au niveau 12, quatrième
 
 Dadi : type 1 Feu, type 2 Métal ; recette demandant ces deux éléments. Les anciens logements Neige/Vol restent valides, sans transformer les habitats ni déplacer les autres lapins. Nouvelles arrivées et déplacements : Feu/Métal/Universel uniquement.
 
-Reproduction inchangée : commun autorisé seulement entre deux communs mono-types de même type ; anciennes naissances conservées.
+Reproduction : un lapin commun ne naît que de deux parents communs du même type (Feu × Feu = Feu) ; anciennes naissances conservées. Lapereau commun confié depuis la nurserie : 20 pièces (décision du propriétaire, 31 octobre 2026).
 
 Aucune simulation ni vérification de l'effet sur la progression, selon la demande du propriétaire. Les anciens résultats restent historiques et ne valident pas ces nouvelles valeurs.

@@ -27,7 +27,7 @@ describe('exact starting element-union pool',()=>{
   SPECIES.boudinet={...original,types:['paille','neige'],recipe,acquisition:[{kind:'recipe',...recipe},{kind:'historical-breeding'}]};
   expect(breedingWeights('paille','neige',2,2)).toEqual({frisket:30,icy:30});
   expect(breedingWeights('paille','neige',3,3)).toEqual({boudinet:30,frisket:30,icy:30});
-  SPECIES.boudinet={...SPECIES.boudinet,rarity:'uncommon'};expect(breedingWeights('paille','neige',3,3)).toEqual({frisket:30,icy:30});
+  SPECIES.boudinet={...SPECIES.boudinet,rarity:'epic'};expect(breedingWeights('paille','neige',3,3)).toEqual({frisket:30,icy:30});
  });
  it('keeps result level filtering effective after pool selection',()=>{
   const s=prepared(),levels: Partial<Record<SpeciesId,number>>={};

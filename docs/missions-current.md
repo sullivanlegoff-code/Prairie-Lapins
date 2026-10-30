@@ -17,7 +17,7 @@ Les 32 espèces actuelles ont une mission stable `discover-<species>`. La récom
 | Épique | 60 | 30 | 1 | 0 |
 | Légendaire | 80 | 40 | 2 | 0 |
 
-Le catalogue actuel ne contient pas d’espèce Peu commune ; cette rareté utiliserait le petit montant des Communs. Les XP de découverte et de naissance déjà attribués par les actions ne sont pas doublés par ces réclamations.
+Les XP de découverte et de naissance déjà attribués par les actions ne sont pas doublés par ces réclamations.
 
 ### Une mission par modèle décoratif
 
