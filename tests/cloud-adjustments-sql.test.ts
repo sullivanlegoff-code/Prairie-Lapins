@@ -2,6 +2,7 @@ import {PGlite} from '@electric-sql/pglite';
 import {afterAll, beforeAll, describe, expect, it} from 'vitest';
 import saves from '../supabase/migrations/001_cloud_saves.sql?raw';
 import adjustments from '../supabase/migrations/002_adjustments.sql?raw';
+import plannedBirth from '../supabase/migrations/003_planned_birth.sql?raw';
 
 const A = '00000000-0000-4000-8000-000000000001', B = '00000000-0000-4000-8000-000000000002';
 let db: PGlite;
@@ -17,7 +18,7 @@ beforeAll(async () => {
     insert into auth.users values ('${A}', 'a@example.invalid', ''), ('${B}', 'b@example.invalid', '');
     create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub', true),'')::uuid$$;
     grant usage on schema auth to anon,authenticated; grant execute on function auth.uid() to anon,authenticated;`);
-  await db.exec(saves); await db.exec(adjustments);
+  await db.exec(saves); await db.exec(adjustments); await db.exec(plannedBirth);
 }, 30000);
 afterAll(async () => { await db?.close(); });
 
@@ -37,6 +38,18 @@ describe.sequential('SQL local : corrections du propriétaire', () => {
     await expect(as(A, () => db.query(`insert into public.prairie_adjustments (owner_id, kind, amount) values ('${A}', 'add_pattes', 5)`))).rejects.toThrow(/permission denied/);
     await expect(as(A, () => db.query('delete from public.prairie_adjustments'))).rejects.toThrow(/permission denied/);
     await expect(as(A, () => db.query("select prairie_private.adjust_player('a@example.invalid', 'add_pattes', 5)"))).rejects.toThrow(/permission denied/);
+  });
+  it('le propriétaire programme une naissance, lisible seulement par ce joueur', async () => {
+    const r = await db.query<{id: string}>("select prairie_private.plan_birth('a@example.invalid', 'dadi') id");
+    expect(r.rows[0].id).toMatch(/^[0-9a-f-]{36}$/);
+    await expect(db.query("select prairie_private.plan_birth('inconnu@example.invalid', 'dadi')")).rejects.toThrow(/Adresse inconnue/);
+    await expect(db.query("select prairie_private.plan_birth('a@example.invalid', 'Pas Une Espèce')")).rejects.toThrow();
+    await expect(db.query("select prairie_private.adjust_player('a@example.invalid', 'plan_birth', 0)")).rejects.toThrow();
+    await expect(db.query("select prairie_private.adjust_player('a@example.invalid', 'teleport', 0)")).rejects.toThrow();
+    expect((await as(A, () => db.query("select kind, species from public.prairie_adjustments where kind = 'plan_birth'"))).rows).toEqual([{kind: 'plan_birth', species: 'dadi'}]);
+    expect((await as(B, () => db.query('select * from public.prairie_adjustments'))).rows).toEqual([]);
+    await expect(as(A, () => db.query("select prairie_private.plan_birth('a@example.invalid', 'dadi')"))).rejects.toThrow(/permission denied/);
+    await db.query("delete from public.prairie_adjustments where kind = 'plan_birth'");
   });
   it('le résumé montre si la correction est appliquée dans la partie', async () => {
     const id = (await db.query<{id: string}>('select id from public.prairie_adjustments')).rows[0].id;

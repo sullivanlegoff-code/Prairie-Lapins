@@ -86,6 +86,7 @@ const current = z.object({
   // Parents may be bought (rabbit-N) or born in the meadow (birth-N).
   lastBreedingParents: z.tuple([identity, identity]).refine(([a, b]) => a !== b && [a, b].every(id => /^(rabbit|birth)-/.test(id))).optional(),
   appliedAdjustments: z.array(z.string().uuid()).max(MAX_APPLIED_ADJUSTMENTS).optional(),
+  plannedBirth: species.optional(),
   cozy: z.object({
     bonds: z.array(z.object({a: identity,b: identity,duration: integer.max(6*HOUR),celebrated:z.boolean()}).strict()).max(512),
     album: z.array(z.object({key:z.string().min(1).max(200),at:integer,kind:z.enum(['birth','friendship','travel','discovery','event']),text:z.string().max(300)}).strict()).max(80),
