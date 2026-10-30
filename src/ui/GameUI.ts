@@ -165,8 +165,10 @@ export class GameUI {
   private decorationDraft: {id: string; catalogId?: DecorationId; location: DecorationLocation | null; rotation: 0 | 1;} | null = null;
   private photo = false;
   private cuisine: ReturnType<typeof mountCuisineActivity>;
+  private readonly onRabbitSheet?: (species: SpeciesId) => void;
   constructor(private controller: GameController, private scene: MeadowScene, private clock: () => number, private preferences: PreferenceStore, audio?: AudioEngine,
-    activityOptions: {onlineServicesAllowed?: boolean; accountKnown?: () => boolean; onCuisineCompleted?: (result: RecipeCompletion) => void; onCuisineActive?: (active: boolean) => void} = {}) {
+    activityOptions: {onlineServicesAllowed?: boolean; accountKnown?: () => boolean; onCuisineCompleted?: (result: RecipeCompletion) => void; onCuisineActive?: (active: boolean) => void; onRabbitSheet?: (species: SpeciesId) => void} = {}) {
+    this.onRabbitSheet = activityOptions.onRabbitSheet;
     this.snapshot = controller.getSnapshot(); this.sounds = audio ? new Sounds(preferences, audio) : new Sounds(preferences);
     this.photoControls=mountPhotoControls(document.getElementById('app')!,()=>this.scene.capturePhoto());
     this.pailleDialogue = new PailleDialogue(preferences, (id, name) => controller.perform({type: 'renameRabbit', id, name}).ok,
@@ -417,6 +419,11 @@ export class GameUI {
     }
     if (!['placement','decorationPlacement','buyRabbit'].includes(view.kind) && this.view && ['placement','decorationPlacement','buyRabbit'].includes(this.view.kind)) this.purchaseReturn = null;
     if (view.kind !== 'buyRabbit') this.scene.setRabbitPurchase(null);
+    // Opening a rabbit's sheet (not coming back to it) may start that rabbit's own music.
+    if (view.kind === 'rabbit' && navigation !== 'back' && !(this.view?.kind === 'rabbit' && this.view.id === view.id)) {
+      const species = this.snapshot.state?.rabbits.find(r => r.id === view.id)?.species;
+      if (species) this.onRabbitSheet?.(species);
+    }
     this.clearRabbitMove();
     this.rememberView();
     const enteringShop = view.kind === 'shop' && this.view?.kind !== 'shop' && navigation !== 'back';

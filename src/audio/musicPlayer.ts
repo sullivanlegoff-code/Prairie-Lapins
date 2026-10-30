@@ -19,6 +19,9 @@ export interface MusicOptions {
   probeTimeout?: number;
   /** The first track played starts at the beginning of one of this many equal parts, chosen at random (default: from the start). */
   startSegments?: number;
+  /** A theme: the track plays once to its end, then onFinished runs (also when it cannot play). */
+  once?: boolean;
+  onFinished?: () => void;
 }
 export type MusicState = 'idle' | 'playing' | 'paused' | 'stopped' | 'unavailable';
 
@@ -92,6 +95,8 @@ export class MusicPlayer {
     this.options.engine.resume();
     if (this.started && this.enabled) this.playCurrent();
   }
+  /** Forgets the current position: the next play starts from the beginning. */
+  rewind(): void { this.generation++; for (const t of [this.current, this.next]) if (t) this.release(t.element); this.current = this.next = null; if (this.state !== 'unavailable') this.state = 'idle'; }
   dispose(): void { this.disposed = true; this.started = false; this.generation++; for (const t of [this.current, this.next]) if (t) this.release(t.element); this.current = this.next = null; this.state = 'stopped'; }
 
   private routed = new WeakSet<MusicElement>();
@@ -141,7 +146,7 @@ export class MusicPlayer {
   }
   /** Chooses and starts buffering the following track only while the current one plays. */
   private prepareNext(): void {
-    if (this.disposed || !this.enabled || this.backgrounded || this.next || !this.current) return;
+    if (this.disposed || this.options.once || !this.enabled || this.backgrounded || this.next || !this.current) return;
     const url = this.pick(this.current.url);
     if (!url || url === this.current.url) return;
     const element = this.element(url); element.preload = 'auto'; element.load?.();
@@ -150,6 +155,7 @@ export class MusicPlayer {
   private advance(): void {
     const finished = this.current; this.current = null;
     if (finished) this.release(finished.element);
+    if (this.options.once) { this.state = 'idle'; this.options.onFinished?.(); return; }
     if (this.next && !this.failed.has(this.next.url)) { this.current = this.next; this.next = null; }
     if (this.enabled && !this.backgrounded) this.playCurrent(); else this.state = 'paused';
   }
@@ -159,7 +165,7 @@ export class MusicPlayer {
     if (this.current?.element !== element) return;
     this.release(element); this.current = null;
     if (this.next && !this.failed.has(this.next.url)) { this.current = this.next; this.next = null; }
-    if (!this.pick(url)) { this.state = 'unavailable'; return; }
+    if (!this.pick(url)) { this.state = 'unavailable'; if (this.options.once) this.options.onFinished?.(); return; }
     if (this.started && this.enabled && !this.backgrounded) this.playCurrent();
   }
   /** Random track other than `previous`, among those not known to fail. */
