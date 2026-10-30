@@ -304,3 +304,15 @@ dialog :is(.badge, .timer, .reason) {
   #game-panel[data-view='missions'] .mission-filters { margin-bottom: 4px; }
   #game-panel[data-view='missions'] [data-mission] { margin-block: 6px; }
 }
+
+/* Missions: readable on a phone in landscape, with clear progress, status and rewards. */
+#game-panel[data-view='missions'] .card { font-size: 15px; line-height: 1.4; padding: 12px 14px; }
+#game-panel[data-view='missions'] .card-heading h3 { font-size: 18px; }
+#game-panel[data-view='missions'] .card p { font-size: 14px; }
+#game-panel[data-view='missions'] progress { height: 16px; margin: 8px 0; }
+#game-panel[data-view='missions'] button.mission-claim { min-height: 48px; font-size: 16px; font-weight: 700; }
+#game-panel .mission-day-intro { padding: 12px 14px; margin: 6px 0 10px; border-radius: 14px; background: rgba(255, 255, 255, .35); }
+#game-panel .mission-day-lead { margin: 0 0 4px; font-size: 17px; font-weight: 700; }
+#game-panel .mission-day-card[data-mission-status="ready"] { outline: 3px solid #9bbf6a; outline-offset: -4px; }
+#game-panel .mission-day-card[data-mission-status="claimed"] { opacity: .75; }
+#game-panel .mission-bonus { background: linear-gradient(#f4f8e2, #e6f0c7); }

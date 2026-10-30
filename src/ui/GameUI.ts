@@ -38,10 +38,10 @@ import {NURSERY_ART} from '../config/nurseryArt';
 import {KITCHEN_ART} from '../config/kitchenArt';
 import {upgradeFootprintReason} from '../simulation/placement';
 import {habitatStats, habitatName, habitatEntryReason, habitatAccepts, welcomeDestinations, removeHabitatReason} from '../simulation/habitats';
-import {MAIN_MISSIONS, DAILY_MISSION_GAP, DAILY_MISSION_IDS, DAILY_MISSIONS, DAILY_BONUS, type Reward} from '../config/missions';
-import {initialMissionIds, activeMainMissions, visibleMainMissions, mainCatalogueUnlocked, availableMissionRewards, mainProgress, dailyCycleStart, dailyCycleEnd, cycleIndexAt, currentDailyMission, dailyOpensAt} from '../simulation/missions';
+import {MAIN_MISSIONS, DAILY_MISSIONS, DAILY_BONUS, DAILY_PICK_COUNT, type Reward} from '../config/missions';
+import {initialMissionIds, activeMainMissions, visibleMainMissions, mainCatalogueUnlocked, availableMissionRewards, mainProgress, dailyCycleStart, dailyCycleEnd, cycleIndexAt, dailyBonusReady, dailyClaimable, dailyMissionsOf, dailyProgress} from '../simulation/missions';
 import type {GameController, Snapshot} from '../application/GameController';
-import {AFFECTION_STATUE, BALANCE, HOUR, MARKET, NURSERY, ORDERS, RARE_BIRTH_BONUS, TRAVEL, feedCost, type Destination, SPECIES, SPECIES_IDS, SHOP_SPECIES, growthDuration, type BuildingKind, type SpeciesId, type RabbitType} from '../config/balance';
+import {AFFECTION_STATUE, BALANCE, MARKET, NURSERY, ORDERS, RARE_BIRTH_BONUS, TRAVEL, feedCost, type Destination, SPECIES, SPECIES_IDS, SHOP_SPECIES, growthDuration, type BuildingKind, type SpeciesId, type RabbitType} from '../config/balance';
 import type {Command, DecorationLocation, GameState, PattesCommand, TimedStage} from '../state/types';
 import {DECORATIONS, DECORATION_IDS, FINE_GRID, ownedDecorationResalePrice, type DecorationId} from '../config/decorations';
 import {catalogDecorationPlacementReason, purchaseDecorationReason} from '../simulation/decorations';
@@ -1673,10 +1673,11 @@ export class GameUI {
       const bar = node('progress'); bar.max = target; bar.value = Math.min(value, target); bar.setAttribute('aria-label', `Progression : ${value} sur ${target}`);
       card.append(node('p', `Progression : ${value} / ${target}`), bar);
     };
-    const shortcut = (card: HTMLElement, kind: BuildingKind | 'collection' | 'affection' | 'extension') => {
+    const shortcut = (card: HTMLElement, kind: BuildingKind | 'collection' | 'affection' | 'extension' | 'arrange') => {
       if(kind==='extension' && s.acquiredParcels.length<PARCEL_IDS.length){const access=stateLevelAccess(s,{family:'extension',rank:s.acquiredParcels.length});if(access.locked)card.append(node('p',`Extension ${s.acquiredParcels.length} · Niveau ${access.requiredLevel} requis`,'reason'));}
-      this.button(card, kind === 'collection' ? 'Voir la collection' : kind === 'affection' ? 'Voir un lapin' : kind === 'extension' ? 'Voir l’extension' : 'Voir le bâtiment ou la boutique', () => {
-        if (kind === 'extension') { this.open({kind:'shop',tab:'home'}, 'root'); this.open({kind:'extension'}); }
+      this.button(card, kind === 'collection' ? 'Voir la collection' : kind === 'affection' ? 'Voir un lapin' : kind === 'extension' ? 'Voir l’extension' : kind === 'arrange' ? 'Aménager la prairie' : 'Voir le bâtiment ou la boutique', () => {
+        if (kind === 'arrange') this.open({kind:'arrange'});
+        else if (kind === 'extension') { this.open({kind:'shop',tab:'home'}, 'root'); this.open({kind:'extension'}); }
         else if (kind === 'collection') this.open({kind});
         else if (kind === 'affection') {
           const rabbit = [...s.rabbits].filter(r => r.affection < BALANCE.maxAffection).sort((a, b) => b.affection - a.affection)[0] ?? s.rabbits[0];
@@ -1738,32 +1739,27 @@ export class GameUI {
         this.content.append(card);
       }
     } else {
-      const daily = s.missions.daily, cycleStart = dailyCycleStart(s);
-      this.content.append(node('p', 'Renouvellement dans :'));
-      const timer = node('p', '', 'timer'); timer.dataset.end = String(dailyCycleEnd(s)); this.content.append(timer);
-      this.content.append(node('p', 'À la fin des 24 heures, la progression et toutes les récompenses non réclamées, bonus compris, expirent. Les cycles manqués ne se cumulent pas.', 'small'));
-      // One mission per session: only the open one progresses; the next opens a few hours after each claim.
-      this.content.append(node('p', `Une mission à la fois : la suivante s’ouvre ${DAILY_MISSION_GAP / HOUR} heures après chaque réclamation, pour ta prochaine visite.`, 'small'));
-      const id = currentDailyMission(s), opensAt = dailyOpensAt(s);
-      if (id) {
-        const mission = DAILY_MISSIONS[id], card = this.card(mission.title, mission.description); card.dataset.mission = id;
-        if (this.now() < opensAt) {
-          const wait = node('p', '', 'timer'); wait.dataset.end = String(opensAt);
-          card.append(node('p', 'Ouverture dans :'), wait, node('p', 'Bientôt', 'badge'));
-        } else {
-          progress(card, daily.progress[id], mission.target);
-          claim(card, {type: 'claimDailyMission', id, cycleStart}, mission.reward, daily.progress[id] >= mission.target, false);
-          if (daily.progress[id] < mission.target) shortcut(card, id === 'collect-pattes' ? 'enclosure' : id === 'collect-grass' ? 'farm' : 'nest');
-        }
+      const daily = s.missions.daily, cycleStart = dailyCycleStart(s), shown = dailyMissionsOf(s), done = shown.filter(id => daily.claimed.includes(id)).length;
+      // Three missions, all open from the start, to do in any order. The cycle bonus follows the three claims.
+      const intro = node('section', '', 'mission-day-intro');
+      intro.append(node('p', 'Trois missions aujourd’hui, dans l’ordre que tu veux.', 'mission-day-lead'), node('p', 'Renouvellement dans :', 'small'));
+      const timer = node('p', '', 'timer'); timer.dataset.end = String(dailyCycleEnd(s)); intro.append(timer);
+      intro.append(node('p', 'Les récompenses non réclamées expirent à la fin des 24 heures. Les cycles manqués ne se cumulent pas.', 'small'));
+      this.content.append(intro);
+      for (const id of shown) {
+        const mission = DAILY_MISSIONS[id], value = dailyProgress(s, id), claimed = daily.claimed.includes(id), ready = dailyClaimable(s, id);
+        const card = this.card(mission.title, mission.description); card.dataset.mission = id; card.dataset.missionStatus = claimed ? 'claimed' : ready ? 'ready' : 'pending';
+        card.classList.add('mission-day-card');
+        progress(card, Math.min(value, mission.target), mission.target);
+        claim(card, {type: 'claimDailyMission', id, cycleStart}, mission.reward, ready, claimed);
+        if (!claimed && !ready) shortcut(card, mission.place);
         this.content.append(card);
-        const later = DAILY_MISSION_IDS.filter(other => other !== id && !daily.claimed.includes(other));
-        if (later.length) this.content.append(node('p', `Ensuite : ${later.map(other => DAILY_MISSIONS[other].title).join(' · ')}`, 'small'));
       }
-      const bonus = this.card('Bonus du cycle', 'Réclame les trois récompenses quotidiennes, puis ce bonus. Il est distinct du cadeau de cœurs disponible toutes les 24 heures.'); bonus.dataset.mission = 'daily-bonus';
-      progress(bonus, daily.claimed.length, DAILY_MISSION_IDS.length);
-      claim(bonus, {type: 'claimDailyBonus', cycleStart}, DAILY_BONUS, daily.claimed.length === DAILY_MISSION_IDS.length, daily.bonusClaimed);
-      if (!daily.bonusClaimed) this.content.append(bonus);
-      else if (daily.claimed.length === DAILY_MISSION_IDS.length) this.content.append(node('p', 'Toutes les récompenses de ce cycle ont été réclamées. Les missions reviendront au prochain cycle.', 'small'));
+      const bonus = this.card('Bonus du cycle', 'Réclame les trois missions pour recevoir ce bonus.'); bonus.dataset.mission = 'daily-bonus'; bonus.classList.add('mission-day-card', 'mission-bonus');
+      progress(bonus, done, DAILY_PICK_COUNT);
+      claim(bonus, {type: 'claimDailyBonus', cycleStart}, DAILY_BONUS[0], dailyBonusReady(s), daily.bonusClaimed, DAILY_BONUS.slice(1));
+      this.content.append(bonus);
+
     }
   }
   private renderHearts(s: GameState): void {
@@ -1857,7 +1853,7 @@ export class GameUI {
     heartsButton.setAttribute('aria-label', hasGift ? 'Cœurs · cadeau disponible' : 'Cœurs');
     const due = (end: number) => !!state && state.lastSimulatedAt < end && end <= this.now();
     if (state && (cycleIndexAt(state.missions.daily.referenceAt, this.now()) > state.missions.daily.cycleIndex ||
-      due(state.nextHeartGiftAt) || due(dailyOpensAt(state)) || (state.travel?.trips.some(t => due(t.endsAt)) ?? false) || state.buildings.some(b =>
+      due(state.nextHeartGiftAt) || (state.travel?.trips.some(t => due(t.endsAt)) ?? false) || state.buildings.some(b =>
         !!b.order && due(b.order.endsAt) || !!b.breeding && due(b.breeding.endsAt) || b.nursery?.babies.some(baby => due(baby.readyAt))))) {
       this.controller.refresh(); return;
     }

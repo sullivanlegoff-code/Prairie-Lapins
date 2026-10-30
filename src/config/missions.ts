@@ -85,15 +85,25 @@ export const MAIN_MISSIONS: Record<MainMissionId, MainDefinition> = {
 };
 /** All components belong to the same manual, atomic claim; legacy single-resource rewards are unchanged. */
 export const mainMissionRewards = (mission: MainDefinition): readonly Reward[] => [mission.reward, ...(mission.extraRewards ?? [])];
-export const DAILY_MISSION_IDS = ['collect-pattes', 'collect-grass', 'gain-affection'] as const;
+/**
+ * Daily pool. Each cycle shows THREE of these at once, all open from the start, to complete in any order (see
+ * `dailyMissionsFor`). `gain-affection` keeps its id from the first version; it is the breeding mission.
+ */
+export const DAILY_MISSION_IDS = ['collect-pattes', 'collect-grass', 'feed-rabbit', 'gain-affection', 'welcome-baby', 'decorate'] as const;
 export type DailyMissionId = typeof DAILY_MISSION_IDS[number];
-export type MissionEvent = 'collectIncome' | 'collectOrder' | 'gainAffection' | 'breed';
-export const DAILY_MISSIONS: Record<DailyMissionId, {title: string; description: string; event: MissionEvent; target: number; reward: Reward}> = {
-  'collect-pattes': {title: 'Récolte de pattes', description: 'Récolter 100 pattes dans les habitats.', event: 'collectIncome', target: 100, reward: {resource: 'pattes', amount: 60}},
-  'collect-grass': {title: 'Une réserve de nourriture', description: 'Récolter 40 nourriture dans les fermes.', event: 'collectOrder', target: 40, reward: {resource: 'grass', amount: 30}},
-  'gain-affection': {title: 'Lancer une reproduction', description: 'Lance une reproduction au nid.', event: 'breed', target: 1, reward: {resource: 'pattes', amount: 40}},
+/** How many daily missions are shown and must be claimed before the cycle bonus. */
+export const DAILY_PICK_COUNT = 3;
+export type MissionEvent = 'collectIncome' | 'collectOrder' | 'feed' | 'breed' | 'welcome' | 'placeDecoration';
+export type DailyCategory = 'collect' | 'care' | 'breed' | 'nursery' | 'decor';
+/** `place` is where the shortcut button leads; `category` keeps the three shown missions varied (one per category). */
+export const DAILY_MISSIONS: Record<DailyMissionId, {title: string; description: string; event: MissionEvent; category: DailyCategory; target: number; reward: Reward; place: BuildingKind | 'collection' | 'arrange'}> = {
+  'collect-pattes': {title: 'Récolte de pattes', description: 'Récolter 100 pattes dans les habitats.', event: 'collectIncome', category: 'collect', target: 100, reward: {resource: 'pattes', amount: 60}, place: 'enclosure'},
+  'collect-grass': {title: 'Une réserve de nourriture', description: 'Récolter 40 nourriture dans les fermes.', event: 'collectOrder', category: 'collect', target: 40, reward: {resource: 'grass', amount: 30}, place: 'farm'},
+  'feed-rabbit': {title: 'Un petit goûter', description: 'Nourrir trois fois un lapin.', event: 'feed', category: 'care', target: 3, reward: {resource: 'pattes', amount: 30}, place: 'enclosure'},
+  'gain-affection': {title: 'Lancer une reproduction', description: 'Lance une reproduction au nid.', event: 'breed', category: 'breed', target: 1, reward: {resource: 'pattes', amount: 40}, place: 'nest'},
+  'welcome-baby': {title: 'Accueillir un lapereau', description: 'Accueille un lapereau prêt depuis la nurserie.', event: 'welcome', category: 'nursery', target: 1, reward: {resource: 'pattes', amount: 40}, place: 'nursery'},
+  'decorate': {title: 'Un coin joli', description: 'Poser une décoration dans la prairie.', event: 'placeDecoration', category: 'decor', target: 1, reward: {resource: 'pattes', amount: 40}, place: 'arrange'},
 };
 export const MISSION_CYCLE_DURATION = 24 * HOUR;
-/** One daily mission per session: the next one opens this long after the previous claim (target: three 5-minute sessions a day). */
-export const DAILY_MISSION_GAP = 4 * HOUR;
-export const DAILY_BONUS: Reward = {resource: 'hearts', amount: 2};
+/** The cycle bonus, claimed once the three shown missions are claimed: hearts and food here, XP in progression.ts. */
+export const DAILY_BONUS: readonly Reward[] = [{resource: 'hearts', amount: 2}, {resource: 'grass', amount: 20}];

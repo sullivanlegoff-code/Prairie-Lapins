@@ -12,11 +12,11 @@ import {normalizeRabbitName} from './rabbitNames';
 import {acquiredCell, PARCEL_IDS, extensionPrice, purchasableParcels} from '../config/land';
 import {HABITAT_TYPES, habitatLevel, habitatPrice, type HabitatLevel} from '../config/habitats';
 import {habitatEntryReason, removeHabitatReason} from './habitats';
-import {DAILY_MISSIONS, DAILY_MISSION_GAP, DAILY_MISSION_IDS, MAIN_MISSIONS, DAILY_BONUS, mainMissionRewards, type Reward} from '../config/missions';
+import {DAILY_MISSIONS, MAIN_MISSIONS, DAILY_BONUS, mainMissionRewards, type Reward} from '../config/missions';
 import {marketPrice, marketUnlocked} from './market';
 import {affectionCap, playerLevel} from './affection';
 import {agencyBuilding, travelling} from './travel';
-import {currentDailyMission, dailyCycleStart, dailyOpensAt, openNextDailyMission, recordMissionAction} from './missions';
+import {dailyBonusReady, dailyClaimable, dailyCycleStart, dailyMissionsOf, recordMissionAction} from './missions';
 import {AFFECTION_STATUE, farmLimit, farmDuration, BALANCE, HEARTS, HOUR, TRAVEL, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
 import {emptyBuilding} from '../state/initial';
 import {babyInNursery, findNurseryBaby, firstFreeNurserySlot, nurseryBuilding, nurseryUnlockQuote, settleNestTransfers} from './nursery';
@@ -181,16 +181,16 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(command.cycleStart === dailyCycleStart(s), 'CYCLE_EXPIRED');
         const daily = s.missions.daily;
         requireRule(!daily.claimed.includes(command.id), 'ALREADY_CLAIMED');
-        requireRule(command.id === currentDailyMission(s) && time >= dailyOpensAt(s), 'NOT_READY');
-        requireRule(daily.progress[command.id] >= DAILY_MISSIONS[command.id].target, 'NOT_READY');
-        requireRule(Number.isSafeInteger(time + DAILY_MISSION_GAP), 'INVALID_TIME');
-        reward(DAILY_MISSIONS[command.id].reward); daily.claimed.push(command.id); openNextDailyMission(s, time); gainXp(missionClaimXp('daily',command.id)); break;
+        requireRule(dailyMissionsOf(s).includes(command.id), 'INVALID_CHOICE');
+        requireRule(dailyClaimable(s, command.id), 'NOT_READY');
+        reward(DAILY_MISSIONS[command.id].reward); daily.claimed.push(command.id); gainXp(missionClaimXp('daily',command.id)); break;
       }
       case 'claimDailyBonus': {
         requireRule(command.cycleStart === dailyCycleStart(s), 'CYCLE_EXPIRED');
         requireRule(!s.missions.daily.bonusClaimed, 'ALREADY_CLAIMED');
-        requireRule(s.missions.daily.claimed.length === DAILY_MISSION_IDS.length, 'NOT_READY');
-        reward(DAILY_BONUS); s.missions.daily.bonusClaimed = true; gainXp(PROGRESSION.xp.claims.dailyBonus); break;
+        requireRule(dailyBonusReady(s), 'NOT_READY');
+        for (const component of DAILY_BONUS) reward(component);
+        s.missions.daily.bonusClaimed = true; gainXp(PROGRESSION.xp.claims.dailyBonus); break;
       }
       case 'welcomeAgency': {
         requireRule(agencyBuilding(s), 'MISSING_BUILDING');
@@ -475,7 +475,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       return sum + (before ? Math.max(0, rabbit.affection - before.affection) : 0);
     }, 0);
     requireRule(recordMissionAction(s, 'gainAffection', affectionGained), 'RESOURCE_LIMIT');
-    requireRule(recordMissionAction(s, command.type === 'buyDecoration' && command.location ? 'placeDecoration' : command.type, command.type === 'feed' || command.type === 'breed' ? 1 : typeof value === 'number' ? value : 0, command.type !== 'placeDecoration' || command.location.kind === 'outside'), 'RESOURCE_LIMIT');
+    requireRule(recordMissionAction(s, command.type === 'buyDecoration' && command.location ? 'placeDecoration' : command.type, ['feed', 'breed', 'welcome'].includes(command.type) || command.type === 'placeDecoration' || (command.type === 'buyDecoration' && !!command.location) ? 1 : typeof value === 'number' ? value : 0, command.type !== 'placeDecoration' || command.location.kind === 'outside'), 'RESOURCE_LIMIT');
     // In particular, a welcome frees the nursery at this action's timestamp.
     advanceCozyEvent(s,command,time);
     return {ok: true, state: advance(s, time), ...(value === undefined ? {} : {value}), ...(progressionGain ? {progressionGain} : {}), ...(cuisineReward ? {cuisineReward} : {})};

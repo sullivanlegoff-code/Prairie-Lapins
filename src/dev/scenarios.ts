@@ -257,7 +257,7 @@ export function scenarioState(id: ScenarioId, now: number): GameState {
       for (const [x, kind] of ['farm', 'nest', 'nursery'].entries()) s.buildings.push(emptyBuilding(`building-${s.nextId++}`, kind as 'farm' | 'nest' | 'nursery', 2 + x * 4, 8));
     }
     s.missions = createMissions(s, now);
-    if (id === 'missions') s.missions.daily.progress = {'collect-pattes': 100, 'collect-grass': 40, 'gain-affection': 3};
+    if (id === 'missions') s.missions.daily.progress = {'collect-pattes': 100, 'collect-grass': 40, 'feed-rabbit': 3, 'gain-affection': 1, 'welcome-baby': 0, decorate: 0};
   }
   // Enforce exactly the same save validation used by every player import.
   const checked = decodeGame(encodeGame(s));

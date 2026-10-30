@@ -1,7 +1,7 @@
 import {settlePurchaseUnlocks} from './purchaseUnlocks';
 import {progressionFromXp} from './progression';
 import {HOUR, ORDERS, SPECIES, SPECIES_IDS} from '../config/balance';
-import {DAILY_MISSIONS, DAILY_MISSION_IDS, MAIN_MISSIONS, MAIN_MISSION_IDS, NEW_MAIN_MISSION_IDS, DURABLE_MISSION_IDS, MISSION_CYCLE_DURATION, DAILY_MISSION_GAP, INITIAL_MISSION_IDS, SOLO_INITIAL_MISSION_IDS, BRANCH_MISSION_IDS, MAIN_EVENT_IDS, type MainMissionId, type DailyMissionId} from '../config/missions';
+import {DAILY_MISSIONS, DAILY_MISSION_IDS, MAIN_MISSIONS, MAIN_MISSION_IDS, NEW_MAIN_MISSION_IDS, DURABLE_MISSION_IDS, MISSION_CYCLE_DURATION, DAILY_PICK_COUNT, INITIAL_MISSION_IDS, SOLO_INITIAL_MISSION_IDS, BRANCH_MISSION_IDS, MAIN_EVENT_IDS, type MainMissionId, type DailyMissionId} from '../config/missions';
 import {RECIPE_PRICES} from '../config/recipes';
 import type {GameState, MissionState} from '../state/types';
 
@@ -28,7 +28,7 @@ export function mainProgress(state: ObservableState, id: MainMissionId): {value:
   }
 }
 export function emptyDailyProgress(): MissionState['daily']['progress'] {
-  return {'collect-pattes': 0, 'collect-grass': 0, 'gain-affection': 0};
+  return Object.fromEntries(DAILY_MISSION_IDS.map(id => [id, 0])) as MissionState['daily']['progress'];
 }
 export function createMissions(state: ObservableState, referenceAt: number): MissionState {
   return {events: emptyMainEvents(), completed: MAIN_MISSION_IDS.filter(id => { if ((DURABLE_MISSION_IDS as readonly string[]).includes(id) || (NEW_MAIN_MISSION_IDS as readonly string[]).includes(id)) return false; if ((id === 'snow-habitat' || id === 'welcome-snow') && state.startCourse !== 'paille-solo') return false; const p = mainProgress({...state, missions: undefined}, id); return p.value >= p.target; }), claimed: [],
@@ -79,16 +79,33 @@ export function activeMainMissions(s: MainMissionState): MainMissionId[] {
   const ready = branches.filter(id => s.missions.completed.includes(id)), pending = branches.find(id => !s.missions.completed.includes(id));
   return [...ready, ...(durable ? [durable] : []), ...(pending ? [pending] : [])];
 }
-/** The daily missions open one at a time, in order; each opens DAILY_MISSION_GAP after the previous claim. */
-export const currentDailyMission = (s: Pick<GameState, 'missions'>): DailyMissionId | null => DAILY_MISSION_IDS.find(id => !s.missions.daily.claimed.includes(id)) ?? null;
-export const dailyOpensAt = (s: Pick<GameState, 'missions'>): number => s.missions.daily.nextAt ?? 0;
-export function dailyReady(s: Pick<GameState, 'missions'>, now: number): boolean {
-  const id = currentDailyMission(s);
-  return !!id && now >= dailyOpensAt(s) && s.missions.daily.progress[id] >= DAILY_MISSIONS[id].target;
+/** Stable hash of cycle and mission: orders the pool differently each cycle, the same way on every device. */
+const missionRank = (cycle: number, id: DailyMissionId): number => {
+  let h = 2166136261;
+  for (const ch of `${cycle}:${id}`) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+  return h >>> 0;
+};
+/**
+ * The three daily missions of a cycle, one per category so they stay varied. Nothing is stored: the same cycle always
+ * shows the same three, and all three are open from the start, to be done in any order.
+ */
+export function dailyMissionsFor(cycleIndex: number): DailyMissionId[] {
+  const picked: DailyMissionId[] = [], categories = new Set<string>();
+  for (const id of [...DAILY_MISSION_IDS].sort((a, b) => missionRank(cycleIndex, a) - missionRank(cycleIndex, b))) {
+    if (picked.length === DAILY_PICK_COUNT) break;
+    if (categories.has(DAILY_MISSIONS[id].category)) continue;
+    picked.push(id); categories.add(DAILY_MISSIONS[id].category);
+  }
+  return picked;
 }
-export function openNextDailyMission(s: GameState, claimedAt: number): void {
-  if (currentDailyMission(s)) s.missions.daily.nextAt = claimedAt + DAILY_MISSION_GAP; else delete s.missions.daily.nextAt;
-}
+export const dailyMissionsOf = (s: Pick<GameState, 'missions'>): DailyMissionId[] => dailyMissionsFor(s.missions.daily.cycleIndex);
+export const dailyProgress = (s: Pick<GameState, 'missions'>, id: DailyMissionId): number => s.missions.daily.progress[id] ?? 0;
+/** A shown mission whose target is reached and whose reward is not yet claimed. */
+export const dailyClaimable = (s: Pick<GameState, 'missions'>, id: DailyMissionId): boolean =>
+  dailyMissionsOf(s).includes(id) && !s.missions.daily.claimed.includes(id) && dailyProgress(s, id) >= DAILY_MISSIONS[id].target;
+/** The cycle bonus opens once every shown mission has been claimed. */
+export const dailyBonusReady = (s: Pick<GameState, 'missions'>): boolean =>
+  dailyMissionsOf(s).every(id => s.missions.daily.claimed.includes(id));
 /** Called once after a successful simulation action; rewards/imports are not events. */
 export function recordMissionAction(s: GameState, action: string, amount: number, placedOutside = true): boolean {
   if ((MAIN_EVENT_IDS as readonly string[]).includes(action) && (action !== 'placeDecoration' || placedOutside)) {
@@ -96,16 +113,17 @@ export function recordMissionAction(s: GameState, action: string, amount: number
     // Counters need only represent these objectives; bounded values avoid overflow.
     s.missions.events[event] = Math.min(event === 'collectOrder' ? 20 : 1, s.missions.events[event] + (event === 'collectOrder' ? amount : 1));
   }
-  // Only the open daily mission progresses: an action made before it opens does not count for it.
-  const id = currentDailyMission(s);
-  if (!id || DAILY_MISSIONS[id].event !== action || s.lastSimulatedAt < dailyOpensAt(s)) return true;
-  const next = s.missions.daily.progress[id] + amount;
-  if (!Number.isSafeInteger(next)) return false;
-  s.missions.daily.progress[id] = next; return true;
+  // Every shown daily mission progresses on its own event, in any order; a decoration only counts when placed outside.
+  for (const id of dailyMissionsOf(s)) {
+    if (DAILY_MISSIONS[id].event !== action || s.missions.daily.claimed.includes(id) || (action === 'placeDecoration' && !placedOutside)) continue;
+    const next = dailyProgress(s, id) + amount;
+    if (!Number.isSafeInteger(next)) return false;
+    s.missions.daily.progress[id] = next;
+  }
+  return true;
 }
 export function availableMissionRewards(s: GameState): number {
-  const d = s.missions.daily;
   return activeMainMissions(s).filter(id => s.missions.completed.includes(id)).length +
-    Number(dailyReady(s, s.lastSimulatedAt)) +
-    Number(d.claimed.length === DAILY_MISSION_IDS.length && !d.bonusClaimed);
+    dailyMissionsOf(s).filter(id => dailyClaimable(s, id)).length +
+    Number(dailyBonusReady(s) && !s.missions.daily.bonusClaimed);
 }

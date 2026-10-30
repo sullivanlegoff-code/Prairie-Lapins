@@ -47,7 +47,7 @@ export const PROGRESSION: ProgressionConfig = {
     birth: mapRarities(definition => definition.birthXp),
     foodMultiplier: 6, breedingLaunch: 5,
     firstDecorationPlacement: {minimum: 10, priceDivisor: 10},
-    claims: {main: 40, daily: 50, dailyBonus: 0, mainExceptions: {}, dailyExceptions: {}},
+    claims: {main: 40, daily: 50, dailyBonus: 100, mainExceptions: {}, dailyExceptions: {}},
   },
   requirements: {
     // Default levels come from each species' own definition; a custom configuration still supplies its own record.
