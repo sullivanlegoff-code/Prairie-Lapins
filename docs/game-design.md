@@ -6,7 +6,7 @@ Le registre `src/config/species.ts` contient 32 espèces. Les notes de publicati
 
 | Lapin | Types | Rareté | Recette | Niveau |
 |---|---|---|---|---:|
-| Dinono | feu + métal | épique | types feu + métal, affection 6, probabilité 5 %, connaissance 450 pattes, sans garantie | 1 |
+| Dinono | feu + métal | épique | types feu + métal, affection 6, probabilité 10 %, connaissance 450 pattes, sans garantie | 1 |
 | Lapin en Bouée | feu + métal | rare | types feu + métal, affection 2, garantie ordinaire, sans prix de connaissance | 1 |
 
 Bouée remplace Dinono entre Boudinet et Egiiipte dans l'ordre du registre et du tirage. Dinono rejoint les épiques après Orange. Son illustration et sa description sont conservées ; aucun invariant n'impose le niveau 11 à tous les épiques, donc son niveau 1 reste inchangé.
@@ -79,7 +79,7 @@ Le prix est payé au lancement. Quantité et durée normale sont figées dans ch
 
 Affection 1–20, sans faim ni dégradation. Le repas qui fait passer de *a* à *a* + 1 coûte : 2, 4, 8, 14, 22, 32, 45, 60, 80, 110, 140, 180, 230, **1 500** (14 → 15), puis 400, 480, 570, 670, 800 nourriture, soit 5 347 pour aller de 1 à 20. Sans la **Statue de l’Affection**, l’affection s’arrête à 14 (repas et Cuisine) ; un lapin déjà plus haut dans une ancienne partie garde son affection. Le repas de l’affection 15 est le plus cher de tous : une vraie récompense.
 
-Quand les deux parents ont au moins 10 d’affection, les chances d’épique et de légendaire sont multipliées par 1,5 ; à partir de 15 pour les deux, par 2 (l’affection la plus basse des deux décide). Exemple : Magicien 5 % → 7,5 % → 10 % ; Dragon et Requin, qui demandent déjà 10, passent à 3 % puis 4 %. Les tirages restent des rapports entiers exacts, en demi-pourcentages. Rares jamais vendus. Prix des recettes payantes, Cuisine, constructions et niveaux d’accès conservés.
+Quand les deux parents ont au moins 10 d’affection, les chances d’épique et de légendaire sont multipliées par 1,5 ; à partir de 15 pour les deux, par 2 (l’affection la plus basse des deux décide). Exemple : Magicien 10 % → 15 % → 20 % ; Dragon et Requin, qui demandent déjà 10, passent de 7 % à 10,5 % puis 14 %. Les tirages restent des rapports entiers exacts, en demi-pourcentages. Rares jamais vendus. Prix des recettes payantes, Cuisine, constructions et niveaux d’accès conservés.
 
 XP : passage N → N+1 = **arrondi(90 × N^0,85)** depuis le 25 octobre 2026 (niveau 22 vers le 20e jour ; auparavant 1,15), plafond 30, un cœur par niveau. Le barème initial demandé 25 × N^1,5 faisait atteindre le niveau 5 pendant le tutoriel, 10 après 2,5 jours écoulés, 15 après 10,5 jours et 20 après 33 jours. Seuls le coefficient et l’exposant ont été ajustés pour le rythme cible. Repas : 6 XP plus 1 par tranche de 200 nourriture dépensée (13 XP pour l’affection 15 ; base relevée de 5 à 6 le 26 octobre 2026 pour compenser la ferme de niveau 1) ; achat commun : 10 ; naissance commune : 10, rare : 20 (Épique 110 et Légendaire 180 conservés) ; première découverte commune : +60, rare : +250 ; lancement de reproduction : 5 ; constructions inchangées ; première pose de chaque modèle de décoration : 10, une fois par référence même après revente ; mission principale : 40, quotidienne : 50, bonus quotidien : 0.
 
@@ -119,20 +119,20 @@ Décision du propriétaire, avec les dessins livrés dans `Design des lapins` (d
 | Espèce | Types | Rareté | Obtention |
 |---|---|---|---|
 | Boudinet | métal + paille | rare | reproduction, éléments métal + paille, affection 2 |
-| Dinono | feu + métal | épique | reproduction, éléments feu + métal, affection 6, 5 %, connaissance 450 |
+| Dinono | feu + métal | épique | reproduction, éléments feu + métal, affection 6, 10 %, connaissance 450 |
 | Lapin en Bouée | feu + métal | rare | reproduction, éléments feu + métal, affection 2, garantie |
 | Egiiipte | vol + métal | rare | reproduction, éléments vol + métal, affection 2 |
 | Piment | vol + feu | rare | reproduction, éléments vol + feu, affection 2 |
 | Tunini | neige + vol | rare | reproduction, éléments neige + vol, affection 2 |
 | Bretonette | métal + vol | rare | reproduction, éléments métal + vol, affection 2 |
-| Dadi | neige + vol | épique | 5 %, éléments neige + vol, affection 6, niveau 11 |
-| Maxou | neige + vol | épique | 5 %, éléments neige + vol, affection 6, niveau 11 |
-| Orange | paille + neige | épique | 5 %, éléments paille + neige, affection 6, niveau 11 |
-| Lapin Magicien | paille + métal (avant : métal + vol) | épique | 5 %, éléments paille + métal, affection 6, niveau 11 |
-| Lapin Dragon | feu + vol | légendaire | 2 %, uniquement Dadi × Phoenix, affection 10, niveau 14 |
-| Lapin Requin | neige + métal | légendaire | 2 %, uniquement Maxou × Wat Wat, affection 10, niveau 14 |
+| Dadi | neige + vol | épique | 10 %, éléments neige + vol, affection 6, niveau 11 |
+| Maxou | neige + vol | épique | 10 %, éléments neige + vol, affection 6, niveau 11 |
+| Orange | paille + neige | épique | 10 %, éléments paille + neige, affection 6, niveau 11 |
+| Lapin Magicien | paille + métal (avant : métal + vol) | épique | 10 %, éléments paille + métal, affection 6, niveau 11 |
+| Lapin Dragon | feu + vol | légendaire | 7 %, uniquement Dadi × Phoenix, affection 10, niveau 14 |
+| Lapin Requin | neige + métal | légendaire | 7 %, uniquement Maxou × Wat Wat, affection 10, niveau 14 |
 
-Les six rares suivent la règle standard des rares (garantie comprise, indice de types gratuit). Le propriétaire a fixé les types des Épiques et les parents des Légendaires ; pour le reste (5 %, affection 6, niveau 11, connaissance à 450 pattes ; 2 %, affection 10, niveau 14, connaissance à 900), ils reprennent provisoirement les seules règles existantes, celles de Magicien et de Dragon, en attendant son arbitrage. Un Magicien déjà logé sous ses anciens types (habitat Vol) reste où il est au chargement ; les nouveaux placements suivent ses types actuels.
+Les six rares suivent la règle standard des rares (garantie comprise, indice de types gratuit). Le propriétaire a fixé les types des Épiques et les parents des Légendaires ; pour le reste (10 %, affection 6, niveau 11, connaissance à 450 pattes ; 7 %, affection 10, niveau 14, connaissance à 900), ils reprennent provisoirement les seules règles existantes, celles de Magicien et de Dragon, en attendant son arbitrage. Un Magicien déjà logé sous ses anciens types (habitat Vol) reste où il est au chargement ; les nouveaux placements suivent ses types actuels.
 
 Orange : le dessin livré reproduisait un personnage protégé (Miffy), qui ne peut pas entrer dans ce dépôt public. Le propriétaire a choisi le 25 octobre 2026 un design original parmi trois concepts peints : B « Lanterne d’hiver » (robe en lanterne d’amour-en-cage, chapeau de paille enneigé). Master détouré par `scripts/prepare-rabbit-masters.mjs` depuis le concept (hors dépôt), sprite 339 × 430, largeur monde 46. Sans clignement ni truffe pour l’instant, comme les autres lapins du 25 octobre.
 
@@ -227,10 +227,12 @@ Brumelin et Mottelin restent des noms provisoires validés pour ce prototype. Un
 | Nurserie | Offerte, un exemplaire | immédiat |
 | Première extension | 500 pattes | immédiat, 6 × 2 cases |
 | Deuxième extension | 1 000 pattes | après la première, 9 × 2 cases |
-| Reproduction | Gratuit (0 patte, 0 cœur) | 20 minutes puis transfert (automatique après la mission « Vers la nurserie ») |
+| Reproduction | Gratuit (0 patte, 0 cœur) | le temps de l’espèce au nid, puis le même en nurserie ; transfert automatique après la mission « Vers la nurserie » |
 | Croissance d'un commun | gratuit | 5 minutes |
 | Croissance de Brumelin ou Mottelin | gratuit | 15 minutes |
-| Croissance d'un nouveau rare | gratuit | 30 minutes |
+| Croissance d'un rare | gratuit | 15, 20, 25 ou 30 minutes selon l'espèce (même temps pour toutes ses naissances) |
+| Croissance d'un épique | gratuit | 3 heures |
+| Croissance d'un légendaire | gratuit | 12 heures |
 
 | Commande de ferme | Coût | Herbe | Délai |
 |---|---:|---:|---:|
@@ -279,7 +281,7 @@ L'ordre des parents ne change pas le tirage. Les tables historiques suivantes re
 
 Feu × Neige, hors garantie : aux affections 4/4, Feu 40 %, Neige 40 %, Feu Glacé 20 %. Aux affections 2/2 ou 4/3, Feu et Neige ont chacun 50 % ; Feu Glacé est exclu et cette paire ne fait pas avancer la malchance. Une reproduction reste autorisée dès 2 pour les deux parents.
 
-Les recettes spéciales sont réservées après normalisation ordinaire : Géant 5 % avec terre+paille et affection 6/6 ; Magicien 5 % avec métal+vol et affection 6/6 ; Dragon 2 % avec exactement Perroquet et Feu, affection 10/10. Chacune compte une seule fois, ordre des parents indifférent. Les résultats ordinaires se partagent le reste proportionnellement. Exemples exacts et conditions : [catalogue quinze espèces](species.md). À plusieurs spéciaux admissibles, soustraire la somme de leurs chances, sans nouveau tirage ni substitution après échec.
+Les recettes spéciales sont réservées après normalisation ordinaire : Géant 5 % avec terre+paille et affection 6/6 ; Magicien 10 % avec métal+vol et affection 6/6 ; Dragon 7 % avec exactement Perroquet et Feu, affection 10/10. Chacune compte une seule fois, ordre des parents indifférent. Les résultats ordinaires se partagent le reste proportionnellement. Exemples exacts et conditions : [catalogue quinze espèces](species.md). À plusieurs spéciaux admissibles, soustraire la somme de leurs chances, sans nouveau tirage ni substitution après échec.
 
 Le résultat est choisi une seule fois, au lancement, puis enregistré avec son identité. Recharger ne le retire jamais au hasard. Chaque lapereau accueilli commence à l'affection 1.
 
@@ -291,9 +293,9 @@ Précision pour les découvertes en attente : un résultat inédit d'une de ces 
 
 ### Nid et nurserie
 
-À la fin des 20 minutes, « Envoyer dans la nurserie » devient disponible. Aucun transfert automatique : délai terminé, absence, rechargement et libération de la nurserie laissent le résultat et les parents au nid. Si elle est occupée, l’interface explique le blocage. Le clic valide transfère l’identité et le résultat déjà tiré, commence la croissance à cet instant, rend les parents à leurs habitats et libère le nid en une opération sauvegardée. Un refus, une sauvegarde impossible ou une double pression ne perd ni ne duplique d’individu. L’espèce reste secrète jusqu’à la fin de croissance et la découverte est enregistrée lors de l’accueil.
+À la fin du temps de l’espèce au nid (voir le tableau des durées), « Envoyer dans la nurserie » devient disponible. Aucun transfert automatique : délai terminé, absence, rechargement et libération de la nurserie laissent le résultat et les parents au nid. Si elle est occupée, l’interface explique le blocage. Le clic valide transfère l’identité et le résultat déjà tiré, commence la croissance à cet instant, rend les parents à leurs habitats et libère le nid en une opération sauvegardée. Un refus, une sauvegarde impossible ou une double pression ne perd ni ne duplique d’individu. L’espèce reste secrète jusqu’à la fin de croissance et la découverte est enregistrée lors de l’accueil.
 
-Depuis le 25 octobre 2026 (rythme de trois sessions de 5 minutes par jour), une fois la mission initiale « Vers la nurserie » réclamée, le transfert devient automatique : à la fin des 20 minutes, le lapereau rejoint le plus petit couchage libre, sa croissance commence à la fin de la reproduction et les parents retournent dans leurs habitats. Si la nurserie est pleine, il attend au nid et part dès qu’un accueil ou un nouveau couchage libère une place ; sa croissance commence alors à cet instant. Un lapereau lancé à une session est ainsi prêt à la suivante, où le joueur l’accueille et relance une reproduction. Le tutoriel et le transfert manuel restent inchangés avant cette mission. Aucun changement de sauvegarde.
+Depuis le 25 octobre 2026 (rythme de trois sessions de 5 minutes par jour), une fois la mission initiale « Vers la nurserie » réclamée, le transfert devient automatique : à la fin du temps de l’espèce au nid, le lapereau rejoint le plus petit couchage libre, sa croissance commence à la fin de la reproduction et les parents retournent dans leurs habitats. Si la nurserie est pleine, il attend au nid et part dès qu’un accueil ou un nouveau couchage libère une place ; sa croissance commence alors à cet instant. Un lapereau lancé à une session est ainsi prêt à la suivante, où le joueur l’accueille et relance une reproduction. Le tutoriel et le transfert manuel restent inchangés avant cette mission. Aucun changement de sauvegarde.
 
 ### Collection et carnet
 

@@ -163,7 +163,7 @@ export function completeLaboratory(now: number): GameState {
   s.travel = {welcomed: true, trips: s.rabbits.slice(2, 4).map((r, i) => ({rabbitId: r.id, destination: i === 0 ? 'Paris' : 'Vannes', startedAt: i === 0 ? now - 3 * HOUR : now, endsAt: i === 0 ? now : now + 3 * HOUR, hearts: 1, grass: 75}))};
   const birth = () => ({id: `birth-${s.nextId++}`, species: 'paille' as const, guaranteed: false, reservedDiscovery: false});
   s.buildings.find(b => b.kind === 'nursery')!.nursery = {capacity: 4, babies: [{slot: 0, birth: birth(), startedAt: now - growthDuration('paille'), readyAt: now}]};
-  s.buildings.find(b => b.kind === 'nest')!.breeding = {parents: [s.rabbits[0].id, s.rabbits[1].id], startedAt: now - BALANCE.breedingDuration, endsAt: now, birth: birth()};
+  s.buildings.find(b => b.kind === 'nest')!.breeding = {parents: [s.rabbits[0].id, s.rabbits[1].id], startedAt: now - growthDuration('paille'), endsAt: now, birth: birth()};
   for (const resource of ['pattes', 'grass', 'hearts'] as const) s = labAction(s, {type: 'resource', resource, value: 1_000_000});
   for (const action of [{type: 'recipes', known: true}, {type: 'mainMissions'}, {type: 'dailyMissions'}, {type: 'decorations'}] as const) s = labAction(s, action);
   return canonical(s);

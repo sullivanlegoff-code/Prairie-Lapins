@@ -49,7 +49,7 @@ export const BALANCE = {
   releaseGrass: {common: 10, rare: 25},
   /** A ready baby released from the nursery, by rarity. Common and uncommon stay provisional until the owner tunes them. */
   releaseBabyPattes: {common: 20, uncommon: 20, rare: 100, epic: 500, legendary: 1000},
-  breedingCost: 0, breedingDuration: 20 * MINUTE,
+  breedingCost: 0,
   commonGrowth: RARITIES.common.growthMinutes * MINUTE, hybridGrowth: RARITIES.uncommon.growthMinutes * MINUTE, rareGrowth: RARITIES.rare.growthMinutes * MINUTE, guaranteeAttempt: 8,
   buildings: {
     enclosure: {price: 350, maximum: null}, farm: {price: 60, maximum: 4},
@@ -120,6 +120,18 @@ export const BREEDING_ODDS: Record<string, Odds> = {
   'neige,paille': {paille: 40, neige: 40},
 };
 
+/**
+ * Nursery growth, and since the owner's rule of 28 October 2026 the same time in the nest, per species. Each rare species has its
+ * own fixed time (15, 20, 25 or 30 minutes); epic and legendary times come from RARITIES.
+ */
+const RARE_GROWTH_MINUTES: Partial<Record<SpeciesId, number>> = {
+  frisket: 15, icy: 15, ardent: 15, snk: 15, 'pic-pic': 15,
+  amethyste: 20, 'princesse-neige': 20, fluffy: 20, virvoletant: 20, phoenix: 20,
+  roukette: 25, 'wat-wat': 25, glassofeu: 25, plume: 25, boudinet: 25,
+  bouee: 30, egiiipte: 30, piment: 30, tunini: 30, bretonette: 30,
+};
 export function growthDuration(species: SpeciesId): number {
-  return RARITIES[SPECIES[species].rarity].growthMinutes * MINUTE;
+  return (RARE_GROWTH_MINUTES[species] ?? RARITIES[SPECIES[species].rarity].growthMinutes) * MINUTE;
 }
+/** Nest time of saves written before the per-species breeding time (20 minutes for every species): still accepted. */
+export const LEGACY_BREEDING_DURATION = 20 * MINUTE;

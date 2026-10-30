@@ -11,7 +11,7 @@ import {type HabitatType, HABITAT_TYPES, HABITAT_LEVELS, habitatLevel} from '../
 import {MAIN_MISSION_IDS, DAILY_MISSION_GAP, DAILY_MISSION_IDS, DAILY_MISSIONS} from '../config/missions';
 import {cycleIndexAt} from '../simulation/missions';
 import {z} from 'zod';
-import {BALANCE, MARKET, CUISINE_FULL_REWARDS_PER_CYCLE, HOUR, LEGACY_ORDER_CROPS, TRAVEL, tripHearts, NURSERY, ORDERS, type OrderId, SHOP_SPECIES, SPECIES, SPECIES_IDS, GUARANTEE_SPECIES, growthDuration, type SpeciesId} from '../config/balance';
+import {BALANCE, LEGACY_BREEDING_DURATION, MARKET, CUISINE_FULL_REWARDS_PER_CYCLE, HOUR, LEGACY_ORDER_CROPS, TRAVEL, tripHearts, NURSERY, ORDERS, type OrderId, SHOP_SPECIES, SPECIES, SPECIES_IDS, GUARANTEE_SPECIES, growthDuration, type SpeciesId} from '../config/balance';
 import type {GameState} from '../state/types';
 import {DECORATION_IDS, RETIRED_DECORATION_IDS, MAX_DECORATIONS} from '../config/decorations';
 import {decorationPlacementReason} from '../simulation/decorations';
@@ -156,7 +156,8 @@ const schema = current.superRefine((s, context) => {
     if (b.order && (!durationValid(b.order.startedAt, b.order.endsAt, (b.order.duration ?? ORDERS[b.order.recipe].duration)))) issue('Order timestamps');
     if (b.breeding) {
       const job = b.breeding;
-      if (!nursery || !durationValid(job.startedAt, job.endsAt, BALANCE.breedingDuration) || job.parents[0] === job.parents[1]) issue('Breeding timestamps or parents');
+      const jobValid = durationValid(job.startedAt, job.endsAt, growthDuration(job.birth.species)) || durationValid(job.startedAt, job.endsAt, LEGACY_BREEDING_DURATION);
+      if (!nursery || !jobValid || job.parents[0] === job.parents[1]) issue('Breeding timestamps or parents');
       if (job.endsAt > s.lastSimulatedAt && job.parents.some(id => !s.rabbits.some(r => r.id === id && r.affection >= BALANCE.breedingAffection))) issue('Missing active parent');
       // Completed jobs may reference parents that were moved or entrusted: the birth and the surviving individuals are preserved.
     }

@@ -396,14 +396,14 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(parents.every(r => r && !busy(r.id)), 'PARENT_BUSY');
         allocation();
         const longestGrowth = Math.max(...(Object.keys(SPECIES) as SpeciesId[]).map(growthDuration));
-        requireRule(Number.isSafeInteger(time + BALANCE.breedingDuration + longestGrowth), 'INVALID_TIME');
+        requireRule(Number.isSafeInteger(time + 2 * longestGrowth), 'INVALID_TIME');
         requireRule(breedingPool(s, parents[0].species, parents[1].species, parents[0].affection, parents[1].affection).total > 0,'NO_BREEDING_RESULT');
         // Free launch: no payment or heart-complement path.
         const roll = rng(); requireRule(Number.isFinite(roll) && roll >= 0 && roll < 1, 'INVALID_RANDOM');
         const result = chooseBirth(s, parents[0].species, parents[1].species, roll, parents[0].affection, parents[1].affection);
         s.pityFailures = result.pityFailures;
         value = id('birth');
-        nest.breeding = {parents: [...command.parents], startedAt: time, endsAt: time + BALANCE.breedingDuration,
+        nest.breeding = {parents: [...command.parents], startedAt: time, endsAt: time + growthDuration(result.species),
           birth: {id: value, species: result.species, guaranteed: result.guaranteed, reservedDiscovery: result.reservedDiscovery}};
         s.lastBreedingParents = [...command.parents];
         if (s.initiation && !s.initiation.birthId) { s.initiation.birthId=value; s.initiation.breeding=jobKey(nest,'breeding'); }

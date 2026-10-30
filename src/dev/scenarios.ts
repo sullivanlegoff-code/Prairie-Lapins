@@ -3,7 +3,7 @@ import {establishHistoricalLevelRights} from '../simulation/levelRights';
 import {cumulativeLevelXp, requiredExtensionLevel, requiredDecorationLevel, requiredHabitatUpgradeLevel} from '../simulation/progression';
 import {PARCEL_IDS, extensionPrice, type ParcelId} from '../config/land';
 import {ISLAND} from '../config/islandGeometry';
-import {BALANCE, MINUTE, NURSERY, growthDuration, SPECIES, SPECIES_IDS, type SpeciesId} from '../config/balance';
+import {MINUTE, NURSERY, growthDuration, SPECIES, SPECIES_IDS, type SpeciesId} from '../config/balance';
 import {buildingPlacementReason} from '../simulation/placement';
 import {HABITAT_TYPES} from '../config/habitats';
 import {act, createGame, decodeGame, encodeGame} from '../simulation';
@@ -301,7 +301,7 @@ function nurseryScenario(id: 'nurseryUnlocks' | 'nurseryStates', start: GameStat
     const birth = (species: SpeciesId) => ({id: `birth-${s.nextId++}`, species, guaranteed: false, reservedDiscovery: false});
     const baby = (slot: 0 | 1, readyAt: number) => { const born = birth('paille'); return {slot, birth: born, startedAt: readyAt - growthDuration(born.species), readyAt}; };
     nursery.nursery = {capacity: 3, babies: [baby(0, now - MINUTE), baby(1, now + 2 * MINUTE)]};
-    nest.breeding = {parents: ['rabbit-2', snow.id], startedAt: now - 5 * MINUTE - BALANCE.breedingDuration, endsAt: now - 5 * MINUTE, birth: birth('neige')};
+    nest.breeding = {parents: ['rabbit-2', snow.id], startedAt: now - 5 * MINUTE - growthDuration('neige'), endsAt: now - 5 * MINUTE, birth: birth('neige')};
     s.hearts = NURSERY.unlockHearts[3] + 10;
   }
   s.missions = createMissions(s, now);
