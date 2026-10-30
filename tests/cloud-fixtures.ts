@@ -6,12 +6,15 @@ import {createGame, encodeGame} from '../src/simulation';
 import type {GameState} from '../src/state/types';
 import {CloudError, remoteSave, type CloudGateway, type CommitRequest, type CommitResult, type RemoteSave} from '../src/cloud/gateway';
 import {CloudSync} from '../src/cloud/sync';
+import type {Adjustment} from '../src/simulation/adjustments';
 
 export class MemoryCloud implements CloudGateway {
   remote: RemoteSave | null = null;
   calls: CommitRequest[] = [];
   receipts = new Map<string, CommitResult>();
   offline = false; loseReply = false;
+  corrections: Adjustment[] = [];
+  async adjustments() { if (this.offline) throw new CloudError('network'); return structuredClone(this.corrections); }
   async read(owner: string) {
     if (this.offline) throw new CloudError('network');
     return this.remote ? remoteSave({owner_id: owner, revision: this.remote.revision, saved_at: this.remote.savedAt, operation_id: this.remote.operation, state: this.remote.state}, owner) : null;
