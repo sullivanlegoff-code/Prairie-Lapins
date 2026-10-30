@@ -52,6 +52,8 @@ export interface ProgressionGain {xpGained: number; rewardedLevels: number[]; he
 export interface GameState {
   /** Last successfully launched pair; independent from the UI's draft selection. */
   lastBreedingParents?: [string, string];
+  /** Owner corrections already applied to this save (see simulation/adjustments.ts). */
+  appliedAdjustments?: string[];
   cozy?: import('../simulation/cozy').CozyState;
   /** Present only on islands started on the southwest parcel (top/right expansion); absent = legacy centre start. */
   islandStart?: IslandStart;
