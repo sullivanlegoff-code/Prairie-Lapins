@@ -209,6 +209,7 @@ export class GameUI {
     document.getElementById('open-collection')!.addEventListener('click', () => this.open({kind: 'collection'}, 'root'), options);
     document.getElementById('open-settings')!.addEventListener('click', () => this.open({kind: 'settings'}, 'root'), options);
     document.getElementById('save-warning')!.addEventListener('click', () => this.open({kind: 'settings'}), options);
+    document.getElementById('cloud-warning')?.addEventListener('click', () => { this.open({kind: 'settings'}, 'root'); document.getElementById('account-content')?.scrollIntoView?.({block: 'start'}); }, options);
     document.getElementById('close-panel')!.addEventListener('click', () => this.close(), options);
     document.getElementById('panel-backdrop')?.addEventListener('click', () => this.close(), options);
     document.getElementById('panel-back')!.addEventListener('click', () => this.back(), options);
@@ -1943,7 +1944,7 @@ export class GameUI {
     return false;
   }
   private onboardingAllowed(element: HTMLElement): boolean {
-    if (element.closest('#paille-dialogue') || ['open-settings','save-warning','recenter-view','close-panel','panel-back','tutorial-toggle','onboarding-skip','continue-portrait'].includes(element.id)) return true;
+    if (element.closest('#paille-dialogue') || ['open-settings','save-warning','cloud-warning','recenter-view','close-panel','panel-back','tutorial-toggle','onboarding-skip','continue-portrait'].includes(element.id)) return true;
     if (element.closest('#settings-content') && this.view?.kind === 'settings') return true;
     // Modal interruptions (level reached, confirmation, level details, import) must always be closable: their content is
     // only reachable while open, and they may open between two renders. Only the pairing window keeps the guided rule.
