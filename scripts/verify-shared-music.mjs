@@ -4,7 +4,7 @@ import {readdirSync, lstatSync, readFileSync} from 'node:fs';
 import {resolve, join, relative} from 'node:path';
 
 const root = resolve(process.argv[2] || 'netlify-site');
-const names = ['indian-vibe-1.mp3', 'indian-vibe-2.mp3', 'indian-vibe-3.mp3', 'dragon-chill.mp3'];
+const names = ['indian-vibe-1.mp3', 'indian-vibe-2.mp3', 'indian-vibe-3.mp3', 'dragon-chill.mp3', 'dadi.mp3'];
 const files = [];
 function walk(directory) {
   for (const name of readdirSync(directory)) {
@@ -16,7 +16,7 @@ function walk(directory) {
 }
 walk(root);
 assert.deepEqual(files.map(file => relative(root, file).replaceAll('\\', '/')).sort(),
-  names.map(name => `assets/audio/music/${name}`).sort(), 'Exactly four shared MP3s, none under dev/');
+  names.map(name => `assets/audio/music/${name}`).sort(), 'Exactly the shared MP3s, none under dev/');
 let total = 0;
 for (const name of names) {
   const bytes = readFileSync(join(root, 'assets/audio/music', name));

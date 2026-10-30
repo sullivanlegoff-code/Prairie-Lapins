@@ -25,7 +25,7 @@ import {AudioEngine} from './audio/audioEngine';
 import {mountSoundSettings, channelSettings} from './ui/soundSettings';
 import {MusicPlayer} from './audio/musicPlayer';
 import {MusicDirector} from './audio/musicDirector';
-import {KITCHEN_TRACKS, MEADOW_START_SEGMENTS, MEADOW_TRACKS} from './config/music';
+import {KITCHEN_TRACKS, MEADOW_START_SEGMENTS, MEADOW_TRACKS, RABBIT_THEMES} from './config/music';
 import {LoadingTracker, renderLoading, startLoadingMessages} from './display/loadingScreen';
 
 async function boot(): Promise<() => void> {
@@ -89,8 +89,19 @@ async function boot(): Promise<() => void> {
   // Musique: the meadow music is probed now; nothing sounds before « Jouer ». The kitchen has its own.
   const musicBase = import.meta.env.VITE_SHARED_MUSIC_BASE ?? import.meta.env.BASE_URL;
   const musicUrls = (files: readonly string[]) => files.map(file => musicBase + 'assets/audio/music/' + file);
+  const themes: Record<string, MusicPlayer> = {};
   const music = new MusicDirector(new MusicPlayer({tracks: musicUrls(MEADOW_TRACKS), engine: audio, startSegments: MEADOW_START_SEGMENTS}),
-    new MusicPlayer({tracks: musicUrls(KITCHEN_TRACKS), engine: audio}));
+    new MusicPlayer({tracks: musicUrls(KITCHEN_TRACKS), engine: audio}), themes);
+  for (const [species, file] of Object.entries(RABBIT_THEMES)) {
+    const theme: MusicPlayer = new MusicPlayer({tracks: musicUrls([file]), engine: audio, once: true, onFinished: () => music.themeFinished(theme)});
+    themes[species] = theme;
+  }
+  // Dadi welcomed or put in the nest: his music, inside the same gesture.
+  const stopThemes = controller.onConfirmedCommand(command => {
+    const state = controller.getSnapshot().state, ids = command.type === 'welcome' ? [command.birthId] : command.type === 'breed' ? command.parents : [];
+    const species = ids.map(id => state?.rabbits.find(r => r.id === id)?.species).find(s => s && s in RABBIT_THEMES);
+    if (species) music.playTheme(species);
+  });
   music.setEnabled(channelSettings(preferences, 'music').enabled);
   void music.prepare().then(ok => ok ? loading.done('music') : loading.warn('music', 'Musique indisponible : le jeu reste jouable sans elle.'));
   const lifecycle = bindLifecycle(controller, browserLifecycle()); lifecycle.start();
@@ -108,7 +119,7 @@ async function boot(): Promise<() => void> {
     requestMobileFullscreen();
     loadingRoot.hidden = true; app.inert = false; loading.dispose(); unrender(); stopMessages();
     ui = new GameUI(controller, scene, clock, preferences, audio, {onlineServicesAllowed: policy.onlineServicesAllowed && !LABORATORY_BUILD && !DECORATIONS_PREVIEW_BUILD, accountKnown: () => accountKnown(storage),
-      onCuisineActive: active => music.setPlace(active ? 'kitchen' : 'meadow')});
+      onCuisineActive: active => music.setPlace(active ? 'kitchen' : 'meadow'), onRabbitSheet: species => music.playTheme(species)});
     const soundSettings = mountSoundSettings(document, preferences, {onChange: (channel, enabled, volume) => {
       audio.configure(channel, {enabled, volume});
       if (channel === 'music') { music.setEnabled(enabled); music.refreshVolume(); }
@@ -142,7 +153,7 @@ async function boot(): Promise<() => void> {
   const dismissPortrait = () => document.body.classList.add('portrait-dismissed');
   document.getElementById('continue-portrait')!.addEventListener('click', dismissPortrait);
   return () => {
-    entered?.(); loading.dispose(); music.dispose(); audio.dispose(); disposeViewport(); disposeInteractions(); lifecycle.stop(); controller.dispose(); game.destroy(true); artStatus.dispose();
+    entered?.(); loading.dispose(); stopThemes(); music.dispose(); audio.dispose(); disposeViewport(); disposeInteractions(); lifecycle.stop(); controller.dispose(); game.destroy(true); artStatus.dispose();
     document.removeEventListener('visibilitychange', background); window.removeEventListener('pagehide', hidden); window.removeEventListener('pageshow', shown);
     document.removeEventListener('pointerdown', retryMusic, {capture: true}); playButton.removeEventListener('click', play); retryButton.removeEventListener('click', retry);
     document.getElementById('continue-portrait')!.removeEventListener('click', dismissPortrait);
