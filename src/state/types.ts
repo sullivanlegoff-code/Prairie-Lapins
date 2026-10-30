@@ -54,6 +54,8 @@ export interface GameState {
   lastBreedingParents?: [string, string];
   /** Owner corrections already applied to this save (see simulation/adjustments.ts). */
   appliedAdjustments?: string[];
+  /** Owner's planned birth: the next breeding that fulfils this species' recipe gives it, then the field is removed. */
+  plannedBirth?: import('../config/balance').SpeciesId;
   cozy?: import('../simulation/cozy').CozyState;
   /** Present only on islands started on the southwest parcel (top/right expansion); absent = legacy centre start. */
   islandStart?: IslandStart;

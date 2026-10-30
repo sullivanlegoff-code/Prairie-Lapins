@@ -1,6 +1,7 @@
 import type {SupabaseClient} from '@supabase/supabase-js';
 import {decodeGame, SAVE_VERSION} from '../persistence/json';
 import type {GameState} from '../state/types';
+import {SPECIES, type SpeciesId} from '../config/balance';
 import {ADJUSTMENT_KINDS, ADJUSTMENT_LIMIT, type Adjustment, type AdjustmentKind} from '../simulation/adjustments';
 
 export const OUTDATED = 'Une version plus récente du jeu a enregistré ta partie : recharge la page pour mettre le jeu à jour.';
@@ -20,11 +21,16 @@ export interface CloudGateway {
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export function adjustmentRows(rows: unknown, owner: string): Adjustment[] {
   if (!Array.isArray(rows)) return [];
-  return rows.flatMap(row => {
+  return rows.flatMap((row): Adjustment[] => {
     const r = row as Record<string, unknown> | null;
     const amount = Number(r?.amount);
-    return r && r.owner_id === owner && typeof r.id === 'string' && UUID.test(r.id) && ADJUSTMENT_KINDS.includes(r.kind as AdjustmentKind)
-      && Number.isSafeInteger(amount) && Math.abs(amount) <= ADJUSTMENT_LIMIT ? [{id: r.id.toLowerCase(), kind: r.kind as AdjustmentKind, amount}] : [];
+    if (!(r && r.owner_id === owner && typeof r.id === 'string' && UUID.test(r.id) && ADJUSTMENT_KINDS.includes(r.kind as AdjustmentKind)
+      && Number.isSafeInteger(amount) && Math.abs(amount) <= ADJUSTMENT_LIMIT)) return [];
+    const id = r.id.toLowerCase(), kind = r.kind as AdjustmentKind;
+    if (kind !== 'plan_birth') return [{id, kind, amount}];
+    // A planned birth names a species with a recipe; anything else is ignored.
+    const species = r.species as SpeciesId;
+    return typeof species === 'string' && Object.hasOwn(SPECIES, species) && SPECIES[species].recipe ? [{id, kind, amount, species}] : [];
   }).reverse(); // Oldest first: corrections apply in the order the owner wrote them.
 }
 export function remoteSave(value: unknown, owner: string): RemoteSave {
@@ -66,7 +72,7 @@ export class SupabaseGateway implements CloudGateway {
   }
   async adjustments(owner: string): Promise<Adjustment[]> {
     try {
-      const {data, error} = await this.request(signal => this.client.from('prairie_adjustments').select('id, owner_id, kind, amount')
+      const {data, error} = await this.request(signal => this.client.from('prairie_adjustments').select('id, owner_id, kind, amount, species')
         .eq('owner_id', owner).order('created_at', {ascending: false}).limit(100).abortSignal(signal));
       return error ? [] : adjustmentRows(data, owner);
     } catch { return []; }

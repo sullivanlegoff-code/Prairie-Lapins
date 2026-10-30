@@ -21,7 +21,7 @@ import {AFFECTION_STATUE, farmLimit, farmDuration, BALANCE, HEARTS, HOUR, TRAVEL
 import {emptyBuilding} from '../state/initial';
 import {babyInNursery, findNurseryBaby, firstFreeNurserySlot, nurseryBuilding, nurseryUnlockQuote, settleNestTransfers} from './nursery';
 import type {ActionResult, Building, Command, GameState, PattesCommand, Refusal, ProgressionGain} from '../state/types';
-import {chooseBirth, breedingPool, nestForParent} from './breeding';
+import {chooseBirth, breedingPool, nestForParent, recipeMatches} from './breeding';
 import {recipePrice, recipePurchaseReason} from './recipes';
 import {advance, validTime, drawIncomeRoll} from './time';
 import {complementCost, quoteAcceleration} from './hearts';
@@ -400,7 +400,12 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(breedingPool(s, parents[0].species, parents[1].species, parents[0].affection, parents[1].affection).total > 0,'NO_BREEDING_RESULT');
         // Free launch: no payment or heart-complement path.
         const roll = rng(); requireRule(Number.isFinite(roll) && roll >= 0 && roll < 1, 'INVALID_RANDOM');
-        const result = chooseBirth(s, parents[0].species, parents[1].species, roll, parents[0].affection, parents[1].affection);
+        let result = chooseBirth(s, parents[0].species, parents[1].species, roll, parents[0].affection, parents[1].affection);
+        // Owner's planned birth (see simulation/adjustments.ts): the first pair fulfilling its recipe gets it, once.
+        if (s.plannedBirth && recipeMatches(s.plannedBirth, parents[0].species, parents[1].species)) {
+          result = {...result, species: s.plannedBirth, guaranteed: false, reservedDiscovery: false};
+          delete s.plannedBirth;
+        }
         s.pityFailures = result.pityFailures;
         value = id('birth');
         nest.breeding = {parents: [...command.parents], startedAt: time, endsAt: time + growthDuration(result.species),
