@@ -24,7 +24,8 @@ import {bindAppInteractions} from './display/appInteractions';
 import {AudioEngine} from './audio/audioEngine';
 import {mountSoundSettings, channelSettings} from './ui/soundSettings';
 import {MusicPlayer} from './audio/musicPlayer';
-import {MUSIC_TRACKS} from './config/music';
+import {MusicDirector} from './audio/musicDirector';
+import {KITCHEN_TRACKS, MEADOW_START_SEGMENTS, MEADOW_TRACKS} from './config/music';
 import {LoadingTracker, renderLoading, startLoadingMessages} from './display/loadingScreen';
 
 async function boot(): Promise<() => void> {
@@ -85,9 +86,11 @@ async function boot(): Promise<() => void> {
   });
   const audio = new AudioEngine();
   for (const channel of ['music', 'effects'] as const) audio.configure(channel, channelSettings(preferences, channel));
-  // Musique: only the first track is probed now; nothing sounds before « Jouer ».
+  // Musique: the meadow music is probed now; nothing sounds before « Jouer ». The kitchen has its own.
   const musicBase = import.meta.env.VITE_SHARED_MUSIC_BASE ?? import.meta.env.BASE_URL;
-  const music = new MusicPlayer({tracks: MUSIC_TRACKS.map(file => musicBase + 'assets/audio/music/' + file), engine: audio});
+  const musicUrls = (files: readonly string[]) => files.map(file => musicBase + 'assets/audio/music/' + file);
+  const music = new MusicDirector(new MusicPlayer({tracks: musicUrls(MEADOW_TRACKS), engine: audio, startSegments: MEADOW_START_SEGMENTS}),
+    new MusicPlayer({tracks: musicUrls(KITCHEN_TRACKS), engine: audio}));
   music.setEnabled(channelSettings(preferences, 'music').enabled);
   void music.prepare().then(ok => ok ? loading.done('music') : loading.warn('music', 'Musique indisponible : le jeu reste jouable sans elle.'));
   const lifecycle = bindLifecycle(controller, browserLifecycle()); lifecycle.start();
@@ -104,7 +107,8 @@ async function boot(): Promise<() => void> {
     music.start();
     requestMobileFullscreen();
     loadingRoot.hidden = true; app.inert = false; loading.dispose(); unrender(); stopMessages();
-    ui = new GameUI(controller, scene, clock, preferences, audio, {onlineServicesAllowed: policy.onlineServicesAllowed && !LABORATORY_BUILD && !DECORATIONS_PREVIEW_BUILD, accountKnown: () => accountKnown(storage)});
+    ui = new GameUI(controller, scene, clock, preferences, audio, {onlineServicesAllowed: policy.onlineServicesAllowed && !LABORATORY_BUILD && !DECORATIONS_PREVIEW_BUILD, accountKnown: () => accountKnown(storage),
+      onCuisineActive: active => music.setPlace(active ? 'kitchen' : 'meadow')});
     const soundSettings = mountSoundSettings(document, preferences, {onChange: (channel, enabled, volume) => {
       audio.configure(channel, {enabled, volume});
       if (channel === 'music') { music.setEnabled(enabled); music.refreshVolume(); }

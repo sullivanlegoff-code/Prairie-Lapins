@@ -3,8 +3,9 @@ import type {AudioEngine} from './audioEngine';
 /** The subset of HTMLAudioElement used here, so the player is testable without a browser. */
 export interface MusicElement {
   src: string; preload: string; volume: number; paused: boolean;
+  currentTime?: number; readonly duration?: number; readonly readyState?: number;
   play(): Promise<void> | void; pause(): void; load?(): void;
-  addEventListener(type: 'ended' | 'error' | 'canplaythrough' | 'loadeddata', listener: () => void): void;
+  addEventListener(type: 'ended' | 'error' | 'canplaythrough' | 'loadeddata' | 'loadedmetadata', listener: () => void): void;
   removeEventListener?(type: 'ended' | 'error', listener: () => void): void;
   removeAttribute?(name: string): void;
 }
@@ -16,6 +17,8 @@ export interface MusicOptions {
   /** Availability probe of the first track before « Jouer » (a small ranged fetch by default). */
   probe?: (url: string) => Promise<boolean>;
   probeTimeout?: number;
+  /** The first track played starts at the beginning of one of this many equal parts, chosen at random (default: from the start). */
+  startSegments?: number;
 }
 export type MusicState = 'idle' | 'playing' | 'paused' | 'stopped' | 'unavailable';
 
@@ -34,6 +37,7 @@ export class MusicPlayer {
   private started = false;
   private generation = 0;
   private disposed = false;
+  private startChosen = false;
   private listeners = new Map<MusicElement, {ended: () => void; error: () => void}>();
   state: MusicState = 'idle';
   readonly history: string[] = [];
@@ -108,6 +112,7 @@ export class MusicPlayer {
     if (!this.routed.has(element) && this.options.engine.attachMusic(element as unknown as HTMLMediaElement)) this.routed.add(element);
     this.refreshVolume();
     if (element.preload !== 'auto') { element.preload = 'auto'; element.load?.(); }
+    if (!this.startChosen) { this.startChosen = true; this.seekToRandomPart(element); }
     if (this.history.at(-1) !== url) this.history.push(url);
     try {
       const played = element.play();
@@ -118,6 +123,21 @@ export class MusicPlayer {
           if (error?.name === 'NotSupportedError') this.fail(element, url); else this.state = 'paused'; });
       else this.prepareNext();
     } catch { this.fail(element, url); }
+  }
+  /** Once, before the first sound: jump to the start of a random part. The length is known only from the metadata. */
+  private seekToRandomPart(element: MusicElement): void {
+    const parts = Math.floor(this.options.startSegments ?? 1);
+    if (parts <= 1) return;
+    const part = Math.min(parts - 1, Math.floor(this.random() * parts));
+    if (!part) return;
+    let done = false;
+    const seek = () => {
+      const duration = element.duration ?? NaN;
+      if (done || this.released.has(element) || !Number.isFinite(duration) || duration <= 0) return;
+      done = true;
+      try { element.currentTime = duration * part / parts; } catch { /* plays from the start */ }
+    };
+    if ((element.readyState ?? 0) >= 1) seek(); else element.addEventListener('loadedmetadata', seek);
   }
   /** Chooses and starts buffering the following track only while the current one plays. */
   private prepareNext(): void {

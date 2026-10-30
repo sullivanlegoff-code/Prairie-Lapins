@@ -12,6 +12,8 @@ export function mountCuisineActivity(background: HTMLElement, options: {
   onRecipeCompleted?: (result: RecipeCompletion) => string | void;
   quotaText?: () => string;
   onExit?: () => void;
+  /** The kitchen opens (true) or closes (false), whatever the reason. */
+  onActiveChange?: (active: boolean) => void;
 } = {}) {
   const dialog = document.createElement('dialog'); dialog.className = 'cuisine-activity';
   dialog.setAttribute('aria-label', 'Cuisine');
@@ -82,6 +84,7 @@ export function mountCuisineActivity(background: HTMLElement, options: {
     companion.replaceChildren(); companion.hidden = true;
     if (dialog.open) dialog.close();
     background.inert = wasInert;
+    options.onActiveChange?.(false);
     if (notify) { options.onExit?.(); if (returnFocus?.isConnected) returnFocus.focus(); }
     returnFocus = null;
   }
@@ -130,6 +133,7 @@ export function mountCuisineActivity(background: HTMLElement, options: {
         chef.append(stand, body);
         // Just above the worktop art, below every kitchen object: dragged items always pass in front of it.
         activity.root.querySelector('#kitchen-world .table-art')!.after(chef);
+        options.onActiveChange?.(true);
       } catch (error) {
         selectedRabbit = null; chef = null;
         react('idle');
