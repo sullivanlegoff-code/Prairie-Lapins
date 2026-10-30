@@ -14,9 +14,9 @@ La révision servie se lit dans `build-revision.txt` (le commit GitHub) et dans 
 
 Les parties sans compte sont rangées dans le navigateur par adresse : une partie locale jouée sur Netlify n'apparaît pas sur GitHub Pages. Les parties liées à un compte se retrouvent en se reconnectant.
 
-## Netlify (manuel)
+## Netlify (hors ligne)
 
-Site `velvety-squirrel-142402.netlify.app`. `npm run build:netlify` construit `netlify-site/` à la racine `/` ; le propriétaire le glisse lui-même dans l'onglet Deploys.
+Le site `velvety-squirrel-142402.netlify.app` a été désactivé par le propriétaire le 30 octobre 2026 ; il répond 404. `npm run build:netlify` reste utile pour construire `netlify-site/` en local (aperçu sur iPhone par le Wi-Fi), mais rien n'y est plus publié.
 
 ## Historique
 
