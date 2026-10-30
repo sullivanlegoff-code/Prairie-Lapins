@@ -1,0 +1,56 @@
+# Publie le jeu sur GitHub Pages à chaque envoi sur main (ou à la demande depuis l'onglet Actions).
+# Jeu : https://sullivanlegoff-code.github.io/Prairie-Lapins/ ; laboratoire : .../Prairie-Lapins/dev/
+# L'URL du projet Supabase et sa clé publishable viennent des variables du dépôt
+# (Settings → Secrets and variables → Actions → Variables), jamais d'un fichier suivi.
+name: Publier sur GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Vérifier la configuration des comptes
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          [[ "$VITE_SUPABASE_URL" =~ ^https://[a-z0-9-]+\.supabase\.co$ ]] || { echo "::error::Variable VITE_SUPABASE_URL absente ou invalide"; exit 1; }
+          [[ "$VITE_SUPABASE_PUBLISHABLE_KEY" =~ ^sb_publishable_ ]] || { echo "::error::Variable VITE_SUPABASE_PUBLISHABLE_KEY absente ou invalide"; exit 1; }
+      - name: Construire le jeu, le laboratoire et le prototype cuisine
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_BUILD_REVISION: ${{ github.sha }}
+        run: npm run build:github
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
