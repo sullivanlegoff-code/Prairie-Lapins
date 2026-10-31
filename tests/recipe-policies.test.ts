@@ -7,8 +7,8 @@ import {validateSpeciesEntries} from '../src/config/validateSpecies';
 import {createCentreStartGame} from '../src/state/initial';
 import {breedingDistributionWeights, breedingPool} from '../src/simulation/breeding';
 
-it('keeps the independent seven special prices, no starting gift and ordered ordinary guarantee entries', () => {
-  expect(RECIPE_PRICES).toEqual({magicien: 450, dragon: 900, dadi: 450, maxou: 450, orange: 450, dinono: 450, requin: 900});
+it('keeps the independent eight special prices, no starting gift and ordered ordinary guarantee entries', () => {
+  expect(RECIPE_PRICES).toEqual({magicien: 450, dragon: 900, dadi: 450, maxou: 450, orange: 450, dinono: 450, dinenette: 450, requin: 900});
   expect(GIFTED_RECIPES).toEqual([]);
   expect(GUARANTEE_SPECIES).toEqual(["frisket","icy","ardent","snk","pic-pic","amethyste","princesse-neige","fluffy","virvoletant","phoenix","roukette","wat-wat","glassofeu","plume","boudinet","bouee","egiiipte","piment","tunini","bretonette"]);
   expect(createCentreStartGame(0).recipeBook).toEqual([]);

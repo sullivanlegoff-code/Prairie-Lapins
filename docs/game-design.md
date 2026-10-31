@@ -2,16 +2,19 @@
 
 **Actualisation du 27 octobre :** les revenus et les 18 plafonds applicables sont détaillés dans [l’économie actuelle](economy-current.md). Les barèmes de revenus, de stockage et les mesures de progression datés plus bas sont historiques. Aucun recalcul de progression n’a été effectué, à la demande du propriétaire. La règle de reproduction actuelle exclut tout résultat commun, sauf entre deux parents communs du même type ; voir [les recettes actuelles](recipes-current.md).
 
-Le registre `src/config/species.ts` contient 32 espèces : 5 communs, 20 rares, 5 épiques, 2 légendaires. La rareté « peu commun » a été retirée du jeu le 31 octobre 2026 ; les tableaux plus bas qui la citent (Brumelin, Mottelin, Terre) sont des archives. Les notes de publication plus bas sont des archives.
+Le registre `src/config/species.ts` contient 33 espèces : 5 communs, 20 rares, 6 épiques, 2 légendaires. La rareté « peu commun » a été retirée du jeu le 31 octobre 2026 ; les tableaux plus bas qui la citent (Brumelin, Mottelin, Terre) sont des archives. Les notes de publication plus bas sont des archives.
 
 | Lapin | Types | Rareté | Recette | Niveau |
 |---|---|---|---|---:|
 | Dinono | feu + métal | épique | types feu + métal, affection 6, probabilité 10 %, connaissance 450 pattes, sans garantie | 1 |
 | Lapin en Bouée | feu + métal | rare | types feu + métal, affection 2, garantie ordinaire, sans prix de connaissance | 1 |
+| Dinenette | paille + vol | épique | types paille + vol, affection 6, probabilité 10 %, connaissance 450 pattes, sans garantie | 11 |
 
 Bouée remplace Dinono entre Boudinet et Egiiipte dans l'ordre du registre et du tirage. Dinono rejoint les épiques après Orange. Son illustration et sa description sont conservées ; aucun invariant n'impose le niveau 11 à tous les épiques, donc son niveau 1 reste inchangé.
 
 Bouée : design original B « Cocktail » choisi par le propriétaire le 26 octobre 2026, lapin gris en vacances, bouée turquoise à pois blancs, lunettes de soleil en cœur roses et jus de fruit à ombrelle. Comme pour Orange, master détouré par `scripts/prepare-rabbit-masters.mjs` depuis le concept hors dépôt, puis sprite dérivé de 425 × 428 px ; largeur monde 54, ancrage 12 (bas de la bouée au sol), regard à droite. Sans clignement ni truffe animée à cause des lunettes de soleil.
+
+Dinenette (31 octobre 2026) : design du propriétaire réalisé dans Adobe Firefly, lapine bélier noire aux yeux bleus en déguisement de dinosaure rose (nœud, pointes pêche, queue en cœur). Seule retouche demandée : la patte avant levée est reposée au sol. Master détouré par `scripts/prepare-rabbit-masters.mjs` depuis le fichier hors dépôt, sprite dérivé de 434 × 428 px ; largeur monde 54, ancrage 12, regard à droite. Mêmes règles que les autres épiques (10 %, affection 6, niveau 11, connaissance 450 pattes). Sans clignement ni truffe animée, pour ne pas retoucher son visage.
 
 Les trois espèces sans sprite sont retirées du catalogue. En v16-v19, `lunettes` devient `boudinet`, `feu-glace` devient `glassofeu` et `perroquet` devient `phoenix`. Le lecteur convertit les adultes, y compris en voyage, et les naissances du nid/de la nurserie ; il conserve identités, noms, affection, habitats, trajets et dates. Il nettoie découvertes, carnet et droits historiques de niveau ; seul un adulte possédé converti ajoute sa nouvelle espèce aux découvertes. Une naissance reste cachée jusqu'à l'accueil. Les réservations ordinaires de Dinono sont annulées sans retirer le lapereau ni rallonger une croissance déjà lancée.
 

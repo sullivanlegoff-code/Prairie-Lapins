@@ -318,5 +318,15 @@
     "width": 425,
     "height": 428,
     "derivedSha1": "b5f18188e655f426e6bfd70817660953ca0f6d85"
+  },
+  "dinenette": {
+    "file": "assets/rabbits/dinenette/dinenette-v1.png",
+    "worldWidth": 54,
+    "sourceSha1": "8bcab8ad27158d85abfe3859b217a9284bab66e9",
+    "sourceWidth": 962,
+    "sourceHeight": 949,
+    "width": 434,
+    "height": 428,
+    "derivedSha1": "f0ce33c1ccf03ffe97131f1bc43752f7f73b01d5"
   }
 }
