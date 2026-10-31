@@ -24,16 +24,16 @@ function reload(s: GameState): GameState {
 
 describe('full main mission catalogue from level seven', () => {
   it('contains one stable identifier per current species and decoration, and exactly twenty new milestones', () => {
-    expect(DISCOVERY_MISSION_IDS).toEqual(SPECIES_IDS.map(id => `discover-${id}`)); expect(DISCOVERY_MISSION_IDS).toHaveLength(33);
+    expect(DISCOVERY_MISSION_IDS).toEqual(SPECIES_IDS.map(id => `discover-${id}`)); expect(DISCOVERY_MISSION_IDS).toHaveLength(34);
     expect(DECORATION_MISSION_IDS).toEqual(DECORATION_IDS.map(id => `decorate-${id}`)); expect(DECORATION_MISSION_IDS).toHaveLength(22);
-    expect(MILESTONE_MISSION_IDS).toHaveLength(20); expect(MAIN_MISSION_IDS).toHaveLength(106); expect(new Set(MAIN_MISSION_IDS).size).toBe(106);
+    expect(MILESTONE_MISSION_IDS).toHaveLength(20); expect(MAIN_MISSION_IDS).toHaveLength(107); expect(new Set(MAIN_MISSION_IDS).size).toBe(107);
     for (const id of ['discover-terre', 'discover-mottelin', 'discover-geant', 'discover-brumelin']) expect(Object.hasOwn(MAIN_MISSIONS, id)).toBe(false);
   });
   it('keeps the original sequential start below seven, then exposes all objectives even with an unfinished guide', () => {
     const young = atLevel(6); expect(visibleMainMissions(young)).toEqual(['snow-habitat']);
     expect(eligibleMainMissionIds(young)).not.toContain('discover-paille');
     expect(act(young, {type: 'claimMainMission', id: 'discover-paille'}, 0)).toMatchObject({ok: false, reason: 'NOT_READY'});
-    const s = atLevel(); expect(visibleMainMissions(s)).toEqual(catalogueMainMissionIds(s)); expect(visibleMainMissions(s)).toHaveLength(103);
+    const s = atLevel(); expect(visibleMainMissions(s)).toEqual(catalogueMainMissionIds(s)); expect(visibleMainMissions(s)).toHaveLength(104);
     expect(visibleMainMissions(s)).toEqual(expect.arrayContaining(['level-thirty', 'discover-dragon', 'decorate-robot-statue', 'snow-habitat']));
     const claimed = run(s, {type: 'claimMainMission', id: 'discover-paille'});
     expect(visibleMainMissions(claimed)).toContain('discover-paille'); expect(activeMainMissions(claimed)).not.toContain('discover-paille');
@@ -42,7 +42,7 @@ describe('full main mission catalogue from level seven', () => {
   });
   it('keeps initial rewards scoped to the historical course and retired goals unclaimable at every level', () => {
     const s = previousStart(0); s.progression = {totalXp: cumulativeLevelXp(30), rewardedThroughLevel: 30};
-    const state = advance(s, 0); expect(visibleMainMissions(state)).toHaveLength(101);
+    const state = advance(s, 0); expect(visibleMainMissions(state)).toHaveLength(102);
     for (const id of ['snow-habitat', 'welcome-snow', 'cozy-nest', 'welcome-babies', 'first-rare'] as const) {
       state.missions.completed.push(id);
       expect(visibleMainMissions(state)).not.toContain(id);

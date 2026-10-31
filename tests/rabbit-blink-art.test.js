@@ -8,10 +8,10 @@ const ADDED_PATCH_SPECIES = ['ardent', 'boudinet', 'dinono', 'egiiipte', 'piment
   'dadi', 'maxou', 'magicien', 'dragon', 'requin', 'orange'];
 
 describe('rabbit blink artwork', () => {
-  it('has useful-resolution sprites and 31 aligned patch sets, excluding Bouee with sunglasses and Dinenette', () => {
+  it('has useful-resolution sprites and 31 aligned patch sets, excluding Bouee with sunglasses, Dinenette and Calinou geant', () => {
     execFileSync(process.execPath, ['scripts/derive-rabbit-art.mjs', '--check'], {stdio: 'pipe'});
     execFileSync(process.execPath, ['scripts/derive-rabbit-blinks.mjs', '--check'], {stdio: 'pipe'});
-    const eligible = SPECIES_ENTRIES.filter(entry => entry.art.kind === 'static-sprite' && entry.id !== 'bouee' && entry.id !== 'dinenette')
+    const eligible = SPECIES_ENTRIES.filter(entry => entry.art.kind === 'static-sprite' && !['bouee', 'dinenette', 'calinou'].includes(entry.id))
       .map(entry => entry.id).sort();
     const manifest = JSON.parse(readFileSync('src/config/rabbitBlinkArt.json', 'utf8'));
     expect(eligible).toEqual([

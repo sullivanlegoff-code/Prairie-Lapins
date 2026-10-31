@@ -328,5 +328,15 @@
     "width": 434,
     "height": 428,
     "derivedSha1": "f0ce33c1ccf03ffe97131f1bc43752f7f73b01d5"
+  },
+  "calinou": {
+    "file": "assets/rabbits/calinou/calinou-v1.png",
+    "worldWidth": 78,
+    "sourceSha1": "6545b0cb5a298ed0dc22c9f3538fa8241430c6d3",
+    "sourceWidth": 1250,
+    "sourceHeight": 1250,
+    "width": 575,
+    "height": 575,
+    "derivedSha1": "3ec3b165b960fe67282ddc560bdf342e43c40114"
   }
 }

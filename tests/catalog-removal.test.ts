@@ -50,7 +50,7 @@ describe('Terre, Mottelin, Géant and Brumelin are gone from every catalogue', (
     for (const id of ['paille', 'neige', 'feu', 'belier-gris', 'volant', 'frisket', 'icy', 'magicien', 'dragon'] as const) expect(SPECIES_IDS).toContain(id);
     expect(SHOP_SPECIES).toEqual(['paille', 'neige', 'feu', 'belier-gris', 'volant']);
     expect([SPECIES.feu.progression.unlockLevel, SPECIES['belier-gris'].progression.unlockLevel, SPECIES.volant.progression.unlockLevel, SPECIES.magicien.progression.unlockLevel, SPECIES.dragon.progression.unlockLevel]).toEqual([5, 7, 9, 11, 14]);
-    expect(RECIPE_PRICES).toEqual({magicien: 450, dragon: 900, dadi: 450, maxou: 450, orange: 450, dinono: 450, dinenette: 450, requin: 900});
+    expect(RECIPE_PRICES).toEqual({magicien: 450, dragon: 900, dadi: 450, maxou: 450, orange: 450, dinono: 450, dinenette: 450, 'calinou': 450, requin: 900});
   });
 
   it('a new game offers no recipe at the start and its collection, notebook and odds never name a removed species', () => {
@@ -119,7 +119,7 @@ describe('distributions: only the removals and their renormalisation', () => {
     expect(breedingOdds(pair[0], pair[1], a, b)).toEqual(Object.fromEntries(Object.entries(expected).map(([id, w]) => [id, w * 100 / total])));
   });
   it('the unions that held Terre no longer exist, and Magicien and Dragon keep their probabilities', () => {
-    expect(breedingOdds('paille', 'belier-gris', 6, 6)).toEqual({roukette: 45, boudinet: 45, magicien: 10});
+    expect(breedingOdds('paille', 'belier-gris', 6, 6)).toEqual({roukette: 40, boudinet: 40, magicien: 10, calinou: 10});
     expect(breedingOdds('dadi', 'phoenix', 10, 10).dragon).toBe(10.5); expect(breedingOdds('dadi', 'phoenix', 15, 15).dragon).toBe(14); expect(breedingOdds('magicien', 'belier-gris', 6, 6).magicien).toBe(10); expect(breedingOdds('magicien', 'belier-gris', 10, 12).magicien).toBe(15); expect(breedingOdds('magicien', 'belier-gris', 15, 14).magicien).toBe(15); expect(breedingOdds('magicien', 'belier-gris', 15, 15).magicien).toBe(20);
     expect(breedingOdds('paille', 'paille')).toEqual({paille: 100}); expect(breedingOdds('neige', 'neige')).toEqual({neige: 100});
   });
