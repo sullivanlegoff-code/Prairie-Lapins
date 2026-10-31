@@ -29,6 +29,7 @@ const SPECIAL_DESCRIPTIONS: Record<string, string> = {
   dadi: 'Un lapin blanc à casquette rouge, avec une chaîne et des baskets.', maxou: 'Un lapin dauphin gris, avec un aileron et une queue de dauphin.',
   dinono: 'Un lapin bélier dans un déguisement de dinosaure vert, avec des pointes orange sur le dos.',
   dinenette: 'Une lapine bélier noire aux yeux bleus, dans un déguisement de dinosaure rose avec un nœud et une queue en cœur.',
+  'calinou': 'Un lapin angora géant, blanc et rosé, à la fourrure en nuage, avec un ruban rose sur l’oreille.',
   orange: 'Une petite lapine blanche à la robe orange.', requin: 'Un lapin bélier gris aux rayures de requin, avec un aileron bleu et un sourire pointu.',
 };
 

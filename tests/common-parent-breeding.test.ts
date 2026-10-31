@@ -4,7 +4,7 @@ import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {HISTORICAL_COMMON_WEIGHTS, HOUR, MINUTE, SPECIES, SPECIES_IDS, growthDuration, type SpeciesId} from '../src/config/balance';
 import {createCentreStartGame} from '../src/state/initial';
 import {act, decodeGame, encodeGame} from '../src/simulation';
-import {breedingDistributionWeights, breedingPool, breedingWeights, chooseBirth, commonResultAllowed} from '../src/simulation/breeding';
+import {breedingDistributionWeights, breedingOdds, breedingPool, breedingWeights, chooseBirth, commonResultAllowed} from '../src/simulation/breeding';
 import {cumulativeLevelXp} from '../src/simulation/progression';
 import {stateLevelAccess} from '../src/simulation/levelRights';
 import {GameController} from '../src/application/GameController';
@@ -98,15 +98,19 @@ describe('Common results require two Common parents of the same single type', ()
       const s = parents('paille', 'belier-gris', affection); s.discovered.push('roukette', 'boudinet');
       const p = breedingPool(s, 'paille', 'belier-gris', affection, affection);
       expect(p.weights.magicien! * 100 / p.total).toBe(expected);
-      expect(p.weights.roukette! * 100 / p.total).toBe((100 - expected) / 2);
-      expect(p.weights.boudinet! * 100 / p.total).toBe((100 - expected) / 2);
+      // Câlinou géant shares Magicien's Paille + Metal recipe and chance.
+      expect(p.weights.calinou! * 100 / p.total).toBe(expected);
+      expect(p.weights.roukette! * 100 / p.total).toBe(100 / 2 - expected);
+      expect(p.weights.boudinet! * 100 / p.total).toBe(100 / 2 - expected);
       for (const [a, b, id] of [['dadi', 'phoenix', 'dragon'], ['maxou', 'wat-wat', 'requin']] as const) {
         const pool = breedingPool(s, a, b, Math.max(10, affection), Math.max(10, affection));
         expect(pool.weights[id]! * 100 / pool.total).toBe(affection >= 15 ? 14 : 10.5);
       }
     }
     // Removing every ordinary candidate cannot turn a fixed 10 % special into a 100 % result.
-    expect(breedingDistributionWeights('paille', 'belier-gris', 6, 6, id => id === 'magicien')).toEqual({});
+    expect(breedingDistributionWeights('paille', 'belier-gris', 6, 6, id => id === 'magicien' || id === 'calinou')).toEqual({});
+    // Paille, Metal, Feu and Vol together at affection 15: five Epics at 20 % fill the draw, and no Rare is listed at 0 %.
+    expect(breedingOdds('magicien', 'phoenix', 15, 15)).toEqual({magicien: 20, dadi: 20, dinenette: 20, dinono: 20, calinou: 20});
   });
   it('removes Common results from mixed pairs while preserving the exact Dragon reserve', () => {
     expect(breedingDistributionWeights('neige', 'pic-pic', 2, 2)).toEqual({'pic-pic': 30, tunini: 30});

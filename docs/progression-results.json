@@ -2,13 +2,13 @@
   "calendarMilestones": {
     "5": 1,
     "10": 3,
-    "15": 7,
-    "20": 16,
-    "22": 22,
-    "25": 34,
-    "30": 53
+    "15": 8,
+    "20": 15,
+    "22": 21,
+    "25": 32,
+    "30": 51
   },
-  "statueDay": 10,
+  "statueDay": 9.5,
   "method": "Seed 20261025; real act/advance; 3 sessions/day at 08/13/20, <=45 commands and <=8 meals/session; two farms, each sowing the best-liked unlocked crop ripe by the next visit; save Hearts from level 13 for the 60-Heart statue plus six in reserve, buy from level 15; collection-first parent pairs; no Cuisine or paid recipes; Hearts for permanent farm, agency and habitat upgrades after the statue reserve. Counter reserves: 3000 coins and 6000 food. Day snapshots just before next 08:00. Tutorial is the first session.",
   "curve": {
     "initialLevel": 1,
@@ -33,11 +33,11 @@
   "milestones": {
     "5": 0,
     "10": 2.208,
-    "15": 6.208,
-    "20": 15,
-    "22": 21.208,
-    "25": 33,
-    "30": 52
+    "15": 7,
+    "20": 14.208,
+    "22": 20,
+    "25": 31.5,
+    "30": 50.5
   },
   "rows": [
     {
@@ -78,6 +78,7 @@
           "orange",
           "dinono",
           "dinenette",
+          "calinou",
           "requin"
         ]
       },
@@ -140,6 +141,7 @@
           "orange",
           "dinono",
           "dinenette",
+          "calinou",
           "requin"
         ]
       },
@@ -220,6 +222,7 @@
           "orange",
           "dinono",
           "dinenette",
+          "calinou",
           "requin"
         ]
       },
@@ -271,16 +274,16 @@
     },
     {
       "step": "7 j",
-      "pattes": 3022,
-      "grass": 1160,
-      "hearts": 37,
-      "level": 15,
-      "species": 20,
+      "pattes": 3470,
+      "grass": 912,
+      "hearts": 30,
+      "level": 14,
+      "species": 19,
       "affection": {
         "≥10": 10,
         "≥15": 0,
         "max": 14,
-        "rabbits": 22
+        "rabbits": 21
       },
       "speciesIds": [
         "paille",
@@ -301,8 +304,7 @@
         "phoenix",
         "egiiipte",
         "roukette",
-        "bouee",
-        "dinono"
+        "dadi"
       ],
       "storedPattes": 1400,
       "remaining": {
@@ -315,10 +317,11 @@
         "paidRecipes": [
           "magicien",
           "dragon",
-          "dadi",
           "maxou",
           "orange",
+          "dinono",
           "dinenette",
+          "calinou",
           "requin"
         ]
       },
@@ -376,23 +379,21 @@
         "discover-phoenix",
         "discover-egiiipte",
         "discover-roukette",
-        "level-fifteen",
-        "discover-bouee",
-        "discover-dinono"
+        "discover-dadi"
       ]
     },
     {
       "step": "20 j",
-      "pattes": 4919,
-      "grass": 27,
-      "hearts": 94,
+      "pattes": 3123,
+      "grass": 0,
+      "hearts": 97,
       "level": 21,
-      "species": 31,
+      "species": 32,
       "affection": {
-        "≥10": 27,
+        "≥10": 26,
         "≥15": 6,
         "max": 20,
-        "rabbits": 37
+        "rabbits": 36
       },
       "speciesIds": [
         "paille",
@@ -413,28 +414,29 @@
         "phoenix",
         "egiiipte",
         "roukette",
+        "dadi",
         "bouee",
-        "dinono",
-        "princesse-neige",
-        "orange",
-        "plume",
-        "pic-pic",
         "magicien",
+        "orange",
+        "maxou",
+        "dinenette",
+        "plume",
         "wat-wat",
+        "princesse-neige",
+        "pic-pic",
         "piment",
         "bretonette",
-        "maxou",
-        "dadi",
-        "dinenette"
+        "dinono",
+        "calinou"
       ],
-      "storedPattes": 3925,
+      "storedPattes": 3100,
       "remaining": {
         "commons": [],
         "extensions": 5,
         "extensionCost": 151000,
         "farms": 0,
         "kitchen": false,
-        "habitatUpgrades": 8,
+        "habitatUpgrades": 9,
         "paidRecipes": [
           "dragon",
           "requin"
@@ -494,41 +496,42 @@
         "discover-phoenix",
         "discover-egiiipte",
         "discover-roukette",
+        "discover-dadi",
         "level-fifteen",
         "discover-bouee",
-        "discover-dinono",
-        "discover-princesse-neige",
+        "discover-magicien",
         "discover-orange",
-        "discover-plume",
-        "discover-pic-pic",
+        "discover-maxou",
+        "discover-dinenette",
         "build-affection-statue",
         "affection-fifteen",
-        "habitat-level-three",
         "affection-twenty",
-        "discover-magicien",
+        "discover-plume",
+        "habitat-level-three",
         "three-extensions",
         "discover-wat-wat",
+        "discover-princesse-neige",
+        "discover-pic-pic",
         "discover-piment",
         "all-ordinary-rares",
         "discover-bretonette",
-        "discover-maxou",
         "level-twenty",
-        "discover-dadi",
-        "discover-dinenette"
+        "discover-dinono",
+        "discover-calinou"
       ]
     },
     {
       "step": "50 j",
-      "pattes": 6335,
-      "grass": 239,
-      "hearts": 509,
+      "pattes": 3872,
+      "grass": 18,
+      "hearts": 470,
       "level": 29,
-      "species": 33,
+      "species": 34,
       "affection": {
-        "≥10": 43,
+        "≥10": 41,
         "≥15": 28,
         "max": 20,
-        "rabbits": 44
+        "rabbits": 42
       },
       "speciesIds": [
         "paille",
@@ -549,30 +552,31 @@
         "phoenix",
         "egiiipte",
         "roukette",
+        "dadi",
         "bouee",
-        "dinono",
-        "princesse-neige",
-        "orange",
-        "plume",
-        "pic-pic",
         "magicien",
+        "orange",
+        "maxou",
+        "dinenette",
+        "plume",
         "wat-wat",
+        "princesse-neige",
+        "pic-pic",
         "piment",
         "bretonette",
-        "maxou",
-        "dadi",
-        "dinenette",
+        "dinono",
+        "calinou",
         "dragon",
         "requin"
       ],
-      "storedPattes": 5075,
+      "storedPattes": 4250,
       "remaining": {
         "commons": [],
         "extensions": 4,
         "extensionCost": 142000,
         "farms": 0,
         "kitchen": false,
-        "habitatUpgrades": 7,
+        "habitatUpgrades": 8,
         "paidRecipes": []
       },
       "decorationBudget": {
@@ -629,27 +633,28 @@
         "discover-phoenix",
         "discover-egiiipte",
         "discover-roukette",
+        "discover-dadi",
         "level-fifteen",
         "discover-bouee",
-        "discover-dinono",
-        "discover-princesse-neige",
+        "discover-magicien",
         "discover-orange",
-        "discover-plume",
-        "discover-pic-pic",
+        "discover-maxou",
+        "discover-dinenette",
         "build-affection-statue",
         "affection-fifteen",
-        "habitat-level-three",
         "affection-twenty",
-        "discover-magicien",
+        "discover-plume",
+        "habitat-level-three",
         "three-extensions",
         "discover-wat-wat",
+        "discover-princesse-neige",
+        "discover-pic-pic",
         "discover-piment",
         "all-ordinary-rares",
         "discover-bretonette",
-        "discover-maxou",
         "level-twenty",
-        "discover-dadi",
-        "discover-dinenette",
+        "discover-dinono",
+        "discover-calinou",
         "level-twenty-two",
         "discover-dragon",
         "discover-requin",
@@ -659,24 +664,24 @@
   ],
   "actions": {
     "buyBuilding": 13,
-    "claimMainMission": 74,
+    "claimMainMission": 75,
     "buyRabbit": 4,
     "startOrder": 419,
     "initiationAid": 3,
     "collectOrder": 417,
-    "feed": 1617,
+    "feed": 1618,
     "breed": 208,
     "claimDailyMission": 100,
     "transferBirth": 1,
     "welcome": 206,
-    "collectIncome": 1906,
+    "collectIncome": 1910,
     "buyDecoration": 1,
     "claimHearts": 69,
-    "upgradeHabitat": 7,
+    "upgradeHabitat": 6,
     "expand": 4,
     "upgradeFarm": 2,
-    "release": 167,
-    "exchangeForHeart": 715
+    "release": 169,
+    "exchangeForHeart": 667
   },
-  "totalActions": 5933
+  "totalActions": 5892
 }

@@ -60,7 +60,8 @@ export function breedingDistributionWeights(a: SpeciesId, b: SpeciesId, affectio
   // In half-percent units, so the ×1.5 affection step of epic and legendary chances stays an exact integer.
   const chance = (id: SpeciesId) => SPECIES[id].recipe!.probability! * 2 * rareBirthFactor(id, affectionA, affectionB);
   const remaining = 200 - specials.reduce((sum, id) => sum + chance(id), 0);
-  const weights: Odds = Object.fromEntries(Object.entries(ordinary).map(([id, weight]) => [id, weight * remaining]));
+  // Five admissible Epics at affection 15 take the whole 100 %: ordinary results then have no chance and are left out.
+  const weights: Odds = remaining > 0 ? Object.fromEntries(Object.entries(ordinary).map(([id, weight]) => [id, weight * remaining])) : {};
   for (const id of specials) weights[id] = chance(id) * total;
   return weights;
 }
