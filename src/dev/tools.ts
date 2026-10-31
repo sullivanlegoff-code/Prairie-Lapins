@@ -12,6 +12,9 @@ import {GIFTED_RECIPES} from '../config/recipes';
 import {SPECIES, SPECIES_IDS, type SpeciesId} from '../config/species';
 import {BALANCE} from '../config/balance';
 import {HABITATS} from '../config/habitats';
+import {LEGENDARY_TEST_EVENT} from '../config/legendaryArt';
+import type {LegendaryAct} from '../display/legendaryTimeline';
+import {showLegendaryReveal} from '../ui/legendaryReveal';
 import {habitatEntryReason, habitatStats} from '../simulation/habitats';
 
 export const TEST_PREFIX = 'prairie-lapins.development.';
@@ -105,6 +108,15 @@ export function developmentEnvironment(base: SaveStorage, options: {decorationPr
       section('Avancer le temps de test');
       for (const minutes of TIME_STEPS) button(`+ ${minutes} min`, `dev-time-${minutes}`, () => resultMessage(advanceTime(controller, minutes), `Horloge de test avancée de ${minutes} minutes.`));
       const disposePanel = mountLabPanel(host, controller, state => replaceTestState(controller, state), (_ok, message) => { status.textContent = message; }, onReplacement);
+      section('Animations légendaires');
+      button('Apparition du Lapin Dragon', 'dev-reveal-dragon', () => showLegendaryReveal('dragon', {title: 'Nouvelle découverte !', name: SPECIES.dragon.name, details: 'Essai du laboratoire', button: 'Fermer'}));
+      button('Apparition du Lapin Requin', 'dev-reveal-requin', () => showLegendaryReveal('requin', {title: 'Nouvelle découverte !', name: SPECIES.requin.name, details: 'Essai du laboratoire', button: 'Fermer'}));
+      const acts: [LegendaryAct, string][] = [['tap', 'Dragon : souffle de feu'], ['smoke', 'Dragon : fumée'], ['hiccup', 'Dragon : hoquet de feu'], ['embers', 'Dragon : braises'],
+        ['dive', 'Requin : plongeon'], ['surf', 'Requin : surf'], ['bubbles', 'Requin : bulles'], ['splash', 'Requin : éclaboussure']];
+      for (const [act, label] of acts) button(label, `dev-legendary-${act}`, () => {
+        window.dispatchEvent(new CustomEvent(LEGENDARY_TEST_EVENT, {detail: {act}}));
+        status.textContent = `${label} : lancé sur les légendaires visibles de la prairie (ferme ce panneau pour regarder).`;
+      });
       section('Placement manuel — habitat existant');
       const field = (label: string, id: string) => {
         const wrap = document.createElement('label'); wrap.textContent = label + ' '; const select = document.createElement('select'); select.id = id; wrap.append(select); target.append(wrap); return select;

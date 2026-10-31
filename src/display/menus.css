@@ -58,7 +58,7 @@
 
 /* Linen sits inside the approved stone shell, including centered sheets. */
 #game-panel .panel-scroll,
-dialog:not(.paille-dialogue):not(.cuisine-activity),
+dialog:not(.paille-dialogue):not(.cuisine-activity):not(.legendary-reveal),
 .cuisine-activity .cuisine-root :is(.overlay-card, .orientation-card) {
   background-color: #f4e8cd;
   background-image: radial-gradient(ellipse at 48% 25%, #fff9e52b 30%, #80602a22 100%), var(--menu-linen);
