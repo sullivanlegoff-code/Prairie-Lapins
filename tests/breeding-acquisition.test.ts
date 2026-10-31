@@ -35,7 +35,7 @@ describe('the breeding engine honours the declared acquisition sources', () => {
     shopOnly('ardent'); expect(breedingWeights('paille', 'ardent', 4, 4)).toEqual({snk: 30});
   });
   it('excludes a special recipe whose source is no longer declared, and does not reserve its probability', () => {
-    shopOnly('magicien'); expect(breedingOdds('paille', 'belier-gris', 6, 6)).toEqual({roukette: 45, boudinet: 45, calinou: 10});
+    shopOnly('magicien'); expect(breedingOdds('paille', 'belier-gris', 6, 6)).toEqual({roukette: 1200 * 100 / 2700, boudinet: 1200 * 100 / 2700, calinou: 300 * 100 / 2700});
     shopOnly('dragon'); expect(breedingOdds('dadi', 'phoenix', 10, 10).dragon).toBeUndefined();
   });
   it('keeps a species without breeding source out of the guarantee, and the guarantee still works for the others', () => {

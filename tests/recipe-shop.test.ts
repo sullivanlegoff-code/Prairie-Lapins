@@ -139,7 +139,7 @@ describe('recipe purchase flow', () => {
     expect(document.activeElement).toBe(heading); expect(scroll.mock.contexts).toContain(card('dinono'));
     const advanced = card('dinono').querySelector<HTMLDetailsElement>('.recipe-rules')!;
     expect(advanced.open).toBe(false); expect(advanced.querySelector('summary')!.textContent).toBe('En savoir plus');
-    expect(advanced.textContent).toContain(`hors garantie ordinaire : ${(SPECIES.dinono.acquisition[0] as {probability: number}).probability} %`);
+    expect(advanced.textContent).toContain('un Épique pèse quatre fois moins qu’un Rare, et les Épiques réunis ne dépassent jamais la moitié du tirage');
     advanced.open = true; advanced.dispatchEvent(new Event('toggle')); controller.refresh();
     expect(card('dinono').querySelector<HTMLDetailsElement>('.recipe-rules')!.open).toBe(true);
     const prepare = [...card('dinono').querySelectorAll('button')].find(b => b.textContent === 'Préparer cette paire au nid' && !b.disabled)!;
@@ -173,7 +173,7 @@ describe('recipe purchase flow', () => {
     expect(card('dinono').textContent).toContain('Affection 6 minimum pour chacun des deux parents.');
     expect(card('dinono').textContent).toMatch(/\d+ paires? possédées? compatibles? avec la recette/);
     const saved = decodeGame(data.get(SAVE_KEY)!); expect(saved.ok && saved.state.recipeBook).toEqual(['dinono']);
-    expect(nestOdds(ui, 'Lapin Bélier Gris', 'Lapin Feu')).toEqual(["Résultats possibles : Dinono et des résultats inconnus.", "Dinono · feu + métal · Épique : 15 %", "Résultats inconnus : 85 %"]);
+    expect(nestOdds(ui, 'Lapin Bélier Gris', 'Lapin Feu')).toEqual(["Résultats possibles : Dinono et des résultats inconnus.", "Dinono · feu + métal · Épique : 3/22 (≈ 13,64 %)", "Résultats inconnus : 19/22 (≈ 86,36 %)"]);
     ui.open({kind: 'collection'}); [...panel().querySelectorAll('button')].find(b => b.textContent === 'Carnet de reproduction')!.click();
     expect([...card('dinono').querySelectorAll('button')].some(b => b.textContent === 'Préparer cette paire au nid')).toBe(true);
   });

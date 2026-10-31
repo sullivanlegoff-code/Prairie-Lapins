@@ -48,8 +48,9 @@ describe('epic and legendary chances grow with both parents’ affection', () =>
     expect([rareBirthFactor('magicien', 9, 20), rareBirthFactor('magicien', 10, 14), rareBirthFactor('magicien', 15, 15), rareBirthFactor('dragon', 15, 20)]).toEqual([1, 1.5, 2, 2]);
     expect(rareBirthFactor('boudinet', 20, 20)).toBe(1); expect(SPECIES.boudinet.rarity).toBe('rare');
     expect(breedingOdds('magicien', 'belier-gris', 9, 9).magicien).toBe(10);
-    expect(breedingOdds('magicien', 'belier-gris', 10, 10).magicien).toBe(15);
-    expect(breedingOdds('magicien', 'belier-gris', 20, 15).magicien).toBe(20);
+    // Weight model: Roukette and Boudinet weigh 1200 each, Magicien and Câlinou géant 300 × the factor each.
+    expect(breedingOdds('magicien', 'belier-gris', 10, 10).magicien).toBe(450 * 100 / 3300);
+    expect(breedingOdds('magicien', 'belier-gris', 20, 15).magicien).toBe(600 * 100 / 3600);
   });
 });
 
