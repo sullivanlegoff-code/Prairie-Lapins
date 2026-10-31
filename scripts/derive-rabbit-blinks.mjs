@@ -12,9 +12,10 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const check = process.argv.includes('--check');
 const sha1 = bytes => createHash('sha1').update(bytes).digest('hex');
 const registry = readFileSync(join(root, 'src/config/species.ts'), 'utf8');
-// Every eligible illustrated species must supply both masters; Bouee wears sunglasses and has no facial animation.
+// Every eligible illustrated species must supply both masters; Bouee wears sunglasses and Dinenette keeps the owner's
+// design untouched, so neither has facial animation.
 const species = [...registry.matchAll(/\{id: '([^']+)'[^\n]+?art: \{kind: 'static-sprite', file: '([^']+)'/g)]
-  .filter(([, id]) => id !== 'bouee');
+  .filter(([, id]) => id !== 'bouee' && id !== 'dinenette');
 if (species.length !== 31) throw Error(`Expected 31 static sprites with blink masters, got ${species.length}`);
 const manifest = {};
 let failed = false;

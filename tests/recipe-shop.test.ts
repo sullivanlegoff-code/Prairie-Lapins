@@ -92,7 +92,7 @@ describe('recipe purchase buttons', () => {
     const {ui} = setup(initial), pool = vi.spyOn(breeding, 'breedingPool'); pool.mockClear();
     ui.open({kind: 'shop', tab: 'recipes'});
     expect(pool).not.toHaveBeenCalled();
-    expect(panel().querySelectorAll('[data-recipe]')).toHaveLength(7);
+    expect(panel().querySelectorAll('[data-recipe]')).toHaveLength(8);
     for (const element of panel().querySelectorAll<HTMLElement>('[data-recipe]')) {
       expect(element.classList.contains('compact-list-card')).toBe(true);
       expect(element.querySelector('details')).toBeNull(); expect(element.querySelector('.recipe-pair')).toBeNull();
@@ -214,9 +214,9 @@ describe('level announcement count', () => {
   it('counts unknown sold recipes newly purchasable, excluding bought or discovered ones', () => {
     const s = shop(1);
     expect(newlyPurchasableRecipes(s, levelUnlockContents(s, 4, 5))).toBe(0);
-    expect(newlyPurchasableRecipes(s, levelUnlockContents(s, 1, 14))).toBe(6);
+    expect(newlyPurchasableRecipes(s, levelUnlockContents(s, 1, 14))).toBe(7);
     expect(newlyPurchasableRecipes(s, levelUnlockContents(s, 1, 2))).toBe(0);
     s.discovered.push('dinono'); s.recipeBook.push('magicien');
-    expect(newlyPurchasableRecipes(s, levelUnlockContents(s, 1, 14))).toBe(5);
+    expect(newlyPurchasableRecipes(s, levelUnlockContents(s, 1, 14))).toBe(6);
   });
 });

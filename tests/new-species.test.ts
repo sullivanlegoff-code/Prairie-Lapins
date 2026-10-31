@@ -131,8 +131,8 @@ describe('saved births, delays, compatibility and collection',()=>{
   const guarantee=knowRecipes(couple('magicien','paille',6));guarantee.pityFailures=9;expect(recipeBook(guarantee,0).find(r=>r.species==='magicien')!.pairs[0]).toMatchObject({probability:'0 %',possible:false});
  });
  it('filters compose by type, rarity and public discoveries without reading pending births',()=>{
-  const s=createGame(0);expect(collectionView(s)).toHaveLength(EXPECTED_IDS.length);expect(collectionView(s,{rarity:'epic'})).toHaveLength(5);
-  expect(collectionView(s,{rarity:'epic',type:'vol'})).toEqual([{known:false,name:'???'}]);expect(collectionView(s,{rarity:'epic',discovery:'known'})).toEqual([]);
+  const s=createGame(0);expect(collectionView(s)).toHaveLength(EXPECTED_IDS.length);expect(collectionView(s,{rarity:'epic'})).toHaveLength(6);
+  expect(collectionView(s,{rarity:'epic',type:'vol'})).toEqual([{known:false,name:'???'},{known:false,name:'???'}]);expect(collectionView(s,{rarity:'epic',discovery:'known'})).toEqual([]);
   expect(collectionView(s,{type:'paille',discovery:'known'})).toEqual([{known:true,species:'paille',name:'Lapin Paille'}]);
  });
  it('prepares every species and actual parent pairs only in a validated explicit test scenario',()=>{

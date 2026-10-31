@@ -50,7 +50,7 @@ describe('Terre, Mottelin, Géant and Brumelin are gone from every catalogue', (
     for (const id of ['paille', 'neige', 'feu', 'belier-gris', 'volant', 'frisket', 'icy', 'magicien', 'dragon'] as const) expect(SPECIES_IDS).toContain(id);
     expect(SHOP_SPECIES).toEqual(['paille', 'neige', 'feu', 'belier-gris', 'volant']);
     expect([SPECIES.feu.progression.unlockLevel, SPECIES['belier-gris'].progression.unlockLevel, SPECIES.volant.progression.unlockLevel, SPECIES.magicien.progression.unlockLevel, SPECIES.dragon.progression.unlockLevel]).toEqual([5, 7, 9, 11, 14]);
-    expect(RECIPE_PRICES).toEqual({magicien: 450, dragon: 900, dadi: 450, maxou: 450, orange: 450, dinono: 450, requin: 900});
+    expect(RECIPE_PRICES).toEqual({magicien: 450, dragon: 900, dadi: 450, maxou: 450, orange: 450, dinono: 450, dinenette: 450, requin: 900});
   });
 
   it('a new game offers no recipe at the start and its collection, notebook and odds never name a removed species', () => {

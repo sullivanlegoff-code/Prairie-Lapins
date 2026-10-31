@@ -28,6 +28,7 @@ const SPECIAL_DESCRIPTIONS: Record<string, string> = {
   magicien: 'Un lapin brun en cape et chapeau de magicien étoilés, baguette à la main.', dragon: 'Un lapin bélier rouge aux écailles de dragon, avec des cornes et des ailes.',
   dadi: 'Un lapin blanc à casquette rouge, avec une chaîne et des baskets.', maxou: 'Un lapin dauphin gris, avec un aileron et une queue de dauphin.',
   dinono: 'Un lapin bélier dans un déguisement de dinosaure vert, avec des pointes orange sur le dos.',
+  dinenette: 'Une lapine bélier noire aux yeux bleus, dans un déguisement de dinosaure rose avec un nœud et une queue en cœur.',
   orange: 'Une petite lapine blanche à la robe orange.', requin: 'Un lapin bélier gris aux rayures de requin, avec un aileron bleu et un sourire pointu.',
 };
 

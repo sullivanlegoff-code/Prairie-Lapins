@@ -27,6 +27,8 @@ export const DESIGNS = [
   {id: 'orange', source: 'output/imagegen/orange-v1/orange-B.png', background: 'light'},
   // Original design chosen by the owner on 26 October 2026 (concept B « Cocktail »), generated outside the Design folder.
   {id: 'bouee', source: 'output/imagegen/bouee-v2/bouee-B.png', background: 'light'},
+  // Owner's own Adobe Firefly design (31 October 2026); only the raised front paw was lowered, at the owner's request.
+  {id: 'dinenette', source: 'output/imagegen/dinenette-v1/dinenette.png', background: 'light'},
 ];
 // Bouee's left ear encloses a pocket of background: seed only that pocket, preserving the ring's white dots.
 export const BACKGROUND_SEEDS = {bouee: [[490, 570]]};

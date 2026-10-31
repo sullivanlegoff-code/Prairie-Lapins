@@ -22,13 +22,13 @@ const items = () => [...el('level-up-unlocks').querySelectorAll('li')].map(li =>
 describe('level-up recipe announcement', () => {
   it('announces the unknown recipe made purchasable, without any condition', async () => {
     const c = setup({...createGame(0), progression: {totalXp: cumulativeLevelXp(10), rewardedThroughLevel: 10}}); c.grantLaboratoryXp(500); c.grantLaboratoryXp(500); await vi.advanceTimersByTimeAsync(300);
-    // The four existing level-11 Epics unlock together; Dinono stays at level 1.
+    // The five level-11 Epics (with Dinenette) unlock together; Dinono stays at level 1.
     expect(el('level-up-title').textContent).toBe('Niveau 11 atteint !');
-    expect(items()).toContain('Recettes en boutique · 4');
+    expect(items()).toContain('Recettes en boutique · 5');
     for (const hidden of ['Affection', 'Paille + Feu', 'paille + feu', '%', 'Parents']) expect(el('level-up-unlocks').textContent).not.toContain(hidden);
   });
   it('omits recipes already known by discovery', async () => {
-    const s = createGame(0); s.discovered.push('magicien', 'dadi', 'maxou', 'orange');
+    const s = createGame(0); s.discovered.push('magicien', 'dadi', 'maxou', 'orange', 'dinenette');
     const c = setup({...s, progression: {totalXp: cumulativeLevelXp(10), rewardedThroughLevel: 10}}); c.grantLaboratoryXp(500); c.grantLaboratoryXp(500); await vi.advanceTimersByTimeAsync(300);
     expect(items().some(t => t.includes('en boutique · ') && t.startsWith('Recette'))).toBe(false);
   });
