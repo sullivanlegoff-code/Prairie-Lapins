@@ -3,6 +3,8 @@ import {bestFriend} from '../simulation/cozy';
 import {DECORATION_COLLECTIONS,TRAVEL_STORIES,COZY_EVENTS,DISCOVERIES,currentCozyEvent,currentDiscovery} from '../config/cozyContent';
 import {discoveryAvailable,translatedDecorations} from '../simulation/cozyActivities';
 import {rabbitDropTargets} from './rabbitDropTargets';
+import {showLegendaryReveal} from './legendaryReveal';
+import {isLegendaryShow, type LegendaryShow} from '../config/legendaryArt';
 import {accountKnown} from '../cloud/accountState';
 import {cloudConfig} from '../cloud/config';
 import {AccountReminder} from './accountReminder';
@@ -1496,6 +1498,7 @@ export class GameUI {
     for (const entry of entries) {
       const info = entry.known ? SPECIES[entry.species] : null, card = this.card(entry.name, entry.known && info ? `${typeNames(info.types)} · ${RARITY_NAMES[info.rarity]} · Découverte` : 'Silhouette · à découvrir');
       card.querySelector('.card-heading')!.prepend(avatar(entry.known ? entry.species : undefined));
+      if (entry.known && info?.rarity === 'legendary') card.classList.add('legendary-shimmer');
       if (entry.known && entry.description) {
         const description = node('p'); description.textContent = entry.description; card.append(description);
       }
@@ -1630,6 +1633,7 @@ export class GameUI {
     this.content.append(avatar(species, true), node('p', `${typeNames(info.types)} · ${RARITY_NAMES[info.rarity]}`),
       node('p', `${s.rabbits.filter(r => r.species === species).length} lapin${s.rabbits.filter(r => r.species === species).length > 1 ? 's' : ''} dans la prairie.`), node('p', info.price === null ? 'Obtention : reproduction.' : 'Obtention : boutique ou reproduction.'), node('p', `Croissance : ${growthDuration(species) / 60_000} minutes.`));
     if (info.recipe) this.button(this.content, 'Consulter la recette', () => this.openRecipe(species), null, true);
+    if (isLegendaryShow(species)) this.button(this.content, 'Revoir l’apparition', () => this.legendaryReveal(species, info.name, 'Fermer'), null, true).dataset.replayReveal = species;
     if (!this.history.length) this.button(this.content, 'Retour à la collection', () => this.open({kind: 'collection'}), null, true);
   }
   private renderExtension(s: GameState): void {
@@ -1917,8 +1921,14 @@ export class GameUI {
   }
   private discovery(species: SpeciesId): void {
     if (this.onboardingActive || this.pailleDialogue.element.open) return;
+    if (isLegendaryShow(species)) { this.legendaryReveal(species, 'Nouvelle découverte !', 'Bienvenue dans la prairie'); return; }
     const info = SPECIES[species]; this.dialog.replaceChildren(node('h2', 'Nouvelle découverte !'), avatar(species, true), node('h3', info.name), node('p', `${typeNames(info.types)} · ${RARITY_NAMES[info.rarity]}`));
     this.button(this.dialog, 'Bienvenue dans la prairie', () => this.dialog.close()); this.dialog.showModal();
+  }
+  /** Lapin Dragon and Lapin Requin: their full-screen first appearance, replayed from the Collection on request. */
+  private legendaryReveal(species: LegendaryShow, title: string, button: string): void {
+    const info = SPECIES[species];
+    showLegendaryReveal(species, {title, name: info.name, details: `${typeNames(info.types)} · ${RARITY_NAMES[info.rarity]}`, button});
   }
   private guide(step: GuideStep): void {
     const s = this.snapshot.state; if (!s) return;

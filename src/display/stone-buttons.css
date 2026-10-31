@@ -136,7 +136,7 @@ button:not(.resource):not(:where(#player-progress)):not(.meadow-nav):not(.meadow
 
 /* A carved stone shell, a slate lintel, and warm light reading surfaces. */
 #game-panel, #game-panel.shop-fullscreen,
-dialog:not(.paille-dialogue):not(.cuisine-activity),
+dialog:not(.paille-dialogue):not(.cuisine-activity):not(.legendary-reveal),
 #tutorial, #portrait-notice > div, .loading-card {
   border: 12px solid transparent;
   border-image: var(--ui-pebble) 28 / 12px / 0 stretch;
@@ -166,7 +166,7 @@ dialog:not(.paille-dialogue):not(.cuisine-activity) > h2 {
   background: linear-gradient(#484c48, #303634);
   border-bottom: 3px solid #a6a394;
 }
-dialog:not(.paille-dialogue):not(.cuisine-activity) { padding: 16px; }
+dialog:not(.paille-dialogue):not(.cuisine-activity):not(.legendary-reveal) { padding: 16px; }
 #player-level-dialog > #level-up-title { color: var(--ui-cream); }
 dialog::backdrop { background: #1e2929a8; }
 .panel-scroll { padding: 12px 12px 20px; scrollbar-color: #777b6d #e5dfcf; }
@@ -278,7 +278,7 @@ progress::-moz-progress-bar { background: linear-gradient(#bedb7b, #7fa845 38%, 
   .panel-header { padding: 4px 8px; }
   #game-panel { top: calc(var(--hud-offset) + 4px); }
   #game-panel.shop-fullscreen { top: 0; }
-  dialog:not(.paille-dialogue):not(.cuisine-activity) { padding: 12px; }
+  dialog:not(.paille-dialogue):not(.cuisine-activity):not(.legendary-reveal) { padding: 12px; }
   dialog:not(.paille-dialogue):not(.cuisine-activity) > h2 { top: -12px; }
 }
 @media (prefers-reduced-motion: reduce) {

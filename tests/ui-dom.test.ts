@@ -542,6 +542,17 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     expect(breeding().open).toBe(true); expect(button('Croiser', breeding()).disabled).toBe(false);
     expect(breedingRow(0, 'Lapin Neige').getAttribute('aria-pressed')).toBe('true'); expect(breedingRow(1, 'Lapin Feu').getAttribute('aria-pressed')).toBe('true');
   });
+  it('replays the Lapin Dragon appearance from its species page and makes its collection card shine', () => {
+    const initial = createGame(0); initial.discovered.push('dragon');
+    const {ui} = setup(initial);
+    ui.open({kind: 'collection'});
+    const card = [...panel().querySelectorAll('article')].find(c => c.textContent?.includes('Lapin Dragon'))!;
+    expect(card.classList.contains('legendary-shimmer')).toBe(true);
+    ui.open({kind: 'species', species: 'dragon'}); button('Revoir l’apparition').click();
+    const reveal = document.querySelector<HTMLDialogElement>('dialog.legendary-reveal-dragon')!;
+    expect(reveal.open).toBe(true); expect(reveal.textContent).toContain('Lapin Dragon'); expect(reveal.textContent).toContain('Légendaire');
+    button('Fermer', reveal).click(); expect(document.querySelector('dialog.legendary-reveal')).toBeNull();
+  });
   it('keeps a guaranteed new rare hidden through reproduction and growth, then discovers it on manual welcome', () => {
     const initial = collectionReady();initial.progression={totalXp:cumulativeLevelXp(6),rewardedThroughLevel:6};
     for (const r of initial.rabbits) r.affection = 4;

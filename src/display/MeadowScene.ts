@@ -6,6 +6,9 @@ import {rabbitArt, type RabbitArt} from '../config/rabbitArt';
 import {rabbitBlinkArt, rabbitPatchPlacement} from '../config/rabbitBlinkArt';
 import {rabbitFaceSeed, rabbitFaceState} from './rabbitBlink';
 import {DadiReactions} from './dadiReactions';
+import {LegendaryView} from './legendaryEffects';
+import {LegendaryClock, type LegendaryAct} from './legendaryTimeline';
+import {LEGENDARY_TEST_EVENT, isLegendaryShow, legendaryMeadowArt} from '../config/legendaryArt';
 import {DadiSpeech, dadiHeadVisible} from './dadiSpeech';
 import {RabbitLife} from './rabbitLife';
 import {RabbitLifeViews} from './rabbitLifeViews';
@@ -67,6 +70,8 @@ export interface DecorationGhost {id: string; catalogId?: DecorationId; location
 interface VisualRabbit {id: string; object: Phaser.GameObjects.Container; body: Phaser.GameObjects.Container; ears: Phaser.GameObjects.Ellipse[]; sprite?: Phaser.GameObjects.Image; art?: RabbitArt; base: Point; phase: number; fedUntil: number;
   flames?: Phaser.GameObjects.Image;
   face?: {seed: number; eyes: Phaser.GameObjects.Image; nose: Phaser.GameObjects.Image};
+  /** Lapin Dragon and Lapin Requin: halo, moving wing or fin, and their shows. */
+  legendary?: LegendaryView;
   center: Point; group: string; motion?: RabbitMotion; nest?: boolean; lift: number;
   /** Centre of the visible body in body space: the somersault turns about it, not about the feet or the picture centre. */
   pivot: Point; /** Mirror sign of the picture's native direction: -1 for art that looks left. */ native: 1 | -1}
@@ -92,6 +97,8 @@ export class MeadowScene extends Phaser.Scene {
   private motionClock: number | null = null;
   private dadi = new DadiReactions();
   private dadiSpeech: DadiSpeech | null = null;
+  /** Legendaries' show clocks, kept across rebuilds of their bodies like the motions. */
+  private legendaryClocks = new Map<string, LegendaryClock>();
   private life = new RabbitLife();
   private cozyInteraction = new CozyInteraction();
   private friends = new Map<string,string|null>();
@@ -216,11 +223,18 @@ export class MeadowScene extends Phaser.Scene {
     const dadiVisibility = () => { if (document.hidden) clearDadi(); };
     document.addEventListener('visibilitychange', dadiVisibility);
     window.addEventListener('pagehide', clearDadi);
+    // Laboratory buttons replay one show on every legendary in the meadow; nothing in the normal game sends this event.
+    const legendaryTest = (event: Event) => {
+      const act = (event as CustomEvent<{act?: LegendaryAct}>).detail?.act;
+      if (act) for (const rabbit of this.rabbitViews) rabbit.legendary?.play(act);
+    };
+    window.addEventListener(LEGENDARY_TEST_EVENT, legendaryTest);
     this.events.once('shutdown', () => {
       stopCommands(); this.dadi.reset(); this.dadiSpeech?.destroy(); this.dadiSpeech = null;
       this.cozyInteraction.reset(); this.discoveryImage?.destroy(); this.discoveryImage = null;
       this.life.reset(); this.lifeViews?.destroy(); this.lifeViews = null;
       document.removeEventListener('visibilitychange', dadiVisibility); window.removeEventListener('pagehide', clearDadi);
+      window.removeEventListener(LEGENDARY_TEST_EVENT, legendaryTest);
     });
     this.recenter();
     this.scale.on('resize', this.resize, this);
@@ -483,6 +497,7 @@ export class MeadowScene extends Phaser.Scene {
     for (const rabbit of state?.rabbits ?? []) {
       add(rabbitArt(rabbit.species));
       for (const patch of rabbitBlinkArt(rabbit.species)?.patches ?? []) add(patch);
+      if (isLegendaryShow(rabbit.species)) for (const art of legendaryMeadowArt(rabbit.species)) add(art);
     }
     const buildingArt = (building: Pick<Building, 'kind' | 'habitat' | 'footprintTier' | 'farmLevel'>) => {
       if (building.kind === 'enclosure') add(habitatArtFor(building.habitat ?? undefined, building.footprintTier));
@@ -741,8 +756,14 @@ export class MeadowScene extends Phaser.Scene {
             body.add(image); return image;
           });
           const face = patches ? {seed: rabbitFaceSeed(rabbit.id), eyes: patches[0], nose: patches[1]} : undefined;
+          let legendary: LegendaryView | undefined;
+          if (isLegendaryShow(rabbit.species) && legendaryMeadowArt(rabbit.species).every(a => this.textures.exists(a.texture))) {
+            let clock = this.legendaryClocks.get(rabbit.id);
+            if (!clock || clock.species !== rabbit.species) { clock = new LegendaryClock(rabbit.species, rabbit.id); this.legendaryClocks.set(rabbit.id, clock); }
+            legendary = new LegendaryView(this, rabbit.id, rabbit.species, {object, body, sprite, art, pivot: view.pivot, motion}, clock);
+          }
           this.animals.add(object);
-          this.rabbitViews.push({id: rabbit.id, ears: [], sprite, art, face, flames, ...view});
+          this.rabbitViews.push({id: rabbit.id, ears: [], sprite, art, face, flames, legendary, ...view});
           return;
         }
         const coat = proceduralCoat(SPECIES[rabbit.species].art), color = Phaser.Display.Color.HexStringToColor(coat.body).color, patch = Phaser.Display.Color.HexStringToColor(coat.patch).color;
@@ -772,6 +793,7 @@ export class MeadowScene extends Phaser.Scene {
       });
     }
     for (const id of [...this.motions.keys()]) if (!walkers.has(id)) this.motions.delete(id);
+    for (const id of [...this.legendaryClocks.keys()]) if (!this.rabbitViews.some(r => r.id === id && r.legendary)) this.legendaryClocks.delete(id);
     this.rabbitGroups.clear();
     for (const rabbit of this.rabbitViews) {
       let group = this.rabbitGroups.get(rabbit.group);
@@ -1019,7 +1041,7 @@ export class MeadowScene extends Phaser.Scene {
     if (!closest) closest = rabbitHit(screen, this.rabbitViews.filter(r => r.sprite && r.art).map(r => ({
       id: r.id, point: this.view.screen(this.bodyPoint(r, 0, -7)), depth: r.object.y, radius: 22
     })));
-    if (closest) { this.select({kind: 'rabbit', id: closest.id}); return; }
+    if (closest) { this.rabbitViews.find(r => r.id === closest!.id)?.legendary?.tap(); this.select({kind: 'rabbit', id: closest.id}); return; }
     const decorationId = this.decorationAt(screen);
     if (decorationId) { this.select({kind: 'decoration', id: decorationId}); return; }
 
@@ -1105,6 +1127,11 @@ export class MeadowScene extends Phaser.Scene {
         lift = rabbitFedLift(time, rabbit.phase, rabbit.fedUntil);
         rabbit.object.setPosition(position.x, position.y).setDepth(position.y);
       }
+      if (rabbit.legendary) {
+        const show = rabbit.legendary;
+        show.update({time, dt, active: lifeActive && visibleResidents.has(rabbit.id), reduced: reducedMotion, asleep: rabbit.motion?.mode === 'sleep'});
+        lift += show.lift; rotation += show.lean;
+      }
       rabbit.lift = lift;
       if (rabbit.object.depth !== previousDepth) depthChanged = true;
       this.poseBody(rabbit, {lift, squashX, squashY, facing, rotation, nuzzle});
@@ -1117,6 +1144,8 @@ export class MeadowScene extends Phaser.Scene {
         const asleep = rabbit.motion?.mode === 'sleep';
         rabbit.face.eyes.setVisible(asleep || (state & 1) !== 0);
         rabbit.face.nose.setVisible(!asleep && (state & 2) !== 0);
+        if (rabbit.legendary?.mouthOpen) rabbit.face.nose.setVisible(false);
+        if (rabbit.legendary?.submerged) { rabbit.face.eyes.setVisible(false); rabbit.face.nose.setVisible(false); }
       }
       rabbit.ears.forEach((ear, index) => { ear.rotation = rabbit.motion?.mode === 'sleep' ? 0 : Math.sin(t * 1.4 + index) * .13; });
       if (lifeActive && visibleResidents.has(rabbit.id) && (rabbit.motion?.mode === 'sleep' || rabbit.motion?.mode === 'kiss')) {
