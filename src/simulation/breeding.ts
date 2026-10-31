@@ -50,19 +50,32 @@ export function breedingWeights(a: SpeciesId, b: SpeciesId, affectionA = 2, affe
   }
   return weights;
 }
-/** Exact integer ratios: reserve specials once, then scale ordinary results. */
+/** An Epic's `probability` is its weight on the scale where an ordinary Rare weighs 40: 10 makes it a quarter of a Rare. */
+const EPIC_WEIGHT_SCALE = 40;
+/**
+ * Owner's weight model (31 October 2026), in exact integer ratios. Every Epic of the pair weighs a quarter of a Rare
+ * (×1.5 / ×2 with affection) and is drawn with the ordinary results; all Epics together never exceed half of that draw.
+ * Legendaries, exact-parent recipes, keep their fixed chance, reserved once outside the Epic cap.
+ */
 export function breedingDistributionWeights(a: SpeciesId, b: SpeciesId, affectionA = 2, affectionB = 2, allowed: (id: SpeciesId) => boolean = () => true): Odds {
   const ordinary = Object.fromEntries(Object.entries(breedingWeights(a, b, affectionA, affectionB)).filter(([id]) => allowed(id as SpeciesId))) as Odds;
   const specials = SPECIES_IDS.filter(id => hasRecipe(SPECIES[id]) && SPECIES[id].recipe?.probability !== undefined && recipeAdmissible(id, a, b, affectionA, affectionB) && allowed(id));
   if (!specials.length) return ordinary;
   const total = Object.values(ordinary).reduce((sum, weight) => sum + weight, 0);
-  if (!total) return {}; // No ordinary mass can be distributed while preserving fixed special probabilities.
-  // In half-percent units, so the ×1.5 affection step of epic and legendary chances stays an exact integer.
+  if (!total) return {}; // Without an ordinary result, neither an Epic share nor a fixed Legendary chance can be kept.
+  const epics = specials.filter(id => SPECIES[id].rarity !== 'legendary'), legendaries = specials.filter(id => SPECIES[id].rarity === 'legendary');
+  const epicWeight = (id: SpeciesId) => SPECIES[id].recipe!.probability! * BREEDING_WEIGHTS.recipe * rareBirthFactor(id, affectionA, affectionB);
+  const ordinaryTotal = total * EPIC_WEIGHT_SCALE, epicTotal = epics.reduce((sum, id) => sum + epicWeight(id), 0);
+  // Over the cap, the Epics share exactly the ordinary mass, keeping their ratios: both sides are scaled by the other's total.
+  const capped = epicTotal > ordinaryTotal;
+  const base: Odds = Object.fromEntries(Object.entries(ordinary).map(([id, weight]) => [id, weight * EPIC_WEIGHT_SCALE * (capped ? epicTotal : 1)]));
+  for (const id of epics) base[id] = epicWeight(id) * (capped ? ordinaryTotal : 1);
+  if (!legendaries.length) return base;
+  // In half-percent units, so the ×1.5 affection step of a Legendary chance stays an exact integer.
   const chance = (id: SpeciesId) => SPECIES[id].recipe!.probability! * 2 * rareBirthFactor(id, affectionA, affectionB);
-  const remaining = 200 - specials.reduce((sum, id) => sum + chance(id), 0);
-  // Five admissible Epics at affection 15 take the whole 100 %: ordinary results then have no chance and are left out.
-  const weights: Odds = remaining > 0 ? Object.fromEntries(Object.entries(ordinary).map(([id, weight]) => [id, weight * remaining])) : {};
-  for (const id of specials) weights[id] = chance(id) * total;
+  const remaining = 200 - legendaries.reduce((sum, id) => sum + chance(id), 0), baseTotal = Object.values(base).reduce((sum, weight) => sum + weight, 0);
+  const weights: Odds = Object.fromEntries(Object.entries(base).map(([id, weight]) => [id, weight * remaining]));
+  for (const id of legendaries) weights[id] = chance(id) * baseTotal;
   return weights;
 }
 export function breedingOdds(a: SpeciesId, b: SpeciesId, affectionA = 2, affectionB = 2): Odds {

@@ -84,7 +84,7 @@ describe('notebook recipe privacy', () => {
 describe('nest odds privacy', () => {
   it('groups unknown results, hides the Dragon and keeps the launch available', () => {
     const {ui} = setup(couple(14)); nestWithParents(ui);
-    expect(odds()).toEqual(["Résultats possibles : Phoenix, Dadi et des résultats inconnus.","Phoenix · feu + vol · Rare : 119/1200 (≈ 9,92 %)","Dadi · feu + métal · Épique : 15 %","Résultats inconnus : 901/1200 (≈ 75,08 %)"]);
+    expect(odds()).toEqual(["Résultats possibles : Phoenix, Dadi et des résultats inconnus.","Phoenix · feu + vol · Rare : 179/1350 (≈ 13,26 %)","Dadi · feu + métal · Épique : 179/3600 (≈ 4,97 %)","Résultats inconnus : 8831/10800 (≈ 81,77 %)"]);
     expect(breeding().textContent).toContain('Résultats possibles : Phoenix, Dadi et des résultats inconnus.');
     for (const hidden of ['Dragon', 'Volant', 'Légendaire', 'Maxou']) { expect(panel().textContent).not.toContain(hidden); expect(breeding().textContent).not.toContain(hidden); }
     expect(panel().textContent).toContain('Chaque recette possède ses propres conditions');

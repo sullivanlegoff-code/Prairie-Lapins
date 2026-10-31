@@ -61,10 +61,10 @@ describe('nest odds privacy over every pair', () => {
   });
   it('gives a documented example: Dadi × Phoenix at affection 10', () => {
     const s = game(14, 0, ['dadi', 'phoenix'], []);
-    // Six ordinary Rares share the 59,5 % left after the fixed specials (Dragon 10,5 %, Dadi 15 %, Dinono 15 %); the Commons of a mixed pair are absent.
-    expect(oddsTexts(oddsView(s, 'dadi', 'phoenix', 10, 10))).toEqual({"excluded":[],"guarantee":"Cette paire est admissible à la garantie.","lines":["Phoenix · feu + vol · Rare : 119/1200 (≈ 9,92 %)","Dadi · feu + métal · Épique : 15 %","Résultats inconnus : 901/1200 (≈ 75,08 %)"],"summary":"Résultats possibles : Phoenix, Dadi et des résultats inconnus."});
+    // Dragon keeps its fixed 10,5 %; the other 89,5 % go by weight to six Rares (1200 each) and Dadi and Dinono (450 each). The Commons of a mixed pair are absent.
+    expect(oddsTexts(oddsView(s, 'dadi', 'phoenix', 10, 10))).toEqual({"excluded":[],"guarantee":"Cette paire est admissible à la garantie.","lines":["Phoenix · feu + vol · Rare : 179/1350 (≈ 13,26 %)","Dadi · feu + métal · Épique : 179/3600 (≈ 4,97 %)","Résultats inconnus : 8831/10800 (≈ 81,77 %)"],"summary":"Résultats possibles : Phoenix, Dadi et des résultats inconnus."});
     s.recipeBook.push('dragon');
-    expect(oddsTexts(oddsView(s, 'dadi', 'phoenix', 10, 10)).lines).toEqual(['Phoenix · feu + vol · Rare : 119/1200 (≈ 9,92 %)', 'Lapin Dragon · feu + vol · Légendaire : 10,5 %', 'Dadi · feu + métal · Épique : 15 %', 'Résultats inconnus : 31/48 (≈ 64,58 %)']);
+    expect(oddsTexts(oddsView(s, 'dadi', 'phoenix', 10, 10)).lines).toEqual(['Phoenix · feu + vol · Rare : 179/1350 (≈ 13,26 %)', 'Dadi · feu + métal · Épique : 179/3600 (≈ 4,97 %)', 'Lapin Dragon · feu + vol · Légendaire : 10,5 %', 'Résultats inconnus : 7697/10800 (≈ 71,27 %)']);
     const locked = game(13, 0, ['dadi', 'phoenix'], []);
     expect(oddsTexts(oddsView(locked, 'dadi', 'phoenix', 10, 10)).excluded).toEqual(['Certains résultats demandent un niveau supérieur · exclus du tirage actuel.']);
   });

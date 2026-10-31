@@ -1,13 +1,25 @@
 # Catalogue courant et migration v20 - 26 octobre 2026
 
+## Chances de reproduction : modèle par poids (31 octobre 2026)
+
+Décision du propriétaire : une paire ne doit jamais donner plus d’une chance sur deux d’obtenir un épique, et les chances doivent rester cohérentes quand on ajoutera des rares, des épiques et des légendaires de tous les types.
+
+- Chaque résultat possible d’une paire reçoit un poids ; sa chance est son poids divisé par le total de la paire.
+- Un rare pèse 40 (en interne 30 × 40 = 1200). Un épique pèse son `probability` (10 pour tous aujourd’hui), soit un quart d’un rare, multiplié par 1,5 si les deux parents ont l’affection 10 et par 2 à l’affection 15.
+- Plafond : tous les épiques réunis ne dépassent jamais la moitié du tirage ; au-delà, ils se partagent exactement cette moitié en gardant leurs proportions.
+- Les légendaires (recette à parents exacts) gardent leur chance fixe (7 %, ×1,5 / ×2 avec l’affection), réservée à part, hors du plafond des épiques ; le reste du tirage suit les poids.
+- Une paire sans résultat rare possible ne donne toujours aucun résultat.
+
+Exemples à l’affection 6 : paille + métal (2 rares, 2 épiques) donne 40 % par rare et 10 % par épique ; paille + neige (2 rares, Orange) donne 44,4 % par rare et 11,1 % pour Orange ; une paire qui réunit paille, métal, feu et vol (12 rares, 5 épiques) donne 7,5 % par rare et 1,9 % par épique. Viser une petite paire est donc la meilleure façon d’obtenir un épique précis.
+
 Le registre `src/config/species.ts` contient 34 espèces. Les notes de publication plus bas sont des archives.
 
 | Lapin | Types | Rareté | Recette | Niveau |
 |---|---|---|---|---:|
-| Dinono | feu + métal | épique | types feu + métal, affection 6, probabilité 5 %, connaissance 450 pattes, sans garantie | 1 |
+| Dinono | feu + métal | épique | types feu + métal, affection 6, poids 10 (un quart d’un rare), connaissance 450 pattes, sans garantie | 1 |
 | Lapin en Bouée | feu + métal | rare | types feu + métal, affection 2, garantie ordinaire, sans prix de connaissance | 1 |
-| Dinenette | paille + vol | épique | types paille + vol, affection 6, probabilité 10 %, connaissance 450 pattes, sans garantie | 11 |
-| Câlinou géant | paille + métal | épique | types paille + métal, affection 6, probabilité 10 %, connaissance 450 pattes, sans garantie | 11 |
+| Dinenette | paille + vol | épique | types paille + vol, affection 6, poids 10 (un quart d’un rare), connaissance 450 pattes, sans garantie | 11 |
+| Câlinou géant | paille + métal | épique | types paille + métal, affection 6, poids 10 (un quart d’un rare), connaissance 450 pattes, sans garantie | 11 |
 
 Bouée remplace Dinono entre Boudinet et Egiiipte dans l'ordre du registre et du tirage. Dinono rejoint les épiques après Orange. Son illustration et sa description sont conservées ; aucun invariant n'impose le niveau 11 à tous les épiques, donc son niveau 1 reste inchangé.
 
@@ -15,7 +27,7 @@ Bouée : design original B « Cocktail » choisi par le propriétaire le 26 octo
 
 Dinenette (31 octobre 2026) : design du propriétaire réalisé dans Adobe Firefly, lapine bélier noire aux yeux bleus en déguisement de dinosaure rose (nœud, pointes pêche, queue en cœur). Seule retouche demandée : la patte avant levée est reposée au sol. Master détouré par `scripts/prepare-rabbit-masters.mjs` depuis le fichier hors dépôt, sprite dérivé de 434 × 428 px ; largeur monde 54, ancrage 12, regard à droite. Mêmes règles que les autres épiques (10 %, affection 6, niveau 11, connaissance 450 pattes). Sans clignement ni truffe animée, pour ne pas retoucher son visage.
 
-Câlinou géant (31 octobre 2026, identifiant `calinou`) : concept B « Nuage géant » choisi par le propriétaire parmi trois designs générés avec ChatGPT, lapin angora géant blanc et rosé à la fourrure en nuage, yeux lilas, ruban rose sur l’oreille ; ni trait de paille ni trait de métal, à la demande du propriétaire. Environ 1,5 fois la taille d’un lapin normal : largeur monde 78 (contre 52 pour un lapin rond comme Boudinet), sprite dérivé de 575 × 575 px, ancrage 12, regard à droite. Mêmes règles que les autres épiques ; il partage la recette paille + métal de Magicien, donc un couple paille + métal donne 10 % de chacun. Avec les quatre types paille, métal, feu et vol réunis et les deux parents à l’affection 15, les cinq épiques possibles (Magicien, Dadi, Dinono, Dinenette, Câlinou géant) prennent chacune 20 % : il ne reste aucune chance de rare, et les rares ne sont alors plus listés. Sans clignement ni truffe animée.
+Câlinou géant (31 octobre 2026, identifiant `calinou`) : concept B « Nuage géant » choisi par le propriétaire parmi trois designs générés avec ChatGPT, lapin angora géant blanc et rosé à la fourrure en nuage, yeux lilas, ruban rose sur l’oreille ; ni trait de paille ni trait de métal, à la demande du propriétaire. Environ 1,5 fois la taille d’un lapin normal : largeur monde 78 (contre 52 pour un lapin rond comme Boudinet), sprite dérivé de 575 × 575 px, ancrage 12, regard à droite. Mêmes règles que les autres épiques ; il partage la recette paille + métal de Magicien, donc un couple paille + métal donne 10 % de chacun à l’affection 6. Sans clignement ni truffe animée.
 
 Les trois espèces sans sprite sont retirées du catalogue. En v16-v19, `lunettes` devient `boudinet`, `feu-glace` devient `glassofeu` et `perroquet` devient `phoenix`. Le lecteur convertit les adultes, y compris en voyage, et les naissances du nid/de la nurserie ; il conserve identités, noms, affection, habitats, trajets et dates. Il nettoie découvertes, carnet et droits historiques de niveau ; seul un adulte possédé converti ajoute sa nouvelle espèce aux découvertes. Une naissance reste cachée jusqu'à l'accueil. Les réservations ordinaires de Dinono sont annulées sans retirer le lapereau ni rallonger une croissance déjà lancée.
 
