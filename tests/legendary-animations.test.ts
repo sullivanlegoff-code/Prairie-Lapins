@@ -3,7 +3,7 @@
 import {existsSync, readFileSync} from 'node:fs';
 import {afterEach, describe, expect, it} from 'vitest';
 import {LEGENDARY_EFFECTS, LEGENDARY_PARTS, legendaryMeadowArt} from '../src/config/legendaryArt';
-import {ACT_MS, DIVE, IDLE_GAP, LegendaryClock, SURF_ENTRY_MS, SURF_SLIDE_MS, TAP_COOLDOWN_MS, breathFrame, diveFin, haloPose, partAngle, speciesActs, surfPose} from '../src/display/legendaryTimeline';
+import {ACT_MS, DIVE, IDLE_GAP, LegendaryClock, SURF_ENTRY_MS, SURF_SLIDE_MS, TAP_COOLDOWN_MS, breathFrame, diveFin, partAngle, speciesActs, surfPose} from '../src/display/legendaryTimeline';
 import {createRabbitMotion, motionZone, startSurf, stepRabbitMotion} from '../src/display/rabbitMotion';
 import {showLegendaryReveal} from '../src/ui/legendaryReveal';
 
@@ -46,7 +46,8 @@ describe('legendary pictures', () => {
     const dragon = legendaryMeadowArt('dragon').map(a => a.texture), requin = legendaryMeadowArt('requin').map(a => a.texture);
     expect(dragon).toContain('legendary-breath-1'); expect(dragon).not.toContain('legendary-surfboard');
     expect(requin).toContain('legendary-surfboard'); expect(requin).not.toContain('legendary-breath-1');
-    for (const list of [dragon, requin]) expect(list.some(t => /^legendary-(firewall|wave|foam)/.test(t))).toBe(false);
+    // No halo in the meadow: the shine belongs to the appearance and the card.
+    for (const list of [dragon, requin]) expect(list.some(t => /^legendary-(firewall|wave|foam|halo)/.test(t))).toBe(false);
   });
 });
 
@@ -83,9 +84,8 @@ describe('legendary clock', () => {
     expect(frames[0]).toBe(0); expect(frames.at(-1)).toBe(5);
     expect(new Set(frames.slice(3, 12))).toEqual(new Set([2, 3, 4]));
   });
-  it('keeps the wing, fin and halo still with reduced motion', () => {
+  it('keeps the wing and fin still with reduced motion', () => {
     expect(partAngle('dragon', 4000, 1, null, true)).toBe(0);
-    expect(haloPose(4000, 1, false, true).rotation).toBe(0);
     expect(Math.abs(partAngle('dragon', 4000, 1, null, false))).toBeLessThan(.25);
   });
   it('shows only the fin while the Requin is under water, and a two-second slide on the board', () => {

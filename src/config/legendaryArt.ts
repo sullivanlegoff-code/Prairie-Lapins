@@ -53,5 +53,5 @@ export const LEGENDARY_PARTS: Record<LegendaryShow, LegendaryParts> = {
 export function legendaryMeadowArt(species: LegendaryShow): {texture: string; url: string}[] {
   const parts = LEGENDARY_PARTS[species], e = LEGENDARY_EFFECTS;
   const own = species === 'dragon' ? [...e.breath, ...e.flame, e.ember, e.spark, e.smoke] : [e.surfboard, e.puddle, e.bubble, e.drop, ...e.surfwave, ...e.splash];
-  return [parts.body, parts.part, ...(parts.mouth ? [parts.mouth] : []), e.halo, ...own];
+  return [parts.body, parts.part, ...(parts.mouth ? [parts.mouth] : []), ...own];
 }

@@ -19,6 +19,7 @@ import './display/meadow-navigation.css';
 import './display/breeding.css';
 import './display/onboarding.css';
 import './display/menus.css';
+import './display/legendary-card.css';
 import './display/loading-screen.css';
 import {bindAppInteractions} from './display/appInteractions';
 import {AudioEngine} from './audio/audioEngine';

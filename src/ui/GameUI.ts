@@ -4,6 +4,7 @@ import {DECORATION_COLLECTIONS,TRAVEL_STORIES,COZY_EVENTS,DISCOVERIES,currentCoz
 import {discoveryAvailable,translatedDecorations} from '../simulation/cozyActivities';
 import {rabbitDropTargets} from './rabbitDropTargets';
 import {showLegendaryReveal} from './legendaryReveal';
+import {clearLegendaryCard, decorateLegendaryCard, legendaryPortrait} from './legendaryCard';
 import {isLegendaryShow, type LegendaryShow} from '../config/legendaryArt';
 import {accountKnown} from '../cloud/accountState';
 import {cloudConfig} from '../cloud/config';
@@ -577,7 +578,7 @@ export class GameUI {
     // Settings, the list menus, a rabbit's card and a building's menu open in the middle of the screen, over the dimmed meadow, with
     // the full height to scroll (a phone in landscape left the side panel about 240 px). The guided start keeps the side panel, except Settings.
     const card = !!this.view && (this.view.kind === 'settings' || (!this.onboardingActive && CENTER_CARD_VIEWS.includes(this.view.kind)));
-    clearRabbitTheme(this.panel);
+    clearRabbitTheme(this.panel); clearLegendaryCard(this.panel);
     this.panel.classList.toggle('center-card', card); document.body.classList.toggle('center-card-open', card);
     const backdrop = document.getElementById('panel-backdrop'); if (backdrop) backdrop.hidden = !card;
     document.getElementById('panel-back')!.hidden = !this.history.length && !fullShop;
@@ -1074,7 +1075,7 @@ export class GameUI {
   }
   private renderRabbit(s: GameState, id: string): void {
     const r = s.rabbits.find(r => r.id === id); if (!r) { this.close(); return; }
-    rabbitTheme(this.panel, r.species);
+    rabbitTheme(this.panel, r.species); const legendary = decorateLegendaryCard(this.panel, r.species);
     const species = SPECIES[r.species]; this.title.textContent = species.name;
     this.menuPortrait(avatar(r.species));
     const friend=s.rabbits.find(other=>other.id===bestFriend(s,r.id));
@@ -1082,7 +1083,7 @@ export class GameUI {
     else this.content.append(node('p','En partageant leur habitat, tes lapins apprennent à devenir complices.','small'));
     const overview = node('div', '', 'rabbit-overview'), essential = node('div');
     essential.append(this.stats([['Affection', `${r.affection} / 20`], ['Revenu', `${rabbitIncome(r.affection, r.species, individualIncomeRoll(r))} pattes / h`]]));
-    overview.append(avatar(r.species, true), essential); this.content.append(overview);
+    overview.append(legendary ? legendaryPortrait(avatar(r.species, true)) : avatar(r.species, true), essential); this.content.append(overview);
     const cost = feedCost(r.affection), away = travelling(s, id), reason = away ? 'TRAVELING' as const : feedReason(s, r.affection);
     if (away) essential.append(node('p', `En voyage ${toPlace(s.travel!.trips.find(t => t.rabbitId === id)!.destination)} · retour à l’agence`, 'badge rabbit-away'));
     if (reason !== 'MAX_AFFECTION' && reason !== 'STATUE_REQUIRED' && reason !== 'TRAVELING') essential.append(node('p', `Prochain repas : ${cost} nourriture → affection ${r.affection + 1}, revenu ${rabbitIncome(r.affection + 1, r.species, individualIncomeRoll(r))} pattes / h.`, 'small'));
@@ -1498,7 +1499,6 @@ export class GameUI {
     for (const entry of entries) {
       const info = entry.known ? SPECIES[entry.species] : null, card = this.card(entry.name, entry.known && info ? `${typeNames(info.types)} · ${RARITY_NAMES[info.rarity]} · Découverte` : 'Silhouette · à découvrir');
       card.querySelector('.card-heading')!.prepend(avatar(entry.known ? entry.species : undefined));
-      if (entry.known && info?.rarity === 'legendary') card.classList.add('legendary-shimmer');
       if (entry.known && entry.description) {
         const description = node('p'); description.textContent = entry.description; card.append(description);
       }
@@ -1630,7 +1630,8 @@ export class GameUI {
   private renderSpecies(s: GameState, species: SpeciesId): void {
     if (!s.discovered.includes(species)) { this.view = {kind: 'collection'}; this.renderCollection(s); return; }
     const info = SPECIES[species]; this.title.textContent = info.name;
-    this.content.append(avatar(species, true), node('p', `${typeNames(info.types)} · ${RARITY_NAMES[info.rarity]}`),
+    const legendary = decorateLegendaryCard(this.panel, species);
+    this.content.append(legendary ? legendaryPortrait(avatar(species, true)) : avatar(species, true), node('p', `${typeNames(info.types)} · ${RARITY_NAMES[info.rarity]}`),
       node('p', `${s.rabbits.filter(r => r.species === species).length} lapin${s.rabbits.filter(r => r.species === species).length > 1 ? 's' : ''} dans la prairie.`), node('p', info.price === null ? 'Obtention : reproduction.' : 'Obtention : boutique ou reproduction.'), node('p', `Croissance : ${growthDuration(species) / 60_000} minutes.`));
     if (info.recipe) this.button(this.content, 'Consulter la recette', () => this.openRecipe(species), null, true);
     if (isLegendaryShow(species)) this.button(this.content, 'Revoir l’apparition', () => this.legendaryReveal(species, info.name, 'Fermer'), null, true).dataset.replayReveal = species;

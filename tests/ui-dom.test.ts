@@ -542,12 +542,18 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     expect(breeding().open).toBe(true); expect(button('Croiser', breeding()).disabled).toBe(false);
     expect(breedingRow(0, 'Lapin Neige').getAttribute('aria-pressed')).toBe('true'); expect(breedingRow(1, 'Lapin Feu').getAttribute('aria-pressed')).toBe('true');
   });
-  it('replays the Lapin Dragon appearance from its species page and makes its collection card shine', () => {
+  it('keeps the Collection list plain, themes the Lapin Dragon species card in fire and replays its appearance', () => {
     const initial = createGame(0); initial.discovered.push('dragon');
     const {ui} = setup(initial);
+    const gamePanel = document.getElementById('game-panel')!;
     ui.open({kind: 'collection'});
-    const card = [...panel().querySelectorAll('article')].find(c => c.textContent?.includes('Lapin Dragon'))!;
-    expect(card.classList.contains('legendary-shimmer')).toBe(true);
+    expect(gamePanel.dataset.legendary).toBeUndefined(); expect(panel().querySelector('.legendary-portrait')).toBeNull();
+    ui.open({kind: 'species', species: 'dragon'});
+    expect(gamePanel.dataset.legendary).toBe('dragon'); expect(gamePanel.style.getPropertyValue('--legendary-banner')).toContain('firewall-1.webp');
+    expect(panel().querySelector('.legendary-portrait .legendary-portrait-halo')).not.toBeNull();
+    expect(gamePanel.querySelector(':scope > .legendary-ambient')!.getAttribute('aria-hidden')).toBe('true');
+    ui.open({kind: 'species', species: 'paille'});
+    expect(gamePanel.dataset.legendary).toBeUndefined(); expect(gamePanel.querySelector('.legendary-ambient')).toBeNull();
     ui.open({kind: 'species', species: 'dragon'}); button('Revoir l’apparition').click();
     const reveal = document.querySelector<HTMLDialogElement>('dialog.legendary-reveal-dragon')!;
     expect(reveal.open).toBe(true); expect(reveal.textContent).toContain('Lapin Dragon'); expect(reveal.textContent).toContain('Légendaire');

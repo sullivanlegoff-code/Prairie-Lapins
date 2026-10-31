@@ -642,8 +642,3 @@ dialog.legendary-reveal-requin { background: #062b40; }
 @keyframes lr-pop { 0% { opacity: 0; transform: scale(.4) translateY(14%); } 60% { opacity: 1; transform: scale(1.08) translateY(-3%); } 100% { opacity: 1; transform: scale(1); } }
 @keyframes lr-twinkle { 0%, 100% { opacity: 0; transform: scale(.4) rotate(0); } 50% { opacity: 1; transform: scale(1) rotate(45deg); } }
 @keyframes lr-shine { to { background-position: -200% 0; } }
-/* A discreet golden shimmer on legendary cards of the Collection. */
-.legendary-shimmer { position: relative; overflow: hidden; }
-.legendary-shimmer::after { content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: inherit; background: linear-gradient(110deg, transparent 35%, #ffe7a066 50%, transparent 65%); background-size: 260% 100%; animation: lr-card-shine 4.5s ease-in-out infinite; }
-@keyframes lr-card-shine { 0% { background-position: 130% 0; } 60%, 100% { background-position: -130% 0; } }
-@media (prefers-reduced-motion: reduce) { .legendary-shimmer::after { animation: none; background: none; box-shadow: inset 0 0 0 2px #e9c463; } }
