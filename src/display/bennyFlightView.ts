@@ -9,7 +9,8 @@ import {ALTITUDE, BennyFlightClock, type FlightFrame, type FlightGeometry, type 
 export const FLIGHT_SHADOW_DEPTH = 1.95, FLIGHT_DEPTH = 2.6;
 /** Height of the flying body's centre above her ground point when she stands in her enclosure (scene units, about A1's middle). */
 export const GROUND_LIFT = 23;
-const SPARKS = 72, FEATHERS = 8, STILL_STARS = 6;
+// Owner (1 November 2026): « plus de poussière d’étoile » during her power, so a large pool, still made once and reused.
+const SPARKS = 320, FEATHERS = 12, STILL_STARS = 12;
 const SPARK_TEXTURES = [BENNY_FLIGHT_EFFECTS.star, BENNY_FLIGHT_EFFECTS.twinkle, BENNY_FLIGHT_EFFECTS.starFive, BENNY_FLIGHT_EFFECTS.stardust, BENNY_FLIGHT_EFFECTS.star];
 
 /** One drawing of Benny in the air: far wings, body, near wings. All its images are made once and only change frame. */
@@ -120,9 +121,14 @@ export class BennyFlightView {
     if (frame.dust) {
       this.dustDue -= dt;
       while (this.dustDue <= 0) {
-        this.dustDue += 34;
+        this.dustDue += 12;
         const back = frame.mirror ? 1 : -1;
-        this.emit(this.sparks, x + back * 18 * frame.scale + (this.random() - .5) * 16, y + (this.random() - .2) * 14, {life: 1300 + this.random() * 700, vx: (this.random() - .5) * 10, vy: 6 + this.random() * 10, size: .35 + this.random() * .45});
+        this.emit(this.sparks, x + back * 18 * frame.scale + (this.random() - .5) * 26, y + (this.random() - .3) * 22, {life: 1800 + this.random() * 1000, vx: (this.random() - .5) * 14, vy: 5 + this.random() * 12, size: .3 + this.random() * .55});
+      }
+      // A glittering aura around her as she flies.
+      if (this.random() < dt / 35) {
+        const a = this.random() * Math.PI * 2, r = 16 + this.random() * 20;
+        this.emit(this.sparks, x + Math.cos(a) * r, y + Math.sin(a) * r * .7, {life: 600 + this.random() * 400, vx: Math.cos(a) * 6, vy: -4 - this.random() * 6, size: .25 + this.random() * .35});
       }
     } else this.dustDue = 0;
     if (frame.sparkle > 0 && this.random() < frame.sparkle * dt / 45) {
@@ -132,8 +138,8 @@ export class BennyFlightView {
     // The rain of dust above the nursery, from her to the roof, with a soft glow on the building.
     const nursery = step.geometry.nursery;
     if (frame.rain > 0 && nursery && step.roof !== null) {
-      for (let k = 0; k < 2; k++) if (this.random() < frame.rain * dt / 30) {
-        const spread = 34 + this.random() * 20, sx = nursery.x + (this.random() - .5) * spread * 2, sy = y + 8 + this.random() * 10, fall = Math.max(30, step.roof + 30 - sy);
+      for (let k = 0; k < 4; k++) if (this.random() < frame.rain * dt / 22) {
+        const spread = 40 + this.random() * 24, sx = nursery.x + (this.random() - .5) * spread * 2, sy = y + 8 + this.random() * 10, fall = Math.max(30, step.roof + 30 - sy);
         this.emit(this.sparks, sx, sy, {life: 1100 + this.random() * 400, vx: (this.random() - .5) * 6, vy: fall / 1.2, size: .3 + this.random() * .35});
       }
     }
@@ -142,7 +148,7 @@ export class BennyFlightView {
     // Feathers falling gently from her wings during her power.
     if (frame.feathers) {
       this.featherDue -= dt;
-      if (this.featherDue <= 0) { this.featherDue = 650 + this.random() * 500; this.emit(this.feathers, x + (this.random() - .5) * 24, y + 4, {life: 2600, vx: (this.random() - .5) * 8, vy: 14, size: .16 + this.random() * .06, spin: (this.random() - .5) * 1.6, sway: 8 + this.random() * 8}); }
+      if (this.featherDue <= 0) { this.featherDue = 420 + this.random() * 380; this.emit(this.feathers, x + (this.random() - .5) * 24, y + 4, {life: 2600, vx: (this.random() - .5) * 8, vy: 14, size: .16 + this.random() * .06, spin: (this.random() - .5) * 1.6, sway: 8 + this.random() * 8}); }
     } else this.featherDue = 300;
     // Reduced motion's power: a still glow with a few stars, on her, then on the nursery.
     const glow = frame.glow, home = step.geometry.home;
