@@ -85,7 +85,7 @@ describe('travel agency rules', () => {
     const blocked: Command[] = [
       {type: 'feed', id: 'rabbit-2'}, {type: 'breed', parents: ['rabbit-2', s.rabbits[1].id]},
       {type: 'moveRabbit', id: 'rabbit-2', enclosureId: home}, {type: 'release', id: 'rabbit-2'},
-      {type: 'rewardCuisine', rabbitId: 'rabbit-2', recipeId: 'salad'},
+      {type: 'rewardCuisine', rabbitId: 'rabbit-2', recipeId: 'avocado-toast'},
     ];
     for (const now of [0, s.travel!.trips[0]!.endsAt]) for (const command of blocked)
       expect(act(s, command, now)).toMatchObject({ok: false, reason: 'TRAVELING'});

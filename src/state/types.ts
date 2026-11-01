@@ -122,7 +122,7 @@ export type TimedStage = 'order' | 'breeding' | 'growth';
 export type Command = BaseCommand
   | {type:'claimDiscovery'; id:string}
   | {type:'translateDecorations'; ids:string[]; dx:number; dy:number}
-  | {type: 'rewardCuisine'; rabbitId: Rabbit['id']; recipeId: 'salad' | 'chicken'}
+  | {type: 'rewardCuisine'; rabbitId: Rabbit['id']; recipeId: import('../config/balance').CuisineRecipeId}
   | {type: 'buyDecoration'; catalogId: DecorationId; location?: Extract<DecorationLocation, {kind: 'outside'}>}
   | {type: 'placeDecoration'; id: string; location: DecorationLocation}
   | {type: 'sellDecoration'; id: string}

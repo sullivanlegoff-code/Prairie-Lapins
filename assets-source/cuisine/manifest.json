@@ -1,0 +1,368 @@
+{
+  "avocado-whole": {
+    "width": 247,
+    "height": 299,
+    "bytes": 20824,
+    "masterSha256": "6ea44ecc258ae72c485c2707901d80d21c0e85065904b290e25ac924489968d1"
+  },
+  "avocado-cut": {
+    "width": 256,
+    "height": 235,
+    "bytes": 12226,
+    "masterSha256": "d86acb7fe519c3d8b6791f10a12a4b5562c3da34e475b1319685bf6e531ad034"
+  },
+  "shallot-whole": {
+    "width": 256,
+    "height": 280,
+    "bytes": 17622,
+    "masterSha256": "f6dbb26268fabb50896151c6b50a01f552af7f6177889d36f744e52fc092aed2"
+  },
+  "shallot-cut": {
+    "width": 256,
+    "height": 161,
+    "bytes": 18722,
+    "masterSha256": "9ced673a70d42a64e7ee6113e44675a66e8296f4294be2ff7fbef17b49cc7a93"
+  },
+  "bread-raw": {
+    "width": 256,
+    "height": 218,
+    "bytes": 19112,
+    "masterSha256": "9ff9bd03b9e40e1768371d73b5b85eaae9f02c52ff312e37911fea4e03ab5b17"
+  },
+  "bread-toasted": {
+    "width": 256,
+    "height": 219,
+    "bytes": 20374,
+    "masterSha256": "477f39b6e0e7fd47c2b8f102298a24921d82e7f06e1ba0c9f1f5f578dce9a21c"
+  },
+  "salmon": {
+    "width": 256,
+    "height": 181,
+    "bytes": 12752,
+    "masterSha256": "d06071e205491793b46be754c82c5337d137c00390748e4df798974615a30e71"
+  },
+  "chocolate": {
+    "width": 256,
+    "height": 252,
+    "bytes": 13500,
+    "masterSha256": "8773c8b3d44c4b9aa02db12aefc332db6d6f2cb4af92ea92b1fbd9be878336c8"
+  },
+  "butter": {
+    "width": 256,
+    "height": 191,
+    "bytes": 9604,
+    "masterSha256": "814cf8be2b3b414716c7a28283fd3e747b542b355640f57ecd44669eede4e916"
+  },
+  "eggs": {
+    "width": 256,
+    "height": 224,
+    "bytes": 10658,
+    "masterSha256": "4118c27d80e45e7e3673127caa3a67e0a7b0bbf7c9babbd55ab9fc381e1598d6"
+  },
+  "sugar": {
+    "width": 256,
+    "height": 262,
+    "bytes": 19370,
+    "masterSha256": "36548eecedf0f95cf7bd3236f08bf3324bfa7cdcee61331ac38acecbae48d0fd"
+  },
+  "flour": {
+    "width": 256,
+    "height": 266,
+    "bytes": 17838,
+    "masterSha256": "53b78a8f77369adcb54f002e38996a67f5d5e424c6646dc136b16627753fab61"
+  },
+  "chicken-raw": {
+    "width": 256,
+    "height": 201,
+    "bytes": 11986,
+    "masterSha256": "56f05630da132fab4e3c295653c9d300063b60a1385959cc441557400ae74d19"
+  },
+  "chicken-cut": {
+    "width": 256,
+    "height": 193,
+    "bytes": 12514,
+    "masterSha256": "2d8884203d4ac1b2d27f1bdcf9fa8bb2a6161593f0843fa7f49e7a0bd343f3e2"
+  },
+  "chicken-soy": {
+    "width": 256,
+    "height": 195,
+    "bytes": 15186,
+    "masterSha256": "0f4afca42380a79e74fc244ac9d2b95a12018000ab978ad008463e43c38c626e"
+  },
+  "chicken-glazed": {
+    "width": 256,
+    "height": 194,
+    "bytes": 15970,
+    "masterSha256": "6752cb8c1613815143c5b92723527de7e3b041edd4b3e8759a6bc75aedf7ddc2"
+  },
+  "sweet-potato-whole": {
+    "width": 256,
+    "height": 207,
+    "bytes": 12454,
+    "masterSha256": "3c0243a2a80f06eeb0cf1fe605563296bf5d5d1d1c3c7214954e4418e197a16a"
+  },
+  "sweet-potato-peeled": {
+    "width": 256,
+    "height": 196,
+    "bytes": 11168,
+    "masterSha256": "38b01c6ea736a7c18f12d5cdee7d7e59e8ad5f9f705a3bb3c299442980a092fe"
+  },
+  "sweet-potato-cut": {
+    "width": 256,
+    "height": 193,
+    "bytes": 12070,
+    "masterSha256": "021dd19dee609c04b7fbea651a3256b32c9f3dbb193f983d5e8777566b8b58ab"
+  },
+  "soy": {
+    "width": 180,
+    "height": 305,
+    "bytes": 12224,
+    "masterSha256": "a0b81507231e89479045afe509bc960772b8dcc00babf30843bc9d2b40c37de4"
+  },
+  "honey": {
+    "width": 256,
+    "height": 301,
+    "bytes": 22410,
+    "masterSha256": "157f47097cf759f3ada45dfbbd37bb8b5e2584676e4497ab129211f06eb9baa8"
+  },
+  "knife": {
+    "width": 256,
+    "height": 228,
+    "bytes": 8688,
+    "masterSha256": "75f34c5a8a3dbed7e8d0b5732dbf99f1665900c30de6db0f2e44f56ee41962ea"
+  },
+  "peeler": {
+    "width": 256,
+    "height": 247,
+    "bytes": 12264,
+    "masterSha256": "4bac052b97c3f599beebf66ac1eba100b0bf365f43ce03f6729ffe489c5cc88e"
+  },
+  "whisk": {
+    "width": 256,
+    "height": 236,
+    "bytes": 18312,
+    "masterSha256": "69ce09849c08f705aa8756bc086f5baa4efd14137952ce9627e41ed2f249e5bd"
+  },
+  "bowl-empty": {
+    "width": 320,
+    "height": 266,
+    "bytes": 12828,
+    "masterSha256": "dad25c80f02a6eb636cc60828fae3b517af3836c1a10399a892f3ae23e8a4d13"
+  },
+  "bowl-eggs": {
+    "width": 320,
+    "height": 266,
+    "bytes": 14606,
+    "masterSha256": "4d83bb6781d80019c090edbbc02666cf99acd3843ea6414ba64103382934fb68"
+  },
+  "bowl-sugar": {
+    "width": 320,
+    "height": 266,
+    "bytes": 16634,
+    "masterSha256": "3495dfe8db91aed69a409e9e4697a9de81ffbc646cd9bf95f22f0b40313fc077"
+  },
+  "bowl-whisked": {
+    "width": 320,
+    "height": 266,
+    "bytes": 18252,
+    "masterSha256": "fc8b19a5d8804007b834082185262c305a2e73db828c29e2a68257ecc40b692b"
+  },
+  "bowl-chocolate": {
+    "width": 320,
+    "height": 266,
+    "bytes": 19054,
+    "masterSha256": "571b8f13d2c927f9b16bd8c5464b82c55b7a102088824783329af91ebaf98c6f"
+  },
+  "bowl-flour": {
+    "width": 320,
+    "height": 266,
+    "bytes": 21508,
+    "masterSha256": "b7cb39a0d4c01fd006f13cabdb9aa5f027d2fd1d560730314c4562773e9aa3b6"
+  },
+  "bowl-batter": {
+    "width": 320,
+    "height": 266,
+    "bytes": 18094,
+    "masterSha256": "168c9594435d75f5e6b7b29c9b3e4b3bd0b8e04da16c81357757baa4142db88a"
+  },
+  "bowl-avocado": {
+    "width": 320,
+    "height": 266,
+    "bytes": 16964,
+    "masterSha256": "b8a0c26d1a5fbcb157dd10dc2aa3c81179771a1d13b0df91c48ed35ce79b5575"
+  },
+  "bowl-honey": {
+    "width": 320,
+    "height": 267,
+    "bytes": 18026,
+    "masterSha256": "4d812ebd5410ffc1cdc43f5856118254e93c54c11c0f02317ea450901565bda3"
+  },
+  "bowl-soy": {
+    "width": 320,
+    "height": 266,
+    "bytes": 19202,
+    "masterSha256": "802d4ea437c68dc9ae4588b2d0c76da34cd45d1eff9048d8536f706277cea685"
+  },
+  "bowl-shallot": {
+    "width": 320,
+    "height": 266,
+    "bytes": 20158,
+    "masterSha256": "43b96bc102525fc510f65603afbb129701f4f3eff6d9fb7af09296a61b7b9fd7"
+  },
+  "bowl-mixed": {
+    "width": 320,
+    "height": 267,
+    "bytes": 19352,
+    "masterSha256": "04878586779dd978d1413e52e33424af2c400ecd6e8ccfa456a06796997a4349"
+  },
+  "saucepan-empty": {
+    "width": 320,
+    "height": 227,
+    "bytes": 13232,
+    "masterSha256": "c812247ae1213383c701e79955a0885395f36c95758fa3ce01be718986f7c59e"
+  },
+  "saucepan-chocolate": {
+    "width": 320,
+    "height": 228,
+    "bytes": 14978,
+    "masterSha256": "4e417c1c69e6ea1e147ac8b33d5b38b3f89f47bc800c4a6130abb19c0aabbc21"
+  },
+  "saucepan-melted": {
+    "width": 320,
+    "height": 228,
+    "bytes": 15388,
+    "masterSha256": "95946af57ff2405763b0ed77ba0de3bd988cf297356a3ac9ff54dd11c74b5bfc"
+  },
+  "pan-empty": {
+    "width": 320,
+    "height": 231,
+    "bytes": 14076,
+    "masterSha256": "4d52e10f1612da64fb9bb03a128f605c7f51ace35bef6937b0c3408e2ffcccef"
+  },
+  "pan-bread": {
+    "width": 320,
+    "height": 238,
+    "bytes": 21308,
+    "masterSha256": "bcd5bf2e8cd9cc77c1ca9ebf9f3c277e78b7584ab6161298049a351fee61c388"
+  },
+  "mould-empty": {
+    "width": 317,
+    "height": 269,
+    "bytes": 15348,
+    "masterSha256": "41fe91df04a0af2086bc65c45cc1ac37478d6057457f521d74414ddfd7f8e82b"
+  },
+  "mould-batter": {
+    "width": 317,
+    "height": 268,
+    "bytes": 18616,
+    "masterSha256": "0c074f26ef8a798a08a4ed8e7daca0de1de36328f56f1fb6b192471a7cde3dfd"
+  },
+  "mould-baked": {
+    "width": 318,
+    "height": 268,
+    "bytes": 26166,
+    "masterSha256": "044c88cccdbc02f4c7d7c08546cbdc46ac6a519111e296f98c471d855ee9e721"
+  },
+  "dish-empty": {
+    "width": 320,
+    "height": 190,
+    "bytes": 9896,
+    "masterSha256": "b7e8f16da1b2138754abc2c1ca5220eee11336a2ef7df36179fb921b4f2d490c"
+  },
+  "dish-chicken": {
+    "width": 320,
+    "height": 190,
+    "bytes": 15080,
+    "masterSha256": "b6c8f2a42c11b8f4b98b8f647de1de7ed4691fdeb9077e204331bf9ca2fcc770"
+  },
+  "dish-sweet-potato": {
+    "width": 320,
+    "height": 191,
+    "bytes": 13420,
+    "masterSha256": "bded02cb9c60a0c38e115bb45924ffb4fa3a80bdf76949c6eeb8bdd5cf686f87"
+  },
+  "dish-both": {
+    "width": 320,
+    "height": 191,
+    "bytes": 17502,
+    "masterSha256": "d249d51d18a9aaf4f6a646c973468c8c3ef63767b4746c66f90b4b406f7d6415"
+  },
+  "dish-cooked": {
+    "width": 320,
+    "height": 238,
+    "bytes": 24284,
+    "masterSha256": "4dc0beea3d69a3c5a201dfa06eb2b192b953380e64a3b2a265c63c4e837e5f8b"
+  },
+  "plate-empty": {
+    "width": 320,
+    "height": 236,
+    "bytes": 11300,
+    "masterSha256": "611f0426ea6a0eb2eecc2f260d9865c5df76f786fb21a1ee2887c1a2b9b3b612"
+  },
+  "plate-toast": {
+    "width": 320,
+    "height": 237,
+    "bytes": 24510,
+    "masterSha256": "79e8d7ab2eb2ffbbb634b2c3f7f7412156a136f734b9833f9b76204617e7475e"
+  },
+  "plate-avocado": {
+    "width": 320,
+    "height": 237,
+    "bytes": 23396,
+    "masterSha256": "19ae20fdb93c25e4c6fd7c9f7805c1b7a658718826ac2601cda1627e9fa02f44"
+  },
+  "plate-salmon": {
+    "width": 320,
+    "height": 238,
+    "bytes": 24528,
+    "masterSha256": "17969035eab2e7ef7a6baa4aa754553f53479501ce92c2fd7f3f7512ef60e867"
+  },
+  "plate-moelleux": {
+    "width": 320,
+    "height": 221,
+    "bytes": 24700,
+    "masterSha256": "da5164e2745a1b6ee02e082cec78ce3c5f41645b039b9e9424b56cd7fe828cd5"
+  },
+  "plate-chicken": {
+    "width": 320,
+    "height": 230,
+    "bytes": 25796,
+    "masterSha256": "9cb0bd469aea407fec0ea63e470a068e19de938e9c38a6b27f2f847fad066169"
+  },
+  "cutting-board": {
+    "width": 320,
+    "height": 198,
+    "bytes": 13622,
+    "masterSha256": "ccc9d0b8f52fd2d48e53018ab7c6217dec6d792a7ba32ccf4e53eee2f751119b"
+  },
+  "stove": {
+    "width": 320,
+    "height": 186,
+    "bytes": 15786,
+    "masterSha256": "a0ca0e96699eea2164f55335d48ed83a23976942907f463418f584c92c48f1ba"
+  },
+  "oven": {
+    "width": 290,
+    "height": 301,
+    "bytes": 15936,
+    "masterSha256": "f4b2200ff46aa68f7f2323bc0929fdce2c3289f8f1eade17c14cf0fe52eaefa6"
+  },
+  "spoon": {
+    "width": 314,
+    "height": 278,
+    "bytes": 12856,
+    "masterSha256": "6720b04a362cdcb9c85060a1870af2aaaa3c403cdf085f258412a9de07c1153e"
+  },
+  "steam": {
+    "width": 216,
+    "height": 289,
+    "bytes": 16128,
+    "masterSha256": "ead71a36f8b45ac8499993c63c3a847a73b2af668375b9bc0388b0fbdaaa24e7"
+  },
+  "backdrop": {
+    "width": 1536,
+    "height": 1024,
+    "bytes": 140826,
+    "masterSha256": "f344baf949fecd4537dacd22611ab837603039022da4d9928153be2f006c7549"
+  }
+}

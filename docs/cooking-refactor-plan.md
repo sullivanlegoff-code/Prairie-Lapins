@@ -1,5 +1,7 @@
 # Plan proposé — cuisine par manipulation d'objets
 
+> Document historique. Depuis le 1er novembre 2026, la Salade est retirée et la cuisine utilise un moteur d’étapes et des images peintes : voir `docs/cooking-minigame.md`.
+
 Audit du 17 octobre 2026, référence applicative `661ab84`, validé en `cab49fc`. Le **socle et la recette Salade sont implémentés**. Poulet reste prévu pour une étape ultérieure. Aucun bâtiment, récompense, sauvegarde, boutique ou déblocage.
 
 ## Socle réalisé le 17 octobre 2026

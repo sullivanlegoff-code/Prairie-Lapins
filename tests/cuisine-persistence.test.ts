@@ -8,7 +8,7 @@ import {withKitchen} from './kitchen-fixture';
 describe('Cuisine affection in the save',()=>{
   it('roundtrips exact non-rabbit-prefixed individual markers and refuses malformed/future bookkeeping',()=>{
     const s=withKitchen(createCentreStartGame(0));s.rabbits[0].id='birth-101';s.nextId=102;
-    const result=act(s,{type:'rewardCuisine',rabbitId:'birth-101',recipeId:'salad'},0);
+    const result=act(s,{type:'rewardCuisine',rabbitId:'birth-101',recipeId:'avocado-toast'},0);
     expect(result.ok).toBe(true);if(!result.ok)return;
     const loaded=decodeGame(encodeGame(result.state));
     expect(loaded).toEqual({ok:true,state:result.state});
@@ -21,7 +21,7 @@ describe('Cuisine affection in the save',()=>{
     }
   });
   it('preserves the Heart marker through a roundtrip and refuses the same Heart again in that cycle',()=>{
-    const s=withKitchen(createCentreStartGame(0)),result=act(s,{type:'rewardCuisine',rabbitId:s.rabbits[0].id,recipeId:'salad'},0);
+    const s=withKitchen(createCentreStartGame(0)),result=act(s,{type:'rewardCuisine',rabbitId:s.rabbits[0].id,recipeId:'avocado-toast'},0);
     expect(result.ok).toBe(true);if(!result.ok)return;
     const loaded=decodeGame(encodeGame(result.state));
     expect(loaded).toEqual({ok:true,state:result.state});
@@ -42,21 +42,21 @@ describe('Cuisine affection in the save',()=>{
       const rabbitId=c.getSnapshot().state!.rabbits[0].id;
       const empty=structuredClone(c.getSnapshot().state),write=storage.setItem,savedBefore=values.get(SAVE_KEY);
       storage.setItem=()=>{throw Error('quota');};
-      expect(c.perform({type:'rewardCuisine',rabbitId,recipeId:'salad'})).toEqual({ok:false,reason:'ACTION_NOT_SAVED'});
+      expect(c.perform({type:'rewardCuisine',rabbitId,recipeId:'avocado-toast'})).toEqual({ok:false,reason:'ACTION_NOT_SAVED'});
       expect(c.getSnapshot().state).toEqual(empty);expect(values.get(SAVE_KEY)).toBe(savedBefore);
       storage.setItem=write;
-      expect(c.perform({type:'rewardCuisine',rabbitId,recipeId:'salad'}).ok).toBe(true);
+      expect(c.perform({type:'rewardCuisine',rabbitId,recipeId:'avocado-toast'}).ok).toBe(true);
       expect(decodeGame(values.get(SAVE_KEY)!)).toEqual({ok:true,state:c.getSnapshot().state});
       const before=structuredClone(c.getSnapshot().state),saved=values.get(SAVE_KEY);
       storage.setItem=()=>{throw Error('quota');};
-      expect(c.perform({type:'rewardCuisine',rabbitId,recipeId:'salad'})).toEqual({ok:false,reason:'ACTION_NOT_SAVED'});
+      expect(c.perform({type:'rewardCuisine',rabbitId,recipeId:'avocado-toast'})).toEqual({ok:false,reason:'ACTION_NOT_SAVED'});
       expect(c.getSnapshot().state).toEqual(before);expect(values.get(SAVE_KEY)).toBe(saved);
     }finally{c.dispose();}
   });
 });
 
 describe('Cuisine full-reward quota in the save',()=>{
-  const cook=(s:ReturnType<typeof createCentreStartGame>,recipeId:'salad'|'chicken'='salad')=>{const r=act(s,{type:'rewardCuisine',rabbitId:s.rabbits[0].id,recipeId},s.lastSimulatedAt);if(!r.ok)throw Error(r.reason);return r.state;};
+  const cook=(s:ReturnType<typeof createCentreStartGame>,recipeId:'avocado-toast'|'chicken'='avocado-toast')=>{const r=act(s,{type:'rewardCuisine',rabbitId:s.rabbits[0].id,recipeId},s.lastSimulatedAt);if(!r.ok)throw Error(r.reason);return r.state;};
   it('round-trips the used count and keeps paying the remaining full slots after a reload',()=>{
     let s=withKitchen(createCentreStartGame(0));for(let n=0;n<3;n++)s=cook(s);
     expect(s.cuisine.fullRuns).toEqual({cycle:0,used:3});
@@ -70,7 +70,7 @@ describe('Cuisine full-reward quota in the save',()=>{
     expect('fullRuns' in raw.cuisine).toBe(false);
     const decoded=decodeGame(JSON.stringify(raw));expect(decoded.ok).toBe(true);if(!decoded.ok)return;
     expect(decoded.state.cuisine).toEqual({affectionCycles:{},heartCycle:null});expect(decoded.state.cuisine.fullRuns?.used??0).toBe(0);
-    let t=decoded.state;const start=t.pattes;for(let n=0;n<5;n++)t=cook(t);expect(t.pattes-start).toBe(5*40);
+    let t=decoded.state;const start=t.pattes;for(let n=0;n<5;n++)t=cook(t);expect(t.pattes-start).toBe(5*45);
     expect(cook(t).pattes-t.pattes).toBe(5);
   });
   it('also loads a save with an explicit heartCycle only, with nothing used',()=>{

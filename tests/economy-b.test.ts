@@ -69,7 +69,7 @@ describe('economy B feedback and prices', () => {
   it('shows all five slots, then the unchanged tip, and renews at the canonical cycle', () => {
     let s=createGame(0);s.buildings.push(emptyBuilding('building-100','kitchen',0,32));s.nextId=101;
     expect(cuisineRemaining(s,0)).toBe(5);
-    for(let left=4;left>=0;left--){const r=act(s,{type:'rewardCuisine',rabbitId:s.rabbits[0].id,recipeId:'salad'},0);expect(r.ok).toBe(true);s=r.state;expect(cuisineRemaining(s,0)).toBe(left);}
+    for(let left=4;left>=0;left--){const r=act(s,{type:'rewardCuisine',rabbitId:s.rabbits[0].id,recipeId:'avocado-toast'},0);expect(r.ok).toBe(true);s=r.state;expect(cuisineRemaining(s,0)).toBe(left);}
     expect(cuisineQuotaText(s,0)).toBe('Récompense complète épuisée : pourboire de 5 pattes et 1 nourriture jusqu’à demain');
     const tip=act(s,{type:'rewardCuisine',rabbitId:s.rabbits[0].id,recipeId:'chicken'},0);expect(tip.ok&&tip.cuisineReward).toMatchObject({pattes:5,grass:1,fullReward:false});
     expect(cuisineRemaining(advance(s,24*HOUR),24*HOUR)).toBe(5);

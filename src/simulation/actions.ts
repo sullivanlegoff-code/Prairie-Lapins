@@ -114,7 +114,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         const moved=translatedDecorations(s,command.ids,command.dx,command.dy);requireRule(!moved.reason,moved.reason ?? 'INVALID_CHOICE');s.decorations=moved.decorations;break;
       }
       case 'rewardCuisine': {
-        requireRule(command.recipeId === 'salad' || command.recipeId === 'chicken', 'INVALID_CHOICE');
+        requireRule(Object.hasOwn(CUISINE_REWARDS, command.recipeId), 'INVALID_CHOICE');
         requireRule(s.buildings.some(b => b.kind === 'kitchen'), 'MISSING_BUILDING'); // The Kitchen is where Cuisine is played.
         const rabbit = s.rabbits.find(r => r.id === command.rabbitId); requireRule(rabbit, 'NOT_FOUND'); requireRule(!travelling(s, rabbit.id), 'TRAVELING');
         const cycle = s.missions.daily.cycleIndex;

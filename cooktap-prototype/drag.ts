@@ -12,13 +12,8 @@ export function bindKitchenDrag(surface: HTMLElement, engine: KitchenEngine, sce
   const point = (e: PointerEvent): Point => ({x: e.clientX, y: e.clientY});
   const release = (pointer: number) => { try { if (surface.hasPointerCapture(pointer)) surface.releasePointerCapture(pointer); } catch { /* Already cancelled by browser. */ } };
   const clearFrame = () => { if (frame) cancelAnimationFrame(frame); frame = 0; };
-  const effect = (result: ActionResult) => {
-    if (!result.effect || !result.effectTargetId) return;
-    if (result.effect === 'pour') { scene.playEffect('olive-oil', 'pour'); scene.playEffect('bowl', 'dressed'); }
-    else if (result.effect === 'season') scene.playEffect(result.effectTargetId, 'season');
-    else if (result.effect === 'oven') scene.playEffect('oven', 'oven');
-    else if (result.effect === 'cut' || result.effect === 'peel') scene.playEffect(result.effectTargetId, result.effect);
-  };
+  const effect = (result: ActionResult) => { if (result.effect && result.effectTargetId) scene.playEffect(result.effectTargetId, result.effect); };
+  const target = (anchor: Point, id: string) => resolveDrop(toClient(anchor, scene.getView()), id, engine.snapshot(), scene.getView(), t => engine.preview(id, t).accepted);
   function cancel(message = 'Manipulation annulée. L’objet retrouve sa place.'): void {
     if (!active) return;
     const drag = active; active = null; clearFrame(); release(drag.pointer);
@@ -28,8 +23,8 @@ export function bindKitchenDrag(surface: HTMLElement, engine: KitchenEngine, sce
   function show(p: Point): void {
     if (!active?.moved) return;
     const anchor = anchorAt(p); scene.move(active.id, anchor);
-    const target = resolveDrop(toClient(anchor, scene.getView()), active.id, engine.snapshot(), engine.zones, scene.getView());
-    scene.hover(target, engine.preview(active.id, target).accepted);
+    const over = target(anchor, active.id);
+    scene.hover(over, engine.preview(active.id, over).accepted);
   }
   // Count pointers on the whole document: a second finger outside the table also cancels.
   doc.addEventListener('pointerdown', e => { pointers.add(e.pointerId); if (pointers.size > 1) { multiBlocked = true; cancel('Deux doigts détectés : l’objet retrouve sa place.'); } }, {capture: true, signal: abort.signal});
@@ -65,11 +60,9 @@ export function bindKitchenDrag(surface: HTMLElement, engine: KitchenEngine, sce
       scene.render(engine.snapshot()); report(result); return;
     }
     show(point(e));
-    const target = resolveDrop(toClient(anchorAt(point(e)), scene.getView()), drag.id, engine.snapshot(), engine.zones, scene.getView());
+    const over = target(anchorAt(point(e)), drag.id);
     active = null; release(drag.pointer);
-    const result = drag.id === 'knife' && target?.kind === 'item'
-      ? engine.dispatch({type: 'use-tool', toolId: drag.id, targetId: target.id})
-      : engine.dispatch({type: 'drop', itemId: drag.id, target});
+    const result = engine.dispatch({type: 'drop', itemId: drag.id, target: over});
     effect(result);
     scene.finish(drag.id, engine.snapshot(), result.accepted ? 'accepted' : 'rejected'); report(result);
   }, {signal: abort.signal});
