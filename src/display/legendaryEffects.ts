@@ -3,7 +3,7 @@ import {LEGENDARY_EFFECTS as FX, LEGENDARY_PARTS, type EffectArt, type Legendary
 import type {RabbitArt} from '../config/rabbitArt';
 import type {Point} from '../ui/gestures';
 import {motionZone, startSurf, type RabbitMotion} from './rabbitMotion';
-import {ACT_MS, DIVE, LegendaryClock, SURF_ENTRY_MS, SURF_SLIDE_MS, breathFrame, diveFin, envelope, haloPose, loopFrame, partAngle, smooth, surfPose,
+import {ACT_MS, DIVE, LegendaryClock, SURF_ENTRY_MS, SURF_SLIDE_MS, breathFrame, diveFin, envelope, loopFrame, partAngle, smooth, surfPose,
   type ActState, type LegendaryAct} from './legendaryTimeline';
 
 /** What the meadow gives each legendary: its ground container, its posed body and the approved sprite inside it. */
@@ -23,10 +23,8 @@ export class LegendaryView {
   /** The mouth is open (the nose-twitch patch must hide) or the body is under water (the face patches too). */
   mouthOpen = false; submerged = false;
   private readonly scale: number;
-  private readonly halo: Phaser.GameObjects.Image;
   private readonly part: Phaser.GameObjects.Image;
   private readonly mouth: Phaser.GameObjects.Image | null = null;
-  private readonly sparks: Phaser.GameObjects.Image[];
   private readonly back: Phaser.GameObjects.Container;
   private readonly front: Phaser.GameObjects.Container;
   private readonly fx: Phaser.GameObjects.Container;
@@ -38,22 +36,18 @@ export class LegendaryView {
     const {art, body, sprite, object} = host, parts = LEGENDARY_PARTS[species];
     this.scale = art.worldWidth / art.width;
     let h = 0; for (const c of id) h = (h * 31 + c.charCodeAt(0)) % 1000; this.phase = h / 100;
-    // The halo turns about the visible centre of the body, behind everything.
-    this.halo = scene.add.image(host.pivot.x, host.pivot.y, FX.halo.texture).setBlendMode(Phaser.BlendModes.ADD);
-    this.halo.setDisplaySize(art.worldWidth * 1.75, art.worldWidth * 1.75);
     // The body is the approved picture without its part; the part, behind it, turns about its hidden root.
     sprite.setTexture(parts.body.texture);
     const anchor = this.point(parts.pivot.x, parts.pivot.y);
     this.part = scene.add.image(anchor.x, anchor.y, parts.part.texture).setOrigin(parts.pivot.x / art.width, parts.pivot.y / art.height).setScale(this.scale);
-    body.addAt(this.halo, 0); body.addAt(this.part, 1);
+    // No golden halo in the meadow (owner, 31 October 2026): the shine belongs to the appearance and the rabbit's card.
+    body.addAt(this.part, 0);
     if (parts.mouth) {
       // Same left edge and scale as the sprite; only its right side is wider, for the open snout.
       this.mouth = scene.add.image(0, art.groundY, parts.mouth.texture).setOrigin(art.width / 2 / parts.mouth.width, 1).setScale(this.scale).setVisible(false);
       body.addAt(this.mouth, body.getIndex(sprite) + 1);
     }
     this.fx = scene.add.container(0, 0); body.add(this.fx);
-    this.sparks = [0, 1, 2].map(() => scene.add.image(0, 0, FX.spark.texture).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0));
-    this.fx.add(this.sparks);
     this.back = scene.add.container(0, 0); this.front = scene.add.container(0, 0);
     object.addAt(this.back, 1); object.add(this.front);
   }
@@ -81,24 +75,10 @@ export class LegendaryView {
       const target = this.surfTarget(motion); if (target) startSurf(motion, target, SURF_ENTRY_MS, SURF_SLIDE_MS);
     }
     if (act !== this.playing) { this.clear(); this.playing = act; if (act) this.build(act); }
-    const halo = haloPose(time, this.phase, asleep, reduced);
-    this.halo.setAlpha(halo.alpha).setRotation(halo.rotation).setDisplaySize(this.host.art.worldWidth * 1.75 * halo.scale, this.host.art.worldWidth * 1.75 * halo.scale);
     this.part.setRotation(partAngle(this.species, time, this.phase, act, reduced));
-    this.twinkle(time, reduced || asleep);
     if (act) this.animate(act);
     this.host.sprite.setVisible(!this.mouthOpen && !this.submerged); this.mouth?.setVisible(this.mouthOpen && !this.submerged);
     this.part.setVisible(!this.submerged);
-  }
-  /** Three golden glints drifting around the halo, each fading in and out on its own beat. */
-  private twinkle(time: number, still: boolean): void {
-    const radius = this.host.art.worldWidth * .55;
-    this.sparks.forEach((spark, k) => {
-      if (still) { spark.setAlpha(0); return; }
-      const t = time / 1000 / 2.6 + k / 3 + this.phase, cycle = t - Math.floor(t), seed = Math.floor(t) * 3 + k;
-      const angle = rand(seed) * Math.PI * 2, r = radius * (.7 + .3 * rand(seed + 1));
-      spark.setPosition(this.host.pivot.x + Math.cos(angle) * r, this.host.pivot.y + Math.sin(angle) * r * .8 - cycle * 4)
-        .setAlpha(Math.sin(cycle * Math.PI) * .9).setScale(.12 + Math.sin(cycle * Math.PI) * .1);
-    });
   }
   /** The surf goes 28 to 40 units sideways, towards the side with more room; none when the fence zone is too narrow. */
   private surfTarget(m: RabbitMotion): Point | null {
@@ -211,5 +191,5 @@ export class LegendaryView {
       });
     }
   }
-  destroy(): void { this.clear(); for (const o of [this.halo, this.part, this.mouth, this.back, this.front, this.fx, ...this.sparks]) o?.destroy(); }
+  destroy(): void { this.clear(); for (const o of [this.part, this.mouth, this.back, this.front, this.fx]) o?.destroy(); }
 }

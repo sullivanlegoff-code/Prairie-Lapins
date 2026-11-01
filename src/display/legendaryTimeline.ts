@@ -88,12 +88,6 @@ export function partAngle(species: LegendaryShow, timeMs: number, phase: number,
   if (act && ['tap', 'hiccup', 'dive', 'surf'].includes(act.act)) angle += Math.sin(act.elapsed / 1000 * Math.PI * 7) * .2 * envelope(act.elapsed / act.duration, .1, .2);
   return angle * amplitude;
 }
-/** Golden halo behind a legendary: soft pulse, slow turn; dimmer while it sleeps. */
-export function haloPose(timeMs: number, phase: number, asleep: boolean, reduced: boolean): {alpha: number; scale: number; rotation: number} {
-  if (reduced) return {alpha: asleep ? .14 : .32, scale: 1, rotation: 0};
-  const t = timeMs / 1000 + phase;
-  return {alpha: (asleep ? .16 : .34) + Math.sin(t * 1.6) * .06, scale: 1 + Math.sin(t * 1.1) * .035, rotation: t * .12};
-}
 /** Requin dive: the body is under water from `hideAt` to `showAt`; the fin turns once around the puddle meanwhile. */
 export const DIVE = {hideAt: 380, showAt: 1750} as const;
 export function diveFin(ms: number): {visible: boolean; angle: number} {
