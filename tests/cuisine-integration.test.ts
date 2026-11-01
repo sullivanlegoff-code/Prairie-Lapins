@@ -438,15 +438,52 @@ describe('Cuisine tasting celebration', () => {
     const k = setup(); play(k, 'chicken');
     expect(chef()!.dataset.tasting).toBe('chicken');
     expect(tasting()!.querySelector('[data-dish="chicken"] img')).not.toBeNull();
-    expect(tasting()!.querySelectorAll('.cuisine-dish img').length).toBe(1);
+    // The finished dish once, over the empty plate that shows through the bites.
+    expect(tasting()!.querySelectorAll('.cuisine-dish img.art-img').length).toBe(1); expect(tasting()!.querySelectorAll('.cuisine-dish img.cuisine-dish-plate').length).toBe(1);
     expect(tasting()!.querySelector('[data-dish="avocado-toast"]')).toBeNull();
   });
-  it('removes every tasting node after the short sequence and stays in the celebrate state', () => {
+  it('removes every tasting node after the meal (5 seconds) and stays in the celebrate state', () => {
     const k = setup(); play(k, 'avocado-toast');
-    vi.advanceTimersByTime(1999); expect(tasting()).not.toBeNull();
+    vi.advanceTimersByTime(4999); expect(tasting()).not.toBeNull();
     vi.advanceTimersByTime(1); expect(tasting()).toBeNull(); expect(chef()!.dataset.tasting).toBeUndefined();
     expect(document.querySelector<HTMLElement>('.cuisine-root')!.dataset.tasting).toBeUndefined();
     expect(companion().dataset.reaction).toBe('celebrate'); expect(chef()!.dataset.reaction).toBe('celebrate');
+  });
+  it('eats for at least 3 seconds before the result card: served, bites with crumbs, then « Miam ! », reward given once', () => {
+    const k = setup(); const before = k.controller.getSnapshot().state!.pattes; const a = play(k, 'avocado-toast');
+    const food = () => tasting()!.querySelector<HTMLElement>('.cuisine-dish img.art-img')!, waiting = () => a.root.dataset.tasting === 'avocado-toast';
+    expect(tasting()!.dataset.meal).toBe('serve'); expect(food().style.getPropertyValue('mask-image')).toBe('');
+    vi.advanceTimersByTime(700); expect(tasting()!.dataset.meal).toBe('eating'); expect(chef()!.dataset.meal).toBe('eating');
+    expect(food().style.getPropertyValue('mask-image').match(/radial-gradient/g)).toHaveLength(3); // one scalloped bite
+    expect(tasting()!.querySelectorAll('.cuisine-crumb').length).toBeGreaterThan(0);
+    vi.advanceTimersByTime(650 * 3); expect(food().style.getPropertyValue('mask-image').match(/radial-gradient/g)).toHaveLength(12);
+    // Still eating, « Miam ! » not yet said, the result card still waiting, 3.6 s after the end of the recipe.
+    vi.advanceTimersByTime(950); expect(tasting()!.dataset.meal).toBe('eating'); expect(waiting()).toBe(true);
+    vi.advanceTimersByTime(300); expect(tasting()!.dataset.meal).toBe('miam'); expect(tasting()!.querySelector('.cuisine-tasting-bubble')!.textContent).toBe('Miam !');
+    expect(food().style.getPropertyValue('mask-image').match(/radial-gradient/g)).toHaveLength(15); // the plate is clean
+    vi.advanceTimersByTime(1099); expect(waiting()).toBe(true); vi.advanceTimersByTime(1); expect(waiting()).toBe(false); expect(tasting()).toBeNull();
+    expect(k.completed).toHaveBeenCalledOnce();
+    expect(k.controller.getSnapshot().state!.pattes - before).toBe(CUISINE_REWARDS['avocado-toast'].pattes);
+  });
+  it('a tap on the kitchen skips the meal to the result card, without a second reward', () => {
+    const k = setup(); const before = k.controller.getSnapshot().state!.pattes; const a = play(k, 'avocado-toast');
+    vi.advanceTimersByTime(1200); expect(a.root.dataset.tasting).toBe('avocado-toast');
+    a.root.dispatchEvent(new Event('pointerdown'));
+    expect(tasting()).toBeNull(); expect(a.root.dataset.tasting).toBeUndefined(); expect(chef()!.dataset.meal).toBeUndefined();
+    expect(a.root.querySelector<HTMLElement>('#result-screen')!.hidden).toBe(false);
+    vi.advanceTimersByTime(6000); expect(tasting()).toBeNull();
+    expect(k.completed).toHaveBeenCalledOnce();
+    expect(k.controller.getSnapshot().state!.pattes - before).toBe(CUISINE_REWARDS['avocado-toast'].pattes);
+  });
+  it('with reduced motion, a short calm meal: the empty plate and « Miam ! » at once, then the result', () => {
+    // Reduced motion only at the meal (the kitchen itself also reads the preference).
+    const k = setup(); k.open(); const a = k.activity(); a.root.querySelector<HTMLButtonElement>('#recipe-avocado-toast')!.click(); finishToast(a.engine);
+    const calm = new EventTarget(); Object.defineProperty(calm, 'matches', {value: true}); vi.stubGlobal('matchMedia', () => calm);
+    a.refresh(); a.refresh();
+    expect(tasting()!.dataset.calm).toBe(''); vi.advanceTimersByTime(300);
+    expect(tasting()!.dataset.meal).toBe('miam'); expect(tasting()!.querySelector('.cuisine-tasting-bubble')!.textContent).toBe('Miam !');
+    expect(tasting()!.querySelector('.cuisine-crumb')).toBeNull();
+    vi.advanceTimersByTime(1300); expect(tasting()).toBeNull(); expect(a.root.dataset.tasting).toBeUndefined();
   });
   it('does not change the reward or save content', () => {
     const k = setup(); const before = structuredClone(k.controller.getSnapshot().state!); play(k, 'avocado-toast');

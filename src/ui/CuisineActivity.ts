@@ -80,20 +80,50 @@ export function mountCuisineActivity(background: HTMLElement, options: {
   }
   function speak(state: TalkState | undefined): void { if (state) { bubble(chef, state.commis); bubble(taster, state.taster); } }
   const STAND = '<svg viewBox="0 0 100 40" aria-hidden="true"><ellipse cx="50" cy="37" rx="44" ry="4" fill="#5a3a2a26"/><path d="M24 14L18 37M76 14L82 37M50 16V37" stroke="#6e4b3a" stroke-width="5" stroke-linecap="round"/><path d="M24 14L18 37M76 14L82 37M50 16V37" stroke="#a86a3e" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="50" cy="12" rx="40" ry="9" fill="#c4513f" stroke="#6e4b3a" stroke-width="2.5"/><ellipse cx="50" cy="10" rx="31" ry="5" fill="#e0604f"/></svg>';
-  // End-of-recipe tasting around the in-scene rabbit: dish presented, hop, « Miam ! », hearts. The result card waits.
-  const TASTING_MS = 2000, HEARTS = 5;
-  let tasting: HTMLElement | null = null, tastingTimer: ReturnType<typeof setTimeout> | undefined;
+  // End-of-recipe meal (owner, 1 November 2026: « au moins 3 secondes et amélioré »): the dish is served to the eater, who leans
+  // in and takes bites, chewing, while the plate empties and crumbs fall; then « Miam ! » and hearts. The result card waits
+  // until the end, a tap on the kitchen skips. With reduced motion: a short, calm version, the empty plate and « Miam ! ».
+  const HEARTS = 5, CRUMBS = 3;
+  /** Bites as ellipses of the dish picture (x, y, half-width, half-height in %), for an eater on the dish's right. The last
+   *  one clears the middle of the plate; the painted rim stays, the empty plate shows through. */
+  const BITES = [[80, 40, 15, 19], [72, 62, 17, 21], [57, 36, 19, 23], [44, 60, 21, 25], [50, 48, 40, 38]] as const;
+  const MEAL = {serveMs: 700, biteMs: 650, miamMs: 3900, endMs: 5000} as const;
+  const CALM_MEAL = {miamMs: 300, endMs: 1600} as const;
+  let tasting: HTMLElement | null = null, tastingTimers: ReturnType<typeof setTimeout>[] = [];
   function stopTasting(): void {
-    if (tastingTimer !== undefined) clearTimeout(tastingTimer);
-    tastingTimer = undefined; tasting?.remove(); tasting = null; if (chef) delete chef.dataset.cheering;
-    if (chef) delete chef.dataset.tasting;
-    if (taster) delete taster.dataset.tasting;
+    for (const timer of tastingTimers) clearTimeout(timer);
+    tastingTimers = []; tasting?.remove(); tasting = null; if (chef) delete chef.dataset.cheering;
+    for (const node of [chef, taster]) if (node) { delete node.dataset.tasting; delete node.dataset.meal; delete node.dataset.chomp; }
     if (activity) delete activity.root.dataset.tasting;
+  }
+  /** The dish with `count` bites taken; `fromLeft` mirrors them for an eater on the dish's left. */
+  function bitten(food: HTMLElement, count: number, fromLeft: boolean): void {
+    const holes = BITES.slice(0, count).flatMap(([x, y, w, h]) => {
+      const at = fromLeft ? 100 - x : x;
+      // A bite is a round mouthful with two smaller ones on its edge: a scalloped, toothy outline.
+      return [[at, y, w, h], [at + (fromLeft ? w : -w) * .55, y - h * .6, w * .45, h * .45], [at + (fromLeft ? w : -w) * .55, y + h * .6, w * .45, h * .45]];
+    }).map(([x, y, w, h]) => `radial-gradient(ellipse ${w.toFixed(1)}% ${h.toFixed(1)}% at ${x.toFixed(1)}% ${y.toFixed(1)}%, transparent 97%, #000 100%)`);
+    const mask = holes.join(', ') || 'none';
+    food.style.setProperty('mask-image', mask); food.style.setProperty('-webkit-mask-image', mask);
+    food.style.setProperty('mask-composite', 'intersect'); food.style.setProperty('-webkit-mask-composite', 'source-in');
+  }
+  function crumbs(dish: HTMLElement, bite: number, fromLeft: boolean): void {
+    const [x, y] = BITES[bite];
+    for (let n = 0; n < CRUMBS; n++) {
+      const crumb = document.createElement('span'); crumb.className = 'cuisine-crumb';
+      crumb.style.left = `${(fromLeft ? 100 - x : x) + (n - 1) * 6}%`; crumb.style.top = `${y + (n % 2) * 8}%`;
+      crumb.style.setProperty('--crumb-index', String(n)); crumb.style.setProperty('--crumb-side', fromLeft ? '-1' : '1');
+      dish.append(crumb);
+    }
   }
   function taste(recipeId: RecipeCompletion['recipeId']): void {
     stopTasting();
     const layer = document.createElement('span'); layer.className = 'cuisine-tasting'; layer.setAttribute('aria-hidden', 'true');
     layer.innerHTML = finishedDishArt(recipeId);
+    const dish = layer.querySelector<HTMLElement>('.cuisine-dish')!, food = dish.querySelector<HTMLElement>('img')!;
+    // The empty plate under the dish shows through each bite.
+    const plate = document.createElement('img'); plate.className = 'cuisine-dish-plate'; plate.src = ART_URLS['plate-empty'] ?? '';
+    plate.alt = ''; plate.draggable = false; food.before(plate);
     const bubble = document.createElement('span'); bubble.className = 'cuisine-tasting-bubble'; bubble.textContent = 'Miam !';
     layer.append(bubble);
     for (let n = 0; n < HEARTS; n++) {
@@ -104,8 +134,24 @@ export function mountCuisineActivity(background: HTMLElement, options: {
     const eater = taster ?? chef;
     if (!eater || !chef || !activity) return;
     eater.append(layer); tasting = layer; eater.dataset.tasting = recipeId; if (taster) chef.dataset.cheering = ''; activity.root.dataset.tasting = recipeId;
-    tastingTimer = setTimeout(stopTasting, TASTING_MS);
+    const fromLeft = eater === chef && !taster; // the commis eats from the left of its dish, the taster from the right
+    const later = (ms: number, step: () => void) => tastingTimers.push(setTimeout(() => { if (tasting === layer) step(); }, ms));
+    const meal = (phase: 'serve' | 'eating' | 'miam') => { layer.dataset.meal = phase; eater.dataset.meal = phase; };
+    const commis = chef;
+    const miam = () => { bitten(food, BITES.length, fromLeft); meal('miam'); if (taster) { delete commis.dataset.cheering; void commis.offsetWidth; commis.dataset.cheering = ''; } };
+    if (globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      layer.dataset.calm = ''; meal('serve'); later(CALM_MEAL.miamMs, miam); later(CALM_MEAL.endMs, stopTasting); return;
+    }
+    meal('serve');
+    BITES.forEach((_, bite) => later(MEAL.serveMs + bite * MEAL.biteMs, () => {
+      meal('eating'); bitten(food, bite + 1, fromLeft); if (bite < BITES.length - 1) crumbs(dish, bite, fromLeft);
+      // One chomp per bite, on top of the chewing rhythm.
+      delete eater.dataset.chomp; void eater.offsetWidth; eater.dataset.chomp = '';
+    }));
+    later(MEAL.miamMs, miam); later(MEAL.endMs, stopTasting);
   }
+  /** Tapping the kitchen during the meal skips straight to the result card. */
+  function skipTasting(): boolean { if (!tasting) return false; stopTasting(); return true; }
   function react(state: 'idle' | 'positive' | 'mistake' | 'celebrate'): void {
     if (reactionTimer !== undefined) clearTimeout(reactionTimer);
     reactionTimer = undefined;
@@ -196,7 +242,7 @@ export function mountCuisineActivity(background: HTMLElement, options: {
         activity.root.querySelector('#kitchen-world .table-art')!.after(...[chef, taster].filter((n): n is HTMLDivElement => !!n));
         talk = createKitchenTalk(!!taster);
         // Touching the kitchen is an action: the hint goes away and the 2-second wait starts again.
-        activity.root.addEventListener('pointerdown', () => speak(talk?.action(Date.now())), {capture: true});
+        activity.root.addEventListener('pointerdown', () => { if (!skipTasting()) speak(talk?.action(Date.now())); }, {capture: true});
         moodTimer = setInterval(() => {
           if (!activity || !talk || !chef) return;
           const snapshot = activity.engine.snapshot(); chef.dataset.mood = commisMood(snapshot); speak(talk.tick(snapshot, Date.now()));
