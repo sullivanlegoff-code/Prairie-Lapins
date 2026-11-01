@@ -3,7 +3,7 @@
 import {existsSync, readFileSync} from 'node:fs';
 import {afterEach, describe, expect, it} from 'vitest';
 import {LEGENDARY_EFFECTS, LEGENDARY_PARTS, legendaryMeadowArt} from '../src/config/legendaryArt';
-import {ACT_MS, DIVE, IDLE_GAP, LegendaryClock, SURF_ENTRY_MS, SURF_SLIDE_MS, TAP_COOLDOWN_MS, breathFrame, diveFin, partAngle, speciesActs, surfPose} from '../src/display/legendaryTimeline';
+import {ACT_MS, DIVE, IDLE_GAP, LegendaryClock, SLAM, SURF_ENTRY_MS, SURF_SLIDE_MS, TAP_COOLDOWN_MS, breathFrame, diveFin, partAngle, speciesActs, surfPose} from '../src/display/legendaryTimeline';
 import {createRabbitMotion, motionZone, startSurf, stepRabbitMotion} from '../src/display/rabbitMotion';
 import {showLegendaryReveal} from '../src/ui/legendaryReveal';
 
@@ -33,8 +33,8 @@ describe('legendary pictures', () => {
     expect(LEGENDARY_EFFECTS.firewall).toHaveLength(5); expect(LEGENDARY_EFFECTS.wave).toHaveLength(3);
   });
   it('cuts the moving parts from the approved sprites, same frame, and keeps the open mouth on the same left edge', () => {
-    const sprite = (species: 'dragon' | 'requin') => pngSize(readFileSync(`public/assets/rabbits/${species}/${species}-v1.png`));
-    for (const species of ['dragon', 'requin'] as const) {
+    const sprite = (species: 'dragon' | 'requin' | 'ankylosaure') => pngSize(readFileSync(`public/assets/rabbits/${species}/${species}-v1.png`));
+    for (const species of ['dragon', 'requin', 'ankylosaure'] as const) {
       const parts = LEGENDARY_PARTS[species];
       expect(pngSize(readFileSync(publicFile(parts.body.url)))).toEqual(sprite(species));
       expect(pngSize(readFileSync(publicFile(parts.part.url)))).toEqual(sprite(species));
@@ -47,7 +47,10 @@ describe('legendary pictures', () => {
     expect(dragon).toContain('legendary-breath-1'); expect(dragon).not.toContain('legendary-surfboard');
     expect(requin).toContain('legendary-surfboard'); expect(requin).not.toContain('legendary-breath-1');
     // No halo in the meadow: the shine belongs to the appearance and the card.
-    for (const list of [dragon, requin]) expect(list.some(t => /^legendary-(firewall|wave|foam|halo)/.test(t))).toBe(false);
+    const ankylosaure = legendaryMeadowArt('ankylosaure').map(a => a.texture);
+    expect(ankylosaure).toEqual(expect.arrayContaining(['rabbit-ankylosaure-tail', 'legendary-crack', 'legendary-dustring', 'legendary-rock', 'legendary-mound']));
+    expect(ankylosaure).not.toContain('legendary-breath-1'); expect(ankylosaure).not.toContain('legendary-surfboard');
+    for (const list of [dragon, requin, ankylosaure]) expect(list.some(t => /^legendary-(firewall|wave|foam|halo|rift|dustwall|strata)/.test(t))).toBe(false);
   });
 });
 
@@ -87,6 +90,16 @@ describe('legendary clock', () => {
   it('keeps the wing and fin still with reduced motion', () => {
     expect(partAngle('dragon', 4000, 1, null, true)).toBe(0);
     expect(Math.abs(partAngle('dragon', 4000, 1, null, false))).toBeLessThan(.25);
+  });
+  it('raises the club tail of the Ankylosaure high, then strikes the ground at the impact, and keeps its own earth shows', () => {
+    const clock = new LegendaryClock('ankylosaure', 'rabbit-7'), slam = clock.tap()!;
+    expect(slam.act).toBe('slam'); expect(SLAM.impact).toBeLessThan(ACT_MS.slam);
+    const at = (ms: number) => partAngle('ankylosaure', 0, 0, {...slam, elapsed: ms}, false);
+    expect(at(SLAM.raise)).toBeGreaterThan(.5); expect(at(SLAM.impact + 20)).toBeLessThan(0);
+    expect(partAngle('ankylosaure', 0, 0, {...slam, elapsed: SLAM.raise}, true)).toBe(0);
+    expect(speciesActs('ankylosaure')).toEqual(['slam', 'rumble', 'dig', 'dust']);
+    expect(new LegendaryClock('ankylosaure', 'rabbit-8').play('surf')).toBeNull();
+    expect(speciesActs('dragon')).not.toContain('slam');
   });
   it('shows only the fin while the Requin is under water, and a two-second slide on the board', () => {
     expect(diveFin(DIVE.hideAt - 10).visible).toBe(false); expect(diveFin((DIVE.hideAt + DIVE.showAt) / 2).visible).toBe(true);
@@ -131,6 +144,15 @@ describe('legendary first appearance', () => {
     const dialog = showLegendaryReveal('requin', {...text, name: 'Lapin Requin'});
     expect(dialog.querySelectorAll('.lr-wave')).toHaveLength(3); expect(dialog.querySelector('.lr-foam-image')).not.toBeNull();
     expect(dialog.querySelector('.lr-wall')).toBeNull();
+    dialog.dispatchEvent(new Event('cancel', {cancelable: true})); expect(document.querySelector('dialog.legendary-reveal')).toBeNull();
+  });
+  it('brings the Ankylosaure with an earthquake: the ground splits, dust rises and rocks fall, never fire or water', () => {
+    const dialog = showLegendaryReveal('ankylosaure', {...text, name: 'Anky'});
+    expect(dialog.classList.contains('legendary-reveal-ankylosaure')).toBe(true);
+    expect(dialog.querySelector('.lr-rift-image')).not.toBeNull(); expect(dialog.querySelector('.lr-dustwall-image')).not.toBeNull();
+    expect(dialog.querySelectorAll('.lr-rock').length).toBeGreaterThanOrEqual(12);
+    expect(dialog.querySelector('.lr-wall, .lr-wave')).toBeNull();
+    expect(dialog.querySelector<HTMLImageElement>('.lr-rabbit')!.alt).toBe('Anky');
     dialog.dispatchEvent(new Event('cancel', {cancelable: true})); expect(document.querySelector('dialog.legendary-reveal')).toBeNull();
   });
 });

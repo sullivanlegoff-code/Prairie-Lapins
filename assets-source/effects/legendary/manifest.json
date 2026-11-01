@@ -244,5 +244,71 @@
     "height": 93,
     "bytes": 3310,
     "masterSha256": "da3db41f1e852a413a83fc26a343d039bb55cc840a54a4d0836d2e52fa5ed0b1"
+  },
+  "rock": {
+    "width": 64,
+    "height": 56,
+    "bytes": 2208,
+    "masterSha256": "1d2674d1ed1157a86fca19fad486d72dc1d5e752e06e4a81097cd8b05540dc0b"
+  },
+  "stone": {
+    "width": 40,
+    "height": 34,
+    "bytes": 1492,
+    "masterSha256": "9d37b613117ec6ebd2758c5a5261f33d211653834410d0246d92f25c96cf75a2"
+  },
+  "clod": {
+    "width": 44,
+    "height": 43,
+    "bytes": 1768,
+    "masterSha256": "10f93d3c6baa7e01ff7f34b618a88e28b79b38b5bd28520b34199080736ed5fc"
+  },
+  "mound": {
+    "width": 96,
+    "height": 49,
+    "bytes": 2890,
+    "masterSha256": "c953add40bbad21817f63477a8884a496528de8c042da8a77657efd584cb1cba"
+  },
+  "crack": {
+    "width": 160,
+    "height": 78,
+    "bytes": 5850,
+    "masterSha256": "1b94565533588c6e665684ff22030a8be505e91a157e194d7ea915a1a0330b90"
+  },
+  "dust": {
+    "width": 96,
+    "height": 80,
+    "bytes": 3868,
+    "masterSha256": "31349a2cdebad2ab7ef5e16d1a4378c0263d4f66e1c7fe0d32ad38c6ad9912f6"
+  },
+  "dustring": {
+    "width": 192,
+    "height": 85,
+    "bytes": 7442,
+    "masterSha256": "6d0a4f81fe0789d403fa7b1b2ffc458002b53a7c67bbf71fa2fddfcbfa8780cc"
+  },
+  "gravel": {
+    "width": 40,
+    "height": 30,
+    "bytes": 1510,
+    "masterSha256": "ec26feb673f8a745d0382031b97b605c1a12f78fa548a6d76e4141fec125846c"
+  },
+  "rift": {
+    "width": 1280,
+    "height": 853,
+    "bytes": 96836,
+    "masterSha256": "dd61d9e19cda2a0bd9014d9a3ce6da0e5642decdf30117b83a3664139b980dd9"
+  },
+  "dustwall": {
+    "width": 1280,
+    "height": 853,
+    "bytes": 79146,
+    "masterSha256": "b77e61460ede114ef3607b0b3a0111fa47d4b60e37aa917bb4bef609f62fe546"
+  },
+  "strata": {
+    "width": 1280,
+    "height": 853,
+    "bytes": 94648,
+    "masterSha256": "d84679c02a39fecaa2637729e2bd3f8848aa13a5308f295381d5d5fb13fc52e2"
   }
 }

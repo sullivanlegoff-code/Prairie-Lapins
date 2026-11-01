@@ -2,8 +2,9 @@ import {LEGENDARY_EFFECTS as FX, type LegendaryShow} from '../config/legendaryAr
 import {rabbitArt} from '../config/rabbitArt';
 
 /**
- * First appearance of a legendary (owner's request of 31 October 2026): the Dragon sets the whole screen on fire, the
- * Requin arrives on a huge wave; when it calms, the rabbit appears before its golden halo. A tap skips to the end; with
+ * First appearance of a legendary (owner's requests of 31 October and 1 November 2026): the Dragon sets the whole screen
+ * on fire, the Requin arrives on a huge wave, the Ankylosaure comes with a great earthquake (the screen shakes, the ground
+ * splits open, rocks fall and dust rises); when it calms, the rabbit appears before its golden halo. A tap skips to the end; with
  * reduced motion the end is shown at once. Purely visual: the dialog is created here and removed when it closes.
  */
 export interface RevealText {title: string; name: string; details: string; button: string}
@@ -39,13 +40,21 @@ function requinEffects(): HTMLElement[] {
     layer('lr-drops', scatter(FX.drop.url, 'lr-drop', 14, 53))];
 }
 
+function ankylosaureEffects(): HTMLElement[] {
+  const rocks = [...scatter(FX.rock.url, 'lr-rock', 6, 101), ...scatter(FX.stone.url, 'lr-rock lr-stone', 8, 113), ...scatter(FX.gravel.url, 'lr-rock lr-gravel', 8, 127)];
+  return [layer('lr-rift', [image(FX.rift.url, 'lr-rift-image')]), layer('lr-dustwall', [image(FX.dustwall.url, 'lr-dustwall-image')]),
+    layer('lr-rocks', rocks), layer('lr-dustflash')];
+}
+const EFFECTS: Record<LegendaryShow, () => HTMLElement[]> = {dragon: dragonEffects, requin: requinEffects, ankylosaure: ankylosaureEffects};
+const SPARK_SEED: Record<LegendaryShow, number> = {dragon: 71, requin: 83, ankylosaure: 97};
+
 /** Opens the appearance; `onClose` runs once when the player closes it (button or Escape). */
 export function showLegendaryReveal(species: LegendaryShow, text: RevealText, onClose: () => void = () => {}): HTMLDialogElement {
   const dialog = document.createElement('dialog');
   dialog.className = `legendary-reveal legendary-reveal-${species}`; dialog.dataset.species = species;
   dialog.setAttribute('aria-labelledby', 'legendary-reveal-title');
-  const effects = layer('lr-fx', species === 'dragon' ? dragonEffects() : requinEffects());
-  const sparks = layer('lr-sparks', scatter(FX.spark.url, 'lr-spark', 7, species === 'dragon' ? 71 : 83));
+  const effects = layer('lr-fx', EFFECTS[species]());
+  const sparks = layer('lr-sparks', scatter(FX.spark.url, 'lr-spark', 7, SPARK_SEED[species]));
   const hero = layer('lr-hero', [image(FX.halo.url, 'lr-halo'), sparks]);
   const rabbit = image(rabbitArt(species)?.url ?? '', 'lr-rabbit'); rabbit.alt = text.name; hero.append(rabbit); hero.removeAttribute('aria-hidden');
   const words = document.createElement('div'); words.className = 'lr-text';
@@ -69,7 +78,7 @@ export function showLegendaryReveal(species: LegendaryShow, text: RevealText, on
   document.body.append(dialog);
   if (reduced) finish();
   dialog.showModal(); button.focus({preventScroll: true});
-  // The fire or the wave starts once its first painting is ready (at most a short wait), so it never flashes in empty.
+  // The fire, the wave or the earthquake starts once its first painting is ready (at most a short wait), so it never flashes in empty.
   const first = (effects.querySelector('img') as HTMLImageElement | null);
   const start = () => dialog.classList.add('is-playing');
   if (!first || first.complete || typeof first.decode !== 'function') start();

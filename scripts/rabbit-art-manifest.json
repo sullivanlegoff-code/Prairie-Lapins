@@ -338,5 +338,15 @@
     "width": 575,
     "height": 575,
     "derivedSha1": "3ec3b165b960fe67282ddc560bdf342e43c40114"
+  },
+  "ankylosaure": {
+    "file": "assets/rabbits/ankylosaure/ankylosaure-v1.png",
+    "worldWidth": 58,
+    "sourceSha1": "e6095135fa5c8f8a02b43aa2228abe533d6222b9",
+    "sourceWidth": 1357,
+    "sourceHeight": 1124,
+    "width": 461,
+    "height": 382,
+    "derivedSha1": "aa114c784b01be2eb7d82a38fb38f014ed7f01d3"
   }
 }

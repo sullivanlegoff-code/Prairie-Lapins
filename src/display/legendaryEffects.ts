@@ -3,7 +3,7 @@ import {LEGENDARY_EFFECTS as FX, LEGENDARY_PARTS, type EffectArt, type Legendary
 import type {RabbitArt} from '../config/rabbitArt';
 import type {Point} from '../ui/gestures';
 import {motionZone, startSurf, type RabbitMotion} from './rabbitMotion';
-import {ACT_MS, DIVE, LegendaryClock, SURF_ENTRY_MS, SURF_SLIDE_MS, breathFrame, diveFin, envelope, loopFrame, partAngle, smooth, surfPose,
+import {ACT_MS, DIVE, LegendaryClock, SLAM, SURF_ENTRY_MS, SURF_SLIDE_MS, arc, breathFrame, diveFin, envelope, loopFrame, partAngle, smooth, surfPose,
   type ActState, type LegendaryAct} from './legendaryTimeline';
 
 /** What the meadow gives each legendary: its ground container, its posed body and the approved sprite inside it. */
@@ -14,7 +14,7 @@ const GROUND_Y = 10;
 const rand = (seed: number) => { const x = Math.sin(seed * 127.1) * 43758.5453; return x - Math.floor(x); };
 
 /**
- * The visible show of one Lapin Dragon or Lapin Requin in the meadow, rebuilt with its body; its clock lives on in
+ * The visible show of one legendary (Lapin Dragon, Lapin Requin, Ankylosaure) in the meadow, rebuilt with its body; its clock lives on in
  * the scene so a rebuild never cuts a show short. Everything is decoration: no state, no input, no random generator.
  */
 export class LegendaryView {
@@ -31,6 +31,9 @@ export class LegendaryView {
   private pieces: Phaser.GameObjects.Image[] = [];
   private playing: ActState | null = null;
   private readonly phase: number;
+  /** Reduced motion asked by the player: the slam then never shakes the camera. */
+  private reduced = false;
+  private shaken = false;
 
   constructor(private scene: Phaser.Scene, readonly id: string, readonly species: LegendaryShow, private host: LegendaryHost, readonly clock: LegendaryClock) {
     const {art, body, sprite, object} = host, parts = LEGENDARY_PARTS[species];
@@ -59,13 +62,13 @@ export class LegendaryView {
     if (additive) image.setBlendMode(Phaser.BlendModes.ADD);
     layer.add(image); this.pieces.push(image); return image;
   }
-  private clear(): void { for (const piece of this.pieces) piece.destroy(); this.pieces = []; this.mouthOpen = this.submerged = false; this.lift = this.lean = 0; }
+  private clear(): void { for (const piece of this.pieces) piece.destroy(); this.pieces = []; this.mouthOpen = this.submerged = this.shaken = false; this.lift = this.lean = 0; }
 
   tap(): void { this.clock.tap(); }
   play(act: LegendaryAct): void { this.clock.play(act); }
 
   update(frame: LegendaryFrame): void {
-    const {time, dt, active, reduced, asleep} = frame, motion = this.host.motion;
+    const {time, dt, active, reduced, asleep} = frame, motion = this.host.motion; this.reduced = reduced;
     const room = !!motion && motion.mode === 'rest' && this.surfTarget(motion) !== null;
     const idle = active && !reduced && !!motion && ['rest', 'walk', 'sleep'].includes(motion.mode);
     this.clock.step(dt, idle, asleep, room);
@@ -114,6 +117,18 @@ export class LegendaryView {
       for (let k = 0; k < 2; k++) this.add(this.front, FX.splash[0], w * .55, [.5, 1]);
       for (let k = 0; k < 4; k++) this.add(this.back, FX.drop, w * .07);
     } else if (act === 'bubbles') for (let k = 0; k < 6; k++) this.add(this.front, FX.bubble, w * (.1 + rand(k) * .1));
+    else if (act === 'slam') {
+      // Where the club lands: a crack and a ring of dust on the ground, puffs of dust, stones and gravel thrown up.
+      this.add(this.back, FX.crack, w * .9); this.add(this.back, FX.dustring, w * 1.15);
+      for (let k = 0; k < 3; k++) this.add(this.front, FX.dust, w * .42);
+      for (const [art, size] of [[FX.rock, .2], [FX.stone, .15], [FX.stone, .12], [FX.gravel, .13], [FX.gravel, .11], [FX.gravel, .12]] as const) this.add(this.front, art, w * size);
+    } else if (act === 'rumble') {
+      for (let k = 0; k < 2; k++) this.add(this.back, FX.dust, w * .3);
+      for (let k = 0; k < 6; k++) this.add(this.front, k % 3 ? FX.gravel : FX.stone, w * (.1 + rand(k + 50) * .04));
+    } else if (act === 'dig') {
+      this.add(this.back, FX.mound, w * .62, [.5, 1]);
+      for (let k = 0; k < 6; k++) this.add(this.front, k % 2 ? FX.clod : FX.gravel, w * (k % 2 ? .13 : .1));
+    } else if (act === 'dust') for (let k = 0; k < 4; k++) this.add(this.front, FX.dust, w * .34);
   }
 
   private animate({act, elapsed: ms, duration}: ActState): void {
@@ -189,7 +204,49 @@ export class LegendaryView {
         const t = Math.max(0, Math.min(1, u * 1.4 - rand(k + 3) * .4)), x = (rand(k + 7) * 2 - 1) * w * .4;
         bubble.setPosition(x + Math.sin(t * 9 + k) * 3, GROUND_Y - 8 - t * w * .9).setAlpha(t > 0 && t < .97 ? .9 : 0);
       });
+    } else if (act === 'slam') this.slam(ms, w, f);
+    else if (act === 'rumble') {
+      const shake = envelope(u, .1, .2), [dustA, dustB, ...stones] = p;
+      this.lean = f * Math.sin(ms / 28) * .025 * shake; this.lift = Math.abs(Math.sin(ms / 45)) * 1.2 * shake;
+      [dustA, dustB].forEach((dust, k) => dust.setPosition((k ? 1 : -1) * w * .32, GROUND_Y - 2).setScale(w * .3 / FX.dust.width * (.7 + .25 * Math.sin(ms / 160 + k))).setAlpha(.55 * shake));
+      stones.forEach((stone, k) => stone.setPosition((rand(k + 60) * 2 - 1) * w * .62, GROUND_Y + 2 - Math.abs(Math.sin(ms / 110 + k * 1.3)) * (3 + rand(k) * 3) * shake)
+        .setRotation(Math.sin(ms / 90 + k) * .3).setAlpha(shake));
+    } else if (act === 'dig') {
+      const busy = envelope(u, .1, .15), [mound, ...clods] = p, behind = -f * w * .55;
+      this.lean = f * .12 * busy; this.lift = Math.abs(Math.sin(ms / 70)) * 1.2 * busy;
+      mound.setPosition(behind, GROUND_Y + 3).setScale(w * .62 / FX.mound.width * (.25 + .75 * smooth(u * 1.3))).setAlpha(envelope(u, .05, .15));
+      clods.forEach((clod, k) => {
+        // Each clod is thrown back between the hind legs, in turn, and lands on the growing heap.
+        const t = (ms / 520 + k / clods.length) % 1, on = u > .08 && u < .82;
+        clod.setPosition(f * w * .28 + (behind - f * w * .28) * t, GROUND_Y - 1 - arc(t) * (12 + rand(k) * 6)).setRotation(t * 5 * -f).setAlpha(on ? Math.min(1, Math.sin(t * Math.PI) * 3) : 0);
+      });
+    } else if (act === 'dust') {
+      const landed = Math.max(0, ms - 300);
+      this.lift = ms < 300 ? Math.sin(ms / 300 * Math.PI) * 4 : 0;
+      p.forEach((dust, k) => {
+        const t = Math.min(1, landed / 900), side = k % 2 ? 1 : -1, far = k < 2 ? .5 : .3;
+        dust.setPosition(side * w * (.18 + far * smooth(t)), GROUND_Y - 2 - t * (k < 2 ? 6 : 12)).setScale(w * .34 / FX.dust.width * (.4 + .7 * t)).setAlpha(landed > 0 ? .85 * (1 - t) : 0);
+      });
     }
+  }
+  /** The club tail strikes at `SLAM.impact`: the ground cracks, a ring of dust spreads, stones fly and the meadow shakes a little. */
+  private slam(ms: number, w: number, f: 1 | -1): void {
+    const [crack, ring, ...rest] = this.pieces, puffs = rest.slice(0, 3), stones = rest.slice(3), t = ms - SLAM.impact;
+    const strike = LEGENDARY_PARTS.ankylosaure.strike!, x = f * this.point(strike.x, strike.y).x;
+    if (t < 0) { for (const piece of this.pieces) piece.setAlpha(0); return; }
+    if (!this.shaken) { this.shaken = true; if (!this.reduced) this.scene.cameras.main.shake(220, .004); }
+    this.lift = t < 260 ? Math.sin(t / 260 * Math.PI) * 3 : 0;
+    const fade = 1 - smooth((t - 650) / 450);
+    crack.setPosition(x, GROUND_Y + 2).setScale(w * .9 / FX.crack.width * (.55 + .45 * smooth(t / 120))).setAlpha(fade);
+    const k = Math.min(1, t / 600); ring.setPosition(x, GROUND_Y + 2).setScale(w * 1.15 / FX.dustring.width * (.3 + .9 * k)).setAlpha(.9 * (1 - k));
+    puffs.forEach((puff, n) => {
+      const d = Math.min(1, t / 900), dir = n - 1;
+      puff.setPosition(x + dir * d * w * .35, GROUND_Y - 2 - d * (8 + (n === 1 ? 6 : 0))).setScale(w * .42 / FX.dust.width * (.45 + .6 * d)).setAlpha(.9 * (1 - d));
+    });
+    stones.forEach((stone, n) => {
+      const flight = 520 + rand(n + 70) * 260, v = Math.min(1, t / flight), side = n % 2 ? 1 : -1;
+      stone.setPosition(x + side * (8 + rand(n + 80) * w * .5) * v, GROUND_Y + 1 - arc(v) * (14 + rand(n + 90) * 16)).setRotation(v * side * 4).setAlpha(v < 1 ? 1 : 0);
+    });
   }
   destroy(): void { this.clear(); for (const o of [this.part, this.mouth, this.back, this.front, this.fx]) o?.destroy(); }
 }

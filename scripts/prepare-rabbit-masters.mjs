@@ -31,6 +31,8 @@ export const DESIGNS = [
   {id: 'dinenette', source: 'output/imagegen/dinenette-v1/dinenette.png', background: 'light'},
   // Original design chosen by the owner on 31 October 2026 (concept B « Nuage géant », ChatGPT), generated outside the Design folder.
   {id: 'calinou', source: 'output/imagegen/geant-v1/geant-B.png', background: 'light'},
+  // Legendary son of Dinono and Dinenette, concept B « Mousse » chosen by the owner on 1 November 2026, its rabbit redone as a mix of both parents with a finer face (B3, ChatGPT).
+  {id: 'ankylosaure', source: 'output/imagegen/ankylosaure-v1/anky-B3.png', background: 'light'},
 ];
 // Bouee's left ear encloses a pocket of background: seed only that pocket, preserving the ring's white dots.
 export const BACKGROUND_SEEDS = {bouee: [[490, 570]]};
