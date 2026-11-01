@@ -23,6 +23,7 @@ const SPECIALS: {id: SpeciesId; probability: number; affection: number; types?: 
   {id: 'orange', probability: 10, affection: 6, types: ['paille', 'neige']}, {id: 'dinono', probability: 10, affection: 6, types: ['feu', 'metal']},
   {id: 'dinenette', probability: 10, affection: 6, types: ['paille', 'vol']},
   {id: 'calinou', probability: 10, affection: 6, types: ['paille', 'metal']}, {id: 'requin', probability: 7, affection: 10, parents: ['maxou', 'wat-wat']},
+  {id: 'ankylosaure', probability: 7, affection: 10, parents: ['dinono', 'dinenette']},
 ];
 function historicalWeights(a: SpeciesId, b: SpeciesId, x: number, y: number): Odds {
   const types = new Set([...SPECIES[a].types, ...SPECIES[b].types]), key = [...types].sort().join(',');

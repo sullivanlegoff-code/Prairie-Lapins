@@ -7,13 +7,17 @@ import type {LegendaryShow} from '../config/legendaryArt';
  * Dragon: touched, it opens its mouth and breathes fire while a ring of flames rises around it (`breath` + `ring`);
  * now and then: smoke from the nostrils, a fiery hiccup, a few embers. Requin: touched, it dives into a puddle and
  * only its fin circles (`dive`); now and then: a two-second surf on a board and a little wave, bubbles, a splash.
+ * Ankylosaure: touched, it raises its club tail and slams the ground, which cracks and throws stones (`slam`); now and
+ * then: a rumble with hopping pebbles, a little dig, a puff of dust.
  */
-export type LegendaryAct = 'tap' | 'smoke' | 'hiccup' | 'embers' | 'dive' | 'surf' | 'bubbles' | 'splash';
-export const ACT_MS: Record<LegendaryAct, number> = {tap: 1900, smoke: 1700, hiccup: 1000, embers: 2000, dive: 2300, surf: 2600, bubbles: 2200, splash: 1000};
-export const TAP_ACT: Record<LegendaryShow, LegendaryAct> = {dragon: 'tap', requin: 'dive'};
-export const IDLE_ACTS: Record<LegendaryShow, readonly LegendaryAct[]> = {dragon: ['smoke', 'hiccup', 'embers', 'smoke'], requin: ['surf', 'bubbles', 'surf', 'splash']};
-/** Asleep, only soft shows: smoke rings from the Dragon, bubbles from the Requin. */
-export const SLEEP_ACTS: Record<LegendaryShow, LegendaryAct> = {dragon: 'smoke', requin: 'bubbles'};
+export type LegendaryAct = 'tap' | 'smoke' | 'hiccup' | 'embers' | 'dive' | 'surf' | 'bubbles' | 'splash' | 'slam' | 'rumble' | 'dig' | 'dust';
+export const ACT_MS: Record<LegendaryAct, number> = {tap: 1900, smoke: 1700, hiccup: 1000, embers: 2000, dive: 2300, surf: 2600, bubbles: 2200, splash: 1000,
+  slam: 2000, rumble: 1600, dig: 2200, dust: 1400};
+export const TAP_ACT: Record<LegendaryShow, LegendaryAct> = {dragon: 'tap', requin: 'dive', ankylosaure: 'slam'};
+export const IDLE_ACTS: Record<LegendaryShow, readonly LegendaryAct[]> = {dragon: ['smoke', 'hiccup', 'embers', 'smoke'], requin: ['surf', 'bubbles', 'surf', 'splash'],
+  ankylosaure: ['rumble', 'dig', 'dust', 'rumble']};
+/** Asleep, only soft shows: smoke rings from the Dragon, bubbles from the Requin, a puff of dust from the Ankylosaure. */
+export const SLEEP_ACTS: Record<LegendaryShow, LegendaryAct> = {dragon: 'smoke', requin: 'bubbles', ankylosaure: 'dust'};
 /** Milliseconds between two spontaneous shows of one legendary; the first comes sooner, to be seen. */
 export const IDLE_GAP = {first: [10_000, 25_000], next: [40_000, 95_000]} as const;
 /** The surf belongs to the surfboard's 2 seconds of slide; the board appears and leaves around it. */
@@ -82,6 +86,7 @@ export function breathFrame(ms: number, duration: number): number {
  */
 export function partAngle(species: LegendaryShow, timeMs: number, phase: number, act: ActState | null, reduced: boolean): number {
   if (reduced) return 0;
+  if (species === 'ankylosaure') return reduced ? 0 : tailAngle(timeMs / 1000 + phase, act);
   const t = timeMs / 1000 + phase, amplitude = species === 'dragon' ? 1 : .55;
   let angle = Math.sin(t * 1.3) * .035;
   const cycle = (t % 7) / 7; if (cycle > .86) angle += Math.sin((cycle - .86) / .14 * Math.PI * 4) * .16 * Math.sin((cycle - .86) / .14 * Math.PI);
@@ -100,3 +105,19 @@ export function surfPose(ms: number): {board: number; lift: number; lean: number
   const slide = clamp((ms - SURF_ENTRY_MS) / SURF_SLIDE_MS);
   return {board, lift: board * (3 + Math.sin(slide * Math.PI * 4) * 1.2), lean: board * (.1 + Math.sin(slide * Math.PI * 2) * .04)};
 }
+
+/** Ankylosaure slam: the club tail rises, waits a breath, then strikes the ground at `impact`. */
+export const SLAM = {raise: 650, impact: 820} as const;
+/** Tail angle (radians, positive lifts the club): a lazy wag at rest; during the slam, up high then down past rest. */
+export function tailAngle(t: number, act: ActState | null): number {
+  let angle = Math.sin(t * 1.1) * .04 + Math.sin(t * 2.7) * .015;
+  if (act?.act === 'slam') {
+    const ms = act.elapsed;
+    if (ms < SLAM.raise) angle += smooth(ms / SLAM.raise) * .62;
+    else if (ms < SLAM.impact) angle += .62 - (.62 + .12) * Math.pow((ms - SLAM.raise) / (SLAM.impact - SLAM.raise), 2);
+    else angle += -.12 * (1 - smooth((ms - SLAM.impact) / 420)) + Math.sin((ms - SLAM.impact) / 60) * .04 * Math.max(0, 1 - (ms - SLAM.impact) / 300);
+  } else if (act?.act === 'dig' || act?.act === 'rumble') angle += Math.sin(act.elapsed / 1000 * Math.PI * 6) * .06 * envelope(act.elapsed / act.duration);
+  return angle;
+}
+/** Stone thrown at `impact`: a parabola, from 0 at the strike to 1 when it lands again. */
+export const arc = (u: number) => 4 * u * (1 - u);

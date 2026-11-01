@@ -1,6 +1,7 @@
-// Painted legendary effects (Lapin Dragon, Lapin Requin), generated with ChatGPT on 31 October 2026 with the owner's free hand.
+// Painted legendary effects (Lapin Dragon, Lapin Requin, Ankylosaure), generated with ChatGPT on 31 October and 1 November 2026 with the owner's free hand.
 // Stage 1 (only when the paintings are redelivered): `node scripts/prepare-legendary-effects.mjs --sources output/imagegen/legendaires-v1`
-//   keys each painting (black or magenta background) and crops it into RGBA masters in assets-source/effects/legendary/.
+//   (fire and water) or `--sources output/imagegen/ankylosaure-effets-v1` (earth) keys each painting found in that folder
+//   (black or magenta background) and crops it into RGBA masters in assets-source/effects/legendary/.
 // Stage 2 (always): `PLAYWRIGHT_MODULE=<installed playwright module> node scripts/prepare-legendary-effects.mjs`
 //   resizes the masters and encodes them as WebP (with alpha) in public/assets/effects/legendary/, with a manifest.
 import {readFileSync, writeFileSync, mkdirSync, existsSync} from 'node:fs';
@@ -14,7 +15,7 @@ process.chdir(fileURLToPath(new URL('..', import.meta.url)));
 const MASTERS = 'assets-source/effects/legendary', TARGET = 'public/assets/effects/legendary';
 
 /**
- * `key`: background removed (black: light becomes opacity, for fire and light; magenta: chroma key, for water).
+ * `key`: background removed (black: light becomes opacity, for fire and light; magenta: chroma key, for water; earth: magenta behind solid earth colours).
  * `box`: [x, y, width, height] in the painting. `frames`: equal cells of the box, as rows or columns.
  * `erase`: [x, y, width, height] of a neighbouring element to clear. `size`: runtime width in pixels. `opaque`: kept with its background (full-screen paintings the page blends with the screen).
  */
@@ -37,6 +38,18 @@ export const EFFECTS = [
   {name: 'drop', source: 'eau-planche.png', key: 'magenta', box: [1265, 616, 123, 133], size: 24},
   {name: 'surfwave', source: 'vaguette-anim.png', key: 'magenta', box: [0, 230, 2172, 250], frames: {columns: 6}, size: 128},
   {name: 'splash', source: 'eclabousse-anim.png', key: 'magenta', box: [0, 230, 2172, 300], frames: {columns: 6}, size: 112},
+  // Ankylosaure
+  {name: 'rock', source: 'terre-planche.png', key: 'earth', box: [24, 99, 385, 336], size: 64},
+  {name: 'stone', source: 'terre-planche.png', key: 'earth', box: [513, 180, 237, 204], size: 40},
+  {name: 'clod', source: 'terre-planche.png', key: 'earth', box: [876, 117, 305, 298], size: 44},
+  {name: 'mound', source: 'terre-planche.png', key: 'earth', box: [1280, 182, 378, 193], size: 96},
+  {name: 'crack', source: 'terre-planche.png', key: 'earth', box: [14, 621, 396, 193], size: 160},
+  {name: 'dust', source: 'terre-planche.png', key: 'earth', box: [471, 556, 331, 276], size: 96},
+  {name: 'dustring', source: 'terre-planche.png', key: 'earth', box: [851, 615, 417, 185], size: 192},
+  {name: 'gravel', source: 'terre-planche.png', key: 'earth', box: [1367, 612, 225, 171], size: 40},
+  {name: 'rift', source: 'faille.png', key: 'earth', box: [0, 0, 1536, 1024], size: 1280},
+  {name: 'dustwall', source: 'poussiere-mur.png', key: 'earth', box: [0, 0, 1536, 1024], size: 1280},
+  {name: 'strata', source: 'strates.png', key: 'none', box: [0, 0, 1536, 1024], size: 1280, opaque: true},
 ];
 
 /** Black background: the brightest channel is the opacity, the colour is unmixed from black. */
@@ -56,6 +69,23 @@ function keyMagenta(rgba) {
     if (!alpha) { rgba.fill(0, i, i + 4); continue; }
     const unmix = (value, key) => Math.max(0, Math.min(255, Math.round((value - (1 - alpha) * key) / alpha)));
     rgba[i] = unmix(r, 255); rgba[i + 1] = unmix(g, 0); rgba[i + 2] = unmix(b, 255); rgba[i + 3] = Math.round(alpha * 255);
+  }
+}
+/**
+ * Magenta background behind solid earth colours (stone, soil, dust): earth never has more red and blue than green, so any
+ * pixel that does is background mixed with painting. Its opacity comes from how magenta it is, and its colour is rebuilt as
+ * a sandy tone from the green channel (magenta has none), so outlines stay dark and the painter's pink glows become dust.
+ */
+function keyEarth(rgba) {
+  for (let i = 0; i < rgba.length; i += 4) {
+    const [r, g, b] = rgba.subarray(i, i + 3), magenta = Math.min(r, b) - g;
+    // Opaque pink (the painter's glow, redder than any soil and bluish): sandy dust of the same lightness.
+    if (magenta <= 0 && r > g + 60 && b > g * .85) { const light = (r + g + b) / 3; rgba[i] = Math.min(255, light * 1.15); rgba[i + 1] = light; rgba[i + 2] = light * .78; continue; }
+    if (magenta <= 0) continue;
+    const alpha = Math.max(0, 1 - magenta / 80);
+    if (!alpha) { rgba.fill(0, i, i + 4); continue; }
+    const green = Math.min(255, g / alpha);
+    rgba[i] = Math.min(255, Math.round(green * 1.15)); rgba[i + 1] = Math.round(green); rgba[i + 2] = Math.round(green * .78); rgba[i + 3] = Math.round(alpha * 255);
   }
 }
 function crop({width, rgba}, [x, y, w, h]) {
@@ -78,10 +108,11 @@ if (sourceIndex > 0) {
   const folder = process.argv[sourceIndex + 1]; mkdirSync(MASTERS, {recursive: true});
   for (const effect of EFFECTS) {
     const names = masterNames(effect);
+    if (!existsSync(`${folder}/${[effect.source].flat()[0]}`)) continue;
     const pieces = Array.isArray(effect.source) ? effect.source.map(file => ({file, box: effect.box})) : cells(effect).map(box => ({file: effect.source, box}));
     pieces.forEach(({file, box}, k) => {
       const image = decode(readFileSync(`${folder}/${file}`));
-      if (effect.key === 'black' && !effect.opaque) keyBlack(image.rgba); else if (effect.key === 'magenta') keyMagenta(image.rgba);
+      if (effect.key === 'black' && !effect.opaque) keyBlack(image.rgba); else if (effect.key === 'magenta') keyMagenta(image.rgba); else if (effect.key === 'earth') keyEarth(image.rgba);
       if (effect.erase) { const [ex, ey, ew, eh] = effect.erase; for (let y = ey; y < ey + eh; y++) image.rgba.fill(0, (y * image.width + ex) * 4, (y * image.width + ex + ew) * 4); }
       const piece = crop(image, box);
       writeFileSync(`${MASTERS}/${names[k]}.png`, encode({width: piece.width, height: piece.height, rgba: piece.pixels}));

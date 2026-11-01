@@ -1,6 +1,7 @@
-/* Cards of the Lapin Dragon (fire) and the Lapin Requin (water), see src/ui/legendaryCard.ts. Dark ink stays on light paper. */
+/* Cards of the Lapin Dragon (fire), the Lapin Requin (water) and the Ankylosaure (earth), see src/ui/legendaryCard.ts. Dark ink stays on light paper. */
 #game-panel[data-legendary="dragon"] { box-shadow: 0 0 0 2px #e9a23b, 0 0 26px #ff7a2a8c, 0 10px 0 #1a201c40, 0 22px 48px #0b120e80; }
 #game-panel[data-legendary="requin"] { box-shadow: 0 0 0 2px #e9c463, 0 0 26px #41b8e68c, 0 10px 0 #1a201c40, 0 22px 48px #0b120e80; }
+#game-panel[data-legendary="ankylosaure"] { box-shadow: 0 0 0 2px #d9a85a, 0 0 26px #b9824a8c, 0 10px 0 #1a201c40, 0 22px 48px #0b120e80; }
 
 /* The title sits on a painted banner: the fire wall, or the great wave. */
 #game-panel[data-legendary] .panel-header {
@@ -11,6 +12,11 @@
   border-bottom-color: #e9c463;
   background: linear-gradient(90deg, #04263ad0, #04263a26 45%, #04263ad0), var(--legendary-banner) center 45% / cover no-repeat, #0b4a68;
 }
+#game-panel[data-legendary="ankylosaure"] .panel-header {
+  border-bottom-color: #d9a85a;
+  background: linear-gradient(90deg, #2a1a0cd0, #2a1a0c26 45%, #2a1a0cd0), var(--legendary-banner) center 40% / cover no-repeat, #6a4424;
+}
+#game-panel[data-legendary="ankylosaure"] .panel-header h2 { text-shadow: 0 0 14px #e0a860, 0 2px #202720; }
 #game-panel[data-legendary="dragon"] .panel-header h2 { text-shadow: 0 0 14px #ff8a2a, 0 2px #202720; }
 #game-panel[data-legendary="requin"] .panel-header h2 { text-shadow: 0 0 14px #5fd4ff, 0 2px #202720; }
 
@@ -29,12 +35,19 @@
     linear-gradient(180deg, #effbfd, #c8ecf4 72%, #a3dbea);
   background-size: 100% 100%;
 }
+#game-panel[data-legendary="ankylosaure"] {
+  --menu-ink: #3a2a14; --menu-muted: #6a5232; background-color: #f1e2c8;
+  background-image: radial-gradient(ellipse at 50% 112%, #9a6a3a70, transparent 58%), radial-gradient(ellipse at 50% -6%, #fff3d6b0, transparent 55%),
+    linear-gradient(180deg, #faf1e0, #ecd8b4 72%, #dcc092);
+  background-size: 100% 100%;
+}
 #game-panel[data-legendary] #panel-content > .badge { border-image-source: none; border: 2px solid #c99a3d; border-radius: 12px; background: linear-gradient(90deg, #fff4d1, #ffe39a, #fff4d1); color: #4a3408; }
 
 /* Embers or bubbles drifting up the two side margins, behind the text and the banner. */
 .legendary-ambient { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; border-radius: inherit; }
 .legendary-mote { position: absolute; left: var(--x); bottom: -32px; width: calc(13px * var(--s)); opacity: 0; animation: legendary-rise var(--t) var(--d) linear infinite; }
 #game-panel[data-legendary="requin"] .legendary-mote { width: calc(18px * var(--s)); }
+#game-panel[data-legendary="ankylosaure"] .legendary-mote { width: calc(20px * var(--s)); }
 @keyframes legendary-rise { 0% { opacity: 0; transform: translate(0, 0); } 12% { opacity: .9; } 85% { opacity: .75; } 100% { opacity: 0; transform: translate(calc(6px * var(--s)), -105vh); } }
 
 /* The shine: a golden halo turning behind the large portrait, with four glints. */

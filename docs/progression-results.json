@@ -36,8 +36,8 @@
     "15": 6.208,
     "20": 16,
     "22": 23.208,
-    "25": 34.208,
-    "30": 53.5
+    "25": 34,
+    "30": 53
   },
   "rows": [
     {
@@ -79,7 +79,8 @@
           "dinono",
           "dinenette",
           "calinou",
-          "requin"
+          "requin",
+          "ankylosaure"
         ]
       },
       "decorationBudget": {
@@ -142,7 +143,8 @@
           "dinono",
           "dinenette",
           "calinou",
-          "requin"
+          "requin",
+          "ankylosaure"
         ]
       },
       "decorationBudget": {
@@ -223,7 +225,8 @@
           "dinono",
           "dinenette",
           "calinou",
-          "requin"
+          "requin",
+          "ankylosaure"
         ]
       },
       "decorationBudget": {
@@ -324,7 +327,8 @@
           "dinono",
           "dinenette",
           "calinou",
-          "requin"
+          "requin",
+          "ankylosaure"
         ]
       },
       "decorationBudget": {
@@ -443,7 +447,8 @@
           "magicien",
           "dragon",
           "dadi",
-          "requin"
+          "requin",
+          "ankylosaure"
         ]
       },
       "decorationBudget": {
@@ -524,16 +529,16 @@
     },
     {
       "step": "50 j",
-      "pattes": 3047,
-      "grass": 1086,
-      "hearts": 499,
+      "pattes": 5461,
+      "grass": 242,
+      "hearts": 492,
       "level": 29,
-      "species": 34,
+      "species": 35,
       "affection": {
-        "≥10": 40,
+        "≥10": 43,
         "≥15": 27,
         "max": 20,
-        "rabbits": 41
+        "rabbits": 44
       },
       "speciesIds": [
         "paille",
@@ -568,17 +573,18 @@
         "maxou",
         "magicien",
         "dadi",
-        "dragon",
-        "requin"
+        "requin",
+        "ankylosaure",
+        "dragon"
       ],
-      "storedPattes": 4975,
+      "storedPattes": 5100,
       "remaining": {
         "commons": [],
         "extensions": 4,
         "extensionCost": 142000,
         "farms": 0,
         "kitchen": false,
-        "habitatUpgrades": 6,
+        "habitatUpgrades": 7,
         "paidRecipes": []
       },
       "decorationBudget": {
@@ -658,32 +664,33 @@
         "level-twenty-two",
         "discover-magicien",
         "discover-dadi",
-        "discover-dragon",
         "discover-requin",
-        "level-twenty-five"
+        "discover-ankylosaure",
+        "level-twenty-five",
+        "discover-dragon"
       ]
     }
   ],
   "actions": {
-    "buyBuilding": 12,
-    "claimMainMission": 75,
+    "buyBuilding": 13,
+    "claimMainMission": 76,
     "buyRabbit": 4,
     "startOrder": 419,
     "initiationAid": 3,
     "collectOrder": 417,
-    "feed": 1611,
-    "breed": 208,
+    "feed": 1608,
+    "breed": 207,
     "claimDailyMission": 100,
     "transferBirth": 1,
-    "welcome": 206,
-    "collectIncome": 1732,
+    "welcome": 205,
+    "collectIncome": 1830,
     "buyDecoration": 1,
     "claimHearts": 69,
     "upgradeHabitat": 7,
     "expand": 4,
     "upgradeFarm": 2,
-    "release": 170,
-    "exchangeForHeart": 731
+    "release": 166,
+    "exchangeForHeart": 696
   },
-  "totalActions": 5772
+  "totalActions": 5828
 }
