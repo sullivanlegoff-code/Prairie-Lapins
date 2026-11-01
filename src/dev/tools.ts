@@ -14,6 +14,8 @@ import {BALANCE} from '../config/balance';
 import {HABITATS} from '../config/habitats';
 import {bennyAllows} from '../simulation/benny';
 import {LEGENDARY_TEST_EVENT} from '../config/legendaryArt';
+import {BENNY_TEST_EVENT} from '../config/bennyArt';
+import type {BennyAct} from '../display/bennyTimeline';
 import type {LegendaryAct} from '../display/legendaryTimeline';
 import {showLegendaryReveal} from '../ui/legendaryReveal';
 import {habitatEntryReason, habitatStats} from '../simulation/habitats';
@@ -119,6 +121,12 @@ export function developmentEnvironment(base: SaveStorage, options: {decorationPr
       for (const [act, label] of acts) button(label, `dev-legendary-${act}`, () => {
         window.dispatchEvent(new CustomEvent(LEGENDARY_TEST_EVENT, {detail: {act}}));
         status.textContent = `${label} : lancé sur les légendaires visibles de la prairie (ferme ce panneau pour regarder).`;
+      });
+      section('Animations de Benny');
+      const bennyActs: [BennyAct, string][] = [['hop', 'Benny : saut'], ['flop', 'Benny : belly flop'], ['scratch', 'Benny : grattage'], ['groom', 'Benny : toilette'], ['stretch', 'Benny : étirement']];
+      for (const [act, label] of bennyActs) button(label, `dev-benny-${act}`, () => {
+        window.dispatchEvent(new CustomEvent(BENNY_TEST_EVENT, {detail: {act}}));
+        status.textContent = `${label} : lancé sur Benny dans la prairie, dès qu’elle est libre (ferme ce panneau pour regarder).`;
       });
       section('Placement manuel — habitat existant');
       const field = (label: string, id: string) => {

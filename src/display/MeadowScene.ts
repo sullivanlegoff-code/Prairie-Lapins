@@ -9,6 +9,9 @@ import {DadiReactions} from './dadiReactions';
 import {LegendaryView} from './legendaryEffects';
 import {LegendaryClock, type LegendaryAct} from './legendaryTimeline';
 import {LEGENDARY_TEST_EVENT, isLegendaryShow, legendaryMeadowArt} from '../config/legendaryArt';
+import {BennyView} from './bennyView';
+import {BennyClock, type BennyAct} from './bennyTimeline';
+import {BENNY_ATLAS, BENNY_ID, BENNY_TEST_EVENT, bennyMeadowArt} from '../config/bennyArt';
 import {DadiSpeech, dadiHeadVisible} from './dadiSpeech';
 import {RabbitLife} from './rabbitLife';
 import {RabbitLifeViews} from './rabbitLifeViews';
@@ -72,6 +75,8 @@ interface VisualRabbit {id: string; object: Phaser.GameObjects.Container; body: 
   face?: {seed: number; eyes: Phaser.GameObjects.Image; nose: Phaser.GameObjects.Image};
   /** Lapin Dragon and Lapin Requin: halo, moving wing or fin, and their shows. */
   legendary?: LegendaryView;
+  /** Benny, the Mythic: her painted acts, blink, nose and ears. */
+  benny?: BennyView;
   center: Point; group: string; motion?: RabbitMotion; nest?: boolean; lift: number;
   /** Centre of the visible body in body space: the somersault turns about it, not about the feet or the picture centre. */
   pivot: Point; /** Mirror sign of the picture's native direction: -1 for art that looks left. */ native: 1 | -1}
@@ -99,6 +104,8 @@ export class MeadowScene extends Phaser.Scene {
   private dadiSpeech: DadiSpeech | null = null;
   /** Legendaries' show clocks, kept across rebuilds of their bodies like the motions. */
   private legendaryClocks = new Map<string, LegendaryClock>();
+  /** Benny's clock, kept across rebuilds of her body like the motions. */
+  private bennyClocks = new Map<string, BennyClock>();
   private life = new RabbitLife();
   private cozyInteraction = new CozyInteraction();
   private friends = new Map<string,string|null>();
@@ -173,7 +180,7 @@ export class MeadowScene extends Phaser.Scene {
     if (stage) queueStage(this, stageArt(stage));
     if (!this.textures.exists(FOOD_TEXTURE)) this.load.image(FOOD_TEXTURE, FOOD_URL);
     for (const art of this.requiredArt(this.controller.getSnapshot().state))
-      if (!this.textures.exists(art.texture)) this.load.image(art.texture, art.url);
+      if (!this.textures.exists(art.texture)) this.loadArt(art);
   }
   create(): void {
     this.sceneReady = true;
@@ -229,12 +236,18 @@ export class MeadowScene extends Phaser.Scene {
       if (act) for (const rabbit of this.rabbitViews) rabbit.legendary?.play(act);
     };
     window.addEventListener(LEGENDARY_TEST_EVENT, legendaryTest);
+    // Laboratory buttons play one of Benny's acts; nothing in the normal game sends this event either.
+    const bennyTest = (event: Event) => {
+      const act = (event as CustomEvent<{act?: BennyAct}>).detail?.act;
+      if (act) for (const rabbit of this.rabbitViews) rabbit.benny?.play(act);
+    };
+    window.addEventListener(BENNY_TEST_EVENT, bennyTest);
     this.events.once('shutdown', () => {
       stopCommands(); this.dadi.reset(); this.dadiSpeech?.destroy(); this.dadiSpeech = null;
       this.cozyInteraction.reset(); this.discoveryImage?.destroy(); this.discoveryImage = null;
       this.life.reset(); this.lifeViews?.destroy(); this.lifeViews = null;
       document.removeEventListener('visibilitychange', dadiVisibility); window.removeEventListener('pagehide', clearDadi);
-      window.removeEventListener(LEGENDARY_TEST_EVENT, legendaryTest);
+      window.removeEventListener(LEGENDARY_TEST_EVENT, legendaryTest); window.removeEventListener(BENNY_TEST_EVENT, bennyTest);
     });
     this.recenter();
     this.scale.on('resize', this.resize, this);
@@ -491,13 +504,14 @@ export class MeadowScene extends Phaser.Scene {
     this.view.setVisibleRegions(this.expanding || !this.current ? null : ownedRegions(this.current.acquiredParcels));
   }
   /** DOM portraits use ordinary image requests; Phaser only decodes residents and the active habitat preview. */
-  private requiredArt(state: GameState | null): {texture: string; url: string}[] {
-    const assets = new Map<string, {texture: string; url: string}>();
-    const add = (art: {texture: string; url: string} | null | undefined) => { if (art) assets.set(art.texture, art); };
+  private requiredArt(state: GameState | null): {texture: string; url: string; atlas?: string}[] {
+    const assets = new Map<string, {texture: string; url: string; atlas?: string}>();
+    const add = (art: {texture: string; url: string; atlas?: string} | null | undefined) => { if (art) assets.set(art.texture, art); };
     for (const rabbit of state?.rabbits ?? []) {
       add(rabbitArt(rabbit.species));
       for (const patch of rabbitBlinkArt(rabbit.species)?.patches ?? []) add(patch);
       if (isLegendaryShow(rabbit.species)) for (const art of legendaryMeadowArt(rabbit.species)) add(art);
+      if (rabbit.species === BENNY_ID) for (const art of bennyMeadowArt()) add(art);
     }
     const buildingArt = (building: Pick<Building, 'kind' | 'habitat' | 'footprintTier' | 'farmLevel'>) => {
       if (building.kind === 'enclosure') add(habitatArtFor(building.habitat ?? undefined, building.footprintTier));
@@ -524,6 +538,10 @@ export class MeadowScene extends Phaser.Scene {
     if (ghost && this.ghost?.location?.kind === 'outside') decoration(ghost, this.ghost.location.rotation);
     return [...assets.values()];
   }
+  /** A picture, or an atlas (picture and frames) such as Benny's animations. */
+  private loadArt(art: {texture: string; url: string; atlas?: string}): void {
+    if (art.atlas) this.load.atlas(art.texture, art.url, art.atlas); else this.load.image(art.texture, art.url);
+  }
   /** Keep the previous complete scene during a batch, including when state changes again during the request. */
   private ensureArt(): boolean {
     const missing = this.requiredArt(this.current).filter(art => !this.textures.exists(art.texture));
@@ -533,7 +551,7 @@ export class MeadowScene extends Phaser.Scene {
     if (!this.artLoading) {
       this.artLoading = true;
       const generation = this.lifeGeneration;
-      for (const art of missing) this.load.image(art.texture, art.url);
+      for (const art of missing) this.loadArt(art);
       this.artComplete = () => {
         this.artComplete = null;
         this.artLoading = false;
@@ -762,8 +780,15 @@ export class MeadowScene extends Phaser.Scene {
             if (!clock || clock.species !== rabbit.species) { clock = new LegendaryClock(rabbit.species, rabbit.id); this.legendaryClocks.set(rabbit.id, clock); }
             legendary = new LegendaryView(this, rabbit.id, rabbit.species, {object, body, sprite, art, pivot: view.pivot, motion}, clock);
           }
+          let benny: BennyView | undefined;
+          // TODO (owner, later): Benny's sky mode (bennyInSky) and her flight; she stays in her enclosure meanwhile.
+          if (rabbit.species === BENNY_ID && this.textures.exists(BENNY_ATLAS.texture)) {
+            let clock = this.bennyClocks.get(rabbit.id);
+            if (!clock) { clock = new BennyClock(rabbit.id); this.bennyClocks.set(rabbit.id, clock); }
+            benny = new BennyView(this, rabbit.id, {object, body, sprite, shadow, art, motion}, clock);
+          }
           this.animals.add(object);
-          this.rabbitViews.push({id: rabbit.id, ears: [], sprite, art, face, flames, legendary, ...view});
+          this.rabbitViews.push({id: rabbit.id, ears: [], sprite, art, face, flames, legendary, benny, ...view});
           return;
         }
         const coat = proceduralCoat(SPECIES[rabbit.species].art), color = Phaser.Display.Color.HexStringToColor(coat.body).color, patch = Phaser.Display.Color.HexStringToColor(coat.patch).color;
@@ -794,6 +819,7 @@ export class MeadowScene extends Phaser.Scene {
     }
     for (const id of [...this.motions.keys()]) if (!walkers.has(id)) this.motions.delete(id);
     for (const id of [...this.legendaryClocks.keys()]) if (!this.rabbitViews.some(r => r.id === id && r.legendary)) this.legendaryClocks.delete(id);
+    for (const id of [...this.bennyClocks.keys()]) if (!this.rabbitViews.some(r => r.id === id && r.benny)) this.bennyClocks.delete(id);
     this.rabbitGroups.clear();
     for (const rabbit of this.rabbitViews) {
       let group = this.rabbitGroups.get(rabbit.group);
@@ -1041,7 +1067,7 @@ export class MeadowScene extends Phaser.Scene {
     if (!closest) closest = rabbitHit(screen, this.rabbitViews.filter(r => r.sprite && r.art).map(r => ({
       id: r.id, point: this.view.screen(this.bodyPoint(r, 0, -7)), depth: r.object.y, radius: 22
     })));
-    if (closest) { this.rabbitViews.find(r => r.id === closest!.id)?.legendary?.tap(); this.select({kind: 'rabbit', id: closest.id}); return; }
+    if (closest) { this.rabbitViews.find(r => r.id === closest!.id)?.legendary?.tap(); this.rabbitViews.find(r => r.id === closest!.id)?.benny?.tap(); this.select({kind: 'rabbit', id: closest.id}); return; }
     const decorationId = this.decorationAt(screen);
     if (decorationId) { this.select({kind: 'decoration', id: decorationId}); return; }
 
@@ -1117,8 +1143,11 @@ export class MeadowScene extends Phaser.Scene {
         const activity = ['sleep', 'zoom', 'meet', 'kiss'].includes(motion.mode);
         if (rabbit.nest ? lifeActive && visibleResidents.has(rabbit.id) && motion.mode !== 'rest' && (!reducedMotion || motion.mode === 'walk' || motion.mode === 'salto' || motion.mode === 'fed') :
           !activity || lifeActive && visibleResidents.has(rabbit.id)) stepRabbitMotion(motion, dt, others);
+        // Benny's act may take over the motion (or carry her along her hops) before the pose is read.
+        rabbit.benny?.update({dt, time, active: lifeActive && visibleResidents.has(rabbit.id), reduced: reducedMotion});
         const pose = rabbitPose(motion);
         ({lift, squashX, squashY, facing, rotation} = pose);
+        if (rabbit.benny) { squashX *= rabbit.benny.squashX; squashY *= rabbit.benny.squashY; }
         nuzzle = pose.nuzzle ?? 0;
         // The ground point drives position and depth; the hop only lifts the body.
         rabbit.object.setPosition(rabbit.center.x + motion.local.x, rabbit.center.y + motion.local.y).setDepth(rabbit.center.y + motion.local.y);

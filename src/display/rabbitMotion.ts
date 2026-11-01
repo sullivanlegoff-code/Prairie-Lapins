@@ -6,7 +6,7 @@ import type {Point} from '../ui/gestures';
  * space as `rabbitOffset`). Nothing here is persisted, and nothing uses the breeding random generator: every
  * individual draws from its own small generator seeded by its identifier.
  */
-export type MotionMode = 'rest' | 'walk' | 'hop' | 'salto' | 'fed' | 'sleep' | 'zoom' | 'meet' | 'kiss' | 'surf';
+export type MotionMode = 'rest' | 'walk' | 'hop' | 'salto' | 'fed' | 'sleep' | 'zoom' | 'meet' | 'kiss' | 'surf' | 'perform';
 export interface RabbitMotion {
   mode: MotionMode;
   /** Milliseconds spent in the current mode (rest counts down in `wait`). */
@@ -72,7 +72,7 @@ export function createRabbitMotion(id: string, home: Point, count: number, layou
 export function retargetRabbitMotion(m: RabbitMotion, home: Point, count: number, layout?: MotionLayout): void {
   m.home = {...home}; m.count = count; m.layout = layout;
   // A somersault or a feeding reaction finishes first; the end of the somersault walks it back if needed.
-  if (m.mode === 'fed' || m.mode === 'salto' || m.mode === 'surf') return;
+  if (m.mode === 'fed' || m.mode === 'salto' || m.mode === 'surf' || m.mode === 'perform') return;
   if (['sleep', 'zoom', 'meet', 'kiss'].includes(m.mode)) {
     const zone = motionZone(m);
     for (const point of [m.local, m.from, m.to]) { point.x = clamp(point.x, zone.minX, zone.maxX); point.y = clamp(point.y, zone.minY, zone.maxY); }
@@ -112,6 +112,22 @@ export function startSurf(m: RabbitMotion, target: Point, entry: number, slide: 
   m.mode = 'surf'; m.elapsed = 0; m.from = {...m.local}; m.to = {x: clamp(target.x, zone.minX, zone.maxX), y: clamp(target.y, zone.minY, zone.maxY)};
   m.wait = entry; m.duration = entry * 2 + slide;
   if (Math.abs(m.to.x - m.from.x) > 2) turnTo(m, m.to.x > m.from.x ? 1 : -1);
+}
+/**
+ * Benny's painted acts: she stays in this mode for `duration` ms, and her view carries her from `from` to `target` (kept in the fence
+ * zone) during her hops; the pictures, squash and shadow are drawn by her own layer. Then back to rest, or walked back to her slot.
+ */
+export function startPerform(m: RabbitMotion, target: Point, duration: number): void {
+  const zone = motionZone(m);
+  m.mode = 'perform'; m.elapsed = 0; m.duration = Math.max(1, duration); m.from = {...m.local};
+  m.to = {x: clamp(target.x, zone.minX, zone.maxX), y: clamp(target.y, zone.minY, zone.maxY)};
+  if (Math.abs(m.to.x - m.from.x) > 2) turnTo(m, m.to.x > m.from.x ? 1 : -1);
+}
+/** Ends Benny's act where she stands (at its target once the hops are over). */
+export function endPerform(m: RabbitMotion, arrived: boolean): void {
+  if (m.mode !== 'perform') return;
+  if (arrived) m.local = {...m.to};
+  endRabbitActivity(m);
 }
 /** Presentation activities may use the whole fenced area, without changing an individual's home slot. */
 export function motionZone(m: RabbitMotion): Box { return m.layout?.zone ?? CONFIG().hard; }
@@ -191,6 +207,10 @@ export function stepRabbitMotion(m: RabbitMotion, dtMs: number, others: readonly
       const u = clamp((m.elapsed - m.wait) / (m.duration - 2 * m.wait), 0, 1), eased = u * u * (3 - 2 * u);
       m.local = {x: m.from.x + (m.to.x - m.from.x) * eased, y: m.from.y + (m.to.y - m.from.y) * eased};
       if (m.elapsed >= m.duration) { m.local = {...m.to}; endRabbitActivity(m); }
+    } else if (m.mode === 'perform') {
+      // Benny's view moves her during the act; the motion only counts its time and closes it.
+      const step = Math.min(remaining, m.duration - m.elapsed); m.elapsed += step; remaining -= step; tick(m, step);
+      if (m.elapsed >= m.duration) endPerform(m, true);
     } else if (m.mode === 'fed') {
       const step = Math.min(remaining, FED_MS - m.elapsed); m.elapsed += step; remaining -= step; tick(m, step);
       if (m.elapsed >= FED_MS) startRest(m, .25);
