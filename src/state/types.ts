@@ -93,7 +93,7 @@ export type Refusal = 'LEVEL_REQUIRED' | 'NO_BREEDING_RESULT' | 'PURCHASE_LOCKED
   'LAST_OF_SPECIES' | 'PARENT_BUSY' | 'NOT_ENOUGH_HEARTS' | 'ACTION_FINISHED' |
   'STALE_ACTION' | 'PRICE_CHANGED' | 'NO_MISSING_PATTES' | 'ALREADY_CLAIMED' | 'CYCLE_EXPIRED' | 'RESOURCE_LIMIT' | 'TYPE_INCOMPATIBLE' | 'MAX_HABITAT_LEVEL' | 'RECIPE_KNOWN' | 'MAX_NURSERY_CAPACITY' |
   'UPGRADE_BLOCKED_BUILDING' | 'UPGRADE_BLOCKED_DECORATION' | 'UPGRADE_BLOCKED_LAND' | 'INVALID_NAME' | 'MARKET_LIMIT' | 'STATUE_REQUIRED' | 'TRAVELING';
-export interface CuisineReward {pattes: number; grass: number; /** True for one of the cycle's full-reward slots, false for a tip. */ fullReward: boolean; affectionGranted: boolean; affectionAtCap: boolean; affectionStatueRequired: boolean; heartGranted: boolean}
+export interface CuisineReward {pattes: number; grass: number; /** True for one of the cycle's full-reward slots, false for a tip. */ fullReward: boolean; affectionGranted: boolean; affectionAtCap: boolean; affectionStatueRequired: boolean; heartGranted: boolean; /** The rabbit the affection reward was drawn for. */ affectionRabbitId: string}
 export type ActionResult = {ok: true; state: GameState; value?: string | number; progressionGain?: ProgressionGain; cuisineReward?: CuisineReward} |
   {ok: false; state: GameState; reason: Refusal};
 export type BaseCommand =
@@ -122,7 +122,8 @@ export type TimedStage = 'order' | 'breeding' | 'growth';
 export type Command = BaseCommand
   | {type:'claimDiscovery'; id:string}
   | {type:'translateDecorations'; ids:string[]; dx:number; dy:number}
-  | {type: 'rewardCuisine'; rabbitId: Rabbit['id']; recipeId: 'salad' | 'chicken'}
+  /** `rabbitId` is the commis; `tasterId` the optional second rabbit (taster). With two, the affection goes to one of them, drawn at random. */
+  | {type: 'rewardCuisine'; rabbitId: Rabbit['id']; tasterId?: Rabbit['id']; recipeId: import('../config/balance').CuisineRecipeId}
   | {type: 'buyDecoration'; catalogId: DecorationId; location?: Extract<DecorationLocation, {kind: 'outside'}>}
   | {type: 'placeDecoration'; id: string; location: DecorationLocation}
   | {type: 'sellDecoration'; id: string}

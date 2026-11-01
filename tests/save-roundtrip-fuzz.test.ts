@@ -29,7 +29,7 @@ function commands(s: any): any[] {
   out.push({type: 'buyDecoration', catalogId: pick(DECORATION_IDS)});
   const d = pick(s.decorations ?? []) as any; if (d) { out.push({type: 'sellDecoration', id: d.id}); out.push({type: 'placeDecoration', id: d.id, location: {kind: 'outside', x: Math.floor(rnd()*30), y: Math.floor(rnd()*48), rotation: 0}}); out.push({type: 'placeDecoration', id: d.id, location: {kind: 'inventory'}}); }
   if (p1 && enc.length) out.push({type: 'buyRabbit', species: pick(SPECIES_IDS), enclosureId: pick(enc)});
-  if (p1) out.push({type: 'rewardCuisine', rabbitId: p1, recipeId: pick(['salad','chicken'])});
+  if (p1) out.push({type: 'rewardCuisine', rabbitId: p1, recipeId: pick(['avocado-toast','moelleux','chicken'])});
   out.push({type: 'exchangeForHeart', resource: pick(['pattes','grass']), expectedCost: 0});
   const job = b.find((x: any) => x.order || x.breeding); if (job) out.push({type: 'accelerate', id: job.id, stage: job.order ? 'order' : 'breeding', jobKey: 'x', maxHearts: 99});
   if (p1 && rnd() < 0.05) out.push({type: 'release', id: p1});

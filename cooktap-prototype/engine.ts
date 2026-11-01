@@ -1,6 +1,7 @@
-import {ITEMS, ZONES, TOOL_RULES, BOTTLE_RULES, type ItemDefinition, type ZoneDefinition} from './recipes';
-export type RecipeId = 'salad' | 'chicken';
-export interface KitchenItem extends ItemDefinition {location: string; zoneId: string; flags: Record<string, boolean>}
+import {ITEMS, RECIPES, recipe as recipeOf, type ItemDefinition, type Point, type RecipeDefinition, type RecipeId, type StateChanges, type StepDefinition, type StepEffect} from './recipes';
+export type {RecipeId} from './recipes';
+/** `location`: where the item is (`home`, `cutting-board`, `merged` once it joined a container, `heating` while cooking). */
+export interface KitchenItem extends ItemDefinition {anchor: Point; home: Point; location: string; visible: boolean; interactive: boolean}
 export type PauseReason = 'portrait' | 'hidden' | 'manual';
 export type DropTarget = {kind: 'zone' | 'item'; id: string};
 export type Intention =
@@ -10,15 +11,19 @@ export type Intention =
   | {type: 'start-recipe'; recipeId: RecipeId}
   | {type: 'choose-recipe'}
   | {type: 'reset-recipe'};
-export interface ActionResult {accepted: boolean; message: string; effect?: 'cut' | 'peel' | 'pour' | 'season' | 'oven' | 'cooked'; effectTargetId?: string}
-export interface KitchenSnapshot {items: KitchenItem[]; pauses: PauseReason[]; selectedId: string | null; activeTimeMs: number; invalidActions: number; recipe: RecipeId | null; phase: 'choosing' | 'playing' | 'completed'; cookingRemainingMs: number}
-const SALAD_IDS = ['mozzarella', 'tomato', 'cucumber'] as const;
-const CHICKEN_IDS = ['chicken', 'sweet-potato'] as const;
-const isSaladFood = (id: string): boolean => (SALAD_IDS as readonly string[]).includes(id);
-const isChickenFood = (id: string): boolean => (CHICKEN_IDS as readonly string[]).includes(id);
-const visibleFor = (recipe: RecipeId, id: string): boolean => recipe === 'salad'
-  ? isSaladFood(id) || ['knife', 'cutting-board', 'bowl', 'olive-oil'].includes(id)
-  : isChickenFood(id) || ['knife', 'peeler', 'cutting-board', 'soy', 'honey', 'baking-dish', 'oven'].includes(id);
+export type Effect = StepEffect | 'cooked';
+export interface ActionResult {accepted: boolean; message: string; effect?: Effect; effectTargetId?: string}
+/** One step as the guide shows it. */
+export interface GuideStep {chip: string; hint: string; actor: string; target: string; done: boolean; next: boolean}
+export interface KitchenSnapshot {
+  items: KitchenItem[]; pauses: PauseReason[]; selectedId: string | null; activeTimeMs: number; invalidActions: number;
+  recipe: RecipeId | null; phase: 'choosing' | 'playing' | 'completed';
+  cookingRemainingMs: number; cookingTotalMs: number; cookingHeater: string | null; cookingContainer: string | null;
+  steps: GuideStep[]; doneSteps: number; totalSteps: number;
+  /** Index in `steps` of the instruction to show, -1 when none. */
+  current: number;
+}
+const BOARD = 'cutting-board';
 
 /** All validation and recipe state live here; rendering never grants progress. */
 export class KitchenEngine {
@@ -27,159 +32,149 @@ export class KitchenEngine {
   private selectedId: string | null = null;
   private activeTimeMs = 0;
   private invalidActions = 0;
-  private recipe: RecipeId | null = null;
+  private recipe: RecipeDefinition | null = null;
   private phase: KitchenSnapshot['phase'] = 'choosing';
-  private cookingRemainingMs = 0;
-  constructor(definitions: readonly ItemDefinition[] = ITEMS, readonly zones: readonly ZoneDefinition[] = ZONES) {
-    this.items = definitions.map(i => ({...i, anchor: {...i.anchor}, flags: {}, zoneId: i.home,
-      location: zones.find(z => z.id === i.home)?.location ?? 'table'}));
-    for (const item of this.items) item.visible = false;
+  /** Steps done, by chain (the finale is the last entry). */
+  private progress: number[] = [];
+  private cooking: {remaining: number; step: StepDefinition} | null = null;
+  constructor(private readonly definitions: readonly ItemDefinition[] = ITEMS) {
+    this.items = definitions.map(def => this.fresh(def, null));
   }
-  snapshot(): KitchenSnapshot { return {items: this.items.map(i => ({...i, anchor: {...i.anchor}, flags: {...i.flags}})), pauses: [...this.pauses], selectedId: this.selectedId, activeTimeMs: this.activeTimeMs, invalidActions: this.invalidActions, recipe: this.recipe, phase: this.phase, cookingRemainingMs: this.cookingRemainingMs}; }
+  private fresh(def: ItemDefinition, recipe: RecipeDefinition | null): KitchenItem {
+    const at = recipe?.layout[def.id];
+    return {...def, anchor: {...(at ?? {x: 0, y: 0})}, home: {...(at ?? {x: 0, y: 0})}, location: 'home', visible: !!at, interactive: !!at && def.kind !== 'fixture'};
+  }
+  snapshot(): KitchenSnapshot {
+    const next = new Set(this.available()), shown = this.nextStep();
+    const lanes = this.recipe ? [...this.recipe.chains, this.recipe.finale] : [];
+    const flat = lanes.flat();
+    const steps = lanes.flatMap((lane, index) => lane.map((s, k) => ({chip: s.chip, hint: s.hint, actor: s.actor, target: s.target, done: k < (this.progress[index] ?? 0), next: next.has(s)})));
+    return {
+      items: this.items.map(i => ({...i, anchor: {...i.anchor}, home: {...i.home}})), pauses: [...this.pauses], selectedId: this.selectedId,
+      activeTimeMs: this.activeTimeMs, invalidActions: this.invalidActions, recipe: this.recipe?.id ?? null, phase: this.phase,
+      cookingRemainingMs: this.cooking?.remaining ?? 0, cookingTotalMs: this.cooking?.step.cook!.ms ?? 0,
+      cookingHeater: this.cooking?.step.cook!.heater ?? null, cookingContainer: this.cooking?.step.cook!.container ?? null,
+      steps, doneSteps: steps.filter(s => s.done).length, totalSteps: steps.length, current: shown ? flat.indexOf(shown) : -1,
+    };
+  }
   get paused(): boolean { return this.pauses.size > 0; }
   setPaused(reason: PauseReason, paused: boolean): void { if (paused) this.pauses.add(reason); else this.pauses.delete(reason); }
-  advance(ms: number): void {
-    if (this.phase !== 'playing' || this.paused || !Number.isFinite(ms) || ms <= 0) return;
+  /** Steps that can be done now: the next one of every unfinished chain, then the finale's next once every chain is done. */
+  private available(): StepDefinition[] {
+    if (!this.recipe || this.phase !== 'playing' || this.cooking) return [];
+    const chains = this.recipe.chains.map((chain, index) => chain[this.progress[index]]).filter(Boolean);
+    if (chains.length) return chains;
+    const finale = this.recipe.finale[this.progress[this.recipe.chains.length]];
+    return finale ? [finale] : [];
+  }
+  /** The instruction to show: a chain already using the board goes first, a step blocked by the busy board last. */
+  nextStep(): StepDefinition | null {
+    const steps = this.available(), onBoard = this.items.find(i => i.location === BOARD)?.id;
+    return steps.find(s => s.actor === onBoard || s.target === onBoard) ?? steps.find(s => !(s.target === BOARD && onBoard)) ?? steps[0] ?? null;
+  }
+  /** Active time only; returns the end of a cooking, if this tick finished one. */
+  advance(ms: number): ActionResult | null {
+    if (this.phase !== 'playing' || this.paused || !Number.isFinite(ms) || ms <= 0) return null;
     this.activeTimeMs += ms;
-    if (this.cookingRemainingMs > 0) {
-      this.cookingRemainingMs = Math.max(0, this.cookingRemainingMs - ms);
-      if (this.cookingRemainingMs === 0) {
-        for (const id of CHICKEN_IDS) { const food = this.item(id); if (food) food.preparation = 'cooked'; }
-        this.phase = 'completed';
-      }
-    }
+    if (!this.cooking) return null;
+    this.cooking.remaining = Math.max(0, this.cooking.remaining - ms);
+    if (this.cooking.remaining > 0) return null;
+    const cook = this.cooking.step.cook!; this.cooking = null;
+    this.apply(cook.set);
+    for (const id of cook.hide ?? []) this.merge(this.item(id)!);
+    for (const id of cook.show ?? []) { const back = this.item(id)!; Object.assign(back, {visible: true, location: 'home', anchor: {...back.home}}); back.interactive = back.draggable; }
+    this.completeIfDone();
+    return {accepted: true, message: cook.message, effect: 'cooked', effectTargetId: cook.container};
   }
   canSelect(id: string): boolean { const i = this.item(id); return this.phase === 'playing' && !this.paused && !!i?.visible && i.interactive; }
   canDrag(id: string): boolean {
-    const i = this.items.find(x => x.id === id);
-    if (this.phase !== 'playing' || this.paused || !i?.draggable || !i.visible || !i.interactive || this.cookingRemainingMs > 0) return false;
-    if (i.kind === 'tool') return i.location === 'tool-rack';
-    if (i.id === 'baking-dish') return i.location === 'dish-rack' && this.dishComplete();
-    return i.location !== 'bowl' && i.location !== 'baking-dish' && i.location !== 'oven';
+    const i = this.item(id);
+    return this.phase === 'playing' && !this.paused && !this.cooking && !!i?.draggable && i.visible && i.interactive;
   }
   private item(id: string): KitchenItem | undefined { return this.items.find(i => i.id === id); }
   private finish(result: ActionResult, invalid = true): ActionResult { if (!result.accepted && invalid) this.invalidActions++; return result; }
-  private dishItems(): KitchenItem[] { return this.items.filter(i => i.location === 'baking-dish' && isChickenFood(i.id)); }
-  private dishComplete(): boolean { return CHICKEN_IDS.every(id => this.item(id)?.location === 'baking-dish'); }
-  private chickenComplete(): boolean { const c = this.item('chicken'); return !!c && c.preparation === 'cut' && c.flags.soyAdded === true && c.flags.honeyAdded === true; }
-  private sweetPotatoComplete(): boolean { const p = this.item('sweet-potato'); return !!p && p.preparation === 'cut'; }
-  private saladComplete(): boolean { return SALAD_IDS.every(id => this.item(id)?.location === 'bowl' && this.item(id)?.preparation === 'cut') && this.item('olive-oil')?.flags.oliveOilAdded === true; }
-  private occupied(location: string, except: string): boolean { return this.items.some(i => i.id !== except && i.visible && i.kind === 'food' && i.location === location); }
+  private apply(changes: StateChanges | undefined): void {
+    for (const [id, change] of Object.entries(changes ?? {})) {
+      const target = this.item(id)!;
+      target.state = typeof change === 'string' ? change : change[target.state] ?? target.state;
+    }
+  }
+  private merge(i: KitchenItem): void { i.visible = false; i.interactive = false; i.location = 'merged'; }
+  private completeIfDone(): void {
+    if (this.recipe && !this.cooking && this.available().length === 0) { this.phase = 'completed'; this.selectedId = null; }
+  }
+  /** Why a drop is refused, with the next instruction when the item is simply early or misplaced. */
   preview(itemId: string, target: DropTarget | null): ActionResult {
     const no = (message: string): ActionResult => ({accepted: false, message});
     if (this.phase !== 'playing' || this.paused || !this.canDrag(itemId)) return no('La manipulation est désactivée.');
-    const item = this.item(itemId)!;
-    if (!target) return no('Déposez sur une zone de préparation.');
-    if (item.kind === 'bottle') {
-      const rule = BOTTLE_RULES.find(r => r.recipe === this.recipe && r.bottle === item.id && r.target === target.id);
-      const receiver = this.item(target.id);
-      if (!rule || !receiver?.visible || (target.kind === 'zone' && receiver.kind !== 'fixture')) return no('Cette bouteille ne convient pas à cette cible.');
-      if (receiver.kind === 'food' && !receiver.interactive) return no('Cet aliment est déjà dans le plat.');
-      if (rule.preparation && receiver.preparation !== rule.preparation) return no(rule.preparationMessage!);
-      if (rule.requiredFlag && !receiver.flags[rule.requiredFlag]) return no(rule.flagMessage!);
-      if (rule.contents && !rule.contents.every(id => this.item(id)?.location === receiver.id && this.item(id)?.preparation === 'cut')) return no('Ajoute d’abord les 3 ingrédients');
-      const owner = rule.flagOwner === 'bottle' ? item : receiver;
-      if (owner.flags[rule.flag]) return no(rule.duplicateMessage);
-      return {accepted: true, message: rule.message, effect: rule.effect, effectTargetId: receiver.id};
+    if (!target) return no('Dépose-le sur un ustensile de la table.');
+    const receiver = this.item(target.id);
+    if (!receiver?.visible || receiver.id === itemId) return no('Dépose-le sur un ustensile de la table.');
+    const steps = this.available(), match = steps.find(s => s.actor === itemId && s.target === receiver.id);
+    if (match) {
+      const busy = this.items.find(i => i.location === BOARD && i.visible);
+      if (match.target === BOARD && busy) return no(`La planche est occupée : ${busy.name.toLowerCase()} d’abord.`);
+      return {accepted: true, message: match.message, effect: match.effect, effectTargetId: match.target};
     }
-    if (target.kind === 'item') {
-      if (item.kind === 'tool') {
-        const food = this.item(target.id);
-        const rules = TOOL_RULES.filter(r => r.recipe === this.recipe && r.tool === item.id && (r.target === 'salad-food' ? !!food && isSaladFood(food.id) : r.target === food?.id));
-        if (!food || !rules.length) return no(item.id === 'peeler' ? 'L’économe ne convient pas à cet objet.' : 'Le couteau doit toucher un aliment sur la planche.');
-        if (food.location !== rules[0].requiredLocation) return no(item.id === 'peeler' ? 'Pose la patate douce sur la planche.' : 'Pose l’aliment sur la planche.');
-        if (food.preparation !== rules[0].requiredPreparation) return no(rules[0].message);
-        return {accepted: true, message: `${item.name} utilisé sur ${food.name.toLowerCase()}.`};
-      }
-      return no('Ces objets ne peuvent pas être combinés.');
-    }
-    const zone = this.zones.find(z => z.id === target.id);
-    if (!zone || !zone.enabled) return no('Cette destination est indisponible.');
-    if (item.kind === 'tool') return no('L’outil revient sur son support après usage.');
-    if (item.id === 'baking-dish') {
-      if (zone.id === 'dish-rack') return no('Le plat est déjà à sa place.');
-      return zone.id === 'oven' && this.dishComplete() ? {accepted: true, message: 'Le plat complet part au four.'} : no('Ajoute le poulet et la patate douce dans le plat.');
-    }
-    if (item.kind !== 'food') return no('Cet objet ne peut pas être déplacé.');
-    if (zone.id === item.home) return item.location === 'reserve' ? no('L’aliment est déjà dans sa réserve.') : {accepted: true, message: `${item.name} remis en réserve.`};
-    if (zone.id === 'cutting-board') {
-      if (this.recipe === 'salad' && item.preparation !== 'whole') return no('Cet ingrédient est déjà coupé.');
-      if (this.recipe === 'chicken' && !['raw', 'whole', 'peeled'].includes(item.preparation)) return no('Cet aliment est déjà préparé.');
-      if (this.occupied('cutting-board', itemId)) return no('La planche est occupée.');
-      return {accepted: true, message: `${item.name} sur la planche.`};
-    }
-    if (zone.id === 'bowl' && this.recipe === 'salad' && isSaladFood(item.id)) return item.preparation === 'cut' ? {accepted: true, message: `${item.name} ajouté au saladier.`} : no('Coupe-le d’abord.');
-    if (zone.id === 'baking-dish' && this.recipe === 'chicken' && isChickenFood(item.id)) {
-      if (this.dishItems().length >= 2) return no('Le plat est plein.');
-      if (item.id === 'chicken' && !this.chickenComplete()) return no('Assaisonne le poulet après l’avoir coupé.');
-      if (item.id === 'sweet-potato' && !this.sweetPotatoComplete()) return no(item.preparation === 'whole' ? 'Épluche puis coupe la patate douce.' : 'Coupe la patate douce.');
-      return {accepted: true, message: `${item.name} ajouté au plat.`};
-    }
-    return no('Cette destination ne convient pas à cet aliment.');
+    const mine = steps.find(s => s.actor === itemId);
+    if (mine) return no(`Pas ici : ${lower(mine.hint)}.`);
+    const next = this.nextStep();
+    const later = this.recipe && [...this.recipe.chains.flat(), ...this.recipe.finale].some(s => s.actor === itemId && !this.isDone(s));
+    if (later && next) return no(`Pas encore : ${lower(next.hint)}.`);
+    return no(next ? `Ce n’est plus utile. ${next.hint}.` : 'Ce n’est plus utile.');
+  }
+  private isDone(s: StepDefinition): boolean {
+    const lanes = [...this.recipe!.chains, this.recipe!.finale];
+    return lanes.some((lane, index) => { const k = lane.indexOf(s); return k >= 0 && k < this.progress[index]; });
   }
   dispatch(intent: Intention): ActionResult {
     if (intent.type === 'start-recipe') {
-      if (this.phase !== 'choosing' || this.paused) return this.finish({accepted: false, message: 'Cette recette n’est pas disponible.'}, false);
-      this.resetState(); this.recipe = intent.recipeId; this.phase = 'playing';
-      for (const i of this.items) i.visible = visibleFor(intent.recipeId, i.id);
-      return {accepted: true, message: intent.recipeId === 'salad' ? 'Prépare les trois ingrédients, puis ajoutez l’huile.' : 'Prépare le poulet et la patate douce, puis enfourne le plat.'};
+      if (this.phase !== 'choosing' || this.paused || !RECIPES.some(r => r.id === intent.recipeId)) return this.finish({accepted: false, message: 'Cette recette n’est pas disponible.'}, false);
+      this.begin(recipeOf(intent.recipeId));
+      return {accepted: true, message: `${this.nextStep()!.hint}.`};
     }
-    if (intent.type === 'choose-recipe') { this.phase = 'choosing'; this.recipe = null; for (const i of this.items) i.visible = false; return {accepted: true, message: 'Choisis une recette.'}; }
+    if (intent.type === 'choose-recipe') {
+      this.phase = 'choosing'; this.recipe = null; this.cooking = null; this.items = this.definitions.map(def => this.fresh(def, null));
+      return {accepted: true, message: 'Choisis une recette.'};
+    }
     if (intent.type === 'reset-recipe') {
       if (!this.recipe) return this.finish({accepted: false, message: 'Aucune recette à recommencer.'}, false);
-      const recipe = this.recipe; this.resetState(); this.recipe = recipe; this.phase = 'playing';
-      for (const i of this.items) i.visible = visibleFor(recipe, i.id);
-      return {accepted: true, message: 'Nouvelle recette : les ingrédients sont prêts.'};
+      this.begin(this.recipe);
+      return {accepted: true, message: `Nouvelle recette : ${lower(this.nextStep()!.hint)}.`};
     }
-    if (this.phase !== 'playing' || this.paused || this.cookingRemainingMs > 0) return this.finish({accepted: false, message: 'Interaction indisponible.'}, false);
-    if (intent.type === 'use-tool') {
-      const result = this.preview(intent.toolId, {kind: 'item', id: intent.targetId});
-      if (!result.accepted) return this.finish(result);
-      const food = this.item(intent.targetId)!, tool = this.item(intent.toolId)!;
-      const rule = TOOL_RULES.find(r => r.recipe === this.recipe && r.tool === tool.id && (r.target === 'salad-food' ? isSaladFood(food.id) : r.target === food.id) && r.requiredLocation === food.location && r.requiredPreparation === food.preparation)!;
-      food.preparation = rule.resultPreparation;
-      tool.location = 'tool-rack'; tool.zoneId = tool.home; tool.anchor = {...this.zones.find(z => z.id === tool.home)!.anchor};
-      this.selectedId = food.id;
-      const effect = rule.resultPreparation === 'peeled' ? 'peel' : 'cut';
-      return {accepted: true, message: effect === 'peel' ? 'Patate douce épluchée. Utilise le couteau pour la couper.' : `${food.name} coupé.`, effect, effectTargetId: food.id};
-    }
+    if (this.phase !== 'playing' || this.paused || this.cooking) return this.finish({accepted: false, message: this.cooking ? 'Patiente pendant la cuisson…' : 'Interaction indisponible.'}, false);
     if (intent.type === 'select') {
       const i = this.item(intent.itemId);
       if (!i?.visible || !i.interactive) return this.finish({accepted: false, message: 'Interaction indisponible.'}, false);
       this.selectedId = i.id;
-      return {accepted: true, message: `${i.name}.`};
+      const mine = this.available().find(s => s.actor === i.id);
+      return {accepted: true, message: mine ? `${i.name} : ${lower(mine.hint)}.` : `${i.name}.`};
     }
-    const result = this.preview(intent.itemId, intent.target);
+    const itemId = intent.type === 'use-tool' ? intent.toolId : intent.itemId;
+    const target: DropTarget | null = intent.type === 'use-tool' ? {kind: 'item', id: intent.targetId} : intent.target;
+    const result = this.preview(itemId, target);
     if (!result.accepted) return this.finish(result);
-    const item = this.item(intent.itemId)!;
-    if (item.kind === 'bottle') {
-      const rule = BOTTLE_RULES.find(r => r.recipe === this.recipe && r.bottle === item.id && r.target === intent.target!.id)!;
-      const owner = rule.flagOwner === 'bottle' ? item : this.item(rule.target)!;
-      owner.flags[rule.flag] = true;
-      if (this.saladComplete()) this.phase = 'completed';
-      // Applicators never leave their logical home; scene.finish snaps the transient drag back.
-      return result;
+    const lanes = [...this.recipe!.chains, this.recipe!.finale], steps = this.available();
+    const s = steps.find(x => x.actor === itemId && x.target === target!.id)!;
+    const lane = lanes.findIndex((l, index) => l[this.progress[index]] === s);
+    this.progress[lane]++;
+    const actor = this.item(itemId)!, receiver = this.item(s.target)!;
+    if (s.move) { actor.location = receiver.id; actor.anchor = {...receiver.anchor, y: receiver.anchor.y - 8}; }
+    if (s.hide) this.merge(actor);
+    this.apply(s.set);
+    this.selectedId = s.move ? actor.id : null;
+    if (s.cook) {
+      this.cooking = {remaining: s.cook.ms, step: s};
+      // A container put in the oven waits inside it, out of sight; a pan stays on the stove.
+      if (s.hide && s.cook.container === actor.id) actor.location = 'heating';
     }
-    if (intent.target?.kind === 'item' && item.kind === 'tool') return this.dispatch({type: 'use-tool', toolId: item.id, targetId: intent.target.id});
-    if (intent.target?.kind === 'zone') {
-      const zone = this.zones.find(z => z.id === intent.target!.id)!;
-      item.location = zone.location; item.zoneId = zone.id; item.anchor = {...zone.anchor};
-      if (zone.id === 'bowl' || zone.id === 'baking-dish' || zone.id === 'oven') { item.draggable = false; item.interactive = false; }
-      if (zone.id === 'oven' && item.id === 'baking-dish') {
-        for (const id of CHICKEN_IDS) { const food = this.item(id)!; food.location = 'oven'; food.zoneId = 'oven'; }
-        this.cookingRemainingMs = 5000;
-        return {accepted: true, message: 'Le plat cuit au four…', effect: 'oven', effectTargetId: 'oven'};
-      }
-      if (zone.id === 'baking-dish' && isChickenFood(item.id)) { item.anchor = {...this.item('baking-dish')!.anchor}; item.draggable = false; item.interactive = false; }
-    }
-    if (this.recipe === 'salad' && this.saladComplete()) this.phase = 'completed';
+    this.completeIfDone();
     return result;
   }
-  private resetState(): void {
-    for (const current of this.items) {
-      const def = ITEMS.find(i => i.id === current.id)!;
-      Object.assign(current, {...def, anchor: {...def.anchor}, flags: {}, zoneId: def.home, location: this.zones.find(z => z.id === def.home)?.location ?? 'table'});
-    }
-    this.activeTimeMs = 0; this.invalidActions = 0; this.selectedId = null; this.cookingRemainingMs = 0;
+  private begin(r: RecipeDefinition): void {
+    this.recipe = r; this.phase = 'playing'; this.cooking = null; this.progress = [...r.chains.map(() => 0), 0];
+    this.items = this.definitions.map(def => this.fresh(def, r));
+    this.activeTimeMs = 0; this.invalidActions = 0; this.selectedId = null;
   }
 }
+const lower = (text: string) => text.charAt(0).toLowerCase() + text.slice(1);

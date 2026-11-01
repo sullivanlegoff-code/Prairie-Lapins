@@ -54,7 +54,7 @@ function prepare(type: Command['type']): {state: GameState; command: Command} {
     renameRabbit: {type: 'renameRabbit', id: 'rabbit-2', name: 'Paillette'},
     upgradeHabitat: {type: 'upgradeHabitat', id: 'building-7', fromLevel: 1},
     expand: {type: 'expand', parcelId: 'east', expectedCost: extensionPrice(s)},
-    rewardCuisine: {type: 'rewardCuisine', rabbitId: 'rabbit-2', recipeId: 'salad'},
+    rewardCuisine: {type: 'rewardCuisine', rabbitId: 'rabbit-2', recipeId: 'avocado-toast'},
     buyDecoration: {type: 'buyDecoration', catalogId: 'bush'},
     placeDecoration: {type: 'placeDecoration', id: 'decoration-10', location: {kind: 'inventory'}},
     sellDecoration: {type: 'sellDecoration', id: 'decoration-10'},
@@ -161,7 +161,7 @@ describe('clock recovery', () => {
     expect(advance(n, NOW)).toEqual(n);
     const resumed = advance(n, NOW + MINUTE);
     expect(resumed.buildings[0].incomeUnits).toBe(s.rabbits.reduce((sum, r) => sum + rabbitIncome(r.affection), 0) * MINUTE);
-    expect(act(n, {type: 'rewardCuisine', rabbitId: 'rabbit-2', recipeId: 'salad'}, NOW)).toMatchObject({ok: true, cuisineReward: {affectionGranted: false, heartGranted: false}});
+    expect(act(n, {type: 'rewardCuisine', rabbitId: 'rabbit-2', recipeId: 'avocado-toast'}, NOW)).toMatchObject({ok: true, cuisineReward: {affectionGranted: false, heartGranted: false}});
     expect(act(n, {type: 'collectOrder', id: farm.id}, NOW + 4 * MINUTE).ok).toBe(true);
     expect(act(n, {type: 'claimHearts'}, NOW)).toMatchObject({ok: false, reason: 'NOT_READY'});
   });

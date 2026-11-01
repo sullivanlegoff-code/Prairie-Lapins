@@ -3,9 +3,11 @@ import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import html from '../cooktap-prototype/index.html?raw';
 import kitchenCSS from '../cooktap-prototype/style.css?raw';
 import {KitchenEngine} from '../cooktap-prototype/engine';
-import {ITEMS, ZONES} from '../cooktap-prototype/recipes';
+import {ITEMS, RECIPES, RECIPE_IDS, allSteps, recipe, type RecipeId} from '../cooktap-prototype/recipes';
+import {ART_URLS, artKey, finishedDishArt} from '../cooktap-prototype/art';
 import {fitScene, hitBox, resolveDrop, toClient} from '../cooktap-prototype/geometry';
 import {mountKitchen, type RecipeCompletion} from '../cooktap-prototype/main';
+import {CUISINE_REWARDS} from '../src/config/balance';
 
 const cleanups: (() => void)[] = [];
 let frames: FrameRequestCallback[] = [];
@@ -16,17 +18,23 @@ beforeEach(() => {
   vi.stubGlobal('cancelAnimationFrame', () => {});
 });
 afterEach(() => { cleanups.splice(0).forEach(dispose => dispose()); vi.useRealTimers(); vi.unstubAllGlobals(); });
-const zoneDrop = (engine: KitchenEngine, itemId: string, id: string) => engine.dispatch({type: 'drop', itemId, target: {kind: 'zone', id}});
-const applyBottle = (engine: KitchenEngine, itemId: string, targetId: string) => engine.dispatch({type: 'drop', itemId, target: {kind: 'item', id: targetId}});
-const startSalad = (engine: KitchenEngine) => engine.dispatch({type: 'start-recipe', recipeId: 'salad'});
-function cut(engine: KitchenEngine, id: string) {
-  expect(zoneDrop(engine, id, 'cutting-board').accepted).toBe(true);
-  expect(engine.dispatch({type: 'use-tool', toolId: 'knife', targetId: id})).toMatchObject({accepted: true, effect: 'cut', effectTargetId: id});
-  expect(engine.snapshot().items.find(item => item.id === id)?.preparation).toBe('cut');
-}
-function finishWithOil(engine: KitchenEngine, order: readonly string[]) {
-  for (const id of order) { cut(engine, id); expect(zoneDrop(engine, id, 'bowl').accepted).toBe(true); }
-  return applyBottle(engine, 'olive-oil', 'bowl');
+
+/** Every drag of each recipe, in a valid order; `cook` lets the active clock run. */
+const PLAYS: Record<RecipeId, readonly (readonly [string, string] | readonly ['cook', number])[]> = {
+  'avocado-toast': [['avocado', 'cutting-board'], ['knife', 'avocado'], ['avocado', 'bowl'], ['honey', 'bowl'], ['soy', 'bowl'],
+    ['shallot', 'cutting-board'], ['knife', 'shallot'], ['shallot', 'bowl'], ['spoon', 'bowl'], ['bread', 'pan'], ['cook', 3000], ['bowl', 'plate'], ['salmon', 'plate']],
+  moelleux: [['chocolate', 'saucepan'], ['butter', 'saucepan'], ['eggs', 'bowl'], ['sugar', 'bowl'], ['whisk', 'bowl'],
+    ['saucepan', 'bowl'], ['flour', 'bowl'], ['whisk', 'bowl'], ['bowl', 'mould'], ['mould', 'oven'], ['cook', 5000]],
+  chicken: [['chicken', 'cutting-board'], ['knife', 'chicken'], ['soy', 'chicken'], ['honey', 'chicken'], ['chicken', 'baking-dish'],
+    ['sweet-potato', 'cutting-board'], ['peeler', 'sweet-potato'], ['knife', 'sweet-potato'], ['sweet-potato', 'baking-dish'], ['baking-dish', 'oven'], ['cook', 5000]],
+};
+const drop = (engine: KitchenEngine, itemId: string, id: string) => engine.dispatch({type: 'drop', itemId, target: {kind: 'item', id}});
+const item = (engine: KitchenEngine, id: string) => engine.snapshot().items.find(i => i.id === id)!;
+function play(engine: KitchenEngine, id: RecipeId, until = Infinity) {
+  PLAYS[id].slice(0, until).forEach(([actor, target]) => {
+    if (actor === 'cook') { engine.advance(target as number); return; }
+    expect(drop(engine, actor, target as string), `${actor} → ${target}`).toMatchObject({accepted: true});
+  });
 }
 function mount(initialPortrait = false, onRecipeCompleted?: (result: RecipeCompletion) => void) {
   let portrait = initialPortrait, rect = {left: 20, top: 60, width: 900, height: 396};
@@ -38,16 +46,13 @@ function mount(initialPortrait = false, onRecipeCompleted?: (result: RecipeCompl
   const node = (id: string) => root.querySelector<HTMLElement>(`[data-item="${id}"]`)!;
   const surface = root.querySelector<HTMLElement>('#kitchen-surface')!;
   const event = (target: HTMLElement, type: string, point: {x: number; y: number}, pointerId = 1) => target.dispatchEvent(new PointerEvent(type, {bubbles: true, pointerId, pointerType: 'touch', clientX: point.x, clientY: point.y, button: 0, buttons: type === 'pointerup' ? 0 : 1}));
-  const at = (id: string) => toClient(kitchen.engine.snapshot().items.find(item => item.id === id)!.anchor, kitchen.scene.getView());
+  const at = (id: string) => toClient(kitchen.engine.snapshot().items.find(i => i.id === id)!.anchor, kitchen.scene.getView());
   const move = (point: {x: number; y: number}, pointer = 1) => { event(surface, 'pointermove', point, pointer); for (const callback of frames.splice(0)) callback(0); };
-  const toZone = (id: string) => toClient(ZONES.find(zone => zone.id === id)!.anchor, kitchen.scene.getView());
-  const begin = () => root.querySelector<HTMLButtonElement>('#recipe-salad')!.click();
-  const beginChicken = () => root.querySelector<HTMLButtonElement>('#recipe-chicken')!.click();
-  return {...kitchen, root, surface, node, event, at, move, toZone, begin, beginChicken,
+  const begin = (id: RecipeId) => root.querySelector<HTMLButtonElement>(`#recipe-${id}`)!.click();
+  return {...kitchen, root, surface, node, event, at, move, begin,
     rotate(value: boolean) { portrait = value; query.dispatchEvent(new Event('change')); },
-    resize() { rect = {...rect, width: 700}; kitchen.refresh(); },
     dragItem(id: string, target: {x: number; y: number}, pointer = 1) { event(node(id), 'pointerdown', at(id), pointer); move(target, pointer); event(surface, 'pointerup', target, pointer); },
-    dragToZone(id: string, zone: string, pointer = 1) { this.dragItem(id, this.toZone(zone), pointer); },
+    dragTo(id: string, target: string, pointer = 1) { this.dragItem(id, at(target), pointer); },
     tapItem(id: string, pointer = 1) { const p = at(id); event(node(id), 'pointerdown', p, pointer); event(surface, 'pointerup', p, pointer); },
   };
 }
@@ -74,8 +79,8 @@ describe('reusable kitchen lifecycle', () => {
     cleanups.push(() => kitchen.dispose());
     expect(kitchen.root.parentElement).toBe(host);
     expect(kitchen.root.querySelector('style')!.textContent).toBe(kitchenCSS);
-    kitchen.root.querySelector<HTMLButtonElement>('#recipe-salad')!.click();
-    expect(kitchen.engine.snapshot()).toMatchObject({recipe: 'salad', phase: 'playing'});
+    kitchen.root.querySelector<HTMLButtonElement>('#recipe-moelleux')!.click();
+    expect(kitchen.engine.snapshot()).toMatchObject({recipe: 'moelleux', phase: 'playing'});
     kitchen.dispose(); kitchen.dispose();
     expect(Array.from(host.children)).toEqual([sibling]);
     expect(kitchen.root.isConnected).toBe(false);
@@ -87,7 +92,7 @@ describe('reusable kitchen lifecycle', () => {
       constructor(callback: () => void) { resizeCallback = callback; }
       observe() {} disconnect = disconnected;
     });
-    const k = mount(); k.beginChicken(); finishChicken(k.engine); k.refresh();
+    const k = mount(); k.begin('chicken'); play(k.engine, 'chicken', 10); k.refresh();
     vi.advanceTimersByTime(1000);
     expect(k.engine.snapshot().cookingRemainingMs).toBe(4000);
     const surface = k.surface, soy = k.node('soy'), replay = k.root.querySelector<HTMLButtonElement>('#recipe-replay')!;
@@ -99,19 +104,18 @@ describe('reusable kitchen lifecycle', () => {
     document.dispatchEvent(new Event('visibilitychange'));
     replay.click(); soy.click(); k.event(surface, 'pointerdown', {x: 10, y: 10}); k.event(surface, 'pointerup', {x: 80, y: 80});
     expect(k.engine.snapshot()).toEqual(frozen);
-    const fresh = mount(); fresh.beginChicken();
+    const fresh = mount(); fresh.begin('chicken');
     expect(fresh.engine.snapshot()).toMatchObject({phase: 'playing', activeTimeMs: 0, cookingRemainingMs: 0, invalidActions: 0});
-    expect(fresh.node('chicken').dataset.preparation).toBe('raw');
+    expect(fresh.node('chicken').dataset.state).toBe('raw');
   });
   it('cancels an in-flight pointer, animation frame, effects and feedback timers on disposal', () => {
-    const k = mount(); k.begin();
-    k.dragToZone('tomato', 'cutting-board'); k.dragItem('knife', k.at('tomato'));
-    k.dragToZone('olive-oil', 'bowl'); // Rejection schedules UI feedback cleanup.
-    const point = k.at('olive-oil');
+    const k = mount(); k.begin('avocado-toast');
+    k.dragTo('avocado', 'cutting-board'); k.dragTo('knife', 'avocado');
+    k.dragTo('honey', 'plate'); // Rejection schedules UI feedback cleanup.
     const capture = vi.fn(() => true), release = vi.fn();
     k.surface.hasPointerCapture = capture; k.surface.releasePointerCapture = release;
-    k.event(k.node('olive-oil'), 'pointerdown', point);
-    k.event(k.surface, 'pointermove', k.toZone('bowl')); // Leave the frame pending.
+    k.event(k.node('honey'), 'pointerdown', k.at('honey'));
+    k.event(k.surface, 'pointermove', k.at('bowl')); // Leave the frame pending.
     const cancelFrame = vi.spyOn(globalThis, 'cancelAnimationFrame');
     k.dispose(); const frozen = k.engine.snapshot();
     expect(release).toHaveBeenCalledWith(1); expect(cancelFrame).toHaveBeenCalled();
@@ -122,7 +126,7 @@ describe('reusable kitchen lifecycle', () => {
     cancelFrame.mockRestore();
   });
   it('scopes every presentation selector and leaves unrelated buttons and headings unchanged', () => {
-    const outside = document.createElement('div'); outside.innerHTML = '<button>Prairie</button><h1>Prairie</h1><nav>Menu</nav><small>Info</small>';
+    const outside = document.createElement('div'); outside.innerHTML = '<button>Prairie</button><h1>Prairie</h1><nav>Menu</nav><small>Info</small><img alt="">';
     document.body.append(outside);
     const elements = Array.from(outside.children) as HTMLElement[];
     const before = elements.map(el => getComputedStyle(el).cssText);
@@ -145,417 +149,260 @@ describe('reusable kitchen lifecycle', () => {
   });
 });
 
-describe('salad recipe engine', () => {
-  it('offers Salad and Chicken, then shows only selected recipe objects', () => {
-    const e = new KitchenEngine(); expect(e.snapshot().phase).toBe('choosing'); expect(e.snapshot().items.every(item => !item.visible)).toBe(true);
-    expect(startSalad(e).accepted).toBe(true);
-    const visible = e.snapshot().items.filter(item => item.visible).map(item => item.id).sort();
-    expect(visible).toEqual(['bowl', 'cutting-board', 'cucumber', 'knife', 'mozzarella', 'olive-oil', 'tomato'].sort());
-    e.dispatch({type: 'choose-recipe'}); expect(e.dispatch({type: 'start-recipe', recipeId: 'chicken'}).accepted).toBe(true);
-    expect(e.snapshot().items.filter(item => item.visible).map(item => item.id).sort()).toEqual(['baking-dish', 'chicken', 'cutting-board', 'honey', 'knife', 'oven', 'peeler', 'soy', 'sweet-potato'].sort());
+describe('recipe book', () => {
+  it('offers avocado toast, moelleux and chicken, without the salad, each paid by the game', () => {
+    expect(RECIPE_IDS).toEqual(['avocado-toast', 'moelleux', 'chicken']);
+    expect(RECIPES.map(r => r.id).sort()).toEqual(Object.keys(CUISINE_REWARDS).sort());
+    for (const gone of ['salad', 'mozzarella', 'tomato', 'cucumber', 'olive-oil']) {
+      expect(RECIPES.some(r => r.id === gone)).toBe(false); expect(ITEMS.some(i => i.id === gone)).toBe(false);
+    }
   });
-  it.each(['mozzarella', 'tomato', 'cucumber'])('moves %s onto the free board and refuses another food while occupied', id => {
-    const e = new KitchenEngine(); startSalad(e); expect(zoneDrop(e, id, 'cutting-board').accepted).toBe(true);
-    const before = e.snapshot(); const other = ['mozzarella', 'tomato', 'cucumber'].find(food => food !== id)!;
-    expect(zoneDrop(e, other, 'cutting-board')).toMatchObject({accepted: false, message: 'La planche est occupée.'});
-    expect(e.snapshot().invalidActions).toBe(1); expect(e.snapshot().items.find(item => item.id === other)?.location).toBe('reserve');
-    expect(e.snapshot().items.find(item => item.id === id)?.location).toBe('cutting-board'); expect(before.items.find(item => item.id === id)?.location).toBe('cutting-board');
+  it('follows the owner’s avocado toast exactly: avocado, cut, honey and soy, cut shallot, mix, toast, spread, smoked salmon', () => {
+    const steps = allSteps(recipe('avocado-toast')).map(s => `${s.actor}>${s.target}`);
+    expect(steps).toEqual(['avocado>cutting-board', 'knife>avocado', 'avocado>bowl', 'honey>bowl', 'soy>bowl',
+      'shallot>cutting-board', 'knife>shallot', 'shallot>bowl', 'spoon>bowl', 'bread>pan', 'bowl>plate', 'salmon>plate']);
+    expect(recipe('avocado-toast').chains).toHaveLength(1); // One strict order.
   });
-  it.each(['mozzarella', 'tomato', 'cucumber'])('knife cuts %s and returns to its support', id => {
-    const e = new KitchenEngine(); startSalad(e); zoneDrop(e, id, 'cutting-board');
-    expect(e.dispatch({type: 'use-tool', toolId: 'knife', targetId: id})).toMatchObject({accepted: true, effect: 'cut', effectTargetId: id});
-    expect(e.snapshot().items.find(item => item.id === id)?.preparation).toBe('cut');
-    expect(e.snapshot().items.find(item => item.id === 'knife')).toMatchObject({location: 'tool-rack', zoneId: 'tool-rack-knife'});
+  it('bakes a real moelleux: melted chocolate and butter, eggs whisked with sugar, chocolate, flour, mould, oven', () => {
+    const r = recipe('moelleux');
+    expect(r.chains.map(c => c.map(s => `${s.actor}>${s.target}`))).toEqual([['chocolate>saucepan', 'butter>saucepan'], ['eggs>bowl', 'sugar>bowl', 'whisk>bowl']]);
+    expect(r.finale.map(s => `${s.actor}>${s.target}`)).toEqual(['saucepan>bowl', 'flour>bowl', 'whisk>bowl', 'bowl>mould', 'mould>oven']);
+    expect(r.finale.at(-1)!.cook).toMatchObject({ms: 5000, heater: 'oven', container: 'mould', set: {mould: 'baked'}});
+  });
+  it('has a painted picture for every object state any recipe can reach, and for every finished dish', () => {
+    for (const r of RECIPES) {
+      const seen = new Map(ITEMS.filter(i => r.layout[i.id]).map(i => [i.id, new Set([i.state])]));
+      for (const s of allSteps(r)) for (const changes of [s.set, s.cook?.set]) for (const [id, change] of Object.entries(changes ?? {}))
+        for (const state of typeof change === 'string' ? [change] : Object.values(change)) seen.get(id)!.add(state);
+      for (const [id, states] of seen) for (const state of states) {
+        const def = ITEMS.find(i => i.id === id)!, key = state ? `${def.art}-${state}` : def.art;
+        expect(ART_URLS[key], `${r.id}: ${key}`).toBeTruthy(); expect(artKey({art: def.art, state})).toBe(key);
+      }
+      expect(ART_URLS[r.dish], r.dish).toBeTruthy();
+      expect(finishedDishArt(r.id)).toContain(`data-dish="${r.id}"`);
+    }
+    expect(ART_URLS.backdrop).toBeTruthy(); expect(ART_URLS.steam).toBeTruthy();
+  });
+  it('lays out every recipe inside the 1000 × 440 table, clear of the chef rabbit and of each other’s anchors', () => {
+    for (const r of RECIPES) {
+      const placed = ITEMS.filter(i => r.layout[i.id]);
+      for (const i of placed) {
+        const {x, y} = r.layout[i.id];
+        expect(x - i.width / 2, `${r.id}:${i.id}`).toBeGreaterThanOrEqual(110); expect(x + i.width / 2).toBeLessThanOrEqual(1000);
+        expect(y - i.height / 2, `${r.id}:${i.id}`).toBeGreaterThanOrEqual(20); expect(y + i.height / 2).toBeLessThanOrEqual(440);
+      }
+      for (const s of allSteps(r)) { expect(r.layout[s.actor], `${r.id}:${s.actor}`).toBeDefined(); expect(r.layout[s.target], `${r.id}:${s.target}`).toBeDefined(); }
+    }
+  });
+});
+
+describe('step engine', () => {
+  it.each(RECIPE_IDS)('plays %s from start to finish and reports completion once', id => {
+    const e = new KitchenEngine();
+    expect(e.dispatch({type: 'start-recipe', recipeId: id})).toMatchObject({accepted: true});
+    expect(e.snapshot().items.filter(i => i.visible).map(i => i.id).sort()).toEqual(Object.keys(recipe(id).layout).sort());
+    play(e, id);
+    expect(e.snapshot()).toMatchObject({phase: 'completed', invalidActions: 0, cookingRemainingMs: 0, doneSteps: allSteps(recipe(id)).length, current: -1});
+  });
+  it('refuses early or misplaced drops with the next instruction, counts them, and changes nothing', () => {
+    const e = new KitchenEngine(); e.dispatch({type: 'start-recipe', recipeId: 'avocado-toast'});
+    const before = e.snapshot().items;
+    expect(drop(e, 'salmon', 'plate')).toEqual({accepted: false, message: 'Pas encore : pose l’avocat sur la planche.'});
+    expect(drop(e, 'avocado', 'bowl')).toEqual({accepted: false, message: 'Pas ici : pose l’avocat sur la planche.'});
+    expect(e.dispatch({type: 'drop', itemId: 'avocado', target: null})).toMatchObject({accepted: false});
+    expect(e.snapshot()).toMatchObject({invalidActions: 3, doneSteps: 0});
+    expect(e.snapshot().items).toEqual(before);
+  });
+  it('keeps the owner’s order: no honey before the avocado is cut and in the bowl, no toast before the mix', () => {
+    const e = new KitchenEngine(); e.dispatch({type: 'start-recipe', recipeId: 'avocado-toast'});
+    play(e, 'avocado-toast', 2);
+    expect(drop(e, 'honey', 'bowl').accepted).toBe(false);
+    expect(drop(e, 'avocado', 'bowl').accepted).toBe(true);
+    expect(drop(e, 'soy', 'bowl').accepted).toBe(false); // Honey first.
+    expect(drop(e, 'honey', 'bowl').accepted).toBe(true); expect(item(e, 'bowl').state).toBe('honey');
+    expect(drop(e, 'soy', 'bowl').accepted).toBe(true); expect(item(e, 'bowl').state).toBe('soy');
+    expect(drop(e, 'bread', 'pan').accepted).toBe(false);
+    for (const [a, b] of [['shallot', 'cutting-board'], ['knife', 'shallot'], ['shallot', 'bowl']]) expect(drop(e, a, b).accepted).toBe(true);
+    expect(drop(e, 'bread', 'pan').accepted).toBe(false); // Mix first.
+    expect(drop(e, 'spoon', 'bowl')).toMatchObject({accepted: true, effect: 'mix'});
+    expect(item(e, 'bowl').state).toBe('mixed');
+  });
+  it('toasts the bread for three active seconds on the stove, then sets it on the plate', () => {
+    const e = new KitchenEngine(); e.dispatch({type: 'start-recipe', recipeId: 'avocado-toast'});
+    play(e, 'avocado-toast', 10);
+    expect(e.snapshot()).toMatchObject({cookingRemainingMs: 3000, cookingHeater: 'stove', cookingContainer: 'pan'});
+    expect(item(e, 'pan')).toMatchObject({state: 'bread', visible: true}); expect(item(e, 'bread').visible).toBe(false);
+    expect(e.canDrag('bowl')).toBe(false); // Nothing moves while it cooks.
+    expect(drop(e, 'bowl', 'plate')).toMatchObject({accepted: false});
     expect(e.snapshot().invalidActions).toBe(0);
+    e.setPaused('portrait', true); e.advance(5000); expect(e.snapshot().cookingRemainingMs).toBe(3000);
+    e.setPaused('portrait', false); expect(e.advance(2999)).toBeNull();
+    expect(e.advance(1)).toEqual({accepted: true, message: 'Tartines dorées, posées sur l’assiette !', effect: 'cooked', effectTargetId: 'pan'});
+    expect(item(e, 'pan').state).toBe('empty'); expect(item(e, 'plate').state).toBe('toast');
+    expect(drop(e, 'bowl', 'plate')).toMatchObject({accepted: true, effect: 'spread'});
+    expect([item(e, 'bowl').state, item(e, 'plate').state]).toEqual(['empty', 'avocado']);
+    expect(drop(e, 'salmon', 'plate').accepted).toBe(true);
+    expect(e.snapshot()).toMatchObject({phase: 'completed'}); expect(item(e, 'plate').state).toBe('salmon');
   });
-  it('refuses knife on an empty board, the board surface, or an already cut ingredient', () => {
-    const e = new KitchenEngine(); startSalad(e);
-    expect(e.dispatch({type: 'drop', itemId: 'knife', target: {kind: 'zone', id: 'cutting-board'}}).accepted).toBe(false);
-    cut(e, 'tomato');
-    expect(e.dispatch({type: 'use-tool', toolId: 'knife', targetId: 'tomato'}).accepted).toBe(false);
-    expect(e.snapshot().invalidActions).toBe(2);
+  it('lets the moelleux chains interleave, but waits for both before the melted chocolate', () => {
+    const e = new KitchenEngine(); e.dispatch({type: 'start-recipe', recipeId: 'moelleux'});
+    expect(drop(e, 'eggs', 'bowl').accepted).toBe(true);
+    expect(drop(e, 'chocolate', 'saucepan').accepted).toBe(true);
+    expect(drop(e, 'sugar', 'bowl').accepted).toBe(true);
+    expect(drop(e, 'butter', 'saucepan')).toMatchObject({accepted: true, effect: 'melt'});
+    expect(item(e, 'saucepan').state).toBe('melted');
+    expect(drop(e, 'saucepan', 'bowl').accepted).toBe(false); // Whisk the eggs and sugar first.
+    expect(drop(e, 'whisk', 'bowl').accepted).toBe(true); expect(item(e, 'bowl').state).toBe('whisked');
+    expect(drop(e, 'saucepan', 'bowl').accepted).toBe(true);
+    expect([item(e, 'saucepan').state, item(e, 'bowl').state, item(e, 'saucepan').location]).toEqual(['empty', 'chocolate', 'home']);
+    for (const [a, b] of [['flour', 'bowl'], ['whisk', 'bowl'], ['bowl', 'mould']]) expect(drop(e, a, b).accepted).toBe(true);
+    expect(drop(e, 'mould', 'oven')).toMatchObject({accepted: true, effect: 'oven'});
+    expect(item(e, 'mould')).toMatchObject({location: 'heating', state: 'batter'});
+    e.advance(5000);
+    expect(item(e, 'mould')).toMatchObject({location: 'home', state: 'baked', visible: true});
+    expect(e.snapshot().phase).toBe('completed');
   });
-  it('requires cut food for the bowl, locks it there and shows contents from engine state', () => {
-    const e = new KitchenEngine(); startSalad(e);
-    expect(zoneDrop(e, 'tomato', 'bowl')).toMatchObject({accepted: false, message: 'Coupe-le d’abord.'});
-    cut(e, 'tomato'); expect(zoneDrop(e, 'tomato', 'bowl').accepted).toBe(true);
-    expect(e.snapshot().items.find(item => item.id === 'tomato')).toMatchObject({preparation: 'cut', location: 'bowl', draggable: false, interactive: false});
-    expect(e.dispatch({type: 'drop', itemId: 'tomato', target: {kind: 'zone', id: 'reserve-tomato'}}).accepted).toBe(false);
+  it('accepts either chicken chain first, keeps one food on the board, and fills the dish in either order', () => {
+    for (const first of ['chicken', 'sweet-potato'] as const) {
+      const e = new KitchenEngine(); e.dispatch({type: 'start-recipe', recipeId: 'chicken'});
+      const other = first === 'chicken' ? 'sweet-potato' : 'chicken';
+      expect(drop(e, first, 'cutting-board').accepted).toBe(true);
+      expect(drop(e, other, 'cutting-board').message).toMatch(/^La planche est occupée/);
+      const chain = (id: string) => id === 'chicken' ? [['knife', 'chicken'], ['soy', 'chicken'], ['honey', 'chicken'], ['chicken', 'baking-dish']] : [['peeler', 'sweet-potato'], ['knife', 'sweet-potato'], ['sweet-potato', 'baking-dish']];
+      for (const [a, b] of chain(first)) expect(drop(e, a, b).accepted).toBe(true);
+      expect(item(e, 'baking-dish').state).toBe(first);
+      expect(drop(e, 'baking-dish', 'oven').accepted).toBe(false);
+      expect(drop(e, other, 'cutting-board').accepted).toBe(true);
+      for (const [a, b] of chain(other)) expect(drop(e, a, b).accepted).toBe(true);
+      expect(item(e, 'baking-dish').state).toBe('both');
+      expect(drop(e, 'baking-dish', 'oven').accepted).toBe(true);
+      e.advance(5000); expect(item(e, 'baking-dish').state).toBe('cooked'); expect(e.snapshot().phase).toBe('completed');
+    }
   });
-  it('returns a cut ingredient to its own reserve without changing preparation', () => {
-    const e = new KitchenEngine(); startSalad(e); cut(e, 'cucumber');
-    expect(zoneDrop(e, 'cucumber', 'reserve-cucumber').accepted).toBe(true);
-    expect(e.snapshot().items.find(item => item.id === 'cucumber')).toMatchObject({location: 'reserve', preparation: 'cut'});
+  it('requires soy before honey and peeling before cutting, with the next instruction', () => {
+    const e = new KitchenEngine(); e.dispatch({type: 'start-recipe', recipeId: 'chicken'});
+    drop(e, 'chicken', 'cutting-board');
+    expect(drop(e, 'soy', 'chicken').message).toBe('Pas encore : coupe le poulet avec le couteau.');
+    drop(e, 'knife', 'chicken');
+    expect(drop(e, 'honey', 'chicken').accepted).toBe(false);
+    expect(drop(e, 'soy', 'chicken')).toMatchObject({accepted: true, effect: 'season'}); expect(item(e, 'chicken').state).toBe('soy');
+    expect(drop(e, 'honey', 'chicken').accepted).toBe(true); expect(item(e, 'chicken').state).toBe('glazed');
+    drop(e, 'chicken', 'baking-dish'); drop(e, 'sweet-potato', 'cutting-board');
+    expect(drop(e, 'knife', 'sweet-potato').accepted).toBe(false);
+    expect(drop(e, 'peeler', 'sweet-potato')).toMatchObject({accepted: true, effect: 'peel'});
   });
-  it.each([0, 1, 2])('refuses olive oil with %i ingredients in bowl', count => {
-    const e = new KitchenEngine(); startSalad(e);
-    for (const id of ['mozzarella', 'tomato', 'cucumber'].slice(0, count)) { cut(e, id); zoneDrop(e, id, 'bowl'); }
-    expect(applyBottle(e, 'olive-oil', 'bowl')).toMatchObject({accepted: false, message: 'Ajoute d’abord les 3 ingrédients'});
-    expect(e.snapshot().items.find(item => item.id === 'olive-oil')?.flags).toEqual({});
-    expect(e.snapshot().phase).toBe('playing'); expect(e.snapshot().invalidActions).toBe(1);
-  });
-  it('accepts oil only after all three cut ingredients are in the bowl and completes the salad', () => {
-    const e = new KitchenEngine(); startSalad(e); expect(finishWithOil(e, ['mozzarella', 'tomato', 'cucumber'])).toMatchObject({accepted: true, message: 'Salade réussie !', effect: 'pour', effectTargetId: 'bowl'});
-    expect(e.snapshot()).toMatchObject({phase: 'completed', invalidActions: 0, items: expect.arrayContaining([expect.objectContaining({id: 'olive-oil', flags: {oliveOilAdded: true}})])});
-    expect(e.advance(1000)).toBeUndefined();
-  });
-  it.each([
-    ['mozzarella', 'tomato', 'cucumber'], ['mozzarella', 'cucumber', 'tomato'],
-    ['tomato', 'mozzarella', 'cucumber'], ['tomato', 'cucumber', 'mozzarella'],
-    ['cucumber', 'mozzarella', 'tomato'], ['cucumber', 'tomato', 'mozzarella'],
-  ])('completes in preparation order %s → %s → %s', (...order) => {
-    const e = new KitchenEngine(); startSalad(e); expect(finishWithOil(e, order)).toMatchObject({accepted: true}); expect(e.snapshot().phase).toBe('completed');
+  it('replay resets every object, state, error and time; choosing hides the table', () => {
+    const e = new KitchenEngine(); e.dispatch({type: 'start-recipe', recipeId: 'moelleux'});
+    drop(e, 'flour', 'bowl'); play(e, 'moelleux', 5); e.advance(1200);
+    e.dispatch({type: 'reset-recipe'});
+    expect(e.snapshot()).toMatchObject({phase: 'playing', recipe: 'moelleux', invalidActions: 0, activeTimeMs: 0, doneSteps: 0});
+    expect(item(e, 'bowl').state).toBe('empty'); expect(item(e, 'eggs').visible).toBe(true);
+    e.dispatch({type: 'choose-recipe'});
+    expect(e.snapshot()).toMatchObject({phase: 'choosing', recipe: null}); expect(e.snapshot().items.every(i => !i.visible)).toBe(true);
   });
   it('measures elapsed active time only while playing in landscape and foreground', () => {
-    const e = new KitchenEngine(); e.advance(5000); expect(e.snapshot().activeTimeMs).toBe(0); startSalad(e); e.advance(1250);
-    e.setPaused('portrait', true); e.advance(9000); e.setPaused('portrait', false); e.setPaused('hidden', true); e.advance(9000);
-    e.setPaused('hidden', false); e.advance(750); expect(e.snapshot().activeTimeMs).toBe(2000);
-  });
-  it('replay resets every ingredient, flags, errors and elapsed time; chooser resets the recipe', () => {
-    const e = new KitchenEngine(); startSalad(e); e.advance(3600); zoneDrop(e, 'tomato', 'bowl');
-    expect(e.snapshot().invalidActions).toBe(1);
-    e.dispatch({type: 'reset-recipe'}); expect(e.snapshot()).toMatchObject({phase: 'playing', recipe: 'salad', activeTimeMs: 0, invalidActions: 0});
-    for (const id of ['mozzarella', 'tomato', 'cucumber']) expect(e.snapshot().items.find(item => item.id === id)).toMatchObject({preparation: 'whole', location: 'reserve', zoneId: `reserve-${id}`, visible: true});
-    expect(e.snapshot().items.find(item => item.id === 'olive-oil')?.flags).toEqual({});
-    e.dispatch({type: 'choose-recipe'}); expect(e.snapshot()).toMatchObject({phase: 'choosing', recipe: null}); expect(e.snapshot().items.every(item => !item.visible)).toBe(true);
+    const e = new KitchenEngine(); e.advance(500); e.dispatch({type: 'start-recipe', recipeId: 'chicken'}); e.advance(250);
+    e.setPaused('portrait', true); e.advance(1000); e.setPaused('portrait', false); e.setPaused('hidden', true); e.advance(1000); e.setPaused('hidden', false); e.advance(250);
+    expect(e.snapshot().activeTimeMs).toBe(500);
   });
 });
 
-describe('draggable bottle applicators', () => {
-  it.each(['soy', 'honey'])('%s only applies on a valid chicken drop and returns home', bottle => {
-    const k = mount(); k.beginChicken();
-    const node = k.node(bottle), home = node.style.transform;
-    k.tapItem(bottle); node.click();
-    expect(k.engine.snapshot().items.find(i => i.id === 'chicken')?.flags).toEqual({});
-    expect(k.engine.snapshot().invalidActions).toBe(0);
-    k.dragItem(bottle, k.at('chicken'));
-    expect(k.engine.snapshot().invalidActions).toBe(1);
-    expect(node.style.transform).toBe(home);
-    k.dragToZone('chicken', 'cutting-board'); k.dragItem('knife', k.at('chicken'));
-    k.tapItem(bottle); node.click();
-    expect(k.engine.snapshot().items.find(i => i.id === 'chicken')?.flags).toEqual({});
-    if (bottle === 'honey') {
-      k.dragItem(bottle, k.at('chicken'));
-      expect(k.engine.snapshot().invalidActions).toBe(2);
-      k.dragItem('soy', k.at('chicken'));
-    }
-    const beforeTap = {...k.engine.snapshot().items.find(i => i.id === 'chicken')!.flags};
-    k.tapItem(bottle); node.click();
-    expect(k.engine.snapshot().items.find(i => i.id === 'chicken')?.flags).toEqual(beforeTap);
-    k.event(node, 'pointerdown', k.at(bottle)); k.move(k.at('chicken'));
-    expect(node.classList.contains('grabbed')).toBe(true);
-    expect(node.style.transform).not.toBe(home);
-    k.event(k.surface, 'pointerup', k.at('chicken'));
-    const flag = bottle === 'soy' ? 'soyAdded' : 'honeyAdded';
-    expect(k.engine.snapshot().items.find(i => i.id === 'chicken')?.flags[flag]).toBe(true);
-    expect(node.style.transform).toBe(home);
-    const errors = k.engine.snapshot().invalidActions;
-    k.dragItem(bottle, k.at('chicken'));
-    expect(k.engine.snapshot().invalidActions).toBe(errors + 1);
-    expect(node.style.transform).toBe(home);
-    k.event(node, 'pointerdown', k.at(bottle)); k.move(k.at('chicken'));
-    k.event(k.surface, 'pointercancel', k.at('chicken'));
-    expect(k.engine.snapshot().invalidActions).toBe(errors + 1);
-    expect(node.style.transform).toBe(home);
-  });
-  it('rejects the wrong food without seasoning and returns the bottle', () => {
-    const k = mount(); k.beginChicken(); const home = k.node('soy').style.transform;
-    k.dragItem('soy', k.at('sweet-potato'));
-    expect(k.engine.snapshot().invalidActions).toBe(1);
-    expect(k.engine.snapshot().items.find(i => i.id === 'chicken')?.flags).toEqual({});
-    expect(k.node('soy').style.transform).toBe(home);
-  });
-  it('oil follows the pointer, cancels without penalty, rejects an unready bowl and returns after completion', () => {
-    const k = mount(); k.begin(); const oil = k.node('olive-oil'), home = oil.style.transform;
-    k.tapItem('olive-oil'); oil.click();
-    expect(k.engine.snapshot()).toMatchObject({phase: 'playing', invalidActions: 0});
-    k.event(oil, 'pointerdown', k.at('olive-oil')); k.move(k.toZone('bowl'));
-    expect(oil.style.transform).not.toBe(home);
-    k.event(k.surface, 'pointercancel', k.toZone('bowl'));
-    expect(k.engine.snapshot().invalidActions).toBe(0); expect(oil.style.transform).toBe(home);
-    k.dragToZone('olive-oil', 'bowl'); expect(k.engine.snapshot().invalidActions).toBe(1);
-    expect(oil.style.transform).toBe(home);
-    for (const id of ['tomato', 'mozzarella', 'cucumber']) { cut(k.engine, id); zoneDrop(k.engine, id, 'bowl'); }
-    k.scene.render(k.engine.snapshot());
-    k.tapItem('olive-oil'); oil.click(); expect(k.engine.snapshot().phase).toBe('playing');
-    expect(k.engine.snapshot().items.find(i => i.id === 'olive-oil')?.flags).toEqual({});
-    k.dragToZone('olive-oil', 'bowl');
-    expect(k.engine.snapshot().phase).toBe('completed'); expect(oil.style.transform).toBe(home);
-    expect(k.engine.snapshot().items.find(i => i.id === 'olive-oil')?.flags.oliveOilAdded).toBe(true);
-  });
-});
-
-describe('salad responsive geometry', () => {
-  it.each([[667, 270], [844, 300], [1400, 700]])('fits %sx%s and preserves >=48px food/tool targets', (width, height) => {
+describe('geometry', () => {
+  it.each([[667, 270], [844, 300], [1400, 700]])('fits %sx%s and keeps every movable object at least 48 px', (width, height) => {
     const view = fitScene({left: 17, top: 30, width, height}); expect(view.width).toBeLessThanOrEqual(width); expect(view.height).toBeLessThanOrEqual(height);
-    for (const id of ['mozzarella', 'tomato', 'cucumber', 'knife', 'olive-oil']) { const item = ITEMS.find(i => i.id === id)!; const box = hitBox(item.anchor, item.width, item.height, view); expect(box.width).toBeGreaterThanOrEqual(48); expect(box.height).toBeGreaterThanOrEqual(48); }
+    for (const r of RECIPES) for (const i of ITEMS.filter(i => r.layout[i.id] && i.draggable)) {
+      const box = hitBox(r.layout[i.id], i.width, i.height, view); expect(box.width).toBeGreaterThanOrEqual(48); expect(box.height).toBeGreaterThanOrEqual(48);
+    }
   });
-  it('resolves the knife target to the food on the board under pointer capture', () => {
-    const e = new KitchenEngine(); startSalad(e); zoneDrop(e, 'tomato', 'cutting-board'); const view = fitScene({left: 0, top: 0, width: 1000, height: 440});
-    expect(resolveDrop({x: 490, y: 238}, 'knife', e.snapshot(), ZONES, view)).toEqual({kind: 'item', id: 'tomato'});
+  it('resolves the knife over the food lying on the board, and the board for a food', () => {
+    const e = new KitchenEngine(); e.dispatch({type: 'start-recipe', recipeId: 'avocado-toast'}); const view = fitScene({left: 0, top: 0, width: 1000, height: 440});
+    const board = recipe('avocado-toast').layout['cutting-board'];
+    expect(resolveDrop(board, 'avocado', e.snapshot(), view, t => e.preview('avocado', t).accepted)).toEqual({kind: 'item', id: 'cutting-board'});
+    drop(e, 'avocado', 'cutting-board');
+    expect(resolveDrop(item(e, 'avocado').anchor, 'knife', e.snapshot(), view, t => e.preview('knife', t).accepted)).toEqual({kind: 'item', id: 'avocado'});
+    expect(resolveDrop({x: -5, y: 10}, 'knife', e.snapshot(), view)).toBeNull();
   });
 });
 
-describe('salad DOM, Pointer Events and UI', () => {
-  it('starts at recipe selection, hides chicken objects, then displays the table and guide', () => {
-    const k = mount(); expect(k.root.querySelector<HTMLElement>('#recipe-screen')!.hidden).toBe(false); expect(k.root.querySelector<HTMLButtonElement>('#recipe-chicken')!.hasAttribute('disabled')).toBe(false);
-    k.begin(); expect(k.root.querySelector<HTMLElement>('#recipe-screen')!.hidden).toBe(true); expect(k.node('chicken').hidden).toBe(true);
-    expect(k.root.querySelector<HTMLElement>('#recipe-guide')!.getAttribute('aria-label')).toContain('couper');
+describe('DOM, Pointer Events and UI', () => {
+  it('starts at the recipe cards, then shows only the chosen recipe’s objects with the guide', () => {
+    const k = mount(); expect(k.root.querySelector<HTMLElement>('#recipe-screen')!.hidden).toBe(false);
+    expect([...k.root.querySelectorAll<HTMLElement>('.menu-recipe')].map(b => b.id)).toEqual(['recipe-avocado-toast', 'recipe-moelleux', 'recipe-chicken']);
+    expect(k.root.querySelector('#recipe-salad')).toBeNull();
+    k.begin('avocado-toast');
+    expect(k.root.querySelector<HTMLElement>('#recipe-screen')!.hidden).toBe(true); expect(k.node('chicken').hidden).toBe(true); expect(k.node('avocado').hidden).toBe(false);
+    expect(k.root.querySelector('#kitchen-title')!.textContent).toBe('Avocado toast');
+    expect(k.root.querySelector('#guide-hint')!.textContent).toBe('Pose l’avocat sur la planche');
+    expect(k.root.querySelector('#guide-count')!.textContent).toBe('Étape 1 sur 12');
+    expect(k.root.querySelectorAll('#guide-steps li')).toHaveLength(12);
+    expect(k.root.querySelector('.guide-thumb img')!.getAttribute('src')).toBe(ART_URLS['avocado-whole']);
+    expect(k.node('avocado').dataset.hint).toBe('actor'); expect(k.node('cutting-board').dataset.hint).toBe('target');
+    expect(k.root.querySelector<HTMLElement>('#recipe-guide')!.getAttribute('aria-label')).toContain('ajoute la tranche de saumon fumé');
   });
-  it('executes drag down → move → up for food and knife, updates cut art and bowl contents, then completes by oil drop', () => {
-    const completed = vi.fn(); const k = mount(false, completed); k.begin();
-    k.dragToZone('tomato', 'cutting-board'); expect(k.node('tomato').dataset.location).toBe('cutting-board');
-    const whole = k.node('tomato').querySelector('.object-art')!.innerHTML;
-    k.dragItem('knife', k.at('tomato')); expect(k.node('tomato').dataset.preparation).toBe('cut');
-    expect(k.node('tomato').querySelector('.object-art')!.innerHTML).not.toBe(whole);
-    expect(k.node('knife').dataset.location).toBe('tool-rack');
-    expect(k.node('tomato').dataset.effect).toBe('cut');
-    k.dragToZone('tomato', 'bowl'); expect(k.node('bowl').dataset.accessibleName).toContain('Tomate');
-    for (const id of ['mozzarella', 'cucumber']) { k.dragToZone(id, 'cutting-board'); k.dragItem('knife', k.at(id)); k.dragToZone(id, 'bowl'); }
-    expect(k.root.querySelector('.bowl-content')!.innerHTML).toContain('#dc725d');
-    k.tapItem('olive-oil'); k.node('olive-oil').click(); expect(k.engine.snapshot().phase).toBe('playing');
-    k.dragToZone('olive-oil', 'bowl'); expect(k.engine.snapshot().phase).toBe('completed');
+  it('drags with down → move → up, changes the painted state, returns the knife and plays effects', () => {
+    const k = mount(); k.begin('avocado-toast');
+    k.dragTo('avocado', 'cutting-board'); expect(k.node('avocado').dataset.location).toBe('cutting-board');
+    expect(k.node('avocado').querySelector('img')!.getAttribute('src')).toBe(ART_URLS['avocado-whole']);
+    k.dragItem('knife', k.at('avocado'));
+    expect(k.node('avocado').dataset.state).toBe('cut');
+    expect(k.node('avocado').querySelector('img')!.getAttribute('src')).toBe(ART_URLS['avocado-cut']);
+    expect(k.node('avocado').dataset.effect).toBe('cut');
+    expect(k.engine.snapshot().items.find(i => i.id === 'knife')!.anchor).toEqual(recipe('avocado-toast').layout.knife);
+    k.dragTo('avocado', 'bowl');
+    expect(k.node('avocado').hidden).toBe(true); expect(k.node('bowl').dataset.accessibleName).toBe('Saladier, avec l’avocat coupé');
+    expect(k.root.querySelector('#guide-count')!.textContent).toBe('Étape 4 sur 12');
+    expect([...k.root.querySelectorAll<HTMLElement>('#guide-steps li')].map(li => li.dataset.step).slice(0, 5)).toEqual(['done', 'done', 'done', 'next', 'todo']);
+  });
+  it('shows the cooking on the stove and finishes the toast through real drags', () => {
+    const completed = vi.fn(); const k = mount(false, completed); k.begin('avocado-toast');
+    play(k.engine, 'avocado-toast', 9); k.refresh();
+    k.dragTo('bread', 'pan');
+    expect(k.node('stove').dataset.cooking).toBe('true'); expect(k.node('pan').dataset.cooking).toBe('true');
+    expect(k.node('pan').hidden).toBe(false);
+    expect(k.root.querySelector('#guide-hint')!.textContent).toBe('Ça cuit…');
+    vi.advanceTimersByTime(1500);
+    expect(k.node('stove').style.getPropertyValue('--cook-progress')).toBe('180deg');
+    vi.advanceTimersByTime(1600);
+    expect(k.node('stove').dataset.cooking).toBe('false'); expect(k.node('plate').dataset.state).toBe('toast');
+    expect(k.node('pan').dataset.effect).toBe('cooked');
+    expect(k.root.querySelector('#kitchen-message')!.textContent).toBe('Tartines dorées, posées sur l’assiette !');
+    k.dragTo('bowl', 'plate'); k.dragTo('salmon', 'plate');
     expect(completed).toHaveBeenCalledOnce();
-    expect(completed).toHaveBeenLastCalledWith({recipeId: 'salad', activeTimeMs: 0, invalidActions: 0});
-    expect(k.node('olive-oil').dataset.effect).toBe('pour');
-    expect(k.root.querySelector<HTMLElement>('.bowl-content')!.dataset.effect).toBe('dressed');
-    expect(k.root.querySelector<HTMLElement>('#result-screen')!.hidden).toBe(false); expect(k.root.querySelector<HTMLElement>('#result-title')!.textContent).toBe('Salade réussie !');
-  });
-  it('counts invalid drops but not pointercancel, second finger, or rotation', () => {
-    const k = mount(); k.begin(); k.dragToZone('tomato', 'bowl'); expect(k.engine.snapshot().invalidActions).toBe(1);
-    k.event(k.node('cucumber'), 'pointerdown', k.at('cucumber')); k.move(k.toZone('cutting-board')); k.event(k.surface, 'pointercancel', k.toZone('cutting-board'));
-    k.event(k.node('tomato'), 'pointerdown', k.at('tomato')); k.move(k.toZone('cutting-board')); k.event(document.body, 'pointerdown', {x: 1, y: 1}, 2);
-    expect(k.engine.snapshot().invalidActions).toBe(1); k.rotate(true); expect(k.engine.snapshot().invalidActions).toBe(1);
-  });
-  it('selects oil on tap without applying it and counts a deliberate irrelevant bottle drop', () => {
-    const k = mount(); k.begin(); const origin = k.at('olive-oil');
-    k.event(k.node('olive-oil'), 'pointerdown', origin); k.move({x: origin.x + 12, y: origin.y}); k.event(k.surface, 'pointerup', {x: origin.x + 12, y: origin.y});
-    expect(k.engine.snapshot().items.find(item => item.id === 'olive-oil')?.flags).toEqual({});
-    expect(k.engine.snapshot().invalidActions).toBe(1); k.tapItem('olive-oil'); expect(k.engine.snapshot().invalidActions).toBe(1);
-  });
-  it('blocks all recipe actions in portrait and preserves recipe state through landscape return', () => {
-    const k = mount(); k.begin(); k.rotate(true); expect(k.engine.canDrag('tomato')).toBe(false);
-    expect(k.root.querySelector<HTMLElement>('#orientation-screen')!.hidden).toBe(false); k.node('olive-oil').click(); expect(k.engine.snapshot().invalidActions).toBe(0);
-    k.rotate(false); expect(k.root.querySelector<HTMLElement>('#orientation-screen')!.hidden).toBe(true); k.dragToZone('tomato', 'cutting-board'); expect(k.node('tomato').dataset.location).toBe('cutting-board');
-  });
-  it('replay through the result action clears progress and returns to a fresh salad', () => {
-    const k = mount(); k.begin(); finishWithOil(k.engine, ['tomato', 'cucumber', 'mozzarella']); k.scene.render(k.engine.snapshot());
-    k.root.querySelector<HTMLButtonElement>('#recipe-replay')!.click();
-    expect(k.engine.snapshot()).toMatchObject({phase: 'playing', activeTimeMs: 0, invalidActions: 0});
-    expect(k.node('tomato').dataset.location).toBe('reserve'); expect(k.node('tomato').dataset.preparation).toBe('whole');
-    expect(k.root.querySelector<HTMLElement>('#result-screen')!.hidden).toBe(true);
-  });
-});
-
-function startChicken(engine: KitchenEngine) { return engine.dispatch({type: 'start-recipe', recipeId: 'chicken'}); }
-function tool(engine: KitchenEngine, id: string, target: string) { return engine.dispatch({type: 'use-tool', toolId: id, targetId: target}); }
-function chickenReady(engine: KitchenEngine) {
-  zoneDrop(engine, 'chicken', 'cutting-board'); tool(engine, 'knife', 'chicken');
-  applyBottle(engine, 'soy', 'chicken'); applyBottle(engine, 'honey', 'chicken');
-  zoneDrop(engine, 'chicken', 'reserve-chicken');
-}
-function potatoReady(engine: KitchenEngine) {
-  zoneDrop(engine, 'sweet-potato', 'cutting-board'); tool(engine, 'peeler', 'sweet-potato'); tool(engine, 'knife', 'sweet-potato');
-  zoneDrop(engine, 'sweet-potato', 'reserve-sweet-potato');
-}
-function finishChicken(engine: KitchenEngine, order: 'chicken-first' | 'potato-first' = 'chicken-first') {
-  const steps = order === 'chicken-first' ? [chickenReady, potatoReady] : [potatoReady, chickenReady];
-  steps[0](engine); const first = order === 'chicken-first' ? 'chicken' : 'sweet-potato';
-  expect(zoneDrop(engine, first, 'baking-dish').accepted).toBe(true);
-  steps[1](engine); const second = order === 'chicken-first' ? 'sweet-potato' : 'chicken';
-  expect(zoneDrop(engine, second, 'baking-dish').accepted).toBe(true);
-  expect(engine.dispatch({type: 'drop', itemId: 'baking-dish', target: {kind: 'zone', id: 'oven'}})).toMatchObject({accepted: true, effect: 'oven'});
-}
-
-describe('chicken and roasted sweet potato engine', () => {
-  it('requires cutting the raw chicken before soy, then honey after soy, and accepts seasoned chicken in the dish', () => {
-    const e = new KitchenEngine(); startChicken(e);
-    expect(applyBottle(e, 'soy', 'chicken')).toMatchObject({accepted: false, message: 'Coupe d’abord le poulet'});
-    zoneDrop(e, 'chicken', 'cutting-board'); expect(tool(e, 'knife', 'chicken')).toMatchObject({accepted: true, effect: 'cut'});
-    expect(applyBottle(e, 'honey', 'chicken')).toMatchObject({accepted: false, message: 'Ajoute d’abord la sauce soja'});
-    expect(applyBottle(e, 'soy', 'chicken').accepted).toBe(true); expect(applyBottle(e, 'honey', 'chicken').accepted).toBe(true);
-    expect(e.snapshot().items.find(i => i.id === 'chicken')?.flags).toEqual({soyAdded: true, honeyAdded: true});
-    expect(zoneDrop(e, 'chicken', 'baking-dish').accepted).toBe(true);
-  });
-  it('requires peeling before knife-cutting the potato and changes it to peeled then cut', () => {
-    const e = new KitchenEngine(); startChicken(e); zoneDrop(e, 'sweet-potato', 'cutting-board');
-    expect(tool(e, 'knife', 'sweet-potato')).toMatchObject({accepted: false, message: 'Épluche-la d’abord.'});
-    expect(e.snapshot().items.find(i => i.id === 'sweet-potato')?.preparation).toBe('whole');
-    expect(tool(e, 'peeler', 'sweet-potato')).toMatchObject({accepted: true, effect: 'peel'});
-    expect(e.snapshot().items.find(i => i.id === 'sweet-potato')?.preparation).toBe('peeled');
-    expect(tool(e, 'knife', 'sweet-potato')).toMatchObject({accepted: true, effect: 'cut'});
-    expect(e.snapshot().items.find(i => i.id === 'sweet-potato')?.preparation).toBe('cut');
-  });
-  it('keeps preparation when an ingredient returns to reserve and enforces one board occupant', () => {
-    const e = new KitchenEngine(); startChicken(e); zoneDrop(e, 'chicken', 'cutting-board');
-    expect(zoneDrop(e, 'sweet-potato', 'cutting-board')).toMatchObject({accepted: false, message: 'La planche est occupée.'});
-    tool(e, 'knife', 'chicken'); applyBottle(e, 'soy', 'chicken'); applyBottle(e, 'honey', 'chicken');
-    expect(zoneDrop(e, 'chicken', 'reserve-chicken').accepted).toBe(true);
-    expect(e.snapshot().items.find(i => i.id === 'chicken')).toMatchObject({preparation: 'cut', location: 'reserve', flags: {soyAdded: true, honeyAdded: true}});
-  });
-  it('rejects incomplete foods and accepts either food order in the baking dish', () => {
-    for (const order of ['chicken-first', 'potato-first'] as const) {
-      const e = new KitchenEngine(); startChicken(e);
-      expect(zoneDrop(e, 'chicken', 'baking-dish').accepted).toBe(false);
-      expect(zoneDrop(e, 'sweet-potato', 'baking-dish').accepted).toBe(false);
-      finishChicken(e, order); expect(e.snapshot().items.find(i => i.id === 'baking-dish')?.location).toBe('oven');
-      expect(e.snapshot().items.filter(i => i.location === 'oven' && i.kind === 'food')).toHaveLength(2);
-    }
-  });
-  it('requires a complete dish for the oven and cooks for exactly five active seconds', () => {
-    const e = new KitchenEngine(); startChicken(e); chickenReady(e);
-    expect(e.canDrag('baking-dish')).toBe(false);
-    zoneDrop(e, 'chicken', 'baking-dish');
-    expect(e.dispatch({type: 'drop', itemId: 'baking-dish', target: {kind: 'zone', id: 'oven'}}).accepted).toBe(false);
-    potatoReady(e); zoneDrop(e, 'sweet-potato', 'baking-dish');
-    e.dispatch({type: 'drop', itemId: 'baking-dish', target: {kind: 'zone', id: 'oven'}});
-    e.advance(4999); expect(e.snapshot()).toMatchObject({phase: 'playing', cookingRemainingMs: 1});
-    expect(e.snapshot().items.find(i => i.id === 'chicken')?.preparation).toBe('cut');
-    e.setPaused('portrait', true); e.advance(2000); expect(e.snapshot().cookingRemainingMs).toBe(1);
-    e.setPaused('portrait', false); e.setPaused('hidden', true); e.advance(2000); expect(e.snapshot().cookingRemainingMs).toBe(1);
-    e.setPaused('hidden', false); e.advance(1);
-    expect(e.snapshot()).toMatchObject({phase: 'completed', cookingRemainingMs: 0});
-    expect(e.snapshot().items.filter(i => ['chicken', 'sweet-potato'].includes(i.id)).every(i => i.preparation === 'cooked')).toBe(true);
-  });
-  it('replays chicken with every item, seasoning, dish, oven, timer and error reset', () => {
-    const e = new KitchenEngine(); startChicken(e); applyBottle(e, 'soy', 'chicken'); finishChicken(e); e.advance(1200);
-    expect(e.snapshot().invalidActions).toBeGreaterThan(0);
-    e.dispatch({type: 'reset-recipe'});
-    expect(e.snapshot()).toMatchObject({phase: 'playing', recipe: 'chicken', activeTimeMs: 0, invalidActions: 0, cookingRemainingMs: 0});
-    for (const id of ['chicken', 'sweet-potato']) expect(e.snapshot().items.find(i => i.id === id)).toMatchObject({location: 'reserve', draggable: true, interactive: true});
-    expect(e.snapshot().items.find(i => i.id === 'sweet-potato')?.preparation).toBe('whole');
-    expect(e.snapshot().items.find(i => i.id === 'chicken')?.flags).toEqual({});
-    expect(e.snapshot().items.find(i => i.id === 'baking-dish')?.location).toBe('dish-rack');
-  });
-});
-
-describe('chicken DOM, Pointer Events and result', () => {
-  it('keeps the oven dish and progress renderable while contained foods stay hidden', () => {
-    const style = document.createElement('style'); style.textContent = kitchenCSS; document.body.append(style);
-    const k = mount(); k.beginChicken();
-    chickenReady(k.engine); potatoReady(k.engine);
-    zoneDrop(k.engine, 'chicken', 'baking-dish'); zoneDrop(k.engine, 'sweet-potato', 'baking-dish');
-    k.scene.render(k.engine.snapshot()); k.dragToZone('baking-dish', 'oven');
-    const dish = k.node('baking-dish');
-    expect(k.engine.snapshot().cookingRemainingMs).toBe(5000);
-    expect(dish.dataset.inDish).toBe('false');
-    expect(dish.hidden).toBe(false);
-    expect(getComputedStyle(dish).opacity).not.toBe('0');
-    expect(getComputedStyle(dish).display).not.toBe('none');
-    expect(getComputedStyle(dish).visibility).not.toBe('hidden');
-    // happy-dom does not paint pseudo-elements: verify the matching CSS rule and its dimensions.
-    const progressRule = Array.from(style.sheet!.cssRules).find(rule => 'selectorText' in rule && /:{1,2}after$/.test(String(rule.selectorText)) && dish.matches(String(rule.selectorText).replace(/:{1,2}after$/, ''))) as CSSStyleRule;
-    expect(progressRule).toBeDefined();
-    expect(progressRule.style.content).toBe('""');
-    expect(progressRule.style.height).toBe('5px');
-    expect(progressRule.style.background).toContain('var(--cook-progress)');
-    expect(dish.style.getPropertyValue('--cook-progress')).toBe('0%');
-    for (const id of ['chicken', 'sweet-potato']) {
-      expect(k.node(id).dataset.inDish).toBe('true');
-      expect(getComputedStyle(k.node(id)).opacity).toBe('0');
-      expect(k.engine.canDrag(id)).toBe(false); expect(k.engine.canSelect(id)).toBe(false);
-    }
-    expect(k.root.querySelector<HTMLElement>('.dish-content')!.hidden).toBe(false);
-    vi.advanceTimersByTime(2000);
-    expect(dish.dataset.progress).toBe('0.4');
-    expect(dish.style.getPropertyValue('--cook-progress')).toBe('40%');
-    expect(getComputedStyle(dish).opacity).not.toBe('0');
-    vi.advanceTimersByTime(3000);
-    expect(k.engine.snapshot()).toMatchObject({phase: 'completed', cookingRemainingMs: 0});
+    expect(completed.mock.calls[0][0]).toMatchObject({recipeId: 'avocado-toast', invalidActions: 0});
     expect(k.root.querySelector<HTMLElement>('#result-screen')!.hidden).toBe(false);
+    expect(k.root.querySelector('#result-title')!.textContent).toBe('Avocado toast réussi !');
+    expect(k.root.querySelector('.result-art [data-dish="avocado-toast"] img')!.getAttribute('src')).toBe(ART_URLS['plate-salmon']);
   });
-
-  it('moves visible dish contents with the dish before committing the oven drop', () => {
-    const k = mount(); k.beginChicken();
-    chickenReady(k.engine); potatoReady(k.engine);
-    zoneDrop(k.engine, 'chicken', 'baking-dish'); zoneDrop(k.engine, 'sweet-potato', 'baking-dish');
-    k.scene.render(k.engine.snapshot());
-    const dish = k.node('baking-dish'), contents = k.root.querySelector<HTMLElement>('.dish-content')!;
-    const translation = (node: HTMLElement) => node.style.transform.match(/translate3d\(([-\d.]+)px,\s*([-\d.]+)px/)!.slice(1).map(Number);
-    const startDish = translation(dish), startContents = translation(contents);
-    expect(contents.hidden).toBe(false);
-    expect(contents.querySelector('path')).not.toBeNull();
-    expect(contents.querySelector('g')).not.toBeNull();
-    for (const id of ['chicken', 'sweet-potato']) {
-      expect(k.engine.canDrag(id)).toBe(false); expect(k.engine.canSelect(id)).toBe(false);
-    }
-    const start = k.at('baking-dish'), oven = k.toZone('oven');
-    k.event(dish, 'pointerdown', start);
-    k.move({x: (start.x + oven.x) / 2, y: (start.y + oven.y) / 2});
-    const movedDish = translation(dish), movedContents = translation(contents);
-    expect(movedContents).not.toEqual(startContents);
-    for (const axis of [0, 1]) expect(movedContents[axis] - startContents[axis]).toBeCloseTo(movedDish[axis] - startDish[axis]);
-    expect(Number(contents.style.zIndex)).toBeGreaterThan(Number(dish.style.zIndex));
-    expect(dish.dataset.location).toBe('dish-rack');
-    vi.advanceTimersByTime(100); // Periodic rendering must not restore the old content position.
-    expect(translation(contents)).toEqual(movedContents);
-    k.move(oven); k.event(k.surface, 'pointerup', oven);
-    expect(dish.dataset.location).toBe('oven');
-    expect(k.engine.snapshot().cookingRemainingMs).toBe(5000);
-    expect(contents.style.zIndex).toBe('');
+  it('counts invalid drops but not pointercancel, a second finger, or rotation', () => {
+    const k = mount(); k.begin('moelleux'); k.dragTo('flour', 'bowl'); expect(k.engine.snapshot().invalidActions).toBe(1);
+    expect(k.root.querySelector('#kitchen-message')!.textContent).toMatch(/^Pas encore/);
+    k.event(k.node('eggs'), 'pointerdown', k.at('eggs')); k.move(k.at('bowl')); k.event(k.surface, 'pointercancel', k.at('bowl'));
+    k.event(k.node('butter'), 'pointerdown', k.at('butter')); k.move(k.at('saucepan')); k.event(document.body, 'pointerdown', {x: 1, y: 1}, 2);
+    expect(k.engine.snapshot().invalidActions).toBe(1); k.rotate(true); expect(k.engine.snapshot().invalidActions).toBe(1);
+    expect(k.engine.snapshot().doneSteps).toBe(0);
   });
-
-  it('keeps an incomplete dish stationary and tappable, then allows dragging the complete dish', () => {
-    const k = mount(); k.beginChicken();
-    const dish = k.node('baking-dish');
-    const attemptIncompleteDrag = () => {
-      expect(k.engine.canDrag('baking-dish')).toBe(false);
-      const transform = dish.style.transform;
-      k.event(dish, 'pointerdown', k.at('baking-dish'));
-      k.move(k.toZone('oven'));
-      expect(dish.style.transform).toBe(transform);
-      expect(dish.classList.contains('grabbed')).toBe(false);
-      expect(k.drag.activeId).toBeNull();
-      k.event(k.surface, 'pointerup', k.toZone('oven'));
-      expect(k.engine.snapshot().invalidActions).toBe(0);
-      expect(dish.dataset.location).toBe('dish-rack');
-      k.tapItem('baking-dish');
-      expect(k.engine.snapshot().selectedId).toBe('baking-dish');
-    };
-    attemptIncompleteDrag();
-    chickenReady(k.engine); zoneDrop(k.engine, 'chicken', 'baking-dish');
-    k.scene.render(k.engine.snapshot());
-    attemptIncompleteDrag();
-    potatoReady(k.engine); zoneDrop(k.engine, 'sweet-potato', 'baking-dish');
-    k.scene.render(k.engine.snapshot());
-    expect(k.engine.canDrag('baking-dish')).toBe(true);
-    const transform = dish.style.transform;
-    k.event(dish, 'pointerdown', k.at('baking-dish'));
-    k.move(k.toZone('oven'));
-    expect(dish.classList.contains('grabbed')).toBe(true);
-    expect(dish.style.transform).not.toBe(transform);
-    expect(k.drag.activeId).toBe('baking-dish');
-    k.event(k.surface, 'pointerup', k.toZone('oven'));
-    expect(k.engine.snapshot()).toMatchObject({cookingRemainingMs: 5000, invalidActions: 0});
-    expect(dish.dataset.location).toBe('oven');
+  it('selects on tap without moving anything, and tells what the object is for', () => {
+    const k = mount(); k.begin('chicken');
+    k.tapItem('chicken');
+    expect(k.engine.snapshot()).toMatchObject({selectedId: 'chicken', invalidActions: 0, doneSteps: 0});
+    expect(k.root.querySelector('#kitchen-message')!.textContent).toBe('Poulet : pose le poulet sur la planche.');
+    expect(k.node('chicken').dataset.selected).toBe('true');
   });
-
-  it('completes chicken and potato using pointer drags, bottle drops, oven timing, and replay', () => {
-    const completed = vi.fn(); const k = mount(false, completed); k.beginChicken();
-    expect(k.node('chicken').hidden).toBe(false); expect(k.node('sweet-potato').hidden).toBe(false); expect(k.node('bowl').hidden).toBe(true);
-    expect(k.node('chicken').querySelector('.object-label')!.textContent).toBe('Poulet cru');
-    k.dragToZone('chicken', 'cutting-board'); k.dragItem('knife', k.at('chicken'));
-    expect(k.node('chicken').dataset.preparation).toBe('cut');
-    expect(k.node('chicken').querySelector('.object-label')!.textContent).toBe('Poulet coupé');
-    k.dragItem('soy', k.at('chicken')); k.dragItem('honey', k.at('chicken')); expect(k.node('chicken').dataset.flags).toContain('honeyAdded');
-    k.dragToZone('chicken', 'reserve-chicken');
-    k.dragToZone('sweet-potato', 'cutting-board'); const whole = k.node('sweet-potato').querySelector('.object-art')!.innerHTML;
-    k.dragItem('knife', k.at('sweet-potato')); expect(k.node('sweet-potato').dataset.preparation).toBe('whole');
-    k.dragItem('peeler', k.at('sweet-potato')); expect(k.node('sweet-potato').dataset.preparation).toBe('peeled');
-    expect(k.node('sweet-potato').querySelector('.object-label')!.textContent).toBe('Patate douce épluchée');
-    expect(k.node('sweet-potato').querySelector('.object-art')!.innerHTML).not.toBe(whole);
-    k.dragItem('knife', k.at('sweet-potato')); expect(k.node('sweet-potato').dataset.preparation).toBe('cut');
-    k.dragToZone('sweet-potato', 'reserve-sweet-potato'); k.dragToZone('chicken', 'baking-dish'); k.dragToZone('sweet-potato', 'baking-dish');
-    expect(k.node('baking-dish').dataset.accessibleName).toContain('Poulet');
-    k.dragToZone('baking-dish', 'oven'); expect(k.node('baking-dish').dataset.cooking).toBe('true');
-    vi.advanceTimersByTime(5000);
-    expect(completed).toHaveBeenCalledOnce();
-    expect(completed).toHaveBeenLastCalledWith({recipeId: 'chicken', activeTimeMs: 5000, invalidActions: 1});
-    vi.advanceTimersByTime(1000); expect(completed).toHaveBeenCalledOnce();
-    expect(k.engine.snapshot().phase).toBe('completed'); expect(k.node('chicken').dataset.preparation).toBe('cooked');
-    expect(k.root.querySelector('#result-title')!.textContent).toContain('Poulet soja-miel');
+  it('blocks every action in portrait and keeps the recipe through the landscape return', () => {
+    const k = mount(); k.begin('chicken'); k.rotate(true); expect(k.engine.canDrag('chicken')).toBe(false);
+    expect(k.root.querySelector<HTMLElement>('#orientation-screen')!.hidden).toBe(false); k.node('soy').click(); expect(k.engine.snapshot().invalidActions).toBe(0);
+    k.rotate(false); expect(k.root.querySelector<HTMLElement>('#orientation-screen')!.hidden).toBe(true);
+    k.dragTo('chicken', 'cutting-board'); expect(k.node('chicken').dataset.location).toBe('cutting-board');
+  });
+  it('replays through the result card and returns to a fresh recipe; the chooser lists the recipes again', () => {
+    const k = mount(); k.begin('moelleux'); play(k.engine, 'moelleux'); k.refresh();
+    expect(k.root.querySelector<HTMLElement>('#result-screen')!.hidden).toBe(false);
+    expect(k.root.querySelector('#result-title')!.textContent).toBe('Moelleux réussi !');
     k.root.querySelector<HTMLButtonElement>('#recipe-replay')!.click();
-    expect(k.engine.snapshot()).toMatchObject({phase: 'playing', activeTimeMs: 0, invalidActions: 0, cookingRemainingMs: 0});
-    expect(k.node('sweet-potato').dataset.preparation).toBe('whole'); expect(k.node('baking-dish').dataset.location).toBe('dish-rack');
+    expect(k.engine.snapshot()).toMatchObject({phase: 'playing', recipe: 'moelleux', activeTimeMs: 0, invalidActions: 0});
+    expect(k.node('mould').dataset.state).toBe('empty'); expect(k.root.querySelector<HTMLElement>('#result-screen')!.hidden).toBe(true);
+    play(k.engine, 'moelleux'); k.refresh();
+    k.root.querySelector<HTMLButtonElement>('#recipe-choose')!.click();
+    expect(k.root.querySelector<HTMLElement>('#recipe-screen')!.hidden).toBe(false); expect(k.engine.snapshot().recipe).toBeNull();
   });
 });

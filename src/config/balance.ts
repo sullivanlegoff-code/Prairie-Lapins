@@ -5,8 +5,10 @@ export const HOUR = 3_600_000;
 export const MINUTE = 60_000;
 /** Cuisine pays full rewards for the first successful completions of each daily cycle, all recipes together. */
 export const CUISINE_FULL_REWARDS_PER_CYCLE = 5;
-/** Full reward by recipe: the longer recipe pays more, the average stays 50 coins. */
-export const CUISINE_REWARDS = {salad: {pattes: 40, grass: 3}, chicken: {pattes: 60, grass: 3}} as const;
+/** Full reward by recipe: the chicken (oven and two preparations) pays more, the average stays 50 coins.
+ * The salad was removed on 1 November 2026: no save stores a recipe id, only the shared slots of the cycle. */
+export const CUISINE_REWARDS = {'avocado-toast': {pattes: 45, grass: 3}, moelleux: {pattes: 45, grass: 3}, chicken: {pattes: 60, grass: 3}} as const;
+export type CuisineRecipeId = keyof typeof CUISINE_REWARDS;
 /** Every completion after the full-reward slots of the cycle: replay stays possible, but it is only a tip. */
 export const CUISINE_TIP = {pattes: 5, grass: 1} as const;
 /**

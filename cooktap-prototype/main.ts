@@ -1,6 +1,7 @@
 import {KitchenEngine, type RecipeId} from './engine';
 import {fitScene, type Rect} from './geometry';
 import {createScene} from './scene';
+import {ART_URLS, BACKDROP_URL} from './art';
 import {bindKitchenDrag} from './drag';
 import {mountKitchenUI} from './ui';
 import kitchenCSS from './style.css?raw';
@@ -18,6 +19,8 @@ export function mountKitchen(host: HTMLElement, options: MountOptions = {}) {
   const root = document.createElement('section'); root.className = 'cuisine-root'; root.lang = 'fr';
   const style = document.createElement('style'); style.textContent = kitchenCSS;
   root.innerHTML = shell; root.prepend(style); host.append(root);
+  root.style.setProperty('--kitchen-backdrop', BACKDROP_URL ? `url("${BACKDROP_URL}")` : 'none');
+  root.style.setProperty('--kitchen-steam', ART_URLS.steam ? `url("${ART_URLS.steam}")` : 'none');
   const abort = new AbortController(), engine = new KitchenEngine();
   let ui: ReturnType<typeof mountKitchenUI>;
   const surface = root.querySelector<HTMLElement>('#kitchen-surface')!, world = root.querySelector<HTMLElement>('#kitchen-world')!;
@@ -44,12 +47,7 @@ export function mountKitchen(host: HTMLElement, options: MountOptions = {}) {
     else if (resetRequested || snapshot.recipe !== presented.recipe || snapshot.phase !== presented.phase ||
       snapshot.invalidActions < presented.invalidActions || snapshot.activeTimeMs < presented.activeTimeMs) event = 'reset';
     else if (snapshot.invalidActions > presented.invalidActions) event = 'invalid';
-    else if (snapshot.items.some(item => {
-      const before = presented.items.find(old => old.id === item.id);
-      return before && (item.preparation !== before.preparation ||
-        Object.keys(item.flags).some(flag => item.flags[flag] !== before.flags[flag]) ||
-        item.location !== before.location && ['bowl', 'baking-dish', 'oven'].includes(item.location));
-    })) event = 'success';
+    else if (snapshot.doneSteps > presented.doneSteps) event = 'success';
     presented = snapshot;
     resetRequested = false;
     if (event) options.onPresentationEvent?.(event);
@@ -77,8 +75,12 @@ export function mountKitchen(host: HTMLElement, options: MountOptions = {}) {
   document.addEventListener('visibilitychange', visibility, {signal: abort.signal});
   window.addEventListener('pagehide', hide, {signal: abort.signal}); window.addEventListener('pageshow', show, {signal: abort.signal});
   const observer = new ResizeObserver(refresh); observer.observe(surface);
-  // Foundation for future active-time cooking, never a countdown or a score.
-  const clock = setInterval(() => { const now = performance.now(); engine.advance(now - previous); previous = now; if (engine.snapshot().recipe === 'chicken') render(); }, 100);
+  // Active-time cooking (oven, pan), never a countdown or a score.
+  const clock = setInterval(() => {
+    const now = performance.now(), cooking = engine.snapshot().cookingRemainingMs > 0, cooked = engine.advance(now - previous); previous = now;
+    if (cooked) { scene.playEffect(cooked.effectTargetId!, 'cooked'); ui.report(cooked); }
+    if (cooking || cooked) render();
+  }, 100);
   engine.setPaused('hidden', document.hidden); refresh();
   return {root, engine, scene, drag, refresh, dispose() {
     if (disposed) return; disposed = true; clearInterval(clock); observer.disconnect(); abort.abort();
