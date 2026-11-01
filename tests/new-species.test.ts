@@ -43,19 +43,19 @@ describe('approved three-species rules',()=>{
   // Different-type Common parents give only the Rares of the union and eligible specials.
   expect(breedingOdds('paille','feu',4,4)).toEqual({ardent:50,snk:50});
   expect(breedingOdds('paille','belier-gris',6,6)).toEqual({roukette:40,boudinet:40,magicien:10,calinou:10});
-  // Dadi (Feu-Metal since 27 October) x Phoenix at affection 10: Dragon keeps its fixed 10,5 % (7 % × 1,5); the other 89,5 % go by weight,
+  // Dadi (Feu-Metal since 27 October) x Phoenix at affection 10: Dragon keeps its fixed 15 % (10 % × 1,5); the other 85 % go by weight,
   // six Rares at 1200 and Dadi and Dinono at 450 each (a quarter of a Rare, × 1,5).
-  const pair=breedingOdds('dadi','phoenix',10,10);expect(pair.dragon).toBe(10.5);for(const id of ['dadi','dinono'] as const)expect(pair[id]).toBeCloseTo(89.5*450/8100,10);
+  const pair=breedingOdds('dadi','phoenix',10,10);expect(pair.dragon).toBe(15);for(const id of ['dadi','dinono'] as const)expect(pair[id]).toBeCloseTo(85*450/8100,10);
   // A mixed pair gives no Common result: feu, belier-gris and volant are absent from the pool.
   for(const id of ['feu','belier-gris','volant'] as const)expect(pair[id]).toBeUndefined();
-  for(const id of ['bouee','egiiipte','piment','bretonette','phoenix','amethyste'] as const)expect(pair[id]).toBeCloseTo(89.5*1200/8100,10);
+  for(const id of ['bouee','egiiipte','piment','bretonette','phoenix','amethyste'] as const)expect(pair[id]).toBeCloseTo(85*1200/8100,10);
   expect(Object.keys(pair)).toHaveLength(9);
  });
  it('reserves a special once and allocates exactly the remainder to ordinary results',()=>{
   const odds=breedingOdds('magicien','belier-gris',6,6);expect(odds.magicien).toBe(10);
   expect(Object.entries(odds).filter(([id])=>id!=='magicien').reduce((n,[,p])=>n+p,0)).toBeCloseTo(90,10);
-  const dragon=breedingOdds('dadi','phoenix',10,10);expect(dragon.dragon).toBe(10.5);
-  expect(Object.entries(dragon).filter(([id])=>id!=='dragon').reduce((n,[,p])=>n+p,0)).toBeCloseTo(89.5,10);
+  const dragon=breedingOdds('dadi','phoenix',10,10);expect(dragon.dragon).toBe(15);
+  expect(Object.entries(dragon).filter(([id])=>id!=='dragon').reduce((n,[,p])=>n+p,0)).toBeCloseTo(85,10);
  });
  it('still reserves simultaneous specials once each, with a synthetic second special',()=>{
   const original=SPECIES.boudinet;
@@ -116,7 +116,7 @@ describe('saved births, delays, compatibility and collection',()=>{
   const welcomed=run(growing, welcomeOf(growing, 'building-1'),ready);expect(welcomed.rabbits.at(-1)).toMatchObject({species:id,affection:1});expect(rabbitIncome(1, id, 5000)).toBe({bouee: 15, magicien: 20, dragon: 23}[id]);
  });
  it('starts the full Dragon growth only after an occupied nursery is freed',()=>{
-  // In the Dadi x Phoenix pool at affection 10, Dragon holds the draws in [0.895, 1) (its 10,5 % after the Rares and the Epics).
+  // In the Dadi x Phoenix pool at affection 10, Dragon holds the draws in [0.85, 1) (its 15 % after the Rares and the Epics).
   const dadiNest=growthDuration('dadi'), dragonNest=growthDuration('dragon'), dragonStart=dadiNest+dragonNest;
   let s=sendToNursery(advance(run(couple('dadi','phoenix',10),breed,0,0),dadiNest));s=run(s,breed,s.lastSimulatedAt,.95);s=advance(s,dragonStart);
   expect(s.buildings.find(b=>b.breeding)!.breeding!.birth.species).toBe('dragon');s=run(s, welcomeOf(s, 'building-1'));expect(stateBaby(s)).toBeNull();s=sendToNursery(s);
@@ -127,8 +127,8 @@ describe('saved births, delays, compatibility and collection',()=>{
   for(const type of ['universal','paille','neige','feu','metal','vol']as const){home.habitat!.type=type;expect(habitatEntryReason(s,home,id)).toBe(type==='universal'||SPECIES[id].types.includes(type)?null:'TYPE_INCOMPATIBLE')}
  });
  it('notebook shares actual odds, explains exact parents and suppresses specials under guarantee',()=>{
-  const s=knowEveryResult(couple('dadi','phoenix',10)),entry=recipeBook(s,0).find(r=>r.species==='dragon')!;expect(entry.pairs).toHaveLength(1);expect(entry.pairs[0]).toMatchObject({probability:'10,5 %',possible:true,guaranteed:false});
-  expect(oddsView(s,'dadi','phoenix',10,10).entries.map(e=>e.probability)).toEqual([...Array(6).fill('179/1350 (≈ 13,26 %)'),'179/3600 (≈ 4,97 %)','179/3600 (≈ 4,97 %)','10,5 %']);
+  const s=knowEveryResult(couple('dadi','phoenix',10)),entry=recipeBook(s,0).find(r=>r.species==='dragon')!;expect(entry.pairs).toHaveLength(1);expect(entry.pairs[0]).toMatchObject({probability:'15 %',possible:true,guaranteed:false});
+  expect(oddsView(s,'dadi','phoenix',10,10).entries.map(e=>e.probability)).toEqual([...Array(6).fill('17/135 (≈ 12,59 %)'),'17/360 (≈ 4,72 %)','17/360 (≈ 4,72 %)','15 %']);
   const wrong=couple('volant','feu',10);expect(recipeBook(wrong,0).find(r=>r.species==='dragon')!.pairs).toEqual([]);
   const guarantee=knowRecipes(couple('magicien','paille',6));guarantee.pityFailures=9;expect(recipeBook(guarantee,0).find(r=>r.species==='magicien')!.pairs[0]).toMatchObject({probability:'0 %',possible:false});
  });
