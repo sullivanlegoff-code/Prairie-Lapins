@@ -15,7 +15,7 @@ export const HOP_STEP = 9, HOP_DRIFT = 3;
  * Benny's painted animations in the meadow (Mythic rabbit). Two images are made once with her body and only change frame: the
  * whole painted pose (the sprite A1 is hidden meanwhile) and a small patch over A1 for the blink. Purely decoration: no state,
  * no input, no game random generator. Her clock lives on in the scene, so a rebuild of her body never cuts an act short.
- * TODO (owner, later): sky mode (`bennyInSky`), her flight and her power's animation; she stays in her enclosure for now.
+ * Her flight (sky mode and power) is drawn apart by BennyFlightView, which hides this enclosure body while she is in the air.
  */
 export class BennyView {
   /** Squash and stretch to multiply into the body's pose. */

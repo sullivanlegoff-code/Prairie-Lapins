@@ -15,6 +15,7 @@ import {HABITATS} from '../config/habitats';
 import {bennyAllows} from '../simulation/benny';
 import {LEGENDARY_TEST_EVENT} from '../config/legendaryArt';
 import {BENNY_TEST_EVENT} from '../config/bennyArt';
+import {BENNY_FLIGHT_TEST_EVENT} from '../config/bennyFlightArt';
 import type {BennyAct} from '../display/bennyTimeline';
 import type {LegendaryAct} from '../display/legendaryTimeline';
 import {showLegendaryReveal} from '../ui/legendaryReveal';
@@ -129,6 +130,17 @@ export function developmentEnvironment(base: SaveStorage, options: {decorationPr
       for (const [act, label] of bennyActs) button(label, `dev-benny-${act}`, () => {
         window.dispatchEvent(new CustomEvent(BENNY_TEST_EVENT, {detail: {act}}));
         status.textContent = `${label} : lancé sur Benny dans la prairie, dès qu’elle est libre (ferme ce panneau pour regarder).`;
+      });
+      // Her flight: the first two buttons change the test game's sky mode, as her card does; the third plays the power's flight alone.
+      const sky = (inSky: boolean, label: string) => {
+        const result = controller.perform({type: 'bennySky', inSky});
+        status.textContent = result.ok ? `${label} : lancé (ferme ce panneau pour regarder).` : 'Ajoute d’abord Benny à la partie de test.';
+      };
+      button('Benny : décollage et vol', 'dev-benny-fly', () => sky(true, 'Benny : décollage et vol'));
+      button('Benny : retour dans l’enclos', 'dev-benny-land', () => sky(false, 'Benny : retour dans l’enclos'));
+      button('Benny : pouvoir (animation seule)', 'dev-benny-power', () => {
+        window.dispatchEvent(new CustomEvent(BENNY_FLIGHT_TEST_EVENT));
+        status.textContent = 'Benny : pouvoir (animation seule) : lancé sans toucher à la partie (ferme ce panneau pour regarder).';
       });
       section('Placement manuel — habitat existant');
       const field = (label: string, id: string) => {

@@ -231,16 +231,20 @@ describe('Benny\'s sheet (simulated DOM, not a browser)', () => {
     expect(box().textContent).toContain('Benny est dans son enclos.'); expect(button('Faire voler Benny').disabled).toBe(false);
   });
   it('uses the power on a waiting baby, then shows the time left before recharge', () => {
-    const {controller} = setup(s => { s.buildings.find(b => b.kind === 'nursery')!.nursery!.babies.push(baby('birth-80', 'frisket', 0)); });
+    const {ui, controller} = setup(s => { s.buildings.find(b => b.kind === 'nursery')!.nursery!.babies.push(baby('birth-80', 'frisket', 0)); });
     const power = button('Utiliser le pouvoir'); expect(power.disabled).toBe(false); power.click();
+    // The card closes so the player sees her fly over the island; reopened, it shows the recharge.
+    expect(document.getElementById('game-panel')!.hidden).toBe(true); ui.open({kind: 'rabbit', id: 'rabbit-3'});
     const state = controller.getSnapshot().state!;
     expect(state.benny).toEqual({powerReadyAt: 48 * HOUR, inSky: false}); expect(state.buildings.find(b => b.kind === 'nursery')!.nursery!.babies[0].readyAt).toBe(0);
     expect(box().querySelector('[data-benny-recharge]')!.textContent).toBe('Recharge : encore 48 h 0 min');
     expect(reasonOf(button('Utiliser le pouvoir'))).toBe('Le pouvoir de Benny se recharge encore.');
   });
   it('switches the sky mode both ways from the sheet', () => {
-    const {controller} = setup(() => {});
+    const {ui, controller} = setup(() => {});
     button('Faire voler Benny').click(); expect(controller.getSnapshot().state!.benny?.inSky).toBe(true);
+    // The card closes so the player sees her take off; reopened, it offers to bring her back.
+    expect(document.getElementById('game-panel')!.hidden).toBe(true); ui.open({kind: 'rabbit', id: 'rabbit-3'});
     expect(box().textContent).toContain('Benny tourne dans le ciel au-dessus de l’île.');
     button('Ramener Benny dans l’enclos').click(); expect(controller.getSnapshot().state!.benny?.inSky).toBe(false);
   });

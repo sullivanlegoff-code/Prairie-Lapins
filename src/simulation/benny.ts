@@ -7,7 +7,7 @@ import type {GameState, Refusal} from '../state/types';
  * - Only one Benny per game: once owned, or already in the nest or the nursery, she leaves every breeding result.
  * - As a parent, she stands in for one Common rabbit drawn at random at each breeding.
  * - Her power ends the wait of every baby in the nursery at once, then recharges for 48 hours.
- * - Her sky mode is only a saved state for now (the flight animation comes later); she stays attached to her enclosure.
+ * - Her sky mode is a saved state (she flies over the island: src/display/bennyFlight.ts); she stays attached to her enclosure.
  */
 export const BENNY: SpeciesId = 'benny';
 export const BENNY_POWER_RECHARGE = 48 * HOUR;

@@ -1135,17 +1135,17 @@ export class GameUI {
     const food = releaseGrass(r.species);
     this.button(this.content, 'Confier ce lapin', () => this.confirm('Confier ce lapin ?', `Ce lapin quittera définitivement ta prairie. Tu reçois ${food} nourriture en remerciement.`, () => this.execute({type: 'release', id}, `Lapin confié · +${food} nourriture`, () => { this.view = {kind: 'building', id: r.enclosureId}; })), releaseReason(s, id, this.now()), true).classList.add('action-danger');
   }
-  /** Benny's power and sky mode (owner, 1 November 2026). The flight animation comes later: only the saved state changes. */
+  /** Benny's power and sky mode (owner, 1 November 2026). The card closes so the player sees her fly (src/display/bennyFlight.ts). */
   private renderBenny(s: GameState): void {
     const now = this.now(), box = node('section', '', 'benny-powers'); box.dataset.bennyPowers = '';
     box.append(node('h3', 'Pouvoir de Benny'), node('p', `Benny termine tout de suite l’attente de tous les lapereaux de la nurserie. Son pouvoir se recharge ensuite pendant ${BENNY_POWER_RECHARGE / 3_600_000} h.`, 'small'));
     const readyAt = bennyPowerReadyAt(s), recharge = node('p', readyAt > now ? `Recharge : encore ${timeLeft(readyAt, now)}` : 'Pouvoir prêt.', 'badge');
     recharge.dataset.bennyRecharge = ''; box.append(recharge);
     const reason = bennyPowerReason(s, now);
-    this.button(box, 'Utiliser le pouvoir', () => this.execute({type: 'bennyPower'}, 'Tous les lapereaux de la nurserie sont prêts !'), reason && REFUSALS[reason]).dataset.focus = 'benny-power';
+    this.button(box, 'Utiliser le pouvoir', () => this.execute({type: 'bennyPower'}, 'Tous les lapereaux de la nurserie sont prêts !', () => this.close()), reason && REFUSALS[reason]).dataset.focus = 'benny-power';
     const sky = bennyInSky(s);
     box.append(node('p', sky ? 'Benny tourne dans le ciel au-dessus de l’île. Elle reste rattachée à son enclos.' : 'Benny est dans son enclos.', 'small'));
-    this.button(box, sky ? 'Ramener Benny dans l’enclos' : 'Faire voler Benny', () => this.execute({type: 'bennySky', inSky: !sky}, sky ? 'Benny est revenue dans son enclos.' : 'Benny s’envole dans le ciel !'), null, true).dataset.focus = 'benny-sky';
+    this.button(box, sky ? 'Ramener Benny dans l’enclos' : 'Faire voler Benny', () => this.execute({type: 'bennySky', inSky: !sky}, sky ? 'Benny est revenue dans son enclos.' : 'Benny s’envole dans le ciel !', () => this.close()), null, true).dataset.focus = 'benny-sky';
     this.content.append(box);
   }
   /** The personal name, in a box after the feeding action: the species stays in the title and the badge. Text only, never HTML. */

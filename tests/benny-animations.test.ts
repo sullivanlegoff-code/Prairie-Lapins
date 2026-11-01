@@ -98,7 +98,9 @@ describe('Benny frames', () => {
     s.textures = {exists: (key: string) => loaded.has(key)};
     s.load = {image: vi.fn(), atlas: vi.fn(), once: vi.fn(), start: vi.fn()}; s.loading = {runtime: vi.fn()};
     s.ensureArt();
-    expect(s.load.atlas.mock.calls).toEqual([[BENNY_ATLAS.texture, BENNY_ATLAS.url, BENNY_ATLAS.atlas]]);
+    // Her flight atlas comes along (tests/benny-flight.test.ts).
+    expect(s.load.atlas.mock.calls[0]).toEqual([BENNY_ATLAS.texture, BENNY_ATLAS.url, BENNY_ATLAS.atlas]);
+    expect(s.load.atlas.mock.calls.filter((c: any[]) => c[0] === BENNY_ATLAS.texture)).toHaveLength(1);
     expect(s.load.image.mock.calls.map((c: any[]) => c[0])).not.toContain(BENNY_ATLAS.texture);
   });
 });
