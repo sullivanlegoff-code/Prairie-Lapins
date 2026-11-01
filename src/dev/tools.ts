@@ -12,6 +12,7 @@ import {GIFTED_RECIPES} from '../config/recipes';
 import {SPECIES, SPECIES_IDS, type SpeciesId} from '../config/species';
 import {BALANCE} from '../config/balance';
 import {HABITATS} from '../config/habitats';
+import {bennyAllows} from '../simulation/benny';
 import {LEGENDARY_TEST_EVENT} from '../config/legendaryArt';
 import type {LegendaryAct} from '../display/legendaryTimeline';
 import {showLegendaryReveal} from '../ui/legendaryReveal';
@@ -76,7 +77,7 @@ export function developmentEnvironment(base: SaveStorage, options: {decorationPr
     const state = controller.getSnapshot().state;
     if (!state) return {ok: false, reason: 'NO_GAME'};
     const home = state.buildings.find(b => b.id === enclosureId && b.kind === 'enclosure');
-    if (!Object.hasOwn(SPECIES, species) || !home) return {ok: false, reason: 'INVALID_TEST_VALUE'};
+    if (!Object.hasOwn(SPECIES, species) || !home || !bennyAllows(state, species)) return {ok: false, reason: 'INVALID_TEST_VALUE'};
     const refusal = habitatEntryReason(state, home, species);
     if (refusal) return {ok: false, state, reason: refusal};
     if (!Number.isSafeInteger(state.nextId + 1)) return {ok: false, reason: 'INVALID_TEST_VALUE'};

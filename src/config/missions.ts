@@ -43,7 +43,7 @@ export const MAIN_MISSION_IDS = [...DURABLE_MISSION_IDS, 'first-farm', 'cozy-nes
 export type MainMissionId = typeof MAIN_MISSION_IDS[number];
 export const MAIN_MISSIONS: Record<MainMissionId, MainDefinition> = {
   ...Object.fromEntries<MainDefinition>(SPECIES_IDS.map(species => {
-    const info = SPECIES[species], rank = info.rarity === 'legendary' ? 4 : info.rarity === 'epic' ? 3 : info.rarity === 'rare' ? 2 : 1;
+    const info = SPECIES[species], rank = info.rarity === 'legendary' || info.rarity === 'mythic' ? 4 : info.rarity === 'epic' ? 3 : info.rarity === 'rare' ? 2 : 1;
     const extraRewards: Reward[] = [{resource: 'grass', amount: rank * 10}];
     if (rank >= 3) extraRewards.push({resource: 'hearts', amount: rank - 2});
     return [`discover-${species}`, {title: `Découvrir ${info.name}`, description: `Accueille ${info.name} pour la première fois.`, condition: {kind: 'species', species}, reward: {resource: 'pattes', amount: rank * 20}, extraRewards, claimXp: 0} satisfies MainDefinition];

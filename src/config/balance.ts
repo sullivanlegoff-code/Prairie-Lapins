@@ -50,7 +50,7 @@ export const BALANCE = {
   incomeBase: 10, incomeRareBase: 10, incomePerLevel: 1,
   releaseGrass: {common: 10, rare: 25},
   /** A ready baby released from the nursery, by rarity (common: 20, decided by the owner). */
-  releaseBabyPattes: {common: 20, rare: 100, epic: 500, legendary: 1000},
+  releaseBabyPattes: {common: 20, rare: 100, epic: 500, legendary: 1000, mythic: 1000}, // Benny is never released (BENNY_KEPT).
   breedingCost: 0,
   commonGrowth: RARITIES.common.growthMinutes * MINUTE, rareGrowth: RARITIES.rare.growthMinutes * MINUTE, guaranteeAttempt: 8,
   buildings: {
@@ -68,7 +68,7 @@ export const BALANCE = {
  */
 /** Individual rare income uses a saved roll, not a species-wide bonus. */
 export const RARE_INCOME_BONUS_SPECIES: readonly SpeciesId[] = [];
-export const INCOME_BASES = {common: 10, rare: 10, rareBonus: 10, epic: 13, legendary: 15} as const;
+export const INCOME_BASES = {common: 10, rare: 10, rareBonus: 10, epic: 13, legendary: 15, mythic: 15} as const;
 /** Keep the first two farms available; later slots follow player progression. */
 export const farmLimit = (level: number): number => level >= 15 ? 4 : level >= 12 ? 3 : 2;
 /** Upgrading shortens new crops by 20%; already running crops retain their frozen duration. */
@@ -111,7 +111,7 @@ export const FEED_COSTS: readonly number[] = [0, 2, 4, 8, 14, 22, 32, 45, 60, 80
 export const feedCost = (affection: number): number => FEED_COSTS[affection] ?? Infinity;
 /** Affection above `cap` needs the statue, sold among the buildings from player level `level`. */
 export const AFFECTION_STATUE = {level: 15, cap: 14, heartPrice: BALANCE.buildings.statue.price} as const;
-/** Epic and legendary recipe chances, multiplied when BOTH parents reach the affection (highest step applies). */
+/** Epic, legendary and mythic recipe chances, multiplied when BOTH parents reach the affection (highest step applies). */
 export const RARE_BIRTH_BONUS: readonly {readonly affection: number; readonly factor: number}[] = [{affection: 15, factor: 2}, {affection: 10, factor: 1.5}];
 export type OrderId = keyof typeof ORDERS;
 export type Odds = Partial<Record<SpeciesId, number>>;

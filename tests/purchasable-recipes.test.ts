@@ -28,7 +28,8 @@ describe('recipe catalogue', () => {
     for (const id of SPECIES_IDS) {
       const priced = RECIPE_PRICES[id] !== undefined, gifted = GIFTED_RECIPES.includes(id);
       if (SPECIES[id].recipe === null) expect([priced, gifted]).toEqual([false, false]);
-      else if (id === 'bouee' || NEW_RARES.some(rare => rare.id === id)) expect([priced, gifted]).toEqual([false, false]);
+      // Benny (Mythic) is never sold nor gifted (owner, 1 November 2026).
+      else if (id === 'bouee' || id === 'benny' || NEW_RARES.some(rare => rare.id === id)) expect([priced, gifted]).toEqual([false, false]);
       else expect(priced !== gifted).toBe(true);
     }
   });

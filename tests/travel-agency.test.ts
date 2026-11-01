@@ -184,7 +184,8 @@ describe('habitat storage and species income', () => {
     for (const id of SPECIES_IDS) {
       const rarity = SPECIES[id].rarity;
       if (rarity === 'common') { expect([rabbitIncome(1, id), rabbitIncome(20, id)]).toEqual([10, 29]); continue; }
-      const multiplier = rarity === 'epic' ? 1.3 : rarity === 'legendary' ? 1.5 : 1;
+      // Benny (Mythic) earns like a Legendary.
+      const multiplier = rarity === 'epic' ? 1.3 : rarity === 'legendary' || rarity === 'mythic' ? 1.5 : 1;
       expect([rabbitIncome(1, id, 0), rabbitIncome(1, id, 9999)]).toEqual([Math.round(10 * multiplier), Math.round(19.999 * multiplier)]);
     }
   });

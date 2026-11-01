@@ -29,6 +29,7 @@ import {setCurrencyText} from '../display/currency';
 import {CROP_IDS, cropDuration, cropIcon, statueThumbnail} from '../display/food';
 import {COCO_WELCOME, HOST_NAME, agencyThumbnail, cocoPortrait, fromPlace, toPlace} from '../display/agency';
 import {travelling} from '../simulation/travel';
+import {BENNY, BENNY_POWER_RECHARGE, bennyInSky, bennyPowerReadyAt, bennyPowerReason} from '../simulation/benny';
 import {feedReason, playerLevel} from '../simulation/affection';
 import type {Building, Rabbit} from '../state/types';
 import {MAX_RABBIT_NAME_LENGTH, normalizeRabbitName} from '../simulation/rabbitNames';
@@ -1124,6 +1125,7 @@ export class GameUI {
     const indicator = node('span', '', 'birth-chance-indicator'); indicator.setAttribute('aria-hidden', 'true');
     for (let notch = 0; notch < factors.length; notch++) indicator.append(node('span', '', notch <= tier ? 'is-active' : ''));
     chance.append(indicator); this.content.append(chance);
+    if (r.species === BENNY) this.renderBenny(s);
     if (parentBusy(s,id,this.now()) && !travelling(s, id)) this.content.append(node('p','Au nid · place réservée dans son habitat · revenus conservés','badge'));
     this.content.append(node('p', `${typeNames(species.types)} · ${RARITY_NAMES[species.rarity]}`, 'badge'), node('p', this.enclosureName(s, r.enclosureId), 'small'));
     this.content.append(node('p', 'Nourrir augmente l’affection ; il n’y a ni faim ni entretien obligatoire.', 'small'), node('h3', 'Autres actions'));
@@ -1131,6 +1133,19 @@ export class GameUI {
     this.button(this.content, 'Déplacer', () => this.beginRabbitMove(id), parentBusy(s,id,this.now()) ? busyReason(s, id) : hasDestination ? null : 'Aucun autre habitat compatible avec une place libre.', true);
     const food = releaseGrass(r.species);
     this.button(this.content, 'Confier ce lapin', () => this.confirm('Confier ce lapin ?', `Ce lapin quittera définitivement ta prairie. Tu reçois ${food} nourriture en remerciement.`, () => this.execute({type: 'release', id}, `Lapin confié · +${food} nourriture`, () => { this.view = {kind: 'building', id: r.enclosureId}; })), releaseReason(s, id, this.now()), true).classList.add('action-danger');
+  }
+  /** Benny's power and sky mode (owner, 1 November 2026). The flight animation comes later: only the saved state changes. */
+  private renderBenny(s: GameState): void {
+    const now = this.now(), box = node('section', '', 'benny-powers'); box.dataset.bennyPowers = '';
+    box.append(node('h3', 'Pouvoir de Benny'), node('p', `Benny termine tout de suite l’attente de tous les lapereaux de la nurserie. Son pouvoir se recharge ensuite pendant ${BENNY_POWER_RECHARGE / 3_600_000} h.`, 'small'));
+    const readyAt = bennyPowerReadyAt(s), recharge = node('p', readyAt > now ? `Recharge : encore ${timeLeft(readyAt, now)}` : 'Pouvoir prêt.', 'badge');
+    recharge.dataset.bennyRecharge = ''; box.append(recharge);
+    const reason = bennyPowerReason(s, now);
+    this.button(box, 'Utiliser le pouvoir', () => this.execute({type: 'bennyPower'}, 'Tous les lapereaux de la nurserie sont prêts !'), reason && REFUSALS[reason]).dataset.focus = 'benny-power';
+    const sky = bennyInSky(s);
+    box.append(node('p', sky ? 'Benny tourne dans le ciel au-dessus de l’île. Elle reste rattachée à son enclos.' : 'Benny est dans son enclos.', 'small'));
+    this.button(box, sky ? 'Ramener Benny dans l’enclos' : 'Faire voler Benny', () => this.execute({type: 'bennySky', inSky: !sky}, sky ? 'Benny est revenue dans son enclos.' : 'Benny s’envole dans le ciel !'), null, true).dataset.focus = 'benny-sky';
+    this.content.append(box);
   }
   /** The personal name, in a box after the feeding action: the species stays in the title and the badge. Text only, never HTML. */
   private renderNickname(r: Rabbit): void {
@@ -1423,6 +1438,7 @@ export class GameUI {
         }, null, true).dataset.focus = 'breeding-odds-close';
         const details = node('div', '', 'breeding-odds');
         details.append(node('p', texts.summary));
+        if (texts.standIn) details.append(node('p', texts.standIn, 'small'));
         for (const line of texts.excluded) details.append(node('p', line, 'reason'));
         for (const line of texts.lines) details.append(node('p', line));
         details.append(node('p', texts.guarantee, 'badge')); probabilities.append(top, details);
@@ -1480,6 +1496,8 @@ export class GameUI {
       }, species);
       // Releasing needs no habitat: the baby leaves the nursery for pattes, straight from here.
       const pattes = releaseBabyPattesFor(species);
+      // The one Benny can never be lost: her release stays refused, with its reason.
+      if (species === BENNY) { this.button(this.content, 'Confier ce lapereau', () => undefined, REFUSALS.BENNY_KEPT, true); continue; }
       this.button(this.content, `Confier ce lapereau · +${pattes} pattes`, () => this.confirm('Confier ce lapereau ?', `Ce lapereau quittera la nurserie et ne rejoindra pas ta prairie. Tu reçois ${pattes} pattes.`, () => this.execute({type: 'releaseBaby', birthId: baby.birthId}, `Lapereau confié · +${pattes} pattes`)), null, true).classList.add('action-danger');
     }
     // After the babies: their timers stay visible without scrolling in landscape.
@@ -1594,13 +1612,14 @@ export class GameUI {
       card.append(node('p', `Affection ${recipe.minAffection} minimum pour chacun des deux parents. Croissance : ${growthDuration(recipe.species) / 60_000} min.`));
       card.append(node('p', 'Reproduction : 20 min · lancement gratuit.', 'small'));
       if (info.recipe?.parents) card.append(node('p', `Parents requis : ${info.recipe.parents.map(id => SPECIES[id].name).join(' × ')}. Les types seuls ne suffisent pas.`));
+      if (info.recipe?.parentRarity) card.append(node('p', `Parents requis : deux lapins de rareté ${RARITY_NAMES[info.recipe.parentRarity]}, de n’importe quelle espèce. ${info.name} est unique : une seule par partie.`));
       const rules = node('details', '', 'recipe-rules');
       rules.open = this.recipeRulesOpen.has(recipe.species);
       rules.addEventListener('toggle', () => { if (rules.isConnected) {
         if (rules.open) this.recipeRulesOpen.add(recipe.species); else this.recipeRulesOpen.delete(recipe.species);
       } });
       rules.append(node('summary', 'En savoir plus'), node('p', info.recipe?.probability !== undefined && info.rarity === 'epic' ? `${recipe.levelAccess.locked ? 'Après déblocage du niveau requis' : 'Si la recette est admissible'}, sa chance dépend des autres résultats possibles de la paire : un Épique pèse quatre fois moins qu’un Rare, et les Épiques réunis ne dépassent jamais la moitié du tirage. Cette espèce ne bénéficie pas de la garantie de découverte.` : info.recipe?.probability !== undefined ? `${recipe.levelAccess.locked ? 'Après déblocage du niveau requis' : 'Si la recette est admissible'}, hors garantie ordinaire : ${info.recipe.probability} %. Cette espèce ne bénéficie pas de la garantie de découverte.` : recipeSource(info.acquisition)?.guaranteeEligible === true ? 'Cette espèce bénéficie de la garantie ordinaire si elle n’est pas encore découverte et reste admissible.' : 'Cette espèce ne bénéficie pas de la garantie de découverte.', 'small'));
-      if (!recipe.pairCount) card.append(node('p', info.recipe?.parents ? 'Possède les deux espèces requises pour préparer cette paire.' : 'Aucune paire possédée n’est admissible à cette recette.', 'small'));
+      if (!recipe.pairCount) card.append(node('p', info.recipe?.parents ? 'Possède les deux espèces requises pour préparer cette paire.' : info.recipe?.parentRarity ? `Possède deux lapins de rareté ${RARITY_NAMES[info.recipe.parentRarity]} pour préparer cette paire.` : 'Aucune paire possédée n’est admissible à cette recette.', 'small'));
       else {
         const details = node('details'); details.open = this.recipeDetails.has(recipe.species) || (!this.recipeClosed.has(recipe.species) && recipe.pairCount <= 3);
         details.append(node('summary', `${recipe.pairCount} paire${recipe.pairCount > 1 ? 's' : ''} possédée${recipe.pairCount > 1 ? 's' : ''} compatible${recipe.pairCount > 1 ? 's' : ''} avec la recette`));

@@ -15,6 +15,6 @@ it('a common is born only from two commons of its own type, at every affection',
   }
 });
 it('has no Uncommon rarity, and a released common baby is worth 20', () => {
-  expect(RARITY_IDS).toEqual(['common', 'rare', 'epic', 'legendary']);
-  expect(BALANCE.releaseBabyPattes).toEqual({common: 20, rare: 100, epic: 500, legendary: 1000});
+  expect(RARITY_IDS).toEqual(['common', 'rare', 'epic', 'legendary', 'mythic']);
+  expect(BALANCE.releaseBabyPattes).toEqual({common: 20, rare: 100, epic: 500, legendary: 1000, mythic: 1000});
 });

@@ -36,7 +36,9 @@ type EntryAcquisition =
   | {readonly kind: 'shop'; readonly price: number}
   // Transitional: the historical rule that lets a species without a recipe come out of ordinary breeding (type match). Not the final decision about Commons.
   | {readonly kind: 'historical-breeding'}
-  | ({readonly kind: 'recipe'; readonly minAffection: number; readonly requiredTypes?: readonly RabbitType[]; readonly parents?: readonly [string, string]; readonly probability?: number} & RecipePolicy);
+  | ({readonly kind: 'recipe'; readonly minAffection: number; readonly requiredTypes?: readonly RabbitType[]; readonly parents?: readonly [string, string];
+      /** Both parents must have this rarity, whatever their species or types (Benny: any two Legendaries). */
+      readonly parentRarity?: Rarity; readonly probability?: number} & RecipePolicy);
 
 const REGISTRY = [
   {id: 'paille', name: 'Lapin Paille', types: ['paille'], rarity: 'common', acquisition: [{kind: 'shop', price: 80}, {kind: 'historical-breeding'}], art: {kind: 'static-sprite', file: 'assets/rabbits/paille/paille-v1.png', texture: 'rabbit-paille-original-v1', width: 303, height: 429, worldWidth: 40, groundY: 12, preloadOrder: 1, facing: 'left'}, progression: {unlockLevel: 1}},
@@ -74,6 +76,8 @@ const REGISTRY = [
   {id: 'calinou', name: 'Câlinou géant', description: 'Un lapin angora géant, blanc et rosé, à la fourrure en nuage, avec un ruban rose sur l’oreille.', types: ['paille', 'metal'], rarity: 'epic', acquisition: [{kind: 'recipe', knowledgePrice: 450, requiredTypes: ['paille', 'metal'], minAffection: 6, probability: 10}], art: {kind: 'static-sprite', file: 'assets/rabbits/calinou/calinou-v1.png', texture: 'rabbit-calinou-original-v1', width: 575, height: 575, worldWidth: 78, groundY: 12, preloadOrder: 34}, progression: {unlockLevel: 11}},
   {id: 'requin', name: 'Lapin Requin', description: 'Un lapin bélier gris aux rayures de requin, avec un aileron bleu et un sourire pointu.', types: ['neige', 'metal'], rarity: 'legendary', acquisition: [{kind: 'recipe', knowledgePrice: 900, minAffection: 10, parents: ['maxou', 'wat-wat'], probability: 10}], art: {kind: 'static-sprite', file: 'assets/rabbits/requin/requin-v1.png', texture: 'rabbit-requin-original-v1', width: 430, height: 428, worldWidth: 56, groundY: 12, preloadOrder: 30}, progression: {unlockLevel: 14}},
   {id: 'ankylosaure', name: 'Anky', description: 'Le fils de Dinono et Dinenette : un lapin bélier brun chocolat aux yeux vert noisette, dans un déguisement d’ankylosaure vert mousse, avec une carapace brune et une queue en massue.', types: ['paille', 'metal'], rarity: 'legendary', acquisition: [{kind: 'recipe', knowledgePrice: 900, minAffection: 10, parents: ['dinono', 'dinenette'], probability: 10}], art: {kind: 'static-sprite', file: 'assets/rabbits/ankylosaure/ankylosaure-v1.png', texture: 'rabbit-ankylosaure-original-v1', width: 461, height: 382, worldWidth: 58, groundY: 12, preloadOrder: 35}, progression: {unlockLevel: 14}},
+  // Mythic, inspired by a real rabbit (owner, 1 November 2026): born of any two Legendary parents, never sold, only one per game.
+  {id: 'benny', name: 'Benny', description: 'Un lapin fauve doré au masque gris fumé, avec une petite tache blanche au-dessus du nez, un plastron et des pattes blanches. Un lapin mythique né d’un vrai lapin.', types: ['arc-en-ciel'], rarity: 'mythic', acquisition: [{kind: 'recipe', minAffection: 10, parentRarity: 'legendary', probability: 10}], art: {kind: 'static-sprite', file: 'assets/rabbits/benny/benny-v1.png', texture: 'rabbit-benny-original-v1', width: 354, height: 435, worldWidth: 48, groundY: 12, preloadOrder: 36}, progression: {unlockLevel: 14}},
 ] as const satisfies readonly Entry[];
 
 /** Readonly view of the original entries, before lookup projection; retains duplicate ids for catalogue validation. */
@@ -85,7 +89,7 @@ export type SpeciesId = Registry[number]['id'];
 export type Acquisition =
   | {kind: 'shop'; price: number}
   | {kind: 'historical-breeding'}
-  | ({kind: 'recipe'; minAffection: number; requiredTypes?: readonly RabbitType[]; parents?: readonly [SpeciesId, SpeciesId]; probability?: number} & RecipePolicy);
+  | ({kind: 'recipe'; minAffection: number; requiredTypes?: readonly RabbitType[]; parents?: readonly [SpeciesId, SpeciesId]; parentRarity?: Rarity; probability?: number} & RecipePolicy);
 export type Recipe = Omit<Extract<Acquisition, {kind: 'recipe'}>, 'kind' | keyof RecipePolicy>;
 export interface SpeciesDefinition {
   /** `unlockLevel`: the player level from which this species is available; the default progression configuration is derived from it. */
@@ -117,7 +121,7 @@ export const recipeSource = (acquisition: readonly Acquisition[]): RecipeSource 
 export function recipeOf(acquisition: readonly Acquisition[]): Recipe | null {
   const source = recipeSource(acquisition);
   if (!source) return null;
-  if (!source.parents && !source.requiredTypes?.length) throw new RangeError('Recipe needs requiredTypes or exact parents');
+  if (!source.parents && !source.requiredTypes?.length && !source.parentRarity) throw new RangeError('Recipe needs requiredTypes, exact parents or a parent rarity');
   const {kind, knowledgePrice, giftedAtStart, guaranteeEligible, ...recipe} = source;
   void kind; void knowledgePrice; void giftedAtStart; void guaranteeEligible;
   return recipe;

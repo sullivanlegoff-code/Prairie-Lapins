@@ -23,6 +23,7 @@ import {babyInNursery, findNurseryBaby, firstFreeNurserySlot, nurseryBuilding, n
 import type {ActionResult, Building, Command, GameState, PattesCommand, Rabbit, Refusal, ProgressionGain} from '../state/types';
 import {chooseBirth, breedingPool, nestForParent, recipeMatches} from './breeding';
 import {recipePrice, recipePurchaseReason} from './recipes';
+import {BENNY, BENNY_POWER_RECHARGE, bennyAllows, bennyPowerReason, bennyStandIn, waitingNurseryBabies} from './benny';
 import {advance, validTime, drawIncomeRoll} from './time';
 import {complementCost, quoteAcceleration} from './hearts';
 import {DECORATIONS, ownedDecorationResalePrice} from '../config/decorations';
@@ -408,12 +409,18 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         allocation();
         const longestGrowth = Math.max(...(Object.keys(SPECIES) as SpeciesId[]).map(growthDuration));
         requireRule(Number.isSafeInteger(time + 2 * longestGrowth), 'INVALID_TIME');
-        requireRule(breedingPool(s, parents[0].species, parents[1].species, parents[0].affection, parents[1].affection).total > 0,'NO_BREEDING_RESULT');
+        // Benny stands in for one Common drawn at random at each breeding, with her own affection (owner, 1 November 2026).
+        const [a, b] = parents.map(parent => {
+          if (parent!.species !== BENNY) return parent!.species;
+          const draw = rng(); requireRule(Number.isFinite(draw) && draw >= 0 && draw < 1, 'INVALID_RANDOM');
+          return bennyStandIn(parent!.species, draw);
+        });
+        requireRule(breedingPool(s, a, b, parents[0].affection, parents[1].affection).total > 0,'NO_BREEDING_RESULT');
         // Free launch: no payment or heart-complement path.
         const roll = rng(); requireRule(Number.isFinite(roll) && roll >= 0 && roll < 1, 'INVALID_RANDOM');
-        let result = chooseBirth(s, parents[0].species, parents[1].species, roll, parents[0].affection, parents[1].affection);
-        // Owner's planned birth (see simulation/adjustments.ts): the first pair fulfilling its recipe gets it, once.
-        if (s.plannedBirth && recipeMatches(s.plannedBirth, parents[0].species, parents[1].species)) {
+        let result = chooseBirth(s, a, b, roll, parents[0].affection, parents[1].affection);
+        // Owner's planned birth (see simulation/adjustments.ts): the first pair fulfilling its recipe gets it, once; never a second Benny.
+        if (s.plannedBirth && bennyAllows(s, s.plannedBirth) && recipeMatches(s.plannedBirth, a, b)) {
           result = {...result, species: s.plannedBirth, guaranteed: false, reservedDiscovery: false};
           delete s.plannedBirth;
         }
@@ -449,6 +456,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         const baby = findNurseryBaby(s, command.birthId);
         requireRule(baby, 'STALE_ACTION');
         requireRule(baby.readyAt <= time, 'NOT_READY');
+        requireRule(baby.birth.species !== BENNY, 'BENNY_KEPT'); // The one Benny can never be lost.
         credit('pattes', releaseBabyPattesFor(baby.birth.species));
         const nursery = nurseryBuilding(s)!;
         nursery.nursery!.babies = nursery.nursery!.babies.filter(other => other !== baby);
@@ -476,6 +484,20 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         const name = normalizeRabbitName(command.name); requireRule(name !== null, 'INVALID_NAME');
         if (name) rabbit.name = name; else delete rabbit.name;
         break;
+      }
+      case 'bennyPower': {
+        const reason = bennyPowerReason(s, time); requireRule(!reason, reason ?? 'INVALID_CHOICE');
+        // Every baby still growing in the nursery is ready now; a birth still in the nest is not concerned.
+        const waiting = waitingNurseryBabies(s, time);
+        for (const baby of waiting) baby.readyAt = time;
+        requireRule(Number.isSafeInteger(time + BENNY_POWER_RECHARGE), 'INVALID_TIME');
+        s.benny = {inSky: s.benny?.inSky ?? false, powerReadyAt: time + BENNY_POWER_RECHARGE};
+        break;
+      }
+      case 'bennySky': {
+        requireRule(typeof command.inSky === 'boolean', 'INVALID_CHOICE');
+        requireRule(s.rabbits.some(r => r.species === BENNY), 'NOT_FOUND');
+        s.benny = {powerReadyAt: s.benny?.powerReadyAt ?? 0, inSky: command.inSky}; break;
       }
       default: throw new Denied('INVALID_CHOICE');
     }

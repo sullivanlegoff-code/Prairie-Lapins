@@ -9,7 +9,7 @@ import {requiredHabitatLevel, requiredSpeciesLevel, validateProgressionConfig} f
 /** The catalogue as it was before the registry extraction, written out here independently of the code it checks. */
 const IDS = [...EXPECTED_IDS];
 /** Fixed recipe chances in percent, before the affection bonus (owner, 30 October 2026): Epics 10 %; Legendaries 10 % since 1 November 2026 (7 % before). */
-const OWNER_PROBABILITY: Record<string, number> = {epic: 10, legendary: 10};
+const OWNER_PROBABILITY: Record<string, number> = {epic: 10, legendary: 10, mythic: 10};
 /** Where each species can be obtained, as the game offered it before sources were declared (written out independently). */
 const SHOP = {kind: 'shop', price: 80}, HISTORICAL = {kind: 'historical-breeding'};
 const HISTORICAL_ACQUISITION: Record<string, unknown> = {
@@ -22,7 +22,7 @@ const HISTORICAL_ACQUISITION: Record<string, unknown> = {
 
 /** Each new Rare is a reproduction-only recipe of its two required elements, with no price, gift, guarantee or fixed percentage. */
 const ACQUISITION: Record<string, unknown> = {...HISTORICAL_ACQUISITION, ...Object.fromEntries(NEW_RARES.map(r => [r.id, [{kind: 'recipe', guaranteeEligible: true, requiredTypes: [...r.requiredTypes], minAffection: STANDARD_RARE.minAffection}]])),
-  ...Object.fromEntries(NEW_SPECIALS.map(s => [s.id, [{kind: 'recipe', knowledgePrice: s.recipe.knowledgePrice, ...(s.recipe.requiredTypes ? {requiredTypes: [...s.recipe.requiredTypes]} : {}), minAffection: s.recipe.minAffection, ...(s.recipe.parents ? {parents: [...s.recipe.parents]} : {}), probability: OWNER_PROBABILITY[s.rarity]}]]))};
+  ...Object.fromEntries(NEW_SPECIALS.map(s => [s.id, [{kind: 'recipe', ...(s.recipe.knowledgePrice !== undefined ? {knowledgePrice: s.recipe.knowledgePrice} : {}), ...(s.recipe.requiredTypes ? {requiredTypes: [...s.recipe.requiredTypes]} : {}), minAffection: s.recipe.minAffection, ...(s.recipe.parents ? {parents: [...s.recipe.parents]} : {}), ...(s.recipe.parentRarity ? {parentRarity: s.recipe.parentRarity} : {}), probability: OWNER_PROBABILITY[s.rarity]}]]))};
 /** Descriptions of the pictures approved on 25 October 2026. */
 const SPECIAL_DESCRIPTIONS: Record<string, string> = {
   magicien: 'Un lapin brun en cape et chapeau de magicien étoilés, baguette à la main.', dragon: 'Un lapin bélier rouge aux écailles de dragon, avec des cornes et des ailes.',
@@ -31,6 +31,7 @@ const SPECIAL_DESCRIPTIONS: Record<string, string> = {
   dinenette: 'Une lapine bélier noire aux yeux bleus, dans un déguisement de dinosaure rose avec un nœud et une queue en cœur.',
   ankylosaure: 'Le fils de Dinono et Dinenette : un lapin bélier brun chocolat aux yeux vert noisette, dans un déguisement d’ankylosaure vert mousse, avec une carapace brune et une queue en massue.',
   'calinou': 'Un lapin angora géant, blanc et rosé, à la fourrure en nuage, avec un ruban rose sur l’oreille.',
+  benny: 'Un lapin fauve doré au masque gris fumé, avec une petite tache blanche au-dessus du nez, un plastron et des pattes blanches. Un lapin mythique né d’un vrai lapin.',
   orange: 'Une petite lapine blanche à la robe orange.', requin: 'Un lapin bélier gris aux rayures de requin, avec un aileron bleu et un sourire pointu.',
 };
 
@@ -47,7 +48,7 @@ const HISTORICAL_DEFINITIONS = {
 const FIXTURE_DEFINITIONS = {...HISTORICAL_DEFINITIONS, ...Object.fromEntries(NEW_RARES.map(r => [r.id, {name: r.name, description: r.description, types: [...r.types], rarity: 'rare', price: null,
   recipe: {requiredTypes: [...r.requiredTypes], minAffection: STANDARD_RARE.minAffection}, acquisition: ACQUISITION[r.id], progression: {unlockLevel: STANDARD_RARE.unlockLevel}, art: r.art}])),
   ...Object.fromEntries(NEW_SPECIALS.map(s => [s.id, {name: s.name, description: SPECIAL_DESCRIPTIONS[s.id], types: [...s.types], rarity: s.rarity, price: null,
-    recipe: {...(s.recipe.requiredTypes ? {requiredTypes: [...s.recipe.requiredTypes]} : {}), minAffection: s.recipe.minAffection, ...(s.recipe.parents ? {parents: [...s.recipe.parents]} : {}), probability: OWNER_PROBABILITY[s.rarity]},
+    recipe: {...(s.recipe.requiredTypes ? {requiredTypes: [...s.recipe.requiredTypes]} : {}), minAffection: s.recipe.minAffection, ...(s.recipe.parents ? {parents: [...s.recipe.parents]} : {}), ...(s.recipe.parentRarity ? {parentRarity: s.recipe.parentRarity} : {}), probability: OWNER_PROBABILITY[s.rarity]},
     acquisition: ACQUISITION[s.id], progression: {unlockLevel: s.unlockLevel}, art: s.art}]))};
 
 /** Dadi is Feu-Metal since the 27 October economy (docs/economy-current.md); the shared art fixture still describes the former Neige-Vol Dadi, so it is overridden here. */

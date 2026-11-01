@@ -3,8 +3,9 @@ import {recipeHint} from './economyFeedback';
 import {stateLevelAccess} from '../simulation/levelRights';
 import {buildingPlacementReason} from '../simulation/placement';
 import {habitatPrice, type HabitatType} from '../config/habitats';
-import {AFFECTION_STATUE, BALANCE, HOUR, TRAVEL, SPECIES, SPECIES_IDS, RECIPE_SPECIES, type BuildingKind, type SpeciesId, type RabbitType, type Rarity} from '../config/balance';
+import {AFFECTION_STATUE, BALANCE, HOUR, TRAVEL, SPECIES, SPECIES_IDS, RECIPE_SPECIES, type Odds, type BuildingKind, type SpeciesId, type RabbitType, type Rarity} from '../config/balance';
 import {breedingPool, recipeMatches, ordinaryPoolAllows, nestForParent} from '../simulation/breeding';
+import {bennyStandIns} from '../simulation/benny';
 import {playerLevel} from '../simulation/affection';
 import {travelling} from '../simulation/travel';
 import {recipeKnown, recipePrice} from '../simulation/recipes';
@@ -42,6 +43,8 @@ export const REFUSALS: Record<Refusal | 'NO_GAME' | 'DISPOSED' | 'SALE_NOT_SAVED
   CAPACITY_FULL: 'Habitat plein.', BUSY: 'Ce bâtiment est occupé.', NOT_READY: 'Ce n’est pas encore prêt.', MAX_AFFECTION: 'Affection maximale atteinte.', STATUE_REQUIRED: 'L’affection 15 demande la Statue de l’Affection, à construire dès le niveau 15.', TRAVELING: 'Ce lapin est en voyage. Accueille-le à l’agence à son retour.',
   SAME_PARENT: 'Choisis deux lapins différents.', AFFECTION_TOO_LOW: 'Chaque parent doit avoir au moins 2 d’affection.',
   MISSING_BUILDING: 'Il manque un bâtiment nécessaire : nid, nurserie ou cuisine.', ALREADY_EXPANDED: 'L’extension est déjà achetée.', PARCEL_UNAVAILABLE: 'Cette parcelle n’est pas encore accessible : l’île s’agrandit dans un ordre fixe, une parcelle après l’autre.', LAST_OF_SPECIES: 'Garde au moins un lapin de chaque espèce possédée.',
+  BENNY_RECHARGING: 'Le pouvoir de Benny se recharge encore.', NO_WAITING_BABY: 'Aucun lapereau n’attend dans la nurserie.',
+  BENNY_KEPT: 'Benny est unique : tu ne peux pas la relâcher.',
   PARENT_BUSY: 'Au nid : ce parent reste indisponible jusqu’au transfert du lapereau dans la nurserie.', NO_GAME: 'Charge une partie dans les paramètres.', DISPOSED: 'Recharge la page.',
 };
 export const moneyReason = (s: GameState, price: number) => s.pattes < price ? 'Solde insuffisant.' : null;
@@ -108,10 +111,10 @@ export function probabilityLabel(weight: number, total: number): string {
 }
 /** Presentation of the unchanged draw: unknown recipes are summed from the same integer weights, never named. */
 export function oddsView(s: GameState, a: SpeciesId, b: SpeciesId, affectionA = 2, affectionB = 2) {
-  const pool = breedingPool(s, a, b, affectionA, affectionB);
+  const standIn = bennyStandIns(a).length > 1 || bennyStandIns(b).length > 1, pool = nestOddsPool(s, a, b, affectionA, affectionB);
   const ids = Object.keys(pool.weights) as SpeciesId[], known = (id: SpeciesId) => recipeKnown(s, id);
   const unknownWeight = ids.filter(id => !known(id)).reduce((sum, id) => sum + pool.weights[id]!, 0);
-  return {eligible: pool.eligible, guaranteed: pool.guaranteed, possible: pool.total > 0,
+  return {standIn, eligible: pool.eligible, guaranteed: pool.guaranteed, possible: pool.total > 0,
     excluded: pool.excluded.filter(e => known(e.species)), hiddenExcluded: pool.excluded.some(e => !known(e.species)),
     entries: ids.filter(known).map(id => ({
       name: SPECIES[id].name,
@@ -120,6 +123,34 @@ export function oddsView(s: GameState, a: SpeciesId, b: SpeciesId, affectionA = 
       probability: probabilityLabel(pool.weights[id]!, pool.total),
     })),
     unknown: unknownWeight ? {weight: unknownWeight * 100 / pool.total, probability: probabilityLabel(unknownWeight, pool.total)} : null};
+}
+/**
+ * Benny as a parent stands in for one Common drawn at random at each breeding: the exact draw of every possible stand-in,
+ * averaged with equal weights. Integer weights on a common denominator keep the labels exact; a stand-in without any
+ * admissible result is left out (that breeding would be refused).
+ */
+/** The draw the nest shows for two parents: the breeding pool itself, or its average over Benny's stand-ins. */
+export function nestOddsPool(s: GameState, a: SpeciesId, b: SpeciesId, affectionA = 2, affectionB = 2) {
+  return bennyStandIns(a).length > 1 || bennyStandIns(b).length > 1 ? standInPool(s, a, b, affectionA, affectionB) : breedingPool(s, a, b, affectionA, affectionB);
+}
+function standInPool(s: GameState, a: SpeciesId, b: SpeciesId, affectionA: number, affectionB: number) {
+  const gcd = (x: number, y: number): number => y ? gcd(y, x % y) : x;
+  const pools = bennyStandIns(a).flatMap(first => bennyStandIns(b).map(second => breedingPool(s, first, second, affectionA, affectionB))).filter(pool => pool.total > 0);
+  // Each draw as reduced integer weights over its own total.
+  const reduced = pools.map(pool => {
+    const divisor = Object.values(pool.weights).reduce((g: number, weight) => gcd(g, weight!), pool.total);
+    return {weights: Object.fromEntries(Object.entries(pool.weights).map(([id, weight]) => [id, weight! / divisor])) as Odds, total: pool.total / divisor};
+  });
+  const common = reduced.reduce((l, pool) => l / gcd(l, pool.total) * pool.total, 1);
+  const exact = Number.isSafeInteger(common * Math.max(1, reduced.length));
+  // Beyond the safe integers, a fine fixed scale replaces the common denominator (labels then show a close value).
+  const scale = (pool: typeof reduced[number]) => exact ? common / pool.total : 1e9 / pool.total;
+  const weights: Odds = {};
+  for (const pool of reduced) for (const [id, weight] of Object.entries(pool.weights) as [SpeciesId, number][])
+    weights[id] = (weights[id] ?? 0) + (exact ? weight * scale(pool) : Math.round(weight * scale(pool)));
+  const total = Object.values(weights).reduce((sum, weight) => sum + weight!, 0);
+  const excluded = [...new Map(pools.flatMap(pool => pool.excluded).map(e => [e.species, e])).values()];
+  return {weights, total, excluded, eligible: pools.some(pool => pool.eligible), guaranteed: pools.length > 0 && pools.every(pool => pool.guaranteed)};
 }
 /** Every nest odds text, from oddsView only: unknown recipes appear solely as the cumulative line or anonymous exclusion. */
 export function oddsTexts(odds: ReturnType<typeof oddsView>) {
@@ -130,6 +161,7 @@ export function oddsTexts(odds: ReturnType<typeof oddsView>) {
     excluded: [...odds.excluded.map(e => `${SPECIES[e.species].name} : Niveau ${e.requiredLevel} requis · exclu du tirage actuel.`),
       ...(odds.hiddenExcluded ? ['Certains résultats demandent un niveau supérieur · exclus du tirage actuel.'] : [])],
     lines: [...odds.entries.map(e => `${e.name} · ${e.description} : ${e.probability}`), ...(odds.unknown ? [`Résultats inconnus : ${odds.unknown.probability}`] : [])],
+    ...(odds.standIn ? {standIn: 'Benny prend la place d’un lapin commun tiré au hasard à chaque reproduction. Les chances affichées sont la moyenne sur les lapins communs possibles.'} : {}),
     guarantee: odds.guaranteed ? 'Cette tentative garantit une espèce non découverte, à parts égales entre les résultats admissibles.' : odds.eligible ? 'Cette paire est admissible à la garantie.' : 'Cette paire ne fait pas avancer la garantie.',
   };
 }

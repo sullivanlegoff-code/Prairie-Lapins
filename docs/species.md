@@ -12,7 +12,9 @@ Décision du propriétaire : une paire ne doit jamais donner plus d’une chance
 
 Exemples à l’affection 6 : paille + métal (2 rares, 2 épiques) donne 40 % par rare et 10 % par épique ; paille + neige (2 rares, Orange) donne 44,4 % par rare et 11,1 % pour Orange ; une paire qui réunit paille, métal, feu et vol (12 rares, 5 épiques) donne 7,5 % par rare et 1,9 % par épique. Viser une petite paire est donc la meilleure façon d’obtenir un épique précis.
 
-Le registre `src/config/species.ts` contient 35 espèces. Les notes de publication plus bas sont des archives.
+Le registre `src/config/species.ts` contient 36 espèces. Les notes de publication plus bas sont des archives.
+
+Benny (1er novembre 2026, identifiant `benny`) : seule espèce de la rareté **Mythique**, inspirée d’un vrai lapin, au féminin. Type arc-en-ciel, exclusif ; elle vit dans n’importe quel enclos. Elle naît de n’importe quelle paire de deux légendaires (Dragon, Requin, Anky, dans n’importe quel ordre, deux identiques comprises), si les deux parents ont l’affection 10 : 10 % de base avec le même bonus d’affection que les légendaires (donc 15 % à l’affection 10, 20 % à l’affection 15), chance réservée comme celle des légendaires. Recette déclarée par `parentRarity: 'legendary'`, jamais vendue, niveau 14. 24 h au nid et 24 h à la nurserie, 360 XP de naissance. Une seule Benny par partie : possédée, au nid ou à la nurserie, elle sort des résultats possibles ; elle ne peut être ni confiée ni relâchée de la nurserie. Comme parent, elle prend la place d’un lapin commun tiré au hasard à chaque reproduction. Pouvoir (bouton sur sa fiche) : tous les lapereaux en attente dans la nurserie sont prêts tout de suite, puis 48 h de recharge. Mode ciel : seulement l’état sauvegardé (v22) et le bouton, l’animation viendra avec les dessins. Dessin provisoire : design A1 approuvé par le propriétaire, sprite 354 × 435 px, largeur monde 48, regard à droite, sans clignement.
 
 | Lapin | Types | Rareté | Recette | Niveau |
 |---|---|---|---|---:|

@@ -33,6 +33,8 @@ export const DESIGNS = [
   {id: 'calinou', source: 'output/imagegen/geant-v1/geant-B.png', background: 'light'},
   // Legendary son of Dinono and Dinenette, concept B « Mousse » chosen by the owner on 1 November 2026, its rabbit redone as a mix of both parents with a finer face (B3, ChatGPT).
   {id: 'ankylosaure', source: 'output/imagegen/ankylosaure-v1/anky-B3.png', background: 'light'},
+  // Mythic Benny, inspired by a real rabbit: design A1 approved by the owner on 1 November 2026 (cut from the A variations sheet).
+  {id: 'benny', source: 'output/imagegen/benny-v2/benny-A1-master.png', background: 'light'},
 ];
 // Bouee's left ear encloses a pocket of background: seed only that pocket, preserving the ring's white dots.
 export const BACKGROUND_SEEDS = {bouee: [[490, 570]]};

@@ -7,7 +7,7 @@ Ce fichier est lu à chaque session. Il fixe le rôle, les règles du propriéta
 Prairie Lapins est un jeu mobile cosy de collection et d'élevage de lapins, inspiré de DragonVale. Il se joue dans le navigateur et surtout sur iPhone (Safari et écran d'accueil), en paysage de préférence.
 
 - Pile : Phaser 3.90, TypeScript, Vite 7, vitest + happy-dom, zod. Supabase (`@supabase/supabase-js`) pour la sauvegarde en ligne facultative.
-- Format de sauvegarde actuel : **v21** (`src/persistence/json.ts`), migrations depuis v16, dont v20 vers v21 pour les amitiés et souvenirs. Les versions 1 à 15 sont refusées.
+- Format de sauvegarde actuel : **v22** (`src/persistence/json.ts`), migrations depuis v16, dont v20 vers v21 pour les amitiés et souvenirs, et v21 vers v22 pour l’état de Benny (pouvoir et mode ciel). Les versions 1 à 15 sont refusées.
 - Hébergement : GitHub Pages, `https://sullivanlegoff-code.github.io/Prairie-Lapins/` (laboratoire à `/dev/`). Chaque `git push` sur `main` publie le jeu pour tous les joueurs (workflow `.github/workflows/deploy-pages.yml`, voir `docs/deployment.md`). L'ancien site Netlify est désactivé depuis le 30 octobre 2026.
 - Le dépôt est **public**.
 
