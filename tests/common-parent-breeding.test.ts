@@ -105,7 +105,7 @@ describe('Common results require two Common parents of the same single type', ()
       expect(p.weights.boudinet! * 100 / p.total).toBeCloseTo(100 / 2 - expected, 12);
       for (const [a, b, id] of [['dadi', 'phoenix', 'dragon'], ['maxou', 'wat-wat', 'requin']] as const) {
         const pool = breedingPool(s, a, b, Math.max(10, affection), Math.max(10, affection));
-        expect(pool.weights[id]! * 100 / pool.total).toBe(affection >= 15 ? 14 : 10.5);
+        expect(pool.weights[id]! * 100 / pool.total).toBe(affection >= 15 ? 20 : 15);
       }
     }
     // Removing every ordinary candidate cannot turn a fixed 10 % special into a 100 % result.
@@ -118,7 +118,7 @@ describe('Common results require two Common parents of the same single type', ()
   it('removes Common results from mixed pairs while preserving the exact Dragon reserve', () => {
     expect(breedingDistributionWeights('neige', 'pic-pic', 2, 2)).toEqual({'pic-pic': 30, tunini: 30});
     const s = parents('dadi', 'phoenix', 10), pool = breedingPool(s, 'dadi', 'phoenix', 10, 10);
-    expect(pool.weights.dragon! * 100 / pool.total).toBe(10.5);
+    expect(pool.weights.dragon! * 100 / pool.total).toBe(15);
     for (const id of ['neige', 'feu', 'volant'] as const) expect(pool.weights[id]).toBeUndefined();
     expect(SPECIES[chooseBirth(s, 'dadi', 'phoenix', 0, 10, 10).species].rarity).not.toBe('common');
   });

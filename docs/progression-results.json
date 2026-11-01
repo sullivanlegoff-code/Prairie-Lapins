@@ -529,16 +529,16 @@
     },
     {
       "step": "50 j",
-      "pattes": 5461,
-      "grass": 242,
-      "hearts": 492,
+      "pattes": 5273,
+      "grass": 169,
+      "hearts": 490,
       "level": 29,
       "species": 35,
       "affection": {
-        "≥10": 43,
+        "≥10": 38,
         "≥15": 27,
         "max": 20,
-        "rabbits": 44
+        "rabbits": 39
       },
       "speciesIds": [
         "paille",
@@ -571,17 +571,17 @@
         "orange",
         "dinenette",
         "maxou",
+        "ankylosaure",
         "magicien",
         "dadi",
         "requin",
-        "ankylosaure",
         "dragon"
       ],
-      "storedPattes": 5100,
+      "storedPattes": 4125,
       "remaining": {
         "commons": [],
-        "extensions": 4,
-        "extensionCost": 142000,
+        "extensions": 5,
+        "extensionCost": 151000,
         "farms": 0,
         "kitchen": false,
         "habitatUpgrades": 7,
@@ -662,35 +662,35 @@
         "discover-dinenette",
         "discover-maxou",
         "level-twenty-two",
+        "discover-ankylosaure",
         "discover-magicien",
         "discover-dadi",
-        "discover-requin",
-        "discover-ankylosaure",
         "level-twenty-five",
+        "discover-requin",
         "discover-dragon"
       ]
     }
   ],
   "actions": {
-    "buyBuilding": 13,
+    "buyBuilding": 12,
     "claimMainMission": 76,
     "buyRabbit": 4,
     "startOrder": 419,
     "initiationAid": 3,
     "collectOrder": 417,
-    "feed": 1608,
+    "feed": 1616,
     "breed": 207,
     "claimDailyMission": 100,
     "transferBirth": 1,
     "welcome": 205,
-    "collectIncome": 1830,
+    "collectIncome": 1709,
     "buyDecoration": 1,
     "claimHearts": 69,
-    "upgradeHabitat": 7,
+    "upgradeHabitat": 6,
     "expand": 4,
     "upgradeFarm": 2,
-    "release": 166,
-    "exchangeForHeart": 696
+    "release": 171,
+    "exchangeForHeart": 707
   },
-  "totalActions": 5828
+  "totalActions": 5729
 }
