@@ -577,3 +577,25 @@ describe('Cuisine for two: commis and taster', () => {
     expect(act.root.querySelector('.cuisine-result-rabbit')!.textContent).toContain(SPECIES[a.species].name);
   });
 });
+
+describe('the cooks talk in the real kitchen (fake clock)', () => {
+  const said = (role: 'commis' | 'taster') => document.querySelector<HTMLElement>(`.cuisine-${role} .cuisine-cook-bubble`)!;
+  it('hints after 2 seconds without action, keeps the same bubble, clears it on a touch, and lets the taster react', () => {
+    const k = setup(true, 'different'); k.ui.select({kind: 'building', id: 'building-100'}); k.enterButton()!.click(); k.choose();
+    const a = k.activity(); a.root.querySelector<HTMLButtonElement>('#recipe-avocado-toast')!.click(); a.refresh();
+    vi.advanceTimersByTime(1800); expect(said('commis').textContent).toBe('');
+    vi.advanceTimersByTime(600);
+    expect(said('commis').textContent).toBe('Pose l’avocat sur la planche !'); expect(said('commis').dataset.kind).toBe('hint');
+    const key = said('commis').dataset.key;
+    vi.advanceTimersByTime(1000); expect(said('commis').textContent).toBe('Pose l’avocat sur la planche !'); expect(said('commis').dataset.key).toBe(key);
+    a.root.dispatchEvent(new Event('pointerdown')); expect(said('commis').textContent).toBe(''); expect(said('commis').dataset.kind).toBeUndefined();
+    vi.advanceTimersByTime(1000); expect(said('commis').textContent).toBe('');
+    // Two successful steps: the taster reacts on the second, while the commis is silent.
+    expect(drop(a.engine, 'avocado', 'cutting-board').accepted).toBe(true); a.refresh();
+    expect(a.engine.dispatch({type: 'use-tool', toolId: 'knife', targetId: 'avocado'}).accepted).toBe(true); a.refresh();
+    expect(said('taster').textContent).toBe('Ça sent bon !'); expect(said('commis').textContent).toBe('');
+    // The guide moved on, and so does the hint.
+    vi.advanceTimersByTime(2400); expect(said('commis').textContent).toBe('Mets l’avocat coupé dans le saladier !'); expect(said('taster').textContent).toBe('');
+    k.exit(); expect(vi.getTimerCount()).toBe(0);
+  });
+});

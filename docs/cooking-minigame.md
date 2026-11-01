@@ -35,6 +35,10 @@ Récompenses inchangées. La commande `rewardCuisine` reçoit `rabbitId` (commis
 
 La toque (concept C) et le bavoir (concept A), choisis par le propriétaire, sont posés sur chaque sprite aux points de `src/config/cuisineAnchors.ts` (haut du crâne, cou, yeux), relevés espèce par espèce ; une espèce sans entrée reçoit un placement par défaut selon son orientation.
 
+### Ce que disent les cuisiniers
+
+Demande du propriétaire (1er novembre 2026) : le commis bouge moins et guide davantage. Tout est dans `src/ui/cuisineTalk.ts`, module pur piloté par l’horloge et l’état de la cuisine. Après plus de 2 secondes sans action, le commis dit l’étape suivante avec les mots du guide (bulle verte) ; la bulle reste stable, ressaute toutes les 4 secondes et disparaît dès que le joueur touche la cuisine. Sinon, il encourage une étape sur trois selon l’avancée (« Le plat est bientôt prêt ! ») et annonce la cuisson (« Prépare tes papilles, la masterclass arrive ! » au four). Le goûteur réagit parfois à une réussite (2e étape, puis toutes les 5), jamais quand le commis parle, et dit toujours « Miam ! » à la fin. Aucune phrase en « vous ». Rien ne parle pendant une pause (téléphone en portrait). Les tests sont dans `tests/cuisine-duo.test.ts` et `tests/cuisine-integration.test.ts` (horloge simulée).
+
 ### Images peintes
 
 Les images ont été peintes avec ChatGPT le 1er novembre 2026 sur des planches à fond magenta. `scripts/prepare-cuisine-art.mjs` les prépare en deux temps : avec `--sources <dossier des planches>`, il détoure le magenta, découpe chaque planche par case et écrit les originaux dans `assets-source/cuisine/` ; sans option (avec `PLAYWRIGHT_MODULE`), il les réduit et les encode en WebP dans `cooktap-prototype/art/` avec `assets-source/cuisine/manifest.json`. Les planches d’origine restent hors Git (`output/imagegen/cuisine-v1/`). Le code charge les images par `import.meta.glob`, donc le jeu, le prototype autonome et les tests utilisent les mêmes fichiers.

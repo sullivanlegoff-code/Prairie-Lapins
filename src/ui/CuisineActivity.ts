@@ -1,27 +1,15 @@
 import {mountKitchen, type RecipeCompletion} from '../../cooktap-prototype/main';
 import {ART_URLS, finishedDishArt} from '../../cooktap-prototype/art';
-import type {KitchenSnapshot} from '../../cooktap-prototype/engine';
 import {rabbitArt} from '../config/rabbitArt';
 import {cuisineAnchors} from '../config/cuisineAnchors';
+import {commisMood, createKitchenTalk, type KitchenTalk, type TalkLine, type TalkState} from './cuisineTalk';
 import type {Rabbit} from '../state/types';
 import {portrait} from './portraits';
 import {SPECIES} from '../config/balance';
 import {setCurrencyText} from '../display/currency';
 
 export type CuisineRabbit = Readonly<Pick<Rabbit, 'id' | 'species'> & {name?: string}>;
-/** What the commis is doing, read from the kitchen's own state (the engine stays rabbit-agnostic). */
-export type CommisMood = 'idle' | 'teary' | 'sniff' | 'impatient';
-export function commisMood(snapshot: KitchenSnapshot): CommisMood {
-  if (snapshot.phase !== 'playing') return 'idle';
-  if (snapshot.cookingRemainingMs > 0) return snapshot.cookingHeater === 'oven' ? 'impatient' : 'sniff';
-  const item = (id: string) => snapshot.items.find(i => i.id === id && i.visible);
-  const next = snapshot.steps.filter(s => s.next);
-  // Cutting a shallot stings the eyes: from the moment it lies on the board until it leaves it.
-  if (item('shallot')?.location === 'cutting-board') return 'teary';
-  // Chocolate smells good: the bar, the melting pan and the chocolate batter.
-  if (next.some(s => s.actor === 'chocolate' || s.actor === 'butter' || s.actor === 'saucepan') || item('saucepan')?.state === 'melted') return 'sniff';
-  return 'idle';
-}
+export {commisMood, type CommisMood} from './cuisineTalk';
 /** The rabbit's sprite with its accessory (toque or bib) and the paws used to cover its eyes, all on the same anchors. */
 export function dressedRabbit(rabbit: CuisineRabbit, role: 'commis' | 'taster', faceRight: boolean): HTMLElement {
   const art = rabbitArt(rabbit.species), facing = art?.facing ?? 1, anchors = cuisineAnchors(rabbit.species, facing);
@@ -80,11 +68,17 @@ export function mountCuisineActivity(background: HTMLElement, options: {
   let reactionTimer: ReturnType<typeof setTimeout> | undefined;
   /** The commis on its stool and the taster beside the table, inside the kitchen world (host-owned nodes). */
   let chef: HTMLElement | null = null, taster: HTMLElement | null = null, moodTimer: ReturnType<typeof setInterval> | undefined;
-  const BUBBLES: Record<CommisMood, string> = {idle: '', teary: 'Ça pique les yeux !', sniff: 'Mmh, ça sent bon !', impatient: 'C’est bientôt prêt ?'};
-  function setMood(mood: CommisMood): void {
-    if (!chef || chef.dataset.mood === mood) return;
-    chef.dataset.mood = mood; chef.querySelector('.cuisine-cook-bubble')!.textContent = BUBBLES[mood];
+  /** The cooks' words (src/ui/cuisineTalk.ts): a bubble's text changes only with the line, and pops again when the line is said again. */
+  let talk: KitchenTalk | null = null;
+  function bubble(node: HTMLElement | null, line: TalkLine | null): void {
+    const element = node?.querySelector<HTMLElement>('.cuisine-cook-bubble'); if (!element) return;
+    const text = line?.text ?? '';
+    if (element.textContent !== text) element.textContent = text;
+    if (!line) { delete element.dataset.kind; delete element.dataset.key; return; }
+    element.dataset.kind = line.kind;
+    if (element.dataset.key !== String(line.key)) { element.dataset.key = String(line.key); element.classList.remove('cuisine-cook-bubble-pop'); void element.offsetWidth; element.classList.add('cuisine-cook-bubble-pop'); }
   }
+  function speak(state: TalkState | undefined): void { if (state) { bubble(chef, state.commis); bubble(taster, state.taster); } }
   const STAND = '<svg viewBox="0 0 100 40" aria-hidden="true"><ellipse cx="50" cy="37" rx="44" ry="4" fill="#5a3a2a26"/><path d="M24 14L18 37M76 14L82 37M50 16V37" stroke="#6e4b3a" stroke-width="5" stroke-linecap="round"/><path d="M24 14L18 37M76 14L82 37M50 16V37" stroke="#a86a3e" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="50" cy="12" rx="40" ry="9" fill="#c4513f" stroke="#6e4b3a" stroke-width="2.5"/><ellipse cx="50" cy="10" rx="31" ry="5" fill="#e0604f"/></svg>';
   // End-of-recipe tasting around the in-scene rabbit: dish presented, hop, « Miam ! », hearts. The result card waits.
   const TASTING_MS = 2000, HEARTS = 5;
@@ -127,7 +121,7 @@ export function mountCuisineActivity(background: HTMLElement, options: {
     if (!activity) return;
     stopTasting();
     if (moodTimer !== undefined) clearInterval(moodTimer); moodTimer = undefined;
-    activity.dispose(); activity = null; chef = null; taster = null;
+    activity.dispose(); activity = null; chef = null; taster = null; talk = null;
     selectedRabbit = null; tasterRabbit = null;
     react('idle');
     companion.replaceChildren(); companion.hidden = true;
@@ -182,6 +176,8 @@ export function mountCuisineActivity(background: HTMLElement, options: {
             card.append(rewardFeedback);
           }
         }, onPresentationEvent: event => {
+          const now = Date.now();
+          if (talk && activity) speak(event === 'success' ? talk.success(activity.engine.snapshot(), now) : event === 'invalid' ? talk.action(now) : talk.reset(now));
           if (event === 'reset') { rewardFeedback.remove(); resultRabbit.remove(); for (const node of [chef, taster]) if (node) delete node.dataset.lucky; }
           react(({success: 'positive', invalid: 'mistake', reset: 'idle', complete: 'celebrate'} as const)[event]);
         }});
@@ -198,10 +194,16 @@ export function mountCuisineActivity(background: HTMLElement, options: {
         taster = tasterRabbit && second ? cook('taster', second, false) : null;
         // Just above the worktop art, below every kitchen object: dragged items always pass in front of them.
         activity.root.querySelector('#kitchen-world .table-art')!.after(...[chef, taster].filter((n): n is HTMLDivElement => !!n));
-        moodTimer = setInterval(() => { if (activity) setMood(commisMood(activity.engine.snapshot())); }, 200);
+        talk = createKitchenTalk(!!taster);
+        // Touching the kitchen is an action: the hint goes away and the 2-second wait starts again.
+        activity.root.addEventListener('pointerdown', () => speak(talk?.action(Date.now())), {capture: true});
+        moodTimer = setInterval(() => {
+          if (!activity || !talk || !chef) return;
+          const snapshot = activity.engine.snapshot(); chef.dataset.mood = commisMood(snapshot); speak(talk.tick(snapshot, Date.now()));
+        }, 200);
         options.onActiveChange?.(true);
       } catch (error) {
-        selectedRabbit = null; tasterRabbit = null; chef = null; taster = null;
+        selectedRabbit = null; tasterRabbit = null; chef = null; taster = null; talk = null;
         if (moodTimer !== undefined) clearInterval(moodTimer); moodTimer = undefined;
         react('idle');
         companion.replaceChildren(); companion.hidden = true;
