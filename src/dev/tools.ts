@@ -111,10 +111,10 @@ export function developmentEnvironment(base: SaveStorage, options: {decorationPr
       section('Animations légendaires');
       button('Apparition du Lapin Dragon', 'dev-reveal-dragon', () => showLegendaryReveal('dragon', {title: 'Nouvelle découverte !', name: SPECIES.dragon.name, details: 'Essai du laboratoire', button: 'Fermer'}));
       button('Apparition du Lapin Requin', 'dev-reveal-requin', () => showLegendaryReveal('requin', {title: 'Nouvelle découverte !', name: SPECIES.requin.name, details: 'Essai du laboratoire', button: 'Fermer'}));
-      button('Apparition de l’Ankylosaure', 'dev-reveal-ankylosaure', () => showLegendaryReveal('ankylosaure', {title: 'Nouvelle découverte !', name: SPECIES.ankylosaure.name, details: 'Essai du laboratoire', button: 'Fermer'}));
+      button('Apparition d’Anky', 'dev-reveal-ankylosaure', () => showLegendaryReveal('ankylosaure', {title: 'Nouvelle découverte !', name: SPECIES.ankylosaure.name, details: 'Essai du laboratoire', button: 'Fermer'}));
       const acts: [LegendaryAct, string][] = [['tap', 'Dragon : souffle de feu'], ['smoke', 'Dragon : fumée'], ['hiccup', 'Dragon : hoquet de feu'], ['embers', 'Dragon : braises'],
         ['dive', 'Requin : plongeon'], ['surf', 'Requin : surf'], ['bubbles', 'Requin : bulles'], ['splash', 'Requin : éclaboussure'],
-        ['slam', 'Ankylosaure : coup de queue'], ['rumble', 'Ankylosaure : grondement'], ['dig', 'Ankylosaure : il creuse'], ['dust', 'Ankylosaure : poussière']];
+        ['slam', 'Anky : coup de queue'], ['rumble', 'Anky : grondement'], ['dig', 'Anky : il creuse'], ['dust', 'Anky : poussière']];
       for (const [act, label] of acts) button(label, `dev-legendary-${act}`, () => {
         window.dispatchEvent(new CustomEvent(LEGENDARY_TEST_EVENT, {detail: {act}}));
         status.textContent = `${label} : lancé sur les légendaires visibles de la prairie (ferme ce panneau pour regarder).`;

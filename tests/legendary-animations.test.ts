@@ -147,12 +147,12 @@ describe('legendary first appearance', () => {
     dialog.dispatchEvent(new Event('cancel', {cancelable: true})); expect(document.querySelector('dialog.legendary-reveal')).toBeNull();
   });
   it('brings the Ankylosaure with an earthquake: the ground splits, dust rises and rocks fall, never fire or water', () => {
-    const dialog = showLegendaryReveal('ankylosaure', {...text, name: 'Ankylosaure'});
+    const dialog = showLegendaryReveal('ankylosaure', {...text, name: 'Anky'});
     expect(dialog.classList.contains('legendary-reveal-ankylosaure')).toBe(true);
     expect(dialog.querySelector('.lr-rift-image')).not.toBeNull(); expect(dialog.querySelector('.lr-dustwall-image')).not.toBeNull();
     expect(dialog.querySelectorAll('.lr-rock').length).toBeGreaterThanOrEqual(12);
     expect(dialog.querySelector('.lr-wall, .lr-wave')).toBeNull();
-    expect(dialog.querySelector<HTMLImageElement>('.lr-rabbit')!.alt).toBe('Ankylosaure');
+    expect(dialog.querySelector<HTMLImageElement>('.lr-rabbit')!.alt).toBe('Anky');
     dialog.dispatchEvent(new Event('cancel', {cancelable: true})); expect(document.querySelector('dialog.legendary-reveal')).toBeNull();
   });
 });

@@ -67,7 +67,7 @@ export const NEW_SPECIALS: readonly SpecialSheet[] = [
   {id: 'calinou', name: 'Câlinou géant', types: ['paille', 'metal'], rarity: 'epic', recipe: {requiredTypes: ['paille', 'metal'], minAffection: 6, probability: 10, knowledgePrice: 450}, unlockLevel: 11, art: sprite('calinou', 575, 575, 78, 12, 34), foot: 1241, sourceSha256: 'cec8474965a1bebd97a252fd4a9d01ef068fe399b0fbfb12d5dbf8e4369b7ed4'},
   {id: 'requin', name: 'Lapin Requin', types: ['neige', 'metal'], rarity: 'legendary', recipe: {parents: ['maxou', 'wat-wat'], minAffection: 10, probability: 2, knowledgePrice: 900}, unlockLevel: 14, art: sprite('requin', 430, 428, 56, 12, 30), foot: 1087, sourceSha256: '88e18a20c408e659dae01a64c080abf3ced9f286af03665147e787293e559584'},
   // Legendary son of Dinono and Dinenette (1 November 2026): concept B « Mousse », its rabbit redone at the owner's request (B3).
-  {id: 'ankylosaure', name: 'Ankylosaure', types: ['paille', 'metal'], rarity: 'legendary', recipe: {parents: ['dinono', 'dinenette'], minAffection: 10, probability: 7, knowledgePrice: 900}, unlockLevel: 14, art: sprite('ankylosaure', 461, 382, 58, 12, 35), foot: 1115, sourceSha256: '2d67498fd7e3db7dc6744b689e2f340241bce58b23c05fe0dfc602801f9be824'},
+  {id: 'ankylosaure', name: 'Anky', types: ['paille', 'metal'], rarity: 'legendary', recipe: {parents: ['dinono', 'dinenette'], minAffection: 10, probability: 7, knowledgePrice: 900}, unlockLevel: 14, art: sprite('ankylosaure', 461, 382, 58, 12, 35), foot: 1115, sourceSha256: '2d67498fd7e3db7dc6744b689e2f340241bce58b23c05fe0dfc602801f9be824'},
 ];
 export const EXPECTED_ART: Record<string, ArtExpectation> = {...HISTORICAL_ART, ...Object.fromEntries(NEW_RARES.map(r => [r.id, r.art])), ...Object.fromEntries(NEW_SPECIALS.map(s => [s.id, s.art]))};
 
