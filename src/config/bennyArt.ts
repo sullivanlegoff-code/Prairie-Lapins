@@ -30,3 +30,26 @@ export const BENNY_ORIGIN = {x: frames.anchor.x / frames.canvas.width, y: frames
 
 /** What a meadow with Benny loads, besides her sprite: the atlas, once. */
 export const bennyMeadowArt = (): {texture: string; url: string; atlas: string}[] => [BENNY_ATLAS];
+
+/**
+ * Painted effects of Benny's first appearance and of her Mythic card (ChatGPT paintings approved by the owner on 1 November 2026):
+ * scripts/prepare-benny-effects.mjs cuts them from the four boards and keys their black background into opacity. Page only, never the meadow.
+ * Sizes are the WebP pixels (assets-source/effects/benny/manifest.json).
+ */
+export interface BennyEffectArt {url: string; width: number; height: number}
+const bennyEffect = (name: string, width: number, height: number): BennyEffectArt =>
+  ({url: `${import.meta.env.BASE_URL}assets/effects/benny/${name}.webp`, width, height});
+const bennyFrames = (name: string, sizes: [number, number][]) => sizes.map(([width, height], k) => bennyEffect(`${name}-${k + 1}`, width, height));
+export const BENNY_EFFECTS = {
+  /** Clouds gathered (1), parting and opening on a golden light (2 to 7), then drifting apart into small clouds (8). */
+  cloud: bennyFrames('cloud', [[443, 339], [443, 340], [443, 339], [443, 340], [443, 339], [443, 340], [443, 339], [443, 340]]),
+  /** A pastel rainbow drawing itself from the left cloud to the right one; 7 shines, 8 rests. */
+  rainbow: bennyFrames('rainbow', [[443, 299], [443, 300], [443, 299], [443, 300], [443, 299], [443, 300], [443, 299], [443, 300]]),
+  /** Golden rays falling from a point: rising (1 to 4), full (4), fading (5, 6). */
+  rays: bennyFrames('rays', [[296, 278], [295, 278], [296, 278], [296, 278], [295, 278], [296, 278]]),
+  ring: bennyEffect('ring', 256, 128), ringSparkles: bennyEffect('ring-sparkles', 256, 147), glow: bennyEffect('glow', 192, 197),
+  twinkle: bennyEffect('twinkle', 96, 96), burst: bennyEffect('burst', 224, 218), prism: bennyEffect('prism', 224, 223),
+  star: bennyEffect('star', 32, 32), starFive: bennyEffect('star-five', 40, 40), starBig: bennyEffect('star-big', 96, 99),
+  stardust: bennyEffect('stardust', 128, 107), trail: bennyEffect('trail', 192, 113), swirl: bennyEffect('swirl', 256, 232),
+  feather: bennyFrames('feather', [[96, 176], [96, 88], [96, 80], [96, 110], [96, 105]]),
+} as const;
