@@ -27,6 +27,14 @@ Un seul aliment à la fois sur la planche. Les cuissons comptent du temps actif 
 | `cooktap-prototype/drag.ts` | Pointer Events, capture, seuil 7 px |
 | `cooktap-prototype/main.ts` / `ui.ts` | orientation, visibilité, horloge active, guide d’étapes, choix de recette, résultat |
 
+### Cuisine à deux lapins
+
+Demande du propriétaire (1er novembre 2026) : on choisit d’abord le **commis** (toque), puis le **goûteur** (bavoir), deux lapins différents. Le commis reste sur son tabouret à gauche et réagit (saut à chaque étape, pattes sur les yeux tant que l’échalote est sur la planche, renifle le chocolat et le pain qui grille, s’impatiente devant le four) ; le goûteur attend à droite et goûte le plat à la fin (« Miam ! », cœurs). Avec un seul lapin dans la prairie, il est à la fois commis et goûteur ; si tous les autres lapins sont en voyage, « Cuisiner sans goûteur » reste possible.
+
+Récompenses inchangées. La commande `rewardCuisine` reçoit `rabbitId` (commis) et `tasterId` facultatif : l’affection va à un seul des deux, tiré au sort par la source aléatoire du jeu, parmi ceux qui peuvent encore la recevoir aujourd’hui ; le résultat affiche « +1 Affection pour … » et un « +1 ♥ » au-dessus du gagnant. Aucune migration : la sauvegarde garde déjà l’affection de cuisine par lapin.
+
+La toque (concept C) et le bavoir (concept A), choisis par le propriétaire, sont posés sur chaque sprite aux points de `src/config/cuisineAnchors.ts` (haut du crâne, cou, yeux), relevés espèce par espèce ; une espèce sans entrée reçoit un placement par défaut selon son orientation.
+
 ### Images peintes
 
 Les images ont été peintes avec ChatGPT le 1er novembre 2026 sur des planches à fond magenta. `scripts/prepare-cuisine-art.mjs` les prépare en deux temps : avec `--sources <dossier des planches>`, il détoure le magenta, découpe chaque planche par case et écrit les originaux dans `assets-source/cuisine/` ; sans option (avec `PLAYWRIGHT_MODULE`), il les réduit et les encode en WebP dans `cooktap-prototype/art/` avec `assets-source/cuisine/manifest.json`. Les planches d’origine restent hors Git (`output/imagegen/cuisine-v1/`). Le code charge les images par `import.meta.glob`, donc le jeu, le prototype autonome et les tests utilisent les mêmes fichiers.

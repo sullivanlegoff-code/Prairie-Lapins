@@ -67,7 +67,7 @@ import {BUILDING_NAMES, REFUSALS, RARITY_NAMES, busyReason, TYPE_NAMES, typeName
 
 type ShopTab = 'home' | 'recipes' | 'rabbits' | 'habitats' | 'buildings' | 'decorations';
 type View = {kind:'album'|'cozyEvents'|'decorationGroup'} | {kind:'levelRequirement';target:LevelAccessTarget} | {kind: 'missions'; tab: 'main' | 'daily'} | {kind: 'shop'; tab: ShopTab} | {kind: 'building' | 'rabbit' | 'moveRabbit' | 'decoration'; id: string} |
-  {kind: 'buyRabbit' | 'species'; species: SpeciesId} | {kind:'extension';parcelId?:ParcelId} | {kind: 'cuisineRabbit' | 'collection' | 'settings' | 'placement' | 'hearts' | 'recipes' | 'arrange' | 'decorationPlacement'} | null;
+  {kind: 'buyRabbit' | 'species'; species: SpeciesId} | {kind:'extension';parcelId?:ParcelId} | {kind: 'cuisineRabbit'; commis?: string} | {kind: 'collection' | 'settings' | 'placement' | 'hearts' | 'recipes' | 'arrange' | 'decorationPlacement'} | null;
 /** Views drawn as a centred card over the dimmed meadow. Placement, purchase, extension and arrangement views keep the side sheet: they need the island visible. */
 const CENTER_CARD_VIEWS: readonly NonNullable<View>['kind'][] = ['album','cozyEvents','decorationGroup','rabbit', 'moveRabbit', 'building', 'missions', 'collection', 'recipes', 'hearts', 'species', 'levelRequirement'];
 function node<K extends keyof HTMLElementTagNameMap>(tag: K, text = '', className = ''): HTMLElementTagNameMap[K] {
@@ -178,12 +178,13 @@ export class GameUI {
       () => { const s = this.snapshot.state; if (!s) return; const task = onboardingTask(s,this.preferences.value,this.now()); if (task.step.done) this.preferences.set({tutorialDone:true}); this.guide(task.step); this.render(); },
       () => { this.renderPreferences(); this.render(); }, () => this.open({kind:'settings'}, 'root'));
     this.cuisine = mountCuisineActivity(document.getElementById('app')!, {onRecipeCompleted: result => {
-      const rabbit = this.cuisine.selectedRabbit;
-      const granted = rabbit ? this.controller.perform({type: 'rewardCuisine', rabbitId: rabbit.id, recipeId: result.recipeId}) : {ok: false as const, reason: 'NOT_FOUND' as const};
+      const rabbit = this.cuisine.selectedRabbit, taster = this.cuisine.taster;
+      const granted = rabbit ? this.controller.perform({type: 'rewardCuisine', rabbitId: rabbit.id, ...(taster ? {tasterId: taster.id} : {}), recipeId: result.recipeId}) : {ok: false as const, reason: 'NOT_FOUND' as const};
       activityOptions.onCuisineCompleted?.(result);
       if (!granted.ok) return `Récompense non enregistrée : ${REFUSALS[granted.reason]}`;
-      const reward = granted.cuisineReward!;
-      return `+${reward.pattes} pattes · +${reward.grass} nourriture${reward.affectionGranted ? ' · +1 Affection' : reward.affectionAtCap ? ' · Affection maximale' : reward.affectionStatueRequired ? ' · La Statue de l’Affection permet de dépasser 14.' : ''}${reward.heartGranted ? ' · +1 Cœur' : ''}`;
+      const reward = granted.cuisineReward!, lucky = granted.state.rabbits.find(r => r.id === reward.affectionRabbitId), luckyName = taster && lucky ? ` pour ${lucky.name || SPECIES[lucky.species].name}` : '';
+      if (taster) this.cuisine.showAffection(reward.affectionRabbitId);
+      return `+${reward.pattes} pattes · +${reward.grass} nourriture${reward.affectionGranted ? ` · +1 Affection${luckyName}` : reward.affectionAtCap ? ` · Affection maximale${luckyName}` : reward.affectionStatueRequired ? ' · La Statue de l’Affection permet de dépasser 14.' : ''}${reward.heartGranted ? ' · +1 Cœur' : ''}`;
     }, quotaText: () => { const state = this.controller.getSnapshot().state; return state ? cuisineQuotaText(state, this.now()) : ''; }, onExit: () => this.render(), onActiveChange: activityOptions.onCuisineActive});
     this.moveBanner.id = 'rabbit-move-banner'; this.moveBanner.hidden = true;
     this.moveBanner.setAttribute('role', 'region'); this.moveBanner.setAttribute('aria-label', 'Déplacer un lapin');
@@ -369,23 +370,48 @@ export class GameUI {
     if (!this.snapshot.state || this.cuisine.active || this.view?.kind === 'cuisineRabbit') return;
     this.open({kind: 'cuisineRabbit'});
   }
-  private renderCuisineRabbits(s: GameState): void {
-    this.title.textContent = 'Choisis ton lapin';
+  /** Cuisine is played by two rabbits: first the commis (cooks, wears the toque), then the taster (bib, tastes the dish). */
+  private renderCuisineRabbits(s: GameState, commisId?: string): void {
+    const commis = commisId ? s.rabbits.find(r => r.id === commisId && !travelling(s, r.id)) : undefined;
+    this.title.textContent = commis ? 'Choisis ton goûteur' : 'Choisis ton commis';
     if (window.innerHeight > window.innerWidth) this.content.append(node('p', 'La Cuisine se joue en paysage : tourne ton téléphone.', 'reason'));
     this.content.append(node('p', cuisineQuotaText(s, this.now()), 'cuisine-quota'));
-    if (!s.rabbits.length) this.content.append(node('p', 'Tu as besoin d’un lapin pour cuisiner.'));
-    for (const rabbit of s.rabbits) {
+    if (!s.rabbits.length) { this.content.append(node('p', 'Tu as besoin d’un lapin pour cuisiner.')); return; }
+    const start = (commisId: string, tasterId?: string) => {
+      if (this.view?.kind !== 'cuisineRabbit' || this.cuisine.active) return;
+      const now = this.controller.getSnapshot().state!, pick = (id?: string) => id === undefined ? undefined : now.rabbits.find(r => r.id === id && !travelling(now, r.id));
+      const cook = pick(commisId), taster = pick(tasterId);
+      if (!cook || (tasterId !== undefined && !taster)) { this.render(); return; }
+      while (this.view?.kind === 'cuisineRabbit') this.back();
+      this.cuisine.open({id: cook.id, species: cook.species, name: cook.name}, taster && {id: taster.id, species: taster.species, name: taster.name});
+    };
+    if (!commis) {
+      this.content.append(node('p', s.rabbits.length > 1 ? 'Ton commis cuisine avec toi. Ensuite, tu choisiras le goûteur, qui goûtera le plat.' : 'Ton lapin sera à la fois commis et goûteur.', 'cuisine-pick-intro'));
+      for (const rabbit of s.rabbits) {
+        const card = this.rabbitCard(s, rabbit.id);
+        const choose = this.button(card, s.rabbits.length > 1 ? 'Choisir comme commis' : 'Cuisiner avec ce lapin', () => {
+          if (this.view?.kind !== 'cuisineRabbit' || this.view.commis || this.cuisine.active) return;
+          const now = this.controller.getSnapshot().state!, current = now.rabbits.find(r => r.id === rabbit.id);
+          if (!current || travelling(now, current.id)) { this.render(); return; }
+          if (now.rabbits.length < 2) start(current.id); else this.open({kind: 'cuisineRabbit', commis: current.id});
+        }, travelling(s, rabbit.id) ? REFUSALS.TRAVELING : null);
+        choose.dataset.cuisineRabbit = rabbit.id;
+        this.content.append(card);
+      }
+      return;
+    }
+    const chosen = node('div', '', 'cuisine-pick-commis');
+    chosen.append(node('p', `Commis : ${commis.name || SPECIES[commis.species].name}`));
+    this.button(chosen, 'Changer de commis', () => this.back(), null, true).dataset.cuisineChangeCommis = '';
+    this.content.append(chosen, node('p', 'Le goûteur attend à côté et goûte le plat à la fin. Un des deux lapins, tiré au sort, gagne l’affection.', 'cuisine-pick-intro'));
+    const others = s.rabbits.filter(r => r.id !== commis.id);
+    for (const rabbit of others) {
       const card = this.rabbitCard(s, rabbit.id);
-      const choose = this.button(card, 'Choisir ce lapin', () => {
-        if (this.view?.kind !== 'cuisineRabbit' || this.cuisine.active) return;
-        const current = this.controller.getSnapshot().state?.rabbits.find(r => r.id === rabbit.id);
-        if (!current || travelling(this.controller.getSnapshot().state!, current.id)) { this.render(); return; }
-        this.back();
-        this.cuisine.open({id: current.id, species: current.species});
-      }, travelling(s, rabbit.id) ? REFUSALS.TRAVELING : null);
-      choose.dataset.cuisineRabbit = rabbit.id;
+      this.button(card, 'Choisir comme goûteur', () => start(commis.id, rabbit.id), travelling(s, rabbit.id) ? REFUSALS.TRAVELING : null).dataset.cuisineTaster = rabbit.id;
       this.content.append(card);
     }
+    // Every other rabbit is away: the commis cooks and tastes alone rather than blocking the Cuisine.
+    if (others.every(r => travelling(s, r.id))) this.button(this.content, 'Cuisiner sans goûteur', () => start(commis.id)).dataset.cuisineAlone = '';
   }
   private back(): void {
     let previous = this.history.pop();
@@ -591,7 +617,7 @@ export class GameUI {
       case 'album': this.renderAlbum(s);break;
       case 'cozyEvents': this.renderCozyEvents(s);break;
       case 'decorationGroup': this.renderDecorationGroup(s);break;
-      case 'cuisineRabbit': this.renderCuisineRabbits(s); break;
+      case 'cuisineRabbit': this.renderCuisineRabbits(s, this.view.commis); break;
       case 'missions': this.renderMissions(s, this.view.tab); break;
       case 'hearts': this.renderHearts(s); break;
       case 'shop': this.renderShop(s, this.view.tab); break;

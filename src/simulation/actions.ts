@@ -20,7 +20,7 @@ import {dailyBonusReady, dailyClaimable, dailyCycleStart, dailyMissionsOf, recor
 import {AFFECTION_STATUE, farmLimit, farmDuration, BALANCE, HEARTS, HOUR, TRAVEL, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
 import {emptyBuilding} from '../state/initial';
 import {babyInNursery, findNurseryBaby, firstFreeNurserySlot, nurseryBuilding, nurseryUnlockQuote, settleNestTransfers} from './nursery';
-import type {ActionResult, Building, Command, GameState, PattesCommand, Refusal, ProgressionGain} from '../state/types';
+import type {ActionResult, Building, Command, GameState, PattesCommand, Rabbit, Refusal, ProgressionGain} from '../state/types';
 import {chooseBirth, breedingPool, nestForParent, recipeMatches} from './breeding';
 import {recipePrice, recipePurchaseReason} from './recipes';
 import {advance, validTime, drawIncomeRoll} from './time';
@@ -116,14 +116,25 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       case 'rewardCuisine': {
         requireRule(Object.hasOwn(CUISINE_REWARDS, command.recipeId), 'INVALID_CHOICE');
         requireRule(s.buildings.some(b => b.kind === 'kitchen'), 'MISSING_BUILDING'); // The Kitchen is where Cuisine is played.
-        const rabbit = s.rabbits.find(r => r.id === command.rabbitId); requireRule(rabbit, 'NOT_FOUND'); requireRule(!travelling(s, rabbit.id), 'TRAVELING');
+        const cooks = [command.rabbitId, ...(command.tasterId === undefined ? [] : [command.tasterId])].map(id => s.rabbits.find(r => r.id === id));
+        for (const cook of cooks) { requireRule(cook, 'NOT_FOUND'); requireRule(!travelling(s, cook.id), 'TRAVELING'); }
+        requireRule(cooks.length === 1 || cooks[0] !== cooks[1], 'SAME_PARENT');
         const cycle = s.missions.daily.cycleIndex;
+        const eligibleCook = (r: Rabbit) => !Object.hasOwn(s.cuisine.affectionCycles, r.id) || s.cuisine.affectionCycles[r.id] !== cycle;
+        // Two cooks: the affection goes to only one of them, drawn by the game's random source (the player cannot choose).
+        // The draw is among the cooks still able to receive it today, so cooking together never pays less than cooking alone.
+        let rabbit = cooks[0]!;
+        if (cooks.length === 2) {
+          const open = cooks.filter(r => eligibleCook(r!) && r!.affection < affectionCap(s)), pool = open.length ? open : cooks;
+          const roll = rng(); requireRule(Number.isFinite(roll) && roll >= 0 && roll < 1, 'INVALID_RANDOM');
+          rabbit = pool[Math.floor(roll * pool.length)]!;
+        }
         // The full-reward slots are shared by every recipe and renew with the canonical daily cycle.
         const used = s.cuisine.fullRuns?.cycle === cycle ? s.cuisine.fullRuns.used : 0, fullReward = used < CUISINE_FULL_REWARDS_PER_CYCLE;
         const paid = fullReward ? CUISINE_REWARDS[command.recipeId] : CUISINE_TIP;
         credit('pattes', paid.pattes); credit('grass', paid.grass);
         if (fullReward) s.cuisine.fullRuns = {cycle, used: used + 1};
-        const eligible = !Object.hasOwn(s.cuisine.affectionCycles, rabbit.id) || s.cuisine.affectionCycles[rabbit.id] !== cycle;
+        const eligible = eligibleCook(rabbit);
         const affectionGranted = eligible && rabbit.affection < affectionCap(s);
         if (eligible) {
           s.cuisine.affectionCycles = {...s.cuisine.affectionCycles, [rabbit.id]: cycle};
@@ -132,7 +143,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         // One Heart per canonical cycle for Cuisine as a whole, whichever rabbit cooked.
         const heartGranted = s.cuisine.heartCycle !== cycle;
         if (heartGranted) { credit('hearts', 1); s.cuisine.heartCycle = cycle; }
-        cuisineReward = {pattes: paid.pattes, grass: paid.grass, fullReward, affectionGranted, affectionAtCap: rabbit.affection === BALANCE.maxAffection, affectionStatueRequired: !affectionGranted && rabbit.affection >= AFFECTION_STATUE.cap && affectionCap(s) === AFFECTION_STATUE.cap, heartGranted};
+        cuisineReward = {pattes: paid.pattes, grass: paid.grass, fullReward, affectionGranted, affectionAtCap: rabbit.affection === BALANCE.maxAffection, affectionStatueRequired: !affectionGranted && rabbit.affection >= AFFECTION_STATUE.cap && affectionCap(s) === AFFECTION_STATUE.cap, heartGranted, affectionRabbitId: rabbit.id};
         break;
       }
       case 'buyDecoration': {

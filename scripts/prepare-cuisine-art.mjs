@@ -1,5 +1,6 @@
 // Painted Cuisine art (food, utensils, containers, kitchen), generated with ChatGPT on 1 November 2026 with the owner's free hand.
 // Stage 1 (only when the paintings are redelivered): `node scripts/prepare-cuisine-art.mjs --sources output/imagegen/cuisine-v1`
+//   (the accessories sheet is read from the sibling folder output/imagegen/cuisine-accessoires-v1)
 //   keys each magenta sprite sheet, splits it by grid cell (painted pieces grouped by their centre) and writes trimmed RGBA
 //   masters in assets-source/cuisine/.
 // Stage 2 (always): `PLAYWRIGHT_MODULE=<installed playwright module> node scripts/prepare-cuisine-art.mjs`
@@ -40,6 +41,9 @@ export const SHEETS = [
     'plate-salmon', 'plate-moelleux', 'plate-chicken', 'cutting-board',
     'stove', 'oven', 'spoon', 'steam'], soft: ['steam']},
   {source: 'cuisine-fond.png', opaque: true, size: 1600, names: ['backdrop']},
+  // The cooks' accessories (owner's choice, 1 November 2026: toque C for the commis, bib A for the taster), from the concept
+  // board painted on its own sheet; the other concepts are left out.
+  {source: '../cuisine-accessoires-v1/accessoires.png', grid: [3, 2], size: 256, names: [null, null, 'toque', 'bavoir', null, null]},
 ];
 
 /**

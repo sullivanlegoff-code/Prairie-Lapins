@@ -44,7 +44,7 @@ describe('Cuisine reward command',()=>{
     expect(r.state.pattes).toBe(before.pattes+CUISINE_REWARDS[recipeId].pattes);expect(r.state.grass).toBe(before.grass+CUISINE_REWARDS[recipeId].grass);
     expect(r.state.rabbits).toEqual(before.rabbits.map(r=>({...r,affection:r.affection+1})));
     expect(r.state.hearts).toBe(before.hearts+1);expect(r.state.cuisine.heartCycle).toBe(0);expect(r.state.progression).toEqual(before.progression);
-    expect(r.cuisineReward).toEqual({...CUISINE_REWARDS[recipeId],fullReward:true,affectionGranted:true,affectionAtCap:false,affectionStatueRequired:false,heartGranted:true});
+    expect(r.cuisineReward).toEqual({...CUISINE_REWARDS[recipeId],fullReward:true,affectionGranted:true,affectionAtCap:false,affectionStatueRequired:false,heartGranted:true,affectionRabbitId:s.rabbits[0].id});
     expect(s).toEqual(before);
   });
   it('tracks same-species individuals by exact id and becomes eligible at the canonical cycle boundary',()=>{
@@ -116,7 +116,7 @@ describe('Cuisine reward command',()=>{
       expect(r.state.pattes).toBe(before.pattes+TOAST.pattes);expect(r.state.grass).toBe(before.grass+TOAST.grass);
       expect(r.state.rabbits[0].affection).toBe(4);expect(r.state.hearts).toBe(before.hearts+1);
       expect(r.state.cuisine).toEqual({affectionCycles:{[s.rabbits[0].id]:0},heartCycle:0,fullRuns:{cycle:0,used:1}});
-      expect(r.cuisineReward).toEqual({...TOAST,fullReward:true,affectionGranted:true,affectionAtCap:false,affectionStatueRequired:false,heartGranted:true});
+      expect(r.cuisineReward).toEqual({...TOAST,fullReward:true,affectionGranted:true,affectionAtCap:false,affectionStatueRequired:false,heartGranted:true,affectionRabbitId:s.rabbits[0].id});
       const again=reward(r.state);expect(again.cuisineReward).toMatchObject({affectionGranted:false,heartGranted:false});
     });
   });
@@ -205,5 +205,37 @@ describe('full-reward quota: five per cycle, shared by every recipe',()=>{
     // A later cycle, skipping days, also starts again.
     const skipped=cook(next,'avocado-toast',s.rabbits[0].id,boundary+5*MISSION_CYCLE_DURATION);
     expect(skipped.cuisineReward).toMatchObject({pattes:45,fullReward:true});expect(skipped.state.cuisine.fullRuns!.cycle).toBe(6);
+  });
+});
+
+describe('Cuisine à deux lapins (commis et goûteur)',()=>{
+  const pair=()=>{const s=withKitchen(createGame(0)),a=s.rabbits[0];a.id='birth-101';s.rabbits.push({...a,id:'birth-102'});s.nextId=103;return s;};
+  const cook=(s:GameState,roll:number,now=s.lastSimulatedAt)=>act(s,{type:'rewardCuisine',rabbitId:'birth-101',tasterId:'birth-102',recipeId:'avocado-toast'},now,()=>roll);
+  it('pays exactly what one rabbit earned, and the affection goes to one of the two, drawn by the game',()=>{
+    const s=pair(),alone=reward(s,'birth-101');
+    for(const [roll,winner] of [[0,'birth-101'],[.49,'birth-101'],[.5,'birth-102'],[.99,'birth-102']] as const){
+      const r=cook(s,roll);expect(r.ok).toBe(true);if(!r.ok)continue;
+      expect(r.cuisineReward).toMatchObject({affectionGranted:true,heartGranted:true,affectionRabbitId:winner,pattes:TOAST.pattes,grass:TOAST.grass});
+      expect(r.state.pattes).toBe(alone.state.pattes);expect(r.state.hearts).toBe(alone.state.hearts);
+      const gained=r.state.rabbits.map(x=>x.affection-s.rabbits.find(y=>y.id===x.id)!.affection);
+      expect(gained.reduce((a,b)=>a+b,0)).toBe(1);expect(r.state.rabbits.find(x=>x.id===winner)!.affection).toBe(s.rabbits[0].affection+1);
+      expect(Object.keys(r.state.cuisine.affectionCycles)).toEqual([winner]);
+    }
+  });
+  it('draws among the rabbits still able to receive affection today, then none once both had it',()=>{
+    const first=cook(pair(),0);if(!first.ok)throw Error();expect(first.cuisineReward!.affectionRabbitId).toBe('birth-101');
+    const second=cook(first.state,0);if(!second.ok)throw Error();expect(second.cuisineReward).toMatchObject({affectionRabbitId:'birth-102',affectionGranted:true});
+    const third=cook(second.state,0);if(!third.ok)throw Error();expect(third.cuisineReward!.affectionGranted).toBe(false);
+    const capped=pair();capped.rabbits[0].affection=20;const r=cook(capped,0);if(!r.ok)throw Error();expect(r.cuisineReward).toMatchObject({affectionRabbitId:'birth-102',affectionGranted:true});
+  });
+  it('refuses the same rabbit twice, an unknown taster and a broken random source',()=>{
+    const s=pair();
+    expect(act(s,{type:'rewardCuisine',rabbitId:'birth-101',tasterId:'birth-101',recipeId:'moelleux'},0,()=>0)).toMatchObject({ok:false,reason:'SAME_PARENT'});
+    expect(act(s,{type:'rewardCuisine',rabbitId:'birth-101',tasterId:'nobody',recipeId:'moelleux'},0,()=>0)).toMatchObject({ok:false,reason:'NOT_FOUND'});
+    expect(act(s,{type:'rewardCuisine',rabbitId:'birth-101',tasterId:'birth-102',recipeId:'moelleux'},0,()=>1)).toMatchObject({ok:false,reason:'INVALID_RANDOM'});
+  });
+  it('a rabbit cooking alone keeps its affection without any draw',()=>{
+    const s=pair();const r=act(s,{type:'rewardCuisine',rabbitId:'birth-102',recipeId:'chicken'},s.lastSimulatedAt,()=>{throw Error('no draw');});
+    expect(r.ok&&r.cuisineReward!.affectionRabbitId).toBe('birth-102');
   });
 });

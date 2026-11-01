@@ -364,5 +364,17 @@
     "height": 1024,
     "bytes": 140826,
     "masterSha256": "f344baf949fecd4537dacd22611ab837603039022da4d9928153be2f006c7549"
+  },
+  "toque": {
+    "width": 256,
+    "height": 207,
+    "bytes": 11876,
+    "masterSha256": "eaaf78ea1045ce39bf09c05e8dc4f62a2e682c51af2e48d0729ad5c21a3d1dc8"
+  },
+  "bavoir": {
+    "width": 256,
+    "height": 257,
+    "bytes": 16682,
+    "masterSha256": "898137228e92439dc4d830db909c4e89fa74bb9a993c283d52ab20e64abd2b94"
   }
 }

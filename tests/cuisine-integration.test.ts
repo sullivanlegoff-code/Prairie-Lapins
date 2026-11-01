@@ -58,9 +58,12 @@ function setup(withKitchen = true, rabbits?: 'duplicates' | 'different' | 'empty
   const hostMounted = vi.spyOn(cuisineHostApi, 'mountCuisineActivity');
   const ui = new GameUI(controller, scene, () => 0, preferences, undefined, {onCuisineCompleted: completed});
   cleanups.push(() => { ui.dispose(); controller.dispose(); });
-  const choose = (id?: string) => {
+  /** Commis first, then (with two rabbits or more) the taster: the given one, or the first offered. */
+  const choose = (id?: string, tasterId?: string) => {
     const choices=[...document.querySelectorAll<HTMLButtonElement>('[data-cuisine-rabbit]')];
     (id ? choices.find(b=>b.dataset.cuisineRabbit===id)! : choices[0]).click();
+    const tasters=[...document.querySelectorAll<HTMLButtonElement>('[data-cuisine-taster]')];
+    if (tasters.length) (tasterId ? tasters.find(b=>b.dataset.cuisineTaster===tasterId)! : tasters[0]).click();
   };
   const enterButton = () => [...document.querySelectorAll<HTMLButtonElement>('#game-panel button')].find(b => b.textContent === 'Entrer dans la Cuisine');
   const open = () => { ui.select({kind: 'building', id: 'building-100'}); enterButton()!.click(); choose(); };
@@ -228,8 +231,16 @@ describe('main-game Cuisine activity', () => {
     expect(k.mounted).not.toHaveBeenCalled();expect(k.host.selectedRabbit).toBeNull();
     const chosen=same.at(-1)!;
     const action=buttons.find(b=>b.dataset.cuisineRabbit===chosen.id)!;action.click();action.click();
+    expect(k.mounted).not.toHaveBeenCalled();
+    expect(document.getElementById('panel-title')!.textContent).toBe('Choisis ton goûteur');
+    expect(document.getElementById('panel-content')!.textContent).toContain('Un des deux lapins, tiré au sort, gagne l’affection.');
+    const tasters=[...document.querySelectorAll<HTMLButtonElement>('[data-cuisine-taster]')];
+    expect(tasters.map(b=>b.dataset.cuisineTaster)).toEqual(before.rabbits.filter(r=>r.id!==chosen.id).map(r=>r.id));
+    const second=before.rabbits.find(r=>r.id!==chosen.id)!;
+    tasters[0].click();tasters[0].click();
     expect(k.mounted).toHaveBeenCalledOnce();
     expect(k.host.selectedRabbit).toEqual({id:chosen.id,species:chosen.species});
+    expect(k.host.taster).toEqual({id:second.id,species:second.species});
     expect(k.mounted.mock.calls[0][1]).not.toHaveProperty('rabbit');
     expect(k.controller.getSnapshot().state).toEqual(before);
     k.exit();expect(k.host.selectedRabbit).toBeNull();expect(k.completed).not.toHaveBeenCalled();
@@ -239,7 +250,7 @@ describe('main-game Cuisine activity', () => {
     const k=setup(true,'empty'),before=structuredClone(k.controller.getSnapshot().state);
     k.ui.select({kind:'building',id:'building-100'});
     [...document.querySelectorAll<HTMLButtonElement>('#panel-content button')].find(b=>b.textContent==='Entrer dans la Cuisine')!.click();
-    expect(document.getElementById('panel-title')!.textContent).toBe('Choisis ton lapin');
+    expect(document.getElementById('panel-title')!.textContent).toBe('Choisis ton commis');
     expect(document.getElementById('panel-content')!.textContent).toContain('Tu as besoin d’un lapin pour cuisiner.');
     expect(document.querySelectorAll('[data-cuisine-rabbit]')).toHaveLength(0);
     expect(k.mounted).not.toHaveBeenCalled();expect(k.host.selectedRabbit).toBeNull();
@@ -255,7 +266,7 @@ describe('main-game Cuisine activity', () => {
     const enter=()=>[...document.querySelectorAll<HTMLButtonElement>('#panel-content button')].find(b=>b.textContent==='Entrer dans la Cuisine')!;
     const action=enter();action.click();action.click();
     expect(k.mounted).not.toHaveBeenCalled();
-    expect(document.getElementById('panel-title')!.textContent).toBe('Choisis ton lapin');
+    expect(document.getElementById('panel-title')!.textContent).toBe('Choisis ton commis');
     k.choose(before!.rabbits[0].id);
     expect(k.mounted).toHaveBeenCalledOnce();
     expect(document.getElementById('app')!.inert).toBe(true);
@@ -274,7 +285,7 @@ describe('main-game Cuisine activity', () => {
     enter().click();k.choose();expect(k.mounted).toHaveBeenCalledTimes(2);
     expect(document.querySelectorAll('.cuisine-root')).toHaveLength(1);
     expect(document.querySelectorAll('.cuisine-root style')).toHaveLength(1);
-    expect(vi.getTimerCount()).toBe(1);k.exit();
+    expect(vi.getTimerCount()).toBe(2);k.exit();
     expect(vi.getTimerCount()).toBe(0);expect(k.completed).not.toHaveBeenCalled();
     expect(k.controller.getSnapshot().state).toEqual(before);
     k.ui.select({kind:'rabbit',id:before!.rabbits[0].id});
@@ -312,7 +323,7 @@ describe('main-game Cuisine activity', () => {
     expect(k.mounted).toHaveBeenCalledTimes(2);
     expect(document.querySelectorAll('.cuisine-root')).toHaveLength(1);
     expect(document.querySelectorAll('.cuisine-root style')).toHaveLength(1);
-    expect(vi.getTimerCount()).toBe(1);
+    expect(vi.getTimerCount()).toBe(2); // the engine's clock and the commis's mood watcher
     const second = k.activity(1);
     expect(second.engine.snapshot()).toMatchObject({phase: 'choosing', activeTimeMs: 0});
     k.exit(); k.ui.select({kind: 'rabbit', id: k.controller.getSnapshot().state!.rabbits[0].id});
@@ -447,7 +458,7 @@ describe('Cuisine tasting celebration', () => {
     const k = setup(); const a = play(k, 'avocado-toast'); expect(tasting()).not.toBeNull();
     a.root.querySelector<HTMLButtonElement>(`#${id}`)!.click();
     expect(tasting()).toBeNull(); expect(companion().dataset.tasting).toBeUndefined(); expect(companion().dataset.reaction).toBe('idle');
-    expect(vi.getTimerCount()).toBeLessThanOrEqual(0 + 1); // only the engine's own interval may remain
+    expect(vi.getTimerCount()).toBeLessThanOrEqual(2); // only the engine's clock and the commis's mood watcher may remain
   });
   it('a second completion after Replay restarts one tasting, never two', () => {
     const k = setup(); const a = play(k, 'avocado-toast');
@@ -480,13 +491,15 @@ describe('selected rabbit inside the Cuisine scene', () => {
     k.ui.select({kind: 'building', id: 'building-100'});
     [...document.querySelectorAll<HTMLButtonElement>('#game-panel button')].find(b => b.textContent === 'Entrer dans la Cuisine')!.click();
     k.choose(target.id); const a = k.activity();
-    expect(chefs()).toHaveLength(1); const chef = chefs()[0];
+    expect(chefs()).toHaveLength(2); const [chef, taster] = chefs();
     expect(chef.parentElement).toBe(a.root.querySelector('#kitchen-world'));
     expect(chef.previousElementSibling).toBe(a.root.querySelector('#kitchen-world .table-art'));
-    expect(chef.dataset.chefRabbit).toBe('boudinet'); expect(chef.getAttribute('aria-hidden')).toBe('true');
+    expect(chef.dataset.chefRabbit).toBe('boudinet'); expect(chef.dataset.role).toBe('commis'); expect(chef.getAttribute('aria-hidden')).toBe('true');
+    expect(taster.dataset.role).toBe('taster'); expect(taster.dataset.chefRabbit).toBe(k.controller.getSnapshot().state!.rabbits[0].species);
     const expected = document.createElement('span'); expected.innerHTML = portrait('boudinet');
-    expect(chef.querySelector('.cuisine-chef-rabbit')!.innerHTML).toBe(expected.innerHTML);
-    expect(chef.querySelector('.cuisine-chef-stand svg')).not.toBeNull();
+    expect(chef.querySelector('.cuisine-cook-figure > img:not(.cuisine-accessory)')!.outerHTML).toBe(expected.firstElementChild!.outerHTML);
+    expect(chef.querySelector('.cuisine-chef-stand svg')).not.toBeNull(); expect(taster.querySelector('.cuisine-chef-stand svg')).not.toBeNull();
+    expect(chef.querySelector('.cuisine-paws')).not.toBeNull(); expect(taster.querySelector('.cuisine-paws')).toBeNull();
   });
   it('stays present and reacts while cooking, without touching the kitchen geometry', () => {
     const k = setup(); k.open(); const a = k.activity(), chef = chefs()[0];
@@ -532,5 +545,35 @@ describe('selected rabbit inside the Cuisine scene', () => {
     activity.root.querySelector<HTMLButtonElement>('#recipe-avocado-toast')!.click(); finishToast(activity.engine); activity.refresh();
     expect(host.querySelector('.cuisine-chef, .cuisine-tasting')).toBeNull(); expect(activity.root.dataset.tasting).toBeUndefined();
     expect(activity.root.querySelector<HTMLElement>('#result-screen')!.hidden).toBe(false);
+  });
+});
+
+describe('Cuisine for two: commis and taster', () => {
+  it('a meadow with one rabbit opens directly: it is both commis and taster', () => {
+    const k = setup(); k.ui.select({kind: 'building', id: 'building-100'}); k.enterButton()!.click();
+    expect(document.getElementById('panel-content')!.textContent).toContain('Ton lapin sera à la fois commis et goûteur.');
+    const only = document.querySelector<HTMLButtonElement>('[data-cuisine-rabbit]')!;
+    expect(only.textContent).toBe('Cuisiner avec ce lapin'); only.click();
+    expect(k.mounted).toHaveBeenCalledOnce(); expect(k.host.taster).toBeNull();
+    expect(document.querySelectorAll('.cuisine-chef')).toHaveLength(1);
+  });
+  it('changes the commis from the taster step, then shows on the result who won the affection', () => {
+    const k = setup(true, 'different'), [a, b] = k.controller.getSnapshot().state!.rabbits;
+    k.ui.select({kind: 'building', id: 'building-100'}); k.enterButton()!.click();
+    document.querySelector<HTMLButtonElement>(`[data-cuisine-rabbit="${a.id}"]`)!.click();
+    expect(document.getElementById('panel-content')!.textContent).toContain(`Commis : ${SPECIES[a.species].name}`);
+    document.querySelector<HTMLButtonElement>('[data-cuisine-change-commis]')!.click();
+    expect(document.getElementById('panel-title')!.textContent).toBe('Choisis ton commis');
+    k.choose(b.id, a.id);
+    expect(k.host.selectedRabbit).toEqual({id: b.id, species: b.species}); expect(k.host.taster).toEqual({id: a.id, species: a.species});
+    const act = k.activity(); act.root.querySelector<HTMLButtonElement>('#recipe-avocado-toast')!.click(); finishToast(act.engine); act.refresh(); act.refresh();
+    const saved = k.controller.getSnapshot().state!, winner = saved.rabbits.find(r => r.affection > (r.id === a.id ? a.affection : b.affection))!;
+    expect(saved.rabbits.reduce((sum, r) => sum + r.affection, 0)).toBe(a.affection + b.affection + 1);
+    expect(act.root.querySelector('.cuisine-reward-feedback')!.textContent).toContain(`+1 Affection pour ${SPECIES[winner.species].name}`);
+    const lucky = document.querySelectorAll<HTMLElement>('.cuisine-chef[data-lucky]');
+    expect(lucky).toHaveLength(1); expect(lucky[0].dataset.chefRabbit).toBe(winner.species);
+    // The taster tastes; the result card shows it.
+    expect(document.querySelector('.cuisine-taster .cuisine-tasting')).not.toBeNull();
+    expect(act.root.querySelector('.cuisine-result-rabbit')!.textContent).toContain(SPECIES[a.species].name);
   });
 });
