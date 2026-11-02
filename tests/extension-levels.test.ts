@@ -27,13 +27,13 @@ describe('rank-based extension level gates',()=>{
   }
  });
  it('allows diagonal/free choices until the next threshold; stale prices never buy another rank',()=>{
-  let s=state(1,8);for(const [i,parcelId] of (['southeast','northwest','south'] as const).entries()){const r=act(s,{type:'expand',parcelId,expectedCost:[600,1800,4500][i]},0);if(!r.ok)throw Error(r.reason);s=r.state;}
-  expect(act(s,{type:'expand',parcelId:'east',expectedCost:600},0)).toMatchObject({ok:false,reason:'PRICE_CHANGED'});expect(act(s,{type:'expand',parcelId:'east',expectedCost:9000},0)).toMatchObject({ok:false,reason:'LEVEL_REQUIRED'});
+  let s=state(1,8);for(const [i,parcelId] of (['southeast','northwest','south'] as const).entries()){const r=act(s,{type:'expand',parcelId,expectedCost:[600,2000,6000][i]},0);if(!r.ok)throw Error(r.reason);s=r.state;}
+  expect(act(s,{type:'expand',parcelId:'east',expectedCost:600},0)).toMatchObject({ok:false,reason:'PRICE_CHANGED'});expect(act(s,{type:'expand',parcelId:'east',expectedCost:12000},0)).toMatchObject({ok:false,reason:'LEVEL_REQUIRED'});
   expect(act(state(1,1),{type:'expand',parcelId:'bad' as never,expectedCost:600},0)).toMatchObject({ok:false,reason:'INVALID_CHOICE'});
  });
  it('keeps old partial/full terrain without invented rights and filters owned announcements',()=>{
   const partial=state(4,1);expect(levelUnlockContents(partial,1,30).filter(t=>t.family==='extension')).toEqual([4,5,6,7,8].map(rank=>({family:'extension',rank})));
-  expect(act(partial,{type:'expand',parcelId:'west',expectedCost:9000},0)).toMatchObject({ok:false,reason:'LEVEL_REQUIRED'});
+  expect(act(partial,{type:'expand',parcelId:'west',expectedCost:12000},0)).toMatchObject({ok:false,reason:'LEVEL_REQUIRED'});
   const full=state(9,1);const loaded=decodeGame(encodeGame(full));expect(loaded).toMatchObject({ok:true,state:{acquiredParcels:full.acquiredParcels,buildings:full.buildings,progression:full.progression}});expect(levelUnlockContents(full,1,30).some(t=>t.family==='extension')).toBe(false);
   const notices=new ProgressionNotices('extension-notices','test');notices.add({fromLevel:1,toLevel:30,heartsGranted:0,unlocks:levelUnlockContents(partial,1,30)});expect(new ProgressionNotices('extension-notices','test').take()?.unlocks?.filter(t=>t.family==='extension')).toHaveLength(5);
  });

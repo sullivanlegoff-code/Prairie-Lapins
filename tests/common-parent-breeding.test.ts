@@ -94,7 +94,7 @@ describe('Common results require two Common parents of the same single type', ()
     controller.dispose();
   });
   it('keeps exact fixed special chances at all affection bonus thresholds after removing common results', () => {
-    for (const [affection, epic] of [[6, 300], [10, 450], [15, 600], [20, 600]] as const) {
+    for (const [affection, epic] of [[6, 300], [10, 345], [15, 390], [20, 390], [30, 450], [50, 600]] as const) {
       const expected = epic * 100 / (2 * 1200 + 2 * epic); // Weight model: two Rares at 1200, two Epics at 300 × the factor.
       const s = parents('paille', 'belier-gris', affection); s.discovered.push('roukette', 'boudinet');
       const p = breedingPool(s, 'paille', 'belier-gris', affection, affection);
@@ -105,20 +105,22 @@ describe('Common results require two Common parents of the same single type', ()
       expect(p.weights.boudinet! * 100 / p.total).toBeCloseTo(100 / 2 - expected, 12);
       for (const [a, b, id] of [['dadi', 'phoenix', 'dragon'], ['maxou', 'wat-wat', 'requin']] as const) {
         const pool = breedingPool(s, a, b, Math.max(10, affection), Math.max(10, affection));
-        expect(pool.weights[id]! * 100 / pool.total).toBe(affection >= 15 ? 20 : 15);
+        expect(pool.weights[id]! * 100 / pool.total).toBe(affection >= 50 ? 20 : affection >= 30 ? 15 : affection >= 15 ? 13 : 11.5);
       }
     }
     // Removing every ordinary candidate cannot turn a fixed 10 % special into a 100 % result.
     expect(breedingDistributionWeights('paille', 'belier-gris', 6, 6, id => id === 'magicien' || id === 'calinou')).toEqual({});
-    // Paille, Metal, Feu and Vol together at affection 15: twelve Rares at 1200 and five Epics at 600, 17 % of Epics in all.
-    const big = breedingOdds('magicien', 'phoenix', 15, 15);
+    // Paille, Metal, Feu and Vol together at affection 50: twelve Rares at 1200 and five Epics at 600, 17 % of Epics in all; at 15, five Epics at 390.
+    const big = breedingOdds('magicien', 'phoenix', 50, 50);
     for (const id of ['magicien', 'dadi', 'dinono', 'dinenette', 'calinou'] as const) expect(big[id]).toBeCloseTo(600 * 100 / 17400, 12);
+    const fifteen = breedingOdds('magicien', 'phoenix', 15, 15);
+    for (const id of ['magicien', 'dadi', 'dinono', 'dinenette', 'calinou'] as const) expect(fifteen[id]).toBeCloseTo(390 * 100 / 16350, 12);
     expect(Object.keys(big)).toHaveLength(17);
   });
   it('removes Common results from mixed pairs while preserving the exact Dragon reserve', () => {
     expect(breedingDistributionWeights('neige', 'pic-pic', 2, 2)).toEqual({'pic-pic': 30, tunini: 30});
     const s = parents('dadi', 'phoenix', 10), pool = breedingPool(s, 'dadi', 'phoenix', 10, 10);
-    expect(pool.weights.dragon! * 100 / pool.total).toBe(15);
+    expect(pool.weights.dragon! * 100 / pool.total).toBe(11.5);
     for (const id of ['neige', 'feu', 'volant'] as const) expect(pool.weights[id]).toBeUndefined();
     expect(SPECIES[chooseBirth(s, 'dadi', 'phoenix', 0, 10, 10).species].rarity).not.toBe('common');
   });

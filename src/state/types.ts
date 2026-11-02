@@ -72,7 +72,7 @@ export interface GameState {
   startCourse?: 'paille-solo';
   purchaseUnlocks?: PurchaseUnlockId[];
   initiation?: Initiation;
-  version: 22;
+  version: 23;
   /** Benny, the Mythic (v22): when her power is usable again, and whether she is flying in the sky. Absent until first used. */
   benny?: {powerReadyAt: number; inSky: boolean};
   rewardedDecorationModels?: DecorationId[]; decorations: OwnedDecoration[]; missions: MissionState; lastSimulatedAt: number; nextId: number;
@@ -94,7 +94,7 @@ export type Refusal = 'LEVEL_REQUIRED' | 'NO_BREEDING_RESULT' | 'PURCHASE_LOCKED
   'SAME_PARENT' | 'AFFECTION_TOO_LOW' | 'MISSING_BUILDING' | 'ALREADY_EXPANDED' | 'PARCEL_UNAVAILABLE' |
   'LAST_OF_SPECIES' | 'PARENT_BUSY' | 'NOT_ENOUGH_HEARTS' | 'ACTION_FINISHED' |
   'STALE_ACTION' | 'PRICE_CHANGED' | 'NO_MISSING_PATTES' | 'ALREADY_CLAIMED' | 'CYCLE_EXPIRED' | 'RESOURCE_LIMIT' | 'TYPE_INCOMPATIBLE' | 'MAX_HABITAT_LEVEL' | 'RECIPE_KNOWN' | 'MAX_NURSERY_CAPACITY' |
-  'UPGRADE_BLOCKED_BUILDING' | 'UPGRADE_BLOCKED_DECORATION' | 'UPGRADE_BLOCKED_LAND' | 'INVALID_NAME' | 'MARKET_LIMIT' | 'STATUE_REQUIRED' | 'TRAVELING' |
+  'UPGRADE_BLOCKED_BUILDING' | 'UPGRADE_BLOCKED_DECORATION' | 'UPGRADE_BLOCKED_LAND' | 'INVALID_NAME' | 'MARKET_LIMIT' | 'STATUE_REQUIRED' | 'SECOND_STATUE_REQUIRED' | 'TRAVELING' |
   'BENNY_RECHARGING' | 'NO_WAITING_BABY' | 'BENNY_KEPT';
 export interface CuisineReward {pattes: number; grass: number; /** True for one of the cycle's full-reward slots, false for a tip. */ fullReward: boolean; affectionGranted: boolean; affectionAtCap: boolean; affectionStatueRequired: boolean; heartGranted: boolean; /** The rabbit the affection reward was drawn for. */ affectionRabbitId: string}
 export type ActionResult = {ok: true; state: GameState; value?: string | number; progressionGain?: ProgressionGain; cuisineReward?: CuisineReward} |

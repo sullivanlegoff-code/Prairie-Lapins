@@ -48,7 +48,7 @@ describe('southwest start for new games', () => {
     let s = rich(createGame(0)), rank = 0;
     while (purchasableParcels(s).length) {
       for (const id of purchasableParcels(s)) expect(PARCELS[id].x >= start.x && PARCELS[id].y <= start.y).toBe(true);
-      expect(extensionPrice(s)).toBe([600,1800,4500,9000,16000,26000,40000,60000][rank++]);
+      expect(extensionPrice(s)).toBe([600,2000,6000,12000,25000,45000,75000,100000][rank++]);
       s = buy(s, purchasableParcels(s).at(-1)!);
     }
     expect([...s.acquiredParcels].sort()).toEqual([...PARCEL_IDS].sort());

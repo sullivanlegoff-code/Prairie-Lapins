@@ -5,9 +5,9 @@
 Décision du propriétaire : une paire ne doit jamais donner plus d’une chance sur deux d’obtenir un épique, et les chances doivent rester cohérentes quand on ajoutera des rares, des épiques et des légendaires de tous les types.
 
 - Chaque résultat possible d’une paire reçoit un poids ; sa chance est son poids divisé par le total de la paire.
-- Un rare pèse 40 (en interne 30 × 40 = 1200). Un épique pèse son `probability` (10 pour tous aujourd’hui), soit un quart d’un rare, multiplié par 1,5 si les deux parents ont l’affection 10 et par 2 à l’affection 15.
+- Un rare pèse 40 (en interne 30 × 40 = 1200). Un épique pèse son `probability` (10 pour tous aujourd’hui), soit un quart d’un rare, multiplié par 1,15 si les deux parents ont l’affection 10, par 1,3 à 15, par 1,5 à 30 et par 2 à 50.
 - Plafond : tous les épiques réunis ne dépassent jamais la moitié du tirage ; au-delà, ils se partagent exactement cette moitié en gardant leurs proportions.
-- Les légendaires (recette à parents exacts) gardent leur chance fixe (10 % depuis le 1er novembre 2026, 7 % avant ; ×1,5 / ×2 avec l’affection, soit 15 % à l’affection 10 et 20 % à 15), réservée à part, hors du plafond des épiques ; le reste du tirage suit les poids.
+- Les légendaires (recette à parents exacts) gardent leur chance fixe (10 % depuis le 1er novembre 2026, 7 % avant ; ×1,15 / ×1,3 / ×1,5 / ×2 avec l’affection, soit 11,5 % à l’affection 10, 13 % à 15, 15 % à 30 et 20 % à 50), réservée à part, hors du plafond des épiques ; le reste du tirage suit les poids.
 - Une paire sans résultat rare possible ne donne toujours aucun résultat.
 
 Exemples à l’affection 6 : paille + métal (2 rares, 2 épiques) donne 40 % par rare et 10 % par épique ; paille + neige (2 rares, Orange) donne 44,4 % par rare et 11,1 % pour Orange ; une paire qui réunit paille, métal, feu et vol (12 rares, 5 épiques) donne 7,5 % par rare et 1,9 % par épique. Viser une petite paire est donc la meilleure façon d’obtenir un épique précis.
@@ -71,9 +71,9 @@ Une partie neuve commence avec **350 pattes, 0 nourriture et 12 cœurs**, Paille
 | Universel | 350 pattes |
 | Amélioration N2 | 50 % du prix d’achat du type |
 | Amélioration N3 | 10 cœurs |
-| Extensions successives | 600 / 1 800 / 4 500 / 9 000 / 16 000 / 26 000 / 40 000 / 60 000 ; niveaux requis conservés |
+| Extensions successives | 600 / 2 000 / 6 000 / 12 000 / 25 000 / 45 000 / 75 000 / 100 000 (2 novembre 2026 ; auparavant 600 / 1 800 / 4 500 / 9 000 / 16 000 / 26 000 / 40 000 / 60 000) ; niveaux requis conservés ; les extensions déjà achetées ne sont pas refacturées |
 | Ferme / Cuisine | 60 / 100 pattes ; deux fermes maximum |
-| Statue de l’Affection | 60 cœurs exclusivement, niveau 15, une seule ; vendue parmi les bâtiments, placement confirmé avant paiement |
+| Statues de l’Affection | deux au maximum, cœurs exclusivement : la première 60 cœurs au niveau 15, la deuxième 150 cœurs au niveau 25 (même dessin) ; vendues parmi les bâtiments, placement confirmé avant paiement |
 
 ### Nourriture et ferme (25 octobre 2026)
 
@@ -98,9 +98,9 @@ Le prix est payé au lancement. Quantité et durée normale sont figées dans ch
 
 ### Affection, statue et naissances rares
 
-Affection 1–20, sans faim ni dégradation. Le repas qui fait passer de *a* à *a* + 1 coûte : 2, 4, 8, 14, 22, 32, 45, 60, 80, 110, 140, 180, 230, **1 500** (14 → 15), puis 400, 480, 570, 670, 800 nourriture, soit 5 347 pour aller de 1 à 20. Sans la **Statue de l’Affection**, l’affection s’arrête à 14 (repas et Cuisine) ; un lapin déjà plus haut dans une ancienne partie garde son affection. Le repas de l’affection 15 est le plus cher de tous : une vraie récompense.
+Affection 1–50 depuis le 2 novembre 2026 (1–20 avant), sans faim ni dégradation. Le repas qui fait passer de *a* à *a* + 1 coûte : 2, 4, 8, 14, 22, 32, 45, 60, 80, 110, 140, 180, 230, **1 500** (14 → 15), puis 400, 480, 570, 670, 800 nourriture, soit 5 347 pour aller de 1 à 20 ; puis 900 à 1 700 par pas de 100 (20 → 21 à 28 → 29), **6 000** (29 → 30), 1 900 à 3 700 par pas de 100 (30 → 31 à 48 → 49) et **10 000** (49 → 50), soit 80 900 de plus pour aller de 20 à 50. Sans la **Statue de l’Affection**, l’affection s’arrête à 14 (repas et Cuisine) ; avec une seule statue, elle s’arrête à 30 : l’affection 31 et plus demande la deuxième statue. Un lapin déjà plus haut garde son affection. Les repas des affections 15, 30 et 50 sont des murs : de vraies récompenses. Le revenu continue de grandir avec l’affection, avec la même pente.
 
-Quand les deux parents ont au moins 10 d’affection, les chances d’épique et de légendaire sont multipliées par 1,5 ; à partir de 15 pour les deux, par 2 (l’affection la plus basse des deux décide). Exemple : Magicien 10 % → 15 % → 20 % ; les légendaires (Dragon, Requin, Anky), qui demandent déjà 10, passent de 10 % à 15 % puis 20 % (7 % → 10,5 % → 14 % avant le 1er novembre 2026). Les tirages restent des rapports entiers exacts, en demi-pourcentages. Rares jamais vendus. Prix des recettes payantes, Cuisine, constructions et niveaux d’accès conservés.
+Quand les deux parents ont au moins 10 d’affection, les chances d’épique et de légendaire sont multipliées par 1,15 ; à partir de 15 pour les deux, par 1,3 ; à partir de 30, par 1,5 ; à 50, par 2 (l’affection la plus basse des deux décide ; paliers du 2 novembre 2026, auparavant ×1,5 à 10 et ×2 à 15). Exemple : les légendaires (Dragon, Requin, Anky), qui demandent déjà 10, passent de 10 % à 11,5 %, 13 %, 15 % puis 20 %. Les tirages restent des rapports entiers exacts (facteurs comptés en vingtièmes). Rares jamais vendus. Prix des recettes payantes, Cuisine, constructions et niveaux d’accès conservés.
 
 XP : passage N → N+1 = **arrondi(90 × N^0,85)** depuis le 25 octobre 2026 (niveau 22 vers le 20e jour ; auparavant 1,15). Avec le modèle par poids du 31 octobre (épiques plus rares), la simulation place le niveau 22 au 24e jour au lieu du 21e ; le propriétaire a choisi de ne pas rééquilibrer pour l’instant, plafond 30, un cœur par niveau. Le barème initial demandé 25 × N^1,5 faisait atteindre le niveau 5 pendant le tutoriel, 10 après 2,5 jours écoulés, 15 après 10,5 jours et 20 après 33 jours. Seuls le coefficient et l’exposant ont été ajustés pour le rythme cible. Repas : 6 XP plus 1 par tranche de 200 nourriture dépensée (13 XP pour l’affection 15 ; base relevée de 5 à 6 le 26 octobre 2026 pour compenser la ferme de niveau 1) ; achat commun : 10 ; naissance commune : 10, rare : 20 (Épique 110 et Légendaire 180 conservés) ; première découverte commune : +60, rare : +250 ; lancement de reproduction : 5 ; constructions inchangées ; première pose de chaque modèle de décoration : 10, une fois par référence même après revente ; mission principale : 40, quotidienne : 50, bonus quotidien : 0.
 

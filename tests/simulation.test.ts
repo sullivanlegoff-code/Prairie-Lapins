@@ -162,17 +162,23 @@ describe('farming and affection', () => {
     const s = run(createGame(0), {type: 'buyBuilding', kind: 'farm', x: 22, y: 20}); s.pattes = 0;
     refuses(s, {type: 'startOrder', id: s.buildings[1].id, recipe: 'foin'}, 'NOT_ENOUGH_PATTES');
   });
-  it('requires 5 347 food to reach affection 20, the statue past 14, then refuses more food', () => {
-    let s = createGame(0); s.grass = 5347;
-    for (let affection = 1; affection < 20; affection++) {
+  it('requires 5 347 food to reach affection 20 and 80 900 more to reach 50, a statue past 14 and a second one past 30, then refuses more food', () => {
+    let s = createGame(0); s.grass = 5347 + 80_900;
+    expect(FEED_COSTS.slice(1, 20).reduce((sum, cost) => sum + cost, 0)).toBe(5347); expect(FEED_COSTS.slice(20).reduce((sum, cost) => sum + cost, 0)).toBe(80_900);
+    for (let affection = 1; affection < 50; affection++) {
       if (affection === 14) {
         refuses(s, {type: 'feed', id: 'rabbit-2'}, 'STATUE_REQUIRED');
         s.buildings.push(emptyBuilding(`building-${s.nextId}`, 'statue', 30, 30)); s.nextId++;
       }
+      if (affection === 30) {
+        refuses(s, {type: 'feed', id: 'rabbit-2'}, 'SECOND_STATUE_REQUIRED');
+        s.buildings.push(emptyBuilding(`building-${s.nextId}`, 'statue', 34, 30)); s.nextId++;
+      }
       const before = s.grass; s = run(s, {type: 'feed', id: 'rabbit-2'});
       expect(before - s.grass).toBe(FEED_COSTS[affection]);
+      if (affection === 19) { expect(s.grass).toBe(80_900); expect(rabbitIncome(20)).toBe(29); }
     }
-    expect(FEED_COSTS[14]).toBe(1500); expect(s.grass).toBe(0); expect(s.rabbits[0].affection).toBe(20); expect(rabbitIncome(20)).toBe(29);
+    expect(FEED_COSTS[14]).toBe(1500); expect(s.grass).toBe(0); expect(s.rabbits[0].affection).toBe(50); expect(rabbitIncome(50)).toBe(59);
     refuses(s, {type: 'feed', id: 'rabbit-2'}, 'MAX_AFFECTION');
     refuses(s, {type: 'feed', id: 'rabbit-3'}, 'NOT_ENOUGH_GRASS');
   });
@@ -336,7 +342,7 @@ describe('JSON format', () => {
   it('rejects invalid capacities, counters, identities, timestamps and reservations', () => {
     const mutations: ((s: GameState) => void)[] = [
       s => { s.pityFailures = 8; }, s => { s.nextId = 1; },
-      s => { s.buildings[1].x = 0; }, s => { s.rabbits[0].affection = 21; },
+      s => { s.buildings[1].x = 0; }, s => { s.rabbits[0].affection = 51; },
       s => { nest(s).breeding!.endsAt++; }, s => { nest(s).breeding!.birth.guaranteed = true; nest(s).breeding!.birth.reservedDiscovery=false; },
       s => { s.discovered = []; }, s => { s.rabbits.push({...s.rabbits[0]}); },
     ];

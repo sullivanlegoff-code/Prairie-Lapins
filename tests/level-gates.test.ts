@@ -53,7 +53,7 @@ describe('active species and habitat level gates',()=>{
  it('keeps v9, captures only provable historical purchases and discovered breeding rights once',()=>{
   const s=at(1);delete s.levelAccessTransition;s.purchaseUnlocks=['feu'];s.discovered=['paille','neige','magicien'];s.missions.events.welcome=1;
   const migrated=reload(s);const rights=structuredClone(migrated.levelAccessTransition);
-  expect(migrated.version).toBe(22);expect(stateLevelAccess(migrated,{family:'species',id:'feu',action:'purchase'}).accessible).toBe(true);expect(stateLevelAccess(migrated,{family:'species',id:'volant',action:'purchase'}).locked).toBe(true);
+  expect(migrated.version).toBe(23);expect(stateLevelAccess(migrated,{family:'species',id:'feu',action:'purchase'}).accessible).toBe(true);expect(stateLevelAccess(migrated,{family:'species',id:'volant',action:'purchase'}).locked).toBe(true);
   expect(stateLevelAccess(migrated,{family:'species',id:'belier-gris',action:'purchase'}).accessible).toBe(true);
   expect(stateLevelAccess(migrated,{family:'habitatPurchase',id:'vol'}).accessible).toBe(true);
   expect(stateLevelAccess(migrated,{family:'habitatPurchase',id:'universal'}).locked).toBe(false); // three discoveries already proved the old milestone
@@ -97,9 +97,9 @@ describe('pre-launch result filtering and unchanged fixed probabilities',()=>{
   s.discovered=s.discovered.filter(id=>id!=='glassofeu');s.progression={totalXp:cumulativeLevelXp(6),rewardedThroughLevel:6};pool=breedingPool(s,'feu','neige',4,4);expect(pool.guaranteed).toBe(true);expect(pool.weights).toEqual({'glassofeu':1});
  });
  it('reserves only currently admissible specials and normalizes ordinary results',()=>{
-  expect(odds(10,'paille','belier-gris')).toEqual({roukette:50,boudinet:50});expect(odds(11,'paille','belier-gris')).toEqual({roukette:1200*100/3300,boudinet:1200*100/3300,magicien:450*100/3300,calinou:450*100/3300}); // Both parents at affection 10: the epic chance ×1.5.
-  expect(odds(13,'dadi','phoenix').dragon).toBeUndefined();expect(odds(13,'dadi','phoenix').dadi).toBe(450*100/8100);
-  const pair=odds(14,'dadi','phoenix');expect(pair.dragon).toBe(15);for(const id of ['dadi','dinono'])expect(pair[id]).toBeCloseTo(85*450/8100,10);expect(Object.keys(pair)).toHaveLength(9);for(const id of ['amethyste','phoenix','bouee','egiiipte','piment','bretonette'])expect(pair[id]).toBeCloseTo(85*1200/8100,10);
+  expect(odds(10,'paille','belier-gris')).toEqual({roukette:50,boudinet:50});expect(odds(11,'paille','belier-gris')).toEqual({roukette:1200*100/3090,boudinet:1200*100/3090,magicien:345*100/3090,calinou:345*100/3090}); // Both parents at affection 10: the epic chance ×1.15.
+  expect(odds(13,'dadi','phoenix').dragon).toBeUndefined();expect(odds(13,'dadi','phoenix').dadi).toBe(345*100/7890);
+  const pair=odds(14,'dadi','phoenix');expect(pair.dragon).toBe(11.5);for(const id of ['dadi','dinono'])expect(pair[id]).toBeCloseTo(88.5*345/7890,10);expect(Object.keys(pair)).toHaveLength(9);for(const id of ['amethyste','phoenix','bouee','egiiipte','piment','bretonette'])expect(pair[id]).toBeCloseTo(88.5*1200/7890,10);
   for(let level=1;level<=14;level++)for(const a of SPECIES_IDS)for(const b of SPECIES_IDS){const result=odds(level,a,b),total=Object.values(result).reduce((n,w)=>n+w,0);if(total)expect(total).toBeCloseTo(100,10);}
  },20000);
  it('launch XP cannot alter this birth, even if it crosses a threshold',()=>{

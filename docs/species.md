@@ -5,9 +5,9 @@
 Décision du propriétaire : une paire ne doit jamais donner plus d’une chance sur deux d’obtenir un épique, et les chances doivent rester cohérentes quand on ajoutera des rares, des épiques et des légendaires de tous les types.
 
 - Chaque résultat possible d’une paire reçoit un poids ; sa chance est son poids divisé par le total de la paire.
-- Un rare pèse 40 (en interne 30 × 40 = 1200). Un épique pèse son `probability` (10 pour tous aujourd’hui), soit un quart d’un rare, multiplié par 1,5 si les deux parents ont l’affection 10 et par 2 à l’affection 15.
+- Un rare pèse 40 (en interne 30 × 40 = 1200). Un épique pèse son `probability` (10 pour tous aujourd’hui), soit un quart d’un rare, multiplié par 1,15 si les deux parents ont l’affection 10, par 1,3 à 15, par 1,5 à 30 et par 2 à 50.
 - Plafond : tous les épiques réunis ne dépassent jamais la moitié du tirage ; au-delà, ils se partagent exactement cette moitié en gardant leurs proportions.
-- Les légendaires (recette à parents exacts) gardent leur chance fixe (10 % depuis le 1er novembre 2026, 7 % avant ; ×1,5 / ×2 avec l’affection, soit 15 % à l’affection 10 et 20 % à 15), réservée à part, hors du plafond des épiques ; le reste du tirage suit les poids.
+- Les légendaires (recette à parents exacts) gardent leur chance fixe (10 % depuis le 1er novembre 2026, 7 % avant ; ×1,15 / ×1,3 / ×1,5 / ×2 avec l’affection, soit 11,5 % à l’affection 10, 13 % à 15, 15 % à 30 et 20 % à 50), réservée à part, hors du plafond des épiques ; le reste du tirage suit les poids.
 - Une paire sans résultat rare possible ne donne toujours aucun résultat.
 
 Exemples à l’affection 6 : paille + métal (2 rares, 2 épiques) donne 40 % par rare et 10 % par épique ; paille + neige (2 rares, Orange) donne 44,4 % par rare et 11,1 % pour Orange ; une paire qui réunit paille, métal, feu et vol (12 rares, 5 épiques) donne 7,5 % par rare et 1,9 % par épique. Viser une petite paire est donc la meilleure façon d’obtenir un épique précis.

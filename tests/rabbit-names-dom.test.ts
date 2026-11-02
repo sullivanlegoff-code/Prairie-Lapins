@@ -34,7 +34,7 @@ const button = (text: string) => [...panel().querySelectorAll<HTMLButtonElement>
 const box = () => panel().querySelector<HTMLElement>('[data-rabbit-nickname]')!;
 const field = () => panel().querySelector<HTMLInputElement>('input[data-focus="rabbit-name"]')!;
 describe('qualitative reproduction chance in the rabbit sheet', () => {
-  it.each([[9, 'Normale', 1], [10, 'Légèrement meilleure', 2], [15, 'Meilleure', 3]] as const)('affection %s displays %s without numbers', (affection, label, active) => {
+  it.each([[9, 'Normale', 1], [10, 'Légèrement meilleure', 2], [15, 'Meilleure', 3], [30, 'Bien meilleure', 4], [50, 'Excellente', 5]] as const)('affection %s displays %s without numbers', (affection, label, active) => {
     const {ui} = setup(s => { s.rabbits[0].affection = affection; });
     ui.open({kind: 'rabbit', id: 'rabbit-2'});
     const chance = panel().querySelector('.rabbit-birth-chance')!;
@@ -42,7 +42,7 @@ describe('qualitative reproduction chance in the rabbit sheet', () => {
     expect(chance.textContent).not.toMatch(/[\d%×]/);
     const indicator = chance.querySelector('.birth-chance-indicator')!;
     expect(indicator.getAttribute('aria-hidden')).toBe('true');
-    expect(indicator.children).toHaveLength(3);
+    expect(indicator.children).toHaveLength(5);
     expect(indicator.querySelectorAll('.is-active')).toHaveLength(active);
   });
   it('keeps manual habitat collection available at one patte with the habitat name in its menu', () => {

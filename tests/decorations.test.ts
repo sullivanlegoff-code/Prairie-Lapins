@@ -109,7 +109,7 @@ describe('decoration ownership and atomic commands', () => {
     let s = buy(rich());const level=requiredExtensionLevel(2);s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level}; refused(s, {type: 'placeDecoration', id: 'decoration-4', location: outside(12, 0)}, 'INVALID_CELL');
     s = run(s, {type:'expand',parcelId:'east',expectedCost:600}); s = pose(s, outside(23, 7));
     refused(s, {type: 'placeDecoration', id: 'decoration-4', location: outside(24, 0)}, 'INVALID_CELL');
-    s = run(s, {type:'expand',parcelId:'west',expectedCost:1800}); s = pose(s, outside(35, 7)); expect(s.buildings[0]).toMatchObject({x: 18, y: 20});
+    s = run(s, {type:'expand',parcelId:'west',expectedCost:2000}); s = pose(s, outside(35, 7)); expect(s.buildings[0]).toMatchObject({x: 18, y: 20});
   });
   it('leaves income, affection, gifts, missions and birth RNG behavior unchanged', () => {
     let plain = rich(); plain.grass = 100; plain = run(plain, {type: 'feed', id: 'rabbit-2'}); plain = run(plain, {type: 'feed', id: 'rabbit-3'});
@@ -132,7 +132,7 @@ describe('saves and four-route boundaries', () => {
     expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: s});
     if (id === 'decoratedHabitat' || id === 'decorationDense') expect(s.rabbits.filter(r => r.enclosureId === 'building-1')).toHaveLength(7);
     const m = memory(encodeGame(s)), c = new GameController(m.storage, () => 0), exported = c.exportGame();
-    if (!exported.ok) throw Error(exported.reason); expect(JSON.parse(exported.json).version).toBe(22);
+    if (!exported.ok) throw Error(exported.reason); expect(JSON.parse(exported.json).version).toBe(23);
     expect(c.restart(true).ok).toBe(true); const p = c.prepareImport(exported.json); if (!p.ok) throw Error(p.reason);
     expect(c.confirmImport(p.token, true).ok).toBe(true); expect(new GameController(m.storage, () => 0).getSnapshot().state).toEqual(s);
   }, 20000);

@@ -46,7 +46,7 @@ export const RECIPE_SPECIES = SPECIES_IDS.filter(id => hasRecipe(SPECIES[id]));
 export const BALANCE = {
   initialPattes: 350, initialGrass: 0, initialWidth: 3, height: 2, extendedWidth: 6,
   extensionCost: 600, enclosureCapacity: 3, enclosureCap: 200,
-  minAffection: 1, maxAffection: 20, breedingAffection: 2,
+  minAffection: 1, maxAffection: 50, breedingAffection: 2,
   incomeBase: 10, incomeRareBase: 10, incomePerLevel: 1,
   releaseGrass: {common: 10, rare: 25},
   /** A ready baby released from the nursery, by rarity (common: 20, decided by the owner). */
@@ -57,7 +57,7 @@ export const BALANCE = {
     enclosure: {price: 350, maximum: null}, farm: {price: 60, maximum: 4},
     nest: {price: 100, maximum: 1}, nursery: {price: 80, maximum: 1},
     kitchen: {price: 100, maximum: 1}, // Provisional building-only integration price.
-    statue: {price: 60, currency: 'hearts', maximum: 1}, // Hearts only, never a coin purchase or complement.
+    statue: {price: 60, currency: 'hearts', maximum: 2}, // Hearts only, never a coin purchase or complement; the second costs more (AFFECTION_STATUES).
     agency: {price: 1000, maximum: 1}, // The travel agency: see TRAVEL.
   } satisfies Record<BuildingKind, {price: number; currency?: 'hearts'; maximum: number | null}>,
 };
@@ -104,15 +104,31 @@ export const ORDERS = {
 /** Production ids of saves before the ten crops, mapped to the crop that shows them; their amount and duration stay frozen. */
 export const LEGACY_ORDER_CROPS = {small: 'foin', medium: 'trefle', large: 'fenouil', night: 'banane'} as const;
 /**
- * Food needed to raise a rabbit's affection from `a` to `a + 1` (index a). The step 14 → 15 is a deliberate wall:
- * affection 15 and above also needs the Statue de l'Affection.
+ * Food needed to raise a rabbit's affection from `a` to `a + 1` (index a). The steps 14 → 15, 29 → 30 and 49 → 50 are deliberate
+ * walls; affection 15 and above also needs the Statue de l'Affection, and 31 and above a second statue.
  */
-export const FEED_COSTS: readonly number[] = [0, 2, 4, 8, 14, 22, 32, 45, 60, 80, 110, 140, 180, 230, 1500, 400, 480, 570, 670, 800];
+export const FEED_COSTS: readonly number[] = [
+  0, 2, 4, 8, 14, 22, 32, 45, 60, 80, 110, 140, 180, 230, 1500, 400, 480, 570, 670, 800,
+  900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 6000,
+  1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3100, 3200, 3300, 3400, 3500, 3600, 3700, 10000,
+];
 export const feedCost = (affection: number): number => FEED_COSTS[affection] ?? Infinity;
-/** Affection above `cap` needs the statue, sold among the buildings from player level `level`. */
-export const AFFECTION_STATUE = {level: 15, cap: 14, heartPrice: BALANCE.buildings.statue.price} as const;
+/**
+ * The Statues de l'Affection, in purchase order (hearts only, sold among the buildings). Statue n is sold from player level
+ * `level` for `heartPrice` Hearts; without it, affection stops at `cap`. Both statues share the same painting.
+ */
+export const AFFECTION_STATUES = [
+  {level: 15, cap: 14, heartPrice: BALANCE.buildings.statue.price},
+  {level: 25, cap: 30, heartPrice: 150},
+] as const;
+/** The first statue: affection above `cap` needs it, sold from player level `level`. */
+export const AFFECTION_STATUE = AFFECTION_STATUES[0];
+/** The second statue: affection above `cap` (31 and more) needs it as well. */
+export const SECOND_AFFECTION_STATUE = AFFECTION_STATUES[1];
 /** Epic, legendary and mythic recipe chances, multiplied when BOTH parents reach the affection (highest step applies). */
-export const RARE_BIRTH_BONUS: readonly {readonly affection: number; readonly factor: number}[] = [{affection: 15, factor: 2}, {affection: 10, factor: 1.5}];
+export const RARE_BIRTH_BONUS: readonly {readonly affection: number; readonly factor: number}[] = [
+  {affection: 50, factor: 2}, {affection: 30, factor: 1.5}, {affection: 15, factor: 1.3}, {affection: 10, factor: 1.15},
+];
 export type OrderId = keyof typeof ORDERS;
 export type Odds = Partial<Record<SpeciesId, number>>;
 // Historical compatibility reference for tests/consumers; production candidates come from the catalogue, never this result list.

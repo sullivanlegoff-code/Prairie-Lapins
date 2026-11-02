@@ -29,7 +29,7 @@ describe('Cuisine reward command',()=>{
     expect(next.state.progression).toEqual(initial.progression);
   });
   it('keeps the Heart independent of affection, including a rabbit at the cap',()=>{
-    const s=withKitchen(createGame(0));s.rabbits[0].affection=20;
+    const s=withKitchen(createGame(0));s.rabbits[0].affection=50;
     const r=reward(s);expect(r.cuisineReward).toMatchObject({affectionGranted:false,affectionAtCap:true,heartGranted:true});expect(r.state.hearts).toBe(s.hearts+1);
   });
   it('applies neither the Heart nor its marker when the transaction fails',()=>{
@@ -66,15 +66,15 @@ describe('Cuisine reward command',()=>{
     expect(early.state.missions.daily.progress['gain-affection']).toBe(0);
     expect(next.state.missions.daily.progress['gain-affection']).toBe(0);
   });
-  it('consumes the opportunity even at the cap and never exceeds 20',()=>{
-    const initial=withKitchen(createGame(0));initial.rabbits[0].affection=20;
+  it('consumes the opportunity even at the cap and never exceeds 50',()=>{
+    const initial=withKitchen(createGame(0));initial.rabbits[0].affection=50;
     const first=reward(initial),second=reward(first.state);
     expect(second.state.missions.daily.progress['gain-affection']).toBe(0);
     expect(first.cuisineReward).toMatchObject({affectionGranted:false,affectionAtCap:true});
     expect(first.state.cuisine.affectionCycles[initial.rabbits[0].id]).toBe(0);
-    expect(second.state.rabbits[0].affection).toBe(20);
-    const lowered=structuredClone(second.state);lowered.rabbits[0].affection=19;
-    expect(reward(lowered).state.rabbits[0].affection).toBe(19);
+    expect(second.state.rabbits[0].affection).toBe(50);
+    const lowered=structuredClone(second.state);lowered.rabbits[0].affection=49;
+    expect(reward(lowered).state.rabbits[0].affection).toBe(49);
     const edge=withKitchen(createGame(0));edge.rabbits[0].affection=19;
     expect(reward(edge).state.rabbits[0].affection).toBe(19); // Past 14, only the Statue de l'Affection opens the way.
     edge.buildings.push(emptyBuilding(`building-${edge.nextId++}`,'statue',30,30));
@@ -84,6 +84,11 @@ describe('Cuisine reward command',()=>{
     expect(blocked).toMatchObject({cuisineReward:{affectionGranted:false,affectionStatueRequired:true}});
     wall.buildings.push(emptyBuilding(`building-${wall.nextId++}`,'statue',30,30));
     expect(reward(wall)).toMatchObject({cuisineReward:{affectionGranted:true,affectionStatueRequired:false}});
+    // Past 30, only a second statue opens the way (2 November 2026).
+    wall.rabbits[0].affection=30;
+    expect(reward(wall)).toMatchObject({cuisineReward:{affectionGranted:false,affectionStatueRequired:true}});
+    wall.buildings.push(emptyBuilding(`building-${wall.nextId++}`,'statue',34,30));
+    const opened=reward(wall);expect(opened).toMatchObject({cuisineReward:{affectionGranted:true,affectionStatueRequired:false}});expect(opened.state.rabbits[0].affection).toBe(31);
   });
   it.each(['pattes','grass'] as const)('rejects %s overflow atomically',resource=>{
     const s=withKitchen(createGame(0));s[resource]=Number.MAX_SAFE_INTEGER;const before=structuredClone(s);

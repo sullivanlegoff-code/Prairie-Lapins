@@ -120,7 +120,8 @@ describe('distributions: only the removals and their renormalisation', () => {
   });
   it('the unions that held Terre no longer exist, and Magicien and Dragon keep their probabilities', () => {
     expect(breedingOdds('paille', 'belier-gris', 6, 6)).toEqual({roukette: 40, boudinet: 40, magicien: 10, calinou: 10});
-    expect(breedingOdds('dadi', 'phoenix', 10, 10).dragon).toBe(15); expect(breedingOdds('dadi', 'phoenix', 15, 15).dragon).toBe(20); expect(breedingOdds('magicien', 'belier-gris', 6, 6).magicien).toBe(10); expect(breedingOdds('magicien', 'belier-gris', 10, 12).magicien).toBe(450 * 100 / 3300); expect(breedingOdds('magicien', 'belier-gris', 15, 14).magicien).toBe(450 * 100 / 3300); expect(breedingOdds('magicien', 'belier-gris', 15, 15).magicien).toBe(600 * 100 / 3600);
+    // Affection steps of 2 November 2026: ×1.15 at 10, ×1.3 at 15, ×1.5 at 30, ×2 at 50.
+    expect(breedingOdds('dadi', 'phoenix', 10, 10).dragon).toBe(11.5); expect(breedingOdds('dadi', 'phoenix', 15, 15).dragon).toBe(13); expect(breedingOdds('dadi', 'phoenix', 30, 30).dragon).toBe(15); expect(breedingOdds('dadi', 'phoenix', 50, 50).dragon).toBe(20); expect(breedingOdds('magicien', 'belier-gris', 6, 6).magicien).toBe(10); expect(breedingOdds('magicien', 'belier-gris', 10, 12).magicien).toBe(345 * 100 / 3090); expect(breedingOdds('magicien', 'belier-gris', 15, 14).magicien).toBe(345 * 100 / 3090); expect(breedingOdds('magicien', 'belier-gris', 15, 15).magicien).toBe(390 * 100 / 3180); expect(breedingOdds('magicien', 'belier-gris', 30, 30).magicien).toBe(450 * 100 / 3300); expect(breedingOdds('magicien', 'belier-gris', 50, 50).magicien).toBe(600 * 100 / 3600);
     expect(breedingOdds('paille', 'paille')).toEqual({paille: 100}); expect(breedingOdds('neige', 'neige')).toEqual({neige: 100});
   });
 });

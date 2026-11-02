@@ -168,21 +168,21 @@ describe('levels, income and payments',()=>{
 
 describe('two extensions, camera and placement',()=>{
   it('requires the first extension, charges 500 then 1000, preserves coordinates and claims the mission only once',()=>{
-    let s=rich();refuse(s,{type:'expand',parcelId:'west',expectedCost:1800},'PRICE_CHANGED');expect(terrainWidth(s)).toBe(12);expect(visibleColumns(s)).toBe(12);
+    let s=rich();refuse(s,{type:'expand',parcelId:'west',expectedCost:2000},'PRICE_CHANGED');expect(terrainWidth(s)).toBe(12);expect(visibleColumns(s)).toBe(12);
     s=run(s,{type:'expand',parcelId:'east',expectedCost:600});s=run(s,{type:'claimMainMission',id:'bigger-meadow'});
     const missions=structuredClone(s.missions),pattes=s.pattes,buildings=structuredClone(s.buildings);
-    expect(terrainWidth(s)).toBe(12);expect(visibleColumns(s)).toBe(12);s=run(s,{type:'expand',parcelId:'west',expectedCost:1800});
-    expect(s.pattes).toBe(pattes-1800);expect(s.buildings).toEqual(buildings);expect(s.missions).toEqual(missions);
+    expect(terrainWidth(s)).toBe(12);expect(visibleColumns(s)).toBe(12);s=run(s,{type:'expand',parcelId:'west',expectedCost:2000});
+    expect(s.pattes).toBe(pattes-2000);expect(s.buildings).toEqual(buildings);expect(s.missions).toEqual(missions);
     expect(terrainWidth(s)).toBe(12);expect(visibleColumns(s)).toBe(12);refuse(s,{type:'claimMainMission',id:'bigger-meadow'},'ALREADY_CLAIMED');
-    refuse(s,{type:'expand',parcelId:'west',expectedCost:1800},'ALREADY_EXPANDED');refuse(s,{type:'expand',parcelId:'east',expectedCost:600},'ALREADY_EXPANDED');
+    refuse(s,{type:'expand',parcelId:'west',expectedCost:2000},'ALREADY_EXPANDED');refuse(s,{type:'expand',parcelId:'east',expectedCost:600},'ALREADY_EXPANDED');
     s=build(s,'metal',8,1);expect(decode(encodeGame(s))).toEqual(s);refuse(s,{type:'moveBuilding',id:'building-1',x: 48, y: 20},'INVALID_CELL');
   });
   it('supports second-extension hearts without paying twice',()=>{
-    let s=run(rich(),{type:'expand',parcelId:'east',expectedCost:600});s.pattes=1775;const command=complement(s,{type:'expand',parcelId:'west',expectedCost:1800});s=run(s,command);
+    let s=run(rich(),{type:'expand',parcelId:'east',expectedCost:600});s.pattes=1975;const command=complement(s,{type:'expand',parcelId:'west',expectedCost:2000});s=run(s,command);
     expect(s).toMatchObject({pattes:0,hearts:99,acquiredParcels:['center','east','west']});refuse(s,command,'ALREADY_EXPANDED');
   });
   it('validates placement across 18 cells while previews do not mutate or spend',()=>{
-    const s=run(run(rich(),{type:'expand',parcelId:'east',expectedCost:600}),{type:'expand',parcelId:'west',expectedCost:1800}),before=structuredClone(s);
+    const s=run(run(rich(),{type:'expand',parcelId:'east',expectedCost:600}),{type:'expand',parcelId:'west',expectedCost:2000}),before=structuredClone(s);
     expect(placementReason(s,{kind:'enclosure',habitatType:'metal',cell:{x: 10, y: 24}})).toBeNull();
     expect(placementReason(s,{kind:'enclosure',habitatType:'metal',cell:{x: 18, y: 12}})).not.toBeNull();
     expect(placementReason(s,{kind:'enclosure',cell:null})).not.toBeNull();expect(s).toEqual(before);

@@ -68,7 +68,7 @@ describe('pure laboratory transactions', () => {
     let s = run(createGame(now), {type: 'rabbit', species: 'neige', affection: 1});
     s = run(s, {type: 'affection', rabbitId: 'rabbit-2', value: 20}); expect(s.rabbits[1].affection).toBe(1);
     for (const value of [2, 10, 15, 20]) { s = run(s, {type: 'affection', value}); expect(s.rabbits.every(r => r.affection === value)).toBe(true); }
-    expect(() => labAction(s, {type: 'affection', value: 21})).toThrow();
+    expect(() => labAction(s, {type: 'affection', value: 51})).toThrow(); s = run(s, {type: 'affection', value: 50}); expect(s.rabbits.every(r => r.affection === 50)).toBe(true);
     // A lowering during breeding keeps a ready birth valid, rather than leaving invalid active parents.
     const full = completeLaboratory(now); const nest = full.buildings.find(b => b.breeding)!;
     nest.breeding!.startedAt = now; nest.breeding!.endsAt = now + 20 * 60000;

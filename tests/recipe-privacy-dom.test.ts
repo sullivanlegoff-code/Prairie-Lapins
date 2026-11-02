@@ -84,7 +84,7 @@ describe('notebook recipe privacy', () => {
 describe('nest odds privacy', () => {
   it('groups unknown results, hides the Dragon and keeps the launch available', () => {
     const {ui} = setup(couple(14)); nestWithParents(ui);
-    expect(odds()).toEqual(["Résultats possibles : Phoenix, Dadi et des résultats inconnus.","Phoenix · feu + vol · Rare : 17/135 (≈ 12,59 %)","Dadi · feu + métal · Épique : 17/360 (≈ 4,72 %)","Résultats inconnus : 893/1080 (≈ 82,69 %)"]);
+    expect(odds()).toEqual(["Résultats possibles : Phoenix, Dadi et des résultats inconnus.","Phoenix · feu + vol · Rare : 177/1315 (≈ 13,46 %)","Dadi · feu + métal · Épique : 4071/105200 (≈ 3,87 %)","Résultats inconnus : 86969/105200 (≈ 82,67 %)"]);
     expect(breeding().textContent).toContain('Résultats possibles : Phoenix, Dadi et des résultats inconnus.');
     for (const hidden of ['Dragon', 'Volant', 'Légendaire', 'Maxou']) { expect(panel().textContent).not.toContain(hidden); expect(breeding().textContent).not.toContain(hidden); }
     expect(panel().textContent).toContain('Chaque recette possède ses propres conditions');
@@ -93,7 +93,7 @@ describe('nest odds privacy', () => {
   });
   it('names a known Dragon and groups an unknown level exclusion', () => {
     const known = setup(couple(14, ['dragon'])); nestWithParents(known.ui);
-    expect(odds()).toContain('Lapin Dragon · feu + vol · Légendaire : 15 %');
+    expect(odds()).toContain('Lapin Dragon · feu + vol · Légendaire : 11,5 %');
     cleanups.splice(0).reverse().forEach(cleanup => cleanup());
     const locked = setup(couple(13)); nestWithParents(locked.ui);
     expect(breeding().textContent).toContain('Certains résultats demandent un niveau supérieur · exclus du tirage actuel.');

@@ -22,7 +22,7 @@ describe('fine building footprints v7',()=>{
   let s=rich();expect(buildingPlacementReason(s,30,21)).toBe('INVALID_CELL');
   s=run(s,{type:'expand',parcelId:'east',expectedCost:600});s=run(s,{type:'buyBuilding',kind:'farm',x:30,y:21});
   expect(s.buildings.at(-1)).toMatchObject({x:30,y:21});expect(buildingPlacementReason(s,19,14)).toBe('INVALID_CELL');
-  s=run(s,{type:'expand',parcelId:'north',expectedCost:1800});expect(buildingPlacementReason(s,19,14)).toBeNull();
+  s=run(s,{type:'expand',parcelId:'north',expectedCost:2000});expect(buildingPlacementReason(s,19,14)).toBeNull();
   expect(buildingPlacementReason(s,46,21)).toBe('INVALID_CELL');expect(buildingPlacementReason(s,19,-1)).toBe('INVALID_CELL');
  });
  it('allows edge contact and excludes only the moving building, including its old overlap',()=>{

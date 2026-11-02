@@ -6,10 +6,11 @@
     "20": 17,
     "22": 24,
     "25": 35,
-    "30": 54
+    "30": 56
   },
   "statueDay": 9,
-  "method": "Seed 20261025; real act/advance; 3 sessions/day at 08/13/20, <=45 commands and <=8 meals/session; two farms, each sowing the best-liked unlocked crop ripe by the next visit; save Hearts from level 13 for the 60-Heart statue plus six in reserve, buy from level 15; collection-first parent pairs; no Cuisine or paid recipes; Hearts for permanent farm, agency and habitat upgrades after the statue reserve. Counter reserves: 3000 coins and 6000 food. Day snapshots just before next 08:00. Tutorial is the first session.",
+  "secondStatueDay": 35,
+  "method": "Seed 20261025; real act/advance; 3 sessions/day at 08/13/20, <=45 commands and <=8 meals/session; two farms, each sowing the best-liked unlocked crop ripe by the next visit; save Hearts two levels ahead for each statue (60 Hearts at level 15, 150 at level 25) plus six in reserve; collection-first parent pairs; no Cuisine or paid recipes; Hearts for permanent farm, agency and habitat upgrades after the statue reserve. Counter reserves: 3000 coins and 6000 food. Day snapshots just before next 08:00. Tutorial is the first session.",
   "curve": {
     "initialLevel": 1,
     "maximumLevel": 30,
@@ -36,8 +37,8 @@
     "15": 6.208,
     "20": 16,
     "22": 23.208,
-    "25": 34,
-    "30": 53
+    "25": 34.5,
+    "30": 55
   },
   "rows": [
     {
@@ -66,7 +67,7 @@
           "volant"
         ],
         "extensions": 8,
-        "extensionCost": 157900,
+        "extensionCost": 265600,
         "farms": 1,
         "kitchen": true,
         "habitatUpgrades": 2,
@@ -130,7 +131,7 @@
           "volant"
         ],
         "extensions": 8,
-        "extensionCost": 157900,
+        "extensionCost": 265600,
         "farms": 0,
         "kitchen": true,
         "habitatUpgrades": 3,
@@ -212,7 +213,7 @@
           "volant"
         ],
         "extensions": 7,
-        "extensionCost": 157300,
+        "extensionCost": 265000,
         "farms": 0,
         "kitchen": true,
         "habitatUpgrades": 5,
@@ -277,9 +278,9 @@
     },
     {
       "step": "7 j",
-      "pattes": 3002,
+      "pattes": 3565,
       "grass": 1175,
-      "hearts": 36,
+      "hearts": 35,
       "level": 15,
       "species": 20,
       "affection": {
@@ -314,7 +315,7 @@
       "remaining": {
         "commons": [],
         "extensions": 6,
-        "extensionCost": 155500,
+        "extensionCost": 263000,
         "farms": 0,
         "kitchen": false,
         "habitatUpgrades": 6,
@@ -392,15 +393,15 @@
     },
     {
       "step": "20 j",
-      "pattes": 3534,
-      "grass": 971,
-      "hearts": 92,
+      "pattes": 5227,
+      "grass": 300,
+      "hearts": 89,
       "level": 21,
-      "species": 30,
+      "species": 29,
       "affection": {
-        "≥10": 28,
-        "≥15": 6,
-        "max": 20,
+        "≥10": 30,
+        "≥15": 2,
+        "max": 29,
         "rabbits": 34
       },
       "speciesIds": [
@@ -432,14 +433,13 @@
         "calinou",
         "dinono",
         "orange",
-        "dinenette",
-        "maxou"
+        "dinenette"
       ],
       "storedPattes": 3725,
       "remaining": {
         "commons": [],
         "extensions": 5,
-        "extensionCost": 151000,
+        "extensionCost": 257000,
         "farms": 0,
         "kitchen": false,
         "habitatUpgrades": 6,
@@ -447,6 +447,7 @@
           "magicien",
           "dragon",
           "dadi",
+          "maxou",
           "requin",
           "ankylosaure"
         ]
@@ -516,29 +517,28 @@
         "discover-bretonette",
         "build-affection-statue",
         "affection-fifteen",
-        "habitat-level-three",
         "discover-calinou",
-        "three-extensions",
+        "habitat-level-three",
         "affection-twenty",
+        "three-extensions",
         "discover-dinono",
         "level-twenty",
         "discover-orange",
-        "discover-dinenette",
-        "discover-maxou"
+        "discover-dinenette"
       ]
     },
     {
       "step": "50 j",
-      "pattes": 3614,
-      "grass": 161,
-      "hearts": 488,
-      "level": 29,
+      "pattes": 3978,
+      "grass": 217,
+      "hearts": 353,
+      "level": 28,
       "species": 36,
       "affection": {
-        "≥10": 39,
-        "≥15": 27,
-        "max": 20,
-        "rabbits": 40
+        "≥10": 45,
+        "≥15": 8,
+        "max": 29,
+        "rabbits": 46
       },
       "speciesIds": [
         "paille",
@@ -571,21 +571,21 @@
         "orange",
         "dinenette",
         "maxou",
-        "ankylosaure",
-        "magicien",
         "dadi",
-        "requin",
+        "magicien",
         "dragon",
+        "requin",
+        "ankylosaure",
         "benny"
       ],
-      "storedPattes": 4975,
+      "storedPattes": 5275,
       "remaining": {
         "commons": [],
-        "extensions": 4,
-        "extensionCost": 142000,
+        "extensions": 5,
+        "extensionCost": 257000,
         "farms": 0,
         "kitchen": false,
-        "habitatUpgrades": 6,
+        "habitatUpgrades": 7,
         "paidRecipes": []
       },
       "decorationBudget": {
@@ -653,46 +653,46 @@
         "discover-bretonette",
         "build-affection-statue",
         "affection-fifteen",
-        "habitat-level-three",
         "discover-calinou",
-        "three-extensions",
+        "habitat-level-three",
         "affection-twenty",
+        "three-extensions",
         "discover-dinono",
         "level-twenty",
         "discover-orange",
         "discover-dinenette",
         "discover-maxou",
         "level-twenty-two",
-        "discover-ankylosaure",
-        "discover-magicien",
         "discover-dadi",
-        "level-twenty-five",
-        "discover-requin",
+        "discover-magicien",
         "discover-dragon",
+        "discover-requin",
+        "level-twenty-five",
+        "discover-ankylosaure",
         "discover-benny"
       ]
     }
   ],
   "actions": {
-    "buyBuilding": 12,
+    "buyBuilding": 14,
     "claimMainMission": 77,
     "buyRabbit": 4,
     "startOrder": 419,
     "initiationAid": 3,
     "collectOrder": 417,
-    "feed": 1604,
+    "feed": 1605,
     "breed": 203,
     "claimDailyMission": 100,
     "transferBirth": 1,
     "welcome": 201,
-    "collectIncome": 1709,
+    "collectIncome": 1826,
     "buyDecoration": 1,
     "claimHearts": 69,
-    "upgradeHabitat": 7,
-    "expand": 4,
+    "upgradeHabitat": 8,
+    "expand": 3,
     "upgradeFarm": 2,
-    "release": 166,
-    "exchangeForHeart": 722
+    "release": 160,
+    "exchangeForHeart": 708
   },
-  "totalActions": 5721
+  "totalActions": 5821
 }

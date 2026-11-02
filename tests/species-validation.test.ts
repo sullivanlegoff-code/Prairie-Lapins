@@ -27,7 +27,7 @@ const invalid: [string, unknown, string][] = [
   ['one exact parent', {...entry(), acquisition: [{...recipe, parents: ['sample']}]}, 'acquisition.0.parents'],
   ['three exact parents', {...entry(), acquisition: [{...recipe, parents: ['sample','sample','sample']}]}, 'acquisition.0.parents'],
   ['unknown parent', {...entry(), acquisition: [{...recipe, parents: ['sample','absent']}]}, 'acquisition.0.parents.1'],
-  ...[0,21,2.5,NaN,Infinity].map(minAffection => ['affection '+minAffection, {...entry(), acquisition: [{...recipe, minAffection}]}, 'acquisition.0.minAffection'] as [string, unknown, string]),
+  ...[0,51,2.5,NaN,Infinity].map(minAffection => ['affection '+minAffection, {...entry(), acquisition: [{...recipe, minAffection}]}, 'acquisition.0.minAffection'] as [string, unknown, string]),
   ...[0,-1,100,NaN,Infinity].map(probability => ['probability '+probability, {...entry(), acquisition: [{...recipe, probability}]}, 'acquisition.0.probability'] as [string, unknown, string]),
   ['unknown art mode', {...entry(), art: {kind: 'atlas'}}, 'art.kind'],
   ...['/assets/rabbits/a.png', 'assets/other/a.png', 'https://example.test/a.png', 'assets/rabbits/../a.png', 'assets/rabbits/./a.png', 'assets/rabbits//a.png', 'assets/rabbits/%2e%2e/a.png', 'assets/rabbits/a.png?x=1', 'assets/rabbits/a.png#x', 'assets/rabbits/a\\b.png', 'assets/rabbits/'].map(file => ['path '+file, {...entry(), art: {...sprite, file}}, 'art.file'] as [string, unknown, string]),

@@ -27,7 +27,7 @@ const MILESTONE_MISSIONS = {
   'agency-level-three': {title: 'Des vacances pour trois', description: 'Améliore l’agence au niveau 3.', condition: {kind: 'buildingLevel', building: 'agency', target: 3}},
   'affection-ten': {title: 'De vrais complices', description: 'Amène un lapin à l’affection 10.', condition: {kind: 'affection', target: 10}},
   'affection-fifteen': {title: 'Inséparables', description: 'Amène un lapin à l’affection 15.', condition: {kind: 'affection', target: 15}},
-  'affection-twenty': {title: 'Une affection au sommet', description: 'Amène un lapin à l’affection 20.', condition: {kind: 'affection', target: 20}},
+  'affection-twenty': {title: 'Une affection rayonnante', description: 'Amène un lapin à l’affection 20.', condition: {kind: 'affection', target: 20}},
   'level-twenty': {title: 'Atteindre le niveau 20', description: 'Atteins le niveau 20.', condition: {kind: 'level', target: 20}},
   'level-twenty-two': {title: 'Atteindre le niveau 22', description: 'Atteins le niveau 22.', condition: {kind: 'level', target: 22}},
   'level-twenty-five': {title: 'Atteindre le niveau 25', description: 'Atteins le niveau 25.', condition: {kind: 'level', target: 25}},

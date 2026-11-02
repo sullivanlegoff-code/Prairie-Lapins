@@ -14,10 +14,10 @@ import {HABITAT_TYPES, habitatLevel, habitatPrice, type HabitatLevel} from '../c
 import {habitatEntryReason, removeHabitatReason} from './habitats';
 import {DAILY_MISSIONS, MAIN_MISSIONS, DAILY_BONUS, mainMissionRewards, type Reward} from '../config/missions';
 import {marketPrice, marketUnlocked} from './market';
-import {affectionCap, playerLevel} from './affection';
+import {affectionCap, nextAffectionStatue, playerLevel, statueReason} from './affection';
 import {agencyBuilding, travelling} from './travel';
 import {dailyBonusReady, dailyClaimable, dailyCycleStart, dailyMissionsOf, recordMissionAction} from './missions';
-import {AFFECTION_STATUE, farmLimit, farmDuration, BALANCE, HEARTS, HOUR, TRAVEL, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
+import {farmLimit, farmDuration, BALANCE, HEARTS, HOUR, TRAVEL, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
 import {emptyBuilding} from '../state/initial';
 import {babyInNursery, findNurseryBaby, firstFreeNurserySlot, nurseryBuilding, nurseryUnlockQuote, settleNestTransfers} from './nursery';
 import type {ActionResult, Building, Command, GameState, PattesCommand, Rabbit, Refusal, ProgressionGain} from '../state/types';
@@ -144,7 +144,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         // One Heart per canonical cycle for Cuisine as a whole, whichever rabbit cooked.
         const heartGranted = s.cuisine.heartCycle !== cycle;
         if (heartGranted) { credit('hearts', 1); s.cuisine.heartCycle = cycle; }
-        cuisineReward = {pattes: paid.pattes, grass: paid.grass, fullReward, affectionGranted, affectionAtCap: rabbit.affection === BALANCE.maxAffection, affectionStatueRequired: !affectionGranted && rabbit.affection >= AFFECTION_STATUE.cap && affectionCap(s) === AFFECTION_STATUE.cap, heartGranted, affectionRabbitId: rabbit.id};
+        cuisineReward = {pattes: paid.pattes, grass: paid.grass, fullReward, affectionGranted, affectionAtCap: rabbit.affection === BALANCE.maxAffection, affectionStatueRequired: !affectionGranted && rabbit.affection >= affectionCap(s) && affectionCap(s) < BALANCE.maxAffection, heartGranted, affectionRabbitId: rabbit.id};
         break;
       }
       case 'buyDecoration': {
@@ -276,13 +276,14 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         const habitatType = command.habitatType ?? 'universal';
         requireRule(HABITAT_TYPES.includes(habitatType) && (command.kind === 'enclosure' || command.habitatType === undefined), 'INVALID_CHOICE');
         requireRule(command.kind!=='enclosure' || stateLevelAccess(s,{family:'habitatPurchase',id:habitatType}).accessible,'LEVEL_REQUIRED');
-        requireRule(command.kind!=='statue' || playerLevel(s)>=AFFECTION_STATUE.level,'LEVEL_REQUIRED');
+        const statue = command.kind === 'statue' ? nextAffectionStatue(s) : null;
+        requireRule(command.kind!=='statue' || !statue || playerLevel(s)>=statue.level,'LEVEL_REQUIRED');
         requireRule(command.kind!=='agency' || playerLevel(s)>=TRAVEL.unlockLevel,'LEVEL_REQUIRED');
         cell(command.x, command.y); allocation();
         if (command.kind === 'statue') {
           requireRule(!payment && !quoteOnly, 'INVALID_CHOICE');
-          requireRule(s.hearts >= AFFECTION_STATUE.heartPrice, 'NOT_ENOUGH_HEARTS');
-          s.hearts -= AFFECTION_STATUE.heartPrice;
+          requireRule(statue && s.hearts >= statue.heartPrice, 'NOT_ENOUGH_HEARTS');
+          s.hearts -= statue.heartPrice;
         } else pay(command.kind === 'enclosure' ? habitatPrice(habitatType) : config.price);
         value = id('building'); s.buildings.push(emptyBuilding(value, command.kind, command.x, command.y, habitatType));
         if (command.kind === 'farm') gainXp(PROGRESSION.xp.construction.farm);
@@ -392,7 +393,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       case 'feed': {
         const rabbit = s.rabbits.find(r => r.id === command.id); requireRule(rabbit, 'NOT_FOUND');
         requireRule(!travelling(s, rabbit.id), 'TRAVELING'); requireRule(rabbit.affection < BALANCE.maxAffection, 'MAX_AFFECTION');
-        requireRule(rabbit.affection < affectionCap(s), 'STATUE_REQUIRED');
+        requireRule(rabbit.affection < affectionCap(s), statueReason(s));
         const cost = feedCost(rabbit.affection);
         requireRule(s.grass >= cost, 'NOT_ENOUGH_GRASS'); s.grass -= cost; rabbit.affection++; gainXp(foodXp(rabbit.affection)); break;
       }

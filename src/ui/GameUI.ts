@@ -32,7 +32,7 @@ import {CROP_IDS, cropDuration, cropIcon, statueThumbnail} from '../display/food
 import {COCO_WELCOME, HOST_NAME, agencyThumbnail, cocoPortrait, fromPlace, toPlace} from '../display/agency';
 import {travelling} from '../simulation/travel';
 import {BENNY, BENNY_POWER_RECHARGE, bennyInSky, bennyPowerReadyAt, bennyPowerReason} from '../simulation/benny';
-import {feedReason, playerLevel} from '../simulation/affection';
+import {affectionStatueCount, feedReason, nextAffectionStatue, playerLevel} from '../simulation/affection';
 import type {Building, Rabbit} from '../state/types';
 import {MAX_RABBIT_NAME_LENGTH, normalizeRabbitName} from '../simulation/rabbitNames';
 import {HABITATS, HABITAT_TYPES, habitatLevel, habitatPrice, type HabitatType} from '../config/habitats';
@@ -47,7 +47,7 @@ import {habitatStats, habitatName, habitatEntryReason, habitatAccepts, welcomeDe
 import {MAIN_MISSIONS, DAILY_MISSIONS, DAILY_BONUS, DAILY_PICK_COUNT, type Reward} from '../config/missions';
 import {initialMissionIds, activeMainMissions, visibleMainMissions, mainCatalogueUnlocked, availableMissionRewards, mainProgress, dailyCycleStart, dailyCycleEnd, cycleIndexAt, dailyBonusReady, dailyClaimable, dailyMissionsOf, dailyProgress} from '../simulation/missions';
 import type {GameController, Snapshot} from '../application/GameController';
-import {AFFECTION_STATUE, BALANCE, MARKET, NURSERY, ORDERS, RARE_BIRTH_BONUS, TRAVEL, feedCost, type Destination, SPECIES, SPECIES_IDS, SHOP_SPECIES, growthDuration, type BuildingKind, type SpeciesId, type RabbitType} from '../config/balance';
+import {AFFECTION_STATUE, BALANCE, FEED_COSTS, MARKET, SECOND_AFFECTION_STATUE, NURSERY, ORDERS, RARE_BIRTH_BONUS, TRAVEL, feedCost, type Destination, SPECIES, SPECIES_IDS, SHOP_SPECIES, growthDuration, type BuildingKind, type SpeciesId, type RabbitType} from '../config/balance';
 import type {Command, DecorationLocation, GameState, PattesCommand, TimedStage} from '../state/types';
 import {DECORATIONS, DECORATION_IDS, FINE_GRID, ownedDecorationResalePrice, type DecorationId} from '../config/decorations';
 import {catalogDecorationPlacementReason, purchaseDecorationReason} from '../simulation/decorations';
@@ -78,6 +78,10 @@ function node<K extends keyof HTMLElementTagNameMap>(tag: K, text = '', classNam
 }
 const rewardLabel = (r: Reward) => r.resource==='none' ? 'Objectif de collection accompli' : `${r.amount} ${{pattes: 'pattes', grass: 'nourriture', hearts: r.amount === 1 ? 'cœur' : 'cœurs'}[r.resource]}`;
 const heartAmount = (n: number) => `${n} ${n === 1 ? 'cœur' : 'cœurs'}`;
+/** The rare birth steps, lowest first: « … l’affection 10 : ×1,15 · 15 : ×1,3 · 30 : ×1,5 · 50 : ×2. » */
+const rareBirthBonusText = () => `Chances d’épique et de légendaire quand les deux parents atteignent l’affection ${[...RARE_BIRTH_BONUS].reverse().map(step => `${step.affection} : ×${String(step.factor).replace('.', ',')}`).join(' · ')}.`;
+/** A wall meal (14 → 15, 29 → 30, 49 → 50) costs more than the meals on either side. */
+const isAffectionWall = (affection: number) => affection > 0 && FEED_COSTS[affection] > FEED_COSTS[affection - 1] && FEED_COSTS[affection] > (FEED_COSTS[affection + 1] ?? 0);
 /** The painted heart of the HUD, as the affection emblem: affection is there from the first meal. */
 function heartEmblem(): HTMLImageElement { return heartIcon(); }
 
@@ -194,7 +198,7 @@ export class GameUI {
       if (!granted.ok) return `Récompense non enregistrée : ${REFUSALS[granted.reason]}`;
       const reward = granted.cuisineReward!, lucky = granted.state.rabbits.find(r => r.id === reward.affectionRabbitId), luckyName = taster && lucky ? ` pour ${lucky.name || SPECIES[lucky.species].name}` : '';
       if (taster) this.cuisine.showAffection(reward.affectionRabbitId);
-      return `+${reward.pattes} pattes · +${reward.grass} nourriture${reward.affectionGranted ? ` · +1 Affection${luckyName}` : reward.affectionAtCap ? ` · Affection maximale${luckyName}` : reward.affectionStatueRequired ? ' · La Statue de l’Affection permet de dépasser 14.' : ''}${reward.heartGranted ? ' · +1 Cœur' : ''}`;
+      return `+${reward.pattes} pattes · +${reward.grass} nourriture${reward.affectionGranted ? ` · +1 Affection${luckyName}` : reward.affectionAtCap ? ` · Affection maximale${luckyName}` : reward.affectionStatueRequired ? (affectionStatueCount(granted.state) === 0 ? ` · La Statue de l’Affection permet de dépasser ${AFFECTION_STATUE.cap}.` : ` · Une deuxième Statue de l’Affection permet de dépasser ${SECOND_AFFECTION_STATUE.cap}.`) : ''}${reward.heartGranted ? ' · +1 Cœur' : ''}`;
     }, quotaText: () => { const state = this.controller.getSnapshot().state; return state ? cuisineQuotaText(state, this.now()) : ''; }, onExit: () => this.render(), onActiveChange: activityOptions.onCuisineActive});
     this.moveBanner.id = 'rabbit-move-banner'; this.moveBanner.hidden = true;
     this.moveBanner.setAttribute('role', 'region'); this.moveBanner.setAttribute('aria-label', 'Déplacer un lapin');
@@ -727,7 +731,7 @@ export class GameUI {
     if (tab === 'decorations') { this.renderDecorationShop(s); return; }
     if (tab === 'habitats' || tab === 'buildings') {
       const basic = habitatLevel('universal', 1);
-      const utility: Record<BuildingKind, string> = {enclosure: `${basic.capacity} places · tous les types · stocke ${basic.cap} pattes`, farm: `Ferme niveau 1 : 5 cultures \u00b7 maximum ${farmLimit(playerLevel(s))} actuellement \u00b7 3 au niveau 12, 4 au niveau 15`, kitchen: 'Cuisine - maximum 1', statue: 'Ouvre l’affection 15 à 20 à tous tes lapins · maximum 1', agency: 'Fait voyager tes lapins · des cœurs au retour · maximum 1', nest: 'Deux parents · maximum 1', nursery: 'Une place pour grandir · maximum 1'};
+      const utility: Record<BuildingKind, string> = {enclosure: `${basic.capacity} places · tous les types · stocke ${basic.cap} pattes`, farm: `Ferme niveau 1 : 5 cultures \u00b7 maximum ${farmLimit(playerLevel(s))} actuellement \u00b7 3 au niveau 12, 4 au niveau 15`, kitchen: 'Cuisine - maximum 1', statue: `Ouvre l’affection ${AFFECTION_STATUE.cap + 1} à ${SECOND_AFFECTION_STATUE.cap}, puis ${SECOND_AFFECTION_STATUE.cap + 1} à ${BALANCE.maxAffection} avec la deuxième · maximum 2`, agency: 'Fait voyager tes lapins · des cœurs au retour · maximum 1', nest: 'Deux parents · maximum 1', nursery: 'Une place pour grandir · maximum 1'};
       if (tab === 'habitats') {
       const universal = this.card(HABITATS.universal.name, `${utility.enclosure} · empreinte 4 × 4`); universal.prepend(habitatThumbnail('universal'));
       if(!this.shopHabitatSpecies || stateLevelAccess(s,{family:'habitatPurchase',id:'universal'}).accessible) {
@@ -747,9 +751,9 @@ export class GameUI {
       for (const kind of ['farm', 'kitchen', 'agency', 'statue'] as const) {
         const card = this.card(BUILDING_NAMES[kind], `${utility[kind]} · empreinte 4 × 4`);
         if (kind === 'agency') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(agencyThumbnail()); card.append(node('p', `Dès le niveau ${TRAVEL.unlockLevel}, ${HOST_NAME} envoie tes lapins en vacances : voyages de 3 à 10 heures, cœurs en souvenir au retour.`, 'small')); }
-        if (kind === 'statue') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(statueThumbnail()); card.append(node('p', `La Statue de l’Affection récompense tes soins : sans elle, l’affection s’arrête à ${AFFECTION_STATUE.cap}. Avec elle, chaque lapin peut atteindre 20, et deux parents d’affection 15 doublent leurs chances d’épique et de légendaire.`, 'small')); }
+        if (kind === 'statue') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(statueThumbnail()); card.append(node('p', affectionStatueCount(s) === 0 ? `La Statue de l’Affection récompense tes soins : sans elle, l’affection s’arrête à ${AFFECTION_STATUE.cap}. Avec elle, chaque lapin peut atteindre ${SECOND_AFFECTION_STATUE.cap}. Une deuxième statue, dès le niveau ${SECOND_AFFECTION_STATUE.level}, ouvre l’affection ${SECOND_AFFECTION_STATUE.cap + 1} à ${BALANCE.maxAffection}.` : `Ta deuxième Statue de l’Affection ouvre l’affection ${SECOND_AFFECTION_STATUE.cap + 1} à ${BALANCE.maxAffection} à tous tes lapins. Dès le niveau ${SECOND_AFFECTION_STATUE.level}.`, 'small'), node('p', rareBirthBonusText(), 'small')); }
         if (kind === 'statue') card.append(node('p', `Ton solde : ${heartAmount(s.hearts)}. Économise tes cœurs pour la construire.`, 'small'));
-        const price = kind === 'statue' ? heartAmount(AFFECTION_STATUE.heartPrice) : `${BALANCE.buildings[kind].price} pattes`;
+        const price = kind === 'statue' ? heartAmount((nextAffectionStatue(s) ?? SECOND_AFFECTION_STATUE).heartPrice) : `${BALANCE.buildings[kind].price} pattes`;
         this.button(card, `Placer · ${price}`, () => this.beginPlacement(kind), buildingReason(s, kind, true)); this.content.append(card);
       }
       }
@@ -782,7 +786,7 @@ export class GameUI {
   }
   private renderPlacement(s: GameState): void {
     const p = this.placement; if (!p) { this.close(); return; }
-    const price = p.kind === 'statue' ? heartAmount(AFFECTION_STATUE.heartPrice) : `${p.kind === 'enclosure' ? habitatPrice(p.habitatType ?? 'universal') : BALANCE.buildings[p.kind].price} pattes`;
+    const price = p.kind === 'statue' ? heartAmount((nextAffectionStatue(s) ?? SECOND_AFFECTION_STATUE).heartPrice) : `${p.kind === 'enclosure' ? habitatPrice(p.habitatType ?? 'universal') : BALANCE.buildings[p.kind].price} pattes`;
     const name = p.kind === 'enclosure' ? HABITATS[p.habitatType ?? s.buildings.find(b => b.id === p.movingId)?.habitat?.type ?? 'universal'].name : BUILDING_NAMES[p.kind];
     this.title.textContent = `${p.movingId ? 'Déplacer' : 'Placer'} : ${name}`;
     if (p.kind === 'statue' && !p.movingId) this.content.append(node('p', `Prix : ${price} · ton solde : ${heartAmount(s.hearts)}. Le paiement a lieu seulement quand tu confirmes l’emplacement.`, 'small'));
@@ -1079,7 +1083,7 @@ export class GameUI {
     else if (b.kind === 'nursery') this.renderNursery(s);
     else if (b.kind === 'kitchen') this.button(this.content, 'Entrer dans la Cuisine', () => this.openCuisine());
     else if (b.kind === 'agency') this.renderAgency(s);
-    else if (b.kind === 'statue') this.content.append(node('p', `La statue veille sur la prairie : tes lapins peuvent dépasser l’affection ${AFFECTION_STATUE.cap} et atteindre 20. Deux parents d’affection 15 doublent leurs chances d’épique et de légendaire.`, 'badge'));
+    else if (b.kind === 'statue') this.content.append(node('p', affectionStatueCount(s) >= 2 ? `Tes deux statues veillent sur la prairie : tes lapins peuvent atteindre l’affection ${BALANCE.maxAffection}.` : `La statue veille sur la prairie : tes lapins peuvent dépasser l’affection ${AFFECTION_STATUE.cap} et atteindre ${SECOND_AFFECTION_STATUE.cap}. Une deuxième statue, dès le niveau ${SECOND_AFFECTION_STATUE.level}, ouvre l’affection ${SECOND_AFFECTION_STATUE.cap + 1} à ${BALANCE.maxAffection}.`, 'badge'), node('p', rareBirthBonusText(), 'small'));
     this.button(this.content, 'Déplacer ce bâtiment', () => this.beginPlacement(b.kind, id), null, true);
   }
   /** Coco speaks in a bubble beside its portrait; the first visit is a short guided welcome, later visits are not guided. */
@@ -1145,19 +1149,19 @@ export class GameUI {
     if(friend)this.button(this.content,`Complice : ${friend.name??SPECIES[friend.species].name}`,()=>this.open({kind:'rabbit',id:friend.id}),null,true);
     else this.content.append(node('p','En partageant leur habitat, tes lapins apprennent à devenir complices.','small'));
     const overview = node('div', '', 'rabbit-overview'), essential = node('div');
-    essential.append(this.stats([['Affection', `${r.affection} / 20`], ['Revenu', `${rabbitIncome(r.affection, r.species, individualIncomeRoll(r))} pattes / h`]]));
+    essential.append(this.stats([['Affection', `${r.affection} / ${BALANCE.maxAffection}`], ['Revenu', `${rabbitIncome(r.affection, r.species, individualIncomeRoll(r))} pattes / h`]]));
     overview.append(legendary ? legendaryPortrait(avatar(r.species, true), r.species) : avatar(r.species, true), essential); this.content.append(overview);
     const cost = feedCost(r.affection), away = travelling(s, id), reason = away ? 'TRAVELING' as const : feedReason(s, r.affection);
     if (away) essential.append(node('p', `En voyage ${toPlace(s.travel!.trips.find(t => t.rabbitId === id)!.destination)} · retour à l’agence`, 'badge rabbit-away'));
-    if (reason !== 'MAX_AFFECTION' && reason !== 'STATUE_REQUIRED' && reason !== 'TRAVELING') essential.append(node('p', `Prochain repas : ${cost} nourriture → affection ${r.affection + 1}, revenu ${rabbitIncome(r.affection + 1, r.species, individualIncomeRoll(r))} pattes / h.`, 'small'));
-    if (r.affection === AFFECTION_STATUE.cap && reason !== 'STATUE_REQUIRED') essential.append(node('p', 'Le grand repas de l’affection 15 : un vrai festin, à la hauteur de la récompense.', 'small rabbit-milestone'));
+    if (reason !== 'MAX_AFFECTION' && reason !== 'STATUE_REQUIRED' && reason !== 'SECOND_STATUE_REQUIRED' && reason !== 'TRAVELING') essential.append(node('p', `Prochain repas : ${cost} nourriture → affection ${r.affection + 1}, revenu ${rabbitIncome(r.affection + 1, r.species, individualIncomeRoll(r))} pattes / h.`, 'small'));
+    if (isAffectionWall(r.affection) && reason !== 'MAX_AFFECTION' && reason !== 'STATUE_REQUIRED' && reason !== 'SECOND_STATUE_REQUIRED') essential.append(node('p', `Le grand repas de l’affection ${r.affection + 1} : un vrai festin, à la hauteur de la récompense.`, 'small rabbit-milestone'));
     this.button(essential, reason === 'MAX_AFFECTION' ? 'Affection maximale' : `Nourrir · ${cost} nourriture`, () => this.execute({type: 'feed', id}, `Affection ${r.affection + 1} !`, () => this.scene.reactToFeed(id)), reason && REFUSALS[reason]).dataset.focus = 'feed';
     this.renderNickname(r);
     const factors = [1, ...RARE_BIRTH_BONUS.map(step => step.factor)].sort((a, b) => a - b);
     const factor = RARE_BIRTH_BONUS.find(step => r.affection >= step.affection)?.factor ?? 1;
     const tier = factors.indexOf(factor);
     const chance = node('div', '', 'rabbit-birth-chance badge');
-    chance.append(node('span', 'Chance de reproduction'), node('strong', ['Normale', 'Légèrement meilleure', 'Meilleure'][tier]));
+    chance.append(node('span', 'Chance de reproduction'), node('strong', ['Normale', 'Légèrement meilleure', 'Meilleure', 'Bien meilleure', 'Excellente'][tier]));
     const indicator = node('span', '', 'birth-chance-indicator'); indicator.setAttribute('aria-hidden', 'true');
     for (let notch = 0; notch < factors.length; notch++) indicator.append(node('span', '', notch <= tier ? 'is-active' : ''));
     chance.append(indicator); this.content.append(chance);

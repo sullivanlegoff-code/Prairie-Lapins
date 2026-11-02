@@ -3,7 +3,8 @@ import type {GameState} from '../state/types';
 import {labAction, type LabAction} from './labActions';
 import {SPECIES, SPECIES_IDS} from '../config/species';
 import {HABITATS, HABITAT_TYPES} from '../config/habitats';
-import type {BuildingKind} from '../config/balance';
+import {BALANCE, type BuildingKind} from '../config/balance';
+import {affectionCap} from '../simulation/affection';
 import {RARITY_NAMES} from '../ui/models';
 import {portrait} from '../ui/portraits';
 import {rabbitTheme, elementIcon} from '../display/rabbitPresentation';
@@ -40,7 +41,7 @@ export function mountLabPanel(host: HTMLElement, controller: GameController,
       const added = after.buildings.filter(b => !before.buildings.some(old => old.id === b.id));
       const extra = added.length ? ` ${added.length} bâtiment(s) créé(s) gratuitement : ${added.map(b => b.habitat ? `${HABITATS[b.habitat.type].name} niveau ${b.habitat.level}` : b.kind).join(', ')}.` : '';
       const land = after.acquiredParcels.length - before.acquiredParcels.length;
-      const warning = after.rabbits.some(r => r.affection > 14) && !after.buildings.some(b => b.kind === 'statue') ? ' Affection au-delà de 14 sans statue : dérogation du laboratoire.' : '';
+      const cap = affectionCap(after), warning = after.rabbits.some(r => r.affection > cap) ? ` Affection au-delà de ${cap} sans ${cap === 14 ? 'statue' : 'deuxième statue'} : dérogation du laboratoire.` : '';
       onReplacement(); report(true, message + extra + (land > 0 ? ` ${land} extension(s) ajoutée(s) gratuitement.` : '') + warning);
     } catch (e) { report(false, e instanceof Error ? e.message : 'Opération refusée.'); }
   };
@@ -59,7 +60,7 @@ export function mountLabPanel(host: HTMLElement, controller: GameController,
   });
   const time = section('Terminer les délais', 'timers');
   button(time, 'Terminer tous les délais maintenant', 'finish-timers', () => perform({type: 'finishTimers'}, 'Délais terminés : cultures, nid, nurserie, voyages, cadeau de cœurs et quotidienne suivante. Rien n’est encaissé.'));
-  const shop = section('Lapins — Boutique de test', 'shop'), affection = select(shop, 'Affection à l’ajout', 'shop-affection', range(20));
+  const shop = section('Lapins — Boutique de test', 'shop'), affection = select(shop, 'Affection à l’ajout', 'shop-affection', range(BALANCE.maxAffection));
   button(shop, 'Un exemplaire de chaque espèce', 'all-rabbits', () => perform({type: 'allRabbits', affection: Number(affection.value)}, `${SPECIES_IDS.length} lapins ajoutés et espèces découvertes.`));
   button(shop, 'Toutes les recettes connues', 'all-recipes', () => perform({type: 'recipes', known: true}, 'Toutes les recettes sont connues.'));
   button(shop, 'Oublier les recettes achetées', 'reset-recipes', () => perform({type: 'recipes', known: false}, 'Recettes achetées oubliées, sans remboursement. Cadeaux et découvertes conservés.'));
@@ -73,9 +74,9 @@ export function mountLabPanel(host: HTMLElement, controller: GameController,
       button(r, 'Ajouter', `add-${species}`, () => perform({type: 'rabbit', species, affection: Number(affection.value)}, `${info.name} ajouté et découvert.`));
     }
   }
-  const bonds = section('Affection', 'affection'), rabbit = select(bonds, 'Lapin et habitat', 'affection-rabbit', []), value = select(bonds, 'Affection', 'affection-value', range(20));
+  const bonds = section('Affection', 'affection'), rabbit = select(bonds, 'Lapin et habitat', 'affection-rabbit', []), value = select(bonds, 'Affection', 'affection-value', range(BALANCE.maxAffection));
   button(bonds, 'Appliquer l’affection', 'set-affection', () => perform({type: 'affection', rabbitId: rabbit.value || 'absent', value: Number(value.value)}, 'Affection du lapin fixée.'));
-  for (const value of [2, 10, 15, 20]) button(bonds, `Tous les lapins à ${value}`, `affection-all-${value}`, () => perform({type: 'affection', value}, `Tous tes lapins ont une affection de ${value}.`));
+  for (const value of [2, 10, 15, 20, 30, 50]) button(bonds, `Tous les lapins à ${value}`, `affection-all-${value}`, () => perform({type: 'affection', value}, `Tous tes lapins ont une affection de ${value}.`));
   const buildings = section('Bâtiments et île', 'buildings');
   const kinds: [string, string][] = [['farm', 'Ferme'], ['kitchen', 'Cuisine'], ['agency', 'Agence de voyage'], ['statue', 'Statue de l’Affection'], ['nest', 'Nid'], ['nursery', 'Nurserie'], ...HABITAT_TYPES.map(t => [`habitat:${t}`, HABITATS[t].name] as [string, string])];
   const kind = select(buildings, 'Bâtiment à construire', 'build-kind', kinds);

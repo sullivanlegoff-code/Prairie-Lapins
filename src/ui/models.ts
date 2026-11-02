@@ -3,10 +3,10 @@ import {recipeHint} from './economyFeedback';
 import {stateLevelAccess} from '../simulation/levelRights';
 import {buildingPlacementReason} from '../simulation/placement';
 import {habitatPrice, type HabitatType} from '../config/habitats';
-import {AFFECTION_STATUE, BALANCE, HOUR, TRAVEL, SPECIES, SPECIES_IDS, RECIPE_SPECIES, type Odds, type BuildingKind, type SpeciesId, type RabbitType, type Rarity} from '../config/balance';
+import {BALANCE, HOUR, TRAVEL, SPECIES, SPECIES_IDS, RECIPE_SPECIES, type Odds, type BuildingKind, type SpeciesId, type RabbitType, type Rarity} from '../config/balance';
 import {breedingPool, recipeMatches, ordinaryPoolAllows, nestForParent} from '../simulation/breeding';
 import {bennyStandIns} from '../simulation/benny';
-import {playerLevel} from '../simulation/affection';
+import {nextAffectionStatue, playerLevel} from '../simulation/affection';
 import {travelling} from '../simulation/travel';
 import {recipeKnown, recipePrice} from '../simulation/recipes';
 import {babiesBySlot, freeNurserySlots, nurseryBuilding, nurserySlotStates, nurseryUnlockQuote, type NurserySlotState} from '../simulation/nursery';
@@ -40,7 +40,7 @@ export const REFUSALS: Record<Refusal | 'NO_GAME' | 'DISPOSED' | 'SALE_NOT_SAVED
   INVALID_TIME: 'L’heure de l’appareil est invalide.', INVALID_RANDOM: 'Le tirage n’a pas pu aboutir. Réessaie.', INVALID_CHOICE: 'Ce choix n’est pas disponible.',
   NOT_FOUND: 'Cet élément n’est plus présent.', NOT_ENOUGH_PATTES: 'Solde insuffisant.', NOT_ENOUGH_GRASS: 'Pas assez de nourriture.', MARKET_LIMIT: 'Le comptoir a fait tous ses échanges pour aujourd’hui. Reviens au prochain cycle.',
   INVALID_CELL: 'Cette case n’est pas encore disponible.', CELL_OCCUPIED: 'Cette case est occupée.', BUILDING_LIMIT: 'Limite de bâtiments atteinte.',
-  CAPACITY_FULL: 'Habitat plein.', BUSY: 'Ce bâtiment est occupé.', NOT_READY: 'Ce n’est pas encore prêt.', MAX_AFFECTION: 'Affection maximale atteinte.', STATUE_REQUIRED: 'L’affection 15 demande la Statue de l’Affection, à construire dès le niveau 15.', TRAVELING: 'Ce lapin est en voyage. Accueille-le à l’agence à son retour.',
+  CAPACITY_FULL: 'Habitat plein.', BUSY: 'Ce bâtiment est occupé.', NOT_READY: 'Ce n’est pas encore prêt.', MAX_AFFECTION: 'Affection maximale atteinte.', STATUE_REQUIRED: 'L’affection 15 demande la Statue de l’Affection, à construire dès le niveau 15.', SECOND_STATUE_REQUIRED: 'L’affection 31 et plus demande deux Statues de l’Affection. Construis la deuxième dès le niveau 25.', TRAVELING: 'Ce lapin est en voyage. Accueille-le à l’agence à son retour.',
   SAME_PARENT: 'Choisis deux lapins différents.', AFFECTION_TOO_LOW: 'Chaque parent doit avoir au moins 2 d’affection.',
   MISSING_BUILDING: 'Il manque un bâtiment nécessaire : nid, nurserie ou cuisine.', ALREADY_EXPANDED: 'L’extension est déjà achetée.', PARCEL_UNAVAILABLE: 'Cette parcelle n’est pas encore accessible : l’île s’agrandit dans un ordre fixe, une parcelle après l’autre.', LAST_OF_SPECIES: 'Garde au moins un lapin de chaque espèce possédée.',
   BENNY_RECHARGING: 'Le pouvoir de Benny se recharge encore.', NO_WAITING_BABY: 'Aucun lapereau n’attend dans la nurserie.',
@@ -62,7 +62,8 @@ export function releaseReason(s: GameState, id: string, now: number): string | n
 }
 export function buildingReason(s: GameState, kind: BuildingKind, ignorePrice = false, habitatType: HabitatType = 'universal'): string | null {
   if (kind === 'nest' || kind === 'nursery') return 'Cet équipement est offert et ne s’achète pas.';
-  if(kind==='statue' && playerLevel(s)<AFFECTION_STATUE.level) return `Niveau ${AFFECTION_STATUE.level} requis`;
+  const statue = kind === 'statue' ? nextAffectionStatue(s) : null;
+  if(statue && playerLevel(s)<statue.level) return `Niveau ${statue.level} requis`;
   if(kind==='agency' && playerLevel(s)<TRAVEL.unlockLevel) return `Niveau ${TRAVEL.unlockLevel} requis`;
   if(kind==='enclosure') {const access=stateLevelAccess(s,{family:'habitatPurchase',id:habitatType});if(access.locked)return `Niveau ${access.requiredLevel} requis`;}
   if (kind === 'farm' && playerLevel(s) < 15 && s.buildings.filter(b => b.kind === 'farm').length >= farmLimit(playerLevel(s))) return `Niveau ${farmLimit(playerLevel(s)) === 2 ? 12 : 15} requis pour une ferme supplémentaire`;
@@ -70,7 +71,7 @@ export function buildingReason(s: GameState, kind: BuildingKind, ignorePrice = f
   if (config.maximum !== null && s.buildings.filter(b => b.kind === kind).length >= config.maximum) return REFUSALS.BUILDING_LIMIT;
   if (s.buildings.length >= s.acquiredParcels.length * ISLAND.parcelArea) return 'Aucune case libre. Agrandis la prairie.';
   if (ignorePrice) return null;
-  if (kind === 'statue') return s.hearts < AFFECTION_STATUE.heartPrice ? REFUSALS.NOT_ENOUGH_HEARTS : null;
+  if (statue) return s.hearts < statue.heartPrice ? REFUSALS.NOT_ENOUGH_HEARTS : null;
   return moneyReason(s, kind === 'enclosure' ? habitatPrice(habitatType) : config.price);
 }
 export type Placement = {kind: BuildingKind; movingId?: string; starter?: boolean; habitatType?: HabitatType; cell: {x: number; y: number} | null};

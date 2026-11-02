@@ -53,7 +53,7 @@ function build(s: GameState, kind: BuildingKind, habitatType: HabitatType = 'uni
   place(s, b); s.buildings.push(b); return b;
 }
 function addRabbit(s: GameState, species: SpeciesId, affection: number): void {
-  integer(affection, 1, 20);
+  integer(affection, 1, BALANCE.maxAffection);
   if (!(SPECIES_IDS as readonly string[]).includes(species)) throw new Error('Espèce inconnue.');
   if (!bennyAllows(s, species)) throw new Error('Benny est unique : il y en a déjà une dans cette partie.');
   const home = s.buildings.find(b => b.kind === 'enclosure' && !habitatEntryReason(s, b, species)) ?? build(s, 'enclosure', 'universal', 3);
@@ -87,7 +87,7 @@ export function labAction(state: GameState, action: LabAction): GameState {
     case 'allRabbits': for (const species of SPECIES_IDS) addRabbit(s, species, action.affection); break;
     case 'recipes': s.recipeBook = [...(action.known ? RECIPE_BOOK_SPECIES : GIFTED_RECIPES)]; break;
     case 'affection': {
-      integer(action.value, 1, 20);
+      integer(action.value, 1, BALANCE.maxAffection);
       const rabbits = s.rabbits.filter(r => !action.rabbitId || r.id === action.rabbitId);
       if (!rabbits.length) throw new Error('Choisis un lapin présent.');
       for (const r of rabbits) r.affection = action.value;
@@ -155,13 +155,13 @@ export function completeLaboratory(now: number): GameState {
   for (const habitatType of HABITAT_TYPES) { const b = build(s, 'enclosure', habitatType, 3); b.incomeUnits = HOUR * 100; }
   // Keep exactly one individual per species, including the starting Paille.
   for (const species of SPECIES_IDS) if (!s.rabbits.some(r => r.species === species)) addRabbit(s, species, 2);
-  s.rabbits.forEach((r, i) => { r.affection = [2, 10, 15, 20][i % 4]; });
+  s.rabbits.forEach((r, i) => { r.affection = [2, 10, 15, 20, 30, 50][i % 6]; });
   for (let i = 0; i < 2; i++) {
     const b = build(s, 'farm'); b.farmLevel = 2;
     const recipe = i === 0 ? 'foin' : 'banane'; const crop = ORDERS[recipe];
     b.order = {recipe, startedAt: i === 0 ? now - crop.duration : now, endsAt: i === 0 ? now : now + crop.duration, grass: crop.grass, duration: crop.duration};
   }
-  build(s, 'kitchen'); build(s, 'statue'); build(s, 'agency').agencyLevel = 3;
+  build(s, 'kitchen'); build(s, 'statue'); build(s, 'statue'); build(s, 'agency').agencyLevel = 3;
   s.travel = {welcomed: true, trips: s.rabbits.slice(2, 4).map((r, i) => ({rabbitId: r.id, destination: i === 0 ? 'Paris' : 'Vannes', startedAt: i === 0 ? now - 3 * HOUR : now, endsAt: i === 0 ? now : now + 3 * HOUR, hearts: 1, grass: 75}))};
   const birth = () => ({id: `birth-${s.nextId++}`, species: 'paille' as const, guaranteed: false, reservedDiscovery: false});
   s.buildings.find(b => b.kind === 'nursery')!.nursery = {capacity: 4, babies: [{slot: 0, birth: birth(), startedAt: now - growthDuration('paille'), readyAt: now}]};

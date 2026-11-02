@@ -19,11 +19,11 @@ import {decorationPlacementReason} from '../simulation/decorations';
 import {ISLAND} from '../config/islandGeometry';
 
 /**
- * The current format is v22 (Benny's power and sky mode, optional), after v21 (friendships and memories), v20 (catalogue conversion) and v19 (farm and agency levels, concurrent trips, Heart receipts), migrated through v18 and v17 from v16 (economy migration). Version 16 was the catalogue boundary of the development saves: the species Terre, Mottelin, Géant and
+ * The current format is v23 (affection up to 50 and a second Statue de l'Affection; nothing to convert), after v22 (Benny's power and sky mode, optional), v21 (friendships and memories), v20 (catalogue conversion) and v19 (farm and agency levels, concurrent trips, Heart receipts), migrated through v18 and v17 from v16 (economy migration). Version 16 was the catalogue boundary of the development saves: the species Terre, Mottelin, Géant and
  * Brumelin and the Terre habitat were removed, and saves before that catalogue boundary are not converted. Versions 1 to 15 are refused as incompatible
  * (the controller then starts a new game); they are never read, migrated or restored.
  */
-export const SAVE_VERSION = 22;
+export const SAVE_VERSION = 23;
 /** Types a species had before the owner changed them: a rabbit already housed under its old types may stay where it is. */
 const LEGACY_TYPES: Partial<Record<SpeciesId, readonly HabitatType[]>> = {magicien: ['metal', 'vol'], bouee: ['paille', 'feu'], dadi: ['neige', 'vol']};
 const integer = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
@@ -331,7 +331,7 @@ export function decodeGame(json: string): DecodeResult {
   if (json.length > MAX_JSON_LENGTH) return {ok: false, reason: 'FILE_TOO_LARGE'};
   let raw: unknown;
   try { raw = JSON.parse(json); } catch { return {ok: false, reason: 'INVALID_JSON'}; }
-  if (raw && typeof raw === 'object' && 'version' in raw && raw.version !== SAVE_VERSION && raw.version !== 21 && raw.version !== 20 && raw.version !== 19 && raw.version !== 18 && raw.version !== 17 && raw.version !== 16)
+  if (raw && typeof raw === 'object' && 'version' in raw && raw.version !== SAVE_VERSION && raw.version !== 22 && raw.version !== 21 && raw.version !== 20 && raw.version !== 19 && raw.version !== 18 && raw.version !== 17 && raw.version !== 16)
     return {ok: false, reason: Number.isInteger(raw.version) && (raw.version as number) >= 1 && (raw.version as number) <= 15 ? 'INCOMPATIBLE_CATALOG' : 'UNSUPPORTED_VERSION'};
   // Only the explicitly retired catalogue entries are removed; unknown IDs still fail validation.
   if (raw && typeof raw === 'object' && 'decorations' in raw && Array.isArray(raw.decorations)) {
@@ -342,7 +342,7 @@ export function decodeGame(json: string): DecodeResult {
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 16) raw = migrateV16(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 17) raw = migrateV17(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 18) raw = migrateV18(raw);
-  if (raw && typeof raw === 'object' && 'version' in raw && (raw.version === 19 || raw.version === 20 || raw.version === 21)) raw.version = SAVE_VERSION;
+  if (raw && typeof raw === 'object' && 'version' in raw && (raw.version === 19 || raw.version === 20 || raw.version === 21 || raw.version === 22)) raw.version = SAVE_VERSION;
   settleStorageCaps(raw);
   const parsed = schema.safeParse(raw);
   if (!parsed.success) return {ok: false, reason: 'INVALID_STATE'};
@@ -363,6 +363,6 @@ export function encodeGame(state: GameState, presentationId?: string): string {
 
 /** Optional presentation metadata, separate from simulation state. Call after validating the save. */
 export function readPresentationId(json: string): string | undefined {
-  try { const raw = JSON.parse(json); const id = z.string().uuid().safeParse(raw.presentationId); return [SAVE_VERSION, 21, 20, 19, 18, 17, 16].includes(raw.version) && id.success ? id.data : undefined; }
+  try { const raw = JSON.parse(json); const id = z.string().uuid().safeParse(raw.presentationId); return [SAVE_VERSION, 22, 21, 20, 19, 18, 17, 16].includes(raw.version) && id.success ? id.data : undefined; }
   catch { return undefined; }
 }
