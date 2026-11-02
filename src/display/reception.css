@@ -1,0 +1,56 @@
+/*
+ * A ready baby's reception card (src/ui/GameUI.ts, renderReception). `data-type` is the baby's first type: today it only sets
+ * an accent colour; `.reception-frame` is the empty layer meant to receive a painted frame per type later (set
+ * `--reception-frame` to its image). It must fit without scrolling on a phone in landscape (about 844 x 390) and in portrait.
+ */
+dialog.reception-card {
+  --reception-accent: #7f9f5c;
+  --reception-glow: #eef3dc;
+  position: fixed;
+  width: min(92vw, 400px);
+  padding: 14px 16px 16px;
+  text-align: center;
+  overflow-x: hidden;
+}
+dialog.reception-card[data-type="paille"] { --reception-accent: #c9973a; --reception-glow: #fbf0cf; }
+dialog.reception-card[data-type="neige"] { --reception-accent: #6aa3c8; --reception-glow: #e6f3fa; }
+dialog.reception-card[data-type="feu"] { --reception-accent: #d0653a; --reception-glow: #fbe5d6; }
+dialog.reception-card[data-type="metal"] { --reception-accent: #7d8b97; --reception-glow: #e9edf0; }
+dialog.reception-card[data-type="vol"] { --reception-accent: #5fa9d6; --reception-glow: #e5f3fb; }
+dialog.reception-card[data-type="arc-en-ciel"] { --reception-accent: #b07bc8; --reception-glow: #f4e9f8; }
+
+.reception-frame {
+  position: absolute; inset: 4px; z-index: 0; pointer-events: none;
+  border: 3px solid var(--reception-accent); border-radius: 14px;
+  background: var(--reception-frame, none) center / 100% 100% no-repeat;
+}
+.reception-card > :not(.reception-frame) { position: relative; z-index: 1; }
+.reception-close {
+  position: absolute !important; top: 2px; right: 2px; width: 44px; min-width: 44px; height: 44px; min-height: 44px;
+  margin: 0; padding: 0; font-size: 24px; line-height: 1;
+}
+.reception-art { display: flex; justify-content: center; }
+.reception-card .portrait.large.reception-portrait {
+  width: min(52vw, 190px); height: min(48vw, 176px); margin: 4px auto 6px;
+  background: radial-gradient(circle at 50% 45%, #fffdf4 0 40%, var(--reception-glow) 75%);
+  box-shadow: 0 0 0 4px var(--reception-accent), 0 6px 14px #2c3f3530;
+}
+.reception-body { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.reception-kicker { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: .02em; color: var(--reception-accent); }
+.reception-body h2.reception-name { margin: 0; font-size: 22px; line-height: 1.2; }
+.reception-details { margin: 0; }
+.reception-new { margin: 2px 0 0; border: 2px solid var(--reception-accent); }
+.reception-actions { display: grid; grid-template-columns: 1fr; gap: 8px; width: 100%; margin-top: 8px; }
+.reception-actions button { width: 100%; min-height: 44px; margin: 0; }
+.reception-actions .reason { margin: -2px 0 2px; font-size: 13px; line-height: 1.35; }
+
+/* Phone in landscape: the baby on the left, its name and the two choices on the right, side by side. */
+@media (orientation: landscape) and (max-height: 520px) {
+  dialog.reception-card { width: min(92vw, 600px); padding: 10px 14px 12px; }
+  dialog.reception-card[open] { display: flex; align-items: center; gap: 16px; }
+  .reception-art { flex: 0 0 auto; }
+  .reception-card .portrait.large.reception-portrait { width: min(42vh, 170px); height: min(40vh, 160px); margin: 4px; }
+  .reception-body { flex: 1 1 auto; align-items: stretch; text-align: left; }
+  .reception-actions { grid-template-columns: 1fr 1fr; }
+  .reception-actions .reason { grid-column: 1 / -1; }
+}

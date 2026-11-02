@@ -41,6 +41,7 @@ import {NEST_ART} from '../config/nestArt';
 import {NURSERY_ART, NURSERY_OVERLAY_ART} from '../config/nurseryArt';
 import {CROP_IDS, CROP_TEXTURE, CROP_URL, SPROUT_TEXTURE, SPROUT_URL} from './food';
 import {NurseryOverlays} from './nurseryOverlays';
+import {nurseryBabyHit} from './nurseryOverlayModel';
 import {progressBars} from './progressBars';
 import {ProgressBarViews} from './progressBarViews';
 import {foodBubble} from './currencyPhaser';
@@ -71,7 +72,8 @@ import {buildingFrame, ownedRegions, recenterCamera, type ScreenChrome} from './
 import {COIN_TEXTURE, COIN_URL, FOOD_TEXTURE, FOOD_URL, HEART_TEXTURE, HEART_URL} from './currency';
 import {coinBubble} from './currencyPhaser';
 
-export type MeadowSelection = {kind: 'building' | 'rabbit' | 'income' | 'grass' | 'decoration' | 'birth' | 'discovery'; id: string} | {kind: 'cell' | 'fineCell'; x: number; y: number} | {kind: 'extension'; parcelId?: ParcelId} | {kind: 'empty'};
+/** `nurseryBubble`: the « Prêt ! » bubble (id: the nursery). `nurseryBaby`: a ready baby touched on its cushion (id: its birthId). */
+export type MeadowSelection = {kind: 'building' | 'rabbit' | 'income' | 'grass' | 'decoration' | 'birth' | 'discovery' | 'nurseryBubble' | 'nurseryBaby'; id: string} | {kind: 'cell' | 'fineCell'; x: number; y: number} | {kind: 'extension'; parcelId?: ParcelId} | {kind: 'empty'};
 export interface DecorationGhost {id: string; catalogId?: DecorationId; location: DecorationLocation | null}
 /** `object` is the ground point (position, depth, scale); `body` carries the hop height, squash and mirror, apart from the shadow. */
 interface VisualRabbit {id: string; object: Phaser.GameObjects.Container; body: Phaser.GameObjects.Container; ears: Phaser.GameObjects.Ellipse[]; sprite?: Phaser.GameObjects.Image; art?: RabbitArt; base: Point; phase: number; fedUntil: number;
@@ -981,7 +983,7 @@ export class MeadowScene extends Phaser.Scene {
           const tween=this.tweens.add({targets:hand,y:p.y-35,duration:500,yoyo:true,repeat:-1});hand.once('destroy',()=>tween.remove());
         }
       }
-      this.bubbles.add(bubble); this.bubbleHits.push({point: p, width:bubble.width, height:bubble.height, selection: {kind: text === 'birth' ? 'birth' : kind, id: b.id}});
+      this.bubbles.add(bubble); this.bubbleHits.push({point: p, width:bubble.width, height:bubble.height, selection: {kind: text === 'birth' ? 'birth' : b.kind === 'nursery' ? 'nurseryBubble' : kind, id: b.id}});
     }
   }
   private gridZoom = 0;
@@ -1128,6 +1130,10 @@ export class MeadowScene extends Phaser.Scene {
       const home=this.current?buildingAt(this.current,fineCell(ground)):null;
       this.select(home ? {kind: 'building', id: home.id} : {kind: 'empty'}); return;
     }
+    // A ready baby on its cushion opens its own reception card; a growing one leaves the touch to the nursery.
+    const nursery = this.current?.buildings.find(b => b.kind === 'nursery');
+    const birthId = nursery ? nurseryBabyHit(nursery, this.current!.lastSimulatedAt, toScreen(buildingCenter(nursery)), world, this.view.zoom) : null;
+    if (birthId) { this.select({kind: 'nurseryBaby', id: birthId}); return; }
     // Benny in the air: a touch on her opens her card.
     if (this.bennyAway && this.bennyFlight?.hit(this.view.world(screen))) { this.select({kind: 'rabbit', id: this.bennyAway}); return; }
     const grounded = this.rabbitViews.filter(r => r.id !== this.bennyAway);
