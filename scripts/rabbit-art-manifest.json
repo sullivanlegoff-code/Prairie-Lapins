@@ -348,5 +348,15 @@
     "width": 461,
     "height": 382,
     "derivedSha1": "aa114c784b01be2eb7d82a38fb38f014ed7f01d3"
+  },
+  "benny": {
+    "file": "assets/rabbits/benny/benny-v1.png",
+    "worldWidth": 48,
+    "sourceSha1": "f3d63a19933f54773df4989d259e5d6d625296d0",
+    "sourceWidth": 466,
+    "sourceHeight": 572,
+    "width": 354,
+    "height": 435,
+    "derivedSha1": "d227c656fab377e6aaf44b39f454f145d1cb58cd"
   }
 }

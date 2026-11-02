@@ -612,7 +612,8 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     expect(dialog.open).toBe(true); expect(dialog.textContent).toContain('Lapin Feu'); button('Bienvenue dans la prairie', dialog).click();
     expect(decodeGame(data.get(SAVE_KEY)!)).toEqual({ok: true, state: state(controller)});
   });
-  it.each(SPECIES_IDS.filter((id, index, ids) => ids.findIndex(other => SPECIES[other].rarity === SPECIES[id].rarity) === index))('announces and credits the exact release food for %s', species => {
+  // Benny, the one Mythic, can never be entrusted: a game cannot hold two (her refusal is covered by tests/benny.test.ts).
+  it.each(SPECIES_IDS.filter((id, index, ids) => SPECIES[id].rarity !== 'mythic' && ids.findIndex(other => SPECIES[other].rarity === SPECIES[id].rarity) === index))('announces and credits the exact release food for %s', species => {
     const initial = createGame(0);
     initial.rabbits = [0, 1].map(i => ({id: `rabbit-${i + 2}`, species, affection: 2, enclosureId: initial.buildings[0].id}));
     initial.discovered = [species];
@@ -887,7 +888,7 @@ describe('habitat panels and controller transactions',()=>{
     expect(c.grantLaboratoryXp(500).ok).toBe(true);
     expect(c.perform({type:'upgradeHabitat',id:'building-6',fromLevel:1}).ok).toBe(true);
     expect(state(c).buildings.find(b=>b.id==='building-6')!.habitat).toEqual({type:'paille',level:2});expect(values.get(SAVE_KEY)).toBe(normal);
-    expect(JSON.parse(values.get('prairie-lapins.development.'+SAVE_KEY)!).version).toBe(21);
+    expect(JSON.parse(values.get('prairie-lapins.development.'+SAVE_KEY)!).version).toBe(22);
   });
 });
 

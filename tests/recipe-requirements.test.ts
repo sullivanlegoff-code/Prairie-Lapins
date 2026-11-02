@@ -17,13 +17,15 @@ afterEach(() => {for (const [id, definition] of saved) SPECIES[id] = definition;
 /** Frozen historical recipe requirements, independent of displayed result types. */
 
 /** Fixed-probability specials, in catalogue order: element recipes (Epics) and exact parents (Legendaries), approved 25 October 2026. */
-const SPECIALS: {id: SpeciesId; probability: number; affection: number; types?: string[]; parents?: [SpeciesId, SpeciesId]}[] = [
+const SPECIALS: {id: SpeciesId; probability: number; affection: number; types?: string[]; parents?: [SpeciesId, SpeciesId]; parentRarity?: 'legendary'}[] = [
   {id: 'magicien', probability: 10, affection: 6, types: ['paille', 'metal']}, {id: 'dragon', probability: 10, affection: 10, parents: ['dadi', 'phoenix']},
   {id: 'dadi', probability: 10, affection: 6, types: ['feu', 'metal']}, {id: 'maxou', probability: 10, affection: 6, types: ['neige', 'vol']},
   {id: 'orange', probability: 10, affection: 6, types: ['paille', 'neige']}, {id: 'dinono', probability: 10, affection: 6, types: ['feu', 'metal']},
   {id: 'dinenette', probability: 10, affection: 6, types: ['paille', 'vol']},
   {id: 'calinou', probability: 10, affection: 6, types: ['paille', 'metal']}, {id: 'requin', probability: 10, affection: 10, parents: ['maxou', 'wat-wat']},
   {id: 'ankylosaure', probability: 10, affection: 10, parents: ['dinono', 'dinenette']},
+  // Benny, the Mythic (1 November 2026): any two Legendaries, a fixed chance reserved like a Legendary's.
+  {id: 'benny', probability: 10, affection: 10, parentRarity: 'legendary'},
 ];
 function historicalWeights(a: SpeciesId, b: SpeciesId, x: number, y: number): Odds {
   const types = new Set([...SPECIES[a].types, ...SPECIES[b].types]), key = [...types].sort().join(',');
@@ -42,8 +44,9 @@ function historicalWeights(a: SpeciesId, b: SpeciesId, x: number, y: number): Od
   // multiply it by 1.5 (2), and all Epics together never exceed the Rares' half; a Legendary keeps a fixed chance on top.
   const factor = Math.min(x,y) >= 15 ? 2 : Math.min(x,y) >= 10 ? 1.5 : 1, epics: Odds = {}, legendaries: Odds = {};
   for (const special of SPECIALS) if (Math.min(x,y) >= special.affection && (special.types ? special.types.every(t => types.has(t as never))
+    : special.parentRarity ? SPECIES[a].rarity === special.parentRarity && SPECIES[b].rarity === special.parentRarity
     : a === special.parents![0] && b === special.parents![1] || a === special.parents![1] && b === special.parents![0]))
-    if (special.parents) legendaries[special.id] = special.probability * factor; else epics[special.id] = 30 * special.probability / 40 * factor;
+    if (special.parents || special.parentRarity) legendaries[special.id] = special.probability * factor; else epics[special.id] = 30 * special.probability / 40 * factor;
   if (!Object.keys(epics).length && !Object.keys(legendaries).length) return pool;
   const total = Object.values(pool).reduce((s,w) => s+w,0);
   if (!total) return {};

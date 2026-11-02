@@ -529,16 +529,16 @@
     },
     {
       "step": "50 j",
-      "pattes": 5273,
-      "grass": 169,
-      "hearts": 490,
+      "pattes": 3614,
+      "grass": 161,
+      "hearts": 488,
       "level": 29,
-      "species": 35,
+      "species": 36,
       "affection": {
-        "≥10": 38,
+        "≥10": 39,
         "≥15": 27,
         "max": 20,
-        "rabbits": 39
+        "rabbits": 40
       },
       "speciesIds": [
         "paille",
@@ -575,16 +575,17 @@
         "magicien",
         "dadi",
         "requin",
-        "dragon"
+        "dragon",
+        "benny"
       ],
-      "storedPattes": 4125,
+      "storedPattes": 4975,
       "remaining": {
         "commons": [],
-        "extensions": 5,
-        "extensionCost": 151000,
+        "extensions": 4,
+        "extensionCost": 142000,
         "farms": 0,
         "kitchen": false,
-        "habitatUpgrades": 7,
+        "habitatUpgrades": 6,
         "paidRecipes": []
       },
       "decorationBudget": {
@@ -667,30 +668,31 @@
         "discover-dadi",
         "level-twenty-five",
         "discover-requin",
-        "discover-dragon"
+        "discover-dragon",
+        "discover-benny"
       ]
     }
   ],
   "actions": {
     "buyBuilding": 12,
-    "claimMainMission": 76,
+    "claimMainMission": 77,
     "buyRabbit": 4,
     "startOrder": 419,
     "initiationAid": 3,
     "collectOrder": 417,
-    "feed": 1616,
-    "breed": 207,
+    "feed": 1604,
+    "breed": 203,
     "claimDailyMission": 100,
     "transferBirth": 1,
-    "welcome": 205,
+    "welcome": 201,
     "collectIncome": 1709,
     "buyDecoration": 1,
     "claimHearts": 69,
-    "upgradeHabitat": 6,
+    "upgradeHabitat": 7,
     "expand": 4,
     "upgradeFarm": 2,
-    "release": 171,
-    "exchangeForHeart": 707
+    "release": 166,
+    "exchangeForHeart": 722
   },
-  "totalActions": 5729
+  "totalActions": 5721
 }

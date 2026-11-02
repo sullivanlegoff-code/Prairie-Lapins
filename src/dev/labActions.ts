@@ -10,6 +10,7 @@ import {emptyBuilding, createGame} from '../state/initial';
 import type {Building, GameState, NurseryCapacity} from '../state/types';
 import {buildingFootprint, footprintPlacementReason} from '../simulation/placement';
 import {habitatEntryReason} from '../simulation/habitats';
+import {bennyAllows} from '../simulation/benny';
 import {cumulativeLevelXp} from '../simulation/progression';
 import {updateMissions, emptyDailyProgress} from '../simulation/missions';
 import {establishHistoricalLevelRights} from '../simulation/levelRights';
@@ -54,6 +55,7 @@ function build(s: GameState, kind: BuildingKind, habitatType: HabitatType = 'uni
 function addRabbit(s: GameState, species: SpeciesId, affection: number): void {
   integer(affection, 1, 20);
   if (!(SPECIES_IDS as readonly string[]).includes(species)) throw new Error('Espèce inconnue.');
+  if (!bennyAllows(s, species)) throw new Error('Benny est unique : il y en a déjà une dans cette partie.');
   const home = s.buildings.find(b => b.kind === 'enclosure' && !habitatEntryReason(s, b, species)) ?? build(s, 'enclosure', 'universal', 3);
   s.rabbits.push({id: `rabbit-${s.nextId++}`, species, affection, enclosureId: home.id});
   if (!s.discovered.includes(species)) s.discovered.push(species);

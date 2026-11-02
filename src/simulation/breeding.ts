@@ -2,13 +2,16 @@ import {BALANCE, BREEDING_WEIGHTS, ORDINARY_POOL_POLICIES, HISTORICAL_COMMON_WEI
 import {breedable, breedsHistorically, hasRecipe} from '../config/species';
 import {stateLevelAccessChecker} from './levelRights';
 import {rareBirthFactor} from './affection';
+import {bennyAllows} from './benny';
 import type {GameState} from '../state/types';
 
 /** Shared recipe identity/types; no inspection of a pending birth. */
 export function recipeMatches(id: SpeciesId, a: SpeciesId, b: SpeciesId): boolean {
   const recipe = SPECIES[id].recipe;
   if (!recipe) return false;
-  if (!recipe.parents && !recipe.requiredTypes?.length) throw new RangeError('Recipe needs requiredTypes or exact parents');
+  if (!recipe.parents && !recipe.requiredTypes?.length && !recipe.parentRarity) throw new RangeError('Recipe needs requiredTypes, exact parents or a parent rarity');
+  // Benny (Mythic): any two parents of this rarity, in any order, the same species included.
+  if (recipe.parentRarity && (SPECIES[a].rarity !== recipe.parentRarity || SPECIES[b].rarity !== recipe.parentRarity)) return false;
   if (recipe.parents) {
     const [first, second] = recipe.parents;
     if (!(a === first && b === second || a === second && b === first)) return false;
@@ -55,7 +58,7 @@ const EPIC_WEIGHT_SCALE = 40;
 /**
  * Owner's weight model (31 October 2026), in exact integer ratios. Every Epic of the pair weighs a quarter of a Rare
  * (×1.5 / ×2 with affection) and is drawn with the ordinary results; all Epics together never exceed half of that draw.
- * Legendaries, exact-parent recipes, keep their fixed chance, reserved once outside the Epic cap.
+ * Legendaries, exact-parent recipes, keep their fixed chance, reserved once outside the Epic cap; so does the Mythic (Benny).
  */
 export function breedingDistributionWeights(a: SpeciesId, b: SpeciesId, affectionA = 2, affectionB = 2, allowed: (id: SpeciesId) => boolean = () => true): Odds {
   const ordinary = Object.fromEntries(Object.entries(breedingWeights(a, b, affectionA, affectionB)).filter(([id]) => allowed(id as SpeciesId))) as Odds;
@@ -63,7 +66,8 @@ export function breedingDistributionWeights(a: SpeciesId, b: SpeciesId, affectio
   if (!specials.length) return ordinary;
   const total = Object.values(ordinary).reduce((sum, weight) => sum + weight, 0);
   if (!total) return {}; // Without an ordinary result, neither an Epic share nor a fixed Legendary chance can be kept.
-  const epics = specials.filter(id => SPECIES[id].rarity !== 'legendary'), legendaries = specials.filter(id => SPECIES[id].rarity === 'legendary');
+  const reserved = (id: SpeciesId) => SPECIES[id].rarity === 'legendary' || SPECIES[id].rarity === 'mythic';
+  const epics = specials.filter(id => !reserved(id)), legendaries = specials.filter(reserved);
   const epicWeight = (id: SpeciesId) => SPECIES[id].recipe!.probability! * BREEDING_WEIGHTS.recipe * rareBirthFactor(id, affectionA, affectionB);
   const ordinaryTotal = total * EPIC_WEIGHT_SCALE, epicTotal = epics.reduce((sum, id) => sum + epicWeight(id), 0);
   // Over the cap, the Epics share exactly the ordinary mass, keeping their ratios: both sides are scaled by the other's total.
@@ -83,17 +87,18 @@ export function breedingOdds(a: SpeciesId, b: SpeciesId, affectionA = 2, affecti
   const total = Object.values(weights).reduce((sum, weight) => sum + weight, 0);
   return Object.fromEntries(Object.entries(weights).map(([id, weight]) => [id, weight * 100 / total]));
 }
-/** Shared by all previews and simulation. Specials never join the guarantee. */
+/** Shared by all previews and simulation. Specials never join the guarantee. A Benny already claimed is never a result. */
 export function breedingPool(state: GameState, a: SpeciesId, b: SpeciesId, affectionA = 2, affectionB = 2) {
   const check=stateLevelAccessChecker(state),cache=new Map<SpeciesId, ReturnType<typeof check>>();
   const access = (id: SpeciesId) => {if(!cache.has(id))cache.set(id,check({family:'species',id,action:'breedingResult'}));return cache.get(id)!;};
+  const allowed = (id: SpeciesId) => access(id).accessible && bennyAllows(state, id);
   const ordinary = Object.fromEntries(Object.entries(breedingWeights(a,b,affectionA,affectionB)).filter(([id]) => access(id as SpeciesId).accessible)) as Odds;
   const unfiltered = breedingDistributionWeights(a,b,affectionA,affectionB);
-  const excluded = (Object.keys(unfiltered) as SpeciesId[]).filter(id => access(id).locked).map(id => ({species:id,requiredLevel:access(id).requiredLevel}));
+  const excluded = (Object.keys(unfiltered) as SpeciesId[]).filter(id => access(id).locked && bennyAllows(state, id)).map(id => ({species:id,requiredLevel:access(id).requiredLevel}));
   const missing = (Object.keys(ordinary) as SpeciesId[]).filter(id => GUARANTEE_SPECIES.includes(id) && breedable(SPECIES[id]) && !state.discovered.includes(id));
   const eligible = missing.length > 0;
   const guaranteed = eligible && state.pityFailures >= BALANCE.guaranteeAttempt - 1;
-  const weights: Odds = guaranteed ? Object.fromEntries(missing.map(id => [id, 1])) : breedingDistributionWeights(a, b, affectionA, affectionB, id => access(id).accessible);
+  const weights: Odds = guaranteed ? Object.fromEntries(missing.map(id => [id, 1])) : breedingDistributionWeights(a, b, affectionA, affectionB, allowed);
   const total = Object.values(weights).reduce((sum, weight) => sum + weight, 0);
   return {weights, total, missing, eligible, guaranteed, excluded};
 }

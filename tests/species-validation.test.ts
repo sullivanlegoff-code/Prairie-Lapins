@@ -12,7 +12,7 @@ const invalid: [string, unknown, string][] = [
   ['missing object', null, 'entry'],
   ...['', ' ', 'Rabbit', 'two_words', '-leading', 'trailing-', 'two--hyphens', 'slash/id'].map(id => ['id '+id, {...entry(), id}, 'id'] as [string, unknown, string]),
   ['empty name', {...entry(), name: '  '}, 'name'],
-  ['unknown rarity', {...entry(), rarity: 'mythic'}, 'rarity'],
+  ['unknown rarity', {...entry(), rarity: 'divine'}, 'rarity'],
   ['empty types', {...entry(), types: []}, 'types'],
   ['unknown type', {...entry(), types: ['water']}, 'types.0'],
   ['duplicate types', {...entry(), types: ['feu','feu']}, 'types'],

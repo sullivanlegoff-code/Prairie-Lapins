@@ -1,0 +1,236 @@
+{
+  "cloud-1": {
+    "width": 443,
+    "height": 339,
+    "bytes": 25714,
+    "masterSha256": "2df4dfa2854ccbc91dbc3b964bf5eeeff8ab5b41133f7582320c2959fb8d2829"
+  },
+  "cloud-2": {
+    "width": 443,
+    "height": 340,
+    "bytes": 28090,
+    "masterSha256": "bbbec4bdf27211ba6400b060a68b9e66ec52fdbccd91330fac7ce560d8e35659"
+  },
+  "cloud-3": {
+    "width": 443,
+    "height": 339,
+    "bytes": 29356,
+    "masterSha256": "8d20e735c786b392b0b91b55ea16eb7d3d36951859fbe7855dda94c5d97e2429"
+  },
+  "cloud-4": {
+    "width": 443,
+    "height": 340,
+    "bytes": 34958,
+    "masterSha256": "6a2329d9368bed04e0d7d30e519b8ce57cc3aec5f1f4262e37e88571ae45a3ae"
+  },
+  "cloud-5": {
+    "width": 443,
+    "height": 339,
+    "bytes": 32122,
+    "masterSha256": "2d34e75be65ee6b46a951eb06c8d36c7fcee4d3cd96e4e13ce43b119b0601082"
+  },
+  "cloud-6": {
+    "width": 443,
+    "height": 340,
+    "bytes": 36848,
+    "masterSha256": "6a8842fb98bd559b89df4d2b2e028208a1964e2c10e72ef65d865062f4a54dc3"
+  },
+  "cloud-7": {
+    "width": 443,
+    "height": 339,
+    "bytes": 37156,
+    "masterSha256": "2e37fd748e84b280fd5aeba7c875fad58307e1d621937dab43ff7b698cd23404"
+  },
+  "cloud-8": {
+    "width": 443,
+    "height": 340,
+    "bytes": 40754,
+    "masterSha256": "38155378a564564053af1446b11ed4a937a58dfde32aff22f1684dd122b40329"
+  },
+  "rainbow-1": {
+    "width": 443,
+    "height": 299,
+    "bytes": 8490,
+    "masterSha256": "eef80113ba1cd5f4b3cac9c6edf0a39ef7d0c5cb2ce12860010ab7907bb167f1"
+  },
+  "rainbow-2": {
+    "width": 443,
+    "height": 300,
+    "bytes": 14786,
+    "masterSha256": "16b7dfd92aaf6add72dd89e7bfe7de4c022442ed7a9385a3626a17598401082a"
+  },
+  "rainbow-3": {
+    "width": 443,
+    "height": 299,
+    "bytes": 16664,
+    "masterSha256": "d85476e134dfd6d8fe15813ed39bd5ecc22191446663da52dff49b78a44e0b49"
+  },
+  "rainbow-4": {
+    "width": 443,
+    "height": 300,
+    "bytes": 25624,
+    "masterSha256": "fb565e04d52b0af2bf7a4f9660c96d065b1010d4eec70bc5bbc94946f7270fd1"
+  },
+  "rainbow-5": {
+    "width": 443,
+    "height": 299,
+    "bytes": 29174,
+    "masterSha256": "1639c4214bfe4e407572ef0444217313159137a9d0ac88e3bc21711182c50827"
+  },
+  "rainbow-6": {
+    "width": 443,
+    "height": 300,
+    "bytes": 29708,
+    "masterSha256": "c01dc11c331919ef427aafddf5cbaf091e2a26cf77fbde4263eaf8bb3279fd1f"
+  },
+  "rainbow-7": {
+    "width": 443,
+    "height": 299,
+    "bytes": 37838,
+    "masterSha256": "2be2ef089e9f95620312c2a4cfd4ad7cfc5c32fb488973599c94a68313d4df77"
+  },
+  "rainbow-8": {
+    "width": 443,
+    "height": 300,
+    "bytes": 35846,
+    "masterSha256": "2849a4ec6a1c113a5efc10f42a1737e59fcdb5da9e7271ba8c13ae5be4e9339c"
+  },
+  "rays-1": {
+    "width": 296,
+    "height": 278,
+    "bytes": 10420,
+    "masterSha256": "6a95ff17d0faeee871994ba6dc4bd739d9537b8d3342bbbac2856dd4453f56cd"
+  },
+  "rays-2": {
+    "width": 295,
+    "height": 278,
+    "bytes": 18366,
+    "masterSha256": "174b1079a4b6b9db86355c0034596528a2ba1e80cf3f14cbb3e5c0fe0c4ac58d"
+  },
+  "rays-3": {
+    "width": 296,
+    "height": 278,
+    "bytes": 25320,
+    "masterSha256": "67ac8ecfa56a140d827394d14f6f029f6fe64b608b4053ca87749408a0b6b4d3"
+  },
+  "rays-4": {
+    "width": 296,
+    "height": 278,
+    "bytes": 32452,
+    "masterSha256": "535a2ef3710ba8c093079a3f8f08417a82392e2c3b584a32295bfa1a29f6cca2"
+  },
+  "rays-5": {
+    "width": 295,
+    "height": 278,
+    "bytes": 28550,
+    "masterSha256": "aedf03d361eb0bcf75cd18d478249dbf7934abe1c58c78d8dbfb64c67dacff41"
+  },
+  "rays-6": {
+    "width": 296,
+    "height": 278,
+    "bytes": 17950,
+    "masterSha256": "1ad51df28827da5612113f8a3e8d254899249d9af90377f3c5387874fb3306a0"
+  },
+  "ring": {
+    "width": 256,
+    "height": 128,
+    "bytes": 13138,
+    "masterSha256": "63d258f290352cc14f776890cdc4d98787259fd9da09811633c51c5f64196434"
+  },
+  "ring-sparkles": {
+    "width": 256,
+    "height": 147,
+    "bytes": 16452,
+    "masterSha256": "1b4147237f93b303f8cfdfeb5304d23abd366e0df7f0ccffec9d5d4c5272428c"
+  },
+  "glow": {
+    "width": 192,
+    "height": 197,
+    "bytes": 13960,
+    "masterSha256": "4b1dd5721c0c118f9624662b7e3a0706fdf68cf87cd7243dcf8795ead2c853bb"
+  },
+  "twinkle": {
+    "width": 96,
+    "height": 96,
+    "bytes": 3828,
+    "masterSha256": "5a96067ef0c528f6b298337e4f5ec56c240bfec28d3df4c795468e6c57711ed4"
+  },
+  "burst": {
+    "width": 224,
+    "height": 218,
+    "bytes": 25728,
+    "masterSha256": "2a3fa9b7babc1dfb5d18b78c079fa8b2978fed2cd187211cfe3373755d5d31b4"
+  },
+  "prism": {
+    "width": 224,
+    "height": 223,
+    "bytes": 24834,
+    "masterSha256": "e378e34482dcf14168b3c40f4d766f4458a2a596705a0041de4cf139faa4b397"
+  },
+  "star": {
+    "width": 32,
+    "height": 32,
+    "bytes": 1252,
+    "masterSha256": "a96d40ab4b23f4220a31d9d0e727840ba1b69821500035310e2d58b26879d1c4"
+  },
+  "star-five": {
+    "width": 40,
+    "height": 40,
+    "bytes": 2004,
+    "masterSha256": "12bf0c53d8457d297b68b556b2f396137b3ee19c4f35f5cb5ae079a48d5f0766"
+  },
+  "star-big": {
+    "width": 96,
+    "height": 99,
+    "bytes": 4992,
+    "masterSha256": "6398d870c6d2c3fcde72032f9a0e84d167dcccafc1b335357de3443e6f0404f6"
+  },
+  "stardust": {
+    "width": 128,
+    "height": 107,
+    "bytes": 7890,
+    "masterSha256": "c26aa6513874973b2f1711c7da3dea215edcb7128d2827f249ba22f5c9816487"
+  },
+  "trail": {
+    "width": 192,
+    "height": 113,
+    "bytes": 11386,
+    "masterSha256": "ab076c793dbd9e94dc89d5adfef3bfe8e152a7e73533f449dfb1d843669123c7"
+  },
+  "swirl": {
+    "width": 256,
+    "height": 232,
+    "bytes": 36208,
+    "masterSha256": "b9453bd3b37b6e5f2adbee7ee79cf242b1ad8cb4037deea6502435203c4b4ac6"
+  },
+  "feather-1": {
+    "width": 96,
+    "height": 176,
+    "bytes": 7650,
+    "masterSha256": "204d5bb32dc9860e981de69b7afaa92a308ddf4871c410d7606fde2fe0677b7d"
+  },
+  "feather-2": {
+    "width": 96,
+    "height": 88,
+    "bytes": 4558,
+    "masterSha256": "718a7574a30a3b02056e2882daeb7aac96be4e7b7f130886ec6764d917c9f172"
+  },
+  "feather-3": {
+    "width": 96,
+    "height": 80,
+    "bytes": 5164,
+    "masterSha256": "66a0ef9cdade84c674ec704a31d6832588e0563cf5b8e558f7a4e1b8ab12329b"
+  },
+  "feather-4": {
+    "width": 96,
+    "height": 110,
+    "bytes": 4550,
+    "masterSha256": "1a7ff35a1926dbb17fe22d938bed4ca13da01c38f03d10ab97ecfc37861857c7"
+  },
+  "feather-5": {
+    "width": 96,
+    "height": 105,
+    "bytes": 5864,
+    "masterSha256": "9f15a4aaec83e677b17ffbf602c6b0638b6b0bafff30dfd498d604aeba379579"
+  }
+}

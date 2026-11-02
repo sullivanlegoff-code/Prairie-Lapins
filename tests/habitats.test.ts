@@ -49,7 +49,7 @@ function breedingState(){
 describe('habitat compatibility and atomic entries',()=>{
   it.each(SPECIES_IDS.flatMap(species=>HABITAT_TYPES.map(type=>({species,type}))))('$species in $type follows species types',({species,type})=>{
     const b=emptyBuilding('building-4','enclosure',4,0,type);
-    expect(habitatAccepts(b,species)).toBe(type==='universal'||SPECIES[species].types.includes(type));
+    expect(habitatAccepts(b,species)).toBe(type==='universal'||SPECIES[species].types.includes(type)||SPECIES[species].types.includes('arc-en-ciel'));
   });
   it.each(HABITAT_TYPES.filter(t=>t!=='universal'))('buys %s for 200 and welcomes its common for 80',type=>{
     let s=build(rich(),type);const home=s.buildings.at(-1)!;

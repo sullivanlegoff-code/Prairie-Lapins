@@ -26,7 +26,7 @@ export function rabbitIncome(affection: number, speciesOrRarity: SpeciesId | Rar
   if (rarity === 'common') return BALANCE.incomeBase + BALANCE.incomePerLevel * (affection - 1);
   const luck = incomeRoll / 10000;
   const rare = 10 + 10 * luck + (affection - 1) * (60 + 20 * luck) / 9;
-  return Math.round(rare * (rarity === 'epic' ? 1.3 : rarity === 'legendary' ? 1.5 : 1));
+  return Math.round(rare * (rarity === 'epic' ? 1.3 : rarity === 'legendary' || rarity === 'mythic' ? 1.5 : 1));
 }
 export function validTime(now: number): boolean { return Number.isSafeInteger(now) && now >= 0; }
 /** Rebase every absolute timestamp; cycle indices and already earned resources stay unchanged. */
@@ -36,6 +36,7 @@ function rebaseClock(s: GameState, offset: number): void {
   s.missions.daily.referenceAt += offset;
   if (s.missions.daily.nextAt !== undefined) s.missions.daily.nextAt += offset;
   for (const trip of s.travel?.trips ?? []) { trip.startedAt += offset; trip.endsAt += offset; }
+  if (s.benny && s.benny.powerReadyAt > 0) s.benny.powerReadyAt += offset;
   for (const b of s.buildings) {
     if (b.order) { b.order.startedAt += offset; b.order.endsAt += offset; }
     if (b.breeding) { b.breeding.startedAt += offset; b.breeding.endsAt += offset; }

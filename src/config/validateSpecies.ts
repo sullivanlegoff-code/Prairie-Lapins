@@ -25,13 +25,15 @@ const acquisition = z.discriminatedUnion('kind', [
   z.object({kind: z.literal('shop'), price: z.number().int().nonnegative()}),
   z.object({kind: z.literal('historical-breeding')}),
   z.object({kind: z.literal('recipe'), requiredTypes: elements.refine(values => values.length <= 4, 'At most four required elements').optional(),
-    parents: z.tuple([nonempty, nonempty]).optional(),
+    parents: z.tuple([nonempty, nonempty]).optional(), parentRarity: z.enum(RARITY_IDS as [string, ...string[]]).optional(),
     minAffection: z.number().int().min(BALANCE.minAffection).max(BALANCE.maxAffection),
     probability: positive.lt(100).optional(), knowledgePrice: z.number().int().nonnegative().optional(),
     giftedAtStart: z.boolean().optional(), guaranteeEligible: z.boolean().optional()}),
 ]).superRefine((source, ctx) => {
-  if (source.kind === 'recipe' && !source.requiredTypes?.length && !source.parents)
-    ctx.addIssue({code: 'custom', path: ['requiredTypes'], message: 'Recipe requires elements or exact parents'});
+  if (source.kind === 'recipe' && !source.requiredTypes?.length && !source.parents && !source.parentRarity)
+    ctx.addIssue({code: 'custom', path: ['requiredTypes'], message: 'Recipe requires elements, exact parents or a parent rarity'});
+  if (source.kind === 'recipe' && source.parentRarity !== undefined && source.parents)
+    ctx.addIssue({code: 'custom', path: ['parentRarity'], message: 'A parent rarity cannot be combined with exact parents'});
   if (source.kind === 'recipe' && source.giftedAtStart === true && source.knowledgePrice !== undefined)
     ctx.addIssue({code: 'custom', path: ['knowledgePrice'], message: 'Starting gift cannot also be sold'});
   if (source.kind === 'recipe' && source.guaranteeEligible === true && source.probability !== undefined)

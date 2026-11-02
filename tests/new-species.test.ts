@@ -75,6 +75,9 @@ describe('approved three-species rules',()=>{
  it('checks symmetry, normalization, eligibility and actual midpoint draws for every pair at threshold boundaries',()=>{
   for(let i=0;i<SPECIES_IDS.length;i++)for(let j=i;j<SPECIES_IDS.length;j++)for(const levels of [[2,2],[4,3],[4,4],[6,5],[6,6],[10,9],[10,10],[20,20]]){
    const a=SPECIES_IDS[i],b=SPECIES_IDS[j],[x,y]=levels,s=createGame(0),pool=breedingPool(s,a,b,x,y);
+   // Benny never breeds as herself: the breed action replaces her by a drawn Common first (covered by tests/benny.test.ts).
+   // Her own rainbow type matches nothing, so a pair with her may have no raw result at all; any raw result is still checked below.
+   if((a==='benny'||b==='benny')&&!pool.total)continue;
    expect(pool.weights).toEqual(breedingPool(s,b,a,y,x).weights);expect(Object.values(breedingOdds(a,b,x,y)).reduce((n,p)=>n+p,0)).toBeCloseTo(100,12);
    if(!commonResultAllowed(a,b))expect(Object.keys(pool.weights).every(id=>SPECIES[id as SpeciesId].rarity!=='common')).toBe(true);
    let cursor=0;for(const [id,w]of Object.entries(pool.weights)){expect(chooseBirth(s,a,b,(cursor+w/2)/pool.total,x,y).species).toBe(id);cursor+=w}

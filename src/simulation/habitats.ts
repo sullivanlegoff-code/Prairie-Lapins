@@ -12,7 +12,8 @@ export function removeHabitatReason(s: GameState, id: string): Refusal | null {
   return null;
 }
 export const habitatAccepts = (b: Building, species: SpeciesId): boolean => b.kind === 'enclosure' && !!b.habitat &&
-  (b.habitat.type === 'universal' || SPECIES[species].types.includes(b.habitat.type));
+  // A rainbow species (Benny alone) may live in any enclosure.
+  (b.habitat.type === 'universal' || SPECIES[species].types.includes('arc-en-ciel') || SPECIES[species].types.includes(b.habitat.type));
 export function habitatEntryReason(s: GameState, b: Building, species: SpeciesId): Refusal | null {
   if (!habitatAccepts(b, species)) return 'TYPE_INCOMPATIBLE';
   return s.rabbits.filter(r => r.enclosureId === b.id).length >= habitatStats(b).capacity ? 'CAPACITY_FULL' : null;

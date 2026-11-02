@@ -14,7 +14,7 @@ Exemples à l’affection 6 : paille + métal (2 rares, 2 épiques) donne 40 % p
 
 **Actualisation du 27 octobre :** les revenus et les 18 plafonds applicables sont détaillés dans [l’économie actuelle](economy-current.md). Les barèmes de revenus, de stockage et les mesures de progression datés plus bas sont historiques. Aucun recalcul de progression n’a été effectué, à la demande du propriétaire. La règle de reproduction actuelle exclut tout résultat commun, sauf entre deux parents communs du même type ; voir [les recettes actuelles](recipes-current.md).
 
-Le registre `src/config/species.ts` contient 35 espèces : 5 communs, 20 rares, 7 épiques, 2 légendaires. La rareté « peu commun » a été retirée du jeu le 31 octobre 2026 ; les tableaux plus bas qui la citent (Brumelin, Mottelin, Terre) sont des archives. Les notes de publication plus bas sont des archives.
+Le registre `src/config/species.ts` contient 36 espèces : 5 communs, 20 rares, 7 épiques, 3 légendaires, 1 mythique (Benny, voir [les espèces](species.md)). La rareté « peu commun » a été retirée du jeu le 31 octobre 2026 ; les tableaux plus bas qui la citent (Brumelin, Mottelin, Terre) sont des archives. Les notes de publication plus bas sont des archives.
 
 | Lapin | Types | Rareté | Recette | Niveau |
 |---|---|---|---|---:|

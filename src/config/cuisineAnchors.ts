@@ -52,6 +52,8 @@ export const CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>> = {
   calinou: a([.65, .17, .36, 4], [.72, .45, .3], [.74, .35, .26]),
   requin: a([.72, .05, .38, 6], [.76, .4, .3], [.78, .19, .3]),
   ankylosaure: a([.76, .1, .36, 6], [.8, .48, .3], [.8, .29, .3]),
+  // Provisional A1 drawing (1 November 2026), read on the sprite only: not yet checked on a capture of the kitchen.
+  benny: a([.58, .22, .36, 6], [.7, .56, .3], [.66, .37, .3]),
 };
 /** A right-facing rabbit with its head at the top right of its picture; mirrored for a left-facing one. */
 export const DEFAULT_ANCHORS: CuisineAnchors = a([.7, .15, .36, 6], [.72, .48, .3], [.75, .3, .3]);

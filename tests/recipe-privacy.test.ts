@@ -1,10 +1,10 @@
 import {describe, expect, it} from 'vitest';
 import {createGame} from '../src/simulation';
-import {breedingPool} from '../src/simulation/breeding';
 import {cumulativeLevelXp} from '../src/simulation/progression';
 import {recipeKnown} from '../src/simulation/recipes';
 import {RECIPE_SPECIES, SPECIES, SPECIES_IDS, type SpeciesId} from '../src/config/balance';
-import {RARITY_NAMES, oddsTexts, oddsView, probabilityLabel, recipeBook, typeNames} from '../src/ui/models';
+import {RARITY_NAMES, nestOddsPool, oddsTexts, oddsView, probabilityLabel, recipeBook, typeNames} from '../src/ui/models';
+// The nest shows the breeding pool itself, or for a Benny parent its exact average over her Common stand-ins (nestOddsPool).
 import type {GameState} from '../src/state/types';
 
 const description = (id: SpeciesId) => `${typeNames(SPECIES[id].types)} · ${RARITY_NAMES[SPECIES[id].rarity]}`;
@@ -24,7 +24,7 @@ describe('nest odds privacy over every pair', () => {
     for (const level of [5, 30]) for (const pity of [0, 9]) {
       const s = game(level, pity, discovered, recipes);
       for (const a of SPECIES_IDS) for (const b of SPECIES_IDS) for (const affection of [2, 4, 6, 10]) {
-        const pool = breedingPool(s, a, b, affection, affection), odds = oddsView(s, a, b, affection, affection), texts = oddsTexts(odds);
+        const pool = nestOddsPool(s, a, b, affection, affection), odds = oddsView(s, a, b, affection, affection), texts = oddsTexts(odds);
         const ids = Object.keys(pool.weights) as SpeciesId[], known = ids.filter(id => recipeKnown(s, id)), unknown = ids.filter(id => !recipeKnown(s, id));
         const unknownWeight = unknown.reduce((sum, id) => sum + pool.weights[id]!, 0);
         expect(known.reduce((sum, id) => sum + pool.weights[id]!, 0) + unknownWeight).toBe(pool.total);
@@ -52,7 +52,7 @@ describe('nest odds privacy over every pair', () => {
     const s = game(5, 0, [...SPECIES_IDS], [...RECIPE_SPECIES]);
     for (const pity of [0, 9]) for (const a of SPECIES_IDS) for (const b of SPECIES_IDS) for (const affection of [2, 4, 6, 10]) {
       s.pityFailures = pity;
-      const pool = breedingPool(s, a, b, affection, affection), texts = oddsTexts(oddsView(s, a, b, affection, affection));
+      const pool = nestOddsPool(s, a, b, affection, affection), texts = oddsTexts(oddsView(s, a, b, affection, affection));
       // Former rendering: one line per drawn species, every exclusion named.
       expect(texts.lines).toEqual((Object.keys(pool.weights) as SpeciesId[]).map(id => `${SPECIES[id].name} · ${description(id)} : ${probabilityLabel(pool.weights[id]!, pool.total)}`));
       expect(texts.excluded).toEqual(pool.excluded.map(e => `${SPECIES[e.species].name} : Niveau ${e.requiredLevel} requis · exclu du tirage actuel.`));

@@ -24,16 +24,16 @@ function reload(s: GameState): GameState {
 
 describe('full main mission catalogue from level seven', () => {
   it('contains one stable identifier per current species and decoration, and exactly twenty new milestones', () => {
-    expect(DISCOVERY_MISSION_IDS).toEqual(SPECIES_IDS.map(id => `discover-${id}`)); expect(DISCOVERY_MISSION_IDS).toHaveLength(35);
+    expect(DISCOVERY_MISSION_IDS).toEqual(SPECIES_IDS.map(id => `discover-${id}`)); expect(DISCOVERY_MISSION_IDS).toHaveLength(36);
     expect(DECORATION_MISSION_IDS).toEqual(DECORATION_IDS.map(id => `decorate-${id}`)); expect(DECORATION_MISSION_IDS).toHaveLength(22);
-    expect(MILESTONE_MISSION_IDS).toHaveLength(20); expect(MAIN_MISSION_IDS).toHaveLength(108); expect(new Set(MAIN_MISSION_IDS).size).toBe(108);
+    expect(MILESTONE_MISSION_IDS).toHaveLength(20); expect(MAIN_MISSION_IDS).toHaveLength(109); expect(new Set(MAIN_MISSION_IDS).size).toBe(109);
     for (const id of ['discover-terre', 'discover-mottelin', 'discover-geant', 'discover-brumelin']) expect(Object.hasOwn(MAIN_MISSIONS, id)).toBe(false);
   });
   it('keeps the original sequential start below seven, then exposes all objectives even with an unfinished guide', () => {
     const young = atLevel(6); expect(visibleMainMissions(young)).toEqual(['snow-habitat']);
     expect(eligibleMainMissionIds(young)).not.toContain('discover-paille');
     expect(act(young, {type: 'claimMainMission', id: 'discover-paille'}, 0)).toMatchObject({ok: false, reason: 'NOT_READY'});
-    const s = atLevel(); expect(visibleMainMissions(s)).toEqual(catalogueMainMissionIds(s)); expect(visibleMainMissions(s)).toHaveLength(105);
+    const s = atLevel(); expect(visibleMainMissions(s)).toEqual(catalogueMainMissionIds(s)); expect(visibleMainMissions(s)).toHaveLength(106);
     expect(visibleMainMissions(s)).toEqual(expect.arrayContaining(['level-thirty', 'discover-dragon', 'decorate-robot-statue', 'snow-habitat']));
     const claimed = run(s, {type: 'claimMainMission', id: 'discover-paille'});
     expect(visibleMainMissions(claimed)).toContain('discover-paille'); expect(activeMainMissions(claimed)).not.toContain('discover-paille');
@@ -42,7 +42,7 @@ describe('full main mission catalogue from level seven', () => {
   });
   it('keeps initial rewards scoped to the historical course and retired goals unclaimable at every level', () => {
     const s = previousStart(0); s.progression = {totalXp: cumulativeLevelXp(30), rewardedThroughLevel: 30};
-    const state = advance(s, 0); expect(visibleMainMissions(state)).toHaveLength(103);
+    const state = advance(s, 0); expect(visibleMainMissions(state)).toHaveLength(104);
     for (const id of ['snow-habitat', 'welcome-snow', 'cozy-nest', 'welcome-babies', 'first-rare'] as const) {
       state.missions.completed.push(id);
       expect(visibleMainMissions(state)).not.toContain(id);
@@ -52,7 +52,7 @@ describe('full main mission catalogue from level seven', () => {
   it.each(SPECIES_IDS)('pays all discovery components exactly once for %s, without new mission XP', species => {
     const initial = atLevel(); initial.discovered = [...new Set([...initial.discovered, species])];
     const s = advance(initial, 0), id = `discover-${species}` as const, definition = MAIN_MISSIONS[id];
-    const rarity = SPECIES[species].rarity, rank = rarity === 'legendary' ? 4 : rarity === 'epic' ? 3 : rarity === 'rare' ? 2 : 1;
+    const rarity = SPECIES[species].rarity, rank = rarity === 'legendary' || rarity === 'mythic' ? 4 : rarity === 'epic' ? 3 : rarity === 'rare' ? 2 : 1;
     expect(mainMissionRewards(definition)).toEqual([{resource: 'pattes', amount: 20 * rank}, {resource: 'grass', amount: 10 * rank}, ...(rank > 2 ? [{resource: 'hearts', amount: rank - 2}] : [])]);
     const claimed = run(s, {type: 'claimMainMission', id});
     expect([claimed.pattes - s.pattes, claimed.grass - s.grass, claimed.hearts - s.hearts]).toEqual([20 * rank, 10 * rank, Math.max(0, rank - 2)]);
@@ -85,7 +85,7 @@ describe('full main mission catalogue from level seven', () => {
     const loaded = advance(reload(s), 0);
     expect(loaded.missions.completed).toEqual(expect.arrayContaining(['discover-dadi', 'decorate-bush']));
     expect({pattes: loaded.pattes, grass: loaded.grass, hearts: loaded.hearts, progression: loaded.progression}).toEqual(before);
-    expect(loaded.missions.claimed).toEqual(s.missions.claimed); expect(loaded.version).toBe(21);
+    expect(loaded.missions.claimed).toEqual(s.missions.claimed); expect(loaded.version).toBe(22);
   });
   it('recovers historical placement markers, but an explicitly unplaced inventory copy does not complete its mission', () => {
     const s = atLevel(); delete s.rewardedDecorationModels;

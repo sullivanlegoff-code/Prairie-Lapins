@@ -9,6 +9,13 @@ import {DadiReactions} from './dadiReactions';
 import {LegendaryView} from './legendaryEffects';
 import {LegendaryClock, type LegendaryAct} from './legendaryTimeline';
 import {LEGENDARY_TEST_EVENT, isLegendaryShow, legendaryMeadowArt} from '../config/legendaryArt';
+import {BennyView} from './bennyView';
+import {BennyClock, type BennyAct} from './bennyTimeline';
+import {BENNY_ATLAS, BENNY_ID, BENNY_TEST_EVENT, bennyMeadowArt} from '../config/bennyArt';
+import {BENNY_FLIGHT_TEST_EVENT, bennyFlightArt} from '../config/bennyFlightArt';
+import {BennyFlightView, GROUND_LIFT} from './bennyFlightView';
+import {ALTITUDE, NURSERY_ALTITUDE, type FlightGeometry} from './bennyFlight';
+import {bennyInSky} from '../simulation/benny';
 import {DadiSpeech, dadiHeadVisible} from './dadiSpeech';
 import {RabbitLife} from './rabbitLife';
 import {RabbitLifeViews} from './rabbitLifeViews';
@@ -72,6 +79,8 @@ interface VisualRabbit {id: string; object: Phaser.GameObjects.Container; body: 
   face?: {seed: number; eyes: Phaser.GameObjects.Image; nose: Phaser.GameObjects.Image};
   /** Lapin Dragon and Lapin Requin: halo, moving wing or fin, and their shows. */
   legendary?: LegendaryView;
+  /** Benny, the Mythic: her painted acts, blink, nose and ears. */
+  benny?: BennyView;
   center: Point; group: string; motion?: RabbitMotion; nest?: boolean; lift: number;
   /** Centre of the visible body in body space: the somersault turns about it, not about the feet or the picture centre. */
   pivot: Point; /** Mirror sign of the picture's native direction: -1 for art that looks left. */ native: 1 | -1}
@@ -99,6 +108,13 @@ export class MeadowScene extends Phaser.Scene {
   private dadiSpeech: DadiSpeech | null = null;
   /** Legendaries' show clocks, kept across rebuilds of their bodies like the motions. */
   private legendaryClocks = new Map<string, LegendaryClock>();
+  /** Benny's clock, kept across rebuilds of her body like the motions. */
+  private bennyClocks = new Map<string, BennyClock>();
+  /** Benny's flight over the island: made once her flight art is loaded, it outlives every rebuild of her body. */
+  private bennyFlight: BennyFlightView | null = null;
+  /** Benny's id while she is up in the air (her enclosure picture is hidden, she is touched in the air). */
+  private bennyAway: string | null = null;
+  private flightIsland: {key: string; centre: Point; rx: number; ry: number} | null = null;
   private life = new RabbitLife();
   private cozyInteraction = new CozyInteraction();
   private friends = new Map<string,string|null>();
@@ -173,7 +189,7 @@ export class MeadowScene extends Phaser.Scene {
     if (stage) queueStage(this, stageArt(stage));
     if (!this.textures.exists(FOOD_TEXTURE)) this.load.image(FOOD_TEXTURE, FOOD_URL);
     for (const art of this.requiredArt(this.controller.getSnapshot().state))
-      if (!this.textures.exists(art.texture)) this.load.image(art.texture, art.url);
+      if (!this.textures.exists(art.texture)) this.loadArt(art);
   }
   create(): void {
     this.sceneReady = true;
@@ -218,7 +234,12 @@ export class MeadowScene extends Phaser.Scene {
       this.friends=new Map((snapshot.state?.rabbits??[]).map(r=>[r.id,bestFriend(snapshot.state!,r.id)]));
       this.progressNow = this.current?.lastSimulatedAt ?? 0; this.renderState();
     });
-    const stopCommands = this.controller.onConfirmedCommand(command => this.dadi.confirmed(command));
+    const stopCommands = this.controller.onConfirmedCommand(command => {
+      this.dadi.confirmed(command);
+      // Benny's flight follows her commands; a reload or another save only finds her saved state (the flight clock reconciles it).
+      if (command.type === 'bennySky') { if (command.inSky) this.bennyFlight?.clock.takeOff(); else this.bennyFlight?.clock.land(); }
+      if (command.type === 'bennyPower') this.playBennyPower();
+    });
     const clearDadi = () => { this.dadi.clearSpeech(); this.dadiSpeech?.hide(); };
     const dadiVisibility = () => { if (document.hidden) clearDadi(); };
     document.addEventListener('visibilitychange', dadiVisibility);
@@ -229,18 +250,87 @@ export class MeadowScene extends Phaser.Scene {
       if (act) for (const rabbit of this.rabbitViews) rabbit.legendary?.play(act);
     };
     window.addEventListener(LEGENDARY_TEST_EVENT, legendaryTest);
+    // Laboratory buttons play one of Benny's acts; nothing in the normal game sends this event either.
+    const bennyTest = (event: Event) => {
+      const act = (event as CustomEvent<{act?: BennyAct}>).detail?.act;
+      if (act) for (const rabbit of this.rabbitViews) rabbit.benny?.play(act);
+    };
+    window.addEventListener(BENNY_TEST_EVENT, bennyTest);
+    // The laboratory's power animation alone: the flight only, the game is not touched.
+    const flightTest = () => this.playBennyPower();
+    window.addEventListener(BENNY_FLIGHT_TEST_EVENT, flightTest);
     this.events.once('shutdown', () => {
       stopCommands(); this.dadi.reset(); this.dadiSpeech?.destroy(); this.dadiSpeech = null;
       this.cozyInteraction.reset(); this.discoveryImage?.destroy(); this.discoveryImage = null;
       this.life.reset(); this.lifeViews?.destroy(); this.lifeViews = null;
       document.removeEventListener('visibilitychange', dadiVisibility); window.removeEventListener('pagehide', clearDadi);
-      window.removeEventListener(LEGENDARY_TEST_EVENT, legendaryTest);
+      window.removeEventListener(LEGENDARY_TEST_EVENT, legendaryTest); window.removeEventListener(BENNY_TEST_EVENT, bennyTest); window.removeEventListener(BENNY_FLIGHT_TEST_EVENT, flightTest);
+      this.bennyFlight?.destroy(); this.bennyFlight = null; this.bennyAway = null; this.flightIsland = null;
     });
     this.recenter();
     this.scale.on('resize', this.resize, this);
     const disposeInput = bindMeadowInput(this.game.canvas, this.view, point => this.tap(point), this.blocked, () => this.applyCamera());
     this.events.once('shutdown', () => { this.rabbitDrops = null; this.dropHits = []; this.dropArrows?.destroy(); this.dropArrows = null; this.unsubscribe?.(); disposeInput(); this.scale.off('resize', this.resize, this); this.buildingTextures.forEach(key=>this.textures.remove(key)); this.ground.clearMask(); this.islandMask?.destroy(); this.islandMaskGraphics?.destroy(); this.islandMask = null; this.islandMaskGraphics = null; this.floatingIslandLayer?.destroy(); this.floatingIslandLayer = null; this.islandStageLayer?.destroy(); this.islandStageLayer = null; this.nurseryOverlays?.destroy(); this.nurseryOverlays = null; this.motions.clear(); this.pivots.clear(); });
     this.loading?.ready();
+  }
+  /** Her power: the flight (or, with reduced motion, a glow), and the camera steps back gently so the island can be seen. */
+  private playBennyPower(): void {
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!this.bennyFlight) return;
+    this.bennyFlight.clock.usePower(reduced);
+    // Once the card has closed (the next frames), so the framing sees the whole meadow.
+    if (!reduced) this.time.delayedCall(80, () => this.showIsland());
+  }
+  /** A soft move centring Benny's orbit, stepping back only as far as needed to see all of it (the player's own gesture always wins). */
+  private showIsland(): void {
+    const island = this.flightIsland;
+    if (!island || !this.current || !this.cameras?.main || this.view.busy || !this.sceneReady) return;
+    const from = {x: this.view.x, y: this.view.y, zoom: this.view.zoom}, insets = this.framingInsets();
+    // The orbit with room for her wings and her height; never closer than the player was.
+    const width = 2 * island.rx + 220, height = 2 * island.ry + 2 * (ALTITUDE + GROUND_LIFT + 50);
+    const fit = Math.min((this.view.width - insets.left - insets.right) / width, (this.view.height - insets.top - insets.bottom) / height);
+    this.view.zoom = Math.max(this.view.minimumZoom, Math.min(from.zoom, fit));
+    this.view.x = island.centre.x; this.view.y = island.centre.y - (ALTITUDE / 2) + (insets.bottom - insets.top) / 2 / this.view.zoom; this.view.clamp();
+    const to = {x: this.view.x, y: this.view.y, zoom: this.view.zoom};
+    Object.assign(this.view, from); this.applyCamera();
+    if (Math.abs(to.zoom - from.zoom) < .01 && Math.hypot(to.x - from.x, to.y - from.y) < 4) return;
+    this.focusTween?.stop();
+    this.focusTween = this.tweens.addCounter({from: 0, to: 1, duration: 1100, ease: 'Sine.easeInOut',
+      onUpdate: tween => {
+        if (this.view.busy) { tween.stop(); this.focusTween = null; return; }
+        const u = tween.getValue() ?? 1;
+        this.view.x = from.x + (to.x - from.x) * u; this.view.y = from.y + (to.y - from.y) * u; this.view.zoom = from.zoom + (to.zoom - from.zoom) * u;
+        this.applyCamera();
+      }, onComplete: () => { this.focusTween = null; }});
+  }
+  /** The island's orbit for Benny: an ellipse inside the owned land's top surface (cached until the land changes). */
+  private bennyGeometry(home: Point, facing: 1 | -1): {geometry: FlightGeometry; roof: number | null} {
+    const parcels = this.current?.acquiredParcels ?? [], key = parcels.join(',');
+    if (this.flightIsland?.key !== key) {
+      const rects = parcels.map(id => { const p = PARCELS[id]; return screenBounds(cellsBounds(p.x, p.y, p.x + ISLAND.parcelCells, p.y + ISLAND.parcelCells)); });
+      const left = Math.min(...rects.map(r => r.left)), right = Math.max(...rects.map(r => r.right)), top = Math.min(...rects.map(r => r.top)), bottom = Math.max(...rects.map(r => r.bottom));
+      this.flightIsland = rects.length ? {key, centre: {x: (left + right) / 2, y: (top + bottom) / 2}, rx: (right - left) * .34, ry: (bottom - top) * .3} : {key, centre: home, rx: 120, ry: 60};
+    }
+    const nursery = this.current?.buildings.find(b => b.kind === 'nursery');
+    const point = nursery ? toScreen(buildingCenter(nursery)) : null, roof = nursery ? buildingFrame(nursery).top : null;
+    const {centre, rx, ry} = this.flightIsland;
+    // Above the nursery's roof, whatever the building's height.
+    const nurseryAltitude = point && roof !== null ? Math.max(NURSERY_ALTITUDE, point.y - roof + 12 - GROUND_LIFT) : undefined;
+    return {geometry: {home, facing, centre, rx, ry, nursery: point, nurseryAltitude}, roof};
+  }
+  /** One frame of Benny's flight: hides her enclosure picture while she is in the air. */
+  private stepBennyFlight(dt: number, reduced: boolean): void {
+    const id = this.current?.rabbits.find(r => r.species === BENNY_ID)?.id;
+    const rabbit = id ? this.rabbitViews.find(r => r.id === id && !r.nest && r.benny) : undefined;
+    if (!this.bennyFlight && rabbit && bennyFlightArt().every(art => this.textures.exists(art.texture))) this.bennyFlight = new BennyFlightView(this);
+    const flight = this.bennyFlight;
+    if (!flight) { this.bennyAway = null; return; }
+    if (!rabbit) { if (flight.last) flight.hide(); this.bennyAway = null; return; }
+    const facing = ((rabbit.body.scaleX < 0 ? -1 : 1) * rabbit.native) as 1 | -1;
+    const {geometry, roof} = this.bennyGeometry({x: rabbit.object.x, y: rabbit.object.y}, facing);
+    const frame = flight.update({dt, sky: !!this.current && bennyInSky(this.current), reduced, geometry, roof});
+    rabbit.object.setAlpha(frame.ground).setVisible(frame.ground > 0);
+    this.bennyAway = frame.ground < .5 ? rabbit.id : null;
   }
   recenter(): void { if (!this.cameras?.main) return; recenterCamera(this.view, this.current, this.screenChrome()); this.applyCamera(); }
   /** Snapshot after the next rendered frame, so WebGL never exports an empty back buffer. */
@@ -491,13 +581,14 @@ export class MeadowScene extends Phaser.Scene {
     this.view.setVisibleRegions(this.expanding || !this.current ? null : ownedRegions(this.current.acquiredParcels));
   }
   /** DOM portraits use ordinary image requests; Phaser only decodes residents and the active habitat preview. */
-  private requiredArt(state: GameState | null): {texture: string; url: string}[] {
-    const assets = new Map<string, {texture: string; url: string}>();
-    const add = (art: {texture: string; url: string} | null | undefined) => { if (art) assets.set(art.texture, art); };
+  private requiredArt(state: GameState | null): {texture: string; url: string; atlas?: string}[] {
+    const assets = new Map<string, {texture: string; url: string; atlas?: string}>();
+    const add = (art: {texture: string; url: string; atlas?: string} | null | undefined) => { if (art) assets.set(art.texture, art); };
     for (const rabbit of state?.rabbits ?? []) {
       add(rabbitArt(rabbit.species));
       for (const patch of rabbitBlinkArt(rabbit.species)?.patches ?? []) add(patch);
       if (isLegendaryShow(rabbit.species)) for (const art of legendaryMeadowArt(rabbit.species)) add(art);
+      if (rabbit.species === BENNY_ID) for (const art of [...bennyMeadowArt(), ...bennyFlightArt()]) add(art);
     }
     const buildingArt = (building: Pick<Building, 'kind' | 'habitat' | 'footprintTier' | 'farmLevel'>) => {
       if (building.kind === 'enclosure') add(habitatArtFor(building.habitat ?? undefined, building.footprintTier));
@@ -524,6 +615,10 @@ export class MeadowScene extends Phaser.Scene {
     if (ghost && this.ghost?.location?.kind === 'outside') decoration(ghost, this.ghost.location.rotation);
     return [...assets.values()];
   }
+  /** A picture, or an atlas (picture and frames) such as Benny's animations. */
+  private loadArt(art: {texture: string; url: string; atlas?: string}): void {
+    if (art.atlas) this.load.atlas(art.texture, art.url, art.atlas); else this.load.image(art.texture, art.url);
+  }
   /** Keep the previous complete scene during a batch, including when state changes again during the request. */
   private ensureArt(): boolean {
     const missing = this.requiredArt(this.current).filter(art => !this.textures.exists(art.texture));
@@ -533,7 +628,7 @@ export class MeadowScene extends Phaser.Scene {
     if (!this.artLoading) {
       this.artLoading = true;
       const generation = this.lifeGeneration;
-      for (const art of missing) this.load.image(art.texture, art.url);
+      for (const art of missing) this.loadArt(art);
       this.artComplete = () => {
         this.artComplete = null;
         this.artLoading = false;
@@ -762,8 +857,14 @@ export class MeadowScene extends Phaser.Scene {
             if (!clock || clock.species !== rabbit.species) { clock = new LegendaryClock(rabbit.species, rabbit.id); this.legendaryClocks.set(rabbit.id, clock); }
             legendary = new LegendaryView(this, rabbit.id, rabbit.species, {object, body, sprite, art, pivot: view.pivot, motion}, clock);
           }
+          let benny: BennyView | undefined;
+          if (rabbit.species === BENNY_ID && this.textures.exists(BENNY_ATLAS.texture)) {
+            let clock = this.bennyClocks.get(rabbit.id);
+            if (!clock) { clock = new BennyClock(rabbit.id); this.bennyClocks.set(rabbit.id, clock); }
+            benny = new BennyView(this, rabbit.id, {object, body, sprite, shadow, art, motion}, clock);
+          }
           this.animals.add(object);
-          this.rabbitViews.push({id: rabbit.id, ears: [], sprite, art, face, flames, legendary, ...view});
+          this.rabbitViews.push({id: rabbit.id, ears: [], sprite, art, face, flames, legendary, benny, ...view});
           return;
         }
         const coat = proceduralCoat(SPECIES[rabbit.species].art), color = Phaser.Display.Color.HexStringToColor(coat.body).color, patch = Phaser.Display.Color.HexStringToColor(coat.patch).color;
@@ -794,6 +895,7 @@ export class MeadowScene extends Phaser.Scene {
     }
     for (const id of [...this.motions.keys()]) if (!walkers.has(id)) this.motions.delete(id);
     for (const id of [...this.legendaryClocks.keys()]) if (!this.rabbitViews.some(r => r.id === id && r.legendary)) this.legendaryClocks.delete(id);
+    for (const id of [...this.bennyClocks.keys()]) if (!this.rabbitViews.some(r => r.id === id && r.benny)) this.bennyClocks.delete(id);
     this.rabbitGroups.clear();
     for (const rabbit of this.rabbitViews) {
       let group = this.rabbitGroups.get(rabbit.group);
@@ -1026,7 +1128,10 @@ export class MeadowScene extends Phaser.Scene {
       const home=this.current?buildingAt(this.current,fineCell(ground)):null;
       this.select(home ? {kind: 'building', id: home.id} : {kind: 'empty'}); return;
     }
-    let closest = rabbitHit(screen, this.rabbitViews.flatMap(r => {
+    // Benny in the air: a touch on her opens her card.
+    if (this.bennyAway && this.bennyFlight?.hit(this.view.world(screen))) { this.select({kind: 'rabbit', id: this.bennyAway}); return; }
+    const grounded = this.rabbitViews.filter(r => r.id !== this.bennyAway);
+    let closest = rabbitHit(screen, grounded.flatMap(r => {
       if (r.sprite && r.art) {
         // Reference images use their own alpha silhouette, avoiding rectangular hits on adjacent residents.
         const world = this.view.world(screen);
@@ -1038,10 +1143,10 @@ export class MeadowScene extends Phaser.Scene {
       return [{id: r.id, point: this.view.screen(this.bodyPoint(r, 0, -7)), depth: r.object.y,
         radius: r.sprite ? Infinity : VISUAL.rabbit.hitRadius * Math.min(1,this.view.zoom/.8)}];
     }));
-    if (!closest) closest = rabbitHit(screen, this.rabbitViews.filter(r => r.sprite && r.art).map(r => ({
+    if (!closest) closest = rabbitHit(screen, grounded.filter(r => r.sprite && r.art).map(r => ({
       id: r.id, point: this.view.screen(this.bodyPoint(r, 0, -7)), depth: r.object.y, radius: 22
     })));
-    if (closest) { this.rabbitViews.find(r => r.id === closest!.id)?.legendary?.tap(); this.select({kind: 'rabbit', id: closest.id}); return; }
+    if (closest) { this.rabbitViews.find(r => r.id === closest!.id)?.legendary?.tap(); this.rabbitViews.find(r => r.id === closest!.id)?.benny?.tap(); this.select({kind: 'rabbit', id: closest.id}); return; }
     const decorationId = this.decorationAt(screen);
     if (decorationId) { this.select({kind: 'decoration', id: decorationId}); return; }
 
@@ -1079,7 +1184,7 @@ export class MeadowScene extends Phaser.Scene {
     if (this.dadiSpeech) {
       const active = !this.photo && !document.hidden && document.getElementById('loading-screen')?.hidden !== false;
       dadiObscured = document.getElementById('game-panel')?.hidden === false || !!document.querySelector('dialog[open]');
-      const visible = this.rabbitViews.filter(r => dadiHeadVisible(this.dadiHead(r), dadiBounds!)).map(r => r.id);
+      const visible = this.rabbitViews.filter(r => r.id !== this.bennyAway && dadiHeadVisible(this.dadiHead(r), dadiBounds!)).map(r => r.id);
       dadi = this.dadi.step(dadiObscured ? 0 : dt, active, dadiObscured ? [] : visible);
       if(dadi.started?.id===this.cozyInteraction.active?.id)this.cozyInteraction.reset();
       if (dadi.started?.salto) {
@@ -1092,7 +1197,8 @@ export class MeadowScene extends Phaser.Scene {
     const lifeActive = !this.photo && !document.hidden && document.getElementById('loading-screen')?.hidden !== false &&
       document.getElementById('game-panel')?.hidden !== false && !document.querySelector('dialog[open]') && !this.placement && !this.arrangement;
     const bounds = {width: this.scale.width, height: this.scale.height, top: document.getElementById('hud')?.getBoundingClientRect().bottom ?? 0};
-    const visibleResidents = new Set(this.rabbitViews.filter(r => r.motion && dadiHeadVisible(this.dadiHead(r), bounds)).map(r => r.id));
+    // Benny up in the air has no speech nor sleep bubble over her empty place.
+    const visibleResidents = new Set(this.rabbitViews.filter(r => r.motion && r.id !== this.bennyAway && dadiHeadVisible(this.dadiHead(r), bounds)).map(r => r.id));
     const visitor=this.cozyInteraction.active;
     this.cozyInteraction.step(dt,lifeActive,!!visitor&&visibleResidents.has(visitor.id)&&this.rabbitViews.some(r=>r.id===visitor.id&&r.motion===visitor.motion&&!r.nest)&&!!this.current?.decorations.some(d=>d.id===visitor.objectId&&d.location.kind==='outside'),reducedMotion);
     if(lifeActive&&!reducedMotion&&dt>=0&&dt<=1000){this.interactionIn-=dt;if(this.interactionIn<=0){this.interactionIn=90000;for(const d of this.current?.decorations??[])if(this.interactionDecoration(d.id))break;}}
@@ -1117,8 +1223,11 @@ export class MeadowScene extends Phaser.Scene {
         const activity = ['sleep', 'zoom', 'meet', 'kiss'].includes(motion.mode);
         if (rabbit.nest ? lifeActive && visibleResidents.has(rabbit.id) && motion.mode !== 'rest' && (!reducedMotion || motion.mode === 'walk' || motion.mode === 'salto' || motion.mode === 'fed') :
           !activity || lifeActive && visibleResidents.has(rabbit.id)) stepRabbitMotion(motion, dt, others);
+        // Benny's act may take over the motion (or carry her along her hops) before the pose is read.
+        rabbit.benny?.update({dt, time, active: lifeActive && visibleResidents.has(rabbit.id), reduced: reducedMotion});
         const pose = rabbitPose(motion);
         ({lift, squashX, squashY, facing, rotation} = pose);
+        if (rabbit.benny) { squashX *= rabbit.benny.squashX; squashY *= rabbit.benny.squashY; }
         nuzzle = pose.nuzzle ?? 0;
         // The ground point drives position and depth; the hop only lifts the body.
         rabbit.object.setPosition(rabbit.center.x + motion.local.x, rabbit.center.y + motion.local.y).setDepth(rabbit.center.y + motion.local.y);
@@ -1154,6 +1263,7 @@ export class MeadowScene extends Phaser.Scene {
       }
     }
     if (depthChanged) this.animals?.sort('depth');
+    this.stepBennyFlight(dt, reducedMotion);
     const speaker = dadi.speech && this.rabbitViews.find(r => r.id === dadi.speech!.id);
     const head = speaker ? this.dadiHead(speaker) : null;
     this.dadiSpeech?.show(dadiObscured ? null : dadi.speech, head, dadiBounds!);

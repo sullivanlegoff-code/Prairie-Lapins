@@ -13,8 +13,8 @@ export function feedReason(s: Pick<GameState, 'buildings' | 'grass'>, affection:
   if (affection >= affectionCap(s)) return 'STATUE_REQUIRED';
   return s.grass < feedCost(affection) ? 'NOT_ENOUGH_GRASS' : null;
 }
-/** Epic or legendary chance multiplier for two parents: the step their LOWER affection reaches, 1 below every step. */
+/** Epic, legendary or mythic chance multiplier for two parents: the step their LOWER affection reaches, 1 below every step. */
 export function rareBirthFactor(species: SpeciesId, affectionA: number, affectionB: number): number {
-  if (!['epic', 'legendary'].includes(SPECIES[species].rarity)) return 1;
+  if (!['epic', 'legendary', 'mythic'].includes(SPECIES[species].rarity)) return 1;
   return RARE_BIRTH_BONUS.find(step => Math.min(affectionA, affectionB) >= step.affection)?.factor ?? 1;
 }

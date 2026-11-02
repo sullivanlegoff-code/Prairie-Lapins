@@ -72,3 +72,27 @@
 @media (max-height: 500px) {
   .legendary-portrait-halo { width: 170px; height: 170px; margin: -85px 0 0 -85px; }
 }
+
+/* Benny, the Mythic rabbit: a pastel sky with its rainbow, rainbow edges instead of gold, stars and feathers drifting up the sides. */
+#game-panel[data-legendary="benny"] {
+  --menu-ink: #34305e; --menu-muted: #5d5888; background-color: #eef0fb;
+  box-shadow: 0 0 0 2px #ffffffd0, 0 0 0 4px #c9b8f0, 0 0 22px #b9d8ff99, 0 0 34px #ffc6e066, 0 10px 0 #1a201c40, 0 22px 48px #0b120e80;
+  background-image: radial-gradient(ellipse at 18% 108%, #ffd3e470, transparent 50%), radial-gradient(ellipse at 84% 108%, #c8f0d670, transparent 50%),
+    radial-gradient(ellipse at 50% -6%, #ffffffc0, transparent 55%), linear-gradient(180deg, #f6f7ff, #e3ebfb 60%, #efe2f6);
+  background-size: 100% 100%;
+}
+#game-panel[data-legendary="benny"] .panel-header {
+  border-bottom: 3px solid transparent; border-image: linear-gradient(90deg, #ffb0c8, #ffd59a, #fff3a0, #b6f0c4, #a6d6ff, #d2b6ff) 1;
+  background: linear-gradient(90deg, #2a2f6ec0, #2a2f6e1a 45%, #2a2f6ec0), var(--legendary-banner) center 58% / 72% auto no-repeat,
+    radial-gradient(ellipse at 50% 120%, #8f7bd0, transparent 70%), linear-gradient(180deg, #2b3270, #4a56a4);
+}
+#game-panel[data-legendary="benny"] .panel-header h2 { text-shadow: 0 0 14px #c9b6ff, 0 0 22px #ffd2ec, 0 2px #202720; }
+#game-panel[data-legendary="benny"] #panel-content > .badge {
+  border: 2px solid #c9b8f0; background: linear-gradient(90deg, #ffe1ea, #fff1cf, #e2f7e6, #dcecff, #ece0ff); color: #3b2f63;
+}
+#game-panel[data-legendary="benny"] .legendary-mote { width: calc(15px * var(--s)); }
+.mythic-portrait > .portrait.large { filter: drop-shadow(0 6px 6px #3a2f6a40); }
+.mythic-portrait .legendary-portrait-halo { animation: mythic-breathe 4.8s ease-in-out infinite; }
+.mythic-portrait-ring { position: absolute; z-index: 0; left: 50%; bottom: -4px; width: 170px; margin-left: -85px; opacity: .85; pointer-events: none; }
+@keyframes mythic-breathe { 0%, 100% { opacity: .75; transform: scale(.94); } 50% { opacity: 1; transform: scale(1.04); } }
+@media (prefers-reduced-motion: reduce) { .mythic-portrait .legendary-portrait-halo { animation: none; } }

@@ -15,7 +15,7 @@ const registry = readFileSync(join(root, 'src/config/species.ts'), 'utf8');
 // Every eligible illustrated species must supply both masters; Bouee wears sunglasses, and Dinenette and Calinou geant
 // keep their approved designs untouched, so none of them has facial animation.
 const species = [...registry.matchAll(/\{id: '([^']+)'[^\n]+?art: \{kind: 'static-sprite', file: '([^']+)'/g)]
-  .filter(([, id]) => !['bouee', 'dinenette', 'calinou', 'ankylosaure'].includes(id));
+  .filter(([, id]) => !['bouee', 'dinenette', 'calinou', 'ankylosaure', 'benny'].includes(id));
 if (species.length !== 31) throw Error(`Expected 31 static sprites with blink masters, got ${species.length}`);
 const manifest = {};
 let failed = false;

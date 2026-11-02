@@ -12,9 +12,14 @@ import {GIFTED_RECIPES} from '../config/recipes';
 import {SPECIES, SPECIES_IDS, type SpeciesId} from '../config/species';
 import {BALANCE} from '../config/balance';
 import {HABITATS} from '../config/habitats';
+import {bennyAllows} from '../simulation/benny';
 import {LEGENDARY_TEST_EVENT} from '../config/legendaryArt';
+import {BENNY_TEST_EVENT} from '../config/bennyArt';
+import {BENNY_FLIGHT_TEST_EVENT} from '../config/bennyFlightArt';
+import type {BennyAct} from '../display/bennyTimeline';
 import type {LegendaryAct} from '../display/legendaryTimeline';
 import {showLegendaryReveal} from '../ui/legendaryReveal';
+import {showBennyReveal} from '../ui/bennyReveal';
 import {habitatEntryReason, habitatStats} from '../simulation/habitats';
 
 export const TEST_PREFIX = 'prairie-lapins.development.';
@@ -76,7 +81,7 @@ export function developmentEnvironment(base: SaveStorage, options: {decorationPr
     const state = controller.getSnapshot().state;
     if (!state) return {ok: false, reason: 'NO_GAME'};
     const home = state.buildings.find(b => b.id === enclosureId && b.kind === 'enclosure');
-    if (!Object.hasOwn(SPECIES, species) || !home) return {ok: false, reason: 'INVALID_TEST_VALUE'};
+    if (!Object.hasOwn(SPECIES, species) || !home || !bennyAllows(state, species)) return {ok: false, reason: 'INVALID_TEST_VALUE'};
     const refusal = habitatEntryReason(state, home, species);
     if (refusal) return {ok: false, state, reason: refusal};
     if (!Number.isSafeInteger(state.nextId + 1)) return {ok: false, reason: 'INVALID_TEST_VALUE'};
@@ -112,12 +117,30 @@ export function developmentEnvironment(base: SaveStorage, options: {decorationPr
       button('Apparition du Lapin Dragon', 'dev-reveal-dragon', () => showLegendaryReveal('dragon', {title: 'Nouvelle découverte !', name: SPECIES.dragon.name, details: 'Essai du laboratoire', button: 'Fermer'}));
       button('Apparition du Lapin Requin', 'dev-reveal-requin', () => showLegendaryReveal('requin', {title: 'Nouvelle découverte !', name: SPECIES.requin.name, details: 'Essai du laboratoire', button: 'Fermer'}));
       button('Apparition d’Anky', 'dev-reveal-ankylosaure', () => showLegendaryReveal('ankylosaure', {title: 'Nouvelle découverte !', name: SPECIES.ankylosaure.name, details: 'Essai du laboratoire', button: 'Fermer'}));
+      button('Apparition de Benny', 'dev-reveal-benny', () => showBennyReveal({title: 'Nouvelle découverte !', name: SPECIES.benny.name, details: 'Essai du laboratoire', button: 'Fermer'}));
       const acts: [LegendaryAct, string][] = [['tap', 'Dragon : souffle de feu'], ['smoke', 'Dragon : fumée'], ['hiccup', 'Dragon : hoquet de feu'], ['embers', 'Dragon : braises'],
         ['dive', 'Requin : plongeon'], ['surf', 'Requin : surf'], ['bubbles', 'Requin : bulles'], ['splash', 'Requin : éclaboussure'],
         ['slam', 'Anky : coup de queue'], ['rumble', 'Anky : grondement'], ['dig', 'Anky : il creuse'], ['dust', 'Anky : poussière']];
       for (const [act, label] of acts) button(label, `dev-legendary-${act}`, () => {
         window.dispatchEvent(new CustomEvent(LEGENDARY_TEST_EVENT, {detail: {act}}));
         status.textContent = `${label} : lancé sur les légendaires visibles de la prairie (ferme ce panneau pour regarder).`;
+      });
+      section('Animations de Benny');
+      const bennyActs: [BennyAct, string][] = [['hop', 'Benny : saut'], ['flop', 'Benny : belly flop'], ['scratch', 'Benny : grattage'], ['groom', 'Benny : toilette'], ['stretch', 'Benny : étirement']];
+      for (const [act, label] of bennyActs) button(label, `dev-benny-${act}`, () => {
+        window.dispatchEvent(new CustomEvent(BENNY_TEST_EVENT, {detail: {act}}));
+        status.textContent = `${label} : lancé sur Benny dans la prairie, dès qu’elle est libre (ferme ce panneau pour regarder).`;
+      });
+      // Her flight: the first two buttons change the test game's sky mode, as her card does; the third plays the power's flight alone.
+      const sky = (inSky: boolean, label: string) => {
+        const result = controller.perform({type: 'bennySky', inSky});
+        status.textContent = result.ok ? `${label} : lancé (ferme ce panneau pour regarder).` : 'Ajoute d’abord Benny à la partie de test.';
+      };
+      button('Benny : décollage et vol', 'dev-benny-fly', () => sky(true, 'Benny : décollage et vol'));
+      button('Benny : retour dans l’enclos', 'dev-benny-land', () => sky(false, 'Benny : retour dans l’enclos'));
+      button('Benny : pouvoir (animation seule)', 'dev-benny-power', () => {
+        window.dispatchEvent(new CustomEvent(BENNY_FLIGHT_TEST_EVENT));
+        status.textContent = 'Benny : pouvoir (animation seule) : lancé sans toucher à la partie (ferme ce panneau pour regarder).';
       });
       section('Placement manuel — habitat existant');
       const field = (label: string, id: string) => {

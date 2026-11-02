@@ -8,6 +8,8 @@ const REGISTRY = [
   {id: 'rare', label: 'Rare', growthMinutes: 30, birthXp: 20},
   {id: 'epic', label: 'Épique', growthMinutes: 180, birthXp: 110},
   {id: 'legendary', label: 'Légendaire', growthMinutes: 720, birthXp: 180},
+  // Benny alone (owner, 1 November 2026): 24 h in the nest and 24 h in the nursery; the birth XP doubles a Legendary's.
+  {id: 'mythic', label: 'Mythique', growthMinutes: 1440, birthXp: 360},
 ] as const;
 
 export type Rarity = typeof REGISTRY[number]['id'];
