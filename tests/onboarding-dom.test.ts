@@ -93,7 +93,13 @@ it.each([.1,.65])('guides every real action, roll=%s, with reloads and no contro
   expect(selected).toEqual(['Miel','Lapin Neige']);real();
   help();real();checkpoint();help();
   ui.select({kind:'birth',id:'building-4'});expect(scene.focusBuilding).toHaveBeenCalledWith('building-5');
-  checkpoint();help();real();checkpoint();help();real();
+  checkpoint();help();real();checkpoint();
+  // « Accueillir » opens the baby's reception card; its « Accueillir » points at the habitats on the island (owner, 2 November 2026).
+  help();const reception=document.getElementById('reception-dialog') as HTMLDialogElement;expect(reception.open).toBe(true);
+  expect(reception.querySelector('button.guide-target')?.textContent).toBe('Accueillir');click('Accueillir',reception);expect(reception.open).toBe(false);
+  expect(document.getElementById('nursery-welcome-banner')!.hidden).toBe(false);expect(modal().open).toBe(false);
+  const targets=vi.mocked(scene.setRabbitDropTargets).mock.calls.at(-1)![0]!;expect(targets.length).toBeGreaterThan(0);
+  ui.select({kind:'building',id:targets[0]});
   expect(state().missions.events.welcome).toBe(1);expect(state().rabbits.at(-1)!.species).toBe(roll===.1?'frisket':'icy');
   expect(state().initiation!.used).toEqual(['order','breeding','growth']);expect(state().hearts).toBe(14);
   help();expect(prefs.value.tutorialDone).toBe(true);expect(document.getElementById('game-panel')!.dataset.view).toBe('missions');
@@ -119,7 +125,7 @@ it.each([.1,.65])('guides every real action, roll=%s, with reloads and no contro
     new PreferenceStore('onboarding-test').restartGuidance();const resumed=setup(saved,false,roll);
     expect(modal().open).toBe(true);expect(modal().querySelector('input')).toBeNull();
     // « Rejoindre la nurserie » performs the transfer itself and follows the baby to the nursery.
-    help();if(saved.buildings.some(b=>b.breeding && b.breeding.endsAt<=0)){expect(resumed.controller.getSnapshot().state!.buildings.find(b=>b.kind==='nest')!.breeding).toBeNull();expect(resumed.scene.focusBuilding).toHaveBeenCalledWith('building-5');}else expect(content().querySelector('.guide-target')).toBeTruthy();resumed.ui.dispose();resumed.controller.dispose();
+    help();if(saved.buildings.some(b=>b.breeding && b.breeding.endsAt<=0)){expect(resumed.controller.getSnapshot().state!.buildings.find(b=>b.kind==='nest')!.breeding).toBeNull();expect(resumed.scene.focusBuilding).toHaveBeenCalledWith('building-5');}else if(saved.buildings.some(b=>b.nursery?.babies.some(baby=>baby.readyAt<=0)))expect((document.getElementById('reception-dialog') as HTMLDialogElement).open).toBe(true);else expect(content().querySelector('.guide-target')).toBeTruthy();resumed.ui.dispose();resumed.controller.dispose();
   }
 });
 it('replays the current task after reload and closing panels, retaining the name',()=>{

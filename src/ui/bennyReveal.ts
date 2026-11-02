@@ -1,6 +1,6 @@
 import {BENNY_EFFECTS as FX, BENNY_ID} from '../config/bennyArt';
 import {rabbitArt} from '../config/rabbitArt';
-import type {RevealText} from './legendaryReveal';
+import {revealEnd, type RevealText} from './legendaryReveal';
 
 /**
  * Benny's first appearance, the Mythic rabbit (owner's request of 1 November 2026: « un vrai phénomène pour le joueur », with
@@ -76,19 +76,18 @@ export function showBennyReveal(text: RevealText, onClose: () => void = () => {}
   const badge = document.createElement('p'); badge.className = 'br-badge';
   const iris = document.createElement('span'); iris.textContent = 'Mythique'; badge.append(iris);
   const details = document.createElement('p'); details.className = 'br-details'; details.textContent = text.details;
-  const button = document.createElement('button'); button.type = 'button'; button.textContent = text.button; button.autofocus = true;
-  words.append(title, name, badge, details, button);
+  words.append(title, name, badge, details);
   dialog.append(layer('br-night'), stars, stage(text.name), fall, words);
 
   const finish = () => { dialog.classList.add('is-final'); window.clearTimeout(timer); };
   const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   const timer = window.setTimeout(finish, END_MS);
-  // A tap anywhere but the button jumps to the calm end; the button closes.
-  dialog.addEventListener('click', event => { if (event.target !== button) finish(); });
   let closed = false;
   const close = () => { if (closed) return; closed = true; window.clearTimeout(timer); if (dialog.open) dialog.close(); dialog.remove(); onClose(); };
-  button.addEventListener('click', close);
+  // A tap anywhere but a button jumps to the calm end; the button closes.
+  const button = revealEnd(dialog, words, text, finish, close);
   dialog.addEventListener('cancel', event => { event.preventDefault(); close(); });
+  dialog.addEventListener('close', close);
   document.body.append(dialog);
   if (reduced) finish();
   dialog.showModal(); button.focus({preventScroll: true});

@@ -230,6 +230,17 @@ function button(text: string, scope: ParentNode = panel()): HTMLButtonElement {
   if (!result) throw new Error(`Button missing: ${text}\n${scope.textContent}`); return result;
 }
 function state(controller: GameController): GameState { return controller.getSnapshot().state!; }
+const receptionDialog = () => document.getElementById('reception-dialog') as HTMLDialogElement;
+/** Reception of 2 November 2026: the nursery button opens the baby's card, « Accueillir » points at the island, the banner's list picks the habitat. */
+function openWelcomeList(baby?: string, inspect?: (card: HTMLDialogElement) => void): void {
+  const open = baby ? panel().querySelector<HTMLButtonElement>(`button[data-reception="${baby}"]`) : panel().querySelector<HTMLButtonElement>('button[data-reception]');
+  if (!open) throw new Error(`Reception button missing
+${panel().textContent}`);
+  open.click(); expect(receptionDialog().open).toBe(true); inspect?.(receptionDialog());
+  button('Accueillir', receptionDialog()).click(); expect(receptionDialog().open).toBe(false);
+  button('Choisir dans une liste', document.getElementById('nursery-welcome-banner')!).click();
+}
+function welcomeFromNursery(destination: string, inspect?: (card: HTMLDialogElement) => void): void { openWelcomeList(undefined, inspect); button(destination).click(); }
 it('confirms an empty habitat removal, credits the announced stock, closes the menu and saves', () => {
   const initial = createGame(0);
   const habitat = emptyBuilding('building-90', 'enclosure', 22, 20, 'paille');
@@ -575,9 +586,11 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     button(`Terminer · ${accelerationCost(growthDuration('glassofeu'))} cœurs`).click(); const dialog = document.getElementById('game-dialog')!;
     expect(dialog.textContent).not.toContain('Glassofeu'); button('Confirmer', dialog).click();
     expect(state(controller).hearts).toBe(12 - accelerationCost(growthDuration('glassofeu'))); expect(state(controller).discovered).not.toContain('glassofeu');
-    expect(panel().textContent).toContain('Glassofeu'); button('Enclos 3 · 0/3').click();
-    expect(dialog.textContent).toContain('Nouvelle découverte'); expect(dialog.textContent).toContain('Glassofeu');
-    button('Bienvenue dans la prairie', dialog).click(); ui.open({kind: 'collection'});
+    expect(panel().textContent).toContain('Glassofeu');
+    // The reception card is the discovery: no « Nouvelle découverte » window follows the welcome.
+    welcomeFromNursery('Enclos 3 · 0/3', card => { expect(card.textContent).toContain('Glassofeu'); expect(card.textContent).toContain('Nouvelle espèce'); });
+    expect(state(controller).discovered).toContain('glassofeu'); expect((dialog as HTMLDialogElement).open).toBe(false); expect(dialog.textContent).not.toContain('Nouvelle découverte');
+    ui.open({kind: 'collection'});
     expect(document.getElementById('panel-title')!.textContent).toBe(`Collection · 7/${EXPECTED_IDS.length}`);
     expect(decodeGame(data.get(SAVE_KEY)!)).toEqual({ok: true, state: state(controller)});
   });
@@ -598,9 +611,8 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     ui.open({kind: 'collection'}); expect(panel().textContent).not.toContain('Icy');
     clock.now += 30 * 60_000; controller.refresh(); ui.select({kind: 'building', id: find('nursery').id});
     expect(panel().textContent).toContain('Icy'); expect(state(controller).discovered).not.toContain('icy');
-    button('Enclos 2 · 0/3').click(); expect(state(controller).discovered).toContain('icy');
-    const dialog = document.getElementById('game-dialog') as HTMLDialogElement; expect(dialog.open).toBe(true); expect(dialog.textContent).toContain('Nouvelle découverte');
-    button('Bienvenue dans la prairie', dialog).click();
+    welcomeFromNursery('Enclos 2 · 0/3', card => expect(card.textContent).toContain('Nouvelle espèce')); expect(state(controller).discovered).toContain('icy');
+    const dialog = document.getElementById('game-dialog') as HTMLDialogElement; expect(dialog.open).toBe(false);
     const newborn = state(controller).rabbits.at(-1)!;
     ui.select({kind: 'rabbit', id: newborn.id}); expect(button('Confier ce lapin').disabled).toBe(true);
     button('Déplacer').click(); [...document.querySelectorAll<HTMLButtonElement>('#rabbit-move-banner button')].find(b => b.textContent === 'Choisir dans une liste')!.click(); button('Enclos 1 · 2/3').click(); expect(state(controller).rabbits.at(-1)!.enclosureId).toBe('building-1');
@@ -760,7 +772,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     expect(state(controller).hearts).toBe(12 - cost); button(`Terminer · ${cost} cœurs`).click(); button('Confirmer', dialog).click();
     expect(panel().textContent).toContain('Icy'); expect(state(controller).hearts).toBe(12 - 2 * cost);
     expect(state(controller).rabbits).toHaveLength(2); expect(state(controller).discovered).not.toContain('icy');
-    button('Enclos 1 · 2/3').click(); expect(state(controller).discovered).toContain('icy');
+    welcomeFromNursery('Enclos 1 · 2/3'); expect(state(controller).discovered).toContain('icy');
   });
   it('invalidates a pending heart confirmation after a successful import', () => {
     const {controller, ui} = setup(); place(ui, 'farm', 1, 0); ui.select({kind: 'building', id: 'building-4'});
@@ -1240,7 +1252,7 @@ describe('initiation presentation',()=>{
  it('celebrates a common first birth once, without calling it a discovery',()=>{
   const s=scenarioState('initiationSaved',0);const historical=babyOf(s.buildings.find(b=>b.kind==='nursery')!)!;historical.readyAt=0;historical.birth.species='paille';historical.birth.reservedDiscovery=false;historical.birth.guaranteed=false; // Previously drawn Common.
   const {ui,controller}=setup(s);ui.open({kind:'building',id:'building-5'});
-  button('Prairie de paille 1 · 1/3').click();
+  welcomeFromNursery('Prairie de paille 1 · 1/3');
   const dialog=document.getElementById('game-dialog') as HTMLDialogElement;
   expect(dialog.open).toBe(true);expect(dialog.textContent).toContain('Bienvenue, petit lapin');
   expect(dialog.textContent).not.toContain('Nouvelle espèce');expect(dialog.textContent).not.toContain('Consulter');
@@ -1250,7 +1262,7 @@ describe('initiation presentation',()=>{
 });
 it('labels an actual first discovery of a species at its first birth',()=>{
  const s=scenarioState('initiationSaved',0);const baby=babyOf(s.buildings.find(b=>b.kind==='nursery')!)!;baby.readyAt=0;baby.birth.species='boudinet';
- const {ui}=setup(s);ui.open({kind:'building',id:'building-5'});button('Prairie de paille 1 · 1/3').click();
+ const {ui}=setup(s);ui.open({kind:'building',id:'building-5'});welcomeFromNursery('Prairie de paille 1 · 1/3');
  const dialog=document.getElementById('game-dialog')!;expect(dialog.textContent).toContain('Nouvelle espèce');expect(dialog.textContent).toContain('Boudinet');expect(dialog.textContent).not.toContain('Consulter');
 });
 it('offers a notebook shortcut after guidance ends',()=>{
@@ -1419,7 +1431,7 @@ it('new course mission shortcut uses Paille and preserves the budget',()=>{
 describe('birth XP confirmation guard',()=>{
  it('a repeated nursery destination control welcomes and rewards the same birth once',()=>{
   const s=currentStart(0);setBaby(s.buildings.find(b=>b.kind==='nursery')!, {birth:{id:'birth-6',species:'paille',guaranteed:false,reservedDiscovery:false},startedAt:0,readyAt:0});s.nextId=7;
-  const {ui,controller}=setup(s);ui.open({kind:'building',id:'building-5'});const welcome=button('Enclos 1 · 2/3');welcome.click();welcome.click();
+  const {ui,controller}=setup(s);ui.open({kind:'building',id:'building-5'});openWelcomeList();const welcome=button('Enclos 1 · 2/3');welcome.click();welcome.click();
   expect(state(controller).rabbits).toHaveLength(3);expect(state(controller).progression.totalXp).toBe(PROGRESSION.xp.birth.common);expect(babyOf(state(controller).buildings.find(b=>b.kind==='nursery')!)).toBeNull();
  });
 });
@@ -1507,8 +1519,9 @@ describe('nursery panel with several cushions',()=>{
   expect(panel().textContent).toContain('Couchages : 3 / 4');expect(panel().textContent).toContain('1 : prêt · 2 : occupé · 3 : prêt · 4 : verrouillé');
   expect([...panel().querySelectorAll('h3')].map(h=>h.textContent).filter(t=>t!.startsWith('Couchage'))).toEqual(['Couchage 1','Couchage 2','Couchage 3']);
   expect(panel().querySelectorAll('.work-state[data-state=running]')).toHaveLength(1);expect(panel().querySelectorAll('[data-accelerate-end]')).toHaveLength(1);
-  const homes=[...panel().querySelectorAll<HTMLButtonElement>('button')].filter(b=>b.textContent==='Enclos 1 · 2/3');expect(homes).toHaveLength(2);
-  homes[1].click();
+  // One reception button per ready baby, in slot order; the growing one has none.
+  expect([...panel().querySelectorAll<HTMLButtonElement>('button[data-reception]')].map(b=>b.dataset.reception)).toEqual(['birth-6','birth-7']);
+  openWelcomeList('birth-7',card=>expect(card.dataset.birthId).toBe('birth-7'));button('Enclos 1 · 2/3').click();
   const after=state(controller).buildings.find(b=>b.kind==='nursery')!.nursery!;
   expect(after.babies.map(b=>[b.slot,b.birth.id]).sort()).toEqual([[0,'birth-6'],[1,'birth-8']]);
   expect(state(controller).rabbits.at(-1)!.id).toBe('birth-7');

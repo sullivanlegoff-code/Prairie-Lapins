@@ -650,6 +650,16 @@ dialog.legendary-reveal-ankylosaure { background: #1d1209; }
 .lr-badge { display: inline-block; margin: 0; padding: 3px 12px; border-radius: 999px; background: linear-gradient(90deg, #b8801d, #ffe08a, #b8801d); background-size: 200% 100%; color: #3a2606; font-weight: 700; font-size: 13px; }
 .lr-details { margin: 6px 0 10px; color: #fff3d6; text-shadow: 0 1px 4px #000a; }
 .lr-text button { width: 100%; min-height: 48px; }
+/* A ready legendary's or Benny's reception: the choices at the end of the show (src/ui/legendaryReveal.ts, revealEnd). */
+.reveal-new { display: inline-block; margin: 0 0 10px; padding: 3px 12px; border-radius: 999px; background: #fff; color: #3a2606; font-weight: 700; font-size: 13px; box-shadow: 0 2px 8px #0006; }
+.reveal-choices { display: grid; gap: 8px; }
+.reveal-choices .reason { margin: -2px 0 2px; color: #fff3d6; font-size: 13px; text-shadow: 0 1px 4px #000c; }
+:is(.lr-text, .br-text) .reveal-later { margin-top: 8px; }
+@media (orientation: landscape) and (max-height: 560px) {
+  .reveal-choices { gap: 6px; }
+  :is(.lr-text, .br-text):has(.reveal-choices) button { min-height: 42px; }
+  :is(.lr-text, .br-text) .reveal-later { margin-top: 6px; }
+}
 @media (orientation: landscape) and (max-height: 560px) {
   .lr-hero { left: 32%; top: 52%; width: min(40vw, 66dvh); }
   .lr-text { left: 72%; bottom: auto; top: 50%; width: min(42vw, 360px); transform: translate(-50%, -50%); }

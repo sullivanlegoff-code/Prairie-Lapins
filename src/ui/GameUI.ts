@@ -3,10 +3,11 @@ import {bestFriend} from '../simulation/cozy';
 import {DECORATION_COLLECTIONS,TRAVEL_STORIES,COZY_EVENTS,DISCOVERIES,currentCozyEvent,currentDiscovery} from '../config/cozyContent';
 import {discoveryAvailable,translatedDecorations} from '../simulation/cozyActivities';
 import {rabbitDropTargets} from './rabbitDropTargets';
-import {showLegendaryReveal} from './legendaryReveal';
+import {showLegendaryReveal, type RevealText} from './legendaryReveal';
 import {showBennyReveal} from './bennyReveal';
 import {clearLegendaryCard, decorateLegendaryCard, legendaryPortrait} from './legendaryCard';
 import {isLegendaryShow} from '../config/legendaryArt';
+import {preloadReceptionFrame, receptionFrame} from '../config/receptionArt';
 import {accountKnown} from '../cloud/accountState';
 import {cloudConfig} from '../cloud/config';
 import {AccountReminder} from './accountReminder';
@@ -54,7 +55,7 @@ import {decorationUrl} from '../display/decorationArt';
 import {quoteComplement, releaseBabyPattesFor, releaseGrass} from '../simulation/actions';
 import {initiationAvailable} from '../simulation/initiation';
 import {marketExchanges, marketPrice, marketUnlocked} from '../simulation/market';
-import {automaticNurseryTransfer, nurseryBuilding, nurseryFull, nurseryUnlockQuote} from '../simulation/nursery';
+import {automaticNurseryTransfer, babyInNursery, firstNurseryBaby, nurseryBuilding, nurseryFull, nurseryUnlockQuote} from '../simulation/nursery';
 import {accelerationCost, quoteAcceleration} from '../simulation/hearts';
 import {rabbitIncome, individualIncomeRoll} from '../simulation/time';
 import type {MeadowScene, MeadowSelection} from '../display/MeadowScene';
@@ -68,10 +69,10 @@ import {guidedStep, type GuideStep} from './guidance';
 import {BUILDING_NAMES, REFUSALS, RARITY_NAMES, busyReason, TYPE_NAMES, typeNames, recipeBook, recipePairs, buildingReason, collectionView, incomeWhole, moneyReason, nurseryView, occupants, oddsTexts, oddsView, placementReason, rabbitAvailability, parentBusy, releaseReason, timeLeft, type Placement, type CollectionFilter} from './models';
 
 type ShopTab = 'home' | 'recipes' | 'rabbits' | 'habitats' | 'buildings' | 'decorations';
-type View = {kind:'album'|'cozyEvents'|'decorationGroup'} | {kind:'levelRequirement';target:LevelAccessTarget} | {kind: 'missions'; tab: 'main' | 'daily'} | {kind: 'shop'; tab: ShopTab} | {kind: 'building' | 'rabbit' | 'moveRabbit' | 'decoration'; id: string} |
+type View = {kind:'album'|'cozyEvents'|'decorationGroup'} | {kind: 'welcomeBaby'; birthId: string} | {kind:'levelRequirement';target:LevelAccessTarget} | {kind: 'missions'; tab: 'main' | 'daily'} | {kind: 'shop'; tab: ShopTab} | {kind: 'building' | 'rabbit' | 'moveRabbit' | 'decoration'; id: string} |
   {kind: 'buyRabbit' | 'species'; species: SpeciesId} | {kind:'extension';parcelId?:ParcelId} | {kind: 'cuisineRabbit'; commis?: string} | {kind: 'collection' | 'settings' | 'placement' | 'hearts' | 'recipes' | 'arrange' | 'decorationPlacement'} | null;
 /** Views drawn as a centred card over the dimmed meadow. Placement, purchase, extension and arrangement views keep the side sheet: they need the island visible. */
-const CENTER_CARD_VIEWS: readonly NonNullable<View>['kind'][] = ['album','cozyEvents','decorationGroup','rabbit', 'moveRabbit', 'building', 'missions', 'collection', 'recipes', 'hearts', 'species', 'levelRequirement'];
+const CENTER_CARD_VIEWS: readonly NonNullable<View>['kind'][] = ['album','cozyEvents','decorationGroup','rabbit', 'moveRabbit', 'welcomeBaby', 'building', 'missions', 'collection', 'recipes', 'hearts', 'species', 'levelRequirement'];
 function node<K extends keyof HTMLElementTagNameMap>(tag: K, text = '', className = ''): HTMLElementTagNameMap[K] {
   const element = document.createElement(tag); setCurrencyText(element, text); decorateRabbitText(element); element.className = className; return element;
 }
@@ -118,6 +119,13 @@ export class GameUI {
   }
   private movingRabbit: string | null = null;
   private moveBanner = node('div', '', 'rabbit-move-banner');
+  /** The ready baby whose habitat is being chosen on the island (birthId), with its banner. */
+  private welcoming: string | null = null;
+  private welcomeBanner = node('div', '', 'rabbit-move-banner nursery-welcome-banner');
+  /** The reception card of one ready baby: its own dialog, so Confier can still ask its confirmation in #game-dialog. */
+  private reception = document.getElementById('reception-dialog') as HTMLDialogElement;
+  /** A legendary's or Benny's show standing in for the reception card (created and removed by the show itself). */
+  private receptionShow: HTMLDialogElement | null = null;
   private placement: Placement | null = null;
   private parents: [string | null, string | null] = [null, null];
   private snapshot: Snapshot;
@@ -198,6 +206,18 @@ export class GameUI {
     }, null, true);
     this.button(this.moveBanner, 'Annuler', () => this.cancelRabbitMove(), null, true);
     document.getElementById('app')!.append(this.moveBanner);
+    this.welcomeBanner.id = 'nursery-welcome-banner'; this.welcomeBanner.hidden = true;
+    this.welcomeBanner.setAttribute('role', 'region'); this.welcomeBanner.setAttribute('aria-label', 'Accueillir un lapereau');
+    const welcomeLabel = node('span'); welcomeLabel.setAttribute('role', 'status'); this.welcomeBanner.append(welcomeLabel);
+    this.button(this.welcomeBanner, 'Choisir dans une liste', () => {
+      const birthId = this.welcoming; if (!birthId) return;
+      this.clearWelcome(); this.open({kind: 'welcomeBaby', birthId}, 'root');
+      this.content.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
+    }, null, true);
+    this.button(this.welcomeBanner, 'Annuler', () => this.cancelWelcome(), null, true);
+    document.getElementById('app')!.append(this.welcomeBanner);
+    // A closing reception card (Escape, cross, a choice) empties itself unless it was reopened meanwhile.
+    this.reception.addEventListener('close', () => { if (!this.reception.open) this.reception.replaceChildren(); });
     const options = {signal: this.abort.signal};
     const skip = node('button','Passer le tutoriel','onboarding-skip'); skip.id='onboarding-skip';
     skip.onclick=()=>{this.preferences.set({tutorial:false});this.pailleDialogue.close();this.renderPreferences();this.render();};
@@ -225,6 +245,7 @@ export class GameUI {
     document.addEventListener('keydown', event => {
       if (event.key !== 'Escape' || event.defaultPrevented || document.querySelector('dialog[open]')) return;
       if (this.movingRabbit) { event.preventDefault(); this.cancelRabbitMove(); return; }
+      if (this.welcoming) { event.preventDefault(); this.cancelWelcome(); return; }
       if (this.view) { event.preventDefault(); this.close(); }
     }, options);
     // Keep native selectors and a gesture's original controls alive during passive saves.
@@ -251,6 +272,8 @@ export class GameUI {
       const warning = document.getElementById('save-warning')!;
       warning.hidden = snapshot.status === 'saved';
       warning.textContent = snapshot.state ? 'Sauvegarde non enregistrée · Paramètres' : 'Partie non chargée · Paramètres';
+      // Every baby's painted reception frame loads while it grows, so its card never opens empty.
+      if (snapshot.state) for (const baby of nurseryBuilding(snapshot.state)?.nursery?.babies ?? []) preloadReceptionFrame(SPECIES[baby.birth.species].types[0]);
       if (!unchanged) { this.render(true); this.renderTutorial(); }
     });
     this.accountReminder = new AccountReminder(preferences,
@@ -455,7 +478,7 @@ export class GameUI {
       const species = this.snapshot.state?.rabbits.find(r => r.id === view.id)?.species;
       if (species) this.onRabbitSheet?.(species);
     }
-    this.clearRabbitMove();
+    this.clearRabbitMove(); this.clearWelcome();
     this.rememberView();
     const enteringShop = view.kind === 'shop' && this.view?.kind !== 'shop' && navigation !== 'back';
     if (enteringShop) this.shopReturn = {view: this.view, history: [...this.history], arranging: this.arranging};
@@ -484,6 +507,7 @@ export class GameUI {
   }
   close(): void {
     if (this.movingRabbit) { this.cancelRabbitMove(); return; }
+    if (this.welcoming) { this.cancelWelcome(); return; }
     if (this.onboardingActive) {
       this.purchaseReturn=null;this.shopReturn=null;this.history=[];this.view=null;this.placement=null;this.arranging=false;
       this.scene.setPlacement(null);this.scene.setTutorialCell(null);this.scene.setRabbitPurchase(null);
@@ -504,7 +528,7 @@ export class GameUI {
     if (!this.view) this.returnFocus = null;
   }
   onReplacement(fresh = false): void {
-    this.clearRabbitMove();
+    this.clearRabbitMove(); this.clearWelcome(); this.closeReception();
     this.pailleDialogue.close();
     this.cuisine.close(false);
     this.history = []; this.scrollPositions.clear(); this.interactionPointers.clear(); this.pendingRender = false;
@@ -533,6 +557,9 @@ export class GameUI {
         this.view?.kind === 'buyRabbit' && building?.habitat?.type === 'neige' ||
         selection.kind === 'grass' && task.step.id === 'harvest' && !task.waiting ||
         selection.kind === 'birth' && task.step.id === 'transfer' && !task.waiting ||
+        !!this.welcoming && selection.kind === 'building' ||
+        selection.kind === 'nurseryBubble' && building?.kind === expected ||
+        selection.kind === 'nurseryBaby' && task.step.id === 'welcomeBirth' && !task.waiting ||
         selection.kind === 'building' && building?.kind === expected ||
         selection.kind === 'rabbit' && rabbit?.species === expected;
       if (!allowed) return;
@@ -543,6 +570,10 @@ export class GameUI {
     if(selection.kind==='discovery'){this.discover(selection.id);return;}
     if (this.movingRabbit) {
       if (selection.kind === 'building') this.dropRabbit(this.movingRabbit, selection.id);
+      return;
+    }
+    if (this.welcoming) {
+      if (selection.kind === 'building') this.dropWelcome(this.welcoming, selection.id);
       return;
     }
     if (this.view?.kind === 'buyRabbit') {
@@ -562,6 +593,9 @@ export class GameUI {
     if (selection.kind === 'income') { this.execute({type: 'collectIncome', id: selection.id}, value => `+ ${value} pattes`); return; }
     if (selection.kind === 'grass') { this.execute({type: 'collectOrder', id: selection.id}, value => `+ ${value} nourriture`); return; }
     if (selection.kind === 'birth') { this.sendBirth(selection.id); return; }
+    // « Prêt ! » is a signal only: it shows the nursery and its panel; each baby is welcomed from its own card.
+    if (selection.kind === 'nurseryBubble') { this.scene.focusBuilding?.(selection.id); this.open({kind: 'building', id: selection.id}); return; }
+    if (selection.kind === 'nurseryBaby') { this.openReception(selection.id); return; }
     // A ready nursery bubble opens its ordinary actions, including during arrangement.
     if (this.arranging && selection.kind === 'building' && this.snapshot.state?.buildings.find(b => b.id === selection.id)?.kind !== 'enclosure') {
       this.open({kind: 'building', id: selection.id}); return;
@@ -578,7 +612,7 @@ export class GameUI {
   private render(passive = false): void {
     if (passive && this.interactionActive()) { this.pendingRender = true; return; }
     this.pendingRender = false;
-    this.syncRabbitMove();
+    this.syncRabbitMove(); this.syncWelcome();
     this.renderTutorial();
     this.applyOnboardingLock();
     if (this.breedingDialog.open) this.renderBreeding();
@@ -626,6 +660,7 @@ export class GameUI {
       case 'building': this.renderBuilding(s, this.view.id); break;
       case 'rabbit': this.renderRabbit(s, this.view.id); break;
       case 'moveRabbit': this.renderDestinations(s, this.view.id); break;
+      case 'welcomeBaby': this.renderWelcomeDestinations(s, this.view.birthId); break;
       case 'levelRequirement':this.renderLevelRequirement(s,this.view.target);break;
       case 'buyRabbit': this.renderBuyRabbit(s, this.view.species); break;
       case 'recipes': this.renderRecipes(s); break;
@@ -1239,6 +1274,160 @@ export class GameUI {
     if(parentBusy(s,id,this.now())) {this.content.append(node('p',busyReason(s, id),'reason'));return;}
     this.destinations(s, enclosureId => this.dropRabbit(id, enclosureId), r.species, r.enclosureId);
   }
+  /** The ready baby of this birth, or null (growing, gone, or another game). */
+  private readyBaby(s: GameState | null, birthId: string) {
+    const baby = s ? babyInNursery(nurseryBuilding(s), birthId) : null;
+    return baby && baby.readyAt <= this.now() ? baby : null;
+  }
+  /**
+   * The single way into a ready baby's reception (owner, 2 November 2026): a touch on its cushion, its button in the nursery
+   * panel, or the guide. The legendaries and Benny first play their own full-screen show, at every birth, and their choices
+   * appear at its end (owner: « ça mette l'animation, puis ensuite on décide »). Returns whether a reception is showing.
+   */
+  private openReception(birthId: string): boolean {
+    this.controller.refresh();
+    const s = this.controller.getSnapshot().state; if (!s) return false;
+    const baby = this.readyBaby(s, birthId), nursery = nurseryBuilding(s);
+    // A baby still growing (or already gone) answers like the nursery itself.
+    if (!baby) { if (nursery) this.open({kind: 'building', id: nursery.id}); return false; }
+    if (this.receptionShow?.isConnected) return true;
+    if (this.cuisine.active || this.pailleDialogue.element.open || this.photo || this.placement || this.decorationDraft) return false;
+    if (this.dialog.open || this.breedingDialog.open || (document.getElementById('import-dialog') as HTMLDialogElement | null)?.open) return false;
+    this.clearRabbitMove(); this.clearWelcome();
+    const species = baby.birth.species;
+    if (isLegendaryShow(species) || species === BENNY) { this.closeReception(); this.openReceptionShow(s, birthId); return true; }
+    this.renderReception(s, birthId);
+    if (!this.reception.open) this.reception.showModal();
+    this.reception.querySelector<HTMLButtonElement>('.reception-actions button:not(:disabled)')?.focus({preventScroll: true});
+    return true;
+  }
+  /** Closes the reception card and the legendaries' or Benny's show, whichever is open: the baby stays in its cushion. */
+  private closeReception(): void {
+    if (this.reception.open) this.reception.close();
+    this.reception.replaceChildren();
+    const show = this.receptionShow; this.receptionShow = null;
+    if (show) { if (show.open) show.close(); show.remove(); }
+  }
+  /** A legendary's or Benny's show, whose calm end carries the same choices as the reception card. */
+  private openReceptionShow(s: GameState, birthId: string): void {
+    const species = this.readyBaby(s, birthId)!.birth.species, info = SPECIES[species];
+    const text: RevealText = {
+      title: 'Ton lapereau est prêt !', name: info.name, details: `${typeNames(info.types)} · ${RARITY_NAMES[info.rarity]}`, button: 'Plus tard',
+      isNew: !s.discovered.includes(species), choices: host => this.receptionChoices(host, s, birthId, species),
+    };
+    let show: HTMLDialogElement | null = null;
+    const onClose = () => { if (show && this.receptionShow === show) this.receptionShow = null; };
+    show = isLegendaryShow(species) ? showLegendaryReveal(species, text, onClose) : showBennyReveal(text, onClose);
+    show.classList.add('reception-show'); show.dataset.birthId = birthId;
+    this.receptionShow = show;
+  }
+  /**
+   * The reception card, painted after the baby's first type (owner, 2 November 2026: « pour tous les lapins je veux que la fiche
+   * de réception du lapin soit stylisée en fonction du type 1 du lapin »), laid out like concept A: the title in the banner, the
+   * baby large on the meadow, its name, types and rarity below it, then Accueillir and Confier inside the wreath.
+   */
+  private renderReception(s: GameState, birthId: string): void {
+    const baby = this.readyBaby(s, birthId)!, species = baby.birth.species, info = SPECIES[species], card = this.reception, type = info.types[0];
+    card.replaceChildren(); clearRabbitTheme(card); rabbitTheme(card, species);
+    card.className = `reception-card reception-type-${type}`; card.dataset.type = type; card.dataset.birthId = birthId;
+    const art = receptionFrame(type);
+    if (art) { preloadReceptionFrame(type); card.style.setProperty('--reception-frame', `url("${art.url}")`); card.style.setProperty('--reception-ratio', (art.width / art.height).toFixed(4)); }
+    else { card.style.removeProperty('--reception-frame'); card.style.removeProperty('--reception-ratio'); }
+    const sheet = node('div', '', 'reception-sheet'), frame = node('div', '', 'reception-frame'); frame.setAttribute('aria-hidden', 'true');
+    const close = node('button', '×', 'reception-close'); close.type = 'button'; close.setAttribute('aria-label', 'Fermer'); close.onclick = () => this.closeReception();
+    const banner = node('div', '', 'reception-banner'); banner.append(node('p', 'Ton lapereau est prêt !', 'reception-kicker'));
+    const portraitArt = avatar(species, true); portraitArt.classList.add('reception-portrait');
+    const artBox = node('div', '', 'reception-art'); artBox.append(portraitArt);
+    const body = node('div', '', 'reception-body'), title = node('h2', info.name, 'reception-name'); title.id = 'reception-title';
+    const details = node('p', '', 'reception-details'); details.append(node('span', `${typeNames(info.types)} · ${RARITY_NAMES[info.rarity]}`));
+    if (!s.discovered.includes(species)) details.append(node('span', 'Nouvelle espèce', 'badge reception-new'));
+    body.append(title, details);
+    sheet.append(frame, banner, artBox, body);
+    const actions = node('div', '', 'reception-actions');
+    this.receptionChoices(actions, s, birthId, species);
+    card.classList.toggle('reception-no-place', !welcomeDestinations(s, species).length);
+    card.append(sheet, actions, close);
+  }
+  /** Accueillir and Confier, on the reception card or at the end of a legendary's or Benny's show. */
+  private receptionChoices(actions: HTMLElement, s: GameState, birthId: string, species: SpeciesId): void {
+    const places = welcomeDestinations(s, species).length;
+    const welcome = this.button(actions, 'Accueillir', () => this.beginWelcome(birthId), places ? null : 'Aucun habitat compatible n’a de place libre. Ton lapereau reste en sécurité dans la nurserie.');
+    welcome.dataset.reception = 'welcome'; if (this.onboardingActive && places) welcome.classList.add('guide-target');
+    if (!places) this.button(actions, 'Voir les habitats compatibles', () => { this.closeReception(); this.compatibleHabitats(species); }, null, true).dataset.reception = 'shop';
+    // Benny can never be lost: her Confier stays refused, with its reason.
+    if (species === BENNY) this.button(actions, 'Confier', () => undefined, REFUSALS.BENNY_KEPT, true).dataset.reception = 'release';
+    else {
+      const pattes = releaseBabyPattesFor(species);
+      const release = this.button(actions, `Confier · +${pattes} pattes`, () => {
+        this.closeReception();
+        this.confirm('Confier ce lapereau ?', `Ce lapereau quittera la nurserie et ne rejoindra pas ta prairie. Tu reçois ${pattes} pattes.`, () => this.execute({type: 'releaseBaby', birthId}, `Lapereau confié · +${pattes} pattes`));
+      }, null, true);
+      release.classList.add('action-danger'); release.dataset.reception = 'release';
+    }
+  }
+  /** « Accueillir » steps back over the island and points arrows at every compatible habitat with a free place. */
+  private beginWelcome(birthId: string): void {
+    this.controller.refresh();
+    const s = this.controller.getSnapshot().state, baby = this.readyBaby(s, birthId);
+    if (!s || !baby) { this.closeReception(); return; }
+    if (!welcomeDestinations(s, baby.birth.species).length) return;
+    this.closeReception(); this.clearRabbitMove();
+    // Not close(): during the guided start it would call Paille back over the island.
+    this.rememberView(); this.purchaseReturn = null; this.shopReturn = null; this.history = []; this.view = null; this.arranging = false; this.syncArrangement();
+    this.welcoming = birthId; this.render();
+    this.scene.zoomForRabbitMove?.();
+    this.welcomeBanner.querySelector<HTMLButtonElement>('button')?.focus({preventScroll: true});
+  }
+  private clearWelcome(): void {
+    if (!this.welcoming) return;
+    this.welcoming = null; this.welcomeBanner.hidden = true; this.scene.setRabbitDropTargets?.(null);
+  }
+  /** Annuler: nothing changes, the baby stays in its cushion. */
+  private cancelWelcome(message?: string): void {
+    if (!this.welcoming) return;
+    this.clearWelcome();
+    if (this.onboardingActive) this.pailleDialogue.invite();
+    this.render();
+    if (message) this.notice(message);
+  }
+  private syncWelcome(): void {
+    const birthId = this.welcoming; if (!birthId) return;
+    const s = this.snapshot.state, baby = this.readyBaby(s, birthId);
+    // Gone (welcomed, entrusted, another game): its own action already said so.
+    if (!s || !baby) { this.clearWelcome(); return; }
+    const places = welcomeDestinations(s, baby.birth.species);
+    if (!places.length || this.pailleDialogue.element.open) { this.clearWelcome(); if (!places.length) this.notice('Aucun habitat compatible n’a de place libre. Ton lapereau reste en sécurité dans la nurserie.'); return; }
+    this.welcomeBanner.hidden = false;
+    this.welcomeBanner.querySelector('span')!.textContent = `Choisis un habitat pour ${SPECIES[baby.birth.species].name}`;
+    this.scene.setRabbitDropTargets?.(places.map(b => b.id));
+  }
+  private dropWelcome(birthId: string, enclosureId: string): void {
+    this.controller.refresh();
+    if (this.welcoming !== birthId && !(this.view?.kind === 'welcomeBaby' && this.view.birthId === birthId)) return;
+    const s = this.controller.getSnapshot().state, baby = this.readyBaby(s, birthId);
+    if (!s || !baby) return;
+    const species = baby.birth.species;
+    if (!welcomeDestinations(s, species).some(b => b.id === enclosureId)) {
+      const b = s.buildings.find(b => b.id === enclosureId);
+      if (b?.kind === 'enclosure') this.notice(`Cet habitat ne peut pas accueillir ce lapereau. ${this.entryReason(s, b, species) ?? ''}`.trim());
+      return;
+    }
+    const discovery = !s.discovered.includes(species), first = s.missions.events.welcome === 0 && !!s.initiation;
+    this.execute({type: 'welcome', enclosureId, birthId}, 'Lapereau accueilli !', () => {
+      this.clearWelcome();
+      if (this.view?.kind === 'welcomeBaby') { this.view = null; this.history = []; }
+      // The reception (card, or the legendaries' and Benny's show) was the discovery: only the guided first birth follows it.
+      if (first) this.firstBirth(species, discovery);
+    });
+  }
+  /** The list fallback of the island arrows, like a rabbit's move. */
+  private renderWelcomeDestinations(s: GameState, birthId: string): void {
+    const baby = this.readyBaby(s, birthId); if (!baby) { this.close(); return; }
+    const species = baby.birth.species, info = SPECIES[species];
+    this.title.textContent = 'Accueillir';
+    this.content.append(this.card(info.name, `${typeNames(info.types)} · ${RARITY_NAMES[info.rarity]}`, species));
+    this.destinations(s, enclosureId => this.dropWelcome(birthId, enclosureId), species);
+  }
   private openRecipe(species: SpeciesId): void {
     this.recipeDetails.add(species); this.requestedRecipeFocus = species; this.open({kind:'recipes'});
   }
@@ -1487,19 +1676,12 @@ export class GameUI {
         this.content.append(avatar(undefined, true));
         this.acceleration(s, nurseryId, 'growth', baby.birthId); continue;
       }
-      const species = baby.species, full = !welcomeDestinations(s, species).length;
-      this.workState(full ? 'blocked' : 'ready', full ? 'Aucun habitat compatible avec une place libre. Le lapereau reste en sécurité ici.' : 'Ton lapereau est prêt. Choisis son habitat.');
-      this.content.append(avatar(species, true), node('h3', SPECIES[species].name));
+      const species = baby.species, full = !welcomeDestinations(s, species).length, name = SPECIES[species].name;
+      this.workState(full ? 'blocked' : 'ready', full ? 'Aucun habitat compatible avec une place libre. Le lapereau reste en sécurité ici.' : 'Ton lapereau est prêt. Touche-le sur son couchage ou ouvre sa fiche pour l’accueillir.');
+      this.content.append(avatar(species, true), node('h3', name));
+      // The keyboard and VoiceOver way to the same reception card as a touch on the cushion.
+      this.button(this.content, full ? `Voir la fiche de ${name}` : `Accueillir ${name}`, () => this.openReception(baby.birthId)).dataset.reception = baby.birthId;
       if (full) this.rabbitNoRoom(this.content, s, species);
-      this.destinations(s, enclosureId => {
-        const discovery = !s.discovered.includes(species), first = s.missions.events.welcome === 0 && !!s.initiation;
-        this.execute({type: 'welcome', enclosureId, birthId: baby.birthId}, 'Lapereau accueilli !', () => { this.view = {kind: 'building', id: enclosureId}; if (first) this.firstBirth(species, discovery); else if (discovery) this.discovery(species); });
-      }, species);
-      // Releasing needs no habitat: the baby leaves the nursery for pattes, straight from here.
-      const pattes = releaseBabyPattesFor(species);
-      // The one Benny can never be lost: her release stays refused, with its reason.
-      if (species === BENNY) { this.button(this.content, 'Confier ce lapereau', () => undefined, REFUSALS.BENNY_KEPT, true); continue; }
-      this.button(this.content, `Confier ce lapereau · +${pattes} pattes`, () => this.confirm('Confier ce lapereau ?', `Ce lapereau quittera la nurserie et ne rejoindra pas ta prairie. Tu reçois ${pattes} pattes.`, () => this.execute({type: 'releaseBaby', birthId: baby.birthId}, `Lapereau confié · +${pattes} pattes`)), null, true).classList.add('action-danger');
     }
     // After the babies: their timers stay visible without scrolling in landscape.
     const slotNames = {locked: 'verrouillé', empty: 'libre', growing: 'occupé', ready: 'prêt'};
@@ -1984,6 +2166,11 @@ export class GameUI {
       const nest=s.buildings.find(b=>b.kind==='nest');
       this.view=null;this.history=[];this.render();if(nest)this.sendBirth(nest.id);return;
     }
+    if (step.id === 'welcomeBirth') {
+      // « Accueillir » opens the ready baby's own reception card, as a touch on its cushion would.
+      const baby = firstNurseryBaby(nurseryBuilding(s));
+      if (baby && baby.readyAt <= this.now()) { this.view = null; this.history = []; this.render(); if (this.openReception(baby.birth.id)) return; }
+    }
     if (step.target === 'camera') { this.scene.recenter(); this.preferences.set({intro: true, guideCamera: true}); this.renderTutorial(); return; }
     if (step.target === 'snowShop') { this.shopHabitatSpecies='neige'; this.open({kind:'shop',tab:'habitats'}); return; }
     if (step.target === 'rabbitShop') { this.open({kind:'shop',tab:'rabbits'}); return; }
@@ -2006,12 +2193,13 @@ export class GameUI {
     if (view.kind === 'shop') return view.tab === ({snowShop:'habitats',rabbitShop:'rabbits',farmShop:'buildings'} as Record<string,string>)[step.id];
     if (view.kind === 'buyRabbit') return step.id === 'rabbitShop' && view.species === 'neige';
     if (view.kind === 'missions') return step.id === 'snowReward' && view.tab === 'main';
+    if (view.kind === 'welcomeBaby') return step.id === 'welcomeBirth';
     if (view.kind === 'rabbit') return s.rabbits.find(r => r.id === view.id)?.species === step.target;
     if (view.kind === 'building') return s.buildings.find(b => b.id === view.id)?.kind === step.target;
     return false;
   }
   private onboardingAllowed(element: HTMLElement): boolean {
-    if (element.closest('#paille-dialogue') || ['open-settings','save-warning','cloud-warning','recenter-view','close-panel','panel-back','tutorial-toggle','onboarding-skip','continue-portrait'].includes(element.id)) return true;
+    if (element.closest('#paille-dialogue, #nursery-welcome-banner') || ['open-settings','save-warning','cloud-warning','recenter-view','close-panel','panel-back','tutorial-toggle','onboarding-skip','continue-portrait'].includes(element.id)) return true;
     if (element.closest('#settings-content') && this.view?.kind === 'settings') return true;
     // Modal interruptions (level reached, confirmation, level details, import) must always be closable: their content is
     // only reachable while open, and they may open between two renders. Only the pairing window keeps the guided rule.
@@ -2051,7 +2239,7 @@ export class GameUI {
       target = [...this.content.querySelectorAll('.card')].find(card => card.querySelector('h3')?.textContent === title)?.querySelector<HTMLButtonElement>('button') ?? undefined;
     } else if (task.step.id === 'snowReward') target = this.content.querySelector<HTMLButtonElement>('[data-mission="welcome-snow"] .mission-claim') ?? undefined;
     else if (task.waiting) target = this.content.querySelector<HTMLButtonElement>('.initiation-aid button') ?? this.content.querySelector<HTMLButtonElement>('.paid-acceleration button') ?? undefined;
-    else if (task.step.id === 'welcomeBirth') target = buttons.find(b => !b.disabled && / · \d+\//.test(b.textContent ?? ''));
+    else if (task.step.id === 'welcomeBirth') target = buttons.find(b => !b.disabled && (/ · \d+\//.test(b.textContent ?? '') || b.dataset.reception !== undefined));
     else {
       const pattern = ({production:/^Cultiver · 10/,harvest:/^Récolter 20/,paille:/^Nourrir/,neige:/^Nourrir/,breed:/^Croiser$/,transfer:/^Envoyer dans la nurserie/} as Record<string,RegExp>)[task.step.id];
       target = buttons.find(b => pattern?.test(b.textContent ?? ''));
@@ -2106,5 +2294,5 @@ export class GameUI {
     if (step.done) this.button(this.tutorial, 'Terminer le guidage', () => { this.preferences.set({tutorialDone: true}); this.renderPreferences(); this.renderTutorial(); }, null, true);
     this.button(this.tutorial, 'Masquer', () => { this.preferences.set({tutorial: false}); this.renderPreferences(); this.renderTutorial(); }, null, true);
   }
-  dispose(): void { this.photoControls.dispose(); this.clearRabbitMove(); this.moveBanner.remove(); this.accountReminder.dispose(); document.getElementById('onboarding-skip')?.remove(); this.pailleDialogue.dispose(); this.cuisine.dispose(); this.confirmationGeneration++; if (this.dialog.open) this.dialog.close(); this.dialog.replaceChildren(); this.unsubscribe(); this.abort.abort(); cancelAnimationFrame(this.frame); clearTimeout(this.toastTimer); this.sounds.dispose(); }
+  dispose(): void { this.photoControls.dispose(); this.clearRabbitMove(); this.moveBanner.remove(); this.clearWelcome(); this.welcomeBanner.remove(); this.closeReception(); this.accountReminder.dispose(); document.getElementById('onboarding-skip')?.remove(); this.pailleDialogue.dispose(); this.cuisine.dispose(); this.confirmationGeneration++; if (this.dialog.open) this.dialog.close(); this.dialog.replaceChildren(); this.unsubscribe(); this.abort.abort(); cancelAnimationFrame(this.frame); clearTimeout(this.toastTimer); this.sounds.dispose(); }
 }
