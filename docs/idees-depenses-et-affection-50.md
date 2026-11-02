@@ -70,6 +70,38 @@ Le point de départ : les joueurs ne dépensent pas assez de pièces. Aujourd'hu
   - les noms et les dessins des nourritures fantaisie ;
   - leur nombre, leur durée, leur rendement et leur niveau de déblocage.
 
+## Réponses du propriétaire aux questions (2 novembre 2026)
+
+Ces réponses remplacent les « À préciser » des sections ci-dessus.
+
+- **Salon de soins** :
+  - un soin (bain, brossage, massage) dure de 1 à 3 h, pour un lapin à la fois ;
+  - le lapin revient avec **+1 d'affection** et un peu d'XP ;
+  - on paie en pièces, plus cher pour un lapin plus rare ;
+  - le salon s'ouvre au **niveau de joueur 12** (bâtiment à 5 000 pièces).
+- **Pique-nique** :
+  - **un par jour au total**, dans l'enclos de ton choix ;
+  - **+1 d'affection** à tous les lapins de l'enclos ;
+  - le prix dépend du nombre de lapins ;
+  - il s'ouvre au **niveau de joueur 8**.
+- **Deuxième Statue de l'Affection** : **150 cœurs, à partir du niveau de joueur 25.**
+- **Ferme niveau 3** : **60 000 pièces par ferme, à partir du niveau de joueur 20.**
+- **Nourritures fantaisie** (ferme niveau 3) :
+  - **trèfle doré, carotte arc-en-ciel, fraise étoilée, pomme d'amour** ;
+  - de plus en plus longues (10 à 16 h) et de plus en plus nourrissantes, au-dessus de la banane ;
+  - elles vont dans le même stock de nourriture que les autres.
+- **Bâtiment de l'ancien dessin** :
+  - on l'achète une fois (proposition : 10 000 pièces, niveau 20) ;
+  - ensuite, on choisit **librement et gratuitement** le dessin de chaque lapin de plus de 30 d'affection, dans les deux sens.
+- **Couronne des lapins ultimes** : **une seule couronne dorée**, la même pour tous.
+- **Rythme de l'affection** : un lapin soigné régulièrement (3 sessions par jour) passe de **l'affection 20 à 50 en environ 30 jours**. Les coûts en nourriture de 20 à 50 seront calculés pour ça, avec un mur à 29 → 30 comme à 14 → 15, puis vérifiés par simulation.
+
+Valeurs encore à fixer par le coordinateur, puis à vérifier par simulation et à montrer au propriétaire avant de coder :
+- le prix d'un soin selon la rareté ;
+- le prix du pique-nique par lapin ;
+- la durée et le rendement exacts des nourritures fantaisie ;
+- le tableau des coûts d'affection de 20 à 50.
+
 ## Points de vigilance
 
 - Règle permanente du propriétaire : ne rien inventer sur les Épiques, les Légendaires ou le Mythique. Toutes les valeurs du palier 30 et le sens de « lapin ultime » lui reviennent.
