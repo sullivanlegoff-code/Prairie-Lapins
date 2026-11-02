@@ -17,7 +17,7 @@ import {marketPrice, marketUnlocked} from './market';
 import {affectionCap, nextAffectionStatue, playerLevel, statueReason} from './affection';
 import {agencyBuilding, travelling} from './travel';
 import {dailyBonusReady, dailyClaimable, dailyCycleStart, dailyMissionsOf, recordMissionAction} from './missions';
-import {farmLimit, farmDuration, BALANCE, HEARTS, HOUR, TRAVEL, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
+import {farmLimit, farmDuration, FARM_UPGRADES, orderFarmLevel, BALANCE, HEARTS, HOUR, TRAVEL, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
 import {emptyBuilding} from '../state/initial';
 import {babyInNursery, findNurseryBaby, firstFreeNurserySlot, nurseryBuilding, nurseryUnlockQuote, settleNestTransfers} from './nursery';
 import type {ActionResult, Building, Command, GameState, PattesCommand, Rabbit, Refusal, ProgressionGain} from '../state/types';
@@ -311,9 +311,14 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         nest.breeding = null; value = birth.id; break;
       }
       case 'upgradeFarm': {
-        const b = building(command.id, 'farm'); requireRule(!b.farmLevel, 'STALE_ACTION');
-        requireRule(playerLevel(s) >= ORDERS.fanes.level, 'LEVEL_REQUIRED');
-        requireRule(s.hearts >= 30, 'NOT_ENOUGH_HEARTS'); s.hearts -= 30; b.farmLevel = 2; break;
+        const b = building(command.id, 'farm'), toLevel = command.toLevel ?? 2;
+        requireRule(toLevel === 2 || toLevel === 3, 'INVALID_CHOICE');
+        requireRule((b.farmLevel ?? 1) === toLevel - 1, 'STALE_ACTION');
+        const upgrade = FARM_UPGRADES[toLevel]; requireRule(playerLevel(s) >= upgrade.level, 'LEVEL_REQUIRED');
+        // Level 2 is paid in Hearts, level 3 in pattes only (no Heart complement); a refusal changes nothing.
+        if ('hearts' in upgrade) { requireRule(s.hearts >= upgrade.hearts, 'NOT_ENOUGH_HEARTS'); s.hearts -= upgrade.hearts; }
+        else { requireRule(s.pattes >= upgrade.pattes, 'NOT_ENOUGH_PATTES'); s.pattes -= upgrade.pattes; }
+        b.farmLevel = toLevel; break;
       }
       case 'upgradeAgency': {
         const b = building(command.id, 'agency'), level = b.agencyLevel ?? 1;
@@ -378,7 +383,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         const b = building(command.id, 'farm'); requireRule(!b.order, 'BUSY');
         requireRule(Object.hasOwn(ORDERS, command.recipe), 'INVALID_CHOICE');
         const recipe = ORDERS[command.recipe]; requireRule(playerLevel(s) >= recipe.level, 'LEVEL_REQUIRED');
-        requireRule(b.farmLevel === 2 || ORDERS[command.recipe].level < ORDERS.fanes.level, 'INVALID_CHOICE');
+        requireRule((b.farmLevel ?? 1) >= orderFarmLevel(command.recipe), 'INVALID_CHOICE');
         const duration = farmDuration(recipe.duration, b.farmLevel);
         requireRule(Number.isSafeInteger(time + duration), 'INVALID_TIME'); pay(recipe.cost);
         if (recipe.duration >= HOUR) s.missions.nightOrderStarted = true; // The « longer crop » main mission.

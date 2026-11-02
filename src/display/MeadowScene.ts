@@ -595,7 +595,7 @@ export class MeadowScene extends Phaser.Scene {
     const buildingArt = (building: Pick<Building, 'kind' | 'habitat' | 'footprintTier' | 'farmLevel'>) => {
       if (building.kind === 'enclosure') add(habitatArtFor(building.habitat ?? undefined, building.footprintTier));
       else if (building.kind === 'farm') {
-        add(building.farmLevel === 2 ? FARM_ART : FARM_LEVEL_1_ART);
+        add(building.farmLevel ? FARM_ART : FARM_LEVEL_1_ART);
         add({texture: SPROUT_TEXTURE, url: SPROUT_URL});
         for (const id of CROP_IDS) add({texture: CROP_TEXTURE(id), url: CROP_URL(id)});
       } else if (building.kind === 'nursery') {
@@ -749,7 +749,7 @@ export class MeadowScene extends Phaser.Scene {
     this.ground.setMask(this.islandMask!);
   }
   private buildingTexture(b: Pick<Building, 'kind' | 'habitat' | 'footprintTier' | 'farmLevel'>): string {
-    if (b.kind === 'farm') return b.farmLevel === 2 ? FARM_ART.texture : FARM_LEVEL_1_ART.texture;
+    if (b.kind === 'farm') return b.farmLevel ? FARM_ART.texture : FARM_LEVEL_1_ART.texture;
     if (b.kind === 'nest') return NEST_ART.texture;
     if (b.kind === 'nursery') return NURSERY_ART.texture;
     if (b.kind === 'kitchen') return KITCHEN_ART.texture;

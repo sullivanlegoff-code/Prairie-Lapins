@@ -253,8 +253,9 @@ describe('agency interface and French text', () => {
     let s = atLevel(22); s.hearts = 200; s = run(s, {type: 'buyBuilding', kind: 'farm', ...free(s)});
     const id = s.buildings.at(-1)!.id; s.startCourse = undefined;
     const {ui, controller} = mount(s); ui.select({kind: 'building', id});
-    expect(panel().querySelectorAll('.farm-order-locked')).toHaveLength(5);
+    expect(panel().querySelectorAll('.farm-order-locked')).toHaveLength(9); // Five level 2 crops and the four fancy crops.
     expect(panel().querySelector('[data-crop="fanes"]')!.textContent).toContain('Ferme niveau 2');
+    expect(panel().querySelector('[data-crop="trefleDore"]')!.textContent).toContain('Ferme niveau 3');
     panel().querySelector<HTMLButtonElement>('[data-crop="foin"] button')!.click();
     expect(controller.getSnapshot().state!.buildings.at(-1)!.order).not.toBeNull();
     [...panel().querySelectorAll<HTMLButtonElement>('.heart-spend')].find(b => b.textContent!.includes('Améliorer'))!.click();

@@ -47,7 +47,7 @@ import {habitatStats, habitatName, habitatEntryReason, habitatAccepts, welcomeDe
 import {MAIN_MISSIONS, DAILY_MISSIONS, DAILY_BONUS, DAILY_PICK_COUNT, type Reward} from '../config/missions';
 import {initialMissionIds, activeMainMissions, visibleMainMissions, mainCatalogueUnlocked, availableMissionRewards, mainProgress, dailyCycleStart, dailyCycleEnd, cycleIndexAt, dailyBonusReady, dailyClaimable, dailyMissionsOf, dailyProgress} from '../simulation/missions';
 import type {GameController, Snapshot} from '../application/GameController';
-import {AFFECTION_STATUE, BALANCE, FEED_COSTS, MARKET, SECOND_AFFECTION_STATUE, NURSERY, ORDERS, RARE_BIRTH_BONUS, TRAVEL, feedCost, type Destination, SPECIES, SPECIES_IDS, SHOP_SPECIES, growthDuration, type BuildingKind, type SpeciesId, type RabbitType} from '../config/balance';
+import {AFFECTION_STATUE, BALANCE, FARM_UPGRADES, FEED_COSTS, MARKET, orderFarmLevel, SECOND_AFFECTION_STATUE, NURSERY, ORDERS, RARE_BIRTH_BONUS, TRAVEL, feedCost, type Destination, SPECIES, SPECIES_IDS, SHOP_SPECIES, growthDuration, type BuildingKind, type SpeciesId, type RabbitType} from '../config/balance';
 import type {Command, DecorationLocation, GameState, PattesCommand, TimedStage} from '../state/types';
 import {DECORATIONS, DECORATION_IDS, FINE_GRID, ownedDecorationResalePrice, type DecorationId} from '../config/decorations';
 import {catalogDecorationPlacementReason, purchaseDecorationReason} from '../simulation/decorations';
@@ -1005,7 +1005,7 @@ export class GameUI {
     else if (b.kind === 'agency') this.menuPortrait(agencyThumbnail());
     else if (b.kind === 'statue') this.menuPortrait(statueThumbnail());
     else {
-      const image = node('img'); image.src = {farm: b.farmLevel === 2 ? FARM_ART.url : FARM_LEVEL_1_ART.url, nest: NEST_ART.url, nursery: NURSERY_ART.url, kitchen: KITCHEN_ART.url}[b.kind];
+      const image = node('img'); image.src = {farm: b.farmLevel ? FARM_ART.url : FARM_LEVEL_1_ART.url, nest: NEST_ART.url, nursery: NURSERY_ART.url, kitchen: KITCHEN_ART.url}[b.kind];
       this.menuPortrait(image);
     }
     if (b.kind === 'enclosure') {
@@ -1051,6 +1051,8 @@ export class GameUI {
       for (const r of residents) { const card = this.rabbitCard(s, r.id); this.button(card, 'Voir ce lapin', () => this.open({kind: 'rabbit', id: r.id}), null, true); this.content.append(card); }
       if (residents.length < stats.capacity) this.button(this.content, 'Acheter un lapin', () => this.open({kind: 'shop', tab: 'rabbits'}), null, true);
     } else if (b.kind === 'farm') {
+      const farmLevel = b.farmLevel ?? 1;
+      this.content.append(node('p', `Ferme niveau ${farmLevel}`, 'badge farm-level'));
       if (b.order) {
         const crop = ORDERS[b.order.recipe], amount = b.order.grass ?? crop.grass, growing = b.order.endsAt > this.now();
         const heading = this.card(crop.name, growing ? `${amount} nourriture en culture. Récolte après le délai.` : `${amount} nourriture prête. Touche Récolter.`);
@@ -1065,20 +1067,21 @@ export class GameUI {
         const previous = this.lastFarmCrop.get(id);
         if (previous) {
           const crop = ORDERS[previous];
-          const reason = !b.farmLevel && crop.level >= ORDERS.fanes.level ? 'Ferme niveau 2 requis.' : level < crop.level ? `Niveau ${crop.level} requis.` : moneyReason(s, crop.cost);
+          const reason = farmLevel < orderFarmLevel(previous) ? `Ferme niveau ${orderFarmLevel(previous)} requis.` : level < crop.level ? `Niveau ${crop.level} requis.` : moneyReason(s, crop.cost);
           const replant = this.button(choices, `Replanter ${crop.name.toLowerCase()} · ${crop.cost} pattes`, () => this.execute({type: 'startOrder', id, recipe: previous}, 'Culture relancée.'), reason);
           replant.dataset.replant = previous;
         }
         for (const recipe of CROP_IDS) {
           const order = ORDERS[recipe], card = this.card(order.name, `${cropDuration(farmDuration(order.duration, b.farmLevel))} · ${order.grass} nourriture par récolte`); card.classList.add('compact-list-card');
           card.classList.add('farm-order'); card.dataset.crop = recipe; card.querySelector('.card-heading')!.prepend(cropIcon(recipe));
-          if (!b.farmLevel && order.level >= ORDERS.fanes.level) { card.classList.add('farm-order-locked'); card.append(node('p', 'Ferme niveau 2', 'badge')); choices.append(card); continue; }
+          if (farmLevel < orderFarmLevel(recipe)) { card.classList.add('farm-order-locked'); card.append(node('p', `Ferme niveau ${orderFarmLevel(recipe)}`, 'badge')); choices.append(card); continue; }
           if (level < order.level) { card.classList.add('farm-order-locked'); card.append(node('p', `Niveau ${order.level} requis`, 'badge')); choices.append(card); continue; }
           this.button(card, `Cultiver · ${order.cost} pattes`, () => this.execute({type: 'startOrder', id, recipe}, 'Culture lancée.'), moneyReason(s, order.cost));
           this.complement(card, s, {type: 'startOrder', id, recipe}, `Cultiver ${order.name.toLowerCase()} : ${order.grass} nourriture`, 'Culture lancée.'); choices.append(card);
         }
       }
-      if (!b.farmLevel) this.heartUpgrade(s, 'Agrandir la ferme', 'Des cultures 20 % plus rapides, le moulin et cinq nouvelles cultures : fanes de carotte, fenouil, pomme, fraise et banane.', 30, {type: 'upgradeFarm', id}, playerLevel(s) < ORDERS.fanes.level ? 'Niveau 9 requis' : null);
+      if (farmLevel === 1) this.heartUpgrade(s, 'Agrandir la ferme', 'Des cultures 20 % plus rapides, le moulin et cinq nouvelles cultures : fanes de carotte, fenouil, pomme, fraise et banane.', FARM_UPGRADES[2].hearts, {type: 'upgradeFarm', id, toLevel: 2}, playerLevel(s) < FARM_UPGRADES[2].level ? `Niveau ${FARM_UPGRADES[2].level} requis` : null);
+      else if (farmLevel === 2) this.farmLevel3Upgrade(s, id);
     } else if (b.kind === 'nest') this.renderNest(s, id);
     else if (b.kind === 'nursery') this.renderNursery(s);
     else if (b.kind === 'kitchen') this.button(this.content, 'Entrer dans la Cuisine', () => this.openCuisine());
@@ -1131,6 +1134,19 @@ export class GameUI {
       }
     }
     if (level < 3) this.heartUpgrade(s, 'Agrandir l’agence', level === 1 ? 'Deux voyages à la fois et 25 nourriture par heure de voyage.' : 'Trois voyages à la fois, avec la nourriture au retour.', level === 1 ? 40 : 120, {type: 'upgradeAgency', id: agency.id, fromLevel: level});
+  }
+  /** Farm level 2 → 3: pattes only, never a Heart complement; re-read at confirmation so a stale view never pays. */
+  private farmLevel3Upgrade(s: GameState, id: string): void {
+    const {level, pattes} = FARM_UPGRADES[3], title = 'Améliorer la ferme';
+    const description = 'Quatre nourritures fantaisie : trèfle doré, carotte arc-en-ciel, fraise étoilée et pomme d’amour. Tes cultures restent 20 % plus rapides.';
+    const card = this.card(title, description); card.dataset.upgradeFarm = '3';
+    this.button(card, `Améliorer · ${pattes} pattes`, () => {
+      this.controller.refresh(); const fresh = this.controller.getSnapshot().state; if (!fresh) return;
+      if (fresh.buildings.find(x => x.id === id)?.farmLevel !== 2) { this.notice(REFUSALS.STALE_ACTION); this.render(); return; }
+      if (fresh.pattes < pattes) { this.notice(REFUSALS.NOT_ENOUGH_PATTES); return; }
+      this.confirm(`${title} ?`, `${description} Paiement : ${pattes} pattes.`, () => this.execute({type: 'upgradeFarm', id, toLevel: 3}, 'Ta ferme passe au niveau 3.'));
+    }, playerLevel(s) < level ? `Niveau ${level} requis` : moneyReason(s, pattes), true);
+    this.content.append(card);
   }
   private heartUpgrade(s: GameState, title: string, description: string, cost: number, command: Command, reason: string | null = null): void {
     const card = this.card(title, description);

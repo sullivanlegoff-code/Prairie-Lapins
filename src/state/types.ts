@@ -17,7 +17,8 @@ export interface Birth {
 }
 /** x/y: integer fine-grid top-left; footprint 4 × 4. */
 export interface Building {
-  farmLevel?: 2; agencyLevel?: 2 | 3;
+  /** Absent = level 1. */
+  farmLevel?: 2 | 3; agencyLevel?: 2 | 3;
   id: string; kind: BuildingKind; x: number; y: number;
   /** Exact numerator: one patte = HOUR units. Never round each update. */
   incomeUnits: number;
@@ -144,7 +145,7 @@ export type Command = BaseCommand
   | {type: 'buyRecipe'; species: SpeciesId}
   /** One Heart from Paille's counter, at the quoted price: a stale or changed price refuses. */
   | {type: 'exchangeForHeart'; resource: 'pattes' | 'grass'; expectedCost: number}
-  | {type: 'welcomeAgency'} | {type: 'startTrip'; rabbitId: string} | {type: 'claimTrip'; rabbitId: string} | {type: 'upgradeFarm'; id: string} | {type: 'upgradeAgency'; id: string; fromLevel: 1 | 2 | 3}
+  | {type: 'welcomeAgency'} | {type: 'startTrip'; rabbitId: string} | {type: 'claimTrip'; rabbitId: string} | {type: 'upgradeFarm'; id: string; /** Level reached; absent = 2 (older callers). A farm not one level below is a stale action. */ toLevel?: 2 | 3} | {type: 'upgradeAgency'; id: string; fromLevel: 1 | 2 | 3}
   /** `birthId` names the nursery baby; required for growth, ignored otherwise. */
   | {type: 'initiationAid'; id: string; stage: TimedStage; jobKey: string; birthId?: string}
   | {type: 'accelerate'; id: string; stage: TimedStage; jobKey: string; maxHearts: number; birthId?: string}

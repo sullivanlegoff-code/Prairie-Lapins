@@ -79,7 +79,7 @@ describe('pure laboratory transactions', () => {
     for (const kind of ['farm', 'farm', 'kitchen', 'agency', 'statue'] as const) { s = run(s, {type: 'build', kind}); expect(s.buildings.at(-1)!.kind).toBe(kind); }
     for (const habitatType of HABITAT_TYPES) { s = run(s, {type: 'build', kind: 'enclosure', habitatType}); expect(s.buildings.at(-1)!.habitat!.type).toBe(habitatType); }
     for (const b of [...s.buildings]) if (['farm', 'agency', 'enclosure'].includes(b.kind)) {
-      for (const level of b.kind === 'farm' ? [2, 1] : [3, 2, 1]) {
+      for (const level of [3, 2, 1]) {
         s = run(s, {type: 'buildingLevel', id: b.id, level});
         const actual = s.buildings.find(item => item.id === b.id)!;
         if (actual.habitat) { expect(actual.habitat.level).toBe(level); expect(actual.footprintTier).toBe(level); }

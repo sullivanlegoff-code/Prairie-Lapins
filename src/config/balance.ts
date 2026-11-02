@@ -71,8 +71,13 @@ export const RARE_INCOME_BONUS_SPECIES: readonly SpeciesId[] = [];
 export const INCOME_BASES = {common: 10, rare: 10, rareBonus: 10, epic: 13, legendary: 15, mythic: 15} as const;
 /** Keep the first two farms available; later slots follow player progression. */
 export const farmLimit = (level: number): number => level >= 15 ? 4 : level >= 12 ? 3 : 2;
-/** Upgrading shortens new crops by 20%; already running crops retain their frozen duration. */
-export const farmDuration = (duration: number, farmLevel?: 2): number => farmLevel === 2 ? Math.ceil(duration * 0.8) : duration;
+/** Upgrading (level 2, and level 3 which keeps it) shortens new crops by 20%; already running crops retain their frozen duration. */
+export const farmDuration = (duration: number, farmLevel?: 2 | 3): number => farmLevel ? Math.ceil(duration * 0.8) : duration;
+/**
+ * Farm upgrades, one farm at a time. Level 2 (30 Hearts, player level 9) opens the five crops from `fanes` on; level 3
+ * (owner, 2 November 2026: 60 000 pattes, player level 20) opens the four fancy crops and keeps every level 2 advantage.
+ */
+export const FARM_UPGRADES = {2: {level: 9, hearts: 30}, 3: {level: 20, pattes: 60_000}} as const;
 /**
  * The travel agency (owner, 25 October 2026), sold among the buildings from player level 8. One rabbit travels at a time,
  * to a destination drawn at random, for 3 to 10 whole hours (drawn with it); it brings back Hearts, more for a longer trip.
@@ -100,7 +105,18 @@ export const ORDERS = {
   pomme: {name: 'Pomme', level: 13, cost: 240, grass: 560, duration: 6 * HOUR},
   fraise: {name: 'Fraise', level: 16, cost: 330, grass: 760, duration: 8 * HOUR},
   banane: {name: 'Banane', level: 19, cost: 450, grass: 1000, duration: 10 * HOUR},
+  // The fancy crops (owner, 2 November 2026): same food stock, planted only in a level 3 farm (FANCY_ORDER_IDS).
+  trefleDore: {name: 'Trèfle doré', level: 20, cost: 600, grass: 1400, duration: 10 * HOUR},
+  carotteArcEnCiel: {name: 'Carotte arc-en-ciel', level: 22, cost: 800, grass: 1800, duration: 12 * HOUR},
+  fraiseEtoilee: {name: 'Fraise étoilée', level: 24, cost: 1000, grass: 2200, duration: 14 * HOUR},
+  pommeAmour: {name: 'Pomme d’amour', level: 26, cost: 1200, grass: 2700, duration: 16 * HOUR},
 };
+/** The fancy crops, reserved for a level 3 farm. */
+export const FANCY_ORDER_IDS = ['trefleDore', 'carotteArcEnCiel', 'fraiseEtoilee', 'pommeAmour'] as const;
+/** Farm level a crop needs: 3 for the fancy crops, 2 from the carrot tops on, 1 otherwise. */
+export function orderFarmLevel(recipe: keyof typeof ORDERS): 1 | 2 | 3 {
+  return (FANCY_ORDER_IDS as readonly string[]).includes(recipe) ? 3 : ORDERS[recipe].level >= ORDERS.fanes.level ? 2 : 1;
+}
 /** Production ids of saves before the ten crops, mapped to the crop that shows them; their amount and duration stay frozen. */
 export const LEGACY_ORDER_CROPS = {small: 'foin', medium: 'trefle', large: 'fenouil', night: 'banane'} as const;
 /**

@@ -45,6 +45,8 @@ for(let day=0;day<70;day++){
  for(const b of s.buildings.filter(b=>b.order&&b.order.endsAt<=now))run({type:'collectOrder',id:b.id});
  run({type:'claimHearts'});claim();
  for(const b of s.buildings.filter(b=>b.kind==='farm'&&!b.farmLevel))if(s.hearts>=statueReserve()+30)run({type:'upgradeFarm',id:b.id});
+ // Farm level 3 (60 000 pattes, level 20) once the pattes reserve of Paille's counter is kept as well.
+ for(const b of s.buildings.filter(b=>b.kind==='farm'&&b.farmLevel===2))if(level()>=balance.FARM_UPGRADES[3].level&&s.pattes>=balance.FARM_UPGRADES[3].pattes+3000)run({type:'upgradeFarm',id:b.id,toLevel:3});
  for(const b of s.buildings.filter(b=>b.kind==='agency'&&(b.agencyLevel??1)<3))if(s.hearts>=statueReserve()+((b.agencyLevel??1)===1?40:120))run({type:'upgradeAgency',id:b.id,fromLevel:b.agencyLevel??1});
 
  for(const b of s.buildings.filter(b=>b.nursery))for(const baby of [...b.nursery.babies].filter(b=>b.readyAt<=now)){const dest=home(baby.birth.species);if(dest)run({type:'welcome',birthId:baby.birth.id,enclosureId:dest.id});}
@@ -60,7 +62,7 @@ for(let day=0;day<70;day++){
  if(!s.buildings.some(b=>b.breeding)){const parents=s.rabbits.filter(r=>r.affection>=2);let best=null,bestScore=-Infinity;for(let a=0;a<parents.length;a++)for(let b=a+1;b<parents.length;b++){const p=breeding.breedingPool(s,parents[a].species,parents[b].species,parents[a].affection,parents[b].affection);if(!p.total)continue;const chance=Object.entries(p.weights).filter(([id])=>!s.discovered.includes(id)).reduce((a,[,v])=>a+v,0)/p.total;const score=chance+(p.eligible?0.001:0);if(score>bestScore){bestScore=score;best=[parents[a].id,parents[b].id];}}if(best)run({type:'breed',parents:best});}
  // The best-liked crop that is unlocked, affordable and ripe by the next visit (gaps of 5, 7 and 12 hours).
  const gap=({0:5,5:7,12:12})[hour]*H;
- for(const b of s.buildings.filter(b=>b.kind==='farm'&&!b.order)){const recipe=Object.keys(balance.ORDERS).filter(id=>{const c=balance.ORDERS[id];return (b.farmLevel===2||c.level<balance.ORDERS.fanes.level)&&c.duration<=gap&&c.level<=level()&&c.cost<=s.pattes;}).at(-1);if(recipe)run({type:'startOrder',id:b.id,recipe});}
+ for(const b of s.buildings.filter(b=>b.kind==='farm'&&!b.order)){const recipe=Object.keys(balance.ORDERS).filter(id=>{const c=balance.ORDERS[id];return (b.farmLevel??1)>=balance.orderFarmLevel(id)&&c.duration<=gap&&c.level<=level()&&c.cost<=s.pattes;}).at(-1);if(recipe)run({type:'startOrder',id:b.id,recipe});}
  // One optional model/day, only for the main decoration mission. Never buy/sell for XP.
  if(!s.missions.claimed.includes('first-decoration')&&s.pattes>500){const catalogId=dec.DECORATION_IDS[0];outer:for(let y=32;y<48;y++)for(let x=0;x<16;x++)if(run({type:'buyDecoration',catalogId,location:{kind:'outside',x,y,rotation:0}}))break outer;}
  // Paille's counter: keep 3 000 pattes and 6 000 food, exchange only the surplus for Hearts.
@@ -70,7 +72,7 @@ for(let day=0;day<70;day++){
  if([1,3,7,20,50].includes(day+1))snapshot(`${day+1} j`,(day+1)*24*H-1);
 }
 const calendarMilestones=Object.fromEntries(Object.entries(milestones).map(([n,d])=>[n,Math.floor(d)+1]));
-const report={calendarMilestones,statueDay,secondStatueDay,method:'Seed 20261025; real act/advance; 3 sessions/day at 08/13/20, <=45 commands and <=8 meals/session; two farms, each sowing the best-liked unlocked crop ripe by the next visit; save Hearts two levels ahead for each statue (60 Hearts at level 15, 150 at level 25) plus six in reserve; collection-first parent pairs; no Cuisine or paid recipes; Hearts for permanent farm, agency and habitat upgrades after the statue reserve. Counter reserves: 3000 coins and 6000 food. Day snapshots just before next 08:00. Tutorial is the first session.',curve:(await import('../src/config/progression.ts')).PROGRESSION.curve,tutorialFinalMission,tutorial,milestones,rows,actions:counts,totalActions};
+const report={calendarMilestones,statueDay,secondStatueDay,method:'Seed 20261025; real act/advance; 3 sessions/day at 08/13/20, <=45 commands and <=8 meals/session; two farms, each sowing the best-liked unlocked crop ripe by the next visit; each farm goes to level 3 (fancy crops) from player level 20 once 63 000 pattes are in hand; save Hearts two levels ahead for each statue (60 Hearts at level 15, 150 at level 25) plus six in reserve; collection-first parent pairs; no Cuisine or paid recipes; Hearts for permanent farm, agency and habitat upgrades after the statue reserve. Counter reserves: 3000 coins and 6000 food. Day snapshots just before next 08:00. Tutorial is the first session.',curve:(await import('../src/config/progression.ts')).PROGRESSION.curve,tutorialFinalMission,tutorial,milestones,rows,actions:counts,totalActions};
 writeFileSync(new URL('./progression-results.json',import.meta.url),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report,null,2));
 // Owner target (25 October 2026): level 22 in about 20 days, within 15 %.
 if(!Number.isFinite(calendarMilestones[22])||Math.abs(calendarMilestones[22]-20)>3)throw Error(`Pacing: level 22 on day ${calendarMilestones[22]}, target 20`);

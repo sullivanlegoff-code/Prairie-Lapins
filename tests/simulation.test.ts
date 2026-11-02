@@ -2,7 +2,7 @@ import {cumulativeLevelXp} from '../src/simulation/progression';
 import {sendToNursery} from './manual-transfer';
 import {regressionStart as legacyGame} from './regression-start';
 import {describe, expect, it} from 'vitest';
-import {FEED_COSTS, HOUR, MINUTE, ORDERS, SPECIES, LEGACY_SPECIES_IDS, HISTORICAL_COMMON_WEIGHTS, farmDuration, growthDuration, type SpeciesId} from '../src/config/balance';
+import {FEED_COSTS, HOUR, MINUTE, ORDERS, SPECIES, LEGACY_SPECIES_IDS, HISTORICAL_COMMON_WEIGHTS, farmDuration, growthDuration, orderFarmLevel, type SpeciesId} from '../src/config/balance';
 import {act, advance,  decodeGame, encodeGame, pendingDiscoveries, rabbitIncome} from '../src/simulation';
 import {breedingOdds, chooseBirth} from '../src/simulation/breeding';
 import type {Command, GameState, Refusal} from '../src/state/types';
@@ -141,9 +141,9 @@ describe('income and time', () => {
 describe('farming and affection', () => {
   it.each(Object.keys(ORDERS) as (keyof typeof ORDERS)[])('runs exactly one %s farm order', recipe => {
     let s = run(createGame(0), {type: 'buyBuilding', kind: 'farm', x: 22, y: 20}); const id = s.buildings[1].id;
-    s.pattes = 1000; s.progression = {totalXp: cumulativeLevelXp(ORDERS[recipe].level), rewardedThroughLevel: ORDERS[recipe].level};
-    s.buildings.find(b => b.id === id)!.farmLevel = 2;
-    s = run(s, {type: 'startOrder', id, recipe}); expect(s.pattes).toBe(1000 - ORDERS[recipe].cost);
+    s.pattes = 2000; s.progression = {totalXp: cumulativeLevelXp(ORDERS[recipe].level), rewardedThroughLevel: ORDERS[recipe].level};
+    s.buildings.find(b => b.id === id)!.farmLevel = orderFarmLevel(recipe) === 3 ? 3 : 2;
+    s = run(s, {type: 'startOrder', id, recipe}); expect(s.pattes).toBe(2000 - ORDERS[recipe].cost);
     refuses(s, {type: 'startOrder', id, recipe}, 'BUSY');
     // The farm is upgraded here: each new crop lasts 20 % less (farmDuration).
     refuses(s, {type: 'collectOrder', id}, 'NOT_READY', farmDuration(ORDERS[recipe].duration, 2) - 1);
@@ -156,7 +156,7 @@ describe('farming and affection', () => {
     refuses(s, {type: 'startOrder', id: s.buildings[1].id, recipe: 'banane'}, 'LEVEL_REQUIRED');
     const crops = Object.values(ORDERS);
     for (let i = 1; i < crops.length; i++) for (const key of ['level', 'cost', 'grass', 'duration'] as const) expect(crops[i][key]).toBeGreaterThanOrEqual(crops[i - 1][key]);
-    expect(crops).toHaveLength(10);
+    expect(crops).toHaveLength(14); // The ten crops, then the four fancy crops of the level 3 farm.
   });
   it('refuses an unaffordable order', () => {
     const s = run(createGame(0), {type: 'buyBuilding', kind: 'farm', x: 22, y: 20}); s.pattes = 0;
