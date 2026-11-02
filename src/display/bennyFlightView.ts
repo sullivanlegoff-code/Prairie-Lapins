@@ -3,7 +3,7 @@ import {BENNY_FLIGHT, BENNY_FLIGHT_ATLAS, BENNY_FLIGHT_EFFECTS, BENNY_MASTER_WID
 import {rabbitArt} from '../config/rabbitArt';
 import {VISUAL} from '../config/visual';
 import type {Point} from '../ui/gestures';
-import {ALTITUDE, BennyFlightClock, type FlightFrame, type FlightGeometry, type FlightView} from './bennyFlight';
+import {ALTITUDE, BennyFlightClock, flightBody, type FlightFrame, type FlightGeometry, type FlightView} from './bennyFlight';
 
 /** Depths in the scene: the soft shadow on the ground under every rabbit, the flight above every rabbit and building, below the bubbles. */
 export const FLIGHT_SHADOW_DEPTH = 1.95, FLIGHT_DEPTH = 2.6;
@@ -27,7 +27,8 @@ class Rig {
   /** Lays out one view at one wing picture; `back` fades the far wing(s). */
   pose(view: FlightView, frame: FlightFrame): void {
     const rig = BENNY_FLIGHT.views[view], {series, frame: n, back} = frame.wing, k = BENNY_FLIGHT.scale;
-    this.body.setFrame(rig.bodies[frame.body - 1]);
+    // Each view keeps its own order of bodies with the beat (the one fading out of a turn too).
+    this.body.setFrame(rig.bodies[(series === 'beat' ? flightBody(n, view) : frame.body) - 1]);
     const place = (image: Phaser.GameObjects.Image, name: string, shoulder: readonly number[], mirror = false) =>
       image.setFrame(name).setPosition((shoulder[0] - BENNY_FLIGHT.body.source / 2) * k, (shoulder[1] - BENNY_FLIGHT.body.source / 2) * k).setScale(mirror ? -1 : 1, 1).setVisible(true);
     for (const image of [...this.behind, ...this.front]) image.setVisible(false);
@@ -122,7 +123,8 @@ export class BennyFlightView {
       this.dustDue -= dt;
       while (this.dustDue <= 0) {
         this.dustDue += 12;
-        const back = frame.mirror ? 1 : -1;
+        // Behind her: on her right while she goes away up-left (her back leaned left), like the mirrored three-quarter back it replaces.
+        const back = frame.mirror || frame.lean < 0 ? 1 : -1;
         this.emit(this.sparks, x + back * 18 * frame.scale + (this.random() - .5) * 26, y + (this.random() - .3) * 22, {life: 1800 + this.random() * 1000, vx: (this.random() - .5) * 14, vy: 5 + this.random() * 12, size: .3 + this.random() * .55});
       }
       // A glittering aura around her as she flies.

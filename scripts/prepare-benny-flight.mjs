@@ -1,11 +1,15 @@
 // Benny's flight over the island (Mythic rabbit; paintings approved by the owner on 1 November 2026). Node built-ins only, plus an
 // installed Playwright for the WebP encoding and the check board, like scripts/prepare-benny-frames.mjs.
 //
-//   PLAYWRIGHT_MODULE=<installed playwright module> node scripts/prepare-benny-flight.mjs [--sources <folder>] [--reference <A1-reference.png>]
+//   PLAYWRIGHT_MODULE=<installed playwright module> node scripts/prepare-benny-flight.mjs [--sources <folder>] [--back-sources <folder>]
+//     [--reference <A1-reference.png>]
 //
 // The sources (default output/imagegen/benny-vol-final-v1, ignored by Git) are drawn in layers:
-// - 10 bodies without wings, 900 × 900 on pure white, at the scale of design A1 (profile, three-quarter front and back, face, back;
+// - 8 bodies without wings, 900 × 900 on pure white, at the scale of design A1 (profile, three-quarter front, face, back;
 //   -1 and -2 only differ by the paws). The left profile is the mirror of the right one, at run time.
+// - The back (the owner's concept B, 1 November 2026) has its own folder (default output/imagegen/benny-vol-dos-final-v1), laid out
+//   the same way (bodies, wings/transparent, wings/anchors.json). Seen a little from above, it also serves both diagonals going away,
+//   leaned by the game: the three-quarter back is no longer shipped.
 // - wings already cut out (wings/transparent), 1200 × 1200, the shoulder (wing root) at the exact centre (600, 600); 8 beat
 //   pictures per series, plus the profile's appearance and disappearance. wings/anchors.json gives each body's shoulders.
 // 1. Bodies are cut out of their white background (the same flood fill and rim un-mixing as the approved sprite and meadow poses).
@@ -29,6 +33,7 @@ import {recolour, stats} from './benny-colour.mjs';
 process.chdir(fileURLToPath(new URL('..', import.meta.url)));
 const argument = name => { const at = process.argv.indexOf(name); return at > 0 ? process.argv[at + 1] : undefined; };
 const SOURCES = argument('--sources') ?? 'output/imagegen/benny-vol-final-v1';
+const BACK_SOURCES = argument('--back-sources') ?? 'output/imagegen/benny-vol-dos-final-v1';
 const REFERENCE = argument('--reference') ?? 'output/imagegen/benny-enclos-final-v1/A1-reference.png';
 const BOARD = `${SOURCES}/planche-atlas-vol.png`;
 const TARGET = 'public/assets/rabbits/benny/flight', CONFIG = 'src/config/bennyFlightFrames.json';
@@ -37,14 +42,21 @@ export const SCALE = .4;
 export const BODY_SOURCE = 900, WING_SOURCE = 1200;
 const BODY = Math.round(BODY_SOURCE * SCALE), WING = Math.round(WING_SOURCE * SCALE);
 
-export const VIEWS = ['profil', '34devant', '34derriere', 'face', 'dos'];
+export const VIEWS = ['profil', '34devant', 'face', 'dos'];
 const BEATS = 8;
 const range = (name, count = BEATS) => Array.from({length: count}, (_, k) => `${name}-${k + 1}`);
 /** Shipped wing series (the others are mirrors or copies of these). */
-const WING_SERIES = ['wing-profil-front', 'wing-34devant-front', 'wing-34devant-back', 'wing-34derriere-front', 'wing-34derriere-back', 'wing-face-left', 'wing-dos-left', 'wing-appear', 'wing-disappear'];
+const WING_SERIES = ['wing-profil-front', 'wing-34devant-front', 'wing-34devant-back', 'wing-face-left', 'wing-dos-left', 'wing-appear', 'wing-disappear'];
 
 // ---------- the rig ----------
 const anchors = JSON.parse(readFileSync(`${SOURCES}/wings/anchors.json`, 'utf8'));
+/** The back's bodies and wings come from its own folder, with its own shoulders. */
+const folder = name => /^(body|wing)-dos-/.test(name) ? BACK_SOURCES : SOURCES;
+anchors.dos = JSON.parse(readFileSync(`${BACK_SOURCES}/wings/anchors.json`, 'utf8')).dos;
+/** The back's shoulders were placed by eye at (406, 352) and (495, 352): their middle fell 52 pixels left of the spine (x 502 at
+ * that height, the middle of the back), the left wing on the flank. Moved right onto the shoulder blades, either side of the spine. */
+export const BACK_SHOULDER_SHIFT = 52;
+for (const wing of anchors.dos.wings) wing.shoulder = [wing.shoulder[0] + BACK_SHOULDER_SHIFT, wing.shoulder[1]];
 /** Series name in anchors.json ("wing-profil-front-1..8") to the shipped series and whether it is drawn mirrored. */
 const shipped = frames => {
   const series = frames.replace(/-1\.\.8$/, '');
@@ -66,18 +78,39 @@ const reference = read(REFERENCE); cutOut(reference, 'light');
 const referenceStats = stats(reference);
 const distance = (a, b) => Math.hypot(...a.map((v, k) => v - b[k]));
 
+/**
+ * The back's pair is recoloured together (side by side, one same correction for both), twice: its two bodies share the same head
+ * and back, so separate corrections made the fur shimmer as they alternate (1.6 ΔE on average over the shared top, against 0.8 left
+ * by the paintings themselves); and it drifts further from A1 (5.4 to 6.3) than the other bodies, one pass leaving up to 1.9.
+ */
+const PAIR_PASSES = {dos: 2};
+/** White background closed in by the drawing (not reached from the edges): between the back's gathered hind legs, under the tail. */
+const BACKGROUND_SEEDS = {'body-dos-1': [[394, 693]]};
+const pairOf = images => {
+  const pair = {width: BODY_SOURCE * images.length, height: BODY_SOURCE, pixels: Buffer.alloc(BODY_SOURCE * images.length * BODY_SOURCE * 4)};
+  const row = BODY_SOURCE * 4;
+  for (let y = 0; y < BODY_SOURCE; y++) images.forEach((image, k) => image.pixels.copy(pair.pixels, (y * pair.width + k * BODY_SOURCE) * 4, y * row, (y + 1) * row));
+  return {pair, split: () => images.forEach((image, k) => { for (let y = 0; y < BODY_SOURCE; y++) pair.pixels.copy(image.pixels, y * row, (y * pair.width + k * BODY_SOURCE) * 4, (y * pair.width + k * BODY_SOURCE) * 4 + row); })};
+};
 const prepared = [], colour = {};
-for (const view of VIEWS) for (const name of rig[view].bodies) {
-  const image = read(`${SOURCES}/${name}.png`);
-  if (image.width !== BODY_SOURCE || image.height !== BODY_SOURCE) throw Error(`${name}: ${BODY_SOURCE} × ${BODY_SOURCE} expected`);
-  cutOut(image, 'light');
-  const before = stats(image), fur = distance(before.fur.mean, referenceStats.fur.mean), mask = before.mask.mean[0] - referenceStats.mask.mean[0];
-  const after = recolour(image, referenceStats).after;
-  colour[name] = {furDrift: +fur.toFixed(2), maskDrift: +mask.toFixed(2),
-    after: {fur: +distance(after.fur.mean, referenceStats.fur.mean).toFixed(2), mask: +(after.mask.mean[0] - referenceStats.mask.mean[0]).toFixed(2)}};
-  prepared.push({name, image: downscale(image, BODY), size: BODY});
+for (const view of VIEWS) {
+  const names = rig[view].bodies, images = names.map(name => {
+    const image = read(`${folder(name)}/${name}.png`);
+    if (image.width !== BODY_SOURCE || image.height !== BODY_SOURCE) throw Error(`${name}: ${BODY_SOURCE} × ${BODY_SOURCE} expected`);
+    cutOut(image, 'light', BACKGROUND_SEEDS[name]);
+    return image;
+  });
+  const before = images.map(image => stats(image));
+  if (PAIR_PASSES[view]) { const {pair, split} = pairOf(images); for (let pass = 0; pass < PAIR_PASSES[view]; pass++) recolour(pair, referenceStats); split(); }
+  else for (const image of images) recolour(image, referenceStats);
+  names.forEach((name, k) => {
+    const after = stats(images[k]);
+    colour[name] = {furDrift: +distance(before[k].fur.mean, referenceStats.fur.mean).toFixed(2), maskDrift: +(before[k].mask.mean[0] - referenceStats.mask.mean[0]).toFixed(2),
+      after: {fur: +distance(after.fur.mean, referenceStats.fur.mean).toFixed(2), mask: +(after.mask.mean[0] - referenceStats.mask.mean[0]).toFixed(2)}};
+    prepared.push({name, image: downscale(images[k], BODY), size: BODY});
+  });
 }
-const wingFile = name => `${SOURCES}/wings/transparent/${name}.png`;
+const wingFile = name => `${folder(name)}/wings/transparent/${name}.png`;
 for (const series of WING_SERIES) for (const name of range(series)) {
   const image = read(wingFile(name));
   if (image.width !== WING_SOURCE || image.height !== WING_SOURCE) throw Error(`${name}: ${WING_SOURCE} × ${WING_SOURCE} expected`);
@@ -85,10 +118,21 @@ for (const series of WING_SERIES) for (const name of range(series)) {
 }
 // The pictures not shipped really are mirrors or copies of shipped ones.
 for (const name of range('wing-profil-back')) if (sha(read(wingFile(name))) !== sha(read(wingFile(name.replace('profil', '34devant'))))) throw Error(`${name} is no longer the three-quarter front's back wing`);
-for (const side of ['face', 'dos']) for (const k of [1, 4, 8]) {
-  const left = read(wingFile(`wing-${side}-left-${k}`)), right = read(wingFile(`wing-${side}-right-${k}`)), w = left.width;
+for (const k of [1, 4, 8]) {
+  const left = read(wingFile(`wing-face-left-${k}`)), right = read(wingFile(`wing-face-right-${k}`)), w = left.width;
   for (let y = 0; y < w; y += 7) for (let x = 0; x < w; x += 3) for (let c = 0; c < 4; c++)
-    if (left.pixels[(y * w + x) * 4 + c] !== right.pixels[(y * w + w - 1 - x) * 4 + c]) throw Error(`wing-${side}-right-${k} is no longer the mirror of the left wing`);
+    if (left.pixels[(y * w + x) * 4 + c] !== right.pixels[(y * w + w - 1 - x) * 4 + c]) throw Error(`wing-face-right-${k} is no longer the mirror of the left wing`);
+}
+// The back's right wings were cut out of their black background apart from the left ones: the mirror holds to a few levels on the
+// cut-out rim only (at most 19 of 255 in premultiplied colour, on fewer than 20 pixels), so every pixel is compared within 24.
+for (let k = 1; k <= BEATS; k++) {
+  const left = read(wingFile(`wing-dos-left-${k}`)), right = read(wingFile(`wing-dos-right-${k}`)), w = left.width;
+  for (let y = 0; y < w; y++) for (let x = 0; x < w; x++) {
+    const a = (y * w + x) * 4, b = (y * w + w - 1 - x) * 4;
+    let d = Math.abs(left.pixels[a + 3] - right.pixels[b + 3]);
+    for (let c = 0; c < 3; c++) d = Math.max(d, Math.abs(left.pixels[a + c] * left.pixels[a + 3] - right.pixels[b + c] * right.pixels[b + 3]) / 255);
+    if (d > 24) throw Error(`wing-dos-right-${k} is no longer the mirror of the left wing`);
+  }
 }
 
 // ---------- atlas ----------

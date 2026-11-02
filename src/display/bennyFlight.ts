@@ -13,13 +13,14 @@ import type {Point} from '../ui/gestures';
  *   roof; then back to her orbit (sky mode) or down to her enclosure.
  * - Landing: a spiral down to her place in the enclosure, then her wings vanish (the profile's disappearance, 1 to 8).
  * - The picture follows her heading on the ground (screen y counted twice, the island being seen from above at a slant): profile
- *   going sideways (left = mirror), three-quarter front coming diagonally towards the player, three-quarter back going diagonally
- *   away, face coming straight, back going straight. A change of view cross-fades in TURN_MS, and a small margin keeps the view
- *   from flickering on a sector's edge.
+ *   going sideways (left = mirror), three-quarter front coming diagonally towards the player, face coming straight, back going
+ *   straight. Going diagonally away, the back too (the owner's concept B, seen a little from above), the whole drawing leaned by
+ *   BACK_LEAN towards her way (right: clockwise, left: anticlockwise). A change of view cross-fades in TURN_MS, the lean turns
+ *   smoothly (LEAN_MS), and a small margin keeps the view from flickering on a sector's edge.
  * - Reduced motion: no flight. In sky mode she stays in her enclosure; her power is a fade of sparkles on her, then on the nursery.
  * - A reload in sky mode puts her straight back on her orbit, without taking off again.
  */
-export type FlightView = 'profil' | '34devant' | '34derriere' | 'face' | 'dos';
+export type FlightView = 'profil' | '34devant' | 'face' | 'dos';
 export type FlightPhase = 'ground' | 'wake' | 'rise' | 'orbit' | 'toNursery' | 'nursery' | 'rejoin' | 'descend' | 'settle';
 export const AIRBORNE: readonly FlightPhase[] = ['rise', 'orbit', 'toNursery', 'nursery', 'rejoin', 'descend'];
 
@@ -42,8 +43,10 @@ export interface FlightFrame {
   dust: boolean; rain: number; feathers: boolean; sparkle: number;
   /** Reduced motion's power: a still glow on her, then on the nursery. */
   glow: {at: 'benny' | 'nursery'; alpha: number} | null;
-  /** Size against A1 (perspective and flight), nose-up tilt (radians) and the little lift of each down stroke (scene units). */
+  /** Size against A1 (perspective and flight), nose-up tilt (radians, the lean included) and the little lift of each down stroke (scene units). */
   scale: number; tilt: number; bob: number;
+  /** The back's lean going diagonally away (radians, clockwise positive), already in `tilt`; it turns smoothly between views. */
+  lean: number;
 }
 
 // ---------- timing (ms) ----------
@@ -54,6 +57,8 @@ export const RISE_MS = 2200, TOUR_MS = 3600, TO_NURSERY_MS = 1100, NURSERY_MS = 
 export const SETTLE_MS = 1100, SETTLE_WINGS_MS = 900, SETTLE_FADE = [800, 1100] as const;
 export const REDUCED_POWER_MS = 2600;
 export const TURN_MS = 180;
+/** Time constant of the lean's turn (ms): about 90 % of the way within one cross-fade. */
+export const LEAN_MS = 80;
 /** One turn of the island in sky mode, and during her power. */
 export const ORBIT_PERIOD = 24000, POWER_PERIOD = 9000;
 /** Wing pictures a second: cruising, powerful (rising), and during her power. */
@@ -67,6 +72,8 @@ export const ALTITUDE = 66, NURSERY_ALTITUDE = 40, SWELL = 6, SPIRAL = 26, NURSE
 export const DEPTH_SQUASH = 2;
 /** Size in the air against A1, and the perspective (smaller at the back of the island, larger at the front). */
 export const FLIGHT_SIZE = .9, PERSPECTIVE = .12;
+/** The back's lean going diagonally away (radians): about 20°. */
+export const BACK_LEAN = 20 * Math.PI / 180;
 /** Margin of a view's sector before it changes (radians). */
 export const VIEW_MARGIN = 8 * Math.PI / 180;
 
@@ -74,20 +81,26 @@ const clamp = (v: number, low = 0, high = 1) => Math.max(low, Math.min(high, v))
 const ease = (u: number) => { u = clamp(u); return u * u * (3 - 2 * u); };
 const lerp = (a: number, b: number, u: number) => a + (b - a) * u;
 
-/** The eight headings, clockwise from "going right" (screen y down = towards the player). */
-const SECTORS: readonly {view: FlightView; mirror: boolean}[] = [
-  {view: 'profil', mirror: false}, {view: '34devant', mirror: false}, {view: 'face', mirror: false}, {view: '34devant', mirror: true},
-  {view: 'profil', mirror: true}, {view: '34derriere', mirror: true}, {view: 'dos', mirror: false}, {view: '34derriere', mirror: false},
+export interface FlightSector {view: FlightView; mirror: boolean; /** Lean of the whole drawing (radians, clockwise positive). */ lean: number}
+/** The eight headings, clockwise from "going right" (screen y down = towards the player). The back serves all three ways away, never
+ * mirrored: one same drawing, so a turn between them is only its lean turning. */
+const SECTORS: readonly FlightSector[] = [
+  {view: 'profil', mirror: false, lean: 0}, {view: '34devant', mirror: false, lean: 0}, {view: 'face', mirror: false, lean: 0}, {view: '34devant', mirror: true, lean: 0},
+  {view: 'profil', mirror: true, lean: 0}, {view: 'dos', mirror: false, lean: -BACK_LEAN}, {view: 'dos', mirror: false, lean: 0}, {view: 'dos', mirror: false, lean: BACK_LEAN},
 ];
 const headingAngle = (dx: number, dy: number) => Math.atan2(dy * DEPTH_SQUASH, dx);
 const sectorOf = (angle: number) => ((Math.round(angle / (Math.PI / 4)) % 8) + 8) % 8;
-/** The picture for a heading on screen (dx right, dy towards the player): every painting looks right, the left side is mirrored. */
-export function flightView(dx: number, dy: number): {view: FlightView; mirror: boolean} { return SECTORS[sectorOf(headingAngle(dx, dy))]; }
+/** The picture for a heading on screen (dx right, dy towards the player): every painting looks right, the left side is mirrored;
+ * going diagonally away, the back leaned towards her way. */
+export function flightView(dx: number, dy: number): FlightSector { return SECTORS[sectorOf(headingAngle(dx, dy))]; }
 
 /** The wing picture (1 to 8) after `ms` of beating at `fps`. */
 export const wingFrame = (ms: number, fps: number): number => Math.floor(ms / 1000 * fps) % BEATS + 1;
-/** The body goes with the wing: paws stretched (2) on the down stroke (pictures 3 to 6), gathered (1) on the way up. */
-export const flightBody = (frame: number): 1 | 2 => frame >= 3 && frame <= 6 ? 2 : 1;
+/** The back's bodies with its wing pictures 1 to 8, as painted on its board (its two bodies only differ by the hind paws). */
+export const BACK_BODIES: readonly (1 | 2)[] = [1, 2, 2, 1, 1, 2, 2, 1];
+/** The body goes with the wing: paws stretched (2) on the down stroke (pictures 3 to 6), gathered (1) on the way up; the back keeps
+ * its own order. */
+export const flightBody = (frame: number, view: FlightView = 'profil'): 1 | 2 => view === 'dos' ? BACK_BODIES[frame - 1] : frame >= 3 && frame <= 6 ? 2 : 1;
 
 /** The orbit's point and height at angle `theta`: an ellipse with a light figure of eight, the height swelling three times a turn. */
 export function orbitPoint(g: Pick<FlightGeometry, 'centre' | 'rx' | 'ry'>, theta: number): {x: number; y: number; altitude: number} {
@@ -120,6 +133,7 @@ export class BennyFlightClock {
   private view = SECTORS[0];
   private previous: {view: FlightView; mirror: boolean; k: number} | null = null;
   private tilt = 0;
+  private lean = 0;
   private reducedShow = -1;
 
   /** "Faire voler Benny": she takes off (or turns back up if she was coming down). */
@@ -152,7 +166,7 @@ export class BennyFlightClock {
     this.theta = orbitAngle(g, g.home); this.phase = 'orbit'; this.t = 0; this.airborne = 1e6; this.power = false;
     this.position = orbitPoint(g, this.theta); this.placed = true;
     const ahead = orbitPoint(g, this.theta + .01); this.heading = this.unit(ahead.x - this.position.x, ahead.y - this.position.y);
-    this.view = flightView(this.heading.x, this.heading.y); this.previous = null;
+    this.view = flightView(this.heading.x, this.heading.y); this.previous = null; this.lean = this.view.lean;
   }
   private unit(x: number, y: number) { const n = Math.hypot(x, y) || 1; return {x: x / n, y: y / n}; }
 
@@ -234,7 +248,7 @@ export class BennyFlightClock {
     }
     const profileOnly = phase === 'wake' || phase === 'settle' || phase === 'ground' || (phase === 'descend' && t > DESCEND_MS * .78);
     let want = this.view;
-    if (profileOnly) want = {view: 'profil', mirror: phase === 'wake' || phase === 'ground' ? g.facing === -1 : this.heading.x < 0};
+    if (profileOnly) want = SECTORS[(phase === 'wake' || phase === 'ground' ? g.facing === -1 : this.heading.x < 0) ? 4 : 0];
     else {
       const angle = headingAngle(this.heading.x, this.heading.y), index = SECTORS.indexOf(this.view);
       const centre = index * Math.PI / 4, off = Math.abs(Math.atan2(Math.sin(angle - centre), Math.cos(angle - centre)));
@@ -243,8 +257,11 @@ export class BennyFlightClock {
     if (want.view !== this.view.view || want.mirror !== this.view.mirror) {
       // A turn cross-fades, unless the rig is not drawn yet (or no more).
       this.previous = shown && phase !== 'wake' ? {view: this.view.view, mirror: this.view.mirror, k: 1} : null;
-      this.view = SECTORS.find(s => s.view === want.view && s.mirror === want.mirror) ?? want;
     } else if (this.previous) { this.previous.k -= dt / TURN_MS; if (this.previous.k <= 0) this.previous = null; }
+    this.view = want;
+    // The lean turns smoothly, both drawings of a cross-fade together (from the back straight to the back leaned: only the lean).
+    this.lean = shown ? lerp(this.lean, want.lean, 1 - Math.exp(-dt / LEAN_MS)) : want.lean;
+    if (Math.abs(this.lean - want.lean) < 1e-3) this.lean = want.lean;
 
     // Wings.
     let series: WingSeries = 'beat', frame = 1, back = 1;
@@ -262,12 +279,12 @@ export class BennyFlightClock {
       frame = this.glideLeft > 0 ? GLIDE_FRAME : wingFrame(this.wingMs, fps);
       back = Math.min(clamp(this.airborne / 300), phase === 'descend' ? 1 - clamp((t - DESCEND_MS * .8) / (DESCEND_MS * .2)) : 1);
     }
-    const body: 1 | 2 = series === 'beat' ? flightBody(frame) : 1;
+    const body: 1 | 2 = series === 'beat' ? flightBody(frame, this.view.view) : 1;
     const up = clamp(p.altitude / ALTITUDE), depth = clamp((p.y - g.centre.y) / Math.max(1, g.ry), -1, 1);
     const scale = lerp(1, FLIGHT_SIZE * (1 + PERSPECTIVE * depth), up);
     // Nose up while climbing, down while coming down (profile and three-quarters), plus the bank of a turn.
     const climb = dt > 0 ? (p.altitude - before.altitude) / dt * 1000 : 0, side = this.view.mirror ? -1 : 1;
-    const tilt = (this.view.view === 'face' || this.view.view === 'dos' ? 0 : -side * clamp(climb * .006, -.12, .12)) + this.tilt;
+    const tilt = (this.view.view === 'face' || this.view.view === 'dos' ? 0 : -side * clamp(climb * .006, -.12, .12)) + this.tilt + this.lean;
     const bob = series === 'beat' && this.glideLeft <= 0 ? Math.sin(this.wingMs / 1000 * (phase === 'rise' ? RISE_FPS : WING_FPS) / BEATS * 2 * Math.PI) * 2.5 * up : 0;
     const powerFlight = this.power && AIRBORNE.includes(phase);
     const rain = phase === 'nursery' ? Math.sin(Math.PI * clamp(t / NURSERY_MS)) ** .5 : 0;
@@ -275,6 +292,6 @@ export class BennyFlightClock {
     const r = this.reducedShow;
     const glow = r < 0 ? null : r < REDUCED_POWER_MS / 2 ? {at: 'benny' as const, alpha: Math.sin(Math.PI * r / (REDUCED_POWER_MS / 2))} : {at: 'nursery' as const, alpha: Math.sin(Math.PI * (r - REDUCED_POWER_MS / 2) / (REDUCED_POWER_MS / 2))};
     return {phase, shown, ground, x: p.x, y: p.y, altitude: p.altitude, view: this.view.view, mirror: this.view.mirror, previous: this.previous ? {...this.previous} : null,
-      wing: {series, frame, back}, body, dust: powerFlight, rain, feathers: powerFlight, sparkle, glow, scale, tilt, bob};
+      wing: {series, frame, back}, body, dust: powerFlight, rain, feathers: powerFlight, sparkle, glow, scale, tilt, bob, lean: this.lean};
   }
 }

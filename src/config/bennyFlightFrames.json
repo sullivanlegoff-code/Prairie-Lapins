@@ -11,10 +11,10 @@
   },
   "beats": 8,
   "atlas": {
-    "width": 1330,
-    "height": 1327,
-    "bytes": 460672,
-    "sha256": "9828bfeb5f0d1c62d8a17169447e2b070b6cb2d6a09993466e95621f6bcd9384"
+    "width": 1298,
+    "height": 1272,
+    "bytes": 397200,
+    "sha256": "9368ec130ae42761b2a715ecb178f635a78f064aa083b6c2698ba35fbffa8887"
   },
   "views": {
     "profil": {
@@ -73,34 +73,6 @@
         }
       ]
     },
-    "34derriere": {
-      "bodies": [
-        "body-34derriere-1",
-        "body-34derriere-2"
-      ],
-      "wings": [
-        {
-          "series": "wing-34derriere-front",
-          "mirror": false,
-          "shoulder": [
-            467,
-            442
-          ],
-          "layer": "front",
-          "darken": false
-        },
-        {
-          "series": "wing-34derriere-back",
-          "mirror": false,
-          "shoulder": [
-            550,
-            375
-          ],
-          "layer": "behind",
-          "darken": true
-        }
-      ]
-    },
     "face": {
       "bodies": [
         "body-face-1",
@@ -139,8 +111,8 @@
           "series": "wing-dos-left",
           "mirror": false,
           "shoulder": [
-            383,
-            392
+            458,
+            352
           ],
           "layer": "front",
           "darken": false
@@ -149,8 +121,8 @@
           "series": "wing-dos-left",
           "mirror": true,
           "shoulder": [
-            533,
-            392
+            547,
+            352
           ],
           "layer": "front",
           "darken": false
@@ -199,22 +171,6 @@
         "mask": 0.14
       }
     },
-    "body-34derriere-1": {
-      "furDrift": 3.37,
-      "maskDrift": 5.67,
-      "after": {
-        "fur": 1.17,
-        "mask": 1
-      }
-    },
-    "body-34derriere-2": {
-      "furDrift": 0.54,
-      "maskDrift": 6.95,
-      "after": {
-        "fur": 0.62,
-        "mask": 0.48
-      }
-    },
     "body-face-1": {
       "furDrift": 2.32,
       "maskDrift": 3.22,
@@ -232,19 +188,19 @@
       }
     },
     "body-dos-1": {
-      "furDrift": 5.05,
-      "maskDrift": 6.31,
+      "furDrift": 5.38,
+      "maskDrift": 6.92,
       "after": {
-        "fur": 0.81,
-        "mask": 1.07
+        "fur": 1.2,
+        "mask": 0.15
       }
     },
     "body-dos-2": {
-      "furDrift": 5.23,
-      "maskDrift": 8.52,
+      "furDrift": 6.28,
+      "maskDrift": 6.95,
       "after": {
-        "fur": 1.01,
-        "mask": 0.45
+        "fur": 1.49,
+        "mask": 0.79
       }
     }
   },
@@ -253,8 +209,6 @@
     "body-profil-2",
     "body-34devant-1",
     "body-34devant-2",
-    "body-34derriere-1",
-    "body-34derriere-2",
     "body-face-1",
     "body-face-2",
     "body-dos-1",
@@ -283,22 +237,6 @@
     "wing-34devant-back-6",
     "wing-34devant-back-7",
     "wing-34devant-back-8",
-    "wing-34derriere-front-1",
-    "wing-34derriere-front-2",
-    "wing-34derriere-front-3",
-    "wing-34derriere-front-4",
-    "wing-34derriere-front-5",
-    "wing-34derriere-front-6",
-    "wing-34derriere-front-7",
-    "wing-34derriere-front-8",
-    "wing-34derriere-back-1",
-    "wing-34derriere-back-2",
-    "wing-34derriere-back-3",
-    "wing-34derriere-back-4",
-    "wing-34derriere-back-5",
-    "wing-34derriere-back-6",
-    "wing-34derriere-back-7",
-    "wing-34derriere-back-8",
     "wing-face-left-1",
     "wing-face-left-2",
     "wing-face-left-3",

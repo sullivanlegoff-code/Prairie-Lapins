@@ -9,7 +9,7 @@ import {MeadowScene} from '../src/display/MeadowScene';
 import {createGame} from '../src/state/initial';
 import {BENNY_FLIGHT, BENNY_FLIGHT_ATLAS, BENNY_FLIGHT_EFFECTS, BENNY_MASTER_WIDTH, bennyFlightArt} from '../src/config/bennyFlightArt';
 import {BENNY_ATLAS} from '../src/config/bennyArt';
-import {ALTITUDE, BEATS, BennyFlightClock, GLIDE_FRAME, ORBIT_PERIOD, TURN_MS, flightBody, flightView, orbitPoint, wingFrame,
+import {ALTITUDE, BACK_LEAN, BEATS, BennyFlightClock, GLIDE_FRAME, ORBIT_PERIOD, TURN_MS, flightBody, flightView, orbitPoint, wingFrame,
   type FlightFrame, type FlightGeometry, type FlightView} from '../src/display/bennyFlight';
 
 const publicFile = (url: string) => 'public/' + url.replace(/^.*?assets\//, 'assets/');
@@ -32,38 +32,58 @@ const drawn = (f: FlightFrame) => ({x: f.x, y: f.y - f.altitude});
 const largestJump = (frames: FlightFrame[]) => Math.max(...frames.slice(1).map((f, k) => Math.hypot(drawn(f).x - drawn(frames[k]).x, drawn(f).y - drawn(frames[k]).y)));
 
 describe('Benny in the air: angles', () => {
-  it('chooses the view from her heading in the 8 directions, mirroring only the left side', () => {
-    const cases: [number, number, FlightView, boolean][] = [
-      [1, 0, 'profil', false], [1, .5, '34devant', false], [0, 1, 'face', false], [-1, .5, '34devant', true],
-      [-1, 0, 'profil', true], [-1, -.5, '34derriere', true], [0, -1, 'dos', false], [1, -.5, '34derriere', false],
+  it('chooses the view from her heading in the 8 directions, mirroring only the left side, the back leaned going diagonally away', () => {
+    const cases: [number, number, FlightView, boolean, number][] = [
+      [1, 0, 'profil', false, 0], [1, .5, '34devant', false, 0], [0, 1, 'face', false, 0], [-1, .5, '34devant', true, 0],
+      [-1, 0, 'profil', true, 0], [-1, -.5, 'dos', false, -BACK_LEAN], [0, -1, 'dos', false, 0], [1, -.5, 'dos', false, BACK_LEAN],
     ];
-    for (const [dx, dy, view, mirror] of cases) expect(flightView(dx, dy), `${dx},${dy}`).toEqual({view, mirror});
+    for (const [dx, dy, view, mirror, lean] of cases) expect(flightView(dx, dy), `${dx},${dy}`).toEqual({view, mirror, lean});
+    // About 20°, leaned towards her way: clockwise (positive) going up-right, anticlockwise going up-left.
+    expect(BACK_LEAN).toBeCloseTo(20 * Math.PI / 180);
     // Going sideways stays in profile even with a little depth; the ground's slant counts screen y twice.
-    expect(flightView(1, .15).view).toBe('profil'); expect(flightView(-1, -.15)).toEqual({view: 'profil', mirror: true});
+    expect(flightView(1, .15).view).toBe('profil'); expect(flightView(-1, -.15)).toEqual({view: 'profil', mirror: true, lean: 0});
   });
-  it('shows the five views and both sides during one turn of the island, each change cross-faded', () => {
+  it('shows the four views and both sides during one turn of the island, each change cross-faded', () => {
     const clock = new BennyFlightClock(), frames = run(clock, ORBIT_PERIOD + 2000, {sky: true});
     expect(frames[0].phase).toBe('orbit');
-    expect(new Set(frames.map(f => f.view))).toEqual(new Set(['profil', '34devant', '34derriere', 'face', 'dos']));
+    expect(new Set(frames.map(f => f.view))).toEqual(new Set(['profil', '34devant', 'face', 'dos']));
     expect(frames.some(f => f.view === 'profil' && f.mirror)).toBe(true); expect(frames.some(f => f.view === 'profil' && !f.mirror)).toBe(true);
     let changes = 0;
     frames.slice(1).forEach((f, k) => {
       const before = frames[k];
       if (f.view !== before.view || f.mirror !== before.mirror) { changes++; expect(f.previous).toEqual({view: before.view, mirror: before.mirror, k: 1}); }
     });
-    expect(changes).toBeGreaterThanOrEqual(8);
+    expect(changes).toBeGreaterThanOrEqual(6);
     // The old view fades over TURN_MS, never longer.
     const fading = frames.filter(f => f.previous); expect(fading.length).toBeLessThanOrEqual(changes * (TURN_MS / STEP + 1));
     // The view follows her real direction on the orbit (clockwise on screen: going down on the right, left at the front).
     const right = frames.find(f => f.x > G.centre.x + G.rx * .97 && !f.previous)!, front = frames.find(f => f.y > G.centre.y + G.ry * .9 && Math.abs(f.x) < 40 && !f.previous)!;
     expect(right.view).toBe('face'); expect(front).toMatchObject({view: 'profil', mirror: true});
+    // Going away (the back of the island): the back, never mirrored, leaned both ways and straight.
+    const away = frames.filter(f => f.view === 'dos');
+    expect(away.every(f => !f.mirror)).toBe(true);
+    expect(away.some(f => f.lean > BACK_LEAN * .95)).toBe(true); expect(away.some(f => f.lean < -BACK_LEAN * .95)).toBe(true); expect(away.some(f => f.lean === 0)).toBe(true);
+  });
+  it('turns the back\'s lean smoothly, never jumping, and adds it to the tilt', () => {
+    const clock = new BennyFlightClock(), frames = run(clock, ORBIT_PERIOD + 2000, {sky: true});
+    const leans = frames.map(f => f.lean);
+    expect(Math.max(...leans)).toBeCloseTo(BACK_LEAN); expect(Math.min(...leans)).toBeCloseTo(-BACK_LEAN);
+    // In 20 ms the lean turns at most a quarter of its way (time constant LEAN_MS), so no step of the whole 20°.
+    const steps = leans.slice(1).map((l, k) => Math.abs(l - leans[k]));
+    expect(Math.max(...steps)).toBeLessThan(BACK_LEAN * .25);
+    // A lean appears only on the back, or fading out of it within 0.4 s.
+    for (const [k, f] of frames.entries()) if (f.view !== 'dos' && Math.abs(f.lean) > .01) expect(frames.slice(Math.max(0, k - 400 / STEP), k).some(g => g.view === 'dos'), `frame ${k}`).toBe(true);
+    // The tilt holds the lean (plus at most the small bank of a turn).
+    for (const f of frames.filter(f => f.view === 'dos')) expect(Math.abs(f.tilt - f.lean)).toBeLessThanOrEqual(.1 + 1e-9);
   });
 });
 
 describe('Benny in the air: wings and bodies', () => {
-  it('beats in a loop of 8 pictures, the paws stretched on the down stroke', () => {
+  it('beats in a loop of 8 pictures, the paws stretched on the down stroke, the back in its own order', () => {
     expect(Array.from({length: 17}, (_, k) => wingFrame(k * 1000 / 11 + 1, 11))).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1]);
-    expect([1, 2, 3, 4, 5, 6, 7, 8].map(flightBody)).toEqual([1, 1, 2, 2, 2, 2, 1, 1]);
+    for (const view of ['profil', '34devant', 'face'] as const) expect([1, 2, 3, 4, 5, 6, 7, 8].map(k => flightBody(k, view))).toEqual([1, 1, 2, 2, 2, 2, 1, 1]);
+    expect([1, 2, 3, 4, 5, 6, 7, 8].map(k => flightBody(k))).toEqual([1, 1, 2, 2, 2, 2, 1, 1]);
+    expect([1, 2, 3, 4, 5, 6, 7, 8].map(k => flightBody(k, 'dos'))).toEqual([1, 2, 2, 1, 1, 2, 2, 1]);
     expect(BEATS).toBe(BENNY_FLIGHT.beats);
   });
   it('flies with her wings always beating, about 11 a second, the two bodies alternating, and glides now and then', () => {
@@ -210,9 +230,18 @@ describe('Benny\'s flight art', () => {
       expect(frame.spriteSourceSize.x + frame.spriteSourceSize.w).toBeLessThanOrEqual(square); expect(frame.spriteSourceSize.y + frame.spriteSourceSize.h).toBeLessThanOrEqual(square);
     }
   });
-  it('declares a full rig for each of the five views, the wings\' appearance and disappearance', () => {
+  it('declares a full rig for each of the four views, the wings\' appearance and disappearance', () => {
     const frames = new Set(BENNY_FLIGHT.frames);
-    expect(Object.keys(BENNY_FLIGHT.views).sort()).toEqual(['34derriere', '34devant', 'dos', 'face', 'profil']);
+    expect(Object.keys(BENNY_FLIGHT.views).sort()).toEqual(['34devant', 'dos', 'face', 'profil']);
+    // No more three-quarter back: the back serves the diagonals going away.
+    expect(BENNY_FLIGHT.frames.filter(name => name.includes('34derriere'))).toEqual([]);
+    expect(Object.keys(json().frames).filter(name => name.includes('34derriere'))).toEqual([]);
+    // The back's textures (concept B): its two bodies and its wing's 8 beats, the right wing drawn mirrored.
+    for (const name of ['body-dos-1', 'body-dos-2', ...Array.from({length: BEATS}, (_, k) => `wing-dos-left-${k + 1}`)]) { expect(frames.has(name), name).toBe(true); expect(json().frames[name], name).toBeDefined(); }
+    expect(BENNY_FLIGHT.views.dos.wings.map(w => w.series)).toEqual(['wing-dos-left', 'wing-dos-left']);
+    // Its shoulders on the shoulder blades, either side of the spine (x 502 in the 900 frame), at the same height.
+    const [left, right] = BENNY_FLIGHT.views.dos.wings.map(w => w.shoulder);
+    expect(left[1]).toBe(right[1]); expect(Math.abs((left[0] + right[0]) / 2 - 502)).toBeLessThanOrEqual(5); expect(right[0] - left[0]).toBe(89);
     for (const [view, rig] of Object.entries(BENNY_FLIGHT.views)) {
       expect(rig.bodies, view).toEqual([`body-${view}-1`, `body-${view}-2`]);
       for (const body of rig.bodies) expect(frames.has(body)).toBe(true);
@@ -223,11 +252,11 @@ describe('Benny\'s flight art', () => {
       }
     }
     // The far wing of the side views is darkened behind the body; the face's wings both behind, the back's both in front; right = mirror.
-    for (const view of ['profil', '34devant', '34derriere'] as const) expect(BENNY_FLIGHT.views[view].wings.map(w => [w.layer, w.darken])).toEqual([['front', false], ['behind', true]]);
+    for (const view of ['profil', '34devant'] as const) expect(BENNY_FLIGHT.views[view].wings.map(w => [w.layer, w.darken])).toEqual([['front', false], ['behind', true]]);
     expect(BENNY_FLIGHT.views.face.wings.map(w => [w.layer, w.mirror])).toEqual([['behind', false], ['behind', true]]);
     expect(BENNY_FLIGHT.views.dos.wings.map(w => [w.layer, w.mirror])).toEqual([['front', false], ['front', true]]);
     for (const series of [BENNY_FLIGHT.transition.appear, BENNY_FLIGHT.transition.disappear]) for (let k = 1; k <= BEATS; k++) expect(frames.has(`${series}-${k}`)).toBe(true);
-    expect(BENNY_FLIGHT.frames).toHaveLength(10 + 9 * 8);
+    expect(BENNY_FLIGHT.frames).toHaveLength(8 + 7 * 8);
   });
   it('is made by its script at A1\'s scale, every body recoloured onto A1', () => {
     const script = readFileSync('scripts/prepare-benny-flight.mjs', 'utf8');
@@ -236,7 +265,7 @@ describe('Benny\'s flight art', () => {
     const master = readFileSync('assets-source/rabbits/benny/sprite.png') as Uint8Array;
     expect(new DataView(master.buffer, master.byteOffset).getUint32(16)).toBe(BENNY_MASTER_WIDTH);
     const colour = (BENNY_FLIGHT as unknown as {colour: Record<string, {after: {fur: number; mask: number}}>}).colour;
-    expect(Object.keys(colour)).toHaveLength(10);
+    expect(Object.keys(colour)).toHaveLength(8);
     for (const [name, c] of Object.entries(colour)) { expect(c.after.fur, name).toBeLessThan(1.5); expect(Math.abs(c.after.mask), name).toBeLessThan(1.5); }
     for (const art of [...Object.values(BENNY_FLIGHT_EFFECTS).flat()]) expect(existsSync(publicFile(art.url)), art.url).toBe(true);
   });
