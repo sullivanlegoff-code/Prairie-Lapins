@@ -52,12 +52,12 @@ Le point de départ : les joueurs ne dépensent pas assez de pièces. Aujourd'hu
   | Palier | Affection des deux parents | Multiplicateur actuel | Multiplicateur voulu |
   |---|---|---|---|
   | 1 | moins de 10 | ×1 | ×1 |
-  | 2 | 10 | ×1,5 | **à baisser** |
-  | 3 | 15 | ×2 | **à baisser** |
+  | 2 | 10 | ×1,5 | **×1,15** |
+  | 3 | 15 | ×2 | **×1,3** |
   | 4 | 30 | n'existe pas | **×1,5** |
   | 5 | 50 | n'existe pas | **×2** |
 
-  Le propriétaire veut baisser les paliers 2 et 3 sans donner de valeur. Proposition du coordinateur, à valider : **×1,15 à l'affection 10 et ×1,3 à l'affection 15.** Attention : cette baisse touche aussi les parties en cours. Les Épiques, Légendaires et Benny seront plus durs à obtenir tant que les lapins n'auront pas atteint l'affection 30.
+  Baisse des paliers 2 et 3 validée par le propriétaire le 2 novembre 2026 : **×1,15 à l'affection 10 et ×1,3 à l'affection 15.** Attention : cette baisse touche aussi les parties en cours. Les Épiques, Légendaires et Benny seront plus durs à obtenir tant que les lapins n'auront pas atteint l'affection 30.
 - **Nouveau dessin à l'affection 30, pour chaque lapin**, donc les 36 espèces.
 - **Nouveau bâtiment** qui permet de remettre un lapin à son ancien dessin, même s'il a dépassé l'affection 30. Ce choix est propre à chaque lapin, et on peut sans doute revenir au nouveau dessin. Le prix et les autres règles sont à préciser.
 
