@@ -19,6 +19,11 @@ import {BABY_TOUCH_RADIUS, nurseryBabyHit, slotPlacement} from '../src/display/n
 import {createGame} from '../src/simulation';
 import type {Building, GameState, NurseryBaby, NurserySlot} from '../src/state/types';
 import {previousStart} from './regression-start';
+// @ts-expect-error -- the browser tsconfig has no Node types; Vitest runs this file in Node.
+import {existsSync, readFileSync} from 'node:fs';
+import {RECEPTION_FRAMES, RECEPTION_FRAME_TYPES, receptionFrame} from '../src/config/receptionArt';
+import {RABBIT_TYPES} from '../src/config/species';
+import {isLegendaryShow} from '../src/config/legendaryArt';
 
 const cleanups: (() => void)[] = [];
 beforeEach(() => {
@@ -108,6 +113,68 @@ describe('touching a baby on its cushion', () => {
     ui.select({kind: 'nurseryBaby', id: 'birth-6'}); expect(card().querySelector('.reception-new')).toBeNull();
     button('×', card()).click(); expect(card().open).toBe(false);
     ui.select({kind: 'nurseryBaby', id: 'birth-7'}); expect(card().querySelector('.reception-new')!.textContent).toBe('Nouvelle espèce');
+  });
+});
+
+const publicFile = (url: string) => 'public/' + url.replace(/^.*?assets\//, 'assets/');
+/** Canvas size of a WebP (VP8X, VP8L or VP8 chunk). */
+function webpSize(b: Uint8Array): [number, number] {
+  const ascii = (from: number, to: number) => String.fromCharCode(...b.subarray(from, to)), u24 = (at: number) => b[at] | b[at + 1] << 8 | b[at + 2] << 16;
+  expect(ascii(0, 4)).toBe('RIFF'); expect(ascii(8, 12)).toBe('WEBP');
+  const chunk = ascii(12, 16), view = new DataView(b.buffer, b.byteOffset, b.byteLength);
+  if (chunk === 'VP8X') return [1 + u24(24), 1 + u24(27)];
+  if (chunk === 'VP8L') { const bits = view.getUint32(21, true); return [(bits & 0x3fff) + 1, ((bits >> 14) & 0x3fff) + 1]; }
+  return [view.getUint16(26, true) & 0x3fff, view.getUint16(28, true) & 0x3fff];
+}
+/** An ordinary species (not a legendary show, not Benny) of that first type. */
+const ordinaryOfType = (type: string) => (Object.keys(SPECIES) as SpeciesId[]).find(id => SPECIES[id].types[0] === type && !isLegendaryShow(id) && SPECIES[id].rarity !== 'mythic');
+
+describe('the painted reception frame of the first type (owner, 2 November 2026)', () => {
+  it('every type but arc-en-ciel has its painted card, served in public/ at the declared size', () => {
+    expect([...RECEPTION_FRAME_TYPES].sort()).toEqual(RABBIT_TYPES.filter(type => type !== 'arc-en-ciel').sort());
+    expect(receptionFrame('arc-en-ciel')).toBeNull();
+    let bytes = 0;
+    for (const type of RECEPTION_FRAME_TYPES) {
+      const art = RECEPTION_FRAMES[type]; expect(art.url).toMatch(new RegExp(`assets/ui/reception/${type}\.webp$`));
+      expect(receptionFrame(type)).toBe(art);
+      const file = publicFile(art.url); expect(existsSync(file), file).toBe(true);
+      const data = readFileSync(file); bytes += data.length;
+      expect(webpSize(data)).toEqual([art.width, art.height]);
+      // The cards are a little wider than 3:2 and are never stretched: the page takes their own ratio.
+      expect(art.width / art.height).toBeGreaterThan(1.45); expect(art.width / art.height).toBeLessThan(1.58);
+    }
+    expect(bytes).toBeLessThan(1_500_000);
+  });
+  it.each(RECEPTION_FRAME_TYPES)('a %s baby card carries its type and its painting', type => {
+    const species = ordinaryOfType(type)!; expect(species).toBeTruthy();
+    const {ui} = setup(game(species));
+    ui.select({kind: 'nurseryBaby', id: 'birth-6'});
+    expect(card().open).toBe(true); expect(card().dataset.type).toBe(type); expect(card().classList.contains(`reception-type-${type}`)).toBe(true);
+    const art = RECEPTION_FRAMES[type];
+    expect(card().style.getPropertyValue('--reception-frame')).toContain(art.url);
+    expect(Number(card().style.getPropertyValue('--reception-ratio'))).toBeCloseTo(art.width / art.height, 3);
+    // Title in the banner, the baby, then its name, and the choices.
+    expect(card().querySelector('.reception-sheet .reception-banner')!.textContent).toBe('Ton lapereau est prêt !');
+    expect(card().querySelector('.reception-sheet .reception-frame')!.getAttribute('aria-hidden')).toBe('true');
+    expect(card().querySelector('.reception-sheet .reception-name')!.textContent).toBe(SPECIES[species].name);
+    expect(card().querySelectorAll('.reception-actions button')).toHaveLength(2);
+    expect(card().classList.contains('reception-no-place')).toBe(false);
+  });
+  it('the next card of another type takes its own painting', () => {
+    const {ui} = setup(game(ordinaryOfType('feu')!, ordinaryOfType('vol')!));
+    ui.select({kind: 'nurseryBaby', id: 'birth-6'}); expect(card().style.getPropertyValue('--reception-frame')).toContain(RECEPTION_FRAMES.feu.url);
+    button('×', card()).click();
+    ui.select({kind: 'nurseryBaby', id: 'birth-7'}); expect(card().dataset.type).toBe('vol');
+    expect(card().style.getPropertyValue('--reception-frame')).toContain(RECEPTION_FRAMES.vol.url);
+    expect(card().classList.contains('reception-type-feu')).toBe(false);
+  });
+  it('without a free place, the card says so and keeps the three choices', () => {
+    const s = game('neige'); fill(s, 'neige');
+    const {ui} = setup(s);
+    ui.select({kind: 'nurseryBaby', id: 'birth-6'});
+    expect(card().classList.contains('reception-no-place')).toBe(true);
+    expect([...card().querySelectorAll<HTMLButtonElement>('.reception-actions button')].map(b => b.dataset.reception)).toEqual(['welcome', 'shop', 'release']);
+    expect(card().querySelector('.reception-actions .reason')).not.toBeNull();
   });
 });
 

@@ -7,6 +7,7 @@ import {showLegendaryReveal, type RevealText} from './legendaryReveal';
 import {showBennyReveal} from './bennyReveal';
 import {clearLegendaryCard, decorateLegendaryCard, legendaryPortrait} from './legendaryCard';
 import {isLegendaryShow} from '../config/legendaryArt';
+import {preloadReceptionFrame, receptionFrame} from '../config/receptionArt';
 import {accountKnown} from '../cloud/accountState';
 import {cloudConfig} from '../cloud/config';
 import {AccountReminder} from './accountReminder';
@@ -271,6 +272,8 @@ export class GameUI {
       const warning = document.getElementById('save-warning')!;
       warning.hidden = snapshot.status === 'saved';
       warning.textContent = snapshot.state ? 'Sauvegarde non enregistrée · Paramètres' : 'Partie non chargée · Paramètres';
+      // Every baby's painted reception frame loads while it grows, so its card never opens empty.
+      if (snapshot.state) for (const baby of nurseryBuilding(snapshot.state)?.nursery?.babies ?? []) preloadReceptionFrame(SPECIES[baby.birth.species].types[0]);
       if (!unchanged) { this.render(true); this.renderTutorial(); }
     });
     this.accountReminder = new AccountReminder(preferences,
@@ -1318,20 +1321,32 @@ export class GameUI {
     show.classList.add('reception-show'); show.dataset.birthId = birthId;
     this.receptionShow = show;
   }
-  /** The baby large in the middle, its name, types and rarity, then Accueillir and Confier. `data-type` will carry a painted frame. */
+  /**
+   * The reception card, painted after the baby's first type (owner, 2 November 2026: « pour tous les lapins je veux que la fiche
+   * de réception du lapin soit stylisée en fonction du type 1 du lapin »), laid out like concept A: the title in the banner, the
+   * baby large on the meadow, its name, types and rarity below it, then Accueillir and Confier inside the wreath.
+   */
   private renderReception(s: GameState, birthId: string): void {
-    const baby = this.readyBaby(s, birthId)!, species = baby.birth.species, info = SPECIES[species], card = this.reception;
+    const baby = this.readyBaby(s, birthId)!, species = baby.birth.species, info = SPECIES[species], card = this.reception, type = info.types[0];
     card.replaceChildren(); clearRabbitTheme(card); rabbitTheme(card, species);
-    card.className = `reception-card reception-type-${info.types[0]}`; card.dataset.type = info.types[0]; card.dataset.birthId = birthId;
-    const frame = node('div', '', 'reception-frame'); frame.setAttribute('aria-hidden', 'true');
+    card.className = `reception-card reception-type-${type}`; card.dataset.type = type; card.dataset.birthId = birthId;
+    const art = receptionFrame(type);
+    if (art) { preloadReceptionFrame(type); card.style.setProperty('--reception-frame', `url("${art.url}")`); card.style.setProperty('--reception-ratio', (art.width / art.height).toFixed(4)); }
+    else { card.style.removeProperty('--reception-frame'); card.style.removeProperty('--reception-ratio'); }
+    const sheet = node('div', '', 'reception-sheet'), frame = node('div', '', 'reception-frame'); frame.setAttribute('aria-hidden', 'true');
     const close = node('button', '×', 'reception-close'); close.type = 'button'; close.setAttribute('aria-label', 'Fermer'); close.onclick = () => this.closeReception();
-    const art = node('div', '', 'reception-art'), portraitArt = avatar(species, true); portraitArt.classList.add('reception-portrait'); art.append(portraitArt);
+    const banner = node('div', '', 'reception-banner'); banner.append(node('p', 'Ton lapereau est prêt !', 'reception-kicker'));
+    const portraitArt = avatar(species, true); portraitArt.classList.add('reception-portrait');
+    const artBox = node('div', '', 'reception-art'); artBox.append(portraitArt);
     const body = node('div', '', 'reception-body'), title = node('h2', info.name, 'reception-name'); title.id = 'reception-title';
-    body.append(node('p', 'Ton lapereau est prêt !', 'reception-kicker'), title, node('p', `${typeNames(info.types)} · ${RARITY_NAMES[info.rarity]}`, 'reception-details'));
-    if (!s.discovered.includes(species)) body.append(node('p', 'Nouvelle espèce', 'badge reception-new'));
+    const details = node('p', '', 'reception-details'); details.append(node('span', `${typeNames(info.types)} · ${RARITY_NAMES[info.rarity]}`));
+    if (!s.discovered.includes(species)) details.append(node('span', 'Nouvelle espèce', 'badge reception-new'));
+    body.append(title, details);
+    sheet.append(frame, banner, artBox, body);
     const actions = node('div', '', 'reception-actions');
     this.receptionChoices(actions, s, birthId, species);
-    body.append(actions); card.append(frame, close, art, body);
+    card.classList.toggle('reception-no-place', !welcomeDestinations(s, species).length);
+    card.append(sheet, actions, close);
   }
   /** Accueillir and Confier, on the reception card or at the end of a legendary's or Benny's show. */
   private receptionChoices(actions: HTMLElement, s: GameState, birthId: string, species: SpeciesId): void {

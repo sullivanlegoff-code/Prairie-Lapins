@@ -1,56 +1,128 @@
 /*
- * A ready baby's reception card (src/ui/GameUI.ts, renderReception). `data-type` is the baby's first type: today it only sets
- * an accent colour; `.reception-frame` is the empty layer meant to receive a painted frame per type later (set
- * `--reception-frame` to its image). It must fit without scrolling on a phone in landscape (about 844 x 390) and in portrait.
+ * A ready baby's reception card (src/ui/GameUI.ts, renderReception), painted after the baby's first type (owner, 2 November 2026).
+ * `data-type` is that type; `--reception-frame` its painted card (src/config/receptionArt.ts) and `--reception-ratio` the card's
+ * width / height. The painting is never stretched: the card box keeps its ratio and everything is placed in percentages of it
+ * (sizes in cqw, the card's width), inside the wreath: the title in the banner, the baby on the meadow, its name, types and rarity
+ * below, Accueillir and Confier above the bow. Phone in landscape (about 844 x 390 and 667 x 375): all of it on the card, no
+ * scrolling. Portrait: the card on top, the choices on a cream strip under it.
+ * The dialog itself has no shell of its own: outside the painted card, only the darkened scene shows.
  */
-dialog.reception-card {
-  --reception-accent: #7f9f5c;
-  --reception-glow: #eef3dc;
+#reception-dialog.reception-card {
+  --reception-ratio: 1.513;
+  --reception-ink: #4b3221;
+  --reception-accent: #b07a3c;
   position: fixed;
-  width: min(92vw, 400px);
-  padding: 14px 16px 16px;
+  container-type: inline-size;
+  width: min(calc(100vw - 16px), calc((100dvh - 14px - env(safe-area-inset-bottom)) * var(--reception-ratio)), 660px);
+  max-width: none; max-height: none;
+  margin: auto; padding: 0;
+  overflow: visible;
+  border: 0; border-image: none; border-radius: 0;
+  background: transparent; box-shadow: none;
+  color: var(--reception-ink);
   text-align: center;
-  overflow-x: hidden;
 }
-dialog.reception-card[data-type="paille"] { --reception-accent: #c9973a; --reception-glow: #fbf0cf; }
-dialog.reception-card[data-type="neige"] { --reception-accent: #6aa3c8; --reception-glow: #e6f3fa; }
-dialog.reception-card[data-type="feu"] { --reception-accent: #d0653a; --reception-glow: #fbe5d6; }
-dialog.reception-card[data-type="metal"] { --reception-accent: #7d8b97; --reception-glow: #e9edf0; }
-dialog.reception-card[data-type="vol"] { --reception-accent: #5fa9d6; --reception-glow: #e5f3fb; }
-dialog.reception-card[data-type="arc-en-ciel"] { --reception-accent: #b07bc8; --reception-glow: #f4e9f8; }
+#reception-dialog[data-type="paille"] { --reception-accent: #a8741f; }
+#reception-dialog[data-type="neige"] { --reception-accent: #3f7ca6; }
+#reception-dialog[data-type="feu"] { --reception-accent: #b4471f; }
+#reception-dialog[data-type="metal"] { --reception-accent: #8a5a22; }
+#reception-dialog[data-type="vol"] { --reception-accent: #2f7db3; }
 
-.reception-frame {
-  position: absolute; inset: 4px; z-index: 0; pointer-events: none;
-  border: 3px solid var(--reception-accent); border-radius: 14px;
-  background: var(--reception-frame, none) center / 100% 100% no-repeat;
+.reception-sheet { position: relative; width: 100%; aspect-ratio: var(--reception-ratio); }
+/* The painted card; under it, a cream card of the same shape while the painting loads (or for a type without painting). */
+.reception-frame { position: absolute; inset: 0; pointer-events: none; filter: drop-shadow(0 10px 18px #1d16104d); }
+.reception-frame::before, .reception-frame::after { content: ''; position: absolute; }
+.reception-frame::before {
+  inset: 1% .8%; border-radius: 7% / 10.5%;
+  background: radial-gradient(ellipse at 50% 45%, #fffaf0 30%, #f8e8cc 100%);
+  box-shadow: inset 0 0 0 2px #e2b47a;
 }
-.reception-card > :not(.reception-frame) { position: relative; z-index: 1; }
-.reception-close {
-  position: absolute !important; top: 2px; right: 2px; width: 44px; min-width: 44px; height: 44px; min-height: 44px;
-  margin: 0; padding: 0; font-size: 24px; line-height: 1;
-}
-.reception-art { display: flex; justify-content: center; }
-.reception-card .portrait.large.reception-portrait {
-  width: min(52vw, 190px); height: min(48vw, 176px); margin: 4px auto 6px;
-  background: radial-gradient(circle at 50% 45%, #fffdf4 0 40%, var(--reception-glow) 75%);
-  box-shadow: 0 0 0 4px var(--reception-accent), 0 6px 14px #2c3f3530;
-}
-.reception-body { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.reception-kicker { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: .02em; color: var(--reception-accent); }
-.reception-body h2.reception-name { margin: 0; font-size: 22px; line-height: 1.2; }
-.reception-details { margin: 0; }
-.reception-new { margin: 2px 0 0; border: 2px solid var(--reception-accent); }
-.reception-actions { display: grid; grid-template-columns: 1fr; gap: 8px; width: 100%; margin-top: 8px; }
-.reception-actions button { width: 100%; min-height: 44px; margin: 0; }
-.reception-actions .reason { margin: -2px 0 2px; font-size: 13px; line-height: 1.35; }
+.reception-frame::after { inset: 0; background: var(--reception-frame, none) center / 100% 100% no-repeat; }
 
-/* Phone in landscape: the baby on the left, its name and the two choices on the right, side by side. */
-@media (orientation: landscape) and (max-height: 520px) {
-  dialog.reception-card { width: min(92vw, 600px); padding: 10px 14px 12px; }
-  dialog.reception-card[open] { display: flex; align-items: center; gap: 16px; }
-  .reception-art { flex: 0 0 auto; }
-  .reception-card .portrait.large.reception-portrait { width: min(42vh, 170px); height: min(40vh, 160px); margin: 4px; }
-  .reception-body { flex: 1 1 auto; align-items: stretch; text-align: left; }
-  .reception-actions { grid-template-columns: 1fr 1fr; }
-  .reception-actions .reason { grid-column: 1 / -1; }
+/* The banner: the title on its straight middle. */
+.reception-banner {
+  position: absolute; left: 27%; right: 27%; top: 4.6%; height: 10.4%;
+  display: flex; align-items: center; justify-content: center;
+}
+.reception-kicker {
+  margin: 0; white-space: nowrap;
+  font-size: max(12px, 3.2cqw); line-height: 1.1; font-weight: 800; letter-spacing: .01em;
+  color: var(--reception-ink); text-shadow: 0 1px 0 #fff8eacc;
+}
+
+/* The baby, large, standing on the meadow. */
+.reception-art { position: absolute; left: 30%; right: 30%; top: 17%; height: 32%; display: flex; justify-content: center; align-items: flex-end; }
+#reception-dialog .portrait.large.reception-portrait {
+  width: auto; min-width: 0; height: 100%; aspect-ratio: 15 / 14; margin: 0;
+  background: none; outline: none; box-shadow: none; border-radius: 0;
+  filter: drop-shadow(0 5px 4px #4a3a2240);
+}
+#reception-dialog .reception-portrait img[data-rabbit-art] { padding: 0; }
+
+.reception-body {
+  position: absolute; left: 23%; right: 23%; top: 49.5%;
+  display: flex; flex-direction: column; align-items: center; gap: .3cqw;
+}
+#reception-dialog .reception-body h2.reception-name {
+  position: static; margin: 0; padding: 0; border: 0; border-radius: 0; background: none;
+  font-size: max(15px, 3.6cqw); line-height: 1.15; font-weight: 900;
+  color: var(--reception-ink); -webkit-text-stroke: 0; text-shadow: 0 1px 0 #fffaf0, 0 0 6px #fffaf0;
+}
+.reception-details {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .4cqw 1.2cqw;
+  margin: 0; font-size: max(12px, 2.4cqw); line-height: 1.2; font-weight: 700; color: #5c4130;
+  text-shadow: 0 0 5px #fffaf0;
+}
+#reception-dialog .badge.reception-new {
+  margin: 0; padding: .3cqw 1.4cqw; border: 2px solid var(--reception-accent); border-radius: 999px;
+  background: #fffaf0e6; color: var(--reception-accent); font-size: max(11px, 2.1cqw); font-weight: 800; line-height: 1.2; text-shadow: none;
+}
+
+/* Accueillir and Confier, above the bow and between the wreath's two sides. */
+.reception-actions {
+  position: absolute; left: 22%; right: 22%; top: 62.5%; height: 12.5%;
+  display: flex; gap: 1.4cqw; align-items: stretch;
+}
+#reception-dialog .reception-actions button {
+  flex: 1 1 0; width: auto; min-width: 0; min-height: 40px; margin: 0; padding: 2px 1.2cqw;
+  font-size: max(12px, 2.4cqw); line-height: 1.15;
+}
+#reception-dialog .reception-actions .reason {
+  order: -1; flex: 1 0 100%; margin: 0; padding: .5cqw 1.2cqw; border: 0; border-radius: 8px;
+  background: #fffaf0d9; color: #6b3020; font-size: max(11px, 1.9cqw); line-height: 1.3; text-align: center;
+}
+/* No free place: a smaller baby, and a third choice with the reason above the three buttons. */
+#reception-dialog.reception-no-place .reception-art { top: 17%; height: 22%; }
+#reception-dialog.reception-no-place .reception-body { top: 39.5%; }
+#reception-dialog.reception-no-place .reception-actions { left: 20%; right: 20%; top: 50%; height: 25.5%; flex-wrap: wrap; align-content: flex-end; row-gap: 1cqw; }
+#reception-dialog.reception-no-place .reception-actions button { font-size: max(11px, 2cqw); min-height: 38px; }
+
+/* The cross, in the card's top right corner, on a cream disc so it reads on any wreath. */
+#reception-dialog .reception-close {
+  position: absolute; top: .6%; right: .4%; z-index: 2;
+  display: grid; place-items: center;
+  width: 44px; min-width: 44px; height: 44px; min-height: 44px; margin: 0; padding: 0;
+  border: 0; border-image: none; border-radius: 50%; background: none; box-shadow: none;
+  font-size: 0; color: var(--reception-ink);
+}
+#reception-dialog .reception-close::before {
+  content: '×'; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%;
+  background: #fffaf0f2; border: 2px solid var(--reception-accent); box-shadow: 0 2px 4px #3a2a1a40;
+  font-size: 22px; line-height: 1; font-weight: 700; color: var(--reception-ink);
+}
+
+/* Portrait: the card is too short for the choices; they go on a cream strip under it, the cross stays on the card. */
+@media (orientation: portrait) {
+  #reception-dialog.reception-card { width: min(calc(100vw - 16px), 520px); }
+  #reception-dialog .reception-actions, #reception-dialog.reception-no-place .reception-actions {
+    position: static; height: auto; margin-top: 8px; padding: 10px 12px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    background: linear-gradient(#fffaf0, #f6e6c8); border: 2px solid #e2b47a; border-radius: 18px;
+    box-shadow: 0 8px 18px #1d16104d;
+  }
+  #reception-dialog .reception-actions button, #reception-dialog.reception-no-place .reception-actions button { min-height: 44px; font-size: 14px; }
+  #reception-dialog .reception-actions .reason { grid-column: 1 / -1; font-size: 13px; }
+  #reception-dialog.reception-no-place .reception-actions { grid-template-columns: 1fr; }
+  #reception-dialog.reception-no-place .reception-art { top: 17%; height: 32%; }
+  #reception-dialog.reception-no-place .reception-body { top: 49.5%; }
 }
