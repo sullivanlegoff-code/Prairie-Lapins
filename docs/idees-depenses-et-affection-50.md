@@ -19,7 +19,7 @@ Le point de départ : les joueurs ne dépensent pas assez de pièces. Aujourd'hu
 
 - Prix actuels des 8 extensions (`EXTENSION_PRICES`, `src/config/land.ts`) : 600, 1 800, 4 500, 9 000, 16 000, 26 000, 40 000, 60 000.
 - Décision du propriétaire : **la dernière coûte 100 000 et l'avant-dernière 75 000.**
-- Proposition pour les autres, à valider : 600, 2 000, 6 000, 12 000, 25 000, 45 000, 75 000, 100 000.
+- Nouveaux prix, validés par le propriétaire le 2 novembre 2026 : **600, 2 000, 6 000, 12 000, 25 000, 45 000, 75 000, 100 000.**
 - Les extensions déjà achetées ne sont pas refacturées.
 
 ## 4. Affection jusqu'à 50
@@ -43,6 +43,23 @@ Le point de départ : les joueurs ne dépensent pas assez de pièces. Aujourd'hu
   - le lapin devient un **lapin ultime** ;
   - on peut **mettre une couronne sur sa tête** (une option qu'on active ou non).
   - À préciser : ce que change concrètement « lapin ultime » (un titre, un badge, des revenus, autre chose), et si la couronne est la même pour tous ou propre à chaque type.
+
+### Précisions du propriétaire (2 novembre 2026)
+
+- **Lapin ultime (affection 50)** : on peut lui mettre une couronne sur la tête, et **sa fiche est adaptée** à son statut de lapin ultime (une fiche spéciale quand on l'ouvre).
+- **Chances de croisement, sur 5 paliers.** Les deux parents doivent atteindre l'affection du palier, et c'est le plus haut palier atteint qui compte.
+
+  | Palier | Affection des deux parents | Multiplicateur actuel | Multiplicateur voulu |
+  |---|---|---|---|
+  | 1 | moins de 10 | ×1 | ×1 |
+  | 2 | 10 | ×1,5 | **à baisser** |
+  | 3 | 15 | ×2 | **à baisser** |
+  | 4 | 30 | n'existe pas | **×1,5** |
+  | 5 | 50 | n'existe pas | **×2** |
+
+  Le propriétaire veut baisser les paliers 2 et 3 sans donner de valeur. Proposition du coordinateur, à valider : **×1,15 à l'affection 10 et ×1,3 à l'affection 15.** Attention : cette baisse touche aussi les parties en cours. Les Épiques, Légendaires et Benny seront plus durs à obtenir tant que les lapins n'auront pas atteint l'affection 30.
+- **Nouveau dessin à l'affection 30, pour chaque lapin**, donc les 36 espèces.
+- **Nouveau bâtiment** qui permet de remettre un lapin à son ancien dessin, même s'il a dépassé l'affection 30. Ce choix est propre à chaque lapin, et on peut sans doute revenir au nouveau dessin. Le prix et les autres règles sont à préciser.
 
 ## 6. Fermes niveau 3 et nourritures fantaisie
 
