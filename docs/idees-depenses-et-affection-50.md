@@ -166,6 +166,13 @@ Ces deux règles servent à tenir l'objectif de 30 jours pour passer de 20 à 50
 ### Bâtiment de l'ancien dessin
 10 000 pièces, à partir du niveau 20. Il ne sert qu'une fois les nouveaux dessins de l'affection 30 faits.
 
+### Dessins choisis par le propriétaire (2 novembre 2026)
+Les planches ont été faites dans ChatGPT, dans la conversation « Créer une planche de concepts ».
+- **Salon de soins** : concept **A**, petit spa cosy avec une baignoire en bois et des bulles de savon.
+- **Pique-nique** : concept **A**, nappe à carreaux rouges et blancs, panier en osier, carottes, pommes et théière.
+- **Nourritures fantaisie** : série **A**, magiques et scintillantes, avec de petites étoiles et des reflets.
+- **Lapin ultime** : couronne **A**, petite couronne dorée à pointes et perles, posée entre les oreilles. Fiche **1**, cadre doré avec lauriers et rubans pourpres.
+
 ### Ordre de travail
 1. **Sans nouveau dessin** : prix de l'île, affection jusqu'à 50, deuxième statue, chances de croisement, sauvegarde v23, simulation.
 2. Ferme niveau 3 et nourritures fantaisie (concepts peints d'abord).
