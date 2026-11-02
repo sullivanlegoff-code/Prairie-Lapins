@@ -7,7 +7,44 @@ import {rabbitArt} from '../config/rabbitArt';
  * splits open, rocks fall and dust rises); when it calms, the rabbit appears before its golden halo. A tap skips to the end; with
  * reduced motion the end is shown at once. Purely visual: the dialog is created here and removed when it closes.
  */
-export interface RevealText {title: string; name: string; details: string; button: string}
+export interface RevealText {
+  title: string; name: string; details: string;
+  /** The closing button; with `choices` it becomes the quieter way out (the baby stays in the nursery). */
+  button: string;
+  /** Adds the « Nouvelle espèce » badge under the details. */
+  isNew?: boolean;
+  /** A ready baby's reception (owner, 2 November 2026): fills the end of the show with Accueillir and Confier. */
+  choices?: (host: HTMLElement) => void;
+}
+
+/**
+ * The end of an appearance (shared with Benny's): the closing button alone, or the reception's choices and the way out. A tap
+ * anywhere skips to the calm end; while the words are not shown yet, a tap on one of the choices only skips (never chooses blind).
+ * Returns the button to focus.
+ */
+export function revealEnd(dialog: HTMLDialogElement, words: HTMLElement, text: RevealText, finish: () => void, close: () => void): HTMLButtonElement {
+  if (text.isNew) { const badge = document.createElement('p'); badge.className = 'reveal-new'; badge.textContent = 'Nouvelle espèce'; words.append(badge); }
+  const button = document.createElement('button'); button.type = 'button'; button.textContent = text.button;
+  button.addEventListener('click', close);
+  if (!text.choices) {
+    button.autofocus = true; words.append(button);
+    dialog.addEventListener('click', event => { if (event.target !== button) finish(); });
+    return button;
+  }
+  const choices = document.createElement('div'); choices.className = 'reveal-choices'; text.choices(choices);
+  button.classList.add('secondary', 'action-secondary', 'reveal-later'); button.dataset.reception = 'later';
+  words.append(choices, button);
+  let shown = false;
+  words.addEventListener('animationend', event => { if (event.target === words) shown = true; });
+  dialog.addEventListener('click', event => {
+    const chosen = event.target instanceof Element && words.contains(event.target) ? event.target.closest('button') : null;
+    if (chosen && (shown || dialog.classList.contains('is-final'))) return;
+    if (chosen) { event.stopPropagation(); event.preventDefault(); }
+    finish();
+  }, true);
+  const first = choices.querySelector<HTMLButtonElement>('button:not(:disabled)') ?? button; first.autofocus = true;
+  return first;
+}
 
 const SKIP_MS = 3400;
 const rand = (seed: number) => { const x = Math.sin(seed * 91.7 + 3.1) * 43758.5453; return x - Math.floor(x); };
@@ -62,19 +99,18 @@ export function showLegendaryReveal(species: LegendaryShow, text: RevealText, on
   const name = document.createElement('h3'); name.textContent = text.name;
   const badge = document.createElement('p'); badge.className = 'lr-badge'; badge.textContent = 'Légendaire';
   const details = document.createElement('p'); details.className = 'lr-details'; details.textContent = text.details;
-  const button = document.createElement('button'); button.type = 'button'; button.textContent = text.button; button.autofocus = true;
-  words.append(title, name, badge, details, button);
+  words.append(title, name, badge, details);
   dialog.append(layer('lr-backdrop'), effects, hero, words);
 
   const finish = () => { dialog.classList.add('is-final'); window.clearTimeout(timer); };
   const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   const timer = window.setTimeout(finish, SKIP_MS + 900);
-  // A tap anywhere but the button jumps to the calm end; the button closes.
-  dialog.addEventListener('click', event => { if (event.target !== button) finish(); });
   let closed = false;
   const close = () => { if (closed) return; closed = true; window.clearTimeout(timer); if (dialog.open) dialog.close(); dialog.remove(); onClose(); };
-  button.addEventListener('click', close);
+  // A tap anywhere but a button jumps to the calm end; the button closes.
+  const button = revealEnd(dialog, words, text, finish, close);
   dialog.addEventListener('cancel', event => { event.preventDefault(); close(); });
+  dialog.addEventListener('close', close);
   document.body.append(dialog);
   if (reduced) finish();
   dialog.showModal(); button.focus({preventScroll: true});

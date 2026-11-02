@@ -3,7 +3,7 @@ import {bestFriend} from '../simulation/cozy';
 import {DECORATION_COLLECTIONS,TRAVEL_STORIES,COZY_EVENTS,DISCOVERIES,currentCozyEvent,currentDiscovery} from '../config/cozyContent';
 import {discoveryAvailable,translatedDecorations} from '../simulation/cozyActivities';
 import {rabbitDropTargets} from './rabbitDropTargets';
-import {showLegendaryReveal} from './legendaryReveal';
+import {showLegendaryReveal, type RevealText} from './legendaryReveal';
 import {showBennyReveal} from './bennyReveal';
 import {clearLegendaryCard, decorateLegendaryCard, legendaryPortrait} from './legendaryCard';
 import {isLegendaryShow} from '../config/legendaryArt';
@@ -123,6 +123,8 @@ export class GameUI {
   private welcomeBanner = node('div', '', 'rabbit-move-banner nursery-welcome-banner');
   /** The reception card of one ready baby: its own dialog, so Confier can still ask its confirmation in #game-dialog. */
   private reception = document.getElementById('reception-dialog') as HTMLDialogElement;
+  /** A legendary's or Benny's show standing in for the reception card (created and removed by the show itself). */
+  private receptionShow: HTMLDialogElement | null = null;
   private placement: Placement | null = null;
   private parents: [string | null, string | null] = [null, null];
   private snapshot: Snapshot;
@@ -1276,24 +1278,45 @@ export class GameUI {
   }
   /**
    * The single way into a ready baby's reception (owner, 2 November 2026): a touch on its cushion, its button in the nursery
-   * panel, or the guide. A later mission will play the legendaries' and Benny's show here, before the card.
+   * panel, or the guide. The legendaries and Benny first play their own full-screen show, at every birth, and their choices
+   * appear at its end (owner: « ça mette l'animation, puis ensuite on décide »). Returns whether a reception is showing.
    */
-  private openReception(birthId: string): void {
+  private openReception(birthId: string): boolean {
     this.controller.refresh();
-    const s = this.controller.getSnapshot().state; if (!s) return;
+    const s = this.controller.getSnapshot().state; if (!s) return false;
     const baby = this.readyBaby(s, birthId), nursery = nurseryBuilding(s);
     // A baby still growing (or already gone) answers like the nursery itself.
-    if (!baby) { if (nursery) this.open({kind: 'building', id: nursery.id}); return; }
-    if (this.cuisine.active || this.pailleDialogue.element.open || this.photo || this.placement || this.decorationDraft) return;
-    if (this.dialog.open || this.breedingDialog.open || (document.getElementById('import-dialog') as HTMLDialogElement | null)?.open) return;
+    if (!baby) { if (nursery) this.open({kind: 'building', id: nursery.id}); return false; }
+    if (this.receptionShow?.isConnected) return true;
+    if (this.cuisine.active || this.pailleDialogue.element.open || this.photo || this.placement || this.decorationDraft) return false;
+    if (this.dialog.open || this.breedingDialog.open || (document.getElementById('import-dialog') as HTMLDialogElement | null)?.open) return false;
     this.clearRabbitMove(); this.clearWelcome();
+    const species = baby.birth.species;
+    if (isLegendaryShow(species) || species === BENNY) { this.closeReception(); this.openReceptionShow(s, birthId); return true; }
     this.renderReception(s, birthId);
     if (!this.reception.open) this.reception.showModal();
     this.reception.querySelector<HTMLButtonElement>('.reception-actions button:not(:disabled)')?.focus({preventScroll: true});
+    return true;
   }
+  /** Closes the reception card and the legendaries' or Benny's show, whichever is open: the baby stays in its cushion. */
   private closeReception(): void {
     if (this.reception.open) this.reception.close();
     this.reception.replaceChildren();
+    const show = this.receptionShow; this.receptionShow = null;
+    if (show) { if (show.open) show.close(); show.remove(); }
+  }
+  /** A legendary's or Benny's show, whose calm end carries the same choices as the reception card. */
+  private openReceptionShow(s: GameState, birthId: string): void {
+    const species = this.readyBaby(s, birthId)!.birth.species, info = SPECIES[species];
+    const text: RevealText = {
+      title: 'Ton lapereau est prêt !', name: info.name, details: `${typeNames(info.types)} · ${RARITY_NAMES[info.rarity]}`, button: 'Plus tard',
+      isNew: !s.discovered.includes(species), choices: host => this.receptionChoices(host, s, birthId, species),
+    };
+    let show: HTMLDialogElement | null = null;
+    const onClose = () => { if (show && this.receptionShow === show) this.receptionShow = null; };
+    show = isLegendaryShow(species) ? showLegendaryReveal(species, text, onClose) : showBennyReveal(text, onClose);
+    show.classList.add('reception-show'); show.dataset.birthId = birthId;
+    this.receptionShow = show;
   }
   /** The baby large in the middle, its name, types and rarity, then Accueillir and Confier. `data-type` will carry a painted frame. */
   private renderReception(s: GameState, birthId: string): void {
@@ -1306,7 +1329,13 @@ export class GameUI {
     const body = node('div', '', 'reception-body'), title = node('h2', info.name, 'reception-name'); title.id = 'reception-title';
     body.append(node('p', 'Ton lapereau est prêt !', 'reception-kicker'), title, node('p', `${typeNames(info.types)} · ${RARITY_NAMES[info.rarity]}`, 'reception-details'));
     if (!s.discovered.includes(species)) body.append(node('p', 'Nouvelle espèce', 'badge reception-new'));
-    const actions = node('div', '', 'reception-actions'), places = welcomeDestinations(s, species).length;
+    const actions = node('div', '', 'reception-actions');
+    this.receptionChoices(actions, s, birthId, species);
+    body.append(actions); card.append(frame, close, art, body);
+  }
+  /** Accueillir and Confier, on the reception card or at the end of a legendary's or Benny's show. */
+  private receptionChoices(actions: HTMLElement, s: GameState, birthId: string, species: SpeciesId): void {
+    const places = welcomeDestinations(s, species).length;
     const welcome = this.button(actions, 'Accueillir', () => this.beginWelcome(birthId), places ? null : 'Aucun habitat compatible n’a de place libre. Ton lapereau reste en sécurité dans la nurserie.');
     welcome.dataset.reception = 'welcome'; if (this.onboardingActive && places) welcome.classList.add('guide-target');
     if (!places) this.button(actions, 'Voir les habitats compatibles', () => { this.closeReception(); this.compatibleHabitats(species); }, null, true).dataset.reception = 'shop';
@@ -1320,7 +1349,6 @@ export class GameUI {
       }, null, true);
       release.classList.add('action-danger'); release.dataset.reception = 'release';
     }
-    body.append(actions); card.append(frame, close, art, body);
   }
   /** « Accueillir » steps back over the island and points arrows at every compatible habitat with a free place. */
   private beginWelcome(birthId: string): void {
@@ -1373,9 +1401,8 @@ export class GameUI {
     this.execute({type: 'welcome', enclosureId, birthId}, 'Lapereau accueilli !', () => {
       this.clearWelcome();
       if (this.view?.kind === 'welcomeBaby') { this.view = null; this.history = []; }
-      // The reception card was the discovery: only the guided first birth and the legendaries' and Benny's shows follow it.
+      // The reception (card, or the legendaries' and Benny's show) was the discovery: only the guided first birth follows it.
       if (first) this.firstBirth(species, discovery);
-      else if (discovery && (isLegendaryShow(species) || species === BENNY)) this.discovery(species);
     });
   }
   /** The list fallback of the island arrows, like a rabbit's move. */
@@ -2127,7 +2154,7 @@ export class GameUI {
     if (step.id === 'welcomeBirth') {
       // « Accueillir » opens the ready baby's own reception card, as a touch on its cushion would.
       const baby = firstNurseryBaby(nurseryBuilding(s));
-      if (baby && baby.readyAt <= this.now()) { this.view = null; this.history = []; this.render(); this.openReception(baby.birth.id); if (this.reception.open) return; }
+      if (baby && baby.readyAt <= this.now()) { this.view = null; this.history = []; this.render(); if (this.openReception(baby.birth.id)) return; }
     }
     if (step.target === 'camera') { this.scene.recenter(); this.preferences.set({intro: true, guideCamera: true}); this.renderTutorial(); return; }
     if (step.target === 'snowShop') { this.shopHabitatSpecies='neige'; this.open({kind:'shop',tab:'habitats'}); return; }
