@@ -630,7 +630,7 @@ export class MeadowScene extends Phaser.Scene {
         for (const id of CROP_IDS) add({texture: CROP_TEXTURE(id), url: CROP_URL(id)});
       } else if (building.kind === 'nursery') {
         add(NURSERY_ART); add(NURSERY_OVERLAY_ART.baby); add(NURSERY_OVERLAY_ART.veil); add(NURSERY_OVERLAY_ART.lock);
-      } else add(({nest: NEST_ART, kitchen: KITCHEN_ART, statue: STATUE_ART, agency: AGENCY_ART, salon: SALON_ART, forest: FOREST_ART})[building.kind]);
+      } else if (building.kind !== 'jumprope') add(({nest: NEST_ART, kitchen: KITCHEN_ART, statue: STATUE_ART, agency: AGENCY_ART, salon: SALON_ART, forest: FOREST_ART})[building.kind]);
     };
     for (const building of state?.buildings ?? []) buildingArt(building);
     if (state && playerLevel(state) >= PICNIC.unlockLevel) add(PICNIC_ART); // Laid out for a few seconds when a picnic starts.

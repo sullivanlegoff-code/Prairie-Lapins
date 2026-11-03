@@ -164,7 +164,7 @@ export function completeLaboratory(now: number): GameState {
     const recipe = i === 0 ? 'foin' : 'banane'; const crop = ORDERS[recipe];
     b.order = {recipe, startedAt: i === 0 ? now - crop.duration : now, endsAt: i === 0 ? now : now + crop.duration, grass: crop.grass, duration: crop.duration};
   }
-  build(s, 'kitchen'); build(s, 'statue'); build(s, 'statue'); build(s, 'agency').agencyLevel = 3; build(s, 'salon'); build(s, 'forest');
+  build(s, 'kitchen'); build(s, 'statue'); build(s, 'statue'); build(s, 'agency').agencyLevel = 3; build(s, 'salon'); build(s, 'forest'); build(s, 'jumprope');
   s.travel = {welcomed: true, trips: s.rabbits.slice(2, 4).map((r, i) => ({rabbitId: r.id, destination: i === 0 ? 'Paris' : 'Vannes', startedAt: i === 0 ? now - 3 * HOUR : now, endsAt: i === 0 ? now : now + 3 * HOUR, hearts: 1, grass: 75}))};
   const birth = () => ({id: `birth-${s.nextId++}`, species: 'paille' as const, guaranteed: false, reservedDiscovery: false});
   s.buildings.find(b => b.kind === 'nursery')!.nursery = {capacity: 4, babies: [{slot: 0, birth: birth(), startedAt: now - growthDuration('paille'), readyAt: now}]};

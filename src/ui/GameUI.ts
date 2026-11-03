@@ -17,6 +17,8 @@ import {heartIcon} from '../display/currency';
 import {cuisineQuotaText, heartGift, recipeHint, orderReadyText} from './economyFeedback';
 import type {AudioEngine} from '../audio/audioEngine';
 import {mountCuisineActivity} from './CuisineActivity';
+import {mountJumpRopeActivity} from './JumpRopeActivity';
+import {jumpRopeDay, jumpRopeRabbitReason} from '../simulation/jumpRope';
 import type {RecipeCompletion} from '../../cooktap-prototype/main';
 import {missionClaimXp} from '../simulation/progression';
 import {PROGRESSION} from '../config/progression';
@@ -49,7 +51,7 @@ import {habitatStats, habitatName, habitatEntryReason, habitatAccepts, welcomeDe
 import {MAIN_MISSIONS, DAILY_MISSIONS, DAILY_BONUS, DAILY_PICK_COUNT, type Reward} from '../config/missions';
 import {initialMissionIds, activeMainMissions, visibleMainMissions, mainCatalogueUnlocked, availableMissionRewards, mainProgress, dailyCycleStart, dailyCycleEnd, cycleIndexAt, dailyBonusReady, dailyClaimable, dailyMissionsOf, dailyProgress} from '../simulation/missions';
 import type {GameController, Snapshot} from '../application/GameController';
-import {AFFECTION_STATUE, BALANCE, CARE_KINDS, FARM_UPGRADES, PICNIC, SALON, FOREST, carePrice, isAffectionWall, MARKET, orderFarmLevel, SECOND_AFFECTION_STATUE, NURSERY, ORDERS, RARE_BIRTH_BONUS, TRAVEL, feedCost, type Destination, SPECIES, SPECIES_IDS, SHOP_SPECIES, growthDuration, type BuildingKind, type SpeciesId, type RabbitType} from '../config/balance';
+import {AFFECTION_STATUE, BALANCE, CARE_KINDS, FARM_UPGRADES, PICNIC, SALON, FOREST, JUMP_ROPE, carePrice, isAffectionWall, MARKET, orderFarmLevel, SECOND_AFFECTION_STATUE, NURSERY, ORDERS, RARE_BIRTH_BONUS, TRAVEL, feedCost, type Destination, SPECIES, SPECIES_IDS, SHOP_SPECIES, growthDuration, type BuildingKind, type SpeciesId, type RabbitType} from '../config/balance';
 import type {Command, DecorationLocation, GameState, PattesCommand, TimedStage} from '../state/types';
 import {DECORATIONS, DECORATION_IDS, FINE_GRID, ownedDecorationResalePrice, type DecorationId} from '../config/decorations';
 import {catalogDecorationPlacementReason, purchaseDecorationReason} from '../simulation/decorations';
@@ -191,6 +193,7 @@ export class GameUI {
   private decorationDraft: {id: string; catalogId?: DecorationId; location: DecorationLocation | null; rotation: 0 | 1;} | null = null;
   private photo = false;
   private cuisine: ReturnType<typeof mountCuisineActivity>;
+  private jumpRope: ReturnType<typeof mountJumpRopeActivity>;
   private readonly onRabbitSheet?: (species: SpeciesId) => void;
   constructor(private controller: GameController, private scene: MeadowScene, private clock: () => number, private preferences: PreferenceStore, audio?: AudioEngine,
     activityOptions: {onlineServicesAllowed?: boolean; accountKnown?: () => boolean; onCuisineCompleted?: (result: RecipeCompletion) => void; onCuisineActive?: (active: boolean) => void; onRabbitSheet?: (species: SpeciesId) => void} = {}) {
@@ -209,6 +212,12 @@ export class GameUI {
       if (taster) this.cuisine.showAffection(reward.affectionRabbitId);
       return `+${reward.pattes} pattes · +${reward.grass} nourriture${reward.affectionGranted ? ` · +1 Affection${luckyName}` : reward.affectionAtCap ? ` · Affection maximale${luckyName}` : reward.affectionStatueRequired ? (affectionStatueCount(granted.state) === 0 ? ` · La Statue de l’Affection permet de dépasser ${AFFECTION_STATUE.cap}.` : ` · Une deuxième Statue de l’Affection permet de dépasser ${SECOND_AFFECTION_STATUE.cap}.`) : ''}${reward.heartGranted ? ' · +1 Cœur' : ''}`;
     }, quotaText: () => { const state = this.controller.getSnapshot().state; return state ? cuisineQuotaText(state, this.now()) : ''; }, onExit: () => this.render(), onActiveChange: activityOptions.onCuisineActive});
+    this.jumpRope = mountJumpRopeActivity(document.getElementById('app')!, {onFinished: (rabbit, score) => {
+      const granted = this.controller.perform({type: 'rewardJumpRope', rabbitId: rabbit.id, score});
+      if (!granted.ok) return `Récompense non enregistrée : ${REFUSALS[granted.reason]}`;
+      const reward = granted.jumpRopeReward!, parts = [...(reward.pattes ? [`+${reward.pattes} pattes`] : []), ...(reward.hearts ? [`+${reward.hearts} Cœur`] : [])];
+      return parts.length ? parts.join(' · ') : score ? 'Partie pour le plaisir : plus de récompense aujourd’hui' : '';
+    }, quotaText: () => { const state = this.controller.getSnapshot().state; return state ? jumpRopeQuotaText(state, this.now()) : ''; }, onExit: () => this.render()});
     this.moveBanner.id = 'rabbit-move-banner'; this.moveBanner.hidden = true;
     this.moveBanner.setAttribute('role', 'region'); this.moveBanner.setAttribute('aria-label', 'Déplacer un lapin');
     const moveLabel = node('span'); moveLabel.setAttribute('role', 'status'); this.moveBanner.append(moveLabel);
@@ -466,7 +475,7 @@ export class GameUI {
   open(view: NonNullable<View>, navigation: 'push' | 'root' | 'tab' | 'back' = 'push'): void {
     if (view.kind === 'settings' || this.snapshot.state && mainCatalogueUnlocked(this.snapshot.state)) this.pailleDialogue.close();
     if (this.onboardingActive && !this.onboardingViewAllowed(view)) return;
-    if (this.cuisine.active || this.pailleDialogue.element.open) return;
+    if (this.cuisine.active || this.jumpRope.active || this.pailleDialogue.element.open) return;
     if (this.dialog.open || (document.getElementById('import-dialog') as HTMLDialogElement).open) return;
     if(view.kind==='buyRabbit') {
       const state=this.controller.getSnapshot().state,target={family:'species',id:view.species,action:'purchase'} as const;
@@ -528,6 +537,7 @@ export class GameUI {
       this.pailleDialogue.invite();this.syncArrangement();this.render();return;
     }
     if (this.cuisine.active) { this.cuisine.close(); return; }
+    if (this.jumpRope.active) { this.jumpRope.close(); return; }
     if (this.dialog.open || (document.getElementById('import-dialog') as HTMLDialogElement).open) return;
     if (this.purchaseReturn) { this.cancelPurchase(); return; }
     this.scene.setRabbitPurchase(null); this.rabbitDestination = null;
@@ -544,7 +554,7 @@ export class GameUI {
   onReplacement(fresh = false): void {
     this.clearRabbitMove(); this.clearWelcome(); this.closeReception();
     this.pailleDialogue.close();
-    this.cuisine.close(false);
+    this.cuisine.close(false); this.jumpRope.close();
     this.history = []; this.scrollPositions.clear(); this.interactionPointers.clear(); this.pendingRender = false;
     this.shopHabitatSpecies=null;
     this.purchaseReturn = null; this.rabbitDestination = null; this.shopRabbitIssue = null; this.scene.setRabbitPurchase(null);
@@ -741,7 +751,7 @@ export class GameUI {
     if (tab === 'decorations') { this.renderDecorationShop(s); return; }
     if (tab === 'habitats' || tab === 'buildings') {
       const basic = habitatLevel('universal', 1);
-      const utility: Record<BuildingKind, string> = {enclosure: `${basic.capacity} places · tous les types · stocke ${basic.cap} pattes`, farm: `Ferme niveau 1 : 5 cultures \u00b7 maximum ${farmLimit(playerLevel(s))} actuellement \u00b7 3 au niveau 12, 4 au niveau 15`, kitchen: 'Cuisine - maximum 1', statue: `Ouvre l’affection ${AFFECTION_STATUE.cap + 1} à ${SECOND_AFFECTION_STATUE.cap}, puis ${SECOND_AFFECTION_STATUE.cap + 1} à ${BALANCE.maxAffection} avec la deuxième · maximum 2`, agency: 'Fait voyager tes lapins · des cœurs au retour · maximum 1', salon: 'Bain, brossage ou massage · +1 d’affection au retour · maximum 1', forest: 'Choisis le dessin de tes lapins d’affection 30 · gratuit · maximum 1', nest: 'Deux parents · maximum 1', nursery: 'Une place pour grandir · maximum 1'};
+      const utility: Record<BuildingKind, string> = {enclosure: `${basic.capacity} places · tous les types · stocke ${basic.cap} pattes`, farm: `Ferme niveau 1 : 5 cultures \u00b7 maximum ${farmLimit(playerLevel(s))} actuellement \u00b7 3 au niveau 12, 4 au niveau 15`, kitchen: 'Cuisine - maximum 1', statue: `Ouvre l’affection ${AFFECTION_STATUE.cap + 1} à ${SECOND_AFFECTION_STATUE.cap}, puis ${SECOND_AFFECTION_STATUE.cap + 1} à ${BALANCE.maxAffection} avec la deuxième · maximum 2`, agency: 'Fait voyager tes lapins · des cœurs au retour · maximum 1', salon: 'Bain, brossage ou massage · +1 d’affection au retour · maximum 1', forest: 'Choisis le dessin de tes lapins d’affection 30 · gratuit · maximum 1', jumprope: `Un mini-jeu de corde à sauter · des pattes chaque jour · maximum 1`, nest: 'Deux parents · maximum 1', nursery: 'Une place pour grandir · maximum 1'};
       if (tab === 'habitats') {
       const universal = this.card(HABITATS.universal.name, `${utility.enclosure} · empreinte 4 × 4`); universal.prepend(habitatThumbnail('universal'));
       if(!this.shopHabitatSpecies || stateLevelAccess(s,{family:'habitatPurchase',id:'universal'}).accessible) {
@@ -758,10 +768,11 @@ export class GameUI {
       }
       } else {
       this.content.append(node('p', 'Le nid et la nurserie sont offerts et ne sont pas vendus.', 'small'));
-      for (const kind of ['farm', 'kitchen', 'agency', 'salon', 'forest', 'statue'] as const) {
+      for (const kind of ['farm', 'kitchen', 'agency', 'jumprope', 'salon', 'forest', 'statue'] as const) {
         const card = this.card(BUILDING_NAMES[kind], `${utility[kind]} · empreinte 4 × 4`);
         if (kind === 'agency') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(agencyThumbnail()); card.append(node('p', `Dès le niveau ${TRAVEL.unlockLevel}, ${HOST_NAME} envoie tes lapins en vacances : voyages de 3 à 10 heures, cœurs en souvenir au retour.`, 'small')); }
         if (kind === 'salon') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(salonThumbnail()); card.append(node('p', `Dès le niveau ${SALON.unlockLevel}, offre un soin à un lapin : un bain, un brossage ou un massage. Il revient avec +1 d’affection et de l’XP.`, 'small')); }
+        if (kind === 'jumprope') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(jumpRopeThumbnail()); card.append(node('p', `Dès le niveau ${JUMP_ROPE.unlockLevel}, un de tes lapins saute à la corde : touche l’écran au bon moment. Tes ${JUMP_ROPE.rewardedGamesPerCycle} premières parties du jour rapportent des pattes, et un cœur si tu atteins ${JUMP_ROPE.heartJumps} sauts.`, 'small')); }
         if (kind === 'forest') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(forestThumbnail()); card.append(node('p', `Dès le niveau ${FOREST.unlockLevel}, choisis pour chaque lapin d’affection 30 ou plus entre son nouveau dessin et l’ancien. C’est gratuit, autant de fois que tu veux.`, 'small')); }
         if (kind === 'statue') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(statueThumbnail()); card.append(node('p', affectionStatueCount(s) === 0 ? `La Statue de l’Affection récompense tes soins : sans elle, l’affection s’arrête à ${AFFECTION_STATUE.cap}. Avec elle, chaque lapin peut atteindre ${SECOND_AFFECTION_STATUE.cap}. Une deuxième statue, dès le niveau ${SECOND_AFFECTION_STATUE.level}, ouvre l’affection ${SECOND_AFFECTION_STATUE.cap + 1} à ${BALANCE.maxAffection}.` : `Ta deuxième Statue de l’Affection ouvre l’affection ${SECOND_AFFECTION_STATUE.cap + 1} à ${BALANCE.maxAffection} à tous tes lapins. Dès le niveau ${SECOND_AFFECTION_STATUE.level}.`, 'small'), node('p', rareBirthBonusText(), 'small')); }
         if (kind === 'statue') card.append(node('p', `Ton solde : ${heartAmount(s.hearts)}. Économise tes cœurs pour la construire.`, 'small'));
@@ -1017,6 +1028,7 @@ export class GameUI {
     else if (b.kind === 'agency') this.menuPortrait(agencyThumbnail());
     else if (b.kind === 'salon') this.menuPortrait(salonThumbnail());
     else if (b.kind === 'forest') this.menuPortrait(forestThumbnail());
+    else if (b.kind === 'jumprope') this.menuPortrait(jumpRopeThumbnail());
     else if (b.kind === 'statue') this.menuPortrait(statueThumbnail());
     else {
       const image = node('img'); image.src = {farm: b.farmLevel ? FARM_ART.url : FARM_LEVEL_1_ART.url, nest: NEST_ART.url, nursery: NURSERY_ART.url, kitchen: KITCHEN_ART.url}[b.kind];
@@ -1103,6 +1115,7 @@ export class GameUI {
     else if (b.kind === 'agency') this.renderAgency(s);
     else if (b.kind === 'salon') this.renderSalon(s);
     else if (b.kind === 'forest') this.renderForest(s);
+    else if (b.kind === 'jumprope') this.renderJumpRope(s);
     else if (b.kind === 'statue') this.content.append(node('p', affectionStatueCount(s) >= 2 ? `Tes deux statues veillent sur la prairie : tes lapins peuvent atteindre l’affection ${BALANCE.maxAffection}.` : `La statue veille sur la prairie : tes lapins peuvent dépasser l’affection ${AFFECTION_STATUE.cap} et atteindre ${SECOND_AFFECTION_STATUE.cap}. Une deuxième statue, dès le niveau ${SECOND_AFFECTION_STATUE.level}, ouvre l’affection ${SECOND_AFFECTION_STATUE.cap + 1} à ${BALANCE.maxAffection}.`, 'badge'), node('p', rareBirthBonusText(), 'small'));
     this.button(this.content, 'Déplacer ce bâtiment', () => this.beginPlacement(b.kind, id), null, true);
   }
@@ -1191,6 +1204,21 @@ export class GameUI {
     }
   }
   /** Forêt de Brocéliande: rabbit by rabbit, the evolved drawing or the old one, for free and both ways. */
+  /** The Terrain de corde à sauter: today's rewards, the record, then the rabbit who skips rope. */
+  private renderJumpRope(s: GameState): void {
+    const now = this.now();
+    this.content.append(node('p', `Touche l’écran quand la corde passe sous ton lapin. Elle tourne de plus en plus vite. Chaque saut rapporte ${JUMP_ROPE.pattesPerJump} pattes, ${JUMP_ROPE.maxPattes} au plus par partie.`, 'small'));
+    this.content.append(node('p', jumpRopeQuotaText(s, now), 'badge'));
+    if (s.jumpRope?.best) this.content.append(node('p', `Ton record : ${s.jumpRope.best} sauts`, 'small'));
+    this.content.append(node('p', 'Choisis le lapin qui saute.', 'small'));
+    const list = node('div', '', 'agency-travellers'); this.content.append(list);
+    const reasonOf = (r: Rabbit) => { const reason = jumpRopeRabbitReason(s, r.id); return reason ? REFUSALS[reason] : null; };
+    for (const r of [...s.rabbits].sort((a, b) => Number(!!reasonOf(a)) - Number(!!reasonOf(b)) || b.affection - a.affection)) {
+      const card = this.card(r.name || SPECIES[r.species].name, `${r.name ? SPECIES[r.species].name + ' · ' : ''}affection ${r.affection}`, r); card.dataset.jumpRopeRabbit = r.id; card.classList.add('compact-list-card');
+      this.button(card, 'Sauter à la corde', () => this.jumpRope.open({id: r.id, species: r.species, name: r.name, affection: r.affection, classicLook: r.classicLook}), reasonOf(r)); list.append(card);
+    }
+    if (!s.rabbits.length) this.content.append(node('p', 'Tu as besoin d’un lapin pour sauter à la corde.'));
+  }
   private renderForest(s: GameState): void {
     const names = EVOLVED_ART.map(art => SPECIES[art.id].name).join(', ');
     this.content.append(node('p', 'Dans la forêt, choisis le dessin de chacun de tes lapins d’affection 30 ou plus : le nouveau ou l’ancien. C’est gratuit, et tu peux changer d’avis quand tu veux.', 'small'));
@@ -2406,5 +2434,16 @@ export class GameUI {
     if (step.done) this.button(this.tutorial, 'Terminer le guidage', () => { this.preferences.set({tutorialDone: true}); this.renderPreferences(); this.renderTutorial(); }, null, true);
     this.button(this.tutorial, 'Masquer', () => { this.preferences.set({tutorial: false}); this.renderPreferences(); this.renderTutorial(); }, null, true);
   }
-  dispose(): void { this.photoControls.dispose(); this.clearRabbitMove(); this.moveBanner.remove(); this.clearWelcome(); this.welcomeBanner.remove(); this.closeReception(); this.accountReminder.dispose(); document.getElementById('onboarding-skip')?.remove(); this.pailleDialogue.dispose(); this.cuisine.dispose(); this.confirmationGeneration++; if (this.dialog.open) this.dialog.close(); this.dialog.replaceChildren(); this.unsubscribe(); this.abort.abort(); cancelAnimationFrame(this.frame); clearTimeout(this.toastTimer); this.sounds.dispose(); }
+  dispose(): void { this.photoControls.dispose(); this.clearRabbitMove(); this.moveBanner.remove(); this.clearWelcome(); this.welcomeBanner.remove(); this.closeReception(); this.accountReminder.dispose(); document.getElementById('onboarding-skip')?.remove(); this.pailleDialogue.dispose(); this.cuisine.dispose(); this.jumpRope.dispose(); this.confirmationGeneration++; if (this.dialog.open) this.dialog.close(); this.dialog.replaceChildren(); this.unsubscribe(); this.abort.abort(); cancelAnimationFrame(this.frame); clearTimeout(this.toastTimer); this.sounds.dispose(); }
+}
+
+/** Today's rewarded games at the Terrain de corde à sauter, and its Heart. */
+function jumpRopeQuotaText(s: GameState, now: number): string {
+  const day = jumpRopeDay(s, now), games = day.rewardedLeft;
+  const rewards = games ? `Encore ${games} partie${games > 1 ? 's' : ''} récompensée${games > 1 ? 's' : ''} aujourd’hui` : 'Parties récompensées finies pour aujourd’hui : reviens demain';
+  return `${rewards}${day.heartLeft ? ` · un cœur à ${JUMP_ROPE.heartJumps} sauts` : ''}`;
+}
+/** PROVISIONAL thumbnail, waiting for the owner's choice of the painted building. */
+function jumpRopeThumbnail(): HTMLElement {
+  const box = node('span', 'Image provisoire', 'jump-rope-thumbnail'); box.setAttribute('aria-hidden', 'true'); return box;
 }

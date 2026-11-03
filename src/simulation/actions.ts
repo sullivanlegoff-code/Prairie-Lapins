@@ -18,8 +18,9 @@ import {affectionCap, isUltimate, nextAffectionStatue, playerLevel, statueReason
 import {agencyBuilding, travelling} from './travel';
 import {atSalon, giftAffectionReason, giftReason, picnicQuote, salonBuilding} from './care';
 import {classicLookReason} from './forest';
+import {jumpRopeBuilding, jumpRopeReward, jumpRopeRabbitReason} from './jumpRope';
 import {dailyBonusReady, dailyClaimable, dailyCycleStart, dailyMissionsOf, recordMissionAction} from './missions';
-import {farmLimit, farmDuration, FARM_UPGRADES, orderFarmLevel, BALANCE, HEARTS, HOUR, TRAVEL, SALON, FOREST, CARE_KINDS, carePrice, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
+import {farmLimit, farmDuration, FARM_UPGRADES, orderFarmLevel, BALANCE, HEARTS, HOUR, TRAVEL, SALON, FOREST, JUMP_ROPE, CARE_KINDS, carePrice, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
 import {emptyBuilding} from '../state/initial';
 import {babyInNursery, findNurseryBaby, firstFreeNurserySlot, nurseryBuilding, nurseryUnlockQuote, settleNestTransfers} from './nursery';
 import type {ActionResult, Building, Command, GameState, PattesCommand, Rabbit, Refusal, ProgressionGain} from '../state/types';
@@ -95,6 +96,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
   let value: string | number | undefined;
   let progressionGain: ProgressionGain | undefined;
   let cuisineReward: import('../state/types').CuisineReward | undefined;
+  let jumpRopeResult: import('./jumpRope').JumpRopeReward | undefined;
   const gainXp = (amount: number) => {
     const result = applyProgressionGain(s, amount);
     requireRule(result.ok, result.ok ? 'INVALID_CHOICE' : result.reason);
@@ -252,6 +254,16 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         for (const r of quote.winners) { r.affection++; gifts[r.id] = cycle; }
         s.affectionGifts = gifts; s.picnicCycle = cycle; gainXp(quote.xp); value = quote.winners.length; break;
       }
+      case 'rewardJumpRope': {
+        requireRule(jumpRopeBuilding(s), 'MISSING_BUILDING');
+        requireRule(Number.isSafeInteger(command.score) && command.score >= 0 && command.score <= JUMP_ROPE.maxScore, 'INVALID_CHOICE');
+        const away = jumpRopeRabbitReason(s, command.rabbitId); requireRule(!away, away ?? 'INVALID_CHOICE');
+        const paid = jumpRopeReward(s, command.score, time), cycle = s.missions.daily.cycleIndex;
+        const day = s.jumpRope?.cycle === cycle ? s.jumpRope : {cycle, rewarded: 0, best: s.jumpRope?.best ?? 0};
+        credit('pattes', paid.pattes); credit('hearts', paid.hearts);
+        s.jumpRope = {cycle, rewarded: day.rewarded + (paid.rewarded ? 1 : 0), ...(day.heart || paid.hearts ? {heart: true as const} : {}), best: Math.max(s.jumpRope?.best ?? 0, command.score)};
+        jumpRopeResult = paid; value = paid.pattes; break;
+      }
       case 'exchangeForHeart': {
         requireRule(command.resource === 'pattes' || command.resource === 'grass', 'INVALID_CHOICE');
         requireRule(marketUnlocked(s), 'LEVEL_REQUIRED');
@@ -311,6 +323,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(command.kind!=='agency' || playerLevel(s)>=TRAVEL.unlockLevel,'LEVEL_REQUIRED');
         requireRule(command.kind!=='salon' || playerLevel(s)>=SALON.unlockLevel,'LEVEL_REQUIRED');
         requireRule(command.kind!=='forest' || playerLevel(s)>=FOREST.unlockLevel,'LEVEL_REQUIRED');
+        requireRule(command.kind!=='jumprope' || playerLevel(s)>=JUMP_ROPE.unlockLevel,'LEVEL_REQUIRED');
         cell(command.x, command.y); allocation();
         if (command.kind === 'statue') {
           requireRule(!payment && !quoteOnly, 'INVALID_CHOICE');
@@ -569,7 +582,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
     requireRule(recordMissionAction(s, command.type === 'buyDecoration' && command.location ? 'placeDecoration' : command.type, ['feed', 'breed', 'welcome'].includes(command.type) || command.type === 'placeDecoration' || (command.type === 'buyDecoration' && !!command.location) ? 1 : typeof value === 'number' ? value : 0, command.type !== 'placeDecoration' || command.location.kind === 'outside'), 'RESOURCE_LIMIT');
     // In particular, a welcome frees the nursery at this action's timestamp.
     advanceCozyEvent(s,command,time);
-    return {ok: true, state: advance(s, time), ...(value === undefined ? {} : {value}), ...(progressionGain ? {progressionGain} : {}), ...(cuisineReward ? {cuisineReward} : {})};
+    return {ok: true, state: advance(s, time), ...(value === undefined ? {} : {value}), ...(progressionGain ? {progressionGain} : {}), ...(cuisineReward ? {cuisineReward} : {}), ...(jumpRopeResult ? {jumpRopeReward: jumpRopeResult} : {})};
   } catch (error) {
     if (error instanceof Quoted) return {ok: true, state, value: error.price};
     if (error instanceof Denied) return {ok: false, state, reason: error.reason};

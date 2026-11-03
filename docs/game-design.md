@@ -135,6 +135,12 @@ La capacité de l’agence est de un, deux ou trois voyages selon son niveau. Un
 
 Le voyage rapporte 1 cœur pour 3–4 h, 2 pour 5–7 h, 3 pour 8–10 h. La destination et le minuteur sont affichés pendant le voyage. À la fin, une bulle cœur apparaît sur l’agence ; le voyageur déclare « Ces vacances à … étaient super ! » (ou « au Caire / au Lavandou »). Le bouton « Accueillir · + N cœurs » crédite le souvenir une seule fois et libère le voyageur. Le retour attend sans péremption ; aucune accélération n’est proposée. L’état est conservé dans la sauvegarde v19 et ses dates suivent le recalage de l’horloge. [Règles, textes et préparation des illustrations](travel-agency.md).
 
+### Terrain de corde à sauter (3 novembre 2026)
+
+Règles laissées libres par le propriétaire. Le Terrain de corde à sauter s’achète parmi les bâtiments dès le niveau 6 pour 1 500 pattes, un exemplaire maximum, sans XP de construction. Le joueur choisit un lapin présent (ni en voyage, ni au salon, ni au nid) et touche l’écran (ou la barre d’espace) quand la corde passe sous lui. La corde tourne d’abord en 1,3 s, puis 3 % plus vite à chaque saut, jusqu’à 0,56 s ; la fenêtre du tap vaut 24 % du tour de chaque côté du passage (0,12 s au moins). Un tap trop loin de la corde, ou un passage sans tap, est un raté ; trois ratés finissent la partie. Un double tap pendant le saut est ignoré.
+
+Récompense : les trois premières parties du cycle quotidien (celui des missions) avec au moins un saut rapportent 2 pattes par saut, 60 au plus ; la première partie du cycle qui atteint 30 sauts donne un cœur. Plafond : 180 pattes et un cœur par jour, aucune XP ni affection, pour ne pas changer le rythme du niveau 22 (la simulation ne joue pas ce mini-jeu, comme la Cuisine). Les parties suivantes sont pour le plaisir. Le jour, les parties récompensées, le cœur et le record sont gardés dans le champ facultatif `jumpRope` de la sauvegarde v23. Le bâtiment et le décor du mini-jeu sont provisoires en attendant le choix du propriétaire parmi les concepts peints.
+
 ## Lapins ajoutés le 25 octobre 2026
 
 Décision du propriétaire, avec les dessins livrés dans `Design des lapins` (détourés et recadrés par `scripts/prepare-rabbit-masters.mjs`, puis réduits par `scripts/derive-rabbit-art.mjs`). Ils ne clignent pas encore des yeux et ne bougent pas la truffe : ce sera une mission suivante.

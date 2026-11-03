@@ -1,0 +1,48 @@
+/* The Terrain de corde à sauter's game (src/ui/JumpRopeActivity.ts). Provisional backdrop until the owner picks the painted concept. */
+.jump-rope-activity {
+  position: fixed; inset: 0; z-index: 140; display: flex; flex-direction: column;
+  background: linear-gradient(#bfe3f2 0%, #e8f5ea 58%, #9fcf7a 58%, #86bd63 100%);
+  font-family: inherit; color: #3b3326; touch-action: none; user-select: none; -webkit-user-select: none;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.jump-rope-activity[hidden] { display: none; }
+.jump-rope-top { display: flex; align-items: center; gap: 12px; padding: 8px 14px; flex-wrap: wrap; }
+.jump-rope-top p { margin: 0; font-weight: 800; }
+.jump-rope-score { font-size: 1.6rem; color: #fff; -webkit-text-stroke: 1.2px #3b3326; paint-order: stroke fill; }
+.jump-rope-lives { font-size: 1.1rem; color: #d2455d; letter-spacing: 2px; }
+.jump-rope-quota { flex: 1; font-size: .9rem; text-align: right; }
+.jump-rope-top button { min-height: 44px; padding: 0 16px; border-radius: 14px; border: 2px solid #6b5a3a; background: #fff8e8; font-weight: 800; }
+.jump-rope-stage { position: relative; flex: 1; min-height: 0; cursor: pointer; overflow: hidden; }
+.jump-rope-rope { position: absolute; left: 22%; width: 56%; top: 8%; height: 84%; overflow: visible; pointer-events: none; }
+.jump-rope-rope path { fill: none; stroke: #e8506a; vector-effect: non-scaling-stroke; stroke-width: 5px; stroke-linecap: round; }
+.jump-rope-rope[data-layer="back"] { z-index: 1; opacity: .85; }
+.jump-rope-rope[data-layer="front"] { z-index: 3; }
+.jump-rope-post { position: absolute; z-index: 2; bottom: 12%; width: 14px; height: 52%; border-radius: 6px; background: linear-gradient(90deg, #a0703f, #7a5130); }
+.jump-rope-post[data-side="left"] { left: calc(26% - 7px); }
+.jump-rope-post[data-side="right"] { right: calc(26% - 7px); }
+.jump-rope-rabbit {
+  --lift: 0; position: absolute; z-index: 2; left: 50%; bottom: 14%; height: 48%; aspect-ratio: 1;
+  transform: translate(-50%, calc(var(--lift) * -38%));
+}
+.jump-rope-figure { display: block; width: 100%; height: 100%; }
+.jump-rope-figure img { width: 100%; height: 100%; object-fit: contain; object-position: bottom; }
+.jump-rope-figure[data-mirrored] { transform: scaleX(-1); }
+.jump-rope-shadow { position: absolute; left: 20%; right: 20%; bottom: -4%; height: 8%; border-radius: 50%; background: #3b552a33; transform: translateY(calc(var(--lift) * 38%)) scale(calc(1 - var(--lift) * .4)); }
+.jump-rope-rabbit.stumble .jump-rope-figure { animation: jump-rope-stumble .4s ease; }
+@keyframes jump-rope-stumble { 25% { transform: rotate(-9deg); } 60% { transform: rotate(7deg); } }
+.jump-rope-pop { position: absolute; z-index: 4; left: 50%; top: 10%; margin: 0; transform: translateX(-50%); font-size: 2rem; font-weight: 900; opacity: 0; color: #fff; -webkit-text-stroke: 1.4px #3b3326; paint-order: stroke fill; pointer-events: none; }
+.jump-rope-pop[data-kind="miss"] { color: #ffd2d9; }
+.jump-rope-pop.shown { animation: jump-rope-pop .45s ease-out; }
+@keyframes jump-rope-pop { 0% { opacity: 1; transform: translate(-50%, 8px) scale(.9); } 100% { opacity: 0; transform: translate(-50%, -18px) scale(1.1); } }
+.jump-rope-provisional { position: absolute; z-index: 4; right: 10px; bottom: 6px; margin: 0; padding: 2px 8px; border-radius: 8px; background: #fff3; font-size: .75rem; font-weight: 800; color: #5a4a2a; pointer-events: none; }
+.jump-rope-card {
+  position: absolute; z-index: 5; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(420px, calc(100% - 32px));
+  max-height: calc(100% - 32px); overflow: auto; padding: 16px 18px; border-radius: 22px; background: #fff8e8; border: 3px solid #8a7550;
+  box-shadow: 0 8px 24px #3b332644; text-align: center; touch-action: auto;
+}
+.jump-rope-card[hidden] { display: none; }
+.jump-rope-card p { margin: 0 0 10px; }
+.jump-rope-title { font-size: 1.3rem; font-weight: 900; }
+.jump-rope-rewards { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.jump-rope-card button { min-height: 44px; margin: 4px; padding: 0 18px; border-radius: 14px; border: 2px solid #6b5a3a; background: #ffe7a8; font-weight: 800; font-size: 1rem; }
+.jump-rope-thumbnail { display: grid; place-items: center; width: 72px; min-width: 72px; height: 72px; border-radius: 12px; border: 2px dashed #d98f2b; background: #9fcf7a; font-size: .62rem; font-weight: 800; text-align: center; color: #3b3326; }
