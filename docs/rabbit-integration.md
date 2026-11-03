@@ -56,7 +56,7 @@ Le rythme pur `rabbitBlink.ts` dépend de l’identifiant et du temps de scène,
 
 Depuis le 3 novembre 2026, un lapin d'affection 30 ou plus montre le dessin évolué de son espèce, s'il en a un (`src/config/evolvedArt.ts`, `EVOLUTION_AFFECTION`). Il paraît 15 % plus grand : `EVOLVED_SCALE = 1.15`, appliqué dans le code à sa largeur monde, jamais dans l'image. Pour ajouter une évolution :
 
-1. copier la peinture approuvée (fond blanc) dans `assets-source/rabbits/<id>/<id>-evolution-source.png` et ajouter l'espèce à la liste des évolutions de `scripts/prepare-rabbit-masters.mjs`, puis `node scripts/prepare-rabbit-masters.mjs . <id>-evolution` (écrit `<id>-evolution-sprite.png`) ;
+1. copier la peinture approuvée (fond blanc ; sur un fond noir uni, comme Dinono et Dinenette, mode `corner` avec une `tolerance` réduite à 24 pour garder les ombres sombres) dans `assets-source/rabbits/<id>/<id>-evolution-source.png` et ajouter l'espèce à la liste des évolutions de `scripts/prepare-rabbit-masters.mjs`, puis `node scripts/prepare-rabbit-masters.mjs . <id>-evolution` (écrit `<id>-evolution-sprite.png`) ;
 2. ajouter une ligne à `EVOLVED_ART` (largeur et hauteur à 0, largeur monde qui garde la surface du v1) et une entrée `<id>-evolution` à `scripts/rabbit-art-manifest.json` (`species`, `master`, `registry`, `displayScale`, `file`, `worldWidth`), puis `node scripts/derive-rabbit-art.mjs <id>-evolution` ;
 3. lire les ancrages de la toque et de la couronne sur le v2 (`EVOLVED_CUISINE_ANCHORS`, `src/config/cuisineAnchors.ts`).
 

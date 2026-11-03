@@ -428,5 +428,33 @@
     "width": 450,
     "height": 482,
     "derivedSha1": "f507bbcafbfe46bbbe5f00c34e12aa39ddce798e"
+  },
+  "dinono-evolution": {
+    "species": "dinono",
+    "master": "assets-source/rabbits/dinono/dinono-evolution-sprite.png",
+    "registry": "src/config/evolvedArt.ts",
+    "displayScale": 1.15,
+    "file": "assets/rabbits/dinono/dinono-v2.png",
+    "worldWidth": 53,
+    "sourceSha1": "443ad842cb9451fccf03d49e228beb6e9c431763",
+    "sourceWidth": 1254,
+    "sourceHeight": 1198,
+    "width": 450,
+    "height": 430,
+    "derivedSha1": "fa9c457ba55dedae98b7ae6d09df68c2dfeb3811"
+  },
+  "dinenette-evolution": {
+    "species": "dinenette",
+    "master": "assets-source/rabbits/dinenette/dinenette-evolution-sprite.png",
+    "registry": "src/config/evolvedArt.ts",
+    "displayScale": 1.15,
+    "file": "assets/rabbits/dinenette/dinenette-v2.png",
+    "worldWidth": 54,
+    "sourceSha1": "accd9364e2bd5a24ebd61a9ef42bbda8fd56f166",
+    "sourceWidth": 1247,
+    "sourceHeight": 1234,
+    "width": 458,
+    "height": 453,
+    "derivedSha1": "a05afded5983c25733508ae1da9c561ed1268059"
   }
 }

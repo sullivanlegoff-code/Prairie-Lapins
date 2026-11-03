@@ -10,7 +10,7 @@ import {encodePng} from './derive-nursery-overlays.mjs';
 
 process.chdir(fileURLToPath(new URL('..', import.meta.url)));
 /** `light`: white background; `checker`: a transparency checkerboard printed into the picture (two neutral greys);
- * `corner`: a flat colour sampled on the border; absent: already transparent. */
+ * `corner`: a flat colour sampled on the border (`tolerance`, optional, replaces its default colour distance); absent: already transparent. */
 export const DESIGNS = [
   {id: 'boudinet', file: 'Rare/Boudinet/Boudinet.png', background: 'light'},
   {id: 'dinono', file: 'Rare/Dinono/Dinono.png'},
@@ -40,9 +40,15 @@ export const DESIGNS = [
   // instead of the species' own sprite.png. Usage: node scripts/prepare-rabbit-masters.mjs . paille-evolution neige-evolution ...
   ...['paille', 'neige', 'feu', 'belier-gris', 'volant'].map(id => ({id: `${id}-evolution`, source: `assets-source/rabbits/${id}/${id}-evolution-source.png`,
     master: `assets-source/rabbits/${id}/${id}-evolution-sprite.png`, background: 'light'})),
+  // Affection 30 evolutions of Dinono (« armure jade ») and Dinenette (« pendentif cœur »), painted and approved by the owner on
+  // 3 November 2026 on a flat black backdrop (RGB, no alpha): `corner` with a tolerance of 24 keeps the dark green and dark grey
+  // shadows of the drawings, which the default tolerance would eat.
+  ...['dinono', 'dinenette'].map(id => ({id: `${id}-evolution`, source: `assets-source/rabbits/${id}/${id}-evolution-source.png`,
+    master: `assets-source/rabbits/${id}/${id}-evolution-sprite.png`, background: 'corner', tolerance: 24})),
 ];
-// Bouee's left ear encloses a pocket of background: seed only that pocket, preserving the ring's white dots.
-export const BACKGROUND_SEEDS = {bouee: [[490, 570]]};
+// Bouee's left ear encloses a pocket of background: seed only that pocket, preserving the ring's white dots. Dinenette's evolved
+// tail curl encloses another one, between the heart and the back.
+export const BACKGROUND_SEEDS = {bouee: [[490, 570]], 'dinenette-evolution': [[150, 820]]};
 const MARGIN = 8, LIGHT_MIN = 200, LIGHT_SPREAD = 26, CHECKER_MIN = 130, CHECKER_SPREAD = 14, CORNER_TOLERANCE = 56;
 
 /** 8-bit RGB or RGBA, non-interlaced; returns RGBA. */
@@ -76,7 +82,7 @@ export function decodeRgbPng(file) {
   return {width, height, pixels};
 }
 
-export function cutOut({width, height, pixels}, mode, backgroundSeeds = []) {
+export function cutOut({width, height, pixels}, mode, backgroundSeeds = [], cornerTolerance = CORNER_TOLERANCE) {
   const at = i => [pixels[i * 4], pixels[i * 4 + 1], pixels[i * 4 + 2]];
   let reference = [0, 0, 0];
   if (mode === 'corner') {
@@ -90,7 +96,7 @@ export function cutOut({width, height, pixels}, mode, backgroundSeeds = []) {
     const [r, g, b] = at(i);
     if (mode === 'light') return Math.max(0, LIGHT_MIN - Math.min(r, g, b), Math.max(r, g, b) - Math.min(r, g, b) - LIGHT_SPREAD);
     if (mode === 'checker') return Math.max(0, CHECKER_MIN - Math.min(r, g, b), Math.max(r, g, b) - Math.min(r, g, b) - CHECKER_SPREAD);
-    return Math.max(0, Math.hypot(r - reference[0], g - reference[1], b - reference[2]) - CORNER_TOLERANCE);
+    return Math.max(0, Math.hypot(r - reference[0], g - reference[1], b - reference[2]) - cornerTolerance);
   };
   const removed = new Uint8Array(width * height), queue = [];
   const seed = i => { if (!removed[i] && distance(i) === 0) { removed[i] = 1; queue.push(i); } };
@@ -134,7 +140,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   if (!folder) throw Error('Usage: node scripts/prepare-rabbit-masters.mjs "<Design des lapins folder>" [id ...]');
   for (const design of DESIGNS.filter(d => !only.length || only.includes(d.id))) {
     const image = decodeRgbPng(readFileSync(design.source ?? join(folder, design.file)));
-    if (design.background) cutOut(image, design.background, BACKGROUND_SEEDS[design.id]);
+    if (design.background) cutOut(image, design.background, BACKGROUND_SEEDS[design.id], design.tolerance);
     const master = crop(image);
     const target = design.master ?? `assets-source/rabbits/${design.id}/sprite.png`;
     mkdirSync(target.slice(0, target.lastIndexOf('/')), {recursive: true});

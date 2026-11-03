@@ -67,6 +67,9 @@ export const EVOLVED_CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>>
   feu: a([.78, .18, .34, 8], [.82, .52, .3], [.78, .33, .3]),
   'belier-gris': a([.74, .05, .34, 6], [.78, .42, .32], [.8, .22, .3]),
   volant: a([.7, .07, .36, 4], [.74, .36, .36], [.76, .19, .38]),
+  // Read the same way on the v2 of Dinono and Dinenette (3 November 2026): estimates, not yet checked on a capture of the kitchen.
+  dinono: a([.74, .17, .34, 6], [.76, .5, .3], [.76, .33, .28]),
+  dinenette: a([.76, .14, .34, 6], [.76, .47, .3], [.75, .3, .28]),
 };
 /** `evolved`: the anchors of the species' evolved drawing (a rabbit showing it), else those of its v1. */
 export function cuisineAnchors(species: SpeciesId, facing: 1 | -1 = 1, evolved = false): CuisineAnchors {

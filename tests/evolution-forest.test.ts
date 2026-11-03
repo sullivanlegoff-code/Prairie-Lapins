@@ -16,7 +16,7 @@ import {emptyBuilding} from '../src/state/initial';
 import {decodePng} from '../scripts/derive-nursery-overlays.mjs';
 import type {Command, GameState} from '../src/state/types';
 
-const EVOLVED: SpeciesId[] = ['paille', 'neige', 'feu', 'belier-gris', 'volant'];
+const EVOLVED: SpeciesId[] = ['paille', 'neige', 'feu', 'belier-gris', 'volant', 'dinono', 'dinenette'];
 function run(s: GameState, command: Command, now = s.lastSimulatedAt) {
   const r = act(s, command, now, () => 0); if (!r.ok) throw Error(r.reason); return r.state;
 }
@@ -44,7 +44,7 @@ function setup(rabbits: [SpeciesId, number][], forest = true) {
 const rabbit = (s: GameState, id: string) => s.rabbits.find(r => r.id === id)!;
 
 describe('Evolved drawings at affection 30', () => {
-  it('the five commons have an evolved drawing, the other species keep their v1', () => {
+  it('the five commons, Dinono and Dinenette have an evolved drawing, the other species keep their v1', () => {
     expect(EVOLUTION_AFFECTION).toBe(30);
     expect(EVOLVED_ART.map(art => art.id)).toEqual(EVOLVED);
     for (const species of SPECIES_IDS) expect(hasEvolvedArt(species)).toBe(EVOLVED.includes(species));
@@ -103,6 +103,11 @@ describe('Evolved drawings at affection 30', () => {
     }
     // A left-facing evolution (Paille) keeps its head on the left of its picture.
     expect(EVOLVED_CUISINE_ANCHORS.paille!.hat.x).toBeLessThan(.5);
+    // Dinono and Dinenette look right, like their v1: their head stays on the right of their picture.
+    for (const species of ['dinono', 'dinenette'] as const) {
+      expect(evolvedRabbitArt(species)!.facing).toBe(1);
+      for (const anchor of Object.values(EVOLVED_CUISINE_ANCHORS[species]!)) expect(anchor.x).toBeGreaterThan(.5);
+    }
   });
 });
 

@@ -31,6 +31,10 @@ export const EVOLVED_ART: readonly EvolvedSprite[] = [
   {id: 'belier-gris', file: 'assets/rabbits/belier-gris/belier-gris-v2.png', texture: 'rabbit-belier-gris-evolved-v2', width: 445, height: 428, worldWidth: 47, groundY: 12},
   // Volant A1 « Zéphyr céleste ».
   {id: 'volant', file: 'assets/rabbits/volant/volant-v2.png', texture: 'rabbit-volant-evolved-v2', width: 450, height: 482, worldWidth: 53, groundY: 12},
+  // Dinono « armure jade ».
+  {id: 'dinono', file: 'assets/rabbits/dinono/dinono-v2.png', texture: 'rabbit-dinono-evolved-v2', width: 450, height: 430, worldWidth: 53, groundY: 12},
+  // Dinenette « pendentif cœur ».
+  {id: 'dinenette', file: 'assets/rabbits/dinenette/dinenette-v2.png', texture: 'rabbit-dinenette-evolved-v2', width: 458, height: 453, worldWidth: 54, groundY: 12},
 ];
 export const evolvedSprite = (species: SpeciesId): EvolvedSprite | undefined => EVOLVED_ART.find(art => art.id === species);
 export const hasEvolvedArt = (species: SpeciesId): boolean => !!evolvedSprite(species);
