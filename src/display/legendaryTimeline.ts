@@ -1,4 +1,4 @@
-import type {LegendaryShow} from '../config/legendaryArt';
+import {LEGENDARY_IDLE_GAP_MS, type LegendaryShow} from '../config/legendaryArt';
 
 /**
  * Timing of the legendaries' meadow shows, apart from Phaser so it can be tested. Purely visual and session-only:
@@ -18,8 +18,8 @@ export const IDLE_ACTS: Record<LegendaryShow, readonly LegendaryAct[]> = {dragon
   ankylosaure: ['rumble', 'dig', 'dust', 'rumble']};
 /** Asleep, only soft shows: smoke rings from the Dragon, bubbles from the Requin, a puff of dust from the Ankylosaure. */
 export const SLEEP_ACTS: Record<LegendaryShow, LegendaryAct> = {dragon: 'smoke', requin: 'bubbles', ankylosaure: 'dust'};
-/** Milliseconds between two spontaneous shows of one legendary; the first comes sooner, to be seen. */
-export const IDLE_GAP = {first: [10_000, 25_000], next: [40_000, 95_000]} as const;
+/** Milliseconds between two spontaneous shows of one legendary; the first comes sooner, to be seen (src/config/legendaryArt.ts). */
+export const IDLE_GAP = LEGENDARY_IDLE_GAP_MS;
 /** The surf belongs to the surfboard's 2 seconds of slide; the board appears and leaves around it. */
 export const SURF_SLIDE_MS = 2000, SURF_ENTRY_MS = 300;
 /** A touch replays at most this often, so repeated taps never pile shows up. */

@@ -2,7 +2,8 @@
 // @ts-expect-error -- the browser tsconfig has no Node types; Vitest runs this file in Node.
 import {existsSync, readFileSync} from 'node:fs';
 import {afterEach, describe, expect, it} from 'vitest';
-import {LEGENDARY_EFFECTS, LEGENDARY_PARTS, legendaryMeadowArt} from '../src/config/legendaryArt';
+import {LEGENDARY_EFFECTS, LEGENDARY_IDLE_GAP_MS, LEGENDARY_PARTS, legendaryMeadowArt} from '../src/config/legendaryArt';
+import {VISUAL} from '../src/config/visual';
 import {ACT_MS, DIVE, IDLE_GAP, LegendaryClock, SLAM, SURF_ENTRY_MS, SURF_SLIDE_MS, TAP_COOLDOWN_MS, breathFrame, diveFin, partAngle, speciesActs, surfPose} from '../src/display/legendaryTimeline';
 import {createRabbitMotion, motionZone, startSurf, stepRabbitMotion} from '../src/display/rabbitMotion';
 import {showLegendaryReveal} from '../src/ui/legendaryReveal';
@@ -55,11 +56,27 @@ describe('legendary pictures', () => {
 });
 
 describe('legendary clock', () => {
-  it('waits between 10 and 25 seconds before its first spontaneous show, then plays one of its own', () => {
+  it('waits its first gap (5 to 12 seconds) before its first spontaneous show, then plays one of its own', () => {
     const clock = new LegendaryClock('dragon', 'rabbit-9');
     expect(clock.step(IDLE_GAP.first[0] - 1, true)).toBeNull();
     let started = null; for (let t = 0; t < IDLE_GAP.first[1] && !started; t += 100) started = clock.step(100, true);
     expect(started).not.toBeNull(); expect(['smoke', 'hiccup', 'embers']).toContain(started!.act);
+  });
+  it('plays its shows far more often than a common rabbit does its rare somersault, with some randomness', () => {
+    expect(IDLE_GAP).toBe(LEGENDARY_IDLE_GAP_MS);
+    const mean = ([low, high]: readonly [number, number]) => (low + high) / 2;
+    // A common resident somersaults on a share `salto.chance` of rest endings, and each rest lasts at least `restMin`:
+    // on average, at least restMin / chance seconds between two somersaults (walks only add to it).
+    const roam = VISUAL.rabbit.roam, commonMs = roam.restMin / roam.salto.chance * 1000;
+    expect(mean(IDLE_GAP.next)).toBeLessThan(commonMs);
+    // Owner's request of 3 November 2026: at least twice as often as the former 40-95 s gap, and still spread.
+    expect(mean(IDLE_GAP.next) * 2).toBeLessThanOrEqual(mean([40_000, 95_000]));
+    expect(mean(IDLE_GAP.first)).toBeLessThan(mean([10_000, 25_000]));
+    expect(IDLE_GAP.next[1]).toBeGreaterThan(IDLE_GAP.next[0] * 1.5);
+    // Measured on a clock: one hour of an idle legendary gives about 135 shows, against about 52 with the former gap.
+    const clock = new LegendaryClock('dragon', 'rabbit-42'); let shows = 0;
+    for (let t = 0; t < 3_600_000; t += 100) if (clock.step(100, true)) shows++;
+    expect(shows).toBeGreaterThanOrEqual(104);
   });
   it('never starts a spontaneous show while it may not, and still finishes the one playing', () => {
     const clock = new LegendaryClock('requin', 'rabbit-3');
