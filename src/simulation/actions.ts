@@ -17,8 +17,9 @@ import {marketPrice, marketUnlocked} from './market';
 import {affectionCap, isUltimate, nextAffectionStatue, playerLevel, statueReason} from './affection';
 import {agencyBuilding, travelling} from './travel';
 import {atSalon, giftAffectionReason, giftReason, picnicQuote, salonBuilding} from './care';
+import {classicLookReason} from './forest';
 import {dailyBonusReady, dailyClaimable, dailyCycleStart, dailyMissionsOf, recordMissionAction} from './missions';
-import {farmLimit, farmDuration, FARM_UPGRADES, orderFarmLevel, BALANCE, HEARTS, HOUR, TRAVEL, SALON, CARE_KINDS, carePrice, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
+import {farmLimit, farmDuration, FARM_UPGRADES, orderFarmLevel, BALANCE, HEARTS, HOUR, TRAVEL, SALON, FOREST, CARE_KINDS, carePrice, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
 import {emptyBuilding} from '../state/initial';
 import {babyInNursery, findNurseryBaby, firstFreeNurserySlot, nurseryBuilding, nurseryUnlockQuote, settleNestTransfers} from './nursery';
 import type {ActionResult, Building, Command, GameState, PattesCommand, Rabbit, Refusal, ProgressionGain} from '../state/types';
@@ -309,6 +310,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(command.kind!=='statue' || !statue || playerLevel(s)>=statue.level,'LEVEL_REQUIRED');
         requireRule(command.kind!=='agency' || playerLevel(s)>=TRAVEL.unlockLevel,'LEVEL_REQUIRED');
         requireRule(command.kind!=='salon' || playerLevel(s)>=SALON.unlockLevel,'LEVEL_REQUIRED');
+        requireRule(command.kind!=='forest' || playerLevel(s)>=FOREST.unlockLevel,'LEVEL_REQUIRED');
         cell(command.x, command.y); allocation();
         if (command.kind === 'statue') {
           requireRule(!payment && !quoteOnly, 'INVALID_CHOICE');
@@ -526,6 +528,14 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         const rabbit = s.rabbits.find(r => r.id === command.rabbitId); requireRule(rabbit, 'NOT_FOUND');
         requireRule(isUltimate(rabbit), 'INVALID_CHOICE');
         if (rabbit.crownHidden) delete rabbit.crownHidden; else rabbit.crownHidden = true;
+        break;
+      }
+      case 'toggleClassicLook': {
+        // Free and purely cosmetic, both ways, as often as wanted: only with the Forêt de Brocéliande, from affection 30, on a species
+        // that has an evolved drawing.
+        const rabbit = s.rabbits.find(r => r.id === command.rabbitId); requireRule(rabbit, 'NOT_FOUND');
+        const reason = classicLookReason(s, rabbit); requireRule(!reason, reason ?? 'INVALID_CHOICE');
+        if (rabbit.classicLook) delete rabbit.classicLook; else rabbit.classicLook = true;
         break;
       }
       case 'bennyPower': {

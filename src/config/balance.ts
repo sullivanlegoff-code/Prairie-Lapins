@@ -27,9 +27,9 @@ export const MARKET = {unlockLevel: 10, base: {pattes: 250, grass: 100}, growth:
 // The species registry lives in ./species; the public names stay available from here.
 export {SPECIES, SPECIES_IDS, LEGACY_SPECIES_IDS};
 export type {SpeciesId, RabbitType, Rarity};
-export type BuildingKind = 'enclosure' | 'farm' | 'nest' | 'nursery' | 'kitchen' | 'statue' | 'agency' | 'salon';
+export type BuildingKind = 'enclosure' | 'farm' | 'nest' | 'nursery' | 'kitchen' | 'statue' | 'agency' | 'salon' | 'forest';
 /** Every building kind, in the order the save validates them. */
-export const BUILDING_KINDS = ['enclosure', 'farm', 'nest', 'nursery', 'kitchen', 'statue', 'agency', 'salon'] as const satisfies readonly BuildingKind[];
+export const BUILDING_KINDS = ['enclosure', 'farm', 'nest', 'nursery', 'kitchen', 'statue', 'agency', 'salon', 'forest'] as const satisfies readonly BuildingKind[];
 export const BREEDING_WEIGHTS = {common: 30, recipe: 30};
 /** Exact element unions only; additional elements retain the historical pool.
  * Eligibility comes from catalogue recipes, never a fixed list of results. */
@@ -63,6 +63,7 @@ export const BALANCE = {
     statue: {price: 60, currency: 'hearts', maximum: 2}, // Hearts only, never a coin purchase or complement; the second costs more (AFFECTION_STATUES).
     agency: {price: 1000, maximum: 1}, // The travel agency: see TRAVEL.
     salon: {price: 5000, maximum: 1}, // The Salon de soins: see SALON.
+    forest: {price: 10000, maximum: 1}, // The Forêt de Brocéliande: see FOREST.
   } satisfies Record<BuildingKind, {price: number; currency?: 'hearts'; maximum: number | null}>,
 };
 /**
@@ -150,6 +151,12 @@ export const SALON = {
 export type CareKind = keyof typeof SALON.cares;
 export const CARE_KINDS = Object.keys(SALON.cares) as CareKind[];
 export const carePrice = (species: SpeciesId, care: CareKind): number => Math.round(SALON.fullPrice[SPECIES[species].rarity] * SALON.cares[care].share);
+/**
+ * The Forêt de Brocéliande (owner, 3 November 2026): one building, 10 000 pattes, from player level 20. Once built, the player
+ * chooses freely and for free, rabbit by rabbit, between the evolved drawing and the old one of every rabbit of affection 30 or
+ * more that has an evolved drawing (src/config/evolvedArt.ts). Purely cosmetic: no income, XP, affection or draw.
+ */
+export const FOREST = {unlockLevel: 20} as const;
 /** The picnic: from player level 8, one a day in all, in one enclosure; paid and rewarded per rabbit present. */
 // 10 XP per rabbit present since 3 November 2026 (5 before).
 export const PICNIC = {unlockLevel: 8, pricePerRabbit: 300, xpPerRabbit: 10} as const;

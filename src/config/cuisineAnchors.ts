@@ -57,8 +57,20 @@ export const CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>> = {
 };
 /** A right-facing rabbit with its head at the top right of its picture; mirrored for a left-facing one. */
 export const DEFAULT_ANCHORS: CuisineAnchors = a([.7, .15, .36, 6], [.72, .48, .3], [.75, .3, .3]);
-export function cuisineAnchors(species: SpeciesId, facing: 1 | -1 = 1): CuisineAnchors {
-  const known = CUISINE_ANCHORS[species]; if (known) return known;
+/**
+ * The same anchors on the evolved drawings (affection 30, src/config/evolvedArt.ts), read on 10 % grids of the v2 sprites
+ * (3 November 2026), not yet checked on a capture of the kitchen. An evolved species without an entry uses `DEFAULT_ANCHORS`.
+ */
+export const EVOLVED_CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>> = {
+  paille: a([.4, .19, .42, -8], [.3, .42, .44], [.25, .29, .45]),
+  neige: a([.78, .23, .34, 10], [.8, .56, .3], [.8, .38, .3]),
+  feu: a([.78, .18, .34, 8], [.82, .52, .3], [.78, .33, .3]),
+  'belier-gris': a([.74, .05, .34, 6], [.78, .42, .32], [.8, .22, .3]),
+  volant: a([.7, .07, .36, 4], [.74, .36, .36], [.76, .19, .38]),
+};
+/** `evolved`: the anchors of the species' evolved drawing (a rabbit showing it), else those of its v1. */
+export function cuisineAnchors(species: SpeciesId, facing: 1 | -1 = 1, evolved = false): CuisineAnchors {
+  const known = evolved ? EVOLVED_CUISINE_ANCHORS[species] : CUISINE_ANCHORS[species]; if (known) return known;
   if (facing === 1) return DEFAULT_ANCHORS;
   const {hat, bib, eyes} = DEFAULT_ANCHORS;
   return {hat: {...hat, x: 1 - hat.x, r: -hat.r}, bib: {...bib, x: 1 - bib.x}, eyes: {...eyes, x: 1 - eyes.x}};

@@ -3,7 +3,7 @@ import {recipeHint} from './economyFeedback';
 import {stateLevelAccess} from '../simulation/levelRights';
 import {buildingPlacementReason} from '../simulation/placement';
 import {habitatPrice, type HabitatType} from '../config/habitats';
-import {AFFECTION_STATUE, BALANCE, HOUR, SALON, SECOND_AFFECTION_STATUE, TRAVEL, SPECIES, SPECIES_IDS, RECIPE_SPECIES, type Odds, type BuildingKind, type SpeciesId, type RabbitType, type Rarity} from '../config/balance';
+import {AFFECTION_STATUE, BALANCE, HOUR, SALON, FOREST, SECOND_AFFECTION_STATUE, TRAVEL, SPECIES, SPECIES_IDS, RECIPE_SPECIES, type Odds, type BuildingKind, type SpeciesId, type RabbitType, type Rarity} from '../config/balance';
 import {breedingPool, recipeMatches, ordinaryPoolAllows, nestForParent} from '../simulation/breeding';
 import {bennyStandIns} from '../simulation/benny';
 import {nextAffectionStatue, playerLevel} from '../simulation/affection';
@@ -17,7 +17,7 @@ import {mapRarities} from '../config/rarities';
 
 /** The three cares of the Salon de soins. */
 export const CARE_NAMES: Record<import('../config/balance').CareKind, string> = {bath: 'Bain', brush: 'Brossage', massage: 'Massage'};
-export const BUILDING_NAMES: Record<BuildingKind, string> = {enclosure: 'Enclos', farm: 'Ferme', nest: 'Nid', nursery: 'Nurserie', kitchen: 'Cuisine', statue: 'Statue de l’Affection', agency: 'Agence de voyage', salon: 'Salon de soins'};
+export const BUILDING_NAMES: Record<BuildingKind, string> = {enclosure: 'Enclos', farm: 'Ferme', nest: 'Nid', nursery: 'Nurserie', kitchen: 'Cuisine', statue: 'Statue de l’Affection', agency: 'Agence de voyage', salon: 'Salon de soins', forest: 'Forêt de Brocéliande'};
 export const REFUSALS: Record<Refusal | 'NO_GAME' | 'DISPOSED' | 'SALE_NOT_SAVED' | 'ACTION_NOT_SAVED' | 'STORAGE_CHANGED', string> = {
   HABITAT_NOT_EMPTY: 'Cet habitat doit être vide.',
   LAST_HABITAT: 'Garde au moins un habitat.',
@@ -47,6 +47,7 @@ export const REFUSALS: Record<Refusal | 'NO_GAME' | 'DISPOSED' | 'SALE_NOT_SAVED
   AT_SALON: 'Ce lapin est au salon de soins. Va le chercher au salon à la fin de son soin.', GIFT_TODAY: 'Ce lapin a déjà eu son cadeau aujourd’hui.',
   AFFECTION_WALL: 'Ce palier se passe en le nourrissant.', PICNIC_TODAY: 'Tu as déjà fait ton pique-nique aujourd’hui. Reviens demain !',
   EMPTY_ENCLOSURE: 'Il n’y a aucun lapin dans cet enclos pour l’instant.', NO_GIFT_POSSIBLE: 'Aucun lapin de cet enclos ne peut gagner d’affection aujourd’hui.',
+  NO_EVOLVED_ART: 'Ce lapin n’a pas encore de nouveau dessin.', EVOLUTION_AFFECTION: 'Ce lapin change de dessin à l’affection 30.',
   SAME_PARENT: 'Choisis deux lapins différents.', AFFECTION_TOO_LOW: 'Chaque parent doit avoir au moins 2 d’affection.',
   MISSING_BUILDING: 'Il manque un bâtiment nécessaire : nid, nurserie ou cuisine.', ALREADY_EXPANDED: 'L’extension est déjà achetée.', PARCEL_UNAVAILABLE: 'Cette parcelle n’est pas encore accessible : l’île s’agrandit dans un ordre fixe, une parcelle après l’autre.', LAST_OF_SPECIES: 'Garde au moins un lapin de chaque espèce possédée.',
   BENNY_RECHARGING: 'Le pouvoir de Benny se recharge encore.', NO_WAITING_BABY: 'Aucun lapereau n’attend dans la nurserie.',
@@ -72,6 +73,7 @@ export function buildingReason(s: GameState, kind: BuildingKind, ignorePrice = f
   if(statue && playerLevel(s)<statue.level) return `Niveau ${statue.level} requis`;
   if(kind==='agency' && playerLevel(s)<TRAVEL.unlockLevel) return `Niveau ${TRAVEL.unlockLevel} requis`;
   if(kind==='salon' && playerLevel(s)<SALON.unlockLevel) return `Niveau ${SALON.unlockLevel} requis`;
+  if(kind==='forest' && playerLevel(s)<FOREST.unlockLevel) return `Niveau ${FOREST.unlockLevel} requis`;
   if(kind==='enclosure') {const access=stateLevelAccess(s,{family:'habitatPurchase',id:habitatType});if(access.locked)return `Niveau ${access.requiredLevel} requis`;}
   if (kind === 'farm' && playerLevel(s) < 15 && s.buildings.filter(b => b.kind === 'farm').length >= farmLimit(playerLevel(s))) return `Niveau ${farmLimit(playerLevel(s)) === 2 ? 12 : 15} requis pour une ferme supplémentaire`;
   const config = BALANCE.buildings[kind];

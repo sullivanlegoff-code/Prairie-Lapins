@@ -1,7 +1,7 @@
-import {rabbitArt} from '../config/rabbitArt';
+import {artForRabbit} from '../config/rabbitArt';
+import type {LookRabbit} from '../config/evolvedArt';
 import {CROWN_ART, ULTIMATE_FRAME, crownAnchor, preloadUltimateArt} from '../config/ultimateArt';
 import {isUltimate} from '../simulation/affection';
-import type {SpeciesId} from '../config/species';
 import type {Rabbit} from '../state/types';
 
 /**
@@ -26,15 +26,15 @@ export function clearUltimateCard(panel: HTMLElement): void {
 }
 /**
  * Puts the golden crown on a portrait's painted rabbit, between the ears (the per-species head anchor of the meadow sprite). The
- * picture is wrapped in a box of its own proportions so the anchor, in fractions of the picture, lands on the head at any size.
+ * anchor is the one of the drawing the rabbit shows (its evolved drawing from affection 30). The picture is wrapped in a box of its own proportions so the anchor, in fractions of the picture, lands on the head at any size.
  */
-export function crownPortrait(portrait: HTMLElement, species: SpeciesId): HTMLElement {
-  const picture = portrait.querySelector<HTMLImageElement>('img[data-rabbit-art]'), art = rabbitArt(species);
+export function crownPortrait(portrait: HTMLElement, rabbit: LookRabbit): HTMLElement {
+  const picture = portrait.querySelector<HTMLImageElement>('img[data-rabbit-art]'), art = artForRabbit(rabbit);
   if (!picture || !art) return portrait;
   const figure = document.createElement('span'); figure.className = 'ultimate-figure';
   figure.style.setProperty('--ratio', String(art.width / art.height));
   picture.replaceWith(figure); figure.append(picture);
-  const anchor = crownAnchor(species, art.facing), crown = document.createElement('img');
+  const anchor = crownAnchor(rabbit.species, art.facing, !!art.evolved), crown = document.createElement('img');
   crown.className = 'ultimate-crown'; crown.alt = ''; crown.draggable = false; crown.decoding = 'async'; crown.src = CROWN_ART.url;
   crown.setAttribute('aria-hidden', 'true');
   crown.style.left = `${anchor.x * 100}%`; crown.style.top = `${anchor.y * 100}%`; crown.style.width = `${anchor.w * 100}%`;

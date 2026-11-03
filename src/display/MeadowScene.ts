@@ -2,7 +2,7 @@ import {deriveArdentFlames, ardentFlamePose} from './ardentFlames';
 import {elementUrl} from './rabbitPresentation';
 import {islandOutline, organicLoop, parcelSetKey} from './islandOutline';
 import {nestForParent} from '../simulation/breeding';
-import {rabbitArt, type RabbitArt} from '../config/rabbitArt';
+import {artForRabbit, type RabbitArt} from '../config/rabbitArt';
 import {rabbitBlinkArt, rabbitPatchPlacement} from '../config/rabbitBlinkArt';
 import {rabbitFaceSeed, rabbitFaceState} from './rabbitBlink';
 import {DadiReactions} from './dadiReactions';
@@ -35,6 +35,8 @@ import {KITCHEN_ART} from '../config/kitchenArt';
 import {STATUE_ART} from '../config/statueArt';
 import {AGENCY_ART} from '../config/agencyArt';
 import {PICNIC_ART, SALON_ART} from '../config/salonArt';
+import {FOREST_ART} from '../config/forestArt';
+import {showsEvolvedArt} from '../config/evolvedArt';
 import {PICNIC} from '../config/balance';
 import {playerLevel, wearsCrown} from '../simulation/affection';
 import {CROWN_ART, CROWN_SEAT, crownAnchor, crownPlacement} from '../config/ultimateArt';
@@ -613,8 +615,9 @@ export class MeadowScene extends Phaser.Scene {
     const assets = new Map<string, {texture: string; url: string; atlas?: string}>();
     const add = (art: {texture: string; url: string; atlas?: string} | null | undefined) => { if (art) assets.set(art.texture, art); };
     for (const rabbit of state?.rabbits ?? []) {
-      add(rabbitArt(rabbit.species));
-      for (const patch of rabbitBlinkArt(rabbit.species)?.patches ?? []) add(patch);
+      // The drawing this rabbit shows (its evolved one from affection 30); the blink and nose patches belong to the v1 only.
+      const shown = artForRabbit(rabbit); add(shown);
+      if (!shown?.evolved) for (const patch of rabbitBlinkArt(rabbit.species)?.patches ?? []) add(patch);
       if (isLegendaryShow(rabbit.species)) for (const art of legendaryMeadowArt(rabbit.species)) add(art);
       if (rabbit.species === BENNY_ID) for (const art of [...bennyMeadowArt(), ...bennyFlightArt()]) add(art);
       if (wearsCrown(rabbit)) add(CROWN_ART);
@@ -627,7 +630,7 @@ export class MeadowScene extends Phaser.Scene {
         for (const id of CROP_IDS) add({texture: CROP_TEXTURE(id), url: CROP_URL(id)});
       } else if (building.kind === 'nursery') {
         add(NURSERY_ART); add(NURSERY_OVERLAY_ART.baby); add(NURSERY_OVERLAY_ART.veil); add(NURSERY_OVERLAY_ART.lock);
-      } else add(({nest: NEST_ART, kitchen: KITCHEN_ART, statue: STATUE_ART, agency: AGENCY_ART, salon: SALON_ART})[building.kind]);
+      } else add(({nest: NEST_ART, kitchen: KITCHEN_ART, statue: STATUE_ART, agency: AGENCY_ART, salon: SALON_ART, forest: FOREST_ART})[building.kind]);
     };
     for (const building of state?.buildings ?? []) buildingArt(building);
     if (state && playerLevel(state) >= PICNIC.unlockLevel) add(PICNIC_ART); // Laid out for a few seconds when a picnic starts.
@@ -679,7 +682,7 @@ export class MeadowScene extends Phaser.Scene {
     if (!this.ensureArt()) return;
     const s = this.current;
     if (s) { this.view.setColumns(visibleColumns(s)); this.updateVisibleRegions(); this.applyCamera(); }
-    const key = JSON.stringify([s?.acquiredParcels, s?.buildings.map(b => [b.id, b.kind, b.x, b.y, b.habitat, b.farmLevel, b.agencyLevel, b.breeding?.parents]), s?.rabbits.map(r => [r.id, r.species, r.enclosureId, wearsCrown(r)]), s?.travel?.trips.map(t => t.rabbitId), s?.care?.rabbitId]);
+    const key = JSON.stringify([s?.acquiredParcels, s?.buildings.map(b => [b.id, b.kind, b.x, b.y, b.habitat, b.farmLevel, b.agencyLevel, b.breeding?.parents]), s?.rabbits.map(r => [r.id, r.species, r.enclosureId, wearsCrown(r), showsEvolvedArt(r)]), s?.travel?.trips.map(t => t.rabbitId), s?.care?.rabbitId]);
     if (key !== this.layoutKey) { this.layoutKey = key; this.drawGround(); this.drawBuildings(); this.drawAnimals(); }
     // The cushion overlays follow the canonical state and simulation time on every refresh (a no-op when nothing changed).
     this.nurseryOverlays?.sync(s);
@@ -784,6 +787,7 @@ export class MeadowScene extends Phaser.Scene {
     if (b.kind === 'statue') return STATUE_ART.texture;
     if (b.kind === 'agency') return AGENCY_ART.texture;
     if (b.kind === 'salon') return SALON_ART.texture;
+    if (b.kind === 'forest') return FOREST_ART.texture;
     if (b.kind === 'enclosure') { const illustrated = habitatArtFor(b.habitat ?? undefined, b.footprintTier); if (illustrated) return illustrated.texture; }
     // The drawing follows the footprint actually acquired (tier), not the capacity level: a legacy enclosure keeps its compact look.
     const sized = b.habitat && b.footprintTier && b.footprintTier > 1 ? HABITAT_SIZE_PROPOSAL[b.footprintTier] : null;
@@ -801,7 +805,7 @@ export class MeadowScene extends Phaser.Scene {
   /** The same registration is used for placed buildings and the placement/move ghost. */
   private positionBuildingArt(image: Phaser.GameObjects.Image, x: number, y: number, kind: Building['kind'], illustrated: HabitatArt | null = null): void {
     if (illustrated) { image.setPosition(x, y).setOrigin(illustrated.anchor.x / illustrated.width, illustrated.anchor.y / illustrated.height).setScale(illustrated.worldWidth / illustrated.width); return; }
-    const art = kind === 'farm' ? FARM_ART : kind === 'nest' ? NEST_ART : kind === 'nursery' ? NURSERY_ART : kind === 'kitchen' ? KITCHEN_ART : kind === 'statue' ? STATUE_ART : kind === 'agency' ? AGENCY_ART : kind === 'salon' ? SALON_ART : null;
+    const art = kind === 'farm' ? FARM_ART : kind === 'nest' ? NEST_ART : kind === 'nursery' ? NURSERY_ART : kind === 'kitchen' ? KITCHEN_ART : kind === 'statue' ? STATUE_ART : kind === 'agency' ? AGENCY_ART : kind === 'salon' ? SALON_ART : kind === 'forest' ? FOREST_ART : null;
     image.setPosition(x, y).setOrigin(.5, art ? art.originY : .5)
       .setScale(art ? art.worldWidth / art.width : .5);
   }
@@ -855,7 +859,7 @@ export class MeadowScene extends Phaser.Scene {
         const object = this.add.container(start.x, start.y).setScale(VISUAL.rabbit.scale).setDepth(start.y);
         const body = this.add.container(0, 0), shadow = this.add.ellipse(0, 10, 35, 12, 0x6b7755, .16);
         object.add([shadow, body]);
-        const art = rabbitArt(rabbit.species);
+        const art = artForRabbit(rabbit); // Its evolved drawing from affection 30, already EVOLVED_SCALE bigger.
         const view = {object, body, center, group: enclosure.id, motion, nest: enclosure.kind === 'nest', lift: 0, pivot: art ? this.spritePivot(art) : {x: 0, y: -3}, native: art ? art.facing : 1 as const, base, phase: index * 2 + Number(rabbit.id.split('-')[1]), fedUntil: 0};
         if (art) {
           const sprite = this.add.image(0, art.groundY, art.texture).setOrigin(.5, 1);
@@ -875,7 +879,8 @@ export class MeadowScene extends Phaser.Scene {
             flames = this.add.image(0, art.groundY, key).setOrigin(.5, 1).setScale(sprite.scaleX).setAlpha(.24);
             body.add(flames);
           }
-          const blinkArt = rabbitBlinkArt(rabbit.species);
+          // No blink or nose patch on an evolved drawing: they were painted on the v1 head only.
+          const blinkArt = art.evolved ? undefined : rabbitBlinkArt(rabbit.species);
           const patches = blinkArt?.patches.map(patch => {
             const placement = rabbitPatchPlacement(art, patch);
             const image = this.add.image(placement.x, placement.y, patch.texture).setOrigin(0, 0).setScale(placement.scale).setVisible(false);
@@ -885,7 +890,7 @@ export class MeadowScene extends Phaser.Scene {
           let crown: Phaser.GameObjects.Image | undefined;
           if (wearsCrown(rabbit) && this.textures.exists(CROWN_ART.texture)) {
             // On the per-species head anchor, in native picture space: the body mirrors, hops and squashes it with the sprite.
-            const place = crownPlacement(art, crownAnchor(rabbit.species, art.facing));
+            const place = crownPlacement(art, crownAnchor(rabbit.species, art.facing, !!art.evolved));
             crown = this.add.image(place.x, place.y, CROWN_ART.texture).setOrigin(.5, CROWN_SEAT).setScale(place.scale).setAngle(place.angle);
             body.add(crown);
           }
@@ -1012,7 +1017,7 @@ export class MeadowScene extends Phaser.Scene {
       if (b.kind === 'salon' && careReady(this.current!, now)) text = 'trip'; // The care is over: the rabbit waits to be welcomed back.
       if (b.kind === 'agency' && tripReady(this.current!, now)) text = 'trip'; // A traveller is back: Coco waits with them. // One bubble for any ready baby.
       if (!text) continue;
-      const p = toScreen(buildingCenter(b)); p.y += b.kind === 'farm' ? FARM_ART.harvestY : b.kind==='nest' ? NEST_ART.actionY : b.kind==='nursery' ? NURSERY_ART.actionY : b.kind==='agency' ? AGENCY_ART.actionY : b.kind==='salon' ? SALON_ART.actionY : -72;
+      const p = toScreen(buildingCenter(b)); p.y += b.kind === 'farm' ? FARM_ART.harvestY : b.kind==='nest' ? NEST_ART.actionY : b.kind==='nursery' ? NURSERY_ART.actionY : b.kind==='agency' ? AGENCY_ART.actionY : b.kind==='salon' ? SALON_ART.actionY : b.kind==='forest' ? FOREST_ART.actionY : -72;
       const bubble = kind === 'income' ? coinBubble(this, p.x, p.y, amount, amount >= habitatStats(b).cap) : text === 'food' ? foodBubble(this, p.x, p.y, b.order!.grass ?? ORDERS[b.order!.recipe].grass) : text === 'birth' || text === 'trip' ? this.heartBubble(p.x, p.y) : this.add.text(p.x, p.y, text, {fontFamily: 'Arial', fontSize: '17px', color: '#3b4d2d', backgroundColor: '#fff7dc', padding: {x: 13, y: 10}}).setOrigin(.5);
       if (text === 'birth' && this.tutorialTarget === 'birth') {
         const halo=this.add.graphics().lineStyle(4,0xffcf55).strokeEllipse(p.x,p.y,bubble.width+12,bubble.height+12);this.bubbles.add(halo);

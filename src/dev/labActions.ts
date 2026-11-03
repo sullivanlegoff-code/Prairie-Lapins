@@ -14,6 +14,7 @@ import {bennyAllows} from '../simulation/benny';
 import {cumulativeLevelXp} from '../simulation/progression';
 import {updateMissions, emptyDailyProgress} from '../simulation/missions';
 import {establishHistoricalLevelRights} from '../simulation/levelRights';
+import {classicLookReason} from '../simulation/forest';
 
 export type LabAction =
   | {type: 'resource'; resource: 'pattes' | 'grass' | 'hearts'; value: number; add?: boolean}
@@ -92,7 +93,7 @@ export function labAction(state: GameState, action: LabAction): GameState {
       integer(action.value, 1, BALANCE.maxAffection);
       const rabbits = s.rabbits.filter(r => !action.rabbitId || r.id === action.rabbitId);
       if (!rabbits.length) throw new Error('Choisis un lapin présent.');
-      for (const r of rabbits) { r.affection = action.value; if (action.value < BALANCE.maxAffection) delete r.crownHidden; } // Only an ultimate rabbit takes off its crown.
+      for (const r of rabbits) { r.affection = action.value; if (action.value < BALANCE.maxAffection) delete r.crownHidden; if (classicLookReason(s, r)) delete r.classicLook; } // Only an ultimate rabbit takes off its crown; the old drawing needs affection 30.
       // A ready birth may reference parents below breeding affection; an active one may not.
       if (action.value < BALANCE.breedingAffection) for (const b of s.buildings) {
         if (b.breeding?.parents.some(id => rabbits.some(r => r.id === id))) b.breeding.endsAt = Math.min(b.breeding.endsAt, s.lastSimulatedAt);
@@ -163,7 +164,7 @@ export function completeLaboratory(now: number): GameState {
     const recipe = i === 0 ? 'foin' : 'banane'; const crop = ORDERS[recipe];
     b.order = {recipe, startedAt: i === 0 ? now - crop.duration : now, endsAt: i === 0 ? now : now + crop.duration, grass: crop.grass, duration: crop.duration};
   }
-  build(s, 'kitchen'); build(s, 'statue'); build(s, 'statue'); build(s, 'agency').agencyLevel = 3; build(s, 'salon');
+  build(s, 'kitchen'); build(s, 'statue'); build(s, 'statue'); build(s, 'agency').agencyLevel = 3; build(s, 'salon'); build(s, 'forest');
   s.travel = {welcomed: true, trips: s.rabbits.slice(2, 4).map((r, i) => ({rabbitId: r.id, destination: i === 0 ? 'Paris' : 'Vannes', startedAt: i === 0 ? now - 3 * HOUR : now, endsAt: i === 0 ? now : now + 3 * HOUR, hearts: 1, grass: 75}))};
   const birth = () => ({id: `birth-${s.nextId++}`, species: 'paille' as const, guaranteed: false, reservedDiscovery: false});
   s.buildings.find(b => b.kind === 'nursery')!.nursery = {capacity: 4, babies: [{slot: 0, birth: birth(), startedAt: now - growthDuration('paille'), readyAt: now}]};

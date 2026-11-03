@@ -1,23 +1,26 @@
 import {mountKitchen, type RecipeCompletion} from '../../cooktap-prototype/main';
 import {ART_URLS, finishedDishArt} from '../../cooktap-prototype/art';
-import {rabbitArt} from '../config/rabbitArt';
+import {artForRabbit, rabbitArt} from '../config/rabbitArt';
 import {cuisineAnchors} from '../config/cuisineAnchors';
 import {commisMood, createKitchenTalk, type KitchenTalk, type TalkLine, type TalkState} from './cuisineTalk';
 import type {Rabbit} from '../state/types';
 import {portrait} from './portraits';
+import type {RabbitArt} from '../config/rabbitArt';
 import {SPECIES} from '../config/balance';
 import {setCurrencyText} from '../display/currency';
 
-export type CuisineRabbit = Readonly<Pick<Rabbit, 'id' | 'species'> & {name?: string}>;
+/** `affection` and `classicLook` choose the drawing the rabbit shows (its evolved one from affection 30); absent, its species' own. */
+export type CuisineRabbit = Readonly<Pick<Rabbit, 'id' | 'species'> & {name?: string; affection?: number; classicLook?: true}>;
+const cookArt = (rabbit: CuisineRabbit): RabbitArt | undefined => rabbit.affection === undefined ? rabbitArt(rabbit.species) : artForRabbit({species: rabbit.species, affection: rabbit.affection, classicLook: rabbit.classicLook});
 export {commisMood, type CommisMood} from './cuisineTalk';
 /** The rabbit's sprite with its accessory (toque or bib) and the paws used to cover its eyes, all on the same anchors. */
 export function dressedRabbit(rabbit: CuisineRabbit, role: 'commis' | 'taster', faceRight: boolean): HTMLElement {
-  const art = rabbitArt(rabbit.species), facing = art?.facing ?? 1, anchors = cuisineAnchors(rabbit.species, facing);
+  const art = cookArt(rabbit), facing = art?.facing ?? 1, anchors = cuisineAnchors(rabbit.species, facing, !!art?.evolved);
   const box = document.createElement('span'); box.className = 'cuisine-cook-rabbit';
   if (art) box.style.aspectRatio = `${art.width} / ${art.height}`;
   const figure = document.createElement('span'); figure.className = 'cuisine-cook-figure';
   if ((facing === 1) !== faceRight) figure.dataset.mirrored = '';
-  figure.innerHTML = portrait(rabbit.species);
+  figure.innerHTML = portrait(rabbit.species, art);
   const place = (node: HTMLElement, x: number, y: number, w: number, r = 0) => {
     node.style.left = `${x * 100}%`; node.style.top = `${y * 100}%`; node.style.width = `${w * 100}%`; node.style.setProperty('--tilt', `${r}deg`); figure.append(node);
   };
@@ -199,7 +202,7 @@ export function mountCuisineActivity(background: HTMLElement, options: {
         selectedRabbit = Object.freeze({id: rabbit.id, species: rabbit.species});
         tasterRabbit = second && second.id !== rabbit.id ? Object.freeze({id: second.id, species: second.species}) : null;
         const art = document.createElement('span'); art.className = 'cuisine-companion-art';
-        art.setAttribute('aria-hidden', 'true'); art.innerHTML = portrait(rabbit.species);
+        art.setAttribute('aria-hidden', 'true'); art.innerHTML = portrait(rabbit.species, cookArt(rabbit));
         const name = document.createElement('span'); name.textContent = rabbit.name || SPECIES[rabbit.species].name;
         companion.replaceChildren(art, name); companion.hidden = false;
         react('idle');
@@ -214,7 +217,7 @@ export function mountCuisineActivity(background: HTMLElement, options: {
             const card = activity.root.querySelector('#result-screen .overlay-card')!;
             const eater = tasterRabbit && second ? second : selectedRabbit && rabbit;
             if (eater) {
-              const face = document.createElement('span'); face.className = 'cuisine-result-rabbit-art'; face.innerHTML = portrait(eater.species);
+              const face = document.createElement('span'); face.className = 'cuisine-result-rabbit-art'; face.innerHTML = portrait(eater.species, cookArt(eater));
               const words = document.createElement('span'); const name = document.createElement('b'); name.textContent = eater.name || SPECIES[eater.species].name;
               words.append(name, document.createElement('br'), '« Miam ! »');
               resultRabbit.replaceChildren(face, words); card.append(resultRabbit);

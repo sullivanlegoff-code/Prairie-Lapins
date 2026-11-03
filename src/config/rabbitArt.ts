@@ -1,8 +1,10 @@
 import {SPECIES, SPECIES_IDS, type SpeciesId, type SpeciesArt} from './species';
+import {EVOLVED_ART, EVOLVED_SCALE, showsEvolvedArt, type LookRabbit} from './evolvedArt';
 
 /** The adapter resolves deployment URLs; the registry owns all sprite metadata. */
 /** `facing` is the native direction of the picture as a mirror sign: 1 looks right (default), -1 looks left. */
-export type RabbitArt = Omit<Extract<SpeciesArt, {kind: 'static-sprite'}>, 'kind' | 'file' | 'preloadOrder' | 'facing'> & {species: SpeciesId; url: string; facing: 1 | -1};
+/** `evolved`: present only on an affection 30 drawing, whose `worldWidth` already includes `EVOLVED_SCALE`. */
+export type RabbitArt = Omit<Extract<SpeciesArt, {kind: 'static-sprite'}>, 'kind' | 'file' | 'preloadOrder' | 'facing'> & {species: SpeciesId; url: string; facing: 1 | -1; evolved?: true};
 export const RABBIT_ART: readonly RabbitArt[] = SPECIES_IDS.flatMap(species => {
   const art = SPECIES[species].art;
   return art.kind === 'static-sprite' ? [{species, ...art}] : [];
@@ -11,6 +13,18 @@ export const RABBIT_ART: readonly RabbitArt[] = SPECIES_IDS.flatMap(species => {
 }));
 export function rabbitArt(species?: string): RabbitArt | undefined {
   return RABBIT_ART.find(art => art.species === species);
+}
+/** The evolved drawings (src/config/evolvedArt.ts), drawn `EVOLVED_SCALE` bigger than their manifest world width. */
+export const EVOLVED_RABBIT_ART: readonly RabbitArt[] = EVOLVED_ART.map(({id, file, texture, width, height, worldWidth, groundY, facing}) => ({
+  species: id, texture, url: `${import.meta.env.BASE_URL}${file}`, width, height, worldWidth: worldWidth * EVOLVED_SCALE, groundY,
+  facing: facing === 'left' ? -1 as const : 1 as const, evolved: true as const,
+}));
+export function evolvedRabbitArt(species?: string): RabbitArt | undefined {
+  return EVOLVED_RABBIT_ART.find(art => art.species === species);
+}
+/** The drawing of this individual rabbit: its evolved drawing from affection 30 (unless it wears the old one), else its species'. */
+export function artForRabbit(rabbit: LookRabbit): RabbitArt | undefined {
+  return (showsEvolvedArt(rabbit) ? evolvedRabbitArt(rabbit.species) : undefined) ?? rabbitArt(rabbit.species);
 }
 /** Public compatibility views: references to the same derived objects, never separate metadata. */
 export const SNOW_ART = rabbitArt('neige')!;

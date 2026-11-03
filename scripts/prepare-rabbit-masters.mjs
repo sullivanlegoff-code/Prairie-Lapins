@@ -35,6 +35,11 @@ export const DESIGNS = [
   {id: 'ankylosaure', source: 'output/imagegen/ankylosaure-v1/anky-B3.png', background: 'light'},
   // Mythic Benny, inspired by a real rabbit: design A1 approved by the owner on 1 November 2026 (cut from the A variations sheet).
   {id: 'benny', source: 'output/imagegen/benny-v2/benny-A1-master.png', background: 'light'},
+  // Affection 30 evolutions of the five commons, chosen by the owner on 3 November 2026 (white backdrop, the rabbit alone). The
+  // approved paintings stay beside the species as <id>-evolution-source.png; `master` writes <id>-evolution-sprite.png (the v2 source)
+  // instead of the species' own sprite.png. Usage: node scripts/prepare-rabbit-masters.mjs . paille-evolution neige-evolution ...
+  ...['paille', 'neige', 'feu', 'belier-gris', 'volant'].map(id => ({id: `${id}-evolution`, source: `assets-source/rabbits/${id}/${id}-evolution-source.png`,
+    master: `assets-source/rabbits/${id}/${id}-evolution-sprite.png`, background: 'light'})),
 ];
 // Bouee's left ear encloses a pocket of background: seed only that pocket, preserving the ring's white dots.
 export const BACKGROUND_SEEDS = {bouee: [[490, 570]]};
@@ -131,8 +136,9 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     const image = decodeRgbPng(readFileSync(design.source ?? join(folder, design.file)));
     if (design.background) cutOut(image, design.background, BACKGROUND_SEEDS[design.id]);
     const master = crop(image);
-    mkdirSync(`assets-source/rabbits/${design.id}`, {recursive: true});
-    writeFileSync(`assets-source/rabbits/${design.id}/sprite.png`, encodePng(master));
+    const target = design.master ?? `assets-source/rabbits/${design.id}/sprite.png`;
+    mkdirSync(target.slice(0, target.lastIndexOf('/')), {recursive: true});
+    writeFileSync(target, encodePng(master));
     console.log(`${design.id}: ${image.width}x${image.height} -> ${master.width}x${master.height}`);
   }
 }

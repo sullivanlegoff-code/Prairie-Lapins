@@ -3,6 +3,7 @@ import {MAX_APPLIED_ADJUSTMENTS} from '../simulation/adjustments';
 import {cumulativeLevelXp, nextLevelCost} from '../simulation/progression';
 import {establishHistoricalLevelRights} from '../simulation/levelRights';
 import {isUltimate} from '../simulation/affection';
+import {classicLookReason} from '../simulation/forest';
 import {PURCHASE_UNLOCK_IDS} from '../config/purchaseUnlocks';
 import {RECIPE_BOOK_SPECIES} from '../config/recipes';
 import {updateMissions} from '../simulation/missions';
@@ -20,7 +21,7 @@ import {decorationPlacementReason} from '../simulation/decorations';
 import {ISLAND} from '../config/islandGeometry';
 
 /**
- * The current format is v23 (affection up to 50, a second Statue de l'Affection, the Salon de soins and the picnic, a lapin ultime's taken-off crown, all optional; nothing to convert), after v22 (Benny's power and sky mode, optional), v21 (friendships and memories), v20 (catalogue conversion) and v19 (farm and agency levels, concurrent trips, Heart receipts), migrated through v18 and v17 from v16 (economy migration). Version 16 was the catalogue boundary of the development saves: the species Terre, Mottelin, Géant and
+ * The current format is v23 (affection up to 50, a second Statue de l'Affection, the Salon de soins and the picnic, a lapin ultime's taken-off crown, the Forêt de Brocéliande and a rabbit's old drawing put back, all optional; nothing to convert), after v22 (Benny's power and sky mode, optional), v21 (friendships and memories), v20 (catalogue conversion) and v19 (farm and agency levels, concurrent trips, Heart receipts), migrated through v18 and v17 from v16 (economy migration). Version 16 was the catalogue boundary of the development saves: the species Terre, Mottelin, Géant and
  * Brumelin and the Terre habitat were removed, and saves before that catalogue boundary are not converted. Versions 1 to 15 are refused as incompatible
  * (the controller then starts a new game); they are never read, migrated or restored.
  */
@@ -49,7 +50,7 @@ const building = z.object({
 // A rabbit may carry the personal name its owner gave it: canonical text (trimmed, at most 32 characters, no control
 // character), absent when unnamed. Names are individual: they are never inherited and never belong to the species.
 const rabbitName = z.string().refine(name => name !== '' && normalizeRabbitName(name) === name, 'Invalid rabbit name');
-const rabbit = z.object({incomeRoll: z.number().int().min(0).max(10000).optional(), id: identity, species, affection: z.number().int().min(BALANCE.minAffection).max(BALANCE.maxAffection), enclosureId: identity, name: rabbitName.optional(), crownHidden: z.literal(true).optional()}).strict();
+const rabbit = z.object({incomeRoll: z.number().int().min(0).max(10000).optional(), id: identity, species, affection: z.number().int().min(BALANCE.minAffection).max(BALANCE.maxAffection), enclosureId: identity, name: rabbitName.optional(), crownHidden: z.literal(true).optional(), classicLook: z.literal(true).optional()}).strict();
 const missions = z.object({
   nightOrderStarted: z.boolean().optional(),
   events: z.object({collectOrder: integer.max(20), breed: integer.max(1), transferBirth: integer.max(1), welcome: integer.max(1), placeDecoration: integer.max(1)}).strict(),
@@ -364,6 +365,9 @@ export function decodeGame(json: string): DecodeResult {
   for (const rabbit of state.rabbits) if (SPECIES[rabbit.species].rarity !== 'common') rabbit.incomeRoll ??= historicalIncomeRoll(rabbit);
   // A taken-off crown only means something on an ultimate rabbit: elsewhere it is dropped, never a reason to refuse the save.
   for (const rabbit of state.rabbits) if (rabbit.crownHidden && !isUltimate(rabbit)) delete rabbit.crownHidden;
+  // The old drawing put back at the Forêt de Brocéliande, the same way: dropped without the forest, below affection 30 or on a species
+  // without an evolved drawing (the rabbit then shows the drawing the rules give it), never a reason to refuse the save.
+  for (const rabbit of state.rabbits) if (rabbit.classicLook && classicLookReason(state, rabbit)) delete rabbit.classicLook;
   const rabbitIds = new Set(state.rabbits.map(rabbit => rabbit.id));
   for (const id of Object.keys(state.cuisine.affectionCycles))
     if (!rabbitIds.has(id)) delete state.cuisine.affectionCycles[id];

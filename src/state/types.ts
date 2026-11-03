@@ -39,8 +39,10 @@ export interface Nursery {capacity: NurseryCapacity; babies: NurseryBaby[]}
 /**
  * incomeRoll: one permanent individual draw, from 0 to 10000. Missing on historical saves.
  * crownHidden: an ultimate rabbit (affection 50) whose crown the player took off; absent = crown worn. Never on another rabbit.
+ * classicLook: a rabbit of affection 30 or more, of a species with an evolved drawing, that the player put back in its old drawing at
+ * the Forêt de Brocéliande; absent = evolved drawing. Never on another rabbit, never without the forest.
  */
-export interface Rabbit { incomeRoll?: number; id: string; species: SpeciesId; affection: number; enclosureId: string; name?: string; crownHidden?: true }
+export interface Rabbit { incomeRoll?: number; id: string; species: SpeciesId; affection: number; enclosureId: string; name?: string; crownHidden?: true; classicLook?: true }
 export interface MissionState {
   nightOrderStarted?: boolean;
   events: Record<MainEvent, number>;
@@ -108,7 +110,8 @@ export type Refusal = 'LEVEL_REQUIRED' | 'NO_BREEDING_RESULT' | 'PURCHASE_LOCKED
   'STALE_ACTION' | 'PRICE_CHANGED' | 'NO_MISSING_PATTES' | 'ALREADY_CLAIMED' | 'CYCLE_EXPIRED' | 'RESOURCE_LIMIT' | 'TYPE_INCOMPATIBLE' | 'MAX_HABITAT_LEVEL' | 'RECIPE_KNOWN' | 'MAX_NURSERY_CAPACITY' |
   'UPGRADE_BLOCKED_BUILDING' | 'UPGRADE_BLOCKED_DECORATION' | 'UPGRADE_BLOCKED_LAND' | 'INVALID_NAME' | 'MARKET_LIMIT' | 'STATUE_REQUIRED' | 'SECOND_STATUE_REQUIRED' | 'TRAVELING' |
   'BENNY_RECHARGING' | 'NO_WAITING_BABY' | 'BENNY_KEPT' |
-  'AT_SALON' | 'GIFT_TODAY' | 'AFFECTION_WALL' | 'PICNIC_TODAY' | 'EMPTY_ENCLOSURE' | 'NO_GIFT_POSSIBLE';
+  'AT_SALON' | 'GIFT_TODAY' | 'AFFECTION_WALL' | 'PICNIC_TODAY' | 'EMPTY_ENCLOSURE' | 'NO_GIFT_POSSIBLE' |
+  'NO_EVOLVED_ART' | 'EVOLUTION_AFFECTION';
 export interface CuisineReward {pattes: number; grass: number; /** True for one of the cycle's full-reward slots, false for a tip. */ fullReward: boolean; affectionGranted: boolean; affectionAtCap: boolean; affectionStatueRequired: boolean; heartGranted: boolean; /** The rabbit the affection reward was drawn for. */ affectionRabbitId: string}
 export type ActionResult = {ok: true; state: GameState; value?: string | number; progressionGain?: ProgressionGain; cuisineReward?: CuisineReward} |
   {ok: false; state: GameState; reason: Refusal};
@@ -135,6 +138,8 @@ export type BaseCommand =
   | {type: 'renameRabbit'; id: string; name: string}
   /** An ultimate rabbit (affection 50) takes off or puts back its crown; free and purely cosmetic. */
   | {type: 'toggleCrown'; rabbitId: string}
+  /** Forêt de Brocéliande: a rabbit of affection 30 or more goes back to its old drawing, or to its evolved one; free and cosmetic. */
+  | {type: 'toggleClassicLook'; rabbitId: string}
   /** Benny's power: every baby of the nursery is ready now; then it recharges for 48 hours. */
   | {type: 'bennyPower'}
   /** Benny flies above the island, or comes back to her enclosure. Her income and enclosure are unchanged. */
