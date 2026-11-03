@@ -88,7 +88,7 @@ describe('browsing all main missions from level seven', () => {
     expect(panel().scrollTop).toBe(240); expect(card('first-meal').dataset.missionStatus).toBe('claimed'); expect(document.activeElement).toBe(filter('all'));
   });
   it('opens and uses filters and claims with real clicks even if an old solo guide is still at snowReward', () => {
-    const s = state(); s.buildings.push(emptyBuilding('building-6', 'enclosure', 10, 40, 'neige')); s.nextId = 7; s.discovered.push('neige');
+    const s = state(); s.buildings.push(emptyBuilding('building-6', 'enclosure', 11, 40, 'neige')); s.nextId = 7; s.discovered.push('neige');
     const {controller, prefs} = setup(s, true); open(); expect(cards()).toHaveLength(catalogueSize());
     filter('ready').click(); expect(filter('ready').getAttribute('aria-pressed')).toBe('true');
     const before = controller.getSnapshot().state!.pattes; claim('discover-paille').click();

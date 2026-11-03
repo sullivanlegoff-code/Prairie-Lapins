@@ -87,7 +87,7 @@ export type Placement = {kind: BuildingKind; movingId?: string; starter?: boolea
 export function placementReason(s: GameState, placement: Placement): string | null {
   const cell = placement.cell;
   if (!cell) return 'Touche un petit carré de la prairie.';
-  const reason = buildingPlacementReason(s, cell.x, cell.y, placement.movingId);
+  const reason = buildingPlacementReason(s, cell.x, cell.y, placement.movingId, placement.kind);
   if (reason) return REFUSALS[reason];
   if (placement.movingId) return null;
   if (placement.starter) return (placement.kind !== 'nest' && placement.kind !== 'nursery') ? REFUSALS.INVALID_CHOICE : s.buildings.some(b=>b.kind===placement.kind) ? REFUSALS.BUILDING_LIMIT : null;

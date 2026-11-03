@@ -38,7 +38,7 @@ import {affectionStatueCount, feedReason, nextAffectionStatue, playerLevel, wear
 import type {Building, Rabbit} from '../state/types';
 import {MAX_RABBIT_NAME_LENGTH, normalizeRabbitName} from '../simulation/rabbitNames';
 import {HABITATS, HABITAT_TYPES, habitatLevel, habitatPrice, type HabitatType} from '../config/habitats';
-import {habitatFootprint} from '../config/habitatSizes';
+import {buildingSize, habitatFootprint} from '../config/habitatSizes';
 import {habitatThumbnail} from './habitatThumbnails';
 import {FARM_ART, FARM_LEVEL_1_ART} from '../config/farmArt';
 import {NEST_ART} from '../config/nestArt';
@@ -803,7 +803,7 @@ export class GameUI {
     this.title.textContent = `${p.movingId ? 'Déplacer' : 'Placer'} : ${name}`;
     if (p.kind === 'statue' && !p.movingId) this.content.append(node('p', `Prix : ${price} · ton solde : ${heartAmount(s.hearts)}. Le paiement a lieu seulement quand tu confirmes l’emplacement.`, 'small'));
     // The footprint shown is the building's real one: an enlarged enclosure keeps its tier when it moves.
-    const size = habitatFootprint(s.buildings.find(b => b.id === p.movingId)?.footprintTier), footprint = `${size.width} × ${size.depth}`;
+    const size = buildingSize(s.buildings.find(b => b.id === p.movingId) ?? {kind: p.kind}), footprint = `${size.width} × ${size.depth}`;
     this.content.append(node('p', `Touche un petit carré pour choisir le coin de l’empreinte ${footprint}. Déplacement par pas d’un carré. Glisse ou pince pour ajuster la vue.`));
     this.content.append(node('p', p.cell ? `Grille fine : (${p.cell.x}, ${p.cell.y}) · empreinte ${footprint}` : 'Aucune case sélectionnée.', 'badge'));
     const reason = placementReason(s, p);
@@ -1034,7 +1034,7 @@ export class GameUI {
         const target={family:'habitatUpgrade',id:b.habitat!.type,toLevel:targetLevel} as const,access=stateLevelAccess(s,target);
         const command:PattesCommand={type:'upgradeHabitat',id,fromLevel:level};
         // The upgrade also acquires the larger footprint, anchored at the same top-left cell; it needs the room before any payment.
-        const from=habitatFootprint(b.footprintTier),to=habitatFootprint(targetLevel),room=upgradeFootprintReason(s,id,targetLevel);
+        const from=buildingSize(b),to=habitatFootprint(targetLevel),room=upgradeFootprintReason(s,id,targetLevel);
         const description=`Niveau de l’habitat ${level} → ${targetLevel} : places ${stats.capacity} → ${next.capacity} · stockage ${stats.cap} → ${next.cap} pattes · emprise ${from.width} × ${from.depth} → ${to.width} × ${to.depth} cases, vers la droite et vers le bas. Occupants, emplacement et stock actuel conservés.`;
         const card=this.card('Amélioration de l’habitat',description);card.dataset.upgradeHabitat=id;
         const inHearts=next.currency==='hearts';

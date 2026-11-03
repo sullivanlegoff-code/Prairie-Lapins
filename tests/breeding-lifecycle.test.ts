@@ -17,8 +17,10 @@ const run = (s: GameState, command: Command, now = s.lastSimulatedAt, roll = .5)
 const nursery = (s: GameState) => s.buildings.find(b => b.kind === 'nursery')!;
 const nest = (s: GameState) => s.buildings.find(b => b.kind === 'nest')!;
 function habitat(s: GameState, type: HabitatType): GameState {
-  // A cell where the habitat also has room to grow to its 6 × 5 level-2 footprint (the upgrade tests need it).
-  for (let y = 32; y <= 44; y++) for (let x = 0; x <= 12; x++) if (!buildingPlacementReason(s, x, y) && !footprintPlacementReason(s, {x, y, width: 6, height: 5})) return run(s, {type: 'buyBuilding', kind: 'enclosure', habitatType: type, x, y});
+  // A cell where the habitat also has room to grow to its 8 × 5 level-2 footprint (the upgrade tests need it). Since v24 the
+  // start parcel has no such room beside the starter buildings: the parcel above it (fine rows 16–31) is added to the fixture.
+  if (!s.acquiredParcels.includes('west')) s.acquiredParcels.push('west');
+  for (let y = 16; y <= 44; y++) for (let x = 0; x <= 12; x++) if (!buildingPlacementReason(s, x, y, undefined, 'enclosure') && !footprintPlacementReason(s, {x, y, width: 8, height: 5})) return run(s, {type: 'buyBuilding', kind: 'enclosure', habitatType: type, x, y});
   throw Error('no free cell');
 }
 const fill = (s: GameState, home: string, species: 'paille' | 'neige') => {

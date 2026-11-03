@@ -17,7 +17,7 @@ import {previousStart} from './regression-start';
 const NOW = 1_790_000_000_000;
 function ready(): GameState {
   const s = previousStart(NOW);
-  s.buildings[0].x = 18; s.buildings[0].y = 20;
+  s.buildings[0].x = 17; s.buildings[0].y = 20;
   s.buildings[1].x = 18; s.buildings[1].y = 16;
   s.buildings[2].x = 22; s.buildings[2].y = 16;
   s.pattes = 100_000; s.grass = 1000; s.hearts = 1000;
@@ -27,7 +27,7 @@ function ready(): GameState {
   s.rabbits.push({...s.rabbits[0], id: 'rabbit-9'});
   const farm = emptyBuilding('building-6', 'farm', 22, 20);
   farm.order = {recipe: 'foin', startedAt: NOW - 5 * MINUTE, endsAt: NOW};
-  const habitat = emptyBuilding('building-7', 'enclosure', 26, 24);
+  const habitat = emptyBuilding('building-7', 'enclosure', 24, 24);
   const kitchen = emptyBuilding('building-8', 'kitchen', 26, 20);
   s.buildings.push(farm, habitat, kitchen);
   s.buildings[0].incomeUnits = 12 * HOUR;

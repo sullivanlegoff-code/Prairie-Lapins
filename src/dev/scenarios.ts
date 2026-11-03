@@ -89,7 +89,7 @@ export function scenarioState(id: ScenarioId, now: number): GameState {
   if (id === 'initiationSaved') {
     s=createCentreStartGame(now);s.grass=10;
     const run=(command:Command)=>{const result=act(s,command,now,()=>.1);if(!result.ok)throw Error(result.reason);s=result.state;};
-    run({type:'buyBuilding',kind:'enclosure',habitatType:'neige',x:18,y:24});const snow=s.buildings.at(-1)!.id;
+    run({type:'buyBuilding',kind:'enclosure',habitatType:'neige',x:17,y:24});const snow=s.buildings.at(-1)!.id;
     run({type:'buyRabbit',species:'neige',enclosureId:snow});const neige=s.rabbits.at(-1)!.id;run({type:'claimMainMission',id:'welcome-snow'});
     run({type:'feed',id:'rabbit-2'});run({type:'feed',id:neige});
     run({type:'breed',parents:['rabbit-2',neige]});
@@ -172,7 +172,7 @@ export function scenarioState(id: ScenarioId, now: number): GameState {
 
     run({type:'buyBuilding',kind:'enclosure',habitatType:'vol',x:24,y:26});
     run({type:'buyDecoration',catalogId:'bush'});
-    run({type:'placeDecoration',id:s.decorations.at(-1)!.id,location:{kind:'outside',x:23,y:22,rotation:0}});
+    run({type:'placeDecoration',id:s.decorations.at(-1)!.id,location:{kind:'outside',x:24,y:22,rotation:0}});
     const checked=decodeGame(encodeGame(s));if(!checked.ok)throw Error('Invalid fine building scenario');return checked.state;
   }
   if (id === 'islandStart' || id === 'islandExpanded' || id === 'islandDiagonal' || id === 'islandL' || id === 'islandFull' || id === 'parcelEdges') {
@@ -229,7 +229,7 @@ export function scenarioState(id: ScenarioId, now: number): GameState {
   } else if (id === 'reproduction' || id==='manualBreeding') {
     run({type: 'feed', id: 'rabbit-2'}); run({type: 'feed', id: 'rabbit-3'});
     if(id==='manualBreeding') {
-      run({type:'buyBuilding',kind:'enclosure',x:18,y:24});
+      run({type:'buyBuilding',kind:'enclosure',x:17,y:24});
       run({type:'moveRabbit',id:'rabbit-3',enclosureId:s.buildings.at(-1)!.id});
       const nursery=s.buildings.find(b=>b.kind==='nursery')!;
       nursery.nursery!.babies=[{slot:0,birth:{id:`birth-${s.nextId++}`,species:'paille',guaranteed:false,reservedDiscovery:false},startedAt:now-growthDuration('paille'),readyAt:now}];
@@ -243,7 +243,7 @@ export function scenarioState(id: ScenarioId, now: number): GameState {
     s.rabbits = []; s.buildings = []; s.discovered = [];
     const types = id === 'habitats' ? HABITAT_TYPES : id === 'collection' ? Array.from({length: Math.ceil(SPECIES_IDS.length / 7)}, () => 'universal' as const) : ['universal', 'universal'] as const;
     for (const [index, type] of types.entries()) {
-      const home = emptyBuilding(`building-${s.nextId++}`, 'enclosure', 18 + index % 3 * 4, 20 + Math.floor(index / 3) * 4, type);
+      const home = emptyBuilding(`building-${s.nextId++}`, 'enclosure', 17 + index % 3 * 5, 20 + Math.floor(index / 3) * 4, type);
       home.habitat!.level = 3; s.buildings.push(home);
       const species: SpeciesId[] = id === 'habitats' ? SPECIES_IDS.slice(0, 11).filter(species => type === 'universal' || SPECIES[species].types.includes(type)) : (id === 'collection' ? SPECIES_IDS : SPECIES_IDS.slice(0, 11)).slice(index * 7, index * 7 + 7);
       const count = id === 'habitats' ? 7 : species.length;
@@ -290,7 +290,7 @@ function nurseryScenario(id: 'nurseryUnlocks' | 'nurseryStates', start: GameStat
   s.pattes = 5000; s.grass = 500;
   const run = (command: Command) => { const result = act(s, command, now, () => .5); if (!result.ok) throw Error(`${command.type}: ${result.reason}`); s = result.state; };
   let cell: {x: number; y: number} | null = null;
-  for (let y = 0; y < ISLAND.mapFine && !cell; y++) for (let x = 0; x < ISLAND.mapFine && !cell; x++) if (!buildingPlacementReason(s, x, y)) cell = {x, y};
+  for (let y = 0; y < ISLAND.mapFine && !cell; y++) for (let x = 0; x < ISLAND.mapFine && !cell; x++) if (!buildingPlacementReason(s, x, y, undefined, 'enclosure')) cell = {x, y};
   if (!cell) throw new Error('No free cell for the Neige home');
   run({type: 'buyBuilding', kind: 'enclosure', habitatType: 'neige', x: cell.x, y: cell.y});
   const snowHome = s.buildings.at(-1)!.id; run({type: 'buyRabbit', species: 'neige', enclosureId: snowHome}); const snow = s.rabbits.at(-1)!;

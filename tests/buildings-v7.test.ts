@@ -30,7 +30,7 @@ describe('fine building footprints v7',()=>{
   const farm=s.buildings.find(b=>b.kind==='farm')!;
   expect(buildingPlacementReason(s,18,21,farm.id)).toBeNull();expect(buildingPlacementReason(s,19,20,farm.id)).toBe('CELL_OCCUPIED');
   expect(buildingPlacementReason(s,18,20)).toBe('CELL_OCCUPIED');expect(buildingPlacementReason(s,18,20,'absent')).toBe('NOT_FOUND');
-  expect(overlaps(buildingFootprint({x:18,y:20}),buildingFootprint({x:22,y:20}))).toBe(false);
+  expect(overlaps(buildingFootprint({kind:'farm',x:18,y:20}),buildingFootprint({kind:'farm',x:22,y:20}))).toBe(false);
  });
  it('blocks reciprocal building/decoration overlaps and allows their edge contact',()=>{
   let s=decoration(rich(),22,22),id=s.decorations[0].id;expect(buildingPlacementReason(s,19,22)).toBe('DECORATION_BLOCKS_BUILDING');

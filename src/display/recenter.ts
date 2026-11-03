@@ -9,7 +9,7 @@ import {FOREST_ART} from '../config/forestArt';
 import {PARCELS, type ParcelId} from '../config/land';
 import {ISLAND} from '../config/islandGeometry';
 import {VISUAL} from '../config/visual';
-import {HABITAT_SIZE_PROPOSAL} from '../config/habitatSizes';
+import {HABITAT_SIZE_PROPOSAL, enclosureScale} from '../config/habitatSizes';
 import {habitatArtFor, habitatArtLayout} from '../config/habitatArt';
 import {buildingCenter, cellsBounds, type MeadowCamera, type ViewInsets, type WorldBounds} from '../ui/gestures';
 import {screenBounds, toScreen} from '../ui/projection';
@@ -20,14 +20,14 @@ import type {Building, GameState} from '../state/types';
 export interface ScreenChrome {width: number; height: number; hudBottom: number; column: {right: number; bottom: number} | null; footerTop: number | null}
 
 /** Screen-world extent of a building as drawn (upright artwork, or habitat fence, posts and residents, and its name label). */
-export function buildingFrame(b: Pick<Building, 'kind' | 'x' | 'y'> & Partial<Pick<Building, 'footprintTier' | 'habitat'>>): WorldBounds {
-  const c = toScreen(buildingCenter(b));
+export function buildingFrame(b: Pick<Building, 'kind' | 'x' | 'y'> & Partial<Pick<Building, 'footprintTier' | 'formerFootprint' | 'habitat'>>): WorldBounds {
+  const c = toScreen(buildingCenter(b)), e = b.kind === 'enclosure' ? enclosureScale(b) : 1;
   const art = b.kind === 'nest' ? NEST_ART : b.kind === 'nursery' ? NURSERY_ART : b.kind === 'farm' ? FARM_ART : b.kind === 'kitchen' ? KITCHEN_ART : b.kind === 'statue' ? STATUE_ART : b.kind === 'agency' ? AGENCY_ART : b.kind === 'salon' ? SALON_ART : b.kind === 'forest' ? FOREST_ART : null;
   // Illustrated enclosure: picture frame around its measured anchor, including the name label.
   const illustrated = b.kind === 'enclosure' ? habitatArtFor(b.habitat ?? undefined, b.footprintTier) : null;
-  if (illustrated) { const k = illustrated.worldWidth / illustrated.width; return {left: c.x - illustrated.anchor.x * k, right: c.x + (illustrated.width - illustrated.anchor.x) * k, top: c.y - illustrated.anchor.y * k, bottom: Math.max(c.y + (illustrated.height - illustrated.anchor.y) * k, c.y + habitatArtLayout(illustrated).labelOffset + 10)}; }
+  if (illustrated) { const k = e * illustrated.worldWidth / illustrated.width; return {left: c.x - illustrated.anchor.x * k, right: c.x + (illustrated.width - illustrated.anchor.x) * k, top: c.y - illustrated.anchor.y * k, bottom: Math.max(c.y + (illustrated.height - illustrated.anchor.y) * k, c.y + habitatArtLayout(illustrated).labelOffset * e + 10)}; }
   // A larger enclosure's fence, rails and corner pieces grow with its tier (same table as the drawing).
-  if (!art) { const g = b.kind === 'enclosure' && b.footprintTier && b.footprintTier > 1 ? HABITAT_SIZE_PROPOSAL[b.footprintTier].growth : {x: 0, top: 0, bottom: 0}; return {left: c.x - 88 - g.x, right: c.x + 88 + g.x, top: c.y - 64 - g.top, bottom: c.y + 80 + g.bottom}; }
+  if (!art) { const g = b.kind === 'enclosure' && b.footprintTier && b.footprintTier > 1 ? HABITAT_SIZE_PROPOSAL[b.footprintTier].growth : {x: 0, top: 0, bottom: 0}; return {left: c.x - (88 + g.x) * e, right: c.x + (88 + g.x) * e, top: c.y - (64 + g.top) * e, bottom: c.y + (80 + g.bottom) * e}; }
   const height = art.worldWidth * art.height / art.width, labelY = 'labelY' in art ? art.labelY : 70;
   return {left: c.x - art.worldWidth / 2, right: c.x + art.worldWidth / 2, top: c.y - height * art.originY, bottom: Math.max(c.y + height * (1 - art.originY), c.y + labelY + 10)};
 }

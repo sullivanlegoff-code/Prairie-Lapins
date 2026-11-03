@@ -83,8 +83,8 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
     const reason = habitatEntryReason(s, b, species); requireRule(!reason, reason ?? 'INVALID_CHOICE');
     return b;
   };
-  const cell = (x: number, y: number, exclude?: string) => {
-    const reason = buildingPlacementReason(s, x, y, exclude);
+  const cell = (x: number, y: number, exclude?: string, kind?: BuildingKind) => {
+    const reason = buildingPlacementReason(s, x, y, exclude, kind);
     requireRule(!reason, reason ?? 'INVALID_CELL');
   };
   const busy = (rabbitId: string) => !!nestForParent(s, rabbitId);
@@ -311,7 +311,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(command.kind!=='agency' || playerLevel(s)>=TRAVEL.unlockLevel,'LEVEL_REQUIRED');
         requireRule(command.kind!=='salon' || playerLevel(s)>=SALON.unlockLevel,'LEVEL_REQUIRED');
         requireRule(command.kind!=='forest' || playerLevel(s)>=FOREST.unlockLevel,'LEVEL_REQUIRED');
-        cell(command.x, command.y); allocation();
+        cell(command.x, command.y, undefined, command.kind); allocation();
         if (command.kind === 'statue') {
           requireRule(!payment && !quoteOnly, 'INVALID_CHOICE');
           requireRule(statue && s.hearts >= statue.heartPrice, 'NOT_ENOUGH_HEARTS');
@@ -372,7 +372,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
           requireRule(!payment && !quoteOnly, 'INVALID_CHOICE');
           requireRule(s.hearts >= price.cost, 'NOT_ENOUGH_HEARTS'); s.hearts -= price.cost;
         } else pay(price.cost);
-        b.habitat.level = next; b.footprintTier = next; break;
+        b.habitat.level = next; b.footprintTier = next; delete b.formerFootprint; break;
       }
       case 'moveBuilding': {
         const b = building(command.id); cell(command.x, command.y, b.id); b.x = command.x; b.y = command.y; break;

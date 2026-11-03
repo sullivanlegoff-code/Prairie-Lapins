@@ -1,3 +1,4 @@
+import {ENCLOSURE_SCALE} from '../src/config/habitatSizes';
 import {describe,it,expect} from 'vitest';
 import {createGame} from '../src/simulation';
 import {MeadowCamera,buildingCenter,type WorldBounds} from '../src/ui/gestures';
@@ -27,7 +28,7 @@ describe('Recentrer frames the three starting buildings', () => {
     const [habitat, nest, nursery] = s.buildings.map(b => toScreen(buildingCenter(b)));
     const nestHeight = NEST_ART.worldWidth * NEST_ART.height / NEST_ART.width, nurseryHeight = NURSERY_ART.worldWidth * NURSERY_ART.height / NURSERY_ART.width;
     const expected = {left: nest.x - NEST_ART.worldWidth / 2, right: nursery.x + NURSERY_ART.worldWidth / 2,
-      top: Math.min(nest.y - nestHeight * NEST_ART.originY, nursery.y - nurseryHeight * NURSERY_ART.originY), bottom: habitat.y + 80};
+      top: Math.min(nest.y - nestHeight * NEST_ART.originY, nursery.y - nurseryHeight * NURSERY_ART.originY), bottom: habitat.y + 70 * ENCLOSURE_SCALE[1] + 10}; // label below the enlarged lawn
     for (const side of ['left', 'right', 'top', 'bottom'] as const) expect(frame[side]).toBeCloseTo(expected[side], 9);
   });
   it.each(Object.entries(chrome))('%s: all three fully visible beside or below the action column, at most at 1.05', (_name, c) => {

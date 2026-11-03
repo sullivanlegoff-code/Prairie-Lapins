@@ -169,7 +169,7 @@ describe('Salon de soins: the save', () => {
     const {s} = setup(['paille']);
     const raw = JSON.parse(encodeGame(s)); raw.version = 22; raw.buildings = raw.buildings.filter((b: {kind: string}) => b.kind !== 'salon');
     const decoded = decodeGame(JSON.stringify(raw)); if (!decoded.ok) throw Error(decoded.reason);
-    expect(decoded.state.version).toBe(23);
+    expect(decoded.state.version).toBe(24);
     expect(decoded.state.care).toBeUndefined(); expect(decoded.state.affectionGifts).toBeUndefined(); expect(decoded.state.picnicCycle).toBeUndefined();
   });
   it('a released rabbit leaves no gift entry', () => {

@@ -22,7 +22,7 @@ it('bounds album and preserves names and durable souvenir counts',()=>{
  expect(s.cozy!.album).toHaveLength(80);expect(s.cozy!.souvenirs).toEqual([{destination:'Paris',visits:90}]);
 });
 it('migrates version20 and round trips new content with bounded validation',()=>{
- const s=regressionStart(0),old={...s,version:20};const migrated=decodeGame(JSON.stringify(old));expect(migrated.ok).toBe(true);if(migrated.ok)expect(migrated.state.version).toBe(23);
+ const s=regressionStart(0),old={...s,version:20};const migrated=decodeGame(JSON.stringify(old));expect(migrated.ok).toBe(true);if(migrated.ok)expect(migrated.state.version).toBe(24);
  recordMemory(s,{key:'event:flowers',kind:'event',at:0,text:'La fête des fleurs'});
  const decoded=decodeGame(JSON.stringify(s));expect(decoded.ok).toBe(true);if(decoded.ok)expect(decoded.state.cozy).toEqual(s.cozy);
  s.cozy!.discoveries=Array.from({length:65},(_,i)=>String(i));expect(decodeGame(JSON.stringify(s)).ok).toBe(false);

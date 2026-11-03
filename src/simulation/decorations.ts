@@ -3,11 +3,11 @@ import {DECORATIONS, FINE_GRID, MAX_DECORATIONS, type DecorationId} from '../con
 import type {DecorationLocation, GameState, Refusal} from '../state/types';
 import {ISLAND, type IslandGeometry} from '../config/islandGeometry';
 
-import {decorationFootprint as footprint, buildingFootprint, decorationsInFootprint, footprintPlacementReason, type PlacementState} from './placement';
+import {decorationFootprint as footprint, decorationsInFootprint, footprintPlacementReason, type PlacementState} from './placement';
 export {footprint};
 /** Legacy explicit bulk command uses a coarse cell; building placement uses buildingFootprint. */
 export function decorationsInCell(s: Pick<GameState, 'decorations'>, x: number, y: number): string[] {
-  return decorationsInFootprint(s, buildingFootprint({x: x * FINE_GRID, y: y * FINE_GRID}));
+  return decorationsInFootprint(s, {x: x * FINE_GRID, y: y * FINE_GRID, width: FINE_GRID, height: FINE_GRID});
 }
 export function purchaseDecorationReason(s: GameState, catalogId: DecorationId): Refusal | null {
   if (!Object.hasOwn(DECORATIONS, catalogId)) return 'INVALID_CHOICE';

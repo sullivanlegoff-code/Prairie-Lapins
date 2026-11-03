@@ -44,7 +44,7 @@ const between = (m: RabbitMotion, low: number, high: number) => low + (high - lo
 const clamp = (value: number, low: number, high: number) => Math.min(high, Math.max(low, value));
 
 /** Smaller groups roam freely; crowded ones stay close to their slot. */
-const roamScale = (count: number) => count <= 3 ? 1 : count <= 5 ? .7 : .6;
+export const roamScale = (count: number) => count <= 3 ? 1 : count <= 5 ? .7 : .6;
 /** Slots of crowded groups are 34 apart at the closest: two neighbours may each give up to a few units. */
 export const minSeparation = (count: number) => count <= 3 ? 26 : count <= 5 ? 20 : 16;
 export interface Box {minX: number; maxX: number; minY: number; maxY: number}

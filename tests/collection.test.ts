@@ -227,7 +227,7 @@ describe('catalogue, notebook, visuals and compatibility', () => {
     const pens = complete.buildings.filter(b => b.kind === 'enclosure');
     for (const pen of pens) pen.habitat!.level = 3;
     // Level-3 enclosures hold seven: add valid ones, on free cells, until the whole catalogue fits one rabbit per species.
-    for (const [x, y] of [18, 22, 26, 30, 34, 38].flatMap(x => [28, 32, 16, 12].map(y => [x, y] as const))) {
+    for (const [x, y] of [16, 21, 26, 31, 36, 41].flatMap(x => [28, 32, 16, 12, 36, 40, 8, 4].map(y => [x, y] as const))) {
       if (pens.length * 7 >= SPECIES_IDS.length) break;
       const home = emptyBuilding(`building-${complete.nextId++}`, 'enclosure', x, y); home.habitat!.level = 3; complete.buildings.push(home);
       try { encodeGame(complete); pens.push(home); } catch { complete.buildings.pop(); complete.nextId--; }
