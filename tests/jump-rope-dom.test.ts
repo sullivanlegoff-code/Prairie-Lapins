@@ -44,12 +44,12 @@ function game(): GameState {
   s.nextId = 104; return s;
 }
 
-it('the shop sells the terrain from level 6 with a provisional picture', () => {
+it('the shop sells the terrain from level 6 with the kiosk picture', () => {
   const s = game(); s.buildings = s.buildings.filter(b => b.kind !== 'jumprope');
   const {ui} = mount(s); ui.open({kind: 'shop', tab: 'buildings'});
   const card = [...panel().querySelectorAll<HTMLElement>('.card')].find(c => c.textContent?.includes('Terrain de corde à sauter'))!;
   expect(card.textContent).toMatch(/Placer · 1\s500 pièces/u); expect(card.textContent).toContain('touche l’écran');
-  expect(card.querySelector('.jump-rope-thumbnail')!.textContent).toBe('Image provisoire');
+  expect(card.querySelector<HTMLImageElement>('img.statue-thumbnail')!.src).toContain('assets/buildings/kiosque-corde.png');
 });
 
 it('the terrain launches a game at the tap, then pays the jumps and counts down today’s rewarded games', () => {

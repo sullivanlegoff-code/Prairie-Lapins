@@ -32,7 +32,7 @@ import {PARCELS, PARCEL_IDS, extensionPrice, purchasableParcels, type ParcelId} 
 import {ISLAND} from '../config/islandGeometry';
 import {setCurrencyText} from '../display/currency';
 import {CROP_IDS, cropDuration, cropIcon, statueThumbnail} from '../display/food';
-import {COCO_WELCOME, HOST_NAME, agencyThumbnail, cocoPortrait, forestThumbnail, fromPlace, salonThumbnail, toPlace} from '../display/agency';
+import {COCO_WELCOME, HOST_NAME, agencyThumbnail, cocoPortrait, forestThumbnail, fromPlace, jumpRopeThumbnail, salonThumbnail, toPlace} from '../display/agency';
 import {atSalon, away, giftReason, picnicQuote, rabbitAwayReason} from '../simulation/care';
 import {travelling} from '../simulation/travel';
 import {BENNY, BENNY_POWER_RECHARGE, bennyInSky, bennyPowerReadyAt, bennyPowerReason} from '../simulation/benny';
@@ -2442,8 +2442,4 @@ function jumpRopeQuotaText(s: GameState, now: number): string {
   const day = jumpRopeDay(s, now), games = day.rewardedLeft;
   const rewards = games ? `Encore ${games} partie${games > 1 ? 's' : ''} récompensée${games > 1 ? 's' : ''} aujourd’hui` : 'Parties récompensées finies pour aujourd’hui : reviens demain';
   return `${rewards}${day.heartLeft ? ` · un cœur à ${JUMP_ROPE.heartJumps} sauts` : ''}`;
-}
-/** PROVISIONAL thumbnail, waiting for the owner's choice of the painted building. */
-function jumpRopeThumbnail(): HTMLElement {
-  const box = node('span', 'Image provisoire', 'jump-rope-thumbnail'); box.setAttribute('aria-hidden', 'true'); return box;
 }

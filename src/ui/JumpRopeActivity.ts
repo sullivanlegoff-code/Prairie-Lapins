@@ -4,6 +4,7 @@ import {airTime, advanceJumpRope, ropePhase, startJumpRope, tapJumpRope, type Ju
 import {setCurrencyText} from '../display/currency';
 import type {CuisineRabbit} from './CuisineActivity';
 import {portrait} from './portraits';
+import {JUMP_ROPE_URL} from '../display/agency';
 
 /**
  * The Terrain de corde à sauter's game (src/simulation/jumpRope.ts holds the rules): a full-screen layer outside GameUI's rebuilt
@@ -22,6 +23,7 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
   layer.setAttribute('role', 'dialog'); layer.setAttribute('aria-modal', 'true'); layer.setAttribute('aria-label', 'Corde à sauter');
   layer.innerHTML = `<div class="jump-rope-top"><p class="jump-rope-score" aria-live="polite"></p><p class="jump-rope-lives"></p><p class="jump-rope-quota"></p><button type="button" data-jump-rope-exit>Quitter</button></div>
 <div class="jump-rope-stage" data-jump-rope-stage>
+<img class="jump-rope-kiosk" alt="" aria-hidden="true" draggable="false" src="${JUMP_ROPE_URL}"><span class="jump-rope-sand"></span>
 <span class="jump-rope-post" data-side="left"></span><span class="jump-rope-post" data-side="right"></span>
 <svg class="jump-rope-rope" data-layer="back" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path/></svg>
 <span class="jump-rope-rabbit"><span class="jump-rope-figure"></span><span class="jump-rope-shadow"></span></span>

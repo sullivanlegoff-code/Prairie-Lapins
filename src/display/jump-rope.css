@@ -1,4 +1,5 @@
-/* The Terrain de corde à sauter's game (src/ui/JumpRopeActivity.ts). Provisional backdrop until the owner picks the painted concept. */
+/* The Terrain de corde à sauter's game (src/ui/JumpRopeActivity.ts), outdoors in front of the kiosk (concept B): its painting at the
+   back, the same striped posts with golden tops and coral rope, a sand circle. The sky and lawn stay a provisional backdrop. */
 .jump-rope-activity {
   position: fixed; inset: 0; z-index: 140; display: flex; flex-direction: column;
   background: linear-gradient(#bfe3f2 0%, #e8f5ea 58%, #9fcf7a 58%, #86bd63 100%);
@@ -14,12 +15,15 @@
 .jump-rope-top button { min-height: 44px; padding: 0 16px; border-radius: 14px; border: 2px solid #6b5a3a; background: #fff8e8; font-weight: 800; }
 .jump-rope-stage { position: relative; flex: 1; min-height: 0; cursor: pointer; overflow: hidden; }
 .jump-rope-rope { position: absolute; left: 22%; width: 56%; top: 8%; height: 84%; overflow: visible; pointer-events: none; }
-.jump-rope-rope path { fill: none; stroke: #e8506a; vector-effect: non-scaling-stroke; stroke-width: 5px; stroke-linecap: round; }
+.jump-rope-rope path { fill: none; stroke: #ea7a80; vector-effect: non-scaling-stroke; stroke-width: 5px; stroke-linecap: round; }
 .jump-rope-rope[data-layer="back"] { z-index: 1; opacity: .85; }
 .jump-rope-rope[data-layer="front"] { z-index: 3; }
-.jump-rope-post { position: absolute; z-index: 2; bottom: 12%; width: 14px; height: 52%; border-radius: 6px; background: linear-gradient(90deg, #a0703f, #7a5130); }
+.jump-rope-post { position: absolute; z-index: 2; bottom: 12%; width: 16px; height: 50%; border-radius: 6px; border: 2px solid #b5706a; background: repeating-linear-gradient(-35deg, #fff6ec 0 9px, #f19a97 9px 17px); }
+.jump-rope-post::before { content: ''; position: absolute; left: 50%; top: -14px; width: 22px; height: 22px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff3b0, #f1b52f 55%, #c98a12); }
 .jump-rope-post[data-side="left"] { left: calc(26% - 7px); }
 .jump-rope-post[data-side="right"] { right: calc(26% - 7px); }
+.jump-rope-kiosk { position: absolute; z-index: 0; left: 4%; bottom: 40%; height: 46%; width: auto; opacity: .95; pointer-events: none; }
+.jump-rope-sand { position: absolute; z-index: 0; left: 50%; bottom: 6%; width: 58%; height: 22%; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse, #f3dca6 55%, #e8c98a 80%, #e8c98a00 100%); }
 .jump-rope-rabbit {
   --lift: 0; position: absolute; z-index: 2; left: 50%; bottom: 14%; height: 48%; aspect-ratio: 1;
   transform: translate(-50%, calc(var(--lift) * -38%));
@@ -45,4 +49,3 @@
 .jump-rope-title { font-size: 1.3rem; font-weight: 900; }
 .jump-rope-rewards { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
 .jump-rope-card button { min-height: 44px; margin: 4px; padding: 0 18px; border-radius: 14px; border: 2px solid #6b5a3a; background: #ffe7a8; font-weight: 800; font-size: 1rem; }
-.jump-rope-thumbnail { display: grid; place-items: center; width: 72px; min-width: 72px; height: 72px; border-radius: 12px; border: 2px dashed #d98f2b; background: #9fcf7a; font-size: .62rem; font-weight: 800; text-align: center; color: #3b3326; }

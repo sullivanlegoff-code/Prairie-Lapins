@@ -16,6 +16,9 @@ export const salonThumbnail = () => picture(SALON_URL, 'statue-thumbnail', 72, 7
 export const FOREST_URL = `${import.meta.env.BASE_URL}assets/buildings/foret-broceliande.png`;
 /** The Forêt de Brocéliande thumbnail, in the shop and its menu. */
 export const forestThumbnail = () => picture(FOREST_URL, 'statue-thumbnail', 72, 72);
+export const JUMP_ROPE_URL = `${import.meta.env.BASE_URL}assets/buildings/kiosque-corde.png`;
+/** The Terrain de corde à sauter thumbnail (the kiosk), in the shop and its menu. */
+export const jumpRopeThumbnail = () => picture(JUMP_ROPE_URL, 'statue-thumbnail', 72, 72);
 /** « à Londres », « au Caire », « au Lavandou ». */
 export const toPlace = (d: Destination) => d.startsWith('Le ') ? `au ${d.slice(3)}` : `à ${d}`;
 /** « de Londres », « du Caire », « d’Hammamet ». */

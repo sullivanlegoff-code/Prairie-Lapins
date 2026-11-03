@@ -36,6 +36,7 @@ import {STATUE_ART} from '../config/statueArt';
 import {AGENCY_ART} from '../config/agencyArt';
 import {PICNIC_ART, SALON_ART} from '../config/salonArt';
 import {FOREST_ART} from '../config/forestArt';
+import {JUMP_ROPE_ART} from '../config/jumpRopeArt';
 import {showsEvolvedArt} from '../config/evolvedArt';
 import {PICNIC} from '../config/balance';
 import {playerLevel, wearsCrown} from '../simulation/affection';
@@ -630,7 +631,7 @@ export class MeadowScene extends Phaser.Scene {
         for (const id of CROP_IDS) add({texture: CROP_TEXTURE(id), url: CROP_URL(id)});
       } else if (building.kind === 'nursery') {
         add(NURSERY_ART); add(NURSERY_OVERLAY_ART.baby); add(NURSERY_OVERLAY_ART.veil); add(NURSERY_OVERLAY_ART.lock);
-      } else if (building.kind !== 'jumprope') add(({nest: NEST_ART, kitchen: KITCHEN_ART, statue: STATUE_ART, agency: AGENCY_ART, salon: SALON_ART, forest: FOREST_ART})[building.kind]);
+      } else add(({nest: NEST_ART, kitchen: KITCHEN_ART, statue: STATUE_ART, agency: AGENCY_ART, salon: SALON_ART, forest: FOREST_ART, jumprope: JUMP_ROPE_ART})[building.kind]);
     };
     for (const building of state?.buildings ?? []) buildingArt(building);
     if (state && playerLevel(state) >= PICNIC.unlockLevel) add(PICNIC_ART); // Laid out for a few seconds when a picnic starts.
@@ -788,6 +789,7 @@ export class MeadowScene extends Phaser.Scene {
     if (b.kind === 'agency') return AGENCY_ART.texture;
     if (b.kind === 'salon') return SALON_ART.texture;
     if (b.kind === 'forest') return FOREST_ART.texture;
+    if (b.kind === 'jumprope') return JUMP_ROPE_ART.texture;
     if (b.kind === 'enclosure') { const illustrated = habitatArtFor(b.habitat ?? undefined, b.footprintTier); if (illustrated) return illustrated.texture; }
     // The drawing follows the footprint actually acquired (tier), not the capacity level: a legacy enclosure keeps its compact look.
     const sized = b.habitat && b.footprintTier && b.footprintTier > 1 ? HABITAT_SIZE_PROPOSAL[b.footprintTier] : null;
@@ -805,7 +807,7 @@ export class MeadowScene extends Phaser.Scene {
   /** The same registration is used for placed buildings and the placement/move ghost. */
   private positionBuildingArt(image: Phaser.GameObjects.Image, x: number, y: number, kind: Building['kind'], illustrated: HabitatArt | null = null): void {
     if (illustrated) { image.setPosition(x, y).setOrigin(illustrated.anchor.x / illustrated.width, illustrated.anchor.y / illustrated.height).setScale(illustrated.worldWidth / illustrated.width); return; }
-    const art = kind === 'farm' ? FARM_ART : kind === 'nest' ? NEST_ART : kind === 'nursery' ? NURSERY_ART : kind === 'kitchen' ? KITCHEN_ART : kind === 'statue' ? STATUE_ART : kind === 'agency' ? AGENCY_ART : kind === 'salon' ? SALON_ART : kind === 'forest' ? FOREST_ART : null;
+    const art = kind === 'farm' ? FARM_ART : kind === 'nest' ? NEST_ART : kind === 'nursery' ? NURSERY_ART : kind === 'kitchen' ? KITCHEN_ART : kind === 'statue' ? STATUE_ART : kind === 'agency' ? AGENCY_ART : kind === 'salon' ? SALON_ART : kind === 'forest' ? FOREST_ART : kind === 'jumprope' ? JUMP_ROPE_ART : null;
     image.setPosition(x, y).setOrigin(.5, art ? art.originY : .5)
       .setScale(art ? art.worldWidth / art.width : .5);
   }
@@ -1017,7 +1019,7 @@ export class MeadowScene extends Phaser.Scene {
       if (b.kind === 'salon' && careReady(this.current!, now)) text = 'trip'; // The care is over: the rabbit waits to be welcomed back.
       if (b.kind === 'agency' && tripReady(this.current!, now)) text = 'trip'; // A traveller is back: Coco waits with them. // One bubble for any ready baby.
       if (!text) continue;
-      const p = toScreen(buildingCenter(b)); p.y += b.kind === 'farm' ? FARM_ART.harvestY : b.kind==='nest' ? NEST_ART.actionY : b.kind==='nursery' ? NURSERY_ART.actionY : b.kind==='agency' ? AGENCY_ART.actionY : b.kind==='salon' ? SALON_ART.actionY : b.kind==='forest' ? FOREST_ART.actionY : -72;
+      const p = toScreen(buildingCenter(b)); p.y += b.kind === 'farm' ? FARM_ART.harvestY : b.kind==='nest' ? NEST_ART.actionY : b.kind==='nursery' ? NURSERY_ART.actionY : b.kind==='agency' ? AGENCY_ART.actionY : b.kind==='salon' ? SALON_ART.actionY : b.kind==='forest' ? FOREST_ART.actionY : b.kind==='jumprope' ? JUMP_ROPE_ART.actionY : -72;
       const bubble = kind === 'income' ? coinBubble(this, p.x, p.y, amount, amount >= habitatStats(b).cap) : text === 'food' ? foodBubble(this, p.x, p.y, b.order!.grass ?? ORDERS[b.order!.recipe].grass) : text === 'birth' || text === 'trip' ? this.heartBubble(p.x, p.y) : this.add.text(p.x, p.y, text, {fontFamily: 'Arial', fontSize: '17px', color: '#3b4d2d', backgroundColor: '#fff7dc', padding: {x: 13, y: 10}}).setOrigin(.5);
       if (text === 'birth' && this.tutorialTarget === 'birth') {
         const halo=this.add.graphics().lineStyle(4,0xffcf55).strokeEllipse(p.x,p.y,bubble.width+12,bubble.height+12);this.bubbles.add(halo);
