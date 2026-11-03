@@ -18,7 +18,7 @@ import {affectionCap, isUltimate, nextAffectionStatue, playerLevel, statueReason
 import {agencyBuilding, travelling} from './travel';
 import {atSalon, giftAffectionReason, giftReason, picnicQuote, salonBuilding} from './care';
 import {classicLookReason} from './forest';
-import {jumpRopeBuilding, jumpRopeReward, jumpRopeRabbitReason} from './jumpRope';
+import {jumpIslandReason, jumpRopeReward, jumpRopeTeamReason} from './jumpRope';
 import {dailyBonusReady, dailyClaimable, dailyCycleStart, dailyMissionsOf, recordMissionAction} from './missions';
 import {farmLimit, farmDuration, FARM_UPGRADES, orderFarmLevel, BALANCE, HEARTS, HOUR, TRAVEL, SALON, FOREST, JUMP_ROPE, CARE_KINDS, carePrice, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
 import {emptyBuilding} from '../state/initial';
@@ -255,14 +255,20 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         s.affectionGifts = gifts; s.picnicCycle = cycle; gainXp(quote.xp); value = quote.winners.length; break;
       }
       case 'rewardJumpRope': {
-        requireRule(jumpRopeBuilding(s), 'MISSING_BUILDING');
+        requireRule(s.jumpIsland, 'MISSING_BUILDING');
         requireRule(Number.isSafeInteger(command.score) && command.score >= 0 && command.score <= JUMP_ROPE.maxScore, 'INVALID_CHOICE');
-        const away = jumpRopeRabbitReason(s, command.rabbitId); requireRule(!away, away ?? 'INVALID_CHOICE');
+        requireRule(command.team && typeof command.team === 'object', 'INVALID_CHOICE');
+        const away = jumpRopeTeamReason(s, command.team); requireRule(!away, away ?? 'INVALID_CHOICE');
+        const team = {carriers: [command.team.carriers[0], command.team.carriers[1]] as [string, string], athlete: command.team.athlete};
         const paid = jumpRopeReward(s, command.score, time), cycle = s.missions.daily.cycleIndex;
         const day = s.jumpRope?.cycle === cycle ? s.jumpRope : {cycle, rewarded: 0, best: s.jumpRope?.best ?? 0};
         credit('pattes', paid.pattes); credit('hearts', paid.hearts);
-        s.jumpRope = {cycle, rewarded: day.rewarded + (paid.rewarded ? 1 : 0), ...(day.heart || paid.hearts ? {heart: true as const} : {}), best: Math.max(s.jumpRope?.best ?? 0, command.score)};
+        s.jumpRope = {cycle, rewarded: day.rewarded + (paid.rewarded ? 1 : 0), ...(day.heart || paid.hearts ? {heart: true as const} : {}), best: Math.max(s.jumpRope?.best ?? 0, command.score), team};
         jumpRopeResult = paid; value = paid.pattes; break;
+      }
+      case 'buyJumpIsland': {
+        const reason = jumpIslandReason(s); requireRule(!reason || reason === 'NOT_ENOUGH_PATTES', reason ?? 'INVALID_CHOICE');
+        pay(JUMP_ROPE.price); s.jumpIsland = true; break;
       }
       case 'exchangeForHeart': {
         requireRule(command.resource === 'pattes' || command.resource === 'grass', 'INVALID_CHOICE');
@@ -323,7 +329,6 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(command.kind!=='agency' || playerLevel(s)>=TRAVEL.unlockLevel,'LEVEL_REQUIRED');
         requireRule(command.kind!=='salon' || playerLevel(s)>=SALON.unlockLevel,'LEVEL_REQUIRED');
         requireRule(command.kind!=='forest' || playerLevel(s)>=FOREST.unlockLevel,'LEVEL_REQUIRED');
-        requireRule(command.kind!=='jumprope' || playerLevel(s)>=JUMP_ROPE.unlockLevel,'LEVEL_REQUIRED');
         cell(command.x, command.y); allocation();
         if (command.kind === 'statue') {
           requireRule(!payment && !quoteOnly, 'INVALID_CHOICE');

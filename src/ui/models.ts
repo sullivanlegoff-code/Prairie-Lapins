@@ -3,7 +3,7 @@ import {recipeHint} from './economyFeedback';
 import {stateLevelAccess} from '../simulation/levelRights';
 import {buildingPlacementReason} from '../simulation/placement';
 import {habitatPrice, type HabitatType} from '../config/habitats';
-import {AFFECTION_STATUE, BALANCE, HOUR, SALON, FOREST, JUMP_ROPE, SECOND_AFFECTION_STATUE, TRAVEL, SPECIES, SPECIES_IDS, RECIPE_SPECIES, type Odds, type BuildingKind, type SpeciesId, type RabbitType, type Rarity} from '../config/balance';
+import {AFFECTION_STATUE, BALANCE, HOUR, SALON, FOREST, SECOND_AFFECTION_STATUE, TRAVEL, SPECIES, SPECIES_IDS, RECIPE_SPECIES, type Odds, type BuildingKind, type SpeciesId, type RabbitType, type Rarity} from '../config/balance';
 import {breedingPool, recipeMatches, ordinaryPoolAllows, nestForParent} from '../simulation/breeding';
 import {bennyStandIns} from '../simulation/benny';
 import {nextAffectionStatue, playerLevel} from '../simulation/affection';
@@ -17,7 +17,7 @@ import {mapRarities} from '../config/rarities';
 
 /** The three cares of the Salon de soins. */
 export const CARE_NAMES: Record<import('../config/balance').CareKind, string> = {bath: 'Bain', brush: 'Brossage', massage: 'Massage'};
-export const BUILDING_NAMES: Record<BuildingKind, string> = {enclosure: 'Enclos', farm: 'Ferme', nest: 'Nid', nursery: 'Nurserie', kitchen: 'Cuisine', statue: 'Statue de l’Affection', agency: 'Agence de voyage', salon: 'Salon de soins', forest: 'Forêt de Brocéliande', jumprope: 'Terrain de corde à sauter'};
+export const BUILDING_NAMES: Record<BuildingKind, string> = {enclosure: 'Enclos', farm: 'Ferme', nest: 'Nid', nursery: 'Nurserie', kitchen: 'Cuisine', statue: 'Statue de l’Affection', agency: 'Agence de voyage', salon: 'Salon de soins', forest: 'Forêt de Brocéliande'};
 export const REFUSALS: Record<Refusal | 'NO_GAME' | 'DISPOSED' | 'SALE_NOT_SAVED' | 'ACTION_NOT_SAVED' | 'STORAGE_CHANGED', string> = {
   HABITAT_NOT_EMPTY: 'Cet habitat doit être vide.',
   LAST_HABITAT: 'Garde au moins un habitat.',
@@ -74,7 +74,6 @@ export function buildingReason(s: GameState, kind: BuildingKind, ignorePrice = f
   if(kind==='agency' && playerLevel(s)<TRAVEL.unlockLevel) return `Niveau ${TRAVEL.unlockLevel} requis`;
   if(kind==='salon' && playerLevel(s)<SALON.unlockLevel) return `Niveau ${SALON.unlockLevel} requis`;
   if(kind==='forest' && playerLevel(s)<FOREST.unlockLevel) return `Niveau ${FOREST.unlockLevel} requis`;
-  if(kind==='jumprope' && playerLevel(s)<JUMP_ROPE.unlockLevel) return `Niveau ${JUMP_ROPE.unlockLevel} requis`;
   if(kind==='enclosure') {const access=stateLevelAccess(s,{family:'habitatPurchase',id:habitatType});if(access.locked)return `Niveau ${access.requiredLevel} requis`;}
   if (kind === 'farm' && playerLevel(s) < 15 && s.buildings.filter(b => b.kind === 'farm').length >= farmLimit(playerLevel(s))) return `Niveau ${farmLimit(playerLevel(s)) === 2 ? 12 : 15} requis pour une ferme supplémentaire`;
   const config = BALANCE.buildings[kind];

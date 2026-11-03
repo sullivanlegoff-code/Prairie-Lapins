@@ -27,9 +27,9 @@ export const MARKET = {unlockLevel: 10, base: {pattes: 250, grass: 100}, growth:
 // The species registry lives in ./species; the public names stay available from here.
 export {SPECIES, SPECIES_IDS, LEGACY_SPECIES_IDS};
 export type {SpeciesId, RabbitType, Rarity};
-export type BuildingKind = 'enclosure' | 'farm' | 'nest' | 'nursery' | 'kitchen' | 'statue' | 'agency' | 'salon' | 'forest' | 'jumprope';
+export type BuildingKind = 'enclosure' | 'farm' | 'nest' | 'nursery' | 'kitchen' | 'statue' | 'agency' | 'salon' | 'forest';
 /** Every building kind, in the order the save validates them. */
-export const BUILDING_KINDS = ['enclosure', 'farm', 'nest', 'nursery', 'kitchen', 'statue', 'agency', 'salon', 'forest', 'jumprope'] as const satisfies readonly BuildingKind[];
+export const BUILDING_KINDS = ['enclosure', 'farm', 'nest', 'nursery', 'kitchen', 'statue', 'agency', 'salon', 'forest'] as const satisfies readonly BuildingKind[];
 export const BREEDING_WEIGHTS = {common: 30, recipe: 30};
 /** Exact element unions only; additional elements retain the historical pool.
  * Eligibility comes from catalogue recipes, never a fixed list of results. */
@@ -64,7 +64,6 @@ export const BALANCE = {
     agency: {price: 1000, maximum: 1}, // The travel agency: see TRAVEL.
     salon: {price: 5000, maximum: 1}, // The Salon de soins: see SALON.
     forest: {price: 10000, maximum: 1}, // The Forêt de Brocéliande: see FOREST.
-    jumprope: {price: 1500, maximum: 1}, // The Terrain de corde à sauter: see JUMP_ROPE.
   } satisfies Record<BuildingKind, {price: number; currency?: 'hearts'; maximum: number | null}>,
 };
 /**
@@ -159,16 +158,20 @@ export const carePrice = (species: SpeciesId, care: CareKind): number => Math.ro
  */
 export const FOREST = {unlockLevel: 20} as const;
 /**
- * The Terrain de corde à sauter (3 November 2026, rules left free by the owner): one building, 1 500 pattes, from player level 6.
- * A rabbit of the player skips rope: tap when the rope passes under its feet; the rope turns faster at every jump; three misses end
- * the game. The first `rewardedGamesPerCycle` games of a daily cycle with at least one jump pay `pattesPerJump` pattes per jump,
- * `maxPattes` at most, and the first game of the cycle reaching `heartJumps` jumps gives one Heart. No XP, no affection: the level
- * pacing stays untouched. Later games are for fun only.
+ * The jump-rope islet (owner, 4 November 2026): a small isolated islet left of the start island, with the kiosk on it, bought as
+ * one building for `price` pattes from player level `unlockLevel`, one per game. Three rabbits of the player play: two carriers
+ * turn the rope and the athlete jumps (looks only: no effect on difficulty or rewards). Tap when the rope passes under the athlete's
+ * feet; the rope turns faster at every jump; one miss ends the game (`lives`), and the player may replay at will. The first
+ * `rewardedGamesPerCycle` games of a daily cycle with at least one jump pay `pattesPerJump` pattes per jump, `maxPattes` at most,
+ * and the first game of the cycle reaching `heartJumps` jumps gives one Heart. No XP, no affection. Later games beat the record.
+ * A precise tap (within `perfectShare` of the window) is « Parfait ! »: looks and sound only.
  */
 export const JUMP_ROPE = {
-  unlockLevel: 6, rewardedGamesPerCycle: 3, pattesPerJump: 2, maxPattes: 60, heartJumps: 30, lives: 3, maxScore: 999,
+  unlockLevel: 20, price: 75_000, rewardedGamesPerCycle: 3, pattesPerJump: 2, maxPattes: 60, heartJumps: 30, lives: 1, maxScore: 999,
   /** Rope timing, in milliseconds: first turn, fastest turn, factor after each jump, half tap window (share of the turn, floor). */
-  leadIn: 1600, startPeriod: 1300, minPeriod: 560, speedUp: 0.97, windowShare: 0.24, minWindow: 120,
+  leadIn: 1600, startPeriod: 1250, minPeriod: 540, speedUp: 0.965, windowShare: 0.24, minWindow: 120, perfectShare: 0.4,
+  /** Every `milestone` jumps, a bigger cheer. */
+  milestone: 10,
 } as const;
 /** The picnic: from player level 8, one a day in all, in one enclosure; paid and rewarded per rabbit present. */
 // 10 XP per rabbit present since 3 November 2026 (5 before).

@@ -6,7 +6,6 @@ import {STATUE_ART} from '../config/statueArt';
 import {AGENCY_ART} from '../config/agencyArt';
 import {SALON_ART} from '../config/salonArt';
 import {FOREST_ART} from '../config/forestArt';
-import {JUMP_ROPE_ART} from '../config/jumpRopeArt';
 import {PARCELS, type ParcelId} from '../config/land';
 import {ISLAND} from '../config/islandGeometry';
 import {VISUAL} from '../config/visual';
@@ -23,7 +22,7 @@ export interface ScreenChrome {width: number; height: number; hudBottom: number;
 /** Screen-world extent of a building as drawn (upright artwork, or habitat fence, posts and residents, and its name label). */
 export function buildingFrame(b: Pick<Building, 'kind' | 'x' | 'y'> & Partial<Pick<Building, 'footprintTier' | 'habitat'>>): WorldBounds {
   const c = toScreen(buildingCenter(b));
-  const art = b.kind === 'nest' ? NEST_ART : b.kind === 'nursery' ? NURSERY_ART : b.kind === 'farm' ? FARM_ART : b.kind === 'kitchen' ? KITCHEN_ART : b.kind === 'statue' ? STATUE_ART : b.kind === 'agency' ? AGENCY_ART : b.kind === 'salon' ? SALON_ART : b.kind === 'forest' ? FOREST_ART : b.kind === 'jumprope' ? JUMP_ROPE_ART : null;
+  const art = b.kind === 'nest' ? NEST_ART : b.kind === 'nursery' ? NURSERY_ART : b.kind === 'farm' ? FARM_ART : b.kind === 'kitchen' ? KITCHEN_ART : b.kind === 'statue' ? STATUE_ART : b.kind === 'agency' ? AGENCY_ART : b.kind === 'salon' ? SALON_ART : b.kind === 'forest' ? FOREST_ART : null;
   // Illustrated enclosure: picture frame around its measured anchor, including the name label.
   const illustrated = b.kind === 'enclosure' ? habitatArtFor(b.habitat ?? undefined, b.footprintTier) : null;
   if (illustrated) { const k = illustrated.worldWidth / illustrated.width; return {left: c.x - illustrated.anchor.x * k, right: c.x + (illustrated.width - illustrated.anchor.x) * k, top: c.y - illustrated.anchor.y * k, bottom: Math.max(c.y + (illustrated.height - illustrated.anchor.y) * k, c.y + habitatArtLayout(illustrated).labelOffset + 10)}; }

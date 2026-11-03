@@ -109,7 +109,9 @@ const current = z.object({
   affectionGifts: z.record(identity, integer).optional(),
   picnicCycle: integer.optional(),
   // The Terrain de corde à sauter (v23, optional): the last rewarded cycle, its rewarded games and Heart, and the record.
-  jumpRope: z.object({cycle: integer, rewarded: integer.max(JUMP_ROPE.rewardedGamesPerCycle), heart: z.literal(true).optional(), best: integer.max(JUMP_ROPE.maxScore)}).strict().optional(),
+  jumpRope: z.object({cycle: integer, rewarded: integer.max(JUMP_ROPE.rewardedGamesPerCycle), heart: z.literal(true).optional(), best: integer.max(JUMP_ROPE.maxScore),
+    team: z.object({carriers: z.tuple([identity, identity]), athlete: identity}).strict().optional()}).strict().optional(),
+  jumpIsland: z.literal(true).optional(),
   missions, decorations: z.array(decoration).max(MAX_DECORATIONS),
   rewardedDecorationModels: z.array(z.enum(DECORATION_IDS)).max(DECORATION_IDS.length).refine(ids => new Set(ids).size === ids.length).optional(),
   acquiredParcels: z.array(z.enum(PARCEL_IDS)).min(1).max(9),
@@ -355,6 +357,7 @@ export function decodeGame(json: string): DecodeResult {
       !RETIRED_DECORATION_IDS.some(id => id === d.catalogId));
   }
   migrateRetiredSpecies(raw);
+  moveKioskToIsland(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 16) raw = migrateV16(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 17) raw = migrateV17(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 18) raw = migrateV18(raw);
@@ -377,6 +380,17 @@ export function decodeGame(json: string): DecodeResult {
   establishHistoricalLevelRights(state);
   updateMissions(state, state.lastSimulatedAt);
   return {ok: true, state};
+}
+/**
+ * The jump-rope kiosk was first a 1 500-pattes building on the land grid (never published, only on test saves). It now stands
+ * on its own islet: a save holding the old kiosk gets the islet for free (nothing lost, the record and the day are kept) and
+ * the kiosk leaves the grid, freeing its cells.
+ */
+function moveKioskToIsland(raw: unknown): void {
+  if (!raw || typeof raw !== 'object' || !('buildings' in raw) || !Array.isArray(raw.buildings)) return;
+  const kept = raw.buildings.filter(b => !b || typeof b !== 'object' || (b as {kind?: unknown}).kind !== 'jumprope');
+  if (kept.length === raw.buildings.length) return;
+  raw.buildings = kept; (raw as {jumpIsland?: true}).jumpIsland = true;
 }
 export function encodeGame(state: GameState, presentationId?: string): string {
   const parsed = schema.parse({...state, ...(presentationId ? {presentationId} : {})});

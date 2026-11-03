@@ -1,12 +1,12 @@
 import {describe, expect, it} from 'vitest';
 import {act, createGame, decodeGame, encodeGame} from '../src/simulation';
-import {BALANCE, HOUR, JUMP_ROPE} from '../src/config/balance';
+import {HOUR, JUMP_ROPE} from '../src/config/balance';
 import {MISSION_CYCLE_DURATION} from '../src/config/missions';
 import {cumulativeLevelXp} from '../src/simulation/progression';
 import {buildingPlacementReason} from '../src/simulation/placement';
-import {advanceJumpRope, airTime, halfWindow, jumpRopeDay, jumpRopeReward, ropePhase, startJumpRope, tapJumpRope} from '../src/simulation/jumpRope';
+import {advanceJumpRope, airTime, halfWindow, jumpRopeDay, jumpRopeReward, ropePhase, rememberedJumpRopeTeam, startJumpRope, tapJumpRope} from '../src/simulation/jumpRope';
 import {emptyBuilding} from '../src/state/initial';
-import type {Command, GameState} from '../src/state/types';
+import type {Command, GameState, JumpRopeTeam} from '../src/state/types';
 
 function run(s: GameState, command: Command, now = s.lastSimulatedAt) {
   const r = act(s, command, now, () => 0); if (!r.ok) throw Error(r.reason); return r;
@@ -19,30 +19,32 @@ function freeCell(s: GameState) {
   throw Error('No space');
 }
 const atLevel = (s: GameState, level: number) => { s.progression = {totalXp: cumulativeLevelXp(level), rewardedThroughLevel: level}; return s; };
-/** Level 6, the terrain bought, and one paille rabbit at home in a universal enclosure. */
+/** Level 20, the islet bought, and three paille rabbits at home in a universal enclosure. */
 function setup() {
-  let s = atLevel(createGame(0), JUMP_ROPE.unlockLevel); s.pattes = 10_000;
+  let s = atLevel(createGame(0), JUMP_ROPE.unlockLevel); s.pattes = 100_000;
   const c = freeCell(s), home = emptyBuilding(`building-${s.nextId++}`, 'enclosure', c.x, c.y); s.buildings.push(home);
-  s = run(s, {type: 'buyBuilding', kind: 'jumprope', ...freeCell(s)}).state;
-  const id = `rabbit-${s.nextId++}`; s.rabbits.push({id, species: 'paille', affection: 3, enclosureId: home.id});
-  return {s, id, home: home.id};
+  s = run(s, {type: 'buyJumpIsland'}).state;
+  const ids = [0, 1, 2].map(() => { const id = `rabbit-${s.nextId++}`; s.rabbits.push({id, species: 'paille', affection: 3, enclosureId: home.id}); return id; });
+  const team: JumpRopeTeam = {carriers: [ids[0], ids[1]], athlete: ids[2]};
+  return {s, team, ids, home: home.id};
 }
 
-describe('Terrain de corde à sauter: the building', () => {
-  it('costs 1 500 pattes from player level 6, one at most, and gives no XP', () => {
-    expect(BALANCE.buildings.jumprope).toEqual({price: 1500, maximum: 1});
-    const low = atLevel(createGame(0), JUMP_ROPE.unlockLevel - 1); low.pattes = 10_000;
-    refused(low, {type: 'buyBuilding', kind: 'jumprope', ...freeCell(low)}, 'LEVEL_REQUIRED');
-    const poor = atLevel(createGame(0), JUMP_ROPE.unlockLevel); poor.pattes = 1_499;
-    refused(poor, {type: 'buyBuilding', kind: 'jumprope', ...freeCell(poor)}, 'NOT_ENOUGH_PATTES');
-    const rich = atLevel(createGame(0), JUMP_ROPE.unlockLevel); rich.pattes = 1_500;
-    const bought = run(rich, {type: 'buyBuilding', kind: 'jumprope', ...freeCell(rich)});
-    expect(bought.state.pattes).toBe(0); expect(bought.state.progression.totalXp).toBe(rich.progression.totalXp);
-    refused(bought.state, {type: 'buyBuilding', kind: 'jumprope', ...freeCell(bought.state)}, 'BUILDING_LIMIT');
+describe('Jump-rope islet: the building', () => {
+  it('costs 75 000 pattes from player level 20, once, off the land grid, and gives no XP', () => {
+    expect(JUMP_ROPE).toMatchObject({price: 75_000, unlockLevel: 20, lives: 1});
+    const low = atLevel(createGame(0), JUMP_ROPE.unlockLevel - 1); low.pattes = 100_000;
+    refused(low, {type: 'buyJumpIsland'}, 'LEVEL_REQUIRED');
+    const poor = atLevel(createGame(0), JUMP_ROPE.unlockLevel); poor.pattes = 74_999;
+    refused(poor, {type: 'buyJumpIsland'}, 'NOT_ENOUGH_PATTES');
+    const rich = atLevel(createGame(0), JUMP_ROPE.unlockLevel); rich.pattes = 75_000;
+    const bought = run(rich, {type: 'buyJumpIsland'});
+    expect(bought.state.pattes).toBe(0); expect(bought.state.jumpIsland).toBe(true);
+    expect(bought.state.buildings).toEqual(rich.buildings); expect(bought.state.progression.totalXp).toBe(rich.progression.totalXp);
+    bought.state.pattes = 100_000; refused(bought.state, {type: 'buyJumpIsland'}, 'BUILDING_LIMIT');
   });
 });
 
-describe('Terrain de corde à sauter: the game', () => {
+describe('Jump-rope islet: the game', () => {
   it('counts a tap near the pass as a jump and turns the rope faster, never below the fastest turn', () => {
     const game = startJumpRope(0);
     expect(game.nextPassAt).toBe(JUMP_ROPE.leadIn); expect(ropePhase(game, 0)).toBe(0); expect(ropePhase(game, game.nextPassAt - game.period / 2)).toBeCloseTo(0.5);
@@ -51,20 +53,22 @@ describe('Terrain de corde à sauter: the game', () => {
     for (let i = 0; i < 200; i++) tapJumpRope(game, game.nextPassAt);
     expect(game.score).toBe(201); expect(game.period).toBe(JUMP_ROPE.minPeriod); expect(game.misses).toBe(0);
   });
-  it('makes a tap far from the rope a miss, and a pass with no tap a miss; three misses end the game', () => {
+  it('calls a precise tap « parfait » and counts the streak, which a merely good jump breaks', () => {
     const game = startJumpRope(0);
-    expect(tapJumpRope(game, 10)).toBe('miss'); expect(game.misses).toBe(1);
-    // The missed pass is consumed: the next target is the following one.
-    expect(game.nextPassAt).toBe(JUMP_ROPE.leadIn + JUMP_ROPE.startPeriod);
-    expect(advanceJumpRope(game, game.nextPassAt + halfWindow(game.period) + 1)).toBe(1); expect(game.misses).toBe(2);
-    expect(game.over).toBe(false);
-    advanceJumpRope(game, game.nextPassAt + halfWindow(game.period) + 1);
-    expect(game.misses).toBe(JUMP_ROPE.lives); expect(game.over).toBe(true);
-    expect(tapJumpRope(game, game.nextPassAt)).toBe('ignored'); expect(game.score).toBe(0);
+    expect(tapJumpRope(game, game.nextPassAt)).toBe('perfect'); expect(tapJumpRope(game, game.nextPassAt + 1)).toBe('perfect'); expect(game.combo).toBe(2);
+    expect(tapJumpRope(game, game.nextPassAt + halfWindow(game.period) - 1)).toBe('jump'); expect(game.combo).toBe(0); expect(game.score).toBe(3);
+  });
+  it('ends the game at the first miss: a tap far from the rope, or a pass with no tap', () => {
+    const early = startJumpRope(0);
+    expect(tapJumpRope(early, 10)).toBe('miss'); expect(early.misses).toBe(1); expect(early.over).toBe(true);
+    expect(tapJumpRope(early, early.nextPassAt)).toBe('ignored'); expect(early.score).toBe(0);
+    const late = startJumpRope(0); tapJumpRope(late, late.nextPassAt);
+    expect(advanceJumpRope(late, late.nextPassAt + halfWindow(late.period) + 1)).toBe(1);
+    expect(late.over).toBe(true); expect(late.score).toBe(1);
   });
   it('ignores a double tap while the rabbit is still in the air', () => {
     const game = startJumpRope(0), at = game.nextPassAt;
-    expect(tapJumpRope(game, at)).toBe('jump');
+    expect(tapJumpRope(game, at)).toBe('perfect');
     expect(tapJumpRope(game, at + airTime(game.period) - 1)).toBe('ignored');
     expect(game.misses).toBe(0); expect(game.score).toBe(1);
   });
@@ -74,63 +78,80 @@ describe('Terrain de corde à sauter: the game', () => {
   });
 });
 
-describe('Terrain de corde à sauter: rewards and the daily limit', () => {
+describe('Jump-rope islet: rewards, the daily limit and the trio', () => {
   it('pays 2 pattes a jump, 60 at most, for the first three games of the day with a jump; then nothing until the next cycle', () => {
-    let {s, id} = setup();
+    let {s, team} = setup();
     expect(jumpRopeReward(s, 0, s.lastSimulatedAt)).toEqual({pattes: 0, hearts: 0, rewarded: false});
-    const blank = run(s, {type: 'rewardJumpRope', rabbitId: id, score: 0});
+    const blank = run(s, {type: 'rewardJumpRope', team, score: 0});
     expect(blank.state.pattes).toBe(s.pattes); expect(jumpRopeDay(blank.state, s.lastSimulatedAt).rewardedLeft).toBe(3); // No jump: the slot is kept.
     s = blank.state;
     const paid: number[] = [];
-    for (const score of [12, 100, 5, 20]) { const before = s.pattes, r = run(s, {type: 'rewardJumpRope', rabbitId: id, score}); paid.push(r.state.pattes - before); expect(r.value).toBe(paid.at(-1)); s = r.state; }
+    for (const score of [12, 100, 5, 20]) { const before = s.pattes, r = run(s, {type: 'rewardJumpRope', team, score}); paid.push(r.state.pattes - before); expect(r.value).toBe(paid.at(-1)); s = r.state; }
     expect(paid).toEqual([24, JUMP_ROPE.maxPattes, 10, 0]);
     expect(jumpRopeDay(s, s.lastSimulatedAt)).toEqual({rewardedLeft: 0, heartLeft: false});
     expect(s.jumpRope?.best).toBe(100);
     // The next daily cycle opens three rewarded games again; the record stays.
-    const tomorrow = s.lastSimulatedAt + MISSION_CYCLE_DURATION, next = run(s, {type: 'rewardJumpRope', rabbitId: id, score: 8}, tomorrow);
-    expect(next.state.pattes - s.pattes).toBe(16); expect(next.state.jumpRope).toEqual({cycle: next.state.missions.daily.cycleIndex, rewarded: 1, best: 100});
+    const tomorrow = s.lastSimulatedAt + MISSION_CYCLE_DURATION, next = run(s, {type: 'rewardJumpRope', team, score: 8}, tomorrow);
+    expect(next.state.pattes - s.pattes).toBe(16); expect(next.state.jumpRope).toEqual({cycle: next.state.missions.daily.cycleIndex, rewarded: 1, best: 100, team});
   });
   it('gives one Heart a day, for the first game reaching 30 jumps, even after the rewarded games', () => {
-    let {s, id} = setup(); const hearts = s.hearts;
-    for (const score of [29, 1, 2]) s = run(s, {type: 'rewardJumpRope', rabbitId: id, score}).state;
+    let {s, team} = setup(); const hearts = s.hearts;
+    for (const score of [29, 1, 2]) s = run(s, {type: 'rewardJumpRope', team, score}).state;
     expect(s.hearts).toBe(hearts);
-    const won = run(s, {type: 'rewardJumpRope', rabbitId: id, score: JUMP_ROPE.heartJumps});
+    const won = run(s, {type: 'rewardJumpRope', team, score: JUMP_ROPE.heartJumps});
     expect(won.jumpRopeReward).toEqual({pattes: 0, hearts: 1, rewarded: false}); expect(won.state.hearts).toBe(hearts + 1);
-    expect(run(won.state, {type: 'rewardJumpRope', rabbitId: id, score: 50}).state.hearts).toBe(hearts + 1);
+    expect(run(won.state, {type: 'rewardJumpRope', team, score: 50}).state.hearts).toBe(hearts + 1);
   });
   it('caps a day at 180 pattes and one Heart, and never gives XP or affection', () => {
-    let {s, id} = setup(); const start = {pattes: s.pattes, hearts: s.hearts, xp: s.progression.totalXp, affection: s.rabbits[0].affection};
-    for (let i = 0; i < 10; i++) s = run(s, {type: 'rewardJumpRope', rabbitId: id, score: JUMP_ROPE.maxScore}).state;
-    expect(s.pattes - start.pattes).toBe(JUMP_ROPE.rewardedGamesPerCycle * JUMP_ROPE.maxPattes);
+    let {s, team} = setup(); const start = {pattes: s.pattes, hearts: s.hearts, xp: s.progression.totalXp, affection: s.rabbits.map(r => r.affection)};
+    for (let i = 0; i < 10; i++) s = run(s, {type: 'rewardJumpRope', team, score: JUMP_ROPE.maxScore}).state;
     expect(s.pattes - start.pattes).toBe(180); expect(s.hearts - start.hearts).toBe(1);
-    expect(s.progression.totalXp).toBe(start.xp); expect(s.rabbits[0].affection).toBe(start.affection);
+    expect(s.progression.totalXp).toBe(start.xp); expect(s.rabbits.map(r => r.affection)).toEqual(start.affection);
   });
-  it('refuses without the terrain, an impossible score, or a rabbit away from home', () => {
-    const {s, id} = setup();
-    const bare = structuredClone(s); bare.buildings = bare.buildings.filter(b => b.kind !== 'jumprope');
-    refused(bare, {type: 'rewardJumpRope', rabbitId: id, score: 3}, 'MISSING_BUILDING');
-    for (const score of [-1, 1.5, JUMP_ROPE.maxScore + 1, Number.NaN]) refused(s, {type: 'rewardJumpRope', rabbitId: id, score}, 'INVALID_CHOICE');
-    refused(s, {type: 'rewardJumpRope', rabbitId: 'rabbit-404', score: 3}, 'NOT_FOUND');
+  it('remembers the last trio, and forgets it while one of its rabbits is away', () => {
+    const {s, team} = setup(), played = run(s, {type: 'rewardJumpRope', team, score: 4}).state;
+    expect(rememberedJumpRopeTeam(played)).toEqual(team);
+    const away = structuredClone(played); away.buildings.push(emptyBuilding('building-900', 'agency', freeCell(away).x, freeCell(away).y));
+    away.travel = {welcomed: true, trips: [{rabbitId: team.athlete, destination: 'Paris', startedAt: s.lastSimulatedAt, endsAt: s.lastSimulatedAt + 3 * HOUR, hearts: 1}]};
+    expect(rememberedJumpRopeTeam(away)).toBeNull();
+  });
+  it('refuses without the islet, an impossible score, the same rabbit twice, or a rabbit away from home', () => {
+    const {s, team, ids} = setup();
+    const bare = structuredClone(s); delete bare.jumpIsland;
+    refused(bare, {type: 'rewardJumpRope', team, score: 3}, 'MISSING_BUILDING');
+    for (const score of [-1, 1.5, JUMP_ROPE.maxScore + 1, Number.NaN]) refused(s, {type: 'rewardJumpRope', team, score}, 'INVALID_CHOICE');
+    refused(s, {type: 'rewardJumpRope', team: {carriers: [ids[0], ids[0]], athlete: ids[2]}, score: 3}, 'INVALID_CHOICE');
+    refused(s, {type: 'rewardJumpRope', team: {carriers: [ids[0], ids[1]], athlete: 'rabbit-404'}, score: 3}, 'NOT_FOUND');
     const away = structuredClone(s); away.buildings.push(emptyBuilding('building-900', 'agency', freeCell(away).x, freeCell(away).y));
-    away.travel = {welcomed: true, trips: [{rabbitId: id, destination: 'Paris', startedAt: s.lastSimulatedAt, endsAt: s.lastSimulatedAt + 3 * HOUR, hearts: 1}]};
-    refused(away, {type: 'rewardJumpRope', rabbitId: id, score: 3}, 'TRAVELING');
+    away.travel = {welcomed: true, trips: [{rabbitId: ids[1], destination: 'Paris', startedAt: s.lastSimulatedAt, endsAt: s.lastSimulatedAt + 3 * HOUR, hearts: 1}]};
+    refused(away, {type: 'rewardJumpRope', team, score: 3}, 'TRAVELING');
   });
 });
 
-describe('Terrain de corde à sauter: the save', () => {
-  it('keeps the day and the record through a save, and refuses a future or impossible day', () => {
-    const {s, id} = setup(), played = run(s, {type: 'rewardJumpRope', rabbitId: id, score: 31}).state;
+describe('Jump-rope islet: the save', () => {
+  it('keeps the islet, the day, the record and the trio through a save, and refuses a future or impossible day', () => {
+    const {s, team} = setup(), played = run(s, {type: 'rewardJumpRope', team, score: 31}).state;
     const decoded = decodeGame(encodeGame(played));
-    expect(decoded.ok && decoded.state.jumpRope).toEqual({cycle: played.missions.daily.cycleIndex, rewarded: 1, heart: true, best: 31});
-    expect(decoded.ok && decoded.state.buildings.some(b => b.kind === 'jumprope')).toBe(true);
+    expect(decoded.ok && decoded.state.jumpRope).toEqual({cycle: played.missions.daily.cycleIndex, rewarded: 1, heart: true, best: 31, team});
+    expect(decoded.ok && decoded.state.jumpIsland).toBe(true);
     const future = structuredClone(played); future.jumpRope!.cycle = played.missions.daily.cycleIndex + 1;
     expect(decodeGame(JSON.stringify({...JSON.parse(encodeGame(played)), jumpRope: future.jumpRope}))).toMatchObject({ok: false});
     expect(decodeGame(JSON.stringify({...JSON.parse(encodeGame(played)), jumpRope: {cycle: 0, rewarded: 4, best: 3}}))).toMatchObject({ok: false});
   });
-  it('reads a v23 save written before the terrain existed', () => {
-    const {s} = setup(), old = JSON.parse(encodeGame(s)); delete old.jumpRope;
-    old.buildings = old.buildings.filter((b: {kind: string}) => b.kind !== 'jumprope');
+  it('reads a v23 save written before the islet existed', () => {
+    const {s} = setup(), old = JSON.parse(encodeGame(s)); delete old.jumpRope; delete old.jumpIsland;
     const decoded = decodeGame(JSON.stringify(old));
-    expect(decoded.ok).toBe(true); expect(decoded.ok && decoded.state.jumpRope).toBeUndefined();
+    expect(decoded.ok).toBe(true); expect(decoded.ok && decoded.state.jumpRope).toBeUndefined(); expect(decoded.ok && decoded.state.jumpIsland).toBeUndefined();
+  });
+  it('moves a test save’s old 1 500-pattes kiosk onto the islet for free, keeping the record and freeing its cells', () => {
+    const {s, home} = setup(), old = JSON.parse(encodeGame(s)); delete old.jumpIsland;
+    old.jumpRope = {cycle: s.missions.daily.cycleIndex, rewarded: 2, best: 17};
+    const c = freeCell(s); old.buildings.push({...emptyBuilding('building-950', 'farm', c.x, c.y), kind: 'jumprope'});
+    const decoded = decodeGame(JSON.stringify(old));
+    expect(decoded.ok).toBe(true); if (!decoded.ok) return;
+    expect(decoded.state.jumpIsland).toBe(true); expect(decoded.state.pattes).toBe(s.pattes);
+    expect(decoded.state.buildings.map(b => b.id)).toEqual(s.buildings.map(b => b.id)); expect(decoded.state.buildings.some(b => b.id === home)).toBe(true);
+    expect(decoded.state.jumpRope).toEqual({cycle: s.missions.daily.cycleIndex, rewarded: 2, best: 17});
+    expect(buildingPlacementReason(decoded.state, c.x, c.y)).toBeNull();
   });
 });

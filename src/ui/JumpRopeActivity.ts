@@ -7,13 +7,20 @@ import {portrait} from './portraits';
 import {JUMP_ROPE_ISLAND_URL, JUMP_ROPE_KIOSK_URL} from '../display/agency';
 import {drawJumpRopeSky} from '../display/jumpRopeSky';
 
+/** Two carriers turn the rope, the athlete jumps (looks only). */
+export interface JumpRopeTrio {carriers: [CuisineRabbit, CuisineRabbit]; athlete: CuisineRabbit}
+
 /**
- * The Terrain de corde à sauter's game (src/simulation/jumpRope.ts holds the rules): a full-screen layer outside GameUI's rebuilt
- * panel, played with one tap anywhere (or the space bar). `onFinished` records the finished game and returns the reward line.
+ * The jump-rope game on its islet (src/simulation/jumpRope.ts holds the rules): a full-screen layer outside GameUI's rebuilt
+ * panel, played with one tap anywhere (or the space bar). One miss ends the game; « Rejouer » starts the next one at once.
+ * `onFinished` records the finished game and returns the reward line; `best` reads the record before the game; `cheer` plays
+ * the confirmation sound on a « Parfait ! » streak, a milestone and a new record.
  */
 export function mountJumpRopeActivity(host: HTMLElement, options: {
-  onFinished: (rabbit: CuisineRabbit, score: number) => string;
+  onFinished: (team: JumpRopeTrio, score: number) => string;
   quotaText?: () => string;
+  best?: () => number;
+  cheer?: () => void;
   onExit?: () => void;
   /** Milliseconds, monotonic; performance.now() by default. Tests drive it and call `update()` themselves. */
   clock?: () => number;
@@ -22,29 +29,37 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
   const clock = options.clock ?? (() => performance.now()), frame = options.frame ?? (step => requestAnimationFrame(step));
   const layer = document.createElement('div'); layer.className = 'jump-rope-activity'; layer.hidden = true;
   layer.setAttribute('role', 'dialog'); layer.setAttribute('aria-modal', 'true'); layer.setAttribute('aria-label', 'Corde à sauter');
-  layer.innerHTML = `<div class="jump-rope-top"><p class="jump-rope-score" aria-live="polite"></p><p class="jump-rope-lives"></p><p class="jump-rope-quota"></p><button type="button" data-jump-rope-exit>Quitter</button></div>
+  layer.innerHTML = `<div class="jump-rope-top"><p class="jump-rope-score" aria-live="polite"></p><p class="jump-rope-best"></p><p class="jump-rope-quota"></p><button type="button" data-jump-rope-exit>Quitter</button></div>
 <div class="jump-rope-stage" data-jump-rope-stage>
 <canvas class="jump-rope-sky" aria-hidden="true"></canvas>
 <img class="jump-rope-island" alt="" aria-hidden="true" draggable="false" src="${JUMP_ROPE_ISLAND_URL}">
 <img class="jump-rope-kiosk" alt="" aria-hidden="true" draggable="false" src="${JUMP_ROPE_KIOSK_URL}">
-<span class="jump-rope-post" data-side="left"></span><span class="jump-rope-post" data-side="right"></span>
+<span class="jump-rope-carrier" data-side="left"><span class="jump-rope-figure"></span><span class="jump-rope-handle"></span></span>
+<span class="jump-rope-carrier" data-side="right"><span class="jump-rope-figure"></span><span class="jump-rope-handle"></span></span>
 <svg class="jump-rope-rope" data-layer="back" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path/></svg>
 <span class="jump-rope-rabbit"><span class="jump-rope-figure"></span><span class="jump-rope-shadow"></span></span>
 <svg class="jump-rope-rope" data-layer="front" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path/></svg>
+<span class="jump-rope-burst" aria-hidden="true"></span>
+<p class="jump-rope-combo" aria-hidden="true"></p>
 <p class="jump-rope-pop" aria-hidden="true"></p>
 </div>
 <div class="jump-rope-card" data-jump-rope-card></div>`;
   host.append(layer);
   const $ = <T extends Element>(selector: string) => layer.querySelector<T>(selector)!;
   const stage = $<HTMLElement>('[data-jump-rope-stage]'), card = $<HTMLElement>('[data-jump-rope-card]');
-  const score = $<HTMLElement>('.jump-rope-score'), lives = $<HTMLElement>('.jump-rope-lives'), quota = $<HTMLElement>('.jump-rope-quota');
-  const rabbitBox = $<HTMLElement>('.jump-rope-rabbit'), figure = $<HTMLElement>('.jump-rope-figure'), pop = $<HTMLElement>('.jump-rope-pop');
+  const score = $<HTMLElement>('.jump-rope-score'), bestLine = $<HTMLElement>('.jump-rope-best'), quota = $<HTMLElement>('.jump-rope-quota');
+  const rabbitBox = $<HTMLElement>('.jump-rope-rabbit'), figure = $<HTMLElement>('.jump-rope-rabbit .jump-rope-figure'), pop = $<HTMLElement>('.jump-rope-pop');
+  const combo = $<HTMLElement>('.jump-rope-combo'), burst = $<HTMLElement>('.jump-rope-burst');
+  const carriers = [...layer.querySelectorAll<HTMLElement>('.jump-rope-carrier')];
   const back = $<SVGPathElement>('[data-layer="back"] path'), front = $<SVGPathElement>('[data-layer="front"] path');
   const sky = $<HTMLCanvasElement>('.jump-rope-sky'), abort = new AbortController();
   const resize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => { if (!layer.hidden) drawJumpRopeSky(sky); });
   resize?.observe(stage);
-  let rabbit: CuisineRabbit | null = null, game: JumpRopeGame | null = null, running = false, popTimer: ReturnType<typeof setTimeout> | undefined;
-  const name = () => rabbit ? rabbit.name || SPECIES[rabbit.species].name : '';
+  let team: JumpRopeTrio | null = null, game: JumpRopeGame | null = null, running = false, popTimer: ReturnType<typeof setTimeout> | undefined;
+  let previousBest = 0, recordShown = false;
+  const nameOf = (r: CuisineRabbit) => r.name || SPECIES[r.species].name;
+  const name = () => team ? nameOf(team.athlete) : '';
+  const jumps = (n: number) => `${n} saut${n > 1 ? 's' : ''}`;
   const button = (label: string, action: () => void, key: string) => {
     const element = document.createElement('button'); element.type = 'button'; element.textContent = label; element.dataset[key] = '';
     element.addEventListener('click', event => { event.stopPropagation(); action(); }); return element;
@@ -52,26 +67,36 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
   const paragraph = (text: string, className: string) => { const p = document.createElement('p'); p.className = className; p.textContent = text; return p; };
   function showCard(...children: HTMLElement[]): void { card.replaceChildren(...children); card.hidden = false; }
   function hud(): void {
-    score.textContent = `${game?.score ?? 0} saut${(game?.score ?? 0) > 1 ? 's' : ''}`;
-    const left = JUMP_ROPE.lives - (game?.misses ?? 0);
-    lives.textContent = `Essais : ${'●'.repeat(Math.max(0, left))}${'○'.repeat(Math.min(JUMP_ROPE.lives, game?.misses ?? 0))}`;
-    lives.setAttribute('aria-label', `${left} essai${left > 1 ? 's' : ''} restant${left > 1 ? 's' : ''}`);
+    score.textContent = jumps(game?.score ?? 0);
+    const best = Math.max(previousBest, game?.score ?? 0); bestLine.textContent = best ? `Record : ${best}` : '';
     quota.textContent = options.quotaText?.() ?? '';
   }
-  /** The rope as a curve between the two posts: low (in front of the feet) near phase 0, high (behind the head) near 0.5. */
+  /** Draws one rabbit's portrait, turned toward `facing` (1 right, -1 left). */
+  function paint(target: HTMLElement, rabbit: CuisineRabbit, facing: 1 | -1): void {
+    const art = rabbit.affection === undefined ? rabbitArt(rabbit.species) : artForRabbit({species: rabbit.species, affection: rabbit.affection, classicLook: rabbit.classicLook});
+    target.innerHTML = portrait(rabbit.species, art);
+    if ((art?.facing ?? 1) !== facing) target.dataset.mirrored = ''; else delete target.dataset.mirrored;
+  }
+  /**
+   * The rope between the carriers' paws: low in front of the athlete's feet near phase 0, high behind its head near 0.5. Its
+   * ends circle a little with the turn, like the carriers' paws, and the carriers sway with it.
+   */
   function drawRope(phase: number): void {
-    const height = Math.cos(2 * Math.PI * phase), y = 46 + 46 * height, path = `M8 46 Q50 ${2 * y - 46} 92 46`;
-    const inFront = height > 0;
+    const turn = Math.cos(2 * Math.PI * phase), end = 73 - 3 * turn, y = turn > 0 ? end + 25 * turn : end + 71 * turn;
+    const path = `M8 ${end} Q50 ${2 * y - end} 92 ${end}`, inFront = turn > 0;
     front.setAttribute('d', inFront ? path : ''); back.setAttribute('d', inFront ? '' : path);
+    for (const carrier of carriers) carrier.style.setProperty('--turn', String(turn));
   }
-  function flash(text: string, kind: 'jump' | 'miss'): void {
+  function flash(text: string, kind: 'jump' | 'perfect' | 'miss' | 'milestone' | 'record' | 'ready'): void {
     pop.textContent = text; pop.dataset.kind = kind; pop.classList.remove('shown'); void pop.offsetWidth; pop.classList.add('shown');
-    clearTimeout(popTimer); popTimer = setTimeout(() => pop.classList.remove('shown'), 450);
+    clearTimeout(popTimer); popTimer = setTimeout(() => pop.classList.remove('shown'), kind === 'ready' ? 900 : 520);
   }
+  function celebrate(): void { burst.classList.remove('shown'); void burst.offsetWidth; burst.classList.add('shown'); }
+  function stumble(): void { rabbitBox.classList.remove('stumble'); void rabbitBox.offsetWidth; rabbitBox.classList.add('stumble'); }
   function update(): void {
     if (!game) return;
     const now = clock(), missed = advanceJumpRope(game, now);
-    if (missed) { flash('Oups !', 'miss'); rabbitBox.classList.remove('stumble'); void rabbitBox.offsetWidth; rabbitBox.classList.add('stumble'); }
+    if (missed) { flash('Oups !', 'miss'); stumble(); }
     drawRope(ropePhase(game, now));
     const air = game.lastJumpAt === null ? 1 : (now - game.lastJumpAt) / airTime(game.period);
     rabbitBox.style.setProperty('--lift', air < 1 ? String(Math.sin(Math.PI * air)) : '0');
@@ -82,31 +107,44 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
   function tap(): void {
     if (!game || !running) return;
     const result = tapJumpRope(game, clock());
-    if (result === 'jump') flash('Hop !', 'jump');
-    else if (result === 'miss') { flash('Oups !', 'miss'); rabbitBox.classList.remove('stumble'); void rabbitBox.offsetWidth; rabbitBox.classList.add('stumble'); }
+    if (result === 'miss') { flash('Oups !', 'miss'); stumble(); }
+    else if (result === 'jump' || result === 'perfect') {
+      const n = game.score;
+      if (previousBest > 0 && n === previousBest + 1 && !recordShown) { recordShown = true; flash('Nouveau record !', 'record'); celebrate(); options.cheer?.(); }
+      else if (n % JUMP_ROPE.milestone === 0) { flash(`${n} sauts !`, 'milestone'); celebrate(); options.cheer?.(); }
+      else if (result === 'perfect') { flash('Parfait !', 'perfect'); if (game.combo >= 3 && game.combo % 3 === 0) options.cheer?.(); }
+      else flash('Hop !', 'jump');
+      combo.textContent = game.combo >= 2 ? `Parfait ×${game.combo}` : ''; combo.classList.toggle('shown', game.combo >= 2);
+    }
     update();
   }
   function finish(): void {
-    running = false; const final = game!.score, who = rabbit!;
+    running = false; const final = game!.score, who = team!, record = final > previousBest && final > 0;
     const reward = options.onFinished(who, final);
     const chips = document.createElement('p'); chips.className = 'jump-rope-rewards';
     for (const part of reward ? reward.split(' · ') : []) { const chip = document.createElement('span'); chip.className = 'cuisine-reward-chip'; setCurrencyText(chip, part); chips.append(chip); }
-    hud();
-    showCard(paragraph(final ? `${name()} a fait ${final} saut${final > 1 ? 's' : ''} !` : `${name()} s’est emmêlé les pattes. Réessaie !`, 'jump-rope-title'), chips,
-      button('Rejouer', start, 'jumpRopeAgain'), button('Quitter', close, 'jumpRopeQuit'));
+    combo.classList.remove('shown'); hud();
+    const again = button('Rejouer', start, 'jumpRopeAgain');
+    showCard(paragraph(final ? `${name()} a fait ${jumps(final)} !` : `${name()} s’est emmêlé les pattes !`, 'jump-rope-title'),
+      ...(record ? [paragraph(previousBest ? `Nouveau record ! L’ancien était de ${previousBest}.` : 'Ton premier record !', 'jump-rope-record')] : previousBest ? [paragraph(`Ton record : ${jumps(previousBest)}`, 'jump-rope-rules')] : []),
+      chips, again, button('Quitter', close, 'jumpRopeQuit'));
+    again.focus();
   }
   function start(): void {
-    game = startJumpRope(clock()); running = true; card.hidden = true; rabbitBox.classList.remove('stumble'); hud(); frame(loop);
+    previousBest = options.best?.() ?? 0; recordShown = false;
+    game = startJumpRope(clock()); running = true; card.hidden = true; rabbitBox.classList.remove('stumble'); combo.classList.remove('shown');
+    hud(); flash('Prêt ?', 'ready'); frame(loop);
   }
   function intro(): void {
-    game = null; running = false; drawRope(0.5); hud();
+    game = null; running = false; previousBest = options.best?.() ?? 0; drawRope(0.5); hud();
+    const [left, right] = team!.carriers;
     showCard(paragraph(`${name()} saute à la corde !`, 'jump-rope-title'),
-      paragraph('Touche l’écran quand la corde passe sous ton lapin. Elle tourne de plus en plus vite. Trois ratés et la partie s’arrête.', 'jump-rope-rules'),
+      paragraph(`${nameOf(left)} et ${nameOf(right)} font tourner la corde. Touche l’écran quand elle passe sous ${name()}. Elle tourne de plus en plus vite. Un raté et la partie s’arrête : rejoue autant que tu veux !`, 'jump-rope-rules'),
       button('C’est parti !', start, 'jumpRopeStart'));
   }
   function close(): void {
     if (layer.hidden) return;
-    running = false; game = null; rabbit = null; layer.hidden = true; clearTimeout(popTimer); options.onExit?.();
+    running = false; game = null; team = null; layer.hidden = true; clearTimeout(popTimer); options.onExit?.();
   }
   stage.addEventListener('pointerdown', event => { event.preventDefault(); tap(); }, {signal: abort.signal});
   $<HTMLButtonElement>('[data-jump-rope-exit]').addEventListener('click', () => close(), {signal: abort.signal});
@@ -118,12 +156,13 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
   return {
     get active() { return !layer.hidden; },
     get playing() { return running; },
-    get rabbit() { return rabbit; },
+    get team() { return team; },
     element: layer,
-    open(chosen: CuisineRabbit) {
-      rabbit = chosen;
-      const art = chosen.affection === undefined ? rabbitArt(chosen.species) : artForRabbit({species: chosen.species, affection: chosen.affection, classicLook: chosen.classicLook});
-      figure.innerHTML = portrait(chosen.species, art); if (art?.facing === -1) figure.dataset.mirrored = ''; else delete figure.dataset.mirrored;
+    open(chosen: JumpRopeTrio) {
+      team = chosen;
+      paint(figure, chosen.athlete, 1);
+      paint(carriers[0].querySelector('.jump-rope-figure')!, chosen.carriers[0], 1);
+      paint(carriers[1].querySelector('.jump-rope-figure')!, chosen.carriers[1], -1);
       layer.hidden = false; drawJumpRopeSky(sky); intro(); $<HTMLButtonElement>('[data-jump-rope-start]').focus();
     },
     close, update, tap,
