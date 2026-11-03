@@ -45,13 +45,13 @@ function setup(initial = ready()) {
 }
 
 describe('statue heart purchase', () => {
-  it('costs exactly 60 Hearts, leaves coins untouched and refuses the second copy before level 25', () => {
+  it('costs exactly 60 Hearts, leaves coins untouched and refuses the second copy before level 22', () => {
     expect(AFFECTION_STATUE.heartPrice).toBe(60);
     const s = ready(71), before = structuredClone(s), result = act(s, buy(s), 0);
     if (!result.ok) throw Error(result.reason);
     expect(s).toEqual(before); expect(result.state.hearts).toBe(11); expect(result.state.pattes).toBe(0);
     expect(result.state.buildings.filter(b => b.kind === 'statue')).toHaveLength(1);
-    // The second statue waits for level 25 (2 November 2026).
+    // The second statue waits for level 22 (3 November 2026; level 25 before).
     expect(act(result.state, buy(result.state), 0)).toEqual({ok: false, state: result.state, reason: 'LEVEL_REQUIRED'});
     expect(decodeGame(encodeGame(result.state))).toEqual({ok: true, state: result.state});
   });
@@ -117,12 +117,12 @@ describe('statue shop and placement', () => {
     expect([s.hearts, s.pattes]).toEqual([0, 0]); expect(s.buildings.filter(b => b.kind === 'statue')).toHaveLength(1);
     expect(decodeGame(data.get(SAVE_KEY)!)).toEqual({ok: true, state: s});
   });
-  it('offers the second statue for 150 Hearts from level 25, then shows the limit', () => {
-    const initial = ready(150), at = free(initial); initial.buildings.push(emptyBuilding(`building-${initial.nextId++}`, 'statue', at.x, at.y));
+  it('offers the second statue for 100 Hearts from level 22, then shows the limit', () => {
+    const initial = ready(100), at = free(initial); initial.buildings.push(emptyBuilding(`building-${initial.nextId++}`, 'statue', at.x, at.y));
     const early = setup(initial); early.ui.open({kind: 'shop', tab: 'buildings'});
-    expect(button('Placer · 150 cœurs').disabled).toBe(true); expect(panel().textContent).toContain('Ta deuxième Statue de l’Affection ouvre l’affection 31 à 50');
-    expect(buildingReason(initial, 'statue')).toBe('Niveau 25 requis');
-    initial.progression = {totalXp: cumulativeLevelXp(25), rewardedThroughLevel: 25};
+    expect(button('Placer · 100 cœurs').disabled).toBe(true); expect(panel().textContent).toContain('Ta deuxième Statue de l’Affection ouvre l’affection 31 à 50');
+    expect(buildingReason(initial, 'statue')).toBe('Niveau 22 requis');
+    initial.progression = {totalXp: cumulativeLevelXp(22), rewardedThroughLevel: 22};
     expect(buildingReason(initial, 'statue')).toBeNull();
     const second = act(initial, buy(initial), 0); if (!second.ok) throw Error(second.reason);
     expect(second.state.hearts).toBe(0); expect(buildingReason(second.state, 'statue')).toBe(REFUSALS.BUILDING_LIMIT);

@@ -54,7 +54,7 @@ it('renders the fourteen crops with their icon, locks the later ones and shows a
 });
 it('shows the accumulated gift amount and the timer only when none is ready',()=>{
   const s=createGame(0),{ui}=mount(s,s.nextHeartGiftAt+48*HOUR);ui.open({kind:'hearts'});
-  expect(panel().textContent).toContain('3 cadeaux · 6 cœurs');expect(panel().querySelector('.timer')).toBeNull();
+  expect(panel().textContent).toContain('3 cadeaux · 9 cœurs');expect(panel().querySelector('.timer')).toBeNull();
   panel().querySelector<HTMLButtonElement>('.heart-gift')!.click();
   expect(panel().textContent).toContain('Aucun cadeau prêt');expect(panel().textContent).toContain('Prochain cadeau dans :');expect(panel().querySelector('.timer')).not.toBeNull();
 });

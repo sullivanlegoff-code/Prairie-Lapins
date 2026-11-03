@@ -17,8 +17,9 @@ export const CUISINE_TIP = {pattes: 5, grass: 1} as const;
  * constants, awaiting the owner's tuning. Hearts only; read them through `nurseryUnlockQuote`.
  */
 export const NURSERY = {initialCapacity: 1, maxCapacity: 4, unlockHearts: {1: 10, 2: 25, 3: 50}} as const;
+/** Paille's free gift: 3 Hearts every 24 h (2 before the Hearts / pattes balance of 3 November 2026), three gifts kept at most. */
 export const HEARTS = {
-  initial: 12, gift: 2, maximumGifts: 3, giftInterval: 24 * HOUR,
+  initial: 12, gift: 3, maximumGifts: 3, giftInterval: 24 * HOUR,
   accelerationStep: 5 * MINUTE, pattesPerHeart: 25,
 };
 /** Paille's counter (late game): one Heart for pattes or grass; each exchange of a daily cycle costs 25 % more, 30 at most per resource. */
@@ -26,7 +27,9 @@ export const MARKET = {unlockLevel: 10, base: {pattes: 250, grass: 100}, growth:
 // The species registry lives in ./species; the public names stay available from here.
 export {SPECIES, SPECIES_IDS, LEGACY_SPECIES_IDS};
 export type {SpeciesId, RabbitType, Rarity};
-export type BuildingKind = 'enclosure' | 'farm' | 'nest' | 'nursery' | 'kitchen' | 'statue' | 'agency';
+export type BuildingKind = 'enclosure' | 'farm' | 'nest' | 'nursery' | 'kitchen' | 'statue' | 'agency' | 'salon';
+/** Every building kind, in the order the save validates them. */
+export const BUILDING_KINDS = ['enclosure', 'farm', 'nest', 'nursery', 'kitchen', 'statue', 'agency', 'salon'] as const satisfies readonly BuildingKind[];
 export const BREEDING_WEIGHTS = {common: 30, recipe: 30};
 /** Exact element unions only; additional elements retain the historical pool.
  * Eligibility comes from catalogue recipes, never a fixed list of results. */
@@ -59,6 +62,7 @@ export const BALANCE = {
     kitchen: {price: 100, maximum: 1}, // Provisional building-only integration price.
     statue: {price: 60, currency: 'hearts', maximum: 2}, // Hearts only, never a coin purchase or complement; the second costs more (AFFECTION_STATUES).
     agency: {price: 1000, maximum: 1}, // The travel agency: see TRAVEL.
+    salon: {price: 5000, maximum: 1}, // The Salon de soins: see SALON.
   } satisfies Record<BuildingKind, {price: number; currency?: 'hearts'; maximum: number | null}>,
 };
 /**
@@ -129,13 +133,33 @@ export const FEED_COSTS: readonly number[] = [
   1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3100, 3200, 3300, 3400, 3500, 3600, 3700, 10000,
 ];
 export const feedCost = (affection: number): number => FEED_COSTS[affection] ?? Infinity;
+/** A wall (14 → 15, 29 → 30, 49 → 50): a step dearer than both its neighbours. Only a meal crosses it, never a gift. */
+export const isAffectionWall = (affection: number): boolean => affection > 0 && FEED_COSTS[affection] > FEED_COSTS[affection - 1] && FEED_COSTS[affection] > (FEED_COSTS[affection + 1] ?? 0);
+/**
+ * Affection gifts (owner, 2 November 2026): a care at the Salon de soins or a picnic gives +1 affection, at most one gift per
+ * rabbit and per daily cycle (the missions' cycle), never across a wall and within the statues' cap.
+ * The Salon de soins: one building (5 000 pattes, player level 12), one rabbit at a time, away from its enclosure like a
+ * traveller. The full price depends on the rabbit's rarity; each care takes its share of it, lasts `hours` and gives `xp` at the return.
+ */
+export const SALON = {
+  unlockLevel: 12,
+  fullPrice: {common: 300, rare: 800, epic: 2000, legendary: 3500, mythic: 5000},
+  // 3 November 2026: the bath is the quick, cheap care; the massage the long, dear one that gives the most XP (brush in between).
+  cares: {bath: {hours: 1, share: 0.5, xp: 10}, brush: {hours: 2, share: 1, xp: 25}, massage: {hours: 3, share: 1.5, xp: 45}},
+} as const satisfies {unlockLevel: number; fullPrice: Record<Rarity, number>; cares: Record<string, {hours: number; share: number; xp: number}>};
+export type CareKind = keyof typeof SALON.cares;
+export const CARE_KINDS = Object.keys(SALON.cares) as CareKind[];
+export const carePrice = (species: SpeciesId, care: CareKind): number => Math.round(SALON.fullPrice[SPECIES[species].rarity] * SALON.cares[care].share);
+/** The picnic: from player level 8, one a day in all, in one enclosure; paid and rewarded per rabbit present. */
+// 10 XP per rabbit present since 3 November 2026 (5 before).
+export const PICNIC = {unlockLevel: 8, pricePerRabbit: 300, xpPerRabbit: 10} as const;
 /**
  * The Statues de l'Affection, in purchase order (hearts only, sold among the buildings). Statue n is sold from player level
  * `level` for `heartPrice` Hearts; without it, affection stops at `cap`. Both statues share the same painting.
  */
 export const AFFECTION_STATUES = [
   {level: 15, cap: 14, heartPrice: BALANCE.buildings.statue.price},
-  {level: 25, cap: 30, heartPrice: 150},
+  {level: 22, cap: 30, heartPrice: 100}, // 3 November 2026 (150 Hearts at level 25 before): affection 20 → 50 in about 30 days.
 ] as const;
 /** The first statue: affection above `cap` needs it, sold from player level `level`. */
 export const AFFECTION_STATUE = AFFECTION_STATUES[0];

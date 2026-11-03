@@ -1,16 +1,422 @@
 {
+  "economy": {
+    "1-10": {
+      "pattes": {
+        "gainPerDay": {
+          "claimMainMission": 288,
+          "claimDailyMission": 48,
+          "collectIncome": 4579
+        },
+        "spendPerDay": {
+          "buyBuilding:enclosure": 510,
+          "buyRabbit": 121,
+          "buyBuilding:farm": 12,
+          "startOrder": 715,
+          "buyDecoration": 0,
+          "upgradeHabitat": 70,
+          "expand": 260,
+          "picnic": 810,
+          "buyBuilding:kitchen": 10,
+          "exchange:pattes": 673,
+          "buyBuilding:salon": 500,
+          "startCare:bath": 80,
+          "startCare:massage": 840
+        },
+        "netPerDay": 314
+      },
+      "hearts": {
+        "gainPerDay": {
+          "buyRabbit": 0,
+          "feed": 0,
+          "claimMainMission": 4,
+          "welcome": 1,
+          "claimHearts": 3,
+          "exchange:pattes": 2,
+          "picnic": 0
+        },
+        "spendPerDay": {
+          "upgradeFarm:2": 3,
+          "upgradeHabitat": 1
+        },
+        "netPerDay": 5
+      },
+      "grass": {
+        "gainPerDay": {
+          "collectOrder": 1618,
+          "claimMainMission": 59,
+          "claimDailyMission": 9,
+          "release": 15
+        },
+        "spendPerDay": {
+          "feed": 1407
+        },
+        "netPerDay": 294
+      },
+      "xp": {
+        "gainPerDay": {
+          "buyBuilding:enclosure": 21,
+          "claimMainMission": 119,
+          "buyRabbit": 28,
+          "buyBuilding:farm": 4,
+          "feed": 122,
+          "breed": 15,
+          "claimDailyMission": 65,
+          "welcome": 558,
+          "buyDecoration": 1,
+          "picnic": 27,
+          "claimCare": 29
+        },
+        "spendPerDay": {},
+        "netPerDay": 989
+      },
+      "counterPattesPerDay": 673,
+      "stock": {
+        "heartsAverage": 28,
+        "heartsEnd": 65,
+        "pattesAverage": 1832,
+        "grassAverage": 559
+      }
+    },
+    "11-20": {
+      "pattes": {
+        "gainPerDay": {
+          "collectIncome": 10421,
+          "claimDailyMission": 74,
+          "claimMainMission": 24
+        },
+        "spendPerDay": {
+          "startCare:massage": 2760,
+          "picnic": 1710,
+          "startOrder": 1078,
+          "expand": 1800,
+          "startCare:bath": 40,
+          "upgradeHabitat": 23,
+          "exchange:pattes": 3006,
+          "buyBuilding:enclosure": 20
+        },
+        "netPerDay": 82
+      },
+      "hearts": {
+        "gainPerDay": {
+          "claimHearts": 3,
+          "claimMainMission": 1,
+          "welcome": 0,
+          "picnic": 0,
+          "exchange:pattes": 5,
+          "claimDailyMission": 0
+        },
+        "spendPerDay": {
+          "buyBuilding:statue": 6,
+          "upgradeHabitat": 1
+        },
+        "netPerDay": 2
+      },
+      "grass": {
+        "gainPerDay": {
+          "collectOrder": 2492,
+          "release": 45,
+          "claimDailyMission": 9,
+          "claimMainMission": 12
+        },
+        "spendPerDay": {
+          "feed": 2851
+        },
+        "netPerDay": -293
+      },
+      "xp": {
+        "gainPerDay": {
+          "claimDailyMission": 90,
+          "claimCare": 127,
+          "welcome": 86,
+          "picnic": 57,
+          "feed": 71,
+          "claimMainMission": 14,
+          "breed": 13,
+          "buyBuilding:enclosure": 3
+        },
+        "spendPerDay": {},
+        "netPerDay": 460
+      },
+      "counterPattesPerDay": 3006,
+      "stock": {
+        "heartsAverage": 38,
+        "heartsEnd": 86,
+        "pattesAverage": 4042,
+        "grassAverage": 1179
+      }
+    },
+    "21-30": {
+      "pattes": {
+        "gainPerDay": {
+          "collectIncome": 13500,
+          "claimDailyMission": 56,
+          "claimMainMission": 6
+        },
+        "spendPerDay": {
+          "startCare:massage": 2580,
+          "picnic": 990,
+          "startOrder": 1090,
+          "exchange:pattes": 927,
+          "expand": 7000,
+          "startCare:bath": 30
+        },
+        "netPerDay": 945
+      },
+      "hearts": {
+        "gainPerDay": {
+          "claimHearts": 3,
+          "exchange:pattes": 2,
+          "feed": 0,
+          "claimDailyMission": 0,
+          "claimMainMission": 0,
+          "claimCare": 0
+        },
+        "spendPerDay": {
+          "buyBuilding:statue": 10,
+          "upgradeHabitat": 1
+        },
+        "netPerDay": -6
+      },
+      "grass": {
+        "gainPerDay": {
+          "collectOrder": 2540,
+          "release": 48,
+          "claimDailyMission": 3,
+          "claimMainMission": 3
+        },
+        "spendPerDay": {
+          "feed": 2568
+        },
+        "netPerDay": 25
+      },
+      "xp": {
+        "gainPerDay": {
+          "claimDailyMission": 55,
+          "claimCare": 128,
+          "welcome": 77,
+          "picnic": 33,
+          "feed": 91,
+          "breed": 13,
+          "claimMainMission": 2
+        },
+        "spendPerDay": {},
+        "netPerDay": 399
+      },
+      "counterPattesPerDay": 927,
+      "stock": {
+        "heartsAverage": 24,
+        "heartsEnd": 25,
+        "pattesAverage": 14006,
+        "grassAverage": 844
+      }
+    },
+    "31-45": {
+      "pattes": {
+        "gainPerDay": {
+          "collectIncome": 14025,
+          "claimDailyMission": 41,
+          "claimMainMission": 24
+        },
+        "spendPerDay": {
+          "startCare:massage": 2690,
+          "picnic": 1180,
+          "startOrder": 1986,
+          "upgradeFarm:3": 8000
+        },
+        "netPerDay": 234
+      },
+      "hearts": {
+        "gainPerDay": {
+          "claimHearts": 3,
+          "claimMainMission": 1,
+          "claimDailyMission": 0,
+          "picnic": 0,
+          "claimCare": 0,
+          "feed": 0
+        },
+        "spendPerDay": {
+          "upgradeFarm:2": 2
+        },
+        "netPerDay": 2
+      },
+      "grass": {
+        "gainPerDay": {
+          "collectOrder": 4377,
+          "release": 60,
+          "claimMainMission": 12,
+          "claimDailyMission": 16
+        },
+        "spendPerDay": {
+          "feed": 4470
+        },
+        "netPerDay": -4
+      },
+      "xp": {
+        "gainPerDay": {
+          "claimDailyMission": 70,
+          "claimCare": 135,
+          "welcome": 133,
+          "picnic": 39,
+          "feed": 82,
+          "breed": 14,
+          "claimMainMission": 1
+        },
+        "spendPerDay": {},
+        "netPerDay": 475
+      },
+      "counterPattesPerDay": 0,
+      "stock": {
+        "heartsAverage": 28,
+        "heartsEnd": 53,
+        "pattesAverage": 28563,
+        "grassAverage": 2141
+      }
+    },
+    "46-60": {
+      "pattes": {
+        "gainPerDay": {
+          "collectIncome": 16797,
+          "claimDailyMission": 36,
+          "claimMainMission": 5
+        },
+        "spendPerDay": {
+          "startCare:massage": 3610,
+          "picnic": 1580,
+          "startOrder": 2400,
+          "buyBuilding:enclosure": 13,
+          "upgradeHabitat": 7,
+          "expand": 5000,
+          "startCare:bath": 27
+        },
+        "netPerDay": 4201
+      },
+      "hearts": {
+        "gainPerDay": {
+          "claimHearts": 3,
+          "claimMainMission": 0,
+          "exchange:grass": 1
+        },
+        "spendPerDay": {
+          "upgradeHabitat": 1
+        },
+        "netPerDay": 3
+      },
+      "grass": {
+        "gainPerDay": {
+          "collectOrder": 5480,
+          "claimDailyMission": 20,
+          "release": 42,
+          "claimMainMission": 3
+        },
+        "spendPerDay": {
+          "feed": 5006,
+          "exchange:grass": 150
+        },
+        "netPerDay": 388
+      },
+      "xp": {
+        "gainPerDay": {
+          "claimDailyMission": 77,
+          "claimCare": 133,
+          "welcome": 137,
+          "picnic": 53,
+          "feed": 74,
+          "breed": 14,
+          "buyBuilding:enclosure": 2
+        },
+        "spendPerDay": {},
+        "netPerDay": 489
+      },
+      "counterPattesPerDay": 0,
+      "stock": {
+        "heartsAverage": 72,
+        "heartsEnd": 102,
+        "pattesAverage": 42416,
+        "grassAverage": 2570
+      }
+    },
+    "61-70": {
+      "pattes": {
+        "gainPerDay": {
+          "collectIncome": 17775,
+          "claimDailyMission": 42
+        },
+        "spendPerDay": {
+          "startCare:massage": 4200,
+          "picnic": 1470,
+          "startOrder": 2400,
+          "expand": 10000,
+          "startCare:bath": 40,
+          "exchange:pattes": 7324
+        },
+        "netPerDay": -7616
+      },
+      "hearts": {
+        "gainPerDay": {
+          "claimHearts": 3,
+          "exchange:grass": 11,
+          "exchange:pattes": 8
+        },
+        "spendPerDay": {},
+        "netPerDay": 22
+      },
+      "grass": {
+        "gainPerDay": {
+          "collectOrder": 5480,
+          "claimDailyMission": 15,
+          "release": 65
+        },
+        "spendPerDay": {
+          "feed": 1,
+          "exchange:grass": 4528
+        },
+        "netPerDay": 1032
+      },
+      "xp": {
+        "gainPerDay": {
+          "claimDailyMission": 70,
+          "claimCare": 132,
+          "welcome": 96,
+          "picnic": 49,
+          "feed": 2,
+          "breed": 15,
+          "claimMainMission": 2
+        },
+        "spendPerDay": {},
+        "netPerDay": 365
+      },
+      "counterPattesPerDay": 7324,
+      "stock": {
+        "heartsAverage": 205,
+        "heartsEnd": 318,
+        "pattesAverage": 21060,
+        "grassAverage": 12400
+      }
+    }
+  },
   "calendarMilestones": {
     "5": 1,
     "10": 3,
     "15": 7,
-    "20": 17,
-    "22": 24,
-    "25": 35,
-    "30": 56
+    "20": 15,
+    "22": 20,
+    "25": 30,
+    "30": 45
   },
-  "statueDay": 9,
-  "secondStatueDay": 35,
-  "method": "Seed 20261025; real act/advance; 3 sessions/day at 08/13/20, <=45 commands and <=8 meals/session; two farms, each sowing the best-liked unlocked crop ripe by the next visit; each farm goes to level 3 (fancy crops) from player level 20 once 63 000 pattes are in hand; save Hearts two levels ahead for each statue (60 Hearts at level 15, 150 at level 25) plus six in reserve; collection-first parent pairs; no Cuisine or paid recipes; Hearts for permanent farm, agency and habitat upgrades after the statue reserve. Counter reserves: 3000 coins and 6000 food. Day snapshots just before next 08:00. Tutorial is the first session.",
+  "statueDay": 10,
+  "secondStatueDay": 21.208,
+  "salonDay": 6.5,
+  "affection20to50": {
+    "rabbit": "rabbit-2",
+    "species": "paille",
+    "day20": 10.5,
+    "day50": 39.208,
+    "days": 28.708,
+    "affectionDay60": 50,
+    "finalAffection": 50
+  },
+  "fastest20to50": 22,
+  "method": "Seed 20261025; real act/advance; 3 sessions/day at 08/13/20, <=45 commands and <=8 meals/session; two farms, each sowing the best-liked unlocked crop ripe by the next visit; each farm goes to level 3 (fancy crops) from player level 20 once 63 000 pattes are in hand; pattes saved for the next coin goal (salon, next extension allowed by the level, farm level 3) before the counter, except while Hearts are short for a statue; save Hearts two levels ahead for each statue (60 Hearts at level 15, 100 at level 22) plus six in reserve; food kept for the most loved rabbit waiting at a wall (29 -> 30, 49 -> 50); collection-first parent pairs; no Cuisine or paid recipes; Salon de soins bought at level 12 with 5 500 pattes in hand, one care per session for the most loved rabbit that may receive a gift (massage with 3 000 pattes left in hand, else bath), one picnic a day in the enclosure where the most rabbits gain (500 pattes kept); Hearts for permanent farm, agency and habitat upgrades after the statue reserve. Counter reserves: the coin goal (or 3000 coins while Hearts are short for a statue) and 6000 food plus a waiting wall meal. Day snapshots just before next 08:00. Tutorial is the first session.",
   "curve": {
     "initialLevel": 1,
     "maximumLevel": 30,
@@ -35,14 +441,19 @@
     "5": 0,
     "10": 2.208,
     "15": 6.208,
-    "20": 16,
-    "22": 23.208,
-    "25": 34.5,
-    "30": 55
+    "20": 14,
+    "22": 19,
+    "25": 29,
+    "30": 44.208
   },
   "rows": [
     {
       "step": "10 min",
+      "affectionById": {
+        "rabbit-2": 2,
+        "rabbit-7": 2,
+        "birth-9": 1
+      },
       "pattes": 850,
       "grass": 96,
       "hearts": 18,
@@ -51,6 +462,7 @@
       "affection": {
         "≥10": 0,
         "≥15": 0,
+        "≥30": 0,
         "max": 2,
         "rabbits": 3
       },
@@ -106,6 +518,13 @@
     },
     {
       "step": "1 j",
+      "affectionById": {
+        "rabbit-2": 11,
+        "rabbit-7": 6,
+        "birth-9": 2,
+        "rabbit-11": 2,
+        "birth-13": 2
+      },
       "pattes": 575,
       "grass": 37,
       "hearts": 23,
@@ -114,6 +533,7 @@
       "affection": {
         "≥10": 1,
         "≥15": 0,
+        "≥30": 0,
         "max": 11,
         "rabbits": 5
       },
@@ -183,14 +603,29 @@
     },
     {
       "step": "3 j",
-      "pattes": 150,
-      "grass": 0,
-      "hearts": 7,
+      "affectionById": {
+        "rabbit-2": 14,
+        "rabbit-7": 14,
+        "birth-9": 14,
+        "rabbit-11": 10,
+        "birth-13": 7,
+        "birth-14": 4,
+        "birth-17": 3,
+        "birth-18": 2,
+        "birth-19": 2,
+        "rabbit-20": 2,
+        "birth-21": 2,
+        "birth-22": 2
+      },
+      "pattes": 3,
+      "grass": 32,
+      "hearts": 9,
       "level": 11,
       "species": 11,
       "affection": {
-        "≥10": 3,
+        "≥10": 4,
         "≥15": 0,
+        "≥30": 0,
         "max": 14,
         "rabbits": 12
       },
@@ -266,28 +701,53 @@
         "habitat-two",
         "discover-icy",
         "discover-snk",
+        "farm-level-two",
         "welcome-metal",
         "discover-belier-gris",
         "ten-species",
         "level-ten",
         "discover-boudinet",
         "bigger-meadow",
-        "discover-fluffy",
-        "farm-level-two"
+        "discover-fluffy"
       ]
     },
     {
       "step": "7 j",
-      "pattes": 3565,
-      "grass": 1175,
-      "hearts": 35,
+      "affectionById": {
+        "rabbit-2": 14,
+        "rabbit-7": 14,
+        "birth-9": 14,
+        "rabbit-11": 14,
+        "birth-13": 14,
+        "birth-14": 14,
+        "birth-17": 14,
+        "birth-18": 14,
+        "birth-19": 14,
+        "rabbit-20": 14,
+        "birth-21": 14,
+        "birth-22": 9,
+        "birth-24": 2,
+        "rabbit-26": 3,
+        "birth-27": 3,
+        "birth-28": 2,
+        "birth-30": 2,
+        "birth-31": 2,
+        "birth-34": 2,
+        "birth-35": 2,
+        "birth-37": 2,
+        "birth-38": 2
+      },
+      "pattes": 3,
+      "grass": 482,
+      "hearts": 38,
       "level": 15,
       "species": 20,
       "affection": {
-        "≥10": 10,
+        "≥10": 11,
         "≥15": 0,
+        "≥30": 0,
         "max": 14,
-        "rabbits": 21
+        "rabbits": 22
       },
       "speciesIds": [
         "paille",
@@ -311,14 +771,14 @@
         "bouee",
         "plume"
       ],
-      "storedPattes": 1400,
+      "storedPattes": 2375,
       "remaining": {
         "commons": [],
         "extensions": 6,
         "extensionCost": 263000,
         "farms": 0,
         "kitchen": false,
-        "habitatUpgrades": 6,
+        "habitatUpgrades": 5,
         "paidRecipes": [
           "magicien",
           "dragon",
@@ -368,6 +828,7 @@
         "habitat-two",
         "discover-icy",
         "discover-snk",
+        "farm-level-two",
         "welcome-metal",
         "discover-belier-gris",
         "ten-species",
@@ -375,14 +836,14 @@
         "discover-boudinet",
         "bigger-meadow",
         "discover-fluffy",
-        "farm-level-two",
         "discover-amethyste",
+        "habitat-level-three",
         "welcome-flight",
         "discover-volant",
         "discover-virvoletant",
-        "build-kitchen",
         "fifteen-species",
         "discover-tunini",
+        "build-kitchen",
         "discover-phoenix",
         "discover-egiiipte",
         "discover-roukette",
@@ -393,16 +854,54 @@
     },
     {
       "step": "20 j",
-      "pattes": 5227,
-      "grass": 300,
-      "hearts": 89,
-      "level": 21,
+      "affectionById": {
+        "rabbit-2": 30,
+        "rabbit-7": 23,
+        "rabbit-11": 14,
+        "birth-13": 14,
+        "birth-14": 14,
+        "birth-17": 14,
+        "birth-18": 14,
+        "birth-19": 14,
+        "rabbit-20": 14,
+        "birth-21": 14,
+        "birth-22": 14,
+        "rabbit-26": 14,
+        "birth-27": 14,
+        "birth-28": 14,
+        "birth-30": 14,
+        "birth-31": 14,
+        "birth-34": 14,
+        "birth-35": 14,
+        "birth-37": 14,
+        "birth-38": 14,
+        "birth-40": 7,
+        "birth-41": 14,
+        "birth-44": 4,
+        "birth-45": 14,
+        "birth-47": 14,
+        "birth-50": 3,
+        "birth-55": 2,
+        "birth-56": 14,
+        "birth-57": 12,
+        "birth-58": 10,
+        "birth-61": 9,
+        "birth-73": 4,
+        "birth-74": 2,
+        "birth-76": 2,
+        "birth-77": 2
+      },
+      "pattes": 4308,
+      "grass": 8,
+      "hearts": 86,
+      "level": 22,
       "species": 29,
       "affection": {
-        "≥10": 30,
+        "≥10": 26,
         "≥15": 2,
-        "max": 29,
-        "rabbits": 34
+        "≥30": 1,
+        "max": 30,
+        "rabbits": 35
       },
       "speciesIds": [
         "paille",
@@ -435,14 +934,14 @@
         "orange",
         "dinenette"
       ],
-      "storedPattes": 3725,
+      "storedPattes": 3925,
       "remaining": {
         "commons": [],
-        "extensions": 5,
-        "extensionCost": 257000,
+        "extensions": 4,
+        "extensionCost": 245000,
         "farms": 0,
         "kitchen": false,
-        "habitatUpgrades": 6,
+        "habitatUpgrades": 7,
         "paidRecipes": [
           "magicien",
           "dragon",
@@ -488,6 +987,7 @@
         "habitat-two",
         "discover-icy",
         "discover-snk",
+        "farm-level-two",
         "welcome-metal",
         "discover-belier-gris",
         "ten-species",
@@ -495,14 +995,14 @@
         "discover-boudinet",
         "bigger-meadow",
         "discover-fluffy",
-        "farm-level-two",
         "discover-amethyste",
+        "habitat-level-three",
         "welcome-flight",
         "discover-volant",
         "discover-virvoletant",
-        "build-kitchen",
         "fifteen-species",
         "discover-tunini",
+        "build-kitchen",
         "discover-phoenix",
         "discover-egiiipte",
         "discover-roukette",
@@ -517,27 +1017,257 @@
         "discover-bretonette",
         "build-affection-statue",
         "affection-fifteen",
-        "discover-calinou",
-        "habitat-level-three",
         "affection-twenty",
         "three-extensions",
-        "discover-dinono",
+        "discover-calinou",
         "level-twenty",
+        "discover-dinono",
         "discover-orange",
-        "discover-dinenette"
+        "discover-dinenette",
+        "level-twenty-two"
+      ]
+    },
+    {
+      "step": "30 j",
+      "affectionById": {
+        "rabbit-2": 39,
+        "rabbit-7": 35,
+        "rabbit-11": 26,
+        "birth-13": 14,
+        "birth-14": 14,
+        "birth-17": 14,
+        "birth-18": 14,
+        "birth-19": 14,
+        "rabbit-20": 14,
+        "birth-21": 14,
+        "birth-22": 14,
+        "rabbit-26": 14,
+        "birth-27": 14,
+        "birth-28": 14,
+        "birth-31": 14,
+        "birth-34": 14,
+        "birth-35": 14,
+        "birth-37": 14,
+        "birth-38": 14,
+        "birth-40": 14,
+        "birth-41": 14,
+        "birth-44": 14,
+        "birth-45": 14,
+        "birth-47": 14,
+        "birth-50": 14,
+        "birth-55": 14,
+        "birth-56": 14,
+        "birth-57": 14,
+        "birth-58": 14,
+        "birth-61": 14,
+        "birth-73": 14,
+        "birth-74": 14,
+        "birth-76": 14,
+        "birth-82": 14,
+        "birth-84": 14,
+        "birth-86": 14,
+        "birth-99": 14,
+        "birth-101": 3,
+        "birth-103": 2
+      },
+      "pattes": 13762,
+      "grass": 259,
+      "hearts": 25,
+      "level": 25,
+      "species": 30,
+      "affection": {
+        "≥10": 37,
+        "≥15": 3,
+        "≥30": 2,
+        "max": 39,
+        "rabbits": 39
+      },
+      "speciesIds": [
+        "paille",
+        "neige",
+        "frisket",
+        "feu",
+        "ardent",
+        "glassofeu",
+        "icy",
+        "snk",
+        "belier-gris",
+        "boudinet",
+        "fluffy",
+        "amethyste",
+        "volant",
+        "virvoletant",
+        "tunini",
+        "phoenix",
+        "egiiipte",
+        "roukette",
+        "bouee",
+        "plume",
+        "wat-wat",
+        "princesse-neige",
+        "pic-pic",
+        "piment",
+        "bretonette",
+        "calinou",
+        "dinono",
+        "orange",
+        "dinenette",
+        "dadi"
+      ],
+      "storedPattes": 4675,
+      "remaining": {
+        "commons": [],
+        "extensions": 2,
+        "extensionCost": 175000,
+        "farms": 0,
+        "kitchen": false,
+        "habitatUpgrades": 6,
+        "paidRecipes": [
+          "magicien",
+          "dragon",
+          "maxou",
+          "requin",
+          "ankylosaure"
+        ]
+      },
+      "decorationBudget": {
+        "models": 21,
+        "pattes": 26150,
+        "hearts": 80
+      },
+      "mainMissionsClaimed": [
+        "snow-habitat",
+        "welcome-snow",
+        "first-meal",
+        "parents-ready",
+        "at-nest",
+        "first-farm",
+        "first-harvest",
+        "to-nursery",
+        "first-birth",
+        "varied-family",
+        "two-habitats",
+        "level-five",
+        "strong-bonds",
+        "welcome-fire",
+        "night-order",
+        "growing-collection",
+        "discover-paille",
+        "discover-neige",
+        "discover-feu",
+        "discover-frisket",
+        "discover-ardent",
+        "second-farm",
+        "affection-ten",
+        "first-decoration",
+        "decorate-dirt-path",
+        "discover-glassofeu",
+        "seven-species",
+        "habitat-two",
+        "discover-icy",
+        "discover-snk",
+        "farm-level-two",
+        "welcome-metal",
+        "discover-belier-gris",
+        "ten-species",
+        "level-ten",
+        "discover-boudinet",
+        "bigger-meadow",
+        "discover-fluffy",
+        "discover-amethyste",
+        "habitat-level-three",
+        "welcome-flight",
+        "discover-volant",
+        "discover-virvoletant",
+        "fifteen-species",
+        "discover-tunini",
+        "build-kitchen",
+        "discover-phoenix",
+        "discover-egiiipte",
+        "discover-roukette",
+        "level-fifteen",
+        "discover-bouee",
+        "discover-plume",
+        "discover-wat-wat",
+        "discover-princesse-neige",
+        "discover-pic-pic",
+        "discover-piment",
+        "all-ordinary-rares",
+        "discover-bretonette",
+        "build-affection-statue",
+        "affection-fifteen",
+        "affection-twenty",
+        "three-extensions",
+        "discover-calinou",
+        "level-twenty",
+        "discover-dinono",
+        "discover-orange",
+        "discover-dinenette",
+        "level-twenty-two",
+        "discover-dadi",
+        "level-twenty-five"
       ]
     },
     {
       "step": "50 j",
-      "pattes": 3978,
-      "grass": 217,
-      "hearts": 353,
-      "level": 28,
+      "affectionById": {
+        "rabbit-2": 50,
+        "rabbit-7": 50,
+        "rabbit-11": 50,
+        "birth-13": 38,
+        "birth-17": 28,
+        "birth-18": 14,
+        "birth-19": 14,
+        "rabbit-20": 14,
+        "birth-21": 14,
+        "birth-22": 14,
+        "rabbit-26": 14,
+        "birth-27": 14,
+        "birth-28": 14,
+        "birth-31": 14,
+        "birth-34": 14,
+        "birth-40": 14,
+        "birth-41": 14,
+        "birth-47": 14,
+        "birth-50": 14,
+        "birth-55": 14,
+        "birth-57": 14,
+        "birth-58": 14,
+        "birth-61": 14,
+        "birth-73": 14,
+        "birth-74": 14,
+        "birth-76": 14,
+        "birth-84": 14,
+        "birth-99": 14,
+        "birth-101": 14,
+        "birth-108": 14,
+        "birth-111": 14,
+        "birth-119": 14,
+        "birth-127": 14,
+        "birth-129": 14,
+        "birth-130": 14,
+        "birth-134": 14,
+        "birth-143": 14,
+        "birth-145": 4,
+        "birth-147": 3,
+        "birth-148": 14,
+        "birth-149": 14,
+        "birth-151": 3,
+        "birth-152": 3,
+        "birth-153": 3,
+        "birth-155": 2,
+        "birth-156": 2
+      },
+      "pattes": 58567,
+      "grass": 593,
+      "hearts": 60,
+      "level": 30,
       "species": 36,
       "affection": {
-        "≥10": 45,
-        "≥15": 8,
-        "max": 29,
+        "≥10": 39,
+        "≥15": 5,
+        "≥30": 4,
+        "max": 50,
         "rabbits": 46
       },
       "speciesIds": [
@@ -570,22 +1300,22 @@
         "dinono",
         "orange",
         "dinenette",
-        "maxou",
         "dadi",
         "magicien",
+        "maxou",
         "dragon",
         "requin",
         "ankylosaure",
         "benny"
       ],
-      "storedPattes": 5275,
+      "storedPattes": 5925,
       "remaining": {
         "commons": [],
-        "extensions": 5,
-        "extensionCost": 257000,
+        "extensions": 2,
+        "extensionCost": 175000,
         "farms": 0,
         "kitchen": false,
-        "habitatUpgrades": 7,
+        "habitatUpgrades": 6,
         "paidRecipes": []
       },
       "decorationBudget": {
@@ -624,6 +1354,7 @@
         "habitat-two",
         "discover-icy",
         "discover-snk",
+        "farm-level-two",
         "welcome-metal",
         "discover-belier-gris",
         "ten-species",
@@ -631,14 +1362,14 @@
         "discover-boudinet",
         "bigger-meadow",
         "discover-fluffy",
-        "farm-level-two",
         "discover-amethyste",
+        "habitat-level-three",
         "welcome-flight",
         "discover-volant",
         "discover-virvoletant",
-        "build-kitchen",
         "fifteen-species",
         "discover-tunini",
+        "build-kitchen",
         "discover-phoenix",
         "discover-egiiipte",
         "discover-roukette",
@@ -653,46 +1384,244 @@
         "discover-bretonette",
         "build-affection-statue",
         "affection-fifteen",
-        "discover-calinou",
-        "habitat-level-three",
         "affection-twenty",
         "three-extensions",
-        "discover-dinono",
+        "discover-calinou",
         "level-twenty",
+        "discover-dinono",
         "discover-orange",
         "discover-dinenette",
-        "discover-maxou",
         "level-twenty-two",
         "discover-dadi",
+        "level-twenty-five",
         "discover-magicien",
+        "discover-maxou",
         "discover-dragon",
         "discover-requin",
-        "level-twenty-five",
         "discover-ankylosaure",
+        "level-thirty",
+        "discover-benny"
+      ]
+    },
+    {
+      "step": "60 j",
+      "affectionById": {
+        "rabbit-2": 50,
+        "rabbit-7": 50,
+        "rabbit-11": 50,
+        "birth-13": 50,
+        "birth-17": 42,
+        "birth-18": 26,
+        "birth-19": 14,
+        "rabbit-20": 14,
+        "birth-21": 14,
+        "birth-22": 14,
+        "rabbit-26": 14,
+        "birth-27": 14,
+        "birth-28": 14,
+        "birth-31": 14,
+        "birth-34": 14,
+        "birth-40": 14,
+        "birth-41": 14,
+        "birth-47": 14,
+        "birth-50": 14,
+        "birth-55": 14,
+        "birth-57": 14,
+        "birth-58": 14,
+        "birth-61": 14,
+        "birth-73": 14,
+        "birth-74": 14,
+        "birth-76": 14,
+        "birth-84": 14,
+        "birth-99": 14,
+        "birth-101": 14,
+        "birth-108": 14,
+        "birth-111": 14,
+        "birth-119": 14,
+        "birth-127": 14,
+        "birth-129": 14,
+        "birth-130": 14,
+        "birth-134": 14,
+        "birth-143": 14,
+        "birth-145": 14,
+        "birth-147": 14,
+        "birth-148": 14,
+        "birth-149": 14,
+        "birth-151": 14,
+        "birth-152": 14,
+        "birth-153": 14,
+        "birth-156": 14,
+        "birth-186": 1
+      },
+      "pattes": 80297,
+      "grass": 6021,
+      "hearts": 102,
+      "level": 30,
+      "species": 36,
+      "affection": {
+        "≥10": 45,
+        "≥15": 6,
+        "≥30": 5,
+        "max": 50,
+        "rabbits": 46
+      },
+      "speciesIds": [
+        "paille",
+        "neige",
+        "frisket",
+        "feu",
+        "ardent",
+        "glassofeu",
+        "icy",
+        "snk",
+        "belier-gris",
+        "boudinet",
+        "fluffy",
+        "amethyste",
+        "volant",
+        "virvoletant",
+        "tunini",
+        "phoenix",
+        "egiiipte",
+        "roukette",
+        "bouee",
+        "plume",
+        "wat-wat",
+        "princesse-neige",
+        "pic-pic",
+        "piment",
+        "bretonette",
+        "calinou",
+        "dinono",
+        "orange",
+        "dinenette",
+        "dadi",
+        "magicien",
+        "maxou",
+        "dragon",
+        "requin",
+        "ankylosaure",
+        "benny"
+      ],
+      "storedPattes": 5925,
+      "remaining": {
+        "commons": [],
+        "extensions": 1,
+        "extensionCost": 100000,
+        "farms": 0,
+        "kitchen": false,
+        "habitatUpgrades": 6,
+        "paidRecipes": []
+      },
+      "decorationBudget": {
+        "models": 21,
+        "pattes": 26150,
+        "hearts": 80
+      },
+      "mainMissionsClaimed": [
+        "snow-habitat",
+        "welcome-snow",
+        "first-meal",
+        "parents-ready",
+        "at-nest",
+        "first-farm",
+        "first-harvest",
+        "to-nursery",
+        "first-birth",
+        "varied-family",
+        "two-habitats",
+        "level-five",
+        "strong-bonds",
+        "welcome-fire",
+        "night-order",
+        "growing-collection",
+        "discover-paille",
+        "discover-neige",
+        "discover-feu",
+        "discover-frisket",
+        "discover-ardent",
+        "second-farm",
+        "affection-ten",
+        "first-decoration",
+        "decorate-dirt-path",
+        "discover-glassofeu",
+        "seven-species",
+        "habitat-two",
+        "discover-icy",
+        "discover-snk",
+        "farm-level-two",
+        "welcome-metal",
+        "discover-belier-gris",
+        "ten-species",
+        "level-ten",
+        "discover-boudinet",
+        "bigger-meadow",
+        "discover-fluffy",
+        "discover-amethyste",
+        "habitat-level-three",
+        "welcome-flight",
+        "discover-volant",
+        "discover-virvoletant",
+        "fifteen-species",
+        "discover-tunini",
+        "build-kitchen",
+        "discover-phoenix",
+        "discover-egiiipte",
+        "discover-roukette",
+        "level-fifteen",
+        "discover-bouee",
+        "discover-plume",
+        "discover-wat-wat",
+        "discover-princesse-neige",
+        "discover-pic-pic",
+        "discover-piment",
+        "all-ordinary-rares",
+        "discover-bretonette",
+        "build-affection-statue",
+        "affection-fifteen",
+        "affection-twenty",
+        "three-extensions",
+        "discover-calinou",
+        "level-twenty",
+        "discover-dinono",
+        "discover-orange",
+        "discover-dinenette",
+        "level-twenty-two",
+        "discover-dadi",
+        "level-twenty-five",
+        "discover-magicien",
+        "discover-maxou",
+        "discover-dragon",
+        "discover-requin",
+        "discover-ankylosaure",
+        "level-thirty",
         "discover-benny"
       ]
     }
   ],
   "actions": {
-    "buyBuilding": 14,
-    "claimMainMission": 77,
+    "buyBuilding": 15,
+    "claimMainMission": 78,
     "buyRabbit": 4,
-    "startOrder": 419,
+    "startOrder": 416,
     "initiationAid": 3,
-    "collectOrder": 417,
-    "feed": 1605,
-    "breed": 203,
+    "collectOrder": 414,
+    "feed": 724,
+    "breed": 193,
     "claimDailyMission": 100,
     "transferBirth": 1,
-    "welcome": 201,
-    "collectIncome": 1826,
+    "welcome": 191,
+    "collectIncome": 1812,
     "buyDecoration": 1,
     "claimHearts": 69,
     "upgradeHabitat": 8,
-    "expand": 3,
-    "upgradeFarm": 2,
-    "release": 160,
-    "exchangeForHeart": 708
+    "upgradeFarm": 4,
+    "expand": 8,
+    "picnic": 65,
+    "exchangeForHeart": 279,
+    "release": 150,
+    "startCare": 188,
+    "claimCare": 187
   },
-  "totalActions": 5821
+  "totalActions": 4910
 }

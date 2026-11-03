@@ -57,14 +57,14 @@ describe('hearts initialization, migration and gifts', () => {
     const initial = createGame(0);
     expect(act(initial, {type: 'claimHearts'}, DAY - 1)).toMatchObject({ok: false, state: initial, reason: 'NOT_READY'});
     const s = run(initial, {type: 'claimHearts'}, DAY);
-    expect(s).toMatchObject({hearts: 14, nextHeartGiftAt: 2 * DAY});
+    expect(s).toMatchObject({hearts: 15, nextHeartGiftAt: 2 * DAY});
     expect(act(s, {type: 'claimHearts'}, DAY)).toMatchObject({ok: false, state: s});
     expect(act(s, {type: 'claimHearts'}, 0)).toMatchObject({ok: false, state: s});
-    expect(run(s, {type: 'claimHearts'}, 2 * DAY).hearts).toBe(16);
+    expect(run(s, {type: 'claimHearts'}, 2 * DAY).hearts).toBe(18);
   });
   it('accumulates at most three gifts across multiple days', () => {
     const s = run(createGame(0), {type: 'claimHearts'}, 9 * DAY + HOUR);
-    expect(s).toMatchObject({hearts: 18, nextHeartGiftAt: 10 * DAY});
+    expect(s).toMatchObject({hearts: 21, nextHeartGiftAt: 10 * DAY});
     expect(act(s, {type: 'claimHearts'}, 10 * DAY-1)).toMatchObject({ok: false});
   });
   it('preserves claimed gifts across reload and refuses another claim after clock reversal', () => {
@@ -72,7 +72,7 @@ describe('hearts initialization, migration and gifts', () => {
     now = DAY; c.perform({type: 'claimHearts'}); now = HOUR;
     const reloaded = new GameController(memory.storage, () => now);
     expect(reloaded.perform({type: 'claimHearts'})).toMatchObject({ok: false, reason: 'NOT_READY'});
-    expect(current(reloaded)).toMatchObject({hearts: 14, nextHeartGiftAt: HOUR + DAY, lastSimulatedAt: HOUR});
+    expect(current(reloaded)).toMatchObject({hearts: 15, nextHeartGiftAt: HOUR + DAY, lastSimulatedAt: HOUR});
   });
 });
 

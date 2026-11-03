@@ -3,7 +3,7 @@ import type {PurchaseUnlockId} from '../config/purchaseUnlocks';
 import type {IslandStart, ParcelId} from '../config/land';
 import type {HabitatType, HabitatLevel} from '../config/habitats';
 import type {MainMissionId, DailyMissionId, MainEvent} from '../config/missions';
-import type {BuildingKind, Destination, OrderId, SpeciesId} from '../config/balance';
+import type {BuildingKind, CareKind, Destination, OrderId, SpeciesId} from '../config/balance';
 import type {DecorationId} from '../config/decorations';
 
 export type DecorationLocation = {kind: 'inventory'} | {kind: 'outside'; x: number; y: number; rotation: 0 | 1};
@@ -36,8 +36,11 @@ export type NurserySlot = 0 | 1 | 2 | 3;
 export interface NurseryBaby {slot: NurserySlot; birth: Birth; startedAt: number; readyAt: number}
 export interface Nursery {capacity: NurseryCapacity; babies: NurseryBaby[]}
 /** `name` is the individual's own, set by the player; absent = unnamed. Never inherited, never tied to the species. */
-/** incomeRoll: one permanent individual draw, from 0 to 10000. Missing on historical saves. */
-export interface Rabbit { incomeRoll?: number; id: string; species: SpeciesId; affection: number; enclosureId: string; name?: string }
+/**
+ * incomeRoll: one permanent individual draw, from 0 to 10000. Missing on historical saves.
+ * crownHidden: an ultimate rabbit (affection 50) whose crown the player took off; absent = crown worn. Never on another rabbit.
+ */
+export interface Rabbit { incomeRoll?: number; id: string; species: SpeciesId; affection: number; enclosureId: string; name?: string; crownHidden?: true }
 export interface MissionState {
   nightOrderStarted?: boolean;
   events: Record<MainEvent, number>;
@@ -87,8 +90,16 @@ export interface GameState {
   market?: {cycle: number; pattes: number; grass: number};
   /** The travel agency: Coco's first welcome given, and the trips under way (ready to welcome back once `endsAt <= now`). */
   travel?: {welcomed: boolean; trips: Trip[]};
+  /** The care under way at the Salon de soins (one rabbit at a time, back once `endsAt <= now`); absent when the salon is free. */
+  care?: Care;
+  /** Daily cycle of each rabbit's last affection gift (a care or a picnic), keyed by rabbit ID. Absent until the first gift. */
+  affectionGifts?: Record<string, number>;
+  /** Daily cycle of the last picnic (one a day in all). Absent until the first picnic. */
+  picnicCycle?: number;
 }
 export interface Trip {grass?: number; rabbitId: string; destination: Destination; startedAt: number; endsAt: number; hearts: number}
+/** Paid at the start; the gift of the day is reserved then, the affection and the XP are given when the player welcomes it back. */
+export interface Care {rabbitId: string; care: CareKind; startedAt: number; endsAt: number}
 export type Refusal = 'LEVEL_REQUIRED' | 'NO_BREEDING_RESULT' | 'PURCHASE_LOCKED' | 'DECORATION_LIMIT' | 'DECORATION_OVERLAP' | 'DECORATION_BLOCKS_BUILDING' | 'INVALID_TIME' | 'INVALID_RANDOM' | 'INVALID_CHOICE' | 'NOT_FOUND' |
   'NOT_ENOUGH_PATTES' | 'NOT_ENOUGH_GRASS' | 'INVALID_CELL' | 'CELL_OCCUPIED' |
   'BUILDING_LIMIT' | 'HABITAT_NOT_EMPTY' | 'LAST_HABITAT' | 'CAPACITY_FULL' | 'BUSY' | 'NOT_READY' | 'MAX_AFFECTION' |
@@ -96,7 +107,8 @@ export type Refusal = 'LEVEL_REQUIRED' | 'NO_BREEDING_RESULT' | 'PURCHASE_LOCKED
   'LAST_OF_SPECIES' | 'PARENT_BUSY' | 'NOT_ENOUGH_HEARTS' | 'ACTION_FINISHED' |
   'STALE_ACTION' | 'PRICE_CHANGED' | 'NO_MISSING_PATTES' | 'ALREADY_CLAIMED' | 'CYCLE_EXPIRED' | 'RESOURCE_LIMIT' | 'TYPE_INCOMPATIBLE' | 'MAX_HABITAT_LEVEL' | 'RECIPE_KNOWN' | 'MAX_NURSERY_CAPACITY' |
   'UPGRADE_BLOCKED_BUILDING' | 'UPGRADE_BLOCKED_DECORATION' | 'UPGRADE_BLOCKED_LAND' | 'INVALID_NAME' | 'MARKET_LIMIT' | 'STATUE_REQUIRED' | 'SECOND_STATUE_REQUIRED' | 'TRAVELING' |
-  'BENNY_RECHARGING' | 'NO_WAITING_BABY' | 'BENNY_KEPT';
+  'BENNY_RECHARGING' | 'NO_WAITING_BABY' | 'BENNY_KEPT' |
+  'AT_SALON' | 'GIFT_TODAY' | 'AFFECTION_WALL' | 'PICNIC_TODAY' | 'EMPTY_ENCLOSURE' | 'NO_GIFT_POSSIBLE';
 export interface CuisineReward {pattes: number; grass: number; /** True for one of the cycle's full-reward slots, false for a tip. */ fullReward: boolean; affectionGranted: boolean; affectionAtCap: boolean; affectionStatueRequired: boolean; heartGranted: boolean; /** The rabbit the affection reward was drawn for. */ affectionRabbitId: string}
 export type ActionResult = {ok: true; state: GameState; value?: string | number; progressionGain?: ProgressionGain; cuisineReward?: CuisineReward} |
   {ok: false; state: GameState; reason: Refusal};
@@ -121,6 +133,8 @@ export type BaseCommand =
   | {type: 'expand'; parcelId: ParcelId; expectedCost: number}
   | {type: 'release'; id: string}
   | {type: 'renameRabbit'; id: string; name: string}
+  /** An ultimate rabbit (affection 50) takes off or puts back its crown; free and purely cosmetic. */
+  | {type: 'toggleCrown'; rabbitId: string}
   /** Benny's power: every baby of the nursery is ready now; then it recharges for 48 hours. */
   | {type: 'bennyPower'}
   /** Benny flies above the island, or comes back to her enclosure. Her income and enclosure are unchanged. */
@@ -145,6 +159,10 @@ export type Command = BaseCommand
   | {type: 'buyRecipe'; species: SpeciesId}
   /** One Heart from Paille's counter, at the quoted price: a stale or changed price refuses. */
   | {type: 'exchangeForHeart'; resource: 'pattes' | 'grass'; expectedCost: number}
+  /** Salon de soins: one care for this rabbit, paid now; `claimCare` welcomes it back once the care is over. */
+  | {type: 'startCare'; rabbitId: string; care: CareKind} | {type: 'claimCare'; rabbitId: string}
+  /** Today's picnic in this enclosure, at the quoted price (300 pattes per rabbit present): a changed price refuses. */
+  | {type: 'picnic'; enclosureId: string; expectedCost: number}
   | {type: 'welcomeAgency'} | {type: 'startTrip'; rabbitId: string} | {type: 'claimTrip'; rabbitId: string} | {type: 'upgradeFarm'; id: string; /** Level reached; absent = 2 (older callers). A farm not one level below is a stale action. */ toLevel?: 2 | 3} | {type: 'upgradeAgency'; id: string; fromLevel: 1 | 2 | 3}
   /** `birthId` names the nursery baby; required for growth, ignored otherwise. */
   | {type: 'initiationAid'; id: string; stage: TimedStage; jobKey: string; birthId?: string}

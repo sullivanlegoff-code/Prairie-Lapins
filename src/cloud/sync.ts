@@ -29,6 +29,7 @@ export function fingerprint(state: GameState): string {
   const reference = s.missions.daily.referenceAt;
   s.nextHeartGiftAt -= reference;
   for (const t of s.travel?.trips ?? []) { t.startedAt -= reference; t.endsAt -= reference; }
+  if (s.care) { s.care.startedAt -= reference; s.care.endsAt -= reference; }
   for (const b of s.buildings) {
     if (b.order) { b.order.startedAt -= reference; b.order.endsAt -= reference; }
     if (b.breeding) { b.breeding.startedAt -= reference; b.breeding.endsAt -= reference; }

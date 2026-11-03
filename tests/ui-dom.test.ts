@@ -688,8 +688,8 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     expect(document.getElementById('hearts')!.textContent).toBe('12');
     expect(button('Réclamer').disabled).toBe(true);
     clock.now = 24 * 3600_000; controller.refresh();
-    const claim = button('Réclamer · 1 cadeau · 2 cœurs'); claim.click(); claim.click();
-    expect(state(controller).hearts).toBe(14); expect(document.getElementById('hearts')!.textContent).toBe('14');
+    const claim = button('Réclamer · 1 cadeau · 3 cœurs'); claim.click(); claim.click();
+    expect(state(controller).hearts).toBe(15); expect(document.getElementById('hearts')!.textContent).toBe('15');
     expect(button('Réclamer').disabled).toBe(true);
   });
   it('defers building payment to final placement, supports both cancellations and confirms only once', () => {
@@ -790,7 +790,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     const time = state(controller).lastSimulatedAt; button('+ 60 min', document.getElementById('devtools')!).click();
     expect(state(controller).lastSimulatedAt - time).toBeGreaterThanOrEqual(3600_000);
     button('+ 1440 min', document.getElementById('devtools')!).click();
-    expect(controller.perform({type: 'claimHearts'}).ok).toBe(true); expect(state(controller).hearts).toBe(14);
+    expect(controller.perform({type: 'claimHearts'}).ok).toBe(true); expect(state(controller).hearts).toBe(15);
     expect(values.get(SAVE_KEY)).toBe(before); expect(values.has('prairie-lapins.development.' + SAVE_KEY)).toBe(true);
     dispose(); controller.dispose();
   });

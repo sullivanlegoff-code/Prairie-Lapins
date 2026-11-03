@@ -24,7 +24,7 @@ export function advanceFriendships(s: GameState, elapsed: number, now: number): 
   if (!s.cozy && (elapsed <= 0 || s.rabbits.length < 2)) return;
   const c = cozyState(s), ids = new Set(s.rabbits.map(r => r.id));
   c.bonds = c.bonds.filter(b => ids.has(b.a) && ids.has(b.b));
-  const busy = new Set([...(s.travel?.trips.map(t => t.rabbitId) ?? []), ...s.buildings.flatMap(b => b.breeding?.parents ?? [])]);
+  const busy = new Set([...(s.travel?.trips.map(t => t.rabbitId) ?? []), ...(s.care ? [s.care.rabbitId] : []), ...s.buildings.flatMap(b => b.breeding?.parents ?? [])]);
   const groups = new Map<string, string[]>();
   for (const r of s.rabbits) if (!busy.has(r.id)) {const list = groups.get(r.enclosureId) ?? []; list.push(r.id); groups.set(r.enclosureId, list);}
   for (const list of groups.values()) for (let i=0;i<list.length;i++) for(let j=i+1;j<list.length;j++) {

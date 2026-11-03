@@ -36,6 +36,7 @@ function rebaseClock(s: GameState, offset: number): void {
   s.missions.daily.referenceAt += offset;
   if (s.missions.daily.nextAt !== undefined) s.missions.daily.nextAt += offset;
   for (const trip of s.travel?.trips ?? []) { trip.startedAt += offset; trip.endsAt += offset; }
+  if (s.care) { s.care.startedAt += offset; s.care.endsAt += offset; }
   if (s.benny && s.benny.powerReadyAt > 0) s.benny.powerReadyAt += offset;
   for (const b of s.buildings) {
     if (b.order) { b.order.startedAt += offset; b.order.endsAt += offset; }

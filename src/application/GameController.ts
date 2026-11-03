@@ -155,7 +155,7 @@ export class GameController {
     if (changed) {
       const crossed = (end: number) => (previous.lastSimulatedAt >= end) !== (next.lastSimulatedAt >= end);
       const visible = settlementChanged || birthPlacementChanged || next.lastSimulatedAt < previous.lastSimulatedAt || crossed(previous.nextHeartGiftAt) ||
-        previous.travel?.trips.some(trip => crossed(trip.endsAt)) ||
+        previous.travel?.trips.some(trip => crossed(trip.endsAt)) || !!previous.care && crossed(previous.care.endsAt) ||
         previous.missions.daily.nextAt !== undefined && crossed(previous.missions.daily.nextAt) ||
         next.buildings.some((b, i) => Math.floor(b.incomeUnits / 3_600_000) !== Math.floor(previous.buildings[i].incomeUnits / 3_600_000) ||
           !!b.order && crossed(b.order.endsAt) || !!b.breeding && crossed(b.breeding.endsAt) ||

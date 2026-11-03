@@ -1,0 +1,52 @@
+/*
+ * The card of a lapin ultime (affection 50), see src/ui/ultimateCard.ts: the painted golden frame (src/config/ultimateArt.ts) drawn
+ * over the whole card as a nine-slice border, its golden bars on the card's edge, and its crown piece centred on the top bar.
+ * --uk: CSS pixels per pixel of the served frame (1200 x 800). Slices 284 245 239 245; outer edge of the bars 99 47 42 45 from
+ * the picture's sides; crown piece 452 x 166 at the top. The card keeps its 12 px edge, now under the golden bars.
+ */
+#game-panel[data-ultimate] {
+  --uk: .3;
+  overflow: visible; border-image: none; border-color: transparent;
+  box-shadow: 0 0 22px #ffd36a8c, 0 10px 0 #1a201c40, 0 22px 48px #0b120e80;
+}
+#game-panel.center-card[data-ultimate] {
+  /* Room above and below for the frame's crown and ribbons, which stand out of the card. */
+  max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 2 * 99px * var(--uk));
+}
+@media (max-width: 600px), (max-height: 500px) { #game-panel[data-ultimate] { --uk: .24; } }
+
+.ultimate-frame {
+  position: absolute; z-index: 6; pointer-events: none; box-sizing: border-box;
+  top: calc(-12px - 99px * var(--uk)); right: calc(-12px - 47px * var(--uk)); bottom: calc(-12px - 42px * var(--uk)); left: calc(-12px - 45px * var(--uk));
+  border-style: solid; border-color: transparent;
+  border-width: calc(284px * var(--uk)) calc(245px * var(--uk)) calc(239px * var(--uk)) calc(245px * var(--uk));
+  border-image: var(--ultimate-frame) 284 245 239 245 / calc(284px * var(--uk)) calc(245px * var(--uk)) calc(239px * var(--uk)) calc(245px * var(--uk)) stretch;
+}
+/* The crown piece starts at the top of the frame picture, at the same scale: its bar continues the frame's top bar. */
+.ultimate-frame-crown {
+  position: absolute; left: 50%; top: calc(-284px * var(--uk)); width: calc(452px * var(--uk)); height: auto; max-width: none;
+  transform: translateX(-50%);
+}
+
+/* Room inside the frame: the corners' laurels and bows never cover the title, the buttons or the last action. */
+#game-panel[data-ultimate] .panel-header { padding: calc(8px + 60px * var(--uk)) calc(12px + 40px * var(--uk)) 8px; }
+#game-panel[data-ultimate] .panel-scroll { padding-left: calc(14px + 20px * var(--uk)); padding-right: calc(14px + 20px * var(--uk)); padding-bottom: calc(24px + 100px * var(--uk)); }
+
+/* « Lapin ultime »: a golden ribbon at the top of the card. */
+#game-panel .ultimate-title {
+  margin: 0 auto 10px; width: fit-content; max-width: 100%; padding: 4px 20px; border: 2px solid #a2458f; border-radius: 999px;
+  background: linear-gradient(180deg, #fff2b8, #f6c94e 60%, #e7a92c); color: #4a2a08;
+  font-weight: 800; font-size: 18px; letter-spacing: .04em; text-align: center; box-shadow: 0 3px 0 #a2458f40, 0 0 12px #ffd36a99;
+}
+
+/* The crown on the portrait: the picture sits in a box of its own proportions, the crown on the head anchor in it. */
+.portrait[data-crowned] { container-type: size; overflow: visible; }
+.ultimate-figure {
+  position: relative; display: block; aspect-ratio: var(--ratio);
+  width: min(calc(100cqw - 8px), calc((100cqh - 8px) * var(--ratio)));
+}
+.portrait .ultimate-figure > img[data-rabbit-art] { display: block; width: 100%; height: 100%; padding: 0; }
+.ultimate-crown {
+  position: absolute; height: auto; max-width: none; pointer-events: none;
+  transform: translate(-50%, -80%) rotate(var(--tilt, 0deg)); transform-origin: 50% 80%; filter: drop-shadow(0 2px 1px #6e4b3a40);
+}

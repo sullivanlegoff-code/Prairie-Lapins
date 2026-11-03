@@ -3,18 +3,21 @@ import {recipeHint} from './economyFeedback';
 import {stateLevelAccess} from '../simulation/levelRights';
 import {buildingPlacementReason} from '../simulation/placement';
 import {habitatPrice, type HabitatType} from '../config/habitats';
-import {BALANCE, HOUR, TRAVEL, SPECIES, SPECIES_IDS, RECIPE_SPECIES, type Odds, type BuildingKind, type SpeciesId, type RabbitType, type Rarity} from '../config/balance';
+import {AFFECTION_STATUE, BALANCE, HOUR, SALON, SECOND_AFFECTION_STATUE, TRAVEL, SPECIES, SPECIES_IDS, RECIPE_SPECIES, type Odds, type BuildingKind, type SpeciesId, type RabbitType, type Rarity} from '../config/balance';
 import {breedingPool, recipeMatches, ordinaryPoolAllows, nestForParent} from '../simulation/breeding';
 import {bennyStandIns} from '../simulation/benny';
 import {nextAffectionStatue, playerLevel} from '../simulation/affection';
 import {travelling} from '../simulation/travel';
+import {atSalon, away} from '../simulation/care';
 import {recipeKnown, recipePrice} from '../simulation/recipes';
 import {babiesBySlot, freeNurserySlots, nurseryBuilding, nurserySlotStates, nurseryUnlockQuote, type NurserySlotState} from '../simulation/nursery';
 import type {GameState, NurserySlot, Refusal} from '../state/types';
 import {ISLAND} from '../config/islandGeometry';
 import {mapRarities} from '../config/rarities';
 
-export const BUILDING_NAMES: Record<BuildingKind, string> = {enclosure: 'Enclos', farm: 'Ferme', nest: 'Nid', nursery: 'Nurserie', kitchen: 'Cuisine', statue: 'Statue de l’Affection', agency: 'Agence de voyage'};
+/** The three cares of the Salon de soins. */
+export const CARE_NAMES: Record<import('../config/balance').CareKind, string> = {bath: 'Bain', brush: 'Brossage', massage: 'Massage'};
+export const BUILDING_NAMES: Record<BuildingKind, string> = {enclosure: 'Enclos', farm: 'Ferme', nest: 'Nid', nursery: 'Nurserie', kitchen: 'Cuisine', statue: 'Statue de l’Affection', agency: 'Agence de voyage', salon: 'Salon de soins'};
 export const REFUSALS: Record<Refusal | 'NO_GAME' | 'DISPOSED' | 'SALE_NOT_SAVED' | 'ACTION_NOT_SAVED' | 'STORAGE_CHANGED', string> = {
   HABITAT_NOT_EMPTY: 'Cet habitat doit être vide.',
   LAST_HABITAT: 'Garde au moins un habitat.',
@@ -40,7 +43,10 @@ export const REFUSALS: Record<Refusal | 'NO_GAME' | 'DISPOSED' | 'SALE_NOT_SAVED
   INVALID_TIME: 'L’heure de l’appareil est invalide.', INVALID_RANDOM: 'Le tirage n’a pas pu aboutir. Réessaie.', INVALID_CHOICE: 'Ce choix n’est pas disponible.',
   NOT_FOUND: 'Cet élément n’est plus présent.', NOT_ENOUGH_PATTES: 'Solde insuffisant.', NOT_ENOUGH_GRASS: 'Pas assez de nourriture.', MARKET_LIMIT: 'Le comptoir a fait tous ses échanges pour aujourd’hui. Reviens au prochain cycle.',
   INVALID_CELL: 'Cette case n’est pas encore disponible.', CELL_OCCUPIED: 'Cette case est occupée.', BUILDING_LIMIT: 'Limite de bâtiments atteinte.',
-  CAPACITY_FULL: 'Habitat plein.', BUSY: 'Ce bâtiment est occupé.', NOT_READY: 'Ce n’est pas encore prêt.', MAX_AFFECTION: 'Affection maximale atteinte.', STATUE_REQUIRED: 'L’affection 15 demande la Statue de l’Affection, à construire dès le niveau 15.', SECOND_STATUE_REQUIRED: 'L’affection 31 et plus demande deux Statues de l’Affection. Construis la deuxième dès le niveau 25.', TRAVELING: 'Ce lapin est en voyage. Accueille-le à l’agence à son retour.',
+  CAPACITY_FULL: 'Habitat plein.', BUSY: 'Ce bâtiment est occupé.', NOT_READY: 'Ce n’est pas encore prêt.', MAX_AFFECTION: 'Affection maximale atteinte.', STATUE_REQUIRED: `L’affection ${AFFECTION_STATUE.cap + 1} demande la Statue de l’Affection, à construire dès le niveau ${AFFECTION_STATUE.level}.`, SECOND_STATUE_REQUIRED: `L’affection ${SECOND_AFFECTION_STATUE.cap + 1} et plus demande deux Statues de l’Affection. Construis la deuxième dès le niveau ${SECOND_AFFECTION_STATUE.level}.`, TRAVELING: 'Ce lapin est en voyage. Accueille-le à l’agence à son retour.',
+  AT_SALON: 'Ce lapin est au salon de soins. Va le chercher au salon à la fin de son soin.', GIFT_TODAY: 'Ce lapin a déjà eu son cadeau aujourd’hui.',
+  AFFECTION_WALL: 'Ce palier se passe en le nourrissant.', PICNIC_TODAY: 'Tu as déjà fait ton pique-nique aujourd’hui. Reviens demain !',
+  EMPTY_ENCLOSURE: 'Il n’y a aucun lapin dans cet enclos pour l’instant.', NO_GIFT_POSSIBLE: 'Aucun lapin de cet enclos ne peut gagner d’affection aujourd’hui.',
   SAME_PARENT: 'Choisis deux lapins différents.', AFFECTION_TOO_LOW: 'Chaque parent doit avoir au moins 2 d’affection.',
   MISSING_BUILDING: 'Il manque un bâtiment nécessaire : nid, nurserie ou cuisine.', ALREADY_EXPANDED: 'L’extension est déjà achetée.', PARCEL_UNAVAILABLE: 'Cette parcelle n’est pas encore accessible : l’île s’agrandit dans un ordre fixe, une parcelle après l’autre.', LAST_OF_SPECIES: 'Garde au moins un lapin de chaque espèce possédée.',
   BENNY_RECHARGING: 'Le pouvoir de Benny se recharge encore.', NO_WAITING_BABY: 'Aucun lapereau n’attend dans la nurserie.',
@@ -49,12 +55,12 @@ export const REFUSALS: Record<Refusal | 'NO_GAME' | 'DISPOSED' | 'SALE_NOT_SAVED
 };
 export const moneyReason = (s: GameState, price: number) => s.pattes < price ? 'Solde insuffisant.' : null;
 export const occupants = (s: GameState, id: string) => s.rabbits.filter(r => r.enclosureId === id);
-/** At the nest or away on a trip: in both cases the rabbit cannot be bred, moved or entrusted. */
-export const parentBusy = (s: GameState, id: string, _now: number) => !!nestForParent(s,id) || travelling(s, id);
-export const busyReason = (s: GameState, id: string): string => travelling(s, id) ? REFUSALS.TRAVELING : REFUSALS.PARENT_BUSY;
+/** At the nest, on a trip or at the salon: the rabbit cannot be bred, moved or entrusted. */
+export const parentBusy = (s: GameState, id: string, _now: number) => !!nestForParent(s,id) || away(s, id);
+export const busyReason = (s: GameState, id: string): string => travelling(s, id) ? REFUSALS.TRAVELING : atSalon(s, id) ? REFUSALS.AT_SALON : REFUSALS.PARENT_BUSY;
 export function rabbitAvailability(s: GameState, id: string, now: number): string | null {
   const r = s.rabbits.find(r => r.id === id);
-  return !r ? 'Lapin absent.' : travelling(s, id) ? 'En voyage.' : parentBusy(s, id, now) ? 'Au nid.' : r.affection < BALANCE.breedingAffection ? 'Affection 2 nécessaire.' : null;
+  return !r ? 'Lapin absent.' : travelling(s, id) ? 'En voyage.' : atSalon(s, id) ? 'Au salon de soins.' : parentBusy(s, id, now) ? 'Au nid.' : r.affection < BALANCE.breedingAffection ? 'Affection 2 nécessaire.' : null;
 }
 export function releaseReason(s: GameState, id: string, now: number): string | null {
   const r = s.rabbits.find(r => r.id === id);
@@ -65,6 +71,7 @@ export function buildingReason(s: GameState, kind: BuildingKind, ignorePrice = f
   const statue = kind === 'statue' ? nextAffectionStatue(s) : null;
   if(statue && playerLevel(s)<statue.level) return `Niveau ${statue.level} requis`;
   if(kind==='agency' && playerLevel(s)<TRAVEL.unlockLevel) return `Niveau ${TRAVEL.unlockLevel} requis`;
+  if(kind==='salon' && playerLevel(s)<SALON.unlockLevel) return `Niveau ${SALON.unlockLevel} requis`;
   if(kind==='enclosure') {const access=stateLevelAccess(s,{family:'habitatPurchase',id:habitatType});if(access.locked)return `Niveau ${access.requiredLevel} requis`;}
   if (kind === 'farm' && playerLevel(s) < 15 && s.buildings.filter(b => b.kind === 'farm').length >= farmLimit(playerLevel(s))) return `Niveau ${farmLimit(playerLevel(s)) === 2 ? 12 : 15} requis pour une ferme supplémentaire`;
   const config = BALANCE.buildings[kind];

@@ -34,7 +34,12 @@ import {habitatArtLayout, habitatArtFor, type HabitatArt} from '../config/habita
 import {KITCHEN_ART} from '../config/kitchenArt';
 import {STATUE_ART} from '../config/statueArt';
 import {AGENCY_ART} from '../config/agencyArt';
-import {travelling, tripReady} from '../simulation/travel';
+import {PICNIC_ART, SALON_ART} from '../config/salonArt';
+import {PICNIC} from '../config/balance';
+import {playerLevel, wearsCrown} from '../simulation/affection';
+import {CROWN_ART, CROWN_SEAT, crownAnchor, crownPlacement} from '../config/ultimateArt';
+import {away, careReady} from '../simulation/care';
+import {tripReady} from '../simulation/travel';
 import {FarmCrops} from './farmCrops';
 import {FARM_ART, FARM_LEVEL_1_ART} from '../config/farmArt';
 import {NEST_ART} from '../config/nestArt';
@@ -78,6 +83,8 @@ export interface DecorationGhost {id: string; catalogId?: DecorationId; location
 /** `object` is the ground point (position, depth, scale); `body` carries the hop height, squash and mirror, apart from the shadow. */
 interface VisualRabbit {id: string; object: Phaser.GameObjects.Container; body: Phaser.GameObjects.Container; ears: Phaser.GameObjects.Ellipse[]; sprite?: Phaser.GameObjects.Image; art?: RabbitArt; base: Point; phase: number; fedUntil: number;
   flames?: Phaser.GameObjects.Image;
+  /** The golden crown of an ultimate rabbit (affection 50) that wears it, on its head in the body. */
+  crown?: Phaser.GameObjects.Image;
   face?: {seed: number; eyes: Phaser.GameObjects.Image; nose: Phaser.GameObjects.Image};
   /** Lapin Dragon and Lapin Requin: halo, moving wing or fin, and their shows. */
   legendary?: LegendaryView;
@@ -359,7 +366,7 @@ export class MeadowScene extends Phaser.Scene {
     const kind = d && kinds[d.catalogId], point = d && this.decorationPoint(d.location, d.catalogId);
     if (!kind || !point) return false;
     const candidates = this.rabbitViews.filter(r => !r.nest && r.motion && ['rest','walk'].includes(r.motion.mode) &&
-      Math.hypot(r.center.x - point.x, r.center.y - point.y) < 160 && !travelling(this.current!,r.id));
+      Math.hypot(r.center.x - point.x, r.center.y - point.y) < 160 && !away(this.current!,r.id));
     candidates.sort((a,b) => Math.hypot(a.object.x-point.x,a.object.y-point.y)-Math.hypot(b.object.x-point.x,b.object.y-point.y));
     const rabbit = candidates[0]; if (!rabbit?.motion) return false;
     this.life.interrupt(rabbit.id);
@@ -567,6 +574,25 @@ export class MeadowScene extends Phaser.Scene {
     this.drawDecorationSelection();
     this.bubbles?.setVisible(!active); this.grid?.setVisible(!active); this.markers?.setVisible(!active); this.ghostView?.setVisible(!active); this.buildingGhost?.setVisible(!active && !!this.placement?.cell); this.nurseryOverlays?.setGhostVisible(!active && this.placement?.kind==='nursery' && !!this.placement.cell); this.updateDetails();
   }
+  /** The picnic (owner's concept A): the cloth pops into the enclosure, a few hearts rise, then it fades out. Presentation only. */
+  playPicnic(enclosureId: string): void {
+    const b = this.current?.buildings.find(x => x.id === enclosureId); if (!b) return;
+    const p = toScreen(buildingCenter(b)), reduced = matchMedia('(prefers-reduced-motion: reduce)').matches, y = p.y + 14;
+    if (this.textures.exists(PICNIC_ART.texture)) {
+      const scale = PICNIC_ART.worldWidth / PICNIC_ART.width, cloth = this.add.image(p.x, y, PICNIC_ART.texture).setOrigin(.5, .62).setDepth(1.95);
+      if (reduced) { cloth.setScale(scale); this.time.delayedCall(2500, () => cloth.destroy()); }
+      else {
+        cloth.setScale(scale * .2).setAlpha(0);
+        this.tweens.add({targets: cloth, scale, alpha: 1, duration: 450, ease: 'Back.easeOut'});
+        this.tweens.add({targets: cloth, alpha: 0, delay: 3200, duration: 600, onComplete: () => cloth.destroy()});
+      }
+    }
+    if (reduced) return;
+    for (let i = 0; i < 5; i++) {
+      const heart = this.add.text(p.x + (i - 2) * 18, y - 20 - (i % 2) * 10, '♥', {fontSize: '24px', color: '#d9788d'}).setDepth(5).setOrigin(.5).setVisible(false);
+      this.tweens.add({targets: heart, alpha: 0, y: heart.y - 50, delay: 350 + i * 180, duration: 1200, ease: 'Sine.easeIn', onStart: () => heart.setVisible(true), onComplete: () => heart.destroy()});
+    }
+  }
   reactToFeed(id: string): void {
     const rabbit = this.rabbitViews.find(r => r.id === id); if (!rabbit) return;
     this.life.interrupt(id);
@@ -591,6 +617,7 @@ export class MeadowScene extends Phaser.Scene {
       for (const patch of rabbitBlinkArt(rabbit.species)?.patches ?? []) add(patch);
       if (isLegendaryShow(rabbit.species)) for (const art of legendaryMeadowArt(rabbit.species)) add(art);
       if (rabbit.species === BENNY_ID) for (const art of [...bennyMeadowArt(), ...bennyFlightArt()]) add(art);
+      if (wearsCrown(rabbit)) add(CROWN_ART);
     }
     const buildingArt = (building: Pick<Building, 'kind' | 'habitat' | 'footprintTier' | 'farmLevel'>) => {
       if (building.kind === 'enclosure') add(habitatArtFor(building.habitat ?? undefined, building.footprintTier));
@@ -600,9 +627,10 @@ export class MeadowScene extends Phaser.Scene {
         for (const id of CROP_IDS) add({texture: CROP_TEXTURE(id), url: CROP_URL(id)});
       } else if (building.kind === 'nursery') {
         add(NURSERY_ART); add(NURSERY_OVERLAY_ART.baby); add(NURSERY_OVERLAY_ART.veil); add(NURSERY_OVERLAY_ART.lock);
-      } else add(({nest: NEST_ART, kitchen: KITCHEN_ART, statue: STATUE_ART, agency: AGENCY_ART})[building.kind]);
+      } else add(({nest: NEST_ART, kitchen: KITCHEN_ART, statue: STATUE_ART, agency: AGENCY_ART, salon: SALON_ART})[building.kind]);
     };
     for (const building of state?.buildings ?? []) buildingArt(building);
+    if (state && playerLevel(state) >= PICNIC.unlockLevel) add(PICNIC_ART); // Laid out for a few seconds when a picnic starts.
     if (this.placement) {
       const moving = state?.buildings.find(b => b.id === this.placement?.movingId);
       buildingArt(moving ?? {kind: this.placement.kind, habitat: this.placement.kind === 'enclosure' ? {type: this.placement.habitatType ?? 'universal', level: 1} : null});
@@ -651,7 +679,7 @@ export class MeadowScene extends Phaser.Scene {
     if (!this.ensureArt()) return;
     const s = this.current;
     if (s) { this.view.setColumns(visibleColumns(s)); this.updateVisibleRegions(); this.applyCamera(); }
-    const key = JSON.stringify([s?.acquiredParcels, s?.buildings.map(b => [b.id, b.kind, b.x, b.y, b.habitat, b.farmLevel, b.agencyLevel, b.breeding?.parents]), s?.rabbits.map(r => [r.id, r.species, r.enclosureId]), s?.travel?.trips.map(t => t.rabbitId)]);
+    const key = JSON.stringify([s?.acquiredParcels, s?.buildings.map(b => [b.id, b.kind, b.x, b.y, b.habitat, b.farmLevel, b.agencyLevel, b.breeding?.parents]), s?.rabbits.map(r => [r.id, r.species, r.enclosureId, wearsCrown(r)]), s?.travel?.trips.map(t => t.rabbitId), s?.care?.rabbitId]);
     if (key !== this.layoutKey) { this.layoutKey = key; this.drawGround(); this.drawBuildings(); this.drawAnimals(); }
     // The cushion overlays follow the canonical state and simulation time on every refresh (a no-op when nothing changed).
     this.nurseryOverlays?.sync(s);
@@ -755,6 +783,7 @@ export class MeadowScene extends Phaser.Scene {
     if (b.kind === 'kitchen') return KITCHEN_ART.texture;
     if (b.kind === 'statue') return STATUE_ART.texture;
     if (b.kind === 'agency') return AGENCY_ART.texture;
+    if (b.kind === 'salon') return SALON_ART.texture;
     if (b.kind === 'enclosure') { const illustrated = habitatArtFor(b.habitat ?? undefined, b.footprintTier); if (illustrated) return illustrated.texture; }
     // The drawing follows the footprint actually acquired (tier), not the capacity level: a legacy enclosure keeps its compact look.
     const sized = b.habitat && b.footprintTier && b.footprintTier > 1 ? HABITAT_SIZE_PROPOSAL[b.footprintTier] : null;
@@ -772,7 +801,7 @@ export class MeadowScene extends Phaser.Scene {
   /** The same registration is used for placed buildings and the placement/move ghost. */
   private positionBuildingArt(image: Phaser.GameObjects.Image, x: number, y: number, kind: Building['kind'], illustrated: HabitatArt | null = null): void {
     if (illustrated) { image.setPosition(x, y).setOrigin(illustrated.anchor.x / illustrated.width, illustrated.anchor.y / illustrated.height).setScale(illustrated.worldWidth / illustrated.width); return; }
-    const art = kind === 'farm' ? FARM_ART : kind === 'nest' ? NEST_ART : kind === 'nursery' ? NURSERY_ART : kind === 'kitchen' ? KITCHEN_ART : kind === 'statue' ? STATUE_ART : kind === 'agency' ? AGENCY_ART : null;
+    const art = kind === 'farm' ? FARM_ART : kind === 'nest' ? NEST_ART : kind === 'nursery' ? NURSERY_ART : kind === 'kitchen' ? KITCHEN_ART : kind === 'statue' ? STATUE_ART : kind === 'agency' ? AGENCY_ART : kind === 'salon' ? SALON_ART : null;
     image.setPosition(x, y).setOrigin(.5, art ? art.originY : .5)
       .setScale(art ? art.worldWidth / art.width : .5);
   }
@@ -795,7 +824,7 @@ export class MeadowScene extends Phaser.Scene {
       const residents = enclosure.kind==='nest' ? enclosure.breeding!.parents.flatMap(id=>this.current!.rabbits.filter(r=>r.id===id)) : this.current!.rabbits.filter(r => r.enclosureId === enclosure.id);
       const center = toScreen(buildingCenter(enclosure));
       residents.forEach((rabbit, index) => {
-        if(enclosure.kind==='enclosure' && (nestForParent(this.current!,rabbit.id) || travelling(this.current!,rabbit.id))) return; // At the nest, or away on a trip.
+        if(enclosure.kind==='enclosure' && (nestForParent(this.current!,rabbit.id) || away(this.current!,rabbit.id))) return; // At the nest, or away (a trip, the salon).
         // Nest parents keep their original independent illustrations in front of the doorway.
         const tier = enclosure.footprintTier ?? 1, proposed = enclosure.kind==='enclosure' && tier > 1 ? HABITAT_SIZE_PROPOSAL[tier] : null;
         const illustrated = enclosure.kind==='enclosure' ? habitatArtFor(enclosure.habitat ?? undefined, enclosure.footprintTier) : null;
@@ -853,6 +882,13 @@ export class MeadowScene extends Phaser.Scene {
             body.add(image); return image;
           });
           const face = patches ? {seed: rabbitFaceSeed(rabbit.id), eyes: patches[0], nose: patches[1]} : undefined;
+          let crown: Phaser.GameObjects.Image | undefined;
+          if (wearsCrown(rabbit) && this.textures.exists(CROWN_ART.texture)) {
+            // On the per-species head anchor, in native picture space: the body mirrors, hops and squashes it with the sprite.
+            const place = crownPlacement(art, crownAnchor(rabbit.species, art.facing));
+            crown = this.add.image(place.x, place.y, CROWN_ART.texture).setOrigin(.5, CROWN_SEAT).setScale(place.scale).setAngle(place.angle);
+            body.add(crown);
+          }
           let legendary: LegendaryView | undefined;
           if (isLegendaryShow(rabbit.species) && legendaryMeadowArt(rabbit.species).every(a => this.textures.exists(a.texture))) {
             let clock = this.legendaryClocks.get(rabbit.id);
@@ -865,8 +901,9 @@ export class MeadowScene extends Phaser.Scene {
             if (!clock) { clock = new BennyClock(rabbit.id); this.bennyClocks.set(rabbit.id, clock); }
             benny = new BennyView(this, rabbit.id, {object, body, sprite, shadow, art, motion}, clock);
           }
+          if (crown) body.bringToTop(crown); // Above a legendary's open snout or part.
           this.animals.add(object);
-          this.rabbitViews.push({id: rabbit.id, ears: [], sprite, art, face, flames, legendary, benny, ...view});
+          this.rabbitViews.push({id: rabbit.id, ears: [], sprite, art, face, flames, crown, legendary, benny, ...view});
           return;
         }
         const coat = proceduralCoat(SPECIES[rabbit.species].art), color = Phaser.Display.Color.HexStringToColor(coat.body).color, patch = Phaser.Display.Color.HexStringToColor(coat.patch).color;
@@ -972,9 +1009,10 @@ export class MeadowScene extends Phaser.Scene {
       if (b.kind === 'farm' && b.order && b.order.endsAt <= now) { text = 'food'; kind = 'grass'; }
       if (b.kind==='nest' && b.breeding && b.breeding.endsAt<=now) text='birth';
       if (b.kind === 'nursery' && readyNurseryBabies(b, now).length) text = 'Prêt !';
+      if (b.kind === 'salon' && careReady(this.current!, now)) text = 'trip'; // The care is over: the rabbit waits to be welcomed back.
       if (b.kind === 'agency' && tripReady(this.current!, now)) text = 'trip'; // A traveller is back: Coco waits with them. // One bubble for any ready baby.
       if (!text) continue;
-      const p = toScreen(buildingCenter(b)); p.y += b.kind === 'farm' ? FARM_ART.harvestY : b.kind==='nest' ? NEST_ART.actionY : b.kind==='nursery' ? NURSERY_ART.actionY : b.kind==='agency' ? AGENCY_ART.actionY : -72;
+      const p = toScreen(buildingCenter(b)); p.y += b.kind === 'farm' ? FARM_ART.harvestY : b.kind==='nest' ? NEST_ART.actionY : b.kind==='nursery' ? NURSERY_ART.actionY : b.kind==='agency' ? AGENCY_ART.actionY : b.kind==='salon' ? SALON_ART.actionY : -72;
       const bubble = kind === 'income' ? coinBubble(this, p.x, p.y, amount, amount >= habitatStats(b).cap) : text === 'food' ? foodBubble(this, p.x, p.y, b.order!.grass ?? ORDERS[b.order!.recipe].grass) : text === 'birth' || text === 'trip' ? this.heartBubble(p.x, p.y) : this.add.text(p.x, p.y, text, {fontFamily: 'Arial', fontSize: '17px', color: '#3b4d2d', backgroundColor: '#fff7dc', padding: {x: 13, y: 10}}).setOrigin(.5);
       if (text === 'birth' && this.tutorialTarget === 'birth') {
         const halo=this.add.graphics().lineStyle(4,0xffcf55).strokeEllipse(p.x,p.y,bubble.width+12,bubble.height+12);this.bubbles.add(halo);
@@ -1171,7 +1209,7 @@ export class MeadowScene extends Phaser.Scene {
     if (s?.buildings.some(b => (b.kind === 'nest' && b.breeding && crossed(b.breeding.endsAt)) ||
       (b.kind === 'farm' && b.order && crossed(b.order.endsAt)) ||
       (b.kind === 'nursery' && b.nursery?.babies.some(baby => crossed(baby.readyAt)))) ||
-      s?.travel?.trips.some(trip => crossed(trip.endsAt))) this.drawBubbles(now);
+      s?.travel?.trips.some(trip => crossed(trip.endsAt)) || (!!s?.care && crossed(s.care.endsAt))) this.drawBubbles(now);
     this.progressNow = now;
     this.progressViews?.sync(progressBars(s, {photo: this.photo, movingId: this.placement?.movingId}, now), s?.buildings.map(b => b.id) ?? []);
     this.progressUpdatedAt = this.time.now;
@@ -1262,6 +1300,8 @@ export class MeadowScene extends Phaser.Scene {
         if (rabbit.legendary?.mouthOpen) rabbit.face.nose.setVisible(false);
         if (rabbit.legendary?.submerged) { rabbit.face.eyes.setVisible(false); rabbit.face.nose.setVisible(false); }
       }
+      // The crown never floats: hidden whenever the head is not the sprite's (a dive, one of Benny's painted acts).
+      if (rabbit.crown && rabbit.sprite) rabbit.crown.setVisible((rabbit.sprite.visible || !!rabbit.legendary?.mouthOpen) && !rabbit.legendary?.submerged);
       rabbit.ears.forEach((ear, index) => { ear.rotation = rabbit.motion?.mode === 'sleep' ? 0 : Math.sin(t * 1.4 + index) * .13; });
       if (lifeActive && visibleResidents.has(rabbit.id) && (rabbit.motion?.mode === 'sleep' || rabbit.motion?.mode === 'kiss')) {
         const head = this.dadiHead(rabbit), world = this.view.world(head);

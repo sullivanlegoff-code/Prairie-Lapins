@@ -2,6 +2,7 @@ import {historicalIncomeRoll} from '../simulation/time';
 import {MAX_APPLIED_ADJUSTMENTS} from '../simulation/adjustments';
 import {cumulativeLevelXp, nextLevelCost} from '../simulation/progression';
 import {establishHistoricalLevelRights} from '../simulation/levelRights';
+import {isUltimate} from '../simulation/affection';
 import {PURCHASE_UNLOCK_IDS} from '../config/purchaseUnlocks';
 import {RECIPE_BOOK_SPECIES} from '../config/recipes';
 import {updateMissions} from '../simulation/missions';
@@ -12,14 +13,14 @@ import {type HabitatType, HABITAT_TYPES, HABITAT_LEVELS, habitatLevel} from '../
 import {MAIN_MISSION_IDS, DAILY_MISSION_IDS, DAILY_MISSIONS, DAILY_PICK_COUNT} from '../config/missions';
 import {cycleIndexAt} from '../simulation/missions';
 import {z} from 'zod';
-import {BALANCE, LEGACY_BREEDING_DURATION, MARKET, CUISINE_FULL_REWARDS_PER_CYCLE, HOUR, LEGACY_ORDER_CROPS, TRAVEL, tripHearts, NURSERY, ORDERS, type OrderId, SHOP_SPECIES, SPECIES, SPECIES_IDS, GUARANTEE_SPECIES, growthDuration, orderFarmLevel, type SpeciesId} from '../config/balance';
+import {BALANCE, BUILDING_KINDS, CARE_KINDS, SALON, LEGACY_BREEDING_DURATION, MARKET, CUISINE_FULL_REWARDS_PER_CYCLE, HOUR, LEGACY_ORDER_CROPS, TRAVEL, tripHearts, NURSERY, ORDERS, type OrderId, SHOP_SPECIES, SPECIES, SPECIES_IDS, GUARANTEE_SPECIES, growthDuration, orderFarmLevel, type SpeciesId} from '../config/balance';
 import type {GameState} from '../state/types';
 import {DECORATION_IDS, RETIRED_DECORATION_IDS, MAX_DECORATIONS} from '../config/decorations';
 import {decorationPlacementReason} from '../simulation/decorations';
 import {ISLAND} from '../config/islandGeometry';
 
 /**
- * The current format is v23 (affection up to 50 and a second Statue de l'Affection; nothing to convert), after v22 (Benny's power and sky mode, optional), v21 (friendships and memories), v20 (catalogue conversion) and v19 (farm and agency levels, concurrent trips, Heart receipts), migrated through v18 and v17 from v16 (economy migration). Version 16 was the catalogue boundary of the development saves: the species Terre, Mottelin, Géant and
+ * The current format is v23 (affection up to 50, a second Statue de l'Affection, the Salon de soins and the picnic, a lapin ultime's taken-off crown, all optional; nothing to convert), after v22 (Benny's power and sky mode, optional), v21 (friendships and memories), v20 (catalogue conversion) and v19 (farm and agency levels, concurrent trips, Heart receipts), migrated through v18 and v17 from v16 (economy migration). Version 16 was the catalogue boundary of the development saves: the species Terre, Mottelin, Géant and
  * Brumelin and the Terre habitat were removed, and saves before that catalogue boundary are not converted. Versions 1 to 15 are refused as incompatible
  * (the controller then starts a new game); they are never read, migrated or restored.
  */
@@ -37,7 +38,7 @@ const footprintTier = z.union([z.literal(1), z.literal(2), z.literal(3)]);
 const nurseryBaby = z.object({slot: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)]), birth, startedAt: timestamp, readyAt: timestamp}).strict();
 const nurseryPayload = z.object({capacity: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]), babies: z.array(nurseryBaby).max(NURSERY.maxCapacity)}).strict();
 const building = z.object({
-  id: identity, kind: z.enum(['enclosure', 'farm', 'nest', 'nursery', 'kitchen', 'statue', 'agency']), x: integer, y: integer, incomeUnits: integer,
+  id: identity, kind: z.enum(BUILDING_KINDS), x: integer, y: integer, incomeUnits: integer,
   habitat: z.object({type: z.enum(HABITAT_TYPES), level: z.union([z.literal(1), z.literal(2), z.literal(3)])}).strict().nullable(),
   farmLevel: z.union([z.literal(2), z.literal(3)]).optional(), agencyLevel: z.union([z.literal(2), z.literal(3)]).optional(),
   footprintTier: footprintTier.optional(),
@@ -48,7 +49,7 @@ const building = z.object({
 // A rabbit may carry the personal name its owner gave it: canonical text (trimmed, at most 32 characters, no control
 // character), absent when unnamed. Names are individual: they are never inherited and never belong to the species.
 const rabbitName = z.string().refine(name => name !== '' && normalizeRabbitName(name) === name, 'Invalid rabbit name');
-const rabbit = z.object({incomeRoll: z.number().int().min(0).max(10000).optional(), id: identity, species, affection: z.number().int().min(BALANCE.minAffection).max(BALANCE.maxAffection), enclosureId: identity, name: rabbitName.optional()}).strict();
+const rabbit = z.object({incomeRoll: z.number().int().min(0).max(10000).optional(), id: identity, species, affection: z.number().int().min(BALANCE.minAffection).max(BALANCE.maxAffection), enclosureId: identity, name: rabbitName.optional(), crownHidden: z.literal(true).optional()}).strict();
 const missions = z.object({
   nightOrderStarted: z.boolean().optional(),
   events: z.object({collectOrder: integer.max(20), breed: integer.max(1), transferBirth: integer.max(1), welcome: integer.max(1), placeDecoration: integer.max(1)}).strict(),
@@ -102,6 +103,10 @@ const current = z.object({
   market: z.object({cycle: integer, pattes: integer.max(MARKET.maximumPerCycle), grass: integer.max(MARKET.maximumPerCycle)}).strict().optional(),
   benny: z.object({powerReadyAt: timestamp, inSky: z.boolean()}).strict().optional(),
   travel: z.object({welcomed: z.boolean(), trips: z.array(z.object({grass: integer.optional(), rabbitId: identity, destination: z.enum(TRAVEL.destinations), startedAt: timestamp, endsAt: timestamp, hearts: integer}).strict()).max(3)}).strict().optional(),
+  // The Salon de soins and the picnic (v23, optional): the care under way, each rabbit's last gift cycle and the last picnic cycle.
+  care: z.object({rabbitId: identity, care: z.enum(CARE_KINDS as [typeof CARE_KINDS[number], ...typeof CARE_KINDS]), startedAt: timestamp, endsAt: timestamp}).strict().optional(),
+  affectionGifts: z.record(identity, integer).optional(),
+  picnicCycle: integer.optional(),
   missions, decorations: z.array(decoration).max(MAX_DECORATIONS),
   rewardedDecorationModels: z.array(z.enum(DECORATION_IDS)).max(DECORATION_IDS.length).refine(ids => new Set(ids).size === ids.length).optional(),
   acquiredParcels: z.array(z.enum(PARCEL_IDS)).min(1).max(9),
@@ -176,7 +181,7 @@ const schema = current.superRefine((s, context) => {
         (newborn.reservedDiscovery && !GUARANTEE_SPECIES.includes(newborn.species))) issue('Birth reservation');
     }
   }
-  for (const kind of ['enclosure', 'farm', 'nest', 'nursery', 'kitchen', 'statue', 'agency'] as const) {
+  for (const kind of BUILDING_KINDS) {
     const maximum = BALANCE.buildings[kind].maximum;
     if (maximum !== null && s.buildings.filter(b => b.kind === kind).length > maximum) issue('Building limit');
   }
@@ -187,6 +192,14 @@ const schema = current.superRefine((s, context) => {
       || (trip.grass !== undefined && (trip.grass !== hours * 25 || !s.buildings.some(b => b.kind === 'agency' && b.agencyLevel))) || trip.hearts !== tripHearts(hours) || trip.startedAt > s.lastSimulatedAt
       || s.buildings.some(b => b.breeding?.parents.includes(trip.rabbitId))) issue('Trip');
   }
+  if (s.care) {
+    // One rabbit at a time, in the salon, for the exact length of its care, with today's gift reserved; never also on a trip or at the nest.
+    const c = s.care;
+    if (!s.buildings.some(b => b.kind === 'salon') || !s.rabbits.some(r => r.id === c.rabbitId) || c.endsAt - c.startedAt !== SALON.cares[c.care].hours * HOUR
+      || c.startedAt > s.lastSimulatedAt || s.affectionGifts?.[c.rabbitId] === undefined || s.travel?.trips.some(t => t.rabbitId === c.rabbitId)
+      || s.buildings.some(b => b.breeding?.parents.includes(c.rabbitId))) issue('Care');
+  }
+  if (Object.values(s.affectionGifts ?? {}).some(cycle => cycle > d.cycleIndex) || (s.picnicCycle ?? 0) > d.cycleIndex) issue('Future gift cycle');
   if (new Set(s.discovered).size !== s.discovered.length) issue('Duplicate discoveries');
   // Only one Benny per game, owned or on her way.
   if ([...s.rabbits.map(r => r.species), ...s.buildings.flatMap(b => [b.breeding?.birth.species, ...(b.nursery?.babies ?? []).map(baby => baby.birth.species)])]
@@ -349,9 +362,12 @@ export function decodeGame(json: string): DecodeResult {
   const {presentationId: _presentationId, ...stored} = parsed.data;
   const state: GameState = {...stored, cuisine: {...stored.cuisine, heartCycle: stored.cuisine.heartCycle ?? null}};
   for (const rabbit of state.rabbits) if (SPECIES[rabbit.species].rarity !== 'common') rabbit.incomeRoll ??= historicalIncomeRoll(rabbit);
+  // A taken-off crown only means something on an ultimate rabbit: elsewhere it is dropped, never a reason to refuse the save.
+  for (const rabbit of state.rabbits) if (rabbit.crownHidden && !isUltimate(rabbit)) delete rabbit.crownHidden;
   const rabbitIds = new Set(state.rabbits.map(rabbit => rabbit.id));
   for (const id of Object.keys(state.cuisine.affectionCycles))
     if (!rabbitIds.has(id)) delete state.cuisine.affectionCycles[id];
+  for (const id of Object.keys(state.affectionGifts ?? {})) if (!rabbitIds.has(id)) delete state.affectionGifts![id];
   establishHistoricalLevelRights(state);
   updateMissions(state, state.lastSimulatedAt);
   return {ok: true, state};

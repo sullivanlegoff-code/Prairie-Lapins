@@ -18,7 +18,7 @@ const atLevel = (level: number) => { const s = createGame(0); s.progression = {t
 const free = (s: GameState) => { for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y)) return {x, y}; throw Error('no free cell'); };
 
 describe('the Statue de l’Affection', () => {
-  it('is sold among the buildings from level 15 at its price; the second one waits for level 25', () => {
+  it('is sold among the buildings from level 15 at its price; the second one waits for level 22', () => {
     const early = atLevel(14); early.pattes = 100_000; early.hearts = 100;
     expect(act(early, {type: 'buyBuilding', kind: 'statue', ...free(early)}, 0)).toMatchObject({ok: false, reason: 'LEVEL_REQUIRED'});
     let s = atLevel(AFFECTION_STATUE.level); s.pattes = 100_000; s.hearts = AFFECTION_STATUE.heartPrice - 1; const at = free(s);
@@ -51,14 +51,14 @@ describe('the Statue de l’Affection', () => {
 });
 
 describe('the second Statue de l’Affection', () => {
-  it('costs 150 Hearts from level 25, hearts only, and a third one is refused', () => {
-    expect(SECOND_AFFECTION_STATUE).toEqual({level: 25, cap: 30, heartPrice: 150}); expect(BALANCE.buildings.statue.maximum).toBe(2);
-    let s = atLevel(24); s.hearts = 1000; s.pattes = 100_000;
+  it('costs 100 Hearts from level 22 (3 November 2026), hearts only, and a third one is refused', () => {
+    expect(SECOND_AFFECTION_STATUE).toEqual({level: 22, cap: 30, heartPrice: 100}); expect(BALANCE.buildings.statue.maximum).toBe(2);
+    let s = atLevel(21); s.hearts = 1000; s.pattes = 100_000;
     s = run(s, {type: 'buyBuilding', kind: 'statue', ...free(s)}); expect(s.hearts).toBe(1000 - AFFECTION_STATUE.heartPrice);
     expect(act(s, {type: 'buyBuilding', kind: 'statue', ...free(s)}, 0)).toMatchObject({ok: false, reason: 'LEVEL_REQUIRED'});
-    s.progression = {totalXp: cumulativeLevelXp(25), rewardedThroughLevel: 25}; s.hearts = 149;
+    s.progression = {totalXp: cumulativeLevelXp(22), rewardedThroughLevel: 22}; s.hearts = 99;
     expect(act(s, {type: 'buyBuilding', kind: 'statue', ...free(s)}, 0)).toMatchObject({ok: false, reason: 'NOT_ENOUGH_HEARTS'});
-    s.hearts = 150; s = run(s, {type: 'buyBuilding', kind: 'statue', ...free(s)});
+    s.hearts = 100; s = run(s, {type: 'buyBuilding', kind: 'statue', ...free(s)});
     expect([s.hearts, s.pattes]).toEqual([0, 100_000]); expect(s.buildings.filter(b => b.kind === 'statue')).toHaveLength(2);
     expect(affectionCap(s)).toBe(BALANCE.maxAffection);
     s.hearts = 1000; expect(act(s, {type: 'buyBuilding', kind: 'statue', ...free(s)}, 0)).toMatchObject({ok: false, reason: 'BUILDING_LIMIT'});

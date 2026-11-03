@@ -20,6 +20,7 @@ import './display/breeding.css';
 import './display/onboarding.css';
 import './display/menus.css';
 import './display/legendary-card.css';
+import './display/ultimate-card.css';
 import './display/benny-reveal.css';
 import './display/reception.css';
 import './display/loading-screen.css';

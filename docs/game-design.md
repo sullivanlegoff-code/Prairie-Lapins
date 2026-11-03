@@ -108,7 +108,7 @@ XP : passage N → N+1 = **arrondi(90 × N^0,85)** depuis le 25 octobre 2026 (ni
 
 Collection : poids ordinaires 30 par commun et 30 par rare admissible. Règle du propriétaire (31 octobre 2026) : un lapin commun ne peut jamais apparaître, sauf avec deux parents communs du même type, qui donnent ce commun (Feu × Feu = Feu, Paille × Paille = Paille, etc.). Deux communs de types différents donnent les recettes admissibles de leurs deux types. Les paires ayant au moins un parent non commun gardent leurs tables. Paille × Neige reste un tirage rare certain. Les 20 rares ordinaires actuels participent à la garantie de nouvelle espèce : après sept échecs admissibles, la huitième tentative garantit une espèce manquante admissible à la paire et au niveau. Les recettes spéciales, Épiques et Légendaires restent exclues. Les probabilités fixes et les bonus d'affection ne sont pas renormalisés par ce filtre ; sans résultat ordinaire, le lancement attend. Les naissances déjà enregistrées, même communes, ne sont pas modifiées. La libération d’un doublon rend 10 nourriture pour un commun ou 25 pour un rare, sans XP ; dernier individu et parent occupé restent protégés.
 
-Les quotidiennes demandent de récolter 100 pattes (récompense 60 pattes), récolter 40 nourriture (+30 nourriture) et lancer une reproduction (+40 pattes). L’identifiant historique `gain-affection` est conservé pour la troisième, dont la règle est désormais la reproduction. Bonus des trois : deux cœurs. Cadeau : deux cœurs par tranche de 24 h, cumul de trois cadeaux maximum (six cœurs), sans décaler la prochaine échéance lors d’une réclamation tardive.
+Les quotidiennes demandent de récolter 100 pattes (récompense 60 pattes), récolter 40 nourriture (+30 nourriture) et lancer une reproduction (+40 pattes). L’identifiant historique `gain-affection` est conservé pour la troisième, dont la règle est désormais la reproduction. Bonus des trois : deux cœurs. Cadeau : trois cœurs par tranche de 24 h (deux avant le 3 novembre 2026), cumul de trois cadeaux maximum (neuf cœurs), sans décaler la prochaine échéance lors d’une réclamation tardive.
 
 Migration v16 → v17 réelle et déterministe : ressources, affection, lapins, bâtiments, stock et résultats/dates des reproductions et croissances sont préservés. Le niveau et la fraction dans le niveau sont convertis depuis l’ancienne courbe 50 × N^1,6, avec arrondi inférieur à un point d’XP, sans récompense de niveau au chargement. Compteur de garantie plafonné à sept ; modèles de décoration déjà posés marqués récompensés ; quotidienne d’affection complétée reste réclamable, réclamation et bonus déjà reçus restent acquis. Versions 1–15 : rejet `INCOMPATIBLE_CATALOG` conservé. Fixture encodée par le véritable code v16 dans `tests/fixtures/economy-v16.json`.
 
@@ -351,7 +351,7 @@ Monnaie facultative pour terminer un délai ou compléter les pattes manquantes 
 |---|---:|
 | Dotation d'une nouvelle partie | 12 cœurs, une fois |
 | Dotation lors de la migration v1 → v2 | 12 cœurs, une fois |
-| Récompense à réclamer manuellement | 2 cœurs |
+| Récompense à réclamer manuellement | 3 cœurs (2 avant le 3 novembre 2026) |
 | Première disponibilité | 24 heures après création ou migration |
 | Disponibilité suivante | 24 heures après chaque réclamation |
 | Récompenses cumulées pendant l'absence | Une seule récompense disponible |
