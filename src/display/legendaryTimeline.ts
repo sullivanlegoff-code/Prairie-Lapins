@@ -61,7 +61,7 @@ export class LegendaryClock {
     if (this.act) { this.act.elapsed += ms; if (this.act.elapsed >= this.act.duration) { this.act = null; this.next = this.between(IDLE_GAP.next); } return null; }
     if (!idle) return null;
     this.next -= ms; if (this.next > 0) return null;
-    const pool = IDLE_ACTS[this.species];
+    const pool = speciesActs(this.species);
     let act = asleep ? SLEEP_ACTS[this.species] : pool[Math.floor(this.random() * pool.length)];
     if (act === 'surf' && !canSurf) act = 'bubbles';
     return this.start(act);

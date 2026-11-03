@@ -56,11 +56,20 @@ describe('legendary pictures', () => {
 });
 
 describe('legendary clock', () => {
-  it('waits its first gap (5 to 12 seconds) before its first spontaneous show, then plays one of its own', () => {
+  it('waits its first gap (10 to 20 seconds) before its first spontaneous show, then plays one of its own', () => {
     const clock = new LegendaryClock('dragon', 'rabbit-9');
     expect(clock.step(IDLE_GAP.first[0] - 1, true)).toBeNull();
     let started = null; for (let t = 0; t < IDLE_GAP.first[1] && !started; t += 100) started = clock.step(100, true);
-    expect(started).not.toBeNull(); expect(['smoke', 'hiccup', 'embers']).toContain(started!.act);
+    expect(started).not.toBeNull(); expect(speciesActs('dragon')).toContain(started!.act);
+  });
+  it('plays every show of its species on its own, never more than 20 seconds apart', () => {
+    // Owner's request of 3 November 2026: "toutes les animations possibles et toutes les 10 à 20 secondes pas plus".
+    expect(IDLE_GAP.first[1]).toBeLessThanOrEqual(20_000); expect(IDLE_GAP.next[1]).toBeLessThanOrEqual(20_000);
+    for (const species of ['dragon', 'requin', 'ankylosaure'] as const) {
+      const clock = new LegendaryClock(species, 'rabbit-7'), seen = new Set<string>();
+      for (let t = 0; t < 1_800_000; t += 100) { const s = clock.step(100, true); if (s) seen.add(s.act); }
+      expect([...seen].sort()).toEqual([...speciesActs(species)].sort());
+    }
   });
   it('plays its shows far more often than a common rabbit does its rare somersault, with some randomness', () => {
     expect(IDLE_GAP).toBe(LEGENDARY_IDLE_GAP_MS);

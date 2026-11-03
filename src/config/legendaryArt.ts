@@ -12,9 +12,9 @@ export const isLegendaryShow = (species: SpeciesId | string): species is Legenda
 /**
  * Milliseconds between two spontaneous meadow shows of one legendary in its enclosure, each drawn in its range so
  * neighbours never play in unison; the first comes sooner, to be seen. Owner's request of 3 November 2026: shows more
- * often (formerly 10-25 s then 40-95 s, about 2.7 times rarer). Legendaries only: Benny keeps her own rhythm.
+ * often (formerly 10-25 s then 40-95 s), then "toutes les 10 à 20 secondes pas plus". Legendaries only: Benny keeps her own rhythm.
  */
-export const LEGENDARY_IDLE_GAP_MS = {first: [5_000, 12_000], next: [15_000, 35_000]} as const;
+export const LEGENDARY_IDLE_GAP_MS = {first: [10_000, 20_000], next: [10_000, 20_000]} as const;
 
 /** Window event of the laboratory buttons: `detail.act` replays that meadow show on every legendary in view. */
 export const LEGENDARY_TEST_EVENT = 'prairie-legendary-test';
