@@ -57,6 +57,10 @@ it('the terrain launches a game at the tap, then pays the jumps and counts down 
   expect(panel().textContent).toContain('Encore 3 parties récompensées aujourd’hui'); expect(panel().textContent).toContain('passe sous ton lapin');
   panel().querySelector<HTMLButtonElement>('[data-jump-rope-rabbit="rabbit-103"] button')!.click();
   expect(layer().hidden).toBe(false); expect(layer().textContent).toContain('Noisette saute à la corde !');
+  // The painted island and kiosk in front of the meadow's sky, no provisional backdrop left.
+  expect(stage().querySelector<HTMLImageElement>('img.jump-rope-island')!.src).toContain('assets/jump-rope/island.webp');
+  expect(stage().querySelector<HTMLImageElement>('img.jump-rope-kiosk')!.src).toContain('assets/jump-rope/kiosk.webp');
+  expect(stage().querySelector('canvas.jump-rope-sky')).not.toBeNull(); expect(layer().textContent).not.toContain('provisoire');
   layer().querySelector<HTMLButtonElement>('[data-jump-rope-start]')!.click();
   // Five good jumps, right on each pass, then three taps far from the rope.
   let pass = JUMP_ROPE.leadIn, period: number = JUMP_ROPE.startPeriod;

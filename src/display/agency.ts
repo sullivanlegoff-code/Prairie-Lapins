@@ -17,6 +17,9 @@ export const FOREST_URL = `${import.meta.env.BASE_URL}assets/buildings/foret-bro
 /** The Forêt de Brocéliande thumbnail, in the shop and its menu. */
 export const forestThumbnail = () => picture(FOREST_URL, 'statue-thumbnail', 72, 72);
 export const JUMP_ROPE_URL = `${import.meta.env.BASE_URL}assets/buildings/kiosque-corde.png`;
+/** The jump-rope game's backdrop: the painted island (lawn and cliff) and the kiosk cut out of the same painting. */
+export const JUMP_ROPE_ISLAND_URL = `${import.meta.env.BASE_URL}assets/jump-rope/island.webp`;
+export const JUMP_ROPE_KIOSK_URL = `${import.meta.env.BASE_URL}assets/jump-rope/kiosk.webp`;
 /** The Terrain de corde à sauter thumbnail (the kiosk), in the shop and its menu. */
 export const jumpRopeThumbnail = () => picture(JUMP_ROPE_URL, 'statue-thumbnail', 72, 72);
 /** « à Londres », « au Caire », « au Lavandou ». */

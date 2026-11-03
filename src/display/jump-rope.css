@@ -1,31 +1,39 @@
-/* The Terrain de corde à sauter's game (src/ui/JumpRopeActivity.ts), outdoors in front of the kiosk (concept B): its painting at the
-   back, the same striped posts with golden tops and coral rope, a sand circle. The sky and lawn stay a provisional backdrop. */
+/* The Terrain de corde à sauter's game (src/ui/JumpRopeActivity.ts), outdoors on the island in front of the kiosk: the meadow's
+   real sky (canvas, src/display/jumpRopeSky.ts), the painted island and kiosk (scripts/prepare-jump-rope-backdrop.mjs), the striped
+   posts with golden tops and the coral rope on the painted sand circle.
+   Everything is placed in the painting's own pixels: --u is one pixel of the 1536 px wide painting at the stage's width, and
+   painting row 880 (the top of the cliff's second row of stones) sits on the stage's bottom edge. */
 .jump-rope-activity {
   position: fixed; inset: 0; z-index: 140; display: flex; flex-direction: column;
-  background: linear-gradient(#bfe3f2 0%, #e8f5ea 58%, #9fcf7a 58%, #86bd63 100%);
+  background: #b8ddeb;
   font-family: inherit; color: #3b3326; touch-action: none; user-select: none; -webkit-user-select: none;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 .jump-rope-activity[hidden] { display: none; }
-.jump-rope-top { display: flex; align-items: center; gap: 12px; padding: 8px 14px; flex-wrap: wrap; }
+.jump-rope-top { position: absolute; z-index: 6; top: env(safe-area-inset-top); left: env(safe-area-inset-left); right: env(safe-area-inset-right); display: flex; align-items: center; gap: 12px; padding: 8px 14px; flex-wrap: wrap; }
 .jump-rope-top p { margin: 0; font-weight: 800; }
 .jump-rope-score { font-size: 1.6rem; color: #fff; -webkit-text-stroke: 1.2px #3b3326; paint-order: stroke fill; }
 .jump-rope-lives { font-size: 1.1rem; color: #d2455d; letter-spacing: 2px; }
 .jump-rope-quota { flex: 1; font-size: .9rem; text-align: right; }
 .jump-rope-top button { min-height: 44px; padding: 0 16px; border-radius: 14px; border: 2px solid #6b5a3a; background: #fff8e8; font-weight: 800; }
-.jump-rope-stage { position: relative; flex: 1; min-height: 0; cursor: pointer; overflow: hidden; }
-.jump-rope-rope { position: absolute; left: 22%; width: 56%; top: 8%; height: 84%; overflow: visible; pointer-events: none; }
+.jump-rope-stage { --u: calc(1cqw / 15.36); position: relative; flex: 1; min-height: 0; cursor: pointer; overflow: hidden; container-type: size; }
+.jump-rope-sky { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+/* Painting rows 470 to 1024. */
+.jump-rope-island { position: absolute; left: 0; width: 100%; height: auto; bottom: calc(-144 * var(--u)); pointer-events: none; }
+/* Painting columns 67 to 455, rows 61 to 574; smaller on short screens so the weather vane stays below the score bar. */
+.jump-rope-kiosk { position: absolute; left: calc(67 * var(--u)); bottom: calc(306 * var(--u)); width: auto;
+  height: min(calc(513 * var(--u)), calc(100cqh - 306 * var(--u) - 58px)); pointer-events: none; }
+/* Ends (8 % and 92 % of the box, half-way down) on the posts' tops; the low point of the swing (92 %) on the sand at row 695. */
+.jump-rope-rope { position: absolute; left: calc(456 * var(--u)); width: calc(613 * var(--u)); bottom: calc(161 * var(--u)); height: calc(300 * var(--u)); overflow: visible; pointer-events: none; }
 .jump-rope-rope path { fill: none; stroke: #ea7a80; vector-effect: non-scaling-stroke; stroke-width: 5px; stroke-linecap: round; }
 .jump-rope-rope[data-layer="back"] { z-index: 1; opacity: .85; }
 .jump-rope-rope[data-layer="front"] { z-index: 3; }
-.jump-rope-post { position: absolute; z-index: 2; bottom: 12%; width: 16px; height: 50%; border-radius: 6px; border: 2px solid #b5706a; background: repeating-linear-gradient(-35deg, #fff6ec 0 9px, #f19a97 9px 17px); }
+.jump-rope-post { position: absolute; z-index: 2; bottom: calc(185 * var(--u)); width: 16px; height: calc(138 * var(--u)); border-radius: 6px; border: 2px solid #b5706a; background: repeating-linear-gradient(-35deg, #fff6ec 0 9px, #f19a97 9px 17px); }
 .jump-rope-post::before { content: ''; position: absolute; left: 50%; top: -14px; width: 22px; height: 22px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff3b0, #f1b52f 55%, #c98a12); }
-.jump-rope-post[data-side="left"] { left: calc(26% - 7px); }
-.jump-rope-post[data-side="right"] { right: calc(26% - 7px); }
-.jump-rope-kiosk { position: absolute; z-index: 0; left: 4%; bottom: 40%; height: 46%; width: auto; opacity: .95; pointer-events: none; }
-.jump-rope-sand { position: absolute; z-index: 0; left: 50%; bottom: 6%; width: 58%; height: 22%; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse, #f3dca6 55%, #e8c98a 80%, #e8c98a00 100%); }
+.jump-rope-post[data-side="left"] { left: calc(505 * var(--u) - 8px); }
+.jump-rope-post[data-side="right"] { left: calc(1020 * var(--u) - 8px); }
 .jump-rope-rabbit {
-  --lift: 0; position: absolute; z-index: 2; left: 50%; bottom: 14%; height: 48%; aspect-ratio: 1;
+  --lift: 0; position: absolute; z-index: 2; left: calc(762 * var(--u)); bottom: calc(185 * var(--u)); height: min(calc(230 * var(--u)), 42cqh); aspect-ratio: 1;
   transform: translate(-50%, calc(var(--lift) * -38%));
 }
 .jump-rope-figure { display: block; width: 100%; height: 100%; }
@@ -34,11 +42,10 @@
 .jump-rope-shadow { position: absolute; left: 20%; right: 20%; bottom: -4%; height: 8%; border-radius: 50%; background: #3b552a33; transform: translateY(calc(var(--lift) * 38%)) scale(calc(1 - var(--lift) * .4)); }
 .jump-rope-rabbit.stumble .jump-rope-figure { animation: jump-rope-stumble .4s ease; }
 @keyframes jump-rope-stumble { 25% { transform: rotate(-9deg); } 60% { transform: rotate(7deg); } }
-.jump-rope-pop { position: absolute; z-index: 4; left: 50%; top: 10%; margin: 0; transform: translateX(-50%); font-size: 2rem; font-weight: 900; opacity: 0; color: #fff; -webkit-text-stroke: 1.4px #3b3326; paint-order: stroke fill; pointer-events: none; }
+.jump-rope-pop { position: absolute; z-index: 4; left: calc(762 * var(--u)); top: 18%; margin: 0; transform: translateX(-50%); font-size: 2rem; font-weight: 900; opacity: 0; color: #fff; -webkit-text-stroke: 1.4px #3b3326; paint-order: stroke fill; pointer-events: none; }
 .jump-rope-pop[data-kind="miss"] { color: #ffd2d9; }
 .jump-rope-pop.shown { animation: jump-rope-pop .45s ease-out; }
 @keyframes jump-rope-pop { 0% { opacity: 1; transform: translate(-50%, 8px) scale(.9); } 100% { opacity: 0; transform: translate(-50%, -18px) scale(1.1); } }
-.jump-rope-provisional { position: absolute; z-index: 4; right: 10px; bottom: 6px; margin: 0; padding: 2px 8px; border-radius: 8px; background: #fff3; font-size: .75rem; font-weight: 800; color: #5a4a2a; pointer-events: none; }
 .jump-rope-card {
   position: absolute; z-index: 5; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(420px, calc(100% - 32px));
   max-height: calc(100% - 32px); overflow: auto; padding: 16px 18px; border-radius: 22px; background: #fff8e8; border: 3px solid #8a7550;

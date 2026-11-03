@@ -4,7 +4,8 @@ import {airTime, advanceJumpRope, ropePhase, startJumpRope, tapJumpRope, type Ju
 import {setCurrencyText} from '../display/currency';
 import type {CuisineRabbit} from './CuisineActivity';
 import {portrait} from './portraits';
-import {JUMP_ROPE_URL} from '../display/agency';
+import {JUMP_ROPE_ISLAND_URL, JUMP_ROPE_KIOSK_URL} from '../display/agency';
+import {drawJumpRopeSky} from '../display/jumpRopeSky';
 
 /**
  * The Terrain de corde à sauter's game (src/simulation/jumpRope.ts holds the rules): a full-screen layer outside GameUI's rebuilt
@@ -23,13 +24,14 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
   layer.setAttribute('role', 'dialog'); layer.setAttribute('aria-modal', 'true'); layer.setAttribute('aria-label', 'Corde à sauter');
   layer.innerHTML = `<div class="jump-rope-top"><p class="jump-rope-score" aria-live="polite"></p><p class="jump-rope-lives"></p><p class="jump-rope-quota"></p><button type="button" data-jump-rope-exit>Quitter</button></div>
 <div class="jump-rope-stage" data-jump-rope-stage>
-<img class="jump-rope-kiosk" alt="" aria-hidden="true" draggable="false" src="${JUMP_ROPE_URL}"><span class="jump-rope-sand"></span>
+<canvas class="jump-rope-sky" aria-hidden="true"></canvas>
+<img class="jump-rope-island" alt="" aria-hidden="true" draggable="false" src="${JUMP_ROPE_ISLAND_URL}">
+<img class="jump-rope-kiosk" alt="" aria-hidden="true" draggable="false" src="${JUMP_ROPE_KIOSK_URL}">
 <span class="jump-rope-post" data-side="left"></span><span class="jump-rope-post" data-side="right"></span>
 <svg class="jump-rope-rope" data-layer="back" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path/></svg>
 <span class="jump-rope-rabbit"><span class="jump-rope-figure"></span><span class="jump-rope-shadow"></span></span>
 <svg class="jump-rope-rope" data-layer="front" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path/></svg>
 <p class="jump-rope-pop" aria-hidden="true"></p>
-<p class="jump-rope-provisional">Décor provisoire</p>
 </div>
 <div class="jump-rope-card" data-jump-rope-card></div>`;
   host.append(layer);
@@ -38,7 +40,9 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
   const score = $<HTMLElement>('.jump-rope-score'), lives = $<HTMLElement>('.jump-rope-lives'), quota = $<HTMLElement>('.jump-rope-quota');
   const rabbitBox = $<HTMLElement>('.jump-rope-rabbit'), figure = $<HTMLElement>('.jump-rope-figure'), pop = $<HTMLElement>('.jump-rope-pop');
   const back = $<SVGPathElement>('[data-layer="back"] path'), front = $<SVGPathElement>('[data-layer="front"] path');
-  const abort = new AbortController();
+  const sky = $<HTMLCanvasElement>('.jump-rope-sky'), abort = new AbortController();
+  const resize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => { if (!layer.hidden) drawJumpRopeSky(sky); });
+  resize?.observe(stage);
   let rabbit: CuisineRabbit | null = null, game: JumpRopeGame | null = null, running = false, popTimer: ReturnType<typeof setTimeout> | undefined;
   const name = () => rabbit ? rabbit.name || SPECIES[rabbit.species].name : '';
   const button = (label: string, action: () => void, key: string) => {
@@ -120,9 +124,9 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
       rabbit = chosen;
       const art = chosen.affection === undefined ? rabbitArt(chosen.species) : artForRabbit({species: chosen.species, affection: chosen.affection, classicLook: chosen.classicLook});
       figure.innerHTML = portrait(chosen.species, art); if (art?.facing === -1) figure.dataset.mirrored = ''; else delete figure.dataset.mirrored;
-      layer.hidden = false; intro(); $<HTMLButtonElement>('[data-jump-rope-start]').focus();
+      layer.hidden = false; drawJumpRopeSky(sky); intro(); $<HTMLButtonElement>('[data-jump-rope-start]').focus();
     },
     close, update, tap,
-    dispose() { close(); abort.abort(); layer.remove(); },
+    dispose() { close(); abort.abort(); resize?.disconnect(); layer.remove(); },
   };
 }
