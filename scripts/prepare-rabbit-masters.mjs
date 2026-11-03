@@ -45,6 +45,11 @@ export const DESIGNS = [
   // shadows of the drawings, which the default tolerance would eat.
   ...['dinono', 'dinenette'].map(id => ({id: `${id}-evolution`, source: `assets-source/rabbits/${id}/${id}-evolution-source.png`,
     master: `assets-source/rabbits/${id}/${id}-evolution-sprite.png`, background: 'corner', tolerance: 24})),
+  // Affection 30 evolutions of 20 Rares, 5 Épiques and 3 Légendaires, approved on 3 November 2026 on a white backdrop.
+  ...['amethyste', 'ardent', 'boudinet', 'bouee', 'bretonette', 'egiiipte', 'fluffy', 'frisket', 'glassofeu', 'icy', 'phoenix',
+    'pic-pic', 'piment', 'plume', 'princesse-neige', 'roukette', 'snk', 'tunini', 'virvoletant', 'wat-wat', 'calinou', 'dadi',
+    'magicien', 'maxou', 'orange', 'ankylosaure', 'dragon', 'requin'].map(id => ({id: `${id}-evolution`, source: `assets-source/rabbits/${id}/${id}-evolution-source.png`,
+    master: `assets-source/rabbits/${id}/${id}-evolution-sprite.png`, background: 'light'})),
 ];
 // Bouee's left ear encloses a pocket of background: seed only that pocket, preserving the ring's white dots. Dinenette's evolved
 // tail curl encloses another one, between the heart and the back.

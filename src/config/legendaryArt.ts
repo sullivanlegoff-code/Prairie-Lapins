@@ -8,6 +8,8 @@ import type {SpeciesId} from './species';
 export const LEGENDARY_SHOWS = ['dragon', 'requin', 'ankylosaure'] as const;
 export type LegendaryShow = typeof LEGENDARY_SHOWS[number];
 export const isLegendaryShow = (species: SpeciesId | string): species is LegendaryShow => (LEGENDARY_SHOWS as readonly string[]).includes(species);
+/** Evolved drawings already contain the full legendary rabbit; v1 based moving pieces must not cover them. */
+export const shouldShowLegendaryView = (species: SpeciesId | string, art: {evolved?: true}): boolean => isLegendaryShow(species) && !art.evolved;
 
 /**
  * Milliseconds between two spontaneous meadow shows of one legendary in its enclosure, each drawn in its range so

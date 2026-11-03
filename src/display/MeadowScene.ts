@@ -8,7 +8,7 @@ import {rabbitFaceSeed, rabbitFaceState} from './rabbitBlink';
 import {DadiReactions} from './dadiReactions';
 import {LegendaryView} from './legendaryEffects';
 import {LegendaryClock, type LegendaryAct} from './legendaryTimeline';
-import {LEGENDARY_TEST_EVENT, isLegendaryShow, legendaryMeadowArt} from '../config/legendaryArt';
+import {LEGENDARY_TEST_EVENT, isLegendaryShow, legendaryMeadowArt, shouldShowLegendaryView} from '../config/legendaryArt';
 import {BennyView} from './bennyView';
 import {BennyClock, type BennyAct} from './bennyTimeline';
 import {BENNY_ATLAS, BENNY_ID, BENNY_TEST_EVENT, bennyMeadowArt} from '../config/bennyArt';
@@ -895,7 +895,7 @@ export class MeadowScene extends Phaser.Scene {
             body.add(crown);
           }
           let legendary: LegendaryView | undefined;
-          if (isLegendaryShow(rabbit.species) && legendaryMeadowArt(rabbit.species).every(a => this.textures.exists(a.texture))) {
+          if (isLegendaryShow(rabbit.species) && shouldShowLegendaryView(rabbit.species, art) && legendaryMeadowArt(rabbit.species).every(a => this.textures.exists(a.texture))) {
             let clock = this.legendaryClocks.get(rabbit.id);
             if (!clock || clock.species !== rabbit.species) { clock = new LegendaryClock(rabbit.species, rabbit.id); this.legendaryClocks.set(rabbit.id, clock); }
             legendary = new LegendaryView(this, rabbit.id, rabbit.species, {object, body, sprite, art, pivot: view.pivot, motion}, clock);

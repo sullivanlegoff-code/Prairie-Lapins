@@ -7,6 +7,7 @@ import {EVOLUTION_AFFECTION, EVOLVED_ART, EVOLVED_SCALE, hasEvolvedArt, showsEvo
 import {artForRabbit, evolvedRabbitArt, rabbitArt} from '../src/config/rabbitArt';
 import {CUISINE_ANCHORS, EVOLVED_CUISINE_ANCHORS, cuisineAnchors} from '../src/config/cuisineAnchors';
 import {crownAnchor} from '../src/config/ultimateArt';
+import {shouldShowLegendaryView} from '../src/config/legendaryArt';
 import {FOREST_ART} from '../src/config/forestArt';
 import {cumulativeLevelXp} from '../src/simulation/progression';
 import {buildingPlacementReason} from '../src/simulation/placement';
@@ -16,7 +17,10 @@ import {emptyBuilding} from '../src/state/initial';
 import {decodePng} from '../scripts/derive-nursery-overlays.mjs';
 import type {Command, GameState} from '../src/state/types';
 
-const EVOLVED: SpeciesId[] = ['paille', 'neige', 'feu', 'belier-gris', 'volant', 'dinono', 'dinenette'];
+const EVOLVED: SpeciesId[] = ['paille', 'neige', 'feu', 'belier-gris', 'volant', 'dinono', 'dinenette',
+  'amethyste', 'ardent', 'boudinet', 'bouee', 'bretonette', 'egiiipte', 'fluffy', 'frisket', 'glassofeu', 'icy', 'phoenix',
+  'pic-pic', 'piment', 'plume', 'princesse-neige', 'roukette', 'snk', 'tunini', 'virvoletant', 'wat-wat', 'calinou', 'dadi',
+  'magicien', 'maxou', 'orange', 'ankylosaure', 'dragon', 'requin'];
 function run(s: GameState, command: Command, now = s.lastSimulatedAt) {
   const r = act(s, command, now, () => 0); if (!r.ok) throw Error(r.reason); return r.state;
 }
@@ -44,12 +48,15 @@ function setup(rabbits: [SpeciesId, number][], forest = true) {
 const rabbit = (s: GameState, id: string) => s.rabbits.find(r => r.id === id)!;
 
 describe('Evolved drawings at affection 30', () => {
-  it('the five commons, Dinono and Dinenette have an evolved drawing, the other species keep their v1', () => {
+  it('the 35 approved species have an evolved drawing, Benny and the other species keep their v1', () => {
     expect(EVOLUTION_AFFECTION).toBe(30);
+    expect(EVOLVED).toHaveLength(35); // 5 commons + Dinono/Dinenette + 28 newly approved drawings.
     expect(EVOLVED_ART.map(art => art.id)).toEqual(EVOLVED);
     for (const species of SPECIES_IDS) expect(hasEvolvedArt(species)).toBe(EVOLVED.includes(species));
-    expect(artForRabbit({species: 'frisket', affection: 50})).toBe(rabbitArt('frisket'));
-    expect(artForRabbit({species: 'dragon', affection: 30})).toBe(rabbitArt('dragon'));
+    expect(artForRabbit({species: 'benny', affection: 50})).toBe(rabbitArt('benny'));
+    expect(artForRabbit({species: 'dragon', affection: 29})).toBe(rabbitArt('dragon'));
+    expect(artForRabbit({species: 'dragon', affection: 30})).toBe(evolvedRabbitArt('dragon'));
+    expect(hasEvolvedArt('benny')).toBe(false);
   });
   it('29 shows the old drawing, 30 and more the evolved one', () => {
     for (const species of EVOLVED) {
@@ -92,6 +99,12 @@ describe('Evolved drawings at affection 30', () => {
       expect([master.width, master.height]).toEqual([m.sourceWidth, m.sourceHeight]);
       // Cut out: transparent corners.
       expect(png.pixels[3]).toBe(0); expect(png.pixels[png.pixels.length - 1]).toBe(0);
+    }
+  });
+  it('does not layer v1 legendary body parts over an evolved legendary picture', async () => {
+    for (const species of ['dragon', 'requin', 'ankylosaure'] as const) {
+      expect(shouldShowLegendaryView(species, evolvedRabbitArt(species)!)).toBe(false);
+      expect(shouldShowLegendaryView(species, rabbitArt(species)!)).toBe(true);
     }
   });
   it('the toque and the crown use the anchors of the evolved drawing', () => {
@@ -142,7 +155,7 @@ describe('Forêt de Brocéliande', () => {
     expect(rabbit(again, a).affection).toBe(30);
   });
   it('refuses below affection 30, on a species without an evolved drawing, and without the forest', () => {
-    const {s, ids: [low, rare]} = setup([['feu', 29], ['frisket', 40]]);
+    const {s, ids: [low, rare]} = setup([['feu', 29], ['benny', 40]]);
     refused(s, {type: 'toggleClassicLook', rabbitId: low}, 'EVOLUTION_AFFECTION');
     refused(s, {type: 'toggleClassicLook', rabbitId: rare}, 'NO_EVOLVED_ART');
     refused(s, {type: 'toggleClassicLook', rabbitId: 'rabbit-404'}, 'NOT_FOUND');
@@ -153,7 +166,7 @@ describe('Forêt de Brocéliande', () => {
     expect(classicLookReason(s, {species: 'feu', affection: 30})).toBeNull();
     expect(forestRabbits(s).map(r => r.id)).toEqual([]);
     const listed = setup([['feu', 31], ['frisket', 40], ['volant', 45], ['paille', 29]]);
-    expect(forestRabbits(listed.s).map(r => r.species)).toEqual(['volant', 'feu']);
+    expect(forestRabbits(listed.s).map(r => r.species)).toEqual(['volant', 'frisket', 'feu']);
   });
 });
 
@@ -183,7 +196,7 @@ describe('Save format: the old drawing put back', () => {
     expect(decoded.state.version).toBe(23); expect(decoded.state.rabbits).toEqual(s.rabbits);
   });
   it('drops a choice that means nothing instead of refusing the save', () => {
-    const {s, ids: [a, low, rare]} = setup([['feu', 30], ['feu', 29], ['frisket', 40]]);
+    const {s, ids: [a, low, rare]} = setup([['feu', 30], ['feu', 29], ['benny', 40]]);
     const raw = JSON.parse(encodeGame(s));
     for (const r of raw.rabbits) if ([a, low, rare].includes(r.id)) r.classicLook = true;
     let decoded = decodeGame(JSON.stringify(raw)); if (!decoded.ok) throw Error(decoded.reason);

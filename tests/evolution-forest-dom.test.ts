@@ -30,7 +30,7 @@ function mount(s: GameState) {
   const ui = new GameUI(controller, scene, () => 0, prefs); cleanups.push(() => { ui.dispose(); controller.dispose(); }); return {ui, controller};
 }
 const panel = () => document.getElementById('panel-content')!;
-/** Level 20, the forest (building-100), a universal enclosure (building-101) with a paille at 30, a neige at 29 and a frisket at 40. */
+/** Level 20, the forest (building-100), a universal enclosure (building-101) with a paille at 30, a neige at 29 and a Frisket at 40. */
 function game(forest = true): GameState {
   const s = createGame(0); s.pattes = 20_000; s.progression = {totalXp: cumulativeLevelXp(20), rewardedThroughLevel: 20};
   const free = () => { for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y)) return {x, y}; throw Error('No space'); };
@@ -48,7 +48,7 @@ it('a portrait shows the evolved drawing of a rabbit at 30, the species drawing 
   expect(rabbitPortrait({species: 'paille', affection: 30})).toContain('data-evolved');
   expect(rabbitPortrait({species: 'paille', affection: 29})).toContain('paille-v1.png');
   expect(rabbitPortrait({species: 'paille', affection: 45, classicLook: true})).toContain('paille-v1.png');
-  expect(rabbitPortrait({species: 'frisket', affection: 50})).toContain('frisket-v1.png');
+  expect(rabbitPortrait({species: 'frisket', affection: 50})).toContain('frisket-v2.png');
   expect(portrait('paille')).toContain('paille-v1.png'); // Catalogue and shop: the species' own drawing.
 });
 
@@ -59,9 +59,10 @@ it('the rabbit sheet shows the evolved drawing; the forest lists the rabbits at 
   ui.select({kind: 'building', id: 'building-100'});
   expect(document.getElementById('panel-title')?.textContent ?? panel().textContent).toContain('Forêt de Brocéliande');
   const cards = [...panel().querySelectorAll<HTMLElement>('[data-forest-rabbit]')];
-  expect(cards.map(card => card.dataset.forestRabbit)).toEqual(['rabbit-104']); // Not the neige at 29, not the frisket.
-  expect(cards[0].querySelector('img')!.src).toContain('paille-v2.png');
-  const toOld = cards[0].querySelector('button')!; expect(toOld.textContent).toBe('Remettre l’ancien dessin');
+  expect(cards.map(card => card.dataset.forestRabbit)).toEqual(['rabbit-106', 'rabbit-104']); // The Neige at 29 is not listed.
+  expect(cards[1].querySelector('img')!.src).toContain('paille-v2.png');
+  expect(cards[0].querySelector('img')!.src).toContain('frisket-v2.png');
+  const toOld = cards[1].querySelector('button')!; expect(toOld.textContent).toBe('Remettre l’ancien dessin');
   const pattes = controller.getSnapshot().state!.pattes;
   toOld.click();
   let state = controller.getSnapshot().state!;
