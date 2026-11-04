@@ -71,7 +71,7 @@ import {EVOLVED_ART, canEvolve, showsEvolvedArt, type LookRabbit} from '../confi
 import {DAILY_STREAK_TARGET, EVOLUTION_CHALLENGES, evolutionChallengeLabel, evolutionChallengeTarget, evolutionChallengesComplete} from '../config/evolutionChallenges';
 import {evolvedRabbitArt, rabbitArt} from '../config/rabbitArt';
 import {rabbitBlinkArt} from '../config/rabbitBlinkArt';
-import {forestRabbits, isEvolved} from '../simulation/forest';
+import {evolutionRevealed, forestRabbits, isEvolved} from '../simulation/forest';
 import {PreferenceStore, Sounds} from './preferences';
 import {onboardingTask} from './onboarding';
 import {PailleDialogue} from './PailleDialogue';
@@ -1462,7 +1462,10 @@ export class GameUI {
       section.append(list);
       const looks = node('div', '', 'evolution-looks');
       for (const [kind, art, name] of [['ancien', rabbitArt(r.species), SPECIES[r.species].name], ['évolué', evolvedRabbitArt(r.species), evolution.name]] as const) {
+        // Owner, 4 November 2026: the evolution is a surprise until a rabbit of this species has evolved (no drawing, no name).
+        const secret = kind === 'évolué' && !evolutionRevealed(s, r.species);
         const card = node('figure', '', `evolution-look ${kind === 'évolué' && r.evolution?.done !== true ? 'is-locked' : ''}`);
+        if (secret) { card.dataset.evolutionSecret = ''; card.append(node('span', '?', 'evolution-mystery'), node('figcaption', 'évolué · surprise !')); looks.append(card); continue; }
         const image = document.createElement('img'); image.src = art?.url ?? ''; image.alt = '';
         card.append(image, node('figcaption', `${kind} · ${name}`)); looks.append(card);
       }
@@ -2060,12 +2063,15 @@ export class GameUI {
       const evolvedArt = evolvedSpecies && EVOLVED_ART.find(art => art.id === evolvedSpecies);
       // An undiscovered species keeps its secret: no evolution shape before it is found.
       if (entry.known && evolvedSpecies && evolvedArt) {
-        const evolvedRabbit = s.rabbits.find(rabbit => rabbit.species === evolvedSpecies && isEvolved(rabbit));
-        const evolvedCell = node('div', '', `collection-evolution ${evolvedRabbit ? 'is-unlocked' : 'is-locked'}`);
+        const revealed = evolutionRevealed(s, evolvedSpecies);
+        const evolvedCell = node('div', '', `collection-evolution ${revealed ? 'is-unlocked' : 'is-locked'}`);
         evolvedCell.dataset.collectionEvolution = evolvedSpecies;
-        const art = evolvedRabbitArt(evolvedSpecies), image = document.createElement('img');
-        image.src = art?.url ?? ''; image.alt = evolvedRabbit ? evolvedArt.name : '';
-        evolvedCell.append(image, node('p', evolvedRabbit ? `Évolution · ${evolvedArt.name}` : 'Évolution · à débloquer', 'small'));
+        // Owner, 4 November 2026: no shape nor name of the evolution before a rabbit of this species has evolved.
+        if (revealed) {
+          const art = evolvedRabbitArt(evolvedSpecies), image = document.createElement('img');
+          image.src = art?.url ?? ''; image.alt = evolvedArt.name;
+          evolvedCell.append(image, node('p', `Évolution · ${evolvedArt.name}`, 'small'));
+        } else evolvedCell.append(node('span', '?', 'evolution-mystery'), node('p', 'Évolution · surprise à découvrir', 'small'));
         card.append(evolvedCell);
       }
       const hint = entry.known ? recipeHint(entry.species) : entry.hint; if (hint) card.append(node('p', hint, 'recipe-hint'));

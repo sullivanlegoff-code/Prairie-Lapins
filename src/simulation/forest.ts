@@ -1,5 +1,6 @@
 import {hasEvolvedArt} from '../config/evolvedArt';
 import type {GameState, Rabbit} from '../state/types';
+import type {SpeciesId} from '../config/balance';
 
 /**
  * The Forêt de Brocéliande (owner, 3 November 2026): once built, the player chooses freely and for free, rabbit by rabbit, between
@@ -18,3 +19,9 @@ export const forestRabbits = (s: Pick<GameState, 'rabbits'>): Rabbit[] =>
   s.rabbits.filter(rabbit => rabbit.evolution?.done === true && rabbit.affection >= 30 && hasEvolvedArt(rabbit.species)).sort((a, b) => b.affection - a.affection);
 /** Whether this rabbit has completed its evolution, even if the forest currently shows its old drawing. */
 export const isEvolved = (rabbit: Pick<Rabbit, 'species' | 'affection' | 'classicLook' | 'evolution'>): boolean => rabbit.evolution?.done === true && hasEvolvedArt(rabbit.species) && rabbit.affection >= 30;
+/**
+ * The evolution of a species is shown (drawing and name, in a sheet or the collection) once one of the player's rabbits of that
+ * species has evolved (owner, 4 November 2026: it is discovered when the rabbit evolves, never before).
+ */
+export const evolutionRevealed = (s: Pick<GameState, 'rabbits'>, species: SpeciesId): boolean =>
+  s.rabbits.some(r => r.species === species && r.evolution?.done === true);
