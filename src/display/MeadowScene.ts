@@ -78,6 +78,9 @@ import {bindMeadowInput} from './meadowInput';
 import {buildingFrame, ownedRegions, recenterCamera, type ScreenChrome} from './recenter';
 import {COIN_TEXTURE, COIN_URL, FOOD_TEXTURE, FOOD_URL, HEART_TEXTURE, HEART_URL} from './currency';
 import {coinBubble} from './currencyPhaser';
+import {MAGICIEN_ART, MAGICIEN_TEST_EVENT} from '../config/magicienArt';
+import {MagicienView} from './magicienEffects';
+import {MagicienClock, type MagicienAct} from './magicienTimeline';
 
 /** `nurseryBubble`: the « Prêt ! » bubble (id: the nursery). `nurseryBaby`: a ready baby touched on its cushion (id: its birthId). */
 export type MeadowSelection = {kind: 'building' | 'rabbit' | 'income' | 'grass' | 'decoration' | 'birth' | 'discovery' | 'nurseryBubble' | 'nurseryBaby'; id: string} | {kind: 'cell' | 'fineCell'; x: number; y: number} | {kind: 'extension'; parcelId?: ParcelId} | {kind: 'empty'};
@@ -92,6 +95,7 @@ interface VisualRabbit {id: string; object: Phaser.GameObjects.Container; body: 
   legendary?: LegendaryView;
   /** Benny, the Mythic: her painted acts, blink, nose and ears. */
   benny?: BennyView;
+  magicien?: MagicienView;
   center: Point; group: string; motion?: RabbitMotion; nest?: boolean; lift: number;
   /** Centre of the visible body in body space: the somersault turns about it, not about the feet or the picture centre. */
   pivot: Point; /** Mirror sign of the picture's native direction: -1 for art that looks left. */ native: 1 | -1}
@@ -121,6 +125,7 @@ export class MeadowScene extends Phaser.Scene {
   private legendaryClocks = new Map<string, LegendaryClock>();
   /** Benny's clock, kept across rebuilds of her body like the motions. */
   private bennyClocks = new Map<string, BennyClock>();
+  private magicienClocks = new Map<string, MagicienClock>();
   /** Benny's flight over the island: made once her flight art is loaded, it outlives every rebuild of her body. */
   private bennyFlight: BennyFlightView | null = null;
   /** Benny's id while she is up in the air (her enclosure picture is hidden, she is touched in the air). */
@@ -201,6 +206,8 @@ export class MeadowScene extends Phaser.Scene {
     if (!this.textures.exists(FOOD_TEXTURE)) this.load.image(FOOD_TEXTURE, FOOD_URL);
     for (const art of this.requiredArt(this.controller.getSnapshot().state))
       if (!this.textures.exists(art.texture)) this.loadArt(art);
+    if (!this.textures.exists(MAGICIEN_ART.circle.texture)) this.load.image(MAGICIEN_ART.circle.texture, MAGICIEN_ART.circle.url);
+    if (!this.textures.exists(MAGICIEN_ART.star.texture)) this.load.image(MAGICIEN_ART.star.texture, MAGICIEN_ART.star.url);
   }
   create(): void {
     this.sceneReady = true;
@@ -261,6 +268,8 @@ export class MeadowScene extends Phaser.Scene {
       if (act) for (const rabbit of this.rabbitViews) rabbit.legendary?.play(act);
     };
     window.addEventListener(LEGENDARY_TEST_EVENT, legendaryTest);
+    const magicienTest = (event: Event) => { const act=(event as CustomEvent<{act?:MagicienAct}>).detail?.act; if(act) for(const rabbit of this.rabbitViews) rabbit.magicien?.play(act); };
+    window.addEventListener(MAGICIEN_TEST_EVENT,magicienTest);
     // Laboratory buttons play one of Benny's acts; nothing in the normal game sends this event either.
     const bennyTest = (event: Event) => {
       const act = (event as CustomEvent<{act?: BennyAct}>).detail?.act;
@@ -275,7 +284,7 @@ export class MeadowScene extends Phaser.Scene {
       this.cozyInteraction.reset(); this.discoveryImage?.destroy(); this.discoveryImage = null;
       this.life.reset(); this.lifeViews?.destroy(); this.lifeViews = null;
       document.removeEventListener('visibilitychange', dadiVisibility); window.removeEventListener('pagehide', clearDadi);
-      window.removeEventListener(LEGENDARY_TEST_EVENT, legendaryTest); window.removeEventListener(BENNY_TEST_EVENT, bennyTest); window.removeEventListener(BENNY_FLIGHT_TEST_EVENT, flightTest);
+      window.removeEventListener(LEGENDARY_TEST_EVENT, legendaryTest); window.removeEventListener(MAGICIEN_TEST_EVENT,magicienTest); window.removeEventListener(BENNY_TEST_EVENT, bennyTest); window.removeEventListener(BENNY_FLIGHT_TEST_EVENT, flightTest);
       this.bennyFlight?.destroy(); this.bennyFlight = null; this.bennyAway = null; this.flightIsland = null;
     });
     this.recenter();
@@ -906,9 +915,14 @@ export class MeadowScene extends Phaser.Scene {
             if (!clock) { clock = new BennyClock(rabbit.id); this.bennyClocks.set(rabbit.id, clock); }
             benny = new BennyView(this, rabbit.id, {object, body, sprite, shadow, art, motion}, clock);
           }
+          let magicien: MagicienView | undefined;
+          if (rabbit.species === 'magicien' && art.evolved && this.textures.exists(MAGICIEN_ART.circle.texture) && this.textures.exists(MAGICIEN_ART.star.texture)) {
+            let clock=this.magicienClocks.get(rabbit.id); if(!clock){clock=new MagicienClock(rabbit.id);this.magicienClocks.set(rabbit.id,clock);}
+            magicien=new MagicienView(this,rabbit.id,{object,body,sprite,shadow,art},clock);
+          }
           if (crown) body.bringToTop(crown); // Above a legendary's open snout or part.
           this.animals.add(object);
-          this.rabbitViews.push({id: rabbit.id, ears: [], sprite, art, face, flames, crown, legendary, benny, ...view});
+          this.rabbitViews.push({id: rabbit.id, ears: [], sprite, art, face, flames, crown, legendary, benny, magicien, ...view});
           return;
         }
         const coat = proceduralCoat(SPECIES[rabbit.species].art), color = Phaser.Display.Color.HexStringToColor(coat.body).color, patch = Phaser.Display.Color.HexStringToColor(coat.patch).color;
@@ -940,6 +954,7 @@ export class MeadowScene extends Phaser.Scene {
     for (const id of [...this.motions.keys()]) if (!walkers.has(id)) this.motions.delete(id);
     for (const id of [...this.legendaryClocks.keys()]) if (!this.rabbitViews.some(r => r.id === id && r.legendary)) this.legendaryClocks.delete(id);
     for (const id of [...this.bennyClocks.keys()]) if (!this.rabbitViews.some(r => r.id === id && r.benny)) this.bennyClocks.delete(id);
+    for (const id of [...this.magicienClocks.keys()]) if (!this.rabbitViews.some(r => r.id === id && r.magicien)) this.magicienClocks.delete(id);
     this.rabbitGroups.clear();
     for (const rabbit of this.rabbitViews) {
       let group = this.rabbitGroups.get(rabbit.group);
@@ -1290,6 +1305,8 @@ export class MeadowScene extends Phaser.Scene {
         show.update({time, dt, active: lifeActive && visibleResidents.has(rabbit.id), reduced: reducedMotion, asleep: rabbit.motion?.mode === 'sleep'});
         lift += show.lift; rotation += show.lean;
       }
+      rabbit.magicien?.update(dt,lifeActive && visibleResidents.has(rabbit.id),reducedMotion);
+      if(rabbit.magicien) lift += rabbit.magicien.lift;
       rabbit.lift = lift;
       if (rabbit.object.depth !== previousDepth) depthChanged = true;
       this.poseBody(rabbit, {lift, squashX, squashY, facing, rotation, nuzzle});

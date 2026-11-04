@@ -21,6 +21,8 @@ import type {LegendaryAct} from '../display/legendaryTimeline';
 import {showLegendaryReveal} from '../ui/legendaryReveal';
 import {showBennyReveal} from '../ui/bennyReveal';
 import {habitatEntryReason, habitatStats} from '../simulation/habitats';
+import {MAGICIEN_TEST_EVENT} from '../config/magicienArt';
+import type {MagicienAct} from '../display/magicienTimeline';
 
 export const TEST_PREFIX = 'prairie-lapins.development.';
 export const DECORATIONS_PREVIEW_PREFIX = 'prairie-lapins.preview.decorations.';
@@ -124,6 +126,12 @@ export function developmentEnvironment(base: SaveStorage, options: {decorationPr
       for (const [act, label] of acts) button(label, `dev-legendary-${act}`, () => {
         window.dispatchEvent(new CustomEvent(LEGENDARY_TEST_EVENT, {detail: {act}}));
         status.textContent = `${label} : lancé sur les légendaires visibles de la prairie (ferme ce panneau pour regarder).`;
+      });
+      section('Animations du Magicien');
+      const magicianActs: [MagicienAct,string][] = [['sparks','Magicien : étincelles'],['circle','Magicien : cercle'],['levitation','Magicien : lévitation']];
+      for(const [act,label] of magicianActs) button(label,`dev-magicien-${act}`,()=>{
+        window.dispatchEvent(new CustomEvent(MAGICIEN_TEST_EVENT,{detail:{act}}));
+        status.textContent=`${label} : lancé sur les Magiciens évolués visibles de la prairie (ferme ce panneau pour regarder).`;
       });
       section('Animations de Benny');
       const bennyActs: [BennyAct, string][] = [['hop', 'Benny : saut'], ['flop', 'Benny : belly flop'], ['scratch', 'Benny : grattage'], ['groom', 'Benny : toilette'], ['stretch', 'Benny : étirement']];
