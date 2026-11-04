@@ -105,7 +105,21 @@ export interface GameState {
   affectionGifts?: Record<string, number>;
   /** Daily cycle of the last picnic (one a day in all). Absent until the first picnic. */
   picnicCycle?: number;
+  /**
+   * The jump-rope game (v23, optional): the daily cycle of the last rewarded game, the rewarded games played in it (at most
+   * JUMP_ROPE.rewardedGamesPerCycle) and whether its Heart was won; `best` is the player's record; `team` the last trio chosen
+   * (two carriers, one athlete; optional, its rabbits may since have left). Absent until the first game.
+   */
+  jumpRope?: {cycle: number; rewarded: number; heart?: true; best: number; team?: JumpRopeTeam;
+    /** The challenge of the day won in this cycle (optional). */
+    challenge?: true;
+    /** Each rabbit's best score as the athlete, keyed by rabbit ID (optional; for future evolution challenges). */
+    athleteBest?: Record<string, number>};
+  /** The jump-rope islet, bought (optional, absent = not bought): it floats left of the start island, off the land grid. */
+  jumpIsland?: true;
 }
+/** Two rabbits turn the rope, the athlete jumps. */
+export interface JumpRopeTeam {carriers: [string, string]; athlete: string}
 export interface Trip {grass?: number; rabbitId: string; destination: Destination; startedAt: number; endsAt: number; hearts: number}
 /** Paid at the start; the gift of the day is reserved then, the affection and the XP are given when the player welcomes it back. */
 export interface Care {rabbitId: string; care: CareKind; startedAt: number; endsAt: number}
@@ -120,7 +134,7 @@ export type Refusal = 'LEVEL_REQUIRED' | 'NO_BREEDING_RESULT' | 'PURCHASE_LOCKED
   'AT_SALON' | 'GIFT_TODAY' | 'AFFECTION_WALL' | 'PICNIC_TODAY' | 'EMPTY_ENCLOSURE' | 'NO_GIFT_POSSIBLE' |
   'NO_EVOLVED_ART' | 'EVOLUTION_AFFECTION' | 'EVOLUTION_CHALLENGES' | 'EVOLUTION_REQUIRED';
 export interface CuisineReward {pattes: number; grass: number; /** True for one of the cycle's full-reward slots, false for a tip. */ fullReward: boolean; affectionGranted: boolean; affectionAtCap: boolean; affectionStatueRequired: boolean; heartGranted: boolean; /** The rabbit the affection reward was drawn for. */ affectionRabbitId: string}
-export type ActionResult = {ok: true; state: GameState; value?: string | number; progressionGain?: ProgressionGain; cuisineReward?: CuisineReward} |
+export type ActionResult = {ok: true; state: GameState; value?: string | number; progressionGain?: ProgressionGain; cuisineReward?: CuisineReward; jumpRopeReward?: import('../simulation/jumpRope').JumpRopeReward} |
   {ok: false; state: GameState; reason: Refusal};
 export type BaseCommand =
   | {type: 'buyBuilding'; kind: BuildingKind; x: number; y: number; habitatType?: HabitatType}
@@ -177,6 +191,10 @@ export type Command = BaseCommand
   | {type: 'startCare'; rabbitId: string; care: CareKind} | {type: 'claimCare'; rabbitId: string}
   /** Today's picnic in this enclosure, at the quoted price (300 pattes per rabbit present): a changed price refuses. */
   | {type: 'picnic'; enclosureId: string; expectedCost: number}
+  /** A finished jump-rope game: `score` jumps by this trio (remembered for the next game); pays within the daily limit (JUMP_ROPE). */
+  | {type: 'rewardJumpRope'; team: JumpRopeTeam; score: number}
+  /** The jump-rope islet, for JUMP_ROPE.price pattes from JUMP_ROPE.unlockLevel, once. */
+  | {type: 'buyJumpIsland'}
   | {type: 'welcomeAgency'} | {type: 'startTrip'; rabbitId: string} | {type: 'claimTrip'; rabbitId: string} | {type: 'upgradeFarm'; id: string; /** Level reached; absent = 2 (older callers). A farm not one level below is a stale action. */ toLevel?: 2 | 3} | {type: 'upgradeAgency'; id: string; fromLevel: 1 | 2 | 3}
   /** `birthId` names the nursery baby; required for growth, ignored otherwise. */
   | {type: 'initiationAid'; id: string; stage: TimedStage; jobKey: string; birthId?: string}

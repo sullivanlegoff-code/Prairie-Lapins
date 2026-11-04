@@ -23,10 +23,10 @@ function reload(s: GameState): GameState {
 }
 
 describe('full main mission catalogue from level seven', () => {
-  it('contains one stable identifier per current species and decoration, and exactly twenty new milestones', () => {
+  it('contains one stable identifier per current species and decoration, and exactly twenty-one new milestones', () => {
     expect(DISCOVERY_MISSION_IDS).toEqual(SPECIES_IDS.map(id => `discover-${id}`)); expect(DISCOVERY_MISSION_IDS).toHaveLength(36);
     expect(DECORATION_MISSION_IDS).toEqual(DECORATION_IDS.map(id => `decorate-${id}`)); expect(DECORATION_MISSION_IDS).toHaveLength(22);
-    expect(MILESTONE_MISSION_IDS).toHaveLength(20); expect(MAIN_MISSION_IDS).toHaveLength(111); expect(new Set(MAIN_MISSION_IDS).size).toBe(111);
+    expect(MILESTONE_MISSION_IDS).toHaveLength(21); expect(MAIN_MISSION_IDS).toHaveLength(112); expect(new Set(MAIN_MISSION_IDS).size).toBe(112);
     for (const id of ['discover-terre', 'discover-mottelin', 'discover-geant', 'discover-brumelin']) expect(Object.hasOwn(MAIN_MISSIONS, id)).toBe(false);
   });
   it('keeps the original sequential start below seven, then exposes all objectives even with an unfinished guide', () => {
@@ -117,14 +117,15 @@ describe('full main mission catalogue from level seven', () => {
     s = reload(s); expect(s.progression.totalXp - xp).toBe(20);
     expect(act(s, {type: 'claimMainMission', id: 'decorate-bush'}, 0)).toMatchObject({ok: false, reason: 'ALREADY_CLAIMED'});
   });
-  it('observes all twenty milestones from their real saved state, credits twenty XP per claim and retains acquired conditions', () => {
+  it('observes all twenty-one milestones from their real saved state, credits twenty XP per claim and retains acquired conditions', () => {
     let s = completeLaboratory(0); s.missions.completed = s.missions.completed.filter(id => !MILESTONE_MISSION_IDS.includes(id as typeof MILESTONE_MISSION_IDS[number]));
+    s.jumpIsland = true; s.jumpRope = {cycle: 0, rewarded: 1, best: 3}; // one game played on the jump-rope islet
     s = advance(s, 0); const xp = s.progression.totalXp;
     for (const id of MILESTONE_MISSION_IDS) {
       const p = mainProgress(s, id); expect(p.value, id).toBeGreaterThanOrEqual(p.target); expect(missionClaimXp('main', id), id).toBe(20);
       s = run(s, {type: 'claimMainMission', id});
     }
-    expect(s.progression.totalXp - xp).toBe(400);
+    expect(s.progression.totalXp - xp).toBe(420);
     s.rabbits.forEach(r => {r.affection = 2;}); s.buildings = s.buildings.filter(b => b.kind !== 'kitchen');
     expect(s.missions.completed).toContain('affection-twenty'); expect(s.missions.completed).toContain('build-kitchen');
   });

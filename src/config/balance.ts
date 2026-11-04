@@ -157,6 +157,29 @@ export const carePrice = (species: SpeciesId, care: CareKind): number => Math.ro
  * cosmetic: no income, XP, affection or draw.
  */
 export const FOREST = {unlockLevel: 20} as const;
+/**
+ * The jump-rope islet (owner, 4 November 2026): a small isolated islet left of the start island, with the kiosk on it, bought as
+ * one building for `price` pattes from player level `unlockLevel`, one per game. Three rabbits of the player play: two carriers
+ * turn the rope and the athlete jumps (looks only: no effect on difficulty or rewards). Tap when the rope passes under the athlete's
+ * feet; the rope turns faster at every jump; one miss ends the game (`lives`), and the player may replay at will. The first
+ * `rewardedGamesPerCycle` games of a daily cycle with at least one jump pay `pattesPerJump` pattes per jump, `maxPattes` at most,
+ * and the first game of the cycle reaching `heartJumps` jumps gives one Heart. No XP, no affection. Later games beat the record.
+ * A precise tap (within `perfectShare` of the window) is « Parfait ! »: looks and sound only.
+ */
+export const JUMP_ROPE = {
+  unlockLevel: 20, price: 75_000, rewardedGamesPerCycle: 3, pattesPerJump: 2, maxPattes: 60, heartJumps: 30, lives: 1, maxScore: 999,
+  /** Rope timing, in milliseconds: first turn, fastest turn, factor after each jump, half tap window (share of the turn, floor). */
+  leadIn: 1600, startPeriod: 1250, minPeriod: 540, speedUp: 0.965, windowShare: 0.24, minWindow: 120, perfectShare: 0.4,
+  /** Every `milestone` jumps, a bigger cheer. */
+  milestone: 10,
+  /** Record medals (owner, 4 November 2026): one hangs on the kiosk for each step the record reaches. */
+  medals: [10, 25, 50, 100],
+  /**
+   * The challenge of the day (owner, 4 November 2026): drawn from the daily cycle alone (no network), reach `jumps` jumps,
+   * sometimes with an athlete of one rabbit type; `hearts` Hearts once a cycle, on top of the other rewards.
+   */
+  challenge: {hearts: 2, jumps: [15, 20, 25], types: ['paille', 'neige', 'feu', 'metal', 'vol']},
+} as const;
 /** The picnic: from player level 8, one a day in all, in one enclosure; paid and rewarded per rabbit present. */
 // 10 XP per rabbit present since 3 November 2026 (5 before).
 export const PICNIC = {unlockLevel: 8, pricePerRabbit: 300, xpPerRabbit: 10} as const;

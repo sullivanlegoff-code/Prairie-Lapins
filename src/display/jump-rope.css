@@ -1,0 +1,99 @@
+/* The jump-rope game (src/ui/JumpRopeActivity.ts), outdoors on the islet in front of the kiosk: the meadow's real sky (canvas,
+   src/display/jumpRopeSky.ts), the painted island and kiosk (scripts/prepare-jump-rope-backdrop.mjs), two carrier rabbits turning
+   the coral rope and the athlete jumping on the painted sand circle.
+   Everything is placed in the painting's own pixels: --u is one pixel of the 1536 px wide painting at the stage's width, and
+   painting row 880 (the top of the cliff's second row of stones) sits on the stage's bottom edge. */
+.jump-rope-activity {
+  position: fixed; inset: 0; z-index: 140; display: flex; flex-direction: column;
+  background: #b8ddeb;
+  font-family: inherit; color: #3b3326; touch-action: none; user-select: none; -webkit-user-select: none;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.jump-rope-activity[hidden] { display: none; }
+.jump-rope-top { position: absolute; z-index: 6; top: env(safe-area-inset-top); left: env(safe-area-inset-left); right: env(safe-area-inset-right); display: flex; align-items: center; gap: 12px; padding: 8px 14px; flex-wrap: wrap; }
+.jump-rope-top p { margin: 0; font-weight: 800; }
+.jump-rope-score { font-size: 1.6rem; color: #fff; -webkit-text-stroke: 1.2px #3b3326; paint-order: stroke fill; }
+.jump-rope-best { font-size: 1rem; color: #fff; -webkit-text-stroke: 1px #3b3326; paint-order: stroke fill; }
+.jump-rope-quota { flex: 1; font-size: .9rem; text-align: right; }
+.jump-rope-top button { min-height: 44px; padding: 0 16px; border-radius: 14px; border: 2px solid #6b5a3a; background: #fff8e8; font-weight: 800; }
+.jump-rope-stage { --u: calc(1cqw / 15.36); position: relative; flex: 1; min-height: 0; cursor: pointer; overflow: hidden; container-type: size; }
+.jump-rope-sky { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+/* Painting rows 470 to 1024. */
+.jump-rope-island { position: absolute; left: 0; width: 100%; height: auto; bottom: calc(-144 * var(--u)); pointer-events: none; }
+/* Painting columns 67 to 455, rows 61 to 574; smaller on short screens so the weather vane stays below the score bar. */
+.jump-rope-kiosk { position: absolute; left: calc(67 * var(--u)); bottom: calc(306 * var(--u)); width: auto;
+  height: min(calc(513 * var(--u)), calc(100cqh - 306 * var(--u) - 58px)); pointer-events: none; }
+/* Ends (8 % and 92 % of the box, 73 % down) in the carriers' paws, 70 painting pixels above the box bottom; the low point of the swing
+   (98 %) on the sand, the high point (2 %) above the athlete's head. */
+.jump-rope-rope { position: absolute; left: calc(498 * var(--u)); width: calc(530 * var(--u)); bottom: calc(175 * var(--u)); height: calc(260 * var(--u)); overflow: visible; pointer-events: none; }
+.jump-rope-rope path { fill: none; stroke: #ea7a80; vector-effect: non-scaling-stroke; stroke-width: 5px; stroke-linecap: round; }
+.jump-rope-rope[data-layer="back"] { z-index: 1; opacity: .85; }
+.jump-rope-rope[data-layer="front"] { z-index: 3; }
+/* The carriers stand just outside the rope's ends, facing the athlete, and sway with the turn (--turn, from 1 low to -1 high). */
+.jump-rope-carrier {
+  --turn: 0; position: absolute; z-index: 2; bottom: calc(180 * var(--u)); height: min(calc(190 * var(--u)), 34cqh); aspect-ratio: 1;
+  transform: translate(-50%, calc(var(--turn) * 2%)) rotate(calc(var(--turn) * var(--lean)));
+  transform-origin: 50% 100%;
+}
+.jump-rope-carrier[data-side="left"] { --lean: 3deg; left: calc(470 * var(--u)); }
+.jump-rope-carrier[data-side="right"] { --lean: -3deg; left: calc(1058 * var(--u)); }
+/* A small striped handle where the rope ends, in the carrier's paws. */
+.jump-rope-handle { position: absolute; bottom: calc(65 / 190 * 100% - 7px); width: 12px; height: 22px; border-radius: 6px; border: 2px solid #b5706a;
+  background: repeating-linear-gradient(-35deg, #fff6ec 0 5px, #8fd3bd 5px 10px); transform: rotate(calc(var(--turn) * 25deg)); }
+.jump-rope-carrier[data-side="left"] .jump-rope-handle { right: 2%; }
+.jump-rope-carrier[data-side="right"] .jump-rope-handle { left: 2%; }
+.jump-rope-rabbit {
+  --lift: 0; position: absolute; z-index: 2; left: calc(762 * var(--u)); bottom: calc(185 * var(--u)); height: min(calc(210 * var(--u)), 38cqh); aspect-ratio: 1;
+  transform: translate(-50%, calc(var(--lift) * -38%));
+}
+.jump-rope-figure { display: block; width: 100%; height: 100%; }
+.jump-rope-figure img { width: 100%; height: 100%; object-fit: contain; object-position: bottom; }
+.jump-rope-figure { position: relative; }
+.jump-rope-figure[data-mirrored] { transform: scaleX(-1); }
+.jump-rope-shadow { position: absolute; left: 20%; right: 20%; bottom: -4%; height: 8%; border-radius: 50%; background: #3b552a33; transform: translateY(calc(var(--lift) * 38%)) scale(calc(1 - var(--lift) * .4)); }
+.jump-rope-rabbit.stumble .jump-rope-figure { animation: jump-rope-stumble .4s ease; }
+@keyframes jump-rope-stumble { 25% { transform: rotate(-9deg); } 60% { transform: rotate(7deg); } }
+.jump-rope-pop { position: absolute; z-index: 4; left: calc(762 * var(--u)); top: 18%; margin: 0; transform: translateX(-50%); font-size: 2rem; font-weight: 900; opacity: 0; color: #fff; -webkit-text-stroke: 1.4px #3b3326; paint-order: stroke fill; pointer-events: none; }
+.jump-rope-pop[data-kind="miss"] { color: #ffd2d9; }
+.jump-rope-pop[data-kind="perfect"] { color: #fff3b0; }
+.jump-rope-pop[data-kind="milestone"], .jump-rope-pop[data-kind="record"] { color: #ffe066; font-size: 2.5rem; }
+.jump-rope-pop[data-kind="ready"] { color: #fff; }
+.jump-rope-pop[data-kind="milestone"].shown, .jump-rope-pop[data-kind="record"].shown, .jump-rope-pop[data-kind="ready"].shown { animation-duration: .9s; }
+/* « Parfait ×3 »: the streak of precise jumps, under the score. */
+.jump-rope-combo { position: absolute; z-index: 4; left: calc(762 * var(--u)); top: calc(18% + 2.6rem); margin: 0; transform: translateX(-50%); font-size: 1.1rem; font-weight: 900;
+  color: #fff3b0; -webkit-text-stroke: 1px #3b3326; paint-order: stroke fill; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.jump-rope-combo.shown { opacity: 1; }
+/* A ring of light on the sand for a milestone or a new record. */
+.jump-rope-burst { position: absolute; z-index: 1; left: calc(762 * var(--u)); bottom: calc(150 * var(--u)); width: calc(420 * var(--u)); height: calc(120 * var(--u));
+  border-radius: 50%; border: 6px solid #fff3b0; transform: translateX(-50%) scale(.2); opacity: 0; pointer-events: none; }
+.jump-rope-burst.shown { animation: jump-rope-burst .7s ease-out; }
+@keyframes jump-rope-burst { 0% { opacity: .95; transform: translateX(-50%) scale(.2); } 100% { opacity: 0; transform: translateX(-50%) scale(1.15); } }
+.jump-rope-record { font-weight: 900; color: #c2722a; }
+.jump-rope-challenge { font-weight: 800; color: #8a4f8f; }
+/* The carriers' reactions: leaning in toward the athlete (console), hopping (applaud); their words above the sand. */
+.jump-rope-carrier.console[data-side="left"] .jump-rope-figure { animation: jump-rope-console-left 1.2s ease-in-out 2; }
+.jump-rope-carrier.console[data-side="right"] .jump-rope-figure { animation: jump-rope-console-right 1.2s ease-in-out 2; }
+@keyframes jump-rope-console-left { 50% { translate: 8% 0; rotate: 7deg; } }
+@keyframes jump-rope-console-right { 50% { translate: -8% 0; rotate: -7deg; } }
+.jump-rope-carrier.applaud .jump-rope-figure { animation: jump-rope-applaud .32s ease-out 6; }
+@keyframes jump-rope-applaud { 50% { translate: 0 -14%; } }
+.jump-rope-cheer { position: absolute; z-index: 4; left: calc(762 * var(--u)); bottom: calc(400 * var(--u)); margin: 0; transform: translateX(-50%); padding: 4px 12px;
+  border-radius: 14px; background: #fff8e8; border: 2px solid #8a7550; font-weight: 800; white-space: nowrap; opacity: 0; transition: opacity .25s; pointer-events: none; }
+.jump-rope-cheer.shown { opacity: 1; }
+.jump-rope-cheer[data-kind="applaud"] { color: #c2722a; }
+@media (prefers-reduced-motion: reduce) { .jump-rope-burst.shown, .jump-rope-carrier .jump-rope-figure { animation: none !important; } .jump-rope-carrier { transform: translate(-50%, 0); } }
+.jump-rope-pop.shown { animation: jump-rope-pop .45s ease-out; }
+@keyframes jump-rope-pop { 0% { opacity: 1; transform: translate(-50%, 8px) scale(.9); } 100% { opacity: 0; transform: translate(-50%, -18px) scale(1.1); } }
+.jump-rope-card {
+  position: absolute; z-index: 5; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(420px, calc(100% - 32px));
+  max-height: calc(100% - 32px); overflow: auto; padding: 16px 18px; border-radius: 22px; background: #fff8e8; border: 3px solid #8a7550;
+  box-shadow: 0 8px 24px #3b332644; text-align: center; touch-action: auto;
+}
+.jump-rope-card[hidden] { display: none; }
+.jump-rope-card p { margin: 0 0 10px; }
+.jump-rope-title { font-size: 1.3rem; font-weight: 900; }
+.jump-rope-rewards { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.jump-rope-card button { min-height: 44px; margin: 4px; padding: 0 18px; border-radius: 14px; border: 2px solid #6b5a3a; background: #ffe7a8; font-weight: 800; font-size: 1rem; }
+/* The record medals won, in the islet's menu (concept M1 « Rubans »). */
+.jump-rope-medals { display: flex; gap: 6px; margin: 4px 0; }
+.jump-rope-medals img { height: 52px; width: auto; }

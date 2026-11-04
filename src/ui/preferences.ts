@@ -48,5 +48,18 @@ export class Sounds {
       oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
     } catch { /* Sound is optional. */ }
   }
+  /** The jump-rope rhythm « tac »: the same synthesised effect as the ping, much shorter and drier, on the Bruitages channel. */
+  tick(): void {
+    this.sync();
+    const output = this.engine.effectsOutput(); if (!output) return;
+    try {
+      const {context, node} = output, oscillator = context.createOscillator(), gain = context.createGain(), time = context.currentTime;
+      void context.resume().catch(() => {});
+      oscillator.type = 'triangle'; oscillator.frequency.setValueAtTime(1200, time); oscillator.frequency.exponentialRampToValueAtTime(700, time + .04);
+      gain.gain.setValueAtTime(.03, time); gain.gain.exponentialRampToValueAtTime(.001, time + .05);
+      oscillator.connect(gain).connect(node); oscillator.start(); oscillator.stop(time + .06);
+      oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
+    } catch { /* Sound is optional. */ }
+  }
   dispose(): void { this.ownEngine?.dispose(); }
 }

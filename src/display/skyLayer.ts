@@ -1,6 +1,8 @@
 import type Phaser from 'phaser';
 
 export const SKY_COLOR = '#91c9e8';
+/** The sky's vertical gradient, top to horizon. */
+export const SKY_GRADIENT = [[0, SKY_COLOR], [.48, '#b8ddeb'], [.82, '#e6e9e4'], [1, '#f9e8d7']] as const;
 // RGBA allocation: 905,216 bytes, independent of viewport size / device pixel ratio.
 export const SKY_TEXTURES = {width: 320, height: 176, variants: 4, skyWidth: 4, skyHeight: 256} as const;
 export interface SkyCloud {
@@ -26,7 +28,8 @@ export function skyClouds(seed = 0x51c10d): SkyCloud[] {
   });
 }
 
-function paintCloud(ctx: CanvasRenderingContext2D, variant: number): void {
+/** One meadow cloud on a SKY_TEXTURES-sized canvas (also drawn behind the jump-rope game). */
+export function paintCloud(ctx: CanvasRenderingContext2D, variant: number): void {
   // One continuous silhouette: no overlapping translucent circles or hard internal seams.
   const lift = [0, 9, -6, 5][variant];
   ctx.beginPath();
@@ -67,8 +70,7 @@ export class SkyLayer {
     };
     const sky = make('meadow-sky-gradient', SKY_TEXTURES.skyWidth, SKY_TEXTURES.skyHeight, ctx => {
       const gradient = ctx.createLinearGradient(0, 0, 0, SKY_TEXTURES.skyHeight);
-      gradient.addColorStop(0, SKY_COLOR); gradient.addColorStop(.48, '#b8ddeb');
-      gradient.addColorStop(.82, '#e6e9e4'); gradient.addColorStop(1, '#f9e8d7');
+      for (const [at, color] of SKY_GRADIENT) gradient.addColorStop(at, color);
       ctx.fillStyle = gradient; ctx.fillRect(0, 0, SKY_TEXTURES.skyWidth, SKY_TEXTURES.skyHeight);
     });
     this.background = scene.add.image(0, 0, sky).setScrollFactor(0).setDepth(-100);

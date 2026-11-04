@@ -17,6 +17,8 @@ import {heartIcon} from '../display/currency';
 import {cuisineQuotaText, heartGift, recipeHint, orderReadyText} from './economyFeedback';
 import type {AudioEngine} from '../audio/audioEngine';
 import {mountCuisineActivity} from './CuisineActivity';
+import {mountJumpRopeActivity} from './JumpRopeActivity';
+import {jumpIslandReason, jumpRopeChallenge, jumpRopeDay, jumpRopeMedals, jumpRopeRabbitReason, rememberedJumpRopeTeam} from '../simulation/jumpRope';
 import type {RecipeCompletion} from '../../cooktap-prototype/main';
 import {missionClaimXp} from '../simulation/progression';
 import {PROGRESSION} from '../config/progression';
@@ -30,7 +32,7 @@ import {PARCELS, PARCEL_IDS, extensionPrice, purchasableParcels, type ParcelId} 
 import {ISLAND} from '../config/islandGeometry';
 import {setCurrencyText} from '../display/currency';
 import {CROP_IDS, cropDuration, cropIcon, statueThumbnail} from '../display/food';
-import {COCO_WELCOME, HOST_NAME, agencyThumbnail, cocoPortrait, forestThumbnail, fromPlace, salonThumbnail, toPlace} from '../display/agency';
+import {COCO_WELCOME, HOST_NAME, agencyThumbnail, cocoPortrait, forestThumbnail, fromPlace, jumpRopeThumbnail, salonThumbnail, toPlace} from '../display/agency';
 import {atSalon, away, giftReason, picnicQuote, rabbitAwayReason} from '../simulation/care';
 import {travelling} from '../simulation/travel';
 import {BENNY, BENNY_POWER_RECHARGE, bennyInSky, bennyPowerReadyAt, bennyPowerReason} from '../simulation/benny';
@@ -49,7 +51,8 @@ import {habitatStats, habitatName, habitatEntryReason, habitatAccepts, welcomeDe
 import {MAIN_MISSIONS, DAILY_MISSIONS, DAILY_BONUS, DAILY_PICK_COUNT, type Reward} from '../config/missions';
 import {initialMissionIds, activeMainMissions, visibleMainMissions, mainCatalogueUnlocked, availableMissionRewards, mainProgress, dailyCycleStart, dailyCycleEnd, cycleIndexAt, dailyBonusReady, dailyClaimable, dailyMissionsOf, dailyProgress} from '../simulation/missions';
 import type {GameController, Snapshot} from '../application/GameController';
-import {AFFECTION_STATUE, BALANCE, CARE_KINDS, FARM_UPGRADES, PICNIC, SALON, FOREST, carePrice, isAffectionWall, MARKET, orderFarmLevel, SECOND_AFFECTION_STATUE, NURSERY, ORDERS, RARE_BIRTH_BONUS, TRAVEL, feedCost, type Destination, SPECIES, SPECIES_IDS, SHOP_SPECIES, growthDuration, type BuildingKind, type SpeciesId, type RabbitType} from '../config/balance';
+import {AFFECTION_STATUE, BALANCE, CARE_KINDS, FARM_UPGRADES, PICNIC, SALON, FOREST, JUMP_ROPE, carePrice, isAffectionWall, MARKET, orderFarmLevel, SECOND_AFFECTION_STATUE, NURSERY, ORDERS, RARE_BIRTH_BONUS, TRAVEL, feedCost, type Destination, SPECIES, SPECIES_IDS, SHOP_SPECIES, growthDuration, type BuildingKind, type SpeciesId, type RabbitType} from '../config/balance';
+import {JUMP_MEDAL_ART} from '../config/jumpIslandArt';
 import type {Command, DecorationLocation, GameState, PattesCommand, TimedStage} from '../state/types';
 import {DECORATIONS, DECORATION_IDS, FINE_GRID, ownedDecorationResalePrice, type DecorationId} from '../config/decorations';
 import {catalogDecorationPlacementReason, purchaseDecorationReason} from '../simulation/decorations';
@@ -75,10 +78,10 @@ import {guidedStep, type GuideStep} from './guidance';
 import {BUILDING_NAMES, CARE_NAMES, REFUSALS, RARITY_NAMES, busyReason, TYPE_NAMES, typeNames, recipeBook, recipePairs, buildingReason, collectionSpeciesView, collectionView, incomeWhole, moneyReason, nurseryView, occupants, oddsTexts, oddsView, placementReason, rabbitAvailability, parentBusy, releaseReason, timeLeft, type Placement, type CollectionFilter} from './models';
 
 type ShopTab = 'home' | 'recipes' | 'rabbits' | 'habitats' | 'buildings' | 'decorations';
-type View = {kind:'album'|'cozyEvents'|'decorationGroup'} | {kind: 'welcomeBaby'; birthId: string} | {kind:'levelRequirement';target:LevelAccessTarget} | {kind: 'missions'; tab: 'main' | 'daily'} | {kind: 'shop'; tab: ShopTab} | {kind: 'building' | 'rabbit' | 'moveRabbit' | 'decoration'; id: string} |
+type View = {kind:'album'|'cozyEvents'|'decorationGroup'} | {kind: 'welcomeBaby'; birthId: string} | {kind:'levelRequirement';target:LevelAccessTarget} | {kind: 'missions'; tab: 'main' | 'daily'} | {kind: 'shop'; tab: ShopTab} | {kind: 'building' | 'rabbit' | 'moveRabbit' | 'decoration'; id: string} | {kind: 'jumpIsland'} |
   {kind: 'buyRabbit' | 'species'; species: SpeciesId} | {kind:'extension';parcelId?:ParcelId} | {kind: 'cuisineRabbit'; commis?: string} | {kind: 'collection' | 'settings' | 'placement' | 'hearts' | 'recipes' | 'arrange' | 'decorationPlacement'} | null;
 /** Views drawn as a centred card over the dimmed meadow. Placement, purchase, extension and arrangement views keep the side sheet: they need the island visible. */
-const CENTER_CARD_VIEWS: readonly NonNullable<View>['kind'][] = ['album','cozyEvents','decorationGroup','rabbit', 'moveRabbit', 'welcomeBaby', 'building', 'missions', 'collection', 'recipes', 'hearts', 'species', 'levelRequirement'];
+const CENTER_CARD_VIEWS: readonly NonNullable<View>['kind'][] = ['album','cozyEvents','decorationGroup','rabbit', 'moveRabbit', 'welcomeBaby', 'building', 'jumpIsland', 'missions', 'collection', 'recipes', 'hearts', 'species', 'levelRequirement'];
 function node<K extends keyof HTMLElementTagNameMap>(tag: K, text = '', className = ''): HTMLElementTagNameMap[K] {
   const element = document.createElement(tag); setCurrencyText(element, text); decorateRabbitText(element); element.className = className; return element;
 }
@@ -194,6 +197,10 @@ export class GameUI {
   private decorationDraft: {id: string; catalogId?: DecorationId; location: DecorationLocation | null; rotation: 0 | 1;} | null = null;
   private photo = false;
   private cuisine: ReturnType<typeof mountCuisineActivity>;
+  private jumpRope: ReturnType<typeof mountJumpRopeActivity>;
+  /** The jump-rope trio being chosen (two carriers, then the athlete) and the slot whose rabbit is being picked. */
+  private jumpRopeSlots: (string | null)[] | null = null;
+  private jumpRopePick: number | null = null;
   private readonly onRabbitSheet?: (species: SpeciesId) => void;
   constructor(private controller: GameController, private scene: MeadowScene, private clock: () => number, private preferences: PreferenceStore, audio?: AudioEngine,
     activityOptions: {onlineServicesAllowed?: boolean; accountKnown?: () => boolean; onCuisineCompleted?: (result: RecipeCompletion) => void; onCuisineActive?: (active: boolean) => void; onRabbitSheet?: (species: SpeciesId) => void} = {}) {
@@ -212,6 +219,14 @@ export class GameUI {
       if (taster) this.cuisine.showAffection(reward.affectionRabbitId);
       return `+${reward.pattes} pattes · +${reward.grass} nourriture${reward.affectionGranted ? ` · +1 Affection${luckyName}` : reward.affectionAtCap ? ` · Affection maximale${luckyName}` : reward.affectionStatueRequired ? (affectionStatueCount(granted.state) === 0 ? ` · La Statue de l’Affection permet de dépasser ${AFFECTION_STATUE.cap}.` : ` · Une deuxième Statue de l’Affection permet de dépasser ${SECOND_AFFECTION_STATUE.cap}.`) : ''}${reward.heartGranted ? ' · +1 Cœur' : ''}`;
     }, quotaText: () => { const state = this.controller.getSnapshot().state; return state ? cuisineQuotaText(state, this.now()) : ''; }, onExit: () => this.render(), onActiveChange: activityOptions.onCuisineActive});
+    this.jumpRope = mountJumpRopeActivity(document.getElementById('app')!, {onFinished: (team, score) => {
+      const granted = this.controller.perform({type: 'rewardJumpRope', team: {carriers: [team.carriers[0].id, team.carriers[1].id], athlete: team.athlete.id}, score});
+      if (!granted.ok) return `Récompense non enregistrée : ${REFUSALS[granted.reason]}`;
+      const reward = granted.jumpRopeReward!, parts = [...(reward.challenge ? ['Défi du jour réussi !'] : []), ...(reward.pattes ? [`+${reward.pattes} pattes`] : []), ...(reward.hearts ? [`+${reward.hearts} Cœur${reward.hearts > 1 ? 's' : ''}`] : [])];
+      return parts.length ? parts.join(' · ') : score ? 'Partie pour le plaisir : plus de récompense aujourd’hui' : '';
+    }, quotaText: () => { const state = this.controller.getSnapshot().state; return state ? jumpRopeQuotaText(state, this.now()) : ''; },
+    best: () => this.controller.getSnapshot().state?.jumpRope?.best ?? 0, cheer: () => this.sounds.ping(), tick: () => this.sounds.tick(),
+    challengeText: () => { const state = this.controller.getSnapshot().state; return state ? jumpRopeChallengeText(state, this.now()) : ''; }, onExit: () => this.render()});
     this.moveBanner.id = 'rabbit-move-banner'; this.moveBanner.hidden = true;
     this.moveBanner.setAttribute('role', 'region'); this.moveBanner.setAttribute('aria-label', 'Déplacer un lapin');
     const moveLabel = node('span'); moveLabel.setAttribute('role', 'status'); this.moveBanner.append(moveLabel);
@@ -500,7 +515,7 @@ export class GameUI {
   open(view: NonNullable<View>, navigation: 'push' | 'root' | 'tab' | 'back' = 'push'): void {
     if (view.kind === 'settings' || this.snapshot.state && mainCatalogueUnlocked(this.snapshot.state)) this.pailleDialogue.close();
     if (this.onboardingActive && !this.onboardingViewAllowed(view)) return;
-    if (this.cuisine.active || this.pailleDialogue.element.open) return;
+    if (this.cuisine.active || this.jumpRope.active || this.pailleDialogue.element.open) return;
     if (this.dialog.open || (document.getElementById('import-dialog') as HTMLDialogElement).open) return;
     if(view.kind==='buyRabbit') {
       const state=this.controller.getSnapshot().state,target={family:'species',id:view.species,action:'purchase'} as const;
@@ -562,6 +577,7 @@ export class GameUI {
       this.pailleDialogue.invite();this.syncArrangement();this.render();return;
     }
     if (this.cuisine.active) { this.cuisine.close(); return; }
+    if (this.jumpRope.active) { this.jumpRope.close(); return; }
     if (this.dialog.open || (document.getElementById('import-dialog') as HTMLDialogElement).open) return;
     if (this.purchaseReturn) { this.cancelPurchase(); return; }
     this.scene.setRabbitPurchase(null); this.rabbitDestination = null;
@@ -578,7 +594,7 @@ export class GameUI {
   onReplacement(fresh = false): void {
     this.clearRabbitMove(); this.clearWelcome(); this.closeReception();
     this.pailleDialogue.close();
-    this.cuisine.close(false);
+    this.cuisine.close(false); this.jumpRope.close();
     this.history = []; this.scrollPositions.clear(); this.interactionPointers.clear(); this.pendingRender = false;
     this.shopHabitatSpecies=null;
     this.purchaseReturn = null; this.rabbitDestination = null; this.shopRabbitIssue = null; this.scene.setRabbitPurchase(null);
@@ -655,6 +671,7 @@ export class GameUI {
     }
     if (selection.kind === 'empty') { this.close(); return; }
     if (selection.kind === 'extension') this.open({kind: 'extension',parcelId:selection.parcelId});
+    else if (selection.kind === 'jumpIsland') this.open({kind: 'jumpIsland'});
     else if (selection.kind === 'building' || selection.kind === 'rabbit') this.open({kind: selection.kind, id: selection.id});
   }
   private render(passive = false): void {
@@ -706,6 +723,7 @@ export class GameUI {
       case 'hearts': this.renderHearts(s); break;
       case 'shop': this.renderShop(s, this.view.tab); break;
       case 'building': this.renderBuilding(s, this.view.id); break;
+      case 'jumpIsland': this.renderJumpIsland(s); break;
       case 'rabbit': this.renderRabbit(s, this.view.id); break;
       case 'moveRabbit': this.renderDestinations(s, this.view.id); break;
       case 'welcomeBaby': this.renderWelcomeDestinations(s, this.view.birthId); break;
@@ -802,6 +820,7 @@ export class GameUI {
         const price = kind === 'statue' ? heartAmount((nextAffectionStatue(s) ?? SECOND_AFFECTION_STATUE).heartPrice) : `${BALANCE.buildings[kind].price} pattes`;
         this.button(card, `Placer · ${price}`, () => this.beginPlacement(kind), buildingReason(s, kind, true)); this.content.append(card);
       }
+      this.content.append(this.jumpIslandOffer(s));
       }
     } else for (const species of SHOP_SPECIES) {
       const card = this.card(SPECIES[species].name, `${typeNames(SPECIES[species].types)} · ${RARITY_NAMES[SPECIES[species].rarity]} · affection 1 · ${rabbitIncome(1, species)} pattes / h`, species);
@@ -1225,6 +1244,66 @@ export class GameUI {
     }
   }
   /** Forêt de Brocéliande: rabbit by rabbit, the evolved drawing or the old one, for free and both ways. */
+  /** The jump-rope islet in the shop: one building, sold whole, floating left of the start island. */
+  private jumpIslandOffer(s: GameState): HTMLElement {
+    const card = this.card(JUMP_ISLAND_NAME, 'Une petite île à côté de la tienne · maximum 1'); card.dataset.jumpIslandOffer = '';
+    card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(jumpRopeThumbnail());
+    card.append(node('p', `Dès le niveau ${JUMP_ROPE.unlockLevel}, une petite île avec le kiosque flotte à gauche de la tienne. Deux de tes lapins font tourner la corde et un troisième saute : un raté et la partie s’arrête, rejoue autant que tu veux. Tes ${JUMP_ROPE.rewardedGamesPerCycle} premières parties du jour rapportent des pattes, et un cœur si tu atteins ${JUMP_ROPE.heartJumps} sauts.`, 'small'));
+    const reason = jumpIslandReason(s), text = reason === 'LEVEL_REQUIRED' ? `Niveau ${JUMP_ROPE.unlockLevel} requis` : reason === 'BUILDING_LIMIT' ? 'Tu as déjà l’île : touche-la dans la prairie.' : reason ? REFUSALS[reason] : null;
+    this.button(card, `Acheter · ${JUMP_ROPE.price} pattes`, () => this.execute({type: 'buyJumpIsland'}, 'L’île de la corde à sauter flotte à côté de la tienne !', () => { this.open({kind: 'jumpIsland'}, 'root'); }), text);
+    return card;
+  }
+  /** The islet's menu: today's rewards, the record, the trio (two carriers, one athlete), then the game. */
+  private renderJumpIsland(s: GameState): void {
+    if (!s.jumpIsland) { this.close(); return; }
+    this.title.textContent = JUMP_ISLAND_NAME; this.menuPortrait(jumpRopeThumbnail());
+    const now = this.now(), available = (id: string | null) => !!id && !jumpRopeRabbitReason(s, id);
+    this.content.append(node('p', 'Deux lapins font tourner la corde, ton athlète saute. Touche l’écran quand la corde passe sous lui : elle tourne de plus en plus vite. Un raté et la partie s’arrête. Rejoue autant que tu veux !', 'small'));
+    this.content.append(node('p', jumpRopeQuotaText(s, now), 'badge'));
+    this.content.append(node('p', jumpRopeChallengeText(s, now), 'badge jump-rope-challenge-badge'));
+    if (s.jumpRope?.best) this.content.append(node('p', `Ton record : ${s.jumpRope.best} sauts`, 'small'));
+    const medals = jumpRopeMedals(s), next = JUMP_ROPE.medals.find(step => !medals.includes(step));
+    if (medals.length) {
+      const row = node('div', '', 'jump-rope-medals');
+      for (const step of medals) { const img = document.createElement('img'); img.src = JUMP_MEDAL_ART.url(step); img.alt = `Médaille ${step} sauts`; img.dataset.jumpRopeMedal = String(step); row.append(img); }
+      this.content.append(row);
+    }
+    this.content.append(node('p', `${medals.length ? `Médailles sur le kiosque : ${medals.join(', ')} sauts.` : 'Pas encore de médaille sur le kiosque.'}${next ? ` Prochaine médaille à ${next} sauts.` : ' Toutes les médailles sont gagnées !'}`, 'small'));
+    // The trio: the one being chosen, else the last one played, else the three most affectionate rabbits at home.
+    const free = [...s.rabbits].filter(r => available(r.id)).sort((a, b) => b.affection - a.affection).map(r => r.id);
+    let slots = this.jumpRopeSlots ?? (() => { const t = rememberedJumpRopeTeam(s); return t ? [t.carriers[0], t.carriers[1], t.athlete] : [free[1] ?? null, free[2] ?? null, free[0] ?? null]; })();
+    slots = slots.map(id => available(id) ? id : null);
+    for (let i = 0; i < 3; i++) if (!slots[i]) slots[i] = free.find(id => !slots.includes(id)) ?? null;
+    this.jumpRopeSlots = slots;
+    const nameOf = (r: Rabbit) => r.name || SPECIES[r.species].name;
+    if (this.jumpRopePick !== null) {
+      const slot = this.jumpRopePick, role = slot === 2 ? 'l’athlète, qui saute' : 'un porteur, qui fait tourner la corde';
+      this.content.append(node('p', `Choisis ${role}.`, 'small'));
+      const list = node('div', '', 'agency-travellers'); this.content.append(list);
+      const reasonOf = (r: Rabbit) => { const reason = jumpRopeRabbitReason(s, r.id); return reason ? REFUSALS[reason] : null; };
+      for (const r of [...s.rabbits].sort((a, b) => Number(!!reasonOf(a)) - Number(!!reasonOf(b)) || b.affection - a.affection)) {
+        const card = this.card(nameOf(r), `${r.name ? SPECIES[r.species].name + ' · ' : ''}affection ${r.affection}`, r); card.dataset.jumpRopeRabbit = r.id; card.classList.add('compact-list-card');
+        const current = slots.indexOf(r.id);
+        this.button(card, current === slot ? 'Déjà à cette place' : 'Choisir', () => {
+          const next = [...this.jumpRopeSlots!]; if (current >= 0) next[current] = next[slot]; next[slot] = r.id;
+          this.jumpRopeSlots = next; this.jumpRopePick = null; this.render();
+        }, reasonOf(r) ?? (current === slot ? 'Il a déjà cette place.' : null)); list.append(card);
+      }
+      this.button(this.content, 'Retour', () => { this.jumpRopePick = null; this.render(); }, null, true);
+      return;
+    }
+    const team = node('div', '', 'agency-travellers jump-rope-team'); this.content.append(team);
+    slots.forEach((id, slot) => {
+      const r = s.rabbits.find(r => r.id === id), role = slot === 2 ? 'Athlète' : 'Porteur';
+      const card = r ? this.card(`${role} : ${nameOf(r)}`, slot === 2 ? 'Il saute' : 'Il fait tourner la corde', r) : this.card(role, 'Personne pour l’instant');
+      card.dataset.jumpRopeSlot = String(slot); card.classList.add('compact-list-card');
+      this.button(card, r ? 'Changer' : 'Choisir', () => { this.jumpRopePick = slot; this.render(); }, null, true); team.append(card);
+    });
+    const ready = slots.every(Boolean), rabbits = slots.map(id => s.rabbits.find(r => r.id === id)!);
+    const toActivity = (r: Rabbit) => ({id: r.id, species: r.species, name: r.name, affection: r.affection, classicLook: r.classicLook});
+    this.button(this.content, 'Jouer', () => this.jumpRope.open({carriers: [toActivity(rabbits[0]), toActivity(rabbits[1])], athlete: toActivity(rabbits[2])}),
+      ready ? null : 'Il te faut trois lapins à la maison : deux porteurs et un athlète.').dataset.jumpRopePlay = '';
+  }
   private renderForest(s: GameState): void {
     const names = EVOLVED_ART.map(art => SPECIES[art.id].name).join(', ');
     this.content.append(node('p', 'Dans la forêt, change le dessin des lapins déjà évolués d’affection 30 ou plus : le nouveau ou l’ancien. C’est gratuit, et tu peux changer d’avis quand tu veux.', 'small'));
@@ -2173,6 +2252,7 @@ export class GameUI {
           }
           else if (c.kind === 'level') card.append(node('p', 'Prends soin de tes lapins et explore la prairie.'));
           else if (c.kind === 'nightOrder') shortcut(card, 'farm');
+          else if (c.kind === 'jumpRopeGame') this.button(card, 'Aller sur ta petite île', () => this.open({kind: 'jumpIsland'}), null, true);
           else if (c.kind === 'habitatLevel') shortcut(card, 'enclosure');
           else if (c.kind === 'extensions') shortcut(card, 'extension');
           else if (c.kind === 'ordinaryRares') shortcut(card, 'collection');
@@ -2496,5 +2576,19 @@ export class GameUI {
     if (step.done) this.button(this.tutorial, 'Terminer le guidage', () => { this.preferences.set({tutorialDone: true}); this.renderPreferences(); this.renderTutorial(); }, null, true);
     this.button(this.tutorial, 'Masquer', () => { this.preferences.set({tutorial: false}); this.renderPreferences(); this.renderTutorial(); }, null, true);
   }
-  dispose(): void { this.photoControls.dispose(); this.clearRabbitMove(); this.moveBanner.remove(); this.clearWelcome(); this.welcomeBanner.remove(); this.closeReception(); this.accountReminder.dispose(); document.getElementById('onboarding-skip')?.remove(); this.pailleDialogue.dispose(); this.cuisine.dispose(); this.confirmationGeneration++; if (this.dialog.open) this.dialog.close(); this.dialog.replaceChildren(); this.unsubscribe(); this.abort.abort(); cancelAnimationFrame(this.frame); clearTimeout(this.toastTimer); this.sounds.dispose(); }
+  dispose(): void { this.photoControls.dispose(); this.clearRabbitMove(); this.moveBanner.remove(); this.clearWelcome(); this.welcomeBanner.remove(); this.closeReception(); this.accountReminder.dispose(); document.getElementById('onboarding-skip')?.remove(); this.pailleDialogue.dispose(); this.cuisine.dispose(); this.jumpRope.dispose(); this.confirmationGeneration++; if (this.dialog.open) this.dialog.close(); this.dialog.replaceChildren(); this.unsubscribe(); this.abort.abort(); cancelAnimationFrame(this.frame); clearTimeout(this.toastTimer); this.sounds.dispose(); }
+}
+
+const JUMP_ISLAND_NAME = 'Île de la corde à sauter';
+/** The challenge of the day at the jump-rope islet, or that it is won. */
+function jumpRopeChallengeText(s: GameState, now: number): string {
+  if (!jumpRopeDay(s, now).challengeLeft) return 'Défi du jour réussi : reviens demain pour le suivant.';
+  const c = jumpRopeChallenge(s, now);
+  return `Défi du jour : ${c.jumps} sauts${c.type ? ` avec un lapin ${TYPE_NAMES[c.type]} comme athlète` : ''} · +${JUMP_ROPE.challenge.hearts} cœurs`;
+}
+/** Today's rewarded games at the jump-rope islet, and its Heart. */
+function jumpRopeQuotaText(s: GameState, now: number): string {
+  const day = jumpRopeDay(s, now), games = day.rewardedLeft;
+  const rewards = games ? `Encore ${games} partie${games > 1 ? 's' : ''} récompensée${games > 1 ? 's' : ''} aujourd’hui` : 'Parties récompensées finies pour aujourd’hui : reviens demain';
+  return `${rewards}${day.heartLeft ? ` · un cœur à ${JUMP_ROPE.heartJumps} sauts` : ''}`;
 }

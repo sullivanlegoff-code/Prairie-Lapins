@@ -18,11 +18,12 @@ import {affectionCap, isUltimate, nextAffectionStatue, playerLevel, statueReason
 import {agencyBuilding, travelling} from './travel';
 import {atSalon, giftAffectionReason, giftReason, picnicQuote, salonBuilding} from './care';
 import {classicLookReason} from './forest';
-import {recordEvolutionChallenge} from './evolution';
+import {recordEvolutionChallenge, recordJumpRopeScore} from './evolution';
 import {canEvolve, hasEvolvedArt} from '../config/evolvedArt';
 import {evolutionChallengesComplete} from '../config/evolutionChallenges';
+import {jumpIslandReason, jumpRopeReward, jumpRopeTeamReason} from './jumpRope';
 import {dailyBonusReady, dailyClaimable, dailyCycleStart, dailyMissionsOf, recordMissionAction} from './missions';
-import {farmLimit, farmDuration, FARM_UPGRADES, orderFarmLevel, BALANCE, HEARTS, HOUR, TRAVEL, SALON, FOREST, CARE_KINDS, carePrice, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
+import {farmLimit, farmDuration, FARM_UPGRADES, orderFarmLevel, BALANCE, HEARTS, HOUR, TRAVEL, SALON, FOREST, JUMP_ROPE, CARE_KINDS, carePrice, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
 import {emptyBuilding} from '../state/initial';
 import {babyInNursery, findNurseryBaby, firstFreeNurserySlot, nurseryBuilding, nurseryUnlockQuote, settleNestTransfers} from './nursery';
 import type {ActionResult, Building, Command, GameState, PattesCommand, Rabbit, Refusal, ProgressionGain} from '../state/types';
@@ -98,6 +99,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
   let value: string | number | undefined;
   let progressionGain: ProgressionGain | undefined;
   let cuisineReward: import('../state/types').CuisineReward | undefined;
+  let jumpRopeResult: import('./jumpRope').JumpRopeReward | undefined;
   const gainXp = (amount: number) => {
     const result = applyProgressionGain(s, amount);
     requireRule(result.ok, result.ok ? 'INVALID_CHOICE' : result.reason);
@@ -255,6 +257,26 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         const cycle = s.missions.daily.cycleIndex, gifts = {...s.affectionGifts};
         for (const r of quote.winners) { r.affection++; gifts[r.id] = cycle; }
         s.affectionGifts = gifts; s.picnicCycle = cycle; gainXp(quote.xp); for (const guest of quote.guests) recordEvolutionChallenge(s, guest.id, 'piquenique'); value = quote.winners.length; break;
+      }
+      case 'rewardJumpRope': {
+        requireRule(s.jumpIsland, 'MISSING_BUILDING');
+        requireRule(Number.isSafeInteger(command.score) && command.score >= 0 && command.score <= JUMP_ROPE.maxScore, 'INVALID_CHOICE');
+        requireRule(command.team && typeof command.team === 'object', 'INVALID_CHOICE');
+        const away = jumpRopeTeamReason(s, command.team); requireRule(!away, away ?? 'INVALID_CHOICE');
+        const team = {carriers: [command.team.carriers[0], command.team.carriers[1]] as [string, string], athlete: command.team.athlete};
+        const paid = jumpRopeReward(s, command.score, time, team.athlete), cycle = s.missions.daily.cycleIndex;
+        const day = s.jumpRope?.cycle === cycle ? s.jumpRope : {cycle, rewarded: 0, best: s.jumpRope?.best ?? 0};
+        credit('pattes', paid.pattes); credit('hearts', paid.hearts);
+        const heart = day.heart || paid.hearts - (paid.challenge ? JUMP_ROPE.challenge.hearts : 0) > 0, challenge = day.challenge || paid.challenge;
+        const athleteBest = {...s.jumpRope?.athleteBest, [team.athlete]: Math.max(s.jumpRope?.athleteBest?.[team.athlete] ?? 0, command.score)};
+        s.jumpRope = {cycle, rewarded: day.rewarded + (paid.rewarded ? 1 : 0), ...(heart ? {heart: true as const} : {}), ...(challenge ? {challenge: true as const} : {}), best: Math.max(s.jumpRope?.best ?? 0, command.score), team, athleteBest};
+        // The athlete's score counts for its « corde » evolution challenges (Roukette, Dadi, Dinono, the legendaries).
+        recordJumpRopeScore(s, team.athlete, command.score);
+        jumpRopeResult = paid; value = paid.pattes; break;
+      }
+      case 'buyJumpIsland': {
+        const reason = jumpIslandReason(s); requireRule(!reason || reason === 'NOT_ENOUGH_PATTES', reason ?? 'INVALID_CHOICE');
+        pay(JUMP_ROPE.price); s.jumpIsland = true; break;
       }
       case 'exchangeForHeart': {
         requireRule(command.resource === 'pattes' || command.resource === 'grass', 'INVALID_CHOICE');
@@ -581,7 +603,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
     requireRule(recordMissionAction(s, command.type === 'buyDecoration' && command.location ? 'placeDecoration' : command.type, ['feed', 'breed', 'welcome'].includes(command.type) || command.type === 'placeDecoration' || (command.type === 'buyDecoration' && !!command.location) ? 1 : typeof value === 'number' ? value : 0, command.type !== 'placeDecoration' || command.location.kind === 'outside'), 'RESOURCE_LIMIT');
     // In particular, a welcome frees the nursery at this action's timestamp.
     advanceCozyEvent(s,command,time);
-    return {ok: true, state: advance(s, time), ...(value === undefined ? {} : {value}), ...(progressionGain ? {progressionGain} : {}), ...(cuisineReward ? {cuisineReward} : {})};
+    return {ok: true, state: advance(s, time), ...(value === undefined ? {} : {value}), ...(progressionGain ? {progressionGain} : {}), ...(cuisineReward ? {cuisineReward} : {}), ...(jumpRopeResult ? {jumpRopeReward: jumpRopeResult} : {})};
   } catch (error) {
     if (error instanceof Quoted) return {ok: true, state, value: error.price};
     if (error instanceof Denied) return {ok: false, state, reason: error.reason};

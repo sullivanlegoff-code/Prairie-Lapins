@@ -29,6 +29,8 @@ function advanced() {
   }
   return s;
 }
+// Without the jump-rope islet, its discovery mission stays hidden (it appears once the islet is bought).
+const withoutIsland = NEW_MAIN_MISSION_IDS.filter(id => id !== 'first-jump-rope');
 describe('economy B durable goals', () => {
   it('loads an existing game without awarding resources or XP, then claims each durable reward once in the full catalogue', () => {
     const old = advanced(); delete old.missions.nightOrderStarted;
@@ -38,7 +40,7 @@ describe('economy B durable goals', () => {
     expect([s.pattes,s.grass,s.hearts,s.progression]).toEqual([old.pattes,old.grass,old.hearts,old.progression]);
     expect(s.missions.nightOrderStarted).toBe(true);
     for (const [index, id] of DURABLE_MISSION_IDS.entries()) {
-      expect(activeMainMissions(s)).toEqual([...DURABLE_MISSION_IDS.slice(index), ...NEW_MAIN_MISSION_IDS]); expect(s.missions.completed).toContain(id);
+      expect(activeMainMissions(s)).toEqual([...DURABLE_MISSION_IDS.slice(index), ...withoutIsland]); expect(s.missions.completed).toContain(id);
       expect(missionClaimXp('main', id)).toBe(40);
       const before=s, reward=MAIN_MISSIONS[id].reward;
       const claimed=act(s,{type:'claimMainMission',id},0);expect(claimed.ok).toBe(true);s=claimed.state;
@@ -47,7 +49,7 @@ describe('economy B durable goals', () => {
       expect(act(s,{type:'claimMainMission',id},0)).toMatchObject({ok:false,reason:'ALREADY_CLAIMED'});
       const reloaded=decodeGame(encodeGame(s));if(!reloaded.ok)throw Error(reloaded.reason);s=reloaded.state;
     }
-    expect(activeMainMissions(s)).toEqual(NEW_MAIN_MISSION_IDS);
+    expect(activeMainMissions(s)).toEqual(withoutIsland);
   });
   it('checks every condition and counts all twenty ordinary rares', () => {
     const s=advanced();
@@ -56,7 +58,7 @@ describe('economy B durable goals', () => {
     expect(mainProgress(s,'all-ordinary-rares').target).toBe(20);
     s.discovered=s.discovered.filter(id=>id!=='bouee');expect(mainProgress(s,'all-ordinary-rares').value).toBe(19);
     expect(GUARANTEE_SPECIES).toHaveLength(20);
-    s.missions.claimed=[...SOLO_INITIAL_MISSION_IDS];expect(activeMainMissions(s)).toEqual([...BRANCH_MISSION_IDS,...DURABLE_MISSION_IDS,...NEW_MAIN_MISSION_IDS]);
+    s.missions.claimed=[...SOLO_INITIAL_MISSION_IDS];expect(activeMainMissions(s)).toEqual([...BRANCH_MISSION_IDS,...DURABLE_MISSION_IDS,...withoutIsland]);
     const claimed=act(s,{type:'claimMainMission',id:'level-fifteen'},0);expect(claimed.ok).toBe(true);
     expect(claimed.state.hearts-s.hearts).toBe(5);expect(claimed.state.progression.totalXp-s.progression.totalXp).toBe(40);
     expect(act(claimed.state,{type:'claimMainMission',id:'level-fifteen'},0)).toMatchObject({ok:false,reason:'ALREADY_CLAIMED'});

@@ -28,7 +28,7 @@ export type LabAction =
   | {type: 'affection'; rabbitId?: string; value: number}
   | {type: 'completeEvolutionChallenges'; rabbitId: string}
   | {type: 'evolveEligibleRabbits'}
-  | {type: 'build'; kind: BuildingKind; habitatType?: HabitatType}
+  | {type: 'build'; kind: BuildingKind | 'jumpIsland'; habitatType?: HabitatType}
   | {type: 'buildingLevel'; id: string; level: number}
   | {type: 'nursery'; capacity: NurseryCapacity}
   | {type: 'extensions' | 'mainMissions' | 'dailyMissions' | 'dailyCycle' | 'coco' | 'heartGift' | 'market' | 'decorations'};
@@ -117,7 +117,7 @@ export function labAction(state: GameState, action: LabAction): GameState {
         rabbit.evolution = {...rabbit.evolution, done: true}; delete rabbit.classicLook;
       }
       break;
-    case 'build': build(s, action.kind, action.habitatType); break;
+    case 'build': if (action.kind === 'jumpIsland') s.jumpIsland = true; else build(s, action.kind, action.habitatType); break;
     case 'buildingLevel': {
       const b = s.buildings.find(b => b.id === action.id);
       if (!b || !['farm', 'agency', 'enclosure'].includes(b.kind)) throw new Error('Choisis une ferme, une agence ou un habitat.');
@@ -181,7 +181,7 @@ export function completeLaboratory(now: number): GameState {
     const recipe = i === 0 ? 'foin' : 'banane'; const crop = ORDERS[recipe];
     b.order = {recipe, startedAt: i === 0 ? now - crop.duration : now, endsAt: i === 0 ? now : now + crop.duration, grass: crop.grass, duration: crop.duration};
   }
-  build(s, 'kitchen'); build(s, 'statue'); build(s, 'statue'); build(s, 'agency').agencyLevel = 3; build(s, 'salon'); build(s, 'forest');
+  build(s, 'kitchen'); build(s, 'statue'); build(s, 'statue'); build(s, 'agency').agencyLevel = 3; build(s, 'salon'); build(s, 'forest'); s.jumpIsland = true;
   s.travel = {welcomed: true, trips: s.rabbits.slice(2, 4).map((r, i) => ({rabbitId: r.id, destination: i === 0 ? 'Paris' : 'Vannes', startedAt: i === 0 ? now - 3 * HOUR : now, endsAt: i === 0 ? now : now + 3 * HOUR, hearts: 1, grass: 75}))};
   const birth = () => ({id: `birth-${s.nextId++}`, species: 'paille' as const, guaranteed: false, reservedDiscovery: false});
   s.buildings.find(b => b.kind === 'nursery')!.nursery = {capacity: 4, babies: [{slot: 0, birth: birth(), startedAt: now - growthDuration('paille'), readyAt: now}]};

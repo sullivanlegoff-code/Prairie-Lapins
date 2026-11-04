@@ -15,7 +15,7 @@ import {type HabitatType, HABITAT_TYPES, HABITAT_LEVELS, habitatLevel} from '../
 import {MAIN_MISSION_IDS, DAILY_MISSION_IDS, DAILY_MISSIONS, DAILY_PICK_COUNT} from '../config/missions';
 import {cycleIndexAt} from '../simulation/missions';
 import {z} from 'zod';
-import {BALANCE, BUILDING_KINDS, CARE_KINDS, SALON, LEGACY_BREEDING_DURATION, MARKET, CUISINE_FULL_REWARDS_PER_CYCLE, HOUR, LEGACY_ORDER_CROPS, TRAVEL, tripHearts, NURSERY, ORDERS, type OrderId, SHOP_SPECIES, SPECIES, SPECIES_IDS, GUARANTEE_SPECIES, growthDuration, orderFarmLevel, type SpeciesId} from '../config/balance';
+import {BALANCE, BUILDING_KINDS, CARE_KINDS, SALON, JUMP_ROPE, LEGACY_BREEDING_DURATION, MARKET, CUISINE_FULL_REWARDS_PER_CYCLE, HOUR, LEGACY_ORDER_CROPS, TRAVEL, tripHearts, NURSERY, ORDERS, type OrderId, SHOP_SPECIES, SPECIES, SPECIES_IDS, GUARANTEE_SPECIES, growthDuration, orderFarmLevel, type SpeciesId} from '../config/balance';
 import type {GameState} from '../state/types';
 import {DECORATION_IDS, RETIRED_DECORATION_IDS, MAX_DECORATIONS} from '../config/decorations';
 import {decorationPlacementReason} from '../simulation/decorations';
@@ -24,7 +24,7 @@ import {EVOLUTION_CHALLENGES, EVOLUTION_CHALLENGE_IDS, evolutionChallengeTarget,
 import {EVOLUTION_AFFECTION, hasEvolvedArt} from '../config/evolvedArt';
 
 /**
- * The current format is v24 (larger enclosures: an enclosure may keep its former footprint, see `migrateV23`), after v23 (affection up to 50, a second Statue de l'Affection, the Salon de soins and the picnic, a lapin ultime's taken-off crown, the Forêt de Brocéliande and a rabbit's old drawing put back, all optional; nothing to convert), after v22 (Benny's power and sky mode, optional), v21 (friendships and memories), v20 (catalogue conversion) and v19 (farm and agency levels, concurrent trips, Heart receipts), migrated through v18 and v17 from v16 (economy migration). Version 16 was the catalogue boundary of the development saves: the species Terre, Mottelin, Géant and
+ * The current format is v24 (larger enclosures: an enclosure may keep its former footprint, see `migrateV23`), after v23 (affection up to 50, a second Statue de l'Affection, the Salon de soins and the picnic, a lapin ultime's taken-off crown, the Forêt de Brocéliande and a rabbit's old drawing put back, the Terrain de corde à sauter, all optional; nothing to convert), after v22 (Benny's power and sky mode, optional), v21 (friendships and memories), v20 (catalogue conversion) and v19 (farm and agency levels, concurrent trips, Heart receipts), migrated through v18 and v17 from v16 (economy migration). Version 16 was the catalogue boundary of the development saves: the species Terre, Mottelin, Géant and
  * Brumelin and the Terre habitat were removed, and saves before that catalogue boundary are not converted. Versions 1 to 15 are refused as incompatible
  * (the controller then starts a new game); they are never read, migrated or restored.
  */
@@ -121,6 +121,11 @@ const current = z.object({
   care: z.object({rabbitId: identity, care: z.enum(CARE_KINDS as [typeof CARE_KINDS[number], ...typeof CARE_KINDS]), startedAt: timestamp, endsAt: timestamp}).strict().optional(),
   affectionGifts: z.record(identity, integer).optional(),
   picnicCycle: integer.optional(),
+  // The Terrain de corde à sauter (v23, optional): the last rewarded cycle, its rewarded games and Heart, and the record.
+  jumpRope: z.object({cycle: integer, rewarded: integer.max(JUMP_ROPE.rewardedGamesPerCycle), heart: z.literal(true).optional(), best: integer.max(JUMP_ROPE.maxScore),
+    team: z.object({carriers: z.tuple([identity, identity]), athlete: identity}).strict().optional(), challenge: z.literal(true).optional(),
+    athleteBest: z.record(identity, integer.max(JUMP_ROPE.maxScore)).optional()}).strict().optional(),
+  jumpIsland: z.literal(true).optional(),
   missions, decorations: z.array(decoration).max(MAX_DECORATIONS),
   rewardedDecorationModels: z.array(z.enum(DECORATION_IDS)).max(DECORATION_IDS.length).refine(ids => new Set(ids).size === ids.length).optional(),
   acquiredParcels: z.array(z.enum(PARCEL_IDS)).min(1).max(9),
@@ -214,7 +219,7 @@ const schema = current.superRefine((s, context) => {
       || c.startedAt > s.lastSimulatedAt || s.affectionGifts?.[c.rabbitId] === undefined || s.travel?.trips.some(t => t.rabbitId === c.rabbitId)
       || s.buildings.some(b => b.breeding?.parents.includes(c.rabbitId))) issue('Care');
   }
-  if (Object.values(s.affectionGifts ?? {}).some(cycle => cycle > d.cycleIndex) || (s.picnicCycle ?? 0) > d.cycleIndex) issue('Future gift cycle');
+  if (Object.values(s.affectionGifts ?? {}).some(cycle => cycle > d.cycleIndex) || (s.picnicCycle ?? 0) > d.cycleIndex || (s.jumpRope?.cycle ?? 0) > d.cycleIndex) issue('Future gift cycle');
   if (new Set(s.discovered).size !== s.discovered.length) issue('Duplicate discoveries');
   // Only one Benny per game, owned or on her way.
   if ([...s.rabbits.map(r => r.species), ...s.buildings.flatMap(b => [b.breeding?.birth.species, ...(b.nursery?.babies ?? []).map(baby => baby.birth.species)])]
@@ -379,6 +384,7 @@ export function decodeGame(json: string): DecodeResult {
       !RETIRED_DECORATION_IDS.some(id => id === d.catalogId));
   }
   migrateRetiredSpecies(raw);
+  moveKioskToIsland(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 16) raw = migrateV16(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 17) raw = migrateV17(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 18) raw = migrateV18(raw);
@@ -400,11 +406,23 @@ export function decodeGame(json: string): DecodeResult {
   for (const id of Object.keys(state.cuisine.affectionCycles))
     if (!rabbitIds.has(id)) delete state.cuisine.affectionCycles[id];
   for (const id of Object.keys(state.affectionGifts ?? {})) if (!rabbitIds.has(id)) delete state.affectionGifts![id];
+  for (const id of Object.keys(state.jumpRope?.athleteBest ?? {})) if (!rabbitIds.has(id)) delete state.jumpRope!.athleteBest![id];
   // Enclosures that still keep their former size grow wherever there is room (never a reason to refuse the save).
   growFormerEnclosures(state);
   establishHistoricalLevelRights(state);
   updateMissions(state, state.lastSimulatedAt);
   return {ok: true, state};
+}
+/**
+ * The jump-rope kiosk was first a 1 500-pattes building on the land grid (never published, only on test saves). It now stands
+ * on its own islet: a save holding the old kiosk gets the islet for free (nothing lost, the record and the day are kept) and
+ * the kiosk leaves the grid, freeing its cells.
+ */
+function moveKioskToIsland(raw: unknown): void {
+  if (!raw || typeof raw !== 'object' || !('buildings' in raw) || !Array.isArray(raw.buildings)) return;
+  const kept = raw.buildings.filter(b => !b || typeof b !== 'object' || (b as {kind?: unknown}).kind !== 'jumprope');
+  if (kept.length === raw.buildings.length) return;
+  raw.buildings = kept; (raw as {jumpIsland?: true}).jumpIsland = true;
 }
 export function encodeGame(state: GameState, presentationId?: string): string {
   const parsed = schema.parse({...state, ...(presentationId ? {presentationId} : {})});

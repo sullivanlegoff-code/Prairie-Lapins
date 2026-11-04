@@ -80,9 +80,9 @@ export function mountLabPanel(host: HTMLElement, controller: GameController,
   button(bonds, 'Appliquer l’affection', 'set-affection', () => perform({type: 'affection', rabbitId: rabbit.value || 'absent', value: Number(value.value)}, 'Affection du lapin fixée.'));
   for (const value of [2, 10, 15, 20, 30, 50]) button(bonds, `Tous les lapins à ${value}`, `affection-all-${value}`, () => perform({type: 'affection', value}, `Tous tes lapins ont une affection de ${value}.`));
   const buildings = section('Bâtiments et île', 'buildings');
-  const kinds: [string, string][] = [['farm', 'Ferme'], ['kitchen', 'Cuisine'], ['agency', 'Agence de voyage'], ['salon', 'Salon de soins'], ['forest', 'Forêt de Brocéliande'], ['statue', 'Statue de l’Affection'], ['nest', 'Nid'], ['nursery', 'Nurserie'], ...HABITAT_TYPES.map(t => [`habitat:${t}`, HABITATS[t].name] as [string, string])];
+  const kinds: [string, string][] = [['farm', 'Ferme'], ['kitchen', 'Cuisine'], ['agency', 'Agence de voyage'], ['salon', 'Salon de soins'], ['forest', 'Forêt de Brocéliande'], ['jumpIsland', 'Île de la corde à sauter'], ['statue', 'Statue de l’Affection'], ['nest', 'Nid'], ['nursery', 'Nurserie'], ...HABITAT_TYPES.map(t => [`habitat:${t}`, HABITATS[t].name] as [string, string])];
   const kind = select(buildings, 'Bâtiment à construire', 'build-kind', kinds);
-  button(buildings, 'Construire gratuitement', 'build', () => { const [k, t] = kind.value.split(':'); perform({type: 'build', kind: k === 'habitat' ? 'enclosure' : k as BuildingKind, ...(t ? {habitatType: t as typeof HABITAT_TYPES[number]} : {})}, 'Construction terminée.'); });
+  button(buildings, 'Construire gratuitement', 'build', () => { const [k, t] = kind.value.split(':'); perform({type: 'build', kind: k === 'habitat' ? 'enclosure' : k as BuildingKind | 'jumpIsland', ...(t ? {habitatType: t as typeof HABITAT_TYPES[number]} : {})}, 'Construction terminée.'); });
   const building = select(buildings, 'Bâtiment à régler', 'building-id', []), buildingLevel = select(buildings, 'Niveau du bâtiment', 'building-level', range(3));
   const refreshLevel = () => setOptions(buildingLevel, range(3));
   building.onchange = refreshLevel;
