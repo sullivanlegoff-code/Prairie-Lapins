@@ -587,6 +587,14 @@ export class MeadowScene extends Phaser.Scene {
       this.tweens.add({targets: heart, alpha: 0, y: heart.y - 50, delay: 350 + i * 180, duration: 1200, ease: 'Sine.easeIn', onStart: () => heart.setVisible(true), onComplete: () => heart.destroy()});
     }
   }
+  /** The show button of a legendary's sheet: the camera comes to this rabbit, which plays that show (false when it cannot now). */
+  playLegendaryAct(id: string, act: LegendaryAct): boolean {
+    const rabbit = this.rabbitViews.find(r => r.id === id); if (!rabbit?.legendary) return false;
+    this.view.x = rabbit.object.x; this.view.y = rabbit.object.y - 20; this.view.clamp(); this.applyCamera();
+    // The surf slides the body: never in reduced motion nor out of a rest or a walk (a nest, a kiss); the splash stays on the spot.
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches || !rabbit.motion || !['rest', 'walk'].includes(rabbit.motion.mode);
+    return rabbit.legendary.request(act === 'surf' && still ? 'splash' : act);
+  }
   reactToFeed(id: string): void {
     const rabbit = this.rabbitViews.find(r => r.id === id); if (!rabbit) return;
     this.life.interrupt(id);
@@ -1212,7 +1220,8 @@ export class MeadowScene extends Phaser.Scene {
     if (!closest) closest = rabbitHit(screen, grounded.filter(r => r.sprite && r.art).map(r => ({
       id: r.id, point: this.view.screen(this.bodyPoint(r, 0, -7)), depth: r.object.y, radius: 22
     })));
-    if (closest) { this.rabbitViews.find(r => r.id === closest!.id)?.legendary?.tap(); this.rabbitViews.find(r => r.id === closest!.id)?.benny?.tap(); this.select({kind: 'rabbit', id: closest.id}); return; }
+    // A touched legendary only opens its sheet, whose show button plays the show (owner, 4 November 2026); Benny keeps her touch.
+    if (closest) { this.rabbitViews.find(r => r.id === closest!.id)?.benny?.tap(); this.select({kind: 'rabbit', id: closest.id}); return; }
     const decorationId = this.decorationAt(screen);
     if (decorationId) { this.select({kind: 'decoration', id: decorationId}); return; }
 

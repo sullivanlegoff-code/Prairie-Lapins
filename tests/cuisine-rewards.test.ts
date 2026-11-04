@@ -5,6 +5,7 @@ import {MISSION_CYCLE_DURATION} from '../src/config/missions';
 import {dailyCycleStart} from '../src/simulation/missions';
 import type {Command,GameState} from '../src/state/types';
 import {withKitchen} from './kitchen-fixture';
+import {evolveAbove30} from './evolved';
 import {emptyBuilding} from '../src/state/initial';
 
 const TOAST=CUISINE_REWARDS['avocado-toast'];
@@ -86,6 +87,9 @@ describe('Cuisine reward command',()=>{
     expect(reward(wall)).toMatchObject({cuisineReward:{affectionGranted:true,affectionStatueRequired:false}});
     // Past 30, only a second statue opens the way (2 November 2026).
     wall.rabbits[0].affection=30;
+    // Since 4 November 2026 the rabbit must evolve first: the reward says so instead of asking for the statue.
+    expect(reward(wall)).toMatchObject({cuisineReward:{affectionGranted:false,affectionStatueRequired:false,affectionEvolutionRequired:true}});
+    evolveAbove30(wall.rabbits[0]);
     expect(reward(wall)).toMatchObject({cuisineReward:{affectionGranted:false,affectionStatueRequired:true}});
     wall.buildings.push(emptyBuilding(`building-${wall.nextId++}`,'statue',34,30));
     const opened=reward(wall);expect(opened).toMatchObject({cuisineReward:{affectionGranted:true,affectionStatueRequired:false}});expect(opened.state.rabbits[0].affection).toBe(31);

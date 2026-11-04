@@ -85,15 +85,15 @@
           "claimMainMission": 24
         },
         "spendPerDay": {
-          "startCare:massage": 2460,
+          "startCare:massage": 2235,
           "picnic": 900,
           "startOrder": 1078,
           "expand": 1800,
           "startCare:bath": 80,
-          "exchange:pattes": 1994,
+          "exchange:pattes": 2209,
           "buyBuilding:enclosure": 20
         },
-        "netPerDay": -9
+        "netPerDay": 1
       },
       "hearts": {
         "gainPerDay": {
@@ -117,56 +117,57 @@
           "claimMainMission": 12
         },
         "spendPerDay": {
-          "feed": 2864
+          "feed": 2786
         },
-        "netPerDay": -294
+        "netPerDay": -215
       },
       "xp": {
         "gainPerDay": {
           "claimDailyMission": 90,
           "claimCare": 128,
-          "welcome": 90,
+          "welcome": 88,
           "picnic": 30,
-          "feed": 64,
+          "feed": 70,
           "claimMainMission": 14,
-          "breed": 14,
+          "breed": 13,
           "buyBuilding:enclosure": 3
         },
         "spendPerDay": {},
-        "netPerDay": 433
+        "netPerDay": 436
       },
-      "counterPattesPerDay": 1994,
+      "counterPattesPerDay": 2209,
       "stock": {
         "heartsAverage": 42,
-        "heartsEnd": 87,
-        "pattesAverage": 4264,
-        "grassAverage": 1236
+        "heartsEnd": 89,
+        "pattesAverage": 4298,
+        "grassAverage": 1213
       }
     },
     "21-30": {
       "pattes": {
         "gainPerDay": {
-          "collectIncome": 10225,
+          "collectIncome": 10124,
           "claimDailyMission": 56,
-          "claimMainMission": 6
+          "claimMainMission": 14
         },
         "spendPerDay": {
-          "startCare:massage": 2040,
-          "picnic": 1080,
+          "startCare:massage": 2310,
+          "picnic": 960,
           "startOrder": 1090,
-          "exchange:pattes": 754,
+          "exchange:pattes": 592,
+          "startCare:bath": 215,
           "expand": 2500,
-          "startCare:bath": 15,
           "buyBuilding:enclosure": 45
         },
-        "netPerDay": 2763
+        "netPerDay": 2482
       },
       "hearts": {
         "gainPerDay": {
           "claimHearts": 3,
           "exchange:pattes": 1,
-          "claimCare": 0,
-          "claimMainMission": 0
+          "claimMainMission": 1,
+          "welcome": 0,
+          "claimDailyMission": 0
         },
         "spendPerDay": {
           "buyBuilding:statue": 10,
@@ -179,60 +180,60 @@
           "collectOrder": 2540,
           "release": 50,
           "claimDailyMission": 3,
-          "claimMainMission": 3
+          "claimMainMission": 7
         },
         "spendPerDay": {
-          "feed": 2008
+          "feed": 2544
         },
-        "netPerDay": 588
+        "netPerDay": 56
       },
       "xp": {
         "gainPerDay": {
           "claimDailyMission": 55,
-          "claimCare": 132,
-          "welcome": 70,
-          "picnic": 36,
-          "feed": 79,
-          "breed": 14,
-          "buyBuilding:enclosure": 3,
-          "claimMainMission": 2
+          "claimCare": 125,
+          "welcome": 86,
+          "picnic": 32,
+          "feed": 104,
+          "breed": 13,
+          "claimMainMission": 6,
+          "buyBuilding:enclosure": 3
         },
         "spendPerDay": {},
-        "netPerDay": 390
+        "netPerDay": 424
       },
-      "counterPattesPerDay": 754,
+      "counterPattesPerDay": 592,
       "stock": {
         "heartsAverage": 27,
-        "heartsEnd": 25,
-        "pattesAverage": 13868,
-        "grassAverage": 1687
+        "heartsEnd": 29,
+        "pattesAverage": 10730,
+        "grassAverage": 802
       }
     },
     "31-45": {
       "pattes": {
         "gainPerDay": {
-          "collectIncome": 12968,
+          "collectIncome": 13865,
           "claimDailyMission": 41,
           "claimMainMission": 24
         },
         "spendPerDay": {
-          "startCare:massage": 1920,
-          "picnic": 1540,
-          "startOrder": 1799,
+          "startCare:massage": 2970,
+          "picnic": 1240,
+          "startOrder": 1840,
+          "upgradeHabitat": 15,
           "expand": 3000,
           "startCare:bath": 10,
-          "upgradeHabitat": 15,
           "upgradeFarm:3": 4000
         },
-        "netPerDay": 749
+        "netPerDay": 855
       },
       "hearts": {
         "gainPerDay": {
           "claimHearts": 3,
           "claimMainMission": 1,
-          "claimCare": 0,
+          "claimDailyMission": 0,
           "welcome": 0,
-          "claimDailyMission": 0
+          "picnic": 0
         },
         "spendPerDay": {
           "upgradeFarm:2": 2,
@@ -242,94 +243,89 @@
       },
       "grass": {
         "gainPerDay": {
-          "collectOrder": 4004,
-          "release": 48,
+          "collectOrder": 4093,
+          "release": 40,
           "claimMainMission": 12,
           "claimDailyMission": 16
         },
         "spendPerDay": {
-          "feed": 4396
+          "feed": 3985
         },
-        "netPerDay": -315
+        "netPerDay": 177
       },
       "xp": {
         "gainPerDay": {
           "claimDailyMission": 70,
           "claimCare": 133,
-          "welcome": 123,
-          "picnic": 51,
-          "feed": 81,
-          "breed": 13
+          "welcome": 133,
+          "picnic": 41,
+          "feed": 92,
+          "breed": 12,
+          "claimMainMission": 1
         },
         "spendPerDay": {},
-        "netPerDay": 471
+        "netPerDay": 481
       },
       "counterPattesPerDay": 0,
       "stock": {
         "heartsAverage": 21,
-        "heartsEnd": 42,
-        "pattesAverage": 28229,
-        "grassAverage": 2240
+        "heartsEnd": 47,
+        "pattesAverage": 28436,
+        "grassAverage": 1743
       }
     },
     "46-60": {
       "pattes": {
         "gainPerDay": {
           "collectIncome": 14475,
-          "claimDailyMission": 36,
-          "claimMainMission": 5
+          "claimDailyMission": 36
         },
         "spendPerDay": {
-          "startCare:massage": 7850,
-          "picnic": 1160,
-          "startOrder": 2330,
+          "startCare:massage": 2020,
+          "picnic": 1440,
+          "startOrder": 2353,
           "upgradeFarm:3": 4000,
-          "startCare:bath": 117
+          "expand": 5000,
+          "startCare:bath": 27
         },
-        "netPerDay": -940
+        "netPerDay": -329
       },
       "hearts": {
         "gainPerDay": {
-          "claimHearts": 3,
-          "claimCare": 0,
-          "claimMainMission": 0,
-          "exchange:grass": 1
+          "claimHearts": 3
         },
         "spendPerDay": {},
-        "netPerDay": 4
+        "netPerDay": 3
       },
       "grass": {
         "gainPerDay": {
-          "collectOrder": 5267,
+          "collectOrder": 5320,
           "claimDailyMission": 20,
-          "release": 55,
-          "claimMainMission": 3
+          "release": 43
         },
         "spendPerDay": {
-          "feed": 4548,
-          "exchange:grass": 462
+          "feed": 5638
         },
-        "netPerDay": 335
+        "netPerDay": -255
       },
       "xp": {
         "gainPerDay": {
           "claimDailyMission": 77,
           "claimCare": 133,
-          "welcome": 125,
-          "picnic": 39,
-          "feed": 53,
-          "breed": 14,
-          "claimMainMission": 1
+          "welcome": 64,
+          "picnic": 48,
+          "feed": 132,
+          "breed": 10
         },
         "spendPerDay": {},
-        "netPerDay": 441
+        "netPerDay": 464
       },
       "counterPattesPerDay": 0,
       "stock": {
-        "heartsAverage": 69,
-        "heartsEnd": 109,
-        "pattesAverage": 22363,
-        "grassAverage": 3345
+        "heartsAverage": 71,
+        "heartsEnd": 92,
+        "pattesAverage": 34791,
+        "grassAverage": 973
       }
     },
     "61-70": {
@@ -339,50 +335,53 @@
           "claimDailyMission": 42
         },
         "spendPerDay": {
-          "startCare:massage": 4200,
-          "picnic": 900,
+          "startCare:massage": 1530,
+          "picnic": 720,
           "startOrder": 2400,
-          "expand": 7500,
-          "startCare:bath": 40
+          "expand": 10000,
+          "startCare:bath": 15,
+          "exchange:pattes": 3055
         },
-        "netPerDay": -523
+        "netPerDay": -3203
       },
       "hearts": {
         "gainPerDay": {
           "claimHearts": 3,
-          "exchange:grass": 12
+          "exchange:pattes": 4
         },
         "spendPerDay": {},
-        "netPerDay": 15
+        "netPerDay": 7
       },
       "grass": {
         "gainPerDay": {
           "collectOrder": 5480,
           "claimDailyMission": 15,
-          "release": 65
+          "release": 45
         },
         "spendPerDay": {
-          "exchange:grass": 5565
+          "feed": 5524
         },
-        "netPerDay": -4
+        "netPerDay": 16
       },
       "xp": {
         "gainPerDay": {
           "claimDailyMission": 70,
           "claimCare": 132,
-          "welcome": 96,
-          "picnic": 30,
-          "breed": 15
+          "welcome": 67,
+          "picnic": 24,
+          "breed": 10,
+          "feed": 109,
+          "claimMainMission": 2
         },
         "spendPerDay": {},
-        "netPerDay": 343
+        "netPerDay": 414
       },
-      "counterPattesPerDay": 0,
+      "counterPattesPerDay": 3055,
       "stock": {
-        "heartsAverage": 191,
-        "heartsEnd": 260,
-        "pattesAverage": 38158,
-        "grassAverage": 6648
+        "heartsAverage": 115,
+        "heartsEnd": 157,
+        "pattesAverage": 44338,
+        "grassAverage": 2154
       }
     }
   },
@@ -393,21 +392,21 @@
     "20": 15,
     "22": 20,
     "25": 30,
-    "30": 46
+    "30": 45
   },
   "statueDay": 10,
-  "secondStatueDay": 21.5,
+  "secondStatueDay": 21.208,
   "salonDay": 6.5,
   "affection20to50": {
     "rabbit": "rabbit-2",
     "species": "paille",
     "day20": 10.5,
-    "day50": 39.5,
-    "days": 29,
-    "affectionDay60": 50,
-    "finalAffection": 50
+    "day50": null,
+    "days": null,
+    "affectionDay60": 30,
+    "finalAffection": 30
   },
-  "fastest20to50": 22.708,
+  "fastest20to50": 25.708,
   "method": "Seed 20261025; real act/advance; 3 sessions/day at 08/13/20, <=45 commands and <=8 meals/session; two farms, each sowing the best-liked unlocked crop ripe by the next visit; each farm goes to level 3 (fancy crops) from player level 20 once 63 000 pattes are in hand; pattes saved for the next coin goal (salon, next extension allowed by the level, farm level 3) before the counter, except while Hearts are short for a statue; save Hearts two levels ahead for each statue (60 Hearts at level 15, 100 at level 22) plus six in reserve; food kept for the most loved rabbit waiting at a wall (29 -> 30, 49 -> 50); collection-first parent pairs; no Cuisine or paid recipes; Salon de soins bought at level 12 with 5 500 pattes in hand, one care per session for the most loved rabbit that may receive a gift (massage with 3 000 pattes left in hand, else bath), one picnic a day in the enclosure where the most rabbits gain (500 pattes kept); Hearts for permanent farm, agency and habitat upgrades after the statue reserve. Counter reserves: the coin goal (or 3000 coins while Hearts are short for a statue) and 6000 food plus a waiting wall meal. Day snapshots just before next 08:00. Tutorial is the first session.",
   "curve": {
     "initialLevel": 1,
@@ -434,9 +433,9 @@
     "10": 2.208,
     "15": 6.208,
     "20": 14,
-    "22": 19.5,
-    "25": 29.5,
-    "30": 45.208
+    "22": 19.208,
+    "25": 29,
+    "30": 44
   },
   "rows": [
     {
@@ -849,7 +848,7 @@
       "affectionById": {
         "rabbit-2": 30,
         "rabbit-7": 27,
-        "rabbit-11": 15,
+        "rabbit-11": 14,
         "birth-13": 14,
         "birth-14": 14,
         "birth-17": 14,
@@ -867,30 +866,29 @@
         "birth-35": 14,
         "birth-37": 14,
         "birth-38": 14,
-        "birth-40": 5,
+        "birth-40": 11,
         "birth-41": 14,
         "birth-47": 14,
-        "birth-50": 2,
+        "birth-50": 6,
         "birth-55": 2,
         "birth-58": 14,
-        "birth-73": 4,
+        "birth-73": 3,
         "birth-74": 2,
-        "birth-76": 2,
+        "birth-76": 3,
         "birth-77": 2,
-        "birth-78": 2,
-        "birth-79": 2
+        "birth-78": 2
       },
-      "pattes": 3394,
-      "grass": 0,
-      "hearts": 87,
+      "pattes": 3498,
+      "grass": 786,
+      "hearts": 89,
       "level": 22,
       "species": 29,
       "affection": {
-        "≥10": 23,
-        "≥15": 3,
+        "≥10": 24,
+        "≥15": 2,
         "≥30": 1,
         "max": 30,
-        "rabbits": 32
+        "rabbits": 31
       },
       "speciesIds": [
         "paille",
@@ -1019,9 +1017,9 @@
     {
       "step": "30 j",
       "affectionById": {
-        "rabbit-2": 39,
+        "rabbit-2": 30,
         "rabbit-7": 37,
-        "rabbit-11": 29,
+        "rabbit-11": 27,
         "birth-13": 14,
         "birth-14": 14,
         "birth-17": 14,
@@ -1035,7 +1033,6 @@
         "birth-28": 14,
         "birth-30": 14,
         "birth-31": 14,
-        "birth-34": 14,
         "birth-37": 14,
         "birth-38": 14,
         "birth-40": 14,
@@ -1048,26 +1045,26 @@
         "birth-74": 14,
         "birth-76": 14,
         "birth-77": 14,
-        "birth-82": 14,
         "birth-88": 14,
-        "birth-89": 14,
-        "birth-99": 3,
-        "birth-103": 1,
-        "birth-104": 2,
-        "birth-105": 1,
-        "birth-107": 1
+        "birth-90": 14,
+        "birth-91": 14,
+        "birth-93": 14,
+        "birth-98": 14,
+        "birth-100": 14,
+        "birth-101": 14,
+        "birth-106": 1
       },
-      "pattes": 31026,
-      "grass": 5877,
-      "hearts": 25,
+      "pattes": 28318,
+      "grass": 1342,
+      "hearts": 29,
       "level": 25,
-      "species": 30,
+      "species": 31,
       "affection": {
-        "≥10": 32,
+        "≥10": 35,
         "≥15": 3,
         "≥30": 2,
-        "max": 39,
-        "rabbits": 37
+        "max": 37,
+        "rabbits": 36
       },
       "speciesIds": [
         "paille",
@@ -1099,7 +1096,8 @@
         "dinono",
         "orange",
         "dinenette",
-        "dadi"
+        "dadi",
+        "ankylosaure"
       ],
       "storedPattes": 3725,
       "remaining": {
@@ -1113,8 +1111,7 @@
           "magicien",
           "dragon",
           "maxou",
-          "requin",
-          "ankylosaure"
+          "requin"
         ]
       },
       "decorationBudget": {
@@ -1191,64 +1188,66 @@
         "discover-orange",
         "discover-dinenette",
         "level-twenty-two",
+        "evolve-first",
         "discover-dadi",
+        "discover-ankylosaure",
         "level-twenty-five"
       ]
     },
     {
       "step": "50 j",
       "affectionById": {
-        "rabbit-2": 50,
+        "rabbit-2": 30,
         "rabbit-7": 50,
-        "rabbit-11": 50,
-        "birth-13": 41,
-        "birth-18": 15,
+        "rabbit-11": 30,
+        "birth-14": 30,
+        "birth-17": 29,
+        "birth-18": 19,
         "birth-19": 14,
         "rabbit-20": 14,
         "birth-21": 14,
         "birth-22": 14,
         "rabbit-26": 14,
+        "birth-27": 14,
         "birth-30": 14,
-        "birth-31": 14,
-        "birth-34": 14,
         "birth-38": 14,
         "birth-40": 14,
         "birth-41": 14,
         "birth-47": 14,
         "birth-50": 14,
+        "birth-55": 14,
         "birth-58": 14,
         "birth-73": 14,
         "birth-74": 14,
         "birth-76": 14,
-        "birth-77": 14,
-        "birth-82": 14,
         "birth-88": 14,
-        "birth-89": 14,
-        "birth-99": 14,
-        "birth-104": 14,
-        "birth-105": 14,
+        "birth-90": 14,
+        "birth-91": 14,
+        "birth-98": 14,
+        "birth-100": 14,
+        "birth-101": 14,
+        "birth-107": 14,
+        "birth-108": 14,
         "birth-109": 14,
-        "birth-110": 14,
+        "birth-112": 14,
+        "birth-114": 14,
         "birth-120": 14,
-        "birth-122": 14,
         "birth-124": 14,
-        "birth-125": 14,
-        "birth-127": 14,
-        "birth-130": 14,
-        "birth-131": 13,
-        "birth-135": 5,
-        "birth-158": 2,
-        "birth-159": 2,
-        "birth-160": 2
+        "birth-126": 14,
+        "birth-131": 14,
+        "birth-132": 14,
+        "birth-133": 14,
+        "birth-140": 14,
+        "birth-151": 1
       },
-      "pattes": 8201,
-      "grass": 1192,
-      "hearts": 58,
+      "pattes": 26483,
+      "grass": 3876,
+      "hearts": 62,
       "level": 30,
-      "species": 35,
+      "species": 36,
       "affection": {
-        "≥10": 38,
-        "≥15": 5,
+        "≥10": 41,
+        "≥15": 6,
         "≥30": 4,
         "max": 50,
         "rabbits": 42
@@ -1284,11 +1283,12 @@
         "orange",
         "dinenette",
         "dadi",
-        "magicien",
+        "ankylosaure",
         "maxou",
         "dragon",
+        "benny",
         "requin",
-        "ankylosaure"
+        "magicien"
       ],
       "storedPattes": 4825,
       "remaining": {
@@ -1374,71 +1374,73 @@
         "discover-orange",
         "discover-dinenette",
         "level-twenty-two",
+        "evolve-first",
         "discover-dadi",
+        "discover-ankylosaure",
         "level-twenty-five",
-        "discover-magicien",
         "discover-maxou",
         "discover-dragon",
+        "discover-benny",
         "discover-requin",
-        "discover-ankylosaure",
+        "discover-magicien",
         "level-thirty"
       ]
     },
     {
       "step": "60 j",
       "affectionById": {
-        "rabbit-2": 50,
+        "rabbit-2": 30,
         "rabbit-7": 50,
-        "rabbit-11": 50,
-        "birth-13": 50,
-        "birth-18": 35,
-        "birth-19": 14,
-        "rabbit-20": 14,
-        "birth-21": 14,
+        "rabbit-11": 30,
+        "birth-14": 30,
+        "birth-17": 30,
+        "birth-18": 30,
+        "birth-19": 30,
+        "rabbit-20": 28,
+        "birth-21": 18,
         "birth-22": 14,
         "rabbit-26": 14,
+        "birth-27": 14,
         "birth-30": 14,
-        "birth-31": 14,
-        "birth-34": 14,
         "birth-38": 14,
         "birth-40": 14,
         "birth-41": 14,
         "birth-47": 14,
         "birth-50": 14,
+        "birth-55": 14,
         "birth-58": 14,
         "birth-73": 14,
-        "birth-74": 14,
         "birth-76": 14,
-        "birth-77": 14,
-        "birth-82": 14,
         "birth-88": 14,
-        "birth-89": 14,
-        "birth-99": 14,
-        "birth-104": 14,
-        "birth-105": 14,
+        "birth-90": 14,
+        "birth-91": 14,
+        "birth-98": 14,
+        "birth-100": 14,
+        "birth-101": 14,
+        "birth-107": 14,
+        "birth-108": 14,
         "birth-109": 14,
-        "birth-110": 14,
+        "birth-112": 14,
+        "birth-114": 14,
         "birth-120": 14,
-        "birth-122": 14,
         "birth-124": 14,
-        "birth-125": 14,
-        "birth-127": 14,
-        "birth-130": 14,
+        "birth-126": 14,
         "birth-131": 14,
-        "birth-135": 14,
-        "birth-158": 14,
-        "birth-163": 14,
-        "birth-186": 1
+        "birth-132": 14,
+        "birth-133": 14,
+        "birth-140": 14,
+        "birth-168": 14,
+        "birth-171": 7
       },
-      "pattes": 28161,
-      "grass": 6168,
-      "hearts": 109,
+      "pattes": 36213,
+      "grass": 166,
+      "hearts": 92,
       "level": 30,
       "species": 36,
       "affection": {
         "≥10": 41,
-        "≥15": 5,
-        "≥30": 5,
+        "≥15": 9,
+        "≥30": 7,
         "max": 50,
         "rabbits": 42
       },
@@ -1473,18 +1475,18 @@
         "orange",
         "dinenette",
         "dadi",
-        "magicien",
+        "ankylosaure",
         "maxou",
         "dragon",
+        "benny",
         "requin",
-        "ankylosaure",
-        "benny"
+        "magicien"
       ],
       "storedPattes": 4825,
       "remaining": {
         "commons": [],
-        "extensions": 2,
-        "extensionCost": 175000,
+        "extensions": 1,
+        "extensionCost": 100000,
         "farms": 0,
         "kitchen": false,
         "habitatUpgrades": 7,
@@ -1564,41 +1566,43 @@
         "discover-orange",
         "discover-dinenette",
         "level-twenty-two",
+        "evolve-first",
         "discover-dadi",
+        "discover-ankylosaure",
         "level-twenty-five",
-        "discover-magicien",
         "discover-maxou",
         "discover-dragon",
+        "discover-benny",
         "discover-requin",
-        "discover-ankylosaure",
-        "level-thirty",
-        "discover-benny"
+        "discover-magicien",
+        "level-thirty"
       ]
     }
   ],
   "actions": {
     "buyBuilding": 15,
-    "claimMainMission": 77,
+    "claimMainMission": 79,
     "buyRabbit": 4,
     "startOrder": 416,
     "initiationAid": 3,
     "collectOrder": 414,
-    "feed": 641,
-    "breed": 193,
+    "feed": 1057,
+    "breed": 167,
     "claimDailyMission": 100,
     "transferBirth": 1,
-    "welcome": 191,
-    "collectIncome": 1865,
+    "welcome": 166,
+    "collectIncome": 1873,
     "buyDecoration": 1,
     "claimHearts": 69,
     "upgradeHabitat": 6,
     "upgradeFarm": 4,
-    "expand": 7,
+    "expand": 8,
     "picnic": 68,
-    "exchangeForHeart": 211,
-    "release": 154,
+    "exchangeForHeart": 105,
+    "release": 129,
     "startCare": 189,
-    "claimCare": 188
+    "claimCare": 188,
+    "evolveRabbit": 2
   },
-  "totalActions": 4817
+  "totalActions": 5064
 }

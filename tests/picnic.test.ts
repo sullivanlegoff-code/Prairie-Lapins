@@ -7,6 +7,7 @@ import {buildingPlacementReason} from '../src/simulation/placement';
 import {picnicQuote} from '../src/simulation/care';
 import {emptyBuilding} from '../src/state/initial';
 import type {Command, GameState} from '../src/state/types';
+import {evolveAbove30} from './evolved';
 
 function run(s: GameState, command: Command, now = s.lastSimulatedAt) {
   const r = act(s, command, now, () => 0); if (!r.ok) throw Error(r.reason); return r.state;
@@ -24,6 +25,7 @@ function setup(rabbits: [SpeciesId, number][], level = 8) {
   for (const kind of ['statue', 'statue', 'salon'] as const) { const c = freeCell(s); s.buildings.push(emptyBuilding(`building-${s.nextId++}`, kind, c.x, c.y)); }
   const c = freeCell(s, 'enclosure'), home = emptyBuilding(`building-${s.nextId++}`, 'enclosure', c.x, c.y); home.habitat = {type: 'universal', level: 3}; s.buildings.push(home);
   const ids = rabbits.map(([species, affection]) => { const id = `rabbit-${s.nextId++}`; s.rabbits.push({id, species, affection, enclosureId: home.id}); if (!s.discovered.includes(species)) s.discovered.push(species); return id; });
+  s.rabbits.forEach(evolveAbove30);
   return {s, ids, home: home.id};
 }
 const affection = (s: GameState, id: string) => s.rabbits.find(r => r.id === id)!.affection;

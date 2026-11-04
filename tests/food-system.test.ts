@@ -3,6 +3,7 @@ import {describe, expect, it} from 'vitest';
 import {act, createGame, decodeGame, encodeGame} from '../src/simulation';
 import {AFFECTION_STATUE, BALANCE, FEED_COSTS, HOUR, MINUTE, ORDERS, RARE_BIRTH_BONUS, SECOND_AFFECTION_STATUE, SPECIES} from '../src/config/balance';
 import {affectionCap, feedReason, rareBirthFactor} from '../src/simulation/affection';
+import {EVOLUTION_CHALLENGES, evolutionChallengeTarget} from '../src/config/evolutionChallenges';
 import {breedingOdds} from '../src/simulation/breeding';
 import {cumulativeLevelXp} from '../src/simulation/progression';
 import {emptyBuilding} from '../src/state/initial';
@@ -66,6 +67,8 @@ describe('the second Statue de l’Affection', () => {
   });
   it('refuses 30 → 31 with one statue and accepts it with two', () => {
     const s = createGame(0); s.grass = 100_000; s.rabbits[0].affection = 30;
+    // Evolved: the evolution wall at 30 (4 November 2026) is tested in tests/affection-evolution-wall.test.ts.
+    s.rabbits[0].evolution = {done: true, challenges: Object.fromEntries((EVOLUTION_CHALLENGES[s.rabbits[0].species] ?? []).map(c => [c, evolutionChallengeTarget(s.rabbits[0].species, c)]))};
     const statue = () => { const at = free(s); s.buildings.push(emptyBuilding(`building-${s.nextId++}`, 'statue', at.x, at.y)); };
     statue();
     expect(feedReason(s, 29)).toBeNull(); expect(feedReason(s, 30)).toBe('SECOND_STATUE_REQUIRED');

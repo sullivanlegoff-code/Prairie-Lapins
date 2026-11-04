@@ -7,6 +7,7 @@ import {buildingPlacementReason} from '../src/simulation/placement';
 import {atSalon, away, giftReason} from '../src/simulation/care';
 import {emptyBuilding} from '../src/state/initial';
 import type {Command, GameState} from '../src/state/types';
+import {evolveAbove30} from './evolved';
 
 function run(s: GameState, command: Command, now = s.lastSimulatedAt) {
   const r = act(s, command, now, () => 0); if (!r.ok) throw Error(r.reason); return r.state;
@@ -28,6 +29,7 @@ function setup(species: SpeciesId[] = ['paille'], affection = 20, statues = 2) {
   s.buildings.push(home);
   s = run(s, {type: 'buyBuilding', kind: 'salon', ...freeCell(s)});
   const ids = species.map(sp => { const id = `rabbit-${s.nextId++}`; s.rabbits.push({id, species: sp, affection, enclosureId: home.id}); if (!s.discovered.includes(sp)) s.discovered.push(sp); return id; });
+  s.rabbits.forEach(evolveAbove30);
   return {s, ids, home: home.id, salon: s.buildings.find(b => b.kind === 'salon')!.id};
 }
 

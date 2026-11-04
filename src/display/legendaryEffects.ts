@@ -66,6 +66,8 @@ export class LegendaryView {
 
   tap(): void { this.clock.tap(); }
   play(act: LegendaryAct): void { this.clock.play(act); }
+  /** From the sheet's show button: true when the show starts. */
+  request(act: LegendaryAct): boolean { return !!this.clock.request(act); }
 
   update(frame: LegendaryFrame): void {
     const {time, dt, active, reduced, asleep} = frame, motion = this.host.motion; this.reduced = reduced;

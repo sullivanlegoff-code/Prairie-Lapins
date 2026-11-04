@@ -8,6 +8,7 @@ import {breedingOdds, chooseBirth} from '../src/simulation/breeding';
 import type {Command, GameState, Refusal} from '../src/state/types';
 import {babyOf, welcomeOf} from './nursery-baby';
 import {emptyBuilding} from '../src/state/initial';
+import {completedEvolution} from './evolved';
 import {habitatStats} from '../src/simulation/habitats';
 import {individualIncomeRoll} from '../src/simulation/time';
 
@@ -171,6 +172,9 @@ describe('farming and affection', () => {
         s.buildings.push(emptyBuilding(`building-${s.nextId}`, 'statue', 30, 30)); s.nextId++;
       }
       if (affection === 30) {
+        // Since 4 November 2026 the rabbit must evolve first, then the second statue opens 31.
+        refuses(s, {type: 'feed', id: 'rabbit-2'}, 'EVOLUTION_REQUIRED');
+        s.rabbits.find(r => r.id === 'rabbit-2')!.evolution = completedEvolution(s.rabbits.find(r => r.id === 'rabbit-2')!.species);
         refuses(s, {type: 'feed', id: 'rabbit-2'}, 'SECOND_STATUE_REQUIRED');
         s.buildings.push(emptyBuilding(`building-${s.nextId}`, 'statue', 34, 30)); s.nextId++;
       }

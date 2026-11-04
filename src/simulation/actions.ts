@@ -14,7 +14,7 @@ import {HABITAT_TYPES, habitatLevel, habitatPrice, type HabitatLevel} from '../c
 import {habitatEntryReason, removeHabitatReason} from './habitats';
 import {DAILY_MISSIONS, MAIN_MISSIONS, DAILY_BONUS, mainMissionRewards, type Reward} from '../config/missions';
 import {marketPrice, marketUnlocked} from './market';
-import {affectionCap, isUltimate, nextAffectionStatue, playerLevel, statueReason} from './affection';
+import {affectionCap, capReason, isUltimate, nextAffectionStatue, playerLevel, rabbitAffectionCap, waitsForEvolution} from './affection';
 import {agencyBuilding, travelling} from './travel';
 import {atSalon, giftAffectionReason, giftReason, picnicQuote, salonBuilding} from './care';
 import {classicLookReason} from './forest';
@@ -132,7 +132,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         // The draw is among the cooks still able to receive it today, so cooking together never pays less than cooking alone.
         let rabbit = cooks[0]!;
         if (cooks.length === 2) {
-          const open = cooks.filter(r => eligibleCook(r!) && r!.affection < affectionCap(s)), pool = open.length ? open : cooks;
+          const open = cooks.filter(r => eligibleCook(r!) && r!.affection < rabbitAffectionCap(s, r!)), pool = open.length ? open : cooks;
           const roll = rng(); requireRule(Number.isFinite(roll) && roll >= 0 && roll < 1, 'INVALID_RANDOM');
           rabbit = pool[Math.floor(roll * pool.length)]!;
         }
@@ -142,7 +142,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         credit('pattes', paid.pattes); credit('grass', paid.grass);
         if (fullReward) s.cuisine.fullRuns = {cycle, used: used + 1};
         const eligible = eligibleCook(rabbit);
-        const affectionGranted = eligible && rabbit.affection < affectionCap(s);
+        const affectionGranted = eligible && rabbit.affection < rabbitAffectionCap(s, rabbit);
         if (eligible) {
           s.cuisine.affectionCycles = {...s.cuisine.affectionCycles, [rabbit.id]: cycle};
           if (affectionGranted) rabbit.affection++;
@@ -150,7 +150,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         // One Heart per canonical cycle for Cuisine as a whole, whichever rabbit cooked.
         const heartGranted = s.cuisine.heartCycle !== cycle;
         if (heartGranted) { credit('hearts', 1); s.cuisine.heartCycle = cycle; }
-        cuisineReward = {pattes: paid.pattes, grass: paid.grass, fullReward, affectionGranted, affectionAtCap: rabbit.affection === BALANCE.maxAffection, affectionStatueRequired: !affectionGranted && rabbit.affection >= affectionCap(s) && affectionCap(s) < BALANCE.maxAffection, heartGranted, affectionRabbitId: rabbit.id};
+        cuisineReward = {pattes: paid.pattes, grass: paid.grass, fullReward, affectionGranted, affectionAtCap: rabbit.affection === BALANCE.maxAffection, affectionStatueRequired: !affectionGranted && rabbit.affection >= rabbitAffectionCap(s, rabbit) && capReason(s, rabbit) !== 'EVOLUTION_REQUIRED' && affectionCap(s) < BALANCE.maxAffection, ...(!affectionGranted && waitsForEvolution(rabbit) && rabbit.affection >= rabbitAffectionCap(s, rabbit) && capReason(s, rabbit) === 'EVOLUTION_REQUIRED' ? {affectionEvolutionRequired: true} : {}), heartGranted, affectionRabbitId: rabbit.id};
         recordEvolutionChallenge(s, command.rabbitId, `cuisine:${command.recipeId}` as import('../config/evolutionChallenges').EvolutionChallenge);
         break;
       }
@@ -246,7 +246,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         const care = s.care; requireRule(care && care.rabbitId === command.rabbitId, 'STALE_ACTION'); requireRule(care.endsAt <= time, 'NOT_READY');
         const rabbit = s.rabbits.find(r => r.id === care.rabbitId); requireRule(rabbit, 'NOT_FOUND');
         // The gift was checked at the start and the rabbit could not change since; the wall and the cap still hold.
-        if (!giftAffectionReason(s, rabbit.affection)) rabbit.affection++;
+        if (!giftAffectionReason(s, rabbit)) rabbit.affection++;
         delete s.care; gainXp(SALON.cares[care.care].xp); recordEvolutionChallenge(s, rabbit.id, 'soin'); value = rabbit.affection; break;
       }
       case 'picnic': {
@@ -455,7 +455,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       case 'feed': {
         const rabbit = s.rabbits.find(r => r.id === command.id); requireRule(rabbit, 'NOT_FOUND');
         requireRule(!travelling(s, rabbit.id), 'TRAVELING'); requireRule(!atSalon(s, rabbit.id), 'AT_SALON'); requireRule(rabbit.affection < BALANCE.maxAffection, 'MAX_AFFECTION');
-        requireRule(rabbit.affection < affectionCap(s), statueReason(s));
+        requireRule(rabbit.affection < rabbitAffectionCap(s, rabbit), capReason(s, rabbit));
         const cost = feedCost(rabbit.affection);
         requireRule(s.grass >= cost, 'NOT_ENOUGH_GRASS'); s.grass -= cost; rabbit.affection++; gainXp(foodXp(rabbit.affection)); break;
       }

@@ -1,4 +1,5 @@
 import {farmLimit, farmDuration} from '../config/balance';
+import type {LegendaryAct} from '../display/legendaryTimeline';
 import {bestFriend} from '../simulation/cozy';
 import {DECORATION_COLLECTIONS,TRAVEL_STORIES} from '../config/cozyContent';
 import {translatedDecorations} from '../simulation/cozyActivities';
@@ -36,7 +37,7 @@ import {COCO_WELCOME, HOST_NAME, agencyThumbnail, cocoPortrait, forestThumbnail,
 import {atSalon, away, giftReason, picnicQuote, rabbitAwayReason} from '../simulation/care';
 import {travelling} from '../simulation/travel';
 import {BENNY, BENNY_POWER_RECHARGE, bennyInSky, bennyPowerReadyAt, bennyPowerReason} from '../simulation/benny';
-import {affectionStatueCount, feedReason, nextAffectionStatue, playerLevel, wearsCrown} from '../simulation/affection';
+import {affectionStatueCount, capReason, feedReason, nextAffectionStatue, playerLevel, rabbitAffectionCap, wearsCrown} from '../simulation/affection';
 import type {Building, Rabbit} from '../state/types';
 import {MAX_RABBIT_NAME_LENGTH, normalizeRabbitName} from '../simulation/rabbitNames';
 import {HABITATS, HABITAT_TYPES, habitatLevel, habitatPrice, type HabitatType} from '../config/habitats';
@@ -77,6 +78,10 @@ import {mountPhotoControls} from './photoControls';
 import {guidedStep, type GuideStep} from './guidance';
 import {BUILDING_NAMES, CARE_NAMES, REFUSALS, RARITY_NAMES, busyReason, TYPE_NAMES, typeNames, recipeBook, recipePairs, buildingReason, collectionSpeciesView, collectionView, incomeWhole, moneyReason, nurseryView, occupants, oddsTexts, oddsView, placementReason, rabbitAvailability, parentBusy, releaseReason, timeLeft, type Placement, type CollectionFilter} from './models';
 
+/** One show button per legendary sheet: Anky's tail strike, the Dragon's fire breath, the Requin's surf. */
+const LEGENDARY_SHOW_BUTTONS: Partial<Record<SpeciesId, {label: string; act: LegendaryAct}>> = {
+  ankylosaure: {label: 'Coup de queue', act: 'slam'}, dragon: {label: 'Souffle de feu', act: 'tap'}, requin: {label: 'Surf', act: 'surf'},
+};
 type ShopTab = 'home' | 'recipes' | 'rabbits' | 'habitats' | 'buildings' | 'decorations';
 type View = {kind:'album'|'decorationGroup'} | {kind: 'welcomeBaby'; birthId: string} | {kind:'levelRequirement';target:LevelAccessTarget} | {kind: 'missions'; tab: 'main' | 'daily'} | {kind: 'shop'; tab: ShopTab} | {kind: 'building' | 'rabbit' | 'moveRabbit' | 'decoration'; id: string} | {kind: 'jumpIsland'} |
   {kind: 'buyRabbit' | 'species'; species: SpeciesId} | {kind:'extension';parcelId?:ParcelId} | {kind: 'cuisineRabbit'; commis?: string} | {kind: 'collection' | 'settings' | 'placement' | 'hearts' | 'recipes' | 'arrange' | 'decorationPlacement'} | null;
@@ -217,7 +222,7 @@ export class GameUI {
       if (!granted.ok) return `Récompense non enregistrée : ${REFUSALS[granted.reason]}`;
       const reward = granted.cuisineReward!, lucky = granted.state.rabbits.find(r => r.id === reward.affectionRabbitId), luckyName = taster && lucky ? ` pour ${lucky.name || SPECIES[lucky.species].name}` : '';
       if (taster) this.cuisine.showAffection(reward.affectionRabbitId);
-      return `+${reward.pattes} pattes · +${reward.grass} nourriture${reward.affectionGranted ? ` · +1 Affection${luckyName}` : reward.affectionAtCap ? ` · Affection maximale${luckyName}` : reward.affectionStatueRequired ? (affectionStatueCount(granted.state) === 0 ? ` · La Statue de l’Affection permet de dépasser ${AFFECTION_STATUE.cap}.` : ` · Une deuxième Statue de l’Affection permet de dépasser ${SECOND_AFFECTION_STATUE.cap}.`) : ''}${reward.heartGranted ? ' · +1 Cœur' : ''}`;
+      return `+${reward.pattes} pattes · +${reward.grass} nourriture${reward.affectionGranted ? ` · +1 Affection${luckyName}` : reward.affectionAtCap ? ` · Affection maximale${luckyName}` : reward.affectionEvolutionRequired ? ` · Fais évoluer ${lucky ? (lucky.name || SPECIES[lucky.species].name) : 'ce lapin'} pour dépasser 30.` : reward.affectionStatueRequired ? (affectionStatueCount(granted.state) === 0 ? ` · La Statue de l’Affection permet de dépasser ${AFFECTION_STATUE.cap}.` : ` · Une deuxième Statue de l’Affection permet de dépasser ${SECOND_AFFECTION_STATUE.cap}.`) : ''}${reward.heartGranted ? ' · +1 Cœur' : ''}`;
     }, quotaText: () => { const state = this.controller.getSnapshot().state; return state ? cuisineQuotaText(state, this.now()) : ''; }, onExit: () => this.render(), onActiveChange: activityOptions.onCuisineActive});
     this.jumpRope = mountJumpRopeActivity(document.getElementById('app')!, {onFinished: (team, score) => {
       const granted = this.controller.perform({type: 'rewardJumpRope', team: {carriers: [team.carriers[0].id, team.carriers[1].id], athlete: team.athlete.id}, score});
@@ -813,7 +818,7 @@ export class GameUI {
         if (kind === 'agency') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(agencyThumbnail()); card.append(node('p', `Dès le niveau ${TRAVEL.unlockLevel}, ${HOST_NAME} envoie tes lapins en vacances : voyages de 3 à 10 heures, cœurs en souvenir au retour.`, 'small')); }
         if (kind === 'salon') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(salonThumbnail()); card.append(node('p', `Dès le niveau ${SALON.unlockLevel}, offre un soin à un lapin : un bain, un brossage ou un massage. Il revient avec +1 d’affection et de l’XP.`, 'small')); }
         if (kind === 'forest') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(forestThumbnail()); card.append(node('p', `Dès le niveau ${FOREST.unlockLevel}, choisis pour chaque lapin déjà évolué entre son nouveau dessin et l’ancien. C’est gratuit, autant de fois que tu veux.`, 'small')); }
-        if (kind === 'statue') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(statueThumbnail()); card.append(node('p', affectionStatueCount(s) === 0 ? `La Statue de l’Affection récompense tes soins : sans elle, l’affection s’arrête à ${AFFECTION_STATUE.cap}. Avec elle, chaque lapin peut atteindre ${SECOND_AFFECTION_STATUE.cap}. Une deuxième statue, dès le niveau ${SECOND_AFFECTION_STATUE.level}, ouvre l’affection ${SECOND_AFFECTION_STATUE.cap + 1} à ${BALANCE.maxAffection}.` : `Ta deuxième Statue de l’Affection ouvre l’affection ${SECOND_AFFECTION_STATUE.cap + 1} à ${BALANCE.maxAffection} à tous tes lapins. Dès le niveau ${SECOND_AFFECTION_STATUE.level}.`, 'small'), node('p', rareBirthBonusText(), 'small')); }
+        if (kind === 'statue') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(statueThumbnail()); card.append(node('p', affectionStatueCount(s) === 0 ? `La Statue de l’Affection récompense tes soins : sans elle, l’affection s’arrête à ${AFFECTION_STATUE.cap}. Avec elle, chaque lapin peut atteindre ${SECOND_AFFECTION_STATUE.cap}. Une deuxième statue, dès le niveau ${SECOND_AFFECTION_STATUE.level}, ouvre l’affection ${SECOND_AFFECTION_STATUE.cap + 1} à ${BALANCE.maxAffection} à tes lapins évolués.` : `Ta deuxième Statue de l’Affection ouvre l’affection ${SECOND_AFFECTION_STATUE.cap + 1} à ${BALANCE.maxAffection} à tes lapins évolués. Dès le niveau ${SECOND_AFFECTION_STATUE.level}.`, 'small'), node('p', rareBirthBonusText(), 'small')); }
         if (kind === 'statue') card.append(node('p', `Ton solde : ${heartAmount(s.hearts)}. Économise tes cœurs pour la construire.`, 'small'));
         const price = kind === 'statue' ? heartAmount((nextAffectionStatue(s) ?? SECOND_AFFECTION_STATUE).heartPrice) : `${BALANCE.buildings[kind].price} pattes`;
         this.button(card, `Placer · ${price}`, () => this.beginPlacement(kind), buildingReason(s, kind, true)); this.content.append(card);
@@ -1139,7 +1144,7 @@ export class GameUI {
     else if (b.kind === 'agency') this.renderAgency(s);
     else if (b.kind === 'salon') this.renderSalon(s);
     else if (b.kind === 'forest') this.renderForest(s);
-    else if (b.kind === 'statue') this.content.append(node('p', affectionStatueCount(s) >= 2 ? `Tes deux statues veillent sur la prairie : tes lapins peuvent atteindre l’affection ${BALANCE.maxAffection}.` : `La statue veille sur la prairie : tes lapins peuvent dépasser l’affection ${AFFECTION_STATUE.cap} et atteindre ${SECOND_AFFECTION_STATUE.cap}. Une deuxième statue, dès le niveau ${SECOND_AFFECTION_STATUE.level}, ouvre l’affection ${SECOND_AFFECTION_STATUE.cap + 1} à ${BALANCE.maxAffection}.`, 'badge'), node('p', rareBirthBonusText(), 'small'));
+    else if (b.kind === 'statue') this.content.append(node('p', affectionStatueCount(s) >= 2 ? `Tes deux statues veillent sur la prairie : tes lapins évolués peuvent atteindre l’affection ${BALANCE.maxAffection}.` : `La statue veille sur la prairie : tes lapins peuvent dépasser l’affection ${AFFECTION_STATUE.cap} et atteindre ${SECOND_AFFECTION_STATUE.cap}. Une deuxième statue, dès le niveau ${SECOND_AFFECTION_STATUE.level}, ouvre l’affection ${SECOND_AFFECTION_STATUE.cap + 1} à ${BALANCE.maxAffection}.`, 'badge'), node('p', rareBirthBonusText(), 'small'));
     this.button(this.content, 'Déplacer ce bâtiment', () => this.beginPlacement(b.kind, id), null, true);
   }
   /** Coco speaks in a bubble beside its portrait; the first visit is a short guided welcome, later visits are not guided. */
@@ -1217,7 +1222,7 @@ export class GameUI {
       return;
     }
     const name = chosen.name || SPECIES[chosen.species].name;
-    const head = this.card(name, `${RARITY_NAMES[SPECIES[chosen.species].rarity]} · affection ${chosen.affection} → ${chosen.affection + 1} au retour`, chosen); this.content.append(head);
+    const head = this.card(name, `${RARITY_NAMES[SPECIES[chosen.species].rarity]} · ${chosen.affection >= rabbitAffectionCap(s, chosen) && capReason(s, chosen) === 'EVOLUTION_REQUIRED' ? `affection ${chosen.affection}, sans gain avant son évolution (le soin compte pour ses défis)` : `affection ${chosen.affection} → ${chosen.affection + 1} au retour`}`, chosen); this.content.append(head);
     this.button(head, 'Changer de lapin', () => { this.salonRabbit = null; this.render(); }, null, true);
     for (const kind of CARE_KINDS) {
       const care = SALON.cares[kind], price = carePrice(chosen.species, kind);
@@ -1349,13 +1354,17 @@ export class GameUI {
     essential.append(this.stats([['Affection', `${r.affection} / ${BALANCE.maxAffection}`], ['Revenu', `${rabbitIncome(r.affection, r.species, individualIncomeRoll(r))} pattes / h`]]));
     const large = wearsCrown(r) ? crownPortrait(avatar(r, true), r) : avatar(r, true);
     overview.append(legendary ? legendaryPortrait(large, r.species) : large, essential); this.content.append(overview);
-    const cost = feedCost(r.affection), onTrip = travelling(s, id), inCare = atSalon(s, id), reason = onTrip ? 'TRAVELING' as const : inCare ? 'AT_SALON' as const : feedReason(s, r.affection);
+    const cost = feedCost(r.affection), onTrip = travelling(s, id), inCare = atSalon(s, id), reason = onTrip ? 'TRAVELING' as const : inCare ? 'AT_SALON' as const : feedReason(s, r);
     if (onTrip) essential.append(node('p', `En voyage ${toPlace(s.travel!.trips.find(t => t.rabbitId === id)!.destination)} · retour à l’agence`, 'badge rabbit-away'));
     if (inCare) essential.append(node('p', `Au salon de soins · ${CARE_NAMES[s.care!.care].toLowerCase()} en cours`, 'badge rabbit-away'));
     if (!inCare && playerLevel(s) >= PICNIC.unlockLevel) { const gift = giftReason(s, r, this.now()); if (gift === 'GIFT_TODAY' || !gift) essential.append(node('p', gift ? 'Cadeau du jour reçu.' : 'Cadeau du jour possible : un soin ou un pique-nique.', 'small')); }
-    if (reason !== 'MAX_AFFECTION' && reason !== 'STATUE_REQUIRED' && reason !== 'SECOND_STATUE_REQUIRED' && reason !== 'TRAVELING' && reason !== 'AT_SALON') essential.append(node('p', `Prochain repas : ${cost} nourriture → affection ${r.affection + 1}, revenu ${rabbitIncome(r.affection + 1, r.species, individualIncomeRoll(r))} pattes / h.`, 'small'));
-    if (isAffectionWall(r.affection) && reason !== 'MAX_AFFECTION' && reason !== 'STATUE_REQUIRED' && reason !== 'SECOND_STATUE_REQUIRED') essential.append(node('p', `Le grand repas de l’affection ${r.affection + 1} : un vrai festin, à la hauteur de la récompense.`, 'small rabbit-milestone'));
+    if (reason !== 'MAX_AFFECTION' && reason !== 'EVOLUTION_REQUIRED' && reason !== 'STATUE_REQUIRED' && reason !== 'SECOND_STATUE_REQUIRED' && reason !== 'TRAVELING' && reason !== 'AT_SALON') essential.append(node('p', `Prochain repas : ${cost} nourriture → affection ${r.affection + 1}, revenu ${rabbitIncome(r.affection + 1, r.species, individualIncomeRoll(r))} pattes / h.`, 'small'));
+    if (reason === 'EVOLUTION_REQUIRED') essential.append(node('p', 'Ton lapin a atteint l’affection 30 : fais-le évoluer pour aller plus loin.', 'small rabbit-milestone'));
+    if (isAffectionWall(r.affection) && reason !== 'MAX_AFFECTION' && reason !== 'EVOLUTION_REQUIRED' && reason !== 'STATUE_REQUIRED' && reason !== 'SECOND_STATUE_REQUIRED') essential.append(node('p', `Le grand repas de l’affection ${r.affection + 1} : un vrai festin, à la hauteur de la récompense.`, 'small rabbit-milestone'));
     this.button(essential, reason === 'MAX_AFFECTION' ? 'Affection maximale' : `Nourrir · ${cost} nourriture`, () => this.execute({type: 'feed', id}, `Affection ${r.affection + 1} !`, () => this.scene.reactToFeed(id)), reason && REFUSALS[reason]).dataset.focus = 'feed';
+    // The legendary's show, from its sheet (owner, 4 November 2026): the sheet closes so that the show can be seen.
+    const show = LEGENDARY_SHOW_BUTTONS[r.species];
+    if (show) this.button(essential, show.label, () => { this.close(); if (!this.scene.playLegendaryAct(id, show.act)) this.notice('Ton lapin finit son numéro : réessaie dans un instant.'); }, onTrip ? REFUSALS.TRAVELING : inCare ? REFUSALS.AT_SALON : null).dataset.legendaryShow = show.act;
     if (ultimate) {
       const crowned = wearsCrown(r);
       this.button(essential, crowned ? 'Enlever la couronne' : 'Mettre la couronne', () => this.execute({type: 'toggleCrown', rabbitId: id}, crowned ? 'Couronne enlevée.' : 'Couronne mise !'), null, true).dataset.focus = 'crown';

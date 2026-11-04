@@ -49,6 +49,11 @@ export class LegendaryClock {
     if (this.act || this.sinceTap < TAP_COOLDOWN_MS) return null;
     this.sinceTap = 0; return this.start(TAP_ACT[this.species]);
   }
+  /** The show button of the rabbit's sheet (owner, 4 November 2026): this show at once, with the touch's anti-repeat delay. */
+  request(act: LegendaryAct): ActState | null {
+    if (this.act || this.sinceTap < TAP_COOLDOWN_MS || !speciesActs(this.species).includes(act)) return null;
+    this.sinceTap = 0; return this.start(act);
+  }
   /** Laboratory and replays: a given show of this species, unless one is playing. */
   play(act: LegendaryAct): ActState | null { return this.act || !speciesActs(this.species).includes(act) ? null : this.start(act); }
   private start(act: LegendaryAct): ActState { this.act = {act, elapsed: 0, duration: ACT_MS[act]}; return this.act; }
