@@ -4,12 +4,14 @@ import {HOUR, ORDERS, SPECIES, SPECIES_IDS} from '../config/balance';
 import {DAILY_MISSIONS, DAILY_MISSION_IDS, MAIN_MISSIONS, MAIN_MISSION_IDS, NEW_MAIN_MISSION_IDS, DURABLE_MISSION_IDS, MISSION_CYCLE_DURATION, DAILY_PICK_COUNT, INITIAL_MISSION_IDS, SOLO_INITIAL_MISSION_IDS, BRANCH_MISSION_IDS, MAIN_EVENT_IDS, type MainMissionId, type DailyMissionId} from '../config/missions';
 import {RECIPE_PRICES} from '../config/recipes';
 import type {GameState, MissionState} from '../state/types';
+import {hasEvolvedArt} from '../config/evolvedArt';
 
 type ObservableState = Pick<GameState, 'rabbits' | 'discovered'> & Partial<Pick<GameState, 'progression' | 'decorations' | 'rewardedDecorationModels' | 'recipeBook'>> & {acquiredParcels?: GameState['acquiredParcels']; expanded?: boolean} & Pick<GameState, 'startCourse'> & {missions?: Pick<MissionState, 'events' | 'nightOrderStarted'>} & {buildings: (Pick<GameState['buildings'][number], 'kind'> & Partial<Pick<GameState['buildings'][number], 'habitat' | 'farmLevel' | 'agencyLevel' | 'nursery'>>)[]};
 export function mainProgress(state: ObservableState, id: MainMissionId): {value: number; target: number} {
   const c = MAIN_MISSIONS[id].condition;
   switch (c.kind) {
     case 'level': return {value: progressionFromXp(state.progression?.totalXp ?? 0).level, target:c.target};
+    case 'evolutions': return {value: state.rabbits.filter(rabbit => rabbit.evolution?.done === true && rabbit.affection >= 30 && hasEvolvedArt(rabbit.species)).length, target:c.target};
     case 'extensions': return {value:Math.max(0,(state.acquiredParcels?.length ?? 1)-1),target:c.target};
     case 'habitatLevel': return {value:Math.max(0,...state.buildings.map(b=>b.habitat?.level ?? 0)),target:c.target};
     case 'buildingLevel': return {value: Math.max(0, ...state.buildings.filter(b => b.kind === c.building).map(b => c.building === 'farm' ? b.farmLevel ?? 1 : c.building === 'agency' ? b.agencyLevel ?? 1 : b.nursery?.capacity ?? 1)), target: c.target};

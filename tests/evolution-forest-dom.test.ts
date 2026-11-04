@@ -43,26 +43,49 @@ function game(forest = true): GameState {
   s.discovered.push('neige', 'frisket'); s.nextId = 107; return s;
 }
 
-it('a portrait shows the evolved drawing of a rabbit at 30, the species drawing elsewhere', () => {
-  expect(rabbitPortrait({species: 'paille', affection: 30})).toContain('paille-v2.png');
-  expect(rabbitPortrait({species: 'paille', affection: 30})).toContain('data-evolved');
+it('a portrait keeps the old drawing until the rabbit has evolved explicitly', () => {
+  expect(rabbitPortrait({species: 'paille', affection: 30})).toContain('paille-v1.png');
+  expect(rabbitPortrait({species: 'paille', affection: 30})).not.toContain('data-evolved');
+  expect(rabbitPortrait({species: 'paille', affection: 30, evolution: {done: true}})).toContain('paille-v2.png');
   expect(rabbitPortrait({species: 'paille', affection: 29})).toContain('paille-v1.png');
   expect(rabbitPortrait({species: 'paille', affection: 45, classicLook: true})).toContain('paille-v1.png');
-  expect(rabbitPortrait({species: 'frisket', affection: 50})).toContain('frisket-v2.png');
+  expect(rabbitPortrait({species: 'frisket', affection: 50})).toContain('frisket-v1.png');
+  expect(rabbitPortrait({species: 'frisket', affection: 50, evolution: {done: true}})).toContain('frisket-v2.png');
   expect(portrait('paille')).toContain('paille-v1.png'); // Catalogue and shop: the species' own drawing.
 });
 
-it('the rabbit sheet shows the evolved drawing; the forest lists the rabbits at 30 and switches their drawing both ways', () => {
-  const {ui, controller} = mount(game());
+it('shows the required challenge progress and keeps evolution disabled until it is complete', () => {
+  const {ui} = mount(game());
   ui.select({kind: 'rabbit', id: 'rabbit-104'});
-  expect(panel().querySelector<HTMLImageElement>('.portrait.large img')!.src).toContain('paille-v2.png');
+  const section = panel().querySelector('[data-rabbit-evolution="rabbit-104"]')!;
+  expect(section.textContent).toContain('0 / 1 voyage');
+  expect(section.querySelector<HTMLButtonElement>('[data-evolve-rabbit]')!.disabled).toBe(true);
+  expect(section.querySelector('.evolution-look.is-locked')).not.toBeNull();
+});
+
+it('the sheet requires explicit evolution; the scene plays and the forest then switches drawings both ways', () => {
+  const s = game(); s.rabbits.find(r => r.id === 'rabbit-104')!.evolution = {challenges: {voyage: 1}};
+  const {ui, controller} = mount(s);
+  (ui as unknown as {open(view: unknown): void}).open({kind: 'collection'});
+  expect(panel().querySelector('.collection-evolution-count')?.textContent).toBe('0 / 35 évolutions');
+  expect(panel().querySelector('[data-collection-evolution="paille"]')?.classList.contains('is-locked')).toBe(true);
+  expect(panel().querySelector('[data-collection-evolution="feu"]')?.classList.contains('is-locked')).toBe(true); // Unknown species still has a grey evolution slot.
+  ui.select({kind: 'rabbit', id: 'rabbit-104'});
+  expect(panel().querySelector<HTMLImageElement>('.portrait.large img')!.src).toContain('paille-v1.png');
+  expect(panel().querySelector('[data-rabbit-evolution="rabbit-104"]')?.textContent).toContain('1 / 1 voyage');
+  expect((panel().querySelector<HTMLButtonElement>('[data-evolve-rabbit]'))?.disabled).toBe(false);
+  panel().querySelector<HTMLButtonElement>('[data-evolve-rabbit]')!.click();
+  expect(controller.getSnapshot().state!.rabbits.find(r => r.id === 'rabbit-104')!.evolution?.done).toBe(true);
+  expect(document.querySelector('.evolution-moment')).not.toBeNull();
+  expect(document.querySelector<HTMLImageElement>('.evolution-after')!.src).toContain('paille-v2.png');
+  document.querySelector<HTMLButtonElement>('.evolution-moment-close')!.click();
+  expect(document.querySelector('.evolution-moment')).toBeNull();
   ui.select({kind: 'building', id: 'building-100'});
   expect(document.getElementById('panel-title')?.textContent ?? panel().textContent).toContain('Forêt de Brocéliande');
   const cards = [...panel().querySelectorAll<HTMLElement>('[data-forest-rabbit]')];
-  expect(cards.map(card => card.dataset.forestRabbit)).toEqual(['rabbit-106', 'rabbit-104']); // The Neige at 29 is not listed.
-  expect(cards[1].querySelector('img')!.src).toContain('paille-v2.png');
-  expect(cards[0].querySelector('img')!.src).toContain('frisket-v2.png');
-  const toOld = cards[1].querySelector('button')!; expect(toOld.textContent).toBe('Remettre l’ancien dessin');
+  expect(cards.map(card => card.dataset.forestRabbit)).toEqual(['rabbit-104']); // Affection 30 alone never adds a rabbit to the forest.
+  expect(cards[0].querySelector('img')!.src).toContain('paille-v2.png');
+  const toOld = cards[0].querySelector('button')!; expect(toOld.textContent).toBe('Remettre l’ancien dessin');
   const pattes = controller.getSnapshot().state!.pattes;
   toOld.click();
   let state = controller.getSnapshot().state!;
@@ -73,6 +96,10 @@ it('the rabbit sheet shows the evolved drawing; the forest lists the rabbits at 
   toNew.click();
   state = controller.getSnapshot().state!;
   expect('classicLook' in state.rabbits.find(r => r.id === 'rabbit-104')!).toBe(false);
+  (ui as unknown as {open(view: unknown): void}).open({kind: 'collection'});
+  expect(panel().querySelector('.collection-evolution-count')?.textContent).toBe('1 / 35 évolutions');
+  expect(panel().querySelector('[data-collection-evolution="paille"]')?.classList.contains('is-unlocked')).toBe(true);
+  expect(panel().querySelector('[data-collection-evolution="paille"]')?.textContent).toContain('Cœur des moissons');
 });
 
 it('the shop sells the forest from level 20 for 10 000 pattes', () => {

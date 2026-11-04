@@ -18,6 +18,9 @@ import {affectionCap, isUltimate, nextAffectionStatue, playerLevel, statueReason
 import {agencyBuilding, travelling} from './travel';
 import {atSalon, giftAffectionReason, giftReason, picnicQuote, salonBuilding} from './care';
 import {classicLookReason} from './forest';
+import {recordEvolutionChallenge} from './evolution';
+import {canEvolve, hasEvolvedArt} from '../config/evolvedArt';
+import {evolutionChallengesComplete} from '../config/evolutionChallenges';
 import {dailyBonusReady, dailyClaimable, dailyCycleStart, dailyMissionsOf, recordMissionAction} from './missions';
 import {farmLimit, farmDuration, FARM_UPGRADES, orderFarmLevel, BALANCE, HEARTS, HOUR, TRAVEL, SALON, FOREST, CARE_KINDS, carePrice, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
 import {emptyBuilding} from '../state/initial';
@@ -147,6 +150,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         const heartGranted = s.cuisine.heartCycle !== cycle;
         if (heartGranted) { credit('hearts', 1); s.cuisine.heartCycle = cycle; }
         cuisineReward = {pattes: paid.pattes, grass: paid.grass, fullReward, affectionGranted, affectionAtCap: rabbit.affection === BALANCE.maxAffection, affectionStatueRequired: !affectionGranted && rabbit.affection >= affectionCap(s) && affectionCap(s) < BALANCE.maxAffection, heartGranted, affectionRabbitId: rabbit.id};
+        recordEvolutionChallenge(s, command.rabbitId, `cuisine:${command.recipeId}` as import('../config/evolutionChallenges').EvolutionChallenge);
         break;
       }
       case 'buyDecoration': {
@@ -222,7 +226,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       case 'claimTrip': {
         const trip = s.travel?.trips.find(t => t.rabbitId === command.rabbitId); requireRule(trip && trip.endsAt <= time, 'NOT_READY');
         rememberTrip(s, trip.rabbitId, trip.destination, trip.startedAt, time);
-        credit('hearts', trip.hearts); credit('grass', trip.grass ?? 0); s.travel!.trips = s.travel!.trips.filter(t => t.rabbitId !== command.rabbitId); value = trip.hearts; break;
+        credit('hearts', trip.hearts); credit('grass', trip.grass ?? 0); s.travel!.trips = s.travel!.trips.filter(t => t.rabbitId !== command.rabbitId); recordEvolutionChallenge(s, command.rabbitId, 'voyage'); value = trip.hearts; break;
       }
       case 'startCare': {
         requireRule(salonBuilding(s), 'MISSING_BUILDING'); requireRule((CARE_KINDS as string[]).includes(command.care), 'INVALID_CHOICE');
@@ -242,7 +246,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         const rabbit = s.rabbits.find(r => r.id === care.rabbitId); requireRule(rabbit, 'NOT_FOUND');
         // The gift was checked at the start and the rabbit could not change since; the wall and the cap still hold.
         if (!giftAffectionReason(s, rabbit.affection)) rabbit.affection++;
-        delete s.care; gainXp(SALON.cares[care.care].xp); value = rabbit.affection; break;
+        delete s.care; gainXp(SALON.cares[care.care].xp); recordEvolutionChallenge(s, rabbit.id, 'soin'); value = rabbit.affection; break;
       }
       case 'picnic': {
         const b = building(command.enclosureId, 'enclosure');
@@ -250,7 +254,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(command.expectedCost === quote.price, 'PRICE_CHANGED'); pay(quote.price);
         const cycle = s.missions.daily.cycleIndex, gifts = {...s.affectionGifts};
         for (const r of quote.winners) { r.affection++; gifts[r.id] = cycle; }
-        s.affectionGifts = gifts; s.picnicCycle = cycle; gainXp(quote.xp); value = quote.winners.length; break;
+        s.affectionGifts = gifts; s.picnicCycle = cycle; gainXp(quote.xp); for (const guest of quote.guests) recordEvolutionChallenge(s, guest.id, 'piquenique'); value = quote.winners.length; break;
       }
       case 'exchangeForHeart': {
         requireRule(command.resource === 'pattes' || command.resource === 'grass', 'INVALID_CHOICE');
@@ -335,12 +339,12 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(nest.breeding.endsAt <= time, 'NOT_READY');
         const nursery = nurseryBuilding(s), slot = firstFreeNurserySlot(nursery);
         requireRule(nursery?.nursery, 'MISSING_BUILDING'); requireRule(slot !== null, 'BUSY');
-        const birth = nest.breeding.birth, duration = growthDuration(birth.species);
+        const birth = nest.breeding.birth, parents = [...nest.breeding.parents], duration = growthDuration(birth.species);
         requireRule(Number.isSafeInteger(time + duration), 'INVALID_TIME');
         requireRule(!findNurseryBaby(s, birth.id), 'STALE_ACTION');
         // Lowest free usable cushion; babies already there never move.
         nursery.nursery.babies.push({slot, birth, startedAt: time, readyAt: time + duration});
-        nest.breeding = null; value = birth.id; break;
+        nest.breeding = null; for (const parentId of parents) recordEvolutionChallenge(s, parentId, 'parent'); value = birth.id; break;
       }
       case 'upgradeFarm': {
         const b = building(command.id, 'farm'), toLevel = command.toLevel ?? 2;
@@ -531,11 +535,19 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         break;
       }
       case 'toggleClassicLook': {
-        // Free and purely cosmetic, both ways, as often as wanted: only with the Forêt de Brocéliande, from affection 30, on a species
-        // that has an evolved drawing.
+        // Free and purely cosmetic, both ways, as often as wanted: only with the Forêt de Brocéliande, on an already evolved rabbit.
         const rabbit = s.rabbits.find(r => r.id === command.rabbitId); requireRule(rabbit, 'NOT_FOUND');
         const reason = classicLookReason(s, rabbit); requireRule(!reason, reason ?? 'INVALID_CHOICE');
         if (rabbit.classicLook) delete rabbit.classicLook; else rabbit.classicLook = true;
+        break;
+      }
+      case 'evolveRabbit': {
+        const rabbit = s.rabbits.find(r => r.id === command.rabbitId); requireRule(rabbit, 'NOT_FOUND');
+        requireRule(hasEvolvedArt(rabbit.species) && rabbit.species !== 'benny', 'NO_EVOLVED_ART');
+        requireRule(rabbit.affection >= 30, 'EVOLUTION_AFFECTION');
+        requireRule(evolutionChallengesComplete(rabbit.species, rabbit.evolution?.challenges), 'EVOLUTION_CHALLENGES');
+        requireRule(canEvolve(rabbit), 'INVALID_CHOICE');
+        rabbit.evolution = {...rabbit.evolution, done: true}; delete rabbit.classicLook;
         break;
       }
       case 'bennyPower': {

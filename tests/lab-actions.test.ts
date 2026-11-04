@@ -74,6 +74,24 @@ describe('pure laboratory transactions', () => {
     nest.breeding!.startedAt = now; nest.breeding!.endsAt = now + 20 * 60000;
     const low = run(full, {type: 'affection', value: 1}); expect(low.buildings.find(b => b.breeding)!.breeding!.endsAt).toBe(now);
   });
+  it('completes challenges for only the selected rabbit and evolves only eligible rabbits', () => {
+    let s = createGame(now);
+    const pailleId = s.rabbits.find(r => r.species === 'paille')!.id;
+    s = run(s, {type: 'affection', rabbitId: pailleId, value: 30});
+    s = run(s, {type: 'rabbit', species: 'neige', affection: 29});
+    s = run(s, {type: 'rabbit', species: 'benny', affection: 30});
+    const neigeId = s.rabbits.find(r => r.species === 'neige')!.id, bennyId = s.rabbits.find(r => r.species === 'benny')!.id;
+    s = run(s, {type: 'completeEvolutionChallenges', rabbitId: pailleId});
+    expect(s.rabbits.find(r => r.id === pailleId)?.evolution?.challenges).toEqual({voyage: 1});
+    expect(s.rabbits.find(r => r.id === neigeId)?.evolution).toBeUndefined();
+    s = run(s, {type: 'completeEvolutionChallenges', rabbitId: neigeId});
+    expect(s.rabbits.find(r => r.id === neigeId)?.evolution?.challenges).toEqual({soin: 1});
+    expect(() => labAction(s, {type: 'completeEvolutionChallenges', rabbitId: bennyId})).toThrow(/pas de défis/);
+    s = run(s, {type: 'evolveEligibleRabbits'});
+    expect(s.rabbits.find(r => r.id === pailleId)?.evolution?.done).toBe(true);
+    expect(s.rabbits.find(r => r.id === neigeId)?.evolution?.done).toBeUndefined(); // Affection below 30.
+    expect(s.rabbits.find(r => r.id === bennyId)?.evolution?.done).toBeUndefined(); // Benny never evolves.
+  });
   it('constructs all building kinds and habitat types for free and sets levels with their real footprints', () => {
     let s = createGame(now); const money = s.pattes;
     for (const kind of ['farm', 'farm', 'kitchen', 'agency', 'statue'] as const) { s = run(s, {type: 'build', kind}); expect(s.buildings.at(-1)!.kind).toBe(kind); }

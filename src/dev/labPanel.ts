@@ -75,6 +75,8 @@ export function mountLabPanel(host: HTMLElement, controller: GameController,
     }
   }
   const bonds = section('Affection', 'affection'), rabbit = select(bonds, 'Lapin et habitat', 'affection-rabbit', []), value = select(bonds, 'Affection', 'affection-value', range(BALANCE.maxAffection));
+  button(bonds, 'Réussir tous les défis du lapin choisi', 'evolution-challenges', () => perform({type: 'completeEvolutionChallenges', rabbitId: rabbit.value}, 'Défis d’évolution du lapin réussis.'));
+  button(bonds, 'Faire évoluer tous les lapins éligibles', 'evolve-eligible-rabbits', () => perform({type: 'evolveEligibleRabbits'}, 'Tous les lapins éligibles ont évolué.'));
   button(bonds, 'Appliquer l’affection', 'set-affection', () => perform({type: 'affection', rabbitId: rabbit.value || 'absent', value: Number(value.value)}, 'Affection du lapin fixée.'));
   for (const value of [2, 10, 15, 20, 30, 50]) button(bonds, `Tous les lapins à ${value}`, `affection-all-${value}`, () => perform({type: 'affection', value}, `Tous tes lapins ont une affection de ${value}.`));
   const buildings = section('Bâtiments et île', 'buildings');

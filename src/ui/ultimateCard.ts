@@ -26,7 +26,7 @@ export function clearUltimateCard(panel: HTMLElement): void {
 }
 /**
  * Puts the golden crown on a portrait's painted rabbit, between the ears (the per-species head anchor of the meadow sprite). The
- * anchor is the one of the drawing the rabbit shows (its evolved drawing from affection 30). The picture is wrapped in a box of its own proportions so the anchor, in fractions of the picture, lands on the head at any size.
+ * anchor is the one of the drawing the rabbit currently shows. The picture is wrapped in a box of its own proportions so the anchor, in fractions of the picture, lands on the head at any size.
  */
 export function crownPortrait(portrait: HTMLElement, rabbit: LookRabbit): HTMLElement {
   const picture = portrait.querySelector<HTMLImageElement>('img[data-rabbit-art]'), art = artForRabbit(rabbit);

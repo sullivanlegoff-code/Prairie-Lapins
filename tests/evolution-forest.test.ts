@@ -4,6 +4,7 @@ import {readFileSync, existsSync} from 'node:fs';
 import {act, createGame, decodeGame, encodeGame} from '../src/simulation';
 import {BALANCE, FOREST, SPECIES_IDS, type SpeciesId} from '../src/config/balance';
 import {EVOLUTION_AFFECTION, EVOLVED_ART, EVOLVED_SCALE, hasEvolvedArt, showsEvolvedArt} from '../src/config/evolvedArt';
+import {EVOLUTION_CHALLENGES, evolutionChallengeTarget} from '../src/config/evolutionChallenges';
 import {artForRabbit, evolvedRabbitArt, rabbitArt} from '../src/config/rabbitArt';
 import {CUISINE_ANCHORS, EVOLVED_CUISINE_ANCHORS, cuisineAnchors} from '../src/config/cuisineAnchors';
 import {crownAnchor} from '../src/config/ultimateArt';
@@ -46,6 +47,10 @@ function setup(rabbits: [SpeciesId, number][], forest = true) {
   return {s, ids};
 }
 const rabbit = (s: GameState, id: string) => s.rabbits.find(r => r.id === id)!;
+function markEvolved(s: GameState, id: string) {
+  const r = rabbit(s, id), challenges = EVOLUTION_CHALLENGES[r.species] ?? [];
+  r.evolution = {done: true, challenges: Object.fromEntries(challenges.map(challenge => [challenge, evolutionChallengeTarget(r.species, challenge)]))};
+}
 
 describe('Evolved drawings at affection 30', () => {
   it('the 35 approved species have an evolved drawing, Benny and the other species keep their v1', () => {
@@ -55,19 +60,20 @@ describe('Evolved drawings at affection 30', () => {
     for (const species of SPECIES_IDS) expect(hasEvolvedArt(species)).toBe(EVOLVED.includes(species));
     expect(artForRabbit({species: 'benny', affection: 50})).toBe(rabbitArt('benny'));
     expect(artForRabbit({species: 'dragon', affection: 29})).toBe(rabbitArt('dragon'));
-    expect(artForRabbit({species: 'dragon', affection: 30})).toBe(evolvedRabbitArt('dragon'));
+    expect(artForRabbit({species: 'dragon', affection: 30})).toBe(rabbitArt('dragon'));
     expect(hasEvolvedArt('benny')).toBe(false);
   });
-  it('29 shows the old drawing, 30 and more the evolved one', () => {
+  it('affection 30 alone keeps the old drawing; only an explicitly evolved rabbit shows the new one', () => {
     for (const species of EVOLVED) {
       expect(artForRabbit({species, affection: 29})).toBe(rabbitArt(species));
-      for (const affection of [30, 31, 50]) {
-        const art = artForRabbit({species, affection})!;
-        expect(art).toBe(evolvedRabbitArt(species)); expect(art.evolved).toBe(true);
-        expect(art.url).toContain(`assets/rabbits/${species}/${species}-v2.png`);
-      }
+      for (const affection of [30, 31, 50]) expect(artForRabbit({species, affection})).toBe(rabbitArt(species));
+      const evolved = {species, affection: 30, evolution: {done: true as const, challenges: Object.fromEntries((EVOLUTION_CHALLENGES[species] ?? []).map(challenge => [challenge, evolutionChallengeTarget(species, challenge)]))}};
+      const art = artForRabbit(evolved)!;
+      expect(art).toBe(evolvedRabbitArt(species)); expect(art.evolved).toBe(true);
+      expect(art.url).toContain(`assets/rabbits/${species}/${species}-v2.png`);
       expect(showsEvolvedArt({species, affection: 29})).toBe(false);
-      expect(showsEvolvedArt({species, affection: 30})).toBe(true);
+      expect(showsEvolvedArt({species, affection: 30})).toBe(false);
+      expect(showsEvolvedArt(evolved)).toBe(true);
       expect(showsEvolvedArt({species, affection: 30, classicLook: true})).toBe(false);
       expect(artForRabbit({species, affection: 40, classicLook: true})).toBe(rabbitArt(species));
     }
@@ -141,10 +147,11 @@ describe('Forêt de Brocéliande', () => {
     expect([png.width, png.height]).toEqual([FOREST_ART.width, FOREST_ART.height]);
   });
   it('switches a rabbit of affection 30 between both drawings, for free, both ways and as often as wanted', () => {
-    const {s, ids: [a, b]} = setup([['paille', 30], ['neige', 45]]);
+    const {s, ids: [a, b]} = setup([['paille', 30], ['neige', 45]]); markEvolved(s, a); markEvolved(s, b);
     const before = {pattes: s.pattes, hearts: s.hearts, grass: s.grass, xp: s.progression.totalXp};
     const old = run(s, {type: 'toggleClassicLook', rabbitId: a});
     expect(rabbit(old, a).classicLook).toBe(true); expect(showsEvolvedArt(rabbit(old, a))).toBe(false);
+    expect(forestRabbits(old).map(r => r.id)).toContain(a); // Already evolved rabbits stay listed even in their old drawing.
     expect(rabbit(old, b).classicLook).toBeUndefined(); expect(showsEvolvedArt(rabbit(old, b))).toBe(true);
     expect(rabbit(s, a).classicLook).toBeUndefined(); // The command never mutates the state it was given.
     const back = run(old, {type: 'toggleClassicLook', rabbitId: a});
@@ -159,20 +166,21 @@ describe('Forêt de Brocéliande', () => {
     refused(s, {type: 'toggleClassicLook', rabbitId: low}, 'EVOLUTION_AFFECTION');
     refused(s, {type: 'toggleClassicLook', rabbitId: rare}, 'NO_EVOLVED_ART');
     refused(s, {type: 'toggleClassicLook', rabbitId: 'rabbit-404'}, 'NOT_FOUND');
-    const none = setup([['feu', 35]], false);
+    const none = setup([['feu', 35]], false); markEvolved(none.s, none.ids[0]);
     refused(none.s, {type: 'toggleClassicLook', rabbitId: none.ids[0]}, 'MISSING_BUILDING');
     // Without the forest a rabbit of affection 30 always shows its evolved drawing.
     expect(showsEvolvedArt(rabbit(none.s, none.ids[0]))).toBe(true);
-    expect(classicLookReason(s, {species: 'feu', affection: 30})).toBeNull();
+    expect(classicLookReason(s, {species: 'feu', affection: 30, evolution: {done: true}})).toBeNull();
     expect(forestRabbits(s).map(r => r.id)).toEqual([]);
     const listed = setup([['feu', 31], ['frisket', 40], ['volant', 45], ['paille', 29]]);
+    for (const id of listed.ids) if (rabbit(listed.s, id).affection >= 30) markEvolved(listed.s, id);
     expect(forestRabbits(listed.s).map(r => r.species)).toEqual(['volant', 'frisket', 'feu']);
   });
 });
 
 describe('Save format: the old drawing put back', () => {
   it('saves and reloads the choice of each rabbit', () => {
-    const {s, ids: [a, b]} = setup([['belier-gris', 30], ['volant', 30]]);
+    const {s, ids: [a, b]} = setup([['belier-gris', 30], ['volant', 30]]); markEvolved(s, a); markEvolved(s, b);
     const old = run(s, {type: 'toggleClassicLook', rabbitId: a});
     const decoded = decodeGame(encodeGame(old)); if (!decoded.ok) throw Error(decoded.reason);
     expect(decoded.state.version).toBe(23);
@@ -187,7 +195,7 @@ describe('Save format: the old drawing put back', () => {
     // Only the usual load normalization (the Rare's individual income draw); no drawing choice appears.
     const plain = (rabbits: GameState['rabbits']) => rabbits.map(({incomeRoll: _roll, ...r}) => r);
     expect(plain(decoded.state.rabbits)).toEqual(plain(s.rabbits)); expect(decoded.state.rabbits.some(r => 'classicLook' in r)).toBe(false);
-    expect(showsEvolvedArt(rabbit(decoded.state, evolved))).toBe(true);
+    expect(showsEvolvedArt(rabbit(decoded.state, evolved))).toBe(false);
   });
   it('loads a v22 save (no forest kind, no choice) unchanged', () => {
     const {s} = setup([['neige', 20]], false);
@@ -196,7 +204,7 @@ describe('Save format: the old drawing put back', () => {
     expect(decoded.state.version).toBe(23); expect(decoded.state.rabbits).toEqual(s.rabbits);
   });
   it('drops a choice that means nothing instead of refusing the save', () => {
-    const {s, ids: [a, low, rare]} = setup([['feu', 30], ['feu', 29], ['benny', 40]]);
+    const {s, ids: [a, low, rare]} = setup([['feu', 30], ['feu', 29], ['benny', 40]]); markEvolved(s, a);
     const raw = JSON.parse(encodeGame(s));
     for (const r of raw.rabbits) if ([a, low, rare].includes(r.id)) r.classicLook = true;
     let decoded = decodeGame(JSON.stringify(raw)); if (!decoded.ok) throw Error(decoded.reason);

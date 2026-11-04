@@ -7,6 +7,8 @@ import {activeMainMissions, mainProgress} from '../src/simulation/missions';
 import {cumulativeLevelXp, missionClaimXp} from '../src/simulation/progression';
 import {cuisineQuotaText, cuisineRemaining, heartGift, orderReadyText, recipeHint} from '../src/ui/economyFeedback';
 import {emptyBuilding} from '../src/state/initial';
+import {EVOLVED_ART} from '../src/config/evolvedArt';
+import {EVOLUTION_CHALLENGES, evolutionChallengeTarget} from '../src/config/evolutionChallenges';
 
 function advanced() {
   const s = createGame(0);
@@ -16,10 +18,19 @@ function advanced() {
   s.acquiredParcels = ['southwest','south','southeast','west'];
   s.missions.claimed = [...SOLO_INITIAL_MISSION_IDS,...BRANCH_MISSION_IDS]; s.missions.completed = [...s.missions.claimed];
   s.missions.nightOrderStarted = true;
+  // This fixture represents five players who explicitly completed their challenges and evolution before opening this catalogue.
+  s.buildings[0]!.habitat = {type: 'universal', level: 3};
+  for (const [index, art] of EVOLVED_ART.slice(0, 5).entries()) {
+    const challenges = [...new Set(EVOLUTION_CHALLENGES[art.id] ?? [])];
+    const rabbit = s.rabbits[index] ?? {...s.rabbits[0]!, id: `rabbit-${s.nextId++}`};
+    rabbit.species = art.id; rabbit.affection = 30; rabbit.enclosureId = s.buildings[0]!.id;
+    rabbit.evolution = {done: true, challenges: Object.fromEntries(challenges.map(challenge => [challenge, evolutionChallengeTarget(art.id, challenge)]))};
+    if (!s.rabbits.includes(rabbit)) s.rabbits.push(rabbit);
+  }
   return s;
 }
 describe('economy B durable goals', () => {
-  it('loads an existing game without awarding resources or XP, then claims each old durable reward once in the full catalogue', () => {
+  it('loads an existing game without awarding resources or XP, then claims each durable reward once in the full catalogue', () => {
     const old = advanced(); delete old.missions.nightOrderStarted;
     old.buildings.push({...emptyBuilding('building-100','farm',0,32),order:{recipe: 'persil',startedAt:0,endsAt:HOUR}});old.nextId=101;
     const loaded = decodeGame(encodeGame(old)); expect(loaded.ok).toBe(true); if(!loaded.ok) throw Error(loaded.reason);

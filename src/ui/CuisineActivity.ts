@@ -9,9 +9,9 @@ import type {RabbitArt} from '../config/rabbitArt';
 import {SPECIES} from '../config/balance';
 import {setCurrencyText} from '../display/currency';
 
-/** `affection` and `classicLook` choose the drawing the rabbit shows (its evolved one from affection 30); absent, its species' own. */
-export type CuisineRabbit = Readonly<Pick<Rabbit, 'id' | 'species'> & {name?: string; affection?: number; classicLook?: true}>;
-const cookArt = (rabbit: CuisineRabbit): RabbitArt | undefined => rabbit.affection === undefined ? rabbitArt(rabbit.species) : artForRabbit({species: rabbit.species, affection: rabbit.affection, classicLook: rabbit.classicLook});
+/** `evolution.done` and `classicLook` choose the drawing the rabbit currently shows; absent evolution data, use its species' own. */
+export type CuisineRabbit = Readonly<Pick<Rabbit, 'id' | 'species'> & {name?: string; affection?: number; classicLook?: true; evolution?: Rabbit['evolution']}>;
+const cookArt = (rabbit: CuisineRabbit): RabbitArt | undefined => rabbit.affection === undefined ? rabbitArt(rabbit.species) : artForRabbit({species: rabbit.species, affection: rabbit.affection, classicLook: rabbit.classicLook, evolution: rabbit.evolution});
 export {commisMood, type CommisMood} from './cuisineTalk';
 /** The rabbit's sprite with its accessory (toque or bib) and the paws used to cover its eyes, all on the same anchors. */
 export function dressedRabbit(rabbit: CuisineRabbit, role: 'commis' | 'taster', faceRight: boolean): HTMLElement {

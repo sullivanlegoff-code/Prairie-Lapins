@@ -3,14 +3,14 @@ import {habitatPrice, type HabitatType} from './habitats';
 import {DECORATIONS, DECORATION_IDS, type DecorationId} from './decorations';
 
 export type Reward = {resource: 'pattes' | 'grass' | 'hearts'; amount: number} | {resource: 'none'; amount: 0};
-export type MainCondition = {kind: 'building'; building: BuildingKind; habitatType?: HabitatType; target?: number} | {kind: 'discoveries' | 'affection'; target: number} | {kind: 'extension' | 'rare'} | {kind: 'level' | 'extensions' | 'habitatLevel'; target: number} | {kind: 'ordinaryRares' | 'nightOrder' | 'paidRecipe'} | {kind: 'species'; species: SpeciesId} | {kind: 'decoration'; model: DecorationId} | {kind: 'buildingLevel'; building: 'farm' | 'agency' | 'nursery'; target: number} | {kind: 'parents'; target: number} | {kind: 'event'; event: MainEvent; target: number};
+export type MainCondition = {kind: 'building'; building: BuildingKind; habitatType?: HabitatType; target?: number} | {kind: 'discoveries' | 'affection' | 'evolutions'; target: number} | {kind: 'extension' | 'rare'} | {kind: 'level' | 'extensions' | 'habitatLevel'; target: number} | {kind: 'ordinaryRares' | 'nightOrder' | 'paidRecipe'} | {kind: 'species'; species: SpeciesId} | {kind: 'decoration'; model: DecorationId} | {kind: 'buildingLevel'; building: 'farm' | 'agency' | 'nursery'; target: number} | {kind: 'parents'; target: number} | {kind: 'event'; event: MainEvent; target: number};
 export type MainDefinition = {title: string; description: string; condition: MainCondition; reward: Reward; extraRewards?: readonly Reward[]; claimXp?: number};
 export const MAIN_EVENT_IDS = ['collectOrder', 'breed', 'transferBirth', 'welcome', 'placeDecoration'] as const;
 export type MainEvent = typeof MAIN_EVENT_IDS[number];
 export const INITIAL_MISSION_IDS = ['first-meal', 'first-farm', 'first-harvest', 'parents-ready', 'at-nest', 'to-nursery', 'first-birth'] as const;
 export const SOLO_INITIAL_MISSION_IDS = ['snow-habitat', 'welcome-snow', 'first-meal', 'parents-ready', 'at-nest', 'first-farm', 'first-harvest', 'to-nursery', 'first-birth'] as const;
 export const BRANCH_MISSION_IDS = ['varied-family', 'growing-collection', 'two-habitats', 'strong-bonds', 'first-decoration', 'bigger-meadow','seven-species'] as const;
-export const DURABLE_MISSION_IDS = ['level-five', 'welcome-fire', 'night-order', 'ten-species', 'habitat-two', 'level-ten', 'welcome-metal', 'three-extensions', 'fifteen-species', 'welcome-flight', 'level-fifteen', 'all-ordinary-rares'] as const;
+export const DURABLE_MISSION_IDS = ['level-five', 'welcome-fire', 'night-order', 'ten-species', 'habitat-two', 'level-ten', 'welcome-metal', 'three-extensions', 'fifteen-species', 'welcome-flight', 'level-fifteen', 'all-ordinary-rares', 'evolve-first', 'evolve-five'] as const;
 export const DISCOVERY_MISSION_IDS = SPECIES_IDS.map(id => `discover-${id}` as const);
 export const DECORATION_MISSION_IDS = DECORATION_IDS.map(id => `decorate-${id}` as const);
 const MILESTONE_MISSIONS = {
@@ -62,6 +62,8 @@ export const MAIN_MISSIONS: Record<MainMissionId, MainDefinition> = {
   'welcome-flight': {title:'Accueillir Volant',description:'Accueillir Volant.',condition:{kind:'species',species:'volant'},reward:{resource:'pattes',amount:500}},
   'level-fifteen': {title:'Atteindre le niveau 15',description:'Atteindre le niveau 15.',condition:{kind:'level',target:15},reward:{resource:'hearts',amount:5}},
   'all-ordinary-rares': {title:'Découvrir tous les rares ordinaires',description:'Découvrir tous les rares ordinaires.',condition:{kind:'ordinaryRares'},reward:{resource:'hearts',amount:10}},
+  'evolve-first': {title:'Fais évoluer ton premier lapin',description:'Fais évoluer un lapin après avoir réussi ses défis.',condition:{kind:'evolutions',target:1},reward:{resource:'hearts',amount:3}},
+  'evolve-five': {title:'Fais évoluer 5 lapins',description:'Fais évoluer cinq lapins après avoir réussi leurs défis.',condition:{kind:'evolutions',target:5},reward:{resource:'hearts',amount:10}},
   'snow-habitat': {title:'Posséder un habitat Neige', description:'Acheter le Jardin enneigé et confirmer son placement.', condition:{kind:'building',building:'enclosure',habitatType:'neige'},reward:{resource:'pattes',amount:0}},
   'welcome-snow': {title:'Accueillir Neige', description:'Accueillir Neige dans la prairie. Récompense unique de départ.',condition:{kind:'species',species:'neige'},reward:{resource:'pattes',amount:50}},
   'seven-species':{title:'Découvrir 7 espèces',description:'Découvrir 7 espèces distinctes. Le niveau du joueur détermine les achats disponibles.',condition:{kind:'discoveries',target:7},reward:{resource:'none',amount:0}},

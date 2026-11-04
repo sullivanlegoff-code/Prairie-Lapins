@@ -63,14 +63,16 @@ import {rabbitIncome, individualIncomeRoll} from '../simulation/time';
 import type {MeadowScene, MeadowSelection} from '../display/MeadowScene';
 import {ActionGate} from './gestures';
 import {portrait, rabbitPortrait} from './portraits';
-import {EVOLVED_ART, showsEvolvedArt, type LookRabbit} from '../config/evolvedArt';
-import {forestRabbits} from '../simulation/forest';
+import {EVOLVED_ART, canEvolve, showsEvolvedArt, type LookRabbit} from '../config/evolvedArt';
+import {EVOLUTION_CHALLENGES, evolutionChallengeLabel, evolutionChallengeTarget, evolutionChallengesComplete} from '../config/evolutionChallenges';
+import {evolvedRabbitArt, rabbitArt} from '../config/rabbitArt';
+import {forestRabbits, isEvolved} from '../simulation/forest';
 import {PreferenceStore, Sounds} from './preferences';
 import {onboardingTask} from './onboarding';
 import {PailleDialogue} from './PailleDialogue';
 import {mountPhotoControls} from './photoControls';
 import {guidedStep, type GuideStep} from './guidance';
-import {BUILDING_NAMES, CARE_NAMES, REFUSALS, RARITY_NAMES, busyReason, TYPE_NAMES, typeNames, recipeBook, recipePairs, buildingReason, collectionView, incomeWhole, moneyReason, nurseryView, occupants, oddsTexts, oddsView, placementReason, rabbitAvailability, parentBusy, releaseReason, timeLeft, type Placement, type CollectionFilter} from './models';
+import {BUILDING_NAMES, CARE_NAMES, REFUSALS, RARITY_NAMES, busyReason, TYPE_NAMES, typeNames, recipeBook, recipePairs, buildingReason, collectionSpeciesView, collectionView, incomeWhole, moneyReason, nurseryView, occupants, oddsTexts, oddsView, placementReason, rabbitAvailability, parentBusy, releaseReason, timeLeft, type Placement, type CollectionFilter} from './models';
 
 type ShopTab = 'home' | 'recipes' | 'rabbits' | 'habitats' | 'buildings' | 'decorations';
 type View = {kind:'album'|'cozyEvents'|'decorationGroup'} | {kind: 'welcomeBaby'; birthId: string} | {kind:'levelRequirement';target:LevelAccessTarget} | {kind: 'missions'; tab: 'main' | 'daily'} | {kind: 'shop'; tab: ShopTab} | {kind: 'building' | 'rabbit' | 'moveRabbit' | 'decoration'; id: string} |
@@ -88,7 +90,7 @@ const rareBirthBonusText = () => `Chances d’épique et de légendaire quand le
 /** The painted heart of the HUD, as the affection emblem: affection is there from the first meal. */
 function heartEmblem(): HTMLImageElement { return heartIcon(); }
 
-/** A species shows its own drawing (catalogue, shop); one rabbit (`LookRabbit`) the drawing it shows, evolved from affection 30. */
+/** A species shows its own drawing (catalogue, shop); one rabbit shows its evolution only after the explicit action. */
 type Subject = SpeciesId | LookRabbit;
 const subjectSpecies = (subject?: Subject): SpeciesId | undefined => typeof subject === 'object' ? subject.species : subject;
 function avatar(subject?: Subject, large = false): HTMLElement {
@@ -157,6 +159,7 @@ export class GameUI {
   private gate = new ActionGate();
   private sounds: Sounds;
   private toastTimer = 0;
+  private evolutionTimer = 0;
   private frame = 0;
   private abort = new AbortController();
   /** The control focused when a menu opened from the meadow; it gets the focus back when that menu closes. */
@@ -342,6 +345,37 @@ export class GameUI {
       if (fireBreeding) this.accountReminder.request();
     });
   }
+  /** A short painted reveal shown only after the explicit evolution action has been saved. */
+  private showEvolutionMoment(rabbit: Rabbit): void {
+    this.dismissEvolutionMoment();
+    const art = EVOLVED_ART.find(entry => entry.id === rabbit.species);
+    const oldArt = rabbitArt(rabbit.species), newArt = evolvedRabbitArt(rabbit.species);
+    if (!art || !oldArt || !newArt) return;
+    const reduced = !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const root = node('div', '', 'evolution-moment'); root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true');
+    root.setAttribute('aria-label', `Évolution : ${art.name}`); root.dataset.reducedMotion = String(reduced);
+    root.style.setProperty('--evolution-background', `url("${import.meta.env.BASE_URL}assets/effects/evolution/evolution-background.png")`);
+    const artBox = node('div', '', 'evolution-moment-art');
+    const before = document.createElement('img'); before.src = oldArt.url; before.alt = ''; before.className = 'evolution-before'; before.draggable = false;
+    const after = document.createElement('img'); after.src = newArt.url; after.alt = ''; after.className = 'evolution-after'; after.draggable = false;
+    const sparkles = document.createElement('img'); sparkles.src = `${import.meta.env.BASE_URL}assets/effects/evolution/evolution-sparkles.png`; sparkles.alt = ''; sparkles.className = 'evolution-sparkles'; sparkles.draggable = false;
+    artBox.append(before, after, sparkles);
+    const title = node('h1', art.name, 'evolution-moment-title');
+    const hint = node('p', reduced ? 'Ton lapin a évolué.' : 'Touche pour passer', 'evolution-moment-hint');
+    const close = node('button', 'Continuer', 'evolution-moment-close'); close.type = 'button';
+    root.append(artBox, title, hint, close); document.body.append(root);
+    let ended = false;
+    const finish = () => { if (ended) return; ended = true; this.dismissEvolutionMoment(); };
+    this.abort.signal.addEventListener('abort', finish, {once: true});
+    root.addEventListener('click', finish); close.addEventListener('click', event => { event.stopPropagation(); finish(); });
+    root.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ' || event.key === 'Escape') { event.preventDefault(); finish(); } });
+    close.focus();
+    if (!reduced) this.evolutionTimer = window.setTimeout(finish, 2500);
+  }
+  private dismissEvolutionMoment(): void {
+    window.clearTimeout(this.evolutionTimer); this.evolutionTimer = 0;
+    document.querySelector('.evolution-moment')?.remove();
+  }
   private levelAction(card:HTMLElement, action:HTMLButtonElement | readonly HTMLButtonElement[], s:GameState, target:LevelAccessTarget):void {
     const access=stateLevelAccess(s,target);
     mountLevelLock(card,action).update(access);
@@ -422,7 +456,7 @@ export class GameUI {
       const cook = pick(commisId), taster = pick(tasterId);
       if (!cook || (tasterId !== undefined && !taster)) { this.render(); return; }
       while (this.view?.kind === 'cuisineRabbit') this.back();
-      this.cuisine.open({id: cook.id, species: cook.species, name: cook.name, affection: cook.affection, classicLook: cook.classicLook}, taster && {id: taster.id, species: taster.species, name: taster.name, affection: taster.affection, classicLook: taster.classicLook});
+      this.cuisine.open({id: cook.id, species: cook.species, name: cook.name, affection: cook.affection, classicLook: cook.classicLook, evolution: cook.evolution}, taster && {id: taster.id, species: taster.species, name: taster.name, affection: taster.affection, classicLook: taster.classicLook, evolution: taster.evolution});
     };
     if (!commis) {
       this.content.append(node('p', s.rabbits.length > 1 ? 'Ton commis cuisine avec toi. Ensuite, tu choisiras le goûteur, qui goûtera le plat.' : 'Ton lapin sera à la fois commis et goûteur.', 'cuisine-pick-intro'));
@@ -741,7 +775,7 @@ export class GameUI {
     if (tab === 'decorations') { this.renderDecorationShop(s); return; }
     if (tab === 'habitats' || tab === 'buildings') {
       const basic = habitatLevel('universal', 1);
-      const utility: Record<BuildingKind, string> = {enclosure: `${basic.capacity} places · tous les types · stocke ${basic.cap} pattes`, farm: `Ferme niveau 1 : 5 cultures \u00b7 maximum ${farmLimit(playerLevel(s))} actuellement \u00b7 3 au niveau 12, 4 au niveau 15`, kitchen: 'Cuisine - maximum 1', statue: `Ouvre l’affection ${AFFECTION_STATUE.cap + 1} à ${SECOND_AFFECTION_STATUE.cap}, puis ${SECOND_AFFECTION_STATUE.cap + 1} à ${BALANCE.maxAffection} avec la deuxième · maximum 2`, agency: 'Fait voyager tes lapins · des cœurs au retour · maximum 1', salon: 'Bain, brossage ou massage · +1 d’affection au retour · maximum 1', forest: 'Choisis le dessin de tes lapins d’affection 30 · gratuit · maximum 1', nest: 'Deux parents · maximum 1', nursery: 'Une place pour grandir · maximum 1'};
+      const utility: Record<BuildingKind, string> = {enclosure: `${basic.capacity} places · tous les types · stocke ${basic.cap} pattes`, farm: `Ferme niveau 1 : 5 cultures \u00b7 maximum ${farmLimit(playerLevel(s))} actuellement \u00b7 3 au niveau 12, 4 au niveau 15`, kitchen: 'Cuisine - maximum 1', statue: `Ouvre l’affection ${AFFECTION_STATUE.cap + 1} à ${SECOND_AFFECTION_STATUE.cap}, puis ${SECOND_AFFECTION_STATUE.cap + 1} à ${BALANCE.maxAffection} avec la deuxième · maximum 2`, agency: 'Fait voyager tes lapins · des cœurs au retour · maximum 1', salon: 'Bain, brossage ou massage · +1 d’affection au retour · maximum 1', forest: 'Change gratuitement le dessin des lapins déjà évolués · maximum 1', nest: 'Deux parents · maximum 1', nursery: 'Une place pour grandir · maximum 1'};
       if (tab === 'habitats') {
       const universal = this.card(HABITATS.universal.name, `${utility.enclosure} · empreinte 4 × 4`); universal.prepend(habitatThumbnail('universal'));
       if(!this.shopHabitatSpecies || stateLevelAccess(s,{family:'habitatPurchase',id:'universal'}).accessible) {
@@ -762,7 +796,7 @@ export class GameUI {
         const card = this.card(BUILDING_NAMES[kind], `${utility[kind]} · empreinte 4 × 4`);
         if (kind === 'agency') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(agencyThumbnail()); card.append(node('p', `Dès le niveau ${TRAVEL.unlockLevel}, ${HOST_NAME} envoie tes lapins en vacances : voyages de 3 à 10 heures, cœurs en souvenir au retour.`, 'small')); }
         if (kind === 'salon') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(salonThumbnail()); card.append(node('p', `Dès le niveau ${SALON.unlockLevel}, offre un soin à un lapin : un bain, un brossage ou un massage. Il revient avec +1 d’affection et de l’XP.`, 'small')); }
-        if (kind === 'forest') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(forestThumbnail()); card.append(node('p', `Dès le niveau ${FOREST.unlockLevel}, choisis pour chaque lapin d’affection 30 ou plus entre son nouveau dessin et l’ancien. C’est gratuit, autant de fois que tu veux.`, 'small')); }
+        if (kind === 'forest') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(forestThumbnail()); card.append(node('p', `Dès le niveau ${FOREST.unlockLevel}, choisis pour chaque lapin déjà évolué entre son nouveau dessin et l’ancien. C’est gratuit, autant de fois que tu veux.`, 'small')); }
         if (kind === 'statue') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(statueThumbnail()); card.append(node('p', affectionStatueCount(s) === 0 ? `La Statue de l’Affection récompense tes soins : sans elle, l’affection s’arrête à ${AFFECTION_STATUE.cap}. Avec elle, chaque lapin peut atteindre ${SECOND_AFFECTION_STATUE.cap}. Une deuxième statue, dès le niveau ${SECOND_AFFECTION_STATUE.level}, ouvre l’affection ${SECOND_AFFECTION_STATUE.cap + 1} à ${BALANCE.maxAffection}.` : `Ta deuxième Statue de l’Affection ouvre l’affection ${SECOND_AFFECTION_STATUE.cap + 1} à ${BALANCE.maxAffection} à tous tes lapins. Dès le niveau ${SECOND_AFFECTION_STATUE.level}.`, 'small'), node('p', rareBirthBonusText(), 'small')); }
         if (kind === 'statue') card.append(node('p', `Ton solde : ${heartAmount(s.hearts)}. Économise tes cœurs pour la construire.`, 'small'));
         const price = kind === 'statue' ? heartAmount((nextAffectionStatue(s) ?? SECOND_AFFECTION_STATUE).heartPrice) : `${BALANCE.buildings[kind].price} pattes`;
@@ -1193,10 +1227,10 @@ export class GameUI {
   /** Forêt de Brocéliande: rabbit by rabbit, the evolved drawing or the old one, for free and both ways. */
   private renderForest(s: GameState): void {
     const names = EVOLVED_ART.map(art => SPECIES[art.id].name).join(', ');
-    this.content.append(node('p', 'Dans la forêt, choisis le dessin de chacun de tes lapins d’affection 30 ou plus : le nouveau ou l’ancien. C’est gratuit, et tu peux changer d’avis quand tu veux.', 'small'));
+    this.content.append(node('p', 'Dans la forêt, change le dessin des lapins déjà évolués d’affection 30 ou plus : le nouveau ou l’ancien. C’est gratuit, et tu peux changer d’avis quand tu veux.', 'small'));
     this.content.append(node('p', `Ont un nouveau dessin pour l’instant : ${names}.`, 'small'));
     const rabbits = forestRabbits(s);
-    if (!rabbits.length) { this.content.append(node('p', 'Aucun de tes lapins n’a encore son nouveau dessin : il arrive à l’affection 30.', 'small')); return; }
+    if (!rabbits.length) { this.content.append(node('p', 'Aucun de tes lapins n’a encore évolué. Réussis ses défis après l’affection 30, puis lance son évolution depuis sa fiche.', 'small')); return; }
     const list = node('div', '', 'agency-travellers'); this.content.append(list);
     for (const r of rabbits) {
       const evolved = showsEvolvedArt(r), name = r.name || SPECIES[r.species].name;
@@ -1265,6 +1299,47 @@ export class GameUI {
       this.button(essential, crowned ? 'Enlever la couronne' : 'Mettre la couronne', () => this.execute({type: 'toggleCrown', rabbitId: id}, crowned ? 'Couronne enlevée.' : 'Couronne mise !'), null, true).dataset.focus = 'crown';
     }
     this.renderNickname(r);
+    const evolution = EVOLVED_ART.find(entry => entry.id === r.species);
+    if (evolution) {
+      const section = node('section', '', 'rabbit-evolution'); section.dataset.rabbitEvolution = r.id;
+      section.append(node('h3', 'Défis d’évolution'));
+      const challenges = EVOLUTION_CHALLENGES[r.species] ?? [];
+      const uniqueChallenges = [...new Set(challenges)];
+      const list = node('ul', '', 'evolution-challenge-list');
+      for (const challenge of uniqueChallenges) {
+        const target = evolutionChallengeTarget(r.species, challenge), value = Math.min(target, r.evolution?.challenges?.[challenge] ?? 0);
+        let label = evolutionChallengeLabel(challenge);
+        if (challenge === 'voyage') label = target === 1 ? 'voyage' : 'voyages';
+        else if (challenge === 'soin') label = target === 1 ? 'soin' : 'soins';
+        else if (challenge === 'piquenique') label = target === 1 ? 'pique-nique' : 'pique-niques';
+        else if (challenge === 'parent') label = target === 1 ? 'lapereau comme parent' : 'lapereaux comme parent';
+        else if (challenge.startsWith('cuisine:')) {
+          const recipe = challenge === 'cuisine:chicken' ? 'le poulet' : challenge === 'cuisine:moelleux' ? 'le moelleux' : 'l’avocado toast';
+          label = `${target === 1 ? 'recette' : 'recettes'} : ${recipe}`;
+        } else if (challenge.startsWith('corde:')) label = `${target === 1 ? 'manche' : 'manches'} de corde à sauter (au moins ${challenge.slice(6)} sauts)`;
+        const li = node('li', '', value >= target ? 'is-complete' : '');
+        li.append(node('span', `${value} / ${target} ${label}`));
+        if (challenge.startsWith('corde:')) li.append(node('small', 'Le défi sera jouable quand la corde à sauter sera ajoutée.'));
+        list.append(li);
+      }
+      section.append(list);
+      const looks = node('div', '', 'evolution-looks');
+      for (const [kind, art, name] of [['ancien', rabbitArt(r.species), SPECIES[r.species].name], ['évolué', evolvedRabbitArt(r.species), evolution.name]] as const) {
+        const card = node('figure', '', `evolution-look ${kind === 'évolué' && r.evolution?.done !== true ? 'is-locked' : ''}`);
+        const image = document.createElement('img'); image.src = art?.url ?? ''; image.alt = '';
+        card.append(image, node('figcaption', `${kind} · ${name}`)); looks.append(card);
+      }
+      section.append(looks);
+      if (r.evolution?.done === true) {
+        section.append(node('p', `${r.name ?? species.name} a évolué : ${evolution.name}.`, 'badge'));
+      } else {
+        const ready = canEvolve(r);
+        const reason = r.affection < 30 ? 'Affection 30 nécessaire.' : !evolutionChallengesComplete(r.species, r.evolution?.challenges) ? 'Termine les défis ci-dessus.' : null;
+        const evolve = this.button(section, 'Faire évoluer', () => this.execute({type: 'evolveRabbit', rabbitId: id}, `${r.name ?? species.name} devient ${evolution.name} !`, () => this.showEvolutionMoment(r)), ready ? null : reason ?? 'Évolution indisponible.');
+        evolve.dataset.evolveRabbit = id;
+      }
+      this.content.append(section);
+    }
     const factors = [1, ...RARE_BIRTH_BONUS.map(step => step.factor)].sort((a, b) => a - b);
     const factor = RARE_BIRTH_BONUS.find(step => r.affection >= step.affection)?.factor ?? 1;
     const tier = factors.indexOf(factor);
@@ -1817,6 +1892,8 @@ export class GameUI {
   private renderCollection(s: GameState): void {
     this.button(this.content,'Album et souvenirs',()=>this.open({kind:'album'}),null,true);
     this.title.textContent = `Collection · ${s.discovered.length}/${SPECIES_IDS.length}`;
+    const evolvedSpecies = new Set(s.rabbits.filter(isEvolved).map(rabbit => rabbit.species)).size;
+    this.content.append(node('p', `${evolvedSpecies} / 35 évolutions`, 'badge collection-evolution-count'));
     const toolbar = node('div', '', 'menu-toolbar');
     this.button(toolbar, 'Carnet de reproduction', () => this.open({kind: 'recipes'}), null, true); this.content.append(toolbar);
     const controls = node('div', '', 'collection-filters');
@@ -1831,15 +1908,27 @@ export class GameUI {
     select('Rareté', 'rarity', {'': 'Toutes les raretés', ...RARITY_NAMES});
     select('Découverte', 'discovery', {'': 'Toutes', known: 'Découvertes', unknown: 'À découvrir'});
     this.content.append(controls);
-    const entries = collectionView(s, this.collectionFilter);
+    const entries = collectionView(s, this.collectionFilter), speciesIds = collectionSpeciesView(s, this.collectionFilter);
     toolbar.append(node('p', `${entries.length} espèce${entries.length > 1 ? 's' : ''} affichée${entries.length > 1 ? 's' : ''}`, 'small'));
     if (!entries.length) this.content.append(node('p', 'Aucune espèce ne correspond à ces filtres.'));
     if (Object.values(this.collectionFilter).some(Boolean)) this.button(this.content, 'Réinitialiser les filtres', () => { this.collectionFilter = {}; this.render(); }, null, true);
-    for (const entry of entries) {
+    for (const [index, entry] of entries.entries()) {
+      const speciesId = entry.known ? entry.species : speciesIds[index]!;
       const info = entry.known ? SPECIES[entry.species] : null, card = this.card(entry.name, entry.known && info ? `${typeNames(info.types)} · ${RARITY_NAMES[info.rarity]} · Découverte` : 'Silhouette · à découvrir');
       card.querySelector('.card-heading')!.prepend(avatar(entry.known ? entry.species : undefined));
       if (entry.known && entry.description) {
         const description = node('p'); description.textContent = entry.description; card.append(description);
+      }
+      const evolvedSpecies = speciesId;
+      const evolvedArt = evolvedSpecies && EVOLVED_ART.find(art => art.id === evolvedSpecies);
+      if (evolvedSpecies && evolvedArt) {
+        const evolvedRabbit = s.rabbits.find(rabbit => rabbit.species === evolvedSpecies && isEvolved(rabbit));
+        const evolvedCell = node('div', '', `collection-evolution ${evolvedRabbit ? 'is-unlocked' : 'is-locked'}`);
+        evolvedCell.dataset.collectionEvolution = evolvedSpecies;
+        const art = evolvedRabbitArt(evolvedSpecies), image = document.createElement('img');
+        image.src = art?.url ?? ''; image.alt = evolvedRabbit ? evolvedArt.name : '';
+        evolvedCell.append(image, node('p', evolvedRabbit ? `Évolution · ${evolvedArt.name}` : 'Évolution · à débloquer', 'small'));
+        card.append(evolvedCell);
       }
       const hint = entry.known ? recipeHint(entry.species) : entry.hint; if (hint) card.append(node('p', hint, 'recipe-hint'));
       if (entry.known) this.button(card, 'Consulter l’espèce', () => this.open({kind: 'species', species: entry.species}), null, true);
@@ -2090,6 +2179,7 @@ export class GameUI {
           else if (c.kind === 'decoration') this.button(card, 'Voir les décorations', () => this.open({kind: 'shop', tab: 'decorations'}), null, true);
           else if (c.kind === 'buildingLevel') shortcut(card, c.building);
           else if (c.kind === 'paidRecipe') this.button(card, 'Voir les recettes de la boutique', () => this.open({kind: 'shop', tab: 'recipes'}), null, true);
+          else if (c.kind === 'evolutions') shortcut(card, 'collection');
           else shortcut(card, c.kind === 'building' ? c.building : c.kind === 'event' ? c.event === 'collectOrder' ? 'farm' : c.event === 'breed' ? 'nest' : 'nursery' : c.kind === 'discoveries' || c.kind === 'rare' || c.kind === 'species' ? 'collection' : c.kind);
         }
         this.content.append(card);

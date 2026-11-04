@@ -153,8 +153,8 @@ export const CARE_KINDS = Object.keys(SALON.cares) as CareKind[];
 export const carePrice = (species: SpeciesId, care: CareKind): number => Math.round(SALON.fullPrice[SPECIES[species].rarity] * SALON.cares[care].share);
 /**
  * The Forêt de Brocéliande (owner, 3 November 2026): one building, 10 000 pattes, from player level 20. Once built, the player
- * chooses freely and for free, rabbit by rabbit, between the evolved drawing and the old one of every rabbit of affection 30 or
- * more that has an evolved drawing (src/config/evolvedArt.ts). Purely cosmetic: no income, XP, affection or draw.
+ * lets the player choose freely and for free between the evolved and old drawing of rabbits that have already evolved. Purely
+ * cosmetic: no income, XP, affection or draw.
  */
 export const FOREST = {unlockLevel: 20} as const;
 /** The picnic: from player level 8, one a day in all, in one enclosure; paid and rewarded per rabbit present. */

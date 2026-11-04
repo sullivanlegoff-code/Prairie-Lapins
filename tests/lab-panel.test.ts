@@ -32,6 +32,10 @@ it('uses collapsible laboratory sections, exact resources, all species, affectio
     set('level', '30'); click('set-level'); expect(controller.getSnapshot().state!.progression).toEqual({totalXp: cumulativeLevelXp(30), rewardedThroughLevel: 30});
     set('shop-affection', '15'); click('all-rabbits'); expect(controller.getSnapshot().state!.discovered).toHaveLength(36); expect(status()).toContain('sans statue'); expect(status()).toContain('universel niveau 3'); expect(status()).toContain('extension');
     set('affection-rabbit', 'rabbit-2'); set('affection-value', '20'); click('set-affection'); expect(controller.getSnapshot().state!.rabbits[0].affection).toBe(20);
+    const testPaille = controller.getSnapshot().state!.rabbits.find(r => r.species === 'paille')!;
+    set('affection-rabbit', testPaille.id); set('affection-value', '30'); click('set-affection');
+    click('evolution-challenges'); click('evolve-eligible-rabbits');
+    expect(controller.getSnapshot().state!.rabbits.find(r => r.id === testPaille.id)?.evolution?.done).toBe(true);
     set('build-kind', 'agency'); click('build'); expect(controller.getSnapshot().state!.buildings.some(b => b.kind === 'agency')).toBe(true);
     click('all-decorations'); expect(controller.getSnapshot().state!.decorations.some(d => d.catalogId === 'robot-statue')).toBe(true);
     prefs.set({tutorial: false, tutorialDone: true}); click('tutorial'); expect(prefs.value).toMatchObject({tutorial: true, tutorialDone: false});

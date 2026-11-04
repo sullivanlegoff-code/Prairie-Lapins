@@ -19,6 +19,8 @@ import type {GameState} from '../state/types';
 import {DECORATION_IDS, RETIRED_DECORATION_IDS, MAX_DECORATIONS} from '../config/decorations';
 import {decorationPlacementReason} from '../simulation/decorations';
 import {ISLAND} from '../config/islandGeometry';
+import {EVOLUTION_CHALLENGES, EVOLUTION_CHALLENGE_IDS, evolutionChallengeTarget, evolutionChallengesComplete, type EvolutionChallenge} from '../config/evolutionChallenges';
+import {EVOLUTION_AFFECTION, hasEvolvedArt} from '../config/evolvedArt';
 
 /**
  * The current format is v23 (affection up to 50, a second Statue de l'Affection, the Salon de soins and the picnic, a lapin ultime's taken-off crown, the Forêt de Brocéliande and a rabbit's old drawing put back, all optional; nothing to convert), after v22 (Benny's power and sky mode, optional), v21 (friendships and memories), v20 (catalogue conversion) and v19 (farm and agency levels, concurrent trips, Heart receipts), migrated through v18 and v17 from v16 (economy migration). Version 16 was the catalogue boundary of the development saves: the species Terre, Mottelin, Géant and
@@ -50,7 +52,16 @@ const building = z.object({
 // A rabbit may carry the personal name its owner gave it: canonical text (trimmed, at most 32 characters, no control
 // character), absent when unnamed. Names are individual: they are never inherited and never belong to the species.
 const rabbitName = z.string().refine(name => name !== '' && normalizeRabbitName(name) === name, 'Invalid rabbit name');
-const rabbit = z.object({incomeRoll: z.number().int().min(0).max(10000).optional(), id: identity, species, affection: z.number().int().min(BALANCE.minAffection).max(BALANCE.maxAffection), enclosureId: identity, name: rabbitName.optional(), crownHidden: z.literal(true).optional(), classicLook: z.literal(true).optional()}).strict();
+const evolution = z.object({done: z.literal(true).optional(), challenges: z.record(z.enum(EVOLUTION_CHALLENGE_IDS as [typeof EVOLUTION_CHALLENGE_IDS[number], ...typeof EVOLUTION_CHALLENGE_IDS[number][]]), integer.max(2)).optional()}).strict().optional();
+const rabbit = z.object({incomeRoll: z.number().int().min(0).max(10000).optional(), id: identity, species, affection: z.number().int().min(BALANCE.minAffection).max(BALANCE.maxAffection), enclosureId: identity, name: rabbitName.optional(), crownHidden: z.literal(true).optional(), classicLook: z.literal(true).optional(), evolution}).strict().superRefine((value, context) => {
+  const challenges = EVOLUTION_CHALLENGES[value.species] ?? [];
+  for (const [key, progress] of Object.entries(value.evolution?.challenges ?? {})) {
+    if (!challenges.includes(key as EvolutionChallenge) || progress > evolutionChallengeTarget(value.species, key as EvolutionChallenge))
+      context.addIssue({code: z.ZodIssueCode.custom, message: 'Invalid evolution challenge progress'});
+  }
+  if (value.evolution?.done && (!hasEvolvedArt(value.species) || value.species === 'benny' || value.affection < EVOLUTION_AFFECTION || !evolutionChallengesComplete(value.species, value.evolution.challenges)))
+    context.addIssue({code: z.ZodIssueCode.custom, message: 'Invalid completed evolution'});
+});
 const missions = z.object({
   nightOrderStarted: z.boolean().optional(),
   events: z.object({collectOrder: integer.max(20), breed: integer.max(1), transferBirth: integer.max(1), welcome: integer.max(1), placeDecoration: integer.max(1)}).strict(),
@@ -363,10 +374,11 @@ export function decodeGame(json: string): DecodeResult {
   const {presentationId: _presentationId, ...stored} = parsed.data;
   const state: GameState = {...stored, cuisine: {...stored.cuisine, heartCycle: stored.cuisine.heartCycle ?? null}};
   for (const rabbit of state.rabbits) if (SPECIES[rabbit.species].rarity !== 'common') rabbit.incomeRoll ??= historicalIncomeRoll(rabbit);
+  for (const rabbit of state.rabbits) if (rabbit.evolution?.done && (rabbit.species === 'benny' || !hasEvolvedArt(rabbit.species) || rabbit.affection < EVOLUTION_AFFECTION || !evolutionChallengesComplete(rabbit.species, rabbit.evolution.challenges))) delete rabbit.evolution.done;
   // A taken-off crown only means something on an ultimate rabbit: elsewhere it is dropped, never a reason to refuse the save.
   for (const rabbit of state.rabbits) if (rabbit.crownHidden && !isUltimate(rabbit)) delete rabbit.crownHidden;
-  // The old drawing put back at the Forêt de Brocéliande, the same way: dropped without the forest, below affection 30 or on a species
-  // without an evolved drawing (the rabbit then shows the drawing the rules give it), never a reason to refuse the save.
+  // The old drawing put back at the Forêt de Brocéliande is dropped without the forest or on a rabbit that has not evolved,
+  // never a reason to refuse the save.
   for (const rabbit of state.rabbits) if (rabbit.classicLook && classicLookReason(state, rabbit)) delete rabbit.classicLook;
   const rabbitIds = new Set(state.rabbits.map(rabbit => rabbit.id));
   for (const id of Object.keys(state.cuisine.affectionCycles))

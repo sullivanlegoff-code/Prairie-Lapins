@@ -47,7 +47,8 @@ export const REFUSALS: Record<Refusal | 'NO_GAME' | 'DISPOSED' | 'SALE_NOT_SAVED
   AT_SALON: 'Ce lapin est au salon de soins. Va le chercher au salon à la fin de son soin.', GIFT_TODAY: 'Ce lapin a déjà eu son cadeau aujourd’hui.',
   AFFECTION_WALL: 'Ce palier se passe en le nourrissant.', PICNIC_TODAY: 'Tu as déjà fait ton pique-nique aujourd’hui. Reviens demain !',
   EMPTY_ENCLOSURE: 'Il n’y a aucun lapin dans cet enclos pour l’instant.', NO_GIFT_POSSIBLE: 'Aucun lapin de cet enclos ne peut gagner d’affection aujourd’hui.',
-  NO_EVOLVED_ART: 'Ce lapin n’a pas encore de nouveau dessin.', EVOLUTION_AFFECTION: 'Ce lapin change de dessin à l’affection 30.',
+  NO_EVOLVED_ART: 'Ce lapin n’a pas de dessin évolué.', EVOLUTION_AFFECTION: 'Affection 30 nécessaire.',
+  EVOLUTION_CHALLENGES: 'Termine ses défis pour le faire évoluer.', EVOLUTION_REQUIRED: 'Fais d’abord évoluer ce lapin depuis sa fiche.',
   SAME_PARENT: 'Choisis deux lapins différents.', AFFECTION_TOO_LOW: 'Chaque parent doit avoir au moins 2 d’affection.',
   MISSING_BUILDING: 'Il manque un bâtiment nécessaire : nid, nurserie ou cuisine.', ALREADY_EXPANDED: 'L’extension est déjà achetée.', PARCEL_UNAVAILABLE: 'Cette parcelle n’est pas encore accessible : l’île s’agrandit dans un ordre fixe, une parcelle après l’autre.', LAST_OF_SPECIES: 'Garde au moins un lapin de chaque espèce possédée.',
   BENNY_RECHARGING: 'Le pouvoir de Benny se recharge encore.', NO_WAITING_BABY: 'Aucun lapereau n’attend dans la nurserie.',
@@ -102,10 +103,13 @@ export function nurseryView(s: GameState, now: number): {capacity: number; free:
     : {slot: baby.slot, birthId: baby.birth.id, stage: 'ready' as const, species: baby.birth.species})};
 }
 export type CollectionFilter = {type?: RabbitType; rarity?: Rarity; discovery?: 'known' | 'unknown'};
-export function collectionView(s: GameState, filter: CollectionFilter = {}) {
+export function collectionSpeciesView(s: GameState, filter: CollectionFilter = {}): SpeciesId[] {
   return SPECIES_IDS.filter(id => (!filter.type || SPECIES[id].types.includes(filter.type)) &&
     (!filter.rarity || SPECIES[id].rarity === filter.rarity) &&
-    (!filter.discovery || s.discovered.includes(id) === (filter.discovery === 'known'))).map(id => s.discovered.includes(id) ? {known: true as const, species: id, name: SPECIES[id].name, ...(SPECIES[id].description ? {description: SPECIES[id].description} : {})} : {known: false as const, name: '???', ...(recipeHint(id) ? {hint: recipeHint(id)} : {})});
+    (!filter.discovery || s.discovered.includes(id) === (filter.discovery === 'known')));
+}
+export function collectionView(s: GameState, filter: CollectionFilter = {}) {
+  return collectionSpeciesView(s, filter).map(id => s.discovered.includes(id) ? {known: true as const, species: id, name: SPECIES[id].name, ...(SPECIES[id].description ? {description: SPECIES[id].description} : {})} : {known: false as const, name: '???', ...(recipeHint(id) ? {hint: recipeHint(id)} : {})});
 }
 export const TYPE_NAMES: Record<RabbitType, string> = {paille: 'paille', neige: 'neige', feu: 'feu', metal: 'métal', vol: 'vol', 'arc-en-ciel': 'arc-en-ciel'};
 export const RARITY_NAMES: Record<Rarity, string> = mapRarities(definition => definition.label);

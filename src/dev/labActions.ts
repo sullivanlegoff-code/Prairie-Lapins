@@ -15,6 +15,8 @@ import {cumulativeLevelXp} from '../simulation/progression';
 import {updateMissions, emptyDailyProgress} from '../simulation/missions';
 import {establishHistoricalLevelRights} from '../simulation/levelRights';
 import {classicLookReason} from '../simulation/forest';
+import {EVOLUTION_CHALLENGES, evolutionChallengeTarget} from '../config/evolutionChallenges';
+import {canEvolve} from '../config/evolvedArt';
 
 export type LabAction =
   | {type: 'resource'; resource: 'pattes' | 'grass' | 'hearts'; value: number; add?: boolean}
@@ -24,6 +26,8 @@ export type LabAction =
   | {type: 'allRabbits'; affection: number}
   | {type: 'recipes'; known: boolean}
   | {type: 'affection'; rabbitId?: string; value: number}
+  | {type: 'completeEvolutionChallenges'; rabbitId: string}
+  | {type: 'evolveEligibleRabbits'}
   | {type: 'build'; kind: BuildingKind; habitatType?: HabitatType}
   | {type: 'buildingLevel'; id: string; level: number}
   | {type: 'nursery'; capacity: NurseryCapacity}
@@ -100,6 +104,19 @@ export function labAction(state: GameState, action: LabAction): GameState {
       }
       break;
     }
+    case 'completeEvolutionChallenges': {
+      const rabbit = s.rabbits.find(r => r.id === action.rabbitId);
+      if (!rabbit) throw new Error('Choisis un lapin présent.');
+      const challenges = EVOLUTION_CHALLENGES[rabbit.species];
+      if (!challenges?.length) throw new Error('Ce lapin n’a pas de défis d’évolution.');
+      rabbit.evolution = {...rabbit.evolution, challenges: Object.fromEntries([...new Set(challenges)].map(challenge => [challenge, evolutionChallengeTarget(rabbit.species, challenge)]))};
+      break;
+    }
+    case 'evolveEligibleRabbits':
+      for (const rabbit of s.rabbits) if (canEvolve(rabbit)) {
+        rabbit.evolution = {...rabbit.evolution, done: true}; delete rabbit.classicLook;
+      }
+      break;
     case 'build': build(s, action.kind, action.habitatType); break;
     case 'buildingLevel': {
       const b = s.buildings.find(b => b.id === action.id);

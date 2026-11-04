@@ -16,7 +16,7 @@ export interface CrownAnchor {readonly x: number; readonly y: number; readonly w
 /**
  * Where the crown sits on a rabbit's picture, as fractions of that picture (top left origin, native facing): the skull between the
  * ears, read for every species on the same sprites as the Cuisine toque (src/config/cuisineAnchors.ts, checked on captures of the
- * kitchen), so both accessories share one per-species anchor (`evolved`: the one of the affection 30 drawing). `w`: crown width over picture width; `r`: tilt in degrees.
+ * kitchen), so both accessories share one per-species anchor (`evolved`: the one of the evolved drawing). `w`: crown width over picture width; `r`: tilt in degrees.
  */
 export function crownAnchor(species: SpeciesId, facing: 1 | -1 = 1, evolved = false): CrownAnchor {
   const {hat} = cuisineAnchors(species, facing, evolved);

@@ -615,7 +615,7 @@ export class MeadowScene extends Phaser.Scene {
     const assets = new Map<string, {texture: string; url: string; atlas?: string}>();
     const add = (art: {texture: string; url: string; atlas?: string} | null | undefined) => { if (art) assets.set(art.texture, art); };
     for (const rabbit of state?.rabbits ?? []) {
-      // The drawing this rabbit shows (its evolved one from affection 30); the blink and nose patches belong to the v1 only.
+      // The drawing this rabbit shows (its evolved one only after explicit evolution); blink and nose patches belong to the v1 only.
       const shown = artForRabbit(rabbit); add(shown);
       if (!shown?.evolved) for (const patch of rabbitBlinkArt(rabbit.species)?.patches ?? []) add(patch);
       if (isLegendaryShow(rabbit.species)) for (const art of legendaryMeadowArt(rabbit.species)) add(art);
@@ -859,7 +859,7 @@ export class MeadowScene extends Phaser.Scene {
         const object = this.add.container(start.x, start.y).setScale(VISUAL.rabbit.scale).setDepth(start.y);
         const body = this.add.container(0, 0), shadow = this.add.ellipse(0, 10, 35, 12, 0x6b7755, .16);
         object.add([shadow, body]);
-        const art = artForRabbit(rabbit); // Its evolved drawing from affection 30, already EVOLVED_SCALE bigger.
+        const art = artForRabbit(rabbit); // Its evolved drawing is already EVOLVED_SCALE bigger.
         const view = {object, body, center, group: enclosure.id, motion, nest: enclosure.kind === 'nest', lift: 0, pivot: art ? this.spritePivot(art) : {x: 0, y: -3}, native: art ? art.facing : 1 as const, base, phase: index * 2 + Number(rabbit.id.split('-')[1]), fedUntil: 0};
         if (art) {
           const sprite = this.add.image(0, art.groundY, art.texture).setOrigin(.5, 1);
