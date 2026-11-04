@@ -129,3 +129,40 @@ it('needs three rabbits at home to play', () => {
   const play = panel().querySelector<HTMLButtonElement>('[data-jump-rope-play]')!;
   expect(play.disabled).toBe(true); expect(panel().textContent).toContain('Il te faut trois lapins à la maison');
 });
+
+it('the islet menu shows the challenge of the day and the medals still to win', () => {
+  const s = game(); s.jumpRope = {cycle: 0, rewarded: 0, best: 26};
+  const {ui} = mount(s); ui.open({kind: 'jumpIsland'});
+  expect(panel().textContent).toMatch(/Défi du jour : (15|20|25) sauts/u);
+  expect(panel().textContent).toContain('Médailles sur le kiosque : 10, 25 sauts. Prochaine médaille à 50 sauts.');
+  expect([...panel().querySelectorAll<HTMLImageElement>('[data-jump-rope-medal]')].map(img => img.dataset.jumpRopeMedal)).toEqual(['10', '25']);
+});
+
+it('a « tac » marks each pass of the rope, the carriers console a miss and applaud a record', async () => {
+  const {mountJumpRopeActivity} = await import('../src/ui/JumpRopeActivity');
+  let t = 0, ticks = 0, best = 2; const host = document.createElement('div'); document.body.append(host);
+  const activity = mountJumpRopeActivity(host, {onFinished: () => '', best: () => best, tick: () => { ticks++; }, challengeText: () => 'Défi du jour : 20 sauts', clock: () => t, frame: () => 0});
+  cleanups.push(() => activity.dispose());
+  const r = {id: 'rabbit-1', species: 'paille' as const, affection: 3};
+  activity.open({carriers: [{...r, id: 'rabbit-2'}, {...r, id: 'rabbit-3'}], athlete: r});
+  expect(activity.element.textContent).toContain('Défi du jour : 20 sauts');
+  activity.element.querySelector<HTMLButtonElement>('[data-jump-rope-start]')!.click();
+  // The count-in beat before the first pass, then one « tac » per pass, early or late taps alike.
+  t = JUMP_ROPE.leadIn - JUMP_ROPE.startPeriod; activity.update(); expect(ticks).toBe(1);
+  t = JUMP_ROPE.leadIn - 30; activity.tap(); activity.update(); expect(ticks).toBe(1); // An early jump: the pass is still to come.
+  t = JUMP_ROPE.leadIn; activity.update(); expect(ticks).toBe(2);
+  activity.update(); expect(ticks).toBe(2);
+  let pass = JUMP_ROPE.leadIn, period = JUMP_ROPE.startPeriod * JUMP_ROPE.speedUp;
+  for (let i = 0; i < 2; i++) { pass += period; t = pass; activity.update(); activity.tap(); period *= JUMP_ROPE.speedUp; }
+  expect(ticks).toBe(4);
+  const carriers = [...activity.element.querySelectorAll('.jump-rope-carrier')];
+  expect(carriers.every(c => c.classList.contains('applaud'))).toBe(true); // Jump 3 beat the record of 2.
+  expect(activity.element.querySelector('.jump-rope-cheer')!.textContent).toBe('Bravo !');
+  // A miss: the game ends, and the record of this game is applauded on the card.
+  t = pass + period / 2; activity.tap();
+  expect(activity.element.querySelector('[data-jump-rope-card]')!.textContent).toContain('Nouveau record');
+  // Next game, no record: a first-pass miss is consoled.
+  best = 3; activity.element.querySelector<HTMLButtonElement>('[data-jump-rope-again]')!.click(); t += 10; activity.tap();
+  expect(carriers.every(c => c.classList.contains('console'))).toBe(true);
+  expect(activity.element.querySelector('.jump-rope-cheer')!.textContent).toBe('Courage, on recommence !');
+});

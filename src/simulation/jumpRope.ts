@@ -1,6 +1,7 @@
 import {JUMP_ROPE} from '../config/balance';
 import {giftCycle, rabbitAwayReason} from './care';
 import {playerLevel} from './affection';
+import {SPECIES, type RabbitType} from '../config/balance';
 import type {GameState, JumpRopeTeam, Refusal} from '../state/types';
 
 /**
@@ -58,17 +59,40 @@ export function jumpIslandReason(s: GameState): Refusal | null {
   if (playerLevel(s) < JUMP_ROPE.unlockLevel) return 'LEVEL_REQUIRED';
   return s.pattes < JUMP_ROPE.price ? 'NOT_ENOUGH_PATTES' : null;
 }
-/** Rewarded games already played in the daily cycle at `now`, and whether its Heart is still to win. */
-export function jumpRopeDay(s: Pick<GameState, 'missions' | 'jumpRope'>, now: number): {rewardedLeft: number; heartLeft: boolean} {
+/** Rewarded games already played in the daily cycle at `now`, and whether its Heart and its challenge are still to win. */
+export function jumpRopeDay(s: Pick<GameState, 'missions' | 'jumpRope'>, now: number): {rewardedLeft: number; heartLeft: boolean; challengeLeft: boolean} {
   const cycle = giftCycle(s, now), day = s.jumpRope?.cycle === cycle ? s.jumpRope : null;
-  return {rewardedLeft: Math.max(0, JUMP_ROPE.rewardedGamesPerCycle - (day?.rewarded ?? 0)), heartLeft: !day?.heart};
+  return {rewardedLeft: Math.max(0, JUMP_ROPE.rewardedGamesPerCycle - (day?.rewarded ?? 0)), heartLeft: !day?.heart, challengeLeft: !day?.challenge};
 }
-export interface JumpRopeReward {pattes: number; hearts: number; rewarded: boolean}
-/** What a finished game of `score` jumps pays now (before it is recorded). */
-export function jumpRopeReward(s: Pick<GameState, 'missions' | 'jumpRope'>, score: number, now: number): JumpRopeReward {
+/** The challenge of the day: `jumps` jumps, with an athlete of `type` when it is not null. */
+export interface JumpRopeChallenge {jumps: number; type: RabbitType | null}
+/**
+ * Drawn from the daily cycle alone (the same on every device, without network). A drawn type none of the player's rabbits has
+ * becomes « any athlete », so the challenge can always be met.
+ */
+export function jumpRopeChallenge(s: Pick<GameState, 'missions' | 'rabbits'>, now: number): JumpRopeChallenge {
+  let h = 2166136261;
+  for (const ch of `corde:${giftCycle(s, now)}`) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+  h >>>= 0;
+  const {jumps, types} = JUMP_ROPE.challenge, pick = Math.floor(h / 7) % (types.length + 1);
+  const type = pick < types.length ? types[pick] : null;
+  return {jumps: jumps[h % jumps.length], type: type && s.rabbits.some(r => SPECIES[r.species].types.includes(type)) ? type : null};
+}
+/** Whether a game of `score` jumps by this athlete meets the challenge. */
+export function meetsJumpRopeChallenge(s: Pick<GameState, 'rabbits'>, challenge: JumpRopeChallenge, athleteId: string, score: number): boolean {
+  const athlete = s.rabbits.find(r => r.id === athleteId);
+  return !!athlete && score >= challenge.jumps && (!challenge.type || SPECIES[athlete.species].types.includes(challenge.type));
+}
+export interface JumpRopeReward {pattes: number; hearts: number; rewarded: boolean; challenge?: true}
+/** What a finished game of `score` jumps pays now (before it is recorded); with the athlete, the challenge of the day too. */
+export function jumpRopeReward(s: Pick<GameState, 'missions' | 'jumpRope' | 'rabbits'>, score: number, now: number, athleteId?: string): JumpRopeReward {
   const day = jumpRopeDay(s, now), rewarded = score > 0 && day.rewardedLeft > 0;
-  return {pattes: rewarded ? Math.min(JUMP_ROPE.maxPattes, score * JUMP_ROPE.pattesPerJump) : 0, hearts: day.heartLeft && score >= JUMP_ROPE.heartJumps ? 1 : 0, rewarded};
+  const challenge = !!athleteId && day.challengeLeft && meetsJumpRopeChallenge(s, jumpRopeChallenge(s, now), athleteId, score);
+  return {pattes: rewarded ? Math.min(JUMP_ROPE.maxPattes, score * JUMP_ROPE.pattesPerJump) : 0,
+    hearts: (day.heartLeft && score >= JUMP_ROPE.heartJumps ? 1 : 0) + (challenge ? JUMP_ROPE.challenge.hearts : 0), rewarded, ...(challenge ? {challenge: true as const} : {})};
 }
+/** The record medals won so far (JUMP_ROPE.medals reached by the record). */
+export const jumpRopeMedals = (s: Pick<GameState, 'jumpRope'>): number[] => JUMP_ROPE.medals.filter(step => (s.jumpRope?.best ?? 0) >= step);
 /** Why this rabbit cannot play now, or null: it must be at home (not on a trip, at the salon or at the nest). */
 export const jumpRopeRabbitReason = (s: GameState, rabbitId: string) => !s.rabbits.some(r => r.id === rabbitId) ? 'NOT_FOUND' as const : rabbitAwayReason(s, rabbitId);
 /** Why this trio cannot play now, or null: three different rabbits, all at home. */

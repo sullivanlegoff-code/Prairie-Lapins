@@ -3,7 +3,7 @@ import {habitatPrice, type HabitatType} from './habitats';
 import {DECORATIONS, DECORATION_IDS, type DecorationId} from './decorations';
 
 export type Reward = {resource: 'pattes' | 'grass' | 'hearts'; amount: number} | {resource: 'none'; amount: 0};
-export type MainCondition = {kind: 'building'; building: BuildingKind; habitatType?: HabitatType; target?: number} | {kind: 'discoveries' | 'affection'; target: number} | {kind: 'extension' | 'rare'} | {kind: 'level' | 'extensions' | 'habitatLevel'; target: number} | {kind: 'ordinaryRares' | 'nightOrder' | 'paidRecipe'} | {kind: 'species'; species: SpeciesId} | {kind: 'decoration'; model: DecorationId} | {kind: 'buildingLevel'; building: 'farm' | 'agency' | 'nursery'; target: number} | {kind: 'parents'; target: number} | {kind: 'event'; event: MainEvent; target: number};
+export type MainCondition = {kind: 'building'; building: BuildingKind; habitatType?: HabitatType; target?: number} | {kind: 'discoveries' | 'affection'; target: number} | {kind: 'extension' | 'rare'} | {kind: 'level' | 'extensions' | 'habitatLevel'; target: number} | {kind: 'ordinaryRares' | 'nightOrder' | 'paidRecipe' | 'jumpRopeGame'} | {kind: 'species'; species: SpeciesId} | {kind: 'decoration'; model: DecorationId} | {kind: 'buildingLevel'; building: 'farm' | 'agency' | 'nursery'; target: number} | {kind: 'parents'; target: number} | {kind: 'event'; event: MainEvent; target: number};
 export type MainDefinition = {title: string; description: string; condition: MainCondition; reward: Reward; extraRewards?: readonly Reward[]; claimXp?: number};
 export const MAIN_EVENT_IDS = ['collectOrder', 'breed', 'transferBirth', 'welcome', 'placeDecoration'] as const;
 export type MainEvent = typeof MAIN_EVENT_IDS[number];
@@ -33,6 +33,8 @@ const MILESTONE_MISSIONS = {
   'level-twenty-five': {title: 'Atteindre le niveau 25', description: 'Atteins le niveau 25.', condition: {kind: 'level', target: 25}},
   'level-thirty': {title: 'Atteindre le niveau 30', description: 'Atteins le niveau 30.', condition: {kind: 'level', target: 30}},
   'island-complete': {title: 'Toute l’île pour tes lapins', description: 'Achète les huit extensions de l’île.', condition: {kind: 'extensions', target: 8}},
+  // Shown once the jump-rope islet is bought (owner, 4 November 2026).
+  'first-jump-rope': {title: 'Premiers sauts', description: 'Joue ta première partie de corde à sauter sur ta petite île.', condition: {kind: 'jumpRopeGame'}},
   'first-paid-recipe': {title: 'Une recette dans ton carnet', description: 'Ajoute une recette de la boutique à ton carnet. Une recette déjà enregistrée compte aussi.', condition: {kind: 'paidRecipe'}},
 } as const satisfies Record<string, Omit<MainDefinition, 'reward'>>;
 export const MILESTONE_MISSION_IDS = Object.keys(MILESTONE_MISSIONS) as (keyof typeof MILESTONE_MISSIONS)[];

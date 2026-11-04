@@ -36,7 +36,8 @@ import {STATUE_ART} from '../config/statueArt';
 import {AGENCY_ART} from '../config/agencyArt';
 import {PICNIC_ART, SALON_ART} from '../config/salonArt';
 import {FOREST_ART} from '../config/forestArt';
-import {JUMP_ISLAND_ART, jumpIslandFrame, jumpIslandPoint} from '../config/jumpIslandArt';
+import {JUMP_ISLAND_ART, JUMP_MEDAL_ART, jumpIslandFrame, jumpIslandPoint, jumpMedalPoint} from '../config/jumpIslandArt';
+import {jumpRopeMedals} from '../simulation/jumpRope';
 import {showsEvolvedArt} from '../config/evolvedArt';
 import {PICNIC} from '../config/balance';
 import {playerLevel, wearsCrown} from '../simulation/affection';
@@ -143,6 +144,8 @@ export class MeadowScene extends Phaser.Scene {
   private buildingsLayer!: Phaser.GameObjects.Container;
   /** The jump-rope islet, left of the start island (off the land grid); null until bought. */
   private jumpIslandImage: Phaser.GameObjects.Image | null = null;
+  /** Its record medals (concept M1 « Rubans »), hung under the kiosk's roof. */
+  private jumpIslandMedals: Phaser.GameObjects.Image[] = [];
   private buildingViews = new Map<string, Phaser.GameObjects.Image>();
   private nurseryOverlays: NurseryOverlays | null = null;
   private progressViews: ProgressBarViews | null = null;
@@ -284,7 +287,7 @@ export class MeadowScene extends Phaser.Scene {
     this.recenter();
     this.scale.on('resize', this.resize, this);
     const disposeInput = bindMeadowInput(this.game.canvas, this.view, point => this.tap(point), this.blocked, () => this.applyCamera());
-    this.events.once('shutdown', () => { this.jumpIslandImage = null; this.rabbitDrops = null; this.dropHits = []; this.dropArrows?.destroy(); this.dropArrows = null; this.unsubscribe?.(); disposeInput(); this.scale.off('resize', this.resize, this); this.buildingTextures.forEach(key=>this.textures.remove(key)); this.ground.clearMask(); this.islandMask?.destroy(); this.islandMaskGraphics?.destroy(); this.islandMask = null; this.islandMaskGraphics = null; this.floatingIslandLayer?.destroy(); this.floatingIslandLayer = null; this.islandStageLayer?.destroy(); this.islandStageLayer = null; this.nurseryOverlays?.destroy(); this.nurseryOverlays = null; this.motions.clear(); this.pivots.clear(); });
+    this.events.once('shutdown', () => { this.jumpIslandImage = null; this.jumpIslandMedals = []; this.rabbitDrops = null; this.dropHits = []; this.dropArrows?.destroy(); this.dropArrows = null; this.unsubscribe?.(); disposeInput(); this.scale.off('resize', this.resize, this); this.buildingTextures.forEach(key=>this.textures.remove(key)); this.ground.clearMask(); this.islandMask?.destroy(); this.islandMaskGraphics?.destroy(); this.islandMask = null; this.islandMaskGraphics = null; this.floatingIslandLayer?.destroy(); this.floatingIslandLayer = null; this.islandStageLayer?.destroy(); this.islandStageLayer = null; this.nurseryOverlays?.destroy(); this.nurseryOverlays = null; this.motions.clear(); this.pivots.clear(); });
     this.loading?.ready();
   }
   /** Her power: the flight (or, with reduced motion, a glow), and the camera steps back gently so the island can be seen. */
@@ -637,7 +640,7 @@ export class MeadowScene extends Phaser.Scene {
       } else add(({nest: NEST_ART, kitchen: KITCHEN_ART, statue: STATUE_ART, agency: AGENCY_ART, salon: SALON_ART, forest: FOREST_ART})[building.kind]);
     };
     for (const building of state?.buildings ?? []) buildingArt(building);
-    if (state?.jumpIsland) add(JUMP_ISLAND_ART);
+    if (state?.jumpIsland) { add(JUMP_ISLAND_ART); for (const step of jumpRopeMedals(state)) add({texture: JUMP_MEDAL_ART.texture(step), url: JUMP_MEDAL_ART.url(step)}); }
     if (state && playerLevel(state) >= PICNIC.unlockLevel) add(PICNIC_ART); // Laid out for a few seconds when a picnic starts.
     if (this.placement) {
       const moving = state?.buildings.find(b => b.id === this.placement?.movingId);
@@ -687,7 +690,7 @@ export class MeadowScene extends Phaser.Scene {
     if (!this.ensureArt()) return;
     const s = this.current;
     if (s) { this.view.setColumns(visibleColumns(s)); this.updateVisibleRegions(); this.applyCamera(); }
-    const key = JSON.stringify([s?.jumpIsland, s?.acquiredParcels, s?.buildings.map(b => [b.id, b.kind, b.x, b.y, b.habitat, b.farmLevel, b.agencyLevel, b.breeding?.parents]), s?.rabbits.map(r => [r.id, r.species, r.enclosureId, wearsCrown(r), showsEvolvedArt(r)]), s?.travel?.trips.map(t => t.rabbitId), s?.care?.rabbitId]);
+    const key = JSON.stringify([s?.jumpIsland, s ? jumpRopeMedals(s).length : 0, s?.acquiredParcels, s?.buildings.map(b => [b.id, b.kind, b.x, b.y, b.habitat, b.farmLevel, b.agencyLevel, b.breeding?.parents]), s?.rabbits.map(r => [r.id, r.species, r.enclosureId, wearsCrown(r), showsEvolvedArt(r)]), s?.travel?.trips.map(t => t.rabbitId), s?.care?.rabbitId]);
     if (key !== this.layoutKey) { this.layoutKey = key; this.drawGround(); this.drawBuildings(); this.drawAnimals(); }
     // The cushion overlays follow the canonical state and simulation time on every refresh (a no-op when nothing changed).
     this.nurseryOverlays?.sync(s);
@@ -827,8 +830,15 @@ export class MeadowScene extends Phaser.Scene {
     if (this.current?.jumpIsland) {
       const p = jumpIslandPoint(), art = JUMP_ISLAND_ART;
       if (!this.jumpIslandImage) { this.jumpIslandImage = this.add.image(p.x, p.y, art.texture); this.buildingsLayer.add(this.jumpIslandImage); }
-      this.jumpIslandImage.setPosition(p.x, p.y).setOrigin(.5, art.originY).setScale(art.worldWidth / art.width).setDepth(p.y);
+      this.jumpIslandImage.setPosition(p.x, p.y).setOrigin(art.originX, art.originY).setScale(art.worldWidth / art.width).setDepth(p.y);
     } else { this.jumpIslandImage?.destroy(); this.jumpIslandImage = null; }
+    const medals = this.current?.jumpIsland ? jumpRopeMedals(this.current) : [];
+    while (this.jumpIslandMedals.length > medals.length) this.jumpIslandMedals.pop()!.destroy();
+    medals.forEach((step, i) => {
+      const at = jumpMedalPoint(i, medals.length), texture = JUMP_MEDAL_ART.texture(step);
+      const image = this.jumpIslandMedals[i] ??= (() => { const created = this.add.image(at.x, at.y, texture); this.buildingsLayer.add(created); return created; })();
+      image.setTexture(texture).setPosition(at.x, at.y).setOrigin(.5, 0).setScale(JUMP_MEDAL_ART.worldHeight / JUMP_MEDAL_ART.height).setDepth(jumpIslandPoint().y + 1);
+    });
     this.buildingsLayer.sort('depth');
   }
   private drawAnimals(): void {
@@ -1218,7 +1228,7 @@ export class MeadowScene extends Phaser.Scene {
     const image = this.jumpIslandImage, f = jumpIslandFrame(); if (!image) return false;
     if (world.x < f.left || world.x > f.right || world.y < f.top || world.y > f.bottom) return false;
     const local = image.getWorldTransformMatrix().applyInverse(world.x, world.y), art = JUMP_ISLAND_ART;
-    const x = Math.floor(local.x + art.width * .5), y = Math.floor(local.y + art.height * art.originY);
+    const x = Math.floor(local.x + art.width * art.originX), y = Math.floor(local.y + art.height * art.originY);
     return x < 0 || y < 0 || x >= art.width || y >= art.height || !this.textures.exists(art.texture) ? true : this.textures.getPixelAlpha(x, y, art.texture) >= 16;
   }
   /** Interpolate the canonical simulation clock; resynchronise on every snapshot, including laboratory time changes. */

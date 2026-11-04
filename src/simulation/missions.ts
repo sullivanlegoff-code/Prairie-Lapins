@@ -5,7 +5,7 @@ import {DAILY_MISSIONS, DAILY_MISSION_IDS, MAIN_MISSIONS, MAIN_MISSION_IDS, NEW_
 import {RECIPE_PRICES} from '../config/recipes';
 import type {GameState, MissionState} from '../state/types';
 
-type ObservableState = Pick<GameState, 'rabbits' | 'discovered'> & Partial<Pick<GameState, 'progression' | 'decorations' | 'rewardedDecorationModels' | 'recipeBook'>> & {acquiredParcels?: GameState['acquiredParcels']; expanded?: boolean} & Pick<GameState, 'startCourse'> & {missions?: Pick<MissionState, 'events' | 'nightOrderStarted'>} & {buildings: (Pick<GameState['buildings'][number], 'kind'> & Partial<Pick<GameState['buildings'][number], 'habitat' | 'farmLevel' | 'agencyLevel' | 'nursery'>>)[]};
+type ObservableState = Pick<GameState, 'rabbits' | 'discovered'> & Partial<Pick<GameState, 'progression' | 'decorations' | 'rewardedDecorationModels' | 'recipeBook' | 'jumpRope'>> & {acquiredParcels?: GameState['acquiredParcels']; expanded?: boolean} & Pick<GameState, 'startCourse'> & {missions?: Pick<MissionState, 'events' | 'nightOrderStarted'>} & {buildings: (Pick<GameState['buildings'][number], 'kind'> & Partial<Pick<GameState['buildings'][number], 'habitat' | 'farmLevel' | 'agencyLevel' | 'nursery'>>)[]};
 export function mainProgress(state: ObservableState, id: MainMissionId): {value: number; target: number} {
   const c = MAIN_MISSIONS[id].condition;
   switch (c.kind) {
@@ -16,6 +16,7 @@ export function mainProgress(state: ObservableState, id: MainMissionId): {value:
     case 'decoration': return {value: Number(state.rewardedDecorationModels?.includes(c.model) || state.decorations?.some(d => d.catalogId === c.model && (d.location.kind === 'outside' || d.placementXpProcessed === true || state.rewardedDecorationModels === undefined && d.placementXpProcessed !== false))), target: 1};
     case 'paidRecipe': return {value: Number(state.recipeBook?.some(id => RECIPE_PRICES[id] !== undefined)), target: 1};
     case 'nightOrder': return {value:Number(!!state.missions?.nightOrderStarted),target:1};
+    case 'jumpRopeGame': return {value: Number(!!state.jumpRope), target: 1};
     case 'ordinaryRares': { const ids=SPECIES_IDS.filter(id=>SPECIES[id].rarity==='rare' && SPECIES[id].acquisition.some(a=>a.kind==='recipe' && a.guaranteeEligible)); return {value:ids.filter(id=>state.discovered.includes(id)).length,target:ids.length}; }
     case 'building': return {value: state.buildings.filter(b => b.kind === c.building && (!c.habitatType || b.habitat?.type === c.habitatType)).length, target: c.target ?? 1};
     case 'discoveries': return {value: state.discovered.length, target: c.target};
@@ -57,10 +58,12 @@ export const emptyMainEvents = (): MissionState['events'] => ({collectOrder: 0, 
 export function initialMissionIds(s: Pick<GameState, 'startCourse'>): readonly MainMissionId[] {
   return s.startCourse === 'paille-solo' ? SOLO_INITIAL_MISSION_IDS : INITIAL_MISSION_IDS;
 }
-type MainMissionState = Pick<GameState, 'startCourse' | 'missions'> & Partial<Pick<GameState, 'progression'>>;
+type MainMissionState = Pick<GameState, 'startCourse' | 'missions'> & Partial<Pick<GameState, 'progression' | 'jumpIsland'>>;
 export const mainCatalogueUnlocked = (s: Partial<Pick<GameState, 'progression'>>): boolean => progressionFromXp(s.progression?.totalXp ?? 0).level >= 7;
 /** Initial rewards belong to their original course; a normal legacy start never gains the solo Neige rewards. */
-export const catalogueMainMissionIds = (s: Pick<GameState, 'startCourse'>): MainMissionId[] => [...initialMissionIds(s), ...BRANCH_MISSION_IDS, ...DURABLE_MISSION_IDS, ...NEW_MAIN_MISSION_IDS];
+// The jump-rope mission only appears once its islet is bought.
+export const catalogueMainMissionIds = (s: Pick<GameState, 'startCourse'> & Partial<Pick<GameState, 'jumpIsland'>>): MainMissionId[] =>
+  [...initialMissionIds(s), ...BRANCH_MISSION_IDS, ...DURABLE_MISSION_IDS, ...NEW_MAIN_MISSION_IDS.filter(id => id !== 'first-jump-rope' || s.jumpIsland)];
 /** Includes finished objectives for browsing; retired identifiers are never part of this catalogue. */
 export function visibleMainMissions(s: MainMissionState): readonly MainMissionId[] {
   return mainCatalogueUnlocked(s) ? catalogueMainMissionIds(s) : activeMainMissions(s);

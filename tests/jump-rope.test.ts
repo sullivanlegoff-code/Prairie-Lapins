@@ -4,7 +4,9 @@ import {HOUR, JUMP_ROPE} from '../src/config/balance';
 import {MISSION_CYCLE_DURATION} from '../src/config/missions';
 import {cumulativeLevelXp} from '../src/simulation/progression';
 import {buildingPlacementReason} from '../src/simulation/placement';
-import {advanceJumpRope, airTime, halfWindow, jumpRopeDay, jumpRopeReward, ropePhase, rememberedJumpRopeTeam, startJumpRope, tapJumpRope} from '../src/simulation/jumpRope';
+import {advanceJumpRope, airTime, halfWindow, jumpRopeChallenge, jumpRopeDay, jumpRopeMedals, jumpRopeReward, meetsJumpRopeChallenge, ropePhase, rememberedJumpRopeTeam, startJumpRope, tapJumpRope} from '../src/simulation/jumpRope';
+import {SPECIES} from '../src/config/balance';
+import {visibleMainMissions, mainProgress} from '../src/simulation/missions';
 import {emptyBuilding} from '../src/state/initial';
 import type {Command, GameState, JumpRopeTeam} from '../src/state/types';
 
@@ -88,24 +90,24 @@ describe('Jump-rope islet: rewards, the daily limit and the trio', () => {
     const paid: number[] = [];
     for (const score of [12, 100, 5, 20]) { const before = s.pattes, r = run(s, {type: 'rewardJumpRope', team, score}); paid.push(r.state.pattes - before); expect(r.value).toBe(paid.at(-1)); s = r.state; }
     expect(paid).toEqual([24, JUMP_ROPE.maxPattes, 10, 0]);
-    expect(jumpRopeDay(s, s.lastSimulatedAt)).toEqual({rewardedLeft: 0, heartLeft: false});
+    expect(jumpRopeDay(s, s.lastSimulatedAt)).toMatchObject({rewardedLeft: 0, heartLeft: false});
     expect(s.jumpRope?.best).toBe(100);
     // The next daily cycle opens three rewarded games again; the record stays.
     const tomorrow = s.lastSimulatedAt + MISSION_CYCLE_DURATION, next = run(s, {type: 'rewardJumpRope', team, score: 8}, tomorrow);
-    expect(next.state.pattes - s.pattes).toBe(16); expect(next.state.jumpRope).toEqual({cycle: next.state.missions.daily.cycleIndex, rewarded: 1, best: 100, team});
+    expect(next.state.pattes - s.pattes).toBe(16); expect(next.state.jumpRope).toMatchObject({cycle: next.state.missions.daily.cycleIndex, rewarded: 1, best: 100, team}); expect(next.state.jumpRope?.heart).toBeUndefined();
   });
   it('gives one Heart a day, for the first game reaching 30 jumps, even after the rewarded games', () => {
-    let {s, team} = setup(); const hearts = s.hearts;
+    let {s, team} = setup(); const hearts = s.hearts + JUMP_ROPE.challenge.hearts; // The 29 jumps also win the challenge of the day.
     for (const score of [29, 1, 2]) s = run(s, {type: 'rewardJumpRope', team, score}).state;
     expect(s.hearts).toBe(hearts);
     const won = run(s, {type: 'rewardJumpRope', team, score: JUMP_ROPE.heartJumps});
     expect(won.jumpRopeReward).toEqual({pattes: 0, hearts: 1, rewarded: false}); expect(won.state.hearts).toBe(hearts + 1);
     expect(run(won.state, {type: 'rewardJumpRope', team, score: 50}).state.hearts).toBe(hearts + 1);
   });
-  it('caps a day at 180 pattes and one Heart, and never gives XP or affection', () => {
+  it('caps a day at 180 pattes, one Heart and the challenge Hearts, and never gives XP or affection', () => {
     let {s, team} = setup(); const start = {pattes: s.pattes, hearts: s.hearts, xp: s.progression.totalXp, affection: s.rabbits.map(r => r.affection)};
     for (let i = 0; i < 10; i++) s = run(s, {type: 'rewardJumpRope', team, score: JUMP_ROPE.maxScore}).state;
-    expect(s.pattes - start.pattes).toBe(180); expect(s.hearts - start.hearts).toBe(1);
+    expect(s.pattes - start.pattes).toBe(180); expect(s.hearts - start.hearts).toBe(1 + JUMP_ROPE.challenge.hearts);
     expect(s.progression.totalXp).toBe(start.xp); expect(s.rabbits.map(r => r.affection)).toEqual(start.affection);
   });
   it('remembers the last trio, and forgets it while one of its rabbits is away', () => {
@@ -128,11 +130,64 @@ describe('Jump-rope islet: rewards, the daily limit and the trio', () => {
   });
 });
 
+describe('Jump-rope islet: challenge of the day, medals, athlete records and the mission', () => {
+  it('draws the same challenge for the same day, changes it over the days, and never asks for a type the player lacks', () => {
+    const {s} = setup(), day = MISSION_CYCLE_DURATION, seen = new Set<string>();
+    for (let i = 0; i < 30; i++) {
+      const at = s.lastSimulatedAt + i * day, c = jumpRopeChallenge(s, at);
+      expect(jumpRopeChallenge(structuredClone(s), at)).toEqual(c); // Deterministic: the cycle alone decides.
+      expect(JUMP_ROPE.challenge.jumps).toContain(c.jumps); expect(c.type === null || c.type === 'paille').toBe(true); // Only paille rabbits here.
+      seen.add(JSON.stringify(c));
+    }
+    expect(seen.size).toBeGreaterThan(1);
+  });
+  it('pays the challenge Hearts once a day, on top of the other rewards, only when the athlete meets it', () => {
+    let {s, team} = setup(); const c = jumpRopeChallenge(s, s.lastSimulatedAt), hearts = s.hearts;
+    expect(meetsJumpRopeChallenge(s, c, team.athlete, c.jumps - 1)).toBe(false);
+    const missed = run(s, {type: 'rewardJumpRope', team, score: c.jumps - 1});
+    expect(missed.jumpRopeReward?.challenge).toBeUndefined(); expect(missed.state.hearts).toBe(hearts); s = missed.state;
+    const won = run(s, {type: 'rewardJumpRope', team, score: c.jumps});
+    expect(won.jumpRopeReward).toMatchObject({challenge: true, hearts: JUMP_ROPE.challenge.hearts}); expect(won.state.hearts).toBe(hearts + JUMP_ROPE.challenge.hearts);
+    expect(jumpRopeDay(won.state, s.lastSimulatedAt).challengeLeft).toBe(false); expect(jumpRopeDay(won.state, s.lastSimulatedAt).heartLeft).toBe(true);
+    const again = run(won.state, {type: 'rewardJumpRope', team, score: c.jumps});
+    expect(again.state.hearts).toBe(won.state.hearts);
+    const tomorrow = s.lastSimulatedAt + MISSION_CYCLE_DURATION, next = jumpRopeChallenge(again.state, tomorrow);
+    expect(jumpRopeDay(again.state, tomorrow).challengeLeft).toBe(true);
+    expect(run(again.state, {type: 'rewardJumpRope', team, score: next.jumps}, tomorrow).jumpRopeReward?.challenge).toBe(true);
+  });
+  it('asks the athlete to be of the drawn type', () => {
+    const {s, ids} = setup(); s.rabbits.find(r => r.id === ids[0])!.species = 'feu'; s.discovered.push('feu');
+    const typed = Array.from({length: 40}, (_, i) => s.lastSimulatedAt + i * MISSION_CYCLE_DURATION).map(at => jumpRopeChallenge(s, at)).find(c => c.type === 'feu')!;
+    expect(typed).toBeDefined(); expect(SPECIES.feu.types).toContain('feu');
+    expect(meetsJumpRopeChallenge(s, typed, ids[2], typed.jumps)).toBe(false); // A paille athlete.
+    expect(meetsJumpRopeChallenge(s, typed, ids[0], typed.jumps)).toBe(true);
+  });
+  it('hangs a medal for each record step, and keeps each athlete’s own best', () => {
+    let {s, team, ids} = setup(); expect(jumpRopeMedals(s)).toEqual([]);
+    s = run(s, {type: 'rewardJumpRope', team, score: 26}).state; expect(jumpRopeMedals(s)).toEqual([10, 25]);
+    s = run(s, {type: 'rewardJumpRope', team: {carriers: [ids[2], ids[1]], athlete: ids[0]}, score: 12}).state;
+    s = run(s, {type: 'rewardJumpRope', team, score: 7}).state;
+    expect(s.jumpRope?.athleteBest).toEqual({[ids[2]]: 26, [ids[0]]: 12}); expect(s.jumpRope?.best).toBe(26);
+    s.jumpRope!.best = 100; expect(jumpRopeMedals(s)).toEqual([10, 25, 50, 100]);
+    // A rabbit that has left the meadow loses its line when the save is read.
+    const gone = structuredClone(s); gone.rabbits = gone.rabbits.filter(r => r.id !== ids[0]); gone.jumpRope!.team = undefined;
+    const decoded = decodeGame(encodeGame(gone)); expect(decoded.ok && decoded.state.jumpRope?.athleteBest).toEqual({[ids[2]]: 26});
+  });
+  it('shows the « Premiers sauts » mission once the islet is bought, done after the first game', () => {
+    const before = atLevel(createGame(0), JUMP_ROPE.unlockLevel);
+    expect(visibleMainMissions(before)).not.toContain('first-jump-rope');
+    const {s, team} = setup();
+    expect(visibleMainMissions(s)).toContain('first-jump-rope'); expect(mainProgress(s, 'first-jump-rope')).toEqual({value: 0, target: 1});
+    const played = run(s, {type: 'rewardJumpRope', team, score: 0}).state;
+    expect(played.missions.completed).toContain('first-jump-rope');
+  });
+});
+
 describe('Jump-rope islet: the save', () => {
   it('keeps the islet, the day, the record and the trio through a save, and refuses a future or impossible day', () => {
     const {s, team} = setup(), played = run(s, {type: 'rewardJumpRope', team, score: 31}).state;
     const decoded = decodeGame(encodeGame(played));
-    expect(decoded.ok && decoded.state.jumpRope).toEqual({cycle: played.missions.daily.cycleIndex, rewarded: 1, heart: true, best: 31, team});
+    expect(decoded.ok && decoded.state.jumpRope).toEqual({cycle: played.missions.daily.cycleIndex, rewarded: 1, heart: true, challenge: true, best: 31, team, athleteBest: {[team.athlete]: 31}});
     expect(decoded.ok && decoded.state.jumpIsland).toBe(true);
     const future = structuredClone(played); future.jumpRope!.cycle = played.missions.daily.cycleIndex + 1;
     expect(decodeGame(JSON.stringify({...JSON.parse(encodeGame(played)), jumpRope: future.jumpRope}))).toMatchObject({ok: false});

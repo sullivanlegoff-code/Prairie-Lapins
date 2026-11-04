@@ -172,6 +172,13 @@ export const JUMP_ROPE = {
   leadIn: 1600, startPeriod: 1250, minPeriod: 540, speedUp: 0.965, windowShare: 0.24, minWindow: 120, perfectShare: 0.4,
   /** Every `milestone` jumps, a bigger cheer. */
   milestone: 10,
+  /** Record medals (owner, 4 November 2026): one hangs on the kiosk for each step the record reaches. */
+  medals: [10, 25, 50, 100],
+  /**
+   * The challenge of the day (owner, 4 November 2026): drawn from the daily cycle alone (no network), reach `jumps` jumps,
+   * sometimes with an athlete of one rabbit type; `hearts` Hearts once a cycle, on top of the other rewards.
+   */
+  challenge: {hearts: 2, jumps: [15, 20, 25], types: ['paille', 'neige', 'feu', 'metal', 'vol']},
 } as const;
 /** The picnic: from player level 8, one a day in all, in one enclosure; paid and rewarded per rabbit present. */
 // 10 XP per rabbit present since 3 November 2026 (5 before).

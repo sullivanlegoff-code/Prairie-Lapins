@@ -14,13 +14,17 @@ export interface JumpRopeTrio {carriers: [CuisineRabbit, CuisineRabbit]; athlete
  * The jump-rope game on its islet (src/simulation/jumpRope.ts holds the rules): a full-screen layer outside GameUI's rebuilt
  * panel, played with one tap anywhere (or the space bar). One miss ends the game; « Rejouer » starts the next one at once.
  * `onFinished` records the finished game and returns the reward line; `best` reads the record before the game; `cheer` plays
- * the confirmation sound on a « Parfait ! » streak, a milestone and a new record.
+ * the confirmation sound on a « Parfait ! » streak, a milestone and a new record; `tick` plays the rhythm « tac » each time the
+ * rope passes under the athlete's feet; `challengeText` describes the challenge of the day. The carriers console the athlete
+ * after a miss and applaud a new record.
  */
 export function mountJumpRopeActivity(host: HTMLElement, options: {
   onFinished: (team: JumpRopeTrio, score: number) => string;
   quotaText?: () => string;
   best?: () => number;
   cheer?: () => void;
+  tick?: () => void;
+  challengeText?: () => string;
   onExit?: () => void;
   /** Milliseconds, monotonic; performance.now() by default. Tests drive it and call `update()` themselves. */
   clock?: () => number;
@@ -41,6 +45,7 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
 <svg class="jump-rope-rope" data-layer="front" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path/></svg>
 <span class="jump-rope-burst" aria-hidden="true"></span>
 <p class="jump-rope-combo" aria-hidden="true"></p>
+<p class="jump-rope-cheer" aria-hidden="true"></p>
 <p class="jump-rope-pop" aria-hidden="true"></p>
 </div>
 <div class="jump-rope-card" data-jump-rope-card></div>`;
@@ -49,14 +54,14 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
   const stage = $<HTMLElement>('[data-jump-rope-stage]'), card = $<HTMLElement>('[data-jump-rope-card]');
   const score = $<HTMLElement>('.jump-rope-score'), bestLine = $<HTMLElement>('.jump-rope-best'), quota = $<HTMLElement>('.jump-rope-quota');
   const rabbitBox = $<HTMLElement>('.jump-rope-rabbit'), figure = $<HTMLElement>('.jump-rope-rabbit .jump-rope-figure'), pop = $<HTMLElement>('.jump-rope-pop');
-  const combo = $<HTMLElement>('.jump-rope-combo'), burst = $<HTMLElement>('.jump-rope-burst');
+  const combo = $<HTMLElement>('.jump-rope-combo'), burst = $<HTMLElement>('.jump-rope-burst'), cheerLine = $<HTMLElement>('.jump-rope-cheer');
   const carriers = [...layer.querySelectorAll<HTMLElement>('.jump-rope-carrier')];
   const back = $<SVGPathElement>('[data-layer="back"] path'), front = $<SVGPathElement>('[data-layer="front"] path');
   const sky = $<HTMLCanvasElement>('.jump-rope-sky'), abort = new AbortController();
   const resize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => { if (!layer.hidden) drawJumpRopeSky(sky); });
   resize?.observe(stage);
   let team: JumpRopeTrio | null = null, game: JumpRopeGame | null = null, running = false, popTimer: ReturnType<typeof setTimeout> | undefined;
-  let previousBest = 0, recordShown = false;
+  let previousBest = 0, recordShown = false, tickedAt = -Infinity;
   const nameOf = (r: CuisineRabbit) => r.name || SPECIES[r.species].name;
   const name = () => team ? nameOf(team.athlete) : '';
   const jumps = (n: number) => `${n} saut${n > 1 ? 's' : ''}`;
@@ -93,9 +98,21 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
   }
   function celebrate(): void { burst.classList.remove('shown'); void burst.offsetWidth; burst.classList.add('shown'); }
   function stumble(): void { rabbitBox.classList.remove('stumble'); void rabbitBox.offsetWidth; rabbitBox.classList.add('stumble'); }
+  /** The carriers react: they lean in to console the athlete, or hop and clap for a record. */
+  function react(kind: 'console' | 'applaud' | null, line = ''): void {
+    for (const carrier of carriers) { carrier.classList.remove('console', 'applaud'); if (kind) { void carrier.offsetWidth; carrier.classList.add(kind); } }
+    cheerLine.textContent = line; cheerLine.dataset.kind = kind ?? ''; cheerLine.classList.toggle('shown', !!line);
+  }
+  /** The rhythm « tac »: once per pass of the rope under the feet, when the clock crosses it. */
+  function rhythm(now: number): void {
+    if (!game || game.over) return;
+    const pass = now >= game.nextPassAt ? game.nextPassAt : game.lastPassAt;
+    if (pass > tickedAt && now >= pass) { tickedAt = pass; options.tick?.(); }
+  }
   function update(): void {
     if (!game) return;
-    const now = clock(), missed = advanceJumpRope(game, now);
+    const now = clock(); rhythm(now);
+    const missed = advanceJumpRope(game, now);
     if (missed) { flash('Oups !', 'miss'); stumble(); }
     drawRope(ropePhase(game, now));
     const air = game.lastJumpAt === null ? 1 : (now - game.lastJumpAt) / airTime(game.period);
@@ -110,7 +127,7 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
     if (result === 'miss') { flash('Oups !', 'miss'); stumble(); }
     else if (result === 'jump' || result === 'perfect') {
       const n = game.score;
-      if (previousBest > 0 && n === previousBest + 1 && !recordShown) { recordShown = true; flash('Nouveau record !', 'record'); celebrate(); options.cheer?.(); }
+      if (previousBest > 0 && n === previousBest + 1 && !recordShown) { recordShown = true; flash('Nouveau record !', 'record'); celebrate(); options.cheer?.(); react('applaud', 'Bravo !'); }
       else if (n % JUMP_ROPE.milestone === 0) { flash(`${n} sauts !`, 'milestone'); celebrate(); options.cheer?.(); }
       else if (result === 'perfect') { flash('Parfait !', 'perfect'); if (game.combo >= 3 && game.combo % 3 === 0) options.cheer?.(); }
       else flash('Hop !', 'jump');
@@ -124,6 +141,7 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
     const chips = document.createElement('p'); chips.className = 'jump-rope-rewards';
     for (const part of reward ? reward.split(' · ') : []) { const chip = document.createElement('span'); chip.className = 'cuisine-reward-chip'; setCurrencyText(chip, part); chips.append(chip); }
     combo.classList.remove('shown'); hud();
+    react(record ? 'applaud' : 'console', record ? 'Bravo !' : final >= 5 ? 'C’était super !' : 'Courage, on recommence !');
     const again = button('Rejouer', start, 'jumpRopeAgain');
     showCard(paragraph(final ? `${name()} a fait ${jumps(final)} !` : `${name()} s’est emmêlé les pattes !`, 'jump-rope-title'),
       ...(record ? [paragraph(previousBest ? `Nouveau record ! L’ancien était de ${previousBest}.` : 'Ton premier record !', 'jump-rope-record')] : previousBest ? [paragraph(`Ton record : ${jumps(previousBest)}`, 'jump-rope-rules')] : []),
@@ -132,14 +150,16 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
   }
   function start(): void {
     previousBest = options.best?.() ?? 0; recordShown = false;
-    game = startJumpRope(clock()); running = true; card.hidden = true; rabbitBox.classList.remove('stumble'); combo.classList.remove('shown');
+    game = startJumpRope(clock()); running = true; tickedAt = -Infinity; card.hidden = true; rabbitBox.classList.remove('stumble'); combo.classList.remove('shown'); react(null);
     hud(); flash('Prêt ?', 'ready'); frame(loop);
   }
   function intro(): void {
-    game = null; running = false; previousBest = options.best?.() ?? 0; drawRope(0.5); hud();
+    game = null; running = false; previousBest = options.best?.() ?? 0; drawRope(0.5); hud(); react(null);
+    const challenge = options.challengeText?.() ?? '';
     const [left, right] = team!.carriers;
     showCard(paragraph(`${name()} saute à la corde !`, 'jump-rope-title'),
       paragraph(`${nameOf(left)} et ${nameOf(right)} font tourner la corde. Touche l’écran quand elle passe sous ${name()}. Elle tourne de plus en plus vite. Un raté et la partie s’arrête : rejoue autant que tu veux !`, 'jump-rope-rules'),
+      ...(challenge ? [paragraph(challenge, 'jump-rope-challenge')] : []),
       button('C’est parti !', start, 'jumpRopeStart'));
   }
   function close(): void {

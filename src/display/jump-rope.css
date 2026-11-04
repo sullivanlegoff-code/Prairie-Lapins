@@ -69,7 +69,19 @@
 .jump-rope-burst.shown { animation: jump-rope-burst .7s ease-out; }
 @keyframes jump-rope-burst { 0% { opacity: .95; transform: translateX(-50%) scale(.2); } 100% { opacity: 0; transform: translateX(-50%) scale(1.15); } }
 .jump-rope-record { font-weight: 900; color: #c2722a; }
-@media (prefers-reduced-motion: reduce) { .jump-rope-burst.shown { animation: none; } .jump-rope-carrier { transform: translate(-50%, 0); } }
+.jump-rope-challenge { font-weight: 800; color: #8a4f8f; }
+/* The carriers' reactions: leaning in toward the athlete (console), hopping (applaud); their words above the sand. */
+.jump-rope-carrier.console[data-side="left"] .jump-rope-figure { animation: jump-rope-console-left 1.2s ease-in-out 2; }
+.jump-rope-carrier.console[data-side="right"] .jump-rope-figure { animation: jump-rope-console-right 1.2s ease-in-out 2; }
+@keyframes jump-rope-console-left { 50% { translate: 8% 0; rotate: 7deg; } }
+@keyframes jump-rope-console-right { 50% { translate: -8% 0; rotate: -7deg; } }
+.jump-rope-carrier.applaud .jump-rope-figure { animation: jump-rope-applaud .32s ease-out 6; }
+@keyframes jump-rope-applaud { 50% { translate: 0 -14%; } }
+.jump-rope-cheer { position: absolute; z-index: 4; left: calc(762 * var(--u)); bottom: calc(400 * var(--u)); margin: 0; transform: translateX(-50%); padding: 4px 12px;
+  border-radius: 14px; background: #fff8e8; border: 2px solid #8a7550; font-weight: 800; white-space: nowrap; opacity: 0; transition: opacity .25s; pointer-events: none; }
+.jump-rope-cheer.shown { opacity: 1; }
+.jump-rope-cheer[data-kind="applaud"] { color: #c2722a; }
+@media (prefers-reduced-motion: reduce) { .jump-rope-burst.shown, .jump-rope-carrier .jump-rope-figure { animation: none !important; } .jump-rope-carrier { transform: translate(-50%, 0); } }
 .jump-rope-pop.shown { animation: jump-rope-pop .45s ease-out; }
 @keyframes jump-rope-pop { 0% { opacity: 1; transform: translate(-50%, 8px) scale(.9); } 100% { opacity: 0; transform: translate(-50%, -18px) scale(1.1); } }
 .jump-rope-card {
@@ -82,3 +94,6 @@
 .jump-rope-title { font-size: 1.3rem; font-weight: 900; }
 .jump-rope-rewards { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
 .jump-rope-card button { min-height: 44px; margin: 4px; padding: 0 18px; border-radius: 14px; border: 2px solid #6b5a3a; background: #ffe7a8; font-weight: 800; font-size: 1rem; }
+/* The record medals won, in the islet's menu (concept M1 « Rubans »). */
+.jump-rope-medals { display: flex; gap: 6px; margin: 4px 0; }
+.jump-rope-medals img { height: 52px; width: auto; }

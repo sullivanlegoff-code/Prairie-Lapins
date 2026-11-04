@@ -110,7 +110,8 @@ const current = z.object({
   picnicCycle: integer.optional(),
   // The Terrain de corde à sauter (v23, optional): the last rewarded cycle, its rewarded games and Heart, and the record.
   jumpRope: z.object({cycle: integer, rewarded: integer.max(JUMP_ROPE.rewardedGamesPerCycle), heart: z.literal(true).optional(), best: integer.max(JUMP_ROPE.maxScore),
-    team: z.object({carriers: z.tuple([identity, identity]), athlete: identity}).strict().optional()}).strict().optional(),
+    team: z.object({carriers: z.tuple([identity, identity]), athlete: identity}).strict().optional(), challenge: z.literal(true).optional(),
+    athleteBest: z.record(identity, integer.max(JUMP_ROPE.maxScore)).optional()}).strict().optional(),
   jumpIsland: z.literal(true).optional(),
   missions, decorations: z.array(decoration).max(MAX_DECORATIONS),
   rewardedDecorationModels: z.array(z.enum(DECORATION_IDS)).max(DECORATION_IDS.length).refine(ids => new Set(ids).size === ids.length).optional(),
@@ -377,6 +378,7 @@ export function decodeGame(json: string): DecodeResult {
   for (const id of Object.keys(state.cuisine.affectionCycles))
     if (!rabbitIds.has(id)) delete state.cuisine.affectionCycles[id];
   for (const id of Object.keys(state.affectionGifts ?? {})) if (!rabbitIds.has(id)) delete state.affectionGifts![id];
+  for (const id of Object.keys(state.jumpRope?.athleteBest ?? {})) if (!rabbitIds.has(id)) delete state.jumpRope!.athleteBest![id];
   establishHistoricalLevelRights(state);
   updateMissions(state, state.lastSimulatedAt);
   return {ok: true, state};

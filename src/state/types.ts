@@ -103,7 +103,11 @@ export interface GameState {
    * JUMP_ROPE.rewardedGamesPerCycle) and whether its Heart was won; `best` is the player's record; `team` the last trio chosen
    * (two carriers, one athlete; optional, its rabbits may since have left). Absent until the first game.
    */
-  jumpRope?: {cycle: number; rewarded: number; heart?: true; best: number; team?: JumpRopeTeam};
+  jumpRope?: {cycle: number; rewarded: number; heart?: true; best: number; team?: JumpRopeTeam;
+    /** The challenge of the day won in this cycle (optional). */
+    challenge?: true;
+    /** Each rabbit's best score as the athlete, keyed by rabbit ID (optional; for future evolution challenges). */
+    athleteBest?: Record<string, number>};
   /** The jump-rope islet, bought (optional, absent = not bought): it floats left of the start island, off the land grid. */
   jumpIsland?: true;
 }
