@@ -10,7 +10,7 @@ describe('contextual placement grid', () => {
     expect(placementGrid(fresh, null)).toEqual([]);
   });
   it('shows three cells around the whole building, not a viewport-sized grid', () => {
-    const lines = placementGrid(fresh, buildingFootprint({x: 5, y: 37}));
+    const lines = placementGrid(fresh, buildingFootprint({kind: 'farm', x: 5, y: 37}));
     const points = lines.flatMap(l => [l.from, l.to]);
     expect(Math.min(...points.map(p => p.x))).toBe(2);
     expect(Math.max(...points.map(p => p.x))).toBe(12);
@@ -31,7 +31,7 @@ describe('contextual placement grid', () => {
     expect(bounds(rotated.width, rotated.height)).toEqual({width: 8, height: 7});
   });
   it('clips the context at the front-left map edges without changing the candidate', () => {
-    const candidate = buildingFootprint({x: 0, y: 44}), original = {...candidate};
+    const candidate = buildingFootprint({kind: 'farm', x: 0, y: 44}), original = {...candidate};
     const points = placementGrid(fresh, candidate).flatMap(l => [l.from, l.to]);
     expect(points.every(p => p.x >= 0 && p.x <= 7 && p.y >= 41 && p.y <= 48)).toBe(true);
     expect(points.some(p => p.x === 0 && p.y === 48)).toBe(true);

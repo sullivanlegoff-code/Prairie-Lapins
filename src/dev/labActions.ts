@@ -54,7 +54,7 @@ function build(s: GameState, kind: BuildingKind, habitatType: HabitatType = 'uni
   if (max !== null && s.buildings.filter(b => b.kind === kind).length >= max) throw new Error('Tu possèdes déjà le maximum de ce bâtiment.');
   if (!HABITAT_TYPES.includes(habitatType)) throw new Error('Habitat inconnu.');
   const b = emptyBuilding(`building-${s.nextId++}`, kind, 0, 0, habitatType);
-  if (b.habitat) { b.habitat.level = level; b.footprintTier = level; }
+  if (b.habitat) { b.habitat.level = level; b.footprintTier = level; delete b.formerFootprint; }
   place(s, b); s.buildings.push(b); return b;
 }
 function addRabbit(s: GameState, species: SpeciesId, affection: number): void {
@@ -132,7 +132,7 @@ export function labAction(state: GameState, action: LabAction): GameState {
         const target = level as HabitatLevel;
         if (s.rabbits.filter(r => r.enclosureId === b.id).length > habitatLevel(b.habitat!.type, target).capacity) throw new Error('Déplace des lapins avant de réduire cet habitat.');
         if (b.incomeUnits > habitatLevel(b.habitat!.type, target).cap * HOUR) throw new Error('Récolte les pièces de cet habitat avant de réduire son stockage.');
-        b.habitat!.level = target; b.footprintTier = target;
+        b.habitat!.level = target; b.footprintTier = target; delete b.formerFootprint;
         if (footprintPlacementReason(s, buildingFootprint(b), {buildingId: b.id})) place(s, b);
       }
       break;

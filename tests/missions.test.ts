@@ -51,7 +51,7 @@ describe('main missions and unique rewards',()=>{
   it('starts eight unclaimed visible objectives and a fresh 24-hour cycle without changing initial resources',()=>{
     const s=createGame(123);
     // The 108 active missions include the two evolution goals; the three retired identifiers stay readable in MAIN_MISSION_IDS.
-    expect(ACTIVE_MAIN_MISSION_IDS).toHaveLength(108);expect(MAIN_MISSION_IDS).toEqual(expect.arrayContaining([...ACTIVE_MAIN_MISSION_IDS]));expect(s).toMatchObject({version: 23,pattes:350,grass:10,hearts:12});
+    expect(ACTIVE_MAIN_MISSION_IDS).toHaveLength(108);expect(MAIN_MISSION_IDS).toEqual(expect.arrayContaining([...ACTIVE_MAIN_MISSION_IDS]));expect(s).toMatchObject({version: 24,pattes:350,grass:10,hearts:12});
     expect(s.missions).toEqual({events:emptyMainEvents(),completed:[],claimed:[],daily:{referenceAt:123,cycleIndex:0,progress:emptyDailyProgress(),claimed:[],bonusClaimed:false}});
     expect(dailyCycleEnd(s)).toBe(123+DAY);
   });

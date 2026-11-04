@@ -24,8 +24,13 @@ export interface Building {
   /** Exact numerator: one patte = HOUR units. Never round each update. */
   incomeUnits: number;
   habitat: {type: HabitatType; level: HabitatLevel} | null;
-  /** Footprint actually acquired (enclosures only): 1 = 4 × 4, 2 = 6 × 5, 3 = 8 × 6 fine cells. Absent = 1, whatever the level. Anchored at x, y. */
+  /** Footprint actually acquired (enclosures only): 1 = 5 × 4, 2 = 8 × 5, 3 = 10 × 6 fine cells. Absent = 1, whatever the level. Anchored at x, y. */
   footprintTier?: HabitatLevel;
+  /**
+   * Enclosures only: still keeps its tier's size from before the enlargement of 3 November 2026 (4 × 4, 6 × 5, 8 × 6), because a
+   * save written before it had no room around it. Removed as soon as it can grow at load, or when it is upgraded.
+   */
+  formerFootprint?: true;
   order: {recipe: OrderId; startedAt: number; endsAt: number; grass?: number; duration?: number} | null;
   breeding: {parents: [string, string]; startedAt: number; endsAt: number; birth: Birth} | null;
   /** Present exactly on the nursery. */
@@ -80,7 +85,7 @@ export interface GameState {
   startCourse?: 'paille-solo';
   purchaseUnlocks?: PurchaseUnlockId[];
   initiation?: Initiation;
-  version: 23;
+  version: 24;
   /** Benny, the Mythic (v22): when her power is usable again, and whether she is flying in the sky. Absent until first used. */
   benny?: {powerReadyAt: number; inSky: boolean};
   rewardedDecorationModels?: DecorationId[]; decorations: OwnedDecoration[]; missions: MissionState; lastSimulatedAt: number; nextId: number;

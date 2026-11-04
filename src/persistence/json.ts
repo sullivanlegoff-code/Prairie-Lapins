@@ -8,6 +8,7 @@ import {PURCHASE_UNLOCK_IDS} from '../config/purchaseUnlocks';
 import {RECIPE_BOOK_SPECIES} from '../config/recipes';
 import {updateMissions} from '../simulation/missions';
 import {buildingPlacementReason} from '../simulation/placement';
+import {growFormerEnclosures} from '../simulation/enclosureGrowth';
 import {normalizeRabbitName} from '../simulation/rabbitNames';
 import {PARCEL_IDS, startParcel} from '../config/land';
 import {type HabitatType, HABITAT_TYPES, HABITAT_LEVELS, habitatLevel} from '../config/habitats';
@@ -23,11 +24,11 @@ import {EVOLUTION_CHALLENGES, EVOLUTION_CHALLENGE_IDS, evolutionChallengeTarget,
 import {EVOLUTION_AFFECTION, hasEvolvedArt} from '../config/evolvedArt';
 
 /**
- * The current format is v23 (affection up to 50, a second Statue de l'Affection, the Salon de soins and the picnic, a lapin ultime's taken-off crown, the Forêt de Brocéliande and a rabbit's old drawing put back, all optional; nothing to convert), after v22 (Benny's power and sky mode, optional), v21 (friendships and memories), v20 (catalogue conversion) and v19 (farm and agency levels, concurrent trips, Heart receipts), migrated through v18 and v17 from v16 (economy migration). Version 16 was the catalogue boundary of the development saves: the species Terre, Mottelin, Géant and
+ * The current format is v24 (larger enclosures: an enclosure may keep its former footprint, see `migrateV23`), after v23 (affection up to 50, a second Statue de l'Affection, the Salon de soins and the picnic, a lapin ultime's taken-off crown, the Forêt de Brocéliande and a rabbit's old drawing put back, all optional; nothing to convert), after v22 (Benny's power and sky mode, optional), v21 (friendships and memories), v20 (catalogue conversion) and v19 (farm and agency levels, concurrent trips, Heart receipts), migrated through v18 and v17 from v16 (economy migration). Version 16 was the catalogue boundary of the development saves: the species Terre, Mottelin, Géant and
  * Brumelin and the Terre habitat were removed, and saves before that catalogue boundary are not converted. Versions 1 to 15 are refused as incompatible
  * (the controller then starts a new game); they are never read, migrated or restored.
  */
-export const SAVE_VERSION = 23;
+export const SAVE_VERSION = 24;
 /** Types a species had before the owner changed them: a rabbit already housed under its old types may stay where it is. */
 const LEGACY_TYPES: Partial<Record<SpeciesId, readonly HabitatType[]>> = {magicien: ['metal', 'vol'], bouee: ['paille', 'feu'], dadi: ['neige', 'vol']};
 const integer = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
@@ -36,7 +37,8 @@ const timestamp = z.number().int().min(Number.MIN_SAFE_INTEGER).max(Number.MAX_S
 const identity = z.string().regex(/^(building|rabbit|birth)-[1-9]\d*$/);
 const species = z.enum(SPECIES_IDS);
 const birth = z.object({id: identity, species, guaranteed: z.boolean(), reservedDiscovery: z.boolean()}).strict();
-// An enclosure may store the footprint tier it has acquired (1 = 4 × 4, 2 = 6 × 5, 3 = 8 × 6 fine cells). Absent means 4 × 4 at any level.
+// An enclosure may store the footprint tier it has acquired (1 = 5 × 4, 2 = 8 × 5, 3 = 10 × 6 fine cells; with `formerFootprint`,
+// the sizes before v24: 4 × 4, 6 × 5, 8 × 6). Absent means tier 1 at any level.
 const footprintTier = z.union([z.literal(1), z.literal(2), z.literal(3)]);
 const nurseryBaby = z.object({slot: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)]), birth, startedAt: timestamp, readyAt: timestamp}).strict();
 const nurseryPayload = z.object({capacity: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]), babies: z.array(nurseryBaby).max(NURSERY.maxCapacity)}).strict();
@@ -44,7 +46,7 @@ const building = z.object({
   id: identity, kind: z.enum(BUILDING_KINDS), x: integer, y: integer, incomeUnits: integer,
   habitat: z.object({type: z.enum(HABITAT_TYPES), level: z.union([z.literal(1), z.literal(2), z.literal(3)])}).strict().nullable(),
   farmLevel: z.union([z.literal(2), z.literal(3)]).optional(), agencyLevel: z.union([z.literal(2), z.literal(3)]).optional(),
-  footprintTier: footprintTier.optional(),
+  footprintTier: footprintTier.optional(), formerFootprint: z.literal(true).optional(),
   order: z.object({recipe: z.enum(Object.keys(ORDERS) as [OrderId, ...OrderId[]]), startedAt: timestamp, endsAt: timestamp, grass: integer.optional(), duration: integer.positive().optional()}).strict().nullable(),
   breeding: z.object({parents: z.tuple([identity, identity]), startedAt: timestamp, endsAt: timestamp, birth}).strict().nullable(),
   nursery: nurseryPayload.nullable(),
@@ -167,6 +169,7 @@ const schema = current.superRefine((s, context) => {
     if ((b.farmLevel !== undefined && b.kind !== 'farm') || (b.agencyLevel !== undefined && b.kind !== 'agency')) issue('Building level');
     if (b.order && (b.farmLevel ?? 1) < orderFarmLevel(b.order.recipe)) issue('Farm level');
     if (b.footprintTier !== undefined && (b.kind !== 'enclosure' || !b.habitat || b.footprintTier > b.habitat.level)) issue('Footprint tier');
+    if (b.formerFootprint && b.kind !== 'enclosure') issue('Former footprint');
     if (!b.id.startsWith('building-')) issue('Building identity');
     if (buildingPlacementReason(s, b.x, b.y, b.id) || cells.has(`${b.x},${b.y}`)) issue('Invalid or occupied cell');
     cells.add(`${b.x},${b.y}`);
@@ -347,6 +350,18 @@ function settleStorageCaps(raw: unknown): void {
 }
 
 /**
+ * v23 → v24, the enlarged enclosures. Every enclosure of an older save keeps, for now, exactly the footprint it had
+ * (`formerFootprint`), so the save validates with the very same rules as before: no refusal, no building removed, no rabbit
+ * moved out. Right after validation, `growFormerEnclosures` gives the enlarged size to each one that has room for it.
+ */
+function migrateV23(raw: object): void {
+  const save = raw as {version: number; buildings?: unknown};
+  if (Array.isArray(save.buildings)) for (const b of save.buildings)
+    if (b && typeof b === 'object' && (b as {kind?: unknown}).kind === 'enclosure') (b as {formerFootprint?: true}).formerFootprint = true;
+  save.version = SAVE_VERSION;
+}
+
+/**
  * `INCOMPATIBLE_CATALOG`: a save written before the catalogue boundary (versions 1 to 15). It is not read further; it is neither
  * converted nor restored. `UNSUPPORTED_VERSION`: any other version this client does not know (for instance a newer one).
  */
@@ -356,7 +371,7 @@ export function decodeGame(json: string): DecodeResult {
   if (json.length > MAX_JSON_LENGTH) return {ok: false, reason: 'FILE_TOO_LARGE'};
   let raw: unknown;
   try { raw = JSON.parse(json); } catch { return {ok: false, reason: 'INVALID_JSON'}; }
-  if (raw && typeof raw === 'object' && 'version' in raw && raw.version !== SAVE_VERSION && raw.version !== 22 && raw.version !== 21 && raw.version !== 20 && raw.version !== 19 && raw.version !== 18 && raw.version !== 17 && raw.version !== 16)
+  if (raw && typeof raw === 'object' && 'version' in raw && raw.version !== SAVE_VERSION && raw.version !== 23 && raw.version !== 22 && raw.version !== 21 && raw.version !== 20 && raw.version !== 19 && raw.version !== 18 && raw.version !== 17 && raw.version !== 16)
     return {ok: false, reason: Number.isInteger(raw.version) && (raw.version as number) >= 1 && (raw.version as number) <= 15 ? 'INCOMPATIBLE_CATALOG' : 'UNSUPPORTED_VERSION'};
   // Only the explicitly retired catalogue entries are removed; unknown IDs still fail validation.
   if (raw && typeof raw === 'object' && 'decorations' in raw && Array.isArray(raw.decorations)) {
@@ -367,7 +382,8 @@ export function decodeGame(json: string): DecodeResult {
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 16) raw = migrateV16(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 17) raw = migrateV17(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 18) raw = migrateV18(raw);
-  if (raw && typeof raw === 'object' && 'version' in raw && (raw.version === 19 || raw.version === 20 || raw.version === 21 || raw.version === 22)) raw.version = SAVE_VERSION;
+  if (raw && typeof raw === 'object' && 'version' in raw && (raw.version === 19 || raw.version === 20 || raw.version === 21 || raw.version === 22)) raw.version = 23;
+  if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 23) migrateV23(raw);
   settleStorageCaps(raw);
   const parsed = schema.safeParse(raw);
   if (!parsed.success) return {ok: false, reason: 'INVALID_STATE'};
@@ -384,6 +400,8 @@ export function decodeGame(json: string): DecodeResult {
   for (const id of Object.keys(state.cuisine.affectionCycles))
     if (!rabbitIds.has(id)) delete state.cuisine.affectionCycles[id];
   for (const id of Object.keys(state.affectionGifts ?? {})) if (!rabbitIds.has(id)) delete state.affectionGifts![id];
+  // Enclosures that still keep their former size grow wherever there is room (never a reason to refuse the save).
+  growFormerEnclosures(state);
   establishHistoricalLevelRights(state);
   updateMissions(state, state.lastSimulatedAt);
   return {ok: true, state};
@@ -395,6 +413,6 @@ export function encodeGame(state: GameState, presentationId?: string): string {
 
 /** Optional presentation metadata, separate from simulation state. Call after validating the save. */
 export function readPresentationId(json: string): string | undefined {
-  try { const raw = JSON.parse(json); const id = z.string().uuid().safeParse(raw.presentationId); return [SAVE_VERSION, 22, 21, 20, 19, 18, 17, 16].includes(raw.version) && id.success ? id.data : undefined; }
+  try { const raw = JSON.parse(json); const id = z.string().uuid().safeParse(raw.presentationId); return [SAVE_VERSION, 23, 22, 21, 20, 19, 18, 17, 16].includes(raw.version) && id.success ? id.data : undefined; }
   catch { return undefined; }
 }

@@ -29,7 +29,7 @@ import {shouldShowIncomeBubble} from './incomeBubble';
 import type {GameController} from '../application/GameController';
 import {drawBuildingArt} from './buildingArt';
 import {drawHabitat} from './habitatArt';
-import {HABITAT_SIZE_PROPOSAL, habitatSlots} from '../config/habitatSizes';
+import {HABITAT_SIZE_PROPOSAL, enclosureScale, habitatSlots} from '../config/habitatSizes';
 import {habitatArtLayout, habitatArtFor, type HabitatArt} from '../config/habitatArt';
 import {KITCHEN_ART} from '../config/kitchenArt';
 import {STATUE_ART} from '../config/statueArt';
@@ -63,7 +63,7 @@ import {SkyLayer, SKY_COLOR} from './skyLayer';
 import {PARCELS, PARCEL_IDS, expansionTarget, purchasableParcels, type ParcelId} from '../config/land';
 import {ISLAND} from '../config/islandGeometry';
 import {rabbitOffset, rabbitPosition, rabbitHit, rabbitFedLift} from './rabbitLayout';
-import {createRabbitMotion, retargetRabbitMotion, stepRabbitMotion, triggerFedReaction, triggerWelcomeSalto, rabbitPose, type RabbitMotion} from './rabbitMotion';
+import {createRabbitMotion, roamScale, retargetRabbitMotion, stepRabbitMotion, triggerFedReaction, triggerWelcomeSalto, rabbitPose, type RabbitMotion} from './rabbitMotion';
 import {habitatStats, habitatEntryReason, visibleColumns} from '../simulation/habitats';
 import {HOUR, ORDERS, type SpeciesId} from '../config/balance';
 import type {Building, DecorationLocation, GameState} from '../state/types';
@@ -501,7 +501,7 @@ export class MeadowScene extends Phaser.Scene {
   private tutorialTarget: 'birth'|null = null;
   focusTutorialCell(cell: {x:number;y:number}): void {
     if(!this.cameras?.main)return;
-    const point=toScreen(buildingCenter(cell));
+    const point=toScreen(buildingCenter({kind:'farm',...cell}));
     const portrait=this.view.width<600;
     this.view.x=point.x+(portrait?0:this.view.width*.18)/this.view.zoom;
     this.view.y=point.y+(portrait?this.view.height*.2:0)/this.view.zoom;
@@ -638,7 +638,7 @@ export class MeadowScene extends Phaser.Scene {
       if (wearsCrown(rabbit)) add(CROWN_ART);
     }
     const buildingArt = (building: Pick<Building, 'kind' | 'habitat' | 'footprintTier' | 'farmLevel'>) => {
-      if (building.kind === 'enclosure') add(habitatArtFor(building.habitat ?? undefined, building.footprintTier));
+      if (building.kind === 'enclosure') add(habitatArtFor(building.habitat ?? undefined, building.footprintTier)); // Same texture at every scale.
       else if (building.kind === 'farm') {
         add(building.farmLevel ? FARM_ART : FARM_LEVEL_1_ART);
         add({texture: SPROUT_TEXTURE, url: SPROUT_URL});
@@ -818,11 +818,12 @@ export class MeadowScene extends Phaser.Scene {
     return key;
   }
   /** The same registration is used for placed buildings and the placement/move ghost. */
-  private positionBuildingArt(image: Phaser.GameObjects.Image, x: number, y: number, kind: Building['kind'], illustrated: HabitatArt | null = null): void {
-    if (illustrated) { image.setPosition(x, y).setOrigin(illustrated.anchor.x / illustrated.width, illustrated.anchor.y / illustrated.height).setScale(illustrated.worldWidth / illustrated.width); return; }
+  /** `enlarged`: an enclosure's uniform drawing factor (`enclosureScale`), the same on both axes so nothing is stretched. */
+  private positionBuildingArt(image: Phaser.GameObjects.Image, x: number, y: number, kind: Building['kind'], illustrated: HabitatArt | null = null, enlarged = 1): void {
+    if (illustrated) { image.setPosition(x, y).setOrigin(illustrated.anchor.x / illustrated.width, illustrated.anchor.y / illustrated.height).setScale(enlarged * illustrated.worldWidth / illustrated.width); return; }
     const art = kind === 'farm' ? FARM_ART : kind === 'nest' ? NEST_ART : kind === 'nursery' ? NURSERY_ART : kind === 'kitchen' ? KITCHEN_ART : kind === 'statue' ? STATUE_ART : kind === 'agency' ? AGENCY_ART : kind === 'salon' ? SALON_ART : kind === 'forest' ? FOREST_ART : null;
     image.setPosition(x, y).setOrigin(.5, art ? art.originY : .5)
-      .setScale(art ? art.worldWidth / art.width : .5);
+      .setScale(art ? art.worldWidth / art.width : .5 * enlarged);
   }
   private drawBuildings(): void {
     const present = new Set<string>();
@@ -831,7 +832,7 @@ export class MeadowScene extends Phaser.Scene {
       let image=this.buildingViews.get(b.id);
       if(!image){image=this.add.image(x,y,this.buildingTexture(b));this.buildingsLayer.add(image);this.buildingViews.set(b.id,image);}
       image.setTexture(this.buildingTexture(b)).setDepth(y);
-      this.positionBuildingArt(image, x, y, b.kind, b.kind === 'enclosure' ? habitatArtFor(b.habitat ?? undefined, b.footprintTier) : null);
+      this.positionBuildingArt(image, x, y, b.kind, b.kind === 'enclosure' ? habitatArtFor(b.habitat ?? undefined, b.footprintTier) : null, b.kind === 'enclosure' ? enclosureScale(b) : 1);
     }
     for(const [id,image] of this.buildingViews)if(!present.has(id)){image.destroy();this.buildingViews.delete(id);}
     this.buildingsLayer.sort('depth');
@@ -848,8 +849,12 @@ export class MeadowScene extends Phaser.Scene {
         const tier = enclosure.footprintTier ?? 1, proposed = enclosure.kind==='enclosure' && tier > 1 ? HABITAT_SIZE_PROPOSAL[tier] : null;
         const illustrated = enclosure.kind==='enclosure' ? habitatArtFor(enclosure.habitat ?? undefined, enclosure.footprintTier) : null;
         const illustratedLayout = illustrated ? habitatArtLayout(illustrated) : null;
-        const offset = enclosure.kind==='nest' ? NEST_ART.parentOffsets[index] : illustratedLayout ? illustratedLayout.slots[Math.min(index, illustratedLayout.slots.length - 1)] : proposed ? habitatSlots(tier as 2 | 3, residents.length)[Math.min(index, residents.length - 1)] : rabbitOffset(index, residents.length);
-        const layout = illustratedLayout ? {zone: illustratedLayout.zone, roamScale: illustratedLayout.roamScale} : proposed ? {zone: proposed.zone, roamScale: proposed.roamScale} : undefined;
+        // An enlarged enclosure spreads the same places and zone by its drawing's factor; rabbits keep their size.
+        const k = enclosure.kind==='enclosure' ? enclosureScale(enclosure) : 1;
+        const spread = (p: {x: number; y: number}) => ({x: p.x * k, y: p.y * k});
+        const spreadZone = (z: {minX: number; maxX: number; minY: number; maxY: number}) => ({minX: z.minX * k, maxX: z.maxX * k, minY: z.minY * k, maxY: z.maxY * k});
+        const offset = enclosure.kind==='nest' ? NEST_ART.parentOffsets[index] : spread(illustratedLayout ? illustratedLayout.slots[Math.min(index, illustratedLayout.slots.length - 1)] : proposed ? habitatSlots(tier as 2 | 3, residents.length)[Math.min(index, residents.length - 1)] : rabbitOffset(index, residents.length));
+        const layout = illustratedLayout ? {zone: spreadZone(illustratedLayout.zone), roamScale: illustratedLayout.roamScale} : proposed ? {zone: spreadZone(proposed.zone), roamScale: proposed.roamScale} : k !== 1 ? {zone: spreadZone(VISUAL.rabbit.roam.hard), roamScale: roamScale(residents.length)} : undefined;
         const base = {x: center.x + offset.x, y: center.y + offset.y};
         // Nest parents keep persistent motions for walks, tricks, races and kisses.
         let motion: RabbitMotion | undefined;
@@ -1111,13 +1116,13 @@ export class MeadowScene extends Phaser.Scene {
   private drawBuildingGrid(): void {
     if(!this.current || !this.placement)return;
     const p=this.placement;
-    const moving=this.current.buildings.find(b=>b.id===p.movingId), active=p.cell?{...p.cell,footprintTier:moving?.footprintTier,farmLevel:moving?.farmLevel}:moving;
+    const moving=this.current.buildings.find(b=>b.id===p.movingId), active=p.cell?{...p.cell,kind:p.kind,footprintTier:moving?.footprintTier,formerFootprint:moving?.formerFootprint,farmLevel:moving?.farmLevel}:moving;
     const lines=this.placementLines(active?buildingFootprint(active):null);
     if(!p.cell){this.setGridStroke(()=>{
       this.strokePlacementContext(lines);
       if(this.tutorialCell) { const c=finePoint(this.tutorialCell.x,this.tutorialCell.y); this.grid.fillStyle(0xffd966,.5);this.grid.fillRect(c.x,c.y,VISUAL.grid.width,VISUAL.grid.depth);this.grid.lineStyle(3/this.view.zoom,0xffd966);this.grid.strokeRect(c.x,c.y,VISUAL.grid.width,VISUAL.grid.depth); }
     });return;}
-    const valid=!buildingPlacementReason(this.current,p.cell.x,p.cell.y,p.movingId),corner=finePoint(p.cell.x,p.cell.y),center=toScreen(buildingCenter(active!)),size=buildingFootprint(active!),cellsWide=VISUAL.grid.width*size.width/FINE_GRID,cellsDeep=VISUAL.grid.depth*size.height/FINE_GRID;
+    const valid=!buildingPlacementReason(this.current,p.cell.x,p.cell.y,p.movingId,p.kind),corner=finePoint(p.cell.x,p.cell.y),center=toScreen(buildingCenter(active!)),size=buildingFootprint(active!),cellsWide=VISUAL.grid.width*size.width/FINE_GRID,cellsDeep=VISUAL.grid.depth*size.height/FINE_GRID;
     this.setGridStroke(()=>{
       this.strokePlacementContext(lines);
       this.grid.fillStyle(valid?0xe5ffd2:0xf5b7b1,.3);this.grid.fillRect(corner.x,corner.y,cellsWide,cellsDeep);
@@ -1130,7 +1135,7 @@ export class MeadowScene extends Phaser.Scene {
     if(!this.buildingGhost)this.buildingGhost=this.add.image(0,0,this.buildingTexture({kind:p.kind,habitat,footprintTier:moving?.footprintTier,farmLevel:moving?.farmLevel})).setDepth(1.5).setAlpha(.55).setScale(.5);
     const tint=valid?0xe4ffb5:0xf3a6a1;
     this.buildingGhost.setTexture(this.buildingTexture({kind:p.kind,habitat,footprintTier:moving?.footprintTier,farmLevel:moving?.farmLevel})).setTint(tint).setVisible(!this.photo);
-    this.positionBuildingArt(this.buildingGhost, center.x, center.y, p.kind, habitatArtFor(habitat ?? undefined, moving?.footprintTier));
+    this.positionBuildingArt(this.buildingGhost, center.x, center.y, p.kind, habitatArtFor(habitat ?? undefined, moving?.footprintTier), p.kind === 'enclosure' ? enclosureScale(moving ?? {}) : 1);
     // The nursery's preview carries its four cushion states, with the ghost base's own opacity and valid/invalid tint.
     if(p.kind==='nursery')this.nurseryOverlays?.showGhost(this.current,moving??null,center,{alpha:this.buildingGhost.alpha,tint},!this.photo);
   }
