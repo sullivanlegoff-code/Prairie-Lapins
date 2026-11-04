@@ -16,8 +16,9 @@ export function cropDuration(ms: number): string {
   return hours ? `${hours} h${rest ? ` ${rest}` : ''}` : `${minutes} min`;
 }
 export const STATUE_URL = `${import.meta.env.BASE_URL}assets/buildings/statue-affection.png`;
-/** The Statue de l'Affection in the building shop. */
-export function statueThumbnail(): HTMLImageElement {
-  const image = document.createElement('img'); image.className = 'statue-thumbnail'; image.src = STATUE_URL; image.alt = ''; image.setAttribute('aria-hidden', 'true');
+export const STATUE_2_URL = `${import.meta.env.BASE_URL}assets/buildings/statue-affection-2.png`;
+/** The Statue de l'Affection in the building shop; `second`: the second statue's own drawing. */
+export function statueThumbnail(second = false): HTMLImageElement {
+  const image = document.createElement('img'); image.className = 'statue-thumbnail'; image.src = second ? STATUE_2_URL : STATUE_URL; image.alt = ''; image.setAttribute('aria-hidden', 'true');
   image.width = 72; image.height = 77; image.draggable = false; return image;
 }

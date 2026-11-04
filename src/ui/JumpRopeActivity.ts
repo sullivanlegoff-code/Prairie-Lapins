@@ -6,6 +6,7 @@ import type {CuisineRabbit} from './CuisineActivity';
 import {portrait} from './portraits';
 import {JUMP_ROPE_ISLAND_URL, JUMP_ROPE_KIOSK_URL} from '../display/agency';
 import {drawJumpRopeSky} from '../display/jumpRopeSky';
+import {JUMP_ROPE_PIECES} from '../config/jumpRopeArt';
 
 /** Two carriers turn the rope, the athlete jumps (looks only). */
 export interface JumpRopeTrio {carriers: [CuisineRabbit, CuisineRabbit]; athlete: CuisineRabbit}
@@ -40,9 +41,9 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
 <img class="jump-rope-kiosk" alt="" aria-hidden="true" draggable="false" src="${JUMP_ROPE_KIOSK_URL}">
 <span class="jump-rope-carrier" data-side="left"><span class="jump-rope-figure"></span><span class="jump-rope-handle"></span></span>
 <span class="jump-rope-carrier" data-side="right"><span class="jump-rope-figure"></span><span class="jump-rope-handle"></span></span>
-<svg class="jump-rope-rope" data-layer="back" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path/></svg>
+<canvas class="jump-rope-rope" data-layer="back" aria-hidden="true"></canvas>
 <span class="jump-rope-rabbit"><span class="jump-rope-figure"></span><span class="jump-rope-shadow"></span></span>
-<svg class="jump-rope-rope" data-layer="front" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path/></svg>
+<canvas class="jump-rope-rope" data-layer="front" aria-hidden="true"></canvas>
 <span class="jump-rope-burst" aria-hidden="true"></span>
 <p class="jump-rope-combo" aria-hidden="true"></p>
 <p class="jump-rope-cheer" aria-hidden="true"></p>
@@ -56,7 +57,9 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
   const rabbitBox = $<HTMLElement>('.jump-rope-rabbit'), figure = $<HTMLElement>('.jump-rope-rabbit .jump-rope-figure'), pop = $<HTMLElement>('.jump-rope-pop');
   const combo = $<HTMLElement>('.jump-rope-combo'), burst = $<HTMLElement>('.jump-rope-burst'), cheerLine = $<HTMLElement>('.jump-rope-cheer');
   const carriers = [...layer.querySelectorAll<HTMLElement>('.jump-rope-carrier')];
-  const back = $<SVGPathElement>('[data-layer="back"] path'), front = $<SVGPathElement>('[data-layer="front"] path');
+  const back = $<HTMLCanvasElement>('[data-layer="back"]'), front = $<HTMLCanvasElement>('[data-layer="front"]');
+  const tile = new Image(); tile.decoding = 'async'; tile.src = JUMP_ROPE_PIECES.tile.url;
+  for (const handle of layer.querySelectorAll<HTMLElement>('.jump-rope-handle')) handle.style.backgroundImage = `url("${JUMP_ROPE_PIECES.handle.url}")`;
   const sky = $<HTMLCanvasElement>('.jump-rope-sky'), abort = new AbortController();
   const resize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => { if (!layer.hidden) drawJumpRopeSky(sky); });
   resize?.observe(stage);
@@ -88,9 +91,45 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
    */
   function drawRope(phase: number): void {
     const turn = Math.cos(2 * Math.PI * phase), end = 73 - 3 * turn, y = turn > 0 ? end + 25 * turn : end + 71 * turn;
-    const path = `M8 ${end} Q50 ${2 * y - end} 92 ${end}`, inFront = turn > 0;
-    front.setAttribute('d', inFront ? path : ''); back.setAttribute('d', inFront ? '' : path);
+    const inFront = turn > 0, path = `M8 ${end} Q50 ${2 * y - end} 92 ${end}`;
+    front.dataset.path = inFront ? path : ''; back.dataset.path = inFront ? '' : path;
+    paintRope(inFront ? front : back, end, 2 * y - end); clearRope(inFront ? back : front);
     for (const carrier of carriers) carrier.style.setProperty('--turn', String(turn));
+  }
+  /** The canvas matches its box (in device pixels); false while it has no size yet (hidden layer, tests). */
+  function fit(canvas: HTMLCanvasElement): boolean {
+    const ratio = Math.min(3, window.devicePixelRatio || 1), width = Math.round(canvas.clientWidth * ratio), height = Math.round(canvas.clientHeight * ratio);
+    if (!width || !height) return false;
+    if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
+    return true;
+  }
+  function clearRope(canvas: HTMLCanvasElement): void { if (canvas.width) canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height); }
+  /**
+   * The painted rope along the quadratic curve from (8, end) through the control (50, control) to (92, end), in percent of the
+   * box: the tile is laid slice by slice along the curve, each slice turned to follow it, so the twists bend with the rope.
+   */
+  function paintRope(canvas: HTMLCanvasElement, end: number, control: number): void {
+    if (!fit(canvas)) return;
+    const context = canvas.getContext('2d'); if (!context) return;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    if (!tile.complete || !tile.naturalWidth) return;
+    const ratio = canvas.width / Math.max(1, canvas.clientWidth), thickness = JUMP_ROPE_PIECES.thickness * ratio;
+    const point = (t: number) => ({x: canvas.width * ((1 - t) ** 2 * 8 + 2 * (1 - t) * t * 50 + t * t * 92) / 100,
+      y: canvas.height * ((1 - t) ** 2 * end + 2 * (1 - t) * t * control + t * t * end) / 100});
+    const tileWidth = tile.naturalWidth, perPixel = tile.naturalHeight / thickness;
+    let along = 0, previous = point(0);
+    for (let i = 1; i <= 48; i++) {
+      const next = point(i / 48), length = Math.hypot(next.x - previous.x, next.y - previous.y);
+      context.save(); context.translate(previous.x, previous.y); context.rotate(Math.atan2(next.y - previous.y, next.x - previous.x));
+      // The slice of tile for this piece of rope, wrapping round the tile's end.
+      let drawn = 0;
+      while (drawn < length) {
+        const sx = along % tileWidth, take = Math.min(length - drawn, (tileWidth - sx) / perPixel);
+        context.drawImage(tile, sx, 0, Math.max(1, take * perPixel), tile.naturalHeight, drawn, -thickness / 2, take + .6, thickness);
+        drawn += take; along += take * perPixel;
+      }
+      context.restore(); previous = next;
+    }
   }
   function flash(text: string, kind: 'jump' | 'perfect' | 'miss' | 'milestone' | 'record' | 'ready'): void {
     pop.textContent = text; pop.dataset.kind = kind; pop.classList.remove('shown'); void pop.offsetWidth; pop.classList.add('shown');

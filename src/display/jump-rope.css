@@ -25,8 +25,8 @@
   height: min(calc(513 * var(--u)), calc(100cqh - 306 * var(--u) - 58px)); pointer-events: none; }
 /* Ends (8 % and 92 % of the box, 73 % down) in the carriers' paws, 70 painting pixels above the box bottom; the low point of the swing
    (98 %) on the sand, the high point (2 %) above the athlete's head. */
-.jump-rope-rope { position: absolute; left: calc(498 * var(--u)); width: calc(530 * var(--u)); bottom: calc(175 * var(--u)); height: calc(260 * var(--u)); overflow: visible; pointer-events: none; }
-.jump-rope-rope path { fill: none; stroke: #ea7a80; vector-effect: non-scaling-stroke; stroke-width: 5px; stroke-linecap: round; }
+/* The painted rope is drawn in a canvas over this box (JumpRopeActivity.ts maps its 0-100 % to the box). */
+.jump-rope-rope { position: absolute; left: calc(498 * var(--u)); width: calc(530 * var(--u)); bottom: calc(175 * var(--u)); height: calc(260 * var(--u)); pointer-events: none; }
 .jump-rope-rope[data-layer="back"] { z-index: 1; opacity: .85; }
 .jump-rope-rope[data-layer="front"] { z-index: 3; }
 /* The carriers stand just outside the rope's ends, facing the athlete, and sway with the turn (--turn, from 1 low to -1 high). */
@@ -37,9 +37,9 @@
 }
 .jump-rope-carrier[data-side="left"] { --lean: 3deg; left: calc(470 * var(--u)); }
 .jump-rope-carrier[data-side="right"] { --lean: -3deg; left: calc(1058 * var(--u)); }
-/* A small striped handle where the rope ends, in the carrier's paws. */
-.jump-rope-handle { position: absolute; bottom: calc(65 / 190 * 100% - 7px); width: 12px; height: 22px; border-radius: 6px; border: 2px solid #b5706a;
-  background: repeating-linear-gradient(-35deg, #fff6ec 0 5px, #8fd3bd 5px 10px); transform: rotate(calc(var(--turn) * 25deg)); }
+/* The painted wooden handle where the rope ends, in the carrier's paws (picture set by JumpRopeActivity.ts). */
+.jump-rope-handle { position: absolute; bottom: calc(65 / 190 * 100% - 13px); width: 11px; height: 34px;
+  background: center / contain no-repeat; transform: rotate(calc(var(--turn) * 25deg)); transform-origin: 50% 30%; }
 .jump-rope-carrier[data-side="left"] .jump-rope-handle { right: 2%; }
 .jump-rope-carrier[data-side="right"] .jump-rope-handle { left: 2%; }
 .jump-rope-rabbit {
