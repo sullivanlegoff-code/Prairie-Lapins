@@ -5,6 +5,7 @@ import type {MagicienAct} from './magicienTimeline';
 import {MagicienClock, magicienLevitation, magicienSparks} from './magicienTimeline';
 export interface MagicienHost {object: Phaser.GameObjects.Container; body: Phaser.GameObjects.Container; sprite: Phaser.GameObjects.Image; shadow: Phaser.GameObjects.Ellipse; art: RabbitArt}
 export class MagicienView {
+  get busy(): boolean { return this.clock.act !== null; }
   lift = 0;
   private playing: MagicienAct | null = null;
   private floor: Phaser.GameObjects.Container;

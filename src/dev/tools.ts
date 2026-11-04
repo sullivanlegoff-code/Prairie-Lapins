@@ -23,6 +23,7 @@ import {showBennyReveal} from '../ui/bennyReveal';
 import {habitatEntryReason, habitatStats} from '../simulation/habitats';
 import {MAGICIEN_TEST_EVENT} from '../config/magicienArt';
 import type {MagicienAct} from '../display/magicienTimeline';
+import {CHASE_EVENT} from '../display/rabbitChase';
 
 export const TEST_PREFIX = 'prairie-lapins.development.';
 export const DECORATIONS_PREVIEW_PREFIX = 'prairie-lapins.preview.decorations.';
@@ -132,6 +133,10 @@ export function developmentEnvironment(base: SaveStorage, options: {decorationPr
       for(const [act,label] of magicianActs) button(label,`dev-magicien-${act}`,()=>{
         window.dispatchEvent(new CustomEvent(MAGICIEN_TEST_EVENT,{detail:{act}}));
         status.textContent=`${label} : lancé sur les Magiciens évolués visibles de la prairie (ferme ce panneau pour regarder).`;
+      });
+      button('Lancer une poursuite', 'dev-rabbit-chase', () => {
+        window.dispatchEvent(new Event(CHASE_EVENT));
+        status.textContent = 'Poursuite lancée dans chaque enclos qui le permet.';
       });
       section('Animations de Benny');
       const bennyActs: [BennyAct, string][] = [['hop', 'Benny : saut'], ['flop', 'Benny : belly flop'], ['scratch', 'Benny : grattage'], ['groom', 'Benny : toilette'], ['stretch', 'Benny : étirement']];

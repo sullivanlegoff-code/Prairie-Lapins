@@ -81,6 +81,7 @@ import {coinBubble} from './currencyPhaser';
 import {MAGICIEN_ART, MAGICIEN_TEST_EVENT} from '../config/magicienArt';
 import {MagicienView} from './magicienEffects';
 import {MagicienClock, type MagicienAct} from './magicienTimeline';
+import {CHASE_EVENT, RabbitChases, type ChaseRunner} from './rabbitChase';
 
 /** `nurseryBubble`: the « Prêt ! » bubble (id: the nursery). `nurseryBaby`: a ready baby touched on its cushion (id: its birthId). */
 export type MeadowSelection = {kind: 'building' | 'rabbit' | 'income' | 'grass' | 'decoration' | 'birth' | 'discovery' | 'nurseryBubble' | 'nurseryBaby'; id: string} | {kind: 'cell' | 'fineCell'; x: number; y: number} | {kind: 'extension'; parcelId?: ParcelId} | {kind: 'empty'};
@@ -126,6 +127,9 @@ export class MeadowScene extends Phaser.Scene {
   /** Benny's clock, kept across rebuilds of her body like the motions. */
   private bennyClocks = new Map<string, BennyClock>();
   private magicienClocks = new Map<string, MagicienClock>();
+  /** Two rabbits of one enclosure running after each other now and then (visual only). */
+  private chases = new RabbitChases();
+  private chaseTest = false;
   /** Benny's flight over the island: made once her flight art is loaded, it outlives every rebuild of her body. */
   private bennyFlight: BennyFlightView | null = null;
   /** Benny's id while she is up in the air (her enclosure picture is hidden, she is touched in the air). */
@@ -279,12 +283,14 @@ export class MeadowScene extends Phaser.Scene {
     // The laboratory's power animation alone: the flight only, the game is not touched.
     const flightTest = () => this.playBennyPower();
     window.addEventListener(BENNY_FLIGHT_TEST_EVENT, flightTest);
+    const chaseTest = () => { this.chaseTest = true; };
+    window.addEventListener(CHASE_EVENT, chaseTest);
     this.events.once('shutdown', () => {
       stopCommands(); this.dadi.reset(); this.dadiSpeech?.destroy(); this.dadiSpeech = null;
       this.cozyInteraction.reset(); this.discoveryImage?.destroy(); this.discoveryImage = null;
-      this.life.reset(); this.lifeViews?.destroy(); this.lifeViews = null;
+      this.chases.reset(); this.life.reset(); this.lifeViews?.destroy(); this.lifeViews = null;
       document.removeEventListener('visibilitychange', dadiVisibility); window.removeEventListener('pagehide', clearDadi);
-      window.removeEventListener(LEGENDARY_TEST_EVENT, legendaryTest); window.removeEventListener(MAGICIEN_TEST_EVENT,magicienTest); window.removeEventListener(BENNY_TEST_EVENT, bennyTest); window.removeEventListener(BENNY_FLIGHT_TEST_EVENT, flightTest);
+      window.removeEventListener(LEGENDARY_TEST_EVENT, legendaryTest); window.removeEventListener(MAGICIEN_TEST_EVENT,magicienTest); window.removeEventListener(BENNY_TEST_EVENT, bennyTest); window.removeEventListener(BENNY_FLIGHT_TEST_EVENT, flightTest); window.removeEventListener(CHASE_EVENT, chaseTest);
       this.bennyFlight?.destroy(); this.bennyFlight = null; this.bennyAway = null; this.flightIsland = null;
     });
     this.recenter();
@@ -992,6 +998,12 @@ export class MeadowScene extends Phaser.Scene {
     this.pivots.set(art.texture, pivot); return pivot;
   }
   /** Body pose: mirror, compression against the ground contact, height, and a rotation about the body centre that keeps that centre in place. */
+  /** Who may run in a chase: never Benny, a legendary in its show, a Magician in his act, a rabbit being touched or talking. */
+  private chaseRunners(visible: ReadonlySet<string>, speaking?: string): ChaseRunner[] {
+    const benny = this.current?.rabbits.find(r => r.species === BENNY_ID)?.id;
+    return this.rabbitViews.flatMap(r => r.motion && !r.nest ? [{id: r.id, group: r.group, motion: r.motion,
+      available: r.id !== benny && !r.benny && visible.has(r.id) && !r.legendary?.clock.act && !r.magicien?.busy && this.cozyInteraction.active?.id !== r.id && speaking !== r.id}] : []);
+  }
   private poseBody(rabbit: VisualRabbit, pose: {lift: number; squashX: number; squashY: number; facing: 1 | -1; rotation: number; nuzzle?: number}): void {
     const scaleX = pose.facing * rabbit.native * pose.squashX, p = rabbit.pivot, c = Math.cos(pose.rotation), s = Math.sin(pose.rotation);
     const px = scaleX * p.x, py = pose.squashY * p.y;
@@ -1268,6 +1280,8 @@ export class MeadowScene extends Phaser.Scene {
     if(lifeActive&&!reducedMotion&&dt>=0&&dt<=1000){this.interactionIn-=dt;if(this.interactionIn<=0){this.interactionIn=90000;for(const d of this.current?.decorations??[])if(this.interactionDecoration(d.id))break;}}
     this.life.step(dt, this.rabbitViews.flatMap(r => r.motion ? [{id: r.id, group: r.group, motion: r.motion, nest: r.nest, friendId:this.friends.get(r.id),occupied:this.cozyInteraction.active?.id===r.id, visible: visibleResidents.has(r.id)}] : []),
       lifeActive, reducedMotion, dadi.speech ? [dadi.speech.id] : []);
+    this.chases.step(dt, this.chaseRunners(visibleResidents, dadi.speech?.id), lifeActive, reducedMotion, this.chaseTest);
+    this.chaseTest = false;
     this.lifeViews?.begin(this.rabbitViews.map(r => r.id));
     let depthChanged = false;
     for (const rabbit of this.rabbitViews) {
