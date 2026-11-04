@@ -43,4 +43,5 @@ export const WINTER_GRASS_TILE = {texture: 'island-grass-noel', url: winterBase 
 export const stageArt = (stage: number): StageArt =>
   (christmasActive() && WINTER_STAGE_ART_LIST.find(s => s.stage === stage)) || ISLAND_STAGE_ART[stage - 1];
 /** The meadow tile shown now: snow during Christmas. */
-export const grassTile = () => christmasActive() ? WINTER_GRASS_TILE : GRASS_TILE;
+/** The snowy meadow only around a stage whose snowy painting is shipped (the others keep their green lawn until painted). */
+export const grassTile = (stage: number | null) => christmasActive() && stage !== null && WINTER_STAGE_ART_LIST.some(s => s.stage === stage) ? WINTER_GRASS_TILE : GRASS_TILE;

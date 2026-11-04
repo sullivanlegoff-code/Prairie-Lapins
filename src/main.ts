@@ -22,6 +22,7 @@ import './display/menus.css';
 import './display/legendary-card.css';
 import './display/ultimate-card.css';
 import './display/jump-rope.css';
+import './display/sky-gifts.css';
 import './display/benny-reveal.css';
 import './display/reception.css';
 import './display/loading-screen.css';

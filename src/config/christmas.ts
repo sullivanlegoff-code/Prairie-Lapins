@@ -9,6 +9,8 @@ export const CHRISTMAS_EVENT = {active: true} as const;
 /** Laboratory only: the test buttons can switch the event off or force the hour of the day, never in the normal game. */
 export interface ChristmasLabOverride {off?: boolean; hour?: number; snow?: 'none' | 'light' | 'heavier'}
 export const CHRISTMAS_LAB_EVENT = 'prairie-christmas-lab';
+/** Laboratory only: its button opens the Christmas market's menu (the game listens only in laboratory storage). */
+export const CHRISTMAS_MARKET_OPEN_EVENT = 'prairie-christmas-market-open';
 const LAB_STORAGE = 'prairie-lab-christmas';
 function readLabOverride(): ChristmasLabOverride {
   if (!LABORATORY_BUILD) return {};

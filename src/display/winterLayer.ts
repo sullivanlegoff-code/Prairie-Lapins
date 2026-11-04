@@ -67,3 +67,38 @@ export class WinterLayer {
     this.night.destroy(); for (const f of this.flakes) f.image.destroy(); this.flakes.length = 0;
   }
 }
+
+/** Above the night shade, so the garland bulbs glow through it (the market islet's lights are at 2.85 too). */
+export const LIGHTS_DEPTH = 2.86;
+/** Glow drawn on each garland bulb found in the snowy island painting (scripts/derive-winter-lights.mjs), from 20:00. */
+export class WinterLights {
+  private images: Phaser.GameObjects.Image[] = [];
+  private stage: number | null = null;
+  constructor(private readonly scene: Phaser.Scene) {
+    if (!scene.textures.exists('noel-halo')) {
+      const size = 64, texture = scene.textures.createCanvas('noel-halo', size, size);
+      if (texture) {
+        const ctx = texture.context, g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+        g.addColorStop(0, 'rgba(255,236,170,1)'); g.addColorStop(.25, 'rgba(255,214,120,.55)'); g.addColorStop(1, 'rgba(255,190,90,0)');
+        ctx.fillStyle = g; ctx.fillRect(0, 0, size, size); texture.refresh();
+      }
+    }
+    scene.events.once('shutdown', () => this.show(null));
+  }
+  /** The bulbs of this stage (master pixels at `pxPerUnit`, the painting's top left at `left, top`), or none. */
+  show(stage: number | null, bulbs: readonly (readonly [number, number])[] = [], canvas = {left: 0, top: 0}, pxPerUnit = 1): void {
+    if (stage === this.stage && (stage === null || this.images.length)) return;
+    for (const image of this.images) image.destroy(); this.images = []; this.stage = stage;
+    if (stage === null || !this.scene.textures.exists('noel-halo')) return;
+    this.images = bulbs.map(([x, y], i) => this.scene.add.image(canvas.left + x / pxPerUnit, canvas.top + y / pxPerUnit, 'noel-halo')
+      .setDepth(LIGHTS_DEPTH).setBlendMode(Phaser.BlendModes.ADD).setScale(.34 + (i % 3) * .03).setAlpha(0).setVisible(false));
+  }
+  /** 0 off, 1 lit; a gentle twinkle per bulb. */
+  update(level: number, time: number): void {
+    const on = level > .001;
+    this.images.forEach((image, i) => {
+      image.setVisible(on);
+      if (on) image.setAlpha(level * (.72 + .18 * Math.sin(time / 700 + i * 1.7)));
+    });
+  }
+}

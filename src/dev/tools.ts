@@ -24,7 +24,9 @@ import {habitatEntryReason, habitatStats} from '../simulation/habitats';
 import {MAGICIEN_TEST_EVENT} from '../config/magicienArt';
 import type {MagicienAct} from '../display/magicienTimeline';
 import {CHASE_EVENT} from '../display/rabbitChase';
-import {christmasLabOverride, setChristmasLabOverride, type ChristmasLabOverride} from '../config/christmas';
+import {CHRISTMAS_MARKET_OPEN_EVENT, christmasLabOverride, setChristmasLabOverride, type ChristmasLabOverride} from '../config/christmas';
+import {MAX_CANDIES} from '../config/christmasEvent';
+import {SNOWBALL_EVENT} from '../display/snowballFight';
 
 export const TEST_PREFIX = 'prairie-lapins.development.';
 export const DECORATIONS_PREVIEW_PREFIX = 'prairie-lapins.preview.decorations.';
@@ -72,6 +74,16 @@ export function developmentEnvironment(base: SaveStorage, options: {decorationPr
     state[resource] += amount;
     return replaceTestState(controller, state);
   }
+  /** Laboratory only: sucres d'orge added to the laboratory save (never the normal game), within the save's bound. */
+  function grantCandies(controller: GameController, amount: number): TestResult {
+    if (controller.storageScope !== 'laboratory') return {ok: false, reason: 'NOT_TEST_SESSION'};
+    const state = controller.getSnapshot().state;
+    if (!state) return {ok: false, reason: 'NO_GAME'};
+    const next = (state.christmas?.candies ?? 0) + amount;
+    if (!Number.isSafeInteger(amount) || amount <= 0 || next > MAX_CANDIES) return {ok: false, reason: 'INVALID_TEST_VALUE'};
+    state.christmas = {...state.christmas, candies: next};
+    return replaceTestState(controller, state);
+  }
   /** Laboratory only: forget bought recipes (gifts and discoveries stay known); no refund. */
   function resetRecipes(controller: GameController): TestResult {
     const state = controller.getSnapshot().state;
@@ -97,7 +109,7 @@ export function developmentEnvironment(base: SaveStorage, options: {decorationPr
     try { return replaceTestState(controller, scenarioState(id, clock())); }
     catch { return {ok: false, reason: 'INVALID_TEST_VALUE'}; }
   }
-  return {clock, storage, preferenceKey: prefix + 'ui', policy: sessionPolicy(true), advanceTime, grant, loadScenario, resetRecipes, addTestRabbit,
+  return {clock, storage, preferenceKey: prefix + 'ui', policy: sessionPolicy(true), advanceTime, grant, grantCandies, loadScenario, resetRecipes, addTestRabbit,
     mount(controller: GameController, onReplacement: (fresh?: boolean) => void = () => {}) {
       if (controller.storageScope !== 'laboratory') throw new Error('Test tools require isolated laboratory storage');
       const host = document.getElementById('devtools')!;
@@ -149,6 +161,12 @@ export function developmentEnvironment(base: SaveStorage, options: {decorationPr
       for (const [snow, label] of [['none', 'pas de neige'], ['light', 'mini flocons'], ['heavier', 'neige un peu plus forte']] as const)
         button(`Neige : ${label}`, `dev-noel-snow-${snow}`, () => noel({snow}, `Neige forcée : ${label}`));
       button('Neige : programme normal', 'dev-noel-snow-auto', () => noel({snow: undefined}, 'Neige selon le programme normal'));
+      button('Bataille de boules de neige', 'dev-noel-snowballs', () => {
+        window.dispatchEvent(new Event(SNOWBALL_EVENT));
+        status.textContent = 'Bataille de boules de neige lancée dans chaque enclos qui le permet (ferme ce panneau pour regarder).';
+      });
+      button('+50 sucres d’orge (laboratoire)', 'dev-noel-candies', () => resultMessage(grantCandies(controller, 50), '+50 sucres d’orge dans la partie du laboratoire.'));
+      button('Ouvrir le Marché de Noël', 'dev-noel-market', () => { window.dispatchEvent(new Event(CHRISTMAS_MARKET_OPEN_EVENT)); status.textContent = 'Marché de Noël ouvert.'; });
       section('Animations de Benny');
       const bennyActs: [BennyAct, string][] = [['hop', 'Benny : saut'], ['flop', 'Benny : belly flop'], ['scratch', 'Benny : grattage'], ['groom', 'Benny : toilette'], ['stretch', 'Benny : étirement']];
       for (const [act, label] of bennyActs) button(label, `dev-benny-${act}`, () => {

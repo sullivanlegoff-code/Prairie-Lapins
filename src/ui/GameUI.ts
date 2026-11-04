@@ -55,7 +55,12 @@ import type {GameController, Snapshot} from '../application/GameController';
 import {AFFECTION_STATUE, BALANCE, CARE_KINDS, FARM_UPGRADES, PICNIC, SALON, FOREST, JUMP_ROPE, carePrice, isAffectionWall, MARKET, orderFarmLevel, SECOND_AFFECTION_STATUE, NURSERY, ORDERS, RARE_BIRTH_BONUS, TRAVEL, feedCost, type Destination, SPECIES, SPECIES_IDS, SHOP_SPECIES, growthDuration, type BuildingKind, type SpeciesId, type RabbitType} from '../config/balance';
 import {JUMP_MEDAL_ART} from '../config/jumpIslandArt';
 import type {Command, DecorationLocation, GameState, PattesCommand, TimedStage} from '../state/types';
-import {DECORATIONS, DECORATION_IDS, FINE_GRID, ownedDecorationResalePrice, type DecorationId} from '../config/decorations';
+import {CHRISTMAS_DECORATION_IDS, DECORATIONS, DECORATION_IDS, FINE_GRID, isChristmasDecoration, ownedDecorationResalePrice, type DecorationId} from '../config/decorations';
+import {CHRISTMAS_MARKET_OPEN_EVENT, christmasActive} from '../config/christmas';
+import {CHRISTMAS_BONUS_CANDIES, CHRISTMAS_CHALLENGES, CHRISTMAS_PICK_COUNT, SKY_GIFTS, SNOWMAN} from '../config/christmasEvent';
+import {CANDY_ICON_URL} from '../config/winterArt';
+import {availableChristmasRewards, candiesOf, christmasBonusClaimed, christmasBonusReady, christmasChallengesOf, christmasClaimable, christmasClaimed, christmasDecorationReason, christmasProgress, skyGiftsDay, skyGiftsRabbitReason, snowmanQuote} from '../simulation/christmas';
+import {mountSkyGiftsActivity} from './SkyGiftsActivity';
 import {catalogDecorationPlacementReason, purchaseDecorationReason} from '../simulation/decorations';
 import {decorationUrl} from '../display/decorationArt';
 import {quoteComplement, releaseBabyPattesFor, releaseGrass} from '../simulation/actions';
@@ -84,10 +89,10 @@ const LEGENDARY_SHOW_BUTTONS: Partial<Record<SpeciesId, {label: string; act: Leg
   ankylosaure: {label: 'Coup de queue', act: 'slam'}, dragon: {label: 'Souffle de feu', act: 'tap'}, requin: {label: 'Surf', act: 'surf'},
 };
 type ShopTab = 'home' | 'recipes' | 'rabbits' | 'habitats' | 'buildings' | 'decorations';
-type View = {kind:'album'|'decorationGroup'} | {kind: 'welcomeBaby'; birthId: string} | {kind:'levelRequirement';target:LevelAccessTarget} | {kind: 'missions'; tab: 'main' | 'daily'} | {kind: 'shop'; tab: ShopTab} | {kind: 'building' | 'rabbit' | 'moveRabbit' | 'decoration'; id: string} | {kind: 'jumpIsland'} |
+type View = {kind:'album'|'decorationGroup'} | {kind: 'welcomeBaby'; birthId: string} | {kind:'levelRequirement';target:LevelAccessTarget} | {kind: 'missions'; tab: 'main' | 'daily'} | {kind: 'shop'; tab: ShopTab} | {kind: 'building' | 'rabbit' | 'moveRabbit' | 'decoration'; id: string} | {kind: 'jumpIsland'} | {kind: 'christmasMarket'} |
   {kind: 'buyRabbit' | 'species'; species: SpeciesId} | {kind:'extension';parcelId?:ParcelId} | {kind: 'cuisineRabbit'; commis?: string} | {kind: 'collection' | 'settings' | 'placement' | 'hearts' | 'recipes' | 'arrange' | 'decorationPlacement'} | null;
 /** Views drawn as a centred card over the dimmed meadow. Placement, purchase, extension and arrangement views keep the side sheet: they need the island visible. */
-const CENTER_CARD_VIEWS: readonly NonNullable<View>['kind'][] = ['album','decorationGroup','rabbit', 'moveRabbit', 'welcomeBaby', 'building', 'jumpIsland', 'missions', 'collection', 'recipes', 'hearts', 'species', 'levelRequirement'];
+const CENTER_CARD_VIEWS: readonly NonNullable<View>['kind'][] = ['album','decorationGroup','rabbit', 'moveRabbit', 'welcomeBaby', 'building', 'jumpIsland', 'christmasMarket', 'missions', 'collection', 'recipes', 'hearts', 'species', 'levelRequirement'];
 function node<K extends keyof HTMLElementTagNameMap>(tag: K, text = '', className = ''): HTMLElementTagNameMap[K] {
   const element = document.createElement(tag); setCurrencyText(element, text); decorateRabbitText(element); element.className = className; return element;
 }
@@ -208,6 +213,9 @@ export class GameUI {
   private photo = false;
   private cuisine: ReturnType<typeof mountCuisineActivity>;
   private jumpRope: ReturnType<typeof mountJumpRopeActivity>;
+  /** Christmas: « Les cadeaux du ciel », and whether the market shows its rabbit choice for it. */
+  private skyGifts: ReturnType<typeof mountSkyGiftsActivity>;
+  private skyGiftsPick = false;
   /** The jump-rope trio being chosen (two carriers, then the athlete) and the slot whose rabbit is being picked. */
   private jumpRopeSlots: (string | null)[] | null = null;
   private jumpRopePick: number | null = null;
@@ -237,6 +245,12 @@ export class GameUI {
     }, quotaText: () => { const state = this.controller.getSnapshot().state; return state ? jumpRopeQuotaText(state, this.now()) : ''; },
     best: () => this.controller.getSnapshot().state?.jumpRope?.best ?? 0, cheer: () => this.sounds.ping(), tick: () => this.sounds.tick(),
     challengeText: () => { const state = this.controller.getSnapshot().state; return state ? jumpRopeChallengeText(state, this.now()) : ''; }, onExit: () => this.render()});
+    this.skyGifts = mountSkyGiftsActivity(document.getElementById('app')!, {onFinished: (rabbit, caught) => {
+      const granted = this.controller.perform({type: 'rewardSkyGifts', rabbitId: rabbit.id, caught});
+      if (!granted.ok) return `Récompense non enregistrée : ${REFUSALS[granted.reason]}`;
+      return Number(granted.value) > 0 ? `+${granted.value} pattes` : 'Partie pour le plaisir : plus de récompense aujourd’hui';
+    }, quotaText: () => { const state = this.controller.getSnapshot().state; return state ? skyGiftsQuotaText(state, this.now()) : ''; },
+    best: () => this.controller.getSnapshot().state?.christmas?.skyGifts?.best ?? 0, cheer: () => this.sounds.ping(), onExit: () => this.render()});
     this.moveBanner.id = 'rabbit-move-banner'; this.moveBanner.hidden = true;
     this.moveBanner.setAttribute('role', 'region'); this.moveBanner.setAttribute('aria-label', 'Déplacer un lapin');
     const moveLabel = node('span'); moveLabel.setAttribute('role', 'status'); this.moveBanner.append(moveLabel);
@@ -268,6 +282,8 @@ export class GameUI {
       if (this.onboardingActive && target && !this.onboardingAllowed(target)) { event.preventDefault(); event.stopImmediatePropagation(); }
     }, {...options, capture:true});
     document.getElementById('open-arrange')!.addEventListener('click', () => this.open({kind: 'arrange'}), options);
+    // The laboratory's « Ouvrir le Marché de Noël » button; ignored outside laboratory storage.
+    window.addEventListener(CHRISTMAS_MARKET_OPEN_EVENT, () => { if (this.controller.storageScope === 'laboratory' && christmasActive()) this.open({kind: 'christmasMarket'}, 'root'); }, options);
     document.getElementById('exit-arrange')!.addEventListener('click', () => this.close(), options);
     document.getElementById('open-photo')!.addEventListener('click', () => this.setPhoto(true), options);
     document.getElementById('photo-return')!.addEventListener('click', () => this.setPhoto(false), options);
@@ -587,8 +603,9 @@ export class GameUI {
   open(view: NonNullable<View>, navigation: 'push' | 'root' | 'tab' | 'back' = 'push'): void {
     if (view.kind === 'settings' || this.snapshot.state && mainCatalogueUnlocked(this.snapshot.state)) this.pailleDialogue.close();
     if (this.onboardingActive && !this.onboardingViewAllowed(view)) return;
-    if (this.cuisine.active || this.jumpRope.active || this.pailleDialogue.element.open) return;
+    if (this.cuisine.active || this.jumpRope.active || this.skyGifts.active || this.pailleDialogue.element.open) return;
     if (this.dialog.open || (document.getElementById('import-dialog') as HTMLDialogElement).open) return;
+    if (view.kind !== 'christmasMarket') this.skyGiftsPick = false;
     if(view.kind==='buyRabbit') {
       const state=this.controller.getSnapshot().state,target={family:'species',id:view.species,action:'purchase'} as const;
       if(state && stateLevelAccess(state,target).locked){this.open({kind:'levelRequirement',target});return;}
@@ -650,6 +667,8 @@ export class GameUI {
     }
     if (this.cuisine.active) { this.cuisine.close(); return; }
     if (this.jumpRope.active) { this.jumpRope.close(); return; }
+    if (this.skyGifts.active) { this.skyGifts.close(); return; }
+    this.skyGiftsPick = false;
     if (this.dialog.open || (document.getElementById('import-dialog') as HTMLDialogElement).open) return;
     if (this.purchaseReturn) { this.cancelPurchase(); return; }
     this.scene.setRabbitPurchase(null); this.rabbitDestination = null;
@@ -666,7 +685,7 @@ export class GameUI {
   onReplacement(fresh = false): void {
     this.clearRabbitMove(); this.clearWelcome(); this.closeReception();
     this.pailleDialogue.close();
-    this.cuisine.close(false); this.jumpRope.close();
+    this.cuisine.close(false); this.jumpRope.close(); this.skyGifts.close(); this.skyGiftsPick = false;
     this.history = []; this.scrollPositions.clear(); this.interactionPointers.clear(); this.pendingRender = false;
     this.shopHabitatSpecies=null;
     this.purchaseReturn = null; this.rabbitDestination = null; this.shopRabbitIssue = null; this.scene.setRabbitPurchase(null);
@@ -743,6 +762,7 @@ export class GameUI {
     if (selection.kind === 'empty') { this.close(); return; }
     if (selection.kind === 'extension') this.open({kind: 'extension',parcelId:selection.parcelId});
     else if (selection.kind === 'jumpIsland') this.open({kind: 'jumpIsland'});
+    else if (selection.kind === 'christmasMarket') { if (christmasActive()) this.open({kind: 'christmasMarket'}); }
     else if (selection.kind === 'building' || selection.kind === 'rabbit') this.open({kind: selection.kind, id: selection.id});
   }
   private render(passive = false): void {
@@ -752,7 +772,8 @@ export class GameUI {
     this.renderTutorial();
     this.applyOnboardingLock();
     if (this.breedingDialog.open) this.renderBreeding();
-    const available = this.snapshot.state ? availableMissionRewards(this.snapshot.state) : 0;
+    // The Christmas challenges waiting to be claimed count with the missions (their panel leads to the market).
+    const available = this.snapshot.state ? availableMissionRewards(this.snapshot.state) + (christmasActive() ? availableChristmasRewards(this.snapshot.state) : 0) : 0;
     const badge = document.getElementById('missions-badge')!;
     badge.hidden = !available; badge.textContent = String(available);
     document.getElementById('open-missions')!.setAttribute('aria-label', available ? `Missions · ${available} récompense${available > 1 ? 's' : ''} disponible${available > 1 ? 's' : ''}` : 'Missions');
@@ -794,6 +815,7 @@ export class GameUI {
       case 'shop': this.renderShop(s, this.view.tab); break;
       case 'building': this.renderBuilding(s, this.view.id); break;
       case 'jumpIsland': this.renderJumpIsland(s); break;
+      case 'christmasMarket': this.renderChristmasMarket(s); break;
       case 'rabbit': this.renderRabbit(s, this.view.id); break;
       case 'moveRabbit': this.renderDestinations(s, this.view.id); break;
       case 'welcomeBaby': this.renderWelcomeDestinations(s, this.view.birthId); break;
@@ -956,7 +978,7 @@ export class GameUI {
   }
   private decorationCard(id: DecorationId, description = ''): HTMLElement {
     const card = this.card(DECORATIONS[id].name, description), icon = node('span', '', 'decoration-icon');
-    const img = document.createElement('img'); img.src = decorationUrl(id); img.alt = DECORATIONS[id].name; icon.append(img); card.querySelector('.card-heading')!.prepend(icon); return card;
+    const img = document.createElement('img'); img.src = decorationUrl(id); img.alt = DECORATIONS[id].name; img.onerror = () => { img.hidden = true; }; icon.append(img); card.querySelector('.card-heading')!.prepend(icon); return card;
   }
   private renderAlbum(s:GameState):void {
     this.title.textContent='Album et souvenirs';
@@ -1052,7 +1074,7 @@ export class GameUI {
       `Vendre ${DECORATIONS[d.catalogId].name} pour ${resale} pattes ?`,
       'Cet exemplaire sera retiré définitivement. Aucun remboursement en cœurs.',
       () => this.execute({type: 'sellDecoration', id}, value => `Objet vendu · + ${value} pattes.`, () => this.finishDecorationAction())
-    ), d.paidHearts !== undefined ? 'Objet précieux : il ne se revend pas.' : Number.isSafeInteger(s.pattes + resale) ? null : REFUSALS.RESOURCE_LIMIT, true).classList.add('action-danger');
+    ), d.paidHearts !== undefined ? 'Objet précieux : il ne se revend pas.' : isChristmasDecoration(d.catalogId) ? 'Décoration de Noël : elle reste à toi.' : Number.isSafeInteger(s.pattes + resale) ? null : REFUSALS.RESOURCE_LIMIT, true).classList.add('action-danger');
     this.button(this.content, 'Mon inventaire', () => this.open({kind: 'arrange'}), null, true);
   }
   private finishDecorationAction(): void {
@@ -1089,16 +1111,17 @@ export class GameUI {
     this.content.append(node('p', 'Touche une destination, puis confirme. Glisse ou pince pour explorer sans poser.', 'small'));
     this.content.append(node('p', draft.catalogId ? 'Aperçu gratuit · aucun achat avant validation.' : d.location.kind === 'inventory' ? 'En cas d’annulation, l’objet reste dans ton inventaire.' : 'En cas d’annulation, l’objet reste à son emplacement actuel.', 'small'));
     if (DECORATIONS[d.catalogId].rotates) this.button(this.content, `Tourner de 90° · orientation ${draft.rotation ? 'verticale' : 'horizontale'}`, () => this.rotateDecoration(), null, true);
-    const definition = DECORATIONS[d.catalogId];
-    this.content.append(node('p', `${definition.width} × ${definition.height} cases fines · ${draft.catalogId ? `${definition.heartPrice !== undefined ? heartAmount(definition.heartPrice) : `${definition.price} pattes`}` : 'pose gratuite'}`, 'badge'));
-    const reason = draft.location ? catalogDecorationPlacementReason(s, d.catalogId, draft.location, draft.catalogId ? undefined : d.id) ?? (draft.catalogId ? purchaseDecorationReason(s,d.catalogId) : null) : null;
+    const definition = DECORATIONS[d.catalogId], christmas = !!draft.catalogId && isChristmasDecoration(d.catalogId);
+    const price = christmas ? candyAmount(definition.candyPrice ?? 0) : definition.heartPrice !== undefined ? heartAmount(definition.heartPrice) : `${definition.price} pattes`;
+    this.content.append(node('p', `${definition.width} × ${definition.height} cases fines · ${draft.catalogId ? price : 'pose gratuite'}`, 'badge'));
+    const reason = draft.location ? catalogDecorationPlacementReason(s, d.catalogId, draft.location, draft.catalogId ? undefined : d.id) ?? (draft.catalogId ? (christmas ? christmasDecorationReason(s, d.catalogId) : purchaseDecorationReason(s,d.catalogId)) : null) : null;
     const actions = node('div', '', 'decoration-placement-actions');
     const status = node('p', !draft.location ? 'Choisis une destination · aucun objet posé' : reason ? `× ${REFUSALS[reason]}` : draft.catalogId ? '✓ Emplacement valide · paiement à la validation' : '✓ Emplacement valide · pose gratuite', !draft.location ? 'placement-pending' : reason ? 'placement-invalid' : 'placement-valid');
     status.setAttribute('role', 'status'); actions.append(status);
     const choices = node('div', '', 'placement-choices'); actions.append(choices);
-    const confirm = this.button(choices, draft.catalogId ? `Acheter et placer · ${definition.heartPrice !== undefined ? heartAmount(definition.heartPrice) : `${definition.price} pattes`}` : 'Confirmer la pose · gratuit', () => {
+    const confirm = this.button(choices, draft.catalogId ? `Acheter et placer · ${price}` : 'Confirmer la pose · gratuit', () => {
       if (this.decorationDraft !== draft || !draft.location || draft.location.kind !== 'outside') return;
-      const command: Command = draft.catalogId ? {type:'buyDecoration',catalogId:d.catalogId,location:structuredClone(draft.location)} : {type:'placeDecoration',id:d.id,location:structuredClone(draft.location)};
+      const command: Command = draft.catalogId ? {type: christmas ? 'buyChristmasDecoration' : 'buyDecoration',catalogId:d.catalogId,location:structuredClone(draft.location)} : {type:'placeDecoration',id:d.id,location:structuredClone(draft.location)};
       this.execute(command, 'Décoration installée.', value => draft.catalogId ? this.finishPurchase('decoration',String(value)) : this.open({kind:'arrange'}));
     });
     confirm.disabled = !draft.location || !!reason;
@@ -1137,6 +1160,7 @@ export class GameUI {
       if (income >= stats.cap) this.content.append(node('p', 'Stock plein : récolte pour relancer les revenus.', 'reason'));
       this.button(this.content, `Récolter ${income} pattes`, () => this.execute({type: 'collectIncome', id}, value => `+ ${value} pattes`), income < 1 ? 'La récolte sera disponible à partir d’une pièce.' : null);
       this.renderPicnic(s, id);
+      if (christmasActive()) this.renderSnowman(s, id);
       if (b.habitat!.level < 3) {
         const level=b.habitat!.level,targetLevel=(level+1) as 2|3,next=habitatLevel(b.habitat!.type,targetLevel);
         const target={family:'habitatUpgrade',id:b.habitat!.type,toLevel:targetLevel} as const,access=stateLevelAccess(s,target);
@@ -1384,6 +1408,84 @@ export class GameUI {
     this.button(card, `Pique-niquer · ${quote.price} pattes`, () => this.confirm('Faire un pique-nique ?', `${winners}. Prix : ${quote.price} pattes (${PICNIC.pricePerRabbit} pattes par lapin présent).`,
       () => this.execute({type: 'picnic', enclosureId: id, expectedCost: quote.price}, value => `Pique-nique ! +1 d’affection pour ${value} lapin${Number(value) > 1 ? 's' : ''}.`, () => { this.close(); this.scene.playPicnic?.(id); })), reason);
     this.content.append(card);
+  }
+  /** Christmas: today's snowman, free, in this enclosure (one a day in all, a rabbit present). */
+  private renderSnowman(s: GameState, id: string): void {
+    const quote = snowmanQuote(s, id, this.now());
+    const card = this.card('Bonhomme de neige', 'Gratuit · un seul bonhomme de neige par jour. Il reste debout dans l’enclos jusqu’à demain.'); card.dataset.snowman = id;
+    this.button(card, 'Faire un bonhomme de neige', () => this.execute({type: 'buildSnowman', enclosureId: id}, 'Un bonhomme de neige tout neuf !', () => { this.close(); this.scene.playSnowman?.(id); }),
+      quote.reason === 'LEVEL_REQUIRED' ? `Niveau ${SNOWMAN.unlockLevel} requis` : quote.reason ? REFUSALS[quote.reason] : null);
+    this.content.append(card);
+  }
+  /**
+   * The Christmas market islet (owner, 4 November 2026): the sucres d'orge balance, the « Défis de Noël » and their bonus, the
+   * eight decorations of the market and « Les cadeaux du ciel ». Closed as soon as the event is off.
+   */
+  private renderChristmasMarket(s: GameState): void {
+    if (!christmasActive()) { this.close(); return; }
+    this.title.textContent = 'Marché de Noël';
+    const now = this.now(), candies = candiesOf(s), rabbitName = (r: Rabbit) => r.name || SPECIES[r.species].name;
+    if (this.skyGiftsPick) {
+      this.content.append(node('p', 'Choisis le lapin qui porte la hotte.', 'small'));
+      const list = node('div', '', 'agency-travellers'); this.content.append(list);
+      const reasonOf = (r: Rabbit) => { const reason = skyGiftsRabbitReason(s, r.id); return reason ? REFUSALS[reason] : null; };
+      for (const r of [...s.rabbits].sort((a, b) => Number(!!reasonOf(a)) - Number(!!reasonOf(b)) || b.affection - a.affection)) {
+        const card = this.card(rabbitName(r), `${r.name ? SPECIES[r.species].name + ' · ' : ''}affection ${r.affection}`, r); card.dataset.skyGiftsRabbit = r.id; card.classList.add('compact-list-card');
+        this.button(card, 'Choisir', () => {
+          this.skyGiftsPick = false; this.render();
+          this.skyGifts.open({id: r.id, species: r.species, name: r.name, affection: r.affection, classicLook: r.classicLook, evolution: r.evolution});
+        }, reasonOf(r)); list.append(card);
+      }
+      this.button(this.content, 'Retour', () => { this.skyGiftsPick = false; this.render(); }, null, true);
+      return;
+    }
+    const balance = node('p', '', 'badge christmas-candies'); balance.dataset.christmasCandies = String(candies);
+    const icon = document.createElement('img'); icon.className = 'candy-icon'; icon.src = CANDY_ICON_URL; icon.alt = 'Sucre d’orge'; icon.width = 20; icon.height = 20; icon.onerror = () => { icon.hidden = true; };
+    balance.append(icon, document.createTextNode(` ${candyAmount(candies)}`)); this.content.append(balance);
+    this.content.append(node('p', 'Les sucres d’orge se gagnent avec les défis de Noël, chaque jour. Ils servent à acheter les décorations du marché.', 'small'));
+    // The Christmas challenges, like the daily missions: three a cycle, then the bonus.
+    this.content.append(node('h3', 'Défis de Noël'));
+    const cycleStart = dailyCycleStart(s), shown = christmasChallengesOf(s), claimed = christmasClaimed(s);
+    for (const id of shown) {
+      const challenge = CHRISTMAS_CHALLENGES[id], value = Math.min(christmasProgress(s, id), challenge.target), done = claimed.includes(id), ready = christmasClaimable(s, id);
+      const card = this.card(challenge.title, challenge.description); card.dataset.christmasChallenge = id; card.dataset.missionStatus = done ? 'claimed' : ready ? 'ready' : 'pending';
+      card.classList.add('mission-day-card');
+      const bar = node('progress'); bar.max = challenge.target; bar.value = value; bar.setAttribute('aria-label', `Progression : ${value} sur ${challenge.target}`);
+      card.append(node('p', `Progression : ${value} / ${challenge.target}`), bar, node('p', `Récompense : ${candyAmount(challenge.candies)}`, 'small'));
+      this.button(card, done ? 'Récompense réclamée' : `Réclamer · +${candyAmount(challenge.candies)}`, () => this.execute({type: 'claimChristmasChallenge', id, cycleStart}, `+${candyAmount(challenge.candies)} !`),
+        done ? 'Déjà réclamée.' : !ready ? 'Défi à compléter.' : null).classList.add('mission-claim');
+      this.content.append(card);
+    }
+    const bonusDone = christmasBonusClaimed(s), bonusReady = christmasBonusReady(s) && !bonusDone, count = shown.filter(id => claimed.includes(id)).length;
+    const bonus = this.card(`Bonus des trois défis : +${candyAmount(CHRISTMAS_BONUS_CANDIES)}`, 'Réclame les trois défis de Noël pour recevoir ce bonus.'); bonus.dataset.christmasChallenge = 'bonus'; bonus.classList.add('mission-day-card', 'mission-bonus');
+    bonus.append(node('p', `Progression : ${count} / ${CHRISTMAS_PICK_COUNT}`));
+    this.button(bonus, bonusDone ? 'Bonus réclamé' : `Réclamer · +${candyAmount(CHRISTMAS_BONUS_CANDIES)}`, () => this.execute({type: 'claimChristmasBonus', cycleStart}, `Bonus de Noël : +${candyAmount(CHRISTMAS_BONUS_CANDIES)} !`),
+      bonusDone ? 'Déjà réclamé.' : !bonusReady ? 'Réclame d’abord les trois défis.' : null).classList.add('mission-claim');
+    this.content.append(bonus);
+    // « Les cadeaux du ciel »: one rabbit carries the basket.
+    this.content.append(node('h3', 'Les cadeaux du ciel'));
+    const day = skyGiftsDay(s, now);
+    this.content.append(node('p', `Le traîneau lâche des cadeaux : attrape-les avec la hotte de ton lapin. Tes ${SKY_GIFTS.rewardedGamesPerCycle} premières parties du jour rapportent des pattes.`, 'small'));
+    this.content.append(node('p', skyGiftsQuotaText(s, now), 'badge'));
+    if (day.best) this.content.append(node('p', `Ton record : ${day.best} cadeau${day.best > 1 ? 'x' : ''}`, 'small'));
+    this.button(this.content, 'Jouer aux cadeaux du ciel', () => { this.skyGiftsPick = true; this.render(); }, s.rabbits.length ? null : 'Il te faut un lapin pour porter la hotte.').dataset.skyGiftsPlay = '';
+    // The market's eight decorations, for sucres d'orge only; placed now (preview, paid at the confirmed placement) or kept.
+    this.content.append(node('h3', 'Décorations de Noël'));
+    this.content.append(node('p', 'Acheter ouvre un aperçu gratuit : le paiement a lieu à la pose confirmée. Acheter pour l’inventaire est un achat immédiat. Elles restent à toi après Noël.', 'small'));
+    for (const id of CHRISTMAS_DECORATION_IDS) {
+      const d = DECORATIONS[id], price = candyAmount(d.candyPrice ?? 0), count = s.decorations.filter(owned => owned.catalogId === id).length;
+      const card = this.decorationCard(id, `${d.width} × ${d.height} cases fines · ${price} · ${count} possédé${count > 1 ? 's' : ''}`); card.dataset.christmasCatalog = id;
+      const reason = christmasDecorationReason(s, id), text = reason ? REFUSALS[reason] : null;
+      this.button(card, `Acheter · ${price}`, () => {
+        this.rememberView(); this.purchaseReturn = {view: {kind: 'christmasMarket'}, history: [...this.history]};
+        this.placement = null; this.scene.setPlacement(null);
+        this.decorationDraft = {id: 'purchase-preview', catalogId: id, location: null, rotation: 0};
+        this.open({kind: 'decorationPlacement'});
+      }, text);
+      this.button(card, `Acheter pour l’inventaire · ${price}`, () => this.confirm(`Acheter : ${d.name} ?`, `${price}. Achat immédiat pour l’inventaire, sans placement.`,
+        () => this.execute({type: 'buyChristmasDecoration', catalogId: id}, 'Elle t’attend dans ton inventaire : pose-la depuis Aménager.')), text, true);
+      this.content.append(card);
+    }
   }
   /** Farm level 2 → 3: pattes only, never a Heart complement; re-read at confirmation so a stale view never pays. */
   private farmLevel3Upgrade(s: GameState, id: string): void {
@@ -2360,6 +2462,12 @@ export class GameUI {
       progress(bonus, done, DAILY_PICK_COUNT);
       claim(bonus, {type: 'claimDailyBonus', cycleStart}, DAILY_BONUS[0], dailyBonusReady(s), daily.bonusClaimed, DAILY_BONUS.slice(1));
       this.content.append(bonus);
+      // Christmas: the challenges and their sucres d'orge are at the market (they count in the Missions badge).
+      if (christmasActive()) {
+        const waiting = availableChristmasRewards(s), noel = this.card('Défis de Noël', waiting ? `${waiting} récompense${waiting > 1 ? 's' : ''} de Noël à réclamer au marché.` : 'Trois défis de Noël chaque jour, au Marché de Noël.');
+        noel.dataset.mission = 'christmas'; noel.classList.add('mission-day-card');
+        this.button(noel, 'Aller au Marché de Noël', () => this.open({kind: 'christmasMarket'}), null, true); this.content.append(noel);
+      }
 
     }
   }
@@ -2651,7 +2759,7 @@ export class GameUI {
     if (step.done) this.button(this.tutorial, 'Terminer le guidage', () => { this.preferences.set({tutorialDone: true}); this.renderPreferences(); this.renderTutorial(); }, null, true);
     this.button(this.tutorial, 'Masquer', () => { this.preferences.set({tutorial: false}); this.renderPreferences(); this.renderTutorial(); }, null, true);
   }
-  dispose(): void { this.photoControls.dispose(); this.clearRabbitMove(); this.moveBanner.remove(); this.clearWelcome(); this.welcomeBanner.remove(); this.closeReception(); this.accountReminder.dispose(); document.getElementById('onboarding-skip')?.remove(); this.pailleDialogue.dispose(); this.cuisine.dispose(); this.jumpRope.dispose(); this.confirmationGeneration++; if (this.dialog.open) this.dialog.close(); this.dialog.replaceChildren(); this.unsubscribe(); this.abort.abort(); cancelAnimationFrame(this.frame); clearTimeout(this.toastTimer); this.endCaress(); this.sounds.dispose(); }
+  dispose(): void { this.photoControls.dispose(); this.clearRabbitMove(); this.moveBanner.remove(); this.clearWelcome(); this.welcomeBanner.remove(); this.closeReception(); this.accountReminder.dispose(); document.getElementById('onboarding-skip')?.remove(); this.pailleDialogue.dispose(); this.cuisine.dispose(); this.jumpRope.dispose(); this.skyGifts.dispose(); this.confirmationGeneration++; if (this.dialog.open) this.dialog.close(); this.dialog.replaceChildren(); this.unsubscribe(); this.abort.abort(); cancelAnimationFrame(this.frame); clearTimeout(this.toastTimer); this.endCaress(); this.sounds.dispose(); }
 }
 
 const JUMP_ISLAND_NAME = 'Île de la corde à sauter';
@@ -2660,6 +2768,12 @@ function jumpRopeChallengeText(s: GameState, now: number): string {
   if (!jumpRopeDay(s, now).challengeLeft) return 'Défi du jour réussi : reviens demain pour le suivant.';
   const c = jumpRopeChallenge(s, now);
   return `Défi du jour : ${c.jumps} sauts${c.type ? ` avec un lapin ${TYPE_NAMES[c.type]} comme athlète` : ''} · +${JUMP_ROPE.challenge.hearts} cœurs`;
+}
+/** « 12 sucres d’orge », « 1 sucre d’orge » (the Christmas market's currency). */
+const candyAmount = (n: number) => `${n} sucre${n > 1 ? 's' : ''} d’orge`;
+/** Today's rewarded games of « Les cadeaux du ciel ». */
+function skyGiftsQuotaText(s: GameState, now: number): string {
+  return `Parties récompensées : ${SKY_GIFTS.rewardedGamesPerCycle - skyGiftsDay(s, now).rewardedLeft}/${SKY_GIFTS.rewardedGamesPerCycle}`;
 }
 /** Today's rewarded games at the jump-rope islet, and its Heart. */
 function jumpRopeQuotaText(s: GameState, now: number): string {

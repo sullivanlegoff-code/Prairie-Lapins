@@ -56,12 +56,13 @@ import {placementGrid, PLACEMENT_GRID} from './placementGrid';
 import {readyNurseryBabies} from '../simulation/nursery';
 import {FloatingIslandLayer} from './floatingIslandLayer';
 import {ISLAND_ART} from '../config/islandArt';
-import {grassTile, islandStage, stageArt} from '../config/islandStages';
+import {grassTile, islandStage, stageArt, STAGE_PX_PER_UNIT, WINTER_STAGE_ART_LIST} from '../config/islandStages';
 import {IslandStageLayer, queueStage} from './islandStageLayer';
 import {SkyLayer, SKY_COLOR} from './skyLayer';
-import {WinterLayer} from './winterLayer';
+import {WinterLayer, WinterLights} from './winterLayer';
+import WINTER_LIGHTS from '../config/islandStageLightsWinter.json';
 import {WINTER_ART, winterUrl} from '../config/winterArt';
-import {christmasActive} from '../config/christmas';
+import {christmasActive, localHour} from '../config/christmas';
 import {PARCELS, PARCEL_IDS, expansionTarget, purchasableParcels, type ParcelId} from '../config/land';
 import {ISLAND} from '../config/islandGeometry';
 import {rabbitOffset, rabbitPosition, rabbitHit, rabbitFedLift} from './rabbitLayout';
@@ -84,9 +85,15 @@ import {MAGICIEN_ART, MAGICIEN_TEST_EVENT} from '../config/magicienArt';
 import {MagicienView} from './magicienEffects';
 import {MagicienClock, magicienFree, type MagicienAct} from './magicienTimeline';
 import {CHASE_EVENT, RabbitChases, type ChaseRunner} from './rabbitChase';
+import {SNOWBALL_EVENT, SnowballFights, snowballPoint, type SnowballThrower} from './snowballFight';
+import {CHRISTMAS_MARKET_ART, christmasMarketFrame, christmasMarketPoint} from '../config/christmasMarketArt';
+import {SNOWBALL_ART, SNOWMAN_ART} from '../config/winterArt';
+import {garlandLevel} from './winterClock';
+import {isChristmasDecoration} from '../config/decorations';
+import {snowmanToday} from '../simulation/christmas';
 
 /** `nurseryBubble`: the « Prêt ! » bubble (id: the nursery). `nurseryBaby`: a ready baby touched on its cushion (id: its birthId). */
-export type MeadowSelection = {kind: 'jumpIsland'} | {kind: 'building' | 'rabbit' | 'income' | 'grass' | 'decoration' | 'birth' | 'nurseryBubble' | 'nurseryBaby'; id: string} | {kind: 'cell' | 'fineCell'; x: number; y: number} | {kind: 'extension'; parcelId?: ParcelId} | {kind: 'empty'};
+export type MeadowSelection = {kind: 'jumpIsland'} | {kind: 'christmasMarket'} | {kind: 'building' | 'rabbit' | 'income' | 'grass' | 'decoration' | 'birth' | 'nurseryBubble' | 'nurseryBaby'; id: string} | {kind: 'cell' | 'fineCell'; x: number; y: number} | {kind: 'extension'; parcelId?: ParcelId} | {kind: 'empty'};
 export interface DecorationGhost {id: string; catalogId?: DecorationId; location: DecorationLocation | null}
 /** `object` is the ground point (position, depth, scale); `body` carries the hop height, squash and mirror, apart from the shadow. */
 interface VisualRabbit {id: string; object: Phaser.GameObjects.Container; body: Phaser.GameObjects.Container; ears: Phaser.GameObjects.Ellipse[]; sprite?: Phaser.GameObjects.Image; art?: RabbitArt; base: Point; phase: number; fedUntil: number;
@@ -132,6 +139,20 @@ export class MeadowScene extends Phaser.Scene {
   /** Two rabbits of one enclosure running after each other now and then (visual only). */
   private chases = new RabbitChases();
   private chaseTest = false;
+  /** Christmas: two rabbits of one enclosure throwing tiny snowballs at each other now and then (visual only). */
+  private snowballs = new SnowballFights();
+  private snowballTest = false;
+  private snowballViews = new Map<string, Phaser.GameObjects.Image>();
+  /** Christmas pictures loaded on demand, never required: a missing one only means nothing is drawn (`optionalArt`). */
+  private optionalPending = new Set<string>();
+  private optionalFailed = new Set<string>();
+  /** The Christmas market islet (west of the island) and its night lights; null while the event is off or its picture missing. */
+  private marketImage: Phaser.GameObjects.Image | null = null;
+  private marketLights: Phaser.GameObjects.Image | null = null;
+  /** Today's snowman, standing at the back of its enclosure (null when none is drawn). */
+  private snowman: {enclosureId: string; image: Phaser.GameObjects.Image} | null = null;
+  /** The snowman being made (three steps), with its guests gathered in front of it, facing `spotX` (their local space). */
+  private snowmanBuild: {enclosureId: string; elapsed: number; step: number; ids: string[]; spotX: number} | null = null;
   /** Benny's flight over the island: made once her flight art is loaded, it outlives every rebuild of her body. */
   private bennyFlight: BennyFlightView | null = null;
   /** Benny's id while she is up in the air (her enclosure picture is hidden, she is touched in the air). */
@@ -145,6 +166,7 @@ export class MeadowScene extends Phaser.Scene {
   private picnicParty: {ids: string[]; left: number; midX: number} | null = null;
   private sky?: SkyLayer;
   private winter?: WinterLayer;
+  private winterLights?: WinterLights;
   private picnicPieces = new Set<Phaser.GameObjects.Image | Phaser.GameObjects.Text>();
   private lifeViews: RabbitLifeViews | null = null;
   private lifeGeneration: number | null = null;
@@ -210,13 +232,12 @@ export class MeadowScene extends Phaser.Scene {
     this.load.image(HEART_TEXTURE, HEART_URL);
     for (const type of ['paille', 'neige', 'feu', 'metal', 'vol'] as const) this.load.image(`element-${type}`, elementUrl(type));
     for (const art of ISLAND_ART) if (!this.textures.exists(art.texture)) this.load.image(art.texture, art.url);
-    const grass = grassTile(); if (!this.textures.exists(grass.texture)) this.load.image(grass.texture, grass.url);
+    // Both lawns while the event is on: buying the next stage may change it.
+    for (const grass of new Set([grassTile(null), grassTile(WINTER_STAGE_ART_LIST[0]?.stage ?? null)])) if (!this.textures.exists(grass.texture)) this.load.image(grass.texture, grass.url);
     // Only the painting of the current stage is loaded at start; a later stage loads when it is bought.
     const stage = islandStage(this.controller.getSnapshot().state?.acquiredParcels ?? []);
     if (stage) queueStage(this, stageArt(stage));
     if (!this.textures.exists(FOOD_TEXTURE)) this.load.image(FOOD_TEXTURE, FOOD_URL);
-    // Christmas: the tiny snowflakes (a missing picture only means no snow, never a blocked meadow).
-    if (christmasActive()) for (const flake of WINTER_ART.flakes) if (!this.textures.exists(flake.texture)) this.load.image(flake.texture, flake.url);
     for (const art of this.requiredArt(this.controller.getSnapshot().state))
       if (!this.textures.exists(art.texture)) this.loadArt(art);
   }
@@ -231,7 +252,9 @@ export class MeadowScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(SKY_COLOR);
     // Owns its shutdown cleanup; independent of parcel ownership and ground projection.
     this.sky = new SkyLayer(this, toScreen(gridPoint(ISLAND.focus, ISLAND.focus)));
-    this.winter = new WinterLayer(this);
+    this.winter = new WinterLayer(this); this.winterLights = new WinterLights(this);
+    // Christmas: the tiny snowflakes, loaded after start (a missing picture only means no snow, never a blocked meadow).
+    if (christmasActive()) for (const flake of WINTER_ART.flakes) this.optionalArt(flake.texture, flake.url);
     // Ground layer (flat on the island, drawn in ground coordinates, one shared projection transform):
     // terrain at depth 0 and the flat overlays at depth 1. Upright layer (untransformed, anchors through
     // toScreen): buildings .1, decorations .5, decoration selection .9, markers 1, ghosts 1.5, rabbits 2,
@@ -292,10 +315,16 @@ export class MeadowScene extends Phaser.Scene {
     window.addEventListener(BENNY_FLIGHT_TEST_EVENT, flightTest);
     const chaseTest = () => { this.chaseTest = true; };
     window.addEventListener(CHASE_EVENT, chaseTest);
+    // Laboratory only: a snowball fight in every enclosure that allows one (while the event is on).
+    const snowballTest = () => { this.snowballTest = true; };
+    window.addEventListener(SNOWBALL_EVENT, snowballTest);
     this.events.once('shutdown', () => {
       stopCommands(); this.dadi.reset(); this.dadiSpeech?.destroy(); this.dadiSpeech = null;
       this.cozyInteraction.reset();
-      this.chases.reset(); this.life.reset(); this.lifeViews?.destroy(); this.lifeViews = null;
+      this.chases.reset(); this.snowballs.reset(); this.life.reset(); this.lifeViews?.destroy(); this.lifeViews = null;
+      window.removeEventListener(SNOWBALL_EVENT, snowballTest);
+      this.snowballViews.clear(); this.marketImage = null; this.marketLights = null; this.snowman = null; this.snowmanBuild = null;
+      this.optionalPending.clear(); this.optionalFailed.clear();
       document.removeEventListener('visibilitychange', dadiVisibility); window.removeEventListener('pagehide', clearDadi);
       window.removeEventListener(LEGENDARY_TEST_EVENT, legendaryTest); window.removeEventListener(MAGICIEN_TEST_EVENT,magicienTest); window.removeEventListener(BENNY_TEST_EVENT, bennyTest); window.removeEventListener(BENNY_FLIGHT_TEST_EVENT, flightTest); window.removeEventListener(CHASE_EVENT, chaseTest);
       this.bennyFlight?.destroy(); this.bennyFlight = null; this.bennyAway = null; this.flightIsland = null;
@@ -431,6 +460,7 @@ export class MeadowScene extends Phaser.Scene {
     const owned = ownedRegions(this.current.acquiredParcels);
     rects.push(...owned);
     if (this.current.jumpIsland && !this.expanding) rects.push(jumpIslandFrame());
+    if (christmasActive() && !this.expanding) rects.push(christmasMarketFrame());
     this.view.overview({left:Math.min(...rects.map(r=>r.left)),right:Math.max(...rects.map(r=>r.right)),top:Math.min(...rects.map(r=>r.top)),bottom:Math.max(...rects.map(r=>r.bottom))});
     this.applyCamera();
   }
@@ -588,6 +618,7 @@ export class MeadowScene extends Phaser.Scene {
     const b = this.current?.buildings.find(x => x.id === enclosureId); if (!b) return;
     const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.focusBuilding(enclosureId);
+    this.snowballs.reset(this.snowballThrowers(new Set()));
     const guests = this.rabbitViews.filter(r => r.group === enclosureId && r.motion && !r.nest && !r.benny && !r.legendary?.clock.act && !r.magicien?.busy &&
       ['rest', 'walk', 'hop', 'sleep', 'zoom', 'meet', 'kiss'].includes(r.motion.mode));
     const first = this.rabbitViews.find(r => r.group === enclosureId && r.motion && !r.nest);
@@ -643,6 +674,121 @@ export class MeadowScene extends Phaser.Scene {
     for (const rabbit of guests) if (rabbit.motion!.mode === 'meet') endRabbitActivity(rabbit.motion!);
     this.picnicParty = null;
   }
+  private snowmanCheckedAt = -Infinity;
+  /** Length of the snowman scene and the moments its three steps appear (ms). */
+  static readonly SNOWMAN_MS = 6500;
+  static readonly SNOWMAN_STEPS = [600, 2200, 3800] as const;
+  /** A rabbit gathered somewhere now (the picnic, the snowman): it neither roams, chases, fights nor speaks. */
+  private gathered(id: string): boolean { return !!this.picnicParty?.ids.includes(id) || !!this.snowmanBuild?.ids.includes(id); }
+  /** An enclosure's roaming zone in its local space (same table as its rabbits' motions). */
+  private enclosureZone(b: Building): {minX: number; maxX: number; minY: number; maxY: number} {
+    const tier = b.footprintTier ?? 1, k = enclosureScale(b), illustrated = habitatArtFor(b.habitat ?? undefined, b.footprintTier);
+    const zone = illustrated ? habitatArtLayout(illustrated).zone : tier > 1 ? HABITAT_SIZE_PROPOSAL[tier as 2 | 3].zone : VISUAL.rabbit.roam.hard;
+    return {minX: zone.minX * k, maxX: zone.maxX * k, minY: zone.minY * k, maxY: zone.maxY * k};
+  }
+  /** Where the snowman stands: at the back of the enclosure, on the right (local space), so the rabbits play in front of it. */
+  private snowmanSpot(b: Building): Point {
+    const zone = this.enclosureZone(b);
+    return {x: zone.minX + (zone.maxX - zone.minX) * .78, y: zone.minY};
+  }
+  /**
+   * The snowman (owner, 4 November 2026): the view comes to the enclosure, the guests gather in front of the spot, facing it,
+   * and the snowman appears in three steps; then it stays standing there until the end of the cycle (`syncSnowman`).
+   * Reduced motion: the finished snowman at once. Presentation only.
+   */
+  playSnowman(enclosureId: string): void {
+    const b = this.current?.buildings.find(x => x.id === enclosureId && x.kind === 'enclosure'); if (!b) return;
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.focusBuilding(enclosureId);
+    for (const step of SNOWMAN_ART.steps) this.optionalArt(step.texture, step.url);
+    const spot = this.snowmanSpot(b), zone = this.enclosureZone(b);
+    if (reduced) { this.snowmanBuild = null; this.syncSnowman(); return; }
+    // A snowball fight under way stops: its rabbits join the others.
+    this.snowballs.reset(this.snowballThrowers(new Set()));
+    const guests = this.rabbitViews.filter(r => r.group === enclosureId && r.motion && !r.nest && !r.benny && !r.legendary?.clock.act && !r.magicien?.busy &&
+      !this.picnicParty?.ids.includes(r.id) && !this.chases.isChasing(r.id) && ['rest', 'walk', 'hop', 'sleep', 'zoom', 'meet', 'kiss'].includes(r.motion.mode));
+    // A half circle in front of the snowman, inside the fence.
+    const rx = Math.min(46, (zone.maxX - zone.minX) / 3), ry = Math.min(26, (zone.maxY - zone.minY) / 2);
+    guests.forEach((rabbit, index) => {
+      const motion = rabbit.motion!, angle = Math.PI * (index + 1) / (guests.length + 1);
+      this.life.interrupt(rabbit.id); if (this.cozyInteraction.active?.id === rabbit.id) this.cozyInteraction.reset();
+      const x = Math.max(zone.minX, Math.min(zone.maxX, spot.x - Math.cos(angle) * rx)), y = Math.max(zone.minY, Math.min(zone.maxY, spot.y + 12 + Math.sin(angle) * ry));
+      startRabbitActivity(motion, 'meet', {x, y});
+      motion.duration = Math.min(motion.duration, 1600);
+    });
+    this.snowmanBuild = {enclosureId, elapsed: 0, step: 0, ids: guests.map(r => r.id), spotX: spot.x};
+    this.snowman?.image.destroy(); this.snowman = null;
+  }
+  /** Each frame of the snowman scene: one more step at each moment, the guests face it; at the end they go back to roaming. */
+  private stepSnowman(dt: number): void {
+    const build = this.snowmanBuild; if (!build) return;
+    build.elapsed += Number.isFinite(dt) && dt > 0 ? Math.min(dt, 1000) : 0;
+    const step = MeadowScene.SNOWMAN_STEPS.filter(at => build.elapsed >= at).length;
+    if (step !== build.step) {
+      build.step = step;
+      const shown = this.placeSnowman(build.enclosureId, step);
+      if (shown && step > 0) { const scale = shown.scale; shown.setScale(scale * .8); this.tweens.add({targets: shown, scale, duration: 320, ease: 'Back.easeOut'}); }
+    }
+    const guests = this.rabbitViews.filter(r => build.ids.includes(r.id) && r.motion);
+    for (const rabbit of guests) {
+      const motion = rabbit.motion!;
+      if (motion.mode === 'meet' && motion.elapsed >= motion.duration && Math.abs(motion.local.x - build.spotX) > 2) motion.facing = motion.local.x < build.spotX ? 1 : -1;
+    }
+    if (build.elapsed < MeadowScene.SNOWMAN_MS) return;
+    for (const rabbit of guests) if (rabbit.motion!.mode === 'meet') endRabbitActivity(rabbit.motion!);
+    this.snowmanBuild = null; this.syncSnowman();
+  }
+  /** Draws step `step` (1 to 3) of the snowman in that enclosure, or nothing (step 0, a missing picture). */
+  private placeSnowman(enclosureId: string, step: number): Phaser.GameObjects.Image | null {
+    const b = this.current?.buildings.find(x => x.id === enclosureId && x.kind === 'enclosure');
+    const art = step > 0 ? SNOWMAN_ART.steps[step - 1] : null;
+    if (!b || !art || !this.optionalArt(art.texture, art.url, () => this.syncSnowman())) {
+      if (!b || !art || this.snowman?.enclosureId !== enclosureId) { this.snowman?.image.destroy(); this.snowman = null; }
+      return null;
+    }
+    const center = toScreen(buildingCenter(b)), spot = this.snowmanSpot(b), x = center.x + spot.x, y = center.y + spot.y;
+    if (this.snowman && this.snowman.enclosureId !== enclosureId) { this.snowman.image.destroy(); this.snowman = null; }
+    // Like the picnic cloth: above the buildings, below the rabbits (depth 2), so the rabbits in front of it pass in front.
+    const image = this.snowman?.image ?? this.add.image(x, y, art.texture).setDepth(1.95);
+    image.setTexture(art.texture).setPosition(x, y).setOrigin(.5, SNOWMAN_ART.originY).setScale(SNOWMAN_ART.worldWidth / image.frame.realWidth);
+    this.snowman = {enclosureId, image};
+    return image;
+  }
+  /** Today's snowman, where `snowmanToday` names an enclosure (kept in photos: it is a nice subject). */
+  private syncSnowman(): void {
+    if (this.snowmanBuild) return;
+    const id = this.current && christmasActive() ? snowmanToday(this.current, this.simulationNow()) : null;
+    if (!id) { this.snowman?.image.destroy(); this.snowman = null; return; }
+    if (this.snowman?.enclosureId === id && this.snowman.image.texture.key === SNOWMAN_ART.steps[2].texture) return;
+    this.placeSnowman(id, 3);
+  }
+  /** Who may throw snowballs: the same rabbits as a chase, never a chaser. */
+  private snowballThrowers(visible: ReadonlySet<string>, speaking?: string): SnowballThrower[] {
+    return this.playfulRabbits(visible, speaking).map(r => ({...r, available: r.available && !this.chases.isChasing(r.id)}));
+  }
+  /** The snowballs in the air, from the thrower's paws to the other's body, and a puff on each hit (nothing without the pictures). */
+  private drawSnowballs(): void {
+    const art = SNOWBALL_ART, balls = this.snowballs.balls(), seen = new Set<string>();
+    const ballReady = balls.length > 0 && this.optionalArt(art.ball.texture, art.ball.url);
+    const paws = (rabbit: VisualRabbit) => (rabbit.art ? rabbit.art.height * rabbit.art.worldWidth / rabbit.art.width - rabbit.art.groundY : 45) * .45 * VISUAL.rabbit.scale;
+    for (const ball of balls) {
+      const from = this.rabbitViews.find(r => r.id === ball.from), to = this.rabbitViews.find(r => r.id === ball.to);
+      if (!ballReady || !from?.motion || !to?.motion) continue;
+      const p = snowballPoint(from.motion.local, to.motion.local, ball.u), height = paws(from) + (paws(to) - paws(from)) * ball.u;
+      let view = this.snowballViews.get(ball.group);
+      if (!view) { view = this.add.image(0, 0, art.ball.texture).setDepth(2.5); this.snowballViews.set(ball.group, view); }
+      view.setPosition(from.center.x + p.x, from.center.y + p.y - p.lift - height).setScale(art.ballWorld / view.frame.realWidth).setVisible(true);
+      seen.add(ball.group);
+    }
+    for (const [group, view] of this.snowballViews) if (!seen.has(group)) { view.destroy(); this.snowballViews.delete(group); }
+    if (!this.snowballs.hits.length || !this.optionalArt(art.puff.texture, art.puff.url)) return;
+    for (const hit of this.snowballs.hits) {
+      const to = this.rabbitViews.find(r => r.id === hit.to); if (!to?.motion) continue;
+      const puff = this.add.image(to.center.x + to.motion.local.x, to.center.y + to.motion.local.y - paws(to), art.puff.texture).setDepth(2.5);
+      puff.setScale(art.puffWorld / puff.frame.realWidth);
+      this.tweens.add({targets: puff, alpha: 0, duration: art.puffMs, onComplete: () => puff.destroy()});
+    }
+  }
   /** The show button of a legendary's sheet: the camera comes to this rabbit, which plays that show (false when it cannot now). */
   playLegendaryAct(id: string, act: LegendaryAct): boolean {
     const rabbit = this.rabbitViews.find(r => r.id === id); if (!rabbit?.legendary) return false;
@@ -664,7 +810,7 @@ export class MeadowScene extends Phaser.Scene {
   }
   private updateVisibleRegions(): void {
     // Owned plateaux and their hanging rock; clouds and extension sketches do not own pan regions.
-    this.view.setVisibleRegions(this.expanding || !this.current ? null : [...ownedRegions(this.current.acquiredParcels), ...(this.current.jumpIsland ? [jumpIslandFrame()] : [])]);
+    this.view.setVisibleRegions(this.expanding || !this.current ? null : [...ownedRegions(this.current.acquiredParcels), ...(this.current.jumpIsland ? [jumpIslandFrame()] : []), ...(christmasActive() ? [christmasMarketFrame()] : [])]);
   }
   /** DOM portraits use ordinary image requests; Phaser only decodes residents and the active habitat preview. */
   private requiredArt(state: GameState | null): {texture: string; url: string; atlas?: string}[] {
@@ -698,6 +844,8 @@ export class MeadowScene extends Phaser.Scene {
       buildingArt(moving ?? {kind: this.placement.kind, habitat: this.placement.kind === 'enclosure' ? {type: this.placement.habitatType ?? 'universal', level: 1} : null});
     }
     const decoration = (id: DecorationId, rotation: 0 | 1) => {
+      // The Christmas decorations' pictures are optional (they may not be painted yet): `drawDecorations` loads them on demand.
+      if (isChristmasDecoration(id)) return;
       add({texture: decorationTexture(id), url: decorationUrl(id)});
       if (rotation) add({texture: decorationTexture(id, rotation), url: decorationUrl(id)});
     };
@@ -710,6 +858,52 @@ export class MeadowScene extends Phaser.Scene {
   private loadArt(art: {texture: string; url: string; atlas?: string}): void {
     const url = winterUrl(art.url, christmasActive());
     if (art.atlas) this.load.atlas(art.texture, url, art.atlas); else this.load.image(art.texture, url);
+  }
+  /**
+   * A Christmas picture that may not exist yet (not painted): true once its texture is there. The first call queues it alone,
+   * outside `requiredArt`, so a missing file never blocks the meadow nor its loading screen; a failed file is not asked again
+   * in this scene. `ready` runs once it has loaded.
+   */
+  private optionalArt(texture: string, url: string, ready?: () => void): boolean {
+    if (this.textures.exists(texture)) return true;
+    if (!this.sceneReady || this.optionalPending.has(texture) || this.optionalFailed.has(texture)) return false;
+    this.optionalPending.add(texture);
+    const finish = (ok: boolean) => {
+      this.load.off(`filecomplete-image-${texture}`, success); this.load.off('loaderror', failure);
+      this.optionalPending.delete(texture);
+      if (!ok || !this.textures.exists(texture)) { this.optionalFailed.add(texture); return; }
+      if (this.sceneReady) ready?.();
+    };
+    const success = () => finish(true);
+    const failure = (file: {key: string}) => { if (file.key === texture) finish(false); };
+    this.load.once(`filecomplete-image-${texture}`, success); this.load.on('loaderror', failure);
+    this.load.image(texture, url); this.load.start();
+    return false;
+  }
+  private christmasDecorationReady(id: DecorationId, rotation: 0 | 1): boolean {
+    return this.optionalArt(decorationTexture(id, rotation), decorationUrl(id), () => { if (this.current) this.renderState(); });
+  }
+  /**
+   * The Christmas market islet, west of the island, for everyone while the event is on; its night lights (ADD blend, above the
+   * night shade) glow with the garlands, from 20:00. Nothing is drawn while a picture is missing.
+   */
+  private syncChristmasMarket(date: Date): void {
+    const art = CHRISTMAS_MARKET_ART, show = christmasActive() && !!this.current;
+    if (!show) { this.marketImage?.destroy(); this.marketImage = null; this.marketLights?.destroy(); this.marketLights = null; return; }
+    const p = christmasMarketPoint();
+    if (!this.marketImage && this.optionalArt(art.texture, art.url)) {
+      const image = this.marketImage = this.add.image(p.x, p.y, art.texture);
+      // Sized by its world width whatever the prepared picture's pixels, like the jump-rope islet.
+      image.setOrigin(art.originX, art.originY).setScale(art.worldWidth / image.frame.realWidth).setDepth(p.y);
+      this.buildingsLayer.add(image); this.buildingsLayer.sort('depth');
+    }
+    if (!this.marketImage) return;
+    const glow = garlandLevel(localHour(date));
+    if (!this.marketLights && glow > 0 && this.optionalArt(art.night.texture, art.night.url)) {
+      const lights = this.marketLights = this.add.image(p.x, p.y, art.night.texture);
+      lights.setOrigin(art.originX, art.originY).setScale(art.worldWidth / lights.frame.realWidth).setDepth(2.85).setBlendMode(Phaser.BlendModes.ADD);
+    }
+    this.marketLights?.setAlpha(glow).setVisible(glow > .001);
   }
   /** Keep the previous complete scene during a batch, including when state changes again during the request. */
   private ensureArt(): boolean {
@@ -761,6 +955,9 @@ export class MeadowScene extends Phaser.Scene {
     const visible = new Set<string>();
     for (const d of this.current?.decorations ?? []) {
       const point = this.decorationPoint(d.location, d.catalogId); if (!point) continue;
+      // A Christmas decoration whose picture is missing (not painted yet) is simply not drawn; it stays owned and placed.
+      const rotation = d.location.kind === 'outside' ? d.location.rotation : 0;
+      if (isChristmasDecoration(d.catalogId) && !this.christmasDecorationReady(d.catalogId, rotation)) continue;
       visible.add(d.id);
       let image = this.decorationViews.get(d.id);
       if (!image) { image = this.add.image(0, 0, decorationTexture(d.catalogId)); (d.catalogId === 'dirt-path' ? this.floorDecorationsLayer : this.decorationsLayer).add(image); this.decorationViews.set(d.id, image); }
@@ -777,6 +974,7 @@ export class MeadowScene extends Phaser.Scene {
     const point = d && this.ghost?.location ? this.decorationPoint(this.ghost.location, d.catalogId) : null;
     if (!d || !point || !this.ghost?.location) { this.ghostView?.setVisible(false); return; }
     const ghostRotation = this.ghost.location.kind === 'outside' ? this.ghost.location.rotation : 0;
+    if (isChristmasDecoration(d.catalogId) && !this.christmasDecorationReady(d.catalogId, ghostRotation)) { this.ghostView?.setVisible(false); return; }
     if (!this.textures.exists(decorationTexture(d.catalogId)) || !this.textures.exists(decorationTexture(d.catalogId, ghostRotation))) { this.ghostView?.setVisible(false); return; }
     if (!this.ghostView) this.ghostView = this.add.image(0, 0, decorationTexture(d.catalogId)).setDepth(1.5).setAlpha(.65).setOrigin(.5, .87);
     const rotation = this.ghost.location.kind === 'outside' ? this.ghost.location.rotation : 0;
@@ -794,16 +992,19 @@ export class MeadowScene extends Phaser.Scene {
     if (stage) {
       if (!this.islandStageLayer) this.islandStageLayer = new IslandStageLayer(this);
       this.islandStageLayer.request(stage, () => { this.floatingIslandLayer?.destroy(); this.floatingIslandLayer = null; });
+      // The garland bulbs of the snowy painting glow at night (only where that painting is shipped).
+      const winterStage = christmasActive() ? WINTER_STAGE_ART_LIST.find(a => a.stage === stage) : undefined;
+      this.winterLights?.show(winterStage ? stage : null, (WINTER_LIGHTS as unknown as Record<string, [number, number][]>)[stage] ?? [], winterStage?.canvas, STAGE_PX_PER_UNIT);
       // The painted rim covers the plateau edges itself.
       this.ground.clearMask(); this.islandMask?.destroy(); this.islandMaskGraphics?.destroy();
       this.islandMask = null; this.islandMaskGraphics = null; this.islandMaskKey = '';
     } else {
-      this.islandStageLayer?.clear();
+      this.islandStageLayer?.clear(); this.winterLights?.show(null);
       if (!this.floatingIslandLayer) this.floatingIslandLayer = new FloatingIslandLayer(this);
       this.floatingIslandLayer.request(ids);
       this.maskIsland(ids);
     }
-    const grass = grassTile(), scale = grass.worldUnits / grass.size;
+    const grass = grassTile(stage), scale = grass.worldUnits / grass.size;
     for (const id of ids) {
       const parcel = PARCELS[id], x = VISUAL.grid.originX + parcel.x * VISUAL.grid.width, y = VISUAL.grid.originY + parcel.y * VISUAL.grid.depth;
       // Anchored on the world origin: neighbouring parcels continue the same pattern without a seam.
@@ -1061,9 +1262,13 @@ export class MeadowScene extends Phaser.Scene {
   /** Body pose: mirror, compression against the ground contact, height, and a rotation about the body centre that keeps that centre in place. */
   /** Who may run in a chase: never Benny, a legendary in its show, a Magician in his act, a rabbit being touched or talking. */
   private chaseRunners(visible: ReadonlySet<string>, speaking?: string): ChaseRunner[] {
+    return this.playfulRabbits(visible, speaking).map(r => ({...r, available: r.available && !this.snowballs.isFighting(r.id)}));
+  }
+  /** The rabbits free for a chase or a snowball fight (a picnic or snowman guest is not). */
+  private playfulRabbits(visible: ReadonlySet<string>, speaking?: string): ChaseRunner[] {
     const benny = this.current?.rabbits.find(r => r.species === BENNY_ID)?.id;
     return this.rabbitViews.flatMap(r => r.motion && !r.nest ? [{id: r.id, group: r.group, motion: r.motion,
-      available: r.id !== benny && !r.benny && visible.has(r.id) && !r.legendary?.clock.act && !r.magicien?.busy && this.cozyInteraction.active?.id !== r.id && speaking !== r.id && !this.picnicParty?.ids.includes(r.id)}] : []);
+      available: r.id !== benny && !r.benny && visible.has(r.id) && !r.legendary?.clock.act && !r.magicien?.busy && this.cozyInteraction.active?.id !== r.id && speaking !== r.id && !this.gathered(r.id)}] : []);
   }
   private poseBody(rabbit: VisualRabbit, pose: {lift: number; squashX: number; squashY: number; facing: 1 | -1; rotation: number; nuzzle?: number}): void {
     const scaleX = pose.facing * rabbit.native * pose.squashX, p = rabbit.pivot, c = Math.cos(pose.rotation), s = Math.sin(pose.rotation);
@@ -1286,6 +1491,7 @@ export class MeadowScene extends Phaser.Scene {
 
     const building=this.current?buildingAt(this.current,fineCell(ground)):null;
     if (!building && this.current?.jumpIsland && this.jumpIslandHit(world)) { this.select({kind: 'jumpIsland'}); return; }
+    if (!building && this.marketHit(world)) { this.select({kind: 'christmasMarket'}); return; }
     this.select(building ? {kind: 'building', id: building.id} : {kind: 'empty'});
   }
   /** The islet's picture, by its painted silhouette (a little margin on small zooms). */
@@ -1295,6 +1501,14 @@ export class MeadowScene extends Phaser.Scene {
     const local = image.getWorldTransformMatrix().applyInverse(world.x, world.y), art = JUMP_ISLAND_ART;
     const x = Math.floor(local.x + art.width * art.originX), y = Math.floor(local.y + art.height * art.originY);
     return x < 0 || y < 0 || x >= art.width || y >= art.height || !this.textures.exists(art.texture) ? true : this.textures.getPixelAlpha(x, y, art.texture) >= 16;
+  }
+  /** The Christmas market's picture, by its painted silhouette (only while it is drawn). */
+  private marketHit(world: Point): boolean {
+    const image = this.marketImage, f = christmasMarketFrame(), art = CHRISTMAS_MARKET_ART; if (!image) return false;
+    if (world.x < f.left || world.x > f.right || world.y < f.top || world.y > f.bottom) return false;
+    const local = image.getWorldTransformMatrix().applyInverse(world.x, world.y), w = image.frame.realWidth, h = image.frame.realHeight;
+    const x = Math.floor(local.x + w * art.originX), y = Math.floor(local.y + h * art.originY);
+    return x < 0 || y < 0 || x >= w || y >= h ? true : this.textures.getPixelAlpha(x, y, art.texture) >= 16;
   }
   /** Interpolate the canonical simulation clock; resynchronise on every snapshot, including laboratory time changes. */
   private simulationNow(): number {
@@ -1327,7 +1541,7 @@ export class MeadowScene extends Phaser.Scene {
       const active = !this.photo && !document.hidden && document.getElementById('loading-screen')?.hidden !== false;
       dadiObscured = document.getElementById('game-panel')?.hidden === false || !!document.querySelector('dialog[open]');
       // A picnic guest stays seated at the cloth: Dadi neither speaks about it nor makes it get up (audit, 4 November 2026).
-      const visible = this.rabbitViews.filter(r => r.id !== this.bennyAway && !this.picnicParty?.ids.includes(r.id) && dadiHeadVisible(this.dadiHead(r), dadiBounds!)).map(r => r.id);
+      const visible = this.rabbitViews.filter(r => r.id !== this.bennyAway && !this.gathered(r.id) && !this.snowballs.isFighting(r.id) && dadiHeadVisible(this.dadiHead(r), dadiBounds!)).map(r => r.id);
       dadi = this.dadi.step(dadiObscured ? 0 : dt, active, dadiObscured ? [] : visible);
       if(dadi.started?.id===this.cozyInteraction.active?.id)this.cozyInteraction.reset();
       if (dadi.started?.salto) {
@@ -1340,6 +1554,7 @@ export class MeadowScene extends Phaser.Scene {
     // Christmas: evening and night over the meadow and its sky, and the snow (it keeps falling in a photo).
     const winterNow = new Date(), christmas = christmasActive();
     this.winter?.update(dt, winterNow, christmas && !document.hidden, reducedMotion);
+    this.winterLights?.update(christmas ? garlandLevel(localHour(winterNow)) : 0, reducedMotion ? 0 : time);
     this.sky?.setNight(christmas ? this.winter?.nightNow(winterNow) ?? 0 : 0);
     const lifeActive = !this.photo && !document.hidden && document.getElementById('loading-screen')?.hidden !== false &&
       document.getElementById('game-panel')?.hidden !== false && !document.querySelector('dialog[open]') && !this.placement && !this.arrangement;
@@ -1350,10 +1565,17 @@ export class MeadowScene extends Phaser.Scene {
     this.cozyInteraction.step(dt,lifeActive,!!visitor&&visibleResidents.has(visitor.id)&&this.rabbitViews.some(r=>r.id===visitor.id&&r.motion===visitor.motion&&!r.nest)&&!!this.current?.decorations.some(d=>d.id===visitor.objectId&&d.location.kind==='outside'),reducedMotion);
     if(lifeActive&&!reducedMotion&&dt>=0&&dt<=1000){this.interactionIn-=dt;if(this.interactionIn<=0){this.interactionIn=90000;for(const d of this.current?.decorations??[])if(this.interactionDecoration(d.id))break;}}
     this.stepPicnic(dt);
-    this.life.step(dt, this.rabbitViews.flatMap(r => r.motion ? [{id: r.id, group: r.group, motion: r.motion, nest: r.nest, friendId:this.friends.get(r.id),occupied:this.cozyInteraction.active?.id===r.id||!!this.picnicParty?.ids.includes(r.id), visible: visibleResidents.has(r.id)}] : []),
-      lifeActive, reducedMotion, dadi.speech && !this.picnicParty?.ids.includes(dadi.speech.id) ? [dadi.speech.id] : []);
+    this.stepSnowman(dt);
+    this.syncChristmasMarket(winterNow);
+    if (this.time.now - this.snowmanCheckedAt >= 500) { this.snowmanCheckedAt = this.time.now; this.syncSnowman(); }
+    this.life.step(dt, this.rabbitViews.flatMap(r => r.motion ? [{id: r.id, group: r.group, motion: r.motion, nest: r.nest, friendId:this.friends.get(r.id),occupied:this.cozyInteraction.active?.id===r.id||this.gathered(r.id)||this.snowballs.isFighting(r.id), visible: visibleResidents.has(r.id)}] : []),
+      lifeActive, reducedMotion, dadi.speech && !this.gathered(dadi.speech.id) ? [dadi.speech.id] : []);
     this.chases.step(dt, this.chaseRunners(visibleResidents, dadi.speech?.id), lifeActive, reducedMotion, this.chaseTest);
     this.chaseTest = false;
+    // Christmas: the snowball fights, after the chases (a chaser never throws), while the event is on.
+    this.snowballs.step(dt, this.snowballThrowers(visibleResidents, dadi.speech?.id), lifeActive, reducedMotion, christmas, this.snowballTest && christmas);
+    this.snowballTest = false;
+    this.drawSnowballs();
     this.lifeViews?.begin(this.rabbitViews.map(r => r.id));
     let depthChanged = false;
     for (const rabbit of this.rabbitViews) {
@@ -1392,7 +1614,7 @@ export class MeadowScene extends Phaser.Scene {
         lift += show.lift; rotation += show.lean;
       }
       rabbit.magicien?.update(dt,lifeActive && visibleResidents.has(rabbit.id) && magicienFree(rabbit.motion?.mode,
-        !!this.picnicParty?.ids.includes(rabbit.id) || this.cozyInteraction.active?.id === rabbit.id || this.chases.isChasing(rabbit.id)),reducedMotion);
+        this.gathered(rabbit.id) || this.cozyInteraction.active?.id === rabbit.id || this.chases.isChasing(rabbit.id) || this.snowballs.isFighting(rabbit.id)),reducedMotion);
       if(rabbit.magicien) lift += rabbit.magicien.lift;
       rabbit.lift = lift;
       if (rabbit.object.depth !== previousDepth) depthChanged = true;

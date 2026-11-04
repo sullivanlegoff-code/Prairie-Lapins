@@ -11,6 +11,26 @@ export const WINTER_ART = {
   flakes: [0, 1, 2, 3].map(i => ({texture: `noel-flocon-${i}`, url: `${base}flocon-${i}.png`, width: 32, height: 32})) as readonly WinterPicture[],
 } as const;
 
+/**
+ * The snowman (owner, 4 November 2026), built in three steps in an enclosure, then standing there until the end of the cycle:
+ * three pictures of the same size and framing (the snowman's base centred at the bottom, `originY` from the top), drawn
+ * `worldWidth` wide. Loaded on demand; a missing picture only means no snowman is drawn.
+ */
+export const SNOWMAN_ART = {
+  steps: [1, 2, 3].map(i => ({texture: `noel-bonhomme-${i}`, url: `${base}bonhomme-${i}.png`})) as readonly {texture: string; url: string}[],
+  worldWidth: 58, originY: .95,
+} as const;
+
+/** The snowball fights: a tiny snowball (drawn `ballWorld` wide) and the puff of a hit (drawn `puffWorld` wide, fading out). */
+export const SNOWBALL_ART = {
+  ball: {texture: 'noel-boule-neige', url: `${base}boule-neige.png`},
+  puff: {texture: 'noel-boule-impact', url: `${base}boule-impact.png`},
+  ballWorld: 9, puffWorld: 26, puffMs: 300,
+} as const;
+
+/** The sucre d'orge icon of the Christmas market and its balance (an <img>, hidden while the picture is missing). */
+export const CANDY_ICON_URL = `${base}sucre-orge.png`;
+
 /** « Les cadeaux du ciel »: the painted night backdrop, the sleigh, the rabbit's basket and the four presents. */
 export const SKY_GIFTS_ART = {
   background: `${base}minijeu/fond.webp`,
