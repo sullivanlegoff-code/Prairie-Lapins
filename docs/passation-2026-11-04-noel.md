@@ -67,7 +67,7 @@
 
 1. **Peintures (Codex, en cours la nuit du 4 novembre).**
    - Les dossiers sont hors Git : `output/imagegen/noel-production/parts/` (morceaux d'île des étapes 5 à 9, `run.sh`) et `.../items/` (`run2.sh` : bâtiments et habitats enneigés, marché, 8 décorations, bonhomme, planche d'icônes, hotte, traîneau, décor du mini-jeu).
-   - Les deux scripts sautent ce qui est déjà peint, donc on peut les relancer : `bash parts/run.sh` puis `bash items/run2.sh`.
+   - Les deux files tournent **en parallèle** (demande du propriétaire) : `bash parts/run-par.sh` et `bash items/run-par.sh`, qui sautent ce qui est déjà peint. Ces deux scripts utilisent `paint-lib.sh` : chaque Codex écrit dans son propre dossier, et une image que Codex n'a pas réussi à enregistrer est récupérée dans le dossier de **sa propre session** (`~/.codex/generated_images/<id de session du journal>`), donc jamais celle de l'autre file. Elles s'arrêtent d'elles-mêmes si la limite d'usage tombe.
    - Si Codex range une image dans un **dossier** nommé `*-neige.png`, sors-en le fichier.
    - Si la limite d'usage tombe, les journaux `log-*.txt` contiennent « usage limit ».
 2. **Intégration, une fois peint :**
