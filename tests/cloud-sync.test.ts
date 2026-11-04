@@ -105,10 +105,10 @@ describe('synchronisation automatique, sans réseau', () => {
   });
   it('refuse une version distante future et ne fait aucune écriture', async () => {
     const f = setup(); f.gateway.remote = remote();
-    Object.assign(f.gateway.remote.state, {version: 26}); await f.sync.connect('player-a');
+    Object.assign(f.gateway.remote.state, {version: 27}); await f.sync.connect('player-a');
     expect(f.sync.getView().status).toBe('outdated'); await f.sync.choose('local', true); await f.sync.retry();
     expect(f.gateway.calls).toHaveLength(0); expect(f.data.has(BACKUP_KEY)).toBe(false);
-    expect(() => remoteSave({state: {version: 26}}, 'player-a')).toThrow(/version plus récente/);
+    expect(() => remoteSave({state: {version: 27}}, 'player-a')).toThrow(/version plus récente/);
   });
   it('ignore la réponse tardive après déconnexion et changement de compte', async () => {
     const f = setup(); await link(f); f.rename('En cours'); let resolve!: (r: CommitResult) => void;

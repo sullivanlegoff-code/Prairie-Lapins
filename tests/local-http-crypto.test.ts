@@ -38,6 +38,6 @@ it('allows normal controller creation, restart, export and import without native
     const prepared=controller.prepareImport(exported.json,exported.json.length);
     if(!prepared.ok)throw Error('Expected a valid import');
     expect(controller.confirmImport(prepared.token,true)).toEqual({ok:true});
-    expect(controller.getSnapshot().state?.version).toBe(25);
+    expect(controller.getSnapshot().state?.version).toBe(26);
   } finally {controller.dispose();}
 });

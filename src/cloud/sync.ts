@@ -41,9 +41,14 @@ export function fingerprint(state: GameState): string {
   const births = s.buildings.flatMap(b => [
     ...(b.breeding ? [b.breeding.birth] : []), ...(b.nursery?.babies.map(x => x.birth) ?? []),
   ]).sort((a, b) => a.id.localeCompare(b.id));
-  const {lastSimulatedAt: _time, purchaseUnlocks: _unlocks, levelAccessTransition: _rights, missions, initiation, buildings, cozy, ...rest} = s;
+  const {lastSimulatedAt: _time, purchaseUnlocks: _unlocks, levelAccessTransition: _rights, missions, initiation, buildings, cozy, christmas, ...rest} = s;
+  // Christmas (v26): the sucres d'orge, today's snowman and the mini-game are actions of their own. The challenges drawn at a new
+  // cycle are passive, like the daily missions; their claims change the sucres d'orge. Absent until something real happened, so
+  // a game that never played the event keeps the same fingerprint as before it.
+  const festive = christmas && (christmas.candies || christmas.snowman || christmas.skyGifts)
+    ? {christmas: {candies: christmas.candies, snowman: christmas.snowman ?? null, skyGifts: christmas.skyGifts ?? null}} : {};
   // Shared time is passive, like income. The full bonds and album still travel with the next action save.
-  return JSON.stringify({...rest, births, cozy: {souvenirs: cozy?.souvenirs ?? [], album: cozy?.album.filter(m => m.kind !== 'friendship') ?? []},
+  return JSON.stringify({...rest, ...festive, births, cozy: {souvenirs: cozy?.souvenirs ?? [], album: cozy?.album.filter(m => m.kind !== 'friendship') ?? []},
     // A caress and the 3-day streak are actions of their own: they must reach the other devices (audit, 4 November 2026).
     missions: {events: missions.events, claimed: missions.claimed, nightOrderStarted: missions.nightOrderStarted, petted: missions.daily.petted ?? [], streak: missions.streak ?? null},
     initiation: initiation ? {used: initiation.used, birthId: initiation.birthId} : null,

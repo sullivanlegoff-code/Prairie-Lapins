@@ -5,6 +5,7 @@ import {DAILY_MISSIONS, DAILY_MISSION_IDS, LEGACY_DAILY_MISSION_IDS, MAIN_MISSIO
 import {RECIPE_PRICES} from '../config/recipes';
 import type {GameState, MissionState} from '../state/types';
 import {hasEvolvedArt} from '../config/evolvedArt';
+import {rollChristmasCycle} from './christmas';
 
 type ObservableState = Pick<GameState, 'rabbits' | 'discovered'> & Partial<Pick<GameState, 'progression' | 'decorations' | 'rewardedDecorationModels' | 'recipeBook' | 'jumpRope'>> & {acquiredParcels?: GameState['acquiredParcels']; expanded?: boolean} & Pick<GameState, 'startCourse'> & {missions?: Pick<MissionState, 'events' | 'nightOrderStarted'>} & {buildings: (Pick<GameState['buildings'][number], 'kind'> & Partial<Pick<GameState['buildings'][number], 'habitat' | 'farmLevel' | 'agencyLevel' | 'nursery'>>)[]};
 export function mainProgress(state: ObservableState, id: MainMissionId): {value: number; target: number} {
@@ -50,6 +51,8 @@ export function updateMissions(state: GameState, now: number): void {
     d.cycleIndex = cycle; d.progress = emptyDailyProgress(); d.claimed = []; d.bonusClaimed = false; delete d.nextAt; delete d.petted;
     // The three missions are drawn now, among what the player can do at the start of the cycle, and stay all cycle long.
     d.picked = pickDailyMissions(state, cycle);
+    // The Christmas challenges follow the same cycle, drawn at the same moment (while the event is on).
+    rollChristmasCycle(state);
   }
   for (const id of eligibleMainMissionIds(state)) {
     const p = mainProgress(state, id);

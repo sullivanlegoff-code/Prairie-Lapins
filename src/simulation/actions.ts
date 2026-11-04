@@ -32,7 +32,9 @@ import {recipePrice, recipePurchaseReason} from './recipes';
 import {BENNY, BENNY_POWER_RECHARGE, bennyAllows, bennyPowerReason, bennyStandIn, waitingNurseryBabies} from './benny';
 import {advance, validTime, drawIncomeRoll} from './time';
 import {complementCost, quoteAcceleration} from './hearts';
-import {DECORATIONS, ownedDecorationResalePrice} from '../config/decorations';
+import {DECORATIONS, isChristmasDecoration, ownedDecorationResalePrice} from '../config/decorations';
+import {CHRISTMAS_BONUS_CANDIES, CHRISTMAS_CHALLENGES, SKY_GIFTS, type ChristmasEventName} from '../config/christmasEvent';
+import {candiesOf, christmasBonusReady, christmasBonusClaimed, christmasChallengesOf, christmasClaimable, christmasClaimed, christmasDecorationReason, christmasEventActive, creditCandies, recordChristmasAction, skyGiftsRabbitReason, skyGiftsReward, snowmanQuote, startChristmasCycle} from './christmas';
 import {catalogDecorationPlacementReason, decorationPlacementReason, decorationsInCell, purchaseDecorationReason} from './decorations';
 
 /** The only purchases a heart complement may cover. Recipes are never among them. */
@@ -101,6 +103,8 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
   let cuisineReward: import('../state/types').CuisineReward | undefined;
   let jumpRopeResult: import('./jumpRope').JumpRopeReward | undefined;
   let missionAmount: number | undefined;
+  /** The Christmas challenges' own events of this action (the snowman, a rewarded mini-game), when it has some. */
+  let christmasCounts: [ChristmasEventName, number][] | undefined;
   const gainXp = (amount: number) => {
     const result = applyProgressionGain(s, amount);
     requireRule(result.ok, result.ok ? 'INVALID_CHOICE' : result.reason);
@@ -112,6 +116,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
     return SPECIES[species].rarity === 'common' ? PROGRESSION.xp.discovery.common : SPECIES[species].rarity === 'rare' ? PROGRESSION.xp.discovery.rare : 0;
   };
   const decorationXp = (catalogId: import('../config/decorations').DecorationId) => {
+    if (isChristmasDecoration(catalogId)) return; // The Christmas market's decorations give no XP.
     s.rewardedDecorationModels ??= [...new Set(state.decorations.filter(d => d.placementXpProcessed !== false).map(d => d.catalogId))];
     if (s.rewardedDecorationModels.includes(catalogId)) return;
     s.rewardedDecorationModels.push(catalogId); gainXp(firstDecorationPlacementXp(catalogId));
@@ -171,7 +176,8 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       case 'sellDecoration': {
         const index = s.decorations.findIndex(d => d.id === command.id);
         requireRule(index >= 0, 'NOT_FOUND');
-        requireRule(s.decorations[index].paidHearts === undefined, 'INVALID_CHOICE');
+        // Heart-paid and Christmas exemplars are never resold (a Christmas one could not be bought again after the event).
+        requireRule(s.decorations[index].paidHearts === undefined && s.decorations[index].paidCandies === undefined && !isChristmasDecoration(s.decorations[index].catalogId), 'INVALID_CHOICE');
         const amount = ownedDecorationResalePrice(s.decorations[index]);
         credit('pattes', amount);
         s.decorations.splice(index, 1); value = amount; break;
@@ -276,6 +282,57 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         // The athlete's score counts for its « corde » evolution challenges (Roukette, Dadi, Dinono, the legendaries).
         recordJumpRopeScore(s, team.athlete, command.score);
         jumpRopeResult = paid; value = paid.pattes; break;
+      }
+      case 'buildSnowman': {
+        // Free, one a day in all, with a rabbit present; no affection, no XP. It stands there until the end of the cycle.
+        const b = building(command.enclosureId, 'enclosure');
+        const quote = snowmanQuote(s, b.id, time); requireRule(!quote.reason, quote.reason ?? 'INVALID_CHOICE');
+        const day = startChristmasCycle(s); day.snowman = {cycle: s.missions.daily.cycleIndex, enclosureId: b.id};
+        christmasCounts = [['buildSnowman', 1]]; value = b.id; break;
+      }
+      case 'rewardSkyGifts': {
+        requireRule(christmasEventActive(), 'EVENT_OVER');
+        requireRule(Number.isSafeInteger(command.caught) && command.caught >= 0 && command.caught <= SKY_GIFTS.maxCaught, 'INVALID_CHOICE');
+        const away = skyGiftsRabbitReason(s, command.rabbitId); requireRule(!away, away ?? 'INVALID_CHOICE');
+        // Pattes only, within the daily limit: no XP. A game beyond the limit pays nothing and counts for no challenge.
+        const paid = skyGiftsReward(s, command.caught, time), cycle = s.missions.daily.cycleIndex, day = startChristmasCycle(s);
+        const previous = day.skyGifts, rewarded = (previous?.cycle === cycle ? previous.rewarded : 0) + (paid.rewarded ? 1 : 0);
+        credit('pattes', paid.pattes);
+        day.skyGifts = {cycle, rewarded, best: Math.max(previous?.best ?? 0, command.caught)};
+        if (paid.rewarded) christmasCounts = [['rewardSkyGifts', 1], ['catchGifts', command.caught]];
+        value = paid.pattes; break;
+      }
+      case 'claimChristmasChallenge': {
+        requireRule(christmasEventActive(), 'EVENT_OVER');
+        requireRule(Object.hasOwn(CHRISTMAS_CHALLENGES, command.id), 'INVALID_CHOICE');
+        requireRule(command.cycleStart === dailyCycleStart(s), 'CYCLE_EXPIRED');
+        requireRule(!christmasClaimed(s).includes(command.id), 'ALREADY_CLAIMED');
+        requireRule(christmasChallengesOf(s).includes(command.id), 'INVALID_CHOICE');
+        requireRule(christmasClaimable(s, command.id), 'NOT_READY');
+        const candies = CHRISTMAS_CHALLENGES[command.id].candies;
+        requireRule(creditCandies(s, candies), 'RESOURCE_LIMIT');
+        const day = startChristmasCycle(s); day.claimed = [...(day.claimed ?? []), command.id]; value = candies; break;
+      }
+      case 'claimChristmasBonus': {
+        requireRule(christmasEventActive(), 'EVENT_OVER');
+        requireRule(command.cycleStart === dailyCycleStart(s), 'CYCLE_EXPIRED');
+        requireRule(!christmasBonusClaimed(s), 'ALREADY_CLAIMED');
+        requireRule(christmasBonusReady(s), 'NOT_READY');
+        requireRule(creditCandies(s, CHRISTMAS_BONUS_CANDIES), 'RESOURCE_LIMIT');
+        startChristmasCycle(s).bonusClaimed = true; value = CHRISTMAS_BONUS_CANDIES; break;
+      }
+      case 'buyChristmasDecoration': {
+        const reason = christmasDecorationReason(s, command.catalogId); requireRule(!reason, reason ?? 'INVALID_CHOICE');
+        if (command.location) {
+          requireRule(command.location.kind === 'outside', 'INVALID_CHOICE');
+          const placement = catalogDecorationPlacementReason(s, command.catalogId, command.location); requireRule(!placement, placement ?? 'INVALID_CHOICE');
+        }
+        const price = DECORATIONS[command.catalogId].candyPrice!;
+        requireRule(candiesOf(s) >= price, 'NOT_ENOUGH_CANDIES');
+        const day = startChristmasCycle(s); day.candies -= price; value = id('decoration');
+        // No placement XP to give: the exemplar is processed from the start.
+        s.decorations.push({id: value, catalogId: command.catalogId, paidCandies: price, location: command.location ? structuredClone(command.location) : {kind: 'inventory'}, placementXpProcessed: true});
+        break;
       }
       case 'buyJumpIsland': {
         const reason = jumpIslandReason(s); requireRule(!reason || reason === 'NOT_ENOUGH_PATTES', reason ?? 'INVALID_CHOICE');
@@ -615,8 +672,16 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
     requireRule(recordMissionAction(s, 'gainAffection', affectionGained), 'RESOURCE_LIMIT');
     // One success each: a meal, a breeding, a welcome, a placed decoration, a recipe, a care, a trip, a picnic, a jump-rope game,
     // a drawing changed at the forest; a caress counts once per rabbit and cycle (`missionAmount`).
-    const once = ['feed', 'breed', 'welcome', 'rewardCuisine', 'startCare', 'startTrip', 'picnic', 'rewardJumpRope', 'toggleClassicLook'].includes(command.type) || command.type === 'placeDecoration' || (command.type === 'buyDecoration' && !!command.location);
-    requireRule(recordMissionAction(s, command.type === 'buyDecoration' && command.location ? 'placeDecoration' : command.type, missionAmount ?? (once ? 1 : typeof value === 'number' ? value : 0), command.type !== 'placeDecoration' || command.location.kind === 'outside'), 'RESOURCE_LIMIT');
+    const boughtPlaced = (command.type === 'buyDecoration' || command.type === 'buyChristmasDecoration') && !!command.location;
+    const once = ['feed', 'breed', 'welcome', 'rewardCuisine', 'startCare', 'startTrip', 'picnic', 'rewardJumpRope', 'toggleClassicLook'].includes(command.type) || command.type === 'placeDecoration' || boughtPlaced;
+    // Rewards are not events: the Christmas claims, the snowman and the mini-game never count for a daily mission.
+    const christmasOnly = ['claimChristmasChallenge', 'claimChristmasBonus', 'rewardSkyGifts', 'buildSnowman'].includes(command.type);
+    const amount = christmasOnly ? 0 : missionAmount ?? (once ? 1 : typeof value === 'number' ? value : 0);
+    requireRule(recordMissionAction(s, boughtPlaced ? 'placeDecoration' : command.type, amount, command.type !== 'placeDecoration' || command.location.kind === 'outside'), 'RESOURCE_LIMIT');
+    // The Christmas challenges count the same events and amounts as the daily missions, and the event's own ones.
+    const christmasEvents: readonly string[] = ['feed', 'breed', 'collectIncome', 'collectOrder', 'petRabbit'];
+    const counts: [ChristmasEventName, number][] = christmasCounts ?? (christmasEvents.includes(command.type) ? [[command.type as ChristmasEventName, amount]] : []);
+    for (const [event, count] of counts) requireRule(recordChristmasAction(s, event, count), 'RESOURCE_LIMIT');
     // In particular, a welcome frees the nursery at this action's timestamp.
     return {ok: true, state: advance(s, time), ...(value === undefined ? {} : {value}), ...(progressionGain ? {progressionGain} : {}), ...(cuisineReward ? {cuisineReward} : {}), ...(jumpRopeResult ? {jumpRopeReward: jumpRopeResult} : {})};
   } catch (error) {

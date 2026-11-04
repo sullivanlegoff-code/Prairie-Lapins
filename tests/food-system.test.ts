@@ -84,14 +84,14 @@ describe('the second Statue de l’Affection', () => {
   it('migrates a v22 save with one statue to v23 without any change', () => {
     const s = createGame(0); s.rabbits[0].affection = 20; s.grass = 1234; s.hearts = 7;
     s.buildings.push(emptyBuilding(`building-${s.nextId++}`, 'statue', free(s).x, free(s).y));
-    const raw = JSON.parse(encodeGame(s)); expect(raw.version).toBe(25); raw.version = 22;
+    const raw = JSON.parse(encodeGame(s)); expect(raw.version).toBe(26); raw.version = 22;
     const migrated = decodeGame(JSON.stringify(raw)); expect(migrated).toEqual(decodeGame(encodeGame(s)));
     if (!migrated.ok) throw Error(migrated.reason);
-    expect(migrated.state.version).toBe(25); expect(migrated.state.rabbits[0].affection).toBe(20);
+    expect(migrated.state.version).toBe(26); expect(migrated.state.rabbits[0].affection).toBe(20);
     expect(migrated.state.buildings.filter(b => b.kind === 'statue')).toHaveLength(1); expect([migrated.state.grass, migrated.state.hearts]).toEqual([1234, 7]);
     expect(affectionCap(migrated.state)).toBe(30);
     // A v22 save could never hold affection above 20 or two statues, but nothing in v23 depends on it.
-    raw.version = 26; expect(decodeGame(JSON.stringify(raw))).toEqual({ok: false, reason: 'UNSUPPORTED_VERSION'});
+    raw.version = 27; expect(decodeGame(JSON.stringify(raw))).toEqual({ok: false, reason: 'UNSUPPORTED_VERSION'});
   });
 });
 
@@ -118,7 +118,7 @@ describe('saves before the ten crops', () => {
     for (const [recipe, crop, grass, duration] of [['small', 'foin', 20, 5 * MINUTE], ['medium', 'trefle', 60, 30 * MINUTE], ['large', 'fenouil', 180, 4 * HOUR], ['night', 'banane', 360, 10 * HOUR]] as const) {
       legacy.buildings.at(-1).order = {recipe, startedAt: 0, endsAt: duration};
       const decoded = decodeGame(JSON.stringify(legacy)); if (!decoded.ok) throw Error(decoded.reason);
-      expect(decoded.state.version).toBe(25);
+      expect(decoded.state.version).toBe(26);
       expect(decoded.state.buildings.at(-1)!.order).toEqual({recipe: crop, startedAt: 0, endsAt: duration, grass, duration});
     }
   });

@@ -1,5 +1,5 @@
 import {stateLevelAccess} from './levelRights';
-import {DECORATIONS, FINE_GRID, MAX_DECORATIONS, type DecorationId} from '../config/decorations';
+import {DECORATIONS, FINE_GRID, MAX_DECORATIONS, isChristmasDecoration, type DecorationId} from '../config/decorations';
 import type {DecorationLocation, GameState, Refusal} from '../state/types';
 import {ISLAND, type IslandGeometry} from '../config/islandGeometry';
 
@@ -10,7 +10,8 @@ export function decorationsInCell(s: Pick<GameState, 'decorations'>, x: number, 
   return decorationsInFootprint(s, {x: x * FINE_GRID, y: y * FINE_GRID, width: FINE_GRID, height: FINE_GRID});
 }
 export function purchaseDecorationReason(s: GameState, catalogId: DecorationId): Refusal | null {
-  if (!Object.hasOwn(DECORATIONS, catalogId)) return 'INVALID_CHOICE';
+  // The Christmas decorations are sold only at the market, for sucres d'orge (`buyChristmasDecoration`).
+  if (!Object.hasOwn(DECORATIONS, catalogId) || isChristmasDecoration(catalogId)) return 'INVALID_CHOICE';
   if (stateLevelAccess(s,{family:'decoration',id:catalogId}).locked) return 'LEVEL_REQUIRED';
   if (s.decorations.length >= MAX_DECORATIONS || !Number.isSafeInteger(s.nextId + 1)) return 'DECORATION_LIMIT';
   const d = DECORATIONS[catalogId];

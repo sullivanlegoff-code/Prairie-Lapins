@@ -6,9 +6,10 @@ import type {MainMissionId, DailyMissionId, MainEvent} from '../config/missions'
 import type {BuildingKind, CareKind, Destination, OrderId, SpeciesId} from '../config/balance';
 import type {DecorationId} from '../config/decorations';
 import type {EvolutionChallenge} from '../config/evolutionChallenges';
+import type {ChristmasChallengeId} from '../config/christmasEvent';
 
 export type DecorationLocation = {kind: 'inventory'} | {kind: 'outside'; x: number; y: number; rotation: 0 | 1};
-export interface OwnedDecoration {paidHearts?: number; paidPrice?: number; id: string; catalogId: DecorationId; location: DecorationLocation; /** Absent on historical exemplars: already processed. */ placementXpProcessed?: boolean}
+export interface OwnedDecoration {paidHearts?: number; paidPrice?: number; /** v26: sucres d'orge paid at the Christmas market (never resold). */ paidCandies?: number; id: string; catalogId: DecorationId; location: DecorationLocation; /** Absent on historical exemplars: already processed. */ placementXpProcessed?: boolean}
 
 export interface Birth {
   id: string;
@@ -93,7 +94,9 @@ export interface GameState {
   startCourse?: 'paille-solo';
   purchaseUnlocks?: PurchaseUnlockId[];
   initiation?: Initiation;
-  version: 25;
+  version: 26;
+  /** The Christmas event (v26, optional; absent until its first use): see `ChristmasState`. */
+  christmas?: ChristmasState;
   /** Benny, the Mythic (v22): when her power is usable again, and whether she is flying in the sky. Absent until first used. */
   benny?: {powerReadyAt: number; inSky: boolean};
   rewardedDecorationModels?: DecorationId[]; decorations: OwnedDecoration[]; missions: MissionState; lastSimulatedAt: number; nextId: number;
@@ -126,6 +129,18 @@ export interface GameState {
   /** The jump-rope islet, bought (optional, absent = not bought): it floats left of the start island, off the land grid. */
   jumpIsland?: true;
 }
+/**
+ * The Christmas event (v26). `candies`: the sucres d'orge balance, kept after the event. `cycle`: the daily cycle the challenges
+ * below belong to (`picked` drawn at its start, `progress`, `claimed`, `bonusClaimed`); another cycle shows none of them.
+ * `snowman`: the one snowman of `cycle`, standing in `enclosureId` until the end of that cycle. `skyGifts`: the rewarded games of
+ * « Les cadeaux du ciel » played in `cycle` and the player's record (`best`, gifts caught in one game).
+ */
+export interface ChristmasState {
+  candies: number; cycle?: number; picked?: ChristmasChallengeId[]; progress?: Partial<Record<ChristmasChallengeId, number>>;
+  claimed?: ChristmasChallengeId[]; bonusClaimed?: true;
+  snowman?: {cycle: number; enclosureId: string};
+  skyGifts?: {cycle: number; rewarded: number; best: number};
+}
 /** Two rabbits turn the rope, the athlete jumps. */
 export interface JumpRopeTeam {carriers: [string, string]; athlete: string}
 export interface Trip {grass?: number; rabbitId: string; destination: Destination; startedAt: number; endsAt: number; hearts: number}
@@ -140,7 +155,8 @@ export type Refusal = 'LEVEL_REQUIRED' | 'NO_BREEDING_RESULT' | 'PURCHASE_LOCKED
   'UPGRADE_BLOCKED_BUILDING' | 'UPGRADE_BLOCKED_DECORATION' | 'UPGRADE_BLOCKED_LAND' | 'INVALID_NAME' | 'MARKET_LIMIT' | 'STATUE_REQUIRED' | 'SECOND_STATUE_REQUIRED' | 'TRAVELING' |
   'BENNY_RECHARGING' | 'NO_WAITING_BABY' | 'BENNY_KEPT' |
   'AT_SALON' | 'GIFT_TODAY' | 'AFFECTION_WALL' | 'PICNIC_TODAY' | 'EMPTY_ENCLOSURE' | 'NO_GIFT_POSSIBLE' |
-  'NO_EVOLVED_ART' | 'EVOLUTION_AFFECTION' | 'EVOLUTION_CHALLENGES' | 'EVOLUTION_REQUIRED';
+  'NO_EVOLVED_ART' | 'EVOLUTION_AFFECTION' | 'EVOLUTION_CHALLENGES' | 'EVOLUTION_REQUIRED' |
+  'EVENT_OVER' | 'SNOWMAN_TODAY' | 'NOT_ENOUGH_CANDIES';
 export interface CuisineReward {pattes: number; grass: number; /** True for one of the cycle's full-reward slots, false for a tip. */ fullReward: boolean; affectionGranted: boolean; affectionAtCap: boolean; affectionStatueRequired: boolean; /** The rabbit stops at 30 until it evolves (owner, 4 November 2026). */ affectionEvolutionRequired?: boolean; heartGranted: boolean; /** The rabbit the affection reward was drawn for. */ affectionRabbitId: string}
 export type ActionResult = {ok: true; state: GameState; value?: string | number; progressionGain?: ProgressionGain; cuisineReward?: CuisineReward; jumpRopeReward?: import('../simulation/jumpRope').JumpRopeReward} |
   {ok: false; state: GameState; reason: Refusal};
@@ -204,6 +220,15 @@ export type Command = BaseCommand
   | {type: 'rewardJumpRope'; team: JumpRopeTeam; score: number}
   /** The jump-rope islet, for JUMP_ROPE.price pattes from JUMP_ROPE.unlockLevel, once. */
   | {type: 'buyJumpIsland'}
+  /** Christmas: today's snowman in this enclosure (free, one a day in all, a rabbit present, from level 2). */
+  | {type: 'buildSnowman'; enclosureId: string}
+  /** Christmas: a finished game of « Les cadeaux du ciel », the basket carried by this rabbit; pays within SKY_GIFTS' daily limit. */
+  | {type: 'rewardSkyGifts'; rabbitId: string; caught: number}
+  /** Christmas: the sucres d'orge of a claimed challenge, or of the cycle bonus, in the cycle starting at `cycleStart`. */
+  | {type: 'claimChristmasChallenge'; id: ChristmasChallengeId; cycleStart: number}
+  | {type: 'claimChristmasBonus'; cycleStart: number}
+  /** Christmas market: a Christmas decoration for its sucres d'orge, placed now or kept in the inventory. */
+  | {type: 'buyChristmasDecoration'; catalogId: DecorationId; location?: Extract<DecorationLocation, {kind: 'outside'}>}
   | {type: 'welcomeAgency'} | {type: 'startTrip'; rabbitId: string} | {type: 'claimTrip'; rabbitId: string} | {type: 'upgradeFarm'; id: string; /** Level reached; absent = 2 (older callers). A farm not one level below is a stale action. */ toLevel?: 2 | 3} | {type: 'upgradeAgency'; id: string; fromLevel: 1 | 2 | 3}
   /** `birthId` names the nursery baby; required for growth, ignored otherwise. */
   | {type: 'initiationAid'; id: string; stage: TimedStage; jobKey: string; birthId?: string}

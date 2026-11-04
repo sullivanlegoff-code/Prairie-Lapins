@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {DECORATIONS, DECORATION_IDS, RETIRED_DECORATION_IDS, decorationResalePrice} from '../src/config/decorations';
+import {CHRISTMAS_DECORATION_IDS, DECORATIONS, DECORATION_IDS, RETIRED_DECORATION_IDS, decorationResalePrice} from '../src/config/decorations';
 import {requiredDecorationLevel, cumulativeLevelXp, validateProgressionConfig} from '../src/simulation/progression';
 import {decorationLayerDepth, decorationScale, decorationOrigin} from '../src/display/decorationArt';
 import {createCentreStartGame} from '../src/state/initial';
@@ -22,7 +22,7 @@ const expected = [
 describe('approved painted decorations', () => {
  it('contains exactly the twenty-two painted decorations', () => {
   expect(DECORATION_IDS).toEqual(expected.map(row => row[0]));
-  expect(Object.keys(DECORATIONS)).toEqual(expected.map(row => row[0]));
+  expect(Object.keys(DECORATIONS)).toEqual([...expected.map(row => row[0]), ...CHRISTMAS_DECORATION_IDS]);
  });
  it('round-trips every current model in a v21 inventory without replacing existing objects', () => {
   const s=createCentreStartGame(0);s.nextId=200;
@@ -55,7 +55,7 @@ describe('approved painted decorations', () => {
   const expectedState={...baseline.state,decorations:raw.decorations.slice(-2)};
   const decoded=decodeGame(JSON.stringify(raw));
   expect(decoded).toEqual({ok:true,state:expectedState});
-  expect(expectedState.version).toBe(25);
+  expect(expectedState.version).toBe(26);
   if(!decoded.ok)throw Error(decoded.reason);
   expect(decodeGame(encodeGame(decoded.state))).toEqual(decoded);
   const data=new Map([[SAVE_KEY,JSON.stringify(raw)]]);

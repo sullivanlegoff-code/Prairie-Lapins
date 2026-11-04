@@ -3,6 +3,10 @@ import type Phaser from 'phaser';
 export const SKY_COLOR = '#91c9e8';
 /** The sky's vertical gradient, top to horizon. */
 export const SKY_GRADIENT = [[0, SKY_COLOR], [.48, '#b8ddeb'], [.82, '#e6e9e4'], [1, '#f9e8d7']] as const;
+/** The Christmas night sky (concept C1, « nuit douce »): deep blue on top, lighter blue at the horizon. */
+export const NIGHT_SKY_GRADIENT = [[0, '#14214a'], [.45, '#233a74'], [.82, '#3d5590'], [1, '#5b6aa3']] as const;
+/** Tint of the clouds at night. */
+export const NIGHT_CLOUD_TINT = 0x6d7fb8;
 // RGBA allocation: 905,216 bytes, independent of viewport size / device pixel ratio.
 export const SKY_TEXTURES = {width: 320, height: 176, variants: 4, skyWidth: 4, skyHeight: 256} as const;
 export interface SkyCloud {
@@ -56,6 +60,10 @@ export function paintCloud(ctx: CanvasRenderingContext2D, variant: number): void
 export class SkyLayer {
   private readonly keys: string[] = [];
   private readonly background: Phaser.GameObjects.Image;
+  /** Created the first evening of the Christmas event only. */
+  private nightBackground: Phaser.GameObjects.Image | null = null;
+  private makeNight: (() => Phaser.GameObjects.Image) | null = null;
+  private night = 0;
   private readonly clouds: {layout: SkyCloud; image: Phaser.GameObjects.Image}[];
   private readonly motion = typeof window !== 'undefined' ? window.matchMedia?.('(prefers-reduced-motion: reduce)') : undefined;
   private elapsed = 0;
@@ -74,6 +82,14 @@ export class SkyLayer {
       ctx.fillStyle = gradient; ctx.fillRect(0, 0, SKY_TEXTURES.skyWidth, SKY_TEXTURES.skyHeight);
     });
     this.background = scene.add.image(0, 0, sky).setScrollFactor(0).setDepth(-100);
+    this.makeNight = () => {
+      const nightSky = make('meadow-sky-night', SKY_TEXTURES.skyWidth, SKY_TEXTURES.skyHeight, ctx => {
+        const gradient = ctx.createLinearGradient(0, 0, 0, SKY_TEXTURES.skyHeight);
+        for (const [at, color] of NIGHT_SKY_GRADIENT) gradient.addColorStop(at, color);
+        ctx.fillStyle = gradient; ctx.fillRect(0, 0, SKY_TEXTURES.skyWidth, SKY_TEXTURES.skyHeight);
+      });
+      return scene.add.image(0, 0, nightSky).setScrollFactor(0).setDepth(-99.5).setAlpha(0);
+    };
     const variants = Array.from({length: SKY_TEXTURES.variants}, (_, i) =>
       make(`meadow-sky-cloud-${i}`, SKY_TEXTURES.width, SKY_TEXTURES.height, ctx => paintCloud(ctx, i)));
     this.clouds = skyClouds(seed).map(layout => ({layout,
@@ -87,6 +103,17 @@ export class SkyLayer {
     this.render();
   }
 
+  /** The Christmas evening and night: 0 by day, 1 at night (the night sky fades in, the clouds turn blue). */
+  setNight(level: number): void {
+    const next = Math.max(0, Math.min(1, level)); if (next === this.night) return;
+    this.night = next;
+    if (next > 0 && !this.nightBackground && this.makeNight) this.nightBackground = this.makeNight();
+    this.nightBackground?.setVisible(next > 0).setAlpha(next);
+    const mix = (shift: number) => Math.round(255 + (((NIGHT_CLOUD_TINT >> shift) & 255) - 255) * next);
+    const tint = (mix(16) << 16) | (mix(8) << 8) | mix(0);
+    for (const c of this.clouds) c.image.setTint(tint);
+  }
+
   private tick(_time: number, delta: number): void {
     if (!this.motion?.matches) this.elapsed += Math.min(delta, 50) / 1000;
   }
@@ -97,6 +124,7 @@ export class SkyLayer {
       image.setPosition(w / 2 + (x - w / 2) / z, h / 2 + (y - h / 2) / z);
     place(this.background, w / 2, h / 2);
     this.background.setDisplaySize((w + 2) / z, (h + 2) / z);
+    if (this.night > 0 && this.nightBackground) { place(this.nightBackground, w / 2, h / 2); this.nightBackground.setDisplaySize((w + 2) / z, (h + 2) / z); }
     const dx = camera.scrollX + w / 2 - this.anchor.x, dy = camera.scrollY + h / 2 - this.anchor.y;
     const mobileScale = Math.min(1.25, Math.max(.6, w / 1000));
     for (const {layout: c, image} of this.clouds) {
@@ -115,7 +143,7 @@ export class SkyLayer {
     this.scene.events.off('preupdate', this.tick, this);
     this.scene.events.off('prerender', this.render, this);
     this.scene.events.off('shutdown', this.destroy, this);
-    this.background.destroy(); this.clouds.forEach(c => c.image.destroy());
+    this.background.destroy(); this.nightBackground?.destroy(); this.clouds.forEach(c => c.image.destroy());
     this.keys.forEach(key => this.scene.textures.remove(key));
   }
 }

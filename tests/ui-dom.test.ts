@@ -901,7 +901,7 @@ describe('habitat panels and controller transactions',()=>{
     // Since v24 the start parcel only has room for the starter enclosure's 8 × 5: that one is upgraded.
     expect(c.perform({type:'upgradeHabitat',id:'building-1',fromLevel:1}).ok).toBe(true);
     expect(state(c).buildings.find(b=>b.id==='building-1')!.habitat).toEqual({type:'paille',level:2});expect(values.get(SAVE_KEY)).toBe(normal);
-    expect(JSON.parse(values.get('prairie-lapins.development.'+SAVE_KEY)!).version).toBe(25);
+    expect(JSON.parse(values.get('prairie-lapins.development.'+SAVE_KEY)!).version).toBe(26);
   });
 });
 

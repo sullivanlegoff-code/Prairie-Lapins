@@ -41,8 +41,11 @@ function decodePng(file) {
 }
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const SOURCES = join(root, 'assets-source/island/stages'), TARGET = join(root, 'public/assets/island/stages');
-const MANIFEST = join(root, 'src/config/islandStageArt.json');
+// The Christmas island (winter: true) has its own snowy masters, derivatives and manifest, with the same geometry.
+const PATHS = {
+  normal: {sources: join(root, 'assets-source/island/stages'), target: join(root, 'public/assets/island/stages'), manifest: join(root, 'src/config/islandStageArt.json')},
+  winter: {sources: join(root, 'assets-source/noel/island'), target: join(root, 'public/assets/noel/island'), manifest: join(root, 'src/config/islandStageArtWinter.json')},
+};
 // Same values as src/config/islandGeometry.ts, src/config/visual.ts and src/config/islandStages.ts (checked by tests).
 const ORIGIN = 120, PARCEL_W = 704, PARCEL_D = 592, Q = .78, PIVOT_Y = ORIGIN + 12 * 148 / 2;
 export const PX_PER_UNIT = 1.5, TILE = 500, FADE = {opaque: 8, clear: 40}, MARGIN = {left: 96, right: 96, top: 96, bottom: 580};
@@ -83,7 +86,8 @@ function insideDistance(geometry) {
   return out;
 }
 
-function deriveStage(n) {
+function deriveStage(n, winter = false) {
+  const SOURCES = PATHS[winter ? 'winter' : 'normal'].sources;
   const geometry = stageGeometry(n), file = join(SOURCES, `stage-${n}.png`);
   if (!existsSync(file)) throw Error(`Missing source ${file}`);
   const bytes = readFileSync(file), master = decodePng(bytes), [w, h] = geometry.size;
@@ -121,8 +125,9 @@ function deriveStage(n) {
     const dist = distance[i];
     if (dist < 0) continue; // Never touch the exterior rim, ivy, cliff or underside.
     const at = i * 4, r = pixels[at], g = pixels[at + 1], b = pixels[at + 2];
-    if (feature[i]) continue;
-    {
+    if (feature[i] && !winter) continue;
+    // The snowy masters keep their painted snow: only the fade into the snow tile, no lawn recolouring.
+    if (!winter) {
       // Compress blade contrast into B's warm meadow palette; keep a little taller turf at the stones.
       const light = .2126 * r + .7152 * g + .0722 * b;
       pixels[at] = Math.round(151 + (light - 130) * .24);
@@ -130,7 +135,7 @@ function deriveStage(n) {
       pixels[at + 2] = Math.round(91 + (light - 130) * .18);
     }
     if (dist < FADE.opaque) continue;
-    const keep = Math.max(protectedRim[i], dist >= FADE.clear ? 0 : 1 - (dist - FADE.opaque) / (FADE.clear - FADE.opaque));
+    const keep = Math.max(winter ? 0 : protectedRim[i], dist >= FADE.clear ? 0 : 1 - (dist - FADE.opaque) / (FADE.clear - FADE.opaque));
     pixels[i * 4 + 3] = Math.round(pixels[i * 4 + 3] * keep);
   }
   const tiles = [], outputs = [];
@@ -147,8 +152,8 @@ function deriveStage(n) {
   return {entry: {stage: n, parcels: geometry.parcels, canvas: geometry.canvas, size: geometry.size, source: sha1(bytes), tiles}, outputs};
 }
 
-function deriveGrass() {
-  const file = join(SOURCES, GRASS.source); if (!existsSync(file)) throw Error(`Missing source ${file}`);
+function deriveGrass(winter = false) {
+  const file = join(PATHS[winter ? 'winter' : 'normal'].sources, GRASS.source); if (!existsSync(file)) throw Error(`Missing source ${file}`);
   const bytes = readFileSync(file), img = decodePng(bytes);
   if (img.width !== GRASS.size || img.height !== GRASS.size) throw Error(`${GRASS.source} must be ${GRASS.size}x${GRASS.size}`);
   for (let i = 3; i < img.pixels.length; i += 4) if (img.pixels[i] !== 255) throw Error(`${GRASS.source} must be fully opaque`);
@@ -179,17 +184,20 @@ async function encodeWebp(outputs) {
   return encoded;
 }
 
-export async function deriveIslandStages({check = false} = {}) {
-  const grass = deriveGrass(), stages = ORDER.map((_, i) => deriveStage(i + 1));
+export async function deriveIslandStages({check = false, winter = false} = {}) {
+  const {target: TARGET, manifest: MANIFEST} = PATHS[winter ? 'winter' : 'normal'];
+  // While the snowy stages are being painted, a missing one keeps the normal island (the game falls back to it).
+  const numbers = ORDER.map((_, i) => i + 1).filter(n => !winter || existsSync(join(PATHS.winter.sources, `stage-${n}.png`)));
+  const grass = deriveGrass(winter), stages = numbers.map(n => deriveStage(n, winter));
   const outputs = [grass, ...stages].flatMap(s => s.outputs);
   const layout = {pxPerUnit: PX_PER_UNIT, tile: TILE, fade: FADE, margin: MARGIN, grass: grass.entry, stages: stages.map(s => s.entry)};
   if (check) {
     // Encoding is lossy and browser-made: check the sources, the layout, and the integrity of every shipped file.
     const problems = [], stored = existsSync(MANIFEST) ? JSON.parse(readFileSync(MANIFEST, 'utf8')) : null;
-    if (!stored) problems.push('src/config/islandStageArt.json is missing');
+    if (!stored) problems.push(`${MANIFEST} is missing`);
     else {
       const {files, ...rest} = stored;
-      if (JSON.stringify(rest) !== JSON.stringify(layout)) problems.push('src/config/islandStageArt.json does not match the sources');
+      if (JSON.stringify(rest) !== JSON.stringify(layout)) problems.push(`${MANIFEST} does not match the sources`);
       for (const {name} of outputs) { const target = join(TARGET, name);
         if (!existsSync(target) || sha1(readFileSync(target)) !== files?.[name]) problems.push(`${name} missing or altered`); }
       if (Object.keys(files ?? {}).length !== outputs.length) problems.push('Unexpected file list');
@@ -211,4 +219,4 @@ export async function deriveIslandStages({check = false} = {}) {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url))
-  console.log(JSON.stringify(await deriveIslandStages({check: process.argv.includes('--check')})));
+  console.log(JSON.stringify(await deriveIslandStages({check: process.argv.includes('--check'), winter: process.argv.includes('--winter')})));

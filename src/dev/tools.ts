@@ -24,6 +24,7 @@ import {habitatEntryReason, habitatStats} from '../simulation/habitats';
 import {MAGICIEN_TEST_EVENT} from '../config/magicienArt';
 import type {MagicienAct} from '../display/magicienTimeline';
 import {CHASE_EVENT} from '../display/rabbitChase';
+import {christmasLabOverride, setChristmasLabOverride, type ChristmasLabOverride} from '../config/christmas';
 
 export const TEST_PREFIX = 'prairie-lapins.development.';
 export const DECORATIONS_PREVIEW_PREFIX = 'prairie-lapins.preview.decorations.';
@@ -138,6 +139,16 @@ export function developmentEnvironment(base: SaveStorage, options: {decorationPr
         window.dispatchEvent(new Event(CHASE_EVENT));
         status.textContent = 'Poursuite lancée dans chaque enclos qui le permet.';
       });
+      section('Noël');
+      const noel = (change: ChristmasLabOverride, label: string) => { setChristmasLabOverride({...christmasLabOverride(), ...change}); status.textContent = `${label} (ferme ce panneau pour regarder).`; };
+      button('Noël : activé', 'dev-noel-on', () => { noel({off: false}, 'Noël activé'); window.location.reload(); });
+      button('Noël : désactivé', 'dev-noel-off', () => { noel({off: true}, 'Noël désactivé dans le laboratoire'); window.location.reload(); });
+      for (const [hour, label] of [[10, '10 h (jour)'], [18.25, '18 h 15 (le soir tombe)'], [19.5, '19 h 30 (nuit)'], [20.05, '20 h 03 (les guirlandes s’allument)'], [23, '23 h (nuit, guirlandes)']] as const)
+        button(`Heure : ${label}`, `dev-noel-hour-${String(hour).replace('.', '-')}`, () => noel({hour}, `Heure forcée : ${label}`));
+      button('Heure : celle de l’appareil', 'dev-noel-hour-auto', () => noel({hour: undefined}, 'Heure de l’appareil'));
+      for (const [snow, label] of [['none', 'pas de neige'], ['light', 'mini flocons'], ['heavier', 'neige un peu plus forte']] as const)
+        button(`Neige : ${label}`, `dev-noel-snow-${snow}`, () => noel({snow}, `Neige forcée : ${label}`));
+      button('Neige : programme normal', 'dev-noel-snow-auto', () => noel({snow: undefined}, 'Neige selon le programme normal'));
       section('Animations de Benny');
       const bennyActs: [BennyAct, string][] = [['hop', 'Benny : saut'], ['flop', 'Benny : belly flop'], ['scratch', 'Benny : grattage'], ['groom', 'Benny : toilette'], ['stretch', 'Benny : étirement']];
       for (const [act, label] of bennyActs) button(label, `dev-benny-${act}`, () => {

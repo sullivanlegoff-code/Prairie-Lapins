@@ -1,0 +1,42 @@
+/* « Les cadeaux du ciel » (src/ui/SkyGiftsActivity.ts): the painted night village, the sleigh crossing the sky, the presents
+   falling, and the player's rabbit with its wicker basket sliding along the snow. Positions are shares of the stage. */
+.sky-gifts-activity {
+  position: fixed; inset: 0; z-index: 140; display: flex; flex-direction: column; background: #1d2a57;
+  font-family: inherit; color: #3b3326; touch-action: none; user-select: none; -webkit-user-select: none;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.sky-gifts-activity[hidden] { display: none; }
+.sky-gifts-top { position: absolute; z-index: 6; top: env(safe-area-inset-top); left: env(safe-area-inset-left); right: env(safe-area-inset-right); display: flex; align-items: center; gap: 12px; padding: 8px 14px; flex-wrap: wrap; }
+.sky-gifts-top p { margin: 0; font-weight: 800; color: #fff; -webkit-text-stroke: 1px #2b2550; paint-order: stroke fill; }
+.sky-gifts-score { font-size: 1.6rem; }
+.sky-gifts-lives { font-size: 1.2rem; letter-spacing: 2px; }
+.sky-gifts-time { font-size: 1.1rem; }
+.sky-gifts-quota { flex: 1; font-size: .9rem; text-align: right; }
+.sky-gifts-top button { min-height: 44px; padding: 0 16px; border-radius: 14px; border: 2px solid #6b5a3a; background: #fff8e8; font-weight: 800; }
+.sky-gifts-stage { position: relative; flex: 1; min-height: 0; overflow: hidden; cursor: pointer; background: center bottom / cover no-repeat #1d2a57; container-type: size; }
+.sky-gifts-sleigh { position: absolute; width: min(30cqw, 46cqh); height: auto; transform: translate(-50%, -50%); pointer-events: none; z-index: 1; }
+.sky-gifts-sleigh[data-facing="-1"] { transform: translate(-50%, -50%) scaleX(-1); }
+.sky-gifts-falling { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+.sky-gifts-gift { position: absolute; width: min(7.5cqw, 12cqh); height: auto; transform: translate(-50%, -50%); }
+/* The rabbit stands on the snow; its basket is on its back, its rim at the catching band (74 % to 86 % of the stage height). */
+.sky-gifts-rabbit { position: absolute; z-index: 3; bottom: 2%; height: min(27cqh, 30cqw); aspect-ratio: 1; transform: translateX(-50%); pointer-events: none; }
+.sky-gifts-figure { position: absolute; inset: 0; display: block; }
+.sky-gifts-figure img { width: 100%; height: 100%; object-fit: contain; object-position: bottom; }
+.sky-gifts-basket { position: absolute; z-index: 1; left: 50%; top: -8%; width: 66%; height: auto; transform: translateX(-50%); }
+.sky-gifts-rabbit.catch .sky-gifts-basket { animation: sky-gifts-catch .25s ease-out; }
+@keyframes sky-gifts-catch { 40% { transform: translateX(-50%) translateY(6%) scale(1.05, .94); } }
+.sky-gifts-pop { position: absolute; z-index: 4; left: 50%; top: 30%; margin: 0; transform: translateX(-50%); font-size: 2rem; font-weight: 900; opacity: 0; color: #fff; -webkit-text-stroke: 1.4px #2b2550; paint-order: stroke fill; pointer-events: none; }
+.sky-gifts-pop[data-kind="miss"] { color: #cfe3ff; }
+.sky-gifts-pop[data-kind="record"] { color: #ffe066; font-size: 2.5rem; }
+.sky-gifts-pop.shown { animation: jump-rope-pop .45s ease-out; }
+.sky-gifts-card {
+  position: absolute; z-index: 5; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(420px, calc(100% - 32px));
+  max-height: calc(100% - 32px); overflow: auto; padding: 16px 18px; border-radius: 22px; background: #fff8e8; border: 3px solid #8a7550;
+  box-shadow: 0 8px 24px #1d2a5766; text-align: center; touch-action: auto;
+}
+.sky-gifts-card[hidden] { display: none; }
+.sky-gifts-card p { margin: 0 0 10px; }
+.sky-gifts-title { font-size: 1.3rem; font-weight: 900; }
+.sky-gifts-rewards { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.sky-gifts-card button { min-height: 44px; margin: 4px; padding: 0 18px; border-radius: 14px; border: 2px solid #6b5a3a; background: #ffe7a8; font-weight: 800; font-size: 1rem; }
+@media (prefers-reduced-motion: reduce) { .sky-gifts-rabbit.catch .sky-gifts-basket, .sky-gifts-pop.shown { animation: none; } }

@@ -49,6 +49,8 @@ export const REFUSALS: Record<Refusal | 'NO_GAME' | 'DISPOSED' | 'SALE_NOT_SAVED
   EMPTY_ENCLOSURE: 'Il n’y a aucun lapin dans cet enclos pour l’instant.', NO_GIFT_POSSIBLE: 'Aucun lapin de cet enclos ne peut gagner d’affection aujourd’hui.',
   NO_EVOLVED_ART: 'Ce lapin n’a pas de dessin évolué.', EVOLUTION_AFFECTION: 'Affection 30 nécessaire.',
   EVOLUTION_CHALLENGES: 'Termine ses défis pour le faire évoluer.', EVOLUTION_REQUIRED: 'Fais d’abord évoluer ce lapin depuis sa fiche.',
+  EVENT_OVER: 'L’événement de Noël est terminé.', SNOWMAN_TODAY: 'Tu as déjà fait ton bonhomme de neige aujourd’hui. Reviens demain !',
+  NOT_ENOUGH_CANDIES: 'Pas assez de sucres d’orge. Réussis les défis de Noël pour en gagner.',
   SAME_PARENT: 'Choisis deux lapins différents.', AFFECTION_TOO_LOW: 'Chaque parent doit avoir au moins 2 d’affection.',
   MISSING_BUILDING: 'Il manque un bâtiment nécessaire : nid, nurserie ou cuisine.', ALREADY_EXPANDED: 'L’extension est déjà achetée.', PARCEL_UNAVAILABLE: 'Cette parcelle n’est pas encore accessible : l’île s’agrandit dans un ordre fixe, une parcelle après l’autre.', LAST_OF_SPECIES: 'Garde au moins un lapin de chaque espèce possédée.',
   BENNY_RECHARGING: 'Le pouvoir de Benny se recharge encore.', NO_WAITING_BABY: 'Aucun lapereau n’attend dans la nurserie.',

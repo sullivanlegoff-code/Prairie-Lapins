@@ -1,5 +1,5 @@
 import {BALANCE, FEED_COSTS, SPECIES, SPECIES_IDS, type SpeciesId} from '../config/balance';
-import {DECORATIONS, DECORATION_IDS, type DecorationId} from '../config/decorations';
+import {ALL_DECORATION_IDS, DECORATIONS, DECORATION_IDS, isChristmasDecoration, type DecorationId} from '../config/decorations';
 import {HABITAT_TYPES, type HabitatType, type HabitatLevel} from '../config/habitats';
 import {PARCEL_IDS} from '../config/land';
 import {MAIN_MISSIONS, MAIN_MISSION_IDS, DAILY_MISSION_IDS, type MainMissionId, type DailyMissionId} from '../config/missions';
@@ -129,7 +129,7 @@ export function requiredHabitatUpgradeLevel(type:HabitatType,to:Exclude<HabitatL
   const base=requiredHabitatLevel(type,c);if(to!==2&&to!==3)throw new RangeError('Upgrade target must be 2 or 3');return base+c.requirements.habitatUpgradeOffsets[to];
 }
 export function requiredDecorationLevel(id:DecorationId,c:ProgressionConfig=PROGRESSION):number {
-  validateQueryConfig(c);if(!DECORATION_IDS.includes(id))throw new RangeError('Unknown decoration');
+  validateQueryConfig(c);if(!(ALL_DECORATION_IDS as readonly string[]).includes(id))throw new RangeError('Unknown decoration');
   if(DECORATIONS[id].level !== undefined) return DECORATIONS[id].level!;
   const price=DECORATIONS[id].price;return c.requirements.decorations.filter(t=>price>=t.minimumPrice).at(-1)!.level;
 }
@@ -142,7 +142,7 @@ export function foodXp(affectionReached:number,c:ProgressionConfig=PROGRESSION):
   return c.xp.foodMultiplier+Math.floor((FEED_COSTS[affectionReached-1]??0)/FOOD_PER_XP);
 }
 export function firstDecorationPlacementXp(id:DecorationId,c:ProgressionConfig=PROGRESSION):number {
-  validateQueryConfig(c);if(!DECORATION_IDS.includes(id))throw new RangeError('Unknown decoration');return c.xp.firstDecorationPlacement.minimum;
+  validateQueryConfig(c);if(!(ALL_DECORATION_IDS as readonly string[]).includes(id))throw new RangeError('Unknown decoration');return isChristmasDecoration(id)?0:c.xp.firstDecorationPlacement.minimum;
 }
 export function missionClaimXp(kind:'main'|'daily',id:MainMissionId|DailyMissionId,c:ProgressionConfig=PROGRESSION):number {
   validateQueryConfig(c);const ids=kind==='main'?MAIN_MISSION_IDS:DAILY_MISSION_IDS;

@@ -1,0 +1,116 @@
+{
+  "pxPerUnit": 1.5,
+  "tile": 500,
+  "fade": {
+    "opaque": 8,
+    "clear": 40
+  },
+  "margin": {
+    "left": 96,
+    "right": 96,
+    "top": 96,
+    "bottom": 580
+  },
+  "grass": {
+    "file": "grass-tile.webp",
+    "size": 1024,
+    "worldUnits": 352,
+    "source": "6a2b47e22997ce59db50dca04d1127278bd250d9"
+  },
+  "stages": [
+    {
+      "stage": 1,
+      "parcels": [
+        "southwest"
+      ],
+      "canvas": {
+        "left": 24,
+        "top": 1142.88,
+        "width": 896,
+        "height": 1137.76
+      },
+      "size": [
+        1344,
+        1707
+      ],
+      "source": "0ce5ec59cb52a1c950a77d1243362770e8b8410f",
+      "tiles": [
+        {
+          "file": "stage-1-0-0.webp",
+          "x": 0,
+          "y": 0,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-1-0-1.webp",
+          "x": 500,
+          "y": 0,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-1-0-2.webp",
+          "x": 1000,
+          "y": 0,
+          "width": 344,
+          "height": 500
+        },
+        {
+          "file": "stage-1-1-0.webp",
+          "x": 0,
+          "y": 500,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-1-1-1.webp",
+          "x": 500,
+          "y": 500,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-1-1-2.webp",
+          "x": 1000,
+          "y": 500,
+          "width": 344,
+          "height": 500
+        },
+        {
+          "file": "stage-1-2-0.webp",
+          "x": 0,
+          "y": 1000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-1-2-1.webp",
+          "x": 500,
+          "y": 1000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-1-2-2.webp",
+          "x": 1000,
+          "y": 1000,
+          "width": 344,
+          "height": 500
+        }
+      ]
+    }
+  ],
+  "files": {
+    "grass-tile.webp": "c7bb10685af333c629f275d3d46003d838cba463",
+    "stage-1-0-0.webp": "0c95416b62bcba2d0ecaec462a27f36e50c90fc8",
+    "stage-1-0-1.webp": "eb1f27e3cddc43b90f709e7dd1d777818e3c704e",
+    "stage-1-0-2.webp": "dca011827cb03d5e671cc6dc99b2d8e822deb7d3",
+    "stage-1-1-0.webp": "92d56670b720b115410090261a2de4e47a1083b3",
+    "stage-1-1-1.webp": "f4bb5284a1fc1ffe1cf1979973ac4aa5a3877fda",
+    "stage-1-1-2.webp": "68fb98078141b6e3b05b0d168f69ddd84a001d70",
+    "stage-1-2-0.webp": "cd85b702c31db4d13e24653bd31e2dc1a6737368",
+    "stage-1-2-1.webp": "0033a0c22a4b3e905c41c03c63ecd03d56fc96b4",
+    "stage-1-2-2.webp": "750dabb80b62e455d1b0264ec243606aa4b35596"
+  }
+}

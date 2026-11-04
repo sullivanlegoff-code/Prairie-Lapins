@@ -56,9 +56,12 @@ import {placementGrid, PLACEMENT_GRID} from './placementGrid';
 import {readyNurseryBabies} from '../simulation/nursery';
 import {FloatingIslandLayer} from './floatingIslandLayer';
 import {ISLAND_ART} from '../config/islandArt';
-import {GRASS_TILE, islandStage, stageArt} from '../config/islandStages';
+import {grassTile, islandStage, stageArt} from '../config/islandStages';
 import {IslandStageLayer, queueStage} from './islandStageLayer';
 import {SkyLayer, SKY_COLOR} from './skyLayer';
+import {WinterLayer} from './winterLayer';
+import {WINTER_ART, winterUrl} from '../config/winterArt';
+import {christmasActive} from '../config/christmas';
 import {PARCELS, PARCEL_IDS, expansionTarget, purchasableParcels, type ParcelId} from '../config/land';
 import {ISLAND} from '../config/islandGeometry';
 import {rabbitOffset, rabbitPosition, rabbitHit, rabbitFedLift} from './rabbitLayout';
@@ -66,7 +69,7 @@ import {createRabbitMotion, endRabbitActivity, motionZone, roamScale, retargetRa
 import {habitatStats, habitatEntryReason, visibleColumns} from '../simulation/habitats';
 import {HOUR, ORDERS, type SpeciesId} from '../config/balance';
 import type {Building, DecorationLocation, GameState} from '../state/types';
-import {DECORATION_IDS, FINE_GRID, type DecorationId} from '../config/decorations';
+import {FINE_GRID, type DecorationId} from '../config/decorations';
 import {catalogDecorationPlacementReason, footprint} from '../simulation/decorations';
 import {decorationTexture, decorationScale, decorationOrigin, decorationUrl, decorationLayerDepth} from './decorationArt';
 import {MeadowCamera, cellsBounds, gridCell, fineCell, finePoint, buildingCenter, gridPoint, type Point} from '../ui/gestures';
@@ -140,6 +143,8 @@ export class MeadowScene extends Phaser.Scene {
   private interactionIn = 45000;
   /** The picnic under way: its guests sit around the cloth (facing its middle, `midX` in their local space) until `left` runs out. */
   private picnicParty: {ids: string[]; left: number; midX: number} | null = null;
+  private sky?: SkyLayer;
+  private winter?: WinterLayer;
   private picnicPieces = new Set<Phaser.GameObjects.Image | Phaser.GameObjects.Text>();
   private lifeViews: RabbitLifeViews | null = null;
   private lifeGeneration: number | null = null;
@@ -205,11 +210,13 @@ export class MeadowScene extends Phaser.Scene {
     this.load.image(HEART_TEXTURE, HEART_URL);
     for (const type of ['paille', 'neige', 'feu', 'metal', 'vol'] as const) this.load.image(`element-${type}`, elementUrl(type));
     for (const art of ISLAND_ART) if (!this.textures.exists(art.texture)) this.load.image(art.texture, art.url);
-    if (!this.textures.exists(GRASS_TILE.texture)) this.load.image(GRASS_TILE.texture, GRASS_TILE.url);
+    const grass = grassTile(); if (!this.textures.exists(grass.texture)) this.load.image(grass.texture, grass.url);
     // Only the painting of the current stage is loaded at start; a later stage loads when it is bought.
     const stage = islandStage(this.controller.getSnapshot().state?.acquiredParcels ?? []);
     if (stage) queueStage(this, stageArt(stage));
     if (!this.textures.exists(FOOD_TEXTURE)) this.load.image(FOOD_TEXTURE, FOOD_URL);
+    // Christmas: the tiny snowflakes (a missing picture only means no snow, never a blocked meadow).
+    if (christmasActive()) for (const flake of WINTER_ART.flakes) if (!this.textures.exists(flake.texture)) this.load.image(flake.texture, flake.url);
     for (const art of this.requiredArt(this.controller.getSnapshot().state))
       if (!this.textures.exists(art.texture)) this.loadArt(art);
   }
@@ -223,7 +230,8 @@ export class MeadowScene extends Phaser.Scene {
     });
     this.cameras.main.setBackgroundColor(SKY_COLOR);
     // Owns its shutdown cleanup; independent of parcel ownership and ground projection.
-    new SkyLayer(this, toScreen(gridPoint(ISLAND.focus, ISLAND.focus)));
+    this.sky = new SkyLayer(this, toScreen(gridPoint(ISLAND.focus, ISLAND.focus)));
+    this.winter = new WinterLayer(this);
     // Ground layer (flat on the island, drawn in ground coordinates, one shared projection transform):
     // terrain at depth 0 and the flat overlays at depth 1. Upright layer (untransformed, anchors through
     // toScreen): buildings .1, decorations .5, decoration selection .9, markers 1, ghosts 1.5, rabbits 2,
@@ -700,7 +708,8 @@ export class MeadowScene extends Phaser.Scene {
   }
   /** A picture, or an atlas (picture and frames) such as Benny's animations. */
   private loadArt(art: {texture: string; url: string; atlas?: string}): void {
-    if (art.atlas) this.load.atlas(art.texture, art.url, art.atlas); else this.load.image(art.texture, art.url);
+    const url = winterUrl(art.url, christmasActive());
+    if (art.atlas) this.load.atlas(art.texture, url, art.atlas); else this.load.image(art.texture, url);
   }
   /** Keep the previous complete scene during a batch, including when state changes again during the request. */
   private ensureArt(): boolean {
@@ -740,7 +749,7 @@ export class MeadowScene extends Phaser.Scene {
     this.syncProgressBars();
     this.drawDecorations(); this.drawBubbles(); this.drawGrid(); this.drawGhost(); this.updateDetails();
   }
-  private decorationPoint(location: DecorationLocation, catalogId: typeof DECORATION_IDS[number]): Point | null {
+  private decorationPoint(location: DecorationLocation, catalogId: DecorationId): Point | null {
     if (location.kind === 'inventory') return null;
     if (location.kind === 'outside') {
       const size = footprint(catalogId, location.rotation);
@@ -794,11 +803,11 @@ export class MeadowScene extends Phaser.Scene {
       this.floatingIslandLayer.request(ids);
       this.maskIsland(ids);
     }
-    const scale = GRASS_TILE.worldUnits / GRASS_TILE.size;
+    const grass = grassTile(), scale = grass.worldUnits / grass.size;
     for (const id of ids) {
       const parcel = PARCELS[id], x = VISUAL.grid.originX + parcel.x * VISUAL.grid.width, y = VISUAL.grid.originY + parcel.y * VISUAL.grid.depth;
       // Anchored on the world origin: neighbouring parcels continue the same pattern without a seam.
-      this.ground.add(this.add.tileSprite(x, y, ISLAND.parcelWidth / scale, ISLAND.parcelDepth / scale, GRASS_TILE.texture)
+      this.ground.add(this.add.tileSprite(x, y, ISLAND.parcelWidth / scale, ISLAND.parcelDepth / scale, grass.texture)
         .setOrigin(0).setScale(scale).setTilePosition(x / scale, y / scale));
     }
   }
@@ -1328,6 +1337,10 @@ export class MeadowScene extends Phaser.Scene {
       }
     }
     const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Christmas: evening and night over the meadow and its sky, and the snow (it keeps falling in a photo).
+    const winterNow = new Date(), christmas = christmasActive();
+    this.winter?.update(dt, winterNow, christmas && !document.hidden, reducedMotion);
+    this.sky?.setNight(christmas ? this.winter?.nightNow(winterNow) ?? 0 : 0);
     const lifeActive = !this.photo && !document.hidden && document.getElementById('loading-screen')?.hidden !== false &&
       document.getElementById('game-panel')?.hidden !== false && !document.querySelector('dialog[open]') && !this.placement && !this.arrangement;
     const bounds = {width: this.scale.width, height: this.scale.height, top: document.getElementById('hud')?.getBoundingClientRect().bottom ?? 0};

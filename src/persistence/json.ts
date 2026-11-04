@@ -17,18 +17,21 @@ import {cycleIndexAt} from '../simulation/missions';
 import {z} from 'zod';
 import {BALANCE, BUILDING_KINDS, CARE_KINDS, SALON, JUMP_ROPE, LEGACY_BREEDING_DURATION, MARKET, CUISINE_FULL_REWARDS_PER_CYCLE, HOUR, LEGACY_ORDER_CROPS, TRAVEL, tripHearts, NURSERY, ORDERS, type OrderId, SHOP_SPECIES, SPECIES, SPECIES_IDS, GUARANTEE_SPECIES, growthDuration, orderFarmLevel, type SpeciesId} from '../config/balance';
 import type {GameState} from '../state/types';
-import {DECORATION_IDS, RETIRED_DECORATION_IDS, MAX_DECORATIONS} from '../config/decorations';
+import {ALL_DECORATION_IDS, DECORATION_IDS, RETIRED_DECORATION_IDS, MAX_DECORATIONS, isChristmasDecoration} from '../config/decorations';
+import {CHRISTMAS_CHALLENGES, CHRISTMAS_CHALLENGE_IDS, CHRISTMAS_PICK_COUNT, MAX_CANDIES, SKY_GIFTS} from '../config/christmasEvent';
 import {decorationPlacementReason} from '../simulation/decorations';
 import {ISLAND} from '../config/islandGeometry';
 import {EVOLUTION_CHALLENGES, EVOLUTION_CHALLENGE_IDS, evolutionChallengeTarget, evolutionChallengesComplete, type EvolutionChallenge} from '../config/evolutionChallenges';
 import {EVOLUTION_AFFECTION, hasEvolvedArt} from '../config/evolvedArt';
 
 /**
- * The current format is v25 (the evolution challenges « commis », « goûteur » and « quotidien », the daily streak, the daily missions drawn at the start of the cycle and the rabbits caressed in it, see `migrateV24`), after v24 (larger enclosures: an enclosure may keep its former footprint, see `migrateV23`), after v23 (affection up to 50, a second Statue de l'Affection, the Salon de soins and the picnic, a lapin ultime's taken-off crown, the Forêt de Brocéliande and a rabbit's old drawing put back, the Terrain de corde à sauter, all optional; nothing to convert), after v22 (Benny's power and sky mode, optional), v21 (friendships and memories), v20 (catalogue conversion) and v19 (farm and agency levels, concurrent trips, Heart receipts), migrated through v18 and v17 from v16 (economy migration). Version 16 was the catalogue boundary of the development saves: the species Terre, Mottelin, Géant and
+ * The current format is v26 (the Christmas event: the sucres d'orge, the Christmas challenges of the cycle, the snowman of the
+ * day, the mini-game « Les cadeaux du ciel » and the Christmas market's decorations with their receipt in sucres d'orge, all
+ * optional; nothing to convert, see `migrateV25`), after v25 (the evolution challenges « commis », « goûteur » and « quotidien », the daily streak, the daily missions drawn at the start of the cycle and the rabbits caressed in it, see `migrateV24`), after v24 (larger enclosures: an enclosure may keep its former footprint, see `migrateV23`), after v23 (affection up to 50, a second Statue de l'Affection, the Salon de soins and the picnic, a lapin ultime's taken-off crown, the Forêt de Brocéliande and a rabbit's old drawing put back, the Terrain de corde à sauter, all optional; nothing to convert), after v22 (Benny's power and sky mode, optional), v21 (friendships and memories), v20 (catalogue conversion) and v19 (farm and agency levels, concurrent trips, Heart receipts), migrated through v18 and v17 from v16 (economy migration). Version 16 was the catalogue boundary of the development saves: the species Terre, Mottelin, Géant and
  * Brumelin and the Terre habitat were removed, and saves before that catalogue boundary are not converted. Versions 1 to 15 are refused as incompatible
  * (the controller then starts a new game); they are never read, migrated or restored.
  */
-export const SAVE_VERSION = 25;
+export const SAVE_VERSION = 26;
 /** Types a species had before the owner changed them: a rabbit already housed under its old types may stay where it is. */
 const LEGACY_TYPES: Partial<Record<SpeciesId, readonly HabitatType[]>> = {magicien: ['metal', 'vol'], bouee: ['paille', 'feu'], dadi: ['neige', 'vol']};
 const integer = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
@@ -81,12 +84,23 @@ const missions = z.object({
   // v25: the daily cycles in a row ending with the bonus claimed (the `quotidien` evolution challenge).
   streak: z.object({count: integer.positive().max(9999), lastCycle: integer}).strict().optional(),
 }).strict();
-const decoration = z.object({paidHearts: integer.positive().optional(), paidPrice: integer.optional(),id: z.string().regex(/^decoration-[1-9]\d*$/), catalogId: z.enum(DECORATION_IDS), placementXpProcessed: z.boolean().optional(),
+const decoration = z.object({paidHearts: integer.positive().optional(), paidPrice: integer.optional(), paidCandies: integer.positive().max(MAX_CANDIES).optional(), id: z.string().regex(/^decoration-[1-9]\d*$/), catalogId: z.enum(ALL_DECORATION_IDS), placementXpProcessed: z.boolean().optional(),
   location: z.discriminatedUnion('kind', [
     z.object({kind: z.literal('inventory')}).strict(),
     z.object({kind: z.literal('outside'), x: integer, y: integer, rotation: z.union([z.literal(0), z.literal(1)])}).strict(),
   ])}).strict();
 const aidStage = z.enum(['order', 'breeding', 'growth']);
+// The Christmas event (v26, optional): the sucres d'orge, the challenges of `cycle`, today's snowman and the mini-game.
+const christmasId = z.enum(CHRISTMAS_CHALLENGE_IDS);
+const christmas = z.object({
+  candies: integer.max(MAX_CANDIES), cycle: integer.optional(),
+  picked: z.array(christmasId).length(CHRISTMAS_PICK_COUNT).refine(ids => new Set(ids).size === ids.length).optional(),
+  progress: z.object(Object.fromEntries(CHRISTMAS_CHALLENGE_IDS.map(id => [id, integer.optional()])) as Record<typeof CHRISTMAS_CHALLENGE_IDS[number], z.ZodOptional<typeof integer>>).strict().optional(),
+  claimed: z.array(christmasId).max(CHRISTMAS_PICK_COUNT).refine(ids => new Set(ids).size === ids.length).optional(),
+  bonusClaimed: z.literal(true).optional(),
+  snowman: z.object({cycle: integer, enclosureId: identity}).strict().optional(),
+  skyGifts: z.object({cycle: integer, rewarded: integer.max(SKY_GIFTS.rewardedGamesPerCycle), best: integer.max(SKY_GIFTS.maxCaught)}).strict().optional(),
+}).strict();
 const historicalTarget = z.discriminatedUnion('family', [
   z.object({family: z.literal('species'), id: species, action: z.enum(['purchase', 'breedingResult'])}).strict(),
   z.object({family: z.literal('habitatPurchase'), id: z.enum(HABITAT_TYPES)}).strict(),
@@ -131,6 +145,7 @@ const current = z.object({
     team: z.object({carriers: z.tuple([identity, identity]), athlete: identity}).strict().optional(), challenge: z.literal(true).optional(),
     athleteBest: z.record(identity, integer.max(JUMP_ROPE.maxScore)).optional()}).strict().optional(),
   jumpIsland: z.literal(true).optional(),
+  christmas: christmas.optional(),
   missions, decorations: z.array(decoration).max(MAX_DECORATIONS),
   rewardedDecorationModels: z.array(z.enum(DECORATION_IDS)).max(DECORATION_IDS.length).refine(ids => new Set(ids).size === ids.length).optional(),
   acquiredParcels: z.array(z.enum(PARCEL_IDS)).min(1).max(9),
@@ -226,6 +241,14 @@ const schema = current.superRefine((s, context) => {
       || s.buildings.some(b => b.breeding?.parents.includes(c.rabbitId))) issue('Care');
   }
   if (Object.values(s.affectionGifts ?? {}).some(cycle => cycle > d.cycleIndex) || (s.picnicCycle ?? 0) > d.cycleIndex || (s.jumpRope?.cycle ?? 0) > d.cycleIndex) issue('Future gift cycle');
+  if (s.christmas) {
+    const c = s.christmas;
+    if ([c.cycle ?? 0, c.snowman?.cycle ?? 0, c.skyGifts?.cycle ?? 0].some(cycle => cycle > d.cycleIndex)) issue('Future gift cycle');
+    if (c.cycle === undefined && (c.picked || c.progress || c.claimed || c.bonusClaimed)) issue('Christmas cycle');
+    const claimed = c.claimed ?? [];
+    if (claimed.some(id => (c.progress?.[id] ?? 0) < CHRISTMAS_CHALLENGES[id].target || (c.picked && !c.picked.includes(id))) ||
+      (c.bonusClaimed && claimed.length !== CHRISTMAS_PICK_COUNT)) issue('Christmas claims');
+  }
   if (new Set(s.discovered).size !== s.discovered.length) issue('Duplicate discoveries');
   // Only one Benny per game, owned or on her way.
   if ([...s.rabbits.map(r => r.species), ...s.buildings.flatMap(b => [b.breeding?.birth.species, ...(b.nursery?.babies ?? []).map(baby => baby.birth.species)])]
@@ -244,6 +267,9 @@ const schema = current.superRefine((s, context) => {
   }
   for (const d of s.decorations) {
     if (d.paidHearts !== undefined && (d.catalogId !== 'robot-statue' || d.paidHearts !== 80 || d.paidPrice !== undefined)) issue('Decoration receipt');
+    // A Christmas decoration is paid in sucres d'orge only, and only a Christmas decoration is.
+    if (d.paidCandies !== undefined && (!isChristmasDecoration(d.catalogId) || d.paidPrice !== undefined || d.paidHearts !== undefined) ||
+      isChristmasDecoration(d.catalogId) && (d.paidPrice !== undefined || d.paidHearts !== undefined)) issue('Decoration receipt');
     ids.push(d.id);
     if (decorationPlacementReason(s, d.id, d.location)) issue('Invalid decoration placement or reference');
   }
@@ -395,7 +421,12 @@ function migrateV24(raw: object): void {
     if (r.evolution.done === true) for (const challenge of list) next[challenge] = evolutionChallengeTarget(species, challenge);
     if (Object.keys(next).length) r.evolution.challenges = next; else delete r.evolution.challenges;
   }
-  save.version = SAVE_VERSION;
+  save.version = 25;
+}
+
+/** v25 → v26, the Christmas event (owner, 4 November 2026): every new field is optional, nothing to convert. */
+function migrateV25(raw: object): void {
+  (raw as {version: number}).version = SAVE_VERSION;
 }
 
 /**
@@ -408,7 +439,7 @@ export function decodeGame(json: string): DecodeResult {
   if (json.length > MAX_JSON_LENGTH) return {ok: false, reason: 'FILE_TOO_LARGE'};
   let raw: unknown;
   try { raw = JSON.parse(json); } catch { return {ok: false, reason: 'INVALID_JSON'}; }
-  if (raw && typeof raw === 'object' && 'version' in raw && raw.version !== SAVE_VERSION && raw.version !== 24 && raw.version !== 23 && raw.version !== 22 && raw.version !== 21 && raw.version !== 20 && raw.version !== 19 && raw.version !== 18 && raw.version !== 17 && raw.version !== 16)
+  if (raw && typeof raw === 'object' && 'version' in raw && raw.version !== SAVE_VERSION && raw.version !== 25 && raw.version !== 24 && raw.version !== 23 && raw.version !== 22 && raw.version !== 21 && raw.version !== 20 && raw.version !== 19 && raw.version !== 18 && raw.version !== 17 && raw.version !== 16)
     return {ok: false, reason: Number.isInteger(raw.version) && (raw.version as number) >= 1 && (raw.version as number) <= 15 ? 'INCOMPATIBLE_CATALOG' : 'UNSUPPORTED_VERSION'};
   // Only the explicitly retired catalogue entries are removed; unknown IDs still fail validation.
   if (raw && typeof raw === 'object' && 'decorations' in raw && Array.isArray(raw.decorations)) {
@@ -423,6 +454,7 @@ export function decodeGame(json: string): DecodeResult {
   if (raw && typeof raw === 'object' && 'version' in raw && (raw.version === 19 || raw.version === 20 || raw.version === 21 || raw.version === 22)) raw.version = 23;
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 23) migrateV23(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 24) migrateV24(raw);
+  if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 25) migrateV25(raw);
   settleStorageCaps(raw);
   const parsed = schema.safeParse(raw);
   if (!parsed.success) return {ok: false, reason: 'INVALID_STATE'};
@@ -444,6 +476,8 @@ export function decodeGame(json: string): DecodeResult {
     if (!rabbitIds.has(id)) delete state.cuisine.affectionCycles[id];
   for (const id of Object.keys(state.affectionGifts ?? {})) if (!rabbitIds.has(id)) delete state.affectionGifts![id];
   for (const id of Object.keys(state.jumpRope?.athleteBest ?? {})) if (!rabbitIds.has(id)) delete state.jumpRope!.athleteBest![id];
+  // Today's snowman stands in an enclosure: one since removed drops it, never a reason to refuse the save.
+  if (state.christmas?.snowman && !state.buildings.some(b => b.kind === 'enclosure' && b.id === state.christmas!.snowman!.enclosureId)) delete state.christmas.snowman;
   // Enclosures that still keep their former size grow wherever there is room (never a reason to refuse the save).
   growFormerEnclosures(state);
   establishHistoricalLevelRights(state);
@@ -468,6 +502,6 @@ export function encodeGame(state: GameState, presentationId?: string): string {
 
 /** Optional presentation metadata, separate from simulation state. Call after validating the save. */
 export function readPresentationId(json: string): string | undefined {
-  try { const raw = JSON.parse(json); const id = z.string().uuid().safeParse(raw.presentationId); return [SAVE_VERSION, 24, 23, 22, 21, 20, 19, 18, 17, 16].includes(raw.version) && id.success ? id.data : undefined; }
+  try { const raw = JSON.parse(json); const id = z.string().uuid().safeParse(raw.presentationId); return [SAVE_VERSION, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16].includes(raw.version) && id.success ? id.data : undefined; }
   catch { return undefined; }
 }
