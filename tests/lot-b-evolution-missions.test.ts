@@ -179,7 +179,8 @@ describe('daily missions offered by what the player can do', () => {
   it('offers each new mission only when it can be done', () => {
     const s = game(['paille']);
     expect(availableDailyMissions(s).filter(id => (extras as readonly string[]).includes(id))).toEqual([]);
-    expect(availableDailyMissions(s)).toContain('pet-rabbits');
+    // The caresses need three rabbits (audit, 4 November 2026): this game has fewer.
+    expect(s.rabbits.length).toBeLessThan(3); expect(availableDailyMissions(s)).not.toContain('pet-rabbits');
     const all = game(['paille'], ['kitchen', 'salon', 'agency', 'forest']);
     all.progression = {totalXp: cumulativeLevelXp(20), rewardedThroughLevel: 20}; all.jumpIsland = true;
     expect(availableDailyMissions(all).filter(id => (extras as readonly string[]).includes(id))).toEqual(['cook-recipe', 'offer-care', 'short-trip', 'picnic', 'jump-rope']);

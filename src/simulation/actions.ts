@@ -582,6 +582,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(evolutionChallengesComplete(rabbit.species, rabbit.evolution?.challenges), 'EVOLUTION_CHALLENGES');
         requireRule(canEvolve(rabbit), 'INVALID_CHOICE');
         rabbit.evolution = {...rabbit.evolution, done: true}; delete rabbit.classicLook;
+        if (!s.evolvedSpecies?.includes(rabbit.species)) s.evolvedSpecies = [...(s.evolvedSpecies ?? []), rabbit.species];
         break;
       }
       case 'bennyPower': {

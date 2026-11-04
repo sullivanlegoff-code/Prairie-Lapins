@@ -115,6 +115,7 @@ export function labAction(state: GameState, action: LabAction): GameState {
     case 'evolveEligibleRabbits':
       for (const rabbit of s.rabbits) if (canEvolve(rabbit)) {
         rabbit.evolution = {...rabbit.evolution, done: true}; delete rabbit.classicLook;
+        if (!s.evolvedSpecies?.includes(rabbit.species)) s.evolvedSpecies = [...(s.evolvedSpecies ?? []), rabbit.species];
       }
       break;
     case 'build': if (action.kind === 'jumpIsland') s.jumpIsland = true; else build(s, action.kind, action.habitatType); break;

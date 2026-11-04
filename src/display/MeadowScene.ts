@@ -37,8 +37,7 @@ import {FOREST_ART} from '../config/forestArt';
 import {JUMP_ISLAND_ART, JUMP_MEDAL_ART, jumpIslandFrame, jumpIslandPoint, jumpMedalPoint} from '../config/jumpIslandArt';
 import {jumpRopeMedals} from '../simulation/jumpRope';
 import {showsEvolvedArt} from '../config/evolvedArt';
-import {PICNIC} from '../config/balance';
-import {playerLevel, wearsCrown} from '../simulation/affection';
+import {wearsCrown} from '../simulation/affection';
 import {CROWN_ART, CROWN_SEAT, crownAnchor, crownPlacement} from '../config/ultimateArt';
 import {away, careReady} from '../simulation/care';
 import {tripReady} from '../simulation/travel';
@@ -80,7 +79,7 @@ import {COIN_TEXTURE, COIN_URL, FOOD_TEXTURE, FOOD_URL, HEART_TEXTURE, HEART_URL
 import {coinBubble} from './currencyPhaser';
 import {MAGICIEN_ART, MAGICIEN_TEST_EVENT} from '../config/magicienArt';
 import {MagicienView} from './magicienEffects';
-import {MagicienClock, type MagicienAct} from './magicienTimeline';
+import {MagicienClock, magicienFree, type MagicienAct} from './magicienTimeline';
 import {CHASE_EVENT, RabbitChases, type ChaseRunner} from './rabbitChase';
 
 /** `nurseryBubble`: the « Prêt ! » bubble (id: the nursery). `nurseryBaby`: a ready baby touched on its cushion (id: its birthId). */
@@ -141,6 +140,7 @@ export class MeadowScene extends Phaser.Scene {
   private interactionIn = 45000;
   /** The picnic under way: its guests sit around the cloth (facing its middle, `midX` in their local space) until `left` runs out. */
   private picnicParty: {ids: string[]; left: number; midX: number} | null = null;
+  private picnicPieces = new Set<Phaser.GameObjects.Image | Phaser.GameObjects.Text>();
   private lifeViews: RabbitLifeViews | null = null;
   private lifeGeneration: number | null = null;
   private pivots = new Map<string, Point>();
@@ -212,8 +212,6 @@ export class MeadowScene extends Phaser.Scene {
     if (!this.textures.exists(FOOD_TEXTURE)) this.load.image(FOOD_TEXTURE, FOOD_URL);
     for (const art of this.requiredArt(this.controller.getSnapshot().state))
       if (!this.textures.exists(art.texture)) this.loadArt(art);
-    if (!this.textures.exists(MAGICIEN_ART.circle.texture)) this.load.image(MAGICIEN_ART.circle.texture, MAGICIEN_ART.circle.url);
-    if (!this.textures.exists(MAGICIEN_ART.star.texture)) this.load.image(MAGICIEN_ART.star.texture, MAGICIEN_ART.star.url);
   }
   create(): void {
     this.sceneReady = true;
@@ -568,6 +566,7 @@ export class MeadowScene extends Phaser.Scene {
     this.syncTutorialHand();
     this.syncProgressBars();
     this.drawDecorationSelection();
+    for (const piece of this.picnicPieces) piece.setVisible(!active && piece.getData('shown') === true);
     this.bubbles?.setVisible(!active); this.grid?.setVisible(!active); this.markers?.setVisible(!active); this.ghostView?.setVisible(!active); this.buildingGhost?.setVisible(!active && !!this.placement?.cell); this.nurseryOverlays?.setGhostVisible(!active && this.placement?.kind==='nursery' && !!this.placement.cell); this.updateDetails();
   }
   /** The picnic (owner's concept A): the cloth pops into the enclosure, a few hearts rise, then it fades out. Presentation only. */
@@ -588,15 +587,21 @@ export class MeadowScene extends Phaser.Scene {
     const mid = {x: (zone.minX + zone.maxX) / 2, y: (zone.minY + zone.maxY) / 2};
     const p = first ? {x: first.center.x + mid.x, y: first.center.y + mid.y} : toScreen(buildingCenter(b));
     const width = (zone.maxX - zone.minX) * .95;
-    if (this.textures.exists(PICNIC_ART.texture)) {
-      const scale = width / PICNIC_ART.width, cloth = this.add.image(p.x, p.y, PICNIC_ART.texture).setOrigin(.5, PICNIC_ART.originY).setDepth(1.95);
-      if (reduced) { cloth.setScale(scale); this.time.delayedCall(4000, () => cloth.destroy()); }
+    // The cloth is loaded the first time a picnic starts (audit, 4 November 2026), then laid out for what is left of it.
+    const started = this.time.now;
+    const lay = () => {
+      const left = MeadowScene.PICNIC_MS - (this.time.now - started);
+      if (!this.sceneReady || !this.textures.exists(PICNIC_ART.texture) || left < 1200) return;
+      const scale = width / PICNIC_ART.width, cloth = this.picnicPiece(this.add.image(p.x, p.y, PICNIC_ART.texture).setOrigin(.5, PICNIC_ART.originY).setDepth(1.95), true);
+      if (reduced) { cloth.setScale(scale); this.time.delayedCall(Math.min(4000, left), () => cloth.destroy()); }
       else {
         cloth.setScale(scale * .2).setAlpha(0);
         this.tweens.add({targets: cloth, scale, alpha: 1, duration: 450, ease: 'Back.easeOut'});
-        this.tweens.add({targets: cloth, alpha: 0, delay: MeadowScene.PICNIC_MS - 600, duration: 600, onComplete: () => cloth.destroy()});
+        this.tweens.add({targets: cloth, alpha: 0, delay: left - 600, duration: 600, onComplete: () => cloth.destroy()});
       }
-    }
+    };
+    if (this.textures.exists(PICNIC_ART.texture)) lay();
+    else { this.load.once(`filecomplete-image-${PICNIC_ART.texture}`, lay); this.load.image(PICNIC_ART.texture, PICNIC_ART.url); this.load.start(); }
     if (reduced) return;
     // The guests sit on an oval around the cloth, the first one in front.
     const rx = (zone.maxX - zone.minX) / 2, ry = (zone.maxY - zone.minY) / 2;
@@ -608,9 +613,14 @@ export class MeadowScene extends Phaser.Scene {
     });
     this.picnicParty = guests.length ? {ids: guests.map(r => r.id), left: MeadowScene.PICNIC_MS, midX: mid.x} : null;
     for (let i = 0; i < 9; i++) {
-      const heart = this.add.text(p.x + ((i * 37) % 5 - 2) * width / 6, p.y - 16 - (i % 3) * 10, '♥', {fontSize: '22px', color: '#d9788d'}).setDepth(5).setOrigin(.5).setVisible(false);
-      this.tweens.add({targets: heart, alpha: 0, y: heart.y - 50, delay: 900 + i * 550, duration: 1300, ease: 'Sine.easeIn', onStart: () => heart.setVisible(true), onComplete: () => heart.destroy()});
+      const heart = this.picnicPiece(this.add.text(p.x + ((i * 37) % 5 - 2) * width / 6, p.y - 16 - (i % 3) * 10, '♥', {fontSize: '22px', color: '#d9788d'}).setDepth(5).setOrigin(.5), false);
+      this.tweens.add({targets: heart, alpha: 0, y: heart.y - 50, delay: 900 + i * 550, duration: 1300, ease: 'Sine.easeIn', onStart: () => { heart.setData('shown', true).setVisible(!this.photo); }, onComplete: () => heart.destroy()});
     }
+  }
+  /** A piece of the picnic (cloth, heart): never in a photo (audit, 4 November 2026); forgotten once destroyed. */
+  private picnicPiece<T extends Phaser.GameObjects.Image | Phaser.GameObjects.Text>(piece: T, shown: boolean): T {
+    piece.setData('shown', shown).setVisible(shown && !this.photo); this.picnicPieces.add(piece);
+    piece.once('destroy', () => this.picnicPieces.delete(piece)); return piece;
   }
   /** Each frame of the picnic: arrived guests face the cloth; at the end they all go back to roaming. */
   private stepPicnic(dt: number): void {
@@ -659,6 +669,8 @@ export class MeadowScene extends Phaser.Scene {
       if (isLegendaryShow(rabbit.species)) for (const art of legendaryMeadowArt(rabbit.species)) add(art);
       if (rabbit.species === BENNY_ID) for (const art of [...bennyMeadowArt(), ...bennyFlightArt()]) add(art);
       if (wearsCrown(rabbit)) add(CROWN_ART);
+      // The magic circle and the stars, only for an evolved Magicien (audit, 4 November 2026).
+      if (rabbit.species === 'magicien' && shown?.evolved) { add(MAGICIEN_ART.circle); add(MAGICIEN_ART.star); }
     }
     const buildingArt = (building: Pick<Building, 'kind' | 'habitat' | 'footprintTier' | 'farmLevel'> & {id?: string}) => {
       if (building.kind === 'enclosure') add(habitatArtFor(building.habitat ?? undefined, building.footprintTier)); // Same texture at every scale.
@@ -673,7 +685,6 @@ export class MeadowScene extends Phaser.Scene {
     };
     for (const building of state?.buildings ?? []) buildingArt(building);
     if (state?.jumpIsland) { add(JUMP_ISLAND_ART); for (const step of jumpRopeMedals(state)) add({texture: JUMP_MEDAL_ART.texture(step), url: JUMP_MEDAL_ART.url(step)}); }
-    if (state && playerLevel(state) >= PICNIC.unlockLevel) add(PICNIC_ART); // Laid out for a few seconds when a picnic starts.
     if (this.placement) {
       const moving = state?.buildings.find(b => b.id === this.placement?.movingId);
       buildingArt(moving ?? {kind: this.placement.kind, habitat: this.placement.kind === 'enclosure' ? {type: this.placement.habitatType ?? 'universal', level: 1} : null});
@@ -1306,7 +1317,8 @@ export class MeadowScene extends Phaser.Scene {
     if (this.dadiSpeech) {
       const active = !this.photo && !document.hidden && document.getElementById('loading-screen')?.hidden !== false;
       dadiObscured = document.getElementById('game-panel')?.hidden === false || !!document.querySelector('dialog[open]');
-      const visible = this.rabbitViews.filter(r => r.id !== this.bennyAway && dadiHeadVisible(this.dadiHead(r), dadiBounds!)).map(r => r.id);
+      // A picnic guest stays seated at the cloth: Dadi neither speaks about it nor makes it get up (audit, 4 November 2026).
+      const visible = this.rabbitViews.filter(r => r.id !== this.bennyAway && !this.picnicParty?.ids.includes(r.id) && dadiHeadVisible(this.dadiHead(r), dadiBounds!)).map(r => r.id);
       dadi = this.dadi.step(dadiObscured ? 0 : dt, active, dadiObscured ? [] : visible);
       if(dadi.started?.id===this.cozyInteraction.active?.id)this.cozyInteraction.reset();
       if (dadi.started?.salto) {
@@ -1326,7 +1338,7 @@ export class MeadowScene extends Phaser.Scene {
     if(lifeActive&&!reducedMotion&&dt>=0&&dt<=1000){this.interactionIn-=dt;if(this.interactionIn<=0){this.interactionIn=90000;for(const d of this.current?.decorations??[])if(this.interactionDecoration(d.id))break;}}
     this.stepPicnic(dt);
     this.life.step(dt, this.rabbitViews.flatMap(r => r.motion ? [{id: r.id, group: r.group, motion: r.motion, nest: r.nest, friendId:this.friends.get(r.id),occupied:this.cozyInteraction.active?.id===r.id||!!this.picnicParty?.ids.includes(r.id), visible: visibleResidents.has(r.id)}] : []),
-      lifeActive, reducedMotion, dadi.speech ? [dadi.speech.id] : []);
+      lifeActive, reducedMotion, dadi.speech && !this.picnicParty?.ids.includes(dadi.speech.id) ? [dadi.speech.id] : []);
     this.chases.step(dt, this.chaseRunners(visibleResidents, dadi.speech?.id), lifeActive, reducedMotion, this.chaseTest);
     this.chaseTest = false;
     this.lifeViews?.begin(this.rabbitViews.map(r => r.id));
@@ -1366,7 +1378,8 @@ export class MeadowScene extends Phaser.Scene {
         show.update({time, dt, active: lifeActive && visibleResidents.has(rabbit.id), reduced: reducedMotion, asleep: rabbit.motion?.mode === 'sleep'});
         lift += show.lift; rotation += show.lean;
       }
-      rabbit.magicien?.update(dt,lifeActive && visibleResidents.has(rabbit.id),reducedMotion);
+      rabbit.magicien?.update(dt,lifeActive && visibleResidents.has(rabbit.id) && magicienFree(rabbit.motion?.mode,
+        !!this.picnicParty?.ids.includes(rabbit.id) || this.cozyInteraction.active?.id === rabbit.id || this.chases.isChasing(rabbit.id)),reducedMotion);
       if(rabbit.magicien) lift += rabbit.magicien.lift;
       rabbit.lift = lift;
       if (rabbit.object.depth !== previousDepth) depthChanged = true;

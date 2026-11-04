@@ -171,7 +171,8 @@ p { line-height: 1.45; margin: 10px 0; overflow-wrap: anywhere; }
 .collection-evolution.is-locked p { color: var(--ink-muted); font-weight: 400; }
 .collection-evolution-count { display: block; width: max-content; margin: 0 0 8px; }
 .evolution-moment { position: fixed; z-index: 10000; inset: 0; display: grid; place-content: center; justify-items: center; gap: 8px; padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); overflow: hidden; background: #f8f2f4 var(--evolution-background) center / cover no-repeat; color: #4b4556; text-align: center; }
-.evolution-moment-art { position: relative; display: grid; place-items: center; width: min(60vw, 420px); height: min(62vh, 330px); }
+/* On a short landscape screen (667×375) the drawing leaves room for the title, the hint and the « Continuer » button. */
+.evolution-moment-art { position: relative; display: grid; place-items: center; width: min(60vw, 420px); height: min(62vh, 330px, calc(100dvh - 200px - env(safe-area-inset-top) - env(safe-area-inset-bottom))); min-height: 120px; }
 .evolution-moment-art > img { position: absolute; max-width: 100%; max-height: 100%; object-fit: contain; }
 .evolution-before { opacity: 1; animation: evolution-old 1.15s ease-in forwards; animation-delay: .55s; }
 .evolution-after { opacity: 0; animation: evolution-new 1.15s ease-out forwards; animation-delay: .55s; }

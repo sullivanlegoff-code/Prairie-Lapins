@@ -50,6 +50,8 @@ const rabbit = (s: GameState, id: string) => s.rabbits.find(r => r.id === id)!;
 function markEvolved(s: GameState, id: string) {
   const r = rabbit(s, id), challenges = EVOLUTION_CHALLENGES[r.species] ?? [];
   r.evolution = {done: true, challenges: Object.fromEntries(challenges.map(challenge => [challenge, evolutionChallengeTarget(r.species, challenge)]))};
+  // As the real evolution does (evolveRabbit): the species stays discovered.
+  if (!s.evolvedSpecies?.includes(r.species)) s.evolvedSpecies = [...(s.evolvedSpecies ?? []), r.species];
 }
 
 describe('Evolved drawings at affection 30', () => {

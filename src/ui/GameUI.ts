@@ -37,7 +37,7 @@ import {COCO_WELCOME, HOST_NAME, agencyThumbnail, cocoPortrait, forestThumbnail,
 import {atSalon, away, giftReason, picnicQuote, rabbitAwayReason} from '../simulation/care';
 import {travelling} from '../simulation/travel';
 import {BENNY, BENNY_POWER_RECHARGE, bennyInSky, bennyPowerReadyAt, bennyPowerReason} from '../simulation/benny';
-import {affectionStatueCount, capReason, feedReason, nextAffectionStatue, playerLevel, rabbitAffectionCap, wearsCrown} from '../simulation/affection';
+import {affectionStatueCount, capReason, feedReason, nextAffectionStatue, playerLevel, rabbitAffectionCap, waitsForEvolution, wearsCrown} from '../simulation/affection';
 import type {Building, Rabbit} from '../state/types';
 import {MAX_RABBIT_NAME_LENGTH, normalizeRabbitName} from '../simulation/rabbitNames';
 import {HABITATS, HABITAT_TYPES, habitatLevel, habitatPrice, type HabitatType} from '../config/habitats';
@@ -67,7 +67,7 @@ import {rabbitIncome, individualIncomeRoll} from '../simulation/time';
 import type {MeadowScene, MeadowSelection} from '../display/MeadowScene';
 import {ActionGate} from './gestures';
 import {portrait, rabbitPortrait} from './portraits';
-import {EVOLVED_ART, canEvolve, showsEvolvedArt, type LookRabbit} from '../config/evolvedArt';
+import {EVOLUTION_AFFECTION, EVOLVED_ART, canEvolve, showsEvolvedArt, type LookRabbit} from '../config/evolvedArt';
 import {DAILY_STREAK_TARGET, EVOLUTION_CHALLENGES, evolutionChallengeLabel, evolutionChallengeTarget, evolutionChallengesComplete} from '../config/evolutionChallenges';
 import {evolvedRabbitArt, rabbitArt} from '../config/rabbitArt';
 import {rabbitBlinkArt} from '../config/rabbitBlinkArt';
@@ -387,9 +387,12 @@ export class GameUI {
     portraitElement.addEventListener('pointermove', event => {
       if (!rub || event.pointerId !== rub.pointer) return;
       const dx = event.clientX - rub.x, dy = event.clientY - rub.y; if (!dx && !dy) return;
-      rub.x = event.clientX; rub.y = event.clientY; rub.distance += Math.hypot(dx, dy);
-      const horizontal = Math.abs(dx) >= Math.abs(dy), direction = `${horizontal ? 'x' : 'y'}${Math.sign(horizontal ? dx : dy)}`;
-      if (rub.direction && rub.direction[0] === direction[0] && rub.direction !== direction) rub.reversals++;
+      rub.x = event.clientX; rub.y = event.clientY;
+      // Only a sideways rub caresses (audit, 4 November 2026): an up or down slide scrolls the sheet (touch-action: pan-y).
+      if (Math.abs(dx) <= Math.abs(dy)) return;
+      rub.distance += Math.abs(dx);
+      const direction = `x${Math.sign(dx)}`;
+      if (rub.direction && rub.direction !== direction) rub.reversals++;
       rub.direction = direction; event.preventDefault();
       if (rub.distance >= 40 || (rub.reversals >= 3 && rub.distance >= 12)) { rub.distance = 0; rub.reversals = 0; this.caress(portraitElement, rabbit); }
     });
@@ -1352,7 +1355,7 @@ export class GameUI {
       this.button(card, r ? 'Changer' : 'Choisir', () => { this.jumpRopePick = slot; this.render(); }, null, true); team.append(card);
     });
     const ready = slots.every(Boolean), rabbits = slots.map(id => s.rabbits.find(r => r.id === id)!);
-    const toActivity = (r: Rabbit) => ({id: r.id, species: r.species, name: r.name, affection: r.affection, classicLook: r.classicLook});
+    const toActivity = (r: Rabbit) => ({id: r.id, species: r.species, name: r.name, affection: r.affection, classicLook: r.classicLook, evolution: r.evolution});
     this.button(this.content, 'Jouer', () => this.jumpRope.open({carriers: [toActivity(rabbits[0]), toActivity(rabbits[1])], athlete: toActivity(rabbits[2])}),
       ready ? null : 'Il te faut trois lapins à la maison : deux porteurs et un athlète.').dataset.jumpRopePlay = '';
   }
@@ -1415,7 +1418,7 @@ export class GameUI {
     if(friend)this.button(this.content,`Complice : ${friend.name??SPECIES[friend.species].name}`,()=>this.open({kind:'rabbit',id:friend.id}),null,true);
     else this.content.append(node('p','En partageant leur habitat, tes lapins apprennent à devenir complices.','small'));
     const overview = node('div', '', 'rabbit-overview'), essential = node('div');
-    essential.append(this.stats([['Affection', `${r.affection} / ${BALANCE.maxAffection}`], ['Revenu', `${rabbitIncome(r.affection, r.species, individualIncomeRoll(r))} pattes / h`]]));
+    essential.append(this.stats([['Affection', `${r.affection} / ${waitsForEvolution(r) ? EVOLUTION_AFFECTION : BALANCE.maxAffection}`], ['Revenu', `${rabbitIncome(r.affection, r.species, individualIncomeRoll(r))} pattes / h`]]));
     const large = wearsCrown(r) ? crownPortrait(avatar(r, true), r) : avatar(r, true);
     overview.append(legendary ? legendaryPortrait(large, r.species) : large, essential); this.content.append(overview);
     this.attachCaress(large, r);
@@ -2032,8 +2035,8 @@ export class GameUI {
   private renderCollection(s: GameState): void {
     this.button(this.content,'Album et souvenirs',()=>this.open({kind:'album'}),null,true);
     this.title.textContent = `Collection · ${s.discovered.length}/${SPECIES_IDS.length}`;
-    const evolvedSpecies = new Set(s.rabbits.filter(isEvolved).map(rabbit => rabbit.species)).size;
-    this.content.append(node('p', `${evolvedSpecies} / 35 évolutions`, 'badge collection-evolution-count'));
+    const evolvedSpecies = new Set([...(s.evolvedSpecies ?? []), ...s.rabbits.filter(isEvolved).map(rabbit => rabbit.species)]).size;
+    this.content.append(node('p', `${evolvedSpecies} / ${EVOLVED_ART.length} évolutions`, 'badge collection-evolution-count'));
     const toolbar = node('div', '', 'menu-toolbar');
     this.button(toolbar, 'Carnet de reproduction', () => this.open({kind: 'recipes'}), null, true); this.content.append(toolbar);
     const controls = node('div', '', 'collection-filters');

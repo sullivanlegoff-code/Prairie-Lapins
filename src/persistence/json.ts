@@ -108,6 +108,7 @@ const current = z.object({
   lastBreedingParents: z.tuple([identity, identity]).refine(([a, b]) => a !== b && [a, b].every(id => /^(rabbit|birth)-/.test(id))).optional(),
   appliedAdjustments: z.array(z.string().uuid()).max(MAX_APPLIED_ADJUSTMENTS).optional(),
   plannedBirth: species.optional(),
+  evolvedSpecies: z.array(species).max(SPECIES_IDS.length).optional(),
   cozy: z.object({
     bonds: z.array(z.object({a: identity,b: identity,duration: integer.max(6*HOUR),celebrated:z.boolean()}).strict()).max(512),
     album: z.array(z.object({key:z.string().min(1).max(200),at:integer,kind:z.enum(['birth','friendship','travel','discovery','event']),text:z.string().max(300)}).strict()).max(80),
@@ -429,6 +430,10 @@ export function decodeGame(json: string): DecodeResult {
   const state: GameState = {...stored, cuisine: {...stored.cuisine, heartCycle: stored.cuisine.heartCycle ?? null}};
   for (const rabbit of state.rabbits) if (SPECIES[rabbit.species].rarity !== 'common') rabbit.incomeRoll ??= historicalIncomeRoll(rabbit);
   for (const rabbit of state.rabbits) if (rabbit.evolution?.done && (rabbit.species === 'benny' || !hasEvolvedArt(rabbit.species) || rabbit.affection < EVOLUTION_AFFECTION || !evolutionChallengesComplete(rabbit.species, rabbit.evolution.challenges))) delete rabbit.evolution.done;
+  // The evolutions already discovered stay discovered (audit, 4 November 2026): the list is completed from the evolved rabbits.
+  const evolvedSpecies = [...new Set([...(state.evolvedSpecies ?? []), ...state.rabbits.filter(r => r.evolution?.done).map(r => r.species)])]
+    .filter(id => id !== 'benny' && hasEvolvedArt(id));
+  if (evolvedSpecies.length) state.evolvedSpecies = evolvedSpecies; else delete state.evolvedSpecies;
   // A taken-off crown only means something on an ultimate rabbit: elsewhere it is dropped, never a reason to refuse the save.
   for (const rabbit of state.rabbits) if (rabbit.crownHidden && !isUltimate(rabbit)) delete rabbit.crownHidden;
   // The old drawing put back at the Forêt de Brocéliande is dropped without the forest or on a rabbit that has not evolved,

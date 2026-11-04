@@ -75,6 +75,8 @@ export interface GameState {
   appliedAdjustments?: string[];
   /** Owner's planned birth: the next breeding that fulfils this species' recipe gives it, then the field is removed. */
   plannedBirth?: import('../config/balance').SpeciesId;
+  /** Species of which one of the player's rabbits has evolved, kept even once that rabbit is released (optional, v25). */
+  evolvedSpecies?: import('../config/balance').SpeciesId[];
   cozy?: import('../simulation/cozy').CozyState;
   /** Present only on islands started on the southwest parcel (top/right expansion); absent = legacy centre start. */
   islandStart?: IslandStart;

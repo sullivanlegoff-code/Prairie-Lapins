@@ -107,6 +107,8 @@ export function dailyMissionAvailable(s: DailyAvailabilityState, id: DailyMissio
     case 'picnic': return progressionFromXp(s.progression?.totalXp ?? 0).level >= PICNIC.unlockLevel && s.rabbits.some(r => s.buildings.some(b => b.kind === 'enclosure' && b.id === r.enclosureId));
     case 'jump-rope': return !!s.jumpIsland;
     case 'forest-walk': return built('forest') && s.rabbits.some(r => r.evolution?.done === true);
+    // Three different rabbits to caress (audit, 4 November 2026): never offered to a player who has fewer.
+    case 'pet-rabbits': return s.rabbits.length >= DAILY_MISSIONS['pet-rabbits'].target;
     default: return true;
   }
 }

@@ -166,3 +166,17 @@ it('a « tac » marks each pass of the rope, the carriers console a miss and app
   expect(carriers.every(c => c.classList.contains('console'))).toBe(true);
   expect(activity.element.querySelector('.jump-rope-cheer')!.textContent).toBe('Courage, on recommence !');
 });
+
+it('an evolved rabbit jumps and turns the rope with its evolved drawing (audit 4 November 2026)', () => {
+  const s = game();
+  const [noisette, pompon, caramel] = ['rabbit-101', 'rabbit-102', 'rabbit-103'].map(id => s.rabbits.find(r => r.id === id)!);
+  noisette.affection = 32; pompon.affection = 30; caramel.affection = 29;
+  noisette.evolution = {done: true, challenges: {voyage: 1}};
+  const {ui} = mount(s); ui.open({kind: 'jumpIsland'});
+  expect(slotText(2)).toContain('Athlète : Noisette');
+  panel().querySelector<HTMLButtonElement>('[data-jump-rope-play]')!.click();
+  // Noisette (evolved) jumps with the new drawing; Pompon and Caramel have not evolved.
+  expect(layer().querySelector<HTMLImageElement>('.jump-rope-rabbit .jump-rope-figure img')!.src).toContain('paille-v2');
+  const carriers = [...layer().querySelectorAll<HTMLImageElement>('.jump-rope-carrier .jump-rope-figure img')].map(img => img.src);
+  expect(carriers.length).toBe(2); expect(carriers.some(src => src.includes('paille-v2'))).toBe(false);
+});

@@ -43,6 +43,13 @@ it('a simple touch on the portrait does not caress the rabbit', () => {
   expect(controller.getSnapshot().state!.missions.daily.petted).toBeUndefined();
 });
 
+it('sliding up or down on the portrait scrolls the sheet and does not caress (audit, 4 November 2026)', () => {
+  const {controller, portrait} = sheet(); const perform = vi.spyOn(controller, 'perform');
+  pointer(portrait, 'pointerdown', 20, 20); pointer(portrait, 'pointermove', 24, 80); pointer(portrait, 'pointermove', 20, 20); pointer(portrait, 'pointermove', 25, 90);
+  pointer(portrait, 'pointerup', 25, 90);
+  expect(perform).not.toHaveBeenCalled();
+});
+
 it('rubbing the portrait closes the eyes, sends up hearts and counts for « Des caresses » only', () => {
   const {controller, portrait, rabbitId} = sheet(); const before = structuredClone(controller.getSnapshot().state!);
   const perform = vi.spyOn(controller, 'perform');

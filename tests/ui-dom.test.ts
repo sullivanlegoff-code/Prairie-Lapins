@@ -506,7 +506,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     const {ui, controller, scene} = setup(); const perform = vi.spyOn(controller, 'perform');
     ui.select({kind: 'rabbit', id: 'rabbit-2'}); button('Nourrir · 2 nourriture').click(); button('Nourrir · 4 nourriture').click();
     expect(perform).toHaveBeenCalledOnce(); expect(state(controller).rabbits[0].affection).toBe(2);expect(state(controller).progression.totalXp).toBe(foodXp(2));
-    expect(document.getElementById('grass')!.textContent).toBe('8'); expect(panel().textContent).toContain('Affection 2 / 50'); expect(scene.reactToFeed).toHaveBeenCalledWith('rabbit-2');
+    expect(document.getElementById('grass')!.textContent).toBe('8'); expect(panel().textContent).toContain('Affection 2 / 30'); expect(scene.reactToFeed).toHaveBeenCalledWith('rabbit-2');
   });
   it('keeps incomplete saved species unknown in the collection', () => {
     const {ui} = setup(); ui.open({kind: 'collection'});
@@ -536,7 +536,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     expect(panel().querySelectorAll('article')).toHaveLength(EXPECTED_RECIPE_IDS.length); expect(recipe().dataset.recipeKnown).toBe('true');
     expect(recipe().textContent).toContain('Affection 2 minimum'); expect(recipe().textContent).toContain('À nourrir');
     expect(button('Préparer cette paire au nid', recipe()).disabled).toBe(true);
-    button('Nourrir Lapin Neige · Enclos 1', recipe()).click(); button('Nourrir · 2 nourriture').click(); expect(panel().textContent).toContain('Affection 2 / 50');
+    button('Nourrir Lapin Neige · Enclos 1', recipe()).click(); button('Nourrir · 2 nourriture').click(); expect(panel().textContent).toContain('Affection 2 / 30');
     ui.select({kind: 'building', id: 'building-4'});
     crossFromNest('Lapin Feu', 'Lapin Neige', false);
     const odds = () => breeding().querySelector('.breeding-odds')!.textContent;
@@ -1324,7 +1324,7 @@ describe('mobile menu continuity', () => {
     expect(controller.perform({type: 'feed', id: 'rabbit-2'}).ok).toBe(true); controller.refresh();
     expect(button('Nourrir · 2 nourriture')).toBe(feed); expect(feed.isConnected).toBe(true);
     window.dispatchEvent(new PointerEvent('pointerup', {pointerId: 7})); flush();
-    expect(panel().textContent).toContain('Affection 2 / 50'); expect(button('Nourrir · 4 nourriture').isConnected).toBe(true);
+    expect(panel().textContent).toContain('Affection 2 / 30'); expect(button('Nourrir · 4 nourriture').isConnected).toBe(true);
     expect(state(controller).grass).toBe(8);
     prefs.restartGuidance(); ui.close();
     const tutorial = document.getElementById('tutorial')!, guide = button('Me guider', tutorial);

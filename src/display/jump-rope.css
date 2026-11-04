@@ -20,9 +20,9 @@
 .jump-rope-sky { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 /* Painting rows 470 to 1024. */
 .jump-rope-island { position: absolute; left: 0; width: 100%; height: auto; bottom: calc(-144 * var(--u)); pointer-events: none; }
-/* Painting columns 67 to 455, rows 61 to 574; smaller on short screens so the weather vane stays below the score bar. */
+/* Painting columns 67 to 455, rows 61 to 574; smaller on short screens so the weather vane stays below the score bar, even when its text takes two lines (667×375). */
 .jump-rope-kiosk { position: absolute; left: calc(67 * var(--u)); bottom: calc(306 * var(--u)); width: auto;
-  height: min(calc(513 * var(--u)), calc(100cqh - 306 * var(--u) - 58px)); pointer-events: none; }
+  height: min(calc(513 * var(--u)), calc(100cqh - 306 * var(--u) - 74px)); pointer-events: none; }
 /* Ends (8 % and 92 % of the box, 73 % down) in the carriers' paws, 70 painting pixels above the box bottom; the low point of the swing
    (98 %) on the sand, the high point (2 %) above the athlete's head. */
 /* The painted rope is drawn in a canvas over this box (JumpRopeActivity.ts maps its 0-100 % to the box). */

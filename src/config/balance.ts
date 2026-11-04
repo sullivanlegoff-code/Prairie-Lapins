@@ -185,7 +185,7 @@ export const JUMP_ROPE = {
 export const PICNIC = {unlockLevel: 8, pricePerRabbit: 300, xpPerRabbit: 10} as const;
 /**
  * The Statues de l'Affection, in purchase order (hearts only, sold among the buildings). Statue n is sold from player level
- * `level` for `heartPrice` Hearts; without it, affection stops at `cap`. Both statues share the same painting.
+ * `level` for `heartPrice` Hearts; without it, affection stops at `cap`. The second one has its own painting (src/config/statueArt.ts).
  */
 export const AFFECTION_STATUES = [
   {level: 15, cap: 14, heartPrice: BALANCE.buildings.statue.price},

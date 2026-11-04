@@ -4,6 +4,11 @@ export const MAGICIEN_DURATION: Record<MagicienAct, number> = {sparks: 1400, cir
 export const MAGICIEN_GAP = {first: [15_000, 30_000], next: [15_000, 30_000]} as const;
 export interface MagicienActState {act: MagicienAct; elapsed: number; duration: number}
 const hash = (id: string) => { let h = 2166136261; for (const c of id) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+/**
+ * A spontaneous trick starts only while the Magicien rests or walks, and takes part in nothing else (audit, 4 November 2026):
+ * never asleep, during a kiss, a picnic, a chase or a visit to a decoration.
+ */
+export const magicienFree = (mode: string | undefined, occupied: boolean): boolean => !occupied && (mode === 'rest' || mode === 'walk');
 export class MagicienClock {
   act: MagicienActState | null = null;
   private seed: number;

@@ -1,5 +1,6 @@
 import {NURSERY, growthDuration} from '../config/balance';
 import type {Building, GameState, NurseryBaby, NurseryCapacity, NurserySlot} from '../state/types';
+import {recordEvolutionChallenge} from './evolution';
 
 /** Pure nursery readers: the only place that knows slot rules. Readiness stays derived: `readyAt <= now`. */
 export const nurseryBuilding = (s: Pick<GameState, 'buildings'>): Building | undefined => s.buildings.find(b => b.kind === 'nursery');
@@ -38,6 +39,8 @@ export function settleNestTransfers(s: GameState, freeSince: number): void {
     const startedAt = Math.max(job.endsAt, freeSince), readyAt = startedAt + growthDuration(job.birth.species);
     if (!Number.isSafeInteger(readyAt)) continue;
     nursery.nursery.babies.push({slot, birth: job.birth, startedAt, readyAt}); nest.breeding = null;
+    // Same evolution step as a manual transfer: each parent counts this birth once (the nest is emptied right here).
+    for (const parentId of job.parents) recordEvolutionChallenge(s, parentId, 'parent');
   }
 }
 export const readyNurseryBabies = (b: Building | undefined, now: number): NurseryBaby[] => babiesBySlot(b).filter(baby => baby.readyAt <= now);

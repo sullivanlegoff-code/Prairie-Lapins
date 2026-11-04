@@ -81,7 +81,7 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
   }
   /** Draws one rabbit's portrait, turned toward `facing` (1 right, -1 left). */
   function paint(target: HTMLElement, rabbit: CuisineRabbit, facing: 1 | -1): void {
-    const art = rabbit.affection === undefined ? rabbitArt(rabbit.species) : artForRabbit({species: rabbit.species, affection: rabbit.affection, classicLook: rabbit.classicLook});
+    const art = rabbit.affection === undefined ? rabbitArt(rabbit.species) : artForRabbit({species: rabbit.species, affection: rabbit.affection, classicLook: rabbit.classicLook, evolution: rabbit.evolution});
     target.innerHTML = portrait(rabbit.species, art);
     if ((art?.facing ?? 1) !== facing) target.dataset.mirrored = ''; else delete target.dataset.mirrored;
   }

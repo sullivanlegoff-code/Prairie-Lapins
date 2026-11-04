@@ -21,7 +21,8 @@ export const forestRabbits = (s: Pick<GameState, 'rabbits'>): Rabbit[] =>
 export const isEvolved = (rabbit: Pick<Rabbit, 'species' | 'affection' | 'classicLook' | 'evolution'>): boolean => rabbit.evolution?.done === true && hasEvolvedArt(rabbit.species) && rabbit.affection >= 30;
 /**
  * The evolution of a species is shown (drawing and name, in a sheet or the collection) once one of the player's rabbits of that
- * species has evolved (owner, 4 November 2026: it is discovered when the rabbit evolves, never before).
+ * species has evolved (owner, 4 November 2026: it is discovered when the rabbit evolves, never before). It stays shown once
+ * that rabbit is released (`evolvedSpecies`).
  */
-export const evolutionRevealed = (s: Pick<GameState, 'rabbits'>, species: SpeciesId): boolean =>
-  s.rabbits.some(r => r.species === species && r.evolution?.done === true);
+export const evolutionRevealed = (s: Pick<GameState, 'rabbits' | 'evolvedSpecies'>, species: SpeciesId): boolean =>
+  s.evolvedSpecies?.includes(species) === true || s.rabbits.some(r => r.species === species && r.evolution?.done === true);
