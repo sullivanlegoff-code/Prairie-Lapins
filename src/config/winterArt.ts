@@ -1,3 +1,4 @@
+import WINTER_BUILDING_LIST from './winterBuildingFiles.json';
 /**
  * The Christmas island's painted pictures (concepts noel-v1, 4 November 2026: island C « Village de Noël », night C1,
  * market A « Chalets », mini-game B « Les cadeaux du ciel »). Each asset is loaded only while the event is on.
@@ -43,7 +44,7 @@ export const SKY_GIFTS_ART = {
  * The snowy copies of the buildings and habitats (same size and silhouette as the normal pictures, painted for the event and
  * prepared by scripts/prepare-winter-island.mjs `items`): served under assets/noel/ at the same relative path.
  */
-export const WINTER_BUILDING_FILES: readonly string[] = [];
+export const WINTER_BUILDING_FILES: readonly string[] = WINTER_BUILDING_LIST;
 /** The snowy copy of a meadow picture while the event is on, else the picture itself. */
 export function winterUrl(url: string, active: boolean): string {
   if (!active || !url.startsWith(import.meta.env.BASE_URL)) return url;

@@ -164,7 +164,7 @@ function deriveGrass(winter = false) {
  * Lossy WebP with alpha, encoded by Chromium (Playwright): the painted tiles weigh about a tenth of their PNG.
  * PLAYWRIGHT_MODULE may point to a playwright installation, as for the docs/*-check.cjs scripts.
  */
-async function encodeWebp(outputs) {
+export async function encodeWebp(outputs) {
   const {createRequire} = await import('node:module');
   const {chromium} = createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE || 'playwright');
   const browser = await chromium.launch(), page = await browser.newPage(), encoded = new Map();
