@@ -74,7 +74,7 @@ describe('pan bounds follow the owned land and its rim', () => {
   for (const [name, s] of Object.entries(islands)) it(`${name}: every rim edge is reachable and a third of the view stays on land, at every zoom`, () => {
     const view = new MeadowCamera(); view.resize(844, 390); view.setVisibleRegions(regions(s));
     const l = land(s), rim = {left: l.left - m.left, right: l.right + m.right, top: l.top - m.top, bottom: l.bottom + m.bottom};
-    for (const zoom of [view.minimumZoom, .3, .55, 1.05, 1.65]) {
+    for (const zoom of [view.minimumZoom, .3, .55, 1.05, 2.2]) {
       view.zoom = zoom;
       // Keep applies to the nearest owned parcel plus its vector rim, independently of texture size.
       const v = {width: 844 - 32, height: 390 - 62 - 32}, keepX = Math.min(v.width / zoom / 3, 704 + m.left + m.right), keepY = Math.min(v.height / zoom / 3, 592 + m.top + m.bottom);

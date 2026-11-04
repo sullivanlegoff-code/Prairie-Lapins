@@ -154,7 +154,7 @@
     "sourceSha1": "a9bc0ecee109bf87e0045c0046b827ff06969bd8",
     "sourceWidth": 1312,
     "sourceHeight": 1199,
-    "worldWidth": 52,
+    "worldWidth": 59.8,
     "width": 461,
     "height": 421,
     "derivedSha1": "870ef00ebe4aa61be1eb9900693404e508dccf1f"
@@ -673,13 +673,13 @@
     "registry": "src/config/evolvedArt.ts",
     "displayScale": 1.15,
     "file": "assets/rabbits/roukette/roukette-v2.png",
-    "worldWidth": 45.2,
+    "worldWidth": 52,
     "sourceSha1": "920516126677125f836162a11d54cbda600792ef",
     "sourceWidth": 974,
     "sourceHeight": 1176,
-    "width": 383,
-    "height": 462,
-    "derivedSha1": "1139c3650bb47a05b9667eaf15b652446f181eb7"
+    "derivedSha1": "b28a30e46e070d3c00d32126aaace75c53a1de6f",
+    "width": 441,
+    "height": 532
   },
   "snk-evolution": {
     "species": "snk",

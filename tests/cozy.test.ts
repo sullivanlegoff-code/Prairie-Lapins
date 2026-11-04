@@ -21,9 +21,10 @@ it('bounds album and preserves names and durable souvenir counts',()=>{
  for(let i=0;i<90;i++)rememberTrip(s,s.rabbits[0].id,'Paris',i,100+i);
  expect(s.cozy!.album).toHaveLength(80);expect(s.cozy!.souvenirs).toEqual([{destination:'Paris',visits:90}]);
 });
-it('migrates version20 and round trips new content with bounded validation',()=>{
+it('migrates version20, keeps album souvenirs, and strips retired fields from legacy saves',()=>{
  const s=regressionStart(0),old={...s,version:20};const migrated=decodeGame(JSON.stringify(old));expect(migrated.ok).toBe(true);if(migrated.ok)expect(migrated.state.version).toBe(24);
  recordMemory(s,{key:'event:flowers',kind:'event',at:0,text:'La fête des fleurs'});
  const decoded=decodeGame(JSON.stringify(s));expect(decoded.ok).toBe(true);if(decoded.ok)expect(decoded.state.cozy).toEqual(s.cozy);
- s.cozy!.discoveries=Array.from({length:65},(_,i)=>String(i));expect(decodeGame(JSON.stringify(s)).ok).toBe(false);
+ const legacy=JSON.parse(JSON.stringify(s));legacy.cozy.discoveries=['lost-slippers'];legacy.cozy.events=[{id:'harvest',progress:2,completed:false}];
+ const loaded=decodeGame(JSON.stringify(legacy));expect(loaded.ok).toBe(true);if(loaded.ok){expect(loaded.state.cozy).not.toHaveProperty('discoveries');expect(loaded.state.cozy).not.toHaveProperty('events');}
 });

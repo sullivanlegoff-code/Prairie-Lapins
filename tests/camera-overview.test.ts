@@ -14,13 +14,13 @@ describe('overview camera, presentation only',()=>{
    const hud=width<height?122:62;
    expect(a.x).toBeGreaterThanOrEqual(16-1e-8);expect(a.y).toBeGreaterThanOrEqual(hud+16-1e-8);
    expect(b.x).toBeLessThanOrEqual(width-16+1e-8);expect(b.y).toBeLessThanOrEqual(height-16+1e-8);
-   expect(c.zoom).toBeGreaterThanOrEqual(c.minimumZoom);expect(c.zoom).toBeLessThanOrEqual(1.65);
+   expect(c.zoom).toBeGreaterThanOrEqual(c.minimumZoom);expect(c.zoom).toBeLessThanOrEqual(2.2);
   });
  }
  it('retains .4 baseline on large screens; adapts minimum on compact screens',()=>{
   const c=new MeadowCamera();c.resize(2000,1200);expect(c.minimumZoom).toBe(.4);
   c.resize(852,393);expect(c.minimumZoom).toBeCloseTo(Math.min(820/(full.right-full.left+160+80+16+2*VISUAL.ground.floatingRim),299/(full.bottom-full.top+160+16+128+VISUAL.ground.floatingDepth+2*VISUAL.ground.floatingRim)));c.scale(.001,{x:426,y:220});expect(c.zoom).toBe(c.minimumZoom);
-  c.scale(1000,{x:426,y:220});expect(c.zoom).toBe(1.65);
+  c.scale(1000,{x:426,y:220});expect(c.zoom).toBe(2.2);
  });
  it('fits around an open panel without changing map geometry',()=>{
   const c=new MeadowCamera();c.resize(852,393);c.setInsets({left:16,right:376,top:78,bottom:16});c.overview(full);

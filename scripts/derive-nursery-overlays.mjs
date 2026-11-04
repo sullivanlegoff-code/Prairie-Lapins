@@ -20,7 +20,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..'), dir = join(
 /** Texture sizes follow the largest on-screen size measured in the game (the framebuffer is in CSS pixels): see src/config/nurseryArt.ts. */
 export const OVERLAYS = {
   baby: {size: 192, sourceSha1: '345a98f9efc3ef73c27306c7d1d319f3bdc84dd0'},
-  veil: {size: 192, sourceSha1: '9b463845a2097e47ec0f26864571013b93258ad8'},
+  veil: {size: 224, sourceSha1: '9b463845a2097e47ec0f26864571013b93258ad8'},
   lock: {size: 96, sourceSha1: 'e4b25a0a4e24003e2302abc01893f21b76515dd3'},
 };
 export const derivedName = (name) => `nursery-v2-${name}-${OVERLAYS[name].size}.png`;

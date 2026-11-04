@@ -196,7 +196,7 @@ describe('two extensions, camera and placement',()=>{
     expect({x:c.x,y:c.y,zoom:c.zoom}).toEqual(far);expect(c.width).toBe(844);c.interaction(false);expect(c.width).toBe(390);expect(c.zoom).toBe(old.zoom);
     c.setColumns(9);c.resize(844,390);c.recenter();expect({x:c.x,y:c.y,zoom:c.zoom}).toEqual(old);
     for(let x=0;x<9;x++)for(let y=0;y<2;y++)expect(gridCell(c.world(c.screen(gridPoint(x+.5,y+.5))))).toEqual({x,y});
-    c.scale(100,{x:422,y:195});expect(c.zoom).toBe(1.65);c.scale(.001,{x:422,y:195});expect(c.zoom).toBe(c.minimumZoom);
+    c.scale(100,{x:422,y:195});expect(c.zoom).toBe(2.2);c.scale(.001,{x:422,y:195});expect(c.zoom).toBe(c.minimumZoom);
   });
   it('retains validated rabbit scale and targets and provides seven distinct resident slots',()=>{
     expect(VISUAL.rabbit.scale).toBe(1.3);expect(VISUAL.rabbit.hitRadius).toBe(27);expect(VISUAL.rabbit.offsets).toHaveLength(3);

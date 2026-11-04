@@ -128,7 +128,7 @@ describe('floating rock camera envelope', () => {
       view.overview(islandFrame(s)!.island);
       expect(contains({left: view.world({x: 16, y: 138}).x, top: view.world({x: 16, y: height < 450 ? 78 : width < height ? 138 : 86}).y, right: view.world({x: width - 16, y: height - 16}).x, bottom: view.world({x: width - 16, y: height - 16}).y}, art), JSON.stringify({ids,zoom:view.zoom,art,screen:[view.screen({x:art.left,y:art.top}),view.screen({x:art.right,y:art.bottom})]})).toBe(true);
       // The deepest visible tip can be reached even at maximum zoom.
-      view.zoom = 1.65; view.x = (art.left + art.right) / 2; view.y = art.bottom; view.clamp();
+      view.zoom = 2.2; view.x = (art.left + art.right) / 2; view.y = art.bottom; view.clamp();
       expect(view.screen({x: view.x, y: art.bottom}).y).toBeLessThan(height);
     }
   });

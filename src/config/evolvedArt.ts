@@ -8,8 +8,8 @@ import {evolutionChallengesComplete} from './evolutionChallenges';
  * entry in scripts/rabbit-art-manifest.json). Pure data, independent of Phaser, the DOM and the deployment URL.
  */
 export const EVOLUTION_AFFECTION = 30;
-/** An evolved rabbit looks about 15 % bigger in the game: applied in code to its world width, never baked in the picture. */
-export const EVOLVED_SCALE = 1.15;
+/** An evolved rabbit looks about 20 % bigger (owner, 4 November 2026; formerly 15 %) in the game: applied in code to its world width, never baked in the picture. */
+export const EVOLVED_SCALE = 1.2;
 
 /** Same fields as a static sprite of the registry; `worldWidth` is the size before `EVOLVED_SCALE`, coherent with the v1. */
 export interface EvolvedSprite {
@@ -67,7 +67,7 @@ export const EVOLVED_ART: readonly EvolvedSprite[] = [
   // Princesse Neige Reine des Glaces.
   {id: 'princesse-neige', name: 'Reine des Glaces', file: 'assets/rabbits/princesse-neige/princesse-neige-v2.png', texture: 'rabbit-princesse-neige-evolved-v2', width: 435, height: 429, worldWidth: 51.3, groundY: 13.5},
   // Roukette Star du Rock.
-  {id: 'roukette', name: 'Star du Rock', file: 'assets/rabbits/roukette/roukette-v2.png', texture: 'rabbit-roukette-evolved-v2', width: 383, height: 462, worldWidth: 45.2, groundY: 12},
+  {id: 'roukette', name: 'Star du Rock', file: 'assets/rabbits/roukette/roukette-v2.png', texture: 'rabbit-roukette-evolved-v2', width: 441, height: 532, worldWidth: 52, groundY: 12},
   // SNK Vétéran.
   {id: 'snk', name: 'Vétéran', file: 'assets/rabbits/snk/snk-v2.png', texture: 'rabbit-snk-evolved-v2', width: 471, height: 384, worldWidth: 55.5, groundY: 15.5},
   // Tunini Séraphique.

@@ -170,7 +170,6 @@ export type BaseCommand =
 export type PattesCommand = Extract<BaseCommand, {type: 'buyBuilding' | 'buyRabbit' | 'expand' | 'startOrder' | 'upgradeHabitat'}>;
 export type TimedStage = 'order' | 'breeding' | 'growth';
 export type Command = BaseCommand
-  | {type:'claimDiscovery'; id:string}
   | {type:'translateDecorations'; ids:string[]; dx:number; dy:number}
   /** `rabbitId` is the commis; `tasterId` the optional second rabbit (taster). With two, the affection goes to one of them, drawn at random. */
   | {type: 'rewardCuisine'; rabbitId: Rabbit['id']; tasterId?: Rabbit['id']; recipeId: import('../config/balance').CuisineRecipeId}

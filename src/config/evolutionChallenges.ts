@@ -22,7 +22,7 @@ export const evolutionChallengeLabel = (challenge: EvolutionChallenge): string =
   if (challenge === 'voyage') return 'voyages';
   if (challenge === 'soin') return 'soins';
   if (challenge === 'piquenique') return 'pique-niques';
-  if (challenge === 'parent') return 'lapereaux comme parent';
+  if (challenge === 'parent') return 'Devenir parent d’un lapereau';
   if (challenge.startsWith('cuisine:')) return `recette ${challenge.slice('cuisine:'.length)}`;
   if (challenge.startsWith('corde:')) return `sauts à la corde (minimum ${challenge.slice('corde:'.length)})`;
   return challenge;

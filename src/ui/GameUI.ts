@@ -1,7 +1,7 @@
 import {farmLimit, farmDuration} from '../config/balance';
 import {bestFriend} from '../simulation/cozy';
-import {DECORATION_COLLECTIONS,TRAVEL_STORIES,COZY_EVENTS,DISCOVERIES,currentCozyEvent,currentDiscovery} from '../config/cozyContent';
-import {discoveryAvailable,translatedDecorations} from '../simulation/cozyActivities';
+import {DECORATION_COLLECTIONS,TRAVEL_STORIES} from '../config/cozyContent';
+import {translatedDecorations} from '../simulation/cozyActivities';
 import {rabbitDropTargets} from './rabbitDropTargets';
 import {showLegendaryReveal, type RevealText} from './legendaryReveal';
 import {showBennyReveal} from './bennyReveal';
@@ -78,10 +78,10 @@ import {guidedStep, type GuideStep} from './guidance';
 import {BUILDING_NAMES, CARE_NAMES, REFUSALS, RARITY_NAMES, busyReason, TYPE_NAMES, typeNames, recipeBook, recipePairs, buildingReason, collectionSpeciesView, collectionView, incomeWhole, moneyReason, nurseryView, occupants, oddsTexts, oddsView, placementReason, rabbitAvailability, parentBusy, releaseReason, timeLeft, type Placement, type CollectionFilter} from './models';
 
 type ShopTab = 'home' | 'recipes' | 'rabbits' | 'habitats' | 'buildings' | 'decorations';
-type View = {kind:'album'|'cozyEvents'|'decorationGroup'} | {kind: 'welcomeBaby'; birthId: string} | {kind:'levelRequirement';target:LevelAccessTarget} | {kind: 'missions'; tab: 'main' | 'daily'} | {kind: 'shop'; tab: ShopTab} | {kind: 'building' | 'rabbit' | 'moveRabbit' | 'decoration'; id: string} | {kind: 'jumpIsland'} |
+type View = {kind:'album'|'decorationGroup'} | {kind: 'welcomeBaby'; birthId: string} | {kind:'levelRequirement';target:LevelAccessTarget} | {kind: 'missions'; tab: 'main' | 'daily'} | {kind: 'shop'; tab: ShopTab} | {kind: 'building' | 'rabbit' | 'moveRabbit' | 'decoration'; id: string} | {kind: 'jumpIsland'} |
   {kind: 'buyRabbit' | 'species'; species: SpeciesId} | {kind:'extension';parcelId?:ParcelId} | {kind: 'cuisineRabbit'; commis?: string} | {kind: 'collection' | 'settings' | 'placement' | 'hearts' | 'recipes' | 'arrange' | 'decorationPlacement'} | null;
 /** Views drawn as a centred card over the dimmed meadow. Placement, purchase, extension and arrangement views keep the side sheet: they need the island visible. */
-const CENTER_CARD_VIEWS: readonly NonNullable<View>['kind'][] = ['album','cozyEvents','decorationGroup','rabbit', 'moveRabbit', 'welcomeBaby', 'building', 'jumpIsland', 'missions', 'collection', 'recipes', 'hearts', 'species', 'levelRequirement'];
+const CENTER_CARD_VIEWS: readonly NonNullable<View>['kind'][] = ['album','decorationGroup','rabbit', 'moveRabbit', 'welcomeBaby', 'building', 'jumpIsland', 'missions', 'collection', 'recipes', 'hearts', 'species', 'levelRequirement'];
 function node<K extends keyof HTMLElementTagNameMap>(tag: K, text = '', className = ''): HTMLElementTagNameMap[K] {
   const element = document.createElement(tag); setCurrencyText(element, text); decorateRabbitText(element); element.className = className; return element;
 }
@@ -631,7 +631,6 @@ export class GameUI {
     if (this.cuisine.active || this.pailleDialogue.element.open) return;
     if (this.photo || this.view?.kind === 'shop') return;
     if (this.dialog.open || (document.getElementById('import-dialog') as HTMLDialogElement).open) return;
-    if(selection.kind==='discovery'){this.discover(selection.id);return;}
     if (this.movingRabbit) {
       if (selection.kind === 'building') this.dropRabbit(this.movingRabbit, selection.id);
       return;
@@ -716,7 +715,6 @@ export class GameUI {
     const s = this.snapshot.state; if (!s) { this.title.textContent = 'Partie indisponible'; return; }
     switch (this.view.kind) {
       case 'album': this.renderAlbum(s);break;
-      case 'cozyEvents': this.renderCozyEvents(s);break;
       case 'decorationGroup': this.renderDecorationGroup(s);break;
       case 'cuisineRabbit': this.renderCuisineRabbits(s, this.view.commis); break;
       case 'missions': this.renderMissions(s, this.view.tab); break;
@@ -888,10 +886,8 @@ export class GameUI {
     const card = this.card(DECORATIONS[id].name, description), icon = node('span', '', 'decoration-icon');
     const img = document.createElement('img'); img.src = decorationUrl(id); img.alt = DECORATIONS[id].name; icon.append(img); card.querySelector('.card-heading')!.prepend(icon); return card;
   }
-  public discover(id:string):void { this.execute({type:'claimDiscovery',id},'Un souvenir ajouté à ton album.'); }
   private renderAlbum(s:GameState):void {
     this.title.textContent='Album et souvenirs';
-    this.button(this.content,'Rendez-vous et découvertes',()=>this.open({kind:'cozyEvents'}),null,true);
     this.button(this.content,'Prendre une photo',()=>{this.close();this.setPhoto(true);},null,true);
     this.content.append(node('h3','Tes moments partagés'));
     const memories=[...(s.cozy?.album??[])].reverse();
@@ -902,19 +898,6 @@ export class GameUI {
       const card=this.card(destination,`${Math.min(3,visits)}/3 souvenirs · ${visits} visite${visits>1?'s':''}`);
       TRAVEL_STORIES[destination].forEach((story,i)=>card.append(node('p',visits>i?story:`Souvenir ${i+1} · à découvrir lors d’un retour de voyage`,'small')));this.content.append(card);
     }
-  }
-  private renderCozyEvents(s:GameState):void {
-    this.title.textContent='Rendez-vous de la prairie';const active=currentCozyEvent(this.now());
-    this.content.append(node('p','Les thèmes reviennent tous les trois mois. Tes progrès restent acquis, même quand tu fais une pause.'));
-    for(const event of COZY_EVENTS){const progress=s.cozy?.events.find(p=>p.id===event.id);const card=this.card(event.name,event.description);
-      card.append(node('p',`${progress?.progress??0}/${event.target} · ${progress?.completed?'Carte obtenue':active.id===event.id?'En ce moment':'De retour bientôt'}`,'badge'));this.content.append(card);}
-    this.content.append(node('h3','Petites découvertes'));
-    const current=currentDiscovery(this.now());
-    this.content.append(node('p','Une petite surprise change toutes les quatre heures. Retrouve-la dans la prairie, ou découvre-la ici. Chaque souvenir reste dans ta collection.','small'));
-    for(const d of DISCOVERIES){const found=s.cozy?.discoveries.includes(d.id);const card=this.decorationCard(d.art,found?d.text:d.id===current.id?'Une surprise t’attend maintenant.':'Cette découverte reviendra.');
-      card.querySelector('h3')!.textContent=d.name;
-      if(discoveryAvailable(s,this.now(),d.id))this.button(card,'Observer',()=>this.discover(d.id));else card.append(node('p',found?'Souvenir découvert':'À retrouver','small'));this.content.append(card);}
-    this.button(this.content,'Ouvrir l’album',()=>this.open({kind:'album'}),null,true);
   }
   private renderDecorationGroup(s:GameState):void {
     this.title.textContent='Déplacer un ensemble';
@@ -1391,14 +1374,13 @@ export class GameUI {
         if (challenge === 'voyage') label = target === 1 ? 'voyage' : 'voyages';
         else if (challenge === 'soin') label = target === 1 ? 'soin' : 'soins';
         else if (challenge === 'piquenique') label = target === 1 ? 'pique-nique' : 'pique-niques';
-        else if (challenge === 'parent') label = target === 1 ? 'lapereau comme parent' : 'lapereaux comme parent';
+        else if (challenge === 'parent') label = `${evolutionChallengeLabel(challenge)} \u00b7 ${value} / ${target}`;
         else if (challenge.startsWith('cuisine:')) {
           const recipe = challenge === 'cuisine:chicken' ? 'le poulet' : challenge === 'cuisine:moelleux' ? 'le moelleux' : 'l’avocado toast';
           label = `${target === 1 ? 'recette' : 'recettes'} : ${recipe}`;
         } else if (challenge.startsWith('corde:')) label = `${target === 1 ? 'manche' : 'manches'} de corde à sauter (au moins ${challenge.slice(6)} sauts)`;
         const li = node('li', '', value >= target ? 'is-complete' : '');
-        li.append(node('span', `${value} / ${target} ${label}`));
-        if (challenge.startsWith('corde:')) li.append(node('small', 'Le défi sera jouable quand la corde à sauter sera ajoutée.'));
+        li.append(node('span', challenge === 'parent' ? label : `${value} / ${target} ${label}`));
         list.append(li);
       }
       section.append(list);
@@ -2173,7 +2155,6 @@ export class GameUI {
     }
     if (tab === 'main' && s.missions.claimed.includes('first-birth')) this.button(tabs, 'Consulter le carnet', () => this.open({kind: 'recipes'}), null, true);
     tabs.classList.add('mission-tabs');
-    this.button(tabs,'Rendez-vous',()=>this.open({kind:'cozyEvents'}),null,true);
     this.content.append(tabs);
     const claim = (card: HTMLElement, command: Command, reward: Reward, ready: boolean, claimed: boolean, extraRewards: readonly Reward[] = []) => {
       const stage = claimed ? 'Réclamée' : ready ? 'À réclamer' : 'En cours';

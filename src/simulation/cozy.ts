@@ -6,12 +6,10 @@ export interface CozyState {
   bonds: {a: string; b: string; duration: number; celebrated: boolean}[];
   album: Memory[];
   souvenirs: {destination: Destination; visits: number}[];
-  discoveries: string[];
-  events: {id: string; progress: number; completed: boolean}[];
 }
 export const FRIENDSHIP_TIME = 6 * HOUR;
 export function cozyState(s: GameState): CozyState {
-  return s.cozy ??= {bonds: [], album: [], souvenirs: [], discoveries: [], events: []};
+  return s.cozy ??= {bonds: [], album: [], souvenirs: []};
 }
 export function recordMemory(s: GameState, memory: Memory): void {
   const c = cozyState(s);

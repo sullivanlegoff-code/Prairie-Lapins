@@ -106,9 +106,7 @@ const current = z.object({
     bonds: z.array(z.object({a: identity,b: identity,duration: integer.max(6*HOUR),celebrated:z.boolean()}).strict()).max(512),
     album: z.array(z.object({key:z.string().min(1).max(200),at:integer,kind:z.enum(['birth','friendship','travel','discovery','event']),text:z.string().max(300)}).strict()).max(80),
     souvenirs:z.array(z.object({destination:z.enum(TRAVEL.destinations),visits:integer.max(9999)}).strict()).max(TRAVEL.destinations.length),
-    discoveries:z.array(z.string().min(1).max(100)).max(64),
-    events:z.array(z.object({id:z.string().min(1).max(100),progress:integer.max(10000),completed:z.boolean()}).strict()).max(24),
-  }).strict().optional(),
+  }).optional(),
   version: z.literal(SAVE_VERSION), lastSimulatedAt: integer, nextId: integer.positive(), pattes: integer, grass: integer, hearts: integer, nextHeartGiftAt: timestamp,
   buildings: z.array(building).max(ISLAND.maxArea),
   rabbits: z.array(rabbit).max(ISLAND.maxArea * HABITAT_LEVELS.universal[2].capacity),
@@ -143,7 +141,7 @@ const schema = current.superRefine((s, context) => {
   if (s.cozy) {
     const c=s.cozy;
     if (new Set(c.bonds.map(b=>`${b.a}:${b.b}`)).size!==c.bonds.length || c.bonds.some(b=>b.a>=b.b || b.celebrated && b.duration<6*HOUR)) issue('Invalid friendship');
-    if (new Set(c.album.map(m=>m.key)).size!==c.album.length || new Set(c.souvenirs.map(m=>m.destination)).size!==c.souvenirs.length || new Set(c.discoveries).size!==c.discoveries.length || new Set(c.events.map(e=>e.id)).size!==c.events.length) issue('Duplicate cozy entry');
+    if (new Set(c.album.map(m=>m.key)).size!==c.album.length || new Set(c.souvenirs.map(m=>m.destination)).size!==c.souvenirs.length) issue('Duplicate cozy entry');
   }
   if (new Set(s.recipeBook).size !== s.recipeBook.length || s.recipeBook.some(id => !RECIPE_BOOK_SPECIES.includes(id))) issue('Invalid recipe book');
   if (s.decorations.some(d => d.placementXpProcessed === false && d.location.kind !== 'inventory')) issue('Unused placement XP on a placed decoration');

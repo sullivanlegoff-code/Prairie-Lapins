@@ -78,25 +78,26 @@ describe('Evolved drawings at affection 30', () => {
       expect(artForRabbit({species, affection: 40, classicLook: true})).toBe(rabbitArt(species));
     }
   });
-  it('an evolved rabbit is drawn 15 % bigger, in code, keeping its picture and facing', () => {
-    expect(EVOLVED_SCALE).toBe(1.15);
+  it('an evolved rabbit is drawn 20 % bigger, in code, keeping its picture and facing', () => {
+    expect(EVOLVED_SCALE).toBe(1.2);
     for (const entry of EVOLVED_ART) {
       const art = evolvedRabbitArt(entry.id)!, v1 = rabbitArt(entry.id)!;
-      expect(art.worldWidth).toBeCloseTo(entry.worldWidth * 1.15, 10);
+      expect(art.worldWidth).toBeCloseTo(entry.worldWidth * 1.2, 10);
       expect(art.width).toBe(entry.width); expect(art.height).toBe(entry.height);
       expect(art.facing).toBe(v1.facing); expect(art.groundY).toBe(v1.groundY);
       expect(art.texture).not.toBe(v1.texture);
       // The manifest world width keeps the v1's drawn area within 5 %: only EVOLVED_SCALE makes the evolution bigger.
       const area = (a: {worldWidth: number; width: number; height: number}) => a.worldWidth * a.worldWidth * a.height / a.width;
       expect(Math.abs(area(entry) / area(v1) - 1)).toBeLessThan(.05);
-      expect(area(art) / area(v1)).toBeGreaterThan(1.15 * 1.15 * .95);
+      expect(area(art) / area(v1)).toBeGreaterThan(1.2 * 1.2 * .95);
     }
   });
-  it('the manifest lists every evolved picture, its master and the 15 % scale; the files exist and match', () => {
+  it('the manifest lists every evolved picture, its master and the scale its pixels were sized for; the files exist and match', () => {
     const manifest = JSON.parse(readFileSync('scripts/rabbit-art-manifest.json', 'utf8'));
     for (const entry of EVOLVED_ART) {
       const m = manifest[`${entry.id}-evolution`];
-      expect(m).toMatchObject({species: entry.id, registry: 'src/config/evolvedArt.ts', displayScale: EVOLVED_SCALE, file: entry.file,
+      // Pixels sized for the former 15 % (legendary layers and the wand tip are in v2 pixels); drawn 20 % bigger since 4 November 2026.
+      expect(m).toMatchObject({species: entry.id, registry: 'src/config/evolvedArt.ts', displayScale: 1.15, file: entry.file,
         worldWidth: entry.worldWidth, width: entry.width, height: entry.height, master: `assets-source/rabbits/${entry.id}/${entry.id}-evolution-sprite.png`});
       expect(existsSync(`assets-source/rabbits/${entry.id}/${entry.id}-evolution-source.png`)).toBe(true);
       const png = decodePng(readFileSync(`public/${entry.file}`));

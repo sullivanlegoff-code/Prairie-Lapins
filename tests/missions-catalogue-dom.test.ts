@@ -41,12 +41,15 @@ const open = () => document.getElementById('open-missions')!.click();
 const catalogueSize = () => catalogueMainMissionIds(state()).length;
 
 describe('browsing all main missions from level seven', () => {
-  it('opens the album and recurring discoveries without spending, and exposes decoration collections',()=>{
-    const {ui,controller}=setup(state());ui.open({kind:'collection'});
+  it('removes the seasonal page and its entry buttons while keeping the album and decoration collections',()=>{
+    const {ui}=setup(state());ui.open({kind:'collection'});
+    const labels=()=>[...panel().querySelectorAll('button')].map(button=>button.textContent);
+    expect(labels()).not.toContain('Rendez-vous et découvertes');
+    expect(labels()).toContain('Album et souvenirs');
+    ui.open({kind:'album'});expect(panel().textContent).toContain('Cartes de voyage');
+    expect(labels()).not.toContain('Rendez-vous et découvertes');
+    ui.open({kind:'missions',tab:'main'});expect(labels()).not.toContain('Rendez-vous');
     const click=(label:string)=>{const b=[...panel().querySelectorAll('button')].find(b=>b.textContent===label);expect(b).toBeDefined();b!.click();};
-    click('Album et souvenirs');expect(panel().textContent).toContain('Cartes de voyage');expect(panel().textContent).toContain('Marrakech');
-    click('Rendez-vous et découvertes');expect(panel().textContent).toContain('Fête des récoltes');
-    const before=controller.getSnapshot().state!.pattes;click('Observer');expect(controller.getSnapshot().state!.cozy!.discoveries).toHaveLength(1);expect(controller.getSnapshot().state!.pattes).toBe(before);
     ui.open({kind:'shop',tab:'decorations'});click('Coin lecture');expect(panel().querySelectorAll('[data-catalog]')).toHaveLength(3);
     ui.open({kind:'arrange'});click('Déplacer un ensemble');expect(panel().textContent).toContain('Confirmer le déplacement');
   });
