@@ -69,7 +69,7 @@ it('the sheet requires explicit evolution; the scene plays and the forest then s
   (ui as unknown as {open(view: unknown): void}).open({kind: 'collection'});
   expect(panel().querySelector('.collection-evolution-count')?.textContent).toBe('0 / 35 évolutions');
   expect(panel().querySelector('[data-collection-evolution="paille"]')?.classList.contains('is-locked')).toBe(true);
-  expect(panel().querySelector('[data-collection-evolution="feu"]')?.classList.contains('is-locked')).toBe(true); // Unknown species still has a grey evolution slot.
+  expect(panel().querySelector('[data-collection-evolution="feu"]')).toBeNull(); // An undiscovered species does not reveal its evolution's shape.
   ui.select({kind: 'rabbit', id: 'rabbit-104'});
   expect(panel().querySelector<HTMLImageElement>('.portrait.large img')!.src).toContain('paille-v1.png');
   expect(panel().querySelector('[data-rabbit-evolution="rabbit-104"]')?.textContent).toContain('1 / 1 voyage');

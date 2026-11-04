@@ -2000,7 +2000,8 @@ export class GameUI {
       }
       const evolvedSpecies = speciesId;
       const evolvedArt = evolvedSpecies && EVOLVED_ART.find(art => art.id === evolvedSpecies);
-      if (evolvedSpecies && evolvedArt) {
+      // An undiscovered species keeps its secret: no evolution shape before it is found.
+      if (entry.known && evolvedSpecies && evolvedArt) {
         const evolvedRabbit = s.rabbits.find(rabbit => rabbit.species === evolvedSpecies && isEvolved(rabbit));
         const evolvedCell = node('div', '', `collection-evolution ${evolvedRabbit ? 'is-unlocked' : 'is-locked'}`);
         evolvedCell.dataset.collectionEvolution = evolvedSpecies;
