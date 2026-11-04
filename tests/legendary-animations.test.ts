@@ -2,11 +2,13 @@
 // @ts-expect-error -- the browser tsconfig has no Node types; Vitest runs this file in Node.
 import {existsSync, readFileSync} from 'node:fs';
 import {afterEach, describe, expect, it} from 'vitest';
-import {LEGENDARY_EFFECTS, LEGENDARY_IDLE_GAP_MS, LEGENDARY_PARTS, legendaryMeadowArt} from '../src/config/legendaryArt';
+import {LEGENDARY_EFFECTS, LEGENDARY_IDLE_GAP_MS, LEGENDARY_PARTS, LEGENDARY_EVOLVED_PARTS, legendaryMeadowArt} from '../src/config/legendaryArt';
 import {VISUAL} from '../src/config/visual';
 import {ACT_MS, DIVE, IDLE_GAP, LegendaryClock, SLAM, SURF_ENTRY_MS, SURF_SLIDE_MS, TAP_COOLDOWN_MS, breathFrame, diveFin, partAngle, speciesActs, surfPose} from '../src/display/legendaryTimeline';
 import {createRabbitMotion, motionZone, startSurf, stepRabbitMotion} from '../src/display/rabbitMotion';
 import {showLegendaryReveal} from '../src/ui/legendaryReveal';
+// @ts-expect-error -- the small project PNG codec is JavaScript and used only by Node tests.
+import {decode} from '../scripts/png-rgba.mjs';
 
 const publicFile = (url: string) => 'public/' + url.replace(/^.*?assets\//, 'assets/');
 /** Canvas size of a WebP (VP8X, VP8L or VP8 chunk). */
@@ -42,6 +44,52 @@ describe('legendary pictures', () => {
     }
     const mouth = LEGENDARY_PARTS.dragon.mouth!, [width, height] = pngSize(readFileSync(publicFile(mouth.url)));
     expect(width).toBe(mouth.width); expect(height).toBe(sprite('dragon')[1]); expect(width).toBeGreaterThan(sprite('dragon')[0]);
+    for (const species of ['dragon', 'requin', 'ankylosaure'] as const) {
+      const parts = LEGENDARY_EVOLVED_PARTS[species], evolved = pngSize(readFileSync(`public/assets/rabbits/${species}/${species}-v2.png`));
+      expect(pngSize(readFileSync(publicFile(parts.body.url)))).toEqual(evolved);
+      expect(pngSize(readFileSync(publicFile(parts.part.url)))).toEqual(evolved);
+      const original = decode(readFileSync(`public/assets/rabbits/${species}/${species}-v2.png`));
+      const body = decode(readFileSync(publicFile(parts.body.url))), piece = decode(readFileSync(publicFile(parts.part.url)));
+      const seen = new Uint8Array(body.width * body.height), sizes: number[] = [];
+      for (let start = 0; start < seen.length; start++) {
+        if (seen[start]) continue;
+        seen[start] = 1; const si = start * 4;
+        if (body.rgba[si + 3] <= 24) continue;
+        const queue = [start]; let count = 0;
+        while (queue.length) {
+          const at = queue.pop()!, x = at % body.width, y = Math.floor(at / body.width); count++;
+          for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+            const nx = x + dx, ny = y + dy; if ((dx === 0 && dy === 0) || nx < 0 || ny < 0 || nx >= body.width || ny >= body.height) continue;
+            const next = ny * body.width + nx, ni = next * 4;
+            if (!seen[next] && body.rgba[ni + 3] > 24) { seen[next] = 1; queue.push(next); }
+            else if (!seen[next]) seen[next] = 1;
+          }
+        }
+        sizes.push(count);
+      }
+      expect(sizes.filter(size => size > 20)).toHaveLength(1);
+      let alphaError = 0, colorError = 0;
+      for (let i = 0; i < original.rgba.length; i += 4) {
+        const ba = body.rgba[i + 3] / 255, pa = piece.rgba[i + 3] / 255, alpha = pa + ba * (1 - pa);
+        alphaError = Math.max(alphaError, Math.abs(alpha * 255 - original.rgba[i + 3]));
+        if (alpha && original.rgba[i + 3]) for (let c = 0; c < 3; c++) {
+          const color = (piece.rgba[i + c] * pa + body.rgba[i + c] * ba * (1 - pa)) / alpha;
+          colorError = Math.max(colorError, Math.abs(color - original.rgba[i + c]));
+        }
+      }
+      expect(alphaError).toBeLessThanOrEqual(1); expect(colorError).toBeLessThanOrEqual(1);
+    }
+    const evolvedMouth = LEGENDARY_EVOLVED_PARTS.dragon.mouth!;
+    expect(existsSync(publicFile(evolvedMouth.url))).toBe(true);
+    expect(pngSize(readFileSync(publicFile(evolvedMouth.url)))).toEqual([evolvedMouth.width, pngSize(readFileSync('public/assets/rabbits/dragon/dragon-v2.png'))[1]]);
+    const original = decode(readFileSync('public/assets/rabbits/dragon/dragon-v2.png'));
+    const body = decode(readFileSync('public/assets/rabbits/dragon/dragon-v2-body.png'));
+    const mouthBody = decode(readFileSync(publicFile(evolvedMouth.url)));
+    for (let i = 0; i < original.rgba.length; i += 4) {
+      const pixel = i / 4, x = pixel % original.width, y = Math.floor(pixel / original.width);
+      // The open body differs from the resting body only around the muzzle.
+      if (x < 362 || x > 474 || y < 156 || y > 267) expect([...mouthBody.rgba.subarray(i, i + 4)]).toEqual([...body.rgba.subarray(i, i + 4)]);
+    }
   });
   it('loads only its own species pictures in the meadow, never the full-screen paintings', () => {
     const dragon = legendaryMeadowArt('dragon').map(a => a.texture), requin = legendaryMeadowArt('requin').map(a => a.texture);
@@ -51,6 +99,11 @@ describe('legendary pictures', () => {
     const ankylosaure = legendaryMeadowArt('ankylosaure').map(a => a.texture);
     expect(ankylosaure).toEqual(expect.arrayContaining(['rabbit-ankylosaure-tail', 'legendary-crack', 'legendary-dustring', 'legendary-rock', 'legendary-mound']));
     expect(ankylosaure).not.toContain('legendary-breath-1'); expect(ankylosaure).not.toContain('legendary-surfboard');
+    for (const species of ['dragon', 'requin', 'ankylosaure'] as const) {
+      const classic = legendaryMeadowArt(species, {evolved: undefined}).map(a => a.texture), evolved = legendaryMeadowArt(species, {evolved: true}).map(a => a.texture);
+      expect(classic).toContain(`rabbit-${species}-v1-body`); expect(evolved).toContain(`rabbit-${species}-v2-body`);
+      expect(evolved).toContain(`rabbit-${species}-v2-${species === 'dragon' ? 'wing' : species === 'requin' ? 'fin' : 'tail'}`);
+    }
     for (const list of [dragon, requin, ankylosaure]) expect(list.some(t => /^legendary-(firewall|wave|foam|halo|rift|dustwall|strata)/.test(t))).toBe(false);
   });
 });

@@ -101,9 +101,9 @@ describe('Evolved drawings at affection 30', () => {
       expect(png.pixels[3]).toBe(0); expect(png.pixels[png.pixels.length - 1]).toBe(0);
     }
   });
-  it('does not layer v1 legendary body parts over an evolved legendary picture', async () => {
+  it('keeps the legendary meadow show for classic and evolved drawings', async () => {
     for (const species of ['dragon', 'requin', 'ankylosaure'] as const) {
-      expect(shouldShowLegendaryView(species, evolvedRabbitArt(species)!)).toBe(false);
+      expect(shouldShowLegendaryView(species, evolvedRabbitArt(species)!)).toBe(true);
       expect(shouldShowLegendaryView(species, rabbitArt(species)!)).toBe(true);
     }
   });
