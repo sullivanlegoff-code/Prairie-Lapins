@@ -127,7 +127,7 @@ describe('Benny clock', () => {
       if (act === 'flop') expect(shown.slice(0, 7)).toEqual(['flop-1', 'flop-2', 'flop-3', 'flop-4', 'flop-5', 'flop-6', null]);
     }
   });
-  it('waits 5 to 10 seconds before its first act at rest, then 8 to 15 seconds between two acts', () => {
+  it('waits 3 to 6 seconds before its first act, then 5 to 9 seconds between two acts', () => {
     const clock = new BennyClock('rabbit-7'), starts: number[] = [], ends: number[] = [];
     let wasPlaying = false;
     for (let t = 0; t < 120_000; t += 20) {
@@ -137,6 +137,11 @@ describe('Benny clock', () => {
     expect(starts[0]).toBeGreaterThanOrEqual(ACT_GAP.first[0] - 40); expect(starts[0]).toBeLessThanOrEqual(ACT_GAP.first[1] + 40);
     expect(starts.length).toBeGreaterThanOrEqual(5);
     for (let k = 1; k < starts.length; k++) { const gap = starts[k] - ends[k - 1]; expect(gap).toBeGreaterThanOrEqual(ACT_GAP.next[0] - 40); expect(gap).toBeLessThanOrEqual(ACT_GAP.next[1] + 40); }
+  });
+  it('counts the time during her walks too, and plays her act as soon as she stops (owner, 4 November 2026)', () => {
+    const clock = new BennyClock('rabbit-11');
+    run(clock, ACT_GAP.first[1] + 1000, {idle: false}); expect(clock.act).toBeNull();
+    clock.step(20, IDLE); expect(clock.act).not.toBeNull();
   });
   it('starts no act when hidden or busy, and draws several kinds of act', () => {
     const hidden = new BennyClock('rabbit-2'); run(hidden, 60_000, {active: false}); expect(hidden.act).toBeNull();

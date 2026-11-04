@@ -109,15 +109,16 @@ describe('legendary pictures', () => {
 });
 
 describe('legendary clock', () => {
-  it('waits its first gap (10 to 20 seconds) before its first spontaneous show, then plays one of its own', () => {
+  it('waits its first gap (4 to 8 seconds) before its first spontaneous show, then plays one of its own', () => {
     const clock = new LegendaryClock('dragon', 'rabbit-9');
     expect(clock.step(IDLE_GAP.first[0] - 1, true)).toBeNull();
     let started = null; for (let t = 0; t < IDLE_GAP.first[1] && !started; t += 100) started = clock.step(100, true);
     expect(started).not.toBeNull(); expect(speciesActs('dragon')).toContain(started!.act);
   });
-  it('plays every show of its species on its own, never more than 20 seconds apart', () => {
-    // Owner's request of 3 November 2026: "toutes les animations possibles et toutes les 10 à 20 secondes pas plus".
-    expect(IDLE_GAP.first[1]).toBeLessThanOrEqual(20_000); expect(IDLE_GAP.next[1]).toBeLessThanOrEqual(20_000);
+  it('plays every show of its species on its own, never more than 12 seconds apart', () => {
+    // Owner's requests of 3 November 2026 ("toutes les animations possibles et toutes les 10 à 20 secondes pas plus") and of
+    // 4 November 2026 (a little more often, seen without a touch): 6 to 12 seconds.
+    expect(IDLE_GAP.first[1]).toBeLessThanOrEqual(8_000); expect(IDLE_GAP.next[1]).toBeLessThanOrEqual(12_000);
     for (const species of ['dragon', 'requin', 'ankylosaure'] as const) {
       const clock = new LegendaryClock(species, 'rabbit-7'), seen = new Set<string>();
       for (let t = 0; t < 1_800_000; t += 100) { const s = clock.step(100, true); if (s) seen.add(s.act); }
@@ -135,7 +136,7 @@ describe('legendary clock', () => {
     expect(mean(IDLE_GAP.next) * 2).toBeLessThanOrEqual(mean([40_000, 95_000]));
     expect(mean(IDLE_GAP.first)).toBeLessThan(mean([10_000, 25_000]));
     expect(IDLE_GAP.next[1]).toBeGreaterThan(IDLE_GAP.next[0] * 1.5);
-    // Measured on a clock: one hour of an idle legendary gives about 135 shows, against about 52 with the former gap.
+    // Measured on a clock: one hour of an idle legendary gives well over 104 shows, against about 52 with the 40-95 s gap.
     const clock = new LegendaryClock('dragon', 'rabbit-42'); let shows = 0;
     for (let t = 0; t < 3_600_000; t += 100) if (clock.step(100, true)) shows++;
     expect(shows).toBeGreaterThanOrEqual(104);
