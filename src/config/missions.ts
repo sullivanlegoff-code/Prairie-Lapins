@@ -90,23 +90,36 @@ export const MAIN_MISSIONS: Record<MainMissionId, MainDefinition> = {
 /** All components belong to the same manual, atomic claim; legacy single-resource rewards are unchanged. */
 export const mainMissionRewards = (mission: MainDefinition): readonly Reward[] => [mission.reward, ...(mission.extraRewards ?? [])];
 /**
- * Daily pool. Each cycle shows THREE of these at once, all open from the start, to complete in any order (see
- * `dailyMissionsFor`). `gain-affection` keeps its id from the first version; it is the breeding mission.
+ * Daily pool. Each cycle shows THREE of these at once, all open from the start, to complete in any order. They are drawn at
+ * the start of the cycle among the missions the player can do then, and stay the same all cycle long (see `dailyMissionsFor`,
+ * `pickDailyMissions`). `gain-affection` keeps its id from the first version; it is the breeding mission.
  */
-export const DAILY_MISSION_IDS = ['collect-pattes', 'collect-grass', 'feed-rabbit', 'gain-affection', 'welcome-baby', 'decorate'] as const;
+export const DAILY_MISSION_IDS = ['collect-pattes', 'collect-grass', 'feed-rabbit', 'gain-affection', 'welcome-baby', 'decorate', 'cook-recipe', 'offer-care', 'short-trip', 'picnic', 'jump-rope', 'forest-walk', 'pet-rabbits'] as const;
 export type DailyMissionId = typeof DAILY_MISSION_IDS[number];
+/** The pool of the first six missions: what a cycle drawn before v25 showed (kept for saves written then). */
+export const LEGACY_DAILY_MISSION_IDS = ['collect-pattes', 'collect-grass', 'feed-rabbit', 'gain-affection', 'welcome-baby', 'decorate'] as const satisfies readonly DailyMissionId[];
 /** How many daily missions are shown and must be claimed before the cycle bonus. */
 export const DAILY_PICK_COUNT = 3;
-export type MissionEvent = 'collectIncome' | 'collectOrder' | 'feed' | 'breed' | 'welcome' | 'placeDecoration';
-export type DailyCategory = 'collect' | 'care' | 'breed' | 'nursery' | 'decor';
+export type MissionEvent = 'collectIncome' | 'collectOrder' | 'feed' | 'breed' | 'welcome' | 'placeDecoration' | 'rewardCuisine' | 'startCare' | 'startTrip' | 'picnic' | 'rewardJumpRope' | 'toggleClassicLook' | 'petRabbit';
+export type DailyCategory = 'collect' | 'care' | 'breed' | 'nursery' | 'decor' | 'activity' | 'outing';
+/** Where the shortcut button leads: a building, the collection, the meadow layout, the jump-rope islet or a rabbit to pet. */
+export type DailyPlace = BuildingKind | 'collection' | 'arrange' | 'jumpIsland' | 'pet';
 /** `place` is where the shortcut button leads; `category` keeps the three shown missions varied (one per category). */
-export const DAILY_MISSIONS: Record<DailyMissionId, {title: string; description: string; event: MissionEvent; category: DailyCategory; target: number; reward: Reward; place: BuildingKind | 'collection' | 'arrange'}> = {
+export const DAILY_MISSIONS: Record<DailyMissionId, {title: string; description: string; event: MissionEvent; category: DailyCategory; target: number; reward: Reward; place: DailyPlace}> = {
   'collect-pattes': {title: 'Récolte de pattes', description: 'Récolter 100 pattes dans les habitats.', event: 'collectIncome', category: 'collect', target: 100, reward: {resource: 'pattes', amount: 60}, place: 'enclosure'},
   'collect-grass': {title: 'Une réserve de nourriture', description: 'Récolter 40 nourriture dans les fermes.', event: 'collectOrder', category: 'collect', target: 40, reward: {resource: 'grass', amount: 30}, place: 'farm'},
   'feed-rabbit': {title: 'Un petit goûter', description: 'Nourrir trois fois un lapin.', event: 'feed', category: 'care', target: 3, reward: {resource: 'pattes', amount: 30}, place: 'enclosure'},
   'gain-affection': {title: 'Lancer une reproduction', description: 'Lance une reproduction au nid.', event: 'breed', category: 'breed', target: 1, reward: {resource: 'pattes', amount: 40}, place: 'nest'},
   'welcome-baby': {title: 'Accueillir un lapereau', description: 'Accueille un lapereau prêt depuis la nurserie.', event: 'welcome', category: 'nursery', target: 1, reward: {resource: 'pattes', amount: 40}, place: 'nursery'},
   'decorate': {title: 'Un coin joli', description: 'Poser une décoration dans la prairie.', event: 'placeDecoration', category: 'decor', target: 1, reward: {resource: 'pattes', amount: 40}, place: 'arrange'},
+  // The missions added on 4 November 2026 (owner): each one is offered only when the player can do it (`dailyMissionAvailable`).
+  'cook-recipe': {title: 'Cuisiner une recette', description: 'Réussis une recette à la cuisine.', event: 'rewardCuisine', category: 'activity', target: 1, reward: {resource: 'pattes', amount: 40}, place: 'kitchen'},
+  'offer-care': {title: 'Offrir un soin', description: 'Lance un soin pour un lapin au salon de soins.', event: 'startCare', category: 'care', target: 1, reward: {resource: 'pattes', amount: 40}, place: 'salon'},
+  'short-trip': {title: 'Un petit voyage', description: 'Envoie un lapin en voyage depuis l’agence.', event: 'startTrip', category: 'outing', target: 1, reward: {resource: 'grass', amount: 30}, place: 'agency'},
+  'picnic': {title: 'Un pique-nique', description: 'Fais un pique-nique dans un habitat.', event: 'picnic', category: 'outing', target: 1, reward: {resource: 'pattes', amount: 40}, place: 'enclosure'},
+  'jump-rope': {title: 'Corde à sauter', description: 'Joue une manche de corde à sauter sur ta petite île.', event: 'rewardJumpRope', category: 'activity', target: 1, reward: {resource: 'pattes', amount: 30}, place: 'jumpIsland'},
+  'forest-walk': {title: 'Promenade en forêt', description: 'À la Forêt de Brocéliande, change le dessin d’un lapin évolué.', event: 'toggleClassicLook', category: 'decor', target: 1, reward: {resource: 'pattes', amount: 30}, place: 'forest'},
+  'pet-rabbits': {title: 'Des caresses', description: 'Caresse 3 lapins différents : frotte doucement leur portrait dans leur fiche.', event: 'petRabbit', category: 'care', target: 3, reward: {resource: 'pattes', amount: 30}, place: 'pet'},
 };
 export const MISSION_CYCLE_DURATION = 24 * HOUR;
 /** The cycle bonus, claimed once the three shown missions are claimed: hearts and food here, XP in progression.ts. */

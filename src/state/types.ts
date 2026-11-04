@@ -54,7 +54,13 @@ export interface MissionState {
   nightOrderStarted?: boolean;
   events: Record<MainEvent, number>;
   completed: MainMissionId[]; claimed: MainMissionId[];
-  daily: {referenceAt: number; cycleIndex: number; progress: Record<DailyMissionId, number>; claimed: DailyMissionId[]; bonusClaimed: boolean; nextAt?: number};
+  /**
+   * daily.picked (v25): the three missions drawn at the start of the cycle among what the player could do then; absent, the
+   * draw among the base missions (`dailyMissionsOf`). daily.petted (v25): the rabbits caressed in this cycle, at most three.
+   */
+  daily: {referenceAt: number; cycleIndex: number; progress: Record<DailyMissionId, number>; claimed: DailyMissionId[]; bonusClaimed: boolean; nextAt?: number; picked?: DailyMissionId[]; petted?: string[]};
+  /** v25: the daily cycles in a row ending with the bonus claimed, and the last one (the `quotidien` evolution challenge). */
+  streak?: {count: number; lastCycle: number};
 }
 export interface Initiation {
   order: string | null; breeding: string | null; growth: string | null;
@@ -85,7 +91,7 @@ export interface GameState {
   startCourse?: 'paille-solo';
   purchaseUnlocks?: PurchaseUnlockId[];
   initiation?: Initiation;
-  version: 24;
+  version: 25;
   /** Benny, the Mythic (v22): when her power is usable again, and whether she is flying in the sky. Absent until first used. */
   benny?: {powerReadyAt: number; inSky: boolean};
   rewardedDecorationModels?: DecorationId[]; decorations: OwnedDecoration[]; missions: MissionState; lastSimulatedAt: number; nextId: number;
@@ -161,6 +167,8 @@ export type BaseCommand =
   | {type: 'toggleCrown'; rabbitId: string}
   /** Forêt de Brocéliande: an evolved rabbit switches between drawings; free and cosmetic. */
   | {type: 'toggleClassicLook'; rabbitId: string}
+  /** A caress on the rabbit's portrait in its sheet, just for fun: it only counts for the « Des caresses » daily mission. */
+  | {type: 'petRabbit'; rabbitId: string}
   /** Confirme l’évolution de ce lapin après affection 30 et ses défis. */
   | {type: 'evolveRabbit'; rabbitId: string}
   /** Benny's power: every baby of the nursery is ready now; then it recharges for 48 hours. */

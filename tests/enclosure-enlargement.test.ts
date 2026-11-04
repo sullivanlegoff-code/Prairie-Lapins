@@ -94,7 +94,7 @@ describe('a v23 save loads without loss', () => {
   it('migrates to v24, keeps every building, rabbit and decoration, and grows an enclosure that has room', () => {
     const s = crowded(); s.rabbits.push({id: 'rabbit-20', species: 'paille', affection: 3, enclosureId: 'building-1'}); s.nextId = 21;
     const loaded = load(asV23Json(s));
-    expect(loaded.version).toBe(24); expectNothingLost(s, loaded); expectNoOverlap(loaded);
+    expect(loaded.version).toBe(25); expectNothingLost(s, loaded); expectNoOverlap(loaded);
     const paille = loaded.buildings.find(b => b.id === 'building-1')!;
     expect(paille.formerFootprint).toBeUndefined(); expect(buildingFootprint(paille)).toEqual({x: 6, y: 40, width: 5, height: 4});
   });

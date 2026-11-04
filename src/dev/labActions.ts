@@ -12,7 +12,7 @@ import {buildingFootprint, footprintPlacementReason} from '../simulation/placeme
 import {habitatEntryReason} from '../simulation/habitats';
 import {bennyAllows} from '../simulation/benny';
 import {cumulativeLevelXp} from '../simulation/progression';
-import {updateMissions, emptyDailyProgress} from '../simulation/missions';
+import {updateMissions, emptyDailyProgress, pickDailyMissions} from '../simulation/missions';
 import {establishHistoricalLevelRights} from '../simulation/levelRights';
 import {classicLookReason} from '../simulation/forest';
 import {EVOLUTION_CHALLENGES, evolutionChallengeTarget} from '../config/evolutionChallenges';
@@ -153,7 +153,8 @@ export function labAction(state: GameState, action: LabAction): GameState {
     case 'dailyCycle': {
       const d = s.missions.daily;
       d.cycleIndex++; d.referenceAt = s.lastSimulatedAt - d.cycleIndex * MISSION_CYCLE_DURATION;
-      d.progress = emptyDailyProgress(); d.claimed = []; d.bonusClaimed = false; delete d.nextAt; break;
+      d.progress = emptyDailyProgress(); d.claimed = []; d.bonusClaimed = false; delete d.nextAt; delete d.petted;
+      d.picked = pickDailyMissions(s, d.cycleIndex); break;
     }
     case 'coco': s.travel = {...s.travel, welcomed: false, trips: s.travel?.trips ?? []}; break;
     case 'heartGift': s.nextHeartGiftAt = s.lastSimulatedAt; break;

@@ -25,8 +25,9 @@ describe('evolution challenge catalogue', () => {
       expect(challenges.length).toBeGreaterThanOrEqual(1);
       expect(challenges.length).toBeLessThanOrEqual(3);
     }
-    expect(EVOLUTION_CHALLENGES.snk).toEqual(['voyage', 'voyage']);
-    expect(EVOLUTION_CHALLENGES.virvoletant).toEqual(['voyage', 'voyage']);
+    // The owner's distribution of 4 November 2026 (checked in full in lot-b-evolution-missions.test.ts).
+    expect(EVOLUTION_CHALLENGES.snk).toEqual(['voyage', 'quotidien']);
+    expect(EVOLUTION_CHALLENGES.virvoletant).toEqual(['voyage', 'gouteur:chicken']);
     expect(EVOLUTION_CHALLENGES.egiiipte).toEqual(['voyage', 'voyage']);
   });
 

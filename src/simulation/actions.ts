@@ -18,9 +18,9 @@ import {affectionCap, capReason, isUltimate, nextAffectionStatue, playerLevel, r
 import {agencyBuilding, travelling} from './travel';
 import {atSalon, giftAffectionReason, giftReason, picnicQuote, salonBuilding} from './care';
 import {classicLookReason} from './forest';
-import {recordEvolutionChallenge, recordJumpRopeScore} from './evolution';
+import {recordDailyStreak, recordEvolutionChallenge, recordJumpRopeScore} from './evolution';
 import {canEvolve, hasEvolvedArt} from '../config/evolvedArt';
-import {evolutionChallengesComplete} from '../config/evolutionChallenges';
+import {evolutionChallengesComplete, type EvolutionChallenge} from '../config/evolutionChallenges';
 import {jumpIslandReason, jumpRopeReward, jumpRopeTeamReason} from './jumpRope';
 import {dailyBonusReady, dailyClaimable, dailyCycleStart, dailyMissionsOf, recordMissionAction} from './missions';
 import {farmLimit, farmDuration, FARM_UPGRADES, orderFarmLevel, BALANCE, HEARTS, HOUR, TRAVEL, SALON, FOREST, JUMP_ROPE, CARE_KINDS, carePrice, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
@@ -100,6 +100,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
   let progressionGain: ProgressionGain | undefined;
   let cuisineReward: import('../state/types').CuisineReward | undefined;
   let jumpRopeResult: import('./jumpRope').JumpRopeReward | undefined;
+  let missionAmount: number | undefined;
   const gainXp = (amount: number) => {
     const result = applyProgressionGain(s, amount);
     requireRule(result.ok, result.ok ? 'INVALID_CHOICE' : result.reason);
@@ -151,7 +152,9 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         const heartGranted = s.cuisine.heartCycle !== cycle;
         if (heartGranted) { credit('hearts', 1); s.cuisine.heartCycle = cycle; }
         cuisineReward = {pattes: paid.pattes, grass: paid.grass, fullReward, affectionGranted, affectionAtCap: rabbit.affection === BALANCE.maxAffection, affectionStatueRequired: !affectionGranted && rabbit.affection >= rabbitAffectionCap(s, rabbit) && capReason(s, rabbit) !== 'EVOLUTION_REQUIRED' && affectionCap(s) < BALANCE.maxAffection, ...(!affectionGranted && waitsForEvolution(rabbit) && rabbit.affection >= rabbitAffectionCap(s, rabbit) && capReason(s, rabbit) === 'EVOLUTION_REQUIRED' ? {affectionEvolutionRequired: true} : {}), heartGranted, affectionRabbitId: rabbit.id};
-        recordEvolutionChallenge(s, command.rabbitId, `cuisine:${command.recipeId}` as import('../config/evolutionChallenges').EvolutionChallenge);
+        // Distinct challenges (owner, 4 November 2026): « commis » counts only for the cook, « goûteur » only for the taster.
+        recordEvolutionChallenge(s, command.rabbitId, `commis:${command.recipeId}` as EvolutionChallenge);
+        if (command.tasterId !== undefined) recordEvolutionChallenge(s, command.tasterId, `gouteur:${command.recipeId}` as EvolutionChallenge);
         break;
       }
       case 'buyDecoration': {
@@ -209,7 +212,8 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(!s.missions.daily.bonusClaimed, 'ALREADY_CLAIMED');
         requireRule(dailyBonusReady(s), 'NOT_READY');
         for (const component of DAILY_BONUS) reward(component);
-        s.missions.daily.bonusClaimed = true; gainXp(PROGRESSION.xp.claims.dailyBonus); break;
+        s.missions.daily.bonusClaimed = true; gainXp(PROGRESSION.xp.claims.dailyBonus);
+        recordDailyStreak(s, s.missions.daily.cycleIndex); break; // A day succeeded, for the « quotidien » evolution challenge.
       }
       case 'welcomeAgency': {
         requireRule(agencyBuilding(s), 'MISSING_BUILDING');
@@ -562,6 +566,15 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         if (rabbit.classicLook) delete rabbit.classicLook; else rabbit.classicLook = true;
         break;
       }
+      case 'petRabbit': {
+        // Just for fun (owner, 4 November 2026): no affection, XP or resource. Only the first caress of each rabbit in the cycle
+        // counts for the « Des caresses » daily mission; the same rabbit caressed again counts once.
+        const rabbit = s.rabbits.find(r => r.id === command.rabbitId); requireRule(rabbit, 'NOT_FOUND');
+        const daily = s.missions.daily, petted = daily.petted ?? [];
+        missionAmount = 0;
+        if (!petted.includes(rabbit.id) && petted.length < DAILY_MISSIONS['pet-rabbits'].target) { daily.petted = [...petted, rabbit.id]; missionAmount = 1; }
+        break;
+      }
       case 'evolveRabbit': {
         const rabbit = s.rabbits.find(r => r.id === command.rabbitId); requireRule(rabbit, 'NOT_FOUND');
         requireRule(hasEvolvedArt(rabbit.species) && rabbit.species !== 'benny', 'NO_EVOLVED_ART');
@@ -599,7 +612,10 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       return sum + (before ? Math.max(0, rabbit.affection - before.affection) : 0);
     }, 0);
     requireRule(recordMissionAction(s, 'gainAffection', affectionGained), 'RESOURCE_LIMIT');
-    requireRule(recordMissionAction(s, command.type === 'buyDecoration' && command.location ? 'placeDecoration' : command.type, ['feed', 'breed', 'welcome'].includes(command.type) || command.type === 'placeDecoration' || (command.type === 'buyDecoration' && !!command.location) ? 1 : typeof value === 'number' ? value : 0, command.type !== 'placeDecoration' || command.location.kind === 'outside'), 'RESOURCE_LIMIT');
+    // One success each: a meal, a breeding, a welcome, a placed decoration, a recipe, a care, a trip, a picnic, a jump-rope game,
+    // a drawing changed at the forest; a caress counts once per rabbit and cycle (`missionAmount`).
+    const once = ['feed', 'breed', 'welcome', 'rewardCuisine', 'startCare', 'startTrip', 'picnic', 'rewardJumpRope', 'toggleClassicLook'].includes(command.type) || command.type === 'placeDecoration' || (command.type === 'buyDecoration' && !!command.location);
+    requireRule(recordMissionAction(s, command.type === 'buyDecoration' && command.location ? 'placeDecoration' : command.type, missionAmount ?? (once ? 1 : typeof value === 'number' ? value : 0), command.type !== 'placeDecoration' || command.location.kind === 'outside'), 'RESOURCE_LIMIT');
     // In particular, a welcome frees the nursery at this action's timestamp.
     return {ok: true, state: advance(s, time), ...(value === undefined ? {} : {value}), ...(progressionGain ? {progressionGain} : {}), ...(cuisineReward ? {cuisineReward} : {}), ...(jumpRopeResult ? {jumpRopeReward: jumpRopeResult} : {})};
   } catch (error) {

@@ -24,11 +24,11 @@ import {EVOLUTION_CHALLENGES, EVOLUTION_CHALLENGE_IDS, evolutionChallengeTarget,
 import {EVOLUTION_AFFECTION, hasEvolvedArt} from '../config/evolvedArt';
 
 /**
- * The current format is v24 (larger enclosures: an enclosure may keep its former footprint, see `migrateV23`), after v23 (affection up to 50, a second Statue de l'Affection, the Salon de soins and the picnic, a lapin ultime's taken-off crown, the Forêt de Brocéliande and a rabbit's old drawing put back, the Terrain de corde à sauter, all optional; nothing to convert), after v22 (Benny's power and sky mode, optional), v21 (friendships and memories), v20 (catalogue conversion) and v19 (farm and agency levels, concurrent trips, Heart receipts), migrated through v18 and v17 from v16 (economy migration). Version 16 was the catalogue boundary of the development saves: the species Terre, Mottelin, Géant and
+ * The current format is v25 (the evolution challenges « commis », « goûteur » and « quotidien », the daily streak, the daily missions drawn at the start of the cycle and the rabbits caressed in it, see `migrateV24`), after v24 (larger enclosures: an enclosure may keep its former footprint, see `migrateV23`), after v23 (affection up to 50, a second Statue de l'Affection, the Salon de soins and the picnic, a lapin ultime's taken-off crown, the Forêt de Brocéliande and a rabbit's old drawing put back, the Terrain de corde à sauter, all optional; nothing to convert), after v22 (Benny's power and sky mode, optional), v21 (friendships and memories), v20 (catalogue conversion) and v19 (farm and agency levels, concurrent trips, Heart receipts), migrated through v18 and v17 from v16 (economy migration). Version 16 was the catalogue boundary of the development saves: the species Terre, Mottelin, Géant and
  * Brumelin and the Terre habitat were removed, and saves before that catalogue boundary are not converted. Versions 1 to 15 are refused as incompatible
  * (the controller then starts a new game); they are never read, migrated or restored.
  */
-export const SAVE_VERSION = 24;
+export const SAVE_VERSION = 25;
 /** Types a species had before the owner changed them: a rabbit already housed under its old types may stay where it is. */
 const LEGACY_TYPES: Partial<Record<SpeciesId, readonly HabitatType[]>> = {magicien: ['metal', 'vol'], bouee: ['paille', 'feu'], dadi: ['neige', 'vol']};
 const integer = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
@@ -71,9 +71,15 @@ const missions = z.object({
   claimed: z.array(z.enum(MAIN_MISSION_IDS)).max(MAIN_MISSION_IDS.length),
   daily: z.object({referenceAt: timestamp, cycleIndex: integer,
     // Saves from before the pool of six read missing keys as 0.
-    progress: z.object({'collect-pattes': integer.default(0), 'collect-grass': integer.default(0), 'feed-rabbit': integer.default(0), 'gain-affection': integer.default(0), 'welcome-baby': integer.default(0), decorate: integer.default(0)}).strict(),
+    // The missions added in v25 read as 0 too.
+    progress: z.object(Object.fromEntries(DAILY_MISSION_IDS.map(id => [id, integer.default(0)])) as Record<typeof DAILY_MISSION_IDS[number], z.ZodDefault<typeof integer>>).strict(),
     claimed: z.array(z.enum(DAILY_MISSION_IDS)).max(DAILY_PICK_COUNT), bonusClaimed: z.boolean(), nextAt: timestamp.optional(),
+    // v25: the three missions drawn at the start of the cycle, and the rabbits caressed in it (at most the mission's target).
+    picked: z.array(z.enum(DAILY_MISSION_IDS)).length(DAILY_PICK_COUNT).refine(ids => new Set(ids).size === ids.length).optional(),
+    petted: z.array(identity).max(DAILY_MISSIONS['pet-rabbits'].target).refine(ids => new Set(ids).size === ids.length).optional(),
   }).strict(),
+  // v25: the daily cycles in a row ending with the bonus claimed (the `quotidien` evolution challenge).
+  streak: z.object({count: integer.positive().max(9999), lastCycle: integer}).strict().optional(),
 }).strict();
 const decoration = z.object({paidHearts: integer.positive().optional(), paidPrice: integer.optional(),id: z.string().regex(/^decoration-[1-9]\d*$/), catalogId: z.enum(DECORATION_IDS), placementXpProcessed: z.boolean().optional(),
   location: z.discriminatedUnion('kind', [
@@ -157,7 +163,8 @@ const schema = current.superRefine((s, context) => {
     m.claimed.some(id => !m.completed.includes(id))) issue('Main mission claims');
   if (d.cycleIndex !== cycleIndexAt(d.referenceAt, s.lastSimulatedAt)) issue('Daily cycle');
   if (new Set(d.claimed).size !== d.claimed.length || d.claimed.some(id => d.progress[id] < DAILY_MISSIONS[id].target) ||
-    (d.bonusClaimed && d.claimed.length !== DAILY_PICK_COUNT)) issue('Daily claims');
+    (d.bonusClaimed && d.claimed.length !== DAILY_PICK_COUNT) || (d.picked && d.claimed.some(id => !d.picked!.includes(id)))) issue('Daily claims');
+  if (m.streak && m.streak.lastCycle > d.cycleIndex) issue('Future daily streak');
   if (s.market && s.market.cycle > d.cycleIndex) issue('Future market cycle');
   if (d.referenceAt > s.lastSimulatedAt && (Object.values(d.progress).some(n => n !== 0) || d.claimed.length || d.bonusClaimed)) issue('Future cycle progress');
   if ([...Object.values(s.cuisine.affectionCycles), s.cuisine.heartCycle ?? 0, s.cuisine.fullRuns?.cycle ?? 0].some(cycle => cycle > s.missions.daily.cycleIndex)) issue('Future Cuisine cycle');
@@ -361,6 +368,32 @@ function migrateV23(raw: object): void {
   const save = raw as {version: number; buildings?: unknown};
   if (Array.isArray(save.buildings)) for (const b of save.buildings)
     if (b && typeof b === 'object' && (b as {kind?: unknown}).kind === 'enclosure') (b as {formerFootprint?: true}).formerFootprint = true;
+  save.version = 24;
+}
+
+/**
+ * v24 → v25, the new evolution challenges (owner, 4 November 2026). A rabbit's `cuisine:<recette>` progress becomes
+ * `commis:<recette>` when its species' new list has it, and is forgotten otherwise; a challenge its species no longer has is
+ * dropped and a value above the new target is capped. A rabbit that has already evolved stays evolved whatever happens: its
+ * progress is filled up to the new list's targets. The cycle under way keeps the three missions it showed in v24: a cycle
+ * without a stored draw shows the draw among the first six missions (`dailyMissionsOf`).
+ */
+function migrateV24(raw: object): void {
+  const save = raw as {version: number; rabbits?: unknown};
+  if (Array.isArray(save.rabbits)) for (const rabbit of save.rabbits) {
+    if (!rabbit || typeof rabbit !== 'object') continue;
+    const r = rabbit as {species?: unknown; evolution?: {done?: unknown; challenges?: unknown}};
+    if (!r.evolution || typeof r.evolution !== 'object' || !SPECIES_IDS.includes(r.species as SpeciesId)) continue;
+    const species = r.species as SpeciesId, list = EVOLUTION_CHALLENGES[species] ?? [], next: Partial<Record<EvolutionChallenge, number>> = {};
+    const old = r.evolution.challenges && typeof r.evolution.challenges === 'object' ? r.evolution.challenges as Record<string, unknown> : {};
+    for (const [key, value] of Object.entries(old)) {
+      const challenge = (key.startsWith('cuisine:') ? `commis:${key.slice('cuisine:'.length)}` : key) as EvolutionChallenge;
+      if (!list.includes(challenge) || !Number.isSafeInteger(value) || (value as number) < 0) continue;
+      next[challenge] = Math.min(evolutionChallengeTarget(species, challenge), Math.max(next[challenge] ?? 0, value as number));
+    }
+    if (r.evolution.done === true) for (const challenge of list) next[challenge] = evolutionChallengeTarget(species, challenge);
+    if (Object.keys(next).length) r.evolution.challenges = next; else delete r.evolution.challenges;
+  }
   save.version = SAVE_VERSION;
 }
 
@@ -374,7 +407,7 @@ export function decodeGame(json: string): DecodeResult {
   if (json.length > MAX_JSON_LENGTH) return {ok: false, reason: 'FILE_TOO_LARGE'};
   let raw: unknown;
   try { raw = JSON.parse(json); } catch { return {ok: false, reason: 'INVALID_JSON'}; }
-  if (raw && typeof raw === 'object' && 'version' in raw && raw.version !== SAVE_VERSION && raw.version !== 23 && raw.version !== 22 && raw.version !== 21 && raw.version !== 20 && raw.version !== 19 && raw.version !== 18 && raw.version !== 17 && raw.version !== 16)
+  if (raw && typeof raw === 'object' && 'version' in raw && raw.version !== SAVE_VERSION && raw.version !== 24 && raw.version !== 23 && raw.version !== 22 && raw.version !== 21 && raw.version !== 20 && raw.version !== 19 && raw.version !== 18 && raw.version !== 17 && raw.version !== 16)
     return {ok: false, reason: Number.isInteger(raw.version) && (raw.version as number) >= 1 && (raw.version as number) <= 15 ? 'INCOMPATIBLE_CATALOG' : 'UNSUPPORTED_VERSION'};
   // Only the explicitly retired catalogue entries are removed; unknown IDs still fail validation.
   if (raw && typeof raw === 'object' && 'decorations' in raw && Array.isArray(raw.decorations)) {
@@ -388,6 +421,7 @@ export function decodeGame(json: string): DecodeResult {
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 18) raw = migrateV18(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && (raw.version === 19 || raw.version === 20 || raw.version === 21 || raw.version === 22)) raw.version = 23;
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 23) migrateV23(raw);
+  if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 24) migrateV24(raw);
   settleStorageCaps(raw);
   const parsed = schema.safeParse(raw);
   if (!parsed.success) return {ok: false, reason: 'INVALID_STATE'};
@@ -429,6 +463,6 @@ export function encodeGame(state: GameState, presentationId?: string): string {
 
 /** Optional presentation metadata, separate from simulation state. Call after validating the save. */
 export function readPresentationId(json: string): string | undefined {
-  try { const raw = JSON.parse(json); const id = z.string().uuid().safeParse(raw.presentationId); return [SAVE_VERSION, 23, 22, 21, 20, 19, 18, 17, 16].includes(raw.version) && id.success ? id.data : undefined; }
+  try { const raw = JSON.parse(json); const id = z.string().uuid().safeParse(raw.presentationId); return [SAVE_VERSION, 24, 23, 22, 21, 20, 19, 18, 17, 16].includes(raw.version) && id.success ? id.data : undefined; }
   catch { return undefined; }
 }

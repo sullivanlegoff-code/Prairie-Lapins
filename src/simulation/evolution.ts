@@ -1,4 +1,4 @@
-import {EVOLUTION_CHALLENGES, evolutionChallengeTarget, type EvolutionChallenge} from '../config/evolutionChallenges';
+import {DAILY_STREAK_TARGET, EVOLUTION_CHALLENGES, evolutionChallengeTarget, type EvolutionChallenge} from '../config/evolutionChallenges';
 import type {GameState} from '../state/types';
 
 /** Adds one real in-game event to only the rabbit that performed it. Values are capped at the species requirement. */
@@ -24,4 +24,18 @@ export function recordJumpRopeScore(state: GameState, rabbitId: string, jumps: n
     if (jumps >= threshold) recordEvolutionChallenge(state, rabbitId, challenge);
   }
   return true;
+}
+
+/**
+ * « Réussir les missions du jour 3 jours de suite » (owner, 4 November 2026). A day succeeded is a daily cycle whose bonus was
+ * claimed: the streak grows when the previous cycle's bonus was claimed too, else it starts again at 1. As soon as it reaches
+ * DAILY_STREAK_TARGET at a claimed bonus, every owned rabbit whose species has the `quotidien` challenge validates it (a rabbit
+ * that arrives later validates it at the next claimed bonus, as long as the streak holds).
+ */
+export function recordDailyStreak(state: GameState, cycle: number): void {
+  const previous = state.missions.streak;
+  const count = previous && previous.lastCycle === cycle - 1 ? previous.count + 1 : previous && previous.lastCycle === cycle ? previous.count : 1;
+  state.missions.streak = {count: Math.min(count, 9999), lastCycle: cycle};
+  if (count < DAILY_STREAK_TARGET) return;
+  for (const rabbit of state.rabbits) recordEvolutionChallenge(state, rabbit.id, 'quotidien');
 }

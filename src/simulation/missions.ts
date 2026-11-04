@@ -1,7 +1,7 @@
 import {settlePurchaseUnlocks} from './purchaseUnlocks';
 import {progressionFromXp} from './progression';
-import {HOUR, ORDERS, SPECIES, SPECIES_IDS} from '../config/balance';
-import {DAILY_MISSIONS, DAILY_MISSION_IDS, MAIN_MISSIONS, MAIN_MISSION_IDS, NEW_MAIN_MISSION_IDS, DURABLE_MISSION_IDS, MISSION_CYCLE_DURATION, DAILY_PICK_COUNT, INITIAL_MISSION_IDS, SOLO_INITIAL_MISSION_IDS, BRANCH_MISSION_IDS, MAIN_EVENT_IDS, type MainMissionId, type DailyMissionId} from '../config/missions';
+import {HOUR, ORDERS, PICNIC, SPECIES, SPECIES_IDS} from '../config/balance';
+import {DAILY_MISSIONS, DAILY_MISSION_IDS, LEGACY_DAILY_MISSION_IDS, MAIN_MISSIONS, MAIN_MISSION_IDS, NEW_MAIN_MISSION_IDS, DURABLE_MISSION_IDS, MISSION_CYCLE_DURATION, DAILY_PICK_COUNT, INITIAL_MISSION_IDS, SOLO_INITIAL_MISSION_IDS, BRANCH_MISSION_IDS, MAIN_EVENT_IDS, type MainMissionId, type DailyMissionId} from '../config/missions';
 import {RECIPE_PRICES} from '../config/recipes';
 import type {GameState, MissionState} from '../state/types';
 import {hasEvolvedArt} from '../config/evolvedArt';
@@ -47,7 +47,9 @@ export function updateMissions(state: GameState, now: number): void {
   if (state.buildings.some(b => b.order && (b.order.duration ?? ORDERS[b.order.recipe].duration) >= HOUR)) m.nightOrderStarted = true;
   const cycle = cycleIndexAt(d.referenceAt, now);
   if (cycle > d.cycleIndex) {
-    d.cycleIndex = cycle; d.progress = emptyDailyProgress(); d.claimed = []; d.bonusClaimed = false; delete d.nextAt;
+    d.cycleIndex = cycle; d.progress = emptyDailyProgress(); d.claimed = []; d.bonusClaimed = false; delete d.nextAt; delete d.petted;
+    // The three missions are drawn now, among what the player can do at the start of the cycle, and stay all cycle long.
+    d.picked = pickDailyMissions(state, cycle);
   }
   for (const id of eligibleMainMissionIds(state)) {
     const p = mainProgress(state, id);
@@ -90,20 +92,45 @@ const missionRank = (cycle: number, id: DailyMissionId): number => {
   for (const ch of `${cycle}:${id}`) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
   return h >>> 0;
 };
+type DailyAvailabilityState = Pick<GameState, 'buildings' | 'rabbits'> & Partial<Pick<GameState, 'progression' | 'jumpIsland'>>;
 /**
- * The three daily missions of a cycle, one per category so they stay varied. Nothing is stored: the same cycle always
- * shows the same three, and all three are open from the start, to be done in any order.
+ * A daily mission is offered only when the player can do it (owner, 4 November 2026): the Cuisine, the salon or the agency
+ * built; the picnic from its level with a rabbit in a habitat; the jump-rope islet bought; the forest built with an evolved
+ * rabbit. The first six missions and the caresses are always possible.
  */
-export function dailyMissionsFor(cycleIndex: number): DailyMissionId[] {
+export function dailyMissionAvailable(s: DailyAvailabilityState, id: DailyMissionId): boolean {
+  const built = (kind: GameState['buildings'][number]['kind']) => s.buildings.some(b => b.kind === kind);
+  switch (id) {
+    case 'cook-recipe': return built('kitchen');
+    case 'offer-care': return built('salon');
+    case 'short-trip': return built('agency');
+    case 'picnic': return progressionFromXp(s.progression?.totalXp ?? 0).level >= PICNIC.unlockLevel && s.rabbits.some(r => s.buildings.some(b => b.kind === 'enclosure' && b.id === r.enclosureId));
+    case 'jump-rope': return !!s.jumpIsland;
+    case 'forest-walk': return built('forest') && s.rabbits.some(r => r.evolution?.done === true);
+    default: return true;
+  }
+}
+export const availableDailyMissions = (s: DailyAvailabilityState): DailyMissionId[] => DAILY_MISSION_IDS.filter(id => dailyMissionAvailable(s, id));
+/** The draw stored at the start of a cycle: what the player could do then, one mission per category. */
+export const pickDailyMissions = (s: DailyAvailabilityState, cycleIndex: number): DailyMissionId[] => dailyMissionsFor(cycleIndex, availableDailyMissions(s));
+/**
+ * The three daily missions of a cycle among `pool`, one per category so they stay varied. The same cycle and pool always give
+ * the same three, and all three are open from the start, to be done in any order.
+ */
+export function dailyMissionsFor(cycleIndex: number, pool: readonly DailyMissionId[] = LEGACY_DAILY_MISSION_IDS): DailyMissionId[] {
   const picked: DailyMissionId[] = [], categories = new Set<string>();
-  for (const id of [...DAILY_MISSION_IDS].sort((a, b) => missionRank(cycleIndex, a) - missionRank(cycleIndex, b))) {
+  for (const id of [...pool].sort((a, b) => missionRank(cycleIndex, a) - missionRank(cycleIndex, b))) {
     if (picked.length === DAILY_PICK_COUNT) break;
     if (categories.has(DAILY_MISSIONS[id].category)) continue;
     picked.push(id); categories.add(DAILY_MISSIONS[id].category);
   }
   return picked;
 }
-export const dailyMissionsOf = (s: Pick<GameState, 'missions'>): DailyMissionId[] => dailyMissionsFor(s.missions.daily.cycleIndex);
+/**
+ * The draw stored at the start of the cycle. A cycle without one (a save written before v25, or a new game's first day) keeps
+ * the draw among the first six missions, which is what it showed before v25: stable, whatever the player builds.
+ */
+export const dailyMissionsOf = (s: Pick<GameState, 'missions'>): DailyMissionId[] => s.missions.daily.picked ?? dailyMissionsFor(s.missions.daily.cycleIndex);
 export const dailyProgress = (s: Pick<GameState, 'missions'>, id: DailyMissionId): number => s.missions.daily.progress[id] ?? 0;
 /** A shown mission whose target is reached and whose reward is not yet claimed. */
 export const dailyClaimable = (s: Pick<GameState, 'missions'>, id: DailyMissionId): boolean =>

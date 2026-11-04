@@ -68,8 +68,9 @@ import type {MeadowScene, MeadowSelection} from '../display/MeadowScene';
 import {ActionGate} from './gestures';
 import {portrait, rabbitPortrait} from './portraits';
 import {EVOLVED_ART, canEvolve, showsEvolvedArt, type LookRabbit} from '../config/evolvedArt';
-import {EVOLUTION_CHALLENGES, evolutionChallengeLabel, evolutionChallengeTarget, evolutionChallengesComplete} from '../config/evolutionChallenges';
+import {DAILY_STREAK_TARGET, EVOLUTION_CHALLENGES, evolutionChallengeLabel, evolutionChallengeTarget, evolutionChallengesComplete} from '../config/evolutionChallenges';
 import {evolvedRabbitArt, rabbitArt} from '../config/rabbitArt';
+import {rabbitBlinkArt} from '../config/rabbitBlinkArt';
 import {forestRabbits, isEvolved} from '../simulation/forest';
 import {PreferenceStore, Sounds} from './preferences';
 import {onboardingTask} from './onboarding';
@@ -189,6 +190,10 @@ export class GameUI {
   private shopResources = node('div', '', 'shop-resources');
   private interactionPointers = new Set<number>();
   private pendingRender = false;
+  /** A caress under way on a rabbit's portrait: the sheet is not rebuilt until it ends, so the animation is never cut. */
+  private petting = false;
+  private petTimer = 0;
+  private petCooldownUntil = -Infinity;
   /** The name being typed in a rabbit's sheet: kept here, not in the DOM, so a refresh never loses the text, the caret or the focus. */
   private rename: {id: string; text: string; caret: number; error: string | null} | null = null;
   /** Which bubble of Coco's first welcome is shown (interface only: the welcome itself is saved once finished). */
@@ -365,6 +370,65 @@ export class GameUI {
       if (fireBreeding) this.accountReminder.request();
     });
   }
+  /**
+   * Caressing a rabbit in its sheet, just for fun (owner, 4 November 2026): rubbing the portrait with a finger or the mouse
+   * (pressed, then about 40 px of movement or a few small back-and-forths; a simple touch does nothing) closes its eyes, sends
+   * up a few hearts, wiggles the portrait gently and plays the soft confirmation sound. At most one caress every 1.5 s. The
+   * command only counts for the « Des caresses » daily mission.
+   */
+  private attachCaress(portraitElement: HTMLElement, rabbit: Rabbit): void {
+    portraitElement.classList.add('pettable'); portraitElement.dataset.petRabbit = rabbit.id;
+    portraitElement.title = 'Frotte doucement pour caresser';
+    let rub: {pointer: number; x: number; y: number; distance: number; reversals: number; direction: string} | null = null;
+    portraitElement.addEventListener('pointerdown', event => {
+      rub = {pointer: event.pointerId, x: event.clientX, y: event.clientY, distance: 0, reversals: 0, direction: ''};
+      try { portraitElement.setPointerCapture?.(event.pointerId); } catch { /* Capture is a comfort only. */ }
+    });
+    portraitElement.addEventListener('pointermove', event => {
+      if (!rub || event.pointerId !== rub.pointer) return;
+      const dx = event.clientX - rub.x, dy = event.clientY - rub.y; if (!dx && !dy) return;
+      rub.x = event.clientX; rub.y = event.clientY; rub.distance += Math.hypot(dx, dy);
+      const horizontal = Math.abs(dx) >= Math.abs(dy), direction = `${horizontal ? 'x' : 'y'}${Math.sign(horizontal ? dx : dy)}`;
+      if (rub.direction && rub.direction[0] === direction[0] && rub.direction !== direction) rub.reversals++;
+      rub.direction = direction; event.preventDefault();
+      if (rub.distance >= 40 || (rub.reversals >= 3 && rub.distance >= 12)) { rub.distance = 0; rub.reversals = 0; this.caress(portraitElement, rabbit); }
+    });
+    const stop = (event: PointerEvent) => { if (rub?.pointer === event.pointerId) rub = null; };
+    for (const type of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) portraitElement.addEventListener(type, stop);
+  }
+  private caress(portraitElement: HTMLElement, rabbit: Rabbit): void {
+    const now = performance.now(); if (now < this.petCooldownUntil) return;
+    this.petCooldownUntil = now + 1500;
+    // Nothing to win and nothing to refuse: a stale sheet simply shows its caress.
+    this.controller.perform({type: 'petRabbit', rabbitId: rabbit.id});
+    this.sounds.ping();
+    const reduced = !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    this.endCaress(portraitElement);
+    this.petting = true; portraitElement.dataset.petting = reduced ? 'still' : 'wiggle';
+    // Closed eyes: the « eyes-closed » patch over the species' own drawing; an evolved drawing has no eyelids.
+    const picture = portraitElement.querySelector<HTMLImageElement>('img[data-rabbit-art]'), art = rabbitArt(rabbit.species);
+    const patch = rabbitBlinkArt(rabbit.species)?.patches.find(item => item.kind === 'eyes-closed');
+    if (picture && art && patch && !picture.hasAttribute('data-evolved') && picture.getAttribute('src') === art.url) {
+      let figure = picture.parentElement?.classList.contains('ultimate-figure') || picture.parentElement?.classList.contains('pet-figure') ? picture.parentElement : null;
+      if (!figure) {
+        figure = node('span', '', 'pet-figure'); figure.style.setProperty('--ratio', String(art.width / art.height));
+        picture.replaceWith(figure); figure.append(picture); portraitElement.dataset.petFigure = '';
+      }
+      const lid = document.createElement('img'); lid.className = 'pet-eyelid'; lid.src = patch.url; lid.alt = ''; lid.draggable = false; lid.setAttribute('aria-hidden', 'true');
+      lid.style.left = `${patch.x / art.width * 100}%`; lid.style.top = `${patch.y / art.height * 100}%`; lid.style.width = `${patch.width / art.width * 100}%`;
+      figure.append(lid);
+    }
+    const hearts = node('span', '', 'pet-hearts'); hearts.setAttribute('aria-hidden', 'true'); if (reduced) hearts.dataset.reduced = '';
+    for (let k = 0; k < 5; k++) { const heart = heartEmblem(); heart.style.setProperty('--i', String(k)); hearts.append(heart); }
+    portraitElement.append(hearts);
+    this.petTimer = window.setTimeout(() => { this.endCaress(portraitElement); requestAnimationFrame(() => this.flushRender()); }, 1400);
+  }
+  private endCaress(portraitElement?: HTMLElement): void {
+    window.clearTimeout(this.petTimer); this.petTimer = 0; this.petting = false;
+    if (!portraitElement) return;
+    delete portraitElement.dataset.petting;
+    portraitElement.querySelectorAll('.pet-eyelid, .pet-hearts').forEach(element => element.remove());
+  }
   /** A short painted reveal shown only after the explicit evolution action has been saved. */
   private showEvolutionMoment(rabbit: Rabbit): void {
     this.dismissEvolutionMoment();
@@ -514,7 +578,7 @@ export class GameUI {
   }
   private interactionActive(): boolean {
     // A field being typed in keeps the keyboard open: passive refreshes wait until it loses the focus.
-    return this.interactionPointers.size > 0 || ((document.activeElement instanceof HTMLSelectElement || document.activeElement instanceof HTMLInputElement) && this.panel.contains(document.activeElement));
+    return this.petting || this.interactionPointers.size > 0 || ((document.activeElement instanceof HTMLSelectElement || document.activeElement instanceof HTMLInputElement) && this.panel.contains(document.activeElement));
   }
   private flushRender(): void { if (this.pendingRender && !this.interactionActive()) this.render(); }
   open(view: NonNullable<View>, navigation: 'push' | 'root' | 'tab' | 'back' = 'push'): void {
@@ -1354,6 +1418,7 @@ export class GameUI {
     essential.append(this.stats([['Affection', `${r.affection} / ${BALANCE.maxAffection}`], ['Revenu', `${rabbitIncome(r.affection, r.species, individualIncomeRoll(r))} pattes / h`]]));
     const large = wearsCrown(r) ? crownPortrait(avatar(r, true), r) : avatar(r, true);
     overview.append(legendary ? legendaryPortrait(large, r.species) : large, essential); this.content.append(overview);
+    this.attachCaress(large, r);
     const cost = feedCost(r.affection), onTrip = travelling(s, id), inCare = atSalon(s, id), reason = onTrip ? 'TRAVELING' as const : inCare ? 'AT_SALON' as const : feedReason(s, r);
     if (onTrip) essential.append(node('p', `En voyage ${toPlace(s.travel!.trips.find(t => t.rabbitId === id)!.destination)} · retour à l’agence`, 'badge rabbit-away'));
     if (inCare) essential.append(node('p', `Au salon de soins · ${CARE_NAMES[s.care!.care].toLowerCase()} en cours`, 'badge rabbit-away'));
@@ -1383,13 +1448,15 @@ export class GameUI {
         if (challenge === 'voyage') label = target === 1 ? 'voyage' : 'voyages';
         else if (challenge === 'soin') label = target === 1 ? 'soin' : 'soins';
         else if (challenge === 'piquenique') label = target === 1 ? 'pique-nique' : 'pique-niques';
-        else if (challenge === 'parent') label = `${evolutionChallengeLabel(challenge)} \u00b7 ${value} / ${target}`;
-        else if (challenge.startsWith('cuisine:')) {
-          const recipe = challenge === 'cuisine:chicken' ? 'le poulet' : challenge === 'cuisine:moelleux' ? 'le moelleux' : 'l’avocado toast';
-          label = `${target === 1 ? 'recette' : 'recettes'} : ${recipe}`;
+        else if (challenge === 'parent' || challenge.startsWith('commis:') || challenge.startsWith('gouteur:')) label = `${evolutionChallengeLabel(challenge)} \u00b7 ${value} / ${target}`;
+        else if (challenge === 'quotidien') {
+          // The streak still alive: its last claimed bonus is this cycle's or the previous one's.
+          const streak = s.missions.streak, alive = streak && streak.lastCycle >= s.missions.daily.cycleIndex - 1 ? streak.count : 0;
+          label = `${evolutionChallengeLabel(challenge)} \u00b7 ${value} / ${target}${value >= target ? '' : ` (série : ${Math.min(alive, DAILY_STREAK_TARGET)} / ${DAILY_STREAK_TARGET})`}`;
         } else if (challenge.startsWith('corde:')) label = `${target === 1 ? 'manche' : 'manches'} de corde à sauter (au moins ${challenge.slice(6)} sauts)`;
-        const li = node('li', '', value >= target ? 'is-complete' : '');
-        li.append(node('span', challenge === 'parent' ? label : `${value} / ${target} ${label}`));
+        const li = node('li', '', value >= target ? 'is-complete' : ''); li.dataset.challenge = challenge;
+        const full = challenge === 'parent' || challenge === 'quotidien' || challenge.startsWith('commis:') || challenge.startsWith('gouteur:');
+        li.append(node('span', full ? label : `${value} / ${target} ${label}`));
         list.append(li);
       }
       section.append(list);
@@ -2188,7 +2255,14 @@ export class GameUI {
       const bar = node('progress'); bar.max = target; bar.value = Math.min(value, target); bar.setAttribute('aria-label', `Progression : ${value} sur ${target}`);
       card.append(node('p', `Progression : ${value} / ${target}`), bar);
     };
-    const shortcut = (card: HTMLElement, kind: BuildingKind | 'collection' | 'affection' | 'extension' | 'arrange') => {
+    const shortcut = (card: HTMLElement, kind: BuildingKind | 'collection' | 'affection' | 'extension' | 'arrange' | 'jumpIsland' | 'pet') => {
+      if (kind === 'jumpIsland') { this.button(card, 'Aller sur ta petite île', () => this.open({kind: 'jumpIsland'}), null, true); return; }
+      if (kind === 'pet') {
+        // The first rabbit not caressed yet in this cycle: its sheet opens on the portrait to rub.
+        const petted = s.missions.daily.petted ?? [], rabbit = s.rabbits.find(r => !petted.includes(r.id)) ?? s.rabbits[0];
+        if (rabbit) this.button(card, 'Caresser un lapin', () => this.open({kind: 'rabbit', id: rabbit.id}), null, true);
+        return;
+      }
       if(kind==='extension' && s.acquiredParcels.length<PARCEL_IDS.length){const access=stateLevelAccess(s,{family:'extension',rank:s.acquiredParcels.length});if(access.locked)card.append(node('p',`Extension ${s.acquiredParcels.length} · Niveau ${access.requiredLevel} requis`,'reason'));}
       this.button(card, kind === 'collection' ? 'Voir la collection' : kind === 'affection' ? 'Voir un lapin' : kind === 'extension' ? 'Voir l’extension' : kind === 'arrange' ? 'Aménager la prairie' : 'Voir le bâtiment ou la boutique', () => {
         if (kind === 'arrange') this.open({kind:'arrange'});
@@ -2262,6 +2336,7 @@ export class GameUI {
       intro.append(node('p', 'Trois missions aujourd’hui, dans l’ordre que tu veux.', 'mission-day-lead'), node('p', 'Renouvellement dans :', 'small'));
       const timer = node('p', '', 'timer'); timer.dataset.end = String(dailyCycleEnd(s)); intro.append(timer);
       intro.append(node('p', 'Les récompenses non réclamées expirent à la fin des 24 heures. Les cycles manqués ne se cumulent pas.', 'small'));
+      intro.append(node('p', 'Les missions sont choisies au début du cycle parmi ce que tu peux déjà faire, et ne changent plus jusqu’au prochain.', 'small'));
       this.content.append(intro);
       for (const id of shown) {
         const mission = DAILY_MISSIONS[id], value = dailyProgress(s, id), claimed = daily.claimed.includes(id), ready = dailyClaimable(s, id);
@@ -2567,7 +2642,7 @@ export class GameUI {
     if (step.done) this.button(this.tutorial, 'Terminer le guidage', () => { this.preferences.set({tutorialDone: true}); this.renderPreferences(); this.renderTutorial(); }, null, true);
     this.button(this.tutorial, 'Masquer', () => { this.preferences.set({tutorial: false}); this.renderPreferences(); this.renderTutorial(); }, null, true);
   }
-  dispose(): void { this.photoControls.dispose(); this.clearRabbitMove(); this.moveBanner.remove(); this.clearWelcome(); this.welcomeBanner.remove(); this.closeReception(); this.accountReminder.dispose(); document.getElementById('onboarding-skip')?.remove(); this.pailleDialogue.dispose(); this.cuisine.dispose(); this.jumpRope.dispose(); this.confirmationGeneration++; if (this.dialog.open) this.dialog.close(); this.dialog.replaceChildren(); this.unsubscribe(); this.abort.abort(); cancelAnimationFrame(this.frame); clearTimeout(this.toastTimer); this.sounds.dispose(); }
+  dispose(): void { this.photoControls.dispose(); this.clearRabbitMove(); this.moveBanner.remove(); this.clearWelcome(); this.welcomeBanner.remove(); this.closeReception(); this.accountReminder.dispose(); document.getElementById('onboarding-skip')?.remove(); this.pailleDialogue.dispose(); this.cuisine.dispose(); this.jumpRope.dispose(); this.confirmationGeneration++; if (this.dialog.open) this.dialog.close(); this.dialog.replaceChildren(); this.unsubscribe(); this.abort.abort(); cancelAnimationFrame(this.frame); clearTimeout(this.toastTimer); this.endCaress(); this.sounds.dispose(); }
 }
 
 const JUMP_ISLAND_NAME = 'Île de la corde à sauter';
