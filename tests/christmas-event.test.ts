@@ -190,6 +190,10 @@ describe('the mini-game « Les cadeaux du ciel »', () => {
   it('pays 2 pattes a gift up to 60 for three games a cycle, never XP, and keeps the record', () => {
     const {s: base, ids} = setup();
     let s = base;
+    // A game with no gift caught uses up none of the three rewarded games.
+    const empty = run(s, {type: 'rewardSkyGifts', rabbitId: ids[0], caught: 0});
+    expect(empty.value).toBe(0); expect(skyGiftsDay(empty.state, 0).rewardedLeft).toBe(SKY_GIFTS.rewardedGamesPerCycle);
+    s = empty.state;
     const first = run(s, {type: 'rewardSkyGifts', rabbitId: ids[0], caught: 10});
     expect(first.value).toBe(20); expect(first.state.pattes - s.pattes).toBe(20); expect(first.progressionGain).toBeUndefined();
     s = first.state;

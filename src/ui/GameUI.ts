@@ -248,7 +248,7 @@ export class GameUI {
     this.skyGifts = mountSkyGiftsActivity(document.getElementById('app')!, {onFinished: (rabbit, caught) => {
       const granted = this.controller.perform({type: 'rewardSkyGifts', rabbitId: rabbit.id, caught});
       if (!granted.ok) return `Récompense non enregistrée : ${REFUSALS[granted.reason]}`;
-      return Number(granted.value) > 0 ? `+${granted.value} pattes` : 'Partie pour le plaisir : plus de récompense aujourd’hui';
+      return Number(granted.value) > 0 ? `+${granted.value} pattes` : caught ? 'Partie pour le plaisir : plus de récompense aujourd’hui' : '';
     }, quotaText: () => { const state = this.controller.getSnapshot().state; return state ? skyGiftsQuotaText(state, this.now()) : ''; },
     best: () => this.controller.getSnapshot().state?.christmas?.skyGifts?.best ?? 0, cheer: () => this.sounds.ping(), onExit: () => this.render()});
     this.moveBanner.id = 'rabbit-move-banner'; this.moveBanner.hidden = true;

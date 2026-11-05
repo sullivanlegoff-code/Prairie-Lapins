@@ -141,7 +141,8 @@ export class MeadowScene extends Phaser.Scene {
   private chaseTest = false;
   /** Christmas: two rabbits of one enclosure throwing tiny snowballs at each other now and then (visual only). */
   private snowballs = new SnowballFights();
-  private snowballTest = false;
+  /** Laboratory: until when the snowball fight button keeps asking for a fight (a napping rabbit may wake up meanwhile). */
+  private snowballTestUntil = 0;
   private snowballViews = new Map<string, Phaser.GameObjects.Image>();
   /** Christmas pictures loaded on demand, never required: a missing one only means nothing is drawn (`optionalArt`). */
   private optionalPending = new Set<string>();
@@ -316,7 +317,7 @@ export class MeadowScene extends Phaser.Scene {
     const chaseTest = () => { this.chaseTest = true; };
     window.addEventListener(CHASE_EVENT, chaseTest);
     // Laboratory only: a snowball fight in every enclosure that allows one (while the event is on).
-    const snowballTest = () => { this.snowballTest = true; };
+    const snowballTest = () => { this.snowballTestUntil = this.time.now + 10_000; };
     window.addEventListener(SNOWBALL_EVENT, snowballTest);
     this.events.once('shutdown', () => {
       stopCommands(); this.dadi.reset(); this.dadiSpeech?.destroy(); this.dadiSpeech = null;
@@ -460,7 +461,7 @@ export class MeadowScene extends Phaser.Scene {
     const owned = ownedRegions(this.current.acquiredParcels);
     rects.push(...owned);
     if (this.current.jumpIsland && !this.expanding) rects.push(jumpIslandFrame());
-    if (christmasActive() && !this.expanding) rects.push(christmasMarketFrame());
+    if (christmasActive() && !this.expanding) rects.push(christmasMarketFrame(!!this.current.jumpIsland));
     this.view.overview({left:Math.min(...rects.map(r=>r.left)),right:Math.max(...rects.map(r=>r.right)),top:Math.min(...rects.map(r=>r.top)),bottom:Math.max(...rects.map(r=>r.bottom))});
     this.applyCamera();
   }
@@ -810,7 +811,7 @@ export class MeadowScene extends Phaser.Scene {
   }
   private updateVisibleRegions(): void {
     // Owned plateaux and their hanging rock; clouds and extension sketches do not own pan regions.
-    this.view.setVisibleRegions(this.expanding || !this.current ? null : [...ownedRegions(this.current.acquiredParcels), ...(this.current.jumpIsland ? [jumpIslandFrame()] : []), ...(christmasActive() ? [christmasMarketFrame()] : [])]);
+    this.view.setVisibleRegions(this.expanding || !this.current ? null : [...ownedRegions(this.current.acquiredParcels), ...(this.current.jumpIsland ? [jumpIslandFrame()] : []), ...(christmasActive() ? [christmasMarketFrame(!!this.current.jumpIsland)] : [])]);
   }
   /** DOM portraits use ordinary image requests; Phaser only decodes residents and the active habitat preview. */
   private requiredArt(state: GameState | null): {texture: string; url: string; atlas?: string}[] {
@@ -890,7 +891,7 @@ export class MeadowScene extends Phaser.Scene {
   private syncChristmasMarket(date: Date): void {
     const art = CHRISTMAS_MARKET_ART, show = christmasActive() && !!this.current;
     if (!show) { this.marketImage?.destroy(); this.marketImage = null; this.marketLights?.destroy(); this.marketLights = null; return; }
-    const p = christmasMarketPoint();
+    const p = christmasMarketPoint(!!this.current?.jumpIsland);
     if (!this.marketImage && this.optionalArt(art.texture, art.url)) {
       const image = this.marketImage = this.add.image(p.x, p.y, art.texture);
       // Sized by its world width whatever the prepared picture's pixels, like the jump-rope islet.
@@ -1504,7 +1505,7 @@ export class MeadowScene extends Phaser.Scene {
   }
   /** The Christmas market's picture, by its painted silhouette (only while it is drawn). */
   private marketHit(world: Point): boolean {
-    const image = this.marketImage, f = christmasMarketFrame(), art = CHRISTMAS_MARKET_ART; if (!image) return false;
+    const image = this.marketImage, f = christmasMarketFrame(!!this.current?.jumpIsland), art = CHRISTMAS_MARKET_ART; if (!image) return false;
     if (world.x < f.left || world.x > f.right || world.y < f.top || world.y > f.bottom) return false;
     const local = image.getWorldTransformMatrix().applyInverse(world.x, world.y), w = image.frame.realWidth, h = image.frame.realHeight;
     const x = Math.floor(local.x + w * art.originX), y = Math.floor(local.y + h * art.originY);
@@ -1573,8 +1574,7 @@ export class MeadowScene extends Phaser.Scene {
     this.chases.step(dt, this.chaseRunners(visibleResidents, dadi.speech?.id), lifeActive, reducedMotion, this.chaseTest);
     this.chaseTest = false;
     // Christmas: the snowball fights, after the chases (a chaser never throws), while the event is on.
-    this.snowballs.step(dt, this.snowballThrowers(visibleResidents, dadi.speech?.id), lifeActive, reducedMotion, christmas, this.snowballTest && christmas);
-    this.snowballTest = false;
+    this.snowballs.step(dt, this.snowballThrowers(visibleResidents, dadi.speech?.id), lifeActive, reducedMotion, christmas, christmas && this.time.now < this.snowballTestUntil);
     this.drawSnowballs();
     this.lifeViews?.begin(this.rabbitViews.map(r => r.id));
     let depthChanged = false;

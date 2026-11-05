@@ -139,9 +139,9 @@ export function skyGiftsDay(s: Pick<GameState, 'christmas' | 'missions'>, now: n
   const g = s.christmas?.skyGifts, day = g && g.cycle === giftCycle(s, now) ? g : null;
   return {rewardedLeft: Math.max(0, SKY_GIFTS.rewardedGamesPerCycle - (day?.rewarded ?? 0)), best: g?.best ?? 0};
 }
-/** What a finished game with `caught` gifts pays now: pattes within the daily limit, never XP. */
+/** What a finished game with `caught` gifts pays now: pattes within the daily limit, never XP. A game with no gift caught uses up no rewarded game. */
 export function skyGiftsReward(s: Pick<GameState, 'christmas' | 'missions'>, caught: number, now: number): {pattes: number; rewarded: boolean} {
-  const rewarded = skyGiftsDay(s, now).rewardedLeft > 0;
+  const rewarded = caught >= 1 && skyGiftsDay(s, now).rewardedLeft > 0;
   return {pattes: rewarded ? Math.min(SKY_GIFTS.maxPattes, Math.max(0, Math.floor(caught)) * SKY_GIFTS.pattesPerGift) : 0, rewarded};
 }
 /** Why this rabbit cannot carry the basket now (missing, on a trip, at the salon), or null. */

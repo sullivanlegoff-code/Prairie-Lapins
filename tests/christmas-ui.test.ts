@@ -160,16 +160,17 @@ describe('Snowman button in the enclosure sheet', () => {
 describe('Christmas market islet frame', () => {
   const overlap = (a: WorldBounds, b: WorldBounds) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
   it('floats west of the island, apart from the jump-rope islet and every parcel', () => {
-    const market = christmasMarketFrame();
-    expect(overlap(market, jumpIslandFrame())).toBe(false);
-    for (const region of ownedRegions([...PARCEL_IDS])) expect(overlap(market, region)).toBe(false);
-    for (const id of PARCEL_IDS) {
-      const p = PARCELS[id];
-      expect(overlap(market, screenBounds(cellsBounds(p.x, p.y, p.x + ISLAND.parcelCells, p.y + ISLAND.parcelCells)))).toBe(false);
-    }
-    // West: left of the start parcel.
+    // Beside the start island; above the jump-rope islet when the player owns it.
+    expect(overlap(christmasMarketFrame(true), jumpIslandFrame())).toBe(false);
     const start = screenBounds(cellsBounds(PARCELS.southwest.x, PARCELS.southwest.y, PARCELS.southwest.x + ISLAND.parcelCells, PARCELS.southwest.y + ISLAND.parcelCells));
-    expect(market.right).toBeLessThan(start.left);
+    for (const market of [christmasMarketFrame(), christmasMarketFrame(true)]) {
+      for (const region of ownedRegions([...PARCEL_IDS])) expect(overlap(market, region)).toBe(false);
+      for (const id of PARCEL_IDS) {
+        const p = PARCELS[id];
+        expect(overlap(market, screenBounds(cellsBounds(p.x, p.y, p.x + ISLAND.parcelCells, p.y + ISLAND.parcelCells)))).toBe(false);
+      }
+      expect(market.right).toBeLessThan(start.left);
+    }
   });
 });
 
