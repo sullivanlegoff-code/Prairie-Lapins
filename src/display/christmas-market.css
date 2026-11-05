@@ -1,0 +1,130 @@
+/* The Christmas market (owner, 5 November 2026): full screen like the shop, in the colours of the event — a snowy night,
+   holly red and green, gold trims and candy-cane stripes. The painted market islet heads the page. */
+#game-panel.christmas-market {
+  --xmas-red: #b3262f;
+  --xmas-red-deep: #7c1820;
+  --xmas-green: #23573a;
+  --xmas-green-deep: #163b27;
+  --xmas-gold: #e7bf62;
+  --xmas-gold-deep: #a97c2c;
+  --xmas-snow: #fffaf0;
+  --xmas-night: #1b2550;
+  border: 0;
+  background: var(--xmas-night);
+}
+#game-panel.christmas-market .panel-header {
+  border-bottom: 0;
+  background: linear-gradient(180deg, var(--xmas-red), var(--xmas-red-deep));
+  box-shadow: inset 0 1px #ffffff40, 0 2px 0 var(--xmas-gold-deep);
+  position: relative;
+}
+/* A candy-cane ribbon under the title bar. */
+#game-panel.christmas-market .panel-header::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -8px; height: 8px; pointer-events: none;
+  background: repeating-linear-gradient(135deg, #fff 0 9px, #d62f38 9px 18px);
+  box-shadow: 0 2px 3px #0005;
+}
+#game-panel.christmas-market .panel-header h2 { color: #fff3cf; -webkit-text-stroke: 1.4px #4a0d12; text-shadow: 0 2px #3d0b10; }
+#game-panel.christmas-market .shop-resources > span { background: #fffaf0; color: var(--xmas-red-deep); border-color: var(--xmas-gold); }
+#game-panel.christmas-market .christmas-resource { display: inline-flex; align-items: center; gap: 4px; }
+/* The page: a snowy night sky (soft snow dots over a deep blue). */
+#game-panel.christmas-market .panel-scroll {
+  padding-top: 22px;
+  color: var(--xmas-snow);
+  background-color: var(--xmas-night);
+  background-image:
+    radial-gradient(circle at 20% 30%, #ffffffd0 0 1.4px, transparent 2px),
+    radial-gradient(circle at 70% 60%, #ffffffa0 0 1.1px, transparent 1.6px),
+    radial-gradient(circle at 45% 85%, #ffffff80 0 1.8px, transparent 2.4px),
+    linear-gradient(180deg, #16204a, #2a2f6a 55%, #3b3a78);
+  background-size: 90px 90px, 130px 130px, 170px 170px, 100% 100%;
+  background-attachment: local;
+}
+#game-panel.christmas-market :is(.small, .card-heading p) { color: inherit; opacity: .92; }
+
+/* The banner: the painted market and the balance. */
+.christmas-banner {
+  display: flex; align-items: center; gap: 14px; margin: 0 0 14px; padding: 10px 16px 10px 8px;
+  border: 3px solid var(--xmas-gold); border-radius: 22px;
+  background: linear-gradient(120deg, #2d3a7a, #43337a 60%, #6b2f5f);
+  box-shadow: inset 0 0 0 2px #fff3, 0 6px 14px #0007;
+}
+.christmas-banner > img { flex: 0 0 auto; width: auto; height: clamp(84px, 22vh, 150px); filter: drop-shadow(0 6px 6px #0008); }
+.christmas-banner-text { min-width: 0; }
+.christmas-banner-lead { margin: 0 0 8px; font-size: 15px; font-weight: 700; color: #fff8e6; }
+.christmas-candies {
+  display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 6px 14px;
+  border: 2px solid var(--xmas-gold); border-radius: 999px;
+  background: #fffaf0; color: var(--xmas-red-deep); font-size: 18px; font-weight: 900;
+  box-shadow: 0 3px 0 var(--xmas-gold-deep);
+}
+
+/* The three tabs: green velvet, the open one red with a gold edge. */
+#game-panel.christmas-market .christmas-tabs { display: flex; gap: 8px; padding: 0 0 12px; margin: 0; }
+#game-panel.christmas-market .christmas-tabs > button {
+  flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 56px;
+  --stone-face: var(--xmas-green); --stone-ink: #fff3cf;
+  font-weight: 900; line-height: 1.15;
+  box-shadow: 0 0 0 2px var(--xmas-gold-deep), 0 4px 0 var(--xmas-green-deep);
+}
+#game-panel.christmas-market .christmas-tabs > button[aria-selected='true'] {
+  --stone-face: var(--xmas-red); --stone-ink: #fff8e2;
+  box-shadow: 0 0 0 3px var(--xmas-gold), 0 4px 0 var(--xmas-red-deep), 0 0 14px #ffd36a80;
+}
+#game-panel.christmas-market .christmas-tabs > button img { width: 28px; height: 28px; object-fit: contain; flex: 0 0 auto; filter: drop-shadow(0 2px 1px #0006); }
+
+/* The cards: warm snow paper framed in gold, a holly-red title. */
+#game-panel.christmas-market .christmas-page .card {
+  border: 3px solid var(--xmas-gold); border-image: none; border-radius: 18px; padding: 12px 14px 14px; margin: 0 0 12px;
+  background: linear-gradient(160deg, #fffdf6, #f6ead2); color: #3b2a1c;
+  box-shadow: inset 0 0 0 2px #fff, 0 5px 0 var(--xmas-gold-deep), 0 8px 14px #0006;
+}
+#game-panel.christmas-market .christmas-page .card :is(.small, .card-heading p, p) { color: #5a4330; opacity: 1; }
+#game-panel.christmas-market .christmas-page .card-heading h3,
+#game-panel.christmas-market .christmas-page .card > h3 { color: var(--xmas-red-deep); }
+#game-panel.christmas-market .christmas-page .card button:not(:disabled):not(.secondary):not(.action-secondary) { --stone-face: var(--xmas-red); --stone-ink: #fff8e2; }
+#game-panel.christmas-market .christmas-page .card button:not(:disabled):is(.secondary, .action-secondary) { --stone-face: var(--xmas-green); --stone-ink: #fff3cf; }
+#game-panel.christmas-market .christmas-page progress::-webkit-progress-bar { background: #e9dcc4; }
+#game-panel.christmas-market .christmas-page progress::-webkit-progress-value { background: repeating-linear-gradient(135deg, #fff 0 6px, #d62f38 6px 12px); }
+#game-panel.christmas-market .christmas-page progress::-moz-progress-bar { background: repeating-linear-gradient(135deg, #fff 0 6px, #d62f38 6px 12px); }
+#game-panel.christmas-market .christmas-page .mission-bonus { background: linear-gradient(160deg, #fff6d6, #f3dc9e); }
+#game-panel.christmas-market .christmas-page > .small { margin: 0 2px 12px; color: #f1ead8; }
+#game-panel.christmas-market .christmas-page .decoration-icon { background: radial-gradient(circle, #fff 30%, #e8f0ff); border-radius: 14px; }
+
+/* « Récompenses spéciales »: two columns when there is room. */
+.christmas-page[data-christmas-page='rewards'] { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; align-items: start; }
+.christmas-page[data-christmas-page='rewards'] > .small { grid-column: 1 / -1; }
+@media (max-width: 640px) { .christmas-page[data-christmas-page='rewards'] { grid-template-columns: minmax(0, 1fr); } }
+
+/* « Récupérer les cadeaux »: the painted night of the mini-game behind its card. */
+#game-panel.christmas-market .christmas-page .christmas-game {
+  color: #fff8e6; text-align: center;
+  background: linear-gradient(180deg, #121a40e0, #1c2456d8 60%, #262b60f0), var(--christmas-game-art) center / cover no-repeat;
+}
+#game-panel.christmas-market .christmas-page .card.christmas-game :is(p, .small) { color: #fff8e6; font-weight: 700; text-shadow: 0 1px 2px #000c; }
+#game-panel.christmas-market .christmas-page .card.christmas-game > .badge { display: inline-block; color: var(--xmas-red-deep); background: #fffaf0; border-color: var(--xmas-gold); text-shadow: none; }
+#game-panel.christmas-market .christmas-page .card.christmas-game > h3 {
+  margin: 4px auto 8px; padding: 6px 22px; border: 3px solid var(--xmas-gold); border-image: none; border-radius: 999px;
+  background: linear-gradient(180deg, var(--xmas-red), var(--xmas-red-deep)); color: #fff3cf; font-size: 22px; text-shadow: 0 2px #3d0b10; box-shadow: 0 3px 0 var(--xmas-gold-deep);
+}
+#game-panel.christmas-market .christmas-page .card.christmas-game > button { margin-inline: auto; min-width: min(100%, 320px); }
+.christmas-traps { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 6px 0 10px; }
+.christmas-traps > span {
+  display: inline-flex; flex-direction: column; align-items: center; gap: 4px; min-width: 96px; padding: 8px 10px;
+  border: 2px solid var(--xmas-gold); border-radius: 16px; background: #fffaf0e6; color: #3b2a1c; font-size: 13px; font-weight: 800;
+}
+#game-panel.christmas-market .christmas-page .christmas-traps > span { color: #3b2a1c; text-shadow: none; }
+#game-panel.christmas-market .christmas-page .christmas-traps > span:not(:first-child) { border-color: #8fd14f; color: #3e1f4d; }
+.christmas-traps img { width: 44px; height: 44px; object-fit: contain; }
+@media (max-width: 480px) {
+  .christmas-banner { flex-direction: column; text-align: center; padding: 10px; }
+  #game-panel.christmas-market .christmas-tabs > button { flex-direction: column; gap: 3px; font-size: 12px; min-height: 64px; padding: 6px; }
+}
+/* A phone held sideways: a slimmer banner, so the tabs and the first card stay in view. */
+@media (max-height: 500px) {
+  .christmas-banner { padding: 6px 12px 6px 6px; margin-bottom: 10px; }
+  .christmas-banner > img { height: 74px; }
+  .christmas-banner-lead { font-size: 13px; margin-bottom: 5px; }
+  .christmas-candies { font-size: 15px; padding: 3px 10px; }
+  #game-panel.christmas-market .christmas-tabs > button { min-height: 46px; }
+}

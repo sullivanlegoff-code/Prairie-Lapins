@@ -58,7 +58,9 @@ import type {Command, DecorationLocation, GameState, PattesCommand, TimedStage} 
 import {CHRISTMAS_DECORATION_IDS, DECORATIONS, DECORATION_IDS, FINE_GRID, isChristmasDecoration, ownedDecorationResalePrice, type DecorationId} from '../config/decorations';
 import {CHRISTMAS_MARKET_OPEN_EVENT, christmasActive} from '../config/christmas';
 import {CHRISTMAS_BONUS_CANDIES, CHRISTMAS_CHALLENGES, CHRISTMAS_PICK_COUNT, SKY_GIFTS, SNOWMAN} from '../config/christmasEvent';
-import {CANDY_ICON_URL} from '../config/winterArt';
+import {CANDY_ICON_URL, SKY_GIFTS_ART} from '../config/winterArt';
+import {SKY_GIFTS_GAME} from '../simulation/skyGiftsGame';
+import {CHRISTMAS_MARKET_ART} from '../config/christmasMarketArt';
 import {availableChristmasRewards, candiesOf, christmasBonusClaimed, christmasBonusReady, christmasChallengesOf, christmasClaimable, christmasClaimed, christmasDecorationReason, christmasProgress, skyGiftsDay, skyGiftsRabbitReason, snowmanQuote} from '../simulation/christmas';
 import {mountSkyGiftsActivity} from './SkyGiftsActivity';
 import {catalogDecorationPlacementReason, purchaseDecorationReason} from '../simulation/decorations';
@@ -89,10 +91,15 @@ const LEGENDARY_SHOW_BUTTONS: Partial<Record<SpeciesId, {label: string; act: Leg
   ankylosaure: {label: 'Coup de queue', act: 'slam'}, dragon: {label: 'Souffle de feu', act: 'tap'}, requin: {label: 'Surf', act: 'surf'},
 };
 type ShopTab = 'home' | 'recipes' | 'rabbits' | 'habitats' | 'buildings' | 'decorations';
-type View = {kind:'album'|'decorationGroup'} | {kind: 'welcomeBaby'; birthId: string} | {kind:'levelRequirement';target:LevelAccessTarget} | {kind: 'missions'; tab: 'main' | 'daily'} | {kind: 'shop'; tab: ShopTab} | {kind: 'building' | 'rabbit' | 'moveRabbit' | 'decoration'; id: string} | {kind: 'jumpIsland'} | {kind: 'christmasMarket'} |
+type View = {kind:'album'|'decorationGroup'} | {kind: 'welcomeBaby'; birthId: string} | {kind:'levelRequirement';target:LevelAccessTarget} | {kind: 'missions'; tab: 'main' | 'daily'} | {kind: 'shop'; tab: ShopTab} | {kind: 'building' | 'rabbit' | 'moveRabbit' | 'decoration'; id: string} | {kind: 'jumpIsland'} | {kind: 'christmasMarket'; tab?: ChristmasMarketTab} |
   {kind: 'buyRabbit' | 'species'; species: SpeciesId} | {kind:'extension';parcelId?:ParcelId} | {kind: 'cuisineRabbit'; commis?: string} | {kind: 'collection' | 'settings' | 'placement' | 'hearts' | 'recipes' | 'arrange' | 'decorationPlacement'} | null;
 /** Views drawn as a centred card over the dimmed meadow. Placement, purchase, extension and arrangement views keep the side sheet: they need the island visible. */
-const CENTER_CARD_VIEWS: readonly NonNullable<View>['kind'][] = ['album','decorationGroup','rabbit', 'moveRabbit', 'welcomeBaby', 'building', 'jumpIsland', 'christmasMarket', 'missions', 'collection', 'recipes', 'hearts', 'species', 'levelRequirement'];
+/** The three tabs of the full-screen Christmas market (owner, 5 November 2026). */
+type ChristmasMarketTab = 'missions' | 'rewards' | 'gifts';
+const CHRISTMAS_MARKET_TABS: readonly [ChristmasMarketTab, string, string][] = [
+  ['missions', 'Missions de Noël', CANDY_ICON_URL], ['rewards', 'Récompenses spéciales', decorationUrl('christmas-tree')], ['gifts', 'Récupérer les cadeaux', SKY_GIFTS_ART.gifts[0]],
+];
+const CENTER_CARD_VIEWS: readonly NonNullable<View>['kind'][] = ['album','decorationGroup','rabbit', 'moveRabbit', 'welcomeBaby', 'building', 'jumpIsland', 'missions', 'collection', 'recipes', 'hearts', 'species', 'levelRequirement'];
 function node<K extends keyof HTMLElementTagNameMap>(tag: K, text = '', className = ''): HTMLElementTagNameMap[K] {
   const element = document.createElement(tag); setCurrencyText(element, text); decorateRabbitText(element); element.className = className; return element;
 }
@@ -786,12 +793,20 @@ export class GameUI {
     this.requestedFocus = null;
     this.panel.hidden = !this.view;
     document.body.classList.toggle('panel-open', !!this.view);
-    const fullShop = this.view?.kind === 'shop' || this.view?.kind==='levelRequirement' && this.view.target.family==='decoration' && this.history.some(view=>view.kind==='shop');
+    // The shop, and the Christmas market (owner, 5 November 2026: « ça doit ressembler au fonctionnement de la boutique »), fill the screen.
+    const market = this.view?.kind === 'christmasMarket' && christmasActive();
+    const fullShop = market || this.view?.kind === 'shop' || this.view?.kind==='levelRequirement' && this.view.target.family==='decoration' && this.history.some(view=>view.kind==='shop');
     this.panel.classList.toggle('shop-fullscreen', fullShop);
+    this.panel.classList.toggle('christmas-market', market);
     document.body.classList.toggle('shop-open', fullShop);
     this.shopResources.hidden = !fullShop;
     if (fullShop && this.snapshot.state) {
-      const s = this.snapshot.state; this.shopResources.replaceChildren(node('span', `${s.pattes} pattes`), node('span', `${s.grass} nourriture`), node('span', heartAmount(s.hearts)));
+      const s = this.snapshot.state;
+      if (market) {
+        const candies = node('span', candyAmount(candiesOf(s)), 'christmas-resource'), icon = document.createElement('img');
+        icon.src = CANDY_ICON_URL; icon.alt = ''; icon.width = 18; icon.height = 18; icon.onerror = () => { icon.hidden = true; }; candies.prepend(icon);
+        this.shopResources.replaceChildren(candies, node('span', `${s.pattes} pattes`));
+      } else this.shopResources.replaceChildren(node('span', `${s.pattes} pattes`), node('span', `${s.grass} nourriture`), node('span', heartAmount(s.hearts)));
     }
     this.panel.dataset.view = this.view?.kind ?? '';
     // Settings, the list menus, a rabbit's card and a building's menu open in the middle of the screen, over the dimmed meadow, with
@@ -815,7 +830,7 @@ export class GameUI {
       case 'shop': this.renderShop(s, this.view.tab); break;
       case 'building': this.renderBuilding(s, this.view.id); break;
       case 'jumpIsland': this.renderJumpIsland(s); break;
-      case 'christmasMarket': this.renderChristmasMarket(s); break;
+      case 'christmasMarket': this.renderChristmasMarket(s, this.view.tab ?? 'missions'); break;
       case 'rabbit': this.renderRabbit(s, this.view.id); break;
       case 'moveRabbit': this.renderDestinations(s, this.view.id); break;
       case 'welcomeBaby': this.renderWelcomeDestinations(s, this.view.birthId); break;
@@ -1418,73 +1433,99 @@ export class GameUI {
     this.content.append(card);
   }
   /**
-   * The Christmas market islet (owner, 4 November 2026): the sucres d'orge balance, the « Défis de Noël » and their bonus, the
-   * eight decorations of the market and « Les cadeaux du ciel ». Closed as soon as the event is off.
+   * The Christmas market islet (owner, 4 November 2026), full screen like the shop since 5 November 2026, in three tabs:
+   * « Missions de Noël » (the challenges and their bonus), « Récompenses spéciales » (the eight decorations, for sucres d'orge)
+   * and « Récupérer les cadeaux » (the mini-game « Les cadeaux du ciel »). Closed as soon as the event is off.
    */
-  private renderChristmasMarket(s: GameState): void {
+  private renderChristmasMarket(s: GameState, tab: ChristmasMarketTab): void {
     if (!christmasActive()) { this.close(); return; }
     this.title.textContent = 'Marché de Noël';
     const now = this.now(), candies = candiesOf(s), rabbitName = (r: Rabbit) => r.name || SPECIES[r.species].name;
-    if (this.skyGiftsPick) {
-      this.content.append(node('p', 'Choisis le lapin qui porte la hotte.', 'small'));
-      const list = node('div', '', 'agency-travellers'); this.content.append(list);
-      const reasonOf = (r: Rabbit) => { const reason = skyGiftsRabbitReason(s, r.id); return reason ? REFUSALS[reason] : null; };
-      for (const r of [...s.rabbits].sort((a, b) => Number(!!reasonOf(a)) - Number(!!reasonOf(b)) || b.affection - a.affection)) {
-        const card = this.card(rabbitName(r), `${r.name ? SPECIES[r.species].name + ' · ' : ''}affection ${r.affection}`, r); card.dataset.skyGiftsRabbit = r.id; card.classList.add('compact-list-card');
-        this.button(card, 'Choisir', () => {
-          this.skyGiftsPick = false; this.render();
-          this.skyGifts.open({id: r.id, species: r.species, name: r.name, affection: r.affection, classicLook: r.classicLook, evolution: r.evolution});
-        }, reasonOf(r)); list.append(card);
+    // The painted market and the balance, then the three tabs.
+    const banner = node('div', '', 'christmas-banner'), picture = document.createElement('img');
+    picture.src = CHRISTMAS_MARKET_ART.url; picture.alt = ''; picture.draggable = false; picture.onerror = () => { picture.hidden = true; };
+    const words = node('div', '', 'christmas-banner-text');
+    const balance = node('p', '', 'christmas-candies'); balance.dataset.christmasCandies = String(candies);
+    const icon = document.createElement('img'); icon.className = 'candy-icon'; icon.src = CANDY_ICON_URL; icon.alt = 'Sucre d’orge'; icon.width = 24; icon.height = 24; icon.onerror = () => { icon.hidden = true; };
+    balance.append(icon, document.createTextNode(` ${candyAmount(candies)}`));
+    words.append(node('p', 'Bienvenue au marché ! Réussis les missions de Noël pour gagner des sucres d’orge, puis échange-les contre des récompenses spéciales.', 'christmas-banner-lead'), balance);
+    banner.append(picture, words); this.content.append(banner);
+    const tabs = node('div', '', 'tabs christmas-tabs'); tabs.setAttribute('role', 'tablist');
+    for (const [key, label, art] of CHRISTMAS_MARKET_TABS) {
+      const button = this.button(tabs, label, () => { this.skyGiftsPick = false; this.open({kind: 'christmasMarket', tab: key}, 'tab'); }, null, tab !== key);
+      const image = document.createElement('img'); image.src = art; image.alt = ''; image.width = 28; image.height = 28; image.onerror = () => { image.hidden = true; }; button.prepend(image);
+      button.setAttribute('role', 'tab'); button.setAttribute('aria-selected', String(tab === key)); button.dataset.christmasTab = key;
+    }
+    this.content.append(tabs);
+    const page = node('div', '', 'christmas-page'); page.dataset.christmasPage = tab; this.content.append(page);
+    const add = (...children: HTMLElement[]) => page.append(...children);
+    if (tab === 'gifts') {
+      if (this.skyGiftsPick) {
+        add(node('p', 'Choisis le lapin qui porte la hotte.', 'small'));
+        const list = node('div', '', 'agency-travellers'); add(list);
+        const reasonOf = (r: Rabbit) => { const reason = skyGiftsRabbitReason(s, r.id); return reason ? REFUSALS[reason] : null; };
+        for (const r of [...s.rabbits].sort((a, b) => Number(!!reasonOf(a)) - Number(!!reasonOf(b)) || b.affection - a.affection)) {
+          const card = this.card(rabbitName(r), `${r.name ? SPECIES[r.species].name + ' · ' : ''}affection ${r.affection}`, r); card.dataset.skyGiftsRabbit = r.id; card.classList.add('compact-list-card');
+          this.button(card, 'Choisir', () => {
+            this.skyGiftsPick = false; this.render();
+            this.skyGifts.open({id: r.id, species: r.species, name: r.name, affection: r.affection, classicLook: r.classicLook, evolution: r.evolution});
+          }, reasonOf(r)); list.append(card);
+        }
+        this.button(page, 'Retour', () => { this.skyGiftsPick = false; this.render(); }, null, true);
+        return;
       }
-      this.button(this.content, 'Retour', () => { this.skyGiftsPick = false; this.render(); }, null, true);
+      // « Les cadeaux du ciel »: one rabbit carries the basket; poisoned presents and bombs must be let fall.
+      const day = skyGiftsDay(s, now), game = node('article', '', 'card christmas-game');
+      game.style.setProperty('--christmas-game-art', `url('${SKY_GIFTS_ART.background}')`);
+      const traps = node('div', '', 'christmas-traps');
+      for (const [url, text] of [[SKY_GIFTS_ART.gifts[1], 'À attraper'], [SKY_GIFTS_ART.traps.poison, `Empoisonné : −${SKY_GIFTS_GAME.poisonGifts} cadeaux`], [SKY_GIFTS_ART.traps.bomb, 'Bombe : fin de partie']] as const) {
+        const item = node('span', text), img = document.createElement('img'); img.src = url; img.alt = ''; img.width = 44; img.height = 44; img.onerror = () => { img.hidden = true; }; item.prepend(img); traps.append(item);
+      }
+      game.append(node('h3', 'Les cadeaux du ciel'),
+        node('p', `Le traîneau lâche des cadeaux : attrape-les avec la hotte de ton lapin, mais laisse tomber les cadeaux empoisonnés et les bombes ! Tes ${SKY_GIFTS.rewardedGamesPerCycle} premières parties du jour rapportent des pattes.`),
+        traps, node('p', skyGiftsQuotaText(s, now), 'badge'));
+      if (day.best) game.append(node('p', `Ton record : ${day.best} cadeau${day.best > 1 ? 'x' : ''}`, 'small'));
+      this.button(game, 'Jouer aux cadeaux du ciel', () => { this.skyGiftsPick = true; this.render(); }, s.rabbits.length ? null : 'Il te faut un lapin pour porter la hotte.').dataset.skyGiftsPlay = '';
+      add(game);
       return;
     }
-    const balance = node('p', '', 'badge christmas-candies'); balance.dataset.christmasCandies = String(candies);
-    const icon = document.createElement('img'); icon.className = 'candy-icon'; icon.src = CANDY_ICON_URL; icon.alt = 'Sucre d’orge'; icon.width = 20; icon.height = 20; icon.onerror = () => { icon.hidden = true; };
-    balance.append(icon, document.createTextNode(` ${candyAmount(candies)}`)); this.content.append(balance);
-    this.content.append(node('p', 'Les sucres d’orge se gagnent avec les défis de Noël, chaque jour. Ils servent à acheter les décorations du marché.', 'small'));
-    // The Christmas challenges, like the daily missions: three a cycle, then the bonus.
-    this.content.append(node('h3', 'Défis de Noël'));
-    const cycleStart = dailyCycleStart(s), shown = christmasChallengesOf(s), claimed = christmasClaimed(s);
-    for (const id of shown) {
-      const challenge = CHRISTMAS_CHALLENGES[id], value = Math.min(christmasProgress(s, id), challenge.target), done = claimed.includes(id), ready = christmasClaimable(s, id);
-      const card = this.card(challenge.title, challenge.description); card.dataset.christmasChallenge = id; card.dataset.missionStatus = done ? 'claimed' : ready ? 'ready' : 'pending';
-      card.classList.add('mission-day-card');
-      const bar = node('progress'); bar.max = challenge.target; bar.value = value; bar.setAttribute('aria-label', `Progression : ${value} sur ${challenge.target}`);
-      card.append(node('p', `Progression : ${value} / ${challenge.target}`), bar, node('p', `Récompense : ${candyAmount(challenge.candies)}`, 'small'));
-      this.button(card, done ? 'Récompense réclamée' : `Réclamer · +${candyAmount(challenge.candies)}`, () => this.execute({type: 'claimChristmasChallenge', id, cycleStart}, `+${candyAmount(challenge.candies)} !`),
-        done ? 'Déjà réclamée.' : !ready ? 'Défi à compléter.' : null).classList.add('mission-claim');
-      this.content.append(card);
+    if (tab === 'missions') {
+      add(node('p', 'Chaque jour, trois missions de Noël et un bonus rapportent des sucres d’orge.', 'small christmas-intro'));
+      // The Christmas challenges, like the daily missions: three a cycle, then the bonus.
+      const cycleStart = dailyCycleStart(s), shown = christmasChallengesOf(s), claimed = christmasClaimed(s);
+      for (const id of shown) {
+        const challenge = CHRISTMAS_CHALLENGES[id], value = Math.min(christmasProgress(s, id), challenge.target), done = claimed.includes(id), ready = christmasClaimable(s, id);
+        const card = this.card(challenge.title, challenge.description); card.dataset.christmasChallenge = id; card.dataset.missionStatus = done ? 'claimed' : ready ? 'ready' : 'pending';
+        card.classList.add('mission-day-card');
+        const bar = node('progress'); bar.max = challenge.target; bar.value = value; bar.setAttribute('aria-label', `Progression : ${value} sur ${challenge.target}`);
+        card.append(node('p', `Progression : ${value} / ${challenge.target}`), bar, node('p', `Récompense : ${candyAmount(challenge.candies)}`, 'small'));
+        this.button(card, done ? 'Récompense réclamée' : `Réclamer · +${candyAmount(challenge.candies)}`, () => this.execute({type: 'claimChristmasChallenge', id, cycleStart}, `+${candyAmount(challenge.candies)} !`),
+          done ? 'Déjà réclamée.' : !ready ? 'Défi à compléter.' : null).classList.add('mission-claim');
+        add(card);
+      }
+      const bonusDone = christmasBonusClaimed(s), bonusReady = christmasBonusReady(s) && !bonusDone, count = shown.filter(id => claimed.includes(id)).length;
+      const bonus = this.card(`Bonus des trois défis : +${candyAmount(CHRISTMAS_BONUS_CANDIES)}`, 'Réclame les trois défis de Noël pour recevoir ce bonus.'); bonus.dataset.christmasChallenge = 'bonus'; bonus.classList.add('mission-day-card', 'mission-bonus');
+      bonus.append(node('p', `Progression : ${count} / ${CHRISTMAS_PICK_COUNT}`));
+      this.button(bonus, bonusDone ? 'Bonus réclamé' : `Réclamer · +${candyAmount(CHRISTMAS_BONUS_CANDIES)}`, () => this.execute({type: 'claimChristmasBonus', cycleStart}, `Bonus de Noël : +${candyAmount(CHRISTMAS_BONUS_CANDIES)} !`),
+        bonusDone ? 'Déjà réclamé.' : !bonusReady ? 'Réclame d’abord les trois défis.' : null).classList.add('mission-claim');
+      add(bonus);
+      return;
     }
-    const bonusDone = christmasBonusClaimed(s), bonusReady = christmasBonusReady(s) && !bonusDone, count = shown.filter(id => claimed.includes(id)).length;
-    const bonus = this.card(`Bonus des trois défis : +${candyAmount(CHRISTMAS_BONUS_CANDIES)}`, 'Réclame les trois défis de Noël pour recevoir ce bonus.'); bonus.dataset.christmasChallenge = 'bonus'; bonus.classList.add('mission-day-card', 'mission-bonus');
-    bonus.append(node('p', `Progression : ${count} / ${CHRISTMAS_PICK_COUNT}`));
-    this.button(bonus, bonusDone ? 'Bonus réclamé' : `Réclamer · +${candyAmount(CHRISTMAS_BONUS_CANDIES)}`, () => this.execute({type: 'claimChristmasBonus', cycleStart}, `Bonus de Noël : +${candyAmount(CHRISTMAS_BONUS_CANDIES)} !`),
-      bonusDone ? 'Déjà réclamé.' : !bonusReady ? 'Réclame d’abord les trois défis.' : null).classList.add('mission-claim');
-    this.content.append(bonus);
-    // « Les cadeaux du ciel »: one rabbit carries the basket.
-    this.content.append(node('h3', 'Les cadeaux du ciel'));
-    const day = skyGiftsDay(s, now);
-    this.content.append(node('p', `Le traîneau lâche des cadeaux : attrape-les avec la hotte de ton lapin. Tes ${SKY_GIFTS.rewardedGamesPerCycle} premières parties du jour rapportent des pattes.`, 'small'));
-    this.content.append(node('p', skyGiftsQuotaText(s, now), 'badge'));
-    if (day.best) this.content.append(node('p', `Ton record : ${day.best} cadeau${day.best > 1 ? 'x' : ''}`, 'small'));
-    this.button(this.content, 'Jouer aux cadeaux du ciel', () => { this.skyGiftsPick = true; this.render(); }, s.rabbits.length ? null : 'Il te faut un lapin pour porter la hotte.').dataset.skyGiftsPlay = '';
     // The market's eight decorations, for sucres d'orge only; placed now (preview, paid at the confirmed placement) or kept.
-    this.content.append(node('h3', 'Décorations de Noël'));
-    this.content.append(node('p', 'Acheter ouvre un aperçu gratuit : le paiement a lieu à la pose confirmée. Acheter pour l’inventaire est un achat immédiat. Elles restent à toi après Noël.', 'small'));
+    add(node('p', 'Acheter ouvre un aperçu gratuit : le paiement a lieu à la pose confirmée. Acheter pour l’inventaire est un achat immédiat. Elles restent à toi après Noël.', 'small'));
     for (const id of CHRISTMAS_DECORATION_IDS) {
       const d = DECORATIONS[id], price = candyAmount(d.candyPrice ?? 0), count = s.decorations.filter(owned => owned.catalogId === id).length;
       const card = this.decorationCard(id, `${d.width} × ${d.height} cases fines · ${price} · ${count} possédé${count > 1 ? 's' : ''}`); card.dataset.christmasCatalog = id;
       const reason = christmasDecorationReason(s, id), text = reason ? REFUSALS[reason] : null;
       this.button(card, `Acheter · ${price}`, () => {
-        this.rememberView(); this.purchaseReturn = {view: {kind: 'christmasMarket'}, history: [...this.history]};
+        this.rememberView(); this.purchaseReturn = {view: {kind: 'christmasMarket', tab: 'rewards'}, history: [...this.history]};
         this.placement = null; this.scene.setPlacement(null);
         this.decorationDraft = {id: 'purchase-preview', catalogId: id, location: null, rotation: 0};
         this.open({kind: 'decorationPlacement'});
       }, text);
       this.button(card, `Acheter pour l’inventaire · ${price}`, () => this.confirm(`Acheter : ${d.name} ?`, `${price}. Achat immédiat pour l’inventaire, sans placement.`,
         () => this.execute({type: 'buyChristmasDecoration', catalogId: id}, 'Elle t’attend dans ton inventaire : pose-la depuis Aménager.')), text, true);
-      this.content.append(card);
+      add(card);
     }
   }
   /** Farm level 2 → 3: pattes only, never a Heart complement; re-read at confirmation so a stale view never pays. */

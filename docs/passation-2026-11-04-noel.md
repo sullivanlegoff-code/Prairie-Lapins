@@ -94,6 +94,22 @@ Leur logique est couverte par les tests.
 
 Aucun essai iPhone.
 
+## Corrections du propriétaire du 5 novembre 2026
+
+- **Marché de Noël en plein écran**, comme la boutique, avec trois onglets :
+  - « Missions de Noël » : les défis et leur bonus ;
+  - « Récompenses spéciales » : les 8 décorations ;
+  - « Récupérer les cadeaux » : le mini-jeu.
+  - Le code est dans `GameUI.renderChristmasMarket` (vue `{kind: 'christmasMarket', tab}`) et l'habillage de Noël dans `src/display/christmas-market.css`.
+- **Mini-jeu plus dur** (`src/simulation/skyGiftsGame.ts`) :
+  - le traîneau lâche aussi des cadeaux empoisonnés et des bombes, qu'il ne faut pas attraper (de 16 % à 32 % des chutes, jamais dans les 4 premières, environ un tiers de bombes) ;
+  - une bombe attrapée explose et arrête la partie : le joueur garde les cadeaux déjà attrapés ;
+  - un cadeau empoisonné enlève 3 cadeaux attrapés (jamais moins de zéro) ;
+  - laisser tomber un piège ne coûte rien, et trois vrais cadeaux tombés dans la neige arrêtent toujours la partie ;
+  - les chutes sont plus rapides et la hotte un peu plus étroite.
+  - Le test « joueur rapide » vérifie qu'un très bon joueur tient les 45 secondes au moins 12 fois sur 20.
+  - Les peintures `minijeu/piege-*.png` et `effet-*.png` viennent de `pieges-neige.png`, passé dans `prepare-noel-art.mjs`.
+
 ## Ce qui reste
 
 1. Faire tester au propriétaire sur iPhone :

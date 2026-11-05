@@ -54,9 +54,28 @@ function game(): GameState {
 }
 
 describe('Christmas market view', () => {
+  it('fills the screen like the shop, with its three tabs', () => {
+    const s = game(); s.christmas = {candies: 12};
+    const {ui} = mount(s); ui.open({kind: 'christmasMarket'});
+    const gamePanel = document.getElementById('game-panel')!;
+    expect(gamePanel.classList.contains('shop-fullscreen')).toBe(true); expect(gamePanel.classList.contains('christmas-market')).toBe(true);
+    expect(gamePanel.classList.contains('center-card')).toBe(false);
+    expect(document.querySelector<HTMLElement>('.shop-resources')!.textContent).toContain('12 sucres d’orge');
+    const tabs = () => [...panel().querySelectorAll<HTMLButtonElement>('[data-christmas-tab]')];
+    expect(tabs().map(t => t.textContent)).toEqual(['Missions de Noël', 'Récompenses spéciales', 'Récupérer les cadeaux']);
+    // The missions open first.
+    expect(tabs()[0].getAttribute('aria-selected')).toBe('true');
+    expect(panel().querySelector('[data-christmas-challenge="bonus"]')).not.toBeNull(); expect(panel().querySelector('[data-christmas-catalog]')).toBeNull();
+    tabs()[1].click();
+    expect(panel().querySelectorAll('[data-christmas-catalog]').length).toBe(CHRISTMAS_DECORATION_IDS.length); expect(panel().querySelector('[data-christmas-challenge]')).toBeNull();
+    tabs()[2].click();
+    expect(panel().querySelector('[data-sky-gifts-play]')).not.toBeNull(); expect(panel().querySelector('[data-christmas-catalog]')).toBeNull();
+    ui.close();
+    expect(gamePanel.classList.contains('christmas-market')).toBe(false); expect(document.body.classList.contains('shop-open')).toBe(false);
+  });
   it('shows the candies balance and the 8 Christmas decorations with their price in sucres d’orge', () => {
     const s = game(); s.christmas = {candies: 45};
-    const {ui} = mount(s); ui.open({kind: 'christmasMarket'});
+    const {ui} = mount(s); ui.open({kind: 'christmasMarket', tab: 'rewards'});
     expect(document.getElementById('panel-title')!.textContent).toBe('Marché de Noël');
     expect(panel().querySelector('[data-christmas-candies]')!.textContent).toContain('45 sucres d’orge');
     expect(panel().querySelector<HTMLImageElement>('.christmas-candies img')!.alt).toBe('Sucre d’orge');
@@ -74,7 +93,7 @@ describe('Christmas market view', () => {
   });
   it('buys a decoration for the inventory with sucres d’orge, then the sell button refuses it', () => {
     const s = game(); s.christmas = {candies: 100};
-    const {ui, state} = mount(s); ui.open({kind: 'christmasMarket'});
+    const {ui, state} = mount(s); ui.open({kind: 'christmasMarket', tab: 'rewards'});
     buttonIn(panel().querySelector('[data-christmas-catalog="gift-pile"]')!, 'Acheter pour l’inventaire · 40 sucres d’orge')!.click();
     buttonIn(document.getElementById('confirmation-dialog') ?? document, 'Confirmer')!.click();
     expect(state().christmas!.candies).toBe(60);
@@ -88,7 +107,7 @@ describe('Christmas market view', () => {
   });
   it('buys and places a decoration through the placement preview, paid in sucres d’orge', () => {
     const s = game(); s.christmas = {candies: 100};
-    const {ui, state} = mount(s); ui.open({kind: 'christmasMarket'});
+    const {ui, state} = mount(s); ui.open({kind: 'christmasMarket', tab: 'rewards'});
     buttonIn(panel().querySelector('[data-christmas-catalog="candy-cane"]')!, 'Acheter · 30 sucres d’orge')!.click();
     expect(document.getElementById('panel-title')!.textContent).toBe('Placer : Sucre d’orge géant');
     // A free fine cell on the start island.
@@ -123,8 +142,9 @@ describe('Christmas market view', () => {
     expect(buttonIn(panel().querySelector('[data-christmas-challenge="bonus"]')!, 'Bonus réclamé')!.disabled).toBe(true);
   });
   it('opens « Les cadeaux du ciel » with one chosen rabbit and shows today’s rewarded games', () => {
-    const {ui} = mount(game()); ui.open({kind: 'christmasMarket'});
+    const {ui} = mount(game()); ui.open({kind: 'christmasMarket', tab: 'gifts'});
     expect(panel().textContent).toContain('Parties récompensées : 0/3');
+    expect(panel().textContent).toContain('laisse tomber les cadeaux empoisonnés et les bombes');
     panel().querySelector<HTMLButtonElement>('[data-sky-gifts-play]')!.click();
     const choice = panel().querySelector<HTMLElement>('[data-sky-gifts-rabbit="rabbit-2"]')!;
     buttonIn(choice, 'Choisir')!.click();
@@ -185,5 +205,29 @@ describe('Laboratory sucres d’orge', () => {
     expect(dev.grantCandies(lab, 50).ok).toBe(true);
     expect(lab.getSnapshot().state!.christmas!.candies).toBe(50);
     expect(normal.getSnapshot().state!.christmas).toBeUndefined();
+  });
+});
+
+describe('« Les cadeaux du ciel » traps on screen', () => {
+  it('shows a poisoned present taking 3 presents away, then a bomb ending the game with its blast', async () => {
+    const {mountSkyGiftsActivity} = await import('../src/ui/SkyGiftsActivity');
+    const {SKY_GIFTS_GAME} = await import('../src/simulation/skyGiftsGame');
+    let now = 0; const finished: number[] = [];
+    const host = document.createElement('div'); document.body.append(host);
+    const activity = mountSkyGiftsActivity(host, {onFinished: (_r, caught) => { finished.push(caught); return ''; }, clock: () => now, frame: () => 0});
+    cleanups.push(() => { activity.dispose(); host.remove(); });
+    activity.open({id: 'rabbit-1', species: 'paille'});
+    activity.element.querySelector<HTMLButtonElement>('[data-sky-gifts-start]')!.click();
+    const g = activity.game!, drop = (id: number, kind: 'poison' | 'bomb') => g.gifts.push({id, x: g.basketX, y: SKY_GIFTS_GAME.catchTop - .001, speed: .5, sway: 0, colour: 0, kind});
+    g.caught = 5; drop(900, 'poison'); now += 32; activity.update();
+    expect(g.caught).toBe(5 - SKY_GIFTS_GAME.poisonGifts);
+    expect(activity.element.querySelector('.sky-gifts-pop')!.textContent).toBe(`Beurk ! −${SKY_GIFTS_GAME.poisonGifts} cadeaux`);
+    expect(activity.element.querySelector('.sky-gifts-blast[data-kind="poison"]')).not.toBeNull();
+    expect(activity.playing).toBe(true);
+    drop(901, 'bomb'); now += 32; activity.update();
+    expect(activity.playing).toBe(false); expect(finished).toEqual([2]);
+    expect(activity.element.classList.contains('exploded')).toBe(true);
+    expect(activity.element.querySelector('.sky-gifts-blast[data-kind="bomb"]')).not.toBeNull();
+    expect(activity.element.querySelector('[data-sky-gifts-card]')!.textContent).toContain('Boum ! Une bombe dans la hotte a arrêté la partie.');
   });
 });

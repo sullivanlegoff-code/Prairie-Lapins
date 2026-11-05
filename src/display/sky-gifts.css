@@ -29,6 +29,16 @@
 .sky-gifts-pop[data-kind="miss"] { color: #cfe3ff; }
 .sky-gifts-pop[data-kind="record"] { color: #ffe066; font-size: 2.5rem; }
 .sky-gifts-pop.shown { animation: jump-rope-pop .45s ease-out; }
+.sky-gifts-pop[data-kind="trap"] { color: #b6ff7a; font-size: 2.2rem; }
+/* The traps (poisoned presents and bombs) wobble a little as they fall, so they stand out from the presents. */
+.sky-gifts-gift:not([data-kind="gift"]) { width: min(8.5cqw, 13.5cqh); animation: sky-gifts-wobble .6s ease-in-out infinite alternate; }
+@keyframes sky-gifts-wobble { from { transform: translate(-50%, -50%) rotate(-9deg); } to { transform: translate(-50%, -50%) rotate(9deg); } }
+.sky-gifts-blasts { position: absolute; inset: 0; pointer-events: none; z-index: 4; }
+.sky-gifts-blast { position: absolute; width: min(20cqw, 30cqh); height: auto; transform: translate(-50%, -50%); animation: sky-gifts-blast .7s ease-out forwards; }
+@keyframes sky-gifts-blast { from { opacity: 1; transform: translate(-50%, -50%) scale(.4); } 35% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); } to { opacity: 0; transform: translate(-50%, -50%) scale(1.25); } }
+.sky-gifts-rabbit.hurt { animation: sky-gifts-hurt .45s ease-in-out; }
+@keyframes sky-gifts-hurt { 20%, 60% { transform: translateX(calc(-50% - 7px)); } 40%, 80% { transform: translateX(calc(-50% + 7px)); } }
+@media (prefers-reduced-motion: reduce) { .sky-gifts-gift:not([data-kind="gift"]), .sky-gifts-rabbit.hurt { animation: none; } .sky-gifts-blast { animation-duration: .01s; animation-delay: .6s; } }
 .sky-gifts-card {
   position: absolute; z-index: 5; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(420px, calc(100% - 32px));
   max-height: calc(100% - 32px); overflow: auto; padding: 16px 18px; border-radius: 22px; background: #fff8e8; border: 3px solid #8a7550;
@@ -40,3 +50,8 @@
 .sky-gifts-rewards { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
 .sky-gifts-card button { min-height: 44px; margin: 4px; padding: 0 18px; border-radius: 14px; border: 2px solid #6b5a3a; background: #ffe7a8; font-weight: 800; font-size: 1rem; }
 @media (prefers-reduced-motion: reduce) { .sky-gifts-rabbit.catch .sky-gifts-basket, .sky-gifts-pop.shown { animation: none; } }
+/* A bomb in the basket: a white-orange flash over the whole game, then the end card. */
+.sky-gifts-activity.exploded .sky-gifts-stage::after { content: ''; position: absolute; inset: 0; z-index: 5; pointer-events: none; background: radial-gradient(circle at 50% 80%, #fff8d8, #ffb347aa 40%, transparent 75%); animation: sky-gifts-flash .8s ease-out forwards; }
+@keyframes sky-gifts-flash { from { opacity: 1; } to { opacity: 0; } }
+.sky-gifts-blast[data-kind="bomb"] { width: min(34cqw, 48cqh); }
+@media (prefers-reduced-motion: reduce) { .sky-gifts-activity.exploded .sky-gifts-stage::after { animation: none; opacity: .5; } }

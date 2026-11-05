@@ -5,7 +5,8 @@
 //   footprints stay right; served under public/assets/noel/buildings|habitats/ at the original's name;
 // - marche-neige.png: the market islet (its night lights are taken from it);
 // - deco-<id>-neige.png: the eight Christmas decorations; snowman-3-neige.png: the finished snowman (its two first steps are cut from it);
-// - icons-neige.png: a 4 × 2 sheet (candy cane, snowball, puff, snowflake, four presents); hotte, traineau, fond-cadeaux.
+// - icons-neige.png: a 4 × 2 sheet (candy cane, snowball, puff, snowflake, four presents); hotte, traineau, fond-cadeaux;
+// - pieges-neige.png: a 4 × 1 sheet of the mini-game's traps (poisoned present, bomb) and of their splash and blast.
 // Masters go to assets-source/noel/, served copies to public/assets/noel/; the list of snowy meadow pictures is written to
 // src/config/winterBuildingFiles.json.
 //   PLAYWRIGHT_MODULE=… node scripts/prepare-noel-art.mjs "<items folder>"
@@ -89,6 +90,12 @@ export function winterCopy(original, painted) {
   return {image: {width: w, height: h, pixels: out}, score: +t.score.toFixed(3)};
 }
 
+/** The picture centred in a transparent square, resized to size × size. */
+function squareOf(img, size) {
+  const s = Math.max(img.width, img.height), pad = Buffer.alloc(s * s * 4), ox = (s - img.width) >> 1, oy = (s - img.height) >> 1;
+  for (let y = 0; y < img.height; y++) img.pixels.copy(pad, ((oy + y) * s + ox) * 4, y * img.width * 4, (y + 1) * img.width * 4);
+  return resize({width: s, height: s, pixels: pad}, size, size);
+}
 export async function prepareNoelArt(folder) {
   const report = {}, served = [], webp = [], winterFiles = [];
   const painted = name => existsSync(`${folder}/${name}-neige.png`) ? decodeRgbPng(readFileSync(`${folder}/${name}-neige.png`)) : null;
@@ -155,10 +162,7 @@ export async function prepareNoelArt(folder) {
   if (sheet) {
     const keyed = keyMagenta(sheet), cw = Math.floor(sheet.width / 4), ch = Math.floor(sheet.height / 2);
     const cell = (c, r) => crop(cropTo(keyed, {x: c * cw, y: r * ch, width: cw, height: ch}));
-    const square = (img, size) => { const s = Math.max(img.width, img.height), pad = Buffer.alloc(s * s * 4);
-      const ox = (s - img.width) >> 1, oy = (s - img.height) >> 1;
-      for (let y = 0; y < img.height; y++) img.pixels.copy(pad, ((oy + y) * s + ox) * 4, y * img.width * 4, (y + 1) * img.width * 4);
-      return resize({width: s, height: s, pixels: pad}, size, size); };
+    const square = squareOf;
     served.push(['public/assets/noel/sucre-orge.png', square(cell(0, 0), 64)], ['public/assets/noel/boule-neige.png', square(cell(1, 0), 64)],
       ['public/assets/noel/boule-impact.png', square(cell(2, 0), 128)]);
     // The four flakes: the painted flake turned and mirrored, so the fall is not made of one identical shape.
@@ -173,6 +177,14 @@ export async function prepareNoelArt(folder) {
     }
     for (let i = 0; i < 4; i++) served.push([`public/assets/noel/minijeu/cadeau-${i}.png`, square(cell(i, 1), 128)]);
     report.icons = 'ok';
+  }
+  // The traps of « Les cadeaux du ciel » (owner, 5 November 2026): 4 columns × 1 row.
+  const traps = painted('pieges');
+  if (traps) {
+    const keyed = keyMagenta(traps), cw = Math.floor(traps.width / 4);
+    const cell = c => crop(cropTo(keyed, {x: c * cw, y: 0, width: cw, height: traps.height}));
+    for (const [c, name] of [[0, 'piege-poison'], [1, 'piege-bombe'], [2, 'effet-poison'], [3, 'effet-boum']]) served.push([`public/assets/noel/minijeu/${name}.png`, squareOf(cell(c), c < 2 ? 128 : 192)]);
+    report.pieges = 'ok';
   }
   for (const [name, max] of [['hotte', 384], ['traineau', 640]]) {
     const art = painted(name); if (!art) continue;

@@ -38,6 +38,9 @@ export const SKY_GIFTS_ART = {
   sleigh: `${base}minijeu/traineau.png`,
   basket: `${base}minijeu/hotte.png`,
   gifts: [0, 1, 2, 3].map(i => `${base}minijeu/cadeau-${i}.png`) as readonly string[],
+  /** The traps not to catch (owner, 5 November 2026), and the splash or blast where one lands in the basket. */
+  traps: {poison: `${base}minijeu/piege-poison.png`, bomb: `${base}minijeu/piege-bombe.png`},
+  trapHits: {poison: `${base}minijeu/effet-poison.png`, bomb: `${base}minijeu/effet-boum.png`},
 } as const;
 
 /**
