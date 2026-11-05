@@ -86,6 +86,7 @@ import {MagicienView} from './magicienEffects';
 import {MagicienClock, magicienFree, type MagicienAct} from './magicienTimeline';
 import {CHASE_EVENT, RabbitChases, type ChaseRunner} from './rabbitChase';
 import {SNOWBALL_EVENT, SnowballFights, snowballPoint, type SnowballThrower} from './snowballFight';
+import {LIGHT_POOLS, NightGlows, type GlowSource} from './nightGlows';
 import {CHRISTMAS_MARKET_ART, christmasMarketFrame, christmasMarketPoint} from '../config/christmasMarketArt';
 import {SNOWBALL_ART, SNOWMAN_ART} from '../config/winterArt';
 import {garlandLevel} from './winterClock';
@@ -168,6 +169,10 @@ export class MeadowScene extends Phaser.Scene {
   private sky?: SkyLayer;
   private winter?: WinterLayer;
   private winterLights?: WinterLights;
+  /** Christmas nights: the lit windows of the buildings and habitats, and the lights of the Christmas decorations. */
+  private nightGlows?: NightGlows;
+  /** The URL each picture was loaded from (its glow picture is found from it). */
+  private artUrls = new Map<string, string>();
   private picnicPieces = new Set<Phaser.GameObjects.Image | Phaser.GameObjects.Text>();
   private lifeViews: RabbitLifeViews | null = null;
   private lifeGeneration: number | null = null;
@@ -253,7 +258,7 @@ export class MeadowScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(SKY_COLOR);
     // Owns its shutdown cleanup; independent of parcel ownership and ground projection.
     this.sky = new SkyLayer(this, toScreen(gridPoint(ISLAND.focus, ISLAND.focus)));
-    this.winter = new WinterLayer(this); this.winterLights = new WinterLights(this);
+    this.winter = new WinterLayer(this); this.winterLights = new WinterLights(this); this.nightGlows = new NightGlows(this, (texture, url) => this.optionalArt(texture, url));
     // Christmas: the tiny snowflakes, loaded after start (a missing picture only means no snow, never a blocked meadow).
     if (christmasActive()) for (const flake of WINTER_ART.flakes) this.optionalArt(flake.texture, flake.url);
     // Ground layer (flat on the island, drawn in ground coordinates, one shared projection transform):
@@ -857,7 +862,7 @@ export class MeadowScene extends Phaser.Scene {
   }
   /** A picture, or an atlas (picture and frames) such as Benny's animations. */
   private loadArt(art: {texture: string; url: string; atlas?: string}): void {
-    const url = winterUrl(art.url, christmasActive());
+    const url = winterUrl(art.url, christmasActive()); this.artUrls.set(art.texture, url);
     if (art.atlas) this.load.atlas(art.texture, url, art.atlas); else this.load.image(art.texture, url);
   }
   /**
@@ -866,6 +871,7 @@ export class MeadowScene extends Phaser.Scene {
    * in this scene. `ready` runs once it has loaded.
    */
   private optionalArt(texture: string, url: string, ready?: () => void): boolean {
+    this.artUrls.set(texture, url);
     if (this.textures.exists(texture)) return true;
     if (!this.sceneReady || this.optionalPending.has(texture) || this.optionalFailed.has(texture)) return false;
     this.optionalPending.add(texture);
@@ -905,6 +911,16 @@ export class MeadowScene extends Phaser.Scene {
       lights.setOrigin(art.originX, art.originY).setScale(art.worldWidth / lights.frame.realWidth).setDepth(2.85).setBlendMode(Phaser.BlendModes.ADD);
     }
     this.marketLights?.setAlpha(glow).setVisible(glow > .001);
+  }
+  /** The pictures that may glow at night: the buildings and habitats, and the decorations (lamp-like ones light the snow). */
+  private glowSources(): GlowSource[] {
+    const sources: GlowSource[] = [];
+    for (const image of this.buildingViews.values()) sources.push({image, url: this.artUrls.get(image.texture.key)});
+    for (const image of this.decorationViews.values()) {
+      const key = image.texture.key, id = key.split(':')[1] ?? '';
+      sources.push({image, url: this.artUrls.get(key), pool: LIGHT_POOLS[id]});
+    }
+    return sources;
   }
   /** Keep the previous complete scene during a batch, including when state changes again during the request. */
   private ensureArt(): boolean {
@@ -1557,6 +1573,7 @@ export class MeadowScene extends Phaser.Scene {
     this.winter?.update(dt, winterNow, christmas && !document.hidden, reducedMotion);
     this.winterLights?.update(christmas ? garlandLevel(localHour(winterNow)) : 0, reducedMotion ? 0 : time);
     this.sky?.setNight(christmas ? this.winter?.nightNow(winterNow) ?? 0 : 0);
+    this.nightGlows?.update(christmas ? this.winter?.nightNow(winterNow) ?? 0 : 0, christmas ? this.glowSources() : []);
     const lifeActive = !this.photo && !document.hidden && document.getElementById('loading-screen')?.hidden !== false &&
       document.getElementById('game-panel')?.hidden !== false && !document.querySelector('dialog[open]') && !this.placement && !this.arrangement;
     const bounds = {width: this.scale.width, height: this.scale.height, top: document.getElementById('hud')?.getBoundingClientRect().bottom ?? 0};

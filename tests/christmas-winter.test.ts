@@ -1,4 +1,6 @@
 import {describe, expect, it} from 'vitest';
+// @ts-expect-error -- the browser tsconfig has no Node types; Vitest runs this file in Node.
+import {existsSync} from 'node:fs';
 import {garlandLevel, nightColor, nightLevel, snowDensity, snowKind, SNOW_ODDS, SNOW_SLOT_MS} from '../src/display/winterClock';
 import {christmasActive, christmasLabOverride, localHour, setChristmasLabOverride} from '../src/config/christmas';
 
@@ -16,7 +18,7 @@ describe('the Christmas day and night (owner, 4 November 2026)', () => {
     expect(garlandLevel(7.75)).toBeGreaterThan(0); expect(garlandLevel(8)).toBe(0); expect(garlandLevel(14)).toBe(0);
   });
   it('shades the night in a soft blue, white by day', () => {
-    expect(nightColor(0)).toBe(0xffffff); expect(nightColor(1)).toBe(0x7480bd);
+    expect(nightColor(0)).toBe(0xffffff); expect(nightColor(1)).toBe(0x9aa6d8);
   });
 });
 
@@ -39,5 +41,23 @@ describe('the Christmas switch', () => {
     setChristmasLabOverride({off: true, hour: 20});
     expect(christmasLabOverride()).toEqual({}); expect(christmasActive()).toBe(true);
     const date = new Date(2026, 11, 1, 9, 30); expect(localHour(date)).toBe(9.5);
+  });
+});
+
+describe('the lit windows of the Christmas nights', () => {
+  it('finds the glow picture of a snowy picture, and none for the others', async () => {
+    const {nightGlowOf, NIGHT_LIGHT_FILES, LIGHT_POOLS} = await import('../src/config/nightLights');
+    expect(NIGHT_LIGHT_FILES.size).toBeGreaterThan(20);
+    expect(nightGlowOf('/Prairie-Lapins/assets/noel/buildings/farm-level-1.png')).toEqual({texture: 'noel-nuit:buildings/farm-level-1.png', url: '/Prairie-Lapins/assets/noel/nuit/buildings/farm-level-1.png'});
+    expect(nightGlowOf('/assets/noel/decorations/lantern-post.png')?.url).toBe('/assets/noel/nuit/decorations/lantern-post.png');
+    // The normal (not snowy) picture, and an unknown one, have no glow.
+    expect(nightGlowOf('/assets/buildings/farm-level-1.png')).toBeNull();
+    expect(nightGlowOf('/assets/noel/buildings/unknown.png')).toBeNull();
+    expect(nightGlowOf(undefined)).toBeNull();
+    for (const id of Object.keys(LIGHT_POOLS)) expect(NIGHT_LIGHT_FILES.has(`decorations/${id}.png`)).toBe(true);
+  });
+  it('ships a glow picture for every listed picture', async () => {
+    const {NIGHT_LIGHT_FILES} = await import('../src/config/nightLights');
+    for (const file of NIGHT_LIGHT_FILES) expect(existsSync(`public/assets/noel/nuit/${file}`), file).toBe(true);
   });
 });

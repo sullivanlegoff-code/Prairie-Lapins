@@ -46,8 +46,9 @@ export function snowDensity(time: number): number {
   return into >= fade ? now : before + (now - before) * smooth(into / fade);
 }
 
-/** Multiply colour of the deepest night: a soft blue in which the island and the rabbits stay readable (concept C1). */
-export const NIGHT_TINT = {r: 0x74, g: 0x80, b: 0xbd};
+/** Multiply colour of the deepest night: a soft blue in which the island and the rabbits stay readable (concept C1), lighter
+ * since 5 November 2026 (owner: « dans la nuit il n'y a pas assez de lumière »): still a blue night, about 30 % brighter. */
+export const NIGHT_TINT = {r: 0x9a, g: 0xa6, b: 0xd8};
 /** The night's colour for a level from 0 (day) to 1 (night), as a Phaser colour. */
 export function nightColor(level: number): number {
   const mix = (day: number, night: number) => Math.round(day + (night - day) * Math.max(0, Math.min(1, level)));
