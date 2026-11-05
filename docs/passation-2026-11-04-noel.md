@@ -1,6 +1,6 @@
 # Passation du 4 novembre 2026 : l'événement de Noël
 
-À lire après `AGENTS.md`. Branche **`feature/noel`** (créée depuis `feature/affection-50`). Rien n'est fusionné dans `main` ni publié : tout sortira dans la grande mise à jour de Noël, quand le propriétaire le dira.
+À lire après `AGENTS.md`. Branche **`feature/noel`** (créée depuis `feature/affection-50`), dernier commit `a40db7d` puis cette passation. Rien n'est fusionné dans `main` ni publié : tout sortira dans la grande mise à jour de Noël, quand le propriétaire le dira.
 
 ## Ce que le propriétaire a décidé (4 novembre 2026)
 
@@ -109,6 +109,28 @@ Aucun essai iPhone.
   - les chutes sont plus rapides et la hotte un peu plus étroite.
   - Le test « joueur rapide » vérifie qu'un très bon joueur tient les 45 secondes au moins 12 fois sur 20.
   - Les peintures `minijeu/piege-*.png` et `effet-*.png` viennent de `pieges-neige.png`, passé dans `prepare-noel-art.mjs`.
+
+## Plus de lumière la nuit (5 novembre 2026, commit `a40db7d`)
+
+Le propriétaire trouvait la nuit trop sombre. Il a choisi les pistes 1, 2 et 3 : Codex est permis si le rendu est meilleur, mais il n'a pas été nécessaire.
+
+1. **Nuit plus claire** : `NIGHT_TINT` dans `src/display/winterClock.ts` (0x9aa6d8 au lieu de 0x7480bd).
+2. **Fenêtres allumées** dès la tombée de la nuit (17 h 30 à 19 h, puis toute la nuit), pas seulement à 20 h :
+   - `scripts/derive-night-lights.mjs` tire des peintures enneigées leurs pixels chauds et lumineux, à la même taille ;
+   - les images sont écrites dans `public/assets/noel/nuit/<buildings|habitats|decorations>/` et la liste dans `src/config/winterNightLights.json` ;
+   - `node scripts/derive-night-lights.mjs --check` vérifie que la liste est à jour ;
+   - `src/display/nightGlows.ts` les ajoute en mode ADD au-dessus du voile de nuit, au même endroit que chaque image ;
+   - `MeadowScene.glowSources` retrouve l'URL de chaque texture grâce à `artUrls`.
+3. **Décorations qui éclairent** : la lanterne, le sapin, l'arche et la boule à neige posent aussi un halo sur la neige (`LIGHT_POOLS` dans `src/config/nightLights.ts`).
+
+Les guirlandes de l'île et les lumières du marché restent à 20 h, comme le propriétaire l'a décidé.
+
+**Validation :**
+- 3 153 tests, les deux builds, la simulation du rythme et `git diff --check` passent ;
+- captures Chromium à 19 h 30 et à 23 h, avec un sapin posé (fenêtres et sapin allumés) ;
+- aucun essai iPhone.
+
+**Pas encore fait :** le rapport au propriétaire sur ce point de la nuit, et le rebuild `npm run build:netlify` pour son aperçu iPhone (`http://192.168.1.13:5174/`).
 
 ## Ce qui reste
 
