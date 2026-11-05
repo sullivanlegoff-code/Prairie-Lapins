@@ -48,7 +48,7 @@ it('renders the fourteen crops with their icon, locks the later ones and shows a
   const crops=[...panel().querySelectorAll<HTMLElement>('.farm-order')];
   expect(crops.map(c=>c.dataset.crop)).toEqual(['foin','pissenlit','trefle','persil','laitue','fanes','fenouil','pomme','fraise','banane','trefleDore','carotteArcEnCiel','fraiseEtoilee','pommeAmour']);
   expect(crops.every(c=>c.querySelector('img.crop-icon'))).toBe(true);expect(crops[9].textContent).toContain('Banane');expect(crops[9].textContent).toContain('10 h');
-  expect(crops[3].querySelector('button')?.textContent).toBe('Cultiver · 50 pièces');expect(crops[4].querySelector('button')).toBeNull();expect(crops[4].querySelector('.badge')?.textContent).toBe('Niveau 7 requis');
+  expect(crops[3].querySelector('button')?.textContent).toBe('Cultiver · 100 pièces');expect(crops[4].querySelector('button')).toBeNull();expect(crops[4].querySelector('.badge')?.textContent).toBe('Niveau 7 requis');
   controller.perform({type:'startOrder',id:'building-100',recipe: 'persil'});
   expect(panel().querySelector('.order-ready-time')?.textContent).toMatch(/^Prête vers \d+ h \d{2}$/);
 });
@@ -60,7 +60,7 @@ it('shows the accumulated gift amount and the timer only when none is ready',()=
 });
 it('shows the Cuisine quota before choosing a rabbit and inside the activity',()=>{
   const s=createGame(0);s.buildings.push(emptyBuilding('building-100','kitchen',0,32));s.nextId=101;s.cuisine.fullRuns={cycle:0,used:2};
-  const {ui}=mount(s);ui.open({kind:'cuisineRabbit'});expect(panel().textContent).toContain('Encore 3 récompenses complètes aujourd’hui');
+  const {ui}=mount(s);ui.open({kind:'cuisineRabbit'});expect(panel().textContent).toContain('Encore 3 récompenses complètes aujourd’hui · +1 affection à gagner aujourd’hui');
   panel().querySelector<HTMLButtonElement>('[data-cuisine-rabbit]')!.click();
-  expect(document.querySelector('.cuisine-activity .cuisine-quota')?.textContent).toBe('Encore 3 récompenses complètes aujourd’hui');
+  expect(document.querySelector('.cuisine-activity .cuisine-quota')?.textContent).toBe('Encore 3 récompenses complètes aujourd’hui · +1 affection à gagner aujourd’hui');
 });

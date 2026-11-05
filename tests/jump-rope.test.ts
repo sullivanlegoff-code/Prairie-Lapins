@@ -96,13 +96,17 @@ describe('Jump-rope islet: rewards, the daily limit and the trio', () => {
     const tomorrow = s.lastSimulatedAt + MISSION_CYCLE_DURATION, next = run(s, {type: 'rewardJumpRope', team, score: 8}, tomorrow);
     expect(next.state.pattes - s.pattes).toBe(16); expect(next.state.jumpRope).toMatchObject({cycle: next.state.missions.daily.cycleIndex, rewarded: 1, best: 100, team}); expect(next.state.jumpRope?.heart).toBeUndefined();
   });
-  it('gives one Heart a day, for the first game reaching 30 jumps, even after the rewarded games', () => {
-    let {s, team} = setup(); const hearts = s.hearts + JUMP_ROPE.challenge.hearts; // The 29 jumps also win the challenge of the day.
-    for (const score of [29, 1, 2]) s = run(s, {type: 'rewardJumpRope', team, score}).state;
-    expect(s.hearts).toBe(hearts);
-    const won = run(s, {type: 'rewardJumpRope', team, score: JUMP_ROPE.heartJumps});
-    expect(won.jumpRopeReward).toEqual({pattes: 0, hearts: 1, rewarded: false}); expect(won.state.hearts).toBe(hearts + 1);
-    expect(run(won.state, {type: 'rewardJumpRope', team, score: 50}).state.hearts).toBe(hearts + 1);
+  it('gives the Hearts on the first game of the day only (owner, 5 November 2026): one at 30 jumps, plus the challenge', () => {
+    const {s, team} = setup(), hearts = s.hearts;
+    const first = run(s, {type: 'rewardJumpRope', team, score: JUMP_ROPE.heartJumps}); // 30 jumps also win the challenge of the day.
+    expect(first.jumpRopeReward).toMatchObject({hearts: 1 + JUMP_ROPE.challenge.hearts, challenge: true});
+    const second = run(first.state, {type: 'rewardJumpRope', team, score: 50});
+    expect(second.jumpRopeReward!.hearts).toBe(0); expect(second.state.hearts).toBe(hearts + 1 + JUMP_ROPE.challenge.hearts);
+    // A first game below 30 jumps uses the day's Hearts: a later game of 30 jumps gives none.
+    const short = run(s, {type: 'rewardJumpRope', team, score: 5});
+    expect(run(short.state, {type: 'rewardJumpRope', team, score: JUMP_ROPE.heartJumps}).jumpRopeReward!.hearts).toBe(0);
+    const tomorrow = s.lastSimulatedAt + MISSION_CYCLE_DURATION;
+    expect(run(second.state, {type: 'rewardJumpRope', team, score: JUMP_ROPE.heartJumps}, tomorrow).jumpRopeReward!.hearts).toBeGreaterThanOrEqual(1);
   });
   it('caps a day at 180 pattes, one Heart and the challenge Hearts, and never gives XP or affection', () => {
     let {s, team} = setup(); const start = {pattes: s.pattes, hearts: s.hearts, xp: s.progression.totalXp, affection: s.rabbits.map(r => r.affection)};
@@ -144,11 +148,13 @@ describe('Jump-rope islet: challenge of the day, medals, athlete records and the
   it('pays the challenge Hearts once a day, on top of the other rewards, only when the athlete meets it', () => {
     let {s, team} = setup(); const c = jumpRopeChallenge(s, s.lastSimulatedAt), hearts = s.hearts;
     expect(meetsJumpRopeChallenge(s, c, team.athlete, c.jumps - 1)).toBe(false);
+    // Only the first game of the day may meet it (owner, 5 November 2026): a missed first game ends the day's challenge.
     const missed = run(s, {type: 'rewardJumpRope', team, score: c.jumps - 1});
-    expect(missed.jumpRopeReward?.challenge).toBeUndefined(); expect(missed.state.hearts).toBe(hearts); s = missed.state;
+    expect(missed.jumpRopeReward?.challenge).toBeUndefined(); expect(missed.state.hearts).toBe(hearts);
+    expect(run(missed.state, {type: 'rewardJumpRope', team, score: c.jumps}).jumpRopeReward?.challenge).toBeUndefined();
     const won = run(s, {type: 'rewardJumpRope', team, score: c.jumps});
     expect(won.jumpRopeReward).toMatchObject({challenge: true, hearts: JUMP_ROPE.challenge.hearts}); expect(won.state.hearts).toBe(hearts + JUMP_ROPE.challenge.hearts);
-    expect(jumpRopeDay(won.state, s.lastSimulatedAt).challengeLeft).toBe(false); expect(jumpRopeDay(won.state, s.lastSimulatedAt).heartLeft).toBe(true);
+    expect(jumpRopeDay(won.state, s.lastSimulatedAt).challengeLeft).toBe(false); expect(jumpRopeDay(won.state, s.lastSimulatedAt).heartLeft).toBe(false);
     const again = run(won.state, {type: 'rewardJumpRope', team, score: c.jumps});
     expect(again.state.hearts).toBe(won.state.hearts);
     const tomorrow = s.lastSimulatedAt + MISSION_CYCLE_DURATION, next = jumpRopeChallenge(again.state, tomorrow);

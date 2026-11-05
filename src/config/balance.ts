@@ -16,14 +16,21 @@ export const CUISINE_TIP = {pattes: 5, grass: 1} as const;
  * `unlockHearts[c]` is the Heart price of the permanent step c → c + 1: provisional balance values, not structural
  * constants, awaiting the owner's tuning. Hearts only; read them through `nurseryUnlockQuote`.
  */
-export const NURSERY = {initialCapacity: 1, maxCapacity: 4, unlockHearts: {1: 10, 2: 25, 3: 50}} as const;
+// Cushions dear in Hearts since the Christmas update (owner, 5 November 2026; 10 / 25 / 50 before); every save goes back to 2 at most.
+export const NURSERY = {initialCapacity: 1, maxCapacity: 4, unlockHearts: {1: 40, 2: 120, 3: 250}} as const;
+/**
+ * The islet of the Epics (owner, 5 November 2026): a small islet floating north of the island, off the land grid, bought once
+ * for `hearts` Hearts from player level `unlockLevel`. Its nest runs a second breeding at the same time as the island's, with
+ * the chances of the Epics, the Legendaries and Benny multiplied by `bonus` (+10 %); the nursery keeps its cushions.
+ * `cell`: the islet nest's top-left fine cell (a 4 × 4 nest), above the start island beyond the north edge of the land grid,
+ * so the island's growth never reaches it.
+ */
+export const EPIC_ISLET = {unlockLevel: 18, hearts: 400, bonus: 1.1, cell: {x: 6, y: -15}} as const;
 /** Paille's free gift: 3 Hearts every 24 h (2 before the Hearts / pattes balance of 3 November 2026), three gifts kept at most. */
 export const HEARTS = {
   initial: 12, gift: 3, maximumGifts: 3, giftInterval: 24 * HOUR,
   accelerationStep: 5 * MINUTE, pattesPerHeart: 25,
 };
-/** Paille's counter (late game): one Heart for pattes or grass; each exchange of a daily cycle costs 25 % more, 30 at most per resource. */
-export const MARKET = {unlockLevel: 10, base: {pattes: 250, grass: 100}, growth: 1.25, maximumPerCycle: 30} as const;
 // The species registry lives in ./species; the public names stay available from here.
 export {SPECIES, SPECIES_IDS, LEGACY_SPECIES_IDS};
 export type {SpeciesId, RabbitType, Rarity};
@@ -93,28 +100,31 @@ export const TRAVEL = {
   destinations: ['Londres', 'Vannes', 'Le Caire', 'Hammamet', 'Le Lavandou', 'Bandol', 'Lille', 'Paris', 'Marrakech'],
 } as const;
 export type Destination = typeof TRAVEL.destinations[number];
-export const tripHearts = (hours: number): number => hours <= 4 ? 1 : hours <= 7 ? 2 : 3;
+/** 1 to 5 Hearts, more for a longer trip (owner, 5 November 2026; 1 to 3 before): 3–4 h 1, 5–6 h 2, 7–8 h 3, 9 h 4, 10 h 5. */
+export const tripHearts = (hours: number): number => hours <= 4 ? 1 : hours <= 6 ? 2 : hours <= 8 ? 3 : hours <= 9 ? 4 : 5;
 /** One draw picks both: destination index and length in hours. */
 export function drawTrip(roll: number): {destination: Destination; hours: number} {
   const count = TRAVEL.destinations.length, lengths = TRAVEL.maxHours - TRAVEL.minHours + 1, n = Math.floor(roll * count * lengths);
   return {destination: TRAVEL.destinations[n % count], hours: TRAVEL.minHours + Math.floor(n / count)};
 }
+// Crop prices doubled for the Christmas update (owner, 5 November 2026): food is dearer, affection 50 takes longer. The hay
+// keeps its 10 pattes: it is the guided first crop whose price Paille's guide quotes (her lines are never changed).
 export const ORDERS = {
   foin: {name: 'Foin', level: 1, cost: 10, grass: 20, duration: 5 * MINUTE},
-  pissenlit: {name: 'Pissenlit', level: 1, cost: 18, grass: 40, duration: 15 * MINUTE},
-  trefle: {name: 'Trèfle', level: 3, cost: 30, grass: 70, duration: 30 * MINUTE},
-  persil: {name: 'Persil', level: 5, cost: 50, grass: 120, duration: HOUR},
-  laitue: {name: 'Laitue romaine', level: 7, cost: 80, grass: 200, duration: 2 * HOUR},
-  fanes: {name: 'Fanes de carotte', level: 9, cost: 120, grass: 290, duration: 3 * HOUR},
-  fenouil: {name: 'Fenouil', level: 11, cost: 160, grass: 380, duration: 4 * HOUR},
-  pomme: {name: 'Pomme', level: 13, cost: 240, grass: 560, duration: 6 * HOUR},
-  fraise: {name: 'Fraise', level: 16, cost: 330, grass: 760, duration: 8 * HOUR},
-  banane: {name: 'Banane', level: 19, cost: 450, grass: 1000, duration: 10 * HOUR},
+  pissenlit: {name: 'Pissenlit', level: 1, cost: 36, grass: 40, duration: 15 * MINUTE},
+  trefle: {name: 'Trèfle', level: 3, cost: 60, grass: 70, duration: 30 * MINUTE},
+  persil: {name: 'Persil', level: 5, cost: 100, grass: 120, duration: HOUR},
+  laitue: {name: 'Laitue romaine', level: 7, cost: 160, grass: 200, duration: 2 * HOUR},
+  fanes: {name: 'Fanes de carotte', level: 9, cost: 240, grass: 290, duration: 3 * HOUR},
+  fenouil: {name: 'Fenouil', level: 11, cost: 320, grass: 380, duration: 4 * HOUR},
+  pomme: {name: 'Pomme', level: 13, cost: 480, grass: 560, duration: 6 * HOUR},
+  fraise: {name: 'Fraise', level: 16, cost: 660, grass: 760, duration: 8 * HOUR},
+  banane: {name: 'Banane', level: 19, cost: 900, grass: 1000, duration: 10 * HOUR},
   // The fancy crops (owner, 2 November 2026): same food stock, planted only in a level 3 farm (FANCY_ORDER_IDS).
-  trefleDore: {name: 'Trèfle doré', level: 20, cost: 600, grass: 1400, duration: 10 * HOUR},
-  carotteArcEnCiel: {name: 'Carotte arc-en-ciel', level: 22, cost: 800, grass: 1800, duration: 12 * HOUR},
-  fraiseEtoilee: {name: 'Fraise étoilée', level: 24, cost: 1000, grass: 2200, duration: 14 * HOUR},
-  pommeAmour: {name: 'Pomme d’amour', level: 26, cost: 1200, grass: 2700, duration: 16 * HOUR},
+  trefleDore: {name: 'Trèfle doré', level: 20, cost: 1200, grass: 1400, duration: 10 * HOUR},
+  carotteArcEnCiel: {name: 'Carotte arc-en-ciel', level: 22, cost: 1600, grass: 1800, duration: 12 * HOUR},
+  fraiseEtoilee: {name: 'Fraise étoilée', level: 24, cost: 2000, grass: 2200, duration: 14 * HOUR},
+  pommeAmour: {name: 'Pomme d’amour', level: 26, cost: 2400, grass: 2700, duration: 16 * HOUR},
 };
 /** The fancy crops, reserved for a level 3 farm. */
 export const FANCY_ORDER_IDS = ['trefleDore', 'carotteArcEnCiel', 'fraiseEtoilee', 'pommeAmour'] as const;
@@ -143,11 +153,13 @@ export const isAffectionWall = (affection: number): boolean => affection > 0 && 
  * traveller. The full price depends on the rabbit's rarity; each care takes its share of it, lasts `hours` and gives `xp` at the return.
  */
 export const SALON = {
-  unlockLevel: 12,
+  unlockLevel: 22, // 12 before the Christmas update (owner, 5 November 2026).
   fullPrice: {common: 300, rare: 800, epic: 2000, legendary: 3500, mythic: 5000},
   // 3 November 2026: the bath is the quick, cheap care; the massage the long, dear one that gives the most XP (brush in between).
-  cares: {bath: {hours: 1, share: 0.5, xp: 10}, brush: {hours: 2, share: 1, xp: 25}, massage: {hours: 3, share: 1.5, xp: 45}},
-} as const satisfies {unlockLevel: number; fullPrice: Record<Rarity, number>; cares: Record<string, {hours: number; share: number; xp: number}>};
+  // 5 November 2026: the first `heartCaresPerCycle` cares started in a daily cycle also bring back `hearts` Hearts.
+  cares: {bath: {hours: 1, share: 0.5, xp: 10, hearts: 1}, brush: {hours: 2, share: 1, xp: 25, hearts: 1}, massage: {hours: 3, share: 1.5, xp: 45, hearts: 2}},
+  heartCaresPerCycle: 2,
+} as const satisfies {unlockLevel: number; fullPrice: Record<Rarity, number>; cares: Record<string, {hours: number; share: number; xp: number; hearts: number}>; heartCaresPerCycle: number};
 export type CareKind = keyof typeof SALON.cares;
 export const CARE_KINDS = Object.keys(SALON.cares) as CareKind[];
 export const carePrice = (species: SpeciesId, care: CareKind): number => Math.round(SALON.fullPrice[SPECIES[species].rarity] * SALON.cares[care].share);
@@ -156,14 +168,15 @@ export const carePrice = (species: SpeciesId, care: CareKind): number => Math.ro
  * lets the player choose freely and for free between the evolved and old drawing of rabbits that have already evolved. Purely
  * cosmetic: no income, XP, affection or draw.
  */
-export const FOREST = {unlockLevel: 20} as const;
+export const FOREST = {unlockLevel: 25} as const; // 20 before the Christmas update (owner, 5 November 2026).
 /**
  * The jump-rope islet (owner, 4 November 2026): a small isolated islet left of the start island, with the kiosk on it, bought as
  * one building for `price` pattes from player level `unlockLevel`, one per game. Three rabbits of the player play: two carriers
  * turn the rope and the athlete jumps (looks only: no effect on difficulty or rewards). Tap when the rope passes under the athlete's
  * feet; the rope turns faster at every jump; one miss ends the game (`lives`), and the player may replay at will. The first
  * `rewardedGamesPerCycle` games of a daily cycle with at least one jump pay `pattesPerJump` pattes per jump, `maxPattes` at most,
- * and the first game of the cycle reaching `heartJumps` jumps gives one Heart. No XP, no affection. Later games beat the record.
+ * and the first game of the cycle, only it (owner, 5 November 2026), gives one Heart if it reaches `heartJumps` jumps and the
+ * challenge's Hearts if it meets the challenge. No XP, no affection. Later games beat the record.
  * A precise tap (within `perfectShare` of the window) is « Parfait ! »: looks and sound only.
  */
 export const JUMP_ROPE = {

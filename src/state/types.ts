@@ -32,6 +32,11 @@ export interface Building {
    * save written before it had no room around it. Removed as soon as it can grow at load, or when it is upgraded.
    */
   formerFootprint?: true;
+  /**
+   * The nest of the islet of the Epics (v27, owner, 5 November 2026): a second nest, floating off the land grid at
+   * EPIC_ISLET.cell, bought once for Hearts; its births have ×1.1 chances of Epics, Legendaries and Benny. Never moved or stored.
+   */
+  islet?: true;
   order: {recipe: OrderId; startedAt: number; endsAt: number; grass?: number; duration?: number} | null;
   breeding: {parents: [string, string]; startedAt: number; endsAt: number; birth: Birth} | null;
   /** Present exactly on the nursery. */
@@ -94,7 +99,7 @@ export interface GameState {
   startCourse?: 'paille-solo';
   purchaseUnlocks?: PurchaseUnlockId[];
   initiation?: Initiation;
-  version: 26;
+  version: 27;
   /** The Christmas event (v26, optional; absent until its first use): see `ChristmasState`. */
   christmas?: ChristmasState;
   /** Benny, the Mythic (v22): when her power is usable again, and whether she is flying in the sky. Absent until first used. */
@@ -106,12 +111,12 @@ export interface GameState {
   /** Recipes bought or gifted. Discovered species are known without an entry here. Never affects a draw. */
   recipeBook: SpeciesId[];
   pityFailures: number;
-  /** Paille's counter: exchanges made in daily cycle `cycle`. Absent until the first exchange. */
-  market?: {cycle: number; pattes: number; grass: number};
   /** The travel agency: Coco's first welcome given, and the trips under way (ready to welcome back once `endsAt <= now`). */
   travel?: {welcomed: boolean; trips: Trip[]};
   /** The care under way at the Salon de soins (one rabbit at a time, back once `endsAt <= now`); absent when the salon is free. */
   care?: Care;
+  /** The cares that brought Hearts in daily cycle `cycle` (at most SALON.heartCaresPerCycle, v27). Absent until the first. */
+  salonHearts?: {cycle: number; cares: number};
   /** Daily cycle of each rabbit's last affection gift (a care or a picnic), keyed by rabbit ID. Absent until the first gift. */
   affectionGifts?: Record<string, number>;
   /** Daily cycle of the last picnic (one a day in all). Absent until the first picnic. */
@@ -145,14 +150,15 @@ export interface ChristmasState {
 export interface JumpRopeTeam {carriers: [string, string]; athlete: string}
 export interface Trip {grass?: number; rabbitId: string; destination: Destination; startedAt: number; endsAt: number; hearts: number}
 /** Paid at the start; the gift of the day is reserved then, the affection and the XP are given when the player welcomes it back. */
-export interface Care {rabbitId: string; care: CareKind; startedAt: number; endsAt: number}
+/** `hearts` (v27): the Hearts this care brings back, fixed at its start (absent when the day's rewarded cares were used). */
+export interface Care {rabbitId: string; care: CareKind; startedAt: number; endsAt: number; hearts?: number}
 export type Refusal = 'LEVEL_REQUIRED' | 'NO_BREEDING_RESULT' | 'PURCHASE_LOCKED' | 'DECORATION_LIMIT' | 'DECORATION_OVERLAP' | 'DECORATION_BLOCKS_BUILDING' | 'INVALID_TIME' | 'INVALID_RANDOM' | 'INVALID_CHOICE' | 'NOT_FOUND' |
   'NOT_ENOUGH_PATTES' | 'NOT_ENOUGH_GRASS' | 'INVALID_CELL' | 'CELL_OCCUPIED' |
   'BUILDING_LIMIT' | 'HABITAT_NOT_EMPTY' | 'LAST_HABITAT' | 'CAPACITY_FULL' | 'BUSY' | 'NOT_READY' | 'MAX_AFFECTION' |
   'SAME_PARENT' | 'AFFECTION_TOO_LOW' | 'MISSING_BUILDING' | 'ALREADY_EXPANDED' | 'PARCEL_UNAVAILABLE' |
   'LAST_OF_SPECIES' | 'PARENT_BUSY' | 'NOT_ENOUGH_HEARTS' | 'ACTION_FINISHED' |
   'STALE_ACTION' | 'PRICE_CHANGED' | 'NO_MISSING_PATTES' | 'ALREADY_CLAIMED' | 'CYCLE_EXPIRED' | 'RESOURCE_LIMIT' | 'TYPE_INCOMPATIBLE' | 'MAX_HABITAT_LEVEL' | 'RECIPE_KNOWN' | 'MAX_NURSERY_CAPACITY' |
-  'UPGRADE_BLOCKED_BUILDING' | 'UPGRADE_BLOCKED_DECORATION' | 'UPGRADE_BLOCKED_LAND' | 'INVALID_NAME' | 'MARKET_LIMIT' | 'STATUE_REQUIRED' | 'SECOND_STATUE_REQUIRED' | 'TRAVELING' |
+  'UPGRADE_BLOCKED_BUILDING' | 'UPGRADE_BLOCKED_DECORATION' | 'UPGRADE_BLOCKED_LAND' | 'INVALID_NAME' | 'STATUE_REQUIRED' | 'SECOND_STATUE_REQUIRED' | 'TRAVELING' |
   'BENNY_RECHARGING' | 'NO_WAITING_BABY' | 'BENNY_KEPT' |
   'AT_SALON' | 'GIFT_TODAY' | 'AFFECTION_WALL' | 'PICNIC_TODAY' | 'EMPTY_ENCLOSURE' | 'NO_GIFT_POSSIBLE' |
   'NO_EVOLVED_ART' | 'EVOLUTION_AFFECTION' | 'EVOLUTION_CHALLENGES' | 'EVOLUTION_REQUIRED' |
@@ -172,7 +178,7 @@ export type BaseCommand =
   | {type: 'startOrder'; id: string; recipe: OrderId}
   | {type: 'collectOrder'; id: string}
   | {type: 'feed'; id: string}
-  | {type: 'breed'; parents: [string, string]}
+  | {type: 'breed'; parents: [string, string]; /** The nest used (absent: the island's nest); the islet's nest is the second one. */ nestId?: string}
   /** Welcomes this exact ready baby; another one is never substituted. */
   | {type: 'welcome'; enclosureId: string; birthId: string}
   /** Releases this exact ready baby from the nursery for pattes: no habitat, no XP, no discovery. */
@@ -211,7 +217,6 @@ export type Command = BaseCommand
   | {type: 'unlockNurserySlot'; fromCapacity: NurseryCapacity; expectedCost: number}
   | {type: 'buyRecipe'; species: SpeciesId}
   /** One Heart from Paille's counter, at the quoted price: a stale or changed price refuses. */
-  | {type: 'exchangeForHeart'; resource: 'pattes' | 'grass'; expectedCost: number}
   /** Salon de soins: one care for this rabbit, paid now; `claimCare` welcomes it back once the care is over. */
   | {type: 'startCare'; rabbitId: string; care: CareKind} | {type: 'claimCare'; rabbitId: string}
   /** Today's picnic in this enclosure, at the quoted price (300 pattes per rabbit present): a changed price refuses. */
@@ -219,7 +224,7 @@ export type Command = BaseCommand
   /** A finished jump-rope game: `score` jumps by this trio (remembered for the next game); pays within the daily limit (JUMP_ROPE). */
   | {type: 'rewardJumpRope'; team: JumpRopeTeam; score: number}
   /** The jump-rope islet, for JUMP_ROPE.price pattes from JUMP_ROPE.unlockLevel, once. */
-  | {type: 'buyJumpIsland'}
+  | {type: 'buyJumpIsland'} | {type: 'buyEpicIslet'}
   /** Christmas: today's snowman in this enclosure (free, one a day in all, a rabbit present, from level 2). */
   | {type: 'buildSnowman'; enclosureId: string}
   /** Christmas: a finished game of « Les cadeaux du ciel », the basket carried by this rabbit; pays within SKY_GIFTS' daily limit. */

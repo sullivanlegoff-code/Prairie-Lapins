@@ -64,7 +64,7 @@ describe('travel agency rules', () => {
     expect([...new Set(trips.map(t => t.hours))]).toEqual([3, 4, 5, 6, 7, 8, 9, 10]);
     expect(drawTrip(0)).toEqual({destination: 'Londres', hours: 3});
     expect(drawTrip(1 - Number.EPSILON)).toEqual({destination: 'Marrakech', hours: 10});
-    expect([3, 4, 5, 6, 7, 8, 9, 10].map(tripHearts)).toEqual([1, 1, 2, 2, 2, 3, 3, 3]);
+    expect([3, 4, 5, 6, 7, 8, 9, 10].map(tripHearts)).toEqual([1, 1, 2, 2, 3, 3, 4, 5]);
   });
 
   it('requires an agency and rejects invalid random draws without changing state', () => {

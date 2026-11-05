@@ -273,7 +273,7 @@ describe('the save (v26)', () => {
   }
   it('round-trips the Christmas state and decorations', () => {
     const {s} = festive();
-    const raw = JSON.parse(encodeGame(s)); expect(raw.version).toBe(26);
+    const raw = JSON.parse(encodeGame(s)); expect(raw.version).toBe(27);
     expect(raw.christmas).toMatchObject({candies: 246, claimed: ['snowman'], snowman: {cycle: 0}, skyGifts: {cycle: 0, rewarded: 1, best: 12}});
     expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: s});
   });
@@ -281,7 +281,7 @@ describe('the save (v26)', () => {
     const s = advance(setup().s, 0);
     const raw = JSON.parse(encodeGame(s)); raw.version = 25;
     const migrated = decodeGame(JSON.stringify(raw));
-    expect(migrated).toEqual({ok: true, state: {...s, version: 26}});
+    expect(migrated).toEqual({ok: true, state: {...s, version: 27}});
     // A v25 save cannot already hold the Christmas fields' bad values either: the same validation applies.
     const bad = JSON.parse(encodeGame(s)); bad.version = 25; bad.christmas = {candies: -1};
     expect(decodeGame(JSON.stringify(bad))).toEqual({ok: false, reason: 'INVALID_STATE'});

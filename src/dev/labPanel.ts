@@ -97,7 +97,6 @@ export function mountLabPanel(host: HTMLElement, controller: GameController,
     ['dailyCycle', 'Nouveau cycle quotidien', 'Nouveau cycle quotidien ouvert, progression remise à zéro.'],
     ['coco', 'Revoir l’accueil de Coco', 'L’agence attend à nouveau l’accueil de Coco.'],
     ['heartGift', 'Rendre le cadeau de cœurs disponible', 'Cadeau de cœurs disponible, à réclamer.'],
-    ['market', 'Réinitialiser le comptoir de Paille', 'Compteurs du comptoir de Paille réinitialisés.'],
   ] as const) button(missions, label, type, () => perform({type}, message));
   button(missions, 'Relancer le tutoriel de Paille', 'tutorial', () => { onReplacement(true); report(true, 'Tutoriel de Paille relancé dans les préférences de test. Les progrès de jeu restent acquis.'); });
   const decorations = section('Décorations', 'decorations');

@@ -130,7 +130,6 @@ describe('pure laboratory transactions', () => {
     const previous = s.missions.daily.cycleIndex; s = run(s, {type: 'dailyCycle'}); expect(s.missions.daily.cycleIndex).toBe(previous + 1); expect(s.missions.daily.claimed).toEqual([]); expect(Object.values(s.missions.daily.progress)).toEqual(DAILY_MISSION_IDS.map(() => 0));
     s = run(s, {type: 'coco'}); expect(s.travel).toEqual({welcomed: false, trips: []});
     s = run(s, {type: 'heartGift'}); expect(s.nextHeartGiftAt).toBe(now);
-    s.market = {cycle: s.missions.daily.cycleIndex, pattes: 2, grass: 2}; s = run(s, {type: 'market'}); expect(s.market).toBeUndefined();
     expect(s.hearts).toBe(hearts); expect(s.pattes).toBe(pattes);
   });
   it('adds each decoration to inventory including the robot with no cost', () => {

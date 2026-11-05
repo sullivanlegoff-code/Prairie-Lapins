@@ -34,13 +34,13 @@ function setup(species: SpeciesId[] = ['paille'], affection = 20, statues = 2) {
 }
 
 describe('Salon de soins: the building', () => {
-  it('costs 5 000 pattes from player level 12, one at most', () => {
+  it('costs 5 000 pattes from player level 22 (12 before the Christmas update), one at most', () => {
     expect(BALANCE.buildings.salon).toEqual({price: 5000, maximum: 1});
-    const low = atLevel(createGame(0), 11); low.pattes = 10_000;
+    const low = atLevel(createGame(0), 21); low.pattes = 10_000;
     refused(low, {type: 'buyBuilding', kind: 'salon', ...freeCell(low)}, 'LEVEL_REQUIRED');
-    const poor = atLevel(createGame(0), 12); poor.pattes = 4_999;
+    const poor = atLevel(createGame(0), 22); poor.pattes = 4_999;
     refused(poor, {type: 'buyBuilding', kind: 'salon', ...freeCell(poor)}, 'NOT_ENOUGH_PATTES');
-    const ok = atLevel(createGame(0), 12); ok.pattes = 12_000;
+    const ok = atLevel(createGame(0), 22); ok.pattes = 12_000;
     const bought = run(ok, {type: 'buyBuilding', kind: 'salon', ...freeCell(ok)});
     expect(bought.pattes).toBe(7_000); expect(bought.buildings.filter(b => b.kind === 'salon')).toHaveLength(1);
     refused(bought, {type: 'buyBuilding', kind: 'salon', ...freeCell(bought)}, 'BUILDING_LIMIT');
@@ -65,7 +65,7 @@ describe('Salon de soins: the cares', () => {
       const {s, ids: [id]} = setup(['frisket'], 20);
       const started = run(s, {type: 'startCare', rabbitId: id, care});
       expect(started.pattes).toBe(s.pattes - carePrice('frisket', care));
-      expect(started.care).toEqual({rabbitId: id, care, startedAt: 0, endsAt: hours * HOUR});
+      expect(started.care).toEqual({rabbitId: id, care, startedAt: 0, endsAt: hours * HOUR, hearts: SALON.cares[care].hearts});
       expect(started.affectionGifts).toEqual({[id]: 0});
       expect(started.rabbits.find(r => r.id === id)!.affection).toBe(20);
       expect(atSalon(started, id) && away(started, id)).toBe(true);
@@ -171,7 +171,7 @@ describe('Salon de soins: the save', () => {
     const {s} = setup(['paille']);
     const raw = JSON.parse(encodeGame(s)); raw.version = 22; raw.buildings = raw.buildings.filter((b: {kind: string}) => b.kind !== 'salon');
     const decoded = decodeGame(JSON.stringify(raw)); if (!decoded.ok) throw Error(decoded.reason);
-    expect(decoded.state.version).toBe(26);
+    expect(decoded.state.version).toBe(27);
     expect(decoded.state.care).toBeUndefined(); expect(decoded.state.affectionGifts).toBeUndefined(); expect(decoded.state.picnicCycle).toBeUndefined();
   });
   it('a released rabbit leaves no gift entry', () => {

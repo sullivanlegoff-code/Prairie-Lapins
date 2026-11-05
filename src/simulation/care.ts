@@ -1,4 +1,4 @@
-import {BALANCE, PICNIC, isAffectionWall} from '../config/balance';
+import {BALANCE, PICNIC, SALON, isAffectionWall} from '../config/balance';
 import {affectionCap, capReason, rabbitAffectionCap, statueReason, type CappedRabbit} from './affection';
 import {nestForParent} from './breeding';
 import {cycleIndexAt} from './missions';
@@ -22,6 +22,9 @@ export function rabbitAwayReason(s: GameState, rabbitId: string): 'TRAVELING' | 
   return travelling(s, rabbitId) ? 'TRAVELING' : atSalon(s, rabbitId) ? 'AT_SALON' : nestForParent(s, rabbitId) ? 'PARENT_BUSY' : null;
 }
 /** The daily cycle at `now`, the same one as the daily missions, even on a snapshot not yet advanced. */
+/** The cares that may still bring Hearts in the daily cycle at `now` (owner, 5 November 2026: two a day). */
+export const salonHeartCaresLeft = (s: Pick<GameState, 'missions' | 'salonHearts'>, now: number): number =>
+  Math.max(0, SALON.heartCaresPerCycle - (s.salonHearts?.cycle === giftCycle(s, now) ? s.salonHearts.cares : 0));
 export const giftCycle = (s: Pick<GameState, 'missions'>, now: number): number =>
   Math.max(s.missions.daily.cycleIndex, cycleIndexAt(s.missions.daily.referenceAt, now));
 /** Why +1 affection from a gift would be refused, whatever the day: the maximum, a statue, or a wall. */

@@ -15,7 +15,7 @@ import {type HabitatType, HABITAT_TYPES, HABITAT_LEVELS, habitatLevel} from '../
 import {MAIN_MISSION_IDS, DAILY_MISSION_IDS, DAILY_MISSIONS, DAILY_PICK_COUNT} from '../config/missions';
 import {cycleIndexAt} from '../simulation/missions';
 import {z} from 'zod';
-import {BALANCE, BUILDING_KINDS, CARE_KINDS, SALON, JUMP_ROPE, LEGACY_BREEDING_DURATION, MARKET, CUISINE_FULL_REWARDS_PER_CYCLE, HOUR, LEGACY_ORDER_CROPS, TRAVEL, tripHearts, NURSERY, ORDERS, type OrderId, SHOP_SPECIES, SPECIES, SPECIES_IDS, GUARANTEE_SPECIES, growthDuration, orderFarmLevel, type SpeciesId} from '../config/balance';
+import {BALANCE, BUILDING_KINDS, CARE_KINDS, SALON, JUMP_ROPE, LEGACY_BREEDING_DURATION, EPIC_ISLET, CUISINE_FULL_REWARDS_PER_CYCLE, HOUR, LEGACY_ORDER_CROPS, TRAVEL, tripHearts, NURSERY, ORDERS, type OrderId, SHOP_SPECIES, SPECIES, SPECIES_IDS, GUARANTEE_SPECIES, growthDuration, orderFarmLevel, type SpeciesId} from '../config/balance';
 import type {GameState} from '../state/types';
 import {ALL_DECORATION_IDS, DECORATION_IDS, RETIRED_DECORATION_IDS, MAX_DECORATIONS, isChristmasDecoration} from '../config/decorations';
 import {CHRISTMAS_CHALLENGES, CHRISTMAS_CHALLENGE_IDS, CHRISTMAS_PICK_COUNT, MAX_CANDIES, SKY_GIFTS} from '../config/christmasEvent';
@@ -25,16 +25,18 @@ import {EVOLUTION_CHALLENGES, EVOLUTION_CHALLENGE_IDS, evolutionChallengeTarget,
 import {EVOLUTION_AFFECTION, hasEvolvedArt} from '../config/evolvedArt';
 
 /**
- * The current format is v26 (the Christmas event: the sucres d'orge, the Christmas challenges of the cycle, the snowman of the
+ * The current format is v27 (the Christmas update's economy: Paille's counter removed, the nursery back to 2 cushions at
+ * most, 1 to 5 Hearts a trip and the Salon's Hearts, see `migrateV26`), after v26 (the Christmas event: the sucres d'orge, the Christmas challenges of the cycle, the snowman of the
  * day, the mini-game « Les cadeaux du ciel » and the Christmas market's decorations with their receipt in sucres d'orge, all
  * optional; nothing to convert, see `migrateV25`), after v25 (the evolution challenges « commis », « goûteur » and « quotidien », the daily streak, the daily missions drawn at the start of the cycle and the rabbits caressed in it, see `migrateV24`), after v24 (larger enclosures: an enclosure may keep its former footprint, see `migrateV23`), after v23 (affection up to 50, a second Statue de l'Affection, the Salon de soins and the picnic, a lapin ultime's taken-off crown, the Forêt de Brocéliande and a rabbit's old drawing put back, the Terrain de corde à sauter, all optional; nothing to convert), after v22 (Benny's power and sky mode, optional), v21 (friendships and memories), v20 (catalogue conversion) and v19 (farm and agency levels, concurrent trips, Heart receipts), migrated through v18 and v17 from v16 (economy migration). Version 16 was the catalogue boundary of the development saves: the species Terre, Mottelin, Géant and
  * Brumelin and the Terre habitat were removed, and saves before that catalogue boundary are not converted. Versions 1 to 15 are refused as incompatible
  * (the controller then starts a new game); they are never read, migrated or restored.
  */
-export const SAVE_VERSION = 26;
+export const SAVE_VERSION = 27;
 /** Types a species had before the owner changed them: a rabbit already housed under its old types may stay where it is. */
 const LEGACY_TYPES: Partial<Record<SpeciesId, readonly HabitatType[]>> = {magicien: ['metal', 'vol'], bouee: ['paille', 'feu'], dadi: ['neige', 'vol']};
 const integer = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
+const offGridCell = z.number().int().min(-64).max(Number.MAX_SAFE_INTEGER);
 // Rebasing a clock may move historical dates before the Unix epoch. Resources stay nonnegative.
 const timestamp = z.number().int().min(Number.MIN_SAFE_INTEGER).max(Number.MAX_SAFE_INTEGER);
 const identity = z.string().regex(/^(building|rabbit|birth)-[1-9]\d*$/);
@@ -46,10 +48,11 @@ const footprintTier = z.union([z.literal(1), z.literal(2), z.literal(3)]);
 const nurseryBaby = z.object({slot: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)]), birth, startedAt: timestamp, readyAt: timestamp}).strict();
 const nurseryPayload = z.object({capacity: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]), babies: z.array(nurseryBaby).max(NURSERY.maxCapacity)}).strict();
 const building = z.object({
-  id: identity, kind: z.enum(BUILDING_KINDS), x: integer, y: integer, incomeUnits: integer,
+  // x, y: a fine cell; only the islet's nest (off the land grid, checked below) may sit at a negative one.
+  id: identity, kind: z.enum(BUILDING_KINDS), x: offGridCell, y: offGridCell, incomeUnits: integer,
   habitat: z.object({type: z.enum(HABITAT_TYPES), level: z.union([z.literal(1), z.literal(2), z.literal(3)])}).strict().nullable(),
   farmLevel: z.union([z.literal(2), z.literal(3)]).optional(), agencyLevel: z.union([z.literal(2), z.literal(3)]).optional(),
-  footprintTier: footprintTier.optional(), formerFootprint: z.literal(true).optional(),
+  footprintTier: footprintTier.optional(), formerFootprint: z.literal(true).optional(), islet: z.literal(true).optional(),
   order: z.object({recipe: z.enum(Object.keys(ORDERS) as [OrderId, ...OrderId[]]), startedAt: timestamp, endsAt: timestamp, grass: integer.optional(), duration: integer.positive().optional()}).strict().nullable(),
   breeding: z.object({parents: z.tuple([identity, identity]), startedAt: timestamp, endsAt: timestamp, birth}).strict().nullable(),
   nursery: nurseryPayload.nullable(),
@@ -133,11 +136,12 @@ const current = z.object({
   rabbits: z.array(rabbit).max(ISLAND.maxArea * HABITAT_LEVELS.universal[2].capacity),
   discovered: z.array(species).max(SPECIES_IDS.length),
   pityFailures: integer.max(BALANCE.guaranteeAttempt - 1),
-  market: z.object({cycle: integer, pattes: integer.max(MARKET.maximumPerCycle), grass: integer.max(MARKET.maximumPerCycle)}).strict().optional(),
   benny: z.object({powerReadyAt: timestamp, inSky: z.boolean()}).strict().optional(),
   travel: z.object({welcomed: z.boolean(), trips: z.array(z.object({grass: integer.optional(), rabbitId: identity, destination: z.enum(TRAVEL.destinations), startedAt: timestamp, endsAt: timestamp, hearts: integer}).strict()).max(3)}).strict().optional(),
   // The Salon de soins and the picnic (v23, optional): the care under way, each rabbit's last gift cycle and the last picnic cycle.
-  care: z.object({rabbitId: identity, care: z.enum(CARE_KINDS as [typeof CARE_KINDS[number], ...typeof CARE_KINDS]), startedAt: timestamp, endsAt: timestamp}).strict().optional(),
+  care: z.object({rabbitId: identity, care: z.enum(CARE_KINDS as [typeof CARE_KINDS[number], ...typeof CARE_KINDS]), startedAt: timestamp, endsAt: timestamp, hearts: integer.positive().optional()}).strict().optional(),
+  // v27: the cares that brought Hearts in the cycle.
+  salonHearts: z.object({cycle: integer, cares: integer.positive().max(SALON.heartCaresPerCycle)}).strict().optional(),
   affectionGifts: z.record(identity, integer).optional(),
   picnicCycle: integer.optional(),
   // The Terrain de corde à sauter (v23, optional): the last rewarded cycle, its rewarded games and Heart, and the record.
@@ -181,7 +185,7 @@ const schema = current.superRefine((s, context) => {
   if (new Set(d.claimed).size !== d.claimed.length || d.claimed.some(id => d.progress[id] < DAILY_MISSIONS[id].target) ||
     (d.bonusClaimed && d.claimed.length !== DAILY_PICK_COUNT) || (d.picked && d.claimed.some(id => !d.picked!.includes(id)))) issue('Daily claims');
   if (m.streak && m.streak.lastCycle > d.cycleIndex) issue('Future daily streak');
-  if (s.market && s.market.cycle > d.cycleIndex) issue('Future market cycle');
+  if (s.salonHearts && s.salonHearts.cycle > d.cycleIndex) issue('Future salon cycle');
   if (d.referenceAt > s.lastSimulatedAt && (Object.values(d.progress).some(n => n !== 0) || d.claimed.length || d.bonusClaimed)) issue('Future cycle progress');
   if ([...Object.values(s.cuisine.affectionCycles), s.cuisine.heartCycle ?? 0, s.cuisine.fullRuns?.cycle ?? 0].some(cycle => cycle > s.missions.daily.cycleIndex)) issue('Future Cuisine cycle');
   const ids: string[] = [];
@@ -196,8 +200,10 @@ const schema = current.superRefine((s, context) => {
     if (b.order && (b.farmLevel ?? 1) < orderFarmLevel(b.order.recipe)) issue('Farm level');
     if (b.footprintTier !== undefined && (b.kind !== 'enclosure' || !b.habitat || b.footprintTier > b.habitat.level)) issue('Footprint tier');
     if (b.formerFootprint && b.kind !== 'enclosure') issue('Former footprint');
+    // The islet of the Epics (v27): one nest at its fixed place off the land grid, never on it.
+    if (b.islet && (b.kind !== 'nest' || b.x !== EPIC_ISLET.cell.x || b.y !== EPIC_ISLET.cell.y)) issue('Islet nest');
     if (!b.id.startsWith('building-')) issue('Building identity');
-    if (buildingPlacementReason(s, b.x, b.y, b.id) || cells.has(`${b.x},${b.y}`)) issue('Invalid or occupied cell');
+    if (!b.islet && (buildingPlacementReason(s, b.x, b.y, b.id) || cells.has(`${b.x},${b.y}`))) issue('Invalid or occupied cell');
     cells.add(`${b.x},${b.y}`);
     if ((b.kind !== 'enclosure' && b.incomeUnits !== 0) || (b.kind !== 'farm' && b.order) || (b.kind !== 'nest' && b.breeding)) issue('Building payload mismatch');
     if ((b.kind === 'nursery') !== (b.nursery !== null)) issue('Nursery payload');
@@ -224,8 +230,9 @@ const schema = current.superRefine((s, context) => {
   }
   for (const kind of BUILDING_KINDS) {
     const maximum = BALANCE.buildings[kind].maximum;
-    if (maximum !== null && s.buildings.filter(b => b.kind === kind).length > maximum) issue('Building limit');
+    if (maximum !== null && s.buildings.filter(b => b.kind === kind && !b.islet).length > maximum) issue('Building limit');
   }
+  if (s.buildings.filter(b => b.islet).length > 1) issue('Islet limit');
   if (s.travel && (s.travel.trips.length > (s.buildings.find(b => b.kind === 'agency')?.agencyLevel ?? 1) || new Set(s.travel.trips.map(t => t.rabbitId)).size !== s.travel.trips.length)) issue('Trip capacity');
   for (const trip of s.travel?.trips ?? []) {
     const hours = (trip.endsAt - trip.startedAt) / HOUR;
@@ -237,7 +244,7 @@ const schema = current.superRefine((s, context) => {
     // One rabbit at a time, in the salon, for the exact length of its care, with today's gift reserved; never also on a trip or at the nest.
     const c = s.care;
     if (!s.buildings.some(b => b.kind === 'salon') || !s.rabbits.some(r => r.id === c.rabbitId) || c.endsAt - c.startedAt !== SALON.cares[c.care].hours * HOUR
-      || c.startedAt > s.lastSimulatedAt || s.affectionGifts?.[c.rabbitId] === undefined || s.travel?.trips.some(t => t.rabbitId === c.rabbitId)
+      || (c.hearts !== undefined && c.hearts !== SALON.cares[c.care].hearts) || c.startedAt > s.lastSimulatedAt || s.affectionGifts?.[c.rabbitId] === undefined || s.travel?.trips.some(t => t.rabbitId === c.rabbitId)
       || s.buildings.some(b => b.breeding?.parents.includes(c.rabbitId))) issue('Care');
   }
   if (Object.values(s.affectionGifts ?? {}).some(cycle => cycle > d.cycleIndex) || (s.picnicCycle ?? 0) > d.cycleIndex || (s.jumpRope?.cycle ?? 0) > d.cycleIndex) issue('Future gift cycle');
@@ -426,7 +433,27 @@ function migrateV24(raw: object): void {
 
 /** v25 → v26, the Christmas event (owner, 4 November 2026): every new field is optional, nothing to convert. */
 function migrateV25(raw: object): void {
-  (raw as {version: number}).version = SAVE_VERSION;
+  (raw as {version: number}).version = 26;
+}
+
+/**
+ * v26 → v27, the Christmas update's economy (owner, 5 November 2026). Paille's counter is gone (`market`, dropped before any
+ * migration). Every nursery goes back to 2 cushions at most, with no refund; a cushion still holding a baby is kept, so nothing
+ * is lost. A trip under way brings the Hearts of the new 1–5 scale.
+ */
+function migrateV26(raw: object): void {
+  const save = raw as {version: number; buildings?: unknown; travel?: {trips?: unknown}};
+  if (Array.isArray(save.buildings)) for (const b of save.buildings) {
+    const n = b && typeof b === 'object' ? (b as {nursery?: {capacity?: unknown; babies?: unknown}}).nursery : null;
+    if (!n || typeof n.capacity !== 'number' || !Array.isArray(n.babies)) continue;
+    const used = Math.max(0, ...n.babies.map(baby => baby && typeof baby === 'object' && typeof (baby as {slot?: unknown}).slot === 'number' ? (baby as {slot: number}).slot + 1 : 0));
+    n.capacity = Math.min(n.capacity, Math.max(2, used));
+  }
+  if (save.travel && typeof save.travel === 'object' && Array.isArray(save.travel.trips)) for (const t of save.travel.trips) {
+    const trip = t as {startedAt?: unknown; endsAt?: unknown; hearts?: unknown};
+    if (trip && typeof trip.startedAt === 'number' && typeof trip.endsAt === 'number') trip.hearts = tripHearts(Math.round((trip.endsAt - trip.startedAt) / HOUR));
+  }
+  save.version = SAVE_VERSION;
 }
 
 /**
@@ -439,7 +466,7 @@ export function decodeGame(json: string): DecodeResult {
   if (json.length > MAX_JSON_LENGTH) return {ok: false, reason: 'FILE_TOO_LARGE'};
   let raw: unknown;
   try { raw = JSON.parse(json); } catch { return {ok: false, reason: 'INVALID_JSON'}; }
-  if (raw && typeof raw === 'object' && 'version' in raw && raw.version !== SAVE_VERSION && raw.version !== 25 && raw.version !== 24 && raw.version !== 23 && raw.version !== 22 && raw.version !== 21 && raw.version !== 20 && raw.version !== 19 && raw.version !== 18 && raw.version !== 17 && raw.version !== 16)
+  if (raw && typeof raw === 'object' && 'version' in raw && raw.version !== SAVE_VERSION && raw.version !== 26 && raw.version !== 25 && raw.version !== 24 && raw.version !== 23 && raw.version !== 22 && raw.version !== 21 && raw.version !== 20 && raw.version !== 19 && raw.version !== 18 && raw.version !== 17 && raw.version !== 16)
     return {ok: false, reason: Number.isInteger(raw.version) && (raw.version as number) >= 1 && (raw.version as number) <= 15 ? 'INCOMPATIBLE_CATALOG' : 'UNSUPPORTED_VERSION'};
   // Only the explicitly retired catalogue entries are removed; unknown IDs still fail validation.
   if (raw && typeof raw === 'object' && 'decorations' in raw && Array.isArray(raw.decorations)) {
@@ -448,6 +475,8 @@ export function decodeGame(json: string): DecodeResult {
   }
   migrateRetiredSpecies(raw);
   moveKioskToIsland(raw);
+  // Paille's counter is removed at v27 (owner, 5 November 2026): its daily record is dropped from every older save.
+  if (raw && typeof raw === 'object' && 'version' in raw && (raw.version as number) < 27) delete (raw as {market?: unknown}).market;
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 16) raw = migrateV16(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 17) raw = migrateV17(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 18) raw = migrateV18(raw);
@@ -455,6 +484,7 @@ export function decodeGame(json: string): DecodeResult {
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 23) migrateV23(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 24) migrateV24(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 25) migrateV25(raw);
+  if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 26) migrateV26(raw);
   settleStorageCaps(raw);
   const parsed = schema.safeParse(raw);
   if (!parsed.success) return {ok: false, reason: 'INVALID_STATE'};
@@ -502,6 +532,6 @@ export function encodeGame(state: GameState, presentationId?: string): string {
 
 /** Optional presentation metadata, separate from simulation state. Call after validating the save. */
 export function readPresentationId(json: string): string | undefined {
-  try { const raw = JSON.parse(json); const id = z.string().uuid().safeParse(raw.presentationId); return [SAVE_VERSION, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16].includes(raw.version) && id.success ? id.data : undefined; }
+  try { const raw = JSON.parse(json); const id = z.string().uuid().safeParse(raw.presentationId); return [SAVE_VERSION, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16].includes(raw.version) && id.success ? id.data : undefined; }
   catch { return undefined; }
 }

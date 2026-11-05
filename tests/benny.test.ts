@@ -188,10 +188,10 @@ describe('Benny\'s sky mode', () => {
 describe('save format v22', () => {
   it('migrates a v21 save without loss and keeps Benny\'s state across a round trip', () => {
     const s = game('benny', 'paille', 2), raw = JSON.parse(encodeGame(s));
-    expect(raw.version).toBe(26); raw.version = 21;
+    expect(raw.version).toBe(27); raw.version = 21;
     // A v21 save loads exactly as the same game written in the current format (v23).
     const migrated = decodeGame(JSON.stringify(raw)); expect(migrated).toEqual(decodeGame(encodeGame(s)));
-    expect(migrated.ok && migrated.state.version).toBe(26); expect(migrated.ok && migrated.state.benny).toBeUndefined();
+    expect(migrated.ok && migrated.state.version).toBe(27); expect(migrated.ok && migrated.state.benny).toBeUndefined();
     expect(migrated.ok && migrated.state.rabbits.map(r => r.species)).toEqual(['benny', 'paille']);
     // Benny's saved state survives a round trip.
     const used = run(s, {type: 'bennySky', inSky: true}), back = decodeGame(encodeGame(used)); expect(back.ok && back.state.benny).toEqual({powerReadyAt: 0, inSky: true});

@@ -34,7 +34,7 @@ import {ISLAND} from '../config/islandGeometry';
 import {setCurrencyText} from '../display/currency';
 import {CROP_IDS, cropDuration, cropIcon, statueThumbnail} from '../display/food';
 import {COCO_WELCOME, HOST_NAME, agencyThumbnail, cocoPortrait, forestThumbnail, fromPlace, jumpRopeThumbnail, salonThumbnail, toPlace} from '../display/agency';
-import {atSalon, away, giftReason, picnicQuote, rabbitAwayReason} from '../simulation/care';
+import {atSalon, away, giftReason, picnicQuote, rabbitAwayReason, salonHeartCaresLeft} from '../simulation/care';
 import {travelling} from '../simulation/travel';
 import {BENNY, BENNY_POWER_RECHARGE, bennyInSky, bennyPowerReadyAt, bennyPowerReason} from '../simulation/benny';
 import {affectionStatueCount, capReason, feedReason, nextAffectionStatue, playerLevel, rabbitAffectionCap, waitsForEvolution, wearsCrown} from '../simulation/affection';
@@ -52,7 +52,7 @@ import {habitatStats, habitatName, habitatEntryReason, habitatAccepts, welcomeDe
 import {MAIN_MISSIONS, DAILY_MISSIONS, DAILY_BONUS, DAILY_PICK_COUNT, type Reward} from '../config/missions';
 import {initialMissionIds, activeMainMissions, visibleMainMissions, mainCatalogueUnlocked, availableMissionRewards, mainProgress, dailyCycleStart, dailyCycleEnd, cycleIndexAt, dailyBonusReady, dailyClaimable, dailyMissionsOf, dailyProgress} from '../simulation/missions';
 import type {GameController, Snapshot} from '../application/GameController';
-import {AFFECTION_STATUE, BALANCE, CARE_KINDS, FARM_UPGRADES, PICNIC, SALON, FOREST, JUMP_ROPE, carePrice, isAffectionWall, MARKET, orderFarmLevel, SECOND_AFFECTION_STATUE, NURSERY, ORDERS, RARE_BIRTH_BONUS, TRAVEL, feedCost, type Destination, SPECIES, SPECIES_IDS, SHOP_SPECIES, growthDuration, type BuildingKind, type SpeciesId, type RabbitType} from '../config/balance';
+import {AFFECTION_STATUE, BALANCE, CARE_KINDS, FARM_UPGRADES, PICNIC, SALON, FOREST, JUMP_ROPE, carePrice, isAffectionWall, orderFarmLevel, SECOND_AFFECTION_STATUE, NURSERY, ORDERS, RARE_BIRTH_BONUS, TRAVEL, feedCost, type Destination, SPECIES, SPECIES_IDS, SHOP_SPECIES, growthDuration, type BuildingKind, type SpeciesId, type RabbitType} from '../config/balance';
 import {JUMP_MEDAL_ART} from '../config/jumpIslandArt';
 import type {Command, DecorationLocation, GameState, PattesCommand, TimedStage} from '../state/types';
 import {CHRISTMAS_DECORATION_IDS, DECORATIONS, DECORATION_IDS, FINE_GRID, isChristmasDecoration, ownedDecorationResalePrice, type DecorationId} from '../config/decorations';
@@ -67,7 +67,6 @@ import {catalogDecorationPlacementReason, purchaseDecorationReason} from '../sim
 import {decorationUrl} from '../display/decorationArt';
 import {quoteComplement, releaseBabyPattesFor, releaseGrass} from '../simulation/actions';
 import {initiationAvailable} from '../simulation/initiation';
-import {marketExchanges, marketPrice, marketUnlocked} from '../simulation/market';
 import {automaticNurseryTransfer, babyInNursery, firstNurseryBaby, nurseryBuilding, nurseryFull, nurseryUnlockQuote} from '../simulation/nursery';
 import {accelerationCost, quoteAcceleration} from '../simulation/hearts';
 import {rabbitIncome, individualIncomeRoll} from '../simulation/time';
@@ -242,7 +241,7 @@ export class GameUI {
       if (!granted.ok) return `Récompense non enregistrée : ${REFUSALS[granted.reason]}`;
       const reward = granted.cuisineReward!, lucky = granted.state.rabbits.find(r => r.id === reward.affectionRabbitId), luckyName = taster && lucky ? ` pour ${lucky.name || SPECIES[lucky.species].name}` : '';
       if (taster) this.cuisine.showAffection(reward.affectionRabbitId);
-      return `+${reward.pattes} pattes · +${reward.grass} nourriture${reward.affectionGranted ? ` · +1 Affection${luckyName}` : reward.affectionAtCap ? ` · Affection maximale${luckyName}` : reward.affectionEvolutionRequired ? ` · Fais évoluer ${lucky ? (lucky.name || SPECIES[lucky.species].name) : 'ce lapin'} pour dépasser 30.` : reward.affectionStatueRequired ? (affectionStatueCount(granted.state) === 0 ? ` · La Statue de l’Affection permet de dépasser ${AFFECTION_STATUE.cap}.` : ` · Une deuxième Statue de l’Affection permet de dépasser ${SECOND_AFFECTION_STATUE.cap}.`) : ''}${reward.heartGranted ? ' · +1 Cœur' : ''}`;
+      return `+${reward.pattes} pattes · +${reward.grass} nourriture${reward.affectionGranted ? ` · +1 Affection${luckyName}` : reward.affectionAtCap ? ` · Affection maximale${luckyName}` : reward.affectionEvolutionRequired ? ` · Fais évoluer ${lucky ? (lucky.name || SPECIES[lucky.species].name) : 'ce lapin'} pour dépasser 30.` : reward.affectionStatueRequired ? (affectionStatueCount(granted.state) === 0 ? ` · La Statue de l’Affection permet de dépasser ${AFFECTION_STATUE.cap}.` : ` · Une deuxième Statue de l’Affection permet de dépasser ${SECOND_AFFECTION_STATUE.cap}.`) : ' · Affection du jour déjà gagnée en cuisine'}${reward.heartGranted ? ' · +1 Cœur' : ''}`;
     }, quotaText: () => { const state = this.controller.getSnapshot().state; return state ? cuisineQuotaText(state, this.now()) : ''; }, onExit: () => this.render(), onActiveChange: activityOptions.onCuisineActive});
     this.jumpRope = mountJumpRopeActivity(document.getElementById('app')!, {onFinished: (team, score) => {
       const granted = this.controller.perform({type: 'rewardJumpRope', team: {carriers: [team.carriers[0].id, team.carriers[1].id], athlete: team.athlete.id}, score});
@@ -922,7 +921,7 @@ export class GameUI {
       for (const kind of ['farm', 'kitchen', 'agency', 'salon', 'forest', 'statue'] as const) {
         const card = this.card(BUILDING_NAMES[kind], `${utility[kind]} · empreinte 4 × 4`);
         if (kind === 'agency') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(agencyThumbnail()); card.append(node('p', `Dès le niveau ${TRAVEL.unlockLevel}, ${HOST_NAME} envoie tes lapins en vacances : voyages de 3 à 10 heures, cœurs en souvenir au retour.`, 'small')); }
-        if (kind === 'salon') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(salonThumbnail()); card.append(node('p', `Dès le niveau ${SALON.unlockLevel}, offre un soin à un lapin : un bain, un brossage ou un massage. Il revient avec +1 d’affection et de l’XP.`, 'small')); }
+        if (kind === 'salon') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(salonThumbnail()); card.append(node('p', `Dès le niveau ${SALON.unlockLevel}, offre un soin à un lapin : un bain, un brossage ou un massage. Il revient avec +1 d’affection et de l’XP, et tes ${SALON.heartCaresPerCycle} premiers soins du jour rapportent aussi des cœurs.`, 'small')); }
         if (kind === 'forest') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(forestThumbnail()); card.append(node('p', `Dès le niveau ${FOREST.unlockLevel}, choisis pour chaque lapin déjà évolué entre son nouveau dessin et l’ancien. C’est gratuit, autant de fois que tu veux.`, 'small')); }
         if (kind === 'statue') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(statueThumbnail(affectionStatueCount(s) >= 1)); card.append(node('p', affectionStatueCount(s) === 0 ? `La Statue de l’Affection récompense tes soins : sans elle, l’affection s’arrête à ${AFFECTION_STATUE.cap}. Avec elle, chaque lapin peut atteindre ${SECOND_AFFECTION_STATUE.cap}. Une deuxième statue, dès le niveau ${SECOND_AFFECTION_STATUE.level}, ouvre l’affection ${SECOND_AFFECTION_STATUE.cap + 1} à ${BALANCE.maxAffection} à tes lapins évolués.` : `Ta deuxième Statue de l’Affection ouvre l’affection ${SECOND_AFFECTION_STATUE.cap + 1} à ${BALANCE.maxAffection} à tes lapins évolués. Dès le niveau ${SECOND_AFFECTION_STATUE.level}.`, 'small'), node('p', rareBirthBonusText(), 'small')); }
         if (kind === 'statue') card.append(node('p', `Ton solde : ${heartAmount(s.hearts)}. Économise tes cœurs pour la construire.`, 'small'));
@@ -1308,11 +1307,11 @@ export class GameUI {
     if (care) {
       const r = s.rabbits.find(x => x.id === care.rabbitId)!, name = r.name || SPECIES[r.species].name, kind = CARE_NAMES[care.care];
       if (care.endsAt <= now) {
-        const card = this.card(`${name} · soin terminé`, `${kind} terminé : ${name} revient tout doux, avec +1 d’affection et ${SALON.cares[care.care].xp} XP.`, r); card.dataset.care = 'ready';
+        const card = this.card(`${name} · soin terminé`, `${kind} terminé : ${name} revient tout doux, avec +1 d’affection et ${SALON.cares[care.care].xp} XP${care.hearts ? ` et ${heartAmount(care.hearts)}` : ''}.`, r); card.dataset.care = 'ready';
         this.button(card, 'Aller le chercher', () => this.execute({type: 'claimCare', rabbitId: r.id}, value => `${name} rentre à l’enclos · affection ${value} !`)).classList.add('heart-gift');
         this.content.append(card);
       } else {
-        const card = this.card(`${name} · au salon`, `${kind} en cours · +1 d’affection et ${SALON.cares[care.care].xp} XP au retour.`, r); card.dataset.care = 'away'; this.content.append(card);
+        const card = this.card(`${name} · au salon`, `${kind} en cours · +1 d’affection et ${SALON.cares[care.care].xp} XP${care.hearts ? ` et ${heartAmount(care.hearts)}` : ''} au retour.`, r); card.dataset.care = 'away'; this.content.append(card);
         this.timer(care.startedAt, care.endsAt); this.content.append(node('p', orderReadyText(care.endsAt).replace('Prête', 'Retour'), 'order-ready-time'));
       }
       return;
@@ -1332,9 +1331,11 @@ export class GameUI {
     const name = chosen.name || SPECIES[chosen.species].name;
     const head = this.card(name, `${RARITY_NAMES[SPECIES[chosen.species].rarity]} · ${chosen.affection >= rabbitAffectionCap(s, chosen) && capReason(s, chosen) === 'EVOLUTION_REQUIRED' ? `affection ${chosen.affection}, sans gain avant son évolution (le soin compte pour ses défis)` : `affection ${chosen.affection} → ${chosen.affection + 1} au retour`}`, chosen); this.content.append(head);
     this.button(head, 'Changer de lapin', () => { this.salonRabbit = null; this.render(); }, null, true);
+    const heartCares = salonHeartCaresLeft(s, now);
+    this.content.append(node('p', heartCares ? `Encore ${heartCares} soin${heartCares > 1 ? 's' : ''} avec des cœurs aujourd’hui.` : 'Les soins avec des cœurs sont finis pour aujourd’hui : reviens demain.', 'small'));
     for (const kind of CARE_KINDS) {
       const care = SALON.cares[kind], price = carePrice(chosen.species, kind);
-      const card = this.card(CARE_NAMES[kind], `${care.hours} h · +1 d’affection et ${care.xp} XP au retour`); card.dataset.care = kind; card.classList.add('compact-list-card');
+      const card = this.card(CARE_NAMES[kind], `${care.hours} h · +1 d’affection et ${care.xp} XP${heartCares ? ` et ${heartAmount(care.hearts)}` : ''} au retour`); card.dataset.care = kind; card.classList.add('compact-list-card');
       this.button(card, `${CARE_NAMES[kind]} · ${price} pattes`, () => this.execute({type: 'startCare', rabbitId: chosen.id, care: kind}, `${name} arrive au salon pour ${kind === 'bath' ? 'son bain' : kind === 'brush' ? 'son brossage' : 'son massage'} !`, () => { this.salonRabbit = null; }), moneyReason(s, price));
       this.content.append(card);
     }
@@ -1344,7 +1345,7 @@ export class GameUI {
   private jumpIslandOffer(s: GameState): HTMLElement {
     const card = this.card(JUMP_ISLAND_NAME, 'Une petite île à côté de la tienne · maximum 1'); card.dataset.jumpIslandOffer = '';
     card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(jumpRopeThumbnail());
-    card.append(node('p', `Dès le niveau ${JUMP_ROPE.unlockLevel}, une petite île avec le kiosque flotte à gauche de la tienne. Deux de tes lapins font tourner la corde et un troisième saute : un raté et la partie s’arrête, rejoue autant que tu veux. Tes ${JUMP_ROPE.rewardedGamesPerCycle} premières parties du jour rapportent des pattes, et un cœur si tu atteins ${JUMP_ROPE.heartJumps} sauts.`, 'small'));
+    card.append(node('p', `Dès le niveau ${JUMP_ROPE.unlockLevel}, une petite île avec le kiosque flotte à gauche de la tienne. Deux de tes lapins font tourner la corde et un troisième saute : un raté et la partie s’arrête, rejoue autant que tu veux. Tes ${JUMP_ROPE.rewardedGamesPerCycle} premières parties du jour rapportent des pattes ; la toute première donne un cœur si tu atteins ${JUMP_ROPE.heartJumps} sauts, et deux de plus si elle réussit le défi du jour.`, 'small'));
     const reason = jumpIslandReason(s), text = reason === 'LEVEL_REQUIRED' ? `Niveau ${JUMP_ROPE.unlockLevel} requis` : reason === 'BUILDING_LIMIT' ? 'Tu as déjà l’île : touche-la dans la prairie.' : reason ? REFUSALS[reason] : null;
     this.button(card, `Acheter · ${JUMP_ROPE.price} pattes`, () => this.execute({type: 'buyJumpIsland'}, 'L’île de la corde à sauter flotte à côté de la tienne !', () => { this.open({kind: 'jumpIsland'}, 'root'); }), text);
     return card;
@@ -2566,23 +2567,7 @@ export class GameUI {
       const wait = node('p', '', 'timer'); wait.dataset.end = String(s.nextHeartGiftAt); this.content.append(wait);
       wait.id = `action-reason-${++this.reasonId}`; gift.setAttribute('aria-describedby', wait.id);
     }
-    this.renderMarket(s);
   }
-  /** Late game: surplus pattes and grass become Hearts, each exchange of the day a little dearer. */
-  private renderMarket(s: GameState): void {
-    this.content.append(node('h3', 'Le comptoir de Paille'));
-    if (!marketUnlocked(s)) { this.content.append(node('p', `Niveau ${MARKET.unlockLevel} requis. Tu pourras y échanger tes pattes et ta nourriture en trop contre des cœurs.`, 'small')); return; }
-    this.content.append(node('p', 'Échange tes pattes ou ta nourriture en trop contre des cœurs. Chaque échange du jour coûte un peu plus que le précédent ; les prix reviennent au départ au prochain cycle.', 'small'));
-    for (const [resource, label, unit] of [['pattes', 'Pièces', 'pattes'], ['grass', 'Nourriture', 'nourriture']] as const) {
-      const price = marketPrice(s, resource), owned = resource === 'pattes' ? s.pattes : s.grass;
-      const card = this.card(`${label} → 1 cœur`, price === null ? REFUSALS.MARKET_LIMIT : `Échanges du jour : ${marketExchanges(s, resource)} / ${MARKET.maximumPerCycle}`);
-      card.dataset.market = resource;
-      if (price !== null) this.button(card, `Échanger · ${price} ${unit}`, () => this.execute({type: 'exchangeForHeart', resource, expectedCost: price}, `+ 1 cœur · − ${price} ${unit}`),
-        owned < price ? REFUSALS[resource === 'pattes' ? 'NOT_ENOUGH_PATTES' : 'NOT_ENOUGH_GRASS'] : null);
-      this.content.append(card);
-    }
-  }
-
   private complement(host: HTMLElement, s: GameState, action: PattesCommand, title: string, success: string, after?: (value?: string | number) => void): void {
     const quote = quoteComplement(s, action, this.now()); if (!quote.ok) return;
     const placement = this.placement, species = this.view?.kind === 'buyRabbit' ? this.view.species : null;
@@ -2843,9 +2828,9 @@ export class GameUI {
 const JUMP_ISLAND_NAME = 'Île de la corde à sauter';
 /** The challenge of the day at the jump-rope islet, or that it is won. */
 function jumpRopeChallengeText(s: GameState, now: number): string {
-  if (!jumpRopeDay(s, now).challengeLeft) return 'Défi du jour réussi : reviens demain pour le suivant.';
+  if (!jumpRopeDay(s, now).challengeLeft) return s.jumpRope?.challenge ? 'Défi du jour réussi : reviens demain pour le suivant.' : 'Le défi se tente à la première partie du jour : reviens demain pour le suivant.';
   const c = jumpRopeChallenge(s, now);
-  return `Défi du jour : ${c.jumps} sauts${c.type ? ` avec un lapin ${TYPE_NAMES[c.type]} comme athlète` : ''} · +${JUMP_ROPE.challenge.hearts} cœurs`;
+  return `Défi du jour, à ta première partie : ${c.jumps} sauts${c.type ? ` avec un lapin ${TYPE_NAMES[c.type]} comme athlète` : ''} · +${JUMP_ROPE.challenge.hearts} cœurs`;
 }
 /** « 12 sucres d’orge », « 1 sucre d’orge » (the Christmas market's currency). */
 const candyAmount = (n: number) => `${n} sucre${n > 1 ? 's' : ''} d’orge`;
@@ -2857,5 +2842,5 @@ function skyGiftsQuotaText(s: GameState, now: number): string {
 function jumpRopeQuotaText(s: GameState, now: number): string {
   const day = jumpRopeDay(s, now), games = day.rewardedLeft;
   const rewards = games ? `Encore ${games} partie${games > 1 ? 's' : ''} récompensée${games > 1 ? 's' : ''} aujourd’hui` : 'Parties récompensées finies pour aujourd’hui : reviens demain';
-  return `${rewards}${day.heartLeft ? ` · un cœur à ${JUMP_ROPE.heartJumps} sauts` : ''}`;
+  return `${rewards}${day.heartLeft ? ` · première partie : un cœur à ${JUMP_ROPE.heartJumps} sauts` : ''}`;
 }

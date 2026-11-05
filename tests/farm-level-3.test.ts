@@ -60,8 +60,8 @@ describe('farm level 3', () => {
 describe('fancy crops', () => {
   it('are the four owner crops, above the banana', () => {
     expect(FANCY_ORDER_IDS.map(id => [ORDERS[id].name, ORDERS[id].level, ORDERS[id].cost, ORDERS[id].duration / HOUR, ORDERS[id].grass])).toEqual([
-      ['Trèfle doré', 20, 600, 10, 1400], ['Carotte arc-en-ciel', 22, 800, 12, 1800],
-      ['Fraise étoilée', 24, 1000, 14, 2200], ['Pomme d’amour', 26, 1200, 16, 2700],
+      ['Trèfle doré', 20, 1200, 10, 1400], ['Carotte arc-en-ciel', 22, 1600, 12, 1800],
+      ['Fraise étoilée', 24, 2000, 14, 2200], ['Pomme d’amour', 26, 2400, 16, 2700],
     ]);
     for (const id of FANCY_ORDER_IDS) expect(orderFarmLevel(id)).toBe(3);
     expect([orderFarmLevel('foin'), orderFarmLevel('laitue'), orderFarmLevel('fanes'), orderFarmLevel('banane')]).toEqual([1, 1, 2, 2]);

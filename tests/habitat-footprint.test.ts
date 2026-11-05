@@ -115,7 +115,7 @@ describe('collisions and moves between small and large buildings', () => {
 
 describe('saves: footprint tiers, and older games untouched', () => {
   it('writes and reads the tier of each enclosure exactly', () => {
-    const s = grown(3), json = encodeGame(s); expect(JSON.parse(json).version).toBe(26);
+    const s = grown(3), json = encodeGame(s); expect(JSON.parse(json).version).toBe(27);
     expect(JSON.parse(json).buildings.find((b: {id: string}) => b.id === 'building-1').footprintTier).toBe(3);
     expect(decodeGame(json)).toEqual({ok: true, state: s});
     const compact = encodeGame(grown(1)); expect(compact).not.toContain('footprintTier');
@@ -127,7 +127,7 @@ describe('saves: footprint tiers, and older games untouched', () => {
     old.buildings.push({...emptyBuilding('building-9', 'enclosure', 10, 40, 'universal'), habitat: {type: 'universal', level: 2}}); old.nextId = 10;
     const decoded = decodeGame(asV23Json(old));
     if (!decoded.ok) throw Error(decoded.reason);
-    expect(decoded.state.version).toBe(26);
+    expect(decoded.state.version).toBe(27);
     for (const key of ['rabbits', 'decorations', 'acquiredParcels', 'pattes', 'grass', 'hearts', 'discovered', 'nextId'] as const) expect(decoded.state[key], key).toEqual(old[key]);
     expect(decoded.state.buildings.map(b => b.id)).toEqual(old.buildings.map(b => b.id));
     // Both have room on the start parcel: tier 1 at its enlarged 5 × 4, slid by one cell at most; nothing else moved.

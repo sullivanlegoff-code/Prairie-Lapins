@@ -110,10 +110,10 @@ it('the sheet requires explicit evolution; the scene plays and the forest then s
   expect(panel().querySelector('[data-collection-evolution="paille"]')?.textContent).toContain('Cœur des moissons');
 });
 
-it('the shop sells the forest from level 20 for 10 000 pattes', () => {
-  const s = game(false); s.progression = {totalXp: cumulativeLevelXp(19), rewardedThroughLevel: 19};
+it('the shop sells the forest from level 25 for 10 000 pattes', () => {
+  const s = game(false); s.progression = {totalXp: cumulativeLevelXp(24), rewardedThroughLevel: 24};
   const {ui} = mount(s); (ui as unknown as {open(view: unknown): void}).open({kind: 'shop', tab: 'buildings'});
   const card = [...panel().querySelectorAll<HTMLElement>('article')].find(a => a.textContent?.includes('Forêt de Brocéliande'))!;
-  expect(card).toBeDefined(); expect(card.textContent).toMatch(/Placer · 10.000 pièces/); expect(card.textContent).toContain('Niveau 20 requis');
+  expect(card).toBeDefined(); expect(card.textContent).toMatch(/Placer · 10.000 pièces/); expect(card.textContent).toContain('Niveau 25 requis');
   expect(card.querySelector('button')!.disabled).toBe(true);
 });

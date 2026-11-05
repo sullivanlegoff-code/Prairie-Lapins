@@ -35,7 +35,7 @@ function freeCell(s: GameState) {
 const atLevel = (s: GameState, level: number) => { s.progression = {totalXp: cumulativeLevelXp(level), rewardedThroughLevel: level}; return s; };
 /** Level 22, two statues, a level 3 universal enclosure holding the given rabbits, with or without the forest. */
 function setup(rabbits: [SpeciesId, number][], forest = true) {
-  let s = atLevel(createGame(0), 22); s.pattes = 100_000;
+  let s = atLevel(createGame(0), 25); s.pattes = 100_000;
   for (let i = 0; i < 2; i++) { const c = freeCell(s); s.buildings.push(emptyBuilding(`building-${s.nextId++}`, 'statue', c.x, c.y)); }
   const c = freeCell(s), home = emptyBuilding(`building-${s.nextId++}`, 'enclosure', c.x, c.y); home.habitat = {type: 'universal', level: 3};
   s.buildings.push(home);
@@ -134,13 +134,13 @@ describe('Evolved drawings at affection 30', () => {
 });
 
 describe('Forêt de Brocéliande', () => {
-  it('costs 10 000 pattes from player level 20, one at most', () => {
-    expect(BALANCE.buildings.forest).toEqual({price: 10000, maximum: 1}); expect(FOREST.unlockLevel).toBe(20);
-    const low = atLevel(createGame(0), 19); low.pattes = 20_000;
+  it('costs 10 000 pattes from player level 25 (20 before the Christmas update), one at most', () => {
+    expect(BALANCE.buildings.forest).toEqual({price: 10000, maximum: 1}); expect(FOREST.unlockLevel).toBe(25);
+    const low = atLevel(createGame(0), 24); low.pattes = 20_000;
     refused(low, {type: 'buyBuilding', kind: 'forest', ...freeCell(low)}, 'LEVEL_REQUIRED');
-    const poor = atLevel(createGame(0), 20); poor.pattes = 9_999;
+    const poor = atLevel(createGame(0), 25); poor.pattes = 9_999;
     refused(poor, {type: 'buyBuilding', kind: 'forest', ...freeCell(poor)}, 'NOT_ENOUGH_PATTES');
-    const ok = atLevel(createGame(0), 20); ok.pattes = 25_000;
+    const ok = atLevel(createGame(0), 25); ok.pattes = 25_000;
     const bought = run(ok, {type: 'buyBuilding', kind: 'forest', ...freeCell(ok)});
     expect(bought.pattes).toBe(15_000); expect(bought.buildings.filter(b => b.kind === 'forest')).toHaveLength(1);
     expect(bought.progression).toEqual(ok.progression); // No XP: purely cosmetic.
@@ -186,7 +186,7 @@ describe('Save format: the old drawing put back', () => {
     const {s, ids: [a, b]} = setup([['belier-gris', 30], ['volant', 30]]); markEvolved(s, a); markEvolved(s, b);
     const old = run(s, {type: 'toggleClassicLook', rabbitId: a});
     const decoded = decodeGame(encodeGame(old)); if (!decoded.ok) throw Error(decoded.reason);
-    expect(decoded.state.version).toBe(26);
+    expect(decoded.state.version).toBe(27);
     expect(rabbit(decoded.state, a).classicLook).toBe(true); expect(rabbit(decoded.state, b).classicLook).toBeUndefined();
     expect(decoded.state).toEqual(old);
   });
@@ -204,7 +204,7 @@ describe('Save format: the old drawing put back', () => {
     const {s} = setup([['neige', 20]], false);
     const raw = JSON.parse(encodeGame(s)); raw.version = 22;
     const decoded = decodeGame(JSON.stringify(raw)); if (!decoded.ok) throw Error(decoded.reason);
-    expect(decoded.state.version).toBe(26); expect(decoded.state.rabbits).toEqual(s.rabbits);
+    expect(decoded.state.version).toBe(27); expect(decoded.state.rabbits).toEqual(s.rabbits);
   });
   it('drops a choice that means nothing instead of refusing the save', () => {
     const {s, ids: [a, low, rare]} = setup([['feu', 30], ['feu', 29], ['benny', 40]]); markEvolved(s, a);

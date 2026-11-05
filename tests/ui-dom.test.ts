@@ -711,7 +711,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
   });
   it('confirms the actual lower acceleration price and ignores a duplicate confirmation', () => {
     const {controller, ui, clock} = setup(); place(ui, 'farm', 1, 0); ui.select({kind: 'building', id: 'building-4'});
-    button('Cultiver · 18 pièces').click(); button('Terminer · 3 cœurs').click(); // Pissenlit: 15 minutes.
+    button('Cultiver · 36 pièces').click(); button('Terminer · 3 cœurs').click(); // Pissenlit: 15 minutes.
     const dialog = document.getElementById('game-dialog')!; expect(dialog.textContent).toContain('solde : 12');
     clock.now = 11 * 60_000; const confirm = button('Confirmer', dialog); confirm.click(); confirm.click();
     expect(state(controller).hearts).toBe(11); expect(state(controller).grass).toBe(10);
@@ -901,7 +901,7 @@ describe('habitat panels and controller transactions',()=>{
     // Since v24 the start parcel only has room for the starter enclosure's 8 × 5: that one is upgraded.
     expect(c.perform({type:'upgradeHabitat',id:'building-1',fromLevel:1}).ok).toBe(true);
     expect(state(c).buildings.find(b=>b.id==='building-1')!.habitat).toEqual({type:'paille',level:2});expect(values.get(SAVE_KEY)).toBe(normal);
-    expect(JSON.parse(values.get('prairie-lapins.development.'+SAVE_KEY)!).version).toBe(26);
+    expect(JSON.parse(values.get('prairie-lapins.development.'+SAVE_KEY)!).version).toBe(27);
   });
 });
 

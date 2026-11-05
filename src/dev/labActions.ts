@@ -31,7 +31,7 @@ export type LabAction =
   | {type: 'build'; kind: BuildingKind | 'jumpIsland'; habitatType?: HabitatType}
   | {type: 'buildingLevel'; id: string; level: number}
   | {type: 'nursery'; capacity: NurseryCapacity}
-  | {type: 'extensions' | 'mainMissions' | 'dailyMissions' | 'dailyCycle' | 'coco' | 'heartGift' | 'market' | 'decorations'};
+  | {type: 'extensions' | 'mainMissions' | 'dailyMissions' | 'dailyCycle' | 'coco' | 'heartGift' | 'decorations'};
 
 function integer(value: number, min: number, max: number): number {
   if (!Number.isSafeInteger(value) || value < min || value > max) throw new Error(`Choisis un entier entre ${min} et ${max}.`);
@@ -159,7 +159,6 @@ export function labAction(state: GameState, action: LabAction): GameState {
     }
     case 'coco': s.travel = {...s.travel, welcomed: false, trips: s.travel?.trips ?? []}; break;
     case 'heartGift': s.nextHeartGiftAt = s.lastSimulatedAt; break;
-    case 'market': delete s.market; break;
     case 'decorations':
       if (s.decorations.length + DECORATION_IDS.length > MAX_DECORATIONS) throw new Error('Libère de la place dans ton inventaire de décorations.');
       for (const catalogId of DECORATION_IDS) s.decorations.push({id: `decoration-${s.nextId++}`, catalogId, location: {kind: 'inventory'}, placementXpProcessed: false});

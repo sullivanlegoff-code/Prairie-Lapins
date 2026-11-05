@@ -1,6 +1,7 @@
 import {CUISINE_FULL_REWARDS_PER_CYCLE, CUISINE_TIP, HEARTS, SPECIES, type SpeciesId} from '../config/balance';
 import type {GameState} from '../state/types';
 import {cycleIndexAt} from '../simulation/missions';
+import {giftCycle} from '../simulation/care';
 
 export function cuisineRemaining(s: GameState, now: number): number {
   const used = s.cuisine.fullRuns?.cycle === cycleIndexAt(s.missions.daily.referenceAt, now) ? s.cuisine.fullRuns.used : 0;
@@ -8,8 +9,10 @@ export function cuisineRemaining(s: GameState, now: number): number {
 }
 export function cuisineQuotaText(s: GameState, now: number): string {
   const left = cuisineRemaining(s, now);
-  return left ? `Encore ${left} récompense${left > 1 ? 's' : ''} complète${left > 1 ? 's' : ''} aujourd’hui`
-    : `Récompense complète épuisée : pourboire de ${CUISINE_TIP.pattes} pattes et ${CUISINE_TIP.grass} nourriture jusqu’à demain`;
+  // One affection a day for the whole Cuisine (owner, 5 November 2026).
+  const affection = Object.values(s.cuisine.affectionCycles).includes(giftCycle(s, now)) ? ' · affection du jour déjà gagnée' : ' · +1 affection à gagner aujourd’hui';
+  return (left ? `Encore ${left} récompense${left > 1 ? 's' : ''} complète${left > 1 ? 's' : ''} aujourd’hui`
+    : `Récompense complète épuisée : pourboire de ${CUISINE_TIP.pattes} pattes et ${CUISINE_TIP.grass} nourriture jusqu’à demain`) + affection;
 }
 export function heartGift(s: Pick<GameState, 'nextHeartGiftAt'>, now: number) {
   const gifts = now < s.nextHeartGiftAt ? 0 : Math.min(HEARTS.maximumGifts, 1 + Math.floor((now - s.nextHeartGiftAt) / HEARTS.giftInterval));

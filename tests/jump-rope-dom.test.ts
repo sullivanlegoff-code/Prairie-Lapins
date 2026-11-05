@@ -133,7 +133,7 @@ it('needs three rabbits at home to play', () => {
 it('the islet menu shows the challenge of the day and the medals still to win', () => {
   const s = game(); s.jumpRope = {cycle: 0, rewarded: 0, best: 26};
   const {ui} = mount(s); ui.open({kind: 'jumpIsland'});
-  expect(panel().textContent).toMatch(/Défi du jour : (15|20|25) sauts/u);
+  expect(panel().textContent).toContain('Le défi se tente à la première partie du jour'); // A game was played today.
   expect(panel().textContent).toContain('Médailles sur le kiosque : 10, 25 sauts. Prochaine médaille à 50 sauts.');
   expect([...panel().querySelectorAll<HTMLImageElement>('[data-jump-rope-medal]')].map(img => img.dataset.jumpRopeMedal)).toEqual(['10', '25']);
 });

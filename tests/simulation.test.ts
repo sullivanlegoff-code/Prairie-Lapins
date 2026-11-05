@@ -142,9 +142,9 @@ describe('income and time', () => {
 describe('farming and affection', () => {
   it.each(Object.keys(ORDERS) as (keyof typeof ORDERS)[])('runs exactly one %s farm order', recipe => {
     let s = run(createGame(0), {type: 'buyBuilding', kind: 'farm', x: 22, y: 20}); const id = s.buildings[1].id;
-    s.pattes = 2000; s.progression = {totalXp: cumulativeLevelXp(ORDERS[recipe].level), rewardedThroughLevel: ORDERS[recipe].level};
+    s.pattes = 5000; s.progression = {totalXp: cumulativeLevelXp(ORDERS[recipe].level), rewardedThroughLevel: ORDERS[recipe].level};
     s.buildings.find(b => b.id === id)!.farmLevel = orderFarmLevel(recipe) === 3 ? 3 : 2;
-    s = run(s, {type: 'startOrder', id, recipe}); expect(s.pattes).toBe(2000 - ORDERS[recipe].cost);
+    s = run(s, {type: 'startOrder', id, recipe}); expect(s.pattes).toBe(5000 - ORDERS[recipe].cost);
     refuses(s, {type: 'startOrder', id, recipe}, 'BUSY');
     // The farm is upgraded here: each new crop lasts 20 % less (farmDuration).
     refuses(s, {type: 'collectOrder', id}, 'NOT_READY', farmDuration(ORDERS[recipe].duration, 2) - 1);

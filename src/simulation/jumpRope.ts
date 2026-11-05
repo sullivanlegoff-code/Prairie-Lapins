@@ -59,10 +59,13 @@ export function jumpIslandReason(s: GameState): Refusal | null {
   if (playerLevel(s) < JUMP_ROPE.unlockLevel) return 'LEVEL_REQUIRED';
   return s.pattes < JUMP_ROPE.price ? 'NOT_ENOUGH_PATTES' : null;
 }
-/** Rewarded games already played in the daily cycle at `now`, and whether its Heart and its challenge are still to win. */
+/**
+ * Rewarded games already played in the daily cycle at `now`, and whether its Heart and its challenge are still to win.
+ * Hearts come from the first game of the day only (owner, 5 November 2026): once a game is recorded in the cycle, both are gone.
+ */
 export function jumpRopeDay(s: Pick<GameState, 'missions' | 'jumpRope'>, now: number): {rewardedLeft: number; heartLeft: boolean; challengeLeft: boolean} {
   const cycle = giftCycle(s, now), day = s.jumpRope?.cycle === cycle ? s.jumpRope : null;
-  return {rewardedLeft: Math.max(0, JUMP_ROPE.rewardedGamesPerCycle - (day?.rewarded ?? 0)), heartLeft: !day?.heart, challengeLeft: !day?.challenge};
+  return {rewardedLeft: Math.max(0, JUMP_ROPE.rewardedGamesPerCycle - (day?.rewarded ?? 0)), heartLeft: !day, challengeLeft: !day};
 }
 /** The challenge of the day: `jumps` jumps, with an athlete of `type` when it is not null. */
 export interface JumpRopeChallenge {jumps: number; type: RabbitType | null}
