@@ -26,7 +26,7 @@ import type {MagicienAct} from '../display/magicienTimeline';
 import {CHASE_EVENT} from '../display/rabbitChase';
 import {CHRISTMAS_MARKET_OPEN_EVENT, christmasLabOverride, setChristmasLabOverride, type ChristmasLabOverride} from '../config/christmas';
 import {MAX_CANDIES} from '../config/christmasEvent';
-import {SNOWBALL_EVENT} from '../display/snowballFight';
+import {SNOWBALL_BATTLE_EVENT, SNOWBALL_EVENT} from '../display/snowballFight';
 
 export const TEST_PREFIX = 'prairie-lapins.development.';
 export const DECORATIONS_PREVIEW_PREFIX = 'prairie-lapins.preview.decorations.';
@@ -161,9 +161,13 @@ export function developmentEnvironment(base: SaveStorage, options: {decorationPr
       for (const [snow, label] of [['none', 'pas de neige'], ['light', 'mini flocons'], ['heavier', 'neige un peu plus forte']] as const)
         button(`Neige : ${label}`, `dev-noel-snow-${snow}`, () => noel({snow}, `Neige forcée : ${label}`));
       button('Neige : programme normal', 'dev-noel-snow-auto', () => noel({snow: undefined}, 'Neige selon le programme normal'));
-      button('Bataille de boules de neige', 'dev-noel-snowballs', () => {
+      button('Duel de boules de neige', 'dev-noel-snowballs', () => {
         window.dispatchEvent(new Event(SNOWBALL_EVENT));
-        status.textContent = 'Bataille de boules de neige lancée dans chaque enclos qui le permet (ferme ce panneau pour regarder).';
+        status.textContent = 'Duel de boules de neige lancé dans chaque enclos qui le permet (ferme ce panneau pour regarder).';
+      });
+      button('Bataille générale de boules de neige', 'dev-noel-snowball-battle', () => {
+        window.dispatchEvent(new Event(SNOWBALL_BATTLE_EVENT));
+        status.textContent = 'Bataille générale lancée dans chaque enclos d’au moins trois lapins libres (ferme ce panneau pour regarder).';
       });
       button('+50 sucres d’orge (laboratoire)', 'dev-noel-candies', () => resultMessage(grantCandies(controller, 50), '+50 sucres d’orge dans la partie du laboratoire.'));
       button('Ouvrir le Marché de Noël', 'dev-noel-market', () => { window.dispatchEvent(new Event(CHRISTMAS_MARKET_OPEN_EVENT)); status.textContent = 'Marché de Noël ouvert.'; });

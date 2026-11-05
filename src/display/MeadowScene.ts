@@ -85,7 +85,7 @@ import {MAGICIEN_ART, MAGICIEN_TEST_EVENT} from '../config/magicienArt';
 import {MagicienView} from './magicienEffects';
 import {MagicienClock, magicienFree, type MagicienAct} from './magicienTimeline';
 import {CHASE_EVENT, RabbitChases, type ChaseRunner} from './rabbitChase';
-import {SNOWBALL_EVENT, SnowballFights, snowballPoint, type SnowballThrower} from './snowballFight';
+import {SNOWBALL_BATTLE_EVENT, SNOWBALL_EVENT, SnowballFights, snowballPoint, type SnowballThrower} from './snowballFight';
 import {LIGHT_POOLS, NightGlows, type GlowSource} from './nightGlows';
 import {CHRISTMAS_MARKET_ART, christmasMarketFrame, christmasMarketPoint} from '../config/christmasMarketArt';
 import {SNOWBALL_ART, SNOWMAN_ART} from '../config/winterArt';
@@ -144,7 +144,8 @@ export class MeadowScene extends Phaser.Scene {
   private snowballs = new SnowballFights();
   /** Laboratory: until when the snowball fight button keeps asking for a fight (a napping rabbit may wake up meanwhile). */
   private snowballTestUntil = 0;
-  private snowballViews = new Map<string, Phaser.GameObjects.Image>();
+  private snowballBattleTestUntil = 0;
+  private snowballViews = new Map<number, Phaser.GameObjects.Image>();
   /** Christmas pictures loaded on demand, never required: a missing one only means nothing is drawn (`optionalArt`). */
   private optionalPending = new Set<string>();
   private optionalFailed = new Set<string>();
@@ -323,12 +324,15 @@ export class MeadowScene extends Phaser.Scene {
     window.addEventListener(CHASE_EVENT, chaseTest);
     // Laboratory only: a snowball fight in every enclosure that allows one (while the event is on).
     const snowballTest = () => { this.snowballTestUntil = this.time.now + 10_000; };
+    const snowballBattleTest = () => { this.snowballBattleTestUntil = this.time.now + 10_000; };
     window.addEventListener(SNOWBALL_EVENT, snowballTest);
+    window.addEventListener(SNOWBALL_BATTLE_EVENT, snowballBattleTest);
     this.events.once('shutdown', () => {
       stopCommands(); this.dadi.reset(); this.dadiSpeech?.destroy(); this.dadiSpeech = null;
       this.cozyInteraction.reset();
       this.chases.reset(); this.snowballs.reset(); this.life.reset(); this.lifeViews?.destroy(); this.lifeViews = null;
       window.removeEventListener(SNOWBALL_EVENT, snowballTest);
+      window.removeEventListener(SNOWBALL_BATTLE_EVENT, snowballBattleTest);
       this.snowballViews.clear(); this.marketImage = null; this.marketLights = null; this.snowman = null; this.snowmanBuild = null;
       this.optionalPending.clear(); this.optionalFailed.clear();
       document.removeEventListener('visibilitychange', dadiVisibility); window.removeEventListener('pagehide', clearDadi);
@@ -772,27 +776,30 @@ export class MeadowScene extends Phaser.Scene {
   private snowballThrowers(visible: ReadonlySet<string>, speaking?: string): SnowballThrower[] {
     return this.playfulRabbits(visible, speaking).map(r => ({...r, available: r.available && !this.chases.isChasing(r.id)}));
   }
-  /** The snowballs in the air, from the thrower's paws to the other's body, and a puff on each hit (nothing without the pictures). */
+  /** The snowballs in the air, from the thrower's paws to the other's body (or the snow), and a puff where each lands (nothing without the pictures). */
   private drawSnowballs(): void {
-    const art = SNOWBALL_ART, balls = this.snowballs.balls(), seen = new Set<string>();
+    const art = SNOWBALL_ART, balls = this.snowballs.balls(), seen = new Set<number>();
     const ballReady = balls.length > 0 && this.optionalArt(art.ball.texture, art.ball.url);
     const paws = (rabbit: VisualRabbit) => (rabbit.art ? rabbit.art.height * rabbit.art.worldWidth / rabbit.art.width - rabbit.art.groundY : 45) * .45 * VISUAL.rabbit.scale;
     for (const ball of balls) {
       const from = this.rabbitViews.find(r => r.id === ball.from), to = this.rabbitViews.find(r => r.id === ball.to);
       if (!ballReady || !from?.motion || !to?.motion) continue;
-      const p = snowballPoint(from.motion.local, to.motion.local, ball.u), height = paws(from) + (paws(to) - paws(from)) * ball.u;
-      let view = this.snowballViews.get(ball.group);
-      if (!view) { view = this.add.image(0, 0, art.ball.texture).setDepth(2.5); this.snowballViews.set(ball.group, view); }
-      view.setPosition(from.center.x + p.x, from.center.y + p.y - p.lift - height).setScale(art.ballWorld / view.frame.realWidth).setVisible(true);
-      seen.add(ball.group);
+      const p = snowballPoint(ball.start, ball.end, ball.u, ball.arc), end = ball.miss ? 0 : paws(to), height = paws(from) + (end - paws(from)) * ball.u;
+      let view = this.snowballViews.get(ball.id);
+      if (!view) { view = this.add.image(0, 0, art.ball.texture).setDepth(2.5); this.snowballViews.set(ball.id, view); }
+      // Spinning a little in flight.
+      view.setPosition(from.center.x + p.x, from.center.y + p.y - p.lift - height).setScale(art.ballWorld / view.frame.realWidth).setRotation(ball.u * 5).setVisible(true);
+      seen.add(ball.id);
     }
-    for (const [group, view] of this.snowballViews) if (!seen.has(group)) { view.destroy(); this.snowballViews.delete(group); }
+    for (const [id, view] of this.snowballViews) if (!seen.has(id)) { view.destroy(); this.snowballViews.delete(id); }
     if (!this.snowballs.hits.length || !this.optionalArt(art.puff.texture, art.puff.url)) return;
     for (const hit of this.snowballs.hits) {
       const to = this.rabbitViews.find(r => r.id === hit.to); if (!to?.motion) continue;
-      const puff = this.add.image(to.center.x + to.motion.local.x, to.center.y + to.motion.local.y - paws(to), art.puff.texture).setDepth(2.5);
-      puff.setScale(art.puffWorld / puff.frame.realWidth);
-      this.tweens.add({targets: puff, alpha: 0, duration: art.puffMs, onComplete: () => puff.destroy()});
+      // A hit puffs on the body; a miss on the snow, a little smaller.
+      const x = hit.miss ? hit.end.x : to.motion.local.x, y = hit.miss ? hit.end.y : to.motion.local.y - paws(to);
+      const puff = this.add.image(to.center.x + x, to.center.y + y, art.puff.texture).setDepth(2.5);
+      puff.setScale(art.puffWorld * (hit.miss ? .75 : 1) / puff.frame.realWidth);
+      this.tweens.add({targets: puff, alpha: 0, scale: puff.scale * 1.25, duration: art.puffMs * (hit.miss ? 1.4 : 1), onComplete: () => puff.destroy()});
     }
   }
   /** The show button of a legendary's sheet: the camera comes to this rabbit, which plays that show (false when it cannot now). */
@@ -1591,7 +1598,8 @@ export class MeadowScene extends Phaser.Scene {
     this.chases.step(dt, this.chaseRunners(visibleResidents, dadi.speech?.id), lifeActive, reducedMotion, this.chaseTest);
     this.chaseTest = false;
     // Christmas: the snowball fights, after the chases (a chaser never throws), while the event is on.
-    this.snowballs.step(dt, this.snowballThrowers(visibleResidents, dadi.speech?.id), lifeActive, reducedMotion, christmas, christmas && this.time.now < this.snowballTestUntil);
+    this.snowballs.step(dt, this.snowballThrowers(visibleResidents, dadi.speech?.id), lifeActive, reducedMotion, christmas, christmas && this.time.now < this.snowballTestUntil,
+      christmas && this.time.now < this.snowballBattleTestUntil);
     this.drawSnowballs();
     this.lifeViews?.begin(this.rabbitViews.map(r => r.id));
     let depthChanged = false;
@@ -1617,6 +1625,9 @@ export class MeadowScene extends Phaser.Scene {
         const pose = rabbitPose(motion);
         ({lift, squashX, squashY, facing, rotation} = pose);
         if (rabbit.benny) { squashX *= rabbit.benny.squashX; squashY *= rabbit.benny.squashY; }
+        // A snowball fight: the wind-up, the knock of a hit, a dodge or the cheer of the winners.
+        const throwing = this.snowballs.pose(rabbit.id, facing);
+        if (throwing) { lift += throwing.lift; squashX *= throwing.squashX; squashY *= throwing.squashY; rotation += throwing.rotation; }
         nuzzle = pose.nuzzle ?? 0;
         // The ground point drives position and depth; the hop only lifts the body.
         rabbit.object.setPosition(rabbit.center.x + motion.local.x, rabbit.center.y + motion.local.y).setDepth(rabbit.center.y + motion.local.y);
