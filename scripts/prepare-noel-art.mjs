@@ -57,7 +57,8 @@ export function keyMagenta(img) {
   const p = copy.pixels;
   for (let i = 0; i < copy.width * copy.height; i++) {
     const r = p[i * 4], g = p[i * 4 + 1], b = p[i * 4 + 2];
-    if (isMagenta(r, g, b)) p[i * 4 + 3] = 0;
+    // Enclosed background (between a reindeer's legs…): only a near-pure magenta, so a purple present keeps its colour.
+    if (r > 215 && b > 215 && g < 60) p[i * 4 + 3] = 0;
     else if (p[i * 4 + 3] && isSpill(r, g, b)) { const m = Math.round((r + b) / 2 * .5 + g * .5); p[i * 4] = Math.min(r, m + 20); p[i * 4 + 2] = Math.min(b, m + 20); p[i * 4 + 3] = Math.round(p[i * 4 + 3] * .6); }
   }
   return copy;
@@ -140,7 +141,7 @@ export async function prepareNoelArt(folder) {
   const snowman = painted('snowman-3');
   if (snowman) {
     const done = fit(crop(keyMagenta(snowman)), 256);
-    [.42, .72, 1].forEach((share, i) => {
+    [.34, .7, 1].forEach((share, i) => {
       const img = {width: done.width, height: done.height, pixels: Buffer.from(done.pixels)}, cut = Math.round(done.height * (1 - share)), soft = 6;
       for (let y = 0; y < Math.min(done.height, cut + soft); y++) for (let x = 0; x < done.width; x++) {
         const k = (y * done.width + x) * 4; img.pixels[k + 3] = y < cut ? 0 : Math.round(img.pixels[k + 3] * (y - cut) / soft);
