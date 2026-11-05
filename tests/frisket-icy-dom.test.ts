@@ -12,7 +12,7 @@ import type {MeadowScene} from '../src/display/MeadowScene';
 import {NEW_RARES} from './rabbit-art-fixtures';
 const cleanup:(()=>void)[]=[];
 afterEach(()=>{cleanup.splice(0).forEach(f=>f());vi.unstubAllGlobals();});
-it.each([false,true])('collection descriptions are gated by discovery (discovered=%s)',discovered=>{
+it.each([false,true])('the collection shows names after discovery but never the descriptions (discovered=%s)',discovered=>{
   document.body.innerHTML=html.match(/<body>([\s\S]*)<\/body>/)![1].replace(/<script[\s\S]*?<\/script>/g,'');
   document.getElementById('loading-screen')!.hidden=true;document.getElementById('app')!.inert=false;
   vi.stubGlobal('requestAnimationFrame',()=>0);vi.stubGlobal('cancelAnimationFrame',()=>{});
@@ -22,7 +22,7 @@ it.each([false,true])('collection descriptions are gated by discovery (discovere
   const ui=new GameUI(c,{setRabbitPurchase:vi.fn(),setPlacement:vi.fn(),setDecorationSelection:vi.fn(),setPhoto:vi.fn(),setArrangement:vi.fn(),setExpansion:vi.fn(),setDecorationGhost:vi.fn(),setDecorationPlacement:vi.fn(),recenter:vi.fn()} as unknown as MeadowScene,()=>0,prefs);cleanup.push(()=>{ui.dispose();c.dispose();});
   ui.open({kind:'collection'});const text=document.getElementById('panel-content')!.textContent!;
   for(const {id} of NEW_RARES as readonly {id:keyof typeof SPECIES}[]){
-    if(discovered){expect(text).toContain(SPECIES[id].name);expect(text).toContain(SPECIES[id].description);expect(document.querySelector(`img[data-rabbit-art="${id}"]`)).not.toBeNull();}
+    if(discovered){expect(text).toContain(SPECIES[id].name);expect(text).not.toContain(SPECIES[id].description);expect(document.querySelector(`img[data-rabbit-art="${id}"]`)).not.toBeNull();}
     else {expect(text).not.toContain(SPECIES[id].name);expect(text).not.toContain(SPECIES[id].description);expect(document.querySelector(`img[data-rabbit-art="${id}"]`)).toBeNull();}
   }
 });

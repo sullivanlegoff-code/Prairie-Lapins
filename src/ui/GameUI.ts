@@ -24,6 +24,7 @@ import type {RecipeCompletion} from '../../cooktap-prototype/main';
 import {missionClaimXp} from '../simulation/progression';
 import {PROGRESSION} from '../config/progression';
 import {recipeSource} from '../config/species';
+import {RABBIT_STORIES} from '../config/rabbitStories';
 import {RECIPE_PRICES} from '../config/recipes';
 import {recipeKnown} from '../simulation/recipes';
 import {stateLevelAccess} from '../simulation/levelRights';
@@ -1564,6 +1565,9 @@ export class GameUI {
     essential.append(this.stats([['Affection', `${r.affection} / ${waitsForEvolution(r) ? EVOLUTION_AFFECTION : BALANCE.maxAffection}`], ['Revenu', `${rabbitIncome(r.affection, r.species, individualIncomeRoll(r))} pattes / h`]]));
     const large = wearsCrown(r) ? crownPortrait(avatar(r, true), r) : avatar(r, true);
     overview.append(legendary ? legendaryPortrait(large, r.species) : large, essential); this.content.append(overview);
+    // The owner's description of the species: only here, on the rabbit's own sheet (owner, 5 November 2026).
+    const story = RABBIT_STORIES[r.species];
+    if (story) { const p = node('p', story, 'rabbit-story'); p.dir = 'auto'; p.dataset.rabbitStory = r.species; this.content.append(p); }
     this.attachCaress(large, r);
     const cost = feedCost(r.affection), onTrip = travelling(s, id), inCare = atSalon(s, id), reason = onTrip ? 'TRAVELING' as const : inCare ? 'AT_SALON' as const : feedReason(s, r);
     if (onTrip) essential.append(node('p', `En voyage ${toPlace(s.travel!.trips.find(t => t.rabbitId === id)!.destination)} · retour à l’agence`, 'badge rabbit-away'));
@@ -2202,9 +2206,6 @@ export class GameUI {
       const speciesId = entry.known ? entry.species : speciesIds[index]!;
       const info = entry.known ? SPECIES[entry.species] : null, card = this.card(entry.name, entry.known && info ? `${typeNames(info.types)} · ${RARITY_NAMES[info.rarity]} · Découverte` : 'Silhouette · à découvrir');
       card.querySelector('.card-heading')!.prepend(avatar(entry.known ? entry.species : undefined));
-      if (entry.known && entry.description) {
-        const description = node('p'); description.textContent = entry.description; card.append(description);
-      }
       const evolvedSpecies = speciesId;
       const evolvedArt = evolvedSpecies && EVOLVED_ART.find(art => art.id === evolvedSpecies);
       // An undiscovered species keeps its secret: no evolution shape before it is found.

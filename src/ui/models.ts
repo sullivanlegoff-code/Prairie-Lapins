@@ -111,7 +111,7 @@ export function collectionSpeciesView(s: GameState, filter: CollectionFilter = {
     (!filter.discovery || s.discovered.includes(id) === (filter.discovery === 'known')));
 }
 export function collectionView(s: GameState, filter: CollectionFilter = {}) {
-  return collectionSpeciesView(s, filter).map(id => s.discovered.includes(id) ? {known: true as const, species: id, name: SPECIES[id].name, ...(SPECIES[id].description ? {description: SPECIES[id].description} : {})} : {known: false as const, name: '???', ...(recipeHint(id) ? {hint: recipeHint(id)} : {})});
+  return collectionSpeciesView(s, filter).map(id => s.discovered.includes(id) ? {known: true as const, species: id, name: SPECIES[id].name} : {known: false as const, name: '???', ...(recipeHint(id) ? {hint: recipeHint(id)} : {})});
 }
 export const TYPE_NAMES: Record<RabbitType, string> = {paille: 'paille', neige: 'neige', feu: 'feu', metal: 'métal', vol: 'vol', 'arc-en-ciel': 'arc-en-ciel'};
 export const RARITY_NAMES: Record<Rarity, string> = mapRarities(definition => definition.label);

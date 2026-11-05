@@ -76,6 +76,6 @@ describe('approved Ardent content', () => {
     home.habitat!.type = 'universal'; const xp = born.progression.totalXp;
     born = reload(run(born,{type:'welcome',enclosureId:home.id,birthId:birth.id},ready));
     expect(born.rabbits.at(-1)).toMatchObject({species:'ardent',affection:1,enclosureId:home.id}); expect(born.progression.totalXp-xp).toBe(270);
-    expect(collectionView(born).find(e => e.known && e.species === 'ardent')).toEqual({known:true,species:'ardent',name:'Ardent',description});
+    expect(collectionView(born).find(e => e.known && e.species === 'ardent')).toEqual({known:true,species:'ardent',name:'Ardent'});
   });
 });

@@ -92,6 +92,6 @@ describe.each(NEW_RARES.map(sheet => [sheet.id, sheet] as const))('approved Rare
     }
     home.habitat!.type = 'universal'; const xp = born.progression.totalXp; born = reload(run(born, {type: 'welcome', enclosureId: home.id, birthId: birth.id}, grown));
     expect(born.rabbits.at(-1)).toMatchObject({species: id, affection: 1, enclosureId: home.id}); expect(born.progression.totalXp - xp).toBe(STANDARD_RARE.birthXp+250);
-    expect(collectionView(born).find(e => e.known && e.species === id)).toEqual({known: true, species: id, name: sheet.name, description: sheet.description});
+    expect(collectionView(born).find(e => e.known && e.species === id)).toEqual({known: true, species: id, name: sheet.name});
   });
 });
