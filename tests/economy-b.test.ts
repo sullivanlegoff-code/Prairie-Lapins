@@ -51,13 +51,13 @@ describe('economy B durable goals', () => {
     }
     expect(activeMainMissions(s)).toEqual(withoutIsland);
   });
-  it('checks every condition and counts all twenty ordinary rares', () => {
+  it('checks every condition and counts all twenty-one ordinary rares', () => {
     const s=advanced();
     for(const id of DURABLE_MISSION_IDS){const p=mainProgress(s,id);expect(p.value,id).toBeGreaterThanOrEqual(p.target);}
     expect(mainProgress(createGame(0),'night-order').value).toBe(0);
-    expect(mainProgress(s,'all-ordinary-rares').target).toBe(20);
-    s.discovered=s.discovered.filter(id=>id!=='bouee');expect(mainProgress(s,'all-ordinary-rares').value).toBe(19);
-    expect(GUARANTEE_SPECIES).toHaveLength(20);
+    expect(mainProgress(s,'all-ordinary-rares').target).toBe(21);
+    s.discovered=s.discovered.filter(id=>id!=='bouee');expect(mainProgress(s,'all-ordinary-rares').value).toBe(20);
+    expect(GUARANTEE_SPECIES).toHaveLength(21);
     s.missions.claimed=[...SOLO_INITIAL_MISSION_IDS];expect(activeMainMissions(s)).toEqual([...BRANCH_MISSION_IDS,...DURABLE_MISSION_IDS,...withoutIsland]);
     const claimed=act(s,{type:'claimMainMission',id:'level-fifteen'},0);expect(claimed.ok).toBe(true);
     expect(claimed.state.hearts-s.hearts).toBe(5);expect(claimed.state.progression.totalXp-s.progression.totalXp).toBe(40);
@@ -72,8 +72,8 @@ describe('economy B durable goals', () => {
   });
 });
 describe('economy B feedback and prices', () => {
-  it('gives only parent type hints for the twenty illustrated rares, including Bouee', () => {
-    const hints=SPECIES_IDS.filter(id=>recipeHint(id));expect(hints).toHaveLength(20);
+  it('gives only parent type hints for the twenty-one illustrated rares, including Bouee', () => {
+    const hints=SPECIES_IDS.filter(id=>recipeHint(id));expect(hints).toHaveLength(21);
     for(const id of hints) expect(recipeHint(id)).toMatch(/^Indice : .+ × .+$/);
     expect(recipeHint('bouee')).toBe('Indice : Feu × Métal');
     for(const id of ['dinono','magicien','dragon'] as const) expect(recipeHint(id)).toBeNull();

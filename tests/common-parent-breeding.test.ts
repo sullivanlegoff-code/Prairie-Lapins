@@ -110,12 +110,12 @@ describe('Common results require two Common parents of the same single type', ()
     }
     // Removing every ordinary candidate cannot turn a fixed 10 % special into a 100 % result.
     expect(breedingDistributionWeights('paille', 'belier-gris', 6, 6, id => id === 'magicien' || id === 'calinou')).toEqual({});
-    // Paille, Metal, Feu and Vol together at affection 50: twelve Rares at 1200 and five Epics at 600, 17 % of Epics in all; at 15, five Epics at 390.
+    // Paille, Metal, Feu and Vol together at affection 50: thirteen Rares at 1200 and eight Epics at 600 (Christmas on); at 15, eight Epics at 390.
     const big = breedingOdds('magicien', 'phoenix', 50, 50);
-    for (const id of ['magicien', 'dadi', 'dinono', 'dinenette', 'calinou'] as const) expect(big[id]).toBeCloseTo(600 * 100 / 17400, 12);
+    for (const id of ['magicien', 'dadi', 'dinono', 'dinenette', 'calinou', 'gigi-rarafe', 'rennes', 'susucre'] as const) expect(big[id]).toBeCloseTo(600 * 100 / 20400, 12);
     const fifteen = breedingOdds('magicien', 'phoenix', 15, 15);
-    for (const id of ['magicien', 'dadi', 'dinono', 'dinenette', 'calinou'] as const) expect(fifteen[id]).toBeCloseTo(390 * 100 / 16350, 12);
-    expect(Object.keys(big)).toHaveLength(17);
+    for (const id of ['magicien', 'dadi', 'dinono', 'dinenette', 'calinou', 'gigi-rarafe', 'rennes', 'susucre'] as const) expect(fifteen[id]).toBeCloseTo(390 * 100 / 18720, 12);
+    expect(Object.keys(big)).toHaveLength(21);
   });
   it('removes Common results from mixed pairs while preserving the exact Dragon reserve', () => {
     expect(breedingDistributionWeights('neige', 'pic-pic', 2, 2)).toEqual({'pic-pic': 30, tunini: 30});

@@ -92,7 +92,7 @@ describe('recipe purchase buttons', () => {
     const {ui} = setup(initial), pool = vi.spyOn(breeding, 'breedingPool'); pool.mockClear();
     ui.open({kind: 'shop', tab: 'recipes'});
     expect(pool).not.toHaveBeenCalled();
-    expect(panel().querySelectorAll('[data-recipe]')).toHaveLength(10);
+    expect(panel().querySelectorAll('[data-recipe]')).toHaveLength(15); // The Christmas recipes are sold during the event only.
     for (const element of panel().querySelectorAll<HTMLElement>('[data-recipe]')) {
       expect(element.classList.contains('compact-list-card')).toBe(true);
       expect(element.querySelector('details')).toBeNull(); expect(element.querySelector('.recipe-pair')).toBeNull();
@@ -173,7 +173,7 @@ describe('recipe purchase flow', () => {
     expect(card('dinono').textContent).toContain('Affection 6 minimum pour chacun des deux parents.');
     expect(card('dinono').textContent).toMatch(/\d+ paires? possédées? compatibles? avec la recette/);
     const saved = decodeGame(data.get(SAVE_KEY)!); expect(saved.ok && saved.state.recipeBook).toEqual(['dinono']);
-    expect(nestOdds(ui, 'Lapin Bélier Gris', 'Lapin Feu')).toEqual(["Résultats possibles : Dinono et des résultats inconnus.", "Dinono · feu + métal · Épique : 23/206 (≈ 11,17 %)", "Résultats inconnus : 183/206 (≈ 88,83 %)"]);
+    expect(nestOdds(ui, 'Lapin Bélier Gris', 'Lapin Feu')).toEqual(["Résultats possibles : Dinono et des résultats inconnus.", "Dinono · feu + métal · Épique : 23/286 (≈ 8,04 %)", "Résultats inconnus : 263/286 (≈ 91,96 %)"]);
     ui.open({kind: 'collection'}); [...panel().querySelectorAll('button')].find(b => b.textContent === 'Carnet de reproduction')!.click();
     expect([...card('dinono').querySelectorAll('button')].some(b => b.textContent === 'Préparer cette paire au nid')).toBe(true);
   });
@@ -214,9 +214,9 @@ describe('level announcement count', () => {
   it('counts unknown sold recipes newly purchasable, excluding bought or discovered ones', () => {
     const s = shop(1);
     expect(newlyPurchasableRecipes(s, levelUnlockContents(s, 4, 5))).toBe(0);
-    expect(newlyPurchasableRecipes(s, levelUnlockContents(s, 1, 14))).toBe(9);
+    expect(newlyPurchasableRecipes(s, levelUnlockContents(s, 1, 14))).toBe(14);
     expect(newlyPurchasableRecipes(s, levelUnlockContents(s, 1, 2))).toBe(0);
     s.discovered.push('dinono'); s.recipeBook.push('magicien');
-    expect(newlyPurchasableRecipes(s, levelUnlockContents(s, 1, 14))).toBe(8);
+    expect(newlyPurchasableRecipes(s, levelUnlockContents(s, 1, 14))).toBe(13);
   });
 });

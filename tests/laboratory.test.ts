@@ -96,13 +96,13 @@ describe('published laboratory isolation', () => {
     expect(decodeGame(encodeGame(s))).toEqual({ok:true,state:s});
     const reloaded = setup();expect(reloaded.controller.getSnapshot().state).toEqual(s);
     for(const [a,b] of [['belier-gris','feu'],['feu','belier-gris']] as const) {
-      expect(breedingPool(s,a,b,2,2)).toMatchObject({"weights":{"amethyste":30,"bouee":30},"total":60,"guaranteed":false});
-      expect(oddsView(s,a,b,2,2)).toMatchObject({entries:[{name:'Améthyste',weight:50,probability:'50 %'}],unknown:{weight:50,probability:'50 %'}});
+      expect(breedingPool(s,a,b,2,2)).toMatchObject({"weights":{"amethyste":30,"bouee":30,"vantablack":30},"total":90,"guaranteed":false});
+      expect(oddsView(s,a,b,2,2)).toMatchObject({entries:[{name:'Améthyste',weight:expect.closeTo(100/3,10),probability:'1/3 (≈ 33,33 %)'}],unknown:{weight:expect.closeTo(200/3,10),probability:'2/3 (≈ 66,67 %)'}});
     }
     for(const [a,b] of [['amethyste','feu'],['feu','amethyste']] as const) {
-      expect(breedingPool(s,a,b,2,2)).toMatchObject({"weights":{"amethyste":30,"bouee":30},"total":60,"guaranteed":false});
-      // Bouee, still undiscovered, shares the same union and appears as the unknown result.
-      expect(oddsView(s,a,b,2,2)).toMatchObject({entries:[{name:'Améthyste',weight:50,probability:'50 %'}],unknown:{weight:50,probability:'50 %'}});
+      expect(breedingPool(s,a,b,2,2)).toMatchObject({"weights":{"amethyste":30,"bouee":30,"vantablack":30},"total":90,"guaranteed":false});
+      // Bouee and Vantablack, still undiscovered, share the same union and appear as the unknown result.
+      expect(oddsView(s,a,b,2,2)).toMatchObject({entries:[{name:'Améthyste',weight:expect.closeTo(100/3,10),probability:'1/3 (≈ 33,33 %)'}],unknown:{weight:expect.closeTo(200/3,10),probability:'2/3 (≈ 66,67 %)'}});
     }
     for(const pair of [s.rabbits.slice(1),s.rabbits.slice(0,2)]) {
       expect(dev.loadScenario(controller,'amethyste').ok).toBe(true);

@@ -42,3 +42,7 @@ export const SNOWMAN = {unlockLevel: 2} as const;
  * `pattesPerGift` pattes per gift caught, at most `maxPattes` (the jump rope's scale), and never XP. `caught` is at most `maxCaught`.
  */
 export const SKY_GIFTS = {rewardedGamesPerCycle: 3, pattesPerGift: 2, maxPattes: 60, maxCaught: 200, gameMs: 45_000, lives: 3} as const;
+
+/** The Christmas rabbits (Yetiti, Rennes, Susucre) may also be bought at the market, for sucres d'orge: a dear shortcut, since
+  * breeding them during the event is the way (owner, 5 November 2026). About nine days of challenges and bonuses. */
+export const CHRISTMAS_RABBIT_CANDY_PRICE = 250;

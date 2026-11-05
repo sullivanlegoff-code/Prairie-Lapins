@@ -50,7 +50,7 @@ describe('Terre, Mottelin, Géant and Brumelin are gone from every catalogue', (
     for (const id of ['paille', 'neige', 'feu', 'belier-gris', 'volant', 'frisket', 'icy', 'magicien', 'dragon'] as const) expect(SPECIES_IDS).toContain(id);
     expect(SHOP_SPECIES).toEqual(['paille', 'neige', 'feu', 'belier-gris', 'volant']);
     expect([SPECIES.feu.progression.unlockLevel, SPECIES['belier-gris'].progression.unlockLevel, SPECIES.volant.progression.unlockLevel, SPECIES.magicien.progression.unlockLevel, SPECIES.dragon.progression.unlockLevel]).toEqual([5, 7, 9, 11, 14]);
-    expect(RECIPE_PRICES).toEqual({magicien: 450, dragon: 900, dadi: 450, maxou: 450, orange: 450, dinono: 450, dinenette: 450, 'calinou': 450, requin: 900, ankylosaure: 900});
+    expect(RECIPE_PRICES).toEqual({magicien: 450, dragon: 900, dadi: 450, maxou: 450, orange: 450, dinono: 450, dinenette: 450, 'calinou': 450, 'gigi-rarafe': 450, yetiti: 450, rennes: 450, susucre: 450, requin: 900, ankylosaure: 900, arkoko: 900});
   });
 
   it('a new game offers no recipe at the start and its collection, notebook and odds never name a removed species', () => {
@@ -112,7 +112,7 @@ describe('distributions: only the removals and their renormalisation', () => {
   it.each([
     [['paille', 'glassofeu'], 2, 2, {frisket: 30, icy: 30, ardent: 30, snk: 30, 'wat-wat': 30, glassofeu: 30}],
     [['paille', 'glassofeu'], 4, 4, {frisket: 30, icy: 30, ardent: 30, snk: 30, 'wat-wat': 30, glassofeu: 30}],
-    [['boudinet', 'glassofeu'], 4, 4, {frisket: 30, icy: 30, ardent: 30, snk: 30, amethyste: 30, 'princesse-neige': 30, fluffy: 30, roukette: 30, 'wat-wat': 30, glassofeu: 30, boudinet: 30, bouee: 30}],
+    [['boudinet', 'glassofeu'], 4, 4, {frisket: 30, icy: 30, ardent: 30, snk: 30, amethyste: 30, 'princesse-neige': 30, fluffy: 30, roukette: 30, 'wat-wat': 30, glassofeu: 30, boudinet: 30, bouee: 30, vantablack: 30}],
   ] as const)('%j at affection %i/%i keeps its raw weights, with no Brumelin and nothing redistributed', (pair, a, b, expected) => {
     expect(breedingWeights(pair[0], pair[1], a, b)).toEqual(expected);
     const total = Object.values(expected).reduce((n, w) => n + w, 0);

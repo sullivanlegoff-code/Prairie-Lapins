@@ -48,7 +48,7 @@ describe('species catalogue and acquisition', () => {
     expect(SPECIES_IDS).toHaveLength(EXPECTED_IDS.length); expect(SHOP_SPECIES).toHaveLength(5); expect(RECIPE_SPECIES).toHaveLength(EXPECTED_RECIPE_IDS.length);
     expect(new Set(SPECIES_IDS.flatMap(id => SPECIES[id].types))).toEqual(new Set(['paille', 'neige', 'feu', 'metal', 'vol', 'arc-en-ciel']));
     // The rainbow type is exclusive to Benny, the one Mythic (owner, 1 November 2026).
-    expect(SPECIES_IDS.filter(id => SPECIES[id].types.includes('arc-en-ciel'))).toEqual(['benny']); expect(SPECIES.benny.types).toEqual(['arc-en-ciel']);
+    expect(SPECIES_IDS.filter(id => SPECIES[id].types.includes('arc-en-ciel'))).toEqual(['arkoko', 'benny']); expect(SPECIES.benny.types).toEqual(['arc-en-ciel']);
     expect(SHOP_SPECIES.map(id=>SPECIES[id].price)).toEqual([80,80,180,350,600]);
   });
   it.each(['feu', 'belier-gris', 'volant'] as const)('purchases %s for 80 with immediate enclosure welcome and discovery', species => {

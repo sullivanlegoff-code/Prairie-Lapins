@@ -54,6 +54,13 @@ export const CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>> = {
   ankylosaure: a([.76, .1, .36, 6], [.8, .48, .3], [.8, .29, .3]),
   // Provisional A1 drawing (1 November 2026), read on the sprite only: not yet checked on a capture of the kitchen.
   benny: a([.58, .22, .36, 6], [.7, .56, .3], [.66, .37, .3]),
+  // The Christmas update's rabbits (5 November 2026), read on 10 % grids of their v1 sprites only: not yet checked in the kitchen.
+  vantablack: a([.68, .24, .34, 6], [.72, .5, .3], [.73, .37, .3]),
+  'gigi-rarafe': a([.66, .09, .3, 4], [.7, .3, .26], [.7, .19, .28]),
+  yetiti: a([.66, .12, .36, 6], [.7, .42, .3], [.7, .27, .3]),
+  rennes: a([.64, .27, .34, 6], [.7, .52, .3], [.71, .39, .28]),
+  susucre: a([.72, .3, .34, 6], [.78, .56, .3], [.79, .43, .28]),
+  arkoko: a([.68, .2, .38, 6], [.76, .54, .32], [.79, .4, .3]),
 };
 /** A right-facing rabbit with its head at the top right of its picture; mirrored for a left-facing one. */
 export const DEFAULT_ANCHORS: CuisineAnchors = a([.7, .15, .36, 6], [.72, .48, .3], [.75, .3, .3]);

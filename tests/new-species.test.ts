@@ -44,12 +44,12 @@ describe('approved three-species rules',()=>{
   expect(breedingOdds('paille','feu',4,4)).toEqual({ardent:50,snk:50});
   expect(breedingOdds('paille','belier-gris',6,6)).toEqual({roukette:40,boudinet:40,magicien:10,calinou:10});
   // Dadi (Feu-Metal since 27 October) x Phoenix at affection 10: Dragon keeps its fixed 11,5 % (10 % × 1,15); the other 88,5 % go by weight,
-  // six Rares at 1200 and Dadi and Dinono at 345 each (a quarter of a Rare, × 1,15).
-  const pair=breedingOdds('dadi','phoenix',10,10);expect(pair.dragon).toBe(11.5);for(const id of ['dadi','dinono'] as const)expect(pair[id]).toBeCloseTo(88.5*345/7890,10);
+  // seven Rares at 1200 (Vantablack since 5 November) and Dadi, Dinono and Rennes (Christmas on) at 345 each (a quarter of a Rare, × 1,15).
+  const pair=breedingOdds('dadi','phoenix',10,10);expect(pair.dragon).toBe(11.5);for(const id of ['dadi','dinono','rennes'] as const)expect(pair[id]).toBeCloseTo(88.5*345/9435,10);
   // A mixed pair gives no Common result: feu, belier-gris and volant are absent from the pool.
   for(const id of ['feu','belier-gris','volant'] as const)expect(pair[id]).toBeUndefined();
-  for(const id of ['bouee','egiiipte','piment','bretonette','phoenix','amethyste'] as const)expect(pair[id]).toBeCloseTo(88.5*1200/7890,10);
-  expect(Object.keys(pair)).toHaveLength(9);
+  for(const id of ['bouee','egiiipte','piment','bretonette','phoenix','amethyste','vantablack'] as const)expect(pair[id]).toBeCloseTo(88.5*1200/9435,10);
+  expect(Object.keys(pair)).toHaveLength(11);
  });
  it('reserves a special once and allocates exactly the remainder to ordinary results',()=>{
   const odds=breedingOdds('magicien','belier-gris',6,6);expect(odds.magicien).toBe(10);
@@ -77,7 +77,8 @@ describe('approved three-species rules',()=>{
    const a=SPECIES_IDS[i],b=SPECIES_IDS[j],[x,y]=levels,s=createGame(0),pool=breedingPool(s,a,b,x,y);
    // Benny never breeds as herself: the breed action replaces her by a drawn Common first (covered by tests/benny.test.ts).
    // Her own rainbow type matches nothing, so a pair with her may have no raw result at all; any raw result is still checked below.
-   if((a==='benny'||b==='benny')&&!pool.total)continue;
+   // Arkoko is rainbow too (5 November 2026): with a Common or another rainbow rabbit, it has no raw result either.
+   if([a,b].some(id=>SPECIES[id].types.includes('arc-en-ciel'))&&!pool.total)continue;
    expect(pool.weights).toEqual(breedingPool(s,b,a,y,x).weights);expect(Object.values(breedingOdds(a,b,x,y)).reduce((n,p)=>n+p,0)).toBeCloseTo(100,12);
    if(!commonResultAllowed(a,b))expect(Object.keys(pool.weights).every(id=>SPECIES[id as SpeciesId].rarity!=='common')).toBe(true);
    let cursor=0;for(const [id,w]of Object.entries(pool.weights)){expect(chooseBirth(s,a,b,(cursor+w/2)/pool.total,x,y).species).toBe(id);cursor+=w}
@@ -86,8 +87,8 @@ describe('approved three-species rules',()=>{
 });
 describe('ordinary guarantee excludes epic and legendary discoveries',()=>{
  it('keeps Bouee in the guarantee and Dinono outside it',()=>{
-  expect(GUARANTEE_SPECIES).toEqual(["frisket","icy","ardent","snk","pic-pic","amethyste","princesse-neige","fluffy","virvoletant","phoenix","roukette","wat-wat","glassofeu","plume","boudinet","bouee","egiiipte","piment","tunini","bretonette"]);
-  const s=couple('belier-gris','feu',4);s.discovered.push('amethyste');s.pityFailures=7;expect(chooseBirth(s,'belier-gris','feu',.999,4,4)).toMatchObject({"species":"bouee","guaranteed":true,"reservedDiscovery":true,"pityFailures":0});
+  expect(GUARANTEE_SPECIES).toEqual(["frisket","icy","ardent","snk","pic-pic","amethyste","princesse-neige","fluffy","virvoletant","phoenix","roukette","wat-wat","glassofeu","plume","boudinet","bouee","egiiipte","piment","tunini","bretonette","vantablack"]);
+  const s=couple('belier-gris','feu',4);s.discovered.push('amethyste','vantablack');s.pityFailures=7;expect(chooseBirth(s,'belier-gris','feu',.999,4,4)).toMatchObject({"species":"bouee","guaranteed":true,"reservedDiscovery":true,"pityFailures":0});
  });
  it('guarantee entirely replaces special and ordinary draws',()=>{
   const s=couple('magicien','paille',6);s.discovered.push('roukette');s.pityFailures=7;const p=breedingPool(s,'magicien','paille',6,6);
@@ -108,7 +109,7 @@ describe('ordinary guarantee excludes epic and legendary discoveries',()=>{
 });
 describe('saved births, delays, compatibility and collection',()=>{
  it.each(rows)('%s draws once, stays hidden, grows after transfer, and welcomes at affection one',(id,a,b,level,minutes)=>{
-  const nest=growthDuration(id),ready=nest+minutes*MINUTE;const source=couple(a,b,level),rng=vi.fn(()=>id==='bouee' ? .999 : id==='dragon' ? .95 : id==='magicien' ? .85 : .999),map=new Map([[SAVE_KEY,encodeGame(source)]]),storage={getItem:(k:string)=>map.get(k)??null,setItem:(k:string,v:string)=>{map.set(k,v)}};
+  const nest=growthDuration(id),ready=nest+minutes*MINUTE;const source=couple(a,b,level),rng=vi.fn(()=>id==='bouee' ? .5 : id==='dragon' ? .95 : id==='magicien' ? .85 : .999),map=new Map([[SAVE_KEY,encodeGame(source)]]),storage={getItem:(k:string)=>map.get(k)??null,setItem:(k:string,v:string)=>{map.set(k,v)}};
   const c=new GameController(storage,()=>0,rng);expect(c.perform(breed).ok).toBe(true);expect(rng).toHaveBeenCalledTimes(1);
   const saved=c.getSnapshot().state!,birth=saved.buildings.find(b=>b.breeding)!.breeding!.birth;expect(birth.species).toBe(id);c.dispose();
   const noDraw=vi.fn(()=>0),reload=new GameController(storage,()=>0,noDraw);expect(reload.getSnapshot().state).toEqual(saved);expect(noDraw).not.toHaveBeenCalled();reload.dispose();
@@ -131,13 +132,13 @@ describe('saved births, delays, compatibility and collection',()=>{
  });
  it('notebook shares actual odds, explains exact parents and suppresses specials under guarantee',()=>{
   const s=knowEveryResult(couple('dadi','phoenix',10)),entry=recipeBook(s,0).find(r=>r.species==='dragon')!;expect(entry.pairs).toHaveLength(1);expect(entry.pairs[0]).toMatchObject({probability:'11,5 %',possible:true,guaranteed:false});
-  expect(oddsView(s,'dadi','phoenix',10,10).entries.map(e=>e.probability)).toEqual([...Array(6).fill('177/1315 (≈ 13,46 %)'),'4071/105200 (≈ 3,87 %)','4071/105200 (≈ 3,87 %)','11,5 %']);
+  expect(oddsView(s,'dadi','phoenix',10,10).entries.map(e=>e.probability)).toEqual([...Array(7).fill('354/3145 (≈ 11,26 %)'),...Array(3).fill('4071/125800 (≈ 3,24 %)'),'11,5 %']);
   const wrong=couple('volant','feu',10);expect(recipeBook(wrong,0).find(r=>r.species==='dragon')!.pairs).toEqual([]);
   const guarantee=knowRecipes(couple('magicien','paille',6));guarantee.pityFailures=9;expect(recipeBook(guarantee,0).find(r=>r.species==='magicien')!.pairs[0]).toMatchObject({probability:'0 %',possible:false});
  });
  it('filters compose by type, rarity and public discoveries without reading pending births',()=>{
-  const s=createGame(0);expect(collectionView(s)).toHaveLength(EXPECTED_IDS.length);expect(collectionView(s,{rarity:'epic'})).toHaveLength(7);
-  expect(collectionView(s,{rarity:'epic',type:'vol'})).toEqual([{known:false,name:'???'},{known:false,name:'???'}]);expect(collectionView(s,{rarity:'epic',discovery:'known'})).toEqual([]);
+  const s=createGame(0);expect(collectionView(s)).toHaveLength(EXPECTED_IDS.length);expect(collectionView(s,{rarity:'epic'})).toHaveLength(11);
+  expect(collectionView(s,{rarity:'epic',type:'vol'})).toEqual([{known:false,name:'???'},{known:false,name:'???'},{known:false,name:'???'}]);expect(collectionView(s,{rarity:'epic',discovery:'known'})).toEqual([]);
   expect(collectionView(s,{type:'paille',discovery:'known'})).toEqual([{known:true,species:'paille',name:'Lapin Paille'}]);
  });
  it('prepares every species and actual parent pairs only in a validated explicit test scenario',()=>{

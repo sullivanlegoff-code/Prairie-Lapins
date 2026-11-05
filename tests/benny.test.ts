@@ -48,7 +48,7 @@ describe('Benny, the one Mythic', () => {
     expect(SPECIES.benny).toMatchObject({name: 'Benny', rarity: 'mythic', types: ['arc-en-ciel'], price: null, progression: {unlockLevel: 14},
       recipe: {parentRarity: 'legendary', minAffection: 10, probability: 10}});
     expect(SPECIES.benny.acquisition).toEqual([{kind: 'recipe', parentRarity: 'legendary', minAffection: 10, probability: 10}]);
-    expect(SPECIES_IDS.filter(id => SPECIES[id].types.includes('arc-en-ciel'))).toEqual(['benny']);
+    expect(SPECIES_IDS.filter(id => SPECIES[id].types.includes('arc-en-ciel'))).toEqual(['arkoko', 'benny']); // Arkoko is rainbow too (owner, 5 November 2026).
     expect(growthDuration('benny')).toBe(24 * HOUR); expect(PROGRESSION.xp.birth.mythic).toBe(360);
     for (const type of HABITAT_TYPES) expect(habitatAccepts(emptyBuilding('building-9', 'enclosure', 0, 0, type), 'benny'), type).toBe(true);
     expect(BENNY_STAND_INS).toEqual(['paille', 'neige', 'feu', 'belier-gris', 'volant']);

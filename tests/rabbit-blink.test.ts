@@ -60,11 +60,11 @@ describe('deterministic rabbit expressions', () => {
 });
 
 describe('rabbit patch adapter and body coordinates', () => {
-  it('covers 31 illustrated species with both patches; Bouee (sunglasses) , Dinenette, Calinou geant, Ankylosaure and Benny (approved designs kept as is) have neither animation', () => {
+  it('covers 31 illustrated species with both patches; Bouee (sunglasses) , Dinenette, Calinou geant, Ankylosaure, Benny and the Christmas update rabbits (approved designs kept as is) have neither animation', () => {
     expect(RABBIT_BLINK_ART).toHaveLength(31);
     for (const species of SPECIES_ENTRIES) {
       const art = rabbitBlinkArt(species.id);
-      if (species.art.kind === 'static-sprite' && !['bouee', 'dinenette', 'calinou', 'ankylosaure', 'benny'].includes(species.id)) {
+      if (species.art.kind === 'static-sprite' && !['bouee', 'dinenette', 'calinou', 'ankylosaure', 'benny', 'vantablack', 'gigi-rarafe', 'yetiti', 'rennes', 'susucre', 'arkoko'].includes(species.id)) {
         expect(art?.patches.map(patch => patch.kind)).toEqual(PATCH_KINDS);
         for (const patch of art!.patches) {
           expect(patch.url).toContain(`assets/rabbits/${species.id}/${species.id}-${patch.kind}.png`);

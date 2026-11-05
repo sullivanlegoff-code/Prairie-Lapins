@@ -25,8 +25,7 @@ import {missionClaimXp} from '../simulation/progression';
 import {PROGRESSION} from '../config/progression';
 import {recipeSource} from '../config/species';
 import {RABBIT_STORIES} from '../config/rabbitStories';
-import {RECIPE_PRICES} from '../config/recipes';
-import {recipeKnown} from '../simulation/recipes';
+import {recipeKnown, recipePrice} from '../simulation/recipes';
 import {stateLevelAccess} from '../simulation/levelRights';
 import type {LevelAccessTarget} from '../simulation/levelAccess';
 import {mountLevelLock} from '../display/LevelLock';
@@ -58,11 +57,11 @@ import {JUMP_MEDAL_ART} from '../config/jumpIslandArt';
 import type {Command, DecorationLocation, GameState, PattesCommand, TimedStage} from '../state/types';
 import {CHRISTMAS_DECORATION_IDS, DECORATIONS, DECORATION_IDS, FINE_GRID, isChristmasDecoration, ownedDecorationResalePrice, type DecorationId} from '../config/decorations';
 import {CHRISTMAS_MARKET_OPEN_EVENT, christmasActive} from '../config/christmas';
-import {CHRISTMAS_BONUS_CANDIES, CHRISTMAS_CHALLENGES, CHRISTMAS_PICK_COUNT, SKY_GIFTS, SNOWMAN} from '../config/christmasEvent';
+import {CHRISTMAS_BONUS_CANDIES, CHRISTMAS_CHALLENGES, CHRISTMAS_PICK_COUNT, CHRISTMAS_RABBIT_CANDY_PRICE, SKY_GIFTS, SNOWMAN} from '../config/christmasEvent';
 import {CANDY_ICON_URL, SKY_GIFTS_ART} from '../config/winterArt';
 import {SKY_GIFTS_GAME} from '../simulation/skyGiftsGame';
 import {CHRISTMAS_MARKET_ART} from '../config/christmasMarketArt';
-import {availableChristmasRewards, candiesOf, christmasBonusClaimed, christmasBonusReady, christmasChallengesOf, christmasClaimable, christmasClaimed, christmasDecorationReason, christmasProgress, skyGiftsDay, skyGiftsRabbitReason, snowmanQuote} from '../simulation/christmas';
+import {availableChristmasRewards, candiesOf, christmasBonusClaimed, christmasBonusReady, christmasChallengesOf, christmasClaimable, christmasClaimed, christmasDecorationReason, christmasProgress, CHRISTMAS_RABBIT_IDS, christmasRabbitReason, skyGiftsDay, skyGiftsRabbitReason, snowmanQuote} from '../simulation/christmas';
 import {mountSkyGiftsActivity} from './SkyGiftsActivity';
 import {catalogDecorationPlacementReason, purchaseDecorationReason} from '../simulation/decorations';
 import {decorationUrl} from '../display/decorationArt';
@@ -93,7 +92,7 @@ const LEGENDARY_SHOW_BUTTONS: Partial<Record<SpeciesId, {label: string; act: Leg
 };
 type ShopTab = 'home' | 'recipes' | 'rabbits' | 'habitats' | 'buildings' | 'decorations';
 type View = {kind:'album'|'decorationGroup'} | {kind: 'welcomeBaby'; birthId: string} | {kind:'levelRequirement';target:LevelAccessTarget} | {kind: 'missions'; tab: 'main' | 'daily'} | {kind: 'shop'; tab: ShopTab} | {kind: 'building' | 'rabbit' | 'moveRabbit' | 'decoration'; id: string} | {kind: 'jumpIsland'} | {kind: 'christmasMarket'; tab?: ChristmasMarketTab} |
-  {kind: 'buyRabbit' | 'species'; species: SpeciesId} | {kind:'extension';parcelId?:ParcelId} | {kind: 'cuisineRabbit'; commis?: string} | {kind: 'collection' | 'settings' | 'placement' | 'hearts' | 'recipes' | 'arrange' | 'decorationPlacement'} | null;
+  {kind: 'buyRabbit' | 'species'; species: SpeciesId; candies?: true} | {kind:'extension';parcelId?:ParcelId} | {kind: 'cuisineRabbit'; commis?: string} | {kind: 'collection' | 'settings' | 'placement' | 'hearts' | 'recipes' | 'arrange' | 'decorationPlacement'} | null;
 /** Views drawn as a centred card over the dimmed meadow. Placement, purchase, extension and arrangement views keep the side sheet: they need the island visible. */
 /** The three tabs of the full-screen Christmas market (owner, 5 November 2026). */
 type ChristmasMarketTab = 'missions' | 'rewards' | 'gifts';
@@ -134,7 +133,7 @@ export class GameUI {
   private rabbitDestination: string | null = null;
   private shopRabbitIssue: SpeciesId | null = null;
   private savePurchaseOrigin(): void {
-    if (this.view?.kind !== 'shop') return;
+    if (this.view?.kind !== 'shop' && this.view?.kind !== 'christmasMarket') return;
     this.rememberView(); this.purchaseReturn = {view: {...this.view}, history: [...this.history]};
   }
   private cancelPurchase(): void {
@@ -614,7 +613,7 @@ export class GameUI {
     if (this.cuisine.active || this.jumpRope.active || this.skyGifts.active || this.pailleDialogue.element.open) return;
     if (this.dialog.open || (document.getElementById('import-dialog') as HTMLDialogElement).open) return;
     if (view.kind !== 'christmasMarket') this.skyGiftsPick = false;
-    if(view.kind==='buyRabbit') {
+    if(view.kind==='buyRabbit' && !view.candies) {
       const state=this.controller.getSnapshot().state,target={family:'species',id:view.species,action:'purchase'} as const;
       if(state && stateLevelAccess(state,target).locked){this.open({kind:'levelRequirement',target});return;}
     }
@@ -622,6 +621,8 @@ export class GameUI {
     if (view.kind === 'buyRabbit' && this.view?.kind !== 'buyRabbit') {
       const state = this.controller.getSnapshot().state;
       if (state && !state.buildings.some(b => !habitatEntryReason(state,b,view.species))) {
+        // A Christmas rabbit of the market: no shop to send the player to, only the reason.
+        if (view.candies) { this.notice('Il te faut un habitat compatible avec une place libre pour l’accueillir.'); return; }
         this.shopRabbitIssue = view.species;
         if (this.view?.kind !== 'shop') this.open({kind:'shop',tab:'rabbits'});
         else this.render();
@@ -836,7 +837,7 @@ export class GameUI {
       case 'moveRabbit': this.renderDestinations(s, this.view.id); break;
       case 'welcomeBaby': this.renderWelcomeDestinations(s, this.view.birthId); break;
       case 'levelRequirement':this.renderLevelRequirement(s,this.view.target);break;
-      case 'buyRabbit': this.renderBuyRabbit(s, this.view.species); break;
+      case 'buyRabbit': if (this.view.candies) this.renderBuyChristmasRabbit(s, this.view.species); else this.renderBuyRabbit(s, this.view.species); break;
       case 'recipes': this.renderRecipes(s); break;
       case 'collection': this.renderCollection(s); break;
       case 'species': this.renderSpecies(s, this.view.species); break;
@@ -1512,6 +1513,17 @@ export class GameUI {
       add(bonus);
       return;
     }
+    // The Christmas rabbits: born only during the event, and also sold here, dearly (owner, 5 November 2026).
+    add(node('h3', 'Lapins de Noël'));
+    add(node('p', `Ils ne naissent au nid que pendant Noël, et restent à toi ensuite. Tu peux aussi en adopter un ici pour ${candyAmount(CHRISTMAS_RABBIT_CANDY_PRICE)}.`, 'small'));
+    for (const id of CHRISTMAS_RABBIT_IDS) {
+      const species = SPECIES[id], count = s.rabbits.filter(r => r.species === id).length;
+      const card = this.card(species.name, `${typeNames(species.types)} · ${RARITY_NAMES[species.rarity]} · ${count} sur ton île`, id); card.dataset.christmasRabbit = id;
+      const reason = christmasRabbitReason(s, id);
+      this.button(card, `Adopter · ${candyAmount(CHRISTMAS_RABBIT_CANDY_PRICE)}`, () => { this.rabbitDestination = null; this.open({kind: 'buyRabbit', species: id, candies: true}); }, reason ? REFUSALS[reason] : null);
+      add(card);
+    }
+    add(node('h3', 'Décorations'));
     // The market's eight decorations, for sucres d'orge only; placed now (preview, paid at the confirmed placement) or kept.
     add(node('p', 'Acheter ouvre un aperçu gratuit : le paiement a lieu à la pose confirmée. Acheter pour l’inventaire est un achat immédiat. Elles restent à toi après Noël.', 'small'));
     for (const id of CHRISTMAS_DECORATION_IDS) {
@@ -1954,6 +1966,30 @@ export class GameUI {
     } else this.button(this.content,`Confirmer l’achat · ${SPECIES[species].price} pattes`,()=>{},'Choisis d’abord un habitat.');
     this.button(this.content,'Annuler · aucun coût',()=>this.cancelPurchase(),null,true);
   }
+  /** A Christmas rabbit bought at the market, for sucres d'orge: the same habitat choice as the shop, no level needed. */
+  private renderBuyChristmasRabbit(s: GameState, species: SpeciesId): void {
+    const price = candyAmount(CHRISTMAS_RABBIT_CANDY_PRICE);
+    this.title.textContent = `Acheter : ${SPECIES[species].name}`; this.content.append(avatar(species), node('p', `${price} · paiement à la confirmation`, 'badge'));
+    const eligible = s.buildings.filter(b => !habitatEntryReason(s, b, species));
+    this.scene.setRabbitPurchase(species, this.rabbitDestination);
+    this.content.append(node('p', 'Choisis un habitat', 'badge'));
+    this.content.append(node('p', 'Touche un habitat encadré sur l’île, puis confirme. Glisse ou pince pour explorer. Aucun paiement avant confirmation.', 'small'));
+    for (const b of eligible) {
+      const free = habitatStats(b).capacity - occupants(s, b.id).length;
+      const button = this.button(this.content, `${this.enclosureName(s, b.id)} · ${free} place${free > 1 ? 's' : ''} libre${free > 1 ? 's' : ''}`, () => this.chooseRabbitHabitat(b.id), null, true);
+      button.setAttribute('aria-pressed', String(b.id === this.rabbitDestination));
+    }
+    if (!eligible.length) this.content.append(node('p', 'Il te faut un habitat compatible avec une place libre pour l’accueillir.', 'reason'));
+    const enclosure = s.buildings.find(b => b.id === this.rabbitDestination), reason = christmasRabbitReason(s, species);
+    if (enclosure) {
+      this.content.append(node('p', `Destination : ${this.enclosureName(s, enclosure.id)}`, 'badge'));
+      this.button(this.content, `Confirmer l’achat · ${price}`, () => {
+        if (this.view?.kind === 'buyRabbit' && this.view.candies && this.view.species === species && this.rabbitDestination === enclosure.id)
+          this.execute({type: 'buyChristmasRabbit', species, enclosureId: enclosure.id}, 'Lapin de Noël acheté et accueilli.', value => { this.finishPurchase('rabbit', String(value)); if (!s.discovered.includes(species)) this.discovery(species); });
+      }, this.entryReason(s, enclosure, species) ?? (reason ? REFUSALS[reason] : null)).dataset.confirmPurchase = '';
+    } else this.button(this.content, `Confirmer l’achat · ${price}`, () => {}, 'Choisis d’abord un habitat.');
+    this.button(this.content, 'Annuler · aucun coût', () => this.cancelPurchase(), null, true);
+  }
   private renderNest(s: GameState, id: string): void {
     const nest = s.buildings.find(b => b.id === id)!;
     if (nest.breeding) {
@@ -2234,8 +2270,8 @@ export class GameUI {
     this.button(intro, 'Ouvrir mon carnet', () => this.open({kind: 'recipes'}), null, true);
     this.content.append(intro);
     // Catalogue order stays stable after a purchase; the shop never builds or inspects parent pairs.
-    for (const species of SPECIES_IDS.filter(id => RECIPE_PRICES[id] !== undefined)) {
-      const info = SPECIES[species], known = recipeKnown(s, species), price = RECIPE_PRICES[species]!;
+    for (const species of SPECIES_IDS.filter(id => recipePrice(id) !== null)) {
+      const info = SPECIES[species], known = recipeKnown(s, species), price = recipePrice(species)!;
       const access = stateLevelAccess(s, {family: 'species', id: species, action: 'breedingResult'});
       const card = this.card(info.name, `${typeNames(info.types)} · ${RARITY_NAMES[info.rarity]}`);
       card.classList.add('compact-list-card', 'recipe-shop-card');

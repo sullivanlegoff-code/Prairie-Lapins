@@ -1,6 +1,7 @@
 import {SPECIES, type SpeciesId} from '../config/balance';
 import {RECIPE_PRICES} from '../config/recipes';
 import {stateLevelAccess} from './levelRights';
+import {seasonAllows} from './season';
 import type {LevelAccessTarget} from './levelAccess';
 import type {GameState, Refusal} from '../state/types';
 
@@ -8,8 +9,9 @@ import type {GameState, Refusal} from '../state/types';
 export function recipeKnown(s: Pick<GameState, 'discovered' | 'recipeBook'>, species: SpeciesId): boolean {
   return s.discovered.includes(species) || SPECIES[species].recipe !== null && s.recipeBook.includes(species);
 }
+/** A seasonal rabbit's recipe is sold only during its event, the only time it can be born (5 November 2026). */
 export function recipePrice(species: SpeciesId): number | null {
-  return RECIPE_PRICES[species] ?? null;
+  return seasonAllows(species) ? RECIPE_PRICES[species] ?? null : null;
 }
 /** Level announcement: unknown, sold recipes among the species unlocked for breeding. Counts only; never a condition. */
 export function newlyPurchasableRecipes(s: GameState, unlocked: readonly LevelAccessTarget[]): number {

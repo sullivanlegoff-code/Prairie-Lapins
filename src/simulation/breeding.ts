@@ -3,6 +3,7 @@ import {breedable, breedsHistorically, hasRecipe} from '../config/species';
 import {stateLevelAccessChecker} from './levelRights';
 import {rareBirthFactor} from './affection';
 import {bennyAllows} from './benny';
+import {seasonAllows} from './season';
 import type {GameState} from '../state/types';
 
 /** Shared recipe identity/types; no inspection of a pending birth. */
@@ -91,14 +92,15 @@ export function breedingOdds(a: SpeciesId, b: SpeciesId, affectionA = 2, affecti
   const total = Object.values(weights).reduce((sum, weight) => sum + weight, 0);
   return Object.fromEntries(Object.entries(weights).map(([id, weight]) => [id, weight * 100 / total]));
 }
-/** Shared by all previews and simulation. Specials never join the guarantee. A Benny already claimed is never a result. */
+export {seasonAllows};
+/** Shared by all previews and simulation. Specials never join the guarantee. A Benny already claimed is never a result, nor a seasonal rabbit out of its season. */
 export function breedingPool(state: GameState, a: SpeciesId, b: SpeciesId, affectionA = 2, affectionB = 2) {
   const check=stateLevelAccessChecker(state),cache=new Map<SpeciesId, ReturnType<typeof check>>();
   const access = (id: SpeciesId) => {if(!cache.has(id))cache.set(id,check({family:'species',id,action:'breedingResult'}));return cache.get(id)!;};
-  const allowed = (id: SpeciesId) => access(id).accessible && bennyAllows(state, id);
+  const allowed = (id: SpeciesId) => access(id).accessible && bennyAllows(state, id) && seasonAllows(id);
   const ordinary = Object.fromEntries(Object.entries(breedingWeights(a,b,affectionA,affectionB)).filter(([id]) => access(id as SpeciesId).accessible)) as Odds;
   const unfiltered = breedingDistributionWeights(a,b,affectionA,affectionB);
-  const excluded = (Object.keys(unfiltered) as SpeciesId[]).filter(id => access(id).locked && bennyAllows(state, id)).map(id => ({species:id,requiredLevel:access(id).requiredLevel}));
+  const excluded = (Object.keys(unfiltered) as SpeciesId[]).filter(id => access(id).locked && bennyAllows(state, id) && seasonAllows(id)).map(id => ({species:id,requiredLevel:access(id).requiredLevel}));
   const missing = (Object.keys(ordinary) as SpeciesId[]).filter(id => GUARANTEE_SPECIES.includes(id) && breedable(SPECIES[id]) && !state.discovered.includes(id));
   const eligible = missing.length > 0;
   const guaranteed = eligible && state.pityFailures >= BALANCE.guaranteeAttempt - 1;

@@ -36,8 +36,8 @@ it('renders two goals, then reveals the next durable goal only after claiming',(
   expect(panel().textContent).toContain('Accueillir Feu');
 });
 it('shows free hints in collection and notebook while keeping affection and odds hidden',()=>{
-  const {ui}=mount(createGame(0));ui.open({kind:'collection'});expect(panel().querySelectorAll('.recipe-hint')).toHaveLength(20);
-  ui.open({kind:'recipes'});expect(panel().querySelectorAll('.recipe-hint')).toHaveLength(20);
+  const {ui}=mount(createGame(0));ui.open({kind:'collection'});expect(panel().querySelectorAll('.recipe-hint')).toHaveLength(21);
+  ui.open({kind:'recipes'});expect(panel().querySelectorAll('.recipe-hint')).toHaveLength(21);
   for(const card of panel().querySelectorAll('[data-recipe-known="false"]')){expect(card.textContent).not.toMatch(/Affection|\d+ %/);}
   expect(panel().querySelector('[data-recipe="bouee"] .recipe-hint')?.textContent).toBe('Indice : Feu × Métal');
   for(const id of ['dinono','magicien','dragon','dadi','maxou','orange','requin'])expect(panel().querySelector(`[data-recipe="${id}"] .recipe-hint`)).toBeNull();

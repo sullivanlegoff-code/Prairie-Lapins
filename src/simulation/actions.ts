@@ -27,14 +27,14 @@ import {farmLimit, farmDuration, FARM_UPGRADES, orderFarmLevel, BALANCE, HEARTS,
 import {emptyBuilding} from '../state/initial';
 import {babyInNursery, findNurseryBaby, firstFreeNurserySlot, nurseryBuilding, nurseryUnlockQuote, settleNestTransfers} from './nursery';
 import type {ActionResult, Building, Command, GameState, PattesCommand, Rabbit, Refusal, ProgressionGain} from '../state/types';
-import {chooseBirth, breedingPool, nestForParent, recipeMatches} from './breeding';
+import {chooseBirth, breedingPool, nestForParent, recipeMatches, seasonAllows} from './breeding';
 import {recipePrice, recipePurchaseReason} from './recipes';
 import {BENNY, BENNY_POWER_RECHARGE, bennyAllows, bennyPowerReason, bennyStandIn, waitingNurseryBabies} from './benny';
 import {advance, validTime, drawIncomeRoll} from './time';
 import {complementCost, quoteAcceleration} from './hearts';
 import {DECORATIONS, isChristmasDecoration, ownedDecorationResalePrice} from '../config/decorations';
-import {CHRISTMAS_BONUS_CANDIES, CHRISTMAS_CHALLENGES, SKY_GIFTS, type ChristmasEventName} from '../config/christmasEvent';
-import {candiesOf, christmasBonusReady, christmasBonusClaimed, christmasChallengesOf, christmasClaimable, christmasClaimed, christmasDecorationReason, christmasEventActive, creditCandies, recordChristmasAction, skyGiftsRabbitReason, skyGiftsReward, snowmanQuote, startChristmasCycle} from './christmas';
+import {CHRISTMAS_BONUS_CANDIES, CHRISTMAS_CHALLENGES, CHRISTMAS_RABBIT_CANDY_PRICE, SKY_GIFTS, type ChristmasEventName} from '../config/christmasEvent';
+import {candiesOf, christmasBonusReady, christmasBonusClaimed, christmasChallengesOf, christmasClaimable, christmasClaimed, christmasDecorationReason, christmasEventActive, christmasRabbitReason, creditCandies, recordChristmasAction, skyGiftsRabbitReason, skyGiftsReward, snowmanQuote, startChristmasCycle} from './christmas';
 import {catalogDecorationPlacementReason, decorationPlacementReason, decorationsInCell, purchaseDecorationReason} from './decorations';
 
 /** The only purchases a heart complement may cover. Recipes are never among them. */
@@ -334,6 +334,14 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         s.decorations.push({id: value, catalogId: command.catalogId, paidCandies: price, location: command.location ? structuredClone(command.location) : {kind: 'inventory'}, placementXpProcessed: true});
         break;
       }
+      case 'buyChristmasRabbit': {
+        // The Christmas market's dear shortcut: sucres d'orge only, no XP (an Epic's discovery gives none), into a compatible habitat.
+        const reason = christmasRabbitReason(s, command.species); requireRule(!reason, reason ?? 'INVALID_CHOICE');
+        room(command.enclosureId, command.species); allocation();
+        const day = startChristmasCycle(s); day.candies -= CHRISTMAS_RABBIT_CANDY_PRICE; value = id('rabbit');
+        s.rabbits.push({id: value, species: command.species, affection: BALANCE.minAffection, enclosureId: command.enclosureId});
+        gainXp(discover(command.species)); break;
+      }
       case 'buyJumpIsland': {
         const reason = jumpIslandReason(s); requireRule(!reason || reason === 'NOT_ENOUGH_PATTES', reason ?? 'INVALID_CHOICE');
         pay(JUMP_ROPE.price); s.jumpIsland = true; break;
@@ -544,7 +552,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         const roll = rng(); requireRule(Number.isFinite(roll) && roll >= 0 && roll < 1, 'INVALID_RANDOM');
         let result = chooseBirth(s, a, b, roll, parents[0].affection, parents[1].affection);
         // Owner's planned birth (see simulation/adjustments.ts): the first pair fulfilling its recipe gets it, once; never a second Benny.
-        if (s.plannedBirth && bennyAllows(s, s.plannedBirth) && recipeMatches(s.plannedBirth, a, b)) {
+        if (s.plannedBirth && bennyAllows(s, s.plannedBirth) && seasonAllows(s.plannedBirth) && recipeMatches(s.plannedBirth, a, b)) {
           result = {...result, species: s.plannedBirth, guaranteed: false, reservedDiscovery: false};
           delete s.plannedBirth;
         }

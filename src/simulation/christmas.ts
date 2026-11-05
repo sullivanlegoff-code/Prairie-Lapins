@@ -1,7 +1,8 @@
 import {CHRISTMAS_EVENT} from '../config/christmas';
-import {CHRISTMAS_CHALLENGES, CHRISTMAS_CHALLENGE_IDS, CHRISTMAS_PICK_COUNT, MAX_CANDIES, SKY_GIFTS, SNOWMAN, type ChristmasChallengeId, type ChristmasEventName} from '../config/christmasEvent';
+import {CHRISTMAS_CHALLENGES, CHRISTMAS_CHALLENGE_IDS, CHRISTMAS_PICK_COUNT, CHRISTMAS_RABBIT_CANDY_PRICE, MAX_CANDIES, SKY_GIFTS, SNOWMAN, type ChristmasChallengeId, type ChristmasEventName} from '../config/christmasEvent';
 import {DECORATIONS, MAX_DECORATIONS, isChristmasDecoration, type DecorationId} from '../config/decorations';
 import {giftCycle, presentRabbits, rabbitAwayReason} from './care';
+import {SPECIES, SPECIES_IDS, type SpeciesId} from '../config/species';
 import {progressionFromXp} from './progression';
 import type {ChristmasState, GameState, Rabbit, Refusal} from '../state/types';
 
@@ -151,6 +152,14 @@ export function skyGiftsRabbitReason(s: GameState, rabbitId: string): Refusal | 
   return away === 'TRAVELING' || away === 'AT_SALON' ? away : null;
 }
 
+/** The rabbits of the Christmas event, born only during it (registry order). */
+export const CHRISTMAS_RABBIT_IDS: readonly SpeciesId[] = SPECIES_IDS.filter(id => SPECIES[id].event === 'christmas');
+/** Why a Christmas rabbit cannot be bought at the market now (its habitat aside), or null. */
+export function christmasRabbitReason(s: GameState, species: SpeciesId): Refusal | null {
+  if (!CHRISTMAS_RABBIT_IDS.includes(species)) return 'INVALID_CHOICE';
+  if (!christmasEventActive()) return 'EVENT_OVER';
+  return candiesOf(s) < CHRISTMAS_RABBIT_CANDY_PRICE ? 'NOT_ENOUGH_CANDIES' : null;
+}
 /** Why a Christmas decoration cannot be bought at the market now (placement aside), or null. */
 export function christmasDecorationReason(s: GameState, catalogId: DecorationId): Refusal | null {
   if (!Object.hasOwn(DECORATIONS, catalogId) || !isChristmasDecoration(catalogId)) return 'INVALID_CHOICE';

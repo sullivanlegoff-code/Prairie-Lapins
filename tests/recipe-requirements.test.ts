@@ -22,8 +22,12 @@ const SPECIALS: {id: SpeciesId; probability: number; affection: number; types?: 
   {id: 'dadi', probability: 10, affection: 6, types: ['feu', 'metal']}, {id: 'maxou', probability: 10, affection: 6, types: ['neige', 'vol']},
   {id: 'orange', probability: 10, affection: 6, types: ['paille', 'neige']}, {id: 'dinono', probability: 10, affection: 6, types: ['feu', 'metal']},
   {id: 'dinenette', probability: 10, affection: 6, types: ['paille', 'vol']},
-  {id: 'calinou', probability: 10, affection: 6, types: ['paille', 'metal']}, {id: 'requin', probability: 10, affection: 10, parents: ['maxou', 'wat-wat']},
-  {id: 'ankylosaure', probability: 10, affection: 10, parents: ['dinono', 'dinenette']},
+  {id: 'calinou', probability: 10, affection: 6, types: ['paille', 'metal']},
+  // Christmas update (5 November 2026): two-element Epics (the Christmas ones while the event is on), and Arkoko of Câlinou géant × Orange.
+  {id: 'gigi-rarafe', probability: 10, affection: 6, types: ['paille', 'feu']}, {id: 'yetiti', probability: 10, affection: 6, types: ['neige', 'paille']},
+  {id: 'rennes', probability: 10, affection: 6, types: ['vol', 'metal']}, {id: 'susucre', probability: 10, affection: 6, types: ['paille', 'feu']},
+  {id: 'requin', probability: 10, affection: 10, parents: ['maxou', 'wat-wat']},
+  {id: 'ankylosaure', probability: 10, affection: 10, parents: ['dinono', 'dinenette']}, {id: 'arkoko', probability: 10, affection: 10, parents: ['calinou', 'orange']},
   // Benny, the Mythic (1 November 2026): any two Legendaries, a fixed chance reserved like a Legendary's.
   {id: 'benny', probability: 10, affection: 10, parentRarity: 'legendary'},
 ];
@@ -64,7 +68,7 @@ describe('explicit recipe requirements', () => {
       expect(engine.map(([id]) => id)).toEqual(oracle.map(([id]) => id));
       engine.forEach(([, p], i) => expect(p).toBeCloseTo(oracle[i][1], 9));
     }
-  }, 30_000); // Exhaustive comparison with the hand-written oracle: close to the default 5 s when the whole suite runs in parallel.
+  }, 90_000); // Exhaustive comparison with the hand-written oracle (42 species since 5 November 2026): well past the default 5 s when the whole suite runs in parallel.
   it('uses independent elements instead of the displayed types, in the engine and known book pairs', () => {
     override('bouee', {requiredTypes: ['neige','metal'], minAffection: 4});
     expect(recipeMatches('bouee','paille','feu')).toBe(false);

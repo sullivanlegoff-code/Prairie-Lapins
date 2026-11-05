@@ -22,7 +22,7 @@ describe('catalogue v20', () => {
     const index = SPECIES_IDS.indexOf('bouee');
     expect(SPECIES_IDS.slice(index - 1, index + 2)).toEqual(['boudinet', 'bouee', 'egiiipte']);
     const s = createGame(0); s.discovered = [...GUARANTEE_SPECIES];
-    expect(mainProgress(s, 'all-ordinary-rares')).toEqual({value: 20, target: 20});
+    expect(mainProgress(s, 'all-ordinary-rares')).toEqual({value: 21, target: 21});
     expect(mainProgress(s, 'first-rare')).toEqual({value: 1, target: 1});
   });
   it.each([16, 17, 18, 19])('converts retired species before validating the v%i migration chain', version => {

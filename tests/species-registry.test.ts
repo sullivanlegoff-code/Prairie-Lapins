@@ -32,6 +32,11 @@ const SPECIAL_DESCRIPTIONS: Record<string, string> = {
   ankylosaure: 'Le fils de Dinono et Dinenette : un lapin bélier brun chocolat aux yeux vert noisette, dans un déguisement d’ankylosaure vert mousse, avec une carapace brune et une queue en massue.',
   'calinou': 'Un lapin angora géant, blanc et rosé, à la fourrure en nuage, avec un ruban rose sur l’oreille.',
   benny: 'Un lapin fauve doré au masque gris fumé, avec une petite tache blanche au-dessus du nez, un plastron et des pattes blanches. Un lapin mythique né d’un vrai lapin.',
+  'gigi-rarafe': 'Un lapin bélier girafe au très long cou, aux taches orange feu et aux petites cornes duveteuses.',
+  'yetiti': 'Un très grand lapin yéti au pelage blanc dense, au visage et aux coussinets bleu ardoise.',
+  'rennes': 'Un lapin renne aux grands bois, au nez rouge, avec son harnais à grelots pour tirer le traîneau.',
+  'susucre': 'Un lapin sucre d’orge rayé rouge et vert menthe, avec un nœud doré et une oreille en crosse.',
+  'arkoko': 'Un lapin brun dans une combinaison rose à capuche, avec une cape arc-en-ciel et un cristal bleu sur le front.',
   orange: 'Une petite lapine blanche à la robe orange.', requin: 'Un lapin bélier gris aux rayures de requin, avec un aileron bleu et un sourire pointu.',
 };
 
@@ -47,7 +52,7 @@ const HISTORICAL_DEFINITIONS = {
 };
 const FIXTURE_DEFINITIONS = {...HISTORICAL_DEFINITIONS, ...Object.fromEntries(NEW_RARES.map(r => [r.id, {name: r.name, description: r.description, types: [...r.types], rarity: 'rare', price: null,
   recipe: {requiredTypes: [...r.requiredTypes], minAffection: STANDARD_RARE.minAffection}, acquisition: ACQUISITION[r.id], progression: {unlockLevel: STANDARD_RARE.unlockLevel}, art: r.art}])),
-  ...Object.fromEntries(NEW_SPECIALS.map(s => [s.id, {name: s.name, description: SPECIAL_DESCRIPTIONS[s.id], types: [...s.types], rarity: s.rarity, price: null,
+  ...Object.fromEntries(NEW_SPECIALS.map(s => [s.id, {name: s.name, ...(s.event ? {event: s.event} : {}), description: SPECIAL_DESCRIPTIONS[s.id], types: [...s.types], rarity: s.rarity, price: null,
     recipe: {...(s.recipe.requiredTypes ? {requiredTypes: [...s.recipe.requiredTypes]} : {}), minAffection: s.recipe.minAffection, ...(s.recipe.parents ? {parents: [...s.recipe.parents]} : {}), ...(s.recipe.parentRarity ? {parentRarity: s.recipe.parentRarity} : {}), probability: OWNER_PROBABILITY[s.rarity]},
     acquisition: ACQUISITION[s.id], progression: {unlockLevel: s.unlockLevel}, art: s.art}]))};
 
@@ -72,7 +77,7 @@ describe('canonical species registry', () => {
   it('keeps the derived lists and their exact order', () => {
     expect(balance.SHOP_SPECIES).toEqual(['paille', 'neige', 'feu', 'belier-gris', 'volant']);
     expect(balance.RECIPE_SPECIES).toEqual(EXPECTED_RECIPE_IDS);
-    expect(balance.GUARANTEE_SPECIES).toEqual(["frisket","icy","ardent","snk","pic-pic","amethyste","princesse-neige","fluffy","virvoletant","phoenix","roukette","wat-wat","glassofeu","plume","boudinet","bouee","egiiipte","piment","tunini","bretonette"]);
+    expect(balance.GUARANTEE_SPECIES).toEqual(["frisket","icy","ardent","snk","pic-pic","amethyste","princesse-neige","fluffy","virvoletant","phoenix","roukette","wat-wat","glassofeu","plume","boudinet","bouee","egiiipte","piment","tunini","bretonette","vantablack"]);
   });
   it('keeps LEGACY_SPECIES_IDS as the historical list: the first two ids, in order', () => {
     expect([...registry.LEGACY_SPECIES_IDS]).toEqual(IDS.slice(0, 2));

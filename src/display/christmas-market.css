@@ -89,6 +89,8 @@
 #game-panel.christmas-market .christmas-page progress::-moz-progress-bar { background: repeating-linear-gradient(135deg, #fff 0 6px, #d62f38 6px 12px); }
 #game-panel.christmas-market .christmas-page .mission-bonus { background: linear-gradient(160deg, #fff6d6, #f3dc9e); }
 #game-panel.christmas-market .christmas-page > .small { margin: 0 2px 12px; color: #f1ead8; }
+#game-panel.christmas-market .christmas-page > :is(h3, .small) { grid-column: 1 / -1; } /* A section title and its note span the whole row of cards. */
+#game-panel.christmas-market .christmas-page > h3 { margin: 10px 2px 4px; color: #fff3cf; }
 #game-panel.christmas-market .christmas-page .decoration-icon { background: radial-gradient(circle, #fff 30%, #e8f0ff); border-radius: 14px; }
 
 /* « Récompenses spéciales »: two columns when there is room. */

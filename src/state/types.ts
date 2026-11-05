@@ -229,6 +229,7 @@ export type Command = BaseCommand
   | {type: 'claimChristmasBonus'; cycleStart: number}
   /** Christmas market: a Christmas decoration for its sucres d'orge, placed now or kept in the inventory. */
   | {type: 'buyChristmasDecoration'; catalogId: DecorationId; location?: Extract<DecorationLocation, {kind: 'outside'}>}
+  | {type: 'buyChristmasRabbit'; species: import('../config/balance').SpeciesId; enclosureId: string}
   | {type: 'welcomeAgency'} | {type: 'startTrip'; rabbitId: string} | {type: 'claimTrip'; rabbitId: string} | {type: 'upgradeFarm'; id: string; /** Level reached; absent = 2 (older callers). A farm not one level below is a stale action. */ toLevel?: 2 | 3} | {type: 'upgradeAgency'; id: string; fromLevel: 1 | 2 | 3}
   /** `birthId` names the nursery baby; required for growth, ignored otherwise. */
   | {type: 'initiationAid'; id: string; stage: TimedStage; jobKey: string; birthId?: string}

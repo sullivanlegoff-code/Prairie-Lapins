@@ -848,5 +848,65 @@
     "width": 465,
     "height": 484,
     "derivedSha1": "e83e599c3bfbe7aea1d21d91c75963d0ba68e615"
+  },
+  "vantablack": {
+    "file": "assets/rabbits/vantablack/vantablack-v1.png",
+    "worldWidth": 46,
+    "sourceSha1": "96cf004faadc47ed231f199c0f240c17a53567c4",
+    "sourceWidth": 876,
+    "sourceHeight": 1202,
+    "width": 339,
+    "height": 465,
+    "derivedSha1": "bcf1f57b873b53ce482c09748448232bcfd6b011"
+  },
+  "gigi-rarafe": {
+    "file": "assets/rabbits/gigi-rarafe/gigi-rarafe-v1.png",
+    "worldWidth": 46,
+    "sourceSha1": "56f94afcd676537b177878b265c27b240ffeb492",
+    "sourceWidth": 781,
+    "sourceHeight": 1223,
+    "width": 339,
+    "height": 531,
+    "derivedSha1": "324c39075b093ca75fe8e7e179e6c4b205af0aa5"
+  },
+  "yetiti": {
+    "file": "assets/rabbits/yetiti/yetiti-v1.png",
+    "worldWidth": 74,
+    "sourceSha1": "f7c4e3a2a6fe3d5fbe56fb6dd49a35f52467d24e",
+    "sourceWidth": 1148,
+    "sourceHeight": 1231,
+    "width": 546,
+    "height": 585,
+    "derivedSha1": "49e378b6a1001a585ad215a9d56f9e3633cf11de"
+  },
+  "rennes": {
+    "file": "assets/rabbits/rennes/rennes-v1.png",
+    "worldWidth": 48,
+    "sourceSha1": "72c8a13597806961822c81de7af4261cb062d5ab",
+    "sourceWidth": 832,
+    "sourceHeight": 1228,
+    "width": 354,
+    "height": 522,
+    "derivedSha1": "deb92ae242e64ea534736250ee4ccd86b9a0b6eb"
+  },
+  "susucre": {
+    "file": "assets/rabbits/susucre/susucre-v1.png",
+    "worldWidth": 50,
+    "sourceSha1": "cb88deb2586ec7f726c853e63789456451f22156",
+    "sourceWidth": 831,
+    "sourceHeight": 1097,
+    "width": 369,
+    "height": 487,
+    "derivedSha1": "9adccd7a7440d38f75adb64d7bcd202200aaa877"
+  },
+  "arkoko": {
+    "file": "assets/rabbits/arkoko/arkoko-v1.png",
+    "worldWidth": 44,
+    "sourceSha1": "cf022ec027c21000375960e3f686b30be5b39414",
+    "sourceWidth": 614,
+    "sourceHeight": 1070,
+    "width": 325,
+    "height": 566,
+    "derivedSha1": "2397eb50dee9df065671b1e5facedc92bfabb4ab"
   }
 }

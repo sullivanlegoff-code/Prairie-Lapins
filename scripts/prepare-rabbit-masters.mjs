@@ -35,6 +35,14 @@ export const DESIGNS = [
   {id: 'ankylosaure', source: 'output/imagegen/ankylosaure-v1/anky-B3.png', background: 'light'},
   // Mythic Benny, inspired by a real rabbit: design A1 approved by the owner on 1 November 2026 (cut from the A variations sheet).
   {id: 'benny', source: 'output/imagegen/benny-v2/benny-A1-master.png', background: 'light'},
+  // Christmas update (owner, 5 November 2026): original concepts chosen by the owner (Vantablack A, Gigi-rarafe B, Yetiti A,
+  // Rennes A, Susucre B), and Arkoko, the owner's own drawing (its transparency checkerboard is printed into the picture).
+  {id: 'vantablack', source: 'output/imagegen/nouveaux-lapins-v1/vantablack-A.png', background: 'light'},
+  {id: 'gigi-rarafe', source: 'output/imagegen/nouveaux-lapins-v1/gigi-rarafe-B.png', background: 'light'},
+  {id: 'yetiti', source: 'output/imagegen/nouveaux-lapins-v1/yetiti-A.png', background: 'light'},
+  {id: 'rennes', source: 'output/imagegen/nouveaux-lapins-v1/rennes-A.png', background: 'light'},
+  {id: 'susucre', source: 'output/imagegen/nouveaux-lapins-v1/susucre-B.png', background: 'light'},
+  {id: 'arkoko', source: 'assets-source/rabbits/Arkoko/Arkoko stade 1.png', background: 'checker'},
   // Affection 30 evolutions of the five commons, chosen by the owner on 3 November 2026 (white backdrop, the rabbit alone). The
   // approved paintings stay beside the species as <id>-evolution-source.png; `master` writes <id>-evolution-sprite.png (the v2 source)
   // instead of the species' own sprite.png. Usage: node scripts/prepare-rabbit-masters.mjs . paille-evolution neige-evolution ...
