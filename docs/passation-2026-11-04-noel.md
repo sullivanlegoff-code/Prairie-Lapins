@@ -63,30 +63,45 @@
   - captures Chromium de l'île enneigée de jour, de nuit et avec les guirlandes allumées ;
   - aucun essai iPhone.
 
+## État au 5 novembre 2026 (commits `519ab64`, `e8bf6c8`, `cae85b5`)
+
+Toutes les peintures sont faites et intégrées :
+- les 9 étapes de l'île enneigée, avec leurs ampoules ;
+- les 10 bâtiments et les 18 habitats enneigés ;
+- le marché de jour et de nuit, et ses 8 décorations ;
+- le bonhomme de neige ;
+- les icônes (sucre d'orge, boules de neige, flocons, cadeaux) ;
+- la hotte, le traîneau et le décor du mini-jeu.
+
+Les files de peinture Codex sont terminées. Pour refaire une image : `output/imagegen/noel-production/` (hors Git), puis `node scripts/prepare-noel-art.mjs output/imagegen/noel-production/items` (voir son en-tête).
+
+**Le marché** (`src/config/christmasMarketArt.ts`) :
+- il flotte à gauche de l'île de départ, à sa hauteur (`cell`) ;
+- si l'îlot de la corde à sauter est acheté, le marché passe juste au-dessus de lui (`cellWithJumpIsland`) ;
+- `tests/christmas-ui.test.ts` vérifie qu'il ne chevauche ni l'îlot ni une parcelle.
+
+**Vérifié dans Chromium (laboratoire)** :
+- l'île enneigée de jour, de nuit et avec les guirlandes ;
+- le marché visible dès l'étape 1 ;
+- la vue « Marché de Noël » (solde, défis, décorations) ;
+- le mini-jeu (intro, partie, fin).
+
+**Pas encore vu en capture** :
+- la bataille de boules de neige : dans la prairie de démonstration, le seul enclos ouvert à deux lapins en avait un qui dormait ;
+- le bonhomme de neige posé dans un enclos.
+
+Leur logique est couverte par les tests.
+
+Aucun essai iPhone.
+
 ## Ce qui reste
 
-1. **Peintures (Codex, en cours la nuit du 4 novembre).**
-   - Les dossiers sont hors Git : `output/imagegen/noel-production/parts/` (morceaux d'île des étapes 5 à 9, `run.sh`) et `.../items/` (`run2.sh` : bâtiments et habitats enneigés, marché, 8 décorations, bonhomme, planche d'icônes, hotte, traîneau, décor du mini-jeu).
-   - Les deux files tournent **en parallèle** (demande du propriétaire) : `bash parts/run-par.sh` et `bash items/run-par.sh`, qui sautent ce qui est déjà peint. Ces deux scripts utilisent `paint-lib.sh` : chaque Codex écrit dans son propre dossier, et une image que Codex n'a pas réussi à enregistrer est récupérée dans le dossier de **sa propre session** (`~/.codex/generated_images/<id de session du journal>`), donc jamais celle de l'autre file. Elles s'arrêtent d'elles-mêmes si la limite d'usage tombe.
-   - Si Codex range une image dans un **dossier** nommé `*-neige.png`, sors-en le fichier.
-   - Si la limite d'usage tombe, les journaux `log-*.txt` contiennent « usage limit ».
-2. **Intégration, une fois peint :**
-   - `node scripts/prepare-winter-island.mjs compose output/imagegen/noel-production/parts`
-   - `PLAYWRIGHT_MODULE=<playwright du dépôt voisin> node scripts/derive-island-stages.mjs --winter`
-   - `node scripts/derive-winter-lights.mjs`
-   - `PLAYWRIGHT_MODULE=… node scripts/prepare-noel-art.mjs output/imagegen/noel-production/items`
-     - Ce script recale chaque bâtiment ou habitat sur l'original et garde sa silhouette ; il ignore une peinture qui correspond à moins de 90 %.
-     - Il fabrique lui-même les lumières de nuit du marché et les étapes 1 et 2 du bonhomme.
-     - Il écrit `src/config/winterBuildingFiles.json`.
-     - Il **n'a pas encore tourné sur de vraies images** : vérifie le résultat.
-3. **Réglages à faire avec des captures :**
-   - `CHRISTMAS_MARKET_ART` : taille, ancrage et case, à mettre d'après `marche.png` ;
-   - la place du bonhomme et sa largeur (`SNOWMAN_ART` dans `winterArt.ts`) ;
-   - la hauteur des boules de neige ;
-   - la hotte dans `sky-gifts.css` ;
-   - l'allure des flocons.
-4. **Contrôle Chromium :** sers `dist/` du laboratoire sur `127.0.0.1:5199`. Scénarios utiles : « Prairie de départ » (étape 1) et « Prairie de démonstration décorée ».
-5. **Validation complète, commit, puis rapport au propriétaire** en français, en le tutoyant.
+1. Faire tester au propriétaire sur iPhone :
+   - la taille des boules de neige (`SNOWBALL_ART` dans `src/config/winterArt.ts`) ;
+   - le bonhomme (`SNOWMAN_ART`) ;
+   - la hotte (`src/display/sky-gifts.css`).
+2. Les lapins de Noël, quand le propriétaire les aura choisis.
+3. La fusion dans `main` et la publication, seulement quand il le demandera.
 
 ## Pièges
 
