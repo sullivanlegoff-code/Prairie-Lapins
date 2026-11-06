@@ -1,0 +1,52 @@
+{
+  "cadre": {
+    "pieces": [
+      { "name": "frame", "height": 480, "saturation": 0.15 }
+    ]
+  },
+  "parchemin": {
+    "tile": true,
+    "size": 512,
+    "pieces": [
+      { "name": "parchment" }
+    ]
+  },
+  "planche": {
+    "pieces": [
+      { "name": "plank", "height": 160, "saturation": 0.9, "brightness": 0.86 }
+    ]
+  },
+  "boutons": {
+    "pieces": [
+      { "name": "button-green", "height": 128, "saturation": 0.6, "brightness": 0.8 },
+      { "name": "button-blue", "height": 128, "saturation": 0.6, "brightness": 0.82 },
+      { "name": "button-red", "height": 128, "saturation": 0.7, "brightness": 0.8 },
+      { "name": "button-stone", "height": 128, "saturation": 0.15 }
+    ]
+  },
+  "petits": {
+    "pieces": [
+      { "name": "close", "height": 160, "saturation": 0.7, "brightness": 0.82 },
+      { "name": "checkbox", "height": 128, "saturation": 0.4 },
+      { "name": "check", "height": 128, "saturation": 0.65, "brightness": 0.85 },
+      { "name": "badge-alert", "height": 96, "saturation": 0.7, "brightness": 0.82 },
+      { "name": "tile", "height": 192, "saturation": 0.4 },
+      { "name": "counter", "height": 112, "saturation": 0.4 }
+    ]
+  },
+  "petits2": {
+    "pieces": [
+      { "name": "round-blue", "height": 160, "saturation": 0.6, "brightness": 0.82 },
+      { "name": "medal", "height": 160, "saturation": 0.6, "brightness": 0.8 },
+      { "name": "card", "height": 200 },
+      { "name": "slate", "height": 120, "saturation": 0.6 },
+      { "name": "fill", "height": 48, "saturation": 0.6, "brightness": 0.82 },
+      { "name": "label", "height": 72 }
+    ]
+  },
+  "missions": {
+    "pieces": [
+      { "name": "missions", "height": 168 }
+    ]
+  }
+}

@@ -1,0 +1,473 @@
+/* The painted interface kit (owner, 6 November 2026, concept B « Pierre et parchemin »): grey carved stone frames with
+   engraved paws, cream parchment inside, window titles on a red-brown plank, glossy buttons — green to act, blue for
+   information and other choices, red to close or for a risky choice — and the Lilita One lettering with a dark outline.
+   Every piece is painted (assets-source/ui/kit, cut by scripts/derive-ui-art.mjs). Imported last: it dresses every
+   control of the game, the kitchen and the reception cards included; layout stays in the other sheets. */
+@font-face {
+  font-family: 'Lilita One';
+  src: url('/assets/fonts/lilita-one-latin.woff2') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2010-2027, U+2030-205E, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* French numbers use a narrow no-break space (« 1 000 000 »); in heavy lettering it vanishes. This face only lends that
+   one character, from a system font, a little wider than the heavy font's own: the groups of digits stay apart. */
+@font-face {
+  font-family: 'Kit Gap';
+  src: local('Arial'), local('Helvetica'), local('Segoe UI'), local('Roboto');
+  unicode-range: U+202F; size-adjust: 100%;
+}
+:root {
+  --kit-font: 'Kit Gap', 'Lilita One', ui-rounded, 'Trebuchet MS', system-ui, sans-serif;
+  --kit-frame: url('/assets/ui/kit/frame.webp');
+  --kit-paper: url('/assets/ui/kit/parchment.webp');
+  --kit-plank: url('/assets/ui/kit/plank.webp');
+  --kit-green: url('/assets/ui/kit/button-green.webp');
+  --kit-blue: url('/assets/ui/kit/button-blue.webp');
+  --kit-red: url('/assets/ui/kit/button-red.webp');
+  --kit-stone: url('/assets/ui/kit/button-stone.webp');
+  --kit-tile: url('/assets/ui/kit/tile.webp');
+  --kit-counter: url('/assets/ui/kit/counter.webp');
+  --kit-ink: #3b2a1a;
+  --kit-ink-muted: #5e4a33;
+  --kit-edge-green: #16300d;
+  --kit-edge-blue: #0b2a63;
+  --kit-edge-red: #5a0d08;
+  --kit-edge-stone: #2a2a28;
+  --kit-edge-dark: #1d1a16;
+}
+
+/* The font has no thin or no-break spaces (U+2000–200F, U+202F, U+205F): they fall back to the reading font, so
+   « 1 000 000 » keeps its gaps. */
+/* Lettering: titles, buttons, labels and numbers; long sentences keep the rounded reading font. */
+:is(button, h1, h2, h3, summary, label, .badge, .timer, .rarity-label, .tabs, .stat strong, .stat > span, #hud, #open-missions, #toast, #arrange-banner, legend, th, output) {
+  font-family: var(--kit-font); font-weight: 400; font-synthesis: none; letter-spacing: .01em;
+}
+:is(h1, h2, h3, .stat strong) { font-weight: 400; }
+
+/* ── Buttons ──────────────────────────────────────────────────────────────────────────────────────────────────────
+   One glossy pill per role, a nine-slice painted behind the label (the button keeps its own padding and size).
+   Excluded: the HUD counters and tiles, painted scene objects, and rows that are picture cards. */
+button:not(.resource, .meadow-nav, .meadow-tool, .kitchen-object, .breeding-row, .menu-recipe, .kit-bare, #player-progress, #open-missions) {
+  --kit-skin: var(--kit-green);
+  --kit-edge: var(--kit-edge-green);
+  position: relative; isolation: isolate;
+  min-height: 46px; padding: 10px 22px 12px;
+  border: 0 !important; border-radius: 999px;
+  background: none !important; box-shadow: none !important;
+  color: #fbf6ea; font-size: 16px; line-height: 1.15;
+  -webkit-text-stroke: 2.5px var(--kit-edge); paint-order: stroke fill;
+  text-shadow: 0 1px 0 var(--kit-edge);
+  transition: filter 90ms ease-out, transform 90ms ease-out;
+}
+button:not(.resource, .meadow-nav, .meadow-tool, .kitchen-object, .breeding-row, .menu-recipe, .kit-bare, #player-progress, #open-missions)::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  border-style: solid; border-color: transparent; border-width: 21px 30px 23px;
+  border-image: var(--kit-skin) 56 64 60 fill / 21px 30px 23px / 0 stretch;
+  filter: none; opacity: 1; background: none;
+}
+button:not(.resource, .meadow-nav, .meadow-tool, .kitchen-object, .breeding-row, .menu-recipe, .kit-bare, #player-progress, #open-missions):is(.secondary, .action-secondary) {
+  --kit-skin: var(--kit-blue); --kit-edge: var(--kit-edge-blue);
+}
+button:not(.resource, .meadow-nav, .meadow-tool, .kitchen-object, .breeding-row, .menu-recipe, .kit-bare, #player-progress, #open-missions).action-danger {
+  --kit-skin: var(--kit-red); --kit-edge: var(--kit-edge-red);
+}
+/* A child in a button never takes the outline meant for its words. */
+button:not(.resource, .meadow-nav, .meadow-tool, .kitchen-object, .breeding-row, .menu-recipe, .kit-bare, #player-progress, #open-missions) :is(img, svg, .portrait, .coin-icon, .food-icon, .heart-icon, .element-icon) {
+  -webkit-text-stroke: 0; filter: drop-shadow(0 1px 1px #0007);
+}
+button:not(.resource, .meadow-nav, .meadow-tool, .kitchen-object, .breeding-row, .menu-recipe, .kit-bare, #player-progress, #open-missions):is(:active, .is-pressed):not(:disabled) {
+  transform: translateY(1px); filter: brightness(.9);
+}
+@media (hover: hover) and (pointer: fine) {
+  button:not(.resource, .meadow-nav, .meadow-tool, .kitchen-object, .breeding-row, .menu-recipe, .kit-bare, #player-progress, #open-missions):hover:not(:disabled) { filter: brightness(1.08); }
+}
+button:not(.resource, .meadow-nav, .meadow-tool, .kitchen-object, .breeding-row, .menu-recipe, .kit-bare, #player-progress, #open-missions):disabled {
+  --kit-skin: var(--kit-stone); --kit-edge: var(--kit-edge-stone);
+  color: #ecebe4; cursor: default; opacity: 1;
+}
+button:not(.resource, .meadow-nav, .meadow-tool, .kitchen-object, .breeding-row, .menu-recipe, .kit-bare, #player-progress, #open-missions):focus-visible {
+  outline: 3px solid #ffd84a; outline-offset: 3px; box-shadow: none !important;
+}
+/* Small inline buttons (lists, farm orders, placement choices) keep a readable outline. */
+:is(.farm-order, .placement-choices, .compact-list-card, .mission-filters, .mission-tabs) button:not(.kitchen-object) { font-size: 14px; -webkit-text-stroke-width: 2px; padding-inline: 16px; }
+
+/* Tabs: the open tab is green, the others are carved stone. */
+.tabs > button:not(.kitchen-object), .mission-tabs > button, .christmas-tabs > button {
+  --kit-skin: var(--kit-stone) !important; --kit-edge: var(--kit-edge-stone) !important;
+}
+.tabs > button:is(:not(.secondary):not(.action-secondary), [aria-pressed='true'], [aria-selected='true']),
+.mission-tabs > button:is([aria-pressed='true'], [aria-selected='true'], :not(.secondary)),
+.christmas-tabs > button[aria-selected='true'] {
+  --kit-skin: var(--kit-green) !important; --kit-edge: var(--kit-edge-green) !important;
+}
+.tabs { padding: 4px 2px 8px !important; border: 0 !important; background: none !important; box-shadow: none !important; }
+
+/* Close: the round red cross. Back: a round blue stone with an arrow. Both stay 46 px targets. */
+#close-panel, button[data-close], .kit-close {
+  width: 50px; min-width: 50px; height: 50px; min-height: 50px; padding: 0 !important;
+  color: transparent !important; font-size: 0 !important; -webkit-text-stroke: 0 !important; text-shadow: none !important;
+}
+#close-panel::before, button[data-close]::before, .kit-close::before {
+  inset: -2px !important; border: 0 !important; border-image: none !important;
+  background: url('/assets/ui/kit/close.webp') center / contain no-repeat !important;
+}
+#panel-back {
+  width: 50px; min-width: 50px; height: 50px; min-height: 50px; padding: 0 0 3px !important;
+  --kit-skin: var(--kit-blue); --kit-edge: var(--kit-edge-blue);
+  font-size: 30px; line-height: 1;
+}
+#panel-back::before { border-image: none !important; border: 0 !important; background: url('/assets/ui/kit/round-blue.webp') center / contain no-repeat !important; }
+
+/* ── Windows ──────────────────────────────────────────────────────────────────────────────────────────────────────
+   The carved frame is drawn over the parchment: its image band (26 px) is wider than the border (18 px), so the
+   parchment, clipped to the padding box, starts right at the stone's inner edge. */
+#game-panel, #game-panel.shop-fullscreen,
+dialog:not(.paille-dialogue):not(.cuisine-activity):not(.legendary-reveal):not(.benny-reveal):not(.reception-card),
+#tutorial, #portrait-notice > div, .loading-card,
+.cuisine-activity .cuisine-root :is(.overlay-card, .orientation-card),
+:is(.sky-gifts-card, .jump-rope-card, .benny-flight-card) {
+  border: 18px solid transparent !important;
+  border-image: var(--kit-frame) 100 / 30px / 4px stretch !important;
+  border-radius: 34px !important;
+  background: #f6e7c4 var(--kit-paper) 0 0 / 256px 256px !important;
+  background-clip: padding-box !important;
+  color: var(--kit-ink) !important;
+  box-shadow: 0 10px 24px #0b120e66 !important;
+}
+#game-panel.shop-fullscreen { border-radius: 0 !important; }
+#game-panel .panel-scroll, #game-panel #settings-content, dialog .panel-scroll { background: none !important; color: var(--kit-ink); }
+#game-panel :is(.small, .card-heading p, p), dialog :is(.small, p) { color: var(--kit-ink-muted); }
+#game-panel p, dialog p { color: var(--kit-ink); }
+dialog::backdrop, #panel-backdrop { background: #10161ab8 !important; }
+
+/* The window title rides on the nailed plank; back and close sit at its ends. */
+.panel-header {
+  position: relative; gap: 6px; padding: 4px 4px 8px !important; min-height: 60px;
+  border: 0 !important; background: none !important; box-shadow: none !important; justify-content: center;
+}
+.panel-header h2, dialog:not(.paille-dialogue):not(.cuisine-activity):not(.legendary-reveal):not(.benny-reveal) > h2,
+.cuisine-activity .cuisine-root :is(.overlay-card, .orientation-card) h2 {
+  flex: 0 1 auto !important; width: fit-content; max-width: 100%; box-sizing: border-box;
+  margin: 0 auto !important; padding: 9px 34px 12px !important;
+  border: 0 solid transparent !important; border-width: 0 !important;
+  border-image: var(--kit-plank) 0 90 fill / 0 34px / 0 stretch !important;
+  background: none !important; border-radius: 0 !important;
+  color: #fbf3e2 !important; font-size: 21px !important; line-height: 1.1; text-align: center;
+  -webkit-text-stroke: 3px #3a1408 !important; paint-order: stroke fill;
+  text-shadow: 0 2px 0 #3a1408 !important; filter: drop-shadow(0 3px 2px #2a120866);
+  overflow-wrap: anywhere;
+}
+dialog:not(.paille-dialogue):not(.cuisine-activity):not(.legendary-reveal):not(.benny-reveal) > h2 {
+  position: relative !important; top: auto !important; display: block; margin-bottom: 12px !important;
+}
+/* Keep the title centred between the two round buttons. */
+.panel-header #panel-back[hidden] + h2 { margin-left: auto !important; }
+.panel-header > :is(#panel-back, #close-panel) { flex: 0 0 auto; }
+.panel-header > #close-panel { margin-left: 0; }
+
+/* ── Paper cards inside a window ─────────────────────────────────────────────────────────────────────────────────── */
+#game-panel :is(.card, .settings-section, .rabbit-nickname, .stat),
+dialog :is(.card, .settings-section),
+.breeding-column, .breeding-odds {
+  border: 14px solid transparent !important;
+  border-image: url('/assets/ui/kit/card.webp') 40 fill / 14px / 0 stretch !important;
+  border-radius: 10px !important;
+  background: none !important; box-shadow: 0 3px 4px #5a3b1a2e !important;
+  color: var(--kit-ink) !important;
+}
+#game-panel :is(.card, .settings-section) { padding: 4px 6px 6px !important; }
+#game-panel :is(.card h3, .card-heading h3, .settings-section > h3), dialog .card h3 { color: #4a2c12 !important; font-size: 18px; }
+/* Section headings: a short plank. */
+#game-panel :is(.panel-scroll, .menu-grid) > h3,
+.breeding-column > h3 {
+  width: fit-content; max-width: 100%; margin: 12px auto 10px !important; padding: 6px 26px 9px !important;
+  border: 0 !important; border-image: var(--kit-plank) 0 90 fill / 0 26px / 0 stretch !important;
+  background: none !important; box-shadow: none !important;
+  color: #fbf3e2 !important; font-size: 16px !important; -webkit-text-stroke: 3px #3a1408; paint-order: stroke fill;
+  text-shadow: 0 2px 0 #3a1408 !important;
+}
+
+/* The shop's balances: the HUD counters, smaller. */
+.shop-resources { gap: 4px 14px !important; margin-left: auto; }
+.shop-resources > span {
+  position: relative; display: inline-flex; align-items: center; gap: 4px; min-height: 34px;
+  padding: 0 12px !important; border: 10px solid transparent !important; border-width: 0 !important;
+  border-image: var(--kit-counter) 34 44 fill / 10px 13px / 0 stretch !important;
+  background: none !important; box-shadow: none !important; border-radius: 0 !important;
+  color: #fff !important; font-family: var(--kit-font); font-size: 15px;
+  -webkit-text-stroke: 3px var(--kit-edge-dark); paint-order: stroke fill; text-shadow: none !important;
+}
+.shop-resources > span :is(img, svg) { -webkit-text-stroke: 0; }
+
+/* Labels: badges, timers and rarities are small paper pills. */
+#game-panel :is(.badge, .timer, .work-state, .initiation-aid, .placement-valid, .placement-invalid, .placement-pending), dialog:not(#reception-dialog) :is(.badge, .timer) {
+  border: 8px solid transparent !important;
+  border-image: url('/assets/ui/kit/label.webp') 30 50 fill / 8px 14px / 0 stretch !important;
+  border-radius: 999px !important; background: none !important; box-shadow: none !important;
+  padding: 2px 8px !important; color: var(--kit-ink) !important;
+}
+#game-panel :is(.reason, .placement-invalid, .work-state[data-state='blocked']), dialog .reason {
+  border: 0 !important; border-left: 4px solid #b3321f !important; border-image: none !important;
+  border-radius: 6px !important; background: #f6d9c4cc !important; color: #6b1f12 !important; padding: 6px 10px !important;
+}
+
+/* Progress: the green glossy fill in a dark recess. */
+progress, .loading-bar, #player-xp-bar {
+  appearance: none; -webkit-appearance: none;
+  height: 18px; border: 2px solid #1d1a16 !important; border-radius: 999px !important;
+  background: #24221f !important; box-shadow: inset 0 2px 3px #000a, 0 1px 0 #fff6 !important; overflow: hidden;
+}
+progress::-webkit-progress-bar { background: #24221f; border-radius: 999px; }
+progress::-webkit-progress-value, .loading-bar span, #player-xp-fill {
+  background: none !important; border: 0 solid transparent !important;
+  border-image: url('/assets/ui/kit/fill.webp') 20 22 fill / 50% 9px / 0 stretch !important;
+  border-radius: 999px; box-shadow: none !important;
+}
+progress::-moz-progress-bar { background: linear-gradient(#8ee04a, #3f9a17); border-radius: 999px; }
+
+/* Text fields on parchment. */
+#game-panel :is(select, input:not([type='range']):not([type='checkbox'])), dialog :is(select, input:not([type='range']):not([type='checkbox']), textarea), #settings-content select {
+  min-height: 46px; border: 3px solid #6b4a2a !important; border-radius: 10px !important;
+  background: #fffaf0 !important; color: var(--kit-ink) !important; box-shadow: inset 0 2px 4px #6b4a2a40 !important;
+  font-size: 16px;
+}
+
+/* Checkboxes: a carved stone square; ticked, the big green check. */
+input[type='checkbox'] {
+  appearance: none; -webkit-appearance: none; flex: 0 0 auto;
+  width: 34px; height: 34px; margin: 0 8px 0 0; vertical-align: middle; cursor: pointer;
+  background: #2b2925 url('/assets/ui/kit/checkbox.webp') center / 100% 100% no-repeat; border-radius: 6px;
+}
+input[type='checkbox']:checked { background-image: url('/assets/ui/kit/check.webp'), url('/assets/ui/kit/checkbox.webp'); background-size: 120% auto, 100% 100%; background-position: 40% 20%, center; background-repeat: no-repeat; }
+input[type='checkbox']:focus-visible { outline: 3px solid #ffd84a; outline-offset: 2px; }
+input[type='range'] { accent-color: #47b31c; }
+
+/* Toasts and banners: dark slate plaques. */
+#toast, #arrange-banner {
+  border: 12px solid transparent !important;
+  border-image: url('/assets/ui/kit/slate.webp') 40 fill / 12px / 0 stretch !important;
+  border-radius: 14px !important; background: none !important; box-shadow: 0 6px 14px #0006 !important;
+  color: #fff !important; -webkit-text-stroke: 3px var(--kit-edge-dark); paint-order: stroke fill; font-size: 16px;
+}
+
+/* ── HUD ─────────────────────────────────────────────────────────────────────────────────────────────────────────── */
+/* Counters: a dark bar in a thin stone rim, the icon overflowing on the left, the amount in white. */
+#hud .resource.meadow-currency {
+  --nav-side: auto;
+  display: flex; align-items: center; justify-content: flex-end;
+  width: 132px; min-width: 132px; height: 40px; min-height: 40px; margin: 0 2px 0 16px; padding: 0 12px 0 30px;
+  border: 0; border-radius: 0; background: none; box-shadow: none; overflow: visible;
+}
+#hud .resource.meadow-currency::before {
+  inset: 0; border: 0; background: none; border-style: solid; border-color: transparent; border-width: 12px 16px;
+  border-image: var(--kit-counter) 34 44 fill / 12px 16px / 0 stretch;
+}
+#hud .resource.meadow-currency > :is(img, svg, span) {
+  top: 50% !important; left: -18px !important; transform: translateY(-50%);
+  width: 40px !important; height: 40px !important; z-index: 1;
+  filter: drop-shadow(0 2px 1px #0009);
+}
+#hud .resource.meadow-currency > strong {
+  position: relative !important; bottom: auto !important; left: auto !important; transform: none !important;
+  z-index: 1; font-size: 16px !important; line-height: 1 !important; color: #f4efe4;
+  -webkit-text-stroke: 3px var(--kit-edge-dark) !important; paint-order: stroke fill; text-shadow: 0 2px 0 var(--kit-edge-dark) !important;
+}
+@media (max-width: 760px) {
+  #hud .resource.meadow-currency { width: 104px; min-width: 104px; height: 34px; min-height: 34px; margin-left: 14px; padding: 0 9px 0 24px; }
+  #hud .resource.meadow-currency > :is(img, svg, span) { width: 32px !important; height: 32px !important; left: -14px !important; }
+  #hud .resource.meadow-currency > strong { font-size: 15px !important; -webkit-text-stroke-width: 3px !important; }
+}
+
+/* Player level: the green medallion with the number, the XP bar in a stone counter beside it. */
+#player-progress {
+  position: relative; display: flex !important; align-items: center; gap: 0 !important;
+  flex: 0 0 190px !important; height: 52px !important; min-height: 52px !important; padding: 0 0 0 46px !important;
+  border: 0 !important; background: none !important; box-shadow: none !important; color: #fff;
+}
+#player-progress .player-xp-track {
+  flex: 1; height: 38px; display: grid; align-items: center; padding: 0 12px 0 14px;
+  border-style: solid; border-color: transparent; border-width: 12px 16px; border-image: var(--kit-counter) 34 44 fill / 12px 16px / 0 stretch;
+  padding: 0 !important;
+}
+#player-progress #player-xp-bar { height: 16px !important; border-width: 1px !important; }
+#player-progress #player-xp-label {
+  font-size: 11px !important; color: #fff; -webkit-text-stroke: 3px var(--kit-edge-dark) !important; paint-order: stroke fill; letter-spacing: .02em;
+}
+#player-progress #player-level {
+  position: absolute; left: 0; top: 50%; transform: translateY(-50%); z-index: 1;
+  width: 54px; height: 54px; display: grid; place-items: center; padding-bottom: 2px;
+  background: url('/assets/ui/kit/medal.webp') center / contain no-repeat;
+  color: #f6f1e4; font-size: 21px !important; -webkit-text-stroke: 3px var(--kit-edge-green) !important; paint-order: stroke fill;
+  text-shadow: 0 2px 0 var(--kit-edge-green);
+}
+@media (max-width: 760px) {
+  #hud #player-progress { flex: 0 0 140px !important; padding-left: 40px !important; height: 46px !important; min-height: 46px !important; }
+  #hud #player-progress #player-level { width: 46px; height: 46px; font-size: 20px !important; }
+  #hud #player-progress .player-xp-track { height: 32px; border-width: 10px 13px; border-image-width: 10px 13px; }
+}
+
+/* Tiles: the carved square, a big painted icon inside, the name lettered below. */
+#meadow-actions button.meadow-nav, #open-missions, #hud nav button.meadow-tool, #hud .resource.meadow-currency { position: relative; isolation: isolate; }
+#open-missions { left: max(16px, env(safe-area-inset-left)); top: calc(var(--hud-offset) + 4px) !important; }
+#meadow-actions { gap: 22px !important; top: calc(var(--hud-offset) + 4px + var(--tile-step, 86px)) !important; }
+#meadow-actions button.meadow-nav, #open-missions {
+  --nav-side: 64px; --nav-icon: 46px;
+  width: var(--nav-side); height: var(--nav-side); min-width: var(--nav-side); min-height: var(--nav-side);
+}
+#meadow-actions button.meadow-nav::before, #open-missions::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  border: 0 !important; border-image: none !important;
+  background: var(--kit-tile) center / 100% 100% no-repeat !important;
+}
+#meadow-actions .meadow-nav-icon, #open-missions .meadow-nav-icon {
+  top: 6px !important; left: calc((var(--nav-side) - var(--nav-icon)) / 2) !important;
+  width: var(--nav-icon) !important; height: var(--nav-icon) !important; filter: drop-shadow(0 2px 1px #0008);
+}
+#meadow-actions .meadow-nav-label, #open-missions .meadow-nav-label {
+  bottom: -11px !important; font-size: 13px !important; line-height: 16px !important; color: #f4efe4;
+  -webkit-text-stroke: 3px var(--kit-edge-dark) !important; paint-order: stroke fill; text-shadow: 0 2px 0 var(--kit-edge-dark) !important;
+}
+#open-missions {
+  position: absolute; display: block; padding: 0; border: 0; background: none; box-shadow: none; isolation: isolate;
+  color: #fff; overflow: visible; -webkit-tap-highlight-color: transparent;
+}
+#open-missions:is(:active, .is-pressed) .meadow-nav-icon { transform: translateY(1px); }
+#open-missions:active::before { filter: brightness(.9); }
+#open-missions:focus-visible { outline: 3px solid #ffd84a; outline-offset: 3px; }
+/* The number of rewards waiting, in the red badge on the tile's corner. */
+#missions-badge {
+  position: absolute; top: -9px; right: -11px; z-index: 2;
+  min-width: 26px; height: 26px; padding: 0 5px; display: grid; place-items: center;
+  border: 0 solid transparent !important; border-width: 0 !important; border-radius: 999px;
+  border-image: var(--kit-red) 56 64 60 fill / 11px 13px 12px / 0 stretch !important; background: none !important;
+  box-shadow: none !important; color: #fff !important; font-size: 13px; line-height: 1;
+  -webkit-text-stroke: 3px var(--kit-edge-red); paint-order: stroke fill; text-shadow: none !important;
+}
+@media (max-height: 450px) {
+  #meadow-actions { gap: 16px !important; --tile-step: 70px; }
+  #meadow-actions button.meadow-nav, #open-missions { --nav-side: 54px; --nav-icon: 38px; }
+  #meadow-actions .meadow-nav-label, #open-missions .meadow-nav-label { font-size: 13px !important; bottom: -10px !important; }
+}
+
+/* HUD tools: the same carved square, a light glyph. */
+#hud nav button.meadow-tool { width: 48px; min-width: 48px; height: 48px; min-height: 48px; color: #f4f1e8; }
+#hud nav button.meadow-tool::before { content: ""; position: absolute; z-index: -1; pointer-events: none; inset: 0 !important; border: 0 !important; border-image: none !important; background: var(--kit-tile) center / 100% 100% no-repeat !important; filter: none !important; }
+#hud nav button.meadow-tool svg { width: 26px; height: 26px; stroke-width: 2.6; filter: drop-shadow(0 2px 0 #1d1a16); }
+#hud nav button.meadow-tool:is(:active, .is-pressed):not(:disabled)::before { filter: brightness(.85) !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  button { transition: none !important; }
+}
+
+/* ---- Screens checked in a played game (6 November) ---------------------------------------------------------------- */
+/* Every other cross of the game is the same round red stone: the nest's and the new rabbit's card. */
+#breeding-dialog button.breeding-close.breeding-close, #reception-dialog button.reception-close {
+  width: 46px; min-width: 46px; height: 46px; min-height: 46px; padding: 0 !important; border-radius: 50%;
+  color: transparent !important; font-size: 0 !important; -webkit-text-stroke: 0 !important; text-shadow: none !important;
+}
+#breeding-dialog button.breeding-close.breeding-close::before, #reception-dialog button.reception-close::before {
+  content: '' !important; position: absolute; z-index: -1; inset: -2px !important; width: auto; height: auto;
+  border: 0 !important; border-image: none !important; border-radius: 0; box-shadow: none;
+  background: url('/assets/ui/kit/close.webp') center / contain no-repeat !important;
+}
+#reception-dialog button.reception-close { top: 1.2%; right: 1.2%; }
+
+/* The nest sits in the parchment window: cream rows, dark ink, the chosen parent ringed in green. */
+#breeding-dialog {
+  --breed-well: transparent; --breed-row: #fff6e0; --breed-ink: var(--kit-ink);
+  --breed-muted: #7a6450; --breed-pick: #4c8f22; color: var(--kit-ink);
+}
+#breeding-dialog button.breeding-row { border: 2px solid #c9a66b; box-shadow: 0 2px 0 #8a643533; }
+#breeding-dialog button.breeding-row .breeding-row-text strong { font-family: var(--kit-font); font-weight: 400; letter-spacing: .01em; }
+#breeding-dialog button.breeding-row:active:not(:disabled) { background: #f3e3bf; }
+#breeding-dialog button.breeding-row:disabled { color: #8d7c69; background: #eadfc7; border-color: #cdbb98; }
+#breeding-dialog button.breeding-row:disabled .breeding-row-text :is(span, small) { color: #8d7c69; }
+#breeding-dialog button.breeding-row:disabled .portrait { opacity: .7; }
+#breeding-dialog .breeding-filters button { white-space: nowrap; font-size: 13px; padding: 4px 12px !important; }
+#breeding-dialog :is(.breeding-filters, .breeding-tools) button[aria-pressed='true'] { --kit-skin: var(--kit-green) !important; --kit-edge: var(--kit-edge-green) !important; box-shadow: none; }
+
+/* Paille's two corner buttons stay one line each: blue, the colour of « other choices ». The words are unchanged. */
+.paille-dialogue :is(.paille-skip, .paille-settings) {
+  --kit-skin: var(--kit-blue) !important; --kit-edge: var(--kit-edge-blue) !important;
+  width: auto; min-width: 0; min-height: 44px; white-space: nowrap; font-size: 14px; padding: 6px 18px !important; overflow-wrap: normal;
+}
+.paille-bubble button { white-space: nowrap; overflow-wrap: normal; }
+
+/* Leaving the kitchen or a mini-game is a way out: red, like every close. */
+button:is([data-cuisine-exit], [data-sky-gifts-exit], [data-jump-rope-exit], [data-benny-flight-exit]) {
+  --kit-skin: var(--kit-red) !important; --kit-edge: var(--kit-edge-red) !important; white-space: nowrap;
+}
+
+/* The Christmas market keeps the parchment window (owner: the same style during Christmas); its night colours stay on
+   the banner and on the mini-game's card, where the light lettering reads. */
+#game-panel.christmas-market .christmas-page > h3 {
+  width: fit-content; max-width: 100%; margin: 12px auto 8px !important; padding: 6px 26px 9px !important;
+  border: 0 !important; border-image: var(--kit-plank) 0 90 fill / 0 26px / 0 stretch !important;
+  color: #fbf3e2 !important; font-size: 16px !important; -webkit-text-stroke: 3px #3a1408; paint-order: stroke fill; text-shadow: 0 2px 0 #3a1408 !important;
+}
+#game-panel.christmas-market .christmas-page > .small { color: var(--kit-ink-muted); text-align: center; }
+#game-panel.christmas-market .christmas-banner .christmas-banner-lead { color: #fff8e6; text-shadow: 0 1px 2px #0009; }
+#game-panel.christmas-market .christmas-banner { border-color: #c9a35a; background: linear-gradient(120deg, #26306a, #33306a 60%, #4f2b52); }
+#game-panel.christmas-market .christmas-page .card.christmas-game {
+  border-image: url('/assets/ui/kit/card.webp') 40 / 14px / 0 stretch !important;
+  background: linear-gradient(180deg, #121a40e0, #1c2456d8 60%, #262b60f0), var(--christmas-game-art) center / cover no-repeat !important;
+  background-clip: padding-box !important; color: #fff8e6 !important;
+}
+#game-panel.christmas-market .christmas-page .card.christmas-game > h3 {
+  border: 0; padding: 6px 30px 9px; border-image: var(--kit-plank) 0 90 fill / 0 30px / 0 stretch !important; background: none; box-shadow: none;
+  color: #fbf3e2 !important; -webkit-text-stroke: 3px #3a1408; paint-order: stroke fill; text-shadow: 0 2px 0 #3a1408;
+}
+
+/* A phone held upright: the counters and the tools take two rows (the HUD's measured height moves the tiles down), and
+   the window's balances wrap instead of running off its edge. */
+@media (orientation: portrait) and (max-width: 980px) {
+  #hud { flex-wrap: wrap; row-gap: 8px; column-gap: 6px; }
+  #hud nav { margin-left: auto; }
+}
+@media (max-width: 560px) {
+  .shop-resources { flex-wrap: wrap; justify-content: center; max-width: 100%; margin-inline: auto; gap: 6px 12px !important; }
+  .shop-resources > span { font-size: 14px; }
+  #hud .resource.meadow-currency { width: 96px; min-width: 96px; margin-left: 12px; }
+}
+
+/* ---- Layout kept from the former stone skin (stone-buttons.css, no longer loaded) ------------------------------------ */
+.panel-scroll { padding: 12px 12px 20px; scrollbar-color: #9a7a4e #efe0bf; }
+.panel-scroll, dialog, #tutorial { scrollbar-width: thin; }
+.panel-scroll::-webkit-scrollbar, dialog::-webkit-scrollbar { width: 8px; }
+.panel-scroll::-webkit-scrollbar-thumb, dialog::-webkit-scrollbar-thumb { background: #9a7a4e; border: 2px solid #efe0bf; border-radius: 8px; }
+.panel-scroll::-webkit-scrollbar-track, dialog::-webkit-scrollbar-track { background: #efe0bf; }
+.card-heading { padding-bottom: 9px; border-bottom: 1px solid #c9a66b; margin-bottom: 8px; }
+.collection-filters select, .rabbit-name-form input, #import-dialog textarea, #settings-content select { min-height: 46px; }
+#settings-content :is(label, select, input) { min-width: 0; max-width: 100%; }
+:is(#game-panel, dialog, #tutorial) :is(input, textarea, select, summary, a):focus-visible { outline: 3px solid #8b551e; outline-offset: 3px; }
+#photo-return { opacity: 1; }
+@media (max-width: 480px) {
+  .panel-scroll { padding: 10px 8px 18px; }
+  .sound-channel { grid-template-columns: 46px minmax(0, 1fr) 3.5em; gap: 6px; }
+  .sound-channel input[type=range] { grid-column: 2; grid-row: auto; min-width: 0; }
+  .sound-channel output { grid-column: 3; }
+}
+@media (max-height: 450px) {
+  .panel-header { padding-block: 4px; }
+  #game-panel { top: calc(var(--hud-offset) + 4px); }
+  #game-panel.shop-fullscreen { top: 0; }
+}
+@media (prefers-reduced-motion: reduce) { button { transition: none !important; } }
+
+/* Settings: the section titles are plain dark lettering on the paper card (no green plaque). */
+#game-panel .settings-section > :is(h3, summary) {
+  border: 0 !important; border-image: none !important; background: none !important; box-shadow: none !important;
+  padding: 0 !important; margin: 0 0 8px !important; width: auto;
+}
+/* The music and sound switches: a round blue stone with the white icon, grey stone when off. */
+.sound-channel button.icon {
+  width: 46px; min-width: 46px; height: 46px; min-height: 46px; padding: 0 !important;
+  color: #fff !important; -webkit-text-stroke: 0 !important;
+}
+.sound-channel button.icon::before { border: 0 !important; border-image: none !important; background: url('/assets/ui/kit/round-blue.webp') center / contain no-repeat !important; }
+.sound-channel button.icon.sound-off::before { filter: grayscale(1) brightness(.9); }
+.sound-channel button.icon svg { width: 24px; height: 24px; position: relative; filter: drop-shadow(0 1px 0 #0b2a63); }
+.sound-channel output { color: var(--kit-ink); font-family: var(--kit-font); }
+/* They stay in the screen's top corners, where Paille's dialogue puts them (the kit's buttons are position: relative). */
+.paille-dialogue .paille-skip { position: absolute !important; top: max(12px, env(safe-area-inset-top)); right: max(16px, env(safe-area-inset-right)); }
+.paille-dialogue .paille-settings { position: absolute !important; top: max(12px, env(safe-area-inset-top)); left: max(16px, env(safe-area-inset-left)); }

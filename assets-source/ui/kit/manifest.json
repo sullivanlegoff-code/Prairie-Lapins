@@ -1,0 +1,276 @@
+{
+  "frame": {
+    "source": "assets-source/ui/kit/cadre.png",
+    "box": [
+      13,
+      12,
+      1560,
+      960
+    ],
+    "width": 780,
+    "height": 480,
+    "sourceSha256": "9558954a6115a8f199bc06ef843dab16065293e365744e0ebd7f5677bd7cf643",
+    "derivedSha256": "aab83e10ba01564fb161e5f46571ff286f4f4f2a1095e3ef18d4ffbff1fe117b",
+    "bytes": 32846
+  },
+  "parchment": {
+    "source": "assets-source/ui/kit/parchemin.png",
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "e5b31211f48be4c3841b4b8c6ef046b1899f3709de10bffc54894ef343e06ec2",
+    "derivedSha256": "b51f83ad0c932fba0ba73c329d24fe70a3ecea2d9deabd81a98f962e05eb781d",
+    "bytes": 14800
+  },
+  "plank": {
+    "source": "assets-source/ui/kit/planche.png",
+    "box": [
+      109,
+      219,
+      1954,
+      287
+    ],
+    "width": 1089,
+    "height": 160,
+    "sourceSha256": "a6613c60502ae3c5cc17212f8ddaffb355b10190effc93db5c15a05332a2531b",
+    "derivedSha256": "36c79540893be6b362efacb94fe4ea5eb25cb41491ddf9fd32447306996b3358",
+    "bytes": 23428
+  },
+  "button-green": {
+    "source": "assets-source/ui/kit/boutons.png",
+    "box": [
+      197,
+      32,
+      1049,
+      225
+    ],
+    "width": 597,
+    "height": 128,
+    "sourceSha256": "8e87ba6a922dace06b0ee458a8cfef5ccbeeb38a1a63ae9f8651bd6f52c18a09",
+    "derivedSha256": "f5a9c19f1cd836eeff3d7512fd9fcc4ce4c022b53b2d4d8852dce7bc345f4cf0",
+    "bytes": 10390
+  },
+  "button-blue": {
+    "source": "assets-source/ui/kit/boutons.png",
+    "box": [
+      197,
+      301,
+      1049,
+      223
+    ],
+    "width": 602,
+    "height": 128,
+    "sourceSha256": "8e87ba6a922dace06b0ee458a8cfef5ccbeeb38a1a63ae9f8651bd6f52c18a09",
+    "derivedSha256": "d4ea194f08a9224de5f744e0f47f07d6eb3dc341623211dc722f1dc418c44c6a",
+    "bytes": 9500
+  },
+  "button-red": {
+    "source": "assets-source/ui/kit/boutons.png",
+    "box": [
+      197,
+      570,
+      1049,
+      224
+    ],
+    "width": 599,
+    "height": 128,
+    "sourceSha256": "8e87ba6a922dace06b0ee458a8cfef5ccbeeb38a1a63ae9f8651bd6f52c18a09",
+    "derivedSha256": "fc50b9644848c6d8ca62c6f129d6bb40ce530b937c4b4b44bcd2c4e3b032ed66",
+    "bytes": 9616
+  },
+  "button-stone": {
+    "source": "assets-source/ui/kit/boutons.png",
+    "box": [
+      197,
+      832,
+      1049,
+      222
+    ],
+    "width": 605,
+    "height": 128,
+    "sourceSha256": "8e87ba6a922dace06b0ee458a8cfef5ccbeeb38a1a63ae9f8651bd6f52c18a09",
+    "derivedSha256": "a6f0276a1da217bc09c5d9b51c3325d490b0b7fd43c20887eaab763260f391ca",
+    "bytes": 11348
+  },
+  "close": {
+    "source": "assets-source/ui/kit/petits.png",
+    "box": [
+      41,
+      87,
+      379,
+      386
+    ],
+    "width": 157,
+    "height": 160,
+    "sourceSha256": "bf5abe30cf7566dbae1a948ce2099f01e77bd06dad632300013e8f2d3ec6ae3f",
+    "derivedSha256": "c26001a0fd9e998b9c845fc82871f493a58bcbb7b5427907997fb33cbe5bb1f5",
+    "bytes": 6758
+  },
+  "checkbox": {
+    "source": "assets-source/ui/kit/petits.png",
+    "box": [
+      496,
+      93,
+      340,
+      356
+    ],
+    "width": 122,
+    "height": 128,
+    "sourceSha256": "bf5abe30cf7566dbae1a948ce2099f01e77bd06dad632300013e8f2d3ec6ae3f",
+    "derivedSha256": "f7d87cc042607d52b3ad881cc242fac6de7508a4d9e5a43b6249bebdd261954d",
+    "bytes": 4586
+  },
+  "check": {
+    "source": "assets-source/ui/kit/petits.png",
+    "box": [
+      1032,
+      116,
+      416,
+      342
+    ],
+    "width": 156,
+    "height": 128,
+    "sourceSha256": "bf5abe30cf7566dbae1a948ce2099f01e77bd06dad632300013e8f2d3ec6ae3f",
+    "derivedSha256": "60b742817158226ca6ab020fc036cf6b793a0a6bea76785ac0a85a7065cfb390",
+    "bytes": 5192
+  },
+  "badge-alert": {
+    "source": "assets-source/ui/kit/petits.png",
+    "box": [
+      60,
+      587,
+      321,
+      328
+    ],
+    "width": 94,
+    "height": 96,
+    "sourceSha256": "bf5abe30cf7566dbae1a948ce2099f01e77bd06dad632300013e8f2d3ec6ae3f",
+    "derivedSha256": "922e61b752c956acd12c98c0a818c51f7e21d1edf0175419aa050f66cd9f4e8a",
+    "bytes": 4484
+  },
+  "tile": {
+    "source": "assets-source/ui/kit/petits.png",
+    "box": [
+      465,
+      569,
+      346,
+      351
+    ],
+    "width": 189,
+    "height": 192,
+    "sourceSha256": "bf5abe30cf7566dbae1a948ce2099f01e77bd06dad632300013e8f2d3ec6ae3f",
+    "derivedSha256": "ef0b2a89984f23e4b49a0425efcd3cfd83d3a01141dbcf7cebbf0c32158dbeb2",
+    "bytes": 8620
+  },
+  "counter": {
+    "source": "assets-source/ui/kit/petits.png",
+    "box": [
+      871,
+      652,
+      642,
+      192
+    ],
+    "width": 375,
+    "height": 112,
+    "sourceSha256": "bf5abe30cf7566dbae1a948ce2099f01e77bd06dad632300013e8f2d3ec6ae3f",
+    "derivedSha256": "6aa03ae4adb11653188472f967fa27c15935446beee6bed95398888c58f5357a",
+    "bytes": 7202
+  },
+  "round-blue": {
+    "source": "assets-source/ui/kit/petits2.png",
+    "box": [
+      56,
+      168,
+      401,
+      405
+    ],
+    "width": 158,
+    "height": 160,
+    "sourceSha256": "d937f4bc436a89f9dcd8af8d2c00aee222f102cb74ece5de0c662826270089e8",
+    "derivedSha256": "cf55c84ca178c5bde92ec7c27bf4253126d474384ca3006dec0cb7cbd6eee362",
+    "bytes": 5804
+  },
+  "medal": {
+    "source": "assets-source/ui/kit/petits2.png",
+    "box": [
+      516,
+      172,
+      453,
+      397
+    ],
+    "width": 183,
+    "height": 160,
+    "sourceSha256": "d937f4bc436a89f9dcd8af8d2c00aee222f102cb74ece5de0c662826270089e8",
+    "derivedSha256": "28ede0a44620cc05960b3eaf7408b77a6836491899d6e9d18fbe1c9a36cb90f7",
+    "bytes": 8960
+  },
+  "card": {
+    "source": "assets-source/ui/kit/petits2.png",
+    "box": [
+      1029,
+      208,
+      464,
+      317
+    ],
+    "width": 293,
+    "height": 200,
+    "sourceSha256": "d937f4bc436a89f9dcd8af8d2c00aee222f102cb74ece5de0c662826270089e8",
+    "derivedSha256": "0641fbe558504fe35958ffdc63d932ce999aaa4fa7dd0a6ef0085b4360753b47",
+    "bytes": 11832
+  },
+  "slate": {
+    "source": "assets-source/ui/kit/petits2.png",
+    "box": [
+      43,
+      686,
+      427,
+      165
+    ],
+    "width": 311,
+    "height": 120,
+    "sourceSha256": "d937f4bc436a89f9dcd8af8d2c00aee222f102cb74ece5de0c662826270089e8",
+    "derivedSha256": "ace8d688bb892f036715711d58e6ecb446fa6520affbcd260a56f9fe18a595d5",
+    "bytes": 8938
+  },
+  "fill": {
+    "source": "assets-source/ui/kit/petits2.png",
+    "box": [
+      516,
+      722,
+      553,
+      83
+    ],
+    "width": 320,
+    "height": 48,
+    "sourceSha256": "d937f4bc436a89f9dcd8af8d2c00aee222f102cb74ece5de0c662826270089e8",
+    "derivedSha256": "17879994991db1bb809cbd8224513587c3be9e20d5d313e8644d82dedf3390dc",
+    "bytes": 3598
+  },
+  "label": {
+    "source": "assets-source/ui/kit/petits2.png",
+    "box": [
+      1118,
+      704,
+      374,
+      122
+    ],
+    "width": 221,
+    "height": 72,
+    "sourceSha256": "d937f4bc436a89f9dcd8af8d2c00aee222f102cb74ece5de0c662826270089e8",
+    "derivedSha256": "627d8f82a03bb22937905d18f29ceb671030d0a98ac0d215f9888303e184c315",
+    "bytes": 4410
+  },
+  "missions": {
+    "source": "assets-source/ui/kit/missions.png",
+    "box": [
+      127,
+      20,
+      986,
+      1204
+    ],
+    "width": 138,
+    "height": 168,
+    "sourceSha256": "7bf377f2f61156b9dbf1eb97eaba01736c142978f22c0985747cb05cc09b9263",
+    "derivedSha256": "757b17610c43ee15b9424d83ebf24499faf668039a75de6d046dbbe4120bdfc1",
+    "bytes": 8178
+  }
+}
