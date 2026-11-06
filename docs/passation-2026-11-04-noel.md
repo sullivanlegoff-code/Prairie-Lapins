@@ -260,4 +260,4 @@ Non corrigé, connu : relâcher le lapin qui a reçu l'affection de la cuisine r
 
 Bases B de Gigi-rarafe, Champignon des bois et Pain d'épice ; 11 évolutions refaites (planches `output/planches/planche-v4.png` à `planche-v6.png`, hors Git). Six ont été repeintes de trois-quarts à la demande du propriétaire : Bouyoyo, Champignon, Pain d'épice, Vantablack, Rennes, Arkoko. La base de Pain d'épice reste de profil, approuvée telle quelle.
 
-Les accessoires de cuisine de ces 6 évolutions ont été placés sur une vue de contrôle, sans essai dans la vraie cuisine.
+Les dessins ont été validés par le propriétaire le 6 novembre. La toque et le bavoir de ces 6 évolutions ont été contrôlés dans la vraie cuisine (Chromium, Avocado toast, chaque lapin en commis et en goûteur) : aucune retouche nécessaire.
