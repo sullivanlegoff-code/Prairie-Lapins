@@ -61,17 +61,21 @@ export function mountSkyGiftsActivity(host: HTMLElement, options: {
     pop.textContent = text; pop.dataset.kind = kind; pop.classList.remove('shown'); void pop.offsetWidth; pop.classList.add('shown');
     clearTimeout(popTimer); popTimer = setTimeout(() => pop.classList.remove('shown'), kind === 'ready' ? 900 : 480);
   }
+  /** Every frame moves only the `translate` property (in stage units, centred on the element): no layout, smoother on a phone. */
+  const place = (element: HTMLElement, x: number, y: number | null) => {
+    element.style.translate = `calc(${(x * 100).toFixed(3)}cqw - 50%) ${y === null ? '0' : `calc(${(y * 100).toFixed(3)}cqh - 50%)`}`;
+  };
   function draw(now: number): void {
     if (!game) return;
-    const s = sleighAt(game, now);
-    sleigh.style.left = `${s.x * 100}%`; sleigh.style.top = `${SKY_GIFTS_GAME.sleighY * 100}%`; sleigh.dataset.facing = String(s.facing);
-    rabbitBox.style.left = `${game.basketX * 100}%`;
+    const s = sleighAt(game, now), facing = String(s.facing);
+    place(sleigh, s.x, SKY_GIFTS_GAME.sleighY); if (sleigh.dataset.facing !== facing) sleigh.dataset.facing = facing;
+    place(rabbitBox, game.basketX, null);
     const seen = new Set<number>();
     for (const gift of game.gifts) {
       seen.add(gift.id);
       let view = views.get(gift.id);
       if (!view) { view = document.createElement('img'); view.alt = ''; view.draggable = false; view.className = 'sky-gifts-gift'; view.dataset.kind = gift.kind; view.src = gift.kind === 'gift' ? art.gifts[gift.colour] : art.traps[gift.kind]; falling.append(view); views.set(gift.id, view); }
-      view.style.left = `${gift.x * 100}%`; view.style.top = `${gift.y * 100}%`;
+      place(view, gift.x, gift.y);
     }
     for (const [id, view] of views) if (!seen.has(id)) { view.remove(); views.delete(id); }
   }
