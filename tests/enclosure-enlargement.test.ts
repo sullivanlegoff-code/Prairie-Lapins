@@ -85,6 +85,22 @@ describe('the enlarged enclosure sizes', () => {
     }
   });
 
+  it('keeps the Ultra neige paintings inside the current footprints, larger level by level', () => {
+    let previousWidth = 0;
+    for (const level of LEVELS) {
+      const art = habitatArtFor({type: 'neige', level, ultra: true}, level)!, s = ENCLOSURE_SCALE[level], k = s * art.worldWidth / art.width, size = ENCLOSURE_FOOTPRINTS[level];
+      const halfWidth = size.width * CELL.x / 2, halfDepth = size.depth * CELL.y / 2;
+      expect(art.texture, `level ${level}`).toContain('habitat-glace');
+      expect(art.anchor.x * k, `level ${level} left`).toBeLessThanOrEqual(halfWidth);
+      expect((art.width - art.anchor.x) * k, `level ${level} right`).toBeLessThanOrEqual(halfWidth);
+      expect((art.height - art.anchor.y) * k, `level ${level} front`).toBeLessThanOrEqual(halfDepth);
+      expect(art.width * k).toBeGreaterThan(previousWidth); previousWidth = art.width * k;
+      const layout = habitatArtLayout(art);
+      expect(Math.max(-layout.zone.minX, layout.zone.maxX) * s).toBeLessThan(halfWidth);
+      expect(Math.max(-layout.zone.minY, layout.zone.maxY) * s).toBeLessThan(halfDepth);
+    }
+  });
+
   it('draws an enclosure with the factor of the era whose footprint it has', () => {
     expect(enclosureScale({})).toBe(1.38); expect(enclosureScale({footprintTier: 2})).toBe(1.4); expect(enclosureScale({footprintTier: 3})).toBe(1.3);
     expect(enclosureScale({footprintTier: 3, formerFootprint: 2})).toBe(1.12); expect(enclosureScale({formerFootprint: 2})).toBe(1.15);

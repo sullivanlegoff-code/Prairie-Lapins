@@ -146,7 +146,7 @@ Le propriétaire a laissé « total liberté » pour cette mission de nuit. Ses 
 
 **Îlot des Épiques** (`src/simulation/epicIslet.ts`, `src/config/epicIsletArt.ts`) :
 - 400 cœurs, dès le niveau 18 ;
-- il flotte au nord de l'île de départ, hors de la grille ;
+- il flotte au sud de l'île de départ, hors de la grille (déplacé le 6 novembre, voir plus bas) ;
 - c'est un second nid : deux croisements en même temps ;
 - ×1,1 sur les chances d'Épique, de Légendaire et de Benny sur ce nid.
 
@@ -157,12 +157,12 @@ Le propriétaire a laissé « total liberté » pour cette mission de nuit. Ses 
 - les parcelles déjà achetées n'en ont pas.
 
 **Enclos Ultra neige** (section du marché de Noël, onglet « Récompenses spéciales ») :
-- 400 sucres d'orge pour transformer un enclos neige de niveau 3 en palais de glace (`habitat.ultra`) ;
-- mêmes places qu'avant ; il reste après Noël, mais ne s'achète que pendant Noël ;
+- un habitat neuf en sucres d'orge, du niveau 1 au niveau 3 (voir « Corrections du 6 novembre ») ;
+- il reste après Noël, mais ne s'achète et ne s'améliore que pendant Noël ;
 - la peinture est servie sous le nom `habitat-glace.png` : un nom en « -neige » serait pris pour une copie enneigée par `prepare-noel-art.mjs`.
 
 **Perchoir de Benny et « Le vol de Benny »** (`src/simulation/bennyFlightGame.ts`, `src/ui/BennyFlightActivity.ts`) :
-- un bâtiment de la boutique (3 000 pièces, un seul), utilisable seulement si Benny est sur l'île ;
+- un bâtiment de la boutique (50 000 pièces, un seul), utilisable seulement si Benny est sur l'île ;
 - le jeu : toucher l'écran fait battre des ailes à Benny, qui passe entre des colonnes de bottes de foin ;
 - récompenses : 3 parties récompensées par jour, 3 pièces par colonne (60 au plus), et 1 cœur à la première partie du jour si Benny franchit 20 colonnes ; le record est gardé.
 
@@ -207,8 +207,29 @@ Les ancrages de la cuisine des nouveaux lapins (`src/config/cuisineAnchors.ts`) 
 
 Aucun essai iPhone.
 
+## Corrections du 6 novembre 2026 (commits `c9c5e1a`, `2b5a1cd` et suivant)
+
+**Ultra neige** : habitat neuf, acheté au niveau 1 et amélioré jusqu'au niveau 3 en sucres d'orge (100 / 150 / 250, `ULTRA_SNOW` dans `src/config/balance.ts`). Dessins : `habitat-glace-1.png`, `habitat-glace-2.png`, `habitat-glace.png`. Le niveau 2 dépassait de son emprise à l'avant avec les nouvelles tailles : ancrage corrigé, et `tests/enclosure-enlargement.test.ts` couvre maintenant les trois niveaux.
+
+**Enclos encore plus grands** : 6 × 5, 10 × 6, 12 × 7 (`ENCLOSURE_FOOTPRINTS`), dessin × 1,38 / 1,4 / 1,3. Une ancienne partie garde sa taille (`formerFootprint`, l'ère 1 ou 2) tant que l'enclos ne peut pas grandir au chargement (`src/simulation/enclosureGrowth.ts`). Le format reste v27, avec le champ `enclosureSizes`.
+
+**Benny** :
+- le perchoir coûte 50 000 pièces ;
+- « Le vol de Benny » a un nouveau sprite de 8 images où elle bat des ailes (`scripts/prepare-benny-flappy.mjs`) ;
+- pour le lag, le jeu ne déplace plus que des `transform` et la boucle Phaser dort pendant la partie ;
+- le clignement existait déjà dans `src/display/bennyTimeline.ts`. Il est vérifié image par image dans Chromium dans l'enclos, avec une horloge pas à pas (`page.clock`). Il se trouve sur le corps de l'enclos, que le vol cache : le « seulement dans l'enclos » vient de la lecture du code, pas d'une capture en vol.
+
+**Îlot des Épiques** : au sud de l'île de départ (`EPIC_ISLET.cell`).
+
+**Dadi évolué** (`src/display/dadiStageView.ts`) : 8 poses peintes plus son dessin évolué, changement toutes les 3,5 à 6,5 s. Le toucher ouvre sa fiche, qui lance sa chanson. Il tient alors son micro sur pied à deux mains jusqu'à la fin, puis revient à la normale. La fin de chanson n'a été vue ni dans Chromium ni sur iPhone, seulement dans le code (`themeFinished`).
+
+**En attente du propriétaire : planche v4** (`output/planches/planche-v4.png`, ignorée par Git, peintures dans `output/imagegen/nouveaux-lapins-v4/`). Propositions A/B pour les dessins de base de Gigi-rarafe, Champignon des bois et Pain d'épice, et pour 11 évolutions. Rien n'est intégré : c'est au propriétaire de choisir. Le jeu montre encore les anciens dessins. Règles : mémoire « rabbit-pose-evolution-rules ».
+
+**Astuce pour les captures** : la partie de test s'injecte dans `prairie-lapins.save.v1` sur le build du jeu (`npm run build`). Le build du laboratoire utilise une partie séparée et l'ignore.
+
 ## Ce qui reste
 
+0. Recevoir les choix du propriétaire sur la planche v4, puis les intégrer.
 1. Faire tester au propriétaire sur iPhone :
    - la taille des boules de neige (`SNOWBALL_ART` dans `src/config/winterArt.ts`) ;
    - le bonhomme (`SNOWMAN_ART`) ;

@@ -173,7 +173,7 @@ export const ULTRA_SNOW_LEVEL1_ART: HabitatArt = {
 };
 export const ULTRA_SNOW_LEVEL2_ART: HabitatArt = {
   type: 'neige', texture: 'habitat-glace-2', url: `${import.meta.env.BASE_URL}assets/habitats/habitat-glace-2.png`,
-  width: 627, height: 524, worldWidth: 1246 * 280 / 1254, anchor: {x: 313.5, y: 335},
+  width: 627, height: 524, worldWidth: 1246 * 280 / 1254, anchor: {x: 313.5, y: 346},
   source: {file: 'habitat-glace-2.png', size: 1365, crop: {x: 0, y: 0, width: 1365, height: 1141}, reduction: 1365 / 627},
 };
 export const ULTRA_SNOW_LEVEL_ART: Readonly<Record<HabitatLevel, HabitatArt>> = {1: ULTRA_SNOW_LEVEL1_ART, 2: ULTRA_SNOW_LEVEL2_ART, 3: ULTRA_SNOW_ART};

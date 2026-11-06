@@ -49,10 +49,17 @@ function claim(){for(let i=0;i<20;i++){const id=missions.activeMainMissions(s).f
 const needs=(r,challenge)=>!r.evolution?.done&&(challenges.EVOLUTION_CHALLENGES[r.species]??[]).includes(challenge)&&(r.evolution?.challenges?.[challenge]??0)<challenges.evolutionChallengeTarget(r.species,challenge);
 const shown=id=>missions.dailyMissionsOf(s).includes(id)&&!s.missions.daily.claimed.includes(id)&&missions.dailyProgress(s,id)<missionConfig.DAILY_MISSIONS[id].target;
 const free=r=>!care.rabbitAwayReason(s,r.id)&&!breeding.nestForParent(s,r.id);
-function spot(){for(let y=0;y<48;y++)for(let x=0;x<48;x++)if(!placement.buildingPlacementReason(s,x,y))return{x,y};return null;}
-function build(kind,habitatType){const pos=spot();return pos&&run({type:'buyBuilding',kind,...pos,...(habitatType?{habitatType}:{})});}
+function spot(kind){for(let y=0;y<48;y++)for(let x=0;x<48;x++)if(!placement.buildingPlacementReason(s,x,y,undefined,kind))return{x,y};return null;}
+function build(kind,habitatType){const pos=spot(kind);return pos&&run({type:'buyBuilding',kind,...pos,...(habitatType?{habitatType}:{})});}
 const room=species=>s.buildings.find(b=>!hab.habitatEntryReason(s,b,species));
-function home(species){if(room(species))return room(species);for(const b of s.buildings.filter(b=>hab.habitatAccepts(b,species)&&b.habitat.level<3&&(b.habitat.level<2||s.hearts>=statueReserve()+10)))if(run({type:'upgradeHabitat',id:b.id,fromLevel:b.habitat.level})&&room(species))return room(species);
+// An enclosure with no room for its next size (6 November 2026, larger enclosures): the player moves it where that size fits,
+// and asks for more land when none does, as the upgrade's refusal message tells a real player to.
+let wantLand=false;
+function grow(b){const tier=b.habitat.level+1;if(placement.upgradeFootprintReason(s,b.id,tier)){let cell=null;
+ for(let y=0;y<48&&!cell;y++)for(let x=0;x<48&&!cell;x++)if(!placement.footprintPlacementReason(s,placement.buildingFootprint({kind:'enclosure',x,y,footprintTier:tier}),{buildingId:b.id}))cell={x,y};
+ if(!cell||!run({type:'moveBuilding',id:b.id,...cell})){wantLand=true;return false;}}
+ return run({type:'upgradeHabitat',id:b.id,fromLevel:b.habitat.level});}
+function home(species){if(room(species))return room(species);for(const b of s.buildings.filter(b=>hab.habitatAccepts(b,species)&&b.habitat.level<3&&(b.habitat.level<2||s.hearts>=statueReserve()+10)))if(grow(b)&&room(species))return room(species);
  const duplicate=s.rabbits.filter(r=>hab.habitatAccepts(s.buildings.find(b=>b.id===r.enclosureId),species)&&s.rabbits.filter(other=>other.species===r.species).length>1).sort((a,b)=>a.affection-b.affection).find(r=>!breeding.nestForParent(s,r.id));if(duplicate)run({type:'release',id:duplicate.id});if(room(species))return room(species);
  build('enclosure',balance.SPECIES[species].types[0]);return room(species);}
 // Exact Paille guide, three free one-shot aids, manual harvest/transfer/welcome and rewards.
@@ -102,7 +109,7 @@ for(let day=0;day<70;day++){
  if(shown('pet-rabbits'))for(const r of s.rabbits.slice(0,missionConfig.DAILY_MISSIONS['pet-rabbits'].target))run({type:'petRabbit',rabbitId:r.id});
  for(const b of s.buildings.filter(b=>b.nursery))for(const baby of [...b.nursery.babies].filter(b=>b.readyAt<=now)){const dest=home(baby.birth.species);if(dest)run({type:'welcome',birthId:baby.birth.id,enclosureId:dest.id});}
  const nest=s.buildings.find(b=>b.kind==='nest');if(nest.breeding?.endsAt<=now)run({type:'transferBirth',id:nest.id,birthId:nest.breeding.birth.id});claim();
- if(s.acquiredParcels.length<9&&s.pattes>=land.extensionPrice(s)+800)run({type:'expand',parcelId:land.purchasableParcels(s)[0],expectedCost:land.extensionPrice(s)});
+ if(s.acquiredParcels.length<9&&s.pattes>=land.extensionPrice(s)+(wantLand?100:800)&&run({type:'expand',parcelId:land.purchasableParcels(s)[0],expectedCost:land.extensionPrice(s)}))wantLand=false;
  for(const species of balance.SHOP_SPECIES.filter(id=>!s.discovered.includes(id)&&rights.stateLevelAccess(s,{family:'species',id,action:'purchase'}).accessible)){if(s.pattes<balance.SPECIES[species].price+500)continue;const dest=home(species);if(dest)run({type:'buyRabbit',species,enclosureId:dest.id});}
  if(s.buildings.filter(b=>b.kind==='farm').length<2&&s.pattes>200)build('farm');
  if(day>=1&&!s.buildings.some(b=>b.kind==='kitchen')&&s.pattes>1000)build('kitchen');
