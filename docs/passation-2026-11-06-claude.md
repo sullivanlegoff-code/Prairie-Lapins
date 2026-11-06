@@ -46,7 +46,7 @@ La mémoire de l'ancien compte se trouve dans le dossier du projet sous `~/.clau
 
 ## Prochaine étape
 
-Le propriétaire doit essayer sur iPhone le vol et l'apparition de Benny. Attends son retour avant d'y retoucher.
+**Fait le 6 novembre :** le propriétaire a essayé sur iPhone le vol et l'apparition de Benny et a tout accepté (« Ok j'accepte tout »). Ces deux parties sont validées ; n'y retouche pas sans qu'il le demande.
 
 - **Serveur iPhone** : `node node_modules/vite/bin/vite.js preview --outDir netlify-site --port 5174 --strictPort --host 0.0.0.0 --configLoader runner`. Celui de l'ancienne session peut s'arrêter avec elle.
 - **Adresse** : `http://10.59.135.114:5174/` lors du dernier contrôle. Vérifie-la avec `ipconfig`, elle peut changer.
