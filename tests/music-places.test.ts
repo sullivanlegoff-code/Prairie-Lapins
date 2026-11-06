@@ -119,6 +119,8 @@ describe('musique : chill partout, Indian vibe en cuisine', () => {
     music.playTheme('dadi'); await flush(); expect(told).toHaveLength(1);
     elements.find(e => e.src === 'dadi.mp3')!.emit('ended'); await flush(); expect(told.at(-1)).toEqual([null, true]);
     music.setEnabled(false); music.playTheme('dadi'); await flush(); expect(told.at(-1)).toEqual(['dadi', false]);
+    // Music off, nothing is held: it never starts by itself when the music comes back, and another touch sings again.
+    expect(music.playingTheme).toBeNull();
     music.setPlace('kitchen'); expect(told.at(-1)).toEqual([null, false]);
   });
 });

@@ -19,10 +19,10 @@ export const CUISINE_TIP = {pattes: 5, grass: 1} as const;
 // Cushions dear in Hearts since the Christmas update (owner, 5 November 2026; 10 / 25 / 50 before); every save goes back to 2 at most.
 export const NURSERY = {initialCapacity: 1, maxCapacity: 4, unlockHearts: {1: 40, 2: 120, 3: 250}} as const;
 /**
- * The islet of the Epics (owner, 5 November 2026): a small islet floating north of the island, off the land grid, bought once
+ * The islet of the Epics (owner, 5 November 2026): a small islet floating south of the island (moved on 6 November), off the land grid, bought once
  * for `hearts` Hearts from player level `unlockLevel`. Its nest runs a second breeding at the same time as the island's, with
  * the chances of the Epics, the Legendaries and Benny multiplied by `bonus` (+10 %); the nursery keeps its cushions.
- * `cell`: the islet nest's top-left fine cell (a 4 × 4 nest), above the start island beyond the north edge of the land grid,
+ * `cell`: the islet nest's top-left fine cell (a 4 × 4 nest), below the start island beyond the south edge of the land grid,
  * so the island's growth never reaches it.
  */
 /**

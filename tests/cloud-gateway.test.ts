@@ -1,4 +1,5 @@
 import {afterEach, expect, it, vi} from 'vitest';
+import {encodeGame} from '../src/persistence/json';
 import type {SupabaseClient} from '@supabase/supabase-js';
 import {createGame} from '../src/simulation';
 import {CLOUD_REQUEST_TIMEOUT, remoteSave, SupabaseGateway} from '../src/cloud/gateway';
@@ -28,7 +29,7 @@ it('le gateway traduit les erreurs, valide le reçu et transmet les paramètres 
   const g = new SupabaseGateway(client);
   expect((await g.read(owner))?.revision).toBe(5); expect(eq).toHaveBeenCalledWith('owner_id', owner);
   expect(await g.commit(request)).toEqual({status: 'ok', owner, revision: 5, savedAt: r.saved_at, operation: r.operation_id});
-  expect(rpc).toHaveBeenCalledWith('prairie_commit', {p_owner: owner, p_expected: 4, p_operation: r.operation_id, p_state: r.state});
+  expect(rpc).toHaveBeenCalledWith('prairie_commit', {p_owner: owner, p_expected: 4, p_operation: r.operation_id, p_state: JSON.parse(encodeGame(request.state))});
   rpc.mockReturnValueOnce(response({...r, status: 'outdated'}));
   await expect(g.commit(request)).rejects.toMatchObject({code: 'outdated'});
   rpc.mockReturnValueOnce(response(null, {status: 401}));

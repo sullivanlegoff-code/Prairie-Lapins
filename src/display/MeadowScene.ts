@@ -788,7 +788,12 @@ export class MeadowScene extends Phaser.Scene {
     if (this.snowmanBuild) return;
     const id = this.current && christmasActive() ? snowmanToday(this.current, this.simulationNow()) : null;
     if (!id) { this.snowman?.image.destroy(); this.snowman = null; return; }
-    if (this.snowman?.enclosureId === id && this.snowman.image.texture.key === SNOWMAN_ART.steps[2].texture) return;
+    if (this.snowman?.enclosureId === id && this.snowman.image.texture.key === SNOWMAN_ART.steps[2].texture) {
+      // Already built: it only follows its enclosure, moved or enlarged.
+      const b = this.current?.buildings.find(x => x.id === id);
+      if (b) { const center = toScreen(buildingCenter(b)), spot = this.snowmanSpot(b); this.snowman.image.setPosition(center.x + spot.x, center.y + spot.y); }
+      return;
+    }
     this.placeSnowman(id, 3);
   }
   /** Who may throw snowballs: the same rabbits as a chase, never a chaser. */
@@ -934,6 +939,10 @@ export class MeadowScene extends Phaser.Scene {
       this.buildingsLayer.add(image); this.buildingsLayer.sort('depth');
     }
     if (!this.marketImage) return;
+    // The market makes way when the jump-rope islet is bought: the picture moves with its touch area.
+    if (this.marketImage.x !== p.x || this.marketImage.y !== p.y) {
+      this.marketImage.setPosition(p.x, p.y).setDepth(p.y); this.buildingsLayer.sort('depth'); this.marketLights?.setPosition(p.x, p.y);
+    }
     const glow = garlandLevel(localHour(date));
     if (!this.marketLights && glow > 0 && this.optionalArt(art.night.texture, art.night.url)) {
       const lights = this.marketLights = this.add.image(p.x, p.y, art.night.texture);

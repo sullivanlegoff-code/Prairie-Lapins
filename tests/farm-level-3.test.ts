@@ -1,4 +1,5 @@
 import {describe, expect, it} from 'vitest';
+import {xpAfterSlowdown} from '../src/simulation/progression';
 import {act, createGame, decodeGame, encodeGame} from '../src/simulation';
 import {FANCY_ORDER_IDS, FARM_UPGRADES, HOUR, ORDERS, farmDuration, orderFarmLevel} from '../src/config/balance';
 import {cumulativeLevelXp} from '../src/simulation/progression';
@@ -112,7 +113,8 @@ describe('farm level 3 saves', () => {
       let {s, id} = setup(22, farmLevel); s = run(s, {type: 'startOrder', id, recipe: farmLevel === 2 ? 'banane' : 'laitue'});
       expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: s});
       const raw = JSON.parse(encodeGame(s)); raw.version = 22;
-      expect(decodeGame(JSON.stringify(raw))).toEqual({ok: true, state: s});
+      // An older save's XP is on the curve without the slow-down: only that changes.
+      expect(decodeGame(JSON.stringify(raw))).toEqual({ok: true, state: {...s, progression: {...s.progression, totalXp: xpAfterSlowdown(s.progression.totalXp)}}});
     }
   });
 });

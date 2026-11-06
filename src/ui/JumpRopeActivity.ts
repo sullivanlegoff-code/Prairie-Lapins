@@ -7,6 +7,8 @@ import {portrait} from './portraits';
 import {JUMP_ROPE_ISLAND_URL, JUMP_ROPE_KIOSK_URL} from '../display/agency';
 import {drawJumpRopeSky} from '../display/jumpRopeSky';
 import {JUMP_ROPE_PIECES} from '../config/jumpRopeArt';
+import {FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
+import {pausableClock, settleCard} from './activityPause';
 
 /** Two carriers turn the rope, the athlete jumps (looks only). */
 export interface JumpRopeTrio {carriers: [CuisineRabbit, CuisineRabbit]; athlete: CuisineRabbit}
@@ -31,7 +33,7 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
   clock?: () => number;
   frame?: (step: () => void) => number;
 }) {
-  const clock = options.clock ?? (() => performance.now()), frame = options.frame ?? (step => requestAnimationFrame(step));
+  const time = pausableClock(options.clock ?? (() => performance.now())), clock = time.now, frame = options.frame ?? (step => requestAnimationFrame(step));
   const layer = document.createElement('div'); layer.className = 'jump-rope-activity'; layer.hidden = true;
   layer.setAttribute('role', 'dialog'); layer.setAttribute('aria-modal', 'true'); layer.setAttribute('aria-label', 'Corde à sauter');
   layer.innerHTML = `<div class="jump-rope-top"><p class="jump-rope-score" aria-live="polite"></p><p class="jump-rope-best"></p><p class="jump-rope-quota"></p><button type="button" data-jump-rope-exit>Quitter</button></div>
@@ -159,7 +161,9 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
     hud();
     if (game.over && running) finish();
   }
-  function loop(): void { if (!running) return; update(); frame(loop); }
+  let scheduled = false;
+  function schedule(): void { if (scheduled) return; scheduled = true; frame(() => { scheduled = false; loop(); }); }
+  function loop(): void { if (!running) return; update(); if (running) schedule(); }
   function tap(): void {
     if (!game || !running) return;
     const result = tapJumpRope(game, clock());
@@ -185,12 +189,12 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
     showCard(paragraph(final ? `${name()} a fait ${jumps(final)} !` : `${name()} s’est emmêlé les pattes !`, 'jump-rope-title'),
       ...(record ? [paragraph(previousBest ? `Nouveau record ! L’ancien était de ${previousBest}.` : 'Ton premier record !', 'jump-rope-record')] : previousBest ? [paragraph(`Ton record : ${jumps(previousBest)}`, 'jump-rope-rules')] : []),
       chips, again, button('Quitter', close, 'jumpRopeQuit'));
-    again.focus();
+    settleCard(card); again.focus();
   }
   function start(): void {
     previousBest = options.best?.() ?? 0; recordShown = false;
     game = startJumpRope(clock()); running = true; tickedAt = -Infinity; card.hidden = true; rabbitBox.classList.remove('stumble'); combo.classList.remove('shown'); react(null);
-    hud(); flash('Prêt ?', 'ready'); frame(loop);
+    hud(); flash('Prêt ?', 'ready'); schedule();
   }
   function intro(): void {
     game = null; running = false; previousBest = options.best?.() ?? 0; drawRope(0.5); hud(); react(null);
@@ -203,8 +207,17 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
   }
   function close(): void {
     if (layer.hidden) return;
-    running = false; game = null; team = null; layer.hidden = true; clearTimeout(popTimer); options.onExit?.();
+    running = false; time.resume(); game = null; team = null; layer.hidden = true; clearTimeout(popTimer);
+    window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: false})); options.onExit?.();
   }
+  /** The phone locked or another app opened: the game waits, frozen, instead of being lost to the time gone by. */
+  function pause(): void {
+    if (!running) return;
+    time.pause(); running = false;
+    showCard(paragraph('Partie en pause', 'jump-rope-title'), button('Reprendre', resume, 'jumpRopeResume'), button('Quitter', close, 'jumpRopeQuit'));
+  }
+  function resume(): void { time.resume(); running = true; card.hidden = true; schedule(); }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); }, {signal: abort.signal});
   stage.addEventListener('pointerdown', event => { event.preventDefault(); tap(); }, {signal: abort.signal});
   $<HTMLButtonElement>('[data-jump-rope-exit]').addEventListener('click', () => close(), {signal: abort.signal});
   document.addEventListener('keydown', event => {
@@ -222,7 +235,8 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
       paint(figure, chosen.athlete, 1);
       paint(carriers[0].querySelector('.jump-rope-figure')!, chosen.carriers[0], 1);
       paint(carriers[1].querySelector('.jump-rope-figure')!, chosen.carriers[1], -1);
-      layer.hidden = false; drawJumpRopeSky(sky); intro(); $<HTMLButtonElement>('[data-jump-rope-start]').focus();
+      layer.hidden = false; window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: true}));
+      drawJumpRopeSky(sky); intro(); $<HTMLButtonElement>('[data-jump-rope-start]').focus();
     },
     close, update, tap,
     dispose() { close(); abort.abort(); resize?.disconnect(); layer.remove(); },

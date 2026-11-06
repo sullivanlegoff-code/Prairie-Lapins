@@ -11,6 +11,8 @@ export class MusicDirector {
   private enabled = true;
   private place: MusicPlace = 'meadow';
   private theme: MusicPlayer | null = null;
+  /** A theme asked for with the music off: the listeners were told, and nothing plays. */
+  private silentTheme = false;
   /** Told when a theme starts (its name, and whether it is heard) or ends (null). */
   onThemeChange: ((name: string | null, audible: boolean) => void) | null = null;
   constructor(readonly meadow: MusicPlayer, readonly kitchen: MusicPlayer, private themes: Readonly<Record<string, MusicPlayer>> = {}) { this.apply(); }
@@ -22,7 +24,7 @@ export class MusicDirector {
   setPlace(place: MusicPlace): void {
     if (place === this.place) return;
     this.place = place;
-    if (place === 'kitchen') this.endTheme();
+    if (place === 'kitchen') { this.endTheme(); if (this.silentTheme) { this.silentTheme = false; this.onThemeChange?.(null, this.enabled); } }
     this.apply();
   }
   get current(): MusicPlace { return this.place; }
@@ -32,6 +34,9 @@ export class MusicDirector {
     const player = this.themes[name];
     if (!player || this.place === 'kitchen' || this.theme === player) return;
     this.endTheme();
+    // Music off: no theme is held, so it can never start by itself when the music comes back. The listeners still hear of it.
+    if (!this.enabled) { this.silentTheme = true; this.onThemeChange?.(name, false); return; }
+    this.silentTheme = false;
     this.theme = player;
     this.apply();
     this.onThemeChange?.(name, this.enabled);

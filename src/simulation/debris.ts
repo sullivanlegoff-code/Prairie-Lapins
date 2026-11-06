@@ -18,7 +18,7 @@ export const DEBRIS = {
   /** Relative price of each kind (two of each per parcel: their mean is 1). */
   weight: {rocher: 1.3, buisson: 1, herbes: .7} satisfies Record<DebrisKind, number>,
 } as const;
-export const DEBRIS_NAMES: Record<DebrisKind, string> = {rocher: 'Rocher', buisson: 'Buisson sauvage', herbes: 'Mauvaises herbes'};
+export const DEBRIS_NAMES: Record<DebrisKind, string> = {rocher: 'Rocher', buisson: 'Buisson sauvage', herbes: 'Broussailles'};
 
 /** The debris of a parcel just bought for `price` pattes, spread without overlap by `rng`; `nextId` names them. */
 export function parcelDebris(parcel: ParcelId, price: number, rng: () => number, nextId: () => string): Debris[] {

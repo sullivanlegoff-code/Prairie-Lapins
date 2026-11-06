@@ -1,6 +1,6 @@
 import {historicalIncomeRoll} from '../simulation/time';
 import {MAX_APPLIED_ADJUSTMENTS} from '../simulation/adjustments';
-import {cumulativeLevelXp, nextLevelCost} from '../simulation/progression';
+import {cumulativeLevelXp, nextLevelCost, xpAfterSlowdown} from '../simulation/progression';
 import {establishHistoricalLevelRights} from '../simulation/levelRights';
 import {isUltimate} from '../simulation/affection';
 import {classicLookReason} from '../simulation/forest';
@@ -17,7 +17,7 @@ import {type HabitatType, HABITAT_TYPES, HABITAT_LEVELS, habitatLevel} from '../
 import {MAIN_MISSION_IDS, DAILY_MISSION_IDS, DAILY_MISSIONS, DAILY_PICK_COUNT} from '../config/missions';
 import {cycleIndexAt} from '../simulation/missions';
 import {z} from 'zod';
-import {BALANCE, BUILDING_KINDS, CARE_KINDS, SALON, JUMP_ROPE, LEGACY_BREEDING_DURATION, EPIC_ISLET, BENNY_FLIGHT, CUISINE_FULL_REWARDS_PER_CYCLE, HOUR, LEGACY_ORDER_CROPS, TRAVEL, tripHearts, NURSERY, ORDERS, type OrderId, SHOP_SPECIES, SPECIES, SPECIES_IDS, GUARANTEE_SPECIES, growthDuration, orderFarmLevel, type SpeciesId} from '../config/balance';
+import {BALANCE, FOREST, BUILDING_KINDS, CARE_KINDS, SALON, JUMP_ROPE, LEGACY_BREEDING_DURATION, EPIC_ISLET, BENNY_FLIGHT, CUISINE_FULL_REWARDS_PER_CYCLE, HOUR, LEGACY_ORDER_CROPS, TRAVEL, tripHearts, NURSERY, ORDERS, type OrderId, SHOP_SPECIES, SPECIES, SPECIES_IDS, GUARANTEE_SPECIES, growthDuration, orderFarmLevel, type SpeciesId} from '../config/balance';
 import type {GameState} from '../state/types';
 import {ALL_DECORATION_IDS, DECORATION_IDS, RETIRED_DECORATION_IDS, MAX_DECORATIONS, isChristmasDecoration} from '../config/decorations';
 import {CHRISTMAS_CHALLENGES, CHRISTMAS_CHALLENGE_IDS, CHRISTMAS_PICK_COUNT, MAX_CANDIES, SKY_GIFTS} from '../config/christmasEvent';
@@ -458,10 +458,13 @@ function migrateV25(raw: object): void {
 /**
  * v26 → v27, the Christmas update's economy (owner, 5 November 2026). Paille's counter is gone (`market`, dropped before any
  * migration). Every nursery goes back to 2 cushions at most, with no refund; a cushion still holding a baby is kept, so nothing
- * is lost. A trip under way brings the Hearts of the new 1–5 scale.
+ * is lost. A trip under way brings the Hearts of the new 1–5 scale. The player keeps the level reached: the slow-down above level 20
+ * applies from there on.
  */
-function migrateV26(raw: object): void {
-  const save = raw as {version: number; buildings?: unknown; travel?: {trips?: unknown}};
+function migrateV26(raw: object, xpOnCurrentCurve: boolean): void {
+  const save = raw as {version: number; buildings?: unknown; travel?: {trips?: unknown}; progression?: {totalXp?: unknown}};
+  const xp = save.progression && typeof save.progression === 'object' ? save.progression.totalXp : null;
+  if (!xpOnCurrentCurve && typeof xp === 'number' && Number.isSafeInteger(xp) && xp >= 0) save.progression!.totalXp = xpAfterSlowdown(xp);
   if (Array.isArray(save.buildings)) for (const b of save.buildings) {
     const n = b && typeof b === 'object' ? (b as {nursery?: {capacity?: unknown; babies?: unknown}}).nursery : null;
     if (!n || typeof n.capacity !== 'number' || !Array.isArray(n.babies)) continue;
@@ -515,14 +518,16 @@ export function decodeGame(json: string): DecodeResult {
   if (raw && typeof raw === 'object' && 'version' in raw && (raw.version as number) < 27) delete (raw as {market?: unknown}).market;
   // Only a v27 save may say the era of its enclosure sizes: an older one had the sizes of its own time, whatever it carries.
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version !== SAVE_VERSION) delete (raw as {enclosureSizes?: unknown}).enclosureSizes;
-  if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 16) raw = migrateV16(raw);
+  // `migrateV16` already converts its XP to the current curve, level and share kept.
+  const fromV16 = !!raw && typeof raw === 'object' && 'version' in raw && raw.version === 16;
+  if (fromV16) raw = migrateV16(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 17) raw = migrateV17(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 18) raw = migrateV18(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && (raw.version === 19 || raw.version === 20 || raw.version === 21 || raw.version === 22)) raw.version = 23;
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 23) migrateV23(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 24) migrateV24(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 25) migrateV25(raw);
-  if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 26) migrateV26(raw);
+  if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 26) migrateV26(raw, fromV16);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === SAVE_VERSION && !('enclosureSizes' in raw)) migrateEnclosureSizes(raw);
   settleStorageCaps(raw);
   const parsed = schema.safeParse(raw);
@@ -540,6 +545,12 @@ export function decodeGame(json: string): DecodeResult {
   // The old drawing put back at the Forêt de Brocéliande is dropped without the forest or on a rabbit that has not evolved,
   // never a reason to refuse the save.
   for (const rabbit of state.rabbits) if (classicLookReason(state, rabbit)) { delete rabbit.classicLook; delete rabbit.lookChange; }
+  // A damaged or edited file never blocks the forest: at most one change, and never longer than a change lasts.
+  let lookChangeSeen = false;
+  for (const rabbit of state.rabbits) if (rabbit.lookChange) {
+    if (lookChangeSeen) delete rabbit.lookChange;
+    else { lookChangeSeen = true; rabbit.lookChange.endsAt = Math.min(rabbit.lookChange.endsAt, state.lastSimulatedAt + FOREST.changeMs); }
+  }
   const rabbitIds = new Set(state.rabbits.map(rabbit => rabbit.id));
   for (const id of Object.keys(state.cuisine.affectionCycles))
     if (!rabbitIds.has(id)) delete state.cuisine.affectionCycles[id];

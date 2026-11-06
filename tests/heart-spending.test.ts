@@ -1,4 +1,5 @@
 import {describe, expect, it} from 'vitest';
+import {xpAfterSlowdown} from '../src/simulation/progression';
 import {act, advance, createGame, decodeGame, encodeGame} from '../src/simulation';
 import {HOUR, ORDERS, orderFarmLevel, type OrderId} from '../src/config/balance';
 import {cumulativeLevelXp} from '../src/simulation/progression';
@@ -48,10 +49,10 @@ describe('permanent heart spending', () => {
     let s = setup('farm'); const farm = s.buildings.at(-1)!; farm.farmLevel = 2;
     s = run(s, {type: 'startOrder', id: farm.id, recipe: 'banane'});
     const raw = JSON.parse(encodeGame(s)); raw.version = 18; delete raw.buildings.at(-1).farmLevel;
-    const decoded = decodeGame(JSON.stringify(raw)); expect(decoded).toEqual({ok: true, state: s});
+    const decoded = decodeGame(JSON.stringify(raw)); expect(decoded).toEqual({ok: true, state: {...s, progression: {...s.progression, totalXp: xpAfterSlowdown(s.progression.totalXp)}}}); // An older save's XP is on the curve without the slow-down.
     let a = setup('agency'); a = run(a, {type: 'startTrip', rabbitId: a.rabbits[0].id});
     const old = JSON.parse(encodeGame(a)); old.version = 18; old.travel = {welcomed: false, trip: old.travel.trips[0]};
-    expect(decodeGame(JSON.stringify(old))).toEqual({ok: true, state: a});
+    expect(decodeGame(JSON.stringify(old))).toEqual({ok: true, state: {...a, progression: {...a.progression, totalXp: xpAfterSlowdown(a.progression.totalXp)}}});
     expect(decodeGame('{"version":21}')).toEqual({ok: false, reason: 'INVALID_STATE'}); // 21 is the current version: an empty save is invalid, not unsupported
   });
   it('upgrades the agency for 40 then 120 hearts and freezes food at departure', () => {

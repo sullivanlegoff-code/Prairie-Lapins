@@ -2,6 +2,7 @@ import {setCurrencyText} from '../display/currency';
 import {BENNY_FLIGHT_ART, BENNY_FLAPPY, FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
 import {advanceBennyFlight, flapBennyFlight, startBennyFlight, BENNY_FLIGHT_GAME, type BennyFlightGame} from '../simulation/bennyFlightGame';
 import type {Rabbit} from '../state/types';
+import {pausableClock, settleCard} from './activityPause';
 
 /**
  * « Le vol de Benny » (src/simulation/bennyFlightGame.ts holds the rules): a full-screen layer like « Les cadeaux du ciel ».
@@ -19,7 +20,7 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
   clock?: () => number;
   frame?: (step: () => void) => number;
 }) {
-  const clock = options.clock ?? (() => performance.now()), frame = options.frame ?? (step => requestAnimationFrame(step));
+  const time = pausableClock(options.clock ?? (() => performance.now())), clock = time.now, frame = options.frame ?? (step => requestAnimationFrame(step));
   const art = BENNY_FLIGHT_ART;
   const layer = document.createElement('div'); layer.className = 'benny-flight-activity'; layer.hidden = true;
   layer.setAttribute('role', 'dialog'); layer.setAttribute('aria-modal', 'true'); layer.setAttribute('aria-label', 'Le vol de Benny');
@@ -100,7 +101,9 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
     draw(); hud();
     if (game.over && running) finish();
   }
-  function loop(): void { if (!running) return; update(); frame(loop); }
+  let scheduled = false;
+  function schedule(): void { if (scheduled) return; scheduled = true; frame(() => { scheduled = false; loop(); }); }
+  function loop(): void { if (!running) return; update(); if (running) schedule(); }
   function flap(): void {
     if (!game || !running) return;
     const now = clock(); flapBennyFlight(game, now);
@@ -118,13 +121,13 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
     showCard(paragraph(final ? `Benny a franchi ${bales(final)} !` : 'Benny s’est posée un peu trop tôt.', 'benny-flight-title'),
       ...(record ? [paragraph(previousBest ? `Nouveau record ! L’ancien était de ${previousBest}.` : 'Ton premier record !', 'benny-flight-record')] : previousBest ? [paragraph(`Ton record : ${bales(previousBest)}`, 'benny-flight-rules')] : []),
       chips, again, button('Quitter', close, 'bennyFlightQuit'));
-    again.focus();
+    settleCard(card); again.focus();
   }
   function start(): void {
     previousBest = options.best?.() ?? 0; shownPassed = 0;
     for (const view of views.values()) view.remove(); views.clear();
     game = startBennyFlight(clock()); running = true; card.hidden = true;
-    hud(); draw(); flash('Touche pour voler !', 'ready'); frame(loop);
+    hud(); draw(); flash('Touche pour voler !', 'ready'); schedule();
   }
   function intro(): void {
     game = startBennyFlight(clock()); running = false; previousBest = options.best?.() ?? 0; draw(); hud();
@@ -134,9 +137,17 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
   }
   function close(): void {
     if (layer.hidden) return;
-    running = false; game = null; layer.hidden = true; clearTimeout(popTimer);
+    running = false; time.resume(); game = null; layer.hidden = true; clearTimeout(popTimer);
     window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: false})); options.onExit?.();
   }
+  /** The phone locked or another app opened: the game waits, frozen, instead of being lost to the time gone by. */
+  function pause(): void {
+    if (!running) return;
+    time.pause(); running = false;
+    showCard(paragraph('Partie en pause', 'benny-flight-title'), button('Reprendre', resume, 'bennyFlightResume'), button('Quitter', close, 'bennyFlightQuit'));
+  }
+  function resume(): void { time.resume(); running = true; card.hidden = true; schedule(); }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); }, {signal: abort.signal});
   window.addEventListener('resize', () => { if (!layer.hidden) measure(); }, {signal: abort.signal});
   stage.addEventListener('pointerdown', event => { event.preventDefault(); flap(); }, {signal: abort.signal});
   $<HTMLButtonElement>('[data-benny-flight-exit]').addEventListener('click', () => close(), {signal: abort.signal});

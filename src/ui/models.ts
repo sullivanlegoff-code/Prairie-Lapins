@@ -34,6 +34,7 @@ export const REFUSALS: Record<Refusal | 'NO_GAME' | 'DISPOSED' | 'SALE_NOT_SAVED
   INVALID_NAME: 'Nom refusé : 32 caractères au plus, sans retour à la ligne ni caractère de contrôle.',
   UPGRADE_BLOCKED_BUILDING: 'Pas assez de place pour agrandir : un autre bâtiment occupe la zone voisine. Déplace-le d’abord ; rien n’est déplacé automatiquement, rien n’est payé.',
   UPGRADE_BLOCKED_DECORATION: 'Pas assez de place pour agrandir : une décoration occupe la zone voisine. Déplace ou range-la d’abord ; rien n’est payé.',
+  UPGRADE_BLOCKED_DEBRIS: 'Pas assez de place pour agrandir : des débris encombrent la zone voisine. Touche-les pour les enlever ; rien n’est payé.',
   UPGRADE_BLOCKED_LAND: 'Pas assez de place pour agrandir : la zone voisine n’est pas du terrain acquis. Déplace l’enclos ou agrandis l’île ; rien n’est payé.',
   TYPE_INCOMPATIBLE: 'Type incompatible.', MAX_HABITAT_LEVEL: 'Niveau maximal atteint.', MAX_NURSERY_CAPACITY: 'Capacité maximale : les quatre couchages sont débloqués.',
   ALREADY_CLAIMED: 'Cette récompense a déjà été réclamée.', CYCLE_EXPIRED: 'Ce cycle a expiré. Consulte les nouvelles missions.', RESOURCE_LIMIT: 'Le solde est trop élevé pour recevoir cette récompense.',

@@ -186,6 +186,14 @@ describe('Forêt de Brocéliande', () => {
     // The change over, the next rabbit may go.
     expect(rabbit(run(later, {type: 'toggleClassicLook', rabbitId: b}), b).lookChange).toBeDefined();
   });
+  it('never lets a damaged save block the forest: one change at most, never longer than a change lasts', () => {
+    const {s, ids: [a, b]} = setup([['paille', 30], ['neige', 45]]); markEvolved(s, a); markEvolved(s, b);
+    s.rabbits.find(r => r.id === a)!.lookChange = {endsAt: s.lastSimulatedAt + 1e12};
+    s.rabbits.find(r => r.id === b)!.lookChange = {endsAt: s.lastSimulatedAt + 1000};
+    const decoded = decodeGame(encodeGame(s)); if (!decoded.ok) throw Error(decoded.reason);
+    expect(decoded.state.rabbits.find(r => r.id === a)!.lookChange?.endsAt).toBe(s.lastSimulatedAt + FOREST.changeMs);
+    expect(decoded.state.rabbits.find(r => r.id === b)!.lookChange).toBeUndefined();
+  });
   it('keeps the time left of a change when the clock jumps back', () => {
     const {s, ids: [a]} = setup([['paille', 30]]); markEvolved(s, a); s.lastSimulatedAt = 100 * 3_600_000;
     const asked = run(s, {type: 'toggleClassicLook', rabbitId: a}), now = s.lastSimulatedAt - 10 * 3_600_000;

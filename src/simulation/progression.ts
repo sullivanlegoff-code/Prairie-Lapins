@@ -114,6 +114,15 @@ function progression(totalXp:number,c:ProgressionConfig):PlayerProgression {
 export function progressionFromXp(totalXp:number,c:ProgressionConfig=PROGRESSION):PlayerProgression {
   integer(totalXp,'Total XP');validateQueryConfig(c);return progression(totalXp,c);
 }
+/**
+ * The XP of the same level and the same share of it once the slow-down above level 20 applies (Christmas update): a save written
+ * with the published curve, without the slow-down, never goes back a level. Nothing changes up to the level the slow-down starts at.
+ */
+export function xpAfterSlowdown(totalXp:number,c:ProgressionConfig=PROGRESSION):number {
+  const slowdown=c.curve.slowdown;if(!slowdown)return totalXp;
+  const {slowdown:_published,...curve}=c.curve,before=progressionFromXp(totalXp,{...c,curve});if(before.level<=slowdown.fromLevel)return totalXp;
+  return cumulativeLevelXp(before.level,c)+(before.xpRequired===null?before.xpInLevel:Math.floor(before.xpInLevel/before.xpRequired*nextLevelCost(before.level,c)!));
+}
 export function addXp(totalXp:number,amount:number,c:ProgressionConfig=PROGRESSION):{progression:PlayerProgression;crossedLevels:number[]} {
   integer(totalXp,'Total XP');integer(amount,'Added XP');const next=sum(totalXp,amount);
   validateQueryConfig(c);const before=progression(totalXp,c), after=progression(next,c), crossedLevels:number[]=[];

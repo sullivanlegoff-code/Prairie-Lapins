@@ -142,7 +142,7 @@ Le propriétaire a laissé « total liberté » pour cette mission de nuit. Ses 
 - prix des cultures doublés, sauf le foin (10) ;
 - cœurs : la cuisine donne au plus +1 d'affection par jour au total, le salon donne des cœurs pour 2 soins par jour, les voyages de 1 à 5 cœurs, la corde à sauter seulement à la première partie du jour ;
 - le comptoir de Paille est retiré ;
-- la nurserie passe à 2 coussins au départ, déblocages à 40 / 120 / 250 cœurs.
+- la nurserie : une nouvelle partie commence à 1 coussin, une partie existante revient à 2 au plus (un coussin occupé par un bébé est gardé), déblocages à 40 / 120 / 250 cœurs.
 
 **Îlot des Épiques** (`src/simulation/epicIslet.ts`, `src/config/epicIsletArt.ts`) :
 - 400 cœurs, dès le niveau 18 ;
@@ -242,3 +242,16 @@ Aucun essai iPhone.
 
 - Ne committe jamais : `assets-source/Benny/`, les dossiers « évolution … » sous `assets-source/rabbits/*/`, `.claude/`, `output/`.
 - Le dépôt mélange des fins de ligne CRLF et LF (`core.autocrlf=true`). Les avertissements « LF will be replaced » sont normaux.
+
+## Audit du 6 novembre 2026
+
+Forêt de Brocéliande : changer de dessin prend 7 heures dans les deux sens, un seul lapin à la fois (`lookChange`, `src/simulation/forest.ts`).
+
+Corrigé par l'audit :
+- une partie publiée garde son niveau au chargement malgré le ralentissement après le niveau 20 (`xpAfterSlowdown`, `migrateV26`) ;
+- sauvegarde en ligne : la fin d'un changement de dessin et le défi « parent » du transfert automatique ne créent plus de faux conflit (`fingerprint`, format 3), et l'état envoyé porte l'ère des tailles d'enclos (`encodeGame` dans `gateway.commit`) ;
+- les trois jeux plein écran se mettent en pause quand le téléphone se verrouille (`src/ui/activityPause.ts`), et l'île s'endort derrière les cadeaux et la corde ;
+- message clair quand un nouveau bâtiment n'a plus aucune place sur l'île (`hasRoomFor`) ;
+- le marché suit l'îlot de la corde, le bonhomme de neige suit son enclos, Dadi musique coupée ne bloque plus, textes de l'îlot « au sud », noms d'espèces retirés de la forêt, « Broussailles » au lieu de « Mauvaises herbes ».
+
+Non corrigé, connu : relâcher le lapin qui a reçu l'affection de la cuisine rouvre celle du jour ; une nurserie avec un bébé sur son 3e ou 4e coussin garde ces coussins ; les cadeaux du ciel bougent encore par `left` / `top`, sans `transform`.

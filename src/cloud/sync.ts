@@ -7,13 +7,14 @@ import type {Adjustment} from '../simulation/adjustments';
 import {CloudError, OUTDATED, type CloudGateway, type CommitRequest, type RemoteSave} from './gateway';
 
 import {CLOUD_KEY} from './accountState';
+import {xpAfterSlowdown} from '../simulation/progression';
 export {CLOUD_KEY} from './accountState';
 export const BACKUP_KEY = 'prairie-lapins.cloud.backup.v1';
 export const LINK_BACKUP_PREFIX = 'prairie-lapins.cloud.link-backup.v1.';
 class InvalidLink extends Error {}
 interface Link {owner: string; revision: number; baseline: string; syncedAt: string | null; pending: CommitRequest | null; format?: number}
 /** Version of the fingerprint below. A link written with another one (none: before v25) compares with `sameCore`. */
-export const FINGERPRINT_FORMAT = 2;
+export const FINGERPRINT_FORMAT = 3;
 export type SyncStatus = 'disconnected' | 'checking' | 'choice' | 'conflict' | 'saved' | 'waiting' | 'sending' | 'offline' | 'session' | 'error' | 'local-error' | 'outdated' | 'recovery';
 export interface SyncView {status: SyncStatus; syncedAt: string | null; remote: RemoteSave | null; message?: string}
 interface Timing {now(): number; set(callback: () => void, delay: number): unknown; clear(handle: unknown): void; uuid(): string}
@@ -42,13 +43,23 @@ export function fingerprint(state: GameState): string {
     ...(b.breeding ? [b.breeding.birth] : []), ...(b.nursery?.babies.map(x => x.birth) ?? []),
   ]).sort((a, b) => a.id.localeCompare(b.id));
   const {lastSimulatedAt: _time, purchaseUnlocks: _unlocks, levelAccessTransition: _rights, missions, initiation, buildings, cozy, christmas, ...rest} = s;
+  // A change of drawing ends by itself: only the drawing it leads to counts. The automatic transfer counts each parent's birth by
+  // itself too, so that challenge is passive once the transfer is.
+  const rabbits = rest.rabbits.map(({lookChange, classicLook, evolution, ...rabbit}) => {
+    let kept = evolution;
+    if (evolution && automaticTransfer) {
+      const {challenges, ...others} = evolution, {parent: _parent, ...counted} = challenges ?? {};
+      kept = {...others, ...(Object.keys(counted).length ? {challenges: counted} : {})};
+    }
+    return {...rabbit, ...((lookChange ? !classicLook : classicLook) ? {classicLook: true} : {}), ...(kept && Object.keys(kept).length ? {evolution: kept} : {})};
+  });
   // Christmas (v26): the sucres d'orge, today's snowman and the mini-game are actions of their own. The challenges drawn at a new
   // cycle are passive, like the daily missions; their claims change the sucres d'orge. Absent until something real happened, so
   // a game that never played the event keeps the same fingerprint as before it.
   const festive = christmas && (christmas.candies || christmas.snowman || christmas.skyGifts)
     ? {christmas: {candies: christmas.candies, snowman: christmas.snowman ?? null, skyGifts: christmas.skyGifts ?? null}} : {};
   // Shared time is passive, like income. The full bonds and album still travel with the next action save.
-  return JSON.stringify({...rest, ...festive, births, cozy: {souvenirs: cozy?.souvenirs ?? [], album: cozy?.album.filter(m => m.kind !== 'friendship') ?? []},
+  return JSON.stringify({...rest, rabbits, ...festive, births, cozy: {souvenirs: cozy?.souvenirs ?? [], album: cozy?.album.filter(m => m.kind !== 'friendship') ?? []},
     // A caress and the 3-day streak are actions of their own: they must reach the other devices (audit, 4 November 2026).
     missions: {events: missions.events, claimed: missions.claimed, nightOrderStarted: missions.nightOrderStarted, petted: missions.daily.petted ?? [], streak: missions.streak ?? null},
     initiation: initiation ? {used: initiation.used, birthId: initiation.birthId} : null,
@@ -66,13 +77,15 @@ export function fingerprint(state: GameState): string {
  */
 export function sameCore(a: string, b: string): boolean {
   try {
-    const core = (json: string) => {
+    const core = (json: string, adjust: (xp: number) => number = xp => xp) => {
       const f = JSON.parse(json) as {pattes?: unknown; grass?: unknown; hearts?: unknown; nextId?: unknown; progression?: unknown;
         rabbits?: {id: unknown; species: unknown; name?: unknown; affection: unknown}[]; buildings?: {id: unknown; kind: unknown}[]; missions?: {claimed?: unknown; events?: unknown}};
-      return JSON.stringify([f.pattes, f.grass, f.hearts, f.nextId, f.progression, f.missions?.claimed, f.missions?.events,
+      const p = f.progression as {totalXp?: unknown} | undefined, progression = p && typeof p.totalXp === 'number' ? {...p, totalXp: adjust(p.totalXp)} : p;
+      return JSON.stringify([f.pattes, f.grass, f.hearts, f.nextId, progression, f.missions?.claimed, f.missions?.events,
         (f.rabbits ?? []).map(r => [r.id, r.species, r.name ?? null, r.affection]), (f.buildings ?? []).map(x => [x.id, x.kind])]);
     };
-    return core(a) === core(b);
+    // A baseline from before the slow-down above level 20 says the XP of the published curve (see `migrateV26`).
+    return core(a) === core(b) || core(a) === core(b, xpAfterSlowdown);
   } catch { return false; }
 }
 

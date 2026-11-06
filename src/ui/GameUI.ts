@@ -47,7 +47,7 @@ import {FARM_ART, FARM_LEVEL_1_ART} from '../config/farmArt';
 import {NEST_ART} from '../config/nestArt';
 import {NURSERY_ART} from '../config/nurseryArt';
 import {KITCHEN_ART} from '../config/kitchenArt';
-import {upgradeFootprintReason} from '../simulation/placement';
+import {hasRoomFor, upgradeFootprintReason} from '../simulation/placement';
 import {habitatStats, habitatName, habitatEntryReason, habitatAccepts, welcomeDestinations, removeHabitatReason} from '../simulation/habitats';
 import {MAIN_MISSIONS, DAILY_MISSIONS, DAILY_BONUS, DAILY_PICK_COUNT, type Reward} from '../config/missions';
 import {initialMissionIds, activeMainMissions, visibleMainMissions, mainCatalogueUnlocked, availableMissionRewards, mainProgress, dailyCycleStart, dailyCycleEnd, cycleIndexAt, dailyBonusReady, dailyClaimable, dailyMissionsOf, dailyProgress} from '../simulation/missions';
@@ -714,7 +714,7 @@ export class GameUI {
   onReplacement(fresh = false): void {
     this.clearRabbitMove(); this.clearWelcome(); this.closeReception();
     this.pailleDialogue.close();
-    this.cuisine.close(false); this.jumpRope.close(); this.skyGifts.close(); this.skyGiftsPick = false;
+    this.cuisine.close(false); this.jumpRope.close(); this.skyGifts.close(); this.bennyFlight.close(); this.skyGiftsPick = false;
     this.history = []; this.scrollPositions.clear(); this.interactionPointers.clear(); this.pendingRender = false;
     this.shopHabitatSpecies=null;
     this.purchaseReturn = null; this.rabbitDestination = null; this.shopRabbitIssue = null; this.scene.setRabbitPurchase(null);
@@ -994,6 +994,8 @@ export class GameUI {
     const size = buildingSize(s.buildings.find(b => b.id === p.movingId) ?? {kind: p.kind}), footprint = `${size.width} × ${size.depth}`;
     this.content.append(node('p', `Touche un petit carré pour choisir le coin de l’empreinte ${footprint}. Déplacement par pas d’un carré. Glisse ou pince pour ajuster la vue.`));
     this.content.append(node('p', p.cell ? `Grille fine : (${p.cell.x}, ${p.cell.y}) · empreinte ${footprint}` : 'Aucune case sélectionnée.', 'badge'));
+    // No square anywhere for a new building: say so at once, instead of leaving the player looking for one.
+    if (!p.movingId && !p.starter && !hasRoomFor(s, p.kind)) this.content.append(node('p', `Plus aucune place de ${footprint} sur ton île. Achète une parcelle dans l’onglet Île de la boutique, ou déplace un bâtiment avec Aménager. Rien n’est payé.`, 'placement-invalid'));
     const reason = placementReason(s, p);
     this.content.append(node('p', !p.cell ? 'Choisis une destination.' : reason ? `× ${reason}` : `✓ Emplacement valide · empreinte ${footprint}`, !p.cell ? 'placement-pending' : reason ? 'placement-invalid' : 'placement-valid'));
     this.button(this.content, p.movingId ? 'Confirmer le déplacement · gratuit' : p.starter ? 'Placer gratuitement' : this.onboardingActive ? `Confirmer · ${price}` : `Acheter et placer · ${price}`, () => {
@@ -1212,7 +1214,7 @@ export class GameUI {
         const from=buildingSize(b),to=habitatFootprint(targetLevel),room=upgradeFootprintReason(s,id,targetLevel);
         const description=`Niveau de l’habitat ${level} → ${targetLevel} : places ${stats.capacity} → ${next.capacity} · stockage ${stats.cap} → ${next.cap} pattes · emprise ${from.width} × ${from.depth} → ${to.width} × ${to.depth} cases, vers la droite et vers le bas. Occupants, emplacement et stock actuel conservés.`;
         const card=this.card('Amélioration de l’habitat',description);card.dataset.upgradeHabitat=id;
-        const inHearts=next.currency==='hearts',ultra=!!b.habitat!.ultra,candies=ULTRA_SNOW.candies[targetLevel];
+        const ultra=!!b.habitat!.ultra,inHearts=!ultra&&next.currency==='hearts',candies=ULTRA_SNOW.candies[targetLevel];
         const action=ultra ?
           this.button(card,`Améliorer · ${candyAmount(candies)}`,()=>this.confirm('Améliorer cet habitat ?',`${description} Paiement : ${candyAmount(candies)}.`,()=>this.execute(command,'Habitat amélioré.')),
             access.locked?null:room?REFUSALS[room]:!christmasActive()?REFUSALS.EVENT_OVER:candiesOf(s)<candies?REFUSALS.NOT_ENOUGH_CANDIES:null,true) :
@@ -1237,8 +1239,8 @@ export class GameUI {
         const current = this.controller.getSnapshot().state; if (!current) return;
         const reason = removeHabitatReason(current, id);
         if (reason) { this.notice(REFUSALS[reason]); this.render(); return; }
-        const stock = incomeWhole(current.buildings.find(b => b.id === id)!.incomeUnits);
-        this.confirm('Retirer cet habitat ?', `Tu récoltes ${stock} pattes. Le prix d'achat et les améliorations ne sont pas remboursés.`,
+        const removed = current.buildings.find(b => b.id === id)!, stock = incomeWhole(removed.incomeUnits);
+        this.confirm('Retirer cet habitat ?', `Tu récoltes ${stock} pattes. Le prix d'achat et les améliorations ne sont pas remboursés.${removed.habitat?.ultra && !christmasActive() ? ' Attention : Noël est fini, tu ne pourras plus racheter cet enclos.' : ''}`,
           () => this.execute({type: 'removeHabitat', id}, 'Habitat retiré.', () => this.close()));
       }, removalReason ? REFUSALS[removalReason] : null, true).classList.add('action-danger');
       for (const r of residents) { const card = this.rabbitCard(s, r.id); this.button(card, 'Voir ce lapin', () => this.open({kind: 'rabbit', id: r.id}), null, true); this.content.append(card); }
@@ -1400,11 +1402,11 @@ export class GameUI {
   }
   /** The islet of the Epics in the shop: a second nest on its own islet, for Hearts (owner, 5 November 2026). */
   private epicIsletOffer(s: GameState): HTMLElement {
-    const card = this.card(EPIC_ISLET_NAME, 'Un second nid sur une petite île au nord · maximum 1'); card.dataset.epicIsletOffer = '';
+    const card = this.card(EPIC_ISLET_NAME, 'Un second nid sur une petite île au sud · maximum 1'); card.dataset.epicIsletOffer = '';
     card.classList.add('statue-offer'); const image = node('img'); image.src = EPIC_ISLET_ART.url; image.alt = ''; image.className = 'statue-thumbnail'; image.width = 72; image.height = 72; card.querySelector('.card-heading')!.prepend(image);
-    card.append(node('p', `Dès le niveau ${EPIC_ISLET.unlockLevel}, une petite île flotte au nord de ton île de départ, avec son propre nid. Lance une deuxième reproduction en même temps que celle de ton nid. ${EPIC_ISLET_TEXT}`, 'small'));
-    const reason = epicIsletReason(s), text = reason === 'LEVEL_REQUIRED' ? `Niveau ${EPIC_ISLET.unlockLevel} requis` : reason === 'BUILDING_LIMIT' ? 'Tu as déjà l’îlot : touche-le dans la prairie, au nord.' : reason ? REFUSALS[reason] : null;
-    this.button(card, `Acheter · ${heartAmount(EPIC_ISLET.hearts)}`, () => this.execute({type: 'buyEpicIslet'}, 'L’îlot des Épiques flotte au nord de ton île !', value => { this.open({kind: 'building', id: String(value)}, 'root'); }), text);
+    card.append(node('p', `Dès le niveau ${EPIC_ISLET.unlockLevel}, une petite île flotte au sud de ton île de départ, avec son propre nid. Lance une deuxième reproduction en même temps que celle de ton nid. ${EPIC_ISLET_TEXT}`, 'small'));
+    const reason = epicIsletReason(s), text = reason === 'LEVEL_REQUIRED' ? `Niveau ${EPIC_ISLET.unlockLevel} requis` : reason === 'BUILDING_LIMIT' ? 'Tu as déjà l’îlot : touche-le dans la prairie, au sud.' : reason ? REFUSALS[reason] : null;
+    this.button(card, `Acheter · ${heartAmount(EPIC_ISLET.hearts)}`, () => this.execute({type: 'buyEpicIslet'}, 'L’îlot des Épiques flotte au sud de ton île !', value => { this.open({kind: 'building', id: String(value)}, 'root'); }), text);
     return card;
   }
   /** The islet's menu: today's rewards, the record, the trio (two carriers, one athlete), then the game. */
@@ -1415,7 +1417,7 @@ export class GameUI {
     this.content.append(node('p', 'Deux lapins font tourner la corde, ton athlète saute. Touche l’écran quand la corde passe sous lui : elle tourne de plus en plus vite. Un raté et la partie s’arrête. Rejoue autant que tu veux !', 'small'));
     this.content.append(node('p', jumpRopeQuotaText(s, now), 'badge'));
     this.content.append(node('p', jumpRopeChallengeText(s, now), 'badge jump-rope-challenge-badge'));
-    if (s.jumpRope?.best) this.content.append(node('p', `Ton record : ${s.jumpRope.best} sauts`, 'small'));
+    if (s.jumpRope?.best) this.content.append(node('p', `Ton record : ${s.jumpRope.best} saut${s.jumpRope.best > 1 ? 's' : ''}`, 'small'));
     const medals = jumpRopeMedals(s), next = JUMP_ROPE.medals.find(step => !medals.includes(step));
     if (medals.length) {
       const row = node('div', '', 'jump-rope-medals');
@@ -1459,11 +1461,9 @@ export class GameUI {
       ready ? null : 'Il te faut trois lapins à la maison : deux porteurs et un athlète.').dataset.jumpRopePlay = '';
   }
   private renderForest(s: GameState): void {
-    const names = EVOLVED_ART.map(art => SPECIES[art.id].name).join(', ');
     this.content.append(node('p', 'Dans la forêt, change le dessin des lapins déjà évolués d’affection 30 ou plus : le nouveau ou l’ancien. C’est gratuit, et chaque changement prend 7 heures, un seul lapin à la fois. Ton lapin reste chez lui pendant ce temps.', 'small'));
-    this.content.append(node('p', `Ont un nouveau dessin pour l’instant : ${names}.`, 'small'));
     const rabbits = forestRabbits(s);
-    if (!rabbits.length) { this.content.append(node('p', 'Aucun de tes lapins n’a encore évolué. Réussis ses défis après l’affection 30, puis lance son évolution depuis sa fiche.', 'small')); return; }
+    if (!rabbits.length) { this.content.append(node('p', 'Aucun de tes lapins n’a encore évolué. Réussis les défis d’un lapin d’affection 30, puis lance son évolution depuis sa fiche.', 'small')); return; }
     const list = node('div', '', 'agency-travellers'); this.content.append(list);
     for (const r of rabbits) {
       const evolved = showsEvolvedArt(r), name = r.name || SPECIES[r.species].name;
@@ -1516,7 +1516,7 @@ export class GameUI {
     const balance = node('p', '', 'christmas-candies'); balance.dataset.christmasCandies = String(candies);
     const icon = document.createElement('img'); icon.className = 'candy-icon'; icon.src = CANDY_ICON_URL; icon.alt = 'Sucre d’orge'; icon.width = 24; icon.height = 24; icon.onerror = () => { icon.hidden = true; };
     balance.append(icon, document.createTextNode(` ${candyAmount(candies)}`));
-    words.append(node('p', 'Bienvenue au marché ! Réussis les missions de Noël pour gagner des sucres d’orge, puis échange-les contre des récompenses spéciales.', 'christmas-banner-lead'), balance);
+    words.append(node('p', 'Bienvenue au marché ! Réussis les défis de Noël pour gagner des sucres d’orge, puis échange-les contre des récompenses spéciales.', 'christmas-banner-lead'), balance);
     banner.append(picture, words); this.content.append(banner);
     const tabs = node('div', '', 'tabs christmas-tabs'); tabs.setAttribute('role', 'tablist');
     for (const [key, label, art] of CHRISTMAS_MARKET_TABS) {
@@ -1558,7 +1558,7 @@ export class GameUI {
       return;
     }
     if (tab === 'missions') {
-      add(node('p', 'Chaque jour, trois missions de Noël et un bonus rapportent des sucres d’orge.', 'small christmas-intro'));
+      add(node('p', 'Chaque jour, trois défis de Noël et un bonus rapportent des sucres d’orge.', 'small christmas-intro'));
       // The Christmas challenges, like the daily missions: three a cycle, then the bonus.
       const cycleStart = dailyCycleStart(s), shown = christmasChallengesOf(s), claimed = christmasClaimed(s);
       for (const id of shown) {
@@ -1592,7 +1592,7 @@ export class GameUI {
     // The Ultra neige habitat (owner, 6 November 2026): a snow enclosure of its own, bought at level 1 and grown to level 3 in
     // sucres d'orge (its card's « Améliorer » button); it stays after Christmas.
     add(node('h3', 'Enclos Ultra neige'));
-    add(node('p', `Un enclos tout en glace pour tes lapins de neige. Il s’achète au niveau 1 pour ${candyAmount(ULTRA_SNOW.candies[1])}, puis s’améliore en sucres d’orge : niveau 2 pour ${candyAmount(ULTRA_SNOW.candies[2])}, niveau 3 (le palais de glace) pour ${candyAmount(ULTRA_SNOW.candies[3])}. Il reste à toi après Noël.`, 'small'));
+    add(node('p', `Un enclos tout en glace pour tes lapins de neige. Son niveau 1 coûte ${candyAmount(ULTRA_SNOW.candies[1])}, puis il s’améliore en sucres d’orge : niveau 2 pour ${candyAmount(ULTRA_SNOW.candies[2])}, niveau 3 (le palais de glace) pour ${candyAmount(ULTRA_SNOW.candies[3])}. Il reste à toi après Noël.`, 'small'));
     {
       const stats = habitatLevel('neige', 1), card = this.card('Enclos Ultra neige', `${HABITATS.neige.accepted} · ${stats.capacity} places · stocke ${stats.cap} pattes`); card.dataset.ultraSnow = '';
       const reason = buildingReason(s, 'enclosure', true, 'neige') ?? (candiesOf(s) < ULTRA_SNOW.candies[1] ? REFUSALS.NOT_ENOUGH_CANDIES : null);

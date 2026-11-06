@@ -4,6 +4,8 @@ import {setCurrencyText} from '../display/currency';
 import type {CuisineRabbit} from './CuisineActivity';
 import {portrait} from './portraits';
 import {SKY_GIFTS_ART} from '../config/winterArt';
+import {FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
+import {pausableClock, settleCard} from './activityPause';
 import {advanceSkyGifts, aimSkyGifts, skyGiftsLeft, sleighAt, startSkyGifts, SKY_GIFTS_GAME, type SkyGiftsGame} from '../simulation/skyGiftsGame';
 
 /**
@@ -20,7 +22,7 @@ export function mountSkyGiftsActivity(host: HTMLElement, options: {
   clock?: () => number;
   frame?: (step: () => void) => number;
 }) {
-  const clock = options.clock ?? (() => performance.now()), frame = options.frame ?? (step => requestAnimationFrame(step));
+  const time = pausableClock(options.clock ?? (() => performance.now())), clock = time.now, frame = options.frame ?? (step => requestAnimationFrame(step));
   const art = SKY_GIFTS_ART;
   const layer = document.createElement('div'); layer.className = 'sky-gifts-activity'; layer.hidden = true;
   layer.setAttribute('role', 'dialog'); layer.setAttribute('aria-modal', 'true'); layer.setAttribute('aria-label', 'Les cadeaux du ciel');
@@ -36,11 +38,11 @@ export function mountSkyGiftsActivity(host: HTMLElement, options: {
   host.append(layer);
   const $ = <T extends Element>(selector: string) => layer.querySelector<T>(selector)!;
   const stage = $<HTMLElement>('[data-sky-gifts-stage]'), card = $<HTMLElement>('[data-sky-gifts-card]'), falling = $<HTMLElement>('.sky-gifts-falling');
-  const score = $<HTMLElement>('.sky-gifts-score'), lives = $<HTMLElement>('.sky-gifts-lives'), time = $<HTMLElement>('.sky-gifts-time'), quota = $<HTMLElement>('.sky-gifts-quota');
+  const score = $<HTMLElement>('.sky-gifts-score'), lives = $<HTMLElement>('.sky-gifts-lives'), timeLeft = $<HTMLElement>('.sky-gifts-time'), quota = $<HTMLElement>('.sky-gifts-quota');
   const blasts = $<HTMLElement>('.sky-gifts-blasts');
   const sleigh = $<HTMLImageElement>('.sky-gifts-sleigh'), rabbitBox = $<HTMLElement>('.sky-gifts-rabbit'), figure = $<HTMLElement>('.sky-gifts-figure'), pop = $<HTMLElement>('.sky-gifts-pop');
   const abort = new AbortController(), views = new Map<number, HTMLImageElement>();
-  let rabbit: CuisineRabbit | null = null, game: SkyGiftsGame | null = null, running = false, previousBest = 0, popTimer: ReturnType<typeof setTimeout> | undefined;
+  let rabbit: CuisineRabbit | null = null, game: SkyGiftsGame | null = null, running = false, previousBest = 0, recordShown = false, popTimer: ReturnType<typeof setTimeout> | undefined;
   const nameOf = (r: CuisineRabbit) => r.name || SPECIES[r.species].name;
   const gifts = (n: number) => `${n} cadeau${n > 1 ? 'x' : ''}`;
   const button = (label: string, action: () => void, key: string) => {
@@ -52,7 +54,7 @@ export function mountSkyGiftsActivity(host: HTMLElement, options: {
   function hud(): void {
     score.textContent = gifts(game?.caught ?? 0);
     const left = SKY_GIFTS_GAME.misses - (game?.missed ?? 0); lives.textContent = '❄'.repeat(Math.max(0, left));
-    time.textContent = game ? `${skyGiftsLeft(game)} s` : '';
+    timeLeft.textContent = game ? `${skyGiftsLeft(game)} s` : '';
     quota.textContent = options.quotaText?.() ?? '';
   }
   function flash(text: string, kind: 'catch' | 'miss' | 'record' | 'ready' | 'trap'): void {
@@ -78,7 +80,7 @@ export function mountSkyGiftsActivity(host: HTMLElement, options: {
     const now = clock(); advanceSkyGifts(game, now);
     if (game.events.caught.length) { rabbitBox.classList.remove('catch'); void rabbitBox.offsetWidth; rabbitBox.classList.add('catch');
       const n = game.caught;
-      if (previousBest > 0 && n === previousBest + 1) { flash('Nouveau record !', 'record'); options.cheer?.(); }
+      if (previousBest > 0 && n === previousBest + 1 && !recordShown) { recordShown = true; flash('Nouveau record !', 'record'); options.cheer?.(); }
       else if (n % 10 === 0) { flash(`${n} cadeaux !`, 'catch'); options.cheer?.(); } else flash('Attrapé !', 'catch'); }
     if (game.events.missed.length) flash('Plouf !', 'miss');
     // A trap in the basket: a splash of poison or a blast where it landed, the rabbit shakes, and a life is lost.
@@ -94,7 +96,9 @@ export function mountSkyGiftsActivity(host: HTMLElement, options: {
     draw(now); hud();
     if (game.over && running) finish();
   }
-  function loop(): void { if (!running) return; update(); frame(loop); }
+  let scheduled = false;
+  function schedule(): void { if (scheduled) return; scheduled = true; frame(() => { scheduled = false; loop(); }); }
+  function loop(): void { if (!running) return; update(); if (running) schedule(); }
   /** The rabbit follows the finger anywhere on the stage. */
   function aim(event: PointerEvent): void {
     if (!game || !running) return;
@@ -113,24 +117,34 @@ export function mountSkyGiftsActivity(host: HTMLElement, options: {
       ...(blown ? [paragraph('Boum ! Une bombe dans la hotte a arrêté la partie.', 'sky-gifts-rules')] : []),
       ...(record ? [paragraph(previousBest ? `Nouveau record ! L’ancien était de ${previousBest}.` : 'Ton premier record !', 'sky-gifts-record')] : previousBest ? [paragraph(`Ton record : ${gifts(previousBest)}`, 'sky-gifts-rules')] : []),
       chips, again, button('Quitter', close, 'skyGiftsQuit'));
-    again.focus();
+    settleCard(card); again.focus();
   }
   function start(): void {
-    previousBest = options.best?.() ?? 0;
+    previousBest = options.best?.() ?? 0; recordShown = false;
     for (const view of views.values()) view.remove(); views.clear(); blasts.replaceChildren(); rabbitBox.classList.remove('hurt'); layer.classList.remove('exploded');
     game = startSkyGifts(clock()); running = true; card.hidden = true;
-    hud(); draw(game.now); flash('Prêt ?', 'ready'); frame(loop);
+    hud(); draw(game.now); flash('Prêt ?', 'ready'); schedule();
   }
   function intro(): void {
-    game = startSkyGifts(clock()); running = false; previousBest = options.best?.() ?? 0; draw(game.now); hud(); time.textContent = '';
+    layer.classList.remove('exploded'); rabbitBox.classList.remove('hurt');
+    game = startSkyGifts(clock()); running = false; previousBest = options.best?.() ?? 0; draw(game.now); hud(); timeLeft.textContent = '';
     showCard(paragraph(`${nameOf(rabbit!)} attrape les cadeaux du ciel !`, 'sky-gifts-title'),
       paragraph(`Le traîneau passe dans le ciel et lâche des cadeaux. Fais glisser ton doigt pour déplacer ${nameOf(rabbit!)} et sa hotte. ${SKY_GIFTS_GAME.ms / 1000} secondes. Attention aux pièges : un cadeau empoisonné t’enlève ${SKY_GIFTS_GAME.poisonGifts} cadeaux, et une bombe explose et arrête la partie ! Trois cadeaux tombés dans la neige arrêtent aussi la partie. Rejoue autant que tu veux !`, 'sky-gifts-rules'),
       button('C’est parti !', start, 'skyGiftsStart'));
   }
   function close(): void {
     if (layer.hidden) return;
-    running = false; game = null; rabbit = null; layer.hidden = true; clearTimeout(popTimer); options.onExit?.();
+    running = false; time.resume(); game = null; rabbit = null; layer.hidden = true; clearTimeout(popTimer);
+    window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: false})); options.onExit?.();
   }
+  /** The phone locked or another app opened: the game waits, frozen, instead of being lost to the time gone by. */
+  function pause(): void {
+    if (!running) return;
+    time.pause(); running = false;
+    showCard(paragraph('Partie en pause', 'sky-gifts-title'), button('Reprendre', resume, 'skyGiftsResume'), button('Quitter', close, 'skyGiftsQuit'));
+  }
+  function resume(): void { time.resume(); running = true; card.hidden = true; schedule(); }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); }, {signal: abort.signal});
   stage.addEventListener('pointerdown', event => { event.preventDefault(); aim(event); }, {signal: abort.signal});
   stage.addEventListener('pointermove', event => { if (event.pointerType !== 'mouse' || event.buttons || running) aim(event); }, {signal: abort.signal});
   $<HTMLButtonElement>('[data-sky-gifts-exit]').addEventListener('click', () => close(), {signal: abort.signal});
@@ -148,7 +162,8 @@ export function mountSkyGiftsActivity(host: HTMLElement, options: {
       rabbit = chosen;
       const look = chosen.affection === undefined ? rabbitArt(chosen.species) : artForRabbit({species: chosen.species, affection: chosen.affection, classicLook: chosen.classicLook, evolution: chosen.evolution});
       figure.innerHTML = portrait(chosen.species, look);
-      layer.hidden = false; intro(); $<HTMLButtonElement>('[data-sky-gifts-start]').focus();
+      layer.hidden = false; window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: true}));
+      intro(); $<HTMLButtonElement>('[data-sky-gifts-start]').focus();
     },
     close, update,
     dispose() { close(); abort.abort(); layer.remove(); },

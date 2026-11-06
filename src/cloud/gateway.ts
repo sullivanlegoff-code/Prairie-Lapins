@@ -1,5 +1,5 @@
 import type {SupabaseClient} from '@supabase/supabase-js';
-import {decodeGame, SAVE_VERSION} from '../persistence/json';
+import {decodeGame, encodeGame, SAVE_VERSION} from '../persistence/json';
 import type {GameState} from '../state/types';
 import {SPECIES, type SpeciesId} from '../config/balance';
 import {ADJUSTMENT_KINDS, ADJUSTMENT_LIMIT, type Adjustment, type AdjustmentKind} from '../simulation/adjustments';
@@ -78,7 +78,7 @@ export class SupabaseGateway implements CloudGateway {
     } catch { return []; }
   }
   async commit(r: CommitRequest): Promise<CommitResult> {
-    const {data, error} = await this.request(signal => this.client.rpc('prairie_commit', {p_owner: r.owner, p_expected: r.expected, p_operation: r.operation, p_state: r.state}).abortSignal(signal));
+    const {data, error} = await this.request(signal => this.client.rpc('prairie_commit', {p_owner: r.owner, p_expected: r.expected, p_operation: r.operation, p_state: JSON.parse(encodeGame(r.state))}).abortSignal(signal));
     if (error) fail(error);
     if (data?.status === 'outdated') throw new CloudError('outdated', OUTDATED);
     if (data?.status === 'conflict') return {status: 'conflict', remote: data.remote ? remoteSave(data.remote, r.owner) : null};
