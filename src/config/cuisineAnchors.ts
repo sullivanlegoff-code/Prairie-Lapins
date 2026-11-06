@@ -57,7 +57,7 @@ export const CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>> = {
   // The Christmas update's rabbits (5 November 2026), read on 10 % grids of their v1 sprites, checked on captures (6 November 2026).
   vantablack: a([.68, .24, .34, 6], [.72, .5, .3], [.73, .37, .3]),
   'gigi-rarafe': a([.42, .09, .3, -4], [.42, .33, .28], [.42, .17, .28]),
-  yetiti: a([.66, .12, .36, 6], [.7, .42, .3], [.7, .27, .3]),
+  yetiti: a([.62, .08, .36, 4], [.68, .34, .28], [.66, .2, .26]),
   rennes: a([.64, .27, .34, 6], [.7, .52, .3], [.71, .39, .28]),
   susucre: a([.72, .3, .34, 6], [.78, .56, .3], [.79, .43, .28]),
   arkoko: a([.68, .2, .38, 6], [.76, .54, .32], [.79, .4, .3]),

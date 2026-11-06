@@ -871,13 +871,13 @@
   },
   "yetiti": {
     "file": "assets/rabbits/yetiti/yetiti-v1.png",
-    "worldWidth": 74,
-    "sourceSha1": "f7c4e3a2a6fe3d5fbe56fb6dd49a35f52467d24e",
-    "sourceWidth": 1148,
-    "sourceHeight": 1231,
-    "width": 546,
-    "height": 585,
-    "derivedSha1": "49e378b6a1001a585ad215a9d56f9e3633cf11de"
+    "worldWidth": 60.8,
+    "sourceSha1": "0fea4c91dd2d8f95c366ed610618a605f36bfb44",
+    "sourceWidth": 773,
+    "sourceHeight": 1225,
+    "width": 448,
+    "height": 710,
+    "derivedSha1": "4ba16f7d24b3147dd9ff7899385bb9eead1fcfd3"
   },
   "rennes": {
     "file": "assets/rabbits/rennes/rennes-v1.png",

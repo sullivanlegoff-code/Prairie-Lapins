@@ -39,7 +39,8 @@ export const DESIGNS = [
   // Rennes A, Susucre B), and Arkoko, the owner's own drawing (its transparency checkerboard is printed into the picture).
   {id: 'vantablack', source: 'output/imagegen/nouveaux-lapins-v1/vantablack-A.png', background: 'light'},
   {id: 'gigi-rarafe', source: 'output/imagegen/nouveaux-lapins-v4/gigi-rarafe-B.png', background: 'light'},
-  {id: 'yetiti', source: 'output/imagegen/nouveaux-lapins-v1/yetiti-A.png', background: 'light'},
+  // Yetiti repainted standing like Paille (6 November 2026, v4 A, same design), at the owner's request: no more feet up.
+  {id: 'yetiti', source: 'output/imagegen/nouveaux-lapins-v4/yetiti-A.png', background: 'light'},
   {id: 'rennes', source: 'output/imagegen/nouveaux-lapins-v1/rennes-A.png', background: 'light'},
   {id: 'susucre', source: 'output/imagegen/nouveaux-lapins-v1/susucre-B.png', background: 'light'},
   {id: 'arkoko', source: 'assets-source/rabbits/Arkoko/Arkoko stade 1.png', background: 'checker'},
