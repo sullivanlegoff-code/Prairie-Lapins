@@ -81,6 +81,10 @@ dialog.benny-reveal::backdrop { background: #141a40; }
   .br-camera { --focus-x: 34%; --focus-y: 32%; --aside: 16vw; --zoom: 1.28; }
   .br-text { left: 75%; bottom: auto; top: 50%; width: min(42vw, 340px); transform: translate(-50%, -50%); }
   .br-text h3 { font-size: 36px; }
+  .br-text:has(.reveal-choices) h2 { font-size: 14px; }
+  .br-text:has(.reveal-choices) h3 { margin: 0 0 2px; font-size: 26px; }
+  .br-text:has(.reveal-choices) .br-details { margin: 3px 0 4px; font-size: 13px; }
+  .br-text:has(.reveal-choices) .reveal-new { margin: 0 0 4px; padding: 1px 10px; font-size: 12px; }
 }
 
 /* The show (about 8.5 s, then the words). Sequences crossfade at the times written on each painting (--at, --off). */
