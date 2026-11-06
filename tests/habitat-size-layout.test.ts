@@ -75,7 +75,7 @@ describe('laboratory scenario for the size comparison', () => {
     const s = scenarioState('enclosureSizes', 0), homes = s.buildings.filter(b => b.kind === 'enclosure');
     expect(homes.map(b => [b.habitat!.type, b.habitat!.level, s.rabbits.filter(r => r.enclosureId === b.id).length])).toEqual([['universal', 1, 3], ['universal', 2, 5], ['universal', 3, 7]]);
     expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: s});
-    // Logical footprints are untouched (still 4 × 4 fine cells each): the proposal changes drawing only.
-    const [a, b, c] = homes; expect([a.x, b.x, c.x]).toEqual([18, 25, 34]);
+    // Side by side at the footprints of their levels (6, 10 and 12 cells wide).
+    const [a, b, c] = homes; expect([a.x, b.x, c.x]).toEqual([18, 25, 36]);
   });
 });

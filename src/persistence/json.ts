@@ -10,6 +10,7 @@ import {updateMissions} from '../simulation/missions';
 import {buildingPlacementReason, footprintPlacementReason} from '../simulation/placement';
 import {debrisFootprint} from '../simulation/debris';
 import {growFormerEnclosures} from '../simulation/enclosureGrowth';
+import {ENCLOSURE_SIZE_ERA} from '../config/habitatSizes';
 import {normalizeRabbitName} from '../simulation/rabbitNames';
 import {PARCEL_IDS, startParcel} from '../config/land';
 import {type HabitatType, HABITAT_TYPES, HABITAT_LEVELS, habitatLevel} from '../config/habitats';
@@ -29,7 +30,7 @@ import {EVOLUTION_AFFECTION, hasEvolvedArt} from '../config/evolvedArt';
  * The current format is v27 (the Christmas update's economy: Paille's counter removed, the nursery back to 2 cushions at
  * most, 1 to 5 Hearts a trip and the Salon's Hearts, see `migrateV26`), after v26 (the Christmas event: the sucres d'orge, the Christmas challenges of the cycle, the snowman of the
  * day, the mini-game « Les cadeaux du ciel » and the Christmas market's decorations with their receipt in sucres d'orge, all
- * optional; nothing to convert, see `migrateV25`), after v25 (the evolution challenges « commis », « goûteur » and « quotidien », the daily streak, the daily missions drawn at the start of the cycle and the rabbits caressed in it, see `migrateV24`), after v24 (larger enclosures: an enclosure may keep its former footprint, see `migrateV23`), after v23 (affection up to 50, a second Statue de l'Affection, the Salon de soins and the picnic, a lapin ultime's taken-off crown, the Forêt de Brocéliande and a rabbit's old drawing put back, the Terrain de corde à sauter, all optional; nothing to convert), after v22 (Benny's power and sky mode, optional), v21 (friendships and memories), v20 (catalogue conversion) and v19 (farm and agency levels, concurrent trips, Heart receipts), migrated through v18 and v17 from v16 (economy migration). Version 16 was the catalogue boundary of the development saves: the species Terre, Mottelin, Géant and
+ * optional; nothing to convert, see `migrateV25`), after v25 (the evolution challenges « commis », « goûteur » and « quotidien », the daily streak, the daily missions drawn at the start of the cycle and the rabbits caressed in it, see `migrateV24`), after v24 (larger enclosures: an enclosure may keep its former footprint, see `migrateV23`; enlarged again on 6 November 2026 within v27, see `migrateEnclosureSizes`), after v23 (affection up to 50, a second Statue de l'Affection, the Salon de soins and the picnic, a lapin ultime's taken-off crown, the Forêt de Brocéliande and a rabbit's old drawing put back, the Terrain de corde à sauter, all optional; nothing to convert), after v22 (Benny's power and sky mode, optional), v21 (friendships and memories), v20 (catalogue conversion) and v19 (farm and agency levels, concurrent trips, Heart receipts), migrated through v18 and v17 from v16 (economy migration). Version 16 was the catalogue boundary of the development saves: the species Terre, Mottelin, Géant and
  * Brumelin and the Terre habitat were removed, and saves before that catalogue boundary are not converted. Versions 1 to 15 are refused as incompatible
  * (the controller then starts a new game); they are never read, migrated or restored.
  */
@@ -43,8 +44,10 @@ const timestamp = z.number().int().min(Number.MIN_SAFE_INTEGER).max(Number.MAX_S
 const identity = z.string().regex(/^(building|rabbit|birth)-[1-9]\d*$/);
 const species = z.enum(SPECIES_IDS);
 const birth = z.object({id: identity, species, guaranteed: z.boolean(), reservedDiscovery: z.boolean()}).strict();
-// An enclosure may store the footprint tier it has acquired (1 = 5 × 4, 2 = 8 × 5, 3 = 10 × 6 fine cells; with `formerFootprint`,
-// the sizes before v24: 4 × 4, 6 × 5, 8 × 6). Absent means tier 1 at any level.
+// An enclosure may store the footprint tier it has acquired (1 = 6 × 5, 2 = 10 × 6, 3 = 12 × 7 fine cells). With `formerFootprint`,
+// it keeps the size of a former era: 1 = before 3 November 2026 (4 × 4, 6 × 5, 8 × 6), 2 = from 3 November 2026 (5 × 4, 8 × 5,
+// 10 × 6); saves v24 to v26, and v27 saves without `enclosureSizes`, wrote `true` for era 1 (see `migrateEnclosureSizes`).
+// Absent tier means tier 1 at any level.
 const footprintTier = z.union([z.literal(1), z.literal(2), z.literal(3)]);
 const nurseryBaby = z.object({slot: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)]), birth, startedAt: timestamp, readyAt: timestamp}).strict();
 const nurseryPayload = z.object({capacity: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]), babies: z.array(nurseryBaby).max(NURSERY.maxCapacity)}).strict();
@@ -53,7 +56,7 @@ const building = z.object({
   id: identity, kind: z.enum(BUILDING_KINDS), x: offGridCell, y: offGridCell, incomeUnits: integer,
   habitat: z.object({type: z.enum(HABITAT_TYPES), level: z.union([z.literal(1), z.literal(2), z.literal(3)]), ultra: z.literal(true).optional()}).strict().nullable(),
   farmLevel: z.union([z.literal(2), z.literal(3)]).optional(), agencyLevel: z.union([z.literal(2), z.literal(3)]).optional(),
-  footprintTier: footprintTier.optional(), formerFootprint: z.literal(true).optional(), islet: z.literal(true).optional(),
+  footprintTier: footprintTier.optional(), formerFootprint: z.union([z.literal(1), z.literal(2)]).optional(), islet: z.literal(true).optional(),
   order: z.object({recipe: z.enum(Object.keys(ORDERS) as [OrderId, ...OrderId[]]), startedAt: timestamp, endsAt: timestamp, grass: integer.optional(), duration: integer.positive().optional()}).strict().nullable(),
   breeding: z.object({parents: z.tuple([identity, identity]), startedAt: timestamp, endsAt: timestamp, birth}).strict().nullable(),
   nursery: nurseryPayload.nullable(),
@@ -162,6 +165,8 @@ const current = z.object({
   purchaseUnlocks: z.array(z.enum(PURCHASE_UNLOCK_IDS)).max(PURCHASE_UNLOCK_IDS.length).refine(ids => new Set(ids).size === ids.length).optional(),
   initiation: z.object({order: z.string().max(500).nullable(), breeding: z.string().max(500).nullable(), growth: z.string().max(500).nullable(), birthId: identity.nullable(), closed: z.array(aidStage).max(3), used: z.array(aidStage).max(3)}).strict().optional(),
   levelAccessTransition: levelAccessTransition.optional(), presentationId: z.string().uuid().optional(),
+  // The era of the enclosure sizes the save was written with (6 November 2026, still v27): absent before, see `migrateEnclosureSizes`.
+  enclosureSizes: z.literal(ENCLOSURE_SIZE_ERA).optional(),
   progression: z.object({totalXp: integer, rewardedThroughLevel: integer.positive()}).strict(),
   recipeBook: z.array(species).max(RECIPE_BOOK_SPECIES.length),
   cuisine: z.object({affectionCycles: z.record(z.string().min(1), integer), heartCycle: integer.nullable().optional(), fullRuns: z.object({cycle: integer, used: integer.max(CUISINE_FULL_REWARDS_PER_CYCLE)}).strict().optional()}).strict(),
@@ -471,6 +476,23 @@ function migrateV26(raw: object): void {
 }
 
 /**
+ * The enclosures enlarged again (owner, 6 November 2026), within v27, which was not yet published: a save that does not say the
+ * era of its sizes (`enclosureSizes`: every older version, and v27 saves written before that day) had the sizes of 3 November
+ * for its unmarked enclosures. Each enclosure keeps, for now, exactly the footprint it had: `formerFootprint: true` (era 1, set
+ * by v24 or by `migrateV23`) becomes 1 and an unmarked one becomes 2, so the save validates with the very same rules as before.
+ * Right after validation, `growFormerEnclosures` gives each one the largest size that has room.
+ */
+function migrateEnclosureSizes(raw: object): void {
+  const save = raw as {buildings?: unknown; enclosureSizes?: number};
+  if (Array.isArray(save.buildings)) for (const b of save.buildings) {
+    if (!b || typeof b !== 'object' || (b as {kind?: unknown}).kind !== 'enclosure') continue;
+    const e = b as {formerFootprint?: unknown};
+    if (e.formerFootprint === true) e.formerFootprint = 1; else if (e.formerFootprint === undefined) e.formerFootprint = 2;
+  }
+  save.enclosureSizes = ENCLOSURE_SIZE_ERA;
+}
+
+/**
  * `INCOMPATIBLE_CATALOG`: a save written before the catalogue boundary (versions 1 to 15). It is not read further; it is neither
  * converted nor restored. `UNSUPPORTED_VERSION`: any other version this client does not know (for instance a newer one).
  */
@@ -491,6 +513,8 @@ export function decodeGame(json: string): DecodeResult {
   moveKioskToIsland(raw);
   // Paille's counter is removed at v27 (owner, 5 November 2026): its daily record is dropped from every older save.
   if (raw && typeof raw === 'object' && 'version' in raw && (raw.version as number) < 27) delete (raw as {market?: unknown}).market;
+  // Only a v27 save may say the era of its enclosure sizes: an older one had the sizes of its own time, whatever it carries.
+  if (raw && typeof raw === 'object' && 'version' in raw && raw.version !== SAVE_VERSION) delete (raw as {enclosureSizes?: unknown}).enclosureSizes;
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 16) raw = migrateV16(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 17) raw = migrateV17(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 18) raw = migrateV18(raw);
@@ -499,10 +523,11 @@ export function decodeGame(json: string): DecodeResult {
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 24) migrateV24(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 25) migrateV25(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 26) migrateV26(raw);
+  if (raw && typeof raw === 'object' && 'version' in raw && raw.version === SAVE_VERSION && !('enclosureSizes' in raw)) migrateEnclosureSizes(raw);
   settleStorageCaps(raw);
   const parsed = schema.safeParse(raw);
   if (!parsed.success) return {ok: false, reason: 'INVALID_STATE'};
-  const {presentationId: _presentationId, ...stored} = parsed.data;
+  const {presentationId: _presentationId, enclosureSizes: _enclosureSizes, ...stored} = parsed.data;
   const state: GameState = {...stored, cuisine: {...stored.cuisine, heartCycle: stored.cuisine.heartCycle ?? null}};
   for (const rabbit of state.rabbits) if (SPECIES[rabbit.species].rarity !== 'common') rabbit.incomeRoll ??= historicalIncomeRoll(rabbit);
   for (const rabbit of state.rabbits) if (rabbit.evolution?.done && (rabbit.species === 'benny' || !hasEvolvedArt(rabbit.species) || rabbit.affection < EVOLUTION_AFFECTION || !evolutionChallengesComplete(rabbit.species, rabbit.evolution.challenges))) delete rabbit.evolution.done;
@@ -540,7 +565,7 @@ function moveKioskToIsland(raw: unknown): void {
   raw.buildings = kept; (raw as {jumpIsland?: true}).jumpIsland = true;
 }
 export function encodeGame(state: GameState, presentationId?: string): string {
-  const parsed = schema.parse({...state, ...(presentationId ? {presentationId} : {})});
+  const parsed = schema.parse({...state, enclosureSizes: ENCLOSURE_SIZE_ERA, ...(presentationId ? {presentationId} : {})});
   return JSON.stringify(parsed);
 }
 

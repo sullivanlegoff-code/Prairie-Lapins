@@ -11,9 +11,10 @@ import {asV23Json} from './v23-save-fixture';
 
 /**
  * Independent expectations. A fresh game owns the south-west parcel (fine cells x 0–15, y 32–47) with the enclosure at
- * (6, 40), 5 × 4, the nest at (2, 36) and the nursery at (10, 36), both 4 × 4.
+ * (4, 40), 6 × 5, the nest at (2, 36) and the nursery at (10, 36), both 4 × 4; its level 3 (12 × 7) still fits there.
  */
-const SIZE = {1: [5, 4], 2: [8, 5], 3: [10, 6]} as const, FORMER = {1: [4, 4], 2: [6, 5], 3: [8, 6]} as const;
+const SIZE = {1: [6, 5], 2: [10, 6], 3: [12, 7]} as const;
+const FORMER = {1: {1: [4, 4], 2: [6, 5], 3: [8, 6]}, 2: {1: [5, 4], 2: [8, 5], 3: [10, 6]}} as const;
 const start = (hearts = 50, pattes = 10_000) => {
   const s = createGame(0); s.hearts = hearts; s.pattes = pattes; s.grass = 100;
   const level = requiredHabitatUpgradeLevel('paille', 3); s.progression = {totalXp: cumulativeLevelXp(level), rewardedThroughLevel: level}; return s;
@@ -26,32 +27,33 @@ const grown = (level: 1 | 2 | 3) => { let s = start(); for (const from of [1, 2]
 describe('enclosure footprint tiers', () => {
   it('gives each tier its footprint, anchored at the top-left cell, and the compact 4 × 4 to everything else', () => {
     for (const [tier, [width, height]] of Object.entries(SIZE)) expect(buildingFootprint({kind: 'enclosure', x: 6, y: 40, footprintTier: Number(tier) as 1 | 2 | 3})).toEqual({x: 6, y: 40, width, height});
-    for (const [tier, [width, height]] of Object.entries(FORMER)) expect(buildingFootprint({kind: 'enclosure', x: 6, y: 40, footprintTier: Number(tier) as 1 | 2 | 3, formerFootprint: true})).toEqual({x: 6, y: 40, width, height});
-    expect(buildingFootprint({kind: 'enclosure', x: 6, y: 40})).toEqual({x: 6, y: 40, width: 5, height: 4}); expect(habitatFootprint(undefined)).toEqual({width: 5, depth: 4});
+    for (const era of [1, 2] as const) for (const [tier, [width, height]] of Object.entries(FORMER[era])) expect(buildingFootprint({kind: 'enclosure', x: 6, y: 40, footprintTier: Number(tier) as 1 | 2 | 3, formerFootprint: era})).toEqual({x: 6, y: 40, width, height});
+    expect(buildingFootprint({kind: 'enclosure', x: 6, y: 40})).toEqual({x: 6, y: 40, width: 6, height: 5}); expect(habitatFootprint(undefined)).toEqual({width: 6, depth: 5});
     expect(buildingFootprint({kind: 'farm', x: 6, y: 40})).toEqual({x: 6, y: 40, width: 4, height: 4});
-    expect(habitatFootprint(7)).toEqual({width: 5, depth: 4}); expect(habitatFootprint(7, true)).toEqual({width: 4, depth: 4});
-    const s = grown(3); expect(buildingFootprint(enclosure(s))).toEqual({x: 6, y: 40, width: 10, height: 6});
+    expect(habitatFootprint(7)).toEqual({width: 6, depth: 5}); expect(habitatFootprint(7, 1)).toEqual({width: 4, depth: 4}); expect(habitatFootprint(7, 2)).toEqual({width: 5, depth: 4});
+    const s = grown(3); expect(buildingFootprint(enclosure(s))).toEqual({x: 4, y: 40, width: 12, height: 7});
     for (const other of s.buildings.filter(b => b.kind !== 'enclosure')) expect(buildingFootprint(other)).toEqual({x: other.x, y: other.y, width: 4, height: 4});
   });
 
   it('centres drawing and residents on the effective footprint, and selects on the whole enlarged area', () => {
-    const s = grown(3), center = buildingCenter(enclosure(s)), compact = buildingCenter({kind: 'enclosure', x: 6, y: 40});
+    const s = grown(3), center = buildingCenter(enclosure(s)), compact = buildingCenter({kind: 'enclosure', x: 4, y: 40});
     expect(center).not.toEqual(compact);
-    expect(buildingAt(s, {x: 13, y: 45})?.id).toBe('building-1'); expect(buildingAt(s, {x: 6, y: 40})?.id).toBe('building-1');
-    expect(buildingAt(s, {x: 15, y: 40})?.id).toBe('building-1'); expect(buildingAt(s, {x: 13, y: 46})).toBeUndefined();
-    expect(buildingAt(grown(1), {x: 13, y: 45})).toBeUndefined(); expect(buildingAt(grown(1), {x: 10, y: 43})?.id).toBe('building-1');
+    expect(buildingAt(s, {x: 13, y: 45})?.id).toBe('building-1'); expect(buildingAt(s, {x: 4, y: 40})?.id).toBe('building-1');
+    expect(buildingAt(s, {x: 15, y: 40})?.id).toBe('building-1'); expect(buildingAt(s, {x: 13, y: 46})?.id).toBe('building-1');
+    expect(buildingAt(s, {x: 13, y: 47})).toBeUndefined();
+    expect(buildingAt(grown(1), {x: 13, y: 45})).toBeUndefined(); expect(buildingAt(grown(1), {x: 9, y: 44})?.id).toBe('building-1');
   });
 });
 
 describe('upgrading with room', () => {
   it('changes level, footprint and payment together at each tier, and keeps every resident and position', () => {
     const before = start(), l2 = run(before, upgrade(1)), l3 = run(l2, upgrade(2));
-    expect(enclosure(l2)).toMatchObject({x: 6, y: 40, footprintTier: 2, habitat: {type: 'paille', level: 2}}); expect(l2.pattes).toBe(before.pattes - 100); expect(l2.hearts).toBe(before.hearts);
-    expect(enclosure(l3)).toMatchObject({x: 6, y: 40, footprintTier: 3, habitat: {type: 'paille', level: 3}}); expect(l3.hearts).toBe(before.hearts - 10); expect(l3.pattes).toBe(l2.pattes);
+    expect(enclosure(l2)).toMatchObject({x: 4, y: 40, footprintTier: 2, habitat: {type: 'paille', level: 2}}); expect(l2.pattes).toBe(before.pattes - 100); expect(l2.hearts).toBe(before.hearts);
+    expect(enclosure(l3)).toMatchObject({x: 4, y: 40, footprintTier: 3, habitat: {type: 'paille', level: 3}}); expect(l3.hearts).toBe(before.hearts - 10); expect(l3.pattes).toBe(l2.pattes);
     expect(l3.rabbits).toEqual(before.rabbits); expect(l3.buildings.filter(b => b.id !== 'building-1')).toEqual(before.buildings.filter(b => b.id !== 'building-1'));
   });
 
-  it('a legacy enclosure at level 2 on the compact footprint acquires the 10 × 6 footprint when it reaches level 3', () => {
+  it('a legacy enclosure at level 2 on the compact footprint acquires the 12 × 7 footprint when it reaches level 3', () => {
     const s = start(); enclosure(s).habitat = {type: 'paille', level: 2};
     const next = run(s, upgrade(2)); expect(enclosure(next)).toMatchObject({footprintTier: 3, habitat: {level: 3}}); expect(next.hearts).toBe(s.hearts - 10);
   });
@@ -59,9 +61,9 @@ describe('upgrading with room', () => {
 
 describe('upgrading without room: explicit refusal, no debit, no mutation, nothing moved', () => {
   const blockers: [string, (s: GameState) => GameState, string][] = [
-    ['a building', s => { s.buildings.push(emptyBuilding('building-9', 'farm', 10, 40)); s.nextId = 10; return s; }, 'UPGRADE_BLOCKED_BUILDING'],
+    ['a building', s => { s.buildings.push(emptyBuilding('building-9', 'farm', 12, 40)); s.nextId = 10; return s; }, 'UPGRADE_BLOCKED_BUILDING'],
     ['a decoration', s => run(run(s, {type: 'buyDecoration', catalogId: 'bush'}), {type: 'placeDecoration', id: 'decoration-' + s.nextId, location: {kind: 'outside', x: 12, y: 41, rotation: 0}}), 'UPGRADE_BLOCKED_DECORATION'],
-    ['land that is not owned', s => { enclosure(s).x = 12; return s; }, 'UPGRADE_BLOCKED_LAND'],
+    ['land that is not owned', s => { enclosure(s).y = 43; return s; }, 'UPGRADE_BLOCKED_LAND'],
   ];
   it.each(blockers)('%s in the target footprint', (_name, block, reason) => {
     const s = block(start()), before = structuredClone(s);
@@ -73,14 +75,14 @@ describe('upgrading without room: explicit refusal, no debit, no mutation, nothi
   });
 
   it('refuses the level-3 footprint beside a building even with enough hearts, and takes nothing', () => {
-    const l2 = grown(2); l2.buildings.push(emptyBuilding('building-9', 'farm', 12, 40)); l2.nextId = 10; const before = structuredClone(l2);
+    const l2 = grown(2); l2.buildings.push(emptyBuilding('building-9', 'farm', 14, 40)); l2.nextId = 10; const before = structuredClone(l2);
     expect(act(l2, upgrade(2), 0)).toEqual({ok: false, state: before, reason: 'UPGRADE_BLOCKED_BUILDING'});
     expect(l2.hearts).toBe(50);
   });
 
   it('re-checks at the moment of payment: an obstacle that appeared since the offer blocks it, a cleared one allows it', () => {
     const s = start(), offered = upgradeFootprintReason(s, 'building-1', 2); expect(offered).toBeNull();
-    const later = structuredClone(s); later.buildings.push(emptyBuilding('building-9', 'farm', 10, 40)); later.nextId = 10;
+    const later = structuredClone(s); later.buildings.push(emptyBuilding('building-9', 'farm', 12, 40)); later.nextId = 10;
     expect(act(later, upgrade(1), 0)).toMatchObject({ok: false, reason: 'UPGRADE_BLOCKED_BUILDING', state: later});
     later.buildings = later.buildings.filter(b => b.id !== 'building-9'); expect(act(later, upgrade(1), 0).ok).toBe(true);
   });
@@ -104,7 +106,8 @@ describe('collisions and moves between small and large buildings', () => {
   it('moves a large enclosure to free ground with its footprint, level and residents intact, and lets the old place be used', () => {
     const s = grown(3), moved = run(s, {type: 'moveBuilding', id: 'building-1', x: 0, y: 40});
     expect(enclosure(moved)).toMatchObject({x: 0, y: 40, footprintTier: 3, habitat: {level: 3}}); expect(moved.rabbits).toEqual(s.rabbits);
-    expect(act(moved, {type: 'moveBuilding', id: 'building-5', x: 11, y: 41}, 0).ok).toBe(true);
+    expect(act(moved, {type: 'moveBuilding', id: 'building-5', x: 11, y: 41}, 0)).toMatchObject({ok: false, reason: 'CELL_OCCUPIED'});
+    expect(act(moved, {type: 'moveBuilding', id: 'building-5', x: 12, y: 41}, 0).ok).toBe(true);
   });
 
   it('keeps decorations out of the enlarged footprint, and the enlarged footprint out of decorations', () => {
@@ -123,15 +126,19 @@ describe('saves: footprint tiers, and older games untouched', () => {
 
   it('keeps a compact high-level enclosure of a v23 save: levels, capacities, residents kept, no debit; it grows only where there is room', () => {
     // Enclosures at level 2 and 3 packed against their neighbours on the compact footprint, with no stored tier.
-    const old = start(); enclosure(old).habitat = {type: 'paille', level: 3};
+    // The v23 start enclosure stood at (6, 40).
+    const old = start(); enclosure(old).habitat = {type: 'paille', level: 3}; enclosure(old).x = 6;
     old.buildings.push({...emptyBuilding('building-9', 'enclosure', 10, 40, 'universal'), habitat: {type: 'universal', level: 2}}); old.nextId = 10;
     const decoded = decodeGame(asV23Json(old));
     if (!decoded.ok) throw Error(decoded.reason);
     expect(decoded.state.version).toBe(27);
     for (const key of ['rabbits', 'decorations', 'acquiredParcels', 'pattes', 'grass', 'hearts', 'discovered', 'nextId'] as const) expect(decoded.state[key], key).toEqual(old[key]);
     expect(decoded.state.buildings.map(b => b.id)).toEqual(old.buildings.map(b => b.id));
-    // Both have room on the start parcel: tier 1 at its enlarged 5 × 4, slid by one cell at most; nothing else moved.
-    for (const b of decoded.state.buildings.filter(item => item.kind === 'enclosure')) { expect('footprintTier' in b).toBe(false); expect(b.formerFootprint).toBeUndefined(); expect(buildingFootprint(b)).toMatchObject({width: 5, height: 4}); }
+    // Both have room on the start parcel: tier 1 at its current 6 × 5, slid by two cells at most; nothing else moved.
+    for (const b of decoded.state.buildings.filter(item => item.kind === 'enclosure')) {
+      expect('footprintTier' in b).toBe(false); expect(b.formerFootprint).toBeUndefined(); expect(buildingFootprint(b)).toMatchObject({width: 6, height: 5});
+      const was = old.buildings.find(o => o.id === b.id)!; expect(Math.abs(b.x - was.x)).toBeLessThanOrEqual(2); expect(Math.abs(b.y - was.y)).toBeLessThanOrEqual(1);
+    }
     for (const b of decoded.state.buildings.filter(item => item.kind !== 'enclosure')) expect(b).toEqual(old.buildings.find(o => o.id === b.id));
     // Reloading what was written changes nothing more.
     expect(decodeGame(encodeGame(decoded.state))).toEqual({ok: true, state: decoded.state});

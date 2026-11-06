@@ -33,9 +33,9 @@ const panel = () => document.getElementById('panel-content')!;
 /** Level 20, the forest (building-100), a universal enclosure (building-101) with a paille at 30, a neige at 29 and a Frisket at 40. */
 function game(forest = true): GameState {
   const s = createGame(0); s.pattes = 20_000; s.progression = {totalXp: cumulativeLevelXp(20), rewardedThroughLevel: 20};
-  const free = () => { for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y)) return {x, y}; throw Error('No space'); };
+  const free = (kind?: 'enclosure') => { for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y, undefined, kind)) return {x, y}; throw Error('No space'); };
   for (const [id, kind] of [['building-100', 'forest'], ['building-101', 'enclosure'], ['building-102', 'statue'], ['building-103', 'statue']] as const) {
-    if (kind === 'forest' && !forest) continue; const c = free(); s.buildings.push(emptyBuilding(id, kind, c.x, c.y));
+    if (kind === 'forest' && !forest) continue; const c = free(kind === 'enclosure' ? kind : undefined); s.buildings.push(emptyBuilding(id, kind, c.x, c.y));
   }
   s.buildings.find(b => b.id === 'building-101')!.habitat = {type: 'universal', level: 3};
   s.rabbits.push({id: 'rabbit-104', species: 'paille', affection: 30, enclosureId: 'building-101'}, {id: 'rabbit-105', species: 'neige', affection: 29, enclosureId: 'building-101'},

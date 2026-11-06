@@ -13,7 +13,7 @@ it('compares identical illustrated Paille homes with 1, 2 and 3 compatible adult
   for (const [index, home] of s.buildings.entries()) {
     expect(home.kind).toBe('enclosure');
     expect(home.habitat).toEqual({type: 'paille', level: 1});
-    expect(buildingFootprint(home)).toEqual({x: 18 + index * 8, y: 24, width: 5, height: 4});
+    expect(buildingFootprint(home)).toEqual({x: 18 + index * 8, y: 24, width: 6, height: 5});
     expect(buildingPlacementReason(s, home.x, home.y, home.id)).toBeNull();
     const adults = s.rabbits.filter(r => r.enclosureId === home.id);
     expect(adults).toHaveLength(index + 1);

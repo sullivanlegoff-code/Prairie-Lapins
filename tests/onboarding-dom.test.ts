@@ -73,7 +73,7 @@ it.each([.1,.65])('guides every real action, roll=%s, with reloads and no contro
   document.getElementById('recenter-view')!.click();expect(scene.recenter).toHaveBeenCalled();
   ui.select({kind:'rabbit',id:'rabbit-2'});document.getElementById('open-missions')!.click();
   real(); expect(content().textContent).toContain('Emplacement valide');
-  const firstGhost=vi.mocked(scene.setPlacement).mock.calls.at(-1)![0]!;expect(firstGhost.cell).toEqual({x:0,y:32});
+  const firstGhost=vi.mocked(scene.setPlacement).mock.calls.at(-1)![0]!;expect(firstGhost.cell).toEqual({x:10,y:40});
   real();expect(state().pattes).toBe(150);checkpoint();
   const snow = state().buildings.find(b=>b.habitat?.type==='neige')!;
   expect(snow.x).toBeGreaterThanOrEqual(0);

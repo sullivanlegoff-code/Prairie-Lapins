@@ -17,13 +17,13 @@ describe('purchase and birth XP in the same candidate',()=>{
   const s=rich(),r=run(s,{type:'buyRabbit',species,enclosureId:'building-1'});expect(r.state.progression.totalXp).toBe(PROGRESSION.xp.commonPurchase+(species==='paille'?0:60));expect(r.progressionGain?.xpGained).toBe(PROGRESSION.xp.commonPurchase+(species==='paille'?0:60));expect(r.state.pattes).toBe(s.pattes-SPECIES[species].price!);expect(s.rabbits).toHaveLength(1);
  });
  it.each(['universal','neige','farm'] as const)('pays and creates %s with catalogue XP',kind=>{
-  const s=rich(),r=run(s,kind==='farm'?{type:'buyBuilding',kind,x:17,y:24}:{type:'buyBuilding',kind:'enclosure',habitatType:kind,x:17,y:24});
+  const s=rich(),r=run(s,kind==='farm'?{type:'buyBuilding',kind,x:17,y:24}:{type:'buyBuilding',kind:'enclosure',habitatType:kind,x:16,y:24});
   expect(r.state.progression.totalXp).toBe(kind==='farm'?PROGRESSION.xp.construction.farm:kind==='universal'?PROGRESSION.xp.construction.universalHabitat:PROGRESSION.xp.construction.specializedHabitat);expect(r.state.buildings).toHaveLength(4);
  });
  it.each(['paille','boudinet','bouee','magicien','dragon'] as SpeciesId[])('welcomes an existing pending %s for its real rarity, once',species=>{
   const s=baby(species),r=run(s, welcomeOf(s, 'building-1'));expect(r.state.progression.totalXp).toBe(PROGRESSION.xp.birth[SPECIES[species].rarity]+(SPECIES[species].rarity==='rare'?250:0));expect(r.state.rabbits.at(-1)?.id).toBe('birth-6');expect(r.state.missions.events.welcome).toBe(1);expect(r.state.discovered).toContain(species);const again=act(r.state, welcomeOf(r.state, 'building-1'),0);expect(again.ok).toBe(false);expect(again.state).toEqual(r.state);
  });
- it.each([{type:'buyRabbit',species:'neige',enclosureId:'building-1'},{type:'buyBuilding',kind:'enclosure',habitatType:'neige',x:17,y:24},{type:'buyBuilding',kind:'farm',x:17,y:24}] as Command[])('heart complement grants the same XP once for $type',cmd=>{
+ it.each([{type:'buyRabbit',species:'neige',enclosureId:'building-1'},{type:'buyBuilding',kind:'enclosure',habitatType:'neige',x:16,y:24},{type:'buyBuilding',kind:'farm',x:17,y:24}] as Command[])('heart complement grants the same XP once for $type',cmd=>{
   const normal=run(rich(),cmd),s=rich();s.pattes=0;s.hearts=100;const q=quoteComplement(s,cmd as Parameters<typeof quoteComplement>[1],0);if(!q.ok)throw Error(q.reason);
   expect(q.hearts).toBeGreaterThan(0);expect(s.progression.totalXp).toBe(0);const r=run(s,{type:'payWithHearts',action:cmd as Parameters<typeof quoteComplement>[1],maxHearts:q.hearts,maxPattes:q.pattes});expect(r.progressionGain?.xpGained).toBe(normal.progressionGain?.xpGained);expect(r.state.hearts).toBe(100-q.hearts+r.progressionGain!.heartsGranted);
  });

@@ -5,6 +5,7 @@ import type {HabitatType, HabitatLevel} from '../config/habitats';
 import type {MainMissionId, DailyMissionId, MainEvent} from '../config/missions';
 import type {BuildingKind, CareKind, Destination, OrderId, SpeciesId} from '../config/balance';
 import type {DecorationId} from '../config/decorations';
+import type {FormerFootprintEra} from '../config/habitatSizes';
 import type {EvolutionChallenge} from '../config/evolutionChallenges';
 import type {ChristmasChallengeId} from '../config/christmasEvent';
 
@@ -29,13 +30,14 @@ export interface Building {
   incomeUnits: number;
   /** `ultra`: a level 3 snow habitat turned into the Ultra neige one at the Christmas market (v27, its own picture; it stays). */
   habitat: {type: HabitatType; level: HabitatLevel; ultra?: true} | null;
-  /** Footprint actually acquired (enclosures only): 1 = 5 × 4, 2 = 8 × 5, 3 = 10 × 6 fine cells. Absent = 1, whatever the level. Anchored at x, y. */
+  /** Footprint actually acquired (enclosures only): 1 = 6 × 5, 2 = 10 × 6, 3 = 12 × 7 fine cells. Absent = 1, whatever the level. Anchored at x, y. */
   footprintTier?: HabitatLevel;
   /**
-   * Enclosures only: still keeps its tier's size from before the enlargement of 3 November 2026 (4 × 4, 6 × 5, 8 × 6), because a
-   * save written before it had no room around it. Removed as soon as it can grow at load, or when it is upgraded.
+   * Enclosures only: still keeps its tier's size of a former era (`ENCLOSURE_SIZE_ERA` in config/habitatSizes), because a save
+   * written then had no room around it: 1 = before 3 November 2026 (4 × 4, 6 × 5, 8 × 6), 2 = from 3 November 2026 (5 × 4,
+   * 8 × 5, 10 × 6). Raised or removed as soon as it can grow at load, removed when it is upgraded.
    */
-  formerFootprint?: true;
+  formerFootprint?: FormerFootprintEra;
   /**
    * The nest of the islet of the Epics (v27, owner, 5 November 2026): a second nest, floating off the land grid at
    * EPIC_ISLET.cell, bought once for Hearts; its births have ×1.1 chances of Epics, Legendaries and Benny. Never moved or stored.

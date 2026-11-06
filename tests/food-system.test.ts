@@ -16,7 +16,7 @@ import type {Command, GameState} from '../src/state/types';
 // Food rework (owner, 25 October 2026): « herbe » becomes food, the farm grows ten crops, affection 15 needs the statue.
 const run = (s: GameState, c: Command, now = s.lastSimulatedAt) => { const r = act(s, c, now); if (!r.ok) throw Error(`${c.type}: ${r.reason}`); return r.state; };
 const atLevel = (level: number) => { const s = createGame(0); s.progression = {totalXp: cumulativeLevelXp(level), rewardedThroughLevel: level}; return s; };
-const free = (s: GameState) => { for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y)) return {x, y}; throw Error('no free cell'); };
+const free = (s: GameState, kind?: 'enclosure') => { for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y, undefined, kind)) return {x, y}; throw Error('no free cell'); };
 
 describe('the Statue de l’Affection', () => {
   it('is sold among the buildings from level 15 at its price; the second one waits for level 22', () => {

@@ -15,15 +15,15 @@ import {evolveAbove30} from './evolved';
 function run(s: GameState, command: Command, now = s.lastSimulatedAt) {
   const r = act(s, command, now, () => 0); if (!r.ok) throw Error(r.reason); return r.state;
 }
-function freeCell(s: GameState) {
-  for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y)) return {x, y};
+function freeCell(s: GameState, kind?: 'enclosure') {
+  for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y, undefined, kind)) return {x, y};
   throw Error('No space');
 }
 const atLevel = (s: GameState, level: number) => { s.progression = {totalXp: cumulativeLevelXp(level), rewardedThroughLevel: level}; return s; };
 function salonGame(species: SpeciesId[]) {
   let s = atLevel(createGame(0), 25); s.pattes = 1_000_000;
   for (let i = 0; i < 2; i++) { const c = freeCell(s); s.buildings.push(emptyBuilding(`building-${s.nextId++}`, 'statue', c.x, c.y)); }
-  const c = freeCell(s), home = emptyBuilding(`building-${s.nextId++}`, 'enclosure', c.x, c.y); home.habitat = {type: 'universal', level: 3};
+  const c = freeCell(s, 'enclosure'), home = emptyBuilding(`building-${s.nextId++}`, 'enclosure', c.x, c.y); home.habitat = {type: 'universal', level: 3};
   s.buildings.push(home);
   s = run(s, {type: 'buyBuilding', kind: 'salon', ...freeCell(s)});
   const ids = species.map(sp => { const id = `rabbit-${s.nextId++}`; s.rabbits.push({id, species: sp, affection: 20, enclosureId: home.id}); if (!s.discovered.includes(sp)) s.discovered.push(sp); return id; });

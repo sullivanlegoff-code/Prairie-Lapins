@@ -46,31 +46,53 @@ export function habitatSlots(tier: HabitatLevel, count: number): readonly {x: nu
 }
 const tierOf = (tier: number | undefined): HabitatLevel => tier === 2 || tier === 3 ? tier : 1;
 /**
- * Enlarged enclosures (3 November 2026, the owner: « Les enclos doivent être plus grands »). Every tier gains about a third of
- * ground: 4 × 4 → 5 × 4 (+25 % of cells), 6 × 5 → 8 × 5 (+33 %), 8 × 6 → 10 × 6 (+25 %). The approved paintings, their rabbit places
- * and wandering zones are shown `ENCLOSURE_SCALE` times larger, the same factor on both axes (never stretched, never redrawn):
- * ×1.15 at tiers 1 and 2 (+32 % of drawn area) and ×1.12 at tier 3 (+25 %), the largest factor whose painting still ends, at the
- * front and on both sides, inside the new footprint. Rabbits keep their size, so each one has more room.
+ * Enclosure sizes, by era (an era is one of the successive sizes the game has given its enclosures, oldest first):
+ * - era 1, the sizes before 3 November 2026: 4 × 4, 6 × 5, 8 × 6 (`HABITAT_SIZE_PROPOSAL[tier].footprint`), drawn at × 1;
+ * - era 2, the first enlargement (3 November 2026, the owner: « Les enclos doivent être plus grands »): 5 × 4, 8 × 5, 10 × 6,
+ *   drawn at × 1.15, × 1.15 and × 1.12;
+ * - era 3, the current one (6 November 2026, the owner: « Je veux que les enclos soient encore plus grand (niveau 1, 2 et 3
+ *   agrandis) »): 6 × 5, 10 × 6, 12 × 7 fine cells (+50 %, +50 % and +40 % of ground over era 2), drawn at × 1.38, × 1.4 and
+ *   × 1.3 (+44 %, +48 % and +35 % of drawn area over era 2).
+ * At every era the approved paintings, their rabbit places and wandering zones are shown `ENCLOSURE_SCALE` times larger, the same
+ * factor on both axes (never stretched, never redrawn): just below the largest factor whose painting still ends, at the front and
+ * on both sides, inside the footprint, for every habitat type (× 1.398, × 1.428 and × 1.318 at era 3: level 1 is held by the
+ * width of the Feu painting, levels 2 and 3 by the front of the Neige and Universel ones). A level 3 (12 × 7) still leaves four
+ * free columns and nine free rows of its 16 × 16 parcel; a new island's Paille enclosure (6 × 5 at 6, 40) stays clear of the nest
+ * and the nursery. Rabbits keep their size, so each one has more room.
  *
- * `HABITAT_SIZE_PROPOSAL[tier].footprint` stays the former size: an enclosure saved before this change keeps it
- * (`Building.formerFootprint`) until it can grow at load or is upgraded.
+ * An enclosure saved with an older era's size keeps it (`Building.formerFootprint`: the era it keeps) until it can grow at load
+ * (`growFormerEnclosures`) or is upgraded (always to the current size of its next tier).
  */
-export const ENCLOSURE_FOOTPRINTS: Readonly<Record<HabitatLevel, {width: number; depth: number}>> = {1: {width: 5, depth: 4}, 2: {width: 8, depth: 5}, 3: {width: 10, depth: 6}};
-export const ENCLOSURE_SCALE: Readonly<Record<HabitatLevel, number>> = {1: 1.15, 2: 1.15, 3: 1.12};
+export type FormerFootprintEra = 1 | 2;
+export const ENCLOSURE_FOOTPRINTS: Readonly<Record<HabitatLevel, {width: number; depth: number}>> = {1: {width: 6, depth: 5}, 2: {width: 10, depth: 6}, 3: {width: 12, depth: 7}};
+export const ENCLOSURE_SCALE: Readonly<Record<HabitatLevel, number>> = {1: 1.38, 2: 1.4, 3: 1.3};
+/** The sizes of the former eras and the factor their drawings had. */
+export const FORMER_ENCLOSURE_FOOTPRINTS: Readonly<Record<FormerFootprintEra, Readonly<Record<HabitatLevel, {width: number; depth: number}>>>> = {
+  1: {1: HABITAT_SIZE_PROPOSAL[1].footprint, 2: HABITAT_SIZE_PROPOSAL[2].footprint, 3: HABITAT_SIZE_PROPOSAL[3].footprint},
+  2: {1: {width: 5, depth: 4}, 2: {width: 8, depth: 5}, 3: {width: 10, depth: 6}},
+};
+export const FORMER_ENCLOSURE_SCALE: Readonly<Record<FormerFootprintEra, Readonly<Record<HabitatLevel, number>>>> = {1: {1: 1, 2: 1, 3: 1}, 2: {1: 1.15, 2: 1.15, 3: 1.12}};
+/** The era of the current sizes (no `formerFootprint`), written in every save since 6 November 2026 (`enclosureSizes`). */
+export const ENCLOSURE_SIZE_ERA = 3;
+const eraOf = (former: number | undefined): FormerFootprintEra | null => former === 1 || former === 2 ? former : null;
 /** Footprint of every other building kind. */
 export const COMPACT_FOOTPRINT = {width: 4, depth: 4} as const;
 /**
- * Footprint in fine cells of an enclosure tier (any value outside the three tiers reads as tier 1): the enlarged size, or the
- * size before the enlargement for an enclosure that still keeps it.
+ * Footprint in fine cells of an enclosure tier (any value outside the three tiers reads as tier 1): the current size, or the
+ * size of the former era an enclosure still keeps.
  */
-export const habitatFootprint = (tier: number | undefined, former = false): {width: number; depth: number} =>
-  former ? HABITAT_SIZE_PROPOSAL[tierOf(tier)].footprint : ENCLOSURE_FOOTPRINTS[tierOf(tier)];
-/** Footprint of any building: enclosures by tier, everything else 4 × 4. */
-export const buildingSize = (b: {kind: string; footprintTier?: number; formerFootprint?: boolean}): {width: number; depth: number} =>
-  b.kind === 'enclosure' ? habitatFootprint(b.footprintTier, b.formerFootprint === true) : COMPACT_FOOTPRINT;
-/** Uniform factor applied to an enclosure's drawing and rabbit layout: 1 while it keeps its former footprint. */
-export const enclosureScale = (b: {footprintTier?: number; formerFootprint?: boolean}): number =>
-  b.formerFootprint ? 1 : ENCLOSURE_SCALE[tierOf(b.footprintTier)];
+export const habitatFootprint = (tier: number | undefined, former?: number): {width: number; depth: number} => {
+  const era = eraOf(former);
+  return era ? FORMER_ENCLOSURE_FOOTPRINTS[era][tierOf(tier)] : ENCLOSURE_FOOTPRINTS[tierOf(tier)];
+};
+/** Footprint of any building: enclosures by tier (and former era), everything else 4 × 4. */
+export const buildingSize = (b: {kind: string; footprintTier?: number; formerFootprint?: number}): {width: number; depth: number} =>
+  b.kind === 'enclosure' ? habitatFootprint(b.footprintTier, b.formerFootprint) : COMPACT_FOOTPRINT;
+/** Uniform factor applied to an enclosure's drawing and rabbit layout: the one of the era whose footprint it has. */
+export const enclosureScale = (b: {footprintTier?: number; formerFootprint?: number}): number => {
+  const era = eraOf(b.formerFootprint);
+  return era ? FORMER_ENCLOSURE_SCALE[era][tierOf(b.footprintTier)] : ENCLOSURE_SCALE[tierOf(b.footprintTier)];
+};
 /** Footprint of a level in world units, for comparison with the drawing and with the neighbouring grid. */
 export const habitatProposalWorldSize = (level: HabitatLevel) => {
   const {footprint} = HABITAT_SIZE_PROPOSAL[level];

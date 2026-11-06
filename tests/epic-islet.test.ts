@@ -15,9 +15,9 @@ function run(s: GameState, command: Command, now = s.lastSimulatedAt) {
 const atLevel = (s: GameState, level: number) => { s.progression = {totalXp: cumulativeLevelXp(level), rewardedThroughLevel: level}; return s; };
 function game(level = 18, hearts = 500) {
   const s = atLevel(createGame(0), level); s.hearts = hearts;
-  const free = () => { for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y)) return {x, y}; throw Error('No space'); };
+  const free = (kind?: 'enclosure') => { for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y, undefined, kind)) return {x, y}; throw Error('No space'); };
   for (const kind of ['nest', 'nursery'] as const) if (!s.buildings.some(b => b.kind === kind)) { const c = free(); s.buildings.push(emptyBuilding(`building-${s.nextId++}`, kind, c.x, c.y)); }
-  const c = free(), home = emptyBuilding(`building-${s.nextId++}`, 'enclosure', c.x, c.y); home.habitat = {type: 'universal', level: 3};
+  const c = free('enclosure'), home = emptyBuilding(`building-${s.nextId++}`, 'enclosure', c.x, c.y); home.habitat = {type: 'universal', level: 3};
   s.buildings.push(home);
   for (const species of ['paille', 'paille', 'neige', 'neige'] as const) { s.rabbits.push({id: `rabbit-${s.nextId++}`, species, affection: 5, enclosureId: home.id}); if (!s.discovered.includes(species)) s.discovered.push(species); }
   s.rabbits.forEach(r => { r.affection = Math.max(r.affection, 5); });

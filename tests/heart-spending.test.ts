@@ -12,7 +12,7 @@ function run(s: GameState, command: Command, now = s.lastSimulatedAt) {
 }
 function setup(kind: 'farm' | 'agency', level = 22) {
   let s = createGame(0); s.progression = {totalXp: cumulativeLevelXp(level), rewardedThroughLevel: level}; s.pattes = 10000; s.hearts = 200;
-  for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y)) {
+  for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y, undefined, kind)) {
     s = run(s, {type: 'buyBuilding', kind, x, y}); return s;
   }
   throw Error('No space');
