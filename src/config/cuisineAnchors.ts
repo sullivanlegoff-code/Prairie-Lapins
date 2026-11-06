@@ -56,7 +56,7 @@ export const CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>> = {
   benny: a([.58, .22, .36, 6], [.7, .56, .3], [.66, .37, .3]),
   // The Christmas update's rabbits (5 November 2026), read on 10 % grids of their v1 sprites only: not yet checked in the kitchen.
   vantablack: a([.68, .24, .34, 6], [.72, .5, .3], [.73, .37, .3]),
-  'gigi-rarafe': a([.66, .09, .3, 4], [.7, .3, .26], [.7, .19, .28]),
+  'gigi-rarafe': a([.42, .09, .3, -4], [.42, .33, .28], [.42, .17, .28]),
   yetiti: a([.66, .12, .36, 6], [.7, .42, .3], [.7, .27, .3]),
   rennes: a([.64, .27, .34, 6], [.7, .52, .3], [.71, .39, .28]),
   susucre: a([.72, .3, .34, 6], [.78, .56, .3], [.79, .43, .28]),
@@ -65,9 +65,9 @@ export const CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>> = {
   fantome: a([.55, .1, .36, 2], [.55, .45, .3], [.56, .3, .3]),
   bouyoyo: a([.6, .12, .36, 4], [.6, .48, .3], [.62, .32, .3]),
   nuage: a([.62, .12, .36, 4], [.64, .48, .3], [.66, .32, .3]),
-  champignon: a([.6, .08, .38, 4], [.62, .45, .3], [.64, .3, .3]),
+  champignon: a([.55, .2, .38, 2], [.58, .5, .3], [.58, .34, .3]),
   'lapin-de-sulli': a([.5, .12, .4, 0], [.5, .6, .34], [.52, .4, .34]),
-  'pain-epice': a([.6, .12, .36, 4], [.6, .5, .3], [.62, .3, .3]),
+  'pain-epice': a([.74, .3, .26, 6], [.76, .62, .26], [.8, .41, .24]),
   'flocon-cristal': a([.62, .14, .34, 4], [.64, .45, .28], [.66, .3, .28]),
 };
 /** A right-facing rabbit with its head at the top right of its picture; mirrored for a left-facing one. */
@@ -115,19 +115,19 @@ export const EVOLVED_CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>>
   dragon: a([0.72, 0.12, .36, 4], [.74, 0.58, .3], [.74, 0.35, .3]),
   requin: a([0.72, 0.12, .36, 4], [.74, 0.58, .3], [.74, 0.31, .3]),
   // The Christmas update's evolutions (6 November 2026): estimates on the v2 sprites, not yet checked in the kitchen.
-  fantome: a([.55, .1, .36, 2], [.55, .45, .3], [.56, .3, .3]),
-  bouyoyo: a([.6, .12, .36, 4], [.6, .48, .3], [.62, .32, .3]),
-  nuage: a([.62, .12, .36, 4], [.64, .48, .3], [.66, .32, .3]),
-  champignon: a([.6, .08, .38, 4], [.62, .45, .3], [.64, .3, .3]),
-  'lapin-de-sulli': a([.5, .12, .4, 0], [.5, .6, .34], [.52, .4, .34]),
-  'pain-epice': a([.6, .12, .36, 4], [.6, .5, .3], [.62, .3, .3]),
+  fantome: a([.42, .22, .3, -2], [.4, .38, .3], [.4, .25, .3]),
+  bouyoyo: a([.76, .31, .22, 6], [.85, .55, .2], [.87, .405, .18]),
+  nuage: a([.3, .2, .3, -4], [.3, .4, .3], [.28, .29, .24]),
+  champignon: a([.71, .23, .3, 4], [.8, .5, .22], [.8, .39, .2]),
+  'lapin-de-sulli': a([.42, .16, .34, -2], [.38, .4, .34], [.3, .28, .3]),
+  'pain-epice': a([.81, .3, .26, 2], [.84, .535, .22], [.86, .405, .18]),
   'flocon-cristal': a([.62, .14, .34, 4], [.64, .45, .28], [.66, .3, .28]),
-  vantablack: a([.68, .22, .34, 6], [.72, .5, .3], [.73, .36, .3]),
-  'gigi-rarafe': a([.66, .09, .3, 4], [.7, .3, .26], [.7, .19, .28]),
-  yetiti: a([.6, .14, .36, 4], [.62, .46, .3], [.62, .3, .3]),
-  rennes: a([.64, .26, .34, 6], [.7, .52, .3], [.71, .4, .28]),
+  vantablack: a([.745, .3, .2, 4], [.865, .57, .2], [.86, .385, .18]),
+  'gigi-rarafe': a([.4, .09, .28, -4], [.45, .33, .26], [.42, .15, .26]),
+  yetiti: a([.38, .1, .3, -4], [.4, .33, .3], [.4, .2, .24]),
+  rennes: a([.6, .285, .2, 2], [.7, .476, .2], [.7, .357, .18]),
   susucre: a([.7, .28, .34, 6], [.74, .58, .3], [.76, .44, .28]),
-  arkoko: a([.64, .2, .38, 4], [.7, .52, .32], [.72, .38, .3]),
+  arkoko: a([.826, .233, .22, 4], [.85, .56, .22], [.863, .38, .18]),
 };
 /** `evolved`: the anchors of the species' evolved drawing (a rabbit showing it), else those of its v1. */
 export function cuisineAnchors(species: SpeciesId, facing: 1 | -1 = 1, evolved = false): CuisineAnchors {

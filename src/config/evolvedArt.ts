@@ -93,19 +93,19 @@ export const EVOLVED_ART: readonly EvolvedSprite[] = [
   // Lapin Requin Roi des Océans.
   {id: 'requin', name: 'Roi des Océans', file: 'assets/rabbits/requin/requin-v2.png', texture: 'rabbit-requin-evolved-v2', width: 465, height: 484, worldWidth: 54.8, groundY: 12},
   // The Christmas update's thirteen rabbits (5 and 6 November 2026), painted in the same pose as their first drawing.
-  {id: 'vantablack', name: 'Braise d’encre', file: 'assets/rabbits/vantablack/vantablack-v2.png', texture: 'rabbit-vantablack-evolved-v2', width: 394, height: 531, worldWidth: 46.4, groundY: 12},
-  {id: 'gigi-rarafe', name: 'Reine de la savane', file: 'assets/rabbits/gigi-rarafe/gigi-rarafe-v2.png', texture: 'rabbit-gigi-rarafe-evolved-v2', width: 390, height: 610, worldWidth: 46, groundY: 12},
-  {id: 'yetiti', name: 'Gardien des neiges', file: 'assets/rabbits/yetiti/yetiti-v2.png', texture: 'rabbit-yetiti-evolved-v2', width: 646, height: 653, worldWidth: 76.2, groundY: 12},
-  {id: 'rennes', name: 'Chef de l’attelage', file: 'assets/rabbits/rennes/rennes-v2.png', texture: 'rabbit-rennes-evolved-v2', width: 436, height: 561, worldWidth: 51.4, groundY: 12},
+  {id: 'vantablack', name: 'Braise d’encre', file: 'assets/rabbits/vantablack/vantablack-v2.png', texture: 'rabbit-vantablack-evolved-v2', width: 434, height: 482, worldWidth: 51.2, groundY: 12},
+  {id: 'gigi-rarafe', name: 'Reine de la savane', file: 'assets/rabbits/gigi-rarafe/gigi-rarafe-v2.png', texture: 'rabbit-gigi-rarafe-evolved-v2', width: 311, height: 767, worldWidth: 36.6, groundY: 12, facing: 'left'},
+  {id: 'yetiti', name: 'Gardien des neiges', file: 'assets/rabbits/yetiti/yetiti-v2.png', texture: 'rabbit-yetiti-evolved-v2', width: 538, height: 785, worldWidth: 63.4, groundY: 12, facing: 'left'},
+  {id: 'rennes', name: 'Chef de l’attelage', file: 'assets/rabbits/rennes/rennes-v2.png', texture: 'rabbit-rennes-evolved-v2', width: 468, height: 522, worldWidth: 55.2, groundY: 12},
   {id: 'susucre', name: 'Sucre glacé', file: 'assets/rabbits/susucre/susucre-v2.png', texture: 'rabbit-susucre-evolved-v2', width: 444, height: 533, worldWidth: 52.4, groundY: 12},
-  {id: 'arkoko', name: 'Cape arc-en-ciel', file: 'assets/rabbits/arkoko/arkoko-v2.png', texture: 'rabbit-arkoko-evolved-v2', width: 386, height: 628, worldWidth: 45.5, groundY: 12},
-  {id: 'fantome', name: 'Drap de soie', file: 'assets/rabbits/fantome/fantome-v2.png', texture: 'rabbit-fantome-evolved-v2', width: 456, height: 502, worldWidth: 53.8, groundY: 12},
-  {id: 'bouyoyo', name: 'Bouillotte de luxe', file: 'assets/rabbits/bouyoyo/bouyoyo-v2.png', texture: 'rabbit-bouyoyo-evolved-v2', width: 389, height: 514, worldWidth: 45.8, groundY: 12},
-  {id: 'lapin-de-sulli', name: 'Grand manteau', file: 'assets/rabbits/lapin-de-sulli/lapin-de-sulli-v2.png', texture: 'rabbit-lapin-de-sulli-evolved-v2', width: 381, height: 547, worldWidth: 44.9, groundY: 12},
-  {id: 'pain-epice', name: 'Chef pâtissier', file: 'assets/rabbits/pain-epice/pain-epice-v2.png', texture: 'rabbit-pain-epice-evolved-v2', width: 371, height: 529, worldWidth: 43.7, groundY: 12},
+  {id: 'arkoko', name: 'Cape arc-en-ciel', file: 'assets/rabbits/arkoko/arkoko-v2.png', texture: 'rabbit-arkoko-evolved-v2', width: 456, height: 531, worldWidth: 53.8, groundY: 12},
+  {id: 'fantome', name: 'Drap de soie', file: 'assets/rabbits/fantome/fantome-v2.png', texture: 'rabbit-fantome-evolved-v2', width: 358, height: 641, worldWidth: 42.2, groundY: 12, facing: 'left'},
+  {id: 'bouyoyo', name: 'Bouillotte de luxe', file: 'assets/rabbits/bouyoyo/bouyoyo-v2.png', texture: 'rabbit-bouyoyo-evolved-v2', width: 428, height: 466, worldWidth: 50.5, groundY: 12},
+  {id: 'lapin-de-sulli', name: 'Grand manteau', file: 'assets/rabbits/lapin-de-sulli/lapin-de-sulli-v2.png', texture: 'rabbit-lapin-de-sulli-evolved-v2', width: 361, height: 575, worldWidth: 42.6, groundY: 12, facing: 'left'},
+  {id: 'pain-epice', name: 'Chef pâtissier', file: 'assets/rabbits/pain-epice/pain-epice-v2.png', texture: 'rabbit-pain-epice-evolved-v2', width: 391, height: 503, worldWidth: 46.1, groundY: 12},
   {id: 'flocon-cristal', name: 'Couronne de givre', file: 'assets/rabbits/flocon-cristal/flocon-cristal-v2.png', texture: 'rabbit-flocon-cristal-evolved-v2', width: 356, height: 531, worldWidth: 42, groundY: 12},
-  {id: 'nuage', name: 'Nuage d’arc-en-ciel', file: 'assets/rabbits/nuage/nuage-v2.png', texture: 'rabbit-nuage-evolved-v2', width: 455, height: 512, worldWidth: 53.6, groundY: 12},
-  {id: 'champignon', name: 'Roi des sous-bois', file: 'assets/rabbits/champignon/champignon-v2.png', texture: 'rabbit-champignon-evolved-v2', width: 435, height: 535, worldWidth: 51.3, groundY: 12},
+  {id: 'nuage', name: 'Nuage d’arc-en-ciel', file: 'assets/rabbits/nuage/nuage-v2.png', texture: 'rabbit-nuage-evolved-v2', width: 405, height: 575, worldWidth: 47.7, groundY: 12, facing: 'left'},
+  {id: 'champignon', name: 'Roi des sous-bois', file: 'assets/rabbits/champignon/champignon-v2.png', texture: 'rabbit-champignon-evolved-v2', width: 431, height: 541, worldWidth: 50.8, groundY: 12},
 ];
 export const evolvedSprite = (species: SpeciesId): EvolvedSprite | undefined => EVOLVED_ART.find(art => art.id === species);
 export const hasEvolvedArt = (species: SpeciesId): boolean => !!evolvedSprite(species);

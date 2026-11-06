@@ -255,3 +255,9 @@ Corrigé par l'audit :
 - le marché suit l'îlot de la corde, le bonhomme de neige suit son enclos, Dadi musique coupée ne bloque plus, textes de l'îlot « au sud », noms d'espèces retirés de la forêt, « Broussailles » au lieu de « Mauvaises herbes ».
 
 Non corrigé, connu : relâcher le lapin qui a reçu l'affection de la cuisine rouvre celle du jour ; une nurserie avec un bébé sur son 3e ou 4e coussin garde ces coussins ; les cadeaux du ciel bougent encore par `left` / `top`, sans `transform`.
+
+## Dessins du 6 novembre 2026
+
+Bases B de Gigi-rarafe, Champignon des bois et Pain d'épice ; 11 évolutions refaites (planches `output/planches/planche-v4.png` à `planche-v6.png`, hors Git). Six ont été repeintes de trois-quarts à la demande du propriétaire : Bouyoyo, Champignon, Pain d'épice, Vantablack, Rennes, Arkoko. La base de Pain d'épice reste de profil, approuvée telle quelle.
+
+Les accessoires de cuisine de ces 6 évolutions ont été placés sur une vue de contrôle, sans essai dans la vraie cuisine.

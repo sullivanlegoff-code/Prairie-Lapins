@@ -861,13 +861,13 @@
   },
   "gigi-rarafe": {
     "file": "assets/rabbits/gigi-rarafe/gigi-rarafe-v1.png",
-    "worldWidth": 46,
-    "sourceSha1": "56f94afcd676537b177878b265c27b240ffeb492",
-    "sourceWidth": 781,
-    "sourceHeight": 1223,
-    "width": 339,
-    "height": 531,
-    "derivedSha1": "324c39075b093ca75fe8e7e179e6c4b205af0aa5"
+    "worldWidth": 40.1,
+    "sourceSha1": "6e32649471f42ba2980a01960353f9bdc2ce0346",
+    "sourceWidth": 601,
+    "sourceHeight": 1241,
+    "width": 296,
+    "height": 611,
+    "derivedSha1": "adb8232c9e1069f9e16bb3e55d947bb4d8c3c837"
   },
   "yetiti": {
     "file": "assets/rabbits/yetiti/yetiti-v1.png",
@@ -941,13 +941,13 @@
   },
   "champignon": {
     "file": "assets/rabbits/champignon/champignon-v1.png",
-    "worldWidth": 51,
-    "sourceSha1": "e83d4318f773c56c056f8c39852776ead4c9f022",
-    "sourceWidth": 979,
-    "sourceHeight": 1215,
-    "width": 376,
-    "height": 467,
-    "derivedSha1": "1060af6e74b6bfc94672456a6f76aa173e39eb5a"
+    "worldWidth": 40.8,
+    "sourceSha1": "5fb958e5e608fc19609b7df22907ea89763e352b",
+    "sourceWidth": 635,
+    "sourceHeight": 1230,
+    "width": 301,
+    "height": 583,
+    "derivedSha1": "5029c77e4ba45e1f881ed3ff8a27e8e673d04cae"
   },
   "lapin-de-sulli": {
     "file": "assets/rabbits/lapin-de-sulli/lapin-de-sulli-v1.png",
@@ -961,13 +961,13 @@
   },
   "pain-epice": {
     "file": "assets/rabbits/pain-epice/pain-epice-v1.png",
-    "worldWidth": 43,
-    "sourceSha1": "a0260f6af98212031406d870c7398adc4652494e",
-    "sourceWidth": 844,
-    "sourceHeight": 1244,
-    "width": 317,
-    "height": 467,
-    "derivedSha1": "80834918082abc41e5c411a19dd9fde0bbc9ab30"
+    "worldWidth": 50.7,
+    "sourceSha1": "e89f88899eebab82a069d866d9072fc708058519",
+    "sourceWidth": 1088,
+    "sourceHeight": 1153,
+    "width": 404,
+    "height": 428,
+    "derivedSha1": "2bd065e62d15b694929305190aaaa7a2a87e3457"
   },
   "flocon-cristal": {
     "file": "assets/rabbits/flocon-cristal/flocon-cristal-v1.png",
@@ -985,13 +985,13 @@
     "registry": "src/config/evolvedArt.ts",
     "displayScale": 1.15,
     "file": "assets/rabbits/vantablack/vantablack-v2.png",
-    "worldWidth": 46.4,
-    "sourceSha1": "028f998ba4f70c828f795f938a6632d3b423095b",
-    "sourceWidth": 894,
-    "sourceHeight": 1205,
-    "width": 394,
-    "height": 531,
-    "derivedSha1": "b6d50b35361e663d2130c4b9c201335470670da3"
+    "worldWidth": 51.2,
+    "sourceSha1": "d45deed66d3cfbf59d70e9a14592c39662cafdd7",
+    "sourceWidth": 1076,
+    "sourceHeight": 1195,
+    "width": 434,
+    "height": 482,
+    "derivedSha1": "3b9919661f06542b7d93694febfcc00488486429"
   },
   "gigi-rarafe-evolution": {
     "species": "gigi-rarafe",
@@ -999,13 +999,13 @@
     "registry": "src/config/evolvedArt.ts",
     "displayScale": 1.15,
     "file": "assets/rabbits/gigi-rarafe/gigi-rarafe-v2.png",
-    "worldWidth": 46,
-    "sourceSha1": "f8cb441a51460319b1c262b81487144df3f56480",
-    "sourceWidth": 785,
-    "sourceHeight": 1227,
-    "width": 390,
-    "height": 610,
-    "derivedSha1": "255f978dab9d7e4d351a6d39961984654778eab7"
+    "worldWidth": 36.6,
+    "sourceSha1": "b4791710e44e508982d1d8c1fdb632bf2aef9b38",
+    "sourceWidth": 506,
+    "sourceHeight": 1248,
+    "width": 311,
+    "height": 767,
+    "derivedSha1": "2ec335d247fc77c714d593486ed12ad65b507bbb"
   },
   "yetiti-evolution": {
     "species": "yetiti",
@@ -1013,13 +1013,13 @@
     "registry": "src/config/evolvedArt.ts",
     "displayScale": 1.15,
     "file": "assets/rabbits/yetiti/yetiti-v2.png",
-    "worldWidth": 76.2,
-    "sourceSha1": "93fa2f5ecf28ba058996417dc0c6cfaa9b61e15c",
-    "sourceWidth": 1241,
-    "sourceHeight": 1254,
-    "width": 646,
-    "height": 653,
-    "derivedSha1": "0bce234040157d9c15b6e78af27dab2c3471414e"
+    "worldWidth": 63.4,
+    "sourceSha1": "ab1d129df3b73c5d7808b8fad4b3d203ecf0f849",
+    "sourceWidth": 849,
+    "sourceHeight": 1238,
+    "width": 538,
+    "height": 785,
+    "derivedSha1": "36a2ccf3dd37b3726ee2168058b7b9aa42bc1a9f"
   },
   "rennes-evolution": {
     "species": "rennes",
@@ -1027,13 +1027,13 @@
     "registry": "src/config/evolvedArt.ts",
     "displayScale": 1.15,
     "file": "assets/rabbits/rennes/rennes-v2.png",
-    "worldWidth": 51.4,
-    "sourceSha1": "a335e0dfad923e77c7570e4b3d20420e12f7e9fb",
-    "sourceWidth": 941,
-    "sourceHeight": 1210,
-    "width": 436,
-    "height": 561,
-    "derivedSha1": "19eec01ad5840b55da27a83c9b5b1a3f7ca99658"
+    "worldWidth": 55.2,
+    "sourceSha1": "5eb834970d5401b60cf614c8fdc6f4c37d54c6a5",
+    "sourceWidth": 1100,
+    "sourceHeight": 1228,
+    "width": 468,
+    "height": 522,
+    "derivedSha1": "a1ff5c7a54cf34b8442acfb05ad409c86a76f1ce"
   },
   "susucre-evolution": {
     "species": "susucre",
@@ -1055,13 +1055,13 @@
     "registry": "src/config/evolvedArt.ts",
     "displayScale": 1.15,
     "file": "assets/rabbits/arkoko/arkoko-v2.png",
-    "worldWidth": 45.5,
-    "sourceSha1": "a8830d182bda04dbe7fa6d08a83198ab951db9e9",
-    "sourceWidth": 754,
-    "sourceHeight": 1227,
-    "width": 386,
-    "height": 628,
-    "derivedSha1": "c640a8ffad05b59660eac1b0f8079a942bbe3fbd"
+    "worldWidth": 53.8,
+    "sourceSha1": "90563de50764a00cdf1ae5219aede6cdb0880778",
+    "sourceWidth": 1039,
+    "sourceHeight": 1211,
+    "width": 456,
+    "height": 531,
+    "derivedSha1": "0e80c378c6db0832378ef1d5baf96094b40a78f4"
   },
   "fantome-evolution": {
     "species": "fantome",
@@ -1069,13 +1069,13 @@
     "registry": "src/config/evolvedArt.ts",
     "displayScale": 1.15,
     "file": "assets/rabbits/fantome/fantome-v2.png",
-    "worldWidth": 53.8,
-    "sourceSha1": "be81b95ae91fc4728647bff3b80424cacfaa559e",
-    "sourceWidth": 1123,
-    "sourceHeight": 1237,
-    "width": 456,
-    "height": 502,
-    "derivedSha1": "68082be10c2a7de0b5169e86535a5dd225bf4cf8"
+    "worldWidth": 42.2,
+    "sourceSha1": "a93654197fe3e491dd41ca3e28bf3a6f494923ba",
+    "sourceWidth": 696,
+    "sourceHeight": 1247,
+    "width": 358,
+    "height": 641,
+    "derivedSha1": "aa3f0f833fb47091454bbda2678214aa9fc7343f"
   },
   "bouyoyo-evolution": {
     "species": "bouyoyo",
@@ -1083,13 +1083,13 @@
     "registry": "src/config/evolvedArt.ts",
     "displayScale": 1.15,
     "file": "assets/rabbits/bouyoyo/bouyoyo-v2.png",
-    "worldWidth": 45.8,
-    "sourceSha1": "760f96fb2a2313a22ebbc3a7660bd742d9562999",
-    "sourceWidth": 946,
-    "sourceHeight": 1251,
-    "width": 389,
-    "height": 514,
-    "derivedSha1": "3c2731ec8ef35690017c89aa1ec01900fcd78168"
+    "worldWidth": 50.5,
+    "sourceSha1": "624931565d7d6b5738e50abbaf5d605a7d458c42",
+    "sourceWidth": 1090,
+    "sourceHeight": 1186,
+    "width": 428,
+    "height": 466,
+    "derivedSha1": "90d4b85d960105a2217e3414af4acbdc505b62e3"
   },
   "lapin-de-sulli-evolution": {
     "species": "lapin-de-sulli",
@@ -1097,13 +1097,13 @@
     "registry": "src/config/evolvedArt.ts",
     "displayScale": 1.15,
     "file": "assets/rabbits/lapin-de-sulli/lapin-de-sulli-v2.png",
-    "worldWidth": 44.9,
-    "sourceSha1": "bc4a9e0b9c6a12a85206f089fc07f7f866fce258",
-    "sourceWidth": 873,
-    "sourceHeight": 1254,
-    "width": 381,
-    "height": 547,
-    "derivedSha1": "83770e0cce4d2eefcd35c274dac640bc2f2fcde5"
+    "worldWidth": 42.6,
+    "sourceSha1": "f684cb606f40842403581c4edb3bb7264ca860ff",
+    "sourceWidth": 786,
+    "sourceHeight": 1252,
+    "width": 361,
+    "height": 575,
+    "derivedSha1": "4544e6674551d6a0fe949b6285e6b584f88ddaf5"
   },
   "pain-epice-evolution": {
     "species": "pain-epice",
@@ -1111,13 +1111,13 @@
     "registry": "src/config/evolvedArt.ts",
     "displayScale": 1.15,
     "file": "assets/rabbits/pain-epice/pain-epice-v2.png",
-    "worldWidth": 43.7,
-    "sourceSha1": "23f84c6332c35bfda842f7c40c5a0e8d5d1faaf6",
-    "sourceWidth": 875,
-    "sourceHeight": 1247,
-    "width": 371,
-    "height": 529,
-    "derivedSha1": "6c122bc2d1e93873544c797667b5d85e5ad86167"
+    "worldWidth": 46.1,
+    "sourceSha1": "9e340b40e7d1d52105119204f6d9fc1ae8b58765",
+    "sourceWidth": 952,
+    "sourceHeight": 1224,
+    "width": 391,
+    "height": 503,
+    "derivedSha1": "c1f3e5623d95eeb5f73eef18508ff89f00f7e78b"
   },
   "flocon-cristal-evolution": {
     "species": "flocon-cristal",
@@ -1139,13 +1139,13 @@
     "registry": "src/config/evolvedArt.ts",
     "displayScale": 1.15,
     "file": "assets/rabbits/nuage/nuage-v2.png",
-    "worldWidth": 53.6,
-    "sourceSha1": "e9d65f9b29118d43be60ff9423792b1ee121d153",
-    "sourceWidth": 1069,
-    "sourceHeight": 1203,
-    "width": 455,
-    "height": 512,
-    "derivedSha1": "2ebbba09012fa0ee8c02ed51149e8976919ce260"
+    "worldWidth": 47.7,
+    "sourceSha1": "caa6e6033511253dac08943f0722aaab2b5c21a1",
+    "sourceWidth": 876,
+    "sourceHeight": 1243,
+    "width": 405,
+    "height": 575,
+    "derivedSha1": "9f7a1bd09d5ee1fad0a5b19b207d14763bc33fd2"
   },
   "champignon-evolution": {
     "species": "champignon",
@@ -1153,12 +1153,12 @@
     "registry": "src/config/evolvedArt.ts",
     "displayScale": 1.15,
     "file": "assets/rabbits/champignon/champignon-v2.png",
-    "worldWidth": 51.3,
-    "sourceSha1": "d7260171ef72248db3920cfae11de6d67e56369d",
-    "sourceWidth": 988,
-    "sourceHeight": 1214,
-    "width": 435,
-    "height": 535,
-    "derivedSha1": "1c92d2678896fcba85df1fc2d2030ccc0ecd5e97"
+    "worldWidth": 50.8,
+    "sourceSha1": "b662a5d77ed5570bd3c2769ac2d6bdb28bb918f6",
+    "sourceWidth": 942,
+    "sourceHeight": 1182,
+    "width": 431,
+    "height": 541,
+    "derivedSha1": "a56578340885bf83d71e7052c4e6cebf47863c0e"
   }
 }

@@ -38,7 +38,7 @@ export const DESIGNS = [
   // Christmas update (owner, 5 November 2026): original concepts chosen by the owner (Vantablack A, Gigi-rarafe B, Yetiti A,
   // Rennes A, Susucre B), and Arkoko, the owner's own drawing (its transparency checkerboard is printed into the picture).
   {id: 'vantablack', source: 'output/imagegen/nouveaux-lapins-v1/vantablack-A.png', background: 'light'},
-  {id: 'gigi-rarafe', source: 'output/imagegen/nouveaux-lapins-v1/gigi-rarafe-B.png', background: 'light'},
+  {id: 'gigi-rarafe', source: 'output/imagegen/nouveaux-lapins-v4/gigi-rarafe-B.png', background: 'light'},
   {id: 'yetiti', source: 'output/imagegen/nouveaux-lapins-v1/yetiti-A.png', background: 'light'},
   {id: 'rennes', source: 'output/imagegen/nouveaux-lapins-v1/rennes-A.png', background: 'light'},
   {id: 'susucre', source: 'output/imagegen/nouveaux-lapins-v1/susucre-B.png', background: 'light'},
@@ -50,10 +50,10 @@ export const DESIGNS = [
   {id: 'fantome', source: 'output/imagegen/nouveaux-lapins-v3/fantome-v3.png', background: 'light'},
   {id: 'bouyoyo', source: 'output/imagegen/nouveaux-lapins-v3/bouyoyo-v2.png', background: 'light'},
   {id: 'lapin-de-sulli', source: 'output/imagegen/nouveaux-lapins-v3/lapin-de-sulli-B.png', background: 'light'},
-  {id: 'pain-epice', source: 'output/imagegen/nouveaux-lapins-v3/pain-epice-A.png', background: 'light'},
+  {id: 'pain-epice', source: 'output/imagegen/nouveaux-lapins-v4/pain-epice-B.png', background: 'light'},
   {id: 'flocon-cristal', source: 'output/imagegen/nouveaux-lapins-v3/flocon-cristal-A.png', background: 'corner', tolerance: 10},
   {id: 'nuage', source: 'output/imagegen/nouveaux-lapins-v3/nuage-A.png', background: 'light'},
-  {id: 'champignon', source: 'output/imagegen/nouveaux-lapins-v3/champignon-A.png', background: 'light'},
+  {id: 'champignon', source: 'output/imagegen/nouveaux-lapins-v4/champignon-B.png', background: 'light'},
   // Affection 30 evolutions of the five commons, chosen by the owner on 3 November 2026 (white backdrop, the rabbit alone). The
   // approved paintings stay beside the species as <id>-evolution-source.png; `master` writes <id>-evolution-sprite.png (the v2 source)
   // instead of the species' own sprite.png. Usage: node scripts/prepare-rabbit-masters.mjs . paille-evolution neige-evolution ...
@@ -78,7 +78,9 @@ export const DESIGNS = [
 ];
 // Bouee's left ear encloses a pocket of background: seed only that pocket, preserving the ring's white dots. Dinenette's evolved
 // tail curl encloses another one, between the heart and the back.
-export const BACKGROUND_SEEDS = {bouee: [[490, 570]], 'dinenette-evolution': [[150, 820]]};
+// The drawings of 6 November 2026: Rennes between its antlers, Arkoko between its legs, Champignon by its small mushrooms, Gigi-rarafe beside an ear and between its legs.
+export const BACKGROUND_SEEDS = {
+  'bouyoyo-evolution': [[768, 1056]],bouee: [[490, 570]], 'dinenette-evolution': [[150, 820]], champignon: [[542, 519]], 'gigi-rarafe': [[588, 1080], [400, 228]]};
 const MARGIN = 8, LIGHT_MIN = 200, LIGHT_SPREAD = 26, CHECKER_MIN = 130, CHECKER_SPREAD = 14, CORNER_TOLERANCE = 56;
 
 /** 8-bit RGB or RGBA, non-interlaced; returns RGBA. */
