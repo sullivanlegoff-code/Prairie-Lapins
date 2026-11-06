@@ -84,7 +84,7 @@
 @media (prefers-reduced-motion: reduce) { .jump-rope-burst.shown, .jump-rope-carrier .jump-rope-figure { animation: none !important; } .jump-rope-carrier { transform: translate(-50%, 0); } }
 .jump-rope-pop.shown { animation: jump-rope-pop .45s ease-out; }
 @keyframes jump-rope-pop { 0% { opacity: 1; transform: translate(-50%, 8px) scale(.9); } 100% { opacity: 0; transform: translate(-50%, -18px) scale(1.1); } }
-.jump-rope-card {
+.jump-rope-card {
   position: absolute; z-index: 8; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(420px, calc(100% - 32px));
   max-height: calc(100% - 32px); overflow: auto; padding: 16px 18px; border-radius: 22px; background: #fff8e8; border: 3px solid #8a7550;
   box-shadow: 0 8px 24px #3b332644; text-align: center; touch-action: auto;
