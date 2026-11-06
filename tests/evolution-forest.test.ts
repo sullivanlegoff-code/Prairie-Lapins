@@ -30,8 +30,8 @@ function run(s: GameState, command: Command, now = s.lastSimulatedAt) {
 function refused(s: GameState, c: Command, reason: string) {
   expect(act(s, c, s.lastSimulatedAt, () => 0)).toEqual({ok: false, state: s, reason});
 }
-function freeCell(s: GameState) {
-  for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y)) return {x, y};
+function freeCell(s: GameState, kind?: 'enclosure') {
+  for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y, undefined, kind)) return {x, y};
   throw Error('No space');
 }
 const atLevel = (s: GameState, level: number) => { s.progression = {totalXp: cumulativeLevelXp(level), rewardedThroughLevel: level}; return s; };
@@ -39,7 +39,7 @@ const atLevel = (s: GameState, level: number) => { s.progression = {totalXp: cum
 function setup(rabbits: [SpeciesId, number][], forest = true) {
   let s = atLevel(createGame(0), 25); s.pattes = 100_000;
   for (let i = 0; i < 2; i++) { const c = freeCell(s); s.buildings.push(emptyBuilding(`building-${s.nextId++}`, 'statue', c.x, c.y)); }
-  const c = freeCell(s), home = emptyBuilding(`building-${s.nextId++}`, 'enclosure', c.x, c.y); home.habitat = {type: 'universal', level: 3};
+  const c = freeCell(s, 'enclosure'), home = emptyBuilding(`building-${s.nextId++}`, 'enclosure', c.x, c.y); home.habitat = {type: 'universal', level: 3};
   s.buildings.push(home);
   if (forest) s = run(s, {type: 'buyBuilding', kind: 'forest', ...freeCell(s)});
   const ids = rabbits.map(([species, affection]) => {

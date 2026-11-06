@@ -33,8 +33,8 @@ const panel = () => document.getElementById('panel-content')!;
 // Owner, 4 November 2026: touching a legendary opens its sheet only; a button on the sheet plays its show after closing it.
 function game(): GameState {
   const s = createGame(0); s.progression = {totalXp: cumulativeLevelXp(20), rewardedThroughLevel: 20};
-  const free = () => { for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y)) return {x, y}; throw Error('No space'); };
-  const c = free(); s.buildings.push(emptyBuilding('building-101', 'enclosure', c.x, c.y)); s.buildings.find(b => b.id === 'building-101')!.habitat = {type: 'universal', level: 3};
+  const free = (kind?: 'enclosure') => { for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y, undefined, kind)) return {x, y}; throw Error('No space'); };
+  const c = free('enclosure'); s.buildings.push(emptyBuilding('building-101', 'enclosure', c.x, c.y)); s.buildings.find(b => b.id === 'building-101')!.habitat = {type: 'universal', level: 3};
   s.rabbits.push({id: 'rabbit-104', species: 'ankylosaure', affection: 5, enclosureId: 'building-101'}, {id: 'rabbit-105', species: 'dragon', affection: 5, enclosureId: 'building-101'},
     {id: 'rabbit-106', species: 'requin', affection: 5, enclosureId: 'building-101'});
   s.discovered.push('ankylosaure', 'dragon', 'requin'); s.nextId = 107; return s;

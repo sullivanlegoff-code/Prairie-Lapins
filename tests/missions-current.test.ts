@@ -46,7 +46,7 @@ describe('current mission journey',()=>{
    s=run(s,{type:'claimDailyMission',id,cycleStart:dailyCycleStart(s)});
   }
   expect(progressionFromXp(s.progression.totalXp).level).toBe(5);
-  const spot=Array.from({length:48*48},(_,i)=>({x:i%48,y:Math.floor(i/48)})).find(p=>!buildingPlacementReason(s,p.x,p.y))!;
+  const spot=Array.from({length:48*48},(_,i)=>({x:i%48,y:Math.floor(i/48)})).find(p=>!buildingPlacementReason(s,p.x,p.y,undefined,'enclosure'))!;
   const before=s.pattes;
   s=run(s,{type:'buyBuilding',kind:'enclosure',habitatType:'feu',...spot});
   s=run(s,{type:'buyRabbit',species:'feu',enclosureId:s.buildings.at(-1)!.id});

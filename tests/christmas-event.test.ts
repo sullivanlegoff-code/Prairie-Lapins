@@ -177,6 +177,7 @@ describe('the snowman', () => {
     s.progression = {totalXp: cumulativeLevelXp(2), rewardedThroughLevel: 2};
     refused(s, {type: 'buildSnowman', enclosureId: s.buildings.find(b => b.kind === 'farm')!.id}, 'NOT_FOUND');
     refused(s, {type: 'buildSnowman', enclosureId: 'building-999'}, 'NOT_FOUND');
+    s.acquiredParcels.push('south'); // The starting parcel has no room left for another 6 × 5 enclosure.
     const c = freeCell(s, 'enclosure'), empty = emptyBuilding(`building-${s.nextId++}`, 'enclosure', c.x, c.y); s.buildings.push(empty);
     refused(s, {type: 'buildSnowman', enclosureId: empty.id}, 'EMPTY_ENCLOSURE');
     // A rabbit at the salon is not present.

@@ -39,8 +39,8 @@ const slotText = (slot: number) => panel().querySelector(`[data-jump-rope-slot="
 /** Level 20, the islet bought, a universal enclosure (building-100) with Noisette (affection 9), Pompon (6) and Caramel (4). */
 function game(): GameState {
   const s = createGame(0); s.pattes = 1_000; s.progression = {totalXp: cumulativeLevelXp(JUMP_ROPE.unlockLevel), rewardedThroughLevel: JUMP_ROPE.unlockLevel};
-  const free = () => { for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y)) return {x, y}; throw Error('No space'); };
-  const c = free(); s.buildings.push(emptyBuilding('building-100', 'enclosure', c.x, c.y)); s.jumpIsland = true;
+  const free = (kind?: 'enclosure') => { for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y, undefined, kind)) return {x, y}; throw Error('No space'); };
+  const c = free('enclosure'); s.buildings.push(emptyBuilding('building-100', 'enclosure', c.x, c.y)); s.jumpIsland = true;
   for (const [id, name, affection] of [['rabbit-101', 'Noisette', 9], ['rabbit-102', 'Pompon', 6], ['rabbit-103', 'Caramel', 4]] as const)
     s.rabbits.push({id, species: 'paille', affection, enclosureId: 'building-100', name});
   s.nextId = 104; return s;
@@ -104,9 +104,11 @@ it('the islet picks a trio, plays one life with Rejouer, pays the jumps and reme
 
 it('the remembered trio comes back, a rabbit on a trip cannot be chosen, and the space bar jumps too', () => {
   const s = game(); s.jumpRope = {cycle: 0, rewarded: 0, best: 3, team: {carriers: ['rabbit-101', 'rabbit-103'], athlete: 'rabbit-102'}};
-  const free = () => { for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y)) return {x, y}; throw Error('No space'); };
-  const c = free(); s.buildings.push(emptyBuilding('building-105', 'agency', c.x, c.y));
-  const d = free(); s.buildings.push(emptyBuilding('building-106', 'enclosure', d.x, d.y)); s.nextId = 107;
+  const free = (kind?: 'enclosure') => { for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y, undefined, kind)) return {x, y}; throw Error('No space'); };
+  // The starting parcel has no room left for a second 6 × 5 enclosure: the south parcel is owned too.
+  s.acquiredParcels.push('south');
+  const d = free('enclosure'); s.buildings.push(emptyBuilding('building-106', 'enclosure', d.x, d.y));
+  const c = free(); s.buildings.push(emptyBuilding('building-105', 'agency', c.x, c.y)); s.nextId = 107;
   s.rabbits.push({id: 'rabbit-104', species: 'neige', affection: 20, enclosureId: 'building-106'}); s.discovered.push('neige');
   s.travel = {welcomed: true, trips: [{rabbitId: 'rabbit-104', destination: 'Paris', startedAt: 0, endsAt: 3 * 3_600_000, hearts: 1}]};
   const {ui} = mount(s); ui.open({kind: 'jumpIsland'});

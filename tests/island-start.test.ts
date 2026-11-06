@@ -19,7 +19,7 @@ describe('southwest start for new games', () => {
     const s = createGame(0);
     expect(s.islandStart).toBe('southwest');
     expect(s.acquiredParcels).toEqual(['southwest']);
-    expect(s.buildings.map(b => [b.kind, b.x, b.y])).toEqual([['enclosure', 6, 40], ['nest', 2, 36], ['nursery', 10, 36]]);
+    expect(s.buildings.map(b => [b.kind, b.x, b.y])).toEqual([['enclosure', 4, 40], ['nest', 2, 36], ['nursery', 10, 36]]);
     for (const b of s.buildings) {
       expect(acquiredFootprint(s, b.x, b.y, FINE_GRID, FINE_GRID)).toBe(true);
       expect(buildingPlacementReason(s, b.x, b.y, b.id)).toBeNull();

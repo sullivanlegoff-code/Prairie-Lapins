@@ -42,7 +42,7 @@ export const gridPoint = (x: number, y: number): Point => ({x: grid.originX + x 
 /** Explicit fine-grid ↔ world conversion; camera remains in world coordinates. */
 export const finePoint=(x:number,y:number):Point=>gridPoint(x/FINE_GRID,y/FINE_GRID);
 /** Centre of the building's effective footprint (an enclosure's tier and size, any other kind 4 × 4), anchored at its top-left cell. */
-export const buildingCenter=(b:Point&{kind:string;footprintTier?:number;formerFootprint?:boolean}):Point=>{const size=buildingSize(b);return finePoint(b.x+size.width/2,b.y+size.depth/2);};
+export const buildingCenter=(b:Point&{kind:string;footprintTier?:number;formerFootprint?:number}):Point=>{const size=buildingSize(b);return finePoint(b.x+size.width/2,b.y+size.depth/2);};
 export function fineCell(point:Point):Point{return {x:Math.floor((point.x-grid.originX)/(grid.width/FINE_GRID)),y:Math.floor((point.y-grid.originY)/(grid.depth/FINE_GRID))};}
 export function gridCell(point: Point): Point {
   return {x: Math.floor((point.x - grid.originX) / grid.width), y: Math.floor((point.y - grid.originY) / grid.depth)};

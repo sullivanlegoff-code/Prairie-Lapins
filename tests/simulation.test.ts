@@ -31,7 +31,7 @@ function setup(): GameState {
   let s = createGame(0); s.pattes = 10_000;
   s = run(s, {type: 'placeStarterBuilding', kind: 'nest', x: 22, y: 20});
   s = run(s, {type: 'placeStarterBuilding', kind: 'nursery', x: 26, y: 20});
-  s = run(s, {type: 'buyBuilding', kind: 'enclosure', x: 17, y: 24});
+  s = run(s, {type: 'buyBuilding', kind: 'enclosure', x: 16, y: 24});
   s = run(s, {type: 'feed', id: 'rabbit-2'}); s = run(s, {type: 'feed', id: 'rabbit-3'});
   return s;
 }

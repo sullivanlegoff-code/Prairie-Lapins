@@ -89,7 +89,7 @@ export function scenarioState(id: ScenarioId, now: number): GameState {
   if (id === 'initiationSaved') {
     s=createCentreStartGame(now);s.grass=10;
     const run=(command:Command)=>{const result=act(s,command,now,()=>.1);if(!result.ok)throw Error(result.reason);s=result.state;};
-    run({type:'buyBuilding',kind:'enclosure',habitatType:'neige',x:17,y:24});const snow=s.buildings.at(-1)!.id;
+    run({type:'buyBuilding',kind:'enclosure',habitatType:'neige',x:16,y:24});const snow=s.buildings.at(-1)!.id;
     run({type:'buyRabbit',species:'neige',enclosureId:snow});const neige=s.rabbits.at(-1)!.id;run({type:'claimMainMission',id:'welcome-snow'});
     run({type:'feed',id:'rabbit-2'});run({type:'feed',id:neige});
     run({type:'breed',parents:['rabbit-2',neige]});
@@ -149,7 +149,7 @@ export function scenarioState(id: ScenarioId, now: number): GameState {
     const rows = [
       {level: 1 as const, x: 18, species: ['paille', 'neige', 'feu'] as const},
       {level: 2 as const, x: 25, species: ['belier-gris', 'volant', 'boudinet', 'phoenix', 'amethyste'] as const},
-      {level: 3 as const, x: 34, species: ['ardent', 'snk', 'glassofeu', 'phoenix', 'plume', 'pic-pic', 'fluffy'] as const},
+      {level: 3 as const, x: 36, species: ['ardent', 'snk', 'glassofeu', 'phoenix', 'plume', 'pic-pic', 'fluffy'] as const},
     ];
     for (const row of rows) {
       const home = emptyBuilding(`building-${s.nextId++}`, 'enclosure', row.x, 24, 'universal'); home.habitat!.level = row.level; if (row.level > 1) home.footprintTier = row.level; s.buildings.push(home);
@@ -163,7 +163,7 @@ export function scenarioState(id: ScenarioId, now: number): GameState {
   if(id==='fineBuildings'){
     acquire('east');acquire('north');
     run({type:'moveBuilding',id:'building-5',x:37,y:21});run({type:'moveBuilding',id:'building-4',x:24,y:14});
-    run({type:'moveBuilding',id:'building-1',x:19,y:22});
+    run({type:'moveBuilding',id:'building-1',x:18,y:21});
     // A level-3 capacity on the compact 4 × 4 footprint, as in a save written before footprint tiers: no room is needed or paid for.
     s.buildings[0].habitat!.level=3;
     const mixed:SpeciesId[]=['paille','neige','frisket','belier-gris','feu','volant','icy'];
@@ -230,7 +230,7 @@ export function scenarioState(id: ScenarioId, now: number): GameState {
   } else if (id === 'reproduction' || id==='manualBreeding') {
     run({type: 'feed', id: 'rabbit-2'}); run({type: 'feed', id: 'rabbit-3'});
     if(id==='manualBreeding') {
-      run({type:'buyBuilding',kind:'enclosure',x:17,y:24});
+      run({type:'buyBuilding',kind:'enclosure',x:16,y:24});
       run({type:'moveRabbit',id:'rabbit-3',enclosureId:s.buildings.at(-1)!.id});
       const nursery=s.buildings.find(b=>b.kind==='nursery')!;
       nursery.nursery!.babies=[{slot:0,birth:{id:`birth-${s.nextId++}`,species:'paille',guaranteed:false,reservedDiscovery:false},startedAt:now-growthDuration('paille'),readyAt:now}];
@@ -244,7 +244,7 @@ export function scenarioState(id: ScenarioId, now: number): GameState {
     s.rabbits = []; s.buildings = []; s.discovered = [];
     const types = id === 'habitats' ? HABITAT_TYPES : id === 'collection' ? Array.from({length: Math.ceil(SPECIES_IDS.length / 7)}, () => 'universal' as const) : ['universal', 'universal'] as const;
     for (const [index, type] of types.entries()) {
-      const home = emptyBuilding(`building-${s.nextId++}`, 'enclosure', 17 + index % 3 * 5, 20 + Math.floor(index / 3) * 4, type);
+      const home = emptyBuilding(`building-${s.nextId++}`, 'enclosure', 17 + index % 3 * 6, 20 + Math.floor(index / 3) * 5, type);
       home.habitat!.level = 3; s.buildings.push(home);
       const species: SpeciesId[] = id === 'habitats' ? SPECIES_IDS.slice(0, 11).filter(species => type === 'universal' || SPECIES[species].types.includes(type)) : (id === 'collection' ? SPECIES_IDS : SPECIES_IDS.slice(0, 11)).slice(index * 7, index * 7 + 7);
       const count = id === 'habitats' ? 7 : species.length;

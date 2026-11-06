@@ -226,8 +226,10 @@ describe('catalogue, notebook, visuals and compatibility', () => {
     const complete = createGame(0);
     const pens = complete.buildings.filter(b => b.kind === 'enclosure');
     for (const pen of pens) pen.habitat!.level = 3;
-    // Level-3 enclosures hold seven: add valid ones, on free cells, until the whole catalogue fits one rabbit per species.
-    for (const [x, y] of [16, 21, 26, 31, 36, 41].flatMap(x => [28, 32, 16, 12, 36, 40, 8, 4].map(y => [x, y] as const))) {
+    // Level-3 enclosures hold seven: add valid ones, on free cells, until the whole catalogue fits one rabbit per species. Since
+    // the 6 × 5 enclosures (6 November 2026) the centre parcel holds too few of them: the whole island is owned.
+    complete.acquiredParcels.push('east', 'north', 'west', 'south');
+    for (const [x, y] of [16, 22, 28, 34, 40, 10, 4].flatMap(x => [27, 32, 14, 9, 37, 42, 4].map(y => [x, y] as const))) {
       if (pens.length * 7 >= SPECIES_IDS.length) break;
       const home = emptyBuilding(`building-${complete.nextId++}`, 'enclosure', x, y); home.habitat!.level = 3; complete.buildings.push(home);
       try { encodeGame(complete); pens.push(home); } catch { complete.buildings.pop(); complete.nextId--; }

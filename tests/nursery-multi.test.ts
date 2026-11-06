@@ -26,7 +26,7 @@ const babies = (s: GameState) => nursery(s).nursery!.babies;
 const slots = (s: GameState) => Object.fromEntries(babies(s).map(b => [b.slot, b.birth.id]));
 const byId = (s: GameState, id: string) => babies(s).find(b => b.birth.id === id)!;
 function habitat(s: GameState, type: HabitatType): GameState {
-  for (let y = 32; y <= 44; y++) for (let x = 0; x <= 12; x++) if (!buildingPlacementReason(s, x, y)) return run(s, {type: 'buyBuilding', kind: 'enclosure', habitatType: type, x, y});
+  for (let y = 32; y <= 44; y++) for (let x = 0; x <= 12; x++) if (!buildingPlacementReason(s, x, y, undefined, 'enclosure')) return run(s, {type: 'buyBuilding', kind: 'enclosure', habitatType: type, x, y});
   throw Error('no free cell');
 }
 /** Paille (building-1) and Neige (own habitat) parents at affection 2; the nursery has `capacity` usable cushions. */

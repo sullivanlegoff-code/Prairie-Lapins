@@ -109,7 +109,7 @@ describe('decoration ownership and atomic commands', () => {
     let s = buy(rich());const level=requiredExtensionLevel(2);s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level}; refused(s, {type: 'placeDecoration', id: 'decoration-4', location: outside(12, 0)}, 'INVALID_CELL');
     s = run(s, {type:'expand',parcelId:'east',expectedCost:600}); s.debris = []; s = pose(s, outside(23, 7)); // Random debris (5 November 2026) cleared away.
     refused(s, {type: 'placeDecoration', id: 'decoration-4', location: outside(24, 0)}, 'INVALID_CELL');
-    s = run(s, {type:'expand',parcelId:'west',expectedCost:2000}); s.debris = []; s = pose(s, outside(35, 7)); expect(s.buildings[0]).toMatchObject({x: 17, y: 20});
+    s = run(s, {type:'expand',parcelId:'west',expectedCost:2000}); s.debris = []; s = pose(s, outside(35, 7)); expect(s.buildings[0]).toMatchObject({x: 16, y: 19});
   });
   it('leaves income, affection, gifts, missions and birth RNG behavior unchanged', () => {
     let plain = rich(); plain.grass = 100; plain = run(plain, {type: 'feed', id: 'rabbit-2'}); plain = run(plain, {type: 'feed', id: 'rabbit-3'});

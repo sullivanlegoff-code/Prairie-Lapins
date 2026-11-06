@@ -19,7 +19,7 @@ function game(): GameState {
   return s;
 }
 function withSnowHabitat(s: GameState, level: 1 | 2 | 3 = 3) {
-  for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y)) {
+  for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y, undefined, 'enclosure')) {
     const b = emptyBuilding(`building-${s.nextId++}`, 'enclosure', x, y); b.habitat = {type: 'neige', level}; s.buildings.push(b); return b.id;
   }
   throw Error('No space');

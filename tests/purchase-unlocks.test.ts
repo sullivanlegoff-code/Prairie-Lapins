@@ -24,7 +24,7 @@ describe('old purchase milestones are evidence only at the one-time transition',
  it('uses discovered commons only for old saves without the former registry and counts more than one universal as evidence',()=>{
   const old=oldGame(0);delete old.purchaseUnlocks;old.discovered.push('feu');const migrated=reload(old);expect(hasPurchaseUnlock(migrated,'feu')).toBe(true);expect(hasPurchaseUnlock(migrated,'volant')).toBe(false);
   const single=oldGame(0);delete single.purchaseUnlocks;expect(hasPurchaseUnlock(reload(single),'universal')).toBe(false);
-  single.buildings.push(emptyBuilding('building-6','enclosure',17,24));single.nextId=7;expect(hasPurchaseUnlock(reload(single),'universal')).toBe(true);
+  single.buildings.push(emptyBuilding('building-6','enclosure',16,24));single.nextId=7;expect(hasPurchaseUnlock(reload(single),'universal')).toBe(true);
   const registry=oldGame(0);registry.discovered.push('feu');expect(hasPurchaseUnlock(reload(registry),'feu')).toBe(false);
  });
  it('new missions keep XP, claims and monetary rewards, without generating mission-based rights',()=>{

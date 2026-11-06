@@ -56,8 +56,8 @@ describe('catalogue v20', () => {
   });
   it('converts owned rabbits, a traveller, nest and nursery births without losing their data', () => {
     const s = scenarioState('collection', HOUR);
-    const free = () => {
-      for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y)) return {x, y};
+    const free = (kind?: 'enclosure') => {
+      for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y, undefined, kind)) return {x, y};
       throw Error('no free cell');
     };
     const pos = free(), agency = emptyBuilding(`building-${s.nextId++}`, 'agency', pos.x, pos.y);

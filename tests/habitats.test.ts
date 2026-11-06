@@ -25,8 +25,8 @@ const run = (s: GameState, command: Command, now = s.lastSimulatedAt) => {
 // This high-level fixture starts with its observable missions settled, as a real loaded game does.
 const rich = () => {const s=createGame(0);const level=Math.max(...HABITAT_TYPES.map(type=>requiredHabitatUpgradeLevel(type,3)));s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level};s.pattes=10000;s.grass=1000;s.hearts=100;return advance(s,0);};
 // Former strip column/row → v10 fine cell → v11 fine cell (same arrangement, enlarged parcels).
-// Column 0 one fine cell further left: enclosures are 5 cells wide since v24.
-const build = (s: GameState, type: HabitatType, x=1, y=0) => run(s,{type:'buyBuilding',kind:'enclosure',habitatType:type,x:toV11((x<6?x+3:x-6) * 4,'x')-(x===0?1:0),y:toV11((y+3) * 4,'y')});
+// Column 0 two fine cells further left: enclosures are 6 cells wide since 6 November 2026.
+const build = (s: GameState, type: HabitatType, x=1, y=0) => run(s,{type:'buyBuilding',kind:'enclosure',habitatType:type,x:toV11((x<6?x+3:x-6) * 4,'x')-(x===0?2:0),y:toV11((y+3) * 4,'y')});
 function refuse(s: GameState, c: Command, reason: Refusal, now=s.lastSimulatedAt) {
   const before=structuredClone(s), r=act(s,c,now,()=>.99);
   expect(r).toEqual({ok:false,state:before,reason}); expect(r.state).toBe(s); expect(s).toEqual(before);
@@ -92,8 +92,8 @@ describe('habitat compatibility and atomic entries',()=>{
   it('moves an occupied specialized building without changing income, occupants, level or affinity',()=>{
     let s=build(rich(),'paille');const home=s.buildings.at(-1)!.id;
     s=run(s,{type:'moveRabbit',id:'rabbit-2',enclosureId:home});s=run(s,{type:'upgradeHabitat',id:home,fromLevel:1});s=advance(s,1234567);
-    const old=structuredClone(s.buildings.at(-1)!);s=run(s,{type:'moveBuilding',id:home,x: 24, y: 25});
-    expect(s.buildings.at(-1)).toEqual({...old,x: 24, y: 25});expect(s.rabbits[0].enclosureId).toBe(home);expect(decode(encodeGame(s))).toEqual(s);
+    const old=structuredClone(s.buildings.at(-1)!);s=run(s,{type:'moveBuilding',id:home,x: 18, y: 25});
+    expect(s.buildings.at(-1)).toEqual({...old,x: 18, y: 25});expect(s.rabbits[0].enclosureId).toBe(home);expect(decode(encodeGame(s))).toEqual(s);
   });
   it('does not backdate income when entering a specialized habitat or increasing affection',()=>{
     let s=build(rich(),'paille');const home=s.buildings.at(-1)!.id;
@@ -106,7 +106,8 @@ describe('habitat compatibility and atomic entries',()=>{
 
 describe('levels, income and payments',()=>{
   it.each(['universal','feu'] as const)('upgrades %s one level at a time, preserves stored fractions and rejects maximal/stale commands',type=>{
-    let s=build(rich(),type);const home=s.buildings[1].id; s.buildings[1].incomeUnits=1234567;
+    // Column 0, row 1: room for the 12 × 7 of level 3 inside the centre parcel.
+    let s=build(rich(),type,0,1);const home=s.buildings[1].id; s.buildings[1].incomeUnits=1234567;
     const initial=s.pattes, initialHearts=s.hearts, first:Command={type:'upgradeHabitat',id:home,fromLevel:1};
     // Independent prices: level 2 in coins (universal 200, specialized 300), level 3 in exactly ten hearts and no coin.
     const coins=type==='universal'?175:225;
@@ -114,7 +115,7 @@ describe('levels, income and payments',()=>{
     expect(habitatStats(s.buildings[1])).toEqual(habitatLevel(type,2));expect(s.buildings[1].incomeUnits).toBe(1234567);
     refuse(s,first,'STALE_ACTION');
     s=run(s,{type:'upgradeHabitat',id:home,fromLevel:2});expect(s.pattes).toBe(initial-coins);expect(s.hearts).toBe(initialHearts-10);
-    expect(s.buildings[1]).toMatchObject({x: 22, y: 20,incomeUnits:1234567,habitat:{type,level:3}});
+    expect(s.buildings[1]).toMatchObject({x: 16, y: 24,incomeUnits:1234567,habitat:{type,level:3}});
     refuse(s,{type:'upgradeHabitat',id:home,fromLevel:3},'MAX_HABITAT_LEVEL');
     expect(decode(encodeGame(s))).toEqual(s);
   });

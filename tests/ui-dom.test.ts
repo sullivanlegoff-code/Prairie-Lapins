@@ -38,7 +38,7 @@ import {buildingPlacementReason} from '../src/simulation/placement';
 
 const cleanups: (() => void)[] = [];
 it('buys, places and selects Cuisine without opening the cooking activity', () => {
-  const initial=createGame(0);initial.buildings[0].x=26;initial.buildings[0].y=28;
+  const initial=createGame(0);initial.buildings[0].x=26;initial.buildings[0].y=27;
   const {controller,ui}=setup(initial);
   document.getElementById('open-shop')!.click();button('Bâtiments et décorations').click();
   button('Placer · 100 pièces').click();ui.select({kind:'cell',x:19,y:22});
@@ -166,7 +166,8 @@ function collectionReady(): GameState {
   let s = createGame(0); s.pattes = 20_000; s.grass = 500; s.progression = {totalXp: cumulativeLevelXp(9), rewardedThroughLevel: 9};
   const step = (command: Command) => { const r = act(s, command, 0, () => .5); if (!r.ok) throw Error(command.type + ': ' + r.reason); s = r.state; };
   step({type: 'placeStarterBuilding', kind: 'nest', x: 22, y: 20}); step({type: 'placeStarterBuilding', kind: 'nursery', x: 26, y: 20}); step({type: 'buyBuilding', kind: 'farm', x: 22, y: 24});
-  for (const [x, y] of [[17, 24], [26, 24], [17, 28]]) step({type: 'buyBuilding', kind: 'enclosure', x, y});
+  // The third 6 × 5 enclosure needs the east parcel: the centre one is full.
+  s.acquiredParcels.push('east'); for (const [x, y] of [[16, 24], [26, 24], [32, 24]]) step({type: 'buyBuilding', kind: 'enclosure', x, y});
   const second = s.buildings.filter(b => b.kind === 'enclosure')[1].id;
   for (const species of ['belier-gris', 'feu', 'volant'] as const) step({type: 'buyRabbit', species, enclosureId: second});
   s.rabbits.forEach(r => r.affection = 2); s.hearts = 12; s.pityFailures = 7; return s;
@@ -838,9 +839,9 @@ describe('habitat panels and controller transactions',()=>{
   it('announces the larger footprint, and explains an upgrade that has no room without offering to pay',()=>{
     const free=createGame(0);free.progression={totalXp:cumulativeLevelXp(14),rewardedThroughLevel:14};free.pattes=2000;
     const open=setup(free);open.ui.select({kind:'building',id:'building-1'});
-    expect(panel().textContent).toContain('emprise 5 × 4 → 8 × 5 cases, vers la droite et vers le bas');expect(button('Améliorer · 175 pièces').disabled).toBe(false);
+    expect(panel().textContent).toContain('emprise 6 × 5 → 10 × 6 cases, vers la droite et vers le bas');expect(button('Améliorer · 175 pièces').disabled).toBe(false);
     const blocked=createGame(0);blocked.progression={totalXp:cumulativeLevelXp(14),rewardedThroughLevel:14};blocked.pattes=2000;
-    const home=blocked.buildings[0];blocked.buildings.push(emptyBuilding('building-9','farm',home.x+5,home.y));blocked.nextId=10;
+    const home=blocked.buildings[0];blocked.buildings.push(emptyBuilding('building-9','farm',home.x+6,home.y));blocked.nextId=10;
     const shut=setup(blocked);shut.ui.select({kind:'building',id:'building-1'});
     expect(panel().textContent).toContain('Pas assez de place pour agrandir : un autre bâtiment occupe la zone voisine');
     const offer=button('Améliorer · 175 pièces');expect(offer.disabled).toBe(true);offer.click();expect(state(shut.controller).pattes).toBe(2000);expect(state(shut.controller).buildings[0]).toMatchObject({habitat:{level:1}});expect(state(shut.controller).buildings[0].footprintTier).toBeUndefined();expect(panel().textContent).not.toContain('Compléter');
@@ -849,8 +850,8 @@ describe('habitat panels and controller transactions',()=>{
     const initial=createGame(0);initial.progression={totalXp:cumulativeLevelXp(14),rewardedThroughLevel:14};
     const home=initial.buildings[0];home.x=18;home.y=24;home.footprintTier=2;home.habitat!.level=2;initial.buildings.push(emptyBuilding('building-9','farm',26,20));initial.nextId=10;
     const {ui}=setup(initial);ui.select({kind:'building',id:home.id});button('Déplacer ce bâtiment').click();
-    expect(panel().textContent).toContain('le coin de l’empreinte 8 × 5');expect(panel().textContent).not.toContain('4 × 4');
-    ui.select({kind:'fineCell',x:18,y:24});expect(panel().textContent).toContain('Grille fine : (18, 24) · empreinte 8 × 5');expect(panel().textContent).toContain('Emplacement valide · empreinte 8 × 5');
+    expect(panel().textContent).toContain('le coin de l’empreinte 10 × 6');expect(panel().textContent).not.toContain('4 × 4');
+    ui.select({kind:'fineCell',x:18,y:24});expect(panel().textContent).toContain('Grille fine : (18, 24) · empreinte 10 × 6');expect(panel().textContent).toContain('Emplacement valide · empreinte 10 × 6');
     ui.close();const other=setup(initial);other.ui.select({kind:'building',id:'building-9'});button('Déplacer ce bâtiment').click();expect(panel().textContent).toContain('le coin de l’empreinte 4 × 4');
   });
   it.each([[9,true],[10,false]])('offers the ten-heart upgrade with %i hearts: disabled=%s, and a refused click spends nothing',(hearts,disabled)=>{
@@ -864,7 +865,7 @@ describe('habitat panels and controller transactions',()=>{
   it('explains incompatible and full destinations for purchases and moves while allowing a compatible choice',()=>{
     const initial=createGame(0);initial.progression={totalXp:cumulativeLevelXp(14),rewardedThroughLevel:14};initial.pattes=5000;const {controller,ui}=setup(initial);
     controller.perform({type:'buyBuilding',kind:'enclosure',habitatType:'feu',x: 22, y: 20});
-    controller.perform({type:'buyBuilding',kind:'enclosure',habitatType:'neige',x: 22, y: 24});
+    controller.perform({type:'buyBuilding',kind:'enclosure',habitatType:'neige',x: 22, y: 25});
     const snow=state(controller).buildings[2].id;
     for(let i=0;i<3;i++)controller.perform({type:'buyRabbit',species:'neige',enclosureId:snow});
     ui.open({kind:'buyRabbit',species:'neige'});
@@ -899,9 +900,10 @@ describe('habitat panels and controller transactions',()=>{
   it('uses the development storage and clock for new habitat actions without changing normal progression',()=>{
     const normal=encodeGame(createGame(0)),values=new Map([[SAVE_KEY,normal]]),base:SaveStorage={getItem:k=>values.get(k)??null,setItem:(k,v)=>{values.set(k,v);}};
     const dev=developmentEnvironment(base),c=new GameController(dev.storage,()=>0);cleanups.push(()=>c.dispose());
-    expect(c.perform({type:'buyBuilding',kind:'enclosure',habitatType:'paille',x: 0, y: 40}).ok).toBe(true);
+    expect(c.perform({type:'buyBuilding',kind:'farm',x: 0, y: 44}).ok).toBe(true);
     expect(c.grantLaboratoryXp(500).ok).toBe(true);
-    // Since v24 the start parcel only has room for the starter enclosure's 8 × 5: that one is upgraded.
+    // The start parcel has room for the starter enclosure's 10 × 6 or for a second 6 × 5 enclosure, not both: a farm is bought
+    // beside it, and the starter enclosure is upgraded.
     expect(c.perform({type:'upgradeHabitat',id:'building-1',fromLevel:1}).ok).toBe(true);
     expect(state(c).buildings.find(b=>b.id==='building-1')!.habitat).toEqual({type:'paille',level:2});expect(values.get(SAVE_KEY)).toBe(normal);
     expect(JSON.parse(values.get('prairie-lapins.development.'+SAVE_KEY)!).version).toBe(27);
@@ -963,7 +965,7 @@ describe('direct decoration selection and confirmed resale UI', () => {
     button('Vendre · 400 pièces').click(); const confirm = button('Confirmer', dialog); confirm.click(); confirm.click();
     const after = state(controller);
     expect(after).toEqual({...before, pattes: before.pattes + 400, decorations: before.decorations.slice(1)});
-    expect(JSON.parse(data.get(SAVE_KEY)!)).toEqual({...after, presentationId: controller.getSnapshot().presentationId});
+    expect(JSON.parse(data.get(SAVE_KEY)!)).toEqual({...after, enclosureSizes: 3, presentationId: controller.getSnapshot().presentationId});
     expect(document.getElementById('game-panel')!.hidden).toBe(true);
     expect(scene.setDecorationSelection).toHaveBeenLastCalledWith(null);
   });
