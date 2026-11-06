@@ -552,8 +552,14 @@ export function decodeGame(json: string): DecodeResult {
     else { lookChangeSeen = true; rabbit.lookChange.endsAt = Math.min(rabbit.lookChange.endsAt, state.lastSimulatedAt + FOREST.changeMs); }
   }
   const rabbitIds = new Set(state.rabbits.map(rabbit => rabbit.id));
-  for (const id of Object.keys(state.cuisine.affectionCycles))
-    if (!rabbitIds.has(id)) delete state.cuisine.affectionCycles[id];
+  // A released rabbit's entry is kept for the day it was spent (the Cuisine gives one affection a day), then dropped.
+  // At most one such entry, and none when a rabbit still on the island already holds today's: a bloated file stays small.
+  const today = state.cuisine.affectionCycles, cycleNow = state.missions.daily.cycleIndex;
+  let spentToday = Object.entries(today).some(([id, cycle]) => rabbitIds.has(id) && cycle === cycleNow);
+  for (const [id, cycle] of Object.entries(today)) {
+    if (rabbitIds.has(id)) continue;
+    if (!spentToday && cycle === cycleNow) spentToday = true; else delete today[id];
+  }
   for (const id of Object.keys(state.affectionGifts ?? {})) if (!rabbitIds.has(id)) delete state.affectionGifts![id];
   for (const id of Object.keys(state.jumpRope?.athleteBest ?? {})) if (!rabbitIds.has(id)) delete state.jumpRope!.athleteBest![id];
   // Today's snowman stands in an enclosure: one since removed drops it, never a reason to refuse the save.

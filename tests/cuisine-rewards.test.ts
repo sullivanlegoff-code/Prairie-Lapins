@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {itAll} from './cases';
-import {act,createGame} from '../src/simulation';
+import {act,createGame,decodeGame,encodeGame} from '../src/simulation';
 import {CUISINE_REWARDS,CUISINE_TIP,CUISINE_FULL_REWARDS_PER_CYCLE} from '../src/config/balance';
 import {MISSION_CYCLE_DURATION} from '../src/config/missions';
 import {dailyCycleStart} from '../src/simulation/missions';
@@ -48,6 +48,18 @@ describe('Cuisine reward command',()=>{
     expect(r.state.hearts).toBe(before.hearts+1);expect(r.state.cuisine.heartCycle).toBe(0);expect(r.state.progression).toEqual(before.progression);
     expect(r.cuisineReward).toEqual({...CUISINE_REWARDS[recipeId],fullReward:true,affectionGranted:true,affectionAtCap:false,affectionStatueRequired:false,heartGranted:true,affectionRabbitId:s.rabbits[0].id});
     expect(s).toEqual(before);
+  });
+  it('keeps the day\'s affection spent when its rabbit is released, through a reload, until the next cycle',()=>{
+    const initial=withKitchen(createGame(1234567)),a=initial.rabbits[0];a.id='birth-101';
+    initial.rabbits.push({...a,id:'birth-102'});initial.nextId=103;
+    const first=reward(initial,'birth-101');expect(first.cuisineReward!.affectionGranted).toBe(true);
+    const released=act(first.state,{type:'release',id:'birth-101'},first.state.lastSimulatedAt);
+    expect(released.ok).toBe(true);if(!released.ok)return;
+    const loaded=decodeGame(encodeGame(released.state));expect(loaded.ok).toBe(true);if(!loaded.ok)return;
+    for(const s of [released.state,loaded.state]){const other=reward(s,'birth-102');expect(other.cuisineReward!.affectionGranted).toBe(false);expect(other.state.rabbits[0].affection).toBe(a.affection);}
+    const boundary=dailyCycleStart(loaded.state)+MISSION_CYCLE_DURATION,next=reward(loaded.state,'birth-102',boundary);
+    expect(next.cuisineReward!.affectionGranted).toBe(true);
+    const reloaded=decodeGame(encodeGame(next.state));expect(reloaded.ok).toBe(true);if(reloaded.ok)expect(reloaded.state.cuisine.affectionCycles).toEqual({'birth-102':1});
   });
   it('tracks same-species individuals by exact id and becomes eligible at the canonical cycle boundary',()=>{
     const initial=withKitchen(createGame(1234567)),a=initial.rabbits[0];a.id='birth-101';

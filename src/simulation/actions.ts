@@ -638,7 +638,10 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(!travelling(s, rabbit.id), 'TRAVELING'); requireRule(!atSalon(s, rabbit.id), 'AT_SALON'); requireRule(!busy(rabbit.id), 'PARENT_BUSY');
         requireRule(s.rabbits.filter(r => r.species === rabbit.species).length > 1, 'LAST_OF_SPECIES');
         credit('grass', releaseGrass(rabbit.species)); s.rabbits = s.rabbits.filter(r => r.id !== rabbit.id);
-        delete s.cuisine.affectionCycles[rabbit.id]; if (s.affectionGifts) delete s.affectionGifts[rabbit.id];
+        // Today's Cuisine affection stays spent when its rabbit leaves: releasing it must not reopen it (only one a day).
+        const today = s.missions.daily.cycleIndex, cycles = s.cuisine.affectionCycles;
+        if (cycles[rabbit.id] !== today || Object.entries(cycles).some(([id, cycle]) => id !== rabbit.id && cycle === today)) delete cycles[rabbit.id];
+        if (s.affectionGifts) delete s.affectionGifts[rabbit.id];
         break;
       }
       case 'renameRabbit': {
