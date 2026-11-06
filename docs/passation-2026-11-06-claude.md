@@ -28,7 +28,9 @@ La mémoire de l'ancien compte se trouve dans le dossier du projet sous `~/.clau
 
 ## Ce qui vient d'être fait (6 novembre)
 
-- **Audit de Noël corrigé** (`ddbdbea`). Trois petits points restent connus et non corrigés : l'affection de la cuisine se rouvre en relâchant le lapin, une nurserie garde ses 3e et 4e coussins occupés, les cadeaux du ciel bougent encore par `left` et `top`.
+- **Audit de Noël corrigé** (`ddbdbea`). Le soir du 6 novembre, deux de ces points sont corrigés : l'affection de la cuisine ne se rouvre plus en relâchant le lapin (`66f43a4`), et les cadeaux du ciel bougent par `translate` (`83c56c5`). Reste connu, laissé tel quel : une nurserie d'une ancienne partie garde ses 3e et 4e coussins occupés (gravité faible, c'est plutôt un petit cadeau).
+- **Cuisine** : toque et bavoir contrôlés en capture sur toutes les espèces, de base et évoluées. Quinze évolutions sont replacées (`0f31a42`). Les pattes qui cachent les yeux (commis triste) n'ont pas été regardées.
+- **Git** : le `main` local contient une ancienne fusion de Noël (`874a82d`, 6 novembre 9 h 09), jamais envoyée. Le jour de la sortie, refusionne `feature/noel` dans `main`.
 - **Nouveaux lapins et évolutions** validés par le propriétaire et intégrés (`a5ffbd7`). Les 48 espèces qui peuvent évoluer ont leur dessin, leurs défis et leurs repères de cuisine. Benny n'a pas d'évolution, par décision du propriétaire.
 - **Le vol de Benny** : battement d'ailes fluide (`4626209`). Seul l'affichage change, pas les règles.
 - **Apparition de Benny** : refaite avec ses poses peintes existantes (`b0a2084`, `cfaafe5`).
