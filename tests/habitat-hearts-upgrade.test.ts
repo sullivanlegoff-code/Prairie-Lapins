@@ -1,4 +1,5 @@
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {act, advance, createGame, decodeGame, encodeGame} from '../src/simulation';
 import {cumulativeLevelXp, requiredHabitatUpgradeLevel} from '../src/simulation/progression';
 import {HABITAT_CAPS, HABITAT_LEVELS, HABITAT_TYPES, habitatLevel, type HabitatType} from '../src/config/habitats';
@@ -25,7 +26,7 @@ describe('upgrading an enclosure: coins to level 2, exactly ten hearts to level 
     expect(HABITAT_LEVELS.universal[2].cap).toBe(HABITAT_CAPS[3].universal); expect(HABITAT_LEVELS.specialized[2].cap).toBe(HABITAT_CAPS[3].paille);
   });
 
-  it.each(HABITAT_TYPES.map(type => [type]))('%s: level 2 costs coins only, level 3 costs exactly ten hearts and no coin', type => {
+  itAll(HABITAT_TYPES.map(type => [type]))('%s: level 2 costs coins only, level 3 costs exactly ten hearts and no coin', type => {
     const start = game(type, 1, 5000, 40), level2 = act(start, upgrade(1), 0);
     if (!level2.ok) throw Error(level2.reason);
     expect(level2.state.pattes).toBe(5000 - COINS_LEVEL_2[type]); expect(level2.state.hearts).toBe(40);
@@ -43,7 +44,7 @@ describe('upgrading an enclosure: coins to level 2, exactly ten hearts to level 
     expect(result.state.hearts).toBe(0); expect(result.state.pattes).toBe(0); expect(result.state.buildings[0].habitat!.level).toBe(3);
   });
 
-  it.each([0, 1, 9])('refuses atomically with %i hearts, whatever the coins: no debit, no level change', hearts => {
+  itAll([0, 1, 9])('refuses atomically with %i hearts, whatever the coins: no debit, no level change', hearts => {
     for (const type of ['universal', 'feu'] as const) {
       const s = game(type, 2, 1_000_000, hearts), before = structuredClone(s);
       expect(act(s, upgrade(2), 0)).toEqual({ok: false, state: before, reason: 'NOT_ENOUGH_HEARTS'}); expect(s).toEqual(before);

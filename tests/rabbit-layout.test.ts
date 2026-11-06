@@ -1,4 +1,5 @@
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {VISUAL} from '../src/config/visual';
 import {rabbitHit, rabbitHitPoint, rabbitOffset, rabbitPosition, type RabbitHitTarget} from '../src/display/rabbitLayout';
 import {gridPoint, MeadowCamera, type Point} from '../src/ui/gestures';
@@ -12,7 +13,7 @@ const targets = (positions: readonly Point[], camera: MeadowCamera): RabbitHitTa
   ({id: `rabbit-${index}`, point: camera.screen(rabbitHitPoint(position)), depth: position.y}));
 
 describe('crowded rabbit display and selection', () => {
-  it.each([5, 7])('keeps every one of %i animated occupants selectable at minimum and initial zoom', count => {
+  itAll([5, 7])('keeps every one of %i animated occupants selectable at minimum and initial zoom', count => {
     const bases = slots(count), camera = new MeadowCamera(); camera.resize(844, 390);
     for (const zoom of [VISUAL.camera.minZoom, VISUAL.camera.initialZoom]) {
       camera.zoom = zoom;
@@ -30,7 +31,7 @@ describe('crowded rabbit display and selection', () => {
     }
   });
 
-  it.each([5, 7])('preserves each of %i body/face targets even when neighbors approach at maximum motion', count => {
+  itAll([5, 7])('preserves each of %i body/face targets even when neighbors approach at maximum motion', count => {
     const bases = slots(count), camera = new MeadowCamera(); camera.resize(844, 390);
     const motion = VISUAL.rabbit.motion;
     // Independent extrema are stricter than the correlated sine animations.

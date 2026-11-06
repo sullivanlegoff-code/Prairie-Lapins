@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import {describe, expect, it, vi} from 'vitest';
+import {itAll} from './cases';
 vi.mock('phaser', () => ({default: {Scene: function Scene() {}}}));
 vi.mock('../src/display/currencyPhaser', () => ({coinBubble: vi.fn(() => ({width: 60, height: 30})), foodBubble: vi.fn()}));
 import {MeadowScene} from '../src/display/MeadowScene';
@@ -9,10 +10,10 @@ import {createGame, emptyBuilding} from '../src/state/initial';
 import {HOUR, type BuildingKind} from '../src/config/balance';
 
 describe('habitat income reminders', () => {
-  it.each([[199, 500, false], [200, 500, true], [99, 100, false], [100, 100, true], [0, 100, false]])('stock %s, cap %s: visible=%s', (amount, cap, visible) => {
+  itAll([[199, 500, false], [200, 500, true], [99, 100, false], [100, 100, true], [0, 100, false]])('stock %s, cap %s: visible=%s', (amount, cap, visible) => {
     expect(shouldShowIncomeBubble(amount, cap)).toBe(visible);
   });
-  it.each([199, 200])('uses the threshold in the rendered scene at %s pattes', amount => {
+  itAll([199, 200])('uses the threshold in the rendered scene at %s pattes', amount => {
     const scene = new MeadowScene({} as never, () => {}, () => false) as any;
     scene.time = {now: 0};
     scene.current = createGame(0); scene.current.buildings[0].incomeUnits = amount * HOUR;

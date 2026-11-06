@@ -1,4 +1,5 @@
 ﻿import {expect, it} from 'vitest';
+import {itAll} from './cases';
 import {SPECIES, SPECIES_IDS, recipeOf, type Acquisition} from '../src/config/species';
 import {deriveRecipePolicies} from '../src/config/recipePolicies';
 import {GIFTED_RECIPES, RECIPE_PRICES} from '../src/config/recipes';
@@ -45,10 +46,10 @@ it('does not let knowledge policy affect any pair, including historical low affe
 
 const fixture=(policy:object)=>({id:'synthetic',name:'Synthetic',rarity:'rare',types:['feu'],progression:{unlockLevel:1},
   art:{kind:'procedural',coat:{body:'#fff',patch:'#123456'}},acquisition:[{kind:'recipe',requiredTypes:['neige'],minAffection:2,...policy}]});
-it.each([-1,1.5,NaN,Infinity])('rejects invalid knowledge price %s with a source field diagnostic',knowledgePrice=>{
+itAll([-1,1.5,NaN,Infinity])('rejects invalid knowledge price %s with a source field diagnostic',knowledgePrice=>{
   expect(validateSpeciesEntries([fixture({knowledgePrice})])).toContainEqual(expect.objectContaining({species:'synthetic',field:'acquisition.0.knowledgePrice'}));
 });
-it.each([
+itAll([
   [{giftedAtStart:'yes'},'giftedAtStart'], [{guaranteeEligible:1},'guaranteeEligible'],
   [{knowledgePrice:0,giftedAtStart:true},'knowledgePrice'], [{probability:5,guaranteeEligible:true},'guaranteeEligible'],
 ])('rejects invalid or conflicting policy %j', (policy,field)=>{

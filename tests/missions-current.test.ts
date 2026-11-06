@@ -2,6 +2,7 @@
 import {previousStart as createGame} from './regression-start';
 import {welcomeOf} from './nursery-baby';
 import {describe,it,expect} from 'vitest';
+import {itAll} from './cases';
 import {act,advance,encodeGame,decodeGame} from '../src/simulation';
 import {activeMainMissions,emptyMainEvents} from '../src/simulation/missions';
 import {DAILY_MISSIONS,INITIAL_MISSION_IDS,MAIN_MISSIONS} from '../src/config/missions';
@@ -28,7 +29,7 @@ describe('current mission journey',()=>{
   expect(MAIN_MISSIONS['first-birth'].reward.resource).toBe('pattes');
   expect(MAIN_MISSIONS['first-birth'].reward.amount).toBeGreaterThanOrEqual(habitatPrice('feu')+SPECIES.feu.price!);
  });
- it.each([.1,.65])('banks every early successful action and unlocks independent branches after claims (roll %s, tests only)',roll=>{
+ itAll([.1,.65])('banks every early successful action and unlocks independent branches after claims (roll %s, tests only)',roll=>{
   let s=earlyJourney(roll);expect([s.pattes,s.grass,s.hearts]).toEqual([280,26,14]);expect(s.missions.events).toEqual({collectOrder:20,breed:1,transferBirth:1,welcome:1,placeDecoration:0});
   for(const id of INITIAL_MISSION_IDS){expect(activeMainMissions(s)).toEqual([id]);expect(s.missions.completed).toContain(id);s=run(s,{type:'claimMainMission',id});s=reload(s);expect(act(s,{type:'claimMainMission',id},s.lastSimulatedAt)).toMatchObject({ok:false,reason:'ALREADY_CLAIMED'});}
   expect([s.pattes,s.grass,s.hearts]).toEqual([990,76,15]);expect(activeMainMissions(s)).toEqual(['varied-family','level-five','growing-collection']);

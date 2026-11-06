@@ -1,6 +1,7 @@
 // HISTORICAL: previousStart reproduces the retired centre-start layout; current economy rules apply.
 // @vitest-environment happy-dom
 import {describe,it,expect} from 'vitest';
+import {itAll} from './cases';
 import {act,advance,createGame,decodeGame,encodeGame} from '../src/simulation';
 import {SOLO_INITIAL_MISSION_IDS} from '../src/config/missions';
 import {activeMainMissions} from '../src/simulation/missions';
@@ -14,7 +15,7 @@ import {habitatPrice} from '../src/config/habitats';
 import {SPECIES} from '../src/config/balance';
 import {progressionFromXp} from '../src/simulation/progression';
 describe('Paille-only course: real commands and existing economy',()=>{
- it.each([true,false])('aided=%s, Frisket and Icy, explicit claims and resumes',aided=>{
+ itAll([true,false])('aided=%s, Frisket and Icy, explicit claims and resumes',aided=>{
   for(const roll of [.1,.65]){
    let s=createGame(0),now=0;const p=new PreferenceStore('step4-'+aided+roll);p.set({intro:true,guideCamera:true});
    const run=(c:Command)=>{const r=act(s,c,now,()=>roll);expect(r.ok,c.type).toBe(true);if(!r.ok)throw Error(r.reason);s=r.state;};

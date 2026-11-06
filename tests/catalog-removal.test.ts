@@ -1,4 +1,5 @@
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {BREEDING_ODDS, GUARANTEE_SPECIES, RECIPE_SPECIES, SHOP_SPECIES, SPECIES, SPECIES_IDS, type SpeciesId} from '../src/config/balance';
 import {RABBIT_TYPES, recipeSource} from '../src/config/species';
 import {HABITAT_TYPES, HABITATS} from '../src/config/habitats';
@@ -61,7 +62,7 @@ describe('Terre, Mottelin, Géant and Brumelin are gone from every catalogue', (
     expect(JSON.stringify(s)).not.toMatch(REMOVED_WORDS);
   });
 
-  it.each(Object.keys(SCENARIOS) as ScenarioId[])('the laboratory scenario %s names none of them', id => {
+  itAll(Object.keys(SCENARIOS) as ScenarioId[])('the laboratory scenario %s names none of them', id => {
     expect(JSON.stringify(scenarioState(id, 3_600_000))).not.toMatch(REMOVED_WORDS);
   }, 60_000);
 });
@@ -109,7 +110,7 @@ describe('what stays reachable', () => {
 
 describe('distributions: only the removals and their renormalisation', () => {
   // Hand-written raw weights (each admissible recipe 30; a mixed pair gives no Common result) of the unions that used to contain Brumelin.
-  it.each([
+  itAll([
     [['paille', 'glassofeu'], 2, 2, {frisket: 30, icy: 30, ardent: 30, snk: 30, 'wat-wat': 30, glassofeu: 30, bouyoyo: 30}],
     [['paille', 'glassofeu'], 4, 4, {frisket: 30, icy: 30, ardent: 30, snk: 30, 'wat-wat': 30, glassofeu: 30, bouyoyo: 30}],
     [['boudinet', 'glassofeu'], 4, 4, {frisket: 30, icy: 30, ardent: 30, snk: 30, amethyste: 30, 'princesse-neige': 30, fluffy: 30, roukette: 30, 'wat-wat': 30, glassofeu: 30, boudinet: 30, bouee: 30, vantablack: 30, bouyoyo: 30, champignon: 30}],

@@ -1,4 +1,5 @@
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {act, advance} from '../src/simulation';
 import {createCentreStartGame} from '../src/state/initial';
 import {decodeGame, encodeGame} from '../src/persistence/json';
@@ -99,7 +100,7 @@ describe('recipe knowledge and the recipe book of a save', () => {
     expect(recipePurchaseReason(atLevel(s, 30), 'boudinet')).toBe('INVALID_CHOICE');
     const r = decodeGame(encodeGame(s)); if (!r.ok) throw Error(r.reason); expect(r.state.recipeBook).toEqual([]);
   });
-  it.each([[['boudinet', 'boudinet']], [['paille']], [['licorne']], [['terre']], [['brumelin']], [[...RECIPE_SPECIES, 'mottelin']]])('rejects an invalid recipe book %j', recipeBook => {
+  itAll([[['boudinet', 'boudinet']], [['paille']], [['licorne']], [['terre']], [['brumelin']], [[...RECIPE_SPECIES, 'mottelin']]])('rejects an invalid recipe book %j', recipeBook => {
     expect(decodeGame(JSON.stringify({...createCentreStartGame(0), recipeBook}))).toEqual({ok: false, reason: 'INVALID_STATE'});
   });
 });

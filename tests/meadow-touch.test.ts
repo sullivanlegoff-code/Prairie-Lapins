@@ -1,4 +1,5 @@
 import {describe, expect, it, vi} from 'vitest';
+import {itAll} from './cases';
 vi.mock('phaser', () => ({default: {Scene: function Scene() {}}}));
 import {MeadowScene} from '../src/display/MeadowScene';
 import type {Point} from '../src/ui/gestures';
@@ -14,7 +15,7 @@ function setup(zoom = 1) {
   return {scene, select};
 }
 describe('meadow screen touch targets', () => {
-  it.each([.3,.5,1,2])('keeps a 44 × 44 screen target at zoom %s for every bubble kind', zoom => {
+  itAll([.3,.5,1,2])('keeps a 44 × 44 screen target at zoom %s for every bubble kind', zoom => {
     for (const kind of ['income','grass','birth','building']) {
       const {scene,select}=setup(zoom);
       scene.bubbleHits=[{point:{x:0,y:0},width:20,height:20,selection:{kind,id:'target'}}];
@@ -40,7 +41,7 @@ describe('meadow screen touch targets', () => {
     scene.rabbitViews=[rabbit('opaque',120,255),rabbit('transparent',100,0)];
     scene.tap({x:100,y:100}); expect(select).toHaveBeenLastCalledWith({kind:'rabbit',id:'opaque'});
   });
-  it.each([.3,1,2])('falls back to the nearest illustrated rabbit within 22 screen px at zoom %s', zoom => {
+  itAll([.3,1,2])('falls back to the nearest illustrated rabbit within 22 screen px at zoom %s', zoom => {
     const {scene,select}=setup(zoom); scene.textures={getPixelAlpha:()=>0};
     scene.rabbitViews=[rabbit('far',120/zoom,0),rabbit('near',100/zoom,0)];
     for (const r of scene.rabbitViews) r.point.y=100/zoom;

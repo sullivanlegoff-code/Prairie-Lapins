@@ -1,4 +1,5 @@
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {VISUAL} from '../src/config/visual';
 import {HABITAT_SIZE_PROPOSAL, habitatProposalGround, habitatSlots} from '../src/config/habitatSizes';
 import {habitatLevel} from '../src/config/habitats';
@@ -14,7 +15,7 @@ function advance(motions: RabbitMotion[], dtMs: number) {
 }
 
 describe('proposed enclosure sizes: resident places and wandering zones', () => {
-  it.each(levels)('level %i has one slot per place of its capacity, inside its zone and its drawn ground, well apart', level => {
+  itAll(levels)('level %i has one slot per place of its capacity, inside its zone and its drawn ground, well apart', level => {
     const proposal = HABITAT_SIZE_PROPOSAL[level], ground = habitatProposalGround(level);
     expect(proposal.slots).toHaveLength(habitatLevel('universal', level).capacity);
     for (const [index, slot] of proposal.slots.entries()) {
@@ -32,7 +33,7 @@ describe('proposed enclosure sizes: resident places and wandering zones', () => 
     expect(VISUAL.rabbit.scale).toBe(1.3);
   });
 
-  it.each(levels)('level %i residents wander inside their own zone, regroup nothing, and never pile up', level => {
+  itAll(levels)('level %i residents wander inside their own zone, regroup nothing, and never pile up', level => {
     const motions = groupOf(level), count = motions.length, walks = motions.map(() => 0), modes = motions.map(m => m.mode); let closest = Infinity;
     for (let t = 0; t < 300_000; t += 33) {
       advance(motions, 33);
@@ -54,7 +55,7 @@ describe('proposed enclosure sizes: resident places and wandering zones', () => 
 });
 
 describe('places for fewer residents than the capacity', () => {
-  it.each(levels)('level %i: any group of 1 to its capacity sits in distinct places, nearest the middle, and the full group uses them all', level => {
+  itAll(levels)('level %i: any group of 1 to its capacity sits in distinct places, nearest the middle, and the full group uses them all', level => {
     const all = HABITAT_SIZE_PROPOSAL[level].slots, key = (p: {x: number; y: number}) => `${p.x},${p.y}`;
     for (let count = 1; count <= all.length; count++) {
       const places = habitatSlots(level, count); expect(places).toHaveLength(count); expect(new Set(places.map(key)).size).toBe(count);

@@ -1,4 +1,5 @@
 import {describe,it,expect,vi} from 'vitest';
+import {itAll} from './cases';
 import {act,advance,decodeGame,encodeGame} from '../src/simulation';
 import {createCentreStartGame} from '../src/state/initial';
 import {emptyBuilding} from '../src/state/initial';
@@ -26,7 +27,7 @@ describe('active species and habitat level gates',()=>{
   expect(next.pattes).toBe(120);next=run(next,{type:'buyBuilding',kind:'farm',x:22,y:20});expect(next.pattes).toBe(60);
   expect(stateLevelAccess(next,{family:'habitatPurchase',id:'paille'}).accessible).toBe(true);
  });
- it.each([['feu',5],['belier-gris',7],['volant',9]] as const)('purchase %s checks the pre-action level, including heart complements', (species,level)=>{
+ itAll([['feu',5],['belier-gris',7],['volant',9]] as const)('purchase %s checks the pre-action level, including heart complements', (species,level)=>{
   const command={type:'buyRabbit',species,enclosureId:'building-1'} as const;
   const before=at(level-1);before.progression.totalXp=cumulativeLevelXp(level)-1;
   expect(act(before,command,0)).toEqual({ok:false,state:before,reason:'LEVEL_REQUIRED'});
@@ -36,7 +37,7 @@ describe('active species and habitat level gates',()=>{
   const s=at(level);expect(run(s,command).pattes).toBe(10000-SPECIES[species].price!);
   const hearts={...s,pattes:0,hearts:100};const accepted=run(hearts,{type:'payWithHearts',action:command,maxHearts:Math.ceil(SPECIES[species].price!/25),maxPattes:0});expect(accepted.hearts).toBe(100-Math.ceil(SPECIES[species].price!/25));expect(accepted.progression.totalXp-s.progression.totalXp).toBe(70);
  });
- it.each([['universal',6],['feu',5],['vol',9]] as const)('habitat %s revalidates its level on final purchase', (habitatType,level)=>{
+ itAll([['universal',6],['feu',5],['vol',9]] as const)('habitat %s revalidates its level on final purchase', (habitatType,level)=>{
   const command={type:'buyBuilding',kind:'enclosure',habitatType,x:16,y:24} as const;
   expect(act(at(level-1),command,0)).toMatchObject({ok:false,reason:'LEVEL_REQUIRED'});
   const s=at(level);expect(run(s,command).buildings.at(-1)!.habitat?.type).toBe(habitatType);

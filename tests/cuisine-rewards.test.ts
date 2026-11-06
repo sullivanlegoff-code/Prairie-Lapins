@@ -1,4 +1,5 @@
 import {describe,expect,it} from 'vitest';
+import {itAll} from './cases';
 import {act,createGame} from '../src/simulation';
 import {CUISINE_REWARDS,CUISINE_TIP,CUISINE_FULL_REWARDS_PER_CYCLE} from '../src/config/balance';
 import {MISSION_CYCLE_DURATION} from '../src/config/missions';
@@ -38,7 +39,7 @@ describe('Cuisine reward command',()=>{
     expect(act(s,{type:'rewardCuisine',rabbitId:s.rabbits[0].id,recipeId:'avocado-toast'},0)).toMatchObject({ok:false,reason:'RESOURCE_LIMIT',state:before});
     expect(s).toEqual(before);expect(s.cuisine.heartCycle).toBeNull();
   });
-  it.each(['avocado-toast','moelleux','chicken'] as const)('credits both configured resources and first-cycle affection for %s and the daily Heart without XP',recipeId=>{
+  itAll(['avocado-toast','moelleux','chicken'] as const)('credits both configured resources and first-cycle affection for %s and the daily Heart without XP',recipeId=>{
     const s=withKitchen(createGame(0)),before=structuredClone(s);
     const r=act(s,{type:'rewardCuisine',rabbitId:s.rabbits[0].id,recipeId},0);
     expect(r.ok).toBe(true);if(!r.ok)return;
@@ -94,7 +95,7 @@ describe('Cuisine reward command',()=>{
     wall.buildings.push(emptyBuilding(`building-${wall.nextId++}`,'statue',34,30));
     const opened=reward(wall);expect(opened).toMatchObject({cuisineReward:{affectionGranted:true,affectionStatueRequired:false}});expect(opened.state.rabbits[0].affection).toBe(31);
   });
-  it.each(['pattes','grass'] as const)('rejects %s overflow atomically',resource=>{
+  itAll(['pattes','grass'] as const)('rejects %s overflow atomically',resource=>{
     const s=withKitchen(createGame(0));s[resource]=Number.MAX_SAFE_INTEGER;const before=structuredClone(s);
     expect(act(s,{type:'rewardCuisine',rabbitId:s.rabbits[0].id,recipeId:'avocado-toast'},0)).toMatchObject({ok:false,reason:'RESOURCE_LIMIT',state:before});
     expect(s).toEqual(before);
@@ -106,7 +107,7 @@ describe('Cuisine reward command',()=>{
   });
   describe('requires a Kitchen in the simulation itself',()=>{
     const bare=()=>{const s=createGame(1234567);s.rabbits[0].affection=3;return s;};
-    it.each(['avocado-toast','moelleux','chicken'] as const)('refuses %s without a Kitchen, with the state untouched and no Cuisine bookkeeping',recipeId=>{
+    itAll(['avocado-toast','moelleux','chicken'] as const)('refuses %s without a Kitchen, with the state untouched and no Cuisine bookkeeping',recipeId=>{
       const s=bare(),before=structuredClone(s);
       expect(s.buildings.some(b=>b.kind==='kitchen')).toBe(false);
       const r=act(s,{type:'rewardCuisine',rabbitId:s.rabbits[0].id,recipeId},s.lastSimulatedAt);
@@ -153,7 +154,7 @@ describe('full-reward quota: five per cycle, shared by every recipe',()=>{
     expect(s.pattes).toBe(start.pattes+5*45+3*5);expect(s.grass).toBe(start.grass+5*3+3*1);
     expect(s.cuisine.fullRuns).toEqual({cycle:0,used:FULL}); // saturates: tips never push it further
   });
-  it.each([
+  itAll([
     ['avocado-toast',[225,275,350,500]],['chicken',[300,350,425,575]],['alternating',[255,305,380,530]],
   ] as const)('totals %s coins over 5 / 15 / 30 / 60 runs, with the 5 coin / 1 grass tip',(mode,totals)=>{
     [5,15,30,60].forEach((runs,i)=>{

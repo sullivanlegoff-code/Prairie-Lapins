@@ -1,4 +1,5 @@
 import {describe, expect, it, vi} from 'vitest';
+import {itAll} from './cases';
 import {SPECIES, SPECIES_ENTRIES, SPECIES_IDS, type SpeciesId} from '../src/config/species';
 import {validateSpeciesEntries} from '../src/config/validateSpecies';
 import {GUARANTEE_SPECIES, MINUTE, growthDuration} from '../src/config/balance';
@@ -13,7 +14,7 @@ import {stateBaby} from './nursery-baby';
 import {cumulativeLevelXp} from '../src/simulation/progression';
 import {GameController} from '../src/application/GameController';
 import {SAVE_KEY} from '../src/persistence/storage';
-import {NEW_RARES, STANDARD_RARE, type RareSheet} from './rabbit-art-fixtures';
+import {EXPECTED_IDS, NEW_RARES, STANDARD_RARE, type RareSheet} from './rabbit-art-fixtures';
 import type {GameState, Command} from '../src/state/types';
 
 /** One common species per element, written out here independently of the registry. */
@@ -36,11 +37,21 @@ function segments(sheet: RareSheet) {
 
 it('keeps every new Rare entry valid in the registry', () => {
   expect(validateSpeciesEntries(SPECIES_ENTRIES)).toEqual([]);
+  expect(SPECIES_IDS).toEqual(EXPECTED_IDS);
+});
+it('gives only the two Rares to two commons (owner decision of 27 October 2026), like Paille × Neige', () => {
+  expect(breedingWeights('paille', 'feu', 2, 2)).toEqual({ardent: 30, snk: 30});
+  expect(breedingOdds('feu', 'paille', 2, 2)).toEqual({ardent: 50, snk: 50});
+  expect(breedingOdds('paille', 'feu', 4, 4)).toEqual({ardent: 50, snk: 50});
+  const s = regressionStart(0); s.progression = {totalXp: cumulativeLevelXp(5), rewardedThroughLevel: 5}; s.pityFailures = 7;
+  expect(breedingPool(s, 'paille', 'feu', 4, 4)).toMatchObject({weights: {ardent: 1, snk: 1}, guaranteed: true});
+  expect(breedingPool(s, 'paille', 'feu', 2, 2)).toMatchObject({weights: {ardent: 1, snk: 1}, guaranteed: true});
+  expect(breedingOdds('paille', 'neige', 2, 2)).toEqual({frisket: 50, icy: 50});
 });
 
-describe.each(NEW_RARES.map(sheet => [sheet.id, sheet] as const))('approved Rare %s', (_id, sheet) => {
-  const id = sheet.id as SpeciesId, [first, second] = sheet.requiredTypes;
-  it('is a Rare reproduction recipe with standard growth, no price, gift, guarantee, coat or fixed percentage', () => {
+describe('approved Rares', () => {
+  itAll(NEW_RARES)('is a Rare reproduction recipe with standard growth, no price, gift, guarantee, coat or fixed percentage', sheet => {
+    const id = sheet.id as SpeciesId, [first, second] = sheet.requiredTypes; void first; void second;
     expect(SPECIES_IDS).toContain(id);
     expect(SPECIES[id]).toEqual({name: sheet.name, description: sheet.description, types: [...sheet.types], rarity: 'rare', price: null,
       progression: {unlockLevel: STANDARD_RARE.unlockLevel}, acquisition: [{kind: 'recipe', guaranteeEligible: true, requiredTypes: [...sheet.requiredTypes], minAffection: STANDARD_RARE.minAffection}],
@@ -49,7 +60,8 @@ describe.each(NEW_RARES.map(sheet => [sheet.id, sheet] as const))('approved Rare
     expect(GIFTED_RECIPES).not.toContain(id); expect(GUARANTEE_SPECIES).toContain(id);
     expect(act(parentsOf(sheet), {type: 'buyRabbit', species: id, enclosureId: 'building-1'}, 0)).toMatchObject({ok: false, reason: 'INVALID_CHOICE'});
   });
-  it('accepts both orders and both elements on one parent, checks both affection thresholds, and excludes missing elements', () => {
+  itAll(NEW_RARES)('accepts both orders and both elements on one parent, checks both affection thresholds, and excludes missing elements', sheet => {
+    const id = sheet.id as SpeciesId, [first, second] = sheet.requiredTypes; void first; void second;
     for (const [a, b] of [[COMMON_OF[first], COMMON_OF[second]], [id, COMMON_OF.paille], [id, id]] as const) for (const [x, y] of [[a, b], [b, a]] as const) {
       expect(recipeMatches(id, x, y)).toBe(true); expect(breedingWeights(x, y, 2, 2)[id]).toBe(STANDARD_RARE.weight);
       expect(breedingWeights(x, y, 1, 2)[id]).toBeUndefined(); expect(breedingWeights(x, y, 2, 1)[id]).toBeUndefined();
@@ -60,7 +72,8 @@ describe.each(NEW_RARES.map(sheet => [sheet.id, sheet] as const))('approved Rare
     const s = parentsOf(sheet); s.rabbits[0].affection = 1; const before = encodeGame(s), rng = vi.fn(() => .99);
     expect(act(s, {type: 'breed', parents: ['rabbit-2', 'rabbit-3']}, 0, rng).ok).toBe(false); expect(encodeGame(s)).toBe(before); expect(rng).not.toHaveBeenCalled();
   });
-  it('gives the exact pool of its element union, with exact draw boundaries, and is never part of a guaranteed draw', () => {
+  itAll(NEW_RARES)('gives the exact pool of its element union, with exact draw boundaries, and is never part of a guaranteed draw', sheet => {
+    const id = sheet.id as SpeciesId, [first, second] = sheet.requiredTypes; void first; void second;
     const s = parentsOf(sheet), expected = Object.fromEntries(sheet.exactUnion.weights), total = sheet.exactUnion.weights.reduce((sum, [, w]) => sum + w, 0);
     const [a, b] = sheet.exactUnion.parents;
     for (const [x, y] of [[a, b], [b, a]] as const) {
@@ -74,7 +87,8 @@ describe.each(NEW_RARES.map(sheet => [sheet.id, sheet] as const))('approved Rare
       const pool = breedingPool(s, x, y, 4, 4); if (pool.guaranteed && pool.missing.includes(id)) expect(pool.weights[id]).toBe(1);
     }
   });
-  it('saves a single draw without rerolling, transfers, grows, welcomes compatibly and reveals the description only on discovery', () => {
+  itAll(NEW_RARES)('saves a single draw without rerolling, transfers, grows, welcomes compatibly and reveals the description only on discovery', sheet => {
+    const id = sheet.id as SpeciesId, [first, second] = sheet.requiredTypes; void first; void second;
     const nest = growthDuration(id), s = parentsOf(sheet), own = segments(sheet).find(segment => segment.id === id)!, roll = (own.start + own.end) / 2;
     s.recipeBook.push(id); expect(JSON.stringify(collectionView(s))).not.toContain(sheet.description);
     const rng = vi.fn(() => roll), data = new Map([[SAVE_KEY, encodeGame(s)]]), storage = {getItem: (k: string) => data.get(k) ?? null, setItem: (k: string, v: string) => {data.set(k, v);}};

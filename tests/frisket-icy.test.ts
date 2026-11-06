@@ -1,4 +1,5 @@
 import {describe, expect, it, vi} from 'vitest';
+import {itAll} from './cases';
 import {SPECIES, SPECIES_IDS, MINUTE, GUARANTEE_SPECIES, growthDuration} from '../src/config/balance';
 import {SPECIES_ENTRIES} from '../src/config/species';
 import {validateSpeciesEntries} from '../src/config/validateSpecies';
@@ -40,7 +41,7 @@ describe('approved Frisket and Icy content',()=>{
     expect(breedingPool(s,'paille','neige',2,2)).toMatchObject({total:60,guaranteed:false,missing:['frisket','icy']});
     s.pityFailures=7;expect(breedingPool(s,'paille','neige',2,2)).toMatchObject({weights:{frisket:1,icy:1},total:2,guaranteed:true});
   });
-  it.each(['frisket','icy'] as const)('%s matches either parent order and hybrid contributions, but not missing elements or affection',id=>{
+  itAll(['frisket','icy'] as const)('%s matches either parent order and hybrid contributions, but not missing elements or affection',id=>{
     for(const [a,b] of [['paille','neige'],['frisket','paille'],['frisket','frisket'],['boudinet','glassofeu']] as const){
       expect(recipeMatches(id,a,b)).toBe(true);expect(recipeMatches(id,b,a)).toBe(true);
       expect(breedingWeights(a,b,2,2)[id]).toBe(30);expect(breedingWeights(b,a,2,2)[id]).toBe(30);
@@ -48,7 +49,7 @@ describe('approved Frisket and Icy content',()=>{
     }
     for(const [a,b]of [['paille','feu'],['neige','volant'],['feu','feu']] as const){expect(recipeMatches(id,a,b)).toBe(false);expect(breedingWeights(a,b,20,20)[id]).toBeUndefined();}
   });
-  it.each([['frisket',.25],['icy',.95]] as const)('%s survives breeding, transfer, Rare growth, compatible welcome and reload at every stage', (id,roll)=>{
+  itAll([['frisket',.25],['icy',.95]] as const)('%s survives breeding, transfer, Rare growth, compatible welcome and reload at every stage', (id,roll)=>{
     const nest=growthDuration(id), ready=nest+growthDuration(id), rng=vi.fn(()=>roll);let s=run(parents(),{type:'breed',parents:['rabbit-2','rabbit-3']},0,rng);const birth=s.buildings.find(b=>b.kind==='nest')!.breeding!.birth;
     expect(birth).toEqual({id:birth.id,species:id,guaranteed:false,reservedDiscovery:true});expect(s.pityFailures).toBe(0);s=reload(s);
     expect(JSON.stringify(collectionView(s))).not.toContain(descriptions[id]);

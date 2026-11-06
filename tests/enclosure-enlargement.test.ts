@@ -1,4 +1,5 @@
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {ENCLOSURE_FOOTPRINTS, ENCLOSURE_SCALE, FORMER_ENCLOSURE_FOOTPRINTS, FORMER_ENCLOSURE_SCALE, HABITAT_SIZE_PROPOSAL, buildingSize, enclosureScale} from '../src/config/habitatSizes';
 import {habitatArtFor, habitatArtLayout} from '../src/config/habitatArt';
 import {HABITAT_TYPES, type HabitatLevel} from '../src/config/habitats';
@@ -244,7 +245,7 @@ describe('a save with the 3 November sizes (v24 to v26, and v27 before 6 Novembe
   /** Enclosures as a client of 3 November placed them: 5 × 4, 8 × 5, 10 × 6, unmarked in its save. */
   const previous = (s: GameState) => { for (const b of s.buildings) if (b.kind === 'enclosure') b.formerFootprint ??= 2; return s; };
 
-  it.each([24, 25, 26, 27] as const)('v%i: keeps every building, rabbit and decoration, and grows an enclosure that has room', version => {
+  itAll([24, 25, 26, 27] as const)('v%i: keeps every building, rabbit and decoration, and grows an enclosure that has room', version => {
     const s = previous(oldIsland(crowded())); s.rabbits.push({id: 'rabbit-20', species: 'paille', affection: 3, enclosureId: 'building-1'}); s.nextId = 21;
     expect(buildingFootprint(s.buildings.find(b => b.id === 'building-1')!)).toEqual({x: 6, y: 40, width: 5, height: 4});
     const loaded = load(asPreviousSizesJson(s, version));

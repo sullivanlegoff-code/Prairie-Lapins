@@ -1,4 +1,5 @@
 import {describe,it,expect} from 'vitest';
+import {itAll} from './cases';
 import {act,decodeGame,encodeGame} from '../src/simulation';
 import {createCentreStartGame} from '../src/state/initial';
 import {DECORATIONS,DECORATION_IDS,decorationResalePrice,type DecorationId} from '../src/config/decorations';
@@ -13,7 +14,7 @@ function at(level:number){const s=createCentreStartGame(0);s.pattes=20000;s.hear
 const run=(s:GameState,c:Command)=>{const r=act(s,c,0);if(!r.ok)throw Error(r.reason);return r.state;};
 const reload=(s:GameState)=>{const r=decodeGame(encodeGame(s));if(!r.ok)throw Error(r.reason);return r.state;};
 describe('level gates acquire new decoration exemplars only',()=>{
- it.each(DECORATION_IDS)('%s is refused below its catalogue threshold in both purchase modes, and allowed at it',id=>{
+ itAll(DECORATION_IDS)('%s is refused below its catalogue threshold in both purchase modes, and allowed at it',id=>{
   const level=requiredDecorationLevel(id);
   for(const placed of [false,true]){
    const command:Command={type:'buyDecoration',catalogId:id,...(placed?{location}:{})};
@@ -32,7 +33,7 @@ describe('level gates acquire new decoration exemplars only',()=>{
   expect(s.progression.totalXp).toBe(xp);expect(s.decorations[0].placementXpProcessed).toBe(true);expect(s.pattes).toBe(start);
   s=run(s,{type:'sellDecoration',id:'decoration-6'});expect(s.progression.totalXp).toBe(xp);expect(s.pattes).toBe(start+decorationResalePrice('birthday-candle'));
  });
- it.each(['inventory','outside'] as const)('historical %s objects without a placement marker never gain retroactive XP',kind=>{
+ itAll(['inventory','outside'] as const)('historical %s objects without a placement marker never gain retroactive XP',kind=>{
   let s=at(1);s.decorations=[{id:'decoration-6',catalogId:'large-bookcase',location:kind==='outside'?location:{kind:'inventory'}}];s.nextId=7;s=reload(s);
   s=run(s,{type:'placeDecoration',id:'decoration-6',location:{kind:'inventory'}});s=run(s,{type:'placeDecoration',id:'decoration-6',location});expect(s.progression.totalXp).toBe(0);expect(s.decorations[0].placementXpProcessed).toBeUndefined();
  });

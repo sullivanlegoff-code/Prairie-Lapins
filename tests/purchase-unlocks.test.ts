@@ -1,6 +1,7 @@
 // HISTORICAL: previousStart reproduces the retired centre-start layout; current economy rules apply.
 import {previousStart as oldGame} from './regression-start';
 import {describe,it,expect} from 'vitest';
+import {itAll} from './cases';
 import {advance,decodeGame,encodeGame,act,createGame} from '../src/simulation';
 import {hasPurchaseUnlock} from '../src/simulation/purchaseUnlocks';
 import {SPECIES_IDS,HOUR} from '../src/config/balance';
@@ -9,7 +10,7 @@ import {scenarioState} from '../src/dev/scenarios';
 import {stateLevelAccess} from '../src/simulation/levelRights';
 const reload=(s:ReturnType<typeof oldGame>)=>{const d=decodeGame(encodeGame(s));if(!d.ok)throw Error(d.reason);return d.state;};
 describe('old purchase milestones are evidence only at the one-time transition',()=>{
- it.each([['universal',3],['feu',5],['volant',7]] as const)('retains the historical %s purchase if the old threshold %i was met', (id,n)=>{
+ itAll([['universal',3],['feu',5],['volant',7]] as const)('retains the historical %s purchase if the old threshold %i was met', (id,n)=>{
   const before=oldGame(0);before.discovered=SPECIES_IDS.filter(species=>!['feu','volant'].includes(species)).slice(0,n-1);
   expect(hasPurchaseUnlock(before,id)).toBe(false);const migratedBefore=reload(before);expect(hasPurchaseUnlock(migratedBefore,id)).toBe(false);
   before.discovered.push(SPECIES_IDS.filter(species=>!['feu','volant'].includes(species))[n-1]);

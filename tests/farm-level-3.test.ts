@@ -1,4 +1,5 @@
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {xpAfterSlowdown} from '../src/simulation/progression';
 import {act, createGame, decodeGame, encodeGame} from '../src/simulation';
 import {FANCY_ORDER_IDS, FARM_UPGRADES, HOUR, ORDERS, farmDuration, orderFarmLevel} from '../src/config/balance';
@@ -67,13 +68,13 @@ describe('fancy crops', () => {
     for (const id of FANCY_ORDER_IDS) expect(orderFarmLevel(id)).toBe(3);
     expect([orderFarmLevel('foin'), orderFarmLevel('laitue'), orderFarmLevel('fanes'), orderFarmLevel('banane')]).toEqual([1, 1, 2, 2]);
   });
-  it.each(FANCY_ORDER_IDS)('%s is refused on a level 1 or 2 farm', recipe => {
+  itAll(FANCY_ORDER_IDS)('%s is refused on a level 1 or 2 farm', recipe => {
     for (const farmLevel of [1, 2] as const) { const {s, id} = setup(30, farmLevel); refused(s, {type: 'startOrder', id, recipe}, 'INVALID_CHOICE'); }
   });
-  it.each(FANCY_ORDER_IDS)('%s is refused below its player level', recipe => {
+  itAll(FANCY_ORDER_IDS)('%s is refused below its player level', recipe => {
     const {s, id} = setup(ORDERS[recipe].level - 1, 3); refused(s, {type: 'startOrder', id, recipe}, 'LEVEL_REQUIRED');
   });
-  it.each(FANCY_ORDER_IDS)('%s grows 20 %% faster on a level 3 farm and fills the single food stock', recipe => {
+  itAll(FANCY_ORDER_IDS)('%s grows 20 %% faster on a level 3 farm and fills the single food stock', recipe => {
     let {s, id} = setup(ORDERS[recipe].level, 3); const pattes = s.pattes, grass = s.grass;
     s = run(s, {type: 'startOrder', id, recipe});
     const duration = Math.ceil(ORDERS[recipe].duration * 0.8);

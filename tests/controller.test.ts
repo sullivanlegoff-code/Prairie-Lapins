@@ -2,6 +2,7 @@
 import {previousStart} from './regression-start';
 import {createGame} from '../src/simulation';
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {GameController} from '../src/application/GameController';
 import {bindLifecycle, type LifecycleHost} from '../src/application/lifecycle';
 import {SAVE_KEY, type SaveStorage} from '../src/persistence/storage';
@@ -149,7 +150,7 @@ describe('storage failures and recovery', () => {
     const exported = controller.exportGame(); expect(exported.ok).toBe(true);
     if (exported.ok) expect(decodeGame(exported.json)).toEqual({ok: true, state: state(controller)});
   });
-  it.each(['{', '{"version":99}', '{"version":16}'])('protects an existing invalid save: %s', raw => {
+  itAll(['{', '{"version":99}', '{"version":16}'])('protects an existing invalid save: %s', raw => {
     const {controller, store, clock} = fixture(raw); clock.now = HOUR;
     controller.refresh(); controller.retrySave();
     expect(store.value).toBe(raw); expect(store.writes).toBe(0);
@@ -198,7 +199,7 @@ describe('transactional imports', () => {
     expect(controller.getSnapshot()).toEqual(previous); expect(store.value).toBe(raw);
     expect(controller.confirmImport(prepared.token, true)).toEqual({ok: false, reason: 'STALE_IMPORT'});
   });
-  it.each([
+  itAll([
     ['{', 'INVALID_JSON'], ['{"version":28}', 'UNSUPPORTED_VERSION'], ['{"version":16}', 'INVALID_STATE'], ['{"version":1}', 'INCOMPATIBLE_CATALOG'], ['{"version":15}', 'INCOMPATIBLE_CATALOG'],
     [' '.repeat(1_000_001), 'FILE_TOO_LARGE'],
   ])('rejects a bad import with %s', (json, reason) => {

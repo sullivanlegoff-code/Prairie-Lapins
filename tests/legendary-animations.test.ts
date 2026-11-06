@@ -2,6 +2,7 @@
 // @ts-expect-error -- the browser tsconfig has no Node types; Vitest runs this file in Node.
 import {existsSync, readFileSync} from 'node:fs';
 import {afterEach, describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {LEGENDARY_EFFECTS, LEGENDARY_IDLE_GAP_MS, LEGENDARY_PARTS, LEGENDARY_EVOLVED_PARTS, legendaryMeadowArt} from '../src/config/legendaryArt';
 import {VISUAL} from '../src/config/visual';
 import {ACT_MS, DIVE, IDLE_GAP, LegendaryClock, SLAM, SURF_ENTRY_MS, SURF_SLIDE_MS, TAP_COOLDOWN_MS, breathFrame, diveFin, partAngle, speciesActs, surfPose} from '../src/display/legendaryTimeline';
@@ -27,7 +28,7 @@ const run = (clock: LegendaryClock, ms: number, idle = false) => { for (let t = 
 
 describe('legendary pictures', () => {
   const effects = Object.values(LEGENDARY_EFFECTS).flat();
-  it.each(effects.map(art => [art.texture, art] as const))('%s is a WebP of its declared size', (_name, art) => {
+  itAll(effects.map(art => [art.texture, art] as const))('%s is a WebP of its declared size', (_name, art) => {
     const file = publicFile(art.url); expect(existsSync(file)).toBe(true);
     expect(webpSize(readFileSync(file))).toEqual([art.width, art.height]);
   });

@@ -1,6 +1,7 @@
 import {execFileSync} from 'node:child_process';
 import {readFileSync} from 'node:fs';
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {SPECIES_ENTRIES} from '../src/config/species';
 import {decodePng} from '../scripts/derive-nursery-overlays.mjs';
 
@@ -35,7 +36,7 @@ describe('rabbit blink artwork', () => {
     }
   }, 30000);
 
-  it.each(ADDED_PATCH_SPECIES)('%s keeps master alpha and an unchanged crop border around each local edit', id => {
+  itAll(ADDED_PATCH_SPECIES)('%s keeps master alpha and an unchanged crop border around each local edit', id => {
     const sourceDir = `assets-source/rabbits/${id}`;
     const master = decodePng(readFileSync(`${sourceDir}/sprite.png`));
     const placement = JSON.parse(readFileSync(`${sourceDir}/blink.json`, 'utf8'));

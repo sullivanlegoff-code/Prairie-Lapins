@@ -1,5 +1,6 @@
 // HISTORICAL: previousStart reproduces the retired centre-start layout; current economy rules apply.
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {GameController} from '../src/application/GameController';
 import {act, advance, decodeGame, encodeGame} from '../src/simulation';
 import {emptyBuilding} from '../src/state/initial';
@@ -97,7 +98,7 @@ function prepare(type: Command['type']): {state: GameState; command: Command} {
 const commands = ['buyBuilding', 'moveBuilding', 'placeStarterBuilding', 'buyRabbit', 'moveRabbit', 'collectIncome', 'startOrder', 'collectOrder', 'feed', 'breed', 'transferBirth', 'welcome', 'release', 'renameRabbit', 'upgradeHabitat', 'expand', 'rewardCuisine', 'buyDecoration', 'placeDecoration', 'sellDecoration', 'storeDecorationsInCell', 'claimMainMission', 'claimDailyMission', 'claimDailyBonus', 'claimHearts', 'buyRecipe', 'unlockNurserySlot', 'accelerate', 'initiationAid', 'payWithHearts'] as const;
 
 describe('all durable actions are saved before adoption', () => {
-  it.each(commands)('%s refuses a failed write and preserves the previous state', type => {
+  itAll(commands)('%s refuses a failed write and preserves the previous state', type => {
     const {state, command} = prepare(type);
     expect(decodeGame(encodeGame(state)).ok, 'valid fixture').toBe(true);
     expect(act(state, command, NOW, () => .9).ok, 'action is otherwise valid').toBe(true);

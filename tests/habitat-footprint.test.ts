@@ -1,4 +1,5 @@
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {act, createGame, decodeGame, encodeGame} from '../src/simulation';
 import {cumulativeLevelXp, requiredHabitatUpgradeLevel} from '../src/simulation/progression';
 import {buildingAt, buildingFootprint, upgradeFootprintReason} from '../src/simulation/placement';
@@ -65,7 +66,7 @@ describe('upgrading without room: explicit refusal, no debit, no mutation, nothi
     ['a decoration', s => run(run(s, {type: 'buyDecoration', catalogId: 'bush'}), {type: 'placeDecoration', id: 'decoration-' + s.nextId, location: {kind: 'outside', x: 12, y: 41, rotation: 0}}), 'UPGRADE_BLOCKED_DECORATION'],
     ['land that is not owned', s => { enclosure(s).y = 43; return s; }, 'UPGRADE_BLOCKED_LAND'],
   ];
-  it.each(blockers)('%s in the target footprint', (_name, block, reason) => {
+  itAll(blockers)('%s in the target footprint', (_name, block, reason) => {
     const s = block(start()), before = structuredClone(s);
     expect(upgradeFootprintReason(s, 'building-1', 2)).toBe(reason);
     expect(act(s, upgrade(1), 0)).toEqual({ok: false, state: before, reason}); expect(s).toEqual(before);

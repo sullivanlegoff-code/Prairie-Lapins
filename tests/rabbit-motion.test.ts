@@ -1,4 +1,5 @@
 import {describe, expect, it, vi} from 'vitest';
+import {itAll} from './cases';
 import {VISUAL} from '../src/config/visual';
 import {rabbitOffset} from '../src/display/rabbitLayout';
 import {FED_MS, KISS_MS, allowedBox, createRabbitMotion, minSeparation, rabbitPose, retargetRabbitMotion, startRabbitActivity, stepRabbitMotion, triggerFedReaction, type RabbitMotion} from '../src/display/rabbitMotion';
@@ -30,7 +31,7 @@ describe('rabbit wandering inside an enclosure', () => {
       else expect(right.nuzzle).toBeGreaterThan(0);
     }
   });
-  it.each([1, 2, 3, 4, 5, 6, 7])('keeps every one of %i residents inside its safe zone, at every frame step', count => {
+  itAll([1, 2, 3, 4, 5, 6, 7])('keeps every one of %i residents inside its safe zone, at every frame step', count => {
     for (const dt of [16, 100, 400]) {
       const motions = group(count);
       for (let t = 0; t < 120_000; t += dt) {
@@ -163,7 +164,7 @@ describe('rabbit wandering inside an enclosure', () => {
     }
   });
 
-  it.each([5, 6, 7])('keeps every one of %i crowded residents alive: each one walks regularly', count => {
+  itAll([5, 6, 7])('keeps every one of %i crowded residents alive: each one walks regularly', count => {
     const motions = group(count), walks = motions.map(() => 0), modes = motions.map(m => m.mode);
     for (let t = 0; t < 300_000; t += 33) {
       advance(motions, 33);

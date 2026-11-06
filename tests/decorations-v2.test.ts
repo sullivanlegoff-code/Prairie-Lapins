@@ -1,4 +1,5 @@
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {CHRISTMAS_DECORATION_IDS, DECORATIONS, DECORATION_IDS, RETIRED_DECORATION_IDS, decorationResalePrice} from '../src/config/decorations';
 import {requiredDecorationLevel, cumulativeLevelXp, validateProgressionConfig} from '../src/simulation/progression';
 import {decorationLayerDepth, decorationScale, decorationOrigin} from '../src/display/decorationArt';
@@ -32,7 +33,7 @@ describe('approved painted decorations', () => {
   expect(decodeGame(encodeGame(saved))).toEqual({ok:true,state:saved});
   expect(saved.decorations.find(d=>d.catalogId==='tree')!.id).toBe('decoration-102');
  });
- it.each(expected)('%s has its approved price, footprint, level, and half-price resale', (id,name,price,width,height,level) => {
+ itAll(expected)('%s has its approved price, footprint, level, and half-price resale', (id,name,price,width,height,level) => {
   expect(DECORATIONS[id]).toMatchObject({name,price,width,height,level,rotates:false,area:'outside'});
   expect(requiredDecorationLevel(id)).toBe(level);
   expect(decorationResalePrice(id)).toBe(Math.floor(price/2));

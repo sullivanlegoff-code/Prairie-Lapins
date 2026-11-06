@@ -1,11 +1,12 @@
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
-import {expect, it} from 'vitest';
+import {expect} from 'vitest';
+import {itAll} from './cases';
 import {SPECIES} from '../src/config/species';
 import {NEW_SPECIALS} from './rabbit-art-fixtures';
 
 // Epics and Legendaries approved on 25 October 2026 (the Rares are covered by frisket-icy-assets.test.js).
-it.each(NEW_SPECIALS.filter(s => s.art.kind === 'static-sprite').map(s => [s.id, s]))('%s keeps its approved master and publishes useful dimensions', (id, sheet) => {
+itAll(NEW_SPECIALS.filter(s => s.art.kind === 'static-sprite').map(s => [s.id, s]))('%s keeps its approved master and publishes useful dimensions', (id, sheet) => {
   const art = SPECIES[id].art;
   expect(art.kind).toBe('static-sprite');
   const png = readFileSync(new URL(`../public/${art.file}`, import.meta.url));

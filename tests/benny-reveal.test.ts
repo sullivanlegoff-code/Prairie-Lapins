@@ -3,6 +3,7 @@ import html from '../index.html?raw';
 // @ts-expect-error -- the browser tsconfig has no Node types; Vitest runs this file in Node.
 import {existsSync, readFileSync} from 'node:fs';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
+import {itAll} from './cases';
 import {BENNY_ATLAS, BENNY_EFFECTS, BENNY_REVEAL_POSES} from '../src/config/bennyArt';
 import {showBennyReveal} from '../src/ui/bennyReveal';
 import {decorateLegendaryCard, clearLegendaryCard, legendaryPortrait} from '../src/ui/legendaryCard';
@@ -35,7 +36,7 @@ beforeEach(() => {
 afterEach(() => { document.querySelectorAll('dialog').forEach(d => d.remove()); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 describe('Benny pictures', () => {
-  it.each(Object.values(BENNY_EFFECTS).flat().map(art => [art.url, art] as const))('%s is a light WebP of its declared size', (_url, art) => {
+  itAll(Object.values(BENNY_EFFECTS).flat().map(art => [art.url, art] as const))('%s is a light WebP of its declared size', (_url, art) => {
     const file = publicFile(art.url); expect(existsSync(file)).toBe(true);
     const bytes = readFileSync(file); expect(webpSize(bytes)).toEqual([art.width, art.height]); expect(bytes.length).toBeLessThan(60_000);
   });

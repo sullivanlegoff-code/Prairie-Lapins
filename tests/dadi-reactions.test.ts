@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import {describe, expect, it, vi} from 'vitest';
+import {itAll} from './cases';
 import {DadiReactions, DADI_BREEDING, DADI_IDLE, DADI_INTERVAL, DADI_SPEECH_DURATION, DADI_WELCOME} from '../src/display/dadiReactions';
 import {DadiSpeech, dadiHeadVisible} from '../src/display/dadiSpeech';
 import {createRabbitMotion, rabbitPose, stepRabbitMotion, triggerWelcomeSalto} from '../src/display/rabbitMotion';
@@ -80,7 +81,7 @@ describe('Dadi reacts only to confirmed commands', () => {
 });
 
 describe('Dadi session timing and lifecycle', () => {
-  it.each([0, .9])('draws one of the two lines every ten active minutes (roll %s)', roll => {
+  itAll([0, .9])('draws one of the two lines every ten active minutes (roll %s)', roll => {
     const dadi = new DadiReactions(() => roll); dadi.sync(resident(), 0);
     expect(tick(dadi, DADI_INTERVAL - 250).speech).toBeNull();
     const line = dadi.step(250, true, ['rabbit-2']);

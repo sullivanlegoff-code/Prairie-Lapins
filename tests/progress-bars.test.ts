@@ -1,4 +1,5 @@
 import {describe, expect, it, vi} from 'vitest';
+import {itAll} from './cases';
 import type Phaser from 'phaser';
 import {createGame} from '../src/simulation';
 import {emptyBuilding} from '../src/state/initial';
@@ -17,7 +18,7 @@ const baby = (slot: NurserySlot, readyAt = 200): NurseryBaby => ({slot, birth: {
 const state = () => ({...createGame(100), lastSimulatedAt: 150, buildings: [] as ReturnType<typeof createGame>['buildings']});
 
 describe('progress fraction', () => {
-  it.each([[100, 0], [150, .5], [200, 1], [0, 0], [300, 1]])('at %i clamps to %f', (now, expected) => {
+  itAll([[100, 0], [150, .5], [200, 1], [0, 0], [300, 1]])('at %i clamps to %f', (now, expected) => {
     expect(progressFraction(now, 100, 200)).toBe(expected);
   });
   it('handles zero and negative durations without NaN', () => {

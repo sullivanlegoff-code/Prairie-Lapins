@@ -1,6 +1,7 @@
 // HISTORICAL: previousStart reproduces the retired centre-start layout; current economy rules apply.
 import {previousStart as createGame} from './regression-start';
-import {describe,it,expect} from 'vitest';
+import {describe, expect} from 'vitest';
+import {itAll} from './cases';
 import {act,advance,encodeGame,decodeGame} from '../src/simulation';
 import {HOUR,MINUTE} from '../src/config/balance';
 import {INITIAL_MISSION_IDS,DAILY_MISSIONS,MAIN_MISSIONS} from '../src/config/missions';
@@ -26,10 +27,10 @@ function journey(aided:boolean,roll:number){
  return {s,now,run,resume,farmId:farm.id,budget,setTime:(t:number)=>{now=t;s=advance(s,t);},current:()=>s};
 }
 describe('initial budget and explicit 24h visit schedules',()=>{
- it.each([true,false])('real beginning, explicit rewards and interrupts, aided=%s',aided=>{
+ itAll([true,false])('real beginning, explicit rewards and interrupts, aided=%s',aided=>{
   for(const roll of [.1,.65]){const j=journey(aided,roll);reports.push({kind:'tutorial',aided,species:j.s.rabbits.at(-1)!.species,budget:j.budget,simulationMinutes:j.now/MINUTE});}
  });
- it.each([true,false])('24h continuation without grants, aided=%s',aided=>{
+ itAll([true,false])('24h continuation without grants, aided=%s',aided=>{
   for(const roll of [.1,.65])for(const visits of [[2,4,8,12,18,24],[8,24]]){
    const j=journey(aided,roll);const run=j.run,current=j.current;const birth=j.s.rabbits.at(-1)!.id;
    function claimBranches(){for(const id of ['varied-family','two-habitats','strong-bonds'] as const)if(current().missions.completed.includes(id)&&!current().missions.claimed.includes(id))run({type:'claimMainMission',id});}

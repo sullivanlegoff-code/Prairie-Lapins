@@ -2,6 +2,7 @@ import {existsSync, readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {join} from 'node:path';
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {HABITAT_TYPES} from '../src/config/habitats';
 import {HABITAT_ART_LAYOUT, HABITAT_LEVEL1_ART, HABITAT_LEVEL1_ART_LIST, HABITAT_WORLD_WIDTH_OF_SOURCE, NEIGE_LEVEL2_ART, FEU_LEVEL2_ART, METAL_LEVEL2_ART, VOL_LEVEL2_ART, NEIGE_LEVEL3_ART, FEU_LEVEL3_ART, METAL_LEVEL3_ART, VOL_LEVEL3_ART, PAILLE_LEVEL3_ART, PAILLE_LEVEL2_ART, UNIVERSAL_LEVEL2_ART, UNIVERSAL_LEVEL3_ART, habitatArtFor} from '../src/config/habitatArt';
 import {HABITAT_SIZE_PROPOSAL} from '../src/config/habitatSizes';
@@ -35,7 +36,7 @@ describe('artistic completeness of the level-1 habitats', () => {
 });
 
 describe('the shipped files', () => {
-  it.each(SIX)('%s: PNG with alpha, loaded at the configured size, cropped from the approved 1254 source at half size', type => {
+  itAll(SIX)('%s: PNG with alpha, loaded at the configured size, cropped from the approved 1254 source at half size', type => {
     const art = HABITAT_LEVEL1_ART[type], png = readFileSync(file(type)), image = decoded[type];
     expect(png.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a'); expect(png[24]).toBe(8); expect(png[25]).toBe(6);
     expect([image.width, image.height]).toEqual([art.width, art.height]);
@@ -45,7 +46,7 @@ describe('the shipped files', () => {
     expect(crop.x).toBeGreaterThanOrEqual(0); expect(crop.y).toBeGreaterThanOrEqual(0); expect(crop.x + crop.width).toBeLessThanOrEqual(1254); expect(crop.y + crop.height).toBeLessThanOrEqual(1254);
     expect(crop).toEqual(HABITAT_SOURCES[type].crop);
   });
-  it.each(SIX)('%s: transparent background, nothing cut at an edge, a few pixels of air all round, one solid drawing', type => {
+  itAll(SIX)('%s: transparent background, nothing cut at an edge, a few pixels of air all round, one solid drawing', type => {
     const {width, height, pixels} = decoded[type];
     let x0 = width, y0 = height, x1 = -1, y1 = -1, opaque = 0, partial = 0;
     for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
@@ -78,7 +79,7 @@ describe('scale, anchors and placement', () => {
     // The visible drawing is about the width of the 4 × 4 grid cell it stands on (176), a little wider with its fence and decor.
     for (const art of HABITAT_LEVEL1_ART_LIST) { expect(art.worldWidth).toBeGreaterThan(176); expect(art.worldWidth).toBeLessThan(200); }
   });
-  it.each(SIX)('%s: the anchor is the middle of the sprite and stands on its opaque lawn', type => {
+  itAll(SIX)('%s: the anchor is the middle of the sprite and stands on its opaque lawn', type => {
     const art = HABITAT_LEVEL1_ART[type];
     expect(Math.abs(art.anchor.x - art.width / 2)).toBeLessThanOrEqual(4);
     expect(art.anchor.y).toBeGreaterThan(art.height * .5); expect(art.anchor.y).toBeLessThan(art.height * .8);
@@ -89,7 +90,7 @@ describe('scale, anchors and placement', () => {
     expect(HABITAT_ART_LAYOUT.labelOffset).toBe(HABITAT_SIZE_PROPOSAL[1].labelOffset);
   });
   /** The resting places and the whole roaming zone of a rabbit must lie on the lawn: pixels of the lawn's own colour, never fence, shelter, rocks or gate. */
-  it.each(SIX)('%s: every resting place and every point it can walk to, stand on the lawn', type => {
+  itAll(SIX)('%s: every resting place and every point it can walk to, stand on the lawn', type => {
     const art = HABITAT_LEVEL1_ART[type], image = decoded[type], k = art.worldWidth / art.width;
     // Median colour of a small window: a flower or a blade of grass under a foot is decoration on the lawn, a fence, wall or gate is not.
     const mean = (cx, cy) => { const c = [[], [], []]; for (let dy = -5; dy <= 5; dy++) for (let dx = -5; dx <= 5; dx++) { const i = ((Math.round(cy) + dy) * image.width + Math.round(cx) + dx) * 4; for (let k = 0; k < 3; k++) c[k].push(image.pixels[i + k]); } return c.map(v => v.sort((a, b) => a - b)[Math.floor(v.length / 2)]); };
@@ -111,7 +112,7 @@ describe('scale, anchors and placement', () => {
 });
 
 describe('which drawing a habitat gets', () => {
-  it.each(SIX)('%s: level-1 art stays compact; approved enlarged drawings require their matching capacity level and tier', type => {
+  itAll(SIX)('%s: level-1 art stays compact; approved enlarged drawings require their matching capacity level and tier', type => {
     expect(habitatArtFor({type, level: 1})).toBe(HABITAT_LEVEL1_ART[type]);
     expect(habitatArtFor({type, level: 1}, 1)).toBe(HABITAT_LEVEL1_ART[type]);
     for (const level of [2, 3]) { expect(habitatArtFor({type, level})).toBeNull(); expect(habitatArtFor({type, level}, 1)).toBeNull(); expect(habitatArtFor({type, level}, level)).toBe(level === 2 ? ({neige: NEIGE_LEVEL2_ART, feu: FEU_LEVEL2_ART, metal: METAL_LEVEL2_ART, vol: VOL_LEVEL2_ART, paille: PAILLE_LEVEL2_ART, universal: UNIVERSAL_LEVEL2_ART}[type] ?? null) : ({neige: NEIGE_LEVEL3_ART, feu: FEU_LEVEL3_ART, metal: METAL_LEVEL3_ART, vol: VOL_LEVEL3_ART, paille: PAILLE_LEVEL3_ART, universal: UNIVERSAL_LEVEL3_ART}[type] ?? null)); }

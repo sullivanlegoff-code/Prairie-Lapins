@@ -5,6 +5,7 @@ import {regressionStart as legacyGame} from './regression-start';
 import {createMissions} from '../src/simulation/missions';
 import {emptyBuilding} from '../src/state/initial';
 import {describe, expect, it, vi} from 'vitest';
+import {itAll} from './cases';
 import {BALANCE, BREEDING_WEIGHTS, HISTORICAL_COMMON_WEIGHTS, LEGACY_SPECIES_IDS, MINUTE, RECIPE_SPECIES, SHOP_SPECIES, SPECIES, SPECIES_IDS, growthDuration, type SpeciesId} from '../src/config/balance';
 import {act, advance,  decodeGame, encodeGame, pendingDiscoveries, rabbitIncome} from '../src/simulation';
 import {breedingOdds, breedingPool, breedingWeights, chooseBirth} from '../src/simulation/breeding';
@@ -51,14 +52,14 @@ describe('species catalogue and acquisition', () => {
     expect(SPECIES_IDS.filter(id => SPECIES[id].types.includes('arc-en-ciel'))).toEqual(['arkoko', 'benny']); expect(SPECIES.benny.types).toEqual(['arc-en-ciel']);
     expect(SHOP_SPECIES.map(id=>SPECIES[id].price)).toEqual([80,80,180,350,600]);
   });
-  it.each(['feu', 'belier-gris', 'volant'] as const)('purchases %s for 80 with immediate enclosure welcome and discovery', species => {
+  itAll(['feu', 'belier-gris', 'volant'] as const)('purchases %s for 80 with immediate enclosure welcome and discovery', species => {
     const initial=createGame(0);initial.pattes=2000;const s = run(initial, {type: 'buyRabbit', species, enclosureId: 'building-1'});
     expect(s).toMatchObject({pattes: 2000-SPECIES[species].price!, hearts: 12});
     expect(s.rabbits[2]).toMatchObject({species, affection: 1, enclosureId: 'building-1'});
     expect(s.discovered).toContain(species);
     expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: s});
   });
-  it.each(rares)('refuses to buy %s without spending', (species) => {
+  itAll(rares)('refuses to buy %s without spending', (species) => {
     const s = createGame(0);
     expect(act(s, {type: 'buyRabbit', species, enclosureId: 'building-1'}, 0)).toEqual({ok: false, reason: 'INVALID_CHOICE', state: s});
   });
@@ -98,7 +99,7 @@ describe('exact breeding pools', () => {
       }
     }
   }, 120000); // Every pair at four affection levels: about 5 s alone, slower under the full suite.
-  it.each(rares)('admits %s only when both parents have affection 2', (rare, a, b) => {
+  itAll(rares)('admits %s only when both parents have affection 2', (rare, a, b) => {
     // Two common parents give only the matching non-common recipes; affection below 2 still excludes them.
     const elements = [...SPECIES[a].types, ...SPECIES[b].types];
     const expectOdds = (actual: Record<string, number>, weights: Record<string, number>) => {
@@ -127,7 +128,7 @@ describe('exact breeding pools', () => {
 });
 
 describe('extended guarantee and persisted rare births', () => {
-  it.each(rares)('guarantees and reserves %s on the eighth eligible attempt, without discovering before welcome', (rare, a, b) => {
+  itAll(rares)('guarantees and reserves %s on the eighth eligible attempt, without discovering before welcome', (rare, a, b) => {
     // A mixed pair gives no Common, so each failure is a discovered Rare of the same pool (30-minute growth), which the guarantee does not reserve.
     const knownRare = {boudinet: 'roukette', phoenix: 'piment', glassofeu: 'wat-wat'} as const;
     const firstCommon = SPECIES_IDS.find(id => id === a || id === b)!;

@@ -2,6 +2,7 @@ import {cumulativeLevelXp} from '../src/simulation/progression';
 import {sendToNursery} from './manual-transfer';
 import {regressionStart as legacyGame} from './regression-start';
 import {describe, expect, it, vi} from 'vitest';
+import {itAll} from './cases';
 import {recipeOf} from '../src/config/species';
 import {GUARANTEE_SPECIES, MINUTE, SPECIES, SPECIES_IDS, growthDuration, type SpeciesId} from '../src/config/balance';
 import {commonResultAllowed, breedingOdds, breedingPool, chooseBirth, recipeMatches} from '../src/simulation/breeding';
@@ -31,7 +32,7 @@ function couple(a: SpeciesId,b: SpeciesId,level:number) {
 }
 const breed:Command={type:'breed',parents:['rabbit-2','rabbit-3']};
 describe('approved three-species rules',()=>{
- it.each(rows)('%s is gated per parent, not the breeding action, and is not purchasable',(id,a,b,level,minutes)=>{
+ itAll(rows)('%s is gated per parent, not the breeding action, and is not purchasable',(id,a,b,level,minutes)=>{
   expect(SPECIES[id].price).toBeNull();expect(growthDuration(id)).toBe(minutes*MINUTE);
   expect(breedingOdds(a,b,level,level-1)[id]).toBeUndefined();expect(breedingOdds(a,b,level,level)[id]).toBeGreaterThan(0);
   const low=couple(a,b,2),before=structuredClone(low);const result=act(low,breed,0,()=>0);expect(result.ok).toBe(true);
@@ -103,13 +104,13 @@ describe('ordinary guarantee excludes epic and legendary discoveries',()=>{
  it('does not count a special-only eligible pair, even with a pending ordinary guarantee',()=>{
   const s=couple('paille','belier-gris',6);s.discovered.push('roukette','boudinet','champignon');s.pityFailures=7;expect(chooseBirth(s,'paille','belier-gris',.88,6,6)).toMatchObject({species:'magicien',guaranteed:false,reservedDiscovery:false,pityFailures:7});
  });
- it.each(['magicien','dragon']as const)('refuses a forged guarantee reservation for %s',id=>{
+ itAll(['magicien','dragon']as const)('refuses a forged guarantee reservation for %s',id=>{
   const [_,a,b,level]=rows.find(r=>r[0]===id)!;const s=run(couple(a,b,level),breed);
   s.buildings.find(b=>b.breeding)!.breeding!.birth.reservedDiscovery=true;expect(decodeGame(JSON.stringify(s))).toMatchObject({ok:false});
  });
 });
 describe('saved births, delays, compatibility and collection',()=>{
- it.each(rows)('%s draws once, stays hidden, grows after transfer, and welcomes at affection one',(id,a,b,level,minutes)=>{
+ itAll(rows)('%s draws once, stays hidden, grows after transfer, and welcomes at affection one',(id,a,b,level,minutes)=>{
   const nest=growthDuration(id),ready=nest+minutes*MINUTE;const source=couple(a,b,level),rng=vi.fn(()=>id==='bouee' ? .5 : id==='dragon' ? .95 : id==='magicien' ? .88 : .999),map=new Map([[SAVE_KEY,encodeGame(source)]]),storage={getItem:(k:string)=>map.get(k)??null,setItem:(k:string,v:string)=>{map.set(k,v)}};
   const c=new GameController(storage,()=>0,rng);expect(c.perform(breed).ok).toBe(true);expect(rng).toHaveBeenCalledTimes(1);
   const saved=c.getSnapshot().state!,birth=saved.buildings.find(b=>b.breeding)!.breeding!.birth;expect(birth.species).toBe(id);c.dispose();
@@ -127,7 +128,7 @@ describe('saved births, delays, compatibility and collection',()=>{
   expect(s.buildings.find(b=>b.breeding)!.breeding!.birth.species).toBe('dragon');s=run(s, welcomeOf(s, 'building-1'));expect(stateBaby(s)).toBeNull();s=sendToNursery(s);
   expect(stateBaby(s)).toMatchObject({startedAt:dragonStart,readyAt:dragonStart+dragonNest});
  });
- it.each(rows)('%s uses current habitat type compatibility',(id)=>{
+ itAll(rows)('%s uses current habitat type compatibility',(id)=>{
   const s=couple('paille','neige',2),home=s.buildings[0];
   for(const type of ['universal','paille','neige','feu','metal','vol']as const){home.habitat!.type=type;expect(habitatEntryReason(s,home,id)).toBe(type==='universal'||SPECIES[id].types.includes(type)?null:'TYPE_INCOMPATIBLE')}
  });

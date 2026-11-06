@@ -1,4 +1,5 @@
 import {describe, it, expect} from 'vitest';
+import {itAll} from './cases';
 import {createGame} from '../src/simulation';
 import {PARCEL_IDS, type ParcelId} from '../src/config/land';
 import {ISLAND} from '../src/config/islandGeometry';
@@ -32,7 +33,7 @@ describe('parcel tops and floating island bounds', () => {
     expect(edges).toHaveLength(4);
     expect(edges.filter(e => e.b.x < e.a.x).map(e => e.a.x - e.b.x)).toEqual([ISLAND.mapWidth]);
   });
-  it.each(fixtures)('%s: pan regions cover the current floating island drawing', (_name, ids) => {
+  itAll(fixtures)('%s: pan regions cover the current floating island drawing', (_name, ids) => {
     const regions = ownedRegions(ids);
     for (const paint of floatingIslandArt(ids).paint) {
       const points = paint.kind === 'ellipse' ? [{x: paint.x, y: paint.y}] : paint.points;

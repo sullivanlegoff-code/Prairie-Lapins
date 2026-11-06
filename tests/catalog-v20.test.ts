@@ -1,4 +1,5 @@
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {SPECIES, SPECIES_IDS, HOUR, GUARANTEE_SPECIES, TRAVEL, growthDuration} from '../src/config/balance';
 import {recipeSource} from '../src/config/species';
 import {decodeGame, encodeGame, SAVE_VERSION} from '../src/persistence/json';
@@ -25,7 +26,7 @@ describe('catalogue v20', () => {
     expect(mainProgress(s, 'all-ordinary-rares')).toEqual({value: 25, target: 25});
     expect(mainProgress(s, 'first-rare')).toEqual({value: 1, target: 1});
   });
-  it.each([16, 17, 18, 19])('converts retired species before validating the v%i migration chain', version => {
+  itAll([16, 17, 18, 19])('converts retired species before validating the v%i migration chain', version => {
     const raw = JSON.parse(encodeGame(createGame(HOUR))); raw.version = version;
     if (version === 16) delete raw.rewardedDecorationModels;
     raw.rabbits[0].species = 'lunettes'; raw.discovered = ['lunettes']; raw.recipeBook = ['lunettes'];
@@ -37,7 +38,7 @@ describe('catalogue v20', () => {
     expect(result.state.pattes).toBe(raw.pattes + 220);
     expect(decodeGame(encodeGame(result.state))).toEqual(result);
   });
-  it.each(['lunettes', 'feu-glace', 'perroquet'])('keeps a converted pending %s discovery hidden', species => {
+  itAll(['lunettes', 'feu-glace', 'perroquet'])('keeps a converted pending %s discovery hidden', species => {
     const raw = JSON.parse(encodeGame(scenarioState('nurseryStates', HOUR))); raw.version = 19;
     const baby = raw.buildings.find((b: {kind: string}) => b.kind === 'nursery').nursery.babies[1];
     baby.birth = {...baby.birth, species, guaranteed: true, reservedDiscovery: true};
@@ -92,7 +93,7 @@ describe('catalogue v20', () => {
     expect(JSON.stringify(result.state.levelAccessTransition)).not.toMatch(/lunettes|feu-glace|perroquet/);
     expect(decodeGame(encodeGame(result.state))).toEqual(result);
   });
-  it.each([0, 1])('keeps Bouee in its Paille home and an existing Dinono growth (slot %i)', slot => {
+  itAll([0, 1])('keeps Bouee in its Paille home and an existing Dinono growth (slot %i)', slot => {
     const s = scenarioState('nurseryStates', HOUR), raw = JSON.parse(encodeGame(s)); raw.version = 19;
     raw.rabbits[0].species = 'bouee'; raw.discovered.push('bouee');
     const baby = raw.buildings.find((b: {kind: string}) => b.kind === 'nursery').nursery.babies[slot];

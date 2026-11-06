@@ -1,6 +1,7 @@
 import {eligibleMainMissionIds} from '../src/simulation/missions';
 import {regressionStart as createGame} from './regression-start';
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {act, advance,  decodeGame, encodeGame} from '../src/simulation';
 import {HOUR, MINUTE, growthDuration} from '../src/config/balance';
 import {MAIN_MISSIONS, MAIN_MISSION_IDS, ACTIVE_MAIN_MISSION_IDS, DAILY_MISSION_IDS, MISSION_CYCLE_DURATION as DAY, type DailyMissionId} from '../src/config/missions';
@@ -73,7 +74,7 @@ describe('main missions and unique rewards',()=>{
     expect(s.rabbits.every(r=>r.affection<5)).toBe(true);expect(s.missions.completed).toContain('strong-bonds');
     const restored=read(encodeGame(s),DAY);expect(run(restored,{type:'claimMainMission',id:'strong-bonds'}).hearts).toBe(13);
   });
-  it.each(eligibleMainMissionIds(createGame(0)))('claims %s once, credits its exact reward, and never counts the reward as daily work',id=>{
+  itAll(eligibleMainMissionIds(createGame(0)))('claims %s once, credits its exact reward, and never counts the reward as daily work',id=>{
     const before=prepared(); before.missions.completed=[id];
     const s=run(before,{type:'claimMainMission',id}), reward=MAIN_MISSIONS[id].reward;
     if(reward.resource==='none')expect([s.pattes,s.grass,s.hearts]).toEqual([before.pattes,before.grass,before.hearts]);else expect(s[reward.resource]).toBe(before[reward.resource]+reward.amount);expect(s.missions.claimed).toEqual([id]);
@@ -188,7 +189,7 @@ describe('mission persistence and controller',()=>{
     m.flags.fail='';expect(c.confirmImport(p.token,true).ok).toBe(true);expect(state(c)).toEqual(incoming);expect(state(c).missions.daily.progress).toEqual(emptyDailyProgress());
     const exported=c.exportGame();if(!exported.ok)throw Error(exported.reason);expect(read(exported.json,5*HOUR)).toEqual(incoming);
   });
-  it.each(['unknown','duplicate','unearned','bonus','cycle','future'] as const)('rejects inconsistent mission state: %s',kind=>{
+  itAll(['unknown','duplicate','unearned','bonus','cycle','future'] as const)('rejects inconsistent mission state: %s',kind=>{
     const s=createGame(0), raw=JSON.parse(encodeGame(s));
     if(kind==='unknown')raw.missions.completed=['invented'];
     if(kind==='duplicate')raw.missions.completed=['first-farm','first-farm'];

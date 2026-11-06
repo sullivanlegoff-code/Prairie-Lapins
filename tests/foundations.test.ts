@@ -1,5 +1,6 @@
 import {regressionStart as createGame} from './regression-start';
 import {describe, expect, it, vi} from 'vitest';
+import {itAll} from './cases';
 import {act, advance, encodeGame, decodeGame} from '../src/simulation';
 import {GameController} from '../src/application/GameController';
 import {SAVE_KEY, type SaveStorage} from '../src/persistence/storage';
@@ -99,7 +100,7 @@ describe('technical foundation regressions', () => {
 });
 
 describe('reproducible action traces', () => {
- it.each([17,104729,20261009])('keeps invariants and time equivalence for seed %i', seed => {
+ itAll([17,104729,20261009])('keeps invariants and time equivalence for seed %i', seed => {
   let value=seed, s=equipped(), now=0; const trace:unknown[]=[];
   const random=()=>{value=(Math.imul(value,1664525)+1013904223)>>>0;return value/4294967296;};
   const rng=vi.fn(random);

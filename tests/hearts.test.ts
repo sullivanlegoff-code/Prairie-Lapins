@@ -2,6 +2,7 @@ import {cumulativeLevelXp,requiredExtensionLevel} from '../src/simulation/progre
 import {sendToNursery} from './manual-transfer';
 import {regressionStart as createGame} from './regression-start';
 import {describe, expect, it, vi} from 'vitest';
+import {itAll} from './cases';
 import {HOUR, MINUTE, ORDERS, growthDuration} from '../src/config/balance';
 import {act, advance,  decodeGame, encodeGame, pendingDiscoveries} from '../src/simulation';
 import {quoteComplement} from '../src/simulation/actions';
@@ -77,7 +78,7 @@ describe('hearts initialization, migration and gifts', () => {
 });
 
 describe('acceleration transactions', () => {
-  it.each([[0, 0], [1, 1], [5 * MINUTE, 1], [5 * MINUTE + 1, 2], [6 * MINUTE, 2], [20 * MINUTE, 4]])('rounds %i milliseconds to %i hearts', (remaining, expected) => {
+  itAll([[0, 0], [1, 1], [5 * MINUTE, 1], [5 * MINUTE + 1, 2], [6 * MINUTE, 2], [20 * MINUTE, 4]])('rounds %i milliseconds to %i hearts', (remaining, expected) => {
     expect(accelerationCost(remaining)).toBe(expected);
   });
   it('finishes only the selected farm at now, without extra income or changing another timer', () => {
@@ -165,7 +166,7 @@ describe('acceleration transactions', () => {
 });
 
 describe('pattes complement transactions', () => {
-  it.each([[0, 0], [1, 1], [25, 1], [26, 2], [50, 2], [51, 3]])('rounds %i missing pattes to %i hearts', (missing, expected) => {
+  itAll([[0, 0], [1, 1], [25, 1], [26, 2], [50, 2], [51, 3]])('rounds %i missing pattes to %i hearts', (missing, expected) => {
     expect(complementCost(missing)).toBe(expected);
   });
   it.each<PattesCommand>([

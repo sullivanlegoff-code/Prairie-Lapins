@@ -1,4 +1,5 @@
 ﻿import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {SPECIES_ENTRIES, SPECIES_IDS} from '../src/config/species';
 import {validateSpeciesEntries} from '../src/config/validateSpecies';
 
@@ -51,7 +52,7 @@ describe('species catalogue validation', () => {
     expect(SPECIES_ENTRIES).toEqual(before);
     expect(SPECIES_ENTRIES.map(e => e.id)).toEqual(SPECIES_IDS);
   });
-  it.each(invalid)('identifies the species and field for %s', (_name, fixture, field) => {
+  itAll(invalid)('identifies the species and field for %s', (_name, fixture, field) => {
     const diagnostics = validateSpeciesEntries([fixture]);
     expect(diagnostics).toContainEqual(expect.objectContaining({index: 0, species: fixture && typeof fixture === 'object' && 'id' in fixture && fixture.id ? fixture.id : '<entry 0>', field}));
     expect(diagnostics.every(d => d.message.length > 0)).toBe(true);
@@ -59,7 +60,7 @@ describe('species catalogue validation', () => {
   it('detects duplicate ids in the raw list even when a lookup would overwrite them', () => {
     expect(validateSpeciesEntries([entry(), entry()])).toContainEqual({index: 1, species: 'sample', field: 'id', message: 'Duplicate species id'});
   });
-  it.each([{kind: 'shop', price: 0}, {kind: 'historical-breeding'}, recipe])('rejects duplicate $kind sources', source => {
+  itAll([{kind: 'shop', price: 0}, {kind: 'historical-breeding'}, recipe])('rejects duplicate $kind sources', source => {
     expect(validateSpeciesEntries([{...entry(), acquisition: [source,source]}])).toContainEqual(expect.objectContaining({species: 'sample', field: 'acquisition.1.kind'}));
   });
   it('identifies duplicate textures and preload orders across distinct entries', () => {

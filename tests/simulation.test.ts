@@ -2,6 +2,7 @@ import {cumulativeLevelXp} from '../src/simulation/progression';
 import {sendToNursery} from './manual-transfer';
 import {regressionStart as legacyGame} from './regression-start';
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {FEED_COSTS, HOUR, MINUTE, ORDERS, SPECIES, LEGACY_SPECIES_IDS, HISTORICAL_COMMON_WEIGHTS, farmDuration, growthDuration, orderFarmLevel, type SpeciesId} from '../src/config/balance';
 import {act, advance,  decodeGame, encodeGame, pendingDiscoveries, rabbitIncome} from '../src/simulation';
 import {breedingOdds, chooseBirth} from '../src/simulation/breeding';
@@ -140,7 +141,7 @@ describe('income and time', () => {
 });
 
 describe('farming and affection', () => {
-  it.each(Object.keys(ORDERS) as (keyof typeof ORDERS)[])('runs exactly one %s farm order', recipe => {
+  itAll(Object.keys(ORDERS) as (keyof typeof ORDERS)[])('runs exactly one %s farm order', recipe => {
     let s = run(createGame(0), {type: 'buyBuilding', kind: 'farm', x: 22, y: 20}); const id = s.buildings[1].id;
     s.pattes = 5000; s.progression = {totalXp: cumulativeLevelXp(ORDERS[recipe].level), rewardedThroughLevel: ORDERS[recipe].level};
     s.buildings.find(b => b.id === id)!.farmLevel = orderFarmLevel(recipe) === 3 ? 3 : 2;

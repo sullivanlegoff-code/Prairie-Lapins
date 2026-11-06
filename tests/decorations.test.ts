@@ -1,6 +1,7 @@
 import {cumulativeLevelXp,requiredExtensionLevel,requiredDecorationLevel} from '../src/simulation/progression';
 import {regressionStart as createGame} from './regression-start';
 import {describe, expect, it, vi} from 'vitest';
+import {itAll} from './cases';
 import {act, advance,  decodeGame, encodeGame} from '../src/simulation';
 import {DECORATIONS, DECORATION_IDS, DECORATION_RESALE_RATE, decorationResalePrice, MAX_DECORATIONS, type DecorationId} from '../src/config/decorations';
 import {decorationsInCell, footprint} from '../src/simulation/decorations';
@@ -50,7 +51,7 @@ describe('decoration ownership and atomic commands', () => {
     m.fail.key='';expect(c.perform({type:'buyDecoration',catalogId:'bush',location:{kind:'outside',x:25,y:23,rotation:0}}).ok).toBe(true);
     const loaded=new GameController(m.storage,()=>0);expect(loaded.getSnapshot().state!.decorations).toHaveLength(1);c.dispose();loaded.dispose();
   });
-  it.each(DECORATION_IDS)('buys %s at its configured currency price without bonuses or birth RNG', id => {
+  itAll(DECORATION_IDS)('buys %s at its configured currency price without bonuses or birth RNG', id => {
     const s = rich(), rng = vi.fn(() => {throw Error('No birth draw');}), r = act(s, {type: 'buyDecoration', catalogId: id}, 0, rng);
     expect(r.ok).toBe(true); if (!r.ok) return;
     expect(r.state).toEqual({...s, pattes: s.pattes - (DECORATIONS[id].heartPrice ? 0 : DECORATIONS[id].price), hearts: s.hearts - (DECORATIONS[id].heartPrice ?? 0), nextId: 5, decorations: [{id: 'decoration-4', catalogId: id, ...(DECORATIONS[id].heartPrice ? {paidHearts: DECORATIONS[id].heartPrice} : {paidPrice: DECORATIONS[id].price}), location: {kind: 'inventory'}, placementXpProcessed: false}]});
@@ -73,7 +74,7 @@ describe('decoration ownership and atomic commands', () => {
     s = pose(s, {kind: 'inventory'}); s = pose(s, outside(5, 3));
     expect(s.pattes).toBe(original.pattes); expect(s.nextId).toBe(original.nextId); expect(s.decorations).toHaveLength(1);
   });
-  it.each([outside(-1, 0), outside(12, 0), outside(4, 12), outside(4.5, 0)])('refuses exterior outside the unlocked fine grid: %j', location => {
+  itAll([outside(-1, 0), outside(12, 0), outside(4, 12), outside(4.5, 0)])('refuses exterior outside the unlocked fine grid: %j', location => {
     const s = buy(rich()); refused(s, {type: 'placeDecoration', id: 'decoration-4', location}, 'INVALID_CELL');
   });
   it('refuses building footprints and other objects but allows crossing two free logical cells', () => {
@@ -82,7 +83,7 @@ describe('decoration ownership and atomic commands', () => {
     s = buy(s, 'large-bookcase'); s = pose(s, {kind: 'outside', x: 27, y: 22, rotation: 0});
     expect(decorationsInCell(s, 6, 5)).toContain('decoration-6'); expect(decorationsInCell(s, 7, 5)).toEqual(['decoration-6']);
   });
-  it.each(['large-bookcase', 'birthday-candle'] as const)('refuses rotation of %s and validates its complete fixed footprint at parcel edges', catalogId => {
+  itAll(['large-bookcase', 'birthday-candle'] as const)('refuses rotation of %s and validates its complete fixed footprint at parcel edges', catalogId => {
     let s = buy(rich(), catalogId);
     expect(footprint(catalogId, 0)).toEqual({width: 2, height: DECORATIONS[catalogId].height});
     const edge = {kind: 'outside', x: 31, y: 16, rotation: 0} as const;
@@ -125,7 +126,7 @@ describe('decoration ownership and atomic commands', () => {
 });
 
 describe('saves and four-route boundaries', () => {
-  it.each(['decorationDemo', 'decoratedHabitat', 'decorationDense'] as const)('validates and restores the prepared %s scenario', id => {
+  itAll(['decorationDemo', 'decoratedHabitat', 'decorationDense'] as const)('validates and restores the prepared %s scenario', id => {
     const s = scenarioState(id, 0); const placed = s.decorations.filter(d => d.location.kind !== 'inventory');
     expect(new Set(placed.map(d => d.catalogId))).toEqual(new Set(DECORATION_IDS));
     if (id === 'decorationDense') {expect(s.decorations).toHaveLength(MAX_DECORATIONS); expect(placed.length).toBeGreaterThan(100);}
@@ -136,7 +137,7 @@ describe('saves and four-route boundaries', () => {
     expect(c.restart(true).ok).toBe(true); const p = c.prepareImport(exported.json); if (!p.ok) throw Error(p.reason);
     expect(c.confirmImport(p.token, true).ok).toBe(true); expect(new GameController(m.storage, () => 0).getSnapshot().state).toEqual(s);
   }, 20000);
-  it.each(['duplicate', 'catalog', 'next-id', 'overlap', 'bounds', 'building', 'rotation', 'missing-home', 'slot', 'slot-overlap', 'quantity', 'extra-location'] as const)('rejects malformed %s imports without replacing the current save', fault => {
+  itAll(['duplicate', 'catalog', 'next-id', 'overlap', 'bounds', 'building', 'rotation', 'missing-home', 'slot', 'slot-overlap', 'quantity', 'extra-location'] as const)('rejects malformed %s imports without replacing the current save', fault => {
     const s = pose(buy(rich()), outside());
     if (fault === 'duplicate') s.decorations.push(structuredClone(s.decorations[0]));
     if (fault === 'catalog') s.decorations[0].catalogId = 'bad-id' as DecorationId;
@@ -165,7 +166,7 @@ describe('saves and four-route boundaries', () => {
 });
 
 describe('atomic decoration resale', () => {
-  it.each(DECORATION_IDS)('sells exactly one inventory %s with the configured pattes refund only', catalogId => {
+  itAll(DECORATION_IDS)('sells exactly one inventory %s with the configured pattes refund only', catalogId => {
     const s = buy(buy(rich(), catalogId), catalogId), before = structuredClone(s);
     if (DECORATIONS[catalogId].heartPrice) { refused(s, {type: 'sellDecoration', id: s.decorations[0].id}, 'INVALID_CHOICE'); expect(s).toEqual(before); return; }
     const sold = run(s, {type: 'sellDecoration', id: s.decorations[0].id});
@@ -180,7 +181,7 @@ describe('atomic decoration resale', () => {
     try {DECORATIONS.bush.price = 21; expect(decorationResalePrice('bush')).toBe(10);}
     finally {DECORATIONS.bush.price = price;}
   });
-  it.each([outside(), outside(5,1)] as DecorationLocation[])('frees the placed destination %j without changing rabbits or buildings', location => {
+  itAll([outside(), outside(5,1)] as DecorationLocation[])('frees the placed destination %j without changing rabbits or buildings', location => {
     const catalogId = location.kind === 'outside' ? 'bush' : 'bunny-slippers';
     const s = pose(buy(buy(rich(), catalogId), catalogId), location, 'decoration-4');
     const sold = run(s, {type: 'sellDecoration', id: 'decoration-4'});
@@ -207,7 +208,7 @@ describe('atomic decoration resale', () => {
     expect(m.writes).toEqual([SAVE_KEY]); expect(c.getSnapshot().state).toEqual(result);
     expect(new GameController(m.storage, () => 0).getSnapshot().state).toEqual(result);
   });
-  it.each(['quota', 'conflict', 'read'] as const)('keeps both object and payment on %s save refusal, and retries cannot replay a sale', fault => {
+  itAll(['quota', 'conflict', 'read'] as const)('keeps both object and payment on %s save refusal, and retries cannot replay a sale', fault => {
     const s = pose(buy(rich(), 'large-bookcase'), outside()), m = memory(encodeGame(s)), c = new GameController(m.storage, () => 0), raw = m.values.get(SAVE_KEY)!;
     if (fault === 'quota') m.fail.key = SAVE_KEY;
     if (fault === 'conflict') m.values.set(SAVE_KEY, encodeGame({...s, grass: s.grass + 1}));

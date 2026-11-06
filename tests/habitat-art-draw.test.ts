@@ -1,4 +1,5 @@
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {HABITAT_TYPES, type HabitatLevel, type HabitatType} from '../src/config/habitats';
 import {HABITAT_SIZE_PROPOSAL, habitatProposalGround, habitatProposalWorldSize} from '../src/config/habitatSizes';
 import {drawHabitat} from '../src/display/habitatArt';
@@ -28,7 +29,7 @@ describe('enclosure drawing', () => {
     for (const type of HABITAT_TYPES) expect(await digest(recordDrawing(g => drawHabitat(g, 128, 128, type, 1, HABITAT_SIZE_PROPOSAL[1].growth)))).toBe(PRODUCTION_DIGESTS[`${type}-1`]);
   });
 
-  it.each([2, 3] as const)('level %i grows the ground by the proposed size, for every type, with distinct drawings', async level => {
+  itAll([2, 3] as const)('level %i grows the ground by the proposed size, for every type, with distinct drawings', async level => {
     const ground = habitatProposalGround(level), seen = new Set<string>();
     for (const type of HABITAT_TYPES) {
       const calls = recordDrawing(g => drawHabitat(g, 0, 0, type, level, HABITAT_SIZE_PROPOSAL[level].growth));
