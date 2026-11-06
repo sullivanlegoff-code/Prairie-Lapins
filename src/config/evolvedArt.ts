@@ -105,7 +105,7 @@ export const EVOLVED_ART: readonly EvolvedSprite[] = [
   {id: 'pain-epice', name: 'Chef pâtissier', file: 'assets/rabbits/pain-epice/pain-epice-v2.png', texture: 'rabbit-pain-epice-evolved-v2', width: 391, height: 503, worldWidth: 46.1, groundY: 12},
   {id: 'flocon-cristal', name: 'Couronne de givre', file: 'assets/rabbits/flocon-cristal/flocon-cristal-v2.png', texture: 'rabbit-flocon-cristal-evolved-v2', width: 356, height: 531, worldWidth: 42, groundY: 12},
   {id: 'nuage', name: 'Nuage d’arc-en-ciel', file: 'assets/rabbits/nuage/nuage-v2.png', texture: 'rabbit-nuage-evolved-v2', width: 405, height: 575, worldWidth: 47.7, groundY: 12, facing: 'left'},
-  {id: 'champignon', name: 'Roi des sous-bois', file: 'assets/rabbits/champignon/champignon-v2.png', texture: 'rabbit-champignon-evolved-v2', width: 431, height: 541, worldWidth: 50.8, groundY: 12},
+  {id: 'champignon', name: 'Roi des sous-bois', file: 'assets/rabbits/champignon/champignon-v2.png', texture: 'rabbit-champignon-evolved-v2', width: 488, height: 477, worldWidth: 57.6, groundY: 12},
 ];
 export const evolvedSprite = (species: SpeciesId): EvolvedSprite | undefined => EVOLVED_ART.find(art => art.id === species);
 export const hasEvolvedArt = (species: SpeciesId): boolean => !!evolvedSprite(species);

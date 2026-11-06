@@ -941,13 +941,13 @@
   },
   "champignon": {
     "file": "assets/rabbits/champignon/champignon-v1.png",
-    "worldWidth": 40.8,
-    "sourceSha1": "5fb958e5e608fc19609b7df22907ea89763e352b",
-    "sourceWidth": 635,
-    "sourceHeight": 1230,
-    "width": 301,
-    "height": 583,
-    "derivedSha1": "5029c77e4ba45e1f881ed3ff8a27e8e673d04cae"
+    "worldWidth": 54.2,
+    "derivedSha1": "68e0fcbeb4fc9b8cd88458582ffe9e61127239fb",
+    "sourceSha1": "2ea0376aa45a98887c4f8ac38c5b88dd52df2012",
+    "sourceWidth": 679,
+    "sourceHeight": 745,
+    "width": 400,
+    "height": 439
   },
   "lapin-de-sulli": {
     "file": "assets/rabbits/lapin-de-sulli/lapin-de-sulli-v1.png",
@@ -1153,12 +1153,12 @@
     "registry": "src/config/evolvedArt.ts",
     "displayScale": 1.15,
     "file": "assets/rabbits/champignon/champignon-v2.png",
-    "worldWidth": 50.8,
-    "sourceSha1": "b662a5d77ed5570bd3c2769ac2d6bdb28bb918f6",
-    "sourceWidth": 942,
-    "sourceHeight": 1182,
-    "width": 431,
-    "height": 541,
-    "derivedSha1": "a56578340885bf83d71e7052c4e6cebf47863c0e"
+    "worldWidth": 57.6,
+    "derivedSha1": "8bcad28ddc15052d2ca9d6c3abc418712cc610ee",
+    "sourceSha1": "149571cbe130561c71815b6e80afdebb657a5f59",
+    "sourceWidth": 875,
+    "sourceHeight": 856,
+    "width": 488,
+    "height": 477
   }
 }
