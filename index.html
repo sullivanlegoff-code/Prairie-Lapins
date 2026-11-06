@@ -39,7 +39,22 @@
       timer = setTimeout(fail, 25000);
     }());
   </script>
-  <link rel="preload" as="image" href="%BASE_URL%assets/loading/morning-path.webp" fetchpriority="high">
+  <script id="loading-scene">
+    // The loading landscape (painted): the morning path, or during the Christmas event (owner, 6 November 2026) the snowy
+    // path by the device clock: A by day, B at dawn and dusk, C at night. Set before the first paint, so no other image flashes.
+    (function () {
+      var christmas = '%PRAIRIE_CHRISTMAS%' === 'true', hour = new Date().getHours() + new Date().getMinutes() / 60;
+      if ('%PRAIRIE_LAB%' === 'true') {
+        try { var lab = JSON.parse(sessionStorage.getItem('prairie-lab-christmas') || '{}'); if (lab.off) christmas = false; if (typeof lab.hour === 'number' && isFinite(lab.hour)) hour = ((lab.hour % 24) + 24) % 24; } catch (e) { /* private mode */ }
+      }
+      var scene = !christmas ? 'matin' : hour >= 19 || hour < 6.5 ? 'noel-nuit' : hour < 9 || hour >= 17 ? 'noel-crepuscule' : 'noel-jour';
+      document.documentElement.dataset.loadingScene = scene;
+      var link = document.createElement('link');
+      link.rel = 'preload'; link.as = 'image'; link.setAttribute('fetchpriority', 'high');
+      link.href = '%BASE_URL%assets/loading/' + (scene === 'matin' ? 'morning-path' : scene) + '.webp';
+      document.head.appendChild(link);
+    }());
+  </script>
   <script src="%BASE_URL%assets/app/standalone-zoom.js"></script>
   <!-- app-install:start -->
   <link rel="manifest" href="%BASE_URL%assets/app/manifest.webmanifest">

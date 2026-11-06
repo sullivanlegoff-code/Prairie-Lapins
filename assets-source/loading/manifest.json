@@ -1,10 +1,42 @@
-{
-  "source": "assets-source/loading/morning-path.png",
-  "target": "public/assets/loading/morning-path.webp",
-  "width": 1672,
-  "height": 941,
-  "quality": 0.82,
-  "sourceSha256": "b9a0aed480f88c0b8847716fb5a1b03649f8aed781877a7de8fed706dbe65aee",
-  "derivedSha256": "3ef32cbb76ee4982649da6a85f018db24b172c70a63d2c7a95a2b19c4ba47e7c",
-  "bytes": 338942
-}
+[
+  {
+    "source": "assets-source/loading/morning-path.png",
+    "target": "public/assets/loading/morning-path.webp",
+    "width": 1672,
+    "height": 941,
+    "quality": 0.82,
+    "sourceSha256": "b9a0aed480f88c0b8847716fb5a1b03649f8aed781877a7de8fed706dbe65aee",
+    "derivedSha256": "3ef32cbb76ee4982649da6a85f018db24b172c70a63d2c7a95a2b19c4ba47e7c",
+    "bytes": 338942
+  },
+  {
+    "source": "assets-source/loading/noel-jour.png",
+    "target": "public/assets/loading/noel-jour.webp",
+    "width": 1672,
+    "height": 941,
+    "quality": 0.82,
+    "sourceSha256": "1bfa01f4bae8b2edee6127bee3f8051e4ec0bd7d99cd2a2d6ed68c7d4c648ebe",
+    "derivedSha256": "b3aabf5dfd34992323758426f15340c3e2c26345c39464b05975a92e2b180cf1",
+    "bytes": 273374
+  },
+  {
+    "source": "assets-source/loading/noel-crepuscule.png",
+    "target": "public/assets/loading/noel-crepuscule.webp",
+    "width": 1672,
+    "height": 941,
+    "quality": 0.82,
+    "sourceSha256": "41ed97eba8c30d8dd3c9dd3c642bd4596a3274844b186ceb9f02e53a1555c272",
+    "derivedSha256": "d33b4af2b1779eb632a51b464f88291778501197e6d5e603e5591f8227a07d21",
+    "bytes": 262632
+  },
+  {
+    "source": "assets-source/loading/noel-nuit.png",
+    "target": "public/assets/loading/noel-nuit.webp",
+    "width": 1672,
+    "height": 941,
+    "quality": 0.82,
+    "sourceSha256": "5d9eb7bacb7b7ffbe92658c3d6437ad2d93c170285769245fd2b4a9f8d854706",
+    "derivedSha256": "e6448b1323bf837909d4841136676ae1afd365d562f0c102bf1da9eb9c3aeb9d",
+    "bytes": 210748
+  }
+]

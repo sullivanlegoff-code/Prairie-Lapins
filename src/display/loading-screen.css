@@ -10,6 +10,10 @@
   color: #354128;
   overflow: hidden;
 }
+/* Christmas event: the snowy path by the time of day (chosen in index.html before the first paint). */
+html[data-loading-scene='noel-jour'] #loading-screen { background-image: url('/assets/loading/noel-jour.webp'); background-color: #e8eef8; }
+html[data-loading-scene='noel-crepuscule'] #loading-screen { background-image: url('/assets/loading/noel-crepuscule.webp'); background-color: #d9c6e6; }
+html[data-loading-scene='noel-nuit'] #loading-screen { background-image: url('/assets/loading/noel-nuit.webp'); background-color: #8fa0cf; }
 #loading-screen .loading-card {
   grid-row: 1;
   width: min(610px, 100%);
