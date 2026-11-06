@@ -88,7 +88,7 @@ describe('decoration ownership and atomic commands', () => {
     const edge = {kind: 'outside', x: 31, y: 16, rotation: 0} as const;
     refused(s, {type: 'placeDecoration', id: 'decoration-4', location: edge}, 'INVALID_CELL');
     refused(s, {type: 'placeDecoration', id: 'decoration-4', location: {...edge,rotation:1}}, 'INVALID_CHOICE');
-    s = run(s, {type:'expand',parcelId:'east',expectedCost:600});s=pose(s,edge);
+    s = run(s, {type:'expand',parcelId:'east',expectedCost:600});s.debris=[];s=pose(s,edge); // The parcel's random debris (5 November 2026) are cleared away.
     expect(s.decorations[0].location).toEqual(edge);
     expect(decodeGame(encodeGame(s))).toEqual({ok:true,state:s});
   });
@@ -107,9 +107,9 @@ describe('decoration ownership and atomic commands', () => {
   });
   it('unlocks 12×8, 24×8 and 36×8 while keeping building coordinates unchanged', () => {
     let s = buy(rich());const level=requiredExtensionLevel(2);s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level}; refused(s, {type: 'placeDecoration', id: 'decoration-4', location: outside(12, 0)}, 'INVALID_CELL');
-    s = run(s, {type:'expand',parcelId:'east',expectedCost:600}); s = pose(s, outside(23, 7));
+    s = run(s, {type:'expand',parcelId:'east',expectedCost:600}); s.debris = []; s = pose(s, outside(23, 7)); // Random debris (5 November 2026) cleared away.
     refused(s, {type: 'placeDecoration', id: 'decoration-4', location: outside(24, 0)}, 'INVALID_CELL');
-    s = run(s, {type:'expand',parcelId:'west',expectedCost:2000}); s = pose(s, outside(35, 7)); expect(s.buildings[0]).toMatchObject({x: 17, y: 20});
+    s = run(s, {type:'expand',parcelId:'west',expectedCost:2000}); s.debris = []; s = pose(s, outside(35, 7)); expect(s.buildings[0]).toMatchObject({x: 17, y: 20});
   });
   it('leaves income, affection, gifts, missions and birth RNG behavior unchanged', () => {
     let plain = rich(); plain.grass = 100; plain = run(plain, {type: 'feed', id: 'rabbit-2'}); plain = run(plain, {type: 'feed', id: 'rabbit-3'});

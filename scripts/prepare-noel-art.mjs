@@ -3,6 +3,8 @@
 // - b-<building>-neige.png, h-<habitat>-neige.png: the snowy copy of a meadow picture, same framing. It is aligned on the
 //   original (small shift and scale search) and keeps the original silhouette exactly, so the game's anchors, taps and
 //   footprints stay right; served under public/assets/noel/buildings|habitats/ at the original's name;
+//   since 6 November 2026 also the islet of the Epics, Benny's perch and the debris (originals from scripts/prepare-noel-extras-art.mjs),
+//   and the snow habitat level 3 and the nest repainted with lit lanterns, so they glow at night;
 // - marche-neige.png: the market islet (its night lights are taken from it);
 // - deco-<id>-neige.png: the eight Christmas decorations; snowman-3-neige.png: the finished snowman (its two first steps are cut from it);
 // - icons-neige.png: a 4 × 2 sheet (candy cane, snowball, puff, snowflake, four presents); hotte, traineau, fond-cadeaux;
@@ -96,6 +98,7 @@ function squareOf(img, size) {
   for (let y = 0; y < img.height; y++) img.pixels.copy(pad, ((oy + y) * s + ox) * 4, y * img.width * 4, (y + 1) * img.width * 4);
   return resize({width: s, height: s, pixels: pad}, size, size);
 }
+const LOOSE_FRAMING = new Set(['b-debris-rocher', 'b-debris-herbes', 'b-debris-buisson', 'b-perchoir-benny']);
 export async function prepareNoelArt(folder) {
   const report = {}, served = [], webp = [], winterFiles = [];
   const painted = name => existsSync(`${folder}/${name}-neige.png`) ? decodeRgbPng(readFileSync(`${folder}/${name}-neige.png`)) : null;
@@ -103,9 +106,13 @@ export async function prepareNoelArt(folder) {
   for (const file of readdirSync(folder).filter(f => /^[bh]-.*\.png$/.test(f) && !f.endsWith('-neige.png'))) {
     const name = file.slice(0, -4), art = painted(name); if (!art) continue;
     const kind = file.startsWith('b-') ? 'buildings' : 'habitats', base = name.slice(2) + '.png';
-    const original = decodeRgbPng(readFileSync(`public/assets/${kind}/${base}`)), {image, score} = winterCopy(original, art);
+    const original = decodeRgbPng(readFileSync(`public/assets/${kind}/${base}`)), copy = winterCopy(original, art), {score} = copy;
+    let {image} = copy;
     report[name] = score;
-    if (score < .9) { report[name] = `${score} (rejected: does not match the original)`; continue; }
+    // A small object whose snowy painting moved a little (debris, Benny's perch, 6 November 2026): its painted framing is kept,
+    // its opaque box stretched on the original's (both are cropped on their opaque pixels), so its anchor stays close.
+    if (score < .9 && LOOSE_FRAMING.has(name)) { image = resize(crop(keyMagenta(art)), original.width, original.height); report[name] = `${score} (painted framing kept)`; }
+    else if (score < .9) { report[name] = `${score} (rejected: does not match the original)`; continue; }
     write(`assets-source/noel/${kind}/${base}`, encodePng(image)); served.push([`public/assets/noel/${kind}/${base}`, image]);
     winterFiles.push(`${kind}/${base}`);
   }

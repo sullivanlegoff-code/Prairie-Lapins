@@ -7,7 +7,8 @@ import {classicLookReason} from '../simulation/forest';
 import {PURCHASE_UNLOCK_IDS} from '../config/purchaseUnlocks';
 import {RECIPE_BOOK_SPECIES} from '../config/recipes';
 import {updateMissions} from '../simulation/missions';
-import {buildingPlacementReason} from '../simulation/placement';
+import {buildingPlacementReason, footprintPlacementReason} from '../simulation/placement';
+import {debrisFootprint} from '../simulation/debris';
 import {growFormerEnclosures} from '../simulation/enclosureGrowth';
 import {normalizeRabbitName} from '../simulation/rabbitNames';
 import {PARCEL_IDS, startParcel} from '../config/land';
@@ -15,7 +16,7 @@ import {type HabitatType, HABITAT_TYPES, HABITAT_LEVELS, habitatLevel} from '../
 import {MAIN_MISSION_IDS, DAILY_MISSION_IDS, DAILY_MISSIONS, DAILY_PICK_COUNT} from '../config/missions';
 import {cycleIndexAt} from '../simulation/missions';
 import {z} from 'zod';
-import {BALANCE, BUILDING_KINDS, CARE_KINDS, SALON, JUMP_ROPE, LEGACY_BREEDING_DURATION, EPIC_ISLET, CUISINE_FULL_REWARDS_PER_CYCLE, HOUR, LEGACY_ORDER_CROPS, TRAVEL, tripHearts, NURSERY, ORDERS, type OrderId, SHOP_SPECIES, SPECIES, SPECIES_IDS, GUARANTEE_SPECIES, growthDuration, orderFarmLevel, type SpeciesId} from '../config/balance';
+import {BALANCE, BUILDING_KINDS, CARE_KINDS, SALON, JUMP_ROPE, LEGACY_BREEDING_DURATION, EPIC_ISLET, BENNY_FLIGHT, CUISINE_FULL_REWARDS_PER_CYCLE, HOUR, LEGACY_ORDER_CROPS, TRAVEL, tripHearts, NURSERY, ORDERS, type OrderId, SHOP_SPECIES, SPECIES, SPECIES_IDS, GUARANTEE_SPECIES, growthDuration, orderFarmLevel, type SpeciesId} from '../config/balance';
 import type {GameState} from '../state/types';
 import {ALL_DECORATION_IDS, DECORATION_IDS, RETIRED_DECORATION_IDS, MAX_DECORATIONS, isChristmasDecoration} from '../config/decorations';
 import {CHRISTMAS_CHALLENGES, CHRISTMAS_CHALLENGE_IDS, CHRISTMAS_PICK_COUNT, MAX_CANDIES, SKY_GIFTS} from '../config/christmasEvent';
@@ -50,7 +51,7 @@ const nurseryPayload = z.object({capacity: z.union([z.literal(1), z.literal(2), 
 const building = z.object({
   // x, y: a fine cell; only the islet's nest (off the land grid, checked below) may sit at a negative one.
   id: identity, kind: z.enum(BUILDING_KINDS), x: offGridCell, y: offGridCell, incomeUnits: integer,
-  habitat: z.object({type: z.enum(HABITAT_TYPES), level: z.union([z.literal(1), z.literal(2), z.literal(3)])}).strict().nullable(),
+  habitat: z.object({type: z.enum(HABITAT_TYPES), level: z.union([z.literal(1), z.literal(2), z.literal(3)]), ultra: z.literal(true).optional()}).strict().nullable(),
   farmLevel: z.union([z.literal(2), z.literal(3)]).optional(), agencyLevel: z.union([z.literal(2), z.literal(3)]).optional(),
   footprintTier: footprintTier.optional(), formerFootprint: z.literal(true).optional(), islet: z.literal(true).optional(),
   order: z.object({recipe: z.enum(Object.keys(ORDERS) as [OrderId, ...OrderId[]]), startedAt: timestamp, endsAt: timestamp, grass: integer.optional(), duration: integer.positive().optional()}).strict().nullable(),
@@ -142,6 +143,9 @@ const current = z.object({
   care: z.object({rabbitId: identity, care: z.enum(CARE_KINDS as [typeof CARE_KINDS[number], ...typeof CARE_KINDS]), startedAt: timestamp, endsAt: timestamp, hearts: integer.positive().optional()}).strict().optional(),
   // v27: the cares that brought Hearts in the cycle.
   salonHearts: z.object({cycle: integer, cares: integer.positive().max(SALON.heartCaresPerCycle)}).strict().optional(),
+  // v27: the debris of the parcels bought since the Christmas update, and « Le vol de Benny ».
+  debris: z.array(z.object({id: z.string().regex(/^debris-[1-9]\d*$/), kind: z.enum(['rocher', 'buisson', 'herbes']), x: integer, y: integer, price: integer.positive()}).strict()).max(512).optional(),
+  bennyFlight: z.object({cycle: integer, rewarded: integer.max(BENNY_FLIGHT.rewardedGamesPerCycle), heart: z.literal(true).optional(), best: integer.max(BENNY_FLIGHT.maxColumns)}).strict().optional(),
   affectionGifts: z.record(identity, integer).optional(),
   picnicCycle: integer.optional(),
   // The Terrain de corde à sauter (v23, optional): the last rewarded cycle, its rewarded games and Heart, and the record.
@@ -186,6 +190,15 @@ const schema = current.superRefine((s, context) => {
     (d.bonusClaimed && d.claimed.length !== DAILY_PICK_COUNT) || (d.picked && d.claimed.some(id => !d.picked!.includes(id)))) issue('Daily claims');
   if (m.streak && m.streak.lastCycle > d.cycleIndex) issue('Future daily streak');
   if (s.salonHearts && s.salonHearts.cycle > d.cycleIndex) issue('Future salon cycle');
+  if (s.bennyFlight && s.bennyFlight.cycle > d.cycleIndex) issue('Future flight cycle');
+  {
+    const seen = new Set<string>();
+    for (const item of s.debris ?? []) {
+      if (!item.id.startsWith('debris-') || seen.has(item.id)) issue('Debris identity'); seen.add(item.id);
+      const others = {...s, debris: (s.debris ?? []).filter(other => other.id !== item.id)};
+      if (footprintPlacementReason(others, debrisFootprint(item))) issue('Debris place');
+    }
+  }
   if (d.referenceAt > s.lastSimulatedAt && (Object.values(d.progress).some(n => n !== 0) || d.claimed.length || d.bonusClaimed)) issue('Future cycle progress');
   if ([...Object.values(s.cuisine.affectionCycles), s.cuisine.heartCycle ?? 0, s.cuisine.fullRuns?.cycle ?? 0].some(cycle => cycle > s.missions.daily.cycleIndex)) issue('Future Cuisine cycle');
   const ids: string[] = [];
@@ -202,6 +215,7 @@ const schema = current.superRefine((s, context) => {
     if (b.formerFootprint && b.kind !== 'enclosure') issue('Former footprint');
     // The islet of the Epics (v27): one nest at its fixed place off the land grid, never on it.
     if (b.islet && (b.kind !== 'nest' || b.x !== EPIC_ISLET.cell.x || b.y !== EPIC_ISLET.cell.y)) issue('Islet nest');
+    if (b.habitat?.ultra && (b.habitat.type !== 'neige' || b.habitat.level !== 3)) issue('Ultra neige habitat');
     if (!b.id.startsWith('building-')) issue('Building identity');
     if (!b.islet && (buildingPlacementReason(s, b.x, b.y, b.id) || cells.has(`${b.x},${b.y}`))) issue('Invalid or occupied cell');
     cells.add(`${b.x},${b.y}`);

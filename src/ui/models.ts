@@ -17,7 +17,7 @@ import {mapRarities} from '../config/rarities';
 
 /** The three cares of the Salon de soins. */
 export const CARE_NAMES: Record<import('../config/balance').CareKind, string> = {bath: 'Bain', brush: 'Brossage', massage: 'Massage'};
-export const BUILDING_NAMES: Record<BuildingKind, string> = {enclosure: 'Enclos', farm: 'Ferme', nest: 'Nid', nursery: 'Nurserie', kitchen: 'Cuisine', statue: 'Statue de l’Affection', agency: 'Agence de voyage', salon: 'Salon de soins', forest: 'Forêt de Brocéliande'};
+export const BUILDING_NAMES: Record<BuildingKind, string> = {enclosure: 'Enclos', farm: 'Ferme', nest: 'Nid', nursery: 'Nurserie', kitchen: 'Cuisine', statue: 'Statue de l’Affection', agency: 'Agence de voyage', salon: 'Salon de soins', forest: 'Forêt de Brocéliande', perch: 'Perchoir de Benny'};
 export const REFUSALS: Record<Refusal | 'NO_GAME' | 'DISPOSED' | 'SALE_NOT_SAVED' | 'ACTION_NOT_SAVED' | 'STORAGE_CHANGED', string> = {
   HABITAT_NOT_EMPTY: 'Cet habitat doit être vide.',
   LAST_HABITAT: 'Garde au moins un habitat.',
@@ -51,6 +51,8 @@ export const REFUSALS: Record<Refusal | 'NO_GAME' | 'DISPOSED' | 'SALE_NOT_SAVED
   EVOLUTION_CHALLENGES: 'Termine ses défis pour le faire évoluer.', EVOLUTION_REQUIRED: 'Fais d’abord évoluer ce lapin depuis sa fiche.',
   EVENT_OVER: 'L’événement de Noël est terminé.', SNOWMAN_TODAY: 'Tu as déjà fait ton bonhomme de neige aujourd’hui. Reviens demain !',
   NOT_ENOUGH_CANDIES: 'Pas assez de sucres d’orge. Réussis les défis de Noël pour en gagner.',
+  DEBRIS_IN_THE_WAY: 'Des débris encombrent cet endroit : touche-les pour les enlever.',
+  BENNY_REQUIRED: 'Il faut Benny sur ton île pour jouer au Perchoir.',
   SAME_PARENT: 'Choisis deux lapins différents.', AFFECTION_TOO_LOW: 'Chaque parent doit avoir au moins 2 d’affection.',
   MISSING_BUILDING: 'Il manque un bâtiment nécessaire : nid, nurserie ou cuisine.', ALREADY_EXPANDED: 'L’extension est déjà achetée.', PARCEL_UNAVAILABLE: 'Cette parcelle n’est pas encore accessible : l’île s’agrandit dans un ordre fixe, une parcelle après l’autre.', LAST_OF_SPECIES: 'Garde au moins un lapin de chaque espèce possédée.',
   BENNY_RECHARGING: 'Le pouvoir de Benny se recharge encore.', NO_WAITING_BABY: 'Aucun lapereau n’attend dans la nurserie.',
@@ -126,8 +128,8 @@ export function probabilityLabel(weight: number, total: number): string {
   return `${weight / divisor}/${total / divisor} (≈ ${(weight * 100 / total).toFixed(2).replace('.', ',')} %)`;
 }
 /** Presentation of the unchanged draw: unknown recipes are summed from the same integer weights, never named. */
-export function oddsView(s: GameState, a: SpeciesId, b: SpeciesId, affectionA = 2, affectionB = 2) {
-  const standIn = bennyStandIns(a).length > 1 || bennyStandIns(b).length > 1, pool = nestOddsPool(s, a, b, affectionA, affectionB);
+export function oddsView(s: GameState, a: SpeciesId, b: SpeciesId, affectionA = 2, affectionB = 2, islet = false) {
+  const standIn = bennyStandIns(a).length > 1 || bennyStandIns(b).length > 1, pool = nestOddsPool(s, a, b, affectionA, affectionB, islet);
   const ids = Object.keys(pool.weights) as SpeciesId[], known = (id: SpeciesId) => recipeKnown(s, id);
   const unknownWeight = ids.filter(id => !known(id)).reduce((sum, id) => sum + pool.weights[id]!, 0);
   return {standIn, eligible: pool.eligible, guaranteed: pool.guaranteed, possible: pool.total > 0,
@@ -145,13 +147,13 @@ export function oddsView(s: GameState, a: SpeciesId, b: SpeciesId, affectionA = 
  * averaged with equal weights. Integer weights on a common denominator keep the labels exact; a stand-in without any
  * admissible result is left out (that breeding would be refused).
  */
-/** The draw the nest shows for two parents: the breeding pool itself, or its average over Benny's stand-ins. */
-export function nestOddsPool(s: GameState, a: SpeciesId, b: SpeciesId, affectionA = 2, affectionB = 2) {
-  return bennyStandIns(a).length > 1 || bennyStandIns(b).length > 1 ? standInPool(s, a, b, affectionA, affectionB) : breedingPool(s, a, b, affectionA, affectionB);
+/** The draw the nest shows for two parents: the breeding pool itself, or its average over Benny's stand-ins. `islet`: the islet of the Epics' nest. */
+export function nestOddsPool(s: GameState, a: SpeciesId, b: SpeciesId, affectionA = 2, affectionB = 2, islet = false) {
+  return bennyStandIns(a).length > 1 || bennyStandIns(b).length > 1 ? standInPool(s, a, b, affectionA, affectionB, islet) : breedingPool(s, a, b, affectionA, affectionB, islet);
 }
-function standInPool(s: GameState, a: SpeciesId, b: SpeciesId, affectionA: number, affectionB: number) {
+function standInPool(s: GameState, a: SpeciesId, b: SpeciesId, affectionA: number, affectionB: number, islet: boolean) {
   const gcd = (x: number, y: number): number => y ? gcd(y, x % y) : x;
-  const pools = bennyStandIns(a).flatMap(first => bennyStandIns(b).map(second => breedingPool(s, first, second, affectionA, affectionB))).filter(pool => pool.total > 0);
+  const pools = bennyStandIns(a).flatMap(first => bennyStandIns(b).map(second => breedingPool(s, first, second, affectionA, affectionB, islet))).filter(pool => pool.total > 0);
   // Each draw as reduced integer weights over its own total.
   const reduced = pools.map(pool => {
     const divisor = Object.values(pool.weights).reduce((g: number, weight) => gcd(g, weight!), pool.total);

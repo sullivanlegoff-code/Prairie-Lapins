@@ -132,13 +132,89 @@ Les guirlandes de l'île et les lumières du marché restent à 20 h, comme le p
 
 **Pas encore fait :** le rapport au propriétaire sur ce point de la nuit, et le rebuild `npm run build:netlify` pour son aperçu iPhone (`http://192.168.1.13:5174/`).
 
+## Grande mise à jour de Noël (5 et 6 novembre 2026)
+
+Le propriétaire a laissé « total liberté » pour cette mission de nuit. Ses réponses (questions 10 à 20) sont dans la mémoire de l'assistant ; voici ce qui en est sorti.
+
+**Économie (commit `a4a272a`)** :
+- après le niveau 20, l'XP demandée monte plus vite (`docs/progression-simulation.mjs`) ;
+- Salon de soins au niveau 22, Forêt de Brocéliande au niveau 25, corde à sauter au niveau 20 ;
+- prix des cultures doublés, sauf le foin (10) ;
+- cœurs : la cuisine donne au plus +1 d'affection par jour au total, le salon donne des cœurs pour 2 soins par jour, les voyages de 1 à 5 cœurs, la corde à sauter seulement à la première partie du jour ;
+- le comptoir de Paille est retiré ;
+- la nurserie passe à 2 coussins au départ, déblocages à 40 / 120 / 250 cœurs.
+
+**Îlot des Épiques** (`src/simulation/epicIslet.ts`, `src/config/epicIsletArt.ts`) :
+- 400 cœurs, dès le niveau 18 ;
+- il flotte au nord de l'île de départ, hors de la grille ;
+- c'est un second nid : deux croisements en même temps ;
+- ×1,1 sur les chances d'Épique, de Légendaire et de Benny sur ce nid.
+
+**Débris** (`src/simulation/debris.ts`) :
+- chaque parcelle achetée à partir de maintenant reçoit 6 débris (rochers, buissons, herbes), deux de chaque ;
+- ils bloquent la construction (refus `DEBRIS_IN_THE_WAY`) ;
+- on les enlève en les touchant, pour environ 50 % du prix de la parcelle au total, réparti selon le type (rocher plus cher que les herbes) ;
+- les parcelles déjà achetées n'en ont pas.
+
+**Enclos Ultra neige** (section du marché de Noël, onglet « Récompenses spéciales ») :
+- 400 sucres d'orge pour transformer un enclos neige de niveau 3 en palais de glace (`habitat.ultra`) ;
+- mêmes places qu'avant ; il reste après Noël, mais ne s'achète que pendant Noël ;
+- la peinture est servie sous le nom `habitat-glace.png` : un nom en « -neige » serait pris pour une copie enneigée par `prepare-noel-art.mjs`.
+
+**Perchoir de Benny et « Le vol de Benny »** (`src/simulation/bennyFlightGame.ts`, `src/ui/BennyFlightActivity.ts`) :
+- un bâtiment de la boutique (3 000 pièces, un seul), utilisable seulement si Benny est sur l'île ;
+- le jeu : toucher l'écran fait battre des ailes à Benny, qui passe entre des colonnes de bottes de foin ;
+- récompenses : 3 parties récompensées par jour, 3 pièces par colonne (60 au plus), et 1 cœur à la première partie du jour si Benny franchit 20 colonnes ; le record est gardé.
+
+**Nuit de Noël complète** :
+- l'îlot des Épiques, le perchoir, l'îlot de la corde, le nid et l'enclos neige de niveau 3 ont maintenant leurs lumières ;
+- `scripts/derive-night-lights.mjs` exclut les débris (baies et fleurs jaunes) ;
+- l'enclos Ultra neige utilise un seuil plus large, ses lanternes étant pâles ;
+- le rond de sable de l'îlot est masqué, sinon il brillait comme une lampe.
+
+**Sept nouveaux lapins** (`src/config/species.ts`, images préparées par `scripts/prepare-rabbit-masters.mjs`) :
+
+| Lapin | Rareté | Types | Note |
+|---|---|---|---|
+| Fantôme (v3, le nez dépasse) | Rare | vol + paille | |
+| Bouyoyo (v2) | Rare | feu + neige | |
+| Nuage | Rare | vol + neige | |
+| Champignon des bois | Rare | paille + métal | |
+| Lapin de Sulli (B) | Épique | feu + neige | |
+| Pain d'épice | Épique | feu + paille | Noël |
+| Flocon de cristal | Épique | neige + vol | Noël |
+
+- Les types ont été choisis pour que le premier couple Paille + Neige donne toujours seulement Frisket et Icy, et qu'aucun couple n'ait plus de 3 rares.
+- Les lapins de Noël ne naissent que pendant Noël.
+
+**Évolutions à l'affection 30** : 13 nouveaux dessins (`src/config/evolvedArt.ts`) et leurs défis (`src/config/evolutionChallenges.ts`) :
+- six lapins déjà en jeu : Vantablack, Gigi Rarafe, Yetiti, Rennes, Susucre, et Arkoko (refaite) ;
+- les sept nouveaux lapins.
+
+Les ancrages de la cuisine des nouveaux lapins (`src/config/cuisineAnchors.ts`) sont estimés : ils n'ont pas encore été vérifiés dans la cuisine.
+
+**Corrigé pendant les captures** :
+- les identifiants des débris étaient refusés par la sauvegarde : une partie avec des débris ne se rechargeait pas ;
+- toucher un débris ne répondait que sur ses cases au sol, pas sur son dessin.
+
+**Vérifié dans Chromium** (captures 844 × 390, partie de test au niveau 25), sans erreur JavaScript :
+- l'île de jour et de nuit (22 h 30) ;
+- l'îlot des Épiques et sa fiche ;
+- le perchoir, sa fiche et une partie complète (17 colonnes, +51 pièces, record enregistré) ;
+- les débris et la fiche « Rocher » ;
+- le palais Ultra neige de jour et de nuit, et sa section du marché ;
+- les nouveaux lapins dans leurs enclos.
+
+Aucun essai iPhone.
+
 ## Ce qui reste
 
 1. Faire tester au propriétaire sur iPhone :
    - la taille des boules de neige (`SNOWBALL_ART` dans `src/config/winterArt.ts`) ;
    - le bonhomme (`SNOWMAN_ART`) ;
    - la hotte (`src/display/sky-gifts.css`).
-2. Les lapins de Noël, quand le propriétaire les aura choisis.
+2. Faire tester au propriétaire sur iPhone les nouveautés du 6 novembre : îlot des Épiques, débris, perchoir et « Le vol de Benny », enclos Ultra neige, nouveaux lapins.
+   Vérifier aussi les ancrages de la cuisine des nouveaux lapins.
 3. La fusion dans `main` et la publication, seulement quand il le demandera.
 
 ## Pièges

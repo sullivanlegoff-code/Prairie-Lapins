@@ -25,6 +25,14 @@ export const NURSERY = {initialCapacity: 1, maxCapacity: 4, unlockHearts: {1: 40
  * `cell`: the islet nest's top-left fine cell (a 4 × 4 nest), above the start island beyond the north edge of the land grid,
  * so the island's growth never reaches it.
  */
+/**
+ * « Le vol de Benny » (owner, 5 November 2026: Benny only, from a building of the main island, rewards of my choice): the
+ * perch needs Benny on the island. The first `rewardedGamesPerCycle` games of a day pay `pattesPerColumn` per hay column
+ * passed (at most `maxPattes`); the very first one also gives a Heart at `heartColumns` columns. Never XP.
+ */
+export const BENNY_FLIGHT = {rewardedGamesPerCycle: 3, pattesPerColumn: 3, maxPattes: 60, heartColumns: 20, maxColumns: 500} as const;
+/** The Ultra neige habitat (owner, 5 November 2026): sold at the Christmas market only, it turns a level 3 snow habitat into an icy palace, and stays. */
+export const ULTRA_SNOW = {candies: 400} as const;
 export const EPIC_ISLET = {unlockLevel: 18, hearts: 400, bonus: 1.1, cell: {x: 6, y: -15}} as const;
 /** Paille's free gift: 3 Hearts every 24 h (2 before the Hearts / pattes balance of 3 November 2026), three gifts kept at most. */
 export const HEARTS = {
@@ -34,9 +42,9 @@ export const HEARTS = {
 // The species registry lives in ./species; the public names stay available from here.
 export {SPECIES, SPECIES_IDS, LEGACY_SPECIES_IDS};
 export type {SpeciesId, RabbitType, Rarity};
-export type BuildingKind = 'enclosure' | 'farm' | 'nest' | 'nursery' | 'kitchen' | 'statue' | 'agency' | 'salon' | 'forest';
+export type BuildingKind = 'enclosure' | 'farm' | 'nest' | 'nursery' | 'kitchen' | 'statue' | 'agency' | 'salon' | 'forest' | 'perch';
 /** Every building kind, in the order the save validates them. */
-export const BUILDING_KINDS = ['enclosure', 'farm', 'nest', 'nursery', 'kitchen', 'statue', 'agency', 'salon', 'forest'] as const satisfies readonly BuildingKind[];
+export const BUILDING_KINDS = ['enclosure', 'farm', 'nest', 'nursery', 'kitchen', 'statue', 'agency', 'salon', 'forest', 'perch'] as const satisfies readonly BuildingKind[];
 export const BREEDING_WEIGHTS = {common: 30, recipe: 30};
 /** Exact element unions only; additional elements retain the historical pool.
  * Eligibility comes from catalogue recipes, never a fixed list of results. */
@@ -71,6 +79,7 @@ export const BALANCE = {
     agency: {price: 1000, maximum: 1}, // The travel agency: see TRAVEL.
     salon: {price: 5000, maximum: 1}, // The Salon de soins: see SALON.
     forest: {price: 10000, maximum: 1}, // The Forêt de Brocéliande: see FOREST.
+    perch: {price: 3000, maximum: 1}, // Benny's perch, for « Le vol de Benny »: see BENNY_FLIGHT.
   } satisfies Record<BuildingKind, {price: number; currency?: 'hearts'; maximum: number | null}>,
 };
 /**

@@ -34,6 +34,7 @@ import {babyOf, setBaby} from './nursery-baby';
 import {EXPECTED_IDS, EXPECTED_RECIPE_IDS, rareAdditions, shareLabel} from './rabbit-art-fixtures';
 import {emptyBuilding} from '../src/state/initial';
 import {habitatCap} from '../src/config/habitats';
+import {buildingPlacementReason} from '../src/simulation/placement';
 
 const cleanups: (() => void)[] = [];
 it('buys, places and selects Cuisine without opening the cooking activity', () => {
@@ -573,7 +574,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
   it('keeps a guaranteed new rare hidden through reproduction and growth, then discovers it on manual welcome', () => {
     const initial = collectionReady();initial.progression={totalXp:cumulativeLevelXp(6),rewardedThroughLevel:6};
     for (const r of initial.rabbits) r.affection = 4;
-    initial.discovered.push('wat-wat');initial.recipeBook.push('glassofeu'); // The shortcut exists only for a known recipe; the species stays undiscovered.
+    initial.discovered.push('wat-wat', 'bouyoyo');initial.recipeBook.push('glassofeu'); // The shortcut exists only for a known recipe; the species stays undiscovered.
     const {ui, controller, clock, data} = setup(initial); clock.now = initial.lastSimulatedAt;
     ui.open({kind: 'recipes'});
     const recipe = [...panel().querySelectorAll('article')].find(c => c.textContent?.includes('feu + neige · Rare'))!;
@@ -591,7 +592,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     welcomeFromNursery('Enclos 3 · 0/3', card => { expect(card.textContent).toContain('Glassofeu'); expect(card.textContent).toContain('Nouvelle espèce'); });
     expect(state(controller).discovered).toContain('glassofeu'); expect((dialog as HTMLDialogElement).open).toBe(false); expect(dialog.textContent).not.toContain('Nouvelle découverte');
     ui.open({kind: 'collection'});
-    expect(document.getElementById('panel-title')!.textContent).toBe(`Collection · 7/${EXPECTED_IDS.length}`);
+    expect(document.getElementById('panel-title')!.textContent).toBe(`Collection · 8/${EXPECTED_IDS.length}`); // Bouyoyo, known beforehand, counts too.
     expect(decodeGame(data.get(SAVE_KEY)!)).toEqual({ok: true, state: state(controller)});
   });
   it('completes the farming, breeding, revealing, welcoming and movement loop through UI controls', () => {
@@ -617,7 +618,9 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     ui.select({kind: 'rabbit', id: newborn.id}); expect(button('Confier ce lapin').disabled).toBe(true);
     button('Déplacer').click(); [...document.querySelectorAll<HTMLButtonElement>('#rabbit-move-banner button')].find(b => b.textContent === 'Choisir dans une liste')!.click(); button('Enclos 1 · 2/3').click(); expect(state(controller).rabbits.at(-1)!.enclosureId).toBe('building-1');
     ui.select({kind: 'extension', parcelId:'east'}); button('Acheter Est · 600 pièces').click(); button('Confirmer', document.getElementById('game-dialog')!).click(); expect(state(controller).acquiredParcels.includes('east')).toBe(true);
-    ui.select({kind: 'building', id: find('farm').id}); button('Déplacer ce bâtiment').click(); ui.select({kind: 'cell', x: 42, y: 24}); button('Confirmer le déplacement · gratuit').click(); expect(find('farm').x).toBe(42);
+    // The new parcel now carries debris (5 November 2026): the farm moves to its first free cell from x 42, y 24 onwards.
+    const to = [42, 41, 40, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30].flatMap(x => [24, 22, 26, 20, 28].map(y => ({x, y}))).find(c => buildingPlacementReason(state(controller), c.x, c.y, find('farm').id) === null)!;
+    ui.select({kind: 'building', id: find('farm').id}); button('Déplacer ce bâtiment').click(); ui.select({kind: 'cell', ...to}); button('Confirmer le déplacement · gratuit').click(); expect(find('farm').x).toBe(to.x);
     ui.open({kind: 'shop', tab: 'rabbits'});
     const earthCard = [...panel().querySelectorAll<HTMLElement>('.card')].find(c => c.querySelector('h3')?.textContent === 'Lapin Feu')!;
     button('Choisir un habitat · 180 pièces', earthCard).click(); ui.select({kind:'building',id:state(controller).buildings.filter(b=>b.kind==='enclosure')[1].id}); button('Confirmer l’achat · 180 pièces').click();
@@ -1016,9 +1019,9 @@ describe('new collection and exact-species recipe UI', () => {
   };
   it('composes filters, keeps them across refresh and shows an actionable empty result', () => {
     const {controller, ui} = setup(scenarioState('collection', 0)); ui.open({kind: 'collection'});
-    change('Rareté', 'epic'); expect(panel().querySelectorAll('article')).toHaveLength(11);
+    change('Rareté', 'epic'); expect(panel().querySelectorAll('article')).toHaveLength(14);
     expect(panel().textContent).not.toContain('Lapin Géant'); expect(panel().textContent).toContain('Lapin Magicien');
-    change('Type', 'feu'); expect(panel().querySelectorAll('article')).toHaveLength(4); expect(panel().textContent).toContain('Gigi-rarafe'); expect(panel().textContent).toContain('Susucre'); expect(panel().textContent).toContain('Dinono'); expect(panel().textContent).toContain('Dadi');
+    change('Type', 'feu'); expect(panel().querySelectorAll('article')).toHaveLength(6); expect(panel().textContent).toContain('Lapin de Sulli'); expect(panel().textContent).toContain('Pain d’épice'); expect(panel().textContent).toContain('Gigi-rarafe'); expect(panel().textContent).toContain('Susucre'); expect(panel().textContent).toContain('Dinono'); expect(panel().textContent).toContain('Dadi');
     change('Découverte', 'unknown'); expect(panel().querySelectorAll('article')).toHaveLength(0);
     expect(panel().textContent).toContain('Aucune espèce'); controller.refresh();
     expect(panel().querySelector<HTMLSelectElement>('select[aria-label="Rareté"]')!.value).toBe('epic');

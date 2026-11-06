@@ -15,6 +15,11 @@ export const NIGHT_LIGHTS_FILE = 'src/config/winterNightLights.json';
 const KINDS = ['buildings', 'habitats', 'decorations'];
 /** A warm, bright pixel: lamplight yellow or orange, never the bluish snow nor the green of the holly. */
 export const isWarmLight = (r, g, b, a) => a > 160 && r > 228 && g > 178 && b < 165 && r - b > .45 * r && r >= g;
+/** The Ultra neige palace's lanterns are paler than lamplight (6 November 2026): a slightly looser test, for it only. */
+export const isPaleWarmLight = (r, g, b, a) => a > 160 && r > 200 && g > 140 && b < 150 && r - b > .3 * r && r >= g;
+const PALE_LIGHTS = new Set(['habitats/habitat-glace.png']);
+/** Lit-looking areas that are no lamps, as ellipses in fractions of the picture: the islet of the Epics' sandy pad. */
+const NOT_LAMPS = {'buildings/ilot-epique.png': [{cx: .505, cy: .59, rx: .27, ry: .1}]};
 /** Fewer lit pixels than this share of the opaque ones: no lights for that picture. */
 const MIN_SHARE = .0015;
 
@@ -36,12 +41,14 @@ function blur(src, w, h, radius) {
 }
 
 /** The glow picture of one painting (same size), or null when it has almost no warm light. */
-export function nightLights({width: w, height: h, pixels: p}) {
+export function nightLights({width: w, height: h, pixels: p}, warm = isWarmLight, notLamps = []) {
   const glow = new Float32Array(w * h * 3); let lit = 0, opaque = 0;
   for (let i = 0; i < w * h; i++) {
     const r = p[i * 4], g = p[i * 4 + 1], b = p[i * 4 + 2], a = p[i * 4 + 3];
     if (a > 160) opaque++;
-    if (!isWarmLight(r, g, b, a)) continue;
+    if (!warm(r, g, b, a)) continue;
+    const x = (i % w) / w, y = Math.floor(i / w) / h;
+    if (notLamps.some(e => ((x - e.cx) / e.rx) ** 2 + ((y - e.cy) / e.ry) ** 2 <= 1)) continue;
     lit++; glow[i * 3] = r; glow[i * 3 + 1] = g * .92; glow[i * 3 + 2] = b * .7;
   }
   if (!opaque || lit / opaque < MIN_SHARE) return null;
@@ -57,8 +64,9 @@ export function deriveNightLights() {
   const list = [], files = [];
   for (const kind of KINDS) {
     const folder = `public/assets/noel/${kind}`; if (!existsSync(folder)) continue;
-    for (const name of readdirSync(folder).filter(f => f.endsWith('.png')).sort()) {
-      const lights = nightLights(decodeRgbPng(readFileSync(`${folder}/${name}`)));
+    // The debris' yellow flowers and berries are no lamps (6 November 2026).
+    for (const name of readdirSync(folder).filter(f => f.endsWith('.png') && !f.startsWith('debris-')).sort()) {
+      const lights = nightLights(decodeRgbPng(readFileSync(`${folder}/${name}`)), PALE_LIGHTS.has(`${kind}/${name}`) ? isPaleWarmLight : isWarmLight, NOT_LAMPS[`${kind}/${name}`]);
       if (!lights) continue;
       list.push(`${kind}/${name}`); files.push([`public/assets/noel/nuit/${kind}/${name}`, lights]);
     }

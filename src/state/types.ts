@@ -18,13 +18,17 @@ export interface Birth {
   reservedDiscovery: boolean;
 }
 /** x/y: integer fine-grid top-left; footprint 4 × 4. */
+export type DebrisKind = 'rocher' | 'buisson' | 'herbes';
+/** One rock, bush or patch of weeds on 2 × 2 fine cells from its top-left cell (`x`, `y`); `price`: pattes to clear it. */
+export interface Debris {id: string; kind: DebrisKind; x: number; y: number; price: number}
 export interface Building {
   /** Absent = level 1. */
   farmLevel?: 2 | 3; agencyLevel?: 2 | 3;
   id: string; kind: BuildingKind; x: number; y: number;
   /** Exact numerator: one patte = HOUR units. Never round each update. */
   incomeUnits: number;
-  habitat: {type: HabitatType; level: HabitatLevel} | null;
+  /** `ultra`: a level 3 snow habitat turned into the Ultra neige one at the Christmas market (v27, its own picture; it stays). */
+  habitat: {type: HabitatType; level: HabitatLevel; ultra?: true} | null;
   /** Footprint actually acquired (enclosures only): 1 = 5 × 4, 2 = 8 × 5, 3 = 10 × 6 fine cells. Absent = 1, whatever the level. Anchored at x, y. */
   footprintTier?: HabitatLevel;
   /**
@@ -117,6 +121,10 @@ export interface GameState {
   care?: Care;
   /** The cares that brought Hearts in daily cycle `cycle` (at most SALON.heartCaresPerCycle, v27). Absent until the first. */
   salonHearts?: {cycle: number; cares: number};
+  /** What clutters the parcels bought since the Christmas update (v27, src/simulation/debris.ts); absent or empty: none. */
+  debris?: Debris[];
+  /** « Le vol de Benny » (v27): the daily cycle of the last rewarded game, the rewarded games of that cycle, whether its Heart was won, and the record. */
+  bennyFlight?: {cycle: number; rewarded: number; heart?: true; best: number};
   /** Daily cycle of each rabbit's last affection gift (a care or a picnic), keyed by rabbit ID. Absent until the first gift. */
   affectionGifts?: Record<string, number>;
   /** Daily cycle of the last picnic (one a day in all). Absent until the first picnic. */
@@ -162,7 +170,7 @@ export type Refusal = 'LEVEL_REQUIRED' | 'NO_BREEDING_RESULT' | 'PURCHASE_LOCKED
   'BENNY_RECHARGING' | 'NO_WAITING_BABY' | 'BENNY_KEPT' |
   'AT_SALON' | 'GIFT_TODAY' | 'AFFECTION_WALL' | 'PICNIC_TODAY' | 'EMPTY_ENCLOSURE' | 'NO_GIFT_POSSIBLE' |
   'NO_EVOLVED_ART' | 'EVOLUTION_AFFECTION' | 'EVOLUTION_CHALLENGES' | 'EVOLUTION_REQUIRED' |
-  'EVENT_OVER' | 'SNOWMAN_TODAY' | 'NOT_ENOUGH_CANDIES';
+  'EVENT_OVER' | 'SNOWMAN_TODAY' | 'NOT_ENOUGH_CANDIES' | 'DEBRIS_IN_THE_WAY' | 'BENNY_REQUIRED';
 export interface CuisineReward {pattes: number; grass: number; /** True for one of the cycle's full-reward slots, false for a tip. */ fullReward: boolean; affectionGranted: boolean; affectionAtCap: boolean; affectionStatueRequired: boolean; /** The rabbit stops at 30 until it evolves (owner, 4 November 2026). */ affectionEvolutionRequired?: boolean; heartGranted: boolean; /** The rabbit the affection reward was drawn for. */ affectionRabbitId: string}
 export type ActionResult = {ok: true; state: GameState; value?: string | number; progressionGain?: ProgressionGain; cuisineReward?: CuisineReward; jumpRopeReward?: import('../simulation/jumpRope').JumpRopeReward} |
   {ok: false; state: GameState; reason: Refusal};
@@ -224,7 +232,7 @@ export type Command = BaseCommand
   /** A finished jump-rope game: `score` jumps by this trio (remembered for the next game); pays within the daily limit (JUMP_ROPE). */
   | {type: 'rewardJumpRope'; team: JumpRopeTeam; score: number}
   /** The jump-rope islet, for JUMP_ROPE.price pattes from JUMP_ROPE.unlockLevel, once. */
-  | {type: 'buyJumpIsland'} | {type: 'buyEpicIslet'}
+  | {type: 'buyJumpIsland'} | {type: 'buyEpicIslet'} | {type: 'clearDebris'; id: string} | {type: 'buyUltraSnow'; enclosureId: string} | {type: 'rewardBennyFlight'; passed: number}
   /** Christmas: today's snowman in this enclosure (free, one a day in all, a rabbit present, from level 2). */
   | {type: 'buildSnowman'; enclosureId: string}
   /** Christmas: a finished game of « Les cadeaux du ciel », the basket carried by this rabbit; pays within SKY_GIFTS' daily limit. */

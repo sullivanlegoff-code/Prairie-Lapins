@@ -35,6 +35,9 @@ import {AGENCY_ART} from '../config/agencyArt';
 import {PICNIC_ART, SALON_ART} from '../config/salonArt';
 import {FOREST_ART} from '../config/forestArt';
 import {JUMP_ISLAND_ART, JUMP_MEDAL_ART, jumpIslandFrame, jumpIslandPoint, jumpMedalPoint} from '../config/jumpIslandArt';
+import {EPIC_ISLET_ART, epicIsletFrame} from '../config/epicIsletArt';
+import {DEBRIS_ART, PERCH_ART} from '../config/bennyFlightGameArt';
+import {DEBRIS} from '../simulation/debris';
 import {jumpRopeMedals} from '../simulation/jumpRope';
 import {showsEvolvedArt} from '../config/evolvedArt';
 import {wearsCrown} from '../simulation/affection';
@@ -94,7 +97,7 @@ import {isChristmasDecoration} from '../config/decorations';
 import {snowmanToday} from '../simulation/christmas';
 
 /** `nurseryBubble`: the « Prêt ! » bubble (id: the nursery). `nurseryBaby`: a ready baby touched on its cushion (id: its birthId). */
-export type MeadowSelection = {kind: 'jumpIsland'} | {kind: 'christmasMarket'} | {kind: 'building' | 'rabbit' | 'income' | 'grass' | 'decoration' | 'birth' | 'nurseryBubble' | 'nurseryBaby'; id: string} | {kind: 'cell' | 'fineCell'; x: number; y: number} | {kind: 'extension'; parcelId?: ParcelId} | {kind: 'empty'};
+export type MeadowSelection = {kind: 'jumpIsland'} | {kind: 'christmasMarket'} | {kind: 'building' | 'rabbit' | 'income' | 'grass' | 'decoration' | 'birth' | 'nurseryBubble' | 'nurseryBaby' | 'debris'; id: string} | {kind: 'cell' | 'fineCell'; x: number; y: number} | {kind: 'extension'; parcelId?: ParcelId} | {kind: 'empty'};
 export interface DecorationGhost {id: string; catalogId?: DecorationId; location: DecorationLocation | null}
 /** `object` is the ground point (position, depth, scale); `body` carries the hop height, squash and mirror, apart from the shadow. */
 interface VisualRabbit {id: string; object: Phaser.GameObjects.Container; body: Phaser.GameObjects.Container; ears: Phaser.GameObjects.Ellipse[]; sprite?: Phaser.GameObjects.Image; art?: RabbitArt; base: Point; phase: number; fedUntil: number;
@@ -211,6 +214,7 @@ export class MeadowScene extends Phaser.Scene {
   private floatingIslandLayer: FloatingIslandLayer | null = null;
   private islandStageLayer: IslandStageLayer | null = null;
   private decorationViews = new Map<string, Phaser.GameObjects.Image>();
+  private debrisViews = new Map<string, Phaser.GameObjects.Image>();
   private ghostView: Phaser.GameObjects.Image | null = null;
   private floorDecorationsLayer!: Phaser.GameObjects.Container;
   private decorationsLayer!: Phaser.GameObjects.Container;
@@ -470,6 +474,7 @@ export class MeadowScene extends Phaser.Scene {
     const owned = ownedRegions(this.current.acquiredParcels);
     rects.push(...owned);
     if (this.current.jumpIsland && !this.expanding) rects.push(jumpIslandFrame());
+    if (this.current.buildings.some(b => b.islet) && !this.expanding) rects.push(epicIsletFrame());
     if (christmasActive() && !this.expanding) rects.push(christmasMarketFrame(!!this.current.jumpIsland));
     this.view.overview({left:Math.min(...rects.map(r=>r.left)),right:Math.max(...rects.map(r=>r.right)),top:Math.min(...rects.map(r=>r.top)),bottom:Math.max(...rects.map(r=>r.bottom))});
     this.applyCamera();
@@ -823,7 +828,7 @@ export class MeadowScene extends Phaser.Scene {
   }
   private updateVisibleRegions(): void {
     // Owned plateaux and their hanging rock; clouds and extension sketches do not own pan regions.
-    this.view.setVisibleRegions(this.expanding || !this.current ? null : [...ownedRegions(this.current.acquiredParcels), ...(this.current.jumpIsland ? [jumpIslandFrame()] : []), ...(christmasActive() ? [christmasMarketFrame(!!this.current.jumpIsland)] : [])]);
+    this.view.setVisibleRegions(this.expanding || !this.current ? null : [...ownedRegions(this.current.acquiredParcels), ...(this.current.jumpIsland ? [jumpIslandFrame()] : []), ...(this.current.buildings.some(b => b.islet) ? [epicIsletFrame()] : []), ...(christmasActive() ? [christmasMarketFrame(!!this.current.jumpIsland)] : [])]);
   }
   /** DOM portraits use ordinary image requests; Phaser only decodes residents and the active habitat preview. */
   private requiredArt(state: GameState | null): {texture: string; url: string; atlas?: string}[] {
@@ -848,9 +853,11 @@ export class MeadowScene extends Phaser.Scene {
       } else if (building.kind === 'nursery') {
         add(NURSERY_ART); add(NURSERY_OVERLAY_ART.baby); add(NURSERY_OVERLAY_ART.veil); add(NURSERY_OVERLAY_ART.lock);
       } else if (building.kind === 'statue') add(statueArtFor(state?.buildings ?? [], building.id));
-      else add(({nest: NEST_ART, kitchen: KITCHEN_ART, agency: AGENCY_ART, salon: SALON_ART, forest: FOREST_ART})[building.kind]);
+      else if (building.kind === 'nest' && 'islet' in building && building.islet) add(EPIC_ISLET_ART);
+      else add(({nest: NEST_ART, kitchen: KITCHEN_ART, agency: AGENCY_ART, salon: SALON_ART, forest: FOREST_ART, perch: PERCH_ART})[building.kind]);
     };
     for (const building of state?.buildings ?? []) buildingArt(building);
+    for (const kind of new Set((state?.debris ?? []).map(d => d.kind))) add({texture: DEBRIS_ART.texture(kind), url: DEBRIS_ART.url(kind)});
     if (state?.jumpIsland) { add(JUMP_ISLAND_ART); for (const step of jumpRopeMedals(state)) add({texture: JUMP_MEDAL_ART.texture(step), url: JUMP_MEDAL_ART.url(step)}); }
     if (this.placement) {
       const moving = state?.buildings.find(b => b.id === this.placement?.movingId);
@@ -923,6 +930,8 @@ export class MeadowScene extends Phaser.Scene {
   private glowSources(): GlowSource[] {
     const sources: GlowSource[] = [];
     for (const image of this.buildingViews.values()) sources.push({image, url: this.artUrls.get(image.texture.key)});
+    // The jump-rope islet's lanterns too (6 November 2026: every building lights up on Christmas nights).
+    if (this.jumpIslandImage) sources.push({image: this.jumpIslandImage, url: this.artUrls.get(this.jumpIslandImage.texture.key)});
     for (const image of this.decorationViews.values()) {
       const key = image.texture.key, id = key.split(':')[1] ?? '';
       sources.push({image, url: this.artUrls.get(key), pool: LIGHT_POOLS[id]});
@@ -965,7 +974,7 @@ export class MeadowScene extends Phaser.Scene {
     this.nurseryOverlays?.sync(s);
     this.farmCrops?.sync(s);
     this.syncProgressBars();
-    this.drawDecorations(); this.drawBubbles(); this.drawGrid(); this.drawGhost(); this.updateDetails();
+    this.drawDecorations(); this.drawDebris(); this.drawBubbles(); this.drawGrid(); this.drawGhost(); this.updateDetails();
   }
   private decorationPoint(location: DecorationLocation, catalogId: DecorationId): Point | null {
     if (location.kind === 'inventory') return null;
@@ -992,6 +1001,19 @@ export class MeadowScene extends Phaser.Scene {
     }
     for (const [id, image] of this.decorationViews) if (!visible.has(id)) { image.destroy(); this.decorationViews.delete(id); }
     this.floorDecorationsLayer.sort('depth'); this.decorationsLayer.sort('depth'); this.drawDecorationSelection();
+  }
+  /** The rocks, bushes and weeds of the parcels bought since the Christmas update, until cleared. */
+  private drawDebris(): void {
+    const present = new Set<string>();
+    for (const d of this.current?.debris ?? []) {
+      const texture = DEBRIS_ART.texture(d.kind); if (!this.textures.exists(texture)) continue;
+      present.add(d.id);
+      const p = toScreen(gridPoint((d.x + DEBRIS.size / 2) / FINE_GRID, (d.y + DEBRIS.size / 2) / FINE_GRID));
+      let image = this.debrisViews.get(d.id);
+      if (!image) { image = this.add.image(p.x, p.y, texture); this.decorationsLayer.add(image); this.debrisViews.set(d.id, image); }
+      image.setTexture(texture).setPosition(p.x, p.y).setOrigin(.5, DEBRIS_ART.originY).setScale(DEBRIS_ART.worldWidth / image.frame.realWidth).setDepth(p.y);
+    }
+    for (const [id, image] of this.debrisViews) if (!present.has(id)) { image.destroy(); this.debrisViews.delete(id); }
   }
   private drawGhost(): void {
     const d = this.current?.decorations.find(d => d.id === this.ghost?.id) ?? (this.ghost?.catalogId ? {id: this.ghost.id, catalogId: this.ghost.catalogId} : null);
@@ -1065,12 +1087,13 @@ export class MeadowScene extends Phaser.Scene {
   }
   private buildingTexture(b: Pick<Building, 'kind' | 'habitat' | 'footprintTier' | 'farmLevel'> & {id?: string}): string {
     if (b.kind === 'farm') return b.farmLevel ? FARM_ART.texture : FARM_LEVEL_1_ART.texture;
-    if (b.kind === 'nest') return NEST_ART.texture;
+    if (b.kind === 'nest') return 'islet' in b && b.islet ? EPIC_ISLET_ART.texture : NEST_ART.texture;
     if (b.kind === 'nursery') return NURSERY_ART.texture;
     if (b.kind === 'kitchen') return KITCHEN_ART.texture;
     if (b.kind === 'statue') return statueArtFor(this.current?.buildings ?? [], b.id).texture;
     if (b.kind === 'agency') return AGENCY_ART.texture;
     if (b.kind === 'salon') return SALON_ART.texture;
+    if (b.kind === 'perch') return PERCH_ART.texture;
     if (b.kind === 'forest') return FOREST_ART.texture;
     if (b.kind === 'enclosure') { const illustrated = habitatArtFor(b.habitat ?? undefined, b.footprintTier); if (illustrated) return illustrated.texture; }
     // The drawing follows the footprint actually acquired (tier), not the capacity level: a legacy enclosure keeps its compact look.
@@ -1090,7 +1113,7 @@ export class MeadowScene extends Phaser.Scene {
   /** `enlarged`: an enclosure's uniform drawing factor (`enclosureScale`), the same on both axes so nothing is stretched. */
   private positionBuildingArt(image: Phaser.GameObjects.Image, x: number, y: number, kind: Building['kind'], illustrated: HabitatArt | null = null, enlarged = 1, id?: string): void {
     if (illustrated) { image.setPosition(x, y).setOrigin(illustrated.anchor.x / illustrated.width, illustrated.anchor.y / illustrated.height).setScale(enlarged * illustrated.worldWidth / illustrated.width); return; }
-    const art = kind === 'farm' ? FARM_ART : kind === 'nest' ? NEST_ART : kind === 'nursery' ? NURSERY_ART : kind === 'kitchen' ? KITCHEN_ART : kind === 'statue' ? statueArtFor(this.current?.buildings ?? [], id) : kind === 'agency' ? AGENCY_ART : kind === 'salon' ? SALON_ART : kind === 'forest' ? FOREST_ART : null;
+    const art = kind === 'farm' ? FARM_ART : kind === 'nest' ? NEST_ART : kind === 'nursery' ? NURSERY_ART : kind === 'kitchen' ? KITCHEN_ART : kind === 'statue' ? statueArtFor(this.current?.buildings ?? [], id) : kind === 'agency' ? AGENCY_ART : kind === 'salon' ? SALON_ART : kind === 'forest' ? FOREST_ART : kind === 'perch' ? PERCH_ART : null;
     image.setPosition(x, y).setOrigin(.5, art ? art.originY : .5)
       .setScale(art ? art.worldWidth / art.width : .5 * enlarged);
   }
@@ -1101,6 +1124,7 @@ export class MeadowScene extends Phaser.Scene {
       let image=this.buildingViews.get(b.id);
       if(!image){image=this.add.image(x,y,this.buildingTexture(b));this.buildingsLayer.add(image);this.buildingViews.set(b.id,image);}
       image.setTexture(this.buildingTexture(b)).setDepth(y);
+      if (b.islet) { image.setPosition(x, y).setOrigin(EPIC_ISLET_ART.originX, EPIC_ISLET_ART.originY).setScale(EPIC_ISLET_ART.worldWidth / EPIC_ISLET_ART.width); continue; }
       this.positionBuildingArt(image, x, y, b.kind, b.kind === 'enclosure' ? habitatArtFor(b.habitat ?? undefined, b.footprintTier) : null, b.kind === 'enclosure' ? enclosureScale(b) : 1, b.id);
     }
     for(const [id,image] of this.buildingViews)if(!present.has(id)){image.destroy();this.buildingViews.delete(id);}
@@ -1515,8 +1539,21 @@ export class MeadowScene extends Phaser.Scene {
 
     const building=this.current?buildingAt(this.current,fineCell(ground)):null;
     if (!building && this.current?.jumpIsland && this.jumpIslandHit(world)) { this.select({kind: 'jumpIsland'}); return; }
+    // A debris answers on its picture (it stands above its cells) or on its cells.
+    const debris = building ? null : this.current?.debris?.find(d => { const c = fineCell(ground); return this.debrisViews.get(d.id)?.getBounds().contains(world.x, world.y) || (c.x >= d.x && c.x < d.x + DEBRIS.size && c.y >= d.y && c.y < d.y + DEBRIS.size); });
+    if (debris) { this.select({kind: 'debris', id: debris.id}); return; }
+    const islet = building ? null : this.current?.buildings.find(b => b.islet);
+    if (islet && this.epicIsletHit(world, islet.id)) { this.select({kind: 'building', id: islet.id}); return; }
     if (!building && this.marketHit(world)) { this.select({kind: 'christmasMarket'}); return; }
     this.select(building ? {kind: 'building', id: building.id} : {kind: 'empty'});
+  }
+  /** The islet of the Epics' picture, by its painted silhouette. */
+  private epicIsletHit(world: Point, id: string): boolean {
+    const image = this.buildingViews.get(id), f = epicIsletFrame(), art = EPIC_ISLET_ART; if (!image) return false;
+    if (world.x < f.left || world.x > f.right || world.y < f.top || world.y > f.bottom) return false;
+    const local = image.getWorldTransformMatrix().applyInverse(world.x, world.y);
+    const x = Math.floor(local.x + art.width * art.originX), y = Math.floor(local.y + art.height * art.originY);
+    return x < 0 || y < 0 || x >= art.width || y >= art.height || !this.textures.exists(art.texture) ? true : this.textures.getPixelAlpha(x, y, art.texture) >= 16;
   }
   /** The islet's picture, by its painted silhouette (a little margin on small zooms). */
   private jumpIslandHit(world: Point): boolean {

@@ -121,7 +121,8 @@ export function scenarioState(id: ScenarioId, now: number): GameState {
     s = result.state;
   };
   if(['islandExpanded','islandDiagonal','islandL','islandFull','parcelEdges','decorationDense'].includes(id)){const level=id==='islandFull'||id==='decorationDense'?requiredExtensionLevel(8):Math.max(requiredExtensionLevel(2),s.progression.rewardedThroughLevel);s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level};}
-  const acquire=(id:ParcelId)=>run({type:'expand',parcelId:id,expectedCost:extensionPrice(s)});
+  // The lab's islands show the land itself: the debris of a newly bought parcel are left out (6 November 2026).
+  const acquire=(id:ParcelId)=>{run({type:'expand',parcelId:id,expectedCost:extensionPrice(s)});s.debris=[];};
   if (id === 'pailleOccupancy') {
     // Same illustrated home and species throughout; only the adult resident count changes, left to right.
     const level = requiredExtensionLevel(1);

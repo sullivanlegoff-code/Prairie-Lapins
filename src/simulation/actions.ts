@@ -8,6 +8,8 @@ import {eligibleMainMissionIds} from './missions';
 import {stateLevelAccess} from './levelRights';
 import {jobKey, initiationAvailable, settleInitiation} from './initiation';
 import {buildingPlacementReason, buildingFootprint, decorationsInFootprint, upgradeFootprintReason} from './placement';
+import {parcelDebris} from './debris';
+import {bennyFlightReason, bennyFlightReward, hasBenny} from './bennyFlight';
 import {normalizeRabbitName} from './rabbitNames';
 import {acquiredCell, PARCEL_IDS, extensionPrice, purchasableParcels} from '../config/land';
 import {HABITAT_TYPES, habitatLevel, habitatPrice, type HabitatLevel} from '../config/habitats';
@@ -15,14 +17,14 @@ import {habitatEntryReason, removeHabitatReason} from './habitats';
 import {DAILY_MISSIONS, MAIN_MISSIONS, DAILY_BONUS, mainMissionRewards, type Reward} from '../config/missions';
 import {affectionCap, capReason, isUltimate, nextAffectionStatue, playerLevel, rabbitAffectionCap, waitsForEvolution} from './affection';
 import {agencyBuilding, travelling} from './travel';
-import {atSalon, giftAffectionReason, giftReason, picnicQuote, salonBuilding} from './care';
+import {atSalon, giftAffectionReason, giftCycle, giftReason, picnicQuote, salonBuilding} from './care';
 import {classicLookReason} from './forest';
 import {recordDailyStreak, recordEvolutionChallenge, recordJumpRopeScore} from './evolution';
 import {canEvolve, hasEvolvedArt} from '../config/evolvedArt';
 import {evolutionChallengesComplete, type EvolutionChallenge} from '../config/evolutionChallenges';
 import {jumpIslandReason, jumpRopeReward, jumpRopeTeamReason} from './jumpRope';
 import {dailyBonusReady, dailyClaimable, dailyCycleStart, dailyMissionsOf, recordMissionAction} from './missions';
-import {farmLimit, farmDuration, FARM_UPGRADES, orderFarmLevel, BALANCE, HEARTS, HOUR, TRAVEL, SALON, FOREST, JUMP_ROPE, EPIC_ISLET, CARE_KINDS, carePrice, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
+import {farmLimit, farmDuration, FARM_UPGRADES, orderFarmLevel, BALANCE, HEARTS, HOUR, TRAVEL, SALON, FOREST, JUMP_ROPE, EPIC_ISLET, BENNY_FLIGHT, ULTRA_SNOW, CARE_KINDS, carePrice, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
 import {emptyBuilding} from '../state/initial';
 import {epicIsletReason} from './epicIslet';
 import {babyInNursery, findNurseryBaby, firstFreeNurserySlot, nurseryBuilding, nurseryUnlockQuote, settleNestTransfers} from './nursery';
@@ -402,6 +404,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(command.kind!=='agency' || playerLevel(s)>=TRAVEL.unlockLevel,'LEVEL_REQUIRED');
         requireRule(command.kind!=='salon' || playerLevel(s)>=SALON.unlockLevel,'LEVEL_REQUIRED');
         requireRule(command.kind!=='forest' || playerLevel(s)>=FOREST.unlockLevel,'LEVEL_REQUIRED');
+        requireRule(command.kind!=='perch' || hasBenny(s),'BENNY_REQUIRED');
         cell(command.x, command.y, undefined, command.kind); allocation();
         if (command.kind === 'statue') {
           requireRule(!payment && !quoteOnly, 'INVALID_CHOICE');
@@ -599,7 +602,33 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(purchasableParcels(s).includes(command.parcelId), 'PARCEL_UNAVAILABLE');
         requireRule(command.expectedCost === extensionPrice(s), 'PRICE_CHANGED');
         requireRule(stateLevelAccess(s,{family:'extension',rank:s.acquiredParcels.length}).accessible,'LEVEL_REQUIRED');
-        pay(extensionPrice(s)); s.acquiredParcels.push(command.parcelId); break;
+        const parcelPrice = extensionPrice(s);
+        pay(parcelPrice); s.acquiredParcels.push(command.parcelId);
+        // A parcel bought from the Christmas update on comes cluttered (owner, 5 November 2026).
+        s.debris = [...(s.debris ?? []), ...parcelDebris(command.parcelId, parcelPrice, rng, () => id('debris'))]; break;
+      }
+      case 'clearDebris': {
+        const debris = (s.debris ?? []).find(d => d.id === command.id); requireRule(debris, 'NOT_FOUND');
+        pay(debris.price); s.debris = s.debris!.filter(d => d.id !== debris.id); value = debris.price; break;
+      }
+      case 'buyUltraSnow': {
+        // The Christmas market's Ultra neige: a level 3 snow habitat becomes an icy palace, for sucres d'orge; it stays after Christmas.
+        requireRule(christmasEventActive(), 'EVENT_OVER');
+        const b = building(command.enclosureId, 'enclosure');
+        requireRule(b.habitat?.type === 'neige' && b.habitat.level === 3 && !b.habitat.ultra, 'INVALID_CHOICE');
+        requireRule(candiesOf(s) >= ULTRA_SNOW.candies, 'NOT_ENOUGH_CANDIES');
+        const day = startChristmasCycle(s); day.candies -= ULTRA_SNOW.candies;
+        b.habitat = {...b.habitat, ultra: true}; value = b.id; break;
+      }
+      case 'rewardBennyFlight': {
+        const reason = bennyFlightReason(s); requireRule(!reason, reason ?? 'INVALID_CHOICE');
+        requireRule(Number.isSafeInteger(command.passed) && command.passed >= 0 && command.passed <= BENNY_FLIGHT.maxColumns, 'INVALID_CHOICE');
+        // Pattes within the daily limit and the first game's Heart: never XP.
+        const paid = bennyFlightReward(s, command.passed, time), cycle = giftCycle(s, time), previous = s.bennyFlight;
+        const today = previous?.cycle === cycle ? previous : null;
+        credit('pattes', paid.pattes); credit('hearts', paid.hearts);
+        s.bennyFlight = {cycle, rewarded: (today?.rewarded ?? 0) + (paid.rewarded ? 1 : 0), ...(today?.heart || paid.hearts ? {heart: true as const} : {}), best: Math.max(previous?.best ?? 0, command.passed)};
+        value = paid.pattes; break;
       }
       case 'release': {
         const rabbit = s.rabbits.find(r => r.id === command.id); requireRule(rabbit, 'NOT_FOUND');

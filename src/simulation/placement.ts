@@ -4,9 +4,10 @@ import {acquiredFootprint} from '../config/land';
 import {ISLAND, type IslandGeometry} from '../config/islandGeometry';
 import type {BuildingKind} from '../config/balance';
 import type {Building, GameState, Refusal} from '../state/types';
+import {debrisFootprint} from './debris';
 
 /** Only positions matter: legacy saves (other building payloads) are checked with the same rules. */
-export type PlacementState = Pick<GameState, 'acquiredParcels' | 'decorations'> & {buildings: readonly (Pick<Building, 'id' | 'kind' | 'x' | 'y'> & Partial<Pick<Building, 'footprintTier' | 'formerFootprint'>>)[]};
+export type PlacementState = Pick<GameState, 'acquiredParcels' | 'decorations'> & Partial<Pick<GameState, 'debris'>> & {buildings: readonly (Pick<Building, 'id' | 'kind' | 'x' | 'y'> & Partial<Pick<Building, 'footprintTier' | 'formerFootprint'>>)[]};
 export type FootprintSubject = Pick<Building, 'kind' | 'x' | 'y'> & Partial<Pick<Building, 'footprintTier' | 'formerFootprint'>>;
 /** All rectangles use integer fine-grid coordinates; touching edges is allowed. */
 export interface Footprint {x: number; y: number; width: number; height: number}
@@ -34,6 +35,8 @@ export function footprintPlacementReason(s: PlacementState,
   if (s.buildings.some(b => b.id !== ignore.buildingId && overlaps(rect, buildingFootprint(b)))) return 'CELL_OCCUPIED';
   if (s.decorations.some(d => d.id !== ignore.decorationId && d.location.kind === 'outside' &&
     overlaps(rect, {...d.location, ...decorationFootprint(d.catalogId, d.location.rotation)}))) return 'DECORATION_OVERLAP';
+  // Debris block buildings and decorations alike until cleared (6 November 2026).
+  if ((s.debris ?? []).some(d => overlaps(rect, debrisFootprint(d)))) return 'DEBRIS_IN_THE_WAY';
   return null;
 }
 /** `kind` is the kind of a new building (absent = a 4 × 4 one); a moved building keeps its own footprint. */
@@ -54,7 +57,7 @@ export function upgradeFootprintReason(s: PlacementState, buildingId: string, ti
   const b = s.buildings.find(item => item.id === buildingId); if (!b) return 'NOT_FOUND';
   // An upgrade always acquires the enlarged footprint of its tier, even for an enclosure that kept its former one.
   const reason = footprintPlacementReason(s, buildingFootprint({kind: b.kind, x: b.x, y: b.y, footprintTier: tier as Building['footprintTier']}), {buildingId}, geometry);
-  return reason === null ? null : reason === 'CELL_OCCUPIED' ? 'UPGRADE_BLOCKED_BUILDING' : reason === 'DECORATION_OVERLAP' ? 'UPGRADE_BLOCKED_DECORATION' : 'UPGRADE_BLOCKED_LAND';
+  return reason === null ? null : reason === 'CELL_OCCUPIED' ? 'UPGRADE_BLOCKED_BUILDING' : reason === 'DECORATION_OVERLAP' || reason === 'DEBRIS_IN_THE_WAY' ? 'UPGRADE_BLOCKED_DECORATION' : 'UPGRADE_BLOCKED_LAND';
 }
 export function buildingAt(s: Pick<GameState, 'buildings'>, p: {x: number; y: number}) {
   return s.buildings.find(b => { const f = buildingFootprint(b); return p.x >= f.x && p.x < f.x + f.width && p.y >= f.y && p.y < f.y + f.height; });
