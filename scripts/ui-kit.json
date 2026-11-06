@@ -18,17 +18,24 @@
   },
   "boutons": {
     "pieces": [
-      { "name": "button-green", "height": 128, "saturation": 0.6, "brightness": 0.8 },
-      { "name": "button-blue", "height": 128, "saturation": 0.6, "brightness": 0.82 },
-      { "name": "button-red", "height": 128, "saturation": 0.7, "brightness": 0.8 },
+      { "name": "glossy-green", "skip": true, "height": 128 },
+      { "name": "glossy-blue", "skip": true, "height": 128 },
+      { "name": "glossy-red", "skip": true, "height": 128 },
       { "name": "button-stone", "height": 128, "saturation": 0.15 }
+    ]
+  },
+  "boutons-pierre": {
+    "pieces": [
+      { "name": "button-green", "height": 128 },
+      { "name": "button-blue", "height": 128 },
+      { "name": "button-red", "height": 128 }
     ]
   },
   "petits": {
     "pieces": [
-      { "name": "close", "height": 160, "saturation": 0.7, "brightness": 0.82 },
+      { "name": "glossy-close", "skip": true, "height": 160 },
       { "name": "checkbox", "height": 128, "saturation": 0.4 },
-      { "name": "check", "height": 128, "saturation": 0.65, "brightness": 0.85 },
+      { "name": "glossy-check", "skip": true, "height": 128 },
       { "name": "badge-alert", "height": 96, "saturation": 0.7, "brightness": 0.82 },
       { "name": "tile", "height": 192, "saturation": 0.4 },
       { "name": "counter", "height": 112, "saturation": 0.4 }
@@ -36,17 +43,26 @@
   },
   "petits2": {
     "pieces": [
-      { "name": "round-blue", "height": 160, "saturation": 0.6, "brightness": 0.82 },
-      { "name": "medal", "height": 160, "saturation": 0.6, "brightness": 0.8 },
+      { "name": "glossy-round-blue", "skip": true, "height": 160 },
+      { "name": "glossy-medal", "skip": true, "height": 160 },
       { "name": "card", "height": 200 },
       { "name": "slate", "height": 120, "saturation": 0.6 },
-      { "name": "fill", "height": 48, "saturation": 0.6, "brightness": 0.82 },
+      { "name": "glossy-fill", "skip": true, "height": 48 },
       { "name": "label", "height": 72 }
     ]
   },
   "missions": {
     "pieces": [
       { "name": "missions", "height": 168 }
+    ]
+  },
+  "ronds-pierre": {
+    "pieces": [
+      { "name": "close", "height": 160, "brightness": 0.9 },
+      { "name": "round-blue", "height": 160, "brightness": 0.9 },
+      { "name": "check", "height": 128, "saturation": 0.65, "brightness": 0.72 },
+      { "name": "medal", "height": 160, "saturation": 0.65, "brightness": 0.72 },
+      { "name": "fill", "height": 48, "saturation": 0.65, "brightness": 0.72 }
     ]
   }
 }

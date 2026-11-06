@@ -35,48 +35,6 @@
     "derivedSha256": "36c79540893be6b362efacb94fe4ea5eb25cb41491ddf9fd32447306996b3358",
     "bytes": 23428
   },
-  "button-green": {
-    "source": "assets-source/ui/kit/boutons.png",
-    "box": [
-      197,
-      32,
-      1049,
-      225
-    ],
-    "width": 597,
-    "height": 128,
-    "sourceSha256": "8e87ba6a922dace06b0ee458a8cfef5ccbeeb38a1a63ae9f8651bd6f52c18a09",
-    "derivedSha256": "f5a9c19f1cd836eeff3d7512fd9fcc4ce4c022b53b2d4d8852dce7bc345f4cf0",
-    "bytes": 10390
-  },
-  "button-blue": {
-    "source": "assets-source/ui/kit/boutons.png",
-    "box": [
-      197,
-      301,
-      1049,
-      223
-    ],
-    "width": 602,
-    "height": 128,
-    "sourceSha256": "8e87ba6a922dace06b0ee458a8cfef5ccbeeb38a1a63ae9f8651bd6f52c18a09",
-    "derivedSha256": "d4ea194f08a9224de5f744e0f47f07d6eb3dc341623211dc722f1dc418c44c6a",
-    "bytes": 9500
-  },
-  "button-red": {
-    "source": "assets-source/ui/kit/boutons.png",
-    "box": [
-      197,
-      570,
-      1049,
-      224
-    ],
-    "width": 599,
-    "height": 128,
-    "sourceSha256": "8e87ba6a922dace06b0ee458a8cfef5ccbeeb38a1a63ae9f8651bd6f52c18a09",
-    "derivedSha256": "fc50b9644848c6d8ca62c6f129d6bb40ce530b937c4b4b44bcd2c4e3b032ed66",
-    "bytes": 9616
-  },
   "button-stone": {
     "source": "assets-source/ui/kit/boutons.png",
     "box": [
@@ -91,19 +49,47 @@
     "derivedSha256": "a6f0276a1da217bc09c5d9b51c3325d490b0b7fd43c20887eaab763260f391ca",
     "bytes": 11348
   },
-  "close": {
-    "source": "assets-source/ui/kit/petits.png",
+  "button-green": {
+    "source": "assets-source/ui/kit/boutons-pierre.png",
     "box": [
-      41,
-      87,
-      379,
-      386
+      66,
+      123,
+      1071,
+      296
     ],
-    "width": 157,
-    "height": 160,
-    "sourceSha256": "bf5abe30cf7566dbae1a948ce2099f01e77bd06dad632300013e8f2d3ec6ae3f",
-    "derivedSha256": "c26001a0fd9e998b9c845fc82871f493a58bcbb7b5427907997fb33cbe5bb1f5",
-    "bytes": 6758
+    "width": 463,
+    "height": 128,
+    "sourceSha256": "e994567efac20c3e7aac384c19073d5d440280e7453dbccdace8ee942f9c83ca",
+    "derivedSha256": "d9a668dff98538496344f7e38ba83d5a52088d376943ec3a609dd465974f4d83",
+    "bytes": 10466
+  },
+  "button-blue": {
+    "source": "assets-source/ui/kit/boutons-pierre.png",
+    "box": [
+      66,
+      514,
+      1071,
+      295
+    ],
+    "width": 465,
+    "height": 128,
+    "sourceSha256": "e994567efac20c3e7aac384c19073d5d440280e7453dbccdace8ee942f9c83ca",
+    "derivedSha256": "0172555c0fd2ada21076eff3b74f93f80e488b890332bf00c9ef5b70e217345d",
+    "bytes": 10588
+  },
+  "button-red": {
+    "source": "assets-source/ui/kit/boutons-pierre.png",
+    "box": [
+      66,
+      906,
+      1071,
+      296
+    ],
+    "width": 463,
+    "height": 128,
+    "sourceSha256": "e994567efac20c3e7aac384c19073d5d440280e7453dbccdace8ee942f9c83ca",
+    "derivedSha256": "95b2df0d33b60c1732f8fb6d2a2cff910b95e10bcb505da3cdf7f76758cb0e00",
+    "bytes": 12488
   },
   "checkbox": {
     "source": "assets-source/ui/kit/petits.png",
@@ -118,20 +104,6 @@
     "sourceSha256": "bf5abe30cf7566dbae1a948ce2099f01e77bd06dad632300013e8f2d3ec6ae3f",
     "derivedSha256": "f7d87cc042607d52b3ad881cc242fac6de7508a4d9e5a43b6249bebdd261954d",
     "bytes": 4586
-  },
-  "check": {
-    "source": "assets-source/ui/kit/petits.png",
-    "box": [
-      1032,
-      116,
-      416,
-      342
-    ],
-    "width": 156,
-    "height": 128,
-    "sourceSha256": "bf5abe30cf7566dbae1a948ce2099f01e77bd06dad632300013e8f2d3ec6ae3f",
-    "derivedSha256": "60b742817158226ca6ab020fc036cf6b793a0a6bea76785ac0a85a7065cfb390",
-    "bytes": 5192
   },
   "badge-alert": {
     "source": "assets-source/ui/kit/petits.png",
@@ -175,34 +147,6 @@
     "derivedSha256": "6aa03ae4adb11653188472f967fa27c15935446beee6bed95398888c58f5357a",
     "bytes": 7202
   },
-  "round-blue": {
-    "source": "assets-source/ui/kit/petits2.png",
-    "box": [
-      56,
-      168,
-      401,
-      405
-    ],
-    "width": 158,
-    "height": 160,
-    "sourceSha256": "d937f4bc436a89f9dcd8af8d2c00aee222f102cb74ece5de0c662826270089e8",
-    "derivedSha256": "cf55c84ca178c5bde92ec7c27bf4253126d474384ca3006dec0cb7cbd6eee362",
-    "bytes": 5804
-  },
-  "medal": {
-    "source": "assets-source/ui/kit/petits2.png",
-    "box": [
-      516,
-      172,
-      453,
-      397
-    ],
-    "width": 183,
-    "height": 160,
-    "sourceSha256": "d937f4bc436a89f9dcd8af8d2c00aee222f102cb74ece5de0c662826270089e8",
-    "derivedSha256": "28ede0a44620cc05960b3eaf7408b77a6836491899d6e9d18fbe1c9a36cb90f7",
-    "bytes": 8960
-  },
   "card": {
     "source": "assets-source/ui/kit/petits2.png",
     "box": [
@@ -231,20 +175,6 @@
     "derivedSha256": "ace8d688bb892f036715711d58e6ecb446fa6520affbcd260a56f9fe18a595d5",
     "bytes": 8938
   },
-  "fill": {
-    "source": "assets-source/ui/kit/petits2.png",
-    "box": [
-      516,
-      722,
-      553,
-      83
-    ],
-    "width": 320,
-    "height": 48,
-    "sourceSha256": "d937f4bc436a89f9dcd8af8d2c00aee222f102cb74ece5de0c662826270089e8",
-    "derivedSha256": "17879994991db1bb809cbd8224513587c3be9e20d5d313e8644d82dedf3390dc",
-    "bytes": 3598
-  },
   "label": {
     "source": "assets-source/ui/kit/petits2.png",
     "box": [
@@ -272,5 +202,75 @@
     "sourceSha256": "7bf377f2f61156b9dbf1eb97eaba01736c142978f22c0985747cb05cc09b9263",
     "derivedSha256": "757b17610c43ee15b9424d83ebf24499faf668039a75de6d046dbbe4120bdfc1",
     "bytes": 8178
+  },
+  "close": {
+    "source": "assets-source/ui/kit/ronds-pierre.png",
+    "box": [
+      20,
+      272,
+      284,
+      292
+    ],
+    "width": 156,
+    "height": 160,
+    "sourceSha256": "d7fff0db72eb41f6c74f356932fab05afe4aadc428c2c19c0ce2a6479d2278e9",
+    "derivedSha256": "3370ece0a8e51b0e7967da450391cbf8b20657862663e6fe4d19c7408802e396",
+    "bytes": 8924
+  },
+  "round-blue": {
+    "source": "assets-source/ui/kit/ronds-pierre.png",
+    "box": [
+      323,
+      272,
+      285,
+      292
+    ],
+    "width": 156,
+    "height": 160,
+    "sourceSha256": "d7fff0db72eb41f6c74f356932fab05afe4aadc428c2c19c0ce2a6479d2278e9",
+    "derivedSha256": "b56db806959fb9da2b8069e42d616e8809b668d4d87429dfc2474ffab2f4b815",
+    "bytes": 8696
+  },
+  "check": {
+    "source": "assets-source/ui/kit/ronds-pierre.png",
+    "box": [
+      635,
+      301,
+      255,
+      236
+    ],
+    "width": 138,
+    "height": 128,
+    "sourceSha256": "d7fff0db72eb41f6c74f356932fab05afe4aadc428c2c19c0ce2a6479d2278e9",
+    "derivedSha256": "8ab042ca78c6a58d433c8b3e07e0a872bc8d9d2399bf024ca6f596925453b371",
+    "bytes": 4740
+  },
+  "medal": {
+    "source": "assets-source/ui/kit/ronds-pierre.png",
+    "box": [
+      911,
+      267,
+      326,
+      297
+    ],
+    "width": 176,
+    "height": 160,
+    "sourceSha256": "d7fff0db72eb41f6c74f356932fab05afe4aadc428c2c19c0ce2a6479d2278e9",
+    "derivedSha256": "9c6035a1fc18a8e849703af6ec4f5226469d1e84761a74121e6e16194084a220",
+    "bytes": 8688
+  },
+  "fill": {
+    "source": "assets-source/ui/kit/ronds-pierre.png",
+    "box": [
+      27,
+      787,
+      1199,
+      201
+    ],
+    "width": 286,
+    "height": 48,
+    "sourceSha256": "d7fff0db72eb41f6c74f356932fab05afe4aadc428c2c19c0ce2a6479d2278e9",
+    "derivedSha256": "f22b652e991a0b3d4643ad8552e7ff8e0ef784905473181fe77921dba51cb2fd",
+    "bytes": 4096
   }
 }

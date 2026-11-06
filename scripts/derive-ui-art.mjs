@@ -114,6 +114,8 @@ try {
     }, {data: bytes.toString('base64'), spec});
     if (!Array.isArray(pieces)) { problems.push(`${sheet}: ${pieces.error}`); continue; }
     for (const piece of pieces) {
+      // `skip`: a painted piece the game no longer uses (the glossy buttons, replaced by the coloured stone on 7 November).
+      if (spec.pieces.find(p => p.name === piece.name)?.skip) continue;
       const target = `public/assets/ui/kit/${piece.name}.webp`, png = Buffer.from(piece.data, 'base64');
       if (check) { if (!existsSync(target) || sha256(readFileSync(target)) !== sha256(png)) problems.push(`${target} differs from its source`); }
       else writeFileSync(target, png);
