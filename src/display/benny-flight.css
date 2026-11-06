@@ -11,15 +11,17 @@
 .benny-flight-score { font-size: 1.6rem; }
 .benny-flight-quota { flex: 1; font-size: .9rem; text-align: right; }
 .benny-flight-top button { min-height: 44px; padding: 0 16px; border-radius: 14px; border: 2px solid #6b5a3a; background: #fff8e8; font-weight: 800; }
-.benny-flight-stage { position: relative; flex: 1; min-height: 0; overflow: hidden; cursor: pointer; background: 0 center / auto 100% repeat-x #8fc3ee; container-type: size; }
+.benny-flight-stage { position: relative; flex: 1; min-height: 0; overflow: hidden; cursor: pointer; background: #8fc3ee; container-type: size; }
+/* The sky is one wide layer moved by transform (no repaint): wider than the stage by one picture, it starts again each picture. */
+.benny-flight-sky { position: absolute; top: 0; bottom: 0; left: 0; background: 0 0 / auto 100% repeat-x; will-change: transform; }
 .benny-flight-columns { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
-.benny-flight-column { position: absolute; top: 0; bottom: 0; }
+.benny-flight-column { position: absolute; top: 0; bottom: 0; left: 0; will-change: transform; }
 .benny-flight-column img { position: absolute; left: 0; width: 100%; object-fit: cover; }
 /* The top half hangs from the sky (its picture flipped), the bottom half rises from the clouds. */
 .benny-flight-column img[data-part="top"] { top: 0; object-position: bottom; transform: scaleY(-1); }
 .benny-flight-column img[data-part="bottom"] { bottom: 0; object-position: top; }
-.benny-flight-benny { position: absolute; z-index: 3; height: min(15cqh, 14cqw); aspect-ratio: 1; transform: translate(-50%, -50%); pointer-events: none; transition: transform .08s linear; }
-.benny-flight-benny img, .benny-flight-benny svg { width: 100%; height: 100%; object-fit: contain; }
+/* Benny's flapping strip (8 frames side by side), placed by transform from the stage's top left corner. */
+.benny-flight-benny { position: absolute; z-index: 3; left: 0; top: 0; height: min(19cqh, 17cqw); aspect-ratio: 310 / 248; background: 0 0 / 800% 100% no-repeat; pointer-events: none; will-change: transform; }
 .benny-flight-benny.flap { animation: benny-flight-flap .22s ease-out; }
 @keyframes benny-flight-flap { 40% { scale: 1.06 .92; } }
 .benny-flight-pop { position: absolute; z-index: 4; left: 50%; top: 22%; margin: 0; transform: translateX(-50%); font-size: 2rem; font-weight: 900; opacity: 0; color: #fff; -webkit-text-stroke: 1.4px #2b4a6b; paint-order: stroke fill; pointer-events: none; white-space: nowrap; }

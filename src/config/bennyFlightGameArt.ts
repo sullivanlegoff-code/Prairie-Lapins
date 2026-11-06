@@ -1,3 +1,5 @@
+import flappy from './bennyFlappyFrames.json';
+
 /**
  * Presentation only: « Le vol de Benny » (6 November 2026), painted by the image model and prepared by
  * scripts/prepare-noel-extras-art.mjs. The sky loops horizontally; one hay column picture serves both halves of a column
@@ -29,3 +31,16 @@ export const DEBRIS_ART = {
   url: (kind: string) => import.meta.env.BASE_URL + `assets/buildings/debris-${kind}.png`,
   worldWidth: 96, originY: .78,
 } as const;
+
+/**
+ * Benny's flapping sprite for « Le vol de Benny » (owner, 6 November 2026: « je veux qu'elle utilise ses ailes »), composed by
+ * scripts/prepare-benny-flappy.mjs from her approved flight paintings: 8 wing beats side by side in one strip. A touch plays a
+ * quick full beat (`quickBeat` ms a frame), and she keeps a calmer beat in between (`calmBeat`).
+ */
+export const BENNY_FLAPPY = {
+  url: import.meta.env.BASE_URL + 'assets/benny-envol/benny-vol.webp',
+  frames: flappy.frames, width: flappy.frame.width, height: flappy.frame.height,
+  quickBeat: 34, calmBeat: 95,
+} as const;
+/** Window event of a full-screen activity opening (`detail` true) or closing: the island's Phaser loop sleeps meanwhile. */
+export const FULLSCREEN_ACTIVITY_EVENT = 'prairie-fullscreen-activity';

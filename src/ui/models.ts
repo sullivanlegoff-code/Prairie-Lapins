@@ -88,7 +88,7 @@ export function buildingReason(s: GameState, kind: BuildingKind, ignorePrice = f
   if (statue) return s.hearts < statue.heartPrice ? REFUSALS.NOT_ENOUGH_HEARTS : null;
   return moneyReason(s, kind === 'enclosure' ? habitatPrice(habitatType) : config.price);
 }
-export type Placement = {kind: BuildingKind; movingId?: string; starter?: boolean; habitatType?: HabitatType; cell: {x: number; y: number} | null};
+export type Placement = {kind: BuildingKind; movingId?: string; starter?: boolean; habitatType?: HabitatType; /** The Ultra neige habitat, paid in sucres d'orge. */ ultra?: true; cell: {x: number; y: number} | null};
 export function placementReason(s: GameState, placement: Placement): string | null {
   const cell = placement.cell;
   if (!cell) return 'Touche un petit carré de la prairie.';

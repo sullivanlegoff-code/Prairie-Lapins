@@ -3,7 +3,7 @@ import {HABITATS, habitatLevel} from '../config/habitats';
 import type {Building, GameState, Refusal} from '../state/types';
 import {ISLAND} from '../config/islandGeometry';
 export const habitatStats = (b: Building) => habitatLevel(b.habitat!.type, b.habitat!.level);
-export const habitatName = (b: Building) => HABITATS[b.habitat!.type].name;
+export const habitatName = (b: Building) => b.habitat!.ultra ? 'Enclos Ultra neige' : HABITATS[b.habitat!.type].name;
 export function removeHabitatReason(s: GameState, id: string): Refusal | null {
   if (!s.buildings.some(b => b.id === id && b.kind === 'enclosure')) return 'NOT_FOUND';
   // Parents at the nest and agency travellers keep their home reference and reserved place.

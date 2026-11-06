@@ -85,6 +85,8 @@ import {buildingFrame, ownedRegions, recenterCamera, type ScreenChrome} from './
 import {COIN_TEXTURE, COIN_URL, FOOD_TEXTURE, FOOD_URL, HEART_TEXTURE, HEART_URL} from './currency';
 import {coinBubble} from './currencyPhaser';
 import {MAGICIEN_ART, MAGICIEN_TEST_EVENT} from '../config/magicienArt';
+import {DADI_SONG_EVENT, DADI_STAGE, type DadiSongDetail} from '../config/dadiStageArt';
+import {DadiStageView} from './dadiStageView';
 import {MagicienView} from './magicienEffects';
 import {MagicienClock, magicienFree, type MagicienAct} from './magicienTimeline';
 import {CHASE_EVENT, RabbitChases, type ChaseRunner} from './rabbitChase';
@@ -110,6 +112,8 @@ interface VisualRabbit {id: string; object: Phaser.GameObjects.Container; body: 
   /** Benny, the Mythic: her painted acts, blink, nose and ears. */
   benny?: BennyView;
   magicien?: MagicienView;
+  /** The evolved Dadi's poses and microphone. */
+  dadi?: DadiStageView;
   center: Point; group: string; motion?: RabbitMotion; nest?: boolean; lift: number;
   /** Centre of the visible body in body space: the somersault turns about it, not about the feet or the picture centre. */
   pivot: Point; /** Mirror sign of the picture's native direction: -1 for art that looks left. */ native: 1 | -1}
@@ -139,6 +143,9 @@ export class MeadowScene extends Phaser.Scene {
   private legendaryClocks = new Map<string, LegendaryClock>();
   /** Benny's clock, kept across rebuilds of her body like the motions. */
   private bennyClocks = new Map<string, BennyClock>();
+  /** Dadi's song is playing (DADI_SONG_EVENT); with the music off, only for `DADI_STAGE.silentSongMs`. */
+  private dadiSinging = false;
+  private dadiSilentTimer = 0;
   private magicienClocks = new Map<string, MagicienClock>();
   /** Two rabbits of one enclosure running after each other now and then (visual only). */
   private chases = new RabbitChases();
@@ -315,6 +322,13 @@ export class MeadowScene extends Phaser.Scene {
     window.addEventListener(LEGENDARY_TEST_EVENT, legendaryTest);
     const magicienTest = (event: Event) => { const act=(event as CustomEvent<{act?:MagicienAct}>).detail?.act; if(act) for(const rabbit of this.rabbitViews) rabbit.magicien?.play(act); };
     window.addEventListener(MAGICIEN_TEST_EVENT,magicienTest);
+    // Dadi's song (src/main.ts): the evolved Dadi sings at his microphone while it plays; music switched off, for a while.
+    const dadiSong = (event: Event) => {
+      const detail = (event as CustomEvent<DadiSongDetail>).detail; window.clearTimeout(this.dadiSilentTimer);
+      this.dadiSinging = !!detail?.singing;
+      if (this.dadiSinging && !detail.audible) this.dadiSilentTimer = window.setTimeout(() => { this.dadiSinging = false; }, DADI_STAGE.silentSongMs);
+    };
+    window.addEventListener(DADI_SONG_EVENT, dadiSong);
     // Laboratory buttons play one of Benny's acts; nothing in the normal game sends this event either.
     const bennyTest = (event: Event) => {
       const act = (event as CustomEvent<{act?: BennyAct}>).detail?.act;
@@ -340,7 +354,7 @@ export class MeadowScene extends Phaser.Scene {
       this.snowballViews.clear(); this.marketImage = null; this.marketLights = null; this.snowman = null; this.snowmanBuild = null;
       this.optionalPending.clear(); this.optionalFailed.clear();
       document.removeEventListener('visibilitychange', dadiVisibility); window.removeEventListener('pagehide', clearDadi);
-      window.removeEventListener(LEGENDARY_TEST_EVENT, legendaryTest); window.removeEventListener(MAGICIEN_TEST_EVENT,magicienTest); window.removeEventListener(BENNY_TEST_EVENT, bennyTest); window.removeEventListener(BENNY_FLIGHT_TEST_EVENT, flightTest); window.removeEventListener(CHASE_EVENT, chaseTest);
+      window.removeEventListener(LEGENDARY_TEST_EVENT, legendaryTest); window.removeEventListener(MAGICIEN_TEST_EVENT,magicienTest); window.removeEventListener(DADI_SONG_EVENT, dadiSong); window.clearTimeout(this.dadiSilentTimer); window.removeEventListener(BENNY_TEST_EVENT, bennyTest); window.removeEventListener(BENNY_FLIGHT_TEST_EVENT, flightTest); window.removeEventListener(CHASE_EVENT, chaseTest);
       this.bennyFlight?.destroy(); this.bennyFlight = null; this.bennyAway = null; this.flightIsland = null;
     });
     this.recenter();
@@ -843,6 +857,7 @@ export class MeadowScene extends Phaser.Scene {
       if (wearsCrown(rabbit)) add(CROWN_ART);
       // The magic circle and the stars, only for an evolved Magicien (audit, 4 November 2026).
       if (rabbit.species === 'magicien' && shown?.evolved) { add(MAGICIEN_ART.circle); add(MAGICIEN_ART.star); }
+      if (rabbit.species === 'dadi' && shown?.evolved) for (const frame of [...DADI_STAGE.poses, ...(DADI_STAGE.micro ? [DADI_STAGE.micro] : [])]) add(frame);
     }
     const buildingArt = (building: Pick<Building, 'kind' | 'habitat' | 'footprintTier' | 'farmLevel'> & {id?: string}) => {
       if (building.kind === 'enclosure') add(habitatArtFor(building.habitat ?? undefined, building.footprintTier)); // Same texture at every scale.
@@ -1236,9 +1251,10 @@ export class MeadowScene extends Phaser.Scene {
             let clock=this.magicienClocks.get(rabbit.id); if(!clock){clock=new MagicienClock(rabbit.id);this.magicienClocks.set(rabbit.id,clock);}
             magicien=new MagicienView(this,rabbit.id,{object,body,sprite,shadow,art},clock);
           }
+          const dadi = rabbit.species === 'dadi' && art.evolved ? new DadiStageView(this, rabbit.id, sprite, art) : undefined;
           if (crown) body.bringToTop(crown); // Above a legendary's open snout or part.
           this.animals.add(object);
-          this.rabbitViews.push({id: rabbit.id, ears: [], sprite, art, face, flames, crown, legendary, benny, magicien, ...view});
+          this.rabbitViews.push({id: rabbit.id, ears: [], sprite, art, face, flames, crown, legendary, benny, magicien, dadi, ...view});
           return;
         }
         const coat = proceduralCoat(SPECIES[rabbit.species].art), color = Phaser.Display.Color.HexStringToColor(coat.body).color, patch = Phaser.Display.Color.HexStringToColor(coat.patch).color;
@@ -1681,6 +1697,7 @@ export class MeadowScene extends Phaser.Scene {
       rabbit.magicien?.update(dt,lifeActive && visibleResidents.has(rabbit.id) && magicienFree(rabbit.motion?.mode,
         this.gathered(rabbit.id) || this.cozyInteraction.active?.id === rabbit.id || this.chases.isChasing(rabbit.id) || this.snowballs.isFighting(rabbit.id)),reducedMotion);
       if(rabbit.magicien) lift += rabbit.magicien.lift;
+      rabbit.dadi?.update(dt, lifeActive && visibleResidents.has(rabbit.id) && rabbit.motion?.mode !== 'sleep', this.dadiSinging);
       rabbit.lift = lift;
       if (rabbit.object.depth !== previousDepth) depthChanged = true;
       this.poseBody(rabbit, {lift, squashX, squashY, facing, rotation, nuzzle});

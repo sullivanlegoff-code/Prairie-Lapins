@@ -4,8 +4,9 @@ import {BENNY_FLIGHT, ULTRA_SNOW} from '../src/config/balance';
 import {ULTRA_SNOW_ART, habitatArtFor} from '../src/config/habitatArt';
 import {cumulativeLevelXp} from '../src/simulation/progression';
 import {bennyFlightDay} from '../src/simulation/bennyFlight';
-import {buildingPlacementReason} from '../src/simulation/placement';
+import {buildingPlacementReason, upgradeFootprintReason} from '../src/simulation/placement';
 import {emptyBuilding} from '../src/state/initial';
+import {PARCEL_IDS} from '../src/config/land';
 import type {Command, GameState} from '../src/state/types';
 
 /** The Ultra neige habitat and Benny's perch (owner, 5 November 2026). */
@@ -29,26 +30,42 @@ function placePerch(s: GameState) {
 }
 
 describe('the Ultra neige habitat', () => {
-  it('turns a level 3 snow habitat into the icy palace for sucres d’orge, once', () => {
-    const s = game(), id = withSnowHabitat(s), bought = run(s, {type: 'buyUltraSnow', enclosureId: id});
-    expect(bought.christmas!.candies).toBe(1000 - ULTRA_SNOW.candies);
-    expect(bought.buildings.find(b => b.id === id)!.habitat).toEqual({type: 'neige', level: 3, ultra: true});
-    expect(act(bought, {type: 'buyUltraSnow', enclosureId: id}, 0)).toMatchObject({ok: false, reason: 'INVALID_CHOICE'});
-    const decoded = decodeGame(encodeGame(bought));
+  function placeUltra(s: GameState) {
+    s.acquiredParcels = [...PARCEL_IDS]; s.debris = [];
+    for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) { const r = act(s, {type: 'buyBuilding', kind: 'enclosure', habitatType: 'neige', ultra: true, x, y}, s.lastSimulatedAt, () => .3); if (r.ok && !upgradeFootprintReason(r.state, String(r.value), 3)) return {state: r.state, id: String(r.value)}; }
+    throw Error('No place for the Ultra neige habitat');
+  }
+  it('is a new snow enclosure, bought at level 1 for sucres d’orge only (no pattes, no XP)', () => {
+    const s = game(), {state, id} = placeUltra(s), b = state.buildings.find(b => b.id === id)!;
+    expect(b.habitat).toEqual({type: 'neige', level: 1, ultra: true});
+    expect(state.christmas!.candies).toBe(1000 - ULTRA_SNOW.candies[1]);
+    expect(state.pattes).toBe(s.pattes); expect(state.progression.totalXp).toBe(s.progression.totalXp);
+    const decoded = decodeGame(encodeGame(state));
     expect(decoded.ok && decoded.state.buildings.find(b => b.id === id)!.habitat!.ultra).toBe(true);
   });
-  it('needs a level 3 snow habitat and enough sucres d’orge', () => {
-    const low = game(), id = withSnowHabitat(low, 2);
-    expect(act(low, {type: 'buyUltraSnow', enclosureId: id}, 0)).toMatchObject({ok: false, reason: 'INVALID_CHOICE'});
-    const poor = game(), other = withSnowHabitat(poor); poor.christmas!.candies = ULTRA_SNOW.candies - 1;
-    expect(act(poor, {type: 'buyUltraSnow', enclosureId: other}, 0)).toMatchObject({ok: false, reason: 'NOT_ENOUGH_CANDIES'});
-  });
-  it('shows the palace only on a grown level 3 habitat', () => {
-    expect(habitatArtFor({type: 'neige', level: 3, ultra: true}, 3)).toBe(ULTRA_SNOW_ART);
+  it('grows to levels 2 and 3 in sucres d’orge, then shows the icy palace', () => {
+    let {state, id} = placeUltra(game());
+    for (const level of [1, 2] as const) {
+      const before = state.christmas!.candies, pattes = state.pattes;
+      state = run(state, {type: 'upgradeHabitat', id, fromLevel: level});
+      const b = state.buildings.find(b => b.id === id)!;
+      expect(b.habitat).toEqual({type: 'neige', level: level + 1, ultra: true});
+      expect(state.christmas!.candies).toBe(before - ULTRA_SNOW.candies[(level + 1) as 2 | 3]); expect(state.pattes).toBe(pattes);
+    }
+    const b = state.buildings.find(b => b.id === id)!;
+    expect(habitatArtFor(b.habitat!, b.footprintTier)).toBe(ULTRA_SNOW_ART);
     expect(habitatArtFor({type: 'neige', level: 3}, 3)).not.toBe(ULTRA_SNOW_ART);
   });
-  it('refuses an Ultra mark on another habitat in a save', () => {
-    const s = game(), id = withSnowHabitat(s, 2); s.buildings.find(b => b.id === id)!.habitat = {type: 'neige', level: 2, ultra: true};
+  it('needs enough sucres d’orge, and is only a snow enclosure', () => {
+    const {state: rich, id: placed} = placeUltra(game()), spot = rich.buildings.find(b => b.id === placed)!;
+    const poor = game(); poor.acquiredParcels = [...PARCEL_IDS]; poor.debris = []; poor.christmas!.candies = ULTRA_SNOW.candies[1] - 1;
+    expect(act(poor, {type: 'buyBuilding', kind: 'enclosure', habitatType: 'neige', ultra: true, x: spot.x, y: spot.y}, 0, () => .3)).toMatchObject({ok: false, reason: 'NOT_ENOUGH_CANDIES'});
+    expect(act(game(), {type: 'buyBuilding', kind: 'enclosure', habitatType: 'feu', ultra: true, x: 0, y: 0}, 0)).toMatchObject({ok: false, reason: 'INVALID_CHOICE'});
+    let {state, id} = placeUltra(game()); state.christmas!.candies = ULTRA_SNOW.candies[2] - 1;
+    expect(act(state, {type: 'upgradeHabitat', id, fromLevel: 1}, state.lastSimulatedAt)).toMatchObject({ok: false, reason: 'NOT_ENOUGH_CANDIES'});
+  });
+  it('refuses an Ultra mark on another kind of habitat in a save', () => {
+    const s = game(), id = withSnowHabitat(s, 2); s.buildings.find(b => b.id === id)!.habitat = {type: 'feu', level: 2, ultra: true};
     expect(() => encodeGame(s)).toThrow(/Ultra neige habitat/);
   });
 });

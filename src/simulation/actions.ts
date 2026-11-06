@@ -405,13 +405,21 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(command.kind!=='salon' || playerLevel(s)>=SALON.unlockLevel,'LEVEL_REQUIRED');
         requireRule(command.kind!=='forest' || playerLevel(s)>=FOREST.unlockLevel,'LEVEL_REQUIRED');
         requireRule(command.kind!=='perch' || hasBenny(s),'BENNY_REQUIRED');
+        // The Ultra neige habitat: a snow enclosure of the Christmas market, paid in sucres d'orge only.
+        requireRule(!command.ultra || command.kind === 'enclosure' && habitatType === 'neige', 'INVALID_CHOICE');
+        if (command.ultra) requireRule(christmasEventActive(), 'EVENT_OVER');
         cell(command.x, command.y, undefined, command.kind); allocation();
-        if (command.kind === 'statue') {
+        if (command.ultra) {
+          requireRule(!payment && !quoteOnly, 'INVALID_CHOICE');
+          requireRule(candiesOf(s) >= ULTRA_SNOW.candies[1], 'NOT_ENOUGH_CANDIES');
+          startChristmasCycle(s).candies -= ULTRA_SNOW.candies[1];
+        } else if (command.kind === 'statue') {
           requireRule(!payment && !quoteOnly, 'INVALID_CHOICE');
           requireRule(statue && s.hearts >= statue.heartPrice, 'NOT_ENOUGH_HEARTS');
           s.hearts -= statue.heartPrice;
         } else pay(command.kind === 'enclosure' ? habitatPrice(habitatType) : config.price);
         value = id('building'); s.buildings.push(emptyBuilding(value, command.kind, command.x, command.y, habitatType));
+        if (command.ultra) { s.buildings[s.buildings.length - 1].habitat = {type: 'neige', level: 1, ultra: true}; break; }
         if (command.kind === 'farm') gainXp(PROGRESSION.xp.construction.farm);
         else if (command.kind === 'enclosure') gainXp(habitatType === 'universal' ? PROGRESSION.xp.construction.universalHabitat : PROGRESSION.xp.construction.specializedHabitat);
         break;
@@ -461,7 +469,11 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         // The enlarged footprint must fit before anything is paid; nothing is ever moved to make room.
         const room = upgradeFootprintReason(s, b.id, next); requireRule(!room, room ?? 'INVALID_CHOICE');
         const price = habitatLevel(b.habitat.type, next);
-        if (price.currency === 'hearts') {
+        if (b.habitat.ultra) {
+          // The Ultra neige habitat grows in sucres d'orge only (no pattes, no Hearts), during the Christmas event.
+          requireRule(!payment && !quoteOnly, 'INVALID_CHOICE'); requireRule(christmasEventActive(), 'EVENT_OVER');
+          requireRule(candiesOf(s) >= ULTRA_SNOW.candies[next], 'NOT_ENOUGH_CANDIES'); startChristmasCycle(s).candies -= ULTRA_SNOW.candies[next];
+        } else if (price.currency === 'hearts') {
           // Paid in hearts only: no coin complement or quote applies, and a refusal leaves balance and level untouched.
           requireRule(!payment && !quoteOnly, 'INVALID_CHOICE');
           requireRule(s.hearts >= price.cost, 'NOT_ENOUGH_HEARTS'); s.hearts -= price.cost;
@@ -610,15 +622,6 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       case 'clearDebris': {
         const debris = (s.debris ?? []).find(d => d.id === command.id); requireRule(debris, 'NOT_FOUND');
         pay(debris.price); s.debris = s.debris!.filter(d => d.id !== debris.id); value = debris.price; break;
-      }
-      case 'buyUltraSnow': {
-        // The Christmas market's Ultra neige: a level 3 snow habitat becomes an icy palace, for sucres d'orge; it stays after Christmas.
-        requireRule(christmasEventActive(), 'EVENT_OVER');
-        const b = building(command.enclosureId, 'enclosure');
-        requireRule(b.habitat?.type === 'neige' && b.habitat.level === 3 && !b.habitat.ultra, 'INVALID_CHOICE');
-        requireRule(candiesOf(s) >= ULTRA_SNOW.candies, 'NOT_ENOUGH_CANDIES');
-        const day = startChristmasCycle(s); day.candies -= ULTRA_SNOW.candies;
-        b.habitat = {...b.habitat, ultra: true}; value = b.id; break;
       }
       case 'rewardBennyFlight': {
         const reason = bennyFlightReason(s); requireRule(!reason, reason ?? 'INVALID_CHOICE');

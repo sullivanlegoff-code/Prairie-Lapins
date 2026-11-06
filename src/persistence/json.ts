@@ -215,7 +215,7 @@ const schema = current.superRefine((s, context) => {
     if (b.formerFootprint && b.kind !== 'enclosure') issue('Former footprint');
     // The islet of the Epics (v27): one nest at its fixed place off the land grid, never on it.
     if (b.islet && (b.kind !== 'nest' || b.x !== EPIC_ISLET.cell.x || b.y !== EPIC_ISLET.cell.y)) issue('Islet nest');
-    if (b.habitat?.ultra && (b.habitat.type !== 'neige' || b.habitat.level !== 3)) issue('Ultra neige habitat');
+    if (b.habitat?.ultra && b.habitat.type !== 'neige') issue('Ultra neige habitat');
     if (!b.id.startsWith('building-')) issue('Building identity');
     if (!b.islet && (buildingPlacementReason(s, b.x, b.y, b.id) || cells.has(`${b.x},${b.y}`))) issue('Invalid or occupied cell');
     cells.add(`${b.x},${b.y}`);

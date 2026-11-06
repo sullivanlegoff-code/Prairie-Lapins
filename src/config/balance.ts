@@ -31,9 +31,14 @@ export const NURSERY = {initialCapacity: 1, maxCapacity: 4, unlockHearts: {1: 40
  * passed (at most `maxPattes`); the very first one also gives a Heart at `heartColumns` columns. Never XP.
  */
 export const BENNY_FLIGHT = {rewardedGamesPerCycle: 3, pattesPerColumn: 3, maxPattes: 60, heartColumns: 20, maxColumns: 500} as const;
-/** The Ultra neige habitat (owner, 5 November 2026): sold at the Christmas market only, it turns a level 3 snow habitat into an icy palace, and stays. */
-export const ULTRA_SNOW = {candies: 400} as const;
-export const EPIC_ISLET = {unlockLevel: 18, hearts: 400, bonus: 1.1, cell: {x: 6, y: -15}} as const;
+/**
+ * The Ultra neige habitat (owner, 6 November 2026: « un tout nouvel habitat neige […] s'acheter niveau 1 et […] s'améliorer jusqu'au
+ * niveau 3 en payant en sucre d'orge »): a snow enclosure of its own, sold at the Christmas market at level 1, then upgraded to levels
+ * 2 and 3, every step paid in sucres d'orge only (no pattes, no Hearts, no XP). It keeps the snow habitat's places and footprints, and
+ * stays after Christmas. In all 500 sucres d'orge, about twenty days of Christmas challenges.
+ */
+export const ULTRA_SNOW = {candies: {1: 100, 2: 150, 3: 250}} as const;
+export const EPIC_ISLET = {unlockLevel: 18, hearts: 400, bonus: 1.1, cell: {x: 6, y: 70}} as const;
 /** Paille's free gift: 3 Hearts every 24 h (2 before the Hearts / pattes balance of 3 November 2026), three gifts kept at most. */
 export const HEARTS = {
   initial: 12, gift: 3, maximumGifts: 3, giftInterval: 24 * HOUR,
@@ -79,7 +84,7 @@ export const BALANCE = {
     agency: {price: 1000, maximum: 1}, // The travel agency: see TRAVEL.
     salon: {price: 5000, maximum: 1}, // The Salon de soins: see SALON.
     forest: {price: 10000, maximum: 1}, // The Forêt de Brocéliande: see FOREST.
-    perch: {price: 3000, maximum: 1}, // Benny's perch, for « Le vol de Benny »: see BENNY_FLIGHT.
+    perch: {price: 50000, maximum: 1}, // Benny's perch, for « Le vol de Benny »: see BENNY_FLIGHT.
   } satisfies Record<BuildingKind, {price: number; currency?: 'hearts'; maximum: number | null}>,
 };
 /**

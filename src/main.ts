@@ -24,6 +24,8 @@ import './display/ultimate-card.css';
 import './display/jump-rope.css';
 import './display/sky-gifts.css';
 import './display/benny-flight.css';
+import {FULLSCREEN_ACTIVITY_EVENT} from './config/bennyFlightGameArt';
+import {DADI_SONG_EVENT, type DadiSongDetail} from './config/dadiStageArt';
 import './display/christmas-market.css';
 import './display/benny-reveal.css';
 import './display/reception.css';
@@ -88,6 +90,8 @@ async function boot(): Promise<() => void> {
     scale: {mode: Phaser.Scale.RESIZE, width: '100%', height: '100%'}, scene: [scene],
     render: {antialias: true}, input: {activePointers: 3},
   });
+  // A full-screen activity (« Le vol de Benny ») hides the island: its loop sleeps meanwhile, so the game keeps the phone's power.
+  window.addEventListener(FULLSCREEN_ACTIVITY_EVENT, event => { if (!game.isBooted) return; if ((event as CustomEvent<boolean>).detail) game.loop.sleep(); else game.loop.wake(); });
   const disposeViewport = bindAppViewport(() => {
     // RESIZE reads parentSize, so measure it before refreshing the canvas/bounds.
     if (game.isBooted) { game.scale.getParentBounds(); game.scale.refresh(); }
@@ -104,6 +108,8 @@ async function boot(): Promise<() => void> {
     const theme: MusicPlayer = new MusicPlayer({tracks: musicUrls([file]), engine: audio, once: true, onFinished: () => music.themeFinished(theme)});
     themes[species] = theme;
   }
+  // The evolved Dadi sings at his microphone while his song plays (src/display/dadiStageView.ts).
+  music.onThemeChange = (name, audible) => window.dispatchEvent(new CustomEvent<DadiSongDetail>(DADI_SONG_EVENT, {detail: {singing: name === 'dadi', audible}}));
   // Dadi welcomed or put in the nest: his music, inside the same gesture.
   const stopThemes = controller.onConfirmedCommand(command => {
     const state = controller.getSnapshot().state, ids = command.type === 'welcome' ? [command.birthId] : command.type === 'breed' ? command.parents : [];

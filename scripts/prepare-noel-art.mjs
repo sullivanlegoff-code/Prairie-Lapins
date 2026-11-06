@@ -205,6 +205,8 @@ export async function prepareNoelArt(folder) {
   }
   for (const [path, img] of served) write(path, encodePng(img));
   if (webp.length) for (const [name, bytes] of await encodeWebp(webp)) write(name, bytes);
+  // The Ultra neige habitat's levels 1 and 2 are painted snowy already (scripts/prepare-noel-extras-art.mjs, `snowy`).
+  winterFiles.push('habitats/habitat-glace-1.png', 'habitats/habitat-glace-2.png');
   writeFileSync('src/config/winterBuildingFiles.json', JSON.stringify(winterFiles.sort(), null, 1) + '\n');
   return report;
 }

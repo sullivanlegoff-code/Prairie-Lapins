@@ -111,4 +111,14 @@ describe('musique : chill partout, Indian vibe en cuisine', () => {
     elements.find(e => e.src === 'dadi.mp3')!.emit('error'); await flush();
     expect(playing()).toEqual(['dragon-chill.mp3']); expect(music.playingTheme).toBeNull();
   });
+  it('tells the meadow when Dadi’s song starts and ends, so the evolved Dadi sings at his microphone only meanwhile', async () => {
+    const {music, elements} = setup(() => 0), told: [string | null, boolean][] = [];
+    music.onThemeChange = (name, audible) => told.push([name, audible]);
+    await music.prepare(); music.start(); await flush();
+    music.playTheme('dadi'); await flush(); expect(told).toEqual([['dadi', true]]);
+    music.playTheme('dadi'); await flush(); expect(told).toHaveLength(1);
+    elements.find(e => e.src === 'dadi.mp3')!.emit('ended'); await flush(); expect(told.at(-1)).toEqual([null, true]);
+    music.setEnabled(false); music.playTheme('dadi'); await flush(); expect(told.at(-1)).toEqual(['dadi', false]);
+    music.setPlace('kitchen'); expect(told.at(-1)).toEqual([null, false]);
+  });
 });

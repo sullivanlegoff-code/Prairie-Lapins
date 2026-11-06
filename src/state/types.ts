@@ -27,7 +27,7 @@ export interface Building {
   id: string; kind: BuildingKind; x: number; y: number;
   /** Exact numerator: one patte = HOUR units. Never round each update. */
   incomeUnits: number;
-  /** `ultra`: a level 3 snow habitat turned into the Ultra neige one at the Christmas market (v27, its own picture; it stays). */
+  /** `ultra`: the Ultra neige habitat, a snow enclosure bought at the Christmas market (v27, its own pictures; it stays). */
   habitat: {type: HabitatType; level: HabitatLevel; ultra?: true} | null;
   /** Footprint actually acquired (enclosures only): 1 = 5 × 4, 2 = 8 × 5, 3 = 10 × 6 fine cells. Absent = 1, whatever the level. Anchored at x, y. */
   footprintTier?: HabitatLevel;
@@ -175,7 +175,8 @@ export interface CuisineReward {pattes: number; grass: number; /** True for one 
 export type ActionResult = {ok: true; state: GameState; value?: string | number; progressionGain?: ProgressionGain; cuisineReward?: CuisineReward; jumpRopeReward?: import('../simulation/jumpRope').JumpRopeReward} |
   {ok: false; state: GameState; reason: Refusal};
 export type BaseCommand =
-  | {type: 'buyBuilding'; kind: BuildingKind; x: number; y: number; habitatType?: HabitatType}
+  /** `ultra`: the Ultra neige habitat (a snow enclosure, `habitatType` 'neige'), paid in sucres d'orge at the Christmas market. */
+  | {type: 'buyBuilding'; kind: BuildingKind; x: number; y: number; habitatType?: HabitatType; ultra?: true}
   | {type: 'moveBuilding'; id: string; x: number; y: number}
   | {type: 'placeStarterBuilding'; kind: 'nest' | 'nursery'; x: number; y: number}
   | {type: 'transferBirth'; id: string; birthId: string}
@@ -232,7 +233,7 @@ export type Command = BaseCommand
   /** A finished jump-rope game: `score` jumps by this trio (remembered for the next game); pays within the daily limit (JUMP_ROPE). */
   | {type: 'rewardJumpRope'; team: JumpRopeTeam; score: number}
   /** The jump-rope islet, for JUMP_ROPE.price pattes from JUMP_ROPE.unlockLevel, once. */
-  | {type: 'buyJumpIsland'} | {type: 'buyEpicIslet'} | {type: 'clearDebris'; id: string} | {type: 'buyUltraSnow'; enclosureId: string} | {type: 'rewardBennyFlight'; passed: number}
+  | {type: 'buyJumpIsland'} | {type: 'buyEpicIslet'} | {type: 'clearDebris'; id: string} | {type: 'rewardBennyFlight'; passed: number}
   /** Christmas: today's snowman in this enclosure (free, one a day in all, a rabbit present, from level 2). */
   | {type: 'buildSnowman'; enclosureId: string}
   /** Christmas: a finished game of « Les cadeaux du ciel », the basket carried by this rabbit; pays within SKY_GIFTS' daily limit. */

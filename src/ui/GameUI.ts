@@ -966,13 +966,13 @@ export class GameUI {
       this.content.append(card);
     }
   }
-  private beginPlacement(kind: BuildingKind, movingId?: string, habitatType?: HabitatType, starter = false): void {
+  private beginPlacement(kind: BuildingKind, movingId?: string, habitatType?: HabitatType, starter = false, ultra = false): void {
     if (!movingId && (kind==='nest'||kind==='nursery') && !starter) return;
     const state=this.controller.getSnapshot().state,target={family:'habitatPurchase',id:habitatType??'universal'} as const;
     if(!movingId && !starter && kind==='enclosure' && state && stateLevelAccess(state,target).locked){this.open({kind:'levelRequirement',target});return;}
     this.savePurchaseOrigin();
     this.arranging=true;this.decorationDraft=null;this.syncArrangement();
-    this.placement = {kind, movingId, habitatType, starter, cell: null};
+    this.placement = {kind, movingId, habitatType, starter, ...(ultra ? {ultra: true as const} : {}), cell: null};
     if (this.onboardingActive && state) {
       const cell = this.onboardingFreeCell(state, this.placement);
       if (kind === 'enclosure') this.placement.cell = cell;
@@ -984,10 +984,12 @@ export class GameUI {
   }
   private renderPlacement(s: GameState): void {
     const p = this.placement; if (!p) { this.close(); return; }
-    const price = p.kind === 'statue' ? heartAmount((nextAffectionStatue(s) ?? SECOND_AFFECTION_STATUE).heartPrice) : `${p.kind === 'enclosure' ? habitatPrice(p.habitatType ?? 'universal') : BALANCE.buildings[p.kind].price} pattes`;
-    const name = p.kind === 'enclosure' ? HABITATS[p.habitatType ?? s.buildings.find(b => b.id === p.movingId)?.habitat?.type ?? 'universal'].name : BUILDING_NAMES[p.kind];
+    const moving = s.buildings.find(b => b.id === p.movingId);
+    const price = p.ultra ? candyAmount(ULTRA_SNOW.candies[1]) : p.kind === 'statue' ? heartAmount((nextAffectionStatue(s) ?? SECOND_AFFECTION_STATUE).heartPrice) : `${p.kind === 'enclosure' ? habitatPrice(p.habitatType ?? 'universal') : BALANCE.buildings[p.kind].price} pattes`;
+    const name = p.ultra || moving?.habitat?.ultra ? 'Enclos Ultra neige' : p.kind === 'enclosure' ? HABITATS[p.habitatType ?? moving?.habitat?.type ?? 'universal'].name : BUILDING_NAMES[p.kind];
     this.title.textContent = `${p.movingId ? 'Déplacer' : 'Placer'} : ${name}`;
     if (p.kind === 'statue' && !p.movingId) this.content.append(node('p', `Prix : ${price} · ton solde : ${heartAmount(s.hearts)}. Le paiement a lieu seulement quand tu confirmes l’emplacement.`, 'small'));
+    if (p.ultra) this.content.append(node('p', `Prix : ${price} · ton solde : ${candyAmount(candiesOf(s))}. Le paiement a lieu seulement quand tu confirmes l’emplacement.`, 'small'));
     // The footprint shown is the building's real one: an enlarged enclosure keeps its tier when it moves.
     const size = buildingSize(s.buildings.find(b => b.id === p.movingId) ?? {kind: p.kind}), footprint = `${size.width} × ${size.depth}`;
     this.content.append(node('p', `Touche un petit carré pour choisir le coin de l’empreinte ${footprint}. Déplacement par pas d’un carré. Glisse ou pince pour ajuster la vue.`));
@@ -996,10 +998,10 @@ export class GameUI {
     this.content.append(node('p', !p.cell ? 'Choisis une destination.' : reason ? `× ${reason}` : `✓ Emplacement valide · empreinte ${footprint}`, !p.cell ? 'placement-pending' : reason ? 'placement-invalid' : 'placement-valid'));
     this.button(this.content, p.movingId ? 'Confirmer le déplacement · gratuit' : p.starter ? 'Placer gratuitement' : this.onboardingActive ? `Confirmer · ${price}` : `Acheter et placer · ${price}`, () => {
       if (this.placement !== p || !p.cell) return;
-      const cmd: Command = p.movingId ? {type: 'moveBuilding', id: p.movingId, ...p.cell} : p.starter && (p.kind==='nest'||p.kind==='nursery') ? {type:'placeStarterBuilding',kind:p.kind,...p.cell} : {type: 'buyBuilding', kind: p.kind, habitatType: p.habitatType, ...p.cell};
+      const cmd: Command = p.movingId ? {type: 'moveBuilding', id: p.movingId, ...p.cell} : p.starter && (p.kind==='nest'||p.kind==='nursery') ? {type:'placeStarterBuilding',kind:p.kind,...p.cell} : {type: 'buyBuilding', kind: p.kind, habitatType: p.habitatType, ...(p.ultra ? {ultra: true as const} : {}), ...p.cell};
       this.execute(cmd, p.movingId ? 'Bâtiment déplacé.' : `${name} construit.`, value => this.finishPurchase('building', p.movingId ?? String(value)));
-    }, placementReason(s, p));
-    if (p.kind !== 'statue' && !p.movingId && !p.starter && p.cell) this.complement(this.content, s, {type: 'buyBuilding', kind: p.kind, habitatType: p.habitatType, ...p.cell},
+    }, placementReason(s, p) ?? (p.ultra && !p.movingId && candiesOf(s) < ULTRA_SNOW.candies[1] ? REFUSALS.NOT_ENOUGH_CANDIES : null));
+    if (p.kind !== 'statue' && !p.ultra && !p.movingId && !p.starter && p.cell) this.complement(this.content, s, {type: 'buyBuilding', kind: p.kind, habitatType: p.habitatType, ...p.cell},
       `Acheter et placer : ${name} (grille fine ${p.cell.x}, ${p.cell.y})`, `${name} construit.`,
       value => this.finishPurchase('building', p.movingId ?? String(value)));
     this.button(this.content, 'Annuler · aucun coût', () => this.cancelPurchase(), null, true);
@@ -1210,8 +1212,11 @@ export class GameUI {
         const from=buildingSize(b),to=habitatFootprint(targetLevel),room=upgradeFootprintReason(s,id,targetLevel);
         const description=`Niveau de l’habitat ${level} → ${targetLevel} : places ${stats.capacity} → ${next.capacity} · stockage ${stats.cap} → ${next.cap} pattes · emprise ${from.width} × ${from.depth} → ${to.width} × ${to.depth} cases, vers la droite et vers le bas. Occupants, emplacement et stock actuel conservés.`;
         const card=this.card('Amélioration de l’habitat',description);card.dataset.upgradeHabitat=id;
-        const inHearts=next.currency==='hearts';
-        const action=inHearts ?
+        const inHearts=next.currency==='hearts',ultra=!!b.habitat!.ultra,candies=ULTRA_SNOW.candies[targetLevel];
+        const action=ultra ?
+          this.button(card,`Améliorer · ${candyAmount(candies)}`,()=>this.confirm('Améliorer cet habitat ?',`${description} Paiement : ${candyAmount(candies)}.`,()=>this.execute(command,'Habitat amélioré.')),
+            access.locked?null:room?REFUSALS[room]:!christmasActive()?REFUSALS.EVENT_OVER:candiesOf(s)<candies?REFUSALS.NOT_ENOUGH_CANDIES:null,true) :
+          inHearts ?
           this.button(card,`Améliorer · ${heartAmount(next.cost)}`,()=>{
             // Re-read at confirmation: a stale view or a changed balance never leads to a payment.
             this.controller.refresh();const current=this.controller.getSnapshot().state;if(!current)return;
@@ -1223,7 +1228,7 @@ export class GameUI {
           this.button(card,`Améliorer · ${next.cost} pattes`,()=>this.confirm('Améliorer cet habitat ?',`${description} Paiement : ${next.cost} pattes.`,()=>this.execute(command,'Habitat amélioré.')),access.locked?null:room?REFUSALS[room]:moneyReason(s,next.cost),true);
         if(inHearts)action.classList.add('heart-spend');
         mountLevelLock(card,action).update(access);
-        if(access.accessible&&!inHearts&&!room)this.complement(card,s,command,`Améliorer : ${description}`,'Habitat amélioré.');
+        if(access.accessible&&!inHearts&&!ultra&&!room)this.complement(card,s,command,`Améliorer : ${description}`,'Habitat amélioré.');
         this.content.append(card);
       } else this.content.append(node('p', 'Niveau maximal atteint.', 'badge'));
       const removalReason = removeHabitatReason(s, id);
@@ -1576,15 +1581,14 @@ export class GameUI {
       this.button(card, `Adopter · ${candyAmount(CHRISTMAS_RABBIT_CANDY_PRICE)}`, () => { this.rabbitDestination = null; this.open({kind: 'buyRabbit', species: id, candies: true}); }, reason ? REFUSALS[reason] : null);
       add(card);
     }
-    // The Ultra neige habitat (owner, 5 November 2026): a level 3 snow habitat becomes an icy palace; it stays after Christmas.
+    // The Ultra neige habitat (owner, 6 November 2026): a snow enclosure of its own, bought at level 1 and grown to level 3 in
+    // sucres d'orge (its card's « Améliorer » button); it stays after Christmas.
     add(node('h3', 'Enclos Ultra neige'));
-    add(node('p', `Transforme un enclos neige de niveau 3 en palais de glace, pour ${candyAmount(ULTRA_SNOW.candies)}. Il le reste après Noël, avec les mêmes places.`, 'small'));
-    const snowy = s.buildings.filter(b => b.kind === 'enclosure' && b.habitat?.type === 'neige' && b.habitat.level === 3);
-    if (!snowy.length) add(node('p', 'Il te faut d’abord un enclos neige de niveau 3.', 'reason'));
-    for (const b of snowy) {
-      const card = this.card(this.enclosureName(s, b.id), b.habitat!.ultra ? 'Déjà en Ultra neige' : 'Enclos neige · niveau 3'); card.dataset.ultraSnow = b.id;
-      this.button(card, `Transformer · ${candyAmount(ULTRA_SNOW.candies)}`, () => this.execute({type: 'buyUltraSnow', enclosureId: b.id}, 'Ton enclos est devenu un palais de glace !'),
-        b.habitat!.ultra ? 'Déjà transformé.' : candiesOf(s) < ULTRA_SNOW.candies ? REFUSALS.NOT_ENOUGH_CANDIES : null);
+    add(node('p', `Un enclos tout en glace pour tes lapins de neige. Il s’achète au niveau 1 pour ${candyAmount(ULTRA_SNOW.candies[1])}, puis s’améliore en sucres d’orge : niveau 2 pour ${candyAmount(ULTRA_SNOW.candies[2])}, niveau 3 (le palais de glace) pour ${candyAmount(ULTRA_SNOW.candies[3])}. Il reste à toi après Noël.`, 'small'));
+    {
+      const stats = habitatLevel('neige', 1), card = this.card('Enclos Ultra neige', `${HABITATS.neige.accepted} · ${stats.capacity} places · stocke ${stats.cap} pattes`); card.dataset.ultraSnow = '';
+      const reason = buildingReason(s, 'enclosure', true, 'neige') ?? (candiesOf(s) < ULTRA_SNOW.candies[1] ? REFUSALS.NOT_ENOUGH_CANDIES : null);
+      this.button(card, `Placer · ${candyAmount(ULTRA_SNOW.candies[1])}`, () => this.beginPlacement('enclosure', undefined, 'neige', false, true), reason);
       add(card);
     }
     add(node('h3', 'Décorations'));
