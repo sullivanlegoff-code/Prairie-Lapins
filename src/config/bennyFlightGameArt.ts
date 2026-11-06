@@ -40,7 +40,10 @@ export const DEBRIS_ART = {
 export const BENNY_FLAPPY = {
   url: import.meta.env.BASE_URL + 'assets/benny-envol/benny-vol.webp',
   frames: flappy.frames, width: flappy.frame.width, height: flappy.frame.height,
-  quickBeat: 34, calmBeat: 95,
+  // One wing frame lasts this long (ms): after a touch, then in between; wingGlide is how fast the wings change pace.
+  quickBeat: 58, calmBeat: 95, wingGlide: 120,
+  // Her tilt (degrees, nose up / nose down, for her speed) and how softly her tilt and her height follow the rules (time constants, ms).
+  tiltUp: 15, tiltDown: 26, tiltPerSpeed: 22, tiltGlide: 130, heightGlide: 42,
 } as const;
 /** Window event of a full-screen activity opening (`detail` true) or closing: the island's Phaser loop sleeps meanwhile. */
 export const FULLSCREEN_ACTIVITY_EVENT = 'prairie-fullscreen-activity';

@@ -22,8 +22,6 @@
 .benny-flight-column img[data-part="bottom"] { bottom: 0; object-position: top; }
 /* Benny's flapping strip (8 frames side by side), placed by transform from the stage's top left corner. */
 .benny-flight-benny { position: absolute; z-index: 3; left: 0; top: 0; height: min(19cqh, 17cqw); aspect-ratio: 310 / 248; background: 0 0 / 800% 100% no-repeat; pointer-events: none; will-change: transform; }
-.benny-flight-benny.flap { animation: benny-flight-flap .22s ease-out; }
-@keyframes benny-flight-flap { 40% { scale: 1.06 .92; } }
 .benny-flight-pop { position: absolute; z-index: 4; left: 50%; top: 22%; margin: 0; transform: translateX(-50%); font-size: 2rem; font-weight: 900; opacity: 0; color: #fff; -webkit-text-stroke: 1.4px #2b4a6b; paint-order: stroke fill; pointer-events: none; white-space: nowrap; }
 .benny-flight-pop[data-kind="record"] { color: #ffe066; font-size: 2.5rem; }
 .benny-flight-pop.shown { animation: benny-flight-pop .6s ease-out; }
