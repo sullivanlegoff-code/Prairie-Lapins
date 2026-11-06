@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import {LEGENDARY_EFFECTS as FX, LEGENDARY_PARTS, type EffectArt, type LegendaryShow} from '../config/legendaryArt';
+import {LEGENDARY_EFFECTS as FX, legendaryPartsForArt, type EffectArt, type LegendaryShow} from '../config/legendaryArt';
 import type {RabbitArt} from '../config/rabbitArt';
 import type {Point} from '../ui/gestures';
 import {motionZone, startSurf, type RabbitMotion} from './rabbitMotion';
@@ -36,7 +36,7 @@ export class LegendaryView {
   private shaken = false;
 
   constructor(private scene: Phaser.Scene, readonly id: string, readonly species: LegendaryShow, private host: LegendaryHost, readonly clock: LegendaryClock) {
-    const {art, body, sprite, object} = host, parts = LEGENDARY_PARTS[species];
+    const {art, body, sprite, object} = host, parts = legendaryPartsForArt(species, art);
     this.scale = art.worldWidth / art.width;
     let h = 0; for (const c of id) h = (h * 31 + c.charCodeAt(0)) % 1000; this.phase = h / 100;
     // The body is the approved picture without its part; the part, behind it, turns about its hidden root.
@@ -66,6 +66,8 @@ export class LegendaryView {
 
   tap(): void { this.clock.tap(); }
   play(act: LegendaryAct): void { this.clock.play(act); }
+  /** From the sheet's show button: true when the show starts. */
+  request(act: LegendaryAct): boolean { return !!this.clock.request(act); }
 
   update(frame: LegendaryFrame): void {
     const {time, dt, active, reduced, asleep} = frame, motion = this.host.motion; this.reduced = reduced;
@@ -107,7 +109,7 @@ export class LegendaryView {
       this.add(this.back, FX.puddle, w * (act === 'dive' ? 1.15 : .8));
       if (act === 'dive') {
         // The fin alone circles in the puddle, turning about its root at the water line.
-        const {part, pivot} = LEGENDARY_PARTS.requin, fin = this.scene.add.image(0, 0, part.texture).setOrigin(pivot.x / this.host.art.width, pivot.y / this.host.art.height);
+        const {part, pivot} = legendaryPartsForArt('requin', this.host.art), fin = this.scene.add.image(0, 0, part.texture).setOrigin(pivot.x / this.host.art.width, pivot.y / this.host.art.height);
         this.back.add(fin); this.pieces.push(fin);
       }
       this.add(this.front, FX.splash[0], w * .95, [.5, 1]);
@@ -133,7 +135,7 @@ export class LegendaryView {
 
   private animate({act, elapsed: ms, duration}: ActState): void {
     const u = ms / duration, w = this.host.art.worldWidth, p = this.pieces, f = this.facing;
-    const mouth = LEGENDARY_PARTS.dragon.mouth!.point, nose = this.point(mouth.x - 6, mouth.y - 14), lips = this.point(mouth.x, mouth.y);
+    const mouth = legendaryPartsForArt('dragon', this.host.art).mouth!.point, nose = this.point(mouth.x - 6, mouth.y - 14), lips = this.point(mouth.x, mouth.y);
     if (act === 'tap') {
       const open = ms > 90 && ms < duration - 300; this.mouthOpen = open;
       this.lean = -f * .07 * envelope(u, .1, .25);
@@ -232,7 +234,7 @@ export class LegendaryView {
   /** The club tail strikes at `SLAM.impact`: the ground cracks, a ring of dust spreads, stones fly and the meadow shakes a little. */
   private slam(ms: number, w: number, f: 1 | -1): void {
     const [crack, ring, ...rest] = this.pieces, puffs = rest.slice(0, 3), stones = rest.slice(3), t = ms - SLAM.impact;
-    const strike = LEGENDARY_PARTS.ankylosaure.strike!, x = f * this.point(strike.x, strike.y).x;
+    const strike = legendaryPartsForArt('ankylosaure', this.host.art).strike!, x = f * this.point(strike.x, strike.y).x;
     if (t < 0) { for (const piece of this.pieces) piece.setAlpha(0); return; }
     if (!this.shaken) { this.shaken = true; if (!this.reduced) this.scene.cameras.main.shake(220, .004); }
     this.lift = t < 260 ? Math.sin(t / 260 * Math.PI) * 3 : 0;

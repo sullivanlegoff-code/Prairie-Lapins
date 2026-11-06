@@ -139,6 +139,8 @@ dialog .card {
 #game-panel .rabbit-nickname { position: relative; padding-left: 15px; }
 #game-panel .rabbit-nickname-name { color: #3b4228; }
 #game-panel .rabbit-nickname .small { font-weight: 700; }
+/* The owner's description of the species, on the rabbit's own sheet only. */
+#game-panel .rabbit-story { margin: 6px 4px 10px; font-style: italic; line-height: 1.35; color: #4a4630; unicode-bidi: plaintext; }
 #game-panel .rabbit-overview > .portrait.large {
   background: radial-gradient(ellipse at center, #d9dfb9 20%, #ece8c2 62%, transparent 64%);
   filter: drop-shadow(0 4px 3px #6b52231a);
@@ -316,3 +318,20 @@ dialog :is(.badge, .timer, .reason) {
 #game-panel .mission-day-card[data-mission-status="ready"] { outline: 3px solid #9bbf6a; outline-offset: -4px; }
 #game-panel .mission-day-card[data-mission-status="claimed"] { opacity: .75; }
 #game-panel .mission-bonus { background: linear-gradient(#f4f8e2, #e6f0c7); }
+/* Caressing a rabbit in its sheet (owner, 4 November 2026): rub the portrait; the sheet does not scroll under the finger. */
+.portrait.pettable { position: relative; touch-action: pan-y; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: grab; }
+.portrait[data-pet-figure] { container-type: size; overflow: visible; }
+.pet-figure { position: relative; display: block; aspect-ratio: var(--ratio); width: min(calc(100cqw - 8px), calc((100cqh - 8px) * var(--ratio))); }
+.portrait .pet-figure > img[data-rabbit-art] { display: block; width: 100%; height: 100%; padding: 0; }
+.pet-eyelid { position: absolute; height: auto; max-width: none; padding: 0; pointer-events: none; }
+.portrait[data-petting="wiggle"] > :is(img[data-rabbit-art], .pet-figure, .ultimate-figure) { animation: pet-wiggle .45s ease-in-out 3; transform-origin: 50% 92%; }
+.pet-hearts { position: absolute; inset: 0; pointer-events: none; overflow: visible; z-index: 2; }
+.pet-hearts .heart-icon { position: absolute; left: calc(18% + var(--i) * 14%); bottom: 38%; width: 20px; height: 20px; opacity: 0; animation: pet-heart-rise 1.25s ease-out calc(var(--i) * 90ms) both; }
+.pet-hearts[data-reduced] .heart-icon { bottom: 62%; animation: pet-heart-fade 1.25s ease-out both; }
+@keyframes pet-wiggle { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-4deg); } 75% { transform: rotate(4deg); } }
+@keyframes pet-heart-rise { 0% { opacity: 0; transform: translateY(0) scale(.6); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-72px) scale(1.05); } }
+@keyframes pet-heart-fade { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .portrait[data-petting] > :is(img[data-rabbit-art], .pet-figure, .ultimate-figure) { animation: none; }
+  .pet-hearts .heart-icon { bottom: 62%; animation: pet-heart-fade 1.25s ease-out both; }
+}

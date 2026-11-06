@@ -48,7 +48,7 @@ describe('species catalogue and acquisition', () => {
     expect(SPECIES_IDS).toHaveLength(EXPECTED_IDS.length); expect(SHOP_SPECIES).toHaveLength(5); expect(RECIPE_SPECIES).toHaveLength(EXPECTED_RECIPE_IDS.length);
     expect(new Set(SPECIES_IDS.flatMap(id => SPECIES[id].types))).toEqual(new Set(['paille', 'neige', 'feu', 'metal', 'vol', 'arc-en-ciel']));
     // The rainbow type is exclusive to Benny, the one Mythic (owner, 1 November 2026).
-    expect(SPECIES_IDS.filter(id => SPECIES[id].types.includes('arc-en-ciel'))).toEqual(['benny']); expect(SPECIES.benny.types).toEqual(['arc-en-ciel']);
+    expect(SPECIES_IDS.filter(id => SPECIES[id].types.includes('arc-en-ciel'))).toEqual(['arkoko', 'benny']); expect(SPECIES.benny.types).toEqual(['arc-en-ciel']);
     expect(SHOP_SPECIES.map(id=>SPECIES[id].price)).toEqual([80,80,180,350,600]);
   });
   it.each(['feu', 'belier-gris', 'volant'] as const)('purchases %s for 80 with immediate enclosure welcome and discovery', species => {
@@ -63,7 +63,7 @@ describe('species catalogue and acquisition', () => {
     expect(act(s, {type: 'buyRabbit', species, enclosureId: 'building-1'}, 0)).toEqual({ok: false, reason: 'INVALID_CHOICE', state: s});
   });
   it('keeps affection, income, building capacities, costs and established growth times', () => {
-    expect(BALANCE).toMatchObject({minAffection: 1, maxAffection: 20, enclosureCapacity: 3, enclosureCap: BALANCE.enclosureCap, breedingCost: 0});
+    expect(BALANCE).toMatchObject({minAffection: 1, maxAffection: 50, enclosureCapacity: 3, enclosureCap: BALANCE.enclosureCap, breedingCost: 0});
     expect([rabbitIncome(1), rabbitIncome(20)]).toEqual([10, 29]);
     for (const id of SHOP_SPECIES) expect(growthDuration(id)).toBe(5 * MINUTE);
   });
@@ -162,7 +162,7 @@ describe('extended guarantee and persisted rare births', () => {
     expect(welcomed.rabbits[2]).toMatchObject({id: birth.id, species: rare, affection: 1});
   });
   it('does not advance or consume a guarantee when rare recipes are excluded by affection', () => {
-    let s = couple('feu', 'neige', 4, 3); s.discovered.push('wat-wat', 'glassofeu');s.pityFailures = 7;
+    let s = couple('feu', 'neige', 4, 3); s.discovered.push('wat-wat', 'glassofeu', 'bouyoyo');s.pityFailures = 7;
     s = run(s, breed);
     expect(s.pityFailures).toBe(7); expect(s.buildings.find(b => b.breeding)!.breeding!.birth.guaranteed).toBe(false);
     expect(pendingDiscoveries(s)).toEqual([]);
@@ -209,7 +209,7 @@ describe('catalogue, notebook, visuals and compatibility', () => {
     expect(recipe.pairs).toEqual([{parents: ['rabbit-2', 'rabbit-3'], feeding: ['rabbit-2'], busy: false, blocked:true, probability: '0 %', guaranteed: false, certain: false, possible: false}]);
     s.rabbits[0].affection = 4; recipe = recipeBook(s, 0).find(r => r.species === 'glassofeu')!;
     expect(recipe.pairs[0]).toMatchObject({probability: shareLabel(30, 30 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length), guaranteed: false, possible: true});
-    s.discovered.push('wat-wat');s.pityFailures = 7; recipe = recipeBook(s, 0).find(r => r.species === 'glassofeu')!;
+    s.discovered.push('wat-wat', 'bouyoyo');s.pityFailures = 7; recipe = recipeBook(s, 0).find(r => r.species === 'glassofeu')!;
     expect(recipe.pairs[0]).toMatchObject({probability: '100 %', guaranteed: true, certain: true});
     const busy = run(s, breed);
     expect(recipeBook(busy, 0).find(r => r.species === 'glassofeu')!.pairs[0]).toMatchObject({busy: true, possible: false});
@@ -227,7 +227,7 @@ describe('catalogue, notebook, visuals and compatibility', () => {
     const pens = complete.buildings.filter(b => b.kind === 'enclosure');
     for (const pen of pens) pen.habitat!.level = 3;
     // Level-3 enclosures hold seven: add valid ones, on free cells, until the whole catalogue fits one rabbit per species.
-    for (const [x, y] of [18, 22, 26, 30, 34, 38].flatMap(x => [28, 32, 16, 12].map(y => [x, y] as const))) {
+    for (const [x, y] of [16, 21, 26, 31, 36, 41].flatMap(x => [28, 32, 16, 12, 36, 40, 8, 4].map(y => [x, y] as const))) {
       if (pens.length * 7 >= SPECIES_IDS.length) break;
       const home = emptyBuilding(`building-${complete.nextId++}`, 'enclosure', x, y); home.habitat!.level = 3; complete.buildings.push(home);
       try { encodeGame(complete); pens.push(home); } catch { complete.buildings.pop(); complete.nextId--; }

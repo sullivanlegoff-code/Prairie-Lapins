@@ -20,9 +20,10 @@ describe('fine building footprints v7',()=>{
  });
  it('requires every fine square to be acquired, including both sides of a parcel boundary',()=>{
   let s=rich();expect(buildingPlacementReason(s,30,21)).toBe('INVALID_CELL');
-  s=run(s,{type:'expand',parcelId:'east',expectedCost:600});s=run(s,{type:'buyBuilding',kind:'farm',x:30,y:21});
+  // Debris (5 November 2026) fall at random on a new parcel; this test is about acquired land only, so they are cleared away.
+  s=run(s,{type:'expand',parcelId:'east',expectedCost:600});s.debris=[];s=run(s,{type:'buyBuilding',kind:'farm',x:30,y:21});
   expect(s.buildings.at(-1)).toMatchObject({x:30,y:21});expect(buildingPlacementReason(s,19,14)).toBe('INVALID_CELL');
-  s=run(s,{type:'expand',parcelId:'north',expectedCost:1800});expect(buildingPlacementReason(s,19,14)).toBeNull();
+  s=run(s,{type:'expand',parcelId:'north',expectedCost:2000});s.debris=[];expect(buildingPlacementReason(s,19,14)).toBeNull();
   expect(buildingPlacementReason(s,46,21)).toBe('INVALID_CELL');expect(buildingPlacementReason(s,19,-1)).toBe('INVALID_CELL');
  });
  it('allows edge contact and excludes only the moving building, including its old overlap',()=>{
@@ -30,7 +31,7 @@ describe('fine building footprints v7',()=>{
   const farm=s.buildings.find(b=>b.kind==='farm')!;
   expect(buildingPlacementReason(s,18,21,farm.id)).toBeNull();expect(buildingPlacementReason(s,19,20,farm.id)).toBe('CELL_OCCUPIED');
   expect(buildingPlacementReason(s,18,20)).toBe('CELL_OCCUPIED');expect(buildingPlacementReason(s,18,20,'absent')).toBe('NOT_FOUND');
-  expect(overlaps(buildingFootprint({x:18,y:20}),buildingFootprint({x:22,y:20}))).toBe(false);
+  expect(overlaps(buildingFootprint({kind:'farm',x:18,y:20}),buildingFootprint({kind:'farm',x:22,y:20}))).toBe(false);
  });
  it('blocks reciprocal building/decoration overlaps and allows their edge contact',()=>{
   let s=decoration(rich(),22,22),id=s.decorations[0].id;expect(buildingPlacementReason(s,19,22)).toBe('DECORATION_BLOCKS_BUILDING');

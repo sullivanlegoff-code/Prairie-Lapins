@@ -100,8 +100,11 @@ const EARS_TURN = [key('ears-1', 110), key('ears-2', 650), key('ears-1', 110)], 
 /** Milliseconds between two face moves (each drawn in its range), and the share of double blinks and double twitches. */
 export const FACE_GAP = {blink: [3000, 6000], nose: [1300, 3600], ears: [7000, 14000]} as const;
 export const DOUBLE = {blink: .25, nose: .35} as const;
-/** Milliseconds between two acts at rest: the first comes a little sooner, to be seen. */
-export const ACT_GAP = {first: [5000, 10000], next: [8000, 15000]} as const;
+/**
+ * Milliseconds between two acts: the first comes a little sooner, to be seen. Since 4 November 2026 (owner: seen often without a
+ * touch) the time runs during her walks too, and the act starts at her next rest; formerly 5-10 s then 8-15 s, counted at rest only.
+ */
+export const ACT_GAP = {first: [3000, 6000], next: [5000, 9000]} as const;
 /** A touch replays at most this often. */
 export const TAP_COOLDOWN_MS = 900;
 /** Hop series: one hop, two or three, and their chances. */
@@ -178,9 +181,9 @@ export class BennyClock {
     }
     // Falling asleep: down into the flop, unless motion is reduced (then only the eyes close).
     if (asleep && !reduced) { this.face = null; return this.start(bennyPlan('nap')); }
-    if (active && idle && !reduced) {
+    if (active && !reduced) {
       this.next -= ms;
-      if (this.next <= 0) return this.start(this.draw());
+      if (idle && this.next <= 0) return this.start(this.draw());
     }
     if (active && !asleep) this.stepFace(ms, reduced);
     return null;

@@ -21,7 +21,7 @@ describe('active species and habitat level gates',()=>{
  it('new start has no historical exemptions and required early purchases remain possible',()=>{
   const s=createCentreStartGame(0);expect(s.levelAccessTransition).toEqual({version:1,rights:[]});
   expect(s.discovered).toEqual(['paille']);expect(s.pattes).toBe(350);
-  let next=run(s,{type:'buyBuilding',kind:'enclosure',habitatType:'neige',x:18,y:24});const enclosureId=next.buildings.at(-1)!.id;
+  let next=run(s,{type:'buyBuilding',kind:'enclosure',habitatType:'neige',x:17,y:24});const enclosureId=next.buildings.at(-1)!.id;
   next=run(next,{type:'buyRabbit',species:'neige',enclosureId});next=run(next,{type:'claimMainMission',id:'welcome-snow'});
   expect(next.pattes).toBe(120);next=run(next,{type:'buyBuilding',kind:'farm',x:22,y:20});expect(next.pattes).toBe(60);
   expect(stateLevelAccess(next,{family:'habitatPurchase',id:'paille'}).accessible).toBe(true);
@@ -37,7 +37,7 @@ describe('active species and habitat level gates',()=>{
   const hearts={...s,pattes:0,hearts:100};const accepted=run(hearts,{type:'payWithHearts',action:command,maxHearts:Math.ceil(SPECIES[species].price!/25),maxPattes:0});expect(accepted.hearts).toBe(100-Math.ceil(SPECIES[species].price!/25));expect(accepted.progression.totalXp-s.progression.totalXp).toBe(70);
  });
  it.each([['universal',6],['feu',5],['vol',9]] as const)('habitat %s revalidates its level on final purchase', (habitatType,level)=>{
-  const command={type:'buyBuilding',kind:'enclosure',habitatType,x:18,y:24} as const;
+  const command={type:'buyBuilding',kind:'enclosure',habitatType,x:17,y:24} as const;
   expect(act(at(level-1),command,0)).toMatchObject({ok:false,reason:'LEVEL_REQUIRED'});
   const s=at(level);expect(run(s,command).buildings.at(-1)!.habitat?.type).toBe(habitatType);
   const poor={...at(level-1),pattes:0,hearts:100};expect(quoteComplement(poor,command,0)).toEqual({ok:false,reason:'LEVEL_REQUIRED'});
@@ -53,7 +53,7 @@ describe('active species and habitat level gates',()=>{
  it('keeps v9, captures only provable historical purchases and discovered breeding rights once',()=>{
   const s=at(1);delete s.levelAccessTransition;s.purchaseUnlocks=['feu'];s.discovered=['paille','neige','magicien'];s.missions.events.welcome=1;
   const migrated=reload(s);const rights=structuredClone(migrated.levelAccessTransition);
-  expect(migrated.version).toBe(22);expect(stateLevelAccess(migrated,{family:'species',id:'feu',action:'purchase'}).accessible).toBe(true);expect(stateLevelAccess(migrated,{family:'species',id:'volant',action:'purchase'}).locked).toBe(true);
+  expect(migrated.version).toBe(27);expect(stateLevelAccess(migrated,{family:'species',id:'feu',action:'purchase'}).accessible).toBe(true);expect(stateLevelAccess(migrated,{family:'species',id:'volant',action:'purchase'}).locked).toBe(true);
   expect(stateLevelAccess(migrated,{family:'species',id:'belier-gris',action:'purchase'}).accessible).toBe(true);
   expect(stateLevelAccess(migrated,{family:'habitatPurchase',id:'vol'}).accessible).toBe(true);
   expect(stateLevelAccess(migrated,{family:'habitatPurchase',id:'universal'}).locked).toBe(false); // three discoveries already proved the old milestone
@@ -66,7 +66,7 @@ describe('active species and habitat level gates',()=>{
  it('a lone old universal grants no universal purchase; a second old universal does',()=>{
   const s=at(1);delete s.levelAccessTransition;delete s.purchaseUnlocks;
   expect(stateLevelAccess(reload(s),{family:'habitatPurchase',id:'universal'}).locked).toBe(true);
-  s.buildings.push(emptyBuilding('building-6','enclosure',18,24));s.nextId=7;
+  s.buildings.push(emptyBuilding('building-6','enclosure',17,24));s.nextId=7;
   expect(stateLevelAccess(reload(s),{family:'habitatPurchase',id:'universal'}).accessible).toBe(true);
  });
  it('old pending result remains welcomeable without fabricating a new historical right',()=>{
@@ -93,13 +93,13 @@ describe('active species and habitat level gates',()=>{
 describe('pre-launch result filtering and unchanged fixed probabilities',()=>{
  it('preserves Paille × Neige and filters the guarantee by level',()=>{
   expect(odds(1,'paille','neige')).toEqual({frisket:50,icy:50});
-  const s=at(1);s.pityFailures=7;s.discovered=['paille','neige','feu','wat-wat','glassofeu'];let pool=breedingPool(s,'feu','neige',4,4);expect(pool.guaranteed).toBe(false);expect(pool.weights).toEqual({'wat-wat':30,glassofeu:30});
+  const s=at(1);s.pityFailures=7;s.discovered=['paille','neige','feu','wat-wat','glassofeu','bouyoyo'];let pool=breedingPool(s,'feu','neige',4,4);expect(pool.guaranteed).toBe(false);expect(pool.weights).toEqual({'wat-wat':30,glassofeu:30,bouyoyo:30});
   s.discovered=s.discovered.filter(id=>id!=='glassofeu');s.progression={totalXp:cumulativeLevelXp(6),rewardedThroughLevel:6};pool=breedingPool(s,'feu','neige',4,4);expect(pool.guaranteed).toBe(true);expect(pool.weights).toEqual({'glassofeu':1});
  });
  it('reserves only currently admissible specials and normalizes ordinary results',()=>{
-  expect(odds(10,'paille','belier-gris')).toEqual({roukette:50,boudinet:50});expect(odds(11,'paille','belier-gris')).toEqual({roukette:1200*100/3300,boudinet:1200*100/3300,magicien:450*100/3300,calinou:450*100/3300}); // Both parents at affection 10: the epic chance ×1.5.
-  expect(odds(13,'dadi','phoenix').dragon).toBeUndefined();expect(odds(13,'dadi','phoenix').dadi).toBe(450*100/8100);
-  const pair=odds(14,'dadi','phoenix');expect(pair.dragon).toBe(15);for(const id of ['dadi','dinono'])expect(pair[id]).toBeCloseTo(85*450/8100,10);expect(Object.keys(pair)).toHaveLength(9);for(const id of ['amethyste','phoenix','bouee','egiiipte','piment','bretonette'])expect(pair[id]).toBeCloseTo(85*1200/8100,10);
+  expect(odds(10,'paille','belier-gris')).toEqual({roukette:100/3,boudinet:100/3,champignon:100/3});expect(odds(11,'paille','belier-gris')).toEqual({roukette:1200*100/4290,boudinet:1200*100/4290,champignon:1200*100/4290,magicien:345*100/4290,calinou:345*100/4290}); // Both parents at affection 10: the epic chance ×1.15.
+  expect(odds(13,'dadi','phoenix').dragon).toBeUndefined();expect(odds(13,'dadi','phoenix').dadi).toBe(345*100/9435);
+  const pair=odds(14,'dadi','phoenix');expect(pair.dragon).toBe(11.5);for(const id of ['dadi','dinono','rennes'])expect(pair[id]).toBeCloseTo(88.5*345/9435,10);expect(Object.keys(pair)).toHaveLength(11);for(const id of ['amethyste','phoenix','bouee','egiiipte','piment','bretonette','vantablack'])expect(pair[id]).toBeCloseTo(88.5*1200/9435,10);
   for(let level=1;level<=14;level++)for(const a of SPECIES_IDS)for(const b of SPECIES_IDS){const result=odds(level,a,b),total=Object.values(result).reduce((n,w)=>n+w,0);if(total)expect(total).toBeCloseTo(100,10);}
  },20000);
  it('launch XP cannot alter this birth, even if it crosses a threshold',()=>{
@@ -111,7 +111,7 @@ describe('pre-launch result filtering and unchanged fixed probabilities',()=>{
  });
  it('with no ordinary fallback, refuses before RNG, XP or work, even for a historically discovered special',()=>{
   // Every union of the catalogue now holds a level-1 result: withdraw the Paille-Metal ones here to recreate a pool without ordinary fallback.
-  const saved=(['paille','roukette','boudinet'] as const).map(id=>[id,SPECIES[id].acquisition] as const);
+  const saved=(['paille','roukette','boudinet','champignon'] as const).map(id=>[id,SPECIES[id].acquisition] as const);
   for(const [id] of saved)SPECIES[id].acquisition=[{kind:'shop',price:80}];
   try {
   const s=at(1);s.discovered.push('magicien');s.rabbits=[{id:'rabbit-2',species:'magicien',affection:6,enclosureId:'building-1'},{id:'rabbit-6',species:'magicien',affection:6,enclosureId:'building-1'}];s.nextId=7;delete s.levelAccessTransition;establishHistoricalLevelRights(s);

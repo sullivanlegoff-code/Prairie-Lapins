@@ -11,7 +11,11 @@ export type SpecializedHabitat = Exclude<HabitatType, 'universal'>;
 /** Central progression configuration; each family has an explicit activation switch. */
 export interface ProgressionConfig {
   readonly activeLevelFamilies: Readonly<Record<LevelAccessFamily, boolean>>;
-  readonly curve: {readonly initialLevel: 1; readonly maximumLevel: number; readonly base: number; readonly exponent: number};
+  /**
+   * `slowdown` (owner, 5 November 2026): from level `fromLevel`, each level costs `step` × (level − fromLevel) more, so the
+   * levels after 20 take longer while every level up to 20 (and the XP already won) keeps its cost.
+   */
+  readonly curve: {readonly initialLevel: 1; readonly maximumLevel: number; readonly base: number; readonly exponent: number; readonly slowdown?: {readonly fromLevel: number; readonly step: number}};
   readonly rewards: {readonly heartsPerLevel: number};
   readonly xp: {
     readonly commonPurchase: number;
@@ -38,7 +42,7 @@ export interface ProgressionConfig {
 }
 export const PROGRESSION: ProgressionConfig = {
   activeLevelFamilies: {species: true, habitatPurchase: true, habitatUpgrade: true, decoration: true, extension: true},
-  curve: {initialLevel: 1, maximumLevel: 30, base: 90, exponent: 0.85},
+  curve: {initialLevel: 1, maximumLevel: 30, base: 90, exponent: 0.85, slowdown: {fromLevel: 20, step: 0.25}},
   rewards: {heartsPerLevel: 1},
   xp: {
     commonPurchase: 10, discovery: {common: 60, rare: 250},

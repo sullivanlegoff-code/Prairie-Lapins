@@ -62,7 +62,7 @@ describe('manual breeding v8',()=>{
   expect(act(later,breed,HOUR)).toMatchObject({ok:false,reason:'BUSY'});
  });
  it.each(['same','different'] as const)('reserves places and keeps the income of parents from %s habitats, even after the deadline',mode=>{
-  let s=prepared();s.pattes=1000;s=run(s,{type:'buyBuilding',kind:'enclosure',habitatType:'neige',x:18,y:24});const second=s.buildings.at(-1)!;
+  let s=prepared();s.pattes=1000;s=run(s,{type:'buyBuilding',kind:'enclosure',habitatType:'neige',x:17,y:24});const second=s.buildings.at(-1)!;
   if(mode==='different')s=run(s,{type:'moveRabbit',id:'rabbit-3',enclosureId:second.id});
   s=run(s,{type:'buyRabbit',species:'paille',enclosureId:'building-1'});if(mode==='different')s=run(s,{type:'buyRabbit',species:'belier-gris',enclosureId:'building-1'});
   const homes=s.rabbits.map(r=>r.enclosureId);s=run(s,breed);s=advance(s,HOUR);
@@ -110,7 +110,7 @@ describe('manual breeding v8',()=>{
   expect([s.pattes,s.hearts]).toEqual([0,0]);
  });
  it.each(['moved','entrusted'] as const)('preserves an old waiting result whose parent was %s and never recreates an individual',mode=>{
-  let old=advance(run(prepared(),breed),20*MINUTE);old.buildings.push(emptyBuilding(`building-${old.nextId++}`,'enclosure',18,24));
+  let old=advance(run(prepared(),breed),20*MINUTE);old.buildings.push(emptyBuilding(`building-${old.nextId++}`,'enclosure',17,24));
   if(mode==='moved')old.rabbits[0].enclosureId=old.buildings.at(-1)!.id;else old.rabbits=old.rabbits.filter(r=>r.id!=='rabbit-2');
   const savedRabbits=structuredClone(old.rabbits),birth=nest(old).breeding!.birth;let s=decode(encodeGame(old));expect(s.rabbits).toEqual(savedRabbits);expect(nest(s).breeding!.birth).toEqual(birth);
   s=transfer(s);expect(s.rabbits).toEqual(savedRabbits);expect(babyOf(nursery(s))!.birth).toEqual(birth);expect(s.rabbits).toHaveLength(savedRabbits.length);

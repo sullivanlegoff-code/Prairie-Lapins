@@ -1,5 +1,5 @@
 /** Pure laboratory transactions. This module is reachable only through the existing dev import. */
-import {BALANCE, HOUR, ORDERS, SPECIES_IDS, growthDuration, type BuildingKind, type SpeciesId} from '../config/balance';
+import {BALANCE, HOUR, ORDERS, SPECIES_IDS, orderFarmLevel, growthDuration, type BuildingKind, type SpeciesId} from '../config/balance';
 import {HABITAT_TYPES, habitatLevel, type HabitatLevel, type HabitatType} from '../config/habitats';
 import {DECORATION_IDS, MAX_DECORATIONS} from '../config/decorations';
 import {PARCEL_IDS, purchasableParcels} from '../config/land';
@@ -12,8 +12,11 @@ import {buildingFootprint, footprintPlacementReason} from '../simulation/placeme
 import {habitatEntryReason} from '../simulation/habitats';
 import {bennyAllows} from '../simulation/benny';
 import {cumulativeLevelXp} from '../simulation/progression';
-import {updateMissions, emptyDailyProgress} from '../simulation/missions';
+import {updateMissions, emptyDailyProgress, pickDailyMissions} from '../simulation/missions';
 import {establishHistoricalLevelRights} from '../simulation/levelRights';
+import {classicLookReason} from '../simulation/forest';
+import {EVOLUTION_CHALLENGES, evolutionChallengeTarget} from '../config/evolutionChallenges';
+import {canEvolve} from '../config/evolvedArt';
 
 export type LabAction =
   | {type: 'resource'; resource: 'pattes' | 'grass' | 'hearts'; value: number; add?: boolean}
@@ -23,10 +26,12 @@ export type LabAction =
   | {type: 'allRabbits'; affection: number}
   | {type: 'recipes'; known: boolean}
   | {type: 'affection'; rabbitId?: string; value: number}
-  | {type: 'build'; kind: BuildingKind; habitatType?: HabitatType}
+  | {type: 'completeEvolutionChallenges'; rabbitId: string}
+  | {type: 'evolveEligibleRabbits'}
+  | {type: 'build'; kind: BuildingKind | 'jumpIsland'; habitatType?: HabitatType}
   | {type: 'buildingLevel'; id: string; level: number}
   | {type: 'nursery'; capacity: NurseryCapacity}
-  | {type: 'extensions' | 'mainMissions' | 'dailyMissions' | 'dailyCycle' | 'coco' | 'heartGift' | 'market' | 'decorations'};
+  | {type: 'extensions' | 'mainMissions' | 'dailyMissions' | 'dailyCycle' | 'coco' | 'heartGift' | 'decorations'};
 
 function integer(value: number, min: number, max: number): number {
   if (!Number.isSafeInteger(value) || value < min || value > max) throw new Error(`Choisis un entier entre ${min} et ${max}.`);
@@ -49,11 +54,11 @@ function build(s: GameState, kind: BuildingKind, habitatType: HabitatType = 'uni
   if (max !== null && s.buildings.filter(b => b.kind === kind).length >= max) throw new Error('Tu possèdes déjà le maximum de ce bâtiment.');
   if (!HABITAT_TYPES.includes(habitatType)) throw new Error('Habitat inconnu.');
   const b = emptyBuilding(`building-${s.nextId++}`, kind, 0, 0, habitatType);
-  if (b.habitat) { b.habitat.level = level; b.footprintTier = level; }
+  if (b.habitat) { b.habitat.level = level; b.footprintTier = level; delete b.formerFootprint; }
   place(s, b); s.buildings.push(b); return b;
 }
 function addRabbit(s: GameState, species: SpeciesId, affection: number): void {
-  integer(affection, 1, 20);
+  integer(affection, 1, BALANCE.maxAffection);
   if (!(SPECIES_IDS as readonly string[]).includes(species)) throw new Error('Espèce inconnue.');
   if (!bennyAllows(s, species)) throw new Error('Benny est unique : il y en a déjà une dans cette partie.');
   const home = s.buildings.find(b => b.kind === 'enclosure' && !habitatEntryReason(s, b, species)) ?? build(s, 'enclosure', 'universal', 3);
@@ -71,6 +76,8 @@ function finishTimers(s: GameState): void {
   for (const trip of s.travel?.trips ?? []) if (trip.endsAt > now) {
     trip.startedAt -= trip.endsAt - now; trip.endsAt = now;
   }
+  // The same for the care under way at the salon: its exact duration is part of the save's check.
+  if (s.care && s.care.endsAt > now) { s.care.startedAt -= s.care.endsAt - now; s.care.endsAt = now; }
   s.nextHeartGiftAt = Math.min(now, s.nextHeartGiftAt);
   if (s.missions.daily.nextAt !== undefined) s.missions.daily.nextAt = Math.min(now, s.missions.daily.nextAt);
 }
@@ -87,24 +94,38 @@ export function labAction(state: GameState, action: LabAction): GameState {
     case 'allRabbits': for (const species of SPECIES_IDS) addRabbit(s, species, action.affection); break;
     case 'recipes': s.recipeBook = [...(action.known ? RECIPE_BOOK_SPECIES : GIFTED_RECIPES)]; break;
     case 'affection': {
-      integer(action.value, 1, 20);
+      integer(action.value, 1, BALANCE.maxAffection);
       const rabbits = s.rabbits.filter(r => !action.rabbitId || r.id === action.rabbitId);
       if (!rabbits.length) throw new Error('Choisis un lapin présent.');
-      for (const r of rabbits) r.affection = action.value;
+      for (const r of rabbits) { r.affection = action.value; if (action.value < BALANCE.maxAffection) delete r.crownHidden; if (classicLookReason(s, r)) delete r.classicLook; } // Only an ultimate rabbit takes off its crown; the old drawing needs affection 30.
       // A ready birth may reference parents below breeding affection; an active one may not.
       if (action.value < BALANCE.breedingAffection) for (const b of s.buildings) {
         if (b.breeding?.parents.some(id => rabbits.some(r => r.id === id))) b.breeding.endsAt = Math.min(b.breeding.endsAt, s.lastSimulatedAt);
       }
       break;
     }
-    case 'build': build(s, action.kind, action.habitatType); break;
+    case 'completeEvolutionChallenges': {
+      const rabbit = s.rabbits.find(r => r.id === action.rabbitId);
+      if (!rabbit) throw new Error('Choisis un lapin présent.');
+      const challenges = EVOLUTION_CHALLENGES[rabbit.species];
+      if (!challenges?.length) throw new Error('Ce lapin n’a pas de défis d’évolution.');
+      rabbit.evolution = {...rabbit.evolution, challenges: Object.fromEntries([...new Set(challenges)].map(challenge => [challenge, evolutionChallengeTarget(rabbit.species, challenge)]))};
+      break;
+    }
+    case 'evolveEligibleRabbits':
+      for (const rabbit of s.rabbits) if (canEvolve(rabbit)) {
+        rabbit.evolution = {...rabbit.evolution, done: true}; delete rabbit.classicLook;
+        if (!s.evolvedSpecies?.includes(rabbit.species)) s.evolvedSpecies = [...(s.evolvedSpecies ?? []), rabbit.species];
+      }
+      break;
+    case 'build': if (action.kind === 'jumpIsland') s.jumpIsland = true; else build(s, action.kind, action.habitatType); break;
     case 'buildingLevel': {
       const b = s.buildings.find(b => b.id === action.id);
       if (!b || !['farm', 'agency', 'enclosure'].includes(b.kind)) throw new Error('Choisis une ferme, une agence ou un habitat.');
-      const level = integer(action.level, 1, b.kind === 'farm' ? 2 : 3);
+      const level = integer(action.level, 1, 3);
       if (b.kind === 'farm') {
-        if (level === 1 && b.order && ORDERS[b.order.recipe].level >= ORDERS.fanes.level) throw new Error('Récolte cette culture avant de revenir au niveau 1.');
-        if (level === 1) delete b.farmLevel; else b.farmLevel = 2;
+        if (b.order && level < orderFarmLevel(b.order.recipe)) throw new Error(`Récolte cette culture avant de revenir au niveau ${level}.`);
+        if (level === 1) delete b.farmLevel; else b.farmLevel = level as 2 | 3;
       } else if (b.kind === 'agency') {
         if ((s.travel?.trips.length ?? 0) > level) throw new Error('Accueille les voyageurs avant de réduire la capacité de l’agence.');
         if (level === 1) delete b.agencyLevel; else b.agencyLevel = level as 2 | 3;
@@ -112,7 +133,7 @@ export function labAction(state: GameState, action: LabAction): GameState {
         const target = level as HabitatLevel;
         if (s.rabbits.filter(r => r.enclosureId === b.id).length > habitatLevel(b.habitat!.type, target).capacity) throw new Error('Déplace des lapins avant de réduire cet habitat.');
         if (b.incomeUnits > habitatLevel(b.habitat!.type, target).cap * HOUR) throw new Error('Récolte les pièces de cet habitat avant de réduire son stockage.');
-        b.habitat!.level = target; b.footprintTier = target;
+        b.habitat!.level = target; b.footprintTier = target; delete b.formerFootprint;
         if (footprintPlacementReason(s, buildingFootprint(b), {buildingId: b.id})) place(s, b);
       }
       break;
@@ -133,11 +154,11 @@ export function labAction(state: GameState, action: LabAction): GameState {
     case 'dailyCycle': {
       const d = s.missions.daily;
       d.cycleIndex++; d.referenceAt = s.lastSimulatedAt - d.cycleIndex * MISSION_CYCLE_DURATION;
-      d.progress = emptyDailyProgress(); d.claimed = []; d.bonusClaimed = false; delete d.nextAt; break;
+      d.progress = emptyDailyProgress(); d.claimed = []; d.bonusClaimed = false; delete d.nextAt; delete d.petted;
+      d.picked = pickDailyMissions(s, d.cycleIndex); break;
     }
     case 'coco': s.travel = {...s.travel, welcomed: false, trips: s.travel?.trips ?? []}; break;
     case 'heartGift': s.nextHeartGiftAt = s.lastSimulatedAt; break;
-    case 'market': delete s.market; break;
     case 'decorations':
       if (s.decorations.length + DECORATION_IDS.length > MAX_DECORATIONS) throw new Error('Libère de la place dans ton inventaire de décorations.');
       for (const catalogId of DECORATION_IDS) s.decorations.push({id: `decoration-${s.nextId++}`, catalogId, location: {kind: 'inventory'}, placementXpProcessed: false});
@@ -155,13 +176,13 @@ export function completeLaboratory(now: number): GameState {
   for (const habitatType of HABITAT_TYPES) { const b = build(s, 'enclosure', habitatType, 3); b.incomeUnits = HOUR * 100; }
   // Keep exactly one individual per species, including the starting Paille.
   for (const species of SPECIES_IDS) if (!s.rabbits.some(r => r.species === species)) addRabbit(s, species, 2);
-  s.rabbits.forEach((r, i) => { r.affection = [2, 10, 15, 20][i % 4]; });
+  s.rabbits.forEach((r, i) => { r.affection = [2, 10, 15, 20, 30, 50][i % 6]; });
   for (let i = 0; i < 2; i++) {
     const b = build(s, 'farm'); b.farmLevel = 2;
     const recipe = i === 0 ? 'foin' : 'banane'; const crop = ORDERS[recipe];
     b.order = {recipe, startedAt: i === 0 ? now - crop.duration : now, endsAt: i === 0 ? now : now + crop.duration, grass: crop.grass, duration: crop.duration};
   }
-  build(s, 'kitchen'); build(s, 'statue'); build(s, 'agency').agencyLevel = 3;
+  build(s, 'kitchen'); build(s, 'statue'); build(s, 'statue'); build(s, 'agency').agencyLevel = 3; build(s, 'salon'); build(s, 'forest'); s.jumpIsland = true;
   s.travel = {welcomed: true, trips: s.rabbits.slice(2, 4).map((r, i) => ({rabbitId: r.id, destination: i === 0 ? 'Paris' : 'Vannes', startedAt: i === 0 ? now - 3 * HOUR : now, endsAt: i === 0 ? now : now + 3 * HOUR, hearts: 1, grass: 75}))};
   const birth = () => ({id: `birth-${s.nextId++}`, species: 'paille' as const, guaranteed: false, reservedDiscovery: false});
   s.buildings.find(b => b.kind === 'nursery')!.nursery = {capacity: 4, babies: [{slot: 0, birth: birth(), startedAt: now - growthDuration('paille'), readyAt: now}]};

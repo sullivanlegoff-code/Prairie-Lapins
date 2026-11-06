@@ -48,15 +48,17 @@ describe('Benny, the one Mythic', () => {
     expect(SPECIES.benny).toMatchObject({name: 'Benny', rarity: 'mythic', types: ['arc-en-ciel'], price: null, progression: {unlockLevel: 14},
       recipe: {parentRarity: 'legendary', minAffection: 10, probability: 10}});
     expect(SPECIES.benny.acquisition).toEqual([{kind: 'recipe', parentRarity: 'legendary', minAffection: 10, probability: 10}]);
-    expect(SPECIES_IDS.filter(id => SPECIES[id].types.includes('arc-en-ciel'))).toEqual(['benny']);
+    expect(SPECIES_IDS.filter(id => SPECIES[id].types.includes('arc-en-ciel'))).toEqual(['arkoko', 'benny']); // Arkoko is rainbow too (owner, 5 November 2026).
     expect(growthDuration('benny')).toBe(24 * HOUR); expect(PROGRESSION.xp.birth.mythic).toBe(360);
     for (const type of HABITAT_TYPES) expect(habitatAccepts(emptyBuilding('building-9', 'enclosure', 0, 0, type), 'benny'), type).toBe(true);
     expect(BENNY_STAND_INS).toEqual(['paille', 'neige', 'feu', 'belier-gris', 'volant']);
   });
-  it.each(PAIRS)('is born of %s × %s (either order): 15 percent at affection 10, 20 percent at affection 15', (a, b) => {
+  // Same affection steps as Epics and Legendaries since 2 November 2026: ×1.15 at 10, ×1.3 at 15, ×1.5 at 30, ×2 at 50 (formerly ×1.5 at 10, ×2 at 15).
+  it.each(PAIRS)('is born of %s × %s (either order): 11.5 percent at affection 10, 13 at 15, 15 at 30, 20 at 50', (a, b) => {
     const s = game(a, b, 10);
     for (const [x, y] of [[a, b], [b, a]] as const) {
-      expect(chance(s, x, y, 10)).toBeCloseTo(15, 12); expect(chance(s, x, y, 15)).toBeCloseTo(20, 12); expect(chance(s, x, y, 20)).toBeCloseTo(20, 12);
+      expect(chance(s, x, y, 10)).toBeCloseTo(11.5, 12); expect(chance(s, x, y, 15)).toBeCloseTo(13, 12); expect(chance(s, x, y, 20)).toBeCloseTo(13, 12);
+      expect(chance(s, x, y, 30)).toBeCloseTo(15, 12); expect(chance(s, x, y, 50)).toBeCloseTo(20, 12);
     }
   });
   it('is never born below affection 10 on either parent, nor with a parent that is not Legendary', () => {
@@ -186,10 +188,10 @@ describe('Benny\'s sky mode', () => {
 describe('save format v22', () => {
   it('migrates a v21 save without loss and keeps Benny\'s state across a round trip', () => {
     const s = game('benny', 'paille', 2), raw = JSON.parse(encodeGame(s));
-    expect(raw.version).toBe(22); raw.version = 21;
-    // A v21 save loads exactly as the same game written in v22.
+    expect(raw.version).toBe(27); raw.version = 21;
+    // A v21 save loads exactly as the same game written in the current format (v23).
     const migrated = decodeGame(JSON.stringify(raw)); expect(migrated).toEqual(decodeGame(encodeGame(s)));
-    expect(migrated.ok && migrated.state.version).toBe(22); expect(migrated.ok && migrated.state.benny).toBeUndefined();
+    expect(migrated.ok && migrated.state.version).toBe(27); expect(migrated.ok && migrated.state.benny).toBeUndefined();
     expect(migrated.ok && migrated.state.rabbits.map(r => r.species)).toEqual(['benny', 'paille']);
     // Benny's saved state survives a round trip.
     const used = run(s, {type: 'bennySky', inSky: true}), back = decodeGame(encodeGame(used)); expect(back.ok && back.state.benny).toEqual({powerReadyAt: 0, inSky: true});

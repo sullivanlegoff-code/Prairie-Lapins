@@ -36,7 +36,7 @@ function setup(withKitchen = true, rabbits?: 'duplicates' | 'different' | 'empty
   if (withKitchen) {
     const initial=createGame(0);
     if (rabbits === 'statue') initial.rabbits[0].affection=14;
-    if (rabbits === 'cap') initial.rabbits[0].affection=20;
+    if (rabbits === 'cap') initial.rabbits[0].affection=50;
     if (rabbits === 'empty') initial.rabbits=[];
     if (rabbits === 'duplicates') initial.rabbits.push({...initial.rabbits[0],id:'rabbit-101'});
     if (rabbits === 'different') {
@@ -89,13 +89,13 @@ describe('main-game Cuisine activity', () => {
     expect(feedback).not.toContain('+1 Affection');
     expect(k.controller.getSnapshot().state!.rabbits[0].affection).toBe(14);
   });
-  it('shows cap feedback without a fake daily +1 and still records the consumed opportunity',()=>{
+  it('shows cap feedback without a fake daily +1 and leaves the day’s affection for another rabbit',()=>{
     const k=setup(true,'cap');k.open();const a=k.activity();
     a.root.querySelector<HTMLButtonElement>('#recipe-avocado-toast')!.click();finishToast(a.engine);a.refresh();
     const feedback=a.root.querySelector('.cuisine-reward-feedback')!.textContent;
     expect(feedback).toContain('Affection maximale');expect(feedback).not.toContain('+1 Affection');
     const state=k.controller.getSnapshot().state!;
-    expect(state.rabbits[0].affection).toBe(20);expect(state.cuisine.affectionCycles[state.rabbits[0].id]).toBe(0);
+    expect(state.rabbits[0].affection).toBe(50);expect(state.cuisine.affectionCycles[state.rabbits[0].id]).toBeUndefined();
   });
   it.each(['avocado-toast','chicken'] as const)('saves exactly one base reward for %s and shows feedback only after the canonical command',recipe=>{
     const k=setup(),before=structuredClone(k.controller.getSnapshot().state!);

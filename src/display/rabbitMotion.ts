@@ -27,6 +27,30 @@ const CONFIG = () => VISUAL.rabbit.roam;
 /** Four half-periods of |sin(14 t)|: the hop after feeding ends exactly on the ground. */
 export const FED_MS = 4 * Math.PI / 14 * 1000;
 export const KISS_MS = 3000;
+/**
+ * The kiss (owner, 4 November 2026), 3 s with the eyes closed: the noses rub first (until KISS_RUB_END of the kiss), then three
+ * little kisses, the head tilting each time (peaks at KISS_PECKS; src/display/rabbitLifeViews.ts pops a heart at each).
+ */
+export const KISS_RUB_END = .4;
+export const KISS_PECKS = [.52, .7, .88] as const;
+const PECK_HALF = .07;
+/** The kiss pose at `u` (0 to 1 of KISS_MS), facing right; upright and still at both ends. */
+export function kissPose(u: number): {lift: number; squashX: number; squashY: number; rotation: number; nuzzle: number} {
+  if (u <= 0 || u >= 1) return {lift: 0, squashX: 1, squashY: 1, rotation: 0, nuzzle: 0};
+  const lean = Math.min(1, u / .12, (1 - u) / .1); // Leaning in, then back.
+  if (u < KISS_RUB_END) {
+    // Rubbing noses: small up-and-down strokes, the bodies held close.
+    const rub = Math.sin(2 * Math.PI * 4 * u / KISS_RUB_END);
+    return {lift: (.25 + .25 * rub) * lean, squashX: 1, squashY: 1, rotation: (.04 + .02 * rub) * lean, nuzzle: (2 + .4 * Math.abs(rub)) * lean};
+  }
+  // The pecks: a quick push of the head with a tilt, the middle one deeper.
+  let peck = 0, tilt = 0;
+  KISS_PECKS.forEach((at, index) => {
+    const d = Math.abs(u - at);
+    if (d < PECK_HALF) { const k = Math.cos(Math.PI / 2 * d / PECK_HALF) ** 2; if (k > peck) { peck = k; tilt = index === 1 ? .16 : .11; } }
+  });
+  return {lift: .5 * peck * lean, squashX: 1 + .02 * peck, squashY: 1 - .015 * peck, rotation: (.04 + tilt * peck) * lean, nuzzle: Math.min(3, (2 + peck) * lean)};
+}
 
 function seedOf(id: string): number {
   let h = 2166136261;
@@ -44,7 +68,7 @@ const between = (m: RabbitMotion, low: number, high: number) => low + (high - lo
 const clamp = (value: number, low: number, high: number) => Math.min(high, Math.max(low, value));
 
 /** Smaller groups roam freely; crowded ones stay close to their slot. */
-const roamScale = (count: number) => count <= 3 ? 1 : count <= 5 ? .7 : .6;
+export const roamScale = (count: number) => count <= 3 ? 1 : count <= 5 ? .7 : .6;
 /** Slots of crowded groups are 34 apart at the closest: two neighbours may each give up to a few units. */
 export const minSeparation = (count: number) => count <= 3 ? 26 : count <= 5 ? 20 : 16;
 export interface Box {minX: number; maxX: number; minY: number; maxY: number}
@@ -263,12 +287,7 @@ export function rabbitPose(m: RabbitMotion): RabbitPose {
     lift = (m.mode === 'zoom' ? 2.5 : walkBob) * Math.abs(Math.sin(Math.PI * m.steps * u));
   } else if (m.mode === 'kiss') {
     const u = clamp(m.elapsed / KISS_MS, 0, 1);
-    // Three soft nose touches, held close like a cuddle, with grounded paws.
-    if (u > 0 && u < 1) {
-      const embrace = Math.sin(Math.PI * u), contact = Math.sin(Math.PI * 3 * u) ** 2;
-      return {lift: contact * .5, squashX: 1 + contact * .025, squashY: 1 - contact * .02,
-        facing: m.facing, rotation: m.facing * (.07 * embrace + .025 * contact), nuzzle: 1.2 * embrace + 1.8 * contact};
-    }
+    if (u > 0 && u < 1) { const k = kissPose(u); return {...k, facing: m.facing, rotation: m.facing * k.rotation}; }
   } else if (m.mode === 'fed') {
     lift = Math.abs(Math.sin(m.elapsed / 1000 * 14)) * motion.hop;
   }

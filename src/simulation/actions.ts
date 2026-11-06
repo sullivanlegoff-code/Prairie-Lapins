@@ -1,6 +1,6 @@
 import {foodXp, firstDecorationPlacementXp, missionClaimXp} from './progression';
 import {rememberBirth, rememberTrip} from './cozy';
-import {claimDiscovery,advanceCozyEvent,translatedDecorations} from './cozyActivities';
+import {translatedDecorations} from './cozyActivities';
 import {PROGRESSION} from '../config/progression';
 import {CUISINE_REWARDS, CUISINE_TIP, CUISINE_FULL_REWARDS_PER_CYCLE} from '../config/balance';
 import {applyProgressionGain} from './progressionRewards';
@@ -8,25 +8,35 @@ import {eligibleMainMissionIds} from './missions';
 import {stateLevelAccess} from './levelRights';
 import {jobKey, initiationAvailable, settleInitiation} from './initiation';
 import {buildingPlacementReason, buildingFootprint, decorationsInFootprint, upgradeFootprintReason} from './placement';
+import {parcelDebris} from './debris';
+import {bennyFlightReason, bennyFlightReward, hasBenny} from './bennyFlight';
 import {normalizeRabbitName} from './rabbitNames';
 import {acquiredCell, PARCEL_IDS, extensionPrice, purchasableParcels} from '../config/land';
 import {HABITAT_TYPES, habitatLevel, habitatPrice, type HabitatLevel} from '../config/habitats';
 import {habitatEntryReason, removeHabitatReason} from './habitats';
 import {DAILY_MISSIONS, MAIN_MISSIONS, DAILY_BONUS, mainMissionRewards, type Reward} from '../config/missions';
-import {marketPrice, marketUnlocked} from './market';
-import {affectionCap, playerLevel} from './affection';
+import {affectionCap, capReason, isUltimate, nextAffectionStatue, playerLevel, rabbitAffectionCap, waitsForEvolution} from './affection';
 import {agencyBuilding, travelling} from './travel';
+import {atSalon, giftAffectionReason, giftCycle, giftReason, picnicQuote, salonBuilding} from './care';
+import {classicLookReason} from './forest';
+import {recordDailyStreak, recordEvolutionChallenge, recordJumpRopeScore} from './evolution';
+import {canEvolve, hasEvolvedArt} from '../config/evolvedArt';
+import {evolutionChallengesComplete, type EvolutionChallenge} from '../config/evolutionChallenges';
+import {jumpIslandReason, jumpRopeReward, jumpRopeTeamReason} from './jumpRope';
 import {dailyBonusReady, dailyClaimable, dailyCycleStart, dailyMissionsOf, recordMissionAction} from './missions';
-import {AFFECTION_STATUE, farmLimit, farmDuration, BALANCE, HEARTS, HOUR, TRAVEL, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
+import {farmLimit, farmDuration, FARM_UPGRADES, orderFarmLevel, BALANCE, HEARTS, HOUR, TRAVEL, SALON, FOREST, JUMP_ROPE, EPIC_ISLET, BENNY_FLIGHT, ULTRA_SNOW, CARE_KINDS, carePrice, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
 import {emptyBuilding} from '../state/initial';
+import {epicIsletReason} from './epicIslet';
 import {babyInNursery, findNurseryBaby, firstFreeNurserySlot, nurseryBuilding, nurseryUnlockQuote, settleNestTransfers} from './nursery';
 import type {ActionResult, Building, Command, GameState, PattesCommand, Rabbit, Refusal, ProgressionGain} from '../state/types';
-import {chooseBirth, breedingPool, nestForParent, recipeMatches} from './breeding';
+import {chooseBirth, breedingPool, nestForParent, recipeMatches, seasonAllows} from './breeding';
 import {recipePrice, recipePurchaseReason} from './recipes';
 import {BENNY, BENNY_POWER_RECHARGE, bennyAllows, bennyPowerReason, bennyStandIn, waitingNurseryBabies} from './benny';
 import {advance, validTime, drawIncomeRoll} from './time';
 import {complementCost, quoteAcceleration} from './hearts';
-import {DECORATIONS, ownedDecorationResalePrice} from '../config/decorations';
+import {DECORATIONS, isChristmasDecoration, ownedDecorationResalePrice} from '../config/decorations';
+import {CHRISTMAS_BONUS_CANDIES, CHRISTMAS_CHALLENGES, CHRISTMAS_RABBIT_CANDY_PRICE, SKY_GIFTS, type ChristmasEventName} from '../config/christmasEvent';
+import {candiesOf, christmasBonusReady, christmasBonusClaimed, christmasChallengesOf, christmasClaimable, christmasClaimed, christmasDecorationReason, christmasEventActive, christmasRabbitReason, creditCandies, recordChristmasAction, skyGiftsRabbitReason, skyGiftsReward, snowmanQuote, startChristmasCycle} from './christmas';
 import {catalogDecorationPlacementReason, decorationPlacementReason, decorationsInCell, purchaseDecorationReason} from './decorations';
 
 /** The only purchases a heart complement may cover. Recipes are never among them. */
@@ -81,8 +91,8 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
     const reason = habitatEntryReason(s, b, species); requireRule(!reason, reason ?? 'INVALID_CHOICE');
     return b;
   };
-  const cell = (x: number, y: number, exclude?: string) => {
-    const reason = buildingPlacementReason(s, x, y, exclude);
+  const cell = (x: number, y: number, exclude?: string, kind?: BuildingKind) => {
+    const reason = buildingPlacementReason(s, x, y, exclude, kind);
     requireRule(!reason, reason ?? 'INVALID_CELL');
   };
   const busy = (rabbitId: string) => !!nestForParent(s, rabbitId);
@@ -93,6 +103,10 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
   let value: string | number | undefined;
   let progressionGain: ProgressionGain | undefined;
   let cuisineReward: import('../state/types').CuisineReward | undefined;
+  let jumpRopeResult: import('./jumpRope').JumpRopeReward | undefined;
+  let missionAmount: number | undefined;
+  /** The Christmas challenges' own events of this action (the snowman, a rewarded mini-game), when it has some. */
+  let christmasCounts: [ChristmasEventName, number][] | undefined;
   const gainXp = (amount: number) => {
     const result = applyProgressionGain(s, amount);
     requireRule(result.ok, result.ok ? 'INVALID_CHOICE' : result.reason);
@@ -104,13 +118,13 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
     return SPECIES[species].rarity === 'common' ? PROGRESSION.xp.discovery.common : SPECIES[species].rarity === 'rare' ? PROGRESSION.xp.discovery.rare : 0;
   };
   const decorationXp = (catalogId: import('../config/decorations').DecorationId) => {
+    if (isChristmasDecoration(catalogId)) return; // The Christmas market's decorations give no XP.
     s.rewardedDecorationModels ??= [...new Set(state.decorations.filter(d => d.placementXpProcessed !== false).map(d => d.catalogId))];
     if (s.rewardedDecorationModels.includes(catalogId)) return;
     s.rewardedDecorationModels.push(catalogId); gainXp(firstDecorationPlacementXp(catalogId));
   };
   try {
     switch (command.type) {
-      case 'claimDiscovery': requireRule(claimDiscovery(s,time,command.id),'STALE_ACTION'); break;
       case 'translateDecorations': {
         const moved=translatedDecorations(s,command.ids,command.dx,command.dy);requireRule(!moved.reason,moved.reason ?? 'INVALID_CHOICE');s.decorations=moved.decorations;break;
       }
@@ -118,15 +132,17 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(Object.hasOwn(CUISINE_REWARDS, command.recipeId), 'INVALID_CHOICE');
         requireRule(s.buildings.some(b => b.kind === 'kitchen'), 'MISSING_BUILDING'); // The Kitchen is where Cuisine is played.
         const cooks = [command.rabbitId, ...(command.tasterId === undefined ? [] : [command.tasterId])].map(id => s.rabbits.find(r => r.id === id));
-        for (const cook of cooks) { requireRule(cook, 'NOT_FOUND'); requireRule(!travelling(s, cook.id), 'TRAVELING'); }
+        for (const cook of cooks) { requireRule(cook, 'NOT_FOUND'); requireRule(!travelling(s, cook.id), 'TRAVELING'); requireRule(!atSalon(s, cook.id), 'AT_SALON'); }
         requireRule(cooks.length === 1 || cooks[0] !== cooks[1], 'SAME_PARENT');
         const cycle = s.missions.daily.cycleIndex;
-        const eligibleCook = (r: Rabbit) => !Object.hasOwn(s.cuisine.affectionCycles, r.id) || s.cuisine.affectionCycles[r.id] !== cycle;
+        // One affection a day for the whole Cuisine (owner, 5 November 2026), whichever rabbit cooks: changing the cook gives no second one.
+        const affectionUsedToday = Object.values(s.cuisine.affectionCycles).includes(cycle);
+        const eligibleCook = (_r: Rabbit) => !affectionUsedToday;
         // Two cooks: the affection goes to only one of them, drawn by the game's random source (the player cannot choose).
         // The draw is among the cooks still able to receive it today, so cooking together never pays less than cooking alone.
         let rabbit = cooks[0]!;
         if (cooks.length === 2) {
-          const open = cooks.filter(r => eligibleCook(r!) && r!.affection < affectionCap(s)), pool = open.length ? open : cooks;
+          const open = cooks.filter(r => eligibleCook(r!) && r!.affection < rabbitAffectionCap(s, r!)), pool = open.length ? open : cooks;
           const roll = rng(); requireRule(Number.isFinite(roll) && roll >= 0 && roll < 1, 'INVALID_RANDOM');
           rabbit = pool[Math.floor(roll * pool.length)]!;
         }
@@ -136,15 +152,16 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         credit('pattes', paid.pattes); credit('grass', paid.grass);
         if (fullReward) s.cuisine.fullRuns = {cycle, used: used + 1};
         const eligible = eligibleCook(rabbit);
-        const affectionGranted = eligible && rabbit.affection < affectionCap(s);
-        if (eligible) {
-          s.cuisine.affectionCycles = {...s.cuisine.affectionCycles, [rabbit.id]: cycle};
-          if (affectionGranted) rabbit.affection++;
-        }
+        const affectionGranted = eligible && rabbit.affection < rabbitAffectionCap(s, rabbit);
+        // The day's affection is used only when it is given: a rabbit at its cap does not spend it for the others.
+        if (affectionGranted) { s.cuisine.affectionCycles = {...s.cuisine.affectionCycles, [rabbit.id]: cycle}; rabbit.affection++; }
         // One Heart per canonical cycle for Cuisine as a whole, whichever rabbit cooked.
         const heartGranted = s.cuisine.heartCycle !== cycle;
         if (heartGranted) { credit('hearts', 1); s.cuisine.heartCycle = cycle; }
-        cuisineReward = {pattes: paid.pattes, grass: paid.grass, fullReward, affectionGranted, affectionAtCap: rabbit.affection === BALANCE.maxAffection, affectionStatueRequired: !affectionGranted && rabbit.affection >= AFFECTION_STATUE.cap && affectionCap(s) === AFFECTION_STATUE.cap, heartGranted, affectionRabbitId: rabbit.id};
+        cuisineReward = {pattes: paid.pattes, grass: paid.grass, fullReward, affectionGranted, affectionAtCap: rabbit.affection === BALANCE.maxAffection, affectionStatueRequired: !affectionGranted && rabbit.affection >= rabbitAffectionCap(s, rabbit) && capReason(s, rabbit) !== 'EVOLUTION_REQUIRED' && affectionCap(s) < BALANCE.maxAffection, ...(!affectionGranted && waitsForEvolution(rabbit) && rabbit.affection >= rabbitAffectionCap(s, rabbit) && capReason(s, rabbit) === 'EVOLUTION_REQUIRED' ? {affectionEvolutionRequired: true} : {}), heartGranted, affectionRabbitId: rabbit.id};
+        // Distinct challenges (owner, 4 November 2026): « commis » counts only for the cook, « goûteur » only for the taster.
+        recordEvolutionChallenge(s, command.rabbitId, `commis:${command.recipeId}` as EvolutionChallenge);
+        if (command.tasterId !== undefined) recordEvolutionChallenge(s, command.tasterId, `gouteur:${command.recipeId}` as EvolutionChallenge);
         break;
       }
       case 'buyDecoration': {
@@ -161,7 +178,8 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       case 'sellDecoration': {
         const index = s.decorations.findIndex(d => d.id === command.id);
         requireRule(index >= 0, 'NOT_FOUND');
-        requireRule(s.decorations[index].paidHearts === undefined, 'INVALID_CHOICE');
+        // Heart-paid and Christmas exemplars are never resold (a Christmas one could not be bought again after the event).
+        requireRule(s.decorations[index].paidHearts === undefined && s.decorations[index].paidCandies === undefined && !isChristmasDecoration(s.decorations[index].catalogId), 'INVALID_CHOICE');
         const amount = ownedDecorationResalePrice(s.decorations[index]);
         credit('pattes', amount);
         s.decorations.splice(index, 1); value = amount; break;
@@ -202,7 +220,8 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(!s.missions.daily.bonusClaimed, 'ALREADY_CLAIMED');
         requireRule(dailyBonusReady(s), 'NOT_READY');
         for (const component of DAILY_BONUS) reward(component);
-        s.missions.daily.bonusClaimed = true; gainXp(PROGRESSION.xp.claims.dailyBonus); break;
+        s.missions.daily.bonusClaimed = true; gainXp(PROGRESSION.xp.claims.dailyBonus);
+        recordDailyStreak(s, s.missions.daily.cycleIndex); break; // A day succeeded, for the « quotidien » evolution challenge.
       }
       case 'welcomeAgency': {
         requireRule(agencyBuilding(s), 'MISSING_BUILDING');
@@ -211,7 +230,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       case 'startTrip': {
         requireRule(agencyBuilding(s), 'MISSING_BUILDING'); requireRule((s.travel?.trips.length ?? 0) < (agencyBuilding(s)!.agencyLevel ?? 1), 'BUSY');
         const rabbit = s.rabbits.find(r => r.id === command.rabbitId); requireRule(rabbit, 'NOT_FOUND');
-        requireRule(!travelling(s, rabbit.id), 'TRAVELING'); requireRule(!busy(rabbit.id), 'PARENT_BUSY');
+        requireRule(!travelling(s, rabbit.id), 'TRAVELING'); requireRule(!atSalon(s, rabbit.id), 'AT_SALON'); requireRule(!busy(rabbit.id), 'PARENT_BUSY');
         const roll = rng(); requireRule(Number.isFinite(roll) && roll >= 0 && roll < 1, 'INVALID_RANDOM');
         const {destination, hours} = drawTrip(roll); requireRule(Number.isSafeInteger(time + hours * HOUR), 'INVALID_TIME');
         s.travel = {welcomed: s.travel?.welcomed ?? false, trips: [...(s.travel?.trips ?? []), {rabbitId: rabbit.id, destination, startedAt: time, endsAt: time + hours * HOUR, hearts: tripHearts(hours), ...(agencyBuilding(s)!.agencyLevel ? {grass: hours * 25} : {})}]};
@@ -220,18 +239,122 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       case 'claimTrip': {
         const trip = s.travel?.trips.find(t => t.rabbitId === command.rabbitId); requireRule(trip && trip.endsAt <= time, 'NOT_READY');
         rememberTrip(s, trip.rabbitId, trip.destination, trip.startedAt, time);
-        credit('hearts', trip.hearts); credit('grass', trip.grass ?? 0); s.travel!.trips = s.travel!.trips.filter(t => t.rabbitId !== command.rabbitId); value = trip.hearts; break;
+        credit('hearts', trip.hearts); credit('grass', trip.grass ?? 0); s.travel!.trips = s.travel!.trips.filter(t => t.rabbitId !== command.rabbitId); recordEvolutionChallenge(s, command.rabbitId, 'voyage'); value = trip.hearts; break;
       }
-      case 'exchangeForHeart': {
-        requireRule(command.resource === 'pattes' || command.resource === 'grass', 'INVALID_CHOICE');
-        requireRule(marketUnlocked(s), 'LEVEL_REQUIRED');
-        const price = marketPrice(s, command.resource); requireRule(price !== null, 'MARKET_LIMIT');
-        requireRule(price === command.expectedCost, 'PRICE_CHANGED');
-        if (command.resource === 'pattes') { requireRule(s.pattes >= price!, 'NOT_ENOUGH_PATTES'); s.pattes -= price!; }
-        else { requireRule(s.grass >= price!, 'NOT_ENOUGH_GRASS'); s.grass -= price!; }
-        credit('hearts', 1);
-        const cycle = s.missions.daily.cycleIndex, counts = s.market?.cycle === cycle ? s.market : {cycle, pattes: 0, grass: 0};
-        counts[command.resource]++; s.market = counts; value = price!; break;
+      case 'startCare': {
+        requireRule(salonBuilding(s), 'MISSING_BUILDING'); requireRule((CARE_KINDS as string[]).includes(command.care), 'INVALID_CHOICE');
+        requireRule(!s.care, 'BUSY');
+        const rabbit = s.rabbits.find(r => r.id === command.rabbitId); requireRule(rabbit, 'NOT_FOUND');
+        requireRule(!travelling(s, rabbit.id), 'TRAVELING'); requireRule(!busy(rabbit.id), 'PARENT_BUSY');
+        // Refused before any payment when the gift could not be given: nothing is paid for nothing.
+        const gift = giftReason(s, rabbit, time); requireRule(!gift, gift ?? 'INVALID_CHOICE');
+        const endsAt = time + SALON.cares[command.care].hours * HOUR; requireRule(Number.isSafeInteger(endsAt), 'INVALID_TIME');
+        const price = carePrice(rabbit.species, command.care); pay(price);
+        const cycle = s.missions.daily.cycleIndex, heartCares = s.salonHearts?.cycle === cycle ? s.salonHearts.cares : 0;
+        const hearts = heartCares < SALON.heartCaresPerCycle ? SALON.cares[command.care].hearts : 0;
+        s.care = {rabbitId: rabbit.id, care: command.care, startedAt: time, endsAt, ...(hearts ? {hearts} : {})};
+        if (hearts) s.salonHearts = {cycle, cares: heartCares + 1};
+        s.affectionGifts = {...s.affectionGifts, [rabbit.id]: s.missions.daily.cycleIndex}; // Today's gift is reserved now.
+        value = price; break;
+      }
+      case 'claimCare': {
+        const care = s.care; requireRule(care && care.rabbitId === command.rabbitId, 'STALE_ACTION'); requireRule(care.endsAt <= time, 'NOT_READY');
+        const rabbit = s.rabbits.find(r => r.id === care.rabbitId); requireRule(rabbit, 'NOT_FOUND');
+        // The gift was checked at the start and the rabbit could not change since; the wall and the cap still hold.
+        if (!giftAffectionReason(s, rabbit)) rabbit.affection++;
+        credit('hearts', care.hearts ?? 0); delete s.care; gainXp(SALON.cares[care.care].xp); recordEvolutionChallenge(s, rabbit.id, 'soin'); value = rabbit.affection; break;
+      }
+      case 'picnic': {
+        const b = building(command.enclosureId, 'enclosure');
+        const quote = picnicQuote(s, b.id, time, playerLevel(s)); requireRule(!quote.reason, quote.reason ?? 'INVALID_CHOICE');
+        requireRule(command.expectedCost === quote.price, 'PRICE_CHANGED'); pay(quote.price);
+        const cycle = s.missions.daily.cycleIndex, gifts = {...s.affectionGifts};
+        for (const r of quote.winners) { r.affection++; gifts[r.id] = cycle; }
+        s.affectionGifts = gifts; s.picnicCycle = cycle; gainXp(quote.xp); for (const guest of quote.guests) recordEvolutionChallenge(s, guest.id, 'piquenique'); value = quote.winners.length; break;
+      }
+      case 'rewardJumpRope': {
+        requireRule(s.jumpIsland, 'MISSING_BUILDING');
+        requireRule(Number.isSafeInteger(command.score) && command.score >= 0 && command.score <= JUMP_ROPE.maxScore, 'INVALID_CHOICE');
+        requireRule(command.team && typeof command.team === 'object', 'INVALID_CHOICE');
+        const away = jumpRopeTeamReason(s, command.team); requireRule(!away, away ?? 'INVALID_CHOICE');
+        const team = {carriers: [command.team.carriers[0], command.team.carriers[1]] as [string, string], athlete: command.team.athlete};
+        const paid = jumpRopeReward(s, command.score, time, team.athlete), cycle = s.missions.daily.cycleIndex;
+        const day = s.jumpRope?.cycle === cycle ? s.jumpRope : {cycle, rewarded: 0, best: s.jumpRope?.best ?? 0};
+        credit('pattes', paid.pattes); credit('hearts', paid.hearts);
+        const heart = day.heart || paid.hearts - (paid.challenge ? JUMP_ROPE.challenge.hearts : 0) > 0, challenge = day.challenge || paid.challenge;
+        const athleteBest = {...s.jumpRope?.athleteBest, [team.athlete]: Math.max(s.jumpRope?.athleteBest?.[team.athlete] ?? 0, command.score)};
+        s.jumpRope = {cycle, rewarded: day.rewarded + (paid.rewarded ? 1 : 0), ...(heart ? {heart: true as const} : {}), ...(challenge ? {challenge: true as const} : {}), best: Math.max(s.jumpRope?.best ?? 0, command.score), team, athleteBest};
+        // The athlete's score counts for its « corde » evolution challenges (Roukette, Dadi, Dinono, the legendaries).
+        recordJumpRopeScore(s, team.athlete, command.score);
+        jumpRopeResult = paid; value = paid.pattes; break;
+      }
+      case 'buildSnowman': {
+        // Free, one a day in all, with a rabbit present; no affection, no XP. It stands there until the end of the cycle.
+        const b = building(command.enclosureId, 'enclosure');
+        const quote = snowmanQuote(s, b.id, time); requireRule(!quote.reason, quote.reason ?? 'INVALID_CHOICE');
+        const day = startChristmasCycle(s); day.snowman = {cycle: s.missions.daily.cycleIndex, enclosureId: b.id};
+        christmasCounts = [['buildSnowman', 1]]; value = b.id; break;
+      }
+      case 'rewardSkyGifts': {
+        requireRule(christmasEventActive(), 'EVENT_OVER');
+        requireRule(Number.isSafeInteger(command.caught) && command.caught >= 0 && command.caught <= SKY_GIFTS.maxCaught, 'INVALID_CHOICE');
+        const away = skyGiftsRabbitReason(s, command.rabbitId); requireRule(!away, away ?? 'INVALID_CHOICE');
+        // Pattes only, within the daily limit: no XP. A game beyond the limit pays nothing and counts for no challenge.
+        const paid = skyGiftsReward(s, command.caught, time), cycle = s.missions.daily.cycleIndex, day = startChristmasCycle(s);
+        const previous = day.skyGifts, rewarded = (previous?.cycle === cycle ? previous.rewarded : 0) + (paid.rewarded ? 1 : 0);
+        credit('pattes', paid.pattes);
+        day.skyGifts = {cycle, rewarded, best: Math.max(previous?.best ?? 0, command.caught)};
+        if (paid.rewarded) christmasCounts = [['rewardSkyGifts', 1], ['catchGifts', command.caught]];
+        value = paid.pattes; break;
+      }
+      case 'claimChristmasChallenge': {
+        requireRule(christmasEventActive(), 'EVENT_OVER');
+        requireRule(Object.hasOwn(CHRISTMAS_CHALLENGES, command.id), 'INVALID_CHOICE');
+        requireRule(command.cycleStart === dailyCycleStart(s), 'CYCLE_EXPIRED');
+        requireRule(!christmasClaimed(s).includes(command.id), 'ALREADY_CLAIMED');
+        requireRule(christmasChallengesOf(s).includes(command.id), 'INVALID_CHOICE');
+        requireRule(christmasClaimable(s, command.id), 'NOT_READY');
+        const candies = CHRISTMAS_CHALLENGES[command.id].candies;
+        requireRule(creditCandies(s, candies), 'RESOURCE_LIMIT');
+        const day = startChristmasCycle(s); day.claimed = [...(day.claimed ?? []), command.id]; value = candies; break;
+      }
+      case 'claimChristmasBonus': {
+        requireRule(christmasEventActive(), 'EVENT_OVER');
+        requireRule(command.cycleStart === dailyCycleStart(s), 'CYCLE_EXPIRED');
+        requireRule(!christmasBonusClaimed(s), 'ALREADY_CLAIMED');
+        requireRule(christmasBonusReady(s), 'NOT_READY');
+        requireRule(creditCandies(s, CHRISTMAS_BONUS_CANDIES), 'RESOURCE_LIMIT');
+        startChristmasCycle(s).bonusClaimed = true; value = CHRISTMAS_BONUS_CANDIES; break;
+      }
+      case 'buyChristmasDecoration': {
+        const reason = christmasDecorationReason(s, command.catalogId); requireRule(!reason, reason ?? 'INVALID_CHOICE');
+        if (command.location) {
+          requireRule(command.location.kind === 'outside', 'INVALID_CHOICE');
+          const placement = catalogDecorationPlacementReason(s, command.catalogId, command.location); requireRule(!placement, placement ?? 'INVALID_CHOICE');
+        }
+        const price = DECORATIONS[command.catalogId].candyPrice!;
+        requireRule(candiesOf(s) >= price, 'NOT_ENOUGH_CANDIES');
+        const day = startChristmasCycle(s); day.candies -= price; value = id('decoration');
+        // No placement XP to give: the exemplar is processed from the start.
+        s.decorations.push({id: value, catalogId: command.catalogId, paidCandies: price, location: command.location ? structuredClone(command.location) : {kind: 'inventory'}, placementXpProcessed: true});
+        break;
+      }
+      case 'buyChristmasRabbit': {
+        // The Christmas market's dear shortcut: sucres d'orge only, no XP (an Epic's discovery gives none), into a compatible habitat.
+        const reason = christmasRabbitReason(s, command.species); requireRule(!reason, reason ?? 'INVALID_CHOICE');
+        room(command.enclosureId, command.species); allocation();
+        const day = startChristmasCycle(s); day.candies -= CHRISTMAS_RABBIT_CANDY_PRICE; value = id('rabbit');
+        s.rabbits.push({id: value, species: command.species, affection: BALANCE.minAffection, enclosureId: command.enclosureId});
+        gainXp(discover(command.species)); break;
+      }
+      case 'buyEpicIslet': {
+        const reason = epicIsletReason(s); requireRule(!reason, reason ?? 'INVALID_CHOICE');
+        allocation(); value = id('building'); s.hearts -= EPIC_ISLET.hearts;
+        s.buildings.push({...emptyBuilding(value, 'nest', EPIC_ISLET.cell.x, EPIC_ISLET.cell.y), islet: true}); break;
+      }
+      case 'buyJumpIsland': {
+        const reason = jumpIslandReason(s); requireRule(!reason || reason === 'NOT_ENOUGH_PATTES', reason ?? 'INVALID_CHOICE');
+        pay(JUMP_ROPE.price); s.jumpIsland = true; break;
       }
       case 'claimHearts': {
         requireRule(time >= s.nextHeartGiftAt, 'NOT_READY');
@@ -276,13 +399,17 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         const habitatType = command.habitatType ?? 'universal';
         requireRule(HABITAT_TYPES.includes(habitatType) && (command.kind === 'enclosure' || command.habitatType === undefined), 'INVALID_CHOICE');
         requireRule(command.kind!=='enclosure' || stateLevelAccess(s,{family:'habitatPurchase',id:habitatType}).accessible,'LEVEL_REQUIRED');
-        requireRule(command.kind!=='statue' || playerLevel(s)>=AFFECTION_STATUE.level,'LEVEL_REQUIRED');
+        const statue = command.kind === 'statue' ? nextAffectionStatue(s) : null;
+        requireRule(command.kind!=='statue' || !statue || playerLevel(s)>=statue.level,'LEVEL_REQUIRED');
         requireRule(command.kind!=='agency' || playerLevel(s)>=TRAVEL.unlockLevel,'LEVEL_REQUIRED');
-        cell(command.x, command.y); allocation();
+        requireRule(command.kind!=='salon' || playerLevel(s)>=SALON.unlockLevel,'LEVEL_REQUIRED');
+        requireRule(command.kind!=='forest' || playerLevel(s)>=FOREST.unlockLevel,'LEVEL_REQUIRED');
+        requireRule(command.kind!=='perch' || hasBenny(s),'BENNY_REQUIRED');
+        cell(command.x, command.y, undefined, command.kind); allocation();
         if (command.kind === 'statue') {
           requireRule(!payment && !quoteOnly, 'INVALID_CHOICE');
-          requireRule(s.hearts >= AFFECTION_STATUE.heartPrice, 'NOT_ENOUGH_HEARTS');
-          s.hearts -= AFFECTION_STATUE.heartPrice;
+          requireRule(statue && s.hearts >= statue.heartPrice, 'NOT_ENOUGH_HEARTS');
+          s.hearts -= statue.heartPrice;
         } else pay(command.kind === 'enclosure' ? habitatPrice(habitatType) : config.price);
         value = id('building'); s.buildings.push(emptyBuilding(value, command.kind, command.x, command.y, habitatType));
         if (command.kind === 'farm') gainXp(PROGRESSION.xp.construction.farm);
@@ -291,7 +418,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       }
       case 'placeStarterBuilding': {
         requireRule(command.kind === 'nest' || command.kind === 'nursery', 'INVALID_CHOICE');
-        requireRule(!s.buildings.some(b => b.kind === command.kind), 'BUILDING_LIMIT');
+        requireRule(!s.buildings.some(b => b.kind === command.kind && !b.islet), 'BUILDING_LIMIT');
         cell(command.x, command.y); allocation(); value = id('building');
         s.buildings.push(emptyBuilding(value, command.kind, command.x, command.y)); break;
       }
@@ -302,17 +429,22 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(nest.breeding.endsAt <= time, 'NOT_READY');
         const nursery = nurseryBuilding(s), slot = firstFreeNurserySlot(nursery);
         requireRule(nursery?.nursery, 'MISSING_BUILDING'); requireRule(slot !== null, 'BUSY');
-        const birth = nest.breeding.birth, duration = growthDuration(birth.species);
+        const birth = nest.breeding.birth, parents = [...nest.breeding.parents], duration = growthDuration(birth.species);
         requireRule(Number.isSafeInteger(time + duration), 'INVALID_TIME');
         requireRule(!findNurseryBaby(s, birth.id), 'STALE_ACTION');
         // Lowest free usable cushion; babies already there never move.
         nursery.nursery.babies.push({slot, birth, startedAt: time, readyAt: time + duration});
-        nest.breeding = null; value = birth.id; break;
+        nest.breeding = null; for (const parentId of parents) recordEvolutionChallenge(s, parentId, 'parent'); value = birth.id; break;
       }
       case 'upgradeFarm': {
-        const b = building(command.id, 'farm'); requireRule(!b.farmLevel, 'STALE_ACTION');
-        requireRule(playerLevel(s) >= ORDERS.fanes.level, 'LEVEL_REQUIRED');
-        requireRule(s.hearts >= 30, 'NOT_ENOUGH_HEARTS'); s.hearts -= 30; b.farmLevel = 2; break;
+        const b = building(command.id, 'farm'), toLevel = command.toLevel ?? 2;
+        requireRule(toLevel === 2 || toLevel === 3, 'INVALID_CHOICE');
+        requireRule((b.farmLevel ?? 1) === toLevel - 1, 'STALE_ACTION');
+        const upgrade = FARM_UPGRADES[toLevel]; requireRule(playerLevel(s) >= upgrade.level, 'LEVEL_REQUIRED');
+        // Level 2 is paid in Hearts, level 3 in pattes only (no Heart complement); a refusal changes nothing.
+        if ('hearts' in upgrade) { requireRule(s.hearts >= upgrade.hearts, 'NOT_ENOUGH_HEARTS'); s.hearts -= upgrade.hearts; }
+        else { requireRule(s.pattes >= upgrade.pattes, 'NOT_ENOUGH_PATTES'); s.pattes -= upgrade.pattes; }
+        b.farmLevel = toLevel; break;
       }
       case 'upgradeAgency': {
         const b = building(command.id, 'agency'), level = b.agencyLevel ?? 1;
@@ -334,10 +466,10 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
           requireRule(!payment && !quoteOnly, 'INVALID_CHOICE');
           requireRule(s.hearts >= price.cost, 'NOT_ENOUGH_HEARTS'); s.hearts -= price.cost;
         } else pay(price.cost);
-        b.habitat.level = next; b.footprintTier = next; break;
+        b.habitat.level = next; b.footprintTier = next; delete b.formerFootprint; break;
       }
       case 'moveBuilding': {
-        const b = building(command.id); cell(command.x, command.y, b.id); b.x = command.x; b.y = command.y; break;
+        const b = building(command.id); requireRule(!b.islet, 'INVALID_CHOICE'); cell(command.x, command.y, b.id); b.x = command.x; b.y = command.y; break;
       }
       case 'buyRabbit': {
         requireRule(Object.hasOwn(SPECIES, command.species), 'INVALID_CHOICE');
@@ -356,7 +488,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       }
       case 'moveRabbit': {
         const rabbit = s.rabbits.find(r => r.id === command.id); requireRule(rabbit, 'NOT_FOUND');
-        requireRule(!travelling(s, rabbit.id), 'TRAVELING'); requireRule(!busy(rabbit.id), 'PARENT_BUSY');
+        requireRule(!travelling(s, rabbit.id), 'TRAVELING'); requireRule(!atSalon(s, rabbit.id), 'AT_SALON'); requireRule(!busy(rabbit.id), 'PARENT_BUSY');
         if (rabbit.enclosureId !== command.enclosureId) { room(command.enclosureId, rabbit.species); rabbit.enclosureId = command.enclosureId; }
         break;
       }
@@ -377,7 +509,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         const b = building(command.id, 'farm'); requireRule(!b.order, 'BUSY');
         requireRule(Object.hasOwn(ORDERS, command.recipe), 'INVALID_CHOICE');
         const recipe = ORDERS[command.recipe]; requireRule(playerLevel(s) >= recipe.level, 'LEVEL_REQUIRED');
-        requireRule(b.farmLevel === 2 || ORDERS[command.recipe].level < ORDERS.fanes.level, 'INVALID_CHOICE');
+        requireRule((b.farmLevel ?? 1) >= orderFarmLevel(command.recipe), 'INVALID_CHOICE');
         const duration = farmDuration(recipe.duration, b.farmLevel);
         requireRule(Number.isSafeInteger(time + duration), 'INVALID_TIME'); pay(recipe.cost);
         if (recipe.duration >= HOUR) s.missions.nightOrderStarted = true; // The « longer crop » main mission.
@@ -391,8 +523,8 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       }
       case 'feed': {
         const rabbit = s.rabbits.find(r => r.id === command.id); requireRule(rabbit, 'NOT_FOUND');
-        requireRule(!travelling(s, rabbit.id), 'TRAVELING'); requireRule(rabbit.affection < BALANCE.maxAffection, 'MAX_AFFECTION');
-        requireRule(rabbit.affection < affectionCap(s), 'STATUE_REQUIRED');
+        requireRule(!travelling(s, rabbit.id), 'TRAVELING'); requireRule(!atSalon(s, rabbit.id), 'AT_SALON'); requireRule(rabbit.affection < BALANCE.maxAffection, 'MAX_AFFECTION');
+        requireRule(rabbit.affection < rabbitAffectionCap(s, rabbit), capReason(s, rabbit));
         const cost = feedCost(rabbit.affection);
         requireRule(s.grass >= cost, 'NOT_ENOUGH_GRASS'); s.grass -= cost; rabbit.affection++; gainXp(foodXp(rabbit.affection)); break;
       }
@@ -400,9 +532,10 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(command.parents[0] !== command.parents[1], 'SAME_PARENT');
         const parents = command.parents.map(key => s.rabbits.find(r => r.id === key));
         requireRule(parents[0] && parents[1], 'NOT_FOUND');
-        requireRule(parents.every(r => r && !travelling(s, r.id)), 'TRAVELING');
+        requireRule(parents.every(r => r && !travelling(s, r.id)), 'TRAVELING'); requireRule(parents.every(r => r && !atSalon(s, r.id)), 'AT_SALON');
         requireRule(parents.every(r => r && r.affection >= BALANCE.breedingAffection), 'AFFECTION_TOO_LOW');
-        const nest = s.buildings.find(b => b.kind === 'nest');
+        // The island's nest, or the islet's nest of the Epics when named (owner, 5 November 2026: a second breeding at once).
+        const nest = command.nestId === undefined ? s.buildings.find(b => b.kind === 'nest' && !b.islet) : s.buildings.find(b => b.id === command.nestId && b.kind === 'nest');
         requireRule(nest && s.buildings.some(b => b.kind === 'nursery'), 'MISSING_BUILDING');
         requireRule(!nest.breeding, 'BUSY');
         requireRule(parents.every(r => r && !busy(r.id)), 'PARENT_BUSY');
@@ -415,12 +548,13 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
           const draw = rng(); requireRule(Number.isFinite(draw) && draw >= 0 && draw < 1, 'INVALID_RANDOM');
           return bennyStandIn(parent!.species, draw);
         });
-        requireRule(breedingPool(s, a, b, parents[0].affection, parents[1].affection).total > 0,'NO_BREEDING_RESULT');
+        const islet = !!nest.islet;
+        requireRule(breedingPool(s, a, b, parents[0].affection, parents[1].affection, islet).total > 0,'NO_BREEDING_RESULT');
         // Free launch: no payment or heart-complement path.
         const roll = rng(); requireRule(Number.isFinite(roll) && roll >= 0 && roll < 1, 'INVALID_RANDOM');
-        let result = chooseBirth(s, a, b, roll, parents[0].affection, parents[1].affection);
+        let result = chooseBirth(s, a, b, roll, parents[0].affection, parents[1].affection, islet);
         // Owner's planned birth (see simulation/adjustments.ts): the first pair fulfilling its recipe gets it, once; never a second Benny.
-        if (s.plannedBirth && bennyAllows(s, s.plannedBirth) && recipeMatches(s.plannedBirth, a, b)) {
+        if (s.plannedBirth && bennyAllows(s, s.plannedBirth) && seasonAllows(s.plannedBirth) && recipeMatches(s.plannedBirth, a, b)) {
           result = {...result, species: s.plannedBirth, guaranteed: false, reservedDiscovery: false};
           delete s.plannedBirth;
         }
@@ -468,14 +602,40 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(purchasableParcels(s).includes(command.parcelId), 'PARCEL_UNAVAILABLE');
         requireRule(command.expectedCost === extensionPrice(s), 'PRICE_CHANGED');
         requireRule(stateLevelAccess(s,{family:'extension',rank:s.acquiredParcels.length}).accessible,'LEVEL_REQUIRED');
-        pay(extensionPrice(s)); s.acquiredParcels.push(command.parcelId); break;
+        const parcelPrice = extensionPrice(s);
+        pay(parcelPrice); s.acquiredParcels.push(command.parcelId);
+        // A parcel bought from the Christmas update on comes cluttered (owner, 5 November 2026).
+        s.debris = [...(s.debris ?? []), ...parcelDebris(command.parcelId, parcelPrice, rng, () => id('debris'))]; break;
+      }
+      case 'clearDebris': {
+        const debris = (s.debris ?? []).find(d => d.id === command.id); requireRule(debris, 'NOT_FOUND');
+        pay(debris.price); s.debris = s.debris!.filter(d => d.id !== debris.id); value = debris.price; break;
+      }
+      case 'buyUltraSnow': {
+        // The Christmas market's Ultra neige: a level 3 snow habitat becomes an icy palace, for sucres d'orge; it stays after Christmas.
+        requireRule(christmasEventActive(), 'EVENT_OVER');
+        const b = building(command.enclosureId, 'enclosure');
+        requireRule(b.habitat?.type === 'neige' && b.habitat.level === 3 && !b.habitat.ultra, 'INVALID_CHOICE');
+        requireRule(candiesOf(s) >= ULTRA_SNOW.candies, 'NOT_ENOUGH_CANDIES');
+        const day = startChristmasCycle(s); day.candies -= ULTRA_SNOW.candies;
+        b.habitat = {...b.habitat, ultra: true}; value = b.id; break;
+      }
+      case 'rewardBennyFlight': {
+        const reason = bennyFlightReason(s); requireRule(!reason, reason ?? 'INVALID_CHOICE');
+        requireRule(Number.isSafeInteger(command.passed) && command.passed >= 0 && command.passed <= BENNY_FLIGHT.maxColumns, 'INVALID_CHOICE');
+        // Pattes within the daily limit and the first game's Heart: never XP.
+        const paid = bennyFlightReward(s, command.passed, time), cycle = giftCycle(s, time), previous = s.bennyFlight;
+        const today = previous?.cycle === cycle ? previous : null;
+        credit('pattes', paid.pattes); credit('hearts', paid.hearts);
+        s.bennyFlight = {cycle, rewarded: (today?.rewarded ?? 0) + (paid.rewarded ? 1 : 0), ...(today?.heart || paid.hearts ? {heart: true as const} : {}), best: Math.max(previous?.best ?? 0, command.passed)};
+        value = paid.pattes; break;
       }
       case 'release': {
         const rabbit = s.rabbits.find(r => r.id === command.id); requireRule(rabbit, 'NOT_FOUND');
-        requireRule(!travelling(s, rabbit.id), 'TRAVELING'); requireRule(!busy(rabbit.id), 'PARENT_BUSY');
+        requireRule(!travelling(s, rabbit.id), 'TRAVELING'); requireRule(!atSalon(s, rabbit.id), 'AT_SALON'); requireRule(!busy(rabbit.id), 'PARENT_BUSY');
         requireRule(s.rabbits.filter(r => r.species === rabbit.species).length > 1, 'LAST_OF_SPECIES');
         credit('grass', releaseGrass(rabbit.species)); s.rabbits = s.rabbits.filter(r => r.id !== rabbit.id);
-        delete s.cuisine.affectionCycles[rabbit.id];
+        delete s.cuisine.affectionCycles[rabbit.id]; if (s.affectionGifts) delete s.affectionGifts[rabbit.id];
         break;
       }
       case 'renameRabbit': {
@@ -483,6 +643,39 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         const rabbit = s.rabbits.find(r => r.id === command.id); requireRule(rabbit, 'NOT_FOUND');
         const name = normalizeRabbitName(command.name); requireRule(name !== null, 'INVALID_NAME');
         if (name) rabbit.name = name; else delete rabbit.name;
+        break;
+      }
+      case 'toggleCrown': {
+        // Free and purely cosmetic, like a name: refused for a rabbit that is not ultimate (affection 50).
+        const rabbit = s.rabbits.find(r => r.id === command.rabbitId); requireRule(rabbit, 'NOT_FOUND');
+        requireRule(isUltimate(rabbit), 'INVALID_CHOICE');
+        if (rabbit.crownHidden) delete rabbit.crownHidden; else rabbit.crownHidden = true;
+        break;
+      }
+      case 'toggleClassicLook': {
+        // Free and purely cosmetic, both ways, as often as wanted: only with the Forêt de Brocéliande, on an already evolved rabbit.
+        const rabbit = s.rabbits.find(r => r.id === command.rabbitId); requireRule(rabbit, 'NOT_FOUND');
+        const reason = classicLookReason(s, rabbit); requireRule(!reason, reason ?? 'INVALID_CHOICE');
+        if (rabbit.classicLook) delete rabbit.classicLook; else rabbit.classicLook = true;
+        break;
+      }
+      case 'petRabbit': {
+        // Just for fun (owner, 4 November 2026): no affection, XP or resource. Only the first caress of each rabbit in the cycle
+        // counts for the « Des caresses » daily mission; the same rabbit caressed again counts once.
+        const rabbit = s.rabbits.find(r => r.id === command.rabbitId); requireRule(rabbit, 'NOT_FOUND');
+        const daily = s.missions.daily, petted = daily.petted ?? [];
+        missionAmount = 0;
+        if (!petted.includes(rabbit.id) && petted.length < DAILY_MISSIONS['pet-rabbits'].target) { daily.petted = [...petted, rabbit.id]; missionAmount = 1; }
+        break;
+      }
+      case 'evolveRabbit': {
+        const rabbit = s.rabbits.find(r => r.id === command.rabbitId); requireRule(rabbit, 'NOT_FOUND');
+        requireRule(hasEvolvedArt(rabbit.species) && rabbit.species !== 'benny', 'NO_EVOLVED_ART');
+        requireRule(rabbit.affection >= 30, 'EVOLUTION_AFFECTION');
+        requireRule(evolutionChallengesComplete(rabbit.species, rabbit.evolution?.challenges), 'EVOLUTION_CHALLENGES');
+        requireRule(canEvolve(rabbit), 'INVALID_CHOICE');
+        rabbit.evolution = {...rabbit.evolution, done: true}; delete rabbit.classicLook;
+        if (!s.evolvedSpecies?.includes(rabbit.species)) s.evolvedSpecies = [...(s.evolvedSpecies ?? []), rabbit.species];
         break;
       }
       case 'bennyPower': {
@@ -513,10 +706,20 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       return sum + (before ? Math.max(0, rabbit.affection - before.affection) : 0);
     }, 0);
     requireRule(recordMissionAction(s, 'gainAffection', affectionGained), 'RESOURCE_LIMIT');
-    requireRule(recordMissionAction(s, command.type === 'buyDecoration' && command.location ? 'placeDecoration' : command.type, ['feed', 'breed', 'welcome'].includes(command.type) || command.type === 'placeDecoration' || (command.type === 'buyDecoration' && !!command.location) ? 1 : typeof value === 'number' ? value : 0, command.type !== 'placeDecoration' || command.location.kind === 'outside'), 'RESOURCE_LIMIT');
+    // One success each: a meal, a breeding, a welcome, a placed decoration, a recipe, a care, a trip, a picnic, a jump-rope game,
+    // a drawing changed at the forest; a caress counts once per rabbit and cycle (`missionAmount`).
+    const boughtPlaced = (command.type === 'buyDecoration' || command.type === 'buyChristmasDecoration') && !!command.location;
+    const once = ['feed', 'breed', 'welcome', 'rewardCuisine', 'startCare', 'startTrip', 'picnic', 'rewardJumpRope', 'toggleClassicLook'].includes(command.type) || command.type === 'placeDecoration' || boughtPlaced;
+    // Rewards are not events: the Christmas claims, the snowman and the mini-game never count for a daily mission.
+    const christmasOnly = ['claimChristmasChallenge', 'claimChristmasBonus', 'rewardSkyGifts', 'buildSnowman'].includes(command.type);
+    const amount = christmasOnly ? 0 : missionAmount ?? (once ? 1 : typeof value === 'number' ? value : 0);
+    requireRule(recordMissionAction(s, boughtPlaced ? 'placeDecoration' : command.type, amount, command.type !== 'placeDecoration' || command.location.kind === 'outside'), 'RESOURCE_LIMIT');
+    // The Christmas challenges count the same events and amounts as the daily missions, and the event's own ones.
+    const christmasEvents: readonly string[] = ['feed', 'breed', 'collectIncome', 'collectOrder', 'petRabbit'];
+    const counts: [ChristmasEventName, number][] = christmasCounts ?? (christmasEvents.includes(command.type) ? [[command.type as ChristmasEventName, amount]] : []);
+    for (const [event, count] of counts) requireRule(recordChristmasAction(s, event, count), 'RESOURCE_LIMIT');
     // In particular, a welcome frees the nursery at this action's timestamp.
-    advanceCozyEvent(s,command,time);
-    return {ok: true, state: advance(s, time), ...(value === undefined ? {} : {value}), ...(progressionGain ? {progressionGain} : {}), ...(cuisineReward ? {cuisineReward} : {})};
+    return {ok: true, state: advance(s, time), ...(value === undefined ? {} : {value}), ...(progressionGain ? {progressionGain} : {}), ...(cuisineReward ? {cuisineReward} : {}), ...(jumpRopeResult ? {jumpRopeReward: jumpRopeResult} : {})};
   } catch (error) {
     if (error instanceof Quoted) return {ok: true, state, value: error.price};
     if (error instanceof Denied) return {ok: false, state, reason: error.reason};

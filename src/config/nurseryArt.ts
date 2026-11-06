@@ -36,7 +36,7 @@ const SOURCE_FRAME = 1254;
  * public/ untouched). `width/height` are the texture's real pixels and are independent of the artistic frame: `originX/Y`
  * (normalised) is the centre of the source's visible pixels (alpha > 8) and `scale` is a fraction of the base PNG's pixel size,
  * both expressed in the 1254² `sourceSize` frame, so a derived texture lands exactly where its source did. Texture sizes follow
- * the largest on-screen size measured in the game (framebuffer = CSS pixels; zoom 1.65, front row: baby 68, veil 80, lock 28 px
+ * the largest on-screen size measured in the game (framebuffer = CSS pixels; zoom 1.65, front row: baby 68, veil 80, lock 28 px; the veil grew to 224 for the 2.2 zoom of 4 November 2026
  * for the whole canvas), about 2.4 to 3.5 times that. The baby lies down in its cushion (`angle`, counter-clockwise) as in the
  * approved montage; it is the same sprite and scale for every species.
  */
@@ -45,7 +45,7 @@ export const NURSERY_OVERLAY_ART = {
   progress: {dy: 128, width: 250, height: 44},
   baby: {texture: 'nursery-v2-baby', url: import.meta.env.BASE_URL + 'assets/buildings/nursery-v2-baby-192.png', width: 192, height: 192, sourceSize: SOURCE_FRAME,
     originX: 630 / 1254, originY: 629 / 1254, scale: .245, angle: -78, dy: 2},
-  veil: {texture: 'nursery-v2-veil', url: import.meta.env.BASE_URL + 'assets/buildings/nursery-v2-veil-192.png', width: 192, height: 192, sourceSize: SOURCE_FRAME,
+  veil: {texture: 'nursery-v2-veil', url: import.meta.env.BASE_URL + 'assets/buildings/nursery-v2-veil-224.png', width: 224, height: 224, sourceSize: SOURCE_FRAME,
     originX: 626 / 1254, originY: 636 / 1254, scale: .29, dy: 8},
   lock: {texture: 'nursery-v2-lock', url: import.meta.env.BASE_URL + 'assets/buildings/nursery-v2-lock-96.png', width: 96, height: 96, sourceSize: SOURCE_FRAME,
     originX: 626 / 1254, originY: 630 / 1254, scale: .10, dy: -4},

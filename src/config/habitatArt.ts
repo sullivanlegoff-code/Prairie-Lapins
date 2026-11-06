@@ -152,7 +152,17 @@ export const HABITAT_ART_LIST: readonly HabitatArt[] = [...HABITAT_LEVEL1_ART_LI
  * The illustrated drawing, or null for vector art. Exact capacity level AND acquired footprint tier must match.
  * The placed building and ghost ask this function; the shop always asks for level 1.
  */
-export function habitatArtFor(habitat: {type: HabitatType; level: HabitatLevel} | undefined, footprintTier?: number): HabitatArt | null {
+/**
+ * The Ultra neige habitat (Christmas market, 6 November 2026): painted on the level 3 snow habitat's framing and footprint
+ * (scripts/prepare-noel-extras-art.mjs, served as habitat-glace.png), an icy palace around an open courtyard.
+ */
+export const ULTRA_SNOW_ART: HabitatArt = {
+  type: 'neige', texture: 'habitat-glace', url: `${import.meta.env.BASE_URL}assets/habitats/habitat-glace.png`,
+  width: 627, height: 483, worldWidth: 352, anchor: {x: 313.5, y: 323},
+  source: {file: 'habitat-ultra-neige.png', size: 1423, crop: {x: 0, y: 0, width: 1423, height: 1096}, reduction: 2},
+};
+export function habitatArtFor(habitat: {type: HabitatType; level: HabitatLevel; ultra?: true} | undefined, footprintTier?: number): HabitatArt | null {
+  if (habitat?.ultra && habitat.level === 3 && footprintTier === 3) return ULTRA_SNOW_ART;
   if (habitat?.level === 2 && footprintTier === 2) return HABITAT_LEVEL2_ART[habitat.type] ?? null;
   if (habitat?.level === 3 && footprintTier === 3) return HABITAT_LEVEL3_ART[habitat.type] ?? null;
   return habitat && habitat.level === 1 && (footprintTier ?? 1) === 1 ? HABITAT_LEVEL1_ART[habitat.type] : null;
@@ -251,5 +261,5 @@ interface HabitatArtLayout {
   zone: {minX: number; maxX: number; minY: number; maxY: number};
   roamScale: number; labelOffset: number;
 }
-const HABITAT_LAYOUTS = new Map<HabitatArt, HabitatArtLayout>([[NEIGE_LEVEL2_ART, NEIGE_LEVEL2_LAYOUT], [FEU_LEVEL2_ART, FEU_LEVEL2_LAYOUT], [METAL_LEVEL2_ART, METAL_LEVEL2_LAYOUT], [VOL_LEVEL2_ART, VOL_LEVEL2_LAYOUT], [PAILLE_LEVEL2_ART, PAILLE_LEVEL2_LAYOUT], [UNIVERSAL_LEVEL2_ART, UNIVERSAL_LEVEL2_LAYOUT], [NEIGE_LEVEL3_ART, NEIGE_LEVEL3_LAYOUT], [FEU_LEVEL3_ART, FEU_LEVEL3_LAYOUT], [METAL_LEVEL3_ART, METAL_LEVEL3_LAYOUT], [VOL_LEVEL3_ART, VOL_LEVEL3_LAYOUT], [PAILLE_LEVEL3_ART, PAILLE_LEVEL3_LAYOUT], [UNIVERSAL_LEVEL3_ART, UNIVERSAL_LEVEL3_LAYOUT]]);
+const HABITAT_LAYOUTS = new Map<HabitatArt, HabitatArtLayout>([[NEIGE_LEVEL2_ART, NEIGE_LEVEL2_LAYOUT], [FEU_LEVEL2_ART, FEU_LEVEL2_LAYOUT], [METAL_LEVEL2_ART, METAL_LEVEL2_LAYOUT], [VOL_LEVEL2_ART, VOL_LEVEL2_LAYOUT], [PAILLE_LEVEL2_ART, PAILLE_LEVEL2_LAYOUT], [UNIVERSAL_LEVEL2_ART, UNIVERSAL_LEVEL2_LAYOUT], [NEIGE_LEVEL3_ART, NEIGE_LEVEL3_LAYOUT], [FEU_LEVEL3_ART, FEU_LEVEL3_LAYOUT], [METAL_LEVEL3_ART, METAL_LEVEL3_LAYOUT], [VOL_LEVEL3_ART, VOL_LEVEL3_LAYOUT], [PAILLE_LEVEL3_ART, PAILLE_LEVEL3_LAYOUT], [UNIVERSAL_LEVEL3_ART, UNIVERSAL_LEVEL3_LAYOUT], [ULTRA_SNOW_ART, UNIVERSAL_LEVEL3_LAYOUT]]);
 export const habitatArtLayout = (art: HabitatArt): HabitatArtLayout => HABITAT_LAYOUTS.get(art) ?? HABITAT_ART_LAYOUT;

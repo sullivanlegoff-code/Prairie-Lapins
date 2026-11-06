@@ -60,7 +60,7 @@ describe('approved Frisket and Icy content',()=>{
     s=reload(run(s,{type:'welcome',enclosureId:home.id,birthId:birth.id},ready,rng));
     expect(s.rabbits.at(-1)).toMatchObject({species:id,affection:1,enclosureId:home.id});expect(s.discovered).toContain(id);
     expect(s.progression.totalXp-xp).toBe(270);expect(s.pityFailures).toBe(0);expect(rng).toHaveBeenCalledTimes(2); // the breeding draw, then the welcome's own income roll for this Rare (drawIncomeRoll)
-    expect(collectionView(s).find(e=>e.known&&e.species===id)).toEqual({known:true,species:id,name:SPECIES[id].name,description:descriptions[id]});
+    expect(collectionView(s).find(e=>e.known&&e.species===id)).toEqual({known:true,species:id,name:SPECIES[id].name});
   });
   it('does not invent descriptions for existing species or reveal descriptions from recipe knowledge alone',()=>{
     const s=parents();s.recipeBook.push('frisket','icy');

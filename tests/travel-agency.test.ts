@@ -64,7 +64,7 @@ describe('travel agency rules', () => {
     expect([...new Set(trips.map(t => t.hours))]).toEqual([3, 4, 5, 6, 7, 8, 9, 10]);
     expect(drawTrip(0)).toEqual({destination: 'Londres', hours: 3});
     expect(drawTrip(1 - Number.EPSILON)).toEqual({destination: 'Marrakech', hours: 10});
-    expect([3, 4, 5, 6, 7, 8, 9, 10].map(tripHearts)).toEqual([1, 1, 2, 2, 2, 3, 3, 3]);
+    expect([3, 4, 5, 6, 7, 8, 9, 10].map(tripHearts)).toEqual([1, 1, 2, 2, 3, 3, 4, 5]);
   });
 
   it('requires an agency and rejects invalid random draws without changing state', () => {
@@ -253,8 +253,9 @@ describe('agency interface and French text', () => {
     let s = atLevel(22); s.hearts = 200; s = run(s, {type: 'buyBuilding', kind: 'farm', ...free(s)});
     const id = s.buildings.at(-1)!.id; s.startCourse = undefined;
     const {ui, controller} = mount(s); ui.select({kind: 'building', id});
-    expect(panel().querySelectorAll('.farm-order-locked')).toHaveLength(5);
+    expect(panel().querySelectorAll('.farm-order-locked')).toHaveLength(9); // Five level 2 crops and the four fancy crops.
     expect(panel().querySelector('[data-crop="fanes"]')!.textContent).toContain('Ferme niveau 2');
+    expect(panel().querySelector('[data-crop="trefleDore"]')!.textContent).toContain('Ferme niveau 3');
     panel().querySelector<HTMLButtonElement>('[data-crop="foin"] button')!.click();
     expect(controller.getSnapshot().state!.buildings.at(-1)!.order).not.toBeNull();
     [...panel().querySelectorAll<HTMLButtonElement>('.heart-spend')].find(b => b.textContent!.includes('Améliorer'))!.click();

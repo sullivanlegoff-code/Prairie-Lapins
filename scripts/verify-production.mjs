@@ -113,7 +113,7 @@ for (const [name, sha1] of [['baby', '345a98f9efc3ef73c27306c7d1d319f3bdc84dd0']
 }
 // Reduced Nursery v2 overlay textures actually loaded by the game (scripts/derive-nursery-overlays.mjs derives them from the approved
 // sources above; `--check` re-derives and compares pixels). Exact size, alpha and committed blob SHA-1 of each.
-for (const [name, size, sha1] of [['baby', 192, '79e1bf89fe3b4a8ddc60fa2d58525582dc776268'], ['veil', 192, 'dba575f70a8cba6724299f62f8702cef3e364f75'], ['lock', 96, '15dde54abac573c0bee6b01390646290c95cb8d0']]) {
+for (const [name, size, sha1] of [['baby', 192, '79e1bf89fe3b4a8ddc60fa2d58525582dc776268'], ['veil', 224, '7536dc5ea8a633f8993bd1f7ac88ee3c31f2e418'], ['lock', 96, '15dde54abac573c0bee6b01390646290c95cb8d0']]) {
   const reduced = readFileSync(join(root, `assets/buildings/nursery-v2-${name}-${size}.png`));
   assert.equal(reduced.subarray(0,8).toString('hex'), '89504e470d0a1a0a', `Reduced nursery v2 ${name} must be a PNG`);
   assert.equal(reduced.readUInt32BE(16), size); assert.equal(reduced.readUInt32BE(20), size);

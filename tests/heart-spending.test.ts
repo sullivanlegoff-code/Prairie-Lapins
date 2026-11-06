@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest';
 import {act, advance, createGame, decodeGame, encodeGame} from '../src/simulation';
-import {HOUR, ORDERS, type OrderId} from '../src/config/balance';
+import {HOUR, ORDERS, orderFarmLevel, type OrderId} from '../src/config/balance';
 import {cumulativeLevelXp} from '../src/simulation/progression';
 import {buildingPlacementReason} from '../src/simulation/placement';
 import {travelling, tripReady} from '../src/simulation/travel';
@@ -22,7 +22,8 @@ function refused(s: GameState, c: Command, reason: string, now = s.lastSimulated
 }
 
 describe('permanent heart spending', () => {
-  it.each(Object.keys(ORDERS) as OrderId[])('gates %s by farm level and preserves crop player levels', recipe => {
+  // The four fancy crops need a level 3 farm: tests/farm-level-3.test.ts covers them.
+  it.each((Object.keys(ORDERS) as OrderId[]).filter(id => orderFarmLevel(id) < 3))('gates %s by farm level and preserves crop player levels', recipe => {
     const s = setup('farm'), b = s.buildings.at(-1)!;
     expect(b.farmLevel).toBeUndefined();
     if (ORDERS[recipe].level >= 9) refused(s, {type: 'startOrder', id: b.id, recipe}, 'INVALID_CHOICE');

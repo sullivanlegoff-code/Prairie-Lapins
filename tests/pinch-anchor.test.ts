@@ -19,7 +19,7 @@ for (const [width,height] of [[390,844],[844,390]]) {
     const c=new MeadowCamera();c.resize(width,height);
     c.setInsets({left:16,right:16,top:80,bottom:34});
     const land={left:648,right:1176,top:564,bottom:1008};c.setVisibleRegions([land]);
-    for(const zoom of [c.minimumZoom,.4,1.05,1.65])for(const [dx,dy] of [[1e6,0],[-1e6,0],[0,1e6],[0,-1e6],[1e6,1e6]]) {
+    for(const zoom of [c.minimumZoom,.4,1.05,2.2])for(const [dx,dy] of [[1e6,0],[-1e6,0],[0,1e6],[0,-1e6],[1e6,1e6]]) {
       c.zoom=zoom;c.pan(dx,dy);
       const a=c.screen({x:land.left,y:land.top}),b=c.screen({x:land.right,y:land.bottom});
       expect(Math.min(width-16,b.x)-Math.max(16,a.x)).toBeGreaterThanOrEqual(Math.min(80,(land.right-land.left)*zoom)-1e-8);
@@ -41,7 +41,7 @@ it('follows the moving midpoint at equal finger distance, including staggered po
   expect(c.world({x:430,y:185}).y).toBeCloseTo(old.y,10);
 });
 it('does not jump through the sky gap between two separate owned parcels', () => {
-  const c=new MeadowCamera();c.resize(390,844);c.zoom=1.65;
+  const c=new MeadowCamera();c.resize(390,844);c.zoom=2.2;
   const regions=[{left:120,right:648,top:120,bottom:564},{left:1176,right:1704,top:1008,bottom:1452}];
   c.setVisibleRegions(regions);c.x=912;c.y=786;c.clamp();
   expect(regions.some(r=>{const a=c.screen({x:r.left,y:r.top}),b=c.screen({x:r.right,y:r.bottom});return b.x>=96&&a.x<=294&&b.y>=218&&a.y<=748;})).toBe(true);

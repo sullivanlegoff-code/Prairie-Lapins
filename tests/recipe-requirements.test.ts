@@ -22,8 +22,15 @@ const SPECIALS: {id: SpeciesId; probability: number; affection: number; types?: 
   {id: 'dadi', probability: 10, affection: 6, types: ['feu', 'metal']}, {id: 'maxou', probability: 10, affection: 6, types: ['neige', 'vol']},
   {id: 'orange', probability: 10, affection: 6, types: ['paille', 'neige']}, {id: 'dinono', probability: 10, affection: 6, types: ['feu', 'metal']},
   {id: 'dinenette', probability: 10, affection: 6, types: ['paille', 'vol']},
-  {id: 'calinou', probability: 10, affection: 6, types: ['paille', 'metal']}, {id: 'requin', probability: 10, affection: 10, parents: ['maxou', 'wat-wat']},
-  {id: 'ankylosaure', probability: 10, affection: 10, parents: ['dinono', 'dinenette']},
+  {id: 'calinou', probability: 10, affection: 6, types: ['paille', 'metal']},
+  // Christmas update (5 November 2026): two-element Epics (the Christmas ones while the event is on), and Arkoko of Câlinou géant × Orange.
+  {id: 'gigi-rarafe', probability: 10, affection: 6, types: ['paille', 'feu']}, {id: 'yetiti', probability: 10, affection: 6, types: ['neige', 'paille']},
+  {id: 'rennes', probability: 10, affection: 6, types: ['vol', 'metal']}, {id: 'susucre', probability: 10, affection: 6, types: ['paille', 'feu']},
+  // 6 November 2026: Lapin de Sulli, and the Christmas Pain d’épice and Flocon de cristal.
+  {id: 'lapin-de-sulli', probability: 10, affection: 6, types: ['feu', 'neige']}, {id: 'pain-epice', probability: 10, affection: 6, types: ['feu', 'paille']},
+  {id: 'flocon-cristal', probability: 10, affection: 6, types: ['neige', 'vol']},
+  {id: 'requin', probability: 10, affection: 10, parents: ['maxou', 'wat-wat']},
+  {id: 'ankylosaure', probability: 10, affection: 10, parents: ['dinono', 'dinenette']}, {id: 'arkoko', probability: 10, affection: 10, parents: ['calinou', 'orange']},
   // Benny, the Mythic (1 November 2026): any two Legendaries, a fixed chance reserved like a Legendary's.
   {id: 'benny', probability: 10, affection: 10, parentRarity: 'legendary'},
 ];
@@ -40,9 +47,9 @@ function historicalWeights(a: SpeciesId, b: SpeciesId, x: number, y: number): Od
   const sameCommon = SPECIES[a].rarity === 'common' && SPECIES[b].rarity === 'common' && SPECIES[a].types.length === 1 && SPECIES[a].types[0] === SPECIES[b].types[0];
   if (!sameCommon)
     for (const id of Object.keys(pool) as SpeciesId[]) if (SPECIES[id].rarity === 'common') delete pool[id];
-  // Owner's weight model (31 October 2026), as percentages: an Epic weighs a quarter of a Rare, both parents at 10 (15)
-  // multiply it by 1.5 (2), and all Epics together never exceed the Rares' half; a Legendary keeps a fixed chance on top.
-  const factor = Math.min(x,y) >= 15 ? 2 : Math.min(x,y) >= 10 ? 1.5 : 1, epics: Odds = {}, legendaries: Odds = {};
+  // Owner's weight model (31 October 2026), as percentages: an Epic weighs a quarter of a Rare, both parents at 10 / 15 / 30 / 50
+  // multiply it by 1.15 / 1.3 / 1.5 / 2 (steps of 2 November 2026), and all Epics together never exceed the Rares' half; a Legendary keeps a fixed chance on top.
+  const low = Math.min(x,y), factor = low >= 50 ? 2 : low >= 30 ? 1.5 : low >= 15 ? 1.3 : low >= 10 ? 1.15 : 1, epics: Odds = {}, legendaries: Odds = {};
   for (const special of SPECIALS) if (Math.min(x,y) >= special.affection && (special.types ? special.types.every(t => types.has(t as never))
     : special.parentRarity ? SPECIES[a].rarity === special.parentRarity && SPECIES[b].rarity === special.parentRarity
     : a === special.parents![0] && b === special.parents![1] || a === special.parents![1] && b === special.parents![0]))
@@ -59,12 +66,12 @@ function historicalWeights(a: SpeciesId, b: SpeciesId, x: number, y: number): Od
 const percentages = (weights: Odds) => { const total = Object.values(weights).reduce((s,w) => s+w,0); return Object.entries(weights).map(([id,w]) => [id, w * 100 / total] as const); };
 describe('explicit recipe requirements', () => {
   it('preserves all other unions and applies the exact starting Rare pool in every ordered integer distribution', () => {
-    for (const a of SPECIES_IDS) for (const b of SPECIES_IDS) for (const x of [1,2,3,4,5,6,9,10,20]) for (const y of [1,2,3,4,5,6,9,10,20]) {
+    for (const a of SPECIES_IDS) for (const b of SPECIES_IDS) for (const x of [1,2,3,4,5,6,9,10,15,20,30,50]) for (const y of [1,2,3,4,5,6,9,10,15,20,30,50]) {
       const engine = percentages(breedingDistributionWeights(a,b,x,y)), oracle = percentages(historicalWeights(a,b,x,y));
       expect(engine.map(([id]) => id)).toEqual(oracle.map(([id]) => id));
       engine.forEach(([, p], i) => expect(p).toBeCloseTo(oracle[i][1], 9));
     }
-  }, 30_000); // Exhaustive comparison with the hand-written oracle: close to the default 5 s when the whole suite runs in parallel.
+  }, 90_000); // Exhaustive comparison with the hand-written oracle (42 species since 5 November 2026): well past the default 5 s when the whole suite runs in parallel.
   it('uses independent elements instead of the displayed types, in the engine and known book pairs', () => {
     override('bouee', {requiredTypes: ['neige','metal'], minAffection: 4});
     expect(recipeMatches('bouee','paille','feu')).toBe(false);

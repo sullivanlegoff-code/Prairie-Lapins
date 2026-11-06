@@ -43,15 +43,15 @@ describe('pure laboratory transactions', () => {
     }
     expect(() => labAction(s, {type: 'level', level: 31})).toThrow();
   });
-  it('adds every species individually and all 36 together, discovering them and creating compatible level-3 homes', () => {
+  it('adds every species individually and all 49 together, discovering them and creating compatible level-3 homes', () => {
     let s = createGame(now);
     for (const species of SPECIES_IDS) {
       s = run(s, {type: 'rabbit', species, affection: 20});
       expect(s.rabbits.at(-1)).toMatchObject({species, affection: 20});
     }
-    expect(SPECIES_IDS).toHaveLength(36);
+    expect(SPECIES_IDS).toHaveLength(49);
     const all = run(createGame(now), {type: 'allRabbits', affection: 15});
-    expect(new Set(all.rabbits.map(r => r.species)).size).toBe(36); expect(all.discovered).toHaveLength(36);
+    expect(new Set(all.rabbits.map(r => r.species)).size).toBe(49); expect(all.discovered).toHaveLength(49);
     expect(all.acquiredParcels.length).toBeGreaterThan(1);
     for (const r of all.rabbits) {
       const b = all.buildings.find(b => b.id === r.enclosureId)!;
@@ -68,18 +68,36 @@ describe('pure laboratory transactions', () => {
     let s = run(createGame(now), {type: 'rabbit', species: 'neige', affection: 1});
     s = run(s, {type: 'affection', rabbitId: 'rabbit-2', value: 20}); expect(s.rabbits[1].affection).toBe(1);
     for (const value of [2, 10, 15, 20]) { s = run(s, {type: 'affection', value}); expect(s.rabbits.every(r => r.affection === value)).toBe(true); }
-    expect(() => labAction(s, {type: 'affection', value: 21})).toThrow();
+    expect(() => labAction(s, {type: 'affection', value: 51})).toThrow(); s = run(s, {type: 'affection', value: 50}); expect(s.rabbits.every(r => r.affection === 50)).toBe(true);
     // A lowering during breeding keeps a ready birth valid, rather than leaving invalid active parents.
     const full = completeLaboratory(now); const nest = full.buildings.find(b => b.breeding)!;
     nest.breeding!.startedAt = now; nest.breeding!.endsAt = now + 20 * 60000;
     const low = run(full, {type: 'affection', value: 1}); expect(low.buildings.find(b => b.breeding)!.breeding!.endsAt).toBe(now);
+  });
+  it('completes challenges for only the selected rabbit and evolves only eligible rabbits', () => {
+    let s = createGame(now);
+    const pailleId = s.rabbits.find(r => r.species === 'paille')!.id;
+    s = run(s, {type: 'affection', rabbitId: pailleId, value: 30});
+    s = run(s, {type: 'rabbit', species: 'neige', affection: 29});
+    s = run(s, {type: 'rabbit', species: 'benny', affection: 30});
+    const neigeId = s.rabbits.find(r => r.species === 'neige')!.id, bennyId = s.rabbits.find(r => r.species === 'benny')!.id;
+    s = run(s, {type: 'completeEvolutionChallenges', rabbitId: pailleId});
+    expect(s.rabbits.find(r => r.id === pailleId)?.evolution?.challenges).toEqual({voyage: 1});
+    expect(s.rabbits.find(r => r.id === neigeId)?.evolution).toBeUndefined();
+    s = run(s, {type: 'completeEvolutionChallenges', rabbitId: neigeId});
+    expect(s.rabbits.find(r => r.id === neigeId)?.evolution?.challenges).toEqual({soin: 1});
+    expect(() => labAction(s, {type: 'completeEvolutionChallenges', rabbitId: bennyId})).toThrow(/pas de défis/);
+    s = run(s, {type: 'evolveEligibleRabbits'});
+    expect(s.rabbits.find(r => r.id === pailleId)?.evolution?.done).toBe(true);
+    expect(s.rabbits.find(r => r.id === neigeId)?.evolution?.done).toBeUndefined(); // Affection below 30.
+    expect(s.rabbits.find(r => r.id === bennyId)?.evolution?.done).toBeUndefined(); // Benny never evolves.
   });
   it('constructs all building kinds and habitat types for free and sets levels with their real footprints', () => {
     let s = createGame(now); const money = s.pattes;
     for (const kind of ['farm', 'farm', 'kitchen', 'agency', 'statue'] as const) { s = run(s, {type: 'build', kind}); expect(s.buildings.at(-1)!.kind).toBe(kind); }
     for (const habitatType of HABITAT_TYPES) { s = run(s, {type: 'build', kind: 'enclosure', habitatType}); expect(s.buildings.at(-1)!.habitat!.type).toBe(habitatType); }
     for (const b of [...s.buildings]) if (['farm', 'agency', 'enclosure'].includes(b.kind)) {
-      for (const level of b.kind === 'farm' ? [2, 1] : [3, 2, 1]) {
+      for (const level of [3, 2, 1]) {
         s = run(s, {type: 'buildingLevel', id: b.id, level});
         const actual = s.buildings.find(item => item.id === b.id)!;
         if (actual.habitat) { expect(actual.habitat.level).toBe(level); expect(actual.footprintTier).toBe(level); }
@@ -112,7 +130,6 @@ describe('pure laboratory transactions', () => {
     const previous = s.missions.daily.cycleIndex; s = run(s, {type: 'dailyCycle'}); expect(s.missions.daily.cycleIndex).toBe(previous + 1); expect(s.missions.daily.claimed).toEqual([]); expect(Object.values(s.missions.daily.progress)).toEqual(DAILY_MISSION_IDS.map(() => 0));
     s = run(s, {type: 'coco'}); expect(s.travel).toEqual({welcomed: false, trips: []});
     s = run(s, {type: 'heartGift'}); expect(s.nextHeartGiftAt).toBe(now);
-    s.market = {cycle: s.missions.daily.cycleIndex, pattes: 2, grass: 2}; s = run(s, {type: 'market'}); expect(s.market).toBeUndefined();
     expect(s.hearts).toBe(hearts); expect(s.pattes).toBe(pattes);
   });
   it('adds each decoration to inventory including the robot with no cost', () => {
@@ -143,7 +160,7 @@ describe('pure laboratory transactions', () => {
     const farm = finished.buildings.find(b => b.order)!; expect(act(finished, {type: 'collectOrder', id: farm.id}, now).ok).toBe(true);
   });
   it.each([0, now])('provides a valid complete endgame and a fresh tutorial scenario at %s', clock => {
-    const s = roundTrip(scenarioState('completeGame', clock)); expect(s.rabbits).toHaveLength(36); expect(s.discovered).toHaveLength(36);
+    const s = roundTrip(scenarioState('completeGame', clock)); expect(s.rabbits).toHaveLength(49); expect(s.discovered).toHaveLength(49);
     expect(s.progression.totalXp).toBe(cumulativeLevelXp(30)); expect(s.acquiredParcels).toHaveLength(9);
     expect(s.buildings.filter(b => b.farmLevel === 2)).toHaveLength(2);
     expect(s.buildings.filter(b => b.order && b.order.endsAt <= clock)).toHaveLength(1);

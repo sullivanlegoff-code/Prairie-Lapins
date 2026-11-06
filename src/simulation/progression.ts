@@ -1,5 +1,5 @@
 import {BALANCE, FEED_COSTS, SPECIES, SPECIES_IDS, type SpeciesId} from '../config/balance';
-import {DECORATIONS, DECORATION_IDS, type DecorationId} from '../config/decorations';
+import {ALL_DECORATION_IDS, DECORATIONS, DECORATION_IDS, isChristmasDecoration, type DecorationId} from '../config/decorations';
 import {HABITAT_TYPES, type HabitatType, type HabitatLevel} from '../config/habitats';
 import {PARCEL_IDS} from '../config/land';
 import {MAIN_MISSIONS, MAIN_MISSION_IDS, DAILY_MISSION_IDS, type MainMissionId, type DailyMissionId} from '../config/missions';
@@ -20,7 +20,8 @@ function integer(value: number, label: string, minimum = 0): void {
   if (!Number.isSafeInteger(value) || value < minimum) throw new RangeError(`${label}: expected a safe integer >= ${minimum}`);
 }
 function cost(level: number, c: ProgressionConfig): number {
-  const value = Math.round(c.curve.base * level ** c.curve.exponent);
+  const slow = c.curve.slowdown, factor = slow ? 1 + slow.step * Math.max(0, level - slow.fromLevel) : 1;
+  const value = Math.round(c.curve.base * level ** c.curve.exponent * factor);
   integer(value, 'Level cost', 1); return value;
 }
 function sum(a: number, b: number): number {
@@ -48,6 +49,7 @@ export function validateProgressionConfig(c: ProgressionConfig = PROGRESSION): v
   integer(c.curve.maximumLevel, 'Maximum level', 1);
   if (!Number.isFinite(c.curve.base) || c.curve.base <= 0) throw new RangeError('Curve base must be finite and positive');
   if (!Number.isFinite(c.curve.exponent) || c.curve.exponent < 0) throw new RangeError('Curve exponent must be finite and nonnegative');
+  if (c.curve.slowdown && (!Number.isFinite(c.curve.slowdown.step) || c.curve.slowdown.step < 0 || !Number.isSafeInteger(c.curve.slowdown.fromLevel) || c.curve.slowdown.fromLevel < 1)) throw new RangeError('Curve slowdown must be finite and nonnegative');
   // Every transition costs at least base. Reject certain overflow before iterating.
   integer((c.curve.maximumLevel - 1) * cost(1,c), 'Minimum cumulative XP');
   threshold(c.curve.maximumLevel, c); // Every cost > 0 and every cumulative sum safe: thresholds strictly increase.
@@ -129,7 +131,7 @@ export function requiredHabitatUpgradeLevel(type:HabitatType,to:Exclude<HabitatL
   const base=requiredHabitatLevel(type,c);if(to!==2&&to!==3)throw new RangeError('Upgrade target must be 2 or 3');return base+c.requirements.habitatUpgradeOffsets[to];
 }
 export function requiredDecorationLevel(id:DecorationId,c:ProgressionConfig=PROGRESSION):number {
-  validateQueryConfig(c);if(!DECORATION_IDS.includes(id))throw new RangeError('Unknown decoration');
+  validateQueryConfig(c);if(!(ALL_DECORATION_IDS as readonly string[]).includes(id))throw new RangeError('Unknown decoration');
   if(DECORATIONS[id].level !== undefined) return DECORATIONS[id].level!;
   const price=DECORATIONS[id].price;return c.requirements.decorations.filter(t=>price>=t.minimumPrice).at(-1)!.level;
 }
@@ -142,7 +144,7 @@ export function foodXp(affectionReached:number,c:ProgressionConfig=PROGRESSION):
   return c.xp.foodMultiplier+Math.floor((FEED_COSTS[affectionReached-1]??0)/FOOD_PER_XP);
 }
 export function firstDecorationPlacementXp(id:DecorationId,c:ProgressionConfig=PROGRESSION):number {
-  validateQueryConfig(c);if(!DECORATION_IDS.includes(id))throw new RangeError('Unknown decoration');return c.xp.firstDecorationPlacement.minimum;
+  validateQueryConfig(c);if(!(ALL_DECORATION_IDS as readonly string[]).includes(id))throw new RangeError('Unknown decoration');return isChristmasDecoration(id)?0:c.xp.firstDecorationPlacement.minimum;
 }
 export function missionClaimXp(kind:'main'|'daily',id:MainMissionId|DailyMissionId,c:ProgressionConfig=PROGRESSION):number {
   validateQueryConfig(c);const ids=kind==='main'?MAIN_MISSION_IDS:DAILY_MISSION_IDS;

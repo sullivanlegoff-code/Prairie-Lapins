@@ -1,6 +1,6 @@
 import type {Command, GameState} from '../state/types';
 import {nestForParent} from '../simulation/breeding';
-import {travelling} from '../simulation/travel';
+import {away} from '../simulation/care';
 
 export const DADI_INTERVAL = 10 * 60_000;
 export const DADI_SPEECH_DURATION = 5_500;
@@ -22,7 +22,7 @@ export class DadiReactions {
   sync(state: GameState | null, generation: number): void {
     if (generation !== this.generation) { this.reset(); this.generation = generation; }
     this.state = state;
-    const present = (id: string) => !!state?.rabbits.some(r => r.id === id && r.species === 'dadi') && !travelling(state!, id);
+    const present = (id: string) => !!state?.rabbits.some(r => r.id === id && r.species === 'dadi') && !away(state!, id);
     this.pending = this.pending.filter(r => present(r.id));
     if (this.speaking && !present(this.speaking.reaction.id)) this.speaking = null;
     if (!state?.rabbits.some(r => r.species === 'dadi')) this.elapsed = 0;
@@ -46,7 +46,7 @@ export class DadiReactions {
       if (this.speaking.remaining <= 0) this.speaking = null;
     }
     const state = this.state;
-    const residents = state?.rabbits.filter(r => r.species === 'dadi' && !nestForParent(state, r.id) && !travelling(state, r.id)) ?? [];
+    const residents = state?.rabbits.filter(r => r.species === 'dadi' && !nestForParent(state, r.id) && !away(state, r.id)) ?? [];
     if (residents.length) this.elapsed += delta;
     if (this.elapsed >= DADI_INTERVAL) {
       this.elapsed = 0;

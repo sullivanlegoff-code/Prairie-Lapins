@@ -44,9 +44,33 @@ export function habitatSlots(tier: HabitatLevel, count: number): readonly {x: nu
   const {slots} = HABITAT_SIZE_PROPOSAL[tier], middle = 10;
   return [...slots].sort((a, b) => Math.hypot(a.x, a.y - middle) - Math.hypot(b.x, b.y - middle)).slice(0, Math.min(count, slots.length));
 }
-/** Footprint in fine cells of a tier; any value outside the three tiers reads as the compact 4 × 4. */
-export const habitatFootprint = (tier: number | undefined): {width: number; depth: number} =>
-  HABITAT_SIZE_PROPOSAL[tier === 2 || tier === 3 ? tier : 1].footprint;
+const tierOf = (tier: number | undefined): HabitatLevel => tier === 2 || tier === 3 ? tier : 1;
+/**
+ * Enlarged enclosures (3 November 2026, the owner: « Les enclos doivent être plus grands »). Every tier gains about a third of
+ * ground: 4 × 4 → 5 × 4 (+25 % of cells), 6 × 5 → 8 × 5 (+33 %), 8 × 6 → 10 × 6 (+25 %). The approved paintings, their rabbit places
+ * and wandering zones are shown `ENCLOSURE_SCALE` times larger, the same factor on both axes (never stretched, never redrawn):
+ * ×1.15 at tiers 1 and 2 (+32 % of drawn area) and ×1.12 at tier 3 (+25 %), the largest factor whose painting still ends, at the
+ * front and on both sides, inside the new footprint. Rabbits keep their size, so each one has more room.
+ *
+ * `HABITAT_SIZE_PROPOSAL[tier].footprint` stays the former size: an enclosure saved before this change keeps it
+ * (`Building.formerFootprint`) until it can grow at load or is upgraded.
+ */
+export const ENCLOSURE_FOOTPRINTS: Readonly<Record<HabitatLevel, {width: number; depth: number}>> = {1: {width: 5, depth: 4}, 2: {width: 8, depth: 5}, 3: {width: 10, depth: 6}};
+export const ENCLOSURE_SCALE: Readonly<Record<HabitatLevel, number>> = {1: 1.15, 2: 1.15, 3: 1.12};
+/** Footprint of every other building kind. */
+export const COMPACT_FOOTPRINT = {width: 4, depth: 4} as const;
+/**
+ * Footprint in fine cells of an enclosure tier (any value outside the three tiers reads as tier 1): the enlarged size, or the
+ * size before the enlargement for an enclosure that still keeps it.
+ */
+export const habitatFootprint = (tier: number | undefined, former = false): {width: number; depth: number} =>
+  former ? HABITAT_SIZE_PROPOSAL[tierOf(tier)].footprint : ENCLOSURE_FOOTPRINTS[tierOf(tier)];
+/** Footprint of any building: enclosures by tier, everything else 4 × 4. */
+export const buildingSize = (b: {kind: string; footprintTier?: number; formerFootprint?: boolean}): {width: number; depth: number} =>
+  b.kind === 'enclosure' ? habitatFootprint(b.footprintTier, b.formerFootprint === true) : COMPACT_FOOTPRINT;
+/** Uniform factor applied to an enclosure's drawing and rabbit layout: 1 while it keeps its former footprint. */
+export const enclosureScale = (b: {footprintTier?: number; formerFootprint?: boolean}): number =>
+  b.formerFootprint ? 1 : ENCLOSURE_SCALE[tierOf(b.footprintTier)];
 /** Footprint of a level in world units, for comparison with the drawing and with the neighbouring grid. */
 export const habitatProposalWorldSize = (level: HabitatLevel) => {
   const {footprint} = HABITAT_SIZE_PROPOSAL[level];

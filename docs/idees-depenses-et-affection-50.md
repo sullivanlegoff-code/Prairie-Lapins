@@ -166,6 +166,13 @@ Ces deux règles servent à tenir l'objectif de 30 jours pour passer de 20 à 50
 ### Bâtiment de l'ancien dessin
 10 000 pièces, à partir du niveau 20. Il ne sert qu'une fois les nouveaux dessins de l'affection 30 faits.
 
+### Dessins choisis par le propriétaire (2 novembre 2026)
+Les planches ont été faites dans ChatGPT, dans la conversation « Créer une planche de concepts ».
+- **Salon de soins** : concept **A**, petit spa cosy avec une baignoire en bois et des bulles de savon.
+- **Pique-nique** : concept **A**, nappe à carreaux rouges et blancs, panier en osier, carottes, pommes et théière.
+- **Nourritures fantaisie** : série **A**, magiques et scintillantes, avec de petites étoiles et des reflets.
+- **Lapin ultime** : couronne **A**, petite couronne dorée à pointes et perles, posée entre les oreilles. Fiche **1**, cadre doré avec lauriers et rubans pourpres.
+
 ### Ordre de travail
 1. **Sans nouveau dessin** : prix de l'île, affection jusqu'à 50, deuxième statue, chances de croisement, sauvegarde v23, simulation.
 2. Ferme niveau 3 et nourritures fantaisie (concepts peints d'abord).
@@ -180,3 +187,63 @@ Ces valeurs seront vérifiées par la simulation à chaque étape, et ajustées 
 - Règle permanente du propriétaire : ne rien inventer sur les Épiques, les Légendaires ou le Mythique. Toutes les valeurs du palier 30 et le sens de « lapin ultime » lui reviennent.
 - Le format de sauvegarde changera (deuxième statue, affection au-delà de 20, ferme niveau 3, état des soins et des pique-niques) : il faudra une migration depuis v22.
 - Tout le travail visuel (salon, pique-nique, deuxième statue, nourritures fantaisie, évolutions à 30, couronne) passe d'abord par des planches de concepts peints.
+
+## Équilibrage cœurs / pièces (3 novembre 2026)
+
+Demande du propriétaire : « Mets la statue de l'affection 2 un peu moins chère. Fais en sorte que l'économie entre les cœurs et les pièces soit équilibrée. Je te laisse totale liberté. »
+
+### Mesure avant (graine 20261025, par jour)
+
+| Jours | Revenus des lapins | Pièces parties au comptoir | Cœurs gagnés / dépensés | Cœurs en stock (fin) |
+|---|---|---|---|---|
+| 1-10 | 2 700 | 470 | 7 / 3 | 51 |
+| 11-20 | 6 200 | 3 000 | 9 / 10 | 47 |
+| 21-30 | 7 900 | 3 600 | 9 / 0 | 139 |
+| 31-45 | 8 300 | 3 300 | 9 / 10 | 130 |
+| 46-60 | 12 500 | 7 900 | 12 / 1 | 300 |
+
+Constats :
+- le joueur simulé échangeait au comptoir tout ce qui dépassait 3 000 pièces : il ne pouvait jamais économiser pour l'extension à 12 000 et au-delà, ni pour la ferme niveau 3. Les pièces « en trop » venaient de là, pas d'un manque de dépenses (il reste 257 000 pièces d'extensions et 120 000 de fermes niveau 3) ;
+- les cœurs, alimentés par ce comptoir, s'entassaient (300 au jour 60) faute d'achat ;
+- le lapin suivi restait bloqué à 29 : la nourriture était partagée entre tous les lapins et n'atteignait jamais les 6 000 du palier 29 → 30. La deuxième statue n'arrivait qu'au jour 34 (niveau 25 au jour 35) ;
+- niveau 22 au jour 24 (contrôle en échec).
+
+### Le joueur simulé (docs/progression-simulation.mjs)
+
+Trois comportements plus réalistes, expliqués dans le script :
+- il **économise ses pièces** pour son prochain achat (salon, prochaine extension permise par son niveau, puis ferme niveau 3) et n'échange au comptoir que le reste, sauf s'il lui manque des cœurs pour une statue ;
+- il **garde la nourriture** du palier (29 → 30, 49 → 50) de son lapin le plus aimé ;
+- au salon, il prend le massage s'il lui reste 3 000 pièces, sinon le bain.
+- Le script rapporte maintenant, par tranche de jours, les gains et dépenses de pièces, de cœurs, de nourriture et d'XP par source (champ `economy`), et accepte `--seed=N` pour vérifier qu'un résultat ne tient pas à la chance.
+
+### Valeurs changées
+
+| Valeur | Avant | Après | Raison |
+|---|---|---|---|
+| Deuxième Statue de l'Affection : prix | 150 cœurs | **100 cœurs** | Demande du propriétaire ; les cœurs deviennent plus rares quand le joueur garde ses pièces. |
+| Deuxième Statue : niveau | 25 | **22** | Le meilleur lapin atteint 30 vers le jour 20 ; au niveau 25 (jour 30-35), il attendait plus de 10 jours. |
+| Cadeau gratuit de cœurs (toutes les 24 h) | 2 cœurs | **3 cœurs** | Sans comptoir, les cœurs tombaient à 2-3 par jour : la deuxième ferme niveau 2 et la statue arrivaient trop tard. |
+| Bain | 1 h, prix plein, 10 XP | **1 h, 50 % du prix, 10 XP** | Le soin rapide et bon marché (utile pour un lapin épique ou légendaire). |
+| Brossage | 2 h, 75 %, 20 XP | **2 h, prix plein, 25 XP** | Le soin du milieu. |
+| Massage | 3 h, 50 %, 30 XP | **3 h, 150 %, 45 XP** | Le soin long et cher qui rapporte le plus d'XP ; il était à la fois le moins cher et le meilleur. |
+| Pique-nique : XP par lapin | 5 | **10** | Avec les soins, rattrape le rythme : niveau 22 au jour 20. |
+
+Inchangés : prix des soins selon la rareté (300, 800, 2 000, 3 500, 5 000), pique-nique à 300 pièces par lapin, ferme niveau 3 (60 000), île, comptoir de Paille, coûts en nourriture, règles d'affection (cadeau +1 par lapin et par jour, jamais à travers un mur), multiplicateurs de naissance.
+
+### Résultat après (même graine)
+
+| | Avant | Après |
+|---|---|---|
+| Niveau 22 | jour 24 (échec) | **jour 20** |
+| Deuxième statue | jour 34 | **jour 21** |
+| Lapin suivi, affection 20 → 50 | 20 au jour 13, 49 au jour 70 | **20 au jour 10,5, 50 au jour 39 (29 jours)** |
+| Extensions achetées (sur 8) | 3 | **8** (7 au jour 60) |
+| Fermes niveau 3 | 0 | **2** (jours 46-70) |
+| Pièces au comptoir, jours 31-60 | 3 300 à 7 900 par jour | **0** (tout va aux extensions et aux fermes) |
+| Cœurs en stock au jour 60 | 300 | **102** |
+
+Lapins à 15+ / 30+ / 50 : jour 30 : 3 / 2 / 0 ; jour 50 : 5 / 4 / 3 ; jour 60 : 6 / 5 / 4.
+
+Sur cinq autres graines : niveau 22 aux jours 19-20, deuxième statue aux jours 21-22, lapin suivi de 20 à 50 en 27 à 31,5 jours.
+
+Limites : les pièces et les cœurs s'accumulent de nouveau après le jour 60, quand tout est acheté (fin de partie). Peu de lapins dépassent 15 : la nourriture va d'abord au lapin le plus aimé.

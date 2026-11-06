@@ -3,18 +3,21 @@ import {recipeHint} from './economyFeedback';
 import {stateLevelAccess} from '../simulation/levelRights';
 import {buildingPlacementReason} from '../simulation/placement';
 import {habitatPrice, type HabitatType} from '../config/habitats';
-import {AFFECTION_STATUE, BALANCE, HOUR, TRAVEL, SPECIES, SPECIES_IDS, RECIPE_SPECIES, type Odds, type BuildingKind, type SpeciesId, type RabbitType, type Rarity} from '../config/balance';
+import {AFFECTION_STATUE, BALANCE, HOUR, SALON, FOREST, SECOND_AFFECTION_STATUE, TRAVEL, SPECIES, SPECIES_IDS, RECIPE_SPECIES, type Odds, type BuildingKind, type SpeciesId, type RabbitType, type Rarity} from '../config/balance';
 import {breedingPool, recipeMatches, ordinaryPoolAllows, nestForParent} from '../simulation/breeding';
 import {bennyStandIns} from '../simulation/benny';
-import {playerLevel} from '../simulation/affection';
+import {nextAffectionStatue, playerLevel} from '../simulation/affection';
 import {travelling} from '../simulation/travel';
+import {atSalon, away} from '../simulation/care';
 import {recipeKnown, recipePrice} from '../simulation/recipes';
 import {babiesBySlot, freeNurserySlots, nurseryBuilding, nurserySlotStates, nurseryUnlockQuote, type NurserySlotState} from '../simulation/nursery';
 import type {GameState, NurserySlot, Refusal} from '../state/types';
 import {ISLAND} from '../config/islandGeometry';
 import {mapRarities} from '../config/rarities';
 
-export const BUILDING_NAMES: Record<BuildingKind, string> = {enclosure: 'Enclos', farm: 'Ferme', nest: 'Nid', nursery: 'Nurserie', kitchen: 'Cuisine', statue: 'Statue de l’Affection', agency: 'Agence de voyage'};
+/** The three cares of the Salon de soins. */
+export const CARE_NAMES: Record<import('../config/balance').CareKind, string> = {bath: 'Bain', brush: 'Brossage', massage: 'Massage'};
+export const BUILDING_NAMES: Record<BuildingKind, string> = {enclosure: 'Enclos', farm: 'Ferme', nest: 'Nid', nursery: 'Nurserie', kitchen: 'Cuisine', statue: 'Statue de l’Affection', agency: 'Agence de voyage', salon: 'Salon de soins', forest: 'Forêt de Brocéliande', perch: 'Perchoir de Benny'};
 export const REFUSALS: Record<Refusal | 'NO_GAME' | 'DISPOSED' | 'SALE_NOT_SAVED' | 'ACTION_NOT_SAVED' | 'STORAGE_CHANGED', string> = {
   HABITAT_NOT_EMPTY: 'Cet habitat doit être vide.',
   LAST_HABITAT: 'Garde au moins un habitat.',
@@ -38,9 +41,18 @@ export const REFUSALS: Record<Refusal | 'NO_GAME' | 'DISPOSED' | 'SALE_NOT_SAVED
   ACTION_FINISHED: 'Cette étape est déjà terminée : aucun cœur dépensé.', STALE_ACTION: 'Cette action a changé. Ouvre à nouveau son panneau.',
   PRICE_CHANGED: 'Le paiement a changé. Vérifie le nouveau prix avant de confirmer.', NO_MISSING_PATTES: 'Ton solde suffit maintenant. Utilise le paiement normal.',
   INVALID_TIME: 'L’heure de l’appareil est invalide.', INVALID_RANDOM: 'Le tirage n’a pas pu aboutir. Réessaie.', INVALID_CHOICE: 'Ce choix n’est pas disponible.',
-  NOT_FOUND: 'Cet élément n’est plus présent.', NOT_ENOUGH_PATTES: 'Solde insuffisant.', NOT_ENOUGH_GRASS: 'Pas assez de nourriture.', MARKET_LIMIT: 'Le comptoir a fait tous ses échanges pour aujourd’hui. Reviens au prochain cycle.',
+  NOT_FOUND: 'Cet élément n’est plus présent.', NOT_ENOUGH_PATTES: 'Solde insuffisant.', NOT_ENOUGH_GRASS: 'Pas assez de nourriture.',
   INVALID_CELL: 'Cette case n’est pas encore disponible.', CELL_OCCUPIED: 'Cette case est occupée.', BUILDING_LIMIT: 'Limite de bâtiments atteinte.',
-  CAPACITY_FULL: 'Habitat plein.', BUSY: 'Ce bâtiment est occupé.', NOT_READY: 'Ce n’est pas encore prêt.', MAX_AFFECTION: 'Affection maximale atteinte.', STATUE_REQUIRED: 'L’affection 15 demande la Statue de l’Affection, à construire dès le niveau 15.', TRAVELING: 'Ce lapin est en voyage. Accueille-le à l’agence à son retour.',
+  CAPACITY_FULL: 'Habitat plein.', BUSY: 'Ce bâtiment est occupé.', NOT_READY: 'Ce n’est pas encore prêt.', MAX_AFFECTION: 'Affection maximale atteinte.', STATUE_REQUIRED: `L’affection ${AFFECTION_STATUE.cap + 1} demande la Statue de l’Affection, à construire dès le niveau ${AFFECTION_STATUE.level}.`, SECOND_STATUE_REQUIRED: `L’affection ${SECOND_AFFECTION_STATUE.cap + 1} et plus demande deux Statues de l’Affection. Construis la deuxième dès le niveau ${SECOND_AFFECTION_STATUE.level}.`, TRAVELING: 'Ce lapin est en voyage. Accueille-le à l’agence à son retour.',
+  AT_SALON: 'Ce lapin est au salon de soins. Va le chercher au salon à la fin de son soin.', GIFT_TODAY: 'Ce lapin a déjà eu son cadeau aujourd’hui.',
+  AFFECTION_WALL: 'Ce palier se passe en le nourrissant.', PICNIC_TODAY: 'Tu as déjà fait ton pique-nique aujourd’hui. Reviens demain !',
+  EMPTY_ENCLOSURE: 'Il n’y a aucun lapin dans cet enclos pour l’instant.', NO_GIFT_POSSIBLE: 'Aucun lapin de cet enclos ne peut gagner d’affection aujourd’hui.',
+  NO_EVOLVED_ART: 'Ce lapin n’a pas de dessin évolué.', EVOLUTION_AFFECTION: 'Affection 30 nécessaire.',
+  EVOLUTION_CHALLENGES: 'Termine ses défis pour le faire évoluer.', EVOLUTION_REQUIRED: 'Fais d’abord évoluer ce lapin depuis sa fiche.',
+  EVENT_OVER: 'L’événement de Noël est terminé.', SNOWMAN_TODAY: 'Tu as déjà fait ton bonhomme de neige aujourd’hui. Reviens demain !',
+  NOT_ENOUGH_CANDIES: 'Pas assez de sucres d’orge. Réussis les défis de Noël pour en gagner.',
+  DEBRIS_IN_THE_WAY: 'Des débris encombrent cet endroit : touche-les pour les enlever.',
+  BENNY_REQUIRED: 'Il faut Benny sur ton île pour jouer au Perchoir.',
   SAME_PARENT: 'Choisis deux lapins différents.', AFFECTION_TOO_LOW: 'Chaque parent doit avoir au moins 2 d’affection.',
   MISSING_BUILDING: 'Il manque un bâtiment nécessaire : nid, nurserie ou cuisine.', ALREADY_EXPANDED: 'L’extension est déjà achetée.', PARCEL_UNAVAILABLE: 'Cette parcelle n’est pas encore accessible : l’île s’agrandit dans un ordre fixe, une parcelle après l’autre.', LAST_OF_SPECIES: 'Garde au moins un lapin de chaque espèce possédée.',
   BENNY_RECHARGING: 'Le pouvoir de Benny se recharge encore.', NO_WAITING_BABY: 'Aucun lapereau n’attend dans la nurserie.',
@@ -49,12 +61,12 @@ export const REFUSALS: Record<Refusal | 'NO_GAME' | 'DISPOSED' | 'SALE_NOT_SAVED
 };
 export const moneyReason = (s: GameState, price: number) => s.pattes < price ? 'Solde insuffisant.' : null;
 export const occupants = (s: GameState, id: string) => s.rabbits.filter(r => r.enclosureId === id);
-/** At the nest or away on a trip: in both cases the rabbit cannot be bred, moved or entrusted. */
-export const parentBusy = (s: GameState, id: string, _now: number) => !!nestForParent(s,id) || travelling(s, id);
-export const busyReason = (s: GameState, id: string): string => travelling(s, id) ? REFUSALS.TRAVELING : REFUSALS.PARENT_BUSY;
+/** At the nest, on a trip or at the salon: the rabbit cannot be bred, moved or entrusted. */
+export const parentBusy = (s: GameState, id: string, _now: number) => !!nestForParent(s,id) || away(s, id);
+export const busyReason = (s: GameState, id: string): string => travelling(s, id) ? REFUSALS.TRAVELING : atSalon(s, id) ? REFUSALS.AT_SALON : REFUSALS.PARENT_BUSY;
 export function rabbitAvailability(s: GameState, id: string, now: number): string | null {
   const r = s.rabbits.find(r => r.id === id);
-  return !r ? 'Lapin absent.' : travelling(s, id) ? 'En voyage.' : parentBusy(s, id, now) ? 'Au nid.' : r.affection < BALANCE.breedingAffection ? 'Affection 2 nécessaire.' : null;
+  return !r ? 'Lapin absent.' : travelling(s, id) ? 'En voyage.' : atSalon(s, id) ? 'Au salon de soins.' : parentBusy(s, id, now) ? 'Au nid.' : r.affection < BALANCE.breedingAffection ? 'Affection 2 nécessaire.' : null;
 }
 export function releaseReason(s: GameState, id: string, now: number): string | null {
   const r = s.rabbits.find(r => r.id === id);
@@ -62,22 +74,25 @@ export function releaseReason(s: GameState, id: string, now: number): string | n
 }
 export function buildingReason(s: GameState, kind: BuildingKind, ignorePrice = false, habitatType: HabitatType = 'universal'): string | null {
   if (kind === 'nest' || kind === 'nursery') return 'Cet équipement est offert et ne s’achète pas.';
-  if(kind==='statue' && playerLevel(s)<AFFECTION_STATUE.level) return `Niveau ${AFFECTION_STATUE.level} requis`;
+  const statue = kind === 'statue' ? nextAffectionStatue(s) : null;
+  if(statue && playerLevel(s)<statue.level) return `Niveau ${statue.level} requis`;
   if(kind==='agency' && playerLevel(s)<TRAVEL.unlockLevel) return `Niveau ${TRAVEL.unlockLevel} requis`;
+  if(kind==='salon' && playerLevel(s)<SALON.unlockLevel) return `Niveau ${SALON.unlockLevel} requis`;
+  if(kind==='forest' && playerLevel(s)<FOREST.unlockLevel) return `Niveau ${FOREST.unlockLevel} requis`;
   if(kind==='enclosure') {const access=stateLevelAccess(s,{family:'habitatPurchase',id:habitatType});if(access.locked)return `Niveau ${access.requiredLevel} requis`;}
   if (kind === 'farm' && playerLevel(s) < 15 && s.buildings.filter(b => b.kind === 'farm').length >= farmLimit(playerLevel(s))) return `Niveau ${farmLimit(playerLevel(s)) === 2 ? 12 : 15} requis pour une ferme supplémentaire`;
   const config = BALANCE.buildings[kind];
   if (config.maximum !== null && s.buildings.filter(b => b.kind === kind).length >= config.maximum) return REFUSALS.BUILDING_LIMIT;
   if (s.buildings.length >= s.acquiredParcels.length * ISLAND.parcelArea) return 'Aucune case libre. Agrandis la prairie.';
   if (ignorePrice) return null;
-  if (kind === 'statue') return s.hearts < AFFECTION_STATUE.heartPrice ? REFUSALS.NOT_ENOUGH_HEARTS : null;
+  if (statue) return s.hearts < statue.heartPrice ? REFUSALS.NOT_ENOUGH_HEARTS : null;
   return moneyReason(s, kind === 'enclosure' ? habitatPrice(habitatType) : config.price);
 }
 export type Placement = {kind: BuildingKind; movingId?: string; starter?: boolean; habitatType?: HabitatType; cell: {x: number; y: number} | null};
 export function placementReason(s: GameState, placement: Placement): string | null {
   const cell = placement.cell;
   if (!cell) return 'Touche un petit carré de la prairie.';
-  const reason = buildingPlacementReason(s, cell.x, cell.y, placement.movingId);
+  const reason = buildingPlacementReason(s, cell.x, cell.y, placement.movingId, placement.kind);
   if (reason) return REFUSALS[reason];
   if (placement.movingId) return null;
   if (placement.starter) return (placement.kind !== 'nest' && placement.kind !== 'nursery') ? REFUSALS.INVALID_CHOICE : s.buildings.some(b=>b.kind===placement.kind) ? REFUSALS.BUILDING_LIMIT : null;
@@ -92,10 +107,13 @@ export function nurseryView(s: GameState, now: number): {capacity: number; free:
     : {slot: baby.slot, birthId: baby.birth.id, stage: 'ready' as const, species: baby.birth.species})};
 }
 export type CollectionFilter = {type?: RabbitType; rarity?: Rarity; discovery?: 'known' | 'unknown'};
-export function collectionView(s: GameState, filter: CollectionFilter = {}) {
+export function collectionSpeciesView(s: GameState, filter: CollectionFilter = {}): SpeciesId[] {
   return SPECIES_IDS.filter(id => (!filter.type || SPECIES[id].types.includes(filter.type)) &&
     (!filter.rarity || SPECIES[id].rarity === filter.rarity) &&
-    (!filter.discovery || s.discovered.includes(id) === (filter.discovery === 'known'))).map(id => s.discovered.includes(id) ? {known: true as const, species: id, name: SPECIES[id].name, ...(SPECIES[id].description ? {description: SPECIES[id].description} : {})} : {known: false as const, name: '???', ...(recipeHint(id) ? {hint: recipeHint(id)} : {})});
+    (!filter.discovery || s.discovered.includes(id) === (filter.discovery === 'known')));
+}
+export function collectionView(s: GameState, filter: CollectionFilter = {}) {
+  return collectionSpeciesView(s, filter).map(id => s.discovered.includes(id) ? {known: true as const, species: id, name: SPECIES[id].name} : {known: false as const, name: '???', ...(recipeHint(id) ? {hint: recipeHint(id)} : {})});
 }
 export const TYPE_NAMES: Record<RabbitType, string> = {paille: 'paille', neige: 'neige', feu: 'feu', metal: 'métal', vol: 'vol', 'arc-en-ciel': 'arc-en-ciel'};
 export const RARITY_NAMES: Record<Rarity, string> = mapRarities(definition => definition.label);
@@ -110,8 +128,8 @@ export function probabilityLabel(weight: number, total: number): string {
   return `${weight / divisor}/${total / divisor} (≈ ${(weight * 100 / total).toFixed(2).replace('.', ',')} %)`;
 }
 /** Presentation of the unchanged draw: unknown recipes are summed from the same integer weights, never named. */
-export function oddsView(s: GameState, a: SpeciesId, b: SpeciesId, affectionA = 2, affectionB = 2) {
-  const standIn = bennyStandIns(a).length > 1 || bennyStandIns(b).length > 1, pool = nestOddsPool(s, a, b, affectionA, affectionB);
+export function oddsView(s: GameState, a: SpeciesId, b: SpeciesId, affectionA = 2, affectionB = 2, islet = false) {
+  const standIn = bennyStandIns(a).length > 1 || bennyStandIns(b).length > 1, pool = nestOddsPool(s, a, b, affectionA, affectionB, islet);
   const ids = Object.keys(pool.weights) as SpeciesId[], known = (id: SpeciesId) => recipeKnown(s, id);
   const unknownWeight = ids.filter(id => !known(id)).reduce((sum, id) => sum + pool.weights[id]!, 0);
   return {standIn, eligible: pool.eligible, guaranteed: pool.guaranteed, possible: pool.total > 0,
@@ -129,13 +147,13 @@ export function oddsView(s: GameState, a: SpeciesId, b: SpeciesId, affectionA = 
  * averaged with equal weights. Integer weights on a common denominator keep the labels exact; a stand-in without any
  * admissible result is left out (that breeding would be refused).
  */
-/** The draw the nest shows for two parents: the breeding pool itself, or its average over Benny's stand-ins. */
-export function nestOddsPool(s: GameState, a: SpeciesId, b: SpeciesId, affectionA = 2, affectionB = 2) {
-  return bennyStandIns(a).length > 1 || bennyStandIns(b).length > 1 ? standInPool(s, a, b, affectionA, affectionB) : breedingPool(s, a, b, affectionA, affectionB);
+/** The draw the nest shows for two parents: the breeding pool itself, or its average over Benny's stand-ins. `islet`: the islet of the Epics' nest. */
+export function nestOddsPool(s: GameState, a: SpeciesId, b: SpeciesId, affectionA = 2, affectionB = 2, islet = false) {
+  return bennyStandIns(a).length > 1 || bennyStandIns(b).length > 1 ? standInPool(s, a, b, affectionA, affectionB, islet) : breedingPool(s, a, b, affectionA, affectionB, islet);
 }
-function standInPool(s: GameState, a: SpeciesId, b: SpeciesId, affectionA: number, affectionB: number) {
+function standInPool(s: GameState, a: SpeciesId, b: SpeciesId, affectionA: number, affectionB: number, islet: boolean) {
   const gcd = (x: number, y: number): number => y ? gcd(y, x % y) : x;
-  const pools = bennyStandIns(a).flatMap(first => bennyStandIns(b).map(second => breedingPool(s, first, second, affectionA, affectionB))).filter(pool => pool.total > 0);
+  const pools = bennyStandIns(a).flatMap(first => bennyStandIns(b).map(second => breedingPool(s, first, second, affectionA, affectionB, islet))).filter(pool => pool.total > 0);
   // Each draw as reduced integer weights over its own total.
   const reduced = pools.map(pool => {
     const divisor = Object.values(pool.weights).reduce((g: number, weight) => gcd(g, weight!), pool.total);

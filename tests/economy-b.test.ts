@@ -7,6 +7,8 @@ import {activeMainMissions, mainProgress} from '../src/simulation/missions';
 import {cumulativeLevelXp, missionClaimXp} from '../src/simulation/progression';
 import {cuisineQuotaText, cuisineRemaining, heartGift, orderReadyText, recipeHint} from '../src/ui/economyFeedback';
 import {emptyBuilding} from '../src/state/initial';
+import {EVOLVED_ART} from '../src/config/evolvedArt';
+import {EVOLUTION_CHALLENGES, evolutionChallengeTarget} from '../src/config/evolutionChallenges';
 
 function advanced() {
   const s = createGame(0);
@@ -16,10 +18,21 @@ function advanced() {
   s.acquiredParcels = ['southwest','south','southeast','west'];
   s.missions.claimed = [...SOLO_INITIAL_MISSION_IDS,...BRANCH_MISSION_IDS]; s.missions.completed = [...s.missions.claimed];
   s.missions.nightOrderStarted = true;
+  // This fixture represents five players who explicitly completed their challenges and evolution before opening this catalogue.
+  s.buildings[0]!.habitat = {type: 'universal', level: 3};
+  for (const [index, art] of EVOLVED_ART.slice(0, 5).entries()) {
+    const challenges = [...new Set(EVOLUTION_CHALLENGES[art.id] ?? [])];
+    const rabbit = s.rabbits[index] ?? {...s.rabbits[0]!, id: `rabbit-${s.nextId++}`};
+    rabbit.species = art.id; rabbit.affection = 30; rabbit.enclosureId = s.buildings[0]!.id;
+    rabbit.evolution = {done: true, challenges: Object.fromEntries(challenges.map(challenge => [challenge, evolutionChallengeTarget(art.id, challenge)]))};
+    if (!s.rabbits.includes(rabbit)) s.rabbits.push(rabbit);
+  }
   return s;
 }
+// Without the jump-rope islet, its discovery mission stays hidden (it appears once the islet is bought).
+const withoutIsland = NEW_MAIN_MISSION_IDS.filter(id => id !== 'first-jump-rope');
 describe('economy B durable goals', () => {
-  it('loads an existing game without awarding resources or XP, then claims each old durable reward once in the full catalogue', () => {
+  it('loads an existing game without awarding resources or XP, then claims each durable reward once in the full catalogue', () => {
     const old = advanced(); delete old.missions.nightOrderStarted;
     old.buildings.push({...emptyBuilding('building-100','farm',0,32),order:{recipe: 'persil',startedAt:0,endsAt:HOUR}});old.nextId=101;
     const loaded = decodeGame(encodeGame(old)); expect(loaded.ok).toBe(true); if(!loaded.ok) throw Error(loaded.reason);
@@ -27,7 +40,7 @@ describe('economy B durable goals', () => {
     expect([s.pattes,s.grass,s.hearts,s.progression]).toEqual([old.pattes,old.grass,old.hearts,old.progression]);
     expect(s.missions.nightOrderStarted).toBe(true);
     for (const [index, id] of DURABLE_MISSION_IDS.entries()) {
-      expect(activeMainMissions(s)).toEqual([...DURABLE_MISSION_IDS.slice(index), ...NEW_MAIN_MISSION_IDS]); expect(s.missions.completed).toContain(id);
+      expect(activeMainMissions(s)).toEqual([...DURABLE_MISSION_IDS.slice(index), ...withoutIsland]); expect(s.missions.completed).toContain(id);
       expect(missionClaimXp('main', id)).toBe(40);
       const before=s, reward=MAIN_MISSIONS[id].reward;
       const claimed=act(s,{type:'claimMainMission',id},0);expect(claimed.ok).toBe(true);s=claimed.state;
@@ -36,16 +49,16 @@ describe('economy B durable goals', () => {
       expect(act(s,{type:'claimMainMission',id},0)).toMatchObject({ok:false,reason:'ALREADY_CLAIMED'});
       const reloaded=decodeGame(encodeGame(s));if(!reloaded.ok)throw Error(reloaded.reason);s=reloaded.state;
     }
-    expect(activeMainMissions(s)).toEqual(NEW_MAIN_MISSION_IDS);
+    expect(activeMainMissions(s)).toEqual(withoutIsland);
   });
-  it('checks every condition and counts all twenty ordinary rares', () => {
+  it('checks every condition and counts all twenty-five ordinary rares', () => {
     const s=advanced();
     for(const id of DURABLE_MISSION_IDS){const p=mainProgress(s,id);expect(p.value,id).toBeGreaterThanOrEqual(p.target);}
     expect(mainProgress(createGame(0),'night-order').value).toBe(0);
-    expect(mainProgress(s,'all-ordinary-rares').target).toBe(20);
-    s.discovered=s.discovered.filter(id=>id!=='bouee');expect(mainProgress(s,'all-ordinary-rares').value).toBe(19);
-    expect(GUARANTEE_SPECIES).toHaveLength(20);
-    s.missions.claimed=[...SOLO_INITIAL_MISSION_IDS];expect(activeMainMissions(s)).toEqual([...BRANCH_MISSION_IDS,...DURABLE_MISSION_IDS,...NEW_MAIN_MISSION_IDS]);
+    expect(mainProgress(s,'all-ordinary-rares').target).toBe(25);
+    s.discovered=s.discovered.filter(id=>id!=='bouee');expect(mainProgress(s,'all-ordinary-rares').value).toBe(24);
+    expect(GUARANTEE_SPECIES).toHaveLength(25);
+    s.missions.claimed=[...SOLO_INITIAL_MISSION_IDS];expect(activeMainMissions(s)).toEqual([...BRANCH_MISSION_IDS,...DURABLE_MISSION_IDS,...withoutIsland]);
     const claimed=act(s,{type:'claimMainMission',id:'level-fifteen'},0);expect(claimed.ok).toBe(true);
     expect(claimed.state.hearts-s.hearts).toBe(5);expect(claimed.state.progression.totalXp-s.progression.totalXp).toBe(40);
     expect(act(claimed.state,{type:'claimMainMission',id:'level-fifteen'},0)).toMatchObject({ok:false,reason:'ALREADY_CLAIMED'});
@@ -59,8 +72,8 @@ describe('economy B durable goals', () => {
   });
 });
 describe('economy B feedback and prices', () => {
-  it('gives only parent type hints for the twenty illustrated rares, including Bouee', () => {
-    const hints=SPECIES_IDS.filter(id=>recipeHint(id));expect(hints).toHaveLength(20);
+  it('gives only parent type hints for the twenty-five illustrated rares, including Bouee', () => {
+    const hints=SPECIES_IDS.filter(id=>recipeHint(id));expect(hints).toHaveLength(25);
     for(const id of hints) expect(recipeHint(id)).toMatch(/^Indice : .+ × .+$/);
     expect(recipeHint('bouee')).toBe('Indice : Feu × Métal');
     for(const id of ['dinono','magicien','dragon'] as const) expect(recipeHint(id)).toBeNull();
@@ -70,16 +83,16 @@ describe('economy B feedback and prices', () => {
     let s=createGame(0);s.buildings.push(emptyBuilding('building-100','kitchen',0,32));s.nextId=101;
     expect(cuisineRemaining(s,0)).toBe(5);
     for(let left=4;left>=0;left--){const r=act(s,{type:'rewardCuisine',rabbitId:s.rabbits[0].id,recipeId:'avocado-toast'},0);expect(r.ok).toBe(true);s=r.state;expect(cuisineRemaining(s,0)).toBe(left);}
-    expect(cuisineQuotaText(s,0)).toBe('Récompense complète épuisée : pourboire de 5 pattes et 1 nourriture jusqu’à demain');
+    expect(cuisineQuotaText(s,0)).toBe('Récompense complète épuisée : pourboire de 5 pattes et 1 nourriture jusqu’à demain · affection du jour déjà gagnée');
     const tip=act(s,{type:'rewardCuisine',rabbitId:s.rabbits[0].id,recipeId:'chicken'},0);expect(tip.ok&&tip.cuisineReward).toMatchObject({pattes:5,grass:1,fullReward:false});
     expect(cuisineRemaining(advance(s,24*HOUR),24*HOUR)).toBe(5);
   });
   it('shows accumulated gifts, caps them at three and uses the next deadline', () => {
     const s=createGame(0), due=s.nextHeartGiftAt;
     expect(heartGift(s,due-1)).toMatchObject({gifts:0,amount:0});
-    expect(heartGift(s,due)).toMatchObject({gifts:1,amount:2});
-    expect(heartGift(s,due+2*HEARTS.giftInterval).text).toBe('3 cadeaux · 6 cœurs');
-    const r=act(s,{type:'claimHearts'},due+8*HEARTS.giftInterval);expect(r.ok&&r.value).toBe(6);
+    expect(heartGift(s,due)).toMatchObject({gifts:1,amount:3});
+    expect(heartGift(s,due+2*HEARTS.giftInterval).text).toBe('3 cadeaux · 9 cœurs');
+    const r=act(s,{type:'claimHearts'},due+8*HEARTS.giftInterval);expect(r.ok&&r.value).toBe(9);
     expect(heartGift(r.state,due+8*HEARTS.giftInterval).gifts).toBe(0);
   });
   it('preserves small prices, halves new prices and caps old refunds at their old paid price', () => {

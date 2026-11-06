@@ -29,7 +29,7 @@ export const VISUAL = {
   // Front three-quarter view: horizontal rows, no rotation, and modest depth compression.
   // Upright sprites keep their proportions; only their ground anchors follow this projection.
   projection: {theta: 0, q: .78},
-  camera: {minZoom: .4, maxZoom: 1.65, initialZoom: 1.05, overviewMargin: 80, overviewPadding: 16, frameMargin: 12, focusX: ISLAND.focus, focusY: ISLAND.focus,
+  camera: {minZoom: .4, maxZoom: 2.2, initialZoom: 1.05, overviewMargin: 80, overviewPadding: 16, frameMargin: 12, focusX: ISLAND.focus, focusY: ISLAND.focus,
     marginX: 300, marginY: 200, hudHeight: 70, compactHudHeight: 62, portraitHudHeight: 122,
     // Pan limit: at least this share of the viewport, on each axis, keeps showing owned land or its rim (the
     // open sky never fills more than two thirds). Below .39 a pinch keeps its anchor down to the minimum zoom,

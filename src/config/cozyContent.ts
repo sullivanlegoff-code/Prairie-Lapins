@@ -17,18 +17,3 @@ export const TRAVEL_STORIES: Record<Destination,readonly [string,string,string]>
  Paris:['Un ticket de métro soigneusement plié.','Un dessin de la tour aperçue au loin.','Un souvenir de pique-nique au bord de l’eau.'],
  Marrakech:['Un ruban aux couleurs du marché.','Un dessin des jardins au petit matin.','Une carte parfumée à la menthe.'],
 };
-export const COZY_EVENTS = [
- {id:'harvest',name:'Fête des récoltes',description:'Récolte six cultures pour garder la carte du grand goûter.',action:'collectOrder',target:6},
- {id:'welcome',name:'Saison des retrouvailles',description:'Accueille trois lapereaux ou retours de voyage pour compléter la carte des retrouvailles.',action:'welcome',target:3},
- {id:'garden',name:'Jardin en fête',description:'Acquiers trois nouveaux objets pour garder la carte du jardin en fête.',action:'buyDecoration',target:3},
-] as const;
-export const DISCOVERIES = [
- {id:'lost-slippers',name:'Les chaussons égarés',text:'Quelqu’un est reparti pieds nus après sa sieste…',art:'bunny-slippers'},
- {id:'forgotten-book',name:'Le livre oublié',text:'Une page est cornée : l’histoire reprendra demain.',art:'small-bookcase'},
- {id:'little-feast',name:'Le goûter secret',text:'Il reste juste assez de miel pour un dernier invité.',art:'honey-pot'},
- {id:'sleepy-plush',name:'La peluche voyageuse',text:'Elle aussi avait envie de voir un autre coin de prairie.',art:'otter-plush'},
- {id:'birthday-wish',name:'Un vœu discret',text:'Une petite bougie attend quelqu’un à célébrer.',art:'birthday-candle'},
- {id:'hay-trail',name:'La piste de foin',text:'Quelques brins racontent une course particulièrement joyeuse.',art:'hay-bale'},
-] as const;
-export const currentCozyEvent = (now:number) => COZY_EVENTS[new Date(now).getUTCMonth()%COZY_EVENTS.length];
-export const currentDiscovery = (now:number) => DISCOVERIES[Math.floor(now/(4*60*60*1000))%DISCOVERIES.length];

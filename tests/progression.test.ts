@@ -10,7 +10,7 @@ function configure(patch:Partial<ProgressionConfig>={}):ProgressionConfig{return
 describe('pure player progression v17',()=>{
  it('starts at one and uses rounded configured transition costs at every boundary',()=>{
   expect(progressionFromXp(0)).toMatchObject({level:1,xpInLevel:0,xpRequired:90});
-  for(let n=1;n<30;n++){expect(nextLevelCost(n)).toBe(Math.round(90*n**0.85));const t=cumulativeLevelXp(n+1);expect(progressionFromXp(t).level).toBe(n+1);expect(progressionFromXp(t-1).level).toBe(n);}
+  for(let n=1;n<30;n++){expect(nextLevelCost(n)).toBe(Math.round(90*n**0.85*(1+0.25*Math.max(0,n-20))));const t=cumulativeLevelXp(n+1);expect(progressionFromXp(t).level).toBe(n+1);expect(progressionFromXp(t-1).level).toBe(n);}
  });
  it('crosses several levels exactly once',()=>{const t=cumulativeLevelXp(5),r=addXp(89,t-89);expect(r.progression).toMatchObject({totalXp:t,level:5,xpInLevel:0});expect(r.crossedLevels).toEqual([2,3,4,5]);expect(addXp(t,0).crossedLevels).toEqual([]);});
  it('caps the level and bar, keeps surplus, and recalculates after raising the maximum',()=>{
@@ -22,7 +22,7 @@ describe('pure player progression v17',()=>{
   expect(addXp(cumulativeLevelXp(29),xp).crossedLevels).toEqual([30]);
  });
  it('changes base/exponent through the configuration while retaining exact safe thresholds',()=>{
-  const c=configure({curve:{...PROGRESSION.curve,base:25,exponent:0}});expect(cumulativeLevelXp(30,c)).toBe(725);expect(nextLevelCost(3,c)).toBe(25);
+  const c=configure({curve:{...PROGRESSION.curve,base:25,exponent:0,slowdown:undefined}});expect(cumulativeLevelXp(30,c)).toBe(725);expect(nextLevelCost(3,c)).toBe(25);
   const fractionalBase=configure({curve:{...PROGRESSION.curve,base:50.5}});expect(nextLevelCost(1,fractionalBase)).toBe(51);
   let previous=0;for(let level=2;level<=30;level++){const threshold=cumulativeLevelXp(level);expect(threshold).toBeGreaterThan(previous);expect(progressionFromXp(threshold).level).toBe(level);previous=threshold;}
  });

@@ -11,7 +11,9 @@ export {CLOUD_KEY} from './accountState';
 export const BACKUP_KEY = 'prairie-lapins.cloud.backup.v1';
 export const LINK_BACKUP_PREFIX = 'prairie-lapins.cloud.link-backup.v1.';
 class InvalidLink extends Error {}
-interface Link {owner: string; revision: number; baseline: string; syncedAt: string | null; pending: CommitRequest | null}
+interface Link {owner: string; revision: number; baseline: string; syncedAt: string | null; pending: CommitRequest | null; format?: number}
+/** Version of the fingerprint below. A link written with another one (none: before v25) compares with `sameCore`. */
+export const FINGERPRINT_FORMAT = 2;
 export type SyncStatus = 'disconnected' | 'checking' | 'choice' | 'conflict' | 'saved' | 'waiting' | 'sending' | 'offline' | 'session' | 'error' | 'local-error' | 'outdated' | 'recovery';
 export interface SyncView {status: SyncStatus; syncedAt: string | null; remote: RemoteSave | null; message?: string}
 interface Timing {now(): number; set(callback: () => void, delay: number): unknown; clear(handle: unknown): void; uuid(): string}
@@ -29,6 +31,7 @@ export function fingerprint(state: GameState): string {
   const reference = s.missions.daily.referenceAt;
   s.nextHeartGiftAt -= reference;
   for (const t of s.travel?.trips ?? []) { t.startedAt -= reference; t.endsAt -= reference; }
+  if (s.care) { s.care.startedAt -= reference; s.care.endsAt -= reference; }
   for (const b of s.buildings) {
     if (b.order) { b.order.startedAt -= reference; b.order.endsAt -= reference; }
     if (b.breeding) { b.breeding.startedAt -= reference; b.breeding.endsAt -= reference; }
@@ -38,15 +41,39 @@ export function fingerprint(state: GameState): string {
   const births = s.buildings.flatMap(b => [
     ...(b.breeding ? [b.breeding.birth] : []), ...(b.nursery?.babies.map(x => x.birth) ?? []),
   ]).sort((a, b) => a.id.localeCompare(b.id));
-  const {lastSimulatedAt: _time, purchaseUnlocks: _unlocks, levelAccessTransition: _rights, missions, initiation, buildings, cozy, ...rest} = s;
+  const {lastSimulatedAt: _time, purchaseUnlocks: _unlocks, levelAccessTransition: _rights, missions, initiation, buildings, cozy, christmas, ...rest} = s;
+  // Christmas (v26): the sucres d'orge, today's snowman and the mini-game are actions of their own. The challenges drawn at a new
+  // cycle are passive, like the daily missions; their claims change the sucres d'orge. Absent until something real happened, so
+  // a game that never played the event keeps the same fingerprint as before it.
+  const festive = christmas && (christmas.candies || christmas.snowman || christmas.skyGifts)
+    ? {christmas: {candies: christmas.candies, snowman: christmas.snowman ?? null, skyGifts: christmas.skyGifts ?? null}} : {};
   // Shared time is passive, like income. The full bonds and album still travel with the next action save.
-  return JSON.stringify({...rest, births, cozy: {souvenirs: cozy?.souvenirs ?? [], discoveries: cozy?.discoveries ?? [], events: cozy?.events ?? [], album: cozy?.album.filter(m => m.kind !== 'friendship') ?? []},
-    missions: {events: missions.events, claimed: missions.claimed, nightOrderStarted: missions.nightOrderStarted},
+  return JSON.stringify({...rest, ...festive, births, cozy: {souvenirs: cozy?.souvenirs ?? [], album: cozy?.album.filter(m => m.kind !== 'friendship') ?? []},
+    // A caress and the 3-day streak are actions of their own: they must reach the other devices (audit, 4 November 2026).
+    missions: {events: missions.events, claimed: missions.claimed, nightOrderStarted: missions.nightOrderStarted, petted: missions.daily.petted ?? [], streak: missions.streak ?? null},
     initiation: initiation ? {used: initiation.used, birthId: initiation.birthId} : null,
     buildings: buildings.map(({incomeUnits: _income, breeding, nursery, ...b}) => ({...b,
       breeding: automaticTransfer ? null : breeding,
       nursery: nursery ? automaticTransfer ? {capacity: nursery.capacity} : nursery : null})),
   });
+}
+
+/**
+ * Whether two fingerprints, possibly of different formats, describe the same progress. A save update (v22 → v25) reshapes
+ * what the fingerprint holds (enclosures grown, old cozy fields gone), so an untouched game would look changed and show a
+ * conflict. Only what every format holds the same way and what any real play changes is compared: resources, levels,
+ * identifiers, rabbits, buildings and missions claimed.
+ */
+export function sameCore(a: string, b: string): boolean {
+  try {
+    const core = (json: string) => {
+      const f = JSON.parse(json) as {pattes?: unknown; grass?: unknown; hearts?: unknown; nextId?: unknown; progression?: unknown;
+        rabbits?: {id: unknown; species: unknown; name?: unknown; affection: unknown}[]; buildings?: {id: unknown; kind: unknown}[]; missions?: {claimed?: unknown; events?: unknown}};
+      return JSON.stringify([f.pattes, f.grass, f.hearts, f.nextId, f.progression, f.missions?.claimed, f.missions?.events,
+        (f.rabbits ?? []).map(r => [r.id, r.species, r.name ?? null, r.affection]), (f.buildings ?? []).map(x => [x.id, x.kind])]);
+    };
+    return core(a) === core(b);
+  } catch { return false; }
 }
 
 /** No DOM/auth/network dependencies. Local writes must succeed before any request. */
@@ -74,14 +101,14 @@ export class CloudSync {
     this.view = {...this.view, status, syncedAt: this.link?.syncedAt ?? null, message};
     for (const f of this.listeners) f(this.getView());
   }
-  private persist(link: Link): void { this.storage.setItem(CLOUD_KEY, JSON.stringify(link)); this.link = link; }
+  private persist(link: Link): void { link = {...link, format: FINGERPRINT_FORMAT}; this.storage.setItem(CLOUD_KEY, JSON.stringify(link)); this.link = link; }
   private readLink(owner: string): Link | null {
     const raw = this.storage.getItem(CLOUD_KEY); if (!raw) return null;
     try {
       const r = JSON.parse(raw) as Link;
       if (!r || typeof r.owner !== 'string') throw new InvalidLink();
       if (r.owner !== owner) return null;
-      if (!Number.isSafeInteger(r.revision) || r.revision < 0 || typeof r.baseline !== 'string' || !(r.syncedAt === null || typeof r.syncedAt === 'string')) throw new InvalidLink();
+      if (!Number.isSafeInteger(r.revision) || r.revision < 0 || typeof r.baseline !== 'string' || !(r.syncedAt === null || typeof r.syncedAt === 'string') || !(r.format === undefined || Number.isSafeInteger(r.format))) throw new InvalidLink();
       if (r.pending) {
         const p = r.pending, d = decodeGame(JSON.stringify(p.state));
         if (p.owner !== owner || p.expected !== r.revision || typeof p.operation !== 'string' || !d.ok) throw new InvalidLink();
@@ -134,6 +161,9 @@ export class CloudSync {
       this.view.remote = remote;
       const local = this.controller.getSnapshot().state;
       if (!this.link) { this.show('choice'); return; }
+      // A link from an older fingerprint format: if this device has not played since, its baseline becomes today's one.
+      if (this.link.format !== FINGERPRINT_FORMAT && !this.link.pending && this.link.baseline && local && sameCore(fingerprint(local), this.link.baseline))
+        this.persist({...this.link, baseline: fingerprint(local)});
       if ((remote?.revision ?? 0) === this.link.revision) {
         this.ready = true; this.show('saved'); this.changed(); return;
       }

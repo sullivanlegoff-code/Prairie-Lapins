@@ -5,6 +5,7 @@ import {MISSION_CYCLE_DURATION} from '../src/config/missions';
 import {dailyCycleStart} from '../src/simulation/missions';
 import type {Command,GameState} from '../src/state/types';
 import {withKitchen} from './kitchen-fixture';
+import {evolveAbove30} from './evolved';
 import {emptyBuilding} from '../src/state/initial';
 
 const TOAST=CUISINE_REWARDS['avocado-toast'];
@@ -20,7 +21,7 @@ describe('Cuisine reward command',()=>{
     const first=reward(initial,'birth-101'),same=reward(first.state,'birth-101'),other=reward(same.state,'birth-102');
     expect(first.cuisineReward!.heartGranted).toBe(true);expect(first.state.hearts).toBe(initial.hearts+1);expect(first.state.cuisine.heartCycle).toBe(0);
     expect(same.cuisineReward!.heartGranted).toBe(false);expect(same.state.hearts).toBe(initial.hearts+1);
-    expect(other.cuisineReward).toMatchObject({heartGranted:false,affectionGranted:true});expect(other.state.hearts).toBe(initial.hearts+1);
+    expect(other.cuisineReward).toMatchObject({heartGranted:false,affectionGranted:false}); // One affection a day for the whole Cuisine (5 November 2026).expect(other.state.hearts).toBe(initial.hearts+1);
     expect(other.state.pattes).toBe(initial.pattes+3*TOAST.pattes);expect(other.state.grass).toBe(initial.grass+3*TOAST.grass);
     const boundary=dailyCycleStart(other.state)+MISSION_CYCLE_DURATION;
     const early=reward(other.state,'birth-102',boundary-1);expect(early.cuisineReward!.heartGranted).toBe(false);
@@ -29,7 +30,7 @@ describe('Cuisine reward command',()=>{
     expect(next.state.progression).toEqual(initial.progression);
   });
   it('keeps the Heart independent of affection, including a rabbit at the cap',()=>{
-    const s=withKitchen(createGame(0));s.rabbits[0].affection=20;
+    const s=withKitchen(createGame(0));s.rabbits[0].affection=50;
     const r=reward(s);expect(r.cuisineReward).toMatchObject({affectionGranted:false,affectionAtCap:true,heartGranted:true});expect(r.state.hearts).toBe(s.hearts+1);
   });
   it('applies neither the Heart nor its marker when the transaction fails',()=>{
@@ -53,8 +54,8 @@ describe('Cuisine reward command',()=>{
     const first=reward(initial,a.id),second=reward(first.state,a.id);
     expect(first.cuisineReward!.affectionGranted).toBe(true);expect(second.cuisineReward!.affectionGranted).toBe(false);
     expect(second.state.rabbits[0].affection).toBe(2);
-    const other=reward(second.state,'birth-102');expect(other.state.rabbits.map(r=>r.affection)).toEqual([2,2]);
-    expect(other.state.cuisine.affectionCycles).toEqual({'birth-101':0,'birth-102':0});
+    const other=reward(second.state,'birth-102');expect(other.state.rabbits.map(r=>r.affection)).toEqual([2,1]); // The day's affection is already used.
+    expect(other.state.cuisine.affectionCycles).toEqual({'birth-101':0});
     const boundary=dailyCycleStart(other.state)+MISSION_CYCLE_DURATION;
     const early=reward(other.state,a.id,boundary-1);expect(early.cuisineReward!.affectionGranted).toBe(false);
     const next=reward(early.state,a.id,boundary);expect(next.cuisineReward!.affectionGranted).toBe(true);
@@ -66,15 +67,15 @@ describe('Cuisine reward command',()=>{
     expect(early.state.missions.daily.progress['gain-affection']).toBe(0);
     expect(next.state.missions.daily.progress['gain-affection']).toBe(0);
   });
-  it('consumes the opportunity even at the cap and never exceeds 20',()=>{
-    const initial=withKitchen(createGame(0));initial.rabbits[0].affection=20;
+  it('keeps the day’s affection when the cook is at the cap and never exceeds 50',()=>{
+    const initial=withKitchen(createGame(0));initial.rabbits[0].affection=50;
     const first=reward(initial),second=reward(first.state);
     expect(second.state.missions.daily.progress['gain-affection']).toBe(0);
     expect(first.cuisineReward).toMatchObject({affectionGranted:false,affectionAtCap:true});
-    expect(first.state.cuisine.affectionCycles[initial.rabbits[0].id]).toBe(0);
-    expect(second.state.rabbits[0].affection).toBe(20);
-    const lowered=structuredClone(second.state);lowered.rabbits[0].affection=19;
-    expect(reward(lowered).state.rabbits[0].affection).toBe(19);
+    expect(first.state.cuisine.affectionCycles[initial.rabbits[0].id]).toBeUndefined();
+    expect(second.state.rabbits[0].affection).toBe(50);
+    const lowered=structuredClone(second.state);lowered.rabbits[0].affection=49;
+    expect(reward(lowered).state.rabbits[0].affection).toBe(49);
     const edge=withKitchen(createGame(0));edge.rabbits[0].affection=19;
     expect(reward(edge).state.rabbits[0].affection).toBe(19); // Past 14, only the Statue de l'Affection opens the way.
     edge.buildings.push(emptyBuilding(`building-${edge.nextId++}`,'statue',30,30));
@@ -84,6 +85,14 @@ describe('Cuisine reward command',()=>{
     expect(blocked).toMatchObject({cuisineReward:{affectionGranted:false,affectionStatueRequired:true}});
     wall.buildings.push(emptyBuilding(`building-${wall.nextId++}`,'statue',30,30));
     expect(reward(wall)).toMatchObject({cuisineReward:{affectionGranted:true,affectionStatueRequired:false}});
+    // Past 30, only a second statue opens the way (2 November 2026).
+    wall.rabbits[0].affection=30;
+    // Since 4 November 2026 the rabbit must evolve first: the reward says so instead of asking for the statue.
+    expect(reward(wall)).toMatchObject({cuisineReward:{affectionGranted:false,affectionStatueRequired:false,affectionEvolutionRequired:true}});
+    evolveAbove30(wall.rabbits[0]);
+    expect(reward(wall)).toMatchObject({cuisineReward:{affectionGranted:false,affectionStatueRequired:true}});
+    wall.buildings.push(emptyBuilding(`building-${wall.nextId++}`,'statue',34,30));
+    const opened=reward(wall);expect(opened).toMatchObject({cuisineReward:{affectionGranted:true,affectionStatueRequired:false}});expect(opened.state.rabbits[0].affection).toBe(31);
   });
   it.each(['pattes','grass'] as const)('rejects %s overflow atomically',resource=>{
     const s=withKitchen(createGame(0));s[resource]=Number.MAX_SAFE_INTEGER;const before=structuredClone(s);
@@ -222,9 +231,9 @@ describe('Cuisine à deux lapins (commis et goûteur)',()=>{
       expect(Object.keys(r.state.cuisine.affectionCycles)).toEqual([winner]);
     }
   });
-  it('draws among the rabbits still able to receive affection today, then none once both had it',()=>{
+  it('draws among the rabbits still able to receive affection, then none once the day’s affection is given',()=>{
     const first=cook(pair(),0);if(!first.ok)throw Error();expect(first.cuisineReward!.affectionRabbitId).toBe('birth-101');
-    const second=cook(first.state,0);if(!second.ok)throw Error();expect(second.cuisineReward).toMatchObject({affectionRabbitId:'birth-102',affectionGranted:true});
+    const second=cook(first.state,0);if(!second.ok)throw Error();expect(second.cuisineReward!.affectionGranted).toBe(false);
     const third=cook(second.state,0);if(!third.ok)throw Error();expect(third.cuisineReward!.affectionGranted).toBe(false);
     const capped=pair();capped.rabbits[0].affection=20;const r=cook(capped,0);if(!r.ok)throw Error();expect(r.cuisineReward).toMatchObject({affectionRabbitId:'birth-102',affectionGranted:true});
   });

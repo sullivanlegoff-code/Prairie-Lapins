@@ -10,7 +10,7 @@ import {encodePng} from './derive-nursery-overlays.mjs';
 
 process.chdir(fileURLToPath(new URL('..', import.meta.url)));
 /** `light`: white background; `checker`: a transparency checkerboard printed into the picture (two neutral greys);
- * `corner`: a flat colour sampled on the border; absent: already transparent. */
+ * `corner`: a flat colour sampled on the border (`tolerance`, optional, replaces its default colour distance); absent: already transparent. */
 export const DESIGNS = [
   {id: 'boudinet', file: 'Rare/Boudinet/Boudinet.png', background: 'light'},
   {id: 'dinono', file: 'Rare/Dinono/Dinono.png'},
@@ -35,9 +35,50 @@ export const DESIGNS = [
   {id: 'ankylosaure', source: 'output/imagegen/ankylosaure-v1/anky-B3.png', background: 'light'},
   // Mythic Benny, inspired by a real rabbit: design A1 approved by the owner on 1 November 2026 (cut from the A variations sheet).
   {id: 'benny', source: 'output/imagegen/benny-v2/benny-A1-master.png', background: 'light'},
+  // Christmas update (owner, 5 November 2026): original concepts chosen by the owner (Vantablack A, Gigi-rarafe B, Yetiti A,
+  // Rennes A, Susucre B), and Arkoko, the owner's own drawing (its transparency checkerboard is printed into the picture).
+  {id: 'vantablack', source: 'output/imagegen/nouveaux-lapins-v1/vantablack-A.png', background: 'light'},
+  {id: 'gigi-rarafe', source: 'output/imagegen/nouveaux-lapins-v1/gigi-rarafe-B.png', background: 'light'},
+  {id: 'yetiti', source: 'output/imagegen/nouveaux-lapins-v1/yetiti-A.png', background: 'light'},
+  {id: 'rennes', source: 'output/imagegen/nouveaux-lapins-v1/rennes-A.png', background: 'light'},
+  {id: 'susucre', source: 'output/imagegen/nouveaux-lapins-v1/susucre-B.png', background: 'light'},
+  {id: 'arkoko', source: 'assets-source/rabbits/Arkoko/Arkoko stade 1.png', background: 'checker'},
+  // Christmas update, second wave (owner, 5 November 2026): Fantôme (v3, the tip of the nose out of the sheet), Bouyoyo (v2,
+  // white stopper), Lapin de Sulli (concept B), and the four rabbits the owner named, painted from his names only (free design):
+  // Pain d'épice and Flocon de cristal (Christmas epics), Nuage and Champignon des bois (rares). Flocon de cristal's white fur
+  // keeps its pale face with a tight tolerance on the backdrop's near-pure white.
+  {id: 'fantome', source: 'output/imagegen/nouveaux-lapins-v3/fantome-v3.png', background: 'light'},
+  {id: 'bouyoyo', source: 'output/imagegen/nouveaux-lapins-v3/bouyoyo-v2.png', background: 'light'},
+  {id: 'lapin-de-sulli', source: 'output/imagegen/nouveaux-lapins-v3/lapin-de-sulli-B.png', background: 'light'},
+  {id: 'pain-epice', source: 'output/imagegen/nouveaux-lapins-v3/pain-epice-A.png', background: 'light'},
+  {id: 'flocon-cristal', source: 'output/imagegen/nouveaux-lapins-v3/flocon-cristal-A.png', background: 'corner', tolerance: 10},
+  {id: 'nuage', source: 'output/imagegen/nouveaux-lapins-v3/nuage-A.png', background: 'light'},
+  {id: 'champignon', source: 'output/imagegen/nouveaux-lapins-v3/champignon-A.png', background: 'light'},
+  // Affection 30 evolutions of the five commons, chosen by the owner on 3 November 2026 (white backdrop, the rabbit alone). The
+  // approved paintings stay beside the species as <id>-evolution-source.png; `master` writes <id>-evolution-sprite.png (the v2 source)
+  // instead of the species' own sprite.png. Usage: node scripts/prepare-rabbit-masters.mjs . paille-evolution neige-evolution ...
+  ...['paille', 'neige', 'feu', 'belier-gris', 'volant'].map(id => ({id: `${id}-evolution`, source: `assets-source/rabbits/${id}/${id}-evolution-source.png`,
+    master: `assets-source/rabbits/${id}/${id}-evolution-sprite.png`, background: 'light'})),
+  // Affection 30 evolutions of Dinono (« armure jade ») and Dinenette (« pendentif cœur »), painted and approved by the owner on
+  // 3 November 2026 on a flat black backdrop (RGB, no alpha): `corner` with a tolerance of 24 keeps the dark green and dark grey
+  // shadows of the drawings, which the default tolerance would eat.
+  ...['dinono', 'dinenette'].map(id => ({id: `${id}-evolution`, source: `assets-source/rabbits/${id}/${id}-evolution-source.png`,
+    master: `assets-source/rabbits/${id}/${id}-evolution-sprite.png`, background: 'corner', tolerance: 24})),
+  // Affection 30 evolutions of 20 Rares, 5 Épiques and 3 Légendaires, approved on 3 November 2026 on a white backdrop.
+  ...['amethyste', 'ardent', 'boudinet', 'bouee', 'bretonette', 'egiiipte', 'fluffy', 'frisket', 'glassofeu', 'icy', 'phoenix',
+    'pic-pic', 'piment', 'plume', 'princesse-neige', 'roukette', 'snk', 'tunini', 'virvoletant', 'wat-wat', 'calinou', 'dadi',
+    'magicien', 'maxou', 'orange', 'ankylosaure', 'dragon', 'requin'].map(id => ({id: `${id}-evolution`, source: `assets-source/rabbits/${id}/${id}-evolution-source.png`,
+    master: `assets-source/rabbits/${id}/${id}-evolution-sprite.png`, background: 'light'})),
+  // Affection 30 evolutions of the Christmas update's thirteen rabbits (painted 5 and 6 November 2026 on a white backdrop, same
+  // pose as the approved first drawing; Arkoko keeps the head of the owner's stage 1).
+  ...['vantablack', 'gigi-rarafe', 'yetiti', 'rennes', 'susucre', 'arkoko', 'fantome', 'bouyoyo', 'lapin-de-sulli', 'pain-epice',
+    'flocon-cristal', 'nuage', 'champignon'].map(id => ({id: `${id}-evolution`, source: `assets-source/rabbits/${id}/${id}-evolution-source.png`,
+    // The white sheet of Fantôme, the white fur of Nuage and Flocon de cristal: only the near-pure white of the backdrop goes.
+    master: `assets-source/rabbits/${id}/${id}-evolution-sprite.png`, ...['fantome', 'nuage'].includes(id) ? {background: 'corner', tolerance: 10} : {background: 'light'}})),
 ];
-// Bouee's left ear encloses a pocket of background: seed only that pocket, preserving the ring's white dots.
-export const BACKGROUND_SEEDS = {bouee: [[490, 570]]};
+// Bouee's left ear encloses a pocket of background: seed only that pocket, preserving the ring's white dots. Dinenette's evolved
+// tail curl encloses another one, between the heart and the back.
+export const BACKGROUND_SEEDS = {bouee: [[490, 570]], 'dinenette-evolution': [[150, 820]]};
 const MARGIN = 8, LIGHT_MIN = 200, LIGHT_SPREAD = 26, CHECKER_MIN = 130, CHECKER_SPREAD = 14, CORNER_TOLERANCE = 56;
 
 /** 8-bit RGB or RGBA, non-interlaced; returns RGBA. */
@@ -71,7 +112,7 @@ export function decodeRgbPng(file) {
   return {width, height, pixels};
 }
 
-export function cutOut({width, height, pixels}, mode, backgroundSeeds = []) {
+export function cutOut({width, height, pixels}, mode, backgroundSeeds = [], cornerTolerance = CORNER_TOLERANCE) {
   const at = i => [pixels[i * 4], pixels[i * 4 + 1], pixels[i * 4 + 2]];
   let reference = [0, 0, 0];
   if (mode === 'corner') {
@@ -85,7 +126,7 @@ export function cutOut({width, height, pixels}, mode, backgroundSeeds = []) {
     const [r, g, b] = at(i);
     if (mode === 'light') return Math.max(0, LIGHT_MIN - Math.min(r, g, b), Math.max(r, g, b) - Math.min(r, g, b) - LIGHT_SPREAD);
     if (mode === 'checker') return Math.max(0, CHECKER_MIN - Math.min(r, g, b), Math.max(r, g, b) - Math.min(r, g, b) - CHECKER_SPREAD);
-    return Math.max(0, Math.hypot(r - reference[0], g - reference[1], b - reference[2]) - CORNER_TOLERANCE);
+    return Math.max(0, Math.hypot(r - reference[0], g - reference[1], b - reference[2]) - cornerTolerance);
   };
   const removed = new Uint8Array(width * height), queue = [];
   const seed = i => { if (!removed[i] && distance(i) === 0) { removed[i] = 1; queue.push(i); } };
@@ -129,10 +170,11 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   if (!folder) throw Error('Usage: node scripts/prepare-rabbit-masters.mjs "<Design des lapins folder>" [id ...]');
   for (const design of DESIGNS.filter(d => !only.length || only.includes(d.id))) {
     const image = decodeRgbPng(readFileSync(design.source ?? join(folder, design.file)));
-    if (design.background) cutOut(image, design.background, BACKGROUND_SEEDS[design.id]);
+    if (design.background) cutOut(image, design.background, BACKGROUND_SEEDS[design.id], design.tolerance);
     const master = crop(image);
-    mkdirSync(`assets-source/rabbits/${design.id}`, {recursive: true});
-    writeFileSync(`assets-source/rabbits/${design.id}/sprite.png`, encodePng(master));
+    const target = design.master ?? `assets-source/rabbits/${design.id}/sprite.png`;
+    mkdirSync(target.slice(0, target.lastIndexOf('/')), {recursive: true});
+    writeFileSync(target, encodePng(master));
     console.log(`${design.id}: ${image.width}x${image.height} -> ${master.width}x${master.height}`);
   }
 }

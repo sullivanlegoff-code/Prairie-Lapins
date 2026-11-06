@@ -2,7 +2,7 @@ import {describe, expect, it} from 'vitest';
 import {act, advance, decodeGame, encodeGame} from '../src/simulation';
 import {regressionStart as createGame} from './regression-start';
 import {setBaby, welcomeOf} from './nursery-baby';
-import {DAILY_BONUS, DAILY_MISSIONS, DAILY_PICK_COUNT, MISSION_CYCLE_DURATION as DAY, type DailyMissionId} from '../src/config/missions';
+import {DAILY_BONUS, DAILY_MISSIONS, DAILY_MISSION_IDS, DAILY_PICK_COUNT, MISSION_CYCLE_DURATION as DAY, type DailyMissionId} from '../src/config/missions';
 import {PROGRESSION} from '../src/config/progression';
 import {availableMissionRewards, dailyBonusReady, dailyClaimable, dailyMissionsFor, dailyMissionsOf, dailyProgress, emptyDailyProgress} from '../src/simulation/missions';
 import type {Command, GameState} from '../src/state/types';
@@ -100,10 +100,10 @@ describe('daily missions: three shown per cycle, all open at once', () => {
     expect(dailyMissionsOf(s)).toHaveLength(DAILY_PICK_COUNT);
     for (const id of dailyMissionsOf(s)) expect(dailyProgress(s, id)).toBe(0);
   });
-  it('saves keep progress for all six missions, write no opening time, and read older saves with zero progress', () => {
+  it('saves keep progress for every mission of the pool, write no opening time, and read older saves with zero progress', () => {
     const s = feed(prepared(), 3);
     const raw = JSON.parse(encodeGame(s));
-    expect(Object.keys(raw.missions.daily.progress).sort()).toEqual(['collect-grass', 'collect-pattes', 'decorate', 'feed-rabbit', 'gain-affection', 'welcome-baby']);
+    expect(Object.keys(raw.missions.daily.progress).sort()).toEqual([...DAILY_MISSION_IDS].sort());
     expect(raw.missions.daily).not.toHaveProperty('nextAt');
     const decoded = decodeGame(JSON.stringify(raw));
     expect(decoded.ok && decoded.state.missions.daily.progress['feed-rabbit']).toBe(3);

@@ -2,12 +2,13 @@ import {cumulativeLevelXp} from '../src/simulation/progression';
 import {sendToNursery} from './manual-transfer';
 import {regressionStart as legacyGame} from './regression-start';
 import {describe, expect, it} from 'vitest';
-import {FEED_COSTS, HOUR, MINUTE, ORDERS, SPECIES, LEGACY_SPECIES_IDS, HISTORICAL_COMMON_WEIGHTS, farmDuration, growthDuration, type SpeciesId} from '../src/config/balance';
+import {FEED_COSTS, HOUR, MINUTE, ORDERS, SPECIES, LEGACY_SPECIES_IDS, HISTORICAL_COMMON_WEIGHTS, farmDuration, growthDuration, orderFarmLevel, type SpeciesId} from '../src/config/balance';
 import {act, advance,  decodeGame, encodeGame, pendingDiscoveries, rabbitIncome} from '../src/simulation';
 import {breedingOdds, chooseBirth} from '../src/simulation/breeding';
 import type {Command, GameState, Refusal} from '../src/state/types';
 import {babyOf, welcomeOf} from './nursery-baby';
 import {emptyBuilding} from '../src/state/initial';
+import {completedEvolution} from './evolved';
 import {habitatStats} from '../src/simulation/habitats';
 import {individualIncomeRoll} from '../src/simulation/time';
 
@@ -30,7 +31,7 @@ function setup(): GameState {
   let s = createGame(0); s.pattes = 10_000;
   s = run(s, {type: 'placeStarterBuilding', kind: 'nest', x: 22, y: 20});
   s = run(s, {type: 'placeStarterBuilding', kind: 'nursery', x: 26, y: 20});
-  s = run(s, {type: 'buyBuilding', kind: 'enclosure', x: 18, y: 24});
+  s = run(s, {type: 'buyBuilding', kind: 'enclosure', x: 17, y: 24});
   s = run(s, {type: 'feed', id: 'rabbit-2'}); s = run(s, {type: 'feed', id: 'rabbit-3'});
   return s;
 }
@@ -141,9 +142,9 @@ describe('income and time', () => {
 describe('farming and affection', () => {
   it.each(Object.keys(ORDERS) as (keyof typeof ORDERS)[])('runs exactly one %s farm order', recipe => {
     let s = run(createGame(0), {type: 'buyBuilding', kind: 'farm', x: 22, y: 20}); const id = s.buildings[1].id;
-    s.pattes = 1000; s.progression = {totalXp: cumulativeLevelXp(ORDERS[recipe].level), rewardedThroughLevel: ORDERS[recipe].level};
-    s.buildings.find(b => b.id === id)!.farmLevel = 2;
-    s = run(s, {type: 'startOrder', id, recipe}); expect(s.pattes).toBe(1000 - ORDERS[recipe].cost);
+    s.pattes = 5000; s.progression = {totalXp: cumulativeLevelXp(ORDERS[recipe].level), rewardedThroughLevel: ORDERS[recipe].level};
+    s.buildings.find(b => b.id === id)!.farmLevel = orderFarmLevel(recipe) === 3 ? 3 : 2;
+    s = run(s, {type: 'startOrder', id, recipe}); expect(s.pattes).toBe(5000 - ORDERS[recipe].cost);
     refuses(s, {type: 'startOrder', id, recipe}, 'BUSY');
     // The farm is upgraded here: each new crop lasts 20 % less (farmDuration).
     refuses(s, {type: 'collectOrder', id}, 'NOT_READY', farmDuration(ORDERS[recipe].duration, 2) - 1);
@@ -156,23 +157,32 @@ describe('farming and affection', () => {
     refuses(s, {type: 'startOrder', id: s.buildings[1].id, recipe: 'banane'}, 'LEVEL_REQUIRED');
     const crops = Object.values(ORDERS);
     for (let i = 1; i < crops.length; i++) for (const key of ['level', 'cost', 'grass', 'duration'] as const) expect(crops[i][key]).toBeGreaterThanOrEqual(crops[i - 1][key]);
-    expect(crops).toHaveLength(10);
+    expect(crops).toHaveLength(14); // The ten crops, then the four fancy crops of the level 3 farm.
   });
   it('refuses an unaffordable order', () => {
     const s = run(createGame(0), {type: 'buyBuilding', kind: 'farm', x: 22, y: 20}); s.pattes = 0;
     refuses(s, {type: 'startOrder', id: s.buildings[1].id, recipe: 'foin'}, 'NOT_ENOUGH_PATTES');
   });
-  it('requires 5 347 food to reach affection 20, the statue past 14, then refuses more food', () => {
-    let s = createGame(0); s.grass = 5347;
-    for (let affection = 1; affection < 20; affection++) {
+  it('requires 5 347 food to reach affection 20 and 80 900 more to reach 50, a statue past 14 and a second one past 30, then refuses more food', () => {
+    let s = createGame(0); s.grass = 5347 + 80_900;
+    expect(FEED_COSTS.slice(1, 20).reduce((sum, cost) => sum + cost, 0)).toBe(5347); expect(FEED_COSTS.slice(20).reduce((sum, cost) => sum + cost, 0)).toBe(80_900);
+    for (let affection = 1; affection < 50; affection++) {
       if (affection === 14) {
         refuses(s, {type: 'feed', id: 'rabbit-2'}, 'STATUE_REQUIRED');
         s.buildings.push(emptyBuilding(`building-${s.nextId}`, 'statue', 30, 30)); s.nextId++;
       }
+      if (affection === 30) {
+        // Since 4 November 2026 the rabbit must evolve first, then the second statue opens 31.
+        refuses(s, {type: 'feed', id: 'rabbit-2'}, 'EVOLUTION_REQUIRED');
+        s.rabbits.find(r => r.id === 'rabbit-2')!.evolution = completedEvolution(s.rabbits.find(r => r.id === 'rabbit-2')!.species);
+        refuses(s, {type: 'feed', id: 'rabbit-2'}, 'SECOND_STATUE_REQUIRED');
+        s.buildings.push(emptyBuilding(`building-${s.nextId}`, 'statue', 34, 30)); s.nextId++;
+      }
       const before = s.grass; s = run(s, {type: 'feed', id: 'rabbit-2'});
       expect(before - s.grass).toBe(FEED_COSTS[affection]);
+      if (affection === 19) { expect(s.grass).toBe(80_900); expect(rabbitIncome(20)).toBe(29); }
     }
-    expect(FEED_COSTS[14]).toBe(1500); expect(s.grass).toBe(0); expect(s.rabbits[0].affection).toBe(20); expect(rabbitIncome(20)).toBe(29);
+    expect(FEED_COSTS[14]).toBe(1500); expect(s.grass).toBe(0); expect(s.rabbits[0].affection).toBe(50); expect(rabbitIncome(50)).toBe(59);
     refuses(s, {type: 'feed', id: 'rabbit-2'}, 'MAX_AFFECTION');
     refuses(s, {type: 'feed', id: 'rabbit-3'}, 'NOT_ENOUGH_GRASS');
   });
@@ -251,7 +261,8 @@ describe('breeding probabilities and pity', () => {
   it('reserves a random new hybrid without marking it discovered', () => {
     const s = setup(); s.rabbits[0].species='feu'; s.discovered.push('feu','wat-wat'); s.rabbits.forEach(r => r.affection = 4); s.pityFailures = 6;
     const next = run(s, breed, 0, 0.999); expect(next.pityFailures).toBe(0);
-    expect(next.discovered).not.toContain('glassofeu'); expect(pendingDiscoveries(next)).toEqual(['glassofeu']);
+    // The last roll draws the last new hybrid of Feu + Neige: Bouyoyo since 6 November 2026.
+    expect(next.discovered).not.toContain('bouyoyo'); expect(pendingDiscoveries(next)).toEqual(['bouyoyo']);
     expect(nest(next).breeding!.birth.guaranteed).toBe(false);
   });
   it('keeps a guaranteed result and its counter coherent while another birth waits', () => {
@@ -336,7 +347,7 @@ describe('JSON format', () => {
   it('rejects invalid capacities, counters, identities, timestamps and reservations', () => {
     const mutations: ((s: GameState) => void)[] = [
       s => { s.pityFailures = 8; }, s => { s.nextId = 1; },
-      s => { s.buildings[1].x = 0; }, s => { s.rabbits[0].affection = 21; },
+      s => { s.buildings[1].x = 0; }, s => { s.rabbits[0].affection = 51; },
       s => { nest(s).breeding!.endsAt++; }, s => { nest(s).breeding!.birth.guaranteed = true; nest(s).breeding!.birth.reservedDiscovery=false; },
       s => { s.discovered = []; }, s => { s.rabbits.push({...s.rabbits[0]}); },
     ];

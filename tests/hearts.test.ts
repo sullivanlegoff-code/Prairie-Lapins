@@ -51,20 +51,20 @@ const current = (c: GameController) => c.getSnapshot().state!;
 
 describe('hearts initialization, migration and gifts', () => {
   it('creates 12 hearts and a first gift exactly 24 hours after creation', () => {
-    expect(createGame(123)).toMatchObject({version: 22, hearts: 12, nextHeartGiftAt: 123 + DAY});
+    expect(createGame(123)).toMatchObject({version: 27, hearts: 12, nextHeartGiftAt: 123 + DAY});
   });
   it('refuses a gift before 24 hours, allows the boundary once and schedules from the claim', () => {
     const initial = createGame(0);
     expect(act(initial, {type: 'claimHearts'}, DAY - 1)).toMatchObject({ok: false, state: initial, reason: 'NOT_READY'});
     const s = run(initial, {type: 'claimHearts'}, DAY);
-    expect(s).toMatchObject({hearts: 14, nextHeartGiftAt: 2 * DAY});
+    expect(s).toMatchObject({hearts: 15, nextHeartGiftAt: 2 * DAY});
     expect(act(s, {type: 'claimHearts'}, DAY)).toMatchObject({ok: false, state: s});
     expect(act(s, {type: 'claimHearts'}, 0)).toMatchObject({ok: false, state: s});
-    expect(run(s, {type: 'claimHearts'}, 2 * DAY).hearts).toBe(16);
+    expect(run(s, {type: 'claimHearts'}, 2 * DAY).hearts).toBe(18);
   });
   it('accumulates at most three gifts across multiple days', () => {
     const s = run(createGame(0), {type: 'claimHearts'}, 9 * DAY + HOUR);
-    expect(s).toMatchObject({hearts: 18, nextHeartGiftAt: 10 * DAY});
+    expect(s).toMatchObject({hearts: 21, nextHeartGiftAt: 10 * DAY});
     expect(act(s, {type: 'claimHearts'}, 10 * DAY-1)).toMatchObject({ok: false});
   });
   it('preserves claimed gifts across reload and refuses another claim after clock reversal', () => {
@@ -72,7 +72,7 @@ describe('hearts initialization, migration and gifts', () => {
     now = DAY; c.perform({type: 'claimHearts'}); now = HOUR;
     const reloaded = new GameController(memory.storage, () => now);
     expect(reloaded.perform({type: 'claimHearts'})).toMatchObject({ok: false, reason: 'NOT_READY'});
-    expect(current(reloaded)).toMatchObject({hearts: 14, nextHeartGiftAt: HOUR + DAY, lastSimulatedAt: HOUR});
+    expect(current(reloaded)).toMatchObject({hearts: 15, nextHeartGiftAt: HOUR + DAY, lastSimulatedAt: HOUR});
   });
 });
 
@@ -213,6 +213,6 @@ describe('imports and exports', () => {
     const preview = c.prepareImport(encodeGame(s)); if (!preview.ok) throw new Error(preview.reason);
     expect(preview.summary.hearts).toBe(3); expect(c.confirmImport(preview.token, true)).toEqual({ok: true});
     expect(current(c).hearts).toBe(3); const exported = c.exportGame(); if (!exported.ok) throw new Error(exported.reason);
-    expect(JSON.parse(exported.json)).toMatchObject({version: 22, hearts: 3});
+    expect(JSON.parse(exported.json)).toMatchObject({version: 27, hearts: 3});
   });
 });

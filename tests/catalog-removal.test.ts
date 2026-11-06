@@ -50,7 +50,7 @@ describe('Terre, Mottelin, Géant and Brumelin are gone from every catalogue', (
     for (const id of ['paille', 'neige', 'feu', 'belier-gris', 'volant', 'frisket', 'icy', 'magicien', 'dragon'] as const) expect(SPECIES_IDS).toContain(id);
     expect(SHOP_SPECIES).toEqual(['paille', 'neige', 'feu', 'belier-gris', 'volant']);
     expect([SPECIES.feu.progression.unlockLevel, SPECIES['belier-gris'].progression.unlockLevel, SPECIES.volant.progression.unlockLevel, SPECIES.magicien.progression.unlockLevel, SPECIES.dragon.progression.unlockLevel]).toEqual([5, 7, 9, 11, 14]);
-    expect(RECIPE_PRICES).toEqual({magicien: 450, dragon: 900, dadi: 450, maxou: 450, orange: 450, dinono: 450, dinenette: 450, 'calinou': 450, requin: 900, ankylosaure: 900});
+    expect(RECIPE_PRICES).toEqual({magicien: 450, dragon: 900, dadi: 450, maxou: 450, orange: 450, dinono: 450, dinenette: 450, 'calinou': 450, 'gigi-rarafe': 450, yetiti: 450, rennes: 450, susucre: 450, 'lapin-de-sulli': 450, 'pain-epice': 450, 'flocon-cristal': 450, requin: 900, ankylosaure: 900, arkoko: 900});
   });
 
   it('a new game offers no recipe at the start and its collection, notebook and odds never name a removed species', () => {
@@ -110,17 +110,19 @@ describe('what stays reachable', () => {
 describe('distributions: only the removals and their renormalisation', () => {
   // Hand-written raw weights (each admissible recipe 30; a mixed pair gives no Common result) of the unions that used to contain Brumelin.
   it.each([
-    [['paille', 'glassofeu'], 2, 2, {frisket: 30, icy: 30, ardent: 30, snk: 30, 'wat-wat': 30, glassofeu: 30}],
-    [['paille', 'glassofeu'], 4, 4, {frisket: 30, icy: 30, ardent: 30, snk: 30, 'wat-wat': 30, glassofeu: 30}],
-    [['boudinet', 'glassofeu'], 4, 4, {frisket: 30, icy: 30, ardent: 30, snk: 30, amethyste: 30, 'princesse-neige': 30, fluffy: 30, roukette: 30, 'wat-wat': 30, glassofeu: 30, boudinet: 30, bouee: 30}],
+    [['paille', 'glassofeu'], 2, 2, {frisket: 30, icy: 30, ardent: 30, snk: 30, 'wat-wat': 30, glassofeu: 30, bouyoyo: 30}],
+    [['paille', 'glassofeu'], 4, 4, {frisket: 30, icy: 30, ardent: 30, snk: 30, 'wat-wat': 30, glassofeu: 30, bouyoyo: 30}],
+    [['boudinet', 'glassofeu'], 4, 4, {frisket: 30, icy: 30, ardent: 30, snk: 30, amethyste: 30, 'princesse-neige': 30, fluffy: 30, roukette: 30, 'wat-wat': 30, glassofeu: 30, boudinet: 30, bouee: 30, vantablack: 30, bouyoyo: 30, champignon: 30}],
   ] as const)('%j at affection %i/%i keeps its raw weights, with no Brumelin and nothing redistributed', (pair, a, b, expected) => {
     expect(breedingWeights(pair[0], pair[1], a, b)).toEqual(expected);
     const total = Object.values(expected).reduce((n, w) => n + w, 0);
     expect(breedingOdds(pair[0], pair[1], a, b)).toEqual(Object.fromEntries(Object.entries(expected).map(([id, w]) => [id, w * 100 / total])));
   });
   it('the unions that held Terre no longer exist, and Magicien and Dragon keep their probabilities', () => {
-    expect(breedingOdds('paille', 'belier-gris', 6, 6)).toEqual({roukette: 40, boudinet: 40, magicien: 10, calinou: 10});
-    expect(breedingOdds('dadi', 'phoenix', 10, 10).dragon).toBe(15); expect(breedingOdds('dadi', 'phoenix', 15, 15).dragon).toBe(20); expect(breedingOdds('magicien', 'belier-gris', 6, 6).magicien).toBe(10); expect(breedingOdds('magicien', 'belier-gris', 10, 12).magicien).toBe(450 * 100 / 3300); expect(breedingOdds('magicien', 'belier-gris', 15, 14).magicien).toBe(450 * 100 / 3300); expect(breedingOdds('magicien', 'belier-gris', 15, 15).magicien).toBe(600 * 100 / 3600);
+    // Champignon des bois (6 November 2026) joined Roukette and Boudinet: three Rares at 1200, two Epics at 300.
+    expect(breedingOdds('paille', 'belier-gris', 6, 6)).toEqual({roukette: 1200 * 100 / 4200, boudinet: 1200 * 100 / 4200, champignon: 1200 * 100 / 4200, magicien: 300 * 100 / 4200, calinou: 300 * 100 / 4200});
+    // Affection steps of 2 November 2026: ×1.15 at 10, ×1.3 at 15, ×1.5 at 30, ×2 at 50.
+    expect(breedingOdds('dadi', 'phoenix', 10, 10).dragon).toBe(11.5); expect(breedingOdds('dadi', 'phoenix', 15, 15).dragon).toBe(13); expect(breedingOdds('dadi', 'phoenix', 30, 30).dragon).toBe(15); expect(breedingOdds('dadi', 'phoenix', 50, 50).dragon).toBe(20); expect(breedingOdds('magicien', 'belier-gris', 6, 6).magicien).toBe(300 * 100 / 4200); expect(breedingOdds('magicien', 'belier-gris', 10, 12).magicien).toBe(345 * 100 / 4290); expect(breedingOdds('magicien', 'belier-gris', 15, 14).magicien).toBe(345 * 100 / 4290); expect(breedingOdds('magicien', 'belier-gris', 15, 15).magicien).toBe(390 * 100 / 4380); expect(breedingOdds('magicien', 'belier-gris', 30, 30).magicien).toBe(450 * 100 / 4500); expect(breedingOdds('magicien', 'belier-gris', 50, 50).magicien).toBe(600 * 100 / 4800);
     expect(breedingOdds('paille', 'paille')).toEqual({paille: 100}); expect(breedingOdds('neige', 'neige')).toEqual({neige: 100});
   });
 });

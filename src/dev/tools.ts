@@ -21,6 +21,12 @@ import type {LegendaryAct} from '../display/legendaryTimeline';
 import {showLegendaryReveal} from '../ui/legendaryReveal';
 import {showBennyReveal} from '../ui/bennyReveal';
 import {habitatEntryReason, habitatStats} from '../simulation/habitats';
+import {MAGICIEN_TEST_EVENT} from '../config/magicienArt';
+import type {MagicienAct} from '../display/magicienTimeline';
+import {CHASE_EVENT} from '../display/rabbitChase';
+import {CHRISTMAS_MARKET_OPEN_EVENT, christmasLabOverride, setChristmasLabOverride, type ChristmasLabOverride} from '../config/christmas';
+import {MAX_CANDIES} from '../config/christmasEvent';
+import {SNOWBALL_BATTLE_EVENT, SNOWBALL_EVENT} from '../display/snowballFight';
 
 export const TEST_PREFIX = 'prairie-lapins.development.';
 export const DECORATIONS_PREVIEW_PREFIX = 'prairie-lapins.preview.decorations.';
@@ -68,6 +74,16 @@ export function developmentEnvironment(base: SaveStorage, options: {decorationPr
     state[resource] += amount;
     return replaceTestState(controller, state);
   }
+  /** Laboratory only: sucres d'orge added to the laboratory save (never the normal game), within the save's bound. */
+  function grantCandies(controller: GameController, amount: number): TestResult {
+    if (controller.storageScope !== 'laboratory') return {ok: false, reason: 'NOT_TEST_SESSION'};
+    const state = controller.getSnapshot().state;
+    if (!state) return {ok: false, reason: 'NO_GAME'};
+    const next = (state.christmas?.candies ?? 0) + amount;
+    if (!Number.isSafeInteger(amount) || amount <= 0 || next > MAX_CANDIES) return {ok: false, reason: 'INVALID_TEST_VALUE'};
+    state.christmas = {...state.christmas, candies: next};
+    return replaceTestState(controller, state);
+  }
   /** Laboratory only: forget bought recipes (gifts and discoveries stay known); no refund. */
   function resetRecipes(controller: GameController): TestResult {
     const state = controller.getSnapshot().state;
@@ -93,7 +109,7 @@ export function developmentEnvironment(base: SaveStorage, options: {decorationPr
     try { return replaceTestState(controller, scenarioState(id, clock())); }
     catch { return {ok: false, reason: 'INVALID_TEST_VALUE'}; }
   }
-  return {clock, storage, preferenceKey: prefix + 'ui', policy: sessionPolicy(true), advanceTime, grant, loadScenario, resetRecipes, addTestRabbit,
+  return {clock, storage, preferenceKey: prefix + 'ui', policy: sessionPolicy(true), advanceTime, grant, grantCandies, loadScenario, resetRecipes, addTestRabbit,
     mount(controller: GameController, onReplacement: (fresh?: boolean) => void = () => {}) {
       if (controller.storageScope !== 'laboratory') throw new Error('Test tools require isolated laboratory storage');
       const host = document.getElementById('devtools')!;
@@ -125,6 +141,36 @@ export function developmentEnvironment(base: SaveStorage, options: {decorationPr
         window.dispatchEvent(new CustomEvent(LEGENDARY_TEST_EVENT, {detail: {act}}));
         status.textContent = `${label} : lancé sur les légendaires visibles de la prairie (ferme ce panneau pour regarder).`;
       });
+      section('Animations du Magicien');
+      const magicianActs: [MagicienAct,string][] = [['sparks','Magicien : étincelles'],['circle','Magicien : cercle'],['levitation','Magicien : lévitation']];
+      for(const [act,label] of magicianActs) button(label,`dev-magicien-${act}`,()=>{
+        window.dispatchEvent(new CustomEvent(MAGICIEN_TEST_EVENT,{detail:{act}}));
+        status.textContent=`${label} : lancé sur les Magiciens évolués visibles de la prairie (ferme ce panneau pour regarder).`;
+      });
+      button('Lancer une poursuite', 'dev-rabbit-chase', () => {
+        window.dispatchEvent(new Event(CHASE_EVENT));
+        status.textContent = 'Poursuite lancée dans chaque enclos qui le permet.';
+      });
+      section('Noël');
+      const noel = (change: ChristmasLabOverride, label: string) => { setChristmasLabOverride({...christmasLabOverride(), ...change}); status.textContent = `${label} (ferme ce panneau pour regarder).`; };
+      button('Noël : activé', 'dev-noel-on', () => { noel({off: false}, 'Noël activé'); window.location.reload(); });
+      button('Noël : désactivé', 'dev-noel-off', () => { noel({off: true}, 'Noël désactivé dans le laboratoire'); window.location.reload(); });
+      for (const [hour, label] of [[10, '10 h (jour)'], [18.25, '18 h 15 (le soir tombe)'], [19.5, '19 h 30 (nuit)'], [20.05, '20 h 03 (les guirlandes s’allument)'], [23, '23 h (nuit, guirlandes)']] as const)
+        button(`Heure : ${label}`, `dev-noel-hour-${String(hour).replace('.', '-')}`, () => noel({hour}, `Heure forcée : ${label}`));
+      button('Heure : celle de l’appareil', 'dev-noel-hour-auto', () => noel({hour: undefined}, 'Heure de l’appareil'));
+      for (const [snow, label] of [['none', 'pas de neige'], ['light', 'mini flocons'], ['heavier', 'neige un peu plus forte']] as const)
+        button(`Neige : ${label}`, `dev-noel-snow-${snow}`, () => noel({snow}, `Neige forcée : ${label}`));
+      button('Neige : programme normal', 'dev-noel-snow-auto', () => noel({snow: undefined}, 'Neige selon le programme normal'));
+      button('Duel de boules de neige', 'dev-noel-snowballs', () => {
+        window.dispatchEvent(new Event(SNOWBALL_EVENT));
+        status.textContent = 'Duel de boules de neige lancé dans chaque enclos qui le permet (ferme ce panneau pour regarder).';
+      });
+      button('Bataille générale de boules de neige', 'dev-noel-snowball-battle', () => {
+        window.dispatchEvent(new Event(SNOWBALL_BATTLE_EVENT));
+        status.textContent = 'Bataille générale lancée dans chaque enclos d’au moins trois lapins libres (ferme ce panneau pour regarder).';
+      });
+      button('+50 sucres d’orge (laboratoire)', 'dev-noel-candies', () => resultMessage(grantCandies(controller, 50), '+50 sucres d’orge dans la partie du laboratoire.'));
+      button('Ouvrir le Marché de Noël', 'dev-noel-market', () => { window.dispatchEvent(new Event(CHRISTMAS_MARKET_OPEN_EVENT)); status.textContent = 'Marché de Noël ouvert.'; });
       section('Animations de Benny');
       const bennyActs: [BennyAct, string][] = [['hop', 'Benny : saut'], ['flop', 'Benny : belly flop'], ['scratch', 'Benny : grattage'], ['groom', 'Benny : toilette'], ['stretch', 'Benny : étirement']];
       for (const [act, label] of bennyActs) button(label, `dev-benny-${act}`, () => {

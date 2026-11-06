@@ -1,6 +1,7 @@
+// @vitest-environment happy-dom
 import {describe, expect, it} from 'vitest';
 import {KitchenEngine} from '../cooktap-prototype/engine';
-import {commisMood} from '../src/ui/CuisineActivity';
+import {commisMood, dressedRabbit} from '../src/ui/CuisineActivity';
 import {createKitchenTalk, HINT_DELAY_MS, HINT_REPEAT_MS} from '../src/ui/cuisineTalk';
 import {CUISINE_ANCHORS, DEFAULT_ANCHORS, cuisineAnchors} from '../src/config/cuisineAnchors';
 import {SPECIES_IDS} from '../src/config/species';
@@ -31,6 +32,14 @@ describe('commis mood, read from the kitchen state', () => {
 });
 
 describe('Cuisine accessory anchors', () => {
+  it('shows a rabbit’s evolved drawing only after its evolution was confirmed', () => {
+    const classic = dressedRabbit({id: 'rabbit-1', species: 'paille', affection: 30}, 'commis', true);
+    const evolved = dressedRabbit({id: 'rabbit-1', species: 'paille', affection: 30, evolution: {done: true}}, 'commis', true);
+    const returnedToClassic = dressedRabbit({id: 'rabbit-1', species: 'paille', affection: 30, evolution: {done: true}, classicLook: true}, 'commis', true);
+    expect(classic.querySelector('img')?.getAttribute('src')).toContain('paille-v1.png');
+    expect(evolved.querySelector('img')?.getAttribute('src')).toContain('paille-v2.png');
+    expect(returnedToClassic.querySelector('img')?.getAttribute('src')).toContain('paille-v1.png');
+  });
   it('place the toque, the bib and the paws inside every current sprite', () => {
     for (const species of SPECIES_IDS) {
       const anchors = CUISINE_ANCHORS[species]; expect(anchors, species).toBeDefined();

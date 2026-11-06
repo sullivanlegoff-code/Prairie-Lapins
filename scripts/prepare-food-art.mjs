@@ -16,6 +16,14 @@ export const FOOD_ART = [
   ...CROP_IDS.map(id => ({id, source: id, master: `assets-source/food/${id}.png`, served: `public/assets/food/${id}.png`, size: 128})),
   {id: 'statue', source: 'statue-b', master: 'assets-source/buildings/statue-affection.png', served: 'public/assets/buildings/statue-affection.png', size: 512, trim: true},
 ];
+/**
+ * The four fancy crops of the level 3 farm (owner, 2 November 2026): paintings already on a transparent background
+ * (`transparent`, so no white cut-out), same crop and 128 px served square as the ten crops. No master is written here.
+ * Usage: node scripts/prepare-food-art.mjs "<folder with the paintings>" fancy
+ */
+export const FANCY_FOOD_ART = [
+  ['trefleDore', 'trefle-dore'], ['carotteArcEnCiel', 'carotte-arc-en-ciel'], ['fraiseEtoilee', 'fraise-etoilee'], ['pommeAmour', 'pomme-d-amour'],
+].map(([id, source]) => ({id, source, master: null, served: `public/assets/food/${id}.png`, size: 128, transparent: true}));
 
 /** Centred in a transparent square, so a single exact area filter scales it. */
 export function square(image) {
@@ -28,10 +36,10 @@ export function square(image) {
 /** Cut out, crop and write each master, then its served copy; a building (`trim`) keeps its own proportions. */
 export function prepareArt(folder, list) {
   for (const art of list) {
-    const image = decodeRgbPng(readFileSync(`${folder}/${art.source}.png`)); cutOut(image, 'light');
+    const image = decodeRgbPng(readFileSync(`${folder}/${art.source}.png`)); if (!art.transparent) cutOut(image, 'light');
     const master = crop(image);
-    for (const path of [art.master, art.served]) mkdirSync(path.slice(0, path.lastIndexOf('/')), {recursive: true});
-    writeFileSync(art.master, encodePng(master));
+    for (const path of [art.master, art.served].filter(Boolean)) mkdirSync(path.slice(0, path.lastIndexOf('/')), {recursive: true});
+    if (art.master) writeFileSync(art.master, encodePng(master));
     const served = downscale(square(master), art.size);
     writeFileSync(art.served, encodePng(art.trim ? crop(served) : served));
     console.log(`${art.id}: ${master.width}x${master.height} -> ${art.served}`);
@@ -41,5 +49,5 @@ export function prepareArt(folder, list) {
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const folder = process.argv[2];
   if (!folder) throw Error('Usage: node scripts/prepare-food-art.mjs "<folder with the paintings>"');
-  prepareArt(folder, FOOD_ART);
+  prepareArt(folder, process.argv[3] === 'fancy' ? FANCY_FOOD_ART : FOOD_ART);
 }

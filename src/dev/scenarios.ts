@@ -7,7 +7,7 @@ import {MINUTE, NURSERY, growthDuration, SPECIES, SPECIES_IDS, type SpeciesId} f
 import {buildingPlacementReason} from '../simulation/placement';
 import {HABITAT_TYPES} from '../config/habitats';
 import {act, createGame, decodeGame, encodeGame} from '../simulation';
-import {createMissions} from '../simulation/missions';
+import {createMissions, emptyDailyProgress} from '../simulation/missions';
 import {createCentreStartGame, emptyBuilding} from '../state/initial';
 import {GIFTED_RECIPES} from '../config/recipes';
 import type {Command, GameState} from '../state/types';
@@ -89,7 +89,7 @@ export function scenarioState(id: ScenarioId, now: number): GameState {
   if (id === 'initiationSaved') {
     s=createCentreStartGame(now);s.grass=10;
     const run=(command:Command)=>{const result=act(s,command,now,()=>.1);if(!result.ok)throw Error(result.reason);s=result.state;};
-    run({type:'buyBuilding',kind:'enclosure',habitatType:'neige',x:18,y:24});const snow=s.buildings.at(-1)!.id;
+    run({type:'buyBuilding',kind:'enclosure',habitatType:'neige',x:17,y:24});const snow=s.buildings.at(-1)!.id;
     run({type:'buyRabbit',species:'neige',enclosureId:snow});const neige=s.rabbits.at(-1)!.id;run({type:'claimMainMission',id:'welcome-snow'});
     run({type:'feed',id:'rabbit-2'});run({type:'feed',id:neige});
     run({type:'breed',parents:['rabbit-2',neige]});
@@ -121,7 +121,8 @@ export function scenarioState(id: ScenarioId, now: number): GameState {
     s = result.state;
   };
   if(['islandExpanded','islandDiagonal','islandL','islandFull','parcelEdges','decorationDense'].includes(id)){const level=id==='islandFull'||id==='decorationDense'?requiredExtensionLevel(8):Math.max(requiredExtensionLevel(2),s.progression.rewardedThroughLevel);s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level};}
-  const acquire=(id:ParcelId)=>run({type:'expand',parcelId:id,expectedCost:extensionPrice(s)});
+  // The lab's islands show the land itself: the debris of a newly bought parcel are left out (6 November 2026).
+  const acquire=(id:ParcelId)=>{run({type:'expand',parcelId:id,expectedCost:extensionPrice(s)});s.debris=[];};
   if (id === 'pailleOccupancy') {
     // Same illustrated home and species throughout; only the adult resident count changes, left to right.
     const level = requiredExtensionLevel(1);
@@ -172,7 +173,7 @@ export function scenarioState(id: ScenarioId, now: number): GameState {
 
     run({type:'buyBuilding',kind:'enclosure',habitatType:'vol',x:24,y:26});
     run({type:'buyDecoration',catalogId:'bush'});
-    run({type:'placeDecoration',id:s.decorations.at(-1)!.id,location:{kind:'outside',x:23,y:22,rotation:0}});
+    run({type:'placeDecoration',id:s.decorations.at(-1)!.id,location:{kind:'outside',x:24,y:22,rotation:0}});
     const checked=decodeGame(encodeGame(s));if(!checked.ok)throw Error('Invalid fine building scenario');return checked.state;
   }
   if (id === 'islandStart' || id === 'islandExpanded' || id === 'islandDiagonal' || id === 'islandL' || id === 'islandFull' || id === 'parcelEdges') {
@@ -229,7 +230,7 @@ export function scenarioState(id: ScenarioId, now: number): GameState {
   } else if (id === 'reproduction' || id==='manualBreeding') {
     run({type: 'feed', id: 'rabbit-2'}); run({type: 'feed', id: 'rabbit-3'});
     if(id==='manualBreeding') {
-      run({type:'buyBuilding',kind:'enclosure',x:18,y:24});
+      run({type:'buyBuilding',kind:'enclosure',x:17,y:24});
       run({type:'moveRabbit',id:'rabbit-3',enclosureId:s.buildings.at(-1)!.id});
       const nursery=s.buildings.find(b=>b.kind==='nursery')!;
       nursery.nursery!.babies=[{slot:0,birth:{id:`birth-${s.nextId++}`,species:'paille',guaranteed:false,reservedDiscovery:false},startedAt:now-growthDuration('paille'),readyAt:now}];
@@ -243,7 +244,7 @@ export function scenarioState(id: ScenarioId, now: number): GameState {
     s.rabbits = []; s.buildings = []; s.discovered = [];
     const types = id === 'habitats' ? HABITAT_TYPES : id === 'collection' ? Array.from({length: Math.ceil(SPECIES_IDS.length / 7)}, () => 'universal' as const) : ['universal', 'universal'] as const;
     for (const [index, type] of types.entries()) {
-      const home = emptyBuilding(`building-${s.nextId++}`, 'enclosure', 18 + index % 3 * 4, 20 + Math.floor(index / 3) * 4, type);
+      const home = emptyBuilding(`building-${s.nextId++}`, 'enclosure', 17 + index % 3 * 5, 20 + Math.floor(index / 3) * 4, type);
       home.habitat!.level = 3; s.buildings.push(home);
       const species: SpeciesId[] = id === 'habitats' ? SPECIES_IDS.slice(0, 11).filter(species => type === 'universal' || SPECIES[species].types.includes(type)) : (id === 'collection' ? SPECIES_IDS : SPECIES_IDS.slice(0, 11)).slice(index * 7, index * 7 + 7);
       const count = id === 'habitats' ? 7 : species.length;
@@ -257,7 +258,7 @@ export function scenarioState(id: ScenarioId, now: number): GameState {
       for (const [x, kind] of ['farm', 'nest', 'nursery'].entries()) s.buildings.push(emptyBuilding(`building-${s.nextId++}`, kind as 'farm' | 'nest' | 'nursery', 2 + x * 4, 8));
     }
     s.missions = createMissions(s, now);
-    if (id === 'missions') s.missions.daily.progress = {'collect-pattes': 100, 'collect-grass': 40, 'feed-rabbit': 3, 'gain-affection': 1, 'welcome-baby': 0, decorate: 0};
+    if (id === 'missions') s.missions.daily.progress = {...emptyDailyProgress(), 'collect-pattes': 100, 'collect-grass': 40, 'feed-rabbit': 3, 'gain-affection': 1};
   }
   // Enforce exactly the same save validation used by every player import.
   const checked = decodeGame(encodeGame(s));
@@ -290,7 +291,7 @@ function nurseryScenario(id: 'nurseryUnlocks' | 'nurseryStates', start: GameStat
   s.pattes = 5000; s.grass = 500;
   const run = (command: Command) => { const result = act(s, command, now, () => .5); if (!result.ok) throw Error(`${command.type}: ${result.reason}`); s = result.state; };
   let cell: {x: number; y: number} | null = null;
-  for (let y = 0; y < ISLAND.mapFine && !cell; y++) for (let x = 0; x < ISLAND.mapFine && !cell; x++) if (!buildingPlacementReason(s, x, y)) cell = {x, y};
+  for (let y = 0; y < ISLAND.mapFine && !cell; y++) for (let x = 0; x < ISLAND.mapFine && !cell; x++) if (!buildingPlacementReason(s, x, y, undefined, 'enclosure')) cell = {x, y};
   if (!cell) throw new Error('No free cell for the Neige home');
   run({type: 'buyBuilding', kind: 'enclosure', habitatType: 'neige', x: cell.x, y: cell.y});
   const snowHome = s.buildings.at(-1)!.id; run({type: 'buyRabbit', species: 'neige', enclosureId: snowHome}); const snow = s.rabbits.at(-1)!;

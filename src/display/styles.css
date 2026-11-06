@@ -150,6 +150,47 @@ p { line-height: 1.45; margin: 10px 0; overflow-wrap: anywhere; }
 .rabbit-overview .stat strong { font-size: 16px; }
 .rabbit-overview p { margin: 6px 0; }
 .rabbit-overview button { width: 100%; margin-top: 6px; }
+.rabbit-evolution { margin: 14px 0; padding: 10px; border: 1px solid var(--line); border-radius: 14px; background: #fbf8ed; }
+.rabbit-evolution h3 { margin-top: 0; }
+.evolution-challenge-list { margin: 0 0 10px; padding-left: 20px; }
+.evolution-challenge-list li { margin: 5px 0; }
+.evolution-challenge-list li.is-complete { color: #456d3d; }
+.evolution-challenge-list small { display: block; color: var(--ink-muted); }
+.evolution-looks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.evolution-look { min-width: 0; margin: 0; padding: 6px; border: 1px solid var(--line); border-radius: 12px; background: #fffdf5; text-align: center; }
+.evolution-look img { display: block; width: 100%; height: 78px; object-fit: contain; }
+.evolution-look figcaption { font-size: 11px; line-height: 1.3; }
+.evolution-look.is-locked img { filter: grayscale(1); opacity: .35; }
+/* The evolution still a surprise: a soft question mark instead of the drawing. */
+.evolution-mystery { display: grid; place-items: center; height: 78px; color: #b49a6a; font: 700 42px/1 Georgia, serif; }
+.collection-evolution .evolution-mystery { width: 54px; height: 52px; flex: none; font-size: 30px; border-radius: 50%; background: #fffdf5; }
+.collection-evolution { display: flex; align-items: center; gap: 8px; min-height: 64px; margin-top: 8px; padding: 6px 9px; border-radius: 11px; background: #f6f3e7; }
+.collection-evolution img { width: 54px; height: 52px; object-fit: contain; }
+.collection-evolution p { margin: 0; font-weight: 700; }
+.collection-evolution.is-locked img { filter: brightness(0); opacity: .18; }
+.collection-evolution.is-locked p { color: var(--ink-muted); font-weight: 400; }
+.collection-evolution-count { display: block; width: max-content; margin: 0 0 8px; }
+.evolution-moment { position: fixed; z-index: 10000; inset: 0; display: grid; place-content: center; justify-items: center; gap: 8px; padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); overflow: hidden; background: #f8f2f4 var(--evolution-background) center / cover no-repeat; color: #4b4556; text-align: center; }
+/* On a short landscape screen (667×375) the drawing leaves room for the title, the hint and the « Continuer » button. */
+.evolution-moment-art { position: relative; display: grid; place-items: center; width: min(60vw, 420px); height: min(62vh, 330px, calc(100dvh - 200px - env(safe-area-inset-top) - env(safe-area-inset-bottom))); min-height: 120px; }
+.evolution-moment-art > img { position: absolute; max-width: 100%; max-height: 100%; object-fit: contain; }
+.evolution-before { opacity: 1; animation: evolution-old 1.15s ease-in forwards; animation-delay: .55s; }
+.evolution-after { opacity: 0; animation: evolution-new 1.15s ease-out forwards; animation-delay: .55s; }
+.evolution-sparkles { width: min(90vw, 680px); height: min(88vh, 620px); opacity: .7; animation: evolution-glow 1.6s ease-in-out both; }
+.evolution-moment-title { margin: 0; opacity: 0; animation: evolution-title .45s ease-out forwards; animation-delay: 1.35s; }
+.evolution-moment-hint { margin: 0; font-size: 13px; color: #686174; }
+.evolution-moment-close { margin-top: 4px; }
+.evolution-moment[data-reduced-motion='true'] .evolution-before, .evolution-moment[data-reduced-motion='true'] .evolution-sparkles { display: none; }
+.evolution-moment[data-reduced-motion='true'] .evolution-after, .evolution-moment[data-reduced-motion='true'] .evolution-moment-title { opacity: 1; animation: none; }
+@keyframes evolution-old { to { opacity: 0; } }
+@keyframes evolution-new { to { opacity: 1; } }
+@keyframes evolution-glow { 0%, 100% { opacity: .25; transform: scale(.94); } 45% { opacity: .85; transform: scale(1.02); } }
+@keyframes evolution-title { to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .evolution-moment * { animation: none !important; }
+  .evolution-moment .evolution-before, .evolution-moment .evolution-sparkles { display: none; }
+  .evolution-moment .evolution-after, .evolution-moment .evolution-moment-title { opacity: 1; }
+}
 .initiation-aid { padding: 10px; margin-top: 12px; border: 1px solid #a8bc8d; border-radius: 12px; background: #edf5df; }
 .initiation-aid button { width: 100%; }
 .initiation-aid p { margin-bottom: 0; }

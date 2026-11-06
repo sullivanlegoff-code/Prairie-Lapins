@@ -1,5 +1,7 @@
 // Node built-ins only. Approved masters, useful DPR-3 dimensions, reproducible SHA-1.
 // Usage: node scripts/derive-rabbit-art.mjs [--check] [id ...] (all rabbits by default).
+// An entry may describe another drawing of an existing species (an affection 30 evolution): `species` names the species, `master`
+// its approved master, `registry` the file holding its metadata and `displayScale` its in-game enlargement (EVOLVED_SCALE).
 import {readFileSync, writeFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
@@ -12,12 +14,14 @@ const manifestPath = 'scripts/rabbit-art-manifest.json';
 const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
 export const sha1 = bytes => createHash('sha1').update(bytes).digest('hex');
 let failed = false;
-const registryPath = 'src/config/species.ts';
-let registry = readFileSync(registryPath, 'utf8');
+const registries = new Map();
+const registryOf = path => { if (!registries.has(path)) registries.set(path, {text: readFileSync(path, 'utf8')}); return registries.get(path); };
 for (const [id, entry] of Object.entries(manifest)) {
   if (only.length && !only.includes(id)) continue;
   try {
-    const bytes = readFileSync(`assets-source/rabbits/${id}/sprite.png`);
+    const species = entry.species ?? id, registryFile = registryOf(entry.registry ?? 'src/config/species.ts');
+    const registry = registryFile.text;
+    const bytes = readFileSync(entry.master ?? `assets-source/rabbits/${id}/sprite.png`);
     const source = decodePng(bytes);
     // A new entry only states its file and world width; writing records the master and its useful dimensions.
     if (!check && entry.sourceSha1 === undefined)
@@ -25,18 +29,18 @@ for (const [id, entry] of Object.entries(manifest)) {
     if (sha1(bytes) !== entry.sourceSha1) throw Error('source SHA-1 differs');
     if (source.width !== entry.sourceWidth || source.height !== entry.sourceHeight) throw Error('source dimensions differ');
     // 150x140 portrait, including 4px padding on each side; world squash max 1.06.
-    const usefulWidth = Math.max(entry.worldWidth * 1.3 * 1.06 * 1.65 * 3, Math.min(142 * 3, 132 * 3 * source.width / source.height));
+    const usefulWidth = Math.max(entry.worldWidth * (entry.displayScale ?? 1) * 1.3 * 1.06 * 1.65 * 3, Math.min(142 * 3, 132 * 3 * source.width / source.height));
     const width = Math.min(source.width, Math.ceil(usefulWidth * 1.08));
     const height = Math.min(source.height, Math.round(source.height * width / source.width));
     const derived = encodePng(resizeRegion(source, source.width, source.height, width, height));
     if (!check && entry.width === undefined) Object.assign(entry, {width, height});
     if (entry.width !== width || entry.height !== height) throw Error('dimensions differ from useful-resolution calculation');
-    const pattern = new RegExp(`(\\{id: '${id}'[^\\n]+?width: )\\d+(, height: )\\d+(, worldWidth: )([\\d.]+)`);
+    const pattern = new RegExp(`(\\{id: '${species}'[^\\n]+?width: )\\d+(, height: )\\d+(, worldWidth: )([\\d.]+)`);
     const metadata = registry.match(pattern);
     if (!metadata || Number(metadata[4]) !== entry.worldWidth) throw Error('registry world width differs');
     const updated = registry.replace(pattern, `$1${width}$2${height}$3${entry.worldWidth}`);
     if (check && updated !== registry) throw Error('registry dimensions differ');
-    registry = updated;
+    registryFile.text = updated;
     const target = `public/${entry.file}`;
     if (check) {
       if (sha1(derived) !== entry.derivedSha1 || !readFileSync(target).equals(derived)) throw Error('derived SHA-1 / bytes differ');
@@ -46,6 +50,6 @@ for (const [id, entry] of Object.entries(manifest)) {
 }
 if (!check && !failed) {
   writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
-  writeFileSync(registryPath, registry);
+  for (const [path, {text}] of registries) writeFileSync(path, text);
 }
 if (failed) process.exitCode = 1;

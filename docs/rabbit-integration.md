@@ -51,3 +51,13 @@ Les masters approuvés et leurs décalages sont sous `assets-source/rabbits/<id>
 Dans Phaser, les deux images, invisibles par défaut, appartiennent au même `body` que le sprite. Leur origine haut-gauche est placée à `(-largeur/2 + x, -hauteur + y) × échelle`, avec `groundY` ajouté en ordonnée. Elles partagent ainsi son miroir, ses compressions, sa hauteur et sa rotation, y compris pendant un salto.
 
 Le rythme pur `rabbitBlink.ts` dépend de l’identifiant et du temps de scène, sans timer/tween ni état aléatoire par image : fermeture de 110–160 ms, intervalles de 2,5–5,8 s, environ 20 % de doubles séparés de 80–110 ms. La truffe produit 2 ou 3 battements de 80–110 ms séparés de 80–110 ms, toutes les 4–10 s, uniquement au repos. Les deux rythmes sont indépendants et désynchronisés entre lapins. Le clignement reste actif avec « réduire les animations » ; le nourrissage et les mouvements conservent leur animation existante.
+
+## Dessins évolués (affection 30)
+
+Depuis le 3 novembre 2026, les 35 espèces listées dans `src/config/evolvedArt.ts` ont un dessin évolué à partir de l'affection 30 ; Benny n'évolue pas. Le dessin paraît 15 % plus grand : `EVOLVED_SCALE = 1.15`, appliqué dans le code à sa largeur monde, jamais dans l'image. Pour ajouter une évolution :
+
+1. copier la peinture approuvée (fond blanc ; sur un fond noir uni, comme Dinono et Dinenette, mode `corner` avec une `tolerance` réduite à 24 pour garder les ombres sombres) dans `assets-source/rabbits/<id>/<id>-evolution-source.png` et ajouter l'espèce à la liste des évolutions de `scripts/prepare-rabbit-masters.mjs`, puis `node scripts/prepare-rabbit-masters.mjs . <id>-evolution` (écrit `<id>-evolution-sprite.png`) ;
+2. ajouter une ligne à `EVOLVED_ART` (largeur et hauteur à 0, largeur monde qui garde la surface du v1) et une entrée `<id>-evolution` à `scripts/rabbit-art-manifest.json` (`species`, `master`, `registry`, `displayScale`, `file`, `worldWidth`), puis `node scripts/derive-rabbit-art.mjs <id>-evolution` ;
+3. lire les ancrages de la toque et de la couronne sur le v2 (`EVOLVED_CUISINE_ANCHORS`, `src/config/cuisineAnchors.ts`).
+
+Les patches de clignement et de truffe ont été peints sur la tête du v1 : un lapin évolué n'en a pas. La Forêt de Brocéliande (10 000 pièces, niveau 20) permet ensuite de remettre l'ancien dessin, lapin par lapin (`classicLook` dans la sauvegarde v23).

@@ -8,6 +8,16 @@ import type {SpeciesId} from './species';
 export const LEGENDARY_SHOWS = ['dragon', 'requin', 'ankylosaure'] as const;
 export type LegendaryShow = typeof LEGENDARY_SHOWS[number];
 export const isLegendaryShow = (species: SpeciesId | string): species is LegendaryShow => (LEGENDARY_SHOWS as readonly string[]).includes(species);
+/** Legendary animations are available for both approved drawings. */
+export const shouldShowLegendaryView = (species: SpeciesId | string, _art: {evolved?: true}): boolean => isLegendaryShow(species);
+
+/**
+ * Milliseconds between two spontaneous meadow shows of one legendary in its enclosure, each drawn in its range so
+ * neighbours never play in unison; the first comes sooner, to be seen. Owner's request of 3 November 2026: shows more
+ * often (formerly 10-25 s then 40-95 s), then "toutes les 10 à 20 secondes pas plus", then on 4 November 2026 a little more often, to be seen often without a touch:
+ * every 6 to 12 seconds, the first one after 4 to 8 seconds. Legendaries only: Benny keeps her own rhythm.
+ */
+export const LEGENDARY_IDLE_GAP_MS = {first: [4_000, 8_000], next: [6_000, 12_000]} as const;
 
 /** Window event of the laboratory buttons: `detail.act` replays that meadow show on every legendary in view. */
 export const LEGENDARY_TEST_EVENT = 'prairie-legendary-test';
@@ -58,11 +68,21 @@ export const LEGENDARY_PARTS: Record<LegendaryShow, LegendaryParts> = {
   ankylosaure: {body: rabbitFile('ankylosaure', 'ankylosaure-v1-body'), part: rabbitFile('ankylosaure', 'ankylosaure-tail'), pivot: {x: 81.5, y: 275.2}, strike: {x: 42, y: 288}},
 };
 
+/** Moving layers cut from the approved evolved masters. Pivots and strike points use v2 image pixels. */
+export const LEGENDARY_EVOLVED_PARTS: Record<LegendaryShow, LegendaryParts> = {
+  dragon: {body: rabbitFile('dragon', 'dragon-v2-body'), part: rabbitFile('dragon', 'dragon-v2-wing'), pivot: {x: 245.1, y: 161.9},
+    mouth: {...rabbitFile('dragon', 'dragon-v2-mouth-open-body'), width: 477, point: {x: 438, y: 188}}},
+  requin: {body: rabbitFile('requin', 'requin-v2-body'), part: rabbitFile('requin', 'requin-v2-fin'), pivot: {x: 139.5, y: 219.8}},
+  ankylosaure: {body: rabbitFile('ankylosaure', 'ankylosaure-v2-body'), part: rabbitFile('ankylosaure', 'ankylosaure-v2-tail'), pivot: {x: 114.5, y: 297.3}, strike: {x: 60, y: 245}},
+};
+export const legendaryPartsForArt = (species: LegendaryShow, art: {evolved?: true}): LegendaryParts => art.evolved ? LEGENDARY_EVOLVED_PARTS[species] : LEGENDARY_PARTS[species];
+
 /** Every picture a meadow with this legendary needs, for the scene loader. */
-export function legendaryMeadowArt(species: LegendaryShow): {texture: string; url: string}[] {
-  const parts = LEGENDARY_PARTS[species], e = LEGENDARY_EFFECTS;
+export function legendaryMeadowArt(species: LegendaryShow, art?: {evolved?: true}): {texture: string; url: string}[] {
+  const e = LEGENDARY_EFFECTS;
   const own = species === 'dragon' ? [...e.breath, ...e.flame, e.ember, e.spark, e.smoke]
     : species === 'requin' ? [e.surfboard, e.puddle, e.bubble, e.drop, ...e.surfwave, ...e.splash]
     : [e.rock, e.stone, e.clod, e.mound, e.gravel, e.crack, e.dustring, e.dust];
-  return [parts.body, parts.part, ...(parts.mouth ? [parts.mouth] : []), ...own];
+  const versions = art ? [legendaryPartsForArt(species, art)] : [LEGENDARY_PARTS[species], LEGENDARY_EVOLVED_PARTS[species]];
+  return [...versions.flatMap(parts => [parts.body, parts.part, ...(parts.mouth ? [parts.mouth] : [])]), ...own];
 }

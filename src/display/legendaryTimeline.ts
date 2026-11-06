@@ -1,4 +1,4 @@
-import type {LegendaryShow} from '../config/legendaryArt';
+import {LEGENDARY_IDLE_GAP_MS, type LegendaryShow} from '../config/legendaryArt';
 
 /**
  * Timing of the legendaries' meadow shows, apart from Phaser so it can be tested. Purely visual and session-only:
@@ -18,8 +18,8 @@ export const IDLE_ACTS: Record<LegendaryShow, readonly LegendaryAct[]> = {dragon
   ankylosaure: ['rumble', 'dig', 'dust', 'rumble']};
 /** Asleep, only soft shows: smoke rings from the Dragon, bubbles from the Requin, a puff of dust from the Ankylosaure. */
 export const SLEEP_ACTS: Record<LegendaryShow, LegendaryAct> = {dragon: 'smoke', requin: 'bubbles', ankylosaure: 'dust'};
-/** Milliseconds between two spontaneous shows of one legendary; the first comes sooner, to be seen. */
-export const IDLE_GAP = {first: [10_000, 25_000], next: [40_000, 95_000]} as const;
+/** Milliseconds between two spontaneous shows of one legendary; the first comes sooner, to be seen (src/config/legendaryArt.ts). */
+export const IDLE_GAP = LEGENDARY_IDLE_GAP_MS;
 /** The surf belongs to the surfboard's 2 seconds of slide; the board appears and leaves around it. */
 export const SURF_SLIDE_MS = 2000, SURF_ENTRY_MS = 300;
 /** A touch replays at most this often, so repeated taps never pile shows up. */
@@ -49,6 +49,11 @@ export class LegendaryClock {
     if (this.act || this.sinceTap < TAP_COOLDOWN_MS) return null;
     this.sinceTap = 0; return this.start(TAP_ACT[this.species]);
   }
+  /** The show button of the rabbit's sheet (owner, 4 November 2026): this show at once, with the touch's anti-repeat delay. */
+  request(act: LegendaryAct): ActState | null {
+    if (this.act || this.sinceTap < TAP_COOLDOWN_MS || !speciesActs(this.species).includes(act)) return null;
+    this.sinceTap = 0; return this.start(act);
+  }
   /** Laboratory and replays: a given show of this species, unless one is playing. */
   play(act: LegendaryAct): ActState | null { return this.act || !speciesActs(this.species).includes(act) ? null : this.start(act); }
   private start(act: LegendaryAct): ActState { this.act = {act, elapsed: 0, duration: ACT_MS[act]}; return this.act; }
@@ -61,7 +66,7 @@ export class LegendaryClock {
     if (this.act) { this.act.elapsed += ms; if (this.act.elapsed >= this.act.duration) { this.act = null; this.next = this.between(IDLE_GAP.next); } return null; }
     if (!idle) return null;
     this.next -= ms; if (this.next > 0) return null;
-    const pool = IDLE_ACTS[this.species];
+    const pool = speciesActs(this.species);
     let act = asleep ? SLEEP_ACTS[this.species] : pool[Math.floor(this.random() * pool.length)];
     if (act === 'surf' && !canSurf) act = 'bubbles';
     return this.start(act);
