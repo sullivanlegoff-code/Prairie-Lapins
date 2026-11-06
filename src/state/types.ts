@@ -61,7 +61,7 @@ export interface Nursery {capacity: NurseryCapacity; babies: NurseryBaby[]}
  * classicLook: an evolved rabbit that the player put back in its old drawing at the Forêt de Brocéliande. Never on another rabbit,
  * never before its evolution, and never without the forest.
  */
-export interface Rabbit { incomeRoll?: number; id: string; species: SpeciesId; affection: number; enclosureId: string; name?: string; crownHidden?: true; classicLook?: true; evolution?: {done?: true; challenges?: Partial<Record<EvolutionChallenge, number>>} }
+export interface Rabbit { incomeRoll?: number; id: string; species: SpeciesId; affection: number; enclosureId: string; name?: string; crownHidden?: true; classicLook?: true; /** The Forêt de Brocéliande is changing its drawing: `classicLook` flips at `endsAt` (7 hours). */ lookChange?: {endsAt: number}; evolution?: {done?: true; challenges?: Partial<Record<EvolutionChallenge, number>>} }
 export interface MissionState {
   nightOrderStarted?: boolean;
   events: Record<MainEvent, number>;
@@ -164,7 +164,7 @@ export interface Trip {grass?: number; rabbitId: string; destination: Destinatio
 export interface Care {rabbitId: string; care: CareKind; startedAt: number; endsAt: number; hearts?: number}
 export type Refusal = 'LEVEL_REQUIRED' | 'NO_BREEDING_RESULT' | 'PURCHASE_LOCKED' | 'DECORATION_LIMIT' | 'DECORATION_OVERLAP' | 'DECORATION_BLOCKS_BUILDING' | 'INVALID_TIME' | 'INVALID_RANDOM' | 'INVALID_CHOICE' | 'NOT_FOUND' |
   'NOT_ENOUGH_PATTES' | 'NOT_ENOUGH_GRASS' | 'INVALID_CELL' | 'CELL_OCCUPIED' |
-  'BUILDING_LIMIT' | 'HABITAT_NOT_EMPTY' | 'LAST_HABITAT' | 'CAPACITY_FULL' | 'BUSY' | 'NOT_READY' | 'MAX_AFFECTION' |
+  'LOOK_CHANGING' | 'BUILDING_LIMIT' | 'HABITAT_NOT_EMPTY' | 'LAST_HABITAT' | 'CAPACITY_FULL' | 'BUSY' | 'NOT_READY' | 'MAX_AFFECTION' |
   'SAME_PARENT' | 'AFFECTION_TOO_LOW' | 'MISSING_BUILDING' | 'ALREADY_EXPANDED' | 'PARCEL_UNAVAILABLE' |
   'LAST_OF_SPECIES' | 'PARENT_BUSY' | 'NOT_ENOUGH_HEARTS' | 'ACTION_FINISHED' |
   'STALE_ACTION' | 'PRICE_CHANGED' | 'NO_MISSING_PATTES' | 'ALREADY_CLAIMED' | 'CYCLE_EXPIRED' | 'RESOURCE_LIMIT' | 'TYPE_INCOMPATIBLE' | 'MAX_HABITAT_LEVEL' | 'RECIPE_KNOWN' | 'MAX_NURSERY_CAPACITY' |

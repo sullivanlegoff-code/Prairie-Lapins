@@ -656,10 +656,12 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         break;
       }
       case 'toggleClassicLook': {
-        // Free and purely cosmetic, both ways, as often as wanted: only with the Forêt de Brocéliande, on an already evolved rabbit.
+        // Free and purely cosmetic, both ways: only with the Forêt de Brocéliande, on an already evolved rabbit. It takes 7 hours
+        // (owner, 6 November 2026): the drawing flips when the time has passed (`settleLookChanges`).
         const rabbit = s.rabbits.find(r => r.id === command.rabbitId); requireRule(rabbit, 'NOT_FOUND');
         const reason = classicLookReason(s, rabbit); requireRule(!reason, reason ?? 'INVALID_CHOICE');
-        if (rabbit.classicLook) delete rabbit.classicLook; else rabbit.classicLook = true;
+        requireRule(!rabbit.lookChange, 'LOOK_CHANGING');
+        rabbit.lookChange = {endsAt: time + FOREST.changeMs};
         break;
       }
       case 'petRabbit': {

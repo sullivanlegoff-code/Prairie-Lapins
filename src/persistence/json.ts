@@ -65,7 +65,7 @@ const building = z.object({
 // character), absent when unnamed. Names are individual: they are never inherited and never belong to the species.
 const rabbitName = z.string().refine(name => name !== '' && normalizeRabbitName(name) === name, 'Invalid rabbit name');
 const evolution = z.object({done: z.literal(true).optional(), challenges: z.record(z.enum(EVOLUTION_CHALLENGE_IDS as [typeof EVOLUTION_CHALLENGE_IDS[number], ...typeof EVOLUTION_CHALLENGE_IDS[number][]]), integer.max(2)).optional()}).strict().optional();
-const rabbit = z.object({incomeRoll: z.number().int().min(0).max(10000).optional(), id: identity, species, affection: z.number().int().min(BALANCE.minAffection).max(BALANCE.maxAffection), enclosureId: identity, name: rabbitName.optional(), crownHidden: z.literal(true).optional(), classicLook: z.literal(true).optional(), evolution}).strict().superRefine((value, context) => {
+const rabbit = z.object({incomeRoll: z.number().int().min(0).max(10000).optional(), id: identity, species, affection: z.number().int().min(BALANCE.minAffection).max(BALANCE.maxAffection), enclosureId: identity, name: rabbitName.optional(), crownHidden: z.literal(true).optional(), classicLook: z.literal(true).optional(), lookChange: z.object({endsAt: timestamp}).strict().optional(), evolution}).strict().superRefine((value, context) => {
   const challenges = EVOLUTION_CHALLENGES[value.species] ?? [];
   for (const [key, progress] of Object.entries(value.evolution?.challenges ?? {})) {
     if (!challenges.includes(key as EvolutionChallenge) || progress > evolutionChallengeTarget(value.species, key as EvolutionChallenge))
@@ -539,7 +539,7 @@ export function decodeGame(json: string): DecodeResult {
   for (const rabbit of state.rabbits) if (rabbit.crownHidden && !isUltimate(rabbit)) delete rabbit.crownHidden;
   // The old drawing put back at the Forêt de Brocéliande is dropped without the forest or on a rabbit that has not evolved,
   // never a reason to refuse the save.
-  for (const rabbit of state.rabbits) if (rabbit.classicLook && classicLookReason(state, rabbit)) delete rabbit.classicLook;
+  for (const rabbit of state.rabbits) if (classicLookReason(state, rabbit)) { delete rabbit.classicLook; delete rabbit.lookChange; }
   const rabbitIds = new Set(state.rabbits.map(rabbit => rabbit.id));
   for (const id of Object.keys(state.cuisine.affectionCycles))
     if (!rabbitIds.has(id)) delete state.cuisine.affectionCycles[id];

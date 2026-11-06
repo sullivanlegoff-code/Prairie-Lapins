@@ -97,7 +97,7 @@ export function labAction(state: GameState, action: LabAction): GameState {
       integer(action.value, 1, BALANCE.maxAffection);
       const rabbits = s.rabbits.filter(r => !action.rabbitId || r.id === action.rabbitId);
       if (!rabbits.length) throw new Error('Choisis un lapin présent.');
-      for (const r of rabbits) { r.affection = action.value; if (action.value < BALANCE.maxAffection) delete r.crownHidden; if (classicLookReason(s, r)) delete r.classicLook; } // Only an ultimate rabbit takes off its crown; the old drawing needs affection 30.
+      for (const r of rabbits) { r.affection = action.value; if (action.value < BALANCE.maxAffection) delete r.crownHidden; if (classicLookReason(s, r)) { delete r.classicLook; delete r.lookChange; } } // Only an ultimate rabbit takes off its crown; the old drawing needs affection 30.
       // A ready birth may reference parents below breeding affection; an active one may not.
       if (action.value < BALANCE.breedingAffection) for (const b of s.buildings) {
         if (b.breeding?.parents.some(id => rabbits.some(r => r.id === id))) b.breeding.endsAt = Math.min(b.breeding.endsAt, s.lastSimulatedAt);

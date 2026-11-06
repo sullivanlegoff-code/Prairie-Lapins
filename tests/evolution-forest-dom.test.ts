@@ -22,9 +22,9 @@ beforeEach(() => {
   HTMLDialogElement.prototype.showModal = function () { this.open = true; }; HTMLDialogElement.prototype.close = function () { this.open = false; };
 });
 afterEach(() => { cleanups.splice(0).reverse().forEach(f => f()); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
-function mount(s: GameState) {
+function mount(s: GameState, clock: () => number = () => 0) {
   const values = new Map([[SAVE_KEY, encodeGame(s)]]);
-  const controller = new GameController({getItem: k => values.get(k) ?? null, setItem: (k, v) => { values.set(k, v); }}, () => 0);
+  const controller = new GameController({getItem: k => values.get(k) ?? null, setItem: (k, v) => { values.set(k, v); }}, clock);
   const scene = {setRabbitPurchase: vi.fn(), setExpansion: vi.fn(), setPlacement: vi.fn(), setArrangement: vi.fn(), setDecorationSelection: vi.fn(), setPhoto: vi.fn(), playPicnic: vi.fn(), reactToFeed: vi.fn(), recenter: vi.fn()} as unknown as MeadowScene;
   const prefs = new PreferenceStore('forest'); prefs.set({tutorial: false, muted: true});
   const ui = new GameUI(controller, scene, () => 0, prefs); cleanups.push(() => { ui.dispose(); controller.dispose(); }); return {ui, controller};
@@ -69,7 +69,8 @@ it('shows the required challenge progress and keeps evolution disabled until it 
 
 it('the sheet requires explicit evolution; the scene plays and the forest then switches drawings both ways', () => {
   const s = game(); s.rabbits.find(r => r.id === 'rabbit-104')!.evolution = {challenges: {voyage: 1}};
-  const {ui, controller} = mount(s);
+  let time = 0;
+  const {ui, controller} = mount(s, () => time);
   (ui as unknown as {open(view: unknown): void}).open({kind: 'collection'});
   expect(panel().querySelector('.collection-evolution-count')?.textContent).toBe('0 / 48 évolutions');
   expect(panel().querySelector('[data-collection-evolution="paille"]')?.classList.contains('is-locked')).toBe(true);
@@ -95,13 +96,26 @@ it('the sheet requires explicit evolution; the scene plays and the forest then s
   expect(cards[0].querySelector('img')!.src).toContain('paille-v2.png');
   const toOld = cards[0].querySelector('button')!; expect(toOld.textContent).toBe('Remettre l’ancien dessin');
   const pattes = controller.getSnapshot().state!.pattes;
+  const confirm = () => [...document.querySelectorAll<HTMLButtonElement>('#game-dialog button')].find(b => b.textContent === 'Confirmer')!.click();
+  const seven = 7 * 3_600_000;
   toOld.click();
+  expect(document.getElementById('game-dialog')?.textContent).toContain('7 heures');
+  expect(controller.getSnapshot().state!.rabbits.find(r => r.id === 'rabbit-104')!.lookChange).toBeUndefined(); // Only once confirmed.
+  confirm();
   let state = controller.getSnapshot().state!;
-  expect(state.rabbits.find(r => r.id === 'rabbit-104')!.classicLook).toBe(true); expect(state.pattes).toBe(pattes);
-  const card = panel().querySelector<HTMLElement>('[data-forest-rabbit="rabbit-104"]')!;
+  expect(state.rabbits.find(r => r.id === 'rabbit-104')!.lookChange).toBeDefined(); expect(state.pattes).toBe(pattes);
+  // The 7 hours: the old drawing stays hidden, no button, the time left is shown.
+  let card = panel().querySelector<HTMLElement>('[data-forest-rabbit="rabbit-104"]')!;
+  expect(card.querySelector('button')).toBeNull(); expect(card.querySelector('[data-look-change]')?.textContent).toContain('Retour à l’ancien dessin');
+  expect(card.querySelector('img')!.src).toContain('paille-v2.png');
+  time += seven; controller.refresh();
+  state = controller.getSnapshot().state!;
+  expect(state.rabbits.find(r => r.id === 'rabbit-104')!.classicLook).toBe(true);
+  card = panel().querySelector<HTMLElement>('[data-forest-rabbit="rabbit-104"]')!;
   expect(card.dataset.look).toBe('classic'); expect(card.querySelector('img')!.src).toContain('paille-v1.png');
   const toNew = card.querySelector('button')!; expect(toNew.textContent).toBe('Remettre le nouveau dessin');
-  toNew.click();
+  toNew.click(); confirm();
+  time += seven; controller.refresh();
   state = controller.getSnapshot().state!;
   expect('classicLook' in state.rabbits.find(r => r.id === 'rabbit-104')!).toBe(false);
   (ui as unknown as {open(view: unknown): void}).open({kind: 'collection'});

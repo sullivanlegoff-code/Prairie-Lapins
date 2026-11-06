@@ -182,7 +182,8 @@ export const carePrice = (species: SpeciesId, care: CareKind): number => Math.ro
  * lets the player choose freely and for free between the evolved and old drawing of rabbits that have already evolved. Purely
  * cosmetic: no income, XP, affection or draw.
  */
-export const FOREST = {unlockLevel: 25} as const; // 20 before the Christmas update (owner, 5 November 2026).
+// 20 before the Christmas update (owner, 5 November 2026). `changeMs`: since 6 November 2026 a change of drawing takes 7 hours, both ways.
+export const FOREST = {unlockLevel: 25, changeMs: 7 * 3_600_000} as const;
 /**
  * The jump-rope islet (owner, 4 November 2026): a small isolated islet left of the start island, with the kiosk on it, bought as
  * one building for `price` pattes from player level `unlockLevel`, one per game. Three rabbits of the player play: two carriers

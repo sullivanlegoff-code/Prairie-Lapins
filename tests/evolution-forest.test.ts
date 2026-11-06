@@ -1,3 +1,4 @@
+import {advance} from '../src/simulation/time';
 import {describe, expect, it} from 'vitest';
 // @ts-expect-error -- the browser tsconfig has no Node types; Vitest runs this file in Node.
 import {readFileSync, existsSync} from 'node:fs';
@@ -88,7 +89,7 @@ describe('Evolved drawings at affection 30', () => {
       const art = evolvedRabbitArt(entry.id)!, v1 = rabbitArt(entry.id)!;
       expect(art.worldWidth).toBeCloseTo(entry.worldWidth * 1.2, 10);
       expect(art.width).toBe(entry.width); expect(art.height).toBe(entry.height);
-      expect(art.facing).toBe(v1.facing); expect(art.groundY).toBe(v1.groundY);
+      expect(art.facing).toBe(entry.facing === 'left' ? -1 : 1); expect(art.groundY).toBe(v1.groundY); // Each painting has its own facing (the evolutions of 6 November 2026 may look the other way).
       expect(art.texture).not.toBe(v1.texture);
       // The manifest world width keeps the v1's drawn area within 5 %: only EVOLVED_SCALE makes the evolution bigger.
       const area = (a: {worldWidth: number; width: number; height: number}) => a.worldWidth * a.worldWidth * a.height / a.width;
@@ -151,20 +152,42 @@ describe('Forêt de Brocéliande', () => {
     const png = decodePng(readFileSync('public/assets/buildings/foret-broceliande.png'));
     expect([png.width, png.height]).toEqual([FOREST_ART.width, FOREST_ART.height]);
   });
-  it('switches a rabbit of affection 30 between both drawings, for free, both ways and as often as wanted', () => {
+  it('switches a rabbit of affection 30 between both drawings, for free, both ways, 7 hours after asking', () => {
     const {s, ids: [a, b]} = setup([['paille', 30], ['neige', 45]]); markEvolved(s, a); markEvolved(s, b);
-    const before = {pattes: s.pattes, hearts: s.hearts, grass: s.grass, xp: s.progression.totalXp};
-    const old = run(s, {type: 'toggleClassicLook', rabbitId: a});
-    expect(rabbit(old, a).classicLook).toBe(true); expect(showsEvolvedArt(rabbit(old, a))).toBe(false);
+    const before = {pattes: s.pattes, hearts: s.hearts, grass: s.grass, xp: s.progression.totalXp}, start = s.lastSimulatedAt, seven = 7 * 3_600_000;
+    expect(FOREST.changeMs).toBe(seven);
+    const asked = run(s, {type: 'toggleClassicLook', rabbitId: a});
+    // Nothing changes yet: the rabbit stays at home with its drawing until the 7 hours have passed.
+    expect(rabbit(asked, a).lookChange).toEqual({endsAt: start + seven});
+    expect(rabbit(asked, a).classicLook).toBeUndefined(); expect(showsEvolvedArt(rabbit(asked, a))).toBe(true);
+    expect(rabbit(s, a).lookChange).toBeUndefined(); // The command never mutates the state it was given.
+    refused(asked, {type: 'toggleClassicLook', rabbitId: a}, 'LOOK_CHANGING');
+    const almost = advance(asked, start + seven - 1);
+    expect(rabbit(almost, a).classicLook).toBeUndefined(); expect(rabbit(almost, a).lookChange).toBeDefined();
+    const old = advance(asked, start + seven);
+    expect(rabbit(old, a).classicLook).toBe(true); expect(showsEvolvedArt(rabbit(old, a))).toBe(false); expect('lookChange' in rabbit(old, a)).toBe(false);
     expect(forestRabbits(old).map(r => r.id)).toContain(a); // Already evolved rabbits stay listed even in their old drawing.
     expect(rabbit(old, b).classicLook).toBeUndefined(); expect(showsEvolvedArt(rabbit(old, b))).toBe(true);
-    expect(rabbit(s, a).classicLook).toBeUndefined(); // The command never mutates the state it was given.
-    const back = run(old, {type: 'toggleClassicLook', rabbitId: a});
+    // Back to the evolved drawing: 7 hours too.
+    const asking = run(old, {type: 'toggleClassicLook', rabbitId: a});
+    expect(rabbit(asking, a).classicLook).toBe(true); expect(rabbit(asking, a).lookChange).toEqual({endsAt: start + 2 * seven});
+    const back = advance(asking, start + 2 * seven);
     expect('classicLook' in rabbit(back, a)).toBe(false); expect(showsEvolvedArt(rabbit(back, a))).toBe(true);
-    const again = run(run(back, {type: 'toggleClassicLook', rabbitId: a}), {type: 'toggleClassicLook', rabbitId: a});
-    expect(rabbit(again, a)).toEqual(rabbit(s, a));
-    expect({pattes: again.pattes, hearts: again.hearts, grass: again.grass, xp: again.progression.totalXp}).toEqual(before);
-    expect(rabbit(again, a).affection).toBe(30);
+    expect(rabbit(back, a)).toEqual(rabbit(s, a));
+    expect({pattes: back.pattes, hearts: back.hearts, xp: back.progression.totalXp}).toEqual({pattes: before.pattes, hearts: before.hearts, xp: before.xp});
+    expect(rabbit(back, a).affection).toBe(30);
+  });
+  it('ends a change of drawing during a long absence, and two rabbits can change at once', () => {
+    const {s, ids: [a, b]} = setup([['paille', 30], ['neige', 45]]); markEvolved(s, a); markEvolved(s, b);
+    const both = run(run(s, {type: 'toggleClassicLook', rabbitId: a}), {type: 'toggleClassicLook', rabbitId: b});
+    const later = advance(both, s.lastSimulatedAt + 30 * 3_600_000);
+    expect(rabbit(later, a).classicLook).toBe(true); expect(rabbit(later, b).classicLook).toBe(true);
+  });
+  it('keeps the time left of a change when the clock jumps back', () => {
+    const {s, ids: [a]} = setup([['paille', 30]]); markEvolved(s, a); s.lastSimulatedAt = 100 * 3_600_000;
+    const asked = run(s, {type: 'toggleClassicLook', rabbitId: a}), now = s.lastSimulatedAt - 10 * 3_600_000;
+    const rebased = advance(asked, now);
+    expect(rabbit(rebased, a).lookChange).toEqual({endsAt: now + 7 * 3_600_000});
   });
   it('refuses below affection 30, on a species without an evolved drawing, and without the forest', () => {
     const {s, ids: [low, rare]} = setup([['feu', 29], ['benny', 40]]);
@@ -186,7 +209,10 @@ describe('Forêt de Brocéliande', () => {
 describe('Save format: the old drawing put back', () => {
   it('saves and reloads the choice of each rabbit', () => {
     const {s, ids: [a, b]} = setup([['belier-gris', 30], ['volant', 30]]); markEvolved(s, a); markEvolved(s, b);
-    const old = run(s, {type: 'toggleClassicLook', rabbitId: a});
+    const asked = run(s, {type: 'toggleClassicLook', rabbitId: a});
+    const waiting = decodeGame(encodeGame(asked)); if (!waiting.ok) throw Error(waiting.reason);
+    expect(waiting.state).toEqual(asked); expect(rabbit(waiting.state, a).lookChange).toBeDefined();
+    const old = advance(asked, s.lastSimulatedAt + FOREST.changeMs);
     const decoded = decodeGame(encodeGame(old)); if (!decoded.ok) throw Error(decoded.reason);
     expect(decoded.state.version).toBe(27);
     expect(rabbit(decoded.state, a).classicLook).toBe(true); expect(rabbit(decoded.state, b).classicLook).toBeUndefined();

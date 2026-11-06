@@ -945,7 +945,7 @@ export class GameUI {
         const card = this.card(BUILDING_NAMES[kind], `${utility[kind]} · empreinte 4 × 4`);
         if (kind === 'agency') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(agencyThumbnail()); card.append(node('p', `Dès le niveau ${TRAVEL.unlockLevel}, ${HOST_NAME} envoie tes lapins en vacances : voyages de 3 à 10 heures, cœurs en souvenir au retour.`, 'small')); }
         if (kind === 'salon') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(salonThumbnail()); card.append(node('p', `Dès le niveau ${SALON.unlockLevel}, offre un soin à un lapin : un bain, un brossage ou un massage. Il revient avec +1 d’affection et de l’XP, et tes ${SALON.heartCaresPerCycle} premiers soins du jour rapportent aussi des cœurs.`, 'small')); }
-        if (kind === 'forest') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(forestThumbnail()); card.append(node('p', `Dès le niveau ${FOREST.unlockLevel}, choisis pour chaque lapin déjà évolué entre son nouveau dessin et l’ancien. C’est gratuit, autant de fois que tu veux.`, 'small')); }
+        if (kind === 'forest') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(forestThumbnail()); card.append(node('p', `Dès le niveau ${FOREST.unlockLevel}, choisis pour chaque lapin déjà évolué entre son nouveau dessin et l’ancien. C’est gratuit, et chaque changement prend 7 heures.`, 'small')); }
         if (kind === 'statue') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(statueThumbnail(affectionStatueCount(s) >= 1)); card.append(node('p', affectionStatueCount(s) === 0 ? `La Statue de l’Affection récompense tes soins : sans elle, l’affection s’arrête à ${AFFECTION_STATUE.cap}. Avec elle, chaque lapin peut atteindre ${SECOND_AFFECTION_STATUE.cap}. Une deuxième statue, dès le niveau ${SECOND_AFFECTION_STATUE.level}, ouvre l’affection ${SECOND_AFFECTION_STATUE.cap + 1} à ${BALANCE.maxAffection} à tes lapins évolués.` : `Ta deuxième Statue de l’Affection ouvre l’affection ${SECOND_AFFECTION_STATUE.cap + 1} à ${BALANCE.maxAffection} à tes lapins évolués. Dès le niveau ${SECOND_AFFECTION_STATUE.level}.`, 'small'), node('p', rareBirthBonusText(), 'small')); }
         if (kind === 'perch') { card.classList.add('statue-offer'); const image = node('img'); image.src = PERCH_ART.url; image.alt = ''; image.className = 'statue-thumbnail'; image.width = 72; image.height = 72; card.querySelector('.card-heading')!.prepend(image); card.append(node('p', `Avec Benny sur ton île, joue au vol de Benny : touche le ciel pour qu’elle batte des ailes et passe entre les colonnes de bottes de foin. Tes ${BENNY_FLIGHT.rewardedGamesPerCycle} premières parties du jour rapportent des pattes, et la toute première un cœur si Benny franchit ${BENNY_FLIGHT.heartColumns} colonnes.`, 'small')); }
         if (kind === 'statue') card.append(node('p', `Ton solde : ${heartAmount(s.hearts)}. Économise tes cœurs pour la construire.`, 'small'));
@@ -1371,7 +1371,7 @@ export class GameUI {
       this.content.append(card);
     }
   }
-  /** Forêt de Brocéliande: rabbit by rabbit, the evolved drawing or the old one, for free and both ways. */
+  /** Forêt de Brocéliande: rabbit by rabbit, the evolved drawing or the old one, for free, both ways, in 7 hours. */
   /** The jump-rope islet in the shop: one building, sold whole, floating left of the start island. */
   private jumpIslandOffer(s: GameState): HTMLElement {
     const card = this.card(JUMP_ISLAND_NAME, 'Une petite île à côté de la tienne · maximum 1'); card.dataset.jumpIslandOffer = '';
@@ -1460,7 +1460,7 @@ export class GameUI {
   }
   private renderForest(s: GameState): void {
     const names = EVOLVED_ART.map(art => SPECIES[art.id].name).join(', ');
-    this.content.append(node('p', 'Dans la forêt, change le dessin des lapins déjà évolués d’affection 30 ou plus : le nouveau ou l’ancien. C’est gratuit, et tu peux changer d’avis quand tu veux.', 'small'));
+    this.content.append(node('p', 'Dans la forêt, change le dessin des lapins déjà évolués d’affection 30 ou plus : le nouveau ou l’ancien. C’est gratuit, et chaque changement prend 7 heures. Ton lapin reste chez lui pendant ce temps.', 'small'));
     this.content.append(node('p', `Ont un nouveau dessin pour l’instant : ${names}.`, 'small'));
     const rabbits = forestRabbits(s);
     if (!rabbits.length) { this.content.append(node('p', 'Aucun de tes lapins n’a encore évolué. Réussis ses défis après l’affection 30, puis lance son évolution depuis sa fiche.', 'small')); return; }
@@ -1468,8 +1468,16 @@ export class GameUI {
     for (const r of rabbits) {
       const evolved = showsEvolvedArt(r), name = r.name || SPECIES[r.species].name;
       const card = this.card(name, `${r.name ? SPECIES[r.species].name + ' · ' : ''}affection ${r.affection} · ${evolved ? 'nouveau dessin' : 'ancien dessin'}`, r);
+      if (r.lookChange) {
+        card.dataset.forestRabbit = r.id; card.dataset.look = evolved ? 'evolved' : 'classic'; card.classList.add('compact-list-card');
+        const change = node('p', `${evolved ? 'Retour à l’ancien dessin' : 'Retour au nouveau dessin'} dans `, 'small'); change.dataset.lookChange = r.id;
+        const left = node('span', timeLeft(r.lookChange.endsAt, this.now()), 'timer'); left.dataset.end = String(r.lookChange.endsAt); change.append(left);
+        card.append(change); list.append(card); continue;
+      }
       card.dataset.forestRabbit = r.id; card.dataset.look = evolved ? 'evolved' : 'classic'; card.classList.add('compact-list-card');
-      this.button(card, evolved ? 'Remettre l’ancien dessin' : 'Remettre le nouveau dessin', () => this.execute({type: 'toggleClassicLook', rabbitId: r.id}, evolved ? `${name} retrouve son ancien dessin.` : `${name} retrouve son nouveau dessin !`), null, true);
+      const hours = Math.round(FOREST.changeMs / 3_600_000);
+      this.button(card, evolved ? 'Remettre l’ancien dessin' : 'Remettre le nouveau dessin', () => this.confirm(evolved ? 'Remettre l’ancien dessin ?' : 'Remettre le nouveau dessin ?', `${name} changera de dessin dans ${hours} heures. C’est gratuit, mais tu ne pourras pas l’annuler.`,
+        () => this.execute({type: 'toggleClassicLook', rabbitId: r.id}, `${name} changera de dessin dans ${hours} heures.`)), null, true);
       list.append(card);
     }
   }
@@ -2693,7 +2701,7 @@ export class GameUI {
     heartsButton.setAttribute('aria-label', hasGift ? 'Cœurs · cadeau disponible' : 'Cœurs');
     const due = (end: number) => !!state && state.lastSimulatedAt < end && end <= this.now();
     if (state && (cycleIndexAt(state.missions.daily.referenceAt, this.now()) > state.missions.daily.cycleIndex ||
-      due(state.nextHeartGiftAt) || (state.travel?.trips.some(t => due(t.endsAt)) ?? false) || state.buildings.some(b =>
+      due(state.nextHeartGiftAt) || (state.travel?.trips.some(t => due(t.endsAt)) ?? false) || state.rabbits.some(r => !!r.lookChange && due(r.lookChange.endsAt)) || state.buildings.some(b =>
         !!b.order && due(b.order.endsAt) || !!b.breeding && due(b.breeding.endsAt) || b.nursery?.babies.some(baby => due(baby.readyAt))))) {
       this.controller.refresh(); return;
     }
