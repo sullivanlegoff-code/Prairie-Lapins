@@ -71,7 +71,7 @@ it('the sheet requires explicit evolution; the scene plays and the forest then s
   const s = game(); s.rabbits.find(r => r.id === 'rabbit-104')!.evolution = {challenges: {voyage: 1}};
   const {ui, controller} = mount(s);
   (ui as unknown as {open(view: unknown): void}).open({kind: 'collection'});
-  expect(panel().querySelector('.collection-evolution-count')?.textContent).toBe('0 / 35 évolutions');
+  expect(panel().querySelector('.collection-evolution-count')?.textContent).toBe('0 / 48 évolutions');
   expect(panel().querySelector('[data-collection-evolution="paille"]')?.classList.contains('is-locked')).toBe(true);
   expect(panel().querySelector('[data-collection-evolution="paille"] img')).toBeNull(); // No silhouette either.
   expect(panel().querySelector('[data-collection-evolution="paille"]')?.textContent).not.toContain('Cœur des moissons');
@@ -105,7 +105,7 @@ it('the sheet requires explicit evolution; the scene plays and the forest then s
   state = controller.getSnapshot().state!;
   expect('classicLook' in state.rabbits.find(r => r.id === 'rabbit-104')!).toBe(false);
   (ui as unknown as {open(view: unknown): void}).open({kind: 'collection'});
-  expect(panel().querySelector('.collection-evolution-count')?.textContent).toBe('1 / 35 évolutions');
+  expect(panel().querySelector('.collection-evolution-count')?.textContent).toBe('1 / 48 évolutions');
   expect(panel().querySelector('[data-collection-evolution="paille"]')?.classList.contains('is-unlocked')).toBe(true);
   expect(panel().querySelector('[data-collection-evolution="paille"]')?.textContent).toContain('Cœur des moissons');
 });

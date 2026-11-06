@@ -7,10 +7,10 @@ import {validateSpeciesEntries} from '../src/config/validateSpecies';
 import {createCentreStartGame} from '../src/state/initial';
 import {breedingDistributionWeights, breedingPool} from '../src/simulation/breeding';
 
-it('keeps the independent fifteen special prices, no starting gift and ordered ordinary guarantee entries', () => {
-  expect(RECIPE_PRICES).toEqual({magicien: 450, dragon: 900, dadi: 450, maxou: 450, orange: 450, dinono: 450, dinenette: 450, 'calinou': 450, 'gigi-rarafe': 450, yetiti: 450, rennes: 450, susucre: 450, requin: 900, ankylosaure: 900, arkoko: 900});
+it('keeps the independent eighteen special prices, no starting gift and ordered ordinary guarantee entries', () => {
+  expect(RECIPE_PRICES).toEqual({magicien: 450, dragon: 900, dadi: 450, maxou: 450, orange: 450, dinono: 450, dinenette: 450, 'calinou': 450, 'gigi-rarafe': 450, yetiti: 450, rennes: 450, susucre: 450, 'lapin-de-sulli': 450, 'pain-epice': 450, 'flocon-cristal': 450, requin: 900, ankylosaure: 900, arkoko: 900});
   expect(GIFTED_RECIPES).toEqual([]);
-  expect(GUARANTEE_SPECIES).toEqual(["frisket","icy","ardent","snk","pic-pic","amethyste","princesse-neige","fluffy","virvoletant","phoenix","roukette","wat-wat","glassofeu","plume","boudinet","bouee","egiiipte","piment","tunini","bretonette","vantablack"]);
+  expect(GUARANTEE_SPECIES).toEqual(["frisket","icy","ardent","snk","pic-pic","amethyste","princesse-neige","fluffy","virvoletant","phoenix","roukette","wat-wat","glassofeu","plume","boudinet","bouee","egiiipte","piment","tunini","bretonette","vantablack","fantome","bouyoyo","nuage","champignon"]);
   expect(createCentreStartGame(0).recipeBook).toEqual([]);
 });
 it('derives policies from isolated sources; absence/false grant no policy, zero is a valid sale price', () => {

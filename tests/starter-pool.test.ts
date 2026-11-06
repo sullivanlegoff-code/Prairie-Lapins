@@ -43,9 +43,9 @@ describe('exact starting element-union pool',()=>{
  });
  it('keeps third-element historical pools and their guarantee',()=>{
   // Paille x Feu Glacé: union feu,neige,paille, no special policy; a mixed pair gives no Common result, each admissible recipe weighs 30.
-  expect(Object.entries(breedingWeights('paille','glassofeu',2,2))).toEqual([['frisket',30],['icy',30],['ardent',30],['snk',30],['wat-wat',30],['glassofeu',30]]);
+  expect(Object.entries(breedingWeights('paille','glassofeu',2,2))).toEqual([['frisket',30],['icy',30],['ardent',30],['snk',30],['wat-wat',30],['glassofeu',30],['bouyoyo',30]]);
   const s=prepared();s.progression={totalXp:cumulativeLevelXp(14),rewardedThroughLevel:14};s.discovered.push('glassofeu');s.pityFailures=7;
-  expect(breedingPool(s,'paille','glassofeu',4,4)).toMatchObject({weights:{frisket:1,icy:1,ardent:1,snk:1,'wat-wat':1},guaranteed:true});
+  expect(breedingPool(s,'paille','glassofeu',4,4)).toMatchObject({weights:{frisket:1,icy:1,ardent:1,snk:1,'wat-wat':1,bouyoyo:1},guaranteed:true});
  });
  it('shares the pool with preview and known book pairs without granting unknown recipes',()=>{
   const s=prepared();expect(recipeBook(s,0).find(r=>r.species==='boudinet')!.pairs).toEqual([]);

@@ -22,13 +22,13 @@ const items = () => [...el('level-up-unlocks').querySelectorAll('li')].map(li =>
 describe('level-up recipe announcement', () => {
   it('announces the unknown recipe made purchasable, without any condition', async () => {
     const c = setup({...createGame(0), progression: {totalXp: cumulativeLevelXp(10), rewardedThroughLevel: 10}}); c.grantLaboratoryXp(500); c.grantLaboratoryXp(500); await vi.advanceTimersByTimeAsync(300);
-    // The ten level-11 Epics (with Gigi-rarafe and the three Christmas ones while the event is on) unlock together; Dinono stays at level 1.
+    // The thirteen level-11 Epics (with Gigi-rarafe, Lapin de Sulli and the five Christmas ones while the event is on) unlock together; Dinono stays at level 1.
     expect(el('level-up-title').textContent).toBe('Niveau 11 atteint !');
-    expect(items()).toContain('Recettes en boutique · 10');
+    expect(items()).toContain('Recettes en boutique · 13');
     for (const hidden of ['Affection', 'Paille + Feu', 'paille + feu', '%', 'Parents']) expect(el('level-up-unlocks').textContent).not.toContain(hidden);
   });
   it('omits recipes already known by discovery', async () => {
-    const s = createGame(0); s.discovered.push('magicien', 'dadi', 'maxou', 'orange', 'dinenette', 'calinou', 'gigi-rarafe', 'yetiti', 'rennes', 'susucre');
+    const s = createGame(0); s.discovered.push('magicien', 'dadi', 'maxou', 'orange', 'dinenette', 'calinou', 'gigi-rarafe', 'yetiti', 'rennes', 'susucre', 'lapin-de-sulli', 'pain-epice', 'flocon-cristal');
     const c = setup({...s, progression: {totalXp: cumulativeLevelXp(10), rewardedThroughLevel: 10}}); c.grantLaboratoryXp(500); c.grantLaboratoryXp(500); await vi.advanceTimersByTimeAsync(300);
     expect(items().some(t => t.includes('en boutique · ') && t.startsWith('Recette'))).toBe(false);
   });

@@ -43,7 +43,7 @@ function memory(raw?:string){
 }
 function breedingState(){
   let s=rich();s=run(s,{type: 'placeStarterBuilding',kind:'nest',x: 22, y: 20});s=run(s,{type: 'placeStarterBuilding',kind:'nursery',x: 26, y: 20});
-  s=run(s,{type:'feed',id:'rabbit-2'});s=run(s,{type:'feed',id:'rabbit-3'});s.pityFailures=7;s.rabbits[0].species='feu';s.discovered.push('feu','wat-wat');s.rabbits.forEach(r=>r.affection=4); // Feu x Neige at affection 4: the guarantee reserves Feu Glacé
+  s=run(s,{type:'feed',id:'rabbit-2'});s=run(s,{type:'feed',id:'rabbit-3'});s.pityFailures=7;s.rabbits[0].species='feu';s.discovered.push('feu','wat-wat','bouyoyo');s.rabbits.forEach(r=>r.affection=4); // Feu x Neige at affection 4 (Bouyoyo already known): the guarantee reserves Feu Glacé
   return run(s,{type:'breed',parents:['rabbit-2','rabbit-3']},17);
 }
 

@@ -11,7 +11,7 @@ describe('rabbit blink artwork', () => {
   it('has useful-resolution sprites and 31 aligned patch sets, excluding Bouee with sunglasses, Dinenette, Calinou geant, Ankylosaure, Benny and the Christmas update rabbits', () => {
     execFileSync(process.execPath, ['scripts/derive-rabbit-art.mjs', '--check'], {stdio: 'pipe'});
     execFileSync(process.execPath, ['scripts/derive-rabbit-blinks.mjs', '--check'], {stdio: 'pipe'});
-    const eligible = SPECIES_ENTRIES.filter(entry => entry.art.kind === 'static-sprite' && !['bouee', 'dinenette', 'calinou', 'ankylosaure', 'benny', 'vantablack', 'gigi-rarafe', 'yetiti', 'rennes', 'susucre', 'arkoko'].includes(entry.id))
+    const eligible = SPECIES_ENTRIES.filter(entry => entry.art.kind === 'static-sprite' && !['bouee', 'dinenette', 'calinou', 'ankylosaure', 'benny', 'vantablack', 'gigi-rarafe', 'yetiti', 'rennes', 'susucre', 'arkoko', 'fantome', 'bouyoyo', 'nuage', 'champignon', 'lapin-de-sulli', 'pain-epice', 'flocon-cristal'].includes(entry.id))
       .map(entry => entry.id).sort();
     const manifest = JSON.parse(readFileSync('src/config/rabbitBlinkArt.json', 'utf8'));
     expect(eligible).toEqual([

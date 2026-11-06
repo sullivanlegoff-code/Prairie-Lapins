@@ -43,6 +43,17 @@ export const DESIGNS = [
   {id: 'rennes', source: 'output/imagegen/nouveaux-lapins-v1/rennes-A.png', background: 'light'},
   {id: 'susucre', source: 'output/imagegen/nouveaux-lapins-v1/susucre-B.png', background: 'light'},
   {id: 'arkoko', source: 'assets-source/rabbits/Arkoko/Arkoko stade 1.png', background: 'checker'},
+  // Christmas update, second wave (owner, 5 November 2026): Fantôme (v3, the tip of the nose out of the sheet), Bouyoyo (v2,
+  // white stopper), Lapin de Sulli (concept B), and the four rabbits the owner named, painted from his names only (free design):
+  // Pain d'épice and Flocon de cristal (Christmas epics), Nuage and Champignon des bois (rares). Flocon de cristal's white fur
+  // keeps its pale face with a tight tolerance on the backdrop's near-pure white.
+  {id: 'fantome', source: 'output/imagegen/nouveaux-lapins-v3/fantome-v3.png', background: 'light'},
+  {id: 'bouyoyo', source: 'output/imagegen/nouveaux-lapins-v3/bouyoyo-v2.png', background: 'light'},
+  {id: 'lapin-de-sulli', source: 'output/imagegen/nouveaux-lapins-v3/lapin-de-sulli-B.png', background: 'light'},
+  {id: 'pain-epice', source: 'output/imagegen/nouveaux-lapins-v3/pain-epice-A.png', background: 'light'},
+  {id: 'flocon-cristal', source: 'output/imagegen/nouveaux-lapins-v3/flocon-cristal-A.png', background: 'corner', tolerance: 10},
+  {id: 'nuage', source: 'output/imagegen/nouveaux-lapins-v3/nuage-A.png', background: 'light'},
+  {id: 'champignon', source: 'output/imagegen/nouveaux-lapins-v3/champignon-A.png', background: 'light'},
   // Affection 30 evolutions of the five commons, chosen by the owner on 3 November 2026 (white backdrop, the rabbit alone). The
   // approved paintings stay beside the species as <id>-evolution-source.png; `master` writes <id>-evolution-sprite.png (the v2 source)
   // instead of the species' own sprite.png. Usage: node scripts/prepare-rabbit-masters.mjs . paille-evolution neige-evolution ...
@@ -58,6 +69,12 @@ export const DESIGNS = [
     'pic-pic', 'piment', 'plume', 'princesse-neige', 'roukette', 'snk', 'tunini', 'virvoletant', 'wat-wat', 'calinou', 'dadi',
     'magicien', 'maxou', 'orange', 'ankylosaure', 'dragon', 'requin'].map(id => ({id: `${id}-evolution`, source: `assets-source/rabbits/${id}/${id}-evolution-source.png`,
     master: `assets-source/rabbits/${id}/${id}-evolution-sprite.png`, background: 'light'})),
+  // Affection 30 evolutions of the Christmas update's thirteen rabbits (painted 5 and 6 November 2026 on a white backdrop, same
+  // pose as the approved first drawing; Arkoko keeps the head of the owner's stage 1).
+  ...['vantablack', 'gigi-rarafe', 'yetiti', 'rennes', 'susucre', 'arkoko', 'fantome', 'bouyoyo', 'lapin-de-sulli', 'pain-epice',
+    'flocon-cristal', 'nuage', 'champignon'].map(id => ({id: `${id}-evolution`, source: `assets-source/rabbits/${id}/${id}-evolution-source.png`,
+    // The white sheet of Fantôme, the white fur of Nuage and Flocon de cristal: only the near-pure white of the backdrop goes.
+    master: `assets-source/rabbits/${id}/${id}-evolution-sprite.png`, ...['fantome', 'nuage'].includes(id) ? {background: 'corner', tolerance: 10} : {background: 'light'}})),
 ];
 // Bouee's left ear encloses a pocket of background: seed only that pocket, preserving the ring's white dots. Dinenette's evolved
 // tail curl encloses another one, between the heart and the back.

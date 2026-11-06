@@ -64,7 +64,7 @@ describe('rabbit patch adapter and body coordinates', () => {
     expect(RABBIT_BLINK_ART).toHaveLength(31);
     for (const species of SPECIES_ENTRIES) {
       const art = rabbitBlinkArt(species.id);
-      if (species.art.kind === 'static-sprite' && !['bouee', 'dinenette', 'calinou', 'ankylosaure', 'benny', 'vantablack', 'gigi-rarafe', 'yetiti', 'rennes', 'susucre', 'arkoko'].includes(species.id)) {
+      if (species.art.kind === 'static-sprite' && !['bouee', 'dinenette', 'calinou', 'ankylosaure', 'benny', 'vantablack', 'gigi-rarafe', 'yetiti', 'rennes', 'susucre', 'arkoko', 'fantome', 'bouyoyo', 'nuage', 'champignon', 'lapin-de-sulli', 'pain-epice', 'flocon-cristal'].includes(species.id)) {
         expect(art?.patches.map(patch => patch.kind)).toEqual(PATCH_KINDS);
         for (const patch of art!.patches) {
           expect(patch.url).toContain(`assets/rabbits/${species.id}/${species.id}-${patch.kind}.png`);

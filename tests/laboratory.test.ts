@@ -37,7 +37,7 @@ function setup() {
 }
 
 describe('published laboratory isolation', () => {
-  it('loads and reloads Pic Pic through the real isolated selector with available adults, room and exact 40/40/20 odds', () => {
+  it('loads and reloads Pic Pic through the real isolated selector with available adults, room and exact odds of its three-Rare union', () => {
     const before = normalSnapshot(), {dev,controller} = setup(); dispose.push(dev.mount(controller));
     const button = document.getElementById('dev-scenario-picPic')!;
     expect(button.textContent).toBe('Pic Pic — découverte et reproduction');
@@ -57,15 +57,15 @@ describe('published laboratory isolation', () => {
     for(const species of ['pic-pic','neige','volant'] as const) expect(habitatEntryReason(s,home,species)).toBeNull();
     expect(decodeGame(encodeGame(s))).toEqual({ok:true,state:s});
     const reloaded = setup();expect(reloaded.controller.getSnapshot().state).toEqual(s);
-    // Two commons never give a common (owner decision of 27 October 2026): only the two Rares of the union remain.
+    // Two commons never give a common (owner decision of 27 October 2026): only the three Rares of the union remain.
     for(const [a,b] of [['neige','volant'],['volant','neige']] as const) {
-      expect(breedingPool(s,a,b,2,2)).toMatchObject({"weights":{"pic-pic":30,"tunini":30},"total":60,"guaranteed":false});
-      expect(oddsView(s,a,b,2,2)).toMatchObject({entries:[{name:'Pic Pic',weight:50,probability:'50 %'}],unknown:{weight:50,probability:'50 %'}});
+      expect(breedingPool(s,a,b,2,2)).toMatchObject({"weights":{"pic-pic":30,"tunini":30,"nuage":30},"total":90,"guaranteed":false});
+      expect(oddsView(s,a,b,2,2)).toMatchObject({entries:[{name:'Pic Pic',weight:100/3,probability:'1/3 (≈ 33,33 %)'}],unknown:{weight:200/3,probability:'2/3 (≈ 66,67 %)'}});
     }
     for(const [a,b] of [['pic-pic','neige'],['neige','pic-pic']] as const) {
-      expect(breedingPool(s,a,b,2,2)).toMatchObject({"weights":{"pic-pic":30,"tunini":30},"total":60,"guaranteed":false});
-      // Tunini, still undiscovered, shares the same union and appears as the unknown result.
-      expect(oddsView(s,a,b,2,2)).toMatchObject({entries:[{name:'Pic Pic',weight:50,probability:'50 %'}],unknown:{weight:50,probability:'50 %'}});
+      expect(breedingPool(s,a,b,2,2)).toMatchObject({"weights":{"pic-pic":30,"tunini":30,"nuage":30},"total":90,"guaranteed":false});
+      // Tunini and Nuage (6 November 2026), still undiscovered, share the same union and appear as the unknown result.
+      expect(oddsView(s,a,b,2,2)).toMatchObject({entries:[{name:'Pic Pic',weight:100/3,probability:'1/3 (≈ 33,33 %)'}],unknown:{weight:200/3,probability:'2/3 (≈ 66,67 %)'}});
     }
     for(const pair of [s.rabbits.slice(1),s.rabbits.slice(0,2)]) {
       expect(dev.loadScenario(controller,'picPic').ok).toBe(true);

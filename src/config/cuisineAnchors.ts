@@ -61,6 +61,14 @@ export const CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>> = {
   rennes: a([.64, .27, .34, 6], [.7, .52, .3], [.71, .39, .28]),
   susucre: a([.72, .3, .34, 6], [.78, .56, .3], [.79, .43, .28]),
   arkoko: a([.68, .2, .38, 6], [.76, .54, .32], [.79, .4, .3]),
+  // The second wave (6 November 2026), read on 10 % grids of their v1 sprites only: not yet checked in the kitchen.
+  fantome: a([.55, .1, .36, 2], [.55, .45, .3], [.56, .3, .3]),
+  bouyoyo: a([.6, .12, .36, 4], [.6, .48, .3], [.62, .32, .3]),
+  nuage: a([.62, .12, .36, 4], [.64, .48, .3], [.66, .32, .3]),
+  champignon: a([.6, .08, .38, 4], [.62, .45, .3], [.64, .3, .3]),
+  'lapin-de-sulli': a([.5, .12, .4, 0], [.5, .6, .34], [.52, .4, .34]),
+  'pain-epice': a([.6, .12, .36, 4], [.6, .5, .3], [.62, .3, .3]),
+  'flocon-cristal': a([.62, .14, .34, 4], [.64, .45, .28], [.66, .3, .28]),
 };
 /** A right-facing rabbit with its head at the top right of its picture; mirrored for a left-facing one. */
 export const DEFAULT_ANCHORS: CuisineAnchors = a([.7, .15, .36, 6], [.72, .48, .3], [.75, .3, .3]);
@@ -106,6 +114,20 @@ export const EVOLVED_CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>>
   ankylosaure: a([0.74, 0.12, .36, 4], [.74, 0.54, .3], [.74, 0.33, .3]),
   dragon: a([0.72, 0.12, .36, 4], [.74, 0.58, .3], [.74, 0.35, .3]),
   requin: a([0.72, 0.12, .36, 4], [.74, 0.58, .3], [.74, 0.31, .3]),
+  // The Christmas update's evolutions (6 November 2026): estimates on the v2 sprites, not yet checked in the kitchen.
+  fantome: a([.55, .1, .36, 2], [.55, .45, .3], [.56, .3, .3]),
+  bouyoyo: a([.6, .12, .36, 4], [.6, .48, .3], [.62, .32, .3]),
+  nuage: a([.62, .12, .36, 4], [.64, .48, .3], [.66, .32, .3]),
+  champignon: a([.6, .08, .38, 4], [.62, .45, .3], [.64, .3, .3]),
+  'lapin-de-sulli': a([.5, .12, .4, 0], [.5, .6, .34], [.52, .4, .34]),
+  'pain-epice': a([.6, .12, .36, 4], [.6, .5, .3], [.62, .3, .3]),
+  'flocon-cristal': a([.62, .14, .34, 4], [.64, .45, .28], [.66, .3, .28]),
+  vantablack: a([.68, .22, .34, 6], [.72, .5, .3], [.73, .36, .3]),
+  'gigi-rarafe': a([.66, .09, .3, 4], [.7, .3, .26], [.7, .19, .28]),
+  yetiti: a([.6, .14, .36, 4], [.62, .46, .3], [.62, .3, .3]),
+  rennes: a([.64, .26, .34, 6], [.7, .52, .3], [.71, .4, .28]),
+  susucre: a([.7, .28, .34, 6], [.74, .58, .3], [.76, .44, .28]),
+  arkoko: a([.64, .2, .38, 4], [.7, .52, .32], [.72, .38, .3]),
 };
 /** `evolved`: the anchors of the species' evolved drawing (a rabbit showing it), else those of its v1. */
 export function cuisineAnchors(species: SpeciesId, facing: 1 | -1 = 1, evolved = false): CuisineAnchors {

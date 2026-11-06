@@ -20,9 +20,9 @@ describe('Epic and Legendary rabbits of 25 October 2026', () => {
   it('draws the Epics from their two elements, with affection 6 on both parents, at a quarter of a Rare weight', () => {
     // Dadi is Feu-Metal since the 27 October economy (docs/economy-current.md); Maxou stays Neige-Vol.
     expect(breedingOdds('feu', 'belier-gris', 6, 6)).toMatchObject({dadi: 300 * 100 / 4200, dinono: 300 * 100 / 4200}); // Three Rares since Vantablack.
-    expect(breedingOdds('neige', 'volant', 6, 6)).toMatchObject({maxou: 300 * 100 / 2700});
+    expect(breedingOdds('neige', 'volant', 6, 6)).toMatchObject({maxou: 300 * 100 / 4200, 'flocon-cristal': 300 * 100 / 4200}); // Three Rares since Nuage, and Flocon de cristal while Christmas is on.
     expect(breedingOdds('paille', 'neige', 6, 6)).toEqual({frisket: 40, icy: 40, orange: 10, yetiti: 10}); // Yetiti while Christmas is on.
-    expect(breedingOdds('paille', 'belier-gris', 6, 6).magicien).toBe(10);
+    expect(breedingOdds('paille', 'belier-gris', 6, 6).magicien).toBe(300 * 100 / 4200); // Three Rares since Champignon des bois.
     expect(breedingOdds('feu', 'belier-gris', 6, 5).dadi).toBeUndefined();
   });
 });

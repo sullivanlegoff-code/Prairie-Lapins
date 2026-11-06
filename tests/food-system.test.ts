@@ -102,12 +102,12 @@ describe('epic and legendary chances grow with both parents’ affection', () =>
     for (const step of RARE_BIRTH_BONUS) expect(Math.abs(step.factor * 20 - Math.round(step.factor * 20))).toBeLessThan(1e-9);
     expect([rareBirthFactor('magicien', 9, 50), rareBirthFactor('magicien', 10, 14), rareBirthFactor('magicien', 15, 29), rareBirthFactor('magicien', 30, 49), rareBirthFactor('dragon', 50, 50), rareBirthFactor('dragon', 49, 50)]).toEqual([1, 1.15, 1.3, 1.5, 2, 1.5]);
     expect(rareBirthFactor('boudinet', 50, 50)).toBe(1); expect(SPECIES.boudinet.rarity).toBe('rare');
-    expect(breedingOdds('magicien', 'belier-gris', 9, 9).magicien).toBe(10);
-    // Weight model: Roukette and Boudinet weigh 1200 each, Magicien and Câlinou géant 300 × the factor each.
-    expect(breedingOdds('magicien', 'belier-gris', 10, 10).magicien).toBe(345 * 100 / 3090);
-    expect(breedingOdds('magicien', 'belier-gris', 20, 15).magicien).toBe(390 * 100 / 3180);
-    expect(breedingOdds('magicien', 'belier-gris', 30, 40).magicien).toBe(450 * 100 / 3300);
-    expect(breedingOdds('magicien', 'belier-gris', 50, 50).magicien).toBe(600 * 100 / 3600);
+    // Weight model: Roukette, Boudinet and Champignon des bois (6 November 2026) weigh 1200 each, Magicien and Câlinou géant 300 × the factor each.
+    expect(breedingOdds('magicien', 'belier-gris', 9, 9).magicien).toBe(300 * 100 / 4200);
+    expect(breedingOdds('magicien', 'belier-gris', 10, 10).magicien).toBe(345 * 100 / 4290);
+    expect(breedingOdds('magicien', 'belier-gris', 20, 15).magicien).toBe(390 * 100 / 4380);
+    expect(breedingOdds('magicien', 'belier-gris', 30, 40).magicien).toBe(450 * 100 / 4500);
+    expect(breedingOdds('magicien', 'belier-gris', 50, 50).magicien).toBe(600 * 100 / 4800);
   });
 });
 

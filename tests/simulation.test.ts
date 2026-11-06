@@ -261,7 +261,8 @@ describe('breeding probabilities and pity', () => {
   it('reserves a random new hybrid without marking it discovered', () => {
     const s = setup(); s.rabbits[0].species='feu'; s.discovered.push('feu','wat-wat'); s.rabbits.forEach(r => r.affection = 4); s.pityFailures = 6;
     const next = run(s, breed, 0, 0.999); expect(next.pityFailures).toBe(0);
-    expect(next.discovered).not.toContain('glassofeu'); expect(pendingDiscoveries(next)).toEqual(['glassofeu']);
+    // The last roll draws the last new hybrid of Feu + Neige: Bouyoyo since 6 November 2026.
+    expect(next.discovered).not.toContain('bouyoyo'); expect(pendingDiscoveries(next)).toEqual(['bouyoyo']);
     expect(nest(next).breeding!.birth.guaranteed).toBe(false);
   });
   it('keeps a guaranteed result and its counter coherent while another birth waits', () => {

@@ -34,11 +34,11 @@ function game(): GameState {
 }
 
 describe('the Christmas rabbits (owner, 5 November 2026)', () => {
-  it('are Yetiti, Rennes and Susucre, three Epics of the Christmas event', () => {
-    expect(CHRISTMAS_RABBIT_IDS).toEqual(['yetiti', 'rennes', 'susucre']);
-    expect(SPECIES_IDS.filter(id => SPECIES[id].event)).toEqual(['yetiti', 'rennes', 'susucre']);
+  it('are Yetiti, Rennes, Susucre, Pain d’épice and Flocon de cristal, five Epics of the Christmas event', () => {
+    expect(CHRISTMAS_RABBIT_IDS).toEqual(['yetiti', 'rennes', 'susucre', 'pain-epice', 'flocon-cristal']);
+    expect(SPECIES_IDS.filter(id => SPECIES[id].event)).toEqual(['yetiti', 'rennes', 'susucre', 'pain-epice', 'flocon-cristal']);
     for (const id of CHRISTMAS_RABBIT_IDS) expect(SPECIES[id].rarity).toBe('epic');
-    expect([SPECIES.yetiti.types, SPECIES.rennes.types, SPECIES.susucre.types]).toEqual([['neige', 'paille'], ['vol', 'metal'], ['paille', 'feu']]);
+    expect([SPECIES.yetiti.types, SPECIES.rennes.types, SPECIES.susucre.types, SPECIES['pain-epice'].types, SPECIES['flocon-cristal'].types]).toEqual([['neige', 'paille'], ['vol', 'metal'], ['paille', 'feu'], ['feu', 'paille'], ['neige', 'vol']]);
   });
 
   it('are born by normal breeding during the event only, and their recipe is sold only then', () => {
@@ -51,7 +51,7 @@ describe('the Christmas rabbits (owner, 5 November 2026)', () => {
     expect(Object.keys(breedingPool(s, 'paille', 'neige', 6, 6).weights)).toEqual(['frisket', 'icy', 'orange']);
     expect(breedingPool(s, 'paille', 'neige', 6, 6).excluded.map(e => e.species)).not.toContain('yetiti');
     // The other new rabbits are not seasonal.
-    for (const id of ['vantablack', 'gigi-rarafe', 'arkoko'] as const) { expect(seasonAllows(id)).toBe(true); }
+    for (const id of ['vantablack', 'gigi-rarafe', 'arkoko', 'lapin-de-sulli', 'fantome', 'bouyoyo', 'nuage', 'champignon'] as const) { expect(seasonAllows(id)).toBe(true); }
     expect(recipePrice('gigi-rarafe')).toBe(450);
   });
 
@@ -106,10 +106,10 @@ describe('the market’s Christmas rabbits', () => {
   const panel = () => document.getElementById('panel-content')!;
   const buttonIn = (root: ParentNode, start: string) => [...root.querySelectorAll<HTMLButtonElement>('button')].find(b => b.textContent?.replace(/\s+/g, ' ').trim().startsWith(start));
 
-  it('lists the three, refuses them without enough sucres d’orge, and welcomes one in a chosen habitat', () => {
+  it('lists the five, refuses them without enough sucres d’orge, and welcomes one in a chosen habitat', () => {
     const s = game(); s.christmas = {candies: 300};
     const {ui, state} = mount(s); ui.open({kind: 'christmasMarket', tab: 'rewards'});
-    expect([...panel().querySelectorAll<HTMLElement>('[data-christmas-rabbit]')].map(c => c.dataset.christmasRabbit)).toEqual(['yetiti', 'rennes', 'susucre']);
+    expect([...panel().querySelectorAll<HTMLElement>('[data-christmas-rabbit]')].map(c => c.dataset.christmasRabbit)).toEqual(['yetiti', 'rennes', 'susucre', 'pain-epice', 'flocon-cristal']);
     const card = panel().querySelector('[data-christmas-rabbit="yetiti"]')!;
     expect(card.textContent).toContain('Épique');
     buttonIn(card, 'Adopter')!.click();

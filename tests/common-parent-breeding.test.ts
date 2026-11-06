@@ -95,14 +95,15 @@ describe('Common results require two Common parents of the same single type', ()
   });
   it('keeps exact fixed special chances at all affection bonus thresholds after removing common results', () => {
     for (const [affection, epic] of [[6, 300], [10, 345], [15, 390], [20, 390], [30, 450], [50, 600]] as const) {
-      const expected = epic * 100 / (2 * 1200 + 2 * epic); // Weight model: two Rares at 1200, two Epics at 300 × the factor.
-      const s = parents('paille', 'belier-gris', affection); s.discovered.push('roukette', 'boudinet');
+      const expected = epic * 100 / (3 * 1200 + 2 * epic); // Weight model: three Rares at 1200 (Champignon des bois since 6 November 2026), two Epics at 300 × the factor.
+      const s = parents('paille', 'belier-gris', affection); s.discovered.push('roukette', 'boudinet', 'champignon');
       const p = breedingPool(s, 'paille', 'belier-gris', affection, affection);
       expect(p.weights.magicien! * 100 / p.total).toBeCloseTo(expected, 12);
       // Câlinou géant shares Magicien's Paille + Metal recipe and chance.
       expect(p.weights.calinou! * 100 / p.total).toBeCloseTo(expected, 12);
-      expect(p.weights.roukette! * 100 / p.total).toBeCloseTo(100 / 2 - expected, 12);
-      expect(p.weights.boudinet! * 100 / p.total).toBeCloseTo(100 / 2 - expected, 12);
+      expect(p.weights.roukette! * 100 / p.total).toBeCloseTo((100 - 2 * expected) / 3, 12);
+      expect(p.weights.boudinet! * 100 / p.total).toBeCloseTo((100 - 2 * expected) / 3, 12);
+      expect(p.weights.champignon! * 100 / p.total).toBeCloseTo((100 - 2 * expected) / 3, 12);
       for (const [a, b, id] of [['dadi', 'phoenix', 'dragon'], ['maxou', 'wat-wat', 'requin']] as const) {
         const pool = breedingPool(s, a, b, Math.max(10, affection), Math.max(10, affection));
         expect(pool.weights[id]! * 100 / pool.total).toBe(affection >= 50 ? 20 : affection >= 30 ? 15 : affection >= 15 ? 13 : 11.5);
@@ -110,15 +111,15 @@ describe('Common results require two Common parents of the same single type', ()
     }
     // Removing every ordinary candidate cannot turn a fixed 10 % special into a 100 % result.
     expect(breedingDistributionWeights('paille', 'belier-gris', 6, 6, id => id === 'magicien' || id === 'calinou')).toEqual({});
-    // Paille, Metal, Feu and Vol together at affection 50: thirteen Rares at 1200 and eight Epics at 600 (Christmas on); at 15, eight Epics at 390.
+    // Paille, Metal, Feu and Vol together at affection 50: fifteen Rares at 1200 (Fantôme and Champignon des bois since 6 November) and nine Epics at 600 (Christmas on, with Pain d’épice); at 15, nine Epics at 390.
     const big = breedingOdds('magicien', 'phoenix', 50, 50);
-    for (const id of ['magicien', 'dadi', 'dinono', 'dinenette', 'calinou', 'gigi-rarafe', 'rennes', 'susucre'] as const) expect(big[id]).toBeCloseTo(600 * 100 / 20400, 12);
+    for (const id of ['magicien', 'dadi', 'dinono', 'dinenette', 'calinou', 'gigi-rarafe', 'rennes', 'susucre', 'pain-epice'] as const) expect(big[id]).toBeCloseTo(600 * 100 / 23400, 12);
     const fifteen = breedingOdds('magicien', 'phoenix', 15, 15);
-    for (const id of ['magicien', 'dadi', 'dinono', 'dinenette', 'calinou', 'gigi-rarafe', 'rennes', 'susucre'] as const) expect(fifteen[id]).toBeCloseTo(390 * 100 / 18720, 12);
-    expect(Object.keys(big)).toHaveLength(21);
+    for (const id of ['magicien', 'dadi', 'dinono', 'dinenette', 'calinou', 'gigi-rarafe', 'rennes', 'susucre', 'pain-epice'] as const) expect(fifteen[id]).toBeCloseTo(390 * 100 / 21510, 12);
+    expect(Object.keys(big)).toHaveLength(24);
   });
   it('removes Common results from mixed pairs while preserving the exact Dragon reserve', () => {
-    expect(breedingDistributionWeights('neige', 'pic-pic', 2, 2)).toEqual({'pic-pic': 30, tunini: 30});
+    expect(breedingDistributionWeights('neige', 'pic-pic', 2, 2)).toEqual({'pic-pic': 30, tunini: 30, nuage: 30});
     const s = parents('dadi', 'phoenix', 10), pool = breedingPool(s, 'dadi', 'phoenix', 10, 10);
     expect(pool.weights.dragon! * 100 / pool.total).toBe(11.5);
     for (const id of ['neige', 'feu', 'volant'] as const) expect(pool.weights[id]).toBeUndefined();

@@ -93,11 +93,11 @@ describe('active species and habitat level gates',()=>{
 describe('pre-launch result filtering and unchanged fixed probabilities',()=>{
  it('preserves Paille × Neige and filters the guarantee by level',()=>{
   expect(odds(1,'paille','neige')).toEqual({frisket:50,icy:50});
-  const s=at(1);s.pityFailures=7;s.discovered=['paille','neige','feu','wat-wat','glassofeu'];let pool=breedingPool(s,'feu','neige',4,4);expect(pool.guaranteed).toBe(false);expect(pool.weights).toEqual({'wat-wat':30,glassofeu:30});
+  const s=at(1);s.pityFailures=7;s.discovered=['paille','neige','feu','wat-wat','glassofeu','bouyoyo'];let pool=breedingPool(s,'feu','neige',4,4);expect(pool.guaranteed).toBe(false);expect(pool.weights).toEqual({'wat-wat':30,glassofeu:30,bouyoyo:30});
   s.discovered=s.discovered.filter(id=>id!=='glassofeu');s.progression={totalXp:cumulativeLevelXp(6),rewardedThroughLevel:6};pool=breedingPool(s,'feu','neige',4,4);expect(pool.guaranteed).toBe(true);expect(pool.weights).toEqual({'glassofeu':1});
  });
  it('reserves only currently admissible specials and normalizes ordinary results',()=>{
-  expect(odds(10,'paille','belier-gris')).toEqual({roukette:50,boudinet:50});expect(odds(11,'paille','belier-gris')).toEqual({roukette:1200*100/3090,boudinet:1200*100/3090,magicien:345*100/3090,calinou:345*100/3090}); // Both parents at affection 10: the epic chance ×1.15.
+  expect(odds(10,'paille','belier-gris')).toEqual({roukette:100/3,boudinet:100/3,champignon:100/3});expect(odds(11,'paille','belier-gris')).toEqual({roukette:1200*100/4290,boudinet:1200*100/4290,champignon:1200*100/4290,magicien:345*100/4290,calinou:345*100/4290}); // Both parents at affection 10: the epic chance ×1.15.
   expect(odds(13,'dadi','phoenix').dragon).toBeUndefined();expect(odds(13,'dadi','phoenix').dadi).toBe(345*100/9435);
   const pair=odds(14,'dadi','phoenix');expect(pair.dragon).toBe(11.5);for(const id of ['dadi','dinono','rennes'])expect(pair[id]).toBeCloseTo(88.5*345/9435,10);expect(Object.keys(pair)).toHaveLength(11);for(const id of ['amethyste','phoenix','bouee','egiiipte','piment','bretonette','vantablack'])expect(pair[id]).toBeCloseTo(88.5*1200/9435,10);
   for(let level=1;level<=14;level++)for(const a of SPECIES_IDS)for(const b of SPECIES_IDS){const result=odds(level,a,b),total=Object.values(result).reduce((n,w)=>n+w,0);if(total)expect(total).toBeCloseTo(100,10);}
@@ -111,7 +111,7 @@ describe('pre-launch result filtering and unchanged fixed probabilities',()=>{
  });
  it('with no ordinary fallback, refuses before RNG, XP or work, even for a historically discovered special',()=>{
   // Every union of the catalogue now holds a level-1 result: withdraw the Paille-Metal ones here to recreate a pool without ordinary fallback.
-  const saved=(['paille','roukette','boudinet'] as const).map(id=>[id,SPECIES[id].acquisition] as const);
+  const saved=(['paille','roukette','boudinet','champignon'] as const).map(id=>[id,SPECIES[id].acquisition] as const);
   for(const [id] of saved)SPECIES[id].acquisition=[{kind:'shop',price:80}];
   try {
   const s=at(1);s.discovered.push('magicien');s.rabbits=[{id:'rabbit-2',species:'magicien',affection:6,enclosureId:'building-1'},{id:'rabbit-6',species:'magicien',affection:6,enclosureId:'building-1'}];s.nextId=7;delete s.levelAccessTransition;establishHistoricalLevelRights(s);

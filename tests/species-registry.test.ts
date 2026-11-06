@@ -37,6 +37,9 @@ const SPECIAL_DESCRIPTIONS: Record<string, string> = {
   'rennes': 'Un lapin renne aux grands bois, au nez rouge, avec son harnais à grelots pour tirer le traîneau.',
   'susucre': 'Un lapin sucre d’orge rayé rouge et vert menthe, avec un nœud doré et une oreille en crosse.',
   'arkoko': 'Un lapin brun dans une combinaison rose à capuche, avec une cape arc-en-ciel et un cristal bleu sur le front.',
+  'lapin-de-sulli': 'Un lapin boudeur en doudoune rouge, avec des moufles jaunes et un bonnet turquoise à pompon jaune.',
+  'pain-epice': 'Un lapin biscuit de pain d’épice, aux glaçages blancs, aux boutons en bonbons et au petit nœud rouge.',
+  'flocon-cristal': 'Un lapin blanc bleuté au pelage givré, aux oreilles terminées par des flocons et à la collerette de cristaux de glace.',
   orange: 'Une petite lapine blanche à la robe orange.', requin: 'Un lapin bélier gris aux rayures de requin, avec un aileron bleu et un sourire pointu.',
 };
 
@@ -77,7 +80,7 @@ describe('canonical species registry', () => {
   it('keeps the derived lists and their exact order', () => {
     expect(balance.SHOP_SPECIES).toEqual(['paille', 'neige', 'feu', 'belier-gris', 'volant']);
     expect(balance.RECIPE_SPECIES).toEqual(EXPECTED_RECIPE_IDS);
-    expect(balance.GUARANTEE_SPECIES).toEqual(["frisket","icy","ardent","snk","pic-pic","amethyste","princesse-neige","fluffy","virvoletant","phoenix","roukette","wat-wat","glassofeu","plume","boudinet","bouee","egiiipte","piment","tunini","bretonette","vantablack"]);
+    expect(balance.GUARANTEE_SPECIES).toEqual(["frisket","icy","ardent","snk","pic-pic","amethyste","princesse-neige","fluffy","virvoletant","phoenix","roukette","wat-wat","glassofeu","plume","boudinet","bouee","egiiipte","piment","tunini","bretonette","vantablack","fantome","bouyoyo","nuage","champignon"]);
   });
   it('keeps LEGACY_SPECIES_IDS as the historical list: the first two ids, in order', () => {
     expect([...registry.LEGACY_SPECIES_IDS]).toEqual(IDS.slice(0, 2));

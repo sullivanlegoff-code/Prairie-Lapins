@@ -148,9 +148,9 @@ describe('UI projections preserve gameplay rules and secrets', () => {
     // Unknown recipe: neither name, types nor rarity; only the exact cumulative probability.
     expect(odds.entries).toEqual([]); expect(odds.unknown).toEqual({weight: 100, probability: '100 %'});
     s.recipeBook = ['glassofeu'];
-    expect(oddsView(s, 'feu', 'neige', 4, 4).entries).toEqual([{"description":"feu + neige · Rare","name":"Glassofeu","probability":"50 %","weight":50}]);
-    // Two unknown guaranteed results share the guarantee equally.
-    s.recipeBook = ['glassofeu', 'wat-wat'];const both = oddsView(s, 'feu', 'neige', 4, 4); expect(both.entries.map(e => e.weight)).toEqual([50, 50]);
+    expect(oddsView(s, 'feu', 'neige', 4, 4).entries).toEqual([{"description":"feu + neige · Rare","name":"Glassofeu","probability":"1/3 (≈ 33,33 %)","weight":100/3}]);
+    // The three unknown guaranteed results (Wat Wat, Glassofeu and, since 6 November 2026, Bouyoyo) share the guarantee equally.
+    s.recipeBook = ['glassofeu', 'wat-wat'];const both = oddsView(s, 'feu', 'neige', 4, 4); expect(both.entries.map(e => e.weight)).toEqual([100/3, 100/3]); expect(both.unknown).toMatchObject({weight: 100/3});
   });
   it('explains last-of-species protection and adapts the tutorial to existing progress', () => {
     const s = createGame(0); expect(releaseReason(s, 'rabbit-2', 0)).toContain('au moins un');

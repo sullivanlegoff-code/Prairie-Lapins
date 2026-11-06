@@ -26,6 +26,9 @@ const SPECIALS: {id: SpeciesId; probability: number; affection: number; types?: 
   // Christmas update (5 November 2026): two-element Epics (the Christmas ones while the event is on), and Arkoko of Câlinou géant × Orange.
   {id: 'gigi-rarafe', probability: 10, affection: 6, types: ['paille', 'feu']}, {id: 'yetiti', probability: 10, affection: 6, types: ['neige', 'paille']},
   {id: 'rennes', probability: 10, affection: 6, types: ['vol', 'metal']}, {id: 'susucre', probability: 10, affection: 6, types: ['paille', 'feu']},
+  // 6 November 2026: Lapin de Sulli, and the Christmas Pain d’épice and Flocon de cristal.
+  {id: 'lapin-de-sulli', probability: 10, affection: 6, types: ['feu', 'neige']}, {id: 'pain-epice', probability: 10, affection: 6, types: ['feu', 'paille']},
+  {id: 'flocon-cristal', probability: 10, affection: 6, types: ['neige', 'vol']},
   {id: 'requin', probability: 10, affection: 10, parents: ['maxou', 'wat-wat']},
   {id: 'ankylosaure', probability: 10, affection: 10, parents: ['dinono', 'dinenette']}, {id: 'arkoko', probability: 10, affection: 10, parents: ['calinou', 'orange']},
   // Benny, the Mythic (1 November 2026): any two Legendaries, a fixed chance reserved like a Legendary's.

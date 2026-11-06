@@ -162,7 +162,7 @@ describe('extended guarantee and persisted rare births', () => {
     expect(welcomed.rabbits[2]).toMatchObject({id: birth.id, species: rare, affection: 1});
   });
   it('does not advance or consume a guarantee when rare recipes are excluded by affection', () => {
-    let s = couple('feu', 'neige', 4, 3); s.discovered.push('wat-wat', 'glassofeu');s.pityFailures = 7;
+    let s = couple('feu', 'neige', 4, 3); s.discovered.push('wat-wat', 'glassofeu', 'bouyoyo');s.pityFailures = 7;
     s = run(s, breed);
     expect(s.pityFailures).toBe(7); expect(s.buildings.find(b => b.breeding)!.breeding!.birth.guaranteed).toBe(false);
     expect(pendingDiscoveries(s)).toEqual([]);
@@ -209,7 +209,7 @@ describe('catalogue, notebook, visuals and compatibility', () => {
     expect(recipe.pairs).toEqual([{parents: ['rabbit-2', 'rabbit-3'], feeding: ['rabbit-2'], busy: false, blocked:true, probability: '0 %', guaranteed: false, certain: false, possible: false}]);
     s.rabbits[0].affection = 4; recipe = recipeBook(s, 0).find(r => r.species === 'glassofeu')!;
     expect(recipe.pairs[0]).toMatchObject({probability: shareLabel(30, 30 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length), guaranteed: false, possible: true});
-    s.discovered.push('wat-wat');s.pityFailures = 7; recipe = recipeBook(s, 0).find(r => r.species === 'glassofeu')!;
+    s.discovered.push('wat-wat', 'bouyoyo');s.pityFailures = 7; recipe = recipeBook(s, 0).find(r => r.species === 'glassofeu')!;
     expect(recipe.pairs[0]).toMatchObject({probability: '100 %', guaranteed: true, certain: true});
     const busy = run(s, breed);
     expect(recipeBook(busy, 0).find(r => r.species === 'glassofeu')!.pairs[0]).toMatchObject({busy: true, possible: false});
