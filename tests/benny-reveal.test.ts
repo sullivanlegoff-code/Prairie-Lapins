@@ -3,7 +3,7 @@ import html from '../index.html?raw';
 // @ts-expect-error -- the browser tsconfig has no Node types; Vitest runs this file in Node.
 import {existsSync, readFileSync} from 'node:fs';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
-import {BENNY_EFFECTS} from '../src/config/bennyArt';
+import {BENNY_ATLAS, BENNY_EFFECTS, BENNY_REVEAL_POSES} from '../src/config/bennyArt';
 import {showBennyReveal} from '../src/ui/bennyReveal';
 import {decorateLegendaryCard, clearLegendaryCard, legendaryPortrait} from '../src/ui/legendaryCard';
 import {GameController} from '../src/application/GameController';
@@ -69,6 +69,39 @@ describe('Benny first appearance', () => {
     dialog.querySelector<HTMLElement>('.br-night')!.click(); expect(dialog.classList.contains('is-final')).toBe(true); expect(dialog.open).toBe(true);
     button.click(); expect(closed).toBe(1); expect(document.querySelector('dialog.benny-reveal')).toBeNull();
     button.click(); expect(closed).toBe(1);
+  });
+  it('tells her story in her approved meadow poses: asleep, awake, the hop of joy, then little movements', () => {
+    reducedMotion(false);
+    const dialog = showBennyReveal(text), story = [...dialog.querySelectorAll<HTMLElement>('.br-story .br-pose')];
+    const at = (piece: HTMLElement) => parseFloat(piece.style.getPropertyValue('--at')), lasts = (piece: HTMLElement) => parseFloat(piece.style.getPropertyValue('--for'));
+    expect(story.length).toBeGreaterThan(8);
+    // One after the other, with no hole: she is never missing during the show.
+    story.forEach((piece, k) => { if (k) expect(at(piece)).toBeLessThanOrEqual(at(story[k - 1]) + lasts(story[k - 1]) + .001); });
+    // The story ends when the rest picture comes back (the CSS hides it until then).
+    const css = readFileSync('src/display/benny-reveal.css', 'utf8') as string, last = story[story.length - 1];
+    expect(css).toContain(`br-hidden ${(at(last) + lasts(last)).toFixed(2)}s`);
+    for (const name of ['blink-1', 'blink-2', 'nose-1', 'nose-2', 'nose-3', 'ears-1', 'ears-2', 'ears-3']) {
+      expect(dialog.querySelector(`.br-idle .br-idle-${name}`)).not.toBeNull(); expect(css).toContain(`@keyframes br-idle-${name} `);
+    }
+    expect(dialog.style.getPropertyValue('--atlas')).toContain('benny-frames.webp');
+    expect(BENNY_ATLAS.url).toContain('benny-frames.webp');
+    // No wings: they belong to her power. Her paintings only, from the meadow atlas.
+    expect(dialog.querySelector('[src*="flight"], [src*="benny-envol"]')).toBeNull();
+    dialog.dispatchEvent(new Event('cancel', {cancelable: true}));
+  });
+  it('places her poses where the meadow atlas really has them', () => {
+    const atlas = JSON.parse(readFileSync('public/assets/rabbits/benny/frames/benny-frames.json', 'utf8') as string) as {meta: {size: {w: number; h: number}}; frames: Record<string, {frame: unknown; spriteSourceSize: {x: number; y: number}}>};
+    expect(BENNY_REVEAL_POSES.atlas).toEqual({w: atlas.meta.size.w, h: atlas.meta.size.h});
+    for (const [name, pose] of Object.entries(BENNY_REVEAL_POSES.poses)) {
+      expect(pose.frame).toEqual({x: (atlas.frames[name].frame as {x: number}).x, y: (atlas.frames[name].frame as {y: number}).y, w: (atlas.frames[name].frame as {w: number}).w, h: (atlas.frames[name].frame as {h: number}).h});
+      expect(pose.at).toEqual({x: atlas.frames[name].spriteSourceSize.x, y: atlas.frames[name].spriteSourceSize.y});
+    }
+  });
+  it('stops every step of the show on a tap: nothing stays waiting for its late start', () => {
+    const css = readFileSync('src/display/benny-reveal.css', 'utf8') as string;
+    for (const rule of css.match(/^[^\n{]*\.is-playing[^\n{]*\{/gm) ?? []) expect(rule).toContain(':not(.is-final)');
+    // A burst with a lasting fill would hide the earlier bursts of the same picture.
+    expect(css).not.toMatch(/\.br-prism-(left|right) \{ animation:[^}]*both/);
   });
   it('brings no fire, no water and no earth: none of the legendary paintings', () => {
     reducedMotion(false);

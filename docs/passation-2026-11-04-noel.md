@@ -261,3 +261,9 @@ Non corrigé, connu : relâcher le lapin qui a reçu l'affection de la cuisine r
 Bases B de Gigi-rarafe, Champignon des bois et Pain d'épice ; 11 évolutions refaites (planches `output/planches/planche-v4.png` à `planche-v6.png`, hors Git). Six ont été repeintes de trois-quarts à la demande du propriétaire : Bouyoyo, Champignon, Pain d'épice, Vantablack, Rennes, Arkoko. La base de Pain d'épice reste de profil, approuvée telle quelle.
 
 Les dessins ont été validés par le propriétaire le 6 novembre. La toque et le bavoir de ces 6 évolutions ont été contrôlés dans la vraie cuisine (Chromium, Avocado toast, chaque lapin en commis et en goûteur) : aucune retouche nécessaire.
+
+## Mise à jour du 6 novembre 2026 : le vol et l’apparition de Benny
+
+- **Le vol de Benny** : au toucher, les règles donnent toujours leur vitesse d’un coup (`bennyFlightGame.ts` n’a pas changé), mais ce qui est dessiné suit en douceur : hauteur et inclinaison lissées, ailes qui accélèrent sans repartir du haut, plus d’étirement. Réglages dans `BENNY_FLAPPY` (`src/config/bennyFlightGameArt.ts`).
+- **L’apparition de Benny** (`src/ui/bennyReveal.ts`, `src/display/benny-reveal.css`) : environ 8,5 s avant les mots. Vue rapprochée qui recule, étoiles filantes, Benny endormie qui descend en se balançant, yeux qui s’ouvrent, atterrissage, gerbe d’étoiles, bond de joie, mots un par un ; ensuite elle respire, cligne, bouge le nez et les oreilles.
+- Ses poses viennent de l’atlas de la prairie, sans nouveau dessin. `src/config/bennyRevealPoses.json` recopie leurs coordonnées (un test le garde égal à l’atlas). Si l’atlas n’est pas prêt à temps, elle descend avec son image de repos.
