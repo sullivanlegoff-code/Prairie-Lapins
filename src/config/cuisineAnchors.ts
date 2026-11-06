@@ -52,16 +52,16 @@ export const CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>> = {
   calinou: a([.65, .17, .36, 4], [.72, .45, .3], [.74, .35, .26]),
   requin: a([.72, .05, .38, 6], [.76, .4, .3], [.78, .19, .3]),
   ankylosaure: a([.76, .1, .36, 6], [.8, .48, .3], [.8, .29, .3]),
-  // Provisional A1 drawing (1 November 2026), read on the sprite only: not yet checked on a capture of the kitchen.
+  // Provisional A1 drawing (1 November 2026), checked with its toque and bib on a capture (6 November 2026).
   benny: a([.58, .22, .36, 6], [.7, .56, .3], [.66, .37, .3]),
-  // The Christmas update's rabbits (5 November 2026), read on 10 % grids of their v1 sprites only: not yet checked in the kitchen.
+  // The Christmas update's rabbits (5 November 2026), read on 10 % grids of their v1 sprites, checked on captures (6 November 2026).
   vantablack: a([.68, .24, .34, 6], [.72, .5, .3], [.73, .37, .3]),
   'gigi-rarafe': a([.42, .09, .3, -4], [.42, .33, .28], [.42, .17, .28]),
   yetiti: a([.66, .12, .36, 6], [.7, .42, .3], [.7, .27, .3]),
   rennes: a([.64, .27, .34, 6], [.7, .52, .3], [.71, .39, .28]),
   susucre: a([.72, .3, .34, 6], [.78, .56, .3], [.79, .43, .28]),
   arkoko: a([.68, .2, .38, 6], [.76, .54, .32], [.79, .4, .3]),
-  // The second wave (6 November 2026), read on 10 % grids of their v1 sprites only: not yet checked in the kitchen.
+  // The second wave (6 November 2026), read on 10 % grids of their v1 sprites, checked on captures (6 November 2026).
   fantome: a([.55, .1, .36, 2], [.55, .45, .3], [.56, .3, .3]),
   bouyoyo: a([.6, .12, .36, 4], [.6, .48, .3], [.62, .32, .3]),
   nuage: a([.62, .12, .36, 4], [.64, .48, .3], [.66, .32, .3]),
@@ -74,7 +74,7 @@ export const CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>> = {
 export const DEFAULT_ANCHORS: CuisineAnchors = a([.7, .15, .36, 6], [.72, .48, .3], [.75, .3, .3]);
 /**
  * The same anchors on the evolved drawings (affection 30, src/config/evolvedArt.ts), read on 10 % grids of the v2 sprites
- * (3 November 2026), not yet checked on a capture of the kitchen. An evolved species without an entry uses `DEFAULT_ANCHORS`.
+ * (3 November 2026). All checked on captures of the toque and bib on 6 November 2026; fifteen were re-read on a 5 % grid then. An evolved species without an entry uses `DEFAULT_ANCHORS`.
  */
 export const EVOLVED_CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>> = {
   paille: a([.4, .19, .42, -8], [.3, .42, .44], [.25, .29, .45]),
@@ -82,40 +82,40 @@ export const EVOLVED_CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>>
   feu: a([.78, .18, .34, 8], [.82, .52, .3], [.78, .33, .3]),
   'belier-gris': a([.74, .05, .34, 6], [.78, .42, .32], [.8, .22, .3]),
   volant: a([.7, .07, .36, 4], [.74, .36, .36], [.76, .19, .38]),
-  // Read the same way on the v2 of Dinono and Dinenette (3 November 2026): estimates, not yet checked on a capture of the kitchen.
+  // Read the same way on the v2 of Dinono and Dinenette (3 November 2026): checked on a capture (6 November 2026).
   dinono: a([.74, .17, .34, 6], [.76, .5, .3], [.76, .33, .28]),
   dinenette: a([.76, .14, .34, 6], [.76, .47, .3], [.75, .3, .28]),
-  // Estimations lues sur les peintures v2, à confirmer sur une capture en cuisine.
-  amethyste: a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
-  ardent: a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
+  // Read on the v2 drawings; checked on captures (6 November 2026), the misplaced ones re-read on a 5 % grid.
+  amethyste: a([.7, .3, .32, 4], [.78, .58, .26], [.74, .43, .24]),
+  ardent: a([.8, .35, .3, 6], [.82, .6, .28], [.82, .46, .24]),
   boudinet: a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
   bouee: a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
   bretonette: a([0.72, 0.1, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
   egiiipte: a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
-  fluffy: a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
-  frisket: a([0.72, 0.06, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
-  glassofeu: a([0.28, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
-  icy: a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
+  fluffy: a([.5, .4, .3, 0], [.58, .6, .26], [.58, .51, .24]),
+  frisket: a([.72, .25, .32, 4], [.74, .55, .28], [.76, .39, .32]),
+  glassofeu: a([.42, .31, .32, -4], [.43, .6, .28], [.43, .47, .28]),
+  icy: a([.56, .3, .36, 2], [.6, .6, .3], [.62, .46, .32]),
   phoenix: a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
-  'pic-pic': a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
+  'pic-pic': a([.5, .33, .32, 0], [.5, .57, .28], [.5, .46, .28]),
   piment: a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
-  plume: a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
-  'princesse-neige': a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
+  plume: a([.74, .37, .3, 6], [.8, .64, .26], [.76, .5, .24]),
+  'princesse-neige': a([.56, .12, .28, 2], [.6, .36, .24], [.6, .26, .24]),
   roukette: a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
   snk: a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
-  tunini: a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
-  virvoletant: a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
+  tunini: a([.65, .3, .26, 4], [.7, .54, .24], [.66, .43, .22]),
+  virvoletant: a([.72, .3, .3, 4], [.74, .68, .26], [.75, .55, .28]),
   'wat-wat': a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
   calinou: a([0.7, 0.18, .36, 4], [.74, 0.55, .3], [.74, 0.34, .3]),
   dadi: a([0.72, 0.1, .36, 4], [.74, 0.56, .3], [.74, 0.3, .3]),
   magicien: a([0.72, 0.1, .36, 4], [.74, 0.55, .3], [.74, 0.38, .3]),
-  maxou: a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
-  orange: a([0.72, 0.08, .36, 4], [.74, 0.58, .3], [.74, 0.36, .3]),
+  maxou: a([.68, .3, .3, 4], [.8, .55, .26], [.74, .4, .24]),
+  orange: a([.45, .08, .3, 2], [.47, .4, .26], [.46, .25, .28]),
   ankylosaure: a([0.74, 0.12, .36, 4], [.74, 0.54, .3], [.74, 0.33, .3]),
-  dragon: a([0.72, 0.12, .36, 4], [.74, 0.58, .3], [.74, 0.35, .3]),
+  dragon: a([.74, .18, .3, 4], [.8, .5, .28], [.78, .33, .24]),
   requin: a([0.72, 0.12, .36, 4], [.74, 0.58, .3], [.74, 0.31, .3]),
-  // The Christmas update's evolutions (6 November 2026): estimates on the v2 sprites, not yet checked in the kitchen.
-  fantome: a([.42, .22, .3, -2], [.4, .38, .3], [.4, .25, .3]),
+  // The Christmas update's evolutions (6 November 2026): read on the v2 sprites, checked on captures.
+  fantome: a([.45, .19, .28, -2], [.42, .34, .26], [.42, .24, .26]),
   bouyoyo: a([.76, .31, .22, 6], [.85, .55, .2], [.87, .405, .18]),
   nuage: a([.3, .2, .3, -4], [.3, .4, .3], [.28, .29, .24]),
   champignon: a([.71, .23, .3, 4], [.8, .5, .22], [.8, .39, .2]),
