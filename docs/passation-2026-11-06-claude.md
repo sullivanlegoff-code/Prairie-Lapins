@@ -52,10 +52,10 @@ La mémoire de l'ancien compte se trouve dans le dossier du projet sous `~/.clau
 - **Adresse** : `http://10.59.135.114:5174/` lors du dernier contrôle. Vérifie-la avec `ipconfig`, elle peut changer.
 - **Revoir l'apparition** : fiche de Benny, « Revoir l'apparition », ou bouton « Apparition de Benny » du laboratoire (`/dev/`).
 
-**Questions encore sans réponse :**
-- le nom « Broussailles » pour les débris ;
-- le dessin de base de Pain d'épice, de pur profil : à garder ou à repeindre ;
-- la toque de cuisine par-dessus les chapeaux des lapins qui en ont un.
+**Réponses du propriétaire (6 novembre) :**
+- le nom « Broussailles » pour les débris : gardé ;
+- le dessin de base de Pain d'épice, de pur profil : gardé tel quel ;
+- la toque de cuisine : elle reste par-dessus le chapeau des lapins qui en ont un.
 
 **Mis de côté par le propriétaire, à ne pas lancer ni reproposer :** le clignement et la truffe sur les évolutions (« On ne fait pas encore le clignement et la truffe pour les évolutions. »).
 
