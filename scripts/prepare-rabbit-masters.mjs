@@ -41,7 +41,9 @@ export const DESIGNS = [
   {id: 'gigi-rarafe', source: 'output/imagegen/nouveaux-lapins-v4/gigi-rarafe-B.png', background: 'light'},
   // Yetiti repainted standing like Paille (6 November 2026, v4 A, same design), at the owner's request: no more feet up.
   {id: 'yetiti', source: 'output/imagegen/nouveaux-lapins-v4/yetiti-A.png', background: 'light'},
-  {id: 'rennes', source: 'output/imagegen/nouveaux-lapins-v1/rennes-A.png', background: 'light'},
+  // Rennes replaced by the owner's own drawings (6 November 2026), repainted by Codex a little more in three-quarter view, same design (rennes-v7);
+  // the repainted evolution is its rennes-evolution-source.png, below.
+  {id: 'rennes', source: 'output/imagegen/rennes-v7/rennes-stade1-repeint.png', background: 'light'},
   {id: 'susucre', source: 'output/imagegen/nouveaux-lapins-v1/susucre-B.png', background: 'light'},
   {id: 'arkoko', source: 'assets-source/rabbits/Arkoko/Arkoko stade 1.png', background: 'checker'},
   // Christmas update, second wave (owner, 5 November 2026): Fantôme (v3, the tip of the nose out of the sheet), Bouyoyo (v2,
@@ -79,9 +81,9 @@ export const DESIGNS = [
 ];
 // Bouee's left ear encloses a pocket of background: seed only that pocket, preserving the ring's white dots. Dinenette's evolved
 // tail curl encloses another one, between the heart and the back.
-// The drawings of 6 November 2026: Rennes between its antlers, Arkoko between its legs, Champignon by its small mushrooms, Gigi-rarafe beside an ear and between its legs.
+// The drawings of 6 November 2026: Rennes between an ear and an antler (both stages) and between its evolved legs, Arkoko between its legs, Champignon by its small mushrooms, Gigi-rarafe beside an ear and between its legs.
 export const BACKGROUND_SEEDS = {
-  'bouyoyo-evolution': [[768, 1056]],bouee: [[490, 570]], 'dinenette-evolution': [[150, 820]], champignon: [[542, 519]], 'gigi-rarafe': [[588, 1080], [400, 228]]};
+  'bouyoyo-evolution': [[768, 1056]], rennes: [[802, 315]], 'rennes-evolution': [[758, 301], [626, 1038]], bouee: [[490, 570]], 'dinenette-evolution': [[150, 820]], champignon: [[542, 519]], 'gigi-rarafe': [[588, 1080], [400, 228]]};
 const MARGIN = 8, LIGHT_MIN = 200, LIGHT_SPREAD = 26, CHECKER_MIN = 130, CHECKER_SPREAD = 14, CORNER_TOLERANCE = 56;
 
 /** 8-bit RGB or RGBA, non-interlaced; returns RGBA. */

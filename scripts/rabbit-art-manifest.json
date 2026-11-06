@@ -881,13 +881,13 @@
   },
   "rennes": {
     "file": "assets/rabbits/rennes/rennes-v1.png",
-    "worldWidth": 48,
-    "sourceSha1": "72c8a13597806961822c81de7af4261cb062d5ab",
-    "sourceWidth": 832,
-    "sourceHeight": 1228,
-    "width": 354,
-    "height": 522,
-    "derivedSha1": "deb92ae242e64ea534736250ee4ccd86b9a0b6eb"
+    "worldWidth": 51.9,
+    "sourceSha1": "1fd1f94f7684c8a3191198cd137857880b0d0150",
+    "sourceWidth": 837,
+    "sourceHeight": 1057,
+    "width": 383,
+    "height": 484,
+    "derivedSha1": "9df32caf500a7f788d570ef839a2fcdbbcec3303"
   },
   "susucre": {
     "file": "assets/rabbits/susucre/susucre-v1.png",
@@ -1027,13 +1027,13 @@
     "registry": "src/config/evolvedArt.ts",
     "displayScale": 1.15,
     "file": "assets/rabbits/rennes/rennes-v2.png",
-    "worldWidth": 55.2,
-    "sourceSha1": "5eb834970d5401b60cf614c8fdc6f4c37d54c6a5",
-    "sourceWidth": 1100,
-    "sourceHeight": 1228,
-    "width": 468,
-    "height": 522,
-    "derivedSha1": "a1ff5c7a54cf34b8442acfb05ad409c86a76f1ce"
+    "worldWidth": 52.3,
+    "sourceSha1": "c3097eac5c60c6f3c52603ef2f2821c10df1edcc",
+    "sourceWidth": 887,
+    "sourceHeight": 1102,
+    "width": 444,
+    "height": 552,
+    "derivedSha1": "76b47c8ef46e75a70ff180fca810b545aa68bdec"
   },
   "susucre-evolution": {
     "species": "susucre",

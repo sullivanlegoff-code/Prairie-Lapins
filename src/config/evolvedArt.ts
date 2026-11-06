@@ -96,7 +96,7 @@ export const EVOLVED_ART: readonly EvolvedSprite[] = [
   {id: 'vantablack', name: 'Braise d’encre', file: 'assets/rabbits/vantablack/vantablack-v2.png', texture: 'rabbit-vantablack-evolved-v2', width: 434, height: 482, worldWidth: 51.2, groundY: 12},
   {id: 'gigi-rarafe', name: 'Reine de la savane', file: 'assets/rabbits/gigi-rarafe/gigi-rarafe-v2.png', texture: 'rabbit-gigi-rarafe-evolved-v2', width: 311, height: 767, worldWidth: 36.6, groundY: 12, facing: 'left'},
   {id: 'yetiti', name: 'Gardien des neiges', file: 'assets/rabbits/yetiti/yetiti-v2.png', texture: 'rabbit-yetiti-evolved-v2', width: 538, height: 785, worldWidth: 63.4, groundY: 12, facing: 'left'},
-  {id: 'rennes', name: 'Chef de l’attelage', file: 'assets/rabbits/rennes/rennes-v2.png', texture: 'rabbit-rennes-evolved-v2', width: 468, height: 522, worldWidth: 55.2, groundY: 12},
+  {id: 'rennes', name: 'Chef de l’attelage', file: 'assets/rabbits/rennes/rennes-v2.png', texture: 'rabbit-rennes-evolved-v2', width: 444, height: 552, worldWidth: 52.3, groundY: 12},
   {id: 'susucre', name: 'Sucre glacé', file: 'assets/rabbits/susucre/susucre-v2.png', texture: 'rabbit-susucre-evolved-v2', width: 444, height: 533, worldWidth: 52.4, groundY: 12},
   {id: 'arkoko', name: 'Cape arc-en-ciel', file: 'assets/rabbits/arkoko/arkoko-v2.png', texture: 'rabbit-arkoko-evolved-v2', width: 456, height: 531, worldWidth: 53.8, groundY: 12},
   {id: 'fantome', name: 'Drap de soie', file: 'assets/rabbits/fantome/fantome-v2.png', texture: 'rabbit-fantome-evolved-v2', width: 358, height: 641, worldWidth: 42.2, groundY: 12, facing: 'left'},
