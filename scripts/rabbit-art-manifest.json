@@ -861,13 +861,13 @@
   },
   "gigi-rarafe": {
     "file": "assets/rabbits/gigi-rarafe/gigi-rarafe-v1.png",
-    "worldWidth": 40.1,
-    "sourceSha1": "6e32649471f42ba2980a01960353f9bdc2ce0346",
-    "sourceWidth": 601,
-    "sourceHeight": 1241,
-    "width": 296,
-    "height": 611,
-    "derivedSha1": "adb8232c9e1069f9e16bb3e55d947bb4d8c3c837"
+    "worldWidth": 51.9,
+    "derivedSha1": "96e55502a8b0e997590fd0b4f2a4b9db93538d77",
+    "sourceSha1": "b0bcc54a94a7ee6f8de4c1be28e35a81b0e7ae38",
+    "sourceWidth": 927,
+    "sourceHeight": 1143,
+    "width": 383,
+    "height": 472
   },
   "yetiti": {
     "file": "assets/rabbits/yetiti/yetiti-v1.png",
@@ -999,13 +999,13 @@
     "registry": "src/config/evolvedArt.ts",
     "displayScale": 1.15,
     "file": "assets/rabbits/gigi-rarafe/gigi-rarafe-v2.png",
-    "worldWidth": 36.6,
-    "sourceSha1": "b4791710e44e508982d1d8c1fdb632bf2aef9b38",
-    "sourceWidth": 506,
-    "sourceHeight": 1248,
-    "width": 311,
-    "height": 767,
-    "derivedSha1": "2ec335d247fc77c714d593486ed12ad65b507bbb"
+    "worldWidth": 50.6,
+    "derivedSha1": "3b5300a393a6e4c15cac0641447efe6ae1953e6f",
+    "sourceSha1": "f4d810e7bbd8cde5c696bcdd2e2012e08639d7dc",
+    "sourceWidth": 906,
+    "sourceHeight": 1171,
+    "width": 429,
+    "height": 554
   },
   "yetiti-evolution": {
     "species": "yetiti",

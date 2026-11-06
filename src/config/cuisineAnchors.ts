@@ -56,7 +56,7 @@ export const CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>> = {
   benny: a([.58, .22, .36, 6], [.7, .56, .3], [.66, .37, .3]),
   // The Christmas update's rabbits (5 November 2026), read on 10 % grids of their v1 sprites, checked on captures (6 November 2026).
   vantablack: a([.68, .24, .34, 6], [.72, .5, .3], [.73, .37, .3]),
-  'gigi-rarafe': a([.42, .09, .3, -4], [.42, .33, .28], [.42, .17, .28]),
+  'gigi-rarafe': a([.7, .12, .3, 8], [.68, .5, .26], [.72, .24, .24]),
   yetiti: a([.62, .08, .36, 4], [.68, .34, .28], [.66, .2, .26]),
   rennes: a([.66, .28, .3, 4], [.7, .56, .28], [.7, .43, .26]),
   susucre: a([.72, .3, .34, 6], [.78, .56, .3], [.79, .43, .28]),
@@ -123,7 +123,7 @@ export const EVOLVED_CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>>
   'pain-epice': a([.81, .3, .26, 2], [.84, .535, .22], [.86, .405, .18]),
   'flocon-cristal': a([.62, .14, .34, 4], [.64, .45, .28], [.66, .3, .28]),
   vantablack: a([.745, .3, .2, 4], [.865, .57, .2], [.86, .385, .18]),
-  'gigi-rarafe': a([.4, .09, .28, -4], [.45, .33, .26], [.42, .15, .26]),
+  'gigi-rarafe': a([.79, .12, .26, 8], [.73, .43, .22], [.81, .185, .22]),
   yetiti: a([.38, .1, .3, -4], [.4, .33, .3], [.4, .2, .24]),
   rennes: a([.72, .255, .28, 4], [.79, .45, .24], [.79, .35, .22]),
   susucre: a([.7, .28, .34, 6], [.74, .58, .3], [.76, .44, .28]),

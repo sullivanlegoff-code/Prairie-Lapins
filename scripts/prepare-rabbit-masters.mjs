@@ -38,7 +38,9 @@ export const DESIGNS = [
   // Christmas update (owner, 5 November 2026): original concepts chosen by the owner (Vantablack A, Gigi-rarafe B, Yetiti A,
   // Rennes A, Susucre B), and Arkoko, the owner's own drawing (its transparency checkerboard is printed into the picture).
   {id: 'vantablack', source: 'output/imagegen/nouveaux-lapins-v1/vantablack-A.png', background: 'light'},
-  {id: 'gigi-rarafe', source: 'output/imagegen/nouveaux-lapins-v4/gigi-rarafe-B.png', background: 'light'},
+  // Gigi-rarafe replaced by the owner's own drawings (7 November 2026, already transparent), made fully opaque (its body was at
+  // 253/255) and cleared of the faint halo below 16/255 (gigi-rarafe-v5); stage 2 is its gigi-rarafe-evolution-source.png, below.
+  {id: 'gigi-rarafe', source: 'output/imagegen/gigi-rarafe-v5/stade1.png'},
   // Yetiti repainted standing like Paille (6 November 2026, v4 A, same design), at the owner's request: no more feet up.
   {id: 'yetiti', source: 'output/imagegen/nouveaux-lapins-v4/yetiti-A.png', background: 'light'},
   // Rennes replaced by the owner's own drawings (6 November 2026), repainted by Codex a little more in three-quarter view, same design (rennes-v7);
@@ -79,13 +81,13 @@ export const DESIGNS = [
   ...['vantablack', 'gigi-rarafe', 'yetiti', 'rennes', 'susucre', 'arkoko', 'fantome', 'bouyoyo', 'lapin-de-sulli', 'pain-epice',
     'flocon-cristal', 'nuage', 'champignon'].map(id => ({id: `${id}-evolution`, source: `assets-source/rabbits/${id}/${id}-evolution-source.png`,
     // The white sheet of Fantôme, the white fur of Nuage and Flocon de cristal: only the near-pure white of the backdrop goes.
-    master: `assets-source/rabbits/${id}/${id}-evolution-sprite.png`, ...['fantome', 'nuage'].includes(id) ? {background: 'corner', tolerance: 10} : id === 'champignon' ? {background: 'corner', tolerance: 40} : {background: 'light'}})),
+    master: `assets-source/rabbits/${id}/${id}-evolution-sprite.png`, ...['fantome', 'nuage'].includes(id) ? {background: 'corner', tolerance: 10} : id === 'champignon' ? {background: 'corner', tolerance: 40} : id === 'gigi-rarafe' ? {} : {background: 'light'}})),
 ];
 // Bouee's left ear encloses a pocket of background: seed only that pocket, preserving the ring's white dots. Dinenette's evolved
 // tail curl encloses another one, between the heart and the back.
-// The drawings of 6 November 2026: Rennes between an ear and an antler (both stages) and between its evolved legs, Arkoko between its legs, Gigi-rarafe beside an ear and between its legs.
+// The drawings of 6 November 2026: Rennes between an ear and an antler (both stages) and between its evolved legs, Arkoko between its legs.
 export const BACKGROUND_SEEDS = {
-  'bouyoyo-evolution': [[768, 1056]], rennes: [[802, 315]], 'rennes-evolution': [[758, 301], [626, 1038]], bouee: [[490, 570]], 'dinenette-evolution': [[150, 820]], 'gigi-rarafe': [[588, 1080], [400, 228]]};
+  'bouyoyo-evolution': [[768, 1056]], rennes: [[802, 315]], 'rennes-evolution': [[758, 301], [626, 1038]], bouee: [[490, 570]], 'dinenette-evolution': [[150, 820]]};
 const MARGIN = 8, LIGHT_MIN = 200, LIGHT_SPREAD = 26, CHECKER_MIN = 130, CHECKER_SPREAD = 14, CORNER_TOLERANCE = 56;
 
 /** 8-bit RGB or RGBA, non-interlaced; returns RGBA. */
