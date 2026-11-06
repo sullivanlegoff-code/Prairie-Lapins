@@ -18,7 +18,7 @@ import {DAILY_MISSIONS, MAIN_MISSIONS, DAILY_BONUS, mainMissionRewards, type Rew
 import {affectionCap, capReason, isUltimate, nextAffectionStatue, playerLevel, rabbitAffectionCap, waitsForEvolution} from './affection';
 import {agencyBuilding, travelling} from './travel';
 import {atSalon, giftAffectionReason, giftCycle, giftReason, picnicQuote, salonBuilding} from './care';
-import {classicLookReason} from './forest';
+import {classicLookReason, lookChanging} from './forest';
 import {recordDailyStreak, recordEvolutionChallenge, recordJumpRopeScore} from './evolution';
 import {canEvolve, hasEvolvedArt} from '../config/evolvedArt';
 import {evolutionChallengesComplete, type EvolutionChallenge} from '../config/evolutionChallenges';
@@ -660,7 +660,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         // (owner, 6 November 2026): the drawing flips when the time has passed (`settleLookChanges`).
         const rabbit = s.rabbits.find(r => r.id === command.rabbitId); requireRule(rabbit, 'NOT_FOUND');
         const reason = classicLookReason(s, rabbit); requireRule(!reason, reason ?? 'INVALID_CHOICE');
-        requireRule(!rabbit.lookChange, 'LOOK_CHANGING');
+        requireRule(!lookChanging(s), 'LOOK_CHANGING'); // One rabbit at a time (owner, 6 November 2026).
         rabbit.lookChange = {endsAt: time + FOREST.changeMs};
         break;
       }

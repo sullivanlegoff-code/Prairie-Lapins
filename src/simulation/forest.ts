@@ -5,7 +5,7 @@ import type {SpeciesId} from '../config/balance';
 /**
  * The Forêt de Brocéliande (owner, 3 November 2026; 7 hours per change since 6 November): once built, the player chooses for free, rabbit by rabbit, between
  * the evolved drawing and the old one of every rabbit that has already evolved, both ways. The rabbit stays at home meanwhile and
- * keeps its drawing until the change ends (`lookChange`).
+ * keeps its drawing until the change ends (`lookChange`); one rabbit at a time.
  */
 export const forestBuilding = (s: Pick<GameState, 'buildings'>) => s.buildings.find(b => b.kind === 'forest');
 export type ClassicLookRefusal = 'MISSING_BUILDING' | 'NO_EVOLVED_ART' | 'EVOLUTION_AFFECTION' | 'EVOLUTION_REQUIRED';
@@ -15,6 +15,8 @@ export function classicLookReason(s: Pick<GameState, 'buildings'>, rabbit: Pick<
   if (!hasEvolvedArt(rabbit.species)) return 'NO_EVOLVED_ART';
   return rabbit.affection < 30 ? 'EVOLUTION_AFFECTION' : rabbit.evolution?.done === true ? null : 'EVOLUTION_REQUIRED';
 }
+/** The rabbit changing its drawing now: only one at a time (owner, 6 November 2026). */
+export const lookChanging = (s: Pick<GameState, 'rabbits'>): Rabbit | undefined => s.rabbits.find(rabbit => rabbit.lookChange);
 /** Ends every change of drawing due by `now`. */
 export function settleLookChanges(s: Pick<GameState, 'rabbits'>, now: number): void {
   for (const rabbit of s.rabbits) if (rabbit.lookChange && rabbit.lookChange.endsAt <= now) {

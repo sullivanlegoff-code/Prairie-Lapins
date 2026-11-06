@@ -87,7 +87,7 @@ import {EVOLUTION_AFFECTION, EVOLVED_ART, canEvolve, showsEvolvedArt, type LookR
 import {DAILY_STREAK_TARGET, EVOLUTION_CHALLENGES, evolutionChallengeLabel, evolutionChallengeTarget, evolutionChallengesComplete} from '../config/evolutionChallenges';
 import {evolvedRabbitArt, rabbitArt} from '../config/rabbitArt';
 import {rabbitBlinkArt} from '../config/rabbitBlinkArt';
-import {evolutionRevealed, forestRabbits, isEvolved} from '../simulation/forest';
+import {evolutionRevealed, forestRabbits, isEvolved, lookChanging} from '../simulation/forest';
 import {PreferenceStore, Sounds} from './preferences';
 import {onboardingTask} from './onboarding';
 import {PailleDialogue} from './PailleDialogue';
@@ -1460,7 +1460,7 @@ export class GameUI {
   }
   private renderForest(s: GameState): void {
     const names = EVOLVED_ART.map(art => SPECIES[art.id].name).join(', ');
-    this.content.append(node('p', 'Dans la forêt, change le dessin des lapins déjà évolués d’affection 30 ou plus : le nouveau ou l’ancien. C’est gratuit, et chaque changement prend 7 heures. Ton lapin reste chez lui pendant ce temps.', 'small'));
+    this.content.append(node('p', 'Dans la forêt, change le dessin des lapins déjà évolués d’affection 30 ou plus : le nouveau ou l’ancien. C’est gratuit, et chaque changement prend 7 heures, un seul lapin à la fois. Ton lapin reste chez lui pendant ce temps.', 'small'));
     this.content.append(node('p', `Ont un nouveau dessin pour l’instant : ${names}.`, 'small'));
     const rabbits = forestRabbits(s);
     if (!rabbits.length) { this.content.append(node('p', 'Aucun de tes lapins n’a encore évolué. Réussis ses défis après l’affection 30, puis lance son évolution depuis sa fiche.', 'small')); return; }
@@ -1477,7 +1477,7 @@ export class GameUI {
       card.dataset.forestRabbit = r.id; card.dataset.look = evolved ? 'evolved' : 'classic'; card.classList.add('compact-list-card');
       const hours = Math.round(FOREST.changeMs / 3_600_000);
       this.button(card, evolved ? 'Remettre l’ancien dessin' : 'Remettre le nouveau dessin', () => this.confirm(evolved ? 'Remettre l’ancien dessin ?' : 'Remettre le nouveau dessin ?', `${name} changera de dessin dans ${hours} heures. C’est gratuit, mais tu ne pourras pas l’annuler.`,
-        () => this.execute({type: 'toggleClassicLook', rabbitId: r.id}, `${name} changera de dessin dans ${hours} heures.`)), null, true);
+        () => this.execute({type: 'toggleClassicLook', rabbitId: r.id}, `${name} changera de dessin dans ${hours} heures.`)), lookChanging(s) ? REFUSALS.LOOK_CHANGING : null, true);
       list.append(card);
     }
   }

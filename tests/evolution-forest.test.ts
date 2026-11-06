@@ -177,11 +177,14 @@ describe('Forêt de Brocéliande', () => {
     expect({pattes: back.pattes, hearts: back.hearts, xp: back.progression.totalXp}).toEqual({pattes: before.pattes, hearts: before.hearts, xp: before.xp});
     expect(rabbit(back, a).affection).toBe(30);
   });
-  it('ends a change of drawing during a long absence, and two rabbits can change at once', () => {
+  it('ends a change of drawing during a long absence, and changes only one rabbit at a time', () => {
     const {s, ids: [a, b]} = setup([['paille', 30], ['neige', 45]]); markEvolved(s, a); markEvolved(s, b);
-    const both = run(run(s, {type: 'toggleClassicLook', rabbitId: a}), {type: 'toggleClassicLook', rabbitId: b});
-    const later = advance(both, s.lastSimulatedAt + 30 * 3_600_000);
-    expect(rabbit(later, a).classicLook).toBe(true); expect(rabbit(later, b).classicLook).toBe(true);
+    const one = run(s, {type: 'toggleClassicLook', rabbitId: a});
+    refused(one, {type: 'toggleClassicLook', rabbitId: b}, 'LOOK_CHANGING');
+    const later = advance(one, s.lastSimulatedAt + 30 * 3_600_000);
+    expect(rabbit(later, a).classicLook).toBe(true);
+    // The change over, the next rabbit may go.
+    expect(rabbit(run(later, {type: 'toggleClassicLook', rabbitId: b}), b).lookChange).toBeDefined();
   });
   it('keeps the time left of a change when the clock jumps back', () => {
     const {s, ids: [a]} = setup([['paille', 30]]); markEvolved(s, a); s.lastSimulatedAt = 100 * 3_600_000;
