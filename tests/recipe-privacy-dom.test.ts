@@ -43,13 +43,12 @@ function couple(level: number, recipes: GameState['recipeBook'] = []) {
 }
 const card = (species: string) => panel().querySelector<HTMLElement>(`[data-recipe="${species}"]`)!;
 const breeding = () => document.getElementById('breeding-dialog') as HTMLDialogElement;
-/** Opens the pairing window from the nest, picks Dadi on the left and Phoenix on the right, and shows the odds. */
+/** Opens the pairing window from the nest and picks Dadi on the left and Phoenix on the right. */
 function nestWithParents(ui: GameUI) {
   ui.select({kind: 'building', id: 'building-4'}); button('Croiser').click();
   const row = (slot: number, name: string) => [...breeding().querySelectorAll('.breeding-column')[slot].querySelectorAll<HTMLButtonElement>('button.breeding-row')].find(r => r.querySelector('strong')?.textContent?.startsWith(name))!;
-  row(0, 'Dadi').click(); row(1, 'Phoenix').click(); button('Probabilités', breeding()).click();
+  row(0, 'Dadi').click(); row(1, 'Phoenix').click();
 }
-const odds = () => [...breeding().querySelectorAll('.breeding-odds p:not(.badge)')].map(p => p.textContent);
 
 describe('notebook recipe privacy', () => {
   it('shows only public information and the coin price for an unknown recipe', () => {
@@ -58,7 +57,8 @@ describe('notebook recipe privacy', () => {
     expect(dragon.dataset.recipeKnown).toBe('false');
     expect(dragon.textContent).toContain('Lapin Dragon'); expect(dragon.textContent).toContain('feu + vol · Légendaire');
     expect(dragon.textContent).toContain('Recette inconnue · niveau 14 atteint · 900 pièces');
-    expect(dragon.textContent).toContain('Conditions détaillées et paires conseillées visibles une fois la recette connue.');
+    // Owner, 7 November 2026: no superfluous help line under an unknown recipe.
+    expect(dragon.textContent).not.toContain('Conditions détaillées');
     expect(dragon.querySelector('img.coin-icon')).not.toBeNull(); expect(dragon.textContent).not.toMatch(/pattes?/);
     for (const hidden of ['Phoenix', 'Affection', '2 %', 'Parents requis', 'garantie', 'paire possédée']) expect(dragon.textContent).not.toContain(hidden);
     // Step 3: the purchase button is the only action; no shortcut before the recipe is known.
@@ -76,27 +76,22 @@ describe('notebook recipe privacy', () => {
     expect(dragon.dataset.recipeKnown).toBe('true');
     expect(dragon.textContent).toContain('Parents requis : Dadi × Phoenix. Les types seuls ne suffisent pas.');
     expect(dragon.textContent).toContain('Affection 10 minimum pour chacun des deux parents.');
-    expect(dragon.textContent).toContain('hors garantie ordinaire : 10 %');
+    // Owner, 7 November 2026: the player never sees exact odds.
+    expect(dragon.textContent).not.toMatch(/%|garantie/);
     expect(button('Préparer cette paire au nid', dragon).disabled).toBe(false);
   });
 });
 
 describe('nest odds privacy', () => {
-  it('groups unknown results, hides the Dragon and keeps the launch available', () => {
-    const {ui} = setup(couple(14)); nestWithParents(ui);
-    expect(odds()).toEqual(["Résultats possibles : Phoenix, Dadi et des résultats inconnus.","Phoenix · feu + vol · Rare : 354/3145 (≈ 11,26 %)","Dadi · feu + métal · Épique : 4071/125800 (≈ 3,24 %)","Résultats inconnus : 107569/125800 (≈ 85,51 %)"]);
-    expect(breeding().textContent).toContain('Résultats possibles : Phoenix, Dadi et des résultats inconnus.');
-    for (const hidden of ['Dragon', 'Volant', 'Légendaire', 'Maxou']) { expect(panel().textContent).not.toContain(hidden); expect(breeding().textContent).not.toContain(hidden); }
-    expect(panel().textContent).toContain('Chaque recette possède ses propres conditions');
-    expect(panel().textContent).not.toContain('Recettes rares : affection 4');
-    expect(button('Croiser', breeding()).disabled).toBe(false);
-  });
-  it('names a known Dragon and groups an unknown level exclusion', () => {
-    const known = setup(couple(14, ['dragon'])); nestWithParents(known.ui);
-    expect(odds()).toContain('Lapin Dragon · feu + vol · Légendaire : 11,5 %');
-    cleanups.splice(0).reverse().forEach(cleanup => cleanup());
-    const locked = setup(couple(13)); nestWithParents(locked.ui);
-    expect(breeding().textContent).toContain('Certains résultats demandent un niveau supérieur · exclus du tirage actuel.');
-    expect(breeding().textContent).not.toContain('Dragon');
+  // Owner, 7 November 2026: the pairing window shows no odds at all, so it can never name a hidden result.
+  it('shows no odds, names no hidden result and keeps the launch available', () => {
+    for (const [level, recipes] of [[14, []], [14, ['dragon']], [13, []]] as const) {
+      const {ui} = setup(couple(level, [...recipes])); nestWithParents(ui);
+      expect(buttons(breeding()).map(b => b.textContent)).not.toContain('Probabilités');
+      expect(breeding().querySelector('.breeding-probabilities, .breeding-odds')).toBeNull();
+      for (const hidden of ['%', 'Résultats possibles', 'garantie', 'Garantie', 'Dragon', 'Volant', 'Légendaire', 'Maxou']) { expect(panel().textContent).not.toContain(hidden); expect(breeding().textContent).not.toContain(hidden); }
+      expect(button('Croiser', breeding()).disabled).toBe(false);
+      cleanups.splice(0).reverse().forEach(cleanup => cleanup());
+    }
   });
 });

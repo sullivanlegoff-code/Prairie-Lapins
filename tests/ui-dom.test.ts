@@ -31,7 +31,7 @@ import {scenarioState} from '../src/dev/scenarios';
 import {BALANCE, MINUTE, NURSERY, SPECIES, SPECIES_IDS, growthDuration} from '../src/config/balance';
 import {accelerationCost} from '../src/simulation/hearts';
 import {babyOf, setBaby} from './nursery-baby';
-import {EXPECTED_IDS, EXPECTED_RECIPE_IDS, rareAdditions, shareLabel} from './rabbit-art-fixtures';
+import {EXPECTED_IDS, EXPECTED_RECIPE_IDS} from './rabbit-art-fixtures';
 import {emptyBuilding} from '../src/state/initial';
 import {habitatCap} from '../src/config/habitats';
 import {buildingPlacementReason} from '../src/simulation/placement';
@@ -176,9 +176,8 @@ describe('reproduction text follows current recipe data', () => {
   it('explains recipe-specific thresholds in the nest without revealing unknown conditions', () => {
     const {ui}=setup(scenarioState('guidedLegacy',0));
     ui.open({kind:'building',id:'building-4'});
-    expect(panel().textContent).toContain('La reproduction est possible dès affection 2 chez chacun des deux parents.');
-    expect(panel().textContent).toContain('Chaque recette possède ses propres conditions');
-    expect(panel().textContent).toContain('résultats ordinaires explicitement éligibles à la garantie et admissibles à cette paire');
+    // Owner, 7 November 2026: no odds, guarantee policy or rule paragraph shown to the player.
+    for (const removed of ['La reproduction est possible dès affection 2', 'Chaque recette possède ses propres conditions', 'Garantie :', 'garantie']) expect(panel().textContent).not.toContain(removed);
     expect(panel().textContent).not.toContain('Recettes rares : affection 4');
     for(const hidden of ['Frisket','Icy','épiques : 6','légendaires : 10']) expect(panel().textContent).not.toContain(hidden);
   });
@@ -188,13 +187,13 @@ describe('reproduction text follows current recipe data', () => {
     const card=panel().querySelector(`[data-recipe="${id}"]`)!;
     expect(card.getAttribute('data-recipe-known')).toBe('true');
     expect(card.textContent).toContain('Affection 2 minimum pour chacun des deux parents.');
-    expect(card.textContent).toContain('Cette espèce bénéficie de la garantie ordinaire');
-    expect(card.textContent).not.toContain('Cette espèce ne bénéficie pas de la garantie');
-    expect(panel().textContent).toContain('espèces explicitement éligibles à la garantie, non découvertes et admissibles à cette paire');
+    // Owner, 7 November 2026: no odds, guarantee policy or rule paragraph shown to the player.
+    expect(card.textContent).not.toMatch(/garantie|%/);
+    expect(panel().textContent).not.toContain('espèces explicitement éligibles à la garantie');
   });
   it('retains the historical guarantee indication for a known eligible recipe', () => {
     const known=createGame(0);known.recipeBook=['boudinet'];const {ui}=setup(known);ui.open({kind:'recipes'});
-    expect(panel().querySelector('[data-recipe="boudinet"]')!.textContent).toContain('Cette espèce bénéficie de la garantie ordinaire si elle n’est pas encore découverte et reste admissible.');
+    expect(panel().querySelector('[data-recipe="boudinet"]')!.textContent).not.toMatch(/garantie|%/);
   });
   it('reads explicit eligibility rather than inferring it from the absence of a fixed probability', () => {
     const original=SPECIES.boudinet.acquisition;
@@ -202,7 +201,7 @@ describe('reproduction text follows current recipe data', () => {
       SPECIES.boudinet.acquisition=original.map(source=>source.kind==='recipe'?{...source,guaranteeEligible:false}:source);
       const known=createGame(0);known.recipeBook=['boudinet'];const {ui}=setup(known);ui.open({kind:'recipes'});
       const card=panel().querySelector('[data-recipe="boudinet"]')!;
-      expect(card.textContent).toContain('Cette espèce ne bénéficie pas de la garantie de découverte.');
+      expect(card.textContent).not.toMatch(/garantie|%/);
       expect(card.textContent).not.toContain('Cette espèce bénéficie de la garantie ordinaire');
     } finally {SPECIES.boudinet.acquisition=original;}
   });
@@ -401,7 +400,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     clock.now=5*hour;controller.perform({type:'collectIncome',id:'building-1'});controller.perform({type:'collectOrder',id:'building-4'});
     for(let i=0;i<3;i++)controller.perform({type:'feed',id:'rabbit-2'});controller.perform({type:'feed',id:'rabbit-3'});for(const [kind,x] of [['nest',26],['nursery',18]] as const)controller.perform({type:'placeStarterBuilding',kind,x,y:24});
     daily();
-    expect(panel().textContent).toContain('expirent');expect(panel().querySelector('.timer')!.textContent).toBe('19 h 0 min');
+    expect(panel().textContent).toContain('À réclamer avant le renouvellement.');expect(panel().querySelector('.timer')!.textContent).toBe('19 h 0 min');
     expect(card('collect-grass')).toBeNull();expect(card('collect-pattes')).toBeNull();
     expect(card('feed-rabbit').textContent).toContain('Progression : 3 / 3');
     expect(button(BONUS,card('daily-bonus')).disabled).toBe(true);
@@ -541,14 +540,10 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     button('Nourrir Lapin Neige · Enclos 1', recipe()).click(); button('Nourrir · 2 nourriture').click(); expect(panel().textContent).toContain('Affection 2 / 30');
     ui.select({kind: 'building', id: 'building-4'});
     crossFromNest('Lapin Feu', 'Lapin Neige', false);
-    const odds = () => breeding().querySelector('.breeding-odds')!.textContent;
-    expect(breeding().querySelector('.breeding-odds')).toBeNull(); button('Probabilités', breeding()).click();
-    expect(odds()).not.toContain('Commun');
-    expect(odds()).toContain('feu + neige');
+    // Owner, 7 November 2026: no odds, guarantee policy or rule paragraph shown to the player.
+    expect(breeding().querySelector('.breeding-odds')).toBeNull(); expect(breeding().textContent).not.toContain('%');
     for (const id of ['rabbit-3', 'rabbit-11']) for (let n = 0; n < 2; n++) expect(controller.perform({type: 'feed', id}).ok).toBe(true);
-    expect(odds()).toContain(`feu + neige · Rare : ${shareLabel(30, 30 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length)}`);
-    expect(odds()).not.toContain('Commun');
-    breeding().close(); ui.open({kind: 'recipes'}); expect(recipe().textContent).toContain(`Recette possible, résultat non garanti · ${shareLabel(30, 30 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length)}`);
+    breeding().close(); ui.open({kind: 'recipes'}); expect(recipe().textContent).not.toMatch(/%|garanti/);
     const before = state(controller), perform = vi.spyOn(controller, 'perform');
     button('Préparer cette paire au nid', recipe()).click(); expect(perform).not.toHaveBeenCalled(); expect(state(controller)).toEqual(before);
     // The shortcut opens the pairing window with the recipe's pair already chosen, nothing launched.
@@ -579,7 +574,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     const {ui, controller, clock, data} = setup(initial); clock.now = initial.lastSimulatedAt;
     ui.open({kind: 'recipes'});
     const recipe = [...panel().querySelectorAll('article')].find(c => c.textContent?.includes('feu + neige · Rare'))!;
-    expect(recipe.textContent).toContain('Résultat garanti pour cette recette · 100 %');
+    expect(recipe.textContent).not.toMatch(/%|garanti/);
     button('Préparer cette paire au nid', recipe).click(); button('Croiser', breeding()).click();
     expect(breeding().open).toBe(false); expect(panel().textContent).not.toContain('Glassofeu'); expect(state(controller).pityFailures).toBe(0);
     const saved = decodeGame(data.get(SAVE_KEY)!); expect(saved.ok && saved.state.buildings.find(b => b.breeding)?.breeding?.birth).toMatchObject({species: 'glassofeu', guaranteed: true, reservedDiscovery: true});
@@ -1032,12 +1027,12 @@ describe('new collection and exact-species recipe UI', () => {
     button('Réinitialiser les filtres').click(); ui.close(); ui.open({kind: 'collection'});
     expect(panel().querySelectorAll('article')).toHaveLength(EXPECTED_IDS.length);
   });
-  it('explains Dragon species, threshold, duration, exclusion from guarantee and real seven-percent pairs', () => {
+  it('explains Dragon species, threshold and duration without any odds', () => {
     const {controller,ui} = setup(scenarioState('collection',0)); const before = structuredClone(state(controller));
     ui.open({kind:'recipes'}); const card = [...panel().querySelectorAll('article')].find(c=>c.querySelector('h3')?.textContent==='Lapin Dragon')!;
     expect(card.textContent).toContain('Dadi × Phoenix'); expect(card.textContent).toContain('Les types seuls ne suffisent pas');
-    expect(card.textContent).toContain('Affection 10 minimum'); expect(card.textContent).toContain(`${growthDuration('dragon') / MINUTE} min`); expect(card.textContent).toContain('ne bénéficie pas');
-    expect(card.textContent).toContain(`${(SPECIES.dragon.acquisition[0] as {probability: number}).probability} %`); expect(state(controller)).toEqual(before);
+    expect(card.textContent).toContain('Affection 10 minimum'); expect(card.textContent).toContain(`${growthDuration('dragon') / MINUTE} min`); expect(card.textContent).not.toMatch(/garantie|%/);
+    expect(state(controller)).toEqual(before);
     button('Préparer cette paire au nid',card).click(); expect(document.getElementById('panel-title')!.textContent).toBe('Nid');
     expect(state(controller).buildings.find(b=>b.kind==='nest')!.breeding).toBeNull();
     expect(state(controller)).toEqual(before);
@@ -1060,10 +1055,7 @@ describe('pairing window and heart bubble', () => {
     expect(breedingRow(0, 0).querySelector('span span')!.textContent).toContain(`affection ${initial.rabbits[0].affection}`);
     expect(breeding().querySelector('.breeding-confirmation')!.textContent).toContain('Étoile');
     expect(nestOf(state(controller)).breeding).toBeNull();
-    button('Probabilités', breeding()).click();
-    expect(document.activeElement?.textContent).toBe('Fermer les probabilités');
-    button('Fermer les probabilités', breeding()).click();
-    expect(document.activeElement?.textContent).toBe('Probabilités');
+    expect([...breeding().querySelectorAll('button')].map(b => b.textContent)).not.toContain('Probabilités');
     button('Croiser', breeding()).click();
     expect(nestOf(state(controller)).breeding!.parents).toEqual(initial.lastBreedingParents);
   });
@@ -1274,7 +1266,7 @@ it('labels an actual first discovery of a species at its first birth',()=>{
 it('offers a notebook shortcut after guidance ends',()=>{
  const s=scenarioState('missionJourney',0);s.recipeBook=['boudinet'];s.progression={totalXp:cumulativeLevelXp(6),rewardedThroughLevel:6};s.missions.claimed=['first-meal','first-farm','first-harvest','parents-ready','at-nest','to-nursery','first-birth'];
  const {ui,prefs,controller}=setup(s);prefs.set({tutorialDone:true,tutorial:false});const wallet=state(controller).pattes;
- ui.open({kind:'missions',tab:'main'});button('Consulter le carnet').click();expect(state(controller).pattes).toBe(wallet);const recipe=panel().querySelector('[data-recipe="boudinet"]')!;expect(recipe.querySelector('h3')!.textContent).toBe('Boudinet');expect(recipe.querySelector('details:not(.recipe-rules)')).toBeNull();expect(recipe.querySelector<HTMLDetailsElement>('.recipe-rules')!.open).toBe(false);expect(recipe.textContent).toContain('Aucune paire possédée n’est admissible');
+ ui.open({kind:'missions',tab:'main'});button('Consulter le carnet').click();expect(state(controller).pattes).toBe(wallet);const recipe=panel().querySelector('[data-recipe="boudinet"]')!;expect(recipe.querySelector('h3')!.textContent).toBe('Boudinet');expect(recipe.querySelector('details:not(.recipe-rules)')).toBeNull();expect(recipe.querySelector('.recipe-rules')).toBeNull();expect(recipe.textContent).toContain('Aucune paire possédée n’est admissible');
 });
 
 describe('mobile menu continuity', () => {
@@ -1522,7 +1514,7 @@ describe('nursery panel with several cushions',()=>{
   const s=currentStart(0),n=s.buildings.find(b=>b.kind==='nursery')!,birth=(id:string)=>({id,species:'paille' as const,guaranteed:false,reservedDiscovery:false});
   n.nursery={capacity:3,babies:[{slot:0,birth:birth('birth-6'),startedAt:0,readyAt:0},{slot:2,birth:birth('birth-7'),startedAt:0,readyAt:0},{slot:1,birth:birth('birth-8'),startedAt:0,readyAt:5*60_000}]};s.nextId=9;
   const {ui,controller}=setup(s);ui.open({kind:'building',id:n.id});
-  expect(panel().textContent).toContain('Couchages : 3 / 4');expect(panel().textContent).toContain('1 : prêt · 2 : occupé · 3 : prêt · 4 : verrouillé');
+  expect(panel().textContent).toContain('Couchages : 3 / 4');expect(panel().textContent).not.toContain('1 : prêt');
   expect([...panel().querySelectorAll('h3')].map(h=>h.textContent).filter(t=>t!.startsWith('Couchage'))).toEqual(['Couchage 1','Couchage 2','Couchage 3']);
   expect(panel().querySelectorAll('.work-state[data-state=running]')).toHaveLength(1);expect(panel().querySelectorAll('[data-accelerate-end]')).toHaveLength(1);
   // One reception button per ready baby, in slot order; the growing one has none.
@@ -1542,7 +1534,7 @@ describe('nursery cushion unlock',()=>{
  it.each([1,2,3] as const)('capacity %i shows its cushions and only the next unlock, at its configured price',capacity=>{
   const price=hearts(PRICE[capacity]);open(capacity,PRICE[capacity]+100);
   expect(panel().textContent).toContain(`Couchages : ${capacity} / 4`);
-  expect(panel().textContent).toContain(['1','2','3','4'].map((n,i)=>`${n} : ${i<capacity?'libre':'verrouillé'}`).join(' · '));
+  expect(panel().textContent).not.toContain('1 : ');
   expect(unlocks().map(b=>[b.textContent,b.disabled])).toEqual([[`Débloquer un couchage · ${price}`,false]]);
  });
  it('confirms the new capacity and price, then spends once and updates the panel immediately and after reload',()=>{
