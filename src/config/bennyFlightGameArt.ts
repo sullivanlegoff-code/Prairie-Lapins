@@ -47,3 +47,10 @@ export const BENNY_FLAPPY = {
 } as const;
 /** Window event of a full-screen activity opening (`detail` true) or closing: the island's Phaser loop sleeps meanwhile. */
 export const FULLSCREEN_ACTIVITY_EVENT = 'prairie-fullscreen-activity';
+/**
+ * Window event of an opaque screen covering the whole island or leaving it (`detail`: which one and whether it covers it): the
+ * full-screen shop and Christmas market, the Cuisine. The island's Phaser loop sleeps while anything covers it (audit of
+ * 7 November 2026: it kept drawing the snow and the rabbits at 60 frames a second behind the shop).
+ */
+export const ISLAND_COVER_EVENT = 'prairie-island-cover';
+export type IslandCover = {source: 'shop' | 'cuisine'; covered: boolean};

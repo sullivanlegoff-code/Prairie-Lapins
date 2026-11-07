@@ -121,6 +121,12 @@ interface VisualRabbit {id: string; object: Phaser.GameObjects.Container; body: 
   pivot: Point; /** Mirror sign of the picture's native direction: -1 for art that looks left. */ native: 1 | -1}
 /** Local y of the ground contact the body is compressed against, so its feet stay put. */
 const BODY_PIVOT = 10;
+/** The player's « reduce motion » setting, through one cached media query (it was queried anew on every frame). */
+let reducedMotionQuery: MediaQueryList | null = null;
+function prefersReducedMotion(): boolean {
+  if (!reducedMotionQuery && typeof matchMedia === 'function') reducedMotionQuery = matchMedia('(prefers-reduced-motion: reduce)');
+  return !!reducedMotionQuery?.matches;
+}
 export class MeadowScene extends Phaser.Scene {
   private current: GameState | null = null;
   private placement: Placement | null = null;
@@ -371,7 +377,7 @@ export class MeadowScene extends Phaser.Scene {
   }
   /** Her power: the flight (or, with reduced motion, a glow), and the camera steps back gently so the island can be seen. */
   private playBennyPower(): void {
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduced = prefersReducedMotion();
     if (!this.bennyFlight) return;
     this.bennyFlight.clock.usePower(reduced);
     // Once the card has closed (the next frames), so the framing sees the whole meadow.
@@ -447,7 +453,7 @@ export class MeadowScene extends Phaser.Scene {
     });
   }
   interactionDecoration(id: string): boolean {
-    if (!this.current || this.cozyInteraction.active || matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+    if (!this.current || this.cozyInteraction.active || prefersReducedMotion()) return false;
     const d = this.current.decorations.find(d => d.id === id);
     const kinds: Partial<Record<DecorationId, InteractionKind>> = {'hay-bale':'play','otter-plush':'cuddle','bunny-slippers':'cuddle','small-bookcase':'read','large-bookcase':'read'};
     const kind = d && kinds[d.catalogId], point = d && this.decorationPoint(d.location, d.catalogId);
@@ -520,7 +526,7 @@ export class MeadowScene extends Phaser.Scene {
     const from = this.view.zoom, to = Math.max(this.view.minimumZoom, Math.min(from * .7, .55));
     if (to >= from) return;
     const go = (t: number) => { this.view.zoom = from + (to - from) * t; this.view.clamp(); this.applyCamera(); };
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { go(1); return; }
+    if (prefersReducedMotion()) { go(1); return; }
     this.focusTween = this.tweens.addCounter({from: 0, to: 1, duration: 650, ease: 'Sine.easeInOut',
       onUpdate: tween => { if (this.view.busy) { tween.stop(); this.focusTween = null; return; } go(tween.getValue() ?? 1); },
       onComplete: () => { this.focusTween = null; }});
@@ -534,7 +540,7 @@ export class MeadowScene extends Phaser.Scene {
     const g = this.dropArrows ??= this.add.graphics().setDepth(10);
     g.clear(); this.dropHits = [];
     const k = 1 / this.view.zoom;
-    const bounce = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : Math.sin(time / 360) * 3;
+    const bounce = prefersReducedMotion() ? 0 : Math.sin(time / 360) * 3;
     for (const id of this.rabbitDrops) {
       const b = this.current?.buildings.find(b => b.id === id); if (!b) continue;
       const frame = buildingFrame(b), x = toScreen(buildingCenter(b)).x, y = frame.top - (22 + bounce) * k;
@@ -582,7 +588,7 @@ export class MeadowScene extends Phaser.Scene {
   private placeTutorialHand(time: number): void {
     const arrow = this.tutorialHand; if (!arrow) return;
     const p = arrow.getData('anchor') as Point, k = 1 / this.view.zoom;
-    const bounce = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : Math.sin(time / 250) * 5;
+    const bounce = prefersReducedMotion() ? 0 : Math.sin(time / 250) * 5;
     arrow.setScale(k).setPosition(p.x, p.y - (34 + bounce) * k);
   }
   setTutorialTarget(target: 'birth'|null): void { if(this.tutorialTarget === target)return; this.tutorialTarget = target; if(this.bubbles)this.drawBubbles(); }
@@ -657,7 +663,7 @@ export class MeadowScene extends Phaser.Scene {
    */
   playPicnic(enclosureId: string): void {
     const b = this.current?.buildings.find(x => x.id === enclosureId); if (!b) return;
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduced = prefersReducedMotion();
     this.focusBuilding(enclosureId);
     this.snowballs.reset(this.snowballThrowers(new Set()));
     const guests = this.rabbitViews.filter(r => r.group === enclosureId && r.motion && !r.nest && !r.benny && !r.legendary?.clock.act && !r.magicien?.busy &&
@@ -739,7 +745,7 @@ export class MeadowScene extends Phaser.Scene {
    */
   playSnowman(enclosureId: string): void {
     const b = this.current?.buildings.find(x => x.id === enclosureId && x.kind === 'enclosure'); if (!b) return;
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduced = prefersReducedMotion();
     this.focusBuilding(enclosureId);
     for (const step of SNOWMAN_ART.steps) this.optionalArt(step.texture, step.url);
     const spot = this.snowmanSpot(b), zone = this.enclosureZone(b);
@@ -843,7 +849,7 @@ export class MeadowScene extends Phaser.Scene {
     const rabbit = this.rabbitViews.find(r => r.id === id); if (!rabbit?.legendary) return false;
     this.view.x = rabbit.object.x; this.view.y = rabbit.object.y - 20; this.view.clamp(); this.applyCamera();
     // The surf slides the body: never in reduced motion nor out of a rest or a walk (a nest, a kiss); the splash stays on the spot.
-    const still = matchMedia('(prefers-reduced-motion: reduce)').matches || !rabbit.motion || !['rest', 'walk'].includes(rabbit.motion.mode);
+    const still = prefersReducedMotion() || !rabbit.motion || !['rest', 'walk'].includes(rabbit.motion.mode);
     return rabbit.legendary.request(act === 'surf' && still ? 'splash' : act);
   }
   reactToFeed(id: string): void {
@@ -1368,14 +1374,37 @@ export class MeadowScene extends Phaser.Scene {
     const from = {x: this.view.x, y: this.view.y}, to = this.view.centered(toScreen(buildingCenter(b)));
     const go = (t: number) => { this.view.x = from.x + (to.x - from.x) * t; this.view.y = from.y + (to.y - from.y) * t; this.view.clamp(); this.applyCamera(); };
     this.focusTween?.stop(); this.focusTween = null;
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { go(1); return; }
+    if (prefersReducedMotion()) { go(1); return; }
     this.focusTween = this.tweens.addCounter({from: 0, to: 1, duration: 650, ease: 'Sine.easeInOut',
       // A pan or pinch by the player takes over at once.
       onUpdate: tween => { if (this.view.busy) { tween.stop(); this.focusTween = null; return; } go(tween.getValue() ?? 1); },
       onComplete: () => { this.focusTween = null; }});
   }
+  /** What the bubbles last drawn show, so an unchanged set is kept (and keeps its animation) instead of being rebuilt. */
+  private bubbleSignature = '';
   private drawBubbles(now = this.simulationNow()): void {
+    // The bubbles are redrawn on every state refresh (every 5 seconds): rebuild them only when what they show changes
+    // (audit of 7 November 2026: the coin bubbles' hop restarted every 5 seconds).
+    const specs = this.bubbleSpecs(now), signature = specs.map(spec => `${spec.b.id}:${spec.text}:${spec.p.x},${spec.p.y}:${spec.text === 'food' ? spec.b.order!.grass ?? spec.b.order!.recipe : ''}`).join('|') +
+      `#${this.tutorialTarget}#${this.incomeLogo()}#${this.textures.exists(COIN_BUBBLE_FRAME.texture)}`;
+    if (signature === this.bubbleSignature && this.bubbles.length) return;
+    this.bubbleSignature = signature;
     this.bubbles.removeAll(true); this.bubbleHits = [];
+    for (const {b, text, kind, p} of specs) {
+      const bubble = kind === 'income' ? this.incomeBubble(p.x, p.y) : text === 'food' ? foodBubble(this, p.x, p.y, b.order!.grass ?? ORDERS[b.order!.recipe].grass) : text === 'birth' || text === 'trip' ? this.heartBubble(p.x, p.y) : this.add.text(p.x, p.y, text, {fontFamily: 'Arial', fontSize: '17px', color: '#3b4d2d', backgroundColor: '#fff7dc', padding: {x: 13, y: 10}}).setOrigin(.5);
+      if (text === 'birth' && this.tutorialTarget === 'birth') {
+        const halo=this.add.graphics().lineStyle(4,0xffcf55).strokeEllipse(p.x,p.y,bubble.width+12,bubble.height+12);this.bubbles.add(halo);
+        const hand = this.add.text(p.x + 34,p.y - 28,'👇',{fontSize:'28px'}).setOrigin(.5); this.bubbles.add(hand);
+        if(!prefersReducedMotion()) {
+          const tween=this.tweens.add({targets:hand,y:p.y-35,duration:500,yoyo:true,repeat:-1});hand.once('destroy',()=>tween.remove());
+        }
+      }
+      this.bubbles.add(bubble); this.bubbleHits.push({point: p, width:bubble.width, height:bubble.height, selection: {kind: text === 'birth' ? 'birth' : b.kind === 'nursery' ? 'nurseryBubble' : kind, id: b.id}});
+    }
+  }
+  /** Which buildings show a bubble now, what it says and where. */
+  private bubbleSpecs(now: number): {b: Building; text: string; kind: 'income' | 'grass' | 'building'; p: {x: number; y: number}}[] {
+    const specs: {b: Building; text: string; kind: 'income' | 'grass' | 'building'; p: {x: number; y: number}}[] = [];
     for (const b of this.current?.buildings ?? []) {
       const amount = Math.floor(b.incomeUnits / HOUR);
       let text = '', kind: 'income' | 'grass' | 'building' = 'building';
@@ -1387,16 +1416,9 @@ export class MeadowScene extends Phaser.Scene {
       if (b.kind === 'agency' && tripReady(this.current!, now)) text = 'trip'; // A traveller is back: Coco waits with them. // One bubble for any ready baby.
       if (!text) continue;
       const p = toScreen(buildingCenter(b)); p.y += b.kind === 'farm' ? FARM_ART.harvestY : b.kind==='nest' ? NEST_ART.actionY : b.kind==='nursery' ? NURSERY_ART.actionY : b.kind==='agency' ? AGENCY_ART.actionY : b.kind==='salon' ? SALON_ART.actionY : b.kind==='forest' ? FOREST_ART.actionY : -72;
-      const bubble = kind === 'income' ? this.incomeBubble(p.x, p.y) : text === 'food' ? foodBubble(this, p.x, p.y, b.order!.grass ?? ORDERS[b.order!.recipe].grass) : text === 'birth' || text === 'trip' ? this.heartBubble(p.x, p.y) : this.add.text(p.x, p.y, text, {fontFamily: 'Arial', fontSize: '17px', color: '#3b4d2d', backgroundColor: '#fff7dc', padding: {x: 13, y: 10}}).setOrigin(.5);
-      if (text === 'birth' && this.tutorialTarget === 'birth') {
-        const halo=this.add.graphics().lineStyle(4,0xffcf55).strokeEllipse(p.x,p.y,bubble.width+12,bubble.height+12);this.bubbles.add(halo);
-        const hand = this.add.text(p.x + 34,p.y - 28,'👇',{fontSize:'28px'}).setOrigin(.5); this.bubbles.add(hand);
-        if(!matchMedia('(prefers-reduced-motion: reduce)').matches) {
-          const tween=this.tweens.add({targets:hand,y:p.y-35,duration:500,yoyo:true,repeat:-1});hand.once('destroy',()=>tween.remove());
-        }
-      }
-      this.bubbles.add(bubble); this.bubbleHits.push({point: p, width:bubble.width, height:bubble.height, selection: {kind: text === 'birth' ? 'birth' : b.kind === 'nursery' ? 'nurseryBubble' : kind, id: b.id}});
+      specs.push({b, text, kind, p});
     }
+    return specs;
   }
   /** The coin bubble's logo: the Christmas basket while the event is on and its picture is loaded, else the coin. */
   private incomeLogo(): string { return christmasActive() && this.textures.exists(COIN_BASKET_ART.texture) ? COIN_BASKET_ART.texture : COIN_TEXTURE; }
@@ -1407,7 +1429,7 @@ export class MeadowScene extends Phaser.Scene {
   private incomeBubble(x: number, y: number): Phaser.GameObjects.Container {
     const f = COIN_BUBBLE_FRAME, framed = this.textures.exists(f.texture);
     const bubble = coinBubble(this, x, y, {logo: this.incomeLogo(), ...(framed ? {frame: {texture: f.texture, height: f.world, centerY: f.centerY, logo: f.logo}} : {})});
-    if (typeof bubble.once === 'function' && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (typeof bubble.once === 'function' && !prefersReducedMotion()) {
       const tween = this.tweens.add({targets: bubble, y: y - 8, duration: 170, ease: 'Quad.easeOut', yoyo: true, repeat: -1, repeatDelay: 2800, delay: Math.abs(Math.round(x * 7.3 + y * 3.1)) % 2800});
       bubble.once('destroy', () => tween.remove());
     }
@@ -1420,7 +1442,7 @@ export class MeadowScene extends Phaser.Scene {
   playIncomeCollect(buildingId: string, pattes: number, candies: number): void {
     const b = this.current?.buildings.find(x => x.id === buildingId); if (!b || pattes < 1) return;
     const p = toScreen(buildingCenter(b)); p.y -= 72;
-    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const still = prefersReducedMotion();
     const logo = this.incomeBubble(p.x, p.y).setDepth(5).setVisible(!this.photo); this.tweens.killTweensOf(logo); logo.y = p.y;
     this.tweens.add({targets: logo, scale: still ? 1 : 1.3, alpha: 0, duration: 280, ease: 'Quad.easeOut', onComplete: () => logo.destroy()});
     const line = (amount: number, texture: string, y: number) => {
@@ -1672,16 +1694,18 @@ export class MeadowScene extends Phaser.Scene {
       if (dadi.started?.salto) {
         this.life.interrupt(dadi.started.id);
         const motion = this.rabbitViews.find(r => r.id === dadi.started!.id)?.motion;
-        if (motion) triggerWelcomeSalto(motion, matchMedia('(prefers-reduced-motion: reduce)').matches);
+        if (motion) triggerWelcomeSalto(motion, prefersReducedMotion());
       }
     }
-    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reducedMotion = prefersReducedMotion();
     // Christmas: evening and night over the meadow and its sky, and the snow (it keeps falling in a photo).
     const winterNow = new Date(), christmas = christmasActive();
     this.winter?.update(dt, winterNow, christmas && !document.hidden, reducedMotion);
     this.winterLights?.update(christmas ? garlandLevel(localHour(winterNow)) : 0, reducedMotion ? 0 : time);
     this.sky?.setNight(christmas ? this.winter?.nightNow(winterNow) ?? 0 : 0);
-    this.nightGlows?.update(christmas ? this.winter?.nightNow(winterNow) ?? 0 : 0, christmas ? this.glowSources() : []);
+    // The glow sources are gathered only at night (the glows are cleared by day anyway).
+    const night = christmas ? this.winter?.nightNow(winterNow) ?? 0 : 0;
+    this.nightGlows?.update(night, night > .001 ? this.glowSources() : []);
     const lifeActive = !this.photo && !document.hidden && document.getElementById('loading-screen')?.hidden !== false &&
       document.getElementById('game-panel')?.hidden !== false && !document.querySelector('dialog[open]') && !this.placement && !this.arrangement;
     const bounds = {width: this.scale.width, height: this.scale.height, top: document.getElementById('hud')?.getBoundingClientRect().bottom ?? 0};

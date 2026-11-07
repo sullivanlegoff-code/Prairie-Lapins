@@ -23,7 +23,7 @@ import './display/ultimate-card.css';
 import './display/jump-rope.css';
 import './display/sky-gifts.css';
 import './display/benny-flight.css';
-import {FULLSCREEN_ACTIVITY_EVENT} from './config/bennyFlightGameArt';
+import {FULLSCREEN_ACTIVITY_EVENT, ISLAND_COVER_EVENT, type IslandCover} from './config/bennyFlightGameArt';
 import {DADI_SONG_EVENT, type DadiSongDetail} from './config/dadiStageArt';
 import './display/christmas-market.css';
 import './display/benny-reveal.css';
@@ -91,7 +91,15 @@ async function boot(): Promise<() => void> {
     render: {antialias: true}, input: {activePointers: 3},
   });
   // A full-screen activity (« Le vol de Benny ») hides the island: its loop sleeps meanwhile, so the game keeps the phone's power.
-  window.addEventListener(FULLSCREEN_ACTIVITY_EVENT, event => { if (!game.isBooted) return; if ((event as CustomEvent<boolean>).detail) game.loop.sleep(); else game.loop.wake(); });
+  // The island sleeps while a full-screen activity or an opaque screen (shop, Christmas market, Cuisine) hides it.
+  const covers = new Set<string>();
+  const coverIsland = (source: string, covered: boolean) => {
+    const before = covers.size > 0; if (covered) covers.add(source); else covers.delete(source);
+    if (!game.isBooted || before === covers.size > 0) return;
+    if (covers.size) game.loop.sleep(); else game.loop.wake();
+  };
+  window.addEventListener(FULLSCREEN_ACTIVITY_EVENT, event => coverIsland('activity', !!(event as CustomEvent<boolean>).detail));
+  window.addEventListener(ISLAND_COVER_EVENT, event => { const {source, covered} = (event as CustomEvent<IslandCover>).detail; coverIsland(source, covered); });
   const disposeViewport = bindAppViewport(() => {
     // RESIZE reads parentSize, so measure it before refreshing the canvas/bounds.
     if (game.isBooted) { game.scale.getParentBounds(); game.scale.refresh(); }
@@ -133,7 +141,7 @@ async function boot(): Promise<() => void> {
     requestMobileFullscreen();
     loadingRoot.hidden = true; app.inert = false; loading.dispose(); unrender(); stopMessages();
     ui = new GameUI(controller, scene, clock, preferences, audio, {onlineServicesAllowed: policy.onlineServicesAllowed && !LABORATORY_BUILD && !DECORATIONS_PREVIEW_BUILD, accountKnown: () => accountKnown(storage),
-      onCuisineActive: active => music.setPlace(active ? 'kitchen' : 'meadow'), onRabbitSheet: species => music.playTheme(species)});
+      onCuisineActive: active => { music.setPlace(active ? 'kitchen' : 'meadow'); window.dispatchEvent(new CustomEvent<IslandCover>(ISLAND_COVER_EVENT, {detail: {source: 'cuisine', covered: active}})); }, onRabbitSheet: species => music.playTheme(species)});
     const soundSettings = mountSoundSettings(document, preferences, {onChange: (channel, enabled, volume) => {
       audio.configure(channel, {enabled, volume});
       if (channel === 'music') { music.setEnabled(enabled); music.refreshVolume(); }

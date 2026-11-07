@@ -7,6 +7,8 @@ import {SAVE_KEY, type SaveStorage} from '../persistence/storage';
 import type {ActionResult, Command, GameState, ProgressionGain} from '../state/types';
 
 type DecodeFailure = Extract<DecodeResult, {ok: false}>['reason'];
+/** The longest a shown game goes without writing its save while only time passes (see `refresh`). */
+export const PASSIVE_SAVE_MS = 60_000;
 export type ControllerIssue = DecodeFailure | 'READ_FAILED' | 'WRITE_FAILED' | 'STORAGE_CHANGED' |
   'NO_GAME' | 'NOT_CONFIRMED' | 'STALE_IMPORT' | 'DISPOSED' | 'ENCODING_FAILED';
 export type Operation = {ok: true} | {ok: false; reason: ControllerIssue};
@@ -165,11 +167,16 @@ export class GameController {
     }
     return changed;
   }
-  refresh(): void {
+  /**
+   * Advances the clock. `persist` false (the 5-second tick while the game is shown) writes the save at most every
+   * PASSIVE_SAVE_MS: passing time is recomputed from `lastSimulatedAt` on the next load anyway, and rewriting the whole save
+   * every 5 seconds only costs battery (audit of 7 November 2026). Hiding or leaving the page always writes it.
+   */
+  refresh(persist = true): void {
     if (this.disposed || !this.state) return;
     if (this.storageChanged()) { this.emit(); return; }
     const now = this.clock();
-    if (this.updateTime(now)) this.saveCurrent(now);
+    if (this.updateTime(now) && (persist || this.lastSavedAt === null || !(Math.abs(now - this.lastSavedAt) < PASSIVE_SAVE_MS))) this.saveCurrent(now);
     this.emit();
   }
   perform(command: Command): ActionResult | {ok: false; reason: 'NO_GAME' | 'DISPOSED' | 'SALE_NOT_SAVED' | 'ACTION_NOT_SAVED' | 'STORAGE_CHANGED'} {

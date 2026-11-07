@@ -54,7 +54,7 @@ import type {GameController, Snapshot} from '../application/GameController';
 import {AFFECTION_STATUE, BALANCE, CARE_KINDS, FARM_UPGRADES, PICNIC, SALON, FOREST, JUMP_ROPE, carePrice, isAffectionWall, orderFarmLevel, SECOND_AFFECTION_STATUE, NURSERY, ORDERS, RARE_BIRTH_BONUS, TRAVEL, feedCost, type Destination, SPECIES, SPECIES_IDS, SHOP_SPECIES, growthDuration, type BuildingKind, type SpeciesId, type RabbitType} from '../config/balance';
 import {JUMP_MEDAL_ART} from '../config/jumpIslandArt';
 import {EPIC_ISLET_ART} from '../config/epicIsletArt';
-import {PERCH_ART} from '../config/bennyFlightGameArt';
+import {ISLAND_COVER_EVENT, PERCH_ART, type IslandCover} from '../config/bennyFlightGameArt';
 import {EPIC_ISLET, BENNY_FLIGHT, ULTRA_SNOW} from '../config/balance';
 import {epicIsletReason} from '../simulation/epicIslet';
 /** The islet of the Epics' name and its one rule, as the shop and its nest show them. */
@@ -229,6 +229,8 @@ export class GameUI {
   private skyGifts: ReturnType<typeof mountSkyGiftsActivity>;
   private bennyFlight: ReturnType<typeof mountBennyFlightActivity>;
   private heartsBeforeFlight: number | null = null;
+  /** Whether the full-screen shop or market currently covers the island (its Phaser loop sleeps meanwhile). */
+  private shopCovering = false;
   private skyGiftsPick = false;
   /** The jump-rope trio being chosen (two carriers, then the athlete) and the slot whose rabbit is being picked. */
   private jumpRopeSlots: (string | null)[] | null = null;
@@ -374,12 +376,12 @@ export class GameUI {
       });
     this.renderPreferences();
     // Countdown text is a projection of timestamps; the controller alone advances the simulation.
-    const animate = () => {
+    // A quarter-second check, not a 60 Hz frame loop: the countdowns change once a second (audit of 7 November 2026).
+    const tick = () => {
       const second = Math.floor(this.clock() / 1000);
       if (second !== this.lastSecond && !document.hidden) { this.lastSecond = second; this.updateTimers(); this.accountReminder.flush(); }
-      this.frame = requestAnimationFrame(animate);
     };
-    this.frame = requestAnimationFrame(animate);
+    this.frame = window.setInterval(tick, 250);
   }
   private now(): number { return Math.max(this.clock(), this.snapshot.state?.lastSimulatedAt ?? 0); }
   private renderPreferences(): void {
@@ -832,6 +834,7 @@ export class GameUI {
     const market = this.view?.kind === 'christmasMarket' && christmasActive();
     const fullShop = market || this.view?.kind === 'shop' || this.view?.kind==='levelRequirement' && this.view.target.family==='decoration' && this.history.some(view=>view.kind==='shop');
     this.panel.classList.toggle('shop-fullscreen', fullShop);
+    if (fullShop !== this.shopCovering) { this.shopCovering = fullShop; window.dispatchEvent(new CustomEvent<IslandCover>(ISLAND_COVER_EVENT, {detail: {source: 'shop', covered: fullShop}})); }
     this.panel.classList.toggle('christmas-market', market);
     document.body.classList.toggle('shop-open', fullShop);
     this.shopResources.hidden = !fullShop;
@@ -2870,7 +2873,7 @@ export class GameUI {
     if (step.done) this.button(this.tutorial, 'Terminer le guidage', () => { this.preferences.set({tutorialDone: true}); this.renderPreferences(); this.renderTutorial(); }, null, true);
     this.button(this.tutorial, 'Masquer', () => { this.preferences.set({tutorial: false}); this.renderPreferences(); this.renderTutorial(); }, null, true);
   }
-  dispose(): void { this.photoControls.dispose(); this.clearRabbitMove(); this.moveBanner.remove(); this.clearWelcome(); this.welcomeBanner.remove(); this.closeReception(); this.accountReminder.dispose(); document.getElementById('onboarding-skip')?.remove(); this.pailleDialogue.dispose(); this.cuisine.dispose(); this.jumpRope.dispose(); this.skyGifts.dispose(); this.bennyFlight.dispose(); this.confirmationGeneration++; if (this.dialog.open) this.dialog.close(); this.dialog.replaceChildren(); this.unsubscribe(); this.abort.abort(); cancelAnimationFrame(this.frame); clearTimeout(this.toastTimer); this.endCaress(); this.sounds.dispose(); }
+  dispose(): void { this.photoControls.dispose(); this.clearRabbitMove(); this.moveBanner.remove(); this.clearWelcome(); this.welcomeBanner.remove(); this.closeReception(); this.accountReminder.dispose(); document.getElementById('onboarding-skip')?.remove(); this.pailleDialogue.dispose(); this.cuisine.dispose(); this.jumpRope.dispose(); this.skyGifts.dispose(); this.bennyFlight.dispose(); this.confirmationGeneration++; if (this.dialog.open) this.dialog.close(); this.dialog.replaceChildren(); this.unsubscribe(); this.abort.abort(); clearInterval(this.frame); clearTimeout(this.toastTimer); this.endCaress(); this.sounds.dispose(); }
 }
 
 const JUMP_ISLAND_NAME = 'Île de la corde à sauter';

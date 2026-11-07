@@ -31,6 +31,8 @@ beforeEach(() => {
   HTMLDialogElement.prototype.close = function () { this.open = false; };
 });
 afterEach(() => { cleanups.splice(0).reverse().forEach(dispose => dispose()); vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+/** The interface's own quarter-second countdown timer (audit of 7 November 2026), always there while it lives. */
+const UI_TICK = 1;
 function setup(withKitchen = true, rabbits?: 'duplicates' | 'different' | 'empty' | 'cap' | 'statue') {
   const values = new Map<string, string>();
   if (withKitchen) {
@@ -280,13 +282,13 @@ describe('main-game Cuisine activity', () => {
     expect(document.querySelector('dialog.cuisine-activity[open]')).toBeNull();
     expect(document.getElementById('app')!.inert).toBe(false);
     expect(document.getElementById('panel-title')!.textContent).toBe('Cuisine');
-    expect(vi.getTimerCount()).toBe(0);
+    expect(vi.getTimerCount() - UI_TICK).toBe(0);
     expect(k.host.selectedRabbit).toBeNull();
     enter().click();k.choose();expect(k.mounted).toHaveBeenCalledTimes(2);
     expect(document.querySelectorAll('.cuisine-root')).toHaveLength(1);
     expect(document.querySelectorAll('.cuisine-root style')).toHaveLength(1);
-    expect(vi.getTimerCount()).toBe(2);k.exit();
-    expect(vi.getTimerCount()).toBe(0);expect(k.completed).not.toHaveBeenCalled();
+    expect(vi.getTimerCount() - UI_TICK).toBe(2);k.exit();
+    expect(vi.getTimerCount() - UI_TICK).toBe(0);expect(k.completed).not.toHaveBeenCalled();
     expect(k.controller.getSnapshot().state).toEqual(before);
     k.ui.select({kind:'rabbit',id:before!.rabbits[0].id});
     expect(document.getElementById('game-panel')!.dataset.view).toBe('rabbit');
@@ -318,12 +320,12 @@ describe('main-game Cuisine activity', () => {
     expect(document.querySelector('dialog.cuisine-activity[open]')).toBeNull();
     expect(document.getElementById('app')!.inert).toBe(false);
     expect(document.getElementById('game-panel')!.dataset.view).toBe('building');
-    expect(k.completed).not.toHaveBeenCalled(); expect(vi.getTimerCount()).toBe(0);
+    expect(k.completed).not.toHaveBeenCalled(); expect(vi.getTimerCount() - UI_TICK).toBe(0);
     k.open();
     expect(k.mounted).toHaveBeenCalledTimes(2);
     expect(document.querySelectorAll('.cuisine-root')).toHaveLength(1);
     expect(document.querySelectorAll('.cuisine-root style')).toHaveLength(1);
-    expect(vi.getTimerCount()).toBe(2); // the engine's clock and the commis's mood watcher
+    expect(vi.getTimerCount() - UI_TICK).toBe(2); // the engine's clock and the commis's mood watcher
     const second = k.activity(1);
     expect(second.engine.snapshot()).toMatchObject({phase: 'choosing', activeTimeMs: 0});
     k.exit(); k.ui.select({kind: 'rabbit', id: k.controller.getSnapshot().state!.rabbits[0].id});
@@ -495,7 +497,7 @@ describe('Cuisine tasting celebration', () => {
     const k = setup(); const a = play(k, 'avocado-toast'); expect(tasting()).not.toBeNull();
     a.root.querySelector<HTMLButtonElement>(`#${id}`)!.click();
     expect(tasting()).toBeNull(); expect(companion().dataset.tasting).toBeUndefined(); expect(companion().dataset.reaction).toBe('idle');
-    expect(vi.getTimerCount()).toBeLessThanOrEqual(2); // only the engine's clock and the commis's mood watcher may remain
+    expect(vi.getTimerCount() - UI_TICK).toBeLessThanOrEqual(2); // only the engine's clock and the commis's mood watcher may remain
   });
   it('a second completion after Replay restarts one tasting, never two', () => {
     const k = setup(); const a = play(k, 'avocado-toast');
@@ -567,7 +569,7 @@ describe('selected rabbit inside the Cuisine scene', () => {
     expect(document.querySelector('.cuisine-tasting')).toBeNull(); expect(chefs()).toHaveLength(1);
     a.root.querySelector<HTMLButtonElement>('#recipe-avocado-toast')!.click(); finishToast(a.engine); a.refresh(); a.refresh();
     k.exit();
-    expect(chefs()).toHaveLength(0); expect(document.querySelector('.cuisine-tasting')).toBeNull(); expect(vi.getTimerCount()).toBe(0);
+    expect(chefs()).toHaveLength(0); expect(document.querySelector('.cuisine-tasting')).toBeNull(); expect(vi.getTimerCount() - UI_TICK).toBe(0);
     k.open(); expect(chefs()).toHaveLength(1); expect(chefs()[0]).not.toBe(chef);
   });
   it('is removed with its timers when the UI is disposed mid-celebration', () => {
@@ -633,6 +635,6 @@ describe('the cooks talk in the real kitchen (fake clock)', () => {
     expect(said('taster').textContent).toBe('Ça sent bon !'); expect(said('commis').textContent).toBe('');
     // The guide moved on, and so does the hint.
     vi.advanceTimersByTime(2400); expect(said('commis').textContent).toBe('Mets l’avocat coupé dans le saladier !'); expect(said('taster').textContent).toBe('');
-    k.exit(); expect(vi.getTimerCount()).toBe(0);
+    k.exit(); expect(vi.getTimerCount() - UI_TICK).toBe(0);
   });
 });

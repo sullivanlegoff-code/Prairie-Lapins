@@ -4,6 +4,7 @@ import {DECORATIONS, MAX_DECORATIONS, isChristmasDecoration, type DecorationId} 
 import {giftCycle, presentRabbits, rabbitAwayReason} from './care';
 import {SPECIES, SPECIES_IDS, type SpeciesId} from '../config/species';
 import {progressionFromXp} from './progression';
+import {stateLevelAccess} from './levelRights';
 import {INCOME_BUBBLE_THRESHOLD} from '../config/visual';
 import type {ChristmasState, GameState, Rabbit, Refusal} from '../state/types';
 
@@ -174,6 +175,8 @@ export const CHRISTMAS_RABBIT_IDS: readonly SpeciesId[] = SPECIES_IDS.filter(id 
 export function christmasRabbitReason(s: GameState, species: SpeciesId): Refusal | null {
   if (!CHRISTMAS_RABBIT_IDS.includes(species)) return 'INVALID_CHOICE';
   if (!christmasEventActive()) return 'EVENT_OVER';
+  // The species' own level still applies (audit of 7 November 2026: the market bypassed it, an Epic at level 5).
+  if (!stateLevelAccess(s, {family: 'species', id: species, action: 'purchase'}).accessible) return 'LEVEL_REQUIRED';
   return candiesOf(s) < CHRISTMAS_RABBIT_CANDY_PRICE ? 'NOT_ENOUGH_CANDIES' : null;
 }
 /** Why a Christmas decoration cannot be bought at the market now (placement aside), or null. */

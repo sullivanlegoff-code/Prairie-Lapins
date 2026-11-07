@@ -563,8 +563,7 @@ export function decodeGame(json: string): DecodeResult {
   }
   for (const id of Object.keys(state.affectionGifts ?? {})) if (!rabbitIds.has(id)) delete state.affectionGifts![id];
   for (const id of Object.keys(state.jumpRope?.athleteBest ?? {})) if (!rabbitIds.has(id)) delete state.jumpRope!.athleteBest![id];
-  // Today's snowman stands in an enclosure: one since removed drops it, never a reason to refuse the save.
-  if (state.christmas?.snowman && !state.buildings.some(b => b.kind === 'enclosure' && b.id === state.christmas!.snowman!.enclosureId)) delete state.christmas.snowman;
+  // Today's snowman stays recorded even if its enclosure is gone (`snowmanToday` hides it): one snowman a day, never a second.
   // Enclosures that still keep their former size grow wherever there is room (never a reason to refuse the save).
   growFormerEnclosures(state);
   establishHistoricalLevelRights(state);

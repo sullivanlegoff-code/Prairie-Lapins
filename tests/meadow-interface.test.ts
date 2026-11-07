@@ -35,7 +35,7 @@ it('interpolates progress from simulation time and keeps the ready bubble on sub
     birth: {id: 'birth-clock', species: 'paille', guaranteed: false, reservedDiscovery: false}};
   scene.current.buildings = [nest]; scene.progressNow = 100;
   scene.progressViews = {sync: vi.fn()};
-  scene.bubbles = {removeAll: vi.fn(), add: vi.fn()};
+  scene.bubbles = {removeAll: vi.fn(), add: vi.fn()}; scene.textures = {exists: () => false};
   scene.heartBubble = vi.fn(() => ({width: 30, height: 30}));
   scene.time.now = 50; scene.syncProgressBars();
   expect(scene.progressViews.sync.mock.lastCall[0][0].fraction).toBe(.5);
@@ -46,6 +46,19 @@ it('interpolates progress from simulation time and keeps the ready bubble on sub
   scene.drawBubbles();
   expect(scene.heartBubble).toHaveBeenCalledTimes(2);
   expect(scene.bubbleHits).toHaveLength(1);
+});
+
+it('keeps unchanged bubbles instead of rebuilding them on every refresh (their hop keeps going)', () => {
+  const scene = new MeadowScene({} as never, () => {}, () => false) as any;
+  scene.time = {now: 0}; scene.current = createGame(0); scene.current.buildings[0].incomeUnits = 400 * HOUR; scene.current.buildings[0].habitat!.level = 2;
+  const drawn: unknown[] = [];
+  scene.bubbles = {removeAll: vi.fn(() => { drawn.length = 0; }), add: vi.fn((o: unknown) => drawn.push(o)), get length() { return drawn.length; }};
+  scene.textures = {exists: () => false};
+  vi.mocked(coinBubble).mockClear();
+  scene.drawBubbles(); scene.drawBubbles(); scene.drawBubbles();
+  expect(coinBubble).toHaveBeenCalledTimes(1);
+  scene.current.buildings[0].incomeUnits = 0; scene.drawBubbles();
+  expect(scene.bubbles.removeAll).toHaveBeenCalledTimes(2); expect(scene.bubbleHits).toHaveLength(0);
 });
 
 it('draws habitats and every building kind without drawing their names on the island', () => {

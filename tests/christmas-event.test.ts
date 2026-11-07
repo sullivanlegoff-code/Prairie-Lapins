@@ -4,7 +4,7 @@ import {HOUR} from '../src/config/balance';
 import {MISSION_CYCLE_DURATION} from '../src/config/missions';
 import {COIN_BUBBLE_CANDIES, CHRISTMAS_CHALLENGES, CHRISTMAS_CHALLENGE_IDS, MAX_CANDIES, SKY_GIFTS, type ChristmasChallengeId} from '../src/config/christmasEvent';
 import {ALL_DECORATION_IDS, CHRISTMAS_DECORATION_IDS, DECORATIONS, DECORATION_IDS, ownedDecorationResalePrice} from '../src/config/decorations';
-import {bubbleCandiesToday, candiesOf, christmasChallengeAvailable, christmasChallengesFor, christmasChallengesOf, christmasProgress, pickChristmasChallenges, skyGiftsDay, snowmanQuote, snowmanToday} from '../src/simulation/christmas';
+import {bubbleCandiesToday, candiesOf, christmasRabbitReason, christmasChallengeAvailable, christmasChallengesFor, christmasChallengesOf, christmasProgress, pickChristmasChallenges, skyGiftsDay, snowmanQuote, snowmanToday} from '../src/simulation/christmas';
 import {dailyCycleStart} from '../src/simulation/missions';
 import {cumulativeLevelXp} from '../src/simulation/progression';
 import {buildingPlacementReason} from '../src/simulation/placement';
@@ -192,6 +192,32 @@ describe('the snowman', () => {
   });
 });
 
+describe('audit of 7 November: the snowman after its enclosure, Benny in the cloud fingerprint', () => {
+  it('keeps today’s snowman through a save even when its enclosure is gone: still one a day', () => {
+    const {s: base, home} = setup(2);
+    const done = run(withChallenges(base, ['snowman', 'feed', 'collect']), {type: 'buildSnowman', enclosureId: home}).state;
+    done.rabbits = done.rabbits.filter(r => r.enclosureId !== home); done.buildings = done.buildings.filter(b => b.id !== home);
+    const r = decodeGame(encodeGame(done)); if (!r.ok) throw Error(r.reason); const loaded = r.state;
+    expect(snowmanToday(loaded, HOUR)).toBeNull(); expect(loaded.christmas?.snowman?.cycle).toBe(0);
+    expect(snowmanQuote(loaded, 'building-1', HOUR).reason).toBe('SNOWMAN_TODAY');
+  });
+  it('counts Benny’s recharge relative to the daily reference, like the other deadlines', () => {
+    const {s: base} = setup(); const s = advance(base, 3 * HOUR); s.benny = {powerReadyAt: 20 * HOUR, inSky: false};
+    // The phone's clock goes back two hours: every deadline moves with it, and the cloud sees no change of its own.
+    const moved = advance(s, HOUR); expect(moved.benny!.powerReadyAt).toBe(18 * HOUR);
+    expect(fingerprint(moved)).toBe(fingerprint(s));
+  });
+});
+
+describe('the market’s Christmas rabbits and the level', () => {
+  it('keeps each species’ own level: no Epic at level 5 through the market', () => {
+    const low = withChallenges(setup(5).s, ['snowman', 'feed', 'collect'], 5000);
+    expect(christmasRabbitReason(low, 'yetiti')).toBe('LEVEL_REQUIRED');
+    const high = withChallenges(setup(12).s, ['snowman', 'feed', 'collect'], 5000);
+    expect(christmasRabbitReason(high, 'yetiti')).toBeNull();
+  });
+});
+
 describe('the coin bubbles at Christmas', () => {
   const cap = (s: GameState, id: string) => habitatStats(s.buildings.find(b => b.id === id)!).cap;
   const collect = (s: GameState, id: string, amount: number, now = s.lastSimulatedAt) => {
@@ -327,7 +353,7 @@ describe('the save (v26)', () => {
     const bad = JSON.parse(encodeGame(s)); bad.version = 25; bad.christmas = {candies: -1};
     expect(decodeGame(JSON.stringify(bad))).toEqual({ok: false, reason: 'INVALID_STATE'});
   });
-  it('refuses invalid Christmas values, and drops a snowman whose enclosure is gone', () => {
+  it('refuses invalid Christmas values, and keeps a snowman whose enclosure is gone', () => {
     const {s, home} = festive();
     const variants: [string, (raw: Record<string, any>) => void][] = [
       ['too many sucres d’orge', raw => { raw.christmas.candies = MAX_CANDIES + 1; }],
@@ -344,9 +370,10 @@ describe('the save (v26)', () => {
       const raw = JSON.parse(encodeGame(s)); change(raw);
       expect(decodeGame(JSON.stringify(raw)), label).toEqual({ok: false, reason: 'INVALID_STATE'});
     }
+    // A snowman whose enclosure is gone stays recorded (one a day), hidden by `snowmanToday`: never a reason to refuse the save.
     const raw = JSON.parse(encodeGame(s)); raw.christmas.snowman.enclosureId = 'building-999';
     const loaded = decodeGame(JSON.stringify(raw));
-    expect(loaded.ok && loaded.state.christmas!.snowman).toBeUndefined();
+    expect(loaded.ok && loaded.state.christmas!.snowman).toEqual({...s.christmas!.snowman, enclosureId: 'building-999'});
     expect(loaded.ok && loaded.state.christmas!.candies).toBe(250);
     expect(home).toBeDefined();
   });

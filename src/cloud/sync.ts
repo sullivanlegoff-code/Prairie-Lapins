@@ -14,7 +14,7 @@ export const LINK_BACKUP_PREFIX = 'prairie-lapins.cloud.link-backup.v1.';
 class InvalidLink extends Error {}
 interface Link {owner: string; revision: number; baseline: string; syncedAt: string | null; pending: CommitRequest | null; format?: number}
 /** Version of the fingerprint below. A link written with another one (none: before v25) compares with `sameCore`. */
-export const FINGERPRINT_FORMAT = 3;
+export const FINGERPRINT_FORMAT = 4;
 export type SyncStatus = 'disconnected' | 'checking' | 'choice' | 'conflict' | 'saved' | 'waiting' | 'sending' | 'offline' | 'session' | 'error' | 'local-error' | 'outdated' | 'recovery';
 export interface SyncView {status: SyncStatus; syncedAt: string | null; remote: RemoteSave | null; message?: string}
 interface Timing {now(): number; set(callback: () => void, delay: number): unknown; clear(handle: unknown): void; uuid(): string}
@@ -33,6 +33,8 @@ export function fingerprint(state: GameState): string {
   s.nextHeartGiftAt -= reference;
   for (const t of s.travel?.trips ?? []) { t.startedAt -= reference; t.endsAt -= reference; }
   if (s.care) { s.care.startedAt -= reference; s.care.endsAt -= reference; }
+  // Benny's recharge moves with the other deadlines when the clock goes backwards (format 4).
+  if (s.benny && s.benny.powerReadyAt > 0) s.benny.powerReadyAt -= reference;
   for (const b of s.buildings) {
     if (b.order) { b.order.startedAt -= reference; b.order.endsAt -= reference; }
     if (b.breeding) { b.breeding.startedAt -= reference; b.breeding.endsAt -= reference; }

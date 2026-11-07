@@ -3,7 +3,7 @@ import {previousStart} from './regression-start';
 import {createGame} from '../src/simulation';
 import {describe, expect, it} from 'vitest';
 import {itAll} from './cases';
-import {GameController} from '../src/application/GameController';
+import {GameController, PASSIVE_SAVE_MS} from '../src/application/GameController';
 import {bindLifecycle, type LifecycleHost} from '../src/application/lifecycle';
 import {SAVE_KEY, type SaveStorage} from '../src/persistence/storage';
 import {act, advance,  decodeGame, encodeGame, pendingDiscoveries} from '../src/simulation';
@@ -27,6 +27,17 @@ describe('targeted passive change detection', () => {
       }
       controller.dispose();
     }
+  });
+  it('writes the save at most once a minute on the regular tick, and always when the page is hidden or left', () => {
+    const start = 1_790_000_000_000;
+    const {controller, store, clock} = fixture(encodeGame(scenarioState('completeGame', start)), start);
+    clock.now = start + 5000; controller.refresh(false); const first = store.writes;
+    for (let k = 2; k <= 6; k++) { clock.now = start + k * 5000; controller.refresh(false); }
+    expect(store.writes).toBe(first);
+    expect(state(controller)).toEqual(advance(stored(store), clock.now));
+    clock.now = start + 5000 + PASSIVE_SAVE_MS; controller.refresh(false); expect(store.writes).toBe(first + 1);
+    clock.now += 5000; controller.refresh(); expect(store.writes).toBe(first + 2); expect(stored(store)).toEqual(state(controller));
+    controller.dispose();
   });
   it('rebases gifts, nursery, jobs and initiation keys, then keeps their deadlines and daily cycle correct after reload', () => {
     const start = 1_790_000_000_000;
