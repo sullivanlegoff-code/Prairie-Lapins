@@ -446,10 +446,11 @@ export class GameUI {
     const reduced = !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     this.endCaress(portraitElement);
     this.petting = true; portraitElement.dataset.petting = reduced ? 'still' : 'wiggle';
-    // Closed eyes: the « eyes-closed » patch over the species' own drawing; an evolved drawing has no eyelids.
-    const picture = portraitElement.querySelector<HTMLImageElement>('img[data-rabbit-art]'), art = rabbitArt(rabbit.species);
-    const patch = rabbitBlinkArt(rabbit.species)?.patches.find(item => item.kind === 'eyes-closed');
-    if (picture && art && patch && !picture.hasAttribute('data-evolved') && picture.getAttribute('src') === art.url) {
+    // Closed eyes: the « eyes-closed » patch over the drawing shown, the first one or the evolved one (each has its own eyelids).
+    const picture = portraitElement.querySelector<HTMLImageElement>('img[data-rabbit-art]'), evolved = !!picture?.hasAttribute('data-evolved');
+    const art = evolved ? evolvedRabbitArt(rabbit.species) : rabbitArt(rabbit.species);
+    const patch = rabbitBlinkArt(rabbit.species, evolved)?.patches.find(item => item.kind === 'eyes-closed');
+    if (picture && art && patch && picture.getAttribute('src') === art.url) {
       let figure = picture.parentElement?.classList.contains('ultimate-figure') || picture.parentElement?.classList.contains('pet-figure') ? picture.parentElement : null;
       if (!figure) {
         figure = node('span', '', 'pet-figure'); figure.style.setProperty('--ratio', String(art.width / art.height));

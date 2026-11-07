@@ -8,6 +8,7 @@ import {createGame, encodeGame} from '../src/simulation';
 import {SAVE_KEY} from '../src/persistence/storage';
 import type {GameState} from '../src/state/types';
 import type {MeadowScene} from '../src/display/MeadowScene';
+import {EVOLUTION_CHALLENGES, evolutionChallengeTarget} from '../src/config/evolutionChallenges';
 
 const cleanups: (() => void)[] = [];
 let clock = 0;
@@ -69,6 +70,19 @@ it('rubbing the portrait closes the eyes, sends up hearts and counts for « Des 
   expect(perform).toHaveBeenCalledTimes(2);
   expect(controller.getSnapshot().state!.missions.daily.progress['pet-rabbits']).toBe(1); // The same rabbit counts once.
   pointer(portrait, 'pointerup', 60);
+});
+
+// 7 November 2026: an evolved drawing has its own eyelids too.
+it('an evolved rabbit closes the eyes of its evolved drawing when caressed', () => {
+  const s = createGame(0), rabbit = s.rabbits[0]!;
+  const challenges = Object.fromEntries((EVOLUTION_CHALLENGES[rabbit.species] ?? []).map(key => [key, evolutionChallengeTarget(rabbit.species, key)]));
+  Object.assign(rabbit, {affection: 30, evolution: {done: true, challenges}});
+  const {ui} = mount(s); ui.select({kind: 'rabbit', id: rabbit.id});
+  const portrait = document.querySelector<HTMLElement>(`#panel-content [data-pet-rabbit="${rabbit.id}"]`)!;
+  expect(portrait.querySelector('img[data-evolved]')).not.toBeNull();
+  pointer(portrait, 'pointerdown', 20); pointer(portrait, 'pointermove', 45); pointer(portrait, 'pointermove', 22);
+  expect(portrait.querySelector<HTMLImageElement>('.pet-eyelid')?.getAttribute('src')).toContain(`${rabbit.species}-evolution-eyes-closed`);
+  pointer(portrait, 'pointerup', 22);
 });
 
 it('small back-and-forths also caress, and with reduced motion the portrait does not wiggle', () => {

@@ -9,5 +9,13 @@
     "x": 174,
     "y": 138,
     "sourceSha1": "3264595908b4ae3c1d57d15f565aa4aa4c084489"
+  },
+  "evolution": {
+    "spriteSha1": "7ed032846f2556f3717cc51d508dd05b3fefef12",
+    "nose-twitch": {
+      "x": 428,
+      "y": 208,
+      "sourceSha1": "2efc911a644f8dd31f4e9b67f23541dd061b7f80"
+    }
   }
 }

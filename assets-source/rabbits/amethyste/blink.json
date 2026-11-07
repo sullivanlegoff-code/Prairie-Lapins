@@ -6,8 +6,21 @@
     "sourceSha1": "2b2c30b204ac1230ee7bbe2ce809f078ef8b294e"
   },
   "nose-twitch": {
-    "x": 1097,
-    "y": 537,
-    "sourceSha1": "10830b50542fffbab90e9840a6aeb4771a442fa8"
+    "x": 1035,
+    "y": 475,
+    "sourceSha1": "467718f8b2f1e177d1406b68d87a627e1cb66425"
+  },
+  "evolution": {
+    "spriteSha1": "c1192b526ffdb44bd9c29f356ddb35d623963d04",
+    "eyes-closed": {
+      "x": 682,
+      "y": 367,
+      "sourceSha1": "dd6112b0ba3a255518adaa52ab8fb17f266d71c9"
+    },
+    "nose-twitch": {
+      "x": 933,
+      "y": 462,
+      "sourceSha1": "b043bac64bc00f79e7a3c1d4a72364b879a25a01"
+    }
   }
 }

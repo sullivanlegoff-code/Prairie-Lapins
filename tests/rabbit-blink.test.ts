@@ -1,5 +1,6 @@
 import {describe, expect, it} from 'vitest';
-import {RABBIT_ART} from '../src/config/rabbitArt';
+import {EVOLVED_RABBIT_ART, RABBIT_ART} from '../src/config/rabbitArt';
+import {EVOLVED_ART, evolvedSprite} from '../src/config/evolvedArt';
 import {PATCH_KINDS, RABBIT_BLINK_ART, rabbitBlinkArt, rabbitPatchPlacement} from '../src/config/rabbitBlinkArt';
 import {SPECIES_ENTRIES} from '../src/config/species';
 import {rabbitFaceEvent, rabbitFaceSeed, rabbitFaceState} from '../src/display/rabbitBlink';
@@ -17,8 +18,8 @@ describe('deterministic rabbit expressions', () => {
         expect(event.duration).toBeLessThanOrEqual(nose ? 110 : 160);
         expect(event.gap).toBeGreaterThanOrEqual(80);
         expect(event.gap).toBeLessThanOrEqual(110);
-        expect(interval).toBeGreaterThanOrEqual(nose ? 4000 : 2500);
-        expect(interval).toBeLessThanOrEqual(nose ? 10000 : 6000);
+        expect(interval).toBeGreaterThanOrEqual(nose ? 2000 : 2500);
+        expect(interval).toBeLessThanOrEqual(nose ? 4000 : 6000);
         if (nose) noseCounts.add(event.count);
         else { expect([1, 2]).toContain(event.count); if (event.count === 2) doubles++; else singles++; }
       }
@@ -60,24 +61,36 @@ describe('deterministic rabbit expressions', () => {
 });
 
 describe('rabbit patch adapter and body coordinates', () => {
-  it('covers 31 illustrated species with both patches; Bouee (sunglasses) , Dinenette, Calinou geant, Ankylosaure, Benny and the Christmas update rabbits (approved designs kept as is) have neither animation', () => {
-    expect(RABBIT_BLINK_ART).toHaveLength(31);
+  // 7 November 2026: every drawing blinks and twitches its nose, first drawings and evolutions alike, except Ardent's first
+  // drawing (painted frames instead), sunglasses (Bouée's two drawings, Dadi's and Fantôme's evolutions: a nose, no eyelids) and Benny (her own painted blink and nose).
+  it('covers every first drawing and every evolution, with their own textures', () => {
+    expect(RABBIT_BLINK_ART).toHaveLength(SPECIES_ENTRIES.filter(entry => entry.art.kind === 'static-sprite').length - 2 + EVOLVED_ART.length);
     for (const species of SPECIES_ENTRIES) {
-      const art = rabbitBlinkArt(species.id);
-      if (species.art.kind === 'static-sprite' && !['bouee', 'dinenette', 'calinou', 'ankylosaure', 'benny', 'vantablack', 'gigi-rarafe', 'yetiti', 'rennes', 'susucre', 'arkoko', 'fantome', 'bouyoyo', 'nuage', 'champignon', 'lapin-de-sulli', 'pain-epice', 'flocon-cristal'].includes(species.id)) {
-        expect(art?.patches.map(patch => patch.kind)).toEqual(PATCH_KINDS);
+      if (species.art.kind !== 'static-sprite') continue;
+      const art = rabbitBlinkArt(species.id), evolved = rabbitBlinkArt(species.id, true);
+      const kinds = species.id === 'bouee' ? ['nose-twitch'] : PATCH_KINDS, evolvedKinds = ['bouee', 'dadi', 'fantome'].includes(species.id) ? ['nose-twitch'] : PATCH_KINDS;
+      if (species.id === 'ardent' || species.id === 'benny') expect(art).toBeUndefined();
+      else {
+        expect(art?.patches.map(patch => patch.kind)).toEqual(kinds);
         for (const patch of art!.patches) {
           expect(patch.url).toContain(`assets/rabbits/${species.id}/${species.id}-${patch.kind}.png`);
           expect(patch.texture).toBe(`${species.art.texture}-${patch.kind}`);
         }
-      } else expect(art).toBeUndefined();
+      }
+      const drawing = evolvedSprite(species.id);
+      if (!drawing) { expect(evolved).toBeUndefined(); continue; }
+      expect(evolved?.patches.map(patch => patch.kind)).toEqual(evolvedKinds);
+      for (const patch of evolved!.patches) {
+        expect(patch.url).toContain(`assets/rabbits/${species.id}/${species.id}-evolution-${patch.kind}.png`);
+        expect(patch.texture).toBe(`${drawing.texture}-${patch.kind}`);
+      }
     }
   });
 
   it('positions the upper-left patch origin relative to sprite origin (.5, 1) and groundY', () => {
     expect(rabbitPatchPlacement({width: 400, height: 500, worldWidth: 100, groundY: 13}, {x: 120, y: 240}))
       .toEqual({x: -20, y: -52, scale: .25});
-    for (const art of RABBIT_ART) for (const patch of rabbitBlinkArt(art.species)?.patches ?? []) {
+    for (const art of [...RABBIT_ART, ...EVOLVED_RABBIT_ART]) for (const patch of rabbitBlinkArt(art.species, !!art.evolved)?.patches ?? []) {
       const placement = rabbitPatchPlacement(art, patch), scale = art.worldWidth / art.width;
       // Both points must remain identical after the parent's mirror, squash, lift and somersault.
       for (const facing of [-1, 1]) for (const rotation of [0, Math.PI * .7, Math.PI]) {

@@ -1,0 +1,26 @@
+{
+  "spriteSha1": "2ea0376aa45a98887c4f8ac38c5b88dd52df2012",
+  "eyes-closed": {
+    "x": 424,
+    "y": 296,
+    "sourceSha1": "be11b77a61267095a92c9af5a2e6eebeaa3dd5a1"
+  },
+  "nose-twitch": {
+    "x": 544,
+    "y": 330,
+    "sourceSha1": "4b7f5726029876aeecbdd3e78202aee722b4a332"
+  },
+  "evolution": {
+    "spriteSha1": "149571cbe130561c71815b6e80afdebb657a5f59",
+    "eyes-closed": {
+      "x": 577,
+      "y": 257,
+      "sourceSha1": "daab091058fae291837aec49c1135da6d1f23f18"
+    },
+    "nose-twitch": {
+      "x": 701,
+      "y": 286,
+      "sourceSha1": "f1331837bb766716118f584d7e0912a3edb5034d"
+    }
+  }
+}

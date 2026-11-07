@@ -39,5 +39,7 @@ export class DadiStageView {
     this.sprite.setTexture(frame ? frame.texture : this.art.texture);
   }
   get singing(): boolean { return this.shown === DADI_STAGE.micro; }
+  /** Another painted pose is on: the evolved drawing's eyelids and nose do not fit it. */
+  get posing(): boolean { return this.shown !== null; }
   destroy(): void { this.show(null); }
 }

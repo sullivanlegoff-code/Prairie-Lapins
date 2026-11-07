@@ -9,5 +9,18 @@
     "x": 945,
     "y": 370,
     "sourceSha1": "e6042608b88e5ebbf91b8a4ef95a16b6f0d85f54"
+  },
+  "evolution": {
+    "spriteSha1": "a8af5f65c88b68fa49b7c8584bdf0a45ffa44916",
+    "eyes-closed": {
+      "x": 437,
+      "y": 528,
+      "sourceSha1": "4e105bb91a325420da3c4862e79898b549508b7f"
+    },
+    "nose-twitch": {
+      "x": 581,
+      "y": 591,
+      "sourceSha1": "cc090961b60701907956c62e56352c504934c9cc"
+    }
   }
 }

@@ -1,9 +1,9 @@
-import {deriveArdentFlames, ardentFlamePose} from './ardentFlames';
+import {ARDENT_FRAMES, ardentFrame} from './ardentFlames';
 import {elementUrl} from './rabbitPresentation';
 import {islandOutline, organicLoop, parcelSetKey} from './islandOutline';
 import {nestForParent} from '../simulation/breeding';
 import {artForRabbit, type RabbitArt} from '../config/rabbitArt';
-import {rabbitBlinkArt, rabbitPatchPlacement} from '../config/rabbitBlinkArt';
+import {rabbitBlinkArt, rabbitPatchPlacement, type PatchKind} from '../config/rabbitBlinkArt';
 import {rabbitFaceSeed, rabbitFaceState} from './rabbitBlink';
 import {DadiReactions} from './dadiReactions';
 import {LegendaryView} from './legendaryEffects';
@@ -103,10 +103,11 @@ export type MeadowSelection = {kind: 'jumpIsland'} | {kind: 'christmasMarket'} |
 export interface DecorationGhost {id: string; catalogId?: DecorationId; location: DecorationLocation | null}
 /** `object` is the ground point (position, depth, scale); `body` carries the hop height, squash and mirror, apart from the shadow. */
 interface VisualRabbit {id: string; object: Phaser.GameObjects.Container; body: Phaser.GameObjects.Container; ears: Phaser.GameObjects.Ellipse[]; sprite?: Phaser.GameObjects.Image; art?: RabbitArt; base: Point; phase: number; fedUntil: number;
-  flames?: Phaser.GameObjects.Image;
+  /** Ardent's first drawing: its painted frames take turns on the sprite. */
+  ardent?: boolean;
   /** The golden crown of an ultimate rabbit (affection 50) that wears it, on its head in the body. */
   crown?: Phaser.GameObjects.Image;
-  face?: {seed: number; eyes: Phaser.GameObjects.Image; nose: Phaser.GameObjects.Image};
+  face?: {seed: number; eyes?: Phaser.GameObjects.Image; nose?: Phaser.GameObjects.Image};
   /** Lapin Dragon and Lapin Requin: halo, moving wing or fin, and their shows. */
   legendary?: LegendaryView;
   /** Benny, the Mythic: her painted acts, blink, nose and ears. */
@@ -860,9 +861,9 @@ export class MeadowScene extends Phaser.Scene {
     const assets = new Map<string, {texture: string; url: string; atlas?: string}>();
     const add = (art: {texture: string; url: string; atlas?: string} | null | undefined) => { if (art) assets.set(art.texture, art); };
     for (const rabbit of state?.rabbits ?? []) {
-      // The drawing this rabbit shows (its evolved one only after explicit evolution); blink and nose patches belong to the v1 only.
+      // The drawing this rabbit shows (its evolved one only after explicit evolution), with that drawing's own blink and nose.
       const shown = artForRabbit(rabbit); add(shown);
-      if (!shown?.evolved) for (const patch of rabbitBlinkArt(rabbit.species)?.patches ?? []) add(patch);
+      for (const patch of rabbitBlinkArt(rabbit.species, !!shown?.evolved)?.patches ?? []) add(patch);
       if (isLegendaryShow(rabbit.species)) for (const art of legendaryMeadowArt(rabbit.species)) add(art);
       if (rabbit.species === BENNY_ID) for (const art of [...bennyMeadowArt(), ...bennyFlightArt()]) add(art);
       if (wearsCrown(rabbit)) add(CROWN_ART);
@@ -1220,28 +1221,19 @@ export class MeadowScene extends Phaser.Scene {
           const sprite = this.add.image(0, art.groundY, art.texture).setOrigin(.5, 1);
           sprite.setScale(art.worldWidth / art.width); // Uniform scale preserves the original proportions.
           body.add(sprite);
-          let flames: Phaser.GameObjects.Image | undefined;
-          if (rabbit.species === 'ardent') {
-            const key = 'ardent-flame-overlay';
-            if (!this.textures.exists(key)) {
-              const canvas = this.textures.createCanvas(key, art.width, art.height)!;
-              const context = canvas.context;
-              context.drawImage(this.textures.get(art.texture).getSourceImage() as HTMLImageElement, 0, 0);
-              const pixels = context.getImageData(0, 0, art.width, art.height);
-              pixels.data.set(deriveArdentFlames(pixels.data, art.width, art.height));
-              context.putImageData(pixels, 0, 0); canvas.refresh();
-            }
-            flames = this.add.image(0, art.groundY, key).setOrigin(.5, 1).setScale(sprite.scaleX).setAlpha(.24);
-            body.add(flames);
-          }
-          // No blink or nose patch on an evolved drawing: they were painted on the v1 head only.
-          const blinkArt = art.evolved ? undefined : rabbitBlinkArt(rabbit.species);
-          const patches = blinkArt?.patches.map(patch => {
-            const placement = rabbitPatchPlacement(art, patch);
-            const image = this.add.image(placement.x, placement.y, patch.texture).setOrigin(0, 0).setScale(placement.scale).setVisible(false);
+          // Ardent's first drawing moves through its painted frames; each one is loaded on demand and never blocks the meadow.
+          const ardent = rabbit.species === 'ardent' && !art.evolved;
+          if (ardent) for (const frame of ARDENT_FRAMES) this.optionalArt(frame.texture, frame.url);
+          // The shown drawing's own eyelids and nose (an evolved drawing has its own, 7 November 2026); either may be missing.
+          const blinkArt = ardent ? undefined : rabbitBlinkArt(rabbit.species, !!art.evolved);
+          const patch = (kind: PatchKind) => {
+            const found = blinkArt?.patches.find(item => item.kind === kind);
+            if (!found) return undefined;
+            const placement = rabbitPatchPlacement(art, found);
+            const image = this.add.image(placement.x, placement.y, found.texture).setOrigin(0, 0).setScale(placement.scale).setVisible(false);
             body.add(image); return image;
-          });
-          const face = patches ? {seed: rabbitFaceSeed(rabbit.id), eyes: patches[0], nose: patches[1]} : undefined;
+          };
+          const face = blinkArt ? {seed: rabbitFaceSeed(rabbit.id), eyes: patch('eyes-closed'), nose: patch('nose-twitch')} : undefined;
           let crown: Phaser.GameObjects.Image | undefined;
           if (wearsCrown(rabbit) && this.textures.exists(CROWN_ART.texture)) {
             // On the per-species head anchor, in native picture space: the body mirrors, hops and squashes it with the sprite.
@@ -1269,7 +1261,7 @@ export class MeadowScene extends Phaser.Scene {
           const dadi = rabbit.species === 'dadi' && art.evolved ? new DadiStageView(this, rabbit.id, sprite, art) : undefined;
           if (crown) body.bringToTop(crown); // Above a legendary's open snout or part.
           this.animals.add(object);
-          this.rabbitViews.push({id: rabbit.id, ears: [], sprite, art, face, flames, crown, legendary, benny, magicien, dadi, ...view});
+          this.rabbitViews.push({id: rabbit.id, ears: [], sprite, art, face, ardent, crown, legendary, benny, magicien, dadi, ...view});
           return;
         }
         const coat = proceduralCoat(SPECIES[rabbit.species].art), color = Phaser.Display.Color.HexStringToColor(coat.body).color, patch = Phaser.Display.Color.HexStringToColor(coat.patch).color;
@@ -1716,18 +1708,18 @@ export class MeadowScene extends Phaser.Scene {
       rabbit.lift = lift;
       if (rabbit.object.depth !== previousDepth) depthChanged = true;
       this.poseBody(rabbit, {lift, squashX, squashY, facing, rotation, nuzzle});
-      if (rabbit.flames && rabbit.sprite) {
-        const pose = ardentFlamePose(rabbit.id, time, matchMedia('(prefers-reduced-motion: reduce)').matches);
-        rabbit.flames.setPosition(pose.x, rabbit.art!.groundY).setScale(rabbit.sprite.scaleX, rabbit.sprite.scaleY * pose.stretch).setAlpha(pose.alpha);
+      if (rabbit.ardent && rabbit.sprite) {
+        const frame = ARDENT_FRAMES[ardentFrame(rabbit.id, time, reducedMotion)].texture;
+        if (rabbit.sprite.texture.key !== frame && this.textures.exists(frame)) rabbit.sprite.setTexture(frame);
       }
       if (rabbit.face) {
         const state = rabbitFaceState(rabbit.face.seed, time, !rabbit.motion || rabbit.motion.mode === 'rest');
         const asleep = rabbit.motion?.mode === 'sleep', kissing = rabbit.motion?.mode === 'kiss' && rabbit.motion.elapsed > 0;
         // Eyes closed while asleep and during a kiss (owner, 4 November 2026); the nose stays still against the partner's.
-        rabbit.face.eyes.setVisible(asleep || kissing || (state & 1) !== 0);
-        rabbit.face.nose.setVisible(!asleep && !kissing && (state & 2) !== 0);
-        if (rabbit.legendary?.mouthOpen) rabbit.face.nose.setVisible(false);
-        if (rabbit.legendary?.submerged) { rabbit.face.eyes.setVisible(false); rabbit.face.nose.setVisible(false); }
+        rabbit.face.eyes?.setVisible(asleep || kissing || (state & 1) !== 0);
+        rabbit.face.nose?.setVisible(!asleep && !kissing && (state & 2) !== 0);
+        if (rabbit.legendary?.mouthOpen) rabbit.face.nose?.setVisible(false);
+        if (rabbit.legendary?.submerged || rabbit.dadi?.posing) { rabbit.face.eyes?.setVisible(false); rabbit.face.nose?.setVisible(false); }
       }
       // The crown never floats: hidden whenever the head is not the sprite's (a dive, one of Benny's painted acts).
       if (rabbit.crown && rabbit.sprite) rabbit.crown.setVisible((rabbit.sprite.visible || !!rabbit.legendary?.mouthOpen) && !rabbit.legendary?.submerged);
