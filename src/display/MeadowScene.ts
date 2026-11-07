@@ -93,7 +93,7 @@ import {CHASE_EVENT, RabbitChases, type ChaseRunner} from './rabbitChase';
 import {SNOWBALL_BATTLE_EVENT, SNOWBALL_EVENT, SnowballFights, snowballPoint, type SnowballThrower} from './snowballFight';
 import {LIGHT_POOLS, NightGlows, type GlowSource} from './nightGlows';
 import {CHRISTMAS_MARKET_ART, christmasMarketFrame, christmasMarketPoint} from '../config/christmasMarketArt';
-import {CANDY_ICON_URL, CANDY_TEXTURE, COIN_BASKET_ART, SNOWBALL_ART, SNOWMAN_ART} from '../config/winterArt';
+import {CANDY_ICON_URL, CANDY_TEXTURE, COIN_BASKET_ART, COIN_BUBBLE_FRAME, SNOWBALL_ART, SNOWMAN_ART} from '../config/winterArt';
 import {formatCoinAmount} from './currency';
 import {garlandLevel} from './winterClock';
 import {isChristmasDecoration} from '../config/decorations';
@@ -277,6 +277,8 @@ export class MeadowScene extends Phaser.Scene {
     if (christmasActive()) for (const flake of WINTER_ART.flakes) this.optionalArt(flake.texture, flake.url);
     // Christmas: the coin bubble's basket and the sucre d'orge of its reward (the plain coin meanwhile, or if one is missing).
     if (christmasActive()) { this.optionalArt(COIN_BASKET_ART.texture, COIN_BASKET_ART.url, () => { if (this.bubbles) this.drawBubbles(); }); this.optionalArt(CANDY_TEXTURE, CANDY_ICON_URL); }
+    // The coin bubble's cream frame, all year (the bare logo meanwhile, or if it is missing).
+    this.optionalArt(COIN_BUBBLE_FRAME.texture, COIN_BUBBLE_FRAME.url, () => { if (this.bubbles) this.drawBubbles(); });
     // Ground layer (flat on the island, drawn in ground coordinates, one shared projection transform):
     // terrain at depth 0 and the flat overlays at depth 1. Upright layer (untransformed, anchors through
     // toScreen): buildings .1, decorations .5, decoration selection .9, markers 1, ghosts 1.5, rabbits 2,
@@ -1396,13 +1398,17 @@ export class MeadowScene extends Phaser.Scene {
       this.bubbles.add(bubble); this.bubbleHits.push({point: p, width:bubble.width, height:bubble.height, selection: {kind: text === 'birth' ? 'birth' : b.kind === 'nursery' ? 'nurseryBubble' : kind, id: b.id}});
     }
   }
-  /** The coin bubble: the Christmas basket (or the coin), bobbing gently unless reduced motion is asked. */
+  /** The coin bubble's logo: the Christmas basket while the event is on and its picture is loaded, else the coin. */
+  private incomeLogo(): string { return christmasActive() && this.textures.exists(COIN_BASKET_ART.texture) ? COIN_BASKET_ART.texture : COIN_TEXTURE; }
+  /**
+   * The coin bubble: the logo in the cream speech bubble (owner's choice A, 7 November 2026). It hops every 3 seconds or so, each
+   * habitat at its own moment, to say « tap me »; still when reduced motion is asked.
+   */
   private incomeBubble(x: number, y: number): Phaser.GameObjects.Container {
-    const basket = christmasActive() && this.textures.exists(COIN_BASKET_ART.texture);
-    const bubble = basket ? coinBubble(this, x, y, COIN_BASKET_ART.texture, COIN_BASKET_ART.world) : coinBubble(this, x, y);
-    const icon = bubble.list?.[1] as Phaser.GameObjects.Image | undefined;
-    if (icon && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      const tween = this.tweens.add({targets: icon, y: -4, duration: 900 + (x % 7) * 40, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'});
+    const f = COIN_BUBBLE_FRAME, framed = this.textures.exists(f.texture);
+    const bubble = coinBubble(this, x, y, {logo: this.incomeLogo(), ...(framed ? {frame: {texture: f.texture, height: f.world, centerY: f.centerY, logo: f.logo}} : {})});
+    if (typeof bubble.once === 'function' && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const tween = this.tweens.add({targets: bubble, y: y - 8, duration: 170, ease: 'Quad.easeOut', yoyo: true, repeat: -1, repeatDelay: 2800, delay: Math.abs(Math.round(x * 7.3 + y * 3.1)) % 2800});
       bubble.once('destroy', () => tween.remove());
     }
     return bubble;
@@ -1414,10 +1420,9 @@ export class MeadowScene extends Phaser.Scene {
   playIncomeCollect(buildingId: string, pattes: number, candies: number): void {
     const b = this.current?.buildings.find(x => x.id === buildingId); if (!b || pattes < 1) return;
     const p = toScreen(buildingCenter(b)); p.y -= 72;
-    const still = matchMedia('(prefers-reduced-motion: reduce)').matches, basket = christmasActive() && this.textures.exists(COIN_BASKET_ART.texture);
-    const logo = this.add.image(p.x, p.y, basket ? COIN_BASKET_ART.texture : COIN_TEXTURE).setDepth(5).setVisible(!this.photo);
-    const size = basket ? COIN_BASKET_ART.world : 34; logo.setScale(size / Math.max(logo.height, 1));
-    this.tweens.add({targets: logo, scale: logo.scale * (still ? 1 : 1.3), alpha: 0, duration: 280, ease: 'Quad.easeOut', onComplete: () => logo.destroy()});
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const logo = this.incomeBubble(p.x, p.y).setDepth(5).setVisible(!this.photo); this.tweens.killTweensOf(logo); logo.y = p.y;
+    this.tweens.add({targets: logo, scale: still ? 1 : 1.3, alpha: 0, duration: 280, ease: 'Quad.easeOut', onComplete: () => logo.destroy()});
     const line = (amount: number, texture: string, y: number) => {
       const label = this.add.text(0, y, `+${formatCoinAmount(amount)}`, {fontFamily: "'Lilita One', 'Trebuchet MS', sans-serif", fontSize: '22px', color: '#fff8e6', stroke: '#5a3a1c', strokeThickness: 5}).setOrigin(1, .5);
       const icon = this.add.image(6, y, texture).setOrigin(0, .5); icon.setScale(30 / Math.max(icon.height, 1));

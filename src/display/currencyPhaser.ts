@@ -3,13 +3,20 @@ import {COIN_TEXTURE, FOOD_TEXTURE, formatCoinAmount} from './currency';
 
 /** One cached texture, matching the DOM currency, with the existing bubble hit bounds. */
 /**
- * A habitat's coin bubble (owner, 7 November 2026): only a logo, never the amount: the painted basket at Christmas (`texture`,
- * `size` high), else the coin. A soft shadow under it; the amount shows when it is collected (MeadowScene.playIncomeCollect).
+ * A habitat's coin bubble (owner, 7 November 2026): never the amount, only a logo (`logo`: the basket at Christmas, else the coin)
+ * inside the painted cream speech bubble (`frame`, when loaded), so it reads as something to tap. The container's origin is the
+ * middle of the bubble's disk; the amount shows when it is collected (MeadowScene.playIncomeCollect).
  */
-export function coinBubble(scene: Phaser.Scene, x: number, y: number, texture = COIN_TEXTURE, size = 34): Phaser.GameObjects.Container {
-  const icon = scene.add.image(0, 0, texture); icon.setScale(size / Math.max(icon.height, 1));
-  const width = icon.displayWidth, shadow = scene.add.ellipse(0, size * .46, width * .7, size * .16, 0x2c3a1e, .22);
-  return scene.add.container(x, y, [shadow, icon]).setSize(Math.max(width, 34), Math.max(size, 34));
+export function coinBubble(scene: Phaser.Scene, x: number, y: number,
+  options: {logo?: string; frame?: {texture: string; height: number; centerY: number; logo: number}} = {}): Phaser.GameObjects.Container {
+  const parts: Phaser.GameObjects.GameObject[] = [];
+  let size = 34, width = 34, height = 34;
+  if (options.frame) {
+    const f = options.frame, back = scene.add.image(0, 0, f.texture).setOrigin(.5, f.centerY); back.setScale(f.height / Math.max(back.height, 1));
+    width = back.displayWidth; height = width; size = width * f.logo; parts.push(back);
+  }
+  const icon = scene.add.image(0, 0, options.logo ?? COIN_TEXTURE); icon.setScale(size / Math.max(icon.height, icon.width, 1)); parts.push(icon);
+  return scene.add.container(x, y, parts).setSize(Math.max(width, 34), Math.max(height, 34));
 }
 /** The farm's harvest bubble: the amount of food ready, with the food logo. */
 export function foodBubble(scene: Phaser.Scene, x: number, y: number, amount: number): Phaser.GameObjects.Container {

@@ -38,6 +38,11 @@ export const CANDY_TEXTURE = 'noel-sucre-orge';
  * sucre d'orge, drawn `world` high above the habitat, without the amount. Prepared by scripts/prepare-noel-extras-art.mjs.
  */
 export const COIN_BASKET_ART = {texture: 'noel-bulle-panier', url: `${base}bulle-panier.png`, world: 50} as const;
+/**
+ * The cream speech bubble the logo sits in (owner's choice A, 7 November 2026), all year: drawn `world` high, its disk's centre at
+ * `centerY` of its height (the tail below points at the habitat); the logo inside is `logo` of the disk's diameter (`disk` of the width).
+ */
+export const COIN_BUBBLE_FRAME = {texture: 'bulle-creme', url: `${base}bulle-creme.png`, world: 64, centerY: .443, disk: 1, logo: .66} as const;
 
 /** « Les cadeaux du ciel »: the painted night backdrop, the sleigh, the rabbit's basket and the four presents. */
 export const SKY_GIFTS_ART = {
