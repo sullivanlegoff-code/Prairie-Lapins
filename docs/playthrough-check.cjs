@@ -57,14 +57,21 @@ fs.mkdirSync(out, {recursive: true});
     }
     else if (state.panel && /^Placer/.test(state.panel)) {
       // Placement: tap the island until a valid cell is chosen (the tutorial marks it with a yellow square).
-      const box = await page.evaluate(() => { const c = document.querySelector('#game canvas').getBoundingClientRect(); const p = document.getElementById('game-panel').getBoundingClientRect(); return {w: Math.min(c.width, p.left || c.width), h: c.height}; });
+      // En portrait la fenêtre occupe le bas de l'écran : on touche l'île au-dessus d'elle.
+      const box = await page.evaluate(() => { const c = document.querySelector('#game canvas').getBoundingClientRect(); const p = document.getElementById('game-panel').getBoundingClientRect(); return p.left > 50 ? {w: Math.min(c.width, p.left), h: c.height} : {w: c.width, h: Math.min(c.height, p.top || c.height)}; });
       let placed = false;
-      for (let y = 60; y < box.h - 20 && !placed; y += 9) for (let x = 20; x < box.w - 20 && !placed; x += 9) {
+      // Seuls les points où l'île (le canvas) est sous le doigt : jamais les boutons de la colonne ou du haut.
+      const points = await page.evaluate(({w, h}) => { const out = []; for (let y = 60; y < h - 20; y += 9) for (let x = 20; x < w - 20; x += 9) if (document.elementFromPoint(x, y)?.tagName === 'CANVAS') out.push([x, y]); return out; }, box);
+      for (const [x, y] of points) { if (placed) break;
         await page.mouse.click(x, y); await page.waitForTimeout(40);
         placed = await page.evaluate(() => [...document.querySelectorAll('#panel-content button')].some(b => /^Confirmer/.test(b.textContent) && !b.disabled));
         if (placed) log.push({placedAt: [x, y]});
       }
       if (!placed) log.push({placementFailed: true});
+    }
+    else if (await page.evaluate(() => { const b = [...document.querySelectorAll('button:not([disabled])')].find(b => /Choisir dans une liste/.test(b.textContent) && b.offsetParent); if (b) b.click(); return !!b; })) {
+      // Lapereau accueilli : « Choisis un habitat pour … » ; un joueur touche un habitat fléché, ou ouvre la liste.
+      log.push({clicked: 'Choisir dans une liste'});
     }
     else { log.push({noTarget: true}); }
     await page.waitForTimeout(700);

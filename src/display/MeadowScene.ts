@@ -552,6 +552,12 @@ export class MeadowScene extends Phaser.Scene {
     this.view.clamp();this.applyCamera();
   }
   setTutorialCell(cell: {x:number;y:number}|null): void { this.tutorialCell = cell; if(this.grid)this.drawGrid(); }
+  /** The guide's yellow square covers a whole 4 × 4 footprint: a tap anywhere inside it picks its corner, not the tapped cell
+   *  (tapping its middle used to answer « Cette case est occupée »). */
+  private snapToTutorialCell(cell: {x:number;y:number}): {x:number;y:number} {
+    const t = this.placement && !this.placement.cell ? this.tutorialCell : null;
+    return t && cell.x >= t.x && cell.x < t.x + FINE_GRID && cell.y >= t.y && cell.y < t.y + FINE_GRID ? {...t} : cell;
+  }
   private tutorialHand: Phaser.GameObjects.Graphics | null = null;
   /** The guide's arrow above the suggested cell while no cell is chosen: the yellow arrow of the rabbit move, without any emoji font. */
   private syncTutorialHand(): void {
@@ -1509,7 +1515,7 @@ export class MeadowScene extends Phaser.Scene {
       if (b && !habitatEntryReason(this.current!, b, this.purchase.species)) this.select({kind:'building',id:b.id});
       return;
     }
-    if (this.placement || (this.arrangement && this.ghost)) { this.select({kind:'fineCell',...fineCell(ground)}); return; }
+    if (this.placement || (this.arrangement && this.ghost)) { this.select({kind:'fineCell',...this.snapToTutorialCell(fineCell(ground))}); return; }
     let nearestBubble: (typeof this.bubbleHits)[number] | null = null, bubbleDistance = Infinity;
     for (const bubble of this.bubbles.visible && this.bubbles.alpha >= .65 ? this.bubbleHits : []) {
       const p = this.view.screen(bubble.point), dx = p.x - screen.x, dy = p.y - screen.y;

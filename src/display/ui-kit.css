@@ -47,10 +47,13 @@
 /* ── Buttons ──────────────────────────────────────────────────────────────────────────────────────────────────────
    One glossy pill per role, a nine-slice painted behind the label (the button keeps its own padding and size).
    Excluded: the HUD counters and tiles, painted scene objects, and rows that are picture cards. */
+/* The painted pill needs a positioned button, but at zero specificity: a button the game places itself (the tutorial's
+   Skip, the photo mode's Return, the save and cloud warnings) keeps its own fixed or absolute place. */
+:where(button:not(.resource, .meadow-nav, .meadow-tool, .kitchen-object, .breeding-row, .menu-recipe, .kit-bare, #player-progress, #open-missions)) { position: relative; }
 button:not(.resource, .meadow-nav, .meadow-tool, .kitchen-object, .breeding-row, .menu-recipe, .kit-bare, #player-progress, #open-missions) {
   --kit-skin: var(--kit-green);
   --kit-edge: var(--kit-edge-green);
-  position: relative; isolation: isolate;
+  isolation: isolate;
   min-height: 46px; padding: 10px 22px 12px;
   border: 0 !important; border-radius: 999px;
   background: none !important; box-shadow: none !important;
@@ -471,3 +474,13 @@ button:is([data-cuisine-exit], [data-sky-gifts-exit], [data-jump-rope-exit], [da
 /* They stay in the screen's top corners, where Paille's dialogue puts them (the kit's buttons are position: relative). */
 .paille-dialogue .paille-skip { position: absolute !important; top: max(12px, env(safe-area-inset-top)); right: max(16px, env(safe-area-inset-right)); }
 .paille-dialogue .paille-settings { position: absolute !important; top: max(12px, env(safe-area-inset-top)); left: max(16px, env(safe-area-inset-left)); }
+
+/* The tutorial's Skip sits in the bottom-left corner: the habitat-choice banners make room for it (right of it in landscape,
+   above it in portrait, where the banner fills the width). */
+body:has(#onboarding-skip:not([hidden])) .rabbit-move-banner:not([hidden]) { left: calc(50% + 64px); max-width: calc(100% - 152px); }
+@media (orientation: portrait) {
+  body:has(#onboarding-skip:not([hidden])) .rabbit-move-banner:not([hidden]) { left: 50%; max-width: calc(100% - 24px); bottom: calc(max(16px, env(safe-area-inset-bottom)) + 58px); }
+}
+
+/* « Croiser » keeps its one word on one line in the narrow portrait footer (it used to break into « Croise / r »). */
+#breeding-dialog button.breeding-launch { white-space: nowrap; padding-left: 10px; padding-right: 10px; }
