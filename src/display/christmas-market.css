@@ -130,3 +130,33 @@
   .christmas-candies { font-size: 15px; padding: 3px 10px; }
   #game-panel.christmas-market .christmas-tabs > button { min-height: 46px; }
 }
+
+/* « Missions de Noël » (owner, 7 November 2026: « on peut les voir qu'une par une »): the three challenges and the bonus as
+   small cards side by side, four in a row when there is room, two otherwise. */
+.christmas-missions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; align-items: stretch; }
+@media (max-width: 700px) { .christmas-missions { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+#game-panel .christmas-page .card.christmas-mission {
+  display: flex; flex-direction: column; gap: 5px; margin: 0; padding: 9px 10px 10px; border-radius: 14px; min-width: 0;
+}
+/* A plain holly-red title instead of the sage ribbon: the ribbon took half of a small card. */
+#game-panel .christmas-page .card.christmas-mission > h3 { width: auto; margin: 0; padding: 0; border: 0; border-image: none; box-shadow: none; color: #8a1d25; font-size: 15px; line-height: 1.15; }
+#game-panel .christmas-page .christmas-mission > p { margin: 0; font-size: 12.5px; line-height: 1.25; }
+.christmas-mission-meter { display: flex; align-items: center; gap: 6px; margin-top: auto; font-size: 13px; font-weight: 800; white-space: nowrap; }
+.christmas-mission-meter > progress { flex: 1 1 auto; min-width: 0; height: 10px; margin: 0; }
+#game-panel .christmas-page .christmas-mission > .christmas-mission-reward {
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 34px; margin: 0;
+  border-radius: 999px; background: #fff6dc; border: 2px dashed #e0c27a; font-size: 13px; font-weight: 800;
+}
+.christmas-mission-reward > img { width: 18px; height: 18px; object-fit: contain; }
+#game-panel .christmas-page .christmas-mission > button.mission-claim { min-height: 38px; margin: 0; padding: 4px 8px; font-size: 13.5px; line-height: 1.1; white-space: normal; }
+#game-panel .christmas-page .christmas-mission[data-mission-status='claimed'] { opacity: .7; }
+#game-panel.christmas-market .christmas-page > .christmas-intro { margin-bottom: 8px; text-align: center; }
+
+/* A phone held sideways: the balance is already in the title bar, so the banner gives its room to the cards. */
+@media (max-height: 500px) {
+  .christmas-banner { display: none; }
+  #game-panel.christmas-market .christmas-tabs { padding-bottom: 8px; }
+  #game-panel.christmas-market .christmas-tabs > button { min-height: 40px; }
+  #game-panel.christmas-market .christmas-page > .christmas-intro { display: none; }
+  #game-panel.christmas-market .panel-scroll { padding-top: 16px; }
+}

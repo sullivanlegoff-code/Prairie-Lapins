@@ -1554,24 +1554,33 @@ export class GameUI {
     }
     if (tab === 'missions') {
       add(node('p', 'Chaque jour, trois défis de Noël et un bonus rapportent des sucres d’orge.', 'small christmas-intro'));
-      // The Christmas challenges, like the daily missions: three a cycle, then the bonus.
+      // The Christmas challenges, like the daily missions: three a cycle, then the bonus. Small cards side by side, so a phone
+      // held sideways shows them all at once (owner, 7 November 2026): a bar and its count, then the reward until it can be claimed.
       const cycleStart = dailyCycleStart(s), shown = christmasChallengesOf(s), claimed = christmasClaimed(s);
+      const grid = node('div', '', 'christmas-missions'); add(grid);
+      const mission = (key: string, title: string, text: string, value: number, target: number, status: 'claimed' | 'ready' | 'pending', reward: number,
+        claimLabel: string, claimedLabel: string, claim: () => void, bonus = false) => {
+        const card = node('article', '', `card christmas-mission mission-day-card${bonus ? ' mission-bonus' : ''}`); card.dataset.christmasChallenge = key; card.dataset.missionStatus = status;
+        const bar = node('progress'); bar.max = target; bar.value = value; bar.setAttribute('aria-label', `Progression : ${value} sur ${target}`);
+        const meter = node('div', '', 'christmas-mission-meter'); meter.append(bar, node('span', `${value} / ${target}`));
+        card.append(node('h3', title), node('p', text), meter);
+        if (status === 'pending') {
+          const chip = node('p', ` +${candyAmount(reward)}`, 'christmas-mission-reward'), icon = document.createElement('img');
+          icon.src = CANDY_ICON_URL; icon.alt = ''; icon.width = 18; icon.height = 18; icon.onerror = () => { icon.hidden = true; }; chip.prepend(icon); card.append(chip);
+        } else {
+          const button = this.button(card, status === 'claimed' ? claimedLabel : claimLabel, claim, null); button.classList.add('mission-claim');
+          if (status === 'claimed') button.disabled = true;
+        }
+        grid.append(card);
+      };
       for (const id of shown) {
         const challenge = CHRISTMAS_CHALLENGES[id], value = Math.min(christmasProgress(s, id), challenge.target), done = claimed.includes(id), ready = christmasClaimable(s, id);
-        const card = this.card(challenge.title, challenge.description); card.dataset.christmasChallenge = id; card.dataset.missionStatus = done ? 'claimed' : ready ? 'ready' : 'pending';
-        card.classList.add('mission-day-card');
-        const bar = node('progress'); bar.max = challenge.target; bar.value = value; bar.setAttribute('aria-label', `Progression : ${value} sur ${challenge.target}`);
-        card.append(node('p', `Progression : ${value} / ${challenge.target}`), bar, node('p', `Récompense : ${candyAmount(challenge.candies)}`, 'small'));
-        this.button(card, done ? 'Récompense réclamée' : `Réclamer · +${candyAmount(challenge.candies)}`, () => this.execute({type: 'claimChristmasChallenge', id, cycleStart}, `+${candyAmount(challenge.candies)} !`),
-          done ? 'Déjà réclamée.' : !ready ? 'Défi à compléter.' : null).classList.add('mission-claim');
-        add(card);
+        mission(id, challenge.title, challenge.description, value, challenge.target, done ? 'claimed' : ready ? 'ready' : 'pending', challenge.candies,
+          `Réclamer · +${candyAmount(challenge.candies)}`, 'Récompense réclamée', () => this.execute({type: 'claimChristmasChallenge', id, cycleStart}, `+${candyAmount(challenge.candies)} !`));
       }
       const bonusDone = christmasBonusClaimed(s), bonusReady = christmasBonusReady(s) && !bonusDone, count = shown.filter(id => claimed.includes(id)).length;
-      const bonus = this.card(`Bonus des trois défis : +${candyAmount(CHRISTMAS_BONUS_CANDIES)}`, 'Réclame les trois défis de Noël pour recevoir ce bonus.'); bonus.dataset.christmasChallenge = 'bonus'; bonus.classList.add('mission-day-card', 'mission-bonus');
-      bonus.append(node('p', `Progression : ${count} / ${CHRISTMAS_PICK_COUNT}`));
-      this.button(bonus, bonusDone ? 'Bonus réclamé' : `Réclamer · +${candyAmount(CHRISTMAS_BONUS_CANDIES)}`, () => this.execute({type: 'claimChristmasBonus', cycleStart}, `Bonus de Noël : +${candyAmount(CHRISTMAS_BONUS_CANDIES)} !`),
-        bonusDone ? 'Déjà réclamé.' : !bonusReady ? 'Réclame d’abord les trois défis.' : null).classList.add('mission-claim');
-      add(bonus);
+      mission('bonus', 'Bonus des trois défis', 'Réclame les trois défis de Noël.', count, CHRISTMAS_PICK_COUNT, bonusDone ? 'claimed' : bonusReady ? 'ready' : 'pending', CHRISTMAS_BONUS_CANDIES,
+        `Réclamer · +${candyAmount(CHRISTMAS_BONUS_CANDIES)}`, 'Bonus réclamé', () => this.execute({type: 'claimChristmasBonus', cycleStart}, `Bonus de Noël : +${candyAmount(CHRISTMAS_BONUS_CANDIES)} !`), true);
       return;
     }
     // The Christmas rabbits: born only during the event, and also sold here, dearly (owner, 5 November 2026).
