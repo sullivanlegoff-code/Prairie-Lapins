@@ -1674,9 +1674,6 @@ export class GameUI {
     essential.append(this.stats([['Affection', `${r.affection} / ${waitsForEvolution(r) ? EVOLUTION_AFFECTION : BALANCE.maxAffection}`], ['Revenu', `${rabbitIncome(r.affection, r.species, individualIncomeRoll(r))} pattes / h`]]));
     const large = wearsCrown(r) ? crownPortrait(avatar(r, true), r) : avatar(r, true);
     overview.append(legendary ? legendaryPortrait(large, r.species) : large, essential); this.content.append(overview);
-    // The owner's description of the species: only here, on the rabbit's own sheet (owner, 5 November 2026).
-    const story = RABBIT_STORIES[r.species];
-    if (story) { const p = node('p', story, 'rabbit-story'); p.dir = 'auto'; p.dataset.rabbitStory = r.species; this.content.append(p); }
     this.attachCaress(large, r);
     const cost = feedCost(r.affection), onTrip = travelling(s, id), inCare = atSalon(s, id), reason = onTrip ? 'TRAVELING' as const : inCare ? 'AT_SALON' as const : feedReason(s, r);
     if (onTrip) essential.append(node('p', `En voyage ${toPlace(s.travel!.trips.find(t => t.rabbitId === id)!.destination)} · retour à l’agence`, 'badge rabbit-away'));
@@ -1692,7 +1689,9 @@ export class GameUI {
       const crowned = wearsCrown(r);
       this.button(essential, crowned ? 'Enlever la couronne' : 'Mettre la couronne', () => this.execute({type: 'toggleCrown', rabbitId: id}, crowned ? 'Couronne enlevée.' : 'Couronne mise !'), null, true).dataset.focus = 'crown';
     }
-    this.renderNickname(r);
+    // The owner's description of the species: only here, on the rabbit's own sheet (owner, 5 November 2026), to the right of
+    // the name in the same frame, as a quote (owner's choice « B · Citation », 7 November 2026).
+    this.renderNickname(r, RABBIT_STORIES[r.species]);
     const evolution = EVOLVED_ART.find(entry => entry.id === r.species);
     if (evolution) {
       const section = node('section', '', 'rabbit-evolution'); section.dataset.rabbitEvolution = r.id;
@@ -1769,12 +1768,14 @@ export class GameUI {
     this.content.append(box);
   }
   /** The personal name, in a box after the feeding action: the species stays in the title and the badge. Text only, never HTML. */
-  private renderNickname(r: Rabbit): void {
-    const box = node('section', '', 'rabbit-nickname'); box.dataset.rabbitNickname = r.id;
-    box.append(node('p', 'Nom personnel', 'small'), node('p', r.name ?? 'Sans nom', r.name ? 'rabbit-nickname-name' : 'rabbit-nickname-name empty'));
+  private renderNickname(r: Rabbit, story?: string): void {
+    const box = node('section', '', 'rabbit-nickname'), identity = node('div', '', 'rabbit-nickname-id'); box.dataset.rabbitNickname = r.id;
+    identity.append(node('p', 'Nom personnel', 'small'), node('p', r.name ?? 'Sans nom', r.name ? 'rabbit-nickname-name' : 'rabbit-nickname-name empty'));
+    box.append(identity);
+    if (story) { const p = node('p', story, 'rabbit-story'); p.dir = 'auto'; p.dataset.rabbitStory = r.species; box.append(p); box.classList.add('with-story'); }
     const draft = this.rename?.id === r.id ? this.rename : null;
     if (!draft) {
-      this.button(box, r.name ? 'Modifier le nom' : 'Donner un nom', () => {
+      this.button(identity, r.name ? 'Modifier le nom' : 'Donner un nom', () => {
         this.rename = {id: r.id, text: r.name ?? '', caret: (r.name ?? '').length, error: null}; this.render();
         this.content.querySelector<HTMLInputElement>('input[data-focus="rabbit-name"]')?.focus();
       }, null, true);
@@ -1797,7 +1798,7 @@ export class GameUI {
     input.addEventListener('select', () => { draft.caret = input.selectionStart ?? draft.caret; });
     refreshHints(); form.append(input, count, problem);
     this.button(form, 'Enregistrer', save); this.button(form, 'Annuler', cancel, null, true);
-    box.append(form); this.content.append(box);
+    identity.append(form); this.content.append(box);
   }
   private beginRabbitMove(id: string): void {
     const s = this.controller.getSnapshot().state;
