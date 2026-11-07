@@ -31,6 +31,13 @@ export const SNOWBALL_ART = {
 
 /** The sucre d'orge icon of the Christmas market and its balance (an <img>, hidden while the picture is missing). */
 export const CANDY_ICON_URL = `${base}sucre-orge.png`;
+/** The same icon on the island (the coin bubble's reward, rising above the habitat). */
+export const CANDY_TEXTURE = 'noel-sucre-orge';
+/**
+ * The coin bubble's logo while the event is on (owner's choice C « le panier enneigé », 7 November 2026): a basket of coins with a
+ * sucre d'orge, drawn `world` high above the habitat, without the amount. Prepared by scripts/prepare-noel-extras-art.mjs.
+ */
+export const COIN_BASKET_ART = {texture: 'noel-bulle-panier', url: `${base}bulle-panier.png`, world: 50} as const;
 
 /** « Les cadeaux du ciel »: the painted night backdrop, the sleigh, the rabbit's basket and the four presents. */
 export const SKY_GIFTS_ART = {

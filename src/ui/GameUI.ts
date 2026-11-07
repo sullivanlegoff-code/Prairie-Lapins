@@ -386,6 +386,7 @@ export class GameUI {
     document.getElementById('tutorial-toggle')!.textContent = this.preferences.value.tutorial && !this.preferences.value.tutorialDone ? 'Quitter le guidage' : 'Reprendre le guidage';
   }
   private notice(message: string): void {
+    if (!message) return; // Nothing to say (the island shows the reward itself).
     if (!this.toast.hidden && this.toast.dataset.message === message) return;
     this.toast.classList.remove('mission-reward');
     this.toast.dataset.message = message; setCurrencyText(this.toast, message); this.toast.hidden = false; window.clearTimeout(this.toastTimer);
@@ -397,11 +398,15 @@ export class GameUI {
     if (reason) { const explanation = node('p', reason, 'reason'); explanation.id = `action-reason-${++this.reasonId}`; button.setAttribute('aria-describedby', explanation.id); parent.append(explanation); }
     return button;
   }
-  /** A habitat's coins, and at Christmas the sucres d'orge its coin bubble held. */
-  private collectIncome(id: string): void {
+  /**
+   * A habitat's coins, and at Christmas the sucres d'orge its coin bubble held. From the bubble (`bubble`), the amounts rise above
+   * the habitat instead of a message (owner, 7 November 2026); from the habitat's sheet, the message stays.
+   */
+  private collectIncome(id: string, bubble = false): void {
     const before = this.snapshot.state ? candiesOf(this.snapshot.state) : 0;
     this.execute({type: 'collectIncome', id}, value => {
       const after = this.controller.getSnapshot().state, candies = after ? candiesOf(after) - before : 0;
+      if (bubble) { this.scene.playIncomeCollect?.(id, Number(value), candies); return ''; }
       return `+ ${value} pattes${candies > 0 ? ` · +${candyAmount(candies)}` : ''}`;
     });
   }
@@ -780,7 +785,7 @@ export class GameUI {
       }
       return;
     }
-    if (selection.kind === 'income') { this.collectIncome(selection.id); return; }
+    if (selection.kind === 'income') { this.collectIncome(selection.id, true); return; }
     if (selection.kind === 'grass') { this.execute({type: 'collectOrder', id: selection.id}, value => `+ ${value} nourriture`); return; }
     if (selection.kind === 'birth') { this.sendBirth(selection.id); return; }
     // « Prêt ! » is a signal only: it shows the nursery and its panel; each baby is welcomed from its own card.

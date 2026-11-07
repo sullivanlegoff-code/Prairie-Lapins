@@ -32,6 +32,8 @@ export const NOEL_EXTRAS = [
   {name: 'debris-buisson', kind: 'buildings', max: 256},
   {name: 'obstacle-foin', kind: 'benny-envol', max: 768},
   {name: 'fond-envol', kind: 'benny-envol', max: 1024, opaque: true},
+  // The coin bubble's logo at Christmas (owner's choice C « le panier enneigé », 7 November 2026, output/imagegen/bulles-v1/).
+  {name: 'bulle-panier', kind: 'noel', max: 160},
 ];
 const write = (path, bytes) => { mkdirSync(dirname(path), {recursive: true}); writeFileSync(path, bytes); };
 const fit = (img, max) => { const s = Math.min(1, max / Math.max(img.width, img.height)); return s >= 1 ? img : resize(img, Math.max(1, Math.round(img.width * s)), Math.max(1, Math.round(img.height * s))); };
