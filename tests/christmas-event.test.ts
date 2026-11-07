@@ -2,15 +2,17 @@ import {describe, expect, it, vi} from 'vitest';
 import {act, advance, createGame, decodeGame, encodeGame} from '../src/simulation';
 import {HOUR} from '../src/config/balance';
 import {MISSION_CYCLE_DURATION} from '../src/config/missions';
-import {CHRISTMAS_CHALLENGES, CHRISTMAS_CHALLENGE_IDS, MAX_CANDIES, SKY_GIFTS, type ChristmasChallengeId} from '../src/config/christmasEvent';
+import {COIN_BUBBLE_CANDIES, CHRISTMAS_CHALLENGES, CHRISTMAS_CHALLENGE_IDS, MAX_CANDIES, SKY_GIFTS, type ChristmasChallengeId} from '../src/config/christmasEvent';
 import {ALL_DECORATION_IDS, CHRISTMAS_DECORATION_IDS, DECORATIONS, DECORATION_IDS, ownedDecorationResalePrice} from '../src/config/decorations';
-import {candiesOf, christmasChallengeAvailable, christmasChallengesFor, christmasChallengesOf, christmasProgress, pickChristmasChallenges, skyGiftsDay, snowmanQuote, snowmanToday} from '../src/simulation/christmas';
+import {bubbleCandiesToday, candiesOf, christmasChallengeAvailable, christmasChallengesFor, christmasChallengesOf, christmasProgress, pickChristmasChallenges, skyGiftsDay, snowmanQuote, snowmanToday} from '../src/simulation/christmas';
 import {dailyCycleStart} from '../src/simulation/missions';
 import {cumulativeLevelXp} from '../src/simulation/progression';
 import {buildingPlacementReason} from '../src/simulation/placement';
 import {catalogDecorationPlacementReason} from '../src/simulation/decorations';
 import {fingerprint} from '../src/cloud/sync';
 import {emptyBuilding} from '../src/state/initial';
+import {habitatStats} from '../src/simulation/habitats';
+import {INCOME_BUBBLE_THRESHOLD} from '../src/config/visual';
 import type {Command, GameState} from '../src/state/types';
 
 const DAY = MISSION_CYCLE_DURATION;
@@ -97,12 +99,14 @@ describe('Christmas challenges: counting and claims', () => {
     s = run(s, {type: 'collectIncome', id: home}).state; expect(christmasProgress(s, 'collect')).toBe(150);
     s = run(s, {type: 'rewardSkyGifts', rabbitId: ids[2], caught: 4}).state; expect(christmasProgress(s, 'sky-gifts')).toBe(1);
     const xp = s.progression.totalXp, daily = structuredClone(s.missions.daily);
-    s = run(s, claim(s, 'feed')).state; expect(candiesOf(s)).toBe(4);
+    // 150 pattes show no coin bubble; the game's 4 gifts give 1 sucre d'orge.
+    expect(candiesOf(s)).toBe(1);
+    s = run(s, claim(s, 'feed')).state; expect(candiesOf(s)).toBe(5);
     refused(s, claim(s, 'feed'), 'ALREADY_CLAIMED');
     refused(s, {type: 'claimChristmasBonus', cycleStart: dailyCycleStart(s)}, 'NOT_READY');
-    s = run(s, claim(s, 'collect')).state; s = run(s, claim(s, 'sky-gifts')).state; expect(candiesOf(s)).toBe(14);
+    s = run(s, claim(s, 'collect')).state; s = run(s, claim(s, 'sky-gifts')).state; expect(candiesOf(s)).toBe(15);
     const bonus = run(s, {type: 'claimChristmasBonus', cycleStart: dailyCycleStart(s)});
-    expect(bonus.value).toBe(10); s = bonus.state; expect(candiesOf(s)).toBe(24); expect(s.christmas!.bonusClaimed).toBe(true);
+    expect(bonus.value).toBe(20); s = bonus.state; expect(candiesOf(s)).toBe(35); expect(s.christmas!.bonusClaimed).toBe(true);
     refused(s, {type: 'claimChristmasBonus', cycleStart: dailyCycleStart(s)}, 'ALREADY_CLAIMED');
     // No XP, and the claims are not events of the daily missions.
     expect(s.progression.totalXp).toBe(xp); expect(bonus.progressionGain).toBeUndefined();
@@ -133,16 +137,17 @@ describe('Christmas challenges: counting and claims', () => {
     const [p, q] = b.rabbits.filter(r => r.affection >= 2).map(r => r.id);
     b = run(b, {type: 'breed', parents: [p, q]}).state; expect(christmasProgress(b, 'breed')).toBe(1);
   });
-  it('earns sucres d’orge only from the challenges and their bonus', () => {
+  it('earns sucres d’orge from the challenges, the coin bubbles and the mini-game only', () => {
     const {s: start, ids, home} = setup();
     const base = run(start, {type: 'claimHearts'}, start.nextHeartGiftAt).state;
     let s = withChallenges(base, ['snowman', 'breed', 'pet']);
     s = run(s, {type: 'feed', id: ids[0]}).state;
     s.buildings.find(b => b.id === home)!.incomeUnits = 300 * HOUR; s = run(s, {type: 'collectIncome', id: home}).state;
+    expect(candiesOf(s)).toBe(1);
     s = run(s, {type: 'rewardSkyGifts', rabbitId: ids[0], caught: 50}).state;
-    expect(candiesOf(s)).toBe(0);
-    s = run(s, {type: 'buildSnowman', enclosureId: home}).state; expect(candiesOf(s)).toBe(0);
-    s = run(s, claim(s, 'snowman')).state; expect(candiesOf(s)).toBe(6);
+    expect(candiesOf(s)).toBe(11);
+    s = run(s, {type: 'buildSnowman', enclosureId: home}).state; expect(candiesOf(s)).toBe(11);
+    s = run(s, claim(s, 'snowman')).state; expect(candiesOf(s)).toBe(17);
   });
   it('refuses a balance beyond its bound', () => {
     const {s: base, home} = setup();
@@ -187,7 +192,42 @@ describe('the snowman', () => {
   });
 });
 
+describe('the coin bubbles at Christmas', () => {
+  const cap = (s: GameState, id: string) => habitatStats(s.buildings.find(b => b.id === id)!).cap;
+  const collect = (s: GameState, id: string, amount: number, now = s.lastSimulatedAt) => {
+    s.buildings.find(b => b.id === id)!.incomeUnits = amount * HOUR; return run(s, {type: 'collectIncome', id}, now).state;
+  };
+  it('gives 1 sucre d’orge for a coin bubble, 2 for a full habitat, nothing without a bubble, never XP', () => {
+    const {s: base, home} = setup();
+    let s = collect(base, home, INCOME_BUBBLE_THRESHOLD - 1); expect(candiesOf(s)).toBe(0);
+    s = collect(s, home, INCOME_BUBBLE_THRESHOLD); expect(candiesOf(s)).toBe(COIN_BUBBLE_CANDIES.perBubble);
+    const xp = s.progression.totalXp;
+    s = collect(s, home, cap(s, home)); expect(candiesOf(s)).toBe(COIN_BUBBLE_CANDIES.perBubble + COIN_BUBBLE_CANDIES.full);
+    expect(s.progression.totalXp).toBe(xp);
+    // A small habitat that is full shows its bubble below the threshold.
+    const small = setup(); const b = small.s.buildings.find(x => x.id === small.home)!;
+    b.habitat = {type: 'feu', level: 1}; expect(cap(small.s, small.home)).toBeLessThan(INCOME_BUBBLE_THRESHOLD);
+    expect(candiesOf(collect(small.s, small.home, cap(small.s, small.home)))).toBe(COIN_BUBBLE_CANDIES.full);
+  });
+  it('stops at the daily limit and starts again the next cycle, and the save keeps it', () => {
+    const {s: base, home} = setup();
+    let s = base;
+    for (let i = 0; i < COIN_BUBBLE_CANDIES.maxPerCycle; i++) s = collect(s, home, cap(s, home));
+    expect(candiesOf(s)).toBe(COIN_BUBBLE_CANDIES.maxPerCycle); expect(bubbleCandiesToday(s, 0)).toBe(COIN_BUBBLE_CANDIES.maxPerCycle);
+    const loaded = decodeGame(encodeGame(s)); expect(loaded.ok && loaded.state.christmas!.bubbles).toEqual(s.christmas!.bubbles);
+    const later = advance(s, DAY); expect(bubbleCandiesToday(later, DAY)).toBe(0);
+    expect(candiesOf(collect(later, home, cap(later, home), DAY))).toBe(COIN_BUBBLE_CANDIES.maxPerCycle + COIN_BUBBLE_CANDIES.full);
+  });
+});
+
 describe('the mini-game « Les cadeaux du ciel »', () => {
+  it('pays 1 sucre d’orge per 3 gifts, at most 10, in the three rewarded games only', () => {
+    const {s: base, ids} = setup();
+    let s = run(base, {type: 'rewardSkyGifts', rabbitId: ids[0], caught: 2}).state; expect(candiesOf(s)).toBe(0);
+    s = run(s, {type: 'rewardSkyGifts', rabbitId: ids[0], caught: 17}).state; expect(candiesOf(s)).toBe(5);
+    s = run(s, {type: 'rewardSkyGifts', rabbitId: ids[0], caught: 90}).state; expect(candiesOf(s)).toBe(5 + SKY_GIFTS.maxCandies);
+    s = run(s, {type: 'rewardSkyGifts', rabbitId: ids[0], caught: 90}).state; expect(candiesOf(s)).toBe(5 + SKY_GIFTS.maxCandies);
+  });
   it('pays 2 pattes a gift up to 60 for three games a cycle, never XP, and keeps the record', () => {
     const {s: base, ids} = setup();
     let s = base;
@@ -275,7 +315,7 @@ describe('the save (v26)', () => {
   it('round-trips the Christmas state and decorations', () => {
     const {s} = festive();
     const raw = JSON.parse(encodeGame(s)); expect(raw.version).toBe(27);
-    expect(raw.christmas).toMatchObject({candies: 246, claimed: ['snowman'], snowman: {cycle: 0}, skyGifts: {cycle: 0, rewarded: 1, best: 12}});
+    expect(raw.christmas).toMatchObject({candies: 250, claimed: ['snowman'], snowman: {cycle: 0}, skyGifts: {cycle: 0, rewarded: 1, best: 12}});
     expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: s});
   });
   it('migrates a v25 save without anything to convert', () => {
@@ -307,7 +347,7 @@ describe('the save (v26)', () => {
     const raw = JSON.parse(encodeGame(s)); raw.christmas.snowman.enclosureId = 'building-999';
     const loaded = decodeGame(JSON.stringify(raw));
     expect(loaded.ok && loaded.state.christmas!.snowman).toBeUndefined();
-    expect(loaded.ok && loaded.state.christmas!.candies).toBe(246);
+    expect(loaded.ok && loaded.state.christmas!.candies).toBe(250);
     expect(home).toBeDefined();
   });
   it('lets the cloud save see the sucres d’orge, the snowman and the mini-game, not the passive draw', () => {
@@ -335,6 +375,9 @@ describe('when the event is over', () => {
       offline({type: 'rewardSkyGifts', rabbitId: ids[0], caught: 3}, 'EVENT_OVER');
       offline({type: 'buyChristmasDecoration', catalogId: 'gift-pile'}, 'EVENT_OVER');
       offline({type: 'claimChristmasBonus', cycleStart: 0}, 'EVENT_OVER');
+      const rich = structuredClone(s); rich.buildings.find(b => b.id === home)!.incomeUnits = 400 * HOUR;
+      const collected = sim.act(rich, {type: 'collectIncome', id: home}, 0, () => 0);
+      expect(collected.ok && collected.state.christmas).toBeUndefined();
       const fed = sim.act(withChallenges(structuredClone(s), ['sky-gifts', 'feed', 'collect']), {type: 'feed', id: ids[0]}, 0, () => 0);
       expect(fed.ok && fed.state.christmas!.progress).toEqual({});
       expect(sim.advance(s, DAY).christmas).toBeUndefined();

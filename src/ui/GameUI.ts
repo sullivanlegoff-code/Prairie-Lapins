@@ -260,9 +260,11 @@ export class GameUI {
     best: () => this.controller.getSnapshot().state?.jumpRope?.best ?? 0, cheer: () => this.sounds.ping(), tick: () => this.sounds.tick(),
     challengeText: () => { const state = this.controller.getSnapshot().state; return state ? jumpRopeChallengeText(state, this.now()) : ''; }, onExit: () => this.render()});
     this.skyGifts = mountSkyGiftsActivity(document.getElementById('app')!, {onFinished: (rabbit, caught) => {
-      const granted = this.controller.perform({type: 'rewardSkyGifts', rabbitId: rabbit.id, caught});
+      const before = this.controller.getSnapshot().state, granted = this.controller.perform({type: 'rewardSkyGifts', rabbitId: rabbit.id, caught});
       if (!granted.ok) return `Récompense non enregistrée : ${REFUSALS[granted.reason]}`;
-      return Number(granted.value) > 0 ? `+${granted.value} pattes` : caught ? 'Partie pour le plaisir : plus de récompense aujourd’hui' : '';
+      const candies = before ? candiesOf(granted.state) - candiesOf(before) : 0;
+      const parts = [...(Number(granted.value) > 0 ? [`+${granted.value} pattes`] : []), ...(candies > 0 ? [`+${candyAmount(candies)}`] : [])];
+      return parts.length ? parts.join(' · ') : caught ? 'Partie pour le plaisir : plus de récompense aujourd’hui' : '';
     }, quotaText: () => { const state = this.controller.getSnapshot().state; return state ? skyGiftsQuotaText(state, this.now()) : ''; },
     best: () => this.controller.getSnapshot().state?.christmas?.skyGifts?.best ?? 0, cheer: () => this.sounds.ping(), onExit: () => this.render()});
     this.bennyFlight = mountBennyFlightActivity(document.getElementById('app')!, {onFinished: passed => {
@@ -394,6 +396,14 @@ export class GameUI {
     button.onclick = action; parent.append(button);
     if (reason) { const explanation = node('p', reason, 'reason'); explanation.id = `action-reason-${++this.reasonId}`; button.setAttribute('aria-describedby', explanation.id); parent.append(explanation); }
     return button;
+  }
+  /** A habitat's coins, and at Christmas the sucres d'orge its coin bubble held. */
+  private collectIncome(id: string): void {
+    const before = this.snapshot.state ? candiesOf(this.snapshot.state) : 0;
+    this.execute({type: 'collectIncome', id}, value => {
+      const after = this.controller.getSnapshot().state, candies = after ? candiesOf(after) - before : 0;
+      return `+ ${value} pattes${candies > 0 ? ` · +${candyAmount(candies)}` : ''}`;
+    });
   }
   private execute(command: Command, success: string | ((value?: string | number) => string), after?: (value?: string | number) => void): void {
     this.gate.run(JSON.stringify(command), () => {
@@ -770,7 +780,7 @@ export class GameUI {
       }
       return;
     }
-    if (selection.kind === 'income') { this.execute({type: 'collectIncome', id: selection.id}, value => `+ ${value} pattes`); return; }
+    if (selection.kind === 'income') { this.collectIncome(selection.id); return; }
     if (selection.kind === 'grass') { this.execute({type: 'collectOrder', id: selection.id}, value => `+ ${value} nourriture`); return; }
     if (selection.kind === 'birth') { this.sendBirth(selection.id); return; }
     // « Prêt ! » is a signal only: it shows the nursery and its panel; each baby is welcomed from its own card.
@@ -1198,7 +1208,7 @@ export class GameUI {
       this.content.append(node('p', `${habitatName(b)} · ${HABITATS[b.habitat!.type].accepted} · niveau ${b.habitat!.level}`, 'badge'));
       this.content.append(this.stats([['Occupants', `${residents.length} / ${stats.capacity} places`], ['Stock', `${income} / ${stats.cap} pattes`], ['Revenu', `${residents.reduce((sum, r) => sum + rabbitIncome(r.affection, r.species, individualIncomeRoll(r)), 0)} pattes / h`]]));
       if (income >= stats.cap) this.content.append(node('p', 'Stock plein : récolte pour relancer les revenus.', 'reason'));
-      this.button(this.content, `Récolter ${income} pattes`, () => this.execute({type: 'collectIncome', id}, value => `+ ${value} pattes`), income < 1 ? 'La récolte sera disponible à partir d’une pièce.' : null);
+      this.button(this.content, `Récolter ${income} pattes`, () => this.collectIncome(id), income < 1 ? 'La récolte sera disponible à partir d’une pièce.' : null);
       this.renderPicnic(s, id);
       if (christmasActive()) this.renderSnowman(s, id);
       if (b.habitat!.level < 3) {
@@ -1511,7 +1521,7 @@ export class GameUI {
     const balance = node('p', '', 'christmas-candies'); balance.dataset.christmasCandies = String(candies);
     const icon = document.createElement('img'); icon.className = 'candy-icon'; icon.src = CANDY_ICON_URL; icon.alt = 'Sucre d’orge'; icon.width = 24; icon.height = 24; icon.onerror = () => { icon.hidden = true; };
     balance.append(icon, document.createTextNode(` ${candyAmount(candies)}`));
-    words.append(node('p', 'Bienvenue au marché ! Réussis les défis de Noël pour gagner des sucres d’orge, puis échange-les contre des récompenses spéciales.', 'christmas-banner-lead'), balance);
+    words.append(node('p', 'Bienvenue au marché ! Gagne des sucres d’orge avec les défis de Noël, les bulles de pièces de tes enclos et les cadeaux du ciel, puis échange-les contre des récompenses spéciales.', 'christmas-banner-lead'), balance);
     banner.append(picture, words); this.content.append(banner);
     const tabs = node('div', '', 'tabs christmas-tabs'); tabs.setAttribute('role', 'tablist');
     for (const [key, label, art] of CHRISTMAS_MARKET_TABS) {
@@ -1545,7 +1555,7 @@ export class GameUI {
         const item = node('span', text), img = document.createElement('img'); img.src = url; img.alt = ''; img.width = 44; img.height = 44; img.onerror = () => { img.hidden = true; }; item.prepend(img); traps.append(item);
       }
       game.append(node('h3', 'Les cadeaux du ciel'),
-        node('p', `Le traîneau lâche des cadeaux : attrape-les avec la hotte de ton lapin, mais laisse tomber les cadeaux empoisonnés et les bombes ! Tes ${SKY_GIFTS.rewardedGamesPerCycle} premières parties du jour rapportent des pattes.`),
+        node('p', `Le traîneau lâche des cadeaux : attrape-les avec la hotte de ton lapin, mais laisse tomber les cadeaux empoisonnés et les bombes ! Tes ${SKY_GIFTS.rewardedGamesPerCycle} premières parties du jour rapportent des pattes et des sucres d’orge (1 tous les ${SKY_GIFTS.giftsPerCandy} cadeaux).`),
         traps, node('p', skyGiftsQuotaText(s, now), 'badge'));
       if (day.best) game.append(node('p', `Ton record : ${day.best} cadeau${day.best > 1 ? 'x' : ''}`, 'small'));
       this.button(game, 'Jouer aux cadeaux du ciel', () => { this.skyGiftsPick = true; this.render(); }, s.rabbits.length ? null : 'Il te faut un lapin pour porter la hotte.').dataset.skyGiftsPlay = '';

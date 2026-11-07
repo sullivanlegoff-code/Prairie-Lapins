@@ -155,6 +155,8 @@ export interface ChristmasState {
   claimed?: ChristmasChallengeId[]; bonusClaimed?: true;
   snowman?: {cycle: number; enclosureId: string};
   skyGifts?: {cycle: number; rewarded: number; best: number};
+  /** Sucres d'orge earned from coin bubbles in gift cycle `cycle` (at most COIN_BUBBLE_CANDIES.maxPerCycle). */
+  bubbles?: {cycle: number; earned: number};
 }
 /** Two rabbits turn the rope, the athlete jumps. */
 export interface JumpRopeTeam {carriers: [string, string]; athlete: string}

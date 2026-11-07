@@ -290,16 +290,16 @@
       "pattes": {
         "gainPerDay": {
           "collectIncome": 7950,
-          "rewardCuisine": 44,
+          "rewardCuisine": 33,
           "claimDailyMission": 56,
-          "claimMainMission": 25
+          "claimMainMission": 28
         },
         "spendPerDay": {
-          "startCare:massage": 3540,
-          "picnic": 880,
+          "startCare:massage": 4150,
+          "picnic": 780,
           "startOrder": 3400
         },
-        "netPerDay": 255
+        "netPerDay": -263
       },
       "hearts": {
         "gainPerDay": {
@@ -319,104 +319,92 @@
         "gainPerDay": {
           "collectOrder": 3880,
           "claimDailyMission": 18,
-          "rewardCuisine": 3,
-          "release": 47,
-          "claimMainMission": 13,
-          "claimTrip": 182,
-          "claimDailyBonus": 5
+          "rewardCuisine": 2,
+          "release": 42,
+          "claimMainMission": 14,
+          "claimTrip": 183,
+          "claimDailyBonus": 7
         },
         "spendPerDay": {
-          "feed": 4200
+          "feed": 4229
         },
-        "netPerDay": -53
+        "netPerDay": -83
       },
       "xp": {
         "gainPerDay": {
           "claimDailyMission": 100,
-          "claimCare": 129,
-          "welcome": 109,
-          "picnic": 29,
-          "breed": 11,
+          "claimCare": 132,
+          "welcome": 107,
+          "picnic": 26,
+          "breed": 10,
           "feed": 89,
-          "claimDailyBonus": 27,
+          "claimDailyBonus": 33,
           "claimMainMission": 3
         },
         "spendPerDay": {},
-        "netPerDay": 496
+        "netPerDay": 501
       },
       "stock": {
         "heartsAverage": 212,
-        "heartsEnd": 314,
-        "pattesAverage": 16121,
-        "grassAverage": 1424
+        "heartsEnd": 313,
+        "pattesAverage": 12279,
+        "grassAverage": 1513
       }
     },
     "61-70": {
       "pattes": {
         "gainPerDay": {
-          "collectIncome": 9233,
-          "claimDailyMission": 72,
-          "rewardCuisine": 93,
-          "claimMainMission": 18
+          "collectIncome": 7950,
+          "claimDailyMission": 26,
+          "rewardCuisine": 5
         },
         "spendPerDay": {
-          "startCare:massage": 2940,
-          "picnic": 990,
-          "startOrder": 3358,
-          "expand": 2500,
-          "upgradeHabitat": 50,
-          "startCare:bath": 55,
-          "buyBuilding:enclosure": 180
+          "startCare:massage": 3180,
+          "picnic": 870,
+          "startOrder": 3400
         },
-        "netPerDay": -657
+        "netPerDay": 531
       },
       "hearts": {
         "gainPerDay": {
           "claimHearts": 3,
           "claimCare": 4,
-          "claimDailyBonus": 1,
-          "claimTrip": 3,
-          "rewardCuisine": 1,
-          "claimMainMission": 0,
-          "breed": 0
+          "claimTrip": 1,
+          "rewardCuisine": 0
         },
         "spendPerDay": {},
-        "netPerDay": 12
+        "netPerDay": 8
       },
       "grass": {
         "gainPerDay": {
-          "collectOrder": 3831,
-          "claimDailyMission": 21,
-          "claimDailyBonus": 8,
-          "claimTrip": 198,
-          "release": 23,
-          "rewardCuisine": 6,
-          "claimMainMission": 9
+          "collectOrder": 3880,
+          "claimDailyMission": 12,
+          "claimTrip": 75,
+          "release": 5,
+          "rewardCuisine": 0
         },
         "spendPerDay": {
-          "feed": 4092
+          "feed": 3892
         },
-        "netPerDay": 3
+        "netPerDay": 80
       },
       "xp": {
         "gainPerDay": {
-          "claimDailyMission": 120,
-          "claimCare": 124,
-          "picnic": 33,
-          "feed": 82,
-          "breed": 14,
-          "claimDailyBonus": 40,
-          "welcome": 99,
-          "buyBuilding:enclosure": 12
+          "claimDailyMission": 45,
+          "claimCare": 131,
+          "picnic": 29,
+          "feed": 38,
+          "welcome": 15,
+          "breed": 2
         },
         "spendPerDay": {},
-        "netPerDay": 523
+        "netPerDay": 259
       },
       "stock": {
-        "heartsAverage": 374,
-        "heartsEnd": 436,
-        "pattesAverage": 10193,
-        "grassAverage": 2293
+        "heartsAverage": 360,
+        "heartsEnd": 396,
+        "pattesAverage": 16472,
+        "grassAverage": 2522
       }
     }
   },
@@ -437,11 +425,12 @@
     "paille",
     "neige",
     "icy",
+    "frisket",
     "feu",
     "snk",
     "bouyoyo"
   ],
-  "dailyBonusClaims": 19,
+  "dailyBonusClaims": 16,
   "affection20to50": {
     "rabbit": "rabbit-2",
     "species": "paille",
@@ -451,7 +440,7 @@
     "affectionDay60": 50,
     "finalAffection": 50
   },
-  "fastest20to50": 19.792,
+  "fastest20to50": 18.292,
   "method": "Seed 20261025; real act/advance; 3 sessions/day at 08/13/20, <=45 commands and <=8 meals/session; two farms, each sowing the best-liked unlocked crop ripe by the next visit; each farm goes to level 3 (fancy crops) from player level 20 once 63 000 pattes are in hand; pattes saved for the next coin goal (salon, next extension allowed by the level, farm level 3); save Hearts two levels ahead for each statue (60 Hearts at level 15, 100 at level 22) plus six in reserve; food kept for the most loved rabbit waiting at a wall (29 -> 30, 49 -> 50); collection-first parent pairs; no paid recipes; daily routine: the harvest and breeding missions claimed when shown and done; while a rabbit needs the 3-day streak, every shown mission once done and the cycle bonus; caresses on three rabbits when that mission is shown; the travel agency at level 8 with 1 500 pattes, a trip for each rabbit that still needs one (no other trip); one Cuisine recipe for a commis or taster that still needs it; the jump-rope islet once a rabbit needs a « corde » challenge and 75 000 pattes plus the coin goal are in hand (25 jumps); every rabbit evolved as soon as it can; Salon de soins bought at level 12 with 5 500 pattes in hand, one care per session for the most loved rabbit that may receive a gift (massage with 3 000 pattes left in hand, else bath), one picnic a day in the enclosure where the most rabbits gain (500 pattes kept); Hearts for permanent farm, agency and habitat upgrades after the statue reserve. No Paille counter (removed on 5 November 2026); `--sessions=5` replays five sessions of 10 minutes a day (90 commands, 12 meals). Tutorial is the first session.",
   "curve": {
     "initialLevel": 1,
@@ -1288,7 +1277,7 @@
         "rabbit-7": 50,
         "birth-16": 50,
         "birth-17": 30,
-        "rabbit-27": 28,
+        "rabbit-27": 27,
         "birth-28": 14,
         "birth-30": 14,
         "rabbit-31": 14,
@@ -1329,12 +1318,12 @@
         "birth-139": 14,
         "birth-151": 14,
         "birth-166": 14,
-        "birth-169": 6,
+        "birth-169": 8,
         "birth-170": 2,
         "birth-171": 1
       },
-      "pattes": 13598,
-      "grass": 1999,
+      "pattes": 11048,
+      "grass": 2449,
       "hearts": 171,
       "level": 27,
       "species": 37,
@@ -1501,9 +1490,9 @@
         "rabbit-7": 50,
         "birth-16": 50,
         "birth-17": 30,
-        "rabbit-27": 43,
-        "birth-28": 33,
-        "birth-30": 19,
+        "rabbit-27": 42,
+        "birth-28": 34,
+        "birth-30": 15,
         "rabbit-31": 14,
         "birth-34": 14,
         "rabbit-35": 14,
@@ -1515,16 +1504,14 @@
         "birth-50": 14,
         "birth-52": 14,
         "birth-54": 14,
-        "birth-57": 14,
+        "birth-60": 14,
         "birth-61": 14,
         "birth-62": 14,
         "birth-72": 14,
         "birth-81": 14,
-        "birth-82": 14,
         "birth-85": 14,
         "birth-86": 14,
         "birth-102": 14,
-        "birth-106": 14,
         "birth-121": 14,
         "birth-122": 14,
         "birth-127": 14,
@@ -1543,14 +1530,16 @@
         "birth-174": 14,
         "birth-177": 14,
         "birth-179": 14,
-        "birth-180": 14,
-        "birth-190": 8
+        "birth-183": 14,
+        "birth-184": 11,
+        "birth-186": 14,
+        "birth-188": 4
       },
-      "pattes": 20148,
-      "grass": 479,
-      "hearts": 314,
+      "pattes": 12373,
+      "grass": 29,
+      "hearts": 313,
       "level": 28,
-      "species": 40,
+      "species": 41,
       "affection": {
         "≥10": 47,
         "≥15": 7,
@@ -1598,7 +1587,8 @@
         "dadi",
         "rennes",
         "gigi-rarafe",
-        "dragon"
+        "lapin-de-sulli",
+        "dinenette"
       ],
       "storedPattes": 2650,
       "remaining": {
@@ -1609,11 +1599,10 @@
         "kitchen": false,
         "habitatUpgrades": 14,
         "paidRecipes": [
+          "dragon",
           "maxou",
           "dinono",
-          "dinenette",
           "calinou",
-          "lapin-de-sulli",
           "requin",
           "ankylosaure",
           "arkoko"
@@ -1707,42 +1696,43 @@
         "discover-dadi",
         "discover-rennes",
         "discover-gigi-rarafe",
-        "discover-dragon",
+        "discover-lapin-de-sulli",
+        "discover-dinenette",
         "evolve-five"
       ]
     }
   ],
   "actions": {
-    "buyBuilding": 24,
-    "claimMainMission": 87,
+    "buyBuilding": 20,
+    "claimMainMission": 85,
     "buyRabbit": 4,
     "startOrder": 418,
     "initiationAid": 3,
     "collectOrder": 416,
-    "feed": 893,
-    "breed": 165,
-    "claimDailyMission": 133,
+    "feed": 819,
+    "breed": 139,
+    "claimDailyMission": 118,
     "transferBirth": 1,
-    "welcome": 163,
-    "collectIncome": 2499,
+    "welcome": 137,
+    "collectIncome": 2467,
     "buyDecoration": 1,
     "claimHearts": 69,
-    "rewardCuisine": 84,
-    "moveBuilding": 5,
-    "upgradeHabitat": 5,
+    "rewardCuisine": 62,
+    "moveBuilding": 3,
+    "upgradeHabitat": 3,
     "petRabbit": 45,
-    "release": 104,
-    "expand": 5,
+    "release": 94,
+    "expand": 4,
     "upgradeFarm": 2,
     "welcomeAgency": 1,
-    "startTrip": 82,
+    "startTrip": 74,
     "picnic": 66,
-    "claimTrip": 80,
-    "claimDailyBonus": 19,
-    "startCare": 151,
-    "claimCare": 150,
-    "evolveRabbit": 6,
+    "claimTrip": 74,
+    "claimDailyBonus": 16,
+    "startCare": 152,
+    "claimCare": 151,
+    "evolveRabbit": 7,
     "upgradeAgency": 2
   },
-  "totalActions": 5683
+  "totalActions": 5453
 }

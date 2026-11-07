@@ -1,9 +1,10 @@
 import {CHRISTMAS_EVENT} from '../config/christmas';
-import {CHRISTMAS_CHALLENGES, CHRISTMAS_CHALLENGE_IDS, CHRISTMAS_PICK_COUNT, CHRISTMAS_RABBIT_CANDY_PRICE, MAX_CANDIES, SKY_GIFTS, SNOWMAN, type ChristmasChallengeId, type ChristmasEventName} from '../config/christmasEvent';
+import {COIN_BUBBLE_CANDIES, CHRISTMAS_CHALLENGES, CHRISTMAS_CHALLENGE_IDS, CHRISTMAS_PICK_COUNT, CHRISTMAS_RABBIT_CANDY_PRICE, MAX_CANDIES, SKY_GIFTS, SNOWMAN, type ChristmasChallengeId, type ChristmasEventName} from '../config/christmasEvent';
 import {DECORATIONS, MAX_DECORATIONS, isChristmasDecoration, type DecorationId} from '../config/decorations';
 import {giftCycle, presentRabbits, rabbitAwayReason} from './care';
 import {SPECIES, SPECIES_IDS, type SpeciesId} from '../config/species';
 import {progressionFromXp} from './progression';
+import {INCOME_BUBBLE_THRESHOLD} from '../config/visual';
 import type {ChristmasState, GameState, Rabbit, Refusal} from '../state/types';
 
 /**
@@ -80,7 +81,7 @@ export function startChristmasCycle(s: GameState): ChristmasState {
   const cycle = s.missions.daily.cycleIndex, old = s.christmas;
   if (old && old.cycle === cycle) return old;
   const next: ChristmasState = {candies: old?.candies ?? 0, cycle, picked: pickChristmasChallenges(s, cycle), progress: {}, claimed: [],
-    ...(old?.snowman ? {snowman: old.snowman} : {}), ...(old?.skyGifts ? {skyGifts: old.skyGifts} : {})};
+    ...(old?.snowman ? {snowman: old.snowman} : {}), ...(old?.skyGifts ? {skyGifts: old.skyGifts} : {}), ...(old?.bubbles ? {bubbles: old.bubbles} : {})};
   s.christmas = next;
   return next;
 }
@@ -141,9 +142,24 @@ export function skyGiftsDay(s: Pick<GameState, 'christmas' | 'missions'>, now: n
   return {rewardedLeft: Math.max(0, SKY_GIFTS.rewardedGamesPerCycle - (day?.rewarded ?? 0)), best: g?.best ?? 0};
 }
 /** What a finished game with `caught` gifts pays now: pattes within the daily limit, never XP. A game with no gift caught uses up no rewarded game. */
-export function skyGiftsReward(s: Pick<GameState, 'christmas' | 'missions'>, caught: number, now: number): {pattes: number; rewarded: boolean} {
-  const rewarded = caught >= 1 && skyGiftsDay(s, now).rewardedLeft > 0;
-  return {pattes: rewarded ? Math.min(SKY_GIFTS.maxPattes, Math.max(0, Math.floor(caught)) * SKY_GIFTS.pattesPerGift) : 0, rewarded};
+export function skyGiftsReward(s: Pick<GameState, 'christmas' | 'missions'>, caught: number, now: number): {pattes: number; candies: number; rewarded: boolean} {
+  const rewarded = caught >= 1 && skyGiftsDay(s, now).rewardedLeft > 0, gifts = Math.max(0, Math.floor(caught));
+  return {pattes: rewarded ? Math.min(SKY_GIFTS.maxPattes, gifts * SKY_GIFTS.pattesPerGift) : 0,
+    candies: rewarded ? Math.min(SKY_GIFTS.maxCandies, Math.floor(gifts / SKY_GIFTS.giftsPerCandy)) : 0, rewarded};
+}
+
+/** Sucres d'orge already earned from coin bubbles in the daily cycle at `now`. */
+export const bubbleCandiesToday = (s: Pick<GameState, 'christmas' | 'missions'>, now: number): number => {
+  const b = s.christmas?.bubbles; return b && b.cycle === giftCycle(s, now) ? b.earned : 0;
+};
+/**
+ * What collecting `amount` pattes from a habitat holding at most `cap` adds in sucres d'orge: only when its coin bubble shows (the
+ * rule of src/display/incomeBubble.ts), more when it was full, within the daily limit, and only while the event is on.
+ */
+export function coinBubbleCandies(s: Pick<GameState, 'christmas' | 'missions'>, amount: number, cap: number, now: number): number {
+  if (!christmasEventActive() || !(amount >= 1 && (amount >= INCOME_BUBBLE_THRESHOLD || amount >= cap))) return 0;
+  const gift = amount >= cap ? COIN_BUBBLE_CANDIES.full : COIN_BUBBLE_CANDIES.perBubble;
+  return Math.max(0, Math.min(gift, COIN_BUBBLE_CANDIES.maxPerCycle - bubbleCandiesToday(s, now)));
 }
 /** Why this rabbit cannot carry the basket now (missing, on a trip, at the salon), or null. */
 export function skyGiftsRabbitReason(s: GameState, rabbitId: string): Refusal | null {

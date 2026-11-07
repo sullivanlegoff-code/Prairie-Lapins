@@ -13,7 +13,7 @@ import {bennyFlightReason, bennyFlightReward, hasBenny} from './bennyFlight';
 import {normalizeRabbitName} from './rabbitNames';
 import {acquiredCell, PARCEL_IDS, extensionPrice, purchasableParcels} from '../config/land';
 import {HABITAT_TYPES, habitatLevel, habitatPrice, type HabitatLevel} from '../config/habitats';
-import {habitatEntryReason, removeHabitatReason} from './habitats';
+import {habitatEntryReason, habitatStats, removeHabitatReason} from './habitats';
 import {DAILY_MISSIONS, MAIN_MISSIONS, DAILY_BONUS, mainMissionRewards, type Reward} from '../config/missions';
 import {affectionCap, capReason, isUltimate, nextAffectionStatue, playerLevel, rabbitAffectionCap, waitsForEvolution} from './affection';
 import {agencyBuilding, travelling} from './travel';
@@ -36,7 +36,7 @@ import {advance, validTime, drawIncomeRoll} from './time';
 import {complementCost, quoteAcceleration} from './hearts';
 import {DECORATIONS, isChristmasDecoration, ownedDecorationResalePrice} from '../config/decorations';
 import {CHRISTMAS_BONUS_CANDIES, CHRISTMAS_CHALLENGES, CHRISTMAS_RABBIT_CANDY_PRICE, SKY_GIFTS, type ChristmasEventName} from '../config/christmasEvent';
-import {candiesOf, christmasBonusReady, christmasBonusClaimed, christmasChallengesOf, christmasClaimable, christmasClaimed, christmasDecorationReason, christmasEventActive, christmasRabbitReason, creditCandies, recordChristmasAction, skyGiftsRabbitReason, skyGiftsReward, snowmanQuote, startChristmasCycle} from './christmas';
+import {candiesOf, coinBubbleCandies, christmasBonusReady, christmasBonusClaimed, christmasChallengesOf, christmasClaimable, christmasClaimed, christmasDecorationReason, christmasEventActive, christmasRabbitReason, creditCandies, recordChristmasAction, skyGiftsRabbitReason, skyGiftsReward, snowmanQuote, startChristmasCycle} from './christmas';
 import {catalogDecorationPlacementReason, decorationPlacementReason, decorationsInCell, purchaseDecorationReason} from './decorations';
 
 /** The only purchases a heart complement may cover. Recipes are never among them. */
@@ -302,7 +302,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         // Pattes only, within the daily limit: no XP. A game beyond the limit pays nothing and counts for no challenge.
         const paid = skyGiftsReward(s, command.caught, time), cycle = s.missions.daily.cycleIndex, day = startChristmasCycle(s);
         const previous = day.skyGifts, rewarded = (previous?.cycle === cycle ? previous.rewarded : 0) + (paid.rewarded ? 1 : 0);
-        credit('pattes', paid.pattes);
+        credit('pattes', paid.pattes); requireRule(creditCandies(s, paid.candies), 'INVALID_CHOICE');
         day.skyGifts = {cycle, rewarded, best: Math.max(previous?.best ?? 0, command.caught)};
         if (paid.rewarded) christmasCounts = [['rewardSkyGifts', 1], ['catchGifts', command.caught]];
         value = paid.pattes; break;
@@ -506,6 +506,12 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       }
       case 'collectIncome': {
         const b = building(command.id, 'enclosure'); value = Math.floor(b.incomeUnits / HOUR);
+        // Christmas: a coin bubble also holds a few sucres d'orge, within the daily limit (owner, 7 November 2026).
+        const candies = coinBubbleCandies(s, value, habitatStats(b).cap, time);
+        if (candies > 0) {
+          const cycle = giftCycle(s, time); requireRule(creditCandies(s, candies), 'INVALID_CHOICE');
+          const day = startChristmasCycle(s); day.bubbles = {cycle, earned: (day.bubbles?.cycle === cycle ? day.bubbles.earned : 0) + candies};
+        }
         credit('pattes', value); b.incomeUnits -= value * HOUR; break;
       }
       case 'removeHabitat': {

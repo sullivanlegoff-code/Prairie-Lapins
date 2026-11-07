@@ -107,7 +107,7 @@ describe('the market’s Christmas rabbits', () => {
   const buttonIn = (root: ParentNode, start: string) => [...root.querySelectorAll<HTMLButtonElement>('button')].find(b => b.textContent?.replace(/\s+/g, ' ').trim().startsWith(start));
 
   it('lists the five, refuses them without enough sucres d’orge, and welcomes one in a chosen habitat', () => {
-    const s = game(); s.christmas = {candies: 300};
+    const s = game(); s.christmas = {candies: CHRISTMAS_RABBIT_CANDY_PRICE + 50};
     const {ui, state} = mount(s); ui.open({kind: 'christmasMarket', tab: 'rewards'});
     expect([...panel().querySelectorAll<HTMLElement>('[data-christmas-rabbit]')].map(c => c.dataset.christmasRabbit)).toEqual(['yetiti', 'rennes', 'susucre', 'pain-epice', 'flocon-cristal']);
     const card = panel().querySelector('[data-christmas-rabbit="yetiti"]')!;
@@ -117,7 +117,7 @@ describe('the market’s Christmas rabbits', () => {
     panel().querySelector<HTMLButtonElement>('button[aria-pressed]')!.click(); // The first compatible habitat with room.
     buttonIn(panel(), 'Confirmer l’achat')!.click();
     expect(state().rabbits.filter(r => r.species === 'yetiti')).toHaveLength(1);
-    expect(state().christmas!.candies).toBe(300 - CHRISTMAS_RABBIT_CANDY_PRICE);
+    expect(state().christmas!.candies).toBe(50);
   });
 
   it('shows the price refusal when the sucres d’orge are missing', () => {

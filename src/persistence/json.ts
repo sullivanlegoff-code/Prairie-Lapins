@@ -20,7 +20,7 @@ import {z} from 'zod';
 import {BALANCE, FOREST, BUILDING_KINDS, CARE_KINDS, SALON, JUMP_ROPE, LEGACY_BREEDING_DURATION, EPIC_ISLET, BENNY_FLIGHT, CUISINE_FULL_REWARDS_PER_CYCLE, HOUR, LEGACY_ORDER_CROPS, TRAVEL, tripHearts, NURSERY, ORDERS, type OrderId, SHOP_SPECIES, SPECIES, SPECIES_IDS, GUARANTEE_SPECIES, growthDuration, orderFarmLevel, type SpeciesId} from '../config/balance';
 import type {GameState} from '../state/types';
 import {ALL_DECORATION_IDS, DECORATION_IDS, RETIRED_DECORATION_IDS, MAX_DECORATIONS, isChristmasDecoration} from '../config/decorations';
-import {CHRISTMAS_CHALLENGES, CHRISTMAS_CHALLENGE_IDS, CHRISTMAS_PICK_COUNT, MAX_CANDIES, SKY_GIFTS} from '../config/christmasEvent';
+import {CHRISTMAS_CHALLENGES, CHRISTMAS_CHALLENGE_IDS, CHRISTMAS_PICK_COUNT, COIN_BUBBLE_CANDIES, MAX_CANDIES, SKY_GIFTS} from '../config/christmasEvent';
 import {decorationPlacementReason} from '../simulation/decorations';
 import {ISLAND} from '../config/islandGeometry';
 import {EVOLUTION_CHALLENGES, EVOLUTION_CHALLENGE_IDS, evolutionChallengeTarget, evolutionChallengesComplete, type EvolutionChallenge} from '../config/evolutionChallenges';
@@ -107,6 +107,7 @@ const christmas = z.object({
   bonusClaimed: z.literal(true).optional(),
   snowman: z.object({cycle: integer, enclosureId: identity}).strict().optional(),
   skyGifts: z.object({cycle: integer, rewarded: integer.max(SKY_GIFTS.rewardedGamesPerCycle), best: integer.max(SKY_GIFTS.maxCaught)}).strict().optional(),
+  bubbles: z.object({cycle: integer, earned: integer.max(COIN_BUBBLE_CANDIES.maxPerCycle)}).strict().optional(),
 }).strict();
 const historicalTarget = z.discriminatedUnion('family', [
   z.object({family: z.literal('species'), id: species, action: z.enum(['purchase', 'breedingResult'])}).strict(),
@@ -269,7 +270,7 @@ const schema = current.superRefine((s, context) => {
   if (Object.values(s.affectionGifts ?? {}).some(cycle => cycle > d.cycleIndex) || (s.picnicCycle ?? 0) > d.cycleIndex || (s.jumpRope?.cycle ?? 0) > d.cycleIndex) issue('Future gift cycle');
   if (s.christmas) {
     const c = s.christmas;
-    if ([c.cycle ?? 0, c.snowman?.cycle ?? 0, c.skyGifts?.cycle ?? 0].some(cycle => cycle > d.cycleIndex)) issue('Future gift cycle');
+    if ([c.cycle ?? 0, c.snowman?.cycle ?? 0, c.skyGifts?.cycle ?? 0, c.bubbles?.cycle ?? 0].some(cycle => cycle > d.cycleIndex)) issue('Future gift cycle');
     if (c.cycle === undefined && (c.picked || c.progress || c.claimed || c.bonusClaimed)) issue('Christmas cycle');
     const claimed = c.claimed ?? [];
     if (claimed.some(id => (c.progress?.[id] ?? 0) < CHRISTMAS_CHALLENGES[id].target || (c.picked && !c.picked.includes(id))) ||

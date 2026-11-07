@@ -32,7 +32,7 @@ export const CHRISTMAS_CHALLENGES: Record<ChristmasChallengeId, ChristmasChallen
 /** How many Christmas challenges each daily cycle shows (one activity among them). */
 export const CHRISTMAS_PICK_COUNT = 3;
 /** Sucres d'orge of the cycle bonus, once the three challenges are claimed. */
-export const CHRISTMAS_BONUS_CANDIES = 10;
+export const CHRISTMAS_BONUS_CANDIES = 20;
 /** A generous bound on the balance, so a save can never overflow. */
 export const MAX_CANDIES = 1_000_000;
 /** The snowman: free, one a day in all, in an enclosure with at least one rabbit present, from player level 2. */
@@ -41,8 +41,16 @@ export const SNOWMAN = {unlockLevel: 2} as const;
  * « Les cadeaux du ciel »: a game lasts `gameMs` with `lives` lives; the first `rewardedGamesPerCycle` games of a daily cycle pay
  * `pattesPerGift` pattes per gift caught, at most `maxPattes` (the jump rope's scale), and never XP. `caught` is at most `maxCaught`.
  */
-export const SKY_GIFTS = {rewardedGamesPerCycle: 3, pattesPerGift: 2, maxPattes: 60, maxCaught: 200, gameMs: 45_000, lives: 3} as const;
+export const SKY_GIFTS = {rewardedGamesPerCycle: 3, pattesPerGift: 2, maxPattes: 60, maxCaught: 200, gameMs: 45_000, lives: 3,
+  /** The same rewarded games also pay one sucre d'orge per `giftsPerCandy` gifts caught, at most `maxCandies` (owner, 7 November 2026). */
+  giftsPerCandy: 3, maxCandies: 10} as const;
+/**
+ * Collecting a habitat whose coin bubble shows (owner, 7 November 2026) also gives `perBubble` sucre d'orge, `full` when the habitat
+ * was full, at most `maxPerCycle` in a daily cycle. With the challenges, the bonus and the mini-game, a player of three sessions a
+ * day earns about 80 sucres d'orge a day: the whole market (decorations and the Ultra neige palace, rabbits apart) in about 20 days.
+ */
+export const COIN_BUBBLE_CANDIES = {perBubble: 1, full: 2, maxPerCycle: 20} as const;
 
-/** The Christmas rabbits (Yetiti, Rennes, Susucre) may also be bought at the market, for sucres d'orge: a dear shortcut, since
-  * breeding them during the event is the way (owner, 5 November 2026). About nine days of challenges and bonuses. */
-export const CHRISTMAS_RABBIT_CANDY_PRICE = 250;
+/** The Christmas rabbits (Yetiti, Rennes, Susucre) are shown at the market to say they exist and invite breeding them: buying one
+  * stays possible but very dear (owner, 7 November 2026: 600, more than a week of a diligent player's sucres d'orge). */
+export const CHRISTMAS_RABBIT_CANDY_PRICE = 600;
