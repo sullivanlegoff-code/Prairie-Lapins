@@ -6,7 +6,9 @@
 //   since 6 November 2026 also the islet of the Epics, Benny's perch and the debris (originals from scripts/prepare-noel-extras-art.mjs),
 //   and the snow habitat level 3 and the nest repainted with lit lanterns, so they glow at night;
 // - marche-neige.png: the market islet (its night lights are taken from it);
-// - deco-<id>-neige.png: the eight Christmas decorations; snowman-3-neige.png: the finished snowman (its two first steps are cut from it);
+// - deco-<id>-neige.png: the Christmas decorations (repainted in the game's plainer style and five new ones on 7 November 2026,
+//   output/imagegen/deco-noel-v1/items/; only the decorations are in that folder, so restore src/config/winterBuildingFiles.json
+//   after running it on such a partial folder); snowman-3-neige.png: the finished snowman (its two first steps are cut from it);
 // - icons-neige.png: a 4 × 2 sheet (candy cane, snowball, puff, snowflake, four presents); hotte, traineau, fond-cadeaux;
 // - pieges-neige.png: a 4 × 1 sheet of the mini-game's traps (poisoned present, bomb) and of their splash and blast.
 // Masters go to assets-source/noel/, served copies to public/assets/noel/; the list of snowy meadow pictures is written to
@@ -98,6 +100,8 @@ function squareOf(img, size) {
   for (let y = 0; y < img.height; y++) img.pixels.copy(pad, ((oy + y) * s + ox) * 4, y * img.width * 4, (y + 1) * img.width * 4);
   return resize({width: s, height: s, pixels: pad}, size, size);
 }
+/** The tall snow castle keeps more pixels than the other decorations (7 November 2026). */
+const DECORATION_MAX = {'snow-castle': 420};
 const LOOSE_FRAMING = new Set(['b-debris-rocher', 'b-debris-herbes', 'b-debris-buisson', 'b-perchoir-benny']);
 export async function prepareNoelArt(folder) {
   const report = {}, served = [], webp = [], winterFiles = [];
@@ -147,7 +151,7 @@ export async function prepareNoelArt(folder) {
   for (const file of readdirSync(folder).filter(f => /^deco-.*-neige\.png$/.test(f))) {
     const id = file.slice(5, -'-neige.png'.length), keyed = keyMagenta(decodeRgbPng(readFileSync(`${folder}/${file}`)));
     const master = crop(keyed); write(`assets-source/noel/decorations/${id}.png`, encodePng(master));
-    const img = fit(master, 320); served.push([`public/assets/noel/decorations/${id}.png`, img]); report[`deco-${id}`] = [img.width, img.height];
+    const img = fit(master, DECORATION_MAX[id] ?? 320); served.push([`public/assets/noel/decorations/${id}.png`, img]); report[`deco-${id}`] = [img.width, img.height];
   }
   // The snowman's three steps, one shared crop so they stay in place.
   // Only the finished snowman is painted (to spare the image model): steps 1 and 2 are its lower part, the rows above
