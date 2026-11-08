@@ -21,7 +21,7 @@ const PALE_LIGHTS = new Set(['habitats/habitat-glace.png']);
 /** The windmill farms (8 November 2026): their pale wooden sails are as bright as lamplight, so only the deep yellow of the
  * lit windows and bulbs counts there (green well above blue: the wood stays dark). */
 export const isLampYellow = (r, g, b, a) => isWarmLight(r, g, b, a) && g - b > 85;
-const LAMP_YELLOW = new Set(['buildings/farm-windmill-nest.png', 'buildings/farm-level-4.png']);
+const LAMP_YELLOW = new Set(['buildings/farm-windmill-nest.png', 'buildings/farm-level-3.png', 'buildings/farm-level-4.png']);
 /** Lit-looking areas that are no lamps, as ellipses in fractions of the picture: the islet of the Epics' sandy pad. */
 const NOT_LAMPS = {'buildings/ilot-epique.png': [{cx: .505, cy: .59, rx: .27, ry: .1}]};
 /** Pictures without any lamp whose straw or ochre yellow would light up whole (7 November 2026, plainer repaint). */

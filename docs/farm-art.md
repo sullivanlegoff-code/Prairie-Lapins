@@ -54,4 +54,13 @@ Choix du propriétaire : variante 1 de la deuxième planche (`output/imagegen/fe
 - `public/assets/buildings/farm-level-4.png`, 1254 × 1254 RGBA, détourée du fond magenta.
 - `FARM_LEVEL_4_ART` (`src/config/farmArt.ts`) : largeur 152,8, origine verticale 0,769, pour que le sol de gazon couvre la même place que celui du niveau 3 (bas alignés) ; le moulin monte plus haut.
 - Sept sillons de six plantes (`furrows`), tenus à l'écart des ailes et de la clôture avant ; `farmArtFor(niveau)` choisit le dessin partout (île, pousses, cadre, menus).
-- Pas encore de version enneigée, comme la ferme des niveaux 2 et 3.
+- Version enneigée pour Noël (même commit que celle du moulin du niveau 2).
+
+## Ferme niveau 3 (8 novembre 2026)
+
+Avant, les niveaux 2 et 3 partageaient le même moulin. Choix du propriétaire : concept A « Moulin fleuri » (`output/imagegen/ferme-niveau-3-v1/`, hors dépôt), peint par Codex entre le moulin du niveau 2 et le grand moulin du niveau 4 : moulin un peu plus haut, jardinière de fleurs, auvent rose au-dessus de la porte, lanterne, banc et brouette de foin, mêmes couleurs, champ de terre nue à six sillons.
+
+- `public/assets/buildings/farm-level-3.png`, 1448 × 1086 RGBA, détourée du fond magenta.
+- `FARM_LEVEL_3_ART` (`src/config/farmArt.ts`) : largeur 195,4, origine verticale 0,735, pour que le sol de gazon couvre la même place que celui du niveau 2 (bas alignés).
+- Six sillons de six plantes, tenus à l'écart de la clôture avant ; `farmArtFor(3)` choisit ce dessin partout.
+- Version enneigée (`output/imagegen/ferme-niveau-3-noel/`, hors dépôt) préparée par `scripts/prepare-noel-art.mjs` (alignement 0,985) : `public/assets/noel/buildings/farm-level-3.png`, lueurs de nuit (fenêtre, lanterne, guirlande) par `scripts/derive-night-lights.mjs`.

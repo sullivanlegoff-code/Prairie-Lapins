@@ -10,7 +10,7 @@ import {emptyBuilding} from '../src/state/initial';
 import {buildingPlacementReason} from '../src/simulation/placement';
 import {currencyAccessibleText, setCurrencyText} from '../src/display/currency';
 import {furrowPoints, furrowState} from '../src/display/farmCrops';
-import {FARM_ART, FARM_LEVEL_1_ART, FARM_LEVEL_4_ART, farmArtFor} from '../src/config/farmArt';
+import {FARM_ART, FARM_LEVEL_1_ART, FARM_LEVEL_3_ART, FARM_LEVEL_4_ART, farmArtFor} from '../src/config/farmArt';
 import type {Command, GameState} from '../src/state/types';
 
 // Food rework (owner, 25 October 2026): « herbe » becomes food, the farm grows ten crops, affection 15 needs the statue.
@@ -135,7 +135,8 @@ describe('food on screen', () => {
   it('draws sprouts on the farm’s five furrows while a crop grows, the crop itself once ripe', () => {
     expect(furrowPoints()).toHaveLength(FARM_ART.furrows.rows * FARM_ART.furrows.perRow);
     // The level 4 windmill (8 November 2026) has its own picture and a larger field of seven furrows.
-    expect([farmArtFor(undefined), farmArtFor(2), farmArtFor(3), farmArtFor(4)]).toEqual([FARM_LEVEL_1_ART, FARM_ART, FARM_ART, FARM_LEVEL_4_ART]);
+    expect([farmArtFor(undefined), farmArtFor(2), farmArtFor(3), farmArtFor(4)]).toEqual([FARM_LEVEL_1_ART, FARM_ART, FARM_LEVEL_3_ART, FARM_LEVEL_4_ART]);
+    expect(furrowPoints(FARM_LEVEL_3_ART)).toHaveLength(6 * 6);
     expect(furrowPoints(FARM_LEVEL_4_ART)).toHaveLength(7 * 6);
     const farm = {...emptyBuilding('building-9', 'farm', 0, 0), order: {recipe: 'pomme' as const, startedAt: 0, endsAt: ORDERS.pomme.duration}};
     expect([furrowState(emptyBuilding('building-8', 'farm', 0, 0), 0), furrowState(farm, HOUR), furrowState(farm, ORDERS.pomme.duration)]).toEqual(['empty', 'growing', 'ripe']);

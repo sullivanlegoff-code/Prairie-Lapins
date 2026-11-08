@@ -1,4 +1,4 @@
-/** Presentation only: two registered textures sharing the same furrows. No footprint, camera or saved-state data. */
+/** Presentation only: one picture per farm level (level 1 and level 2 share the same furrows). No footprint, camera or saved-state data. */
 export const FARM_PALETTE: 'original' | 'light' | 'nest' = 'nest';
 const FARM_FILE = {original: 'farm-windmill', light: 'farm-windmill-light', nest: 'farm-windmill-nest'}[FARM_PALETTE];
 export const FARM_ART = {
@@ -36,5 +36,16 @@ export const FARM_LEVEL_4_ART: FarmArt = {
   harvestY: FARM_ART.harvestY, progress: FARM_ART.progress,
   furrows: {T: [900, 628], L: [680, 835], R: [1210, 812], rows: 7, perRow: 6, along: [.04, .8], sproutSize: 46, ripeSize: 62},
 };
-/** The picture of a farm at this level: the small farm at level 1, the windmill at levels 2 and 3, the grand windmill at level 4. */
-export const farmArtFor = (farmLevel?: number): FarmArt => farmLevel === 4 ? FARM_LEVEL_4_ART : farmLevel ? FARM_ART : FARM_LEVEL_1_ART;
+/**
+ * The level 3 farm (owner, 8 November 2026: concept A « Moulin fleuri », a slightly taller windmill with a flower box, a pink
+ * porch roof, a lantern, a bench and a hay wheelbarrow). Scaled like level 4 so its grass base covers the same ground as the
+ * level 2 picture (bottoms aligned); six furrows, the plants kept clear of the front fence.
+ */
+export const FARM_LEVEL_3_ART: FarmArt = {
+  texture: 'farm-level-3', url: import.meta.env.BASE_URL + 'assets/buildings/farm-level-3.png',
+  width: 1448, height: 1086, worldWidth: 195.4, originY: .735,
+  harvestY: FARM_ART.harvestY, progress: FARM_ART.progress,
+  furrows: {T: [935, 535], L: [730, 605], R: [1205, 690], rows: 6, perRow: 6, along: [.06, .82], sproutSize: 46, ripeSize: 62},
+};
+/** The picture of a farm at this level: the small farm at level 1, the windmill at level 2, the flowered windmill at level 3, the grand windmill at level 4. */
+export const farmArtFor = (farmLevel?: number): FarmArt => farmLevel === 4 ? FARM_LEVEL_4_ART : farmLevel === 3 ? FARM_LEVEL_3_ART : farmLevel ? FARM_ART : FARM_LEVEL_1_ART;

@@ -5,7 +5,7 @@ import {toScreen} from '../ui/projection';
 import type {GameState} from '../state/types';
 import {CROP_IDS, CROP_TEXTURE, CROP_URL, SPROUT_TEXTURE, SPROUT_URL} from './food';
 
-/** Plant points on a farm picture's furrows (levels 2 and 3 by default), as world offsets from the building point, back rows first. */
+/** Plant points on a farm picture's furrows (the level 2 picture by default), as world offsets from the building point, back rows first. */
 export function furrowPoints(art: FarmArt = farmArtFor(2)): {x: number; y: number}[] {
   const {T, L, R, rows, perRow, along} = art.furrows, k = art.worldWidth / art.width, points = [];
   for (let row = 0; row < rows; row++) for (let i = 0; i < perRow; i++) {
