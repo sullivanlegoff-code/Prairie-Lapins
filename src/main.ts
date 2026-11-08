@@ -1,5 +1,6 @@
 import {accountKnown} from './cloud/accountState';
 import Phaser from 'phaser';
+import {installImageTwins, installWebpTwins} from './display/webpTwins';
 import {MeadowScene} from './display/MeadowScene';
 import {mountArtStatus} from './display/artStatus';
 import {GameController} from './application/GameController';
@@ -85,6 +86,8 @@ async function boot(): Promise<() => void> {
       runtime: (status, retry) => artStatus.update(status, retry),
       ready: () => { loading.done('textures'); loading.done('scene'); }});
   recenterAfterLab = () => scene.recenter();
+  // The meadow's pictures come as their light WebP twins (src/display/webpTwins.ts).
+  installWebpTwins(Phaser.Loader.LoaderPlugin.prototype); installImageTwins(HTMLImageElement.prototype);
   const game = new Phaser.Game({
     type: Phaser.AUTO, parent: 'game', backgroundColor: '#fffdf5', transparent: true,
     scale: {mode: Phaser.Scale.RESIZE, width: '100%', height: '100%'}, scene: [scene],

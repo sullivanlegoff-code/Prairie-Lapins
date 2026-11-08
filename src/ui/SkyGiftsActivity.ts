@@ -1,4 +1,5 @@
 import {artForRabbit, rabbitArt} from '../config/rabbitArt';
+import {preferWebp} from '../display/webpTwins';
 import {SPECIES} from '../config/balance';
 import {setCurrencyText} from '../display/currency';
 import type {CuisineRabbit} from './CuisineActivity';
@@ -28,9 +29,9 @@ export function mountSkyGiftsActivity(host: HTMLElement, options: {
   layer.setAttribute('role', 'dialog'); layer.setAttribute('aria-modal', 'true'); layer.setAttribute('aria-label', 'Les cadeaux du ciel');
   layer.innerHTML = `<div class="sky-gifts-top"><p class="sky-gifts-score" aria-live="polite"></p><p class="sky-gifts-lives" aria-hidden="true"></p><p class="sky-gifts-time"></p><p class="sky-gifts-quota"></p><button type="button" data-sky-gifts-exit>Quitter</button></div>
 <div class="sky-gifts-stage" data-sky-gifts-stage style="background-image:url('${art.background}')">
-<img class="sky-gifts-sleigh" alt="" aria-hidden="true" draggable="false" src="${art.sleigh}">
+<img class="sky-gifts-sleigh" alt="" aria-hidden="true" draggable="false" src="${preferWebp(art.sleigh)}">
 <div class="sky-gifts-falling" aria-hidden="true"></div>
-<span class="sky-gifts-rabbit"><img class="sky-gifts-basket" alt="" aria-hidden="true" draggable="false" src="${art.basket}"><span class="sky-gifts-figure"></span></span>
+<span class="sky-gifts-rabbit"><img class="sky-gifts-basket" alt="" aria-hidden="true" draggable="false" src="${preferWebp(art.basket)}"><span class="sky-gifts-figure"></span></span>
 <p class="sky-gifts-pop" aria-hidden="true"></p>
 <div class="sky-gifts-blasts" aria-hidden="true"></div>
 </div>

@@ -30,7 +30,7 @@
   inset: 0;
   border: 0;
   border-image: none;
-  background: url('/assets/ui/navigation/support-pebble.png') center / contain no-repeat;
+  background: url('/assets/ui/navigation/support-pebble.webp') center / contain no-repeat;
   filter: none;
   transition: filter 80ms ease-out;
 }
@@ -109,7 +109,7 @@
   inset: 2px;
   border: 0;
   border-image: none;
-  background: url('/assets/ui/navigation/support-pebble.png') center / contain no-repeat;
+  background: url('/assets/ui/navigation/support-pebble.webp') center / contain no-repeat;
   filter: grayscale(1);
   transition: filter 80ms ease-out;
 }
@@ -168,7 +168,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: url('/assets/ui/navigation/support-pebble.png') center / contain no-repeat;
+  background: url('/assets/ui/navigation/support-pebble.webp') center / contain no-repeat;
   pointer-events: none;
   transition: filter 80ms ease-out;
 }

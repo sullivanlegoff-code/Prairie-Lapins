@@ -1,3 +1,4 @@
+import {preferWebp} from '../src/display/webpTwins';
 import {describe, expect, it} from 'vitest';
 import {SNOW_ART, rabbitArt} from '../src/config/rabbitArt';
 import {portrait} from '../src/ui/portraits';
@@ -5,7 +6,7 @@ import {SPECIES_IDS} from '../src/config/balance';
 import {rabbitHit} from '../src/display/rabbitLayout';
 describe('Neige original artwork', () => {
  it('shares one image without changing other species or unknown portraits', () => {
-  expect(portrait('neige')).toContain(`src="${SNOW_ART.url}"`);
+  expect(portrait('neige')).toContain(`src="${preferWebp(SNOW_ART.url)}"`);
   expect(portrait('neige')).toContain('alt="Lapin Neige"');
   for(const id of SPECIES_IDS.filter(id=>!rabbitArt(id)))expect(portrait(id)).toMatch(/^<svg /);
   expect(portrait()).toContain('>?</text>');

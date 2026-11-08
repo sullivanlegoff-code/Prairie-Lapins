@@ -36,9 +36,9 @@ describe('Cuisine accessory anchors', () => {
     const classic = dressedRabbit({id: 'rabbit-1', species: 'paille', affection: 30}, 'commis', true);
     const evolved = dressedRabbit({id: 'rabbit-1', species: 'paille', affection: 30, evolution: {done: true}}, 'commis', true);
     const returnedToClassic = dressedRabbit({id: 'rabbit-1', species: 'paille', affection: 30, evolution: {done: true}, classicLook: true}, 'commis', true);
-    expect(classic.querySelector('img')?.getAttribute('src')).toContain('paille-v1.png');
-    expect(evolved.querySelector('img')?.getAttribute('src')).toContain('paille-v2.png');
-    expect(returnedToClassic.querySelector('img')?.getAttribute('src')).toContain('paille-v1.png');
+    expect(classic.querySelector('img')?.getAttribute('src')).toMatch(/paille-v1\.(png|webp)/);
+    expect(evolved.querySelector('img')?.getAttribute('src')).toMatch(/paille-v2\.(png|webp)/);
+    expect(returnedToClassic.querySelector('img')?.getAttribute('src')).toMatch(/paille-v1\.(png|webp)/);
   });
   it('place the toque, the bib and the paws inside every current sprite', () => {
     for (const species of SPECIES_IDS) {

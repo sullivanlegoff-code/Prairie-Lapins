@@ -44,14 +44,14 @@ function game(forest = true): GameState {
 }
 
 it('a portrait keeps the old drawing until the rabbit has evolved explicitly', () => {
-  expect(rabbitPortrait({species: 'paille', affection: 30})).toContain('paille-v1.png');
+  expect(rabbitPortrait({species: 'paille', affection: 30})).toMatch(/paille-v1\.(png|webp)/);
   expect(rabbitPortrait({species: 'paille', affection: 30})).not.toContain('data-evolved');
-  expect(rabbitPortrait({species: 'paille', affection: 30, evolution: {done: true}})).toContain('paille-v2.png');
-  expect(rabbitPortrait({species: 'paille', affection: 29})).toContain('paille-v1.png');
-  expect(rabbitPortrait({species: 'paille', affection: 45, classicLook: true})).toContain('paille-v1.png');
-  expect(rabbitPortrait({species: 'frisket', affection: 50})).toContain('frisket-v1.png');
-  expect(rabbitPortrait({species: 'frisket', affection: 50, evolution: {done: true}})).toContain('frisket-v2.png');
-  expect(portrait('paille')).toContain('paille-v1.png'); // Catalogue and shop: the species' own drawing.
+  expect(rabbitPortrait({species: 'paille', affection: 30, evolution: {done: true}})).toMatch(/paille-v2\.(png|webp)/);
+  expect(rabbitPortrait({species: 'paille', affection: 29})).toMatch(/paille-v1\.(png|webp)/);
+  expect(rabbitPortrait({species: 'paille', affection: 45, classicLook: true})).toMatch(/paille-v1\.(png|webp)/);
+  expect(rabbitPortrait({species: 'frisket', affection: 50})).toMatch(/frisket-v1\.(png|webp)/);
+  expect(rabbitPortrait({species: 'frisket', affection: 50, evolution: {done: true}})).toMatch(/frisket-v2\.(png|webp)/);
+  expect(portrait('paille')).toMatch(/paille-v1\.(png|webp)/); // Catalogue and shop: the species' own drawing.
 });
 
 it('shows the required challenge progress and keeps evolution disabled until it is complete', () => {
@@ -78,13 +78,13 @@ it('the sheet requires explicit evolution; the scene plays and the forest then s
   expect(panel().querySelector('[data-collection-evolution="paille"]')?.textContent).not.toContain('Cœur des moissons');
   expect(panel().querySelector('[data-collection-evolution="feu"]')).toBeNull(); // An undiscovered species does not reveal its evolution's shape.
   ui.select({kind: 'rabbit', id: 'rabbit-104'});
-  expect(panel().querySelector<HTMLImageElement>('.portrait.large img')!.src).toContain('paille-v1.png');
+  expect(panel().querySelector<HTMLImageElement>('.portrait.large img')!.src).toMatch(/paille-v1\.(png|webp)/);
   expect(panel().querySelector('[data-rabbit-evolution="rabbit-104"]')?.textContent).toContain('1 / 1 voyage');
   expect((panel().querySelector<HTMLButtonElement>('[data-evolve-rabbit]'))?.disabled).toBe(false);
   panel().querySelector<HTMLButtonElement>('[data-evolve-rabbit]')!.click();
   expect(controller.getSnapshot().state!.rabbits.find(r => r.id === 'rabbit-104')!.evolution?.done).toBe(true);
   expect(document.querySelector('.evolution-moment')).not.toBeNull();
-  expect(document.querySelector<HTMLImageElement>('.evolution-after')!.src).toContain('paille-v2.png');
+  expect(document.querySelector<HTMLImageElement>('.evolution-after')!.src).toMatch(/paille-v2\.(png|webp)/);
   document.querySelector<HTMLButtonElement>('.evolution-moment-close')!.click();
   expect(document.querySelector('.evolution-moment')).toBeNull();
   ui.select({kind: 'rabbit', id: 'rabbit-104'}); // Evolved: the sheet now shows the evolution, drawing and name.
@@ -93,7 +93,7 @@ it('the sheet requires explicit evolution; the scene plays and the forest then s
   expect(document.getElementById('panel-title')?.textContent ?? panel().textContent).toContain('Forêt de Brocéliande');
   const cards = [...panel().querySelectorAll<HTMLElement>('[data-forest-rabbit]')];
   expect(cards.map(card => card.dataset.forestRabbit)).toEqual(['rabbit-104']); // Affection 30 alone never adds a rabbit to the forest.
-  expect(cards[0].querySelector('img')!.src).toContain('paille-v2.png');
+  expect(cards[0].querySelector('img')!.src).toMatch(/paille-v2\.(png|webp)/);
   const toOld = cards[0].querySelector('button')!; expect(toOld.textContent).toBe('Remettre l’ancien dessin');
   const pattes = controller.getSnapshot().state!.pattes;
   const confirm = () => [...document.querySelectorAll<HTMLButtonElement>('#game-dialog button')].find(b => b.textContent === 'Confirmer')!.click();
@@ -107,12 +107,12 @@ it('the sheet requires explicit evolution; the scene plays and the forest then s
   // The 7 hours: the old drawing stays hidden, no button, the time left is shown.
   let card = panel().querySelector<HTMLElement>('[data-forest-rabbit="rabbit-104"]')!;
   expect(card.querySelector('button')).toBeNull(); expect(card.querySelector('[data-look-change]')?.textContent).toContain('Retour à l’ancien dessin');
-  expect(card.querySelector('img')!.src).toContain('paille-v2.png');
+  expect(card.querySelector('img')!.src).toMatch(/paille-v2\.(png|webp)/);
   time += seven; controller.refresh();
   state = controller.getSnapshot().state!;
   expect(state.rabbits.find(r => r.id === 'rabbit-104')!.classicLook).toBe(true);
   card = panel().querySelector<HTMLElement>('[data-forest-rabbit="rabbit-104"]')!;
-  expect(card.dataset.look).toBe('classic'); expect(card.querySelector('img')!.src).toContain('paille-v1.png');
+  expect(card.dataset.look).toBe('classic'); expect(card.querySelector('img')!.src).toMatch(/paille-v1\.(png|webp)/);
   const toNew = card.querySelector('button')!; expect(toNew.textContent).toBe('Remettre le nouveau dessin');
   toNew.click(); confirm();
   time += seven; controller.refresh();

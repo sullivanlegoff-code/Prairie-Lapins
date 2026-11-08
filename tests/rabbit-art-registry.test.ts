@@ -1,4 +1,5 @@
 ﻿import {describe, expect, it} from 'vitest';
+import {preferWebp} from '../src/display/webpTwins';
 import {SPECIES, SPECIES_ENTRIES, SPECIES_IDS} from '../src/config/species';
 import {validateSpeciesEntries} from '../src/config/validateSpecies';
 import {RABBIT_ART, rabbitArt, SNOW_ART, STRAW_ART, LOP_ART, FIRE_ART, FLIGHT_ART} from '../src/config/rabbitArt';
@@ -25,7 +26,7 @@ describe('registry-owned art and URL adapter', () => {
     for (const id of SPECIES_IDS) {
       const art = rabbitArt(id);
       if (!art) {expect(portrait(id)).toMatch(/^<svg /); continue;}
-      expect(portrait(id)).toBe(`<img src="${art.url}" alt="${SPECIES[id].name}" width="${art.width}" height="${art.height}" decoding="async" draggable="false" data-rabbit-art="${id}">`);
+      expect(portrait(id)).toBe(`<img src="${preferWebp(art.url)}" alt="${SPECIES[id].name}" width="${art.width}" height="${art.height}" decoding="async" draggable="false" data-rabbit-art="${id}">`);
     }
   });
   it('carries the native direction of each picture: right by default, left only where the fixture says so, declarable without code', () => {

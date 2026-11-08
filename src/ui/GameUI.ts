@@ -1,4 +1,5 @@
 import {farmLimit, farmDuration} from '../config/balance';
+import {preferWebp} from '../display/webpTwins';
 import type {LegendaryAct} from '../display/legendaryTimeline';
 import {bestFriend} from '../simulation/cozy';
 import {DECORATION_COLLECTIONS,TRAVEL_STORIES} from '../config/cozyContent';
@@ -467,7 +468,7 @@ export class GameUI {
     const picture = portraitElement.querySelector<HTMLImageElement>('img[data-rabbit-art]'), evolved = !!picture?.hasAttribute('data-evolved');
     const art = evolved ? evolvedRabbitArt(rabbit.species) : rabbitArt(rabbit.species);
     const patch = rabbitBlinkArt(rabbit.species, evolved)?.patches.find(item => item.kind === 'eyes-closed');
-    if (picture && art && patch && picture.getAttribute('src') === art.url) {
+    if (picture && art && patch && [art.url, preferWebp(art.url)].includes(picture.getAttribute('src') ?? '')) {
       let figure = picture.parentElement?.classList.contains('ultimate-figure') || picture.parentElement?.classList.contains('pet-figure') ? picture.parentElement : null;
       if (!figure) {
         figure = node('span', '', 'pet-figure'); figure.style.setProperty('--ratio', String(art.width / art.height));

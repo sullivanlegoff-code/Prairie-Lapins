@@ -1,4 +1,5 @@
 ﻿import {expect, it, vi} from 'vitest';
+import {preferWebp} from '../src/display/webpTwins';
 import {portrait, COATS} from '../src/ui/portraits';
 import {SPECIES, SPECIES_IDS, proceduralCoat, type SpeciesArt, type SpeciesDefinition} from '../src/config/species';
 import {EXPECTED_ART} from './rabbit-art-fixtures';
@@ -47,6 +48,6 @@ it('renders an isolated static-sprite definition without any coat or compatibili
     const isolated = await import('../src/ui/portraits');
     expect(isolated.COATS).not.toHaveProperty('dragon');
     expect(isolated.portrait('dragon')).toContain('data-rabbit-art="dragon"');
-    expect(isolated.portrait('dragon')).toContain(`src="${import.meta.env.BASE_URL}${art.file}"`);
+    expect(isolated.portrait('dragon')).toContain(`src="${preferWebp(import.meta.env.BASE_URL + art.file)}"`);
   } finally {vi.doUnmock('../src/config/species'); vi.resetModules();}
 });

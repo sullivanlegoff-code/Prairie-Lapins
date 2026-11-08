@@ -1,4 +1,5 @@
 import {artForRabbit, rabbitArt} from '../config/rabbitArt';
+import {preferWebp} from '../display/webpTwins';
 import {JUMP_ROPE, SPECIES} from '../config/balance';
 import {airTime, advanceJumpRope, ropePhase, startJumpRope, tapJumpRope, type JumpRopeGame} from '../simulation/jumpRope';
 import {setCurrencyText} from '../display/currency';
@@ -39,8 +40,8 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
   layer.innerHTML = `<div class="jump-rope-top"><p class="jump-rope-score" aria-live="polite"></p><p class="jump-rope-best"></p><p class="jump-rope-quota"></p><button type="button" data-jump-rope-exit>Quitter</button></div>
 <div class="jump-rope-stage" data-jump-rope-stage>
 <canvas class="jump-rope-sky" aria-hidden="true"></canvas>
-<img class="jump-rope-island" alt="" aria-hidden="true" draggable="false" src="${JUMP_ROPE_ISLAND_URL}">
-<img class="jump-rope-kiosk" alt="" aria-hidden="true" draggable="false" src="${JUMP_ROPE_KIOSK_URL}">
+<img class="jump-rope-island" alt="" aria-hidden="true" draggable="false" src="${preferWebp(JUMP_ROPE_ISLAND_URL)}">
+<img class="jump-rope-kiosk" alt="" aria-hidden="true" draggable="false" src="${preferWebp(JUMP_ROPE_KIOSK_URL)}">
 <span class="jump-rope-carrier" data-side="left"><span class="jump-rope-figure"></span><span class="jump-rope-handle"></span></span>
 <span class="jump-rope-carrier" data-side="right"><span class="jump-rope-figure"></span><span class="jump-rope-handle"></span></span>
 <canvas class="jump-rope-rope" data-layer="back" aria-hidden="true"></canvas>

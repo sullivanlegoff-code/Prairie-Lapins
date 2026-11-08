@@ -1,10 +1,10 @@
 /* The meadow's field journal. Art is shared, layout and interaction stay local.
    Never skin the HUD, navigation, stone controls or outer panel border here. */
 :root {
-  --menu-linen: url('/assets/ui/menus/linen.png');
-  --menu-oak: url('/assets/ui/menus/oak.png');
-  --menu-stitch: url('/assets/ui/menus/stitched.png');
-  --menu-sage: url('/assets/ui/menus/sage.png');
+  --menu-linen: url('/assets/ui/menus/linen.webp');
+  --menu-oak: url('/assets/ui/menus/oak.webp');
+  --menu-stitch: url('/assets/ui/menus/stitched.webp');
+  --menu-sage: url('/assets/ui/menus/sage.webp');
   --menu-ink: #342f22;
   --menu-muted: #534b38;
 }
