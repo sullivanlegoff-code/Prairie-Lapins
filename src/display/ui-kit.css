@@ -125,7 +125,7 @@ button:not(.resource, .meadow-nav, .meadow-tool, .kitchen-object, .breeding-row,
    The carved frame is drawn over the parchment: its image band (26 px) is wider than the border (18 px), so the
    parchment, clipped to the padding box, starts right at the stone's inner edge. */
 #game-panel, #game-panel.shop-fullscreen,
-dialog:not(.paille-dialogue):not(.cuisine-activity):not(.legendary-reveal):not(.benny-reveal):not(.reception-card),
+dialog:not(.paille-dialogue):not(.cuisine-activity):not(.legendary-reveal):not(.benny-reveal):not(.reception-card):not(.update-news),
 #tutorial, #portrait-notice > div, .loading-card,
 .cuisine-activity .cuisine-root :is(.overlay-card, .orientation-card),
 :is(.sky-gifts-card, .jump-rope-card, .benny-flight-card) {

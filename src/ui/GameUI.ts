@@ -14,6 +14,7 @@ import {preloadReceptionFrame, receptionFrame} from '../config/receptionArt';
 import {accountKnown} from '../cloud/accountState';
 import {cloudConfig} from '../cloud/config';
 import {AccountReminder} from './accountReminder';
+import {UpdateNews} from './updateNews';
 import {decorateRabbitText, rabbitTheme, clearRabbitTheme} from '../display/rabbitPresentation';
 import {heartIcon} from '../display/currency';
 import {cuisineQuotaText, heartGift, recipeHint, orderReadyText} from './economyFeedback';
@@ -132,6 +133,8 @@ export class GameUI {
   private decorationGroup=new Set<string>();
   private groupOffset={x:0,y:0};
   private accountReminder: AccountReminder;
+  /** The Christmas update's news: once by itself, then under the settings while the event lasts. */
+  private updateNews: UpdateNews;
   private pailleDialogue: PailleDialogue;
   private get stagedOnboarding(): boolean { return this.controller.storageScope !== 'laboratory'; }
   private get onboardingActive(): boolean { const s = this.snapshot.state; return this.stagedOnboarding && s?.startCourse === 'paille-solo' && !mainCatalogueUnlocked(s) && this.preferences.value.tutorial && !this.preferences.value.tutorialDone && !s.missions.events.welcome; }
@@ -320,6 +323,8 @@ export class GameUI {
     document.getElementById('open-shop')!.addEventListener('click', () => this.open({kind: 'shop', tab: 'home'}, 'root'), options);
     document.getElementById('open-collection')!.addEventListener('click', () => this.open({kind: 'collection'}, 'root'), options);
     document.getElementById('open-settings')!.addEventListener('click', () => this.open({kind: 'settings'}, 'root'), options);
+    document.getElementById('open-news')?.addEventListener('click', () => this.updateNews.open(), options);
+    window.addEventListener('resize', () => this.renderNewsButton(), options);
     document.getElementById('save-warning')!.addEventListener('click', () => this.open({kind: 'settings'}), options);
     document.getElementById('cloud-warning')?.addEventListener('click', () => { this.open({kind: 'settings'}, 'root'); document.getElementById('account-content')?.scrollIntoView?.({block: 'start'}); }, options);
     document.getElementById('close-panel')!.addEventListener('click', () => this.close(), options);
@@ -360,6 +365,8 @@ export class GameUI {
       if (snapshot.state) for (const baby of nurseryBuilding(snapshot.state)?.nursery?.babies ?? []) preloadReceptionFrame(SPECIES[baby.birth.species].types[0]);
       if (!unchanged) { this.render(true); this.renderTutorial(); }
     });
+    this.updateNews = new UpdateNews(preferences, () => this.onboardingActive || !this.snapshot.state);
+    this.renderNewsButton();
     this.accountReminder = new AccountReminder(preferences,
       () => activityOptions.onlineServicesAllowed !== false && controller.storageScope !== 'laboratory' &&
         new URLSearchParams(location.search).get('dev') !== '1' && !!cloudConfig() && !(activityOptions.accountKnown ?? accountKnown)(),
@@ -380,11 +387,23 @@ export class GameUI {
     // A quarter-second check, not a 60 Hz frame loop: the countdowns change once a second (audit of 7 November 2026).
     const tick = () => {
       const second = Math.floor(this.clock() / 1000);
-      if (second !== this.lastSecond && !document.hidden) { this.lastSecond = second; this.updateTimers(); this.accountReminder.flush(); }
+      if (second !== this.lastSecond && !document.hidden) { this.lastSecond = second; this.updateTimers(); this.renderNewsButton(); this.updateNews.flush(); this.accountReminder.flush(); }
     };
     this.frame = window.setInterval(tick, 250);
   }
   private now(): number { return Math.max(this.clock(), this.snapshot.state?.lastSimulatedAt ?? 0); }
+  /** At the start of a game (main.ts): the update's news opens by itself once per device, when nothing else is in the way. */
+  welcomeNews(): void { this.updateNews.request(); }
+  /** The news button: shown while Christmas lasts, right under the settings (the top bar would cut a button hanging below it). */
+  private renderNewsButton(): void {
+    const button = document.getElementById('open-news'), settings = document.getElementById('open-settings');
+    if (!button) return;
+    button.hidden = !this.updateNews.available;
+    if (button.hidden || !settings) return;
+    const box = settings.getBoundingClientRect();
+    if (box.width <= 0) return;
+    button.style.left = `${Math.round(box.left)}px`; button.style.top = `${Math.round(box.bottom + 6)}px`;
+  }
   private renderPreferences(): void {
     document.getElementById('tutorial-toggle')!.textContent = this.preferences.value.tutorial && !this.preferences.value.tutorialDone ? 'Quitter le guidage' : 'Reprendre le guidage';
   }
@@ -2783,7 +2802,7 @@ export class GameUI {
     return false;
   }
   private onboardingAllowed(element: HTMLElement): boolean {
-    if (element.closest('#paille-dialogue, #nursery-welcome-banner') || ['open-settings','save-warning','cloud-warning','recenter-view','close-panel','panel-back','tutorial-toggle','onboarding-skip','continue-portrait'].includes(element.id)) return true;
+    if (element.closest('#paille-dialogue, #nursery-welcome-banner') || ['open-settings','open-news','save-warning','cloud-warning','recenter-view','close-panel','panel-back','tutorial-toggle','onboarding-skip','continue-portrait'].includes(element.id)) return true;
     if (element.closest('#settings-content') && this.view?.kind === 'settings') return true;
     // Modal interruptions (level reached, confirmation, level details, import) must always be closable: their content is
     // only reachable while open, and they may open between two renders. Only the pairing window keeps the guided rule.
@@ -2878,7 +2897,7 @@ export class GameUI {
     if (step.done) this.button(this.tutorial, 'Terminer le guidage', () => { this.preferences.set({tutorialDone: true}); this.renderPreferences(); this.renderTutorial(); }, null, true);
     this.button(this.tutorial, 'Masquer', () => { this.preferences.set({tutorial: false}); this.renderPreferences(); this.renderTutorial(); }, null, true);
   }
-  dispose(): void { this.photoControls.dispose(); this.clearRabbitMove(); this.moveBanner.remove(); this.clearWelcome(); this.welcomeBanner.remove(); this.closeReception(); this.accountReminder.dispose(); document.getElementById('onboarding-skip')?.remove(); this.pailleDialogue.dispose(); this.cuisine.dispose(); this.jumpRope.dispose(); this.skyGifts.dispose(); this.bennyFlight.dispose(); this.confirmationGeneration++; if (this.dialog.open) this.dialog.close(); this.dialog.replaceChildren(); this.unsubscribe(); this.abort.abort(); clearInterval(this.frame); clearTimeout(this.toastTimer); this.endCaress(); this.sounds.dispose(); }
+  dispose(): void { this.photoControls.dispose(); this.clearRabbitMove(); this.moveBanner.remove(); this.clearWelcome(); this.welcomeBanner.remove(); this.closeReception(); this.accountReminder.dispose(); this.updateNews.dispose(); document.getElementById('onboarding-skip')?.remove(); this.pailleDialogue.dispose(); this.cuisine.dispose(); this.jumpRope.dispose(); this.skyGifts.dispose(); this.bennyFlight.dispose(); this.confirmationGeneration++; if (this.dialog.open) this.dialog.close(); this.dialog.replaceChildren(); this.unsubscribe(); this.abort.abort(); clearInterval(this.frame); clearTimeout(this.toastTimer); this.endCaress(); this.sounds.dispose(); }
 }
 
 const JUMP_ISLAND_NAME = 'Île de la corde à sauter';

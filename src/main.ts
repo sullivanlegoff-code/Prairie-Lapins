@@ -28,6 +28,7 @@ import {FULLSCREEN_ACTIVITY_EVENT, ISLAND_COVER_EVENT, type IslandCover} from '.
 import {DADI_SONG_EVENT, type DadiSongDetail} from './config/dadiStageArt';
 import './display/christmas-market.css';
 import './display/benny-reveal.css';
+import './display/update-news.css';
 import './display/reception.css';
 import './display/loading-screen.css';
 import './display/ui-kit.css';
@@ -145,6 +146,7 @@ async function boot(): Promise<() => void> {
     loadingRoot.hidden = true; app.inert = false; loading.dispose(); unrender(); stopMessages();
     ui = new GameUI(controller, scene, clock, preferences, audio, {onlineServicesAllowed: policy.onlineServicesAllowed && !LABORATORY_BUILD && !DECORATIONS_PREVIEW_BUILD, accountKnown: () => accountKnown(storage),
       onCuisineActive: active => { music.setPlace(active ? 'kitchen' : 'meadow'); window.dispatchEvent(new CustomEvent<IslandCover>(ISLAND_COVER_EVENT, {detail: {source: 'cuisine', covered: active}})); }, onRabbitSheet: species => music.playTheme(species)});
+    ui.welcomeNews();
     const soundSettings = mountSoundSettings(document, preferences, {onChange: (channel, enabled, volume) => {
       audio.configure(channel, {enabled, volume});
       if (channel === 'music') { music.setEnabled(enabled); music.refreshVolume(); }
