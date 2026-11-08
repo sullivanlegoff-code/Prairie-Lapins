@@ -81,7 +81,7 @@ Trois relectures en lecture seule (interface et rendu, simulation et sauvegarde,
 9. **Poids** : 7 images jamais utilisées retirées (environ 5,7 Mo de moins à servir).
 
 ### Restant (non corrigé, à décider ou mineur)
-- **Musique `dragon-chill.mp3` de 19,5 Mo** : à ré-encoder vers 2 à 3 Mo (128 kbit/s suffit). Aucun outil de conversion n'est installé sur la machine.
+- ~~Musique `dragon-chill.mp3` de 19,5 Mo~~ : réglé le 8 novembre 2026, ce thème est supprimé et remplacé par les sept musiques de Noël en 96 kbit/s (16,8 Mo en tout, chargées une à une ; voir `docs/audio.md`).
 - **Palais Ultra neige** : après la fin de l'événement, il ne peut plus être amélioré, et les sucres d'orge dépensés sont perdus si on le retire. Décision du propriétaire (7 novembre 2026) : **le palais reste figé** après l'événement ; le comportement actuel est conservé.
 - **Défis de Noël du tout premier jour** d'une partie (ou du jour de lancement de l'événement) : tant qu'aucun défi n'a avancé, la liste peut changer quand l'île grandit (une ferme, le niveau 2). Aucune progression n'est perdue : le tirage est enregistré au premier défi avancé. L'enregistrer plus tôt changerait toutes les sauvegardes neuves ; laissé tel quel.
 - Mineurs, laissés tels quels : la position du bandeau du haut est relue à chaque image (coût faible) ; un écouteur d'annulation de l'évolution n'est pas retiré (fuite négligeable, un par évolution).

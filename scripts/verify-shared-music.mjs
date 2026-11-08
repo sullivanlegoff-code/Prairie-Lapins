@@ -4,7 +4,7 @@ import {readdirSync, lstatSync, readFileSync} from 'node:fs';
 import {resolve, join, relative} from 'node:path';
 
 const root = resolve(process.argv[2] || 'netlify-site');
-const names = ['indian-vibe-1.mp3', 'indian-vibe-2.mp3', 'indian-vibe-3.mp3', 'dragon-chill.mp3', 'dadi.mp3'];
+const names = ['indian-vibe-1.mp3', 'indian-vibe-2.mp3', 'indian-vibe-3.mp3', ...[1, 2, 3, 4, 5, 6, 7].map(n => `noel-${n}.mp3`), 'dadi.mp3'];
 const files = [];
 function walk(directory) {
   for (const name of readdirSync(directory)) {

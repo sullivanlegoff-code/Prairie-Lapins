@@ -35,7 +35,7 @@ import {AudioEngine} from './audio/audioEngine';
 import {mountSoundSettings, channelSettings} from './ui/soundSettings';
 import {MusicPlayer} from './audio/musicPlayer';
 import {MusicDirector} from './audio/musicDirector';
-import {KITCHEN_TRACKS, MEADOW_START_SEGMENTS, MEADOW_TRACKS, RABBIT_THEMES} from './config/music';
+import {KITCHEN_TRACKS, MEADOW_TRACKS, RABBIT_THEMES} from './config/music';
 import {LoadingTracker, renderLoading, startLoadingMessages} from './display/loadingScreen';
 
 async function boot(): Promise<() => void> {
@@ -106,11 +106,11 @@ async function boot(): Promise<() => void> {
   });
   const audio = new AudioEngine();
   for (const channel of ['music', 'effects'] as const) audio.configure(channel, channelSettings(preferences, channel));
-  // Musique: the meadow music is probed now; nothing sounds before « Jouer ». The kitchen has its own.
+  // Musique: one of the seven Christmas tracks, drawn at random, is probed now; nothing sounds before « Jouer ». The kitchen has its own.
   const musicBase = import.meta.env.VITE_SHARED_MUSIC_BASE ?? import.meta.env.BASE_URL;
   const musicUrls = (files: readonly string[]) => files.map(file => musicBase + 'assets/audio/music/' + file);
   const themes: Record<string, MusicPlayer> = {};
-  const music = new MusicDirector(new MusicPlayer({tracks: musicUrls(MEADOW_TRACKS), engine: audio, startSegments: MEADOW_START_SEGMENTS}),
+  const music = new MusicDirector(new MusicPlayer({tracks: musicUrls(MEADOW_TRACKS), engine: audio}),
     new MusicPlayer({tracks: musicUrls(KITCHEN_TRACKS), engine: audio}), themes);
   for (const [species, file] of Object.entries(RABBIT_THEMES)) {
     const theme: MusicPlayer = new MusicPlayer({tracks: musicUrls([file]), engine: audio, once: true, onFinished: () => music.themeFinished(theme)});
