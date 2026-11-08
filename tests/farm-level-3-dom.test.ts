@@ -35,9 +35,11 @@ it('locks the farm level 3 upgrade below player level 20', () => {
   const {ui} = mount(farmGame(19, 2, 100_000)); ui.select({kind: 'building', id: 'building-100'});
   expect(panel().querySelector('.farm-level')?.textContent).toBe('Ferme niveau 2');
   const card = panel().querySelector<HTMLElement>('[data-upgrade-farm="3"]')!;
-  expect(card.textContent).toContain('trèfle doré'); expect(card.querySelector('button')!.disabled).toBe(true);
+  expect(card.textContent).toContain('Quatre nourritures fantaisie à découvrir'); expect(card.textContent).not.toContain('trèfle doré'); expect(card.querySelector('button')!.disabled).toBe(true);
   expect(card.textContent).toContain('Niveau 20 requis');
-  for (const id of ['trefleDore', 'carotteArcEnCiel', 'fraiseEtoilee', 'pommeAmour']) expect(panel().querySelector(`[data-crop="${id}"]`)!.textContent).toContain('Ferme niveau 3');
+  // Owner, 8 November 2026: the fancy crops stay hidden until the farm reaches level 3.
+  for (const id of ['trefleDore', 'carotteArcEnCiel', 'fraiseEtoilee', 'pommeAmour']) expect(panel().querySelector(`[data-crop="${id}"]`)).toBeNull();
+  expect(panel().querySelector('[data-crop="fanes"]')).not.toBeNull();
 });
 
 it('upgrades the farm to level 3 for 60 000 pattes after confirmation, then opens the fancy crops', () => {
