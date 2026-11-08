@@ -87,6 +87,7 @@ import {coinBubble} from './currencyPhaser';
 import {MAGICIEN_ART, MAGICIEN_TEST_EVENT} from '../config/magicienArt';
 import {DADI_SONG_EVENT, DADI_STAGE, type DadiSongDetail} from '../config/dadiStageArt';
 import {DadiStageView} from './dadiStageView';
+import {danceMove, dancePose} from './rabbitDance';
 import {MagicienView} from './magicienEffects';
 import {MagicienClock, magicienFree, type MagicienAct} from './magicienTimeline';
 import {CHASE_EVENT, RabbitChases, type ChaseRunner} from './rabbitChase';
@@ -154,6 +155,8 @@ export class MeadowScene extends Phaser.Scene {
   /** Dadi's song is playing (DADI_SONG_EVENT); with the music off, only for `DADI_STAGE.silentSongMs`. */
   private dadiSinging = false;
   private dadiSilentTimer = 0;
+  /** Scene time when Dadi's song started: the other rabbits dance on its beat (src/display/rabbitDance.ts). */
+  private dadiSongAt = 0;
   private magicienClocks = new Map<string, MagicienClock>();
   /** Two rabbits of one enclosure running after each other now and then (visual only). */
   private chases = new RabbitChases();
@@ -337,7 +340,10 @@ export class MeadowScene extends Phaser.Scene {
     // Dadi's song (src/main.ts): the evolved Dadi sings at his microphone while it plays; music switched off, for a while.
     const dadiSong = (event: Event) => {
       const detail = (event as CustomEvent<DadiSongDetail>).detail; window.clearTimeout(this.dadiSilentTimer);
+      const started = !!detail?.singing && !this.dadiSinging;
       this.dadiSinging = !!detail?.singing;
+      // The song wakes the meadow: sleepers, a kissing pair or a chase stop, everyone dances (owner, 8 November 2026).
+      if (started) { this.dadiSongAt = this.time.now; for (const rabbit of this.rabbitViews) if (this.dances(rabbit)) this.life.interrupt(rabbit.id); }
       if (this.dadiSinging && !detail.audible) this.dadiSilentTimer = window.setTimeout(() => { this.dadiSinging = false; }, DADI_STAGE.silentSongMs);
     };
     window.addEventListener(DADI_SONG_EVENT, dadiSong);
@@ -726,6 +732,11 @@ export class MeadowScene extends Phaser.Scene {
   static readonly SNOWMAN_MS = 6500;
   static readonly SNOWMAN_STEPS = [600, 2200, 3800] as const;
   /** A rabbit gathered somewhere now (the picnic, the snowman): it neither roams, chases, fights nor speaks. */
+  /** Dances to Dadi's song: every rabbit out in the meadow but Dadi, Benny up in the air, a nursery parent or a picnic guest. */
+  private dances(rabbit: VisualRabbit): boolean {
+    if (!this.dadiSinging || this.photo || !rabbit.motion || rabbit.nest || rabbit.id === this.bennyAway || this.gathered(rabbit.id)) return false;
+    return this.current?.rabbits.find(r => r.id === rabbit.id)?.species !== 'dadi';
+  }
   private gathered(id: string): boolean { return !!this.picnicParty?.ids.includes(id) || !!this.snowmanBuild?.ids.includes(id); }
   /** An enclosure's roaming zone in its local space (same table as its rabbits' motions). */
   private enclosureZone(b: Building): {minX: number; maxX: number; minY: number; maxY: number} {
@@ -1719,11 +1730,11 @@ export class MeadowScene extends Phaser.Scene {
     this.syncChristmasMarket(winterNow);
     if (this.time.now - this.snowmanCheckedAt >= 500) { this.snowmanCheckedAt = this.time.now; this.syncSnowman(); }
     this.life.step(dt, this.rabbitViews.flatMap(r => r.motion ? [{id: r.id, group: r.group, motion: r.motion, nest: r.nest, friendId:this.friends.get(r.id),occupied:this.cozyInteraction.active?.id===r.id||this.gathered(r.id)||this.snowballs.isFighting(r.id), visible: visibleResidents.has(r.id)}] : []),
-      lifeActive, reducedMotion, dadi.speech && !this.gathered(dadi.speech.id) ? [dadi.speech.id] : []);
-    this.chases.step(dt, this.chaseRunners(visibleResidents, dadi.speech?.id), lifeActive, reducedMotion, this.chaseTest);
+      lifeActive && !this.dadiSinging, reducedMotion, dadi.speech && !this.gathered(dadi.speech.id) ? [dadi.speech.id] : []);
+    this.chases.step(dt, this.chaseRunners(visibleResidents, dadi.speech?.id), lifeActive && !this.dadiSinging, reducedMotion, this.chaseTest);
     this.chaseTest = false;
     // Christmas: the snowball fights, after the chases (a chaser never throws), while the event is on.
-    this.snowballs.step(dt, this.snowballThrowers(visibleResidents, dadi.speech?.id), lifeActive, reducedMotion, christmas, christmas && this.time.now < this.snowballTestUntil,
+    this.snowballs.step(dt, this.snowballThrowers(visibleResidents, dadi.speech?.id), lifeActive && !this.dadiSinging, reducedMotion, christmas, christmas && this.time.now < this.snowballTestUntil,
       christmas && this.time.now < this.snowballBattleTestUntil);
     this.drawSnowballs();
     this.lifeViews?.begin(this.rabbitViews.map(r => r.id));
@@ -1742,13 +1753,17 @@ export class MeadowScene extends Phaser.Scene {
           others.push(other.motion.local);
           if (other.motion.mode === 'walk') others.push(other.motion.to);
         }
-        const activity = ['sleep', 'zoom', 'meet', 'kiss'].includes(motion.mode);
-        if (rabbit.nest ? lifeActive && visibleResidents.has(rabbit.id) && motion.mode !== 'rest' && (!reducedMotion || motion.mode === 'walk' || motion.mode === 'salto' || motion.mode === 'fed') :
+        const activity = ['sleep', 'zoom', 'meet', 'kiss'].includes(motion.mode), dancing = this.dances(rabbit);
+        if (dancing) { /* stands where it is while it dances */ } else if (rabbit.nest ? lifeActive && visibleResidents.has(rabbit.id) && motion.mode !== 'rest' && (!reducedMotion || motion.mode === 'walk' || motion.mode === 'salto' || motion.mode === 'fed') :
           !activity || lifeActive && visibleResidents.has(rabbit.id)) stepRabbitMotion(motion, dt, others);
         // Benny's act may take over the motion (or carry her along her hops) before the pose is read.
         rabbit.benny?.update({dt, time, active: lifeActive && visibleResidents.has(rabbit.id), reduced: reducedMotion});
         const pose = rabbitPose(motion);
         ({lift, squashX, squashY, facing, rotation} = pose);
+        if (dancing) {
+          const dance = dancePose(danceMove(rabbit.id), this.time.now - this.dadiSongAt, reducedMotion);
+          ({lift, squashX, squashY} = dance); rotation = dance.rotation; facing = dance.facing ?? motion.facing; pose.nuzzle = 0;
+        }
         if (rabbit.benny) { squashX *= rabbit.benny.squashX; squashY *= rabbit.benny.squashY; }
         // A snowball fight: the wind-up, the knock of a hit, a dodge or the cheer of the winners.
         const throwing = this.snowballs.pose(rabbit.id, facing);

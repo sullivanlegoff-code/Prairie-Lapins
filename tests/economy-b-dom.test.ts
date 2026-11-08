@@ -42,12 +42,13 @@ it('shows free hints in collection and notebook while keeping affection and odds
   expect(panel().querySelector('[data-recipe="bouee"] .recipe-hint')?.textContent).toBe('Indice : Feu × Métal');
   for(const id of ['dinono','magicien','dragon','dadi','maxou','orange','requin'])expect(panel().querySelector(`[data-recipe="${id}"] .recipe-hint`)).toBeNull();
 });
-it('renders the fourteen crops with their icon, locks the later ones and shows a local completion clock for a running crop',()=>{
+// Owner (8 November 2026): a level 1 farm shows only its own five crops; the higher farm levels' crops stay hidden until the upgrade.
+it('renders the level 1 farm crops with their icon, locks the later ones and shows a local completion clock for a running crop',()=>{
   const s=createGame(0);s.pattes=1000;s.buildings.push(emptyBuilding('building-100','farm',0,32));s.nextId=101;s.progression={totalXp:cumulativeLevelXp(5),rewardedThroughLevel:5};
   const {ui,controller}=mount(s);ui.select({kind:'building',id:'building-100'});
   const crops=[...panel().querySelectorAll<HTMLElement>('.farm-order')];
-  expect(crops.map(c=>c.dataset.crop)).toEqual(['foin','pissenlit','trefle','persil','laitue','fanes','fenouil','pomme','fraise','banane','trefleDore','carotteArcEnCiel','fraiseEtoilee','pommeAmour','citrouilleDoree','melonLune','cerisesCristal']);
-  expect(crops.every(c=>c.querySelector('img.crop-icon'))).toBe(true);expect(crops[9].textContent).toContain('Banane');expect(crops[9].textContent).toContain('10 h');
+  expect(crops.map(c=>c.dataset.crop)).toEqual(['foin','pissenlit','trefle','persil','laitue']);
+  expect(crops.every(c=>c.querySelector('img.crop-icon'))).toBe(true);expect(crops[4].textContent).toContain('Laitue');
   expect(crops[3].querySelector('button')?.textContent).toBe('Cultiver · 250 pièces');expect(crops[4].querySelector('button')).toBeNull();expect(crops[4].querySelector('.badge')?.textContent).toBe('Niveau 7 requis');
   controller.perform({type:'startOrder',id:'building-100',recipe: 'persil'});
   expect(panel().querySelector('.order-ready-time')?.textContent).toMatch(/^Prête vers \d+ h \d{2}$/);
