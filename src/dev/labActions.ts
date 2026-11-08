@@ -122,10 +122,10 @@ export function labAction(state: GameState, action: LabAction): GameState {
     case 'buildingLevel': {
       const b = s.buildings.find(b => b.id === action.id);
       if (!b || !['farm', 'agency', 'enclosure'].includes(b.kind)) throw new Error('Choisis une ferme, une agence ou un habitat.');
-      const level = integer(action.level, 1, 3);
+      const level = integer(action.level, 1, b.kind === 'farm' ? 4 : 3);
       if (b.kind === 'farm') {
         if (b.order && level < orderFarmLevel(b.order.recipe)) throw new Error(`Récolte cette culture avant de revenir au niveau ${level}.`);
-        if (level === 1) delete b.farmLevel; else b.farmLevel = level as 2 | 3;
+        if (level === 1) delete b.farmLevel; else b.farmLevel = level as 2 | 3 | 4;
       } else if (b.kind === 'agency') {
         if ((s.travel?.trips.length ?? 0) > level) throw new Error('Accueille les voyageurs avant de réduire la capacité de l’agence.');
         if (level === 1) delete b.agencyLevel; else b.agencyLevel = level as 2 | 3;

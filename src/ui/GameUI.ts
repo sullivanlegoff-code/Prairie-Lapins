@@ -1289,7 +1289,7 @@ export class GameUI {
         }
       }
       if (farmLevel === 1) this.heartUpgrade(s, 'Agrandir la ferme', 'Des cultures 20 % plus rapides, le moulin et cinq nouvelles cultures : fanes de carotte, fenouil, pomme, fraise et banane.', FARM_UPGRADES[2].hearts, {type: 'upgradeFarm', id, toLevel: 2}, playerLevel(s) < FARM_UPGRADES[2].level ? `Niveau ${FARM_UPGRADES[2].level} requis` : null);
-      else if (farmLevel === 2) this.farmLevel3Upgrade(s, id);
+      else if (farmLevel === 2 || farmLevel === 3) this.farmPattesUpgrade(s, id, farmLevel + 1 as 3 | 4);
     } else if (b.kind === 'nest') this.renderNest(s, id);
     else if (b.kind === 'nursery') this.renderNursery(s);
     else if (b.kind === 'kitchen') this.button(this.content, 'Entrer dans la Cuisine', () => this.openCuisine());
@@ -1639,16 +1639,18 @@ export class GameUI {
       add(card);
     }
   }
-  /** Farm level 2 → 3: pattes only, never a Heart complement; re-read at confirmation so a stale view never pays. */
-  private farmLevel3Upgrade(s: GameState, id: string): void {
-    const {level, pattes} = FARM_UPGRADES[3], title = 'Améliorer la ferme';
-    const description = 'Quatre nourritures fantaisie : trèfle doré, carotte arc-en-ciel, fraise étoilée et pomme d’amour. Tes cultures restent 20 % plus rapides.';
-    const card = this.card(title, description); card.dataset.upgradeFarm = '3';
+  /** Farm level 2 → 3 and 3 → 4: pattes only, never a Heart complement; re-read at confirmation so a stale view never pays. */
+  private farmPattesUpgrade(s: GameState, id: string, toLevel: 3 | 4): void {
+    const {level, pattes} = FARM_UPGRADES[toLevel], title = 'Améliorer la ferme';
+    const description = toLevel === 3
+      ? 'Quatre nourritures fantaisie : trèfle doré, carotte arc-en-ciel, fraise étoilée et pomme d’amour. Tes cultures restent 20 % plus rapides.'
+      : 'Un moulin encore plus beau et trois cultures plus généreuses : citrouille dorée, melon de lune et cerises de cristal. Toutes tes cultures deviennent 30 % plus rapides.';
+    const card = this.card(title, description); card.dataset.upgradeFarm = String(toLevel);
     this.button(card, `Améliorer · ${pattes} pattes`, () => {
       this.controller.refresh(); const fresh = this.controller.getSnapshot().state; if (!fresh) return;
-      if (fresh.buildings.find(x => x.id === id)?.farmLevel !== 2) { this.notice(REFUSALS.STALE_ACTION); this.render(); return; }
+      if ((fresh.buildings.find(x => x.id === id)?.farmLevel ?? 1) !== toLevel - 1) { this.notice(REFUSALS.STALE_ACTION); this.render(); return; }
       if (fresh.pattes < pattes) { this.notice(REFUSALS.NOT_ENOUGH_PATTES); return; }
-      this.confirm(`${title} ?`, `${description} Paiement : ${pattes} pattes.`, () => this.execute({type: 'upgradeFarm', id, toLevel: 3}, 'Ta ferme passe au niveau 3.'));
+      this.confirm(`${title} ?`, `${description} Paiement : ${pattes} pattes.`, () => this.execute({type: 'upgradeFarm', id, toLevel}, `Ta ferme passe au niveau ${toLevel}.`));
     }, playerLevel(s) < level ? `Niveau ${level} requis` : moneyReason(s, pattes), true);
     this.content.append(card);
   }

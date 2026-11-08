@@ -55,7 +55,7 @@ const building = z.object({
   // x, y: a fine cell; only the islet's nest (off the land grid, checked below) may sit at a negative one.
   id: identity, kind: z.enum(BUILDING_KINDS), x: offGridCell, y: offGridCell, incomeUnits: integer,
   habitat: z.object({type: z.enum(HABITAT_TYPES), level: z.union([z.literal(1), z.literal(2), z.literal(3)]), ultra: z.literal(true).optional()}).strict().nullable(),
-  farmLevel: z.union([z.literal(2), z.literal(3)]).optional(), agencyLevel: z.union([z.literal(2), z.literal(3)]).optional(),
+  farmLevel: z.union([z.literal(2), z.literal(3), z.literal(4)]).optional(), agencyLevel: z.union([z.literal(2), z.literal(3)]).optional(),
   footprintTier: footprintTier.optional(), formerFootprint: z.union([z.literal(1), z.literal(2)]).optional(), islet: z.literal(true).optional(),
   order: z.object({recipe: z.enum(Object.keys(ORDERS) as [OrderId, ...OrderId[]]), startedAt: timestamp, endsAt: timestamp, grass: integer.optional(), duration: integer.positive().optional()}).strict().nullable(),
   breeding: z.object({parents: z.tuple([identity, identity]), startedAt: timestamp, endsAt: timestamp, birth}).strict().nullable(),

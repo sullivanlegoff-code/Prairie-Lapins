@@ -143,12 +143,13 @@ describe('income and time', () => {
 describe('farming and affection', () => {
   itAll(Object.keys(ORDERS) as (keyof typeof ORDERS)[])('runs exactly one %s farm order', recipe => {
     let s = run(createGame(0), {type: 'buyBuilding', kind: 'farm', x: 22, y: 20}); const id = s.buildings[1].id;
-    s.pattes = 5000; s.progression = {totalXp: cumulativeLevelXp(ORDERS[recipe].level), rewardedThroughLevel: ORDERS[recipe].level};
-    s.buildings.find(b => b.id === id)!.farmLevel = orderFarmLevel(recipe) === 3 ? 3 : 2;
-    s = run(s, {type: 'startOrder', id, recipe}); expect(s.pattes).toBe(5000 - ORDERS[recipe].cost);
+    s.pattes = 10_000; s.progression = {totalXp: cumulativeLevelXp(ORDERS[recipe].level), rewardedThroughLevel: ORDERS[recipe].level};
+    const farmLevel = orderFarmLevel(recipe) === 4 ? 4 : orderFarmLevel(recipe) === 3 ? 3 : 2;
+    s.buildings.find(b => b.id === id)!.farmLevel = farmLevel;
+    s = run(s, {type: 'startOrder', id, recipe}); expect(s.pattes).toBe(10_000 - ORDERS[recipe].cost);
     refuses(s, {type: 'startOrder', id, recipe}, 'BUSY');
-    // The farm is upgraded here: each new crop lasts 20 % less (farmDuration).
-    refuses(s, {type: 'collectOrder', id}, 'NOT_READY', farmDuration(ORDERS[recipe].duration, 2) - 1);
+    // The farm is upgraded here: each new crop lasts 20 % less (30 % on a level 4 farm, farmDuration).
+    refuses(s, {type: 'collectOrder', id}, 'NOT_READY', farmDuration(ORDERS[recipe].duration, farmLevel) - 1);
     s = run(s, {type: 'collectOrder', id}, 100 * HOUR);
     expect(s.grass).toBe(10 + ORDERS[recipe].grass); expect(s.buildings[1].order).toBeNull();
     refuses(s, {type: 'collectOrder', id}, 'NOT_READY');
@@ -156,9 +157,11 @@ describe('farming and affection', () => {
   it('opens each crop at its own player level, better-liked crops costing, lasting and yielding more', () => {
     const s = run(createGame(0), {type: 'buyBuilding', kind: 'farm', x: 22, y: 20}); s.pattes = 1000;
     refuses(s, {type: 'startOrder', id: s.buildings[1].id, recipe: 'banane'}, 'LEVEL_REQUIRED');
-    const crops = Object.values(ORDERS);
-    for (let i = 1; i < crops.length; i++) for (const key of ['level', 'cost', 'grass', 'duration'] as const) expect(crops[i][key]).toBeGreaterThanOrEqual(crops[i - 1][key]);
-    expect(crops).toHaveLength(14); // The ten crops, then the four fancy crops of the level 3 farm.
+    const all = Object.values(ORDERS);
+    // The ten crops, then the four fancy crops of the level 3 farm, then the three level 4 crops (richer, so compared apart).
+    expect(all).toHaveLength(17);
+    for (const crops of [all.slice(0, 14), all.slice(14)])
+      for (let i = 1; i < crops.length; i++) for (const key of ['level', 'cost', 'grass', 'duration'] as const) expect(crops[i][key]).toBeGreaterThanOrEqual(crops[i - 1][key]);
   });
   it('refuses an unaffordable order', () => {
     const s = run(createGame(0), {type: 'buyBuilding', kind: 'farm', x: 22, y: 20}); s.pattes = 0;

@@ -446,10 +446,10 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       }
       case 'upgradeFarm': {
         const b = building(command.id, 'farm'), toLevel = command.toLevel ?? 2;
-        requireRule(toLevel === 2 || toLevel === 3, 'INVALID_CHOICE');
+        requireRule(toLevel === 2 || toLevel === 3 || toLevel === 4, 'INVALID_CHOICE');
         requireRule((b.farmLevel ?? 1) === toLevel - 1, 'STALE_ACTION');
         const upgrade = FARM_UPGRADES[toLevel]; requireRule(playerLevel(s) >= upgrade.level, 'LEVEL_REQUIRED');
-        // Level 2 is paid in Hearts, level 3 in pattes only (no Heart complement); a refusal changes nothing.
+        // Level 2 is paid in Hearts, levels 3 and 4 in pattes only (no Heart complement); a refusal changes nothing.
         if ('hearts' in upgrade) { requireRule(s.hearts >= upgrade.hearts, 'NOT_ENOUGH_HEARTS'); s.hearts -= upgrade.hearts; }
         else { requireRule(s.pattes >= upgrade.pattes, 'NOT_ENOUGH_PATTES'); s.pattes -= upgrade.pattes; }
         b.farmLevel = toLevel; break;

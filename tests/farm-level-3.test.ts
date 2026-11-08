@@ -62,8 +62,8 @@ describe('farm level 3', () => {
 describe('fancy crops', () => {
   it('are the four owner crops, above the banana', () => {
     expect(FANCY_ORDER_IDS.map(id => [ORDERS[id].name, ORDERS[id].level, ORDERS[id].cost, ORDERS[id].duration / HOUR, ORDERS[id].grass])).toEqual([
-      ['Trèfle doré', 20, 1200, 10, 1400], ['Carotte arc-en-ciel', 22, 1600, 12, 1800],
-      ['Fraise étoilée', 24, 2000, 14, 2200], ['Pomme d’amour', 26, 2400, 16, 2700],
+      ['Trèfle doré', 20, 3000, 10, 1400], ['Carotte arc-en-ciel', 22, 4000, 12, 1800],
+      ['Fraise étoilée', 24, 5000, 14, 2200], ['Pomme d’amour', 26, 6000, 16, 2700],
     ]);
     for (const id of FANCY_ORDER_IDS) expect(orderFarmLevel(id)).toBe(3);
     expect([orderFarmLevel('foin'), orderFarmLevel('laitue'), orderFarmLevel('fanes'), orderFarmLevel('banane')]).toEqual([1, 1, 2, 2]);
@@ -104,9 +104,9 @@ describe('farm level 3 saves', () => {
       expect(decodeGame(JSON.stringify(raw))).toEqual({ok: false, reason: 'INVALID_STATE'});
     }
   });
-  it('refuse a farm level beyond 3', () => {
+  it('refuse a farm level beyond 4', () => {
     const {s, id} = setup(22, 3); const raw = JSON.parse(encodeGame(s));
-    raw.buildings.find((b: {id: string}) => b.id === id).farmLevel = 4;
+    raw.buildings.find((b: {id: string}) => b.id === id).farmLevel = 5;
     expect(decodeGame(JSON.stringify(raw))).toEqual({ok: false, reason: 'INVALID_STATE'});
   });
   it('still load v22 saves and level 1 or 2 farms unchanged', () => {

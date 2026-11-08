@@ -84,7 +84,7 @@ export function mountLabPanel(host: HTMLElement, controller: GameController,
   const kind = select(buildings, 'Bâtiment à construire', 'build-kind', kinds);
   button(buildings, 'Construire gratuitement', 'build', () => { const [k, t] = kind.value.split(':'); perform({type: 'build', kind: k === 'habitat' ? 'enclosure' : k as BuildingKind | 'jumpIsland', ...(t ? {habitatType: t as typeof HABITAT_TYPES[number]} : {})}, 'Construction terminée.'); });
   const building = select(buildings, 'Bâtiment à régler', 'building-id', []), buildingLevel = select(buildings, 'Niveau du bâtiment', 'building-level', range(3));
-  const refreshLevel = () => setOptions(buildingLevel, range(3));
+  const refreshLevel = () => setOptions(buildingLevel, range(controller.getSnapshot().state?.buildings.find(b => b.id === building.value)?.kind === 'farm' ? 4 : 3));
   building.onchange = refreshLevel;
   button(buildings, 'Appliquer au bâtiment', 'set-building-level', () => perform({type: 'buildingLevel', id: building.value, level: Number(buildingLevel.value)}, 'Niveau et empreinte du bâtiment réglés. Un habitat peut être déplacé sur une case libre si nécessaire.'));
   const cushions = select(buildings, 'Coussins de la nurserie', 'nursery-capacity', range(4));

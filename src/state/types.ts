@@ -24,7 +24,7 @@ export type DebrisKind = 'rocher' | 'buisson' | 'herbes';
 export interface Debris {id: string; kind: DebrisKind; x: number; y: number; price: number}
 export interface Building {
   /** Absent = level 1. */
-  farmLevel?: 2 | 3; agencyLevel?: 2 | 3;
+  farmLevel?: 2 | 3 | 4; agencyLevel?: 2 | 3;
   id: string; kind: BuildingKind; x: number; y: number;
   /** Exact numerator: one patte = HOUR units. Never round each update. */
   incomeUnits: number;
@@ -248,7 +248,7 @@ export type Command = BaseCommand
   /** Christmas market: a Christmas decoration for its sucres d'orge, placed now or kept in the inventory. */
   | {type: 'buyChristmasDecoration'; catalogId: DecorationId; location?: Extract<DecorationLocation, {kind: 'outside'}>}
   | {type: 'buyChristmasRabbit'; species: import('../config/balance').SpeciesId; enclosureId: string}
-  | {type: 'welcomeAgency'} | {type: 'startTrip'; rabbitId: string} | {type: 'claimTrip'; rabbitId: string} | {type: 'upgradeFarm'; id: string; /** Level reached; absent = 2 (older callers). A farm not one level below is a stale action. */ toLevel?: 2 | 3} | {type: 'upgradeAgency'; id: string; fromLevel: 1 | 2 | 3}
+  | {type: 'welcomeAgency'} | {type: 'startTrip'; rabbitId: string} | {type: 'claimTrip'; rabbitId: string} | {type: 'upgradeFarm'; id: string; /** Level reached; absent = 2 (older callers). A farm not one level below is a stale action. */ toLevel?: 2 | 3 | 4} | {type: 'upgradeAgency'; id: string; fromLevel: 1 | 2 | 3}
   /** `birthId` names the nursery baby; required for growth, ignored otherwise. */
   | {type: 'initiationAid'; id: string; stage: TimedStage; jobKey: string; birthId?: string}
   | {type: 'accelerate'; id: string; stage: TimedStage; jobKey: string; maxHearts: number; birthId?: string}

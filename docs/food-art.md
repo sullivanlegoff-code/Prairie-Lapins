@@ -14,6 +14,7 @@ Les peintures sources (fond blanc pur, 1024 × 1024) restent hors du dépôt. `n
 | `public/assets/food/<nourriture fantaisie>.png` (quatre) | aucun (peintures approuvées le 2 novembre 2026, fond déjà transparent) | 128 × 128 |
 
 Les quatre nourritures fantaisie de la ferme niveau 3 (`trefleDore`, `carotteArcEnCiel`, `fraiseEtoilee`, `pommeAmour`) se préparent avec `node scripts/prepare-food-art.mjs "<dossier des peintures>" fancy` : même recadrage et même carré de 128 px, sans détourage puisque le fond est déjà transparent.
+| `public/assets/food/<culture de la ferme niveau 4>.png` (trois) | aucun (peintures du 8 novembre 2026, détourées du magenta ou du blanc) | 128 × 128 |
 | `public/assets/buildings/statue-affection.png` | `assets-source/buildings/statue-affection.png` | 478 × 512 |
 
 Dans le jeu : le logo accompagne chaque montant de nourriture (`src/display/currency.ts`) et remplace le trèfle du HUD ; chaque culture a son icône dans la ferme (`src/display/food.ts`) ; pendant la culture, 25 pousses sont posées sur les cinq sillons du dessin de la ferme, et l’icône de l’aliment les remplace à maturité (`src/display/farmCrops.ts`, sillons décrits dans `FARM_ART.furrows`). La statue occupe l’empreinte 4 × 4 d’un bâtiment, calée comme la Cuisine (`src/config/statueArt.ts`).

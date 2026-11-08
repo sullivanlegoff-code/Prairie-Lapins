@@ -46,7 +46,7 @@ it('renders the fourteen crops with their icon, locks the later ones and shows a
   const s=createGame(0);s.pattes=1000;s.buildings.push(emptyBuilding('building-100','farm',0,32));s.nextId=101;s.progression={totalXp:cumulativeLevelXp(5),rewardedThroughLevel:5};
   const {ui,controller}=mount(s);ui.select({kind:'building',id:'building-100'});
   const crops=[...panel().querySelectorAll<HTMLElement>('.farm-order')];
-  expect(crops.map(c=>c.dataset.crop)).toEqual(['foin','pissenlit','trefle','persil','laitue','fanes','fenouil','pomme','fraise','banane','trefleDore','carotteArcEnCiel','fraiseEtoilee','pommeAmour']);
+  expect(crops.map(c=>c.dataset.crop)).toEqual(['foin','pissenlit','trefle','persil','laitue','fanes','fenouil','pomme','fraise','banane','trefleDore','carotteArcEnCiel','fraiseEtoilee','pommeAmour','citrouilleDoree','melonLune','cerisesCristal']);
   expect(crops.every(c=>c.querySelector('img.crop-icon'))).toBe(true);expect(crops[9].textContent).toContain('Banane');expect(crops[9].textContent).toContain('10 h');
   expect(crops[3].querySelector('button')?.textContent).toBe('Cultiver · 100 pièces');expect(crops[4].querySelector('button')).toBeNull();expect(crops[4].querySelector('.badge')?.textContent).toBe('Niveau 7 requis');
   controller.perform({type:'startOrder',id:'building-100',recipe: 'persil'});

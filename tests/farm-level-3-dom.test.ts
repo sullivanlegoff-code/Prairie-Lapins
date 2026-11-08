@@ -48,7 +48,8 @@ it('upgrades the farm to level 3 for 60 000 pattes after confirmation, then open
   const state = controller.getSnapshot().state!;
   expect(state.pattes).toBe(0); expect(state.buildings.at(-1)!.farmLevel).toBe(3);
   expect(panel().querySelector('.farm-level')?.textContent).toBe('Ferme niveau 3');
-  expect(panel().querySelector('[data-upgrade-farm]')).toBeNull();
+  expect(panel().querySelector('[data-upgrade-farm="3"]')).toBeNull();
+  expect(panel().querySelector('[data-upgrade-farm="4"]')!.textContent).toContain('Niveau 25 requis');
   expect(panel().querySelector('[data-crop="trefleDore"] button')).not.toBeNull();
   expect(panel().querySelector('[data-crop="carotteArcEnCiel"]')!.textContent).toContain('Niveau 22 requis');
   expect(panel().querySelector('[data-crop="trefleDore"] img.crop-icon')).not.toBeNull();
