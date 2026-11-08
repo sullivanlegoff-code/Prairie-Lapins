@@ -24,7 +24,7 @@ import {canEvolve, hasEvolvedArt} from '../config/evolvedArt';
 import {evolutionChallengesComplete, type EvolutionChallenge} from '../config/evolutionChallenges';
 import {jumpIslandReason, jumpRopeReward, jumpRopeTeamReason} from './jumpRope';
 import {dailyBonusReady, dailyClaimable, dailyCycleStart, dailyMissionsOf, recordMissionAction} from './missions';
-import {farmLimit, farmDuration, FARM_UPGRADES, orderFarmLevel, BALANCE, HEARTS, HOUR, TRAVEL, SALON, FOREST, JUMP_ROPE, EPIC_ISLET, BENNY_FLIGHT, ULTRA_SNOW, CARE_KINDS, carePrice, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
+import {AGENCY_UPGRADE_HEARTS, DAILY_HEART_SOURCES, farmLimit, farmDuration, FARM_UPGRADES, orderFarmLevel, BALANCE, HEARTS, HOUR, TRAVEL, SALON, FOREST, JUMP_ROPE, EPIC_ISLET, BENNY_FLIGHT, ULTRA_SNOW, CARE_KINDS, carePrice, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
 import {emptyBuilding} from '../state/initial';
 import {epicIsletReason} from './epicIslet';
 import {babyInNursery, findNurseryBaby, firstFreeNurserySlot, nurseryBuilding, nurseryUnlockQuote, settleNestTransfers} from './nursery';
@@ -157,7 +157,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         if (affectionGranted) { s.cuisine.affectionCycles = {...s.cuisine.affectionCycles, [rabbit.id]: cycle}; rabbit.affection++; }
         // One Heart per canonical cycle for Cuisine as a whole, whichever rabbit cooked.
         const heartGranted = s.cuisine.heartCycle !== cycle;
-        if (heartGranted) { credit('hearts', 1); s.cuisine.heartCycle = cycle; }
+        if (heartGranted) { credit('hearts', DAILY_HEART_SOURCES.cuisine); s.cuisine.heartCycle = cycle; }
         cuisineReward = {pattes: paid.pattes, grass: paid.grass, fullReward, affectionGranted, affectionAtCap: rabbit.affection === BALANCE.maxAffection, affectionStatueRequired: !affectionGranted && rabbit.affection >= rabbitAffectionCap(s, rabbit) && capReason(s, rabbit) !== 'EVOLUTION_REQUIRED' && affectionCap(s) < BALANCE.maxAffection, ...(!affectionGranted && waitsForEvolution(rabbit) && rabbit.affection >= rabbitAffectionCap(s, rabbit) && capReason(s, rabbit) === 'EVOLUTION_REQUIRED' ? {affectionEvolutionRequired: true} : {}), heartGranted, affectionRabbitId: rabbit.id};
         // Distinct challenges (owner, 4 November 2026): « commis » counts only for the cook, « goûteur » only for the taster.
         recordEvolutionChallenge(s, command.rabbitId, `commis:${command.recipeId}` as EvolutionChallenge);
@@ -457,7 +457,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       case 'upgradeAgency': {
         const b = building(command.id, 'agency'), level = b.agencyLevel ?? 1;
         requireRule(level === command.fromLevel, 'STALE_ACTION'); requireRule(level < 3, 'INVALID_CHOICE');
-        const cost = level === 1 ? 40 : 120;
+        const cost = AGENCY_UPGRADE_HEARTS[level as 1 | 2];
         requireRule(s.hearts >= cost, 'NOT_ENOUGH_HEARTS'); s.hearts -= cost; b.agencyLevel = level === 1 ? 2 : 3; break;
       }
       case 'upgradeHabitat': {

@@ -88,7 +88,7 @@ for(let day=0;day<70;day++){
  // Farm level 3 (60 000 pattes, level 20) with 3 000 pattes kept in hand.
  for(const b of s.buildings.filter(b=>b.kind==='farm'&&b.farmLevel===2))if(level()>=balance.FARM_UPGRADES[3].level&&s.pattes>=balance.FARM_UPGRADES[3].pattes+3000)run({type:'upgradeFarm',id:b.id,toLevel:3});
  for(const b of s.buildings.filter(b=>b.kind==='farm'&&b.farmLevel===3))if(level()>=balance.FARM_UPGRADES[4].level&&s.pattes>=balance.FARM_UPGRADES[4].pattes+3000)run({type:'upgradeFarm',id:b.id,toLevel:4});
- for(const b of s.buildings.filter(b=>b.kind==='agency'&&(b.agencyLevel??1)<3))if(s.hearts>=statueReserve()+((b.agencyLevel??1)===1?40:120))run({type:'upgradeAgency',id:b.id,fromLevel:b.agencyLevel??1});
+ for(const b of s.buildings.filter(b=>b.kind==='agency'&&(b.agencyLevel??1)<3))if(s.hearts>=statueReserve()+balance.AGENCY_UPGRADE_HEARTS[b.agencyLevel??1])run({type:'upgradeAgency',id:b.id,fromLevel:b.agencyLevel??1});
 
  // Salon de soins (5 000 pattes, level 12): welcome back the rabbit in care, buy the salon once 5 500 pattes are in hand.
  if(!noCare){

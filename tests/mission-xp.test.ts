@@ -7,6 +7,7 @@ import {MAIN_MISSIONS,DAILY_MISSIONS,DAILY_BONUS,MISSION_CYCLE_DURATION} from '.
 import {dailyCycleStart,dailyMissionsFor,dailyMissionsOf} from '../src/simulation/missions';
 import {SAVE_KEY} from '../src/persistence/storage';
 import type {Command,GameState} from '../src/state/types';
+const HPL = PROGRESSION.rewards.heartsPerLevel; // Hearts per level (3 since 8 November 2026).
 /** The three missions shown on day 0: each one is filled to its target, so all of them are claimable. */
 const SHOWN=dailyMissionsFor(0);
 function ready(){const s=createGame(0);s.rabbits[0].affection=2;for(const id of SHOWN)s.missions.daily.progress[id]=DAILY_MISSIONS[id].target;return advance(s,0);}
@@ -51,6 +52,6 @@ describe('mission claim XP, not completion XP',()=>{
   const before=structuredClone(s),r=act(s,command,0);expect(r.ok).toBe(false);expect(r.state).toEqual(before);expect(s).toEqual(before);
  });
  it('a level earned by a heart-paying main mission credits both rewards once',()=>{
-  const s=ready();s.rabbits[0].affection=5;s.progression.totalXp=89;const r=run(s,{type:'claimMainMission',id:'strong-bonds'});expect(r.ok).toBe(true);expect(r.state.hearts).toBe(14);expect(r.state.progression.rewardedThroughLevel).toBe(2);
+  const s=ready();s.rabbits[0].affection=5;s.progression.totalXp=89;const r=run(s,{type:'claimMainMission',id:'strong-bonds'});expect(r.ok).toBe(true);expect(r.state.hearts).toBe(13+HPL);expect(r.state.progression.rewardedThroughLevel).toBe(2);
  });
 });

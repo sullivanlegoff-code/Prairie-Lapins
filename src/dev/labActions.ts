@@ -1,5 +1,5 @@
 /** Pure laboratory transactions. This module is reachable only through the existing dev import. */
-import {BALANCE, HOUR, ORDERS, SPECIES_IDS, orderFarmLevel, growthDuration, type BuildingKind, type SpeciesId} from '../config/balance';
+import {BALANCE, HOUR, tripHearts, ORDERS, SPECIES_IDS, orderFarmLevel, growthDuration, type BuildingKind, type SpeciesId} from '../config/balance';
 import {HABITAT_TYPES, habitatLevel, type HabitatLevel, type HabitatType} from '../config/habitats';
 import {DECORATION_IDS, MAX_DECORATIONS} from '../config/decorations';
 import {PARCEL_IDS, purchasableParcels} from '../config/land';
@@ -183,7 +183,7 @@ export function completeLaboratory(now: number): GameState {
     b.order = {recipe, startedAt: i === 0 ? now - crop.duration : now, endsAt: i === 0 ? now : now + crop.duration, grass: crop.grass, duration: crop.duration};
   }
   build(s, 'kitchen'); build(s, 'statue'); build(s, 'statue'); build(s, 'agency').agencyLevel = 3; build(s, 'salon'); build(s, 'forest'); s.jumpIsland = true;
-  s.travel = {welcomed: true, trips: s.rabbits.slice(2, 4).map((r, i) => ({rabbitId: r.id, destination: i === 0 ? 'Paris' : 'Vannes', startedAt: i === 0 ? now - 3 * HOUR : now, endsAt: i === 0 ? now : now + 3 * HOUR, hearts: 1, grass: 75}))};
+  s.travel = {welcomed: true, trips: s.rabbits.slice(2, 4).map((r, i) => ({rabbitId: r.id, destination: i === 0 ? 'Paris' : 'Vannes', startedAt: i === 0 ? now - 3 * HOUR : now, endsAt: i === 0 ? now : now + 3 * HOUR, hearts: tripHearts(3), grass: 75}))};
   const birth = () => ({id: `birth-${s.nextId++}`, species: 'paille' as const, guaranteed: false, reservedDiscovery: false});
   s.buildings.find(b => b.kind === 'nursery')!.nursery = {capacity: 4, babies: [{slot: 0, birth: birth(), startedAt: now - growthDuration('paille'), readyAt: now}]};
   s.buildings.find(b => b.kind === 'nest')!.breeding = {parents: [s.rabbits[0].id, s.rabbits[1].id], startedAt: now - growthDuration('paille'), endsAt: now, birth: birth()};

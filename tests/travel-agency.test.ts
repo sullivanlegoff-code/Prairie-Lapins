@@ -2,7 +2,7 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import html from '../index.html?raw';
 import {act, advance, createGame, decodeGame, encodeGame} from '../src/simulation';
-import {BALANCE, HOUR, RARE_INCOME_BONUS_SPECIES, SPECIES, SPECIES_IDS, TRAVEL, drawTrip, tripHearts} from '../src/config/balance';
+import {AGENCY_UPGRADE_HEARTS, BALANCE, HOUR, RARE_INCOME_BONUS_SPECIES, SPECIES, SPECIES_IDS, TRAVEL, drawTrip, tripHearts} from '../src/config/balance';
 import {HABITAT_CAPS, habitatCap, type HabitatType} from '../src/config/habitats';
 import {rabbitIncome} from '../src/simulation/time';
 import {buildingPlacementReason} from '../src/simulation/placement';
@@ -64,7 +64,7 @@ describe('travel agency rules', () => {
     expect([...new Set(trips.map(t => t.hours))]).toEqual([3, 4, 5, 6, 7, 8, 9, 10]);
     expect(drawTrip(0)).toEqual({destination: 'Londres', hours: 3});
     expect(drawTrip(1 - Number.EPSILON)).toEqual({destination: 'Marrakech', hours: 10});
-    expect([3, 4, 5, 6, 7, 8, 9, 10].map(tripHearts)).toEqual([1, 1, 2, 2, 3, 3, 4, 5]);
+    expect([3, 4, 5, 6, 7, 8, 9, 10].map(tripHearts)).toEqual([3, 3, 5, 5, 7, 7, 9, 12]);
   });
 
   it('requires an agency and rejects invalid random draws without changing state', () => {
@@ -94,7 +94,7 @@ describe('travel agency rules', () => {
     expect(act(s, {type: 'claimTrip', rabbitId: 'rabbit-2'}, 3 * HOUR - 1)).toMatchObject({ok: false, reason: 'NOT_READY'});
     const hearts = s.hearts;
     s = run(s, {type: 'claimTrip', rabbitId: 'rabbit-2'}, 3 * HOUR);
-    expect(s.hearts).toBe(hearts + 1);
+    expect(s.hearts).toBe(hearts + tripHearts(3));
     expect(s.travel!.trips).toHaveLength(0);
     expect(act(s, {type: 'claimTrip', rabbitId: 'rabbit-2'}, 3 * HOUR)).toMatchObject({ok: false, reason: 'NOT_READY'});
     expect(run(s, {type: 'startTrip', rabbitId: 'rabbit-2'}).travel!.trips).toHaveLength(1);
@@ -125,7 +125,7 @@ describe('travel agency rules', () => {
       s => { s.travel!.trips[0]!.endsAt = 3 * HOUR + 1; },
       s => { s.travel!.trips[0]!.endsAt = 2 * HOUR; },
       s => { s.travel!.trips[0]!.endsAt = 11 * HOUR; },
-      s => { s.travel!.trips[0]!.hearts = 3; },
+      s => { s.travel!.trips[0]!.hearts = 99; },
       s => { s.travel!.trips[0]!.rabbitId = 'rabbit-999'; },
       s => { s.buildings = s.buildings.filter(b => b.kind !== 'agency'); },
       s => { s.travel!.trips[0]!.destination = 'inconnue' as typeof TRAVEL.destinations[number]; },
@@ -148,7 +148,7 @@ describe('travel agency rules', () => {
     expect(rebased.travel!.trips[0]).toMatchObject({startedAt: HOUR, endsAt: 4 * HOUR});
     expect(decodeGame(encodeGame(rebased))).toEqual({ok: true, state: rebased});
     expect(act(rebased, {type: 'claimTrip', rabbitId: 'rabbit-2'}, 4 * HOUR - 1)).toMatchObject({ok: false, reason: 'NOT_READY'});
-    expect(run(rebased, {type: 'claimTrip', rabbitId: 'rabbit-2'}, 4 * HOUR).hearts).toBe(s.hearts + 1);
+    expect(run(rebased, {type: 'claimTrip', rabbitId: 'rabbit-2'}, 4 * HOUR).hearts).toBe(s.hearts + tripHearts(3));
   });
 });
 
@@ -247,13 +247,13 @@ describe('agency interface and French text', () => {
     const confirm = [...document.querySelectorAll<HTMLButtonElement>('#game-dialog button')].find(b => b.textContent === 'Confirmer');
     confirm!.click();
     expect(controller.getSnapshot().state!.buildings.at(-1)!.agencyLevel).toBe(3);
-    expect(controller.getSnapshot().state!.hearts).toBe(before - 120);
+    expect(controller.getSnapshot().state!.hearts).toBe(before - AGENCY_UPGRADE_HEARTS[2]);
   });
   it('locks advanced crops, confirms farm expansion during a crop, and explains precious resale', () => {
     let s = atLevel(22); s.hearts = 200; s = run(s, {type: 'buyBuilding', kind: 'farm', ...free(s)});
     const id = s.buildings.at(-1)!.id; s.startCourse = undefined;
     const {ui, controller} = mount(s); ui.select({kind: 'building', id});
-    expect(panel().querySelectorAll('.farm-order-locked')).toHaveLength(9); // Five level 2 crops and the four fancy crops.
+    expect(panel().querySelectorAll('.farm-order-locked')).toHaveLength(12); // Five level 2 crops, the four fancy crops and the three level 4 crops.
     expect(panel().querySelector('[data-crop="fanes"]')!.textContent).toContain('Ferme niveau 2');
     expect(panel().querySelector('[data-crop="trefleDore"]')!.textContent).toContain('Ferme niveau 3');
     panel().querySelector<HTMLButtonElement>('[data-crop="foin"] button')!.click();
@@ -300,9 +300,9 @@ describe('agency interface and French text', () => {
     expect(panel().querySelector('.agency-host')!.textContent).toBe('De retour de Londres : voici Lapin Paille ! Viens l’accueillir.');
     expect(panel().querySelector('.traveller-bubble')!.textContent).toContain('Ces vacances à Londres étaient super !');
     const button = panel().querySelector<HTMLButtonElement>('.agency-return button')!;
-    expect(button.textContent).toBe('Accueillir · + 1 cœur'); button.click();
+    expect(button.textContent).toBe(`Accueillir · + ${tripHearts(3)} cœurs`); button.click();
     const returned = reloaded.controller.getSnapshot().state!;
-    expect(returned.hearts).toBe(travelling.hearts + 1);
+    expect(returned.hearts).toBe(travelling.hearts + tripHearts(3));
     expect(returned.travel).toEqual({welcomed: true, trips: []});
     expect(decodeGame(encodeGame(returned))).toEqual({ok: true, state: returned});
     expect(panel().querySelector('.agency-host-portrait')).not.toBeNull();

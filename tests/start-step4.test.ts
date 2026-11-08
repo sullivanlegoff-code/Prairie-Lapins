@@ -14,6 +14,8 @@ import {babyOf, welcomeOf} from './nursery-baby';
 import {habitatPrice} from '../src/config/habitats';
 import {SPECIES} from '../src/config/balance';
 import {progressionFromXp} from '../src/simulation/progression';
+import {PROGRESSION} from '../src/config/progression';
+const HPL = PROGRESSION.rewards.heartsPerLevel; // Hearts per level (3 since 8 November 2026).
 describe('Paille-only course: real commands and existing economy',()=>{
  itAll([true,false])('aided=%s, Frisket and Icy, explicit claims and resumes',aided=>{
   for(const roll of [.1,.65]){
@@ -34,7 +36,7 @@ describe('Paille-only course: real commands and existing economy',()=>{
    finish('building-4','breeding');expect(babyOf(s.buildings.find(b=>b.kind==='nursery')!)).toBeNull();expect(guidedStep(s,p.value,now).id).toBe('transfer');run({type:'transferBirth',id:'building-4',birthId:s.initiation!.birthId!});claim('to-nursery');expect(s.buildings.find(b=>b.kind==='nest')!.breeding).toBeNull();expect(s.rabbits.map(r=>r.enclosureId)).toEqual(['building-1',snow]);resume();finish('building-5','growth');
    // Both Rares can enter either specialized home.
    run(welcomeOf(s, roll===.65?snow:'building-1'));claim('first-birth');resume();expect(guidedStep(s,p.value,now).done).toBe(true);
-   expect(s.rabbits.at(-1)!.species).toBe(roll===.1?'frisket':'icy');expect([s.pattes,s.grass,s.hearts]).toEqual([760,66,15]);expect(s.missions.claimed).toEqual(['snow-habitat','welcome-snow','first-farm','first-harvest','first-meal','parents-ready','at-nest','to-nursery','first-birth']);expect(s.initiation!.used).toEqual(aided?['order','breeding','growth']:[]);expect(s.missions.completed).toContain('two-habitats');expect(s.missions.claimed).not.toContain('two-habitats');
+   expect(s.rabbits.at(-1)!.species).toBe(roll===.1?'frisket':'icy');expect([s.pattes,s.grass,s.hearts]).toEqual([760,66,12+3*HPL]);expect(s.missions.claimed).toEqual(['snow-habitat','welcome-snow','first-farm','first-harvest','first-meal','parents-ready','at-nest','to-nursery','first-birth']);expect(s.initiation!.used).toEqual(aided?['order','breeding','growth']:[]);expect(s.missions.completed).toContain('two-habitats');expect(s.missions.claimed).not.toContain('two-habitats');
    expect(SOLO_INITIAL_MISSION_IDS.at(-1)).toBe('first-birth');
    run({type:'claimMainMission',id:'varied-family'});resume();
    expect(progressionFromXp(s.progression.totalXp).level).toBe(5);
@@ -58,6 +60,6 @@ describe('Paille-only course: real commands and existing economy',()=>{
   d.state.missions.completed.push('welcome-snow');expect(act(d.state,{type:'claimMainMission',id:'welcome-snow'},0)).toMatchObject({ok:false,reason:'NOT_READY'});
  });
  it('minimum budget needs neither income nor other rewards',()=>{
-  let s=createGame(0);const run=(c:Command)=>{const r=act(s,c,0);if(!r.ok)throw Error(r.reason);s=r.state;};run({type:'buyBuilding',kind:'enclosure',habitatType:'neige',x:10,y:40});run({type:'buyRabbit',species:'neige',enclosureId:s.buildings.at(-1)!.id});run({type:'claimMainMission',id:'welcome-snow'});expect(s.pattes).toBe(120);run({type:'buyBuilding',kind:'farm',x:6,y:36});run({type:'startOrder',id:s.buildings.at(-1)!.id,recipe: 'foin'});expect([s.pattes,s.hearts]).toEqual([50,13]);
+  let s=createGame(0);const run=(c:Command)=>{const r=act(s,c,0);if(!r.ok)throw Error(r.reason);s=r.state;};run({type:'buyBuilding',kind:'enclosure',habitatType:'neige',x:10,y:40});run({type:'buyRabbit',species:'neige',enclosureId:s.buildings.at(-1)!.id});run({type:'claimMainMission',id:'welcome-snow'});expect(s.pattes).toBe(120);run({type:'buyBuilding',kind:'farm',x:6,y:36});run({type:'startOrder',id:s.buildings.at(-1)!.id,recipe: 'foin'});expect([s.pattes,s.hearts]).toEqual([50,12+HPL]);
  });
 });

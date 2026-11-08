@@ -12,6 +12,8 @@ import {buildingPlacementReason} from '../src/simulation/placement';
 import {progressionFromXp} from '../src/simulation/progression';
 import {dailyCycleStart,dailyMissionsOf} from '../src/simulation/missions';
 import type {Command,GameState} from '../src/state/types';
+import {PROGRESSION} from '../src/config/progression';
+const HPL = PROGRESSION.rewards.heartsPerLevel; // Hearts per level (3 since 8 November 2026).
 const run=(s:GameState,c:Command,at=s.lastSimulatedAt,roll=.9)=>{const r=act(s,c,at,()=>roll);if(!r.ok)throw Error(`${c.type}: ${r.reason}`);return r.state;};
 const reload=(s:GameState)=>{const r=decodeGame(encodeGame(s));if(!r.ok)throw Error(r.reason);return r.state;};
 function earlyJourney(roll:number){
@@ -30,9 +32,9 @@ describe('current mission journey',()=>{
   expect(MAIN_MISSIONS['first-birth'].reward.amount).toBeGreaterThanOrEqual(habitatPrice('feu')+SPECIES.feu.price!);
  });
  itAll([.1,.65])('banks every early successful action and unlocks independent branches after claims (roll %s, tests only)',roll=>{
-  let s=earlyJourney(roll);expect([s.pattes,s.grass,s.hearts]).toEqual([280,26,14]);expect(s.missions.events).toEqual({collectOrder:20,breed:1,transferBirth:1,welcome:1,placeDecoration:0});
+  let s=earlyJourney(roll);expect([s.pattes,s.grass,s.hearts]).toEqual([280,26,12+2*HPL]);expect(s.missions.events).toEqual({collectOrder:20,breed:1,transferBirth:1,welcome:1,placeDecoration:0});
   for(const id of INITIAL_MISSION_IDS){expect(activeMainMissions(s)).toEqual([id]);expect(s.missions.completed).toContain(id);s=run(s,{type:'claimMainMission',id});s=reload(s);expect(act(s,{type:'claimMainMission',id},s.lastSimulatedAt)).toMatchObject({ok:false,reason:'ALREADY_CLAIMED'});}
-  expect([s.pattes,s.grass,s.hearts]).toEqual([990,76,15]);expect(activeMainMissions(s)).toEqual(['varied-family','level-five','growing-collection']);
+  expect([s.pattes,s.grass,s.hearts]).toEqual([990,76,12+3*HPL]);expect(activeMainMissions(s)).toEqual(['varied-family','level-five','growing-collection']);
   // Terre and Brumelin were removed with their missions: no objective names them.
   for(const id of ['discover-brumelin','discover-terre'])expect(Object.hasOwn(MAIN_MISSIONS,id),id).toBe(false);
   s=run(s,{type:'claimMainMission',id:'varied-family'});

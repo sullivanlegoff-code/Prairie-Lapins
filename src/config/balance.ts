@@ -17,7 +17,7 @@ export const CUISINE_TIP = {pattes: 5, grass: 1} as const;
  * constants, awaiting the owner's tuning. Hearts only; read them through `nurseryUnlockQuote`.
  */
 // Cushions dear in Hearts since the Christmas update (owner, 5 November 2026; 10 / 25 / 50 before); every save goes back to 2 at most.
-export const NURSERY = {initialCapacity: 1, maxCapacity: 4, unlockHearts: {1: 40, 2: 120, 3: 250}} as const;
+export const NURSERY = {initialCapacity: 1, maxCapacity: 4, unlockHearts: {1: 30, 2: 60, 3: 80}} /* 8 November 2026 (40, 120, 250 before) */ as const;
 /**
  * The islet of the Epics (owner, 5 November 2026): a small islet floating south of the island (moved on 6 November), off the land grid, bought once
  * for `hearts` Hearts from player level `unlockLevel`. Its nest runs a second breeding at the same time as the island's, with
@@ -38,10 +38,13 @@ export const BENNY_FLIGHT = {rewardedGamesPerCycle: 3, pattesPerColumn: 3, maxPa
  * stays after Christmas. In all 500 sucres d'orge, about twenty days of Christmas challenges.
  */
 export const ULTRA_SNOW = {candies: {1: 100, 2: 150, 3: 250}} as const;
-export const EPIC_ISLET = {unlockLevel: 18, hearts: 400, bonus: 1.1, cell: {x: 6, y: 70}} as const;
+export const EPIC_ISLET = {unlockLevel: 18, hearts: 200, /* 8 November 2026 (400 before) */ bonus: 1.1, cell: {x: 6, y: 70}} as const;
 /** Paille's free gift: 3 Hearts every 24 h (2 before the Hearts / pattes balance of 3 November 2026), three gifts kept at most. */
+/** Hearts from daily activities that are not tied to one building's config: the first Cuisine dish of each daily cycle. */
+export const DAILY_HEART_SOURCES = {cuisine: 3} as const; // 8 November 2026 (1 before).
 export const HEARTS = {
-  initial: 12, gift: 3, maximumGifts: 3, giftInterval: 24 * HOUR,
+  initial: 12, gift: 10, maximumGifts: 3, // gift: 8 November 2026 (3 before).
+  giftInterval: 24 * HOUR,
   accelerationStep: 5 * MINUTE, pattesPerHeart: 25,
 };
 // The species registry lives in ./species; the public names stay available from here.
@@ -113,13 +116,17 @@ export const FARM_UPGRADES = {2: {level: 9, hearts: 30}, 3: {level: 20, pattes: 
  * to a destination drawn at random, for 3 to 10 whole hours (drawn with it); it brings back Hearts, more for a longer trip.
  * The traveller keeps its place and its income at home, but cannot be fed, bred, moved or entrusted while away.
  */
+/** Hearts to grow the travel agency: level 1 → 2 (two trips at a time), then 2 → 3 (three trips). */
+export const AGENCY_UPGRADE_HEARTS = {1: 30, 2: 60} as const; // 8 November 2026 (40 and 120 before).
 export const TRAVEL = {
   unlockLevel: 8, minHours: 3, maxHours: 10,
   destinations: ['Londres', 'Vannes', 'Le Caire', 'Hammamet', 'Le Lavandou', 'Bandol', 'Lille', 'Paris', 'Marrakech'],
 } as const;
 export type Destination = typeof TRAVEL.destinations[number];
-/** 1 to 5 Hearts, more for a longer trip (owner, 5 November 2026; 1 to 3 before): 3–4 h 1, 5–6 h 2, 7–8 h 3, 9 h 4, 10 h 5. */
-export const tripHearts = (hours: number): number => hours <= 4 ? 1 : hours <= 6 ? 2 : hours <= 8 ? 3 : hours <= 9 ? 4 : 5;
+/** 3 to 12 Hearts, more for a longer trip (8 November 2026, Hearts calendar: src/simulation/heartCalendar.ts): 3–4 h 3, 5–6 h 5, 7–8 h 7, 9 h 9, 10 h 12. */
+/** The table of 5 November 2026 (1 to 5 Hearts): a trip started before 8 November 2026 keeps it, and its save stays valid. */
+export const tripHeartsBefore20261108 = (hours: number): number => hours <= 4 ? 1 : hours <= 6 ? 2 : hours <= 8 ? 3 : hours <= 9 ? 4 : 5;
+export const tripHearts = (hours: number): number => hours <= 4 ? 3 : hours <= 6 ? 5 : hours <= 8 ? 7 : hours <= 9 ? 9 : 12;
 /** One draw picks both: destination index and length in hours. */
 export function drawTrip(roll: number): {destination: Destination; hours: number} {
   const count = TRAVEL.destinations.length, lengths = TRAVEL.maxHours - TRAVEL.minHours + 1, n = Math.floor(roll * count * lengths);

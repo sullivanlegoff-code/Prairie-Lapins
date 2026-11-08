@@ -28,13 +28,14 @@ import type {Command, GameState} from '../src/state/types';
 import {developmentEnvironment} from '../src/dev/tools';
 import {SAVE_KEY, type SaveStorage} from '../src/persistence/storage';
 import {scenarioState} from '../src/dev/scenarios';
-import {BALANCE, MINUTE, NURSERY, SPECIES, SPECIES_IDS, growthDuration} from '../src/config/balance';
+import {BALANCE, HEARTS, MINUTE, NURSERY, ORDERS, SPECIES, SPECIES_IDS, growthDuration} from '../src/config/balance';
 import {accelerationCost} from '../src/simulation/hearts';
 import {babyOf, setBaby} from './nursery-baby';
 import {EXPECTED_IDS, EXPECTED_RECIPE_IDS} from './rabbit-art-fixtures';
 import {emptyBuilding} from '../src/state/initial';
 import {habitatCap} from '../src/config/habitats';
 import {buildingPlacementReason} from '../src/simulation/placement';
+import {DAILY_BONUS} from '../src/config/missions';
 
 const cleanups: (() => void)[] = [];
 it('buys, places and selects Cuisine without opening the cooking activity', () => {
@@ -394,7 +395,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     const {controller,ui,clock}=setup(initial);place(ui,'farm',1,0);
     const hour=3600_000,daily=()=>{document.getElementById('open-missions')!.click();button('Quotidiennes').click();};
     const card=(id:string)=>panel().querySelector<HTMLElement>(`[data-mission="${id}"]`)!;
-    const BONUS='Réclamer · + 2 cœurs · + 20 nourriture';
+    const BONUS=`Réclamer · + ${DAILY_BONUS[0].amount} cœurs · + 20 nourriture`;
     controller.perform({type:'startOrder',id:'building-4',recipe: 'pissenlit'});
     // Morning: the three shown missions of day 0 (feed-rabbit, welcome-baby, gain-affection) are all open; the harvest counts for none of them.
     clock.now=5*hour;controller.perform({type:'collectIncome',id:'building-1'});controller.perform({type:'collectOrder',id:'building-4'});
@@ -687,8 +688,8 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     expect(document.getElementById('hearts')!.textContent).toBe('12');
     expect(button('Réclamer').disabled).toBe(true);
     clock.now = 24 * 3600_000; controller.refresh();
-    const claim = button('Réclamer · 1 cadeau · 3 cœurs'); claim.click(); claim.click();
-    expect(state(controller).hearts).toBe(15); expect(document.getElementById('hearts')!.textContent).toBe('15');
+    const claim = button(`Réclamer · 1 cadeau · ${HEARTS.gift} cœurs`); claim.click(); claim.click();
+    expect(state(controller).hearts).toBe(12 + HEARTS.gift); expect(document.getElementById('hearts')!.textContent).toBe(String(12 + HEARTS.gift));
     expect(button('Réclamer').disabled).toBe(true);
   });
   it('defers building payment to final placement, supports both cancellations and confirms only once', () => {
@@ -710,7 +711,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
   });
   it('confirms the actual lower acceleration price and ignores a duplicate confirmation', () => {
     const {controller, ui, clock} = setup(); place(ui, 'farm', 1, 0); ui.select({kind: 'building', id: 'building-4'});
-    button('Cultiver · 36 pièces').click(); button('Terminer · 3 cœurs').click(); // Pissenlit: 15 minutes.
+    button(`Cultiver · ${ORDERS.pissenlit.cost} pièces`).click(); button('Terminer · 3 cœurs').click(); // Pissenlit: 15 minutes.
     const dialog = document.getElementById('game-dialog')!; expect(dialog.textContent).toContain('solde : 12');
     clock.now = 11 * 60_000; const confirm = button('Confirmer', dialog); confirm.click(); confirm.click();
     expect(state(controller).hearts).toBe(11); expect(state(controller).grass).toBe(10);
@@ -789,7 +790,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     const time = state(controller).lastSimulatedAt; button('+ 60 min', document.getElementById('devtools')!).click();
     expect(state(controller).lastSimulatedAt - time).toBeGreaterThanOrEqual(3600_000);
     button('+ 1440 min', document.getElementById('devtools')!).click();
-    expect(controller.perform({type: 'claimHearts'}).ok).toBe(true); expect(state(controller).hearts).toBe(15);
+    expect(controller.perform({type: 'claimHearts'}).ok).toBe(true); expect(state(controller).hearts).toBe(12 + HEARTS.gift);
     expect(values.get(SAVE_KEY)).toBe(before); expect(values.has('prairie-lapins.development.' + SAVE_KEY)).toBe(true);
     dispose(); controller.dispose();
   });

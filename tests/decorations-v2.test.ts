@@ -37,7 +37,7 @@ describe('approved painted decorations', () => {
   expect(DECORATIONS[id]).toMatchObject({name,price,width,height,level,rotates:false,area:'outside'});
   expect(requiredDecorationLevel(id)).toBe(level);
   expect(decorationResalePrice(id)).toBe(Math.floor(price/2));
-  const state=createCentreStartGame(0); state.pattes=20000; state.hearts=80; state.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level};
+  const state=createCentreStartGame(0); state.pattes=20000; state.hearts=DECORATIONS[id].heartPrice ?? 80; state.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level};
   const bought=act(state,{type:'buyDecoration',catalogId:id},0);expect(bought.ok).toBe(true);if(!bought.ok)throw Error(bought.reason);
   if(DECORATIONS[id].heartPrice){expect(bought.state.hearts).toBe(0);expect(bought.state.pattes).toBe(state.pattes);expect(act(bought.state,{type:'sellDecoration',id:bought.state.decorations[0].id},0)).toEqual({ok:false,state:bought.state,reason:'INVALID_CHOICE'});return;}
   const sold=act(bought.state,{type:'sellDecoration',id:bought.state.decorations[0].id},0);expect(sold.ok).toBe(true);expect(sold.state.pattes).toBe(20000-price+Math.floor(price/2));

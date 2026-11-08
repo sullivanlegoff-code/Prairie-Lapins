@@ -43,7 +43,7 @@ export interface ProgressionConfig {
 export const PROGRESSION: ProgressionConfig = {
   activeLevelFamilies: {species: true, habitatPurchase: true, habitatUpgrade: true, decoration: true, extension: true},
   curve: {initialLevel: 1, maximumLevel: 30, base: 90, exponent: 0.85, slowdown: {fromLevel: 20, step: 0.25}},
-  rewards: {heartsPerLevel: 1},
+  rewards: {heartsPerLevel: 3}, // 8 November 2026 (1 before).
   xp: {
     commonPurchase: 10, discovery: {common: 60, rare: 250},
     construction: {specializedHabitat: 30, universalHabitat: 40, farm: 20},

@@ -16,6 +16,7 @@ import {SPECIES,CUISINE_REWARDS} from '../src/config/balance';
 import {portrait} from '../src/ui/portraits';
 import mainStyles from '../src/display/styles.css?raw';
 import {fitScene,toClient} from '../cooktap-prototype/geometry';
+import {DAILY_HEART_SOURCES} from '../src/config/balance';
 
 const cleanups: (() => void)[] = [];
 let frames: FrameRequestCallback[];
@@ -117,7 +118,7 @@ describe('main-game Cuisine activity', () => {
     }
     a.refresh();a.refresh();vi.advanceTimersByTime(1000);a.refresh();
     expect(performed).toHaveBeenCalledExactlyOnceWith({type:'rewardCuisine',rabbitId:before.rabbits[0].id,recipeId:recipe});
-    const paid=CUISINE_REWARDS[recipe],expected={...before,pattes:before.pattes+paid.pattes,grass:before.grass+paid.grass,hearts:before.hearts+1,
+    const paid=CUISINE_REWARDS[recipe],expected={...before,pattes:before.pattes+paid.pattes,grass:before.grass+paid.grass,hearts:before.hearts+DAILY_HEART_SOURCES.cuisine,
       missions:{...before.missions,completed:[...before.missions.completed,'first-meal'],daily:{...before.missions.daily,progress:{...before.missions.daily.progress,'gain-affection':before.missions.daily.progress['gain-affection']}}},
       rabbits:before.rabbits.map((r,i)=>i===0?{...r,affection:r.affection+1}:r),cuisine:{affectionCycles:{[before.rabbits[0].id]:before.missions.daily.cycleIndex},heartCycle:before.missions.daily.cycleIndex,fullRuns:{cycle:before.missions.daily.cycleIndex,used:1}}};
     expect(k.controller.getSnapshot().state).toEqual(expected);
@@ -336,7 +337,7 @@ describe('main-game Cuisine activity', () => {
     const before = k.controller.getSnapshot().state;
     activity.root.querySelector<HTMLButtonElement>('#recipe-avocado-toast')!.click();
     finishToast(activity.engine); activity.refresh(); activity.refresh(); vi.advanceTimersByTime(1000);
-    expect(activity.root.querySelector('.cuisine-reward-feedback')!.textContent).toContain('+1 Cœur');
+    expect(activity.root.querySelector('.cuisine-reward-feedback')!.textContent).toContain(`+${DAILY_HEART_SOURCES.cuisine} Cœurs`);
     expect(k.completed).toHaveBeenCalledOnce();
     expect(k.completed).toHaveBeenLastCalledWith({recipeId: 'avocado-toast', activeTimeMs: 3000, invalidActions: 0});
     activity.root.querySelector<HTMLButtonElement>('#recipe-replay')!.click();
@@ -347,7 +348,7 @@ describe('main-game Cuisine activity', () => {
     expect(k.completed.mock.calls[0][0]).not.toBe(k.completed.mock.calls[1][0]);
     activity.root.querySelector<HTMLButtonElement>('#recipe-choose')!.click();
     expect(activity.engine.snapshot().phase).toBe('choosing'); expect(k.completed).toHaveBeenCalledTimes(2);
-    expect(k.controller.getSnapshot().state).toEqual({...before,pattes:before!.pattes+2*CUISINE_REWARDS['avocado-toast'].pattes,grass:before!.grass+2*CUISINE_REWARDS['avocado-toast'].grass,hearts:before!.hearts+1,
+    expect(k.controller.getSnapshot().state).toEqual({...before,pattes:before!.pattes+2*CUISINE_REWARDS['avocado-toast'].pattes,grass:before!.grass+2*CUISINE_REWARDS['avocado-toast'].grass,hearts:before!.hearts+DAILY_HEART_SOURCES.cuisine,
       missions:{...before!.missions,completed:[...before!.missions.completed,'first-meal'],daily:{...before!.missions.daily,progress:{...before!.missions.daily.progress,'gain-affection':before!.missions.daily.progress['gain-affection']}}},
       rabbits:before!.rabbits.map((r,i)=>i===0?{...r,affection:r.affection+1}:r),cuisine:{affectionCycles:{[before!.rabbits[0].id]:before!.missions.daily.cycleIndex},heartCycle:before!.missions.daily.cycleIndex,fullRuns:{cycle:before!.missions.daily.cycleIndex,used:2}}});
   });
@@ -490,7 +491,7 @@ describe('Cuisine tasting celebration', () => {
   it('does not change the reward or save content', () => {
     const k = setup(); const before = structuredClone(k.controller.getSnapshot().state!); play(k, 'avocado-toast');
     const after = k.controller.getSnapshot().state!;
-    expect([after.pattes - before.pattes, after.grass - before.grass, after.hearts - before.hearts]).toEqual([CUISINE_REWARDS['avocado-toast'].pattes, CUISINE_REWARDS['avocado-toast'].grass, 1]);
+    expect([after.pattes - before.pattes, after.grass - before.grass, after.hearts - before.hearts]).toEqual([CUISINE_REWARDS['avocado-toast'].pattes, CUISINE_REWARDS['avocado-toast'].grass, DAILY_HEART_SOURCES.cuisine]);
     expect(JSON.stringify(after)).not.toContain('Miam');
   });
   it.each(['recipe-replay', 'recipe-choose'])('%s cleans the tasting immediately', id => {

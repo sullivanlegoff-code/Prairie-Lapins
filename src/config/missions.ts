@@ -123,4 +123,5 @@ export const DAILY_MISSIONS: Record<DailyMissionId, {title: string; description:
 };
 export const MISSION_CYCLE_DURATION = 24 * HOUR;
 /** The cycle bonus, claimed once the three shown missions are claimed: hearts and food here, XP in progression.ts. */
-export const DAILY_BONUS: readonly Reward[] = [{resource: 'hearts', amount: 2}, {resource: 'grass', amount: 20}];
+export const DAILY_BONUS: readonly Reward[] = [{resource: 'hearts', amount: 5}, // 5 Hearts since 8 November 2026 (2 before).
+  {resource: 'grass', amount: 20}];

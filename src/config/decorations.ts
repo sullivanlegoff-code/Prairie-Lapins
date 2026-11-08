@@ -38,7 +38,7 @@ export const DECORATIONS: Record<DecorationId, DecorationDefinition> = {
   'hanukkah-menorah': {name: 'Ménorah de Hanoucca', price: 2500, area: 'outside', width: 1, height: 1, rotates: false, level: 14, art: {file: 'assets/decorations/hanukkah-menorah.png', worldWidth: 43, anchor: {x: .5, y: 0.94}}},
   // Owner's own artwork, shipped unchanged (only cropped and reduced like every decoration).
   'honey-pot': {name: 'Pot de miel géant', price: 70, area: 'outside', width: 2, height: 2, rotates: false, level: 4, art: {file: 'assets/decorations/honey-pot.png', worldWidth: 95, anchor: {x: .5, y: 0.9}}},
-  'robot-statue': {name: 'Statue du robot noir et doré', price: 15000, heartPrice: 80, area: 'outside', width: 2, height: 2, rotates: false, level: 22, art: {file: 'assets/decorations/robot-statue.png', worldWidth: 52, anchor: {x: .5, y: 0.95}}},
+  'robot-statue': {name: 'Statue du robot noir et doré', price: 15000, heartPrice: 50, area: 'outside', width: 2, height: 2, rotates: false, level: 22, art: {file: 'assets/decorations/robot-statue.png', worldWidth: 52, anchor: {x: .5, y: 0.95}}},
   'penguin-bookcase': {name: 'Armoire de livres Penguin', price: 5000, area: 'outside', width: 2, height: 1, rotates: false, level: 14, art: {file: 'assets/decorations/penguin-bookcase.png', worldWidth: 96, anchor: {x: .5, y: .93}}},
   'ironing-board': {name: 'Table à repasser jaune', price: 300, area: 'outside', width: 2, height: 1, rotates: false, level: 6, art: {file: 'assets/decorations/ironing-board.png', worldWidth: 70, anchor: {x: .5, y: .93}}},
   'climbing-rock': {name: 'Rocher d’escalade', price: 900, area: 'outside', width: 2, height: 2, rotates: false, level: 8, art: {file: 'assets/decorations/climbing-rock.png', worldWidth: 85, anchor: {x: .5, y: .93}}},

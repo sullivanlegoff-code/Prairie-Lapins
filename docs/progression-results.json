@@ -21,15 +21,15 @@
           "buyRabbit": 0,
           "feed": 0,
           "claimMainMission": 1,
-          "welcome": 0,
-          "claimHearts": 3,
-          "claimDailyMission": 0,
+          "welcome": 1,
+          "claimHearts": 9,
+          "claimDailyMission": 1,
           "breed": 0
         },
         "spendPerDay": {
-          "upgradeFarm:2": 3
+          "upgradeFarm:2": 6
         },
-        "netPerDay": 1
+        "netPerDay": 6
       },
       "grass": {
         "gainPerDay": {
@@ -58,8 +58,8 @@
         "netPerDay": 363
       },
       "stock": {
-        "heartsAverage": 24,
-        "heartsEnd": 24,
+        "heartsAverage": 57,
+        "heartsEnd": 75,
         "pattesAverage": 59,
         "grassAverage": 5
       }
@@ -78,15 +78,13 @@
       },
       "hearts": {
         "gainPerDay": {
-          "claimHearts": 3,
+          "claimHearts": 10,
           "welcome": 0,
           "claimMainMission": 1,
-          "feed": 0
+          "feed": 1
         },
-        "spendPerDay": {
-          "upgradeFarm:2": 3
-        },
-        "netPerDay": 1
+        "spendPerDay": {},
+        "netPerDay": 12
       },
       "grass": {
         "gainPerDay": {
@@ -112,8 +110,8 @@
         "netPerDay": 330
       },
       "stock": {
-        "heartsAverage": 19,
-        "heartsEnd": 38,
+        "heartsAverage": 141,
+        "heartsEnd": 199,
         "pattesAverage": 42,
         "grassAverage": 543
       }
@@ -131,14 +129,14 @@
       },
       "hearts": {
         "gainPerDay": {
-          "claimHearts": 3,
-          "feed": 0,
-          "welcome": 0
+          "claimHearts": 10,
+          "welcome": 1,
+          "breed": 0
         },
         "spendPerDay": {
           "buyBuilding:statue": 6
         },
-        "netPerDay": -3
+        "netPerDay": 5
       },
       "grass": {
         "gainPerDay": {
@@ -147,26 +145,26 @@
           "claimDailyMission": 3
         },
         "spendPerDay": {
-          "feed": 782
+          "feed": 793
         },
-        "netPerDay": -28
+        "netPerDay": -40
       },
       "xp": {
         "gainPerDay": {
           "claimDailyMission": 55,
           "welcome": 105,
-          "feed": 144,
-          "breed": 15,
-          "claimMainMission": 4
+          "feed": 138,
+          "claimMainMission": 4,
+          "breed": 15
         },
         "spendPerDay": {},
-        "netPerDay": 323
+        "netPerDay": 317
       },
       "stock": {
-        "heartsAverage": 44,
-        "heartsEnd": 11,
+        "heartsAverage": 198,
+        "heartsEnd": 248,
         "pattesAverage": 40,
-        "grassAverage": 1138
+        "grassAverage": 439
       }
     },
     "31-45": {
@@ -182,12 +180,16 @@
       },
       "hearts": {
         "gainPerDay": {
-          "claimHearts": 3,
+          "claimHearts": 10,
+          "breed": 0,
           "feed": 0,
+          "claimDailyMission": 0,
           "welcome": 0
         },
-        "spendPerDay": {},
-        "netPerDay": 3
+        "spendPerDay": {
+          "buyBuilding:statue": 7
+        },
+        "netPerDay": 4
       },
       "grass": {
         "gainPerDay": {
@@ -196,26 +198,26 @@
           "claimDailyMission": 12
         },
         "spendPerDay": {
-          "feed": 715
+          "feed": 741
         },
-        "netPerDay": 32
+        "netPerDay": 6
       },
       "xp": {
         "gainPerDay": {
           "welcome": 132,
-          "feed": 140,
+          "feed": 139,
           "breed": 15,
           "claimDailyMission": 57,
           "claimMainMission": 4
         },
         "spendPerDay": {},
-        "netPerDay": 348
+        "netPerDay": 347
       },
       "stock": {
-        "heartsAverage": 37,
-        "heartsEnd": 60,
+        "heartsAverage": 317,
+        "heartsEnd": 310,
         "pattesAverage": 41,
-        "grassAverage": 332
+        "grassAverage": 317
       }
     },
     "46-60": {
@@ -231,14 +233,12 @@
       },
       "hearts": {
         "gainPerDay": {
-          "claimHearts": 3,
-          "feed": 0,
-          "welcome": 0
+          "claimHearts": 10,
+          "welcome": 0,
+          "feed": 0
         },
-        "spendPerDay": {
-          "buyBuilding:statue": 7
-        },
-        "netPerDay": -4
+        "spendPerDay": {},
+        "netPerDay": 10
       },
       "grass": {
         "gainPerDay": {
@@ -247,25 +247,25 @@
           "release": 55
         },
         "spendPerDay": {
-          "feed": 748
+          "feed": 695
         },
-        "netPerDay": -2
+        "netPerDay": 51
       },
       "xp": {
         "gainPerDay": {
           "claimDailyMission": 60,
           "welcome": 132,
-          "feed": 141,
+          "feed": 143,
           "breed": 15
         },
         "spendPerDay": {},
-        "netPerDay": 348
+        "netPerDay": 350
       },
       "stock": {
-        "heartsAverage": 79,
-        "heartsEnd": 7,
+        "heartsAverage": 394,
+        "heartsEnd": 466,
         "pattesAverage": 51,
-        "grassAverage": 431
+        "grassAverage": 543
       }
     },
     "61-70": {
@@ -281,11 +281,11 @@
       },
       "hearts": {
         "gainPerDay": {
-          "claimHearts": 3,
-          "claimDailyMission": 0
+          "claimHearts": 10,
+          "feed": 0
         },
         "spendPerDay": {},
-        "netPerDay": 3
+        "netPerDay": 10
       },
       "grass": {
         "gainPerDay": {
@@ -294,9 +294,9 @@
           "release": 63
         },
         "spendPerDay": {
-          "feed": 799
+          "feed": 796
         },
-        "netPerDay": -40
+        "netPerDay": -37
       },
       "xp": {
         "gainPerDay": {
@@ -310,10 +310,10 @@
         "netPerDay": 337
       },
       "stock": {
-        "heartsAverage": 24,
-        "heartsEnd": 38,
+        "heartsAverage": 523,
+        "heartsEnd": 569,
         "pattesAverage": 38,
-        "grassAverage": 559
+        "grassAverage": 483
       }
     }
   },
@@ -325,8 +325,8 @@
     "22": 43,
     "25": 63
   },
-  "statueDay": 28,
-  "secondStatueDay": 59,
+  "statueDay": 20,
+  "secondStatueDay": 42.208,
   "salonDay": null,
   "agencyDay": null,
   "jumpIslandDay": null,
@@ -335,7 +335,7 @@
   "affection20to50": {
     "rabbit": "rabbit-2",
     "species": "paille",
-    "day20": 36.5,
+    "day20": 35,
     "day50": null,
     "days": null,
     "affectionDay60": 24,
@@ -356,14 +356,14 @@
   "tutorialFinalMission": {
     "pattes": 800,
     "grass": 66,
-    "hearts": 16,
+    "hearts": 24,
     "level": 5,
     "xp": 817
   },
   "tutorial": {
     "pattes": 850,
     "grass": 96,
-    "hearts": 18,
+    "hearts": 26,
     "level": 5,
     "xp": 937
   },
@@ -385,7 +385,7 @@
       },
       "pattes": 850,
       "grass": 96,
-      "hearts": 18,
+      "hearts": 26,
       "level": 5,
       "species": 3,
       "affection": {
@@ -436,7 +436,7 @@
       "decorationBudget": {
         "models": 22,
         "pattes": 26151,
-        "hearts": 80
+        "hearts": 50
       },
       "mainMissionsClaimed": [
         "snow-habitat",
@@ -463,7 +463,7 @@
       },
       "pattes": 136,
       "grass": 7,
-      "hearts": 19,
+      "hearts": 27,
       "level": 5,
       "species": 3,
       "affection": {
@@ -514,7 +514,7 @@
       "decorationBudget": {
         "models": 22,
         "pattes": 26151,
-        "hearts": 80
+        "hearts": 50
       },
       "mainMissionsClaimed": [
         "snow-habitat",
@@ -546,7 +546,7 @@
       },
       "pattes": 66,
       "grass": 1,
-      "hearts": 27,
+      "hearts": 53,
       "level": 7,
       "species": 4,
       "affection": {
@@ -598,7 +598,7 @@
       "decorationBudget": {
         "models": 22,
         "pattes": 26151,
-        "hearts": 80
+        "hearts": 50
       },
       "mainMissionsClaimed": [
         "snow-habitat",
@@ -638,7 +638,7 @@
       },
       "pattes": 66,
       "grass": 2,
-      "hearts": 11,
+      "hearts": 39,
       "level": 9,
       "species": 4,
       "affection": {
@@ -690,7 +690,7 @@
       "decorationBudget": {
         "models": 22,
         "pattes": 26151,
-        "hearts": 80
+        "hearts": 50
       },
       "mainMissionsClaimed": [
         "snow-habitat",
@@ -731,7 +731,7 @@
       },
       "pattes": 31,
       "grass": 567,
-      "hearts": 38,
+      "hearts": 199,
       "level": 15,
       "species": 6,
       "affection": {
@@ -783,7 +783,7 @@
       "decorationBudget": {
         "models": 22,
         "pattes": 26151,
-        "hearts": 80
+        "hearts": 50
       },
       "mainMissionsClaimed": [
         "snow-habitat",
@@ -818,7 +818,7 @@
     {
       "step": "30 j",
       "affectionById": {
-        "rabbit-2": 17,
+        "rabbit-2": 18,
         "rabbit-7": 14,
         "birth-13": 14,
         "birth-25": 14,
@@ -828,15 +828,15 @@
         "birth-98": 9
       },
       "pattes": 41,
-      "grass": 285,
-      "hearts": 11,
+      "grass": 170,
+      "hearts": 248,
       "level": 18,
       "species": 6,
       "affection": {
         "≥10": 7,
         "≥15": 1,
         "≥30": 0,
-        "max": 17,
+        "max": 18,
         "rabbits": 8
       },
       "speciesIds": [
@@ -881,7 +881,7 @@
       "decorationBudget": {
         "models": 22,
         "pattes": 26151,
-        "hearts": 80
+        "hearts": 50
       },
       "mainMissionsClaimed": [
         "snow-habitat",
@@ -918,25 +918,25 @@
     {
       "step": "50 j",
       "affectionById": {
-        "rabbit-2": 22,
+        "rabbit-2": 23,
         "rabbit-7": 14,
         "birth-13": 14,
         "birth-25": 14,
         "birth-42": 14,
         "birth-60": 14,
         "birth-65": 14,
-        "birth-158": 9
+        "birth-159": 9
       },
       "pattes": 61,
-      "grass": 812,
-      "hearts": 76,
+      "grass": 181,
+      "hearts": 363,
       "level": 23,
       "species": 6,
       "affection": {
         "≥10": 7,
         "≥15": 1,
         "≥30": 0,
-        "max": 22,
+        "max": 23,
         "rabbits": 8
       },
       "speciesIds": [
@@ -981,7 +981,7 @@
       "decorationBudget": {
         "models": 22,
         "pattes": 26151,
-        "hearts": 80
+        "hearts": 50
       },
       "mainMissionsClaimed": [
         "snow-habitat",
@@ -1013,8 +1013,8 @@
         "level-fifteen",
         "build-affection-statue",
         "affection-fifteen",
-        "level-twenty",
         "affection-twenty",
+        "level-twenty",
         "level-twenty-two"
       ]
     },
@@ -1031,8 +1031,8 @@
         "birth-189": 9
       },
       "pattes": 11,
-      "grass": 732,
-      "hearts": 7,
+      "grass": 1020,
+      "hearts": 466,
       "level": 24,
       "species": 6,
       "affection": {
@@ -1084,7 +1084,7 @@
       "decorationBudget": {
         "models": 22,
         "pattes": 26151,
-        "hearts": 80
+        "hearts": 50
       },
       "mainMissionsClaimed": [
         "snow-habitat",
@@ -1116,8 +1116,8 @@
         "level-fifteen",
         "build-affection-statue",
         "affection-fifteen",
-        "level-twenty",
         "affection-twenty",
+        "level-twenty",
         "level-twenty-two"
       ]
     }
@@ -1129,7 +1129,7 @@
     "startOrder": 418,
     "initiationAid": 3,
     "collectOrder": 416,
-    "feed": 1564,
+    "feed": 1556,
     "breed": 210,
     "claimDailyMission": 85,
     "transferBirth": 1,
@@ -1142,5 +1142,5 @@
     "release": 202,
     "upgradeFarm": 2
   },
-  "totalActions": 3703
+  "totalActions": 3695
 }

@@ -2,7 +2,7 @@ import {describe, expect, it} from 'vitest';
 import {itAll} from './cases';
 import {xpAfterSlowdown} from '../src/simulation/progression';
 import {act, advance, createGame, decodeGame, encodeGame} from '../src/simulation';
-import {HOUR, ORDERS, orderFarmLevel, type OrderId} from '../src/config/balance';
+import {HOUR, ORDERS, orderFarmLevel, tripHearts, tripHeartsBefore20261108, type OrderId} from '../src/config/balance';
 import {cumulativeLevelXp} from '../src/simulation/progression';
 import {buildingPlacementReason} from '../src/simulation/placement';
 import {travelling, tripReady} from '../src/simulation/travel';
@@ -53,21 +53,23 @@ describe('permanent heart spending', () => {
     const decoded = decodeGame(JSON.stringify(raw)); expect(decoded).toEqual({ok: true, state: {...s, progression: {...s.progression, totalXp: xpAfterSlowdown(s.progression.totalXp)}}}); // An older save's XP is on the curve without the slow-down.
     let a = setup('agency'); a = run(a, {type: 'startTrip', rabbitId: a.rabbits[0].id});
     const old = JSON.parse(encodeGame(a)); old.version = 18; old.travel = {welcomed: false, trip: old.travel.trips[0]};
-    expect(decodeGame(JSON.stringify(old))).toEqual({ok: true, state: {...a, progression: {...a.progression, totalXp: xpAfterSlowdown(a.progression.totalXp)}}});
+    // A save older than v27 was written before 8 November 2026: its trip keeps the Hearts of that time's table.
+    const legacyTravel = {...a.travel!, trips: a.travel!.trips.map(trip => ({...trip, hearts: tripHeartsBefore20261108((trip.endsAt - trip.startedAt) / HOUR)}))};
+    expect(decodeGame(JSON.stringify(old))).toEqual({ok: true, state: {...a, travel: legacyTravel, progression: {...a.progression, totalXp: xpAfterSlowdown(a.progression.totalXp)}}});
     expect(decodeGame('{"version":21}')).toEqual({ok: false, reason: 'INVALID_STATE'}); // 21 is the current version: an empty save is invalid, not unsupported
   });
-  it('upgrades the agency for 40 then 120 hearts and freezes food at departure', () => {
+  it('upgrades the agency for 30 then 60 hearts (8 November 2026) and freezes food at departure', () => {
     let s = setup('agency'); const id = s.buildings.at(-1)!.id;
     for (let i = 0; i < 2; i++) s.rabbits.push({...s.rabbits[0], id: `rabbit-${s.nextId++}`});
     s = run(s, {type: 'startTrip', rabbitId: s.rabbits[0].id});
     refused(s, {type: 'startTrip', rabbitId: s.rabbits[1].id}, 'BUSY');
-    s.hearts = 39; refused(s, {type: 'upgradeAgency', id, fromLevel: 1}, 'NOT_ENOUGH_HEARTS'); s.hearts = 160;
-    const coins = s.pattes; s = run(s, {type: 'upgradeAgency', id, fromLevel: 1}); expect(s.hearts).toBe(120);
+    s.hearts = 29; refused(s, {type: 'upgradeAgency', id, fromLevel: 1}, 'NOT_ENOUGH_HEARTS'); s.hearts = 90;
+    const coins = s.pattes; s = run(s, {type: 'upgradeAgency', id, fromLevel: 1}); expect(s.hearts).toBe(60);
     refused(s, {type: 'upgradeAgency', id, fromLevel: 1}, 'STALE_ACTION');
     refused(s, {type: 'startTrip', rabbitId: s.rabbits[0].id}, 'TRAVELING');
     s = run(s, {type: 'startTrip', rabbitId: s.rabbits[1].id});
     refused(s, {type: 'startTrip', rabbitId: s.rabbits[2].id}, 'BUSY');
-    s.hearts = 119; refused(s, {type: 'upgradeAgency', id, fromLevel: 2}, 'NOT_ENOUGH_HEARTS'); s.hearts = 120;
+    s.hearts = 59; refused(s, {type: 'upgradeAgency', id, fromLevel: 2}, 'NOT_ENOUGH_HEARTS'); s.hearts = 60;
     s = run(s, {type: 'upgradeAgency', id, fromLevel: 2}); expect(s.hearts).toBe(0); expect(s.pattes).toBe(coins);
     s = run(s, {type: 'startTrip', rabbitId: s.rabbits[2].id});
     expect(s.travel!.trips.map(t => t.grass)).toEqual([undefined, 75, 75]);
@@ -80,19 +82,24 @@ describe('permanent heart spending', () => {
       (v: GameState) => { v.travel!.trips[1].rabbitId = v.travel!.trips[0].rabbitId; },
       (v: GameState) => { v.travel!.trips[1].grass = 74; },
     ]) { const v = structuredClone(s); mutate(v); expect(decodeGame(JSON.stringify(v))).toEqual({ok: false, reason: 'INVALID_STATE'}); }
+    // A trip started before 8 November 2026 keeps its old Hearts (1 for 3 hours) and its save stays valid; any other amount is refused.
+    { const v = structuredClone(s); v.travel!.trips[1].hearts = 1; expect(decodeGame(encodeGame(v))).toEqual({ok: true, state: v}); v.travel!.trips[1].hearts = 2; expect(decodeGame(JSON.stringify(v))).toEqual({ok: false, reason: 'INVALID_STATE'}); }
     const rebased = advance({...s, lastSimulatedAt: 10 * HOUR, travel: {...s.travel!, trips: s.travel!.trips.map(t => ({...t, startedAt: 10 * HOUR, endsAt: 13 * HOUR}))}}, HOUR);
     expect(rebased.travel!.trips.every(t => t.startedAt === HOUR && t.endsAt === 4 * HOUR)).toBe(true);
     for (const r of s.rabbits) s = run(s, {type: 'claimTrip', rabbitId: r.id}, 3 * HOUR);
-    expect(s.hearts).toBe(3); expect(s.grass).toBe(150); expect(s.travel!.trips).toEqual([]);
+    expect(s.hearts).toBe(3 * tripHearts(3)); expect(s.grass).toBe(150); expect(s.travel!.trips).toEqual([]);
     refused(s, {type: 'claimTrip', rabbitId: s.rabbits[0].id}, 'NOT_READY', 3 * HOUR);
   });
-  it('buys the robot with 80 hearts, never resells it, and preserves historical receipts', () => {
+  it('buys the robot with 50 hearts (80 before 8 November 2026), never resells it, and preserves historical receipts', () => {
     let s = setup('farm'); const buy = {type: 'buyDecoration', catalogId: 'robot-statue'} as const;
-    s.hearts = 79; refused(s, buy, 'NOT_ENOUGH_HEARTS'); s.hearts = 80; s.pattes = 0;
+    s.hearts = 49; refused(s, buy, 'NOT_ENOUGH_HEARTS'); s.hearts = 50; s.pattes = 0;
     s = run(s, buy); expect(s.hearts).toBe(0); expect(s.pattes).toBe(0);
-    const owned = s.decorations[0]; expect(owned.paidHearts).toBe(80); expect(owned.paidPrice).toBeUndefined();
+    const owned = s.decorations[0]; expect(owned.paidHearts).toBe(50); expect(owned.paidPrice).toBeUndefined();
     refused(s, {type: 'sellDecoration', id: owned.id}, 'INVALID_CHOICE'); expect(ownedDecorationResalePrice(owned)).toBe(0);
     expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: s});
+    // A robot bought for 80 Hearts before 8 November 2026 keeps a valid receipt; any other amount is refused.
+    owned.paidHearts = 80; expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: s});
+    owned.paidHearts = 79; expect(decodeGame(JSON.stringify(s))).toEqual({ok: false, reason: 'INVALID_STATE'}); owned.paidHearts = 50;
     delete owned.paidHearts; owned.paidPrice = 15000;
     expect(run(s, {type: 'sellDecoration', id: owned.id}).pattes).toBe(7500);
     delete owned.paidPrice; expect(run(s, {type: 'sellDecoration', id: owned.id}).pattes).toBe(500);

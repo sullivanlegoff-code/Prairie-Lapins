@@ -36,8 +36,8 @@ describe('Christmas update economy: unlocks and prices', () => {
     expect(SALON.unlockLevel).toBe(22); expect(FOREST.unlockLevel).toBe(25); expect(JUMP_ROPE.unlockLevel).toBe(20);
     expect(ORDERS.foin.cost).toBe(10); expect(ORDERS.pissenlit.cost).toBe(90); expect(ORDERS.trefle.cost).toBe(150);
   });
-  it('prices the nursery cushions 40, 120 and 250 Hearts', () => {
-    expect(NURSERY.unlockHearts).toEqual({1: 40, 2: 120, 3: 250});
+  it('prices the nursery cushions 30, 60 and 80 Hearts (Hearts calendar, 8 November 2026)', () => {
+    expect(NURSERY.unlockHearts).toEqual({1: 30, 2: 60, 3: 80});
   });
   it('slows the levels after 20 only: every level up to 20 keeps its cost', () => {
     const plain = (level: number) => Math.round(PROGRESSION.curve.base * level ** PROGRESSION.curve.exponent);
@@ -49,8 +49,8 @@ describe('Christmas update economy: unlocks and prices', () => {
 });
 
 describe('Christmas update economy: Hearts', () => {
-  it('gives 1 to 5 Hearts a trip, more for a longer one', () => {
-    expect([3, 4, 5, 6, 7, 8, 9, 10].map(tripHearts)).toEqual([1, 1, 2, 2, 3, 3, 4, 5]);
+  it('gives 3 to 12 Hearts a trip, more for a longer one (8 November 2026)', () => {
+    expect([3, 4, 5, 6, 7, 8, 9, 10].map(tripHearts)).toEqual([3, 3, 5, 5, 7, 7, 9, 12]);
   });
   it('gives Hearts for the first two cares of the day only (bath and brush 1, massage 2)', () => {
     const {s, ids: [a, b, c]} = salonGame(['paille', 'neige', 'feu']);

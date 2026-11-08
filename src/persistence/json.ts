@@ -17,9 +17,9 @@ import {type HabitatType, HABITAT_TYPES, HABITAT_LEVELS, habitatLevel} from '../
 import {MAIN_MISSION_IDS, DAILY_MISSION_IDS, DAILY_MISSIONS, DAILY_PICK_COUNT} from '../config/missions';
 import {cycleIndexAt} from '../simulation/missions';
 import {z} from 'zod';
-import {BALANCE, FOREST, BUILDING_KINDS, CARE_KINDS, SALON, JUMP_ROPE, LEGACY_BREEDING_DURATION, EPIC_ISLET, BENNY_FLIGHT, CUISINE_FULL_REWARDS_PER_CYCLE, HOUR, LEGACY_ORDER_CROPS, TRAVEL, tripHearts, NURSERY, ORDERS, type OrderId, SHOP_SPECIES, SPECIES, SPECIES_IDS, GUARANTEE_SPECIES, growthDuration, orderFarmLevel, type SpeciesId} from '../config/balance';
+import {BALANCE, FOREST, BUILDING_KINDS, CARE_KINDS, SALON, JUMP_ROPE, LEGACY_BREEDING_DURATION, EPIC_ISLET, BENNY_FLIGHT, CUISINE_FULL_REWARDS_PER_CYCLE, HOUR, LEGACY_ORDER_CROPS, TRAVEL, tripHearts, tripHeartsBefore20261108, NURSERY, ORDERS, type OrderId, SHOP_SPECIES, SPECIES, SPECIES_IDS, GUARANTEE_SPECIES, growthDuration, orderFarmLevel, type SpeciesId} from '../config/balance';
 import type {GameState} from '../state/types';
-import {ALL_DECORATION_IDS, DECORATION_IDS, RETIRED_DECORATION_IDS, MAX_DECORATIONS, isChristmasDecoration} from '../config/decorations';
+import {ALL_DECORATION_IDS, DECORATIONS, DECORATION_IDS, RETIRED_DECORATION_IDS, MAX_DECORATIONS, isChristmasDecoration} from '../config/decorations';
 import {CHRISTMAS_CHALLENGES, CHRISTMAS_CHALLENGE_IDS, CHRISTMAS_PICK_COUNT, COIN_BUBBLE_CANDIES, MAX_CANDIES, SKY_GIFTS} from '../config/christmasEvent';
 import {decorationPlacementReason} from '../simulation/decorations';
 import {ISLAND} from '../config/islandGeometry';
@@ -257,7 +257,7 @@ const schema = current.superRefine((s, context) => {
   for (const trip of s.travel?.trips ?? []) {
     const hours = (trip.endsAt - trip.startedAt) / HOUR;
     if (!s.buildings.some(b => b.kind === 'agency') || !s.rabbits.some(r => r.id === trip.rabbitId) || !Number.isInteger(hours) || hours < TRAVEL.minHours || hours > TRAVEL.maxHours
-      || (trip.grass !== undefined && (trip.grass !== hours * 25 || !s.buildings.some(b => b.kind === 'agency' && b.agencyLevel))) || trip.hearts !== tripHearts(hours) || trip.startedAt > s.lastSimulatedAt
+      || (trip.grass !== undefined && (trip.grass !== hours * 25 || !s.buildings.some(b => b.kind === 'agency' && b.agencyLevel))) || (trip.hearts !== tripHearts(hours) && trip.hearts !== tripHeartsBefore20261108(hours)) || trip.startedAt > s.lastSimulatedAt
       || s.buildings.some(b => b.breeding?.parents.includes(trip.rabbitId))) issue('Trip');
   }
   if (s.care) {
@@ -293,7 +293,7 @@ const schema = current.superRefine((s, context) => {
     if (s.rabbits.filter(r => r.enclosureId === b.id).length > capacity) issue('Enclosure capacity');
   }
   for (const d of s.decorations) {
-    if (d.paidHearts !== undefined && (d.catalogId !== 'robot-statue' || d.paidHearts !== 80 || d.paidPrice !== undefined)) issue('Decoration receipt');
+    if (d.paidHearts !== undefined && (d.catalogId !== 'robot-statue' || (d.paidHearts !== 80 /* price before 8 November 2026 */ && d.paidHearts !== DECORATIONS['robot-statue'].heartPrice) || d.paidPrice !== undefined)) issue('Decoration receipt');
     // A Christmas decoration is paid in sucres d'orge only, and only a Christmas decoration is.
     if (d.paidCandies !== undefined && (!isChristmasDecoration(d.catalogId) || d.paidPrice !== undefined || d.paidHearts !== undefined) ||
       isChristmasDecoration(d.catalogId) && (d.paidPrice !== undefined || d.paidHearts !== undefined)) issue('Decoration receipt');
@@ -474,7 +474,8 @@ function migrateV26(raw: object, xpOnCurrentCurve: boolean): void {
   }
   if (save.travel && typeof save.travel === 'object' && Array.isArray(save.travel.trips)) for (const t of save.travel.trips) {
     const trip = t as {startedAt?: unknown; endsAt?: unknown; hearts?: unknown};
-    if (trip && typeof trip.startedAt === 'number' && typeof trip.endsAt === 'number') trip.hearts = tripHearts(Math.round((trip.endsAt - trip.startedAt) / HOUR));
+    // A save older than this version was written before 8 November 2026: its trip keeps the table of that time.
+    if (trip && typeof trip.startedAt === 'number' && typeof trip.endsAt === 'number') trip.hearts = tripHeartsBefore20261108(Math.round((trip.endsAt - trip.startedAt) / HOUR));
   }
   save.version = SAVE_VERSION;
 }

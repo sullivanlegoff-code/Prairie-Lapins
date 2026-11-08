@@ -10,6 +10,8 @@ import {createGame, encodeGame} from '../src/simulation';
 import {previousStart} from './regression-start';
 import type {MeadowScene} from '../src/display/MeadowScene';
 import {SAVE_KEY} from '../src/persistence/storage';
+import {PROGRESSION} from '../src/config/progression';
+const HPL = PROGRESSION.rewards.heartsPerLevel; // Hearts per level (3 since 8 November 2026).
 
 const cleanup: (() => void)[] = [];
 beforeEach(() => {
@@ -101,7 +103,7 @@ it.each([.1,.65])('guides every real action, roll=%s, with reloads and no contro
   const targets=vi.mocked(scene.setRabbitDropTargets).mock.calls.at(-1)![0]!;expect(targets.length).toBeGreaterThan(0);
   ui.select({kind:'building',id:targets[0]});
   expect(state().missions.events.welcome).toBe(1);expect(state().rabbits.at(-1)!.species).toBe(roll===.1?'frisket':'icy');
-  expect(state().initiation!.used).toEqual(['order','breeding','growth']);expect(state().hearts).toBe(14);
+  expect(state().initiation!.used).toEqual(['order','breeding','growth']);expect(state().hearts).toBe(12+2*HPL);
   help();expect(prefs.value.tutorialDone).toBe(true);expect(document.getElementById('game-panel')!.dataset.view).toBe('missions');
   document.getElementById('open-collection')!.click();expect(document.getElementById('game-panel')!.dataset.view).toBe('collection');
   ui.dispose();controller.dispose();

@@ -9,6 +9,7 @@ import {quoteComplement} from '../src/simulation/actions';
 import {SAVE_KEY} from '../src/persistence/storage';
 import type {Command,GameState} from '../src/state/types';
 import {setBaby, welcomeOf} from './nursery-baby';
+const HPL = PROGRESSION.rewards.heartsPerLevel; // Hearts per level (3 since 8 November 2026).
 function rich(){const s=createCentreStartGame(0);s.grass=10;delete s.levelAccessTransition;s.pattes=10000;s.purchaseUnlocks=['universal','feu','volant'];s.buildings[0].habitat!.type='universal';return s;}
 function run(s:GameState,c:Command,t=s.lastSimulatedAt){const r=act(s,c,t,()=>.99);if(!r.ok)throw Error(r.reason);return r;}
 function baby(species:SpeciesId){const s=rich();setBaby(s.buildings.find(b=>b.kind==='nursery')!, {birth:{id:'birth-6',species,guaranteed:false,reservedDiscovery:false},startedAt:0,readyAt:0});s.nextId=7;return s;}
@@ -30,7 +31,7 @@ describe('purchase and birth XP in the same candidate',()=>{
  });
  it('pays before rewarding a level and cannot finance its own purchase with future hearts',()=>{
   const s=rich();s.progression.totalXp=30;s.pattes=0;s.hearts=3;const command={type:'payWithHearts',action:{type:'buyRabbit',species:'neige',enclosureId:'building-1'},maxHearts:4,maxPattes:0} as const;
-  const denied=act(s,command,0);expect(denied).toEqual({ok:false,state:s,reason:'NOT_ENOUGH_HEARTS'});s.hearts=4;const r=run(s,command);expect(r.state.pattes).toBe(0);expect(r.state.hearts).toBe(1);expect(r.progressionGain).toEqual({"heartsGranted":1,"rewardedLevels":[2],"xpGained":70});
+  const denied=act(s,command,0);expect(denied).toEqual({ok:false,state:s,reason:'NOT_ENOUGH_HEARTS'});s.hearts=4;const r=run(s,command);expect(r.state.pattes).toBe(0);expect(r.state.hearts).toBe(HPL);expect(r.progressionGain).toEqual({"heartsGranted":HPL,"rewardedLevels":[2],"xpGained":70});
  });
  itAll([{type:'buyRabbit',species:'neige',enclosureId:'building-1'},{type:'buyBuilding',kind:'farm',x:17,y:24},{type:'welcome',enclosureId:'building-1',birthId:'birth-6'}] as Command[])('XP/heart overflow refuses the entire $type candidate',command=>{
   for(const overflow of ['xp','hearts']){const s=baby('paille');if(overflow==='xp')s.progression.totalXp=Number.MAX_SAFE_INTEGER;else{s.progression.totalXp=89;s.hearts=Number.MAX_SAFE_INTEGER;}const before=structuredClone(s),r=act(s,command,0);expect(r.ok).toBe(false);expect(r.state).toEqual(before);expect(s).toEqual(before);}

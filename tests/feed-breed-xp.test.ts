@@ -11,6 +11,7 @@ import {PROGRESSION} from '../src/config/progression';
 import {jobKey} from '../src/simulation/initiation';
 import {SAVE_KEY} from '../src/persistence/storage';
 import type {Command,GameState} from '../src/state/types';
+const HPL = PROGRESSION.rewards.heartsPerLevel; // Hearts per level (3 since 8 November 2026).
 function parents(){const s=createGame(0);s.grass=10;s.buildings[0].habitat!.type='universal';s.rabbits[0].affection=2;s.rabbits.push({id:'rabbit-3',species:'neige',affection:2,enclosureId:'building-1'});s.discovered.push('neige');return s;}
 const breed:Command={type:'breed',parents:['rabbit-2','rabbit-3']};
 function run(s:GameState,c:Command,t=s.lastSimulatedAt){const r=act(s,c,t,()=>.1);if(!r.ok)throw Error(r.reason);return r;}
@@ -26,7 +27,7 @@ describe('food and launch XP candidates',()=>{
  });
  itAll(['missing','low','same'])('invalid %s parents give no XP',why=>{const s=parents();if(why==='low')s.rabbits[1].affection=1;const command:Command={type:'breed',parents:why==='same'?['rabbit-2','rabbit-2']:why==='missing'?['rabbit-2','rabbit-99']:['rabbit-2','rabbit-3']};expect(act(s,command,0)).toMatchObject({ok:false,state:s});});
  itAll(['feed','breed'] as const)('%s crosses a level with exact rewards and refuses resource overflow atomically',type=>{
-  const s=parents();s.progression.totalXp=89;const c:Command=type==='breed'?breed:{type:'feed',id:'rabbit-2'};const r=run(s,c);expect(r.state.hearts).toBe(13);expect(r.progressionGain?.rewardedLevels).toEqual([2]);expect(r.state.progression.totalXp).toBe(89+(type==='breed'?PROGRESSION.xp.breedingLaunch:foodXp(3)));
+  const s=parents();s.progression.totalXp=89;const c:Command=type==='breed'?breed:{type:'feed',id:'rabbit-2'};const r=run(s,c);expect(r.state.hearts).toBe(12+HPL);expect(r.progressionGain?.rewardedLevels).toEqual([2]);expect(r.state.progression.totalXp).toBe(89+(type==='breed'?PROGRESSION.xp.breedingLaunch:foodXp(3)));
   s.hearts=Number.MAX_SAFE_INTEGER;expect(act(s,c,0)).toEqual({ok:false,state:s,reason:'RESOURCE_LIMIT'});
  });
  itAll(['feed','breed'] as const)('%s failed save discards the entire candidate, then retries once',type=>{

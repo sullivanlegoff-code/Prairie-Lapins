@@ -90,9 +90,9 @@ describe('economy B feedback and prices', () => {
   it('shows accumulated gifts, caps them at three and uses the next deadline', () => {
     const s=createGame(0), due=s.nextHeartGiftAt;
     expect(heartGift(s,due-1)).toMatchObject({gifts:0,amount:0});
-    expect(heartGift(s,due)).toMatchObject({gifts:1,amount:3});
-    expect(heartGift(s,due+2*HEARTS.giftInterval).text).toBe('3 cadeaux · 9 cœurs');
-    const r=act(s,{type:'claimHearts'},due+8*HEARTS.giftInterval);expect(r.ok&&r.value).toBe(9);
+    expect(heartGift(s,due)).toMatchObject({gifts:1,amount:HEARTS.gift});
+    expect(heartGift(s,due+2*HEARTS.giftInterval).text).toBe(`3 cadeaux · ${3*HEARTS.gift} cœurs`);
+    const r=act(s,{type:'claimHearts'},due+8*HEARTS.giftInterval);expect(r.ok&&r.value).toBe(3*HEARTS.gift);
     expect(heartGift(r.state,due+8*HEARTS.giftInterval).gifts).toBe(0);
   });
   it('preserves small prices, halves new prices and caps old refunds at their old paid price', () => {

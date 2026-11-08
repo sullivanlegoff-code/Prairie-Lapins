@@ -11,6 +11,7 @@ import {setBaby, welcomeOf} from './nursery-baby';
 import {GameController} from '../src/application/GameController';
 import {SAVE_KEY, type SaveStorage} from '../src/persistence/storage';
 import type {Command, GameState} from '../src/state/types';
+import {DAILY_BONUS} from '../src/config/missions';
 
 const run = (s: GameState, c: Command, now = s.lastSimulatedAt) => {
   const result = act(s, c, now, () => .9); if (!result.ok) throw Error(result.reason); return result.state;
@@ -159,7 +160,7 @@ describe('daily event accounting and fixed cycles',()=>{
     for(const id of DAILY_MISSION_IDS)expect(act(s,{type:'claimDailyMission',id,cycleStart:0},s.lastSimulatedAt)).toMatchObject({ok:false,reason:dailyMissionsFor(0).includes(id)?'ALREADY_CLAIMED':'INVALID_CHOICE'});
     const hearts=s.hearts,bonus=act(s,{type:'claimDailyBonus',cycleStart:0},s.lastSimulatedAt);if(!bonus.ok)throw Error(bonus.reason);
     // Levels crossed by the bonus XP pay their own hearts, reported apart from the bonus.
-    expect(bonus.state.hearts).toBe(hearts+2+(bonus.progressionGain?.heartsGranted??0));expect(bonus.state.nextHeartGiftAt).toBe(DAY);
+    expect(bonus.state.hearts).toBe(hearts+DAILY_BONUS[0].amount+(bonus.progressionGain?.heartsGranted??0));expect(bonus.state.nextHeartGiftAt).toBe(DAY);
     s=bonus.state;
     expect(act(s,{type:'claimDailyBonus',cycleStart:0},s.lastSimulatedAt)).toMatchObject({ok:false,state:s,reason:'ALREADY_CLAIMED'});
     expect(run(s,{type:'claimHearts'},DAY).hearts).toBe(s.hearts+HEARTS.gift);

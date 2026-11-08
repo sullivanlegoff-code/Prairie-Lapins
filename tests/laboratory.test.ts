@@ -16,6 +16,8 @@ import {oddsView, rabbitAvailability} from '../src/ui/models';
 import {habitatEntryReason} from '../src/simulation/habitats';
 import {cumulativeLevelXp} from '../src/simulation/progression';
 import {EXPECTED_IDS} from './rabbit-art-fixtures';
+import {PROGRESSION} from '../src/config/progression';
+const HPL = PROGRESSION.rewards.heartsPerLevel; // Hearts per level (3 since 8 November 2026).
 
 const controllers: GameController[] = [];
 const dispose: (() => void)[] = [];
@@ -246,7 +248,7 @@ describe('published laboratory isolation', () => {
   it('uses controller persistence for the two XP buttons, without touching normal state', () => {
     const {dev,controller}=setup(),before=normalSnapshot();dispose.push(dev.mount(controller));
     document.getElementById('dev-xp-50')!.click();document.getElementById('dev-xp-500')!.click();
-    expect(controller.getSnapshot().state).toMatchObject({"progression":{"rewardedThroughLevel":4,"totalXp":550},"hearts":15});
+    expect(controller.getSnapshot().state).toMatchObject({"progression":{"rewardedThroughLevel":4,"totalXp":550},"hearts":12+3*HPL});
     expect(document.getElementById('dev-status')!.textContent).toContain('+500 XP');
     expect(normalSnapshot()).toEqual(before);
   });
