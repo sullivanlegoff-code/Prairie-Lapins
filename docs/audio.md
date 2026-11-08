@@ -20,6 +20,8 @@ Source fournie par le propriétaire, **non modifiée** : `<profil-utilisateur>\O
 | Music Christmast 7.mp3 | idem | 6:32 | 192 kb/s CBR | 9 404 126 | `noel-7.mp3` (96 kb/s) | 4 696 057 |
 | **Total** (Indian vibe + Noël) | | 38:45 | | **55 979 327** | | **31 577 882** |
 
+Volume égalisé (8 novembre 2026, demande du propriétaire) : les musiques de Noël 4 et 1 étaient nettement plus faibles (niveau moyen 0,063 et 0,079 contre environ 0,14 pour les autres). Avant l'encodage, elles ont été amplifiées (×2,15 et ×1,6, sans écrêtage : pic 0,95 et 0,98) dans Chromium, puis encodées comme les autres. Niveaux moyens mesurés sur les fichiers du jeu : 0,125 / 0,106 / 0,134 / 0,135 / 0,177 / 0,192 / 0,143.
+
 Fichiers dans `public/assets/audio/music/` : MP3 44,1 kHz stéréo, durées identiques ; 128 kb/s CBR pour les Indian vibe, **96 kb/s CBR pour les sept musiques de Noël** (moitié de la taille source, contrôlées dans Chromium : durées, canaux et niveaux identiques à 0,1 s près). Le MP3 est lu par Safari iOS ; il reste le format le plus sûr pour tous les navigateurs du projet.
 
 **Règle de build partagé (17 octobre 2026)** : `build:netlify` et `build:pages` produisent une seule copie des quatre pistes sous `assets/audio/music/` à la racine de leur artefact. Le script combiné fixe `VITE_SHARED_MUSIC_BASE` à la base du site : `/` pour Netlify, `/Project-L/` pour Pages. `src/main.ts` utilise cette base pour le jeu et le laboratoire, plutôt que la base propre au laboratoire (`/dev/`). Les builds isolés et le serveur de développement gardent `BASE_URL` en repli. Ne pas réintroduire des URLs `/dev/assets/audio/music/` dans le build combiné.
