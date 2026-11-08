@@ -48,7 +48,7 @@ it('renders the fourteen crops with their icon, locks the later ones and shows a
   const crops=[...panel().querySelectorAll<HTMLElement>('.farm-order')];
   expect(crops.map(c=>c.dataset.crop)).toEqual(['foin','pissenlit','trefle','persil','laitue','fanes','fenouil','pomme','fraise','banane','trefleDore','carotteArcEnCiel','fraiseEtoilee','pommeAmour','citrouilleDoree','melonLune','cerisesCristal']);
   expect(crops.every(c=>c.querySelector('img.crop-icon'))).toBe(true);expect(crops[9].textContent).toContain('Banane');expect(crops[9].textContent).toContain('10 h');
-  expect(crops[3].querySelector('button')?.textContent).toBe('Cultiver · 100 pièces');expect(crops[4].querySelector('button')).toBeNull();expect(crops[4].querySelector('.badge')?.textContent).toBe('Niveau 7 requis');
+  expect(crops[3].querySelector('button')?.textContent).toBe('Cultiver · 250 pièces');expect(crops[4].querySelector('button')).toBeNull();expect(crops[4].querySelector('.badge')?.textContent).toBe('Niveau 7 requis');
   controller.perform({type:'startOrder',id:'building-100',recipe: 'persil'});
   expect(panel().querySelector('.order-ready-time')?.textContent).toMatch(/^Prête vers \d+ h \d{2}$/);
 });

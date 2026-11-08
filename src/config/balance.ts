@@ -126,19 +126,19 @@ export function drawTrip(roll: number): {destination: Destination; hours: number
   return {destination: TRAVEL.destinations[n % count], hours: TRAVEL.minHours + Math.floor(n / count)};
 }
 // Crop prices doubled for the Christmas update (owner, 5 November 2026). The hay keeps its 10 pattes: it is the guided first
-// crop whose price Paille's guide quotes (her lines are never changed). On 8 November 2026 the owner asked for ×2.5: applied
-// to the fancy crops only for now, because ×2.5 on every crop puts level 22 near day 43 in the simulation (owner to decide).
+// crop whose price Paille's guide quotes (her lines are never changed). Then ×2.5 on every crop (owner, 8 November 2026),
+// chosen knowing that the simulated player then reaches level 22 much later than day 20.
 export const ORDERS = {
   foin: {name: 'Foin', level: 1, cost: 10, grass: 20, duration: 5 * MINUTE},
-  pissenlit: {name: 'Pissenlit', level: 1, cost: 36, grass: 40, duration: 15 * MINUTE},
-  trefle: {name: 'Trèfle', level: 3, cost: 60, grass: 70, duration: 30 * MINUTE},
-  persil: {name: 'Persil', level: 5, cost: 100, grass: 120, duration: HOUR},
-  laitue: {name: 'Laitue romaine', level: 7, cost: 160, grass: 200, duration: 2 * HOUR},
-  fanes: {name: 'Fanes de carotte', level: 9, cost: 240, grass: 290, duration: 3 * HOUR},
-  fenouil: {name: 'Fenouil', level: 11, cost: 320, grass: 380, duration: 4 * HOUR},
-  pomme: {name: 'Pomme', level: 13, cost: 480, grass: 560, duration: 6 * HOUR},
-  fraise: {name: 'Fraise', level: 16, cost: 660, grass: 760, duration: 8 * HOUR},
-  banane: {name: 'Banane', level: 19, cost: 900, grass: 1000, duration: 10 * HOUR},
+  pissenlit: {name: 'Pissenlit', level: 1, cost: 90, grass: 40, duration: 15 * MINUTE},
+  trefle: {name: 'Trèfle', level: 3, cost: 150, grass: 70, duration: 30 * MINUTE},
+  persil: {name: 'Persil', level: 5, cost: 250, grass: 120, duration: HOUR},
+  laitue: {name: 'Laitue romaine', level: 7, cost: 400, grass: 200, duration: 2 * HOUR},
+  fanes: {name: 'Fanes de carotte', level: 9, cost: 600, grass: 290, duration: 3 * HOUR},
+  fenouil: {name: 'Fenouil', level: 11, cost: 800, grass: 380, duration: 4 * HOUR},
+  pomme: {name: 'Pomme', level: 13, cost: 1200, grass: 560, duration: 6 * HOUR},
+  fraise: {name: 'Fraise', level: 16, cost: 1650, grass: 760, duration: 8 * HOUR},
+  banane: {name: 'Banane', level: 19, cost: 2250, grass: 1000, duration: 10 * HOUR},
   // The fancy crops (owner, 2 November 2026; ×2.5 on 8 November 2026): same food stock, only in a level 3 farm (FANCY_ORDER_IDS).
   trefleDore: {name: 'Trèfle doré', level: 20, cost: 3000, grass: 1400, duration: 10 * HOUR},
   carotteArcEnCiel: {name: 'Carotte arc-en-ciel', level: 22, cost: 4000, grass: 1800, duration: 12 * HOUR},

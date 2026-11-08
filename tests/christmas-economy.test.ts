@@ -34,7 +34,7 @@ function salonGame(species: SpeciesId[]) {
 describe('Christmas update economy: unlocks and prices', () => {
   it('opens the Salon at level 22, the Forest at 25, keeps the jump rope at 20 and doubles the crops', () => {
     expect(SALON.unlockLevel).toBe(22); expect(FOREST.unlockLevel).toBe(25); expect(JUMP_ROPE.unlockLevel).toBe(20);
-    expect(ORDERS.foin.cost).toBe(10); expect(ORDERS.pissenlit.cost).toBe(36); expect(ORDERS.trefle.cost).toBe(60);
+    expect(ORDERS.foin.cost).toBe(10); expect(ORDERS.pissenlit.cost).toBe(90); expect(ORDERS.trefle.cost).toBe(150);
   });
   it('prices the nursery cushions 40, 120 and 250 Hearts', () => {
     expect(NURSERY.unlockHearts).toEqual({1: 40, 2: 120, 3: 250});
