@@ -1705,7 +1705,7 @@ export class MeadowScene extends Phaser.Scene {
     this.sky?.setNight(christmas ? this.winter?.nightNow(winterNow) ?? 0 : 0);
     // The glow sources are gathered only at night (the glows are cleared by day anyway).
     const night = christmas ? this.winter?.nightNow(winterNow) ?? 0 : 0;
-    this.nightGlows?.update(night, night > .001 ? this.glowSources() : []);
+    this.nightGlows?.update(night, night > .001 ? this.glowSources() : [], night > .001 ? this.rabbitViews.map(r => r.object) : []);
     const lifeActive = !this.photo && !document.hidden && document.getElementById('loading-screen')?.hidden !== false &&
       document.getElementById('game-panel')?.hidden !== false && !document.querySelector('dialog[open]') && !this.placement && !this.arrangement;
     const bounds = {width: this.scale.width, height: this.scale.height, top: document.getElementById('hud')?.getBoundingClientRect().bottom ?? 0};
