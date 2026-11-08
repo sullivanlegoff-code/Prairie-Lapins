@@ -45,7 +45,7 @@ import {CROWN_ART, CROWN_SEAT, crownAnchor, crownPlacement} from '../config/ulti
 import {away, careReady} from '../simulation/care';
 import {tripReady} from '../simulation/travel';
 import {FarmCrops} from './farmCrops';
-import {FARM_ART, FARM_LEVEL_1_ART} from '../config/farmArt';
+import {farmArtFor} from '../config/farmArt';
 import {NEST_ART} from '../config/nestArt';
 import {NURSERY_ART, NURSERY_OVERLAY_ART} from '../config/nurseryArt';
 import {CROP_IDS, CROP_TEXTURE, CROP_URL, SPROUT_TEXTURE, SPROUT_URL} from './food';
@@ -885,7 +885,7 @@ export class MeadowScene extends Phaser.Scene {
     const buildingArt = (building: Pick<Building, 'kind' | 'habitat' | 'footprintTier' | 'farmLevel'> & {id?: string}) => {
       if (building.kind === 'enclosure') add(habitatArtFor(building.habitat ?? undefined, building.footprintTier)); // Same texture at every scale.
       else if (building.kind === 'farm') {
-        add(building.farmLevel ? FARM_ART : FARM_LEVEL_1_ART);
+        add(farmArtFor(building.farmLevel));
         add({texture: SPROUT_TEXTURE, url: SPROUT_URL});
         for (const id of CROP_IDS) add({texture: CROP_TEXTURE(id), url: CROP_URL(id)});
       } else if (building.kind === 'nursery') {
@@ -1128,7 +1128,7 @@ export class MeadowScene extends Phaser.Scene {
     this.ground.setMask(this.islandMask!);
   }
   private buildingTexture(b: Pick<Building, 'kind' | 'habitat' | 'footprintTier' | 'farmLevel'> & {id?: string}): string {
-    if (b.kind === 'farm') return b.farmLevel ? FARM_ART.texture : FARM_LEVEL_1_ART.texture;
+    if (b.kind === 'farm') return farmArtFor(b.farmLevel).texture;
     if (b.kind === 'nest') return 'islet' in b && b.islet ? EPIC_ISLET_ART.texture : NEST_ART.texture;
     if (b.kind === 'nursery') return NURSERY_ART.texture;
     if (b.kind === 'kitchen') return KITCHEN_ART.texture;
@@ -1155,7 +1155,7 @@ export class MeadowScene extends Phaser.Scene {
   /** `enlarged`: an enclosure's uniform drawing factor (`enclosureScale`), the same on both axes so nothing is stretched. */
   private positionBuildingArt(image: Phaser.GameObjects.Image, x: number, y: number, kind: Building['kind'], illustrated: HabitatArt | null = null, enlarged = 1, id?: string): void {
     if (illustrated) { image.setPosition(x, y).setOrigin(illustrated.anchor.x / illustrated.width, illustrated.anchor.y / illustrated.height).setScale(enlarged * illustrated.worldWidth / illustrated.width); return; }
-    const art = kind === 'farm' ? FARM_ART : kind === 'nest' ? NEST_ART : kind === 'nursery' ? NURSERY_ART : kind === 'kitchen' ? KITCHEN_ART : kind === 'statue' ? statueArtFor(this.current?.buildings ?? [], id) : kind === 'agency' ? AGENCY_ART : kind === 'salon' ? SALON_ART : kind === 'forest' ? FOREST_ART : kind === 'perch' ? PERCH_ART : null;
+    const art = kind === 'farm' ? farmArtFor(this.current?.buildings.find(b => b.id === id)?.farmLevel) : kind === 'nest' ? NEST_ART : kind === 'nursery' ? NURSERY_ART : kind === 'kitchen' ? KITCHEN_ART : kind === 'statue' ? statueArtFor(this.current?.buildings ?? [], id) : kind === 'agency' ? AGENCY_ART : kind === 'salon' ? SALON_ART : kind === 'forest' ? FOREST_ART : kind === 'perch' ? PERCH_ART : null;
     image.setPosition(x, y).setOrigin(.5, art ? art.originY : .5)
       .setScale(art ? art.worldWidth / art.width : .5 * enlarged);
   }
@@ -1415,7 +1415,7 @@ export class MeadowScene extends Phaser.Scene {
       if (b.kind === 'salon' && careReady(this.current!, now)) text = 'trip'; // The care is over: the rabbit waits to be welcomed back.
       if (b.kind === 'agency' && tripReady(this.current!, now)) text = 'trip'; // A traveller is back: Coco waits with them. // One bubble for any ready baby.
       if (!text) continue;
-      const p = toScreen(buildingCenter(b)); p.y += b.kind === 'farm' ? FARM_ART.harvestY : b.kind==='nest' ? NEST_ART.actionY : b.kind==='nursery' ? NURSERY_ART.actionY : b.kind==='agency' ? AGENCY_ART.actionY : b.kind==='salon' ? SALON_ART.actionY : b.kind==='forest' ? FOREST_ART.actionY : -72;
+      const p = toScreen(buildingCenter(b)); p.y += b.kind === 'farm' ? farmArtFor(b.farmLevel).harvestY : b.kind==='nest' ? NEST_ART.actionY : b.kind==='nursery' ? NURSERY_ART.actionY : b.kind==='agency' ? AGENCY_ART.actionY : b.kind==='salon' ? SALON_ART.actionY : b.kind==='forest' ? FOREST_ART.actionY : -72;
       specs.push({b, text, kind, p});
     }
     return specs;

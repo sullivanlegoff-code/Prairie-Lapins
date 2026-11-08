@@ -46,3 +46,12 @@ Le candidat applicatif a été fusionné par la PR24 en `5a55a2e`. La CI obligat
 Le déploiement [38916097585](https://github.com/sullivanlegoff-code/Project-L/actions/runs/38916097585) a servi la bonne révision et le PNG exact dans les deux modes, prévisualisations figées conservées. Son contrôle public de Vue d'ensemble a ensuite photographié le canvas avant la fin du préchargement Phaser : page crème entière, pas un débordement du moulin. Le [diagnostic 38917275526](https://github.com/sullivanlegoff-code/Project-L/actions/runs/38917275526) conserve la capture initiale et reproduit ce même état en retenant la requête PNG ; après libération et chargement, le cadrage et l'eau sont corrects.
 
 Correction de contrôle `06986df` : attendre la fin des transferts réseau et deux trames de rendu avant les commandes de caméra, au lieu de considérer la seule sauvegarde comme preuve du rendu prêt. Les assertions de pixels, cadrage, placement, gestes et sauvegardes sont inchangées. Aucune modification applicative ni délai arbitrairement augmenté. Reprise ciblée et contrôles publics restants : [38917550963](https://github.com/sullivanlegoff-code/Project-L/actions/runs/38917550963). Il reste à confirmer la CI de cette correction puis la publication finale ; la preuve finale sera enregistrée dans les PR.
+
+## Ferme niveau 4 (8 novembre 2026)
+
+Choix du propriétaire : variante 1 de la deuxième planche (`output/imagegen/ferme-niveau-4-v2/`, hors dépôt), peinte par Codex à partir de la ferme niveau 3 : moulin plus haut avec un étage en pierre, balcon fleuri, lucarne, sacs de farine, mêmes couleurs que le niveau 3 et un champ de terre nue à sept sillons.
+
+- `public/assets/buildings/farm-level-4.png`, 1254 × 1254 RGBA, détourée du fond magenta.
+- `FARM_LEVEL_4_ART` (`src/config/farmArt.ts`) : largeur 152,8, origine verticale 0,769, pour que le sol de gazon couvre la même place que celui du niveau 3 (bas alignés) ; le moulin monte plus haut.
+- Sept sillons de six plantes (`furrows`), tenus à l'écart des ailes et de la clôture avant ; `farmArtFor(niveau)` choisit le dessin partout (île, pousses, cadre, menus).
+- Pas encore de version enneigée, comme la ferme des niveaux 2 et 3.

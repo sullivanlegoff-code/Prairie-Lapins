@@ -17,3 +17,24 @@ export const FARM_ART = {
 } as const;
 
 export const FARM_LEVEL_1_ART = {...FARM_ART, texture: "farm-level-1", url: import.meta.env.BASE_URL + "assets/buildings/farm-level-1.png"} as const;
+
+/** What the scene, the plants and the menus need from a farm picture. */
+export interface FarmArt {
+  readonly texture: string; readonly url: string; readonly width: number; readonly height: number;
+  readonly worldWidth: number; readonly originY: number; readonly harvestY: number;
+  readonly progress: {readonly x: number; readonly y: number; readonly width: number; readonly height: number};
+  readonly furrows: {readonly T: readonly [number, number]; readonly L: readonly [number, number]; readonly R: readonly [number, number]; readonly rows: number; readonly perRow: number; readonly along: readonly [number, number]; readonly sproutSize: number; readonly ripeSize: number};
+}
+/**
+ * The level 4 farm (owner, 8 November 2026: variant 1, a taller windmill with a stone storey and a balcony, the level 3
+ * colours, a bare dirt field). Scaled so its grass base covers the same ground as the level 3 picture (bottoms aligned), so
+ * the windmill rises higher; seven furrows, the plants kept off the windmill's sails and the front fence.
+ */
+export const FARM_LEVEL_4_ART: FarmArt = {
+  texture: 'farm-level-4', url: import.meta.env.BASE_URL + 'assets/buildings/farm-level-4.png',
+  width: 1254, height: 1254, worldWidth: 152.8, originY: .769,
+  harvestY: FARM_ART.harvestY, progress: FARM_ART.progress,
+  furrows: {T: [900, 628], L: [680, 835], R: [1210, 812], rows: 7, perRow: 6, along: [.04, .8], sproutSize: 46, ripeSize: 62},
+};
+/** The picture of a farm at this level: the small farm at level 1, the windmill at levels 2 and 3, the grand windmill at level 4. */
+export const farmArtFor = (farmLevel?: number): FarmArt => farmLevel === 4 ? FARM_LEVEL_4_ART : farmLevel ? FARM_ART : FARM_LEVEL_1_ART;

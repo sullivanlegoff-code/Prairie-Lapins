@@ -42,7 +42,7 @@ import {MAX_RABBIT_NAME_LENGTH, normalizeRabbitName} from '../simulation/rabbitN
 import {HABITATS, HABITAT_TYPES, habitatLevel, habitatPrice, type HabitatType} from '../config/habitats';
 import {buildingSize, habitatFootprint} from '../config/habitatSizes';
 import {habitatThumbnail} from './habitatThumbnails';
-import {FARM_ART, FARM_LEVEL_1_ART} from '../config/farmArt';
+import {FARM_ART, farmArtFor} from '../config/farmArt';
 import {NEST_ART} from '../config/nestArt';
 import {NURSERY_ART} from '../config/nurseryArt';
 import {KITCHEN_ART} from '../config/kitchenArt';
@@ -1208,7 +1208,7 @@ export class GameUI {
     else if (b.kind === 'forest') this.menuPortrait(forestThumbnail());
     else if (b.kind === 'statue') this.menuPortrait(statueThumbnail(s.buildings.filter(x => x.kind === 'statue').findIndex(x => x.id === b.id) >= 1));
     else {
-      const image = node('img'); image.src = b.islet ? EPIC_ISLET_ART.url : {farm: b.farmLevel ? FARM_ART.url : FARM_LEVEL_1_ART.url, nest: NEST_ART.url, nursery: NURSERY_ART.url, perch: PERCH_ART.url, kitchen: KITCHEN_ART.url}[b.kind];
+      const image = node('img'); image.src = b.islet ? EPIC_ISLET_ART.url : {farm: farmArtFor(b.farmLevel).url, nest: NEST_ART.url, nursery: NURSERY_ART.url, perch: PERCH_ART.url, kitchen: KITCHEN_ART.url}[b.kind];
       this.menuPortrait(image);
     }
     if (b.kind === 'enclosure') {
