@@ -1,0 +1,16 @@
+{
+  "spriteSha1": "9b08b871c6fcd80d391064aef69bf60a59fd6f5e",
+  "nose-twitch": {
+    "x": 770,
+    "y": 300,
+    "sourceSha1": "75276dce5f7c47aff27746418129035dee723672"
+  },
+  "evolution": {
+    "spriteSha1": "5052a4198602c6d72dbea16bf95f138ebb680b9a",
+    "nose-twitch": {
+      "x": 633,
+      "y": 323,
+      "sourceSha1": "8e5850253b64ddeffed5842839ba19c5a8bf5de8"
+    }
+  }
+}

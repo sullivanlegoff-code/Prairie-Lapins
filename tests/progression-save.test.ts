@@ -9,6 +9,7 @@ import {GameController} from '../src/application/GameController';
 import {SAVE_KEY, type SaveStorage} from '../src/persistence/storage';
 import {developmentEnvironment, TEST_PREFIX} from '../src/dev/tools';
 import {HOUR} from '../src/config/balance';
+const HPL = PROGRESSION.rewards.heartsPerLevel; // Hearts per level (3 since 8 November 2026).
 
 const originalAct = simulation.act;
 afterEach(() => vi.restoreAllMocks());
@@ -30,21 +31,21 @@ describe('v9 progression and level rewards', () => {
   });
   it('grants exact hearts for one and multiple levels; keeps derived values outside the save', () => {
     const s = createCentreStartGame(0);
-    expect(applyProgressionGain(s,90)).toEqual({ok:true,gain:{xpGained:90,rewardedLevels:[2],heartsGranted:1}});
-    expect(applyProgressionGain(s,600)).toEqual({ok:true,gain:{xpGained:600,rewardedLevels:[3,4],heartsGranted:2}});
-    expect(s.hearts).toBe(15); expect(s.progression).toEqual({totalXp:690,rewardedThroughLevel:4});
+    expect(applyProgressionGain(s,90)).toEqual({ok:true,gain:{xpGained:90,rewardedLevels:[2],heartsGranted:HPL}});
+    expect(applyProgressionGain(s,600)).toEqual({ok:true,gain:{xpGained:600,rewardedLevels:[3,4],heartsGranted:2*HPL}});
+    expect(s.hearts).toBe(12+3*HPL); expect(s.progression).toEqual({totalXp:690,rewardedThroughLevel:4});
     expect(JSON.parse(encodeGame(s)).progression).toEqual(s.progression);
   });
   it('retains surplus, rewards a raised maximum only on the next positive gain and never tops up older rewards', () => {
     const raised = {...PROGRESSION,curve:{...PROGRESSION.curve,maximumLevel:31}};
     const s=createCentreStartGame(0), total=cumulativeLevelXp(31,raised);
     expect(applyProgressionGain(s,total).ok).toBe(true);
-    expect(s.hearts).toBe(41); expect(s.progression.rewardedThroughLevel).toBe(30);
+    expect(s.hearts).toBe(12+29*HPL); expect(s.progression.rewardedThroughLevel).toBe(30);
     expect(progressionFromXp(total).maximum).toBe(true); expect(progressionFromXp(total,raised).level).toBe(31);
     const before=structuredClone(s);expect(applyProgressionGain(s,0,raised)).toEqual({ok:true,gain:{xpGained:0,rewardedLevels:[],heartsGranted:0}});expect(s).toEqual(before);
-    expect(applyProgressionGain(s,1,raised)).toEqual({ok:true,gain:{xpGained:1,rewardedLevels:[31],heartsGranted:1}});
-    const changedReward={...raised,rewards:{heartsPerLevel:3}};
-    expect(applyProgressionGain(s,1,changedReward)).toEqual({ok:true,gain:{xpGained:1,rewardedLevels:[],heartsGranted:0}});expect(s.hearts).toBe(42);
+    expect(applyProgressionGain(s,1,raised)).toEqual({ok:true,gain:{xpGained:1,rewardedLevels:[31],heartsGranted:HPL}});
+    const changedReward={...raised,rewards:{heartsPerLevel:HPL+2}};
+    expect(applyProgressionGain(s,1,changedReward)).toEqual({ok:true,gain:{xpGained:1,rewardedLevels:[],heartsGranted:0}});expect(s.hearts).toBe(12+30*HPL);
   });
   it('marks a zero-heart level reward as processed',()=>{
     const s=createCentreStartGame(0);expect(applyProgressionGain(s,90,{...PROGRESSION,rewards:{heartsPerLevel:0}}).ok).toBe(true);

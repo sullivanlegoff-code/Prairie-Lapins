@@ -9,6 +9,8 @@ import {levelUnlockContents} from '../src/simulation/levelRights';
 import {ProgressionNotices} from '../src/ui/progressionNotices';
 import {cumulativeLevelXp,requiredDecorationLevel} from '../src/simulation/progression';
 import {mountSavePanel} from '../src/display/SavePanel';
+import {PROGRESSION} from '../src/config/progression';
+const HPL = PROGRESSION.rewards.heartsPerLevel; // Hearts per level (3 since 8 November 2026).
 const disposers:(()=>void)[]=[];
 const el=(id:string)=>document.getElementById(id)!;
 const dialog=()=>el('player-level-dialog') as HTMLDialogElement;
@@ -36,7 +38,7 @@ describe('confirmed XP presentation',()=>{
  });
  it('groups a single and multiple gain into one recap with exact already-received hearts',async()=>{
   const{c}=setup();c.grantLaboratoryXp(50);c.grantLaboratoryXp(500);expect(el('player-xp-feedback').textContent).toBe('+550 XP');await tick();
-  expect(dialog().open).toBe(true);expect(el('level-up-title').textContent).toBe('Niveau 4 atteint !');expect(el('level-up-range').textContent).toBe('Niveau 1 → 4');expect(el('level-up-reward').textContent).toBe('3 cœurs déjà reçus.');expect(c.getSnapshot().state!.hearts).toBe(15);expect(el('level-up-unlocks').hidden).toBe(false);for(const id of DECORATION_IDS.filter(id=>requiredDecorationLevel(id)>1&&requiredDecorationLevel(id)<=4))expect(el('level-up-unlocks').textContent).toContain(DECORATIONS[id].name);expect(el('level-up-unlocks').textContent).not.toMatch(/Terre|Mottelin|Brumelin|Géant/);
+  expect(dialog().open).toBe(true);expect(el('level-up-title').textContent).toBe('Niveau 4 atteint !');expect(el('level-up-range').textContent).toBe('Niveau 1 → 4');expect(el('level-up-reward').textContent).toBe(`${3*HPL} cœurs déjà reçus.`);expect(c.getSnapshot().state!.hearts).toBe(12+3*HPL);expect(el('level-up-unlocks').hidden).toBe(false);for(const id of DECORATION_IDS.filter(id=>requiredDecorationLevel(id)>1&&requiredDecorationLevel(id)<=4))expect(el('level-up-unlocks').textContent).toContain(DECORATIONS[id].name);expect(el('level-up-unlocks').textContent).not.toMatch(/Terre|Mottelin|Brumelin|Géant/);
  });
  it('defers through a panel and placement, persists once across reload, and never closes the active action',async()=>{
   const first=setup();el('game-panel').hidden=false;document.body.classList.add('arranging');first.c.grantLaboratoryXp(50);await tick();expect(dialog().open).toBe(false);expect(el('game-panel').hidden).toBe(false);
@@ -46,7 +48,7 @@ describe('confirmed XP presentation',()=>{
   const saved=next.values.get(SAVE_KEY)!;next.dispose();next.c.dispose();setup(saved);await tick();expect(dialog().open).toBe(false);
  });
  it('merges new levels into an already open recap without stacking dialogs',async()=>{
-  const{c}=setup();c.grantLaboratoryXp(50);await tick();expect(dialog().open).toBe(true);c.grantLaboratoryXp(500);await tick();expect(document.querySelectorAll('dialog[open]').length).toBe(1);expect(el('level-up-reward').textContent).toBe('3 cœurs déjà reçus.');expect(el('level-up-range').textContent).toBe('Niveau 1 → 4');
+  const{c}=setup();c.grantLaboratoryXp(50);await tick();expect(dialog().open).toBe(true);c.grantLaboratoryXp(500);await tick();expect(document.querySelectorAll('dialog[open]').length).toBe(1);expect(el('level-up-reward').textContent).toBe(`${3*HPL} cœurs déjà reçus.`);expect(el('level-up-range').textContent).toBe('Niveau 1 → 4');
  });
  it('blocks during a confirmation and drops transients on same-export import or restart',async()=>{
   const{c}=setup();const confirmation=el('game-dialog') as HTMLDialogElement;confirmation.showModal();c.grantLaboratoryXp(50);await tick();expect(dialog().open).toBe(false);
@@ -97,7 +99,7 @@ describe('confirmed XP presentation',()=>{
   expect(upgrades).toEqual(['Prairie de paille : amélioration au niveau 2 disponible · possibilité payante','Jardin enneigé : amélioration au niveau 2 disponible · possibilité payante']);expect(new Set(texts).size).toBe(texts.length);expect(next.c.getSnapshot().state!.buildings[0].habitat!.level).toBe(1);expect(next.c.getSnapshot().state!.progression.totalXp).toBe(540);
  });
  it('does not open an unacknowledgeable window when preference writes fail',async()=>{
-  const{c}=setup();vi.spyOn(localStorage,'setItem').mockImplementation(()=>{throw Error('preference quota');});c.grantLaboratoryXp(50);await tick();expect(dialog().open).toBe(false);expect(c.getSnapshot().state!.hearts).toBe(13);
+  const{c}=setup();vi.spyOn(localStorage,'setItem').mockImplementation(()=>{throw Error('preference quota');});c.grantLaboratoryXp(50);await tick();expect(dialog().open).toBe(false);expect(c.getSnapshot().state!.hearts).toBe(12+HPL);
  });
 
 });

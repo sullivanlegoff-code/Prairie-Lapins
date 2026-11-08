@@ -1,5 +1,6 @@
 import {accountKnown} from './cloud/accountState';
 import Phaser from 'phaser';
+import {installImageTwins, installWebpTwins} from './display/webpTwins';
 import {MeadowScene} from './display/MeadowScene';
 import {mountArtStatus} from './display/artStatus';
 import {GameController} from './application/GameController';
@@ -14,7 +15,6 @@ import {PreferenceStore} from './ui/preferences';
 import {BUILD_REVISION, RELEASE_LABEL} from './config/release';
 import {DECORATIONS_PREVIEW_BUILD, LABORATORY_BUILD, sessionPolicy} from './config/runtime';
 import './display/styles.css';
-import './display/stone-buttons.css';
 import './display/meadow-navigation.css';
 import './display/breeding.css';
 import './display/onboarding.css';
@@ -24,16 +24,20 @@ import './display/ultimate-card.css';
 import './display/jump-rope.css';
 import './display/sky-gifts.css';
 import './display/benny-flight.css';
+import {FULLSCREEN_ACTIVITY_EVENT, ISLAND_COVER_EVENT, type IslandCover} from './config/bennyFlightGameArt';
+import {DADI_SONG_EVENT, type DadiSongDetail} from './config/dadiStageArt';
 import './display/christmas-market.css';
 import './display/benny-reveal.css';
+import './display/update-news.css';
 import './display/reception.css';
 import './display/loading-screen.css';
+import './display/ui-kit.css';
 import {bindAppInteractions} from './display/appInteractions';
 import {AudioEngine} from './audio/audioEngine';
 import {mountSoundSettings, channelSettings} from './ui/soundSettings';
 import {MusicPlayer} from './audio/musicPlayer';
 import {MusicDirector} from './audio/musicDirector';
-import {KITCHEN_TRACKS, MEADOW_START_SEGMENTS, MEADOW_TRACKS, RABBIT_THEMES} from './config/music';
+import {KITCHEN_TRACKS, MEADOW_TRACKS, RABBIT_THEMES} from './config/music';
 import {LoadingTracker, renderLoading, startLoadingMessages} from './display/loadingScreen';
 
 async function boot(): Promise<() => void> {
@@ -83,27 +87,41 @@ async function boot(): Promise<() => void> {
       runtime: (status, retry) => artStatus.update(status, retry),
       ready: () => { loading.done('textures'); loading.done('scene'); }});
   recenterAfterLab = () => scene.recenter();
+  // The meadow's pictures come as their light WebP twins (src/display/webpTwins.ts).
+  installWebpTwins(Phaser.Loader.LoaderPlugin.prototype); installImageTwins(HTMLImageElement.prototype);
   const game = new Phaser.Game({
     type: Phaser.AUTO, parent: 'game', backgroundColor: '#fffdf5', transparent: true,
     scale: {mode: Phaser.Scale.RESIZE, width: '100%', height: '100%'}, scene: [scene],
     render: {antialias: true}, input: {activePointers: 3},
   });
+  // A full-screen activity (« Le vol de Benny ») hides the island: its loop sleeps meanwhile, so the game keeps the phone's power.
+  // The island sleeps while a full-screen activity or an opaque screen (shop, Christmas market, Cuisine) hides it.
+  const covers = new Set<string>();
+  const coverIsland = (source: string, covered: boolean) => {
+    const before = covers.size > 0; if (covered) covers.add(source); else covers.delete(source);
+    if (!game.isBooted || before === covers.size > 0) return;
+    if (covers.size) game.loop.sleep(); else game.loop.wake();
+  };
+  window.addEventListener(FULLSCREEN_ACTIVITY_EVENT, event => coverIsland('activity', !!(event as CustomEvent<boolean>).detail));
+  window.addEventListener(ISLAND_COVER_EVENT, event => { const {source, covered} = (event as CustomEvent<IslandCover>).detail; coverIsland(source, covered); });
   const disposeViewport = bindAppViewport(() => {
     // RESIZE reads parentSize, so measure it before refreshing the canvas/bounds.
     if (game.isBooted) { game.scale.getParentBounds(); game.scale.refresh(); }
   });
   const audio = new AudioEngine();
   for (const channel of ['music', 'effects'] as const) audio.configure(channel, channelSettings(preferences, channel));
-  // Musique: the meadow music is probed now; nothing sounds before « Jouer ». The kitchen has its own.
+  // Musique: one of the seven Christmas tracks, drawn at random, is probed now; nothing sounds before « Jouer ». The kitchen has its own.
   const musicBase = import.meta.env.VITE_SHARED_MUSIC_BASE ?? import.meta.env.BASE_URL;
   const musicUrls = (files: readonly string[]) => files.map(file => musicBase + 'assets/audio/music/' + file);
   const themes: Record<string, MusicPlayer> = {};
-  const music = new MusicDirector(new MusicPlayer({tracks: musicUrls(MEADOW_TRACKS), engine: audio, startSegments: MEADOW_START_SEGMENTS}),
+  const music = new MusicDirector(new MusicPlayer({tracks: musicUrls(MEADOW_TRACKS), engine: audio}),
     new MusicPlayer({tracks: musicUrls(KITCHEN_TRACKS), engine: audio}), themes);
   for (const [species, file] of Object.entries(RABBIT_THEMES)) {
     const theme: MusicPlayer = new MusicPlayer({tracks: musicUrls([file]), engine: audio, once: true, onFinished: () => music.themeFinished(theme)});
     themes[species] = theme;
   }
+  // The evolved Dadi sings at his microphone while his song plays (src/display/dadiStageView.ts).
+  music.onThemeChange = (name, audible) => window.dispatchEvent(new CustomEvent<DadiSongDetail>(DADI_SONG_EVENT, {detail: {singing: name === 'dadi', audible}}));
   // Dadi welcomed or put in the nest: his music, inside the same gesture.
   const stopThemes = controller.onConfirmedCommand(command => {
     const state = controller.getSnapshot().state, ids = command.type === 'welcome' ? [command.birthId] : command.type === 'breed' ? command.parents : [];
@@ -127,7 +145,8 @@ async function boot(): Promise<() => void> {
     requestMobileFullscreen();
     loadingRoot.hidden = true; app.inert = false; loading.dispose(); unrender(); stopMessages();
     ui = new GameUI(controller, scene, clock, preferences, audio, {onlineServicesAllowed: policy.onlineServicesAllowed && !LABORATORY_BUILD && !DECORATIONS_PREVIEW_BUILD, accountKnown: () => accountKnown(storage),
-      onCuisineActive: active => music.setPlace(active ? 'kitchen' : 'meadow'), onRabbitSheet: species => music.playTheme(species)});
+      onCuisineActive: active => { music.setPlace(active ? 'kitchen' : 'meadow'); window.dispatchEvent(new CustomEvent<IslandCover>(ISLAND_COVER_EVENT, {detail: {source: 'cuisine', covered: active}})); }, onRabbitSheet: species => music.playTheme(species)});
+    ui.welcomeNews();
     const soundSettings = mountSoundSettings(document, preferences, {onChange: (channel, enabled, volume) => {
       audio.configure(channel, {enabled, volume});
       if (channel === 'music') { music.setEnabled(enabled); music.refreshVolume(); }

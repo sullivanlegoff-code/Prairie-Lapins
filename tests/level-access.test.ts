@@ -1,4 +1,5 @@
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {PROGRESSION, LEVEL_ACCESS_FAMILIES, type ProgressionConfig} from '../src/config/progression';
 import {SPECIES_IDS} from '../src/config/balance';
 import {HABITAT_TYPES} from '../src/config/habitats';
@@ -14,7 +15,7 @@ const targets: LevelAccessTarget[] = [
   ...Array.from({length:8},(_,i) => ({family:'extension', rank:i+1} as const)),
 ];
 describe('level requirements without active gameplay restrictions', () => {
-  it.each(targets)('checks before/at/after $family', target => {
+  itAll(targets)('checks before/at/after $family', target => {
     const required = checkLevelAccess(0,target,[],active).requiredLevel;
     if(required>1) expect(checkLevelAccess(cumulativeLevelXp(required-1),target,[],active).locked).toBe(true);
     for(const level of [required,required+1]) expect(checkLevelAccess(cumulativeLevelXp(level),target,[],active).accessible).toBe(true);
@@ -44,7 +45,7 @@ describe('level requirements without active gameplay restrictions', () => {
     expect(result).toContainEqual({family:'species',id:'dragon',action:'purchase'});
     expect(newlyAccessibleContents(5,5,targets,[],active)).toEqual([]);
   });
-  it.each([
+  itAll([
     {family:'species',id:'missing',action:'purchase'}, {family:'species',id:'feu',action:'unknown'},
     {family:'habitatPurchase',id:'missing'}, {family:'habitatUpgrade',id:'universal',toLevel:1},
     {family:'decoration',id:'missing'}, ...[0,9,1.5,NaN].map(rank=>({family:'extension',rank})), {family:'unknown'},

@@ -1,10 +1,10 @@
 /* The meadow's field journal. Art is shared, layout and interaction stay local.
    Never skin the HUD, navigation, stone controls or outer panel border here. */
 :root {
-  --menu-linen: url('/assets/ui/menus/linen.png');
-  --menu-oak: url('/assets/ui/menus/oak.png');
-  --menu-stitch: url('/assets/ui/menus/stitched.png');
-  --menu-sage: url('/assets/ui/menus/sage.png');
+  --menu-linen: url('/assets/ui/menus/linen.webp');
+  --menu-oak: url('/assets/ui/menus/oak.webp');
+  --menu-stitch: url('/assets/ui/menus/stitched.webp');
+  --menu-sage: url('/assets/ui/menus/sage.webp');
   --menu-ink: #342f22;
   --menu-muted: #534b38;
 }
@@ -58,7 +58,7 @@
 
 /* Linen sits inside the approved stone shell, including centered sheets. */
 #game-panel .panel-scroll,
-dialog:not(.paille-dialogue):not(.cuisine-activity):not(.legendary-reveal):not(.benny-reveal),
+dialog:not(.paille-dialogue):not(.cuisine-activity):not(.legendary-reveal):not(.benny-reveal):not(.update-news),
 .cuisine-activity .cuisine-root :is(.overlay-card, .orientation-card) {
   background-color: #f4e8cd;
   background-image: radial-gradient(ellipse at 48% 25%, #fff9e52b 30%, #80602a22 100%), var(--menu-linen);
@@ -141,6 +141,17 @@ dialog .card {
 #game-panel .rabbit-nickname .small { font-weight: 700; }
 /* The owner's description of the species, on the rabbit's own sheet only. */
 #game-panel .rabbit-story { margin: 6px 4px 10px; font-style: italic; line-height: 1.35; color: #4a4630; unicode-bidi: plaintext; }
+/* « B · Citation » (owner, 7 November 2026): the name in large wooden letters on the left, the description as a quote on its
+   right, in the same frame; one column on an upright phone or while the name is being typed. */
+#game-panel .rabbit-nickname.with-story { display: grid; grid-template-columns: minmax(170px, 40%) minmax(0, 1fr); gap: 6px 18px; align-items: center; }
+#game-panel .rabbit-nickname-id { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
+#game-panel .rabbit-nickname-id > button { margin-top: 6px; white-space: nowrap; }
+#game-panel .rabbit-nickname-id > form { align-self: stretch; }
+#game-panel .rabbit-nickname-name:not(.empty) { font-family: var(--kit-font); font-weight: 400; font-size: 26px; line-height: 1.1; color: #6b3d1c; }
+#game-panel .rabbit-nickname.with-story .rabbit-story { position: relative; margin: 0; padding: 4px; padding-inline-start: 40px; font-size: 15px; line-height: 1.45; color: #5a3f22; }
+#game-panel .rabbit-nickname.with-story .rabbit-story::before { content: '“'; position: absolute; inset-inline-start: 2px; top: -14px; font: 64px/1 var(--kit-font); color: #b07a3a; opacity: .75; }
+#game-panel .rabbit-nickname.with-story:has(form) { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 560px) { #game-panel .rabbit-nickname.with-story { grid-template-columns: minmax(0, 1fr); } }
 #game-panel .rabbit-overview > .portrait.large {
   background: radial-gradient(ellipse at center, #d9dfb9 20%, #ece8c2 62%, transparent 64%);
   filter: drop-shadow(0 4px 3px #6b52231a);

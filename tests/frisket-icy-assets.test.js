@@ -1,10 +1,11 @@
 ﻿import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
-import {expect, it} from 'vitest';
+import {expect} from 'vitest';
+import {itAll} from './cases';
 import {SPECIES} from '../src/config/species';
 import {NEW_RARES} from './rabbit-art-fixtures';
 
-it.each(NEW_RARES.map(r=>[r.id,r.source,r.sourceSha256,r.art.width,r.art.height,r.foot]))('%s (%s) keeps the approved master bytes and publishes the useful pixel dimensions', (id,approved,approvedSha256,width,height,foot)=>{
+itAll(NEW_RARES.map(r=>[r.id,r.source,r.sourceSha256,r.art.width,r.art.height,r.foot]))('%s (%s) keeps the approved master bytes and publishes the useful pixel dimensions', (id,approved,approvedSha256,width,height,foot)=>{
   const art=SPECIES[id].art;
   expect(art.kind).toBe('static-sprite');
   const png=readFileSync(new URL(`../public/${art.file}`,import.meta.url));

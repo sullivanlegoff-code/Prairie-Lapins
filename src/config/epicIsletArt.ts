@@ -5,7 +5,8 @@ import {toScreen} from '../ui/projection';
 /**
  * Presentation only: the islet of the Epics (owner, 5 November 2026), painted by the image model on 6 November 2026 and prepared
  * by scripts/prepare-noel-extras-art.mjs: a small floating island whose breeding nest is the islet's own `nest` building. It
- * floats alone north of the start island, beyond the land grid, so the island's growth never reaches it. The anchor is the
+ * floats just south of the start island (owner, 6 November 2026: closer to it early in the game), beyond the land grid: the island
+ * grows east and north only, so its growth never reaches it. The anchor is the
  * centre of the sand circle in front of the nest basket (x 188, y 300 of the 376 × 512 texture), at the building's centre.
  */
 export const EPIC_ISLET_ART = {

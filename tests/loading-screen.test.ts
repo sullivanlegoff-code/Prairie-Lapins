@@ -114,6 +114,6 @@ describe('loading messages and Paille', () => {
   it('shows the running Paille as decoration only', () => {
     const runner = document.querySelector('#loading-screen .loading-runner')!;
     expect(runner.getAttribute('aria-hidden')).toBe('true');
-    expect(runner.querySelector('img')!.getAttribute('src')).toContain('assets/rabbits/paille/paille-v1.png');
+    expect(runner.querySelector('img')!.getAttribute('src')).toContain('assets/rabbits/paille/paille-v1.webp');
   });
 });

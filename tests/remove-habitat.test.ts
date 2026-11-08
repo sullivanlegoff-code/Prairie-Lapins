@@ -83,8 +83,8 @@ describe('removeHabitat', () => {
 
   it('unblocks a completely saturated island with no extension left', () => {
     let s = fixture(); s.rabbits = []; s.buildings = [];
-    // Enclosures are 5 × 4: the three columns left on the east edge are too narrow for any building.
-    for (let y = 0; y < ISLAND.mapFine; y += 4) for (let x = 0; x + 5 <= ISLAND.mapFine; x += 5)
+    // Enclosures are 6 × 5: the three rows left on the south edge are too shallow for any building.
+    for (let y = 0; y + 5 <= ISLAND.mapFine; y += 5) for (let x = 0; x + 6 <= ISLAND.mapFine; x += 6)
       s.buildings.push(emptyBuilding(`building-${s.nextId++}`, 'enclosure', x, y, 'paille'));
     expect(purchasableParcels(s)).toEqual([]);
     for (let y = 0; y < ISLAND.mapFine; y++) for (let x = 0; x < ISLAND.mapFine; x++)

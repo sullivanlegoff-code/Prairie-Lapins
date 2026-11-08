@@ -27,9 +27,11 @@ afterEach(() => { cleanups.splice(0).reverse().forEach(f => f()); vi.restoreAllM
 function game(): GameState {
   const s = previousStart(0); delete s.initiation;
   const home = s.buildings[0]; s.nextId = Math.max(s.nextId, 10);
+  // The centre parcel holds a single extra 6 × 5 enclosure: the east one is owned too.
+  s.acquiredParcels.push('east');
   for (const [id, type] of [['building-8', 'neige'], ['building-9', 'feu']] as const) {
     const building = {...structuredClone(home), id, habitat: {...home.habitat!, type}, incomeUnits: 0};
-    const spot = (() => { for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y)) return {x, y}; throw Error('no room'); })();
+    const spot = (() => { for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y, undefined, 'enclosure')) return {x, y}; throw Error('no room'); })();
     s.buildings.push({...building, ...spot});
   }
   return s;

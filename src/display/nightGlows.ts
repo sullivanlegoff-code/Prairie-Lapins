@@ -11,14 +11,24 @@ export {LIGHT_POOLS};
  * soft warm pool of light on the snow at their foot. Nothing is drawn while a glow picture is missing.
  */
 export interface GlowSource {image: Phaser.GameObjects.Image; url: string | undefined; pool?: number}
+/** Something that can stand in front of a lit picture (a rabbit): where it stands, the glow is erased. */
+export type GlowOccluder = Phaser.GameObjects.Container;
 
 export class NightGlows {
   private glows = new Map<Phaser.GameObjects.Image, {glow: Phaser.GameObjects.Image; pool: Phaser.GameObjects.Image | null}>();
+  /**
+   * The glows sit above the night shade, so drawn one by one they would light a rabbit standing in front of a window (iPhone,
+   * 8 November 2026). They are drawn each night frame into one screen-sized picture, every rabbit overlapping a lit picture is
+   * erased from it, and that picture is added over the shade. The rabbits are drawn above every building and decoration (their
+   * layer is above both), so a rabbit over a lit picture is always in front of it (owner, 8 November 2026: the light of an
+   * enclosure was over a rabbit standing in front of it, because the depths of two different layers were compared).
+   */
+  private layer: Phaser.GameObjects.RenderTexture | null = null;
   constructor(private readonly scene: Phaser.Scene, private readonly ready: (texture: string, url: string) => boolean) {
     scene.events.once('shutdown', () => this.clear());
   }
-  /** Each frame: `level` 0 by day to 1 at night; `sources` the pictures shown now. */
-  update(level: number, sources: readonly GlowSource[]): void {
+  /** Each frame: `level` 0 by day to 1 at night; `sources` the pictures shown now; `occluders` the rabbits on the island. */
+  update(level: number, sources: readonly GlowSource[], occluders: readonly GlowOccluder[] = []): void {
     if (level <= .001) { this.clear(); return; }
     const seen = new Set<Phaser.GameObjects.Image>();
     for (const {image, url, pool} of sources) {
@@ -27,8 +37,8 @@ export class NightGlows {
       seen.add(image);
       let entry = this.glows.get(image);
       if (!entry) {
-        const glow = this.scene.add.image(0, 0, glowArt.texture).setDepth(NIGHT_GLOW_DEPTH).setBlendMode(Phaser.BlendModes.ADD);
-        const halo = pool && this.scene.textures.exists('noel-halo') ? this.scene.add.image(0, 0, 'noel-halo').setDepth(NIGHT_GLOW_DEPTH - .005).setBlendMode(Phaser.BlendModes.ADD) : null;
+        const glow = this.scene.make.image({x: 0, y: 0, key: glowArt.texture}, false).setBlendMode(Phaser.BlendModes.ADD);
+        const halo = pool && this.scene.textures.exists('noel-halo') ? this.scene.make.image({x: 0, y: 0, key: 'noel-halo'}, false).setBlendMode(Phaser.BlendModes.ADD) : null;
         entry = {glow, pool: halo}; this.glows.set(image, entry);
       }
       const {glow, pool: halo} = entry;
@@ -42,6 +52,31 @@ export class NightGlows {
       }
     }
     for (const [image, entry] of this.glows) if (!seen.has(image)) { entry.glow.destroy(); entry.pool?.destroy(); this.glows.delete(image); }
+    this.paint(occluders);
   }
-  clear(): void { for (const entry of this.glows.values()) { entry.glow.destroy(); entry.pool?.destroy(); } this.glows.clear(); }
+  private paint(occluders: readonly GlowOccluder[]): void {
+    if (!this.glows.size) { this.layer?.setVisible(false); return; }
+    const camera = this.scene.cameras.main, w = Math.max(1, Math.ceil(camera.width)), h = Math.max(1, Math.ceil(camera.height)), z = camera.zoom;
+    if (!this.layer) this.layer = this.scene.add.renderTexture(0, 0, w, h).setOrigin(0, 0).setScrollFactor(0).setDepth(NIGHT_GLOW_DEPTH).setBlendMode(Phaser.BlendModes.ADD);
+    const layer = this.layer.setVisible(true);
+    if (layer.width !== w || layer.height !== h) layer.setSize(w, h);
+    // Under the main camera's zoom, this screen-space picture covers the screen pixel for pixel; it draws with the same view.
+    layer.setPosition(w / 2 - w / 2 / z, h / 2 - h / 2 / z).setScale(1 / z);
+    layer.camera.setScroll(camera.scrollX, camera.scrollY).setZoom(z);
+    const entries = [...this.glows.values()];
+    layer.clear(); layer.draw([...entries.flatMap(e => e.pool ? [e.pool] : []), ...entries.map(e => e.glow)]);
+    const lit = [...this.glows.values()].map(({glow}) => glow.getBounds()), front: GlowOccluder[] = [];
+    for (const rabbit of occluders) {
+      if (!rabbit.active || !rabbit.visible || rabbit.alpha <= 0) continue;
+      const near = lit.filter(l => rabbit.x > l.left - 160 && rabbit.x < l.right + 160 && rabbit.y > l.top - 160 && rabbit.y < l.bottom + 220);
+      if (!near.length) continue;
+      const box = rabbit.getBounds();
+      if (near.some(l => Phaser.Geom.Rectangle.Overlaps(l, box))) front.push(rabbit);
+    }
+    if (front.length) layer.erase(front);
+  }
+  clear(): void {
+    for (const entry of this.glows.values()) { entry.glow.destroy(); entry.pool?.destroy(); } this.glows.clear();
+    this.layer?.destroy(); this.layer = null;
+  }
 }

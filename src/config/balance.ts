@@ -17,12 +17,12 @@ export const CUISINE_TIP = {pattes: 5, grass: 1} as const;
  * constants, awaiting the owner's tuning. Hearts only; read them through `nurseryUnlockQuote`.
  */
 // Cushions dear in Hearts since the Christmas update (owner, 5 November 2026; 10 / 25 / 50 before); every save goes back to 2 at most.
-export const NURSERY = {initialCapacity: 1, maxCapacity: 4, unlockHearts: {1: 40, 2: 120, 3: 250}} as const;
+export const NURSERY = {initialCapacity: 1, maxCapacity: 4, unlockHearts: {1: 30, 2: 60, 3: 80}} /* 8 November 2026 (40, 120, 250 before) */ as const;
 /**
- * The islet of the Epics (owner, 5 November 2026): a small islet floating north of the island, off the land grid, bought once
+ * The islet of the Epics (owner, 5 November 2026): a small islet floating south of the island (moved on 6 November), off the land grid, bought once
  * for `hearts` Hearts from player level `unlockLevel`. Its nest runs a second breeding at the same time as the island's, with
  * the chances of the Epics, the Legendaries and Benny multiplied by `bonus` (+10 %); the nursery keeps its cushions.
- * `cell`: the islet nest's top-left fine cell (a 4 × 4 nest), above the start island beyond the north edge of the land grid,
+ * `cell`: the islet nest's top-left fine cell (a 4 × 4 nest), below the start island beyond the south edge of the land grid,
  * so the island's growth never reaches it.
  */
 /**
@@ -31,12 +31,20 @@ export const NURSERY = {initialCapacity: 1, maxCapacity: 4, unlockHearts: {1: 40
  * passed (at most `maxPattes`); the very first one also gives a Heart at `heartColumns` columns. Never XP.
  */
 export const BENNY_FLIGHT = {rewardedGamesPerCycle: 3, pattesPerColumn: 3, maxPattes: 60, heartColumns: 20, maxColumns: 500} as const;
-/** The Ultra neige habitat (owner, 5 November 2026): sold at the Christmas market only, it turns a level 3 snow habitat into an icy palace, and stays. */
-export const ULTRA_SNOW = {candies: 400} as const;
-export const EPIC_ISLET = {unlockLevel: 18, hearts: 400, bonus: 1.1, cell: {x: 6, y: -15}} as const;
+/**
+ * The Ultra neige habitat (owner, 6 November 2026: « un tout nouvel habitat neige […] s'acheter niveau 1 et […] s'améliorer jusqu'au
+ * niveau 3 en payant en sucre d'orge »): a snow enclosure of its own, sold at the Christmas market at level 1, then upgraded to levels
+ * 2 and 3, every step paid in sucres d'orge only (no pattes, no Hearts, no XP). It keeps the snow habitat's places and footprints, and
+ * stays after Christmas. In all 500 sucres d'orge, about twenty days of Christmas challenges.
+ */
+export const ULTRA_SNOW = {candies: {1: 100, 2: 150, 3: 250}} as const;
+export const EPIC_ISLET = {unlockLevel: 18, hearts: 200, /* 8 November 2026 (400 before) */ bonus: 1.1, cell: {x: 6, y: 70}} as const;
 /** Paille's free gift: 3 Hearts every 24 h (2 before the Hearts / pattes balance of 3 November 2026), three gifts kept at most. */
+/** Hearts from daily activities that are not tied to one building's config: the first Cuisine dish of each daily cycle. */
+export const DAILY_HEART_SOURCES = {cuisine: 3} as const; // 8 November 2026 (1 before).
 export const HEARTS = {
-  initial: 12, gift: 3, maximumGifts: 3, giftInterval: 24 * HOUR,
+  initial: 12, gift: 10, maximumGifts: 3, // gift: 8 November 2026 (3 before).
+  giftInterval: 24 * HOUR,
   accelerationStep: 5 * MINUTE, pattesPerHeart: 25,
 };
 // The species registry lives in ./species; the public names stay available from here.
@@ -79,7 +87,7 @@ export const BALANCE = {
     agency: {price: 1000, maximum: 1}, // The travel agency: see TRAVEL.
     salon: {price: 5000, maximum: 1}, // The Salon de soins: see SALON.
     forest: {price: 10000, maximum: 1}, // The Forêt de Brocéliande: see FOREST.
-    perch: {price: 3000, maximum: 1}, // Benny's perch, for « Le vol de Benny »: see BENNY_FLIGHT.
+    perch: {price: 50000, maximum: 1}, // Benny's perch, for « Le vol de Benny »: see BENNY_FLIGHT.
   } satisfies Record<BuildingKind, {price: number; currency?: 'hearts'; maximum: number | null}>,
 };
 /**
@@ -92,53 +100,71 @@ export const RARE_INCOME_BONUS_SPECIES: readonly SpeciesId[] = [];
 export const INCOME_BASES = {common: 10, rare: 10, rareBonus: 10, epic: 13, legendary: 15, mythic: 15} as const;
 /** Keep the first two farms available; later slots follow player progression. */
 export const farmLimit = (level: number): number => level >= 15 ? 4 : level >= 12 ? 3 : 2;
-/** Upgrading (level 2, and level 3 which keeps it) shortens new crops by 20%; already running crops retain their frozen duration. */
-export const farmDuration = (duration: number, farmLevel?: 2 | 3): number => farmLevel ? Math.ceil(duration * 0.8) : duration;
+/**
+ * Upgrading (level 2, and level 3 which keeps it) shortens new crops by 20%, level 4 by 30%; already running crops retain
+ * their frozen duration.
+ */
+export const farmDuration = (duration: number, farmLevel?: 2 | 3 | 4): number => farmLevel === 4 ? Math.ceil(duration * 0.7) : farmLevel ? Math.ceil(duration * 0.8) : duration;
 /**
  * Farm upgrades, one farm at a time. Level 2 (30 Hearts, player level 9) opens the five crops from `fanes` on; level 3
- * (owner, 2 November 2026: 60 000 pattes, player level 20) opens the four fancy crops and keeps every level 2 advantage.
+ * (owner, 2 November 2026: 60 000 pattes, player level 20) opens the four fancy crops and keeps every level 2 advantage. Level 4 (8 November 2026: 100 000 pattes, player level 25)
+ * opens three richer crops and makes every crop 30 % faster.
  */
-export const FARM_UPGRADES = {2: {level: 9, hearts: 30}, 3: {level: 20, pattes: 60_000}} as const;
+export const FARM_UPGRADES = {2: {level: 9, hearts: 30}, 3: {level: 20, pattes: 60_000}, 4: {level: 25, pattes: 100_000}} as const;
 /**
  * The travel agency (owner, 25 October 2026), sold among the buildings from player level 8. One rabbit travels at a time,
  * to a destination drawn at random, for 3 to 10 whole hours (drawn with it); it brings back Hearts, more for a longer trip.
  * The traveller keeps its place and its income at home, but cannot be fed, bred, moved or entrusted while away.
  */
+/** Hearts to grow the travel agency: level 1 → 2 (two trips at a time), then 2 → 3 (three trips). */
+export const AGENCY_UPGRADE_HEARTS = {1: 30, 2: 60} as const; // 8 November 2026 (40 and 120 before).
 export const TRAVEL = {
   unlockLevel: 8, minHours: 3, maxHours: 10,
   destinations: ['Londres', 'Vannes', 'Le Caire', 'Hammamet', 'Le Lavandou', 'Bandol', 'Lille', 'Paris', 'Marrakech'],
 } as const;
 export type Destination = typeof TRAVEL.destinations[number];
-/** 1 to 5 Hearts, more for a longer trip (owner, 5 November 2026; 1 to 3 before): 3–4 h 1, 5–6 h 2, 7–8 h 3, 9 h 4, 10 h 5. */
-export const tripHearts = (hours: number): number => hours <= 4 ? 1 : hours <= 6 ? 2 : hours <= 8 ? 3 : hours <= 9 ? 4 : 5;
+/** 3 to 12 Hearts, more for a longer trip (8 November 2026, Hearts calendar: src/simulation/heartCalendar.ts): 3–4 h 3, 5–6 h 5, 7–8 h 7, 9 h 9, 10 h 12. */
+/** The table of 5 November 2026 (1 to 5 Hearts): a trip started before 8 November 2026 keeps it, and its save stays valid. */
+export const tripHeartsBefore20261108 = (hours: number): number => hours <= 4 ? 1 : hours <= 6 ? 2 : hours <= 8 ? 3 : hours <= 9 ? 4 : 5;
+export const tripHearts = (hours: number): number => hours <= 4 ? 3 : hours <= 6 ? 5 : hours <= 8 ? 7 : hours <= 9 ? 9 : 12;
 /** One draw picks both: destination index and length in hours. */
 export function drawTrip(roll: number): {destination: Destination; hours: number} {
   const count = TRAVEL.destinations.length, lengths = TRAVEL.maxHours - TRAVEL.minHours + 1, n = Math.floor(roll * count * lengths);
   return {destination: TRAVEL.destinations[n % count], hours: TRAVEL.minHours + Math.floor(n / count)};
 }
-// Crop prices doubled for the Christmas update (owner, 5 November 2026): food is dearer, affection 50 takes longer. The hay
-// keeps its 10 pattes: it is the guided first crop whose price Paille's guide quotes (her lines are never changed).
+// Crop prices doubled for the Christmas update (owner, 5 November 2026). The hay keeps its 10 pattes: it is the guided first
+// crop whose price Paille's guide quotes (her lines are never changed). Then ×2.5 on every crop (owner, 8 November 2026),
+// chosen knowing that the simulated player then reaches level 22 much later than day 20.
 export const ORDERS = {
   foin: {name: 'Foin', level: 1, cost: 10, grass: 20, duration: 5 * MINUTE},
-  pissenlit: {name: 'Pissenlit', level: 1, cost: 36, grass: 40, duration: 15 * MINUTE},
-  trefle: {name: 'Trèfle', level: 3, cost: 60, grass: 70, duration: 30 * MINUTE},
-  persil: {name: 'Persil', level: 5, cost: 100, grass: 120, duration: HOUR},
-  laitue: {name: 'Laitue romaine', level: 7, cost: 160, grass: 200, duration: 2 * HOUR},
-  fanes: {name: 'Fanes de carotte', level: 9, cost: 240, grass: 290, duration: 3 * HOUR},
-  fenouil: {name: 'Fenouil', level: 11, cost: 320, grass: 380, duration: 4 * HOUR},
-  pomme: {name: 'Pomme', level: 13, cost: 480, grass: 560, duration: 6 * HOUR},
-  fraise: {name: 'Fraise', level: 16, cost: 660, grass: 760, duration: 8 * HOUR},
-  banane: {name: 'Banane', level: 19, cost: 900, grass: 1000, duration: 10 * HOUR},
-  // The fancy crops (owner, 2 November 2026): same food stock, planted only in a level 3 farm (FANCY_ORDER_IDS).
-  trefleDore: {name: 'Trèfle doré', level: 20, cost: 1200, grass: 1400, duration: 10 * HOUR},
-  carotteArcEnCiel: {name: 'Carotte arc-en-ciel', level: 22, cost: 1600, grass: 1800, duration: 12 * HOUR},
-  fraiseEtoilee: {name: 'Fraise étoilée', level: 24, cost: 2000, grass: 2200, duration: 14 * HOUR},
-  pommeAmour: {name: 'Pomme d’amour', level: 26, cost: 2400, grass: 2700, duration: 16 * HOUR},
+  pissenlit: {name: 'Pissenlit', level: 1, cost: 90, grass: 40, duration: 15 * MINUTE},
+  trefle: {name: 'Trèfle', level: 3, cost: 150, grass: 70, duration: 30 * MINUTE},
+  persil: {name: 'Persil', level: 5, cost: 250, grass: 120, duration: HOUR},
+  laitue: {name: 'Laitue romaine', level: 7, cost: 400, grass: 200, duration: 2 * HOUR},
+  fanes: {name: 'Fanes de carotte', level: 9, cost: 600, grass: 290, duration: 3 * HOUR},
+  fenouil: {name: 'Fenouil', level: 11, cost: 800, grass: 380, duration: 4 * HOUR},
+  pomme: {name: 'Pomme', level: 13, cost: 1200, grass: 560, duration: 6 * HOUR},
+  fraise: {name: 'Fraise', level: 16, cost: 1650, grass: 760, duration: 8 * HOUR},
+  banane: {name: 'Banane', level: 19, cost: 2250, grass: 1000, duration: 10 * HOUR},
+  // The fancy crops (owner, 2 November 2026; ×2.5 on 8 November 2026): same food stock, only in a level 3 farm (FANCY_ORDER_IDS).
+  trefleDore: {name: 'Trèfle doré', level: 20, cost: 3000, grass: 1400, duration: 10 * HOUR},
+  carotteArcEnCiel: {name: 'Carotte arc-en-ciel', level: 22, cost: 4000, grass: 1800, duration: 12 * HOUR},
+  fraiseEtoilee: {name: 'Fraise étoilée', level: 24, cost: 5000, grass: 2200, duration: 14 * HOUR},
+  pommeAmour: {name: 'Pomme d’amour', level: 26, cost: 6000, grass: 2700, duration: 16 * HOUR},
+  // The level 4 farm crops (owner, 8 November 2026: a level 4 farm must pay off in the long run). More food per patte
+  // (about 1.7 pattes per food against 2.2 for the fancy crops) and per hour than any level 3 crop.
+  citrouilleDoree: {name: 'Citrouille dorée', level: 25, cost: 5000, grass: 2900, duration: 8 * HOUR},
+  melonLune: {name: 'Melon de lune', level: 27, cost: 7000, grass: 4200, duration: 12 * HOUR},
+  cerisesCristal: {name: 'Cerises de cristal', level: 29, cost: 9000, grass: 5600, duration: 16 * HOUR},
 };
-/** The fancy crops, reserved for a level 3 farm. */
+/** The fancy crops, reserved for a level 3 farm (and above). */
 export const FANCY_ORDER_IDS = ['trefleDore', 'carotteArcEnCiel', 'fraiseEtoilee', 'pommeAmour'] as const;
-/** Farm level a crop needs: 3 for the fancy crops, 2 from the carrot tops on, 1 otherwise. */
-export function orderFarmLevel(recipe: keyof typeof ORDERS): 1 | 2 | 3 {
+/** The crops reserved for a level 4 farm. */
+export const GRAND_ORDER_IDS = ['citrouilleDoree', 'melonLune', 'cerisesCristal'] as const;
+export type FarmLevel = 1 | 2 | 3 | 4;
+/** Farm level a crop needs: 4 for the level 4 crops, 3 for the fancy crops, 2 from the carrot tops on, 1 otherwise. */
+export function orderFarmLevel(recipe: keyof typeof ORDERS): FarmLevel {
+  if ((GRAND_ORDER_IDS as readonly string[]).includes(recipe)) return 4;
   return (FANCY_ORDER_IDS as readonly string[]).includes(recipe) ? 3 : ORDERS[recipe].level >= ORDERS.fanes.level ? 2 : 1;
 }
 /** Production ids of saves before the ten crops, mapped to the crop that shows them; their amount and duration stay frozen. */
@@ -177,7 +203,8 @@ export const carePrice = (species: SpeciesId, care: CareKind): number => Math.ro
  * lets the player choose freely and for free between the evolved and old drawing of rabbits that have already evolved. Purely
  * cosmetic: no income, XP, affection or draw.
  */
-export const FOREST = {unlockLevel: 25} as const; // 20 before the Christmas update (owner, 5 November 2026).
+// 20 before the Christmas update (owner, 5 November 2026). `changeMs`: since 6 November 2026 a change of drawing takes 7 hours, both ways.
+export const FOREST = {unlockLevel: 25, changeMs: 7 * 3_600_000} as const;
 /**
  * The jump-rope islet (owner, 4 November 2026): a small isolated islet left of the start island, with the kiosk on it, bought as
  * one building for `price` pattes from player level `unlockLevel`, one per game. Three rabbits of the player play: two carriers

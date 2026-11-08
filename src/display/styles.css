@@ -22,6 +22,11 @@ button, summary, #hud, #meadow-actions, #game canvas {
   -webkit-user-select: none; user-select: none;
 }
 img, #game canvas { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+/* A long press on a panel, a dialog or the guide no longer selects its text with the iPhone magnifier, and a tap no longer
+   flashes grey (audit of 7 November 2026). Fields stay selectable. */
+#game-panel, dialog, #tutorial { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+input, textarea, [contenteditable] { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
+button, summary, a, label, [role="button"] { -webkit-tap-highlight-color: transparent; }
 /* Suppress native double-tap zoom across the game shell; native pinch remains available outside the canvas. */
 html, body, #app { touch-action: manipulation; width: 100%; height: 100%; margin: 0; overflow: hidden; overscroll-behavior: none; }
 /* Exclude page pinch zoom in the installed app. Canvas stays none and panels
@@ -694,7 +699,7 @@ dialog.legendary-reveal-ankylosaure { background: #1d1209; }
 /* A ready legendary's or Benny's reception: the choices at the end of the show (src/ui/legendaryReveal.ts, revealEnd). */
 .reveal-new { display: inline-block; margin: 0 0 10px; padding: 3px 12px; border-radius: 999px; background: #fff; color: #3a2606; font-weight: 700; font-size: 13px; box-shadow: 0 2px 8px #0006; }
 .reveal-choices { display: grid; gap: 8px; }
-.reveal-choices .reason { margin: -2px 0 2px; color: #fff3d6; font-size: 13px; text-shadow: 0 1px 4px #000c; }
+.reveal-choices .reason { margin: -2px 0 2px; color: #4a3115; font-size: 13px; text-shadow: none; }
 :is(.lr-text, .br-text) .reveal-later { margin-top: 8px; }
 @media (orientation: landscape) and (max-height: 560px) {
   .reveal-choices { gap: 6px; }

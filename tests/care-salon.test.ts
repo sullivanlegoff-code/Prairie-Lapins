@@ -15,8 +15,8 @@ function run(s: GameState, command: Command, now = s.lastSimulatedAt) {
 function refused(s: GameState, c: Command, reason: string, now = s.lastSimulatedAt) {
   expect(act(s, c, now, () => 0)).toEqual({ok: false, state: s, reason});
 }
-function freeCell(s: GameState) {
-  for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y)) return {x, y};
+function freeCell(s: GameState, kind?: 'enclosure') {
+  for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y, undefined, kind)) return {x, y};
   throw Error('No space');
 }
 const atLevel = (s: GameState, level: number) => { s.progression = {totalXp: cumulativeLevelXp(level), rewardedThroughLevel: level}; return s; };
@@ -25,7 +25,7 @@ function setup(species: SpeciesId[] = ['paille'], affection = 20, statues = 2) {
   let s = atLevel(createGame(0), 25); s.pattes = 1_000_000;
   for (let i = 0; i < statues; i++) { const c = freeCell(s); s.buildings.push(emptyBuilding(`building-${s.nextId++}`, 'statue', c.x, c.y)); }
   // A level 3 universal enclosure (nine places) kept on the 4 × 4 footprint.
-  const c = freeCell(s), home = emptyBuilding(`building-${s.nextId++}`, 'enclosure', c.x, c.y); home.habitat = {type: 'universal', level: 3};
+  const c = freeCell(s, 'enclosure'), home = emptyBuilding(`building-${s.nextId++}`, 'enclosure', c.x, c.y); home.habitat = {type: 'universal', level: 3};
   s.buildings.push(home);
   s = run(s, {type: 'buyBuilding', kind: 'salon', ...freeCell(s)});
   const ids = species.map(sp => { const id = `rabbit-${s.nextId++}`; s.rabbits.push({id, species: sp, affection, enclosureId: home.id}); if (!s.discovered.includes(sp)) s.discovered.push(sp); return id; });

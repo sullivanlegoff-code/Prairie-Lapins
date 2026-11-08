@@ -1,4 +1,5 @@
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {act, advance, decodeGame, encodeGame} from '../src/simulation';
 import {MAX_RABBIT_NAME_LENGTH, normalizeRabbitName} from '../src/simulation/rabbitNames';
 import {GameController} from '../src/application/GameController';
@@ -21,12 +22,12 @@ const named = (s: GameState, id: string) => s.rabbits.find(r => r.id === id)!;
 const rabbitsWithoutName = (s: GameState) => s.rabbits.map(({name: _name, ...rest}) => rest);
 
 describe('the rule for a personal name', () => {
-  it.each([
+  itAll([
     ['Mimi', 'Mimi'], ['  Mimi  ', 'Mimi'], ['Éloïse-Çà, va ?', 'Éloïse-Çà, va ?'], ['Jean  Pierre', 'Jean  Pierre'], ['', ''], ['   ', ''], [' Mimi ', 'Mimi'],
     ['🐰'.repeat(MAX_RABBIT_NAME_LENGTH), '🐰'.repeat(MAX_RABBIT_NAME_LENGTH)], ['a'.repeat(MAX_RABBIT_NAME_LENGTH), 'a'.repeat(MAX_RABBIT_NAME_LENGTH)], ['<b>x</b> & "q"', '<b>x</b> & "q"'],
   ])('accepts %j as %j', (raw, expected) => expect(normalizeRabbitName(raw)).toBe(expected));
-  it.each([['a'.repeat(MAX_RABBIT_NAME_LENGTH + 1)], ['🐰'.repeat(MAX_RABBIT_NAME_LENGTH + 1)], ['a\nb'], ['Mimi\n'], ['\nMimi'], ['a\r\nb'], ['a\tb'], ['a\u0000b'], ['a b'], ['a b'], ['\u007f']])('refuses %j', raw => expect(normalizeRabbitName(raw)).toBeNull());
-  it.each([[null], [undefined], [12], [{}]])('refuses a non-text value %j', value => expect(normalizeRabbitName(value)).toBeNull());
+  itAll([['a'.repeat(MAX_RABBIT_NAME_LENGTH + 1)], ['🐰'.repeat(MAX_RABBIT_NAME_LENGTH + 1)], ['a\nb'], ['Mimi\n'], ['\nMimi'], ['a\r\nb'], ['a\tb'], ['a\u0000b'], ['a b'], ['a b'], ['\u007f']])('refuses %j', raw => expect(normalizeRabbitName(raw)).toBeNull());
+  itAll([[null], [undefined], [12], [{}]])('refuses a non-text value %j', value => expect(normalizeRabbitName(value)).toBeNull());
 });
 
 describe('naming a rabbit by command', () => {

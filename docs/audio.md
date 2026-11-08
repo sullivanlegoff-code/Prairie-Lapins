@@ -2,31 +2,41 @@
 
 ## Pistes
 
-Source fournie par le propriétaire, **non modifiée** : `<profil-utilisateur>\OneDrive\Bureau\project L\Music` (horodatages et tailles relus après conversion, identiques).
+Source fournie par le propriétaire, **non modifiée** : `<profil-utilisateur>\OneDrive\Bureau\project L\Music` (horodatages et tailles relus après conversion, identiques). Les sept musiques de Noël (8 novembre 2026) viennent de `docs/Music/`, dossier local du propriétaire jamais committé.
+
+**Ancien thème supprimé (8 novembre 2026, demande du propriétaire)** : « Music chill (dragon vibe) » (`dragon-chill.mp3`, 19 475 582 octets) est retiré du jeu et du dépôt. Il reste seulement dans l'historique Git (pas de réécriture d'historique).
 
 | Source | Format source | Durée | Débit source | Taille source | Fichier du projet | Taille |
 | --- | --- | --- | --- | ---: | --- | ---: |
 | Indian vibe.mp3 | MP3 (MPEG-1 Layer III), 44,1 kHz stéréo | 5:14 | 192 kb/s CBR | 7 591 392 | `indian-vibe-1.mp3` | 5 008 420 |
 | Indian vibe 2.mp3 | idem | 5:00 | 192 kb/s CBR | 7 202 316 | `indian-vibe-2.mp3` | 4 791 761 |
 | Indian vibe 3.mp3 | idem | 5:13 | 192 kb/s CBR | 7 592 047 | `indian-vibe-3.mp3` | 4 998 823 |
-| Music chill (dragon vibe).mp3 | idem | 20:20 | 320 kb/s CBR | 48 797 823 | `dragon-chill.mp3` | 19 475 582 |
-| **Total** | | 46:47 | | **71 183 578** | | **34 274 586** |
+| Music christmast 1.mp3 | idem | 5:22 | 192 kb/s CBR | 7 729 573 | `noel-1.mp3` (96 kb/s) | 3 860 034 |
+| Music Christmast 2.mp3 | idem | 2:57 | 192 kb/s CBR | 4 257 586 | `noel-2.mp3` (96 kb/s) | 2 126 640 |
+| Music Christmast 3.mp3 | idem | 2:54 | 192 kb/s CBR | 4 185 488 | `noel-3.mp3` (96 kb/s) | 2 090 645 |
+| Music Christmast 4.mp3 | idem | 2:18 | 192 kb/s CBR | 3 320 939 | `noel-4.mp3` (96 kb/s) | 1 659 018 |
+| Music Christmast 5.mp3 | idem | 1:35 | 192 kb/s CBR | 2 285 863 | `noel-5.mp3` (96 kb/s) | 1 142 255 |
+| Music Christmast 6.mp3 | idem | 1:40 | 192 kb/s CBR | 2 409 997 | `noel-6.mp3` (96 kb/s) | 1 204 229 |
+| Music Christmast 7.mp3 | idem | 6:32 | 192 kb/s CBR | 9 404 126 | `noel-7.mp3` (96 kb/s) | 4 696 057 |
+| **Total** (Indian vibe + Noël) | | 38:45 | | **55 979 327** | | **31 577 882** |
 
-Fichiers dans `public/assets/audio/music/` : MP3 128 kb/s CBR, 44,1 kHz stéréo, durées identiques. Le MP3 est lu par Safari iOS ; il reste le format le plus sûr pour tous les navigateurs du projet.
+Volume égalisé (8 novembre 2026, demande du propriétaire) : les musiques de Noël 4 et 1 étaient nettement plus faibles (niveau moyen 0,063 et 0,079 contre environ 0,14 pour les autres). Avant l'encodage, elles ont été amplifiées (×2,15 et ×1,6, sans écrêtage : pic 0,95 et 0,98) dans Chromium, puis encodées comme les autres. Niveaux moyens mesurés sur les fichiers du jeu : 0,125 / 0,106 / 0,134 / 0,135 / 0,177 / 0,192 / 0,143.
+
+Fichiers dans `public/assets/audio/music/` : MP3 44,1 kHz stéréo, durées identiques ; 128 kb/s CBR pour les Indian vibe, **96 kb/s CBR pour les sept musiques de Noël** (moitié de la taille source, contrôlées dans Chromium : durées, canaux et niveaux identiques à 0,1 s près). Le MP3 est lu par Safari iOS ; il reste le format le plus sûr pour tous les navigateurs du projet.
 
 **Règle de build partagé (17 octobre 2026)** : `build:netlify` et `build:pages` produisent une seule copie des quatre pistes sous `assets/audio/music/` à la racine de leur artefact. Le script combiné fixe `VITE_SHARED_MUSIC_BASE` à la base du site : `/` pour Netlify, `/Project-L/` pour Pages. `src/main.ts` utilise cette base pour le jeu et le laboratoire, plutôt que la base propre au laboratoire (`/dev/`). Les builds isolés et le serveur de développement gardent `BASE_URL` en repli. Ne pas réintroduire des URLs `/dev/assets/audio/music/` dans le build combiné.
 
 Vite copie encore `public/` durant chaque sous-build ; le script retire ensuite uniquement les copies MP3 du laboratoire après comparaison octet par octet avec les pistes partagées. Aucun symlink, aucune recompression. `scripts/verify-shared-music.mjs`, exécuté automatiquement par le build combiné, impose exactement quatre MP3 aux chemins attendus et leur identité avec `public/`. Recontrôle manuel : `node scripts/verify-shared-music.mjs netlify-site`. L'ancien total de 68 549 172 octets d'audio devient **34 274 586 octets** ; build complet mesuré **64 286 336 octets** contre 98 560 912 avant cette optimisation.
 
-**Conversion** : aucun ffmpeg n'est installé ; l'encodeur MP3 intégré à Windows 11 (Media Foundation, API WinRT `Windows.Media.Transcoding.MediaTranscoder`, profil `MediaEncodingProfile.CreateMp3(Medium)` = 128 kb/s) a été utilisé depuis PowerShell, sans rien installer. Réencodage MP3 → MP3 (donc avec perte, comme toute recompression).
+**Conversion** : aucun ffmpeg n'est installé ; les musiques de Noël ont été encodées de la même façon, avec un débit fixé à 96 000 bit/s (`profile.Audio.Bitrate`) ; l'encodeur MP3 intégré à Windows 11 (Media Foundation, API WinRT `Windows.Media.Transcoding.MediaTranscoder`, profil `MediaEncodingProfile.CreateMp3(Medium)` = 128 kb/s) a été utilisé depuis PowerShell, sans rien installer. Réencodage MP3 → MP3 (donc avec perte, comme toute recompression).
 
 **Contrôle objectif, pas une écoute** : 60 s de chaque paire (de 30 s à 90 s) décodées par Chromium (WebAudio), alignées (décalage de l'encodeur) puis comparées : rapport signal/bruit de forme d'onde 20,7 / 34,2 / 25,2 / 27,1 dB, énergie haute fréquence conservée à 98–100 %. Ces chiffres ne remplacent pas l'écoute du propriétaire. Le WebKit de Playwright sous Windows ne lit aucun MP3 (erreur 4, y compris les fichiers d'origine) : limite de ce navigateur de test, pas des fichiers.
 
 ## Musique de fond
 
-- **Règle du propriétaire (30 octobre 2026)** : « Music chill (dragon vibe) » (`dragon-chill.mp3`) est la seule musique du jeu ; les trois « Indian vibe » ne jouent que dans la cuisine. `src/audio/musicDirector.ts` tient deux lecteurs (`MEADOW_TRACKS` et `KITCHEN_TRACKS` dans `src/config/music.ts`) : à l'ouverture de la cuisine, la musique chill se met en pause et une Indian vibe démarre ; en sortant, la musique chill reprend là où elle s'était arrêtée (et l'Indian vibe reprendra aussi à sa position la fois suivante). Jamais deux musiques en même temps.
-- **Départ au hasard** : la musique chill (20:20) est découpée en 10 parts égales ; au lancement du jeu, elle démarre au début de l'une d'elles, tirée au hasard (`MEADOW_START_SEGMENTS`, option `startSegments` du lecteur), dès que le navigateur connaît sa durée et avant le premier son. Elle continue ensuite normalement ; arrivée à la fin, elle reprend depuis le début.
-- **Musique de Dadi (règle du propriétaire, 31 octobre 2026)** : `dadi.mp3` se lance quand on accueille un Dadi dans la prairie, quand on lance un croisement avec un Dadi au nid, et quand on ouvre la fiche d'un Dadi. Elle joue une seule fois jusqu'au bout, toujours depuis son début, puis la musique chill reprend là où elle s'était arrêtée. Rouvrir la fiche pendant qu'elle joue ne la relance pas ; entrer en cuisine l'interrompt. Thème déclaré dans `RABBIT_THEMES` (`src/config/music.ts`), lecteur `once` dans `MusicDirector`.
+- **Règle du propriétaire (8 novembre 2026)** : les sept musiques de Noël (`noel-1.mp3` à `noel-7.mp3`, `MEADOW_TRACKS` dans `src/config/music.ts`) sont le thème du jeu, partout sauf en cuisine et pendant la musique de Dadi. À chaque lancement, l'une des sept, tirée au hasard, démarre à son début ; ensuite elles s'enchaînent au hasard, jamais deux fois la même d'affilée. Les trois « Indian vibe » ne jouent que dans la cuisine. `src/audio/musicDirector.ts` tient deux lecteurs : à l'ouverture de la cuisine, la musique de Noël se met en pause et une Indian vibe démarre ; en sortant, la musique de Noël reprend là où elle s'était arrêtée (et l'Indian vibe reprendra aussi à sa position la fois suivante). Jamais deux musiques en même temps.
+- Seule la piste en cours et la suivante (choisie quand la première joue) sont chargées : une partie ne télécharge pas les sept musiques d'un coup.
+- **Musique de Dadi (règle du propriétaire, 31 octobre 2026)** : `dadi.mp3` se lance quand on accueille un Dadi dans la prairie, quand on lance un croisement avec un Dadi au nid, et quand on ouvre la fiche d'un Dadi. Elle joue une seule fois jusqu'au bout, toujours depuis son début, puis la musique de Noël reprend là où elle s'était arrêtée. Rouvrir la fiche pendant qu'elle joue ne la relance pas ; entrer en cuisine l'interrompt. Thème déclaré dans `RABBIT_THEMES` (`src/config/music.ts`), lecteur `once` dans `MusicDirector`.
   Source fournie par le propriétaire : `Musique Dadi.mp3` (MP3 192 kb/s CBR, 44,1 kHz, 3:21, 4 881 707 octets). Début coupé **sans réencodage** par `node scripts/trim-mp3.mjs <source> 98 public/assets/audio/music/dadi.mp3` : trames entières gardées à partir de 98,011 s (1:38, la première trame commençant après 1:38), étiquettes ID3 et trame Info retirées. Résultat : 1:43, 2 478 916 octets.
 - `src/audio/musicPlayer.ts` : une piste à la fois, tirée au hasard sans répéter immédiatement la précédente ; à la fin (`ended`), la suivante enchaîne directement. Avant « Jouer », seule la première piste est choisie et vérifiée (requête partielle de 64 Kio, pas de téléchargement complet) ; la suivante n'est choisie et mise en tampon qu'une fois la piste courante en lecture. Jamais plus d'un élément audio actif.
 - Démarrage uniquement dans le geste « Jouer » (exigence iOS) : le moteur Web Audio est créé et repris à ce moment-là.

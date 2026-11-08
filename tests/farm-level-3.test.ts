@@ -1,4 +1,6 @@
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
+import {xpAfterSlowdown} from '../src/simulation/progression';
 import {act, createGame, decodeGame, encodeGame} from '../src/simulation';
 import {FANCY_ORDER_IDS, FARM_UPGRADES, HOUR, ORDERS, farmDuration, orderFarmLevel} from '../src/config/balance';
 import {cumulativeLevelXp} from '../src/simulation/progression';
@@ -60,19 +62,19 @@ describe('farm level 3', () => {
 describe('fancy crops', () => {
   it('are the four owner crops, above the banana', () => {
     expect(FANCY_ORDER_IDS.map(id => [ORDERS[id].name, ORDERS[id].level, ORDERS[id].cost, ORDERS[id].duration / HOUR, ORDERS[id].grass])).toEqual([
-      ['Trèfle doré', 20, 1200, 10, 1400], ['Carotte arc-en-ciel', 22, 1600, 12, 1800],
-      ['Fraise étoilée', 24, 2000, 14, 2200], ['Pomme d’amour', 26, 2400, 16, 2700],
+      ['Trèfle doré', 20, 3000, 10, 1400], ['Carotte arc-en-ciel', 22, 4000, 12, 1800],
+      ['Fraise étoilée', 24, 5000, 14, 2200], ['Pomme d’amour', 26, 6000, 16, 2700],
     ]);
     for (const id of FANCY_ORDER_IDS) expect(orderFarmLevel(id)).toBe(3);
     expect([orderFarmLevel('foin'), orderFarmLevel('laitue'), orderFarmLevel('fanes'), orderFarmLevel('banane')]).toEqual([1, 1, 2, 2]);
   });
-  it.each(FANCY_ORDER_IDS)('%s is refused on a level 1 or 2 farm', recipe => {
+  itAll(FANCY_ORDER_IDS)('%s is refused on a level 1 or 2 farm', recipe => {
     for (const farmLevel of [1, 2] as const) { const {s, id} = setup(30, farmLevel); refused(s, {type: 'startOrder', id, recipe}, 'INVALID_CHOICE'); }
   });
-  it.each(FANCY_ORDER_IDS)('%s is refused below its player level', recipe => {
+  itAll(FANCY_ORDER_IDS)('%s is refused below its player level', recipe => {
     const {s, id} = setup(ORDERS[recipe].level - 1, 3); refused(s, {type: 'startOrder', id, recipe}, 'LEVEL_REQUIRED');
   });
-  it.each(FANCY_ORDER_IDS)('%s grows 20 %% faster on a level 3 farm and fills the single food stock', recipe => {
+  itAll(FANCY_ORDER_IDS)('%s grows 20 %% faster on a level 3 farm and fills the single food stock', recipe => {
     let {s, id} = setup(ORDERS[recipe].level, 3); const pattes = s.pattes, grass = s.grass;
     s = run(s, {type: 'startOrder', id, recipe});
     const duration = Math.ceil(ORDERS[recipe].duration * 0.8);
@@ -102,9 +104,9 @@ describe('farm level 3 saves', () => {
       expect(decodeGame(JSON.stringify(raw))).toEqual({ok: false, reason: 'INVALID_STATE'});
     }
   });
-  it('refuse a farm level beyond 3', () => {
+  it('refuse a farm level beyond 4', () => {
     const {s, id} = setup(22, 3); const raw = JSON.parse(encodeGame(s));
-    raw.buildings.find((b: {id: string}) => b.id === id).farmLevel = 4;
+    raw.buildings.find((b: {id: string}) => b.id === id).farmLevel = 5;
     expect(decodeGame(JSON.stringify(raw))).toEqual({ok: false, reason: 'INVALID_STATE'});
   });
   it('still load v22 saves and level 1 or 2 farms unchanged', () => {
@@ -112,7 +114,8 @@ describe('farm level 3 saves', () => {
       let {s, id} = setup(22, farmLevel); s = run(s, {type: 'startOrder', id, recipe: farmLevel === 2 ? 'banane' : 'laitue'});
       expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: s});
       const raw = JSON.parse(encodeGame(s)); raw.version = 22;
-      expect(decodeGame(JSON.stringify(raw))).toEqual({ok: true, state: s});
+      // An older save's XP is on the curve without the slow-down: only that changes.
+      expect(decodeGame(JSON.stringify(raw))).toEqual({ok: true, state: {...s, progression: {...s.progression, totalXp: xpAfterSlowdown(s.progression.totalXp)}}});
     }
   });
 });

@@ -7,7 +7,7 @@ import {ISLAND} from '../src/config/islandGeometry';
 import {regressionStart} from './regression-start';
 
 it('persists and locates Cuisine without habitat XP, and rejects duplicate ownership',()=>{
-  const before=regressionStart(0);before.pattes=10000;before.buildings[0].x=26;before.buildings[0].y=28;
+  const before=regressionStart(0);before.pattes=10000;before.buildings[0].x=26;before.buildings[0].y=27;
   const result=act(before,{type:'buyBuilding',kind:'kitchen',x:19,y:22},0);
   expect(result.ok).toBe(true);if(!result.ok)return;
   const s=result.state,b=s.buildings.at(-1)!;

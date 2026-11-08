@@ -1,4 +1,5 @@
 import frames from './bennyFrames.json';
+import revealPoses from './bennyRevealPoses.json';
 import {rabbitArt} from './rabbitArt';
 
 /**
@@ -19,6 +20,9 @@ export const BENNY_FRAMES = {
 export type BennyFrameName = keyof typeof frames.frames;
 export const BENNY_ATLAS = {texture: 'benny-frames', url: `${import.meta.env.BASE_URL}assets/rabbits/benny/frames/benny-frames.webp`,
   atlas: `${import.meta.env.BASE_URL}assets/rabbits/benny/frames/benny-frames.json`} as const;
+
+/** Where the poses of her first appearance sit in the atlas (src/ui/bennyReveal.ts); tests/benny-reveal.test.ts keeps it equal to the atlas. */
+export const BENNY_REVEAL_POSES = revealPoses;
 
 /** Fail early if the generated frame no longer matches the sprite registry. */
 const sprite = rabbitArt(BENNY_ID);

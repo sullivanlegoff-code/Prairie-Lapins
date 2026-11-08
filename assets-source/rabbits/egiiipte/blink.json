@@ -1,13 +1,26 @@
 {
   "spriteSha1": "6f9a57b6e9cfc8fcfac8270751e1ee5ae72c29d4",
   "eyes-closed": {
-    "x": 535,
-    "y": 118,
-    "sourceSha1": "20c497dc69f9dc2e27c7c3a3371cff7c91d9ab3d"
+    "x": 538,
+    "y": 113,
+    "sourceSha1": "9604c8c66ad33d0e239309eec1f8b6e779fef8d4"
   },
   "nose-twitch": {
     "x": 727,
     "y": 229,
     "sourceSha1": "8a90ab85e4e50784c643e8ea3c4c35cfb3ea1238"
+  },
+  "evolution": {
+    "spriteSha1": "878db2ae6ec62f5de4aa6f3a6fb2f1a6e432e430",
+    "eyes-closed": {
+      "x": 764,
+      "y": 208,
+      "sourceSha1": "68f81d61421a11382007afd69a2ed26680ac6f1a"
+    },
+    "nose-twitch": {
+      "x": 1026,
+      "y": 342,
+      "sourceSha1": "a51f391529d8bc6c15aed617ea3904bf88fa04d4"
+    }
   }
 }

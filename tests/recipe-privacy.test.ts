@@ -1,4 +1,5 @@
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {createGame} from '../src/simulation';
 import {cumulativeLevelXp} from '../src/simulation/progression';
 import {recipeKnown} from '../src/simulation/recipes';
@@ -19,7 +20,7 @@ const knowledge: [string, SpeciesId[], SpeciesId[]][] = [
 ];
 
 describe('nest odds privacy over every pair', () => {
-  it.each(knowledge)('%s: unknown results are summed exactly and never named or described', (_name, discovered, recipes) => {
+  itAll(knowledge)('%s: unknown results are summed exactly and never named or described', (_name, discovered, recipes) => {
     let checked = 0;
     for (const level of [5, 30]) for (const pity of [0, 9]) {
       const s = game(level, pity, discovered, recipes);

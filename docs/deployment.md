@@ -21,3 +21,11 @@ Le site `velvety-squirrel-142402.netlify.app` a été désactivé par le propri�
 ## Historique
 
 Les versions v6 et antérieures étaient publiées depuis le dépôt `Project-L` (base `/Project-L/`) ; voir `docs/history/`.
+
+## Images légères (WebP) — 8 novembre 2026
+
+Chaque image PNG de `public/assets` a une jumelle WebP environ cinq fois plus légère, que le jeu charge à sa place (prairie, menus, Collection, Boutique) ; le PNG reste la source et le secours. Mesures sur la version GitHub, partie complète : 27 Mo avant « Jouer » → 8,5 Mo ; Collection 26,9 Mo → 4 Mo ; Boutique 8 Mo → 1,5 Mo.
+
+- Après avoir ajouté ou modifié une image PNG : `PLAYWRIGHT_MODULE=<playwright> node scripts/make-webp-twins.mjs` (il ne refait que les images changées).
+- `scripts/verify-webp-twins.mjs` arrête la construction du site si un PNG a changé depuis sa jumelle (sinon le jeu montrerait l'ancienne image) ; `tests/webp-twins.test.ts` vérifie la même chose.
+- Liste des jumelles : `src/config/webpTwins.json` ; empreintes des PNG d'origine : `scripts/webp-twin-hashes.json`.

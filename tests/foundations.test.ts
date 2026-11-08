@@ -1,5 +1,6 @@
 import {regressionStart as createGame} from './regression-start';
 import {describe, expect, it, vi} from 'vitest';
+import {itAll} from './cases';
 import {act, advance, encodeGame, decodeGame} from '../src/simulation';
 import {GameController} from '../src/application/GameController';
 import {SAVE_KEY, type SaveStorage} from '../src/persistence/storage';
@@ -41,7 +42,7 @@ describe('technical foundation regressions', () => {
  });
  it('refuses exhausted entity allocation before payment or random draw', () => {
   const s = equipped(); s.nextId = Number.MAX_SAFE_INTEGER; const rng = vi.fn(() => .2);
-  for (const command of [{type:'buyBuilding',kind:'farm',x:27,y:24}, {type:'buyRabbit',species:'neige',enclosureId:'building-7'}, {type:'breed',parents:['rabbit-2','rabbit-3']}] as Command[]) {
+  for (const command of [{type:'buyBuilding',kind:'farm',x:28,y:24}, {type:'buyRabbit',species:'neige',enclosureId:'building-7'}, {type:'breed',parents:['rabbit-2','rabbit-3']}] as Command[]) {
    const before = structuredClone(s); expect(act(s,command,0,rng)).toEqual({ok:false,reason:'RESOURCE_LIMIT',state:s}); expect(s).toEqual(before);
   }
   expect(rng).not.toHaveBeenCalled(); invariant(s);
@@ -99,7 +100,7 @@ describe('technical foundation regressions', () => {
 });
 
 describe('reproducible action traces', () => {
- it.each([17,104729,20261009])('keeps invariants and time equivalence for seed %i', seed => {
+ itAll([17,104729,20261009])('keeps invariants and time equivalence for seed %i', seed => {
   let value=seed, s=equipped(), now=0; const trace:unknown[]=[];
   const random=()=>{value=(Math.imul(value,1664525)+1013904223)>>>0;return value/4294967296;};
   const rng=vi.fn(random);

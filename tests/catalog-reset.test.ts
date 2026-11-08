@@ -1,4 +1,5 @@
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {GameController} from '../src/application/GameController';
 import {SAVE_VERSION, decodeGame, encodeGame, readPresentationId} from '../src/persistence/json';
 import {SAVE_KEY, type SaveStorage} from '../src/persistence/storage';
@@ -27,7 +28,7 @@ describe('the save boundary of the new catalogue', () => {
     const again = new GameController(b.normal, () => HOUR); expect(again.getSnapshot()).toMatchObject({status: 'saved', catalogReset: false}); again.dispose();
   });
 
-  it.each([1, 2, 8, 12, 14, 15])('starts a new valid game on a normal save of version %i, saves it and says why', version => {
+  itAll([1, 2, 8, 12, 14, 15])('starts a new valid game on a normal save of version %i, saves it and says why', version => {
     const b = browser({[SAVE_KEY]: oldSave(version)}), c = new GameController(b.normal, () => 1234);
     expect(c.getSnapshot()).toMatchObject({status: 'saved', issue: null, catalogReset: true, dirty: false, lastSavedAt: 1234, hasUnreadableBackup: false});
     expect(state(c)).toEqual(createGame(1234));

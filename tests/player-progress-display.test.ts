@@ -8,6 +8,7 @@ import {createGame, encodeGame} from '../src/simulation';
 import {PROGRESSION} from '../src/config/progression';
 import {cumulativeLevelXp} from '../src/simulation/progression';
 import {mountSavePanel} from '../src/display/SavePanel';
+const HPL = PROGRESSION.rewards.heartsPerLevel; // Hearts per level (3 since 8 November 2026).
 const el=(id:string)=>document.getElementById(id)!;
 const snapshot=(state: Snapshot['state'], generation=0):Snapshot=>({viewRevision:0,state,generation,status:'saved',issue:null,lastSavedAt:0,dirty:false,hasUnreadableBackup:false,catalogReset:false});
 beforeEach(()=>{document.body.innerHTML=html.match(/<body>([\s\S]*)<\/body>/)![1].replace(/<script[\s\S]*?<\/script>/g,'');});
@@ -18,7 +19,7 @@ describe('player progress display',()=>{
   applyProgressionGain(s,90);ui.update(snapshot(s));expect(el('player-level').textContent).toBe('2');expect(el('player-xp-label').textContent).toBe('0 / 162 XP');
   applyProgressionGain(s,600);ui.update(snapshot(s));expect(el('player-level').textContent).toBe('4');expect(el('player-detail-total').textContent).toContain('690');
   expect(bar.getAttribute('aria-valuenow')).toBe('209');expect(bar.getAttribute('aria-valuemax')).toBe('292');
-  expect(el('player-progress')).toBe(button);expect(el('player-xp-bar')).toBe(bar);expect(s.hearts).toBe(15);ui.dispose();
+  expect(el('player-progress')).toBe(button);expect(el('player-xp-bar')).toBe(bar);expect(s.hearts).toBe(12+3*HPL);ui.dispose();
  });
  it('renders maximum and safe large totals without a fictitious threshold',()=>{
   const ui=mountPlayerProgression(),s=createGame(0);s.progression.totalXp=Number.MAX_SAFE_INTEGER;ui.update(snapshot(s));
@@ -40,7 +41,7 @@ describe('player progress display',()=>{
  });
  it('tracks confirmed controller gains, imports and new games through SavePanel subscription, then unsubscribes',()=>{
   const values=new Map<string,string>(),c=new GameController({scope:'laboratory',getItem:k=>values.get(k)??null,setItem:(k,v)=>{values.set(k,v);}},()=>0);
-  const dispose=mountSavePanel(c);c.grantLaboratoryXp(50);c.grantLaboratoryXp(50);expect(el('player-level').textContent).toBe('2');expect(el('hearts').textContent).toBe('13');
+  const dispose=mountSavePanel(c);c.grantLaboratoryXp(50);c.grantLaboratoryXp(50);expect(el('player-level').textContent).toBe('2');expect(el('hearts').textContent).toBe(String(12+HPL));
   const state=createGame(0);state.progression.totalXp=cumulativeLevelXp(5);const p=c.prepareImport(encodeGame(state));if(!p.ok)throw Error(p.reason);c.confirmImport(p.token,true);expect(el('player-level').textContent).toBe('5');expect(el('hearts').textContent).toBe('12');
   c.restart(true);expect(el('player-xp-label').textContent).toBe('0 / 90 XP');dispose();c.grantLaboratoryXp(50);expect(el('player-level').textContent).toBe('1');c.dispose();
  });

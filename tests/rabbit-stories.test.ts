@@ -50,6 +50,9 @@ describe('the rabbits’ descriptions (owner, 5 November 2026)', () => {
     ui.open({kind: 'rabbit', id: rabbit.id});
     const story = document.querySelector<HTMLElement>('[data-rabbit-story="paille"]');
     expect(story?.textContent).toBe(RABBIT_STORIES.paille);
+    // In the name's frame, to the right of the name (owner's choice « B · Citation », 7 November 2026).
+    expect(story?.parentElement?.matches('[data-rabbit-nickname].with-story')).toBe(true);
+    expect(story?.previousElementSibling?.classList.contains('rabbit-nickname-id')).toBe(true);
     ui.open({kind: 'collection'});
     expect(document.getElementById('panel-content')!.textContent).not.toContain(RABBIT_STORIES.paille!);
   });

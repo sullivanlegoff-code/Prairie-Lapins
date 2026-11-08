@@ -16,15 +16,15 @@ function run(s: GameState, command: Command, now = s.lastSimulatedAt) {
 function refused(s: GameState, c: Command, reason: string, now = s.lastSimulatedAt) {
   expect(act(s, c, now, () => 0)).toEqual({ok: false, state: s, reason});
 }
-function freeCell(s: GameState) {
-  for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y)) return {x, y};
+function freeCell(s: GameState, kind?: 'enclosure') {
+  for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y, undefined, kind)) return {x, y};
   throw Error('No space');
 }
 const atLevel = (s: GameState, level: number) => { s.progression = {totalXp: cumulativeLevelXp(level), rewardedThroughLevel: level}; return s; };
 /** Level 20, the islet bought, and three paille rabbits at home in a universal enclosure. */
 function setup() {
   let s = atLevel(createGame(0), JUMP_ROPE.unlockLevel); s.pattes = 100_000;
-  const c = freeCell(s), home = emptyBuilding(`building-${s.nextId++}`, 'enclosure', c.x, c.y); s.buildings.push(home);
+  const c = freeCell(s, 'enclosure'), home = emptyBuilding(`building-${s.nextId++}`, 'enclosure', c.x, c.y); s.buildings.push(home);
   s = run(s, {type: 'buyJumpIsland'}).state;
   const ids = [0, 1, 2].map(() => { const id = `rabbit-${s.nextId++}`; s.rabbits.push({id, species: 'paille', affection: 3, enclosureId: home.id}); return id; });
   const team: JumpRopeTeam = {carriers: [ids[0], ids[1]], athlete: ids[2]};

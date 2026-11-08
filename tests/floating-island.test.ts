@@ -1,5 +1,6 @@
 import type Phaser from 'phaser';
 import {describe, expect, it, vi} from 'vitest';
+import {itAll} from './cases';
 import {PARCEL_IDS} from '../src/config/land';
 import {floatingIslandArt} from '../src/display/floatingIslandArt';
 import {FloatingIslandLayer} from '../src/display/floatingIslandLayer';
@@ -93,7 +94,7 @@ describe('floating island painted cache', () => {
     expect(s.graphics[0].destroyed).toBe(false); expect(s.graphics[2].destroyed).toBe(true); expect(s.graphics[3].destroyed).toBe(true);
     s.layer.request(['southwest', 'south']); expect(s.layer.generations).toBe(2);
   });
-  it.each(['shutdown', 'explicit', 'root'])('cleans up on %s, idempotently, without late reconstruction', mode => {
+  itAll(['shutdown', 'explicit', 'root'])('cleans up on %s, idempotently, without late reconstruction', mode => {
     const s = setup(); s.layer.request(PARCEL_IDS);
     if (mode === 'shutdown') {const l = s.listeners.get('shutdown')!; l.fn.call(l.context);}
     else if (mode === 'root') s.root.destroy(); else s.layer.destroy();
@@ -118,7 +119,7 @@ describe('floating rock camera envelope', () => {
       expect(outside, JSON.stringify({ids, outside})).toBeUndefined();
     }
   }, 15000);
-  it.each([[390, 844], [852, 393], [1440, 1000]])('fits the whole rock on recenter and overview at %s × %s', (width, height) => {
+  itAll([[390, 844], [852, 393], [1440, 1000]])('fits the whole rock on recenter and overview at %s × %s', (width, height) => {
     for (const ids of [ ['southwest'] as const, ['southwest', 'south', 'west'] as const, PARCEL_IDS, ['southwest', 'northeast'] as const]) {
       const s = {...createGame(0), acquiredParcels: [...ids]}, view = new MeadowCamera(); view.resize(width, height); view.setVisibleRegions(ownedRegions(ids));
       const chrome = {width, height, hudBottom: 70, column: {right: 109, bottom: 278}, footerTop: null};

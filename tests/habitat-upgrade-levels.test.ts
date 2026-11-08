@@ -1,4 +1,5 @@
 import {describe,it,expect} from 'vitest';
+import {itAll} from './cases';
 import {createGame,act,advance,encodeGame,decodeGame} from '../src/simulation';
 import {cumulativeLevelXp,requiredHabitatUpgradeLevel} from '../src/simulation/progression';
 import {HABITAT_TYPES,habitatLevel,type HabitatType} from '../src/config/habitats';
@@ -16,7 +17,7 @@ describe('target-level habitat upgrades',()=>{
   const expected={paille:[3,6],neige:[3,6],terre:[5,8],feu:[7,10],universal:[8,11],metal:[9,12],vol:[11,14]};
   for(const type of HABITAT_TYPES)expect([requiredHabitatUpgradeLevel(type,2),requiredHabitatUpgradeLevel(type,3)]).toEqual(expected[type]);
  });
- it.each(rows)('$type to $to refuses before the threshold and allows normal/hearts payment at it',({type,to,from})=>{
+ itAll(rows)('$type to $to refuses before the threshold and allows normal/hearts payment at it',({type,to,from})=>{
   const level=requiredHabitatUpgradeLevel(type,to),s=state(type,from,level-1),command={type:'upgradeHabitat',id:'building-1',fromLevel:from} as const;
   s.buildings[0].incomeUnits=HOUR/2+17;const before=structuredClone(s);expect(act(s,command,0)).toEqual({ok:false,state:before,reason:'LEVEL_REQUIRED'});expect(s).toEqual(before);
   expect(quoteComplement({...s,pattes:0},command,0)).toEqual({ok:false,reason:'LEVEL_REQUIRED'});
@@ -48,7 +49,7 @@ describe('target-level habitat upgrades',()=>{
   const command={type:'upgradeHabitat',id:'building-1',fromLevel:1} as const,next=run(s,command);expect(next.buildings[0].incomeUnits).toBe(HOUR/2+17);expect(next.rabbits).toEqual(s.rabbits);expect(next.buildings[1].breeding).toEqual(s.buildings[1].breeding);expect(next.progression).toEqual(s.progression);
   const absent=run(s,command,1000*HOUR);expect(absent.buildings[0].incomeUnits).toBe(habitatLevel('paille',1).cap*HOUR);expect(advance(absent,1001*HOUR).buildings[0].incomeUnits).toBe((habitatLevel('paille',1).cap+22)*HOUR);
  });
- it.each([false,true])('write refusal rolls back the upgrade and payment, hearts=%s',hearts=>{
+ itAll([false,true])('write refusal rolls back the upgrade and payment, hearts=%s',hearts=>{
   const s=state('paille',1,3);if(hearts)s.pattes=0;const data=new Map([[SAVE_KEY,encodeGame(s)]]);let fail=false;const c=new GameController({getItem:k=>data.get(k)??null,setItem:(k,v)=>{if(fail)throw Error('quota');data.set(k,v);}},()=>0);const events:unknown[]=[];c.onProgressionGain(g=>events.push(g));const command:Command=hearts?{type:'payWithHearts',action:{type:'upgradeHabitat',id:'building-1',fromLevel:1},maxHearts:1000,maxPattes:0}:{type:'upgradeHabitat',id:'building-1',fromLevel:1};
   fail=true;expect(c.perform(command)).toMatchObject({ok:false,reason:'ACTION_NOT_SAVED'});expect(c.getSnapshot().state).toEqual(s);fail=false;expect(c.perform(command).ok).toBe(true);expect(events).toHaveLength(0);expect(c.getSnapshot().state?.progression).toEqual(s.progression);c.dispose();
  });

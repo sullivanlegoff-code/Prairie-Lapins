@@ -1,9 +1,9 @@
-import {deriveArdentFlames, ardentFlamePose} from './ardentFlames';
+import {ARDENT_FRAMES, ardentFrame} from './ardentFlames';
 import {elementUrl} from './rabbitPresentation';
 import {islandOutline, organicLoop, parcelSetKey} from './islandOutline';
 import {nestForParent} from '../simulation/breeding';
 import {artForRabbit, type RabbitArt} from '../config/rabbitArt';
-import {rabbitBlinkArt, rabbitPatchPlacement} from '../config/rabbitBlinkArt';
+import {rabbitBlinkArt, rabbitPatchPlacement, type PatchKind} from '../config/rabbitBlinkArt';
 import {rabbitFaceSeed, rabbitFaceState} from './rabbitBlink';
 import {DadiReactions} from './dadiReactions';
 import {LegendaryView} from './legendaryEffects';
@@ -45,7 +45,7 @@ import {CROWN_ART, CROWN_SEAT, crownAnchor, crownPlacement} from '../config/ulti
 import {away, careReady} from '../simulation/care';
 import {tripReady} from '../simulation/travel';
 import {FarmCrops} from './farmCrops';
-import {FARM_ART, FARM_LEVEL_1_ART} from '../config/farmArt';
+import {farmArtFor} from '../config/farmArt';
 import {NEST_ART} from '../config/nestArt';
 import {NURSERY_ART, NURSERY_OVERLAY_ART} from '../config/nurseryArt';
 import {CROP_IDS, CROP_TEXTURE, CROP_URL, SPROUT_TEXTURE, SPROUT_URL} from './food';
@@ -85,13 +85,17 @@ import {buildingFrame, ownedRegions, recenterCamera, type ScreenChrome} from './
 import {COIN_TEXTURE, COIN_URL, FOOD_TEXTURE, FOOD_URL, HEART_TEXTURE, HEART_URL} from './currency';
 import {coinBubble} from './currencyPhaser';
 import {MAGICIEN_ART, MAGICIEN_TEST_EVENT} from '../config/magicienArt';
+import {DADI_SONG_EVENT, DADI_STAGE, type DadiSongDetail} from '../config/dadiStageArt';
+import {DadiStageView} from './dadiStageView';
+import {danceMove, dancePose} from './rabbitDance';
 import {MagicienView} from './magicienEffects';
 import {MagicienClock, magicienFree, type MagicienAct} from './magicienTimeline';
 import {CHASE_EVENT, RabbitChases, type ChaseRunner} from './rabbitChase';
 import {SNOWBALL_BATTLE_EVENT, SNOWBALL_EVENT, SnowballFights, snowballPoint, type SnowballThrower} from './snowballFight';
 import {LIGHT_POOLS, NightGlows, type GlowSource} from './nightGlows';
 import {CHRISTMAS_MARKET_ART, christmasMarketFrame, christmasMarketPoint} from '../config/christmasMarketArt';
-import {SNOWBALL_ART, SNOWMAN_ART} from '../config/winterArt';
+import {CANDY_ICON_URL, CANDY_TEXTURE, COIN_BASKET_ART, COIN_BUBBLE_FRAME, SNOWBALL_ART, SNOWMAN_ART} from '../config/winterArt';
+import {formatCoinAmount} from './currency';
 import {garlandLevel} from './winterClock';
 import {isChristmasDecoration} from '../config/decorations';
 import {snowmanToday} from '../simulation/christmas';
@@ -101,20 +105,29 @@ export type MeadowSelection = {kind: 'jumpIsland'} | {kind: 'christmasMarket'} |
 export interface DecorationGhost {id: string; catalogId?: DecorationId; location: DecorationLocation | null}
 /** `object` is the ground point (position, depth, scale); `body` carries the hop height, squash and mirror, apart from the shadow. */
 interface VisualRabbit {id: string; object: Phaser.GameObjects.Container; body: Phaser.GameObjects.Container; ears: Phaser.GameObjects.Ellipse[]; sprite?: Phaser.GameObjects.Image; art?: RabbitArt; base: Point; phase: number; fedUntil: number;
-  flames?: Phaser.GameObjects.Image;
+  /** Ardent's first drawing: its painted frames take turns on the sprite. */
+  ardent?: boolean;
   /** The golden crown of an ultimate rabbit (affection 50) that wears it, on its head in the body. */
   crown?: Phaser.GameObjects.Image;
-  face?: {seed: number; eyes: Phaser.GameObjects.Image; nose: Phaser.GameObjects.Image};
+  face?: {seed: number; eyes?: Phaser.GameObjects.Image; nose?: Phaser.GameObjects.Image};
   /** Lapin Dragon and Lapin Requin: halo, moving wing or fin, and their shows. */
   legendary?: LegendaryView;
   /** Benny, the Mythic: her painted acts, blink, nose and ears. */
   benny?: BennyView;
   magicien?: MagicienView;
+  /** The evolved Dadi's poses and microphone. */
+  dadi?: DadiStageView;
   center: Point; group: string; motion?: RabbitMotion; nest?: boolean; lift: number;
   /** Centre of the visible body in body space: the somersault turns about it, not about the feet or the picture centre. */
   pivot: Point; /** Mirror sign of the picture's native direction: -1 for art that looks left. */ native: 1 | -1}
 /** Local y of the ground contact the body is compressed against, so its feet stay put. */
 const BODY_PIVOT = 10;
+/** The player's « reduce motion » setting, through one cached media query (it was queried anew on every frame). */
+let reducedMotionQuery: MediaQueryList | null = null;
+function prefersReducedMotion(): boolean {
+  if (!reducedMotionQuery && typeof matchMedia === 'function') reducedMotionQuery = matchMedia('(prefers-reduced-motion: reduce)');
+  return !!reducedMotionQuery?.matches;
+}
 export class MeadowScene extends Phaser.Scene {
   private current: GameState | null = null;
   private placement: Placement | null = null;
@@ -139,6 +152,11 @@ export class MeadowScene extends Phaser.Scene {
   private legendaryClocks = new Map<string, LegendaryClock>();
   /** Benny's clock, kept across rebuilds of her body like the motions. */
   private bennyClocks = new Map<string, BennyClock>();
+  /** Dadi's song is playing (DADI_SONG_EVENT); with the music off, only for `DADI_STAGE.silentSongMs`. */
+  private dadiSinging = false;
+  private dadiSilentTimer = 0;
+  /** Scene time when Dadi's song started: the other rabbits dance on its beat (src/display/rabbitDance.ts). */
+  private dadiSongAt = 0;
   private magicienClocks = new Map<string, MagicienClock>();
   /** Two rabbits of one enclosure running after each other now and then (visual only). */
   private chases = new RabbitChases();
@@ -266,6 +284,10 @@ export class MeadowScene extends Phaser.Scene {
     this.winter = new WinterLayer(this); this.winterLights = new WinterLights(this); this.nightGlows = new NightGlows(this, (texture, url) => this.optionalArt(texture, url));
     // Christmas: the tiny snowflakes, loaded after start (a missing picture only means no snow, never a blocked meadow).
     if (christmasActive()) for (const flake of WINTER_ART.flakes) this.optionalArt(flake.texture, flake.url);
+    // Christmas: the coin bubble's basket and the sucre d'orge of its reward (the plain coin meanwhile, or if one is missing).
+    if (christmasActive()) { this.optionalArt(COIN_BASKET_ART.texture, COIN_BASKET_ART.url, () => { if (this.bubbles) this.drawBubbles(); }); this.optionalArt(CANDY_TEXTURE, CANDY_ICON_URL); }
+    // The coin bubble's cream frame, all year (the bare logo meanwhile, or if it is missing).
+    this.optionalArt(COIN_BUBBLE_FRAME.texture, COIN_BUBBLE_FRAME.url, () => { if (this.bubbles) this.drawBubbles(); });
     // Ground layer (flat on the island, drawn in ground coordinates, one shared projection transform):
     // terrain at depth 0 and the flat overlays at depth 1. Upright layer (untransformed, anchors through
     // toScreen): buildings .1, decorations .5, decoration selection .9, markers 1, ghosts 1.5, rabbits 2,
@@ -315,6 +337,16 @@ export class MeadowScene extends Phaser.Scene {
     window.addEventListener(LEGENDARY_TEST_EVENT, legendaryTest);
     const magicienTest = (event: Event) => { const act=(event as CustomEvent<{act?:MagicienAct}>).detail?.act; if(act) for(const rabbit of this.rabbitViews) rabbit.magicien?.play(act); };
     window.addEventListener(MAGICIEN_TEST_EVENT,magicienTest);
+    // Dadi's song (src/main.ts): the evolved Dadi sings at his microphone while it plays; music switched off, for a while.
+    const dadiSong = (event: Event) => {
+      const detail = (event as CustomEvent<DadiSongDetail>).detail; window.clearTimeout(this.dadiSilentTimer);
+      const started = !!detail?.singing && !this.dadiSinging;
+      this.dadiSinging = !!detail?.singing;
+      // The song wakes the meadow: sleepers, a kissing pair or a chase stop, everyone dances (owner, 8 November 2026).
+      if (started) { this.dadiSongAt = this.time.now; for (const rabbit of this.rabbitViews) if (this.dances(rabbit)) this.life.interrupt(rabbit.id); }
+      if (this.dadiSinging && !detail.audible) this.dadiSilentTimer = window.setTimeout(() => { this.dadiSinging = false; }, DADI_STAGE.silentSongMs);
+    };
+    window.addEventListener(DADI_SONG_EVENT, dadiSong);
     // Laboratory buttons play one of Benny's acts; nothing in the normal game sends this event either.
     const bennyTest = (event: Event) => {
       const act = (event as CustomEvent<{act?: BennyAct}>).detail?.act;
@@ -340,7 +372,7 @@ export class MeadowScene extends Phaser.Scene {
       this.snowballViews.clear(); this.marketImage = null; this.marketLights = null; this.snowman = null; this.snowmanBuild = null;
       this.optionalPending.clear(); this.optionalFailed.clear();
       document.removeEventListener('visibilitychange', dadiVisibility); window.removeEventListener('pagehide', clearDadi);
-      window.removeEventListener(LEGENDARY_TEST_EVENT, legendaryTest); window.removeEventListener(MAGICIEN_TEST_EVENT,magicienTest); window.removeEventListener(BENNY_TEST_EVENT, bennyTest); window.removeEventListener(BENNY_FLIGHT_TEST_EVENT, flightTest); window.removeEventListener(CHASE_EVENT, chaseTest);
+      window.removeEventListener(LEGENDARY_TEST_EVENT, legendaryTest); window.removeEventListener(MAGICIEN_TEST_EVENT,magicienTest); window.removeEventListener(DADI_SONG_EVENT, dadiSong); window.clearTimeout(this.dadiSilentTimer); window.removeEventListener(BENNY_TEST_EVENT, bennyTest); window.removeEventListener(BENNY_FLIGHT_TEST_EVENT, flightTest); window.removeEventListener(CHASE_EVENT, chaseTest);
       this.bennyFlight?.destroy(); this.bennyFlight = null; this.bennyAway = null; this.flightIsland = null;
     });
     this.recenter();
@@ -351,7 +383,7 @@ export class MeadowScene extends Phaser.Scene {
   }
   /** Her power: the flight (or, with reduced motion, a glow), and the camera steps back gently so the island can be seen. */
   private playBennyPower(): void {
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduced = prefersReducedMotion();
     if (!this.bennyFlight) return;
     this.bennyFlight.clock.usePower(reduced);
     // Once the card has closed (the next frames), so the framing sees the whole meadow.
@@ -427,7 +459,7 @@ export class MeadowScene extends Phaser.Scene {
     });
   }
   interactionDecoration(id: string): boolean {
-    if (!this.current || this.cozyInteraction.active || matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+    if (!this.current || this.cozyInteraction.active || prefersReducedMotion()) return false;
     const d = this.current.decorations.find(d => d.id === id);
     const kinds: Partial<Record<DecorationId, InteractionKind>> = {'hay-bale':'play','otter-plush':'cuddle','bunny-slippers':'cuddle','small-bookcase':'read','large-bookcase':'read'};
     const kind = d && kinds[d.catalogId], point = d && this.decorationPoint(d.location, d.catalogId);
@@ -500,7 +532,7 @@ export class MeadowScene extends Phaser.Scene {
     const from = this.view.zoom, to = Math.max(this.view.minimumZoom, Math.min(from * .7, .55));
     if (to >= from) return;
     const go = (t: number) => { this.view.zoom = from + (to - from) * t; this.view.clamp(); this.applyCamera(); };
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { go(1); return; }
+    if (prefersReducedMotion()) { go(1); return; }
     this.focusTween = this.tweens.addCounter({from: 0, to: 1, duration: 650, ease: 'Sine.easeInOut',
       onUpdate: tween => { if (this.view.busy) { tween.stop(); this.focusTween = null; return; } go(tween.getValue() ?? 1); },
       onComplete: () => { this.focusTween = null; }});
@@ -514,7 +546,7 @@ export class MeadowScene extends Phaser.Scene {
     const g = this.dropArrows ??= this.add.graphics().setDepth(10);
     g.clear(); this.dropHits = [];
     const k = 1 / this.view.zoom;
-    const bounce = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : Math.sin(time / 360) * 3;
+    const bounce = prefersReducedMotion() ? 0 : Math.sin(time / 360) * 3;
     for (const id of this.rabbitDrops) {
       const b = this.current?.buildings.find(b => b.id === id); if (!b) continue;
       const frame = buildingFrame(b), x = toScreen(buildingCenter(b)).x, y = frame.top - (22 + bounce) * k;
@@ -538,6 +570,12 @@ export class MeadowScene extends Phaser.Scene {
     this.view.clamp();this.applyCamera();
   }
   setTutorialCell(cell: {x:number;y:number}|null): void { this.tutorialCell = cell; if(this.grid)this.drawGrid(); }
+  /** The guide's yellow square covers a whole 4 × 4 footprint: a tap anywhere inside it picks its corner, not the tapped cell
+   *  (tapping its middle used to answer « Cette case est occupée »). */
+  private snapToTutorialCell(cell: {x:number;y:number}): {x:number;y:number} {
+    const t = this.placement && !this.placement.cell ? this.tutorialCell : null;
+    return t && cell.x >= t.x && cell.x < t.x + FINE_GRID && cell.y >= t.y && cell.y < t.y + FINE_GRID ? {...t} : cell;
+  }
   private tutorialHand: Phaser.GameObjects.Graphics | null = null;
   /** The guide's arrow above the suggested cell while no cell is chosen: the yellow arrow of the rabbit move, without any emoji font. */
   private syncTutorialHand(): void {
@@ -556,7 +594,7 @@ export class MeadowScene extends Phaser.Scene {
   private placeTutorialHand(time: number): void {
     const arrow = this.tutorialHand; if (!arrow) return;
     const p = arrow.getData('anchor') as Point, k = 1 / this.view.zoom;
-    const bounce = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : Math.sin(time / 250) * 5;
+    const bounce = prefersReducedMotion() ? 0 : Math.sin(time / 250) * 5;
     arrow.setScale(k).setPosition(p.x, p.y - (34 + bounce) * k);
   }
   setTutorialTarget(target: 'birth'|null): void { if(this.tutorialTarget === target)return; this.tutorialTarget = target; if(this.bubbles)this.drawBubbles(); }
@@ -631,7 +669,7 @@ export class MeadowScene extends Phaser.Scene {
    */
   playPicnic(enclosureId: string): void {
     const b = this.current?.buildings.find(x => x.id === enclosureId); if (!b) return;
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduced = prefersReducedMotion();
     this.focusBuilding(enclosureId);
     this.snowballs.reset(this.snowballThrowers(new Set()));
     const guests = this.rabbitViews.filter(r => r.group === enclosureId && r.motion && !r.nest && !r.benny && !r.legendary?.clock.act && !r.magicien?.busy &&
@@ -694,6 +732,11 @@ export class MeadowScene extends Phaser.Scene {
   static readonly SNOWMAN_MS = 6500;
   static readonly SNOWMAN_STEPS = [600, 2200, 3800] as const;
   /** A rabbit gathered somewhere now (the picnic, the snowman): it neither roams, chases, fights nor speaks. */
+  /** Dances to Dadi's song: every rabbit out in the meadow but Dadi, Benny up in the air, a nursery parent or a picnic guest. */
+  private dances(rabbit: VisualRabbit): boolean {
+    if (!this.dadiSinging || this.photo || !rabbit.motion || rabbit.nest || rabbit.id === this.bennyAway || this.gathered(rabbit.id)) return false;
+    return this.current?.rabbits.find(r => r.id === rabbit.id)?.species !== 'dadi';
+  }
   private gathered(id: string): boolean { return !!this.picnicParty?.ids.includes(id) || !!this.snowmanBuild?.ids.includes(id); }
   /** An enclosure's roaming zone in its local space (same table as its rabbits' motions). */
   private enclosureZone(b: Building): {minX: number; maxX: number; minY: number; maxY: number} {
@@ -713,7 +756,7 @@ export class MeadowScene extends Phaser.Scene {
    */
   playSnowman(enclosureId: string): void {
     const b = this.current?.buildings.find(x => x.id === enclosureId && x.kind === 'enclosure'); if (!b) return;
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduced = prefersReducedMotion();
     this.focusBuilding(enclosureId);
     for (const step of SNOWMAN_ART.steps) this.optionalArt(step.texture, step.url);
     const spot = this.snowmanSpot(b), zone = this.enclosureZone(b);
@@ -774,7 +817,12 @@ export class MeadowScene extends Phaser.Scene {
     if (this.snowmanBuild) return;
     const id = this.current && christmasActive() ? snowmanToday(this.current, this.simulationNow()) : null;
     if (!id) { this.snowman?.image.destroy(); this.snowman = null; return; }
-    if (this.snowman?.enclosureId === id && this.snowman.image.texture.key === SNOWMAN_ART.steps[2].texture) return;
+    if (this.snowman?.enclosureId === id && this.snowman.image.texture.key === SNOWMAN_ART.steps[2].texture) {
+      // Already built: it only follows its enclosure, moved or enlarged.
+      const b = this.current?.buildings.find(x => x.id === id);
+      if (b) { const center = toScreen(buildingCenter(b)), spot = this.snowmanSpot(b); this.snowman.image.setPosition(center.x + spot.x, center.y + spot.y); }
+      return;
+    }
     this.placeSnowman(id, 3);
   }
   /** Who may throw snowballs: the same rabbits as a chase, never a chaser. */
@@ -812,7 +860,7 @@ export class MeadowScene extends Phaser.Scene {
     const rabbit = this.rabbitViews.find(r => r.id === id); if (!rabbit?.legendary) return false;
     this.view.x = rabbit.object.x; this.view.y = rabbit.object.y - 20; this.view.clamp(); this.applyCamera();
     // The surf slides the body: never in reduced motion nor out of a rest or a walk (a nest, a kiss); the splash stays on the spot.
-    const still = matchMedia('(prefers-reduced-motion: reduce)').matches || !rabbit.motion || !['rest', 'walk'].includes(rabbit.motion.mode);
+    const still = prefersReducedMotion() || !rabbit.motion || !['rest', 'walk'].includes(rabbit.motion.mode);
     return rabbit.legendary.request(act === 'surf' && still ? 'splash' : act);
   }
   reactToFeed(id: string): void {
@@ -835,19 +883,20 @@ export class MeadowScene extends Phaser.Scene {
     const assets = new Map<string, {texture: string; url: string; atlas?: string}>();
     const add = (art: {texture: string; url: string; atlas?: string} | null | undefined) => { if (art) assets.set(art.texture, art); };
     for (const rabbit of state?.rabbits ?? []) {
-      // The drawing this rabbit shows (its evolved one only after explicit evolution); blink and nose patches belong to the v1 only.
+      // The drawing this rabbit shows (its evolved one only after explicit evolution), with that drawing's own blink and nose.
       const shown = artForRabbit(rabbit); add(shown);
-      if (!shown?.evolved) for (const patch of rabbitBlinkArt(rabbit.species)?.patches ?? []) add(patch);
+      for (const patch of rabbitBlinkArt(rabbit.species, !!shown?.evolved)?.patches ?? []) add(patch);
       if (isLegendaryShow(rabbit.species)) for (const art of legendaryMeadowArt(rabbit.species)) add(art);
       if (rabbit.species === BENNY_ID) for (const art of [...bennyMeadowArt(), ...bennyFlightArt()]) add(art);
       if (wearsCrown(rabbit)) add(CROWN_ART);
       // The magic circle and the stars, only for an evolved Magicien (audit, 4 November 2026).
       if (rabbit.species === 'magicien' && shown?.evolved) { add(MAGICIEN_ART.circle); add(MAGICIEN_ART.star); }
+      if (rabbit.species === 'dadi' && shown?.evolved) for (const frame of [...DADI_STAGE.poses, ...(DADI_STAGE.micro ? [DADI_STAGE.micro] : [])]) add(frame);
     }
     const buildingArt = (building: Pick<Building, 'kind' | 'habitat' | 'footprintTier' | 'farmLevel'> & {id?: string}) => {
       if (building.kind === 'enclosure') add(habitatArtFor(building.habitat ?? undefined, building.footprintTier)); // Same texture at every scale.
       else if (building.kind === 'farm') {
-        add(building.farmLevel ? FARM_ART : FARM_LEVEL_1_ART);
+        add(farmArtFor(building.farmLevel));
         add({texture: SPROUT_TEXTURE, url: SPROUT_URL});
         for (const id of CROP_IDS) add({texture: CROP_TEXTURE(id), url: CROP_URL(id)});
       } else if (building.kind === 'nursery') {
@@ -919,6 +968,10 @@ export class MeadowScene extends Phaser.Scene {
       this.buildingsLayer.add(image); this.buildingsLayer.sort('depth');
     }
     if (!this.marketImage) return;
+    // The market makes way when the jump-rope islet is bought: the picture moves with its touch area.
+    if (this.marketImage.x !== p.x || this.marketImage.y !== p.y) {
+      this.marketImage.setPosition(p.x, p.y).setDepth(p.y); this.buildingsLayer.sort('depth'); this.marketLights?.setPosition(p.x, p.y);
+    }
     const glow = garlandLevel(localHour(date));
     if (!this.marketLights && glow > 0 && this.optionalArt(art.night.texture, art.night.url)) {
       const lights = this.marketLights = this.add.image(p.x, p.y, art.night.texture);
@@ -1086,7 +1139,7 @@ export class MeadowScene extends Phaser.Scene {
     this.ground.setMask(this.islandMask!);
   }
   private buildingTexture(b: Pick<Building, 'kind' | 'habitat' | 'footprintTier' | 'farmLevel'> & {id?: string}): string {
-    if (b.kind === 'farm') return b.farmLevel ? FARM_ART.texture : FARM_LEVEL_1_ART.texture;
+    if (b.kind === 'farm') return farmArtFor(b.farmLevel).texture;
     if (b.kind === 'nest') return 'islet' in b && b.islet ? EPIC_ISLET_ART.texture : NEST_ART.texture;
     if (b.kind === 'nursery') return NURSERY_ART.texture;
     if (b.kind === 'kitchen') return KITCHEN_ART.texture;
@@ -1113,7 +1166,7 @@ export class MeadowScene extends Phaser.Scene {
   /** `enlarged`: an enclosure's uniform drawing factor (`enclosureScale`), the same on both axes so nothing is stretched. */
   private positionBuildingArt(image: Phaser.GameObjects.Image, x: number, y: number, kind: Building['kind'], illustrated: HabitatArt | null = null, enlarged = 1, id?: string): void {
     if (illustrated) { image.setPosition(x, y).setOrigin(illustrated.anchor.x / illustrated.width, illustrated.anchor.y / illustrated.height).setScale(enlarged * illustrated.worldWidth / illustrated.width); return; }
-    const art = kind === 'farm' ? FARM_ART : kind === 'nest' ? NEST_ART : kind === 'nursery' ? NURSERY_ART : kind === 'kitchen' ? KITCHEN_ART : kind === 'statue' ? statueArtFor(this.current?.buildings ?? [], id) : kind === 'agency' ? AGENCY_ART : kind === 'salon' ? SALON_ART : kind === 'forest' ? FOREST_ART : kind === 'perch' ? PERCH_ART : null;
+    const art = kind === 'farm' ? farmArtFor(this.current?.buildings.find(b => b.id === id)?.farmLevel) : kind === 'nest' ? NEST_ART : kind === 'nursery' ? NURSERY_ART : kind === 'kitchen' ? KITCHEN_ART : kind === 'statue' ? statueArtFor(this.current?.buildings ?? [], id) : kind === 'agency' ? AGENCY_ART : kind === 'salon' ? SALON_ART : kind === 'forest' ? FOREST_ART : kind === 'perch' ? PERCH_ART : null;
     image.setPosition(x, y).setOrigin(.5, art ? art.originY : .5)
       .setScale(art ? art.worldWidth / art.width : .5 * enlarged);
   }
@@ -1190,28 +1243,19 @@ export class MeadowScene extends Phaser.Scene {
           const sprite = this.add.image(0, art.groundY, art.texture).setOrigin(.5, 1);
           sprite.setScale(art.worldWidth / art.width); // Uniform scale preserves the original proportions.
           body.add(sprite);
-          let flames: Phaser.GameObjects.Image | undefined;
-          if (rabbit.species === 'ardent') {
-            const key = 'ardent-flame-overlay';
-            if (!this.textures.exists(key)) {
-              const canvas = this.textures.createCanvas(key, art.width, art.height)!;
-              const context = canvas.context;
-              context.drawImage(this.textures.get(art.texture).getSourceImage() as HTMLImageElement, 0, 0);
-              const pixels = context.getImageData(0, 0, art.width, art.height);
-              pixels.data.set(deriveArdentFlames(pixels.data, art.width, art.height));
-              context.putImageData(pixels, 0, 0); canvas.refresh();
-            }
-            flames = this.add.image(0, art.groundY, key).setOrigin(.5, 1).setScale(sprite.scaleX).setAlpha(.24);
-            body.add(flames);
-          }
-          // No blink or nose patch on an evolved drawing: they were painted on the v1 head only.
-          const blinkArt = art.evolved ? undefined : rabbitBlinkArt(rabbit.species);
-          const patches = blinkArt?.patches.map(patch => {
-            const placement = rabbitPatchPlacement(art, patch);
-            const image = this.add.image(placement.x, placement.y, patch.texture).setOrigin(0, 0).setScale(placement.scale).setVisible(false);
+          // Ardent's first drawing moves through its painted frames; each one is loaded on demand and never blocks the meadow.
+          const ardent = rabbit.species === 'ardent' && !art.evolved;
+          if (ardent) for (const frame of ARDENT_FRAMES) this.optionalArt(frame.texture, frame.url);
+          // The shown drawing's own eyelids and nose (an evolved drawing has its own, 7 November 2026); either may be missing.
+          const blinkArt = ardent ? undefined : rabbitBlinkArt(rabbit.species, !!art.evolved);
+          const patch = (kind: PatchKind) => {
+            const found = blinkArt?.patches.find(item => item.kind === kind);
+            if (!found) return undefined;
+            const placement = rabbitPatchPlacement(art, found);
+            const image = this.add.image(placement.x, placement.y, found.texture).setOrigin(0, 0).setScale(placement.scale).setVisible(false);
             body.add(image); return image;
-          });
-          const face = patches ? {seed: rabbitFaceSeed(rabbit.id), eyes: patches[0], nose: patches[1]} : undefined;
+          };
+          const face = blinkArt ? {seed: rabbitFaceSeed(rabbit.id), eyes: patch('eyes-closed'), nose: patch('nose-twitch')} : undefined;
           let crown: Phaser.GameObjects.Image | undefined;
           if (wearsCrown(rabbit) && this.textures.exists(CROWN_ART.texture)) {
             // On the per-species head anchor, in native picture space: the body mirrors, hops and squashes it with the sprite.
@@ -1236,9 +1280,10 @@ export class MeadowScene extends Phaser.Scene {
             let clock=this.magicienClocks.get(rabbit.id); if(!clock){clock=new MagicienClock(rabbit.id);this.magicienClocks.set(rabbit.id,clock);}
             magicien=new MagicienView(this,rabbit.id,{object,body,sprite,shadow,art},clock);
           }
+          const dadi = rabbit.species === 'dadi' && art.evolved ? new DadiStageView(this, rabbit.id, sprite, art) : undefined;
           if (crown) body.bringToTop(crown); // Above a legendary's open snout or part.
           this.animals.add(object);
-          this.rabbitViews.push({id: rabbit.id, ears: [], sprite, art, face, flames, crown, legendary, benny, magicien, ...view});
+          this.rabbitViews.push({id: rabbit.id, ears: [], sprite, art, face, ardent, crown, legendary, benny, magicien, dadi, ...view});
           return;
         }
         const coat = proceduralCoat(SPECIES[rabbit.species].art), color = Phaser.Display.Color.HexStringToColor(coat.body).color, patch = Phaser.Display.Color.HexStringToColor(coat.patch).color;
@@ -1340,14 +1385,37 @@ export class MeadowScene extends Phaser.Scene {
     const from = {x: this.view.x, y: this.view.y}, to = this.view.centered(toScreen(buildingCenter(b)));
     const go = (t: number) => { this.view.x = from.x + (to.x - from.x) * t; this.view.y = from.y + (to.y - from.y) * t; this.view.clamp(); this.applyCamera(); };
     this.focusTween?.stop(); this.focusTween = null;
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { go(1); return; }
+    if (prefersReducedMotion()) { go(1); return; }
     this.focusTween = this.tweens.addCounter({from: 0, to: 1, duration: 650, ease: 'Sine.easeInOut',
       // A pan or pinch by the player takes over at once.
       onUpdate: tween => { if (this.view.busy) { tween.stop(); this.focusTween = null; return; } go(tween.getValue() ?? 1); },
       onComplete: () => { this.focusTween = null; }});
   }
+  /** What the bubbles last drawn show, so an unchanged set is kept (and keeps its animation) instead of being rebuilt. */
+  private bubbleSignature = '';
   private drawBubbles(now = this.simulationNow()): void {
+    // The bubbles are redrawn on every state refresh (every 5 seconds): rebuild them only when what they show changes
+    // (audit of 7 November 2026: the coin bubbles' hop restarted every 5 seconds).
+    const specs = this.bubbleSpecs(now), signature = specs.map(spec => `${spec.b.id}:${spec.text}:${spec.p.x},${spec.p.y}:${spec.text === 'food' ? spec.b.order!.grass ?? spec.b.order!.recipe : ''}`).join('|') +
+      `#${this.tutorialTarget}#${this.incomeLogo()}#${this.textures.exists(COIN_BUBBLE_FRAME.texture)}`;
+    if (signature === this.bubbleSignature && this.bubbles.length) return;
+    this.bubbleSignature = signature;
     this.bubbles.removeAll(true); this.bubbleHits = [];
+    for (const {b, text, kind, p} of specs) {
+      const bubble = kind === 'income' ? this.incomeBubble(p.x, p.y) : text === 'food' ? foodBubble(this, p.x, p.y, b.order!.grass ?? ORDERS[b.order!.recipe].grass) : text === 'birth' || text === 'trip' ? this.heartBubble(p.x, p.y) : this.add.text(p.x, p.y, text, {fontFamily: 'Arial', fontSize: '17px', color: '#3b4d2d', backgroundColor: '#fff7dc', padding: {x: 13, y: 10}}).setOrigin(.5);
+      if (text === 'birth' && this.tutorialTarget === 'birth') {
+        const halo=this.add.graphics().lineStyle(4,0xffcf55).strokeEllipse(p.x,p.y,bubble.width+12,bubble.height+12);this.bubbles.add(halo);
+        const hand = this.add.text(p.x + 34,p.y - 28,'👇',{fontSize:'28px'}).setOrigin(.5); this.bubbles.add(hand);
+        if(!prefersReducedMotion()) {
+          const tween=this.tweens.add({targets:hand,y:p.y-35,duration:500,yoyo:true,repeat:-1});hand.once('destroy',()=>tween.remove());
+        }
+      }
+      this.bubbles.add(bubble); this.bubbleHits.push({point: p, width:bubble.width, height:bubble.height, selection: {kind: text === 'birth' ? 'birth' : b.kind === 'nursery' ? 'nurseryBubble' : kind, id: b.id}});
+    }
+  }
+  /** Which buildings show a bubble now, what it says and where. */
+  private bubbleSpecs(now: number): {b: Building; text: string; kind: 'income' | 'grass' | 'building'; p: {x: number; y: number}}[] {
+    const specs: {b: Building; text: string; kind: 'income' | 'grass' | 'building'; p: {x: number; y: number}}[] = [];
     for (const b of this.current?.buildings ?? []) {
       const amount = Math.floor(b.incomeUnits / HOUR);
       let text = '', kind: 'income' | 'grass' | 'building' = 'building';
@@ -1358,17 +1426,46 @@ export class MeadowScene extends Phaser.Scene {
       if (b.kind === 'salon' && careReady(this.current!, now)) text = 'trip'; // The care is over: the rabbit waits to be welcomed back.
       if (b.kind === 'agency' && tripReady(this.current!, now)) text = 'trip'; // A traveller is back: Coco waits with them. // One bubble for any ready baby.
       if (!text) continue;
-      const p = toScreen(buildingCenter(b)); p.y += b.kind === 'farm' ? FARM_ART.harvestY : b.kind==='nest' ? NEST_ART.actionY : b.kind==='nursery' ? NURSERY_ART.actionY : b.kind==='agency' ? AGENCY_ART.actionY : b.kind==='salon' ? SALON_ART.actionY : b.kind==='forest' ? FOREST_ART.actionY : -72;
-      const bubble = kind === 'income' ? coinBubble(this, p.x, p.y, amount, amount >= habitatStats(b).cap) : text === 'food' ? foodBubble(this, p.x, p.y, b.order!.grass ?? ORDERS[b.order!.recipe].grass) : text === 'birth' || text === 'trip' ? this.heartBubble(p.x, p.y) : this.add.text(p.x, p.y, text, {fontFamily: 'Arial', fontSize: '17px', color: '#3b4d2d', backgroundColor: '#fff7dc', padding: {x: 13, y: 10}}).setOrigin(.5);
-      if (text === 'birth' && this.tutorialTarget === 'birth') {
-        const halo=this.add.graphics().lineStyle(4,0xffcf55).strokeEllipse(p.x,p.y,bubble.width+12,bubble.height+12);this.bubbles.add(halo);
-        const hand = this.add.text(p.x + 34,p.y - 28,'👇',{fontSize:'28px'}).setOrigin(.5); this.bubbles.add(hand);
-        if(!matchMedia('(prefers-reduced-motion: reduce)').matches) {
-          const tween=this.tweens.add({targets:hand,y:p.y-35,duration:500,yoyo:true,repeat:-1});hand.once('destroy',()=>tween.remove());
-        }
-      }
-      this.bubbles.add(bubble); this.bubbleHits.push({point: p, width:bubble.width, height:bubble.height, selection: {kind: text === 'birth' ? 'birth' : b.kind === 'nursery' ? 'nurseryBubble' : kind, id: b.id}});
+      const p = toScreen(buildingCenter(b)); p.y += b.kind === 'farm' ? farmArtFor(b.farmLevel).harvestY : b.kind==='nest' ? NEST_ART.actionY : b.kind==='nursery' ? NURSERY_ART.actionY : b.kind==='agency' ? AGENCY_ART.actionY : b.kind==='salon' ? SALON_ART.actionY : b.kind==='forest' ? FOREST_ART.actionY : -72;
+      specs.push({b, text, kind, p});
     }
+    return specs;
+  }
+  /** The coin bubble's logo: the Christmas basket while the event is on and its picture is loaded, else the coin. */
+  private incomeLogo(): string { return christmasActive() && this.textures.exists(COIN_BASKET_ART.texture) ? COIN_BASKET_ART.texture : COIN_TEXTURE; }
+  /**
+   * The coin bubble: the logo in the cream speech bubble (owner's choice A, 7 November 2026). It hops every 3 seconds or so, each
+   * habitat at its own moment, to say « tap me »; still when reduced motion is asked.
+   */
+  private incomeBubble(x: number, y: number): Phaser.GameObjects.Container {
+    const f = COIN_BUBBLE_FRAME, framed = this.textures.exists(f.texture);
+    const bubble = coinBubble(this, x, y, {logo: this.incomeLogo(), ...(framed ? {frame: {texture: f.texture, height: f.world, centerY: f.centerY, logo: f.logo}} : {})});
+    if (typeof bubble.once === 'function' && !prefersReducedMotion()) {
+      const tween = this.tweens.add({targets: bubble, y: y - 8, duration: 170, ease: 'Quad.easeOut', yoyo: true, repeat: -1, repeatDelay: 2800, delay: Math.abs(Math.round(x * 7.3 + y * 3.1)) % 2800});
+      bubble.once('destroy', () => tween.remove());
+    }
+    return bubble;
+  }
+  /**
+   * A coin bubble collected (owner, 7 November 2026): the logo pops and fades, then the pattes and, below, the sucres d'orge rise
+   * above the habitat, each beside its icon. Presentation only; reduced motion: the amounts show and fade, without moving.
+   */
+  playIncomeCollect(buildingId: string, pattes: number, candies: number): void {
+    const b = this.current?.buildings.find(x => x.id === buildingId); if (!b || pattes < 1) return;
+    const p = toScreen(buildingCenter(b)); p.y -= 72;
+    const still = prefersReducedMotion();
+    const logo = this.incomeBubble(p.x, p.y).setDepth(5).setVisible(!this.photo); this.tweens.killTweensOf(logo); logo.y = p.y;
+    this.tweens.add({targets: logo, scale: still ? 1 : 1.3, alpha: 0, duration: 280, ease: 'Quad.easeOut', onComplete: () => logo.destroy()});
+    const line = (amount: number, texture: string, y: number) => {
+      const label = this.add.text(0, y, `+${formatCoinAmount(amount)}`, {fontFamily: "'Lilita One', 'Trebuchet MS', sans-serif", fontSize: '22px', color: '#fff8e6', stroke: '#5a3a1c', strokeThickness: 5}).setOrigin(1, .5);
+      const icon = this.add.image(6, y, texture).setOrigin(0, .5); icon.setScale(30 / Math.max(icon.height, 1));
+      const width = label.width + 6 + icon.displayWidth; label.x = label.width - width / 2; icon.x = label.x + 6;
+      return [label, icon];
+    };
+    const parts = [...line(pattes, COIN_TEXTURE, 0), ...(candies > 0 && this.textures.exists(CANDY_TEXTURE) ? line(candies, CANDY_TEXTURE, 32) : [])];
+    const reward = this.add.container(p.x, p.y + 6, parts).setDepth(5).setAlpha(0).setVisible(!this.photo);
+    this.tweens.add({targets: reward, alpha: 1, y: p.y - (still ? 0 : 8), delay: 120, duration: 260, ease: 'Quad.easeOut'});
+    this.tweens.add({targets: reward, alpha: 0, y: p.y - (still ? 0 : 42), delay: 1500, duration: 600, ease: 'Sine.easeIn', onComplete: () => reward.destroy()});
   }
   private gridZoom = 0;
   /** Re-records the placement overlay from geometry computed by drawGrid; only its zoom-relative widths change. */
@@ -1484,7 +1581,7 @@ export class MeadowScene extends Phaser.Scene {
       if (b && !habitatEntryReason(this.current!, b, this.purchase.species)) this.select({kind:'building',id:b.id});
       return;
     }
-    if (this.placement || (this.arrangement && this.ghost)) { this.select({kind:'fineCell',...fineCell(ground)}); return; }
+    if (this.placement || (this.arrangement && this.ghost)) { this.select({kind:'fineCell',...this.snapToTutorialCell(fineCell(ground))}); return; }
     let nearestBubble: (typeof this.bubbleHits)[number] | null = null, bubbleDistance = Infinity;
     for (const bubble of this.bubbles.visible && this.bubbles.alpha >= .65 ? this.bubbleHits : []) {
       const p = this.view.screen(bubble.point), dx = p.x - screen.x, dy = p.y - screen.y;
@@ -1608,16 +1705,18 @@ export class MeadowScene extends Phaser.Scene {
       if (dadi.started?.salto) {
         this.life.interrupt(dadi.started.id);
         const motion = this.rabbitViews.find(r => r.id === dadi.started!.id)?.motion;
-        if (motion) triggerWelcomeSalto(motion, matchMedia('(prefers-reduced-motion: reduce)').matches);
+        if (motion) triggerWelcomeSalto(motion, prefersReducedMotion());
       }
     }
-    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reducedMotion = prefersReducedMotion();
     // Christmas: evening and night over the meadow and its sky, and the snow (it keeps falling in a photo).
     const winterNow = new Date(), christmas = christmasActive();
     this.winter?.update(dt, winterNow, christmas && !document.hidden, reducedMotion);
     this.winterLights?.update(christmas ? garlandLevel(localHour(winterNow)) : 0, reducedMotion ? 0 : time);
     this.sky?.setNight(christmas ? this.winter?.nightNow(winterNow) ?? 0 : 0);
-    this.nightGlows?.update(christmas ? this.winter?.nightNow(winterNow) ?? 0 : 0, christmas ? this.glowSources() : []);
+    // The glow sources are gathered only at night (the glows are cleared by day anyway).
+    const night = christmas ? this.winter?.nightNow(winterNow) ?? 0 : 0;
+    this.nightGlows?.update(night, night > .001 ? this.glowSources() : [], night > .001 ? this.rabbitViews.map(r => r.object) : []);
     const lifeActive = !this.photo && !document.hidden && document.getElementById('loading-screen')?.hidden !== false &&
       document.getElementById('game-panel')?.hidden !== false && !document.querySelector('dialog[open]') && !this.placement && !this.arrangement;
     const bounds = {width: this.scale.width, height: this.scale.height, top: document.getElementById('hud')?.getBoundingClientRect().bottom ?? 0};
@@ -1631,11 +1730,11 @@ export class MeadowScene extends Phaser.Scene {
     this.syncChristmasMarket(winterNow);
     if (this.time.now - this.snowmanCheckedAt >= 500) { this.snowmanCheckedAt = this.time.now; this.syncSnowman(); }
     this.life.step(dt, this.rabbitViews.flatMap(r => r.motion ? [{id: r.id, group: r.group, motion: r.motion, nest: r.nest, friendId:this.friends.get(r.id),occupied:this.cozyInteraction.active?.id===r.id||this.gathered(r.id)||this.snowballs.isFighting(r.id), visible: visibleResidents.has(r.id)}] : []),
-      lifeActive, reducedMotion, dadi.speech && !this.gathered(dadi.speech.id) ? [dadi.speech.id] : []);
-    this.chases.step(dt, this.chaseRunners(visibleResidents, dadi.speech?.id), lifeActive, reducedMotion, this.chaseTest);
+      lifeActive && !this.dadiSinging, reducedMotion, dadi.speech && !this.gathered(dadi.speech.id) ? [dadi.speech.id] : []);
+    this.chases.step(dt, this.chaseRunners(visibleResidents, dadi.speech?.id), lifeActive && !this.dadiSinging, reducedMotion, this.chaseTest);
     this.chaseTest = false;
     // Christmas: the snowball fights, after the chases (a chaser never throws), while the event is on.
-    this.snowballs.step(dt, this.snowballThrowers(visibleResidents, dadi.speech?.id), lifeActive, reducedMotion, christmas, christmas && this.time.now < this.snowballTestUntil,
+    this.snowballs.step(dt, this.snowballThrowers(visibleResidents, dadi.speech?.id), lifeActive && !this.dadiSinging, reducedMotion, christmas, christmas && this.time.now < this.snowballTestUntil,
       christmas && this.time.now < this.snowballBattleTestUntil);
     this.drawSnowballs();
     this.lifeViews?.begin(this.rabbitViews.map(r => r.id));
@@ -1654,13 +1753,17 @@ export class MeadowScene extends Phaser.Scene {
           others.push(other.motion.local);
           if (other.motion.mode === 'walk') others.push(other.motion.to);
         }
-        const activity = ['sleep', 'zoom', 'meet', 'kiss'].includes(motion.mode);
-        if (rabbit.nest ? lifeActive && visibleResidents.has(rabbit.id) && motion.mode !== 'rest' && (!reducedMotion || motion.mode === 'walk' || motion.mode === 'salto' || motion.mode === 'fed') :
+        const activity = ['sleep', 'zoom', 'meet', 'kiss'].includes(motion.mode), dancing = this.dances(rabbit);
+        if (dancing) { /* stands where it is while it dances */ } else if (rabbit.nest ? lifeActive && visibleResidents.has(rabbit.id) && motion.mode !== 'rest' && (!reducedMotion || motion.mode === 'walk' || motion.mode === 'salto' || motion.mode === 'fed') :
           !activity || lifeActive && visibleResidents.has(rabbit.id)) stepRabbitMotion(motion, dt, others);
         // Benny's act may take over the motion (or carry her along her hops) before the pose is read.
         rabbit.benny?.update({dt, time, active: lifeActive && visibleResidents.has(rabbit.id), reduced: reducedMotion});
         const pose = rabbitPose(motion);
         ({lift, squashX, squashY, facing, rotation} = pose);
+        if (dancing) {
+          const dance = dancePose(danceMove(rabbit.id), this.time.now - this.dadiSongAt, reducedMotion);
+          ({lift, squashX, squashY} = dance); rotation = dance.rotation; facing = dance.facing ?? motion.facing; pose.nuzzle = 0;
+        }
         if (rabbit.benny) { squashX *= rabbit.benny.squashX; squashY *= rabbit.benny.squashY; }
         // A snowball fight: the wind-up, the knock of a hit, a dodge or the cheer of the winners.
         const throwing = this.snowballs.pose(rabbit.id, facing);
@@ -1681,21 +1784,22 @@ export class MeadowScene extends Phaser.Scene {
       rabbit.magicien?.update(dt,lifeActive && visibleResidents.has(rabbit.id) && magicienFree(rabbit.motion?.mode,
         this.gathered(rabbit.id) || this.cozyInteraction.active?.id === rabbit.id || this.chases.isChasing(rabbit.id) || this.snowballs.isFighting(rabbit.id)),reducedMotion);
       if(rabbit.magicien) lift += rabbit.magicien.lift;
+      rabbit.dadi?.update(dt, lifeActive && visibleResidents.has(rabbit.id) && rabbit.motion?.mode !== 'sleep', this.dadiSinging);
       rabbit.lift = lift;
       if (rabbit.object.depth !== previousDepth) depthChanged = true;
       this.poseBody(rabbit, {lift, squashX, squashY, facing, rotation, nuzzle});
-      if (rabbit.flames && rabbit.sprite) {
-        const pose = ardentFlamePose(rabbit.id, time, matchMedia('(prefers-reduced-motion: reduce)').matches);
-        rabbit.flames.setPosition(pose.x, rabbit.art!.groundY).setScale(rabbit.sprite.scaleX, rabbit.sprite.scaleY * pose.stretch).setAlpha(pose.alpha);
+      if (rabbit.ardent && rabbit.sprite) {
+        const frame = ARDENT_FRAMES[ardentFrame(rabbit.id, time, reducedMotion)].texture;
+        if (rabbit.sprite.texture.key !== frame && this.textures.exists(frame)) rabbit.sprite.setTexture(frame);
       }
       if (rabbit.face) {
         const state = rabbitFaceState(rabbit.face.seed, time, !rabbit.motion || rabbit.motion.mode === 'rest');
         const asleep = rabbit.motion?.mode === 'sleep', kissing = rabbit.motion?.mode === 'kiss' && rabbit.motion.elapsed > 0;
         // Eyes closed while asleep and during a kiss (owner, 4 November 2026); the nose stays still against the partner's.
-        rabbit.face.eyes.setVisible(asleep || kissing || (state & 1) !== 0);
-        rabbit.face.nose.setVisible(!asleep && !kissing && (state & 2) !== 0);
-        if (rabbit.legendary?.mouthOpen) rabbit.face.nose.setVisible(false);
-        if (rabbit.legendary?.submerged) { rabbit.face.eyes.setVisible(false); rabbit.face.nose.setVisible(false); }
+        rabbit.face.eyes?.setVisible(asleep || kissing || (state & 1) !== 0);
+        rabbit.face.nose?.setVisible(!asleep && !kissing && (state & 2) !== 0);
+        if (rabbit.legendary?.mouthOpen) rabbit.face.nose?.setVisible(false);
+        if (rabbit.legendary?.submerged || rabbit.dadi?.posing) { rabbit.face.eyes?.setVisible(false); rabbit.face.nose?.setVisible(false); }
       }
       // The crown never floats: hidden whenever the head is not the sprite's (a dive, one of Benny's painted acts).
       if (rabbit.crown && rabbit.sprite) rabbit.crown.setVisible((rabbit.sprite.visible || !!rabbit.legendary?.mouthOpen) && !rabbit.legendary?.submerged);

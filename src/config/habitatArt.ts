@@ -161,8 +161,24 @@ export const ULTRA_SNOW_ART: HabitatArt = {
   width: 627, height: 483, worldWidth: 352, anchor: {x: 313.5, y: 323},
   source: {file: 'habitat-ultra-neige.png', size: 1423, crop: {x: 0, y: 0, width: 1423, height: 1096}, reduction: 2},
 };
+/**
+ * The Ultra neige habitat at levels 1 and 2 (painted 6 November 2026, output/imagegen/noel-v5/, prepared by
+ * scripts/prepare-noel-extras-art.mjs): smaller ice enclosures that grow into the palace. Shown as wide as the snow habitat of
+ * the same level, anchored on the middle of their snowy courtyard.
+ */
+export const ULTRA_SNOW_LEVEL1_ART: HabitatArt = {
+  type: 'neige', texture: 'habitat-glace-1', url: `${import.meta.env.BASE_URL}assets/habitats/habitat-glace-1.png`,
+  width: 627, height: 314, worldWidth: 190, anchor: {x: 313.5, y: 146},
+  source: {file: 'habitat-glace-1.png', size: 1617, crop: {x: 0, y: 0, width: 1617, height: 811}, reduction: 1617 / 627},
+};
+export const ULTRA_SNOW_LEVEL2_ART: HabitatArt = {
+  type: 'neige', texture: 'habitat-glace-2', url: `${import.meta.env.BASE_URL}assets/habitats/habitat-glace-2.png`,
+  width: 627, height: 524, worldWidth: 1246 * 280 / 1254, anchor: {x: 313.5, y: 346},
+  source: {file: 'habitat-glace-2.png', size: 1365, crop: {x: 0, y: 0, width: 1365, height: 1141}, reduction: 1365 / 627},
+};
+export const ULTRA_SNOW_LEVEL_ART: Readonly<Record<HabitatLevel, HabitatArt>> = {1: ULTRA_SNOW_LEVEL1_ART, 2: ULTRA_SNOW_LEVEL2_ART, 3: ULTRA_SNOW_ART};
 export function habitatArtFor(habitat: {type: HabitatType; level: HabitatLevel; ultra?: true} | undefined, footprintTier?: number): HabitatArt | null {
-  if (habitat?.ultra && habitat.level === 3 && footprintTier === 3) return ULTRA_SNOW_ART;
+  if (habitat?.ultra && (footprintTier ?? 1) === habitat.level) return ULTRA_SNOW_LEVEL_ART[habitat.level];
   if (habitat?.level === 2 && footprintTier === 2) return HABITAT_LEVEL2_ART[habitat.type] ?? null;
   if (habitat?.level === 3 && footprintTier === 3) return HABITAT_LEVEL3_ART[habitat.type] ?? null;
   return habitat && habitat.level === 1 && (footprintTier ?? 1) === 1 ? HABITAT_LEVEL1_ART[habitat.type] : null;
@@ -261,5 +277,5 @@ interface HabitatArtLayout {
   zone: {minX: number; maxX: number; minY: number; maxY: number};
   roamScale: number; labelOffset: number;
 }
-const HABITAT_LAYOUTS = new Map<HabitatArt, HabitatArtLayout>([[NEIGE_LEVEL2_ART, NEIGE_LEVEL2_LAYOUT], [FEU_LEVEL2_ART, FEU_LEVEL2_LAYOUT], [METAL_LEVEL2_ART, METAL_LEVEL2_LAYOUT], [VOL_LEVEL2_ART, VOL_LEVEL2_LAYOUT], [PAILLE_LEVEL2_ART, PAILLE_LEVEL2_LAYOUT], [UNIVERSAL_LEVEL2_ART, UNIVERSAL_LEVEL2_LAYOUT], [NEIGE_LEVEL3_ART, NEIGE_LEVEL3_LAYOUT], [FEU_LEVEL3_ART, FEU_LEVEL3_LAYOUT], [METAL_LEVEL3_ART, METAL_LEVEL3_LAYOUT], [VOL_LEVEL3_ART, VOL_LEVEL3_LAYOUT], [PAILLE_LEVEL3_ART, PAILLE_LEVEL3_LAYOUT], [UNIVERSAL_LEVEL3_ART, UNIVERSAL_LEVEL3_LAYOUT], [ULTRA_SNOW_ART, UNIVERSAL_LEVEL3_LAYOUT]]);
+const HABITAT_LAYOUTS = new Map<HabitatArt, HabitatArtLayout>([[NEIGE_LEVEL2_ART, NEIGE_LEVEL2_LAYOUT], [FEU_LEVEL2_ART, FEU_LEVEL2_LAYOUT], [METAL_LEVEL2_ART, METAL_LEVEL2_LAYOUT], [VOL_LEVEL2_ART, VOL_LEVEL2_LAYOUT], [PAILLE_LEVEL2_ART, PAILLE_LEVEL2_LAYOUT], [UNIVERSAL_LEVEL2_ART, UNIVERSAL_LEVEL2_LAYOUT], [NEIGE_LEVEL3_ART, NEIGE_LEVEL3_LAYOUT], [FEU_LEVEL3_ART, FEU_LEVEL3_LAYOUT], [METAL_LEVEL3_ART, METAL_LEVEL3_LAYOUT], [VOL_LEVEL3_ART, VOL_LEVEL3_LAYOUT], [PAILLE_LEVEL3_ART, PAILLE_LEVEL3_LAYOUT], [UNIVERSAL_LEVEL3_ART, UNIVERSAL_LEVEL3_LAYOUT], [ULTRA_SNOW_LEVEL2_ART, NEIGE_LEVEL2_LAYOUT], [ULTRA_SNOW_ART, UNIVERSAL_LEVEL3_LAYOUT]]);
 export const habitatArtLayout = (art: HabitatArt): HabitatArtLayout => HABITAT_LAYOUTS.get(art) ?? HABITAT_ART_LAYOUT;

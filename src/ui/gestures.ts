@@ -42,7 +42,7 @@ export const gridPoint = (x: number, y: number): Point => ({x: grid.originX + x 
 /** Explicit fine-grid ↔ world conversion; camera remains in world coordinates. */
 export const finePoint=(x:number,y:number):Point=>gridPoint(x/FINE_GRID,y/FINE_GRID);
 /** Centre of the building's effective footprint (an enclosure's tier and size, any other kind 4 × 4), anchored at its top-left cell. */
-export const buildingCenter=(b:Point&{kind:string;footprintTier?:number;formerFootprint?:boolean}):Point=>{const size=buildingSize(b);return finePoint(b.x+size.width/2,b.y+size.depth/2);};
+export const buildingCenter=(b:Point&{kind:string;footprintTier?:number;formerFootprint?:number}):Point=>{const size=buildingSize(b);return finePoint(b.x+size.width/2,b.y+size.depth/2);};
 export function fineCell(point:Point):Point{return {x:Math.floor((point.x-grid.originX)/(grid.width/FINE_GRID)),y:Math.floor((point.y-grid.originY)/(grid.depth/FINE_GRID))};}
 export function gridCell(point: Point): Point {
   return {x: Math.floor((point.x - grid.originX) / grid.width), y: Math.floor((point.y - grid.originY) / grid.depth)};
@@ -178,7 +178,32 @@ export class MeadowCamera {
   }
   world(point: Point): Point { return {x: this.x + (point.x - this.width / 2) / this.zoom, y: this.y + (point.y - this.height / 2) / this.zoom}; }
   screen(point: Point): Point { return {x: (point.x - this.x) * this.zoom + this.width / 2, y: (point.y - this.y) * this.zoom + this.height / 2}; }
-  pan(dx: number, dy: number): void { this.x -= dx / this.zoom; this.y -= dy / this.zoom; this.clamp(); }
+  pan(dx: number, dy: number): void {
+    const wantX = this.x - dx / this.zoom, wantY = this.y - dy / this.zoom;
+    this.x = wantX; this.y = wantY; this.clamp();
+    // Between two islands (the market islet, the jump-rope islet, a detached parcel) the way through can sit a little higher
+    // or lower: a straight drag stops at the corner. The movement held back then slides the camera along the edge towards the
+    // island that lies further in that direction (iPhone, 7 November 2026: stuck on the market islet after « Les cadeaux du ciel »).
+    const lostX = wantX - this.x, lostY = wantY - this.y;
+    if (Math.abs(lostX) > 1e-6 && Math.abs(lostX) >= Math.abs(lostY)) this.glide('x', lostX);
+    else if (Math.abs(lostY) > 1e-6) this.glide('y', lostY);
+  }
+  /** Slides the other axis by up to `lost` towards the nearest land region that lets the camera go further along `axis`. */
+  private glide(axis: 'x' | 'y', lost: number): void {
+    const {boxes, dx, dy} = this.allowed(); if (boxes.length < 2) return;
+    const cx = this.x + dx, cy = this.y + dy, along = axis === 'x' ? cx : cy, across = axis === 'x' ? cy : cx, ahead = Math.sign(lost) * 1e-3;
+    let target: number | null = null, gap = Infinity;
+    for (const b of boxes) {
+      const [from, to, low, high] = axis === 'x' ? [b.left, b.right, b.top, b.bottom] : [b.top, b.bottom, b.left, b.right];
+      if (along + ahead < from || along + ahead > to || (across >= low && across <= high)) continue;
+      const edge = across < low ? low : high, distance = Math.abs(edge - across);
+      if (distance < gap) { gap = distance; target = edge; }
+    }
+    if (target === null) return;
+    const step = Math.sign(target - across) * Math.min(Math.abs(lost), gap);
+    if (axis === 'x') this.y += step; else this.x += step;
+    this.clamp();
+  }
   scale(factor: number, at: Point, dx = 0, dy = 0): void {
     // One clamp for the entire pinch: the old midpoint follows the moving fingers.
     const anchor = this.world({x: at.x - dx, y: at.y - dy});
@@ -186,21 +211,25 @@ export class MeadowCamera {
     this.zoom = Math.max(Math.min(this.minimumZoom, this.zoom), Math.min(camera.maxZoom, this.zoom * factor));
     const after = this.world(at); this.x += anchor.x - after.x; this.y += anchor.y - after.y; this.clamp();
   }
-  clamp(): void {
+  /** Where the centre of the visible viewport may stand, one box per land region, and the viewport centre's offset. */
+  private allowed(): {boxes: WorldBounds[]; dx: number; dy: number} {
     const v = this.viewport, dx = (v.x + v.width / 2 - this.width / 2) / this.zoom, dy = (v.y + v.height / 2 - this.height / 2) / this.zoom;
     const halfX = v.width / this.zoom / 2, halfY = v.height / this.zoom / 2;
-    const x = this.x + dx, y = this.y + dy;
     // Keep at least panKeep of the viewport of one land region (owned parcel with its rim) visible on each
     // axis, or the whole region when it is smaller: the open sky never fills most of the screen. A viewport
     // larger than the island is not recentred, and pinch anchors survive down to the minimum zoom.
-    let nearest: Point | null = null, distance = Infinity;
-    for (const region of this.visibleRegions?.length ? this.visibleRegions : [this.fullIsland()]) {
+    const boxes = (this.visibleRegions?.length ? this.visibleRegions : [this.fullIsland()]).map(region => {
       const keepX = Math.min(camera.panKeep * halfX * 2, region.right - region.left, halfX * 2);
       const keepY = Math.min(camera.panKeep * halfY * 2, region.bottom - region.top, halfY * 2);
-      const candidate = {
-        x: Math.max(region.left + keepX - halfX, Math.min(region.right - keepX + halfX, x)),
-        y: Math.max(region.top + keepY - halfY, Math.min(region.bottom - keepY + halfY, y)),
-      };
+      return {left: region.left + keepX - halfX, right: region.right - keepX + halfX, top: region.top + keepY - halfY, bottom: region.bottom - keepY + halfY};
+    });
+    return {boxes, dx, dy};
+  }
+  clamp(): void {
+    const {boxes, dx, dy} = this.allowed(), x = this.x + dx, y = this.y + dy;
+    let nearest: Point | null = null, distance = Infinity;
+    for (const b of boxes) {
+      const candidate = {x: Math.max(b.left, Math.min(b.right, x)), y: Math.max(b.top, Math.min(b.bottom, y))};
       const delta = (candidate.x - x) ** 2 + (candidate.y - y) ** 2;
       if (delta < distance) { distance = delta; nearest = candidate; }
     }

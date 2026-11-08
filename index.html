@@ -39,7 +39,22 @@
       timer = setTimeout(fail, 25000);
     }());
   </script>
-  <link rel="preload" as="image" href="%BASE_URL%assets/loading/morning-path.webp" fetchpriority="high">
+  <script id="loading-scene">
+    // The loading landscape (painted): the morning path, or during the Christmas event (owner, 6 November 2026) the snowy
+    // path by the device clock: A by day, B at dawn and dusk, C at night. Set before the first paint, so no other image flashes.
+    (function () {
+      var christmas = '%PRAIRIE_CHRISTMAS%' === 'true', hour = new Date().getHours() + new Date().getMinutes() / 60;
+      if ('%PRAIRIE_LAB%' === 'true') {
+        try { var lab = JSON.parse(sessionStorage.getItem('prairie-lab-christmas') || '{}'); if (lab.off) christmas = false; if (typeof lab.hour === 'number' && isFinite(lab.hour)) hour = ((lab.hour % 24) + 24) % 24; } catch (e) { /* private mode */ }
+      }
+      var scene = !christmas ? 'matin' : hour >= 19 || hour < 6.5 ? 'noel-nuit' : hour < 9 || hour >= 17 ? 'noel-crepuscule' : 'noel-jour';
+      document.documentElement.dataset.loadingScene = scene;
+      var link = document.createElement('link');
+      link.rel = 'preload'; link.as = 'image'; link.setAttribute('fetchpriority', 'high');
+      link.href = '%BASE_URL%assets/loading/' + (scene === 'matin' ? 'morning-path' : scene) + '.webp';
+      document.head.appendChild(link);
+    }());
+  </script>
   <script src="%BASE_URL%assets/app/standalone-zoom.js"></script>
   <!-- app-install:start -->
   <link rel="manifest" href="%BASE_URL%assets/app/manifest.webmanifest">
@@ -61,7 +76,7 @@
       <p id="loading-message" role="status"></p>
       <div class="actions"><button id="loading-play" type="button" disabled>Jouer</button><button id="loading-retry" class="secondary" type="button" hidden>Réessayer</button></div>
     </div>
-    <div class="loading-runner" aria-hidden="true"><img src="%BASE_URL%assets/rabbits/paille/paille-v1.png" alt="" width="303" height="429"></div>
+    <div class="loading-runner" aria-hidden="true"><img src="%BASE_URL%assets/rabbits/paille/paille-v1.webp" alt="" width="303" height="429"></div>
   </section>
   <main id="app" inert>
     <div id="game" aria-label="Prairie : glisse pour déplacer la vue, pince pour zoomer, touche pour sélectionner"></div>
@@ -69,23 +84,24 @@
       <button id="player-progress" type="button" disabled aria-haspopup="dialog" aria-controls="player-progress-dialog" aria-label="Niveau du joueur indisponible">
         <span class="player-xp-track"><span id="player-xp-label">Niveau indisponible</span><span id="player-xp-bar" role="progressbar" aria-label="XP du joueur" aria-valuemin="0"><span id="player-xp-fill"></span></span></span><span id="player-level" aria-hidden="true">—</span>
       </button>
-      <div class="resource coin-counter meadow-currency" aria-label="Pièces"><strong id="pattes">—</strong><img class="coin-icon" src="%BASE_URL%assets/currency/coin.png" width="28" height="28" alt="" aria-hidden="true"></div>
-      <div class="resource grass meadow-currency" aria-label="Nourriture"><strong id="grass">—</strong><img class="food-logo" src="%BASE_URL%assets/food/logo.png" width="28" height="28" alt="" aria-hidden="true" draggable="false"></div>
+      <div class="resource coin-counter meadow-currency" aria-label="Pièces"><strong id="pattes">—</strong><img class="coin-icon" src="%BASE_URL%assets/currency/coin.webp" width="28" height="28" alt="" aria-hidden="true"></div>
+      <div class="resource grass meadow-currency" aria-label="Nourriture"><strong id="grass">—</strong><img class="food-logo" src="%BASE_URL%assets/food/logo.webp" width="28" height="28" alt="" aria-hidden="true" draggable="false"></div>
       <button id="open-hearts" type="button" class="resource hearts meadow-currency" aria-label="Cœurs : solde et récompense">
-        <strong id="hearts">—</strong><img class="heart-icon" src="%BASE_URL%assets/currency/heart.png" width="23" height="23" alt="" aria-hidden="true">
+        <strong id="hearts">—</strong><img class="heart-icon" src="%BASE_URL%assets/currency/heart.webp" width="23" height="23" alt="" aria-hidden="true">
       </button>
       <nav aria-label="Navigation principale">
         <button id="recenter-view" type="button" class="icon secondary meadow-tool" aria-label="Recentrer la vue" title="Recentrer la vue"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="6"/><path d="M12 3V7M12 17V21M3 12H7M17 12H21"/></svg></button>
         <button id="open-photo" type="button" class="icon secondary meadow-tool" aria-label="Mode photo" title="Mode photo"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 6L9 3H15L16 6H20Q22 6 22 8V19Q22 21 20 21H4Q2 21 2 19V8Q2 6 4 6Z"/><circle cx="12" cy="13" r="4"/><path d="M18 9H20"/></svg></button>
         <button id="open-settings" type="button" class="icon secondary meadow-tool" aria-label="Paramètres" title="Paramètres"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 3-1 3-3 1-2 4 2 2v3l4 3 3-1 3 1 4-3v-3l2-2-2-4-3-1-1-3Z"/><circle cx="12" cy="11" r="3"/></svg></button>
+        <button id="open-news" type="button" class="icon secondary meadow-tool" aria-label="Nouveautés de Noël" title="Nouveautés de Noël" hidden><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="1"/><path d="M3 7h18v3H3zM12 7v13M12 7c-2-4-6-4-6-1.5S10 7 12 7Zm0 0c2-4 6-4 6-1.5S14 7 12 7Z"/></svg></button>
       </nav>
     </header>
     <span id="player-xp-feedback" role="status" hidden></span>
-    <button id="open-missions" type="button" class="secondary">Missions <span id="missions-badge" hidden aria-hidden="true"></span></button>
+    <button id="open-missions" type="button"><img class="meadow-nav-icon" src="%BASE_URL%assets/ui/kit/missions.webp" width="138" height="168" alt="" aria-hidden="true" draggable="false"><span class="meadow-nav-label">Missions</span><span id="missions-badge" hidden aria-hidden="true"></span></button>
     <div id="meadow-actions">
-      <button id="open-shop" type="button" class="meadow-nav"><img class="meadow-nav-icon" src="%BASE_URL%assets/ui/navigation/shop.png" width="168" height="168" alt="" aria-hidden="true" draggable="false"><span class="meadow-nav-label">Boutique</span></button>
-      <button id="open-arrange" type="button" class="secondary meadow-nav"><img class="meadow-nav-icon" src="%BASE_URL%assets/ui/navigation/arrange.png" width="168" height="168" alt="" aria-hidden="true" draggable="false"><span class="meadow-nav-label">Aménager</span></button>
-      <button id="open-collection" type="button" class="meadow-nav"><img class="meadow-nav-icon" src="%BASE_URL%assets/ui/navigation/collection.png" width="168" height="168" alt="" aria-hidden="true" draggable="false"><span class="meadow-nav-label">Collection</span></button>
+      <button id="open-shop" type="button" class="meadow-nav"><img class="meadow-nav-icon" src="%BASE_URL%assets/ui/navigation/shop.webp" width="168" height="168" alt="" aria-hidden="true" draggable="false"><span class="meadow-nav-label">Boutique</span></button>
+      <button id="open-arrange" type="button" class="secondary meadow-nav"><img class="meadow-nav-icon" src="%BASE_URL%assets/ui/navigation/arrange.webp" width="168" height="168" alt="" aria-hidden="true" draggable="false"><span class="meadow-nav-label">Aménager</span></button>
+      <button id="open-collection" type="button" class="meadow-nav"><img class="meadow-nav-icon" src="%BASE_URL%assets/ui/navigation/collection.webp" width="168" height="168" alt="" aria-hidden="true" draggable="false"><span class="meadow-nav-label">Collection</span></button>
       <button id="open-preview-tools" type="button" class="secondary" hidden>Outils test</button>
     </div>
     <div id="arrange-banner" hidden><span>AMÉNAGEMENT · aperçu avant confirmation</span><button id="exit-arrange" class="secondary" type="button">Quitter</button></div>
@@ -106,7 +122,7 @@
         <h3>Sauvegarde</h3>
         <p id="save-status" role="status">Chargement de la partie…</p>
         <p id="saved-at" class="small"></p>
-        <p class="small"><strong id="rabbits">—</strong> lapins · <span class="coin-amount"><strong id="stored-income">—</strong><img class="coin-icon" src="%BASE_URL%assets/currency/coin.png" width="20" height="20" alt="" aria-hidden="true"><span class="sr-only"> pièces</span></span> en attente dans les enclos.</p>
+        <p class="small"><strong id="rabbits">—</strong> lapins · <span class="coin-amount"><strong id="stored-income">—</strong><img class="coin-icon" src="%BASE_URL%assets/currency/coin.webp" width="20" height="20" alt="" aria-hidden="true"><span class="sr-only"> pièces</span></span> en attente dans les enclos.</p>
         <div class="actions">
           <button id="export-game" type="button">Exporter ma partie</button>
           <button id="retry-save" type="button" hidden>Réessayer la sauvegarde</button>

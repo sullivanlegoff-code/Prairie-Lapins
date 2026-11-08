@@ -1,3 +1,4 @@
+import {preferWebp} from '../src/display/webpTwins';
 import {describe, expect, it} from 'vitest';
 import {STRAW_ART, SNOW_ART, rabbitArt} from '../src/config/rabbitArt';
 import {portrait} from '../src/ui/portraits';
@@ -5,7 +6,7 @@ describe('Paille reference artwork (Terre was removed with its catalogue)', () =
   it('uses each species original texture for every shared portrait, without mixing sources', () => {
     for (const art of [STRAW_ART]) {
       const html = portrait(art.species);
-      expect(html).toContain(`src="${art.url}"`);
+      expect(html).toContain(`src="${preferWebp(art.url)}"`);
       expect(html).toContain(`data-rabbit-art="${art.species}"`);
       expect(html).toContain(`width="${art.width}" height="${art.height}"`);
       expect(html).not.toContain(SNOW_ART.url);

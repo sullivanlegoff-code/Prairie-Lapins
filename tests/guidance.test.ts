@@ -7,6 +7,8 @@ import {PreferenceStore} from '../src/ui/preferences';
 import {act,  encodeGame, decodeGame} from '../src/simulation';
 import type {Command} from '../src/state/types';
 import {babyOf, setBaby, welcomeOf} from './nursery-baby';
+import {PROGRESSION} from '../src/config/progression';
+const HPL = PROGRESSION.rewards.heartsPerLevel; // Hearts per level (3 since 8 November 2026).
 beforeEach(() => localStorage.clear());
 describe('optional guided beginning, separate from game rewards', () => {
   it('offers old saves voluntary activation and keeps resumption flags without migrating game data', () => {
@@ -42,7 +44,7 @@ describe('optional guided beginning, separate from game rewards', () => {
     expect(baby.startedAt).toBe(now); now=baby.readyAt; reload(); expect(id()).toBe('welcomeBirth');
     perform(welcomeOf(s, 'building-1')); expect(id()).toBe('free'); expect(guidedStep(s,prefs.value,now).done).toBe(true);
     expect(s.discovered).toEqual(['paille','neige',rng===.1?'frisket':'icy']);
-    expect(s.missions.claimed).toEqual([]); expect(s.pattes).toBe(280); expect(s.grass).toBe(26); expect(s.hearts).toBe(14);
+    expect(s.missions.claimed).toEqual([]); expect(s.pattes).toBe(280); expect(s.grass).toBe(26); expect(s.hearts).toBe(12+2*HPL);
   });
   it('recognizes early feeding/consultation and explains lack of resources without applying actions', () => {
     const s=createGame(0),p=new PreferenceStore('guide');p.set({intro:true,guideCamera:true,guideCollection:true,guideRecipe:true});

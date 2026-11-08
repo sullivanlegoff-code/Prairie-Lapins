@@ -18,6 +18,6 @@ export function bennyFlightDay(s: Pick<GameState, 'bennyFlight' | 'missions'>, n
 }
 /** What a finished game with `passed` columns pays now: pattes within the daily limit, a Heart on the first game of the day at `heartColumns`. */
 export function bennyFlightReward(s: Pick<GameState, 'bennyFlight' | 'missions'>, passed: number, now: number): {pattes: number; hearts: number; rewarded: boolean} {
-  const day = bennyFlightDay(s, now), rewarded = day.rewardedLeft > 0, count = Math.max(0, Math.floor(passed));
+  const day = bennyFlightDay(s, now), count = Math.max(0, Math.floor(passed)), rewarded = count >= 1 && day.rewardedLeft > 0;
   return {pattes: rewarded ? Math.min(BENNY_FLIGHT.maxPattes, count * BENNY_FLIGHT.pattesPerColumn) : 0, hearts: day.heartLeft && count >= BENNY_FLIGHT.heartColumns ? 1 : 0, rewarded};
 }

@@ -23,6 +23,8 @@ const npm = args => process.platform === 'win32' && process.env.npm_execpath ? r
 // A single artifact replaces BOTH routes atomically. No independent Pages deployment.
 // Both bundles use the parent site's music directory, including builds under /Project-L/.
 process.env.VITE_SHARED_MUSIC_BASE = base;
+// A light WebP twin must never show an older picture than its PNG (scripts/make-webp-twins.mjs).
+run('node', ['scripts/verify-webp-twins.mjs']);
 npm(['run', 'build', '--', '--base=' + base, '--outDir', root, '--emptyOutDir']);
 writeFileSync(join(root, 'build-revision.txt'), revision + '\n');
 writeFileSync(join(root, '.nojekyll'), '');

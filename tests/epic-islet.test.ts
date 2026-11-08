@@ -8,16 +8,16 @@ import {buildingPlacementReason} from '../src/simulation/placement';
 import {emptyBuilding} from '../src/state/initial';
 import type {Command, GameState} from '../src/state/types';
 
-/** The islet of the Epics (owner, 5 November 2026): 400 Hearts from level 18, a second breeding, ×1.1 on Epics, Legendaries and Benny. */
+/** The islet of the Epics (owner, 5 November 2026; 200 Hearts since 8 November 2026, 400 before) from level 18, a second breeding, ×1.1 on Epics, Legendaries and Benny. */
 function run(s: GameState, command: Command, now = s.lastSimulatedAt) {
   const r = act(s, command, now, () => 0); if (!r.ok) throw Error(r.reason); return r.state;
 }
 const atLevel = (s: GameState, level: number) => { s.progression = {totalXp: cumulativeLevelXp(level), rewardedThroughLevel: level}; return s; };
 function game(level = 18, hearts = 500) {
   const s = atLevel(createGame(0), level); s.hearts = hearts;
-  const free = () => { for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y)) return {x, y}; throw Error('No space'); };
+  const free = (kind?: 'enclosure') => { for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y, undefined, kind)) return {x, y}; throw Error('No space'); };
   for (const kind of ['nest', 'nursery'] as const) if (!s.buildings.some(b => b.kind === kind)) { const c = free(); s.buildings.push(emptyBuilding(`building-${s.nextId++}`, kind, c.x, c.y)); }
-  const c = free(), home = emptyBuilding(`building-${s.nextId++}`, 'enclosure', c.x, c.y); home.habitat = {type: 'universal', level: 3};
+  const c = free('enclosure'), home = emptyBuilding(`building-${s.nextId++}`, 'enclosure', c.x, c.y); home.habitat = {type: 'universal', level: 3};
   s.buildings.push(home);
   for (const species of ['paille', 'paille', 'neige', 'neige'] as const) { s.rabbits.push({id: `rabbit-${s.nextId++}`, species, affection: 5, enclosureId: home.id}); if (!s.discovered.includes(species)) s.discovered.push(species); }
   s.rabbits.forEach(r => { r.affection = Math.max(r.affection, 5); });
@@ -25,12 +25,12 @@ function game(level = 18, hearts = 500) {
 }
 
 describe('the islet of the Epics', () => {
-  it('costs 400 Hearts from player level 18, once', () => {
-    expect(EPIC_ISLET).toMatchObject({unlockLevel: 18, hearts: 400, bonus: 1.1});
+  it('costs 200 Hearts from player level 18, once', () => {
+    expect(EPIC_ISLET).toMatchObject({unlockLevel: 18, hearts: 200, bonus: 1.1});
     expect(epicIsletReason(game(17))).toBe('LEVEL_REQUIRED');
-    expect(epicIsletReason(game(18, 399))).toBe('NOT_ENOUGH_HEARTS');
+    expect(epicIsletReason(game(18, 199))).toBe('NOT_ENOUGH_HEARTS');
     const s = game(), bought = run(s, {type: 'buyEpicIslet'});
-    expect(bought.hearts).toBe(s.hearts - 400);
+    expect(bought.hearts).toBe(s.hearts - 200);
     expect(epicIsletNest(bought)).toMatchObject({kind: 'nest', islet: true, x: EPIC_ISLET.cell.x, y: EPIC_ISLET.cell.y, breeding: null});
     expect(epicIsletReason(bought)).toBe('BUILDING_LIMIT');
     expect(act(bought, {type: 'moveBuilding', id: epicIsletNest(bought)!.id, x: 10, y: 10}, 0)).toMatchObject({ok: false, reason: 'INVALID_CHOICE'});

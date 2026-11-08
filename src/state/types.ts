@@ -5,6 +5,7 @@ import type {HabitatType, HabitatLevel} from '../config/habitats';
 import type {MainMissionId, DailyMissionId, MainEvent} from '../config/missions';
 import type {BuildingKind, CareKind, Destination, OrderId, SpeciesId} from '../config/balance';
 import type {DecorationId} from '../config/decorations';
+import type {FormerFootprintEra} from '../config/habitatSizes';
 import type {EvolutionChallenge} from '../config/evolutionChallenges';
 import type {ChristmasChallengeId} from '../config/christmasEvent';
 
@@ -23,19 +24,20 @@ export type DebrisKind = 'rocher' | 'buisson' | 'herbes';
 export interface Debris {id: string; kind: DebrisKind; x: number; y: number; price: number}
 export interface Building {
   /** Absent = level 1. */
-  farmLevel?: 2 | 3; agencyLevel?: 2 | 3;
+  farmLevel?: 2 | 3 | 4; agencyLevel?: 2 | 3;
   id: string; kind: BuildingKind; x: number; y: number;
   /** Exact numerator: one patte = HOUR units. Never round each update. */
   incomeUnits: number;
-  /** `ultra`: a level 3 snow habitat turned into the Ultra neige one at the Christmas market (v27, its own picture; it stays). */
+  /** `ultra`: the Ultra neige habitat, a snow enclosure bought at the Christmas market (v27, its own pictures; it stays). */
   habitat: {type: HabitatType; level: HabitatLevel; ultra?: true} | null;
-  /** Footprint actually acquired (enclosures only): 1 = 5 × 4, 2 = 8 × 5, 3 = 10 × 6 fine cells. Absent = 1, whatever the level. Anchored at x, y. */
+  /** Footprint actually acquired (enclosures only): 1 = 6 × 5, 2 = 10 × 6, 3 = 12 × 7 fine cells. Absent = 1, whatever the level. Anchored at x, y. */
   footprintTier?: HabitatLevel;
   /**
-   * Enclosures only: still keeps its tier's size from before the enlargement of 3 November 2026 (4 × 4, 6 × 5, 8 × 6), because a
-   * save written before it had no room around it. Removed as soon as it can grow at load, or when it is upgraded.
+   * Enclosures only: still keeps its tier's size of a former era (`ENCLOSURE_SIZE_ERA` in config/habitatSizes), because a save
+   * written then had no room around it: 1 = before 3 November 2026 (4 × 4, 6 × 5, 8 × 6), 2 = from 3 November 2026 (5 × 4,
+   * 8 × 5, 10 × 6). Raised or removed as soon as it can grow at load, removed when it is upgraded.
    */
-  formerFootprint?: true;
+  formerFootprint?: FormerFootprintEra;
   /**
    * The nest of the islet of the Epics (v27, owner, 5 November 2026): a second nest, floating off the land grid at
    * EPIC_ISLET.cell, bought once for Hearts; its births have ×1.1 chances of Epics, Legendaries and Benny. Never moved or stored.
@@ -59,7 +61,7 @@ export interface Nursery {capacity: NurseryCapacity; babies: NurseryBaby[]}
  * classicLook: an evolved rabbit that the player put back in its old drawing at the Forêt de Brocéliande. Never on another rabbit,
  * never before its evolution, and never without the forest.
  */
-export interface Rabbit { incomeRoll?: number; id: string; species: SpeciesId; affection: number; enclosureId: string; name?: string; crownHidden?: true; classicLook?: true; evolution?: {done?: true; challenges?: Partial<Record<EvolutionChallenge, number>>} }
+export interface Rabbit { incomeRoll?: number; id: string; species: SpeciesId; affection: number; enclosureId: string; name?: string; crownHidden?: true; classicLook?: true; /** The Forêt de Brocéliande is changing its drawing: `classicLook` flips at `endsAt` (7 hours). */ lookChange?: {endsAt: number}; evolution?: {done?: true; challenges?: Partial<Record<EvolutionChallenge, number>>} }
 export interface MissionState {
   nightOrderStarted?: boolean;
   events: Record<MainEvent, number>;
@@ -153,6 +155,8 @@ export interface ChristmasState {
   claimed?: ChristmasChallengeId[]; bonusClaimed?: true;
   snowman?: {cycle: number; enclosureId: string};
   skyGifts?: {cycle: number; rewarded: number; best: number};
+  /** Sucres d'orge earned from coin bubbles in gift cycle `cycle` (at most COIN_BUBBLE_CANDIES.maxPerCycle). */
+  bubbles?: {cycle: number; earned: number};
 }
 /** Two rabbits turn the rope, the athlete jumps. */
 export interface JumpRopeTeam {carriers: [string, string]; athlete: string}
@@ -162,11 +166,11 @@ export interface Trip {grass?: number; rabbitId: string; destination: Destinatio
 export interface Care {rabbitId: string; care: CareKind; startedAt: number; endsAt: number; hearts?: number}
 export type Refusal = 'LEVEL_REQUIRED' | 'NO_BREEDING_RESULT' | 'PURCHASE_LOCKED' | 'DECORATION_LIMIT' | 'DECORATION_OVERLAP' | 'DECORATION_BLOCKS_BUILDING' | 'INVALID_TIME' | 'INVALID_RANDOM' | 'INVALID_CHOICE' | 'NOT_FOUND' |
   'NOT_ENOUGH_PATTES' | 'NOT_ENOUGH_GRASS' | 'INVALID_CELL' | 'CELL_OCCUPIED' |
-  'BUILDING_LIMIT' | 'HABITAT_NOT_EMPTY' | 'LAST_HABITAT' | 'CAPACITY_FULL' | 'BUSY' | 'NOT_READY' | 'MAX_AFFECTION' |
+  'LOOK_CHANGING' | 'BUILDING_LIMIT' | 'HABITAT_NOT_EMPTY' | 'LAST_HABITAT' | 'CAPACITY_FULL' | 'BUSY' | 'NOT_READY' | 'MAX_AFFECTION' |
   'SAME_PARENT' | 'AFFECTION_TOO_LOW' | 'MISSING_BUILDING' | 'ALREADY_EXPANDED' | 'PARCEL_UNAVAILABLE' |
   'LAST_OF_SPECIES' | 'PARENT_BUSY' | 'NOT_ENOUGH_HEARTS' | 'ACTION_FINISHED' |
   'STALE_ACTION' | 'PRICE_CHANGED' | 'NO_MISSING_PATTES' | 'ALREADY_CLAIMED' | 'CYCLE_EXPIRED' | 'RESOURCE_LIMIT' | 'TYPE_INCOMPATIBLE' | 'MAX_HABITAT_LEVEL' | 'RECIPE_KNOWN' | 'MAX_NURSERY_CAPACITY' |
-  'UPGRADE_BLOCKED_BUILDING' | 'UPGRADE_BLOCKED_DECORATION' | 'UPGRADE_BLOCKED_LAND' | 'INVALID_NAME' | 'STATUE_REQUIRED' | 'SECOND_STATUE_REQUIRED' | 'TRAVELING' |
+  'UPGRADE_BLOCKED_BUILDING' | 'UPGRADE_BLOCKED_DECORATION' | 'UPGRADE_BLOCKED_DEBRIS' | 'UPGRADE_BLOCKED_LAND' | 'INVALID_NAME' | 'STATUE_REQUIRED' | 'SECOND_STATUE_REQUIRED' | 'TRAVELING' |
   'BENNY_RECHARGING' | 'NO_WAITING_BABY' | 'BENNY_KEPT' |
   'AT_SALON' | 'GIFT_TODAY' | 'AFFECTION_WALL' | 'PICNIC_TODAY' | 'EMPTY_ENCLOSURE' | 'NO_GIFT_POSSIBLE' |
   'NO_EVOLVED_ART' | 'EVOLUTION_AFFECTION' | 'EVOLUTION_CHALLENGES' | 'EVOLUTION_REQUIRED' |
@@ -175,7 +179,8 @@ export interface CuisineReward {pattes: number; grass: number; /** True for one 
 export type ActionResult = {ok: true; state: GameState; value?: string | number; progressionGain?: ProgressionGain; cuisineReward?: CuisineReward; jumpRopeReward?: import('../simulation/jumpRope').JumpRopeReward} |
   {ok: false; state: GameState; reason: Refusal};
 export type BaseCommand =
-  | {type: 'buyBuilding'; kind: BuildingKind; x: number; y: number; habitatType?: HabitatType}
+  /** `ultra`: the Ultra neige habitat (a snow enclosure, `habitatType` 'neige'), paid in sucres d'orge at the Christmas market. */
+  | {type: 'buyBuilding'; kind: BuildingKind; x: number; y: number; habitatType?: HabitatType; ultra?: true}
   | {type: 'moveBuilding'; id: string; x: number; y: number}
   | {type: 'placeStarterBuilding'; kind: 'nest' | 'nursery'; x: number; y: number}
   | {type: 'transferBirth'; id: string; birthId: string}
@@ -232,7 +237,7 @@ export type Command = BaseCommand
   /** A finished jump-rope game: `score` jumps by this trio (remembered for the next game); pays within the daily limit (JUMP_ROPE). */
   | {type: 'rewardJumpRope'; team: JumpRopeTeam; score: number}
   /** The jump-rope islet, for JUMP_ROPE.price pattes from JUMP_ROPE.unlockLevel, once. */
-  | {type: 'buyJumpIsland'} | {type: 'buyEpicIslet'} | {type: 'clearDebris'; id: string} | {type: 'buyUltraSnow'; enclosureId: string} | {type: 'rewardBennyFlight'; passed: number}
+  | {type: 'buyJumpIsland'} | {type: 'buyEpicIslet'} | {type: 'clearDebris'; id: string} | {type: 'rewardBennyFlight'; passed: number}
   /** Christmas: today's snowman in this enclosure (free, one a day in all, a rabbit present, from level 2). */
   | {type: 'buildSnowman'; enclosureId: string}
   /** Christmas: a finished game of « Les cadeaux du ciel », the basket carried by this rabbit; pays within SKY_GIFTS' daily limit. */
@@ -243,7 +248,7 @@ export type Command = BaseCommand
   /** Christmas market: a Christmas decoration for its sucres d'orge, placed now or kept in the inventory. */
   | {type: 'buyChristmasDecoration'; catalogId: DecorationId; location?: Extract<DecorationLocation, {kind: 'outside'}>}
   | {type: 'buyChristmasRabbit'; species: import('../config/balance').SpeciesId; enclosureId: string}
-  | {type: 'welcomeAgency'} | {type: 'startTrip'; rabbitId: string} | {type: 'claimTrip'; rabbitId: string} | {type: 'upgradeFarm'; id: string; /** Level reached; absent = 2 (older callers). A farm not one level below is a stale action. */ toLevel?: 2 | 3} | {type: 'upgradeAgency'; id: string; fromLevel: 1 | 2 | 3}
+  | {type: 'welcomeAgency'} | {type: 'startTrip'; rabbitId: string} | {type: 'claimTrip'; rabbitId: string} | {type: 'upgradeFarm'; id: string; /** Level reached; absent = 2 (older callers). A farm not one level below is a stale action. */ toLevel?: 2 | 3 | 4} | {type: 'upgradeAgency'; id: string; fromLevel: 1 | 2 | 3}
   /** `birthId` names the nursery baby; required for growth, ignored otherwise. */
   | {type: 'initiationAid'; id: string; stage: TimedStage; jobKey: string; birthId?: string}
   | {type: 'accelerate'; id: string; stage: TimedStage; jobKey: string; maxHearts: number; birthId?: string}

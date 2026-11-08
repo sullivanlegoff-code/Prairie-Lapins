@@ -60,3 +60,33 @@ it('removes pending frames, settle timers and listeners, with a matching cream b
   expect(s.style.getPropertyValue('--app-height')).toBe('');
   expect(html).toContain('name="theme-color" content="#fffdf5"');
 });
+
+function installedHost(inner: {width: number; height: number}, screen: {width: number; height: number}, standalone: boolean) {
+  vi.useFakeTimers();
+  const viewport = Object.assign(new EventTarget(), {...inner, scale: 1});
+  const frames = new Map<number, FrameRequestCallback>(); let next = 0;
+  const host = Object.assign(new EventTarget(), {
+    visualViewport: viewport, innerWidth: inner.width, innerHeight: inner.height, scrollX: 0, scrollY: 0, screen,
+    navigator: {standalone}, matchMedia: () => ({matches: false}),
+    requestAnimationFrame: (callback: FrameRequestCallback) => { frames.set(++next, callback); return next; },
+    cancelAnimationFrame: (id: number) => { frames.delete(id); },
+    setTimeout: window.setTimeout.bind(window), clearTimeout: window.clearTimeout.bind(window), scrollTo: vi.fn(),
+  });
+  const dispose = bindAppViewport(() => {}, host as unknown as Window, document);
+  [...frames.values()].forEach(callback => callback(0)); frames.clear();
+  const style = document.documentElement.style;
+  return {size: [style.getPropertyValue('--app-width'), style.getPropertyValue('--app-height')], dispose};
+}
+it('opened from the home screen, fills a status-bar-sized gap so no strip shows; Safari and split view keep their size', () => {
+  // iPhone 14 screen 390 × 844 (iOS reports it in portrait whatever the rotation).
+  for (const [inner, standalone, expected] of [
+    [{width: 844, height: 343}, true, ['844px', '390px']], // landscape, one status bar short
+    [{width: 390, height: 797}, true, ['390px', '844px']], // portrait, one status bar short
+    [{width: 844, height: 390}, true, ['844px', '390px']], // already exact
+    [{width: 844, height: 343}, false, ['844px', '343px']], // ordinary Safari: its bars are real
+    [{width: 600, height: 390}, true, ['600px', '390px']], // a window much narrower than the screen (iPad split view)
+  ] as const) {
+    const s = installedHost(inner, {width: 390, height: 844}, standalone);
+    expect(s.size).toEqual(expected); s.dispose();
+  }
+});

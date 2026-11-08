@@ -1,4 +1,5 @@
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {act, advance, decodeGame, encodeGame} from '../src/simulation';
 import {welcomeDestinations} from '../src/simulation/habitats';
 import {quoteAcceleration} from '../src/simulation/hearts';
@@ -22,7 +23,7 @@ describe('laboratory scenarios for the nursery', () => {
   it('are offered by the existing selector under their names', () => {
     expect(SCENARIOS.nurseryUnlocks).toBe('Nurserie — déblocages'); expect(SCENARIOS.nurseryStates).toBe('Nurserie — quatre états');
   });
-  it.each(['nurseryUnlocks', 'nurseryStates'] as const)('%s: valid v13 save, unique identities below nextId, a single nursery, usable nest and homes', id => {
+  itAll(['nurseryUnlocks', 'nurseryStates'] as const)('%s: valid v13 save, unique identities below nextId, a single nursery, usable nest and homes', id => {
     const s = scenarioState(id, NOW);
     expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: s}); expect(s.version).toBe(27);
     const ids = identities(s); expect(new Set(ids).size).toBe(ids.length); expect(ids.every(x => Number(x.split('-')[1]) < s.nextId)).toBe(true);

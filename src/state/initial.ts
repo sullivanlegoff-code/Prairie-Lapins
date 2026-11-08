@@ -10,10 +10,14 @@ export function emptyBuilding(id: string, kind: BuildingKind, x: number, y: numb
   return {id, kind, x, y, incomeUnits: 0, habitat: kind === 'enclosure' ? {type: habitatType, level: 1} : null, order: null, breeding: null,
     nursery: kind === 'nursery' ? {capacity: NURSERY.initialCapacity, babies: []} : null};
 }
-/** The starting group (enclosure, nest, nursery) at the same place inside its start parcel, in fine cells. */
+/**
+ * The starting group (enclosure, nest, nursery) at the same place inside its start parcel, in fine cells. On the southwest start
+ * (every new game) the enclosure stands 4 cells from the parcel's left edge, so that it grows in place up to level 3 (12 × 7,
+ * since 6 November 2026) without leaving the starting parcel; the former centre start keeps its enclosure 6 cells in.
+ */
 function starterBuildings(parcel: ParcelId): Building[] {
-  const x = PARCELS[parcel].x * FINE_GRID, y = PARCELS[parcel].y * FINE_GRID;
-  return [emptyBuilding('building-1', 'enclosure', x + 6, y + 8, 'paille'), emptyBuilding('building-4', 'nest', x + 2, y + 4), emptyBuilding('building-5', 'nursery', x + 10, y + 4)];
+  const x = PARCELS[parcel].x * FINE_GRID, y = PARCELS[parcel].y * FINE_GRID, enclosureX = parcel === 'southwest' ? 4 : 6;
+  return [emptyBuilding('building-1', 'enclosure', x + enclosureX, y + 8, 'paille'), emptyBuilding('building-4', 'nest', x + 2, y + 4), emptyBuilding('building-5', 'nursery', x + 10, y + 4)];
 }
 /** New games start on the southwest parcel and grow up and to the right (`purchasableParcels`). */
 export function createGame(now: number = Date.now()): GameState {

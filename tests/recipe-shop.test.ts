@@ -12,7 +12,7 @@ import {SPECIES} from '../src/config/balance';
 import {GameController} from '../src/application/GameController';
 import {GameUI} from '../src/ui/GameUI';
 import {PreferenceStore} from '../src/ui/preferences';
-import {REFUSALS} from '../src/ui/models';
+import {REFUSALS, oddsTexts, oddsView} from '../src/ui/models';
 import * as breeding from '../src/simulation/breeding';
 import {SAVE_KEY, type SaveStorage} from '../src/persistence/storage';
 import type {MeadowScene} from '../src/display/MeadowScene';
@@ -45,19 +45,11 @@ const buy = (species: string) => card(species)?.querySelector<HTMLButtonElement>
 const consult = (species: string) => card(species)?.querySelector<HTMLButtonElement>(`[data-consult-recipe="${species}"]`) ?? null;
 const confirmButton = () => [...dialog().querySelectorAll('button')].find(b => b.textContent === 'Confirmer')!;
 const state = (c: GameController) => c.getSnapshot().state!;
-/** Opens the pairing window from the nest, picks `a` on the left and `b` on the right, and reads the odds. */
-function nestOdds(ui: GameUI, a: string, b: string) {
-  document.getElementById('close-panel')!.click(); ui.select({kind: 'building', id: 'building-4'});
-  [...panel().querySelectorAll('button')].find(x => x.textContent === 'Croiser')!.click();
-  const window = document.getElementById('breeding-dialog')!;
-  const row = (slot: number, name: string) => [...window.querySelectorAll('.breeding-column')[slot].querySelectorAll<HTMLButtonElement>('button.breeding-row')].find(r => r.querySelector('strong')?.textContent?.startsWith(name))!;
-  // A remembered pair stays selected; a second click would clear it.
-  for (const [slot, name] of [[0, a], [1, b]] as const) if (!row(slot, name).classList.contains('selected')) row(slot, name).click();
-  const odds = window.querySelector('.breeding-odds');
-  if (!odds) [...window.querySelectorAll('button')].find(x => x.textContent === 'Probabilités')!.click();
-  const lines = [...window.querySelectorAll('.breeding-odds p:not(.badge)')].map(p => p.textContent);
-  (document.getElementById('breeding-dialog') as HTMLDialogElement).close();
-  return lines;
+/** What the nest would offer for the rabbits named `a` and `b` (model only: owner, 7 November 2026, the player never sees these odds). */
+function nestOdds(c: GameController, a: string, b: string) {
+  const s = state(c), pick = (name: string) => s.rabbits.find(r => SPECIES[r.species].name === name)!, [x, y] = [pick(a), pick(b)];
+  const texts = oddsTexts(oddsView(s, x.species, y.species, x.affection, y.affection, false));
+  return [texts.summary, ...(texts.standIn ? [texts.standIn] : []), ...texts.excluded, ...texts.lines];
 }
 
 describe('recipe purchase buttons', () => {
@@ -137,11 +129,8 @@ describe('recipe purchase flow', () => {
     consult('dinono')!.click();
     const heading = card('dinono').querySelector('h3')!;
     expect(document.activeElement).toBe(heading); expect(scroll.mock.contexts).toContain(card('dinono'));
-    const advanced = card('dinono').querySelector<HTMLDetailsElement>('.recipe-rules')!;
-    expect(advanced.open).toBe(false); expect(advanced.querySelector('summary')!.textContent).toBe('En savoir plus');
-    expect(advanced.textContent).toContain('un Épique pèse quatre fois moins qu’un Rare, et les Épiques réunis ne dépassent jamais la moitié du tirage');
-    advanced.open = true; advanced.dispatchEvent(new Event('toggle')); controller.refresh();
-    expect(card('dinono').querySelector<HTMLDetailsElement>('.recipe-rules')!.open).toBe(true);
+    // Owner, 7 November 2026: no « En savoir plus » box with the odds rules.
+    expect(card('dinono').querySelector('.recipe-rules')).toBeNull(); expect(card('dinono').textContent).not.toMatch(/%|Épique pèse/);
     const prepare = [...card('dinono').querySelectorAll('button')].find(b => b.textContent === 'Préparer cette paire au nid' && !b.disabled)!;
     expect(prepare).toBeDefined(); prepare.click();
     const breedingDialog = document.getElementById('breeding-dialog') as HTMLDialogElement;
@@ -154,7 +143,7 @@ describe('recipe purchase flow', () => {
   it('confirms, debits once on a rapid double press, reveals the card and updates the nest without reload', () => {
     const {ui, controller, data} = setup(shop());
     // The summary line now sits inside the odds block, before the probability lines.
-    expect(nestOdds(ui, 'Lapin Bélier Gris', 'Lapin Feu')).toEqual(["Résultats possibles : inconnus.", "Résultats inconnus : 100 %"]);
+    expect(nestOdds(controller, 'Lapin Bélier Gris', 'Lapin Feu')).toEqual(["Résultats possibles : inconnus.", "Résultats inconnus : 100 %"]);
     const before = state(controller); ui.open({kind: 'shop', tab: 'recipes'});
     buy('dinono')!.click(); buy('dinono')!.click();
     expect(dialog().open).toBe(true); expect(dialog().querySelector('h2')!.textContent).toBe('Acheter la recette : Dinono ?');
@@ -173,7 +162,7 @@ describe('recipe purchase flow', () => {
     expect(card('dinono').textContent).toContain('Affection 6 minimum pour chacun des deux parents.');
     expect(card('dinono').textContent).toMatch(/\d+ paires? possédées? compatibles? avec la recette/);
     const saved = decodeGame(data.get(SAVE_KEY)!); expect(saved.ok && saved.state.recipeBook).toEqual(['dinono']);
-    expect(nestOdds(ui, 'Lapin Bélier Gris', 'Lapin Feu')).toEqual(["Résultats possibles : Dinono et des résultats inconnus.", "Dinono · feu + métal · Épique : 23/286 (≈ 8,04 %)", "Résultats inconnus : 263/286 (≈ 91,96 %)"]);
+    expect(nestOdds(controller, 'Lapin Bélier Gris', 'Lapin Feu')).toEqual(["Résultats possibles : Dinono et des résultats inconnus.", "Dinono · feu + métal · Épique : 23/286 (≈ 8,04 %)", "Résultats inconnus : 263/286 (≈ 91,96 %)"]);
     ui.open({kind: 'collection'}); [...panel().querySelectorAll('button')].find(b => b.textContent === 'Carnet de reproduction')!.click();
     expect([...card('dinono').querySelectorAll('button')].some(b => b.textContent === 'Préparer cette paire au nid')).toBe(true);
   });

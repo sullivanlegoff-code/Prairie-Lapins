@@ -92,7 +92,7 @@ describe('unlocking with babies present', () => {
   /** Two babies growing in slots 0 and 1 of a two-cushion nursery (real breeding, Heart-ended reproductions). */
   function twoBabies() {
     let s = createGame(0); s.pattes = 100_000; s.hearts = 500; s.grass = 1000;
-    for (let y = 32; y <= 44 && s.buildings.length < 4; y++) for (let x = 0; x <= 12 && s.buildings.length < 4; x++) if (!buildingPlacementReason(s, x, y)) s = run(s, {type: 'buyBuilding', kind: 'enclosure', habitatType: 'neige', x, y});
+    for (let y = 32; y <= 44 && s.buildings.length < 4; y++) for (let x = 0; x <= 12 && s.buildings.length < 4; x++) if (!buildingPlacementReason(s, x, y, undefined, 'enclosure')) s = run(s, {type: 'buyBuilding', kind: 'enclosure', habitatType: 'neige', x, y});
     const snowHome = s.buildings.at(-1)!.id;
     s = run(s, {type: 'buyRabbit', species: 'neige', enclosureId: snowHome}); const snow = s.rabbits.at(-1)!.id;
     s = run(s, {type: 'feed', id: 'rabbit-2'}); s = run(s, {type: 'feed', id: snow});

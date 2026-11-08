@@ -1,6 +1,7 @@
 import {eligibleMainMissionIds} from '../src/simulation/missions';
 import {regressionStart as createGame} from './regression-start';
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {act, advance,  decodeGame, encodeGame} from '../src/simulation';
 import {HOUR, MINUTE, growthDuration} from '../src/config/balance';
 import {MAIN_MISSIONS, MAIN_MISSION_IDS, ACTIVE_MAIN_MISSION_IDS, DAILY_MISSION_IDS, MISSION_CYCLE_DURATION as DAY, type DailyMissionId} from '../src/config/missions';
@@ -10,6 +11,7 @@ import {setBaby, welcomeOf} from './nursery-baby';
 import {GameController} from '../src/application/GameController';
 import {SAVE_KEY, type SaveStorage} from '../src/persistence/storage';
 import type {Command, GameState} from '../src/state/types';
+import {DAILY_BONUS} from '../src/config/missions';
 
 const run = (s: GameState, c: Command, now = s.lastSimulatedAt) => {
   const result = act(s, c, now, () => .9); if (!result.ok) throw Error(result.reason); return result.state;
@@ -73,7 +75,7 @@ describe('main missions and unique rewards',()=>{
     expect(s.rabbits.every(r=>r.affection<5)).toBe(true);expect(s.missions.completed).toContain('strong-bonds');
     const restored=read(encodeGame(s),DAY);expect(run(restored,{type:'claimMainMission',id:'strong-bonds'}).hearts).toBe(13);
   });
-  it.each(eligibleMainMissionIds(createGame(0)))('claims %s once, credits its exact reward, and never counts the reward as daily work',id=>{
+  itAll(eligibleMainMissionIds(createGame(0)))('claims %s once, credits its exact reward, and never counts the reward as daily work',id=>{
     const before=prepared(); before.missions.completed=[id];
     const s=run(before,{type:'claimMainMission',id}), reward=MAIN_MISSIONS[id].reward;
     if(reward.resource==='none')expect([s.pattes,s.grass,s.hearts]).toEqual([before.pattes,before.grass,before.hearts]);else expect(s[reward.resource]).toBe(before[reward.resource]+reward.amount);expect(s.missions.claimed).toEqual([id]);
@@ -158,7 +160,7 @@ describe('daily event accounting and fixed cycles',()=>{
     for(const id of DAILY_MISSION_IDS)expect(act(s,{type:'claimDailyMission',id,cycleStart:0},s.lastSimulatedAt)).toMatchObject({ok:false,reason:dailyMissionsFor(0).includes(id)?'ALREADY_CLAIMED':'INVALID_CHOICE'});
     const hearts=s.hearts,bonus=act(s,{type:'claimDailyBonus',cycleStart:0},s.lastSimulatedAt);if(!bonus.ok)throw Error(bonus.reason);
     // Levels crossed by the bonus XP pay their own hearts, reported apart from the bonus.
-    expect(bonus.state.hearts).toBe(hearts+2+(bonus.progressionGain?.heartsGranted??0));expect(bonus.state.nextHeartGiftAt).toBe(DAY);
+    expect(bonus.state.hearts).toBe(hearts+DAILY_BONUS[0].amount+(bonus.progressionGain?.heartsGranted??0));expect(bonus.state.nextHeartGiftAt).toBe(DAY);
     s=bonus.state;
     expect(act(s,{type:'claimDailyBonus',cycleStart:0},s.lastSimulatedAt)).toMatchObject({ok:false,state:s,reason:'ALREADY_CLAIMED'});
     expect(run(s,{type:'claimHearts'},DAY).hearts).toBe(s.hearts+HEARTS.gift);
@@ -188,7 +190,7 @@ describe('mission persistence and controller',()=>{
     m.flags.fail='';expect(c.confirmImport(p.token,true).ok).toBe(true);expect(state(c)).toEqual(incoming);expect(state(c).missions.daily.progress).toEqual(emptyDailyProgress());
     const exported=c.exportGame();if(!exported.ok)throw Error(exported.reason);expect(read(exported.json,5*HOUR)).toEqual(incoming);
   });
-  it.each(['unknown','duplicate','unearned','bonus','cycle','future'] as const)('rejects inconsistent mission state: %s',kind=>{
+  itAll(['unknown','duplicate','unearned','bonus','cycle','future'] as const)('rejects inconsistent mission state: %s',kind=>{
     const s=createGame(0), raw=JSON.parse(encodeGame(s));
     if(kind==='unknown')raw.missions.completed=['invented'];
     if(kind==='duplicate')raw.missions.completed=['first-farm','first-farm'];

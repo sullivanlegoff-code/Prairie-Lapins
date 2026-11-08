@@ -1,4 +1,5 @@
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {act, createGame} from '../src/simulation';
 import {growthDuration, BALANCE, MINUTE, SPECIES, type SpeciesId} from '../src/config/balance';
 import {nurseryBuilding} from '../src/simulation/nursery';
@@ -38,7 +39,7 @@ describe('confier un lapereau prêt depuis la nurserie', () => {
     expect(r).toMatchObject({ok: false, reason: 'STALE_ACTION'});
     expect(r.state).toEqual(before);
   });
-  it.each([['rare', 100], ['epic', 500], ['legendary', 1000]] as const)('pays %s babies %i pattes', (rarity, price) => {
+  itAll([['rare', 100], ['epic', 500], ['legendary', 1000]] as const)('pays %s babies %i pattes', (rarity, price) => {
     const species = (Object.keys(SPECIES) as SpeciesId[]).find(id => SPECIES[id].rarity === rarity)!;
     const s = withBaby(NOW - 1); nurseryBuilding(s)!.nursery!.babies[0].birth.species = species;
     const r = release(s, 'birth-7');

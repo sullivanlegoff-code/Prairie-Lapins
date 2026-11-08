@@ -1,5 +1,5 @@
 /** Pure laboratory transactions. This module is reachable only through the existing dev import. */
-import {BALANCE, HOUR, ORDERS, SPECIES_IDS, orderFarmLevel, growthDuration, type BuildingKind, type SpeciesId} from '../config/balance';
+import {BALANCE, HOUR, tripHearts, ORDERS, SPECIES_IDS, orderFarmLevel, growthDuration, type BuildingKind, type SpeciesId} from '../config/balance';
 import {HABITAT_TYPES, habitatLevel, type HabitatLevel, type HabitatType} from '../config/habitats';
 import {DECORATION_IDS, MAX_DECORATIONS} from '../config/decorations';
 import {PARCEL_IDS, purchasableParcels} from '../config/land';
@@ -97,7 +97,7 @@ export function labAction(state: GameState, action: LabAction): GameState {
       integer(action.value, 1, BALANCE.maxAffection);
       const rabbits = s.rabbits.filter(r => !action.rabbitId || r.id === action.rabbitId);
       if (!rabbits.length) throw new Error('Choisis un lapin présent.');
-      for (const r of rabbits) { r.affection = action.value; if (action.value < BALANCE.maxAffection) delete r.crownHidden; if (classicLookReason(s, r)) delete r.classicLook; } // Only an ultimate rabbit takes off its crown; the old drawing needs affection 30.
+      for (const r of rabbits) { r.affection = action.value; if (action.value < BALANCE.maxAffection) delete r.crownHidden; if (classicLookReason(s, r)) { delete r.classicLook; delete r.lookChange; } } // Only an ultimate rabbit takes off its crown; the old drawing needs affection 30.
       // A ready birth may reference parents below breeding affection; an active one may not.
       if (action.value < BALANCE.breedingAffection) for (const b of s.buildings) {
         if (b.breeding?.parents.some(id => rabbits.some(r => r.id === id))) b.breeding.endsAt = Math.min(b.breeding.endsAt, s.lastSimulatedAt);
@@ -122,10 +122,10 @@ export function labAction(state: GameState, action: LabAction): GameState {
     case 'buildingLevel': {
       const b = s.buildings.find(b => b.id === action.id);
       if (!b || !['farm', 'agency', 'enclosure'].includes(b.kind)) throw new Error('Choisis une ferme, une agence ou un habitat.');
-      const level = integer(action.level, 1, 3);
+      const level = integer(action.level, 1, b.kind === 'farm' ? 4 : 3);
       if (b.kind === 'farm') {
         if (b.order && level < orderFarmLevel(b.order.recipe)) throw new Error(`Récolte cette culture avant de revenir au niveau ${level}.`);
-        if (level === 1) delete b.farmLevel; else b.farmLevel = level as 2 | 3;
+        if (level === 1) delete b.farmLevel; else b.farmLevel = level as 2 | 3 | 4;
       } else if (b.kind === 'agency') {
         if ((s.travel?.trips.length ?? 0) > level) throw new Error('Accueille les voyageurs avant de réduire la capacité de l’agence.');
         if (level === 1) delete b.agencyLevel; else b.agencyLevel = level as 2 | 3;
@@ -183,7 +183,7 @@ export function completeLaboratory(now: number): GameState {
     b.order = {recipe, startedAt: i === 0 ? now - crop.duration : now, endsAt: i === 0 ? now : now + crop.duration, grass: crop.grass, duration: crop.duration};
   }
   build(s, 'kitchen'); build(s, 'statue'); build(s, 'statue'); build(s, 'agency').agencyLevel = 3; build(s, 'salon'); build(s, 'forest'); s.jumpIsland = true;
-  s.travel = {welcomed: true, trips: s.rabbits.slice(2, 4).map((r, i) => ({rabbitId: r.id, destination: i === 0 ? 'Paris' : 'Vannes', startedAt: i === 0 ? now - 3 * HOUR : now, endsAt: i === 0 ? now : now + 3 * HOUR, hearts: 1, grass: 75}))};
+  s.travel = {welcomed: true, trips: s.rabbits.slice(2, 4).map((r, i) => ({rabbitId: r.id, destination: i === 0 ? 'Paris' : 'Vannes', startedAt: i === 0 ? now - 3 * HOUR : now, endsAt: i === 0 ? now : now + 3 * HOUR, hearts: tripHearts(3), grass: 75}))};
   const birth = () => ({id: `birth-${s.nextId++}`, species: 'paille' as const, guaranteed: false, reservedDiscovery: false});
   s.buildings.find(b => b.kind === 'nursery')!.nursery = {capacity: 4, babies: [{slot: 0, birth: birth(), startedAt: now - growthDuration('paille'), readyAt: now}]};
   s.buildings.find(b => b.kind === 'nest')!.breeding = {parents: [s.rabbits[0].id, s.rabbits[1].id], startedAt: now - growthDuration('paille'), endsAt: now, birth: birth()};

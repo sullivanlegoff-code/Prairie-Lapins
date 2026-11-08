@@ -2,7 +2,8 @@
 import {previousStart} from './regression-start';
 import {createGame} from '../src/simulation';
 import {describe, expect, it} from 'vitest';
-import {GameController} from '../src/application/GameController';
+import {itAll} from './cases';
+import {GameController, PASSIVE_SAVE_MS} from '../src/application/GameController';
 import {bindLifecycle, type LifecycleHost} from '../src/application/lifecycle';
 import {SAVE_KEY, type SaveStorage} from '../src/persistence/storage';
 import {act, advance,  decodeGame, encodeGame, pendingDiscoveries} from '../src/simulation';
@@ -26,6 +27,17 @@ describe('targeted passive change detection', () => {
       }
       controller.dispose();
     }
+  });
+  it('writes the save at most once a minute on the regular tick, and always when the page is hidden or left', () => {
+    const start = 1_790_000_000_000;
+    const {controller, store, clock} = fixture(encodeGame(scenarioState('completeGame', start)), start);
+    clock.now = start + 5000; controller.refresh(false); const first = store.writes;
+    for (let k = 2; k <= 6; k++) { clock.now = start + k * 5000; controller.refresh(false); }
+    expect(store.writes).toBe(first);
+    expect(state(controller)).toEqual(advance(stored(store), clock.now));
+    clock.now = start + 5000 + PASSIVE_SAVE_MS; controller.refresh(false); expect(store.writes).toBe(first + 1);
+    clock.now += 5000; controller.refresh(); expect(store.writes).toBe(first + 2); expect(stored(store)).toEqual(state(controller));
+    controller.dispose();
   });
   it('rebases gifts, nursery, jobs and initiation keys, then keeps their deadlines and daily cycle correct after reload', () => {
     const start = 1_790_000_000_000;
@@ -149,7 +161,7 @@ describe('storage failures and recovery', () => {
     const exported = controller.exportGame(); expect(exported.ok).toBe(true);
     if (exported.ok) expect(decodeGame(exported.json)).toEqual({ok: true, state: state(controller)});
   });
-  it.each(['{', '{"version":99}', '{"version":16}'])('protects an existing invalid save: %s', raw => {
+  itAll(['{', '{"version":99}', '{"version":16}'])('protects an existing invalid save: %s', raw => {
     const {controller, store, clock} = fixture(raw); clock.now = HOUR;
     controller.refresh(); controller.retrySave();
     expect(store.value).toBe(raw); expect(store.writes).toBe(0);
@@ -198,7 +210,7 @@ describe('transactional imports', () => {
     expect(controller.getSnapshot()).toEqual(previous); expect(store.value).toBe(raw);
     expect(controller.confirmImport(prepared.token, true)).toEqual({ok: false, reason: 'STALE_IMPORT'});
   });
-  it.each([
+  itAll([
     ['{', 'INVALID_JSON'], ['{"version":28}', 'UNSUPPORTED_VERSION'], ['{"version":16}', 'INVALID_STATE'], ['{"version":1}', 'INCOMPATIBLE_CATALOG'], ['{"version":15}', 'INCOMPATIBLE_CATALOG'],
     [' '.repeat(1_000_001), 'FILE_TOO_LARGE'],
   ])('rejects a bad import with %s', (json, reason) => {

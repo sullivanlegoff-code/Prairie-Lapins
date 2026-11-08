@@ -1,4 +1,5 @@
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {labAction, completeLaboratory, type LabAction} from '../src/dev/labActions';
 import {scenarioState} from '../src/dev/scenarios';
 import {createGame, encodeGame, decodeGame, act} from '../src/simulation';
@@ -28,7 +29,7 @@ function run(s: GameState, action: LabAction): GameState {
 }
 
 describe('pure laboratory transactions', () => {
-  it.each(['pattes', 'grass', 'hearts'] as const)('sets and adds exact %s without changing other balances', resource => {
+  itAll(['pattes', 'grass', 'hearts'] as const)('sets and adds exact %s without changing other balances', resource => {
     let s = createGame(now);
     for (const value of [0, 123, 1_000_000]) { s = run(s, {type: 'resource', resource, value}); expect(s[resource]).toBe(value); }
     for (const value of [1000, 10000]) { const before = s[resource]; s = run(s, {type: 'resource', resource, value, add: true}); expect(s[resource]).toBe(before + value); }
@@ -159,7 +160,7 @@ describe('pure laboratory transactions', () => {
     expect(finished.lastSimulatedAt).toBe(now);
     const farm = finished.buildings.find(b => b.order)!; expect(act(finished, {type: 'collectOrder', id: farm.id}, now).ok).toBe(true);
   });
-  it.each([0, now])('provides a valid complete endgame and a fresh tutorial scenario at %s', clock => {
+  itAll([0, now])('provides a valid complete endgame and a fresh tutorial scenario at %s', clock => {
     const s = roundTrip(scenarioState('completeGame', clock)); expect(s.rabbits).toHaveLength(49); expect(s.discovered).toHaveLength(49);
     expect(s.progression.totalXp).toBe(cumulativeLevelXp(30)); expect(s.acquiredParcels).toHaveLength(9);
     expect(s.buildings.filter(b => b.farmLevel === 2)).toHaveLength(2);

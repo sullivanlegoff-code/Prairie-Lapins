@@ -1,3 +1,4 @@
+import {settleLookChanges} from './forest';
 import {establishHistoricalLevelRights} from './levelRights';
 import {advanceFriendships} from './cozy';
 import {settleInitiation} from './initiation';
@@ -38,6 +39,7 @@ function rebaseClock(s: GameState, offset: number): void {
   for (const trip of s.travel?.trips ?? []) { trip.startedAt += offset; trip.endsAt += offset; }
   if (s.care) { s.care.startedAt += offset; s.care.endsAt += offset; }
   if (s.benny && s.benny.powerReadyAt > 0) s.benny.powerReadyAt += offset;
+  for (const rabbit of s.rabbits) if (rabbit.lookChange) rabbit.lookChange.endsAt += offset;
   for (const b of s.buildings) {
     if (b.order) { b.order.startedAt += offset; b.order.endsAt += offset; }
     if (b.breeding) { b.breeding.startedAt += offset; b.breeding.endsAt += offset; }
@@ -77,6 +79,7 @@ export function advance(state: GameState, now: number): GameState {
   advanceFriendships(next, elapsed, target);
   next.lastSimulatedAt = target;
   settleNestTransfers(next, freeSince);
+  settleLookChanges(next, target);
   updateMissions(next, target);
   settleInitiation(next);
   return next;

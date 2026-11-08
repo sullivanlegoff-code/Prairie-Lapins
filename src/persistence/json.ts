@@ -1,6 +1,6 @@
 import {historicalIncomeRoll} from '../simulation/time';
 import {MAX_APPLIED_ADJUSTMENTS} from '../simulation/adjustments';
-import {cumulativeLevelXp, nextLevelCost} from '../simulation/progression';
+import {cumulativeLevelXp, nextLevelCost, xpAfterSlowdown} from '../simulation/progression';
 import {establishHistoricalLevelRights} from '../simulation/levelRights';
 import {isUltimate} from '../simulation/affection';
 import {classicLookReason} from '../simulation/forest';
@@ -10,16 +10,17 @@ import {updateMissions} from '../simulation/missions';
 import {buildingPlacementReason, footprintPlacementReason} from '../simulation/placement';
 import {debrisFootprint} from '../simulation/debris';
 import {growFormerEnclosures} from '../simulation/enclosureGrowth';
+import {ENCLOSURE_SIZE_ERA} from '../config/habitatSizes';
 import {normalizeRabbitName} from '../simulation/rabbitNames';
 import {PARCEL_IDS, startParcel} from '../config/land';
 import {type HabitatType, HABITAT_TYPES, HABITAT_LEVELS, habitatLevel} from '../config/habitats';
 import {MAIN_MISSION_IDS, DAILY_MISSION_IDS, DAILY_MISSIONS, DAILY_PICK_COUNT} from '../config/missions';
 import {cycleIndexAt} from '../simulation/missions';
 import {z} from 'zod';
-import {BALANCE, BUILDING_KINDS, CARE_KINDS, SALON, JUMP_ROPE, LEGACY_BREEDING_DURATION, EPIC_ISLET, BENNY_FLIGHT, CUISINE_FULL_REWARDS_PER_CYCLE, HOUR, LEGACY_ORDER_CROPS, TRAVEL, tripHearts, NURSERY, ORDERS, type OrderId, SHOP_SPECIES, SPECIES, SPECIES_IDS, GUARANTEE_SPECIES, growthDuration, orderFarmLevel, type SpeciesId} from '../config/balance';
+import {BALANCE, FOREST, BUILDING_KINDS, CARE_KINDS, SALON, JUMP_ROPE, LEGACY_BREEDING_DURATION, EPIC_ISLET, BENNY_FLIGHT, CUISINE_FULL_REWARDS_PER_CYCLE, HOUR, LEGACY_ORDER_CROPS, TRAVEL, tripHearts, tripHeartsBefore20261108, NURSERY, ORDERS, type OrderId, SHOP_SPECIES, SPECIES, SPECIES_IDS, GUARANTEE_SPECIES, growthDuration, orderFarmLevel, type SpeciesId} from '../config/balance';
 import type {GameState} from '../state/types';
-import {ALL_DECORATION_IDS, DECORATION_IDS, RETIRED_DECORATION_IDS, MAX_DECORATIONS, isChristmasDecoration} from '../config/decorations';
-import {CHRISTMAS_CHALLENGES, CHRISTMAS_CHALLENGE_IDS, CHRISTMAS_PICK_COUNT, MAX_CANDIES, SKY_GIFTS} from '../config/christmasEvent';
+import {ALL_DECORATION_IDS, DECORATIONS, DECORATION_IDS, RETIRED_DECORATION_IDS, MAX_DECORATIONS, isChristmasDecoration} from '../config/decorations';
+import {CHRISTMAS_CHALLENGES, CHRISTMAS_CHALLENGE_IDS, CHRISTMAS_PICK_COUNT, COIN_BUBBLE_CANDIES, MAX_CANDIES, SKY_GIFTS} from '../config/christmasEvent';
 import {decorationPlacementReason} from '../simulation/decorations';
 import {ISLAND} from '../config/islandGeometry';
 import {EVOLUTION_CHALLENGES, EVOLUTION_CHALLENGE_IDS, evolutionChallengeTarget, evolutionChallengesComplete, type EvolutionChallenge} from '../config/evolutionChallenges';
@@ -29,7 +30,7 @@ import {EVOLUTION_AFFECTION, hasEvolvedArt} from '../config/evolvedArt';
  * The current format is v27 (the Christmas update's economy: Paille's counter removed, the nursery back to 2 cushions at
  * most, 1 to 5 Hearts a trip and the Salon's Hearts, see `migrateV26`), after v26 (the Christmas event: the sucres d'orge, the Christmas challenges of the cycle, the snowman of the
  * day, the mini-game « Les cadeaux du ciel » and the Christmas market's decorations with their receipt in sucres d'orge, all
- * optional; nothing to convert, see `migrateV25`), after v25 (the evolution challenges « commis », « goûteur » and « quotidien », the daily streak, the daily missions drawn at the start of the cycle and the rabbits caressed in it, see `migrateV24`), after v24 (larger enclosures: an enclosure may keep its former footprint, see `migrateV23`), after v23 (affection up to 50, a second Statue de l'Affection, the Salon de soins and the picnic, a lapin ultime's taken-off crown, the Forêt de Brocéliande and a rabbit's old drawing put back, the Terrain de corde à sauter, all optional; nothing to convert), after v22 (Benny's power and sky mode, optional), v21 (friendships and memories), v20 (catalogue conversion) and v19 (farm and agency levels, concurrent trips, Heart receipts), migrated through v18 and v17 from v16 (economy migration). Version 16 was the catalogue boundary of the development saves: the species Terre, Mottelin, Géant and
+ * optional; nothing to convert, see `migrateV25`), after v25 (the evolution challenges « commis », « goûteur » and « quotidien », the daily streak, the daily missions drawn at the start of the cycle and the rabbits caressed in it, see `migrateV24`), after v24 (larger enclosures: an enclosure may keep its former footprint, see `migrateV23`; enlarged again on 6 November 2026 within v27, see `migrateEnclosureSizes`), after v23 (affection up to 50, a second Statue de l'Affection, the Salon de soins and the picnic, a lapin ultime's taken-off crown, the Forêt de Brocéliande and a rabbit's old drawing put back, the Terrain de corde à sauter, all optional; nothing to convert), after v22 (Benny's power and sky mode, optional), v21 (friendships and memories), v20 (catalogue conversion) and v19 (farm and agency levels, concurrent trips, Heart receipts), migrated through v18 and v17 from v16 (economy migration). Version 16 was the catalogue boundary of the development saves: the species Terre, Mottelin, Géant and
  * Brumelin and the Terre habitat were removed, and saves before that catalogue boundary are not converted. Versions 1 to 15 are refused as incompatible
  * (the controller then starts a new game); they are never read, migrated or restored.
  */
@@ -43,8 +44,10 @@ const timestamp = z.number().int().min(Number.MIN_SAFE_INTEGER).max(Number.MAX_S
 const identity = z.string().regex(/^(building|rabbit|birth)-[1-9]\d*$/);
 const species = z.enum(SPECIES_IDS);
 const birth = z.object({id: identity, species, guaranteed: z.boolean(), reservedDiscovery: z.boolean()}).strict();
-// An enclosure may store the footprint tier it has acquired (1 = 5 × 4, 2 = 8 × 5, 3 = 10 × 6 fine cells; with `formerFootprint`,
-// the sizes before v24: 4 × 4, 6 × 5, 8 × 6). Absent means tier 1 at any level.
+// An enclosure may store the footprint tier it has acquired (1 = 6 × 5, 2 = 10 × 6, 3 = 12 × 7 fine cells). With `formerFootprint`,
+// it keeps the size of a former era: 1 = before 3 November 2026 (4 × 4, 6 × 5, 8 × 6), 2 = from 3 November 2026 (5 × 4, 8 × 5,
+// 10 × 6); saves v24 to v26, and v27 saves without `enclosureSizes`, wrote `true` for era 1 (see `migrateEnclosureSizes`).
+// Absent tier means tier 1 at any level.
 const footprintTier = z.union([z.literal(1), z.literal(2), z.literal(3)]);
 const nurseryBaby = z.object({slot: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)]), birth, startedAt: timestamp, readyAt: timestamp}).strict();
 const nurseryPayload = z.object({capacity: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]), babies: z.array(nurseryBaby).max(NURSERY.maxCapacity)}).strict();
@@ -52,8 +55,8 @@ const building = z.object({
   // x, y: a fine cell; only the islet's nest (off the land grid, checked below) may sit at a negative one.
   id: identity, kind: z.enum(BUILDING_KINDS), x: offGridCell, y: offGridCell, incomeUnits: integer,
   habitat: z.object({type: z.enum(HABITAT_TYPES), level: z.union([z.literal(1), z.literal(2), z.literal(3)]), ultra: z.literal(true).optional()}).strict().nullable(),
-  farmLevel: z.union([z.literal(2), z.literal(3)]).optional(), agencyLevel: z.union([z.literal(2), z.literal(3)]).optional(),
-  footprintTier: footprintTier.optional(), formerFootprint: z.literal(true).optional(), islet: z.literal(true).optional(),
+  farmLevel: z.union([z.literal(2), z.literal(3), z.literal(4)]).optional(), agencyLevel: z.union([z.literal(2), z.literal(3)]).optional(),
+  footprintTier: footprintTier.optional(), formerFootprint: z.union([z.literal(1), z.literal(2)]).optional(), islet: z.literal(true).optional(),
   order: z.object({recipe: z.enum(Object.keys(ORDERS) as [OrderId, ...OrderId[]]), startedAt: timestamp, endsAt: timestamp, grass: integer.optional(), duration: integer.positive().optional()}).strict().nullable(),
   breeding: z.object({parents: z.tuple([identity, identity]), startedAt: timestamp, endsAt: timestamp, birth}).strict().nullable(),
   nursery: nurseryPayload.nullable(),
@@ -62,7 +65,7 @@ const building = z.object({
 // character), absent when unnamed. Names are individual: they are never inherited and never belong to the species.
 const rabbitName = z.string().refine(name => name !== '' && normalizeRabbitName(name) === name, 'Invalid rabbit name');
 const evolution = z.object({done: z.literal(true).optional(), challenges: z.record(z.enum(EVOLUTION_CHALLENGE_IDS as [typeof EVOLUTION_CHALLENGE_IDS[number], ...typeof EVOLUTION_CHALLENGE_IDS[number][]]), integer.max(2)).optional()}).strict().optional();
-const rabbit = z.object({incomeRoll: z.number().int().min(0).max(10000).optional(), id: identity, species, affection: z.number().int().min(BALANCE.minAffection).max(BALANCE.maxAffection), enclosureId: identity, name: rabbitName.optional(), crownHidden: z.literal(true).optional(), classicLook: z.literal(true).optional(), evolution}).strict().superRefine((value, context) => {
+const rabbit = z.object({incomeRoll: z.number().int().min(0).max(10000).optional(), id: identity, species, affection: z.number().int().min(BALANCE.minAffection).max(BALANCE.maxAffection), enclosureId: identity, name: rabbitName.optional(), crownHidden: z.literal(true).optional(), classicLook: z.literal(true).optional(), lookChange: z.object({endsAt: timestamp}).strict().optional(), evolution}).strict().superRefine((value, context) => {
   const challenges = EVOLUTION_CHALLENGES[value.species] ?? [];
   for (const [key, progress] of Object.entries(value.evolution?.challenges ?? {})) {
     if (!challenges.includes(key as EvolutionChallenge) || progress > evolutionChallengeTarget(value.species, key as EvolutionChallenge))
@@ -104,6 +107,7 @@ const christmas = z.object({
   bonusClaimed: z.literal(true).optional(),
   snowman: z.object({cycle: integer, enclosureId: identity}).strict().optional(),
   skyGifts: z.object({cycle: integer, rewarded: integer.max(SKY_GIFTS.rewardedGamesPerCycle), best: integer.max(SKY_GIFTS.maxCaught)}).strict().optional(),
+  bubbles: z.object({cycle: integer, earned: integer.max(COIN_BUBBLE_CANDIES.maxPerCycle)}).strict().optional(),
 }).strict();
 const historicalTarget = z.discriminatedUnion('family', [
   z.object({family: z.literal('species'), id: species, action: z.enum(['purchase', 'breedingResult'])}).strict(),
@@ -162,6 +166,8 @@ const current = z.object({
   purchaseUnlocks: z.array(z.enum(PURCHASE_UNLOCK_IDS)).max(PURCHASE_UNLOCK_IDS.length).refine(ids => new Set(ids).size === ids.length).optional(),
   initiation: z.object({order: z.string().max(500).nullable(), breeding: z.string().max(500).nullable(), growth: z.string().max(500).nullable(), birthId: identity.nullable(), closed: z.array(aidStage).max(3), used: z.array(aidStage).max(3)}).strict().optional(),
   levelAccessTransition: levelAccessTransition.optional(), presentationId: z.string().uuid().optional(),
+  // The era of the enclosure sizes the save was written with (6 November 2026, still v27): absent before, see `migrateEnclosureSizes`.
+  enclosureSizes: z.literal(ENCLOSURE_SIZE_ERA).optional(),
   progression: z.object({totalXp: integer, rewardedThroughLevel: integer.positive()}).strict(),
   recipeBook: z.array(species).max(RECIPE_BOOK_SPECIES.length),
   cuisine: z.object({affectionCycles: z.record(z.string().min(1), integer), heartCycle: integer.nullable().optional(), fullRuns: z.object({cycle: integer, used: integer.max(CUISINE_FULL_REWARDS_PER_CYCLE)}).strict().optional()}).strict(),
@@ -215,7 +221,7 @@ const schema = current.superRefine((s, context) => {
     if (b.formerFootprint && b.kind !== 'enclosure') issue('Former footprint');
     // The islet of the Epics (v27): one nest at its fixed place off the land grid, never on it.
     if (b.islet && (b.kind !== 'nest' || b.x !== EPIC_ISLET.cell.x || b.y !== EPIC_ISLET.cell.y)) issue('Islet nest');
-    if (b.habitat?.ultra && (b.habitat.type !== 'neige' || b.habitat.level !== 3)) issue('Ultra neige habitat');
+    if (b.habitat?.ultra && b.habitat.type !== 'neige') issue('Ultra neige habitat');
     if (!b.id.startsWith('building-')) issue('Building identity');
     if (!b.islet && (buildingPlacementReason(s, b.x, b.y, b.id) || cells.has(`${b.x},${b.y}`))) issue('Invalid or occupied cell');
     cells.add(`${b.x},${b.y}`);
@@ -251,7 +257,7 @@ const schema = current.superRefine((s, context) => {
   for (const trip of s.travel?.trips ?? []) {
     const hours = (trip.endsAt - trip.startedAt) / HOUR;
     if (!s.buildings.some(b => b.kind === 'agency') || !s.rabbits.some(r => r.id === trip.rabbitId) || !Number.isInteger(hours) || hours < TRAVEL.minHours || hours > TRAVEL.maxHours
-      || (trip.grass !== undefined && (trip.grass !== hours * 25 || !s.buildings.some(b => b.kind === 'agency' && b.agencyLevel))) || trip.hearts !== tripHearts(hours) || trip.startedAt > s.lastSimulatedAt
+      || (trip.grass !== undefined && (trip.grass !== hours * 25 || !s.buildings.some(b => b.kind === 'agency' && b.agencyLevel))) || (trip.hearts !== tripHearts(hours) && trip.hearts !== tripHeartsBefore20261108(hours)) || trip.startedAt > s.lastSimulatedAt
       || s.buildings.some(b => b.breeding?.parents.includes(trip.rabbitId))) issue('Trip');
   }
   if (s.care) {
@@ -264,7 +270,7 @@ const schema = current.superRefine((s, context) => {
   if (Object.values(s.affectionGifts ?? {}).some(cycle => cycle > d.cycleIndex) || (s.picnicCycle ?? 0) > d.cycleIndex || (s.jumpRope?.cycle ?? 0) > d.cycleIndex) issue('Future gift cycle');
   if (s.christmas) {
     const c = s.christmas;
-    if ([c.cycle ?? 0, c.snowman?.cycle ?? 0, c.skyGifts?.cycle ?? 0].some(cycle => cycle > d.cycleIndex)) issue('Future gift cycle');
+    if ([c.cycle ?? 0, c.snowman?.cycle ?? 0, c.skyGifts?.cycle ?? 0, c.bubbles?.cycle ?? 0].some(cycle => cycle > d.cycleIndex)) issue('Future gift cycle');
     if (c.cycle === undefined && (c.picked || c.progress || c.claimed || c.bonusClaimed)) issue('Christmas cycle');
     const claimed = c.claimed ?? [];
     if (claimed.some(id => (c.progress?.[id] ?? 0) < CHRISTMAS_CHALLENGES[id].target || (c.picked && !c.picked.includes(id))) ||
@@ -287,7 +293,7 @@ const schema = current.superRefine((s, context) => {
     if (s.rabbits.filter(r => r.enclosureId === b.id).length > capacity) issue('Enclosure capacity');
   }
   for (const d of s.decorations) {
-    if (d.paidHearts !== undefined && (d.catalogId !== 'robot-statue' || d.paidHearts !== 80 || d.paidPrice !== undefined)) issue('Decoration receipt');
+    if (d.paidHearts !== undefined && (d.catalogId !== 'robot-statue' || (d.paidHearts !== 80 /* price before 8 November 2026 */ && d.paidHearts !== DECORATIONS['robot-statue'].heartPrice) || d.paidPrice !== undefined)) issue('Decoration receipt');
     // A Christmas decoration is paid in sucres d'orge only, and only a Christmas decoration is.
     if (d.paidCandies !== undefined && (!isChristmasDecoration(d.catalogId) || d.paidPrice !== undefined || d.paidHearts !== undefined) ||
       isChristmasDecoration(d.catalogId) && (d.paidPrice !== undefined || d.paidHearts !== undefined)) issue('Decoration receipt');
@@ -453,10 +459,13 @@ function migrateV25(raw: object): void {
 /**
  * v26 → v27, the Christmas update's economy (owner, 5 November 2026). Paille's counter is gone (`market`, dropped before any
  * migration). Every nursery goes back to 2 cushions at most, with no refund; a cushion still holding a baby is kept, so nothing
- * is lost. A trip under way brings the Hearts of the new 1–5 scale.
+ * is lost. A trip under way brings the Hearts of the new 1–5 scale. The player keeps the level reached: the slow-down above level 20
+ * applies from there on.
  */
-function migrateV26(raw: object): void {
-  const save = raw as {version: number; buildings?: unknown; travel?: {trips?: unknown}};
+function migrateV26(raw: object, xpOnCurrentCurve: boolean): void {
+  const save = raw as {version: number; buildings?: unknown; travel?: {trips?: unknown}; progression?: {totalXp?: unknown}};
+  const xp = save.progression && typeof save.progression === 'object' ? save.progression.totalXp : null;
+  if (!xpOnCurrentCurve && typeof xp === 'number' && Number.isSafeInteger(xp) && xp >= 0) save.progression!.totalXp = xpAfterSlowdown(xp);
   if (Array.isArray(save.buildings)) for (const b of save.buildings) {
     const n = b && typeof b === 'object' ? (b as {nursery?: {capacity?: unknown; babies?: unknown}}).nursery : null;
     if (!n || typeof n.capacity !== 'number' || !Array.isArray(n.babies)) continue;
@@ -465,9 +474,27 @@ function migrateV26(raw: object): void {
   }
   if (save.travel && typeof save.travel === 'object' && Array.isArray(save.travel.trips)) for (const t of save.travel.trips) {
     const trip = t as {startedAt?: unknown; endsAt?: unknown; hearts?: unknown};
-    if (trip && typeof trip.startedAt === 'number' && typeof trip.endsAt === 'number') trip.hearts = tripHearts(Math.round((trip.endsAt - trip.startedAt) / HOUR));
+    // A save older than this version was written before 8 November 2026: its trip keeps the table of that time.
+    if (trip && typeof trip.startedAt === 'number' && typeof trip.endsAt === 'number') trip.hearts = tripHeartsBefore20261108(Math.round((trip.endsAt - trip.startedAt) / HOUR));
   }
   save.version = SAVE_VERSION;
+}
+
+/**
+ * The enclosures enlarged again (owner, 6 November 2026), within v27, which was not yet published: a save that does not say the
+ * era of its sizes (`enclosureSizes`: every older version, and v27 saves written before that day) had the sizes of 3 November
+ * for its unmarked enclosures. Each enclosure keeps, for now, exactly the footprint it had: `formerFootprint: true` (era 1, set
+ * by v24 or by `migrateV23`) becomes 1 and an unmarked one becomes 2, so the save validates with the very same rules as before.
+ * Right after validation, `growFormerEnclosures` gives each one the largest size that has room.
+ */
+function migrateEnclosureSizes(raw: object): void {
+  const save = raw as {buildings?: unknown; enclosureSizes?: number};
+  if (Array.isArray(save.buildings)) for (const b of save.buildings) {
+    if (!b || typeof b !== 'object' || (b as {kind?: unknown}).kind !== 'enclosure') continue;
+    const e = b as {formerFootprint?: unknown};
+    if (e.formerFootprint === true) e.formerFootprint = 1; else if (e.formerFootprint === undefined) e.formerFootprint = 2;
+  }
+  save.enclosureSizes = ENCLOSURE_SIZE_ERA;
 }
 
 /**
@@ -491,18 +518,23 @@ export function decodeGame(json: string): DecodeResult {
   moveKioskToIsland(raw);
   // Paille's counter is removed at v27 (owner, 5 November 2026): its daily record is dropped from every older save.
   if (raw && typeof raw === 'object' && 'version' in raw && (raw.version as number) < 27) delete (raw as {market?: unknown}).market;
-  if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 16) raw = migrateV16(raw);
+  // Only a v27 save may say the era of its enclosure sizes: an older one had the sizes of its own time, whatever it carries.
+  if (raw && typeof raw === 'object' && 'version' in raw && raw.version !== SAVE_VERSION) delete (raw as {enclosureSizes?: unknown}).enclosureSizes;
+  // `migrateV16` already converts its XP to the current curve, level and share kept.
+  const fromV16 = !!raw && typeof raw === 'object' && 'version' in raw && raw.version === 16;
+  if (fromV16) raw = migrateV16(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 17) raw = migrateV17(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 18) raw = migrateV18(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && (raw.version === 19 || raw.version === 20 || raw.version === 21 || raw.version === 22)) raw.version = 23;
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 23) migrateV23(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 24) migrateV24(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 25) migrateV25(raw);
-  if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 26) migrateV26(raw);
+  if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 26) migrateV26(raw, fromV16);
+  if (raw && typeof raw === 'object' && 'version' in raw && raw.version === SAVE_VERSION && !('enclosureSizes' in raw)) migrateEnclosureSizes(raw);
   settleStorageCaps(raw);
   const parsed = schema.safeParse(raw);
   if (!parsed.success) return {ok: false, reason: 'INVALID_STATE'};
-  const {presentationId: _presentationId, ...stored} = parsed.data;
+  const {presentationId: _presentationId, enclosureSizes: _enclosureSizes, ...stored} = parsed.data;
   const state: GameState = {...stored, cuisine: {...stored.cuisine, heartCycle: stored.cuisine.heartCycle ?? null}};
   for (const rabbit of state.rabbits) if (SPECIES[rabbit.species].rarity !== 'common') rabbit.incomeRoll ??= historicalIncomeRoll(rabbit);
   for (const rabbit of state.rabbits) if (rabbit.evolution?.done && (rabbit.species === 'benny' || !hasEvolvedArt(rabbit.species) || rabbit.affection < EVOLUTION_AFFECTION || !evolutionChallengesComplete(rabbit.species, rabbit.evolution.challenges))) delete rabbit.evolution.done;
@@ -514,14 +546,25 @@ export function decodeGame(json: string): DecodeResult {
   for (const rabbit of state.rabbits) if (rabbit.crownHidden && !isUltimate(rabbit)) delete rabbit.crownHidden;
   // The old drawing put back at the Forêt de Brocéliande is dropped without the forest or on a rabbit that has not evolved,
   // never a reason to refuse the save.
-  for (const rabbit of state.rabbits) if (rabbit.classicLook && classicLookReason(state, rabbit)) delete rabbit.classicLook;
+  for (const rabbit of state.rabbits) if (classicLookReason(state, rabbit)) { delete rabbit.classicLook; delete rabbit.lookChange; }
+  // A damaged or edited file never blocks the forest: at most one change, and never longer than a change lasts.
+  let lookChangeSeen = false;
+  for (const rabbit of state.rabbits) if (rabbit.lookChange) {
+    if (lookChangeSeen) delete rabbit.lookChange;
+    else { lookChangeSeen = true; rabbit.lookChange.endsAt = Math.min(rabbit.lookChange.endsAt, state.lastSimulatedAt + FOREST.changeMs); }
+  }
   const rabbitIds = new Set(state.rabbits.map(rabbit => rabbit.id));
-  for (const id of Object.keys(state.cuisine.affectionCycles))
-    if (!rabbitIds.has(id)) delete state.cuisine.affectionCycles[id];
+  // A released rabbit's entry is kept for the day it was spent (the Cuisine gives one affection a day), then dropped.
+  // At most one such entry, and none when a rabbit still on the island already holds today's: a bloated file stays small.
+  const today = state.cuisine.affectionCycles, cycleNow = state.missions.daily.cycleIndex;
+  let spentToday = Object.entries(today).some(([id, cycle]) => rabbitIds.has(id) && cycle === cycleNow);
+  for (const [id, cycle] of Object.entries(today)) {
+    if (rabbitIds.has(id)) continue;
+    if (!spentToday && cycle === cycleNow) spentToday = true; else delete today[id];
+  }
   for (const id of Object.keys(state.affectionGifts ?? {})) if (!rabbitIds.has(id)) delete state.affectionGifts![id];
   for (const id of Object.keys(state.jumpRope?.athleteBest ?? {})) if (!rabbitIds.has(id)) delete state.jumpRope!.athleteBest![id];
-  // Today's snowman stands in an enclosure: one since removed drops it, never a reason to refuse the save.
-  if (state.christmas?.snowman && !state.buildings.some(b => b.kind === 'enclosure' && b.id === state.christmas!.snowman!.enclosureId)) delete state.christmas.snowman;
+  // Today's snowman stays recorded even if its enclosure is gone (`snowmanToday` hides it): one snowman a day, never a second.
   // Enclosures that still keep their former size grow wherever there is room (never a reason to refuse the save).
   growFormerEnclosures(state);
   establishHistoricalLevelRights(state);
@@ -540,7 +583,7 @@ function moveKioskToIsland(raw: unknown): void {
   raw.buildings = kept; (raw as {jumpIsland?: true}).jumpIsland = true;
 }
 export function encodeGame(state: GameState, presentationId?: string): string {
-  const parsed = schema.parse({...state, ...(presentationId ? {presentationId} : {})});
+  const parsed = schema.parse({...state, enclosureSizes: ENCLOSURE_SIZE_ERA, ...(presentationId ? {presentationId} : {})});
   return JSON.stringify(parsed);
 }
 

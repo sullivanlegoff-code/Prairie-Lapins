@@ -1,4 +1,5 @@
 import {describe,it,expect} from 'vitest';
+import {itAll} from './cases';
 import {PROGRESSION,type ProgressionConfig} from '../src/config/progression';
 import {SPECIES_IDS} from '../src/config/balance';
 import {DECORATION_IDS} from '../src/config/decorations';
@@ -26,7 +27,7 @@ describe('pure player progression v17',()=>{
   const fractionalBase=configure({curve:{...PROGRESSION.curve,base:50.5}});expect(nextLevelCost(1,fractionalBase)).toBe(51);
   let previous=0;for(let level=2;level<=30;level++){const threshold=cumulativeLevelXp(level);expect(threshold).toBeGreaterThan(previous);expect(progressionFromXp(threshold).level).toBe(level);previous=threshold;}
  });
- it.each([-1,.5,NaN,Infinity,-Infinity,Number.MAX_SAFE_INTEGER+1])('refuses invalid total or added XP %s',bad=>{
+ itAll([-1,.5,NaN,Infinity,-Infinity,Number.MAX_SAFE_INTEGER+1])('refuses invalid total or added XP %s',bad=>{
   expect(()=>progressionFromXp(bad)).toThrow(RangeError);expect(()=>addXp(bad,0)).toThrow(RangeError);expect(()=>addXp(0,bad)).toThrow(RangeError);
  });
  it('refuses sum overflow and level inputs outside the configuration',()=>{

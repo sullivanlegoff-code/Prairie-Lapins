@@ -10,6 +10,8 @@ import {createGame, encodeGame} from '../src/simulation';
 import {previousStart} from './regression-start';
 import type {MeadowScene} from '../src/display/MeadowScene';
 import {SAVE_KEY} from '../src/persistence/storage';
+import {PROGRESSION} from '../src/config/progression';
+const HPL = PROGRESSION.rewards.heartsPerLevel; // Hearts per level (3 since 8 November 2026).
 
 const cleanup: (() => void)[] = [];
 beforeEach(() => {
@@ -73,7 +75,7 @@ it.each([.1,.65])('guides every real action, roll=%s, with reloads and no contro
   document.getElementById('recenter-view')!.click();expect(scene.recenter).toHaveBeenCalled();
   ui.select({kind:'rabbit',id:'rabbit-2'});document.getElementById('open-missions')!.click();
   real(); expect(content().textContent).toContain('Emplacement valide');
-  const firstGhost=vi.mocked(scene.setPlacement).mock.calls.at(-1)![0]!;expect(firstGhost.cell).toEqual({x:0,y:32});
+  const firstGhost=vi.mocked(scene.setPlacement).mock.calls.at(-1)![0]!;expect(firstGhost.cell).toEqual({x:10,y:40});
   real();expect(state().pattes).toBe(150);checkpoint();
   const snow = state().buildings.find(b=>b.habitat?.type==='neige')!;
   expect(snow.x).toBeGreaterThanOrEqual(0);
@@ -101,7 +103,7 @@ it.each([.1,.65])('guides every real action, roll=%s, with reloads and no contro
   const targets=vi.mocked(scene.setRabbitDropTargets).mock.calls.at(-1)![0]!;expect(targets.length).toBeGreaterThan(0);
   ui.select({kind:'building',id:targets[0]});
   expect(state().missions.events.welcome).toBe(1);expect(state().rabbits.at(-1)!.species).toBe(roll===.1?'frisket':'icy');
-  expect(state().initiation!.used).toEqual(['order','breeding','growth']);expect(state().hearts).toBe(14);
+  expect(state().initiation!.used).toEqual(['order','breeding','growth']);expect(state().hearts).toBe(12+2*HPL);
   help();expect(prefs.value.tutorialDone).toBe(true);expect(document.getElementById('game-panel')!.dataset.view).toBe('missions');
   document.getElementById('open-collection')!.click();expect(document.getElementById('game-panel')!.dataset.view).toBe('collection');
   ui.dispose();controller.dispose();

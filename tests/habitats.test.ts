@@ -2,6 +2,7 @@ import {cumulativeLevelXp,requiredHabitatUpgradeLevel} from '../src/simulation/p
 import {sendToNursery} from './manual-transfer';
 import {regressionStart as createGame} from './regression-start';
 import {describe, expect, it, vi} from 'vitest';
+import {itAll} from './cases';
 import {HABITAT_TYPES, HABITATS, habitatLevel, type HabitatType} from '../src/config/habitats';
 import {SPECIES, SPECIES_IDS, HOUR, MINUTE, BALANCE, growthDuration} from '../src/config/balance';
 import {act, advance,  decodeGame, encodeGame, pendingDiscoveries} from '../src/simulation';
@@ -25,8 +26,8 @@ const run = (s: GameState, command: Command, now = s.lastSimulatedAt) => {
 // This high-level fixture starts with its observable missions settled, as a real loaded game does.
 const rich = () => {const s=createGame(0);const level=Math.max(...HABITAT_TYPES.map(type=>requiredHabitatUpgradeLevel(type,3)));s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level};s.pattes=10000;s.grass=1000;s.hearts=100;return advance(s,0);};
 // Former strip column/row → v10 fine cell → v11 fine cell (same arrangement, enlarged parcels).
-// Column 0 one fine cell further left: enclosures are 5 cells wide since v24.
-const build = (s: GameState, type: HabitatType, x=1, y=0) => run(s,{type:'buyBuilding',kind:'enclosure',habitatType:type,x:toV11((x<6?x+3:x-6) * 4,'x')-(x===0?1:0),y:toV11((y+3) * 4,'y')});
+// Column 0 two fine cells further left: enclosures are 6 cells wide since 6 November 2026.
+const build = (s: GameState, type: HabitatType, x=1, y=0) => run(s,{type:'buyBuilding',kind:'enclosure',habitatType:type,x:toV11((x<6?x+3:x-6) * 4,'x')-(x===0?2:0),y:toV11((y+3) * 4,'y')});
 function refuse(s: GameState, c: Command, reason: Refusal, now=s.lastSimulatedAt) {
   const before=structuredClone(s), r=act(s,c,now,()=>.99);
   expect(r).toEqual({ok:false,state:before,reason}); expect(r.state).toBe(s); expect(s).toEqual(before);
@@ -48,11 +49,11 @@ function breedingState(){
 }
 
 describe('habitat compatibility and atomic entries',()=>{
-  it.each(SPECIES_IDS.flatMap(species=>HABITAT_TYPES.map(type=>({species,type}))))('$species in $type follows species types',({species,type})=>{
+  itAll(SPECIES_IDS.flatMap(species=>HABITAT_TYPES.map(type=>({species,type}))))('$species in $type follows species types',({species,type})=>{
     const b=emptyBuilding('building-4','enclosure',4,0,type);
     expect(habitatAccepts(b,species)).toBe(type==='universal'||SPECIES[species].types.includes(type)||SPECIES[species].types.includes('arc-en-ciel'));
   });
-  it.each(HABITAT_TYPES.filter(t=>t!=='universal'))('buys %s for 200 and welcomes its common for 80',type=>{
+  itAll(HABITAT_TYPES.filter(t=>t!=='universal'))('buys %s for 200 and welcomes its common for 80',type=>{
     let s=build(rich(),type);const home=s.buildings.at(-1)!;
     expect(s.pattes).toBe(10000-habitatLevel(type,1).cost);expect(home.habitat).toEqual({type,level:1});expect(habitatStats(home)).toEqual({capacity:3,cap:habitatLevel(type,1).cap,cost:habitatLevel(type,1).cost,currency:'pattes'});
     const species=SPECIES_IDS.find(id=>SPECIES[id].price!==null&&SPECIES[id].types.includes(type))!;
@@ -92,8 +93,8 @@ describe('habitat compatibility and atomic entries',()=>{
   it('moves an occupied specialized building without changing income, occupants, level or affinity',()=>{
     let s=build(rich(),'paille');const home=s.buildings.at(-1)!.id;
     s=run(s,{type:'moveRabbit',id:'rabbit-2',enclosureId:home});s=run(s,{type:'upgradeHabitat',id:home,fromLevel:1});s=advance(s,1234567);
-    const old=structuredClone(s.buildings.at(-1)!);s=run(s,{type:'moveBuilding',id:home,x: 24, y: 25});
-    expect(s.buildings.at(-1)).toEqual({...old,x: 24, y: 25});expect(s.rabbits[0].enclosureId).toBe(home);expect(decode(encodeGame(s))).toEqual(s);
+    const old=structuredClone(s.buildings.at(-1)!);s=run(s,{type:'moveBuilding',id:home,x: 18, y: 25});
+    expect(s.buildings.at(-1)).toEqual({...old,x: 18, y: 25});expect(s.rabbits[0].enclosureId).toBe(home);expect(decode(encodeGame(s))).toEqual(s);
   });
   it('does not backdate income when entering a specialized habitat or increasing affection',()=>{
     let s=build(rich(),'paille');const home=s.buildings.at(-1)!.id;
@@ -105,8 +106,9 @@ describe('habitat compatibility and atomic entries',()=>{
 });
 
 describe('levels, income and payments',()=>{
-  it.each(['universal','feu'] as const)('upgrades %s one level at a time, preserves stored fractions and rejects maximal/stale commands',type=>{
-    let s=build(rich(),type);const home=s.buildings[1].id; s.buildings[1].incomeUnits=1234567;
+  itAll(['universal','feu'] as const)('upgrades %s one level at a time, preserves stored fractions and rejects maximal/stale commands',type=>{
+    // Column 0, row 1: room for the 12 × 7 of level 3 inside the centre parcel.
+    let s=build(rich(),type,0,1);const home=s.buildings[1].id; s.buildings[1].incomeUnits=1234567;
     const initial=s.pattes, initialHearts=s.hearts, first:Command={type:'upgradeHabitat',id:home,fromLevel:1};
     // Independent prices: level 2 in coins (universal 200, specialized 300), level 3 in exactly ten hearts and no coin.
     const coins=type==='universal'?175:225;
@@ -114,11 +116,11 @@ describe('levels, income and payments',()=>{
     expect(habitatStats(s.buildings[1])).toEqual(habitatLevel(type,2));expect(s.buildings[1].incomeUnits).toBe(1234567);
     refuse(s,first,'STALE_ACTION');
     s=run(s,{type:'upgradeHabitat',id:home,fromLevel:2});expect(s.pattes).toBe(initial-coins);expect(s.hearts).toBe(initialHearts-10);
-    expect(s.buildings[1]).toMatchObject({x: 22, y: 20,incomeUnits:1234567,habitat:{type,level:3}});
+    expect(s.buildings[1]).toMatchObject({x: 16, y: 24,incomeUnits:1234567,habitat:{type,level:3}});
     refuse(s,{type:'upgradeHabitat',id:home,fromLevel:3},'MAX_HABITAT_LEVEL');
     expect(decode(encodeGame(s))).toEqual(s);
   });
-  it.each(['universal','paille'] as const)('caps income with the old %s ceiling before upgrade without recovering lost income',type=>{
+  itAll(['universal','paille'] as const)('caps income with the old %s ceiling before upgrade without recovering lost income',type=>{
     let s=build(rich(),type);const home=s.buildings[1].id;s=run(s,{type:'moveRabbit',id:'rabbit-2',enclosureId:home});
     s=run(s,{type:'upgradeHabitat',id:home,fromLevel:1},1000*HOUR);
     const oldCap=habitatLevel(type,1).cap;
@@ -225,7 +227,7 @@ describe('v4 validation, migrations, imports and storage',()=>{
     m.flags.fail='';expect(c.confirmImport(p.token,true).ok).toBe(true);expect(c.getSnapshot().state).toEqual(s);
     const out=c.exportGame();if(!out.ok)throw Error(out.reason);expect(decode(out.json)).toEqual(s);
   });
-  it.each(['level0','level4','fractionalLevel','unknownType','missingHabitat','utilityHabitat','overCap','overCapacity','incompatible','secondWithoutFirst','outside','missingSecond'] as const)('rejects invalid %s without replacing the active game',damage=>{
+  itAll(['level0','level4','fractionalLevel','unknownType','missingHabitat','utilityHabitat','overCap','overCapacity','incompatible','secondWithoutFirst','outside','missingSecond'] as const)('rejects invalid %s without replacing the active game',damage=>{
     const s=rich(),raw=JSON.parse(encodeGame(s));
     switch(damage){
       case 'level0':raw.buildings[0].habitat.level=0;break;

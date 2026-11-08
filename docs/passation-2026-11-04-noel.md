@@ -142,11 +142,11 @@ Le propriétaire a laissé « total liberté » pour cette mission de nuit. Ses 
 - prix des cultures doublés, sauf le foin (10) ;
 - cœurs : la cuisine donne au plus +1 d'affection par jour au total, le salon donne des cœurs pour 2 soins par jour, les voyages de 1 à 5 cœurs, la corde à sauter seulement à la première partie du jour ;
 - le comptoir de Paille est retiré ;
-- la nurserie passe à 2 coussins au départ, déblocages à 40 / 120 / 250 cœurs.
+- la nurserie : une nouvelle partie commence à 1 coussin, une partie existante revient à 2 au plus (un coussin occupé par un bébé est gardé), déblocages à 40 / 120 / 250 cœurs.
 
 **Îlot des Épiques** (`src/simulation/epicIslet.ts`, `src/config/epicIsletArt.ts`) :
 - 400 cœurs, dès le niveau 18 ;
-- il flotte au nord de l'île de départ, hors de la grille ;
+- il flotte au sud de l'île de départ, hors de la grille (déplacé le 6 novembre, voir plus bas) ;
 - c'est un second nid : deux croisements en même temps ;
 - ×1,1 sur les chances d'Épique, de Légendaire et de Benny sur ce nid.
 
@@ -157,12 +157,12 @@ Le propriétaire a laissé « total liberté » pour cette mission de nuit. Ses 
 - les parcelles déjà achetées n'en ont pas.
 
 **Enclos Ultra neige** (section du marché de Noël, onglet « Récompenses spéciales ») :
-- 400 sucres d'orge pour transformer un enclos neige de niveau 3 en palais de glace (`habitat.ultra`) ;
-- mêmes places qu'avant ; il reste après Noël, mais ne s'achète que pendant Noël ;
+- un habitat neuf en sucres d'orge, du niveau 1 au niveau 3 (voir « Corrections du 6 novembre ») ;
+- il reste après Noël, mais ne s'achète et ne s'améliore que pendant Noël ;
 - la peinture est servie sous le nom `habitat-glace.png` : un nom en « -neige » serait pris pour une copie enneigée par `prepare-noel-art.mjs`.
 
 **Perchoir de Benny et « Le vol de Benny »** (`src/simulation/bennyFlightGame.ts`, `src/ui/BennyFlightActivity.ts`) :
-- un bâtiment de la boutique (3 000 pièces, un seul), utilisable seulement si Benny est sur l'île ;
+- un bâtiment de la boutique (50 000 pièces, un seul), utilisable seulement si Benny est sur l'île ;
 - le jeu : toucher l'écran fait battre des ailes à Benny, qui passe entre des colonnes de bottes de foin ;
 - récompenses : 3 parties récompensées par jour, 3 pièces par colonne (60 au plus), et 1 cœur à la première partie du jour si Benny franchit 20 colonnes ; le record est gardé.
 
@@ -207,8 +207,29 @@ Les ancrages de la cuisine des nouveaux lapins (`src/config/cuisineAnchors.ts`) 
 
 Aucun essai iPhone.
 
+## Corrections du 6 novembre 2026 (commits `c9c5e1a`, `2b5a1cd` et suivant)
+
+**Ultra neige** : habitat neuf, acheté au niveau 1 et amélioré jusqu'au niveau 3 en sucres d'orge (100 / 150 / 250, `ULTRA_SNOW` dans `src/config/balance.ts`). Dessins : `habitat-glace-1.png`, `habitat-glace-2.png`, `habitat-glace.png`. Le niveau 2 dépassait de son emprise à l'avant avec les nouvelles tailles : ancrage corrigé, et `tests/enclosure-enlargement.test.ts` couvre maintenant les trois niveaux.
+
+**Enclos encore plus grands** : 6 × 5, 10 × 6, 12 × 7 (`ENCLOSURE_FOOTPRINTS`), dessin × 1,38 / 1,4 / 1,3. Une ancienne partie garde sa taille (`formerFootprint`, l'ère 1 ou 2) tant que l'enclos ne peut pas grandir au chargement (`src/simulation/enclosureGrowth.ts`). Le format reste v27, avec le champ `enclosureSizes`.
+
+**Benny** :
+- le perchoir coûte 50 000 pièces ;
+- « Le vol de Benny » a un nouveau sprite de 8 images où elle bat des ailes (`scripts/prepare-benny-flappy.mjs`) ;
+- pour le lag, le jeu ne déplace plus que des `transform` et la boucle Phaser dort pendant la partie ;
+- le clignement existait déjà dans `src/display/bennyTimeline.ts`. Il est vérifié image par image dans Chromium dans l'enclos, avec une horloge pas à pas (`page.clock`). Il se trouve sur le corps de l'enclos, que le vol cache : le « seulement dans l'enclos » vient de la lecture du code, pas d'une capture en vol.
+
+**Îlot des Épiques** : au sud de l'île de départ (`EPIC_ISLET.cell`).
+
+**Dadi évolué** (`src/display/dadiStageView.ts`) : 8 poses peintes plus son dessin évolué, changement toutes les 3,5 à 6,5 s. Le toucher ouvre sa fiche, qui lance sa chanson. Il tient alors son micro sur pied à deux mains jusqu'à la fin, puis revient à la normale. La fin de chanson n'a été vue ni dans Chromium ni sur iPhone, seulement dans le code (`themeFinished`).
+
+**En attente du propriétaire : planche v4** (`output/planches/planche-v4.png`, ignorée par Git, peintures dans `output/imagegen/nouveaux-lapins-v4/`). Propositions A/B pour les dessins de base de Gigi-rarafe, Champignon des bois et Pain d'épice, et pour 11 évolutions. Rien n'est intégré : c'est au propriétaire de choisir. Le jeu montre encore les anciens dessins. Règles : mémoire « rabbit-pose-evolution-rules ».
+
+**Astuce pour les captures** : la partie de test s'injecte dans `prairie-lapins.save.v1` sur le build du jeu (`npm run build`). Le build du laboratoire utilise une partie séparée et l'ignore.
+
 ## Ce qui reste
 
+0. Recevoir les choix du propriétaire sur la planche v4, puis les intégrer.
 1. Faire tester au propriétaire sur iPhone :
    - la taille des boules de neige (`SNOWBALL_ART` dans `src/config/winterArt.ts`) ;
    - le bonhomme (`SNOWMAN_ART`) ;
@@ -221,3 +242,28 @@ Aucun essai iPhone.
 
 - Ne committe jamais : `assets-source/Benny/`, les dossiers « évolution … » sous `assets-source/rabbits/*/`, `.claude/`, `output/`.
 - Le dépôt mélange des fins de ligne CRLF et LF (`core.autocrlf=true`). Les avertissements « LF will be replaced » sont normaux.
+
+## Audit du 6 novembre 2026
+
+Forêt de Brocéliande : changer de dessin prend 7 heures dans les deux sens, un seul lapin à la fois (`lookChange`, `src/simulation/forest.ts`).
+
+Corrigé par l'audit :
+- une partie publiée garde son niveau au chargement malgré le ralentissement après le niveau 20 (`xpAfterSlowdown`, `migrateV26`) ;
+- sauvegarde en ligne : la fin d'un changement de dessin et le défi « parent » du transfert automatique ne créent plus de faux conflit (`fingerprint`, format 3), et l'état envoyé porte l'ère des tailles d'enclos (`encodeGame` dans `gateway.commit`) ;
+- les trois jeux plein écran se mettent en pause quand le téléphone se verrouille (`src/ui/activityPause.ts`), et l'île s'endort derrière les cadeaux et la corde ;
+- message clair quand un nouveau bâtiment n'a plus aucune place sur l'île (`hasRoomFor`) ;
+- le marché suit l'îlot de la corde, le bonhomme de neige suit son enclos, Dadi musique coupée ne bloque plus, textes de l'îlot « au sud », noms d'espèces retirés de la forêt, « Broussailles » au lieu de « Mauvaises herbes ».
+
+Non corrigé, connu : relâcher le lapin qui a reçu l'affection de la cuisine rouvre celle du jour ; une nurserie avec un bébé sur son 3e ou 4e coussin garde ces coussins ; les cadeaux du ciel bougent encore par `left` / `top`, sans `transform`.
+
+## Dessins du 6 novembre 2026
+
+Bases B de Gigi-rarafe, Champignon des bois et Pain d'épice ; 11 évolutions refaites (planches `output/planches/planche-v4.png` à `planche-v6.png`, hors Git). Six ont été repeintes de trois-quarts à la demande du propriétaire : Bouyoyo, Champignon, Pain d'épice, Vantablack, Rennes, Arkoko. La base de Pain d'épice reste de profil, approuvée telle quelle.
+
+Les dessins ont été validés par le propriétaire le 6 novembre. La toque et le bavoir de ces 6 évolutions ont été contrôlés dans la vraie cuisine (Chromium, Avocado toast, chaque lapin en commis et en goûteur) : aucune retouche nécessaire.
+
+## Mise à jour du 6 novembre 2026 : le vol et l’apparition de Benny
+
+- **Le vol de Benny** : au toucher, les règles donnent toujours leur vitesse d’un coup (`bennyFlightGame.ts` n’a pas changé), mais ce qui est dessiné suit en douceur : hauteur et inclinaison lissées, ailes qui accélèrent sans repartir du haut, plus d’étirement. Réglages dans `BENNY_FLAPPY` (`src/config/bennyFlightGameArt.ts`).
+- **L’apparition de Benny** (`src/ui/bennyReveal.ts`, `src/display/benny-reveal.css`) : environ 8,5 s avant les mots. Vue rapprochée qui recule, étoiles filantes, Benny endormie qui descend en se balançant, yeux qui s’ouvrent, atterrissage, gerbe d’étoiles, bond de joie, mots un par un ; ensuite elle respire, cligne, bouge le nez et les oreilles.
+- Ses poses viennent de l’atlas de la prairie, sans nouveau dessin. `src/config/bennyRevealPoses.json` recopie leurs coordonnées (un test le garde égal à l’atlas). Si l’atlas n’est pas prêt à temps, elle descend avec son image de repos.

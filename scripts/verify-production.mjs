@@ -85,16 +85,8 @@ assert.equal(farm.subarray(0,8).toString('hex'), '89504e470d0a1a0a', 'Farm must 
 assert.equal(farm.readUInt32BE(16), 1254); assert.equal(farm.readUInt32BE(20), 1254);
 assert.equal(farm[25], 6, 'Farm texture must contain alpha');
 assert.equal(createHash('sha1').update('blob '+farm.length+'\0').update(farm).digest('hex'), '7d327382bf7714b8f32fc50ee08ebb7eb4b94ff5', 'Unexpected farm artwork');
-const nest = readFileSync(join(root, 'assets/buildings/nest-heart-cave.png'));
-assert.equal(nest.subarray(0,8).toString('hex'), '89504e470d0a1a0a', 'Nest must be a PNG');
-assert.equal(nest.readUInt32BE(16), 1254); assert.equal(nest.readUInt32BE(20), 1254);
-assert.equal(nest[25], 6, 'Nest texture must contain alpha');
-assert.equal(createHash('sha1').update('blob '+nest.length+'\0').update(nest).digest('hex'), 'b5b09bdaa4f774f71f1a52ffcb8507430f480ebd', 'Unexpected nest artwork');
-const nursery = readFileSync(join(root, 'assets/buildings/nursery-bunny-house.png'));
-assert.equal(nursery.subarray(0,8).toString('hex'), '89504e470d0a1a0a', 'Nursery must be a PNG');
-assert.equal(nursery.readUInt32BE(16), 1254); assert.equal(nursery.readUInt32BE(20), 1254);
-assert.equal(nursery[25], 6, 'Nursery texture must contain alpha');
-assert.equal(createHash('sha1').update('blob '+nursery.length+'\0').update(nursery).digest('hex'), '468b2e7244f26f2a264539a696bac9f8afca0d01', 'Unexpected nursery artwork');
+// The first nest (nest-heart-cave.png) and nursery (nursery-bunny-house.png) pictures were replaced by the v2 art and are no
+// longer shipped (audit of 7 November 2026).
 // Approved Nursery v2 base (src/config/nurseryArt.ts). The expected blob SHA-1 was computed from the approved source
 // image (generated_images/…/exec-6fb74ffc-8b11-4e97-94cc-f26086135ed5.png), never from a build output.
 const nurseryBase = readFileSync(join(root, 'assets/buildings/nursery-v2-base.png'));

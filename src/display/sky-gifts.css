@@ -14,12 +14,13 @@
 .sky-gifts-quota { flex: 1; font-size: .9rem; text-align: right; }
 .sky-gifts-top button { min-height: 44px; padding: 0 16px; border-radius: 14px; border: 2px solid #6b5a3a; background: #fff8e8; font-weight: 800; }
 .sky-gifts-stage { position: relative; flex: 1; min-height: 0; overflow: hidden; cursor: pointer; background: center bottom / cover no-repeat #1d2a57; container-type: size; }
-.sky-gifts-sleigh { position: absolute; width: min(30cqw, 46cqh); height: auto; transform: translate(-50%, -50%); pointer-events: none; z-index: 1; }
-.sky-gifts-sleigh[data-facing="-1"] { transform: translate(-50%, -50%) scaleX(-1); }
+/* The sleigh, the presents and the rabbit sit at the stage's top-left corner; the script moves them with `translate` only. */
+.sky-gifts-sleigh { position: absolute; left: 0; top: 0; width: min(30cqw, 46cqh); height: auto; pointer-events: none; z-index: 1; will-change: translate; }
+.sky-gifts-sleigh[data-facing="-1"] { scale: -1 1; }
 .sky-gifts-falling { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
-.sky-gifts-gift { position: absolute; width: min(7.5cqw, 12cqh); height: auto; transform: translate(-50%, -50%); }
+.sky-gifts-gift { position: absolute; left: 0; top: 0; width: min(7.5cqw, 12cqh); height: auto; will-change: translate; }
 /* The rabbit stands on the snow; its basket is on its back, its rim at the catching band (74 % to 86 % of the stage height). */
-.sky-gifts-rabbit { position: absolute; z-index: 3; bottom: 2%; height: min(27cqh, 30cqw); aspect-ratio: 1; transform: translateX(-50%); pointer-events: none; }
+.sky-gifts-rabbit { position: absolute; z-index: 3; left: 0; bottom: 2%; height: min(27cqh, 30cqw); aspect-ratio: 1; pointer-events: none; will-change: translate; }
 .sky-gifts-figure { position: absolute; inset: 0; display: block; }
 .sky-gifts-figure img { width: 100%; height: 100%; object-fit: contain; object-position: bottom; }
 .sky-gifts-basket { position: absolute; z-index: 1; left: 50%; top: -8%; width: 66%; height: auto; transform: translateX(-50%); }
@@ -32,15 +33,15 @@
 .sky-gifts-pop[data-kind="trap"] { color: #b6ff7a; font-size: 2.2rem; }
 /* The traps (poisoned presents and bombs) wobble a little as they fall, so they stand out from the presents. */
 .sky-gifts-gift:not([data-kind="gift"]) { width: min(8.5cqw, 13.5cqh); animation: sky-gifts-wobble .6s ease-in-out infinite alternate; }
-@keyframes sky-gifts-wobble { from { transform: translate(-50%, -50%) rotate(-9deg); } to { transform: translate(-50%, -50%) rotate(9deg); } }
+@keyframes sky-gifts-wobble { from { rotate: -9deg; } to { rotate: 9deg; } }
 .sky-gifts-blasts { position: absolute; inset: 0; pointer-events: none; z-index: 4; }
 .sky-gifts-blast { position: absolute; width: min(20cqw, 30cqh); height: auto; transform: translate(-50%, -50%); animation: sky-gifts-blast .7s ease-out forwards; }
 @keyframes sky-gifts-blast { from { opacity: 1; transform: translate(-50%, -50%) scale(.4); } 35% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); } to { opacity: 0; transform: translate(-50%, -50%) scale(1.25); } }
 .sky-gifts-rabbit.hurt { animation: sky-gifts-hurt .45s ease-in-out; }
-@keyframes sky-gifts-hurt { 20%, 60% { transform: translateX(calc(-50% - 7px)); } 40%, 80% { transform: translateX(calc(-50% + 7px)); } }
+@keyframes sky-gifts-hurt { 20%, 60% { transform: translateX(-7px); } 40%, 80% { transform: translateX(7px); } }
 @media (prefers-reduced-motion: reduce) { .sky-gifts-gift:not([data-kind="gift"]), .sky-gifts-rabbit.hurt { animation: none; } .sky-gifts-blast { animation-duration: .01s; animation-delay: .6s; } }
 .sky-gifts-card {
-  position: absolute; z-index: 5; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(420px, calc(100% - 32px));
+  position: absolute; z-index: 8; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(420px, calc(100% - 32px));
   max-height: calc(100% - 32px); overflow: auto; padding: 16px 18px; border-radius: 22px; background: #fff8e8; border: 3px solid #8a7550;
   box-shadow: 0 8px 24px #1d2a5766; text-align: center; touch-action: auto;
 }

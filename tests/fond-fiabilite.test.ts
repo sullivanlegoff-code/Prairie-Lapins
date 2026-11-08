@@ -1,5 +1,6 @@
 // HISTORICAL: previousStart reproduces the retired centre-start layout; current economy rules apply.
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {GameController} from '../src/application/GameController';
 import {act, advance, decodeGame, encodeGame} from '../src/simulation';
 import {emptyBuilding} from '../src/state/initial';
@@ -17,7 +18,7 @@ import {previousStart} from './regression-start';
 const NOW = 1_790_000_000_000;
 function ready(): GameState {
   const s = previousStart(NOW);
-  s.buildings[0].x = 17; s.buildings[0].y = 20;
+  s.buildings[0].x = 16; s.buildings[0].y = 20;
   s.buildings[1].x = 18; s.buildings[1].y = 16;
   s.buildings[2].x = 22; s.buildings[2].y = 16;
   s.pattes = 100_000; s.grass = 1000; s.hearts = 1000;
@@ -27,7 +28,7 @@ function ready(): GameState {
   s.rabbits.push({...s.rabbits[0], id: 'rabbit-9'});
   const farm = emptyBuilding('building-6', 'farm', 22, 20);
   farm.order = {recipe: 'foin', startedAt: NOW - 5 * MINUTE, endsAt: NOW};
-  const habitat = emptyBuilding('building-7', 'enclosure', 24, 24);
+  const habitat = emptyBuilding('building-7', 'enclosure', 22, 25);
   const kitchen = emptyBuilding('building-8', 'kitchen', 26, 20);
   s.buildings.push(farm, habitat, kitchen);
   s.buildings[0].incomeUnits = 12 * HOUR;
@@ -41,8 +42,8 @@ function ready(): GameState {
 function prepare(type: Command['type']): {state: GameState; command: Command} {
   const s = ready(), id = 'building-6';
   const command: Partial<Record<Command['type'], Command>> = {
-    buyBuilding: {type: 'buyBuilding', kind: 'farm', x: 18, y: 24},
-    moveBuilding: {type: 'moveBuilding', id, x: 18, y: 24},
+    buyBuilding: {type: 'buyBuilding', kind: 'farm', x: 18, y: 25},
+    moveBuilding: {type: 'moveBuilding', id, x: 18, y: 25},
     buyRabbit: {type: 'buyRabbit', species: 'paille', enclosureId: 'building-7'},
     moveRabbit: {type: 'moveRabbit', id: 'rabbit-2', enclosureId: 'building-7'},
     collectIncome: {type: 'collectIncome', id: 'building-1'},
@@ -97,7 +98,7 @@ function prepare(type: Command['type']): {state: GameState; command: Command} {
 const commands = ['buyBuilding', 'moveBuilding', 'placeStarterBuilding', 'buyRabbit', 'moveRabbit', 'collectIncome', 'startOrder', 'collectOrder', 'feed', 'breed', 'transferBirth', 'welcome', 'release', 'renameRabbit', 'upgradeHabitat', 'expand', 'rewardCuisine', 'buyDecoration', 'placeDecoration', 'sellDecoration', 'storeDecorationsInCell', 'claimMainMission', 'claimDailyMission', 'claimDailyBonus', 'claimHearts', 'buyRecipe', 'unlockNurserySlot', 'accelerate', 'initiationAid', 'payWithHearts'] as const;
 
 describe('all durable actions are saved before adoption', () => {
-  it.each(commands)('%s refuses a failed write and preserves the previous state', type => {
+  itAll(commands)('%s refuses a failed write and preserves the previous state', type => {
     const {state, command} = prepare(type);
     expect(decodeGame(encodeGame(state)).ok, 'valid fixture').toBe(true);
     expect(act(state, command, NOW, () => .9).ok, 'action is otherwise valid').toBe(true);

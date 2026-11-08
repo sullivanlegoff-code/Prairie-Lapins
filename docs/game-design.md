@@ -44,6 +44,15 @@ Les exports sont en v20 ; la chaîne v16-v19 est conservée, les versions 1-15 r
 
 # Économie courante — partie A, sauvegarde v20
 
+### Économie des cœurs — 8 novembre 2026
+
+Règle du propriétaire : en jouant tous les jours (trois sessions) et sans jamais dépenser de cœurs pour accélérer, on doit pouvoir payer **tout ce qui s'achète en cœurs en 15 jours**. Les niveaux de joueur requis restent les mêmes : les cœurs sont prêts au jour 15 et attendent le niveau (statue 1 au niveau 15, îlet épique au 18, statue 2 et statue du robot au 22). Ces montants remplacent ceux des sections plus anciennes.
+
+- Prix : ferme niveau 2, 30 ; agence niveau 2 puis 3, **30 puis 60** (40 et 120 avant) ; nurserie 2e, 3e, 4e place, **30, 60, 80** (40, 120, 250) ; statues de l'Affection, 60 et 100 (inchangées) ; statue du robot, **50** (80) ; îlet épique, **200** (400) ; habitat niveau 3, 10 par habitat. Total pour une fois chaque achat (un habitat de chaque type) : **760 cœurs**.
+- Gains : cadeau **10 cœurs** par 24 h, trois cadeaux en réserve au plus (3 avant) ; bonus des missions du jour, **5** (2) ; premier plat de la Cuisine du jour, **3** (1) ; **3 cœurs par niveau** (1) ; voyages **3, 5, 7, 9 ou 12 cœurs** pour 3-4 h, 5-6 h, 7-8 h, 9 h et 10 h (1 à 5 avant). Salon, corde à sauter, vol de Benny et missions inchangés.
+- Calendrier : `src/simulation/heartCalendar.ts` rejoue jour par jour les sources d'un joueur assidu avec les vraies valeurs du jeu (niveaux tirés de la simulation de progression ; agence au niveau 8, améliorée dès que possible ; chaque place de l'agence relancée à chaque session). Résultat : **787 cœurs gagnés au jour 15** pour 760 à dépenser (718 au jour 14). `tests/heart-calendar.test.ts` vérifie qu'un nouveau réglage garde ce rythme.
+- Après le jour 15, un joueur assidu gagne environ 70 cœurs par jour (dont une cinquantaine en voyages) : ils servent alors surtout à accélérer (1 cœur par 5 minutes) et à compléter des achats en pièces (1 cœur pour 25 pièces).
+
 ### Dépenses permanentes en cœurs — 26 octobre 2026
 
 Une ferme achetée est de niveau 1 : foin, pissenlit, trèfle, persil et laitue. Dès le niveau joueur 9, `upgradeFarm {id}` coûte 30 cœurs et ouvre fanes de carotte, fenouil, pomme, fraise et banane, avec le moulin du dessin historique. Les niveaux joueur de chaque culture restent requis. L’amélioration est immédiate, possible pendant une culture, sans pièces, complément ni accélération. `farmLevel?: 2 | 3` absent signifie niveau 1. Les deux dessins partagent les mêmes sillons et les mêmes pousses.

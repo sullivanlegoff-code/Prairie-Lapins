@@ -53,11 +53,16 @@ export function buildingPlacementReason(s: PlacementState,
  * owned land, free of other buildings and of decorations. Nothing is ever moved or put away to make room.
  */
 export function upgradeFootprintReason(s: PlacementState, buildingId: string, tier: number, geometry: IslandGeometry = ISLAND):
-  'UPGRADE_BLOCKED_LAND' | 'UPGRADE_BLOCKED_BUILDING' | 'UPGRADE_BLOCKED_DECORATION' | 'NOT_FOUND' | null {
+  'UPGRADE_BLOCKED_LAND' | 'UPGRADE_BLOCKED_BUILDING' | 'UPGRADE_BLOCKED_DECORATION' | 'UPGRADE_BLOCKED_DEBRIS' | 'NOT_FOUND' | null {
   const b = s.buildings.find(item => item.id === buildingId); if (!b) return 'NOT_FOUND';
   // An upgrade always acquires the enlarged footprint of its tier, even for an enclosure that kept its former one.
   const reason = footprintPlacementReason(s, buildingFootprint({kind: b.kind, x: b.x, y: b.y, footprintTier: tier as Building['footprintTier']}), {buildingId}, geometry);
-  return reason === null ? null : reason === 'CELL_OCCUPIED' ? 'UPGRADE_BLOCKED_BUILDING' : reason === 'DECORATION_OVERLAP' || reason === 'DEBRIS_IN_THE_WAY' ? 'UPGRADE_BLOCKED_DECORATION' : 'UPGRADE_BLOCKED_LAND';
+  return reason === null ? null : reason === 'CELL_OCCUPIED' ? 'UPGRADE_BLOCKED_BUILDING' : reason === 'DEBRIS_IN_THE_WAY' ? 'UPGRADE_BLOCKED_DEBRIS' : reason === 'DECORATION_OVERLAP' ? 'UPGRADE_BLOCKED_DECORATION' : 'UPGRADE_BLOCKED_LAND';
+}
+/** Whether a new building of this kind fits anywhere on the land owned today. */
+export function hasRoomFor(s: PlacementState, kind: BuildingKind, geometry: IslandGeometry = ISLAND): boolean {
+  for (let y = 0; y < geometry.mapFine; y++) for (let x = 0; x < geometry.mapFine; x++) if (buildingPlacementReason(s, x, y, undefined, kind, geometry) === null) return true;
+  return false;
 }
 export function buildingAt(s: Pick<GameState, 'buildings'>, p: {x: number; y: number}) {
   return s.buildings.find(b => { const f = buildingFootprint(b); return p.x >= f.x && p.x < f.x + f.width && p.y >= f.y && p.y < f.y + f.height; });

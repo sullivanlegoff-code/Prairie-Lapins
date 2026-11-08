@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import {describe,it,expect} from 'vitest';
+import {itAll} from './cases';
 import {act,encodeGame,decodeGame} from '../src/simulation';
 import {createCentreStartGame} from '../src/state/initial';
 import {requiredExtensionLevel,cumulativeLevelXp} from '../src/simulation/progression';
@@ -13,7 +14,7 @@ import {ProgressionNotices} from '../src/ui/progressionNotices';
 function state(rank:number,level:number){const s=createCentreStartGame(0);s.acquiredParcels=PARCEL_IDS.slice(0,rank);s.pattes=5000000;s.hearts=10000;s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level};return s;}
 describe('rank-based extension level gates',()=>{
  it('activates all five central families',()=>expect(Object.values(PROGRESSION.activeLevelFamilies)).toEqual([true,true,true,true,true]));
- it.each([1,2,3,4,5,6,7,8])('rank %i revalidates level before normal/hearts payment',rank=>{
+ itAll([1,2,3,4,5,6,7,8])('rank %i revalidates level before normal/hearts payment',rank=>{
   const level=requiredExtensionLevel(rank);expect(level).toBe([4,6,8,10,12,15,18,22][rank-1]);
   const s=state(rank,level-1),command={type:'expand',parcelId:PARCEL_IDS[rank],expectedCost:extensionPrice(s)} as const,before=structuredClone(s);
   expect(act(s,command,0)).toEqual({ok:false,state:before,reason:'LEVEL_REQUIRED'});expect(s).toEqual(before);
@@ -37,7 +38,7 @@ describe('rank-based extension level gates',()=>{
   const full=state(9,1);const loaded=decodeGame(encodeGame(full));expect(loaded).toMatchObject({ok:true,state:{acquiredParcels:full.acquiredParcels,buildings:full.buildings,progression:full.progression}});expect(levelUnlockContents(full,1,30).some(t=>t.family==='extension')).toBe(false);
   const notices=new ProgressionNotices('extension-notices','test');notices.add({fromLevel:1,toLevel:30,heartsGranted:0,unlocks:levelUnlockContents(partial,1,30)});expect(new ProgressionNotices('extension-notices','test').take()?.unlocks?.filter(t=>t.family==='extension')).toHaveLength(5);
  });
- it.each([false,true])('write failure rejects parcel and payment, then one retry succeeds (hearts=%s)',hearts=>{
+ itAll([false,true])('write failure rejects parcel and payment, then one retry succeeds (hearts=%s)',hearts=>{
   const s=state(1,4);if(hearts)s.pattes=0;let raw=encodeGame(s),fail=false;const storage={getItem:(k:string)=>k===SAVE_KEY?raw:null,setItem:(k:string,v:string)=>{if(fail)throw Error('quota');if(k===SAVE_KEY)raw=v;}};
   const c=new GameController(storage,()=>0);const action={type:'expand',parcelId:'southeast',expectedCost:600} as const,q=quoteComplement(s,action,0);if(hearts&&!q.ok)throw Error(q.reason);const command=hearts?{type:'payWithHearts' as const,action,maxPattes:0,maxHearts:q.ok?q.hearts:0}:action;
   const before=c.getSnapshot().state,rawBefore=raw;fail=true;expect(c.perform(command)).toMatchObject({ok:false,reason:'ACTION_NOT_SAVED'});expect(c.getSnapshot().state).toEqual(before);expect(raw).toBe(rawBefore);fail=false;expect(c.perform(command).ok).toBe(true);expect(c.perform(command).ok).toBe(false);expect(c.getSnapshot().state?.acquiredParcels).toEqual(['center','southeast']);c.dispose();

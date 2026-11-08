@@ -1,4 +1,5 @@
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {CHRISTMAS_DECORATION_IDS, DECORATIONS, DECORATION_IDS, RETIRED_DECORATION_IDS, decorationResalePrice} from '../src/config/decorations';
 import {requiredDecorationLevel, cumulativeLevelXp, validateProgressionConfig} from '../src/simulation/progression';
 import {decorationLayerDepth, decorationScale, decorationOrigin} from '../src/display/decorationArt';
@@ -32,11 +33,11 @@ describe('approved painted decorations', () => {
   expect(decodeGame(encodeGame(saved))).toEqual({ok:true,state:saved});
   expect(saved.decorations.find(d=>d.catalogId==='tree')!.id).toBe('decoration-102');
  });
- it.each(expected)('%s has its approved price, footprint, level, and half-price resale', (id,name,price,width,height,level) => {
+ itAll(expected)('%s has its approved price, footprint, level, and half-price resale', (id,name,price,width,height,level) => {
   expect(DECORATIONS[id]).toMatchObject({name,price,width,height,level,rotates:false,area:'outside'});
   expect(requiredDecorationLevel(id)).toBe(level);
   expect(decorationResalePrice(id)).toBe(Math.floor(price/2));
-  const state=createCentreStartGame(0); state.pattes=20000; state.hearts=80; state.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level};
+  const state=createCentreStartGame(0); state.pattes=20000; state.hearts=DECORATIONS[id].heartPrice ?? 80; state.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level};
   const bought=act(state,{type:'buyDecoration',catalogId:id},0);expect(bought.ok).toBe(true);if(!bought.ok)throw Error(bought.reason);
   if(DECORATIONS[id].heartPrice){expect(bought.state.hearts).toBe(0);expect(bought.state.pattes).toBe(state.pattes);expect(act(bought.state,{type:'sellDecoration',id:bought.state.decorations[0].id},0)).toEqual({ok:false,state:bought.state,reason:'INVALID_CHOICE'});return;}
   const sold=act(bought.state,{type:'sellDecoration',id:bought.state.decorations[0].id},0);expect(sold.ok).toBe(true);expect(sold.state.pattes).toBe(20000-price+Math.floor(price/2));

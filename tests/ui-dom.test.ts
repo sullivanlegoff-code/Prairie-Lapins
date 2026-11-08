@@ -28,17 +28,18 @@ import type {Command, GameState} from '../src/state/types';
 import {developmentEnvironment} from '../src/dev/tools';
 import {SAVE_KEY, type SaveStorage} from '../src/persistence/storage';
 import {scenarioState} from '../src/dev/scenarios';
-import {BALANCE, MINUTE, NURSERY, SPECIES, SPECIES_IDS, growthDuration} from '../src/config/balance';
+import {BALANCE, HEARTS, MINUTE, NURSERY, ORDERS, SPECIES, SPECIES_IDS, growthDuration} from '../src/config/balance';
 import {accelerationCost} from '../src/simulation/hearts';
 import {babyOf, setBaby} from './nursery-baby';
-import {EXPECTED_IDS, EXPECTED_RECIPE_IDS, rareAdditions, shareLabel} from './rabbit-art-fixtures';
+import {EXPECTED_IDS, EXPECTED_RECIPE_IDS} from './rabbit-art-fixtures';
 import {emptyBuilding} from '../src/state/initial';
 import {habitatCap} from '../src/config/habitats';
 import {buildingPlacementReason} from '../src/simulation/placement';
+import {DAILY_BONUS} from '../src/config/missions';
 
 const cleanups: (() => void)[] = [];
 it('buys, places and selects Cuisine without opening the cooking activity', () => {
-  const initial=createGame(0);initial.buildings[0].x=26;initial.buildings[0].y=28;
+  const initial=createGame(0);initial.buildings[0].x=26;initial.buildings[0].y=27;
   const {controller,ui}=setup(initial);
   document.getElementById('open-shop')!.click();button('Bâtiments et décorations').click();
   button('Placer · 100 pièces').click();ui.select({kind:'cell',x:19,y:22});
@@ -166,7 +167,8 @@ function collectionReady(): GameState {
   let s = createGame(0); s.pattes = 20_000; s.grass = 500; s.progression = {totalXp: cumulativeLevelXp(9), rewardedThroughLevel: 9};
   const step = (command: Command) => { const r = act(s, command, 0, () => .5); if (!r.ok) throw Error(command.type + ': ' + r.reason); s = r.state; };
   step({type: 'placeStarterBuilding', kind: 'nest', x: 22, y: 20}); step({type: 'placeStarterBuilding', kind: 'nursery', x: 26, y: 20}); step({type: 'buyBuilding', kind: 'farm', x: 22, y: 24});
-  for (const [x, y] of [[17, 24], [26, 24], [17, 28]]) step({type: 'buyBuilding', kind: 'enclosure', x, y});
+  // The third 6 × 5 enclosure needs the east parcel: the centre one is full.
+  s.acquiredParcels.push('east'); for (const [x, y] of [[16, 24], [26, 24], [32, 24]]) step({type: 'buyBuilding', kind: 'enclosure', x, y});
   const second = s.buildings.filter(b => b.kind === 'enclosure')[1].id;
   for (const species of ['belier-gris', 'feu', 'volant'] as const) step({type: 'buyRabbit', species, enclosureId: second});
   s.rabbits.forEach(r => r.affection = 2); s.hearts = 12; s.pityFailures = 7; return s;
@@ -175,9 +177,8 @@ describe('reproduction text follows current recipe data', () => {
   it('explains recipe-specific thresholds in the nest without revealing unknown conditions', () => {
     const {ui}=setup(scenarioState('guidedLegacy',0));
     ui.open({kind:'building',id:'building-4'});
-    expect(panel().textContent).toContain('La reproduction est possible dès affection 2 chez chacun des deux parents.');
-    expect(panel().textContent).toContain('Chaque recette possède ses propres conditions');
-    expect(panel().textContent).toContain('résultats ordinaires explicitement éligibles à la garantie et admissibles à cette paire');
+    // Owner, 7 November 2026: no odds, guarantee policy or rule paragraph shown to the player.
+    for (const removed of ['La reproduction est possible dès affection 2', 'Chaque recette possède ses propres conditions', 'Garantie :', 'garantie']) expect(panel().textContent).not.toContain(removed);
     expect(panel().textContent).not.toContain('Recettes rares : affection 4');
     for(const hidden of ['Frisket','Icy','épiques : 6','légendaires : 10']) expect(panel().textContent).not.toContain(hidden);
   });
@@ -187,13 +188,13 @@ describe('reproduction text follows current recipe data', () => {
     const card=panel().querySelector(`[data-recipe="${id}"]`)!;
     expect(card.getAttribute('data-recipe-known')).toBe('true');
     expect(card.textContent).toContain('Affection 2 minimum pour chacun des deux parents.');
-    expect(card.textContent).toContain('Cette espèce bénéficie de la garantie ordinaire');
-    expect(card.textContent).not.toContain('Cette espèce ne bénéficie pas de la garantie');
-    expect(panel().textContent).toContain('espèces explicitement éligibles à la garantie, non découvertes et admissibles à cette paire');
+    // Owner, 7 November 2026: no odds, guarantee policy or rule paragraph shown to the player.
+    expect(card.textContent).not.toMatch(/garantie|%/);
+    expect(panel().textContent).not.toContain('espèces explicitement éligibles à la garantie');
   });
   it('retains the historical guarantee indication for a known eligible recipe', () => {
     const known=createGame(0);known.recipeBook=['boudinet'];const {ui}=setup(known);ui.open({kind:'recipes'});
-    expect(panel().querySelector('[data-recipe="boudinet"]')!.textContent).toContain('Cette espèce bénéficie de la garantie ordinaire si elle n’est pas encore découverte et reste admissible.');
+    expect(panel().querySelector('[data-recipe="boudinet"]')!.textContent).not.toMatch(/garantie|%/);
   });
   it('reads explicit eligibility rather than inferring it from the absence of a fixed probability', () => {
     const original=SPECIES.boudinet.acquisition;
@@ -201,7 +202,7 @@ describe('reproduction text follows current recipe data', () => {
       SPECIES.boudinet.acquisition=original.map(source=>source.kind==='recipe'?{...source,guaranteeEligible:false}:source);
       const known=createGame(0);known.recipeBook=['boudinet'];const {ui}=setup(known);ui.open({kind:'recipes'});
       const card=panel().querySelector('[data-recipe="boudinet"]')!;
-      expect(card.textContent).toContain('Cette espèce ne bénéficie pas de la garantie de découverte.');
+      expect(card.textContent).not.toMatch(/garantie|%/);
       expect(card.textContent).not.toContain('Cette espèce bénéficie de la garantie ordinaire');
     } finally {SPECIES.boudinet.acquisition=original;}
   });
@@ -394,13 +395,13 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     const {controller,ui,clock}=setup(initial);place(ui,'farm',1,0);
     const hour=3600_000,daily=()=>{document.getElementById('open-missions')!.click();button('Quotidiennes').click();};
     const card=(id:string)=>panel().querySelector<HTMLElement>(`[data-mission="${id}"]`)!;
-    const BONUS='Réclamer · + 2 cœurs · + 20 nourriture';
+    const BONUS=`Réclamer · + ${DAILY_BONUS[0].amount} cœurs · + 20 nourriture`;
     controller.perform({type:'startOrder',id:'building-4',recipe: 'pissenlit'});
     // Morning: the three shown missions of day 0 (feed-rabbit, welcome-baby, gain-affection) are all open; the harvest counts for none of them.
     clock.now=5*hour;controller.perform({type:'collectIncome',id:'building-1'});controller.perform({type:'collectOrder',id:'building-4'});
     for(let i=0;i<3;i++)controller.perform({type:'feed',id:'rabbit-2'});controller.perform({type:'feed',id:'rabbit-3'});for(const [kind,x] of [['nest',26],['nursery',18]] as const)controller.perform({type:'placeStarterBuilding',kind,x,y:24});
     daily();
-    expect(panel().textContent).toContain('expirent');expect(panel().querySelector('.timer')!.textContent).toBe('19 h 0 min');
+    expect(panel().textContent).toContain('À réclamer avant le renouvellement.');expect(panel().querySelector('.timer')!.textContent).toBe('19 h 0 min');
     expect(card('collect-grass')).toBeNull();expect(card('collect-pattes')).toBeNull();
     expect(card('feed-rabbit').textContent).toContain('Progression : 3 / 3');
     expect(button(BONUS,card('daily-bonus')).disabled).toBe(true);
@@ -540,14 +541,10 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     button('Nourrir Lapin Neige · Enclos 1', recipe()).click(); button('Nourrir · 2 nourriture').click(); expect(panel().textContent).toContain('Affection 2 / 30');
     ui.select({kind: 'building', id: 'building-4'});
     crossFromNest('Lapin Feu', 'Lapin Neige', false);
-    const odds = () => breeding().querySelector('.breeding-odds')!.textContent;
-    expect(breeding().querySelector('.breeding-odds')).toBeNull(); button('Probabilités', breeding()).click();
-    expect(odds()).not.toContain('Commun');
-    expect(odds()).toContain('feu + neige');
+    // Owner, 7 November 2026: no odds, guarantee policy or rule paragraph shown to the player.
+    expect(breeding().querySelector('.breeding-odds')).toBeNull(); expect(breeding().textContent).not.toContain('%');
     for (const id of ['rabbit-3', 'rabbit-11']) for (let n = 0; n < 2; n++) expect(controller.perform({type: 'feed', id}).ok).toBe(true);
-    expect(odds()).toContain(`feu + neige · Rare : ${shareLabel(30, 30 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length)}`);
-    expect(odds()).not.toContain('Commun');
-    breeding().close(); ui.open({kind: 'recipes'}); expect(recipe().textContent).toContain(`Recette possible, résultat non garanti · ${shareLabel(30, 30 * Object.keys(rareAdditions(['feu', 'neige'], 4, 4)).length)}`);
+    breeding().close(); ui.open({kind: 'recipes'}); expect(recipe().textContent).not.toMatch(/%|garanti/);
     const before = state(controller), perform = vi.spyOn(controller, 'perform');
     button('Préparer cette paire au nid', recipe()).click(); expect(perform).not.toHaveBeenCalled(); expect(state(controller)).toEqual(before);
     // The shortcut opens the pairing window with the recipe's pair already chosen, nothing launched.
@@ -578,7 +575,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     const {ui, controller, clock, data} = setup(initial); clock.now = initial.lastSimulatedAt;
     ui.open({kind: 'recipes'});
     const recipe = [...panel().querySelectorAll('article')].find(c => c.textContent?.includes('feu + neige · Rare'))!;
-    expect(recipe.textContent).toContain('Résultat garanti pour cette recette · 100 %');
+    expect(recipe.textContent).not.toMatch(/%|garanti/);
     button('Préparer cette paire au nid', recipe).click(); button('Croiser', breeding()).click();
     expect(breeding().open).toBe(false); expect(panel().textContent).not.toContain('Glassofeu'); expect(state(controller).pityFailures).toBe(0);
     const saved = decodeGame(data.get(SAVE_KEY)!); expect(saved.ok && saved.state.buildings.find(b => b.breeding)?.breeding?.birth).toMatchObject({species: 'glassofeu', guaranteed: true, reservedDiscovery: true});
@@ -691,8 +688,8 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     expect(document.getElementById('hearts')!.textContent).toBe('12');
     expect(button('Réclamer').disabled).toBe(true);
     clock.now = 24 * 3600_000; controller.refresh();
-    const claim = button('Réclamer · 1 cadeau · 3 cœurs'); claim.click(); claim.click();
-    expect(state(controller).hearts).toBe(15); expect(document.getElementById('hearts')!.textContent).toBe('15');
+    const claim = button(`Réclamer · 1 cadeau · ${HEARTS.gift} cœurs`); claim.click(); claim.click();
+    expect(state(controller).hearts).toBe(12 + HEARTS.gift); expect(document.getElementById('hearts')!.textContent).toBe(String(12 + HEARTS.gift));
     expect(button('Réclamer').disabled).toBe(true);
   });
   it('defers building payment to final placement, supports both cancellations and confirms only once', () => {
@@ -714,7 +711,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
   });
   it('confirms the actual lower acceleration price and ignores a duplicate confirmation', () => {
     const {controller, ui, clock} = setup(); place(ui, 'farm', 1, 0); ui.select({kind: 'building', id: 'building-4'});
-    button('Cultiver · 36 pièces').click(); button('Terminer · 3 cœurs').click(); // Pissenlit: 15 minutes.
+    button(`Cultiver · ${ORDERS.pissenlit.cost} pièces`).click(); button('Terminer · 3 cœurs').click(); // Pissenlit: 15 minutes.
     const dialog = document.getElementById('game-dialog')!; expect(dialog.textContent).toContain('solde : 12');
     clock.now = 11 * 60_000; const confirm = button('Confirmer', dialog); confirm.click(); confirm.click();
     expect(state(controller).hearts).toBe(11); expect(state(controller).grass).toBe(10);
@@ -793,7 +790,7 @@ describe('real HTML UI wired to the real controller (simulated DOM, not a browse
     const time = state(controller).lastSimulatedAt; button('+ 60 min', document.getElementById('devtools')!).click();
     expect(state(controller).lastSimulatedAt - time).toBeGreaterThanOrEqual(3600_000);
     button('+ 1440 min', document.getElementById('devtools')!).click();
-    expect(controller.perform({type: 'claimHearts'}).ok).toBe(true); expect(state(controller).hearts).toBe(15);
+    expect(controller.perform({type: 'claimHearts'}).ok).toBe(true); expect(state(controller).hearts).toBe(12 + HEARTS.gift);
     expect(values.get(SAVE_KEY)).toBe(before); expect(values.has('prairie-lapins.development.' + SAVE_KEY)).toBe(true);
     dispose(); controller.dispose();
   });
@@ -838,9 +835,9 @@ describe('habitat panels and controller transactions',()=>{
   it('announces the larger footprint, and explains an upgrade that has no room without offering to pay',()=>{
     const free=createGame(0);free.progression={totalXp:cumulativeLevelXp(14),rewardedThroughLevel:14};free.pattes=2000;
     const open=setup(free);open.ui.select({kind:'building',id:'building-1'});
-    expect(panel().textContent).toContain('emprise 5 × 4 → 8 × 5 cases, vers la droite et vers le bas');expect(button('Améliorer · 175 pièces').disabled).toBe(false);
+    expect(panel().textContent).toContain('emprise 6 × 5 → 10 × 6 cases, vers la droite et vers le bas');expect(button('Améliorer · 175 pièces').disabled).toBe(false);
     const blocked=createGame(0);blocked.progression={totalXp:cumulativeLevelXp(14),rewardedThroughLevel:14};blocked.pattes=2000;
-    const home=blocked.buildings[0];blocked.buildings.push(emptyBuilding('building-9','farm',home.x+5,home.y));blocked.nextId=10;
+    const home=blocked.buildings[0];blocked.buildings.push(emptyBuilding('building-9','farm',home.x+6,home.y));blocked.nextId=10;
     const shut=setup(blocked);shut.ui.select({kind:'building',id:'building-1'});
     expect(panel().textContent).toContain('Pas assez de place pour agrandir : un autre bâtiment occupe la zone voisine');
     const offer=button('Améliorer · 175 pièces');expect(offer.disabled).toBe(true);offer.click();expect(state(shut.controller).pattes).toBe(2000);expect(state(shut.controller).buildings[0]).toMatchObject({habitat:{level:1}});expect(state(shut.controller).buildings[0].footprintTier).toBeUndefined();expect(panel().textContent).not.toContain('Compléter');
@@ -849,8 +846,8 @@ describe('habitat panels and controller transactions',()=>{
     const initial=createGame(0);initial.progression={totalXp:cumulativeLevelXp(14),rewardedThroughLevel:14};
     const home=initial.buildings[0];home.x=18;home.y=24;home.footprintTier=2;home.habitat!.level=2;initial.buildings.push(emptyBuilding('building-9','farm',26,20));initial.nextId=10;
     const {ui}=setup(initial);ui.select({kind:'building',id:home.id});button('Déplacer ce bâtiment').click();
-    expect(panel().textContent).toContain('le coin de l’empreinte 8 × 5');expect(panel().textContent).not.toContain('4 × 4');
-    ui.select({kind:'fineCell',x:18,y:24});expect(panel().textContent).toContain('Grille fine : (18, 24) · empreinte 8 × 5');expect(panel().textContent).toContain('Emplacement valide · empreinte 8 × 5');
+    expect(panel().textContent).toContain('le coin de l’empreinte 10 × 6');expect(panel().textContent).not.toContain('4 × 4');
+    ui.select({kind:'fineCell',x:18,y:24});expect(panel().textContent).toContain('Grille fine : (18, 24) · empreinte 10 × 6');expect(panel().textContent).toContain('Emplacement valide · empreinte 10 × 6');
     ui.close();const other=setup(initial);other.ui.select({kind:'building',id:'building-9'});button('Déplacer ce bâtiment').click();expect(panel().textContent).toContain('le coin de l’empreinte 4 × 4');
   });
   it.each([[9,true],[10,false]])('offers the ten-heart upgrade with %i hearts: disabled=%s, and a refused click spends nothing',(hearts,disabled)=>{
@@ -864,7 +861,7 @@ describe('habitat panels and controller transactions',()=>{
   it('explains incompatible and full destinations for purchases and moves while allowing a compatible choice',()=>{
     const initial=createGame(0);initial.progression={totalXp:cumulativeLevelXp(14),rewardedThroughLevel:14};initial.pattes=5000;const {controller,ui}=setup(initial);
     controller.perform({type:'buyBuilding',kind:'enclosure',habitatType:'feu',x: 22, y: 20});
-    controller.perform({type:'buyBuilding',kind:'enclosure',habitatType:'neige',x: 22, y: 24});
+    controller.perform({type:'buyBuilding',kind:'enclosure',habitatType:'neige',x: 22, y: 25});
     const snow=state(controller).buildings[2].id;
     for(let i=0;i<3;i++)controller.perform({type:'buyRabbit',species:'neige',enclosureId:snow});
     ui.open({kind:'buyRabbit',species:'neige'});
@@ -899,9 +896,10 @@ describe('habitat panels and controller transactions',()=>{
   it('uses the development storage and clock for new habitat actions without changing normal progression',()=>{
     const normal=encodeGame(createGame(0)),values=new Map([[SAVE_KEY,normal]]),base:SaveStorage={getItem:k=>values.get(k)??null,setItem:(k,v)=>{values.set(k,v);}};
     const dev=developmentEnvironment(base),c=new GameController(dev.storage,()=>0);cleanups.push(()=>c.dispose());
-    expect(c.perform({type:'buyBuilding',kind:'enclosure',habitatType:'paille',x: 0, y: 40}).ok).toBe(true);
+    expect(c.perform({type:'buyBuilding',kind:'farm',x: 0, y: 44}).ok).toBe(true);
     expect(c.grantLaboratoryXp(500).ok).toBe(true);
-    // Since v24 the start parcel only has room for the starter enclosure's 8 × 5: that one is upgraded.
+    // The start parcel has room for the starter enclosure's 10 × 6 or for a second 6 × 5 enclosure, not both: a farm is bought
+    // beside it, and the starter enclosure is upgraded.
     expect(c.perform({type:'upgradeHabitat',id:'building-1',fromLevel:1}).ok).toBe(true);
     expect(state(c).buildings.find(b=>b.id==='building-1')!.habitat).toEqual({type:'paille',level:2});expect(values.get(SAVE_KEY)).toBe(normal);
     expect(JSON.parse(values.get('prairie-lapins.development.'+SAVE_KEY)!).version).toBe(27);
@@ -963,7 +961,7 @@ describe('direct decoration selection and confirmed resale UI', () => {
     button('Vendre · 400 pièces').click(); const confirm = button('Confirmer', dialog); confirm.click(); confirm.click();
     const after = state(controller);
     expect(after).toEqual({...before, pattes: before.pattes + 400, decorations: before.decorations.slice(1)});
-    expect(JSON.parse(data.get(SAVE_KEY)!)).toEqual({...after, presentationId: controller.getSnapshot().presentationId});
+    expect(JSON.parse(data.get(SAVE_KEY)!)).toEqual({...after, enclosureSizes: 3, presentationId: controller.getSnapshot().presentationId});
     expect(document.getElementById('game-panel')!.hidden).toBe(true);
     expect(scene.setDecorationSelection).toHaveBeenLastCalledWith(null);
   });
@@ -1030,12 +1028,12 @@ describe('new collection and exact-species recipe UI', () => {
     button('Réinitialiser les filtres').click(); ui.close(); ui.open({kind: 'collection'});
     expect(panel().querySelectorAll('article')).toHaveLength(EXPECTED_IDS.length);
   });
-  it('explains Dragon species, threshold, duration, exclusion from guarantee and real seven-percent pairs', () => {
+  it('explains Dragon species, threshold and duration without any odds', () => {
     const {controller,ui} = setup(scenarioState('collection',0)); const before = structuredClone(state(controller));
     ui.open({kind:'recipes'}); const card = [...panel().querySelectorAll('article')].find(c=>c.querySelector('h3')?.textContent==='Lapin Dragon')!;
     expect(card.textContent).toContain('Dadi × Phoenix'); expect(card.textContent).toContain('Les types seuls ne suffisent pas');
-    expect(card.textContent).toContain('Affection 10 minimum'); expect(card.textContent).toContain(`${growthDuration('dragon') / MINUTE} min`); expect(card.textContent).toContain('ne bénéficie pas');
-    expect(card.textContent).toContain(`${(SPECIES.dragon.acquisition[0] as {probability: number}).probability} %`); expect(state(controller)).toEqual(before);
+    expect(card.textContent).toContain('Affection 10 minimum'); expect(card.textContent).toContain(`${growthDuration('dragon') / MINUTE} min`); expect(card.textContent).not.toMatch(/garantie|%/);
+    expect(state(controller)).toEqual(before);
     button('Préparer cette paire au nid',card).click(); expect(document.getElementById('panel-title')!.textContent).toBe('Nid');
     expect(state(controller).buildings.find(b=>b.kind==='nest')!.breeding).toBeNull();
     expect(state(controller)).toEqual(before);
@@ -1058,10 +1056,7 @@ describe('pairing window and heart bubble', () => {
     expect(breedingRow(0, 0).querySelector('span span')!.textContent).toContain(`affection ${initial.rabbits[0].affection}`);
     expect(breeding().querySelector('.breeding-confirmation')!.textContent).toContain('Étoile');
     expect(nestOf(state(controller)).breeding).toBeNull();
-    button('Probabilités', breeding()).click();
-    expect(document.activeElement?.textContent).toBe('Fermer les probabilités');
-    button('Fermer les probabilités', breeding()).click();
-    expect(document.activeElement?.textContent).toBe('Probabilités');
+    expect([...breeding().querySelectorAll('button')].map(b => b.textContent)).not.toContain('Probabilités');
     button('Croiser', breeding()).click();
     expect(nestOf(state(controller)).breeding!.parents).toEqual(initial.lastBreedingParents);
   });
@@ -1272,7 +1267,7 @@ it('labels an actual first discovery of a species at its first birth',()=>{
 it('offers a notebook shortcut after guidance ends',()=>{
  const s=scenarioState('missionJourney',0);s.recipeBook=['boudinet'];s.progression={totalXp:cumulativeLevelXp(6),rewardedThroughLevel:6};s.missions.claimed=['first-meal','first-farm','first-harvest','parents-ready','at-nest','to-nursery','first-birth'];
  const {ui,prefs,controller}=setup(s);prefs.set({tutorialDone:true,tutorial:false});const wallet=state(controller).pattes;
- ui.open({kind:'missions',tab:'main'});button('Consulter le carnet').click();expect(state(controller).pattes).toBe(wallet);const recipe=panel().querySelector('[data-recipe="boudinet"]')!;expect(recipe.querySelector('h3')!.textContent).toBe('Boudinet');expect(recipe.querySelector('details:not(.recipe-rules)')).toBeNull();expect(recipe.querySelector<HTMLDetailsElement>('.recipe-rules')!.open).toBe(false);expect(recipe.textContent).toContain('Aucune paire possédée n’est admissible');
+ ui.open({kind:'missions',tab:'main'});button('Consulter le carnet').click();expect(state(controller).pattes).toBe(wallet);const recipe=panel().querySelector('[data-recipe="boudinet"]')!;expect(recipe.querySelector('h3')!.textContent).toBe('Boudinet');expect(recipe.querySelector('details:not(.recipe-rules)')).toBeNull();expect(recipe.querySelector('.recipe-rules')).toBeNull();expect(recipe.textContent).toContain('Aucune paire possédée n’est admissible');
 });
 
 describe('mobile menu continuity', () => {
@@ -1520,7 +1515,7 @@ describe('nursery panel with several cushions',()=>{
   const s=currentStart(0),n=s.buildings.find(b=>b.kind==='nursery')!,birth=(id:string)=>({id,species:'paille' as const,guaranteed:false,reservedDiscovery:false});
   n.nursery={capacity:3,babies:[{slot:0,birth:birth('birth-6'),startedAt:0,readyAt:0},{slot:2,birth:birth('birth-7'),startedAt:0,readyAt:0},{slot:1,birth:birth('birth-8'),startedAt:0,readyAt:5*60_000}]};s.nextId=9;
   const {ui,controller}=setup(s);ui.open({kind:'building',id:n.id});
-  expect(panel().textContent).toContain('Couchages : 3 / 4');expect(panel().textContent).toContain('1 : prêt · 2 : occupé · 3 : prêt · 4 : verrouillé');
+  expect(panel().textContent).toContain('Couchages : 3 / 4');expect(panel().textContent).not.toContain('1 : prêt');
   expect([...panel().querySelectorAll('h3')].map(h=>h.textContent).filter(t=>t!.startsWith('Couchage'))).toEqual(['Couchage 1','Couchage 2','Couchage 3']);
   expect(panel().querySelectorAll('.work-state[data-state=running]')).toHaveLength(1);expect(panel().querySelectorAll('[data-accelerate-end]')).toHaveLength(1);
   // One reception button per ready baby, in slot order; the growing one has none.
@@ -1540,7 +1535,7 @@ describe('nursery cushion unlock',()=>{
  it.each([1,2,3] as const)('capacity %i shows its cushions and only the next unlock, at its configured price',capacity=>{
   const price=hearts(PRICE[capacity]);open(capacity,PRICE[capacity]+100);
   expect(panel().textContent).toContain(`Couchages : ${capacity} / 4`);
-  expect(panel().textContent).toContain(['1','2','3','4'].map((n,i)=>`${n} : ${i<capacity?'libre':'verrouillé'}`).join(' · '));
+  expect(panel().textContent).not.toContain('1 : ');
   expect(unlocks().map(b=>[b.textContent,b.disabled])).toEqual([[`Débloquer un couchage · ${price}`,false]]);
  });
  it('confirms the new capacity and price, then spends once and updates the panel immediately and after reload',()=>{

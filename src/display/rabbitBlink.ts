@@ -10,17 +10,19 @@ function unit(seed: number, cycle: number, salt: number): number {
   h = Math.imul(h ^ (h >>> 15), 0x735a2d97);
   return ((h ^ (h >>> 15)) >>> 0) / 4294967296;
 }
+/** Nose bursts every 2 to 4 s (owner, 7 November 2026): 2.3–3.7 s periods, ±0.3 s jitter. */
+const NOSE_PERIOD = 2300, NOSE_SPREAD = 1400;
 export function rabbitFaceEvent(seed: number, cycle: number, nose = false) {
   // Independent period and initial phase per rabbit, with bounded jitter for each successive event.
-  const period = nose ? 4400 + unit(seed, 0, 1) * 5200 : 2800 + unit(seed, 0, 2) * 2700;
-  const jitter = nose ? 200 : 150;
+  const period = nose ? NOSE_PERIOD + unit(seed, 0, 1) * NOSE_SPREAD : 2800 + unit(seed, 0, 2) * 2700;
+  const jitter = 150;
   return {start: cycle * period + unit(seed, 0, nose ? 3 : 4) * period + unit(seed, cycle, 5) * jitter * 2,
     duration: nose ? 80 + unit(seed, cycle, 6) * 30 : 110 + unit(seed, cycle, 7) * 50,
     gap: 80 + unit(seed, cycle, 8) * 30,
     count: nose ? (unit(seed, cycle, 9) < .5 ? 2 : 3) : (unit(seed, cycle, 10) < .2 ? 2 : 1), period};
 }
 function active(seed: number, time: number, nose: boolean): boolean {
-  const period = nose ? 4400 + unit(seed, 0, 1) * 5200 : 2800 + unit(seed, 0, 2) * 2700;
+  const period = nose ? NOSE_PERIOD + unit(seed, 0, 1) * NOSE_SPREAD : 2800 + unit(seed, 0, 2) * 2700;
   const cycle = Math.floor(time / period);
   // An event may straddle its time slot; only these two slots can intersect the current instant.
   for (let i = cycle - 1; i <= cycle; i++) {

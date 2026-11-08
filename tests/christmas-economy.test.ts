@@ -15,15 +15,15 @@ import {evolveAbove30} from './evolved';
 function run(s: GameState, command: Command, now = s.lastSimulatedAt) {
   const r = act(s, command, now, () => 0); if (!r.ok) throw Error(r.reason); return r.state;
 }
-function freeCell(s: GameState) {
-  for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y)) return {x, y};
+function freeCell(s: GameState, kind?: 'enclosure') {
+  for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y, undefined, kind)) return {x, y};
   throw Error('No space');
 }
 const atLevel = (s: GameState, level: number) => { s.progression = {totalXp: cumulativeLevelXp(level), rewardedThroughLevel: level}; return s; };
 function salonGame(species: SpeciesId[]) {
   let s = atLevel(createGame(0), 25); s.pattes = 1_000_000;
   for (let i = 0; i < 2; i++) { const c = freeCell(s); s.buildings.push(emptyBuilding(`building-${s.nextId++}`, 'statue', c.x, c.y)); }
-  const c = freeCell(s), home = emptyBuilding(`building-${s.nextId++}`, 'enclosure', c.x, c.y); home.habitat = {type: 'universal', level: 3};
+  const c = freeCell(s, 'enclosure'), home = emptyBuilding(`building-${s.nextId++}`, 'enclosure', c.x, c.y); home.habitat = {type: 'universal', level: 3};
   s.buildings.push(home);
   s = run(s, {type: 'buyBuilding', kind: 'salon', ...freeCell(s)});
   const ids = species.map(sp => { const id = `rabbit-${s.nextId++}`; s.rabbits.push({id, species: sp, affection: 20, enclosureId: home.id}); if (!s.discovered.includes(sp)) s.discovered.push(sp); return id; });
@@ -34,10 +34,10 @@ function salonGame(species: SpeciesId[]) {
 describe('Christmas update economy: unlocks and prices', () => {
   it('opens the Salon at level 22, the Forest at 25, keeps the jump rope at 20 and doubles the crops', () => {
     expect(SALON.unlockLevel).toBe(22); expect(FOREST.unlockLevel).toBe(25); expect(JUMP_ROPE.unlockLevel).toBe(20);
-    expect(ORDERS.foin.cost).toBe(10); expect(ORDERS.pissenlit.cost).toBe(36); expect(ORDERS.trefle.cost).toBe(60);
+    expect(ORDERS.foin.cost).toBe(10); expect(ORDERS.pissenlit.cost).toBe(90); expect(ORDERS.trefle.cost).toBe(150);
   });
-  it('prices the nursery cushions 40, 120 and 250 Hearts', () => {
-    expect(NURSERY.unlockHearts).toEqual({1: 40, 2: 120, 3: 250});
+  it('prices the nursery cushions 30, 60 and 80 Hearts (Hearts calendar, 8 November 2026)', () => {
+    expect(NURSERY.unlockHearts).toEqual({1: 30, 2: 60, 3: 80});
   });
   it('slows the levels after 20 only: every level up to 20 keeps its cost', () => {
     const plain = (level: number) => Math.round(PROGRESSION.curve.base * level ** PROGRESSION.curve.exponent);
@@ -49,8 +49,8 @@ describe('Christmas update economy: unlocks and prices', () => {
 });
 
 describe('Christmas update economy: Hearts', () => {
-  it('gives 1 to 5 Hearts a trip, more for a longer one', () => {
-    expect([3, 4, 5, 6, 7, 8, 9, 10].map(tripHearts)).toEqual([1, 1, 2, 2, 3, 3, 4, 5]);
+  it('gives 3 to 12 Hearts a trip, more for a longer one (8 November 2026)', () => {
+    expect([3, 4, 5, 6, 7, 8, 9, 10].map(tripHearts)).toEqual([3, 3, 5, 5, 7, 7, 9, 12]);
   });
   it('gives Hearts for the first two cares of the day only (bath and brush 1, massage 2)', () => {
     const {s, ids: [a, b, c]} = salonGame(['paille', 'neige', 'feu']);

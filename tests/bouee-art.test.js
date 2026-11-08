@@ -10,7 +10,7 @@ const approved = 'output/imagegen/bouee-v2/bouee-B.png';
 const master = readFileSync('assets-source/rabbits/bouee/sprite.png');
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 
-it('keeps the approved Cocktail master and grounds the bottom of its ring, without facial patches', () => {
+it('keeps the approved Cocktail master and grounds the bottom of its ring; her sunglasses stay on (a nose twitch, no eyelids)', () => {
   expect(sha256(master)).toBe('c66e7d232aea7b4ed4cfd04b44567c43a65a34bf904c9c56c65f0af662ddff89');
   const image = decodePng(master), art = SPECIES.bouee.art;
   expect([image.width, image.height]).toEqual([1191, 1200]);
@@ -20,7 +20,7 @@ it('keeps the approved Cocktail master and grounds the bottom of its ring, witho
   expect(foot).toBe(1191);
   const contact = art.groundY - (image.height - foot) * art.worldWidth / image.width;
   expect(contact).toBeGreaterThan(11); expect(contact).toBeLessThan(12);
-  expect(rabbitBlinkArt('bouee')).toBeUndefined();
+  expect(rabbitBlinkArt('bouee')?.patches.map(patch => patch.kind)).toEqual(['nose-twitch']);
 });
 
 // The approved concept stays outside Git; the pinned master above is always checked, including in CI.

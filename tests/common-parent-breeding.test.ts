@@ -151,9 +151,9 @@ describe('Common results require two Common parents of the same single type', ()
     [...document.querySelectorAll<HTMLButtonElement>('#panel-content button')].find(button => button.textContent === 'Croiser')!.click();
     const dialog = document.getElementById('breeding-dialog') as HTMLDialogElement;
     for (const [slot, id] of [[0, 'rabbit-2'], [1, 'rabbit-6']] as const) dialog.querySelector<HTMLButtonElement>(`[data-focus="breeding-parent-${slot}-${id}"]`)!.click();
-    // The possible results are shown only once the Probabilités panel is open (closed by default); opening it re-renders the dialog.
-    [...dialog.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === 'Probabilités')!.click();
-    expect(dialog.textContent).toContain('Résultats possibles');
+    // Owner, 7 November 2026: the pairing window shows no odds.
+    expect([...dialog.querySelectorAll('button')].map(button => button.textContent)).not.toContain('Probabilités');
+    expect(dialog.textContent).not.toContain('%');
     const launch = [...dialog.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === 'Croiser')!;
     expect(launch.disabled).toBe(false);
     const perform = vi.spyOn(controller, 'perform'), before = controller.getSnapshot().state!; launch.click();

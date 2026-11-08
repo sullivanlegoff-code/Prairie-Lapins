@@ -1,4 +1,5 @@
 import {artForRabbit, rabbitArt, type RabbitArt} from '../config/rabbitArt';
+import {preferWebp} from '../display/webpTwins';
 import type {LookRabbit} from '../config/evolvedArt';
 import {SPECIES, type SpeciesId} from '../config/balance';
 import {proceduralCoat, type Coat} from '../config/species';
@@ -7,7 +8,7 @@ export {COATS} from '../config/rabbitCoats';
 /** `chosen`: the drawing to show (an individual rabbit's, see `rabbitPortrait`); the species' own drawing by default. */
 export function portrait(species?: SpeciesId, chosen?: RabbitArt): string {
   const art = chosen ?? rabbitArt(species);
-  if (art) return `<img src="${art.url}" alt="${SPECIES[art.species].name}" width="${art.width}" height="${art.height}" decoding="async" draggable="false" data-rabbit-art="${art.species}"${art.evolved ? ' data-evolved=""' : ''}>`;
+  if (art) return `<img src="${preferWebp(art.url)}" alt="${SPECIES[art.species].name}" width="${art.width}" height="${art.height}" decoding="async" draggable="false" data-rabbit-art="${art.species}"${art.evolved ? ' data-evolved=""' : ''}>`;
   const c: Coat = species ? proceduralCoat(SPECIES[species].art) : {body: '#b6c3b1', patch: '#b6c3b1'};
   const wings = c.wings ? `<g fill="${c.plumage ? '#86b9d0' : '#fff9ee'}" stroke="#8b9cb4" stroke-width="2"><path d="M35 69Q9 69 5 47Q16 37 29 50L42 68Z"/><path d="M82 65Q106 36 116 47Q115 68 91 77Z"/><path d="M15 48l14 16m74-15L88 65" fill="none"/></g>` : '';
   const ears = c.lop ? `<ellipse cx="31" cy="54" rx="11" ry="27" transform="rotate(18 31 54)" fill="${c.body}"/><ellipse cx="88" cy="54" rx="11" ry="27" transform="rotate(-18 88 54)" fill="${c.body}"/>` : `<ellipse cx="43" cy="33" rx="10" ry="27" transform="rotate(-13 43 33)" fill="${c.body}"/><ellipse cx="71" cy="31" rx="10" ry="27" transform="rotate(12 71 31)" fill="${c.frost ? c.patch : c.body}"/><ellipse cx="43" cy="30" rx="4" ry="17" fill="#dab5ac"/><ellipse cx="71" cy="28" rx="4" ry="17" fill="#dab5ac"/>`;

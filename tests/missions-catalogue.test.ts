@@ -1,4 +1,5 @@
 import {describe, expect, it} from 'vitest';
+import {itAll} from './cases';
 import {act, advance, createGame, decodeGame, encodeGame} from '../src/simulation';
 import {GameController} from '../src/application/GameController';
 import {SAVE_KEY} from '../src/persistence/storage';
@@ -49,7 +50,7 @@ describe('full main mission catalogue from level seven', () => {
       expect(act(state, {type: 'claimMainMission', id}, 0)).toMatchObject({ok: false, reason: 'NOT_READY'});
     }
   });
-  it.each(SPECIES_IDS)('pays all discovery components exactly once for %s, without new mission XP', species => {
+  itAll(SPECIES_IDS)('pays all discovery components exactly once for %s, without new mission XP', species => {
     const initial = atLevel(); initial.discovered = [...new Set([...initial.discovered, species])];
     const s = advance(initial, 0), id = `discover-${species}` as const, definition = MAIN_MISSIONS[id];
     const rarity = SPECIES[species].rarity, rank = rarity === 'legendary' || rarity === 'mythic' ? 4 : rarity === 'epic' ? 3 : rarity === 'rare' ? 2 : 1;
@@ -59,7 +60,7 @@ describe('full main mission catalogue from level seven', () => {
     expect(claimed.progression).toEqual(s.progression); expect(missionClaimXp('main', id)).toBe(0);
     const loaded = reload(claimed); expect(act(loaded, {type: 'claimMainMission', id}, 0)).toMatchObject({ok: false, reason: 'ALREADY_CLAIMED', state: loaded});
   });
-  it.each(['pattes', 'grass', 'hearts'] as const)('refuses the entire composite claim if %s would overflow', resource => {
+  itAll(['pattes', 'grass', 'hearts'] as const)('refuses the entire composite claim if %s would overflow', resource => {
     const initial = atLevel(); initial.discovered.push('dadi'); initial[resource] = Number.MAX_SAFE_INTEGER;
     const s = advance(initial, 0), before = structuredClone(s);
     expect(act(s, {type: 'claimMainMission', id: 'discover-dadi'}, 0)).toEqual({ok: false, reason: 'RESOURCE_LIMIT', state: before});
@@ -94,7 +95,7 @@ describe('full main mission catalogue from level seven', () => {
     s.decorations[0].placementXpProcessed = false; expect(mainProgress(s, 'decorate-bush').value).toBe(0);
     s.decorations[0].placementXpProcessed = true; expect(mainProgress(s, 'decorate-bush').value).toBe(1);
   });
-  it.each(DECORATION_IDS)('remembers and rewards the historical first placement of %s exactly once', model => {
+  itAll(DECORATION_IDS)('remembers and rewards the historical first placement of %s exactly once', model => {
     const initial = atLevel(); initial.rewardedDecorationModels = [model];
     const s = advance(initial, 0), id = `decorate-${model}` as const;
     expect(MAIN_MISSIONS[id].condition).toEqual({kind: 'decoration', model}); expect(s.missions.completed).toContain(id);

@@ -48,8 +48,8 @@ const buttonIn = (root: ParentNode, label: string) => [...root.querySelectorAll<
 /** Level 5, the start enclosure (building-1) with Paille, and an empty enclosure (building-100). */
 function game(): GameState {
   const s = createGame(0); s.progression = {totalXp: cumulativeLevelXp(5), rewardedThroughLevel: 5};
-  const free = () => { for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y)) return {x, y}; throw Error('No space'); };
-  const c = free(); s.buildings.push(emptyBuilding('building-100', 'enclosure', c.x, c.y)); s.nextId = 101;
+  const free = (kind?: 'enclosure') => { for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y, undefined, kind)) return {x, y}; throw Error('No space'); };
+  const c = free('enclosure'); s.buildings.push(emptyBuilding('building-100', 'enclosure', c.x, c.y)); s.nextId = 101;
   return s;
 }
 
@@ -130,16 +130,26 @@ describe('Christmas market view', () => {
     let expected = 0;
     for (const id of picked) {
       const card = panel().querySelector<HTMLElement>(`[data-christmas-challenge="${id}"]`)!, target = CHRISTMAS_CHALLENGES[id].target;
-      expect(card.textContent).toContain(`Progression : ${target} / ${target}`);
+      expect(card.textContent).toContain(`${target} / ${target}`); // Compact cards since 7 November 2026: the bar and its count.
       expected += CHRISTMAS_CHALLENGES[id].candies;
       buttonIn(card, `Réclamer · +${CHRISTMAS_CHALLENGES[id].candies} sucre${CHRISTMAS_CHALLENGES[id].candies > 1 ? 's' : ''} d’orge`)!.click();
       expect(state().christmas!.candies).toBe(expected);
     }
     const bonus = panel().querySelector<HTMLElement>('[data-christmas-challenge="bonus"]')!;
-    expect(bonus.textContent).toContain(`Bonus des trois défis : +${CHRISTMAS_BONUS_CANDIES} sucres d’orge`);
+    expect(bonus.textContent).toContain('Bonus des trois défis');
     buttonIn(bonus, `Réclamer · +${CHRISTMAS_BONUS_CANDIES} sucres d’orge`)!.click();
     expect(state().christmas!.candies).toBe(expected + CHRISTMAS_BONUS_CANDIES);
     expect(buttonIn(panel().querySelector('[data-christmas-challenge="bonus"]')!, 'Bonus réclamé')!.disabled).toBe(true);
+  });
+  it('shows the challenges as small cards side by side: a challenge in progress shows its reward, without a button', () => {
+    const s = game(), picked = christmasChallengesOf(s);
+    s.christmas = {candies: 0, cycle: s.missions.daily.cycleIndex, picked, progress: {}, claimed: []};
+    const {ui} = mount(s); ui.open({kind: 'christmasMarket'});
+    const grid = panel().querySelector('.christmas-missions')!;
+    expect(grid.querySelectorAll('[data-christmas-challenge]')).toHaveLength(picked.length + 1);
+    const card = grid.querySelector<HTMLElement>(`[data-christmas-challenge="${picked[0]}"]`)!, target = CHRISTMAS_CHALLENGES[picked[0]].target;
+    expect(card.dataset.missionStatus).toBe('pending'); expect(card.querySelector('button')).toBeNull();
+    expect(card.textContent).toContain(`0 / ${target}`); expect(card.querySelector('.christmas-mission-reward')?.textContent).toContain(`+${CHRISTMAS_CHALLENGES[picked[0]].candies}`);
   });
   it('opens « Les cadeaux du ciel » with one chosen rabbit and shows today’s rewarded games', () => {
     const {ui} = mount(game()); ui.open({kind: 'christmasMarket', tab: 'gifts'});

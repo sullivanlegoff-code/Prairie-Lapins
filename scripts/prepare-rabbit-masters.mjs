@@ -38,9 +38,14 @@ export const DESIGNS = [
   // Christmas update (owner, 5 November 2026): original concepts chosen by the owner (Vantablack A, Gigi-rarafe B, Yetiti A,
   // Rennes A, Susucre B), and Arkoko, the owner's own drawing (its transparency checkerboard is printed into the picture).
   {id: 'vantablack', source: 'output/imagegen/nouveaux-lapins-v1/vantablack-A.png', background: 'light'},
-  {id: 'gigi-rarafe', source: 'output/imagegen/nouveaux-lapins-v1/gigi-rarafe-B.png', background: 'light'},
-  {id: 'yetiti', source: 'output/imagegen/nouveaux-lapins-v1/yetiti-A.png', background: 'light'},
-  {id: 'rennes', source: 'output/imagegen/nouveaux-lapins-v1/rennes-A.png', background: 'light'},
+  // Gigi-rarafe replaced by the owner's own drawings (7 November 2026, already transparent), made fully opaque (its body was at
+  // 253/255) and cleared of the faint halo below 16/255 (gigi-rarafe-v5); stage 2 is its gigi-rarafe-evolution-source.png, below.
+  {id: 'gigi-rarafe', source: 'output/imagegen/gigi-rarafe-v5/stade1.png'},
+  // Yetiti repainted standing like Paille (6 November 2026, v4 A, same design), at the owner's request: no more feet up.
+  {id: 'yetiti', source: 'output/imagegen/nouveaux-lapins-v4/yetiti-A.png', background: 'light'},
+  // Rennes replaced by the owner's own drawings (6 November 2026), repainted by Codex a little more in three-quarter view, same design (rennes-v7);
+  // the repainted evolution is its rennes-evolution-source.png, below.
+  {id: 'rennes', source: 'output/imagegen/rennes-v7/rennes-stade1-repeint.png', background: 'light'},
   {id: 'susucre', source: 'output/imagegen/nouveaux-lapins-v1/susucre-B.png', background: 'light'},
   {id: 'arkoko', source: 'assets-source/rabbits/Arkoko/Arkoko stade 1.png', background: 'checker'},
   // Christmas update, second wave (owner, 5 November 2026): Fantôme (v3, the tip of the nose out of the sheet), Bouyoyo (v2,
@@ -50,10 +55,12 @@ export const DESIGNS = [
   {id: 'fantome', source: 'output/imagegen/nouveaux-lapins-v3/fantome-v3.png', background: 'light'},
   {id: 'bouyoyo', source: 'output/imagegen/nouveaux-lapins-v3/bouyoyo-v2.png', background: 'light'},
   {id: 'lapin-de-sulli', source: 'output/imagegen/nouveaux-lapins-v3/lapin-de-sulli-B.png', background: 'light'},
-  {id: 'pain-epice', source: 'output/imagegen/nouveaux-lapins-v3/pain-epice-A.png', background: 'light'},
+  {id: 'pain-epice', source: 'output/imagegen/nouveaux-lapins-v4/pain-epice-B.png', background: 'light'},
   {id: 'flocon-cristal', source: 'output/imagegen/nouveaux-lapins-v3/flocon-cristal-A.png', background: 'corner', tolerance: 10},
   {id: 'nuage', source: 'output/imagegen/nouveaux-lapins-v3/nuage-A.png', background: 'light'},
-  {id: 'champignon', source: 'output/imagegen/nouveaux-lapins-v3/champignon-A.png', background: 'light'},
+  // Champignon replaced by the owner's own drawing (7 November 2026, « lapin champignon enchanté », both stages on one black sheet,
+  // cut in two at its empty middle, champignon-v3); the evolution half is its champignon-evolution-source.png, below.
+  {id: 'champignon', source: 'output/imagegen/champignon-v3/champignon-stade1.png', background: 'corner', tolerance: 40},
   // Affection 30 evolutions of the five commons, chosen by the owner on 3 November 2026 (white backdrop, the rabbit alone). The
   // approved paintings stay beside the species as <id>-evolution-source.png; `master` writes <id>-evolution-sprite.png (the v2 source)
   // instead of the species' own sprite.png. Usage: node scripts/prepare-rabbit-masters.mjs . paille-evolution neige-evolution ...
@@ -74,11 +81,13 @@ export const DESIGNS = [
   ...['vantablack', 'gigi-rarafe', 'yetiti', 'rennes', 'susucre', 'arkoko', 'fantome', 'bouyoyo', 'lapin-de-sulli', 'pain-epice',
     'flocon-cristal', 'nuage', 'champignon'].map(id => ({id: `${id}-evolution`, source: `assets-source/rabbits/${id}/${id}-evolution-source.png`,
     // The white sheet of Fantôme, the white fur of Nuage and Flocon de cristal: only the near-pure white of the backdrop goes.
-    master: `assets-source/rabbits/${id}/${id}-evolution-sprite.png`, ...['fantome', 'nuage'].includes(id) ? {background: 'corner', tolerance: 10} : {background: 'light'}})),
+    master: `assets-source/rabbits/${id}/${id}-evolution-sprite.png`, ...['fantome', 'nuage'].includes(id) ? {background: 'corner', tolerance: 10} : id === 'champignon' ? {background: 'corner', tolerance: 40} : id === 'gigi-rarafe' ? {} : {background: 'light'}})),
 ];
 // Bouee's left ear encloses a pocket of background: seed only that pocket, preserving the ring's white dots. Dinenette's evolved
 // tail curl encloses another one, between the heart and the back.
-export const BACKGROUND_SEEDS = {bouee: [[490, 570]], 'dinenette-evolution': [[150, 820]]};
+// The drawings of 6 November 2026: Rennes between an ear and an antler (both stages) and between its evolved legs, Arkoko between its legs.
+export const BACKGROUND_SEEDS = {
+  'bouyoyo-evolution': [[768, 1056]], rennes: [[802, 315]], 'rennes-evolution': [[758, 301], [626, 1038]], bouee: [[490, 570]], 'dinenette-evolution': [[150, 820]]};
 const MARGIN = 8, LIGHT_MIN = 200, LIGHT_SPREAD = 26, CHECKER_MIN = 130, CHECKER_SPREAD = 14, CORNER_TOLERANCE = 56;
 
 /** 8-bit RGB or RGBA, non-interlaced; returns RGBA. */

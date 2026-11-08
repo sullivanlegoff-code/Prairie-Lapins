@@ -18,8 +18,14 @@ export const isWarmLight = (r, g, b, a) => a > 160 && r > 228 && g > 178 && b < 
 /** The Ultra neige palace's lanterns are paler than lamplight (6 November 2026): a slightly looser test, for it only. */
 export const isPaleWarmLight = (r, g, b, a) => a > 160 && r > 200 && g > 140 && b < 150 && r - b > .3 * r && r >= g;
 const PALE_LIGHTS = new Set(['habitats/habitat-glace.png']);
+/** The windmill farms (8 November 2026): their pale wooden sails are as bright as lamplight, so only the deep yellow of the
+ * lit windows and bulbs counts there (green well above blue: the wood stays dark). */
+export const isLampYellow = (r, g, b, a) => isWarmLight(r, g, b, a) && g - b > 85;
+const LAMP_YELLOW = new Set(['buildings/farm-windmill-nest.png', 'buildings/farm-level-3.png', 'buildings/farm-level-4.png']);
 /** Lit-looking areas that are no lamps, as ellipses in fractions of the picture: the islet of the Epics' sandy pad. */
 const NOT_LAMPS = {'buildings/ilot-epique.png': [{cx: .505, cy: .59, rx: .27, ry: .1}]};
+/** Pictures without any lamp whose straw or ochre yellow would light up whole (7 November 2026, plainer repaint). */
+const NO_LIGHTS = new Set(['decorations/reindeer.png', 'decorations/gift-pile.png', 'decorations/sled.png']);
 /** Fewer lit pixels than this share of the opaque ones: no lights for that picture. */
 const MIN_SHARE = .0015;
 
@@ -65,8 +71,8 @@ export function deriveNightLights() {
   for (const kind of KINDS) {
     const folder = `public/assets/noel/${kind}`; if (!existsSync(folder)) continue;
     // The debris' yellow flowers and berries are no lamps (6 November 2026).
-    for (const name of readdirSync(folder).filter(f => f.endsWith('.png') && !f.startsWith('debris-')).sort()) {
-      const lights = nightLights(decodeRgbPng(readFileSync(`${folder}/${name}`)), PALE_LIGHTS.has(`${kind}/${name}`) ? isPaleWarmLight : isWarmLight, NOT_LAMPS[`${kind}/${name}`]);
+    for (const name of readdirSync(folder).filter(f => f.endsWith('.png') && !f.startsWith('debris-') && !NO_LIGHTS.has(`${kind}/${f}`)).sort()) {
+      const lights = nightLights(decodeRgbPng(readFileSync(`${folder}/${name}`)), PALE_LIGHTS.has(`${kind}/${name}`) ? isPaleWarmLight : LAMP_YELLOW.has(`${kind}/${name}`) ? isLampYellow : isWarmLight, NOT_LAMPS[`${kind}/${name}`]);
       if (!lights) continue;
       list.push(`${kind}/${name}`); files.push([`public/assets/noel/nuit/${kind}/${name}`, lights]);
     }

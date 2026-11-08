@@ -11,7 +11,7 @@ export const NIGHT_GLOW_DEPTH = 2.87;
 /** How strong the windows glow at full night. */
 export const NIGHT_GLOW_STRENGTH = .9;
 /** The decorations that light the snow around them, and how wide that pool is (share of the picture's width). */
-export const LIGHT_POOLS: Readonly<Record<string, number>> = {'lantern-post': 2.4, 'christmas-tree': 1.5, 'wreath-arch': 1.1, 'snow-globe': 1.2};
+export const LIGHT_POOLS: Readonly<Record<string, number>> = {'lantern-post': 2.4, 'christmas-tree': 1.5, 'wreath-arch': 1.1, 'snow-globe': 1.2, 'souvenir-stand': 1.1, 'raclette-stand': 1, 'mini-igloo': 1, 'snow-castle': .9};
 
 /** The glow picture of a served picture, from its URL (only the snowy pictures under assets/noel/ have one). */
 export function nightGlowOf(url: string | undefined): {texture: string; url: string} | null {

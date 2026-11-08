@@ -34,6 +34,7 @@ export const REFUSALS: Record<Refusal | 'NO_GAME' | 'DISPOSED' | 'SALE_NOT_SAVED
   INVALID_NAME: 'Nom refusé : 32 caractères au plus, sans retour à la ligne ni caractère de contrôle.',
   UPGRADE_BLOCKED_BUILDING: 'Pas assez de place pour agrandir : un autre bâtiment occupe la zone voisine. Déplace-le d’abord ; rien n’est déplacé automatiquement, rien n’est payé.',
   UPGRADE_BLOCKED_DECORATION: 'Pas assez de place pour agrandir : une décoration occupe la zone voisine. Déplace ou range-la d’abord ; rien n’est payé.',
+  UPGRADE_BLOCKED_DEBRIS: 'Pas assez de place pour agrandir : des débris encombrent la zone voisine. Touche-les pour les enlever ; rien n’est payé.',
   UPGRADE_BLOCKED_LAND: 'Pas assez de place pour agrandir : la zone voisine n’est pas du terrain acquis. Déplace l’enclos ou agrandis l’île ; rien n’est payé.',
   TYPE_INCOMPATIBLE: 'Type incompatible.', MAX_HABITAT_LEVEL: 'Niveau maximal atteint.', MAX_NURSERY_CAPACITY: 'Capacité maximale : les quatre couchages sont débloqués.',
   ALREADY_CLAIMED: 'Cette récompense a déjà été réclamée.', CYCLE_EXPIRED: 'Ce cycle a expiré. Consulte les nouvelles missions.', RESOURCE_LIMIT: 'Le solde est trop élevé pour recevoir cette récompense.',
@@ -43,7 +44,7 @@ export const REFUSALS: Record<Refusal | 'NO_GAME' | 'DISPOSED' | 'SALE_NOT_SAVED
   INVALID_TIME: 'L’heure de l’appareil est invalide.', INVALID_RANDOM: 'Le tirage n’a pas pu aboutir. Réessaie.', INVALID_CHOICE: 'Ce choix n’est pas disponible.',
   NOT_FOUND: 'Cet élément n’est plus présent.', NOT_ENOUGH_PATTES: 'Solde insuffisant.', NOT_ENOUGH_GRASS: 'Pas assez de nourriture.',
   INVALID_CELL: 'Cette case n’est pas encore disponible.', CELL_OCCUPIED: 'Cette case est occupée.', BUILDING_LIMIT: 'Limite de bâtiments atteinte.',
-  CAPACITY_FULL: 'Habitat plein.', BUSY: 'Ce bâtiment est occupé.', NOT_READY: 'Ce n’est pas encore prêt.', MAX_AFFECTION: 'Affection maximale atteinte.', STATUE_REQUIRED: `L’affection ${AFFECTION_STATUE.cap + 1} demande la Statue de l’Affection, à construire dès le niveau ${AFFECTION_STATUE.level}.`, SECOND_STATUE_REQUIRED: `L’affection ${SECOND_AFFECTION_STATUE.cap + 1} et plus demande deux Statues de l’Affection. Construis la deuxième dès le niveau ${SECOND_AFFECTION_STATUE.level}.`, TRAVELING: 'Ce lapin est en voyage. Accueille-le à l’agence à son retour.',
+  LOOK_CHANGING: 'Un seul lapin à la fois : attends la fin du changement en cours.', CAPACITY_FULL: 'Habitat plein.', BUSY: 'Ce bâtiment est occupé.', NOT_READY: 'Ce n’est pas encore prêt.', MAX_AFFECTION: 'Affection maximale atteinte.', STATUE_REQUIRED: `L’affection ${AFFECTION_STATUE.cap + 1} demande la Statue de l’Affection, à construire dès le niveau ${AFFECTION_STATUE.level}.`, SECOND_STATUE_REQUIRED: `L’affection ${SECOND_AFFECTION_STATUE.cap + 1} et plus demande deux Statues de l’Affection. Construis la deuxième dès le niveau ${SECOND_AFFECTION_STATUE.level}.`, TRAVELING: 'Ce lapin est en voyage. Accueille-le à l’agence à son retour.',
   AT_SALON: 'Ce lapin est au salon de soins. Va le chercher au salon à la fin de son soin.', GIFT_TODAY: 'Ce lapin a déjà eu son cadeau aujourd’hui.',
   AFFECTION_WALL: 'Ce palier se passe en le nourrissant.', PICNIC_TODAY: 'Tu as déjà fait ton pique-nique aujourd’hui. Reviens demain !',
   EMPTY_ENCLOSURE: 'Il n’y a aucun lapin dans cet enclos pour l’instant.', NO_GIFT_POSSIBLE: 'Aucun lapin de cet enclos ne peut gagner d’affection aujourd’hui.',
@@ -88,7 +89,7 @@ export function buildingReason(s: GameState, kind: BuildingKind, ignorePrice = f
   if (statue) return s.hearts < statue.heartPrice ? REFUSALS.NOT_ENOUGH_HEARTS : null;
   return moneyReason(s, kind === 'enclosure' ? habitatPrice(habitatType) : config.price);
 }
-export type Placement = {kind: BuildingKind; movingId?: string; starter?: boolean; habitatType?: HabitatType; cell: {x: number; y: number} | null};
+export type Placement = {kind: BuildingKind; movingId?: string; starter?: boolean; habitatType?: HabitatType; /** The Ultra neige habitat, paid in sucres d'orge. */ ultra?: true; cell: {x: number; y: number} | null};
 export function placementReason(s: GameState, placement: Placement): string | null {
   const cell = placement.cell;
   if (!cell) return 'Touche un petit carré de la prairie.';

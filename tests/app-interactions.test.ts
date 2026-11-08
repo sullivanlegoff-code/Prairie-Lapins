@@ -51,6 +51,8 @@ it('keeps the HUD utilities accessible and shares press feedback without changin
   const buttons = [...document.querySelectorAll<HTMLButtonElement>('#hud nav .meadow-tool')];
   expect(buttons.map(b => [b.id, b.getAttribute('aria-label')])).toEqual([
     ['recenter-view', 'Recentrer la vue'], ['open-photo', 'Mode photo'], ['open-settings', 'Paramètres'],
+    // Christmas update (owner, 8 November 2026): the news button, under the settings while the event lasts.
+    ['open-news', 'Nouveautés de Noël'],
   ]);
   for (const button of buttons) {
     const glyph = button.querySelector('svg')!;
