@@ -20,6 +20,7 @@ dialog.update-news::backdrop { background: #170b33; }
 .un-lieux { background: radial-gradient(ellipse at 50% 30%, #b4ffd8, #22c3b0 45%, #145ea8 100%); --un-a: #19b8a4; --un-b: #ffcf3a; --un-c: #ff6a3d; }
 .un-poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; user-select: none; -webkit-user-select: none; pointer-events: none; }
 .un-poster[hidden] { display: none; }
+.un-lieux .un-poster { object-position: 50% 0; }
 
 /* The words: a ticket in the slide's three colours, at the bottom left, the buttons at its right. */
 .un-card {

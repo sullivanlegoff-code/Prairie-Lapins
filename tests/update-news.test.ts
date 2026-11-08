@@ -126,5 +126,7 @@ describe('the words of the news', () => {
   });
   it('points each poster to its painted picture', () => {
     expect(NEWS_PAGES.map(p => p.poster.split('/').pop())).toEqual(['affiche-1.webp', 'affiche-2.webp', 'affiche-3.webp']);
+    const painted = Object.keys(import.meta.glob('../public/assets/news/noel-2026/*.webp')).map(path => path.split('/').pop());
+    expect(painted.sort()).toEqual(['affiche-1.webp', 'affiche-2.webp', 'affiche-3.webp']);
   });
 });
