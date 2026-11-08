@@ -18,8 +18,10 @@ export class NightGlows {
   private glows = new Map<Phaser.GameObjects.Image, {glow: Phaser.GameObjects.Image; pool: Phaser.GameObjects.Image | null}>();
   /**
    * The glows sit above the night shade, so drawn one by one they would light a rabbit standing in front of a window (iPhone,
-   * 8 November 2026). They are drawn each night frame into one screen-sized picture, the rabbits in front of every lit picture
-   * they overlap are erased from it, and that picture is added over the shade. A rabbit behind a lit picture is not erased.
+   * 8 November 2026). They are drawn each night frame into one screen-sized picture, every rabbit overlapping a lit picture is
+   * erased from it, and that picture is added over the shade. The rabbits are drawn above every building and decoration (their
+   * layer is above both), so a rabbit over a lit picture is always in front of it (owner, 8 November 2026: the light of an
+   * enclosure was over a rabbit standing in front of it, because the depths of two different layers were compared).
    */
   private layer: Phaser.GameObjects.RenderTexture | null = null;
   constructor(private readonly scene: Phaser.Scene, private readonly ready: (texture: string, url: string) => boolean) {
@@ -63,13 +65,13 @@ export class NightGlows {
     layer.camera.setScroll(camera.scrollX, camera.scrollY).setZoom(z);
     const entries = [...this.glows.values()];
     layer.clear(); layer.draw([...entries.flatMap(e => e.pool ? [e.pool] : []), ...entries.map(e => e.glow)]);
-    const lit = [...this.glows].map(([image, {glow}]) => ({depth: image.depth, bounds: glow.getBounds()})), front: GlowOccluder[] = [];
+    const lit = [...this.glows.values()].map(({glow}) => glow.getBounds()), front: GlowOccluder[] = [];
     for (const rabbit of occluders) {
       if (!rabbit.active || !rabbit.visible || rabbit.alpha <= 0) continue;
-      const near = lit.filter(l => rabbit.x > l.bounds.left - 160 && rabbit.x < l.bounds.right + 160 && rabbit.y > l.bounds.top - 160 && rabbit.y < l.bounds.bottom + 220);
+      const near = lit.filter(l => rabbit.x > l.left - 160 && rabbit.x < l.right + 160 && rabbit.y > l.top - 160 && rabbit.y < l.bottom + 220);
       if (!near.length) continue;
-      const box = rabbit.getBounds(), over = near.filter(l => Phaser.Geom.Rectangle.Overlaps(l.bounds, box));
-      if (over.length && over.every(l => rabbit.depth > l.depth)) front.push(rabbit);
+      const box = rabbit.getBounds();
+      if (near.some(l => Phaser.Geom.Rectangle.Overlaps(l, box))) front.push(rabbit);
     }
     if (front.length) layer.erase(front);
   }

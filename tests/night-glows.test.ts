@@ -6,7 +6,7 @@ vi.mock('phaser', () => ({default: {BlendModes: {ADD: 1}, Geom: {Rectangle: {Ove
 import {NightGlows} from '../src/display/nightGlows';
 
 // iPhone, 8 November 2026: the window glows were drawn over the rabbits standing in front of the house. They are now drawn into
-// one picture, and a rabbit in front of every lit picture it overlaps is erased from it.
+// one picture, and every rabbit over a lit picture is erased from it.
 function stub(bounds: {x: number; y: number; w: number; h: number}) {
   const self: Record<string, unknown> = {x: 0, y: 0, depth: 0, mask: null, texture: {key: ''}, destroy: vi.fn()};
   for (const name of ['setBlendMode', 'setOrigin', 'setScale', 'setFlipX', 'setAlpha', 'setTexture']) self[name] = vi.fn(() => self);
@@ -27,12 +27,14 @@ function setup() {
 }
 const url = 'https://x/assets/noel/buildings/farm-level-1.png';
 describe('the Christmas night glows and the rabbits', () => {
-  it('erases a rabbit standing in front of a lit house from the glows, never one behind it or far away', () => {
+  // Owner (8 November 2026): the light of an enclosure was drawn over a rabbit standing in front of it. The rabbits' layer is
+  // above every building and decoration, so a rabbit over a lit picture is in front of it whatever its depth inside its layer.
+  it('erases every rabbit over a lit house from the glows, whatever its depth in its own layer, never one far away', () => {
     const {glows, layer, house, rabbit} = setup();
-    const front = rabbit(2, 100), behind = rabbit(.5, 120), far = rabbit(2, 900);
-    glows.update(1, [{image: house, url}], [front, behind, far]);
+    const front = rabbit(2, 100), lowDepth = rabbit(.5, 120), far = rabbit(2, 900);
+    glows.update(1, [{image: house, url}], [front, lowDepth, far]);
     expect(layer.draw).toHaveBeenCalledOnce();
-    expect(layer.erase).toHaveBeenCalledWith([front]);
+    expect(layer.erase).toHaveBeenCalledWith([front, lowDepth]);
   });
   it('draws nothing and erases nothing by day', () => {
     const {glows, layer, house, rabbit} = setup();
