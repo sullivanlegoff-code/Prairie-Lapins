@@ -121,6 +121,8 @@ describe('the words of the news', () => {
   });
   it('keeps evolutions a surprise and talks to the player with « tu »', () => {
     for (const evolved of EVOLVED_ART) expect(words).not.toContain(evolved.name);
+    // Owner: showing every new rabbit spoils too much; the new legendary stays a mystery.
+    expect(words).not.toContain(SPECIES.arkoko.name);
     expect(words).not.toMatch(/\bvous\b|\bvotre\b|\bvos\b/i);
     expect(words).not.toMatch(/herbe/i);
   });

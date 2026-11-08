@@ -3,7 +3,8 @@ import {EPIC_ISLET, FARM_UPGRADES, FOREST, JUMP_ROPE, PICNIC, SALON, SPECIES, SP
 /**
  * The news of the Christmas update (owner, 8 November 2026): a page that welcomes the player once, at the first launch after
  * the update, then stays open to all with a button under the settings while the Christmas event lasts. Three posters to swipe
- * through, chosen by the owner: the Christmas event, the new rabbits (never an evolution: they stay a surprise) and the new
+ * through, chosen by the owner: the Christmas event, the new rabbits (only a few of them, never an evolution nor the new legendary:
+ * they stay a surprise, owner 8 November 2026) and the new
  * places. Each poster is a painted picture without words; the words are the game's, over its calm bottom part.
  */
 export interface NewsPage {id: string; title: string; lines: readonly string[]; poster: string}
@@ -22,7 +23,7 @@ export const NEWS_PAGES: readonly NewsPage[] = [
     'Attrape les cadeaux que le traîneau lâche dans le ciel !',
   ]},
   {id: 'lapins', title: `${NEW_SPECIES.length} nouveaux lapins`, poster: poster(2), lines: [
-    `${count('rare')} lapins rares, ${count('epic')} lapins épiques aux couleurs de Noël et un nouveau légendaire : ${SPECIES.arkoko.name}.`,
+    `${count('rare')} lapins rares, ${count('epic')} lapins épiques aux couleurs de Noël et un nouveau légendaire… qui reste un mystère !`,
     'Découvre leurs recettes dans le nid et complète ta collection.',
     'Avec beaucoup d’affection, tes lapins pourront même évoluer… À toi de découvrir en quoi !',
   ]},
