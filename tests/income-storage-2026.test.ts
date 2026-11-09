@@ -38,7 +38,8 @@ describe('individual income and owner habitat storage',()=>{
     expect(decodeGame(encodeGame(old.state))).toEqual(old);
   });
   it('uses the exact owner limits without changing places',()=>{
-    const expected=[[100,125,150,200,175,200],[300,350,400,500,450,500],[1250,1250,1250,1250,1250,1250]];
+    // Doubled by the owner on 9 November 2026.
+    const expected=[[200,250,300,400,350,400],[600,700,800,1000,900,1000],[2500,2500,2500,2500,2500,2500]];
     for(const level of [1,2,3] as const){
       expect(order.map(t=>habitatLevel(t,level).cap)).toEqual(expected[level-1]);
       order.forEach(type=>expect(habitatLevel(type,level).capacity).toBe([3,5,7][level-1]));
@@ -71,7 +72,7 @@ describe('individual income and owner habitat storage',()=>{
     const input=raw('vol',2);input.buildings[0].incomeUnits=4800*HOUR-17;
     const data=new Map([[SAVE_KEY,JSON.stringify(input)]]),storage={getItem:(key:string)=>data.get(key)??null,setItem:(key:string,value:string)=>{data.set(key,value);}};
     const first=new GameController(storage,()=>0),state=first.getSnapshot().state!;
-    expect(state.pattes).toBe(input.pattes+4300);expect(state.buildings[0].incomeUnits).toBe(500*HOUR-17);first.dispose();
+    expect(state.pattes).toBe(input.pattes+3800);expect(state.buildings[0].incomeUnits).toBe(1000*HOUR-17);first.dispose();
     const second=new GameController(storage,()=>0);expect(second.getSnapshot().state).toEqual(state);second.dispose();
   });
 });

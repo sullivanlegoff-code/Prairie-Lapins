@@ -805,7 +805,7 @@ describe('habitat panels and controller transactions',()=>{
     ui.open({kind:'shop',tab:'habitats'});
     expect(panel().textContent).toContain('Enclos universel');expect(panel().textContent).toContain('Habitats spécialisés');expect(panel().textContent).not.toContain('Ferme');
     for(const name of ['Prairie de paille','Jardin enneigé','Clairière de feu','Atelier de métal','Jardin des airs']){
-      expect(card(name).textContent).toContain(`3 places · stocke ${({'Prairie de paille':'100','Jardin enneigé':'125','Clairière de feu':'150','Atelier de métal':'175','Jardin des airs':'200'} as Record<string,string>)[name]} pièces`);expect(button(`Placer · ${{'Prairie de paille':'200','Jardin enneigé':'200','Clairière de feu':'450','Atelier de métal':'800','Jardin des airs':'1 200'}[name]} pièces`,card(name)).disabled).toBe(false);
+      expect(card(name).textContent).toContain(`3 places · stocke ${({'Prairie de paille':'200','Jardin enneigé':'250','Clairière de feu':'300','Atelier de métal':'350','Jardin des airs':'400'} as Record<string,string>)[name]} pièces`);expect(button(`Placer · ${{'Prairie de paille':'200','Jardin enneigé':'200','Clairière de feu':'450','Atelier de métal':'800','Jardin des airs':'1 200'}[name]} pièces`,card(name)).disabled).toBe(false);
     }
     choose();ui.select({kind:'cell',x: 18, y: 20});expect(panel().textContent).not.toContain('Compléter');
     ui.select({kind:'cell',x: 22, y: 20});button('Annuler · aucun coût').click();expect(state(controller)).toEqual(initial);
@@ -820,10 +820,10 @@ describe('habitat panels and controller transactions',()=>{
     const {controller,ui,scene}=setup(initial);
     const home=()=>state(controller).buildings[0];ui.select({kind:'building',id:home().id});
     expect(panel().textContent).toContain('Tous les types · niveau 1');expect(panel().textContent).toContain('20 pièces / h');
-    expect(panel().textContent).toContain('2 / 3');expect(panel().textContent).toContain('0 / 200');expect(panel().textContent).toContain('Niveau de l’habitat 1 → 2 : places 3 → 5 · stockage 200 → 500 pièces');
+    expect(panel().textContent).toContain('2 / 3');expect(panel().textContent).toContain('0 / 400');expect(panel().textContent).toContain('Niveau de l’habitat 1 → 2 : places 3 → 5 · stockage 400 → 1 000 pièces');
     button('Améliorer · 175 pièces').click();button('Annuler',dialog()).click();expect(state(controller)).toEqual(initial);
     button('Améliorer · 175 pièces').click();const confirm=button('Confirmer',dialog());confirm.click();confirm.click();
-    expect(home().habitat!.level).toBe(2);expect(state(controller).pattes).toBe(1825);expect(panel().textContent).toContain('2 / 5');expect(panel().textContent).toContain('0 / 500');
+    expect(home().habitat!.level).toBe(2);expect(state(controller).pattes).toBe(1825);expect(panel().textContent).toContain('2 / 5');expect(panel().textContent).toContain('0 / 1 000');
     // Level 3 is paid in exactly ten hearts, shown before confirmation; no coin is spent and no coin complement is offered.
     expect(panel().textContent).not.toContain('Compléter');expect(state(controller).hearts).toBe(25);
     button('Améliorer · 10 cœurs').click();expect(dialog().textContent).toContain('Paiement : 10 cœurs');expect(dialog().textContent).toContain('solde : 25 cœurs');expect(dialog().textContent).toContain('Aucune pièce n’est dépensée');
@@ -878,7 +878,7 @@ describe('habitat panels and controller transactions',()=>{
     const initial=createGame(0);initial.progression={totalXp:cumulativeLevelXp(14),rewardedThroughLevel:14};initial.pattes=830;initial.hearts=50;const {controller,ui}=setup(initial);
     controller.perform({type:'buyBuilding',kind:'enclosure',habitatType:'metal',x: 22, y: 20});const home=state(controller).buildings[1].id;
     ui.select({kind:'building',id:home});expect(panel().textContent).toContain('Métal · niveau 1');
-    button('Compléter · 30 pièces + 15 cœurs').click();expect(dialog().textContent).toContain('places 3 → 5 · stockage 175 → 450');button('Confirmer',dialog()).click();
+    button('Compléter · 30 pièces + 15 cœurs').click();expect(dialog().textContent).toContain('places 3 → 5 · stockage 350 → 900');button('Confirmer',dialog()).click();
     expect(state(controller)).toMatchObject({pattes:0,hearts:35});expect(state(controller).buildings[1].habitat!.level).toBe(2);
     expect(panel().textContent).not.toContain('Compléter');button('Améliorer · 10 cœurs').click();const old=button('Confirmer',dialog());
     const replacement=state(controller);establishHistoricalLevelRights(replacement);const p=controller.prepareImport(encodeGame(replacement));if(!p.ok)throw Error(p.reason);controller.confirmImport(p.token,true);ui.onReplacement();old.click();
@@ -1481,7 +1481,7 @@ describe('decoration level acquisition UI',()=>{
 describe('habitat upgrade level controls',()=>{
  it('keeps before/after details visible, blocks all payments and updates at the player threshold',()=>{
   const initial=soloStart(0);initial.grass=10;initial.progression={totalXp:cumulativeLevelXp(3)-5,rewardedThroughLevel:2};const {ui,controller}=setup(initial);ui.open({kind:'building',id:'building-1'});
-  const card=()=>panel().querySelector<HTMLElement>('[data-upgrade-habitat]')!;expect(card().textContent).toContain('places 3 → 5');expect(card().textContent).toContain('stockage 100 → 300');expect(card().textContent).toContain('Niveau 3 requis');expect(button('Améliorer · 100 pièces',card()).disabled).toBe(true);expect(card().textContent).not.toContain('Compléter');
+  const card=()=>panel().querySelector<HTMLElement>('[data-upgrade-habitat]')!;expect(card().textContent).toContain('places 3 → 5');expect(card().textContent).toContain('stockage 200 → 600');expect(card().textContent).toContain('Niveau 3 requis');expect(button('Améliorer · 100 pièces',card()).disabled).toBe(true);expect(card().textContent).not.toContain('Compléter');
   controller.perform({type:'feed',id:'rabbit-2'});expect(button('Améliorer · 100 pièces',card()).disabled).toBe(false);const xp=state(controller).progression.totalXp;button('Améliorer · 100 pièces',card()).click();button('Confirmer',document.getElementById('game-dialog')!).click();expect(state(controller).buildings[0].habitat?.level).toBe(2);expect(state(controller).progression.totalXp).toBe(xp);expect(card().textContent).toContain('Niveau 6 requis');
  });
  it('explains a locked capacity upgrade and offers an actually buyable compatible habitat',()=>{

@@ -230,9 +230,9 @@ describe('the coin bubbles at Christmas', () => {
     const xp = s.progression.totalXp;
     s = collect(s, home, cap(s, home)); expect(candiesOf(s)).toBe(COIN_BUBBLE_CANDIES.perBubble + COIN_BUBBLE_CANDIES.full);
     expect(s.progression.totalXp).toBe(xp);
-    // A small habitat that is full shows its bubble below the threshold.
+    // The smallest habitat, full, shows its bubble (stocks doubled by the owner on 9 November 2026: it holds exactly the threshold).
     const small = setup(); const b = small.s.buildings.find(x => x.id === small.home)!;
-    b.habitat = {type: 'feu', level: 1}; expect(cap(small.s, small.home)).toBeLessThan(INCOME_BUBBLE_THRESHOLD);
+    b.habitat = {type: 'paille', level: 1}; expect(cap(small.s, small.home)).toBeLessThanOrEqual(INCOME_BUBBLE_THRESHOLD);
     expect(candiesOf(collect(small.s, small.home, cap(small.s, small.home)))).toBe(COIN_BUBBLE_CANDIES.full);
   });
   it('stops at the daily limit and starts again the next cycle, and the save keeps it', () => {

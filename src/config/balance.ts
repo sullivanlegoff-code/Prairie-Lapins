@@ -71,7 +71,7 @@ export const SHOP_SPECIES = SPECIES_IDS.filter(id => isSold(SPECIES[id]));
 export const RECIPE_SPECIES = SPECIES_IDS.filter(id => hasRecipe(SPECIES[id]));
 export const BALANCE = {
   initialPattes: 350, initialGrass: 0, initialWidth: 3, height: 2, extendedWidth: 6,
-  extensionCost: 600, enclosureCapacity: 3, enclosureCap: 200,
+  extensionCost: 600, enclosureCapacity: 3, enclosureCap: 400,
   minAffection: 1, maxAffection: 50, breedingAffection: 2,
   incomeBase: 10, incomeRareBase: 10, incomePerLevel: 1,
   releaseGrass: {common: 10, rare: 25},
