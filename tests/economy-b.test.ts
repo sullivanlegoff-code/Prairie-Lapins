@@ -34,7 +34,7 @@ const withoutIsland = NEW_MAIN_MISSION_IDS.filter(id => id !== 'first-jump-rope'
 describe('economy B durable goals', () => {
   it('loads an existing game without awarding resources or XP, then claims each durable reward once in the full catalogue', () => {
     const old = advanced(); delete old.missions.nightOrderStarted;
-    old.buildings.push({...emptyBuilding('building-100','farm',0,32),order:{recipe: 'persil',startedAt:0,endsAt:HOUR}});old.nextId=101;
+    old.buildings.push({...emptyBuilding('building-100','farm',0,32),order:{recipe: 'laitue',startedAt:0,endsAt:HOUR}});old.nextId=101;
     const loaded = decodeGame(encodeGame(old)); expect(loaded.ok).toBe(true); if(!loaded.ok) throw Error(loaded.reason);
     let s = loaded.state;
     expect([s.pattes,s.grass,s.hearts,s.progression]).toEqual([old.pattes,old.grass,old.hearts,old.progression]);
@@ -64,9 +64,10 @@ describe('economy B durable goals', () => {
     expect(act(claimed.state,{type:'claimMainMission',id:'level-fifteen'},0)).toMatchObject({ok:false,reason:'ALREADY_CLAIMED'});
   });
   it('banks a successful longer-crop launch through harvest and reload, but never a refused order', () => {
-    let s=createGame(0);s.buildings.push(emptyBuilding('building-100','farm',0,32));s.nextId=101;s.progression={totalXp:cumulativeLevelXp(5),rewardedThroughLevel:5};
-    s.pattes=0;expect(act(s,{type:'startOrder',id:'building-100',recipe: 'persil'},0).state.missions.nightOrderStarted).toBeUndefined();
-    s.pattes=1000;const launch=act(s,{type:'startOrder',id:'building-100',recipe: 'persil'},0);expect(launch.ok).toBe(true);
+    let s=createGame(0);s.buildings.push(emptyBuilding('building-100','farm',0,32));s.nextId=101;s.progression={totalXp:cumulativeLevelXp(7),rewardedThroughLevel:7};
+    // Crops 50 % faster on 10 November 2026: the lettuce is now the first crop of an hour.
+    s.pattes=0;expect(act(s,{type:'startOrder',id:'building-100',recipe: 'laitue'},0).state.missions.nightOrderStarted).toBeUndefined();
+    s.pattes=1000;const launch=act(s,{type:'startOrder',id:'building-100',recipe: 'laitue'},0);expect(launch.ok).toBe(true);
     const harvest=act(launch.state,{type:'collectOrder',id:'building-100'},10*HOUR);expect(harvest.ok).toBe(true);
     const load=decodeGame(encodeGame(harvest.state));expect(load.ok&&load.state.missions.nightOrderStarted).toBe(true);
   });

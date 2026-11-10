@@ -5,7 +5,7 @@ import {settleInitiation} from './initiation';
 import {habitatStats} from './habitats';
 import {updateMissions} from './missions';
 import {settleNestTransfers} from './nursery';
-import {BALANCE, HOUR, MINUTE, SPECIES, type SpeciesId, type Rarity} from '../config/balance';
+import {BALANCE, INCOME_BOOST, HOUR, MINUTE, SPECIES, type SpeciesId, type Rarity} from '../config/balance';
 import type {GameState, Rabbit} from '../state/types';
 /** Stable fallback for historical rabbits: loading never rerolls an individual's income. */
 export function historicalIncomeRoll(rabbit: Pick<Rabbit, 'id' | 'species'>): number {
@@ -24,10 +24,10 @@ export function individualIncomeRoll(rabbit: Pick<Rabbit, 'id' | 'species' | 'in
 /** Whole coins/hour; round once per individual, never at each simulation tick. */
 export function rabbitIncome(affection: number, speciesOrRarity: SpeciesId | Rarity = 'common', incomeRoll = 5000): number {
   const species = Object.hasOwn(SPECIES, speciesOrRarity) ? speciesOrRarity as SpeciesId : null, rarity = species ? SPECIES[species].rarity : speciesOrRarity;
-  if (rarity === 'common') return BALANCE.incomeBase + BALANCE.incomePerLevel * (affection - 1);
+  if (rarity === 'common') return Math.round((BALANCE.incomeBase + BALANCE.incomePerLevel * (affection - 1)) * INCOME_BOOST);
   const luck = incomeRoll / 10000;
   const rare = 10 + 10 * luck + (affection - 1) * (60 + 20 * luck) / 9;
-  return Math.round(rare * (rarity === 'epic' ? 1.3 : rarity === 'legendary' || rarity === 'mythic' ? 1.5 : 1));
+  return Math.round(rare * (rarity === 'epic' ? 1.3 : rarity === 'legendary' || rarity === 'mythic' ? 1.5 : 1) * INCOME_BOOST);
 }
 export function validTime(now: number): boolean { return Number.isSafeInteger(now) && now >= 0; }
 /** Rebase every absolute timestamp; cycle indices and already earned resources stay unchanged. */

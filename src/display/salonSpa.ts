@@ -13,6 +13,8 @@ import {GLOW_MS, glowStrength, spaLayout, waterLine, type SpaLayout} from './sal
 
 /** Pictures the spa needs once a salon stands on the island (the rabbits' own pictures are loaded with the residents). */
 export const salonSpaArt = (): {texture: string; url: string}[] => [SALON_ART.tub, ...Object.values(SPA_PIECES), BENNY_FLIGHT_EFFECTS.glow, BENNY_FLIGHT_EFFECTS.twinkle, BENNY_FLIGHT_EFFECTS.star];
+/** The brush's angle on the meadow: upside down from its picture, bristles towards the rabbit's back. */
+const BRUSH_ANGLE = 155;
 /** A soft white puff for the massage's steam, drawn once. */
 const STEAM_TEXTURE = 'spa-steam';
 function steamTexture(scene: Phaser.Scene): string {
@@ -99,7 +101,8 @@ export class SalonSpaView {
       rabbit.setPosition(station.x, station.y - art.groundY * size);
       // The brush combs the back, behind the head (the rabbit looks right, so its back is on the left).
       view.brushAt = {x: layout.chest.x - w * .48, y: layout.chest.y + (layout.chest.y - head.y) * .25};
-      view.brush = piece(SPA_PIECES.brush, view.brushAt.x, view.brushAt.y, w * .5).setAngle(-25);
+      // Turned over (owner, 10 November 2026): the bristles against the back, the handle away from the rabbit.
+      view.brush = piece(SPA_PIECES.brush, view.brushAt.x, view.brushAt.y, w * .5).setAngle(BRUSH_ANGLE);
       rabbit.add(view.brush);
       drift(SPA_PIECES.tuft.texture, 5, 2200, () => ({x: view.brushAt!.x, y: view.brushAt!.y}), 22, 12, 7);
       layer.add(rabbit);
@@ -136,7 +139,7 @@ export class SalonSpaView {
       v.rabbit.setScale(Math.abs(v.rabbit.scaleX), Math.abs(v.rabbit.scaleX) * (1 + breathe));
       if (v.brush && v.brushAt) {
         const t = reduced ? 0 : Math.sin(time / 260);
-        v.brush.setPosition(v.brushAt.x + t * 2, v.brushAt.y + t * v.layout.height * .12).setAngle(-25 + t * 14);
+        v.brush.setPosition(v.brushAt.x + t * 2, v.brushAt.y + t * v.layout.height * .12).setAngle(BRUSH_ANGLE + t * 14);
       }
       for (const d of v.drifts) {
         if (reduced) { d.image.setVisible(false); continue; }

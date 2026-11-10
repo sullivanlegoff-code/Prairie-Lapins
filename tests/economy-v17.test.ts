@@ -35,7 +35,7 @@ describe('economy invariants',()=>{
  it('stores less in the first habitats at levels 1 and 2 (universal follows Vol), the same maximum at level 3',()=>{const order=['paille','neige','feu','metal','vol'] as const;for(const level of [1,2] as const){const caps=order.map(t=>habitatLevel(t,level).cap);for(let i=1;i<caps.length;i++)expect(caps[i]).toBeGreaterThan(caps[i-1]);expect(habitatLevel('universal',level).cap).toBe(habitatLevel('vol',level).cap);}expect(new Set(HABITAT_TYPES.map(t=>habitatLevel(t,3).cap))).toEqual(new Set([HABITAT_CAPS[3].paille]));expect(habitatLevel('vol',2).cap).toBeLessThan(habitatLevel('paille',3).cap);for(const type of HABITAT_TYPES)for(const level of [1,2,3] as const){const h=habitatLevel(type,level);expect(Number.isSafeInteger(h.cap)&&h.cap>0).toBe(true);if(level===2)expect(h.cost).toBe(habitatPrice(type)/2);}});
  it('guarantees all 25 ordinary rares and excludes specials',()=>{expect(GUARANTEE_SPECIES).toHaveLength(25);expect(GUARANTEE_SPECIES).not.toContain('dragon');expect(GUARANTEE_SPECIES).not.toContain('magicien');});
  it('accumulates gifts up to three and keeps the next clock boundary',()=>{const s=migrated();for(const days of [1,2,3,10]){const now=s.nextHeartGiftAt+(days-1)*24*HOUR+HOUR;const r=act(s,{type:'claimHearts'},now);expect(r.ok).toBe(true);expect(r.state.hearts).toBe(s.hearts+Math.min(3,days)*HEARTS.gift);expect(r.state.nextHeartGiftAt).toBe(now+23*HOUR);expect(advance(r.state,now).hearts).toBe(r.state.hearts);}});
- it('has ten crops, from short visits to the night',()=>{expect(Object.keys(ORDERS)).toEqual(['foin','pissenlit','trefle','persil','laitue','fanes','fenouil','pomme','fraise','banane','trefleDore','carotteArcEnCiel','fraiseEtoilee','pommeAmour','citrouilleDoree','melonLune','cerisesCristal']);expect(ORDERS.foin).toMatchObject({cost:10,grass:20,duration:5*60000});expect(ORDERS.banane).toMatchObject({level:19,duration:10*HOUR});});
+ it('has ten crops, from short visits to the night',()=>{expect(Object.keys(ORDERS)).toEqual(['foin','pissenlit','trefle','persil','laitue','fanes','fenouil','pomme','fraise','banane','trefleDore','carotteArcEnCiel','fraiseEtoilee','pommeAmour','citrouilleDoree','melonLune','cerisesCristal']);expect(ORDERS.foin).toMatchObject({cost:10,grass:20,duration:5*60000});expect(ORDERS.banane).toMatchObject({level:19,duration:5*HOUR});});
 });
 
 describe('persistent economy transactions',()=>{
@@ -58,11 +58,11 @@ describe('persistent economy transactions',()=>{
   const r=act(s,{type:'breed',parents:['rabbit-2','rabbit-6']},s.lastSimulatedAt,()=>0);expect(r.ok).toBe(true);expect(r.state.missions.daily.progress['gain-affection']).toBe(1);
  });
  it('uses integer hourly income by rarity: each rare has its own roll, epics and legendaries multiply it',()=>{
-  for(const species of ['paille','neige','feu','belier-gris','volant'] as const)expect([rabbitIncome(1,species),rabbitIncome(20,species)]).toEqual([10,29]);
-  // Rares: each has a saved individual roll from 0 to 9999 (docs/economy-current.md): 10 to 20 coins/h at affection 1, 70 to 100 at affection 10.
-  for(const id of SPECIES_IDS.filter(id=>SPECIES[id].rarity==='rare'))expect([rabbitIncome(1,id,0),rabbitIncome(1,id,9999),rabbitIncome(10,id,0),rabbitIncome(10,id,9999)]).toEqual([10,20,70,100]);
+  for(const species of ['paille','neige','feu','belier-gris','volant'] as const)expect([rabbitIncome(1,species),rabbitIncome(20,species)]).toEqual([13,38]);
+  // Rares: each has a saved individual roll from 0 to 9999 (docs/economy-current.md): 10 to 20 coins/h at affection 1, 70 to 100 at affection 10, ×1.3 since 10 November 2026.
+  for(const id of SPECIES_IDS.filter(id=>SPECIES[id].rarity==='rare'))expect([rabbitIncome(1,id,0),rabbitIncome(1,id,9999),rabbitIncome(10,id,0),rabbitIncome(10,id,9999)]).toEqual([13,26,91,130]);
   // Epics earn 1.3 times and legendaries 1.5 times the rare reference.
-  expect([rabbitIncome(1,'magicien',0),rabbitIncome(1,'magicien',9999)]).toEqual([13,26]);expect([rabbitIncome(1,'dragon',0),rabbitIncome(1,'dragon',9999)]).toEqual([15,30]);
+  expect([rabbitIncome(1,'magicien',0),rabbitIncome(1,'magicien',9999)]).toEqual([17,34]);expect([rabbitIncome(1,'dragon',0),rabbitIncome(1,'dragon',9999)]).toEqual([20,39]);
   const rares=SPECIES_IDS.filter(id=>SPECIES[id].rarity==='rare');expect(rares).toHaveLength(25);expect(RARE_INCOME_BONUS_SPECIES).toEqual([]);
  });
 });

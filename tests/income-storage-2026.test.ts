@@ -18,13 +18,13 @@ function raw(type: HabitatType='paille', level: 1|2|3=1) {
 }
 describe('individual income and owner habitat storage',()=>{
   it('matches both rare boundaries, rarity bonuses and common income',()=>{
-    for(const [affection,low,high] of [[1,10,20],[10,70,100]] as const){
+    for(const [affection,low,high] of [[1,13,26],[10,91,130]] as const){
       expect(rabbitIncome(affection,'rare',0)).toBe(low);
       expect(rabbitIncome(affection,'rare',10000)).toBe(high);
       expect(rabbitIncome(affection,'epic',0)).toBe(Math.round(low*1.3));
       expect(rabbitIncome(affection,'legendary',10000)).toBe(Math.round(high*1.5));
     }
-    expect(rabbitIncome(1,'paille')).toBe(10);expect(rabbitIncome(10,'paille')).toBe(19);
+    expect(rabbitIncome(1,'paille')).toBe(13);expect(rabbitIncome(10,'paille')).toBe(25);
     for(const roll of [0,5000,10000])for(let level=2;level<=20;level++)expect(rabbitIncome(level,'rare',roll)).toBeGreaterThan(rabbitIncome(level-1,'rare',roll));
   });
   it('keeps the individual draw across reloads and exact short simulation ticks',()=>{
@@ -38,8 +38,8 @@ describe('individual income and owner habitat storage',()=>{
     expect(decodeGame(encodeGame(old.state))).toEqual(old);
   });
   it('uses the exact owner limits without changing places',()=>{
-    // Doubled by the owner on 9 November 2026.
-    const expected=[[200,250,300,400,350,400],[600,700,800,1000,900,1000],[2500,2500,2500,2500,2500,2500]];
+    // Doubled by the owner on 9 November 2026, then ×1.5 on 10 November 2026.
+    const expected=[[300,375,450,600,525,600],[900,1050,1200,1500,1350,1500],[3750,3750,3750,3750,3750,3750]];
     for(const level of [1,2,3] as const){
       expect(order.map(t=>habitatLevel(t,level).cap)).toEqual(expected[level-1]);
       order.forEach(type=>expect(habitatLevel(type,level).capacity).toBe([3,5,7][level-1]));
@@ -72,7 +72,7 @@ describe('individual income and owner habitat storage',()=>{
     const input=raw('vol',2);input.buildings[0].incomeUnits=4800*HOUR-17;
     const data=new Map([[SAVE_KEY,JSON.stringify(input)]]),storage={getItem:(key:string)=>data.get(key)??null,setItem:(key:string,value:string)=>{data.set(key,value);}};
     const first=new GameController(storage,()=>0),state=first.getSnapshot().state!;
-    expect(state.pattes).toBe(input.pattes+3800);expect(state.buildings[0].incomeUnits).toBe(1000*HOUR-17);first.dispose();
+    expect(state.pattes).toBe(input.pattes+3300);expect(state.buildings[0].incomeUnits).toBe(1500*HOUR-17);first.dispose();
     const second=new GameController(storage,()=>0);expect(second.getSnapshot().state).toEqual(state);second.dispose();
   });
 });

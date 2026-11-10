@@ -26,7 +26,7 @@
 .salon-scene-body.flipped { animation-name: spa-breathe-flipped; }
 @keyframes spa-breathe-flipped { 0%, 100% { scale: -1 1; } 50% { scale: -1 1.015; } }
 @keyframes spa-wobble { 50% { scale: 1.04 .97; } }
-@keyframes spa-brush { 0%, 100% { translate: -50% -70%; rotate: -12deg; } 50% { translate: -46% -20%; rotate: 8deg; } }
+@keyframes spa-brush { 0%, 100% { translate: -50% -70%; rotate: 168deg; } 50% { translate: -46% -20%; rotate: 188deg; } }
 @keyframes spa-rise { 0% { opacity: 0; translate: -50% -50%; scale: .6; } 15% { opacity: 1; } 100% { opacity: 0; translate: -30% -380%; scale: 1.2; } }
 @keyframes spa-fly { 0% { opacity: 0; translate: -50% -50%; scale: .5; } 15% { opacity: 1; } 100% { opacity: 0; translate: -260% -260%; scale: 1; rotate: 90deg; } }
 @media (prefers-reduced-motion: reduce) {

@@ -115,7 +115,7 @@ describe('daily event accounting and fixed cycles',()=>{
   });
   it('does not count stored income, ready production, initial resources, quotes or refused actions',()=>{
     let s=prepared();s=run(s,{type:'startOrder',id:'building-4',recipe: 'pissenlit'});s=advance(s,5*HOUR);
-    expect(s.buildings[0].incomeUnits).toBe(100*HOUR);expect(s.missions.daily.progress).toEqual(emptyDailyProgress());
+    expect(s.buildings[0].incomeUnits).toBe(130*HOUR);expect(s.missions.daily.progress).toEqual(emptyDailyProgress());
     s.grass=0; expect(act(s,{type:'feed',id:'rabbit-2'},s.lastSimulatedAt)).toMatchObject({ok:false,state:s});
     expect(act(s,{type:'buyBuilding',kind:'farm',x: 18, y: 20},s.lastSimulatedAt)).toMatchObject({ok:false,state:s});
   });
