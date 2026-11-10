@@ -9,7 +9,7 @@ import {MeadowScene} from '../src/display/MeadowScene';
 import {createGame} from '../src/state/initial';
 import {BENNY_FLIGHT, BENNY_FLIGHT_ATLAS, BENNY_FLIGHT_EFFECTS, BENNY_MASTER_WIDTH, bennyFlightArt} from '../src/config/bennyFlightArt';
 import {BENNY_ATLAS} from '../src/config/bennyArt';
-import {ALTITUDE, BACK_LEAN, BEATS, BennyFlightClock, GLIDE_FRAME, ORBIT_PERIOD, TURN_MS, flightBody, flightView, orbitPoint, wingFrame,
+import {ALTITUDE, BACK_LEAN, BEATS, BennyFlightClock, GLIDE_FRAME, ORBIT_PERIOD, TURN_MS, flightBody, flightView, lapShape, orbitPoint, wingFrame,
   type FlightFrame, type FlightGeometry, type FlightView} from '../src/display/bennyFlight';
 
 const publicFile = (url: string) => 'public/' + url.replace(/^.*?assets\//, 'assets/');
@@ -31,11 +31,35 @@ const phases = (frames: FlightFrame[]) => frames.map(f => f.phase).filter((p, k,
 const drawn = (f: FlightFrame) => ({x: f.x, y: f.y - f.altitude});
 const largestJump = (frames: FlightFrame[]) => Math.max(...frames.slice(1).map((f, k) => Math.hypot(drawn(f).x - drawn(frames[k]).x, drawn(f).y - drawn(frames[k]).y)));
 
+describe('Benny in the air: her circuits (owner, 10 November 2026)', () => {
+  const laps = 12, frames = run(new BennyFlightClock(), ORBIT_PERIOD * laps, {sky: true});
+  it('flies circles, never twice the same circuit, and some laps make little loops', () => {
+    const shapes = Array.from({length: laps}, (_, k) => lapShape(k));
+    expect(new Set(shapes.map(s => JSON.stringify(s))).size).toBe(laps);
+    expect(shapes.some(s => s.loopSize > 0)).toBe(true); expect(shapes.some(s => s.loopSize === 0)).toBe(true);
+    // The same lap always has the same shape (no random generator, nothing saved).
+    expect(lapShape(5)).toEqual(lapShape(5));
+    // Two laps apart, the same angle is not the same place.
+    const a = orbitPoint(G, 1), b = orbitPoint(G, 1 + 2 * Math.PI);
+    expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeGreaterThan(5);
+  });
+  it('never jumps where two laps meet, and stays above the island', () => {
+    expect(largestJump(frames)).toBeLessThan(3);
+    for (const f of frames) { expect(Math.abs(f.x - G.centre.x)).toBeLessThanOrEqual(G.rx * 1.12); expect(Math.abs(f.y - G.centre.y)).toBeLessThanOrEqual(G.ry * 1.4); }
+  });
+  it('is seen from the back less than a quarter of the time', () => {
+    const back = frames.filter(f => f.view === 'dos').length / frames.length;
+    expect(back).toBeGreaterThan(.05); expect(back).toBeLessThan(.25);
+  });
+});
+
 describe('Benny in the air: angles', () => {
-  it('chooses the view from her heading in the 8 directions, mirroring only the left side, the back leaned going diagonally away', () => {
+  it('chooses the view from her heading, mirroring only the left side, the back (leaned) only near straight away', () => {
     const cases: [number, number, FlightView, boolean, number][] = [
       [1, 0, 'profil', false, 0], [1, .5, '34devant', false, 0], [0, 1, 'face', false, 0], [-1, .5, '34devant', true, 0],
-      [-1, 0, 'profil', true, 0], [-1, -.5, 'dos', false, -BACK_LEAN], [0, -1, 'dos', false, 0], [1, -.5, 'dos', false, BACK_LEAN],
+      [-1, 0, 'profil', true, 0], [-.4, -1, 'dos', false, -BACK_LEAN], [0, -1, 'dos', false, 0], [.4, -1, 'dos', false, BACK_LEAN],
+      // Going diagonally away (owner, 10 November 2026: less often from the back): the profile.
+      [-1, -.5, 'profil', true, 0], [1, -.5, 'profil', false, 0],
     ];
     for (const [dx, dy, view, mirror, lean] of cases) expect(flightView(dx, dy), `${dx},${dy}`).toEqual({view, mirror, lean});
     // About 20°, leaned towards her way: clockwise (positive) going up-right, anticlockwise going up-left.
@@ -57,7 +81,9 @@ describe('Benny in the air: angles', () => {
     // The old view fades over TURN_MS, never longer.
     const fading = frames.filter(f => f.previous); expect(fading.length).toBeLessThanOrEqual(changes * (TURN_MS / STEP + 1));
     // The view follows her real direction on the orbit (clockwise on screen: going down on the right, left at the front).
-    const right = frames.find(f => f.x > G.centre.x + G.rx * .97 && !f.previous)!, front = frames.find(f => f.y > G.centre.y + G.ry * .9 && Math.abs(f.x) < 40 && !f.previous)!;
+    // Every lap has its own circuit: her rightmost and frontmost points on this one (there she goes straight down, then left).
+    const settled = frames.filter(f => !f.previous), most = (key: (f: FlightFrame) => number) => settled.reduce((a, b) => key(b) > key(a) ? b : a);
+    const right = most(f => f.x), front = most(f => f.y);
     expect(right.view).toBe('face'); expect(front).toMatchObject({view: 'profil', mirror: true});
     // Going away (the back of the island): the back, never mirrored, leaned both ways and straight.
     const away = frames.filter(f => f.view === 'dos');
@@ -130,7 +156,7 @@ describe('Benny in the air: sequences', () => {
     expect(sky.every(f => f.phase === 'orbit' && !f.dust && !f.feathers && f.rain === 0 && f.sparkle === 0)).toBe(true);
     // Gentle swells of altitude, a smaller Benny at the back of the island.
     const heights = sky.map(f => f.altitude); expect(Math.max(...heights) - Math.min(...heights)).toBeGreaterThan(6);
-    const back = sky.find(f => f.y < -G.ry * .9)!, front = sky.find(f => f.y > G.ry * .9)!; expect(back.scale).toBeLessThan(front.scale);
+    const back = sky.reduce((a, b) => b.y < a.y ? b : a), front = sky.reduce((a, b) => b.y > a.y ? b : a); expect(back.scale).toBeLessThan(front.scale);
     clock.land();
     const frames = until(clock, f => f.phase === 'ground', {sky: false});
     expect(phases(frames)).toEqual(['descend', 'settle', 'ground']);
