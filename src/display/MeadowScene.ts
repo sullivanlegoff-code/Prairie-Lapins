@@ -85,11 +85,11 @@ import {bindMeadowInput} from './meadowInput';
 import {buildingFrame, ownedRegions, recenterCamera, type ScreenChrome} from './recenter';
 import {COIN_TEXTURE, COIN_URL, FOOD_TEXTURE, FOOD_URL, HEART_TEXTURE, HEART_URL} from './currency';
 import {coinBubble} from './currencyPhaser';
-import {MAGICIEN_ART, MAGICIEN_TEST_EVENT} from '../config/magicienArt';
+import {MAGICIEN_ART, MAGICIEN_TEST_EVENT, magicienShowArt} from '../config/magicienArt';
 import {DADI_SONG_EVENT, DADI_STAGE, type DadiSongDetail} from '../config/dadiStageArt';
 import {DadiStageView} from './dadiStageView';
 import {danceMove, dancePose} from './rabbitDance';
-import {MagicienView} from './magicienEffects';
+import {MagicienView, type MagicienFriend} from './magicienEffects';
 import {MagicienClock, magicienFree, type MagicienAct} from './magicienTimeline';
 import {CHASE_EVENT, RabbitChases, type ChaseRunner} from './rabbitChase';
 import {SNOWBALL_BATTLE_EVENT, SNOWBALL_EVENT, SnowballFights, snowballPoint, type SnowballThrower} from './snowballFight';
@@ -340,7 +340,7 @@ export class MeadowScene extends Phaser.Scene {
       if (act) for (const rabbit of this.rabbitViews) rabbit.legendary?.play(act);
     };
     window.addEventListener(LEGENDARY_TEST_EVENT, legendaryTest);
-    const magicienTest = (event: Event) => { const act=(event as CustomEvent<{act?:MagicienAct}>).detail?.act; if(act) for(const rabbit of this.rabbitViews) rabbit.magicien?.play(act); };
+    const magicienTest = (event: Event) => { const act=(event as CustomEvent<{act?:MagicienAct}>).detail?.act; if(act) for(const rabbit of this.rabbitViews) rabbit.magicien?.play(act, this.magicFriend(rabbit, null)); };
     window.addEventListener(MAGICIEN_TEST_EVENT,magicienTest);
     // Dadi's song (src/main.ts): the evolved Dadi sings at his microphone while it plays; music switched off, for a while.
     const dadiSong = (event: Event) => {
@@ -894,8 +894,8 @@ export class MeadowScene extends Phaser.Scene {
       if (isLegendaryShow(rabbit.species)) for (const art of legendaryMeadowArt(rabbit.species)) add(art);
       if (rabbit.species === BENNY_ID) for (const art of [...bennyMeadowArt(), ...bennyFlightArt()]) add(art);
       if (wearsCrown(rabbit)) add(CROWN_ART);
-      // The magic circle and the stars, only for an evolved Magicien (audit, 4 November 2026).
-      if (rabbit.species === 'magicien' && shown?.evolved) { add(MAGICIEN_ART.circle); add(MAGICIEN_ART.star); }
+      // His magic shows' poses and effects, only for an evolved Magicien (audit, 4 November 2026; shows of 10 November 2026).
+      if (rabbit.species === 'magicien' && shown?.evolved) for (const art of magicienShowArt()) add(art);
       if (rabbit.species === 'dadi' && shown?.evolved) for (const frame of [...DADI_STAGE.poses, ...(DADI_STAGE.micro ? [DADI_STAGE.micro] : [])]) add(frame);
     }
     const buildingArt = (building: Pick<Building, 'kind' | 'habitat' | 'footprintTier' | 'farmLevel'> & {id?: string}) => {
@@ -1372,6 +1372,25 @@ export class MeadowScene extends Phaser.Scene {
     return this.rabbitViews.flatMap(r => r.motion && !r.nest ? [{id: r.id, group: r.group, motion: r.motion,
       available: r.id !== benny && !r.benny && visible.has(r.id) && !r.legendary?.clock.act && !r.magicien?.busy && this.cozyInteraction.active?.id !== r.id && speaking !== r.id && !this.gathered(r.id)}] : []);
   }
+  /**
+   * The friend an evolved Magicien may enchant: the nearest other resident of his enclosure, seen and resting, free of any other
+   * act (`visible` null: the laboratory's button, any resting friend).
+   */
+  private magicFriend(magicien: VisualRabbit, visible: ReadonlySet<string> | null): MagicienFriend | null {
+    let best: VisualRabbit | null = null, distance = Infinity;
+    for (const other of this.rabbitGroups.get(magicien.group) ?? []) {
+      if (other === magicien || !other.motion || other.motion.mode !== 'rest' || other.nest || other.benny || other.magicien?.busy || other.legendary?.clock.act) continue;
+      if ((visible && !visible.has(other.id)) || this.gathered(other.id) || this.cozyInteraction.active?.id === other.id || this.chases.isChasing(other.id) || this.snowballs.isFighting(other.id)) continue;
+      const d = Math.hypot(other.object.x - magicien.object.x, other.object.y - magicien.object.y);
+      if (d < distance) { distance = d; best = other; }
+    }
+    return best ? {id: best.id, object: best.object, sprite: best.sprite} : null;
+  }
+  /** How high a Magicien's spell lifts this rabbit now (scene units, 0 when none). */
+  private enchantedLift(id: string): number {
+    let lift = 0; for (const r of this.rabbitViews) if (r.magicien?.enchanted?.id === id) lift = Math.max(lift, r.magicien.enchanted.lift);
+    return lift;
+  }
   private poseBody(rabbit: VisualRabbit, pose: {lift: number; squashX: number; squashY: number; facing: 1 | -1; rotation: number; nuzzle?: number}): void {
     const scaleX = pose.facing * rabbit.native * pose.squashX, p = rabbit.pivot, c = Math.cos(pose.rotation), s = Math.sin(pose.rotation);
     const px = scaleX * p.x, py = pose.squashY * p.y;
@@ -1764,7 +1783,9 @@ export class MeadowScene extends Phaser.Scene {
           if (other.motion.mode === 'walk') others.push(other.motion.to);
         }
         const activity = ['sleep', 'zoom', 'meet', 'kiss'].includes(motion.mode), dancing = this.dances(rabbit);
-        if (dancing) { /* stands where it is while it dances */ } else if (rabbit.nest ? lifeActive && visibleResidents.has(rabbit.id) && motion.mode !== 'rest' && (!reducedMotion || motion.mode === 'walk' || motion.mode === 'salto' || motion.mode === 'fed') :
+        // The Magicien stays where he is during his trick, and so does the friend he enchants.
+        const spellbound = !!rabbit.magicien?.busy || this.enchantedLift(rabbit.id) > 0;
+        if (dancing || spellbound) { /* stands where it is while it dances, does magic or is enchanted */ } else if (rabbit.nest ? lifeActive && visibleResidents.has(rabbit.id) && motion.mode !== 'rest' && (!reducedMotion || motion.mode === 'walk' || motion.mode === 'salto' || motion.mode === 'fed') :
           !activity || lifeActive && visibleResidents.has(rabbit.id)) stepRabbitMotion(motion, dt, others);
         // Benny's act may take over the motion (or carry her along her hops) before the pose is read.
         rabbit.benny?.update({dt, time, active: lifeActive && visibleResidents.has(rabbit.id), reduced: reducedMotion});
@@ -1792,8 +1813,10 @@ export class MeadowScene extends Phaser.Scene {
         lift += show.lift; rotation += show.lean;
       }
       rabbit.magicien?.update(dt,lifeActive && visibleResidents.has(rabbit.id) && magicienFree(rabbit.motion?.mode,
-        this.gathered(rabbit.id) || this.cozyInteraction.active?.id === rabbit.id || this.chases.isChasing(rabbit.id) || this.snowballs.isFighting(rabbit.id)),reducedMotion);
-      if(rabbit.magicien) lift += rabbit.magicien.lift;
+        this.gathered(rabbit.id) || this.cozyInteraction.active?.id === rabbit.id || this.chases.isChasing(rabbit.id) || this.snowballs.isFighting(rabbit.id)),reducedMotion,
+        rabbit.magicien && !rabbit.magicien.busy ? this.magicFriend(rabbit, visibleResidents) : null);
+      if(rabbit.magicien) { lift += rabbit.magicien.lift; if (rabbit.magicien.facing) facing = rabbit.magicien.facing; }
+      lift += this.enchantedLift(rabbit.id);
       rabbit.dadi?.update(dt, lifeActive && visibleResidents.has(rabbit.id) && rabbit.motion?.mode !== 'sleep', this.dadiSinging);
       rabbit.lift = lift;
       if (rabbit.object.depth !== previousDepth) depthChanged = true;
@@ -1809,10 +1832,10 @@ export class MeadowScene extends Phaser.Scene {
         rabbit.face.eyes?.setVisible(asleep || kissing || (state & 1) !== 0);
         rabbit.face.nose?.setVisible(!asleep && !kissing && (state & 2) !== 0);
         if (rabbit.legendary?.mouthOpen) rabbit.face.nose?.setVisible(false);
-        if (rabbit.legendary?.submerged || rabbit.dadi?.posing) { rabbit.face.eyes?.setVisible(false); rabbit.face.nose?.setVisible(false); }
+        if (rabbit.legendary?.submerged || rabbit.dadi?.posing || rabbit.magicien?.posing) { rabbit.face.eyes?.setVisible(false); rabbit.face.nose?.setVisible(false); }
       }
       // The crown never floats: hidden whenever the head is not the sprite's (a dive, one of Benny's painted acts).
-      if (rabbit.crown && rabbit.sprite) rabbit.crown.setVisible((rabbit.sprite.visible || !!rabbit.legendary?.mouthOpen) && !rabbit.legendary?.submerged);
+      if (rabbit.crown && rabbit.sprite) rabbit.crown.setVisible((rabbit.sprite.visible || !!rabbit.legendary?.mouthOpen) && !rabbit.legendary?.submerged && !rabbit.magicien?.posing);
       rabbit.ears.forEach((ear, index) => { ear.rotation = rabbit.motion?.mode === 'sleep' ? 0 : Math.sin(t * 1.4 + index) * .13; });
       if (lifeActive && visibleResidents.has(rabbit.id) && (rabbit.motion?.mode === 'sleep' || rabbit.motion?.mode === 'kiss')) {
         const head = this.dadiHead(rabbit), world = this.view.world(head);

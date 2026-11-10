@@ -115,10 +115,10 @@ describe('audit 4 November 2026: an evolution discovered stays discovered', () =
 });
 
 describe('audit 4 November 2026: the Magicien only performs when free', () => {
-  it('starts a trick while resting or walking, never asleep, kissing, at a picnic or in a chase', async () => {
+  it('starts a trick while resting, never walking (he stays still for his shows since 10 November 2026), asleep, kissing, at a picnic or in a chase', async () => {
     const {magicienFree} = await import('../src/display/magicienTimeline');
-    expect(magicienFree('rest', false)).toBe(true); expect(magicienFree('walk', false)).toBe(true);
-    for (const mode of ['sleep', 'kiss', 'meet', 'zoom', 'fed', 'hop', 'salto', undefined]) expect(magicienFree(mode, false)).toBe(false);
+    expect(magicienFree('rest', false)).toBe(true);
+    for (const mode of ['walk', 'sleep', 'kiss', 'meet', 'zoom', 'fed', 'hop', 'salto', undefined]) expect(magicienFree(mode, false)).toBe(false);
     expect(magicienFree('rest', true)).toBe(false); // A picnic guest, a chase runner or a visitor at a decoration.
   });
 });
