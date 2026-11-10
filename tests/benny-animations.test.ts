@@ -222,4 +222,16 @@ describe('Benny in the enclosure', () => {
     const n = createRabbitMotion('rabbit-benny', {x: 0, y: 0}, 1); startPerform(n, {x: 10, y: 0}, 800); n.local = {x: 4, y: 0};
     endPerform(n, false); expect(n.local).toEqual({x: 4, y: 0}); expect(n.mode).not.toBe('perform');
   });
+  it('hops and scratches her ears more often, and stretches less often (owner, 10 November 2026)', () => {
+    const counts: Record<string, number> = {};
+    for (const id of ['rabbit-1', 'rabbit-2', 'rabbit-3']) {
+      const clock = new BennyClock(id);
+      for (let t = 0; t < 20 * 60_000; t += 50) { const started = clock.step(50, IDLE); if (started) counts[started.act] = (counts[started.act] ?? 0) + 1; }
+    }
+    const total = Object.values(counts).reduce((a, b) => a + b, 0);
+    expect(total).toBeGreaterThan(300);
+    for (const act of ['flop', 'groom', 'stretch']) { expect(counts.hop, act).toBeGreaterThan(counts[act]); expect(counts.scratch, act).toBeGreaterThan(counts[act]); }
+    expect(counts.stretch).toBeLessThan(counts.flop); expect(counts.stretch).toBeLessThan(counts.groom);
+    expect(counts.stretch / total).toBeLessThan(.12); expect(counts.hop / total).toBeGreaterThan(.28);
+  });
 });

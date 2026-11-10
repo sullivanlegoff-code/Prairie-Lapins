@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {RabbitLife, LIFE_TIMING, NAP_MS, NEST_KISS_MS, type LifeResident, type LifeTiming} from '../src/display/rabbitLife';
+import {RabbitLife, LIFE_TIMING, BENNY_NAP_MS, NAP_MS, NEST_KISS_MS, type LifeResident, type LifeTiming} from '../src/display/rabbitLife';
 import {createRabbitMotion, KISS_MS, motionZone, rabbitPose, stepRabbitMotion, triggerFedReaction} from '../src/display/rabbitMotion';
 
 const quiet = 1e9;
@@ -51,6 +51,15 @@ describe('visible rabbit life, independent of saves and gameplay random', () => 
     expect(rabbits[0].motion.mode).toBe('sleep'); expect(rabbitPose(rabbits[0].motion).lift).toBe(0);
     tick(life, rabbits, 500); expect(rabbits[0].motion.mode).not.toBe('sleep');
     expect(rabbits[0].motion.local).toEqual(position);
+  });
+  it('wakes Benny after three seconds of nap at most, while the other rabbits keep their minute (owner, 10 November 2026)', () => {
+    const life = new RabbitLife(timing({sleepGap: [100, 100]})), benny = {...rabbit('benny'), napMs: BENNY_NAP_MS}, other = rabbit('other', 30);
+    const rabbits = [benny, other];
+    tick(life, rabbits); expect(benny.motion.mode).toBe('sleep'); expect(other.motion.mode).toBe('sleep');
+    for (let i = 0; i < BENNY_NAP_MS / 500 - 1; i++) tick(life, rabbits, 500);
+    expect(benny.motion.mode).toBe('sleep');
+    tick(life, rabbits, 500); expect(benny.motion.mode).not.toBe('sleep'); expect(other.motion.mode).toBe('sleep');
+    expect(BENNY_NAP_MS).toBeLessThanOrEqual(3000);
   });
   it('pauses activity time behind menus, offscreen or after a suspended tab, and feeding wakes it', () => {
     const life = new RabbitLife(timing({sleepGap: [100, 100]})), rabbits = [rabbit('nap')];

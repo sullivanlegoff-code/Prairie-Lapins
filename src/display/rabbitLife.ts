@@ -1,10 +1,12 @@
 import {canSalto, endRabbitActivity, KISS_MS, motionZone, startRabbitActivity, startWalk, triggerWelcomeSalto, type RabbitMotion} from './rabbitMotion';
 import {rabbitFaceSeed} from './rabbitBlink';
 
-export interface LifeResident {id: string; group: string; motion: RabbitMotion; visible: boolean; nest?: boolean; friendId?: string | null; occupied?: boolean}
+export interface LifeResident {id: string; group: string; motion: RabbitMotion; visible: boolean; nest?: boolean; friendId?: string | null; occupied?: boolean; /** How long a nap lasts (default NAP_MS). */ napMs?: number}
 export interface LifeTiming {zoomGap: readonly [number, number]; sleepGap: readonly [number, number]; socialGap: readonly [number, number]}
 export const LIFE_TIMING: LifeTiming = {zoomGap: [90_000, 90_000], sleepGap: [60_000, 120_000], socialGap: [30_000, 60_000]};
 export const NAP_MS = 60_000;
+/** Benny never sleeps more than 3 seconds (owner, 10 November 2026). */
+export const BENNY_NAP_MS = 3000;
 export const NEST_KISS_MS = 15_000;
 type Individual = {group: string; motion: RabbitMotion; napIn: number; sleeping: number | null; nest?: boolean};
 type Pair = {a: string; b: string; elapsed: number; kissing: boolean};
@@ -119,7 +121,7 @@ export class RabbitLife {
             const target = {x: Math.max(zone.minX + 4, Math.min(zone.maxX - 4, p.x + (p.x < 0 ? 24 : -24))), y: Math.max(zone.minY + 4, Math.min(zone.maxY - 4, p.y))};
             if (Math.hypot(r.motion.local.x - target.x, r.motion.local.y - target.y) > 8) { startWalk(r.motion, target); continue; }
           }
-          startRabbitActivity(r.motion, 'sleep'); r.sleeping = NAP_MS; sleepers++;
+          startRabbitActivity(r.motion, 'sleep'); r.sleeping = rabbit.napMs ?? NAP_MS; sleepers++;
         }
       }
     }

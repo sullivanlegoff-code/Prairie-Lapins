@@ -109,8 +109,11 @@ export const ACT_GAP = {first: [3000, 6000], next: [5000, 9000]} as const;
 export const TAP_COOLDOWN_MS = 900;
 /** Hop series: one hop, two or three, and their chances. */
 export const HOP_SERIES = [[1, .45], [2, .35], [3, .2]] as const;
-/** Each idle act's weight in the draw: hops a little more often. */
-export const ACT_WEIGHTS: Record<BennyAct, number> = {hop: 3, flop: 2, scratch: 2, groom: 2, stretch: 2};
+/**
+ * Each idle act's weight in the draw. Owner, 10 November 2026: more little hops and ear scratches, a little fewer stretches
+ * (formerly hop 3, scratch 2, stretch 2).
+ */
+export const ACT_WEIGHTS: Record<BennyAct, number> = {hop: 5, flop: 2, scratch: 4, groom: 2, stretch: 1};
 
 export interface BennyStep {
   /** Benny is on screen and nothing hides the meadow. */ active: boolean;
