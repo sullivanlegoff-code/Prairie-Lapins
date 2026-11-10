@@ -142,7 +142,7 @@ export function developmentEnvironment(base: SaveStorage, options: {decorationPr
         status.textContent = `${label} : lancé sur les légendaires visibles de la prairie (ferme ce panneau pour regarder).`;
       });
       section('Animations du Magicien');
-      const magicianActs: [MagicienAct,string][] = [['sparks','Magicien : étincelles'],['circle','Magicien : cercle'],['levitation','Magicien : lévitation']];
+      const magicianActs: [MagicienAct,string][] = [['sparks','Magicien : étincelles'],['circle','Magicien : cercle'],['levitation','Magicien : lévitation'],['firework',"Magicien : feu d'artifice"],['butterflies','Magicien : papillons'],['spell','Magicien : sort à un ami']];
       for(const [act,label] of magicianActs) button(label,`dev-magicien-${act}`,()=>{
         window.dispatchEvent(new CustomEvent(MAGICIEN_TEST_EVENT,{detail:{act}}));
         status.textContent=`${label} : lancé sur les Magiciens évolués visibles de la prairie (ferme ce panneau pour regarder).`;
