@@ -61,5 +61,24 @@ export class Sounds {
       oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
     } catch { /* Sound is optional. */ }
   }
+  /**
+   * The Salon de soins' bubbles (owner, 10 November 2026: « bruit de bulles »): `count` little « bloop » in a row, each a sine
+   * whose pitch rises quickly, like a bubble that pops at the surface; pitches and gaps vary a little so it sounds like water.
+   */
+  bubbles(count = 6): void {
+    this.sync();
+    const output = this.engine.effectsOutput(); if (!output) return;
+    try {
+      const {context, node} = output, start = context.currentTime;
+      void context.resume().catch(() => {});
+      for (let i = 0, at = start; i < count; i++, at += .07 + Math.random() * .11) {
+        const oscillator = context.createOscillator(), gain = context.createGain(), pitch = 380 + Math.random() * 520, length = .05 + Math.random() * .04;
+        oscillator.type = 'sine'; oscillator.frequency.setValueAtTime(pitch, at); oscillator.frequency.exponentialRampToValueAtTime(pitch * 2.6, at + length);
+        gain.gain.setValueAtTime(.0001, at); gain.gain.exponentialRampToValueAtTime(.03, at + .008); gain.gain.exponentialRampToValueAtTime(.0005, at + length);
+        oscillator.connect(gain).connect(node); oscillator.start(at); oscillator.stop(at + length + .02);
+        oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
+      }
+    } catch { /* Sound is optional. */ }
+  }
   dispose(): void { this.ownEngine?.dispose(); }
 }

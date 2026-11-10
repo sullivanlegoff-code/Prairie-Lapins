@@ -36,6 +36,7 @@ import {setCurrencyText} from '../display/currency';
 import {CROP_IDS, cropDuration, cropIcon, statueThumbnail} from '../display/food';
 import {COCO_WELCOME, HOST_NAME, agencyThumbnail, cocoPortrait, forestThumbnail, fromPlace, jumpRopeThumbnail, salonThumbnail, toPlace} from '../display/agency';
 import {atSalon, away, giftReason, picnicQuote, rabbitAwayReason, salonHeartCaresLeft} from '../simulation/care';
+import {salonCareThumbnail, salonScene} from './salonScene';
 import {travelling} from '../simulation/travel';
 import {BENNY, BENNY_POWER_RECHARGE, bennyInSky, bennyPowerReadyAt, bennyPowerReason} from '../simulation/benny';
 import {affectionStatueCount, capReason, feedReason, nextAffectionStatue, playerLevel, rabbitAffectionCap, waitsForEvolution, wearsCrown} from '../simulation/affection';
@@ -221,6 +222,8 @@ export class GameUI {
   private agencyWelcomeStep = 0;
   /** The rabbit chosen at the Salon de soins, before choosing its care. */
   private salonRabbit: string | null = null;
+  /** The care whose bubbles were last heard (rabbit and start), so the sound plays once per care, not at every refresh. */
+  private salonHeard: string | null = null;
   private reasonId = 0;
   private lastSecond = -1;
   private confirmationGeneration = 0;
@@ -1373,6 +1376,10 @@ export class GameUI {
     this.content.append(node('p', 'Un lapin à la fois. Il revient avec +1 d’affection et de l’XP. Un seul cadeau par lapin et par jour : un soin ou un pique-nique.', 'small'));
     if (care) {
       const r = s.rabbits.find(x => x.id === care.rabbitId)!, name = r.name || SPECIES[r.species].name, kind = CARE_NAMES[care.care];
+      // The care drawn large (owner, 10 November 2026), with its bubbles' sound the first time this care is shown.
+      this.content.append(salonScene(r, care.care));
+      const heard = `${care.rabbitId}:${care.startedAt}`;
+      if (this.salonHeard !== heard) { this.salonHeard = heard; this.sounds.bubbles(); }
       if (care.endsAt <= now) {
         const card = this.card(`${name} · soin terminé`, `${kind} terminé : ${name} revient tout doux, avec +1 d’affection et ${SALON.cares[care.care].xp} XP${care.hearts ? ` et ${heartAmount(care.hearts)}` : ''}.`, r); card.dataset.care = 'ready';
         this.button(card, 'Aller le chercher', () => this.execute({type: 'claimCare', rabbitId: r.id}, value => `${name} rentre à l’enclos · affection ${value} !`)).classList.add('heart-gift');
@@ -1403,6 +1410,7 @@ export class GameUI {
     for (const kind of CARE_KINDS) {
       const care = SALON.cares[kind], price = carePrice(chosen.species, kind);
       const card = this.card(CARE_NAMES[kind], `${care.hours} h · +1 d’affection et ${care.xp} XP${heartCares ? ` et ${heartAmount(care.hearts)}` : ''} au retour`); card.dataset.care = kind; card.classList.add('compact-list-card');
+      card.querySelector('.card-heading')!.prepend(salonCareThumbnail(kind));
       this.button(card, `${CARE_NAMES[kind]} · ${price} pattes`, () => this.execute({type: 'startCare', rabbitId: chosen.id, care: kind}, `${name} arrive au salon pour ${kind === 'bath' ? 'son bain' : kind === 'brush' ? 'son brossage' : 'son massage'} !`, () => { this.salonRabbit = null; }), moneyReason(s, price));
       this.content.append(card);
     }

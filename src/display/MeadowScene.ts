@@ -27,12 +27,13 @@ import {shouldShowIncomeBubble} from './incomeBubble';
 import type {GameController} from '../application/GameController';
 import {drawBuildingArt} from './buildingArt';
 import {drawHabitat} from './habitatArt';
-import {HABITAT_SIZE_PROPOSAL, enclosureScale, habitatSlots} from '../config/habitatSizes';
+import {HABITAT_SIZE_PROPOSAL, enclosureScale, habitatSlots, salonScale} from '../config/habitatSizes';
 import {habitatArtLayout, habitatArtFor, type HabitatArt} from '../config/habitatArt';
 import {KITCHEN_ART} from '../config/kitchenArt';
 import {statueArtFor} from '../config/statueArt';
 import {AGENCY_ART} from '../config/agencyArt';
 import {PICNIC_ART, SALON_ART} from '../config/salonArt';
+import {SalonSpaView, salonSpaArt} from './salonSpa';
 import {FOREST_ART} from '../config/forestArt';
 import {JUMP_ISLAND_ART, JUMP_MEDAL_ART, jumpIslandFrame, jumpIslandPoint, jumpMedalPoint} from '../config/jumpIslandArt';
 import {EPIC_ISLET_ART, epicIsletFrame} from '../config/epicIsletArt';
@@ -202,6 +203,8 @@ export class MeadowScene extends Phaser.Scene {
   private bubbleHits: {point: Point; width: number; height: number; selection: MeadowSelection}[] = [];
   private layoutKey = '';
   private buildingsLayer!: Phaser.GameObjects.Container;
+  /** The rabbit in care at the Salon de soins and the shine of a rabbit welcomed back (src/display/salonSpa.ts). */
+  private salonSpa: SalonSpaView | null = null;
   /** The jump-rope islet, left of the start island (off the land grid); null until bought. */
   private jumpIslandImage: Phaser.GameObjects.Image | null = null;
   /** Its record medals (concept M1 « Rubans »), hung under the kiosk's roof. */
@@ -293,6 +296,8 @@ export class MeadowScene extends Phaser.Scene {
     // toScreen): buildings .1, decorations .5, decoration selection .9, markers 1, ghosts 1.5, rabbits 2,
     // bubbles and availability texts 3. Depths are those of the former single-plane scene.
     this.ground = this.add.container(0, 0); this.buildingsLayer = this.add.container(0, 0).setDepth(.1); this.animals = this.add.container(0, 0).setDepth(2);
+    this.salonSpa = new SalonSpaView(this);
+    this.events.once('shutdown', () => { this.salonSpa?.destroy(); this.salonSpa = null; });
     this.nurseryOverlays = new NurseryOverlays(this, this.buildingsLayer);
     this.progressViews = new ProgressBarViews(this);
     this.events.once('shutdown', () => { this.progressViews?.destroy(); this.progressViews = null; });
@@ -904,6 +909,8 @@ export class MeadowScene extends Phaser.Scene {
       } else if (building.kind === 'statue') add(statueArtFor(state?.buildings ?? [], building.id));
       else if (building.kind === 'nest' && 'islet' in building && building.islet) add(EPIC_ISLET_ART);
       else add(({nest: NEST_ART, kitchen: KITCHEN_ART, agency: AGENCY_ART, salon: SALON_ART, forest: FOREST_ART, perch: PERCH_ART})[building.kind]);
+      // The spa's tub front and small pieces, for the rabbit in care (src/display/salonSpa.ts).
+      if (building.kind === 'salon') for (const art of salonSpaArt()) add(art);
     };
     for (const building of state?.buildings ?? []) buildingArt(building);
     for (const kind of new Set((state?.debris ?? []).map(d => d.kind))) add({texture: DEBRIS_ART.texture(kind), url: DEBRIS_ART.url(kind)});
@@ -1021,11 +1028,12 @@ export class MeadowScene extends Phaser.Scene {
     if (!this.ensureArt()) return;
     const s = this.current;
     if (s) { this.view.setColumns(visibleColumns(s)); this.updateVisibleRegions(); this.applyCamera(); }
-    const key = JSON.stringify([s?.jumpIsland, s ? jumpRopeMedals(s).length : 0, s?.acquiredParcels, s?.buildings.map(b => [b.id, b.kind, b.x, b.y, b.habitat, b.farmLevel, b.agencyLevel, b.breeding?.parents]), s?.rabbits.map(r => [r.id, r.species, r.enclosureId, wearsCrown(r), showsEvolvedArt(r)]), s?.travel?.trips.map(t => t.rabbitId), s?.care?.rabbitId]);
+    const key = JSON.stringify([s?.jumpIsland, s ? jumpRopeMedals(s).length : 0, s?.acquiredParcels, s?.buildings.map(b => [b.id, b.kind, b.x, b.y, b.habitat, b.farmLevel, b.agencyLevel, b.formerFootprint, b.breeding?.parents]), s?.rabbits.map(r => [r.id, r.species, r.enclosureId, wearsCrown(r), showsEvolvedArt(r)]), s?.travel?.trips.map(t => t.rabbitId), s?.care?.rabbitId]);
     if (key !== this.layoutKey) { this.layoutKey = key; this.drawGround(); this.drawBuildings(); this.drawAnimals(); }
     // The cushion overlays follow the canonical state and simulation time on every refresh (a no-op when nothing changed).
     this.nurseryOverlays?.sync(s);
     this.farmCrops?.sync(s);
+    this.salonSpa?.sync(s, this.simulationNow());
     this.syncProgressBars();
     this.drawDecorations(); this.drawDebris(); this.drawBubbles(); this.drawGrid(); this.drawGhost(); this.updateDetails();
   }
@@ -1167,8 +1175,9 @@ export class MeadowScene extends Phaser.Scene {
   private positionBuildingArt(image: Phaser.GameObjects.Image, x: number, y: number, kind: Building['kind'], illustrated: HabitatArt | null = null, enlarged = 1, id?: string): void {
     if (illustrated) { image.setPosition(x, y).setOrigin(illustrated.anchor.x / illustrated.width, illustrated.anchor.y / illustrated.height).setScale(enlarged * illustrated.worldWidth / illustrated.width); return; }
     const art = kind === 'farm' ? farmArtFor(this.current?.buildings.find(b => b.id === id)?.farmLevel) : kind === 'nest' ? NEST_ART : kind === 'nursery' ? NURSERY_ART : kind === 'kitchen' ? KITCHEN_ART : kind === 'statue' ? statueArtFor(this.current?.buildings ?? [], id) : kind === 'agency' ? AGENCY_ART : kind === 'salon' ? SALON_ART : kind === 'forest' ? FOREST_ART : kind === 'perch' ? PERCH_ART : null;
+    // `enlarged` also shrinks a Salon de soins that keeps the former 4 × 4 (`salonScale`).
     image.setPosition(x, y).setOrigin(.5, art ? art.originY : .5)
-      .setScale(art ? art.worldWidth / art.width : .5 * enlarged);
+      .setScale(art ? art.worldWidth / art.width * (kind === 'salon' ? enlarged : 1) : .5 * enlarged);
   }
   private drawBuildings(): void {
     const present = new Set<string>();
@@ -1178,7 +1187,7 @@ export class MeadowScene extends Phaser.Scene {
       if(!image){image=this.add.image(x,y,this.buildingTexture(b));this.buildingsLayer.add(image);this.buildingViews.set(b.id,image);}
       image.setTexture(this.buildingTexture(b)).setDepth(y);
       if (b.islet) { image.setPosition(x, y).setOrigin(EPIC_ISLET_ART.originX, EPIC_ISLET_ART.originY).setScale(EPIC_ISLET_ART.worldWidth / EPIC_ISLET_ART.width); continue; }
-      this.positionBuildingArt(image, x, y, b.kind, b.kind === 'enclosure' ? habitatArtFor(b.habitat ?? undefined, b.footprintTier) : null, b.kind === 'enclosure' ? enclosureScale(b) : 1, b.id);
+      this.positionBuildingArt(image, x, y, b.kind, b.kind === 'enclosure' ? habitatArtFor(b.habitat ?? undefined, b.footprintTier) : null, b.kind === 'enclosure' ? enclosureScale(b) : b.kind === 'salon' ? salonScale(b) : 1, b.id);
     }
     for(const [id,image] of this.buildingViews)if(!present.has(id)){image.destroy();this.buildingViews.delete(id);}
     if (this.current?.jumpIsland) {
@@ -1426,7 +1435,7 @@ export class MeadowScene extends Phaser.Scene {
       if (b.kind === 'salon' && careReady(this.current!, now)) text = 'trip'; // The care is over: the rabbit waits to be welcomed back.
       if (b.kind === 'agency' && tripReady(this.current!, now)) text = 'trip'; // A traveller is back: Coco waits with them. // One bubble for any ready baby.
       if (!text) continue;
-      const p = toScreen(buildingCenter(b)); p.y += b.kind === 'farm' ? farmArtFor(b.farmLevel).harvestY : b.kind==='nest' ? NEST_ART.actionY : b.kind==='nursery' ? NURSERY_ART.actionY : b.kind==='agency' ? AGENCY_ART.actionY : b.kind==='salon' ? SALON_ART.actionY : b.kind==='forest' ? FOREST_ART.actionY : -72;
+      const p = toScreen(buildingCenter(b)); p.y += b.kind === 'farm' ? farmArtFor(b.farmLevel).harvestY : b.kind==='nest' ? NEST_ART.actionY : b.kind==='nursery' ? NURSERY_ART.actionY : b.kind==='agency' ? AGENCY_ART.actionY : b.kind==='salon' ? SALON_ART.actionY * salonScale(b) : b.kind==='forest' ? FOREST_ART.actionY : -72;
       specs.push({b, text, kind, p});
     }
     return specs;
@@ -1541,7 +1550,7 @@ export class MeadowScene extends Phaser.Scene {
     if(!this.buildingGhost)this.buildingGhost=this.add.image(0,0,this.buildingTexture({kind:p.kind,habitat,footprintTier:moving?.footprintTier,farmLevel:moving?.farmLevel,id:moving?.id})).setDepth(1.5).setAlpha(.55).setScale(.5);
     const tint=valid?0xe4ffb5:0xf3a6a1;
     this.buildingGhost.setTexture(this.buildingTexture({kind:p.kind,habitat,footprintTier:moving?.footprintTier,farmLevel:moving?.farmLevel,id:moving?.id})).setTint(tint).setVisible(!this.photo);
-    this.positionBuildingArt(this.buildingGhost, center.x, center.y, p.kind, habitatArtFor(habitat ?? undefined, moving?.footprintTier), p.kind === 'enclosure' ? enclosureScale(moving ?? {}) : 1, moving?.id);
+    this.positionBuildingArt(this.buildingGhost, center.x, center.y, p.kind, habitatArtFor(habitat ?? undefined, moving?.footprintTier), p.kind === 'enclosure' ? enclosureScale(moving ?? {}) : p.kind === 'salon' ? salonScale(moving ?? {}) : 1, moving?.id);
     // The nursery's preview carries its four cushion states, with the ghost base's own opacity and valid/invalid tint.
     if(p.kind==='nursery')this.nurseryOverlays?.showGhost(this.current,moving??null,center,{alpha:this.buildingGhost.alpha,tint},!this.photo);
   }
@@ -1709,6 +1718,7 @@ export class MeadowScene extends Phaser.Scene {
       }
     }
     const reducedMotion = prefersReducedMotion();
+    this.salonSpa?.update(time, this.simulationNow(), reducedMotion, this.rabbitViews);
     // Christmas: evening and night over the meadow and its sky, and the snow (it keeps falling in a photo).
     const winterNow = new Date(), christmas = christmasActive();
     this.winter?.update(dt, winterNow, christmas && !document.hidden, reducedMotion);

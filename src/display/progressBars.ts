@@ -2,6 +2,7 @@ import {FARM_ART} from '../config/farmArt';
 import {NEST_ART} from '../config/nestArt';
 import {AGENCY_ART} from '../config/agencyArt';
 import {SALON_ART} from '../config/salonArt';
+import {salonScale} from '../config/habitatSizes';
 import {NURSERY_OVERLAY_ART, NURSERY_ROW_SCALE, NURSERY_SLOT_ANCHORS} from '../config/nurseryArt';
 import {babiesBySlot} from '../simulation/nursery';
 import type {GameState} from '../state/types';
@@ -43,7 +44,7 @@ export function progressBars(state: (Pick<GameState, 'buildings' | 'lastSimulate
           {x: art.x, y: art.y + row * art.gap, width: art.width, height: art.height});
       }
     }
-    if (b.kind === 'salon' && state.care) add(`care-${state.care.rabbitId}`, state.care.startedAt, state.care.endsAt, SALON_ART.progress);
+    if (b.kind === 'salon' && state.care) { const k = salonScale(b), art = SALON_ART.progress; add(`care-${state.care.rabbitId}`, state.care.startedAt, state.care.endsAt, {x: art.x * k, y: art.y * k, width: art.width * k, height: art.height}); }
     if (b.kind === 'nursery' && b.nursery) for (const baby of babiesBySlot(b)) {
       if (baby.slot >= b.nursery.capacity) continue;
       const anchor = NURSERY_SLOT_ANCHORS[baby.slot], row = NURSERY_ROW_SCALE[anchor.row], art = NURSERY_OVERLAY_ART.progress;

@@ -225,7 +225,7 @@ describe('Save format: the old drawing put back', () => {
     expect(waiting.state).toEqual(asked); expect(rabbit(waiting.state, a).lookChange).toBeDefined();
     const old = advance(asked, s.lastSimulatedAt + FOREST.changeMs);
     const decoded = decodeGame(encodeGame(old)); if (!decoded.ok) throw Error(decoded.reason);
-    expect(decoded.state.version).toBe(27);
+    expect(decoded.state.version).toBe(28);
     expect(rabbit(decoded.state, a).classicLook).toBe(true); expect(rabbit(decoded.state, b).classicLook).toBeUndefined();
     expect(decoded.state).toEqual(old);
   });
@@ -243,7 +243,7 @@ describe('Save format: the old drawing put back', () => {
     const {s} = setup([['neige', 20]], false);
     const raw = JSON.parse(encodeGame(s)); raw.version = 22;
     const decoded = decodeGame(JSON.stringify(raw)); if (!decoded.ok) throw Error(decoded.reason);
-    expect(decoded.state.version).toBe(27); expect(decoded.state.rabbits).toEqual(s.rabbits);
+    expect(decoded.state.version).toBe(28); expect(decoded.state.rabbits).toEqual(s.rabbits);
   });
   it('drops a choice that means nothing instead of refusing the save', () => {
     const {s, ids: [a, low, rare]} = setup([['feu', 30], ['feu', 29], ['benny', 40]]); markEvolved(s, a);

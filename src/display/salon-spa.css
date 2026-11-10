@@ -1,0 +1,37 @@
+/* The Salon de soins' scene in its menu (src/ui/salonScene.ts): the painted corner of the care, the rabbit in it, the spa's pieces
+   and their small movements. Every position is a share of the scene (3:2) or of the rabbit's picture. */
+.salon-scene { position: relative; margin: 0 0 10px; width: 100%; aspect-ratio: 3 / 2; overflow: hidden; border-radius: 16px; background: #f4d9c6;
+  box-shadow: inset 0 0 0 3px #fff6e8, 0 2px 0 #b98a5c; }
+.salon-scene img { user-select: none; -webkit-user-select: none; pointer-events: none; }
+.salon-scene-backdrop, .salon-scene-front { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.salon-scene-rabbit { position: absolute; }
+.salon-scene-body, .salon-scene-pieces { position: absolute; left: 0; top: 0; width: 100%; }
+.salon-scene-body { animation: spa-breathe 3.4s ease-in-out infinite; transform-origin: 50% 100%; }
+.salon-scene-body.flipped { scale: -1 1; }
+.salon-scene-picture { display: block; width: 100%; height: 100%; }
+.salon-scene-eyes { position: absolute; height: auto; }
+/* In the bath the box cuts the rabbit at the water line (its bottom), nothing else: the foam, bubbles and hearts go beyond it. */
+.salon-scene-rabbit[data-water-line] { clip-path: inset(-200% -100% 0 -100%); }
+.salon-scene-piece { position: absolute; height: auto; translate: -50% -50%; rotate: var(--spa-angle, 0deg); }
+.spa-foam-crown { translate: -50% -78%; animation: spa-wobble 2.6s ease-in-out infinite; }
+.spa-foam-water { translate: -50% -60%; scale: 1 .38; }
+.spa-turban { translate: -50% -80%; }
+.spa-blanket { translate: -50% 0; scale: 1 .6; transform-origin: 50% 0; }
+.spa-brush { animation: spa-brush 1.1s ease-in-out infinite; transform-origin: 70% 50%; }
+.salon-scene-drift { opacity: 0; animation: spa-rise 2.6s linear infinite; }
+.spa-tuft { animation-name: spa-fly; animation-duration: 2.2s; }
+.spa-heart { animation-duration: 3.4s; }
+.spa-steam { aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, #ffffffd0, #ffffff40 55%, #fff0 70%); animation-duration: 3.6s; }
+@keyframes spa-breathe { 50% { scale: 1 1.015; } }
+.salon-scene-body.flipped { animation-name: spa-breathe-flipped; }
+@keyframes spa-breathe-flipped { 0%, 100% { scale: -1 1; } 50% { scale: -1 1.015; } }
+@keyframes spa-wobble { 50% { scale: 1.04 .97; } }
+@keyframes spa-brush { 0%, 100% { translate: -50% -70%; rotate: -12deg; } 50% { translate: -46% -20%; rotate: 8deg; } }
+@keyframes spa-rise { 0% { opacity: 0; translate: -50% -50%; scale: .6; } 15% { opacity: 1; } 100% { opacity: 0; translate: -30% -380%; scale: 1.2; } }
+@keyframes spa-fly { 0% { opacity: 0; translate: -50% -50%; scale: .5; } 15% { opacity: 1; } 100% { opacity: 0; translate: -260% -260%; scale: 1; rotate: 90deg; } }
+@media (prefers-reduced-motion: reduce) {
+  .salon-scene *, .salon-scene *::before { animation: none !important; }
+  .salon-scene-drift { display: none; }
+  .salon-scene-body.flipped { scale: -1 1; }
+}
+.salon-care-thumbnail { width: 96px; height: 64px; object-fit: cover; border-radius: 10px; flex: none; box-shadow: 0 0 0 2px #fff6e8; }

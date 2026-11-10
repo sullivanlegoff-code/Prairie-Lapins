@@ -15,14 +15,16 @@ function run(s: GameState, command: Command, now = s.lastSimulatedAt) {
 function refused(s: GameState, c: Command, reason: string, now = s.lastSimulatedAt) {
   expect(act(s, c, now, () => 0)).toEqual({ok: false, state: s, reason});
 }
-function freeCell(s: GameState, kind?: 'enclosure') {
+function freeCell(s: GameState, kind?: 'enclosure' | 'salon') {
+  // The starting parcel has no room for the 6 × 6 spa next to the other buildings: the salon goes on the south parcel, cleared.
+  if (kind === 'salon' && !s.acquiredParcels.includes('south')) { s.acquiredParcels.push('south'); s.debris = []; }
   for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y, undefined, kind)) return {x, y};
   throw Error('No space');
 }
 /** Player level `level`, two statues, a salon, and a universal level 3 enclosure with these rabbits (species, affection). */
 function setup(rabbits: [SpeciesId, number][], level = 8) {
   const s = createGame(0); s.progression = {totalXp: cumulativeLevelXp(level), rewardedThroughLevel: level}; s.pattes = 100_000;
-  for (const kind of ['statue', 'statue', 'salon'] as const) { const c = freeCell(s); s.buildings.push(emptyBuilding(`building-${s.nextId++}`, kind, c.x, c.y)); }
+  for (const kind of ['statue', 'statue', 'salon'] as const) { const c = freeCell(s, kind === 'salon' ? kind : undefined); s.buildings.push(emptyBuilding(`building-${s.nextId++}`, kind, c.x, c.y)); }
   const c = freeCell(s, 'enclosure'), home = emptyBuilding(`building-${s.nextId++}`, 'enclosure', c.x, c.y); home.habitat = {type: 'universal', level: 3}; s.buildings.push(home);
   const ids = rabbits.map(([species, affection]) => { const id = `rabbit-${s.nextId++}`; s.rabbits.push({id, species, affection, enclosureId: home.id}); if (!s.discovered.includes(species)) s.discovered.push(species); return id; });
   s.rabbits.forEach(evolveAbove30);

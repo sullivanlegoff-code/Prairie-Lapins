@@ -36,6 +36,7 @@ export interface Building {
    * Enclosures only: still keeps its tier's size of a former era (`ENCLOSURE_SIZE_ERA` in config/habitatSizes), because a save
    * written then had no room around it: 1 = before 3 November 2026 (4 × 4, 6 × 5, 8 × 6), 2 = from 3 November 2026 (5 × 4,
    * 8 × 5, 10 × 6). Raised or removed as soon as it can grow at load, removed when it is upgraded.
+   * Also the Salon de soins (v28, only 1): it keeps the former 4 × 4 until it has room for the spa's 6 × 6.
    */
   formerFootprint?: FormerFootprintEra;
   /**
@@ -105,7 +106,7 @@ export interface GameState {
   startCourse?: 'paille-solo';
   purchaseUnlocks?: PurchaseUnlockId[];
   initiation?: Initiation;
-  version: 27;
+  version: 28;
   /** The Christmas event (v26, optional; absent until its first use): see `ChristmasState`. */
   christmas?: ChristmasState;
   /** Benny, the Mythic (v22): when her power is usable again, and whether she is flying in the sky. Absent until first used. */

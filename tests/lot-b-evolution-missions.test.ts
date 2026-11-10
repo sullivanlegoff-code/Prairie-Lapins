@@ -14,9 +14,10 @@ import type {GameState} from '../src/state/types';
 /** A universal level-3 enclosure (building-101) holding the given species at affection 30 (rabbit-110, rabbit-111, ...). */
 function game(species: SpeciesId[] = [], extra: ('kitchen' | 'salon' | 'agency' | 'forest')[] = []): GameState {
   const s = createGame(0);
-  const free = (kind?: 'enclosure') => { for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y, undefined, kind)) return {x, y}; throw Error('No space'); };
+  if (extra.includes('salon')) { s.acquiredParcels.push('south'); s.debris = []; } // Room for the 6 × 6 spa.
+  const free = (kind?: 'enclosure' | 'salon') => { for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y, undefined, kind)) return {x, y}; throw Error('No space'); };
   let c = free('enclosure'); s.buildings.push(emptyBuilding('building-101', 'enclosure', c.x, c.y)); s.buildings.at(-1)!.habitat = {type: 'universal', level: 3};
-  extra.forEach((kind, k) => { c = free(); s.buildings.push(emptyBuilding(`building-${102 + k}`, kind, c.x, c.y)); });
+  extra.forEach((kind, k) => { c = free(kind === 'salon' ? kind : undefined); s.buildings.push(emptyBuilding(`building-${102 + k}`, kind, c.x, c.y)); });
   species.forEach((id, k) => { s.rabbits.push({id: `rabbit-${110 + k}`, species: id, affection: 30, enclosureId: 'building-101'}); if (!s.discovered.includes(id)) s.discovered.push(id); });
   s.nextId = 200; return s;
 }
@@ -117,7 +118,7 @@ describe('save v24 → v25', () => {
   it('keeps a Cuisine progress as commis when the new list has it, forgets it otherwise, and keeps evolved rabbits evolved', () => {
     const s = game(['feu', 'icy', 'snk', 'boudinet', 'paille'], ['kitchen']);
     const raw = JSON.parse(encodeGame(s));
-    expect(raw.version).toBe(27);
+    expect(raw.version).toBe(28);
     raw.version = 24; delete raw.missions.daily.picked;
     raw.rabbits[1].evolution = {challenges: {'cuisine:chicken': 1}}; // Feu: commis:chicken now.
     raw.rabbits[2].evolution = {challenges: {'cuisine:moelleux': 1, soin: 1}}; // Icy: its moelleux is a taster challenge now.
@@ -127,7 +128,7 @@ describe('save v24 → v25', () => {
     const decoded = decodeGame(JSON.stringify(raw));
     if (!decoded.ok) throw Error(decoded.reason);
     const loaded = decoded.state;
-    expect(loaded.version).toBe(27);
+    expect(loaded.version).toBe(28);
     expect(rabbit(loaded, 'rabbit-110').evolution).toEqual({challenges: {'commis:chicken': 1}});
     expect(rabbit(loaded, 'rabbit-111').evolution).toEqual({challenges: {soin: 1}});
     expect(rabbit(loaded, 'rabbit-112').evolution).toEqual({done: true, challenges: {voyage: 1, quotidien: 1}});
