@@ -96,10 +96,10 @@ describe('acceleration transactions', () => {
   });
   it('uses the lower price at confirmation, without resetting the clock or next gift', () => {
     const s = run(prepared(), {type: 'startOrder', id: 'building-4', recipe: 'pissenlit'});
-    const command = speed(s, 'building-4', 'order'); expect(command.maxHearts).toBe(3); // Pissenlit: 15 minutes.
-    const memory = store(encodeGame(s)); const c = new GameController(memory.storage, () => 11 * MINUTE);
+    const command = speed(s, 'building-4', 'order'); expect(command.maxHearts).toBe(2); // Pissenlit: 7.5 minutes since 10 November 2026.
+    const memory = store(encodeGame(s)); const c = new GameController(memory.storage, () => 5.5 * MINUTE);
     expect(c.perform(command)).toMatchObject({ok: true, value: 1});
-    expect(current(c)).toMatchObject({hearts: 11, nextHeartGiftAt: DAY, lastSimulatedAt: 11 * MINUTE});
+    expect(current(c)).toMatchObject({hearts: 11, nextHeartGiftAt: DAY, lastSimulatedAt: 5.5 * MINUTE});
   });
   it('spends nothing if the stage has already ended or the button is pressed twice', () => {
     const s = run(prepared(), {type: 'startOrder', id: 'building-4', recipe: 'foin'});
@@ -110,7 +110,7 @@ describe('acceleration transactions', () => {
   it('refuses insufficient hearts, unconfirmed higher prices and changed targets without mutation', () => {
     const s = run(prepared(), {type: 'startOrder', id: 'building-4', recipe: 'pissenlit'});
     const command = speed(s, 'building-4', 'order');
-    expect(act(s, {...command, maxHearts: 2}, 0)).toMatchObject({ok: false, reason: 'PRICE_CHANGED', state: s});
+    expect(act(s, {...command, maxHearts: 1}, 0)).toMatchObject({ok: false, reason: 'PRICE_CHANGED', state: s});
     expect(act(s, {...command, jobKey: 'old'}, 0)).toMatchObject({ok: false, reason: 'STALE_ACTION', state: s});
     s.hearts = 0; expect(act(s, command, 0)).toMatchObject({ok: false, reason: 'NOT_ENOUGH_HEARTS', state: s});
   });

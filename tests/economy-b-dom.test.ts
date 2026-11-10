@@ -49,7 +49,7 @@ it('renders the level 1 farm crops with their icon, locks the later ones and sho
   const crops=[...panel().querySelectorAll<HTMLElement>('.farm-order')];
   expect(crops.map(c=>c.dataset.crop)).toEqual(['foin','pissenlit','trefle','persil','laitue']);
   expect(crops.every(c=>c.querySelector('img.crop-icon'))).toBe(true);expect(crops[4].textContent).toContain('Laitue');
-  expect(crops[3].querySelector('button')?.textContent).toBe('Cultiver · 250 pièces');expect(crops[4].querySelector('button')).toBeNull();expect(crops[4].querySelector('.badge')?.textContent).toBe('Niveau 7 requis');
+  expect(crops[3].querySelector('button')?.textContent).toBe('Cultiver · 200 pièces');expect(crops[4].querySelector('button')).toBeNull();expect(crops[4].querySelector('.badge')?.textContent).toBe('Niveau 7 requis');
   controller.perform({type:'startOrder',id:'building-100',recipe: 'persil'});
   expect(panel().querySelector('.order-ready-time')?.textContent).toMatch(/^Prête vers \d+ h \d{2}$/);
 });

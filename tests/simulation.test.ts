@@ -88,35 +88,35 @@ describe('initial state, costs and atomic refusals', () => {
 
 describe('income and time', () => {
   it('computes income, caps it and collects only whole pattes', () => {
-    let s = advance(createGame(0), HOUR); expect(s.buildings[0].incomeUnits).toBe(20*HOUR);
-    s = run(s, {type: 'collectIncome', id: enclosure}); expect(s.pattes).toBe(370);
+    let s = advance(createGame(0), HOUR); expect(s.buildings[0].incomeUnits).toBe(26*HOUR);
+    s = run(s, {type: 'collectIncome', id: enclosure}); expect(s.pattes).toBe(376);
     s = advance(s, 1000 * HOUR); const cap = habitatStats(s.buildings[0]).cap; expect(s.buildings[0].incomeUnits).toBe(cap * HOUR);
-    s = run(s, {type: 'collectIncome', id: enclosure}); expect(s.pattes).toBe(370 + cap);
+    s = run(s, {type: 'collectIncome', id: enclosure}); expect(s.pattes).toBe(376 + cap);
   });
   it('preserves fractional income through repeated advances and collections', () => {
     const original = createGame(0); let split = original;
     for (let t = 1; t <= 100; t++) split = run(split, {type: 'collectIncome', id: enclosure}, t);
     const once = advance(original, 100);
     expect(split.buildings[0].incomeUnits).toBe(once.buildings[0].incomeUnits);
-    expect(split.buildings[0].incomeUnits).toBe(2000);
+    expect(split.buildings[0].incomeUnits).toBe(2600);
   });
   it('settles the old affection before feeding', () => {
     const s = run(createGame(0), {type: 'feed', id: 'rabbit-2'}, HOUR);
-    expect(s.buildings[0].incomeUnits).toBe(20*HOUR);
-    expect(advance(s, 2 * HOUR).buildings[0].incomeUnits).toBe(41 * HOUR);
+    expect(s.buildings[0].incomeUnits).toBe(26*HOUR);
+    expect(advance(s, 2 * HOUR).buildings[0].incomeUnits).toBe(53 * HOUR);
   });
   it('does not produce income retroactively for purchases', () => {
     const s = run(createGame(0), {type: 'buyRabbit', species: 'neige', enclosureId: enclosure}, HOUR);
-    expect(s.buildings[0].incomeUnits).toBe(20*HOUR);
-    expect(advance(s, 2 * HOUR).buildings[0].incomeUnits).toBe(50 * HOUR);
+    expect(s.buildings[0].incomeUnits).toBe(26*HOUR);
+    expect(advance(s, 2 * HOUR).buildings[0].incomeUnits).toBe(65 * HOUR);
   });
   it('settles both enclosures before moving a rabbit', () => {
     let s = setup(); const target = secondEnclosure(s);
     s = run(s, {type: 'moveRabbit', id: 'rabbit-2', enclosureId: target}, HOUR);
-    expect(s.buildings[0].incomeUnits).toBe(22 * HOUR);
+    expect(s.buildings[0].incomeUnits).toBe(28 * HOUR);
     s = advance(s, 2 * HOUR);
-    expect(s.buildings[0].incomeUnits).toBe(33 * HOUR);
-    expect(s.buildings.find(b => b.id === target)!.incomeUnits).toBe(11 * HOUR);
+    expect(s.buildings[0].incomeUnits).toBe(42 * HOUR);
+    expect(s.buildings.find(b => b.id === target)!.incomeUnits).toBe(14 * HOUR);
   });
   it('ignores a reversed clock and never counts an interval twice', () => {
     let s = advance(createGame(0), HOUR);
@@ -124,7 +124,7 @@ describe('income and time', () => {
     s = run(s, {type: 'collectIncome', id: enclosure}, HOUR - MINUTE);
     expect(s.lastSimulatedAt).toBe(HOUR);
     expect(advance(s, HOUR).buildings[0].incomeUnits).toBe(0);
-    expect(advance(s, 2 * HOUR).buildings[0].incomeUnits).toBe(20*HOUR);
+    expect(advance(s, 2 * HOUR).buildings[0].incomeUnits).toBe(26*HOUR);
   });
   it('anchors new timers to the monotonic time when the clock reverses', () => {
     let s = advance(setup(), HOUR); s = run(s, breed, HOUR - MINUTE);
@@ -184,9 +184,9 @@ describe('farming and affection', () => {
       }
       const before = s.grass; s = run(s, {type: 'feed', id: 'rabbit-2'});
       expect(before - s.grass).toBe(FEED_COSTS[affection]);
-      if (affection === 19) { expect(s.grass).toBe(80_900); expect(rabbitIncome(20)).toBe(29); }
+      if (affection === 19) { expect(s.grass).toBe(80_900); expect(rabbitIncome(20)).toBe(38); }
     }
-    expect(FEED_COSTS[14]).toBe(1500); expect(s.grass).toBe(0); expect(s.rabbits[0].affection).toBe(50); expect(rabbitIncome(50)).toBe(59);
+    expect(FEED_COSTS[14]).toBe(1500); expect(s.grass).toBe(0); expect(s.rabbits[0].affection).toBe(50); expect(rabbitIncome(50)).toBe(77);
     refuses(s, {type: 'feed', id: 'rabbit-2'}, 'MAX_AFFECTION');
     refuses(s, {type: 'feed', id: 'rabbit-3'}, 'NOT_ENOUGH_GRASS');
   });
@@ -316,8 +316,8 @@ describe('nursery, capacity and release', () => {
     s = run(s, {type: 'buyRabbit', species: 'paille', enclosureId: enclosure});
     const duplicate = s.rabbits.at(-1)!.id;
     s = run(s, {type: 'release', id: duplicate}, HOUR);
-    expect(s.buildings[0].incomeUnits).toBe(30 * HOUR); expect(s.discovered).toContain('paille');
-    expect(advance(s, 2 * HOUR).buildings[0].incomeUnits).toBe(50 * HOUR);
+    expect(s.buildings[0].incomeUnits).toBe(39 * HOUR); expect(s.discovered).toContain('paille');
+    expect(advance(s, 2 * HOUR).buildings[0].incomeUnits).toBe(65 * HOUR);
     refuses(s, {type: 'release', id: 'rabbit-2'}, 'LAST_OF_SPECIES');
   });
   it('protects an active parent even when a duplicate exists', () => {
