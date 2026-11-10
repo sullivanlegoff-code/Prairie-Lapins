@@ -14,6 +14,8 @@ const CELL = {x: ISLAND.cellWidth / FINE_GRID, y: ISLAND.cellDepth / FINE_GRID};
 const TARGETS: readonly (FormerFootprintEra | undefined)[] = [undefined, 2];
 
 /**
+ * Since v28 the Salon de soins too: a salon built before the spa (10 November 2026) keeps 4 × 4 until 6 × 6 fits, by the same rules.
+ *
  * Gives every enclosure that still keeps the size of a former era (`formerFootprint`) the largest size that fits, among the
  * current one and the later former ones, where there is room. Run on every loaded save, after validation, so it can never make a
  * save refused:
@@ -31,8 +33,8 @@ const TARGETS: readonly (FormerFootprintEra | undefined)[] = [undefined, 2];
 export function growFormerEnclosures(s: Pick<GameState, 'buildings' | 'decorations' | 'acquiredParcels'> & Partial<Pick<GameState, 'debris'>>): string[] {
   const grown: string[] = [];
   for (const era of TARGETS) for (const reach of [1, ENCLOSURE_GROWTH_REACH]) for (const b of s.buildings) {
-    // Only an enclosure of an older era than the target grows to it.
-    if (b.kind !== 'enclosure' || !b.formerFootprint || (era !== undefined && b.formerFootprint >= era)) continue;
+    // Only an enclosure of an older era than the target grows to it; the Salon de soins (v28) only to its current spa size.
+    if ((b.kind !== 'enclosure' && b.kind !== 'salon') || !b.formerFootprint || (era !== undefined && (b.kind === 'salon' || b.formerFootprint >= era))) continue;
     const current = buildingFootprint(b), target = buildingFootprint({kind: b.kind, x: b.x, y: b.y, footprintTier: b.footprintTier, formerFootprint: era});
     const ax = current.x + (current.width - target.width) / 2, ay = current.y + (current.height - target.height) / 2;
     // First its own top-left cell: the enclosure then grows to the right and downwards, like an upgrade; then the nearest places

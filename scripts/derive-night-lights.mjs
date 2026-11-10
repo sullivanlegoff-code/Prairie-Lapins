@@ -24,8 +24,8 @@ export const isLampYellow = (r, g, b, a) => isWarmLight(r, g, b, a) && g - b > 8
 const LAMP_YELLOW = new Set(['buildings/farm-windmill-nest.png', 'buildings/farm-level-3.png', 'buildings/farm-level-4.png']);
 /** Lit-looking areas that are no lamps, as ellipses in fractions of the picture: the islet of the Epics' sandy pad. */
 const NOT_LAMPS = {'buildings/ilot-epique.png': [{cx: .505, cy: .59, rx: .27, ry: .1}]};
-/** Pictures without any lamp whose straw or ochre yellow would light up whole (7 November 2026, plainer repaint). */
-const NO_LIGHTS = new Set(['decorations/reindeer.png', 'decorations/gift-pile.png', 'decorations/sled.png']);
+/** Pictures without any lamp whose straw or ochre yellow would light up whole (7 November 2026, plainer repaint), and the spa's tub front (10 November 2026), a piece of the salon whose lights it already has. */
+const NO_LIGHTS = new Set(['decorations/reindeer.png', 'decorations/gift-pile.png', 'decorations/sled.png', 'buildings/salon-baquet.png']);
 /** Fewer lit pixels than this share of the opaque ones: no lights for that picture. */
 const MIN_SHARE = .0015;
 

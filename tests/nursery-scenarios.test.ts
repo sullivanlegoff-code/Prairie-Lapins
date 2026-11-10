@@ -25,7 +25,7 @@ describe('laboratory scenarios for the nursery', () => {
   });
   itAll(['nurseryUnlocks', 'nurseryStates'] as const)('%s: valid v13 save, unique identities below nextId, a single nursery, usable nest and homes', id => {
     const s = scenarioState(id, NOW);
-    expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: s}); expect(s.version).toBe(27);
+    expect(decodeGame(encodeGame(s))).toEqual({ok: true, state: s}); expect(s.version).toBe(28);
     const ids = identities(s); expect(new Set(ids).size).toBe(ids.length); expect(ids.every(x => Number(x.split('-')[1]) < s.nextId)).toBe(true);
     expect(s.buildings.filter(b => b.kind === 'nursery')).toHaveLength(1); expect(s.buildings.filter(b => b.kind === 'nest')).toHaveLength(1);
     expect(home(s, 'paille')).toBeTruthy(); expect(home(s, 'neige')).toBeTruthy();

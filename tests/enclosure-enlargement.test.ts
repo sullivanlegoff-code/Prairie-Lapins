@@ -62,8 +62,8 @@ describe('the enlarged enclosure sizes', () => {
     }
     expect(area(ENCLOSURE_FOOTPRINTS[2])).toBeGreaterThan(area(ENCLOSURE_FOOTPRINTS[1]));
     expect(area(ENCLOSURE_FOOTPRINTS[3])).toBeGreaterThan(area(ENCLOSURE_FOOTPRINTS[2]));
-    // Other buildings keep 4 × 4.
-    for (const kind of ['farm', 'nest', 'nursery', 'kitchen', 'statue', 'agency', 'salon', 'forest'] as const) expect(buildingSize({kind})).toEqual({width: 4, depth: 4});
+    // Other buildings keep 4 × 4, except the Salon de soins, a 6 × 6 spa since 10 November 2026 (tests/salon-spa.test.ts).
+    for (const kind of ['farm', 'nest', 'nursery', 'kitchen', 'statue', 'agency', 'forest'] as const) expect(buildingSize({kind})).toEqual({width: 4, depth: 4});
   });
 
   it('shows every painting larger with one uniform factor, its front and sides inside the footprint, larger level by level, at every era', () => {
@@ -149,7 +149,7 @@ describe('a v23 save loads without loss', () => {
   it('migrates to v24, keeps every building, rabbit and decoration, and grows an enclosure that has room', () => {
     const s = oldIsland(crowded()); s.rabbits.push({id: 'rabbit-20', species: 'paille', affection: 3, enclosureId: 'building-1'}); s.nextId = 21;
     const loaded = load(asV23Json(s));
-    expect(loaded.version).toBe(27); expectNothingLost(s, loaded); expectNoOverlap(loaded);
+    expect(loaded.version).toBe(28); expectNothingLost(s, loaded); expectNoOverlap(loaded);
     const paille = loaded.buildings.find(b => b.id === 'building-1')!;
     // It has room to the right and downwards: it grows where it stands, like an upgrade.
     expect(paille.formerFootprint).toBeUndefined(); expect(buildingFootprint(paille)).toEqual({x: 6, y: 40, width: 6, height: 5});
@@ -249,7 +249,7 @@ describe('a save with the 3 November sizes (v24 to v26, and v27 before 6 Novembe
     const s = previous(oldIsland(crowded())); s.rabbits.push({id: 'rabbit-20', species: 'paille', affection: 3, enclosureId: 'building-1'}); s.nextId = 21;
     expect(buildingFootprint(s.buildings.find(b => b.id === 'building-1')!)).toEqual({x: 6, y: 40, width: 5, height: 4});
     const loaded = load(asPreviousSizesJson(s, version));
-    expect(loaded.version).toBe(27); expectNothingLost(s, loaded); expectNoOverlap(loaded);
+    expect(loaded.version).toBe(28); expectNothingLost(s, loaded); expectNoOverlap(loaded);
     // It has room to the right and downwards: it grows where it stands.
     const paille = loaded.buildings.find(b => b.id === 'building-1')!;
     expect(paille.formerFootprint).toBeUndefined(); expect(buildingFootprint(paille)).toEqual({x: 6, y: 40, width: 6, height: 5}); expect(enclosureScale(paille)).toBe(1.38);

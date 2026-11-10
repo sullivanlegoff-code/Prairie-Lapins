@@ -15,7 +15,10 @@ function run(s: GameState, command: Command, now = s.lastSimulatedAt) {
 function refused(s: GameState, c: Command, reason: string, now = s.lastSimulatedAt) {
   expect(act(s, c, now, () => 0)).toEqual({ok: false, state: s, reason});
 }
-function freeCell(s: GameState, kind?: 'enclosure') {
+/** A free place for a building of `kind` (the salon is 6 × 6 since 10 November 2026; others default to 4 × 4). */
+function freeCell(s: GameState, kind?: 'enclosure' | 'salon') {
+  // The starting parcel has no room for the 6 × 6 spa next to the other buildings: the salon goes on the south parcel, cleared.
+  if (kind === 'salon' && !s.acquiredParcels.includes('south')) { s.acquiredParcels.push('south'); s.debris = []; }
   for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y, undefined, kind)) return {x, y};
   throw Error('No space');
 }
@@ -27,7 +30,7 @@ function setup(species: SpeciesId[] = ['paille'], affection = 20, statues = 2) {
   // A level 3 universal enclosure (nine places) kept on the 4 × 4 footprint.
   const c = freeCell(s, 'enclosure'), home = emptyBuilding(`building-${s.nextId++}`, 'enclosure', c.x, c.y); home.habitat = {type: 'universal', level: 3};
   s.buildings.push(home);
-  s = run(s, {type: 'buyBuilding', kind: 'salon', ...freeCell(s)});
+  s = run(s, {type: 'buyBuilding', kind: 'salon', ...freeCell(s, 'salon')});
   const ids = species.map(sp => { const id = `rabbit-${s.nextId++}`; s.rabbits.push({id, species: sp, affection, enclosureId: home.id}); if (!s.discovered.includes(sp)) s.discovered.push(sp); return id; });
   s.rabbits.forEach(evolveAbove30);
   return {s, ids, home: home.id, salon: s.buildings.find(b => b.kind === 'salon')!.id};
@@ -37,13 +40,13 @@ describe('Salon de soins: the building', () => {
   it('costs 5 000 pattes from player level 22 (12 before the Christmas update), one at most', () => {
     expect(BALANCE.buildings.salon).toEqual({price: 5000, maximum: 1});
     const low = atLevel(createGame(0), 21); low.pattes = 10_000;
-    refused(low, {type: 'buyBuilding', kind: 'salon', ...freeCell(low)}, 'LEVEL_REQUIRED');
+    refused(low, {type: 'buyBuilding', kind: 'salon', ...freeCell(low, 'salon')}, 'LEVEL_REQUIRED');
     const poor = atLevel(createGame(0), 22); poor.pattes = 4_999;
-    refused(poor, {type: 'buyBuilding', kind: 'salon', ...freeCell(poor)}, 'NOT_ENOUGH_PATTES');
+    refused(poor, {type: 'buyBuilding', kind: 'salon', ...freeCell(poor, 'salon')}, 'NOT_ENOUGH_PATTES');
     const ok = atLevel(createGame(0), 22); ok.pattes = 12_000;
-    const bought = run(ok, {type: 'buyBuilding', kind: 'salon', ...freeCell(ok)});
+    const bought = run(ok, {type: 'buyBuilding', kind: 'salon', ...freeCell(ok, 'salon')});
     expect(bought.pattes).toBe(7_000); expect(bought.buildings.filter(b => b.kind === 'salon')).toHaveLength(1);
-    refused(bought, {type: 'buyBuilding', kind: 'salon', ...freeCell(bought)}, 'BUILDING_LIMIT');
+    refused(bought, {type: 'buyBuilding', kind: 'salon', ...freeCell(bought, 'salon')}, 'BUILDING_LIMIT');
   });
   it('refuses a care without a salon', () => {
     const s = atLevel(createGame(0), 12);
@@ -171,7 +174,7 @@ describe('Salon de soins: the save', () => {
     const {s} = setup(['paille']);
     const raw = JSON.parse(encodeGame(s)); raw.version = 22; raw.buildings = raw.buildings.filter((b: {kind: string}) => b.kind !== 'salon');
     const decoded = decodeGame(JSON.stringify(raw)); if (!decoded.ok) throw Error(decoded.reason);
-    expect(decoded.state.version).toBe(27);
+    expect(decoded.state.version).toBe(28);
     expect(decoded.state.care).toBeUndefined(); expect(decoded.state.affectionGifts).toBeUndefined(); expect(decoded.state.picnicCycle).toBeUndefined();
   });
   it('a released rabbit leaves no gift entry', () => {

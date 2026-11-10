@@ -85,9 +85,16 @@ export const habitatFootprint = (tier: number | undefined, former?: number): {wi
   const era = eraOf(former);
   return era ? FORMER_ENCLOSURE_FOOTPRINTS[era][tierOf(tier)] : ENCLOSURE_FOOTPRINTS[tierOf(tier)];
 };
-/** Footprint of any building: enclosures by tier (and former era), everything else 4 × 4. */
+/**
+ * The Salon de soins turned into a spa with three care corners (owner, 10 November 2026: « il doit être plus grand »). A salon
+ * built before keeps the compact size (`formerFootprint: 1`) until it has room to grow at load (`growFormerEnclosures`).
+ */
+export const SALON_FOOTPRINT = {width: 6, depth: 6} as const;
+/** Footprint of any building: enclosures by tier (and former era), the salon 6 × 6 (or its former 4 × 4), everything else 4 × 4. */
 export const buildingSize = (b: {kind: string; footprintTier?: number; formerFootprint?: number}): {width: number; depth: number} =>
-  b.kind === 'enclosure' ? habitatFootprint(b.footprintTier, b.formerFootprint) : COMPACT_FOOTPRINT;
+  b.kind === 'enclosure' ? habitatFootprint(b.footprintTier, b.formerFootprint) : b.kind === 'salon' ? (b.formerFootprint ? COMPACT_FOOTPRINT : SALON_FOOTPRINT) : COMPACT_FOOTPRINT;
+/** Drawing factor of the salon: its spa painting is made for the 6 × 6 footprint, shrunk on a salon that keeps the former size. */
+export const salonScale = (b: {formerFootprint?: number}): number => b.formerFootprint ? COMPACT_FOOTPRINT.width / SALON_FOOTPRINT.width : 1;
 /** Uniform factor applied to an enclosure's drawing and rabbit layout: the one of the era whose footprint it has. */
 export const enclosureScale = (b: {footprintTier?: number; formerFootprint?: number}): number => {
   const era = eraOf(b.formerFootprint);

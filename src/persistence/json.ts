@@ -27,14 +27,15 @@ import {EVOLUTION_CHALLENGES, EVOLUTION_CHALLENGE_IDS, evolutionChallengeTarget,
 import {EVOLUTION_AFFECTION, hasEvolvedArt} from '../config/evolvedArt';
 
 /**
- * The current format is v27 (the Christmas update's economy: Paille's counter removed, the nursery back to 2 cushions at
+ * The current format is v28 (the Salon de soins becomes a 6 × 6 spa: a salon built before keeps 4 × 4 until it has room, see
+ * `migrateV27`), after v27 (the Christmas update's economy: Paille's counter removed, the nursery back to 2 cushions at
  * most, 1 to 5 Hearts a trip and the Salon's Hearts, see `migrateV26`), after v26 (the Christmas event: the sucres d'orge, the Christmas challenges of the cycle, the snowman of the
  * day, the mini-game « Les cadeaux du ciel » and the Christmas market's decorations with their receipt in sucres d'orge, all
  * optional; nothing to convert, see `migrateV25`), after v25 (the evolution challenges « commis », « goûteur » and « quotidien », the daily streak, the daily missions drawn at the start of the cycle and the rabbits caressed in it, see `migrateV24`), after v24 (larger enclosures: an enclosure may keep its former footprint, see `migrateV23`; enlarged again on 6 November 2026 within v27, see `migrateEnclosureSizes`), after v23 (affection up to 50, a second Statue de l'Affection, the Salon de soins and the picnic, a lapin ultime's taken-off crown, the Forêt de Brocéliande and a rabbit's old drawing put back, the Terrain de corde à sauter, all optional; nothing to convert), after v22 (Benny's power and sky mode, optional), v21 (friendships and memories), v20 (catalogue conversion) and v19 (farm and agency levels, concurrent trips, Heart receipts), migrated through v18 and v17 from v16 (economy migration). Version 16 was the catalogue boundary of the development saves: the species Terre, Mottelin, Géant and
  * Brumelin and the Terre habitat were removed, and saves before that catalogue boundary are not converted. Versions 1 to 15 are refused as incompatible
  * (the controller then starts a new game); they are never read, migrated or restored.
  */
-export const SAVE_VERSION = 27;
+export const SAVE_VERSION = 28;
 /** Types a species had before the owner changed them: a rabbit already housed under its old types may stay where it is. */
 const LEGACY_TYPES: Partial<Record<SpeciesId, readonly HabitatType[]>> = {magicien: ['metal', 'vol'], bouee: ['paille', 'feu'], dadi: ['neige', 'vol']};
 const integer = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
@@ -218,7 +219,7 @@ const schema = current.superRefine((s, context) => {
     if ((b.farmLevel !== undefined && b.kind !== 'farm') || (b.agencyLevel !== undefined && b.kind !== 'agency')) issue('Building level');
     if (b.order && (b.farmLevel ?? 1) < orderFarmLevel(b.order.recipe)) issue('Farm level');
     if (b.footprintTier !== undefined && (b.kind !== 'enclosure' || !b.habitat || b.footprintTier > b.habitat.level)) issue('Footprint tier');
-    if (b.formerFootprint && b.kind !== 'enclosure') issue('Former footprint');
+    if (b.formerFootprint && b.kind !== 'enclosure' && !(b.kind === 'salon' && b.formerFootprint === 1)) issue('Former footprint');
     // The islet of the Epics (v27): one nest at its fixed place off the land grid, never on it.
     if (b.islet && (b.kind !== 'nest' || b.x !== EPIC_ISLET.cell.x || b.y !== EPIC_ISLET.cell.y)) issue('Islet nest');
     if (b.habitat?.ultra && b.habitat.type !== 'neige') issue('Ultra neige habitat');
@@ -477,6 +478,18 @@ function migrateV26(raw: object, xpOnCurrentCurve: boolean): void {
     // A save older than this version was written before 8 November 2026: its trip keeps the table of that time.
     if (trip && typeof trip.startedAt === 'number' && typeof trip.endsAt === 'number') trip.hearts = tripHeartsBefore20261108(Math.round((trip.endsAt - trip.startedAt) / HOUR));
   }
+  save.version = 27;
+}
+
+/**
+ * v27 → v28, the Salon de soins becomes a spa with three care corners (owner, 10 November 2026: « il doit être plus grand »):
+ * 6 × 6 instead of 4 × 4. A salon of an older save keeps, for now, exactly its 4 × 4 (`formerFootprint: 1`), so the save
+ * validates with the very same rules as before; right after validation, `growFormerEnclosures` enlarges it where there is room.
+ */
+function migrateV27(raw: object): void {
+  const save = raw as {version: number; buildings?: unknown};
+  if (Array.isArray(save.buildings)) for (const b of save.buildings)
+    if (b && typeof b === 'object' && (b as {kind?: unknown}).kind === 'salon') (b as {formerFootprint?: number}).formerFootprint = 1;
   save.version = SAVE_VERSION;
 }
 
@@ -507,7 +520,7 @@ export function decodeGame(json: string): DecodeResult {
   if (json.length > MAX_JSON_LENGTH) return {ok: false, reason: 'FILE_TOO_LARGE'};
   let raw: unknown;
   try { raw = JSON.parse(json); } catch { return {ok: false, reason: 'INVALID_JSON'}; }
-  if (raw && typeof raw === 'object' && 'version' in raw && raw.version !== SAVE_VERSION && raw.version !== 26 && raw.version !== 25 && raw.version !== 24 && raw.version !== 23 && raw.version !== 22 && raw.version !== 21 && raw.version !== 20 && raw.version !== 19 && raw.version !== 18 && raw.version !== 17 && raw.version !== 16)
+  if (raw && typeof raw === 'object' && 'version' in raw && raw.version !== SAVE_VERSION && raw.version !== 27 && raw.version !== 26 && raw.version !== 25 && raw.version !== 24 && raw.version !== 23 && raw.version !== 22 && raw.version !== 21 && raw.version !== 20 && raw.version !== 19 && raw.version !== 18 && raw.version !== 17 && raw.version !== 16)
     return {ok: false, reason: Number.isInteger(raw.version) && (raw.version as number) >= 1 && (raw.version as number) <= 15 ? 'INCOMPATIBLE_CATALOG' : 'UNSUPPORTED_VERSION'};
   // Only the explicitly retired catalogue entries are removed; unknown IDs still fail validation.
   if (raw && typeof raw === 'object' && 'decorations' in raw && Array.isArray(raw.decorations)) {
@@ -518,8 +531,8 @@ export function decodeGame(json: string): DecodeResult {
   moveKioskToIsland(raw);
   // Paille's counter is removed at v27 (owner, 5 November 2026): its daily record is dropped from every older save.
   if (raw && typeof raw === 'object' && 'version' in raw && (raw.version as number) < 27) delete (raw as {market?: unknown}).market;
-  // Only a v27 save may say the era of its enclosure sizes: an older one had the sizes of its own time, whatever it carries.
-  if (raw && typeof raw === 'object' && 'version' in raw && raw.version !== SAVE_VERSION) delete (raw as {enclosureSizes?: unknown}).enclosureSizes;
+  // Only a v27 or later save may say the era of its enclosure sizes: an older one had the sizes of its own time, whatever it carries.
+  if (raw && typeof raw === 'object' && 'version' in raw && (raw.version as number) < 27) delete (raw as {enclosureSizes?: unknown}).enclosureSizes;
   // `migrateV16` already converts its XP to the current curve, level and share kept.
   const fromV16 = !!raw && typeof raw === 'object' && 'version' in raw && raw.version === 16;
   if (fromV16) raw = migrateV16(raw);
@@ -530,7 +543,8 @@ export function decodeGame(json: string): DecodeResult {
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 24) migrateV24(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 25) migrateV25(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 26) migrateV26(raw, fromV16);
-  if (raw && typeof raw === 'object' && 'version' in raw && raw.version === SAVE_VERSION && !('enclosureSizes' in raw)) migrateEnclosureSizes(raw);
+  if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 27 && !('enclosureSizes' in raw)) migrateEnclosureSizes(raw);
+  if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 27) migrateV27(raw);
   settleStorageCaps(raw);
   const parsed = schema.safeParse(raw);
   if (!parsed.success) return {ok: false, reason: 'INVALID_STATE'};
@@ -589,6 +603,6 @@ export function encodeGame(state: GameState, presentationId?: string): string {
 
 /** Optional presentation metadata, separate from simulation state. Call after validating the save. */
 export function readPresentationId(json: string): string | undefined {
-  try { const raw = JSON.parse(json); const id = z.string().uuid().safeParse(raw.presentationId); return [SAVE_VERSION, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16].includes(raw.version) && id.success ? id.data : undefined; }
+  try { const raw = JSON.parse(json); const id = z.string().uuid().safeParse(raw.presentationId); return [SAVE_VERSION, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16].includes(raw.version) && id.success ? id.data : undefined; }
   catch { return undefined; }
 }

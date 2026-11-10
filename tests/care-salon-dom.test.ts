@@ -34,8 +34,9 @@ const buttonNamed = (root: ParentNode, text: string) => [...root.querySelectorAl
 /** Level 12, one statue, the salon (building-100), a universal enclosure (building-101) with a frisket at 20 and a paille at 14. */
 function game(): GameState {
   const s = createGame(0); s.pattes = 10_000; s.progression = {totalXp: cumulativeLevelXp(12), rewardedThroughLevel: 12};
-  const free = (kind?: 'enclosure') => { for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y, undefined, kind)) return {x, y}; throw Error('No space'); };
-  for (const [id, kind] of [['building-100', 'salon'], ['building-101', 'enclosure'], ['building-102', 'statue']] as const) { const c = free(kind === 'enclosure' ? kind : undefined); s.buildings.push(emptyBuilding(id, kind, c.x, c.y)); }
+  s.acquiredParcels.push('south'); s.debris = []; // Room for the 6 × 6 spa.
+  const free = (kind?: 'enclosure' | 'salon') => { for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y, undefined, kind)) return {x, y}; throw Error('No space'); };
+  for (const [id, kind] of [['building-100', 'salon'], ['building-101', 'enclosure'], ['building-102', 'statue']] as const) { const c = free(kind === 'statue' ? undefined : kind); s.buildings.push(emptyBuilding(id, kind, c.x, c.y)); }
   s.rabbits.push({id: 'rabbit-103', species: 'frisket', affection: 20, enclosureId: 'building-101'}, {id: 'rabbit-104', species: 'paille', affection: 14, enclosureId: 'building-101'});
   s.discovered.push('frisket'); s.nextId = 105; return s;
 }

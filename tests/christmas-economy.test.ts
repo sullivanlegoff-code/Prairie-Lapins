@@ -15,7 +15,9 @@ import {evolveAbove30} from './evolved';
 function run(s: GameState, command: Command, now = s.lastSimulatedAt) {
   const r = act(s, command, now, () => 0); if (!r.ok) throw Error(r.reason); return r.state;
 }
-function freeCell(s: GameState, kind?: 'enclosure') {
+function freeCell(s: GameState, kind?: 'enclosure' | 'salon') {
+  // The starting parcel has no room for the 6 × 6 spa next to the other buildings: the salon goes on the south parcel, cleared.
+  if (kind === 'salon' && !s.acquiredParcels.includes('south')) { s.acquiredParcels.push('south'); s.debris = []; }
   for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y, undefined, kind)) return {x, y};
   throw Error('No space');
 }
@@ -25,7 +27,7 @@ function salonGame(species: SpeciesId[]) {
   for (let i = 0; i < 2; i++) { const c = freeCell(s); s.buildings.push(emptyBuilding(`building-${s.nextId++}`, 'statue', c.x, c.y)); }
   const c = freeCell(s, 'enclosure'), home = emptyBuilding(`building-${s.nextId++}`, 'enclosure', c.x, c.y); home.habitat = {type: 'universal', level: 3};
   s.buildings.push(home);
-  s = run(s, {type: 'buyBuilding', kind: 'salon', ...freeCell(s)});
+  s = run(s, {type: 'buyBuilding', kind: 'salon', ...freeCell(s, 'salon')});
   const ids = species.map(sp => { const id = `rabbit-${s.nextId++}`; s.rabbits.push({id, species: sp, affection: 20, enclosureId: home.id}); if (!s.discovered.includes(sp)) s.discovered.push(sp); return id; });
   s.rabbits.forEach(evolveAbove30);
   return {s, ids};
@@ -88,7 +90,7 @@ describe('Christmas update save (v27)', () => {
     old.buildings.find((b: {id: string}) => b.id === nursery.id).nursery.capacity = 4;
     const decoded = decodeGame(JSON.stringify(old));
     expect(decoded.ok).toBe(true); if (!decoded.ok) return;
-    expect(decoded.state.version).toBe(27);
+    expect(decoded.state.version).toBe(28);
     expect('market' in decoded.state).toBe(false);
     expect(decoded.state.buildings.find(b => b.id === nursery.id)!.nursery!.capacity).toBe(2);
   });
