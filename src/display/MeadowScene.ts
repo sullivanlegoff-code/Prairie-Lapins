@@ -17,7 +17,7 @@ import {BennyFlightView, GROUND_LIFT} from './bennyFlightView';
 import {ALTITUDE, NURSERY_ALTITUDE, type FlightGeometry} from './bennyFlight';
 import {bennyInSky} from '../simulation/benny';
 import {DadiSpeech, dadiHeadVisible} from './dadiSpeech';
-import {RabbitLife} from './rabbitLife';
+import {BENNY_NAP_MS, RabbitLife} from './rabbitLife';
 import {RabbitLifeViews} from './rabbitLifeViews';
 import {CozyInteraction, type InteractionKind} from './cozyInteraction';
 import {bestFriend} from '../simulation/cozy';
@@ -1758,7 +1758,7 @@ export class MeadowScene extends Phaser.Scene {
     this.stepSnowman(dt);
     this.syncChristmasMarket(winterNow);
     if (this.time.now - this.snowmanCheckedAt >= 500) { this.snowmanCheckedAt = this.time.now; this.syncSnowman(); }
-    this.life.step(dt, this.rabbitViews.flatMap(r => r.motion ? [{id: r.id, group: r.group, motion: r.motion, nest: r.nest, friendId:this.friends.get(r.id),occupied:this.cozyInteraction.active?.id===r.id||this.gathered(r.id)||this.snowballs.isFighting(r.id), visible: visibleResidents.has(r.id)}] : []),
+    this.life.step(dt, this.rabbitViews.flatMap(r => r.motion ? [{id: r.id, group: r.group, motion: r.motion, nest: r.nest, friendId:this.friends.get(r.id),napMs:r.benny?BENNY_NAP_MS:undefined,occupied:this.cozyInteraction.active?.id===r.id||this.gathered(r.id)||this.snowballs.isFighting(r.id), visible: visibleResidents.has(r.id)}] : []),
       lifeActive && !this.dadiSinging, reducedMotion, dadi.speech && !this.gathered(dadi.speech.id) ? [dadi.speech.id] : []);
     this.chases.step(dt, this.chaseRunners(visibleResidents, dadi.speech?.id), lifeActive && !this.dadiSinging, reducedMotion, this.chaseTest);
     this.chaseTest = false;
