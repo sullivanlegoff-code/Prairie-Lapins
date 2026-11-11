@@ -2,7 +2,7 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import html from '../index.html?raw';
 import {act, advance, createGame, decodeGame, encodeGame} from '../src/simulation';
-import {AGENCY_UPGRADE_HEARTS, BALANCE, HOUR, INCOME_BOOST, RARE_INCOME_BONUS_SPECIES, SPECIES, SPECIES_IDS, TRAVEL, drawTrip, tripHearts} from '../src/config/balance';
+import {AGENCY_UPGRADE_HEARTS, BALANCE, HOUR, BENNY_INCOME_BOOST, INCOME_BOOST, RARE_INCOME_BONUS_SPECIES, SPECIES, SPECIES_IDS, TRAVEL, drawTrip, tripHearts} from '../src/config/balance';
 import {HABITAT_CAPS, habitatCap, type HabitatType} from '../src/config/habitats';
 import {rabbitIncome} from '../src/simulation/time';
 import {buildingPlacementReason} from '../src/simulation/placement';
@@ -90,7 +90,7 @@ describe('travel agency rules', () => {
     for (const now of [0, s.travel!.trips[0]!.endsAt]) for (const command of blocked)
       expect(act(s, command, now)).toMatchObject({ok: false, reason: 'TRAVELING'});
     expect(advance(s, HOUR).rabbits[0].enclosureId).toBe(home);
-    expect(advance(s, HOUR).buildings[0].incomeUnits).toBe(28 * HOUR);
+    expect(advance(s, HOUR).buildings[0].incomeUnits).toBe(42 * HOUR);
     expect(act(s, {type: 'claimTrip', rabbitId: 'rabbit-2'}, 3 * HOUR - 1)).toMatchObject({ok: false, reason: 'NOT_READY'});
     const hearts = s.hearts;
     s = run(s, {type: 'claimTrip', rabbitId: 'rabbit-2'}, 3 * HOUR);
@@ -169,10 +169,11 @@ describe('habitat storage and species income', () => {
     s.buildings[0].incomeUnits = oldCap * HOUR;
     const decoded = decodeGame(JSON.stringify(s));
     expect(decoded.ok).toBe(true); if (!decoded.ok) return;
-    expect(decoded.state.pattes).toBe(s.pattes + oldCap - habitatCap('paille', level));
-    expect(decoded.state.buildings[0].incomeUnits).toBe(habitatCap('paille', level) * HOUR);
+    // Since 11 November 2026 the level 3 stock (5 625) holds more than the former 5 600: nothing to settle there.
+    expect(decoded.state.pattes).toBe(s.pattes + Math.max(0, oldCap - habitatCap('paille', level)));
+    expect(decoded.state.buildings[0].incomeUnits).toBe(Math.min(oldCap, habitatCap('paille', level)) * HOUR);
     expect(decodeGame(encodeGame(decoded.state))).toEqual(decoded);
-    s.buildings[0].incomeUnits++;
+    s.buildings[0].incomeUnits = Math.max(oldCap, habitatCap('paille', level)) * HOUR + 1;
     expect(decodeGame(JSON.stringify(s))).toEqual({ok: false, reason: 'INVALID_STATE'});
   });
   it('preserves a store filled to the current maximum of its level', () => {
@@ -183,10 +184,10 @@ describe('habitat storage and species income', () => {
     expect(RARE_INCOME_BONUS_SPECIES).toEqual([]);
     for (const id of SPECIES_IDS) {
       const rarity = SPECIES[id].rarity;
-      if (rarity === 'common') { expect([rabbitIncome(1, id), rabbitIncome(20, id)]).toEqual([13, 38]); continue; }
-      // Benny (Mythic) earns like a Legendary.
-      const multiplier = rarity === 'epic' ? 1.3 : rarity === 'legendary' || rarity === 'mythic' ? 1.5 : 1;
-      expect([rabbitIncome(1, id, 0), rabbitIncome(1, id, 9999)]).toEqual([Math.round(10 * multiplier * INCOME_BOOST), Math.round(19.999 * multiplier * INCOME_BOOST)]);
+      if (rarity === 'common') { expect([rabbitIncome(1, id), rabbitIncome(20, id)]).toEqual([20, 57]); continue; }
+      // Benny (Mythic) earns like a Legendary, with her own boost since 11 November 2026 (twice her former income).
+      const multiplier = rarity === 'epic' ? 1.3 : rarity === 'legendary' || rarity === 'mythic' ? 1.5 : 1, boost = id === 'benny' ? BENNY_INCOME_BOOST : INCOME_BOOST;
+      expect([rabbitIncome(1, id, 0), rabbitIncome(1, id, 9999)]).toEqual([Math.round(10 * multiplier * boost), Math.round(19.999 * multiplier * boost)]);
     }
   });
 });

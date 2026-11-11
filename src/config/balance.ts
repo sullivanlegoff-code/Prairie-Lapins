@@ -71,7 +71,7 @@ export const SHOP_SPECIES = SPECIES_IDS.filter(id => isSold(SPECIES[id]));
 export const RECIPE_SPECIES = SPECIES_IDS.filter(id => hasRecipe(SPECIES[id]));
 export const BALANCE = {
   initialPattes: 350, initialGrass: 0, initialWidth: 3, height: 2, extendedWidth: 6,
-  extensionCost: 600, enclosureCapacity: 3, enclosureCap: 600,
+  extensionCost: 600, enclosureCapacity: 3, enclosureCap: 900,
   minAffection: 1, maxAffection: 50, breedingAffection: 2,
   incomeBase: 10, incomeRareBase: 10, incomePerLevel: 1,
   releaseGrass: {common: 10, rare: 25},
@@ -97,8 +97,13 @@ export const BALANCE = {
  */
 /** Individual rare income uses a saved roll, not a species-wide bonus. */
 export const RARE_INCOME_BONUS_SPECIES: readonly SpeciesId[] = [];
-/** Every rabbit's coin income ×1.3 (owner, 10 November 2026), rounded once per rabbit. */
-export const INCOME_BOOST = 1.3;
+/**
+ * Every rabbit's coin income: ×1.3 (owner, 10 November 2026), then 50 % more (11 November 2026: « les lapins gagnent 50 % de plus »),
+ * so ×1.95, rounded once per rabbit.
+ */
+export const INCOME_BOOST = 1.95;
+/** Benny earns 100 % more than before 11 November 2026 (owner: « Benny gagne 100 % de plus »): ×2.6 instead of ×1.3. */
+export const BENNY_INCOME_BOOST = 2.6;
 export const INCOME_BASES = {common: 10, rare: 10, rareBonus: 10, epic: 13, legendary: 15, mythic: 15} as const;
 /** Keep the first two farms available; later slots follow player progression. */
 export const farmLimit = (level: number): number => level >= 15 ? 4 : level >= 12 ? 3 : 2;

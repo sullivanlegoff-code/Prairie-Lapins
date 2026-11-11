@@ -58,11 +58,11 @@ describe('persistent economy transactions',()=>{
   const r=act(s,{type:'breed',parents:['rabbit-2','rabbit-6']},s.lastSimulatedAt,()=>0);expect(r.ok).toBe(true);expect(r.state.missions.daily.progress['gain-affection']).toBe(1);
  });
  it('uses integer hourly income by rarity: each rare has its own roll, epics and legendaries multiply it',()=>{
-  for(const species of ['paille','neige','feu','belier-gris','volant'] as const)expect([rabbitIncome(1,species),rabbitIncome(20,species)]).toEqual([13,38]);
+  for(const species of ['paille','neige','feu','belier-gris','volant'] as const)expect([rabbitIncome(1,species),rabbitIncome(20,species)]).toEqual([20,57]);
   // Rares: each has a saved individual roll from 0 to 9999 (docs/economy-current.md): 10 to 20 coins/h at affection 1, 70 to 100 at affection 10, ×1.3 since 10 November 2026.
-  for(const id of SPECIES_IDS.filter(id=>SPECIES[id].rarity==='rare'))expect([rabbitIncome(1,id,0),rabbitIncome(1,id,9999),rabbitIncome(10,id,0),rabbitIncome(10,id,9999)]).toEqual([13,26,91,130]);
+  for(const id of SPECIES_IDS.filter(id=>SPECIES[id].rarity==='rare'))expect([rabbitIncome(1,id,0),rabbitIncome(1,id,9999),rabbitIncome(10,id,0),rabbitIncome(10,id,9999)]).toEqual([20,39,137,195]);
   // Epics earn 1.3 times and legendaries 1.5 times the rare reference.
-  expect([rabbitIncome(1,'magicien',0),rabbitIncome(1,'magicien',9999)]).toEqual([17,34]);expect([rabbitIncome(1,'dragon',0),rabbitIncome(1,'dragon',9999)]).toEqual([20,39]);
+  expect([rabbitIncome(1,'magicien',0),rabbitIncome(1,'magicien',9999)]).toEqual([25,51]);expect([rabbitIncome(1,'dragon',0),rabbitIncome(1,'dragon',9999)]).toEqual([29,58]);
   const rares=SPECIES_IDS.filter(id=>SPECIES[id].rarity==='rare');expect(rares).toHaveLength(25);expect(RARE_INCOME_BONUS_SPECIES).toEqual([]);
  });
 });

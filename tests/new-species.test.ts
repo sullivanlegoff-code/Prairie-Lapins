@@ -119,7 +119,7 @@ describe('saved births, delays, compatibility and collection',()=>{
   expect(nurseryView(growing,nest).babies).toEqual([{slot: 0, birthId: expect.any(String), stage: 'growing', startedAt: expect.any(Number), readyAt:ready}]);expect(collectionView(growing).filter(e=>e.known).map(e=>e.name)).not.toContain(SPECIES[id].name);
   expect(decodeGame(encodeGame(growing))).toEqual({ok:true,state:growing});
   expect(nurseryView(growing,ready).babies).toMatchObject([{stage:'ready',species:id}]);
-  const welcomed=run(growing, welcomeOf(growing, 'building-1'),ready);expect(welcomed.rabbits.at(-1)).toMatchObject({species:id,affection:1});expect(rabbitIncome(1, id, 5000)).toBe({bouee: 20, magicien: 25, dragon: 29}[id]);
+  const welcomed=run(growing, welcomeOf(growing, 'building-1'),ready);expect(welcomed.rabbits.at(-1)).toMatchObject({species:id,affection:1});expect(rabbitIncome(1, id, 5000)).toBe({bouee: 29, magicien: 38, dragon: 44}[id]);
  });
  it('starts the full Dragon growth only after an occupied nursery is freed',()=>{
   // In the Dadi x Phoenix pool at affection 10, Dragon holds the draws in [0.85, 1) (its 15 % after the Rares and the Epics).

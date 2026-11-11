@@ -5,7 +5,7 @@ import {settleInitiation} from './initiation';
 import {habitatStats} from './habitats';
 import {updateMissions} from './missions';
 import {settleNestTransfers} from './nursery';
-import {BALANCE, INCOME_BOOST, HOUR, MINUTE, SPECIES, type SpeciesId, type Rarity} from '../config/balance';
+import {BALANCE, BENNY_INCOME_BOOST, INCOME_BOOST, HOUR, MINUTE, SPECIES, type SpeciesId, type Rarity} from '../config/balance';
 import type {GameState, Rabbit} from '../state/types';
 /** Stable fallback for historical rabbits: loading never rerolls an individual's income. */
 export function historicalIncomeRoll(rabbit: Pick<Rabbit, 'id' | 'species'>): number {
@@ -27,7 +27,7 @@ export function rabbitIncome(affection: number, speciesOrRarity: SpeciesId | Rar
   if (rarity === 'common') return Math.round((BALANCE.incomeBase + BALANCE.incomePerLevel * (affection - 1)) * INCOME_BOOST);
   const luck = incomeRoll / 10000;
   const rare = 10 + 10 * luck + (affection - 1) * (60 + 20 * luck) / 9;
-  return Math.round(rare * (rarity === 'epic' ? 1.3 : rarity === 'legendary' || rarity === 'mythic' ? 1.5 : 1) * INCOME_BOOST);
+  return Math.round(rare * (rarity === 'epic' ? 1.3 : rarity === 'legendary' || rarity === 'mythic' ? 1.5 : 1) * (species === 'benny' ? BENNY_INCOME_BOOST : INCOME_BOOST));
 }
 export function validTime(now: number): boolean { return Number.isSafeInteger(now) && now >= 0; }
 /** Rebase every absolute timestamp; cycle indices and already earned resources stay unchanged. */
