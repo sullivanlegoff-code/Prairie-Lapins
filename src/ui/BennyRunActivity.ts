@@ -389,11 +389,13 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (!game) return;
     const s = runSummary(game), record = s.score > best && s.score > 0, previous = best; best = Math.max(best, s.score);
     const line = options.onFinished?.(s);
-    hud();
+    hud(); draw(clock()); // The run as it stood, without the scene's words.
     const again = button('Rejouer', () => start(), 'bennyRunAgain');
-    showCard(paragraph('La Dragon a rattrapé Benny !', 'benny-run-title'),
-
-      paragraph(`Score ${s.score} · ${s.metres} m · ${plural(s.coins, 'pièce')} · ${plural(s.pots, 'pot')} · ${plural(s.foes, 'créature')} · ${plural(s.wallRuns, 'mur')} · meilleur combo ${s.bestCombo} · ${s.seconds} s`, 'benny-run-rules'),
+    // The score big, then the run's figures two by two.
+    const stats = document.createElement('ul'); stats.className = 'benny-run-stats';
+    for (const line of [`${s.metres} m`, plural(s.coins, 'pièce'), plural(s.pots, 'pot'), plural(s.foes, 'créature'), plural(s.wallRuns, 'mur'),
+      `combo max ${s.bestCombo}`, `${Math.floor(s.seconds / 60)} min ${String(s.seconds % 60).padStart(2, '0')} s`]) { const li = document.createElement('li'); li.textContent = line; stats.append(li); }
+    showCard(paragraph('La Dragon a rattrapé Benny !', 'benny-run-title'), paragraph(`${s.score} points`, 'benny-run-big'), stats,
       ...(record ? [paragraph(previous ? `Nouveau record ! L’ancien était de ${previous}.` : 'Ton premier record !', 'benny-run-record')] : best ? [paragraph(`Ton record : ${best}`, 'benny-run-rules')] : []),
       ...(line ? [paragraph(line, 'benny-run-rules')] : []),
       again, button('Quitter', close, 'bennyRunQuit'));
@@ -411,13 +413,20 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   function intro(): void {
     game = startBennyRun(clock()); lanes = game.lanes; viewLane = game.lane; running = false; measure(); hud(); draw(clock());
-    const learn = button('Revoir le tutoriel', () => start(true), 'bennyRunTutorial');
-    showCard(paragraph('Cours cours Benny !', 'benny-run-title'),
-      paragraph('Benny a chipé un peu du trésor de la Dragon ! Glisse vers le haut pour sauter, sur le côté pour changer de couloir, vers le bas pour faire une roulade (en l’air : charge au sol).', 'benny-run-rules'),
+    const learn = button('Revoir le tutoriel', () => start(true), 'bennyRunTutorial'), record = Math.max(best, options.best?.() ?? 0);
+    // Short: the tutorial teaches the gestures on the first run; the full rules wait behind « Comment jouer ? ».
+    const rules = document.createElement('div'); rules.className = 'benny-run-how'; rules.hidden = true;
+    const how = button('Comment jouer ?', () => { rules.hidden = !rules.hidden; how.textContent = rules.hidden ? 'Comment jouer ?' : 'Cacher les règles'; }, 'bennyRunHow');
+    rules.append(
+      paragraph('Glisse vers le haut pour sauter, sur le côté pour changer de couloir, vers le bas pour faire une roulade (en l’air : charge au sol).', 'benny-run-rules'),
       paragraph('Frappe les pots et les créatures avec ton bâton : de face avec une roulade, sur le côté en glissant vers leur couloir, vers le haut pour un petit monstre volant (il reste à ta hauteur). Une créature de chaque côté ? Ton bâton tournoie et frappe les deux. Une créature que tu dépasses sans la frapper t’attaque !', 'benny-run-rules'),
       paragraph('Au bord, glisse vers le mur (même en sautant) pour courir dessus. Pour descendre : saute depuis le mur, glisse vers l’autre côté pour frapper ce qui t’attend en bas, ou charge au sol pour faire une onde de choc. Passe sur un pouvoir pour l’utiliser tout de suite.', 'benny-run-rules'),
-      paragraph('Prototype en formes grises : les vrais dessins arrivent ensuite.', 'benny-run-rules'),
-      button('C’est parti !', () => start(), 'bennyRunStart'), ...(Math.max(best, options.best?.() ?? 0) > 0 ? [learn] : []));
+      paragraph('Un pot frappé file droit devant et renverse tout dans son couloir. Au-dessus d’un grand gouffre, glisse vers l’autre mur pour bondir dessus.', 'benny-run-rules'),
+      paragraph('Prototype en formes simples : les vrais dessins arrivent ensuite.', 'benny-run-rules'));
+    showCard(paragraph('Cours cours Benny !', 'benny-run-title'),
+      paragraph('Benny a chipé un peu du trésor de la Dragon : cours, frappe tout ce qui bouge, et ne te fais pas rattraper !', 'benny-run-rules'),
+      ...(record > 0 ? [paragraph(`Ton record : ${record}`, 'benny-run-record')] : []),
+      button('C’est parti !', () => start(), 'bennyRunStart'), ...(record > 0 ? [learn] : []), how, rules);
   }
   function close(): void {
     if (layer.hidden) return;

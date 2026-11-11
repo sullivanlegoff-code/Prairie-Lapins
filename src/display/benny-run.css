@@ -39,3 +39,8 @@
 /* After a bump: the Dragon's countdown, its own line under the top bar. */
 .benny-run-danger { order: 11; flex-basis: 100%; margin: 0; font-size: .95rem; font-weight: 800; color: #ffd0c8 !important; }
 .benny-run-danger[hidden] { display: none; }
+/* End card: the score big, the figures two by two. Start card: the rules folded away. */
+.benny-run-big { font-size: 2.4rem; font-weight: 800; color: #b0582a; line-height: 1.1; }
+.benny-run-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; margin: 0; padding: 0; list-style: none; font-weight: 700; }
+.benny-run-how { display: grid; gap: 10px; }
+.benny-run-how[hidden] { display: none; }
