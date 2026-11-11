@@ -379,4 +379,11 @@ describe('Cours cours Benny ! rules', () => {
     expect(types(g)).toContain('blocked');
     run(g, 3000); expect(g.platforms.every(p => p.to > g.distance - 10)).toBe(true); expect(g.raised).toBeNull();
   });
+  it('lets an awake dragonnet waddle across the road from far off, turning back at the edge, and stop when Benny is near', () => {
+    const g = quiet(); const e = place(g, 'dragonnet', 1, 60, {cross: 1, crossAt: g.at});
+    run(g, C.crossMs * .5); expect(e.lane).toBe(2);
+    run(g, C.crossMs); expect(e.lane).toBe(1);
+    run(g, (e.z - g.distance - C.crossStill + 2) / g.speed * 1000); const still = e.lane;
+    run(g, C.crossMs * 1.5); expect(e.lane).toBe(still);
+  });
 });

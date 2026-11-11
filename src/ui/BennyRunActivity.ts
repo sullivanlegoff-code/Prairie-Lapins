@@ -345,7 +345,15 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'dragonnet': {
         // A little dragon asleep, curled up, with a Z floating up.
         for (const dir of [-1, 1]) { c.fillStyle = '#c47a9a'; c.beginPath(); c.moveTo(x + dir * w * .1, y - h * .7); c.lineTo(x + dir * w * .5, y - h * 1.05); c.lineTo(x + dir * w * .35, y - h * .55); c.fill(); }
-        ellipse(x, y - h * .4, w * .5, h * .4, '#8e3a5a'); ellipse(x, y - h * .62, w * .26, h * .24, '#a3476a'); eyes(x, y - h * .62, w * .1, Math.max(1, w * .05), true);
+        ellipse(x, y - h * .4, w * .5, h * .4, '#8e3a5a'); ellipse(x, y - h * .62, w * .26, h * .24, '#a3476a');
+        // Awake and waddling across: eyes open, and an arrow the way it goes.
+        if (e.cross) {
+          eyes(x, y - h * .62, w * .1, Math.max(1, w * .06));
+          const ax = x + e.cross * w * .75, ay = y - h * .5, r = Math.max(4, w * .2); c.fillStyle = '#ffe36b';
+          c.beginPath(); c.moveTo(ax + e.cross * r, ay); c.lineTo(ax - e.cross * r * .4, ay - r * .8); c.lineTo(ax - e.cross * r * .4, ay + r * .8); c.fill();
+          return true;
+        }
+        eyes(x, y - h * .62, w * .1, Math.max(1, w * .05), true);
         const z = (at / 900 + e.id * .3) % 1; c.globalAlpha = 1 - z; c.fillStyle = '#fff'; c.font = `800 ${Math.round(Math.max(8, h * .4))}px system-ui`; c.textAlign = 'center'; c.fillText('z', x + w * .35, y - h * (1 + z * .6)); c.globalAlpha = 1;
         return true;
       }
