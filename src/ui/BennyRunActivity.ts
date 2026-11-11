@@ -1,6 +1,6 @@
 import '../display/benny-run.css';
 import {FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
-import {advanceBennyRun, BENNY_RUN, settingAt, comboMultiplier, dragonVisible, inAir, powerActive, runHeight, runInput, runSummary, sliding, startBennyRun, takeRunEvents,
+import {advanceBennyRun, BENNY_RUN, reach, settingAt, wallLane, comboMultiplier, dragonVisible, inAir, powerActive, runHeight, runInput, runSummary, sliding, startBennyRun, takeRunEvents,
   type BennyRun, type RunEntity, type RunInput, type RunPower, type RunSetting, type RunSummary, type TutorialStep} from '../simulation/bennyRun';
 import {pausableClock, settleCard} from './activityPause';
 
@@ -213,9 +213,18 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (shape.round) { c.beginPath(); c.ellipse(base.x, base.y - h / 2, w / 2, h / 2, 0, 0, Math.PI * 2); c.fill(); }
     else c.fillRect(base.x - w / 2, base.y - h, w, h);
     if (e.kind === 'power' && e.power && base.s > 14) { c.fillStyle = '#fff'; c.font = `800 ${Math.round(Math.max(10, base.s * .3))}px system-ui`; c.textAlign = 'center'; c.fillText(POWER_NAMES[e.power], base.x, base.y - h - 4); }
+    // A creature that will strike Benny unless she strikes it first (beside her or straight ahead, 1.4 s away at most): a red « ! ».
+    if (threatening(g, e)) { const r = Math.max(9, base.s * .32) * (1 + .12 * Math.sin(g.at / 90)), y = base.y - h - r * 1.6;
+      c.fillStyle = '#d93a3a'; c.beginPath(); c.arc(base.x, y, r, 0, Math.PI * 2); c.fill(); c.fillStyle = '#fff'; c.font = `900 ${Math.round(r * 1.5)}px system-ui`; c.textAlign = 'center'; c.fillText('!', base.x, y + r * .52); return; }
     if (shape.label && base.s > 18) { c.fillStyle = '#fff'; c.font = `700 ${Math.round(Math.max(10, base.s * .28))}px system-ui`; c.textAlign = 'center'; c.fillText(shape.label, base.x, base.y - h - 4); }
   }
   let leapArc = 0;
+  const FOES = new Set(['dragonnet', 'chest', 'ember', 'flyer']);
+  function threatening(g: BennyRun, e: RunEntity): boolean {
+    const ahead = e.z - g.distance, across = g.wall ? wallLane(g, g.wall.side) : g.lane;
+    if (!FOES.has(e.kind) || ahead <= 0 || ahead > Math.max(reach(g), g.speed * 1.4) || powerActive(g, 'flight')) return false;
+    return g.wall ? e.kind === 'flyer' && Math.abs(e.lane - across) === 1 : Math.abs(e.lane - across) <= 1;
+  }
   const bennyHeight = (g: BennyRun) => g.wall ? BENNY_RUN.wallRunHeight + Math.sin(leapArc * Math.PI) * 1.4 : runHeight(g);
   function benny(c: CanvasRenderingContext2D, g: BennyRun, now: number): void {
     const wall = g.wall, x = laneX(viewLane);

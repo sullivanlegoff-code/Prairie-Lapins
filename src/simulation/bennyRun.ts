@@ -311,7 +311,8 @@ function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
     case 'slalom': {
       // Pots one lane then the next: each lane change strikes one, and the combo grows.
       let lane = any(); const count = 3 + Math.round(2 * d);
-      for (let i = 0; i < count; i++) { add(g, 'pot', lane, z + i * step); lane = neighbour(lane); }
+      // Coins along the way: after striking a pot Benny runs in its lane until the next one.
+      for (let i = 0; i < count; i++) { add(g, 'pot', lane, z + i * step); if (i < count - 1) for (const k of [1, 2]) add(g, 'coin', lane, z + i * step + k * step / 3); lane = neighbour(lane); }
       return z + (count - 1) * step;
     }
     case 'pots': { for (const lane of others(g, 1 + (random(g) < .5 ? 1 : 0))) add(g, 'pot', lane, z); return z; }
