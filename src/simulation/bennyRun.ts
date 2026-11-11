@@ -72,6 +72,8 @@ export const BENNY_RUN = {
    * `challengeGapMs` after one is done. Each one done is worth `challengePoints` times its rank (at most `challengePointsMax`). */
   challengeOrder: ['pots', 'coins', 'foes', 'walls', 'combo'] as const, challengeFirstMs: 5000, challengeGapMs: 4000,
   challengePoints: 100, challengePointsMax: 500,
+  /** While the « run on walls » challenge is on, the share of patterns that are a row of pillars (whatever the difficulty). */
+  wallChallengeNudge: .5,
   /** Things are laid out to `spawnAhead` m ahead, the first at `firstAt` m, then every `gapStart` m down to `gapMin` m. */
   spawnAhead: 90, firstAt: 30, gapStart: 22, gapMin: 11,
   /** Share of coin lines carrying a power, and how long each power lasts once picked up (the bubble lasts until a bump, at most this). */
@@ -291,6 +293,8 @@ const PATTERNS: Record<RunPattern, [number, number]> = {
 function choosePattern(g: BennyRun, z: number): RunPattern {
   const d = runDifficulty(g), list = (Object.keys(PATTERNS) as RunPattern[]).filter(p => (p !== 'flyers' || d >= C.flyerFrom) && (p !== 'pair' || d >= .2) && (p !== 'hole' || d >= .08) &&
     (p !== 'wall' || (d > .25 && wallSide(g, z))));
+  // The « run on walls » challenge: a row of pillars (the way on is up a wall) comes one time in two meanwhile.
+  if (g.challenge?.kind === 'walls' && wallSide(g, z) && random(g) < C.wallChallengeNudge) return 'wall';
   const weight = (p: RunPattern) => PATTERNS[p][0] + (PATTERNS[p][1] - PATTERNS[p][0]) * d;
   let roll = random(g) * list.reduce((n, p) => n + weight(p), 0);
   for (const p of list) { roll -= weight(p); if (roll < 0) return p; }

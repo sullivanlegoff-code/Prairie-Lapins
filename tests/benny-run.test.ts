@@ -346,4 +346,14 @@ describe('Cours cours Benny ! rules', () => {
     expect(runSummary(g).challenges).toBe(1);
     const t = startBennyRun(0, 7, 3, true); run(t, 8000); expect(t.challenge).toBeNull();
   });
+  it('brings rows of pillars (a wall to run on) while the « run on walls » challenge is on', () => {
+    const rows = (challenge: boolean) => {
+      const g = startBennyRun(0, 11); g.nextChallengeAt = Infinity; g.active = {power: 'flight', until: Infinity};
+      if (challenge) g.challenge = {kind: 'walls', goal: 99, from: 0, count: 0};
+      const seen = new Set<number>(); let n = 0;
+      for (let t = 0; t < 30_000; t += 500) { run(g, 500); for (const e of g.entities) if (e.kind === 'pillar' && !seen.has(Math.round(e.z))) { seen.add(Math.round(e.z)); n++; } }
+      return n;
+    };
+    const on = rows(true), off = rows(false); expect(on).toBeGreaterThanOrEqual(off + 4);
+  });
 });
