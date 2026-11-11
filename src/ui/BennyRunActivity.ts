@@ -307,6 +307,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       if (to > from) { const a = project(x, from, top), b = project(x, to, top); c.strokeStyle = 'rgba(255,255,255,.25)'; c.lineWidth = Math.max(1, a.s * .1); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); }
     }
   }
+  /** When each rock hit the road (its fall is drawn over a moment). */
+  const rocksDown = new Map<number, number>();
   const SHAPES: Record<string, {colour: string; w: number; h: number; up?: number; round?: boolean; label?: string}> = {
     coin: {colour: '#f4c430', w: .45, h: .45, up: .5, round: true}, power: {colour: '#b07bff', w: 1.25, h: 1.25, up: .5, round: true}, wallCoin: {colour: '#f4c430', w: .45, h: .45, up: 1.6, round: true},
     pot: {colour: '#c96b3a', w: .9, h: .9, round: true}, thrownPot: {colour: '#e08a52', w: .8, h: .8, up: .5, round: true}, barrier: {colour: '#7a5a3a', w: 2, h: .6, label: 'saute'},
@@ -321,7 +323,13 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     let shown = shownLanes.get(e.id) ?? e.lane; shown += (e.lane - shown) * Math.min(1, frameDt * 12); if (Math.abs(e.lane - shown) < .01) shown = e.lane; shownLanes.set(e.id, shown);
     const n = lanesAt(g, e.z), x = e.lane < 0 ? -wallXAt(g, ahead) + .4 : e.lane > n - 1 ? wallXAt(g, ahead) - .4 : (shown - (n - 1) / 2) * LANE_WIDTH;
     // The little flying monster keeps to Benny's height, a little above her head.
-    const up = e.kind === 'flyer' ? bennyHeight(g) + .9 + Math.sin(g.at / 180 + e.id) * .08 : e.up ?? shape.up ?? 0;
+    let up = e.kind === 'flyer' ? bennyHeight(g) + .9 + Math.sin(g.at / 180 + e.id) * .08 : e.up ?? shape.up ?? 0;
+    // A rock up under the ceiling (its shadow on the road grows as it shakes loose), then falling fast.
+    if (e.rock) {
+      const fell = rocksDown.get(e.id), drop = e.rock === 'up' ? 1 : fell === undefined ? 0 : Math.max(0, 1 - (clock() - fell) / 160);
+      if (drop > 0) { const g0 = project(x, ahead, 0), r = BENNY_RUN.rockLand / Math.max(BENNY_RUN.rockLand, ahead); c.fillStyle = `rgba(0,0,0,${.12 + .25 * r})`; c.beginPath(); c.ellipse(g0.x, g0.y, g0.s * .9 * r, g0.s * .25 * r, 0, 0, Math.PI * 2); c.fill(); }
+      up = 7 * drop * drop + (e.rock === 'up' ? Math.sin(g.at / 40 + e.id) * .05 : 0);
+    }
     const base = project(x, ahead, up), w = shape.w * base.s, h = shape.h * base.s;
     if (!figure(c, e, base.x, base.y, w, h, g.at)) {
       c.fillStyle = shape.colour;
@@ -388,7 +396,11 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         c.fillStyle = '#fff'; for (const dir of [-1, 1]) { c.beginPath(); c.moveTo(x + dir * w * .12, y - h * .25); c.lineTo(x + dir * w * .04, y - h * .25); c.lineTo(x + dir * w * .08, y - h * .1); c.fill(); }
         return true;
       }
-      case 'barrier': {
+      case 'barrier': if (e.rock) {
+        // A boulder: grey-brown, a lighter side, a crack.
+        ellipse(x, y - h * 1.05, w * .36, h * 1.1, '#6f6258'); ellipse(x - w * .1, y - h * 1.4, w * .18, h * .5, '#8d8075');
+        c.strokeStyle = '#4a3f37'; c.lineWidth = Math.max(1, w * .03); c.beginPath(); c.moveTo(x + w * .08, y - h * 1.7); c.lineTo(x + w * .16, y - h * 1.1); c.lineTo(x + w * .06, y - h * .6); c.stroke(); return true;
+      } else {
         // A wooden fence: two posts and two planks.
         c.fillStyle = '#5c3e24'; c.fillRect(x - w * .45, y - h, w * .08, h); c.fillRect(x + w * .37, y - h, w * .08, h);
         c.fillStyle = '#8a6440'; c.fillRect(x - w / 2, y - h * .9, w, h * .3); c.fillRect(x - w / 2, y - h * .45, w, h * .3); return true;
@@ -596,6 +608,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         if (event.points === undefined) flash(`Défi : ${CHALLENGE_TEXT[event.kind](event.goal)}`);
         else { flash(`Défi réussi ! +${event.points}`); sound('power'); burst(width / 2, height * .3, ['#7be08a', '#ffe66b', '#fff'], 24, 360); }
         break;
+      case 'rockfall': { rocksDown.set(event.entity.id, clock()); { const p = screenOf(g, event.entity); burst(p.x, p.y, ['#6f6258', '#8d8075', '#4a3f37'], 6, 160); }
+        if (event.entity.lane === g.lane || Math.abs(event.entity.lane - g.lane) === 1) { sound('bump', .5); shakeFor('strike'); } break; }
       case 'crumble': { const n = lanesAt(g, event.pit.from), x = (event.pit.lane - (n - 1) / 2) * LANE_WIDTH, p = project(x, event.pit.from - g.distance + 1, 0);
         burst(p.x, p.y, ['#5a3d22', '#8a6440', '#3a2a1c'], 10, 200); if (event.pit.from - g.distance < 30) sound('bump', .6); break; }
       case 'platformUp': sound('jump', 1.2); break;

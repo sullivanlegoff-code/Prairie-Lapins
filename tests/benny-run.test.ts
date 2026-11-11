@@ -397,4 +397,23 @@ describe('Cours cours Benny ! rules', () => {
     g.pits.push({lane: 1, from: g.distance + 3, to: g.distance + 7, open: true}); run(g, 400);
     expect(g.lastBumpAt).not.toBeNull(); expect(g.over).toBe(false);
   });
+  it('drops rocks from the cave ceiling when Benny comes near: a boulder to jump over', () => {
+    const g = quiet(); run(g, C.introMs); const z = g.distance;
+    g.entities.push({id: 70001, kind: 'barrier', lane: 1, z: z + 40, rock: 'up'});
+    run(g, 200); expect(g.entities[0].rock).toBe('up');
+    run(g, (40 - C.rockLand) / g.speed * 1000 + 100); expect(g.entities[0].rock).toBe('down'); expect(types(g)).toContain('rockfall');
+    while (g.entities[0].z - g.distance > 1.2) run(g, 10); runInput(g, g.at, 'up'); run(g, 800); expect(g.lastBumpAt).toBeNull();
+  });
+  it('lays rockfalls only in the cave, always leaving one lane free', () => {
+    for (const seed of [3, 4, 5]) {
+      const g = startBennyRun(0, seed, 3); let seen = 0;
+      for (let t = 0; t < 200_000 && !g.over; t += 1000) { g.lastBumpAt = null; g.stumbleUntil = 0; run(g, 1000);
+        const rocks = g.entities.filter(e => e.rock); seen += rocks.length;
+        for (const e of rocks) expect(settingAt(g, e.z)).toBe('grotte');
+        const byZ = new Map<number, number>(); for (const e of rocks) byZ.set(e.z, (byZ.get(e.z) ?? 0) + 1);
+        for (const [rz, n] of byZ) expect(n).toBeLessThan(lanesAt(g, rz));
+      }
+      expect(seen).toBeGreaterThan(0);
+    }
+  });
 });
