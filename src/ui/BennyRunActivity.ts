@@ -96,7 +96,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   };
   const paragraph = (text: string, className: string) => { const p = document.createElement('p'); p.className = className; p.textContent = text; return p; };
   function showCard(...children: HTMLElement[]): void { card.replaceChildren(...children); card.hidden = false; }
-  function flash(text: string): void { pop.textContent = text; pop.classList.remove('show'); void pop.offsetWidth; pop.classList.add('show'); clearTimeout(popTimer); popTimer = setTimeout(() => pop.classList.remove('show'), 900); }
+  function flash(text: string, big = false): void { pop.textContent = text; pop.classList.toggle('benny-run-count', big); pop.classList.remove('show'); void pop.offsetWidth; pop.classList.add('show'); clearTimeout(popTimer); popTimer = setTimeout(() => pop.classList.remove('show'), 900); }
   function measure(): void {
     const ratio = Math.min(2, window.devicePixelRatio || 1), box = canvas.getBoundingClientRect();
     width = Math.max(1, box.width); height = Math.max(1, box.height);
@@ -174,7 +174,6 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
    * rising sparks; the mountain sky with two rows of snowy peaks and drifting clouds (shapes until the painted settings). */
   function backdrop(c: CanvasRenderingContext2D, setting: RunSetting): void {
     const horizon = project(0, FAR, 0).y, now = clock(), alpha = c.globalAlpha;
-    c.fillStyle = SETTING_COLOURS[setting].sky; c.fillRect(0, 0, width, height);
     const sky = (top: string, bottom: string) => { const grad = c.createLinearGradient(0, 0, 0, horizon); grad.addColorStop(0, top); grad.addColorStop(1, bottom); c.fillStyle = grad; c.fillRect(0, 0, width, horizon + 1); };
     const glow = (colour: string, r: number) => { const grad = c.createRadialGradient(width / 2, horizon, 0, width / 2, horizon, r); grad.addColorStop(0, colour); grad.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = grad; c.fillRect(0, 0, width, horizon + 1); };
     const ridge = (colour: string, base: number, peaks: number, rise: number, seed: number, snow?: string) => {
@@ -578,16 +577,31 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   function close(): void {
     if (layer.hidden) return;
     ending = null;
-    clearTimeout(stopTimer);
+    clearTimeout(stopTimer); clearTimeout(countdown); countdown = undefined;
     running = false; time.resume(); game = null; layer.hidden = true; clearTimeout(popTimer);
     window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: false})); options.onExit?.();
   }
+  /** The 3, 2, 1 before the run goes on after a pause. */
+  let countdown: ReturnType<typeof setTimeout> | undefined;
   function pause(): void {
-    if (!running) return;
-    time.pause(); running = false;
-    showCard(paragraph('Partie en pause', 'benny-run-title'), button('Reprendre', resume, 'bennyRunResume'), button('Quitter', close, 'bennyRunQuit'));
+    if (!running && !countdown) return;
+    if (countdown) { clearTimeout(countdown); countdown = undefined; } else time.pause();
+    running = false;
+    const ch = game?.challenge;
+    showCard(paragraph('Partie en pause', 'benny-run-title'), ...(ch ? [paragraph(`Défi : ${CHALLENGE_TEXT[ch.kind](ch.goal)} (${ch.count}/${ch.goal})`, 'benny-run-rules')] : []),
+      button('Reprendre', resume, 'bennyRunResume'), button('Quitter', close, 'bennyRunQuit'));
   }
-  function resume(): void { if (sideways()) return; time.resume(); running = true; card.hidden = true; lastDrawAt = clock(); lastLoopAt = clock(); frame(loop); }
+  function resume(): void {
+    if (sideways() || running || countdown || !game) return;
+    card.hidden = true; draw(clock());
+    // Time to put a thumb back on the screen: 3, 2, 1, then the run goes on.
+    let n = 3;
+    const next = () => {
+      if (n === 0) { countdown = undefined; time.resume(); running = true; lastDrawAt = clock(); lastLoopAt = clock(); frame(loop); return; }
+      flash(String(n), true); sound('coin', n === 1 ? 1.5 : 1); n--; countdown = setTimeout(next, 500);
+    };
+    next();
+  }
 
   // Gestures: a swipe fires as soon as the finger has moved far enough.
   let touch: {x: number; y: number; id: number; fired: boolean} | null = null;

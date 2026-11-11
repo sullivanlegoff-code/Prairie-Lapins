@@ -54,3 +54,5 @@
 .benny-run-score.benny-run-beaten { color: #ffe36b; }
 /* The challenge under way, its own line under the top bar. */
 .benny-run-challenge { order: 12; flex-basis: 100%; font-size: .95rem; color: #c8f5c8 !important; }
+/* The 3, 2, 1 after a pause. */
+.benny-run-pop.benny-run-count { font-size: 4.5rem; }
