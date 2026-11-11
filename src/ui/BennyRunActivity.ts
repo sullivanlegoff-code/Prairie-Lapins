@@ -1,6 +1,6 @@
 import '../display/benny-run.css';
 import {FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
-import {advanceBennyRun, BENNY_RUN, reach, settingAt, wallLane, comboMultiplier, dragonVisible, inAir, powerActive, runHeight, runInput, runSummary, sliding, startBennyRun, takeRunEvents,
+import {advanceBennyRun, BENNY_RUN, lanesAt, reach, settingAt, wallLane, comboMultiplier, dragonVisible, inAir, powerActive, runHeight, runInput, runSummary, sliding, startBennyRun, takeRunEvents,
   type BennyRun, type ChallengeKind, type RunEntity, type RunInput, type RunPower, type RunSetting, type RunSummary, type TutorialStep} from '../simulation/bennyRun';
 import {pausableClock, settleCard} from './activityPause';
 
@@ -87,8 +87,31 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   let swing: {at: number; lane: number} | null = null, shock: number | null = null, flashes: {at: number; text: string; x: number}[] = [];
   let width = 0, height = 0;
   /** The road's lanes (3 for now; zones of up to 5 later) and the walls' distance from its middle. */
-  let lanes = 3;
+  let lanes = 3, viewLanes = 3;
   const wallX = () => lanes / 2 * LANE_WIDTH + .35;
+  /** How wide the road is drawn `ahead` m in front of Benny (in lanes): it opens over 6 m into a wide hall and closes over
+   * 6 m past its end. */
+  function lanesDrawn(g: BennyRun, ahead: number): number {
+    const z = g.distance + ahead; let wide = 0;
+    for (const w of g.zones) wide = Math.max(wide, z >= w.from && z < w.to ? Math.min(1, (z - w.from) / 6) : z >= w.to ? Math.max(0, 1 - (z - w.to) / 6) : 0);
+    return g.baseLanes + (BENNY_RUN.wideLanes - g.baseLanes) * wide;
+  }
+  const halfAt = (g: BennyRun, ahead: number) => lanesDrawn(g, ahead) / 2 * LANE_WIDTH;
+  const wallXAt = (g: BennyRun, ahead: number) => halfAt(g, ahead) + .35;
+  /** Where along the road to cut it for drawing: finer near Benny and around the edges of a wide hall. */
+  function cuts(g: BennyRun, from: number, to: number): number[] {
+    const list = [from, to];
+    for (let z = from; z < to; z += z < 30 ? 3 : 8) list.push(z);
+    for (const w of g.zones) for (const edge of [w.from, w.to]) for (let k = 0; k <= 6; k += 1.5) { const z = edge - g.distance + k; if (z > from && z < to) list.push(z); }
+    return [...new Set(list)].sort((a, b) => a - b);
+  }
+  /** A strip of the road between `from` and `to` m ahead, `x0`..`x1` as shares of each side's half-width (-1 to 1). */
+  function strip(c: CanvasRenderingContext2D, g: BennyRun, from: number, to: number, colour: string, up = 0, x0 = -1, x1 = 1): void {
+    const zs = cuts(g, from, to); c.fillStyle = colour; c.beginPath();
+    zs.forEach((z, i) => { const p = project(x0 * halfAt(g, z), z, up); if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); });
+    for (const z of [...zs].reverse()) { const p = project(x1 * halfAt(g, z), z, up); c.lineTo(p.x, p.y); }
+    c.closePath(); c.fill();
+  }
 
   const button = (label: string, action: () => void, key: string) => {
     const element = document.createElement('button'); element.type = 'button'; element.textContent = label; element.dataset[key] = '';
@@ -134,8 +157,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
 
   // Perspective: a point `x` metres across, `ahead` metres in front of Benny and `up` metres high.
   // Upright screen: the three lanes and the walls fill the width, and the camera rises so that Benny runs low on the screen.
-  const scale0 = () => Math.min(width * .86, height * .62) / (lanes * LANE_WIDTH + 2.6);
-  const cameraHeight = () => Math.min(16, Math.max(2.2, (height * .74 - height * HORIZON) / scale0()));
+  const scale0 = () => Math.min(width * .86, height * .62) / (viewLanes * LANE_WIDTH + 2.6);
+  const cameraHeight = () => Math.min(24, Math.max(2.2, (height * .74 - height * HORIZON) / scale0()));
   const project = (x: number, ahead: number, up: number) => {
     const horizon = height * HORIZON, s = scale0() * CAMERA_BACK / (Math.max(-CAMERA_BACK + .5, ahead) + CAMERA_BACK);
     return {x: width / 2 + x * s, y: horizon + (cameraHeight() - up) * s, s};
@@ -152,7 +175,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const first = Math.floor((g.distance + NEAR) / 7), last = Math.floor((g.distance + FAR) / 7);
     for (let k = last; k >= first; k--) for (const dir of [-1, 1]) {
       const z = k * 7 + ((k * 37 + (dir > 0 ? 3 : 0)) % 5), ahead = z - g.distance; if (ahead < NEAR || ahead > FAR) continue;
-      const kind = (k * 13 + (dir > 0 ? 7 : 0)) % 3, x = dir * (wallX() + 1.6 + ((k * 29) % 7) * .45), p = project(x, ahead, 0), s = p.s;
+      const kind = (k * 13 + (dir > 0 ? 7 : 0)) % 3, x = dir * (wallXAt(g, ahead) + 1.6 + ((k * 29) % 7) * .45), p = project(x, ahead, 0), s = p.s;
       switch (settingAt(g, z)) {
         case 'grotte':
           if (kind === 0) { c.fillStyle = '#f4c430'; c.beginPath(); c.moveTo(p.x - s * 1.1, p.y); c.lineTo(p.x, p.y - s * .9); c.lineTo(p.x + s * 1.1, p.y); c.fill(); c.fillStyle = '#ffe58a'; c.beginPath(); c.arc(p.x - s * .2, p.y - s * .45, s * .14, 0, Math.PI * 2); c.fill(); }
@@ -217,29 +240,34 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     c.fillStyle = colours.side; c.fillRect(0, horizon, width, height - horizon);
     if (border < FAR) { const b = project(0, border, 0).y; c.fillStyle = next.side; c.fillRect(0, horizon, width, Math.max(0, b - horizon)); }
     scenery(c, g);
-    quad(c, [project(-edge, NEAR, 0), project(edge, NEAR, 0), project(edge, border, 0), project(-edge, border, 0)], colours.ground);
-    if (border < FAR) quad(c, [project(-edge, border, 0), project(edge, border, 0), project(edge, FAR, 0), project(-edge, FAR, 0)], next.ground);
+    strip(c, g, NEAR, border, colours.ground);
+    if (border < FAR) strip(c, g, border, FAR, next.ground);
     // Lane stripes that scroll with the distance, so the speed reads.
     for (let k = 0; k < 40; k++) {
       const z0 = NEAR + k * 4 - (g.distance % 4), z1 = z0 + 2;
       if (z0 > FAR) break;
-      for (const x of Array.from({length: lanes - 1}, (_, i) => laneX(i) + LANE_WIDTH / 2)) quad(c, [project(x - .06, z0, 0), project(x + .06, z0, 0), project(x + .06, z1, 0), project(x - .06, z1, 0)], z0 < border ? colours.lane : next.lane);
+      // The stripes of the lanes there (none where the road is opening or closing).
+      const n0 = lanesDrawn(g, z0), n1 = lanesDrawn(g, z1); if (n0 !== n1 || n0 % 1) continue;
+      for (const x of Array.from({length: n0 - 1}, (_, i) => (i + 1 - n0 / 2) * LANE_WIDTH)) quad(c, [project(x - .06, z0, 0), project(x + .06, z0, 0), project(x + .06, z1, 0), project(x - .06, z1, 0)], z0 < border ? colours.lane : next.lane);
     }
     // Gaps in the road: a chasm (lava on the bridge), with a bright lip on its near and far edges.
     for (const h of g.holes) {
       const from = Math.max(NEAR, h.from - g.distance), to = Math.min(FAR, h.to - g.distance); if (to <= from) continue;
       const look = SETTING_COLOURS[settingAt(g, h.from)];
-      quad(c, [project(-edge, from, 0), project(edge, from, 0), project(edge, to, 0), project(-edge, to, 0)], look.hole);
+      strip(c, g, from, to, look.hole);
       if (settingAt(g, h.from) === 'pont') for (let k = 0; k < 3; k++) { const z = from + ((g.at / 400 + k / 3) % 1) * (to - from), a = project(-edge * .6, z, 0), b = project(edge * .6, z, 0); c.strokeStyle = 'rgba(255,230,140,.5)'; c.lineWidth = Math.max(1, a.s * .08); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); }
-      for (const z of [from, to]) if (z > NEAR && z < FAR) quad(c, [project(-edge, z - .25, 0), project(edge, z - .25, 0), project(edge, z + .25, 0), project(-edge, z + .25, 0)], look.holeEdge);
+      for (const z of [from, to]) if (z > NEAR && z < FAR) strip(c, g, z - .25, z + .25, look.holeEdge);
     }
     // The walls, in their segments: runnable ones are lit and striped, the others dark.
     for (const w of g.walls) for (const [lo, hi, look] of [[NEAR, border, colours], [border, FAR, next]] as const) {
       const from = Math.max(lo, w.from - g.distance), to = Math.min(hi, w.to - g.distance); if (to <= from) continue;
-      const x = w.side === 'left' ? -wallX() : wallX();
-      quad(c, [project(x, from, 0), project(x, to, 0), project(x, to, WALL_HEIGHT), project(x, from, WALL_HEIGHT)], w.runnable ? look.wall : look.wallOff);
+      const dir = w.side === 'left' ? -1 : 1, zs = cuts(g, from, to);
+      c.fillStyle = w.runnable ? look.wall : look.wallOff; c.beginPath();
+      zs.forEach((z, i) => { const p = project(dir * wallXAt(g, z), z, 0); if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); });
+      for (const z of [...zs].reverse()) { const p = project(dir * wallXAt(g, z), z, WALL_HEIGHT); c.lineTo(p.x, p.y); }
+      c.closePath(); c.fill();
       if (w.runnable) for (let z = Math.ceil(from / 6) * 6; z < to; z += 6) {
-        const a = project(x, z, .3), b = project(x, z, WALL_HEIGHT - .3);
+        const x = dir * wallXAt(g, z), a = project(x, z, .3), b = project(x, z, WALL_HEIGHT - .3);
         c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = Math.max(1, a.s * .05); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke();
       }
     }
@@ -254,7 +282,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   };
   function thing(c: CanvasRenderingContext2D, g: BennyRun, e: RunEntity): void {
     const shape = SHAPES[e.kind], ahead = e.z - g.distance; if (!shape || ahead > FAR || ahead < -3) return;
-    const x = e.lane < 0 ? -wallX() + .4 : e.lane > lanes - 1 ? wallX() - .4 : laneX(e.lane);
+    const n = lanesAt(g, e.z), x = e.lane < 0 ? -wallXAt(g, ahead) + .4 : e.lane > n - 1 ? wallXAt(g, ahead) - .4 : (e.lane - (n - 1) / 2) * LANE_WIDTH;
     // The little flying monster keeps to Benny's height, a little above her head.
     const up = e.kind === 'flyer' ? bennyHeight(g) + .9 + Math.sin(g.at / 180 + e.id) * .08 : e.up ?? shape.up ?? 0;
     const base = project(x, ahead, up), w = shape.w * base.s, h = shape.h * base.s;
@@ -440,6 +468,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   function draw(now: number): void {
     const c = context, g = game; if (!c || !g) return;
     const dt = Math.min(.05, Math.max(0, (now - lastDrawAt) / 1000)); lastDrawAt = now;
+    // The lanes under Benny now; the camera pulls back gently in a wide hall.
+    lanes = g.lanes; viewLanes += (lanesDrawn(g, 8) - viewLanes) * Math.min(1, dt * 2.5);
     // Benny glides between lanes, and onto and off a wall (drawn just inside it), instead of jumping there.
     const onWall = (wallX() - .45 - laneX(lanes - 1)) / LANE_WIDTH, target = g.wall ? (g.wall.side === 'left' ? -onWall : lanes - 1 + onWall) : g.lane;
     viewLane += (target - viewLane) * Math.min(1, dt * 24);
@@ -484,7 +514,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     coach.textContent = (again ? 'Encore une fois ! ' : '') + COACH[step]; coach.hidden = false;
   }
   /** Where a thing is drawn on screen now (for the shards). */
-  const screenOf = (g: BennyRun, e: RunEntity) => { const x = e.lane < 0 ? -wallX() + .4 : e.lane > lanes - 1 ? wallX() - .4 : laneX(e.lane);
+  const screenOf = (g: BennyRun, e: RunEntity) => { const n = lanesAt(g, e.z), ahead = e.z - g.distance, x = e.lane < 0 ? -wallXAt(g, ahead) + .4 : e.lane > n - 1 ? wallXAt(g, ahead) - .4 : (e.lane - (n - 1) / 2) * LANE_WIDTH;
     return project(x, Math.max(.3, e.z - g.distance), e.kind === 'flyer' ? bennyHeight(g) + .9 : .5); };
   function react(): void {
     const g = game; if (!g) return;
@@ -518,6 +548,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'challenge':
         if (event.points === undefined) flash(`Défi : ${CHALLENGE_TEXT[event.kind](event.goal)}`);
         else { flash(`Défi réussi ! +${event.points}`); sound('power'); burst(width / 2, height * .3, ['#7be08a', '#ffe66b', '#fff'], 24, 360); }
+        break;
+      case 'lanes':
+        viewLane += event.shift;
+        if (event.shift > 0) flash('La salle s’élargit : cinq couloirs !');
         break;
       case 'setting': flash(SETTING_NAMES[event.setting]); settingBefore = shownSetting; shownSetting = event.setting; settingSince = clock(); break;
       case 'tutorial': showCoach(event.step, event.again); break;
@@ -642,7 +676,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     coach.hidden = true;
     slowLost = 0; slowUntil = 0; lastLoopAt = clock(); settingSince = -1e9; shownSetting = 'grotte';
     runBest = best; beaten = false; milestone = 0; score.classList.remove('benny-run-beaten');
-    game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLane = game.lane; swing = null; shock = null; flashes = []; bits = []; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
+    game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; swing = null; shock = null; flashes = []; bits = []; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
     holesAnnounced = 0; lastHoleSeen = -1;
     hud(); flash('Cours cours Benny !'); frame(loop);
   }

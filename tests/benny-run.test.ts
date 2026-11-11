@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {advanceBennyRun, BENNY_RUN as C, challengeGoal, comboMultiplier, dragonVisible, holeAt, inAir, reach, runHeight, runInput, tutorialStep, runnableAt, runSummary, settingAt, startBennyRun, takeRunEvents,
+import {advanceBennyRun, BENNY_RUN as C, challengeGoal, comboMultiplier, dragonVisible, holeAt, lanesAt, inAir, reach, runHeight, runInput, tutorialStep, runnableAt, runSummary, settingAt, startBennyRun, takeRunEvents,
   type BennyRun, type RunEntity, type RunKind} from '../src/simulation/bennyRun';
 
 /** A run with nothing laid out by chance: the test places what it needs, `z` metres ahead of Benny. */
@@ -221,8 +221,8 @@ describe('Cours cours Benny ! rules', () => {
     place(g, 'chest', 0, reach(g) - .5); runInput(g, g.at, 'left'); expect(g.foes).toBe(1);
   });
   it('lays the road out in varied patterns: pot slaloms, rows of creatures, coin arcs over barriers, and always a way through', () => {
-    const g = startBennyRun(0, 3), seen = new Map<number, RunEntity>();
-    for (let t = 0; t < 200_000; t += 250) { for (const e of g.entities) seen.set(e.id, e); g.entities = g.entities.filter(e => e.z > g.distance + 20); advanceBennyRun(g, t); }
+    const g = startBennyRun(0, 3), seen = new Map<number, RunEntity>(), width = new Map<number, number>();
+    for (let t = 0; t < 200_000; t += 250) { for (const e of g.entities) { seen.set(e.id, e); width.set(e.z, lanesAt(g, e.z)); } g.entities = g.entities.filter(e => e.z > g.distance + 20); advanceBennyRun(g, t); }
     // A second run for the rarer things (the powers).
     const g2 = startBennyRun(0, 4); for (let t = 0; t < 200_000; t += 250) { for (const e of g2.entities) seen.set(-e.id, {...e, z: -1e6 - e.id}); g2.entities = g2.entities.filter(e => e.z > g2.distance + 20); advanceBennyRun(g2, t); }
     const all = [...seen.values()], kinds = new Set(all.map(e => e.kind));
@@ -230,10 +230,12 @@ describe('Cours cours Benny ! rules', () => {
     expect(all.some(e => e.kind === 'coin' && (e.up ?? 0) > 1)).toBe(true); // A coin arc.
     // Every row of pillars leaves a lane free, or has a runnable wall beside it (the wall pattern).
     const rows = new Map<number, number[]>(); for (const e of all) if (e.kind === 'pillar') rows.set(e.z, [...(rows.get(e.z) ?? []), e.lane]);
-    for (const [z, lanes] of rows) if (lanes.length >= g.lanes) expect(g.walls.length >= 0 && all.some(e => e.kind === 'wallCoin' && Math.abs(e.z - z) < 8)).toBe(true);
+    for (const [z, lanes] of rows) if (lanes.length >= (width.get(z) ?? g.lanes)) expect(g.walls.length >= 0 && all.some(e => e.kind === 'wallCoin' && Math.abs(e.z - z) < 8)).toBe(true);
     // Never two creatures side by side in the same row but for the spin pair (one on each side of the middle lane).
     const foeRows = new Map<number, number[]>(); for (const e of all) if (['dragonnet', 'chest', 'ember', 'flyer'].includes(e.kind)) foeRows.set(e.z, [...(foeRows.get(e.z) ?? []), e.lane]);
-    for (const lanes of foeRows.values()) if (lanes.length > 1) expect(lanes.sort()).toEqual([0, 2]);
+    for (const [z, lanes] of foeRows) if (lanes.length > 1) { const middle = Math.floor((width.get(z) ?? 3) / 2); expect(lanes.sort()).toEqual([middle - 1, middle + 1]); }
+    // The road widens to five lanes now and then.
+    expect([...width.values()]).toContain(5);
   });
   it('teaches one gesture at a time on the first run, lays a missed step out again, and never lets the Dragon catch Benny meanwhile', () => {
     const g = startBennyRun(0, 7, 3, true); for (const w of g.walls) w.runnable = true;
@@ -305,16 +307,16 @@ describe('Cours cours Benny ! rules', () => {
   it('lays out a fair road: never three pillars in a row without both walls runnable beside them, and replays the same', () => {
     /** Lays out four minutes of road; Benny passes everything unharmed (what is near is cleared away): only the layout is checked. */
     const lay = (seed: number) => {
-      const g = startBennyRun(0, seed), pillars = new Map<number, Set<number>>(), walls = new Map<string, boolean>();
+      const g = startBennyRun(0, seed), pillars = new Map<number, Set<number>>(), walls = new Map<string, boolean>(), width = new Map<number, number>();
       let triples = 0; const holes: {from: number; to: number}[] = [];
       for (let t = 0; t < 240_000; t += 250) {
-        for (const e of g.entities) if (e.kind === 'pillar') pillars.set(e.z, (pillars.get(e.z) ?? new Set()).add(e.lane));
+        for (const e of g.entities) if (e.kind === 'pillar') { pillars.set(e.z, (pillars.get(e.z) ?? new Set()).add(e.lane)); width.set(e.z, lanesAt(g, e.z)); }
         for (const w of g.walls) walls.set(`${w.side}:${w.from}`, w.runnable);
         for (const h of g.holes) if (!holes.some(o => o.from === h.from)) holes.push({...h});
         g.entities = g.entities.filter(e => e.z > g.distance + 20);
         advanceBennyRun(g, t); g.lastBumpAt = null; // Falls into gaps are not the point here.
       }
-      for (const [z, row] of pillars) if (row.size === 3) {
+      for (const [z, row] of pillars) if (row.size === width.get(z)) {
         triples++;
         // Both walls, so the nearer one is a way on from any lane.
         const runnable = (['left', 'right'] as const).every(side => [z - 25, z, z + 5].every(at => walls.get(`${side}:${Math.floor(at / C.wallSegment) * C.wallSegment}`)));
@@ -355,5 +357,12 @@ describe('Cours cours Benny ! rules', () => {
       return n;
     };
     const on = rows(true), off = rows(false); expect(on).toBeGreaterThanOrEqual(off + 4);
+  });
+  it('widens the road to five lanes in a wide hall (the middle stays the middle), then narrows it back', () => {
+    const g = quiet(); g.zones.push({from: g.distance + 10, to: g.distance + 40});
+    expect(lanesAt(g, g.distance + 20)).toBe(5); expect(g.lanes).toBe(3);
+    run(g, 1000); expect(g).toMatchObject({lanes: 5, lane: 2}); expect(takeRunEvents(g)).toContainEqual({type: 'lanes', lanes: 5, shift: 1});
+    runInput(g, g.at, 'right'); runInput(g, g.at + 200, 'right'); expect(g.lane).toBe(4);
+    run(g, 2500); expect(g).toMatchObject({lanes: 3, lane: 2});
   });
 });
