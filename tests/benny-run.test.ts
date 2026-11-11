@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {advanceBennyRun, BENNY_RUN as C, comboMultiplier, dragonVisible, inAir, reach, runHeight, runInput, tutorialStep, runnableAt, runSummary, startBennyRun, takeRunEvents,
+import {advanceBennyRun, BENNY_RUN as C, comboMultiplier, dragonVisible, holeAt, inAir, reach, runHeight, runInput, tutorialStep, runnableAt, runSummary, startBennyRun, takeRunEvents,
   type BennyRun, type RunEntity, type RunKind} from '../src/simulation/bennyRun';
 
 /** A run with nothing laid out by chance: the test places what it needs, `z` metres ahead of Benny. */
@@ -165,6 +165,29 @@ describe('Cours cours Benny ! rules', () => {
     place(g, 'beam', 1, g.speed * (C.slideMs + 100) / 1000); run(g, C.slideMs + 300);
     expect(types(g)).toEqual(['cleared']); expect(g.lastBumpAt).toBeNull();
   });
+  it('jumps a short gap; running into one is a bump and she hops out', () => {
+    const g = quiet(); for (const w of g.walls) w.runnable = false;
+    g.holes.push({from: g.distance + 3, to: g.distance + 7}); runInput(g, g.at, 'up'); run(g, 900);
+    expect(g.lastBumpAt).toBeNull(); expect(holeAt(g)).toBeUndefined();
+    g.holes.push({from: g.distance + 3, to: g.distance + 7}); run(g, 1200);
+    expect(types(g)).toContain('fall'); expect(g.lastBumpAt).not.toBeNull(); expect(g.over).toBe(false); expect(g.distance).toBeGreaterThan(g.holes[0].to);
+  });
+  it('crosses a long gap on the walls: the wall run does not run out over it, and swiping across leaps to the other wall', () => {
+    const g = quiet(); runInput(g, g.at, 'left'); runInput(g, g.at, 'left');
+    expect(g.wall?.side).toBe('left');
+    g.holes.push({from: g.distance + 2, to: g.distance + 2 + g.speed * (C.wallMs + 1500) / 1000});
+    run(g, C.wallMs + 200); expect(g.wall?.side).toBe('left'); // Past its usual time, still on the wall over the gap.
+    takeRunEvents(g); runInput(g, g.at, 'right');
+    expect(g.wall?.side).toBe('right'); expect(types(g)).toEqual(['wallLeap']); expect(g.score).toBe(C.points.wallLeap);
+    runInput(g, g.at, 'up'); expect(g.wall?.side).toBe('left'); // Up over a gap leaps too.
+    runInput(g, g.at, 'down'); expect(g.wall?.side).toBe('left'); // No charge into the void.
+    run(g, 2000); expect(holeAt(g)).toBeUndefined(); expect(g.lastBumpAt).toBeNull();
+  });
+  it('catches the nearer wall when Benny runs into a long gap', () => {
+    const g = quiet(); runInput(g, g.at, 'right');
+    g.holes.push({from: g.distance + 3, to: g.distance + 30}); run(g, 600);
+    expect(types(g)).toContain('fall'); expect(g.wall?.side).toBe('right'); expect(g.over).toBe(false);
+  });
   it('keeps a jump asked for just before landing and does it on landing', () => {
     const g = quiet(); runInput(g, g.at, 'up'); run(g, C.jumpMs - 100);
     runInput(g, g.at, 'up'); run(g, 150);
@@ -261,12 +284,13 @@ describe('Cours cours Benny ! rules', () => {
     /** Lays out four minutes of road; Benny passes everything unharmed (what is near is cleared away): only the layout is checked. */
     const lay = (seed: number) => {
       const g = startBennyRun(0, seed), pillars = new Map<number, Set<number>>(), walls = new Map<string, boolean>();
-      let triples = 0;
+      let triples = 0; const holes: {from: number; to: number}[] = [];
       for (let t = 0; t < 240_000; t += 250) {
         for (const e of g.entities) if (e.kind === 'pillar') pillars.set(e.z, (pillars.get(e.z) ?? new Set()).add(e.lane));
         for (const w of g.walls) walls.set(`${w.side}:${w.from}`, w.runnable);
+        for (const h of g.holes) if (!holes.some(o => o.from === h.from)) holes.push({...h});
         g.entities = g.entities.filter(e => e.z > g.distance + 20);
-        advanceBennyRun(g, t);
+        advanceBennyRun(g, t); g.lastBumpAt = null; // Falls into gaps are not the point here.
       }
       for (const [z, row] of pillars) if (row.size === 3) {
         triples++;
@@ -274,10 +298,15 @@ describe('Cours cours Benny ! rules', () => {
         const runnable = (['left', 'right'] as const).every(side => [z - 25, z, z + 5].every(at => walls.get(`${side}:${Math.floor(at / C.wallSegment) * C.wallSegment}`)));
         expect(runnable).toBe(true);
       }
+      // Every long gap has both walls runnable over it.
+      for (const h of holes) if (h.to - h.from > 10) for (const side of ['left', 'right'] as const) for (let at = h.from - 20; at <= h.to + 5; at += 4) expect(walls.get(`${side}:${Math.floor(at / C.wallSegment) * C.wallSegment}`)).toBe(true);
+      holeCount += holes.length;
       return {g, triples};
     };
+    let holeCount = 0;
     const a = lay(5), b = lay(5);
     expect(runSummary(b.g)).toEqual(runSummary(a.g)); expect(a.g.distance).toBeGreaterThan(4000); expect(a.g.over).toBe(false);
     expect([1, 2, 3, 99].reduce((n, seed) => n + lay(seed).triples, a.triples)).toBeGreaterThan(0);
+    expect(holeCount).toBeGreaterThan(0);
   });
 });

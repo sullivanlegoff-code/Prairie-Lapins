@@ -13,10 +13,10 @@ import {pausableClock, settleCard} from './activityPause';
  * Played with the iPhone upright only (owner, 11 November 2026): turned sideways, the run pauses behind a « tourne ton iPhone » card.
  */
 const HORIZON = .15, LANE_WIDTH = 2.2, CAMERA_BACK = 14, WALL_HEIGHT = 4.5, BENNY_SIZE = 1.35, FAR = 90, NEAR = -(CAMERA_BACK - .6);
-const SETTING_COLOURS: Record<RunSetting, {sky: string; ground: string; lane: string; wall: string; wallOff: string; side: string}> = {
-  grotte: {sky: '#3a2a1c', ground: '#9a7a52', lane: '#b8956a', wall: '#c9a26a', wallOff: '#5c4630', side: '#e2b450'},
-  pont: {sky: '#4a2420', ground: '#8d8378', lane: '#a39a8e', wall: '#b5aa9a', wallOff: '#55493f', side: '#f07a2a'},
-  montagne: {sky: '#f2a77a', ground: '#a88a66', lane: '#c2a37c', wall: '#cdb48e', wallOff: '#6b5844', side: '#c9d8e8'},
+const SETTING_COLOURS: Record<RunSetting, {sky: string; ground: string; lane: string; wall: string; wallOff: string; side: string; hole: string; holeEdge: string}> = {
+  grotte: {sky: '#3a2a1c', ground: '#9a7a52', lane: '#b8956a', wall: '#c9a26a', wallOff: '#5c4630', side: '#e2b450', hole: '#1c120b', holeEdge: '#5a3d22'},
+  pont: {sky: '#4a2420', ground: '#8d8378', lane: '#a39a8e', wall: '#b5aa9a', wallOff: '#55493f', side: '#f07a2a', hole: '#ff6a1a', holeEdge: '#ffd27a'},
+  montagne: {sky: '#f2a77a', ground: '#a88a66', lane: '#c2a37c', wall: '#cdb48e', wallOff: '#6b5844', side: '#c9d8e8', hole: '#5d7894', holeEdge: '#eef4fa'},
 };
 const SETTING_NAMES: Record<RunSetting, string> = {grotte: 'La grotte dorée', pont: 'Le pont sur la lave', montagne: 'Le sentier de montagne'};
 const POWER_NAMES: Record<RunPower, string> = {magnet: 'Aimant', bubble: 'Bulle arc-en-ciel', double: 'Pièces doublées', flight: 'Envol'};
@@ -131,6 +131,13 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       if (z0 > FAR) break;
       for (const x of Array.from({length: lanes - 1}, (_, i) => laneX(i) + LANE_WIDTH / 2)) quad(c, [project(x - .06, z0, 0), project(x + .06, z0, 0), project(x + .06, z1, 0), project(x - .06, z1, 0)], colours.lane);
     }
+    // Gaps in the road: a chasm (lava on the bridge), with a bright lip on its near and far edges.
+    for (const h of g.holes) {
+      const from = Math.max(NEAR, h.from - g.distance), to = Math.min(FAR, h.to - g.distance); if (to <= from) continue;
+      quad(c, [project(-edge, from, 0), project(edge, from, 0), project(edge, to, 0), project(-edge, to, 0)], colours.hole);
+      if (g.setting === 'pont') for (let k = 0; k < 3; k++) { const z = from + ((g.at / 400 + k / 3) % 1) * (to - from), a = project(-edge * .6, z, 0), b = project(edge * .6, z, 0); c.strokeStyle = 'rgba(255,230,140,.5)'; c.lineWidth = Math.max(1, a.s * .08); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); }
+      for (const z of [from, to]) if (z > NEAR && z < FAR) quad(c, [project(-edge, z - .25, 0), project(edge, z - .25, 0), project(edge, z + .25, 0), project(-edge, z + .25, 0)], colours.holeEdge);
+    }
     // The walls, in their segments: runnable ones are lit and striped, the others dark.
     for (const w of g.walls) {
       const from = Math.max(NEAR, w.from - g.distance), to = Math.min(FAR, w.to - g.distance); if (to <= from) continue;
@@ -166,7 +173,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (e.kind === 'power' && e.power && base.s > 14) { c.fillStyle = '#fff'; c.font = `800 ${Math.round(Math.max(10, base.s * .3))}px system-ui`; c.textAlign = 'center'; c.fillText(POWER_NAMES[e.power], base.x, base.y - h - 4); }
     if (shape.label && base.s > 18) { c.fillStyle = '#fff'; c.font = `700 ${Math.round(Math.max(10, base.s * .28))}px system-ui`; c.textAlign = 'center'; c.fillText(shape.label, base.x, base.y - h - 4); }
   }
-  const bennyHeight = (g: BennyRun) => g.wall ? BENNY_RUN.wallRunHeight : runHeight(g);
+  let leapArc = 0;
+  const bennyHeight = (g: BennyRun) => g.wall ? BENNY_RUN.wallRunHeight + Math.sin(leapArc * Math.PI) * 1.4 : runHeight(g);
   function benny(c: CanvasRenderingContext2D, g: BennyRun, now: number): void {
     const wall = g.wall, x = laneX(viewLane);
     const up = bennyHeight(g), p = project(x, 0, up), s = p.s * BENNY_SIZE;
@@ -215,6 +223,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // Benny glides between lanes, and onto and off a wall (drawn just inside it), instead of jumping there.
     const onWall = (wallX() - .45 - laneX(lanes - 1)) / LANE_WIDTH, target = g.wall ? (g.wall.side === 'left' ? -onWall : lanes - 1 + onWall) : g.lane;
     viewLane += (target - viewLane) * Math.min(1, dt * 24);
+    // Crossing from one wall to the other: a bound through the air.
+    leapArc = g.wall ? Math.min(1, Math.abs(target - viewLane) / (lanes - 1 + 2 * onWall)) : 0;
     c.save();
     if (shake) { const k = (now - shake.at) / shake.ms; if (k >= 1) shake = null; else { const a = shake.px * (1 - k); c.translate((Math.random() * 2 - 1) * a, (Math.random() * 2 - 1) * a); } }
     road(c, g, SETTING_COLOURS[g.setting]);
@@ -268,11 +278,13 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       }
       case 'crash': { const p = screenOf(g, event.entity); burst(p.x, p.y, ['#c96b3a', '#8a4a26'], 8, 180); sound('pot'); break; }
       case 'coin': if (clock() - lastCoinSound > 60) { lastCoinSound = clock(); sound('coin'); } break;
-      case 'bump': flash('Aïe ! La Dragon arrive !'); hurtAt = clock(); shakeFor('bump'); sound('bump'); break;
+      case 'bump': if (event.entity.kind !== 'hole') flash('Aïe ! La Dragon arrive !'); hurtAt = clock(); shakeFor('bump'); sound('bump'); break;
       case 'shield': flash('La bulle te protège !'); burst(width / 2, height * .7, ['#e7d1ff', '#b07bff', '#fff'], 16, 260); sound('power'); break;
       case 'power': flash(`${POWER_NAMES[event.power]} !`); sound('power'); break;
       case 'wallStart': sound('wall'); break;
       case 'wallEnd': flashes.push({at: clock(), text: `Mur +${event.points}`, x: width / 2}); break;
+      case 'wallLeap': flashes.push({at: clock(), text: `Saut de mur +${event.points}`, x: width / 2}); sound('wall'); shakeFor('strike'); break;
+      case 'fall': flash(event.onto ? 'Ouf ! Benny se rattrape au mur !' : 'Ouf ! Benny ressort du trou !'); break;
       case 'shockwave': shock = clock(); flash('Onde de choc !'); shakeFor('shock'); sound('shock'); break;
       case 'setting': flash(SETTING_NAMES[event.setting]); break;
       case 'tutorial': showCoach(event.step, event.again); break;
@@ -280,9 +292,17 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       default: break;
     }
   }
+  /** The first gaps of a run are announced as they come into sight. */
+  let holesAnnounced = 0, lastHoleSeen = -1;
+  function announceHoles(g: BennyRun): void {
+    const next = g.holes.find(h => h.from > g.distance && h.from - g.distance < 45);
+    if (!next || next.from === lastHoleSeen || holesAnnounced >= 2) return;
+    lastHoleSeen = next.from; holesAnnounced++;
+    flash(next.to - next.from > 10 ? 'Un grand gouffre : cours sur le mur et saute d’un mur à l’autre !' : 'Un trou : saute par-dessus !');
+  }
   function loop(): void {
     if (!running || !game) return;
-    const now = clock(); advanceBennyRun(game, now); react(); hud(); draw(now);
+    const now = clock(); advanceBennyRun(game, now); react(); announceHoles(game); hud(); draw(now);
     if (running) frame(loop);
   }
   function input(gesture: RunInput): void {
@@ -384,6 +404,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // The first run (no record yet) starts with the tutorial; it can be asked for again from the start card.
     coach.hidden = true;
     game = startBennyRun(clock(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLane = game.lane; swing = null; shock = null; flashes = []; bits = []; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
+    holesAnnounced = 0; lastHoleSeen = -1;
     hud(); flash('Cours cours Benny !'); frame(loop);
   }
   function intro(): void {
