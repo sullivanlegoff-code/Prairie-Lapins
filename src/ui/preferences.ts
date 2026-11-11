@@ -48,6 +48,32 @@ export class Sounds {
       oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
     } catch { /* Sound is optional. */ }
   }
+  /**
+   * « Cours cours Benny ! »: one short synthesised effect per action, on the Bruitages channel (its switch and volume apply).
+   * Tones only: a sweep from `from` to `to` Hz over `length` s, sometimes two in a row.
+   */
+  run(kind: 'strike' | 'pot' | 'coin' | 'bump' | 'jump' | 'roll' | 'shock' | 'wall' | 'power' | 'caught'): void {
+    this.sync();
+    const output = this.engine.effectsOutput(); if (!output) return;
+    const tones: Record<typeof kind, [OscillatorType, number, number, number, number, number?][]> = {
+      strike: [['triangle', 620, 180, .08, .05]], pot: [['square', 900, 260, .09, .025], ['triangle', 1400, 700, .06, .02, .03]],
+      coin: [['sine', 1320, 1760, .07, .025]], bump: [['sawtooth', 220, 70, .26, .04]], jump: [['sine', 320, 640, .11, .025]],
+      roll: [['triangle', 300, 160, .12, .025]], shock: [['sine', 140, 38, .42, .07], ['triangle', 520, 120, .2, .03]],
+      wall: [['triangle', 420, 560, .1, .025]], power: [['sine', 660, 660, .07, .03], ['sine', 880, 880, .07, .03, .08], ['sine', 1180, 1180, .1, .03, .16]],
+      caught: [['triangle', 520, 260, .3, .04], ['triangle', 390, 200, .35, .035, .25]],
+    };
+    try {
+      const {context, node} = output, now = context.currentTime;
+      void context.resume().catch(() => {});
+      for (const [type, from, to, length, volume, delay = 0] of tones[kind]) {
+        const oscillator = context.createOscillator(), gain = context.createGain(), time = now + delay;
+        oscillator.type = type; oscillator.frequency.setValueAtTime(from, time); oscillator.frequency.exponentialRampToValueAtTime(to, time + length);
+        gain.gain.setValueAtTime(volume, time); gain.gain.exponentialRampToValueAtTime(.0005, time + length);
+        oscillator.connect(gain).connect(node); oscillator.start(time); oscillator.stop(time + length + .02);
+        oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
+      }
+    } catch { /* Sound is optional. */ }
+  }
   /** The jump-rope rhythm « tac »: the same synthesised effect as the ping, much shorter and drier, on the Bruitages channel. */
   tick(): void {
     this.sync();

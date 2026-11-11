@@ -22,6 +22,9 @@ const SETTING_NAMES: Record<RunSetting, string> = {grotte: 'La grotte dorée', p
 const POWER_NAMES: Record<RunPower, string> = {magnet: 'Aimant', bubble: 'Bulle arc-en-ciel', double: 'Pièces doublées', flight: 'Envol'};
 /** A swipe fires once the finger has moved this far; a quick flick lifted sooner still counts from `FLICK` px. */
 const SWIPE = 18, FLICK = 10;
+export type RunSound = 'strike' | 'pot' | 'coin' | 'bump' | 'jump' | 'roll' | 'shock' | 'wall' | 'power' | 'caught';
+/** Feedback: a strike freezes the game for `HIT_STOP` ms; shakes last their `ms` with this many pixels at most. */
+const HIT_STOP = 45, SHAKES = {strike: {ms: 90, px: 3}, bump: {ms: 260, px: 9}, shock: {ms: 320, px: 11}} as const;
 const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? 's' : ''}`;
 
 export function mountBennyRunActivity(host: HTMLElement, options: {
@@ -29,6 +32,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   onFinished?: (summary: RunSummary) => string | void;
   /** The best score kept by the game, read before each run. */
   best?: () => number;
+  /** A short sound for an action (the game's Bruitages channel); silent when absent. */
+  sound?: (kind: RunSound) => void;
   onExit?: () => void; clock?: () => number; frame?: (step: () => void) => number;
 } = {}) {
   const time = pausableClock(options.clock ?? (() => performance.now())), clock = time.now, frame = options.frame ?? (step => requestAnimationFrame(step));
@@ -49,6 +54,23 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const context = canvas.getContext('2d');
   const abort = new AbortController();
   let game: BennyRun | null = null, running = false, best = 0, viewLane = 1, lastDrawAt = 0, popTimer: ReturnType<typeof setTimeout> | undefined;
+  /** Screen-space bits flying out of a pot or a creature, coin sparkles, and the present shake. */
+  let bits: {x: number; y: number; vx: number; vy: number; at: number; life: number; colour: string; size: number}[] = [];
+  let shake: {at: number; ms: number; px: number} | null = null, hurtAt: number | null = null, lastCoinSound = 0, stopTimer: ReturnType<typeof setTimeout> | undefined;
+  const sound = (kind: RunSound) => { try { options.sound?.(kind); } catch { /* Sound is optional. */ } };
+  function burst(x: number, y: number, colours: readonly string[], count: number, speed: number): void {
+    const at = clock();
+    for (let i = 0; i < count; i++) { const a = Math.random() * Math.PI * 2, v = speed * (.4 + Math.random() * .8);
+      bits.push({x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - speed * .6, at, life: 380 + Math.random() * 260, colour: colours[i % colours.length], size: 3 + Math.random() * 4}); }
+    if (bits.length > 160) bits = bits.slice(-160);
+  }
+  /** A short freeze on a strike, so that the hit lands (the game clock stops, the drawing goes on). */
+  function hitStop(): void {
+    if (!running) return;
+    time.pause(); clearTimeout(stopTimer);
+    stopTimer = setTimeout(() => { if (running) time.resume(); }, HIT_STOP);
+  }
+  const shakeFor = (kind: keyof typeof SHAKES) => { const s = SHAKES[kind]; if (!shake || shake.px <= s.px || clock() - shake.at > shake.ms) shake = {at: clock(), ...s}; };
   let swing: {at: number; lane: number} | null = null, shock: number | null = null, flashes: {at: number; text: string; x: number}[] = [];
   let width = 0, height = 0;
   /** The road's lanes (3 for now; zones of up to 5 later) and the walls' distance from its middle. */
@@ -186,25 +208,52 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // Benny glides between lanes, and onto and off a wall (drawn just inside it), instead of jumping there.
     const onWall = (wallX() - .45 - laneX(lanes - 1)) / LANE_WIDTH, target = g.wall ? (g.wall.side === 'left' ? -onWall : lanes - 1 + onWall) : g.lane;
     viewLane += (target - viewLane) * Math.min(1, dt * 24);
+    c.save();
+    if (shake) { const k = (now - shake.at) / shake.ms; if (k >= 1) shake = null; else { const a = shake.px * (1 - k); c.translate((Math.random() * 2 - 1) * a, (Math.random() * 2 - 1) * a); } }
     road(c, g, SETTING_COLOURS[g.setting]);
+    speedLines(c, g, now);
     const ahead = [...g.entities].sort((a, b) => b.z - a.z);
     for (const e of ahead) if (e.z - g.distance > 0) thing(c, g, e);
     benny(c, g, now);
     for (const e of ahead) if (e.z - g.distance <= 0) thing(c, g, e);
     dragon(c, g);
+    // Shards and sparkles.
+    bits = bits.filter(b => now - b.at < b.life);
+    for (const b of bits) { const t = (now - b.at) / 1000; c.globalAlpha = 1 - (now - b.at) / b.life; c.fillStyle = b.colour;
+      c.fillRect(b.x + b.vx * t - b.size / 2, b.y + b.vy * t + 900 * t * t - b.size / 2, b.size, b.size); }
+    c.globalAlpha = 1;
+    c.restore();
+    // A bump: the screen's edges flush red for a moment.
+    if (hurtAt !== null && now - hurtAt < 400) {
+      const k = 1 - (now - hurtAt) / 400, grad = c.createRadialGradient(width / 2, height / 2, Math.min(width, height) * .3, width / 2, height / 2, Math.max(width, height) * .7);
+      grad.addColorStop(0, 'rgba(200,40,40,0)'); grad.addColorStop(1, `rgba(200,40,40,${.45 * k})`); c.fillStyle = grad; c.fillRect(0, 0, width, height);
+    }
     flashes = flashes.filter(f => now - f.at < 700);
     for (const f of flashes) { c.globalAlpha = 1 - (now - f.at) / 700; c.fillStyle = '#fff'; c.font = '800 22px system-ui'; c.textAlign = 'center'; c.fillText(f.text, f.x, height * .55 - (now - f.at) * .05); }
     c.globalAlpha = 1;
   }
+  /** Where a thing is drawn on screen now (for the shards). */
+  const screenOf = (g: BennyRun, e: RunEntity) => { const x = e.lane < 0 ? -wallX() + .4 : e.lane > lanes - 1 ? wallX() - .4 : laneX(e.lane);
+    return project(x, Math.max(.3, e.z - g.distance), e.kind === 'flyer' ? bennyHeight(g) + .9 : .5); };
   function react(): void {
     const g = game; if (!g) return;
     for (const event of takeRunEvents(g)) switch (event.type) {
-      case 'strike': if (event.by === 'spin') flash('Coup tournoyant !'); swing = {at: clock(), lane: g.lane}; flashes.push({at: clock(), text: `+${event.points}`, x: project(laneX(event.entity.lane), 0, 0).x}); break;
-      case 'bump': flash('Aïe ! La Dragon arrive !'); break;
-      case 'shield': flash('La bulle te protège !'); break;
-      case 'power': flash(`${POWER_NAMES[event.power]} !`); break;
+      case 'strike': {
+        if (event.by === 'spin') flash('Coup tournoyant !'); swing = {at: clock(), lane: g.lane};
+        const p = screenOf(g, event.entity);
+        flashes.push({at: clock(), text: `+${event.points}`, x: p.x});
+        if (event.entity.kind === 'pot') { burst(p.x, p.y, ['#c96b3a', '#e08a52', '#8a4a26', '#f4c430'], 14, 260); sound('pot'); }
+        else { burst(p.x, p.y, ['#fff', '#e7d1ff', '#ffb3c8', '#ffe36b'], 12, 220); sound('strike'); }
+        shakeFor('strike'); hitStop(); break;
+      }
+      case 'crash': { const p = screenOf(g, event.entity); burst(p.x, p.y, ['#c96b3a', '#8a4a26'], 8, 180); sound('pot'); break; }
+      case 'coin': if (clock() - lastCoinSound > 60) { lastCoinSound = clock(); sound('coin'); } break;
+      case 'bump': flash('Aïe ! La Dragon arrive !'); hurtAt = clock(); shakeFor('bump'); sound('bump'); break;
+      case 'shield': flash('La bulle te protège !'); burst(width / 2, height * .7, ['#e7d1ff', '#b07bff', '#fff'], 16, 260); sound('power'); break;
+      case 'power': flash(`${POWER_NAMES[event.power]} !`); sound('power'); break;
+      case 'wallStart': sound('wall'); break;
       case 'wallEnd': flashes.push({at: clock(), text: `Mur +${event.points}`, x: width / 2}); break;
-      case 'shockwave': shock = clock(); flash('Onde de choc !'); break;
+      case 'shockwave': shock = clock(); flash('Onde de choc !'); shakeFor('shock'); sound('shock'); break;
       case 'setting': flash(SETTING_NAMES[event.setting]); break;
       case 'caught': finish(); break;
       default: break;
@@ -215,9 +264,28 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const now = clock(); advanceBennyRun(game, now); react(); hud(); draw(now);
     if (running) frame(loop);
   }
-  function input(gesture: RunInput): void { if (!running || !game || sideways()) return; runInput(game, clock(), gesture); react(); hud(); }
+  function input(gesture: RunInput): void {
+    if (!running || !game || sideways()) return;
+    const g = game, wasAir = inAir(g), wasRolling = sliding(g);
+    runInput(g, clock(), gesture);
+    if (gesture === 'up' && inAir(g) && g.airFrom === g.at && !wasAir) sound('jump');
+    if (gesture === 'down' && sliding(g) && !wasRolling) sound('roll');
+    react(); hud();
+  }
+  /** Streaks along the screen's sides that thicken with the speed. */
+  function speedLines(c: CanvasRenderingContext2D, g: BennyRun, now: number): void {
+    const k = Math.max(0, (g.speed - BENNY_RUN.speedStart - 4) / (BENNY_RUN.speedMax - BENNY_RUN.speedStart - 4)); if (k <= 0) return;
+    c.save(); c.strokeStyle = `rgba(255,250,235,${.12 + .2 * k})`; c.lineWidth = 2;
+    for (let i = 0; i < 10; i++) {
+      const seed = (i * 97 + Math.floor(now / 70) * 31) % 100 / 100, left = i % 2 === 0, x = left ? seed * width * .18 : width - seed * width * .18;
+      const y = height * (.25 + ((i * 0.137 + now / 600) % 1) * .75), len = 30 + 70 * k;
+      c.beginPath(); c.moveTo(x, y); c.lineTo(x + (left ? -1 : 1) * len * .25, y + len); c.stroke();
+    }
+    c.restore();
+  }
   function finish(): void {
     if (!game) return;
+    clearTimeout(stopTimer); time.resume(); sound('caught');
     running = false; const s = runSummary(game), record = s.score > best && s.score > 0, previous = best; best = Math.max(best, s.score);
     const line = options.onFinished?.(s);
     hud();
@@ -232,8 +300,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   function start(): void {
     if (sideways()) { orientation(); return; }
+    clearTimeout(stopTimer); time.resume();
     best = Math.max(best, options.best?.() ?? 0);
-    game = startBennyRun(clock()); lanes = game.lanes; viewLane = game.lane; swing = null; shock = null; flashes = []; running = true; card.hidden = true; lastDrawAt = clock();
+    game = startBennyRun(clock()); lanes = game.lanes; viewLane = game.lane; swing = null; shock = null; flashes = []; bits = []; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
     hud(); flash('Cours cours Benny !'); frame(loop);
   }
   function intro(): void {
@@ -247,6 +316,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   function close(): void {
     if (layer.hidden) return;
+    clearTimeout(stopTimer);
     running = false; time.resume(); game = null; layer.hidden = true; clearTimeout(popTimer);
     window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: false})); options.onExit?.();
   }
