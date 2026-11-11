@@ -1,10 +1,10 @@
 import {describe, expect, it} from 'vitest';
-import {advanceBennyRun, BENNY_RUN as C, comboMultiplier, dragonVisible, holeAt, inAir, reach, runHeight, runInput, tutorialStep, runnableAt, runSummary, settingAt, startBennyRun, takeRunEvents,
+import {advanceBennyRun, BENNY_RUN as C, challengeGoal, comboMultiplier, dragonVisible, holeAt, inAir, reach, runHeight, runInput, tutorialStep, runnableAt, runSummary, settingAt, startBennyRun, takeRunEvents,
   type BennyRun, type RunEntity, type RunKind} from '../src/simulation/bennyRun';
 
 /** A run with nothing laid out by chance: the test places what it needs, `z` metres ahead of Benny. */
 function quiet(seed = 7, lanes = 3): BennyRun {
-  const g = startBennyRun(0, seed, lanes); g.entities = []; g.nextSpawnZ = Infinity; g.nextSettingAt = Infinity;
+  const g = startBennyRun(0, seed, lanes); g.entities = []; g.nextSpawnZ = Infinity; g.nextSettingAt = Infinity; g.nextChallengeAt = Infinity;
   for (const w of g.walls) w.runnable = true; g.wallsTo = {left: 1e9, right: 1e9}; g.walls.push({side: 'left', from: 0, to: 1e9, runnable: true}, {side: 'right', from: 0, to: 1e9, runnable: true});
   return g;
 }
@@ -330,5 +330,20 @@ describe('Cours cours Benny ! rules', () => {
     expect(runSummary(b.g)).toEqual(runSummary(a.g)); expect(a.g.distance).toBeGreaterThan(4000); expect(a.g.over).toBe(false);
     expect([1, 2, 3, 99].reduce((n, seed) => n + lay(seed).triples, a.triples)).toBeGreaterThan(0);
     expect(holeCount).toBeGreaterThan(0);
+  });
+  it('gives short challenges one after the other, each one done worth more points, and none during the tutorial', () => {
+    const g = quiet(); g.nextChallengeAt = g.at + C.challengeFirstMs;
+    run(g, C.challengeFirstMs - 100); expect(g.challenge).toBeNull();
+    run(g, 200); expect(g.challenge).toMatchObject({kind: 'pots', goal: challengeGoal('pots', 0), count: 0});
+    expect(takeRunEvents(g)).toContainEqual({type: 'challenge', kind: 'pots', goal: 6});
+    // Pots struck before the challenge do not count; those after do.
+    for (let i = 0; i < 6; i++) { const side = g.lane === 0 ? 1 : g.lane - 1; place(g, 'pot', side, 3); runInput(g, g.at, side < g.lane ? 'left' : 'right'); run(g, 400); }
+    const before = g.score - C.challengePoints; run(g, 20);
+    expect(g.challengesDone).toBe(1); expect(g.challenge).toBeNull(); expect(before).toBeGreaterThan(0);
+    expect(takeRunEvents(g)).toContainEqual(expect.objectContaining({type: 'challenge', kind: 'pots', points: C.challengePoints}));
+    run(g, C.challengeGapMs + 50); expect(g.challenge).toMatchObject({kind: 'coins', goal: challengeGoal('coins', 1)});
+    expect(challengeGoal('combo', 99)).toBe(40);
+    expect(runSummary(g).challenges).toBe(1);
+    const t = startBennyRun(0, 7, 3, true); run(t, 8000); expect(t.challenge).toBeNull();
   });
 });

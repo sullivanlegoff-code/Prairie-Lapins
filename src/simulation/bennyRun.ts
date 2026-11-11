@@ -68,6 +68,10 @@ export const BENNY_RUN = {
   settingMs: [40_000, 55_000],
   /** A new setting starts this far ahead (m): it comes into sight and Benny runs into it. */
   settingAhead: 80,
+  /** Short challenges during the run, one after the other, in this order: the first after `challengeFirstMs`, the next
+   * `challengeGapMs` after one is done. Each one done is worth `challengePoints` times its rank (at most `challengePointsMax`). */
+  challengeOrder: ['pots', 'coins', 'foes', 'walls', 'combo'] as const, challengeFirstMs: 5000, challengeGapMs: 4000,
+  challengePoints: 100, challengePointsMax: 500,
   /** Things are laid out to `spawnAhead` m ahead, the first at `firstAt` m, then every `gapStart` m down to `gapMin` m. */
   spawnAhead: 90, firstAt: 30, gapStart: 22, gapMin: 11,
   /** Share of coin lines carrying a power, and how long each power lasts once picked up (the bubble lasts until a bump, at most this). */
@@ -114,8 +118,11 @@ export type RunEvent =
   | {type: 'pound'}
   | {type: 'shockwave'}
   | {type: 'setting'; setting: RunSetting}
+  /** A challenge given (`points` absent) or done. */
+  | {type: 'challenge'; kind: ChallengeKind; goal: number; points?: number}
   | {type: 'tutorial'; step: TutorialStep | null; again?: boolean};
 
+export type ChallengeKind = 'pots' | 'coins' | 'foes' | 'walls' | 'combo';
 export interface BennyRun {
   seed: number; startedAt: number; at: number;
   distance: number; speed: number;
@@ -138,6 +145,8 @@ export interface BennyRun {
   active: {power: RunPower; until: number} | null;
   score: number; coins: number; pots: number; foes: number; wallRuns: number;
   combo: number; comboUntil: number; bestCombo: number;
+  /** The challenge under way (`count` of `goal`, counted from `from`), how many are done, and when the next one comes. */
+  challenge: {kind: ChallengeKind; goal: number; from: number; count: number} | null; challengesDone: number; nextChallengeAt: number;
   over: boolean;
   /** What happened since the display last took them (`takeRunEvents`). */
   events: RunEvent[];
@@ -214,6 +223,7 @@ export function startBennyRun(now: number, seed = Math.floor(Math.random() * 214
     entities: [], nextId: 1, nextSpawnZ: C.firstAt, walls: [], wallsTo: {left: 0, right: 0}, holes: [],
     setting: 'grotte', nextSettingAt: 0, upcoming: null, stumbleUntil: 0, lastBumpAt: null,
     active: null, score: 0, coins: 0, pots: 0, foes: 0, wallRuns: 0, combo: 0, comboUntil: 0, bestCombo: 0,
+    challenge: null, challengesDone: 0, nextChallengeAt: now + C.challengeFirstMs,
     over: false, events: [], queuedJumpUntil: 0, paceFrom: now, tutorial: tutorial ? {step: 0, ids: [], tries: 0, struck: 0} : null,
   };
   g.nextSettingAt = now + settingDelay(g);
@@ -512,7 +522,7 @@ function meet(g: BennyRun, e: RunEntity): void {
 
 function tick(g: BennyRun): void {
   const dt = C.step / 1000, eventsBefore = g.events.length;
-  if (g.tutorial) { g.paceFrom += C.step; g.nextSettingAt += C.step; }
+  if (g.tutorial) { g.paceFrom += C.step; g.nextSettingAt += C.step; g.nextChallengeAt += C.step; }
   if (g.active && g.at >= g.active.until) g.active = null;
   const base = C.speedStart + (C.speedMax - C.speedStart) * (1 - (1 - runDifficulty(g)) ** C.speedEase);
   g.speed = base * (g.at < g.stumbleUntil ? C.stumbleSlow : 1);
@@ -552,11 +562,38 @@ function tick(g: BennyRun): void {
     if (g.over) break;
     if (isFoe(e) && e.beside && Math.abs(e.lane - across(g)) === 1 && (!g.wall || e.kind === 'flyer') && e.z - before > -C.hitHalf - 1e-9 && e.z - g.distance <= -C.hitHalf && !powerActive(g, 'flight')) bump(g, e);
   }
-  if (g.tutorial) followTutorial(g, g.events.slice(eventsBefore));
+  if (g.tutorial) followTutorial(g, g.events.slice(eventsBefore)); else followChallenge(g);
   g.entities = g.entities.filter(e => e.z > g.distance - 5);
   g.holes = g.holes.filter(h => h.to > g.distance - 5);
   // The walls go on being laid during the tutorial; the rest of the road waits for its end.
   if (g.tutorial) layWalls(g); else spawn(g);
+}
+
+/** A challenge's goal, the `n`th one of the run (from 0): a little more each time. */
+export function challengeGoal(kind: ChallengeKind, n: number): number {
+  switch (kind) {
+    case 'pots': return 6 + 3 * n;
+    case 'coins': return 30 + 15 * n;
+    case 'foes': return 3 + 2 * n;
+    case 'walls': return 2 + Math.floor(n / 5);
+    case 'combo': return Math.min(40, 8 + 4 * n);
+  }
+}
+const challengeCounter = (g: BennyRun, kind: ChallengeKind) =>
+  kind === 'pots' ? g.pots : kind === 'coins' ? g.coins : kind === 'foes' ? g.foes : kind === 'walls' ? g.wallRuns : 0;
+function followChallenge(g: BennyRun): void {
+  if (!g.challenge) {
+    if (g.at < g.nextChallengeAt) return;
+    const n = g.challengesDone, kind = C.challengeOrder[n % C.challengeOrder.length], goal = challengeGoal(kind, n);
+    g.challenge = {kind, goal, from: challengeCounter(g, kind), count: 0}; g.events.push({type: 'challenge', kind, goal});
+    return;
+  }
+  const c = g.challenge;
+  c.count = Math.min(c.goal, c.kind === 'combo' ? Math.max(c.count, g.combo) : challengeCounter(g, c.kind) - c.from);
+  if (c.count < c.goal) return;
+  const points = Math.min(C.challengePointsMax, C.challengePoints * (g.challengesDone + 1));
+  g.score += points; g.challengesDone++; g.challenge = null; g.nextChallengeAt = g.at + C.challengeGapMs;
+  g.events.push({type: 'challenge', kind: c.kind, goal: c.goal, points});
 }
 
 export function advanceBennyRun(g: BennyRun, now: number): void {
@@ -623,6 +660,6 @@ export function takeRunEvents(g: BennyRun): RunEvent[] { const e = g.events; g.e
 
 /** The longest distance a saved run may claim: an hour at full speed, far beyond any real run. */
 export const BENNY_RUN_MAX_METRES = 24 * 3600;
-export interface RunSummary {score: number; metres: number; coins: number; pots: number; foes: number; wallRuns: number; bestCombo: number; seconds: number}
+export interface RunSummary {score: number; metres: number; coins: number; pots: number; foes: number; wallRuns: number; bestCombo: number; seconds: number; challenges: number}
 export const runSummary = (g: BennyRun): RunSummary => ({score: g.score, metres: Math.floor(g.distance), coins: g.coins, pots: g.pots, foes: g.foes,
-  wallRuns: g.wallRuns, bestCombo: g.bestCombo, seconds: Math.floor((g.at - g.startedAt) / 1000)});
+  wallRuns: g.wallRuns, bestCombo: g.bestCombo, seconds: Math.floor((g.at - g.startedAt) / 1000), challenges: g.challengesDone});

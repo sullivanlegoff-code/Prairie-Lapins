@@ -1,7 +1,7 @@
 import '../display/benny-run.css';
 import {FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
 import {advanceBennyRun, BENNY_RUN, reach, settingAt, wallLane, comboMultiplier, dragonVisible, inAir, powerActive, runHeight, runInput, runSummary, sliding, startBennyRun, takeRunEvents,
-  type BennyRun, type RunEntity, type RunInput, type RunPower, type RunSetting, type RunSummary, type TutorialStep} from '../simulation/bennyRun';
+  type BennyRun, type ChallengeKind, type RunEntity, type RunInput, type RunPower, type RunSetting, type RunSummary, type TutorialStep} from '../simulation/bennyRun';
 import {pausableClock, settleCard} from './activityPause';
 
 /**
@@ -19,6 +19,10 @@ const SETTING_COLOURS: Record<RunSetting, {sky: string; ground: string; lane: st
   montagne: {sky: '#f2a77a', ground: '#a88a66', lane: '#c2a37c', wall: '#cdb48e', wallOff: '#6b5844', side: '#c9d8e8', hole: '#5d7894', holeEdge: '#eef4fa'},
 };
 const SETTING_NAMES: Record<RunSetting, string> = {grotte: 'La grotte dorée', pont: 'Le pont sur la lave', montagne: 'Le sentier de montagne'};
+/** A challenge said to the player (tutoiement). */
+const CHALLENGE_TEXT: Record<ChallengeKind, (goal: number) => string> = {
+  pots: n => `frappe ${n} pots`, coins: n => `ramasse ${n} pièces`, foes: n => `frappe ${n} créatures`, walls: n => `cours sur ${n} murs`, combo: n => `fais un combo de ${n}`,
+};
 const POWER_NAMES: Record<RunPower, string> = {magnet: 'Aimant', bubble: 'Bulle arc-en-ciel', double: 'Pièces doublées', flight: 'Envol'};
 /** A swipe fires once the finger has moved this far; a quick flick lifted sooner still counts from `FLICK` px. */
 const SWIPE = 18, FLICK = 10;
@@ -42,7 +46,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const layer = document.createElement('div'); layer.className = 'benny-run-activity'; layer.hidden = true;
   layer.setAttribute('role', 'dialog'); layer.setAttribute('aria-modal', 'true'); layer.setAttribute('aria-label', 'Cours cours Benny !');
   layer.innerHTML = `<div class="benny-run-top"><p class="benny-run-score" aria-live="polite"></p><p class="benny-run-combo"></p><div class="benny-run-combo-bar" aria-hidden="true"><span></span></div><p class="benny-run-metres"></p><p class="benny-run-coins"></p>
-<p class="benny-run-power"></p><button type="button" data-benny-run-pause aria-label="Pause">❚❚</button><button type="button" data-benny-run-exit aria-label="Quitter">✕</button><p class="benny-run-danger" hidden></p></div>
+<p class="benny-run-power"></p><button type="button" data-benny-run-pause aria-label="Pause">❚❚</button><button type="button" data-benny-run-exit aria-label="Quitter">✕</button><p class="benny-run-danger" hidden></p><p class="benny-run-challenge"></p></div>
 <canvas class="benny-run-canvas" data-benny-run-canvas></canvas>
 <p class="benny-run-pop" aria-hidden="true"></p>
 <p class="benny-run-coach" aria-live="polite" hidden></p>
@@ -52,6 +56,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const $ = <T extends Element>(selector: string) => layer.querySelector<T>(selector)!;
   const canvas = $<HTMLCanvasElement>('[data-benny-run-canvas]'), card = $<HTMLElement>('[data-benny-run-card]'), pop = $<HTMLElement>('.benny-run-pop');
   const score = $<HTMLElement>('.benny-run-score'), combo = $<HTMLElement>('.benny-run-combo'), metres = $<HTMLElement>('.benny-run-metres'), coins = $<HTMLElement>('.benny-run-coins');
+  const challengeLine = $<HTMLElement>('.benny-run-challenge');
   const coach = $<HTMLElement>('.benny-run-coach'), danger = $<HTMLElement>('.benny-run-danger'), comboBar = $<HTMLElement>('.benny-run-combo-bar'), comboFill = $<HTMLElement>('.benny-run-combo-bar span');
   const powerLine = $<HTMLElement>('.benny-run-power'), turn = $<HTMLElement>('[data-benny-run-turn]');
   const sideways = () => window.innerWidth > window.innerHeight;
@@ -109,6 +114,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       beaten = true; score.classList.add('benny-run-beaten'); flash('Nouveau record !'); sound('power');
       burst(width / 2, height * .3, ['#ff6b6b', '#ffb84d', '#ffe66b', '#7be08a', '#6bb8ff', '#b07bff'], 40, 420);
     }
+    // The challenge under way and how far along it is.
+    const ch = g.challenge; challengeLine.textContent = ch ? `Défi · ${CHALLENGE_TEXT[ch.kind](ch.goal)} · ${ch.count}/${ch.goal}` : '';
     // Every 500 m.
     const reached = Math.floor(g.distance / 500) * 500;
     if (reached > milestone && !g.tutorial) { milestone = reached; flash(`${reached} m !`); sound('coin', 1.5); }
@@ -383,6 +390,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'wallLeap': flashes.push({at: clock(), text: `Saut de mur +${event.points}`, x: width / 2}); sound('wall'); shakeFor('strike'); break;
       case 'fall': flash(event.onto ? 'Ouf ! Benny se rattrape au mur !' : 'Ouf ! Benny ressort du trou !'); break;
       case 'shockwave': shock = clock(); slowMo(380); flash('Onde de choc !'); shakeFor('shock'); sound('shock'); break;
+      case 'challenge':
+        if (event.points === undefined) flash(`Défi : ${CHALLENGE_TEXT[event.kind](event.goal)}`);
+        else { flash(`Défi réussi ! +${event.points}`); sound('power'); burst(width / 2, height * .3, ['#7be08a', '#ffe66b', '#fff'], 24, 360); }
+        break;
       case 'setting': flash(SETTING_NAMES[event.setting]); settingBefore = shownSetting; shownSetting = event.setting; settingSince = clock(); break;
       case 'tutorial': showCoach(event.step, event.again); break;
       case 'caught': finish(); break;
@@ -490,7 +501,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const again = button('Rejouer', () => start(), 'bennyRunAgain');
     // The score big, then the run's figures two by two.
     const stats = document.createElement('ul'); stats.className = 'benny-run-stats';
-    for (const line of [`${s.metres} m`, plural(s.coins, 'pièce'), plural(s.pots, 'pot'), plural(s.foes, 'créature'), plural(s.wallRuns, 'mur'),
+    for (const line of [`${s.metres} m`, plural(s.coins, 'pièce'), plural(s.pots, 'pot'), plural(s.foes, 'créature'), plural(s.wallRuns, 'mur'), plural(s.challenges, 'défi'),
       `combo max ${s.bestCombo}`, `${Math.floor(s.seconds / 60)} min ${String(s.seconds % 60).padStart(2, '0')} s`]) { const li = document.createElement('li'); li.textContent = line; stats.append(li); }
     showCard(paragraph('La Dragon a rattrapé Benny !', 'benny-run-title'), paragraph(`${s.score} points`, 'benny-run-big'), stats,
       ...(record ? [paragraph(previous ? `Nouveau record ! L’ancien était de ${previous}.` : 'Ton premier record !', 'benny-run-record')] : best ? [paragraph(`Ton record : ${best}`, 'benny-run-rules')] : []),
