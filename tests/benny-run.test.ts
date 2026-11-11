@@ -41,11 +41,11 @@ describe('Cours cours Benny ! rules', () => {
     const g = quiet(); place(g, 'pot', 1, 3); run(g, 1000);
     expect(types(g)).toEqual(['crash']); expect(g).toMatchObject({score: 0, pots: 0, lastBumpAt: null});
   });
-  it('clears a barrier by jumping, a beam by sliding, and bumps into them otherwise', () => {
+  it('clears a barrier by jumping, a beam by sliding (a few points each, the combo untouched), and bumps into them otherwise', () => {
     const g = quiet(); run(g, C.introMs);
     place(g, 'barrier', 1, 3); runInput(g, g.at, 'up'); run(g, 400);
     place(g, 'beam', 1, 4); run(g, 300); runInput(g, g.at, 'down'); run(g, 500);
-    expect(types(g)).toEqual(['cleared', 'cleared']);
+    expect(types(g)).toEqual(['cleared', 'cleared']); expect(g).toMatchObject({score: 2 * C.points.dodge, combo: 0});
     place(g, 'beam', 1, 3); runInput(g, g.at, 'up'); run(g, 400);
     expect(types(g)).toEqual(['bump']);
   });

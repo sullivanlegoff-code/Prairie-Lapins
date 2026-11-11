@@ -57,7 +57,7 @@ export const BENNY_RUN = {
   stumbleMs: 900, stumbleSlow: .7, dragonMs: 10_000, introMs: 3000,
   /** Combo: strikes less than `comboMs` apart; the multiplier grows by one every `comboStep` strikes, up to `comboMax`. */
   comboMs: 2500, comboStep: 3, comboMax: 5,
-  points: {pot: 10, foe: 25, wallRun: 50, wallLeap: 25},
+  points: {pot: 10, foe: 25, wallRun: 50, wallLeap: 25, dodge: 5},
   /** Gaps in the road: short ones (m) to jump, long ones to cross on the walls, leaping from one wall to the other. */
   holeShort: [3.5, 5], holeLong: [14, 34],
   /** A pot struck flies on along its lane, this much faster than Benny (m/s) and this far (m), and knocks over all it meets. */
@@ -104,7 +104,8 @@ export type RunEvent =
   | {type: 'strike'; entity: RunEntity; points: number; combo: number; multiplier: number; by: StrikeKind}
   | {type: 'crash'; entity: RunEntity}
   | {type: 'coin'; entity: RunEntity; amount: number}
-  | {type: 'cleared'; entity: RunEntity}
+  /** Passed over or under unharmed; `points` for a barrier jumped or a beam rolled under. */
+  | {type: 'cleared'; entity: RunEntity; points?: number}
   | {type: 'bump'; entity: RunEntity}
   | {type: 'shield'; entity: RunEntity}
   | {type: 'caught'; entity: RunEntity}
@@ -512,8 +513,8 @@ function meet(g: BennyRun, e: RunEntity): void {
       if (sliding(g)) { strike(g, e, 'slide'); return; }
       if (high) { g.events.push({type: 'cleared', entity: e}); return; }
       g.entities = g.entities.filter(o => o !== e); g.events.push({type: 'crash', entity: e}); return;
-    case 'barrier': if (high) g.events.push({type: 'cleared', entity: e}); else bump(g, e); return;
-    case 'beam': if (sliding(g) || (!inAir(g) && g.at < g.slideUntil + C.slideGraceMs)) g.events.push({type: 'cleared', entity: e}); else bump(g, e); return;
+    case 'barrier': if (high) dodge(g, e); else bump(g, e); return;
+    case 'beam': if (sliding(g) || (!inAir(g) && g.at < g.slideUntil + C.slideGraceMs)) dodge(g, e); else bump(g, e); return;
     // A creature: sliding into it strikes it; otherwise, even jumping over it, it strikes Benny as she passes.
     case 'dragonnet': case 'chest': case 'ember': case 'flyer': if (sliding(g)) strike(g, e, 'slide'); else bump(g, e); return;
     case 'pillar': bump(g, e); return;
@@ -594,6 +595,11 @@ function followChallenge(g: BennyRun): void {
   const points = Math.min(C.challengePointsMax, C.challengePoints * (g.challengesDone + 1));
   g.score += points; g.challengesDone++; g.challenge = null; g.nextChallengeAt = g.at + C.challengeGapMs;
   g.events.push({type: 'challenge', kind: c.kind, goal: c.goal, points});
+}
+
+/** A barrier jumped or a beam rolled under: a few points (not a strike: the combo neither grows nor breaks). */
+function dodge(g: BennyRun, e: RunEntity): void {
+  const points = C.points.dodge; g.score += points; g.events.push({type: 'cleared', entity: e, points});
 }
 
 export function advanceBennyRun(g: BennyRun, now: number): void {

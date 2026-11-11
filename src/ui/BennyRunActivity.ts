@@ -508,6 +508,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'shield': flash('La bulle te protège !'); burst(width / 2, height * .7, ['#e7d1ff', '#b07bff', '#fff'], 16, 260); sound('power'); break;
       case 'power': flash(`${POWER_NAMES[event.power]} !`); sound('power'); break;
       case 'wallStart': sound('wall'); break;
+      case 'cleared':
+        if (event.points) { const p = screenOf(g, event.entity); flashes.push({at: clock(), text: `+${event.points}`, x: p.x}); burst(p.x, p.y - 10, ['#fff', '#ffe66b'], 6, 160); }
+        break;
       case 'wallEnd': flashes.push({at: clock(), text: `Mur +${event.points}`, x: width / 2}); break;
       case 'wallLeap': flashes.push({at: clock(), text: `Saut de mur +${event.points}`, x: width / 2}); sound('wall'); shakeFor('strike'); break;
       case 'fall': flash(event.onto ? 'Ouf ! Benny se rattrape au mur !' : 'Ouf ! Benny ressort du trou !'); break;
