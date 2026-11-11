@@ -422,12 +422,12 @@
     "displayScale": 1.15,
     "file": "assets/rabbits/volant/volant-v2.png",
     "worldWidth": 53,
-    "sourceSha1": "1bed4884bbd036230f888b82ccab15122a89abc9",
-    "sourceWidth": 1092,
-    "sourceHeight": 1170,
+    "sourceSha1": "afb6eae2045000260b32ad2e87f43d24c431861e",
+    "sourceWidth": 993,
+    "sourceHeight": 1078,
     "width": 450,
-    "height": 482,
-    "derivedSha1": "f507bbcafbfe46bbbe5f00c34e12aa39ddce798e"
+    "height": 489,
+    "derivedSha1": "dc65ec0e1816869d25f699610db58d00672996cf"
   },
   "dinono-evolution": {
     "species": "dinono",

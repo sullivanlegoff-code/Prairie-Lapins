@@ -11,16 +11,16 @@
     "sourceSha1": "4e89ee306b5c65fc9a0410ceccaab95030a1dfe4"
   },
   "evolution": {
-    "spriteSha1": "1bed4884bbd036230f888b82ccab15122a89abc9",
+    "spriteSha1": "afb6eae2045000260b32ad2e87f43d24c431861e",
     "eyes-closed": {
-      "x": 652,
-      "y": 180,
-      "sourceSha1": "5ff3268fae6f6ebb2416959e83c79f9ed776d935"
+      "x": 580,
+      "y": 152,
+      "sourceSha1": "cf27d7ae03cf0d82629b2aa20c5335f1d6b9f4ed"
     },
     "nose-twitch": {
-      "x": 860,
-      "y": 310,
-      "sourceSha1": "77d26dd7981fdb8d9a17d7e1185fbae1e6895ee7"
+      "x": 729,
+      "y": 263,
+      "sourceSha1": "f45ca4a6d03f19322464a98681c2d8ecadc5b9eb"
     }
   }
 }
