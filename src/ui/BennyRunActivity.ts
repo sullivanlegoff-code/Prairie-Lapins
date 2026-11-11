@@ -24,6 +24,8 @@ const POWER_NAMES: Record<RunPower, string> = {magnet: 'Aimant', bubble: 'Bulle 
 const SWIPE = 18, FLICK = 10;
 export type RunSound = 'strike' | 'pot' | 'coin' | 'bump' | 'jump' | 'roll' | 'shock' | 'wall' | 'power' | 'caught';
 /** Feedback: a strike freezes the game for `HIT_STOP` ms; shakes last their `ms` with this many pixels at most. */
+/** A big moment (shock wave, spin, a flying pot bowling a creature over) plays in slow motion at this rate for a moment. */
+const SLOW_RATE = .35;
 const HIT_STOP = 45, SHAKES = {strike: {ms: 90, px: 3}, bump: {ms: 260, px: 9}, shock: {ms: 320, px: 11}} as const;
 const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? 's' : ''}`;
 
@@ -72,6 +74,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     time.pause(); clearTimeout(stopTimer);
     stopTimer = setTimeout(() => { if (running) time.resume(); }, HIT_STOP);
   }
+  /** The game's own time: the clock, less what the slow motions have held back. */
+  let slowLost = 0, slowUntil = 0, lastLoopAt = 0;
+  const gameTime = () => clock() - slowLost;
+  const slowMo = (ms: number) => { const now = clock(); if (now > slowUntil + 900) slowUntil = now + ms; };
   const shakeFor = (kind: keyof typeof SHAKES) => { const s = SHAKES[kind]; if (!shake || shake.px <= s.px || clock() - shake.at > shake.ms) shake = {at: clock(), ...s}; };
   let swing: {at: number; lane: number} | null = null, shock: number | null = null, flashes: {at: number; text: string; x: number}[] = [];
   let width = 0, height = 0;
@@ -269,8 +275,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const g = game; if (!g) return;
     for (const event of takeRunEvents(g)) switch (event.type) {
       case 'strike': {
-        if (event.by === 'spin') flash('Coup tournoyant !');
-        if (event.by === 'throw' && event.entity.kind !== 'pot') flash('Strike ! Le pot renverse tout !');
+        if (event.by === 'spin') { flash('Coup tournoyant !'); slowMo(260); }
+        if (event.by === 'throw' && event.entity.kind !== 'pot') { flash('Strike ! Le pot renverse tout !'); slowMo(240); }
         if (event.by !== 'throw') swing = {at: clock(), lane: g.lane};
         const p = screenOf(g, event.entity);
         flashes.push({at: clock(), text: `+${event.points}`, x: p.x});
@@ -287,7 +293,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'wallEnd': flashes.push({at: clock(), text: `Mur +${event.points}`, x: width / 2}); break;
       case 'wallLeap': flashes.push({at: clock(), text: `Saut de mur +${event.points}`, x: width / 2}); sound('wall'); shakeFor('strike'); break;
       case 'fall': flash(event.onto ? 'Ouf ! Benny se rattrape au mur !' : 'Ouf ! Benny ressort du trou !'); break;
-      case 'shockwave': shock = clock(); flash('Onde de choc !'); shakeFor('shock'); sound('shock'); break;
+      case 'shockwave': shock = clock(); slowMo(380); flash('Onde de choc !'); shakeFor('shock'); sound('shock'); break;
       case 'setting': flash(SETTING_NAMES[event.setting]); break;
       case 'tutorial': showCoach(event.step, event.again); break;
       case 'caught': finish(); break;
@@ -304,13 +310,15 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   function loop(): void {
     if (!running || !game) return;
-    const now = clock(); advanceBennyRun(game, now); react(); announceHoles(game); hud(); draw(now);
+    const now = clock();
+    if (now < slowUntil) slowLost += Math.min(50, Math.max(0, now - lastLoopAt)) * (1 - SLOW_RATE);
+    lastLoopAt = now; advanceBennyRun(game, gameTime()); react(); announceHoles(game); hud(); draw(now);
     if (running) frame(loop);
   }
   function input(gesture: RunInput): void {
     if (!running || !game || sideways()) return;
     const g = game, wasAir = inAir(g), wasRolling = sliding(g);
-    runInput(g, clock(), gesture);
+    runInput(g, gameTime(), gesture);
     if (gesture === 'up' && inAir(g) && g.airFrom === g.at && !wasAir) sound('jump');
     if (gesture === 'down' && sliding(g) && !wasRolling) sound('roll');
     react(); hud();
@@ -407,7 +415,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     best = Math.max(best, options.best?.() ?? 0);
     // The first run (no record yet) starts with the tutorial; it can be asked for again from the start card.
     coach.hidden = true;
-    game = startBennyRun(clock(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLane = game.lane; swing = null; shock = null; flashes = []; bits = []; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
+    slowLost = 0; slowUntil = 0; lastLoopAt = clock();
+    game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLane = game.lane; swing = null; shock = null; flashes = []; bits = []; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
     holesAnnounced = 0; lastHoleSeen = -1;
     hud(); flash('Cours cours Benny !'); frame(loop);
   }
@@ -440,7 +449,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     time.pause(); running = false;
     showCard(paragraph('Partie en pause', 'benny-run-title'), button('Reprendre', resume, 'bennyRunResume'), button('Quitter', close, 'bennyRunQuit'));
   }
-  function resume(): void { if (sideways()) return; time.resume(); running = true; card.hidden = true; lastDrawAt = clock(); frame(loop); }
+  function resume(): void { if (sideways()) return; time.resume(); running = true; card.hidden = true; lastDrawAt = clock(); lastLoopAt = clock(); frame(loop); }
 
   // Gestures: a swipe fires as soon as the finger has moved far enough.
   let touch: {x: number; y: number; id: number; fired: boolean} | null = null;

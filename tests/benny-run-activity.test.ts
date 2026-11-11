@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {mountBennyRunActivity} from '../src/ui/BennyRunActivity';
 
 /** The run's screen, driven by a hand clock and hand frames (no canvas drawing in happy-dom). */
@@ -8,12 +8,12 @@ function mount(best = 0) {
   const activity = mountBennyRunActivity(document.body, {clock: () => now, frame: step => frames.push(step), best: () => best,
     sound: kind => sounds.push(kind), onFinished: summary => { finished.push(summary); }});
   activity.open();
-  const step = (ms: number) => { for (let t = 0; t < ms; t += 16) { now += 16; const pending = frames.splice(0); for (const f of pending) f(); } };
+  const step = (ms: number) => { for (let t = 0; t < ms; t += 16) { now += 16; vi.advanceTimersByTime(16); const pending = frames.splice(0); for (const f of pending) f(); } };
   return {activity, step, sounds, finished, key: (key: string) => document.dispatchEvent(new KeyboardEvent('keydown', {key, bubbles: true}))};
 }
 const upright = (width: number, height: number) => { Object.defineProperty(window, 'innerWidth', {value: width, configurable: true}); Object.defineProperty(window, 'innerHeight', {value: height, configurable: true}); };
-beforeEach(() => upright(390, 844));
-afterEach(() => { document.body.innerHTML = ''; });
+beforeEach(() => { upright(390, 844); vi.useFakeTimers({toFake: ['setTimeout', 'clearTimeout']}); });
+afterEach(() => { document.body.innerHTML = ''; vi.useRealTimers(); });
 
 describe('« Cours cours Benny ! » screen', () => {
   it('starts the first run with the tutorial, answers the arrow keys at once, and plays a sound for a jump', () => {
@@ -40,6 +40,17 @@ describe('« Cours cours Benny ! » screen', () => {
     expect(card.hidden).toBe(true); expect(finished).toHaveLength(0);
     document.querySelector('canvas')!.dispatchEvent(new PointerEvent('pointerdown', {bubbles: true}));
     expect(card.hidden).toBe(false); expect(card.textContent).toMatch(/La Dragon a rattrapé Benny/); expect(finished).toHaveLength(1);
+  });
+  it('plays a shock wave in slow motion for a moment, then at full pace again', () => {
+    const {activity, step, key} = mount(50);
+    document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);
+    const g = activity.game!; g.entities = []; g.nextSpawnZ = Infinity; for (const w of g.walls) w.runnable = true;
+    key('ArrowLeft'); key('ArrowLeft'); expect(g.wall).not.toBeNull();
+    for (const lane of [0, 1, 2]) g.entities.push({id: 9100 + lane, kind: 'ember', lane, z: g.distance + 3});
+    key('ArrowDown'); step(200);
+    const before = g.at; step(160); const slow = g.at - before;
+    step(900); const after = g.at; step(160); const full = g.at - after;
+    expect(g.foes).toBe(3); expect(slow).toBeLessThan(full * .6); expect(full).toBeGreaterThan(140);
   });
   it('pauses held sideways and refuses to start until the iPhone is upright again', () => {
     upright(844, 390);
