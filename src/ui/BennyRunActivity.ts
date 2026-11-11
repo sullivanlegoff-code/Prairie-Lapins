@@ -245,7 +245,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     }
   }
   const SHAPES: Record<string, {colour: string; w: number; h: number; up?: number; round?: boolean; label?: string}> = {
-    coin: {colour: '#f4c430', w: .45, h: .45, up: .5, round: true}, power: {colour: '#b07bff', w: .8, h: .8, up: .6, round: true}, wallCoin: {colour: '#f4c430', w: .45, h: .45, up: 1.6, round: true},
+    coin: {colour: '#f4c430', w: .45, h: .45, up: .5, round: true}, power: {colour: '#b07bff', w: 1.25, h: 1.25, up: .5, round: true}, wallCoin: {colour: '#f4c430', w: .45, h: .45, up: 1.6, round: true},
     pot: {colour: '#c96b3a', w: .9, h: .9, round: true}, thrownPot: {colour: '#e08a52', w: .8, h: .8, up: .5, round: true}, barrier: {colour: '#7a5a3a', w: 2, h: .6, label: 'saute'},
     beam: {colour: '#7a5a3a', w: 2, h: .45, up: 1.1, label: 'roulade'}, pillar: {colour: '#8a8a8a', w: 1.6, h: 3},
     dragonnet: {colour: '#8e3a5a', w: 1.1, h: .8, round: true}, chest: {colour: '#6e3b2e', w: 1.3, h: .9},
@@ -330,6 +330,26 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         c.fillStyle = '#8a8a8a'; c.fillRect(x - w * .4, y - h, w * .8, h);
         c.fillStyle = '#a4a4a4'; for (const k of [-.2, .1]) c.fillRect(x + k * w, y - h, w * .08, h);
         c.fillStyle = '#6e6e6e'; c.fillRect(x - w / 2, y - h, w, h * .08); c.fillRect(x - w / 2, y - h * .08, w, h * .08); return true;
+      }
+      case 'power': {
+        // A glowing bubble that bobs, with the power's sign inside: a magnet, a rainbow, « ×2 », a pair of wings.
+        const cy = y - h / 2 + Math.sin(at / 200 + e.id) * h * .08, r = w / 2;
+        const glow = c.createRadialGradient(x, cy, r * .2, x, cy, r * 1.4); glow.addColorStop(0, 'rgba(255,255,255,.9)'); glow.addColorStop(.6, 'rgba(200,170,255,.55)'); glow.addColorStop(1, 'rgba(200,170,255,0)');
+        c.fillStyle = glow; c.beginPath(); c.arc(x, cy, r * 1.4, 0, Math.PI * 2); c.fill();
+        c.lineWidth = Math.max(1.5, r * .16);
+        switch (e.power) {
+          case 'magnet':
+            c.strokeStyle = '#d93a3a'; c.beginPath(); c.arc(x, cy, r * .45, Math.PI, 0, true); c.stroke();
+            c.fillStyle = '#e8e8e8'; c.fillRect(x - r * .45 - c.lineWidth / 2, cy - r * .5, c.lineWidth, r * .3); c.fillRect(x + r * .45 - c.lineWidth / 2, cy - r * .5, c.lineWidth, r * .3); break;
+          case 'bubble':
+            ['#ff6b6b', '#ffb84d', '#7be08a', '#6bb8ff', '#b07bff'].forEach((colour, i) => { c.strokeStyle = colour; c.lineWidth = Math.max(1, r * .08); c.beginPath(); c.arc(x, cy + r * .25, r * (.7 - i * .1), Math.PI, 0); c.stroke(); }); break;
+          case 'double':
+            c.fillStyle = '#f4c430'; c.beginPath(); c.arc(x, cy, r * .55, 0, Math.PI * 2); c.fill();
+            c.fillStyle = '#7a4a10'; c.font = `900 ${Math.round(Math.max(8, r * .6))}px system-ui`; c.textAlign = 'center'; c.fillText('×2', x, cy + r * .2); break;
+          case 'flight':
+            c.fillStyle = '#fff'; for (const dir of [-1, 1]) { c.beginPath(); c.ellipse(x + dir * r * .3, cy, r * .35, r * .18, dir * -.5, 0, Math.PI * 2); c.fill(); c.beginPath(); c.ellipse(x + dir * r * .35, cy + r * .2, r * .25, r * .12, dir * -.3, 0, Math.PI * 2); c.fill(); } break;
+        }
+        return true;
       }
       case 'coin': case 'wallCoin': {
         ellipse(x, y - h / 2, w / 2, h / 2, '#f4c430'); ellipse(x, y - h / 2, w * .32, h * .32, '#e0a81e'); ellipse(x - w * .14, y - h * .66, w * .1, h * .1, '#fff6c8'); return true;
