@@ -98,10 +98,20 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     canvas.width = Math.round(width * ratio); canvas.height = Math.round(height * ratio);
     context?.setTransform(ratio, 0, 0, ratio, 0, 0);
   }
+  /** The record when this run started, whether it is beaten yet, and the last 500 m reached. */
+  let runBest = 0, beaten = false, milestone = 0;
   function hud(): void {
     const g = game; if (!g) return;
     const multiplier = g.at <= g.comboUntil ? comboMultiplier(g.combo) : 1;
     score.textContent = `${g.score}`;
+    // Beating the record during the run: said at once, with confetti, and the score turns gold.
+    if (!beaten && runBest > 0 && g.score > runBest && !g.tutorial) {
+      beaten = true; score.classList.add('benny-run-beaten'); flash('Nouveau record !'); sound('power');
+      burst(width / 2, height * .3, ['#ff6b6b', '#ffb84d', '#ffe66b', '#7be08a', '#6bb8ff', '#b07bff'], 40, 420);
+    }
+    // Every 500 m.
+    const reached = Math.floor(g.distance / 500) * 500;
+    if (reached > milestone && !g.tutorial) { milestone = reached; flash(`${reached} m !`); sound('coin', 1.5); }
     // Hidden while the tutorial's advice is up (they would overlap).
     combo.textContent = coach.hidden && g.combo > 1 && g.at <= g.comboUntil ? `${g.combo} coups${multiplier > 1 ? ` · ×${multiplier}` : ''}` : '';
     // The time left to keep the combo going.
@@ -495,6 +505,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // The first run (no record yet) starts with the tutorial; it can be asked for again from the start card.
     coach.hidden = true;
     slowLost = 0; slowUntil = 0; lastLoopAt = clock(); settingSince = -1e9; shownSetting = 'grotte';
+    runBest = best; beaten = false; milestone = 0; score.classList.remove('benny-run-beaten');
     game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLane = game.lane; swing = null; shock = null; flashes = []; bits = []; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
     holesAnnounced = 0; lastHoleSeen = -1;
     hud(); flash('Cours cours Benny !'); frame(loop);

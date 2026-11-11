@@ -50,3 +50,5 @@
 .benny-run-combo-bar span { display: block; height: 100%; background: #ffe36b; }
 .benny-run-top [data-benny-run-pause] { margin-left: auto; min-width: 44px; padding: 0 10px; }
 .benny-run-top [data-benny-run-exit] { min-width: 44px; padding: 0 10px; }
+/* The score once the record is beaten during the run. */
+.benny-run-score.benny-run-beaten { color: #ffe36b; }

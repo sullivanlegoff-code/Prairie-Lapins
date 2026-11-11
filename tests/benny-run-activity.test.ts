@@ -52,6 +52,15 @@ describe('« Cours cours Benny ! » screen', () => {
     step(900); const after = g.at; step(160); const full = g.at - after;
     expect(g.foes).toBe(3); expect(slow).toBeLessThan(full * .6); expect(full).toBeGreaterThan(140);
   });
+  it('says so at once when the run beats the record, and turns the score gold', () => {
+    const {activity, step, sounds} = mount(50);
+    document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);
+    const g = activity.game!, score = document.querySelector<HTMLElement>('.benny-run-score')!;
+    step(100); expect(score.classList.contains('benny-run-beaten')).toBe(false);
+    g.score = 51; step(50);
+    expect(score.classList.contains('benny-run-beaten')).toBe(true); expect(sounds).toContain('power');
+    expect(document.querySelector('.benny-run-pop')?.textContent ?? '').toMatch(/Nouveau record/);
+  });
   it('pauses held sideways and refuses to start until the iPhone is upright again', () => {
     upright(844, 390);
     const {activity} = mount(50);
