@@ -77,6 +77,9 @@ export const BENNY_RUN = {
   /** Wide halls: the road widens to `wideLanes` lanes for `wideLen` m (from this far into the speed ramp); nothing is laid
    * within `wideClear` m before an edge of one, so that no thing straddles it. */
   wideLanes: 5, wideLen: [140, 220], wideFrom: .15, wideClear: 60,
+  /** Raised platforms along one lane: this high (m), climbed by a ramp this long; from the ground beside one, Benny cannot step
+   * onto it (only by its ramp, or from a wall). */
+  platformHeight: 1.8, rampLen: 6,
   /** Things are laid out to `spawnAhead` m ahead, the first at `firstAt` m, then every `gapStart` m down to `gapMin` m. */
   spawnAhead: 90, firstAt: 30, gapStart: 22, gapMin: 11,
   /** Share of coin lines carrying a power, and how long each power lasts once picked up (the bubble lasts until a bump, at most this). */
@@ -126,10 +129,13 @@ export type RunEvent =
   | {type: 'setting'; setting: RunSetting}
   /** The road widens or narrows under Benny's feet: `lanes` now, her lane number moved by `shift`. */
   | {type: 'lanes'; lanes: number; shift: number}
+  /** Up a platform's ramp; off a platform (its end, or a step aside); against a platform's side (no way up from the ground). */
+  | {type: 'platformUp'} | {type: 'platformDown'} | {type: 'blocked'}
   /** A challenge given (`points` absent) or done. */
   | {type: 'challenge'; kind: ChallengeKind; goal: number; points?: number}
   | {type: 'tutorial'; step: TutorialStep | null; again?: boolean};
 
+export interface Platform {lane: number; from: number; to: number}
 export type ChallengeKind = 'pots' | 'coins' | 'foes' | 'walls' | 'combo';
 export interface BennyRun {
   seed: number; startedAt: number; at: number;
@@ -138,6 +144,8 @@ export interface BennyRun {
   lanes: number; lane: number; laneChangedAt: number;
   /** The road's usual lanes, and the wide halls ahead (`wideLanes` lanes from `from` to `to` m). */
   baseLanes: number; zones: {from: number; to: number}[];
+  /** Raised platforms ahead (one lane, from `from` to `to` m, their ramp before), and the one Benny is on. */
+  platforms: Platform[]; raised: Platform | null;
   /** In the air between `airFrom` and `airUntil`, a jump starting `jumpFrom` m high; `pound` once the ground charge has started,
    * from `poundFrom` m high. */
   airFrom: number; airUntil: number; jumpFrom: number; pound: boolean; poundFrom: number;
@@ -228,7 +236,7 @@ const pick = <T>(g: BennyRun, list: readonly T[]): T => list[Math.min(list.lengt
 
 export function startBennyRun(now: number, seed = Math.floor(Math.random() * 2147483647), lanes = 3, tutorial = false): BennyRun {
   const g: BennyRun = {
-    seed: (seed >>> 0) || 1, startedAt: now, at: now, distance: 0, speed: C.speedStart, lanes, lane: Math.floor(lanes / 2), laneChangedAt: -Infinity, baseLanes: lanes, zones: [],
+    seed: (seed >>> 0) || 1, startedAt: now, at: now, distance: 0, speed: C.speedStart, lanes, lane: Math.floor(lanes / 2), laneChangedAt: -Infinity, baseLanes: lanes, zones: [], platforms: [], raised: null,
     airFrom: 0, airUntil: 0, jumpFrom: 0, pound: false, poundFrom: 0, slideUntil: 0, wall: null,
     entities: [], nextId: 1, nextSpawnZ: C.firstAt, walls: [], wallsTo: {left: 0, right: 0}, holes: [],
     setting: 'grotte', nextSettingAt: 0, upcoming: null, stumbleUntil: 0, lastBumpAt: null,
@@ -253,9 +261,36 @@ export const sliding = (g: BennyRun) => g.at < g.slideUntil && !inAir(g);
 /** Benny's height above the road (m): a jump's arc, a quick drop when charging, high up while flying. */
 export function runHeight(g: BennyRun): number {
   if (powerActive(g, 'flight')) return 3;
+  return floorHeight(g) + airHeight(g);
+}
+/** How high Benny's jump or ground charge has taken her above what she runs on. */
+function airHeight(g: BennyRun): number {
   if (!inAir(g)) return 0;
   const p = (g.at - g.airFrom) / (g.airUntil - g.airFrom);
   return g.pound ? g.poundFrom * (1 - p) : g.jumpFrom * (1 - p) + 4 * C.jumpHeight * p * (1 - p);
+}
+/** The height of what Benny runs on: a platform (or its ramp) she has climbed, else the road. */
+export function floorHeight(g: BennyRun): number {
+  const p = g.raised; if (!p) return 0;
+  return C.platformHeight * Math.max(0, Math.min(1, (g.distance - (p.from - C.rampLen)) / C.rampLen));
+}
+/** The platform along `lane` at `z`, ramp included. */
+export const platformAt = (g: BennyRun, lane: number, z: number) => g.platforms.find(p => p.lane === lane && z >= p.from - C.rampLen && z < p.to);
+/** Off a platform (its end, or a step aside): a jump down from its height, like one off a wall. */
+function dropOff(g: BennyRun): void {
+  const from = floorHeight(g); g.raised = null; g.events.push({type: 'platformDown'});
+  if (g.pound) { g.poundFrom += from; return; }
+  const rel = airHeight(g) + from;
+  g.jumpFrom = rel; g.airFrom = g.at; g.airUntil = g.at + C.jumpMs * .7 * (1 + rel / (2 * C.jumpHeight)); g.slideUntil = 0;
+}
+/** Up a ramp met in her lane; off at the end. */
+function followPlatform(g: BennyRun): void {
+  if (!g.raised && !g.wall && !powerActive(g, 'flight')) {
+    const p = g.platforms.find(o => o.lane === g.lane && g.distance >= o.from - C.rampLen && g.distance < o.from + 1);
+    if (p) { g.raised = p; g.events.push({type: 'platformUp'}); }
+  }
+  if (g.raised && (g.distance >= g.raised.to || g.lane !== g.raised.lane || g.wall)) dropOff(g);
+  g.platforms = g.platforms.filter(p => p.to > g.distance - 10);
 }
 /** The Dragon shows at the start and for `dragonMs` after a bump. */
 export const dragonVisible = (g: BennyRun) => g.at - g.startedAt < C.introMs || dragonNear(g);
@@ -285,7 +320,7 @@ export const wallLane = (g: BennyRun, side: Side) => side === 'left' ? -1 : g.la
 const across = (g: BennyRun) => g.wall ? wallLane(g, g.wall.side) : g.lane;
 const others = (g: BennyRun, n: number) => { const l = laneList(g); for (let i = l.length - 1; i > 0; i--) { const j = Math.floor(random(g) * (i + 1)); [l[i], l[j]] = [l[j], l[i]]; } return l.slice(0, n); };
 
-export type RunPattern = 'coins' | 'arc' | 'slalom' | 'pots' | 'gauntlet' | 'pair' | 'tunnel' | 'barriers' | 'pillars' | 'wall' | 'flyers' | 'breather' | 'hole' | 'skittles' | 'wide';
+export type RunPattern = 'coins' | 'arc' | 'slalom' | 'pots' | 'gauntlet' | 'pair' | 'tunnel' | 'barriers' | 'pillars' | 'wall' | 'flyers' | 'breather' | 'hole' | 'skittles' | 'wide' | 'platform';
 /**
  * The road is laid out in short patterns rather than one thing at a time, so that it has a rhythm: a slalom of pots to chain
  * lane strikes into a combo, a row of creatures one side then the other, a pair of creatures on both sides for the spinning
@@ -295,12 +330,12 @@ export type RunPattern = 'coins' | 'arc' | 'slalom' | 'pots' | 'gauntlet' | 'pai
  */
 const PATTERNS: Record<RunPattern, [number, number]> = {
   coins: [4, 1.5], arc: [2, 2], slalom: [3, 3], pots: [3, 1.5], gauntlet: [1.5, 3.5], pair: [.5, 2.5], tunnel: [1, 2], barriers: [1, 2],
-  pillars: [1.5, 2.5], wall: [0, 2], flyers: [0, 2.5], breather: [2, .8], hole: [0, 2.2], skittles: [1.5, 2], wide: [0, 1.2],
+  pillars: [1.5, 2.5], wall: [0, 2], flyers: [0, 2.5], breather: [2, .8], hole: [0, 2.2], skittles: [1.5, 2], wide: [0, 1.2], platform: [.4, 1.4],
 };
 function choosePattern(g: BennyRun, z: number): RunPattern {
   const d = runDifficulty(g), list = (Object.keys(PATTERNS) as RunPattern[]).filter(p => (p !== 'flyers' || d >= C.flyerFrom) && (p !== 'pair' || d >= .2) && (p !== 'hole' || d >= .08) &&
     (p !== 'wall' || (d > .25 && wallSide(g, z))) &&
-    (p !== 'wide' || (d >= C.wideFrom && g.baseLanes < C.wideLanes && !g.zones.some(w => w.to > z - 100))));
+    (p !== 'platform' || d >= .1) && (p !== 'wide' || (d >= C.wideFrom && g.baseLanes < C.wideLanes && !g.zones.some(w => w.to > z - 100))));
   // The « run on walls » challenge: a row of pillars (the way on is up a wall) comes one time in two meanwhile.
   if (g.challenge?.kind === 'walls' && wallSide(g, z) && random(g) < C.wallChallengeNudge) return 'wall';
   const weight = (p: RunPattern) => PATTERNS[p][0] + (PATTERNS[p][1] - PATTERNS[p][0]) * d;
@@ -387,6 +422,16 @@ function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
       return z + (count - 1) * (step + 3);
     }
     case 'breather': { const lane = any(); for (let i = 0; i < 4; i++) add(g, 'coin', lane, z + i * 2); return z + 6; }
+    case 'platform': {
+      // A raised platform along one lane, coins on top; below it, rows of pillars in the other lanes: up the ramp (or a wall).
+      const lane = any(), from = z + C.rampLen, to = from + 26 + d * 20;
+      g.platforms.push({lane, from, to});
+      // Both walls runnable along it too: missing the ramp, a wall is still a way past the pillars.
+      for (const w of g.walls) if (w.to > from - 25 && w.from <= to) w.runnable = true;
+      for (let k = from - 2; k < to - 1; k += 3) add(g, 'coin', lane, k, {up: C.platformHeight + .5});
+      for (const pz of [from + 9, from + 23].filter(p => p < to - 3)) for (const l of all) if (l !== lane) add(g, 'pillar', l, pz);
+      return to + 4;
+    }
     case 'wide': {
       // The road widens to five lanes a little way on (the edge clear of anything), for a long stretch.
       const from = z + 6, to = from + C.wideLen[0] + random(g) * (C.wideLen[1] - C.wideLen[0]);
@@ -513,11 +558,13 @@ function bump(g: BennyRun, e: RunEntity): void {
   g.events.push({type: 'bump', entity: e});
 }
 /** A ground charge starting now, from Benny's present height (or `from` m when leaving a wall): the higher, the longer the fall. */
-function startPound(g: BennyRun, from = runHeight(g)): void {
+function startPound(g: BennyRun, from = airHeight(g)): void {
   g.poundFrom = Math.max(from, .3); g.pound = true; g.airFrom = g.at; g.airUntil = g.at + C.poundMs * Math.max(1, Math.sqrt(g.poundFrom / C.jumpHeight)); g.slideUntil = 0;
 }
 function endWall(g: BennyRun): void {
   const side = g.wall!.side; g.wall = null; g.lane = side === 'left' ? 0 : g.lanes - 1; g.laneChangedAt = g.at;
+  // Down from the wall onto a platform along the edge lane: she lands on top of it.
+  const p = platformAt(g, g.lane, g.distance); if (p && g.distance >= p.from) g.raised = p;
   g.wallRuns++;
   g.combo = g.at <= g.comboUntil ? g.combo + 1 : 1; g.comboUntil = g.at + C.comboMs; g.bestCombo = Math.max(g.bestCombo, g.combo);
   const points = C.points.wallRun * comboMultiplier(g.combo); g.score = Math.min(C.maxScore, g.score + points);
@@ -540,7 +587,7 @@ function meet(g: BennyRun, e: RunEntity): void {
     if (e.lane === g.lane || powerActive(g, 'magnet')) { g.entities = g.entities.filter(o => o !== e); gainCoins(g, e, 1); }
     return;
   }
-  if (e.lane !== g.lane || g.wall || powerActive(g, 'flight')) return;
+  if (e.lane !== g.lane || g.wall || g.raised || powerActive(g, 'flight')) return;
   // In the air at all (even just taking off or about to land) clears a barrier or a pot.
   const high = inAir(g) || runHeight(g) > C.clearHeight;
   switch (e.kind) {
@@ -567,7 +614,7 @@ function tick(g: BennyRun): void {
   if (g.at >= g.nextSettingAt && !g.upcoming) {
     g.upcoming = {setting: pick(g, RUN_SETTINGS.filter(s => s !== g.setting)), z: g.distance + C.settingAhead}; g.nextSettingAt = g.at + settingDelay(g);
   }
-  followLanes(g);
+  followLanes(g); followPlatform(g);
   if (g.upcoming && g.distance >= g.upcoming.z) { g.setting = g.upcoming.setting; g.upcoming = null; g.events.push({type: 'setting', setting: g.setting}); }
   // Landing: a ground charge breaks the pots and creatures just ahead in Benny's lane; from high up, a shock wave strikes all around.
   if (g.pound && !inAir(g)) {
@@ -579,7 +626,7 @@ function tick(g: BennyRun): void {
   }
   // Over a gap, the run on a wall does not run out.
   if (g.wall && ((g.at >= g.wall.until && !holeAt(g)) || !runnableAt(g, g.wall.side, g.distance))) endWall(g);
-  if (!g.wall && !inAir(g) && !powerActive(g, 'flight') && holeAt(g)) fall(g);
+  if (!g.wall && !g.raised && !inAir(g) && !powerActive(g, 'flight') && holeAt(g)) fall(g);
   if (g.over) return;
   // A jump asked for just before landing.
   if (g.queuedJumpUntil && !inAir(g) && !g.wall) { const fresh = g.at <= g.queuedJumpUntil; g.queuedJumpUntil = 0; if (fresh) runInput(g, g.at, 'up'); }
@@ -597,7 +644,7 @@ function tick(g: BennyRun): void {
   for (const e of g.entities) if (isFoe(e) && lanesAt(g, e.z) === g.lanes && Math.abs(e.lane - across(g)) === 1 && e.z - g.distance >= Math.max(C.besideFrom, g.speed * C.besideMs / 1000) && e.z - g.distance <= reach(g)) e.beside = true;
   for (const e of [...g.entities]) {
     if (g.over) break;
-    if (isFoe(e) && e.beside && Math.abs(e.lane - across(g)) === 1 && (!g.wall || e.kind === 'flyer') && e.z - before > -C.hitHalf - 1e-9 && e.z - g.distance <= -C.hitHalf && !powerActive(g, 'flight')) bump(g, e);
+    if (isFoe(e) && e.beside && Math.abs(e.lane - across(g)) === 1 && ((!g.wall && !g.raised) || e.kind === 'flyer') && e.z - before > -C.hitHalf - 1e-9 && e.z - g.distance <= -C.hitHalf && !powerActive(g, 'flight')) bump(g, e);
   }
   if (g.tutorial) followTutorial(g, g.events.slice(eventsBefore)); else followChallenge(g);
   g.entities = g.entities.filter(e => e.z > g.distance - 5);
@@ -662,6 +709,10 @@ export function runInput(g: BennyRun, now: number, input: RunInput): void {
         }
         return;
       }
+      // A platform's side, from the ground: no way up (only by its ramp).
+      const side2 = platformAt(g, target, g.distance);
+      if (side2 && !g.raised && g.distance >= side2.from - C.rampLen + 1.5) { g.events.push({type: 'blocked'}); return; }
+      if (g.raised) dropOff(g);
       const from = g.lane; g.lane = target; g.laneChangedAt = g.at;
       // The wand: changing lanes towards a pot or a creature strikes it; with a creature on her other side as well, she spins and
       // strikes both at once.

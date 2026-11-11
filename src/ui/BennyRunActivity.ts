@@ -1,6 +1,6 @@
 import '../display/benny-run.css';
 import {FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
-import {advanceBennyRun, BENNY_RUN, lanesAt, reach, settingAt, wallLane, comboMultiplier, dragonVisible, inAir, powerActive, runHeight, runInput, runSummary, sliding, startBennyRun, takeRunEvents,
+import {advanceBennyRun, BENNY_RUN, floorHeight, lanesAt, reach, settingAt, wallLane, comboMultiplier, dragonVisible, inAir, powerActive, runHeight, runInput, runSummary, sliding, startBennyRun, takeRunEvents,
   type BennyRun, type ChallengeKind, type RunEntity, type RunInput, type RunPower, type RunSetting, type RunSummary, type TutorialStep} from '../simulation/bennyRun';
 import {pausableClock, settleCard} from './activityPause';
 
@@ -272,6 +272,26 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       }
     }
   }
+  /** The raised platforms: stone sides, a lighter top with a path, the ramp up to it (shapes until the painted settings). */
+  function platforms(c: CanvasRenderingContext2D, g: BennyRun): void {
+    const top = BENNY_RUN.platformHeight, ramp = BENNY_RUN.rampLen;
+    for (const p of [...g.platforms].sort((a, b) => b.from - a.from)) {
+      const start = Math.max(NEAR, p.from - ramp - g.distance), from = Math.max(NEAR, p.from - g.distance), to = Math.min(FAR, p.to - g.distance); if (to <= start) continue;
+      const n = lanesAt(g, p.from), x = (p.lane - (n - 1) / 2) * LANE_WIDTH, x0 = x - LANE_WIDTH * .47, x1 = x + LANE_WIDTH * .47;
+      const look = SETTING_COLOURS[settingAt(g, p.from)], height = (z: number) => z < p.from - g.distance ? top * Math.max(0, (z - (p.from - ramp - g.distance)) / ramp) : top;
+      // Its shadow on the road beside it, the two sides (the one facing the middle shows), then the ramp and the top.
+      for (const [sx, dx] of [[x0, -.5], [x1, .5]] as const) quad(c, [project(sx, from, 0), project(sx + dx, from, 0), project(sx + dx, to, 0), project(sx, to, 0)], 'rgba(0,0,0,.22)');
+      for (const sx of [x0, x1]) { c.fillStyle = look.wallOff; c.beginPath(); c.moveTo(project(sx, start, 0).x, project(sx, start, 0).y);
+        for (const z of [from, to]) { const q = project(sx, z, height(z)); c.lineTo(q.x, q.y); } const e = project(sx, to, 0); c.lineTo(e.x, e.y); c.closePath(); c.fill(); }
+      quad(c, [project(x0, start, height(start)), project(x1, start, height(start)), project(x1, from, top), project(x0, from, top)], look.wall);
+      if (to > from) { quad(c, [project(x0, from, top), project(x1, from, top), project(x1, to, top), project(x0, to, top)], look.wall);
+        quad(c, [project(x0, from, top), project(x1, from, top), project(x1, to, top), project(x0, to, top)], 'rgba(255,255,255,.22)'); }
+      // Dark edges along the top and the ramp, so its height reads from behind.
+      c.strokeStyle = 'rgba(40,24,12,.75)';
+      for (const sx of [x0, x1]) { const a = project(sx, start, height(start)), b = project(sx, from, top), e = project(sx, to, top); c.lineWidth = Math.max(1.5, b.s * .09); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.lineTo(e.x, e.y); c.stroke(); }
+      if (to > from) { const a = project(x, from, top), b = project(x, to, top); c.strokeStyle = 'rgba(255,255,255,.25)'; c.lineWidth = Math.max(1, a.s * .1); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); }
+    }
+  }
   const SHAPES: Record<string, {colour: string; w: number; h: number; up?: number; round?: boolean; label?: string}> = {
     coin: {colour: '#f4c430', w: .45, h: .45, up: .5, round: true}, power: {colour: '#b07bff', w: 1.25, h: 1.25, up: .5, round: true}, wallCoin: {colour: '#f4c430', w: .45, h: .45, up: 1.6, round: true},
     pot: {colour: '#c96b3a', w: .9, h: .9, round: true}, thrownPot: {colour: '#e08a52', w: .8, h: .8, up: .5, round: true}, barrier: {colour: '#7a5a3a', w: 2, h: .6, label: 'saute'},
@@ -429,7 +449,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     c.fillStyle = '#fff8ee'; c.beginPath(); c.arc(0, h * .3, w * .14, 0, Math.PI * 2); c.fill();
     if (powerActive(g, 'bubble')) { c.strokeStyle = 'rgba(180,140,255,.8)'; c.lineWidth = 4; c.beginPath(); c.arc(0, 0, w * .85, 0, Math.PI * 2); c.stroke(); }
     c.restore();
-    if (!inAir(g) && !wall && !powerActive(g, 'flight')) { c.fillStyle = 'rgba(0,0,0,.18)'; c.beginPath(); c.ellipse(p.x, project(x, 0, 0).y, w * .55, s * .12, 0, 0, Math.PI * 2); c.fill(); }
+    if (!inAir(g) && !wall && !powerActive(g, 'flight')) { c.fillStyle = 'rgba(0,0,0,.18)'; c.beginPath(); c.ellipse(p.x, project(x, 0, floorHeight(g)).y, w * .55, s * .12, 0, 0, Math.PI * 2); c.fill(); }
     // The shock wave: a golden ring spreading on the road around her.
     if (shock !== null && now - shock < 450) {
       const k = Math.max(0, (now - shock) / 450), ground = project(x, 0, 0), r = (BENNY_RUN.shockReach * .9) * k;
@@ -479,6 +499,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (shake) { const k = (now - shake.at) / shake.ms; if (k >= 1) shake = null; else { const a = shake.px * (1 - k); c.translate((Math.random() * 2 - 1) * a, (Math.random() * 2 - 1) * a); } }
     road(c, g, SETTING_COLOURS[g.setting]);
     speedLines(c, g, now);
+    platforms(c, g);
     const ahead = [...g.entities].sort((a, b) => b.z - a.z);
     for (const e of ahead) if (e.z - g.distance > 0) thing(c, g, e);
     // During the end scene, Benny and the Dragon are in the scene, not on the road.
@@ -549,6 +570,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         if (event.points === undefined) flash(`Défi : ${CHALLENGE_TEXT[event.kind](event.goal)}`);
         else { flash(`Défi réussi ! +${event.points}`); sound('power'); burst(width / 2, height * .3, ['#7be08a', '#ffe66b', '#fff'], 24, 360); }
         break;
+      case 'platformUp': sound('jump', 1.2); break;
+      case 'blocked': sound('bump', .8); shakeFor('strike'); flash('Monte par la rampe !'); break;
       case 'lanes':
         viewLane += event.shift;
         if (event.shift > 0) flash('La salle s’élargit : cinq couloirs !');

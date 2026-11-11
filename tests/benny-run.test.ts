@@ -221,10 +221,10 @@ describe('Cours cours Benny ! rules', () => {
     place(g, 'chest', 0, reach(g) - .5); runInput(g, g.at, 'left'); expect(g.foes).toBe(1);
   });
   it('lays the road out in varied patterns: pot slaloms, rows of creatures, coin arcs over barriers, and always a way through', () => {
-    const g = startBennyRun(0, 3), seen = new Map<number, RunEntity>(), width = new Map<number, number>();
+    const g = startBennyRun(0, 3), seen = new Map<number, RunEntity>(), width = new Map<number, number>(); let wide = false;
     for (let t = 0; t < 200_000; t += 250) { for (const e of g.entities) { seen.set(e.id, e); width.set(e.z, lanesAt(g, e.z)); } g.entities = g.entities.filter(e => e.z > g.distance + 20); advanceBennyRun(g, t); }
-    // A second run for the rarer things (the powers).
-    const g2 = startBennyRun(0, 4); for (let t = 0; t < 200_000; t += 250) { for (const e of g2.entities) seen.set(-e.id, {...e, z: -1e6 - e.id}); g2.entities = g2.entities.filter(e => e.z > g2.distance + 20); advanceBennyRun(g2, t); }
+    // More runs for the rarer things (the powers, the flying monsters).
+    for (const seed of [4, 5]) { const g2 = startBennyRun(0, seed); for (let t = 0; t < 200_000; t += 250) { for (const e of g2.entities) seen.set(-e.id - seed * 1e6, {...e, z: -1e7 - e.id - seed * 1e6}); g2.entities = g2.entities.filter(e => e.z > g2.distance + 20); advanceBennyRun(g2, t); if (g2.zones.length) wide = true; } }
     const all = [...seen.values()], kinds = new Set(all.map(e => e.kind));
     for (const kind of ['coin', 'pot', 'barrier', 'beam', 'pillar', 'dragonnet', 'chest', 'ember', 'flyer', 'power'] as const) expect(kinds).toContain(kind);
     expect(all.some(e => e.kind === 'coin' && (e.up ?? 0) > 1)).toBe(true); // A coin arc.
@@ -235,7 +235,7 @@ describe('Cours cours Benny ! rules', () => {
     const foeRows = new Map<number, number[]>(); for (const e of all) if (['dragonnet', 'chest', 'ember', 'flyer'].includes(e.kind)) foeRows.set(e.z, [...(foeRows.get(e.z) ?? []), e.lane]);
     for (const [z, lanes] of foeRows) if (lanes.length > 1) { const middle = Math.floor((width.get(z) ?? 3) / 2); expect(lanes.sort()).toEqual([middle - 1, middle + 1]); }
     // The road widens to five lanes now and then.
-    expect([...width.values()]).toContain(5);
+    expect(wide || [...width.values()].includes(5)).toBe(true);
   });
   it('teaches one gesture at a time on the first run, lays a missed step out again, and never lets the Dragon catch Benny meanwhile', () => {
     const g = startBennyRun(0, 7, 3, true); for (const w of g.walls) w.runnable = true;
@@ -364,5 +364,19 @@ describe('Cours cours Benny ! rules', () => {
     run(g, 1000); expect(g).toMatchObject({lanes: 5, lane: 2}); expect(takeRunEvents(g)).toContainEqual({type: 'lanes', lanes: 5, shift: 1});
     runInput(g, g.at, 'right'); runInput(g, g.at + 200, 'right'); expect(g.lane).toBe(4);
     run(g, 2500); expect(g).toMatchObject({lanes: 3, lane: 2});
+  });
+  it('climbs a platform by its ramp, runs over what is below, steps off it aside or at its end, and cannot step onto it from beside', () => {
+    const g = quiet(); run(g, C.introMs); const z = g.distance;
+    g.platforms.push({lane: 1, from: z + 12, to: z + 50});
+    run(g, 1600); expect(g.raised).not.toBeNull(); expect(runHeight(g)).toBeCloseTo(C.platformHeight, 1);
+    expect(types(g)).toContain('platformUp');
+    place(g, 'pillar', 2, 6); place(g, 'coin', 1, 4); run(g, 600);
+    expect(g.lastBumpAt).toBeNull(); expect(g.coins).toBe(1);
+    // Aside: a jump down from up there, into the next lane; from there, no way back up but by a ramp.
+    runInput(g, g.at, 'right'); expect(g.raised).toBeNull(); expect(g.lane).toBe(2); expect(inAir(g)).toBe(true);
+    run(g, 800); expect(runHeight(g)).toBe(0);
+    runInput(g, g.at, 'left'); expect(g.lane).toBe(2);
+    expect(types(g)).toContain('blocked');
+    run(g, 3000); expect(g.platforms.every(p => p.to > g.distance - 10)).toBe(true); expect(g.raised).toBeNull();
   });
 });
