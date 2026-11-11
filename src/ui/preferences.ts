@@ -52,7 +52,8 @@ export class Sounds {
    * « Cours cours Benny ! »: one short synthesised effect per action, on the Bruitages channel (its switch and volume apply).
    * Tones only: a sweep from `from` to `to` Hz over `length` s, sometimes two in a row.
    */
-  run(kind: 'strike' | 'pot' | 'coin' | 'bump' | 'jump' | 'roll' | 'shock' | 'wall' | 'power' | 'caught'): void {
+  /** `pitch` raises the notes (1 = as written): the strikes of a combo climb a semitone each. */
+  run(kind: 'strike' | 'pot' | 'coin' | 'bump' | 'jump' | 'roll' | 'shock' | 'wall' | 'power' | 'caught', pitch = 1): void {
     this.sync();
     const output = this.engine.effectsOutput(); if (!output) return;
     const tones: Record<typeof kind, [OscillatorType, number, number, number, number, number?][]> = {
@@ -67,7 +68,7 @@ export class Sounds {
       void context.resume().catch(() => {});
       for (const [type, from, to, length, volume, delay = 0] of tones[kind]) {
         const oscillator = context.createOscillator(), gain = context.createGain(), time = now + delay;
-        oscillator.type = type; oscillator.frequency.setValueAtTime(from, time); oscillator.frequency.exponentialRampToValueAtTime(to, time + length);
+        oscillator.type = type; oscillator.frequency.setValueAtTime(from * pitch, time); oscillator.frequency.exponentialRampToValueAtTime(to * pitch, time + length);
         gain.gain.setValueAtTime(volume, time); gain.gain.exponentialRampToValueAtTime(.0005, time + length);
         oscillator.connect(gain).connect(node); oscillator.start(time); oscillator.stop(time + length + .02);
         oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };

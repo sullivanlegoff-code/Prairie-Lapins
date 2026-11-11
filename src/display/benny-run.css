@@ -44,3 +44,9 @@
 .benny-run-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; margin: 0; padding: 0; list-style: none; font-weight: 700; }
 .benny-run-how { display: grid; gap: 10px; }
 .benny-run-how[hidden] { display: none; }
+/* The combo's time left, a bar under its count; the pause button beside Quitter. */
+.benny-run-combo-bar { position: absolute; left: 50%; top: calc(100% + 2.9rem); width: 120px; height: 6px; margin-left: -60px; border-radius: 3px; background: rgba(59,36,20,.55); overflow: hidden; }
+.benny-run-combo-bar[hidden] { display: none; }
+.benny-run-combo-bar span { display: block; height: 100%; background: #ffe36b; }
+.benny-run-top [data-benny-run-pause] { margin-left: auto; min-width: 44px; padding: 0 10px; }
+.benny-run-top [data-benny-run-exit] { min-width: 44px; padding: 0 10px; }

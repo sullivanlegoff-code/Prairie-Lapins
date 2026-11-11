@@ -35,14 +35,14 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   /** The best score kept by the game, read before each run. */
   best?: () => number;
   /** A short sound for an action (the game's Bruitages channel); silent when absent. */
-  sound?: (kind: RunSound) => void;
+  sound?: (kind: RunSound, pitch?: number) => void;
   onExit?: () => void; clock?: () => number; frame?: (step: () => void) => number;
 } = {}) {
   const time = pausableClock(options.clock ?? (() => performance.now())), clock = time.now, frame = options.frame ?? (step => requestAnimationFrame(step));
   const layer = document.createElement('div'); layer.className = 'benny-run-activity'; layer.hidden = true;
   layer.setAttribute('role', 'dialog'); layer.setAttribute('aria-modal', 'true'); layer.setAttribute('aria-label', 'Cours cours Benny !');
-  layer.innerHTML = `<div class="benny-run-top"><p class="benny-run-score" aria-live="polite"></p><p class="benny-run-combo"></p><p class="benny-run-metres"></p><p class="benny-run-coins"></p>
-<p class="benny-run-power"></p><button type="button" data-benny-run-exit>Quitter</button><p class="benny-run-danger" hidden></p></div>
+  layer.innerHTML = `<div class="benny-run-top"><p class="benny-run-score" aria-live="polite"></p><p class="benny-run-combo"></p><div class="benny-run-combo-bar" aria-hidden="true"><span></span></div><p class="benny-run-metres"></p><p class="benny-run-coins"></p>
+<p class="benny-run-power"></p><button type="button" data-benny-run-pause aria-label="Pause">❚❚</button><button type="button" data-benny-run-exit aria-label="Quitter">✕</button><p class="benny-run-danger" hidden></p></div>
 <canvas class="benny-run-canvas" data-benny-run-canvas></canvas>
 <p class="benny-run-pop" aria-hidden="true"></p>
 <p class="benny-run-coach" aria-live="polite" hidden></p>
@@ -52,7 +52,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const $ = <T extends Element>(selector: string) => layer.querySelector<T>(selector)!;
   const canvas = $<HTMLCanvasElement>('[data-benny-run-canvas]'), card = $<HTMLElement>('[data-benny-run-card]'), pop = $<HTMLElement>('.benny-run-pop');
   const score = $<HTMLElement>('.benny-run-score'), combo = $<HTMLElement>('.benny-run-combo'), metres = $<HTMLElement>('.benny-run-metres'), coins = $<HTMLElement>('.benny-run-coins');
-  const coach = $<HTMLElement>('.benny-run-coach'), danger = $<HTMLElement>('.benny-run-danger');
+  const coach = $<HTMLElement>('.benny-run-coach'), danger = $<HTMLElement>('.benny-run-danger'), comboBar = $<HTMLElement>('.benny-run-combo-bar'), comboFill = $<HTMLElement>('.benny-run-combo-bar span');
   const powerLine = $<HTMLElement>('.benny-run-power'), turn = $<HTMLElement>('[data-benny-run-turn]');
   const sideways = () => window.innerWidth > window.innerHeight;
   const context = canvas.getContext('2d');
@@ -61,7 +61,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   /** Screen-space bits flying out of a pot or a creature, coin sparkles, and the present shake. */
   let bits: {x: number; y: number; vx: number; vy: number; at: number; life: number; colour: string; size: number}[] = [];
   let shake: {at: number; ms: number; px: number} | null = null, hurtAt: number | null = null, lastCoinSound = 0, stopTimer: ReturnType<typeof setTimeout> | undefined;
-  const sound = (kind: RunSound) => { try { options.sound?.(kind); } catch { /* Sound is optional. */ } };
+  const sound = (kind: RunSound, pitch = 1) => { try { options.sound?.(kind, pitch); } catch { /* Sound is optional. */ } };
   function burst(x: number, y: number, colours: readonly string[], count: number, speed: number): void {
     const at = clock();
     for (let i = 0; i < count; i++) { const a = Math.random() * Math.PI * 2, v = speed * (.4 + Math.random() * .8);
@@ -104,6 +104,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     score.textContent = `${g.score}`;
     // Hidden while the tutorial's advice is up (they would overlap).
     combo.textContent = coach.hidden && g.combo > 1 && g.at <= g.comboUntil ? `${g.combo} coups${multiplier > 1 ? ` · ×${multiplier}` : ''}` : '';
+    // The time left to keep the combo going.
+    comboBar.hidden = !combo.textContent; if (combo.textContent) comboFill.style.width = `${Math.max(0, Math.min(1, (g.comboUntil - g.at) / BENNY_RUN.comboMs)) * 100}%`;
     metres.textContent = `${Math.floor(g.distance)} m`; coins.textContent = plural(g.coins, 'pièce');
     const active = g.active && g.at < g.active.until ? g.active : null;
     powerLine.textContent = active ? `${POWER_NAMES[active.power]} · ${Math.ceil((active.until - g.at) / 1000)} s` : '';
@@ -315,8 +317,11 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         if (event.by !== 'throw') swing = {at: clock(), lane: g.lane};
         const p = screenOf(g, event.entity);
         flashes.push({at: clock(), text: `+${event.points}`, x: p.x});
-        if (event.entity.kind === 'pot') { burst(p.x, p.y, ['#c96b3a', '#e08a52', '#8a4a26', '#f4c430'], 14, 260); sound('pot'); }
-        else { burst(p.x, p.y, ['#fff', '#e7d1ff', '#ffb3c8', '#ffe36b'], 12, 220); sound('strike'); }
+        // Each strike of a combo a semitone higher (up to an octave); a new multiplier is announced.
+        const pitch = 2 ** (Math.min(12, event.combo - 1) / 12);
+        if (event.entity.kind === 'pot') { burst(p.x, p.y, ['#c96b3a', '#e08a52', '#8a4a26', '#f4c430'], 14, 260); sound('pot', pitch); }
+        else { burst(p.x, p.y, ['#fff', '#e7d1ff', '#ffb3c8', '#ffe36b'], 12, 220); sound('strike', pitch); }
+        if (event.multiplier > 1 && event.combo === (event.multiplier - 1) * BENNY_RUN.comboStep + 1) { flash(`Combo ×${event.multiplier} !`); sound('power'); }
         shakeFor('strike'); hitStop(); break;
       }
       case 'crash': { const p = screenOf(g, event.entity); burst(p.x, p.y, ['#c96b3a', '#8a4a26'], 8, 180); sound('pot'); break; }
@@ -508,6 +513,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }, {signal: abort.signal});
   canvas.addEventListener('pointercancel', () => { touch = null; }, {signal: abort.signal});
   $<HTMLButtonElement>('[data-benny-run-exit]').addEventListener('click', () => close(), {signal: abort.signal});
+  $<HTMLButtonElement>('[data-benny-run-pause]').addEventListener('click', () => pause(), {signal: abort.signal});
   document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); }, {signal: abort.signal});
   function orientation(): void {
     if (layer.hidden) return;

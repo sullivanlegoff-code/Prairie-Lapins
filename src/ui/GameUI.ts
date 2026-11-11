@@ -291,7 +291,7 @@ export class GameUI {
     this.bennyRun = mountBennyRunActivity(document.getElementById('app')!, {onFinished: summary => {
       const saved = this.controller.perform({type: 'finishBennyRun', score: summary.score, metres: summary.metres});
       return saved.ok ? undefined : `Record non enregistré : ${REFUSALS[saved.reason]}`;
-    }, best: () => this.controller.getSnapshot().state?.bennyRun?.best ?? 0, sound: kind => this.sounds.run(kind), onExit: () => this.render()});
+    }, best: () => this.controller.getSnapshot().state?.bennyRun?.best ?? 0, sound: (kind, pitch) => this.sounds.run(kind, pitch), onExit: () => this.render()});
     this.moveBanner.id = 'rabbit-move-banner'; this.moveBanner.hidden = true;
     this.moveBanner.setAttribute('role', 'region'); this.moveBanner.setAttribute('aria-label', 'Déplacer un lapin');
     const moveLabel = node('span'); moveLabel.setAttribute('role', 'status'); this.moveBanner.append(moveLabel);
