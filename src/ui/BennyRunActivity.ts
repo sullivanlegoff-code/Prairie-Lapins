@@ -8,10 +8,11 @@ import {pausableClock, settleCard} from './activityPause';
  * « Cours cours Benny ! » (src/simulation/bennyRun.ts holds the rules): a full-screen layer like « Le vol de Benny ». This is the
  * grey prototype the owner tunes the feel with (11 November 2026): plain shapes on a canvas, the road seen from behind Benny in
  * perspective, until the painted art he chose (Benny seen from behind, the « conte doré » settings, the rainbow-ribbon wand, the
- * dragonnets, greedy chests and embers) replaces them. Swipes: up jump, down slide or ground charge, sideways lane or wall; a power
- * works as soon as Benny runs over it. The arrow keys do the same. The island's Phaser loop sleeps while the run is open.
+ * dragonnets, greedy chests and embers) replaces them. Swipes: up jump, down slide (it strikes) or ground charge, sideways lane or wall;
+ * a power works as soon as Benny runs over it. The arrow keys do the same. The island's Phaser loop sleeps while the run is open.
+ * Played with the iPhone upright only (owner, 11 November 2026): turned sideways, the run pauses behind a « tourne ton iPhone » card.
  */
-const LANE_WIDTH = 2.2, CAMERA_BACK = 8, CAMERA_HEIGHT = 2.2, WALL_X = 1.5 * LANE_WIDTH + .35, WALL_HEIGHT = 3.2, FAR = 90, NEAR = -(CAMERA_BACK - .6);
+const HORIZON = .2, LANE_WIDTH = 2.2, CAMERA_BACK = 8, WALL_X = 1.5 * LANE_WIDTH + .35, WALL_HEIGHT = 4.5, FAR = 90, NEAR = -(CAMERA_BACK - .6);
 const SETTING_COLOURS: Record<RunSetting, {sky: string; ground: string; lane: string; wall: string; wallOff: string; side: string}> = {
   grotte: {sky: '#3a2a1c', ground: '#9a7a52', lane: '#b8956a', wall: '#c9a26a', wallOff: '#5c4630', side: '#e2b450'},
   pont: {sky: '#4a2420', ground: '#8d8378', lane: '#a39a8e', wall: '#b5aa9a', wallOff: '#55493f', side: '#f07a2a'},
@@ -36,16 +37,18 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
 <p class="benny-run-power"></p><button type="button" data-benny-run-exit>Quitter</button></div>
 <canvas class="benny-run-canvas" data-benny-run-canvas></canvas>
 <p class="benny-run-pop" aria-hidden="true"></p>
-<div class="benny-run-card" data-benny-run-card></div>`;
+<div class="benny-run-card" data-benny-run-card></div>
+<div class="benny-run-turn" data-benny-run-turn hidden><div class="benny-run-phone" aria-hidden="true"></div><p>Tourne ton iPhone à la verticale pour jouer à Cours cours Benny !</p></div>`;
   host.append(layer);
   const $ = <T extends Element>(selector: string) => layer.querySelector<T>(selector)!;
   const canvas = $<HTMLCanvasElement>('[data-benny-run-canvas]'), card = $<HTMLElement>('[data-benny-run-card]'), pop = $<HTMLElement>('.benny-run-pop');
   const score = $<HTMLElement>('.benny-run-score'), combo = $<HTMLElement>('.benny-run-combo'), metres = $<HTMLElement>('.benny-run-metres'), coins = $<HTMLElement>('.benny-run-coins');
-  const powerLine = $<HTMLElement>('.benny-run-power');
+  const powerLine = $<HTMLElement>('.benny-run-power'), turn = $<HTMLElement>('[data-benny-run-turn]');
+  const sideways = () => window.innerWidth > window.innerHeight;
   const context = canvas.getContext('2d');
   const abort = new AbortController();
   let game: BennyRun | null = null, running = false, best = 0, viewLane = 1, lastDrawAt = 0, popTimer: ReturnType<typeof setTimeout> | undefined;
-  let swing: {at: number; lane: number} | null = null, flashes: {at: number; text: string; x: number}[] = [];
+  let swing: {at: number; lane: number} | null = null, shock: number | null = null, flashes: {at: number; text: string; x: number}[] = [];
   let width = 0, height = 0;
 
   const button = (label: string, action: () => void, key: string) => {
@@ -72,9 +75,12 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
 
   // Perspective: a point `x` metres across, `ahead` metres in front of Benny and `up` metres high.
+  // Upright screen: the three lanes and the walls fill the width, and the camera rises so that Benny runs low on the screen.
+  const scale0 = () => Math.min(width * .86, height * .62) / (3 * LANE_WIDTH + 1);
+  const cameraHeight = () => Math.min(8, Math.max(2.2, (height * .74 - height * HORIZON) / scale0()));
   const project = (x: number, ahead: number, up: number) => {
-    const horizon = height * .3, scale0 = width * .62 / (3 * LANE_WIDTH + 1), s = scale0 * CAMERA_BACK / (Math.max(-CAMERA_BACK + .5, ahead) + CAMERA_BACK);
-    return {x: width / 2 + x * s, y: horizon + (CAMERA_HEIGHT - up) * s, s};
+    const horizon = height * HORIZON, s = scale0() * CAMERA_BACK / (Math.max(-CAMERA_BACK + .5, ahead) + CAMERA_BACK);
+    return {x: width / 2 + x * s, y: horizon + (cameraHeight() - up) * s, s};
   };
   const laneX = (lane: number) => (lane - 1) * LANE_WIDTH;
   function quad(c: CanvasRenderingContext2D, points: {x: number; y: number}[], fill: string): void {
@@ -122,7 +128,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   function benny(c: CanvasRenderingContext2D, g: BennyRun, now: number): void {
     const wall = g.wall, x = wall ? (wall.side === 'left' ? -WALL_X + .45 : WALL_X - .45) : laneX(viewLane);
-    const up = wall ? 1.2 : runHeight(g), p = project(x, 0, up), s = p.s;
+    const up = wall ? BENNY_RUN.wallRunHeight : runHeight(g), p = project(x, 0, up), s = p.s;
     const flat = sliding(g), w = (flat ? 1.1 : .8) * s, h = (flat ? .45 : 1) * s;
     c.save(); c.translate(p.x, p.y - h / 2);
     if (wall) c.rotate(wall.side === 'left' ? -1.1 : 1.1);
@@ -133,6 +139,12 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (powerActive(g, 'bubble')) { c.strokeStyle = 'rgba(180,140,255,.8)'; c.lineWidth = 4; c.beginPath(); c.arc(0, 0, w * .85, 0, Math.PI * 2); c.stroke(); }
     c.restore();
     if (!inAir(g) && !wall && !powerActive(g, 'flight')) { c.fillStyle = 'rgba(0,0,0,.18)'; c.beginPath(); c.ellipse(p.x, project(x, 0, 0).y, w * .55, s * .12, 0, 0, Math.PI * 2); c.fill(); }
+    // The shock wave: a golden ring spreading on the road around her.
+    if (shock !== null && now - shock < 450) {
+      const k = Math.max(0, (now - shock) / 450), ground = project(x, 0, 0), r = (BENNY_RUN.shockReach * .9) * k;
+      c.save(); c.globalAlpha = 1 - k; c.strokeStyle = '#ffd86b'; c.lineWidth = 6 * (1 - k) + 2;
+      c.beginPath(); c.ellipse(ground.x, ground.y, r * ground.s, r * ground.s * .35, 0, 0, Math.PI * 2); c.stroke(); c.restore();
+    }
     // The wand's rainbow sweep for a moment after a strike.
     if (swing && now - swing.at < 220) {
       const k = (now - swing.at) / 220, colours = ['#ff6b6b', '#ffb84d', '#ffe66b', '#7be08a', '#6bb8ff', '#b07bff'];
@@ -176,6 +188,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'shield': flash('La bulle te protège !'); break;
       case 'power': flash(`${POWER_NAMES[event.power]} !`); break;
       case 'wallEnd': flashes.push({at: clock(), text: `Mur +${event.points}`, x: width / 2}); break;
+      case 'shockwave': shock = clock(); flash('Onde de choc !'); break;
       case 'setting': flash(SETTING_NAMES[event.setting]); break;
       case 'caught': finish(); break;
       default: break;
@@ -186,7 +199,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const now = clock(); advanceBennyRun(game, now); react(); hud(); draw(now);
     if (running) frame(loop);
   }
-  function input(gesture: RunInput): void { if (!running || !game) return; runInput(game, clock(), gesture); react(); hud(); }
+  function input(gesture: RunInput): void { if (!running || !game || sideways()) return; runInput(game, clock(), gesture); react(); hud(); }
   function finish(): void {
     if (!game) return;
     running = false; const s = runSummary(game), record = s.score > best && s.score > 0, previous = best; best = Math.max(best, s.score);
@@ -202,14 +215,17 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     settleCard(card); again.focus();
   }
   function start(): void {
+    if (sideways()) { orientation(); return; }
     best = Math.max(best, options.best?.() ?? 0);
-    game = startBennyRun(clock()); viewLane = 1; swing = null; flashes = []; running = true; card.hidden = true; lastDrawAt = clock();
+    game = startBennyRun(clock()); viewLane = 1; swing = null; shock = null; flashes = []; running = true; card.hidden = true; lastDrawAt = clock();
     hud(); flash('Cours cours Benny !'); frame(loop);
   }
   function intro(): void {
     game = startBennyRun(clock()); running = false; measure(); hud(); draw(clock());
     showCard(paragraph('Cours cours Benny !', 'benny-run-title'),
-      paragraph('Benny a chipé un peu du trésor de la Dragon ! Glisse vers le haut pour sauter, vers le bas pour glisser (en l’air : charge au sol), sur le côté pour changer de couloir ou courir sur le mur. Change de couloir vers un pot ou une créature pour la frapper avec ton bâton. Passe sur un pouvoir pour l’utiliser tout de suite.', 'benny-run-rules'),
+      paragraph('Benny a chipé un peu du trésor de la Dragon ! Glisse vers le haut pour sauter, sur le côté pour changer de couloir, vers le bas pour glisser (en l’air : charge au sol).', 'benny-run-rules'),
+      paragraph('Frappe les pots et les créatures avec ton bâton : change de couloir vers elles ou glisse dedans. Une créature que tu dépasses sans la frapper t’attaque !', 'benny-run-rules'),
+      paragraph('Au bord, glisse vers le mur (même en sautant) pour courir dessus. Pour descendre : saute, glisse vers l’autre côté, ou charge au sol pour faire une onde de choc. Passe sur un pouvoir pour l’utiliser tout de suite.', 'benny-run-rules'),
       paragraph('Prototype en formes grises : les vrais dessins arrivent ensuite.', 'benny-run-rules'),
       button('C’est parti !', start, 'bennyRunStart'));
   }
@@ -223,7 +239,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     time.pause(); running = false;
     showCard(paragraph('Partie en pause', 'benny-run-title'), button('Reprendre', resume, 'bennyRunResume'), button('Quitter', close, 'bennyRunQuit'));
   }
-  function resume(): void { time.resume(); running = true; card.hidden = true; lastDrawAt = clock(); frame(loop); }
+  function resume(): void { if (sideways()) return; time.resume(); running = true; card.hidden = true; lastDrawAt = clock(); frame(loop); }
 
   // Gestures: a swipe fires as soon as the finger has moved far enough.
   let touch: {x: number; y: number; id: number; fired: boolean} | null = null;
@@ -238,7 +254,13 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   canvas.addEventListener('pointercancel', () => { touch = null; }, {signal: abort.signal});
   $<HTMLButtonElement>('[data-benny-run-exit]').addEventListener('click', () => close(), {signal: abort.signal});
   document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); }, {signal: abort.signal});
-  window.addEventListener('resize', () => { if (!layer.hidden) { measure(); if (game) draw(clock()); } }, {signal: abort.signal});
+  function orientation(): void {
+    if (layer.hidden) return;
+    const wrong = sideways(); turn.hidden = !wrong;
+    if (wrong) pause();
+  }
+  window.addEventListener('resize', () => { if (!layer.hidden) { orientation(); measure(); if (game) draw(clock()); } }, {signal: abort.signal});
+  window.addEventListener('orientationchange', () => setTimeout(() => { orientation(); measure(); if (game) draw(clock()); }, 200), {signal: abort.signal});
   const keys: Record<string, RunInput> = {ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down'};
   document.addEventListener('keydown', event => {
     if (layer.hidden) return;
@@ -253,7 +275,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     element: layer,
     open() {
       layer.hidden = false; window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: true}));
-      intro(); $<HTMLButtonElement>('[data-benny-run-start]').focus();
+      intro(); orientation(); $<HTMLButtonElement>('[data-benny-run-start]').focus();
     },
     close, input,
     dispose() { close(); abort.abort(); layer.remove(); },

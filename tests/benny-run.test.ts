@@ -49,6 +49,48 @@ describe('Cours cours Benny ! rules', () => {
     place(g, 'beam', 1, 3); runInput(g, g.at, 'up'); run(g, 400);
     expect(types(g)).toEqual(['bump']);
   });
+  it('strikes with a slide (swipe down) what is ahead in the lane, and what it slides into', () => {
+    const g = quiet(); run(g, C.introMs);
+    place(g, 'chest', 1, 5); runInput(g, g.at, 'down');
+    expect(g).toMatchObject({foes: 1, lastBumpAt: null}); expect(g.entities).toHaveLength(0);
+    run(g, 800); place(g, 'ember', 1, 9); run(g, 300); runInput(g, g.at, 'down'); run(g, 600);
+    expect(g).toMatchObject({foes: 2, lastBumpAt: null});
+    place(g, 'pot', 1, 3); runInput(g, g.at, 'down'); expect(g.pots).toBe(1);
+  });
+  it('is struck by a creature she passes without striking it: in her lane even when jumping, in the next lane, not two lanes away nor from a wall', () => {
+    const g = quiet(); run(g, C.introMs);
+    place(g, 'dragonnet', 1, 3); runInput(g, g.at, 'up'); run(g, 500);
+    expect(takeRunEvents(g).map(e => e.type)).toContain('bump');
+    run(g, C.dragonMs);
+    place(g, 'chest', 0, 4); run(g, 800);
+    expect(types(g)).toEqual(['bump']);
+    run(g, C.dragonMs);
+    runInput(g, g.at, 'right'); place(g, 'ember', 0, 4); run(g, 800);
+    expect(types(g)).toEqual([]);
+    runInput(g, g.at, 'right'); expect(g.wall?.side).toBe('right');
+    place(g, 'dragonnet', 2, 4); run(g, 800);
+    expect(types(g)).toEqual(['wallStart']); expect(g.foes).toBe(0);
+  });
+  it('climbs a wall in the middle of a jump, and leaves it by a jump or by swiping away from it', () => {
+    const g = quiet(); runInput(g, g.at, 'left'); runInput(g, g.at, 'up'); run(g, 200);
+    runInput(g, g.at, 'left'); expect(g.wall?.side).toBe('left');
+    run(g, 300); runInput(g, g.at, 'up');
+    expect(g).toMatchObject({wall: null, lane: 0, wallRuns: 1}); expect(g.airUntil).toBeGreaterThan(g.at);
+    run(g, C.jumpMs); runInput(g, g.at, 'left'); expect(g.wall?.side).toBe('left');
+    runInput(g, g.at, 'right'); expect(g).toMatchObject({wall: null, lane: 0, wallRuns: 2});
+  });
+  it('leaves a wall with a ground charge whose shock wave strikes every lane around her; a charge from a jump does not', () => {
+    const g = quiet(); runInput(g, g.at, 'left'); runInput(g, g.at, 'left'); run(g, 300);
+    const near = [place(g, 'pot', 0, 3), place(g, 'dragonnet', 1, 4), place(g, 'chest', 2, 2)], far = place(g, 'pot', 2, 14);
+    runInput(g, g.at, 'down'); run(g, 300);
+    const events = takeRunEvents(g);
+    expect(events.map(e => e.type)).toContain('shockwave');
+    expect(events.filter(e => e.type === 'strike').map(e => e.type === 'strike' && e.by)).toEqual(['shock', 'shock', 'shock']);
+    expect(g.entities).toEqual([far]); expect(near.every(e => !g.entities.includes(e))).toBe(true);
+    expect(g).toMatchObject({wall: null, lane: 0, pots: 1, foes: 2, lastBumpAt: null});
+    const h = quiet(); runInput(h, h.at, 'up'); run(h, 300); place(h, 'pot', 0, 2); place(h, 'pot', 1, 2.5); runInput(h, h.at, 'down'); run(h, 300);
+    expect(types(h)).not.toContain('shockwave'); expect(h.pots).toBe(1);
+  });
   it('charges the ground from the air and breaks the pot ahead', () => {
     const g = quiet(); runInput(g, g.at, 'up'); run(g, 150);
     place(g, 'pot', 1, 2.5); runInput(g, g.at, 'down'); run(g, 200);

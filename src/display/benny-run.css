@@ -5,8 +5,8 @@
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 .benny-run-activity[hidden] { display: none; }
-.benny-run-top { position: absolute; z-index: 6; top: env(safe-area-inset-top); left: env(safe-area-inset-left); right: env(safe-area-inset-right); display: flex; align-items: center; gap: 12px; padding: 8px 14px; pointer-events: none; }
-.benny-run-top p { margin: 0; font-weight: 800; color: #fff; -webkit-text-stroke: 1px #3b2414; paint-order: stroke fill; }
+.benny-run-top { position: absolute; z-index: 6; top: env(safe-area-inset-top); left: env(safe-area-inset-left); right: env(safe-area-inset-right); display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 8px 12px; pointer-events: none; }
+.benny-run-top p { margin: 0; white-space: nowrap; font-weight: 800; color: #fff; -webkit-text-stroke: 1px #3b2414; paint-order: stroke fill; }
 .benny-run-score { font-size: 1.6rem; min-width: 4ch; }
 .benny-run-combo { color: #ffe36b !important; }
 .benny-run-metres { flex: 1; text-align: right; }
@@ -23,3 +23,11 @@
 .benny-run-title { font-size: 1.4rem; font-weight: 800; }
 .benny-run-record { font-weight: 800; color: #b0582a; }
 .benny-run-card button { min-height: 44px; border-radius: 14px; border: 2px solid #6b5a3a; background: #ffe7a8; font-weight: 800; font-size: 1rem; }
+/* Upright only (owner, 11 November 2026): sideways, this card covers the run, which waits in pause. */
+.benny-run-turn { position: absolute; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px;
+  background: #3a2a1c; color: #fff8e8; text-align: center; font-size: 1.3rem; font-weight: 800; }
+.benny-run-turn[hidden] { display: none; }
+.benny-run-turn p { margin: 0; max-width: 28ch; }
+.benny-run-phone { width: 46px; height: 80px; border: 5px solid #fff8e8; border-radius: 10px; animation: benny-run-phone 1.6s ease-in-out infinite; }
+@keyframes benny-run-phone { 0%, 20% { transform: rotate(-90deg); } 60%, 100% { transform: rotate(0deg); } }
+@media (prefers-reduced-motion: reduce) { .benny-run-phone { animation: none; } }
