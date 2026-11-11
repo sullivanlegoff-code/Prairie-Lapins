@@ -99,14 +99,14 @@ describe('controller startup and normal saves', () => {
   it('saves immediately after an action succeeds', () => {
     const {controller, store, clock} = fixture(); clock.now = HOUR;
     const result = controller.perform({type: 'collectIncome', id: 'building-1'});
-    expect(result.ok).toBe(true); expect(state(controller).pattes).toBe(363);
+    expect(result.ok).toBe(true); expect(state(controller).pattes).toBe(370);
     expect(store.writes).toBe(2); expect(stored(store)).toEqual(state(controller));
   });
   it('keeps separate time advancement after refusing an action without spending', () => {
     const {controller, store, clock} = fixture(); clock.now = HOUR;
     const result = controller.perform({type:'expand',parcelId:'south',expectedCost:600});
     expect(result).toMatchObject({"ok":false,"reason":"LEVEL_REQUIRED"});
-    expect(state(controller).pattes).toBe(350); expect(state(controller).buildings[0].incomeUnits).toBe(13*HOUR);
+    expect(state(controller).pattes).toBe(350); expect(state(controller).buildings[0].incomeUnits).toBe(20*HOUR);
     expect(stored(store)).toEqual(state(controller)); expect(store.writes).toBe(2);
   });
   it('does not write again when state has not evolved', () => {
@@ -119,7 +119,7 @@ describe('controller startup and normal saves', () => {
     clock.now = HOUR - MINUTE; controller.refresh(); expect(state(controller).lastSimulatedAt).toBe(HOUR);
     const reloaded = new GameController(store, () => 2 * HOUR);
     reloaded.refresh(); reloaded.refresh();
-    expect(state(reloaded).buildings[0].incomeUnits).toBe(26*HOUR);
+    expect(state(reloaded).buildings[0].incomeUnits).toBe(40*HOUR);
     expect(state(reloaded)).toEqual(advance(createGame(0), 2 * HOUR));
   });
   it('does not let consumers mutate the active state through snapshots or results', () => {
@@ -137,7 +137,7 @@ describe('storage failures and recovery', () => {
     expect(controller.getSnapshot()).toMatchObject({state: null, status: 'read-error', lastSavedAt: null});
     controller.refresh(); expect(store.value).toBe(original); expect(store.writes).toBe(0);
     store.failRead = false; expect(controller.retrySave()).toEqual({ok: true});
-    expect(state(controller).buildings[0].incomeUnits).toBe(13*HOUR);
+    expect(state(controller).buildings[0].incomeUnits).toBe(20*HOUR);
   });
   it('keeps a first game in memory when writing fails and retries successfully', () => {
     const store = new MemoryStorage(); store.failWrite = true;

@@ -90,7 +90,7 @@ describe('progression candidate persistence',()=>{
     const m=memory(),clock={now:0},c=new GameController(m.storage,()=>clock.now),raw=m.data.get(SAVE_KEY);m.flags.fail=SAVE_KEY;clock.now=HOUR;
     expect(c.grantLaboratoryXp(50)).toEqual({ok:false,reason:'ACTION_NOT_SAVED'});
     expect(c.getSnapshot()).toMatchObject({status:'write-error',dirty:true,state:{progression:{totalXp:0,rewardedThroughLevel:1},hearts:12,lastSimulatedAt:HOUR}});
-    expect(c.getSnapshot().state!.buildings[0].incomeUnits).toBe(13*HOUR);expect(m.data.get(SAVE_KEY)).toBe(raw);
+    expect(c.getSnapshot().state!.buildings[0].incomeUnits).toBe(20*HOUR);expect(m.data.get(SAVE_KEY)).toBe(raw);
     m.flags.fail='';expect(c.grantLaboratoryXp(50)).toMatchObject({ok:true,progressionGain:{xpGained:50,rewardedLevels:[],heartsGranted:0}});
     expect(read(m.data.get(SAVE_KEY)!)).toEqual(c.getSnapshot().state);c.dispose();
   });

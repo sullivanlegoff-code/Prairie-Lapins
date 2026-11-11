@@ -99,9 +99,9 @@ describe('habitat compatibility and atomic entries',()=>{
   it('does not backdate income when entering a specialized habitat or increasing affection',()=>{
     let s=build(rich(),'paille');const home=s.buildings.at(-1)!.id;
     s=run(s,{type:'moveRabbit',id:'rabbit-2',enclosureId:home},HOUR);
-    expect(s.buildings[0].incomeUnits).toBe(26*HOUR);expect(s.buildings[1].incomeUnits).toBe(0);
-    s=run(s,{type:'feed',id:'rabbit-2'},2*HOUR);expect(s.buildings[1].incomeUnits).toBe(13*HOUR);
-    s=advance(s,3*HOUR);expect(s.buildings[1].incomeUnits).toBe(27*HOUR);
+    expect(s.buildings[0].incomeUnits).toBe(40*HOUR);expect(s.buildings[1].incomeUnits).toBe(0);
+    s=run(s,{type:'feed',id:'rabbit-2'},2*HOUR);expect(s.buildings[1].incomeUnits).toBe(20*HOUR);
+    s=advance(s,3*HOUR);expect(s.buildings[1].incomeUnits).toBe(41*HOUR);
   });
 });
 
@@ -125,7 +125,7 @@ describe('levels, income and payments',()=>{
     s=run(s,{type:'upgradeHabitat',id:home,fromLevel:1},1000*HOUR);
     const oldCap=habitatLevel(type,1).cap;
     expect(s.buildings[1].incomeUnits).toBe(oldCap*HOUR);
-    expect(advance(s,1001*HOUR).buildings[1].incomeUnits).toBe((oldCap+13)*HOUR);
+    expect(advance(s,1001*HOUR).buildings[1].incomeUnits).toBe((oldCap+20)*HOUR);
     expect(advance(advance(s,1000*HOUR+1234),1001*HOUR)).toEqual(advance(s,1001*HOUR));
     expect(advance(s,1000*HOUR-MINUTE)).toEqual(s);
   });
@@ -135,7 +135,7 @@ describe('levels, income and payments',()=>{
       if(level>1)s=run(s,{type:'upgradeHabitat',id,fromLevel:(level-1) as 1|2});
       while(s.rabbits.length<habitatStats(s.buildings[0]).capacity)s=run(s,{type:'buyRabbit',species:'paille',enclosureId:id});
       refuse(s,{type:'buyRabbit',species:'paille',enclosureId:id},'CAPACITY_FULL');
-      expect(advance(s,HOUR).buildings[0].incomeUnits).toBe(s.rabbits.length*13*HOUR);
+      expect(advance(s,HOUR).buildings[0].incomeUnits).toBe(s.rabbits.length*20*HOUR);
     }
     refuse(s,{type:'release',id:'rabbit-3'},'LAST_OF_SPECIES');expect(decode(encodeGame(s))).toEqual(s);
   });
