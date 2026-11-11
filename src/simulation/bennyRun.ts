@@ -12,14 +12,18 @@
  * (« si on glisse ça attaque l'ennemi »), or when she charges the ground on it. A creature she passes without striking it, in her
  * lane or the next one, strikes back: a bump (« quand on passe à côté d'un ennemi sans l'attaquer il doit nous attaquer »); only
  * on a wall or flying is she out of its reach. A ground charge from high up (from a wall for now; « plus tard plus de verticalité »)
- * sends a shock wave around her that strikes everything near, in every lane. A pot met straight on just breaks, for no points and
- * no bump (our decision).
+ * sends a shock wave around her that strikes everything near, in every lane. When a lane change strikes a creature while another waits
+ * in the lane on her other side, the wand spins and strikes both at once (owner: « quand il y a deux ennemis sur des voies à droite
+ * ou à gauche, ça attaque les deux en même temps »). A little flying monster keeps to Benny's height, so that she can always strike it
+ * by swiping towards it (sideways, up, or with a slide); it is the one creature that reaches her on a wall. A pot met straight on just
+ * breaks, for no points and no bump (our decision). The road has three lanes for now; the rules take any number (owner: zones of up
+ * to 5 lanes later).
  * First bump: Benny stumbles and the Dragon swoops in; a second bump within `dragonMs` and she is caught (the run ends); otherwise
  * the Dragon flies off again. The creatures are cosy, never hurt: a sleeping dragonnet wakes and flies off, a greedy chest snaps shut
  * and spits its coins, a mischievous ember goes out in a little heart of smoke. Score: pots, creatures and wall runs, multiplied for a
  * while by combos. Rewards are for later: these rules only count.
  *
- * Pure rules: distances in metres along the road, lanes 0 (left) to 2 (right), the clock in milliseconds, fixed steps and a seeded
+ * Pure rules: distances in metres along the road, lanes 0 (left) to `lanes - 1` (right), the clock in milliseconds, fixed steps and a seeded
  * draw, so a run replays the same from the same inputs.
  */
 export const BENNY_RUN = {
@@ -50,6 +54,8 @@ export const BENNY_RUN = {
   spawnAhead: 90, firstAt: 30, gapStart: 22, gapMin: 11,
   /** Share of coin lines carrying a power, and how long each power lasts once picked up (the bubble lasts until a bump, at most this). */
   powerChance: .25, powers: {magnet: 8000, bubble: 20_000, double: 10_000, flight: 6000},
+  /** Share of the creatures that are little flying monsters, once the run is `flyerFrom` into its speed ramp. */
+  flyerShare: .3, flyerFrom: .15,
   /** A mischievous ember hops to a neighbouring lane every `emberHopMs`, but only while farther than `emberStill` m. */
   emberHopMs: 1400, emberStill: 14,
   /** A run never pays: this only bounds what a run can count. */
@@ -60,14 +66,15 @@ export type RunSetting = 'grotte' | 'pont' | 'montagne';
 export const RUN_SETTINGS: readonly RunSetting[] = ['grotte', 'pont', 'montagne'];
 export type RunPower = keyof typeof BENNY_RUN.powers;
 export const RUN_POWERS = Object.keys(BENNY_RUN.powers) as RunPower[];
-export type RunFoe = 'dragonnet' | 'chest' | 'ember';
+export type RunFoe = 'dragonnet' | 'chest' | 'ember' | 'flyer';
 export type RunKind = 'coin' | 'wallCoin' | 'power' | 'pot' | 'barrier' | 'beam' | 'pillar' | RunFoe;
+/** The creatures on the ground; the little flying monster (`flyer`) comes on top. */
 export const RUN_FOES: readonly RunFoe[] = ['dragonnet', 'chest', 'ember'];
 export type RunInput = 'left' | 'right' | 'up' | 'down';
 export type Side = 'left' | 'right';
-export type StrikeKind = 'lane' | 'slide' | 'pound' | 'shock';
+export type StrikeKind = 'lane' | 'spin' | 'slide' | 'jump' | 'pound' | 'shock';
 
-/** A thing on the road. `lane` is 0 to 2; a wall coin's lane is -1 (left wall) or 3 (right wall). */
+/** A thing on the road. `lane` is 0 to `lanes - 1`; a wall coin's lane is -1 (left wall) or `lanes` (right wall). */
 export interface RunEntity {id: number; kind: RunKind; lane: number; z: number; power?: RunPower; hopAt?: number}
 export interface WallSegment {side: Side; from: number; to: number; runnable: boolean}
 export type RunEvent =
@@ -88,7 +95,8 @@ export type RunEvent =
 export interface BennyRun {
   seed: number; startedAt: number; at: number;
   distance: number; speed: number;
-  lane: number; laneChangedAt: number;
+  /** How many lanes the road has (3 for now), and Benny's. */
+  lanes: number; lane: number; laneChangedAt: number;
   /** In the air between `airFrom` and `airUntil`; `pound` once the ground charge has started, from `poundFrom` m high. */
   airFrom: number; airUntil: number; pound: boolean; poundFrom: number;
   slideUntil: number;
@@ -110,9 +118,9 @@ const C = BENNY_RUN;
 const random = (g: BennyRun) => { g.seed = (g.seed + 0x6D2B79F5) >>> 0; let t = g.seed; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 const pick = <T>(g: BennyRun, list: readonly T[]): T => list[Math.min(list.length - 1, Math.floor(random(g) * list.length))];
 
-export function startBennyRun(now: number, seed = Math.floor(Math.random() * 2147483647)): BennyRun {
+export function startBennyRun(now: number, seed = Math.floor(Math.random() * 2147483647), lanes = 3): BennyRun {
   const g: BennyRun = {
-    seed: (seed >>> 0) || 1, startedAt: now, at: now, distance: 0, speed: C.speedStart, lane: 1, laneChangedAt: -Infinity,
+    seed: (seed >>> 0) || 1, startedAt: now, at: now, distance: 0, speed: C.speedStart, lanes, lane: Math.floor(lanes / 2), laneChangedAt: -Infinity,
     airFrom: 0, airUntil: 0, pound: false, poundFrom: 0, slideUntil: 0, wall: null,
     entities: [], nextId: 1, nextSpawnZ: C.firstAt, walls: [], wallsTo: {left: 0, right: 0},
     setting: 'grotte', nextSettingAt: 0, stumbleUntil: 0, lastBumpAt: null,
@@ -158,40 +166,46 @@ const add = (g: BennyRun, kind: RunKind, lane: number, z: number, extra: Partial
   if (kind === 'ember') e.hopAt = g.at + C.emberHopMs;
   g.entities.push(e); return e;
 };
-const lanes = [0, 1, 2] as const;
-const others = (g: BennyRun, n: number) => { const l = [...lanes]; for (let i = l.length - 1; i > 0; i--) { const j = Math.floor(random(g) * (i + 1)); [l[i], l[j]] = [l[j], l[i]]; } return l.slice(0, n); };
+const laneList = (g: BennyRun) => Array.from({length: g.lanes}, (_, i) => i);
+/** The lane number of a wall: -1 on the left, `lanes` on the right. */
+export const wallLane = (g: BennyRun, side: Side) => side === 'left' ? -1 : g.lanes;
+/** Where Benny is across the road: her lane, or her wall's. */
+const across = (g: BennyRun) => g.wall ? wallLane(g, g.wall.side) : g.lane;
+const others = (g: BennyRun, n: number) => { const l = laneList(g); for (let i = l.length - 1; i > 0; i--) { const j = Math.floor(random(g) * (i + 1)); [l[i], l[j]] = [l[j], l[i]]; } return l.slice(0, n); };
 
 /** Lays out what comes next on the road, from the seeded draw; harder as the run goes on, never a wall of three pillars without a runnable wall beside it. */
 function spawn(g: BennyRun): void {
   layWalls(g);
   while (g.nextSpawnZ < g.distance + C.spawnAhead) {
     const z = g.nextSpawnZ, d = runDifficulty(g), roll = random(g);
-    const foeShare = .18 + .17 * d, obstacleShare = .3 + .1 * d;
+    // Coins .22, pots .2, creatures more and more, obstacles up to what is left but the wall-run pattern (three pillars side by side).
+    const foeShare = .18 + .17 * d, tripleShare = d > .25 ? .07 : 0, obstacleShare = Math.min(.3 + .1 * d, 1 - tripleShare - .42 - foeShare);
     if (roll < .22) {
       // A line of coins, sometimes along a runnable wall.
       const side = pick(g, ['left', 'right'] as const);
-      if (random(g) < .3 && runnableAt(g, side, z) && runnableAt(g, side, z + 10)) for (let i = 0; i < 6; i++) add(g, 'wallCoin', side === 'left' ? -1 : 3, z + i * 2);
+      if (random(g) < .3 && runnableAt(g, side, z) && runnableAt(g, side, z + 10)) for (let i = 0; i < 6; i++) add(g, 'wallCoin', wallLane(g, side), z + i * 2);
       else {
-        const lane = pick(g, lanes), power = random(g) < C.powerChance ? pick(g, RUN_POWERS) : null;
+        const lane = pick(g, laneList(g)), power = random(g) < C.powerChance ? pick(g, RUN_POWERS) : null;
         for (let i = 0; i < 5; i++) if (power && i === 2) add(g, 'power', lane, z + i * 2, {power}); else add(g, 'coin', lane, z + i * 2);
       }
     } else if (roll < .22 + .2) {
       for (const lane of others(g, 1 + (random(g) < .4 ? 1 : 0))) add(g, 'pot', lane, z);
     } else if (roll < .42 + foeShare) {
-      const foe = pick(g, RUN_FOES), lane = pick(g, lanes);
-      add(g, foe, lane, z);
+      const creature = () => d >= C.flyerFrom && random(g) < C.flyerShare ? 'flyer' as const : pick(g, RUN_FOES);
+      const lane = pick(g, laneList(g));
+      add(g, creature(), lane, z);
       // A second one a little farther, so that Benny has time to strike both.
-      if (d > .4 && random(g) < .4) add(g, pick(g, RUN_FOES), (lane + 1 + Math.floor(random(g) * 2)) % 3, z + 8);
+      if (d > .4 && random(g) < .4) add(g, creature(), (lane + 1 + Math.floor(random(g) * (g.lanes - 1))) % g.lanes, z + 8);
     } else if (roll < .42 + foeShare + obstacleShare) {
       const kind = pick(g, ['barrier', 'beam', 'pillar'] as const);
       const count = kind === 'pillar' ? 1 + (random(g) < .3 + .3 * d ? 1 : 0) : 1 + Math.floor(random(g) * (2 + d * 1.5));
-      for (const lane of others(g, Math.min(3, count))) add(g, kind, lane, z);
+      for (const lane of others(g, Math.min(g.lanes, count))) add(g, kind, lane, z);
       // Coins over a barrier or under a beam reward the right move.
       if (kind !== 'pillar' && random(g) < .5) add(g, 'coin', g.entities[g.entities.length - 1].lane, z);
     } else {
       // Three pillars side by side: the way on is up a runnable wall (only where there is one).
       const side = (['left', 'right'] as const).find(s => runnableAt(g, s, z - 25) && runnableAt(g, s, z) && runnableAt(g, s, z + 5));
-      if (side && d > .25) { for (const lane of lanes) add(g, 'pillar', lane, z); for (let i = 0; i < 4; i++) add(g, 'wallCoin', side === 'left' ? -1 : 3, z - 6 + i * 3); }
+      if (side && d > .25) { for (const lane of laneList(g)) add(g, 'pillar', lane, z); for (let i = 0; i < 4; i++) add(g, 'wallCoin', wallLane(g, side), z - 6 + i * 3); }
       else for (const lane of others(g, 2)) add(g, 'pot', lane, z);
     }
     const gap = C.gapStart - (C.gapStart - C.gapMin) * d;
@@ -199,11 +213,11 @@ function spawn(g: BennyRun): void {
   }
 }
 
-const isFoe = (e: RunEntity) => RUN_FOES.includes(e.kind as RunFoe);
+const isFoe = (e: RunEntity) => e.kind === 'flyer' || RUN_FOES.includes(e.kind as RunFoe);
 const strikable = (e: RunEntity) => e.kind === 'pot' || isFoe(e);
-/** The nearest pot or creature in `lane`, from just behind Benny to `reach` m ahead. */
-const nearest = (g: BennyRun, lane: number, reach: number) => g.entities
-  .filter(e => e.lane === lane && strikable(e) && e.z - g.distance >= -C.hitHalf && e.z - g.distance <= reach).sort((a, b) => a.z - b.z)[0];
+/** The nearest pot or creature (or only creature) in `lane`, from just behind Benny to `reach` m ahead. */
+const nearest = (g: BennyRun, lane: number, reach: number, which: (e: RunEntity) => boolean = strikable) => g.entities
+  .filter(e => e.lane === lane && which(e) && e.z - g.distance >= -C.hitHalf && e.z - g.distance <= reach).sort((a, b) => a.z - b.z)[0];
 function strike(g: BennyRun, e: RunEntity, by: StrikeKind): void {
   g.entities = g.entities.filter(o => o !== e);
   g.combo = g.at <= g.comboUntil ? g.combo + 1 : 1; g.comboUntil = g.at + C.comboMs; g.bestCombo = Math.max(g.bestCombo, g.combo);
@@ -236,7 +250,7 @@ function startPound(g: BennyRun, from = runHeight(g)): void {
   g.poundFrom = Math.max(from, .3); g.pound = true; g.airFrom = g.at; g.airUntil = g.at + C.poundMs * Math.max(1, Math.sqrt(g.poundFrom / C.jumpHeight)); g.slideUntil = 0;
 }
 function endWall(g: BennyRun): void {
-  const side = g.wall!.side; g.wall = null; g.lane = side === 'left' ? 0 : 2; g.laneChangedAt = g.at;
+  const side = g.wall!.side; g.wall = null; g.lane = side === 'left' ? 0 : g.lanes - 1; g.laneChangedAt = g.at;
   g.wallRuns++;
   g.combo = g.at <= g.comboUntil ? g.combo + 1 : 1; g.comboUntil = g.at + C.comboMs; g.bestCombo = Math.max(g.bestCombo, g.combo);
   const points = C.points.wallRun * comboMultiplier(g.combo); g.score = Math.min(C.maxScore, g.score + points);
@@ -246,7 +260,7 @@ function endWall(g: BennyRun): void {
 /** What happens when a thing reaches Benny without having been struck. */
 function meet(g: BennyRun, e: RunEntity): void {
   if (e.kind === 'wallCoin') {
-    if (g.wall && (g.wall.side === 'left' ? -1 : 3) === e.lane) { g.entities = g.entities.filter(o => o !== e); gainCoins(g, e, 1); }
+    if (g.wall && wallLane(g, g.wall.side) === e.lane) { g.entities = g.entities.filter(o => o !== e); gainCoins(g, e, 1); }
     return;
   }
   if (e.kind === 'power') {
@@ -269,7 +283,7 @@ function meet(g: BennyRun, e: RunEntity): void {
     case 'barrier': if (high) g.events.push({type: 'cleared', entity: e}); else bump(g, e); return;
     case 'beam': if (sliding(g)) g.events.push({type: 'cleared', entity: e}); else bump(g, e); return;
     // A creature: sliding into it strikes it; otherwise, even jumping over it, it strikes Benny as she passes.
-    case 'dragonnet': case 'chest': case 'ember': if (sliding(g)) strike(g, e, 'slide'); else bump(g, e); return;
+    case 'dragonnet': case 'chest': case 'ember': case 'flyer': if (sliding(g)) strike(g, e, 'slide'); else bump(g, e); return;
     case 'pillar': bump(g, e); return;
   }
 }
@@ -295,16 +309,17 @@ function tick(g: BennyRun): void {
   if (g.wall && (g.at >= g.wall.until || !runnableAt(g, g.wall.side, g.distance))) endWall(g);
   for (const e of g.entities) if (e.kind === 'ember' && e.hopAt !== undefined && g.at >= e.hopAt) {
     e.hopAt = g.at + C.emberHopMs;
-    if (e.z - g.distance > C.emberStill) e.lane = e.lane === 1 ? pick(g, [0, 2]) : 1;
+    if (e.z - g.distance > C.emberStill) e.lane = pick(g, [e.lane - 1, e.lane + 1].filter(l => l >= 0 && l < g.lanes));
   }
   for (const e of [...g.entities]) {
     if (g.over) break;
     if (e.z - before > C.hitHalf - 1e-9 && e.z - g.distance <= C.hitHalf) meet(g, e);
   }
-  // A creature in the next lane that Benny has just passed without striking it strikes her (not on a wall, not flying).
+  // A creature in the next lane that Benny has just passed without striking it strikes her (not flying). On a wall, only a flying
+  // monster reaches her, from the edge lane: it keeps to her height.
   for (const e of [...g.entities]) {
     if (g.over) break;
-    if (isFoe(e) && Math.abs(e.lane - g.lane) === 1 && e.z - before > -C.hitHalf - 1e-9 && e.z - g.distance <= -C.hitHalf && !g.wall && !powerActive(g, 'flight')) bump(g, e);
+    if (isFoe(e) && Math.abs(e.lane - across(g)) === 1 && (!g.wall || e.kind === 'flyer') && e.z - before > -C.hitHalf - 1e-9 && e.z - g.distance <= -C.hitHalf && !powerActive(g, 'flight')) bump(g, e);
   }
   g.entities = g.entities.filter(e => e.z > g.distance - 5);
   spawn(g);
@@ -321,10 +336,10 @@ export function runInput(g: BennyRun, now: number, input: RunInput): void {
   switch (input) {
     case 'left': case 'right': {
       const step = input === 'left' ? -1 : 1, side: Side = input;
-      // Off the wall by swiping away from it.
-      if (g.wall) { if (g.wall.side !== side) endWall(g); return; }
+      // Off the wall by swiping away from it, striking on the way down what waits in the edge lane.
+      if (g.wall) { if (g.wall.side !== side) { endWall(g); const hit = nearest(g, g.lane, C.strikeReach); if (hit) strike(g, hit, 'lane'); } return; }
       const target = g.lane + step;
-      if (target < 0 || target > 2) {
+      if (target < 0 || target > g.lanes - 1) {
         if (runnableAt(g, side, g.distance) && !powerActive(g, 'flight')) {
           // From the ground or in the middle of a jump.
           g.wall = {side, until: g.at + C.wallMs}; g.airUntil = 0; g.pound = false; g.slideUntil = 0;
@@ -332,17 +347,22 @@ export function runInput(g: BennyRun, now: number, input: RunInput): void {
         }
         return;
       }
-      g.lane = target; g.laneChangedAt = g.at;
-      // The wand: changing lanes towards a pot or a creature strikes it.
-      const hit = nearest(g, target, C.strikeReach);
+      const from = g.lane; g.lane = target; g.laneChangedAt = g.at;
+      // The wand: changing lanes towards a pot or a creature strikes it; with a creature on her other side as well, she spins and
+      // strikes both at once.
+      const hit = nearest(g, target, C.strikeReach), behind = hit ? nearest(g, from - step, C.strikeReach, isFoe) : undefined;
       if (hit) strike(g, hit, 'lane');
+      if (behind && isFoe(hit!)) strike(g, behind, 'spin');
       return;
     }
     case 'up':
       if (powerActive(g, 'flight') || (inAir(g) && !g.wall)) return;
       // A jump, also off a wall (she lands in the edge lane).
       if (g.wall) endWall(g);
-      g.airFrom = g.at; g.airUntil = g.at + C.jumpMs; g.pound = false; g.slideUntil = 0; return;
+      g.airFrom = g.at; g.airUntil = g.at + C.jumpMs; g.pound = false; g.slideUntil = 0;
+      // A jump towards a flying monster just ahead strikes it: it keeps to her height.
+      { const flyer = nearest(g, g.lane, C.strikeReach, e => e.kind === 'flyer'); if (flyer) strike(g, flyer, 'jump'); }
+      return;
     case 'down': {
       if (powerActive(g, 'flight')) return;
       // Off a wall with a ground charge: from that height, a shock wave.

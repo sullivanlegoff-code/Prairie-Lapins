@@ -3,8 +3,8 @@ import {advanceBennyRun, BENNY_RUN as C, comboMultiplier, dragonVisible, runInpu
   type BennyRun, type RunEntity, type RunKind} from '../src/simulation/bennyRun';
 
 /** A run with nothing laid out by chance: the test places what it needs, `z` metres ahead of Benny. */
-function quiet(seed = 7): BennyRun {
-  const g = startBennyRun(0, seed); g.entities = []; g.nextSpawnZ = Infinity; g.nextSettingAt = Infinity;
+function quiet(seed = 7, lanes = 3): BennyRun {
+  const g = startBennyRun(0, seed, lanes); g.entities = []; g.nextSpawnZ = Infinity; g.nextSettingAt = Infinity;
   for (const w of g.walls) w.runnable = true; g.wallsTo = {left: 1e9, right: 1e9}; g.walls.push({side: 'left', from: 0, to: 1e9, runnable: true}, {side: 'right', from: 0, to: 1e9, runnable: true});
   return g;
 }
@@ -90,6 +90,38 @@ describe('Cours cours Benny ! rules', () => {
     expect(g).toMatchObject({wall: null, lane: 0, pots: 1, foes: 2, lastBumpAt: null});
     const h = quiet(); runInput(h, h.at, 'up'); run(h, 300); place(h, 'pot', 0, 2); place(h, 'pot', 1, 2.5); runInput(h, h.at, 'down'); run(h, 300);
     expect(types(h)).not.toContain('shockwave'); expect(h.pots).toBe(1);
+  });
+  it('spins and strikes both creatures when one waits on each side of her', () => {
+    const g = quiet(); run(g, C.introMs);
+    place(g, 'chest', 0, 4); place(g, 'dragonnet', 2, 4.5); runInput(g, g.at, 'left');
+    const strikes = takeRunEvents(g).filter(e => e.type === 'strike').map(e => e.type === 'strike' && e.by);
+    expect(strikes).toEqual(['lane', 'spin']); expect(g).toMatchObject({lane: 0, foes: 2}); expect(g.entities).toHaveLength(0);
+    // Moving away from a lone creature does not strike it.
+    place(g, 'ember', 0, 6); runInput(g, g.at, 'right'); expect(g).toMatchObject({lane: 1, foes: 2});
+  });
+  it('strikes a little flying monster by swiping towards it: sideways, up or with a slide', () => {
+    const g = quiet(); run(g, C.introMs);
+    place(g, 'flyer', 2, 5); runInput(g, g.at, 'right'); expect(g.foes).toBe(1);
+    place(g, 'flyer', 2, 5); runInput(g, g.at, 'up'); expect(g.foes).toBe(2);
+    run(g, C.jumpMs + 50);
+    place(g, 'flyer', 2, 5); runInput(g, g.at, 'down'); expect(g.foes).toBe(3);
+    expect(g.lastBumpAt).toBeNull();
+  });
+  it('lets a flying monster reach Benny on a wall, from the edge lane, and swiping off the wall strikes it', () => {
+    const g = quiet(); run(g, C.introMs); runInput(g, g.at, 'left'); runInput(g, g.at, 'left'); expect(g.wall?.side).toBe('left');
+    place(g, 'chest', 0, 3); run(g, 500); expect(g.lastBumpAt).toBeNull(); // A creature on the ground does not reach the wall.
+    place(g, 'flyer', 0, 3); run(g, 500); expect(g.lastBumpAt).not.toBeNull();
+    run(g, C.dragonMs); runInput(g, g.at, 'right'); runInput(g, g.at, 'left'); runInput(g, g.at, 'left'); expect(g.wall?.side).toBe('left');
+    place(g, 'flyer', 0, 4); runInput(g, g.at, 'right');
+    expect(g).toMatchObject({wall: null, lane: 0}); expect(g.entities.some(e => e.kind === 'flyer')).toBe(false);
+  });
+  it('takes any number of lanes: five lanes, Benny in the middle, walls past the edges', () => {
+    const g = quiet(7, 5); expect(g).toMatchObject({lanes: 5, lane: 2});
+    for (let i = 0; i < 3; i++) runInput(g, g.at, 'right');
+    expect(g).toMatchObject({lane: 4, wall: {side: 'right'}});
+    place(g, 'wallCoin', 5, 3); run(g, 400); expect(g.coins).toBe(1);
+    const h = startBennyRun(0, 11, 5);
+    for (let t = 0; t < 120_000; t += 250) { h.entities = h.entities.filter(e => e.z > h.distance + 20); advanceBennyRun(h, t); for (const e of h.entities) expect(e.lane).toBeGreaterThanOrEqual(-1), expect(e.lane).toBeLessThanOrEqual(5); }
   });
   it('charges the ground from the air and breaks the pot ahead', () => {
     const g = quiet(); runInput(g, g.at, 'up'); run(g, 150);

@@ -12,7 +12,7 @@ import {pausableClock, settleCard} from './activityPause';
  * a power works as soon as Benny runs over it. The arrow keys do the same. The island's Phaser loop sleeps while the run is open.
  * Played with the iPhone upright only (owner, 11 November 2026): turned sideways, the run pauses behind a « tourne ton iPhone » card.
  */
-const HORIZON = .2, LANE_WIDTH = 2.2, CAMERA_BACK = 8, WALL_X = 1.5 * LANE_WIDTH + .35, WALL_HEIGHT = 4.5, FAR = 90, NEAR = -(CAMERA_BACK - .6);
+const HORIZON = .2, LANE_WIDTH = 2.2, CAMERA_BACK = 8, WALL_HEIGHT = 4.5, BENNY_SIZE = 1.35, FAR = 90, NEAR = -(CAMERA_BACK - .6);
 const SETTING_COLOURS: Record<RunSetting, {sky: string; ground: string; lane: string; wall: string; wallOff: string; side: string}> = {
   grotte: {sky: '#3a2a1c', ground: '#9a7a52', lane: '#b8956a', wall: '#c9a26a', wallOff: '#5c4630', side: '#e2b450'},
   pont: {sky: '#4a2420', ground: '#8d8378', lane: '#a39a8e', wall: '#b5aa9a', wallOff: '#55493f', side: '#f07a2a'},
@@ -50,6 +50,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   let game: BennyRun | null = null, running = false, best = 0, viewLane = 1, lastDrawAt = 0, popTimer: ReturnType<typeof setTimeout> | undefined;
   let swing: {at: number; lane: number} | null = null, shock: number | null = null, flashes: {at: number; text: string; x: number}[] = [];
   let width = 0, height = 0;
+  /** The road's lanes (3 for now; zones of up to 5 later) and the walls' distance from its middle. */
+  let lanes = 3;
+  const wallX = () => lanes / 2 * LANE_WIDTH + .35;
 
   const button = (label: string, action: () => void, key: string) => {
     const element = document.createElement('button'); element.type = 'button'; element.textContent = label; element.dataset[key] = '';
@@ -68,7 +71,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const g = game; if (!g) return;
     const multiplier = g.at <= g.comboUntil ? comboMultiplier(g.combo) : 1;
     score.textContent = `${g.score}`;
-    combo.textContent = multiplier > 1 ? `Combo ×${multiplier}` : g.combo > 1 && g.at <= g.comboUntil ? `${g.combo} coups` : '';
+    combo.textContent = g.combo > 1 && g.at <= g.comboUntil ? `${g.combo} coups${multiplier > 1 ? ` · ×${multiplier}` : ''}` : '';
     metres.textContent = `${Math.floor(g.distance)} m`; coins.textContent = plural(g.coins, 'pièce');
     const active = g.active && g.at < g.active.until ? g.active : null;
     powerLine.textContent = active ? `${POWER_NAMES[active.power]} · ${Math.ceil((active.until - g.at) / 1000)} s` : '';
@@ -76,13 +79,13 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
 
   // Perspective: a point `x` metres across, `ahead` metres in front of Benny and `up` metres high.
   // Upright screen: the three lanes and the walls fill the width, and the camera rises so that Benny runs low on the screen.
-  const scale0 = () => Math.min(width * .86, height * .62) / (3 * LANE_WIDTH + 1);
+  const scale0 = () => Math.min(width * .86, height * .62) / (lanes * LANE_WIDTH + 2.6);
   const cameraHeight = () => Math.min(8, Math.max(2.2, (height * .74 - height * HORIZON) / scale0()));
   const project = (x: number, ahead: number, up: number) => {
     const horizon = height * HORIZON, s = scale0() * CAMERA_BACK / (Math.max(-CAMERA_BACK + .5, ahead) + CAMERA_BACK);
     return {x: width / 2 + x * s, y: horizon + (cameraHeight() - up) * s, s};
   };
-  const laneX = (lane: number) => (lane - 1) * LANE_WIDTH;
+  const laneX = (lane: number) => (lane - (lanes - 1) / 2) * LANE_WIDTH;
   function quad(c: CanvasRenderingContext2D, points: {x: number; y: number}[], fill: string): void {
     c.beginPath(); c.moveTo(points[0].x, points[0].y); for (const p of points.slice(1)) c.lineTo(p.x, p.y); c.closePath(); c.fillStyle = fill; c.fill();
   }
@@ -90,18 +93,18 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     c.fillStyle = colours.sky; c.fillRect(0, 0, width, height);
     const horizon = project(0, FAR, 0).y;
     c.fillStyle = colours.side; c.fillRect(0, horizon, width, height - horizon);
-    const edge = 1.5 * LANE_WIDTH;
+    const edge = lanes / 2 * LANE_WIDTH;
     quad(c, [project(-edge, NEAR, 0), project(edge, NEAR, 0), project(edge, FAR, 0), project(-edge, FAR, 0)], colours.ground);
     // Lane stripes that scroll with the distance, so the speed reads.
     for (let k = 0; k < 40; k++) {
       const z0 = NEAR + k * 4 - (g.distance % 4), z1 = z0 + 2;
       if (z0 > FAR) break;
-      for (const x of [-LANE_WIDTH / 2, LANE_WIDTH / 2]) quad(c, [project(x - .06, z0, 0), project(x + .06, z0, 0), project(x + .06, z1, 0), project(x - .06, z1, 0)], colours.lane);
+      for (const x of Array.from({length: lanes - 1}, (_, i) => laneX(i) + LANE_WIDTH / 2)) quad(c, [project(x - .06, z0, 0), project(x + .06, z0, 0), project(x + .06, z1, 0), project(x - .06, z1, 0)], colours.lane);
     }
     // The walls, in their segments: runnable ones are lit and striped, the others dark.
     for (const w of g.walls) {
       const from = Math.max(NEAR, w.from - g.distance), to = Math.min(FAR, w.to - g.distance); if (to <= from) continue;
-      const x = w.side === 'left' ? -WALL_X : WALL_X;
+      const x = w.side === 'left' ? -wallX() : wallX();
       quad(c, [project(x, from, 0), project(x, to, 0), project(x, to, WALL_HEIGHT), project(x, from, WALL_HEIGHT)], w.runnable ? colours.wall : colours.wallOff);
       if (w.runnable) for (let z = Math.ceil(from / 6) * 6; z < to; z += 6) {
         const a = project(x, z, .3), b = project(x, z, WALL_HEIGHT - .3);
@@ -115,20 +118,28 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     beam: {colour: '#7a5a3a', w: 2, h: .45, up: 1.1, label: 'glisse'}, pillar: {colour: '#8a8a8a', w: 1.6, h: 3},
     dragonnet: {colour: '#8e3a5a', w: 1.1, h: .8, round: true, label: 'zzz'}, chest: {colour: '#6e3b2e', w: 1.3, h: .9, label: 'coffre'},
     ember: {colour: '#ff9a2a', w: .9, h: .9, up: .4, round: true, label: 'braise'},
+    flyer: {colour: '#7b4fc9', w: .8, h: .7, round: true, label: 'petit monstre'},
   };
   function thing(c: CanvasRenderingContext2D, g: BennyRun, e: RunEntity): void {
     const shape = SHAPES[e.kind], ahead = e.z - g.distance; if (!shape || ahead > FAR || ahead < -3) return;
-    const x = e.lane < 0 ? -WALL_X + .4 : e.lane > 2 ? WALL_X - .4 : laneX(e.lane);
-    const base = project(x, ahead, shape.up ?? 0), w = shape.w * base.s, h = shape.h * base.s;
+    const x = e.lane < 0 ? -wallX() + .4 : e.lane > lanes - 1 ? wallX() - .4 : laneX(e.lane);
+    // The little flying monster keeps to Benny's height, a little above her head.
+    const up = e.kind === 'flyer' ? bennyHeight(g) + .9 + Math.sin(g.at / 180 + e.id) * .08 : shape.up ?? 0;
+    const base = project(x, ahead, up), w = shape.w * base.s, h = shape.h * base.s;
+    if (e.kind === 'flyer') {
+      const flap = Math.abs(Math.sin(g.at / 90 + e.id)); c.fillStyle = '#b89af0';
+      for (const dir of [-1, 1]) { c.beginPath(); c.moveTo(base.x + dir * w * .3, base.y - h * .6); c.lineTo(base.x + dir * w * 1.1, base.y - h * (.6 + .7 * flap)); c.lineTo(base.x + dir * w * .9, base.y - h * .2); c.fill(); }
+    }
     c.fillStyle = shape.colour;
     if (shape.round) { c.beginPath(); c.ellipse(base.x, base.y - h / 2, w / 2, h / 2, 0, 0, Math.PI * 2); c.fill(); }
     else c.fillRect(base.x - w / 2, base.y - h, w, h);
     if (e.kind === 'power' && e.power && base.s > 14) { c.fillStyle = '#fff'; c.font = `800 ${Math.round(Math.max(10, base.s * .3))}px system-ui`; c.textAlign = 'center'; c.fillText(POWER_NAMES[e.power], base.x, base.y - h - 4); }
     if (shape.label && base.s > 18) { c.fillStyle = '#fff'; c.font = `700 ${Math.round(Math.max(10, base.s * .28))}px system-ui`; c.textAlign = 'center'; c.fillText(shape.label, base.x, base.y - h - 4); }
   }
+  const bennyHeight = (g: BennyRun) => g.wall ? BENNY_RUN.wallRunHeight : runHeight(g);
   function benny(c: CanvasRenderingContext2D, g: BennyRun, now: number): void {
-    const wall = g.wall, x = wall ? (wall.side === 'left' ? -WALL_X + .45 : WALL_X - .45) : laneX(viewLane);
-    const up = wall ? BENNY_RUN.wallRunHeight : runHeight(g), p = project(x, 0, up), s = p.s;
+    const wall = g.wall, x = wall ? (wall.side === 'left' ? -wallX() + .45 : wallX() - .45) : laneX(viewLane);
+    const up = bennyHeight(g), p = project(x, 0, up), s = p.s * BENNY_SIZE;
     const flat = sliding(g), w = (flat ? 1.1 : .8) * s, h = (flat ? .45 : 1) * s;
     c.save(); c.translate(p.x, p.y - h / 2);
     if (wall) c.rotate(wall.side === 'left' ? -1.1 : 1.1);
@@ -157,7 +168,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // Behind Benny (between her and the camera), on her outer side, low on the screen: she swoops in from below, then hovers.
     const since = g.lastBumpAt === null ? g.at - g.startedAt : g.at - g.lastBumpAt, left = g.lastBumpAt === null ? BENNY_RUN.introMs : BENNY_RUN.dragonMs;
     const out = Math.min(1, since / 450, Math.max(0, (left - since) / 450));
-    const side = viewLane > 1.5 ? -1 : 1, x = laneX(viewLane) + side * 1.1, ahead = -4.2 - (1 - out) * 2;
+    const side = viewLane > (lanes - 1) / 2 ? -1 : 1, x = laneX(viewLane) + side * 1.1, ahead = -4.2 - (1 - out) * 2;
     const p = project(x, ahead, 1.1 + Math.sin(g.at / 260) * .1), size = .5 * p.s;
     c.save(); c.globalAlpha = out;
     c.fillStyle = '#b58ad1';
@@ -183,7 +194,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   function react(): void {
     const g = game; if (!g) return;
     for (const event of takeRunEvents(g)) switch (event.type) {
-      case 'strike': swing = {at: clock(), lane: g.lane}; flashes.push({at: clock(), text: `+${event.points}`, x: project(laneX(event.entity.lane), 0, 0).x}); break;
+      case 'strike': if (event.by === 'spin') flash('Coup tournoyant !'); swing = {at: clock(), lane: g.lane}; flashes.push({at: clock(), text: `+${event.points}`, x: project(laneX(event.entity.lane), 0, 0).x}); break;
       case 'bump': flash('Aïe ! La Dragon arrive !'); break;
       case 'shield': flash('La bulle te protège !'); break;
       case 'power': flash(`${POWER_NAMES[event.power]} !`); break;
@@ -217,14 +228,14 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   function start(): void {
     if (sideways()) { orientation(); return; }
     best = Math.max(best, options.best?.() ?? 0);
-    game = startBennyRun(clock()); viewLane = 1; swing = null; shock = null; flashes = []; running = true; card.hidden = true; lastDrawAt = clock();
+    game = startBennyRun(clock()); lanes = game.lanes; viewLane = game.lane; swing = null; shock = null; flashes = []; running = true; card.hidden = true; lastDrawAt = clock();
     hud(); flash('Cours cours Benny !'); frame(loop);
   }
   function intro(): void {
-    game = startBennyRun(clock()); running = false; measure(); hud(); draw(clock());
+    game = startBennyRun(clock()); lanes = game.lanes; viewLane = game.lane; running = false; measure(); hud(); draw(clock());
     showCard(paragraph('Cours cours Benny !', 'benny-run-title'),
       paragraph('Benny a chipé un peu du trésor de la Dragon ! Glisse vers le haut pour sauter, sur le côté pour changer de couloir, vers le bas pour glisser (en l’air : charge au sol).', 'benny-run-rules'),
-      paragraph('Frappe les pots et les créatures avec ton bâton : change de couloir vers elles ou glisse dedans. Une créature que tu dépasses sans la frapper t’attaque !', 'benny-run-rules'),
+      paragraph('Frappe les pots et les créatures avec ton bâton : change de couloir vers elles ou glisse dedans. Une créature de chaque côté ? Ton bâton tournoie et frappe les deux. Les petits monstres volants restent à ta hauteur : glisse vers eux pour les frapper. Une créature que tu dépasses sans la frapper t’attaque !', 'benny-run-rules'),
       paragraph('Au bord, glisse vers le mur (même en sautant) pour courir dessus. Pour descendre : saute, glisse vers l’autre côté, ou charge au sol pour faire une onde de choc. Passe sur un pouvoir pour l’utiliser tout de suite.', 'benny-run-rules'),
       paragraph('Prototype en formes grises : les vrais dessins arrivent ensuite.', 'benny-run-rules'),
       button('C’est parti !', start, 'bennyRunStart'));
