@@ -231,12 +231,34 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const up = bennyHeight(g), p = project(x, 0, up), s = p.s * BENNY_SIZE;
     // Rolling, she curls up into a ball that turns.
     const flat = sliding(g), w = (flat ? .75 : .8) * s, h = (flat ? .75 : 1) * s;
-    c.save(); c.translate(p.x, p.y - h / 2);
+    // Running: a stride every 1.6 m, so the faster she runs the quicker her paws go; she bobs, her ears flop, she leans into a lane change.
+    const stride = g.distance / 1.6 * Math.PI * 2, grounded = !flat && !inAir(g) && !powerActive(g, 'flight');
+    const bob = grounded ? Math.abs(Math.sin(stride)) * .07 * s : 0, lean = Math.max(-.3, Math.min(.3, (g.lane - viewLane) * .35));
+    c.save(); c.translate(p.x, p.y - h / 2 - bob);
     if (flat) c.rotate((g.slideUntil - g.at) / 90);
-    if (wall) c.rotate(wall.side === 'left' ? -1.1 : 1.1);
+    else if (wall) c.rotate(wall.side === 'left' ? -1.1 : 1.1);
+    else c.rotate(lean);
     if (g.at < g.stumbleUntil && Math.floor(now / 80) % 2) c.globalAlpha = .45;
+    if (!flat) {
+      // Back paws, one up as the other pushes (tucked in the air).
+      c.fillStyle = '#c4834a';
+      for (const side of [-1, 1]) { const lift = grounded ? Math.max(0, Math.sin(stride + (side > 0 ? Math.PI : 0))) * .16 * s : .08 * s;
+        c.beginPath(); c.ellipse(side * w * .26, h * .5 - lift, w * .14, h * .11, 0, 0, Math.PI * 2); c.fill(); }
+      // The wand in her right paw: a rainbow star at its tip.
+      const tip = {x: w * .62, y: -h * .2 + Math.sin(stride) * .05 * s};
+      c.strokeStyle = '#8a5a2b'; c.lineWidth = Math.max(2, s * .06); c.beginPath(); c.moveTo(w * .36, h * .12); c.lineTo(tip.x, tip.y); c.stroke();
+      c.fillStyle = `hsl(${(now / 6) % 360} 90% 65%)`; c.beginPath();
+      for (let i = 0; i < 10; i++) { const r = (i % 2 ? .06 : .14) * s, a = -Math.PI / 2 + i * Math.PI / 5; c.lineTo(tip.x + Math.cos(a) * r, tip.y + Math.sin(a) * r); }
+      c.fill();
+    }
     c.fillStyle = '#d99a5b'; c.beginPath(); c.ellipse(0, 0, w / 2, h / 2, 0, 0, Math.PI * 2); c.fill();
-    c.fillStyle = '#7d6a5a'; c.fillRect(-w * .28, -h / 2 - .35 * s, w * .14, .4 * s); c.fillRect(w * .14, -h / 2 - .35 * s, w * .14, .4 * s);
+    if (!flat) {
+      // Long ears, swept back by the wind and flopping with each stride.
+      for (const side of [-1, 1]) { const flop = side * .18 + Math.sin(stride + side) * (grounded ? .12 : .04);
+        c.save(); c.translate(side * w * .2, -h * .38); c.rotate(flop);
+        c.fillStyle = '#d99a5b'; c.beginPath(); c.ellipse(0, -.28 * s, w * .11, .3 * s, 0, 0, Math.PI * 2); c.fill();
+        c.fillStyle = '#f2b8a0'; c.beginPath(); c.ellipse(0, -.26 * s, w * .05, .22 * s, 0, 0, Math.PI * 2); c.fill(); c.restore(); }
+    } else { c.fillStyle = '#7d6a5a'; c.fillRect(-w * .28, -h / 2 - .2 * s, w * .14, .25 * s); c.fillRect(w * .14, -h / 2 - .2 * s, w * .14, .25 * s); }
     c.fillStyle = '#fff8ee'; c.beginPath(); c.arc(0, h * .3, w * .14, 0, Math.PI * 2); c.fill();
     if (powerActive(g, 'bubble')) { c.strokeStyle = 'rgba(180,140,255,.8)'; c.lineWidth = 4; c.beginPath(); c.arc(0, 0, w * .85, 0, Math.PI * 2); c.stroke(); }
     c.restore();
@@ -264,8 +286,16 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     c.save(); c.globalAlpha = out;
     c.fillStyle = '#b58ad1';
     for (const dir of [-1, 1]) { c.beginPath(); c.moveTo(p.x + dir * size * .6, p.y); c.lineTo(p.x + dir * size * 1.6, p.y - size * .8 * Math.abs(Math.sin(g.at / 120))); c.lineTo(p.x + dir * size * .3, p.y - size * .3); c.fill(); }
-    c.fillStyle = '#9c2f3c'; c.beginPath(); c.ellipse(p.x, p.y, size * .75, size * .55, 0, 0, Math.PI * 2); c.fill();
-    c.fillStyle = '#fff'; c.font = `800 ${Math.round(size * .28)}px system-ui`; c.textAlign = 'center'; c.fillText('Dragon', p.x, p.y + size * .1);
+    // Seen from behind: a tail swinging below, the body, a row of spines, the head with two horns (shapes until her painting).
+    const swing = Math.sin(g.at / 180) * size * .35;
+    c.strokeStyle = '#9c2f3c'; c.lineWidth = size * .16; c.lineCap = 'round';
+    c.beginPath(); c.moveTo(p.x, p.y + size * .4); c.quadraticCurveTo(p.x + swing, p.y + size * .9, p.x - swing * .6, p.y + size * 1.2); c.stroke(); c.lineCap = 'butt';
+    c.fillStyle = '#9c2f3c'; c.beginPath(); c.ellipse(p.x, p.y, size * .7, size * .55, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#f4c430';
+    for (const k of [-.25, .05, .35]) { const y = p.y + k * size; c.beginPath(); c.moveTo(p.x - size * .09, y); c.lineTo(p.x, y - size * .18); c.lineTo(p.x + size * .09, y); c.fill(); }
+    const head = p.y - size * .62;
+    c.fillStyle = '#f2e3c4'; for (const dir of [-1, 1]) { c.beginPath(); c.moveTo(p.x + dir * size * .18, head - size * .1); c.lineTo(p.x + dir * size * .42, head - size * .52); c.lineTo(p.x + dir * size * .3, head - size * .02); c.fill(); }
+    c.fillStyle = '#b23a48'; c.beginPath(); c.ellipse(p.x, head, size * .38, size * .3, 0, 0, Math.PI * 2); c.fill();
     c.restore();
   }
   function draw(now: number): void {
