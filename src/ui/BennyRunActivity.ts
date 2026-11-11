@@ -246,11 +246,11 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   const SHAPES: Record<string, {colour: string; w: number; h: number; up?: number; round?: boolean; label?: string}> = {
     coin: {colour: '#f4c430', w: .45, h: .45, up: .5, round: true}, power: {colour: '#b07bff', w: .8, h: .8, up: .6, round: true}, wallCoin: {colour: '#f4c430', w: .45, h: .45, up: 1.6, round: true},
-    pot: {colour: '#c96b3a', w: .9, h: .9, round: true, label: 'pot'}, thrownPot: {colour: '#e08a52', w: .8, h: .8, up: .5, round: true}, barrier: {colour: '#7a5a3a', w: 2, h: .6, label: 'saute'},
+    pot: {colour: '#c96b3a', w: .9, h: .9, round: true}, thrownPot: {colour: '#e08a52', w: .8, h: .8, up: .5, round: true}, barrier: {colour: '#7a5a3a', w: 2, h: .6, label: 'saute'},
     beam: {colour: '#7a5a3a', w: 2, h: .45, up: 1.1, label: 'roulade'}, pillar: {colour: '#8a8a8a', w: 1.6, h: 3},
-    dragonnet: {colour: '#8e3a5a', w: 1.1, h: .8, round: true, label: 'zzz'}, chest: {colour: '#6e3b2e', w: 1.3, h: .9, label: 'coffre'},
-    ember: {colour: '#ff9a2a', w: .9, h: .9, up: .4, round: true, label: 'braise'},
-    flyer: {colour: '#7b4fc9', w: .8, h: .7, round: true, label: 'petit monstre'},
+    dragonnet: {colour: '#8e3a5a', w: 1.1, h: .8, round: true}, chest: {colour: '#6e3b2e', w: 1.3, h: .9},
+    ember: {colour: '#ff9a2a', w: .9, h: .9, up: .4, round: true},
+    flyer: {colour: '#7b4fc9', w: .8, h: .7, round: true},
   };
   function thing(c: CanvasRenderingContext2D, g: BennyRun, e: RunEntity): void {
     const shape = SHAPES[e.kind], ahead = e.z - g.distance; if (!shape || ahead > FAR || ahead < -3) return;
@@ -258,18 +258,84 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // The little flying monster keeps to Benny's height, a little above her head.
     const up = e.kind === 'flyer' ? bennyHeight(g) + .9 + Math.sin(g.at / 180 + e.id) * .08 : e.up ?? shape.up ?? 0;
     const base = project(x, ahead, up), w = shape.w * base.s, h = shape.h * base.s;
-    if (e.kind === 'flyer') {
-      const flap = Math.abs(Math.sin(g.at / 90 + e.id)); c.fillStyle = '#b89af0';
-      for (const dir of [-1, 1]) { c.beginPath(); c.moveTo(base.x + dir * w * .3, base.y - h * .6); c.lineTo(base.x + dir * w * 1.1, base.y - h * (.6 + .7 * flap)); c.lineTo(base.x + dir * w * .9, base.y - h * .2); c.fill(); }
+    if (!figure(c, e, base.x, base.y, w, h, g.at)) {
+      c.fillStyle = shape.colour;
+      if (shape.round) { c.beginPath(); c.ellipse(base.x, base.y - h / 2, w / 2, h / 2, 0, 0, Math.PI * 2); c.fill(); }
+      else c.fillRect(base.x - w / 2, base.y - h, w, h);
     }
-    c.fillStyle = shape.colour;
-    if (shape.round) { c.beginPath(); c.ellipse(base.x, base.y - h / 2, w / 2, h / 2, 0, 0, Math.PI * 2); c.fill(); }
-    else c.fillRect(base.x - w / 2, base.y - h, w, h);
     if (e.kind === 'power' && e.power && base.s > 14) { c.fillStyle = '#fff'; c.font = `800 ${Math.round(Math.max(10, base.s * .3))}px system-ui`; c.textAlign = 'center'; c.fillText(POWER_NAMES[e.power], base.x, base.y - h - 4); }
     // A creature that will strike Benny unless she strikes it first (beside her or straight ahead, 1.4 s away at most): a red « ! ».
     if (threatening(g, e)) { const r = Math.max(9, base.s * .32) * (1 + .12 * Math.sin(g.at / 90)), y = base.y - h - r * 1.6;
       c.fillStyle = '#d93a3a'; c.beginPath(); c.arc(base.x, y, r, 0, Math.PI * 2); c.fill(); c.fillStyle = '#fff'; c.font = `900 ${Math.round(r * 1.5)}px system-ui`; c.textAlign = 'center'; c.fillText('!', base.x, y + r * .52); return; }
     if (shape.label && base.s > 18) { c.fillStyle = '#fff'; c.font = `700 ${Math.round(Math.max(10, base.s * .28))}px system-ui`; c.textAlign = 'center'; c.fillText(shape.label, base.x, base.y - h - 4); }
+  }
+  /** Shapes that say what each thing is, standing on (`x`, `y`), `w` × `h` px; false for those still drawn as a plain block. */
+  function figure(c: CanvasRenderingContext2D, e: RunEntity, x: number, y: number, w: number, h: number, at: number): boolean {
+    const ellipse = (cx: number, cy: number, rx: number, ry: number, colour: string) => { c.fillStyle = colour; c.beginPath(); c.ellipse(cx, cy, Math.max(.5, rx), Math.max(.5, ry), 0, 0, Math.PI * 2); c.fill(); };
+    const eyes = (cx: number, cy: number, gap: number, r: number, closed = false) => {
+      for (const dir of [-1, 1]) if (closed) { c.strokeStyle = '#2a1a12'; c.lineWidth = Math.max(1, r * .5); c.beginPath(); c.arc(cx + dir * gap, cy - r * .3, r, .2 * Math.PI, .8 * Math.PI); c.stroke(); }
+      else { ellipse(cx + dir * gap, cy, r, r * 1.15, '#fff'); ellipse(cx + dir * gap, cy + r * .15, r * .5, r * .6, '#2a1a12'); }
+    };
+    switch (e.kind) {
+      case 'pot': case 'thrownPot': {
+        // A clay jar (spinning once struck).
+        c.save(); c.translate(x, y - h * .5); if (e.kind === 'thrownPot') c.rotate(at / 60);
+        ellipse(0, h * .06, w * .5, h * .42, '#c96b3a'); c.fillStyle = '#a8542a'; c.fillRect(-w * .22, -h * .5, w * .44, h * .2);
+        ellipse(0, -h * .5, w * .28, h * .07, '#7a3a1c'); c.fillStyle = '#f4c430'; c.fillRect(-w * .45, h * .02, w * .9, h * .08);
+        ellipse(-w * .2, -h * .08, w * .08, h * .14, 'rgba(255,255,255,.35)'); c.restore(); return true;
+      }
+      case 'chest': {
+        // The greedy chest: its lid chomps, teeth and eyes in the gap.
+        const open = (.15 + .25 * Math.abs(Math.sin(at / 160 + e.id))) * h, lid = h * .38;
+        c.fillStyle = '#6e3b2e'; c.fillRect(x - w / 2, y - h * .55, w, h * .55);
+        c.fillStyle = '#2a120c'; c.fillRect(x - w * .46, y - h * .55 - open, w * .92, open);
+        c.fillStyle = '#fff'; for (let i = 0; i < 5; i++) { const tx = x - w * .4 + i * w * .2; c.beginPath(); c.moveTo(tx - w * .07, y - h * .55); c.lineTo(tx + w * .07, y - h * .55); c.lineTo(tx, y - h * .55 - open * .5); c.fill(); }
+        eyes(x, y - h * .55 - open * .55, w * .18, Math.max(1.5, open * .22));
+        c.fillStyle = '#8a4a36'; c.beginPath(); c.moveTo(x - w / 2, y - h * .55 - open); c.lineTo(x + w / 2, y - h * .55 - open); c.lineTo(x + w * .44, y - h * .55 - open - lid); c.lineTo(x - w * .44, y - h * .55 - open - lid); c.fill();
+        c.fillStyle = '#f4c430'; c.fillRect(x - w * .06, y - h * .55 - open - lid * .7, w * .12, lid * .5); c.fillRect(x - w / 2, y - h * .3, w, h * .07); return true;
+      }
+      case 'dragonnet': {
+        // A little dragon asleep, curled up, with a Z floating up.
+        for (const dir of [-1, 1]) { c.fillStyle = '#c47a9a'; c.beginPath(); c.moveTo(x + dir * w * .1, y - h * .7); c.lineTo(x + dir * w * .5, y - h * 1.05); c.lineTo(x + dir * w * .35, y - h * .55); c.fill(); }
+        ellipse(x, y - h * .4, w * .5, h * .4, '#8e3a5a'); ellipse(x, y - h * .62, w * .26, h * .24, '#a3476a'); eyes(x, y - h * .62, w * .1, Math.max(1, w * .05), true);
+        const z = (at / 900 + e.id * .3) % 1; c.globalAlpha = 1 - z; c.fillStyle = '#fff'; c.font = `800 ${Math.round(Math.max(8, h * .4))}px system-ui`; c.textAlign = 'center'; c.fillText('z', x + w * .35, y - h * (1 + z * .6)); c.globalAlpha = 1;
+        return true;
+      }
+      case 'ember': {
+        // A living flame that flickers.
+        const f = 1 + .08 * Math.sin(at / 70 + e.id);
+        c.fillStyle = '#ff6a1a'; c.beginPath(); c.moveTo(x, y - h * 1.15 * f); c.quadraticCurveTo(x + w * .6, y - h * .5, x, y); c.quadraticCurveTo(x - w * .6, y - h * .5, x, y - h * 1.15 * f); c.fill();
+        c.fillStyle = '#ffd24a'; c.beginPath(); c.moveTo(x, y - h * .8 * f); c.quadraticCurveTo(x + w * .32, y - h * .3, x, y - h * .05); c.quadraticCurveTo(x - w * .32, y - h * .3, x, y - h * .8 * f); c.fill();
+        eyes(x, y - h * .38, w * .12, Math.max(1, w * .07)); return true;
+      }
+      case 'flyer': {
+        const flap = Math.abs(Math.sin(at / 90 + e.id)); c.fillStyle = '#b89af0';
+        for (const dir of [-1, 1]) { c.beginPath(); c.moveTo(x + dir * w * .3, y - h * .6); c.lineTo(x + dir * w * 1.1, y - h * (.6 + .7 * flap)); c.lineTo(x + dir * w * .9, y - h * .2); c.fill(); }
+        ellipse(x, y - h / 2, w / 2, h / 2, '#7b4fc9'); eyes(x, y - h * .55, w * .17, Math.max(1, w * .1));
+        c.fillStyle = '#fff'; for (const dir of [-1, 1]) { c.beginPath(); c.moveTo(x + dir * w * .12, y - h * .25); c.lineTo(x + dir * w * .04, y - h * .25); c.lineTo(x + dir * w * .08, y - h * .1); c.fill(); }
+        return true;
+      }
+      case 'barrier': {
+        // A wooden fence: two posts and two planks.
+        c.fillStyle = '#5c3e24'; c.fillRect(x - w * .45, y - h, w * .08, h); c.fillRect(x + w * .37, y - h, w * .08, h);
+        c.fillStyle = '#8a6440'; c.fillRect(x - w / 2, y - h * .9, w, h * .3); c.fillRect(x - w / 2, y - h * .45, w, h * .3); return true;
+      }
+      case 'beam': {
+        // A log held up across the lane on two posts: roll under it.
+        c.fillStyle = '#5c3e24'; c.fillRect(x - w * .48, y - h, w * .06, h * 3.4); c.fillRect(x + w * .42, y - h, w * .06, h * 3.4);
+        c.fillStyle = '#8a6440'; c.fillRect(x - w / 2, y - h, w, h); ellipse(x + w / 2, y - h / 2, h * .25, h / 2, '#c49a6a');
+        c.strokeStyle = '#6b4a2a'; c.lineWidth = Math.max(1, h * .08); c.beginPath(); c.moveTo(x - w * .3, y - h * .5); c.lineTo(x + w * .2, y - h * .5); c.stroke(); return true;
+      }
+      case 'pillar': {
+        c.fillStyle = '#8a8a8a'; c.fillRect(x - w * .4, y - h, w * .8, h);
+        c.fillStyle = '#a4a4a4'; for (const k of [-.2, .1]) c.fillRect(x + k * w, y - h, w * .08, h);
+        c.fillStyle = '#6e6e6e'; c.fillRect(x - w / 2, y - h, w, h * .08); c.fillRect(x - w / 2, y - h * .08, w, h * .08); return true;
+      }
+      case 'coin': case 'wallCoin': {
+        ellipse(x, y - h / 2, w / 2, h / 2, '#f4c430'); ellipse(x, y - h / 2, w * .32, h * .32, '#e0a81e'); ellipse(x - w * .14, y - h * .66, w * .1, h * .1, '#fff6c8'); return true;
+      }
+      default: return false;
+    }
   }
   let leapArc = 0;
   const FOES = new Set(['dragonnet', 'chest', 'ember', 'flyer']);
