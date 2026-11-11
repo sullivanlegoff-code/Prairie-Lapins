@@ -96,6 +96,9 @@ export const BENNY_RUN = {
   /** In the cave, rocks hang from the ceiling (their shadow on the road) and fall when Benny is `rockLand` m away: then a
    * boulder to jump over, like a fence. */
   rockLand: 24,
+  /** On the bridge over the lava, vents bubble in the road and burst into a lava geyser when Benny is `geyserAt` m away:
+   * a column she cannot jump, to go round. */
+  geyserAt: 30,
   /** A run never pays: this only bounds what a run can count. */
   maxScore: 9_999_999,
 } as const;
@@ -114,7 +117,7 @@ export type StrikeKind = 'lane' | 'spin' | 'slide' | 'jump' | 'pound' | 'shock' 
 
 /** A thing on the road. `lane` is 0 to `lanes - 1`; a wall coin's lane is -1 (left wall) or `lanes` (right wall). */
 /** A thing on the road; `up` is how high a coin floats (a coin arc over a barrier), for the drawing only. */
-export interface RunEntity {id: number; kind: RunKind; lane: number; z: number; power?: RunPower; hopAt?: number; up?: number; beside?: boolean; flyTo?: number; cross?: -1 | 1; crossAt?: number; rock?: 'up' | 'down'}
+export interface RunEntity {id: number; kind: RunKind; lane: number; z: number; power?: RunPower; hopAt?: number; up?: number; beside?: boolean; flyTo?: number; cross?: -1 | 1; crossAt?: number; rock?: 'up' | 'down'; geyser?: 'idle' | 'up'}
 export interface WallSegment {side: Side; from: number; to: number; runnable: boolean}
 export type RunEvent =
   | {type: 'strike'; entity: RunEntity; points: number; combo: number; multiplier: number; by: StrikeKind}
@@ -143,6 +146,8 @@ export type RunEvent =
   | {type: 'crumble'; pit: Pit}
   /** A rock fallen from the cave's ceiling onto the road. */
   | {type: 'rockfall'; entity: RunEntity}
+  /** A vent on the lava bridge bursting into a geyser. */
+  | {type: 'geyser'; entity: RunEntity}
   /** A challenge given (`points` absent) or done. */
   | {type: 'challenge'; kind: ChallengeKind; goal: number; points?: number}
   | {type: 'tutorial'; step: TutorialStep | null; again?: boolean};
@@ -335,7 +340,7 @@ export const wallLane = (g: BennyRun, side: Side) => side === 'left' ? -1 : g.la
 const across = (g: BennyRun) => g.wall ? wallLane(g, g.wall.side) : g.lane;
 const others = (g: BennyRun, n: number) => { const l = laneList(g); for (let i = l.length - 1; i > 0; i--) { const j = Math.floor(random(g) * (i + 1)); [l[i], l[j]] = [l[j], l[i]]; } return l.slice(0, n); };
 
-export type RunPattern = 'coins' | 'arc' | 'slalom' | 'pots' | 'gauntlet' | 'pair' | 'tunnel' | 'barriers' | 'pillars' | 'wall' | 'flyers' | 'breather' | 'hole' | 'skittles' | 'wide' | 'platform' | 'crossers' | 'crumble' | 'rockfall';
+export type RunPattern = 'coins' | 'arc' | 'slalom' | 'pots' | 'gauntlet' | 'pair' | 'tunnel' | 'barriers' | 'pillars' | 'wall' | 'flyers' | 'breather' | 'hole' | 'skittles' | 'wide' | 'platform' | 'crossers' | 'crumble' | 'rockfall' | 'geysers';
 /**
  * The road is laid out in short patterns rather than one thing at a time, so that it has a rhythm: a slalom of pots to chain
  * lane strikes into a combo, a row of creatures one side then the other, a pair of creatures on both sides for the spinning
@@ -345,12 +350,12 @@ export type RunPattern = 'coins' | 'arc' | 'slalom' | 'pots' | 'gauntlet' | 'pai
  */
 const PATTERNS: Record<RunPattern, [number, number]> = {
   coins: [4, 1.5], arc: [2, 2], slalom: [3, 3], pots: [3, 1.5], gauntlet: [1.5, 3.5], pair: [.5, 2.5], tunnel: [1, 2], barriers: [1, 2],
-  pillars: [1.5, 2.5], wall: [0, 2], flyers: [0, 2.5], breather: [2, .8], hole: [0, 2.2], skittles: [1.5, 2], wide: [0, 1.2], platform: [.4, 1.4], crossers: [0, 1.6], crumble: [.2, 1.1], rockfall: [1.5, 2.5],
+  pillars: [1.5, 2.5], wall: [0, 2], flyers: [0, 2.5], breather: [2, .8], hole: [0, 2.2], skittles: [1.5, 2], wide: [0, 1.2], platform: [.4, 1.4], crossers: [0, 1.6], crumble: [.2, 1.1], rockfall: [1.5, 2.5], geysers: [1.5, 2.5],
 };
 function choosePattern(g: BennyRun, z: number): RunPattern {
   const d = runDifficulty(g), list = (Object.keys(PATTERNS) as RunPattern[]).filter(p => (p !== 'flyers' || d >= C.flyerFrom) && (p !== 'pair' || d >= .2) && (p !== 'hole' || d >= .08) &&
     (p !== 'wall' || (d > .25 && wallSide(g, z))) &&
-    (p !== 'platform' || d >= .1) && (p !== 'crossers' || d >= .2) && (p !== 'crumble' || d >= .12) && (p !== 'rockfall' || (d >= .06 && settingAt(g, z) === 'grotte' && settingAt(g, z + 40) === 'grotte')) && (p !== 'wide' || (d >= C.wideFrom && g.baseLanes < C.wideLanes && !g.zones.some(w => w.to > z - 100))));
+    (p !== 'platform' || d >= .1) && (p !== 'crossers' || d >= .2) && (p !== 'crumble' || d >= .12) && (p !== 'geysers' || (d >= .06 && settingAt(g, z) === 'pont' && settingAt(g, z + 40) === 'pont')) && (p !== 'rockfall' || (d >= .06 && settingAt(g, z) === 'grotte' && settingAt(g, z + 40) === 'grotte')) && (p !== 'wide' || (d >= C.wideFrom && g.baseLanes < C.wideLanes && !g.zones.some(w => w.to > z - 100))));
   // The « run on walls » challenge: a row of pillars (the way on is up a wall) comes one time in two meanwhile.
   if (g.challenge?.kind === 'walls' && wallSide(g, z) && random(g) < C.wallChallengeNudge) return 'wall';
   const weight = (p: RunPattern) => PATTERNS[p][0] + (PATTERNS[p][1] - PATTERNS[p][0]) * d;
@@ -437,6 +442,19 @@ function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
       return z + (count - 1) * (step + 3);
     }
     case 'breather': { const lane = any(); for (let i = 0; i < 4; i++) add(g, 'coin', lane, z + i * 2); return z + 6; }
+    case 'geysers': {
+      // Vents in a zigzag, one lane after another (two side by side later on, never all): weave between the geysers.
+      let lane = any(), at = z;
+      const rows = 3 + (random(g) < d ? 1 : 0);
+      for (let r = 0; r < rows; r++) {
+        add(g, 'pillar', lane, at, {geyser: 'idle'});
+        const two = g.lanes > 2 && random(g) < .2 + .4 * d, other = two ? neighbour(lane) : -1;
+        if (two) add(g, 'pillar', other, at, {geyser: 'idle'});
+        const free = all.filter(l => l !== lane && l !== other); add(g, 'coin', pick(g, free), at);
+        lane = pick(g, all.filter(l => l !== lane)); at += 11;
+      }
+      return at - 11;
+    }
     case 'rockfall': {
       // Rocks fall in all lanes but one (two rows later on, the free lane changing): jump them or take the free lane.
       const rows = random(g) < .25 + .5 * d ? 2 : 1;
@@ -672,8 +690,8 @@ function tick(g: BennyRun): void {
   // A new setting is chosen ahead, then reached.
   if (g.at >= g.nextSettingAt && !g.upcoming) {
     g.upcoming = {setting: pick(g, RUN_SETTINGS.filter(s => s !== g.setting)), z: g.distance + C.settingAhead}; g.nextSettingAt = g.at + settingDelay(g);
-    // Rocks hang only from the cave's ceiling: none past where it ends.
-    const end = g.upcoming.z; g.entities = g.entities.filter(e => !(e.rock && e.z >= end));
+    // Rocks hang only from the cave's ceiling, vents only on the lava bridge: none past where they end.
+    const end = g.upcoming.z; g.entities = g.entities.filter(e => !((e.rock || e.geyser) && e.z >= end));
   }
   followLanes(g); followPlatform(g);
   if (g.upcoming && g.distance >= g.upcoming.z) { g.setting = g.upcoming.setting; g.upcoming = null; g.events.push({type: 'setting', setting: g.setting}); }
@@ -694,6 +712,7 @@ function tick(g: BennyRun): void {
   if (g.queuedJumpUntil && !inAir(g) && !g.wall) { const fresh = g.at <= g.queuedJumpUntil; g.queuedJumpUntil = 0; if (fresh) runInput(g, g.at, 'up'); }
   flyPots(g, dt);
   for (const e of g.entities) if (e.rock === 'up' && e.z - g.distance <= C.rockLand) { e.rock = 'down'; g.events.push({type: 'rockfall', entity: e}); }
+  for (const e of g.entities) if (e.geyser === 'idle' && e.z - g.distance <= C.geyserAt) { e.geyser = 'up'; g.events.push({type: 'geyser', entity: e}); }
   for (const e of g.entities) if (e.cross && e.crossAt !== undefined && g.at >= e.crossAt) {
     e.crossAt = g.at + C.crossMs;
     if (e.z - g.distance > C.crossStill) { const n = lanesAt(g, e.z); if (e.lane + e.cross < 0 || e.lane + e.cross > n - 1) e.cross = -e.cross as -1 | 1; e.lane += e.cross; }

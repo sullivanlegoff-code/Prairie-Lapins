@@ -404,6 +404,25 @@ describe('Cours cours Benny ! rules', () => {
     run(g, (40 - C.rockLand) / g.speed * 1000 + 100); expect(g.entities[0].rock).toBe('down'); expect(types(g)).toContain('rockfall');
     while (g.entities[0].z - g.distance > 1.2) run(g, 10); runInput(g, g.at, 'up'); run(g, 800); expect(g.lastBumpAt).toBeNull();
   });
+  it('bursts a lava geyser out of a vent on the bridge as Benny comes: a column she cannot jump', () => {
+    const g = quiet(); run(g, C.introMs); const z = g.distance;
+    g.entities.push({id: 70002, kind: 'pillar', lane: 1, z: z + 45, geyser: 'idle'});
+    run(g, 200); expect(g.entities[0].geyser).toBe('idle');
+    run(g, (45 - C.geyserAt) / g.speed * 1000 + 100); expect(g.entities[0].geyser).toBe('up'); expect(types(g)).toContain('geyser');
+    while (g.entities[0].z - g.distance > 1.2) run(g, 10); runInput(g, g.at, 'up'); run(g, 800); expect(g.lastBumpAt).not.toBeNull();
+  });
+  it('lays geysers only on the lava bridge, never in all lanes at once', () => {
+    for (const seed of [3, 4, 5]) {
+      const g = startBennyRun(0, seed, 3); g.setting = 'pont'; let seen = 0;
+      for (let t = 0; t < 200_000 && !g.over; t += 1000) { g.lastBumpAt = null; g.stumbleUntil = 0; run(g, 1000);
+        const vents = g.entities.filter(e => e.geyser); seen += vents.length;
+        for (const e of vents) expect(settingAt(g, e.z)).toBe('pont');
+        const byZ = new Map<number, number>(); for (const e of vents) byZ.set(e.z, (byZ.get(e.z) ?? 0) + 1);
+        for (const [vz, n] of byZ) expect(n).toBeLessThan(lanesAt(g, vz));
+      }
+      expect(seen).toBeGreaterThan(0);
+    }
+  });
   it('lays rockfalls only in the cave, always leaving one lane free', () => {
     for (const seed of [3, 4, 5]) {
       const g = startBennyRun(0, seed, 3); let seen = 0;

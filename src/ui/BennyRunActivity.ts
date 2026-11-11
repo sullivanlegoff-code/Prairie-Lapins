@@ -307,6 +307,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       if (to > from) { const a = project(x, from, top), b = project(x, to, top); c.strokeStyle = 'rgba(255,255,255,.25)'; c.lineWidth = Math.max(1, a.s * .1); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); }
     }
   }
+  /** When each geyser burst out (it rises over a moment). */
+  const geysersUp = new Map<number, number>();
   /** When each rock hit the road (its fall is drawn over a moment). */
   const rocksDown = new Map<number, number>();
   const SHAPES: Record<string, {colour: string; w: number; h: number; up?: number; round?: boolean; label?: string}> = {
@@ -411,7 +413,17 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         c.fillStyle = '#8a6440'; c.fillRect(x - w / 2, y - h, w, h); ellipse(x + w / 2, y - h / 2, h * .25, h / 2, '#c49a6a');
         c.strokeStyle = '#6b4a2a'; c.lineWidth = Math.max(1, h * .08); c.beginPath(); c.moveTo(x - w * .3, y - h * .5); c.lineTo(x + w * .2, y - h * .5); c.stroke(); return true;
       }
-      case 'pillar': {
+      case 'pillar': if (e.geyser) {
+        // A vent in the road (dark, glowing, bubbling), then a column of lava rising out of it.
+        ellipse(x, y, w * .42, w * .12, '#2a0e06'); ellipse(x, y, w * .3, w * .08, '#ff6a1a');
+        const rose = geysersUp.get(e.id), grow = e.geyser === 'idle' ? 0 : rose === undefined ? 1 : Math.min(1, (clock() - rose) / 220);
+        if (!grow) { const b = (at / 160 + e.id) % 1; ellipse(x + w * .1, y - b * h * .2, w * .05, w * .05, '#ffb03a'); return true; }
+        const top = y - h * grow * (1 + .04 * Math.sin(at / 60 + e.id)), half = w * .36;
+        const lava = c.createLinearGradient(x - half, 0, x + half, 0); lava.addColorStop(0, '#c2300c'); lava.addColorStop(.5, '#ffb03a'); lava.addColorStop(1, '#c2300c');
+        c.fillStyle = lava; c.beginPath(); c.moveTo(x - half, y); c.quadraticCurveTo(x - half * .7, (y + top) / 2, x - half * .9, top); c.lineTo(x + half * .9, top); c.quadraticCurveTo(x + half * .7, (y + top) / 2, x + half, y); c.fill();
+        for (let k = 0; k < 3; k++) { const a = at / 120 + k * 2.1 + e.id; ellipse(x + Math.sin(a) * half * 1.2, top - Math.abs(Math.cos(a)) * h * .15, half * .35, half * .35, k ? '#ff6a1a' : '#ffe36b'); }
+        return true;
+      } else {
         c.fillStyle = '#8a8a8a'; c.fillRect(x - w * .4, y - h, w * .8, h);
         c.fillStyle = '#a4a4a4'; for (const k of [-.2, .1]) c.fillRect(x + k * w, y - h, w * .08, h);
         c.fillStyle = '#6e6e6e'; c.fillRect(x - w / 2, y - h, w, h * .08); c.fillRect(x - w / 2, y - h * .08, w, h * .08); return true;
@@ -608,6 +620,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         if (event.points === undefined) flash(`Défi : ${CHALLENGE_TEXT[event.kind](event.goal)}`);
         else { flash(`Défi réussi ! +${event.points}`); sound('power'); burst(width / 2, height * .3, ['#7be08a', '#ffe66b', '#fff'], 24, 360); }
         break;
+      case 'geyser': { geysersUp.set(event.entity.id, clock()); const p = screenOf(g, event.entity); burst(p.x, p.y, ['#ff6a1a', '#ffb03a', '#ffe36b'], 8, 220);
+        if (Math.abs(event.entity.lane - g.lane) <= 1) sound('wall', .6); break; }
       case 'rockfall': { rocksDown.set(event.entity.id, clock()); { const p = screenOf(g, event.entity); burst(p.x, p.y, ['#6f6258', '#8d8075', '#4a3f37'], 6, 160); }
         if (event.entity.lane === g.lane || Math.abs(event.entity.lane - g.lane) === 1) { sound('bump', .5); shakeFor('strike'); } break; }
       case 'crumble': { const n = lanesAt(g, event.pit.from), x = (event.pit.lane - (n - 1) / 2) * LANE_WIDTH, p = project(x, event.pit.from - g.distance + 1, 0);
