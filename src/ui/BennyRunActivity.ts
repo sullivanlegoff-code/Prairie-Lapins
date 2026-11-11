@@ -170,11 +170,48 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       }
     }
   }
+  /** Above the horizon: the cave's ceiling with its stalactites and a gold glow far off; the lava's red glow with rocks and
+   * rising sparks; the mountain sky with two rows of snowy peaks and drifting clouds (shapes until the painted settings). */
+  function backdrop(c: CanvasRenderingContext2D, setting: RunSetting): void {
+    const horizon = project(0, FAR, 0).y, now = clock(), alpha = c.globalAlpha;
+    c.fillStyle = SETTING_COLOURS[setting].sky; c.fillRect(0, 0, width, height);
+    const sky = (top: string, bottom: string) => { const grad = c.createLinearGradient(0, 0, 0, horizon); grad.addColorStop(0, top); grad.addColorStop(1, bottom); c.fillStyle = grad; c.fillRect(0, 0, width, horizon + 1); };
+    const glow = (colour: string, r: number) => { const grad = c.createRadialGradient(width / 2, horizon, 0, width / 2, horizon, r); grad.addColorStop(0, colour); grad.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = grad; c.fillRect(0, 0, width, horizon + 1); };
+    const ridge = (colour: string, base: number, peaks: number, rise: number, seed: number, snow?: string) => {
+      const points: [number, number][] = [];
+      for (let i = 0; i <= peaks * 2; i++) points.push([(i + (i % 2 ? (((i * seed) % 7) - 3) * .12 : 0)) / (peaks * 2) * width, base - (i % 2 ? rise * (.55 + ((i * seed) % 9) / 18) : rise * ((i * seed) % 5) / 14)]);
+      c.fillStyle = colour; c.beginPath(); c.moveTo(0, horizon + 1); for (const [x, y] of points) c.lineTo(x, y); c.lineTo(width, horizon + 1); c.fill();
+      if (snow) { c.fillStyle = snow; for (let i = 1; i < points.length; i += 2) { const [x, y] = points[i], [lx, ly] = points[i - 1], [rx, ry] = points[i + 1];
+        const k = .3; c.beginPath(); c.moveTo(x, y); c.lineTo(x + (rx - x) * k, y + (ry - y) * k); c.lineTo(x, y + (ry - y) * k * .7); c.lineTo(x + (lx - x) * k, y + (ly - y) * k); c.fill(); } }
+    };
+    switch (setting) {
+      case 'grotte':
+        sky('#1a110a', '#5e4122'); glow('rgba(255,214,120,.45)', width * .45);
+        c.fillStyle = '#2b1d11';
+        for (let i = 0; i < 16; i++) { const x = (i + .5) / 16 * width + (((i * 37) % 11) - 5) * 2, w = width / 34 * (1 + ((i * 17) % 3) * .35), len = horizon * (.22 + ((i * 53) % 7) / 16);
+          c.beginPath(); c.moveTo(x - w, 0); c.lineTo(x + w, 0); c.lineTo(x, len); c.fill(); }
+        break;
+      case 'pont':
+        sky('#230b08', '#b5381a'); glow('rgba(255,150,60,.5)', width * .55);
+        ridge('#3a1712', horizon, 7, horizon * .28, 13);
+        for (let i = 0; i < 18; i++) { const x = ((i * 97) % 100) / 100 * width, y = horizon - ((now / 18 + i * 61) % (horizon * 1.1)), r = 1.5 + (i % 3);
+          c.globalAlpha = alpha * Math.max(0, Math.min(1, y / horizon)); c.fillStyle = i % 2 ? '#ffb04a' : '#ffd27a'; c.beginPath(); c.arc(x + Math.sin(now / 400 + i) * 6, y, r, 0, Math.PI * 2); c.fill(); }
+        c.globalAlpha = alpha;
+        break;
+      case 'montagne':
+        sky('#79b4e4', '#f6c9a2');
+        for (let i = 0; i < 4; i++) { const x = ((now / 90 + i * width * .37) % (width * 1.4)) - width * .2, y = horizon * (.18 + i * .13);
+          c.fillStyle = 'rgba(255,255,255,.8)'; c.beginPath(); c.ellipse(x, y, width * .09, horizon * .06, 0, 0, Math.PI * 2); c.ellipse(x + width * .06, y - horizon * .03, width * .06, horizon * .05, 0, 0, Math.PI * 2); c.fill(); }
+        ridge('#9fb0cc', horizon - horizon * .05, 4, horizon * .55, 5, '#f4f8fc');
+        ridge('#7d93b2', horizon, 6, horizon * .3, 11, '#e6eef6');
+        break;
+    }
+  }
   function road(c: CanvasRenderingContext2D, g: BennyRun, colours: typeof SETTING_COLOURS[RunSetting]): void {
     // The sky fades from the last setting's over 800 ms.
     const fade = Math.min(1, (clock() - settingSince) / 800);
-    if (fade < 1) { c.fillStyle = SETTING_COLOURS[settingBefore].sky; c.fillRect(0, 0, width, height); c.globalAlpha = fade; }
-    c.fillStyle = colours.sky; c.fillRect(0, 0, width, height); c.globalAlpha = 1;
+    if (fade < 1) { backdrop(c, settingBefore); c.globalAlpha = fade; }
+    backdrop(c, g.setting); c.globalAlpha = 1;
     const horizon = project(0, FAR, 0).y, edge = lanes / 2 * LANE_WIDTH;
     // The next setting, from its start onwards: drawn beyond a line across the whole ground.
     const border = g.upcoming ? Math.max(NEAR, Math.min(FAR, g.upcoming.z - g.distance)) : FAR, next = g.upcoming ? SETTING_COLOURS[g.upcoming.setting] : colours;
