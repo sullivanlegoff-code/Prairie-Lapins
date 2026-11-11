@@ -151,7 +151,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   const SHAPES: Record<string, {colour: string; w: number; h: number; up?: number; round?: boolean; label?: string}> = {
     coin: {colour: '#f4c430', w: .45, h: .45, up: .5, round: true}, power: {colour: '#b07bff', w: .8, h: .8, up: .6, round: true}, wallCoin: {colour: '#f4c430', w: .45, h: .45, up: 1.6, round: true},
-    pot: {colour: '#c96b3a', w: .9, h: .9, round: true, label: 'pot'}, barrier: {colour: '#7a5a3a', w: 2, h: .6, label: 'saute'},
+    pot: {colour: '#c96b3a', w: .9, h: .9, round: true, label: 'pot'}, thrownPot: {colour: '#e08a52', w: .8, h: .8, up: .5, round: true}, barrier: {colour: '#7a5a3a', w: 2, h: .6, label: 'saute'},
     beam: {colour: '#7a5a3a', w: 2, h: .45, up: 1.1, label: 'roulade'}, pillar: {colour: '#8a8a8a', w: 1.6, h: 3},
     dragonnet: {colour: '#8e3a5a', w: 1.1, h: .8, round: true, label: 'zzz'}, chest: {colour: '#6e3b2e', w: 1.3, h: .9, label: 'coffre'},
     ember: {colour: '#ff9a2a', w: .9, h: .9, up: .4, round: true, label: 'braise'},
@@ -269,7 +269,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const g = game; if (!g) return;
     for (const event of takeRunEvents(g)) switch (event.type) {
       case 'strike': {
-        if (event.by === 'spin') flash('Coup tournoyant !'); swing = {at: clock(), lane: g.lane};
+        if (event.by === 'spin') flash('Coup tournoyant !');
+        if (event.by === 'throw' && event.entity.kind !== 'pot') flash('Strike ! Le pot renverse tout !');
+        if (event.by !== 'throw') swing = {at: clock(), lane: g.lane};
         const p = screenOf(g, event.entity);
         flashes.push({at: clock(), text: `+${event.points}`, x: p.x});
         if (event.entity.kind === 'pot') { burst(p.x, p.y, ['#c96b3a', '#e08a52', '#8a4a26', '#f4c430'], 14, 260); sound('pot'); }

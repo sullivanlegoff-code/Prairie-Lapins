@@ -188,6 +188,18 @@ describe('Cours cours Benny ! rules', () => {
     g.holes.push({from: g.distance + 3, to: g.distance + 30}); run(g, 600);
     expect(types(g)).toContain('fall'); expect(g.wall?.side).toBe('right'); expect(g.over).toBe(false);
   });
+  it('sends a struck pot flying along its lane: it bowls over the creatures and pots it meets, and the combo grows', () => {
+    const g = quiet();
+    place(g, 'pot', 0, 4); place(g, 'chest', 0, 14); place(g, 'pot', 0, 20); place(g, 'dragonnet', 2, 10);
+    runInput(g, g.at, 'left'); run(g, 900);
+    const strikes = takeRunEvents(g).filter(e => e.type === 'strike');
+    expect(strikes.map(e => e.type === 'strike' && e.by)).toEqual(['lane', 'throw', 'throw']);
+    expect(g).toMatchObject({pots: 2, foes: 1, combo: 3});
+    expect(g.entities.some(e => e.kind === 'dragonnet')).toBe(true); // Only its own lane.
+    // A pot broken by a ground charge does not fly.
+    runInput(g, g.at, 'up'); place(g, 'pot', 0, 3); runInput(g, g.at, 'down'); run(g, 300);
+    expect(g.entities.some(e => e.kind === 'thrownPot')).toBe(false);
+  });
   it('keeps a jump asked for just before landing and does it on landing', () => {
     const g = quiet(); runInput(g, g.at, 'up'); run(g, C.jumpMs - 100);
     runInput(g, g.at, 'up'); run(g, 150);
@@ -203,6 +215,8 @@ describe('Cours cours Benny ! rules', () => {
   it('lays the road out in varied patterns: pot slaloms, rows of creatures, coin arcs over barriers, and always a way through', () => {
     const g = startBennyRun(0, 3), seen = new Map<number, RunEntity>();
     for (let t = 0; t < 200_000; t += 250) { for (const e of g.entities) seen.set(e.id, e); g.entities = g.entities.filter(e => e.z > g.distance + 20); advanceBennyRun(g, t); }
+    // A second run for the rarer things (the powers).
+    const g2 = startBennyRun(0, 4); for (let t = 0; t < 200_000; t += 250) { for (const e of g2.entities) seen.set(-e.id, {...e, z: -1e6 - e.id}); g2.entities = g2.entities.filter(e => e.z > g2.distance + 20); advanceBennyRun(g2, t); }
     const all = [...seen.values()], kinds = new Set(all.map(e => e.kind));
     for (const kind of ['coin', 'pot', 'barrier', 'beam', 'pillar', 'dragonnet', 'chest', 'ember', 'flyer', 'power'] as const) expect(kinds).toContain(kind);
     expect(all.some(e => e.kind === 'coin' && (e.up ?? 0) > 1)).toBe(true); // A coin arc.
@@ -216,7 +230,7 @@ describe('Cours cours Benny ! rules', () => {
   it('teaches one gesture at a time on the first run, lays a missed step out again, and never lets the Dragon catch Benny meanwhile', () => {
     const g = startBennyRun(0, 7, 3, true); for (const w of g.walls) w.runnable = true;
     /** Runs until the step's thing is `at` m ahead (the nearest of them). */
-    const until = (at: number) => { for (let i = 0; i < 2000 && g.entities.every(e => e.z - g.distance > at); i++) run(g, 10); };
+    const until = (at: number) => { for (let i = 0; i < 2000 && g.entities.filter(e => e.kind !== 'thrownPot').every(e => e.z - g.distance > at); i++) run(g, 10); };
     expect(tutorialStep(g)).toBe('pot'); expect(g.entities).toHaveLength(1);
     until(-2); run(g, 200); // Missed: it comes back.
     expect(takeRunEvents(g).some(e => e.type === 'tutorial' && e.again)).toBe(true); expect(tutorialStep(g)).toBe('pot');
