@@ -44,6 +44,10 @@ export const BENNY_RUN = {
   /** A strike reaches the nearest pot or creature from `-hitHalf` m to `strikeReach` m plus `strikeLead` s of running ahead: the
    * faster Benny runs, the farther her wand reaches, so that the time to react stays fair (about 0.4 s at any speed). */
   strikeReach: 4, strikeLead: .32, hitHalf: .6,
+  /** A creature strikes back only if Benny ran beside it while it was within the wand's reach and still this far ahead (she had time to strike it). */
+  besideFrom: 1.5,
+  /** A ground charge ends in a roll this long (ms), so that a swipe down always gets Benny low. */
+  poundRollMs: 450,
   /** A jump asked for just before landing is kept for `bufferMs` and done on landing. */
   bufferMs: 220,
   /** A bump: Benny slows for `stumbleMs`; the Dragon stays `dragonMs`; she also shows for `introMs` at the start. */
@@ -81,7 +85,7 @@ export type StrikeKind = 'lane' | 'spin' | 'slide' | 'jump' | 'pound' | 'shock';
 
 /** A thing on the road. `lane` is 0 to `lanes - 1`; a wall coin's lane is -1 (left wall) or `lanes` (right wall). */
 /** A thing on the road; `up` is how high a coin floats (a coin arc over a barrier), for the drawing only. */
-export interface RunEntity {id: number; kind: RunKind; lane: number; z: number; power?: RunPower; hopAt?: number; up?: number}
+export interface RunEntity {id: number; kind: RunKind; lane: number; z: number; power?: RunPower; hopAt?: number; up?: number; beside?: boolean}
 export interface WallSegment {side: Side; from: number; to: number; runnable: boolean}
 export type RunEvent =
   | {type: 'strike'; entity: RunEntity; points: number; combo: number; multiplier: number; by: StrikeKind}
@@ -442,7 +446,7 @@ function tick(g: BennyRun): void {
   }
   // Landing: a ground charge breaks the pots and creatures just ahead in Benny's lane; from high up, a shock wave strikes all around.
   if (g.pound && !inAir(g)) {
-    g.pound = false; g.events.push({type: 'pound'});
+    g.pound = false; g.events.push({type: 'pound'}); g.slideUntil = g.at + C.poundRollMs;
     if (g.poundFrom >= C.shockHeight) {
       g.events.push({type: 'shockwave'});
       for (const e of g.entities.filter(o => strikable(o) && o.z - g.distance >= -C.shockBehind && o.z - g.distance <= C.shockReach)) strike(g, e, 'shock');
@@ -461,9 +465,10 @@ function tick(g: BennyRun): void {
   }
   // A creature in the next lane that Benny has just passed without striking it strikes her (not flying). On a wall, only a flying
   // monster reaches her, from the edge lane: it keeps to her height.
+  for (const e of g.entities) if (isFoe(e) && Math.abs(e.lane - across(g)) === 1 && e.z - g.distance >= C.besideFrom && e.z - g.distance <= reach(g)) e.beside = true;
   for (const e of [...g.entities]) {
     if (g.over) break;
-    if (isFoe(e) && Math.abs(e.lane - across(g)) === 1 && (!g.wall || e.kind === 'flyer') && e.z - before > -C.hitHalf - 1e-9 && e.z - g.distance <= -C.hitHalf && !powerActive(g, 'flight')) bump(g, e);
+    if (isFoe(e) && e.beside && Math.abs(e.lane - across(g)) === 1 && (!g.wall || e.kind === 'flyer') && e.z - before > -C.hitHalf - 1e-9 && e.z - g.distance <= -C.hitHalf && !powerActive(g, 'flight')) bump(g, e);
   }
   if (g.tutorial) followTutorial(g, g.events.slice(eventsBefore));
   g.entities = g.entities.filter(e => e.z > g.distance - 5);

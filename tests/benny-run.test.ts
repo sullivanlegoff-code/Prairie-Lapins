@@ -138,6 +138,23 @@ describe('Cours cours Benny ! rules', () => {
     place(g, 'chest', 2, 4); runInput(g, g.at, 'left');
     expect(g).toMatchObject({wall: null, lane: 2, foes: 1}); run(g, 800); expect(g.lastBumpAt).toBeNull();
   });
+  it('spares Benny from a creature she only comes beside at the last moment: she had no time to strike it', () => {
+    const g = quiet();
+    runInput(g, g.at, 'left'); place(g, 'chest', 2, 6);
+    // Two lanes away until it is almost level, then Benny steps next to it.
+    run(g, Math.round((6 - 1.2) / g.speed * 1000));
+    runInput(g, g.at, 'right'); run(g, 600);
+    expect(g.lastBumpAt).toBeNull();
+    // Beside it from afar, without striking: it strikes back.
+    place(g, 'chest', 2, 8); run(g, 1200);
+    expect(g.lastBumpAt).not.toBeNull();
+  });
+  it('ends a ground charge in a short roll, so a swipe down in the air still gets Benny under a beam', () => {
+    const g = quiet();
+    runInput(g, g.at, 'up'); run(g, 300);
+    place(g, 'beam', 1, g.speed * .55); runInput(g, g.at, 'down'); run(g, 800);
+    expect(types(g)).toEqual(['pound', 'cleared']); expect(g.lastBumpAt).toBeNull();
+  });
   it('keeps a jump asked for just before landing and does it on landing', () => {
     const g = quiet(); runInput(g, g.at, 'up'); run(g, C.jumpMs - 100);
     runInput(g, g.at, 'up'); run(g, 150);
