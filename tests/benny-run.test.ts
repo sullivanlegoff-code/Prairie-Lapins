@@ -155,6 +155,16 @@ describe('Cours cours Benny ! rules', () => {
     place(g, 'beam', 1, g.speed * .55); runInput(g, g.at, 'down'); run(g, 800);
     expect(types(g)).toEqual(['pound', 'cleared']); expect(g.lastBumpAt).toBeNull();
   });
+  it('forgives a hair: in the air at all clears a barrier, and a beam just after a roll ends still passes over', () => {
+    const g = quiet();
+    runInput(g, g.at, 'up'); run(g, C.jumpMs - 30);
+    // Landing on a barrier with a jump asked for: off again at once, over it.
+    place(g, 'barrier', 1, .9); runInput(g, g.at, 'up'); run(g, 300);
+    expect(types(g)).toEqual(['cleared']);
+    run(g, 1000); runInput(g, g.at, 'down');
+    place(g, 'beam', 1, g.speed * (C.slideMs + 100) / 1000); run(g, C.slideMs + 300);
+    expect(types(g)).toEqual(['cleared']); expect(g.lastBumpAt).toBeNull();
+  });
   it('keeps a jump asked for just before landing and does it on landing', () => {
     const g = quiet(); runInput(g, g.at, 'up'); run(g, C.jumpMs - 100);
     runInput(g, g.at, 'up'); run(g, 150);
@@ -247,7 +257,7 @@ describe('Cours cours Benny ! rules', () => {
     const g = quiet(); run(g, 1000); expect(g.speed).toBeCloseTo(C.speedStart, 0);
     run(g, C.speedRampMs); expect(g.speed).toBe(C.speedMax);
   });
-  it('lays out a fair road: never three pillars in a row without a runnable wall beside them, and replays the same', () => {
+  it('lays out a fair road: never three pillars in a row without both walls runnable beside them, and replays the same', () => {
     /** Lays out four minutes of road; Benny passes everything unharmed (what is near is cleared away): only the layout is checked. */
     const lay = (seed: number) => {
       const g = startBennyRun(0, seed), pillars = new Map<number, Set<number>>(), walls = new Map<string, boolean>();
@@ -260,7 +270,8 @@ describe('Cours cours Benny ! rules', () => {
       }
       for (const [z, row] of pillars) if (row.size === 3) {
         triples++;
-        const runnable = (['left', 'right'] as const).some(side => [z - 25, z, z + 5].every(at => walls.get(`${side}:${Math.floor(at / C.wallSegment) * C.wallSegment}`)));
+        // Both walls, so the nearer one is a way on from any lane.
+        const runnable = (['left', 'right'] as const).every(side => [z - 25, z, z + 5].every(at => walls.get(`${side}:${Math.floor(at / C.wallSegment) * C.wallSegment}`)));
         expect(runnable).toBe(true);
       }
       return {g, triples};

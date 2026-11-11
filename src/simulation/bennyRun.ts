@@ -44,10 +44,13 @@ export const BENNY_RUN = {
   /** A strike reaches the nearest pot or creature from `-hitHalf` m to `strikeReach` m plus `strikeLead` s of running ahead: the
    * faster Benny runs, the farther her wand reaches, so that the time to react stays fair (about 0.4 s at any speed). */
   strikeReach: 4, strikeLead: .32, hitHalf: .6,
-  /** A creature strikes back only if Benny ran beside it while it was within the wand's reach and still this far ahead (she had time to strike it). */
-  besideFrom: 1.5,
+  /** A creature strikes back only if Benny ran beside it while it was within the wand's reach and still this far ahead, in metres or
+   * in time at the present speed (she had time to strike it). */
+  besideFrom: 1.5, besideMs: 200,
   /** A ground charge ends in a roll this long (ms), so that a swipe down always gets Benny low. */
   poundRollMs: 450,
+  /** A beam met this long (ms) after a roll has ended still passes over her: the roll does not stop a hair too early. */
+  slideGraceMs: 150,
   /** A jump asked for just before landing is kept for `bufferMs` and done on landing. */
   bufferMs: 220,
   /** A bump: Benny slows for `stumbleMs`; the Dragon stays `dragonMs`; she also shows for `introMs` at the start. */
@@ -331,6 +334,8 @@ function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
     case 'wall': {
       // Three pillars side by side: the way on is up the runnable wall, along its coins.
       const side = wallSide(g, z)!;
+      // Both walls made runnable around the row, so the nearer wall is always a way on, whatever lane Benny comes from.
+      for (const w of g.walls) if (w.to > z - 25 && w.from <= z + 5) w.runnable = true;
       for (const lane of all) add(g, 'pillar', lane, z);
       for (let i = 0; i < 4; i++) add(g, 'wallCoin', wallLane(g, side), z - 6 + i * 3);
       return z + 4;
@@ -419,14 +424,15 @@ function meet(g: BennyRun, e: RunEntity): void {
     return;
   }
   if (e.lane !== g.lane || g.wall || powerActive(g, 'flight')) return;
-  const high = runHeight(g) > C.clearHeight;
+  // In the air at all (even just taking off or about to land) clears a barrier or a pot.
+  const high = inAir(g) || runHeight(g) > C.clearHeight;
   switch (e.kind) {
     case 'pot':
       if (sliding(g)) { strike(g, e, 'slide'); return; }
       if (high) { g.events.push({type: 'cleared', entity: e}); return; }
       g.entities = g.entities.filter(o => o !== e); g.events.push({type: 'crash', entity: e}); return;
     case 'barrier': if (high) g.events.push({type: 'cleared', entity: e}); else bump(g, e); return;
-    case 'beam': if (sliding(g)) g.events.push({type: 'cleared', entity: e}); else bump(g, e); return;
+    case 'beam': if (sliding(g) || (!inAir(g) && g.at < g.slideUntil + C.slideGraceMs)) g.events.push({type: 'cleared', entity: e}); else bump(g, e); return;
     // A creature: sliding into it strikes it; otherwise, even jumping over it, it strikes Benny as she passes.
     case 'dragonnet': case 'chest': case 'ember': case 'flyer': if (sliding(g)) strike(g, e, 'slide'); else bump(g, e); return;
     case 'pillar': bump(g, e); return;
@@ -465,7 +471,7 @@ function tick(g: BennyRun): void {
   }
   // A creature in the next lane that Benny has just passed without striking it strikes her (not flying). On a wall, only a flying
   // monster reaches her, from the edge lane: it keeps to her height.
-  for (const e of g.entities) if (isFoe(e) && Math.abs(e.lane - across(g)) === 1 && e.z - g.distance >= C.besideFrom && e.z - g.distance <= reach(g)) e.beside = true;
+  for (const e of g.entities) if (isFoe(e) && Math.abs(e.lane - across(g)) === 1 && e.z - g.distance >= Math.max(C.besideFrom, g.speed * C.besideMs / 1000) && e.z - g.distance <= reach(g)) e.beside = true;
   for (const e of [...g.entities]) {
     if (g.over) break;
     if (isFoe(e) && e.beside && Math.abs(e.lane - across(g)) === 1 && (!g.wall || e.kind === 'flyer') && e.z - before > -C.hitHalf - 1e-9 && e.z - g.distance <= -C.hitHalf && !powerActive(g, 'flight')) bump(g, e);
