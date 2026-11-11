@@ -3,7 +3,7 @@
  * endless road of three lanes, seen from behind, that keeps speeding up. Only the Dragon chases her, flying behind: she shows at the
  * start and after a bump. Original game: the owner borrowed only gameplay ideas from lane runners (running on walls, breaking things).
  *
- * The owner's controls: swipe up to jump; swipe down to slide, or to charge the ground when already in the air; swipe sideways to
+ * The owner's controls: swipe up to jump (from a wall, the jump starts at the wall's height); swipe down to roll (« une roulade »), or to charge the ground when already in the air; swipe sideways to
  * change lanes, or to run on the wall from an edge lane (most walls, not all), from the ground or in the middle of a jump. Off the
  * wall: a jump, a swipe away from the wall, or a ground charge (owner, 11 November 2026). A power lies on the road and works as soon as Benny runs
  * over it (owner, 11 November 2026: « qu'ils soient utilisés dès que l'on va dessus, pas en cliquant »). Benny holds a wand in
@@ -97,8 +97,9 @@ export interface BennyRun {
   distance: number; speed: number;
   /** How many lanes the road has (3 for now), and Benny's. */
   lanes: number; lane: number; laneChangedAt: number;
-  /** In the air between `airFrom` and `airUntil`; `pound` once the ground charge has started, from `poundFrom` m high. */
-  airFrom: number; airUntil: number; pound: boolean; poundFrom: number;
+  /** In the air between `airFrom` and `airUntil`, a jump starting `jumpFrom` m high; `pound` once the ground charge has started,
+   * from `poundFrom` m high. */
+  airFrom: number; airUntil: number; jumpFrom: number; pound: boolean; poundFrom: number;
   slideUntil: number;
   wall: {side: Side; until: number} | null;
   entities: RunEntity[]; nextId: number; nextSpawnZ: number;
@@ -121,7 +122,7 @@ const pick = <T>(g: BennyRun, list: readonly T[]): T => list[Math.min(list.lengt
 export function startBennyRun(now: number, seed = Math.floor(Math.random() * 2147483647), lanes = 3): BennyRun {
   const g: BennyRun = {
     seed: (seed >>> 0) || 1, startedAt: now, at: now, distance: 0, speed: C.speedStart, lanes, lane: Math.floor(lanes / 2), laneChangedAt: -Infinity,
-    airFrom: 0, airUntil: 0, pound: false, poundFrom: 0, slideUntil: 0, wall: null,
+    airFrom: 0, airUntil: 0, jumpFrom: 0, pound: false, poundFrom: 0, slideUntil: 0, wall: null,
     entities: [], nextId: 1, nextSpawnZ: C.firstAt, walls: [], wallsTo: {left: 0, right: 0},
     setting: 'grotte', nextSettingAt: 0, stumbleUntil: 0, lastBumpAt: null,
     active: null, score: 0, coins: 0, pots: 0, foes: 0, wallRuns: 0, combo: 0, comboUntil: 0, bestCombo: 0,
@@ -143,7 +144,7 @@ export function runHeight(g: BennyRun): number {
   if (powerActive(g, 'flight')) return 3;
   if (!inAir(g)) return 0;
   const p = (g.at - g.airFrom) / (g.airUntil - g.airFrom);
-  return g.pound ? g.poundFrom * (1 - p) : 4 * C.jumpHeight * p * (1 - p);
+  return g.pound ? g.poundFrom * (1 - p) : g.jumpFrom * (1 - p) + 4 * C.jumpHeight * p * (1 - p);
 }
 /** The Dragon shows at the start and for `dragonMs` after a bump. */
 export const dragonVisible = (g: BennyRun) => g.at - g.startedAt < C.introMs || dragonNear(g);
@@ -357,9 +358,9 @@ export function runInput(g: BennyRun, now: number, input: RunInput): void {
     }
     case 'up':
       if (powerActive(g, 'flight') || (inAir(g) && !g.wall)) return;
-      // A jump, also off a wall (she lands in the edge lane).
-      if (g.wall) endWall(g);
-      g.airFrom = g.at; g.airUntil = g.at + C.jumpMs; g.pound = false; g.slideUntil = 0;
+      // A jump, also off a wall: then it starts at the wall's height, lasts a little longer, and she lands in the edge lane.
+      { const from = g.wall ? C.wallRunHeight : 0; if (g.wall) endWall(g);
+        g.jumpFrom = from; g.airFrom = g.at; g.airUntil = g.at + C.jumpMs * (1 + from / (2 * C.jumpHeight)); g.pound = false; g.slideUntil = 0; }
       // A jump towards a flying monster just ahead strikes it: it keeps to her height.
       { const flyer = nearest(g, g.lane, C.strikeReach, e => e.kind === 'flyer'); if (flyer) strike(g, flyer, 'jump'); }
       return;
@@ -368,7 +369,8 @@ export function runInput(g: BennyRun, now: number, input: RunInput): void {
       // Off a wall with a ground charge: from that height, a shock wave.
       if (g.wall) { endWall(g); startPound(g, C.wallRunHeight); return; }
       if (inAir(g)) { if (!g.pound) startPound(g); return; }
-      // A slide that strikes with the wand what is just ahead in the lane, and anything met while sliding.
+      // A roll (the owner's « roulade »): it strikes with the wand what is just ahead in the lane, and anything met while rolling; it
+      // passes under a beam.
       g.slideUntil = g.at + C.slideMs;
       const hit = nearest(g, g.lane, C.strikeReach);
       if (hit) strike(g, hit, 'slide');

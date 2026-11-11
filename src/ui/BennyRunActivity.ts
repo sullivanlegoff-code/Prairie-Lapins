@@ -115,7 +115,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const SHAPES: Record<string, {colour: string; w: number; h: number; up?: number; round?: boolean; label?: string}> = {
     coin: {colour: '#f4c430', w: .45, h: .45, up: .5, round: true}, power: {colour: '#b07bff', w: .8, h: .8, up: .6, round: true}, wallCoin: {colour: '#f4c430', w: .45, h: .45, up: 1.6, round: true},
     pot: {colour: '#c96b3a', w: .9, h: .9, round: true, label: 'pot'}, barrier: {colour: '#7a5a3a', w: 2, h: .6, label: 'saute'},
-    beam: {colour: '#7a5a3a', w: 2, h: .45, up: 1.1, label: 'glisse'}, pillar: {colour: '#8a8a8a', w: 1.6, h: 3},
+    beam: {colour: '#7a5a3a', w: 2, h: .45, up: 1.1, label: 'roulade'}, pillar: {colour: '#8a8a8a', w: 1.6, h: 3},
     dragonnet: {colour: '#8e3a5a', w: 1.1, h: .8, round: true, label: 'zzz'}, chest: {colour: '#6e3b2e', w: 1.3, h: .9, label: 'coffre'},
     ember: {colour: '#ff9a2a', w: .9, h: .9, up: .4, round: true, label: 'braise'},
     flyer: {colour: '#7b4fc9', w: .8, h: .7, round: true, label: 'petit monstre'},
@@ -138,10 +138,12 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   const bennyHeight = (g: BennyRun) => g.wall ? BENNY_RUN.wallRunHeight : runHeight(g);
   function benny(c: CanvasRenderingContext2D, g: BennyRun, now: number): void {
-    const wall = g.wall, x = wall ? (wall.side === 'left' ? -wallX() + .45 : wallX() - .45) : laneX(viewLane);
+    const wall = g.wall, x = laneX(viewLane);
     const up = bennyHeight(g), p = project(x, 0, up), s = p.s * BENNY_SIZE;
-    const flat = sliding(g), w = (flat ? 1.1 : .8) * s, h = (flat ? .45 : 1) * s;
+    // Rolling, she curls up into a ball that turns.
+    const flat = sliding(g), w = (flat ? .75 : .8) * s, h = (flat ? .75 : 1) * s;
     c.save(); c.translate(p.x, p.y - h / 2);
+    if (flat) c.rotate((g.slideUntil - g.at) / 90);
     if (wall) c.rotate(wall.side === 'left' ? -1.1 : 1.1);
     if (g.at < g.stumbleUntil && Math.floor(now / 80) % 2) c.globalAlpha = .45;
     c.fillStyle = '#d99a5b'; c.beginPath(); c.ellipse(0, 0, w / 2, h / 2, 0, 0, Math.PI * 2); c.fill();
@@ -180,7 +182,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   function draw(now: number): void {
     const c = context, g = game; if (!c || !g) return;
     const dt = Math.min(.05, Math.max(0, (now - lastDrawAt) / 1000)); lastDrawAt = now;
-    viewLane += (g.lane - viewLane) * Math.min(1, dt * 18);
+    // Benny glides between lanes, and onto and off a wall (drawn just inside it), instead of jumping there.
+    const onWall = (wallX() - .45 - laneX(lanes - 1)) / LANE_WIDTH, target = g.wall ? (g.wall.side === 'left' ? -onWall : lanes - 1 + onWall) : g.lane;
+    viewLane += (target - viewLane) * Math.min(1, dt * 18);
     road(c, g, SETTING_COLOURS[g.setting]);
     const ahead = [...g.entities].sort((a, b) => b.z - a.z);
     for (const e of ahead) if (e.z - g.distance > 0) thing(c, g, e);
@@ -234,9 +238,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   function intro(): void {
     game = startBennyRun(clock()); lanes = game.lanes; viewLane = game.lane; running = false; measure(); hud(); draw(clock());
     showCard(paragraph('Cours cours Benny !', 'benny-run-title'),
-      paragraph('Benny a chipé un peu du trésor de la Dragon ! Glisse vers le haut pour sauter, sur le côté pour changer de couloir, vers le bas pour glisser (en l’air : charge au sol).', 'benny-run-rules'),
-      paragraph('Frappe les pots et les créatures avec ton bâton : change de couloir vers elles ou glisse dedans. Une créature de chaque côté ? Ton bâton tournoie et frappe les deux. Les petits monstres volants restent à ta hauteur : glisse vers eux pour les frapper. Une créature que tu dépasses sans la frapper t’attaque !', 'benny-run-rules'),
-      paragraph('Au bord, glisse vers le mur (même en sautant) pour courir dessus. Pour descendre : saute, glisse vers l’autre côté, ou charge au sol pour faire une onde de choc. Passe sur un pouvoir pour l’utiliser tout de suite.', 'benny-run-rules'),
+      paragraph('Benny a chipé un peu du trésor de la Dragon ! Glisse vers le haut pour sauter, sur le côté pour changer de couloir, vers le bas pour faire une roulade (en l’air : charge au sol).', 'benny-run-rules'),
+      paragraph('Frappe les pots et les créatures avec ton bâton : de face avec une roulade, sur le côté en glissant vers leur couloir, vers le haut pour un petit monstre volant (il reste à ta hauteur). Une créature de chaque côté ? Ton bâton tournoie et frappe les deux. Une créature que tu dépasses sans la frapper t’attaque !', 'benny-run-rules'),
+      paragraph('Au bord, glisse vers le mur (même en sautant) pour courir dessus. Pour descendre : saute depuis le mur, glisse vers l’autre côté pour frapper ce qui t’attend en bas, ou charge au sol pour faire une onde de choc. Passe sur un pouvoir pour l’utiliser tout de suite.', 'benny-run-rules'),
       paragraph('Prototype en formes grises : les vrais dessins arrivent ensuite.', 'benny-run-rules'),
       button('C’est parti !', start, 'bennyRunStart'));
   }

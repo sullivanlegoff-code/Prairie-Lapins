@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {advanceBennyRun, BENNY_RUN as C, comboMultiplier, dragonVisible, runInput, runnableAt, runSummary, startBennyRun, takeRunEvents,
+import {advanceBennyRun, BENNY_RUN as C, comboMultiplier, dragonVisible, runHeight, runInput, runnableAt, runSummary, startBennyRun, takeRunEvents,
   type BennyRun, type RunEntity, type RunKind} from '../src/simulation/bennyRun';
 
 /** A run with nothing laid out by chance: the test places what it needs, `z` metres ahead of Benny. */
@@ -122,6 +122,21 @@ describe('Cours cours Benny ! rules', () => {
     place(g, 'wallCoin', 5, 3); run(g, 400); expect(g.coins).toBe(1);
     const h = startBennyRun(0, 11, 5);
     for (let t = 0; t < 120_000; t += 250) { h.entities = h.entities.filter(e => e.z > h.distance + 20); advanceBennyRun(h, t); for (const e of h.entities) expect(e.lane).toBeGreaterThanOrEqual(-1), expect(e.lane).toBeLessThanOrEqual(5); }
+  });
+  it('jumps off a wall from the wall’s height, and a ground charge from up there sends a shock wave', () => {
+    const g = quiet(); run(g, C.introMs); runInput(g, g.at, 'left'); runInput(g, g.at, 'left'); run(g, 200);
+    runInput(g, g.at, 'up'); expect(g).toMatchObject({wall: null, lane: 0});
+    run(g, 20); expect(runHeight(g)).toBeGreaterThan(C.wallRunHeight * .95);
+    for (const lane of [0, 1, 2]) place(g, 'dragonnet', lane, 3);
+    runInput(g, g.at, 'down'); run(g, 400);
+    expect(types(g)).toContain('shockwave'); expect(g).toMatchObject({foes: 3, lastBumpAt: null});
+    // From the ground, the same jump stays low: no shock wave.
+    const h = quiet(); runInput(h, h.at, 'up'); run(h, 300); runInput(h, h.at, 'down'); run(h, 300); expect(types(h)).not.toContain('shockwave');
+  });
+  it('swiping away from the wall strikes a creature waiting in the lane she lands in', () => {
+    const g = quiet(); run(g, C.introMs); runInput(g, g.at, 'right'); runInput(g, g.at, 'right'); expect(g.wall?.side).toBe('right');
+    place(g, 'chest', 2, 4); runInput(g, g.at, 'left');
+    expect(g).toMatchObject({wall: null, lane: 2, foes: 1}); run(g, 800); expect(g.lastBumpAt).toBeNull();
   });
   it('charges the ground from the air and breaks the pot ahead', () => {
     const g = quiet(); runInput(g, g.at, 'up'); run(g, 150);
