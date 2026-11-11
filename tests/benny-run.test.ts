@@ -75,12 +75,23 @@ describe('Cours cours Benny ! rules', () => {
     run(g, C.comboMs + 10); place(g, 'pot', g.lane === 1 ? 0 : 1, 5); runInput(g, g.at, g.lane === 1 ? 'left' : 'right');
     expect(g.combo).toBe(1);
   });
-  it('stores a power from a pot and uses it on a touch: the rainbow bubble takes one bump', () => {
+  it('uses a power as soon as Benny runs over it, without a touch: the rainbow bubble takes one bump', () => {
     const g = quiet(); run(g, C.introMs);
-    place(g, 'pot', 0, 5, {power: 'bubble'}); runInput(g, g.at, 'left');
-    expect(g.power).toBe('bubble'); runInput(g, g.at, 'tap'); expect(g).toMatchObject({power: null, active: {power: 'bubble'}});
-    place(g, 'pillar', 0, 3); run(g, 1000);
-    expect(types(g)).toEqual(['power', 'strike', 'powerUsed', 'shield']); expect(g).toMatchObject({lastBumpAt: null, active: null});
+    place(g, 'power', 0, 3, {power: 'bubble'}); run(g, 500);
+    expect(g.active).toBeNull(); // Not in Benny's lane: it stays on the road.
+    place(g, 'power', 1, 3, {power: 'bubble'}); run(g, 500);
+    expect(g.active?.power).toBe('bubble');
+    place(g, 'pillar', 1, 3); run(g, 1000);
+    expect(types(g)).toEqual(['power', 'shield']); expect(g).toMatchObject({lastBumpAt: null, active: null});
+  });
+  it('picks up a power while jumping, and a new power replaces the one under way', () => {
+    const g = quiet(); place(g, 'power', 1, 3, {power: 'magnet'}); runInput(g, g.at, 'up'); run(g, 500);
+    expect(g.active?.power).toBe('magnet');
+    place(g, 'coin', 0, 3); run(g, 500); expect(g.coins).toBe(1); // The magnet brings the coins of the other lanes.
+    place(g, 'power', 1, 3, {power: 'flight'}); run(g, 500);
+    expect(g.active?.power).toBe('flight');
+    place(g, 'pillar', 1, 3); run(g, 500); expect(g.lastBumpAt).toBeNull(); // Flying over everything.
+    run(g, C.powers.flight); expect(g.active).toBeNull();
   });
   it('speeds up to its top speed in about two and a half minutes', () => {
     const g = quiet(); run(g, 1000); expect(g.speed).toBeCloseTo(C.speedStart, 0);

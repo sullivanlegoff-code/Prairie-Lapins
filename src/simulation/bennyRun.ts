@@ -4,7 +4,8 @@
  * start and after a bump. Original game: the owner borrowed only gameplay ideas from lane runners (running on walls, breaking things).
  *
  * The owner's controls: swipe up to jump; swipe down to slide, or to charge the ground when already in the air; swipe sideways to
- * change lanes, or to run on the wall from an edge lane (most walls, not all); touch to use the stored power. Benny holds a wand in
+ * change lanes, or to run on the wall from an edge lane (most walls, not all). A power lies on the road and works as soon as Benny runs
+ * over it (owner, 11 November 2026: « qu'ils soient utilisés dès que l'on va dessus, pas en cliquant »). Benny holds a wand in
  * her mouth (a light wooden stick with a rainbow ribbon): she strikes a pot or a creature of the lair only when she changes lanes
  * towards it, or charges the ground on it; running straight into a creature is a bump (owner: « elle frappe les ennemis si elle change
  * de voie vers un ennemi. Sinon elle prend un coup »). A pot met straight on just breaks, for no points and no bump (our decision).
@@ -33,14 +34,14 @@ export const BENNY_RUN = {
   /** Combo: strikes less than `comboMs` apart; the multiplier grows by one every `comboStep` strikes, up to `comboMax`. */
   comboMs: 2500, comboStep: 3, comboMax: 5,
   points: {pot: 10, foe: 25, wallRun: 50},
-  /** Coins a pot without a power spills. */
+  /** Coins a pot spills. */
   potCoins: 3,
   /** The setting changes at random every 40 to 55 s. */
   settingMs: [40_000, 55_000],
   /** Things are laid out to `spawnAhead` m ahead, the first at `firstAt` m, then every `gapStart` m down to `gapMin` m. */
   spawnAhead: 90, firstAt: 30, gapStart: 22, gapMin: 11,
-  /** Share of pots holding a power, and how long each power lasts once used (the bubble lasts until a bump, at most this). */
-  powerChance: .18, powers: {magnet: 8000, bubble: 20_000, double: 10_000, flight: 6000},
+  /** Share of coin lines carrying a power, and how long each power lasts once picked up (the bubble lasts until a bump, at most this). */
+  powerChance: .25, powers: {magnet: 8000, bubble: 20_000, double: 10_000, flight: 6000},
   /** A mischievous ember hops to a neighbouring lane every `emberHopMs`, but only while farther than `emberStill` m. */
   emberHopMs: 1400, emberStill: 14,
   /** A run never pays: this only bounds what a run can count. */
@@ -52,9 +53,9 @@ export const RUN_SETTINGS: readonly RunSetting[] = ['grotte', 'pont', 'montagne'
 export type RunPower = keyof typeof BENNY_RUN.powers;
 export const RUN_POWERS = Object.keys(BENNY_RUN.powers) as RunPower[];
 export type RunFoe = 'dragonnet' | 'chest' | 'ember';
-export type RunKind = 'coin' | 'wallCoin' | 'pot' | 'barrier' | 'beam' | 'pillar' | RunFoe;
+export type RunKind = 'coin' | 'wallCoin' | 'power' | 'pot' | 'barrier' | 'beam' | 'pillar' | RunFoe;
 export const RUN_FOES: readonly RunFoe[] = ['dragonnet', 'chest', 'ember'];
-export type RunInput = 'left' | 'right' | 'up' | 'down' | 'tap';
+export type RunInput = 'left' | 'right' | 'up' | 'down';
 export type Side = 'left' | 'right';
 
 /** A thing on the road. `lane` is 0 to 2; a wall coin's lane is -1 (left wall) or 3 (right wall). */
@@ -69,7 +70,6 @@ export type RunEvent =
   | {type: 'shield'; entity: RunEntity}
   | {type: 'caught'; entity: RunEntity}
   | {type: 'power'; power: RunPower}
-  | {type: 'powerUsed'; power: RunPower}
   | {type: 'wallStart'; side: Side}
   | {type: 'wallEnd'; side: Side; points: number}
   | {type: 'pound'}
@@ -87,8 +87,8 @@ export interface BennyRun {
   walls: WallSegment[]; wallsTo: Record<Side, number>;
   setting: RunSetting; nextSettingAt: number;
   stumbleUntil: number; lastBumpAt: number | null;
-  /** The power waiting for a touch, and the one under way. */
-  power: RunPower | null; active: {power: RunPower; until: number} | null;
+  /** The power under way (a new one replaces it). */
+  active: {power: RunPower; until: number} | null;
   score: number; coins: number; pots: number; foes: number; wallRuns: number;
   combo: number; comboUntil: number; bestCombo: number;
   over: boolean;
@@ -106,7 +106,7 @@ export function startBennyRun(now: number, seed = Math.floor(Math.random() * 214
     airFrom: 0, airUntil: 0, pound: false, slideUntil: 0, wall: null,
     entities: [], nextId: 1, nextSpawnZ: C.firstAt, walls: [], wallsTo: {left: 0, right: 0},
     setting: 'grotte', nextSettingAt: 0, stumbleUntil: 0, lastBumpAt: null,
-    power: null, active: null, score: 0, coins: 0, pots: 0, foes: 0, wallRuns: 0, combo: 0, comboUntil: 0, bestCombo: 0,
+    active: null, score: 0, coins: 0, pots: 0, foes: 0, wallRuns: 0, combo: 0, comboUntil: 0, bestCombo: 0,
     over: false, events: [],
   };
   g.nextSettingAt = now + settingDelay(g);
@@ -161,9 +161,12 @@ function spawn(g: BennyRun): void {
       // A line of coins, sometimes along a runnable wall.
       const side = pick(g, ['left', 'right'] as const);
       if (random(g) < .3 && runnableAt(g, side, z) && runnableAt(g, side, z + 10)) for (let i = 0; i < 6; i++) add(g, 'wallCoin', side === 'left' ? -1 : 3, z + i * 2);
-      else { const lane = pick(g, lanes); for (let i = 0; i < 5; i++) add(g, 'coin', lane, z + i * 2); }
+      else {
+        const lane = pick(g, lanes), power = random(g) < C.powerChance ? pick(g, RUN_POWERS) : null;
+        for (let i = 0; i < 5; i++) if (power && i === 2) add(g, 'power', lane, z + i * 2, {power}); else add(g, 'coin', lane, z + i * 2);
+      }
     } else if (roll < .22 + .2) {
-      for (const lane of others(g, 1 + (random(g) < .4 ? 1 : 0))) add(g, 'pot', lane, z, random(g) < C.powerChance ? {power: pick(g, RUN_POWERS)} : {});
+      for (const lane of others(g, 1 + (random(g) < .4 ? 1 : 0))) add(g, 'pot', lane, z);
     } else if (roll < .42 + foeShare) {
       const foe = pick(g, RUN_FOES), lane = pick(g, lanes);
       add(g, foe, lane, z);
@@ -192,12 +195,17 @@ function strike(g: BennyRun, e: RunEntity, by: 'lane' | 'pound'): void {
   g.score = Math.min(C.maxScore, g.score + points);
   if (e.kind === 'pot') {
     g.pots++;
-    if (e.power) { g.power = e.power; g.events.push({type: 'power', power: e.power}); } else gainCoins(g, e, C.potCoins);
+    gainCoins(g, e, C.potCoins);
   } else { g.foes++; gainCoins(g, e, 2); }
   g.events.push({type: 'strike', entity: e, points, combo: g.combo, multiplier, by});
 }
 function gainCoins(g: BennyRun, e: RunEntity, amount: number): void {
   const n = amount * (powerActive(g, 'double') ? 2 : 1); g.coins += n; g.events.push({type: 'coin', entity: e, amount: n});
+}
+function usePower(g: BennyRun, power: RunPower): void {
+  g.active = {power, until: g.at + C.powers[power]};
+  if (power === 'flight') { g.wall = null; g.airUntil = 0; g.pound = false; g.slideUntil = 0; }
+  g.events.push({type: 'power', power});
 }
 function bump(g: BennyRun, e: RunEntity): void {
   g.entities = g.entities.filter(o => o !== e);
@@ -219,6 +227,11 @@ function endWall(g: BennyRun): void {
 function meet(g: BennyRun, e: RunEntity): void {
   if (e.kind === 'wallCoin') {
     if (g.wall && (g.wall.side === 'left' ? -1 : 3) === e.lane) { g.entities = g.entities.filter(o => o !== e); gainCoins(g, e, 1); }
+    return;
+  }
+  if (e.kind === 'power') {
+    // Picked up on the ground, in the air or flying, never from a wall; it works at once.
+    if (e.lane === g.lane && !g.wall && e.power) { g.entities = g.entities.filter(o => o !== e); usePower(g, e.power); }
     return;
   }
   if (e.kind === 'coin') {
@@ -298,12 +311,6 @@ export function runInput(g: BennyRun, now: number, input: RunInput): void {
       if (g.wall || powerActive(g, 'flight')) return;
       if (inAir(g)) { if (!g.pound) { g.pound = true; g.airFrom = g.at; g.airUntil = g.at + C.poundMs; } return; }
       g.slideUntil = g.at + C.slideMs; return;
-    case 'tap': {
-      if (!g.power || (g.active && g.at < g.active.until)) return;
-      const power = g.power; g.power = null; g.active = {power, until: g.at + C.powers[power]};
-      if (power === 'flight') { g.wall = null; g.airUntil = 0; g.pound = false; g.slideUntil = 0; }
-      g.events.push({type: 'powerUsed', power}); return;
-    }
   }
 }
 

@@ -1,6 +1,6 @@
 import '../display/benny-run.css';
 import {FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
-import {advanceBennyRun, comboMultiplier, dragonVisible, inAir, powerActive, runHeight, runInput, runSummary, sliding, startBennyRun, takeRunEvents,
+import {advanceBennyRun, BENNY_RUN, comboMultiplier, dragonVisible, inAir, powerActive, runHeight, runInput, runSummary, sliding, startBennyRun, takeRunEvents,
   type BennyRun, type RunEntity, type RunInput, type RunPower, type RunSetting} from '../simulation/bennyRun';
 import {pausableClock, settleCard} from './activityPause';
 
@@ -8,8 +8,8 @@ import {pausableClock, settleCard} from './activityPause';
  * « Cours cours Benny ! » (src/simulation/bennyRun.ts holds the rules): a full-screen layer like « Le vol de Benny ». This is the
  * grey prototype the owner tunes the feel with (11 November 2026): plain shapes on a canvas, the road seen from behind Benny in
  * perspective, until the painted art he chose (Benny seen from behind, the « conte doré » settings, the rainbow-ribbon wand, the
- * dragonnets, greedy chests and embers) replaces them. Swipes: up jump, down slide or ground charge, sideways lane or wall; a touch
- * uses the stored power. The arrow keys and the space bar do the same. The island's Phaser loop sleeps while the run is open.
+ * dragonnets, greedy chests and embers) replaces them. Swipes: up jump, down slide or ground charge, sideways lane or wall; a power
+ * works as soon as Benny runs over it. The arrow keys do the same. The island's Phaser loop sleeps while the run is open.
  */
 const LANE_WIDTH = 2.2, CAMERA_BACK = 8, CAMERA_HEIGHT = 2.2, WALL_X = 1.5 * LANE_WIDTH + .35, WALL_HEIGHT = 3.2, FAR = 90, NEAR = -(CAMERA_BACK - .6);
 const SETTING_COLOURS: Record<RunSetting, {sky: string; ground: string; lane: string; wall: string; wallOff: string; side: string}> = {
@@ -27,7 +27,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {onExit?: () =
   const layer = document.createElement('div'); layer.className = 'benny-run-activity'; layer.hidden = true;
   layer.setAttribute('role', 'dialog'); layer.setAttribute('aria-modal', 'true'); layer.setAttribute('aria-label', 'Cours cours Benny !');
   layer.innerHTML = `<div class="benny-run-top"><p class="benny-run-score" aria-live="polite"></p><p class="benny-run-combo"></p><p class="benny-run-metres"></p><p class="benny-run-coins"></p>
-<button type="button" class="benny-run-power" data-benny-run-power></button><button type="button" data-benny-run-exit>Quitter</button></div>
+<p class="benny-run-power"></p><button type="button" data-benny-run-exit>Quitter</button></div>
 <canvas class="benny-run-canvas" data-benny-run-canvas></canvas>
 <p class="benny-run-pop" aria-hidden="true"></p>
 <div class="benny-run-card" data-benny-run-card></div>`;
@@ -35,7 +35,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {onExit?: () =
   const $ = <T extends Element>(selector: string) => layer.querySelector<T>(selector)!;
   const canvas = $<HTMLCanvasElement>('[data-benny-run-canvas]'), card = $<HTMLElement>('[data-benny-run-card]'), pop = $<HTMLElement>('.benny-run-pop');
   const score = $<HTMLElement>('.benny-run-score'), combo = $<HTMLElement>('.benny-run-combo'), metres = $<HTMLElement>('.benny-run-metres'), coins = $<HTMLElement>('.benny-run-coins');
-  const powerButton = $<HTMLButtonElement>('[data-benny-run-power]');
+  const powerLine = $<HTMLElement>('.benny-run-power');
   const context = canvas.getContext('2d');
   const abort = new AbortController();
   let game: BennyRun | null = null, running = false, best = 0, viewLane = 1, lastDrawAt = 0, popTimer: ReturnType<typeof setTimeout> | undefined;
@@ -61,9 +61,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {onExit?: () =
     score.textContent = `${g.score}`;
     combo.textContent = multiplier > 1 ? `Combo ×${multiplier}` : g.combo > 1 && g.at <= g.comboUntil ? `${g.combo} coups` : '';
     metres.textContent = `${Math.floor(g.distance)} m`; coins.textContent = plural(g.coins, 'pièce');
-    const active = g.active && g.at < g.active.until ? g.active.power : null;
-    powerButton.textContent = active ? `${POWER_NAMES[active]} !` : g.power ? `Touche : ${POWER_NAMES[g.power]}` : 'Pas de pouvoir';
-    powerButton.disabled = !g.power || !!active;
+    const active = g.active && g.at < g.active.until ? g.active : null;
+    powerLine.textContent = active ? `${POWER_NAMES[active.power]} · ${Math.ceil((active.until - g.at) / 1000)} s` : '';
   }
 
   // Perspective: a point `x` metres across, `ahead` metres in front of Benny and `up` metres high.
@@ -99,7 +98,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {onExit?: () =
     }
   }
   const SHAPES: Record<string, {colour: string; w: number; h: number; up?: number; round?: boolean; label?: string}> = {
-    coin: {colour: '#f4c430', w: .45, h: .45, up: .5, round: true}, wallCoin: {colour: '#f4c430', w: .45, h: .45, up: 1.6, round: true},
+    coin: {colour: '#f4c430', w: .45, h: .45, up: .5, round: true}, power: {colour: '#b07bff', w: .8, h: .8, up: .6, round: true}, wallCoin: {colour: '#f4c430', w: .45, h: .45, up: 1.6, round: true},
     pot: {colour: '#c96b3a', w: .9, h: .9, round: true, label: 'pot'}, barrier: {colour: '#7a5a3a', w: 2, h: .6, label: 'saute'},
     beam: {colour: '#7a5a3a', w: 2, h: .45, up: 1.1, label: 'glisse'}, pillar: {colour: '#8a8a8a', w: 1.6, h: 3},
     dragonnet: {colour: '#8e3a5a', w: 1.1, h: .8, round: true, label: 'zzz'}, chest: {colour: '#6e3b2e', w: 1.3, h: .9, label: 'coffre'},
@@ -112,7 +111,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {onExit?: () =
     c.fillStyle = shape.colour;
     if (shape.round) { c.beginPath(); c.ellipse(base.x, base.y - h / 2, w / 2, h / 2, 0, 0, Math.PI * 2); c.fill(); }
     else c.fillRect(base.x - w / 2, base.y - h, w, h);
-    if (e.power) { c.strokeStyle = '#b06cff'; c.lineWidth = Math.max(2, base.s * .08); c.stroke(); }
+    if (e.kind === 'power' && e.power && base.s > 14) { c.fillStyle = '#fff'; c.font = `800 ${Math.round(Math.max(10, base.s * .3))}px system-ui`; c.textAlign = 'center'; c.fillText(POWER_NAMES[e.power], base.x, base.y - h - 4); }
     if (shape.label && base.s > 18) { c.fillStyle = '#fff'; c.font = `700 ${Math.round(Math.max(10, base.s * .28))}px system-ui`; c.textAlign = 'center'; c.fillText(shape.label, base.x, base.y - h - 4); }
   }
   function benny(c: CanvasRenderingContext2D, g: BennyRun, now: number): void {
@@ -137,13 +136,17 @@ export function mountBennyRunActivity(host: HTMLElement, options: {onExit?: () =
   }
   function dragon(c: CanvasRenderingContext2D, g: BennyRun): void {
     if (!dragonVisible(g)) return;
-    // Behind Benny and above her: closer and bigger right after a bump.
-    const since = g.lastBumpAt === null ? (g.at - g.startedAt) : g.at - g.lastBumpAt, near = g.lastBumpAt !== null;
-    const s = Math.min(1, since / 400), size = (near ? .3 : .22) * height * s, x = width / 2 + Math.sin(g.at / 500) * width * .08, y = height * .26;
-    c.fillStyle = '#9c2f3c'; c.beginPath(); c.ellipse(x, y, size, size * .6, 0, 0, Math.PI * 2); c.fill();
-    c.fillStyle = '#b58ad1'; c.beginPath(); c.moveTo(x - size * .9, y); c.lineTo(x - size * 2, y - size * .7 * Math.abs(Math.sin(g.at / 120))); c.lineTo(x - size * .5, y - size * .2); c.fill();
-    c.beginPath(); c.moveTo(x + size * .9, y); c.lineTo(x + size * 2, y - size * .7 * Math.abs(Math.sin(g.at / 120))); c.lineTo(x + size * .5, y - size * .2); c.fill();
-    c.fillStyle = '#fff'; c.font = `800 ${Math.round(size * .32)}px system-ui`; c.textAlign = 'center'; c.fillText('Dragon', x, y + size * .12);
+    // Behind Benny (between her and the camera), on her outer side, low on the screen: she swoops in from below, then hovers.
+    const since = g.lastBumpAt === null ? g.at - g.startedAt : g.at - g.lastBumpAt, left = g.lastBumpAt === null ? BENNY_RUN.introMs : BENNY_RUN.dragonMs;
+    const out = Math.min(1, since / 450, Math.max(0, (left - since) / 450));
+    const side = viewLane > 1.5 ? -1 : 1, x = laneX(viewLane) + side * 1.1, ahead = -4.2 - (1 - out) * 2;
+    const p = project(x, ahead, 1.1 + Math.sin(g.at / 260) * .1), size = .5 * p.s;
+    c.save(); c.globalAlpha = out;
+    c.fillStyle = '#b58ad1';
+    for (const dir of [-1, 1]) { c.beginPath(); c.moveTo(p.x + dir * size * .6, p.y); c.lineTo(p.x + dir * size * 1.6, p.y - size * .8 * Math.abs(Math.sin(g.at / 120))); c.lineTo(p.x + dir * size * .3, p.y - size * .3); c.fill(); }
+    c.fillStyle = '#9c2f3c'; c.beginPath(); c.ellipse(p.x, p.y, size * .75, size * .55, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#fff'; c.font = `800 ${Math.round(size * .28)}px system-ui`; c.textAlign = 'center'; c.fillText('Dragon', p.x, p.y + size * .1);
+    c.restore();
   }
   function draw(now: number): void {
     const c = context, g = game; if (!c || !g) return;
@@ -165,7 +168,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {onExit?: () =
       case 'strike': swing = {at: clock(), lane: g.lane}; flashes.push({at: clock(), text: `+${event.points}`, x: project(laneX(event.entity.lane), 0, 0).x}); break;
       case 'bump': flash('Aïe ! La Dragon arrive !'); break;
       case 'shield': flash('La bulle te protège !'); break;
-      case 'power': flash(`Pouvoir : ${POWER_NAMES[event.power]}`); break;
+      case 'power': flash(`${POWER_NAMES[event.power]} !`); break;
       case 'wallEnd': flashes.push({at: clock(), text: `Mur +${event.points}`, x: width / 2}); break;
       case 'setting': flash(SETTING_NAMES[event.setting]); break;
       case 'caught': finish(); break;
@@ -197,7 +200,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {onExit?: () =
   function intro(): void {
     game = startBennyRun(clock()); running = false; measure(); hud(); draw(clock());
     showCard(paragraph('Cours cours Benny !', 'benny-run-title'),
-      paragraph('Benny a chipé un peu du trésor de la Dragon ! Glisse vers le haut pour sauter, vers le bas pour glisser (en l’air : charge au sol), sur le côté pour changer de couloir ou courir sur le mur. Change de couloir vers un pot ou une créature pour la frapper avec ton bâton. Touche l’écran pour utiliser ton pouvoir.', 'benny-run-rules'),
+      paragraph('Benny a chipé un peu du trésor de la Dragon ! Glisse vers le haut pour sauter, vers le bas pour glisser (en l’air : charge au sol), sur le côté pour changer de couloir ou courir sur le mur. Change de couloir vers un pot ou une créature pour la frapper avec ton bâton. Passe sur un pouvoir pour l’utiliser tout de suite.', 'benny-run-rules'),
       paragraph('Prototype en formes grises : les vrais dessins arrivent ensuite.', 'benny-run-rules'),
       button('C’est parti !', start, 'bennyRunStart'));
   }
@@ -213,7 +216,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {onExit?: () =
   }
   function resume(): void { time.resume(); running = true; card.hidden = true; lastDrawAt = clock(); frame(loop); }
 
-  // Gestures: a swipe fires as soon as the finger has moved far enough; a touch that does not move uses the power.
+  // Gestures: a swipe fires as soon as the finger has moved far enough.
   let touch: {x: number; y: number; id: number; fired: boolean} | null = null;
   canvas.addEventListener('pointerdown', event => { event.preventDefault(); touch = {x: event.clientX, y: event.clientY, id: event.pointerId, fired: false}; }, {signal: abort.signal});
   canvas.addEventListener('pointermove', event => {
@@ -222,13 +225,12 @@ export function mountBennyRunActivity(host: HTMLElement, options: {onExit?: () =
     if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE) return;
     touch.fired = true; input(Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'left' : 'right') : (dy < 0 ? 'up' : 'down'));
   }, {signal: abort.signal});
-  canvas.addEventListener('pointerup', event => { if (touch && touch.id === event.pointerId && !touch.fired) input('tap'); touch = null; }, {signal: abort.signal});
+  canvas.addEventListener('pointerup', () => { touch = null; }, {signal: abort.signal});
   canvas.addEventListener('pointercancel', () => { touch = null; }, {signal: abort.signal});
-  powerButton.addEventListener('click', event => { event.stopPropagation(); input('tap'); }, {signal: abort.signal});
   $<HTMLButtonElement>('[data-benny-run-exit]').addEventListener('click', () => close(), {signal: abort.signal});
   document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); }, {signal: abort.signal});
   window.addEventListener('resize', () => { if (!layer.hidden) { measure(); if (game) draw(clock()); } }, {signal: abort.signal});
-  const keys: Record<string, RunInput> = {ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down', ' ': 'tap'};
+  const keys: Record<string, RunInput> = {ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down'};
   document.addEventListener('keydown', event => {
     if (layer.hidden) return;
     if (event.key === 'Escape') { event.preventDefault(); close(); return; }
