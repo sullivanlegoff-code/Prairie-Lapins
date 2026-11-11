@@ -80,7 +80,8 @@ export type Side = 'left' | 'right';
 export type StrikeKind = 'lane' | 'spin' | 'slide' | 'jump' | 'pound' | 'shock';
 
 /** A thing on the road. `lane` is 0 to `lanes - 1`; a wall coin's lane is -1 (left wall) or `lanes` (right wall). */
-export interface RunEntity {id: number; kind: RunKind; lane: number; z: number; power?: RunPower; hopAt?: number}
+/** A thing on the road; `up` is how high a coin floats (a coin arc over a barrier), for the drawing only. */
+export interface RunEntity {id: number; kind: RunKind; lane: number; z: number; power?: RunPower; hopAt?: number; up?: number}
 export interface WallSegment {side: Side; from: number; to: number; runnable: boolean}
 export type RunEvent =
   | {type: 'strike'; entity: RunEntity; points: number; combo: number; multiplier: number; by: StrikeKind}
@@ -181,43 +182,111 @@ export const wallLane = (g: BennyRun, side: Side) => side === 'left' ? -1 : g.la
 const across = (g: BennyRun) => g.wall ? wallLane(g, g.wall.side) : g.lane;
 const others = (g: BennyRun, n: number) => { const l = laneList(g); for (let i = l.length - 1; i > 0; i--) { const j = Math.floor(random(g) * (i + 1)); [l[i], l[j]] = [l[j], l[i]]; } return l.slice(0, n); };
 
-/** Lays out what comes next on the road, from the seeded draw; harder as the run goes on, never a wall of three pillars without a runnable wall beside it. */
+export type RunPattern = 'coins' | 'arc' | 'slalom' | 'pots' | 'gauntlet' | 'pair' | 'tunnel' | 'barriers' | 'pillars' | 'wall' | 'flyers' | 'breather';
+/**
+ * The road is laid out in short patterns rather than one thing at a time, so that it has a rhythm: a slalom of pots to chain
+ * lane strikes into a combo, a row of creatures one side then the other, a pair of creatures on both sides for the spinning
+ * wand, a tunnel of beams to roll under, barriers with an arc of coins over them, pillars with a way through, a stretch of
+ * wall to run past three pillars, flying monsters, and breathers of coins. Each pattern leaves Benny a way through; the
+ * patterns come more often and harder as the run speeds up. `weights` gives each pattern's share at the start and at the end.
+ */
+const PATTERNS: Record<RunPattern, [number, number]> = {
+  coins: [4, 1.5], arc: [2, 2], slalom: [3, 3], pots: [3, 1.5], gauntlet: [1.5, 3.5], pair: [.5, 2.5], tunnel: [1, 2], barriers: [1, 2],
+  pillars: [1.5, 2.5], wall: [0, 2], flyers: [0, 2.5], breather: [2, .8],
+};
+function choosePattern(g: BennyRun, z: number): RunPattern {
+  const d = runDifficulty(g), list = (Object.keys(PATTERNS) as RunPattern[]).filter(p => (p !== 'flyers' || d >= C.flyerFrom) && (p !== 'pair' || d >= .2) &&
+    (p !== 'wall' || (d > .25 && wallSide(g, z))));
+  const weight = (p: RunPattern) => PATTERNS[p][0] + (PATTERNS[p][1] - PATTERNS[p][0]) * d;
+  let roll = random(g) * list.reduce((n, p) => n + weight(p), 0);
+  for (const p of list) { roll -= weight(p); if (roll < 0) return p; }
+  return list[list.length - 1];
+}
+/** A side whose wall can be run on from 25 m before `z` to 5 m after: the way past three pillars. */
+const wallSide = (g: BennyRun, z: number) => (['left', 'right'] as const).find(s => runnableAt(g, s, z - 25) && runnableAt(g, s, z) && runnableAt(g, s, z + 5));
+/** Lays out one pattern from `z` and returns where it ends. */
+function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
+  const d = runDifficulty(g), all = laneList(g), any = () => pick(g, all), neighbour = (lane: number) => pick(g, all.filter(l => Math.abs(l - lane) === 1));
+  const creature = () => d >= C.flyerFrom && random(g) < C.flyerShare * .6 ? 'flyer' as const : pick(g, RUN_FOES);
+  const step = 7 + 3 * (1 - d);
+  switch (pattern) {
+    case 'coins': {
+      const side = pick(g, ['left', 'right'] as const);
+      if (random(g) < .3 && runnableAt(g, side, z) && runnableAt(g, side, z + 10)) { for (let i = 0; i < 6; i++) add(g, 'wallCoin', wallLane(g, side), z + i * 2); return z + 10; }
+      // A line that drifts to the next lane halfway, sometimes with a power in the middle.
+      const lane = any(), next = random(g) < .5 ? neighbour(lane) : lane, power = random(g) < C.powerChance ? pick(g, RUN_POWERS) : null;
+      for (let i = 0; i < 6; i++) if (power && i === 2) add(g, 'power', lane, z + i * 2, {power}); else add(g, 'coin', i < 3 ? lane : next, z + i * 2);
+      return z + 10;
+    }
+    case 'arc': {
+      // A barrier with an arc of coins over it: jump through the coins.
+      const lane = any(); add(g, 'barrier', lane, z + 6);
+      for (let i = 0; i < 5; i++) add(g, 'coin', lane, z + 2 + i * 2, {up: .5 + Math.sin(Math.PI * i / 4) * 1.3});
+      for (const other of all.filter(l => l !== lane)) if (random(g) < .5 + .4 * d) add(g, 'barrier', other, z + 6);
+      return z + 10;
+    }
+    case 'slalom': {
+      // Pots one lane then the next: each lane change strikes one, and the combo grows.
+      let lane = any(); const count = 3 + Math.round(2 * d);
+      for (let i = 0; i < count; i++) { add(g, 'pot', lane, z + i * step); lane = neighbour(lane); }
+      return z + (count - 1) * step;
+    }
+    case 'pots': { for (const lane of others(g, 1 + (random(g) < .5 ? 1 : 0))) add(g, 'pot', lane, z); return z; }
+    case 'gauntlet': {
+      // Creatures one side then the other: strike each with a lane change (or roll into it).
+      let lane = any(); const count = 2 + Math.round(2 * d);
+      for (let i = 0; i < count; i++) { add(g, i === count - 1 ? creature() : pick(g, RUN_FOES), lane, z + i * (step + 2)); lane = neighbour(lane); }
+      return z + (count - 1) * (step + 2);
+    }
+    case 'pair': {
+      // A creature on each side of the middle lane: the spinning wand strikes both. A coin in the middle draws Benny there.
+      const middle = Math.floor(g.lanes / 2); add(g, 'coin', middle, z - 4); add(g, 'coin', middle, z - 2);
+      // Creatures that stay put (an ember would hop into the middle lane).
+      const still = ['dragonnet', 'chest'] as const; add(g, pick(g, still), middle - 1, z + 2); add(g, pick(g, still), middle + 1, z + 2);
+      return z + 2;
+    }
+    case 'tunnel': {
+      // Beams across the road: roll under them, through a line of coins.
+      const count = 1 + Math.round(random(g) * (1 + d)), lane = any();
+      for (let i = 0; i < count; i++) { for (const l of all) add(g, 'beam', l, z + i * 5); add(g, 'coin', lane, z + i * 5 + 2.5); }
+      return z + (count - 1) * 5;
+    }
+    case 'barriers': {
+      const count = Math.min(g.lanes, 1 + Math.floor(random(g) * (2 + d * 1.5)));
+      for (const lane of others(g, count)) add(g, 'barrier', lane, z);
+      if (count === g.lanes) for (let i = 0; i < 3; i++) add(g, 'coin', any(), z - 2 + i * 2, {up: 1.4});
+      return z;
+    }
+    case 'pillars': {
+      // Pillars with a way through, where a pot or a creature may wait.
+      const free = any();
+      for (const lane of all) if (lane !== free && (Math.abs(lane - free) === 1 || random(g) < .5)) add(g, 'pillar', lane, z);
+      if (random(g) < .3 + .4 * d) add(g, random(g) < .5 ? 'pot' : pick(g, RUN_FOES), free, z + 8);
+      return z + 8;
+    }
+    case 'wall': {
+      // Three pillars side by side: the way on is up the runnable wall, along its coins.
+      const side = wallSide(g, z)!;
+      for (const lane of all) add(g, 'pillar', lane, z);
+      for (let i = 0; i < 4; i++) add(g, 'wallCoin', wallLane(g, side), z - 6 + i * 3);
+      return z + 4;
+    }
+    case 'flyers': {
+      // Flying monsters keep to Benny's height: swipe towards them.
+      const count = 1 + Math.round(d), lane = any();
+      for (let i = 0; i < count; i++) add(g, 'flyer', i % 2 ? neighbour(lane) : lane, z + i * (step + 3));
+      return z + (count - 1) * (step + 3);
+    }
+    case 'breather': { const lane = any(); for (let i = 0; i < 4; i++) add(g, 'coin', lane, z + i * 2); return z + 6; }
+  }
+}
+/** Lays out what comes next on the road, from the seeded draw: patterns, then a gap that shrinks as the run speeds up. */
 function spawn(g: BennyRun): void {
   layWalls(g);
   while (g.nextSpawnZ < g.distance + C.spawnAhead) {
-    const z = g.nextSpawnZ, d = runDifficulty(g), roll = random(g);
-    // Coins .22, pots .2, creatures more and more, obstacles up to what is left but the wall-run pattern (three pillars side by side).
-    const foeShare = .18 + .17 * d, tripleShare = d > .25 ? .07 : 0, obstacleShare = Math.min(.3 + .1 * d, 1 - tripleShare - .42 - foeShare);
-    if (roll < .22) {
-      // A line of coins, sometimes along a runnable wall.
-      const side = pick(g, ['left', 'right'] as const);
-      if (random(g) < .3 && runnableAt(g, side, z) && runnableAt(g, side, z + 10)) for (let i = 0; i < 6; i++) add(g, 'wallCoin', wallLane(g, side), z + i * 2);
-      else {
-        const lane = pick(g, laneList(g)), power = random(g) < C.powerChance ? pick(g, RUN_POWERS) : null;
-        for (let i = 0; i < 5; i++) if (power && i === 2) add(g, 'power', lane, z + i * 2, {power}); else add(g, 'coin', lane, z + i * 2);
-      }
-    } else if (roll < .22 + .2) {
-      for (const lane of others(g, 1 + (random(g) < .4 ? 1 : 0))) add(g, 'pot', lane, z);
-    } else if (roll < .42 + foeShare) {
-      const creature = () => d >= C.flyerFrom && random(g) < C.flyerShare ? 'flyer' as const : pick(g, RUN_FOES);
-      const lane = pick(g, laneList(g));
-      add(g, creature(), lane, z);
-      // A second one a little farther, so that Benny has time to strike both.
-      if (d > .4 && random(g) < .4) add(g, creature(), (lane + 1 + Math.floor(random(g) * (g.lanes - 1))) % g.lanes, z + 8);
-    } else if (roll < .42 + foeShare + obstacleShare) {
-      const kind = pick(g, ['barrier', 'beam', 'pillar'] as const);
-      const count = kind === 'pillar' ? 1 + (random(g) < .3 + .3 * d ? 1 : 0) : 1 + Math.floor(random(g) * (2 + d * 1.5));
-      for (const lane of others(g, Math.min(g.lanes, count))) add(g, kind, lane, z);
-      // Coins over a barrier or under a beam reward the right move.
-      if (kind !== 'pillar' && random(g) < .5) add(g, 'coin', g.entities[g.entities.length - 1].lane, z);
-    } else {
-      // Three pillars side by side: the way on is up a runnable wall (only where there is one).
-      const side = (['left', 'right'] as const).find(s => runnableAt(g, s, z - 25) && runnableAt(g, s, z) && runnableAt(g, s, z + 5));
-      if (side && d > .25) { for (const lane of laneList(g)) add(g, 'pillar', lane, z); for (let i = 0; i < 4; i++) add(g, 'wallCoin', wallLane(g, side), z - 6 + i * 3); }
-      else for (const lane of others(g, 2)) add(g, 'pot', lane, z);
-    }
+    const z = g.nextSpawnZ, end = layPattern(g, choosePattern(g, z), z), d = runDifficulty(g);
     const gap = C.gapStart - (C.gapStart - C.gapMin) * d;
-    g.nextSpawnZ = z + gap * (.85 + random(g) * .3);
+    g.nextSpawnZ = end + gap * (.85 + random(g) * .3);
   }
 }
 

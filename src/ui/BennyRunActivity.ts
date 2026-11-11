@@ -147,7 +147,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const shape = SHAPES[e.kind], ahead = e.z - g.distance; if (!shape || ahead > FAR || ahead < -3) return;
     const x = e.lane < 0 ? -wallX() + .4 : e.lane > lanes - 1 ? wallX() - .4 : laneX(e.lane);
     // The little flying monster keeps to Benny's height, a little above her head.
-    const up = e.kind === 'flyer' ? bennyHeight(g) + .9 + Math.sin(g.at / 180 + e.id) * .08 : shape.up ?? 0;
+    const up = e.kind === 'flyer' ? bennyHeight(g) + .9 + Math.sin(g.at / 180 + e.id) * .08 : e.up ?? shape.up ?? 0;
     const base = project(x, ahead, up), w = shape.w * base.s, h = shape.h * base.s;
     if (e.kind === 'flyer') {
       const flap = Math.abs(Math.sin(g.at / 90 + e.id)); c.fillStyle = '#b89af0';

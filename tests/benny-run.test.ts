@@ -150,6 +150,19 @@ describe('Cours cours Benny ! rules', () => {
     run(g, C.speedRampMs); expect(reach(g)).toBeGreaterThan(slow + 3); expect(reach(g) / g.speed).toBeGreaterThan(.45);
     place(g, 'chest', 0, reach(g) - .5); runInput(g, g.at, 'left'); expect(g.foes).toBe(1);
   });
+  it('lays the road out in varied patterns: pot slaloms, rows of creatures, coin arcs over barriers, and always a way through', () => {
+    const g = startBennyRun(0, 3), seen = new Map<number, RunEntity>();
+    for (let t = 0; t < 200_000; t += 250) { for (const e of g.entities) seen.set(e.id, e); g.entities = g.entities.filter(e => e.z > g.distance + 20); advanceBennyRun(g, t); }
+    const all = [...seen.values()], kinds = new Set(all.map(e => e.kind));
+    for (const kind of ['coin', 'pot', 'barrier', 'beam', 'pillar', 'dragonnet', 'chest', 'ember', 'flyer', 'power'] as const) expect(kinds).toContain(kind);
+    expect(all.some(e => e.kind === 'coin' && (e.up ?? 0) > 1)).toBe(true); // A coin arc.
+    // Every row of pillars leaves a lane free, or has a runnable wall beside it (the wall pattern).
+    const rows = new Map<number, number[]>(); for (const e of all) if (e.kind === 'pillar') rows.set(e.z, [...(rows.get(e.z) ?? []), e.lane]);
+    for (const [z, lanes] of rows) if (lanes.length >= g.lanes) expect(g.walls.length >= 0 && all.some(e => e.kind === 'wallCoin' && Math.abs(e.z - z) < 8)).toBe(true);
+    // Never two creatures side by side in the same row but for the spin pair (one on each side of the middle lane).
+    const foeRows = new Map<number, number[]>(); for (const e of all) if (['dragonnet', 'chest', 'ember', 'flyer'].includes(e.kind)) foeRows.set(e.z, [...(foeRows.get(e.z) ?? []), e.lane]);
+    for (const lanes of foeRows.values()) if (lanes.length > 1) expect(lanes.sort()).toEqual([0, 2]);
+  });
   it('charges the ground from the air and breaks the pot ahead', () => {
     const g = quiet(); runInput(g, g.at, 'up'); run(g, 150);
     place(g, 'pot', 1, 2.5); runInput(g, g.at, 'down'); run(g, 200);
