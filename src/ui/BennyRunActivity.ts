@@ -12,7 +12,7 @@ import {pausableClock, settleCard} from './activityPause';
  * a power works as soon as Benny runs over it. The arrow keys do the same. The island's Phaser loop sleeps while the run is open.
  * Played with the iPhone upright only (owner, 11 November 2026): turned sideways, the run pauses behind a « tourne ton iPhone » card.
  */
-const HORIZON = .2, LANE_WIDTH = 2.2, CAMERA_BACK = 8, WALL_HEIGHT = 4.5, BENNY_SIZE = 1.35, FAR = 90, NEAR = -(CAMERA_BACK - .6);
+const HORIZON = .15, LANE_WIDTH = 2.2, CAMERA_BACK = 14, WALL_HEIGHT = 4.5, BENNY_SIZE = 1.35, FAR = 90, NEAR = -(CAMERA_BACK - .6);
 const SETTING_COLOURS: Record<RunSetting, {sky: string; ground: string; lane: string; wall: string; wallOff: string; side: string}> = {
   grotte: {sky: '#3a2a1c', ground: '#9a7a52', lane: '#b8956a', wall: '#c9a26a', wallOff: '#5c4630', side: '#e2b450'},
   pont: {sky: '#4a2420', ground: '#8d8378', lane: '#a39a8e', wall: '#b5aa9a', wallOff: '#55493f', side: '#f07a2a'},
@@ -96,7 +96,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const g = game; if (!g) return;
     const multiplier = g.at <= g.comboUntil ? comboMultiplier(g.combo) : 1;
     score.textContent = `${g.score}`;
-    combo.textContent = g.combo > 1 && g.at <= g.comboUntil ? `${g.combo} coups${multiplier > 1 ? ` · ×${multiplier}` : ''}` : '';
+    // Hidden while the tutorial's advice is up (they would overlap).
+    combo.textContent = coach.hidden && g.combo > 1 && g.at <= g.comboUntil ? `${g.combo} coups${multiplier > 1 ? ` · ×${multiplier}` : ''}` : '';
     metres.textContent = `${Math.floor(g.distance)} m`; coins.textContent = plural(g.coins, 'pièce');
     const active = g.active && g.at < g.active.until ? g.active : null;
     powerLine.textContent = active ? `${POWER_NAMES[active.power]} · ${Math.ceil((active.until - g.at) / 1000)} s` : '';
@@ -109,7 +110,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   // Perspective: a point `x` metres across, `ahead` metres in front of Benny and `up` metres high.
   // Upright screen: the three lanes and the walls fill the width, and the camera rises so that Benny runs low on the screen.
   const scale0 = () => Math.min(width * .86, height * .62) / (lanes * LANE_WIDTH + 2.6);
-  const cameraHeight = () => Math.min(8, Math.max(2.2, (height * .74 - height * HORIZON) / scale0()));
+  const cameraHeight = () => Math.min(16, Math.max(2.2, (height * .74 - height * HORIZON) / scale0()));
   const project = (x: number, ahead: number, up: number) => {
     const horizon = height * HORIZON, s = scale0() * CAMERA_BACK / (Math.max(-CAMERA_BACK + .5, ahead) + CAMERA_BACK);
     return {x: width / 2 + x * s, y: horizon + (cameraHeight() - up) * s, s};
@@ -199,8 +200,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // Behind Benny (between her and the camera), on her outer side, low on the screen: she swoops in from below, then hovers.
     const since = g.lastBumpAt === null ? g.at - g.startedAt : g.at - g.lastBumpAt, left = g.lastBumpAt === null ? BENNY_RUN.introMs : BENNY_RUN.dragonMs;
     const out = Math.min(1, since / 450, Math.max(0, (left - since) / 450));
-    const side = viewLane > (lanes - 1) / 2 ? -1 : 1, x = laneX(viewLane) + side * 1.1, ahead = -4.2 - (1 - out) * 2;
-    const p = project(x, ahead, 1.1 + Math.sin(g.at / 260) * .1), size = .5 * p.s;
+    const side = viewLane > (lanes - 1) / 2 ? -1 : 1, x = laneX(viewLane) + side * 1.2, ahead = -3 - (1 - out) * 3;
+    const p = project(x, ahead, 2.2 + Math.sin(g.at / 260) * .15), size = .85 * p.s;
     c.save(); c.globalAlpha = out;
     c.fillStyle = '#b58ad1';
     for (const dir of [-1, 1]) { c.beginPath(); c.moveTo(p.x + dir * size * .6, p.y); c.lineTo(p.x + dir * size * 1.6, p.y - size * .8 * Math.abs(Math.sin(g.at / 120))); c.lineTo(p.x + dir * size * .3, p.y - size * .3); c.fill(); }
