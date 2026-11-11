@@ -1,0 +1,25 @@
+/* « Cours cours Benny ! » (src/ui/BennyRunActivity.ts): the grey prototype's full-screen layer, like « Le vol de Benny ». */
+.benny-run-activity {
+  position: fixed; inset: 0; z-index: 140; display: flex; flex-direction: column; background: #3a2a1c;
+  font-family: inherit; color: #3b3326; touch-action: none; user-select: none; -webkit-user-select: none;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.benny-run-activity[hidden] { display: none; }
+.benny-run-top { position: absolute; z-index: 6; top: env(safe-area-inset-top); left: env(safe-area-inset-left); right: env(safe-area-inset-right); display: flex; align-items: center; gap: 12px; padding: 8px 14px; pointer-events: none; }
+.benny-run-top p { margin: 0; font-weight: 800; color: #fff; -webkit-text-stroke: 1px #3b2414; paint-order: stroke fill; }
+.benny-run-score { font-size: 1.6rem; min-width: 4ch; }
+.benny-run-combo { color: #ffe36b !important; }
+.benny-run-metres { flex: 1; text-align: right; }
+.benny-run-top button { pointer-events: auto; min-height: 44px; padding: 0 14px; border-radius: 14px; border: 2px solid #6b5a3a; background: #fff8e8; font-weight: 800; }
+.benny-run-power:disabled { opacity: .55; }
+.benny-run-canvas { flex: 1; width: 100%; min-height: 0; display: block; }
+.benny-run-pop { position: absolute; z-index: 5; left: 0; right: 0; top: 34%; margin: 0; text-align: center; font-size: 1.7rem; font-weight: 800; color: #fff; -webkit-text-stroke: 1px #3b2414; paint-order: stroke fill; opacity: 0; pointer-events: none; }
+.benny-run-pop.show { animation: benny-run-pop .9s ease-out; }
+@keyframes benny-run-pop { 0% { opacity: 0; transform: scale(.8); } 15% { opacity: 1; transform: scale(1.05); } 70% { opacity: 1; } 100% { opacity: 0; transform: translateY(-12px); } }
+.benny-run-card { position: absolute; z-index: 8; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(560px, calc(100% - 32px)); max-height: calc(100% - 24px); overflow: auto;
+  display: flex; flex-direction: column; gap: 10px; padding: 18px; border-radius: 18px; background: #fff8e8; border: 3px solid #6b5a3a; box-shadow: 0 10px 30px rgba(0,0,0,.35); text-align: center; }
+.benny-run-card[hidden] { display: none; }
+.benny-run-card p { margin: 0; }
+.benny-run-title { font-size: 1.4rem; font-weight: 800; }
+.benny-run-record { font-weight: 800; color: #b0582a; }
+.benny-run-card button { min-height: 44px; border-radius: 14px; border: 2px solid #6b5a3a; background: #ffe7a8; font-weight: 800; font-size: 1rem; }

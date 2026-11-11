@@ -101,6 +101,14 @@ export function mountLabPanel(host: HTMLElement, controller: GameController,
   button(missions, 'Relancer le tutoriel de Paille', 'tutorial', () => { onReplacement(true); report(true, 'Tutoriel de Paille relancé dans les préférences de test. Les progrès de jeu restent acquis.'); });
   const decorations = section('Décorations', 'decorations');
   button(decorations, 'Un exemplaire de chaque décoration', 'all-decorations', () => perform({type: 'decorations'}, 'Un exemplaire de chaque décoration ajouté gratuitement à ton inventaire, dont la statue du robot.'));
+  // « Cours cours Benny ! » (owner, 11 November 2026): the grey prototype, laboratory only until the painted art and the Antre du dragon.
+  const games = section('Mini-jeux en préparation', 'games');
+  let run: {open: () => void} | null = null;
+  button(games, 'Cours cours Benny ! (prototype gris)', 'benny-run', () => {
+    void import('../ui/BennyRunActivity').then(({mountBennyRunActivity}) => {
+      run ??= mountBennyRunActivity(document.getElementById('app') ?? document.body); run.open();
+    });
+  });
   return controller.subscribe(snapshot => {
     const s = snapshot.state; if (!s) return;
     setOptions(rabbit, s.rabbits.map(r => {
