@@ -38,6 +38,7 @@ import {FOREST_ART} from '../config/forestArt';
 import {JUMP_ISLAND_ART, JUMP_MEDAL_ART, jumpIslandFrame, jumpIslandPoint, jumpMedalPoint} from '../config/jumpIslandArt';
 import {EPIC_ISLET_ART, epicIsletFrame} from '../config/epicIsletArt';
 import {DEBRIS_ART, PERCH_ART} from '../config/bennyFlightGameArt';
+import {LAIR_ART} from '../config/lairArt';
 import {DEBRIS} from '../simulation/debris';
 import {jumpRopeMedals} from '../simulation/jumpRope';
 import {showsEvolvedArt} from '../config/evolvedArt';
@@ -908,7 +909,7 @@ export class MeadowScene extends Phaser.Scene {
         add(NURSERY_ART); add(NURSERY_OVERLAY_ART.baby); add(NURSERY_OVERLAY_ART.veil); add(NURSERY_OVERLAY_ART.lock);
       } else if (building.kind === 'statue') add(statueArtFor(state?.buildings ?? [], building.id));
       else if (building.kind === 'nest' && 'islet' in building && building.islet) add(EPIC_ISLET_ART);
-      else add(({nest: NEST_ART, kitchen: KITCHEN_ART, agency: AGENCY_ART, salon: SALON_ART, forest: FOREST_ART, perch: PERCH_ART})[building.kind]);
+      else add(({nest: NEST_ART, kitchen: KITCHEN_ART, agency: AGENCY_ART, salon: SALON_ART, forest: FOREST_ART, perch: PERCH_ART, lair: LAIR_ART})[building.kind]);
       // The spa's tub front and small pieces, for the rabbit in care (src/display/salonSpa.ts).
       if (building.kind === 'salon') for (const art of salonSpaArt()) add(art);
     };
@@ -1155,6 +1156,7 @@ export class MeadowScene extends Phaser.Scene {
     if (b.kind === 'agency') return AGENCY_ART.texture;
     if (b.kind === 'salon') return SALON_ART.texture;
     if (b.kind === 'perch') return PERCH_ART.texture;
+    if (b.kind === 'lair') return LAIR_ART.texture;
     if (b.kind === 'forest') return FOREST_ART.texture;
     if (b.kind === 'enclosure') { const illustrated = habitatArtFor(b.habitat ?? undefined, b.footprintTier); if (illustrated) return illustrated.texture; }
     // The drawing follows the footprint actually acquired (tier), not the capacity level: a legacy enclosure keeps its compact look.
@@ -1174,7 +1176,7 @@ export class MeadowScene extends Phaser.Scene {
   /** `enlarged`: an enclosure's uniform drawing factor (`enclosureScale`), the same on both axes so nothing is stretched. */
   private positionBuildingArt(image: Phaser.GameObjects.Image, x: number, y: number, kind: Building['kind'], illustrated: HabitatArt | null = null, enlarged = 1, id?: string): void {
     if (illustrated) { image.setPosition(x, y).setOrigin(illustrated.anchor.x / illustrated.width, illustrated.anchor.y / illustrated.height).setScale(enlarged * illustrated.worldWidth / illustrated.width); return; }
-    const art = kind === 'farm' ? farmArtFor(this.current?.buildings.find(b => b.id === id)?.farmLevel) : kind === 'nest' ? NEST_ART : kind === 'nursery' ? NURSERY_ART : kind === 'kitchen' ? KITCHEN_ART : kind === 'statue' ? statueArtFor(this.current?.buildings ?? [], id) : kind === 'agency' ? AGENCY_ART : kind === 'salon' ? SALON_ART : kind === 'forest' ? FOREST_ART : kind === 'perch' ? PERCH_ART : null;
+    const art = kind === 'farm' ? farmArtFor(this.current?.buildings.find(b => b.id === id)?.farmLevel) : kind === 'nest' ? NEST_ART : kind === 'nursery' ? NURSERY_ART : kind === 'kitchen' ? KITCHEN_ART : kind === 'statue' ? statueArtFor(this.current?.buildings ?? [], id) : kind === 'agency' ? AGENCY_ART : kind === 'salon' ? SALON_ART : kind === 'forest' ? FOREST_ART : kind === 'perch' ? PERCH_ART : kind === 'lair' ? LAIR_ART : null;
     // `enlarged` also shrinks a Salon de soins that keeps the former 4 × 4 (`salonScale`).
     image.setPosition(x, y).setOrigin(.5, art ? art.originY : .5)
       .setScale(art ? art.worldWidth / art.width * (kind === 'salon' ? enlarged : 1) : .5 * enlarged);

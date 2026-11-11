@@ -17,6 +17,7 @@ import {type HabitatType, HABITAT_TYPES, HABITAT_LEVELS, habitatLevel} from '../
 import {MAIN_MISSION_IDS, DAILY_MISSION_IDS, DAILY_MISSIONS, DAILY_PICK_COUNT} from '../config/missions';
 import {cycleIndexAt} from '../simulation/missions';
 import {z} from 'zod';
+import {BENNY_RUN, BENNY_RUN_MAX_METRES} from '../simulation/bennyRun';
 import {BALANCE, FOREST, BUILDING_KINDS, CARE_KINDS, SALON, JUMP_ROPE, LEGACY_BREEDING_DURATION, EPIC_ISLET, BENNY_FLIGHT, CUISINE_FULL_REWARDS_PER_CYCLE, HOUR, LEGACY_ORDER_CROPS, TRAVEL, tripHearts, tripHeartsBefore20261108, NURSERY, ORDERS, type OrderId, SHOP_SPECIES, SPECIES, SPECIES_IDS, GUARANTEE_SPECIES, growthDuration, orderFarmLevel, type SpeciesId} from '../config/balance';
 import type {GameState} from '../state/types';
 import {ALL_DECORATION_IDS, DECORATIONS, DECORATION_IDS, RETIRED_DECORATION_IDS, MAX_DECORATIONS, isChristmasDecoration} from '../config/decorations';
@@ -27,7 +28,8 @@ import {EVOLUTION_CHALLENGES, EVOLUTION_CHALLENGE_IDS, evolutionChallengeTarget,
 import {EVOLUTION_AFFECTION, hasEvolvedArt} from '../config/evolvedArt';
 
 /**
- * The current format is v28 (the Salon de soins becomes a 6 × 6 spa: a salon built before keeps 4 × 4 until it has room, see
+ * The current format is v29 (the Antre du dragon and the record of « Cours cours Benny ! », optional; nothing to convert, see
+ * `migrateV28`), after v28 (the Salon de soins becomes a 6 × 6 spa: a salon built before keeps 4 × 4 until it has room, see
  * `migrateV27`), after v27 (the Christmas update's economy: Paille's counter removed, the nursery back to 2 cushions at
  * most, 1 to 5 Hearts a trip and the Salon's Hearts, see `migrateV26`), after v26 (the Christmas event: the sucres d'orge, the Christmas challenges of the cycle, the snowman of the
  * day, the mini-game « Les cadeaux du ciel » and the Christmas market's decorations with their receipt in sucres d'orge, all
@@ -35,7 +37,7 @@ import {EVOLUTION_AFFECTION, hasEvolvedArt} from '../config/evolvedArt';
  * Brumelin and the Terre habitat were removed, and saves before that catalogue boundary are not converted. Versions 1 to 15 are refused as incompatible
  * (the controller then starts a new game); they are never read, migrated or restored.
  */
-export const SAVE_VERSION = 28;
+export const SAVE_VERSION = 29;
 /** Types a species had before the owner changed them: a rabbit already housed under its old types may stay where it is. */
 const LEGACY_TYPES: Partial<Record<SpeciesId, readonly HabitatType[]>> = {magicien: ['metal', 'vol'], bouee: ['paille', 'feu'], dadi: ['neige', 'vol']};
 const integer = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
@@ -151,6 +153,8 @@ const current = z.object({
   // v27: the debris of the parcels bought since the Christmas update, and « Le vol de Benny ».
   debris: z.array(z.object({id: z.string().regex(/^debris-[1-9]\d*$/), kind: z.enum(['rocher', 'buisson', 'herbes']), x: integer, y: integer, price: integer.positive()}).strict()).max(512).optional(),
   bennyFlight: z.object({cycle: integer, rewarded: integer.max(BENNY_FLIGHT.rewardedGamesPerCycle), heart: z.literal(true).optional(), best: integer.max(BENNY_FLIGHT.maxColumns)}).strict().optional(),
+  // v29: the record of « Cours cours Benny ! », played from the Antre du dragon.
+  bennyRun: z.object({best: integer.max(BENNY_RUN.maxScore), metres: integer.max(BENNY_RUN_MAX_METRES)}).strict().optional(),
   affectionGifts: z.record(identity, integer).optional(),
   picnicCycle: integer.optional(),
   // The Terrain de corde à sauter (v23, optional): the last rewarded cycle, its rewarded games and Heart, and the record.
@@ -490,7 +494,15 @@ function migrateV27(raw: object): void {
   const save = raw as {version: number; buildings?: unknown};
   if (Array.isArray(save.buildings)) for (const b of save.buildings)
     if (b && typeof b === 'object' && (b as {kind?: unknown}).kind === 'salon') (b as {formerFootprint?: number}).formerFootprint = 1;
-  save.version = SAVE_VERSION;
+  save.version = 28;
+}
+
+/**
+ * v28 → v29, the Antre du dragon and « Cours cours Benny ! » (owner, 11 November 2026): a new building kind and an optional
+ * record. Nothing to convert; the version moves so that an older client refuses the lair instead of reading it as invalid.
+ */
+function migrateV28(raw: object): void {
+  (raw as {version: number}).version = SAVE_VERSION;
 }
 
 /**
@@ -520,7 +532,7 @@ export function decodeGame(json: string): DecodeResult {
   if (json.length > MAX_JSON_LENGTH) return {ok: false, reason: 'FILE_TOO_LARGE'};
   let raw: unknown;
   try { raw = JSON.parse(json); } catch { return {ok: false, reason: 'INVALID_JSON'}; }
-  if (raw && typeof raw === 'object' && 'version' in raw && raw.version !== SAVE_VERSION && raw.version !== 27 && raw.version !== 26 && raw.version !== 25 && raw.version !== 24 && raw.version !== 23 && raw.version !== 22 && raw.version !== 21 && raw.version !== 20 && raw.version !== 19 && raw.version !== 18 && raw.version !== 17 && raw.version !== 16)
+  if (raw && typeof raw === 'object' && 'version' in raw && raw.version !== SAVE_VERSION && raw.version !== 28 && raw.version !== 27 && raw.version !== 26 && raw.version !== 25 && raw.version !== 24 && raw.version !== 23 && raw.version !== 22 && raw.version !== 21 && raw.version !== 20 && raw.version !== 19 && raw.version !== 18 && raw.version !== 17 && raw.version !== 16)
     return {ok: false, reason: Number.isInteger(raw.version) && (raw.version as number) >= 1 && (raw.version as number) <= 15 ? 'INCOMPATIBLE_CATALOG' : 'UNSUPPORTED_VERSION'};
   // Only the explicitly retired catalogue entries are removed; unknown IDs still fail validation.
   if (raw && typeof raw === 'object' && 'decorations' in raw && Array.isArray(raw.decorations)) {
@@ -545,6 +557,7 @@ export function decodeGame(json: string): DecodeResult {
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 26) migrateV26(raw, fromV16);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 27 && !('enclosureSizes' in raw)) migrateEnclosureSizes(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 27) migrateV27(raw);
+  if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 28) migrateV28(raw);
   settleStorageCaps(raw);
   const parsed = schema.safeParse(raw);
   if (!parsed.success) return {ok: false, reason: 'INVALID_STATE'};
@@ -603,6 +616,6 @@ export function encodeGame(state: GameState, presentationId?: string): string {
 
 /** Optional presentation metadata, separate from simulation state. Call after validating the save. */
 export function readPresentationId(json: string): string | undefined {
-  try { const raw = JSON.parse(json); const id = z.string().uuid().safeParse(raw.presentationId); return [SAVE_VERSION, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16].includes(raw.version) && id.success ? id.data : undefined; }
+  try { const raw = JSON.parse(json); const id = z.string().uuid().safeParse(raw.presentationId); return [SAVE_VERSION, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16].includes(raw.version) && id.success ? id.data : undefined; }
   catch { return undefined; }
 }

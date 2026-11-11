@@ -106,7 +106,7 @@ export interface GameState {
   startCourse?: 'paille-solo';
   purchaseUnlocks?: PurchaseUnlockId[];
   initiation?: Initiation;
-  version: 28;
+  version: 29;
   /** The Christmas event (v26, optional; absent until its first use): see `ChristmasState`. */
   christmas?: ChristmasState;
   /** Benny, the Mythic (v22): when her power is usable again, and whether she is flying in the sky. Absent until first used. */
@@ -128,6 +128,8 @@ export interface GameState {
   debris?: Debris[];
   /** « Le vol de Benny » (v27): the daily cycle of the last rewarded game, the rewarded games of that cycle, whether its Heart was won, and the record. */
   bennyFlight?: {cycle: number; rewarded: number; heart?: true; best: number};
+  /** « Cours cours Benny ! »: the best score and the longest run (metres). No reward yet. */
+  bennyRun?: {best: number; metres: number};
   /** Daily cycle of each rabbit's last affection gift (a care or a picnic), keyed by rabbit ID. Absent until the first gift. */
   affectionGifts?: Record<string, number>;
   /** Daily cycle of the last picnic (one a day in all). Absent until the first picnic. */
@@ -238,7 +240,7 @@ export type Command = BaseCommand
   /** A finished jump-rope game: `score` jumps by this trio (remembered for the next game); pays within the daily limit (JUMP_ROPE). */
   | {type: 'rewardJumpRope'; team: JumpRopeTeam; score: number}
   /** The jump-rope islet, for JUMP_ROPE.price pattes from JUMP_ROPE.unlockLevel, once. */
-  | {type: 'buyJumpIsland'} | {type: 'buyEpicIslet'} | {type: 'clearDebris'; id: string} | {type: 'rewardBennyFlight'; passed: number}
+  | {type: 'buyJumpIsland'} | {type: 'buyEpicIslet'} | {type: 'clearDebris'; id: string} | {type: 'rewardBennyFlight'; passed: number} | {type: 'finishBennyRun'; score: number; metres: number}
   /** Christmas: today's snowman in this enclosure (free, one a day in all, a rabbit present, from level 2). */
   | {type: 'buildSnowman'; enclosureId: string}
   /** Christmas: a finished game of « Les cadeaux du ciel », the basket carried by this rabbit; pays within SKY_GIFTS' daily limit. */

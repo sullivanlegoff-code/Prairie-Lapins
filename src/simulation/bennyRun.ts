@@ -317,6 +317,8 @@ export function runInput(g: BennyRun, now: number, input: RunInput): void {
 /** The events since the last call, for the display (sounds, sparks, the score popping). */
 export function takeRunEvents(g: BennyRun): RunEvent[] { const e = g.events; g.events = []; return e; }
 
+/** The longest distance a saved run may claim: an hour at full speed, far beyond any real run. */
+export const BENNY_RUN_MAX_METRES = 24 * 3600;
 export interface RunSummary {score: number; metres: number; coins: number; pots: number; foes: number; wallRuns: number; bestCombo: number; seconds: number}
 export const runSummary = (g: BennyRun): RunSummary => ({score: g.score, metres: Math.floor(g.distance), coins: g.coins, pots: g.pots, foes: g.foes,
   wallRuns: g.wallRuns, bestCombo: g.bestCombo, seconds: Math.floor((g.at - g.startedAt) / 1000)});

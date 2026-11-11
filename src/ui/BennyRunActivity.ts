@@ -1,7 +1,7 @@
 import '../display/benny-run.css';
 import {FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
 import {advanceBennyRun, BENNY_RUN, comboMultiplier, dragonVisible, inAir, powerActive, runHeight, runInput, runSummary, sliding, startBennyRun, takeRunEvents,
-  type BennyRun, type RunEntity, type RunInput, type RunPower, type RunSetting} from '../simulation/bennyRun';
+  type BennyRun, type RunEntity, type RunInput, type RunPower, type RunSetting, type RunSummary} from '../simulation/bennyRun';
 import {pausableClock, settleCard} from './activityPause';
 
 /**
@@ -22,7 +22,13 @@ const POWER_NAMES: Record<RunPower, string> = {magnet: 'Aimant', bubble: 'Bulle 
 const SWIPE = 24;
 const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? 's' : ''}`;
 
-export function mountBennyRunActivity(host: HTMLElement, options: {onExit?: () => void; clock?: () => number; frame?: (step: () => void) => number} = {}) {
+export function mountBennyRunActivity(host: HTMLElement, options: {
+  /** Records a finished run (the record); returns a line for the end card, if any. */
+  onFinished?: (summary: RunSummary) => string | void;
+  /** The best score kept by the game, read before each run. */
+  best?: () => number;
+  onExit?: () => void; clock?: () => number; frame?: (step: () => void) => number;
+} = {}) {
   const time = pausableClock(options.clock ?? (() => performance.now())), clock = time.now, frame = options.frame ?? (step => requestAnimationFrame(step));
   const layer = document.createElement('div'); layer.className = 'benny-run-activity'; layer.hidden = true;
   layer.setAttribute('role', 'dialog'); layer.setAttribute('aria-modal', 'true'); layer.setAttribute('aria-label', 'Cours cours Benny !');
@@ -184,16 +190,19 @@ export function mountBennyRunActivity(host: HTMLElement, options: {onExit?: () =
   function finish(): void {
     if (!game) return;
     running = false; const s = runSummary(game), record = s.score > best && s.score > 0, previous = best; best = Math.max(best, s.score);
+    const line = options.onFinished?.(s);
     hud();
     const again = button('Rejouer', start, 'bennyRunAgain');
     showCard(paragraph('La Dragon a rattrapé Benny !', 'benny-run-title'),
       paragraph('Elles se chamaillent pour le trésor… (scène peinte à venir)', 'benny-run-rules'),
       paragraph(`Score ${s.score} · ${s.metres} m · ${plural(s.coins, 'pièce')} · ${plural(s.pots, 'pot')} · ${plural(s.foes, 'créature')} · ${plural(s.wallRuns, 'mur')} · meilleur combo ${s.bestCombo} · ${s.seconds} s`, 'benny-run-rules'),
       ...(record ? [paragraph(previous ? `Nouveau record ! L’ancien était de ${previous}.` : 'Ton premier record !', 'benny-run-record')] : best ? [paragraph(`Ton record : ${best}`, 'benny-run-rules')] : []),
+      ...(line ? [paragraph(line, 'benny-run-rules')] : []),
       again, button('Quitter', close, 'bennyRunQuit'));
     settleCard(card); again.focus();
   }
   function start(): void {
+    best = Math.max(best, options.best?.() ?? 0);
     game = startBennyRun(clock()); viewLane = 1; swing = null; flashes = []; running = true; card.hidden = true; lastDrawAt = clock();
     hud(); flash('Cours cours Benny !'); frame(loop);
   }

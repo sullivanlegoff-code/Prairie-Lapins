@@ -10,6 +10,7 @@ import {jobKey, initiationAvailable, settleInitiation} from './initiation';
 import {buildingPlacementReason, buildingFootprint, decorationsInFootprint, upgradeFootprintReason} from './placement';
 import {parcelDebris} from './debris';
 import {bennyFlightReason, bennyFlightReward, hasBenny} from './bennyFlight';
+import {BENNY_RUN, BENNY_RUN_MAX_METRES} from './bennyRun';
 import {normalizeRabbitName} from './rabbitNames';
 import {acquiredCell, PARCEL_IDS, extensionPrice, purchasableParcels} from '../config/land';
 import {HABITAT_TYPES, habitatLevel, habitatPrice, type HabitatLevel} from '../config/habitats';
@@ -24,7 +25,7 @@ import {canEvolve, hasEvolvedArt} from '../config/evolvedArt';
 import {evolutionChallengesComplete, type EvolutionChallenge} from '../config/evolutionChallenges';
 import {jumpIslandReason, jumpRopeReward, jumpRopeTeamReason} from './jumpRope';
 import {dailyBonusReady, dailyClaimable, dailyCycleStart, dailyMissionsOf, recordMissionAction} from './missions';
-import {AGENCY_UPGRADE_HEARTS, DAILY_HEART_SOURCES, farmLimit, farmDuration, FARM_UPGRADES, orderFarmLevel, BALANCE, HEARTS, HOUR, TRAVEL, SALON, FOREST, JUMP_ROPE, EPIC_ISLET, BENNY_FLIGHT, ULTRA_SNOW, CARE_KINDS, carePrice, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
+import {AGENCY_UPGRADE_HEARTS, DAILY_HEART_SOURCES, farmLimit, farmDuration, FARM_UPGRADES, orderFarmLevel, BALANCE, HEARTS, HOUR, TRAVEL, SALON, FOREST, JUMP_ROPE, EPIC_ISLET, BENNY_FLIGHT, BENNY_LAIR, ULTRA_SNOW, CARE_KINDS, carePrice, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
 import {emptyBuilding} from '../state/initial';
 import {epicIsletReason} from './epicIslet';
 import {babyInNursery, findNurseryBaby, firstFreeNurserySlot, nurseryBuilding, nurseryUnlockQuote, settleNestTransfers} from './nursery';
@@ -405,6 +406,8 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(command.kind!=='salon' || playerLevel(s)>=SALON.unlockLevel,'LEVEL_REQUIRED');
         requireRule(command.kind!=='forest' || playerLevel(s)>=FOREST.unlockLevel,'LEVEL_REQUIRED');
         requireRule(command.kind!=='perch' || hasBenny(s),'BENNY_REQUIRED');
+        requireRule(command.kind!=='lair' || playerLevel(s)>=BENNY_LAIR.unlockLevel,'LEVEL_REQUIRED');
+        requireRule(command.kind!=='lair' || hasBenny(s),'BENNY_REQUIRED');
         // The Ultra neige habitat: a snow enclosure of the Christmas market, paid in sucres d'orge only.
         requireRule(!command.ultra || command.kind === 'enclosure' && habitatType === 'neige', 'INVALID_CHOICE');
         if (command.ultra) requireRule(christmasEventActive(), 'EVENT_OVER');
@@ -628,6 +631,13 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       case 'clearDebris': {
         const debris = (s.debris ?? []).find(d => d.id === command.id); requireRule(debris, 'NOT_FOUND');
         pay(debris.price); s.debris = s.debris!.filter(d => d.id !== debris.id); value = debris.price; break;
+      }
+      case 'finishBennyRun': {
+        // « Cours cours Benny ! » keeps only the record for now: no pattes, no Hearts, no XP (owner: rewards « plus tard »).
+        requireRule(s.buildings.some(b => b.kind === 'lair'), 'NOT_FOUND'); requireRule(hasBenny(s), 'BENNY_REQUIRED');
+        requireRule([command.score, command.metres].every(n => Number.isSafeInteger(n) && n >= 0) && command.score <= BENNY_RUN.maxScore && command.metres <= BENNY_RUN_MAX_METRES, 'INVALID_CHOICE');
+        s.bennyRun = {best: Math.max(s.bennyRun?.best ?? 0, command.score), metres: Math.max(s.bennyRun?.metres ?? 0, command.metres)};
+        value = command.score; break;
       }
       case 'rewardBennyFlight': {
         const reason = bennyFlightReason(s); requireRule(!reason, reason ?? 'INVALID_CHOICE');
