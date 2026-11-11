@@ -260,6 +260,19 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       if (settingAt(g, h.from) === 'pont') for (let k = 0; k < 3; k++) { const z = from + ((g.at / 400 + k / 3) % 1) * (to - from), a = project(-edge * .6, z, 0), b = project(edge * .6, z, 0); c.strokeStyle = 'rgba(255,230,140,.5)'; c.lineWidth = Math.max(1, a.s * .08); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); }
       for (const z of [from, to]) if (z > NEAR && z < FAR) strip(c, g, z - .25, z + .25, look.holeEdge);
     }
+    // Cracked slabs in a lane (thin dark cracks), then the pit once they gave way (with a lip like a gap's).
+    for (const p of g.pits) {
+      const from = Math.max(NEAR, p.from - g.distance), to = Math.min(FAR, p.to - g.distance); if (to <= from) continue;
+      const n = lanesAt(g, p.from), x = (p.lane - (n - 1) / 2) * LANE_WIDTH, x0 = x - LANE_WIDTH * .48, x1 = x + LANE_WIDTH * .48, look = SETTING_COLOURS[settingAt(g, p.from)];
+      if (p.open) { quad(c, [project(x0, from, 0), project(x1, from, 0), project(x1, to, 0), project(x0, to, 0)], look.hole);
+        for (const z of [from, to]) if (z > NEAR) quad(c, [project(x0, z - .2, 0), project(x1, z - .2, 0), project(x1, z + .2, 0), project(x0, z + .2, 0)], look.holeEdge); }
+      else {
+        quad(c, [project(x0, from, 0), project(x1, from, 0), project(x1, to, 0), project(x0, to, 0)], 'rgba(40,24,12,.25)');
+        c.strokeStyle = 'rgba(30,18,10,.8)'; const a = project(x, from, 0); c.lineWidth = Math.max(1, a.s * .06); c.beginPath();
+        for (let k = 0; k < 4; k++) { const z0 = from + (to - from) * k / 4, z1 = from + (to - from) * (k + 1) / 4, p0 = project(x + (k % 2 ? .5 : -.5), z0, 0), p1 = project(x + (k % 2 ? -.4 : .4), z1, 0); if (!k) c.moveTo(p0.x, p0.y); c.lineTo(p1.x, p1.y); }
+        c.stroke();
+      }
+    }
     // The walls, in their segments: runnable ones are lit and striped, the others dark.
     for (const w of g.walls) for (const [lo, hi, look] of [[NEAR, border, colours], [border, FAR, next]] as const) {
       const from = Math.max(lo, w.from - g.distance), to = Math.min(hi, w.to - g.distance); if (to <= from) continue;
@@ -583,6 +596,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         if (event.points === undefined) flash(`Défi : ${CHALLENGE_TEXT[event.kind](event.goal)}`);
         else { flash(`Défi réussi ! +${event.points}`); sound('power'); burst(width / 2, height * .3, ['#7be08a', '#ffe66b', '#fff'], 24, 360); }
         break;
+      case 'crumble': { const n = lanesAt(g, event.pit.from), x = (event.pit.lane - (n - 1) / 2) * LANE_WIDTH, p = project(x, event.pit.from - g.distance + 1, 0);
+        burst(p.x, p.y, ['#5a3d22', '#8a6440', '#3a2a1c'], 10, 200); if (event.pit.from - g.distance < 30) sound('bump', .6); break; }
       case 'platformUp': sound('jump', 1.2); break;
       case 'blocked': sound('bump', .8); shakeFor('strike'); flash('Monte par la rampe !'); break;
       case 'lanes':

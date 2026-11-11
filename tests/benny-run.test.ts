@@ -386,4 +386,15 @@ describe('Cours cours Benny ! rules', () => {
     run(g, (e.z - g.distance - C.crossStill + 2) / g.speed * 1000); const still = e.lane;
     run(g, C.crossMs * 1.5); expect(e.lane).toBe(still);
   });
+  it('opens a pit where cracked slabs give way as Benny comes: over it unharmed, into it a bump and a scramble out', () => {
+    const g = quiet(); run(g, C.introMs); const z = g.distance;
+    g.pits.push({lane: 1, from: z + 30, to: z + 34, open: false});
+    run(g, 200); expect(g.pits[0].open).toBe(false);
+    run(g, (30 - C.crumbleAt) / g.speed * 1000 + 100); expect(g.pits[0].open).toBe(true); expect(types(g)).toContain('crumble');
+    // Over it with a jump: unharmed.
+    while (g.pits[0].from - g.distance > 1.2) run(g, 10); runInput(g, g.at, 'up'); run(g, 800); expect(g.lastBumpAt).toBeNull();
+    // Into the next one: a bump, then out of it.
+    g.pits.push({lane: 1, from: g.distance + 3, to: g.distance + 7, open: true}); run(g, 400);
+    expect(g.lastBumpAt).not.toBeNull(); expect(g.over).toBe(false);
+  });
 });
