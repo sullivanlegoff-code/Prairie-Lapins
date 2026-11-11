@@ -31,7 +31,7 @@ export const EVOLVED_ART: readonly EvolvedSprite[] = [
   // Bélier Gris A « Gardien d'argent ».
   {id: 'belier-gris', name: "Gardien d'argent", file: 'assets/rabbits/belier-gris/belier-gris-v2.png', texture: 'rabbit-belier-gris-evolved-v2', width: 445, height: 428, worldWidth: 47, groundY: 12},
   // Volant A1 « Zéphyr céleste ».
-  {id: 'volant', name: 'Zéphyr céleste', file: 'assets/rabbits/volant/volant-v2.png', texture: 'rabbit-volant-evolved-v2', width: 450, height: 482, worldWidth: 53, groundY: 12},
+  {id: 'volant', name: 'Zéphyr céleste', file: 'assets/rabbits/volant/volant-v2.png', texture: 'rabbit-volant-evolved-v2', width: 450, height: 489, worldWidth: 53, groundY: 12},
   // Dinono « armure jade ».
   {id: 'dinono', name: 'Armure jade', file: 'assets/rabbits/dinono/dinono-v2.png', texture: 'rabbit-dinono-evolved-v2', width: 450, height: 430, worldWidth: 53, groundY: 12},
   // Dinenette « pendentif cœur ».

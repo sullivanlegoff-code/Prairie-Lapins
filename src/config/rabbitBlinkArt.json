@@ -235,28 +235,28 @@
   },
   "volant-evolution": {
     "sprite": "assets/rabbits/volant/volant-v2.png",
-    "spriteSha1": "f507bbcafbfe46bbbe5f00c34e12aa39ddce798e",
+    "spriteSha1": "dc65ec0e1816869d25f699610db58d00672996cf",
     "spriteWidth": 450,
-    "spriteHeight": 482,
+    "spriteHeight": 489,
     "eyes-closed": {
       "file": "assets/rabbits/volant/volant-evolution-eyes-closed.png",
-      "x": 268,
-      "y": 74,
-      "width": 143,
-      "height": 74,
+      "x": 262,
+      "y": 68,
+      "width": 145,
+      "height": 73,
       "source": "assets-source/rabbits/volant/evolution-eyes-closed.png",
-      "sourceSha1": "5ff3268fae6f6ebb2416959e83c79f9ed776d935",
-      "derivedSha1": "4cc1c634f0d1e58f71c27a0b5ac0fa2d06d521a8"
+      "sourceSha1": "cf27d7ae03cf0d82629b2aa20c5335f1d6b9f4ed",
+      "derivedSha1": "0e9f175f14cb860e395ffb96807adcaf32185e63"
     },
     "nose-twitch": {
       "file": "assets/rabbits/volant/volant-evolution-nose-twitch.png",
-      "x": 354,
-      "y": 127,
-      "width": 34,
-      "height": 31,
+      "x": 330,
+      "y": 119,
+      "width": 65,
+      "height": 51,
       "source": "assets-source/rabbits/volant/evolution-nose-twitch.png",
-      "sourceSha1": "77d26dd7981fdb8d9a17d7e1185fbae1e6895ee7",
-      "derivedSha1": "a28d7436be129a99df6b5ced22b258b09d35f542"
+      "sourceSha1": "f45ca4a6d03f19322464a98681c2d8ecadc5b9eb",
+      "derivedSha1": "c48f294fa61093481fba874c0ec9cd28a076773d"
     }
   },
   "magicien": {
