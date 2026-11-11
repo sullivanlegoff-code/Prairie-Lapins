@@ -32,6 +32,9 @@ export const BENNY_RUN = {
   speedStart: 11, speedMax: 24, speedRampMs: 150_000,
   /** The speed climbs quickly at first, then more and more gently (an ease-out of this power). */
   speedEase: 1.6,
+  /** Past the ramp, the run keeps hardening: every `overtimeMs` more, `overtimeSpeed` m/s faster and the gaps between
+   * patterns `overtimeGap` m shorter, `overtimeMax` times at most (a new pace each time, announced). */
+  overtimeMs: 75_000, overtimeSpeed: 1.5, overtimeGap: .4, overtimeMax: 4,
   /** A jump: its time and its height (m); a slide; a ground charge comes down in `poundMs` and breaks what is ahead within `poundReach`. */
   jumpMs: 650, jumpHeight: 1.4, slideMs: 700, poundMs: 120, poundReach: 4,
   /** Height above which Benny clears a low thing (a barrier, a pot). */
@@ -153,6 +156,8 @@ export type RunEvent =
   | {type: 'geyser'; entity: RunEntity}
   /** A gust of wind on the mountain: announced (`warn`), then blowing Benny one lane towards `dir` (`pushed` if she moved). */
   | {type: 'gust'; dir: -1 | 1; warn: boolean; pushed?: boolean}
+  /** A new, faster pace past the ramp. */
+  | {type: 'faster'; pace: number}
   /** A challenge given (`points` absent) or done. */
   | {type: 'challenge'; kind: ChallengeKind; goal: number; points?: number}
   | {type: 'tutorial'; step: TutorialStep | null; again?: boolean};
@@ -173,6 +178,8 @@ export interface BennyRun {
   pits: Pit[];
   /** Gusts of wind ahead on the mountain path: where they blow, which way, and whether they were announced. */
   gusts: {z: number; dir: -1 | 1; warned: boolean}[];
+  /** The pace announced last (past the ramp, one more each `overtimeMs`). */
+  pace: number;
   /** In the air between `airFrom` and `airUntil`, a jump starting `jumpFrom` m high; `pound` once the ground charge has started,
    * from `poundFrom` m high. */
   airFrom: number; airUntil: number; jumpFrom: number; pound: boolean; poundFrom: number;
@@ -263,7 +270,7 @@ const pick = <T>(g: BennyRun, list: readonly T[]): T => list[Math.min(list.lengt
 
 export function startBennyRun(now: number, seed = Math.floor(Math.random() * 2147483647), lanes = 3, tutorial = false): BennyRun {
   const g: BennyRun = {
-    seed: (seed >>> 0) || 1, startedAt: now, at: now, distance: 0, speed: C.speedStart, lanes, lane: Math.floor(lanes / 2), laneChangedAt: -Infinity, baseLanes: lanes, zones: [], platforms: [], raised: null, pits: [], gusts: [],
+    seed: (seed >>> 0) || 1, startedAt: now, at: now, distance: 0, speed: C.speedStart, lanes, lane: Math.floor(lanes / 2), laneChangedAt: -Infinity, baseLanes: lanes, zones: [], platforms: [], raised: null, pits: [], gusts: [], pace: 0,
     airFrom: 0, airUntil: 0, jumpFrom: 0, pound: false, poundFrom: 0, slideUntil: 0, wall: null,
     entities: [], nextId: 1, nextSpawnZ: C.firstAt, walls: [], wallsTo: {left: 0, right: 0}, holes: [],
     setting: 'grotte', nextSettingAt: 0, upcoming: null, stumbleUntil: 0, lastBumpAt: null,
@@ -282,6 +289,8 @@ export const settingAt = (g: BennyRun, z: number): RunSetting => g.upcoming && z
 const settingDelay = (g: BennyRun) => C.settingMs[0] + random(g) * (C.settingMs[1] - C.settingMs[0]);
 /** How far into the speed ramp the run is, from 0 to 1. */
 export const runDifficulty = (g: BennyRun) => Math.min(1, Math.max(0, g.at - g.paceFrom) / C.speedRampMs);
+/** How far past the ramp the run is, in steps of `overtimeMs` (0 before it ends, `overtimeMax` at most; smooth in between). */
+export const runOvertime = (g: BennyRun) => Math.min(C.overtimeMax, Math.max(0, g.at - g.paceFrom - C.speedRampMs) / C.overtimeMs);
 export const powerActive = (g: BennyRun, power: RunPower) => g.active?.power === power && g.at < g.active.until;
 export const inAir = (g: BennyRun) => g.at < g.airUntil;
 export const sliding = (g: BennyRun) => g.at < g.slideUntil && !inAir(g);
@@ -549,7 +558,7 @@ function spawn(g: BennyRun): void {
     const real = g.lanes; g.lanes = lanesAt(g, z);
     const end = layPattern(g, choosePattern(g, z), z), d = runDifficulty(g);
     g.lanes = real;
-    const gap = C.gapStart - (C.gapStart - C.gapMin) * d;
+    const gap = C.gapStart - (C.gapStart - C.gapMin) * d - C.overtimeGap * runOvertime(g);
     g.nextSpawnZ = end + gap * (.85 + random(g) * .3);
   }
 }
@@ -709,7 +718,8 @@ function tick(g: BennyRun): void {
   const dt = C.step / 1000, eventsBefore = g.events.length;
   if (g.tutorial) { g.paceFrom += C.step; g.nextSettingAt += C.step; g.nextChallengeAt += C.step; }
   if (g.active && g.at >= g.active.until) g.active = null;
-  const base = C.speedStart + (C.speedMax - C.speedStart) * (1 - (1 - runDifficulty(g)) ** C.speedEase);
+  const base = C.speedStart + (C.speedMax - C.speedStart) * (1 - (1 - runDifficulty(g)) ** C.speedEase) + C.overtimeSpeed * runOvertime(g);
+  if (runDifficulty(g) >= 1 && g.pace < Math.min(C.overtimeMax, 1 + Math.floor(runOvertime(g)))) { g.pace++; g.events.push({type: 'faster', pace: g.pace}); }
   g.speed = base * (g.at < g.stumbleUntil ? C.stumbleSlow : 1);
   const before = g.distance; g.distance += g.speed * dt;
   // A new setting is chosen ahead, then reached.

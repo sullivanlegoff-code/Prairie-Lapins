@@ -649,6 +649,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         viewLane += event.shift;
         if (event.shift > 0) flash('La salle s’élargit : cinq couloirs !');
         break;
+      case 'faster': flash(event.pace === 1 ? 'Vitesse de croisière… et ça accélère encore !' : `Plus vite ! Allure ${event.pace}`); sound('power', 1.3); break;
       case 'setting': flash(SETTING_NAMES[event.setting]); settingBefore = shownSetting; shownSetting = event.setting; settingSince = clock(); break;
       case 'tutorial': showCoach(event.step, event.again); break;
       case 'caught': finish(); break;

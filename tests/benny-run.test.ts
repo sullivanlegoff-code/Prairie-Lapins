@@ -302,7 +302,7 @@ describe('Cours cours Benny ! rules', () => {
   });
   it('speeds up to its top speed in about two and a half minutes', () => {
     const g = quiet(); run(g, 1000); expect(g.speed).toBeCloseTo(C.speedStart, 0);
-    run(g, C.speedRampMs); expect(g.speed).toBe(C.speedMax);
+    run(g, C.speedRampMs - 1000); expect(g.speed).toBeCloseTo(C.speedMax, 5);
   });
   it('lays out a fair road: never three pillars in a row without both walls runnable beside them, and replays the same', () => {
     /** Lays out four minutes of road; Benny passes everything unharmed (what is near is cleared away): only the layout is checked. */
@@ -434,6 +434,12 @@ describe('Cours cours Benny ! rules', () => {
     // At the edge already: it cannot blow her off the road.
     while (g.gusts.length) run(g, 10);
     expect(g.lane).toBe(2); expect(g.over).toBe(false);
+  });
+  it('keeps getting faster past the ramp, a new pace announced every while, up to a ceiling', () => {
+    const g = quiet(); run(g, C.speedRampMs - 1000); const top = C.speedMax; expect(g.speed).toBeLessThan(top + .01);
+    takeRunEvents(g); run(g, 2000); expect(takeRunEvents(g).filter(e => e.type === 'faster')).toEqual([{type: 'faster', pace: 1}]);
+    run(g, C.overtimeMs); expect(g.speed).toBeGreaterThan(top + C.overtimeSpeed * .9); expect(g.pace).toBe(2);
+    run(g, C.overtimeMs * 6); expect(g.pace).toBe(C.overtimeMax); expect(g.speed).toBeCloseTo(top + C.overtimeSpeed * C.overtimeMax, 1);
   });
   it('lays rockfalls only in the cave, always leaving one lane free', () => {
     for (const seed of [3, 4, 5]) {
