@@ -87,7 +87,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   let swing: {at: number; lane: number} | null = null, shock: number | null = null, flashes: {at: number; text: string; x: number}[] = [];
   let width = 0, height = 0;
   /** The road's lanes (3 for now; zones of up to 5 later) and the walls' distance from its middle. */
-  let lanes = 3, viewLanes = 3;
+  let lanes = 3, viewLanes = 3, frameDt = 0;
+  /** The lane each thing is drawn in (it glides to its lane). */
+  const shownLanes = new Map<number, number>();
   const wallX = () => lanes / 2 * LANE_WIDTH + .35;
   /** How wide the road is drawn `ahead` m in front of Benny (in lanes): it opens over 6 m into a wide hall and closes over
    * 6 m past its end. */
@@ -302,7 +304,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   };
   function thing(c: CanvasRenderingContext2D, g: BennyRun, e: RunEntity): void {
     const shape = SHAPES[e.kind], ahead = e.z - g.distance; if (!shape || ahead > FAR || ahead < -3) return;
-    const n = lanesAt(g, e.z), x = e.lane < 0 ? -wallXAt(g, ahead) + .4 : e.lane > n - 1 ? wallXAt(g, ahead) - .4 : (e.lane - (n - 1) / 2) * LANE_WIDTH;
+    // A creature changing lanes (an ember hopping, a dragonnet crossing) slides over rather than jumps.
+    let shown = shownLanes.get(e.id) ?? e.lane; shown += (e.lane - shown) * Math.min(1, frameDt * 12); if (Math.abs(e.lane - shown) < .01) shown = e.lane; shownLanes.set(e.id, shown);
+    const n = lanesAt(g, e.z), x = e.lane < 0 ? -wallXAt(g, ahead) + .4 : e.lane > n - 1 ? wallXAt(g, ahead) - .4 : (shown - (n - 1) / 2) * LANE_WIDTH;
     // The little flying monster keeps to Benny's height, a little above her head.
     const up = e.kind === 'flyer' ? bennyHeight(g) + .9 + Math.sin(g.at / 180 + e.id) * .08 : e.up ?? shape.up ?? 0;
     const base = project(x, ahead, up), w = shape.w * base.s, h = shape.h * base.s;
@@ -497,6 +501,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const c = context, g = game; if (!c || !g) return;
     const dt = Math.min(.05, Math.max(0, (now - lastDrawAt) / 1000)); lastDrawAt = now;
     // The lanes under Benny now; the camera pulls back gently in a wide hall.
+    frameDt = dt; if (shownLanes.size > 200) for (const id of shownLanes.keys()) if (!g.entities.some(e => e.id === id)) shownLanes.delete(id);
     lanes = g.lanes; viewLanes += (lanesDrawn(g, 8) - viewLanes) * Math.min(1, dt * 2.5);
     // Benny glides between lanes, and onto and off a wall (drawn just inside it), instead of jumping there.
     const onWall = (wallX() - .45 - laneX(lanes - 1)) / LANE_WIDTH, target = g.wall ? (g.wall.side === 'left' ? -onWall : lanes - 1 + onWall) : g.lane;
