@@ -61,3 +61,6 @@
 .benny-run-top .benny-run-score { font-size: clamp(1.15rem, 6.4vw, 1.6rem); min-width: 0; }
 .benny-run-top .benny-run-metres, .benny-run-top .benny-run-coins { font-size: clamp(.8rem, 3.9vw, 1.05rem); }
 .benny-run-top button { flex: none; }
+/* The coins as a gold coin and a number: room for big scores on one row. */
+.benny-run-top .benny-run-coins { display: inline-flex; align-items: center; gap: 4px; }
+.benny-run-top .benny-run-coins::before { content: ''; width: .9em; height: .9em; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff6c8 0 18%, #f4c430 20% 62%, #d99a1e 64%); box-shadow: 0 0 0 1px #3b2414; }
