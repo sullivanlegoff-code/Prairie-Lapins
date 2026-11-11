@@ -66,6 +66,8 @@ export const BENNY_RUN = {
   potCoins: 3,
   /** The setting changes at random every 40 to 55 s. */
   settingMs: [40_000, 55_000],
+  /** A new setting starts this far ahead (m): it comes into sight and Benny runs into it. */
+  settingAhead: 80,
   /** Things are laid out to `spawnAhead` m ahead, the first at `firstAt` m, then every `gapStart` m down to `gapMin` m. */
   spawnAhead: 90, firstAt: 30, gapStart: 22, gapMin: 11,
   /** Share of coin lines carrying a power, and how long each power lasts once picked up (the bubble lasts until a bump, at most this). */
@@ -129,6 +131,8 @@ export interface BennyRun {
   /** Gaps in the road ahead, from `from` to `to` (m). */
   holes: {from: number; to: number}[];
   setting: RunSetting; nextSettingAt: number;
+  /** The next setting, from `z` on, while Benny runs towards it. */
+  upcoming: {setting: RunSetting; z: number} | null;
   stumbleUntil: number; lastBumpAt: number | null;
   /** The power under way (a new one replaces it). */
   active: {power: RunPower; until: number} | null;
@@ -208,7 +212,7 @@ export function startBennyRun(now: number, seed = Math.floor(Math.random() * 214
     seed: (seed >>> 0) || 1, startedAt: now, at: now, distance: 0, speed: C.speedStart, lanes, lane: Math.floor(lanes / 2), laneChangedAt: -Infinity,
     airFrom: 0, airUntil: 0, jumpFrom: 0, pound: false, poundFrom: 0, slideUntil: 0, wall: null,
     entities: [], nextId: 1, nextSpawnZ: C.firstAt, walls: [], wallsTo: {left: 0, right: 0}, holes: [],
-    setting: 'grotte', nextSettingAt: 0, stumbleUntil: 0, lastBumpAt: null,
+    setting: 'grotte', nextSettingAt: 0, upcoming: null, stumbleUntil: 0, lastBumpAt: null,
     active: null, score: 0, coins: 0, pots: 0, foes: 0, wallRuns: 0, combo: 0, comboUntil: 0, bestCombo: 0,
     over: false, events: [], queuedJumpUntil: 0, paceFrom: now, tutorial: tutorial ? {step: 0, ids: [], tries: 0, struck: 0} : null,
   };
@@ -218,6 +222,8 @@ export function startBennyRun(now: number, seed = Math.floor(Math.random() * 214
   return g;
 }
 
+/** The setting at `z` (m along the road): the present one, or the next one past its start. */
+export const settingAt = (g: BennyRun, z: number): RunSetting => g.upcoming && z >= g.upcoming.z ? g.upcoming.setting : g.setting;
 const settingDelay = (g: BennyRun) => C.settingMs[0] + random(g) * (C.settingMs[1] - C.settingMs[0]);
 /** How far into the speed ramp the run is, from 0 to 1. */
 export const runDifficulty = (g: BennyRun) => Math.min(1, Math.max(0, g.at - g.paceFrom) / C.speedRampMs);
@@ -510,10 +516,11 @@ function tick(g: BennyRun): void {
   const base = C.speedStart + (C.speedMax - C.speedStart) * (1 - (1 - runDifficulty(g)) ** C.speedEase);
   g.speed = base * (g.at < g.stumbleUntil ? C.stumbleSlow : 1);
   const before = g.distance; g.distance += g.speed * dt;
-  if (g.at >= g.nextSettingAt) {
-    g.setting = pick(g, RUN_SETTINGS.filter(s => s !== g.setting)); g.nextSettingAt = g.at + settingDelay(g);
-    g.events.push({type: 'setting', setting: g.setting});
+  // A new setting is chosen ahead, then reached.
+  if (g.at >= g.nextSettingAt && !g.upcoming) {
+    g.upcoming = {setting: pick(g, RUN_SETTINGS.filter(s => s !== g.setting)), z: g.distance + C.settingAhead}; g.nextSettingAt = g.at + settingDelay(g);
   }
+  if (g.upcoming && g.distance >= g.upcoming.z) { g.setting = g.upcoming.setting; g.upcoming = null; g.events.push({type: 'setting', setting: g.setting}); }
   // Landing: a ground charge breaks the pots and creatures just ahead in Benny's lane; from high up, a shock wave strikes all around.
   if (g.pound && !inAir(g)) {
     g.pound = false; g.events.push({type: 'pound'}); g.slideUntil = g.at + C.poundRollMs;

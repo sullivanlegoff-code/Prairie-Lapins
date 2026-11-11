@@ -1,6 +1,6 @@
 import '../display/benny-run.css';
 import {FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
-import {advanceBennyRun, BENNY_RUN, comboMultiplier, dragonVisible, inAir, powerActive, runHeight, runInput, runSummary, sliding, startBennyRun, takeRunEvents,
+import {advanceBennyRun, BENNY_RUN, settingAt, comboMultiplier, dragonVisible, inAir, powerActive, runHeight, runInput, runSummary, sliding, startBennyRun, takeRunEvents,
   type BennyRun, type RunEntity, type RunInput, type RunPower, type RunSetting, type RunSummary, type TutorialStep} from '../simulation/bennyRun';
 import {pausableClock, settleCard} from './activityPause';
 
@@ -125,30 +125,64 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   function quad(c: CanvasRenderingContext2D, points: {x: number; y: number}[], fill: string): void {
     c.beginPath(); c.moveTo(points[0].x, points[0].y); for (const p of points.slice(1)) c.lineTo(p.x, p.y); c.closePath(); c.fillStyle = fill; c.fill();
   }
+  /** When the setting last changed under Benny's feet (the sky fades over), and what it was before. */
+  let settingSince = -1e9, settingBefore: RunSetting = 'grotte', shownSetting: RunSetting = 'grotte';
+  /** The scenery beside the road, every few metres beyond the walls: gold heaps and crystals in the cave, lava bubbles and chain
+   * posts on the bridge, pines and snowy rocks on the mountain path. Shapes for now, until the painted settings. */
+  function scenery(c: CanvasRenderingContext2D, g: BennyRun): void {
+    const first = Math.floor((g.distance + NEAR) / 7), last = Math.floor((g.distance + FAR) / 7);
+    for (let k = last; k >= first; k--) for (const dir of [-1, 1]) {
+      const z = k * 7 + ((k * 37 + (dir > 0 ? 3 : 0)) % 5), ahead = z - g.distance; if (ahead < NEAR || ahead > FAR) continue;
+      const kind = (k * 13 + (dir > 0 ? 7 : 0)) % 3, x = dir * (wallX() + 1.6 + ((k * 29) % 7) * .45), p = project(x, ahead, 0), s = p.s;
+      switch (settingAt(g, z)) {
+        case 'grotte':
+          if (kind === 0) { c.fillStyle = '#f4c430'; c.beginPath(); c.moveTo(p.x - s * 1.1, p.y); c.lineTo(p.x, p.y - s * .9); c.lineTo(p.x + s * 1.1, p.y); c.fill(); c.fillStyle = '#ffe58a'; c.beginPath(); c.arc(p.x - s * .2, p.y - s * .45, s * .14, 0, Math.PI * 2); c.fill(); }
+          else if (kind === 1) { c.fillStyle = '#7fd6e8'; c.beginPath(); c.moveTo(p.x, p.y - s * 1.8); c.lineTo(p.x + s * .35, p.y - s * .6); c.lineTo(p.x, p.y); c.lineTo(p.x - s * .35, p.y - s * .6); c.fill(); }
+          else { c.fillStyle = '#7a5a36'; c.beginPath(); c.ellipse(p.x, p.y - s * .3, s * .7, s * .35, 0, 0, Math.PI * 2); c.fill(); }
+          break;
+        case 'pont':
+          if (kind === 2) { c.fillStyle = '#4a3a30'; c.fillRect(p.x - s * .12, p.y - s * 2.2, s * .24, s * 2.2); c.strokeStyle = '#8a7a6a'; c.lineWidth = Math.max(1, s * .06); c.beginPath(); c.moveTo(p.x, p.y - s * 2); c.lineTo(p.x - dir * s * 1.5, p.y - s * 1.2); c.stroke(); }
+          else { const r = s * (.25 + .15 * Math.abs(Math.sin(g.at / 300 + k))); c.fillStyle = '#ffd27a'; c.beginPath(); c.arc(p.x, p.y - r * .5, r, 0, Math.PI * 2); c.fill(); }
+          break;
+        case 'montagne':
+          if (kind === 2) { c.fillStyle = '#e9eef4'; c.beginPath(); c.ellipse(p.x, p.y - s * .35, s * .8, s * .45, 0, 0, Math.PI * 2); c.fill(); }
+          else { c.fillStyle = '#3f7a4a'; for (const [w, y] of [[1, .6], [.8, 1.2], [.55, 1.75]]) { c.beginPath(); c.moveTo(p.x - s * w, p.y - s * (y - .6)); c.lineTo(p.x, p.y - s * (y + .7)); c.lineTo(p.x + s * w, p.y - s * (y - .6)); c.fill(); } c.fillStyle = '#6b4a2a'; c.fillRect(p.x - s * .1, p.y - s * .2, s * .2, s * .25); }
+          break;
+      }
+    }
+  }
   function road(c: CanvasRenderingContext2D, g: BennyRun, colours: typeof SETTING_COLOURS[RunSetting]): void {
-    c.fillStyle = colours.sky; c.fillRect(0, 0, width, height);
-    const horizon = project(0, FAR, 0).y;
+    // The sky fades from the last setting's over 800 ms.
+    const fade = Math.min(1, (clock() - settingSince) / 800);
+    if (fade < 1) { c.fillStyle = SETTING_COLOURS[settingBefore].sky; c.fillRect(0, 0, width, height); c.globalAlpha = fade; }
+    c.fillStyle = colours.sky; c.fillRect(0, 0, width, height); c.globalAlpha = 1;
+    const horizon = project(0, FAR, 0).y, edge = lanes / 2 * LANE_WIDTH;
+    // The next setting, from its start onwards: drawn beyond a line across the whole ground.
+    const border = g.upcoming ? Math.max(NEAR, Math.min(FAR, g.upcoming.z - g.distance)) : FAR, next = g.upcoming ? SETTING_COLOURS[g.upcoming.setting] : colours;
     c.fillStyle = colours.side; c.fillRect(0, horizon, width, height - horizon);
-    const edge = lanes / 2 * LANE_WIDTH;
-    quad(c, [project(-edge, NEAR, 0), project(edge, NEAR, 0), project(edge, FAR, 0), project(-edge, FAR, 0)], colours.ground);
+    if (border < FAR) { const b = project(0, border, 0).y; c.fillStyle = next.side; c.fillRect(0, horizon, width, Math.max(0, b - horizon)); }
+    scenery(c, g);
+    quad(c, [project(-edge, NEAR, 0), project(edge, NEAR, 0), project(edge, border, 0), project(-edge, border, 0)], colours.ground);
+    if (border < FAR) quad(c, [project(-edge, border, 0), project(edge, border, 0), project(edge, FAR, 0), project(-edge, FAR, 0)], next.ground);
     // Lane stripes that scroll with the distance, so the speed reads.
     for (let k = 0; k < 40; k++) {
       const z0 = NEAR + k * 4 - (g.distance % 4), z1 = z0 + 2;
       if (z0 > FAR) break;
-      for (const x of Array.from({length: lanes - 1}, (_, i) => laneX(i) + LANE_WIDTH / 2)) quad(c, [project(x - .06, z0, 0), project(x + .06, z0, 0), project(x + .06, z1, 0), project(x - .06, z1, 0)], colours.lane);
+      for (const x of Array.from({length: lanes - 1}, (_, i) => laneX(i) + LANE_WIDTH / 2)) quad(c, [project(x - .06, z0, 0), project(x + .06, z0, 0), project(x + .06, z1, 0), project(x - .06, z1, 0)], z0 < border ? colours.lane : next.lane);
     }
     // Gaps in the road: a chasm (lava on the bridge), with a bright lip on its near and far edges.
     for (const h of g.holes) {
       const from = Math.max(NEAR, h.from - g.distance), to = Math.min(FAR, h.to - g.distance); if (to <= from) continue;
-      quad(c, [project(-edge, from, 0), project(edge, from, 0), project(edge, to, 0), project(-edge, to, 0)], colours.hole);
-      if (g.setting === 'pont') for (let k = 0; k < 3; k++) { const z = from + ((g.at / 400 + k / 3) % 1) * (to - from), a = project(-edge * .6, z, 0), b = project(edge * .6, z, 0); c.strokeStyle = 'rgba(255,230,140,.5)'; c.lineWidth = Math.max(1, a.s * .08); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); }
-      for (const z of [from, to]) if (z > NEAR && z < FAR) quad(c, [project(-edge, z - .25, 0), project(edge, z - .25, 0), project(edge, z + .25, 0), project(-edge, z + .25, 0)], colours.holeEdge);
+      const look = SETTING_COLOURS[settingAt(g, h.from)];
+      quad(c, [project(-edge, from, 0), project(edge, from, 0), project(edge, to, 0), project(-edge, to, 0)], look.hole);
+      if (settingAt(g, h.from) === 'pont') for (let k = 0; k < 3; k++) { const z = from + ((g.at / 400 + k / 3) % 1) * (to - from), a = project(-edge * .6, z, 0), b = project(edge * .6, z, 0); c.strokeStyle = 'rgba(255,230,140,.5)'; c.lineWidth = Math.max(1, a.s * .08); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); }
+      for (const z of [from, to]) if (z > NEAR && z < FAR) quad(c, [project(-edge, z - .25, 0), project(edge, z - .25, 0), project(edge, z + .25, 0), project(-edge, z + .25, 0)], look.holeEdge);
     }
     // The walls, in their segments: runnable ones are lit and striped, the others dark.
-    for (const w of g.walls) {
-      const from = Math.max(NEAR, w.from - g.distance), to = Math.min(FAR, w.to - g.distance); if (to <= from) continue;
+    for (const w of g.walls) for (const [lo, hi, look] of [[NEAR, border, colours], [border, FAR, next]] as const) {
+      const from = Math.max(lo, w.from - g.distance), to = Math.min(hi, w.to - g.distance); if (to <= from) continue;
       const x = w.side === 'left' ? -wallX() : wallX();
-      quad(c, [project(x, from, 0), project(x, to, 0), project(x, to, WALL_HEIGHT), project(x, from, WALL_HEIGHT)], w.runnable ? colours.wall : colours.wallOff);
+      quad(c, [project(x, from, 0), project(x, to, 0), project(x, to, WALL_HEIGHT), project(x, from, WALL_HEIGHT)], w.runnable ? look.wall : look.wallOff);
       if (w.runnable) for (let z = Math.ceil(from / 6) * 6; z < to; z += 6) {
         const a = project(x, z, .3), b = project(x, z, WALL_HEIGHT - .3);
         c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = Math.max(1, a.s * .05); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke();
@@ -237,9 +271,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     speedLines(c, g, now);
     const ahead = [...g.entities].sort((a, b) => b.z - a.z);
     for (const e of ahead) if (e.z - g.distance > 0) thing(c, g, e);
-    benny(c, g, now);
+    // During the end scene, Benny and the Dragon are in the scene, not on the road.
+    if (!ending) benny(c, g, now);
     for (const e of ahead) if (e.z - g.distance <= 0) thing(c, g, e);
-    dragon(c, g);
+    if (!ending) dragon(c, g);
     // Shards and sparkles.
     bits = bits.filter(b => now - b.at < b.life);
     for (const b of bits) { const t = (now - b.at) / 1000; c.globalAlpha = 1 - (now - b.at) / b.life; c.fillStyle = b.colour;
@@ -294,7 +329,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'wallLeap': flashes.push({at: clock(), text: `Saut de mur +${event.points}`, x: width / 2}); sound('wall'); shakeFor('strike'); break;
       case 'fall': flash(event.onto ? 'Ouf ! Benny se rattrape au mur !' : 'Ouf ! Benny ressort du trou !'); break;
       case 'shockwave': shock = clock(); slowMo(380); flash('Onde de choc !'); shakeFor('shock'); sound('shock'); break;
-      case 'setting': flash(SETTING_NAMES[event.setting]); break;
+      case 'setting': flash(SETTING_NAMES[event.setting]); settingBefore = shownSetting; shownSetting = event.setting; settingSince = clock(); break;
       case 'tutorial': showCoach(event.step, event.again); break;
       case 'caught': finish(); break;
       default: break;
@@ -415,7 +450,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     best = Math.max(best, options.best?.() ?? 0);
     // The first run (no record yet) starts with the tutorial; it can be asked for again from the start card.
     coach.hidden = true;
-    slowLost = 0; slowUntil = 0; lastLoopAt = clock();
+    slowLost = 0; slowUntil = 0; lastLoopAt = clock(); settingSince = -1e9; shownSetting = 'grotte';
     game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLane = game.lane; swing = null; shock = null; flashes = []; bits = []; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
     holesAnnounced = 0; lastHoleSeen = -1;
     hud(); flash('Cours cours Benny !'); frame(loop);

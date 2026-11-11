@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {advanceBennyRun, BENNY_RUN as C, comboMultiplier, dragonVisible, holeAt, inAir, reach, runHeight, runInput, tutorialStep, runnableAt, runSummary, startBennyRun, takeRunEvents,
+import {advanceBennyRun, BENNY_RUN as C, comboMultiplier, dragonVisible, holeAt, inAir, reach, runHeight, runInput, tutorialStep, runnableAt, runSummary, settingAt, startBennyRun, takeRunEvents,
   type BennyRun, type RunEntity, type RunKind} from '../src/simulation/bennyRun';
 
 /** A run with nothing laid out by chance: the test places what it needs, `z` metres ahead of Benny. */
@@ -199,6 +199,14 @@ describe('Cours cours Benny ! rules', () => {
     // A pot broken by a ground charge does not fly.
     runInput(g, g.at, 'up'); place(g, 'pot', 0, 3); runInput(g, g.at, 'down'); run(g, 300);
     expect(g.entities.some(e => e.kind === 'thrownPot')).toBe(false);
+  });
+  it('changes the setting ahead of Benny: it comes into sight, then she runs into it', () => {
+    const g = startBennyRun(0, 11); g.entities = []; g.nextSpawnZ = Infinity; g.lastBumpAt = null;
+    run(g, g.nextSettingAt - g.at + 10);
+    const next = g.upcoming!; expect(next.setting).not.toBe(g.setting); expect(next.z - g.distance).toBeCloseTo(C.settingAhead, 0);
+    expect(settingAt(g, g.distance + 10)).toBe(g.setting); expect(settingAt(g, next.z + 1)).toBe(next.setting);
+    takeRunEvents(g); g.entities = []; run(g, (next.z - g.distance) / g.speed * 1000 + 50);
+    expect(g.setting).toBe(next.setting); expect(g.upcoming).toBeNull(); expect(takeRunEvents(g).some(e => e.type === 'setting')).toBe(true);
   });
   it('keeps a jump asked for just before landing and does it on landing', () => {
     const g = quiet(); runInput(g, g.at, 'up'); run(g, C.jumpMs - 100);

@@ -6,7 +6,7 @@
 }
 .benny-run-activity[hidden] { display: none; }
 .benny-run-top { position: absolute; z-index: 6; top: env(safe-area-inset-top); left: env(safe-area-inset-left); right: env(safe-area-inset-right); display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 8px 12px; pointer-events: none; }
-.benny-run-top p { margin: 0; white-space: nowrap; font-weight: 800; color: #fff; -webkit-text-stroke: 1px #3b2414; paint-order: stroke fill; }
+.benny-run-top p { margin: 0; white-space: nowrap; font-weight: 800; color: #fff; -webkit-text-stroke: 1px #3b2414; paint-order: stroke fill; text-shadow: 0 1px 4px rgba(40,20,8,.75); }
 .benny-run-score { font-size: 1.6rem; min-width: 4ch; }
 /* The strikes in a row, big in the middle under the top bar. */
 .benny-run-combo { position: absolute; left: 0; right: 0; top: calc(100% + 4px); text-align: center; font-size: 1.9rem; color: #ffe36b !important; }
