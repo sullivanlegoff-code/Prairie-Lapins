@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {advanceBennyRun, BENNY_RUN as C, comboMultiplier, dragonVisible, runHeight, runInput, runnableAt, runSummary, startBennyRun, takeRunEvents,
+import {advanceBennyRun, BENNY_RUN as C, comboMultiplier, dragonVisible, inAir, reach, runHeight, runInput, runnableAt, runSummary, startBennyRun, takeRunEvents,
   type BennyRun, type RunEntity, type RunKind} from '../src/simulation/bennyRun';
 
 /** A run with nothing laid out by chance: the test places what it needs, `z` metres ahead of Benny. */
@@ -137,6 +137,18 @@ describe('Cours cours Benny ! rules', () => {
     const g = quiet(); run(g, C.introMs); runInput(g, g.at, 'right'); runInput(g, g.at, 'right'); expect(g.wall?.side).toBe('right');
     place(g, 'chest', 2, 4); runInput(g, g.at, 'left');
     expect(g).toMatchObject({wall: null, lane: 2, foes: 1}); run(g, 800); expect(g.lastBumpAt).toBeNull();
+  });
+  it('keeps a jump asked for just before landing and does it on landing', () => {
+    const g = quiet(); runInput(g, g.at, 'up'); run(g, C.jumpMs - 100);
+    runInput(g, g.at, 'up'); run(g, 150);
+    expect(inAir(g)).toBe(true); expect(g.airFrom).toBeGreaterThan(C.jumpMs - 100);
+    // Asked for too early, it is forgotten.
+    const h = quiet(); runInput(h, h.at, 'up'); run(h, 50); runInput(h, h.at, 'up'); run(h, C.jumpMs + 50); expect(inAir(h)).toBe(false);
+  });
+  it('lets the wand reach farther as the speed rises, for the same time to react', () => {
+    const g = quiet(); const slow = reach(g); expect(slow / g.speed).toBeGreaterThan(.6);
+    run(g, C.speedRampMs); expect(reach(g)).toBeGreaterThan(slow + 3); expect(reach(g) / g.speed).toBeGreaterThan(.45);
+    place(g, 'chest', 0, reach(g) - .5); runInput(g, g.at, 'left'); expect(g.foes).toBe(1);
   });
   it('charges the ground from the air and breaks the pot ahead', () => {
     const g = quiet(); runInput(g, g.at, 'up'); run(g, 150);

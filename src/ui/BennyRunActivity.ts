@@ -20,7 +20,8 @@ const SETTING_COLOURS: Record<RunSetting, {sky: string; ground: string; lane: st
 };
 const SETTING_NAMES: Record<RunSetting, string> = {grotte: 'La grotte dorée', pont: 'Le pont sur la lave', montagne: 'Le sentier de montagne'};
 const POWER_NAMES: Record<RunPower, string> = {magnet: 'Aimant', bubble: 'Bulle arc-en-ciel', double: 'Pièces doublées', flight: 'Envol'};
-const SWIPE = 24;
+/** A swipe fires once the finger has moved this far; a quick flick lifted sooner still counts from `FLICK` px. */
+const SWIPE = 18, FLICK = 10;
 const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? 's' : ''}`;
 
 export function mountBennyRunActivity(host: HTMLElement, options: {
@@ -184,7 +185,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const dt = Math.min(.05, Math.max(0, (now - lastDrawAt) / 1000)); lastDrawAt = now;
     // Benny glides between lanes, and onto and off a wall (drawn just inside it), instead of jumping there.
     const onWall = (wallX() - .45 - laneX(lanes - 1)) / LANE_WIDTH, target = g.wall ? (g.wall.side === 'left' ? -onWall : lanes - 1 + onWall) : g.lane;
-    viewLane += (target - viewLane) * Math.min(1, dt * 18);
+    viewLane += (target - viewLane) * Math.min(1, dt * 24);
     road(c, g, SETTING_COLOURS[g.setting]);
     const ahead = [...g.entities].sort((a, b) => b.z - a.z);
     for (const e of ahead) if (e.z - g.distance > 0) thing(c, g, e);
@@ -265,7 +266,14 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE) return;
     touch.fired = true; input(Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'left' : 'right') : (dy < 0 ? 'up' : 'down'));
   }, {signal: abort.signal});
-  canvas.addEventListener('pointerup', () => { touch = null; }, {signal: abort.signal});
+  canvas.addEventListener('pointerup', event => {
+    // A short flick lifted before reaching the swipe distance still counts.
+    if (touch && touch.id === event.pointerId && !touch.fired) {
+      const dx = event.clientX - touch.x, dy = event.clientY - touch.y;
+      if (Math.max(Math.abs(dx), Math.abs(dy)) >= FLICK) input(Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'left' : 'right') : (dy < 0 ? 'up' : 'down'));
+    }
+    touch = null;
+  }, {signal: abort.signal});
   canvas.addEventListener('pointercancel', () => { touch = null; }, {signal: abort.signal});
   $<HTMLButtonElement>('[data-benny-run-exit]').addEventListener('click', () => close(), {signal: abort.signal});
   document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); }, {signal: abort.signal});

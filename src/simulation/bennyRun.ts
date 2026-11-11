@@ -29,7 +29,9 @@
 export const BENNY_RUN = {
   step: 1000 / 120,
   /** Speed in metres per second: at the start, at most, and the time to reach the most (a good run lasts about 3 minutes). */
-  speedStart: 10, speedMax: 24, speedRampMs: 150_000,
+  speedStart: 11, speedMax: 24, speedRampMs: 150_000,
+  /** The speed climbs quickly at first, then more and more gently (an ease-out of this power). */
+  speedEase: 1.6,
   /** A jump: its time and its height (m); a slide; a ground charge comes down in `poundMs` and breaks what is ahead within `poundReach`. */
   jumpMs: 650, jumpHeight: 1.4, slideMs: 700, poundMs: 120, poundReach: 4,
   /** Height above which Benny clears a low thing (a barrier, a pot). */
@@ -39,8 +41,11 @@ export const BENNY_RUN = {
   wallRunHeight: 1.8, shockHeight: 1.6, shockBehind: 1.5, shockReach: 6,
   /** A wall run lasts `wallMs` at most; walls come in segments of `wallSegment` m, `wallRunnable` of them runnable. */
   wallMs: 2600, wallSegment: 36, wallRunnable: .7,
-  /** A lane change strikes the nearest pot or creature of the new lane from `-hitHalf` to `strikeReach` m ahead. */
-  strikeReach: 7, hitHalf: .6,
+  /** A strike reaches the nearest pot or creature from `-hitHalf` m to `strikeReach` m plus `strikeLead` s of running ahead: the
+   * faster Benny runs, the farther her wand reaches, so that the time to react stays fair (about 0.4 s at any speed). */
+  strikeReach: 4, strikeLead: .32, hitHalf: .6,
+  /** A jump asked for just before landing is kept for `bufferMs` and done on landing. */
+  bufferMs: 220,
   /** A bump: Benny slows for `stumbleMs`; the Dragon stays `dragonMs`; she also shows for `introMs` at the start. */
   stumbleMs: 900, stumbleSlow: .7, dragonMs: 10_000, introMs: 3000,
   /** Combo: strikes less than `comboMs` apart; the multiplier grows by one every `comboStep` strikes, up to `comboMax`. */
@@ -113,6 +118,8 @@ export interface BennyRun {
   over: boolean;
   /** What happened since the display last took them (`takeRunEvents`). */
   events: RunEvent[];
+  /** A jump asked for in the air, done on landing if it is still fresh. */
+  queuedJumpUntil: number;
 }
 
 const C = BENNY_RUN;
@@ -126,7 +133,7 @@ export function startBennyRun(now: number, seed = Math.floor(Math.random() * 214
     entities: [], nextId: 1, nextSpawnZ: C.firstAt, walls: [], wallsTo: {left: 0, right: 0},
     setting: 'grotte', nextSettingAt: 0, stumbleUntil: 0, lastBumpAt: null,
     active: null, score: 0, coins: 0, pots: 0, foes: 0, wallRuns: 0, combo: 0, comboUntil: 0, bestCombo: 0,
-    over: false, events: [],
+    over: false, events: [], queuedJumpUntil: 0,
   };
   g.nextSettingAt = now + settingDelay(g);
   layWalls(g); spawn(g);
@@ -219,6 +226,8 @@ const strikable = (e: RunEntity) => e.kind === 'pot' || isFoe(e);
 /** The nearest pot or creature (or only creature) in `lane`, from just behind Benny to `reach` m ahead. */
 const nearest = (g: BennyRun, lane: number, reach: number, which: (e: RunEntity) => boolean = strikable) => g.entities
   .filter(e => e.lane === lane && which(e) && e.z - g.distance >= -C.hitHalf && e.z - g.distance <= reach).sort((a, b) => a.z - b.z)[0];
+/** How far ahead the wand reaches at the present speed. */
+export const reach = (g: BennyRun) => C.strikeReach + C.strikeLead * g.speed;
 function strike(g: BennyRun, e: RunEntity, by: StrikeKind): void {
   g.entities = g.entities.filter(o => o !== e);
   g.combo = g.at <= g.comboUntil ? g.combo + 1 : 1; g.comboUntil = g.at + C.comboMs; g.bestCombo = Math.max(g.bestCombo, g.combo);
@@ -292,7 +301,7 @@ function meet(g: BennyRun, e: RunEntity): void {
 function tick(g: BennyRun): void {
   const dt = C.step / 1000;
   if (g.active && g.at >= g.active.until) g.active = null;
-  const base = C.speedStart + (C.speedMax - C.speedStart) * runDifficulty(g);
+  const base = C.speedStart + (C.speedMax - C.speedStart) * (1 - (1 - runDifficulty(g)) ** C.speedEase);
   g.speed = base * (g.at < g.stumbleUntil ? C.stumbleSlow : 1);
   const before = g.distance; g.distance += g.speed * dt;
   if (g.at >= g.nextSettingAt) {
@@ -308,6 +317,8 @@ function tick(g: BennyRun): void {
     } else for (const e of g.entities.filter(o => o.lane === g.lane && strikable(o) && o.z - g.distance >= -C.hitHalf && o.z - g.distance <= C.poundReach)) strike(g, e, 'pound');
   }
   if (g.wall && (g.at >= g.wall.until || !runnableAt(g, g.wall.side, g.distance))) endWall(g);
+  // A jump asked for just before landing.
+  if (g.queuedJumpUntil && !inAir(g) && !g.wall) { const fresh = g.at <= g.queuedJumpUntil; g.queuedJumpUntil = 0; if (fresh) runInput(g, g.at, 'up'); }
   for (const e of g.entities) if (e.kind === 'ember' && e.hopAt !== undefined && g.at >= e.hopAt) {
     e.hopAt = g.at + C.emberHopMs;
     if (e.z - g.distance > C.emberStill) e.lane = pick(g, [e.lane - 1, e.lane + 1].filter(l => l >= 0 && l < g.lanes));
@@ -338,7 +349,7 @@ export function runInput(g: BennyRun, now: number, input: RunInput): void {
     case 'left': case 'right': {
       const step = input === 'left' ? -1 : 1, side: Side = input;
       // Off the wall by swiping away from it, striking on the way down what waits in the edge lane.
-      if (g.wall) { if (g.wall.side !== side) { endWall(g); const hit = nearest(g, g.lane, C.strikeReach); if (hit) strike(g, hit, 'lane'); } return; }
+      if (g.wall) { if (g.wall.side !== side) { endWall(g); const hit = nearest(g, g.lane, reach(g)); if (hit) strike(g, hit, 'lane'); } return; }
       const target = g.lane + step;
       if (target < 0 || target > g.lanes - 1) {
         if (runnableAt(g, side, g.distance) && !powerActive(g, 'flight')) {
@@ -351,18 +362,20 @@ export function runInput(g: BennyRun, now: number, input: RunInput): void {
       const from = g.lane; g.lane = target; g.laneChangedAt = g.at;
       // The wand: changing lanes towards a pot or a creature strikes it; with a creature on her other side as well, she spins and
       // strikes both at once.
-      const hit = nearest(g, target, C.strikeReach), behind = hit ? nearest(g, from - step, C.strikeReach, isFoe) : undefined;
+      const hit = nearest(g, target, reach(g)), behind = hit ? nearest(g, from - step, reach(g), isFoe) : undefined;
       if (hit) strike(g, hit, 'lane');
       if (behind && isFoe(hit!)) strike(g, behind, 'spin');
       return;
     }
     case 'up':
-      if (powerActive(g, 'flight') || (inAir(g) && !g.wall)) return;
+      if (powerActive(g, 'flight')) return;
+      // Too early, in the air: kept a moment and done on landing.
+      if (inAir(g) && !g.wall) { g.queuedJumpUntil = g.at + C.bufferMs; return; }
       // A jump, also off a wall: then it starts at the wall's height, lasts a little longer, and she lands in the edge lane.
       { const from = g.wall ? C.wallRunHeight : 0; if (g.wall) endWall(g);
         g.jumpFrom = from; g.airFrom = g.at; g.airUntil = g.at + C.jumpMs * (1 + from / (2 * C.jumpHeight)); g.pound = false; g.slideUntil = 0; }
       // A jump towards a flying monster just ahead strikes it: it keeps to her height.
-      { const flyer = nearest(g, g.lane, C.strikeReach, e => e.kind === 'flyer'); if (flyer) strike(g, flyer, 'jump'); }
+      { const flyer = nearest(g, g.lane, reach(g), e => e.kind === 'flyer'); if (flyer) strike(g, flyer, 'jump'); }
       return;
     case 'down': {
       if (powerActive(g, 'flight')) return;
@@ -372,7 +385,7 @@ export function runInput(g: BennyRun, now: number, input: RunInput): void {
       // A roll (the owner's « roulade »): it strikes with the wand what is just ahead in the lane, and anything met while rolling; it
       // passes under a beam.
       g.slideUntil = g.at + C.slideMs;
-      const hit = nearest(g, g.lane, C.strikeReach);
+      const hit = nearest(g, g.lane, reach(g));
       if (hit) strike(g, hit, 'slide');
       return;
     }
