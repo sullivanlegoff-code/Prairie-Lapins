@@ -307,6 +307,18 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       if (to > from) { const a = project(x, from, top), b = project(x, to, top); c.strokeStyle = 'rgba(255,255,255,.25)'; c.lineWidth = Math.max(1, a.s * .1); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); }
     }
   }
+  /** The wind as a gust comes and blows: white streaks across the path, the way it blows. */
+  function wind(c: CanvasRenderingContext2D, g: BennyRun, now: number): void {
+    const w = g.gusts.find(o => o.warned) ?? (gustAt !== null && now - gustAt.at < 700 ? {dir: gustAt.dir, z: g.distance} : null); if (!w) return;
+    const strength = gustAt && now - gustAt.at < 700 ? 1 - (now - gustAt.at) / 700 : .5 + .5 * Math.max(0, 1 - (w.z - g.distance) / BENNY_RUN.gustWarn);
+    c.strokeStyle = `rgba(255,255,255,${.45 * strength})`; c.lineCap = 'round';
+    for (let k = 0; k < 9; k++) {
+      const p = ((now / 600 + k * .37) % 1), y = height * (.3 + ((k * 53) % 50) / 100), len = width * (.12 + .1 * strength), x = w.dir > 0 ? -len + p * (width + len * 2) : width + len - p * (width + len * 2);
+      c.lineWidth = 2 + 2 * strength; c.beginPath(); c.moveTo(x, y); c.quadraticCurveTo(x - w.dir * len * .5, y - 6, x - w.dir * len, y); c.stroke();
+    }
+  }
+  /** The last gust that blew (for the streaks to fade). */
+  let gustAt: {at: number; dir: -1 | 1} | null = null;
   /** When each geyser burst out (it rises over a moment). */
   const geysersUp = new Map<number, number>();
   /** When each rock hit the road (its fall is drawn over a moment). */
@@ -550,6 +562,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     road(c, g, SETTING_COLOURS[g.setting]);
     speedLines(c, g, now);
     platforms(c, g);
+    wind(c, g, now);
     const ahead = [...g.entities].sort((a, b) => b.z - a.z);
     for (const e of ahead) if (e.z - g.distance > 0) thing(c, g, e);
     // During the end scene, Benny and the Dragon are in the scene, not on the road.
@@ -619,6 +632,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'challenge':
         if (event.points === undefined) flash(`Défi : ${CHALLENGE_TEXT[event.kind](event.goal)}`);
         else { flash(`Défi réussi ! +${event.points}`); sound('power'); burst(width / 2, height * .3, ['#7be08a', '#ffe66b', '#fff'], 24, 360); }
+        break;
+      case 'gust':
+        if (event.warn) { flash(event.dir > 0 ? 'Coup de vent → !' : '← Coup de vent !'); sound('roll', .6); }
+        else { gustAt = {at: clock(), dir: event.dir}; if (event.pushed) { sound('roll', .8); shakeFor('strike'); } }
         break;
       case 'geyser': { geysersUp.set(event.entity.id, clock()); const p = screenOf(g, event.entity); burst(p.x, p.y, ['#ff6a1a', '#ffb03a', '#ffe36b'], 8, 220);
         if (Math.abs(event.entity.lane - g.lane) <= 1) sound('wall', .6); break; }

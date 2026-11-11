@@ -423,6 +423,18 @@ describe('Cours cours Benny ! rules', () => {
       expect(seen).toBeGreaterThan(0);
     }
   });
+  it('announces a gust of wind on the mountain, then blows Benny one lane downwind (not off the road, not off a wall)', () => {
+    const g = quiet(); run(g, C.introMs); const z = g.distance;
+    g.gusts.push({z: z + 40, dir: 1, warned: false}, {z: z + 80, dir: 1, warned: false});
+    run(g, 200); expect(types(g)).not.toContain('gust');
+    run(g, (40 - C.gustWarn) / g.speed * 1000 + 100); expect(takeRunEvents(g).find(e => e.type === 'gust')).toMatchObject({warn: true, dir: 1});
+    expect(g.lane).toBe(1);
+    while (g.gusts.length > 1) run(g, 10);
+    expect(g.lane).toBe(2);
+    // At the edge already: it cannot blow her off the road.
+    while (g.gusts.length) run(g, 10);
+    expect(g.lane).toBe(2); expect(g.over).toBe(false);
+  });
   it('lays rockfalls only in the cave, always leaving one lane free', () => {
     for (const seed of [3, 4, 5]) {
       const g = startBennyRun(0, seed, 3); let seen = 0;
