@@ -40,7 +40,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const layer = document.createElement('div'); layer.className = 'benny-run-activity'; layer.hidden = true;
   layer.setAttribute('role', 'dialog'); layer.setAttribute('aria-modal', 'true'); layer.setAttribute('aria-label', 'Cours cours Benny !');
   layer.innerHTML = `<div class="benny-run-top"><p class="benny-run-score" aria-live="polite"></p><p class="benny-run-combo"></p><p class="benny-run-metres"></p><p class="benny-run-coins"></p>
-<p class="benny-run-power"></p><button type="button" data-benny-run-exit>Quitter</button></div>
+<p class="benny-run-power"></p><button type="button" data-benny-run-exit>Quitter</button><p class="benny-run-danger" hidden></p></div>
 <canvas class="benny-run-canvas" data-benny-run-canvas></canvas>
 <p class="benny-run-pop" aria-hidden="true"></p>
 <p class="benny-run-coach" aria-live="polite" hidden></p>
@@ -50,7 +50,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const $ = <T extends Element>(selector: string) => layer.querySelector<T>(selector)!;
   const canvas = $<HTMLCanvasElement>('[data-benny-run-canvas]'), card = $<HTMLElement>('[data-benny-run-card]'), pop = $<HTMLElement>('.benny-run-pop');
   const score = $<HTMLElement>('.benny-run-score'), combo = $<HTMLElement>('.benny-run-combo'), metres = $<HTMLElement>('.benny-run-metres'), coins = $<HTMLElement>('.benny-run-coins');
-  const coach = $<HTMLElement>('.benny-run-coach');
+  const coach = $<HTMLElement>('.benny-run-coach'), danger = $<HTMLElement>('.benny-run-danger');
   const powerLine = $<HTMLElement>('.benny-run-power'), turn = $<HTMLElement>('[data-benny-run-turn]');
   const sideways = () => window.innerWidth > window.innerHeight;
   const context = canvas.getContext('2d');
@@ -100,6 +100,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     metres.textContent = `${Math.floor(g.distance)} m`; coins.textContent = plural(g.coins, 'pièce');
     const active = g.active && g.at < g.active.until ? g.active : null;
     powerLine.textContent = active ? `${POWER_NAMES[active.power]} · ${Math.ceil((active.until - g.at) / 1000)} s` : '';
+    // After a bump: how long the Dragon stays on Benny's tail (a second bump meanwhile ends the run).
+    const left = g.lastBumpAt === null || g.tutorial ? 0 : BENNY_RUN.dragonMs - (g.at - g.lastBumpAt);
+    danger.hidden = left <= 0 || g.over;
+    if (left > 0) danger.textContent = `La Dragon te talonne ! Encore ${Math.ceil(left / 1000)} s sans choc`;
   }
 
   // Perspective: a point `x` metres across, `ahead` metres in front of Benny and `up` metres high.
@@ -299,15 +303,73 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     }
     c.restore();
   }
+  /**
+   * The end: a short gentle scene before the card (owner: « une scène douce où Benny et le Dragon se chamaillent »). The Dragon
+   * lands beside Benny, they tug at the treasure bag between them, puffs of smoke and little hearts, then a laugh. Shapes for now,
+   * until the painted scene; a tap skips it.
+   */
+  const SQUABBLE_MS = 3400;
+  const SQUABBLE_LINES: [number, 'dragon' | 'benny', string][] = [
+    [300, 'dragon', 'Rends-moi mon trésor !'], [1300, 'benny', 'Juste une petite pièce…'], [2300, 'dragon', 'Bon… on refait la course ?'],
+  ];
+  let ending: {at: number; done: () => void} | null = null;
+  function squabble(c: CanvasRenderingContext2D, now: number): void {
+    const t = now - ending!.at, cx = width / 2, ground = height * .66, unit = Math.min(width, height) * .12;
+    c.fillStyle = 'rgba(40,24,14,.55)'; c.fillRect(0, 0, width, height);
+    c.fillStyle = 'rgba(255,240,210,.18)'; c.beginPath(); c.ellipse(cx, ground + unit * .3, unit * 3.4, unit * .7, 0, 0, Math.PI * 2); c.fill();
+    // The Dragon lands from above in the first half-second.
+    const land = Math.min(1, t / 500), tug = Math.sin(Math.max(0, t - 500) / 140) * unit * .18 * (t < 2400 ? 1 : Math.max(0, 1 - (t - 2400) / 400));
+    const dx = cx + unit * 1.4, dy = ground - unit * .7 - (1 - land) * height * .5;
+    c.fillStyle = '#b58ad1';
+    for (const dir of [-1, 1]) { c.beginPath(); c.moveTo(dx + dir * unit * .4, dy - unit * .2); c.lineTo(dx + dir * unit * 1.2, dy - unit * (.9 + .3 * Math.abs(Math.sin(t / 110)))); c.lineTo(dx + dir * unit * .2, dy + unit * .1); c.fill(); }
+    c.fillStyle = '#9c2f3c'; c.beginPath(); c.ellipse(dx, dy, unit * .75, unit * .65, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(dx - unit * .25, dy - unit * .15, unit * .1, 0, Math.PI * 2); c.fill();
+    // Benny, on the left, pulling the other way.
+    const bx = cx - unit * 1.4 + tug * .5, by = ground - unit * .5;
+    c.fillStyle = '#d99a5b'; c.beginPath(); c.ellipse(bx, by, unit * .55, unit * .6, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#7d6a5a'; c.fillRect(bx - unit * .3, by - unit * 1.05, unit * .14, unit * .5); c.fillRect(bx + unit * .12, by - unit * 1.05, unit * .14, unit * .5);
+    // The treasure bag between them, tugged one way then the other.
+    const sx = cx + tug, sy = ground - unit * .45;
+    c.strokeStyle = '#6e4a2a'; c.lineWidth = 3; c.beginPath(); c.moveTo(bx + unit * .4, by); c.lineTo(sx, sy); c.lineTo(dx - unit * .6, dy + unit * .1); c.stroke();
+    c.fillStyle = '#c79a4a'; c.beginPath(); c.ellipse(sx, sy, unit * .42, unit * .38, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#f4c430'; for (let i = 0; i < 3; i++) { c.beginPath(); c.arc(sx - unit * .2 + i * unit * .2, sy - unit * .38, unit * .09, 0, Math.PI * 2); c.fill(); }
+    // Puffs of smoke while they tug, then little hearts.
+    for (let i = 0; i < 6; i++) {
+      const k = ((t / 700 + i / 6) % 1), a = i * 1.7;
+      if (t > 500 && t < 2600) { c.globalAlpha = .5 * (1 - k); c.fillStyle = '#f2e6d8'; c.beginPath(); c.arc(sx + Math.cos(a) * unit * (.5 + k), sy - unit * .2 - k * unit, unit * (.15 + .2 * k), 0, Math.PI * 2); c.fill(); }
+      if (t > 2400) { c.globalAlpha = Math.max(0, 1 - k); c.fillStyle = '#ff8fb1'; c.font = `${Math.round(unit * .4)}px system-ui`; c.textAlign = 'center'; c.fillText('♥', sx + (i - 2.5) * unit * .4, sy - unit * (.6 + k * 1.4)); }
+    }
+    c.globalAlpha = 1;
+    // Speech bubbles.
+    const said = SQUABBLE_LINES.filter(([at]) => t >= at).at(-1);
+    if (said) {
+      const [, who, text] = said, x = who === 'dragon' ? dx : bx, y = (who === 'dragon' ? dy : by) - unit * 1.5;
+      c.font = `800 ${Math.round(Math.max(14, unit * .28))}px system-ui`; const w = Math.min(width - 24, c.measureText(text).width + 24), left = Math.max(12, Math.min(width - 12 - w, x - w / 2));
+      c.fillStyle = '#fff8e8'; c.strokeStyle = '#6b5a3a'; c.lineWidth = 2; c.beginPath(); c.roundRect(left, y - unit * .45, w, unit * .7, 12); c.fill(); c.stroke();
+      c.fillStyle = '#3b3326'; c.textAlign = 'center'; c.fillText(text, left + w / 2, y);
+    }
+    c.fillStyle = 'rgba(255,248,232,.8)'; c.font = '700 14px system-ui'; c.textAlign = 'center'; c.fillText('Touche l’écran pour passer', cx, height - 28);
+  }
+  function endLoop(): void {
+    if (!ending || !game) return;
+    const now = performance.now(); draw(clock()); const c = context; if (c) squabble(c, now);
+    if (now - ending.at >= SQUABBLE_MS) { const done = ending.done; ending = null; done(); return; }
+    frame(endLoop);
+  }
   function finish(): void {
     if (!game) return;
     clearTimeout(stopTimer); time.resume(); sound('caught');
-    running = false; const s = runSummary(game), record = s.score > best && s.score > 0, previous = best; best = Math.max(best, s.score);
+    running = false; danger.hidden = true; coach.hidden = true;
+    ending = {at: performance.now(), done: showEnd}; frame(endLoop);
+  }
+  function showEnd(): void {
+    if (!game) return;
+    const s = runSummary(game), record = s.score > best && s.score > 0, previous = best; best = Math.max(best, s.score);
     const line = options.onFinished?.(s);
     hud();
     const again = button('Rejouer', () => start(), 'bennyRunAgain');
     showCard(paragraph('La Dragon a rattrapé Benny !', 'benny-run-title'),
-      paragraph('Elles se chamaillent pour le trésor… (scène peinte à venir)', 'benny-run-rules'),
+
       paragraph(`Score ${s.score} · ${s.metres} m · ${plural(s.coins, 'pièce')} · ${plural(s.pots, 'pot')} · ${plural(s.foes, 'créature')} · ${plural(s.wallRuns, 'mur')} · meilleur combo ${s.bestCombo} · ${s.seconds} s`, 'benny-run-rules'),
       ...(record ? [paragraph(previous ? `Nouveau record ! L’ancien était de ${previous}.` : 'Ton premier record !', 'benny-run-record')] : best ? [paragraph(`Ton record : ${best}`, 'benny-run-rules')] : []),
       ...(line ? [paragraph(line, 'benny-run-rules')] : []),
@@ -335,6 +397,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   function close(): void {
     if (layer.hidden) return;
+    ending = null;
     clearTimeout(stopTimer);
     running = false; time.resume(); game = null; layer.hidden = true; clearTimeout(popTimer);
     window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: false})); options.onExit?.();
@@ -348,7 +411,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
 
   // Gestures: a swipe fires as soon as the finger has moved far enough.
   let touch: {x: number; y: number; id: number; fired: boolean} | null = null;
-  canvas.addEventListener('pointerdown', event => { event.preventDefault(); touch = {x: event.clientX, y: event.clientY, id: event.pointerId, fired: false}; }, {signal: abort.signal});
+  canvas.addEventListener('pointerdown', event => {
+    // A tap skips the end scene.
+    if (ending) { event.preventDefault(); const done = ending.done; ending = null; done(); return; }
+    event.preventDefault(); touch = {x: event.clientX, y: event.clientY, id: event.pointerId, fired: false}; }, {signal: abort.signal});
   canvas.addEventListener('pointermove', event => {
     if (!touch || touch.id !== event.pointerId || touch.fired) return;
     const dx = event.clientX - touch.x, dy = event.clientY - touch.y;

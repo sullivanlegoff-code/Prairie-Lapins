@@ -36,3 +36,6 @@
 .benny-run-coach { position: absolute; z-index: 5; left: 16px; right: 16px; top: 12%; margin: 0; padding: 10px 14px; border-radius: 14px; text-align: center;
   font-size: 1.15rem; font-weight: 800; color: #3b3326; background: rgba(255,248,232,.92); border: 2px solid #6b5a3a; pointer-events: none; }
 .benny-run-coach[hidden] { display: none; }
+/* After a bump: the Dragon's countdown, its own line under the top bar. */
+.benny-run-danger { order: 11; flex-basis: 100%; margin: 0; font-size: .95rem; font-weight: 800; color: #ffd0c8 !important; }
+.benny-run-danger[hidden] { display: none; }
