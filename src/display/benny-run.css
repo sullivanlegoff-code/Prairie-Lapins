@@ -56,3 +56,8 @@
 .benny-run-challenge { order: 12; flex-basis: 100%; font-size: .95rem; color: #c8f5c8 !important; }
 /* The 3, 2, 1 after a pause. */
 .benny-run-pop.benny-run-count { font-size: 4.5rem; }
+/* One row whatever the numbers: the figures shrink a little on a narrow screen rather than push the buttons down. */
+.benny-run-top { column-gap: 8px; }
+.benny-run-top .benny-run-score { font-size: clamp(1.15rem, 6.4vw, 1.6rem); min-width: 0; }
+.benny-run-top .benny-run-metres, .benny-run-top .benny-run-coins { font-size: clamp(.8rem, 3.9vw, 1.05rem); }
+.benny-run-top button { flex: none; }
