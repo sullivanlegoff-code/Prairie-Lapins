@@ -96,7 +96,8 @@ export type RunEvent =
   | {type: 'wallEnd'; side: Side; points: number}
   | {type: 'pound'}
   | {type: 'shockwave'}
-  | {type: 'setting'; setting: RunSetting};
+  | {type: 'setting'; setting: RunSetting}
+  | {type: 'tutorial'; step: TutorialStep | null; again?: boolean};
 
 export interface BennyRun {
   seed: number; startedAt: number; at: number;
@@ -121,29 +122,88 @@ export interface BennyRun {
   events: RunEvent[];
   /** A jump asked for in the air, done on landing if it is still fresh. */
   queuedJumpUntil: number;
+  /** Where the speed ramp counts from (it waits during the tutorial). */
+  paceFrom: number;
+  /** The tutorial of the first run: the present step, and the things placed for it. */
+  tutorial: {step: number; ids: number[]; tries: number; struck: number} | null;
+}
+
+/**
+ * The tutorial woven into the first seconds of the first run (no record yet), or asked for again: one gesture at a time, each
+ * with one thing on the road and a line of advice; a step missed comes back. Meanwhile the road is otherwise empty, the speed
+ * stays at its start and a bump only makes Benny stumble (the Dragon does not catch her).
+ */
+export type TutorialStep = 'pot' | 'jump' | 'roll' | 'front' | 'flyer' | 'wall';
+export const TUTORIAL: readonly TutorialStep[] = ['pot', 'jump', 'roll', 'front', 'flyer', 'wall'];
+/** How far ahead each step's thing is placed, and how far the road stays clear after the tutorial. */
+const TUTORIAL_AHEAD = 30;
+export const tutorialStep = (g: BennyRun): TutorialStep | null => g.tutorial ? TUTORIAL[g.tutorial.step] ?? null : null;
+function placeTutorial(g: BennyRun): void {
+  const t = g.tutorial!, step = TUTORIAL[t.step], z = g.distance + TUTORIAL_AHEAD, all = laneList(g);
+  const side = g.lane > 0 ? g.lane - 1 : g.lane + 1;
+  const placed: RunEntity[] = [];
+  switch (step) {
+    case 'pot': placed.push(add(g, 'pot', side, z)); break;
+    case 'jump': for (const l of all) placed.push(add(g, 'barrier', l, z)); break;
+    case 'roll': for (const l of all) placed.push(add(g, 'beam', l, z)); break;
+    case 'front': placed.push(add(g, 'chest', g.lane, z)); break;
+    case 'flyer': placed.push(add(g, 'flyer', side, z)); break;
+    case 'wall': {
+      // The nearer wall, made runnable all along the way to the pillars.
+      const wallSide: Side = g.lane < g.lanes / 2 ? 'left' : 'right';
+      for (const w of g.walls) if (w.side === wallSide && w.to > g.distance && w.from < z + 10) w.runnable = true;
+      // Nearer than the other steps: climbing as soon as the advice shows, the wall run still lasts past the pillars.
+      const pz = z - 8;
+      for (const l of all) placed.push(add(g, 'pillar', l, pz));
+      for (let i = 0; i < 4; i++) add(g, 'wallCoin', wallLane(g, wallSide), pz - 9 + i * 3);
+      break;
+    }
+  }
+  t.ids = placed.map(e => e.id); t.struck = g.pots + g.foes;
+}
+/** After a tick: a step passed moves on, a step missed is laid out again. */
+function followTutorial(g: BennyRun, events: RunEvent[]): void {
+  const t = g.tutorial; if (!t) return;
+  const step = TUTORIAL[t.step], mine = (e: RunEntity) => t.ids.includes(e.id);
+  const hurt = events.some(ev => (ev.type === 'bump' || ev.type === 'crash') && mine(ev.entity));
+  const behind = g.entities.filter(mine).every(e => e.z < g.distance - 1);
+  // The wall step is passed once the pillars are behind her without a bump (climbing too early lets the wall run end before them).
+  // A strike may come from a swipe, between two ticks: it shows as one more pot or creature struck.
+  const passed = !hurt && (step === 'wall' ? behind : (step === 'jump' || step === 'roll') ? events.some(ev => ev.type === 'cleared' && mine(ev.entity)) :
+    g.pots + g.foes > t.struck && !g.entities.some(mine));
+  const missed = !passed && (hurt || behind);
+  if (passed) {
+    g.entities = g.entities.filter(e => !mine(e) || e.kind === 'pillar'); t.step++; t.tries = 0;
+    if (t.step >= TUTORIAL.length) { g.tutorial = null; g.nextSpawnZ = g.distance + TUTORIAL_AHEAD; g.events.push({type: 'tutorial', step: null}); return; }
+    g.events.push({type: 'tutorial', step: TUTORIAL[t.step]}); placeTutorial(g);
+  } else if (missed) {
+    g.entities = g.entities.filter(e => !mine(e)); t.tries++;
+    g.events.push({type: 'tutorial', step, again: true}); placeTutorial(g);
+  }
 }
 
 const C = BENNY_RUN;
 const random = (g: BennyRun) => { g.seed = (g.seed + 0x6D2B79F5) >>> 0; let t = g.seed; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 const pick = <T>(g: BennyRun, list: readonly T[]): T => list[Math.min(list.length - 1, Math.floor(random(g) * list.length))];
 
-export function startBennyRun(now: number, seed = Math.floor(Math.random() * 2147483647), lanes = 3): BennyRun {
+export function startBennyRun(now: number, seed = Math.floor(Math.random() * 2147483647), lanes = 3, tutorial = false): BennyRun {
   const g: BennyRun = {
     seed: (seed >>> 0) || 1, startedAt: now, at: now, distance: 0, speed: C.speedStart, lanes, lane: Math.floor(lanes / 2), laneChangedAt: -Infinity,
     airFrom: 0, airUntil: 0, jumpFrom: 0, pound: false, poundFrom: 0, slideUntil: 0, wall: null,
     entities: [], nextId: 1, nextSpawnZ: C.firstAt, walls: [], wallsTo: {left: 0, right: 0},
     setting: 'grotte', nextSettingAt: 0, stumbleUntil: 0, lastBumpAt: null,
     active: null, score: 0, coins: 0, pots: 0, foes: 0, wallRuns: 0, combo: 0, comboUntil: 0, bestCombo: 0,
-    over: false, events: [], queuedJumpUntil: 0,
+    over: false, events: [], queuedJumpUntil: 0, paceFrom: now, tutorial: tutorial ? {step: 0, ids: [], tries: 0, struck: 0} : null,
   };
   g.nextSettingAt = now + settingDelay(g);
-  layWalls(g); spawn(g);
+  layWalls(g);
+  if (g.tutorial) { g.nextSpawnZ = Infinity; placeTutorial(g); g.events.push({type: 'tutorial', step: TUTORIAL[0]}); } else spawn(g);
   return g;
 }
 
 const settingDelay = (g: BennyRun) => C.settingMs[0] + random(g) * (C.settingMs[1] - C.settingMs[0]);
 /** How far into the speed ramp the run is, from 0 to 1. */
-export const runDifficulty = (g: BennyRun) => Math.min(1, (g.at - g.startedAt) / C.speedRampMs);
+export const runDifficulty = (g: BennyRun) => Math.min(1, Math.max(0, g.at - g.paceFrom) / C.speedRampMs);
 export const powerActive = (g: BennyRun, power: RunPower) => g.active?.power === power && g.at < g.active.until;
 export const inAir = (g: BennyRun) => g.at < g.airUntil;
 export const sliding = (g: BennyRun) => g.at < g.slideUntil && !inAir(g);
@@ -320,6 +380,8 @@ function bump(g: BennyRun, e: RunEntity): void {
   g.entities = g.entities.filter(o => o !== e);
   if (powerActive(g, 'bubble')) { g.active = null; g.events.push({type: 'shield', entity: e}); return; }
   g.combo = 0; g.comboUntil = 0;
+  // During the tutorial a bump only makes her stumble.
+  if (g.tutorial) { g.stumbleUntil = g.at + C.stumbleMs; g.slideUntil = 0; g.events.push({type: 'bump', entity: e}); return; }
   if (dragonNear(g)) { g.over = true; g.events.push({type: 'caught', entity: e}); return; }
   g.lastBumpAt = g.at; g.stumbleUntil = g.at + C.stumbleMs; g.slideUntil = 0;
   g.events.push({type: 'bump', entity: e});
@@ -368,7 +430,8 @@ function meet(g: BennyRun, e: RunEntity): void {
 }
 
 function tick(g: BennyRun): void {
-  const dt = C.step / 1000;
+  const dt = C.step / 1000, eventsBefore = g.events.length;
+  if (g.tutorial) { g.paceFrom += C.step; g.nextSettingAt += C.step; }
   if (g.active && g.at >= g.active.until) g.active = null;
   const base = C.speedStart + (C.speedMax - C.speedStart) * (1 - (1 - runDifficulty(g)) ** C.speedEase);
   g.speed = base * (g.at < g.stumbleUntil ? C.stumbleSlow : 1);
@@ -402,8 +465,10 @@ function tick(g: BennyRun): void {
     if (g.over) break;
     if (isFoe(e) && Math.abs(e.lane - across(g)) === 1 && (!g.wall || e.kind === 'flyer') && e.z - before > -C.hitHalf - 1e-9 && e.z - g.distance <= -C.hitHalf && !powerActive(g, 'flight')) bump(g, e);
   }
+  if (g.tutorial) followTutorial(g, g.events.slice(eventsBefore));
   g.entities = g.entities.filter(e => e.z > g.distance - 5);
-  spawn(g);
+  // The walls go on being laid during the tutorial; the rest of the road waits for its end.
+  if (g.tutorial) layWalls(g); else spawn(g);
 }
 
 export function advanceBennyRun(g: BennyRun, now: number): void {

@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {advanceBennyRun, BENNY_RUN as C, comboMultiplier, dragonVisible, inAir, reach, runHeight, runInput, runnableAt, runSummary, startBennyRun, takeRunEvents,
+import {advanceBennyRun, BENNY_RUN as C, comboMultiplier, dragonVisible, inAir, reach, runHeight, runInput, tutorialStep, runnableAt, runSummary, startBennyRun, takeRunEvents,
   type BennyRun, type RunEntity, type RunKind} from '../src/simulation/bennyRun';
 
 /** A run with nothing laid out by chance: the test places what it needs, `z` metres ahead of Benny. */
@@ -162,6 +162,25 @@ describe('Cours cours Benny ! rules', () => {
     // Never two creatures side by side in the same row but for the spin pair (one on each side of the middle lane).
     const foeRows = new Map<number, number[]>(); for (const e of all) if (['dragonnet', 'chest', 'ember', 'flyer'].includes(e.kind)) foeRows.set(e.z, [...(foeRows.get(e.z) ?? []), e.lane]);
     for (const lanes of foeRows.values()) if (lanes.length > 1) expect(lanes.sort()).toEqual([0, 2]);
+  });
+  it('teaches one gesture at a time on the first run, lays a missed step out again, and never lets the Dragon catch Benny meanwhile', () => {
+    const g = startBennyRun(0, 7, 3, true); for (const w of g.walls) w.runnable = true;
+    /** Runs until the step's thing is `at` m ahead (the nearest of them). */
+    const until = (at: number) => { for (let i = 0; i < 2000 && g.entities.every(e => e.z - g.distance > at); i++) run(g, 10); };
+    expect(tutorialStep(g)).toBe('pot'); expect(g.entities).toHaveLength(1);
+    until(-2); run(g, 200); // Missed: it comes back.
+    expect(takeRunEvents(g).some(e => e.type === 'tutorial' && e.again)).toBe(true); expect(tutorialStep(g)).toBe('pot');
+    until(5); runInput(g, g.at, g.entities[0].lane < g.lane ? 'left' : 'right'); run(g, 20); expect(tutorialStep(g)).toBe('jump');
+    until(3); runInput(g, g.at, 'up'); run(g, 500); expect(tutorialStep(g)).toBe('roll');
+    until(4); runInput(g, g.at, 'down'); run(g, 500); expect(tutorialStep(g)).toBe('front');
+    until(-1); run(g, 300); expect(g.over).toBe(false); expect(g.lastBumpAt).toBeNull(); expect(tutorialStep(g)).toBe('front'); // A bump: no Dragon.
+    until(5); runInput(g, g.at, 'down'); run(g, 20); expect(tutorialStep(g)).toBe('flyer');
+    until(5); const flyer = g.entities.find(e => e.kind === 'flyer')!; runInput(g, g.at, flyer.lane < g.lane ? 'left' : 'right'); run(g, 20);
+    expect(tutorialStep(g)).toBe('wall');
+    const side = g.lane < 1.5 ? 'left' : 'right'; while (g.lane !== (side === 'left' ? 0 : 2)) runInput(g, g.at, side === 'left' ? 'left' : 'right');
+    runInput(g, g.at, side); expect(g.wall).not.toBeNull(); run(g, 2500); // Climbing at once, the wall run lasts past the pillars.
+    expect(g.tutorial).toBeNull(); expect(g.lastBumpAt).toBeNull(); expect(g.speed).toBeCloseTo(C.speedStart, 0);
+    run(g, 3000); expect(g.entities.length).toBeGreaterThan(0); // The road fills up again.
   });
   it('charges the ground from the air and breaks the pot ahead', () => {
     const g = quiet(); runInput(g, g.at, 'up'); run(g, 150);

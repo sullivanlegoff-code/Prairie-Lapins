@@ -1,7 +1,7 @@
 import '../display/benny-run.css';
 import {FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
 import {advanceBennyRun, BENNY_RUN, comboMultiplier, dragonVisible, inAir, powerActive, runHeight, runInput, runSummary, sliding, startBennyRun, takeRunEvents,
-  type BennyRun, type RunEntity, type RunInput, type RunPower, type RunSetting, type RunSummary} from '../simulation/bennyRun';
+  type BennyRun, type RunEntity, type RunInput, type RunPower, type RunSetting, type RunSummary, type TutorialStep} from '../simulation/bennyRun';
 import {pausableClock, settleCard} from './activityPause';
 
 /**
@@ -43,12 +43,14 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
 <p class="benny-run-power"></p><button type="button" data-benny-run-exit>Quitter</button></div>
 <canvas class="benny-run-canvas" data-benny-run-canvas></canvas>
 <p class="benny-run-pop" aria-hidden="true"></p>
+<p class="benny-run-coach" aria-live="polite" hidden></p>
 <div class="benny-run-card" data-benny-run-card></div>
 <div class="benny-run-turn" data-benny-run-turn hidden><div class="benny-run-phone" aria-hidden="true"></div><p>Tourne ton iPhone à la verticale pour jouer à Cours cours Benny !</p></div>`;
   host.append(layer);
   const $ = <T extends Element>(selector: string) => layer.querySelector<T>(selector)!;
   const canvas = $<HTMLCanvasElement>('[data-benny-run-canvas]'), card = $<HTMLElement>('[data-benny-run-card]'), pop = $<HTMLElement>('.benny-run-pop');
   const score = $<HTMLElement>('.benny-run-score'), combo = $<HTMLElement>('.benny-run-combo'), metres = $<HTMLElement>('.benny-run-metres'), coins = $<HTMLElement>('.benny-run-coins');
+  const coach = $<HTMLElement>('.benny-run-coach');
   const powerLine = $<HTMLElement>('.benny-run-power'), turn = $<HTMLElement>('[data-benny-run-turn]');
   const sideways = () => window.innerWidth > window.innerHeight;
   const context = canvas.getContext('2d');
@@ -232,6 +234,19 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     for (const f of flashes) { c.globalAlpha = 1 - (now - f.at) / 700; c.fillStyle = '#fff'; c.font = '800 22px system-ui'; c.textAlign = 'center'; c.fillText(f.text, f.x, height * .55 - (now - f.at) * .05); }
     c.globalAlpha = 1;
   }
+  /** The tutorial's advice, one per step (tutoiement). */
+  const COACH: Record<TutorialStep, string> = {
+    pot: 'Un pot à côté de toi : glisse vers lui pour le frapper avec ton bâton !',
+    jump: 'Une barrière : glisse vers le haut pour sauter !',
+    roll: 'Une poutre : glisse vers le bas pour passer dessous en roulade !',
+    front: 'Un coffre glouton droit devant : fais une roulade dedans pour le frapper !',
+    flyer: 'Un petit monstre volant : glisse vers lui pour le frapper !',
+    wall: 'Des piliers partout : glisse vers le mur pour courir dessus !',
+  };
+  function showCoach(step: TutorialStep | null, again = false): void {
+    if (!step) { coach.textContent = 'Bravo ! Maintenant, cours aussi loin que tu peux !'; coach.hidden = false; setTimeout(() => { if (game && !game.tutorial) coach.hidden = true; }, 2600); return; }
+    coach.textContent = (again ? 'Encore une fois ! ' : '') + COACH[step]; coach.hidden = false;
+  }
   /** Where a thing is drawn on screen now (for the shards). */
   const screenOf = (g: BennyRun, e: RunEntity) => { const x = e.lane < 0 ? -wallX() + .4 : e.lane > lanes - 1 ? wallX() - .4 : laneX(e.lane);
     return project(x, Math.max(.3, e.z - g.distance), e.kind === 'flyer' ? bennyHeight(g) + .9 : .5); };
@@ -255,6 +270,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'wallEnd': flashes.push({at: clock(), text: `Mur +${event.points}`, x: width / 2}); break;
       case 'shockwave': shock = clock(); flash('Onde de choc !'); shakeFor('shock'); sound('shock'); break;
       case 'setting': flash(SETTING_NAMES[event.setting]); break;
+      case 'tutorial': showCoach(event.step, event.again); break;
       case 'caught': finish(); break;
       default: break;
     }
@@ -289,7 +305,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     running = false; const s = runSummary(game), record = s.score > best && s.score > 0, previous = best; best = Math.max(best, s.score);
     const line = options.onFinished?.(s);
     hud();
-    const again = button('Rejouer', start, 'bennyRunAgain');
+    const again = button('Rejouer', () => start(), 'bennyRunAgain');
     showCard(paragraph('La Dragon a rattrapé Benny !', 'benny-run-title'),
       paragraph('Elles se chamaillent pour le trésor… (scène peinte à venir)', 'benny-run-rules'),
       paragraph(`Score ${s.score} · ${s.metres} m · ${plural(s.coins, 'pièce')} · ${plural(s.pots, 'pot')} · ${plural(s.foes, 'créature')} · ${plural(s.wallRuns, 'mur')} · meilleur combo ${s.bestCombo} · ${s.seconds} s`, 'benny-run-rules'),
@@ -298,21 +314,24 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       again, button('Quitter', close, 'bennyRunQuit'));
     settleCard(card); again.focus();
   }
-  function start(): void {
+  function start(withTutorial = false): void {
     if (sideways()) { orientation(); return; }
     clearTimeout(stopTimer); time.resume();
     best = Math.max(best, options.best?.() ?? 0);
-    game = startBennyRun(clock()); lanes = game.lanes; viewLane = game.lane; swing = null; shock = null; flashes = []; bits = []; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
+    // The first run (no record yet) starts with the tutorial; it can be asked for again from the start card.
+    coach.hidden = true;
+    game = startBennyRun(clock(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLane = game.lane; swing = null; shock = null; flashes = []; bits = []; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
     hud(); flash('Cours cours Benny !'); frame(loop);
   }
   function intro(): void {
     game = startBennyRun(clock()); lanes = game.lanes; viewLane = game.lane; running = false; measure(); hud(); draw(clock());
+    const learn = button('Revoir le tutoriel', () => start(true), 'bennyRunTutorial');
     showCard(paragraph('Cours cours Benny !', 'benny-run-title'),
       paragraph('Benny a chipé un peu du trésor de la Dragon ! Glisse vers le haut pour sauter, sur le côté pour changer de couloir, vers le bas pour faire une roulade (en l’air : charge au sol).', 'benny-run-rules'),
       paragraph('Frappe les pots et les créatures avec ton bâton : de face avec une roulade, sur le côté en glissant vers leur couloir, vers le haut pour un petit monstre volant (il reste à ta hauteur). Une créature de chaque côté ? Ton bâton tournoie et frappe les deux. Une créature que tu dépasses sans la frapper t’attaque !', 'benny-run-rules'),
       paragraph('Au bord, glisse vers le mur (même en sautant) pour courir dessus. Pour descendre : saute depuis le mur, glisse vers l’autre côté pour frapper ce qui t’attend en bas, ou charge au sol pour faire une onde de choc. Passe sur un pouvoir pour l’utiliser tout de suite.', 'benny-run-rules'),
       paragraph('Prototype en formes grises : les vrais dessins arrivent ensuite.', 'benny-run-rules'),
-      button('C’est parti !', start, 'bennyRunStart'));
+      button('C’est parti !', () => start(), 'bennyRunStart'), ...(Math.max(best, options.best?.() ?? 0) > 0 ? [learn] : []));
   }
   function close(): void {
     if (layer.hidden) return;

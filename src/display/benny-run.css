@@ -32,3 +32,7 @@
 .benny-run-phone { width: 46px; height: 80px; border: 5px solid #fff8e8; border-radius: 10px; animation: benny-run-phone 1.6s ease-in-out infinite; }
 @keyframes benny-run-phone { 0%, 20% { transform: rotate(-90deg); } 60%, 100% { transform: rotate(0deg); } }
 @media (prefers-reduced-motion: reduce) { .benny-run-phone { animation: none; } }
+/* The tutorial's advice, big and readable above Benny. */
+.benny-run-coach { position: absolute; z-index: 5; left: 16px; right: 16px; top: 12%; margin: 0; padding: 10px 14px; border-radius: 14px; text-align: center;
+  font-size: 1.15rem; font-weight: 800; color: #3b3326; background: rgba(255,248,232,.92); border: 2px solid #6b5a3a; pointer-events: none; }
+.benny-run-coach[hidden] { display: none; }
