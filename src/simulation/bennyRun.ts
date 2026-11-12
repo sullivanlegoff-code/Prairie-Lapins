@@ -454,10 +454,16 @@ function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
       return z;
     }
     case 'fireballs': {
-      z += rollLead(g, C.fireSpeed);
+      const lead = rollLead(g, C.fireSpeed);
+      z += lead;
       // Fireballs rolling down the lanes towards Benny, one after the other (never all lanes at once): jump them or step aside.
       const count = 2 + (random(g) < d ? 1 : 0); let lane = any();
-      for (let i = 0; i < count; i++) { add(g, 'fireball', lane, z + i * 10, settingAt(g, z) === 'montagne' ? {snow: true} : {}); lane = pick(g, all.filter(l => l !== lane)); }
+      for (let i = 0; i < count; i++) {
+        add(g, 'fireball', lane, z + i * 10, settingAt(g, z) === 'montagne' ? {snow: true} : {});
+        // An arc of coins over where it will meet Benny: a reward for jumping it.
+        for (let k = 0; k < 3; k++) add(g, 'coin', lane, z - lead + i * 10 - 2 + k * 2, {up: .9 + (k === 1 ? .6 : 0)});
+        lane = pick(g, all.filter(l => l !== lane));
+      }
       return z + (count - 1) * 10;
     }
     case 'wallTrail': {
