@@ -73,3 +73,5 @@
 /* The coins as a gold coin and a number: room for big scores on one row. */
 .benny-run-top .benny-run-coins { display: inline-flex; align-items: center; gap: 4px; }
 .benny-run-top .benny-run-coins::before { content: ''; width: .9em; height: .9em; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff6c8 0 18%, #f4c430 20% 62%, #d99a1e 64%); box-shadow: 0 0 0 1px #3b2414; }
+.benny-run-top .benny-run-hearts { font-size: clamp(.8rem, 3.9vw, 1.05rem); color: #ff4d6d; font-weight: 800; text-shadow: 0 1px 0 #3b2414; }
+.benny-run-top .benny-run-hearts::before { content: '♥ '; }

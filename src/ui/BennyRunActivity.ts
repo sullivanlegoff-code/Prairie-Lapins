@@ -77,7 +77,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const time = pausableClock(options.clock ?? (() => performance.now())), clock = time.now, frame = options.frame ?? (step => requestAnimationFrame(step));
   const layer = document.createElement('div'); layer.className = 'benny-run-activity'; layer.hidden = true;
   layer.setAttribute('role', 'dialog'); layer.setAttribute('aria-modal', 'true'); layer.setAttribute('aria-label', 'Cours cours Benny !');
-  layer.innerHTML = `<div class="benny-run-top"><p class="benny-run-score" aria-live="polite"></p><p class="benny-run-combo"></p><div class="benny-run-combo-bar" aria-hidden="true"><span></span></div><p class="benny-run-metres"></p><p class="benny-run-coins"></p>
+  layer.innerHTML = `<div class="benny-run-top"><p class="benny-run-score" aria-live="polite"></p><p class="benny-run-combo"></p><div class="benny-run-combo-bar" aria-hidden="true"><span></span></div><p class="benny-run-metres"></p><p class="benny-run-coins"></p><p class="benny-run-hearts" hidden></p>
 <p class="benny-run-power"></p><button type="button" data-benny-run-pause aria-label="Pause">❚❚</button><button type="button" data-benny-run-exit aria-label="Quitter">✕</button><p class="benny-run-danger" hidden></p></div>
 <div class="benny-run-quest" hidden><p class="benny-run-challenge"></p><div class="benny-run-quest-bar" aria-hidden="true"><span></span></div></div>
 <canvas class="benny-run-canvas" data-benny-run-canvas></canvas>
@@ -88,7 +88,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   host.append(layer);
   const $ = <T extends Element>(selector: string) => layer.querySelector<T>(selector)!;
   const canvas = $<HTMLCanvasElement>('[data-benny-run-canvas]'), card = $<HTMLElement>('[data-benny-run-card]'), pop = $<HTMLElement>('.benny-run-pop');
-  const score = $<HTMLElement>('.benny-run-score'), combo = $<HTMLElement>('.benny-run-combo'), metres = $<HTMLElement>('.benny-run-metres'), coins = $<HTMLElement>('.benny-run-coins');
+  const score = $<HTMLElement>('.benny-run-score'), combo = $<HTMLElement>('.benny-run-combo'), metres = $<HTMLElement>('.benny-run-metres'), coins = $<HTMLElement>('.benny-run-coins'), hearts = $<HTMLElement>('.benny-run-hearts');
   const challengeLine = $<HTMLElement>('.benny-run-challenge'), quest = $<HTMLElement>('.benny-run-quest'), questFill = $<HTMLElement>('.benny-run-quest-bar span');
   const coach = $<HTMLElement>('.benny-run-coach'), danger = $<HTMLElement>('.benny-run-danger'), comboBar = $<HTMLElement>('.benny-run-combo-bar'), comboFill = $<HTMLElement>('.benny-run-combo-bar span');
   const powerLine = $<HTMLElement>('.benny-run-power'), turn = $<HTMLElement>('[data-benny-run-turn]');
@@ -264,6 +264,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // The time left to keep the combo going.
     comboBar.hidden = !combo.textContent; if (combo.textContent) comboFill.style.width = `${Math.max(0, Math.min(1, (g.comboUntil - g.at) / BENNY_RUN.comboMs)) * 100}%`;
     metres.textContent = `${Math.floor(g.distance)} m`; coins.textContent = `${g.coins}`; coins.setAttribute('aria-label', plural(g.coins, 'pièce'));
+    // The Hearts won so far in this run, shown once there is one.
+    hearts.hidden = g.hearts === 0; hearts.textContent = `${g.hearts}`; hearts.setAttribute('aria-label', plural(g.hearts, 'cœur'));
     const active = g.active && g.at < g.active.until ? g.active : null;
     powerLine.textContent = active ? `${POWER_NAMES[active.power]} · ${Math.ceil((active.until - g.at) / 1000)} s` : '';
     // Its last second: the line blinks (and Benny's aura too), so its end is no surprise.
@@ -662,7 +664,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       }
       case 'heart': {
         // A Heart floating above the road, bobbing: red, with a white shine.
-        const cy = y - h / 2 + Math.sin(at / 180 + e.id) * h * .08, r = w * .3;
+        // Bigger than a coin: a Heart is worth more and must be seen from far off on a phone.
+        const cy = y - h / 2 + Math.sin(at / 180 + e.id) * h * .08, r = w * .4;
         c.beginPath(); c.moveTo(x, cy + r * 1.1);
         c.bezierCurveTo(x - r * 2.2, cy + r * .2, x - r * 1.2, cy - r * 1.6, x, cy - r * .5);
         c.bezierCurveTo(x + r * 1.2, cy - r * 1.6, x + r * 2.2, cy + r * .2, x, cy + r * 1.1);
