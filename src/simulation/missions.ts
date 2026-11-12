@@ -8,7 +8,7 @@ import {hasEvolvedArt} from '../config/evolvedArt';
 import {rollChristmasCycle} from './christmas';
 import {seasonAllows} from './season';
 
-type ObservableState = Pick<GameState, 'rabbits' | 'discovered'> & Partial<Pick<GameState, 'progression' | 'decorations' | 'rewardedDecorationModels' | 'recipeBook' | 'jumpRope'>> & {acquiredParcels?: GameState['acquiredParcels']; expanded?: boolean} & Pick<GameState, 'startCourse'> & {missions?: Pick<MissionState, 'events' | 'nightOrderStarted'>} & {buildings: (Pick<GameState['buildings'][number], 'kind'> & Partial<Pick<GameState['buildings'][number], 'habitat' | 'farmLevel' | 'agencyLevel' | 'nursery'>>)[]};
+type ObservableState = Pick<GameState, 'rabbits' | 'discovered'> & Partial<Pick<GameState, 'progression' | 'decorations' | 'rewardedDecorationModels' | 'recipeBook' | 'jumpRope' | 'bennyRun'>> & {acquiredParcels?: GameState['acquiredParcels']; expanded?: boolean} & Pick<GameState, 'startCourse'> & {missions?: Pick<MissionState, 'events' | 'nightOrderStarted'>} & {buildings: (Pick<GameState['buildings'][number], 'kind'> & Partial<Pick<GameState['buildings'][number], 'habitat' | 'farmLevel' | 'agencyLevel' | 'nursery'>>)[]};
 export function mainProgress(state: ObservableState, id: MainMissionId): {value: number; target: number} {
   const c = MAIN_MISSIONS[id].condition;
   switch (c.kind) {
@@ -21,6 +21,7 @@ export function mainProgress(state: ObservableState, id: MainMissionId): {value:
     case 'paidRecipe': return {value: Number(state.recipeBook?.some(id => RECIPE_PRICES[id] !== undefined)), target: 1};
     case 'nightOrder': return {value:Number(!!state.missions?.nightOrderStarted),target:1};
     case 'jumpRopeGame': return {value: Number(!!state.jumpRope), target: 1};
+    case 'bennyRunGame': return {value: Number(!!state.bennyRun), target: 1};
     case 'ordinaryRares': { const ids=SPECIES_IDS.filter(id=>SPECIES[id].rarity==='rare' && SPECIES[id].acquisition.some(a=>a.kind==='recipe' && a.guaranteeEligible)); return {value:ids.filter(id=>state.discovered.includes(id)).length,target:ids.length}; }
     case 'building': return {value: state.buildings.filter(b => b.kind === c.building && (!c.habitatType || b.habitat?.type === c.habitatType)).length, target: c.target ?? 1};
     case 'discoveries': return {value: state.discovered.length, target: c.target};
@@ -75,8 +76,8 @@ const seasonalGoalShown = (s: Partial<Pick<GameState, 'discovered'>>, id: string
   const species = id.startsWith('discover-') ? id.slice(9) as SpeciesId : null;
   return !species || !Object.hasOwn(SPECIES, species) || seasonAllows(species) || (s.discovered ?? []).includes(species);
 };
-export const catalogueMainMissionIds = (s: Pick<GameState, 'startCourse'> & Partial<Pick<GameState, 'jumpIsland' | 'discovered'>>): MainMissionId[] =>
-  [...initialMissionIds(s), ...BRANCH_MISSION_IDS, ...DURABLE_MISSION_IDS, ...NEW_MAIN_MISSION_IDS.filter(id => (id !== 'first-jump-rope' || s.jumpIsland) && seasonalGoalShown(s, id))];
+export const catalogueMainMissionIds = (s: Pick<GameState, 'startCourse'> & Partial<Pick<GameState, 'jumpIsland' | 'discovered' | 'buildings'>>): MainMissionId[] =>
+  [...initialMissionIds(s), ...BRANCH_MISSION_IDS, ...DURABLE_MISSION_IDS, ...NEW_MAIN_MISSION_IDS.filter(id => (id !== 'first-jump-rope' || s.jumpIsland) && (id !== 'first-benny-run' || !!s.buildings?.some(b => b.kind === 'lair')) && seasonalGoalShown(s, id))];
 /** Includes finished objectives for browsing; retired identifiers are never part of this catalogue. */
 export function visibleMainMissions(s: MainMissionState): readonly MainMissionId[] {
   return mainCatalogueUnlocked(s) ? catalogueMainMissionIds(s) : activeMainMissions(s);
@@ -115,6 +116,8 @@ export function dailyMissionAvailable(s: DailyAvailabilityState, id: DailyMissio
     case 'short-trip': return built('agency');
     case 'picnic': return progressionFromXp(s.progression?.totalXp ?? 0).level >= PICNIC.unlockLevel && s.rabbits.some(r => s.buildings.some(b => b.kind === 'enclosure' && b.id === r.enclosureId));
     case 'jump-rope': return !!s.jumpIsland;
+    // Both need the Antre du dragon built (its game needs Benny too, but the Antre is what the player sees first).
+    case 'benny-run': case 'benny-coins': return built('lair');
     case 'forest-walk': return built('forest') && s.rabbits.some(r => r.evolution?.done === true);
     // Three different rabbits to caress (audit, 4 November 2026): never offered to a player who has fewer.
     case 'pet-rabbits': return s.rabbits.length >= DAILY_MISSIONS['pet-rabbits'].target;

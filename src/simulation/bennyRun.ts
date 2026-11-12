@@ -131,8 +131,9 @@ export const BENNY_RUN = {
    * the day (owner, 12 November 2026: « les pièces récoltées comptent pour les pièces du jeu principal »). Runs past that are for the record. */
   pattesPerCoin: 1, maxPattes: 150, rewardedRunsPerCycle: 3,
   /** Hearts on the road, now and then (owner, 12 November 2026: « de temps en temps on peut récolter des cœurs »): one pattern in
-   * `heartEvery` may bring one, after `heartFrom` m. A run keeps at most `maxHeartsPerRun`; a day pays at most `heartsPerCycle`. */
-  heartFrom: 400, heartEvery: 30, maxHeartsPerRun: 2, heartsPerCycle: 2,
+   * `heartEvery` may bring one, after `heartFrom` m. Measured: about 5 on the road in five minutes, so a good run of about five
+   * minutes gives about 4. A run keeps at most `maxHeartsPerRun`; a day pays at most `heartsPerCycle` (owner: 20 a day). */
+  heartFrom: 400, heartEvery: 40, maxHeartsPerRun: 8, heartsPerCycle: 20,
   /** The most coins a run can count (bounds what a save can claim). */
   maxCoins: 5000,
 } as const;

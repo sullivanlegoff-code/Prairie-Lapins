@@ -648,6 +648,8 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         credit('pattes', paid.pattes); credit('hearts', paid.hearts);
         const day = paid.rewarded ? {cycle, rewarded: (today?.rewarded ?? 0) + 1, hearts: (today?.hearts ?? 0) + paid.hearts} : today;
         s.bennyRun = {best: Math.max(s.bennyRun?.best ?? 0, command.score), metres: Math.max(s.bennyRun?.metres ?? 0, command.metres), ...(Object.keys(settings).length ? {settings} : {}), ...(day ? {day} : {})};
+        // The daily missions and the main mission « Premier cours » count the run and its coins (a run is a run, rewarded or not).
+        requireRule(recordMissionAction(s, 'bennyRun', 1) && recordMissionAction(s, 'bennyCoins', coins), 'RESOURCE_LIMIT');
         value = paid.pattes; break;
       }
       case 'rewardBennyFlight': {

@@ -4,6 +4,7 @@ import {BALANCE, BENNY_LAIR} from '../src/config/balance';
 import {MISSION_CYCLE_DURATION} from '../src/config/missions';
 import {BENNY_RUN} from '../src/simulation/bennyRun';
 import {bennyRunDay, bennyRunReward} from '../src/simulation/bennyRunRewards';
+import {dailyMissionAvailable, mainProgress} from '../src/simulation/missions';
 import {cumulativeLevelXp} from '../src/simulation/progression';
 import {SAVE_VERSION} from '../src/persistence/json';
 import type {GameState} from '../src/state/types';
@@ -68,15 +69,27 @@ describe('the coins of « Cours cours Benny ! » are pattes', () => {
     let s = game(); const hearts = s.hearts;
     s = finish(s, 5, s.lastSimulatedAt, BENNY_RUN.maxHeartsPerRun).state;
     expect(s.hearts).toBe(hearts + BENNY_RUN.maxHeartsPerRun);
-    // The day's Hearts are used up in the second run if it takes more than what is left.
-    s = finish(s, 5, s.lastSimulatedAt, BENNY_RUN.maxHeartsPerRun).state;
-    expect(s.hearts).toBe(hearts + BENNY_RUN.heartsPerCycle); expect(s.bennyRun?.day?.hearts).toBe(BENNY_RUN.heartsPerCycle);
+    // The rewarded runs of the day pay until the day's Hearts are used up (owner: 20 a day), then none.
+    for (let i = 1; i < BENNY_RUN.rewardedRunsPerCycle; i++) s = finish(s, 5, s.lastSimulatedAt, BENNY_RUN.maxHeartsPerRun).state;
+    expect(s.hearts).toBe(hearts + Math.min(BENNY_RUN.heartsPerCycle, BENNY_RUN.rewardedRunsPerCycle * BENNY_RUN.maxHeartsPerRun));
+    expect(s.bennyRun?.day?.hearts).toBe(Math.min(BENNY_RUN.heartsPerCycle, BENNY_RUN.rewardedRunsPerCycle * BENNY_RUN.maxHeartsPerRun));
     s = finish(s, 5, s.lastSimulatedAt, 1).state;
-    expect(s.hearts).toBe(hearts + BENNY_RUN.heartsPerCycle);
+    expect(s.hearts).toBe(hearts + Math.min(BENNY_RUN.heartsPerCycle, BENNY_RUN.rewardedRunsPerCycle * BENNY_RUN.maxHeartsPerRun));
   });
   it('refuses more Hearts in a run than the road can give', () => {
     const s = game();
     expect(act(s, {type: 'finishBennyRun', score: 1, metres: 1, hearts: BENNY_RUN.maxHeartsPerRun + 1}, s.lastSimulatedAt)).toMatchObject({ok: false, reason: 'INVALID_CHOICE'});
+  });
+  it('counts the run and its coins for the daily missions, and the first run for the main mission', () => {
+    let s = game(); s.missions.daily.picked = ['benny-run', 'benny-coins', 'collect-pattes'];
+    expect(mainProgress(s, 'first-benny-run').value).toBe(0);
+    s = finish(s, 25).state;
+    expect(s.missions.daily.progress['benny-run']).toBe(1); expect(s.missions.daily.progress['benny-coins']).toBe(25);
+    expect(mainProgress(s, 'first-benny-run')).toEqual({value: 1, target: 1});
+  });
+  it('offers the run missions once the Antre du dragon is built', () => {
+    expect(dailyMissionAvailable(game(), 'benny-run')).toBe(true); expect(dailyMissionAvailable(game(), 'benny-coins')).toBe(true);
+    expect(dailyMissionAvailable(createGame(0), 'benny-run')).toBe(false);
   });
   it('counts whole coins only, from the rules', () => {
     const s = game();

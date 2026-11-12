@@ -2629,6 +2629,7 @@ export class GameUI {
           else if (c.kind === 'buildingLevel') shortcut(card, c.building);
           else if (c.kind === 'paidRecipe') this.button(card, 'Voir les recettes de la boutique', () => this.open({kind: 'shop', tab: 'recipes'}), null, true);
           else if (c.kind === 'evolutions') shortcut(card, 'collection');
+          else if (c.kind === 'bennyRunGame') shortcut(card, 'lair');
           else shortcut(card, c.kind === 'building' ? c.building : c.kind === 'event' ? c.event === 'collectOrder' ? 'farm' : c.event === 'breed' ? 'nest' : 'nursery' : c.kind === 'discoveries' || c.kind === 'rare' || c.kind === 'species' ? 'collection' : c.kind);
         }
         this.content.append(card);
