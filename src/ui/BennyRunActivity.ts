@@ -37,7 +37,7 @@ const HINTS_KEY = 'prairie-lapins:benny-run-hints';
 const POWER_NAMES: Record<RunPower, string> = {magnet: 'Aimant', bubble: 'Bulle arc-en-ciel', double: 'Pièces doublées', flight: 'Envol', dash: 'Ruée'};
 /** A swipe fires once the finger has moved this far; a quick flick lifted sooner still counts from `FLICK` px. */
 const SWIPE = 18, FLICK = 10;
-export type RunSound = 'strike' | 'pot' | 'coin' | 'bump' | 'jump' | 'roll' | 'shock' | 'wall' | 'power' | 'caught';
+export type RunSound = 'strike' | 'pot' | 'coin' | 'bump' | 'jump' | 'roll' | 'shock' | 'wall' | 'power' | 'caught' | 'dodge' | 'rumble' | 'whoosh' | 'land' | 'sizzle';
 /** Feedback: a strike freezes the game for `HIT_STOP` ms; shakes last their `ms` with this many pixels at most. */
 /** A big moment (shock wave, spin, a flying pot bowling a creature over) plays in slow motion at this rate for a moment. */
 const SLOW_RATE = .35;
@@ -568,7 +568,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const bob = grounded ? Math.abs(Math.sin(stride)) * .07 * s : 0, lean = Math.max(-.3, Math.min(.3, (g.lane - viewLane) * .35));
     // Touching down: a squash for a moment and a puff of dust at her feet; taking off and rising: a stretch.
     const up2 = inAir(g) && !wall && !powerActive(g, 'flight');
-    if (wasUp && !up2 && !wall && !flat) { landedAt = now; const ground = project(x, 0, floorHeight(g)); burst(ground.x, ground.y, ['rgba(230,215,190,.9)', 'rgba(200,180,150,.8)'], 7, 110); }
+    if (wasUp && !up2 && !wall && !flat) { landedAt = now; const ground = project(x, 0, floorHeight(g)); burst(ground.x, ground.y, ['rgba(230,215,190,.9)', 'rgba(200,180,150,.8)'], 7, 110); sound('land', .9 + Math.random() * .2); }
     wasUp = up2;
     const land = Math.max(0, 1 - (now - landedAt) / 150), rising = up2 && g.at - g.airFrom < 220 ? 1 - (g.at - g.airFrom) / 220 : 0;
     const squash = 1 - .2 * land + .1 * rising;
@@ -722,9 +722,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'bump': if (event.entity.kind !== 'hole') flash('Aïe ! La Dragon arrive !'); hurtAt = clock(); shakeFor('bump'); sound('bump'); break;
       case 'shield': flash('La bulle te protège !'); burst(width / 2, height * .7, ['#e7d1ff', '#b07bff', '#fff'], 16, 260); sound('power'); break;
       case 'power': flash(`${POWER_NAMES[event.power]} !`); sound('power'); break;
-      case 'wallStart': sound('wall'); break;
+      case 'wallStart': sound('wall', event.side === 'left' ? .94 : 1.06); break;
       case 'cleared':
-        if (event.points) { const p = screenOf(g, event.entity); flashes.push({at: clock(), text: `+${event.points}`, x: p.x}); burst(p.x, p.y - 10, ['#fff', '#ffe66b'], 6, 160); }
+        if (event.points) { const p = screenOf(g, event.entity); flashes.push({at: clock(), text: `+${event.points}`, x: p.x}); burst(p.x, p.y - 10, ['#fff', '#ffe66b'], 6, 160); sound('dodge', .95 + Math.random() * .1); }
         break;
       case 'wallEnd': flashes.push({at: clock(), text: `Mur +${event.points}`, x: width / 2}); if (event.trail) { flash(`Traînée parfaite : ${event.trail} pièces !`); sound('power', 1.1); } break;
       case 'wallLeap': flashes.push({at: clock(), text: `Saut de mur +${event.points}`, x: width / 2}); sound('wall'); shakeFor('strike'); break;
@@ -735,22 +735,22 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         else { flash(`Défi réussi ! +${event.points}`); sound('power'); burst(width / 2, height * .3, ['#7be08a', '#ffe66b', '#fff'], 24, 360); }
         break;
       case 'gust':
-        if (event.warn) { flash(event.dir > 0 ? 'Coup de vent → !' : '← Coup de vent !'); sound('roll', .6); }
-        else { gustAt = {at: clock(), dir: event.dir}; if (event.pushed) { sound('roll', .8); shakeFor('strike'); } }
+        if (event.warn) { flash(event.dir > 0 ? 'Coup de vent → !' : '← Coup de vent !'); sound('whoosh'); }
+        else { gustAt = {at: clock(), dir: event.dir}; if (event.pushed) { sound('whoosh', 1.3); shakeFor('strike'); } }
         break;
       case 'geyser': { geysersUp.set(event.entity.id, clock()); const p = screenOf(g, event.entity); burst(p.x, p.y, ['#ff6a1a', '#ffb03a', '#ffe36b'], 8, 220);
-        if (Math.abs(event.entity.lane - g.lane) <= 1) sound('wall', .6); break; }
+        if (Math.abs(event.entity.lane - g.lane) <= 1) sound('sizzle', .9 + Math.random() * .2); break; }
       case 'rockfall': { rocksDown.set(event.entity.id, clock()); { const p = screenOf(g, event.entity); burst(p.x, p.y, ['#6f6258', '#8d8075', '#4a3f37'], 6, 160); }
-        if (event.entity.lane === g.lane || Math.abs(event.entity.lane - g.lane) === 1) { sound('bump', .5); shakeFor('strike'); } break; }
+        if (event.entity.lane === g.lane || Math.abs(event.entity.lane - g.lane) === 1) { sound('rumble'); shakeFor('strike'); } break; }
       case 'crumble': { const n = lanesAt(g, event.pit.from), x = (event.pit.lane - (n - 1) / 2) * LANE_WIDTH, p = project(x, event.pit.from - g.distance + 1, 0);
-        burst(p.x, p.y, ['#5a3d22', '#8a6440', '#3a2a1c'], 10, 200); if (event.pit.from - g.distance < 30) sound('bump', .6); break; }
+        burst(p.x, p.y, ['#5a3d22', '#8a6440', '#3a2a1c'], 10, 200); if (event.pit.from - g.distance < 30) sound('rumble', 1.3); break; }
       case 'platformUp': sound('jump', 1.2); break;
       case 'blocked': sound('bump', .8); shakeFor('strike'); flash('Monte par la rampe !'); break;
       case 'lanes':
         viewLane += event.shift;
         if (event.shift > 0) flash('La salle s’élargit : cinq couloirs !');
         break;
-      case 'landing': flash('Atterrissage en douceur !'); sound('jump', .8); break;
+      case 'landing': flash('Atterrissage en douceur !'); sound('land'); break;
       case 'faster': flash(event.pace === 1 ? 'Vitesse de croisière… et ça accélère encore !' : `Plus vite ! Allure ${event.pace}`); sound('power', 1.3); break;
       case 'setting': flash(SETTING_NAMES[event.setting]); settingBefore = shownSetting; shownSetting = event.setting; settingSince = clock(); break;
       case 'tutorial': showCoach(event.step, event.again); break;
@@ -777,7 +777,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (!running || !game || sideways()) return;
     const g = game, wasAir = inAir(g), wasRolling = sliding(g);
     runInput(g, gameTime(), gesture);
-    if (gesture === 'up' && inAir(g) && g.airFrom === g.at && !wasAir) sound('jump');
+    if (gesture === 'up' && inAir(g) && g.airFrom === g.at && !wasAir) sound('jump', .96 + Math.random() * .08);
     if (gesture === 'down' && sliding(g) && !wasRolling) sound('roll');
     react(); hud();
   }
