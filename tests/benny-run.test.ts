@@ -517,6 +517,14 @@ describe('Cours cours Benny ! rules', () => {
     const coins = g.coins; run(g, 2000); expect(g.coins).toBeGreaterThan(coins); // Picked up following them.
     g.active!.until = g.at; run(g, 20); expect(g.entities.some(e => e.sky)).toBe(false);
   });
+  it('banks a long series of strikes once it ends by itself, but not one broken by a bump', () => {
+    const g = quiet(); g.lane = 1; for (let i = 0; i < 6; i++) place(g, 'pot', 1, 2 + i * 6);
+    runInput(g, g.at, 'down'); run(g, 3300); expect(g.combo).toBe(6); takeRunEvents(g); const score = g.score;
+    run(g, C.comboMs); expect(takeRunEvents(g)).toContainEqual({type: 'series', length: 6, points: 6 * C.seriesPoints});
+    expect(g.score).toBe(score + 6 * C.seriesPoints); expect(g.combo).toBe(0);
+    for (let i = 0; i < 5; i++) place(g, 'pot', 1, 2 + i * 5); runInput(g, g.at, 'down'); run(g, 2300); expect(g.combo).toBe(5);
+    place(g, 'pillar', 1, 1); run(g, 300); run(g, C.comboMs); expect(takeRunEvents(g).some(e => e.type === 'series')).toBe(false);
+  });
   it('glides down at the end of a flight, onto a clear spot', () => {
     const g = quiet(); run(g, C.introMs); g.active = {power: 'flight', until: g.at + 300};
     run(g, 200); place(g, 'pillar', 1, 8); place(g, 'coin', 1, 9);

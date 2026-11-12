@@ -64,6 +64,8 @@ export const BENNY_RUN = {
   stumbleMs: 900, stumbleSlow: .7, dragonMs: 10_000, introMs: 3000,
   /** Combo: strikes less than `comboMs` apart; the multiplier grows by one every `comboStep` strikes, up to `comboMax`. */
   comboMs: 2500, comboStep: 3, comboMax: 5,
+  /** A series of at least `seriesMin` strikes that ends by itself (not by a bump) is banked: `seriesPoints` per strike. */
+  seriesMin: 5, seriesPoints: 5,
   points: {pot: 10, foe: 25, wallRun: 50, wallLeap: 25, dodge: 5, wallTrail: 10, leapChain: 15, close: 15, km: 100},
   /** « De justesse » : an obstacle passing in the lane Benny left less than `closeMs` ago. */
   closeMs: 300,
@@ -176,6 +178,8 @@ export type RunEvent =
   | {type: 'faster'; pace: number}
   /** The end of a flight: gliding down onto a clear spot. */
   | {type: 'landing'}
+  /** A series of strikes ended by itself, banked. */
+  | {type: 'series'; length: number; points: number}
   /** Up off a springboard. */
   | {type: 'bounce'}
   /** Another kilometre run. */
@@ -845,6 +849,10 @@ function tick(g: BennyRun): void {
   const dt = C.step / 1000, eventsBefore = g.events.length;
   if (g.tutorial) { g.paceFrom += C.step; g.nextSettingAt += C.step; g.nextChallengeAt += C.step; }
   if (g.active && g.at >= g.active.until) { if (g.active.power === 'flight') landFromFlight(g); g.active = null; }
+  if (g.combo >= C.seriesMin && g.comboUntil > 0 && g.at > g.comboUntil) {
+    const points = g.combo * C.seriesPoints; g.score = Math.min(C.maxScore, g.score + points); g.events.push({type: 'series', length: g.combo, points});
+    g.combo = 0; g.comboUntil = 0;
+  }
   const base = C.speedStart + (C.speedMax - C.speedStart) * (1 - (1 - runDifficulty(g)) ** C.speedEase) + C.overtimeSpeed * runOvertime(g);
   if (runDifficulty(g) >= 1 && g.pace < Math.min(C.overtimeMax, 1 + Math.floor(runOvertime(g)))) { g.pace++; g.events.push({type: 'faster', pace: g.pace}); }
   g.speed = base * (g.at < g.stumbleUntil ? C.stumbleSlow : 1) * (powerActive(g, 'dash') ? C.dashSpeed : 1);

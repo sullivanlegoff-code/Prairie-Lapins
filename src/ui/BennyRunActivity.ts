@@ -815,6 +815,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'km': milestone = event.km * 1000; flash(`${event.km} km ! +${event.points}`); sound('power', 1.15); break;
       case 'bounce': { sound('jump', 1.4); shakeFor('strike'); const ground = project(laneX(viewLane), .5, 0); burst(ground.x, ground.y, ['#7be08a', '#4fb06a', '#fff'], 10, 200);
         flashes.push({at: clock(), text: 'Boing !', x: width / 2}); break; }
+      case 'series': flash(`Série de ${event.length} ! +${event.points}`); sound('power', 1.05); break;
       case 'landing': flash('Atterrissage en douceur !'); sound('land'); break;
       case 'faster': flash(event.pace === 1 ? 'Vitesse de croisière… et ça accélère encore !' : `Plus vite ! Allure ${event.pace}`); sound('power', 1.3); break;
       case 'setting': flash(SETTING_NAMES[event.setting]); settingBefore = shownSetting; shownSetting = event.setting; settingSince = clock(); break;
