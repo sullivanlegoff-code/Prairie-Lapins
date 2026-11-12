@@ -167,16 +167,17 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   function show(text: string, big: boolean): void { pop.textContent = text; pop.classList.toggle('benny-run-count', big); pop.classList.remove('show'); void pop.offsetWidth; pop.classList.add('show'); clearTimeout(popTimer); popTimer = setTimeout(() => pop.classList.remove('show'), 900); }
   /**
    * The canvas resolution, at most 2 pixels per point: on a device that cannot keep up (more than half the frames of the last
-   * 120 slower than 50 per second), it steps down by a quarter, to 1.25 at the least: a little softer, but smooth.
+   * 60 slower than 50 per second), it steps down by a quarter (by half when most were slower than 30 per second), to 1.25 at
+   * the least: a little softer, but smooth.
    */
-  let ratioCap = 2, sampled = 0, slowSampled = 0, lastFrameAt = 0;
+  let ratioCap = 2, sampled = 0, slowSampled = 0, verySlow = 0, lastFrameAt = 0;
   function watchFrames(now: number): void {
     const gap = now - lastFrameAt; lastFrameAt = now;
     if (gap <= 0 || gap > 200) return; // A pause or a hidden tab: not a measure.
-    sampled++; if (gap > 20) slowSampled++;
-    if (sampled < 120) return;
-    if (slowSampled > sampled / 2 && ratioCap > 1.25 && (window.devicePixelRatio || 1) > 1.25) { ratioCap -= .25; measure(); }
-    sampled = 0; slowSampled = 0;
+    sampled++; if (gap > 20) slowSampled++; if (gap > 33) verySlow++;
+    if (sampled < 60) return;
+    if (slowSampled > sampled / 2 && ratioCap > 1.25 && (window.devicePixelRatio || 1) > 1.25) { ratioCap = Math.max(1.25, ratioCap - (verySlow > sampled / 2 ? .5 : .25)); measure(); }
+    sampled = 0; slowSampled = 0; verySlow = 0;
   }
   function measure(): void {
     const ratio = Math.min(ratioCap, window.devicePixelRatio || 1), box = canvas.getBoundingClientRect();
