@@ -207,37 +207,49 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   /** Above the horizon: the cave's ceiling with its stalactites and a gold glow far off; the lava's red glow with rocks and
    * rising sparks; the mountain sky with two rows of snowy peaks and drifting clouds (shapes until the painted settings). */
+  /** The still parts of the settings' skies, painted once into images (per setting, screen size and horizon). */
+  const layers = new Map<string, HTMLCanvasElement | null>();
+  function skyLayer(key: string, h: number, paint: (k: CanvasRenderingContext2D) => void): HTMLCanvasElement | null {
+    const id = `${key}|${width}|${Math.round(h)}`; if (layers.has(id)) return layers.get(id)!;
+    const ratio = Math.min(2, window.devicePixelRatio || 1), el = document.createElement('canvas'); el.width = Math.max(1, Math.ceil(width * ratio)); el.height = Math.max(1, Math.ceil((h + 1) * ratio));
+    const k = el.getContext('2d'); if (k) { k.scale(ratio, ratio); paint(k); }
+    if (layers.size > 16) layers.clear(); layers.set(id, k ? el : null); return k ? el : null;
+  }
+  /** Above the horizon: the cave's ceiling with its stalactites and a gold glow far off; the lava's red glow with rocks and
+   * rising sparks; the mountain sky with two rows of snowy peaks and drifting clouds (shapes until the painted settings). */
   function backdrop(c: CanvasRenderingContext2D, setting: RunSetting): void {
     const horizon = project(0, FAR, 0).y, now = clock(), alpha = c.globalAlpha;
-    const sky = (top: string, bottom: string) => { const grad = c.createLinearGradient(0, 0, 0, horizon); grad.addColorStop(0, top); grad.addColorStop(1, bottom); c.fillStyle = grad; c.fillRect(0, 0, width, horizon + 1); };
-    const glow = (colour: string, r: number) => { const grad = c.createRadialGradient(width / 2, horizon, 0, width / 2, horizon, r); grad.addColorStop(0, colour); grad.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = grad; c.fillRect(0, 0, width, horizon + 1); };
-    const ridge = (colour: string, base: number, peaks: number, rise: number, seed: number, snow?: string) => {
+    const sky = (k: CanvasRenderingContext2D, top: string, bottom: string) => { const grad = k.createLinearGradient(0, 0, 0, horizon); grad.addColorStop(0, top); grad.addColorStop(1, bottom); k.fillStyle = grad; k.fillRect(0, 0, width, horizon + 1); };
+    const glow = (k: CanvasRenderingContext2D, colour: string, r: number) => { const grad = k.createRadialGradient(width / 2, horizon, 0, width / 2, horizon, r); grad.addColorStop(0, colour); grad.addColorStop(1, 'rgba(0,0,0,0)'); k.fillStyle = grad; k.fillRect(0, 0, width, horizon + 1); };
+    const ridge = (k: CanvasRenderingContext2D, colour: string, base: number, peaks: number, rise: number, seed: number, snow?: string) => {
       const points: [number, number][] = [];
       for (let i = 0; i <= peaks * 2; i++) points.push([(i + (i % 2 ? (((i * seed) % 7) - 3) * .12 : 0)) / (peaks * 2) * width, base - (i % 2 ? rise * (.55 + ((i * seed) % 9) / 18) : rise * ((i * seed) % 5) / 14)]);
-      c.fillStyle = colour; c.beginPath(); c.moveTo(0, horizon + 1); for (const [x, y] of points) c.lineTo(x, y); c.lineTo(width, horizon + 1); c.fill();
-      if (snow) { c.fillStyle = snow; for (let i = 1; i < points.length; i += 2) { const [x, y] = points[i], [lx, ly] = points[i - 1], [rx, ry] = points[i + 1];
-        const k = .3; c.beginPath(); c.moveTo(x, y); c.lineTo(x + (rx - x) * k, y + (ry - y) * k); c.lineTo(x, y + (ry - y) * k * .7); c.lineTo(x + (lx - x) * k, y + (ly - y) * k); c.fill(); } }
+      k.fillStyle = colour; k.beginPath(); k.moveTo(0, horizon + 1); for (const [x, y] of points) k.lineTo(x, y); k.lineTo(width, horizon + 1); k.fill();
+      if (snow) { k.fillStyle = snow; for (let i = 1; i < points.length; i += 2) { const [x, y] = points[i], [lx, ly] = points[i - 1], [rx, ry] = points[i + 1];
+        const q = .3; k.beginPath(); k.moveTo(x, y); k.lineTo(x + (rx - x) * q, y + (ry - y) * q); k.lineTo(x, y + (ry - y) * q * .7); k.lineTo(x + (lx - x) * q, y + (ly - y) * q); k.fill(); } }
     };
+    // A still layer drawn from its image (or straight onto the screen where images cannot be made).
+    const still = (key: string, paint: (k: CanvasRenderingContext2D) => void) => { const el = skyLayer(setting + key, horizon, paint); if (el) c.drawImage(el, 0, 0, width, horizon + 1); else paint(c); };
     switch (setting) {
       case 'grotte':
-        sky('#1a110a', '#5e4122'); glow('rgba(255,214,120,.45)', width * .45);
-        c.fillStyle = '#2b1d11';
-        for (let i = 0; i < 16; i++) { const x = (i + .5) / 16 * width + (((i * 37) % 11) - 5) * 2, w = width / 34 * (1 + ((i * 17) % 3) * .35), len = horizon * (.22 + ((i * 53) % 7) / 16);
-          c.beginPath(); c.moveTo(x - w, 0); c.lineTo(x + w, 0); c.lineTo(x, len); c.fill(); }
+        still('', k => {
+          sky(k, '#1a110a', '#5e4122'); glow(k, 'rgba(255,214,120,.45)', width * .45);
+          k.fillStyle = '#2b1d11';
+          for (let i = 0; i < 16; i++) { const x = (i + .5) / 16 * width + (((i * 37) % 11) - 5) * 2, w = width / 34 * (1 + ((i * 17) % 3) * .35), len = horizon * (.22 + ((i * 53) % 7) / 16);
+            k.beginPath(); k.moveTo(x - w, 0); k.lineTo(x + w, 0); k.lineTo(x, len); k.fill(); }
+        });
         break;
       case 'pont':
-        sky('#230b08', '#b5381a'); glow('rgba(255,150,60,.5)', width * .55);
-        ridge('#3a1712', horizon, 7, horizon * .28, 13);
+        still('', k => { sky(k, '#230b08', '#b5381a'); glow(k, 'rgba(255,150,60,.5)', width * .55); ridge(k, '#3a1712', horizon, 7, horizon * .28, 13); });
         for (let i = 0; i < 18; i++) { const x = ((i * 97) % 100) / 100 * width, y = horizon - ((now / 18 + i * 61) % (horizon * 1.1)), r = 1.5 + (i % 3);
           c.globalAlpha = alpha * Math.max(0, Math.min(1, y / horizon)); c.fillStyle = i % 2 ? '#ffb04a' : '#ffd27a'; c.beginPath(); c.arc(x + Math.sin(now / 400 + i) * 6, y, r, 0, Math.PI * 2); c.fill(); }
         c.globalAlpha = alpha;
         break;
       case 'montagne':
-        sky('#79b4e4', '#f6c9a2');
+        still('-sky', k => sky(k, '#79b4e4', '#f6c9a2'));
         for (let i = 0; i < 4; i++) { const x = ((now / 90 + i * width * .37) % (width * 1.4)) - width * .2, y = horizon * (.18 + i * .13);
           c.fillStyle = 'rgba(255,255,255,.8)'; c.beginPath(); c.ellipse(x, y, width * .09, horizon * .06, 0, 0, Math.PI * 2); c.ellipse(x + width * .06, y - horizon * .03, width * .06, horizon * .05, 0, 0, Math.PI * 2); c.fill(); }
-        ridge('#9fb0cc', horizon - horizon * .05, 4, horizon * .55, 5, '#f4f8fc');
-        ridge('#7d93b2', horizon, 6, horizon * .3, 11, '#e6eef6');
+        still('-peaks', k => { ridge(k, '#9fb0cc', horizon - horizon * .05, 4, horizon * .55, 5, '#f4f8fc'); ridge(k, '#7d93b2', horizon, 6, horizon * .3, 11, '#e6eef6'); });
         break;
     }
   }
