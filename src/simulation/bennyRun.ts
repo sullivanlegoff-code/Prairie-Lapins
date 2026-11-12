@@ -110,11 +110,6 @@ export const BENNY_RUN = {
   /** A flying monster hovers at this height (m), a jump's height: it is struck only by jumping through it (owner: « un saut au-
    * dessus de Benny »). Running under it does not hurt; on a wall it still reaches her. */
   flyerHeight: 1.1,
-  /** A mischievous ember hops to a neighbouring lane every `emberHopMs`, but only while farther than `emberStill` m. */
-  emberHopMs: 1400, emberStill: 14,
-  /** An awake dragonnet waddles across the road, one lane every `crossMs` (turning back at the edges), while farther than
-   * `crossStill` m: then it stops, so the last moment stays fair. */
-  crossMs: 700, crossStill: 12,
   /** Cracked slabs in one lane give way when Benny is `crumbleAt` m from them: a pit to jump or to go round. */
   crumbleAt: 16, pitLen: [3.5, 5],
   /** In the cave, rocks hang from the ceiling (their shadow on the road) and fall when Benny is `rockLand` m away: then a
@@ -160,7 +155,7 @@ export type StrikeKind = 'lane' | 'spin' | 'slide' | 'jump' | 'pound' | 'shock' 
 
 /** A thing on the road. `lane` is 0 to `lanes - 1`; a wall coin's lane is -1 (left wall) or `lanes` (right wall). */
 /** A thing on the road; `up` is how high a coin floats (a coin arc over a barrier), for the drawing only. */
-export interface RunEntity {id: number; kind: RunKind; lane: number; z: number; power?: RunPower; sky?: boolean; hopAt?: number; up?: number; beside?: boolean; cross?: -1 | 1; crossAt?: number; rock?: 'up' | 'down'; geyser?: 'idle' | 'up'; rolling?: boolean; snow?: boolean; cart?: boolean; gold?: boolean}
+export interface RunEntity {id: number; kind: RunKind; lane: number; z: number; power?: RunPower; sky?: boolean; up?: number; beside?: boolean; rock?: 'up' | 'down'; geyser?: 'idle' | 'up'; rolling?: boolean; snow?: boolean; cart?: boolean; gold?: boolean}
 export interface WallSegment {side: Side; from: number; to: number; runnable: boolean}
 export type RunEvent =
   | {type: 'strike'; entity: RunEntity; points: number; combo: number; multiplier: number; by: StrikeKind; roll?: number}
@@ -426,7 +421,6 @@ function layWalls(g: BennyRun): void {
 export const isGoldenPot = (id: number) => Math.imul(id, 2654435761) >>> 0 < 2 ** 32 / C.goldEvery;
 const add = (g: BennyRun, kind: RunKind, lane: number, z: number, extra: Partial<RunEntity> = {}) => {
   const e: RunEntity = {id: g.nextId++, kind, lane, z, ...extra};
-  if (kind === 'ember') e.hopAt = g.at + C.emberHopMs;
   if (kind === 'pot' && isGoldenPot(e.id)) e.gold = true;
   g.entities.push(e); return e;
 };
@@ -437,7 +431,7 @@ export const wallLane = (g: BennyRun, side: Side) => side === 'left' ? -1 : g.la
 const across = (g: BennyRun) => g.wall ? wallLane(g, g.wall.side) : g.lane;
 const others = (g: BennyRun, n: number) => { const l = laneList(g); for (let i = l.length - 1; i > 0; i--) { const j = Math.floor(random(g) * (i + 1)); [l[i], l[j]] = [l[j], l[i]]; } return l.slice(0, n); };
 
-export type RunPattern = 'stairs' | 'coins' | 'arc' | 'slalom' | 'pots' | 'gauntlet' | 'pair' | 'tunnel' | 'barriers' | 'pillars' | 'wall' | 'flyers' | 'breather' | 'hole' | 'skittles' | 'wide' | 'platform' | 'crossers' | 'crumble' | 'rockfall' | 'geysers' | 'gust' | 'burrow' | 'wallTrail' | 'fireballs' | 'carts' | 'spring';
+export type RunPattern = 'stairs' | 'coins' | 'arc' | 'slalom' | 'pots' | 'gauntlet' | 'pair' | 'tunnel' | 'barriers' | 'pillars' | 'wall' | 'flyers' | 'breather' | 'hole' | 'skittles' | 'wide' | 'platform' | 'crumble' | 'rockfall' | 'geysers' | 'gust' | 'burrow' | 'wallTrail' | 'fireballs' | 'carts' | 'spring';
 /**
  * The road is laid out in short patterns rather than one thing at a time, so that it has a rhythm: a slalom of pots to chain
  * lane strikes into a combo, a row of creatures one side then the other, a pair of creatures on both sides for the spinning
@@ -447,12 +441,12 @@ export type RunPattern = 'stairs' | 'coins' | 'arc' | 'slalom' | 'pots' | 'gaunt
  */
 const PATTERNS: Record<RunPattern, [number, number]> = {
   coins: [4, 1.5], stairs: [.6, 1.2], arc: [2, 2], slalom: [3, 3], pots: [3, 1.5], gauntlet: [1.5, 3.5], pair: [.5, 2.5], tunnel: [1, 2], barriers: [1, 2],
-  pillars: [1.5, 2.5], spring: [.5, 1.2], wall: [0, 2], flyers: [0, 2.5], breather: [2, .8], hole: [0, 2.2], skittles: [1.5, 2], wide: [0, 1.2], platform: [.4, 1.4], crossers: [0, 1.6], crumble: [.2, 1.1], rockfall: [1.5, 2.5], geysers: [1.2, 2], gust: [1.2, 1.8], burrow: [.2, .8], wallTrail: [.8, 1.4], fireballs: [.6, 1.6], carts: [.4, 1],
+  pillars: [1.5, 2.5], spring: [.5, 1.2], wall: [0, 2], flyers: [0, 2.5], breather: [2, .8], hole: [0, 2.2], skittles: [1.5, 2], wide: [0, 1.2], platform: [.4, 1.4], crumble: [.2, 1.1], rockfall: [1.5, 2.5], geysers: [1.2, 2], gust: [1.2, 1.8], burrow: [.2, .8], wallTrail: [.8, 1.4], fireballs: [.6, 1.6], carts: [.4, 1],
 };
 function choosePattern(g: BennyRun, z: number): RunPattern {
   const d = runDifficulty(g), list = (Object.keys(PATTERNS) as RunPattern[]).filter(p => (p !== 'flyers' || d >= C.flyerFrom) && (p !== 'pair' || d >= .2) && (p !== 'hole' || d >= .08) &&
     (p !== 'wall' || (d > .25 && wallSide(g, z))) &&
-    (p !== 'platform' || d >= .1) && (p !== 'spring' || d >= .1) && (p !== 'crossers' || d >= .2) && (p !== 'crumble' || d >= .12) && (p !== 'burrow' || d >= .2) && (p !== 'carts' || (d >= .15 && settingAt(g, z) === 'grotte' && settingAt(g, z + 40) === 'grotte')) && (p !== 'fireballs' || (d >= .1 && (['pont', 'montagne'] as RunSetting[]).some(s => settingAt(g, z) === s && settingAt(g, z + 40) === s))) && (p !== 'wallTrail' || (d >= .05 && trailSide(g, z) !== undefined)) && (p !== 'gust' || (d >= .06 && settingAt(g, z) === 'montagne' && settingAt(g, z + 30) === 'montagne')) && (p !== 'geysers' || (d >= .06 && settingAt(g, z) === 'pont' && settingAt(g, z + 40) === 'pont')) && (p !== 'rockfall' || (d >= .06 && settingAt(g, z) === 'grotte' && settingAt(g, z + 40) === 'grotte')) && (p !== 'wide' || (d >= C.wideFrom && g.baseLanes < C.wideLanes && !g.zones.some(w => w.to > z - 100))));
+    (p !== 'platform' || d >= .1) && (p !== 'spring' || d >= .1) && (p !== 'crumble' || d >= .12) && (p !== 'burrow' || d >= .2) && (p !== 'carts' || (d >= .15 && settingAt(g, z) === 'grotte' && settingAt(g, z + 40) === 'grotte')) && (p !== 'fireballs' || (d >= .1 && (['pont', 'montagne'] as RunSetting[]).some(s => settingAt(g, z) === s && settingAt(g, z + 40) === s))) && (p !== 'wallTrail' || (d >= .05 && trailSide(g, z) !== undefined)) && (p !== 'gust' || (d >= .06 && settingAt(g, z) === 'montagne' && settingAt(g, z + 30) === 'montagne')) && (p !== 'geysers' || (d >= .06 && settingAt(g, z) === 'pont' && settingAt(g, z + 40) === 'pont')) && (p !== 'rockfall' || (d >= .06 && settingAt(g, z) === 'grotte' && settingAt(g, z + 40) === 'grotte')) && (p !== 'wide' || (d >= C.wideFrom && g.baseLanes < C.wideLanes && !g.zones.some(w => w.to > z - 100))));
   // The « run on walls » challenge: a row of pillars (the way on is up a wall) comes one time in two meanwhile.
   if (g.challenge?.kind === 'walls' && wallSide(g, z) && random(g) < C.wallChallengeNudge) return 'wall';
   const weight = (p: RunPattern) => PATTERNS[p][0] + (PATTERNS[p][1] - PATTERNS[p][0]) * d;
@@ -502,10 +496,12 @@ function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
       return z + (count - 1) * (step + 2);
     }
     case 'pair': {
-      // A creature on each side of the middle lane: the spinning wand strikes both. A coin in the middle draws Benny there.
-      const middle = Math.floor(g.lanes / 2); add(g, 'coin', middle, z - 4); add(g, 'coin', middle, z - 2);
-      // Creatures that stay put (an ember would hop into the middle lane).
-      const still = ['dragonnet', 'chest'] as const; add(g, pick(g, still), middle - 1, z + 2); add(g, pick(g, still), middle + 1, z + 2);
+      // Two creatures in neighbouring lanes, side by side (never with a lane empty between them), and coins in the free lane that draw
+      // Benny there.
+      const a = pick(g, all.filter(l => l + 1 < g.lanes)), free = pick(g, all.filter(l => l !== a && l !== a + 1));
+      add(g, 'coin', free, z - 4); add(g, 'coin', free, z - 2);
+      // Creatures that stay put.
+      const still = ['dragonnet', 'chest'] as const; add(g, pick(g, still), a, z + 2); add(g, pick(g, still), a + 1, z + 2);
       return z + 2;
     }
     case 'carts': {
@@ -634,13 +630,6 @@ function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
         lane = lane + 1 < g.lanes ? lane + 1 : lane - 1; at += len + 6;
       }
       return at;
-    }
-    case 'crossers': {
-      // One or two awake dragonnets waddling across the road, a coin trail between them.
-      const count = random(g) < .4 + .4 * d ? 2 : 1;
-      for (let i = 0; i < count; i++) { const lane = i ? g.lanes - 1 : 0, dir = i ? -1 : 1; add(g, 'dragonnet', lane, z + i * 9, {cross: dir, crossAt: g.at + C.crossMs * (1 + random(g))}); }
-      for (let k = 0; k < 3; k++) add(g, 'coin', Math.floor(g.lanes / 2), z - 6 + k * 2);
-      return z + (count - 1) * 9 + 2;
     }
     case 'stairs': {
       // A stretch of stairs up along one lane, its flat top, and the stairs down: Benny walks them, no jump.
@@ -965,14 +954,6 @@ function tick(g: BennyRun): void {
   if (g.queuedJumpUntil && !inAir(g) && !g.wall) { const fresh = g.at <= g.queuedJumpUntil; g.queuedJumpUntil = 0; if (fresh) runInput(g, g.at, 'up'); }
   for (const e of g.entities) if (e.rock === 'up' && e.z - g.distance <= C.rockLand) { e.rock = 'down'; g.events.push({type: 'rockfall', entity: e}); }
   for (const e of g.entities) if (e.geyser === 'idle' && e.z - g.distance <= C.geyserAt) { e.geyser = 'up'; g.events.push({type: 'geyser', entity: e}); }
-  for (const e of g.entities) if (e.cross && e.crossAt !== undefined && g.at >= e.crossAt) {
-    e.crossAt = g.at + C.crossMs;
-    if (e.z - g.distance > C.crossStill) { const n = lanesAt(g, e.z); if (e.lane + e.cross < 0 || e.lane + e.cross > n - 1) e.cross = -e.cross as -1 | 1; e.lane += e.cross; }
-  }
-  for (const e of g.entities) if (e.kind === 'ember' && e.hopAt !== undefined && g.at >= e.hopAt) {
-    e.hopAt = g.at + C.emberHopMs;
-    if (e.z - g.distance > C.emberStill) { const n = lanesAt(g, e.z); e.lane = pick(g, [e.lane - 1, e.lane + 1].filter(l => l >= 0 && l < n)); }
-  }
   // Fireballs roll towards Benny once she is near (their way this tick counts for the meeting below).
   const roll = (e: RunEntity) => e.rolling ? (e.cart ? C.cartSpeed : C.fireSpeed) * dt : 0;
   for (const e of g.entities) if (e.kind === 'fireball' && e.z - g.distance < C.fireFrom) { e.rolling = true; e.z -= roll(e); }

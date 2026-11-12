@@ -127,6 +127,17 @@ describe('Cours cours Benny ! rules', () => {
     low.ledges.push({lane: 1, from: v - 5, to: v + 60, top: .4});
     runInput(low, low.at, 'right'); expect(low.lane).toBe(1);
   });
+  it('never lays two creatures in one row with an empty lane between them: side by side only', () => {
+    const kinds = ['dragonnet', 'chest', 'ember', 'flyer'];
+    for (let seed = 1; seed <= 6; seed++) {
+      const g = startBennyRun(0, seed * 104729); const rows = new Map<string, number[]>(); let t = 0;
+      while (g.distance < 1500 && t < 1_000_000) {
+        t += 16; advanceBennyRun(g, t); if (g.over) g.over = false; // Measured on a run that goes on.
+        for (const e of g.entities) if (kinds.includes(e.kind)) rows.set(e.z.toFixed(1), [...(rows.get(e.z.toFixed(1)) ?? []), e.lane]);
+      }
+      for (const lanes of rows.values()) { const s = [...new Set(lanes)].sort((a, b) => a - b); expect(s.every((l, i) => i === 0 || l - s[i - 1] <= 1)).toBe(true); }
+    }
+  });
   it('lets a flying monster hover over the road: running under it does nothing, only a jump through its height strikes it', () => {
     const g = quiet(); run(g, C.introMs);
     place(g, 'flyer', g.lane, 1); run(g, 400); expect(g).toMatchObject({lastBumpAt: null, foes: 0}); // Passed under, on the ground.
@@ -261,9 +272,9 @@ describe('Cours cours Benny ! rules', () => {
     // Every row of pillars leaves a lane free, or has a runnable wall beside it (the wall pattern).
     const rows = new Map<number, number[]>(); for (const e of all) if (e.kind === 'pillar') rows.set(e.z, [...(rows.get(e.z) ?? []), e.lane]);
     for (const [z, lanes] of rows) if (lanes.length >= (width.get(z) ?? g.lanes)) expect(g.walls.length >= 0 && all.some(e => e.kind === 'wallCoin' && Math.abs(e.z - z) < 8)).toBe(true);
-    // Never two creatures side by side in the same row but for the spin pair (one on each side of the middle lane).
+    // Creatures in one row fill neighbouring lanes only: never a lane empty between two of them.
     const foeRows = new Map<number, number[]>(); for (const e of all) if (['dragonnet', 'chest', 'ember', 'flyer'].includes(e.kind)) foeRows.set(e.z, [...(foeRows.get(e.z) ?? []), e.lane]);
-    for (const [z, lanes] of foeRows) if (lanes.length > 1) { const middle = Math.floor((width.get(z) ?? 3) / 2); expect(lanes.sort()).toEqual([middle - 1, middle + 1]); }
+    for (const lanes of foeRows.values()) { const s = [...lanes].sort((x, y) => x - y); expect(s[s.length - 1] - s[0]).toBe(s.length - 1); }
     // The road widens to five lanes now and then.
     expect(wide || [...width.values()].includes(5)).toBe(true);
   });
@@ -413,12 +424,9 @@ describe('Cours cours Benny ! rules', () => {
     runInput(h, h.at, 'right'); expect(h.raised).toBeNull(); expect(h.lane).toBe(2); expect(inAir(h)).toBe(true);
     run(h, 800); expect(runHeight(h)).toBe(0);
     run(h, 3000); expect(h.platforms.every(p => p.to > h.distance - 10)).toBe(true); expect(h.raised).toBeNull();
-  });  it('lets an awake dragonnet waddle across the road from far off, turning back at the edge, and stop when Benny is near', () => {
-    const g = quiet(); const e = place(g, 'dragonnet', 1, 60, {cross: 1, crossAt: g.at});
-    run(g, C.crossMs * .5); expect(e.lane).toBe(2);
-    run(g, C.crossMs); expect(e.lane).toBe(1);
-    run(g, (e.z - g.distance - C.crossStill + 2) / g.speed * 1000); const still = e.lane;
-    run(g, C.crossMs * 1.5); expect(e.lane).toBe(still);
+  });  it('never moves a creature sideways: a dragonnet, an ember or any other stays in its lane', () => {
+    const g = quiet(); const e = place(g, 'dragonnet', 1, 60); place(g, 'ember', 2, 30);
+    run(g, 6000); expect(e.lane).toBe(1); expect(g.entities.filter(o => o.kind === 'ember').every(o => o.lane === 2)).toBe(true);
   });
   it('opens a pit where cracked slabs give way as Benny comes: over it unharmed, into it a bump and a scramble out', () => {
     const g = quiet(); run(g, C.introMs); const z = g.distance;
