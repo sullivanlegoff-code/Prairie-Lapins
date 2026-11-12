@@ -10,7 +10,6 @@
 .benny-run-score { font-size: 1.6rem; min-width: 4ch; }
 /* The strikes in a row, big in the middle under the top bar. */
 .benny-run-combo { position: absolute; left: 0; right: 0; top: calc(100% + 4px); text-align: center; font-size: 1.9rem; color: #ffe36b !important; }
-.benny-run-combo.benny-run-series { color: #9dff8a !important; font-size: 1.5rem; white-space: nowrap; }
 .benny-run-metres { flex: 1; text-align: right; }
 .benny-run-top button { pointer-events: auto; min-height: 44px; padding: 0 14px; border-radius: 14px; border: 2px solid #6b5a3a; background: #fff8e8; font-weight: 800; }
 .benny-run-power { color: #e7d1ff !important; order: 10; flex-basis: 100%; font-size: .95rem; }
@@ -49,9 +48,6 @@
 .benny-run-how { display: grid; gap: 10px; }
 .benny-run-how[hidden] { display: none; }
 /* The combo's time left, a bar under its count; the pause button beside Quitter. */
-.benny-run-combo-bar { position: absolute; left: 50%; top: calc(100% + 2.9rem); width: 120px; height: 6px; margin-left: -60px; border-radius: 3px; background: rgba(59,36,20,.55); overflow: hidden; }
-.benny-run-combo-bar[hidden] { display: none; }
-.benny-run-combo-bar span { display: block; height: 100%; background: #ffe36b; }
 .benny-run-top [data-benny-run-pause] { margin-left: auto; min-width: 44px; padding: 0 10px; }
 .benny-run-top [data-benny-run-exit] { min-width: 44px; padding: 0 10px; }
 /* The score once the record is beaten during the run. */

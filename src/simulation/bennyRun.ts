@@ -936,8 +936,8 @@ function tick(g: BennyRun): void {
     const end = g.upcoming.z; g.entities = g.entities.filter(e => !((e.rock || e.geyser || e.kind === 'fireball') && e.z >= end)); g.gusts = g.gusts.filter(w => w.z < end);
   }
   followLanes(g); followPlatform(g);
-  // On a wall the combo keeps going (it is not added to).
-  if (g.wall && g.combo) g.comboUntil = Math.max(g.comboUntil, g.at + C.comboMs);
+  // A combo waits while she rolls, is in the air or on a wall: it ends only when she runs on the track doing nothing.
+  if (g.combo && (g.wall || inAir(g) || g.pound || g.at < g.slideUntil)) g.comboUntil = Math.max(g.comboUntil, g.at + C.comboMs);
   if (g.upcoming && g.distance >= g.upcoming.z) { g.setting = g.upcoming.setting; g.upcoming = null; g.events.push({type: 'setting', setting: g.setting}); }
   // Landing: a ground charge breaks the pots and creatures just ahead in Benny's lane; from high up, a shock wave strikes all around.
   // Falling onto a creature's head with a downward swipe: it breaks, and she rebounds off it.
@@ -1039,6 +1039,14 @@ function shareScore(g: BennyRun): void {
 }
 
 /** One of the player's gestures, at `now`. */
+/** Benny lands in lane `target` (from `from`, with a step `step`): the wand strikes every pot or creature within reach in that lane (owner:
+ * two creatures in the lane, both fall at once); with a creature on her other side as well, she spins and strikes it. */
+function arrive(g: BennyRun, from: number, target: number, step: number): void {
+  g.lane = target; g.laneChangedAt = g.at; g.laneFrom = from;
+  const first = nearest(g, target, reach(g)), behind = first ? nearest(g, from - step, reach(g), isFoe) : undefined;
+  for (let hit = first; hit; hit = nearest(g, target, reach(g))) strike(g, hit, 'lane');
+  if (behind && isFoe(first!)) strike(g, behind, 'spin');
+}
 export function runInput(g: BennyRun, now: number, input: RunInput): void {
   advanceBennyRun(g, now);
   if (g.over) return;
@@ -1047,7 +1055,8 @@ export function runInput(g: BennyRun, now: number, input: RunInput): void {
       const step = input === 'left' ? -1 : 1, side: Side = input;
       // Off the wall by swiping away from it, striking on the way down what waits in the edge lane.
       if (g.wall && holeAt(g)) { if (g.wall.side !== side) leap(g); return; }
-      if (g.wall) { if (g.wall.side !== side) { endWall(g); const hit = nearest(g, g.lane, reach(g)); if (hit) strike(g, hit, 'lane'); } return; }
+      // Off the wall by swiping away from it: she comes down into the next lane at once, striking what is there.
+      if (g.wall) { if (g.wall.side !== side) { const from = g.lane; endWall(g); if (g.lane + step >= 0 && g.lane + step <= g.lanes - 1) arrive(g, from, g.lane + step, step); } return; }
       const target = g.lane + step;
       if (target < 0 || target > g.lanes - 1) {
         if (runnableAt(g, side, g.distance) && !powerActive(g, 'flight')) {
@@ -1060,12 +1069,7 @@ export function runInput(g: BennyRun, now: number, input: RunInput): void {
       // Stairs: a step sideways only when the step is low enough; a higher ledge needs a jump (in the air, any lane is fine).
       if (!inAir(g) && ledgeHeight(g, target, g.distance) - floorHeight(g) > C.stepMax) { g.events.push({type: 'blocked'}); return; }
       if (g.raised) dropOff(g);
-      const from = g.lane; g.lane = target; g.laneChangedAt = g.at; g.laneFrom = from;
-      // The wand: changing lanes towards a pot or creatures strikes every one of them within reach in the lane she moves into
-      // (owner: two creatures in the lane, both fall at once); with a creature on her other side as well, she spins and strikes it.
-      const first = nearest(g, target, reach(g)), behind = first ? nearest(g, from - step, reach(g), isFoe) : undefined;
-      for (let hit = first; hit; hit = nearest(g, target, reach(g))) strike(g, hit, 'lane');
-      if (behind && isFoe(first!)) strike(g, behind, 'spin');
+      const from = g.lane; arrive(g, from, target, step);
       return;
     }
     case 'up':
@@ -1089,7 +1093,8 @@ export function runInput(g: BennyRun, now: number, input: RunInput): void {
       // A roll (the owner's « roulade »): it strikes with the wand what is just ahead in the lane, and anything met while rolling; it
       // passes under a beam.
       g.slideUntil = g.at + C.slideMs; g.rollHits = 0;
-      const hit = nearest(g, g.lane, reach(g));
+      // The roll strikes only what touches Benny's own hit-box, not what is ahead of her.
+      const hit = nearest(g, g.lane, C.hitHalf);
       if (hit) strike(g, hit, 'slide');
       return;
     }

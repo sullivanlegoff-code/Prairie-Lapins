@@ -56,13 +56,15 @@ describe('Cours cours Benny ! rules', () => {
     place(g, 'beam', 1, 3); runInput(g, g.at, 'up'); run(g, 400);
     expect(types(g)).toEqual(['bump']);
   });
-  it('strikes with a slide (swipe down) what is ahead in the lane, and what it slides into', () => {
+  it('strikes with a slide (swipe down) only what touches the hit-box of Benny, and what it slides into', () => {
     const g = quiet(); run(g, C.introMs);
-    place(g, 'chest', 1, 5); runInput(g, g.at, 'down');
-    expect(g).toMatchObject({foes: 1, lastBumpAt: null}); expect(g.entities).toHaveLength(0);
-    run(g, 800); place(g, 'ember', 1, 9); run(g, 300); runInput(g, g.at, 'down'); run(g, 600);
+    place(g, 'chest', 1, 5); runInput(g, g.at, 'down'); expect(g).toMatchObject({foes: 0}); // Ahead, out of her hit-box: no strike.
+    g.entities = [];
+    run(g, 800); place(g, 'chest', 1, 0.3); runInput(g, g.at, 'down');
+    expect(g).toMatchObject({foes: 1, lastBumpAt: null});
+    run(g, 800); place(g, 'ember', 1, 0.3); runInput(g, g.at, 'down'); run(g, 600);
     expect(g).toMatchObject({foes: 2, lastBumpAt: null});
-    place(g, 'pot', 1, 3); runInput(g, g.at, 'down'); expect(g.pots).toBe(1);
+    place(g, 'pot', 1, 0.3); runInput(g, g.at, 'down'); expect(g.pots).toBe(1);
   });
   it('is struck by a creature she passes without striking it: in her lane even when jumping, in the next lane, not two lanes away nor from a wall', () => {
     const g = quiet(); run(g, C.introMs);
@@ -84,7 +86,7 @@ describe('Cours cours Benny ! rules', () => {
     run(g, 300); runInput(g, g.at, 'up');
     expect(g).toMatchObject({wall: null, lane: 0, wallRuns: 1}); expect(g.airUntil).toBeGreaterThan(g.at);
     run(g, C.jumpMs); runInput(g, g.at, 'left'); expect(g.wall?.side).toBe('left');
-    runInput(g, g.at, 'right'); expect(g).toMatchObject({wall: null, lane: 0, wallRuns: 2});
+    runInput(g, g.at, 'right'); expect(g).toMatchObject({wall: null, lane: 1, wallRuns: 2}); // Down into the next lane, at once.
   });
   it('leaves a wall with a ground charge whose shock wave strikes every lane around her; a charge from a jump does not', () => {
     const g = quiet(); runInput(g, g.at, 'left'); runInput(g, g.at, 'left'); run(g, 300);
@@ -111,7 +113,7 @@ describe('Cours cours Benny ! rules', () => {
     place(g, 'flyer', 2, 5); runInput(g, g.at, 'right'); expect(g.foes).toBe(1);
     place(g, 'flyer', 2, 5); runInput(g, g.at, 'up'); expect(g.foes).toBe(2);
     run(g, C.jumpMs + 50);
-    place(g, 'flyer', 2, 5); runInput(g, g.at, 'down'); expect(g.foes).toBe(3);
+    place(g, 'flyer', 2, 0.3); runInput(g, g.at, 'down'); expect(g.foes).toBe(3);
     expect(g.lastBumpAt).toBeNull();
   });
   it('walks up stairs without a jump, and steps sideways only onto a low step', () => {
@@ -135,8 +137,8 @@ describe('Cours cours Benny ! rules', () => {
     place(g, 'chest', 0, 3); run(g, 500); expect(g.lastBumpAt).toBeNull(); // A creature on the ground does not reach the wall.
     place(g, 'flyer', 0, 3); run(g, 500); expect(g.lastBumpAt).not.toBeNull();
     run(g, C.dragonMs); runInput(g, g.at, 'right'); runInput(g, g.at, 'left'); runInput(g, g.at, 'left'); expect(g.wall?.side).toBe('left');
-    place(g, 'flyer', 0, 4); runInput(g, g.at, 'right');
-    expect(g).toMatchObject({wall: null, lane: 0}); expect(g.entities.some(e => e.kind === 'flyer')).toBe(false);
+    place(g, 'flyer', 1, 4); runInput(g, g.at, 'right');
+    expect(g).toMatchObject({wall: null, lane: 1}); expect(g.entities.some(e => e.kind === 'flyer')).toBe(false);
   });
   it('takes any number of lanes: five lanes, Benny in the middle, walls past the edges', () => {
     const g = quiet(7, 5); expect(g).toMatchObject({lanes: 5, lane: 2});
@@ -156,10 +158,10 @@ describe('Cours cours Benny ! rules', () => {
     // From the ground, the same jump stays low: no shock wave.
     const h = quiet(); runInput(h, h.at, 'up'); run(h, 300); runInput(h, h.at, 'down'); run(h, 300); expect(types(h)).not.toContain('shockwave');
   });
-  it('swiping away from the wall strikes a creature waiting in the lane she lands in', () => {
+  it('swiping away from the wall comes down into the middle lane at once, and strikes what waits there', () => {
     const g = quiet(); run(g, C.introMs); runInput(g, g.at, 'right'); runInput(g, g.at, 'right'); expect(g.wall?.side).toBe('right');
-    place(g, 'chest', 2, 4); runInput(g, g.at, 'left');
-    expect(g).toMatchObject({wall: null, lane: 2, foes: 1}); run(g, 800); expect(g.lastBumpAt).toBeNull();
+    place(g, 'chest', 1, 4); runInput(g, g.at, 'left');
+    expect(g).toMatchObject({wall: null, lane: 1, foes: 1}); run(g, 800); expect(g.lastBumpAt).toBeNull();
   });
   it('spares Benny from a creature she only comes beside at the last moment: she had no time to strike it', () => {
     const g = quiet();
@@ -276,7 +278,8 @@ describe('Cours cours Benny ! rules', () => {
     until(3); runInput(g, g.at, 'up'); run(g, 500); expect(tutorialStep(g)).toBe('roll');
     until(4); runInput(g, g.at, 'down'); run(g, 500); expect(tutorialStep(g)).toBe('front');
     until(-1); run(g, 300); expect(g.over).toBe(false); expect(g.lastBumpAt).toBeNull(); expect(tutorialStep(g)).toBe('front'); // A bump: no Dragon.
-    until(5); runInput(g, g.at, 'down'); run(g, 20); expect(tutorialStep(g)).toBe('flyer');
+    until(5); const chest = g.entities.find(e => e.kind === 'chest')!; chest.z = g.distance + C.hitHalf * .5; // Rolled into, at the body.
+    runInput(g, g.at, 'down'); run(g, 20); expect(tutorialStep(g)).toBe('flyer');
     until(5); const flyer = g.entities.find(e => e.kind === 'flyer')!; runInput(g, g.at, flyer.lane < g.lane ? 'left' : 'right'); run(g, 20);
     expect(tutorialStep(g)).toBe('wall');
     const side = g.lane < 1.5 ? 'left' : 'right'; while (g.lane !== (side === 'left' ? 0 : 2)) runInput(g, g.at, side === 'left' ? 'left' : 'right');
@@ -544,11 +547,11 @@ describe('Cours cours Benny ! rules', () => {
     g.active!.until = g.at; run(g, 20); expect(g.entities.some(e => e.sky)).toBe(false);
   });
   it('banks a long series of strikes once it ends by itself, but not one broken by a bump', () => {
-    const g = quiet(); g.lane = 1; for (let i = 0; i < 6; i++) place(g, 'pot', 1, 2 + i * 6);
+    const g = quiet(); g.lane = 1; for (let i = 0; i < 6; i++) place(g, 'pot', 1, 0.3 + i * 2.5); // A row she rolls through.
     runInput(g, g.at, 'down'); run(g, 3300); expect(g.combo).toBe(6); takeRunEvents(g); const score = g.score;
-    run(g, C.comboMs); expect(takeRunEvents(g)).toContainEqual({type: 'series', length: 6, points: 6 * C.seriesPoints});
+    run(g, C.comboMs * 2); expect(takeRunEvents(g)).toContainEqual({type: 'series', length: 6, points: 6 * C.seriesPoints}); // The roll keeps the combo, then it ends.
     expect(g.score).toBe(score + 6 * C.seriesPoints); expect(g.combo).toBe(0);
-    for (let i = 0; i < 5; i++) place(g, 'pot', 1, 2 + i * 5); runInput(g, g.at, 'down'); run(g, 2300); expect(g.combo).toBe(5);
+    for (let i = 0; i < 5; i++) place(g, 'pot', 1, 0.3 + i * 2.5); runInput(g, g.at, 'down'); run(g, 2300); expect(g.combo).toBe(5);
     place(g, 'pillar', 1, 1); run(g, 300); run(g, C.comboMs); expect(takeRunEvents(g).some(e => e.type === 'series')).toBe(false);
   });
   it('glides down at the end of a flight, onto a clear spot', () => {
@@ -630,7 +633,7 @@ describe('golden pots', () => {
   });
   it('gives five times the points for a golden pot', () => {
     const g = quiet(); run(g, C.introMs);
-    place(g, 'pot', 1, 3, {gold: true}); runInput(g, g.at, 'down');
+    place(g, 'pot', 1, 0.3, {gold: true}); runInput(g, g.at, 'down');
     expect(g.score).toBe(C.points.pot * C.goldPot); expect(g.pots).toBe(1); expect(runSummary(g).goldPots).toBe(1);
   });
   it('picks up a Heart in its lane, and passes one in another lane', () => {

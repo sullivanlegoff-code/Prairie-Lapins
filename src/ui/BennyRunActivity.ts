@@ -1,6 +1,6 @@
 import '../display/benny-run.css';
 import {FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
-import {advanceBennyRun, BENNY_RUN, floorHeight, ledgeHeight, lanesAt, reach, settingAt, wallLane, comboMultiplier, dragonVisible, inAir, powerActive, runHeight, runInput, runSummary, sliding, startBennyRun, takeRunEvents,
+import {advanceBennyRun, BENNY_RUN, floorHeight, ledgeHeight, lanesAt, reach, settingAt, wallLane, dragonVisible, inAir, powerActive, runHeight, runInput, runSummary, sliding, startBennyRun, takeRunEvents,
   type BennyRun, type ChallengeKind, type RunEntity, type RunInput, type RunPower, type RunSetting, type RunSummary, type TutorialStep} from '../simulation/bennyRun';
 import {pausableClock, settleCard} from './activityPause';
 import RUN_ART from '../config/bennyRunArt.json';
@@ -77,7 +77,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const time = pausableClock(options.clock ?? (() => performance.now())), clock = time.now, frame = options.frame ?? (step => requestAnimationFrame(step));
   const layer = document.createElement('div'); layer.className = 'benny-run-activity'; layer.hidden = true;
   layer.setAttribute('role', 'dialog'); layer.setAttribute('aria-modal', 'true'); layer.setAttribute('aria-label', 'Cours cours Benny !');
-  layer.innerHTML = `<div class="benny-run-top"><p class="benny-run-score" aria-live="polite"></p><p class="benny-run-combo"></p><div class="benny-run-combo-bar" aria-hidden="true"><span></span></div><p class="benny-run-metres"></p><p class="benny-run-coins"></p><p class="benny-run-hearts" hidden></p>
+  layer.innerHTML = `<div class="benny-run-top"><p class="benny-run-score" aria-live="polite"></p><p class="benny-run-combo"></p><p class="benny-run-metres"></p><p class="benny-run-coins"></p><p class="benny-run-hearts" hidden></p>
 <p class="benny-run-power"></p><button type="button" data-benny-run-pause aria-label="Pause">❚❚</button><button type="button" data-benny-run-exit aria-label="Quitter">✕</button><p class="benny-run-danger" hidden></p></div>
 <div class="benny-run-quest" hidden><p class="benny-run-challenge"></p><div class="benny-run-quest-bar" aria-hidden="true"><span></span></div></div>
 <canvas class="benny-run-canvas" data-benny-run-canvas></canvas>
@@ -90,7 +90,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const canvas = $<HTMLCanvasElement>('[data-benny-run-canvas]'), card = $<HTMLElement>('[data-benny-run-card]'), pop = $<HTMLElement>('.benny-run-pop');
   const score = $<HTMLElement>('.benny-run-score'), combo = $<HTMLElement>('.benny-run-combo'), metres = $<HTMLElement>('.benny-run-metres'), coins = $<HTMLElement>('.benny-run-coins'), hearts = $<HTMLElement>('.benny-run-hearts');
   const challengeLine = $<HTMLElement>('.benny-run-challenge'), quest = $<HTMLElement>('.benny-run-quest'), questFill = $<HTMLElement>('.benny-run-quest-bar span');
-  const coach = $<HTMLElement>('.benny-run-coach'), danger = $<HTMLElement>('.benny-run-danger'), comboBar = $<HTMLElement>('.benny-run-combo-bar'), comboFill = $<HTMLElement>('.benny-run-combo-bar span');
+  const coach = $<HTMLElement>('.benny-run-coach'), danger = $<HTMLElement>('.benny-run-danger');
   const powerLine = $<HTMLElement>('.benny-run-power'), turn = $<HTMLElement>('[data-benny-run-turn]');
   const sideways = () => window.innerWidth > window.innerHeight;
   const context = canvas.getContext('2d');
@@ -242,7 +242,6 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   function hud(): void {
     const g = game; if (!g) return;
     hints(g);
-    const multiplier = g.at <= g.comboUntil ? comboMultiplier(g.combo) : 1;
     score.textContent = `${g.score}`;
     // Beating the record during the run: said at once, with confetti, and the score turns gold.
     if (!beaten && runBest > 0 && g.score > runBest && !g.tutorial) {
@@ -258,11 +257,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (metresBest > 0 && !metresBeaten && g.distance > metresBest) { metresBeaten = true; flash('Plus loin que jamais !', false, true); sound('power', 1.2); }
     if (reached > milestone && !g.tutorial && reached % 1000) { milestone = reached; flash(`${reached} m !`); sound('coin', 1.5); }
     // Hidden while the tutorial's advice is up (they would overlap).
-    combo.textContent = coach.hidden && g.combo > 1 && g.at <= g.comboUntil ? `${g.combo} coups${multiplier > 1 ? ` · ×${multiplier}` : ''}${g.combo >= BENNY_RUN.seriesMin ? ` · +${g.combo * BENNY_RUN.seriesPoints} en jeu` : ''}` : '';
-    // The series bonus waiting at the end of the combo (banked if no bump).
-    combo.classList.toggle('benny-run-series', g.combo >= BENNY_RUN.seriesMin);
-    // The time left to keep the combo going.
-    comboBar.hidden = !combo.textContent; if (combo.textContent) comboFill.style.width = `${Math.max(0, Math.min(1, (g.comboUntil - g.at) / BENNY_RUN.comboMs)) * 100}%`;
+    // A combo shows only its count of hits (owner: no bar, nothing else).
+    combo.textContent = coach.hidden && g.combo > 1 && g.at <= g.comboUntil ? `${g.combo} coups` : '';
     metres.textContent = `${Math.floor(g.distance)} m`; coins.textContent = `${g.coins}`; coins.setAttribute('aria-label', plural(g.coins, 'pièce'));
     // The Hearts won so far in this run, shown once there is one.
     hearts.hidden = g.hearts === 0; hearts.textContent = `${g.hearts}`; hearts.setAttribute('aria-label', plural(g.hearts, 'cœur'));
@@ -883,7 +879,6 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         if (event.entity.gold) { burst(p.x, p.y, ['#fff3a0', '#f4c430', '#ffffff'], 26, 380); flash(`Pot doré ! +${event.points}`); }
         if (event.entity.kind === 'pot') { burst(p.x, p.y, ['#c96b3a', '#e08a52', '#8a4a26', '#a8542a', '#f4c430'], 22, 320); burst(p.x, p.y, ['rgba(220,180,140,.8)'], 6, 90); sound('pot', pitch); }
         else { burst(p.x, p.y, ['#fff', '#e7d1ff', '#ffb3c8', '#ffe36b'], 12, 220); sound('strike', pitch); }
-        if (event.multiplier > 1 && event.combo === (event.multiplier - 1) * BENNY_RUN.comboStep + 1) { flash(`Combo ×${event.multiplier} !`); sound('power'); }
         // A creature lands harder than a pot: a longer freeze, a bigger ring.
         rings.push({x: p.x, y: p.y - p.s * .4, at: clock(), size: p.s * (event.entity.kind === 'pot' ? .9 : 1.4)});
         // A shock wave's strikes ring and score but neither freeze nor shake the run.
@@ -901,7 +896,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         break;
       case 'wallEnd': flashes.push({at: clock(), text: `Mur +${event.points}`, x: width / 2}); if (event.trail) { flash(`Traînée parfaite : ${event.trail} pièces !`); sound('power', 1.1); } break;
       case 'wallLeap': flashes.push({at: clock(), text: `Saut de mur +${event.points}`, x: width / 2}); sound('wall', 1 + .06 * Math.min(6, event.chain - 1));
-        if (event.chain >= 2) flash(event.chain === 2 ? 'Double bond !' : event.chain === 3 ? 'Triple bond !' : `Bonds ×${event.chain} !`); shakeFor('strike'); break;
+        shakeFor('strike'); break;
       case 'fall': flash(event.onto ? 'Ouf ! Benny se rattrape au mur !' : 'Ouf ! Benny ressort du trou !'); break;
       // The shock wave: a ring and a sound only, no slow motion and no shake (it must not slow the run down).
       case 'shockwave': shock = clock(); flash('Onde de choc !'); sound('shock'); break;
