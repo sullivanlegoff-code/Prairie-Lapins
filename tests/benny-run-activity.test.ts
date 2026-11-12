@@ -60,14 +60,15 @@ describe('« Cours cours Benny ! » screen', () => {
     step(900); const after = g.at; step(160); const full = g.at - after;
     expect(g.foes).toBe(3); expect(slow).toBeLessThan(full * .6); expect(full).toBeGreaterThan(140);
   });
-  it('answers a swipe mid-stroke, a second one in the same stroke, but not one long swipe twice', () => {
+  it('answers one move per finger down: a turn without lifting the finger does nothing, a new touch answers again', () => {
     const {activity, step} = mount(50);
     document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);
     const g = activity.game!, canvas = document.querySelector('canvas')!, lane = g.lane;
     const at = (type: string, x: number, y: number) => canvas.dispatchEvent(new PointerEvent(type, {bubbles: true, clientX: x, clientY: y, pointerId: 1}));
     at('pointerdown', 100, 300); at('pointermove', 125, 300); expect(g.lane).toBe(lane + 1);
     at('pointermove', 160, 300); expect(g.lane).toBe(lane + 1); // Still the same swipe, a little longer.
-    at('pointermove', 160, 270); at('pointerup', 160, 270); expect(g.airUntil).toBeGreaterThan(g.at); // Then up, without lifting.
+    at('pointermove', 160, 270); at('pointerup', 160, 270); expect(g.airUntil).toBeLessThanOrEqual(g.at); // Then up, without lifting: nothing.
+    at('pointerdown', 200, 300); at('pointermove', 200, 260); at('pointerup', 200, 260); expect(g.airUntil).toBeGreaterThan(g.at); // A new touch: up.
   });
   it('moves one lane per swipe: holding the finger and going on the same way does not move her again', () => {
     const {activity, step} = mount(50);

@@ -1109,26 +1109,24 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     next();
   }
 
-  // Gestures, like arrows: one swipe is one move. A swipe fires as soon as the finger has moved far enough; holding the finger and
-  // going on the same way never moves Benny again (owner: « un glissement = un déplacement »). A turn without lifting the finger
-  // (left then up in one stroke) is a new move, measured from where the finger turned.
-  let touch: {x: number; y: number; id: number; last: RunInput | null} | null = null;
+  // Gestures, like arrows: one finger down is one move at most (owner: « un glissement = un déplacement, on ne doit pas pouvoir
+  // jouer en laissant le doigt enfoncé »). The move fires as soon as the finger has moved far enough; after that, nothing more
+  // counts until the finger is lifted, turns included.
+  let touch: {x: number; y: number; id: number; moved: boolean} | null = null;
   const way = (dx: number, dy: number): RunInput => Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'left' : 'right') : (dy < 0 ? 'up' : 'down');
   canvas.addEventListener('pointerdown', event => {
     // A tap skips the end scene.
     if (ending) { event.preventDefault(); const done = ending.done; ending = null; done(); return; }
-    event.preventDefault(); touch = {x: event.clientX, y: event.clientY, id: event.pointerId, last: null}; }, {signal: abort.signal});
+    event.preventDefault(); touch = {x: event.clientX, y: event.clientY, id: event.pointerId, moved: false}; }, {signal: abort.signal});
   canvas.addEventListener('pointermove', event => {
-    if (!touch || touch.id !== event.pointerId) return;
-    const dx = event.clientX - touch.x, dy = event.clientY - touch.y, far = Math.max(Math.abs(dx), Math.abs(dy)), dir = way(dx, dy);
-    // Still going the same way: no new move; the start follows the finger, so a turn is measured from here.
-    if (dir === touch.last) { touch.x = event.clientX; touch.y = event.clientY; return; }
+    if (!touch || touch.id !== event.pointerId || touch.moved) return;
+    const dx = event.clientX - touch.x, dy = event.clientY - touch.y, far = Math.max(Math.abs(dx), Math.abs(dy));
     if (far < SWIPE) return;
-    touch = {x: event.clientX, y: event.clientY, id: touch.id, last: dir}; input(dir);
+    touch.moved = true; input(way(dx, dy));
   }, {signal: abort.signal});
   canvas.addEventListener('pointerup', event => {
     // A short flick lifted before reaching the swipe distance still counts.
-    if (touch && touch.id === event.pointerId && touch.last === null) {
+    if (touch && touch.id === event.pointerId && !touch.moved) {
       const dx = event.clientX - touch.x, dy = event.clientY - touch.y;
       if (Math.max(Math.abs(dx), Math.abs(dy)) >= FLICK) input(way(dx, dy));
     }
