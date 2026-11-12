@@ -222,9 +222,9 @@ describe('Cours cours Benny ! rules', () => {
   });
   it('lays the road out in varied patterns: pot slaloms, rows of creatures, coin arcs over barriers, and always a way through', () => {
     const g = startBennyRun(0, 3), seen = new Map<number, RunEntity>(), width = new Map<number, number>(); let wide = false;
-    for (let t = 0; t < 200_000; t += 250) { for (const e of g.entities) { seen.set(e.id, e); width.set(e.z, lanesAt(g, e.z)); } g.entities = g.entities.filter(e => e.z > g.distance + 20); advanceBennyRun(g, t); }
+    for (let t = 0; t < 200_000; t += 250) { for (const e of g.entities) { seen.set(e.id, e); width.set(e.z, lanesAt(g, e.z)); } g.entities = g.entities.filter(e => e.z > g.distance + 20); g.pits = g.pits.filter(p => p.from > g.distance + 20); g.holes = g.holes.filter(h => h.from > g.distance + 20); advanceBennyRun(g, t); }
     // More runs for the rarer things (the powers, the flying monsters).
-    for (const seed of [4, 5]) { const g2 = startBennyRun(0, seed); for (let t = 0; t < 200_000; t += 250) { for (const e of g2.entities) seen.set(-e.id - seed * 1e6, {...e, z: -1e7 - e.id - seed * 1e6}); g2.entities = g2.entities.filter(e => e.z > g2.distance + 20); advanceBennyRun(g2, t); if (g2.zones.length) wide = true; } }
+    for (const seed of [4, 5]) { const g2 = startBennyRun(0, seed); for (let t = 0; t < 200_000; t += 250) { for (const e of g2.entities) seen.set(-e.id - seed * 1e6, {...e, z: -1e7 - e.id - seed * 1e6}); g2.entities = g2.entities.filter(e => e.z > g2.distance + 20); g2.pits = g2.pits.filter(p => p.from > g2.distance + 20); g2.holes = g2.holes.filter(h => h.from > g2.distance + 20); advanceBennyRun(g2, t); if (g2.zones.length) wide = true; } }
     const all = [...seen.values()], kinds = new Set(all.map(e => e.kind));
     for (const kind of ['coin', 'pot', 'barrier', 'beam', 'pillar', 'dragonnet', 'chest', 'ember', 'flyer', 'power'] as const) expect(kinds).toContain(kind);
     expect(all.some(e => e.kind === 'coin' && (e.up ?? 0) > 1)).toBe(true); // A coin arc.
@@ -440,6 +440,15 @@ describe('Cours cours Benny ! rules', () => {
     takeRunEvents(g); run(g, 2000); expect(takeRunEvents(g).filter(e => e.type === 'faster')).toEqual([{type: 'faster', pace: 1}]);
     run(g, C.overtimeMs); expect(g.speed).toBeGreaterThan(top + C.overtimeSpeed * .9); expect(g.pace).toBe(2);
     run(g, C.overtimeMs * 6); expect(g.pace).toBe(C.overtimeMax); expect(g.speed).toBeCloseTo(top + C.overtimeSpeed * C.overtimeMax, 1);
+  });
+  it('slides all the way through a long tunnel of logs with a single roll', () => {
+    const g = quiet(); run(g, C.introMs); const z = g.distance + 20;
+    for (let k = 0; k <= 30; k += C.burrowStep) g.entities.push({id: 71000 + k * 2, kind: 'beam', lane: 1, z: z + k});
+    while (z - g.distance > 1.5) run(g, 10);
+    runInput(g, g.at, 'down'); while (g.distance < z + 31) run(g, 10);
+    expect(g.lastBumpAt).toBeNull();
+    // Without the tunnel, a roll ends after its usual time.
+    runInput(g, g.at, 'down'); run(g, C.slideMs + 50); expect(g.at < g.slideUntil).toBe(false);
   });
   it('lays rockfalls only in the cave, always leaving one lane free', () => {
     for (const seed of [3, 4, 5]) {
