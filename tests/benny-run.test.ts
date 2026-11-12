@@ -485,6 +485,14 @@ describe('Cours cours Benny ! rules', () => {
     const end = takeRunEvents(g).find(e => e.type === 'wallEnd');
     expect(end).toMatchObject({trail: 7, points: C.points.wallRun + 7 * C.points.wallTrail});
   });
+  it('charges with the « Ruée »: faster, smashing all in her lane, leaping gaps', () => {
+    const g = quiet(); run(g, C.introMs); const plain = g.speed;
+    place(g, 'power', 1, 2, {power: 'dash'}); run(g, 300); expect(g.active?.power).toBe('dash'); expect(g.speed).toBeCloseTo(plain * C.dashSpeed, 0);
+    place(g, 'pillar', 1, 4); place(g, 'chest', 1, 8); place(g, 'barrier', 1, 12); g.holes.push({from: g.distance + 16, to: g.distance + 19});
+    const score = g.score; run(g, 1500);
+    expect(g.lastBumpAt).toBeNull(); expect(g.foes).toBe(1); expect(g.score).toBeGreaterThan(score + 2 * C.dashSmash);
+    run(g, C.powers.dash); expect(g.active).toBeNull();
+  });
   it('lays rockfalls only in the cave, always leaving one lane free', () => {
     let total = 0;
     for (const seed of [3, 4, 5]) {

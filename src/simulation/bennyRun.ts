@@ -88,7 +88,9 @@ export const BENNY_RUN = {
   /** Things are laid out to `spawnAhead` m ahead, the first at `firstAt` m, then every `gapStart` m down to `gapMin` m. */
   spawnAhead: 90, firstAt: 30, gapStart: 22, gapMin: 11,
   /** Share of coin lines carrying a power, and how long each power lasts once picked up (the bubble lasts until a bump, at most this). */
-  powerChance: .25, powers: {magnet: 8000, bubble: 20_000, double: 10_000, flight: 6000},
+  powerChance: .25, powers: {magnet: 8000, bubble: 20_000, double: 10_000, flight: 6000, dash: 3500},
+  /** The « Ruée »: Benny charges this much faster and smashes all in her lane (gaps leapt), a pillar or a fence worth `dashSmash` points. */
+  dashSpeed: 1.4, dashSmash: 15,
   /** Share of the creatures that are little flying monsters, once the run is `flyerFrom` into its speed ramp. */
   flyerShare: .3, flyerFrom: .15,
   /** A mischievous ember hops to a neighbouring lane every `emberHopMs`, but only while farther than `emberStill` m. */
@@ -124,7 +126,7 @@ export type RunKind = 'coin' | 'wallCoin' | 'power' | 'pot' | 'barrier' | 'beam'
 export const RUN_FOES: readonly RunFoe[] = ['dragonnet', 'chest', 'ember'];
 export type RunInput = 'left' | 'right' | 'up' | 'down';
 export type Side = 'left' | 'right';
-export type StrikeKind = 'lane' | 'spin' | 'slide' | 'jump' | 'pound' | 'shock' | 'throw';
+export type StrikeKind = 'lane' | 'spin' | 'slide' | 'jump' | 'pound' | 'shock' | 'throw' | 'dash';
 
 /** A thing on the road. `lane` is 0 to `lanes - 1`; a wall coin's lane is -1 (left wall) or `lanes` (right wall). */
 /** A thing on the road; `up` is how high a coin floats (a coin arc over a barrier), for the drawing only. */
@@ -628,7 +630,7 @@ export const pitAt = (g: BennyRun, lane = g.lane, z = g.distance) => g.pits.find
 /** Slabs giving way as Benny comes; into one: a bump, then she scrambles out (a hop over the rest). */
 function followPits(g: BennyRun): void {
   for (const p of g.pits) if (!p.open && p.from - g.distance <= C.crumbleAt) { p.open = true; g.events.push({type: 'crumble', pit: p}); }
-  const pit = !g.wall && !g.raised && !inAir(g) && !powerActive(g, 'flight') ? pitAt(g) : undefined;
+  const pit = !g.wall && !g.raised && !inAir(g) && !powerActive(g, 'flight') && !powerActive(g, 'dash') ? pitAt(g) : undefined;
   if (pit) {
     g.slideUntil = 0; g.pound = false;
     bump(g, {id: g.nextId++, kind: 'hole', lane: g.lane, z: g.distance});
@@ -665,7 +667,7 @@ function strike(g: BennyRun, e: RunEntity, by: StrikeKind): void {
   } else { g.foes++; gainCoins(g, e, 2); }
   g.events.push({type: 'strike', entity: e, points, combo: g.combo, multiplier, by});
   // A pot struck flies on along its lane (not one broken by a ground charge or its shock wave, nor one a flying pot knocks over).
-  if (e.kind === 'pot' && by !== 'pound' && by !== 'shock' && by !== 'throw') add(g, 'thrownPot', e.lane, Math.max(e.z, g.distance + .5), {flyTo: Math.max(e.z, g.distance) + C.throwRange});
+  if (e.kind === 'pot' && by !== 'pound' && by !== 'shock' && by !== 'throw' && by !== 'dash') add(g, 'thrownPot', e.lane, Math.max(e.z, g.distance + .5), {flyTo: Math.max(e.z, g.distance) + C.throwRange});
 }
 /** The flying pots: like a bowling ball, each knocks over every pot and creature it reaches in its lane, then breaks at the end of its run. */
 function flyPots(g: BennyRun, dt: number): void {
@@ -739,6 +741,11 @@ function meet(g: BennyRun, e: RunEntity): void {
     return;
   }
   if (e.lane !== g.lane || g.wall || g.raised || powerActive(g, 'flight')) return;
+  // Charging: pots and creatures struck, fences, logs and pillars smashed.
+  if (powerActive(g, 'dash') && e.kind !== 'thrownPot') {
+    if (e.kind === 'pot' || isFoe(e)) { strike(g, e, 'dash'); return; }
+    g.entities = g.entities.filter(o => o !== e); g.score = Math.min(C.maxScore, g.score + C.dashSmash); g.events.push({type: 'cleared', entity: e, points: C.dashSmash}); return;
+  }
   // In the air at all (even just taking off or about to land) clears a barrier or a pot.
   const high = inAir(g) || runHeight(g) > C.clearHeight;
   switch (e.kind) {
@@ -760,7 +767,7 @@ function tick(g: BennyRun): void {
   if (g.active && g.at >= g.active.until) { if (g.active.power === 'flight') landFromFlight(g); g.active = null; }
   const base = C.speedStart + (C.speedMax - C.speedStart) * (1 - (1 - runDifficulty(g)) ** C.speedEase) + C.overtimeSpeed * runOvertime(g);
   if (runDifficulty(g) >= 1 && g.pace < Math.min(C.overtimeMax, 1 + Math.floor(runOvertime(g)))) { g.pace++; g.events.push({type: 'faster', pace: g.pace}); }
-  g.speed = base * (g.at < g.stumbleUntil ? C.stumbleSlow : 1);
+  g.speed = base * (g.at < g.stumbleUntil ? C.stumbleSlow : 1) * (powerActive(g, 'dash') ? C.dashSpeed : 1);
   const before = g.distance; g.distance += g.speed * dt;
   // A new setting is chosen ahead, then reached.
   if (g.at >= g.nextSettingAt && !g.upcoming) {
@@ -780,7 +787,7 @@ function tick(g: BennyRun): void {
   }
   // Over a gap, the run on a wall does not run out.
   if (g.wall && ((g.at >= g.wall.until && !holeAt(g)) || !runnableAt(g, g.wall.side, g.distance))) endWall(g);
-  if (!g.wall && !g.raised && !inAir(g) && !powerActive(g, 'flight') && holeAt(g)) fall(g);
+  if (!g.wall && !g.raised && !inAir(g) && !powerActive(g, 'flight') && !powerActive(g, 'dash') && holeAt(g)) fall(g);
   if (!g.over) followPits(g);
   followGusts(g);
   // Under a tunnel of logs, a roll goes on while there is another log just ahead: one long slide.

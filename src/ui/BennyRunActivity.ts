@@ -25,7 +25,7 @@ const CHALLENGE_TEXT: Record<ChallengeKind, (goal: number) => string> = {
   pots: n => `frappe ${n} pots`, coins: n => `ramasse ${n} pièces`, foes: n => `frappe ${n} créatures`, walls: n => `cours sur ${n} murs`, combo: n => `fais un combo de ${n}`,
   clean: n => `cours ${n} m sans choc`, dodges: n => `saute ou passe dessous ${n} fois`,
 };
-const POWER_NAMES: Record<RunPower, string> = {magnet: 'Aimant', bubble: 'Bulle arc-en-ciel', double: 'Pièces doublées', flight: 'Envol'};
+const POWER_NAMES: Record<RunPower, string> = {magnet: 'Aimant', bubble: 'Bulle arc-en-ciel', double: 'Pièces doublées', flight: 'Envol', dash: 'Ruée'};
 /** A swipe fires once the finger has moved this far; a quick flick lifted sooner still counts from `FLICK` px. */
 const SWIPE = 18, FLICK = 10;
 export type RunSound = 'strike' | 'pot' | 'coin' | 'bump' | 'jump' | 'roll' | 'shock' | 'wall' | 'power' | 'caught';
@@ -488,6 +488,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
           case 'double':
             c.fillStyle = '#f4c430'; c.beginPath(); c.arc(x, cy, r * .55, 0, Math.PI * 2); c.fill();
             c.fillStyle = '#7a4a10'; c.font = `900 ${Math.round(Math.max(8, r * .6))}px system-ui`; c.textAlign = 'center'; c.fillText('×2', x, cy + r * .2); break;
+          case 'dash':
+            c.strokeStyle = '#ff8a2a'; c.lineWidth = Math.max(2, r * .16); for (const dx of [-.3, .1]) { c.beginPath(); c.moveTo(x + dx * r, cy - r * .4); c.lineTo(x + (dx + .3) * r, cy); c.lineTo(x + dx * r, cy + r * .4); c.stroke(); } break;
           case 'flight':
             c.fillStyle = '#fff'; for (const dir of [-1, 1]) { c.beginPath(); c.ellipse(x + dir * r * .3, cy, r * .35, r * .18, dir * -.5, 0, Math.PI * 2); c.fill(); c.beginPath(); c.ellipse(x + dir * r * .35, cy + r * .2, r * .25, r * .12, dir * -.3, 0, Math.PI * 2); c.fill(); } break;
         }
@@ -503,7 +505,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const FOES = new Set(['dragonnet', 'chest', 'ember', 'flyer']);
   function threatening(g: BennyRun, e: RunEntity): boolean {
     const ahead = e.z - g.distance, across = g.wall ? wallLane(g, g.wall.side) : g.lane;
-    if (!FOES.has(e.kind) || ahead <= 0 || ahead > Math.max(reach(g), g.speed * 1.4) || powerActive(g, 'flight')) return false;
+    if (!FOES.has(e.kind) || ahead <= 0 || ahead > Math.max(reach(g), g.speed * 1.4) || powerActive(g, 'flight') || powerActive(g, 'dash')) return false;
     return g.wall ? e.kind === 'flyer' && Math.abs(e.lane - across) === 1 : Math.abs(e.lane - across) <= 1;
   }
   /** Benny's landings: when she last touched down (a squash and a puff of dust), and whether she was in the air last frame. */
@@ -550,6 +552,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         c.fillStyle = '#f2b8a0'; c.beginPath(); c.ellipse(0, -.26 * s, w * .05, .22 * s, 0, 0, Math.PI * 2); c.fill(); c.restore(); }
     } else { c.fillStyle = '#7d6a5a'; c.fillRect(-w * .28, -h / 2 - .2 * s, w * .14, .25 * s); c.fillRect(w * .14, -h / 2 - .2 * s, w * .14, .25 * s); }
     c.fillStyle = '#fff8ee'; c.beginPath(); c.arc(0, h * .3, w * .14, 0, Math.PI * 2); c.fill();
+    // Charging: a fiery aura that flickers.
+    if (powerActive(g, 'dash')) { c.strokeStyle = `rgba(255,${120 + Math.floor(Math.sin(now / 40) * 40)},40,.85)`; c.lineWidth = 5; c.beginPath(); c.ellipse(0, h * .1, w * .8, h * .7, 0, 0, Math.PI * 2); c.stroke(); }
     if (powerActive(g, 'bubble')) { c.strokeStyle = 'rgba(180,140,255,.8)'; c.lineWidth = 4; c.beginPath(); c.arc(0, 0, w * .85, 0, Math.PI * 2); c.stroke(); }
     c.restore();
     if (!inAir(g) && !wall && !powerActive(g, 'flight')) { c.fillStyle = 'rgba(0,0,0,.18)'; c.beginPath(); c.ellipse(p.x, project(x, 0, floorHeight(g)).y, w * .55, s * .12, 0, 0, Math.PI * 2); c.fill(); }
