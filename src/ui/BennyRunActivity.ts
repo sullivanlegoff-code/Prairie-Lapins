@@ -3,6 +3,14 @@ import {FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
 import {advanceBennyRun, BENNY_RUN, floorHeight, lanesAt, reach, settingAt, wallLane, comboMultiplier, dragonVisible, inAir, powerActive, runHeight, runInput, runSummary, sliding, startBennyRun, takeRunEvents,
   type BennyRun, type ChallengeKind, type RunEntity, type RunInput, type RunPower, type RunSetting, type RunSummary, type TutorialStep} from '../simulation/bennyRun';
 import {pausableClock, settleCard} from './activityPause';
+import RUN_ART from '../config/bennyRunArt.json';
+
+/** The paintings' frames (scripts/prepare-benny-run-art.mjs): Benny's square stands her on its bottom, the Dragon's is centred on her body. */
+type PaintedName = 'benny' | 'dragon';
+/** Painted Benny's square, in Benny's sizes (her shape was one size tall): the drawing, ears up, fills about four fifths of it. */
+const PAINTED_BENNY = 1.85;
+/** The Dragon's flight from behind: her two wing beats, each held this long. */
+const WING_BEAT = 120;
 
 /**
  * « Cours cours Benny ! » (src/simulation/bennyRun.ts holds the rules): a full-screen layer like « Le vol de Benny ». This is the
@@ -110,6 +118,22 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   /** The game's own time: the clock, less what the slow motions have held back. */
   let slowLost = 0, slowUntil = 0, lastLoopAt = 0;
   const gameTime = () => clock() - slowLost;
+  // The paintings (owner's picks of 12 November 2026: Benny A seen from behind, the evolved Dragon A): drawn once loaded, the shapes
+  // stand in until then (and in tests, where no picture loads).
+  const art: Record<PaintedName, {image: HTMLImageElement | null; ready: boolean}> = {benny: {image: null, ready: false}, dragon: {image: null, ready: false}};
+  function loadArt(): void {
+    for (const name of ['benny', 'dragon'] as const) {
+      if (art[name].image) continue;
+      const image = new Image(); image.decoding = 'async'; image.onload = () => { art[name].ready = true; };
+      image.src = `${import.meta.env.BASE_URL}${RUN_ART[name].image}`; art[name].image = image;
+    }
+  }
+  /** One frame of a painting, its anchor (Benny's feet, the Dragon's body) at (x, y), `side` wide, mirrored if asked. */
+  function paint(c: CanvasRenderingContext2D, name: PaintedName, frame: string, x: number, y: number, side: number, mirror = false): void {
+    const image = art[name].image, at = (RUN_ART[name].frames as Record<string, number[]>)[frame], size = RUN_ART[name].size; if (!image || !at) return;
+    c.save(); c.translate(x, y); if (mirror) c.scale(-1, 1);
+    c.drawImage(image, at[0], at[1], size, size, -side / 2, RUN_ART[name].anchor === 'feet' ? -side * .97 : -side / 2, side, side); c.restore();
+  }
   const slowMo = (ms: number) => { const now = clock(); if (now > slowUntil + 900) slowUntil = now + ms; };
   const shakeFor = (kind: keyof typeof SHAKES) => { const s = SHAKES[kind]; if (!shake || shake.px <= s.px || clock() - shake.at > shake.ms) shake = {at: clock(), ...s}; };
   let rings: {x: number; y: number; at: number; size: number; ground?: boolean}[] = [];
@@ -643,12 +667,19 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const squash = 1 - .2 * land + .1 * rising;
     c.save(); c.translate(p.x, p.y - h / 2 - bob + h / 2 * (1 - squash));
     if (flat) c.rotate((g.slideUntil - g.at) / 90);
-    else if (wall) c.rotate(wall.side === 'left' ? -1.1 : 1.1);
+    else if (wall) { if (!art.benny.ready) c.rotate(wall.side === 'left' ? -1.1 : 1.1); }
     // Off a springboard: a whole somersault at the top of the bounce (not once a ground charge has started).
     else if (inAir(g) && g.airUntil === g.bounceUntil && !g.pound) { const k = (g.at - g.airFrom) / (g.airUntil - g.airFrom); c.rotate(lean + Math.PI * 2 * Math.min(1, Math.max(0, (k - .15) / .6))); }
     else c.rotate(lean);
     if (!flat) c.scale(1 / Math.sqrt(squash), squash);
     if (g.at < g.stumbleUntil && Math.floor(now / 80) % 2) c.globalAlpha = .45;
+    // Painted: her pose for the moment (the wall pose leans onto a wall on her right, mirrored for the left one; the strike swings
+    // her wand the way she moved), standing on her feet.
+    if (art.benny.ready) {
+      const pose = flat ? 'roll' : wall ? 'wall' : inAir(g) || powerActive(g, 'flight') ? 'jump' : swing && now - swing.at < 180 ? 'strike' : Math.sin(stride) > 0 ? 'run-1' : 'run-2';
+      const mirror = wall ? wall.side === 'left' : pose === 'strike' && g.lane < g.laneFrom;
+      paint(c, 'benny', pose, 0, flat ? h * .45 : h / 2, s * PAINTED_BENNY * (flat ? .8 : 1), mirror);
+    } else {
     if (!flat) {
       // Back paws, one up as the other pushes (tucked in the air).
       c.fillStyle = '#c4834a';
@@ -673,6 +704,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         c.fillStyle = '#f2b8a0'; c.beginPath(); c.ellipse(0, -.26 * s, w * .05, .22 * s, 0, 0, Math.PI * 2); c.fill(); c.restore(); }
     } else { c.fillStyle = '#7d6a5a'; c.fillRect(-w * .28, -h / 2 - .2 * s, w * .14, .25 * s); c.fillRect(w * .14, -h / 2 - .2 * s, w * .14, .25 * s); }
     c.fillStyle = '#fff8ee'; c.beginPath(); c.arc(0, h * .3, w * .14, 0, Math.PI * 2); c.fill();
+    }
     const fading = g.active !== null && g.active.until - g.at < POWER_ENDING && Math.floor(now / 90) % 2 === 1;
     // Charging: a fiery aura that flickers.
     if (powerActive(g, 'dash') && !fading) { c.strokeStyle = `rgba(255,${120 + Math.floor(Math.sin(now / 40) * 40)},40,.85)`; c.lineWidth = 5; c.beginPath(); c.ellipse(0, h * .1, w * .8, h * .7, 0, 0, Math.PI * 2); c.stroke(); }
@@ -700,6 +732,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const side = viewLane > (lanes - 1) / 2 ? -1 : 1, x = laneX(viewLane) + side * 1.2, ahead = -3 - (1 - out) * 3;
     const p = project(x, ahead, 2.2 + Math.sin(g.at / 260) * .15), size = .85 * p.s;
     c.save(); c.globalAlpha = out;
+    // Painted: her flight seen from behind, wings up then down.
+    if (art.dragon.ready) { paint(c, 'dragon', Math.floor(g.at / WING_BEAT) % 2 ? 'fly-2' : 'fly-1', p.x, p.y, size * 4.4); c.restore(); return; }
     c.fillStyle = '#b58ad1';
     for (const dir of [-1, 1]) { c.beginPath(); c.moveTo(p.x + dir * size * .6, p.y); c.lineTo(p.x + dir * size * 1.6, p.y - size * .8 * Math.abs(Math.sin(g.at / 120))); c.lineTo(p.x + dir * size * .3, p.y - size * .3); c.fill(); }
     // Seen from behind: a tail swinging below, the body, a row of spines, the head with two horns (shapes until her painting).
@@ -908,31 +942,40 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     c.fillStyle = 'rgba(255,240,210,.18)'; c.beginPath(); c.ellipse(cx, ground + unit * .3, unit * 3.4, unit * .7, 0, 0, Math.PI * 2); c.fill();
     // The Dragon lands from above in the first half-second.
     const land = Math.min(1, t / 500), tug = Math.sin(Math.max(0, t - 500) / 140) * unit * .18 * (t < 2400 ? 1 : Math.max(0, 1 - (t - 2400) / 400));
-    const dx = cx + unit * 1.4, dy = ground - unit * .7 - (1 - land) * height * .5;
+    // Painted: the Dragon holding Benny (one picture), its middle at `centre`, dropping in from above.
+    const painted = art.dragon.ready, side = Math.min(width * .95, unit * 6.2), centre = ground + unit * .4 - (1 - land) * height * .5 - side / 2;
+    const dx = painted ? cx - unit * .5 : cx + unit * 1.4, dy = (painted ? ground - unit * 2.1 : ground - unit * .7) - (1 - land) * height * .5;
+    if (painted) {
+      c.save(); c.translate(cx, centre + side / 2); c.rotate(tug / unit * .08); paint(c, 'dragon', 'catch', 0, -side / 2, side); c.restore();
+    } else {
     c.fillStyle = '#b58ad1';
     for (const dir of [-1, 1]) { c.beginPath(); c.moveTo(dx + dir * unit * .4, dy - unit * .2); c.lineTo(dx + dir * unit * 1.2, dy - unit * (.9 + .3 * Math.abs(Math.sin(t / 110)))); c.lineTo(dx + dir * unit * .2, dy + unit * .1); c.fill(); }
     c.fillStyle = '#9c2f3c'; c.beginPath(); c.ellipse(dx, dy, unit * .75, unit * .65, 0, 0, Math.PI * 2); c.fill();
     c.fillStyle = '#fff'; c.beginPath(); c.arc(dx - unit * .25, dy - unit * .15, unit * .1, 0, Math.PI * 2); c.fill();
+    }
     // Benny, on the left, pulling the other way.
     const bx = cx - unit * 1.4 + tug * .5, by = ground - unit * .5;
-    c.fillStyle = '#d99a5b'; c.beginPath(); c.ellipse(bx, by, unit * .55, unit * .6, 0, 0, Math.PI * 2); c.fill();
-    c.fillStyle = '#7d6a5a'; c.fillRect(bx - unit * .3, by - unit * 1.05, unit * .14, unit * .5); c.fillRect(bx + unit * .12, by - unit * 1.05, unit * .14, unit * .5);
+    const speaker = (who: 'dragon' | 'benny') => painted ? (who === 'dragon' ? {x: cx - side * .1, y: centre - side * .35} : {x: cx + side * .3, y: centre - side * .02}) : (who === 'dragon' ? {x: dx, y: dy} : {x: bx, y: by});
+    if (!painted) { c.fillStyle = '#d99a5b'; c.beginPath(); c.ellipse(bx, by, unit * .55, unit * .6, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#7d6a5a'; c.fillRect(bx - unit * .3, by - unit * 1.05, unit * .14, unit * .5); c.fillRect(bx + unit * .12, by - unit * 1.05, unit * .14, unit * .5); }
     // The treasure bag between them, tugged one way then the other.
     const sx = cx + tug, sy = ground - unit * .45;
+    if (!painted) {
     c.strokeStyle = '#6e4a2a'; c.lineWidth = 3; c.beginPath(); c.moveTo(bx + unit * .4, by); c.lineTo(sx, sy); c.lineTo(dx - unit * .6, dy + unit * .1); c.stroke();
     c.fillStyle = '#c79a4a'; c.beginPath(); c.ellipse(sx, sy, unit * .42, unit * .38, 0, 0, Math.PI * 2); c.fill();
     c.fillStyle = '#f4c430'; for (let i = 0; i < 3; i++) { c.beginPath(); c.arc(sx - unit * .2 + i * unit * .2, sy - unit * .38, unit * .09, 0, Math.PI * 2); c.fill(); }
+    }
     // Puffs of smoke while they tug, then little hearts.
     for (let i = 0; i < 6; i++) {
       const k = ((t / 700 + i / 6) % 1), a = i * 1.7;
-      if (t > 500 && t < 2600) { c.globalAlpha = .5 * (1 - k); c.fillStyle = '#f2e6d8'; c.beginPath(); c.arc(sx + Math.cos(a) * unit * (.5 + k), sy - unit * .2 - k * unit, unit * (.15 + .2 * k), 0, Math.PI * 2); c.fill(); }
-      if (t > 2400) { c.globalAlpha = Math.max(0, 1 - k); c.fillStyle = '#ff8fb1'; c.font = `${Math.round(unit * .4)}px system-ui`; c.textAlign = 'center'; c.fillText('♥', sx + (i - 2.5) * unit * .4, sy - unit * (.6 + k * 1.4)); }
+      if (t > 500 && t < 2600 && !painted) { c.globalAlpha = .5 * (1 - k); c.fillStyle = '#f2e6d8'; c.beginPath(); c.arc(sx + Math.cos(a) * unit * (.5 + k), sy - unit * .2 - k * unit, unit * (.15 + .2 * k), 0, Math.PI * 2); c.fill(); }
+      if (t > 2400) { c.globalAlpha = Math.max(0, 1 - k); c.fillStyle = '#ff8fb1'; c.font = `${Math.round(unit * .4)}px system-ui`; c.textAlign = 'center'; c.fillText('♥', (painted ? cx + side * .28 : sx) + (i - 2.5) * unit * .4, (painted ? centre - side * .05 : sy) - unit * (.6 + k * 1.4)); }
     }
     c.globalAlpha = 1;
     // Speech bubbles.
     const said = SQUABBLE_LINES.filter(([at]) => t >= at).at(-1);
     if (said) {
-      const [, who, text] = said, x = who === 'dragon' ? dx : bx, y = (who === 'dragon' ? dy : by) - unit * 1.5;
+      const [, who, text] = said, x = speaker(who).x, y = speaker(who).y - unit * 1.5;
       c.font = `800 ${Math.round(Math.max(14, unit * .28))}px system-ui`; const w = Math.min(width - 24, c.measureText(text).width + 24), left = Math.max(12, Math.min(width - 12 - w, x - w / 2));
       c.fillStyle = '#fff8e8'; c.strokeStyle = '#6b5a3a'; c.lineWidth = 2; c.beginPath(); c.roundRect(left, y - unit * .45, w, unit * .7, 12); c.fill(); c.stroke();
       c.fillStyle = '#3b3326'; c.textAlign = 'center'; c.fillText(text, left + w / 2, y);
@@ -1076,7 +1119,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     get game() { return game; },
     element: layer,
     open() {
-      layer.hidden = false; window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: true}));
+      layer.hidden = false; window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: true})); loadArt();
       intro(); orientation(); $<HTMLButtonElement>('[data-benny-run-start]').focus();
     },
     close, input,

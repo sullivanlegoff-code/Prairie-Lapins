@@ -1,0 +1,60 @@
+{
+  "benny": {
+    "image": "assets/benny-run/benny.webp",
+    "size": 320,
+    "frames": {
+      "run-1": [
+        0,
+        0
+      ],
+      "run-2": [
+        320,
+        0
+      ],
+      "jump": [
+        640,
+        0
+      ],
+      "roll": [
+        0,
+        320
+      ],
+      "wall": [
+        320,
+        320
+      ],
+      "strike": [
+        640,
+        320
+      ]
+    },
+    "anchor": "feet",
+    "pockets": 0,
+    "bytes": 78364
+  },
+  "dragon": {
+    "image": "assets/benny-run/dragon.webp",
+    "size": 420,
+    "frames": {
+      "fly-1": [
+        0,
+        0
+      ],
+      "fly-2": [
+        420,
+        0
+      ],
+      "face": [
+        0,
+        420
+      ],
+      "catch": [
+        420,
+        420
+      ]
+    },
+    "anchor": "body",
+    "pockets": 0,
+    "bytes": 110462
+  }
+}

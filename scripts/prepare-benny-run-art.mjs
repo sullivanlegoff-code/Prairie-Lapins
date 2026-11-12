@@ -1,0 +1,156 @@
+// « Cours cours Benny ! »: Benny's and the Dragon's paintings for the run (owner's picks of 12 November 2026: Benny A, seen from
+// behind, and Dragon A, the evolved Dragon « Écarlate Majestueux » with its big wings). Node built-ins plus an installed Playwright
+// for the WebP encoding and the check board, like scripts/prepare-benny-flight.mjs.
+//
+//   PLAYWRIGHT_MODULE=<installed playwright module> node scripts/prepare-benny-run-art.mjs [--sources <folder>] [--reference <A1-reference.png>]
+//
+// The sources (default output/imagegen/course-benny-final-v1, ignored by Git) are two production sheets on pure white:
+// - sheet-benny.png: six poses left to right (run 1, run 2, jump, roll, wall, strike);
+// - sheet-dragon2.png (redone from the game's evolved Dragon itself at the owner's request): four pictures left to right (flight from behind wings up, wings down, face, the end scene).
+// 1. Each sheet is cut out of its white background (flood fill from the border, then white pockets closed in by the drawing).
+// 2. Benny's sheet is recoloured onto the approved A1 reference as a whole (one same correction for every pose: no flicker).
+// 3. The drawings are the sheet's big separate blots, left to right (specks dropped); each goes into a square: Benny standing on
+//    the square's bottom, centred; the Dragon centred on her body (the two wing beats keep the very same body place).
+// 4. Each square is reduced by the exact area filter and laid in a grid atlas per character (WebP), and
+//    src/config/bennyRunArt.json gives every frame's place and the square size.
+import {readFileSync, writeFileSync, mkdirSync, existsSync} from 'node:fs';
+import {createRequire} from 'node:module';
+import {fileURLToPath} from 'node:url';
+import {decodeRgbPng, cutOut} from './prepare-rabbit-masters.mjs';
+import {downscale, encodePng} from './derive-nursery-overlays.mjs';
+import {recolour, stats} from './benny-colour.mjs';
+
+process.chdir(fileURLToPath(new URL('..', import.meta.url)));
+const argument = name => { const at = process.argv.indexOf(name); return at > 0 ? process.argv[at + 1] : undefined; };
+const SOURCES = argument('--sources') ?? 'output/imagegen/course-benny-final-v1';
+const REFERENCE = argument('--reference') ?? 'output/imagegen/benny-enclos-final-v1/A1-reference.png';
+const TARGET = 'public/assets/benny-run', CONFIG = 'src/config/bennyRunArt.json';
+
+export const CHARACTERS = {
+  benny: {sheet: 'sheet-benny.png', frames: ['run-1', 'run-2', 'jump', 'roll', 'wall', 'strike'], size: 320, columns: 3, standing: true},
+  dragon: {sheet: 'sheet-dragon2.png', frames: ['fly-1', 'fly-2', 'face', 'catch'], size: 420, columns: 2, standing: false},
+};
+/** A blot smaller than this share of the biggest one is a speck (a stray stroke, a crumb), not a drawing. */
+const SPECK = .04;
+
+const read = file => decodeRgbPng(readFileSync(file));
+
+/** Pure white pockets the drawing closes in (between the legs, under an arm) become background too. */
+function clearPockets({width, height, pixels}) {
+  const seen = new Uint8Array(width * height), white = i => pixels[i * 4 + 3] === 255 && Math.min(pixels[i * 4], pixels[i * 4 + 1], pixels[i * 4 + 2]) >= 247
+    && Math.max(pixels[i * 4], pixels[i * 4 + 1], pixels[i * 4 + 2]) - Math.min(pixels[i * 4], pixels[i * 4 + 1], pixels[i * 4 + 2]) <= 5;
+  let cleared = 0;
+  for (let start = 0; start < width * height; start++) {
+    if (seen[start] || !white(start)) continue;
+    const pocket = [start]; seen[start] = 1;
+    for (let k = 0; k < pocket.length; k++) { const i = pocket[k], x = i % width;
+      for (const j of [i - width, i + width, x ? i - 1 : -1, x < width - 1 ? i + 1 : -1]) if (j >= 0 && j < width * height && !seen[j] && white(j)) { seen[j] = 1; pocket.push(j); } }
+    if (pocket.length >= 250) { for (const i of pocket) pixels[i * 4 + 3] = 0; cleared += pocket.length; }
+  }
+  return cleared;
+}
+
+/** The sheet's separate drawings (8-connected blots of visible pixels), left to right, specks dropped. */
+function blots({width, height, pixels}) {
+  const label = new Int32Array(width * height).fill(-1), found = [];
+  for (let start = 0; start < width * height; start++) {
+    if (label[start] >= 0 || pixels[start * 4 + 3] < 24) continue;
+    const id = found.length, stack = [start]; label[start] = id; let x0 = width, y0 = height, x1 = 0, y1 = 0, count = 0;
+    while (stack.length) { const i = stack.pop(), x = i % width, y = (i - x) / width; count++;
+      x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const nx = x + dx, ny = y + dy, j = ny * width + nx;
+        if (nx >= 0 && ny >= 0 && nx < width && ny < height && label[j] < 0 && pixels[j * 4 + 3] >= 24) { label[j] = id; stack.push(j); } } }
+    found.push({id, x0, y0, x1, y1, count});
+  }
+  const biggest = Math.max(...found.map(b => b.count));
+  return {label, list: found.filter(b => b.count >= biggest * SPECK).sort((a, b) => a.x0 - b.x0)};
+}
+
+/** One drawing alone (its own pixels only) in a square of `side`, its anchor at (ax, ay) of the square. */
+function square(image, label, blot, side, ax, ay, anchorX, anchorY) {
+  const out = {width: side, height: side, pixels: Buffer.alloc(side * side * 4)};
+  for (let y = blot.y0; y <= blot.y1; y++) for (let x = blot.x0; x <= blot.x1; x++) {
+    const i = y * image.width + x; if (label[i] !== blot.id) continue;
+    const tx = Math.round(x - anchorX + ax), ty = Math.round(y - anchorY + ay);
+    if (tx < 0 || ty < 0 || tx >= side || ty >= side) throw Error('A drawing does not fit its square');
+    image.pixels.copy(out.pixels, (ty * side + tx) * 4, i * 4, i * 4 + 4);
+  }
+  // The blot keeps its soft rim: the faint pixels around it (below the blot threshold) next to it come too.
+  for (let y = Math.max(0, blot.y0 - 2); y <= Math.min(image.height - 1, blot.y1 + 2); y++) for (let x = Math.max(0, blot.x0 - 2); x <= Math.min(image.width - 1, blot.x1 + 2); x++) {
+    const i = y * image.width + x; if (label[i] >= 0 || !image.pixels[i * 4 + 3]) continue;
+    const tx = Math.round(x - anchorX + ax), ty = Math.round(y - anchorY + ay);
+    if (tx >= 0 && ty >= 0 && tx < side && ty < side) image.pixels.copy(out.pixels, (ty * side + tx) * 4, i * 4, i * 4 + 4);
+  }
+  return out;
+}
+/** The middle of the body: the mean column of the visible pixels in the lower 45 % of the blot (wings stay above it). */
+function bodyCentre(image, label, blot) {
+  let sx = 0, sy = 0, n = 0; const from = blot.y0 + (blot.y1 - blot.y0) * .3, to = blot.y0 + (blot.y1 - blot.y0) * .75;
+  for (let y = Math.round(from); y <= to; y++) for (let x = blot.x0; x <= blot.x1; x++) if (label[y * image.width + x] === blot.id) { sx += x; sy += y; n++; }
+  return {x: sx / n, y: sy / n};
+}
+
+if (!existsSync(REFERENCE)) throw Error(`Missing ${REFERENCE}: give the approved A1 reference with --reference`);
+const reference = read(REFERENCE); cutOut(reference, 'light');
+const referenceStats = stats(reference);
+mkdirSync(TARGET, {recursive: true});
+const config = {}, atlases = {};
+for (const [name, character] of Object.entries(CHARACTERS)) {
+  const sheet = read(`${SOURCES}/${character.sheet}`);
+  cutOut(sheet, 'light'); const pockets = clearPockets(sheet);
+  if (name === 'benny') recolour(sheet, referenceStats);
+  const {label, list} = blots(sheet);
+  if (list.length !== character.frames.length) throw Error(`${character.sheet}: ${list.length} drawings found, ${character.frames.length} expected`);
+  // One square side per character, from its biggest drawing, with a margin.
+  const side = Math.ceil(Math.max(...list.map(b => Math.max(b.x1 - b.x0, b.y1 - b.y0) + 1)) * 1.08);
+  const frames = list.map((blot, k) => {
+    let image;
+    if (character.standing) image = square(sheet, label, blot, side, side / 2, side * .97, (blot.x0 + blot.x1) / 2, blot.y1);
+    else { const c = bodyCentre(sheet, label, blot); image = square(sheet, label, blot, side, side / 2, side / 2, c.x, c.y); }
+    return {name: character.frames[k], image: downscale(image, character.size)};
+  });
+  const columns = character.columns, rows = Math.ceil(frames.length / columns), S = character.size;
+  const atlas = {width: columns * S, height: rows * S, pixels: Buffer.alloc(columns * S * rows * S * 4)};
+  frames.forEach((frame, k) => { const ox = (k % columns) * S, oy = Math.floor(k / columns) * S;
+    for (let y = 0; y < S; y++) frame.image.pixels.copy(atlas.pixels, ((oy + y) * atlas.width + ox) * 4, y * S * 4, (y + 1) * S * 4); });
+  for (let i = 3; i < atlas.pixels.length; i += 4) if (!atlas.pixels[i]) atlas.pixels[i - 3] = atlas.pixels[i - 2] = atlas.pixels[i - 1] = 0;
+  atlases[name] = atlas;
+  config[name] = {image: `assets/benny-run/${name}.webp`, size: S, frames: Object.fromEntries(frames.map((f, k) => [f.name, [(k % columns) * S, Math.floor(k / columns) * S]])),
+    anchor: character.standing ? 'feet' : 'body', pockets};
+}
+
+const {chromium} = createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const browser = await chromium.launch();
+try {
+  const page = await browser.newPage();
+  const encoded = {};
+  for (const [name, atlas] of Object.entries(atlases)) {
+    encoded[name] = await page.evaluate(async ({png}) => {
+      const bytes = Uint8Array.from(atob(png), char => char.charCodeAt(0)), bitmap = await createImageBitmap(new Blob([bytes], {type: 'image/png'}), {premultiplyAlpha: 'none', colorSpaceConversion: 'none'});
+      const canvas = new OffscreenCanvas(bitmap.width, bitmap.height); canvas.getContext('2d').drawImage(bitmap, 0, 0);
+      const blob = await canvas.convertToBlob({type: 'image/webp', quality: .88}), buffer = new Uint8Array(await blob.arrayBuffer()); let text = '';
+      for (let i = 0; i < buffer.length; i += 0x8000) text += String.fromCharCode(...buffer.subarray(i, i + 0x8000));
+      return btoa(text);
+    }, {png: encodePng(atlas).toString('base64')});
+    writeFileSync(`${TARGET}/${name}.webp`, Buffer.from(encoded[name], 'base64'));
+    config[name].bytes = Buffer.from(encoded[name], 'base64').length;
+  }
+  // The check board for the owner, next to the sources: every frame on the run's three grounds.
+  await page.setViewportSize({width: 1400, height: 900});
+  await page.setContent('<!doctype html><meta charset="utf-8"><body style="margin:0"></body>');
+  const board = await page.evaluate(async ({encoded, config}) => {
+    const canvas = document.createElement('canvas'), cell = 200, names = Object.keys(config), columns = 6;
+    canvas.width = columns * cell; canvas.height = names.length * 3 * cell; const g = canvas.getContext('2d');
+    const grounds = ['#9a7a54', '#5a2a22', '#b9c4d2'];
+    let row = 0;
+    for (const name of names) {
+      const image = new Image(); image.src = `data:image/webp;base64,${encoded[name]}`; await image.decode();
+      for (const ground of grounds) { g.fillStyle = ground; g.fillRect(0, row * cell, canvas.width, cell);
+        Object.values(config[name].frames).forEach(([x, y], k) => g.drawImage(image, x, y, config[name].size, config[name].size, k * cell + 6, row * cell + 6, cell - 12, cell - 12)); row++; }
+    }
+    return canvas.toDataURL('image/png').split(',')[1];
+  }, {encoded, config});
+  writeFileSync(`${SOURCES}/planche-atlas-course.png`, Buffer.from(board, 'base64'));
+} finally { await browser.close(); }
+writeFileSync(CONFIG, JSON.stringify(config, null, 2) + '\n');
+console.log(JSON.stringify(Object.fromEntries(Object.entries(config).map(([k, v]) => [k, {bytes: v.bytes, pockets: v.pockets, frames: Object.keys(v.frames).length}]))));
