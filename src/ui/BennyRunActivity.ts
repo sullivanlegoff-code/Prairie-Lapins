@@ -28,6 +28,8 @@ const CHALLENGE_TEXT: Record<ChallengeKind, (goal: number) => string> = {
 };
 /** A hint the first time each newer obstacle comes into sight (once per device). */
 const FLASH_READ = 550;
+/** How far ahead (m) the magnet starts pulling the coins of the other lanes towards Benny. */
+const MAGNET_PULL = 10;
 /** A power's last moments (ms): its line and its aura blink. */
 const POWER_ENDING = 1000;
 /** The obstacles' words (« saute », « roulade ») stay until she has got past that kind this many times in the run. */
@@ -431,9 +433,13 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const shape = SHAPES[e.kind], ahead = e.z - g.distance; if (!shape || ahead > FAR || ahead < -3) return;
     // A creature changing lanes (an ember hopping, a dragonnet crossing) slides over rather than jumps.
     let shown = shownLanes.get(e.id) ?? e.lane; shown += (e.lane - shown) * Math.min(1, frameDt * 12); if (Math.abs(e.lane - shown) < .01) shown = e.lane; shownLanes.set(e.id, shown);
-    const n = lanesAt(g, e.z), x = e.lane < 0 ? -wallXAt(g, ahead) + .4 : e.lane > n - 1 ? wallXAt(g, ahead) - .4 : (shown - (n - 1) / 2) * LANE_WIDTH;
+    const n = lanesAt(g, e.z); let x = e.lane < 0 ? -wallXAt(g, ahead) + .4 : e.lane > n - 1 ? wallXAt(g, ahead) - .4 : (shown - (n - 1) / 2) * LANE_WIDTH;
     // The little flying monster keeps to Benny's height, a little above her head.
     let up = e.kind === 'flyer' ? bennyHeight(g) + .9 + Math.sin(g.at / 180 + e.id) * .08 : e.up ?? shape.up ?? 0;
+    // The magnet: the coins of the other lanes fly over to Benny in her last metres before them.
+    if (e.kind === 'coin' && e.lane !== g.lane && powerActive(g, 'magnet') && ahead < MAGNET_PULL) {
+      const pull = (1 - Math.max(0, ahead) / MAGNET_PULL) ** 2; x += (laneX(viewLane) - x) * pull; up += .5 * Math.sin(Math.PI * pull);
+    }
     // A rock up under the ceiling (its shadow on the road grows as it shakes loose), then falling fast.
     if (e.rock) {
       const fell = rocksDown.get(e.id), drop = e.rock === 'up' ? 1 : fell === undefined ? 0 : Math.max(0, 1 - (clock() - fell) / 160);
