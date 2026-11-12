@@ -30,6 +30,8 @@ const TARGET = 'public/assets/benny-run', CONFIG = 'src/config/bennyRunArt.json'
 
 export const CHARACTERS = {
   benny: {sheet: 'sheet-benny.png', frames: ['run-1', 'run-2', 'jump', 'roll', 'wall', 'strike'], size: 320, columns: 3, standing: true},
+  // Four more poses of Benny (owner's sheet of 13 Nov.): the wind-up of a strike, the landing, the fall, the push off the ground.
+  'benny-moves': {sheet: 'sheet-benny-moves.png', frames: ['windup', 'land', 'fall', 'push'], size: 320, columns: 4, standing: true},
   dragon: {sheet: 'sheet-dragon2.png', frames: ['fly-1', 'fly-2', 'face', 'catch'], size: 420, columns: 2, standing: false},
   // Two rows of four, each drawing fitted to its own square (they differ in size), standing on its bottom; the two pictures of
   // one creature share one square so it keeps its size from one picture to the next.
@@ -108,7 +110,7 @@ const config = {}, atlases = {};
 for (const [name, character] of Object.entries(CHARACTERS)) {
   const sheet = read(`${SOURCES}/${character.sheet}`);
   cutOut(sheet, 'light'); const pockets = clearPockets(sheet);
-  if (name === 'benny') recolour(sheet, referenceStats);
+  if (name === 'benny' || name === 'benny-moves') recolour(sheet, referenceStats);
   const {label, list} = blots(sheet, character.rows);
   if (list.length !== character.frames.length) throw Error(`${character.sheet}: ${list.length} drawings found, ${character.frames.length} expected`);
   const extent = b => Math.max(b.x1 - b.x0, b.y1 - b.y0) + 1;

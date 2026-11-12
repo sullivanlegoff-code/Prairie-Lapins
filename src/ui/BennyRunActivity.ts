@@ -6,8 +6,8 @@ import {pausableClock, settleCard} from './activityPause';
 import RUN_ART from '../config/bennyRunArt.json';
 
 /** The paintings' frames (scripts/prepare-benny-run-art.mjs): Benny's square stands her on its bottom, the Dragon's is centred on her body. */
-type PaintedName = 'benny' | 'dragon' | 'creatures' | 'objets';
-const PAINTED: PaintedName[] = ['benny', 'dragon', 'creatures', 'objets'];
+type PaintedName = 'benny' | 'benny-moves' | 'dragon' | 'creatures' | 'objets';
+const PAINTED: PaintedName[] = ['benny', 'benny-moves', 'dragon', 'creatures', 'objets'];
 /** Painted Benny's square, in Benny's sizes (her shape was one size tall): the drawing, ears up, fills about four fifths of it. */
 const PAINTED_BENNY = 1.85;
 /** The Dragon's flight from behind: her two wing beats, each held this long. */
@@ -743,7 +743,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (art.benny.ready) {
       const pose = flat ? 'roll' : wall ? 'wall' : inAir(g) || powerActive(g, 'flight') ? 'jump' : swing && now - swing.at < 180 ? 'strike' : Math.sin(stride) > 0 ? 'run-1' : 'run-2';
       const mirror = wall ? wall.side === 'left' : pose === 'strike' && g.lane < g.laneFrom;
-      paint(c, 'benny', pose, 0, flat ? h * .45 : h / 2, s * PAINTED_BENNY * (flat ? .8 : 1), mirror);
+      // The wind-up of a strike, the landing and the fall have their own painted poses (sheet of 13 Nov.).
+      const moves: string | null = g.fallFrom !== null ? 'fall' : swing && now - swing.at < 80 && !wall && !flat && !inAir(g) ? 'windup' : land > .25 && !wall && !flat && !inAir(g) ? 'land' : null;
+      if (moves) paint(c, 'benny-moves', moves, 0, h / 2, s * PAINTED_BENNY, mirror);
+      else paint(c, 'benny', pose, 0, flat ? h * .45 : h / 2, s * PAINTED_BENNY * (flat ? .8 : 1), mirror);
     } else {
     if (!flat) {
       // Back paws, one up as the other pushes (tucked in the air).

@@ -32,6 +32,31 @@
     "pockets": 0,
     "bytes": 78364
   },
+  "benny-moves": {
+    "image": "assets/benny-run/benny-moves.webp",
+    "size": 320,
+    "frames": {
+      "windup": [
+        0,
+        0
+      ],
+      "land": [
+        320,
+        0
+      ],
+      "fall": [
+        640,
+        0
+      ],
+      "push": [
+        960,
+        0
+      ]
+    },
+    "anchor": "feet",
+    "pockets": 0,
+    "bytes": 52028
+  },
   "dragon": {
     "image": "assets/benny-run/dragon.webp",
     "size": 420,
