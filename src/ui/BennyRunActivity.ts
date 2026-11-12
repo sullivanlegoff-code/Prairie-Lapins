@@ -138,8 +138,21 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const paragraph = (text: string, className: string) => { const p = document.createElement('p'); p.className = className; p.textContent = text; return p; };
   function showCard(...children: HTMLElement[]): void { card.replaceChildren(...children); card.hidden = false; }
   function flash(text: string, big = false): void { pop.textContent = text; pop.classList.toggle('benny-run-count', big); pop.classList.remove('show'); void pop.offsetWidth; pop.classList.add('show'); clearTimeout(popTimer); popTimer = setTimeout(() => pop.classList.remove('show'), 900); }
+  /**
+   * The canvas resolution, at most 2 pixels per point: on a device that cannot keep up (more than half the frames of the last
+   * 120 slower than 50 per second), it steps down by a quarter, to 1.25 at the least: a little softer, but smooth.
+   */
+  let ratioCap = 2, sampled = 0, slowSampled = 0, lastFrameAt = 0;
+  function watchFrames(now: number): void {
+    const gap = now - lastFrameAt; lastFrameAt = now;
+    if (gap <= 0 || gap > 200) return; // A pause or a hidden tab: not a measure.
+    sampled++; if (gap > 20) slowSampled++;
+    if (sampled < 120) return;
+    if (slowSampled > sampled / 2 && ratioCap > 1.25 && (window.devicePixelRatio || 1) > 1.25) { ratioCap -= .25; measure(); }
+    sampled = 0; slowSampled = 0;
+  }
   function measure(): void {
-    const ratio = Math.min(2, window.devicePixelRatio || 1), box = canvas.getBoundingClientRect();
+    const ratio = Math.min(ratioCap, window.devicePixelRatio || 1), box = canvas.getBoundingClientRect();
     width = Math.max(1, box.width); height = Math.max(1, box.height);
     canvas.width = Math.round(width * ratio); canvas.height = Math.round(height * ratio);
     context?.setTransform(ratio, 0, 0, ratio, 0, 0);
@@ -771,7 +784,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (!running || !game) return;
     const now = clock();
     if (now < slowUntil) slowLost += Math.min(50, Math.max(0, now - lastLoopAt)) * (1 - SLOW_RATE);
-    lastLoopAt = now; advanceBennyRun(game, gameTime()); react(); announceHoles(game); hud(); draw(now);
+    lastLoopAt = now; watchFrames(now); advanceBennyRun(game, gameTime()); react(); announceHoles(game); hud(); draw(now);
     if (running) frame(loop);
   }
   function input(gesture: RunInput): void {
