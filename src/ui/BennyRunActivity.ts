@@ -12,7 +12,7 @@ import {pausableClock, settleCard} from './activityPause';
  * a power works as soon as Benny runs over it. The arrow keys do the same. The island's Phaser loop sleeps while the run is open.
  * Played with the iPhone upright only (owner, 11 November 2026): turned sideways, the run pauses behind a « tourne ton iPhone » card.
  */
-const HORIZON = .15, LANE_WIDTH = 2.2, CAMERA_BACK = 14, WALL_HEIGHT = 4.5, BENNY_SIZE = 1.35, FAR = 90, NEAR = -(CAMERA_BACK - .6);
+const HORIZON = .21, LANE_WIDTH = 2.2, CAMERA_BACK = 12, WALL_HEIGHT = 4.5, BENNY_SIZE = 1.6, FAR = 90, NEAR = -(CAMERA_BACK - .6);
 const SETTING_COLOURS: Record<RunSetting, {sky: string; ground: string; lane: string; wall: string; wallOff: string; side: string; hole: string; holeEdge: string}> = {
   grotte: {sky: '#3a2a1c', ground: '#9a7a52', lane: '#b8956a', wall: '#c9a26a', wallOff: '#5c4630', side: '#e2b450', hole: '#1c120b', holeEdge: '#5a3d22'},
   pont: {sky: '#4a2420', ground: '#8d8378', lane: '#a39a8e', wall: '#b5aa9a', wallOff: '#55493f', side: '#f07a2a', hole: '#ff6a1a', holeEdge: '#ffd27a'},
@@ -246,7 +246,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   // Perspective: a point `x` metres across, `ahead` metres in front of Benny and `up` metres high.
   // Upright screen: the three lanes and the walls fill the width, and the camera rises so that Benny runs low on the screen.
   const scale0 = () => Math.min(width * .86, height * .62) / (viewLanes * LANE_WIDTH + 2.6);
-  const cameraHeight = () => Math.min(24, Math.max(2.2, (height * .74 - height * HORIZON) / scale0()));
+  const cameraHeight = () => Math.min(24, Math.max(2.2, (height * .78 - height * HORIZON) / scale0()));
   const project = (x: number, ahead: number, up: number) => {
     const horizon = height * HORIZON, s = scale0() * CAMERA_BACK / (Math.max(-CAMERA_BACK + .5, ahead) + CAMERA_BACK);
     return {x: width / 2 + (x - camX) * s, y: horizon + (cameraHeight() + camUp - up) * s, s};
