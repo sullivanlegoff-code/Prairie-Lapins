@@ -219,7 +219,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (metresBest > 0 && !metresBeaten && g.distance > metresBest) { metresBeaten = true; flash('Plus loin que jamais !', false, true); sound('power', 1.2); }
     if (reached > milestone && !g.tutorial && reached % 1000) { milestone = reached; flash(`${reached} m !`); sound('coin', 1.5); }
     // Hidden while the tutorial's advice is up (they would overlap).
-    combo.textContent = coach.hidden && g.combo > 1 && g.at <= g.comboUntil ? `${g.combo} coups${multiplier > 1 ? ` · ×${multiplier}` : ''}` : '';
+    combo.textContent = coach.hidden && g.combo > 1 && g.at <= g.comboUntil ? `${g.combo} coups${multiplier > 1 ? ` · ×${multiplier}` : ''}${g.combo >= BENNY_RUN.seriesMin ? ` · +${g.combo * BENNY_RUN.seriesPoints} en jeu` : ''}` : '';
+    // The series bonus waiting at the end of the combo (banked if no bump).
+    combo.classList.toggle('benny-run-series', g.combo >= BENNY_RUN.seriesMin);
     // The time left to keep the combo going.
     comboBar.hidden = !combo.textContent; if (combo.textContent) comboFill.style.width = `${Math.max(0, Math.min(1, (g.comboUntil - g.at) / BENNY_RUN.comboMs)) * 100}%`;
     metres.textContent = `${Math.floor(g.distance)} m`; coins.textContent = `${g.coins}`; coins.setAttribute('aria-label', plural(g.coins, 'pièce'));

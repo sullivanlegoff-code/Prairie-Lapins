@@ -10,6 +10,7 @@
 .benny-run-score { font-size: 1.6rem; min-width: 4ch; }
 /* The strikes in a row, big in the middle under the top bar. */
 .benny-run-combo { position: absolute; left: 0; right: 0; top: calc(100% + 4px); text-align: center; font-size: 1.9rem; color: #ffe36b !important; }
+.benny-run-combo.benny-run-series { color: #9dff8a !important; font-size: 1.5rem; white-space: nowrap; }
 .benny-run-metres { flex: 1; text-align: right; }
 .benny-run-top button { pointer-events: auto; min-height: 44px; padding: 0 14px; border-radius: 14px; border: 2px solid #6b5a3a; background: #fff8e8; font-weight: 800; }
 .benny-run-power { color: #e7d1ff !important; order: 10; flex-basis: 100%; font-size: .95rem; }
