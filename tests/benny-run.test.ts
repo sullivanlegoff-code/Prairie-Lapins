@@ -471,6 +471,13 @@ describe('Cours cours Benny ! rules', () => {
     while (g.entities.some(e => e.id === 72002) && g.entities[0].z - g.distance > 1.2) run(g, 10); runInput(g, g.at, 'up'); run(g, 700);
     expect(g.dodges).toBe(before + 1); expect(challengeGoal('dodges', 0)).toBe(4);
   });
+  it('glides down at the end of a flight, onto a clear spot', () => {
+    const g = quiet(); run(g, C.introMs); g.active = {power: 'flight', until: g.at + 300};
+    run(g, 200); place(g, 'pillar', 1, 8); place(g, 'coin', 1, 9);
+    run(g, 150); expect(g.active).toBeNull(); expect(runHeight(g)).toBeGreaterThan(2); expect(types(g)).toContain('landing');
+    expect(g.entities.some(e => e.kind === 'pillar')).toBe(false); expect(g.entities.some(e => e.kind === 'coin')).toBe(true);
+    run(g, 2000); expect(g.lastBumpAt).toBeNull(); expect(runHeight(g)).toBe(0);
+  });
   it('lays rockfalls only in the cave, always leaving one lane free', () => {
     let total = 0;
     for (const seed of [3, 4, 5]) {

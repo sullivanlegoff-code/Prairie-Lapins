@@ -506,6 +506,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (!FOES.has(e.kind) || ahead <= 0 || ahead > Math.max(reach(g), g.speed * 1.4) || powerActive(g, 'flight')) return false;
     return g.wall ? e.kind === 'flyer' && Math.abs(e.lane - across) === 1 : Math.abs(e.lane - across) <= 1;
   }
+  /** Benny's landings: when she last touched down (a squash and a puff of dust), and whether she was in the air last frame. */
+  let landedAt = -1e9, wasUp = false;
   const bennyHeight = (g: BennyRun) => g.wall ? BENNY_RUN.wallRunHeight + Math.sin(leapArc * Math.PI) * 1.4 : runHeight(g);
   function benny(c: CanvasRenderingContext2D, g: BennyRun, now: number): void {
     const wall = g.wall, x = laneX(viewLane);
@@ -515,10 +517,17 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // Running: a stride every 1.6 m, so the faster she runs the quicker her paws go; she bobs, her ears flop, she leans into a lane change.
     const stride = g.distance / 1.6 * Math.PI * 2, grounded = !flat && !inAir(g) && !powerActive(g, 'flight');
     const bob = grounded ? Math.abs(Math.sin(stride)) * .07 * s : 0, lean = Math.max(-.3, Math.min(.3, (g.lane - viewLane) * .35));
-    c.save(); c.translate(p.x, p.y - h / 2 - bob);
+    // Touching down: a squash for a moment and a puff of dust at her feet; taking off and rising: a stretch.
+    const up2 = inAir(g) && !wall && !powerActive(g, 'flight');
+    if (wasUp && !up2 && !wall && !flat) { landedAt = now; const ground = project(x, 0, floorHeight(g)); burst(ground.x, ground.y, ['rgba(230,215,190,.9)', 'rgba(200,180,150,.8)'], 7, 110); }
+    wasUp = up2;
+    const land = Math.max(0, 1 - (now - landedAt) / 150), rising = up2 && g.at - g.airFrom < 220 ? 1 - (g.at - g.airFrom) / 220 : 0;
+    const squash = 1 - .2 * land + .1 * rising;
+    c.save(); c.translate(p.x, p.y - h / 2 - bob + h / 2 * (1 - squash));
     if (flat) c.rotate((g.slideUntil - g.at) / 90);
     else if (wall) c.rotate(wall.side === 'left' ? -1.1 : 1.1);
     else c.rotate(lean);
+    if (!flat) c.scale(1 / Math.sqrt(squash), squash);
     if (g.at < g.stumbleUntil && Math.floor(now / 80) % 2) c.globalAlpha = .45;
     if (!flat) {
       // Back paws, one up as the other pushes (tucked in the air).
@@ -690,6 +699,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         viewLane += event.shift;
         if (event.shift > 0) flash('La salle s’élargit : cinq couloirs !');
         break;
+      case 'landing': flash('Atterrissage en douceur !'); sound('jump', .8); break;
       case 'faster': flash(event.pace === 1 ? 'Vitesse de croisière… et ça accélère encore !' : `Plus vite ! Allure ${event.pace}`); sound('power', 1.3); break;
       case 'setting': flash(SETTING_NAMES[event.setting]); settingBefore = shownSetting; shownSetting = event.setting; settingSince = clock(); break;
       case 'tutorial': showCoach(event.step, event.again); break;
@@ -817,7 +827,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     coach.hidden = true;
     slowLost = 0; slowUntil = 0; lastLoopAt = clock(); settingSince = -1e9; shownSetting = 'grotte';
     runBest = best; beaten = false; milestone = 0; metresBest = options.bestMetres?.() ?? 0; metresBeaten = false; score.classList.remove('benny-run-beaten');
-    game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; camX = 0; camUp = 0; swing = null; shock = null; flashes = []; bits = []; rings = []; coinRun = 0; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
+    game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; camX = 0; camUp = 0; landedAt = -1e9; wasUp = false; swing = null; shock = null; flashes = []; bits = []; rings = []; coinRun = 0; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
     holesAnnounced = 0; lastHoleSeen = -1;
     hud(); flash('Cours cours Benny !'); frame(loop);
   }

@@ -161,6 +161,8 @@ export type RunEvent =
   | {type: 'gust'; dir: -1 | 1; warn: boolean; pushed?: boolean}
   /** A new, faster pace past the ramp. */
   | {type: 'faster'; pace: number}
+  /** The end of a flight: gliding down onto a clear spot. */
+  | {type: 'landing'}
   /** A challenge given (`points` absent) or done. */
   | {type: 'challenge'; kind: ChallengeKind; goal: number; points?: number}
   | {type: 'tutorial'; step: TutorialStep | null; again?: boolean};
@@ -666,7 +668,17 @@ function flyPots(g: BennyRun, dt: number): void {
 function gainCoins(g: BennyRun, e: RunEntity, amount: number): void {
   const n = amount * (powerActive(g, 'double') ? 2 : 1); g.coins += n; g.events.push({type: 'coin', entity: e, amount: n});
 }
+/** The end of a flight: Benny glides down from its height, onto a clear spot (what stood just ahead of her is swept away). */
+function landFromFlight(g: BennyRun): void {
+  g.jumpFrom = 3; g.airFrom = g.at; g.airUntil = g.at + C.jumpMs * (1 + 3 / (2 * C.jumpHeight)); g.slideUntil = 0; g.pound = false;
+  const clear = g.distance + g.speed * (g.airUntil - g.at) / 1000 + 4;
+  g.entities = g.entities.filter(e => e.kind === 'coin' || e.kind === 'wallCoin' || e.kind === 'power' || e.z < g.distance || e.z > clear);
+  g.holes = g.holes.filter(h => h.to < g.distance || h.from > clear); g.pits = g.pits.filter(p => p.to < g.distance || p.from > clear);
+  g.events.push({type: 'landing'});
+}
 function usePower(g: BennyRun, power: RunPower): void {
+  // A new power picked up in flight: she glides down first.
+  if (powerActive(g, 'flight') && power !== 'flight') landFromFlight(g);
   g.active = {power, until: g.at + C.powers[power]};
   if (power === 'flight') { g.wall = null; g.airUntil = 0; g.pound = false; g.slideUntil = 0; }
   g.events.push({type: 'power', power});
@@ -732,7 +744,7 @@ function meet(g: BennyRun, e: RunEntity): void {
 function tick(g: BennyRun): void {
   const dt = C.step / 1000, eventsBefore = g.events.length;
   if (g.tutorial) { g.paceFrom += C.step; g.nextSettingAt += C.step; g.nextChallengeAt += C.step; }
-  if (g.active && g.at >= g.active.until) g.active = null;
+  if (g.active && g.at >= g.active.until) { if (g.active.power === 'flight') landFromFlight(g); g.active = null; }
   const base = C.speedStart + (C.speedMax - C.speedStart) * (1 - (1 - runDifficulty(g)) ** C.speedEase) + C.overtimeSpeed * runOvertime(g);
   if (runDifficulty(g) >= 1 && g.pace < Math.min(C.overtimeMax, 1 + Math.floor(runOvertime(g)))) { g.pace++; g.events.push({type: 'faster', pace: g.pace}); }
   g.speed = base * (g.at < g.stumbleUntil ? C.stumbleSlow : 1);
