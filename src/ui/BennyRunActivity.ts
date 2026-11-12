@@ -590,6 +590,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         return true;
       }
       case 'coin': case 'wallCoin': {
+        // While coins count double: a white halo that pulses around each one.
+        if (game && powerActive(game, 'double')) { const k = .5 + .5 * Math.sin(at / 110 + e.id); ellipse(x, y - h / 2, w * (.62 + .1 * k), h * (.62 + .1 * k), `rgba(255,255,255,${.35 + .3 * k})`); }
         ellipse(x, y - h / 2, w / 2, h / 2, '#f4c430'); ellipse(x, y - h / 2, w * .32, h * .32, '#e0a81e'); ellipse(x - w * .14, y - h * .66, w * .1, h * .1, '#fff6c8'); return true;
       }
       default: return false;
