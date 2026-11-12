@@ -592,6 +592,6 @@ describe('golden pots', () => {
   it('gives five times the points for a golden pot', () => {
     const g = quiet(); run(g, C.introMs);
     place(g, 'pot', 1, 3, {gold: true}); runInput(g, g.at, 'down');
-    expect(g.score).toBe(C.points.pot * C.goldPot); expect(g.pots).toBe(1);
+    expect(g.score).toBe(C.points.pot * C.goldPot); expect(g.pots).toBe(1); expect(runSummary(g).goldPots).toBe(1);
   });
 });

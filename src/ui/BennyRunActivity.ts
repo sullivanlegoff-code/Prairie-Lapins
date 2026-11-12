@@ -934,7 +934,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const again = button('Rejouer', () => start(), 'bennyRunAgain');
     // The score big, then the run's figures two by two.
     const stats = document.createElement('ul'); stats.className = 'benny-run-stats';
-    for (const line of [`${s.metres} m`, plural(s.coins, 'pièce'), plural(s.pots, 'pot'), plural(s.foes, 'créature'), plural(s.wallRuns, 'mur'), plural(s.leaps, 'bond'), plural(s.dodges, 'esquive'), plural(s.challenges, 'défi'),
+    for (const line of [`${s.metres} m`, plural(s.coins, 'pièce'), plural(s.pots, 'pot') + (s.goldPots ? ` (${plural(s.goldPots, 'doré')})` : ''), plural(s.foes, 'créature'), plural(s.wallRuns, 'mur'), plural(s.leaps, 'bond'), plural(s.dodges, 'esquive'), plural(s.challenges, 'défi'),
       `combo max ${s.bestCombo}`, `${Math.floor(s.seconds / 60)} min ${String(s.seconds % 60).padStart(2, '0')} s`]) { const li = document.createElement('li'); li.textContent = line; stats.append(li); }
     // The points won in each setting crossed (the best one first).
     const parts = (Object.keys(s.bySetting) as RunSetting[]).filter(k => s.bySetting[k] > 0).sort((a, b) => s.bySetting[b] - s.bySetting[a]);

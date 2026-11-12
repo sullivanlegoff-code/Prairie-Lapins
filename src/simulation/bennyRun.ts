@@ -235,7 +235,7 @@ export interface BennyRun {
   stumbleUntil: number; lastBumpAt: number | null;
   /** The power under way (a new one replaces it). */
   active: {power: RunPower; until: number} | null;
-  score: number; coins: number; pots: number; foes: number; wallRuns: number;
+  score: number; coins: number; pots: number; goldPots: number; foes: number; wallRuns: number;
   /** Barriers jumped and beams rolled under. */
   dodges: number;
   /** Leaps from one wall to the other. */
@@ -318,7 +318,7 @@ export function startBennyRun(now: number, seed = Math.floor(Math.random() * 214
     airFrom: 0, airUntil: 0, bounceUntil: -1, jumpFrom: 0, pound: false, poundFrom: 0, slideUntil: 0, wall: null,
     entities: [], nextId: 1, nextSpawnZ: C.firstAt, walls: [], wallsTo: {left: 0, right: 0}, holes: [],
     setting: 'grotte', nextSettingAt: 0, upcoming: null, stumbleUntil: 0, lastBumpAt: null,
-    active: null, score: 0, coins: 0, pots: 0, foes: 0, wallRuns: 0, dodges: 0, leaps: 0, combo: 0, comboUntil: 0, bestCombo: 0,
+    active: null, score: 0, coins: 0, pots: 0, goldPots: 0, foes: 0, wallRuns: 0, dodges: 0, leaps: 0, combo: 0, comboUntil: 0, bestCombo: 0,
     challenge: null, challengesDone: 0, nextChallengeAt: now + C.challengeFirstMs,
     over: false, events: [], queuedJumpUntil: 0, paceFrom: now, tutorial: tutorial ? {step: 0, ids: [], tries: 0, struck: 0} : null,
   };
@@ -735,7 +735,7 @@ function strike(g: BennyRun, e: RunEntity, by: StrikeKind): void {
   const multiplier = comboMultiplier(g.combo), points = (e.kind === 'pot' ? C.points.pot * (e.gold ? C.goldPot : 1) : C.points.foe) * multiplier;
   g.score = Math.min(C.maxScore, g.score + points);
   if (e.kind === 'pot') {
-    g.pots++;
+    g.pots++; if (e.gold) g.goldPots++;
     gainCoins(g, e, C.potCoins);
   } else { g.foes++; gainCoins(g, e, 2); }
   if (by === 'slide') { g.rollHits++; g.slideUntil = Math.max(g.slideUntil, g.at) + C.rollChainMs; }
@@ -1027,6 +1027,6 @@ export function takeRunEvents(g: BennyRun): RunEvent[] { const e = g.events; g.e
 
 /** The longest distance a saved run may claim: an hour at full speed, far beyond any real run. */
 export const BENNY_RUN_MAX_METRES = 24 * 3600;
-export interface RunSummary {score: number; bySetting: Record<RunSetting, number>; metres: number; coins: number; pots: number; foes: number; wallRuns: number; leaps: number; dodges: number; bestCombo: number; seconds: number; challenges: number}
-export const runSummary = (g: BennyRun): RunSummary => ({score: g.score, bySetting: (shareScore(g), {...g.scoreBy}), metres: Math.floor(g.distance), coins: g.coins, pots: g.pots, foes: g.foes,
+export interface RunSummary {score: number; bySetting: Record<RunSetting, number>; metres: number; coins: number; pots: number; goldPots: number; foes: number; wallRuns: number; leaps: number; dodges: number; bestCombo: number; seconds: number; challenges: number}
+export const runSummary = (g: BennyRun): RunSummary => ({score: g.score, bySetting: (shareScore(g), {...g.scoreBy}), metres: Math.floor(g.distance), coins: g.coins, pots: g.pots, goldPots: g.goldPots, foes: g.foes,
   wallRuns: g.wallRuns, leaps: g.leaps, dodges: g.dodges, bestCombo: g.bestCombo, seconds: Math.floor((g.at - g.startedAt) / 1000), challenges: g.challengesDone});
