@@ -60,7 +60,7 @@ export const BENNY_RUN = {
   stumbleMs: 900, stumbleSlow: .7, dragonMs: 10_000, introMs: 3000,
   /** Combo: strikes less than `comboMs` apart; the multiplier grows by one every `comboStep` strikes, up to `comboMax`. */
   comboMs: 2500, comboStep: 3, comboMax: 5,
-  points: {pot: 10, foe: 25, wallRun: 50, wallLeap: 25, dodge: 5, wallTrail: 10},
+  points: {pot: 10, foe: 25, wallRun: 50, wallLeap: 25, dodge: 5, wallTrail: 10, leapChain: 15},
   /** Coins picked up on one wall run for the « wall trail » bonus (`points.wallTrail` each). */
   wallTrailMin: 6,
   /** Gaps in the road: short ones (m) to jump, long ones to cross on the walls, leaping from one wall to the other. */
@@ -149,7 +149,7 @@ export type RunEvent =
   | {type: 'wallStart'; side: Side}
   | {type: 'wallEnd'; side: Side; points: number; trail: number}
   /** From one wall to the other, over a gap in the road. */
-  | {type: 'wallLeap'; side: Side; points: number; combo: number}
+  | {type: 'wallLeap'; side: Side; points: number; combo: number; chain: number}
   /** Into a gap: a bump, then she catches a wall or hops out. */
   | {type: 'fall'; onto: Side | null}
   | {type: 'pound'}
@@ -199,7 +199,7 @@ export interface BennyRun {
    * from `poundFrom` m high. */
   airFrom: number; airUntil: number; jumpFrom: number; pound: boolean; poundFrom: number;
   slideUntil: number;
-  wall: {side: Side; until: number; coins?: number} | null;
+  wall: {side: Side; until: number; coins?: number; leaps?: number} | null;
   entities: RunEntity[]; nextId: number; nextSpawnZ: number;
   walls: WallSegment[]; wallsTo: Record<Side, number>;
   /** Gaps in the road ahead, from `from` to `to` (m). */
@@ -674,10 +674,12 @@ function followPits(g: BennyRun): void {
 function leap(g: BennyRun): void {
   const side: Side = g.wall!.side === 'left' ? 'right' : 'left';
   if (!runnableAt(g, side, g.distance)) return;
-  g.wall = {side, until: g.at + C.wallMs}; g.leaps++;
+  // Leaps in a row without touching the ground: each one worth `leapChain` more than the last.
+  const chain = (g.wall!.leaps ?? 0) + 1;
+  g.wall = {side, until: g.at + C.wallMs, coins: g.wall!.coins, leaps: chain}; g.leaps++;
   g.combo = g.at <= g.comboUntil ? g.combo + 1 : 1; g.comboUntil = g.at + C.comboMs; g.bestCombo = Math.max(g.bestCombo, g.combo);
-  const points = C.points.wallLeap * comboMultiplier(g.combo); g.score = Math.min(C.maxScore, g.score + points);
-  g.events.push({type: 'wallLeap', side, points, combo: g.combo});
+  const points = (C.points.wallLeap + C.points.leapChain * (chain - 1)) * comboMultiplier(g.combo); g.score = Math.min(C.maxScore, g.score + points);
+  g.events.push({type: 'wallLeap', side, points, combo: g.combo, chain});
 }
 const isFoe = (e: RunEntity) => e.kind === 'flyer' || RUN_FOES.includes(e.kind as RunFoe);
 const strikable = (e: RunEntity) => e.kind === 'pot' || isFoe(e);

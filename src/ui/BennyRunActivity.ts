@@ -727,7 +727,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         if (event.points) { const p = screenOf(g, event.entity); flashes.push({at: clock(), text: `+${event.points}`, x: p.x}); burst(p.x, p.y - 10, ['#fff', '#ffe66b'], 6, 160); sound('dodge', .95 + Math.random() * .1); }
         break;
       case 'wallEnd': flashes.push({at: clock(), text: `Mur +${event.points}`, x: width / 2}); if (event.trail) { flash(`Traînée parfaite : ${event.trail} pièces !`); sound('power', 1.1); } break;
-      case 'wallLeap': flashes.push({at: clock(), text: `Saut de mur +${event.points}`, x: width / 2}); sound('wall'); shakeFor('strike'); break;
+      case 'wallLeap': flashes.push({at: clock(), text: `Saut de mur +${event.points}`, x: width / 2}); sound('wall', 1 + .06 * Math.min(6, event.chain - 1));
+        if (event.chain >= 2) flash(event.chain === 2 ? 'Double bond !' : event.chain === 3 ? 'Triple bond !' : `Bonds ×${event.chain} !`); shakeFor('strike'); break;
       case 'fall': flash(event.onto ? 'Ouf ! Benny se rattrape au mur !' : 'Ouf ! Benny ressort du trou !'); break;
       case 'shockwave': shock = clock(); slowMo(380); flash('Onde de choc !'); shakeFor('shock'); sound('shock'); break;
       case 'challenge':
