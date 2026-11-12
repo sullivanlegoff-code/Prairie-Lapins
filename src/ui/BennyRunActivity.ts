@@ -187,7 +187,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // Every 500 m.
     const reached = Math.floor(g.distance / 500) * 500;
     if (metresBest > 0 && !metresBeaten && g.distance > metresBest) { metresBeaten = true; flash('Plus loin que jamais !'); sound('power', 1.2); }
-    if (reached > milestone && !g.tutorial) { milestone = reached; flash(`${reached} m !`); sound('coin', 1.5); }
+    if (reached > milestone && !g.tutorial && reached % 1000) { milestone = reached; flash(`${reached} m !`); sound('coin', 1.5); }
     // Hidden while the tutorial's advice is up (they would overlap).
     combo.textContent = coach.hidden && g.combo > 1 && g.at <= g.comboUntil ? `${g.combo} coups${multiplier > 1 ? ` · ×${multiplier}` : ''}` : '';
     // The time left to keep the combo going.
@@ -768,6 +768,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         if (event.shift > 0) flash('La salle s’élargit : cinq couloirs !');
         break;
       case 'close': flashes.push({at: clock(), text: `De justesse ! +${event.points}`, x: width / 2}); sound('dodge', 1.3); break;
+      case 'km': milestone = event.km * 1000; flash(`${event.km} km ! +${event.points}`); sound('power', 1.15); break;
       case 'landing': flash('Atterrissage en douceur !'); sound('land'); break;
       case 'faster': flash(event.pace === 1 ? 'Vitesse de croisière… et ça accélère encore !' : `Plus vite ! Allure ${event.pace}`); sound('power', 1.3); break;
       case 'setting': flash(SETTING_NAMES[event.setting]); settingBefore = shownSetting; shownSetting = event.setting; settingSince = clock(); break;

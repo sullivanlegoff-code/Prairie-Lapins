@@ -483,6 +483,11 @@ describe('Cours cours Benny ! rules', () => {
     g.entities.push({id: 73002, kind: 'pillar', lane: 0, z: g.distance + 12}); runInput(g, g.at, 'right'); run(g, 1200);
     expect(types(g)).not.toContain('close');
   });
+  it('rewards each kilometre, a little more each time', () => {
+    const g = quiet(); g.distance = 999; g.walls.forEach(w => { w.from = 0; }); takeRunEvents(g); const score = g.score;
+    run(g, 500); expect(takeRunEvents(g).filter(e => e.type === 'km')).toEqual([{type: 'km', km: 1, points: C.points.km}]); expect(g.score).toBe(score + C.points.km);
+    g.distance = 1999.5; run(g, 300); expect(g.kms).toBe(2); expect(g.score).toBe(score + 3 * C.points.km);
+  });
   it('glides down at the end of a flight, onto a clear spot', () => {
     const g = quiet(); run(g, C.introMs); g.active = {power: 'flight', until: g.at + 300};
     run(g, 200); place(g, 'pillar', 1, 8); place(g, 'coin', 1, 9);

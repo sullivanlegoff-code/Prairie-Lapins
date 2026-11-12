@@ -60,7 +60,7 @@ export const BENNY_RUN = {
   stumbleMs: 900, stumbleSlow: .7, dragonMs: 10_000, introMs: 3000,
   /** Combo: strikes less than `comboMs` apart; the multiplier grows by one every `comboStep` strikes, up to `comboMax`. */
   comboMs: 2500, comboStep: 3, comboMax: 5,
-  points: {pot: 10, foe: 25, wallRun: 50, wallLeap: 25, dodge: 5, wallTrail: 10, leapChain: 15, close: 15},
+  points: {pot: 10, foe: 25, wallRun: 50, wallLeap: 25, dodge: 5, wallTrail: 10, leapChain: 15, close: 15, km: 100},
   /** « De justesse » : an obstacle passing in the lane Benny left less than `closeMs` ago. */
   closeMs: 300,
   /** Coins picked up on one wall run for the « wall trail » bonus (`points.wallTrail` each). */
@@ -173,6 +173,8 @@ export type RunEvent =
   | {type: 'faster'; pace: number}
   /** The end of a flight: gliding down onto a clear spot. */
   | {type: 'landing'}
+  /** Another kilometre run. */
+  | {type: 'km'; km: number; points: number}
   /** Out of the way of an obstacle at the last moment. */
   | {type: 'close'; entity: RunEntity; points: number}
   /** A challenge given (`points` absent) or done. */
@@ -190,6 +192,8 @@ export interface BennyRun {
   lanes: number; lane: number; laneChangedAt: number;
   /** The lane she was in before her last lane change. */
   laneFrom: number;
+  /** The kilometres already rewarded (`points.km` × the kilometre: 100 at 1 km, 200 at 2 km…). */
+  kms: number;
   /** The road's usual lanes, and the wide halls ahead (`wideLanes` lanes from `from` to `to` m). */
   baseLanes: number; zones: {from: number; to: number}[];
   /** Raised platforms ahead (one lane, from `from` to `to` m, their ramp before), and the one Benny is on. */
@@ -295,7 +299,7 @@ const pick = <T>(g: BennyRun, list: readonly T[]): T => list[Math.min(list.lengt
 
 export function startBennyRun(now: number, seed = Math.floor(Math.random() * 2147483647), lanes = 3, tutorial = false): BennyRun {
   const g: BennyRun = {
-    seed: (seed >>> 0) || 1, startedAt: now, at: now, distance: 0, speed: C.speedStart, lanes, lane: Math.floor(lanes / 2), laneChangedAt: -Infinity, laneFrom: Math.floor(lanes / 2), baseLanes: lanes, zones: [], platforms: [], raised: null, pits: [], gusts: [], pace: 0, scoreBy: {grotte: 0, pont: 0, montagne: 0}, scored: 0,
+    seed: (seed >>> 0) || 1, startedAt: now, at: now, distance: 0, speed: C.speedStart, lanes, lane: Math.floor(lanes / 2), laneChangedAt: -Infinity, laneFrom: Math.floor(lanes / 2), kms: 0, baseLanes: lanes, zones: [], platforms: [], raised: null, pits: [], gusts: [], pace: 0, scoreBy: {grotte: 0, pont: 0, montagne: 0}, scored: 0,
     airFrom: 0, airUntil: 0, jumpFrom: 0, pound: false, poundFrom: 0, slideUntil: 0, wall: null,
     entities: [], nextId: 1, nextSpawnZ: C.firstAt, walls: [], wallsTo: {left: 0, right: 0}, holes: [],
     setting: 'grotte', nextSettingAt: 0, upcoming: null, stumbleUntil: 0, lastBumpAt: null,
@@ -834,6 +838,7 @@ function tick(g: BennyRun): void {
   if (!g.wall && !g.raised && !inAir(g) && !powerActive(g, 'flight') && !powerActive(g, 'dash') && holeAt(g)) fall(g);
   if (!g.over) followPits(g);
   followGusts(g);
+  if (!g.tutorial && g.distance >= (g.kms + 1) * 1000) { g.kms++; const points = C.points.km * g.kms; g.score = Math.min(C.maxScore, g.score + points); g.events.push({type: 'km', km: g.kms, points}); }
   // Under a tunnel of logs, a roll goes on while there is another log just ahead: one long slide.
   if (sliding(g) && g.slideUntil - g.at < 120 && g.entities.some(e => e.kind === 'beam' && e.lane === g.lane && e.z >= g.distance && e.z - g.distance <= C.burrowKeep)) g.slideUntil = g.at + 120;
   if (g.over) return;
