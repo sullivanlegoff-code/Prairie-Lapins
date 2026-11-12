@@ -69,6 +69,16 @@ describe('« Cours cours Benny ! » screen', () => {
     at('pointermove', 160, 300); expect(g.lane).toBe(lane + 1); // Still the same swipe, a little longer.
     at('pointermove', 160, 270); at('pointerup', 160, 270); expect(g.airUntil).toBeGreaterThan(g.at); // Then up, without lifting.
   });
+  it('moves one lane per swipe: holding the finger and going on the same way does not move her again', () => {
+    const {activity, step} = mount(50);
+    document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);
+    const g = activity.game!, canvas = document.querySelector('canvas')!, lane = g.lane;
+    const at = (type: string, x: number, y: number) => canvas.dispatchEvent(new PointerEvent(type, {bubbles: true, clientX: x, clientY: y, pointerId: 1}));
+    at('pointerdown', 100, 300); at('pointermove', 125, 300); expect(g.lane).toBe(lane + 1);
+    for (let x = 150; x <= 400; x += 25) at('pointermove', x, 300); // A long hold, the finger going on to the right.
+    expect(g.lane).toBe(lane + 1); expect(g.wall).toBeNull(); // A second move would have taken her up the edge wall.
+    at('pointerup', 400, 300);
+  });
   it('says so at once when the run beats the record, and turns the score gold', () => {
     const {activity, step, sounds} = mount(50);
     document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);

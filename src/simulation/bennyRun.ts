@@ -1007,11 +1007,11 @@ export function runInput(g: BennyRun, now: number, input: RunInput): void {
       if (side2 && !g.raised && g.distance >= side2.from - C.rampLen + 1.5) { g.events.push({type: 'blocked'}); return; }
       if (g.raised) dropOff(g);
       const from = g.lane; g.lane = target; g.laneChangedAt = g.at; g.laneFrom = from;
-      // The wand: changing lanes towards a pot or a creature strikes it; with a creature on her other side as well, she spins and
-      // strikes both at once.
-      const hit = nearest(g, target, reach(g)), behind = hit ? nearest(g, from - step, reach(g), isFoe) : undefined;
-      if (hit) strike(g, hit, 'lane');
-      if (behind && isFoe(hit!)) strike(g, behind, 'spin');
+      // The wand: changing lanes towards a pot or creatures strikes every one of them within reach in the lane she moves into
+      // (owner: two creatures in the lane, both fall at once); with a creature on her other side as well, she spins and strikes it.
+      const first = nearest(g, target, reach(g)), behind = first ? nearest(g, from - step, reach(g), isFoe) : undefined;
+      for (let hit = first; hit; hit = nearest(g, target, reach(g))) strike(g, hit, 'lane');
+      if (behind && isFoe(first!)) strike(g, behind, 'spin');
       return;
     }
     case 'up':

@@ -53,8 +53,6 @@ const HINTS_KEY = 'prairie-lapins:benny-run-hints';
 const POWER_NAMES: Record<RunPower, string> = {magnet: 'Aimant', bubble: 'Bulle arc-en-ciel', double: 'Pièces doublées', flight: 'Envol', dash: 'Ruée'};
 /** A swipe fires once the finger has moved this far; a quick flick lifted sooner still counts from `FLICK` px. */
 const SWIPE = 18, FLICK = 10;
-/** Without lifting the finger, the same swipe again needs this many times the swipe distance. */
-const SAME_AGAIN = 3;
 export type RunSound = 'strike' | 'pot' | 'coin' | 'bump' | 'jump' | 'roll' | 'shock' | 'wall' | 'power' | 'caught' | 'dodge' | 'rumble' | 'whoosh' | 'land' | 'sizzle';
 /**
  * Feedback: striking a creature freezes the game for `HIT_STOP` ms, at most once every `HIT_STOP_GAP` ms (a pot never: a roll through
@@ -1111,21 +1109,22 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     next();
   }
 
-  // Gestures: a swipe fires as soon as the finger has moved far enough. Without lifting it, another swipe can follow from there
-  // (left then up in one stroke); the same way again only after a much longer stroke, so one long swipe never counts twice.
-  let touch: {x: number; y: number; id: number; last: RunInput | null; run: number} | null = null;
+  // Gestures, like arrows: one swipe is one move. A swipe fires as soon as the finger has moved far enough; holding the finger and
+  // going on the same way never moves Benny again (owner: « un glissement = un déplacement »). A turn without lifting the finger
+  // (left then up in one stroke) is a new move, measured from where the finger turned.
+  let touch: {x: number; y: number; id: number; last: RunInput | null} | null = null;
   const way = (dx: number, dy: number): RunInput => Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'left' : 'right') : (dy < 0 ? 'up' : 'down');
   canvas.addEventListener('pointerdown', event => {
     // A tap skips the end scene.
     if (ending) { event.preventDefault(); const done = ending.done; ending = null; done(); return; }
-    event.preventDefault(); touch = {x: event.clientX, y: event.clientY, id: event.pointerId, last: null, run: 0}; }, {signal: abort.signal});
+    event.preventDefault(); touch = {x: event.clientX, y: event.clientY, id: event.pointerId, last: null}; }, {signal: abort.signal});
   canvas.addEventListener('pointermove', event => {
     if (!touch || touch.id !== event.pointerId) return;
     const dx = event.clientX - touch.x, dy = event.clientY - touch.y, far = Math.max(Math.abs(dx), Math.abs(dy)), dir = way(dx, dy);
-    // Going on the same way: the start follows the finger (so a turn is seen from there), counting the way gone.
-    if (dir === touch.last) { touch.run += far; touch.x = event.clientX; touch.y = event.clientY; if (touch.run < SWIPE * SAME_AGAIN) return; }
-    else if (far < SWIPE) return;
-    touch = {x: event.clientX, y: event.clientY, id: touch.id, last: dir, run: 0}; input(dir);
+    // Still going the same way: no new move; the start follows the finger, so a turn is measured from here.
+    if (dir === touch.last) { touch.x = event.clientX; touch.y = event.clientY; return; }
+    if (far < SWIPE) return;
+    touch = {x: event.clientX, y: event.clientY, id: touch.id, last: dir}; input(dir);
   }, {signal: abort.signal});
   canvas.addEventListener('pointerup', event => {
     // A short flick lifted before reaching the swipe distance still counts.

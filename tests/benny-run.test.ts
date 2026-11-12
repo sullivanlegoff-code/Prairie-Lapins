@@ -17,6 +17,13 @@ const types = (g: BennyRun) => takeRunEvents(g).map(e => e.type);
 
 /** « Cours cours Benny ! » (owner, 11 November 2026). */
 describe('Cours cours Benny ! rules', () => {
+  it('strikes every creature in the lane she moves into, within reach, in one move', () => {
+    const g = quiet(); g.lane = 0;
+    place(g, 'dragonnet', 1, 2); place(g, 'chest', 1, 4);
+    runInput(g, g.at, 'right');
+    expect(g).toMatchObject({lane: 1, foes: 2, combo: 2});
+    expect(g.entities.filter(e => e.lane === 1 && e.z > g.distance)).toHaveLength(0);
+  });
   it('strikes a creature with the wand only when changing lanes towards it, and bumps into one met straight on', () => {
     const g = quiet();
     place(g, 'dragonnet', 0, 5);
