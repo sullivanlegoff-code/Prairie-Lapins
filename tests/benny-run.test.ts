@@ -510,6 +510,13 @@ describe('Cours cours Benny ! rules', () => {
     run(g, 700); runInput(g, g.at, 'down'); run(g, 400);
     expect(types(g)).toContain('shockwave'); expect(g.pots).toBe(3); expect(g.lastBumpAt).toBeNull();
   });
+  it('lays a road of coins in the sky for a flight, one lane step at a time, gone with the flight', () => {
+    const g = quiet(); g.lane = 1; place(g, 'power', 1, 2, {power: 'flight'}); run(g, 300);
+    const sky = g.entities.filter(e => e.sky).sort((a, b) => a.z - b.z); expect(sky.length).toBeGreaterThan(15);
+    sky.forEach((e, i) => { if (i) expect(Math.abs(e.lane - sky[i - 1].lane)).toBeLessThanOrEqual(1); });
+    const coins = g.coins; run(g, 2000); expect(g.coins).toBeGreaterThan(coins); // Picked up following them.
+    g.active!.until = g.at; run(g, 20); expect(g.entities.some(e => e.sky)).toBe(false);
+  });
   it('glides down at the end of a flight, onto a clear spot', () => {
     const g = quiet(); run(g, C.introMs); g.active = {power: 'flight', until: g.at + 300};
     run(g, 200); place(g, 'pillar', 1, 8); place(g, 'coin', 1, 9);

@@ -139,7 +139,7 @@ export type StrikeKind = 'lane' | 'spin' | 'slide' | 'jump' | 'pound' | 'shock' 
 
 /** A thing on the road. `lane` is 0 to `lanes - 1`; a wall coin's lane is -1 (left wall) or `lanes` (right wall). */
 /** A thing on the road; `up` is how high a coin floats (a coin arc over a barrier), for the drawing only. */
-export interface RunEntity {id: number; kind: RunKind; lane: number; z: number; power?: RunPower; hopAt?: number; up?: number; beside?: boolean; cross?: -1 | 1; crossAt?: number; rock?: 'up' | 'down'; geyser?: 'idle' | 'up'; rolling?: boolean; snow?: boolean; cart?: boolean}
+export interface RunEntity {id: number; kind: RunKind; lane: number; z: number; power?: RunPower; sky?: boolean; hopAt?: number; up?: number; beside?: boolean; cross?: -1 | 1; crossAt?: number; rock?: 'up' | 'down'; geyser?: 'idle' | 'up'; rolling?: boolean; snow?: boolean; cart?: boolean}
 export interface WallSegment {side: Side; from: number; to: number; runnable: boolean}
 export type RunEvent =
   | {type: 'strike'; entity: RunEntity; points: number; combo: number; multiplier: number; by: StrikeKind; roll?: number}
@@ -736,11 +736,21 @@ function strike(g: BennyRun, e: RunEntity, by: StrikeKind): void {
 function gainCoins(g: BennyRun, e: RunEntity, amount: number): void {
   const n = amount * (powerActive(g, 'double') ? 2 : 1); g.coins += n; g.events.push({type: 'coin', entity: e, amount: n});
 }
+/** A flight's road of coins up in the sky, winding from lane to lane, all along it. */
+function skyTrail(g: BennyRun): void {
+  g.entities = g.entities.filter(e => !e.sky);
+  let lane = g.lane;
+  for (let t = .6, k = 0; t < C.powers.flight / 1000 - .4; t += .2, k++) {
+    if (k > 0 && k % 6 === 0) lane = pick(g, laneList(g).filter(l => Math.abs(l - lane) === 1));
+    add(g, 'coin', lane, g.distance + g.speed * t, {up: 3.1, sky: true});
+  }
+}
 /** The end of a flight: Benny glides down from its height, onto a clear spot (what stood just ahead of her is swept away). */
 function landFromFlight(g: BennyRun): void {
   g.jumpFrom = 3; g.airFrom = g.at; g.airUntil = g.at + C.jumpMs * (1 + 3 / (2 * C.jumpHeight)); g.slideUntil = 0; g.pound = false;
   const clear = g.distance + g.speed * (g.airUntil - g.at) / 1000 + 4;
-  g.entities = g.entities.filter(e => e.kind === 'coin' || e.kind === 'wallCoin' || e.kind === 'power' || e.z < g.distance || e.z > clear);
+  // The sky's coins she has not reached are gone with the flight.
+  g.entities = g.entities.filter(e => !e.sky && (e.kind === 'coin' || e.kind === 'wallCoin' || e.kind === 'power' || e.z < g.distance || e.z > clear));
   g.holes = g.holes.filter(h => h.to < g.distance || h.from > clear); g.pits = g.pits.filter(p => p.to < g.distance || p.from > clear);
   g.events.push({type: 'landing'});
 }
@@ -748,7 +758,7 @@ function usePower(g: BennyRun, power: RunPower): void {
   // A new power picked up in flight: she glides down first.
   if (powerActive(g, 'flight') && power !== 'flight') landFromFlight(g);
   g.active = {power, until: g.at + C.powers[power]};
-  if (power === 'flight') { g.wall = null; g.airUntil = 0; g.pound = false; g.slideUntil = 0; }
+  if (power === 'flight') { g.wall = null; g.airUntil = 0; g.pound = false; g.slideUntil = 0; skyTrail(g); }
   g.events.push({type: 'power', power});
 }
 function bump(g: BennyRun, e: RunEntity): void {
