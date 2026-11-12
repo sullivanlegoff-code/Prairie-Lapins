@@ -479,9 +479,15 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'pot': {
         // A clay jar.
         c.save(); c.translate(x, y - h * .5);
-        ellipse(0, h * .06, w * .5, h * .42, '#c96b3a'); c.fillStyle = '#a8542a'; c.fillRect(-w * .22, -h * .5, w * .44, h * .2);
+        // A golden one shines: a halo, a gold body, a glint.
+        if (e.gold) { c.globalAlpha = .35 + .2 * Math.sin(at / 120 + e.id); ellipse(0, 0, w * .8, h * .7, '#fff3a0'); c.globalAlpha = 1; }
+        ellipse(0, h * .06, w * .5, h * .42, e.gold ? '#e8b923' : '#c96b3a'); c.fillStyle = e.gold ? '#c9961a' : '#a8542a'; c.fillRect(-w * .22, -h * .5, w * .44, h * .2);
         ellipse(0, -h * .5, w * .28, h * .07, '#7a3a1c'); c.fillStyle = '#f4c430'; c.fillRect(-w * .45, h * .02, w * .9, h * .08);
-        ellipse(-w * .2, -h * .08, w * .08, h * .14, 'rgba(255,255,255,.35)'); c.restore(); return true;
+        ellipse(-w * .2, -h * .08, w * .08, h * .14, 'rgba(255,255,255,.35)');
+        // A turning four-point sparkle above a golden one.
+        if (e.gold) { const r = w * (.28 + .06 * Math.sin(at / 90 + e.id)); c.translate(w * .3, -h * .75); c.rotate(at / 400); c.fillStyle = '#fff'; c.beginPath();
+          for (let i = 0; i < 8; i++) { const k = i % 2 ? r * .25 : r; c.lineTo(Math.cos(i * Math.PI / 4) * k, Math.sin(i * Math.PI / 4) * k); } c.fill(); }
+        c.restore(); return true;
       }
       case 'chest': {
         // The greedy chest: its lid chomps, teeth and eyes in the gap.
@@ -772,6 +778,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         flashes.push({at: clock(), text: `+${event.points}`, x: p.x});
         // Each strike of a combo a semitone higher (up to an octave); a new multiplier is announced.
         const pitch = 2 ** (Math.min(12, event.combo - 1) / 12);
+        if (event.entity.gold) { burst(p.x, p.y, ['#fff3a0', '#f4c430', '#ffffff'], 26, 380); flash(`Pot doré ! +${event.points}`); }
         if (event.entity.kind === 'pot') { burst(p.x, p.y, ['#c96b3a', '#e08a52', '#8a4a26', '#a8542a', '#f4c430'], 22, 320); burst(p.x, p.y, ['rgba(220,180,140,.8)'], 6, 90); sound('pot', pitch); }
         else { burst(p.x, p.y, ['#fff', '#e7d1ff', '#ffb3c8', '#ffe36b'], 12, 220); sound('strike', pitch); }
         if (event.multiplier > 1 && event.combo === (event.multiplier - 1) * BENNY_RUN.comboStep + 1) { flash(`Combo ×${event.multiplier} !`); sound('power'); }

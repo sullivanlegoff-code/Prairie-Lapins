@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {advanceBennyRun, BENNY_RUN as C, challengeGoal, comboMultiplier, dragonVisible, holeAt, lanesAt, inAir, reach, runHeight, runInput, tutorialStep, runnableAt, runSummary, settingAt, startBennyRun, takeRunEvents,
+import {advanceBennyRun, BENNY_RUN as C, isGoldenPot, challengeGoal, comboMultiplier, dragonVisible, holeAt, lanesAt, inAir, reach, runHeight, runInput, tutorialStep, runnableAt, runSummary, settingAt, startBennyRun, takeRunEvents,
   type BennyRun, type RunEntity, type RunKind} from '../src/simulation/bennyRun';
 
 /** A run with nothing laid out by chance: the test places what it needs, `z` metres ahead of Benny. */
@@ -576,5 +576,22 @@ describe('Cours cours Benny ! rules', () => {
       total += seen; expect(g.over).toBe(false);
     }
     expect(total).toBeGreaterThan(0);
+  });
+});
+
+describe('golden pots', () => {
+  it('makes about one laid pot in twenty golden', () => {
+    const ids = Array.from({length: 4000}, (_, i) => i + 1), share = ids.filter(isGoldenPot).length / ids.length;
+    expect(share).toBeGreaterThan(.04); expect(share).toBeLessThan(.06);
+    // Never two golden pots side by side in a row of pots.
+    expect(ids.some(id => isGoldenPot(id) && isGoldenPot(id + 1))).toBe(false);
+    // The pots the game lays follow the rule.
+    const g = startBennyRun(1, 1000); run(g, 30000);
+    expect(g.entities.filter(e => e.kind === 'pot').every(e => !!e.gold === isGoldenPot(e.id))).toBe(true);
+  });
+  it('gives five times the points for a golden pot', () => {
+    const g = quiet(); run(g, C.introMs);
+    place(g, 'pot', 1, 3, {gold: true}); runInput(g, g.at, 'down');
+    expect(g.score).toBe(C.points.pot * C.goldPot); expect(g.pots).toBe(1);
   });
 });

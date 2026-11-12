@@ -76,6 +76,8 @@ export const BENNY_RUN = {
   /** A pot struck flies on along its lane, this much faster than Benny (m/s) and this far (m), and knocks over all it meets. */
   /** Coins a pot spills. */
   potCoins: 3,
+  // One pot in `goldEvery` (picked from its number, so the run's draws stay the same) is golden: worth `goldPot` times the points.
+  goldEvery: 20, goldPot: 5,
   /** The setting changes at random every 40 to 55 s. */
   settingMs: [40_000, 55_000],
   /** A new setting starts this far ahead (m): it comes into sight and Benny runs into it. */
@@ -141,7 +143,7 @@ export type StrikeKind = 'lane' | 'spin' | 'slide' | 'jump' | 'pound' | 'shock' 
 
 /** A thing on the road. `lane` is 0 to `lanes - 1`; a wall coin's lane is -1 (left wall) or `lanes` (right wall). */
 /** A thing on the road; `up` is how high a coin floats (a coin arc over a barrier), for the drawing only. */
-export interface RunEntity {id: number; kind: RunKind; lane: number; z: number; power?: RunPower; sky?: boolean; hopAt?: number; up?: number; beside?: boolean; cross?: -1 | 1; crossAt?: number; rock?: 'up' | 'down'; geyser?: 'idle' | 'up'; rolling?: boolean; snow?: boolean; cart?: boolean}
+export interface RunEntity {id: number; kind: RunKind; lane: number; z: number; power?: RunPower; sky?: boolean; hopAt?: number; up?: number; beside?: boolean; cross?: -1 | 1; crossAt?: number; rock?: 'up' | 'down'; geyser?: 'idle' | 'up'; rolling?: boolean; snow?: boolean; cart?: boolean; gold?: boolean}
 export interface WallSegment {side: Side; from: number; to: number; runnable: boolean}
 export type RunEvent =
   | {type: 'strike'; entity: RunEntity; points: number; combo: number; multiplier: number; by: StrikeKind; roll?: number}
@@ -386,9 +388,12 @@ function layWalls(g: BennyRun): void {
   g.walls = g.walls.filter(w => w.to > g.distance - 10);
 }
 
+/** Whether the pot with this number is golden (about one in `goldEvery`, spread out). */
+export const isGoldenPot = (id: number) => Math.imul(id, 2654435761) >>> 0 < 2 ** 32 / C.goldEvery;
 const add = (g: BennyRun, kind: RunKind, lane: number, z: number, extra: Partial<RunEntity> = {}) => {
   const e: RunEntity = {id: g.nextId++, kind, lane, z, ...extra};
   if (kind === 'ember') e.hopAt = g.at + C.emberHopMs;
+  if (kind === 'pot' && isGoldenPot(e.id)) e.gold = true;
   g.entities.push(e); return e;
 };
 const laneList = (g: BennyRun) => Array.from({length: g.lanes}, (_, i) => i);
@@ -727,7 +732,7 @@ export const reach = (g: BennyRun) => C.strikeReach + C.strikeLead * g.speed;
 function strike(g: BennyRun, e: RunEntity, by: StrikeKind): void {
   g.entities = g.entities.filter(o => o !== e);
   g.combo = g.at <= g.comboUntil ? g.combo + 1 : 1; g.comboUntil = g.at + C.comboMs; g.bestCombo = Math.max(g.bestCombo, g.combo);
-  const multiplier = comboMultiplier(g.combo), points = (e.kind === 'pot' ? C.points.pot : C.points.foe) * multiplier;
+  const multiplier = comboMultiplier(g.combo), points = (e.kind === 'pot' ? C.points.pot * (e.gold ? C.goldPot : 1) : C.points.foe) * multiplier;
   g.score = Math.min(C.maxScore, g.score + points);
   if (e.kind === 'pot') {
     g.pots++;
@@ -735,7 +740,6 @@ function strike(g: BennyRun, e: RunEntity, by: StrikeKind): void {
   } else { g.foes++; gainCoins(g, e, 2); }
   if (by === 'slide') { g.rollHits++; g.slideUntil = Math.max(g.slideUntil, g.at) + C.rollChainMs; }
   g.events.push({type: 'strike', entity: e, points, combo: g.combo, multiplier, by, ...(by === 'slide' ? {roll: g.rollHits} : {})});
-  // A pot struck flies on along its lane (not one broken by a ground charge or its shock wave, nor one a flying pot knocks over).
 }
 function gainCoins(g: BennyRun, e: RunEntity, amount: number): void {
   const n = amount * (powerActive(g, 'double') ? 2 : 1); g.coins += n; g.events.push({type: 'coin', entity: e, amount: n});
