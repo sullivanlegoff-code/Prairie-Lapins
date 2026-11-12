@@ -183,6 +183,8 @@ export interface BennyRun {
   gusts: {z: number; dir: -1 | 1; warned: boolean}[];
   /** The pace announced last (past the ramp, one more each `overtimeMs`). */
   pace: number;
+  /** The points won in each setting so far (`scored`: the score already shared out). */
+  scoreBy: Record<RunSetting, number>; scored: number;
   /** In the air between `airFrom` and `airUntil`, a jump starting `jumpFrom` m high; `pound` once the ground charge has started,
    * from `poundFrom` m high. */
   airFrom: number; airUntil: number; jumpFrom: number; pound: boolean; poundFrom: number;
@@ -273,7 +275,7 @@ const pick = <T>(g: BennyRun, list: readonly T[]): T => list[Math.min(list.lengt
 
 export function startBennyRun(now: number, seed = Math.floor(Math.random() * 2147483647), lanes = 3, tutorial = false): BennyRun {
   const g: BennyRun = {
-    seed: (seed >>> 0) || 1, startedAt: now, at: now, distance: 0, speed: C.speedStart, lanes, lane: Math.floor(lanes / 2), laneChangedAt: -Infinity, baseLanes: lanes, zones: [], platforms: [], raised: null, pits: [], gusts: [], pace: 0,
+    seed: (seed >>> 0) || 1, startedAt: now, at: now, distance: 0, speed: C.speedStart, lanes, lane: Math.floor(lanes / 2), laneChangedAt: -Infinity, baseLanes: lanes, zones: [], platforms: [], raised: null, pits: [], gusts: [], pace: 0, scoreBy: {grotte: 0, pont: 0, montagne: 0}, scored: 0,
     airFrom: 0, airUntil: 0, jumpFrom: 0, pound: false, poundFrom: 0, slideUntil: 0, wall: null,
     entities: [], nextId: 1, nextSpawnZ: C.firstAt, walls: [], wallsTo: {left: 0, right: 0}, holes: [],
     setting: 'grotte', nextSettingAt: 0, upcoming: null, stumbleUntil: 0, lastBumpAt: null,
@@ -820,7 +822,11 @@ function dodge(g: BennyRun, e: RunEntity): void {
 }
 
 export function advanceBennyRun(g: BennyRun, now: number): void {
-  while (!g.over && g.at + C.step <= now) { g.at += C.step; tick(g); }
+  while (!g.over && g.at + C.step <= now) { g.at += C.step; tick(g); shareScore(g); }
+}
+/** The points won since last time go to the setting Benny is in. */
+function shareScore(g: BennyRun): void {
+  if (g.score !== g.scored) { g.scoreBy[g.setting] += g.score - g.scored; g.scored = g.score; }
 }
 
 /** One of the player's gestures, at `now`. */
@@ -887,6 +893,6 @@ export function takeRunEvents(g: BennyRun): RunEvent[] { const e = g.events; g.e
 
 /** The longest distance a saved run may claim: an hour at full speed, far beyond any real run. */
 export const BENNY_RUN_MAX_METRES = 24 * 3600;
-export interface RunSummary {score: number; metres: number; coins: number; pots: number; foes: number; wallRuns: number; bestCombo: number; seconds: number; challenges: number}
-export const runSummary = (g: BennyRun): RunSummary => ({score: g.score, metres: Math.floor(g.distance), coins: g.coins, pots: g.pots, foes: g.foes,
+export interface RunSummary {score: number; bySetting: Record<RunSetting, number>; metres: number; coins: number; pots: number; foes: number; wallRuns: number; bestCombo: number; seconds: number; challenges: number}
+export const runSummary = (g: BennyRun): RunSummary => ({score: g.score, bySetting: (shareScore(g), {...g.scoreBy}), metres: Math.floor(g.distance), coins: g.coins, pots: g.pots, foes: g.foes,
   wallRuns: g.wallRuns, bestCombo: g.bestCombo, seconds: Math.floor((g.at - g.startedAt) / 1000), challenges: g.challengesDone});

@@ -452,6 +452,11 @@ describe('Cours cours Benny ! rules', () => {
     // Without the tunnel, a roll ends after its usual time.
     runInput(g, g.at, 'down'); run(g, C.slideMs + 50); expect(g.at < g.slideUntil).toBe(false);
   });
+  it('shares the points out between the settings they were won in', () => {
+    const g = quiet(); run(g, C.introMs); g.score += 40; run(g, 50);
+    g.setting = 'pont'; g.score += 25; run(g, 50); g.score += 5;
+    expect(runSummary(g).bySetting).toEqual({grotte: 40, pont: 30, montagne: 0});
+  });
   it('lays rockfalls only in the cave, always leaving one lane free', () => {
     let total = 0;
     for (const seed of [3, 4, 5]) {

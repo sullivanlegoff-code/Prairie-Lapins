@@ -18,6 +18,7 @@ const SETTING_COLOURS: Record<RunSetting, {sky: string; ground: string; lane: st
   pont: {sky: '#4a2420', ground: '#8d8378', lane: '#a39a8e', wall: '#b5aa9a', wallOff: '#55493f', side: '#f07a2a', hole: '#ff6a1a', holeEdge: '#ffd27a'},
   montagne: {sky: '#f2a77a', ground: '#a88a66', lane: '#c2a37c', wall: '#cdb48e', wallOff: '#6b5844', side: '#c9d8e8', hole: '#5d7894', holeEdge: '#eef4fa'},
 };
+const SETTING_SHORT: Record<RunSetting, string> = {grotte: 'Grotte', pont: 'Pont', montagne: 'Montagne'};
 const SETTING_NAMES: Record<RunSetting, string> = {grotte: 'La grotte dorée', pont: 'Le pont sur la lave', montagne: 'Le sentier de montagne'};
 /** A challenge said to the player (tutoiement). */
 const CHALLENGE_TEXT: Record<ChallengeKind, (goal: number) => string> = {
@@ -773,7 +774,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const stats = document.createElement('ul'); stats.className = 'benny-run-stats';
     for (const line of [`${s.metres} m`, plural(s.coins, 'pièce'), plural(s.pots, 'pot'), plural(s.foes, 'créature'), plural(s.wallRuns, 'mur'), plural(s.challenges, 'défi'),
       `combo max ${s.bestCombo}`, `${Math.floor(s.seconds / 60)} min ${String(s.seconds % 60).padStart(2, '0')} s`]) { const li = document.createElement('li'); li.textContent = line; stats.append(li); }
-    showCard(paragraph('La Dragon a rattrapé Benny !', 'benny-run-title'), paragraph(`${s.score} points`, 'benny-run-big'), stats,
+    // The points won in each setting crossed (the best one first).
+    const parts = (Object.keys(s.bySetting) as RunSetting[]).filter(k => s.bySetting[k] > 0).sort((a, b) => s.bySetting[b] - s.bySetting[a]);
+    const bySetting = parts.length > 1 ? [paragraph(parts.map(k => `${SETTING_SHORT[k]} ${s.bySetting[k]}`).join(' · '), 'benny-run-rules')] : [];
+    showCard(paragraph('La Dragon a rattrapé Benny !', 'benny-run-title'), paragraph(`${s.score} points`, 'benny-run-big'), stats, ...bySetting,
       ...(record ? [paragraph(previous ? `Nouveau record ! L’ancien était de ${previous}.` : 'Ton premier record !', 'benny-run-record')] : best ? [paragraph(`Ton record : ${best}`, 'benny-run-rules')] : []),
       ...(line ? [paragraph(line, 'benny-run-rules')] : []),
       again, button('Quitter', close, 'bennyRunQuit'));
