@@ -628,6 +628,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     c.save(); c.translate(p.x, p.y - h / 2 - bob + h / 2 * (1 - squash));
     if (flat) c.rotate((g.slideUntil - g.at) / 90);
     else if (wall) c.rotate(wall.side === 'left' ? -1.1 : 1.1);
+    // Off a springboard: a whole somersault at the top of the bounce (not once a ground charge has started).
+    else if (inAir(g) && g.airUntil === g.bounceUntil && !g.pound) { const k = (g.at - g.airFrom) / (g.airUntil - g.airFrom); c.rotate(lean + Math.PI * 2 * Math.min(1, Math.max(0, (k - .15) / .6))); }
     else c.rotate(lean);
     if (!flat) c.scale(1 / Math.sqrt(squash), squash);
     if (g.at < g.stumbleUntil && Math.floor(now / 80) % 2) c.globalAlpha = .45;
@@ -811,7 +813,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         break;
       case 'close': flashes.push({at: clock(), text: `De justesse ! +${event.points}`, x: width / 2}); sound('dodge', 1.3); break;
       case 'km': milestone = event.km * 1000; flash(`${event.km} km ! +${event.points}`); sound('power', 1.15); break;
-      case 'bounce': sound('jump', 1.4); shakeFor('strike'); break;
+      case 'bounce': { sound('jump', 1.4); shakeFor('strike'); const ground = project(laneX(viewLane), .5, 0); burst(ground.x, ground.y, ['#7be08a', '#4fb06a', '#fff'], 10, 200);
+        flashes.push({at: clock(), text: 'Boing !', x: width / 2}); break; }
       case 'landing': flash('Atterrissage en douceur !'); sound('land'); break;
       case 'faster': flash(event.pace === 1 ? 'Vitesse de croisière… et ça accélère encore !' : `Plus vite ! Allure ${event.pace}`); sound('power', 1.3); break;
       case 'setting': flash(SETTING_NAMES[event.setting]); settingBefore = shownSetting; shownSetting = event.setting; settingSince = clock(); break;
