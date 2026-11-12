@@ -499,6 +499,12 @@ describe('Cours cours Benny ! rules', () => {
     expect(strikes.map(e => e.type === 'strike' && e.by)).toEqual(['wall']); expect(g.pots).toBe(1);
     expect(g.lastBumpAt).toBeNull();
   });
+  it('bounces high off a springboard, over a row of pillars and a creature, and lands on the road', () => {
+    const g = quiet(); g.lane = 1; for (const w of g.walls) w.runnable = false;
+    place(g, 'spring', 1, 2); for (const l of [0, 1, 2]) place(g, 'pillar', l, 8); place(g, 'chest', 1, 10);
+    run(g, 600); expect(types(g)).toContain('bounce'); expect(runHeight(g)).toBeGreaterThan(C.overHeight);
+    run(g, 1500); expect(g.lastBumpAt).toBeNull(); expect(inAir(g)).toBe(false); expect(g.entities.some(e => e.kind === 'pillar' && e.z > g.distance)).toBe(false);
+  });
   it('glides down at the end of a flight, onto a clear spot', () => {
     const g = quiet(); run(g, C.introMs); g.active = {power: 'flight', until: g.at + 300};
     run(g, 200); place(g, 'pillar', 1, 8); place(g, 'coin', 1, 9);

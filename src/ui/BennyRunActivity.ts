@@ -425,6 +425,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const SHAPES: Record<string, {colour: string; w: number; h: number; up?: number; round?: boolean; label?: string}> = {
     coin: {colour: '#f4c430', w: .45, h: .45, up: .5, round: true}, power: {colour: '#b07bff', w: 1.25, h: 1.25, up: .5, round: true}, wallCoin: {colour: '#f4c430', w: .45, h: .45, up: 1.6, round: true},
     pot: {colour: '#c96b3a', w: .9, h: .9, round: true}, barrier: {colour: '#7a5a3a', w: 2, h: .6, label: 'saute'},
+    spring: {colour: '#4fb06a', w: 1.4, h: .3, label: 'tremplin'},
     beam: {colour: '#7a5a3a', w: 2, h: .45, up: 1.1, label: 'roulade'}, pillar: {colour: '#8a8a8a', w: 1.6, h: 3},
     dragonnet: {colour: '#8e3a5a', w: 1.1, h: .8, round: true}, chest: {colour: '#6e3b2e', w: 1.3, h: .9},
     ember: {colour: '#ff9a2a', w: .9, h: .9, up: .4, round: true},
@@ -809,6 +810,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         break;
       case 'close': flashes.push({at: clock(), text: `De justesse ! +${event.points}`, x: width / 2}); sound('dodge', 1.3); break;
       case 'km': milestone = event.km * 1000; flash(`${event.km} km ! +${event.points}`); sound('power', 1.15); break;
+      case 'bounce': sound('jump', 1.4); shakeFor('strike'); break;
       case 'landing': flash('Atterrissage en douceur !'); sound('land'); break;
       case 'faster': flash(event.pace === 1 ? 'Vitesse de croisière… et ça accélère encore !' : `Plus vite ! Allure ${event.pace}`); sound('power', 1.3); break;
       case 'setting': flash(SETTING_NAMES[event.setting]); settingBefore = shownSetting; shownSetting = event.setting; settingSince = clock(); break;
