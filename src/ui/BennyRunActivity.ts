@@ -37,7 +37,7 @@ const LABEL_UNTIL = 3;
 const HINTS = {
   rock: 'Éboulement ! Saute les rochers ou prends le couloir libre.', geyser: 'Geysers de lave : on ne les saute pas, contourne-les !',
   fire: 'Boules de feu : saute-les ou écarte-toi !', snow: 'Boules de neige : saute-les ou écarte-toi !', cart: 'Wagonnets fous : trop hauts, écarte-toi !',
-  pit: 'Le sol craque ! Saute la fosse ou change de couloir.', platform: 'Une plateforme : monte par la rampe !',
+  pit: 'Le sol craque ! Saute la fosse ou change de couloir.', spring: 'Un tremplin ! Passe dessus pour bondir par-dessus les piliers.', platform: 'Une plateforme : monte par la rampe !',
 } as const;
 type HintKind = keyof typeof HINTS;
 const HINTS_KEY = 'prairie-lapins:benny-run-hints';
@@ -194,7 +194,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (g.tutorial) return;
     const near = (z: number) => z - g.distance > 0 && z - g.distance < 38;
     const kinds: HintKind[] = [];
-    for (const e of g.entities) if (near(e.z)) kinds.push(...(e.rock ? ['rock'] : e.geyser ? ['geyser'] : e.cart ? ['cart'] : e.snow ? ['snow'] : e.kind === 'fireball' ? ['fire'] : []) as HintKind[]);
+    for (const e of g.entities) if (near(e.z)) kinds.push(...(e.rock ? ['rock'] : e.geyser ? ['geyser'] : e.cart ? ['cart'] : e.snow ? ['snow'] : e.kind === 'fireball' ? ['fire'] : e.kind === 'spring' ? ['spring'] : []) as HintKind[]);
     if (g.pits.some(p => near(p.from))) kinds.push('pit');
     if (g.platforms.some(p => near(p.from - BENNY_RUN.rampLen))) kinds.push('platform');
     const kind = kinds.find(k => !hinted.has(k)); if (!kind) return;
