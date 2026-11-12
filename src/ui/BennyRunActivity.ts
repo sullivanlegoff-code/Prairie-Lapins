@@ -1,6 +1,6 @@
 import '../display/benny-run.css';
 import {FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
-import {advanceBennyRun, BENNY_RUN, floorHeight, ledgeHeight, lanesAt, reach, settingAt, wallLane, dragonVisible, inAir, powerActive, runHeight, runInput, runSummary, sliding, startBennyRun, takeRunEvents,
+import {advanceBennyRun, BENNY_RUN, floorHeight, ledgeHeight, platformAt, lanesAt, reach, settingAt, wallLane, dragonVisible, inAir, powerActive, runHeight, runInput, runSummary, sliding, startBennyRun, takeRunEvents,
   type BennyRun, type ChallengeKind, type RunEntity, type RunInput, type RunPower, type RunSetting, type RunSummary, type TutorialStep} from '../simulation/bennyRun';
 import {pausableClock, settleCard} from './activityPause';
 import RUN_ART from '../config/bennyRunArt.json';
@@ -499,7 +499,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     let shown = shownLanes.get(e.id) ?? e.lane; shown += (e.lane - shown) * Math.min(1, frameDt * 12); if (Math.abs(e.lane - shown) < .01) shown = e.lane; shownLanes.set(e.id, shown);
     const n = lanesAt(g, e.z); let x = e.lane < 0 ? -wallXAt(g, ahead) + .4 : e.lane > n - 1 ? wallXAt(g, ahead) - .4 : (shown - (n - 1) / 2) * LANE_WIDTH;
     // The little flying monster hovers at a jump's height over the road (it is struck only by jumping through it).
-    let up = e.kind === 'flyer' ? BENNY_RUN.flyerHeight + .5 + Math.sin(g.at / 180 + e.id) * .08 : e.up ?? shape.up ?? 0;
+    // Things on the road sit on its height here: stairs and a platform's top.
+    const ground = e.kind === 'flyer' ? 0 : ledgeHeight(g, e.lane, e.z) + (platformAt(g, e.lane, e.z) ? BENNY_RUN.platformHeight : 0);
+    let up = e.kind === 'flyer' ? BENNY_RUN.flyerHeight + .5 + Math.sin(g.at / 180 + e.id) * .08 : ground + (e.up ?? shape.up ?? 0);
     // The magnet: the coins of the other lanes fly over to Benny in her last metres before them.
     if (e.kind === 'coin' && e.lane !== g.lane && powerActive(g, 'magnet') && ahead < MAGNET_PULL) {
       const pull = (1 - Math.max(0, ahead) / MAGNET_PULL) ** 2; x += (laneX(viewLane) - x) * pull; up += .5 * Math.sin(Math.PI * pull);
