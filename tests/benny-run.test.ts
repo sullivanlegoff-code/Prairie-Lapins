@@ -505,6 +505,11 @@ describe('Cours cours Benny ! rules', () => {
     run(g, 600); expect(types(g)).toContain('bounce'); expect(runHeight(g)).toBeGreaterThan(C.overHeight);
     run(g, 1500); expect(g.lastBumpAt).toBeNull(); expect(inAir(g)).toBe(false); expect(g.entities.some(e => e.kind === 'pillar' && e.z > g.distance)).toBe(false);
   });
+  it('from a springboard bounce, a ground charge makes a shock wave that breaks the pots across the road', () => {
+    const g = quiet(); g.lane = 1; place(g, 'spring', 1, 1); for (const l of [0, 1, 2]) place(g, 'pot', l, 1 + g.speed * C.springMs / 1000 * .8);
+    run(g, 700); runInput(g, g.at, 'down'); run(g, 400);
+    expect(types(g)).toContain('shockwave'); expect(g.pots).toBe(3); expect(g.lastBumpAt).toBeNull();
+  });
   it('glides down at the end of a flight, onto a clear spot', () => {
     const g = quiet(); run(g, C.introMs); g.active = {power: 'flight', until: g.at + 300};
     run(g, 200); place(g, 'pillar', 1, 8); place(g, 'coin', 1, 9);

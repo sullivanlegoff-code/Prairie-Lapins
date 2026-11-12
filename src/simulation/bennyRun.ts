@@ -520,6 +520,9 @@ function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
       add(g, 'spring', lane, z);
       for (const l of all) add(g, l === way && way !== lane ? 'barrier' : 'pillar', l, top);
       for (let k = 1; k < 8; k++) { const p = k / 8; add(g, 'coin', lane, z + len * p, {up: 4 * C.springHeight * p * (1 - p) + .3}); }
+      // Often, pots across the road under the end of the bounce (she passes over them): a ground charge from up there breaks them all
+      // with its shock wave.
+      if (random(g) < .5 + .4 * d) for (const l of all) add(g, 'pot', l, z + len * .8);
       return z + len + 4;
     }
     case 'pillars': {
