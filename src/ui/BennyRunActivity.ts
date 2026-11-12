@@ -112,10 +112,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const gameTime = () => clock() - slowLost;
   const slowMo = (ms: number) => { const now = clock(); if (now > slowUntil + 900) slowUntil = now + ms; };
   const shakeFor = (kind: keyof typeof SHAKES) => { const s = SHAKES[kind]; if (!shake || shake.px <= s.px || clock() - shake.at > shake.ms) shake = {at: clock(), ...s}; };
-  let rings: {x: number; y: number; at: number; size: number}[] = [];
+  let rings: {x: number; y: number; at: number; size: number; ground?: boolean}[] = [];
   /** Coins picked up close together climb in pitch (back down after a pause). */
   let coinRun = 0;
-  let swing: {at: number; lane: number} | null = null, shock: number | null = null, flashes: {at: number; text: string; x: number}[] = [];
+  let swing: {at: number; lane: number} | null = null, shock: number | null = null, flashes: {at: number; text: string; x: number; big?: boolean}[] = [];
   let width = 0, height = 0;
   /** The road's lanes (3 for now; zones of up to 5 later) and the walls' distance from its middle. */
   let lanes = 3, viewLanes = 3, frameDt = 0;
@@ -743,7 +743,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // Shards and sparkles.
     // Impact rings: a white circle that opens and fades where a strike lands.
     rings = rings.filter(r => now - r.at < 260);
-    for (const r of rings) { const k = (now - r.at) / 260; c.strokeStyle = `rgba(255,255,255,${.9 * (1 - k)})`; c.lineWidth = 6 * (1 - k) + 1; c.beginPath(); c.arc(r.x, r.y, r.size * (.4 + k), 0, Math.PI * 2); c.stroke(); }
+    for (const r of rings) { const k = (now - r.at) / 260; c.strokeStyle = r.ground ? `rgba(120,235,255,${.9 * (1 - k)})` : `rgba(255,255,255,${.9 * (1 - k)})`; c.lineWidth = 6 * (1 - k) + 1; c.beginPath();
+      if (r.ground) c.ellipse(r.x, r.y, r.size * (.5 + k), r.size * (.5 + k) * .32, 0, 0, Math.PI * 2); else c.arc(r.x, r.y, r.size * (.4 + k), 0, Math.PI * 2); c.stroke(); }
     bits = bits.filter(b => now - b.at < b.life);
     for (const b of bits) { const t = (now - b.at) / 1000; c.globalAlpha = 1 - (now - b.at) / b.life; c.fillStyle = b.colour;
       c.fillRect(b.x + b.vx * t - b.size / 2, b.y + b.vy * t + 900 * t * t - b.size / 2, b.size, b.size); }
@@ -755,7 +756,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       grad.addColorStop(0, 'rgba(200,40,40,0)'); grad.addColorStop(1, `rgba(200,40,40,${.45 * k})`); c.fillStyle = grad; c.fillRect(0, 0, width, height);
     }
     flashes = flashes.filter(f => now - f.at < 700);
-    for (const f of flashes) { c.globalAlpha = 1 - (now - f.at) / 700; c.fillStyle = '#fff'; c.font = '800 22px system-ui'; c.textAlign = 'center'; c.fillText(f.text, f.x, height * .55 - (now - f.at) * .05); }
+    // Points spring out (a strike's big, popping in), outlined to read on any ground, and float up.
+    c.textAlign = 'center'; c.lineJoin = 'round';
+    for (const f of flashes) { const k = (now - f.at) / 700, pop = 1 + .45 * Math.max(0, 1 - k * 6), y = height * (f.big ? .7 : .55) - (now - f.at) * .06;
+      c.globalAlpha = 1 - k * k; c.font = `800 ${Math.round((f.big ? 30 : 22) * pop)}px system-ui`; c.lineWidth = 5; c.strokeStyle = 'rgba(59,36,20,.85)'; c.strokeText(f.text, f.x, y); c.fillStyle = f.big ? '#fff6c8' : '#fff'; c.fillText(f.text, f.x, y); }
     c.globalAlpha = 1;
   }
   /** The tutorial's advice, one per step (tutoiement). */
@@ -783,7 +787,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         // Three things or more broken in one roll: it is said.
         if (event.roll && event.roll >= 3) flash(`Roulade en chaîne ×${event.roll} !`);
         const p = screenOf(g, event.entity);
-        flashes.push({at: clock(), text: `+${event.points}`, x: p.x});
+        flashes.push({at: clock(), text: `+${event.points}`, x: (p.x + width / 2) / 2, big: true});
+        // A glowing ring opens on the ground under Benny with each strike.
+        { const b = project(laneX(viewLane), 0, bennyHeight(g)); rings.push({x: b.x, y: b.y, at: clock(), size: b.s * 1.2, ground: true}); }
         // Each strike of a combo a semitone higher (up to an octave); a new multiplier is announced.
         const pitch = 2 ** (Math.min(12, event.combo - 1) / 12);
         if (event.entity.gold) { burst(p.x, p.y, ['#fff3a0', '#f4c430', '#ffffff'], 26, 380); flash(`Pot doré ! +${event.points}`); }
