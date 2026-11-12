@@ -206,12 +206,13 @@ describe('Cours cours Benny ! rules', () => {
     place(g, 'beam', 1, g.speed * (C.slideMs + 100) / 1000); run(g, C.slideMs + 300);
     expect(types(g)).toEqual(['cleared']); expect(g.lastBumpAt).toBeNull();
   });
-  it('jumps a short gap; running into one is a bump and she hops out', () => {
+  it('jumps a short gap; running into one is a fall into the void, and the Dragon catches her: the run is over', () => {
     const g = quiet(); for (const w of g.walls) w.runnable = false;
     g.holes.push({from: g.distance + 3, to: g.distance + 7}); runInput(g, g.at, 'up'); run(g, 900);
     expect(g.lastBumpAt).toBeNull(); expect(holeAt(g)).toBeUndefined();
-    g.holes.push({from: g.distance + 3, to: g.distance + 7}); run(g, 1200);
-    expect(types(g)).toContain('fall'); expect(g.lastBumpAt).not.toBeNull(); expect(g.over).toBe(false); expect(g.distance).toBeGreaterThan(g.holes[0].to);
+    g.holes.push({from: g.distance + 3, to: g.distance + 7}); run(g, 300);
+    expect(types(g)).toContain('fall'); expect(g.over).toBe(false); // The drop first.
+    run(g, C.fallMs + 50); expect(g.over).toBe(true); expect(types(g)).toContain('caught');
   });
   it('crosses a long gap on the walls: the wall run does not run out over it, and swiping across leaps to the other wall', () => {
     const g = quiet(); runInput(g, g.at, 'left'); runInput(g, g.at, 'left');
@@ -226,10 +227,10 @@ describe('Cours cours Benny ! rules', () => {
     runInput(g, g.at, 'down'); expect(g.wall?.side).toBe('left'); // No charge into the void.
     run(g, 2000); expect(holeAt(g)).toBeUndefined(); expect(g.lastBumpAt).toBeNull();
   });
-  it('catches the nearer wall when Benny runs into a long gap', () => {
+  it('falls into a long gap too, even with a wall beside it: the void ends the run', () => {
     const g = quiet(); runInput(g, g.at, 'right');
     g.holes.push({from: g.distance + 3, to: g.distance + 30}); run(g, 600);
-    expect(types(g)).toContain('fall'); expect(g.wall?.side).toBe('right'); expect(g.over).toBe(false);
+    expect(types(g)).toContain('fall'); expect(g.wall).toBeNull(); run(g, C.fallMs + 50); expect(g.over).toBe(true);
   });
   it('breaks a struck pot where it stands: nothing flies on, what stood behind it is still there', () => {
     const g = quiet();
@@ -363,7 +364,7 @@ describe('Cours cours Benny ! rules', () => {
         for (const w of g.walls) walls.set(`${w.side}:${w.from}`, w.runnable);
         for (const h of g.holes) if (!holes.some(o => o.from === h.from)) holes.push({...h});
         g.entities = g.entities.filter(e => e.z > g.distance + 20);
-        advanceBennyRun(g, t); g.lastBumpAt = null; // Falls into gaps are not the point here.
+        advanceBennyRun(g, t); g.lastBumpAt = null; g.fallFrom = null; g.over = false; g.pits = g.pits.filter(p => !p.open); const gap = holeAt(g); if (gap) g.distance = gap.to; // Falls into the void are not the point here: she is carried past.
       }
       for (const [z, row] of pillars) if (row.size === width.get(z)) {
         triples++;
@@ -446,11 +447,22 @@ describe('Cours cours Benny ! rules', () => {
     place(g, 'pillar', lane, c.z - g.distance + 2); c.knock = C.chestKnock; run(g, 300);
     expect(g.entities).not.toContain(c);
   });
+  it('a lane open to the void drops Benny into it: the Dragon catches her and the run is over', () => {
+    const g = quiet(); run(g, C.introMs);
+    g.pits.push({lane: g.lane, from: g.distance + 2, to: g.distance + 12, open: true}); run(g, 400);
+    expect(types(g)).toContain('fall'); expect(g.over).toBe(false); run(g, C.fallMs + 50); expect(g.over).toBe(true);
+  });
+  it('swiping off the road into a void side is a fall, not a wall', () => {
+    const g = quiet(); run(g, C.introMs); g.lane = 0; const z = g.distance;
+    for (const w of g.walls) w.runnable = false; // The quiet road has runnable walls: this side is the void only.
+    g.walls.push({side: 'left', from: z - 5, to: z + 60, runnable: false, void: true});
+    runInput(g, g.at, 'left'); expect(g.fallFrom).not.toBeNull(); expect(g.wall).toBeNull();
+  });
   it('never moves a creature sideways: a dragonnet, an ember or any other stays in its lane', () => {
     const g = quiet(); const e = place(g, 'dragonnet', 1, 60); place(g, 'ember', 2, 30);
     run(g, 6000); expect(e.lane).toBe(1); expect(g.entities.filter(o => o.kind === 'ember').every(o => o.lane === 2)).toBe(true);
   });
-  it('opens a pit where cracked slabs give way as Benny comes: over it unharmed, into it a bump and a scramble out', () => {
+  it('opens a pit where cracked slabs give way as Benny comes: over it unharmed, into it the void and the end of the run', () => {
     const g = quiet(); run(g, C.introMs); const z = g.distance;
     g.pits.push({lane: 1, from: z + 30, to: z + 34, open: false});
     run(g, 200); expect(g.pits[0].open).toBe(false);
@@ -459,7 +471,7 @@ describe('Cours cours Benny ! rules', () => {
     while (g.pits[0].from - g.distance > 1.2) run(g, 10); runInput(g, g.at, 'up'); run(g, 800); expect(g.lastBumpAt).toBeNull();
     // Into the next one: a bump, then out of it.
     g.pits.push({lane: 1, from: g.distance + 3, to: g.distance + 7, open: true}); run(g, 400);
-    expect(g.lastBumpAt).not.toBeNull(); expect(g.over).toBe(false);
+    expect(types(g)).toContain('fall'); run(g, C.fallMs + 50); expect(g.over).toBe(true);
   });
   it('drops rocks from the cave ceiling when Benny comes near: a boulder to jump over', () => {
     const g = quiet(); run(g, C.introMs); const z = g.distance;

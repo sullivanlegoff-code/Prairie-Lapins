@@ -404,16 +404,18 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       }
     }
     // The walls, in their segments: runnable ones are lit and striped, the others dark.
-    for (const w of g.walls) for (const [lo, hi, look] of [[NEAR, border, colours], [border, FAR, next]] as const) {
+    for (const w of g.walls) for (const [lo, hi] of [[NEAR, border], [border, FAR]] as const) {
+      if (w.void) continue; // The void beside the road: nothing to see but the dark.
       const from = Math.max(lo, w.from - g.distance), to = Math.min(hi, w.to - g.distance); if (to <= from) continue;
       const dir = w.side === 'left' ? -1 : 1, zs = cuts(g, from, to);
-      c.fillStyle = w.runnable ? look.wall : look.wallOff; c.beginPath();
+      // A wall Benny can run on is earth with grass (it reads as ground); the others are grey stone.
+      c.fillStyle = w.runnable ? '#7d9b4c' : '#6e7480'; c.beginPath();
       zs.forEach((z, i) => { const p = project(dir * wallXAt(g, z), z, 0); if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); });
       for (const z of [...zs].reverse()) { const p = project(dir * wallXAt(g, z), z, WALL_HEIGHT); c.lineTo(p.x, p.y); }
       c.closePath(); c.fill();
       if (w.runnable) for (let z = Math.ceil(from / 6) * 6; z < to; z += 6) {
         const x = dir * wallXAt(g, z), a = project(x, z, .3), b = project(x, z, WALL_HEIGHT - .3);
-        c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = Math.max(1, a.s * .05); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke();
+        c.strokeStyle = 'rgba(90,60,30,.45)'; c.lineWidth = Math.max(1, a.s * .05); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke();
       }
     }
   }
