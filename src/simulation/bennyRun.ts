@@ -46,6 +46,8 @@ export const BENNY_RUN = {
   /** Benny's height when running on a wall; a ground charge from `shockHeight` m or more sends a shock wave from `shockBehind` m
    * behind her to `shockReach` m ahead, in every lane. */
   wallRunHeight: 1.8, shockHeight: 1.6, shockBehind: 1.5, shockReach: 6,
+  /** A ground charge that falls on a creature's head (at most `headHeight` m up) breaks it, and Benny rebounds off it. */
+  headHeight: 1.6,
   /** A wall run lasts `wallMs` at most; walls come in segments of `wallSegment` m, `wallRunnable` of them runnable. */
   wallMs: 2600, wallSegment: 36, wallRunnable: .7,
   /** A strike reaches the nearest pot or creature from `-hitHalf` m to `strikeReach` m plus `strikeLead` s of running ahead: the
@@ -66,7 +68,7 @@ export const BENNY_RUN = {
   comboMs: 2500, comboStep: 3, comboMax: 5,
   /** A series of at least `seriesMin` strikes that ends by itself (not by a bump) is banked: `seriesPoints` per strike. */
   seriesMin: 5, seriesPoints: 5,
-  points: {pot: 10, foe: 25, wallRun: 50, wallLeap: 25, dodge: 5, wallTrail: 10, leapChain: 15, close: 15, km: 100},
+  points: {pot: 10, foe: 25, wallPerSecond: 40, wallLeap: 25, dodge: 5, wallTrail: 10, leapChain: 15, close: 15, km: 100},
   /** « De justesse » : an obstacle passing in the lane Benny left less than `closeMs` ago. */
   closeMs: 300,
   /** Coins picked up on one wall run for the « wall trail » bonus (`points.wallTrail` each). */
@@ -245,7 +247,7 @@ export interface BennyRun {
   /** The height of the platform a springboard bounce lands on (0 when it lands on the road). */
   landHeight: number;
   slideUntil: number;
-  wall: {side: Side; until: number; coins?: number; leaps?: number} | null;
+  wall: {side: Side; until: number; since?: number; coins?: number; leaps?: number} | null;
   entities: RunEntity[]; nextId: number; nextSpawnZ: number;
   walls: WallSegment[]; wallsTo: Record<Side, number>;
   /** Gaps in the road ahead, from `from` to `to` (m). */
@@ -724,7 +726,7 @@ function fall(g: BennyRun): void {
   g.slideUntil = 0; g.pound = false;
   bump(g, {id: g.nextId++, kind: 'hole', lane: g.lane, z: g.distance});
   if (g.over) return;
-  if (onto) { g.wall = {side: onto, until: g.at + C.wallMs}; g.airUntil = 0; }
+  if (onto) { g.wall = {side: onto, until: g.at + C.wallMs, since: g.at}; g.airUntil = 0; }
   else { g.jumpFrom = 0; g.airFrom = g.at; g.airUntil = g.at + Math.max(C.jumpMs, (hole.to - g.distance) / Math.max(1, g.speed * C.stumbleSlow) * 1000 + 120); }
   g.events.push({type: 'fall', onto});
 }
@@ -760,7 +762,7 @@ function leap(g: BennyRun): void {
   if (!runnableAt(g, side, g.distance)) return;
   // Leaps in a row without touching the ground: each one worth `leapChain` more than the last.
   const chain = (g.wall!.leaps ?? 0) + 1;
-  g.wall = {side, until: g.at + C.wallMs, coins: g.wall!.coins, leaps: chain}; g.leaps++;
+  g.wall = {side, until: g.at + C.wallMs, since: g.at, coins: g.wall!.coins, leaps: chain}; g.leaps++;
   g.combo = g.at <= g.comboUntil ? g.combo + 1 : 1; g.comboUntil = g.at + C.comboMs; g.bestCombo = Math.max(g.bestCombo, g.combo);
   const points = (C.points.wallLeap + C.points.leapChain * (chain - 1)) * comboMultiplier(g.combo); g.score = Math.min(C.maxScore, g.score + points);
   g.events.push({type: 'wallLeap', side, points, combo: g.combo, chain});
@@ -825,18 +827,26 @@ function bump(g: BennyRun, e: RunEntity): void {
   g.events.push({type: 'bump', entity: e});
 }
 /** A ground charge starting now, from Benny's present height (or `from` m when leaving a wall): the higher, the longer the fall. */
+/** A bounce off a creature in the air (struck from above, or on its head): a shorter jump from where she is, so that the next creature's
+ * head or flying monster can be struck in the air too (combos in the air). */
+function rebound(g: BennyRun): void {
+  const from = airHeight(g);
+  g.jumpFrom = from; g.airFrom = g.at; g.airUntil = g.at + C.jumpMs * .6 * (1 + from / (2 * C.jumpHeight));
+  g.bounceUntil = -1; g.pound = false; g.slideUntil = 0;
+}
 function startPound(g: BennyRun, from = airHeight(g)): void {
   g.poundFrom = Math.max(from, .3); g.pound = true; g.airFrom = g.at; g.airUntil = g.at + C.poundMs * Math.max(1, Math.sqrt(g.poundFrom / C.jumpHeight)); g.slideUntil = 0;
 }
 function endWall(g: BennyRun): void {
-  const side = g.wall!.side, trail = g.wall!.coins ?? 0; g.wall = null; g.lane = side === 'left' ? 0 : g.lanes - 1; g.laneChangedAt = g.at;
+  const side = g.wall!.side, trail = g.wall!.coins ?? 0, since = g.wall!.since ?? g.at; g.wall = null; g.lane = side === 'left' ? 0 : g.lanes - 1; g.laneChangedAt = g.at;
   // Down from the wall onto a platform along the edge lane: she lands on top of it.
   const p = platformAt(g, g.lane, g.distance); if (p && g.distance >= p.from) g.raised = p;
   g.wallRuns++;
-  g.combo = g.at <= g.comboUntil ? g.combo + 1 : 1; g.comboUntil = g.at + C.comboMs; g.bestCombo = Math.max(g.bestCombo, g.combo);
+  // Running on a wall adds no combo, but keeps the one under way; its points follow the time spent up there.
+  if (g.combo) g.comboUntil = Math.max(g.comboUntil, g.at + C.comboMs);
   // A trail of coins picked up all along the wall: a bonus for each.
   const bonus = trail >= C.wallTrailMin ? trail * C.points.wallTrail : 0;
-  const points = C.points.wallRun * comboMultiplier(g.combo) + bonus; g.score = Math.min(C.maxScore, g.score + points);
+  const points = Math.round(C.points.wallPerSecond * (g.at - since) / 1000 * comboMultiplier(g.combo)) + bonus; g.score = Math.min(C.maxScore, g.score + points);
   g.events.push({type: 'wallEnd', side, points, trail: bonus ? trail : 0});
 }
 
@@ -901,7 +911,7 @@ function meet(g: BennyRun, e: RunEntity): void {
     case 'flyer':
       if (sliding(g)) strike(g, e, 'slide');
       else if (g.wall) bump(g, e);
-      else if (inAir(g) && runHeight(g) >= C.flyerHeight) strike(g, e, 'jump');
+      else if (inAir(g) && runHeight(g) >= C.flyerHeight) { strike(g, e, 'jump'); rebound(g); }
       return;
     case 'pillar': bump(g, e); return;
   }
@@ -926,8 +936,15 @@ function tick(g: BennyRun): void {
     const end = g.upcoming.z; g.entities = g.entities.filter(e => !((e.rock || e.geyser || e.kind === 'fireball') && e.z >= end)); g.gusts = g.gusts.filter(w => w.z < end);
   }
   followLanes(g); followPlatform(g);
+  // On a wall the combo keeps going (it is not added to).
+  if (g.wall && g.combo) g.comboUntil = Math.max(g.comboUntil, g.at + C.comboMs);
   if (g.upcoming && g.distance >= g.upcoming.z) { g.setting = g.upcoming.setting; g.upcoming = null; g.events.push({type: 'setting', setting: g.setting}); }
   // Landing: a ground charge breaks the pots and creatures just ahead in Benny's lane; from high up, a shock wave strikes all around.
+  // Falling onto a creature's head with a downward swipe: it breaks, and she rebounds off it.
+  if (g.pound && inAir(g) && runHeight(g) <= C.headHeight) {
+    const head = g.entities.find(o => isFoe(o) && o.lane === g.lane && lanesAt(g, o.z) === g.lanes && Math.abs(o.z - g.distance) <= C.hitHalf);
+    if (head) { strike(g, head, 'pound'); rebound(g); }
+  }
   if (g.pound && !inAir(g)) {
     g.pound = false; g.events.push({type: 'pound'}); g.slideUntil = g.at + C.poundRollMs; g.rollHits = 0;
     if (g.poundFrom >= C.shockHeight) {
@@ -1035,7 +1052,7 @@ export function runInput(g: BennyRun, now: number, input: RunInput): void {
       if (target < 0 || target > g.lanes - 1) {
         if (runnableAt(g, side, g.distance) && !powerActive(g, 'flight')) {
           // From the ground or in the middle of a jump.
-          g.wall = {side, until: g.at + C.wallMs}; g.airUntil = 0; g.pound = false; g.slideUntil = 0;
+          g.wall = {side, until: g.at + C.wallMs, since: g.at}; g.airUntil = 0; g.pound = false; g.slideUntil = 0;
           g.events.push({type: 'wallStart', side});
         }
         return;

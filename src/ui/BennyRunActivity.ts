@@ -886,7 +886,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         if (event.multiplier > 1 && event.combo === (event.multiplier - 1) * BENNY_RUN.comboStep + 1) { flash(`Combo ×${event.multiplier} !`); sound('power'); }
         // A creature lands harder than a pot: a longer freeze, a bigger ring.
         rings.push({x: p.x, y: p.y - p.s * .4, at: clock(), size: p.s * (event.entity.kind === 'pot' ? .9 : 1.4)});
-        shakeFor('strike'); if (event.entity.kind !== 'pot') hitStop(); break;
+        // A shock wave's strikes ring and score but neither freeze nor shake the run.
+        if (event.by !== 'shock') { shakeFor('strike'); if (event.entity.kind !== 'pot') hitStop(); } break;
       }
       case 'crash': { const p = screenOf(g, event.entity); burst(p.x, p.y, ['#c96b3a', '#8a4a26'], 8, 180); sound('pot'); break; }
       case 'coin': if (clock() - lastCoinSound > 60) { coinRun = clock() - lastCoinSound < 450 ? Math.min(12, coinRun + 1) : 0; lastCoinSound = clock(); sound('coin', 2 ** (coinRun / 24)); } break;
@@ -902,7 +903,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'wallLeap': flashes.push({at: clock(), text: `Saut de mur +${event.points}`, x: width / 2}); sound('wall', 1 + .06 * Math.min(6, event.chain - 1));
         if (event.chain >= 2) flash(event.chain === 2 ? 'Double bond !' : event.chain === 3 ? 'Triple bond !' : `Bonds ×${event.chain} !`); shakeFor('strike'); break;
       case 'fall': flash(event.onto ? 'Ouf ! Benny se rattrape au mur !' : 'Ouf ! Benny ressort du trou !'); break;
-      case 'shockwave': shock = clock(); slowMo(380); flash('Onde de choc !'); shakeFor('shock'); sound('shock'); break;
+      // The shock wave: a ring and a sound only, no slow motion and no shake (it must not slow the run down).
+      case 'shockwave': shock = clock(); flash('Onde de choc !'); sound('shock'); break;
       case 'challenge':
         if (event.points === undefined) flash(`Défi : ${CHALLENGE_TEXT[event.kind](event.goal)}`);
         else { flash(`Défi réussi ! +${event.points}`); sound('power'); burst(width / 2, height * .3, ['#7be08a', '#ffe66b', '#fff'], 24, 360); }

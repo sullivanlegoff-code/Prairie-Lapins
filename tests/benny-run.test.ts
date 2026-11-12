@@ -295,7 +295,8 @@ describe('Cours cours Benny ! rules', () => {
     for (const lane of [0, 1, 2]) place(g, 'pillar', lane, 6);
     place(g, 'wallCoin', -1, 4);
     run(g, C.wallMs + 50);
-    expect(g).toMatchObject({wall: null, lane: 0, wallRuns: 1, coins: 1, lastBumpAt: null, score: C.points.wallRun});
+    expect(g).toMatchObject({wall: null, lane: 0, wallRuns: 1, coins: 1, lastBumpAt: null, combo: 0});
+    expect(Math.abs(g.score - C.points.wallPerSecond * C.wallMs / 1000)).toBeLessThanOrEqual(C.points.wallPerSecond * .1); // By the time up there.
   });
   it('does not climb a wall that is not runnable', () => {
     const g = quiet(); for (const w of g.walls) if (w.side === 'right') w.runnable = false;
@@ -557,12 +558,25 @@ describe('Cours cours Benny ! rules', () => {
     expect(g.entities.some(e => e.kind === 'pillar')).toBe(false); expect(g.entities.some(e => e.kind === 'coin')).toBe(true);
     run(g, 2000); expect(g.lastBumpAt).toBeNull(); expect(runHeight(g)).toBe(0);
   });
+  it('running on a wall adds no combo, keeps the one under way, and pays by the time spent up there', () => {
+    const g = quiet(); run(g, C.introMs); g.combo = 3; g.comboUntil = g.at + 100;
+    runInput(g, g.at, 'left'); runInput(g, g.at, 'left'); expect(g.wall?.side).toBe('left');
+    run(g, C.wallMs - 300); expect(g.combo).toBe(3); expect(g.comboUntil).toBeGreaterThan(g.at); // The combo is kept alive on the wall.
+    while (g.wall) run(g, 20);
+    expect(g.combo).toBe(3); expect(g.score).toBeGreaterThan(0);
+  });
+  it('breaks a creature whose head a downward swipe falls on, and rebounds off it', () => {
+    const g = quiet(); run(g, C.introMs);
+    runInput(g, g.at, 'up'); run(g, 200); runInput(g, g.at, 'down'); expect(g.pound).toBe(true);
+    place(g, 'dragonnet', g.lane, 0.3); run(g, 150);
+    expect(g.foes).toBe(1); expect(inAir(g)).toBe(true); expect(g.pound).toBe(false); // Struck, and up again.
+  });
   it('gives a bonus for a trail of coins picked up all along one wall run', () => {
     const g = quiet(); run(g, C.introMs); runInput(g, g.at, 'left'); runInput(g, g.at, 'left'); expect(g.wall?.side).toBe('left');
     for (let k = 0; k < 7; k++) place(g, 'wallCoin', -1, 2 + k * 2.5);
     takeRunEvents(g); while (g.wall) run(g, 20);
     const end = takeRunEvents(g).find(e => e.type === 'wallEnd');
-    expect(end).toMatchObject({trail: 7, points: C.points.wallRun + 7 * C.points.wallTrail});
+    expect(end).toMatchObject({trail: 7}); expect((end as {points: number}).points).toBeGreaterThanOrEqual(7 * C.points.wallTrail);
   });
   it('charges with the « Ruée »: faster, smashing all in her lane, leaping gaps', () => {
     const g = quiet(); run(g, C.introMs); const plain = g.speed;
