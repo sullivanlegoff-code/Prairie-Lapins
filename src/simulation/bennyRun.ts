@@ -369,12 +369,12 @@ export type RunPattern = 'coins' | 'arc' | 'slalom' | 'pots' | 'gauntlet' | 'pai
  */
 const PATTERNS: Record<RunPattern, [number, number]> = {
   coins: [4, 1.5], arc: [2, 2], slalom: [3, 3], pots: [3, 1.5], gauntlet: [1.5, 3.5], pair: [.5, 2.5], tunnel: [1, 2], barriers: [1, 2],
-  pillars: [1.5, 2.5], wall: [0, 2], flyers: [0, 2.5], breather: [2, .8], hole: [0, 2.2], skittles: [1.5, 2], wide: [0, 1.2], platform: [.4, 1.4], crossers: [0, 1.6], crumble: [.2, 1.1], rockfall: [1.5, 2.5], geysers: [1.5, 2.5], gust: [1.2, 1.8], burrow: [.3, 1.2],
+  pillars: [1.5, 2.5], wall: [0, 2], flyers: [0, 2.5], breather: [2, .8], hole: [0, 2.2], skittles: [1.5, 2], wide: [0, 1.2], platform: [.4, 1.4], crossers: [0, 1.6], crumble: [.2, 1.1], rockfall: [1.5, 2.5], geysers: [1.2, 2], gust: [1.2, 1.8], burrow: [.2, .8],
 };
 function choosePattern(g: BennyRun, z: number): RunPattern {
   const d = runDifficulty(g), list = (Object.keys(PATTERNS) as RunPattern[]).filter(p => (p !== 'flyers' || d >= C.flyerFrom) && (p !== 'pair' || d >= .2) && (p !== 'hole' || d >= .08) &&
     (p !== 'wall' || (d > .25 && wallSide(g, z))) &&
-    (p !== 'platform' || d >= .1) && (p !== 'crossers' || d >= .2) && (p !== 'crumble' || d >= .12) && (p !== 'burrow' || d >= .15) && (p !== 'gust' || (d >= .06 && settingAt(g, z) === 'montagne' && settingAt(g, z + 30) === 'montagne')) && (p !== 'geysers' || (d >= .06 && settingAt(g, z) === 'pont' && settingAt(g, z + 40) === 'pont')) && (p !== 'rockfall' || (d >= .06 && settingAt(g, z) === 'grotte' && settingAt(g, z + 40) === 'grotte')) && (p !== 'wide' || (d >= C.wideFrom && g.baseLanes < C.wideLanes && !g.zones.some(w => w.to > z - 100))));
+    (p !== 'platform' || d >= .1) && (p !== 'crossers' || d >= .2) && (p !== 'crumble' || d >= .12) && (p !== 'burrow' || d >= .2) && (p !== 'gust' || (d >= .06 && settingAt(g, z) === 'montagne' && settingAt(g, z + 30) === 'montagne')) && (p !== 'geysers' || (d >= .06 && settingAt(g, z) === 'pont' && settingAt(g, z + 40) === 'pont')) && (p !== 'rockfall' || (d >= .06 && settingAt(g, z) === 'grotte' && settingAt(g, z + 40) === 'grotte')) && (p !== 'wide' || (d >= C.wideFrom && g.baseLanes < C.wideLanes && !g.zones.some(w => w.to > z - 100))));
   // The « run on walls » challenge: a row of pillars (the way on is up a wall) comes one time in two meanwhile.
   if (g.challenge?.kind === 'walls' && wallSide(g, z) && random(g) < C.wallChallengeNudge) return 'wall';
   const weight = (p: RunPattern) => PATTERNS[p][0] + (PATTERNS[p][1] - PATTERNS[p][0]) * d;
@@ -483,9 +483,9 @@ function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
         const two = g.lanes > 2 && random(g) < .2 + .4 * d, other = two ? neighbour(lane) : -1;
         if (two) add(g, 'pillar', other, at, {geyser: 'idle'});
         const free = all.filter(l => l !== lane && l !== other); add(g, 'coin', pick(g, free), at);
-        lane = pick(g, all.filter(l => l !== lane)); at += 11;
+        lane = pick(g, all.filter(l => l !== lane)); at += 14;
       }
-      return at - 11;
+      return at - 14;
     }
     case 'rockfall': {
       // Rocks fall in all lanes but one (two rows later on, the free lane changing): jump them or take the free lane.
