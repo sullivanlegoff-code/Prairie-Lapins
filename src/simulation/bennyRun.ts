@@ -75,7 +75,7 @@ export const BENNY_RUN = {
   settingAhead: 80,
   /** Short challenges during the run, one after the other, in this order: the first after `challengeFirstMs`, the next
    * `challengeGapMs` after one is done. Each one done is worth `challengePoints` times its rank (at most `challengePointsMax`). */
-  challengeOrder: ['pots', 'coins', 'foes', 'clean', 'walls', 'dodges', 'combo'] as const, challengeFirstMs: 5000, challengeGapMs: 4000,
+  challengeOrder: ['pots', 'coins', 'foes', 'clean', 'walls', 'dodges', 'combo', 'leaps'] as const, challengeFirstMs: 5000, challengeGapMs: 4000,
   challengePoints: 100, challengePointsMax: 500,
   /** While the « run on walls » challenge is on, the share of patterns that are a row of pillars (whatever the difficulty). */
   wallChallengeNudge: .5,
@@ -178,7 +178,7 @@ export type RunEvent =
 export interface Platform {lane: number; from: number; to: number}
 /** A pit in one lane where cracked slabs gave way (`open`), or are about to. */
 export interface Pit {lane: number; from: number; to: number; open: boolean}
-export type ChallengeKind = 'pots' | 'coins' | 'foes' | 'walls' | 'combo' | 'clean' | 'dodges';
+export type ChallengeKind = 'pots' | 'coins' | 'foes' | 'walls' | 'combo' | 'clean' | 'dodges' | 'leaps';
 export interface BennyRun {
   seed: number; startedAt: number; at: number;
   distance: number; speed: number;
@@ -213,6 +213,8 @@ export interface BennyRun {
   score: number; coins: number; pots: number; foes: number; wallRuns: number;
   /** Barriers jumped and beams rolled under. */
   dodges: number;
+  /** Leaps from one wall to the other. */
+  leaps: number;
   combo: number; comboUntil: number; bestCombo: number;
   /** The challenge under way (`count` of `goal`, counted from `from`), how many are done, and when the next one comes. */
   challenge: {kind: ChallengeKind; goal: number; from: number; count: number} | null; challengesDone: number; nextChallengeAt: number;
@@ -291,7 +293,7 @@ export function startBennyRun(now: number, seed = Math.floor(Math.random() * 214
     airFrom: 0, airUntil: 0, jumpFrom: 0, pound: false, poundFrom: 0, slideUntil: 0, wall: null,
     entities: [], nextId: 1, nextSpawnZ: C.firstAt, walls: [], wallsTo: {left: 0, right: 0}, holes: [],
     setting: 'grotte', nextSettingAt: 0, upcoming: null, stumbleUntil: 0, lastBumpAt: null,
-    active: null, score: 0, coins: 0, pots: 0, foes: 0, wallRuns: 0, dodges: 0, combo: 0, comboUntil: 0, bestCombo: 0,
+    active: null, score: 0, coins: 0, pots: 0, foes: 0, wallRuns: 0, dodges: 0, leaps: 0, combo: 0, comboUntil: 0, bestCombo: 0,
     challenge: null, challengesDone: 0, nextChallengeAt: now + C.challengeFirstMs,
     over: false, events: [], queuedJumpUntil: 0, paceFrom: now, tutorial: tutorial ? {step: 0, ids: [], tries: 0, struck: 0} : null,
   };
@@ -672,7 +674,7 @@ function followPits(g: BennyRun): void {
 function leap(g: BennyRun): void {
   const side: Side = g.wall!.side === 'left' ? 'right' : 'left';
   if (!runnableAt(g, side, g.distance)) return;
-  g.wall = {side, until: g.at + C.wallMs};
+  g.wall = {side, until: g.at + C.wallMs}; g.leaps++;
   g.combo = g.at <= g.comboUntil ? g.combo + 1 : 1; g.comboUntil = g.at + C.comboMs; g.bestCombo = Math.max(g.bestCombo, g.combo);
   const points = C.points.wallLeap * comboMultiplier(g.combo); g.score = Math.min(C.maxScore, g.score + points);
   g.events.push({type: 'wallLeap', side, points, combo: g.combo});
@@ -868,10 +870,11 @@ export function challengeGoal(kind: ChallengeKind, n: number): number {
     case 'combo': return Math.min(40, 8 + 4 * n);
     case 'clean': return Math.min(1500, 300 + 100 * n);
     case 'dodges': return 4 + n;
+    case 'leaps': return 2 + Math.floor(n / 7);
   }
 }
 const challengeCounter = (g: BennyRun, kind: ChallengeKind) =>
-  kind === 'pots' ? g.pots : kind === 'coins' ? g.coins : kind === 'foes' ? g.foes : kind === 'walls' ? g.wallRuns : kind === 'dodges' ? g.dodges : kind === 'clean' ? Math.floor(g.distance) : 0;
+  kind === 'pots' ? g.pots : kind === 'coins' ? g.coins : kind === 'foes' ? g.foes : kind === 'walls' ? g.wallRuns : kind === 'dodges' ? g.dodges : kind === 'leaps' ? g.leaps : kind === 'clean' ? Math.floor(g.distance) : 0;
 function followChallenge(g: BennyRun): void {
   if (!g.challenge) {
     if (g.at < g.nextChallengeAt) return;

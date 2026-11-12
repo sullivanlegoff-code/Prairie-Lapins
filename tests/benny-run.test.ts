@@ -180,6 +180,7 @@ describe('Cours cours Benny ! rules', () => {
     takeRunEvents(g); runInput(g, g.at, 'right');
     expect(g.wall?.side).toBe('right'); expect(types(g)).toEqual(['wallLeap']); expect(g.score).toBe(C.points.wallLeap);
     runInput(g, g.at, 'up'); expect(g.wall?.side).toBe('left'); // Up over a gap leaps too.
+    expect(g.leaps).toBe(2); expect(challengeGoal('leaps', 0)).toBe(2); expect(C.challengeOrder).toContain('leaps');
     runInput(g, g.at, 'down'); expect(g.wall?.side).toBe('left'); // No charge into the void.
     run(g, 2000); expect(holeAt(g)).toBeUndefined(); expect(g.lastBumpAt).toBeNull();
   });

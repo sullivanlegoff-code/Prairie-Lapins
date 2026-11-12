@@ -24,6 +24,7 @@ const SETTING_NAMES: Record<RunSetting, string> = {grotte: 'La grotte dorée', p
 const CHALLENGE_TEXT: Record<ChallengeKind, (goal: number) => string> = {
   pots: n => `frappe ${n} pots`, coins: n => `ramasse ${n} pièces`, foes: n => `frappe ${n} créatures`, walls: n => `cours sur ${n} murs`, combo: n => `fais un combo de ${n}`,
   clean: n => `cours ${n} m sans choc`, dodges: n => `saute ou passe dessous ${n} fois`,
+  leaps: n => `bondis ${n} fois d’un mur à l’autre`,
 };
 /** A hint the first time each newer obstacle comes into sight (once per device). */
 const HINTS = {
