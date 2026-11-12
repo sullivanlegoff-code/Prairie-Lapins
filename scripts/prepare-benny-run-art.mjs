@@ -7,6 +7,8 @@
 // The sources (default output/imagegen/course-benny-final-v1, ignored by Git) are two production sheets on pure white:
 // - sheet-benny.png: six poses left to right (run 1, run 2, jump, roll, wall, strike);
 // - sheet-dragon2.png (redone from the game's evolved Dragon itself at the owner's request): four pictures left to right (flight from behind wings up, wings down, face, the end scene).
+// - sheet-creatures.png and sheet-objets.png: two rows of four (dragonnet asleep/awake, chest shut/open, ember x2, flyer x2;
+//   pot, golden pot, barrier, beam, pillar, rock, mine cart, coin), each fitted to its own square, its size in it noted.
 // 1. Each sheet is cut out of its white background (flood fill from the border, then white pockets closed in by the drawing).
 // 2. Benny's sheet is recoloured onto the approved A1 reference as a whole (one same correction for every pose: no flicker).
 // 3. The drawings are the sheet's big separate blots, left to right (specks dropped); each goes into a square: Benny standing on
@@ -29,6 +31,10 @@ const TARGET = 'public/assets/benny-run', CONFIG = 'src/config/bennyRunArt.json'
 export const CHARACTERS = {
   benny: {sheet: 'sheet-benny.png', frames: ['run-1', 'run-2', 'jump', 'roll', 'wall', 'strike'], size: 320, columns: 3, standing: true},
   dragon: {sheet: 'sheet-dragon2.png', frames: ['fly-1', 'fly-2', 'face', 'catch'], size: 420, columns: 2, standing: false},
+  // Two rows of four, each drawing fitted to its own square (they differ in size), standing on its bottom; the two pictures of
+  // one creature share one square so it keeps its size from one picture to the next.
+  creatures: {sheet: 'sheet-creatures.png', frames: ['dragonnet-sleep', 'dragonnet-awake', 'chest-shut', 'chest-open', 'ember-1', 'ember-2', 'flyer-1', 'flyer-2'], size: 200, columns: 4, rows: 2, fit: true, pairs: true},
+  objets: {sheet: 'sheet-objets.png', frames: ['pot', 'pot-gold', 'barrier', 'beam', 'pillar', 'rock', 'cart', 'coin'], size: 200, columns: 4, rows: 2, fit: true},
 };
 /** A blot smaller than this share of the biggest one is a speck (a stray stroke, a crumb), not a drawing. */
 const SPECK = .04;
@@ -51,7 +57,7 @@ function clearPockets({width, height, pixels}) {
 }
 
 /** The sheet's separate drawings (8-connected blots of visible pixels), left to right, specks dropped. */
-function blots({width, height, pixels}) {
+function blots({width, height, pixels}, rows = 1) {
   const label = new Int32Array(width * height).fill(-1), found = [];
   for (let start = 0; start < width * height; start++) {
     if (label[start] >= 0 || pixels[start * 4 + 3] < 24) continue;
@@ -63,7 +69,11 @@ function blots({width, height, pixels}) {
     found.push({id, x0, y0, x1, y1, count});
   }
   const biggest = Math.max(...found.map(b => b.count));
-  return {label, list: found.filter(b => b.count >= biggest * SPECK).sort((a, b) => a.x0 - b.x0)};
+  const kept = found.filter(b => b.count >= biggest * SPECK);
+  // On a sheet of several rows: top row first (by the drawings' middle height), each row left to right.
+  const byHeight = [...kept].sort((a, b) => (a.y0 + a.y1) - (b.y0 + b.y1)), per = Math.ceil(kept.length / rows), list = [];
+  for (let r = 0; r < rows; r++) list.push(...byHeight.slice(r * per, (r + 1) * per).sort((a, b) => a.x0 - b.x0));
+  return {label, list};
 }
 
 /** One drawing alone (its own pixels only) in a square of `side`, its anchor at (ax, ay) of the square. */
@@ -99,15 +109,19 @@ for (const [name, character] of Object.entries(CHARACTERS)) {
   const sheet = read(`${SOURCES}/${character.sheet}`);
   cutOut(sheet, 'light'); const pockets = clearPockets(sheet);
   if (name === 'benny') recolour(sheet, referenceStats);
-  const {label, list} = blots(sheet);
+  const {label, list} = blots(sheet, character.rows);
   if (list.length !== character.frames.length) throw Error(`${character.sheet}: ${list.length} drawings found, ${character.frames.length} expected`);
-  // One square side per character, from its biggest drawing, with a margin.
-  const side = Math.ceil(Math.max(...list.map(b => Math.max(b.x1 - b.x0, b.y1 - b.y0) + 1)) * 1.08);
+  const extent = b => Math.max(b.x1 - b.x0, b.y1 - b.y0) + 1;
+  // One square side per character, from its biggest drawing, with a margin; fitted sheets: per drawing (or per pair).
+  const side = Math.ceil(Math.max(...list.map(extent)) * 1.08);
+  const sideOf = k => !character.fit ? side : Math.ceil((character.pairs ? Math.max(extent(list[k - k % 2]), extent(list[k - k % 2 + 1])) : extent(list[k])) * 1.04);
   const frames = list.map((blot, k) => {
-    let image;
-    if (character.standing) image = square(sheet, label, blot, side, side / 2, side * .97, (blot.x0 + blot.x1) / 2, blot.y1);
-    else { const c = bodyCentre(sheet, label, blot); image = square(sheet, label, blot, side, side / 2, side / 2, c.x, c.y); }
-    return {name: character.frames[k], image: downscale(image, character.size)};
+    let image; const s = sideOf(k);
+    if (character.standing || character.fit) image = square(sheet, label, blot, s, s / 2, s * (character.fit ? .98 : .97), (blot.x0 + blot.x1) / 2, blot.y1);
+    else { const c = bodyCentre(sheet, label, blot); image = square(sheet, label, blot, s, s / 2, s / 2, c.x, c.y); }
+    // A fitted drawing's width and height in its square (a pair takes its first picture's), to draw it at the thing's size.
+    const ref = character.pairs ? list[k - k % 2] : blot, fit = character.fit ? [+((ref.x1 - ref.x0 + 1) / s).toFixed(3), +((ref.y1 - ref.y0 + 1) / s).toFixed(3)] : [];
+    return {name: character.frames[k], image: downscale(image, character.size), fit};
   });
   const columns = character.columns, rows = Math.ceil(frames.length / columns), S = character.size;
   const atlas = {width: columns * S, height: rows * S, pixels: Buffer.alloc(columns * S * rows * S * 4)};
@@ -115,8 +129,8 @@ for (const [name, character] of Object.entries(CHARACTERS)) {
     for (let y = 0; y < S; y++) frame.image.pixels.copy(atlas.pixels, ((oy + y) * atlas.width + ox) * 4, y * S * 4, (y + 1) * S * 4); });
   for (let i = 3; i < atlas.pixels.length; i += 4) if (!atlas.pixels[i]) atlas.pixels[i - 3] = atlas.pixels[i - 2] = atlas.pixels[i - 1] = 0;
   atlases[name] = atlas;
-  config[name] = {image: `assets/benny-run/${name}.webp`, size: S, frames: Object.fromEntries(frames.map((f, k) => [f.name, [(k % columns) * S, Math.floor(k / columns) * S]])),
-    anchor: character.standing ? 'feet' : 'body', pockets};
+  config[name] = {image: `assets/benny-run/${name}.webp`, size: S, frames: Object.fromEntries(frames.map((f, k) => [f.name, [(k % columns) * S, Math.floor(k / columns) * S, ...f.fit]])),
+    anchor: character.standing || character.fit ? 'feet' : 'body', pockets};
 }
 
 const {chromium} = createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE || 'playwright');
@@ -139,7 +153,7 @@ try {
   await page.setViewportSize({width: 1400, height: 900});
   await page.setContent('<!doctype html><meta charset="utf-8"><body style="margin:0"></body>');
   const board = await page.evaluate(async ({encoded, config}) => {
-    const canvas = document.createElement('canvas'), cell = 200, names = Object.keys(config), columns = 6;
+    const canvas = document.createElement('canvas'), cell = 200, names = Object.keys(config), columns = 8;
     canvas.width = columns * cell; canvas.height = names.length * 3 * cell; const g = canvas.getContext('2d');
     const grounds = ['#9a7a54', '#5a2a22', '#b9c4d2'];
     let row = 0;

@@ -6,7 +6,8 @@ import {pausableClock, settleCard} from './activityPause';
 import RUN_ART from '../config/bennyRunArt.json';
 
 /** The paintings' frames (scripts/prepare-benny-run-art.mjs): Benny's square stands her on its bottom, the Dragon's is centred on her body. */
-type PaintedName = 'benny' | 'dragon';
+type PaintedName = 'benny' | 'dragon' | 'creatures' | 'objets';
+const PAINTED: PaintedName[] = ['benny', 'dragon', 'creatures', 'objets'];
 /** Painted Benny's square, in Benny's sizes (her shape was one size tall): the drawing, ears up, fills about four fifths of it. */
 const PAINTED_BENNY = 1.85;
 /** The Dragon's flight from behind: her two wing beats, each held this long. */
@@ -120,9 +121,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const gameTime = () => clock() - slowLost;
   // The paintings (owner's picks of 12 November 2026: Benny A seen from behind, the evolved Dragon A): drawn once loaded, the shapes
   // stand in until then (and in tests, where no picture loads).
-  const art: Record<PaintedName, {image: HTMLImageElement | null; ready: boolean}> = {benny: {image: null, ready: false}, dragon: {image: null, ready: false}};
+  const art = Object.fromEntries(PAINTED.map(name => [name, {image: null, ready: false}])) as Record<PaintedName, {image: HTMLImageElement | null; ready: boolean}>;
   function loadArt(): void {
-    for (const name of ['benny', 'dragon'] as const) {
+    for (const name of PAINTED) {
       if (art[name].image) continue;
       const image = new Image(); image.decoding = 'async'; image.onload = () => { art[name].ready = true; };
       image.src = `${import.meta.env.BASE_URL}${RUN_ART[name].image}`; art[name].image = image;
@@ -133,6 +134,14 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const image = art[name].image, at = (RUN_ART[name].frames as Record<string, number[]>)[frame], size = RUN_ART[name].size; if (!image || !at) return;
     c.save(); c.translate(x, y); if (mirror) c.scale(-1, 1);
     c.drawImage(image, at[0], at[1], size, size, -side / 2, RUN_ART[name].anchor === 'feet' ? -side * .97 : -side / 2, side, side); c.restore();
+  }
+  /** One fitted drawing (a creature, an object) set on (x, bottom), `w` wide and `h` tall (its own proportions if `h` is left out);
+   *  false while its painting has not loaded. */
+  function fitted(c: CanvasRenderingContext2D, name: 'creatures' | 'objets', frame: string, x: number, bottom: number, w: number, h?: number): boolean {
+    const image = art[name].image, at = (RUN_ART[name].frames as Record<string, number[]>)[frame], size = RUN_ART[name].size;
+    if (!art[name].ready || !image || !at) return false;
+    const sideX = w / at[2], sideY = h === undefined ? sideX : h / at[3];
+    c.drawImage(image, at[0], at[1], size, size, x - sideX / 2, bottom - sideY * .98, sideX, sideY); return true;
   }
   const slowMo = (ms: number) => { const now = clock(); if (now > slowUntil + 900) slowUntil = now + ms; };
   const shakeFor = (kind: keyof typeof SHAKES) => { const s = SHAKES[kind]; if (!shake || shake.px <= s.px || clock() - shake.at > shake.ms) shake = {at: clock(), ...s}; };
@@ -485,7 +494,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       up = 7 * drop * drop + (e.rock === 'up' ? Math.sin(g.at / 40 + e.id) * .05 : 0);
     }
     const base = project(x, ahead, up), w = shape.w * base.s, h = shape.h * base.s;
-    if (!figure(c, e, base.x, base.y, w, h, g.at)) {
+    if (!figure(c, e, base.x, base.y, w, h, g.at, project(x, ahead, 0).y)) {
       c.fillStyle = shape.colour;
       if (shape.round) { c.beginPath(); c.ellipse(base.x, base.y - h / 2, w / 2, h / 2, 0, 0, Math.PI * 2); c.fill(); }
       else c.fillRect(base.x - w / 2, base.y - h, w, h);
@@ -501,7 +510,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (label && base.s > 18 && !inTunnel && passed < LABEL_UNTIL) { c.fillStyle = '#fff'; c.font = `700 ${Math.round(Math.max(10, base.s * .28))}px system-ui`; c.textAlign = 'center'; c.fillText(label, base.x, base.y - h - 4); }
   }
   /** Shapes that say what each thing is, standing on (`x`, `y`), `w` × `h` px; false for those still drawn as a plain block. */
-  function figure(c: CanvasRenderingContext2D, e: RunEntity, x: number, y: number, w: number, h: number, at: number): boolean {
+  function figure(c: CanvasRenderingContext2D, e: RunEntity, x: number, y: number, w: number, h: number, at: number, ground = y): boolean {
     const ellipse = (cx: number, cy: number, rx: number, ry: number, colour: string) => { c.fillStyle = colour; c.beginPath(); c.ellipse(cx, cy, Math.max(.5, rx), Math.max(.5, ry), 0, 0, Math.PI * 2); c.fill(); };
     const eyes = (cx: number, cy: number, gap: number, r: number, closed = false) => {
       for (const dir of [-1, 1]) if (closed) { c.strokeStyle = '#2a1a12'; c.lineWidth = Math.max(1, r * .5); c.beginPath(); c.arc(cx + dir * gap, cy - r * .3, r, .2 * Math.PI, .8 * Math.PI); c.stroke(); }
@@ -513,9 +522,11 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         c.save(); c.translate(x, y - h * .5);
         // A golden one shines: a halo, a gold body, a glint.
         if (e.gold) { c.globalAlpha = .35 + .2 * Math.sin(at / 120 + e.id); ellipse(0, 0, w * .8, h * .7, '#fff3a0'); c.globalAlpha = 1; }
+        // Painted: the clay pot or the golden one (owner-approved objects board), standing on the road.
+        if (fitted(c, 'objets', e.gold ? 'pot-gold' : 'pot', 0, h * .5, w * .95)) {} else {
         ellipse(0, h * .06, w * .5, h * .42, e.gold ? '#e8b923' : '#c96b3a'); c.fillStyle = e.gold ? '#c9961a' : '#a8542a'; c.fillRect(-w * .22, -h * .5, w * .44, h * .2);
         ellipse(0, -h * .5, w * .28, h * .07, '#7a3a1c'); c.fillStyle = '#f4c430'; c.fillRect(-w * .45, h * .02, w * .9, h * .08);
-        ellipse(-w * .2, -h * .08, w * .08, h * .14, 'rgba(255,255,255,.35)');
+        ellipse(-w * .2, -h * .08, w * .08, h * .14, 'rgba(255,255,255,.35)'); }
         // A turning four-point sparkle above a golden one.
         if (e.gold) { const r = w * (.28 + .06 * Math.sin(at / 90 + e.id)); c.translate(w * .3, -h * .75); c.rotate(at / 400); c.fillStyle = '#fff'; c.beginPath();
           for (let i = 0; i < 8; i++) { const k = i % 2 ? r * .25 : r; c.lineTo(Math.cos(i * Math.PI / 4) * k, Math.sin(i * Math.PI / 4) * k); } c.fill(); }
@@ -524,6 +535,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'chest': {
         // The greedy chest: its lid chomps, teeth and eyes in the gap.
         const open = (.15 + .25 * Math.abs(Math.sin(at / 160 + e.id))) * h, lid = h * .38;
+        // Painted: its lid shut, then snapping open.
+        if (fitted(c, 'creatures', Math.sin(at / 160 + e.id) > .2 ? 'chest-open' : 'chest-shut', x, y, w * 1.05)) return true;
         c.fillStyle = '#6e3b2e'; c.fillRect(x - w / 2, y - h * .55, w, h * .55);
         c.fillStyle = '#2a120c'; c.fillRect(x - w * .46, y - h * .55 - open, w * .92, open);
         c.fillStyle = '#fff'; for (let i = 0; i < 5; i++) { const tx = x - w * .4 + i * w * .2; c.beginPath(); c.moveTo(tx - w * .07, y - h * .55); c.lineTo(tx + w * .07, y - h * .55); c.lineTo(tx, y - h * .55 - open * .5); c.fill(); }
@@ -533,6 +546,14 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       }
       case 'dragonnet': {
         // A little dragon asleep, curled up, with a Z floating up.
+        // Painted: asleep on its coins, or awake and trotting (an arrow the way it goes).
+        if (art.creatures.ready) {
+          fitted(c, 'creatures', e.cross ? 'dragonnet-awake' : 'dragonnet-sleep', x, y, w * 1.15);
+          if (e.cross) { const ax = x + e.cross * w * .8, ay = y - h * .5, r = Math.max(4, w * .2); c.fillStyle = '#ffe36b';
+            c.beginPath(); c.moveTo(ax + e.cross * r, ay); c.lineTo(ax - e.cross * r * .4, ay - r * .8); c.lineTo(ax - e.cross * r * .4, ay + r * .8); c.fill(); return true; }
+          const z = (at / 900 + e.id * .3) % 1; c.globalAlpha = 1 - z; c.fillStyle = '#fff'; c.font = `800 ${Math.round(Math.max(8, h * .4))}px system-ui`; c.textAlign = 'center'; c.fillText('z', x + w * .4, y - h * (1.1 + z * .6)); c.globalAlpha = 1;
+          return true;
+        }
         for (const dir of [-1, 1]) { c.fillStyle = '#c47a9a'; c.beginPath(); c.moveTo(x + dir * w * .1, y - h * .7); c.lineTo(x + dir * w * .5, y - h * 1.05); c.lineTo(x + dir * w * .35, y - h * .55); c.fill(); }
         ellipse(x, y - h * .4, w * .5, h * .4, '#8e3a5a'); ellipse(x, y - h * .62, w * .26, h * .24, '#a3476a');
         // Awake and waddling across: eyes open, and an arrow the way it goes.
@@ -549,11 +570,14 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'ember': {
         // A living flame that flickers.
         const f = 1 + .08 * Math.sin(at / 70 + e.id);
+        if (fitted(c, 'creatures', Math.floor(at / 110 + e.id) % 2 ? 'ember-2' : 'ember-1', x, y, w * 1.05)) return true;
         c.fillStyle = '#ff6a1a'; c.beginPath(); c.moveTo(x, y - h * 1.15 * f); c.quadraticCurveTo(x + w * .6, y - h * .5, x, y); c.quadraticCurveTo(x - w * .6, y - h * .5, x, y - h * 1.15 * f); c.fill();
         c.fillStyle = '#ffd24a'; c.beginPath(); c.moveTo(x, y - h * .8 * f); c.quadraticCurveTo(x + w * .32, y - h * .3, x, y - h * .05); c.quadraticCurveTo(x - w * .32, y - h * .3, x, y - h * .8 * f); c.fill();
         eyes(x, y - h * .38, w * .12, Math.max(1, w * .07)); return true;
       }
       case 'flyer': {
+        // Painted: wings up, wings down.
+        if (fitted(c, 'creatures', Math.floor(at / 90 + e.id) % 2 ? 'flyer-2' : 'flyer-1', x, y, w * 2)) return true;
         const flap = Math.abs(Math.sin(at / 90 + e.id)); c.fillStyle = '#b89af0';
         for (const dir of [-1, 1]) { c.beginPath(); c.moveTo(x + dir * w * .3, y - h * .6); c.lineTo(x + dir * w * 1.1, y - h * (.6 + .7 * flap)); c.lineTo(x + dir * w * .9, y - h * .2); c.fill(); }
         ellipse(x, y - h / 2, w / 2, h / 2, '#7b4fc9'); eyes(x, y - h * .55, w * .17, Math.max(1, w * .1));
@@ -562,15 +586,18 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       }
       case 'barrier': if (e.rock) {
         // A boulder: grey-brown, a lighter side, a crack.
+        if (fitted(c, 'objets', 'rock', x, y, w * .78)) return true;
         ellipse(x, y - h * 1.05, w * .36, h * 1.1, '#6f6258'); ellipse(x - w * .1, y - h * 1.4, w * .18, h * .5, '#8d8075');
         c.strokeStyle = '#4a3f37'; c.lineWidth = Math.max(1, w * .03); c.beginPath(); c.moveTo(x + w * .08, y - h * 1.7); c.lineTo(x + w * .16, y - h * 1.1); c.lineTo(x + w * .06, y - h * .6); c.stroke(); return true;
       } else {
         // A wooden fence: two posts and two planks.
+        if (fitted(c, 'objets', 'barrier', x, y, w, h * 1.15)) return true;
         c.fillStyle = '#5c3e24'; c.fillRect(x - w * .45, y - h, w * .08, h); c.fillRect(x + w * .37, y - h, w * .08, h);
         c.fillStyle = '#8a6440'; c.fillRect(x - w / 2, y - h * .9, w, h * .3); c.fillRect(x - w / 2, y - h * .45, w, h * .3); return true;
       }
       case 'beam': {
-        // A log held up across the lane on two posts: roll under it.
+        // A log held up across the lane on two posts: roll under it. Painted: the log's top where the log is, its posts on the road.
+        if (fitted(c, 'objets', 'beam', x, ground, w * 1.04, ground - (y - h))) return true;
         c.fillStyle = '#5c3e24'; c.fillRect(x - w * .48, y - h, w * .06, h * 3.4); c.fillRect(x + w * .42, y - h, w * .06, h * 3.4);
         c.fillStyle = '#8a6440'; c.fillRect(x - w / 2, y - h, w, h); ellipse(x + w / 2, y - h / 2, h * .25, h / 2, '#c49a6a');
         c.strokeStyle = '#6b4a2a'; c.lineWidth = Math.max(1, h * .08); c.beginPath(); c.moveTo(x - w * .3, y - h * .5); c.lineTo(x + w * .2, y - h * .5); c.stroke(); return true;
@@ -586,6 +613,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         for (let k = 0; k < 3; k++) { const a = at / 120 + k * 2.1 + e.id; ellipse(x + Math.sin(a) * half * 1.2, top - Math.abs(Math.cos(a)) * h * .15, half * .35, half * .35, k ? '#ff6a1a' : '#ffe36b'); }
         return true;
       } else {
+        if (fitted(c, 'objets', 'pillar', x, y, w * .85, h)) return true;
         c.fillStyle = '#8a8a8a'; c.fillRect(x - w * .4, y - h, w * .8, h);
         c.fillStyle = '#a4a4a4'; for (const k of [-.2, .1]) c.fillRect(x + k * w, y - h, w * .08, h);
         c.fillStyle = '#6e6e6e'; c.fillRect(x - w / 2, y - h, w, h * .08); c.fillRect(x - w / 2, y - h * .08, w, h * .08); return true;
@@ -617,6 +645,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         // On the mountain, a snowball rolling down, a spray of snow behind it.
         if (e.cart) {
           // A wooden mine cart heaped with gold, its wheels turning.
+          if (fitted(c, 'objets', 'cart', x, y, w * 1.05)) return true;
           c.fillStyle = '#3a2a1c'; for (const dx of [-.3, .3]) { c.beginPath(); c.arc(x + dx * w, y - h * .12, w * .12, 0, Math.PI * 2); c.fill(); }
           c.fillStyle = '#7a5634'; c.beginPath(); c.moveTo(x - w * .5, y - h * 1.1); c.lineTo(x + w * .5, y - h * 1.1); c.lineTo(x + w * .4, y - h * .2); c.lineTo(x - w * .4, y - h * .2); c.fill();
           c.fillStyle = '#5c3e24'; c.fillRect(x - w * .5, y - h * .75, w, h * .08);
@@ -636,6 +665,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'coin': case 'wallCoin': {
         // While coins count double: a white halo that pulses around each one.
         if (game && powerActive(game, 'double')) { const k = .5 + .5 * Math.sin(at / 110 + e.id); ellipse(x, y - h / 2, w * (.62 + .1 * k), h * (.62 + .1 * k), `rgba(255,255,255,${.35 + .3 * k})`); }
+        if (fitted(c, 'objets', 'coin', x, y, w)) return true;
         ellipse(x, y - h / 2, w / 2, h / 2, '#f4c430'); ellipse(x, y - h / 2, w * .32, h * .32, '#e0a81e'); ellipse(x - w * .14, y - h * .66, w * .1, h * .1, '#fff6c8'); return true;
       }
       default: return false;
