@@ -73,7 +73,7 @@ export const BENNY_RUN = {
   settingAhead: 80,
   /** Short challenges during the run, one after the other, in this order: the first after `challengeFirstMs`, the next
    * `challengeGapMs` after one is done. Each one done is worth `challengePoints` times its rank (at most `challengePointsMax`). */
-  challengeOrder: ['pots', 'coins', 'foes', 'walls', 'combo'] as const, challengeFirstMs: 5000, challengeGapMs: 4000,
+  challengeOrder: ['pots', 'coins', 'foes', 'clean', 'walls', 'dodges', 'combo'] as const, challengeFirstMs: 5000, challengeGapMs: 4000,
   challengePoints: 100, challengePointsMax: 500,
   /** While the « run on walls » challenge is on, the share of patterns that are a row of pillars (whatever the difficulty). */
   wallChallengeNudge: .5,
@@ -168,7 +168,7 @@ export type RunEvent =
 export interface Platform {lane: number; from: number; to: number}
 /** A pit in one lane where cracked slabs gave way (`open`), or are about to. */
 export interface Pit {lane: number; from: number; to: number; open: boolean}
-export type ChallengeKind = 'pots' | 'coins' | 'foes' | 'walls' | 'combo';
+export type ChallengeKind = 'pots' | 'coins' | 'foes' | 'walls' | 'combo' | 'clean' | 'dodges';
 export interface BennyRun {
   seed: number; startedAt: number; at: number;
   distance: number; speed: number;
@@ -201,6 +201,8 @@ export interface BennyRun {
   /** The power under way (a new one replaces it). */
   active: {power: RunPower; until: number} | null;
   score: number; coins: number; pots: number; foes: number; wallRuns: number;
+  /** Barriers jumped and beams rolled under. */
+  dodges: number;
   combo: number; comboUntil: number; bestCombo: number;
   /** The challenge under way (`count` of `goal`, counted from `from`), how many are done, and when the next one comes. */
   challenge: {kind: ChallengeKind; goal: number; from: number; count: number} | null; challengesDone: number; nextChallengeAt: number;
@@ -279,7 +281,7 @@ export function startBennyRun(now: number, seed = Math.floor(Math.random() * 214
     airFrom: 0, airUntil: 0, jumpFrom: 0, pound: false, poundFrom: 0, slideUntil: 0, wall: null,
     entities: [], nextId: 1, nextSpawnZ: C.firstAt, walls: [], wallsTo: {left: 0, right: 0}, holes: [],
     setting: 'grotte', nextSettingAt: 0, upcoming: null, stumbleUntil: 0, lastBumpAt: null,
-    active: null, score: 0, coins: 0, pots: 0, foes: 0, wallRuns: 0, combo: 0, comboUntil: 0, bestCombo: 0,
+    active: null, score: 0, coins: 0, pots: 0, foes: 0, wallRuns: 0, dodges: 0, combo: 0, comboUntil: 0, bestCombo: 0,
     challenge: null, challengesDone: 0, nextChallengeAt: now + C.challengeFirstMs,
     over: false, events: [], queuedJumpUntil: 0, paceFrom: now, tutorial: tutorial ? {step: 0, ids: [], tries: 0, struck: 0} : null,
   };
@@ -673,6 +675,8 @@ function bump(g: BennyRun, e: RunEntity): void {
   g.entities = g.entities.filter(o => o !== e);
   if (powerActive(g, 'bubble')) { g.active = null; g.events.push({type: 'shield', entity: e}); return; }
   g.combo = 0; g.comboUntil = 0;
+  // « Run without a bump »: it starts again from here.
+  if (g.challenge?.kind === 'clean') g.challenge.from = Math.floor(g.distance);
   // During the tutorial a bump only makes her stumble.
   if (g.tutorial) { g.stumbleUntil = g.at + C.stumbleMs; g.slideUntil = 0; g.events.push({type: 'bump', entity: e}); return; }
   if (dragonNear(g)) { g.over = true; g.events.push({type: 'caught', entity: e}); return; }
@@ -797,10 +801,12 @@ export function challengeGoal(kind: ChallengeKind, n: number): number {
     case 'foes': return 3 + 2 * n;
     case 'walls': return 2 + Math.floor(n / 5);
     case 'combo': return Math.min(40, 8 + 4 * n);
+    case 'clean': return Math.min(1500, 300 + 100 * n);
+    case 'dodges': return 4 + n;
   }
 }
 const challengeCounter = (g: BennyRun, kind: ChallengeKind) =>
-  kind === 'pots' ? g.pots : kind === 'coins' ? g.coins : kind === 'foes' ? g.foes : kind === 'walls' ? g.wallRuns : 0;
+  kind === 'pots' ? g.pots : kind === 'coins' ? g.coins : kind === 'foes' ? g.foes : kind === 'walls' ? g.wallRuns : kind === 'dodges' ? g.dodges : kind === 'clean' ? Math.floor(g.distance) : 0;
 function followChallenge(g: BennyRun): void {
   if (!g.challenge) {
     if (g.at < g.nextChallengeAt) return;
@@ -818,7 +824,7 @@ function followChallenge(g: BennyRun): void {
 
 /** A barrier jumped or a beam rolled under: a few points (not a strike: the combo neither grows nor breaks). */
 function dodge(g: BennyRun, e: RunEntity): void {
-  const points = C.points.dodge; g.score += points; g.events.push({type: 'cleared', entity: e, points});
+  const points = C.points.dodge; g.score += points; g.dodges++; g.events.push({type: 'cleared', entity: e, points});
 }
 
 export function advanceBennyRun(g: BennyRun, now: number): void {

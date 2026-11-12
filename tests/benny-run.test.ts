@@ -457,6 +457,20 @@ describe('Cours cours Benny ! rules', () => {
     g.setting = 'pont'; g.score += 25; run(g, 50); g.score += 5;
     expect(runSummary(g).bySetting).toEqual({grotte: 40, pont: 30, montagne: 0});
   });
+  it('runs a « no bump » challenge that starts again at a bump, and counts the barriers jumped', () => {
+    const g = quiet(); run(g, C.introMs);
+    g.challenge = {kind: 'clean', goal: 60, from: Math.floor(g.distance), count: 0};
+    run(g, 1500); const counted = g.challenge.count; expect(counted).toBeGreaterThan(10);
+    g.entities.push({id: 72001, kind: 'pillar', lane: g.lane, z: g.distance + 1}); run(g, 200);
+    expect(g.lastBumpAt).not.toBeNull(); expect(g.challenge!.count).toBeLessThan(counted);
+    g.lastBumpAt = null; g.stumbleUntil = 0; takeRunEvents(g);
+    while (g.challenge) run(g, 50);
+    expect(takeRunEvents(g).some(e => e.type === 'challenge' && e.kind === 'clean' && e.points)).toBe(true);
+    // Barriers jumped count for the « jump or roll under » challenge.
+    const before = g.dodges; g.entities.push({id: 72002, kind: 'barrier', lane: g.lane, z: g.distance + 3});
+    while (g.entities.some(e => e.id === 72002) && g.entities[0].z - g.distance > 1.2) run(g, 10); runInput(g, g.at, 'up'); run(g, 700);
+    expect(g.dodges).toBe(before + 1); expect(challengeGoal('dodges', 0)).toBe(4);
+  });
   it('lays rockfalls only in the cave, always leaving one lane free', () => {
     let total = 0;
     for (const seed of [3, 4, 5]) {

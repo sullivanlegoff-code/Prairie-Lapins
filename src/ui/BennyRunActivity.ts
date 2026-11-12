@@ -23,6 +23,7 @@ const SETTING_NAMES: Record<RunSetting, string> = {grotte: 'La grotte dorée', p
 /** A challenge said to the player (tutoiement). */
 const CHALLENGE_TEXT: Record<ChallengeKind, (goal: number) => string> = {
   pots: n => `frappe ${n} pots`, coins: n => `ramasse ${n} pièces`, foes: n => `frappe ${n} créatures`, walls: n => `cours sur ${n} murs`, combo: n => `fais un combo de ${n}`,
+  clean: n => `cours ${n} m sans choc`, dodges: n => `saute ou passe dessous ${n} fois`,
 };
 const POWER_NAMES: Record<RunPower, string> = {magnet: 'Aimant', bubble: 'Bulle arc-en-ciel', double: 'Pièces doublées', flight: 'Envol'};
 /** A swipe fires once the finger has moved this far; a quick flick lifted sooner still counts from `FLICK` px. */
