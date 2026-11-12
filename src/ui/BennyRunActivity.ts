@@ -760,6 +760,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'strike': {
         if (event.by === 'spin') { flash('Coup tournoyant !'); slowMo(260); }
         swing = {at: clock(), lane: g.lane};
+        // Three things or more broken in one roll: it is said.
+        if (event.roll && event.roll >= 3) flash(`Roulade en chaîne ×${event.roll} !`);
         const p = screenOf(g, event.entity);
         flashes.push({at: clock(), text: `+${event.points}`, x: p.x});
         // Each strike of a combo a semitone higher (up to an octave); a new multiplier is announced.

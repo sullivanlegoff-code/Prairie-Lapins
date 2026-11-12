@@ -203,6 +203,7 @@ describe('Cours cours Benny ! rules', () => {
     const g = quiet(); place(g, 'pot', 1, 2); place(g, 'chest', 1, 8); place(g, 'pot', 1, 14); place(g, 'dragonnet', 1, 20);
     runInput(g, g.at, 'down'); run(g, 2000);
     expect(g).toMatchObject({pots: 2, foes: 2, lastBumpAt: null}); expect(g.bestCombo).toBe(4);
+    expect(takeRunEvents(g).flatMap(e => e.type === 'strike' ? [e.roll] : [])).toEqual([1, 2, 3, 4]);
   });
   it('changes the setting ahead of Benny: it comes into sight, then she runs into it', () => {
     const g = startBennyRun(0, 11); g.entities = []; g.nextSpawnZ = Infinity; g.lastBumpAt = null;

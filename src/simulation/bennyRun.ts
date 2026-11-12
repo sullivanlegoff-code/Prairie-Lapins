@@ -140,7 +140,7 @@ export type StrikeKind = 'lane' | 'spin' | 'slide' | 'jump' | 'pound' | 'shock' 
 export interface RunEntity {id: number; kind: RunKind; lane: number; z: number; power?: RunPower; hopAt?: number; up?: number; beside?: boolean; cross?: -1 | 1; crossAt?: number; rock?: 'up' | 'down'; geyser?: 'idle' | 'up'; rolling?: boolean; snow?: boolean; cart?: boolean}
 export interface WallSegment {side: Side; from: number; to: number; runnable: boolean}
 export type RunEvent =
-  | {type: 'strike'; entity: RunEntity; points: number; combo: number; multiplier: number; by: StrikeKind}
+  | {type: 'strike'; entity: RunEntity; points: number; combo: number; multiplier: number; by: StrikeKind; roll?: number}
   | {type: 'crash'; entity: RunEntity}
   | {type: 'coin'; entity: RunEntity; amount: number}
   /** Passed over or under unharmed; `points` for a barrier jumped or a beam rolled under. */
@@ -193,6 +193,8 @@ export interface BennyRun {
   lanes: number; lane: number; laneChangedAt: number;
   /** The lane she was in before her last lane change. */
   laneFrom: number;
+  /** The pots and creatures broken in the present roll. */
+  rollHits: number;
   /** The kilometres already rewarded (`points.km` × the kilometre: 100 at 1 km, 200 at 2 km…). */
   kms: number;
   /** The road's usual lanes, and the wide halls ahead (`wideLanes` lanes from `from` to `to` m). */
@@ -300,7 +302,7 @@ const pick = <T>(g: BennyRun, list: readonly T[]): T => list[Math.min(list.lengt
 
 export function startBennyRun(now: number, seed = Math.floor(Math.random() * 2147483647), lanes = 3, tutorial = false): BennyRun {
   const g: BennyRun = {
-    seed: (seed >>> 0) || 1, startedAt: now, at: now, distance: 0, speed: C.speedStart, lanes, lane: Math.floor(lanes / 2), laneChangedAt: -Infinity, laneFrom: Math.floor(lanes / 2), kms: 0, baseLanes: lanes, zones: [], platforms: [], raised: null, pits: [], gusts: [], pace: 0, scoreBy: {grotte: 0, pont: 0, montagne: 0}, scored: 0,
+    seed: (seed >>> 0) || 1, startedAt: now, at: now, distance: 0, speed: C.speedStart, lanes, lane: Math.floor(lanes / 2), laneChangedAt: -Infinity, laneFrom: Math.floor(lanes / 2), rollHits: 0, kms: 0, baseLanes: lanes, zones: [], platforms: [], raised: null, pits: [], gusts: [], pace: 0, scoreBy: {grotte: 0, pont: 0, montagne: 0}, scored: 0,
     airFrom: 0, airUntil: 0, jumpFrom: 0, pound: false, poundFrom: 0, slideUntil: 0, wall: null,
     entities: [], nextId: 1, nextSpawnZ: C.firstAt, walls: [], wallsTo: {left: 0, right: 0}, holes: [],
     setting: 'grotte', nextSettingAt: 0, upcoming: null, stumbleUntil: 0, lastBumpAt: null,
@@ -707,8 +709,8 @@ function strike(g: BennyRun, e: RunEntity, by: StrikeKind): void {
     g.pots++;
     gainCoins(g, e, C.potCoins);
   } else { g.foes++; gainCoins(g, e, 2); }
-  g.events.push({type: 'strike', entity: e, points, combo: g.combo, multiplier, by});
-  if (by === 'slide') g.slideUntil = Math.max(g.slideUntil, g.at) + C.rollChainMs;
+  if (by === 'slide') { g.rollHits++; g.slideUntil = Math.max(g.slideUntil, g.at) + C.rollChainMs; }
+  g.events.push({type: 'strike', entity: e, points, combo: g.combo, multiplier, by, ...(by === 'slide' ? {roll: g.rollHits} : {})});
   // A pot struck flies on along its lane (not one broken by a ground charge or its shock wave, nor one a flying pot knocks over).
 }
 function gainCoins(g: BennyRun, e: RunEntity, amount: number): void {
@@ -820,7 +822,7 @@ function tick(g: BennyRun): void {
   if (g.upcoming && g.distance >= g.upcoming.z) { g.setting = g.upcoming.setting; g.upcoming = null; g.events.push({type: 'setting', setting: g.setting}); }
   // Landing: a ground charge breaks the pots and creatures just ahead in Benny's lane; from high up, a shock wave strikes all around.
   if (g.pound && !inAir(g)) {
-    g.pound = false; g.events.push({type: 'pound'}); g.slideUntil = g.at + C.poundRollMs;
+    g.pound = false; g.events.push({type: 'pound'}); g.slideUntil = g.at + C.poundRollMs; g.rollHits = 0;
     if (g.poundFrom >= C.shockHeight) {
       g.events.push({type: 'shockwave'});
       for (const e of g.entities.filter(o => strikable(o) && o.z - g.distance >= -C.shockBehind && o.z - g.distance <= C.shockReach)) strike(g, e, 'shock');
@@ -963,7 +965,7 @@ export function runInput(g: BennyRun, now: number, input: RunInput): void {
       if (inAir(g)) { if (!g.pound) startPound(g); return; }
       // A roll (the owner's « roulade »): it strikes with the wand what is just ahead in the lane, and anything met while rolling; it
       // passes under a beam.
-      g.slideUntil = g.at + C.slideMs;
+      g.slideUntil = g.at + C.slideMs; g.rollHits = 0;
       const hit = nearest(g, g.lane, reach(g));
       if (hit) strike(g, hit, 'slide');
       return;
