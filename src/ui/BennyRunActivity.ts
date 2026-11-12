@@ -149,6 +149,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   let rings: {x: number; y: number; at: number; size: number; ground?: boolean}[] = [];
   /** Coins picked up close together climb in pitch (back down after a pause). */
   let coinRun = 0;
+  let ghosts: {e: RunEntity; at: number}[] = [];
   let swing: {at: number; lane: number} | null = null, shock: number | null = null, flashes: {at: number; text: string; x: number; big?: boolean}[] = [];
   let width = 0, height = 0;
   /** The road's lanes (3 for now; zones of up to 5 later) and the walls' distance from its middle. */
@@ -837,6 +838,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // During the end scene, Benny and the Dragon are in the scene, not on the road.
     if (!ending) benny(c, g, now);
     for (const e of ahead) if (e.z - g.distance <= 0) thing(c, g, e);
+    // A creature struck melts away: its picture fades out where it was, over a short moment.
+    ghosts = ghosts.filter(gh => now - gh.at < 240);
+    for (const gh of ghosts) { c.globalAlpha = Math.max(0, 1 - (now - gh.at) / 240) * .9; thing(c, g, gh.e); }
+    c.globalAlpha = 1;
     if (!ending) dragon(c, g);
     if (!ending) fallCatch(c, g, now);
     // Shards and sparkles.
@@ -882,6 +887,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     for (const event of takeRunEvents(g)) switch (event.type) {
       case 'strike': {
         if (event.by === 'spin') { flash('Coup tournoyant !'); slowMo(260); }
+        if (event.entity.kind !== 'pot') ghosts.push({e: {...event.entity}, at: clock()});
         swing = {at: clock(), lane: g.lane};
         // Three things or more broken in one roll: it is said.
         if (event.roll && event.roll >= 3) flash(`Roulade en chaîne ×${event.roll} !`);
