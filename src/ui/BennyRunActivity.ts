@@ -744,7 +744,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       const pose = flat ? 'roll' : wall ? 'wall' : inAir(g) || powerActive(g, 'flight') ? 'jump' : swing && now - swing.at < 180 ? 'strike' : Math.sin(stride) > 0 ? 'run-1' : 'run-2';
       const mirror = wall ? wall.side === 'left' : pose === 'strike' && g.lane < g.laneFrom;
       // The wind-up of a strike, the landing and the fall have their own painted poses (sheet of 13 Nov.).
-      const moves: string | null = g.fallFrom !== null ? 'fall' : swing && now - swing.at < 80 && !wall && !flat && !inAir(g) ? 'windup' : land > .25 && !wall && !flat && !inAir(g) ? 'land' : null;
+      const moves: string | null = g.fallFrom !== null ? 'fall' : wall && g.at - (wall.since ?? g.at) < 180 ? 'push' : swing && now - swing.at < 80 && !wall && !flat && !inAir(g) ? 'windup' : land > .25 && !wall && !flat && !inAir(g) ? 'land' : null;
       if (moves) paint(c, 'benny-moves', moves, 0, h / 2, s * PAINTED_BENNY, mirror);
       else paint(c, 'benny', pose, 0, flat ? h * .45 : h / 2, s * PAINTED_BENNY * (flat ? .8 : 1), mirror);
     } else {
