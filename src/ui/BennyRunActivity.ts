@@ -1,6 +1,6 @@
 import '../display/benny-run.css';
 import {FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
-import {advanceBennyRun, BENNY_RUN, floorHeight, lanesAt, reach, settingAt, wallLane, comboMultiplier, dragonVisible, inAir, powerActive, runHeight, runInput, runSummary, sliding, startBennyRun, takeRunEvents,
+import {advanceBennyRun, BENNY_RUN, floorHeight, ledgeHeight, lanesAt, reach, settingAt, wallLane, comboMultiplier, dragonVisible, inAir, powerActive, runHeight, runInput, runSummary, sliding, startBennyRun, takeRunEvents,
   type BennyRun, type ChallengeKind, type RunEntity, type RunInput, type RunPower, type RunSetting, type RunSummary, type TutorialStep} from '../simulation/bennyRun';
 import {pausableClock, settleCard} from './activityPause';
 import RUN_ART from '../config/bennyRunArt.json';
@@ -422,6 +422,20 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     }
   }
   /** The raised platforms: stone sides, a lighter top with a path, the ramp up to it (shapes until the painted settings). */
+  /** The stairs: a raised stretch of road along one lane, its top drawn step by step up and back down (shapes, like the platforms). */
+  function ledges(c: CanvasRenderingContext2D, g: BennyRun): void {
+    for (const l of [...g.ledges].sort((a, b) => b.from - a.from)) {
+      const from = Math.max(NEAR, l.from - g.distance), to = Math.min(FAR, l.to - g.distance); if (to <= from) continue;
+      const n = lanesAt(g, l.from), x = (l.lane - (n - 1) / 2) * LANE_WIDTH, x0 = x - LANE_WIDTH * .47, x1 = x + LANE_WIDTH * .47;
+      const look = SETTING_COLOURS[settingAt(g, l.from)];
+      for (let z = from; z < to; z += 1) {
+        const z1 = Math.min(to, z + 1), h = ledgeHeight(g, l.lane, g.distance + z), h1 = ledgeHeight(g, l.lane, g.distance + z1);
+        quad(c, [project(x0, z, h), project(x1, z, h), project(x1, z1, h1), project(x0, z1, h1)], look.wall);
+        quad(c, [project(x0, z, 0), project(x0, z1, 0), project(x0, z1, h1), project(x0, z, h)], look.wallOff);
+        quad(c, [project(x1, z, 0), project(x1, z1, 0), project(x1, z1, h1), project(x1, z, h)], look.wallOff);
+      }
+    }
+  }
   function platforms(c: CanvasRenderingContext2D, g: BennyRun): void {
     const top = BENNY_RUN.platformHeight;
     for (const p of [...g.platforms].sort((a, b) => b.from - a.from)) {
@@ -805,7 +819,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (shake) { const k = (now - shake.at) / shake.ms; if (k >= 1) shake = null; else { const a = shake.px * (1 - k); c.translate((Math.random() * 2 - 1) * a, (Math.random() * 2 - 1) * a); } }
     road(c, g, SETTING_COLOURS[g.setting]);
     speedLines(c, g, now);
-    platforms(c, g);
+    platforms(c, g); ledges(c, g);
     recordBanner(c, g);
     wind(c, g, now);
     const ahead = [...g.entities].sort((a, b) => b.z - a.z);
@@ -904,6 +918,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'crumble': { const n = lanesAt(g, event.pit.from), x = (event.pit.lane - (n - 1) / 2) * LANE_WIDTH, p = project(x, event.pit.from - g.distance + 1, 0);
         burst(p.x, p.y, ['#5a3d22', '#8a6440', '#3a2a1c'], 10, 200); if (event.pit.from - g.distance < 30) sound('rumble', 1.3); break; }
       case 'platformUp': sound('jump', 1.2); break;
+      case 'blocked': sound('bump', .8); flash('Trop haut : monte les marches !'); break;
       case 'lanes':
         viewLane += event.shift;
         if (event.shift > 0) flash('La salle s’élargit : cinq couloirs !');

@@ -114,6 +114,17 @@ describe('Cours cours Benny ! rules', () => {
     place(g, 'flyer', 2, 5); runInput(g, g.at, 'down'); expect(g.foes).toBe(3);
     expect(g.lastBumpAt).toBeNull();
   });
+  it('walks up stairs without a jump, and steps sideways only onto a low step', () => {
+    const g = quiet(); run(g, C.introMs); const z = g.distance;
+    g.ledges.push({lane: 1, from: z + 2, to: z + 60, top: 1.2});
+    run(g, 2500); expect(inAir(g)).toBe(false); expect(runHeight(g)).toBeCloseTo(1.2, 1); // Up the stairs, on the flat top.
+    const high = quiet(); run(high, C.introMs); high.lane = 0; const w = high.distance;
+    high.ledges.push({lane: 1, from: w - 5, to: w + 60, top: 1.2}); // She is level with the stairs, already on their top: the next lane is a high step.
+    runInput(high, high.at, 'right'); expect(high.lane).toBe(0); expect(types(high)).toContain('blocked'); // Too high a step.
+    const low = quiet(); run(low, C.introMs); low.lane = 0; const v = low.distance;
+    low.ledges.push({lane: 1, from: v - 5, to: v + 60, top: .4});
+    runInput(low, low.at, 'right'); expect(low.lane).toBe(1);
+  });
   it('lets a flying monster hover over the road: running under it does nothing, only a jump through its height strikes it', () => {
     const g = quiet(); run(g, C.introMs);
     place(g, 'flyer', g.lane, 1); run(g, 400); expect(g).toMatchObject({lastBumpAt: null, foes: 0}); // Passed under, on the ground.
