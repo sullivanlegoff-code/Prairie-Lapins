@@ -493,6 +493,14 @@ describe('Cours cours Benny ! rules', () => {
     expect(g.lastBumpAt).toBeNull(); expect(g.foes).toBe(1); expect(g.score).toBeGreaterThan(score + 2 * C.dashSmash);
     run(g, C.powers.dash); expect(g.active).toBeNull();
   });
+  it('rolls fireballs towards Benny once she is near: jumped, unharmed; met on the ground, a bump', () => {
+    const g = quiet(); run(g, C.introMs);
+    const ball = place(g, 'fireball', 1, 60); run(g, 300); expect(ball.rolling).toBeUndefined();
+    while (ball.z - g.distance > C.fireFrom) run(g, 10);
+    const z0 = ball.z; run(g, 200); expect(ball.z).toBeLessThan(z0);
+    while (ball.z - g.distance > 1.5) run(g, 10); runInput(g, g.at, 'up'); run(g, 800); expect(g.lastBumpAt).toBeNull();
+    place(g, 'fireball', 1, 20); run(g, 1500); expect(g.lastBumpAt).not.toBeNull();
+  });
   it('lays rockfalls only in the cave, always leaving one lane free', () => {
     let total = 0;
     for (const seed of [3, 4, 5]) {

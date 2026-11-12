@@ -109,6 +109,8 @@ export const BENNY_RUN = {
   /** On the mountain path, a gust of wind is announced `gustWarn` m ahead, then pushes Benny one lane downwind (not on a
    * wall or a platform); the road past it is clear, with coins downwind. */
   gustWarn: 18,
+  /** On the lava bridge, fireballs roll towards Benny at `fireSpeed` m/s once she is `fireFrom` m away: jump them or step aside. */
+  fireSpeed: 7, fireFrom: 45,
   /** A long tunnel of logs: beams every `burrowStep` m; a roll under one goes on while another is within `burrowKeep` m
    * (one roll for the whole tunnel, a long slide). */
   burrowStep: 2.5, burrowKeep: 3,
@@ -121,7 +123,7 @@ export const RUN_SETTINGS: readonly RunSetting[] = ['grotte', 'pont', 'montagne'
 export type RunPower = keyof typeof BENNY_RUN.powers;
 export const RUN_POWERS = Object.keys(BENNY_RUN.powers) as RunPower[];
 export type RunFoe = 'dragonnet' | 'chest' | 'ember' | 'flyer';
-export type RunKind = 'coin' | 'wallCoin' | 'power' | 'pot' | 'barrier' | 'beam' | 'pillar' | 'hole' | 'thrownPot' | RunFoe;
+export type RunKind = 'coin' | 'wallCoin' | 'power' | 'pot' | 'barrier' | 'beam' | 'pillar' | 'hole' | 'thrownPot' | 'fireball' | RunFoe;
 /** The creatures on the ground; the little flying monster (`flyer`) comes on top. */
 export const RUN_FOES: readonly RunFoe[] = ['dragonnet', 'chest', 'ember'];
 export type RunInput = 'left' | 'right' | 'up' | 'down';
@@ -130,7 +132,7 @@ export type StrikeKind = 'lane' | 'spin' | 'slide' | 'jump' | 'pound' | 'shock' 
 
 /** A thing on the road. `lane` is 0 to `lanes - 1`; a wall coin's lane is -1 (left wall) or `lanes` (right wall). */
 /** A thing on the road; `up` is how high a coin floats (a coin arc over a barrier), for the drawing only. */
-export interface RunEntity {id: number; kind: RunKind; lane: number; z: number; power?: RunPower; hopAt?: number; up?: number; beside?: boolean; flyTo?: number; cross?: -1 | 1; crossAt?: number; rock?: 'up' | 'down'; geyser?: 'idle' | 'up'}
+export interface RunEntity {id: number; kind: RunKind; lane: number; z: number; power?: RunPower; hopAt?: number; up?: number; beside?: boolean; flyTo?: number; cross?: -1 | 1; crossAt?: number; rock?: 'up' | 'down'; geyser?: 'idle' | 'up'; rolling?: boolean}
 export interface WallSegment {side: Side; from: number; to: number; runnable: boolean}
 export type RunEvent =
   | {type: 'strike'; entity: RunEntity; points: number; combo: number; multiplier: number; by: StrikeKind}
@@ -369,7 +371,7 @@ export const wallLane = (g: BennyRun, side: Side) => side === 'left' ? -1 : g.la
 const across = (g: BennyRun) => g.wall ? wallLane(g, g.wall.side) : g.lane;
 const others = (g: BennyRun, n: number) => { const l = laneList(g); for (let i = l.length - 1; i > 0; i--) { const j = Math.floor(random(g) * (i + 1)); [l[i], l[j]] = [l[j], l[i]]; } return l.slice(0, n); };
 
-export type RunPattern = 'coins' | 'arc' | 'slalom' | 'pots' | 'gauntlet' | 'pair' | 'tunnel' | 'barriers' | 'pillars' | 'wall' | 'flyers' | 'breather' | 'hole' | 'skittles' | 'wide' | 'platform' | 'crossers' | 'crumble' | 'rockfall' | 'geysers' | 'gust' | 'burrow' | 'wallTrail';
+export type RunPattern = 'coins' | 'arc' | 'slalom' | 'pots' | 'gauntlet' | 'pair' | 'tunnel' | 'barriers' | 'pillars' | 'wall' | 'flyers' | 'breather' | 'hole' | 'skittles' | 'wide' | 'platform' | 'crossers' | 'crumble' | 'rockfall' | 'geysers' | 'gust' | 'burrow' | 'wallTrail' | 'fireballs';
 /**
  * The road is laid out in short patterns rather than one thing at a time, so that it has a rhythm: a slalom of pots to chain
  * lane strikes into a combo, a row of creatures one side then the other, a pair of creatures on both sides for the spinning
@@ -379,12 +381,12 @@ export type RunPattern = 'coins' | 'arc' | 'slalom' | 'pots' | 'gauntlet' | 'pai
  */
 const PATTERNS: Record<RunPattern, [number, number]> = {
   coins: [4, 1.5], arc: [2, 2], slalom: [3, 3], pots: [3, 1.5], gauntlet: [1.5, 3.5], pair: [.5, 2.5], tunnel: [1, 2], barriers: [1, 2],
-  pillars: [1.5, 2.5], wall: [0, 2], flyers: [0, 2.5], breather: [2, .8], hole: [0, 2.2], skittles: [1.5, 2], wide: [0, 1.2], platform: [.4, 1.4], crossers: [0, 1.6], crumble: [.2, 1.1], rockfall: [1.5, 2.5], geysers: [1.2, 2], gust: [1.2, 1.8], burrow: [.2, .8], wallTrail: [.8, 1.4],
+  pillars: [1.5, 2.5], wall: [0, 2], flyers: [0, 2.5], breather: [2, .8], hole: [0, 2.2], skittles: [1.5, 2], wide: [0, 1.2], platform: [.4, 1.4], crossers: [0, 1.6], crumble: [.2, 1.1], rockfall: [1.5, 2.5], geysers: [1.2, 2], gust: [1.2, 1.8], burrow: [.2, .8], wallTrail: [.8, 1.4], fireballs: [.6, 1.6],
 };
 function choosePattern(g: BennyRun, z: number): RunPattern {
   const d = runDifficulty(g), list = (Object.keys(PATTERNS) as RunPattern[]).filter(p => (p !== 'flyers' || d >= C.flyerFrom) && (p !== 'pair' || d >= .2) && (p !== 'hole' || d >= .08) &&
     (p !== 'wall' || (d > .25 && wallSide(g, z))) &&
-    (p !== 'platform' || d >= .1) && (p !== 'crossers' || d >= .2) && (p !== 'crumble' || d >= .12) && (p !== 'burrow' || d >= .2) && (p !== 'wallTrail' || (d >= .05 && trailSide(g, z) !== undefined)) && (p !== 'gust' || (d >= .06 && settingAt(g, z) === 'montagne' && settingAt(g, z + 30) === 'montagne')) && (p !== 'geysers' || (d >= .06 && settingAt(g, z) === 'pont' && settingAt(g, z + 40) === 'pont')) && (p !== 'rockfall' || (d >= .06 && settingAt(g, z) === 'grotte' && settingAt(g, z + 40) === 'grotte')) && (p !== 'wide' || (d >= C.wideFrom && g.baseLanes < C.wideLanes && !g.zones.some(w => w.to > z - 100))));
+    (p !== 'platform' || d >= .1) && (p !== 'crossers' || d >= .2) && (p !== 'crumble' || d >= .12) && (p !== 'burrow' || d >= .2) && (p !== 'fireballs' || (d >= .1 && settingAt(g, z) === 'pont' && settingAt(g, z + 40) === 'pont')) && (p !== 'wallTrail' || (d >= .05 && trailSide(g, z) !== undefined)) && (p !== 'gust' || (d >= .06 && settingAt(g, z) === 'montagne' && settingAt(g, z + 30) === 'montagne')) && (p !== 'geysers' || (d >= .06 && settingAt(g, z) === 'pont' && settingAt(g, z + 40) === 'pont')) && (p !== 'rockfall' || (d >= .06 && settingAt(g, z) === 'grotte' && settingAt(g, z + 40) === 'grotte')) && (p !== 'wide' || (d >= C.wideFrom && g.baseLanes < C.wideLanes && !g.zones.some(w => w.to > z - 100))));
   // The « run on walls » challenge: a row of pillars (the way on is up a wall) comes one time in two meanwhile.
   if (g.challenge?.kind === 'walls' && wallSide(g, z) && random(g) < C.wallChallengeNudge) return 'wall';
   const weight = (p: RunPattern) => PATTERNS[p][0] + (PATTERNS[p][1] - PATTERNS[p][0]) * d;
@@ -437,6 +439,12 @@ function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
       // Creatures that stay put (an ember would hop into the middle lane).
       const still = ['dragonnet', 'chest'] as const; add(g, pick(g, still), middle - 1, z + 2); add(g, pick(g, still), middle + 1, z + 2);
       return z + 2;
+    }
+    case 'fireballs': {
+      // Fireballs rolling down the lanes towards Benny, one after the other (never all lanes at once): jump them or step aside.
+      const count = 2 + (random(g) < d ? 1 : 0); let lane = any();
+      for (let i = 0; i < count; i++) { add(g, 'fireball', lane, z + i * 10); lane = pick(g, all.filter(l => l !== lane)); }
+      return z + (count - 1) * 10;
     }
     case 'wallTrail': {
       // A long trail of coins up a wall, and below it a slalom of pots and barriers: the wall is the way for the coins.
@@ -754,6 +762,7 @@ function meet(g: BennyRun, e: RunEntity): void {
       if (high) { g.events.push({type: 'cleared', entity: e}); return; }
       g.entities = g.entities.filter(o => o !== e); g.events.push({type: 'crash', entity: e}); return;
     case 'barrier': if (high) dodge(g, e); else bump(g, e); return;
+    case 'fireball': if (high) dodge(g, e); else bump(g, e); return;
     case 'beam': if (sliding(g) || (!inAir(g) && g.at < g.slideUntil + C.slideGraceMs)) dodge(g, e); else bump(g, e); return;
     // A creature: sliding into it strikes it; otherwise, even jumping over it, it strikes Benny as she passes.
     case 'dragonnet': case 'chest': case 'ember': case 'flyer': if (sliding(g)) strike(g, e, 'slide'); else bump(g, e); return;
@@ -773,7 +782,7 @@ function tick(g: BennyRun): void {
   if (g.at >= g.nextSettingAt && !g.upcoming) {
     g.upcoming = {setting: pick(g, RUN_SETTINGS.filter(s => s !== g.setting)), z: g.distance + C.settingAhead}; g.nextSettingAt = g.at + settingDelay(g);
     // Rocks hang only from the cave's ceiling, vents only on the lava bridge, gusts only on the mountain: none past where they end.
-    const end = g.upcoming.z; g.entities = g.entities.filter(e => !((e.rock || e.geyser) && e.z >= end)); g.gusts = g.gusts.filter(w => w.z < end);
+    const end = g.upcoming.z; g.entities = g.entities.filter(e => !((e.rock || e.geyser || e.kind === 'fireball') && e.z >= end)); g.gusts = g.gusts.filter(w => w.z < end);
   }
   followLanes(g); followPlatform(g);
   if (g.upcoming && g.distance >= g.upcoming.z) { g.setting = g.upcoming.setting; g.upcoming = null; g.events.push({type: 'setting', setting: g.setting}); }
@@ -806,9 +815,12 @@ function tick(g: BennyRun): void {
     e.hopAt = g.at + C.emberHopMs;
     if (e.z - g.distance > C.emberStill) { const n = lanesAt(g, e.z); e.lane = pick(g, [e.lane - 1, e.lane + 1].filter(l => l >= 0 && l < n)); }
   }
+  // Fireballs roll towards Benny once she is near (their way this tick counts for the meeting below).
+  const roll = C.fireSpeed * dt;
+  for (const e of g.entities) if (e.kind === 'fireball' && e.z - g.distance < C.fireFrom) { e.z -= roll; e.rolling = true; }
   for (const e of [...g.entities]) {
     if (g.over) break;
-    if (e.z - before > C.hitHalf - 1e-9 && e.z - g.distance <= C.hitHalf) meet(g, e);
+    if (e.z + (e.rolling ? roll : 0) - before > C.hitHalf - 1e-9 && e.z - g.distance <= C.hitHalf) meet(g, e);
   }
   // A creature in the next lane that Benny has just passed without striking it strikes her (not flying). On a wall, only a flying
   // monster reaches her, from the edge lane: it keeps to her height.

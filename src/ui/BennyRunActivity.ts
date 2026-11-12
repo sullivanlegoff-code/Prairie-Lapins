@@ -361,6 +361,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     dragonnet: {colour: '#8e3a5a', w: 1.1, h: .8, round: true}, chest: {colour: '#6e3b2e', w: 1.3, h: .9},
     ember: {colour: '#ff9a2a', w: .9, h: .9, up: .4, round: true},
     flyer: {colour: '#7b4fc9', w: .8, h: .7, round: true},
+    fireball: {colour: '#ff6a1a', w: 1.3, h: 1.3, up: .1, round: true, label: 'saute'},
   };
   function thing(c: CanvasRenderingContext2D, g: BennyRun, e: RunEntity): void {
     const shape = SHAPES[e.kind], ahead = e.z - g.distance; if (!shape || ahead > FAR || ahead < -3) return;
@@ -493,6 +494,13 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
           case 'flight':
             c.fillStyle = '#fff'; for (const dir of [-1, 1]) { c.beginPath(); c.ellipse(x + dir * r * .3, cy, r * .35, r * .18, dir * -.5, 0, Math.PI * 2); c.fill(); c.beginPath(); c.ellipse(x + dir * r * .35, cy + r * .2, r * .25, r * .12, dir * -.3, 0, Math.PI * 2); c.fill(); } break;
         }
+        return true;
+      }
+      case 'fireball': {
+        // A rolling ball of fire, flames trailing behind it (away from Benny).
+        const turn = at / 60 + e.id;
+        for (let k = 3; k > 0; k--) ellipse(x, y - h * (.5 + k * .18), w * (.32 - k * .06), h * (.3 - k * .05), k % 2 ? '#ffb03a' : '#ff6a1a');
+        ellipse(x, y - h / 2, w / 2, h / 2, '#e8461a'); ellipse(x + Math.cos(turn) * w * .15, y - h / 2 + Math.sin(turn) * h * .15, w * .22, h * .22, '#ffd24a');
         return true;
       }
       case 'coin': case 'wallCoin': {
