@@ -605,9 +605,12 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     }
     c.fillStyle = '#d99a5b'; c.beginPath(); c.ellipse(0, 0, w / 2, h / 2, 0, 0, Math.PI * 2); c.fill();
     if (!flat) {
-      // Long ears, swept back by the wind and flopping with each stride.
-      for (const side of [-1, 1]) { const flop = side * .18 + Math.sin(stride + side) * (grounded ? .12 : .04);
-        c.save(); c.translate(side * w * .2, -h * .38); c.rotate(flop);
+      // Long ears, swept back by the wind and flopping with each stride. In a jump they trail low on the way up and fly up and
+      // out on the way down; with the Dragon at her heels they lie flat back, a little shorter.
+      const jump = inAir(g) && !wall && !powerActive(g, 'flight') && g.airUntil > g.airFrom ? Math.min(1, (g.at - g.airFrom) / (g.airUntil - g.airFrom)) : -1;
+      const fly = jump < 0 ? 0 : jump < .5 ? -.12 * (1 - jump * 2) : .5 * (jump - .5) * 2, scared = dragonVisible(g) && !wall;
+      for (const side of [-1, 1]) { const flop = side * (.18 + fly + (scared ? .35 : 0)) + Math.sin(stride + side) * (grounded ? .12 : .04);
+        c.save(); c.translate(side * w * .2, -h * .38); c.rotate(flop); if (scared) c.scale(1, .8);
         c.fillStyle = '#d99a5b'; c.beginPath(); c.ellipse(0, -.28 * s, w * .11, .3 * s, 0, 0, Math.PI * 2); c.fill();
         c.fillStyle = '#f2b8a0'; c.beginPath(); c.ellipse(0, -.26 * s, w * .05, .22 * s, 0, 0, Math.PI * 2); c.fill(); c.restore(); }
     } else { c.fillStyle = '#7d6a5a'; c.fillRect(-w * .28, -h / 2 - .2 * s, w * .14, .25 * s); c.fillRect(w * .14, -h / 2 - .2 * s, w * .14, .25 * s); }
