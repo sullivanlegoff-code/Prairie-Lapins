@@ -46,7 +46,7 @@ const LABEL_UNTIL = 3;
 const HINTS = {
   rock: 'Éboulement ! Saute les rochers ou prends le couloir libre.', geyser: 'Geysers de lave : on ne les saute pas, contourne-les !',
   fire: 'Boules de feu : saute-les ou écarte-toi !', snow: 'Boules de neige : saute-les ou écarte-toi !', cart: 'Wagonnets fous : trop hauts, écarte-toi !',
-  pit: 'Le sol craque ! Saute la fosse ou change de couloir.', spring: 'Un tremplin ! Passe dessus pour bondir par-dessus les piliers.', gold: 'Un pot doré ! Frappe-le : il vaut cinq pots.', platform: 'Une plateforme : monte par la rampe !',
+  pit: 'Le sol craque ! Saute la fosse ou change de couloir.', spring: 'Un tremplin ! Passe dessus pour bondir par-dessus les piliers.', gold: 'Un pot doré ! Frappe-le : il vaut cinq pots.', platform: 'Une plateforme : atterris dessus depuis le tremplin pour monter !',
 } as const;
 type HintKind = keyof typeof HINTS;
 const HINTS_KEY = 'prairie-lapins:benny-run-hints';
@@ -234,7 +234,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const kinds: HintKind[] = [];
     for (const e of g.entities) if (near(e.z)) kinds.push(...(e.rock ? ['rock'] : e.geyser ? ['geyser'] : e.cart ? ['cart'] : e.snow ? ['snow'] : e.kind === 'fireball' ? ['fire'] : e.kind === 'spring' ? ['spring'] : e.gold ? ['gold'] : []) as HintKind[]);
     if (g.pits.some(p => near(p.from))) kinds.push('pit');
-    if (g.platforms.some(p => near(p.from - BENNY_RUN.rampLen))) kinds.push('platform');
+    if (g.platforms.some(p => near(p.from))) kinds.push('platform');
     const kind = kinds.find(k => !hinted.has(k)); if (!kind) return;
     hinted.add(kind); flash(HINTS[kind]);
     try { localStorage.setItem(HINTS_KEY, JSON.stringify([...hinted])); } catch { /* Only for this session. */ }
@@ -423,11 +423,11 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   /** The raised platforms: stone sides, a lighter top with a path, the ramp up to it (shapes until the painted settings). */
   function platforms(c: CanvasRenderingContext2D, g: BennyRun): void {
-    const top = BENNY_RUN.platformHeight, ramp = BENNY_RUN.rampLen;
+    const top = BENNY_RUN.platformHeight;
     for (const p of [...g.platforms].sort((a, b) => b.from - a.from)) {
-      const start = Math.max(NEAR, p.from - ramp - g.distance), from = Math.max(NEAR, p.from - g.distance), to = Math.min(FAR, p.to - g.distance); if (to <= start) continue;
+      const start = Math.max(NEAR, p.from - g.distance), from = Math.max(NEAR, p.from - g.distance), to = Math.min(FAR, p.to - g.distance); if (to <= start) continue;
       const n = lanesAt(g, p.from), x = (p.lane - (n - 1) / 2) * LANE_WIDTH, x0 = x - LANE_WIDTH * .47, x1 = x + LANE_WIDTH * .47;
-      const look = SETTING_COLOURS[settingAt(g, p.from)], height = (z: number) => z < p.from - g.distance ? top * Math.max(0, (z - (p.from - ramp - g.distance)) / ramp) : top;
+      const look = SETTING_COLOURS[settingAt(g, p.from)], height = (_z: number) => top;
       // Its shadow on the road beside it, the two sides (the one facing the middle shows), then the ramp and the top.
       for (const [sx, dx] of [[x0, -.5], [x1, .5]] as const) quad(c, [project(sx, from, 0), project(sx + dx, from, 0), project(sx + dx, to, 0), project(sx, to, 0)], 'rgba(0,0,0,.22)');
       for (const sx of [x0, x1]) { c.fillStyle = look.wallOff; c.beginPath(); c.moveTo(project(sx, start, 0).x, project(sx, start, 0).y);
@@ -904,7 +904,6 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'crumble': { const n = lanesAt(g, event.pit.from), x = (event.pit.lane - (n - 1) / 2) * LANE_WIDTH, p = project(x, event.pit.from - g.distance + 1, 0);
         burst(p.x, p.y, ['#5a3d22', '#8a6440', '#3a2a1c'], 10, 200); if (event.pit.from - g.distance < 30) sound('rumble', 1.3); break; }
       case 'platformUp': sound('jump', 1.2); break;
-      case 'blocked': sound('bump', .8); shakeFor('strike'); flash('Monte par la rampe !'); break;
       case 'lanes':
         viewLane += event.shift;
         if (event.shift > 0) flash('La salle s’élargit : cinq couloirs !');

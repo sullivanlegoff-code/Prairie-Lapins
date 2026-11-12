@@ -91,9 +91,9 @@ export const BENNY_RUN = {
   /** Wide halls: the road widens to `wideLanes` lanes for `wideLen` m (from this far into the speed ramp); nothing is laid
    * within `wideClear` m before an edge of one, so that no thing straddles it. */
   wideLanes: 5, wideLen: [140, 220], wideFrom: .15, wideClear: 60,
-  /** Raised platforms along one lane: this high (m), climbed by a ramp this long; from the ground beside one, Benny cannot step
-   * onto it (only by its ramp, or from a wall). */
-  platformHeight: 1.8, rampLen: 6,
+  /** Raised platforms along one lane: this high (m). Benny gets up onto one only by landing on it from a springboard aimed at it
+   * (owner: « uniquement en prenant un tremplin »); from the ground she runs on beneath. */
+  platformHeight: 1.8,
   /** Things are laid out to `spawnAhead` m ahead, the first at `firstAt` m, then every `gapStart` m down to `gapMin` m. */
   spawnAhead: 90, firstAt: 30, gapStart: 22, gapMin: 11,
   /** Share of coin lines carrying a power, and how long each power lasts once picked up (the bubble lasts until a bump, at most this). */
@@ -180,8 +180,8 @@ export type RunEvent =
   | {type: 'setting'; setting: RunSetting}
   /** The road widens or narrows under Benny's feet: `lanes` now, her lane number moved by `shift`. */
   | {type: 'lanes'; lanes: number; shift: number}
-  /** Up a platform's ramp; off a platform (its end, or a step aside); against a platform's side (no way up from the ground). */
-  | {type: 'platformUp'} | {type: 'platformDown'} | {type: 'blocked'}
+  /** Up onto a platform (landing from a springboard); off a platform (its end, or a step aside). */
+  | {type: 'platformUp'} | {type: 'platformDown'}
   /** Cracked slabs giving way ahead. */
   | {type: 'crumble'; pit: Pit}
   /** A rock fallen from the cave's ceiling onto the road. */
@@ -237,6 +237,8 @@ export interface BennyRun {
   airFrom: number; airUntil: number; jumpFrom: number; pound: boolean; poundFrom: number;
   /** The end of a springboard bounce (its jump is that much higher). */
   bounceUntil: number;
+  /** The height of the platform a springboard bounce lands on (0 when it lands on the road). */
+  landHeight: number;
   slideUntil: number;
   wall: {side: Side; until: number; coins?: number; leaps?: number} | null;
   entities: RunEntity[]; nextId: number; nextSpawnZ: number;
@@ -329,7 +331,7 @@ const pick = <T>(g: BennyRun, list: readonly T[]): T => list[Math.min(list.lengt
 export function startBennyRun(now: number, seed = Math.floor(Math.random() * 2147483647), lanes = 3, tutorial = false): BennyRun {
   const g: BennyRun = {
     seed: (seed >>> 0) || 1, startedAt: now, at: now, distance: 0, speed: C.speedStart, lanes, lane: Math.floor(lanes / 2), laneChangedAt: -Infinity, laneFrom: Math.floor(lanes / 2), rollHits: 0, kms: 0, baseLanes: lanes, zones: [], platforms: [], raised: null, pits: [], gusts: [], pace: 0, scoreBy: {grotte: 0, pont: 0, montagne: 0}, scored: 0,
-    airFrom: 0, airUntil: 0, bounceUntil: -1, jumpFrom: 0, pound: false, poundFrom: 0, slideUntil: 0, wall: null,
+    airFrom: 0, airUntil: 0, bounceUntil: -1, landHeight: 0, jumpFrom: 0, pound: false, poundFrom: 0, slideUntil: 0, wall: null,
     entities: [], nextId: 1, nextSpawnZ: C.firstAt, walls: [], wallsTo: {left: 0, right: 0}, holes: [],
     setting: 'grotte', nextSettingAt: 0, upcoming: null, stumbleUntil: 0, lastBumpAt: null,
     active: null, score: 0, coins: 0, hearts: 0, pots: 0, goldPots: 0, foes: 0, wallRuns: 0, dodges: 0, leaps: 0, combo: 0, comboUntil: 0, bestCombo: 0,
@@ -361,15 +363,16 @@ export function runHeight(g: BennyRun): number {
 function airHeight(g: BennyRun): number {
   if (!inAir(g)) return 0;
   const p = (g.at - g.airFrom) / (g.airUntil - g.airFrom);
-  return g.pound ? g.poundFrom * (1 - p) : g.jumpFrom * (1 - p) + 4 * (g.airUntil === g.bounceUntil ? C.springHeight : C.jumpHeight) * p * (1 - p);
+  // A bounce that lands on a platform rises to its top as it comes down, so she stands on it without a jump of the floor.
+  const landing = g.airUntil === g.bounceUntil ? g.landHeight : 0;
+  return g.pound ? g.poundFrom * (1 - p) : g.jumpFrom * (1 - p) + landing * p + 4 * (g.airUntil === g.bounceUntil ? C.springHeight : C.jumpHeight) * p * (1 - p);
 }
 /** The height of what Benny runs on: a platform (or its ramp) she has climbed, else the road. */
 export function floorHeight(g: BennyRun): number {
-  const p = g.raised; if (!p) return 0;
-  return C.platformHeight * Math.max(0, Math.min(1, (g.distance - (p.from - C.rampLen)) / C.rampLen));
+  return g.raised ? C.platformHeight : 0;
 }
 /** The platform along `lane` at `z`, ramp included. */
-export const platformAt = (g: BennyRun, lane: number, z: number) => g.platforms.find(p => p.lane === lane && z >= p.from - C.rampLen && z < p.to);
+export const platformAt = (g: BennyRun, lane: number, z: number) => g.platforms.find(p => p.lane === lane && z >= p.from && z < p.to);
 /** Off a platform (its end, or a step aside): a jump down from its height, like one off a wall. */
 function dropOff(g: BennyRun): void {
   const from = floorHeight(g); g.raised = null; g.events.push({type: 'platformDown'});
@@ -380,7 +383,8 @@ function dropOff(g: BennyRun): void {
 /** Up a ramp met in her lane; off at the end. */
 function followPlatform(g: BennyRun): void {
   if (!g.raised && !g.wall && !powerActive(g, 'flight')) {
-    const p = g.platforms.find(o => o.lane === g.lane && g.distance >= o.from - C.rampLen && g.distance < o.from + 1);
+    // Only just landed from a springboard aimed at a platform: she stands on it (from the ground, she runs on beneath).
+    const p = g.landHeight > 0 && g.at >= g.bounceUntil && g.at - g.bounceUntil < C.springMs ? g.platforms.find(o => o.lane === g.lane && g.distance >= o.from && g.distance < o.to) : undefined;
     if (p) { g.raised = p; g.events.push({type: 'platformUp'}); }
   }
   if (g.raised && (g.distance >= g.raised.to || g.lane !== g.raised.lane || g.wall)) dropOff(g);
@@ -623,8 +627,9 @@ function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
       return z + (count - 1) * 9 + 2;
     }
     case 'platform': {
-      // A raised platform along one lane, coins on top; below it, rows of pillars in the other lanes: up the ramp (or a wall).
-      const lane = any(), from = z + C.rampLen, to = from + 26 + d * 20;
+      // A raised platform along one lane, coins on top; below it, rows of pillars in the other lanes: up from a springboard (or a wall).
+      const lane = any(), from = z + g.speed * C.springMs / 1000 - 4, to = from + 26 + d * 20;
+      add(g, 'spring', lane, z); // The springboard that lands her on it.
       g.platforms.push({lane, from, to});
       // Both walls runnable along it too: missing the ramp, a wall is still a way past the pillars.
       for (const w of g.walls) if (w.to > from - 25 && w.from <= to) w.runnable = true;
@@ -852,7 +857,10 @@ function meet(g: BennyRun, e: RunEntity): void {
   if (airHeight(g) > C.overHeight) return;
   // A springboard met on the ground (or rolling): up she goes.
   if (e.kind === 'spring') {
-    if (!inAir(g)) { g.slideUntil = 0; g.jumpFrom = 0; g.airFrom = g.at; g.airUntil = g.bounceUntil = g.at + C.springMs; g.events.push({type: 'bounce'}); }
+    if (!inAir(g)) {
+      g.slideUntil = 0; g.jumpFrom = 0; g.airFrom = g.at; g.airUntil = g.bounceUntil = g.at + C.springMs; g.events.push({type: 'bounce'});
+      g.landHeight = platformAt(g, e.lane, g.distance + g.speed * C.springMs / 1000) ? C.platformHeight : 0;
+    }
     return;
   }
   // In the air at all (even just taking off or about to land) clears a barrier or a pot.
@@ -1012,9 +1020,6 @@ export function runInput(g: BennyRun, now: number, input: RunInput): void {
         }
         return;
       }
-      // A platform's side, from the ground: no way up (only by its ramp).
-      const side2 = platformAt(g, target, g.distance);
-      if (side2 && !g.raised && g.distance >= side2.from - C.rampLen + 1.5) { g.events.push({type: 'blocked'}); return; }
       if (g.raised) dropOff(g);
       const from = g.lane; g.lane = target; g.laneChangedAt = g.at; g.laneFrom = from;
       // The wand: changing lanes towards a pot or creatures strikes every one of them within reach in the lane she moves into

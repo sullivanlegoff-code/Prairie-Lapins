@@ -382,21 +382,23 @@ describe('Cours cours Benny ! rules', () => {
     runInput(g, g.at, 'right'); runInput(g, g.at + 200, 'right'); expect(g.lane).toBe(4);
     run(g, 2500); expect(g).toMatchObject({lanes: 3, lane: 2});
   });
-  it('climbs a platform by its ramp, runs over what is below, steps off it aside or at its end, and cannot step onto it from beside', () => {
+  it('reaches a platform only by landing on it from a springboard, runs on beneath it from the ground, steps off it aside or at its end', () => {
+    // From the ground, beneath it: no way up.
     const g = quiet(); run(g, C.introMs); const z = g.distance;
     g.platforms.push({lane: 1, from: z + 12, to: z + 50});
-    run(g, 1600); expect(g.raised).not.toBeNull(); expect(runHeight(g)).toBeCloseTo(C.platformHeight, 1);
-    expect(types(g)).toContain('platformUp');
-    place(g, 'pillar', 2, 6); place(g, 'coin', 1, 4); run(g, 600);
-    expect(g.lastBumpAt).toBeNull(); expect(g.coins).toBe(1);
-    // Aside: a jump down from up there, into the next lane; from there, no way back up but by a ramp.
-    runInput(g, g.at, 'right'); expect(g.raised).toBeNull(); expect(g.lane).toBe(2); expect(inAir(g)).toBe(true);
-    run(g, 800); expect(runHeight(g)).toBe(0);
-    runInput(g, g.at, 'left'); expect(g.lane).toBe(2);
-    expect(types(g)).toContain('blocked');
-    run(g, 3000); expect(g.platforms.every(p => p.to > g.distance - 10)).toBe(true); expect(g.raised).toBeNull();
-  });
-  it('lets an awake dragonnet waddle across the road from far off, turning back at the edge, and stop when Benny is near', () => {
+    run(g, 1600); expect(g.raised).toBeNull(); expect(runHeight(g)).toBe(0);
+    // A springboard just before it, aimed at it: she bounces and lands on top.
+    const h = quiet(); run(h, C.introMs); const w = h.distance, len = h.speed * C.springMs / 1000;
+    place(h, 'spring', 1, 3); h.platforms.push({lane: 1, from: w + 3 + len - 4, to: w + 3 + len + 40});
+    run(h, 2000); expect(h.raised).not.toBeNull(); expect(runHeight(h)).toBeCloseTo(C.platformHeight, 1);
+    expect(types(h)).toContain('platformUp');
+    place(h, 'pillar', 2, 6); place(h, 'coin', 1, 4); run(h, 600);
+    expect(h.lastBumpAt).toBeNull(); expect(h.coins).toBe(1);
+    // Aside: a jump down from up there, into the next lane.
+    runInput(h, h.at, 'right'); expect(h.raised).toBeNull(); expect(h.lane).toBe(2); expect(inAir(h)).toBe(true);
+    run(h, 800); expect(runHeight(h)).toBe(0);
+    run(h, 3000); expect(h.platforms.every(p => p.to > h.distance - 10)).toBe(true); expect(h.raised).toBeNull();
+  });  it('lets an awake dragonnet waddle across the road from far off, turning back at the edge, and stop when Benny is near', () => {
     const g = quiet(); const e = place(g, 'dragonnet', 1, 60, {cross: 1, crossAt: g.at});
     run(g, C.crossMs * .5); expect(e.lane).toBe(2);
     run(g, C.crossMs); expect(e.lane).toBe(1);
