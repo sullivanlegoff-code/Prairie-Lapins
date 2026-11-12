@@ -222,7 +222,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
           break;
         case 'montagne':
           if (kind === 2) { c.fillStyle = '#e9eef4'; c.beginPath(); c.ellipse(p.x, p.y - s * .35, s * .8, s * .45, 0, 0, Math.PI * 2); c.fill(); }
-          else { c.fillStyle = '#3f7a4a'; for (const [w, y] of [[1, .6], [.8, 1.2], [.55, 1.75]]) { c.beginPath(); c.moveTo(p.x - s * w, p.y - s * (y - .6)); c.lineTo(p.x, p.y - s * (y + .7)); c.lineTo(p.x + s * w, p.y - s * (y - .6)); c.fill(); } c.fillStyle = '#6b4a2a'; c.fillRect(p.x - s * .1, p.y - s * .2, s * .2, s * .25); }
+          else if (p.x + s > 0 && p.x - s < width) { c.fillStyle = '#3f7a4a'; c.beginPath(); for (const [w, y] of [[1, .6], [.8, 1.2], [.55, 1.75]]) { c.moveTo(p.x - s * w, p.y - s * (y - .6)); c.lineTo(p.x, p.y - s * (y + .7)); c.lineTo(p.x + s * w, p.y - s * (y - .6)); } c.fill(); c.fillStyle = '#6b4a2a'; c.fillRect(p.x - s * .1, p.y - s * .2, s * .2, s * .25); }
           break;
       }
     }
@@ -250,8 +250,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       if (snow) { k.fillStyle = snow; for (let i = 1; i < points.length; i += 2) { const [x, y] = points[i], [lx, ly] = points[i - 1], [rx, ry] = points[i + 1];
         const q = .3; k.beginPath(); k.moveTo(x, y); k.lineTo(x + (rx - x) * q, y + (ry - y) * q); k.lineTo(x, y + (ry - y) * q * .7); k.lineTo(x + (lx - x) * q, y + (ly - y) * q); k.fill(); } }
     };
-    // A still layer drawn from its image (or straight onto the screen where images cannot be made).
-    const still = (key: string, paint: (k: CanvasRenderingContext2D) => void) => { const el = skyLayer(setting + key, horizon, paint); if (el) c.drawImage(el, 0, 0, width, horizon + 1); else paint(c); };
+    // A still layer drawn from its image (only from `from` of the way down, where it has something), or straight onto the screen.
+    const still = (key: string, paint: (k: CanvasRenderingContext2D) => void, from = 0) => { const el = skyLayer(setting + key, horizon, paint); if (!el) { paint(c); return; }
+      const top = Math.floor(horizon * from), k = el.height / (horizon + 1); c.drawImage(el, 0, top * k, el.width, el.height - top * k, 0, top, width, horizon + 1 - top); };
     switch (setting) {
       case 'grotte':
         still('', k => {
@@ -271,7 +272,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         still('-sky', k => sky(k, '#79b4e4', '#f6c9a2'));
         for (let i = 0; i < 4; i++) { const x = ((now / 90 + i * width * .37) % (width * 1.4)) - width * .2, y = horizon * (.18 + i * .13);
           c.fillStyle = 'rgba(255,255,255,.8)'; c.beginPath(); c.ellipse(x, y, width * .09, horizon * .06, 0, 0, Math.PI * 2); c.ellipse(x + width * .06, y - horizon * .03, width * .06, horizon * .05, 0, 0, Math.PI * 2); c.fill(); }
-        still('-peaks', k => { ridge(k, '#9fb0cc', horizon - horizon * .05, 4, horizon * .55, 5, '#f4f8fc'); ridge(k, '#7d93b2', horizon, 6, horizon * .3, 11, '#e6eef6'); });
+        still('-peaks', k => { ridge(k, '#9fb0cc', horizon - horizon * .05, 4, horizon * .55, 5, '#f4f8fc'); ridge(k, '#7d93b2', horizon, 6, horizon * .3, 11, '#e6eef6'); }, .35);
         break;
     }
   }
