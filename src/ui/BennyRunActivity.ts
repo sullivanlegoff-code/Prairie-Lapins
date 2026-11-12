@@ -25,6 +25,14 @@ const CHALLENGE_TEXT: Record<ChallengeKind, (goal: number) => string> = {
   pots: n => `frappe ${n} pots`, coins: n => `ramasse ${n} pièces`, foes: n => `frappe ${n} créatures`, walls: n => `cours sur ${n} murs`, combo: n => `fais un combo de ${n}`,
   clean: n => `cours ${n} m sans choc`, dodges: n => `saute ou passe dessous ${n} fois`,
 };
+/** A hint the first time each newer obstacle comes into sight (once per device). */
+const HINTS = {
+  rock: 'Éboulement ! Saute les rochers ou prends le couloir libre.', geyser: 'Geysers de lave : on ne les saute pas, contourne-les !',
+  fire: 'Boules de feu : saute-les ou écarte-toi !', snow: 'Boules de neige : saute-les ou écarte-toi !', cart: 'Wagonnets fous : trop hauts, écarte-toi !',
+  pit: 'Le sol craque ! Saute la fosse ou change de couloir.', platform: 'Une plateforme : monte par la rampe !',
+} as const;
+type HintKind = keyof typeof HINTS;
+const HINTS_KEY = 'prairie-lapins:benny-run-hints';
 const POWER_NAMES: Record<RunPower, string> = {magnet: 'Aimant', bubble: 'Bulle arc-en-ciel', double: 'Pièces doublées', flight: 'Envol', dash: 'Ruée'};
 /** A swipe fires once the finger has moved this far; a quick flick lifted sooner still counts from `FLICK` px. */
 const SWIPE = 18, FLICK = 10;
@@ -137,8 +145,22 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   /** The record when this run started, whether it is beaten yet, and the last 500 m reached. */
   let runBest = 0, beaten = false, milestone = 0, metresBest = 0, metresBeaten = false;
+  /** The hints already given on this device. */
+  const hinted = (() => { try { return new Set<string>(JSON.parse(localStorage.getItem(HINTS_KEY) ?? '[]')); } catch { return new Set<string>(); } })();
+  function hints(g: BennyRun): void {
+    if (g.tutorial) return;
+    const near = (z: number) => z - g.distance > 0 && z - g.distance < 38;
+    const kinds: HintKind[] = [];
+    for (const e of g.entities) if (near(e.z)) kinds.push(...(e.rock ? ['rock'] : e.geyser ? ['geyser'] : e.cart ? ['cart'] : e.snow ? ['snow'] : e.kind === 'fireball' ? ['fire'] : []) as HintKind[]);
+    if (g.pits.some(p => near(p.from))) kinds.push('pit');
+    if (g.platforms.some(p => near(p.from - BENNY_RUN.rampLen))) kinds.push('platform');
+    const kind = kinds.find(k => !hinted.has(k)); if (!kind) return;
+    hinted.add(kind); flash(HINTS[kind]);
+    try { localStorage.setItem(HINTS_KEY, JSON.stringify([...hinted])); } catch { /* Only for this session. */ }
+  }
   function hud(): void {
     const g = game; if (!g) return;
+    hints(g);
     const multiplier = g.at <= g.comboUntil ? comboMultiplier(g.combo) : 1;
     score.textContent = `${g.score}`;
     // Beating the record during the run: said at once, with confetti, and the score turns gold.
