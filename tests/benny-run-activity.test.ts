@@ -49,7 +49,7 @@ describe('« Cours cours Benny ! » screen', () => {
     document.querySelector('canvas')!.dispatchEvent(new PointerEvent('pointerdown', {bubbles: true}));
     expect(card.hidden).toBe(false); expect(card.textContent).toMatch(/La Dragon a rattrapé Benny/); expect(finished).toHaveLength(1);
   });
-  it('plays a shock wave in slow motion for a moment, then at full pace again', () => {
+  it('plays a shock wave at full pace: no slow motion, and its strikes freeze nothing', () => {
     const {activity, step, key} = mount(50);
     document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);
     const g = activity.game!; g.entities = []; g.nextSpawnZ = Infinity; for (const w of g.walls) w.runnable = true;
@@ -58,7 +58,7 @@ describe('« Cours cours Benny ! » screen', () => {
     key('ArrowDown'); step(200);
     const before = g.at; step(160); const slow = g.at - before;
     step(900); const after = g.at; step(160); const full = g.at - after;
-    expect(g.foes).toBe(3); expect(slow).toBeLessThan(full * .6); expect(full).toBeGreaterThan(140);
+    expect(g.foes).toBe(3); expect(slow).toBeGreaterThan(full * .9); expect(full).toBeGreaterThan(140); // The shock wave never slows the run.
   });
   it('answers one move per finger down: a turn without lifting the finger does nothing, a new touch answers again', () => {
     const {activity, step} = mount(50);
