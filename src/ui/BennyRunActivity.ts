@@ -163,8 +163,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const cameraHeight = () => Math.min(24, Math.max(2.2, (height * .74 - height * HORIZON) / scale0()));
   const project = (x: number, ahead: number, up: number) => {
     const horizon = height * HORIZON, s = scale0() * CAMERA_BACK / (Math.max(-CAMERA_BACK + .5, ahead) + CAMERA_BACK);
-    return {x: width / 2 + x * s, y: horizon + (cameraHeight() - up) * s, s};
+    return {x: width / 2 + (x - camX) * s, y: horizon + (cameraHeight() + camUp - up) * s, s};
   };
+  /** The camera follows Benny a little: towards a wall she runs on (and up with her), up with her onto a platform. */
+  let camX = 0, camUp = 0;
   const laneX = (lane: number) => (lane - (lanes - 1) / 2) * LANE_WIDTH;
   function quad(c: CanvasRenderingContext2D, points: {x: number; y: number}[], fill: string): void {
     c.beginPath(); c.moveTo(points[0].x, points[0].y); for (const p of points.slice(1)) c.lineTo(p.x, p.y); c.closePath(); c.fillStyle = fill; c.fill();
@@ -557,6 +559,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // Benny glides between lanes, and onto and off a wall (drawn just inside it), instead of jumping there.
     const onWall = (wallX() - .45 - laneX(lanes - 1)) / LANE_WIDTH, target = g.wall ? (g.wall.side === 'left' ? -onWall : lanes - 1 + onWall) : g.lane;
     viewLane += (target - viewLane) * Math.min(1, dt * 24);
+    { const side = g.wall ? (g.wall.side === 'left' ? -1 : 1) : 0, toX = side ? side * wallX() * .35 : laneX(viewLane) * .12, toUp = g.wall ? bennyHeight(g) * .45 : floorHeight(g) * .4;
+      camX += (toX - camX) * Math.min(1, dt * 5); camUp += (toUp - camUp) * Math.min(1, dt * 4); }
     // Crossing from one wall to the other: a bound through the air.
     leapArc = g.wall ? Math.min(1, Math.abs(target - viewLane) / (lanes - 1 + 2 * onWall)) : 0;
     c.save();
@@ -775,7 +779,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     coach.hidden = true;
     slowLost = 0; slowUntil = 0; lastLoopAt = clock(); settingSince = -1e9; shownSetting = 'grotte';
     runBest = best; beaten = false; milestone = 0; score.classList.remove('benny-run-beaten');
-    game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; swing = null; shock = null; flashes = []; bits = []; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
+    game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; camX = 0; camUp = 0; swing = null; shock = null; flashes = []; bits = []; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
     holesAnnounced = 0; lastHoleSeen = -1;
     hud(); flash('Cours cours Benny !'); frame(loop);
   }
