@@ -365,7 +365,7 @@ export const wallLane = (g: BennyRun, side: Side) => side === 'left' ? -1 : g.la
 const across = (g: BennyRun) => g.wall ? wallLane(g, g.wall.side) : g.lane;
 const others = (g: BennyRun, n: number) => { const l = laneList(g); for (let i = l.length - 1; i > 0; i--) { const j = Math.floor(random(g) * (i + 1)); [l[i], l[j]] = [l[j], l[i]]; } return l.slice(0, n); };
 
-export type RunPattern = 'coins' | 'arc' | 'slalom' | 'pots' | 'gauntlet' | 'pair' | 'tunnel' | 'barriers' | 'pillars' | 'wall' | 'flyers' | 'breather' | 'hole' | 'skittles' | 'wide' | 'platform' | 'crossers' | 'crumble' | 'rockfall' | 'geysers' | 'gust' | 'burrow';
+export type RunPattern = 'coins' | 'arc' | 'slalom' | 'pots' | 'gauntlet' | 'pair' | 'tunnel' | 'barriers' | 'pillars' | 'wall' | 'flyers' | 'breather' | 'hole' | 'skittles' | 'wide' | 'platform' | 'crossers' | 'crumble' | 'rockfall' | 'geysers' | 'gust' | 'burrow' | 'wallTrail';
 /**
  * The road is laid out in short patterns rather than one thing at a time, so that it has a rhythm: a slalom of pots to chain
  * lane strikes into a combo, a row of creatures one side then the other, a pair of creatures on both sides for the spinning
@@ -375,12 +375,12 @@ export type RunPattern = 'coins' | 'arc' | 'slalom' | 'pots' | 'gauntlet' | 'pai
  */
 const PATTERNS: Record<RunPattern, [number, number]> = {
   coins: [4, 1.5], arc: [2, 2], slalom: [3, 3], pots: [3, 1.5], gauntlet: [1.5, 3.5], pair: [.5, 2.5], tunnel: [1, 2], barriers: [1, 2],
-  pillars: [1.5, 2.5], wall: [0, 2], flyers: [0, 2.5], breather: [2, .8], hole: [0, 2.2], skittles: [1.5, 2], wide: [0, 1.2], platform: [.4, 1.4], crossers: [0, 1.6], crumble: [.2, 1.1], rockfall: [1.5, 2.5], geysers: [1.2, 2], gust: [1.2, 1.8], burrow: [.2, .8],
+  pillars: [1.5, 2.5], wall: [0, 2], flyers: [0, 2.5], breather: [2, .8], hole: [0, 2.2], skittles: [1.5, 2], wide: [0, 1.2], platform: [.4, 1.4], crossers: [0, 1.6], crumble: [.2, 1.1], rockfall: [1.5, 2.5], geysers: [1.2, 2], gust: [1.2, 1.8], burrow: [.2, .8], wallTrail: [.8, 1.4],
 };
 function choosePattern(g: BennyRun, z: number): RunPattern {
   const d = runDifficulty(g), list = (Object.keys(PATTERNS) as RunPattern[]).filter(p => (p !== 'flyers' || d >= C.flyerFrom) && (p !== 'pair' || d >= .2) && (p !== 'hole' || d >= .08) &&
     (p !== 'wall' || (d > .25 && wallSide(g, z))) &&
-    (p !== 'platform' || d >= .1) && (p !== 'crossers' || d >= .2) && (p !== 'crumble' || d >= .12) && (p !== 'burrow' || d >= .2) && (p !== 'gust' || (d >= .06 && settingAt(g, z) === 'montagne' && settingAt(g, z + 30) === 'montagne')) && (p !== 'geysers' || (d >= .06 && settingAt(g, z) === 'pont' && settingAt(g, z + 40) === 'pont')) && (p !== 'rockfall' || (d >= .06 && settingAt(g, z) === 'grotte' && settingAt(g, z + 40) === 'grotte')) && (p !== 'wide' || (d >= C.wideFrom && g.baseLanes < C.wideLanes && !g.zones.some(w => w.to > z - 100))));
+    (p !== 'platform' || d >= .1) && (p !== 'crossers' || d >= .2) && (p !== 'crumble' || d >= .12) && (p !== 'burrow' || d >= .2) && (p !== 'wallTrail' || (d >= .05 && trailSide(g, z) !== undefined)) && (p !== 'gust' || (d >= .06 && settingAt(g, z) === 'montagne' && settingAt(g, z + 30) === 'montagne')) && (p !== 'geysers' || (d >= .06 && settingAt(g, z) === 'pont' && settingAt(g, z + 40) === 'pont')) && (p !== 'rockfall' || (d >= .06 && settingAt(g, z) === 'grotte' && settingAt(g, z + 40) === 'grotte')) && (p !== 'wide' || (d >= C.wideFrom && g.baseLanes < C.wideLanes && !g.zones.some(w => w.to > z - 100))));
   // The « run on walls » challenge: a row of pillars (the way on is up a wall) comes one time in two meanwhile.
   if (g.challenge?.kind === 'walls' && wallSide(g, z) && random(g) < C.wallChallengeNudge) return 'wall';
   const weight = (p: RunPattern) => PATTERNS[p][0] + (PATTERNS[p][1] - PATTERNS[p][0]) * d;
@@ -388,6 +388,8 @@ function choosePattern(g: BennyRun, z: number): RunPattern {
   for (const p of list) { roll -= weight(p); if (roll < 0) return p; }
   return list[list.length - 1];
 }
+/** A side whose wall can be run on all along a trail of coins from `z` (30 m). */
+const trailSide = (g: BennyRun, z: number) => (['left', 'right'] as const).find(s => [0, 10, 20, 30].every(k => runnableAt(g, s, z + k)));
 /** A side whose wall can be run on from 25 m before `z` to 5 m after: the way past three pillars. */
 const wallSide = (g: BennyRun, z: number) => (['left', 'right'] as const).find(s => runnableAt(g, s, z - 25) && runnableAt(g, s, z) && runnableAt(g, s, z + 5));
 /** Lays out one pattern from `z` and returns where it ends. */
@@ -431,6 +433,13 @@ function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
       // Creatures that stay put (an ember would hop into the middle lane).
       const still = ['dragonnet', 'chest'] as const; add(g, pick(g, still), middle - 1, z + 2); add(g, pick(g, still), middle + 1, z + 2);
       return z + 2;
+    }
+    case 'wallTrail': {
+      // A long trail of coins up a wall, and below it a slalom of pots and barriers: the wall is the way for the coins.
+      const side = trailSide(g, z)!, edge = side === 'left' ? 0 : g.lanes - 1;
+      for (let k = 0; k <= 27; k += 3) add(g, 'wallCoin', wallLane(g, side), z + k);
+      for (let k = 6; k <= 24; k += 9) { add(g, 'pot', edge, z + k); for (const l of all) if (l !== edge && random(g) < .5) add(g, 'barrier', l, z + k + 4); }
+      return z + 28;
     }
     case 'burrow': {
       // A long tunnel of logs over the whole road: one roll and Benny slides all the way, along coins that change lanes halfway.
