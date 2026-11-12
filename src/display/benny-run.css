@@ -57,7 +57,12 @@
 /* The score once the record is beaten during the run. */
 .benny-run-score.benny-run-beaten { color: #ffe36b; }
 /* The challenge under way, its own line under the top bar. */
-.benny-run-challenge { order: 12; flex-basis: 100%; font-size: .95rem; color: #c8f5c8 !important; }
+/* The challenge under way: a panel at the bottom, its words and a bar that fills. */
+.benny-run-quest { position: absolute; z-index: 6; left: calc(12px + env(safe-area-inset-left)); right: calc(12px + env(safe-area-inset-right)); bottom: calc(14px + env(safe-area-inset-bottom)); padding: 8px 14px 10px; border-radius: 16px; background: rgba(46,30,22,.82); border: 2px solid rgba(255,236,200,.35); pointer-events: none; }
+.benny-run-quest[hidden] { display: none; }
+.benny-run-challenge { margin: 0 0 6px; text-align: center; font-weight: 800; font-size: 1.05rem; color: #fff; }
+.benny-run-quest-bar { height: 12px; border-radius: 6px; background: rgba(0,0,0,.55); overflow: hidden; }
+.benny-run-quest-bar span { display: block; height: 100%; width: 0; border-radius: 6px; background: linear-gradient(#8ef07a, #3fae3a); transition: width .25s ease-out; }
 /* The 3, 2, 1 after a pause. */
 .benny-run-pop.benny-run-count { font-size: 4.5rem; }
 /* One row whatever the numbers: the figures shrink a little on a narrow screen rather than push the buttons down. */

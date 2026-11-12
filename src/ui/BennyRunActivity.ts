@@ -71,7 +71,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const layer = document.createElement('div'); layer.className = 'benny-run-activity'; layer.hidden = true;
   layer.setAttribute('role', 'dialog'); layer.setAttribute('aria-modal', 'true'); layer.setAttribute('aria-label', 'Cours cours Benny !');
   layer.innerHTML = `<div class="benny-run-top"><p class="benny-run-score" aria-live="polite"></p><p class="benny-run-combo"></p><div class="benny-run-combo-bar" aria-hidden="true"><span></span></div><p class="benny-run-metres"></p><p class="benny-run-coins"></p>
-<p class="benny-run-power"></p><button type="button" data-benny-run-pause aria-label="Pause">❚❚</button><button type="button" data-benny-run-exit aria-label="Quitter">✕</button><p class="benny-run-danger" hidden></p><p class="benny-run-challenge"></p></div>
+<p class="benny-run-power"></p><button type="button" data-benny-run-pause aria-label="Pause">❚❚</button><button type="button" data-benny-run-exit aria-label="Quitter">✕</button><p class="benny-run-danger" hidden></p></div>
+<div class="benny-run-quest" hidden><p class="benny-run-challenge"></p><div class="benny-run-quest-bar" aria-hidden="true"><span></span></div></div>
 <canvas class="benny-run-canvas" data-benny-run-canvas></canvas>
 <p class="benny-run-pop" aria-hidden="true"></p>
 <p class="benny-run-coach" aria-live="polite" hidden></p>
@@ -81,7 +82,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const $ = <T extends Element>(selector: string) => layer.querySelector<T>(selector)!;
   const canvas = $<HTMLCanvasElement>('[data-benny-run-canvas]'), card = $<HTMLElement>('[data-benny-run-card]'), pop = $<HTMLElement>('.benny-run-pop');
   const score = $<HTMLElement>('.benny-run-score'), combo = $<HTMLElement>('.benny-run-combo'), metres = $<HTMLElement>('.benny-run-metres'), coins = $<HTMLElement>('.benny-run-coins');
-  const challengeLine = $<HTMLElement>('.benny-run-challenge');
+  const challengeLine = $<HTMLElement>('.benny-run-challenge'), quest = $<HTMLElement>('.benny-run-quest'), questFill = $<HTMLElement>('.benny-run-quest-bar span');
   const coach = $<HTMLElement>('.benny-run-coach'), danger = $<HTMLElement>('.benny-run-danger'), comboBar = $<HTMLElement>('.benny-run-combo-bar'), comboFill = $<HTMLElement>('.benny-run-combo-bar span');
   const powerLine = $<HTMLElement>('.benny-run-power'), turn = $<HTMLElement>('[data-benny-run-turn]');
   const sideways = () => window.innerWidth > window.innerHeight;
@@ -218,7 +219,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       burst(width / 2, height * .3, ['#ff6b6b', '#ffb84d', '#ffe66b', '#7be08a', '#6bb8ff', '#b07bff'], 40, 420);
     }
     // The challenge under way and how far along it is.
-    const ch = g.challenge; challengeLine.textContent = ch ? `Défi · ${CHALLENGE_TEXT[ch.kind](ch.goal)} · ${ch.count}/${ch.goal}` : '';
+    // The challenge under way, in a panel at the bottom with its progress bar.
+    const ch = g.challenge; challengeLine.textContent = ch ? `Défi : ${CHALLENGE_TEXT[ch.kind](ch.goal)} · ${ch.count}/${ch.goal}` : '';
+    quest.hidden = !ch || !coach.hidden || !running; if (ch) questFill.style.width = `${Math.min(1, ch.count / ch.goal) * 100}%`;
     // Every 500 m.
     const reached = Math.floor(g.distance / 500) * 500;
     if (metresBest > 0 && !metresBeaten && g.distance > metresBest) { metresBeaten = true; flash('Plus loin que jamais !', false, true); sound('power', 1.2); }
