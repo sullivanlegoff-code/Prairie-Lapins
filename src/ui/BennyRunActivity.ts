@@ -701,7 +701,21 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   /** Benny's landings: when she last touched down (a squash and a puff of dust), and whether she was in the air last frame. */
   let landedAt = -1e9, wasUp = false;
   const bennyHeight = (g: BennyRun) => g.wall ? BENNY_RUN.wallRunHeight + Math.sin(leapArc * Math.PI) * 1.4 : runHeight(g);
+  /** The void: Benny drops, and the Dragon rises from below in its catch pose, and she lands on its back. */
+  function fallCatch(c: CanvasRenderingContext2D, g: BennyRun, now: number): void {
+    if (g.fallFrom === null) return;
+    const t = Math.min(1, (g.at - g.fallFrom) / BENNY_RUN.fallMs), side = Math.min(width, height) * .6;
+    // The Dragon swoops up from below the screen, then holds her.
+    const rise = Math.min(1, t / .6), x = width / 2, feet = height * (1.22 - .42 * rise);
+    if (art.dragon.ready) paint(c, 'dragon', 'catch', x, feet, side);
+    // Benny lands on its back, sitting: she shows once she is there.
+    const on = Math.max(0, Math.min(1, (t - .45) / .3));
+    if (art.benny.ready && on > 0) { c.save(); c.globalAlpha = on; paint(c, 'benny', 'roll', x, feet - side * .42, side * .42); c.restore(); }
+    void now;
+  }
   function benny(c: CanvasRenderingContext2D, g: BennyRun, now: number): void {
+    // Falling into the void she is out of sight once the Dragon has her (see fallCatch).
+    if (g.fallFrom !== null && (g.at - g.fallFrom) / BENNY_RUN.fallMs > .45) return;
     const wall = g.wall, x = laneX(viewLane);
     const up = bennyHeight(g), p = project(x, 0, up), s = p.s * BENNY_SIZE;
     // Rolling, she curls up into a ball that turns.
@@ -824,6 +838,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (!ending) benny(c, g, now);
     for (const e of ahead) if (e.z - g.distance <= 0) thing(c, g, e);
     if (!ending) dragon(c, g);
+    if (!ending) fallCatch(c, g, now);
     // Shards and sparkles.
     // Impact rings: a white circle that opens and fades where a strike lands.
     rings = rings.filter(r => now - r.at < 260);
@@ -897,7 +912,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'wallEnd': flashes.push({at: clock(), text: `Mur +${event.points}`, x: width / 2}); if (event.trail) { flash(`Traînée parfaite : ${event.trail} pièces !`); sound('power', 1.1); } break;
       case 'wallLeap': flashes.push({at: clock(), text: `Saut de mur +${event.points}`, x: width / 2}); sound('wall', 1 + .06 * Math.min(6, event.chain - 1));
         shakeFor('strike'); break;
-      case 'fall': flash(event.onto ? 'Ouf ! Benny se rattrape au mur !' : 'Ouf ! Benny ressort du trou !'); break;
+      case 'fall': flash('Oh non, le vide !'); sound('bump', .7); break;
       // The shock wave: a ring and a sound only, no slow motion and no shake (it must not slow the run down).
       case 'shockwave': shock = clock(); flash('Onde de choc !'); sound('shock'); break;
       case 'challenge':
