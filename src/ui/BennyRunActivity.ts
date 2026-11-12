@@ -424,7 +424,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const rocksDown = new Map<number, number>();
   const SHAPES: Record<string, {colour: string; w: number; h: number; up?: number; round?: boolean; label?: string}> = {
     coin: {colour: '#f4c430', w: .45, h: .45, up: .5, round: true}, power: {colour: '#b07bff', w: 1.25, h: 1.25, up: .5, round: true}, wallCoin: {colour: '#f4c430', w: .45, h: .45, up: 1.6, round: true},
-    pot: {colour: '#c96b3a', w: .9, h: .9, round: true}, thrownPot: {colour: '#e08a52', w: .8, h: .8, up: .5, round: true}, barrier: {colour: '#7a5a3a', w: 2, h: .6, label: 'saute'},
+    pot: {colour: '#c96b3a', w: .9, h: .9, round: true}, barrier: {colour: '#7a5a3a', w: 2, h: .6, label: 'saute'},
     beam: {colour: '#7a5a3a', w: 2, h: .45, up: 1.1, label: 'roulade'}, pillar: {colour: '#8a8a8a', w: 1.6, h: 3},
     dragonnet: {colour: '#8e3a5a', w: 1.1, h: .8, round: true}, chest: {colour: '#6e3b2e', w: 1.3, h: .9},
     ember: {colour: '#ff9a2a', w: .9, h: .9, up: .4, round: true},
@@ -472,9 +472,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       else { ellipse(cx + dir * gap, cy, r, r * 1.15, '#fff'); ellipse(cx + dir * gap, cy + r * .15, r * .5, r * .6, '#2a1a12'); }
     };
     switch (e.kind) {
-      case 'pot': case 'thrownPot': {
-        // A clay jar (spinning once struck).
-        c.save(); c.translate(x, y - h * .5); if (e.kind === 'thrownPot') c.rotate(at / 60);
+      case 'pot': {
+        // A clay jar.
+        c.save(); c.translate(x, y - h * .5);
         ellipse(0, h * .06, w * .5, h * .42, '#c96b3a'); c.fillStyle = '#a8542a'; c.fillRect(-w * .22, -h * .5, w * .44, h * .2);
         ellipse(0, -h * .5, w * .28, h * .07, '#7a3a1c'); c.fillStyle = '#f4c430'; c.fillRect(-w * .45, h * .02, w * .9, h * .08);
         ellipse(-w * .2, -h * .08, w * .08, h * .14, 'rgba(255,255,255,.35)'); c.restore(); return true;
@@ -759,13 +759,12 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     for (const event of takeRunEvents(g)) switch (event.type) {
       case 'strike': {
         if (event.by === 'spin') { flash('Coup tournoyant !'); slowMo(260); }
-        if (event.by === 'throw' && event.entity.kind !== 'pot') { flash('Strike ! Le pot renverse tout !'); slowMo(240); }
-        if (event.by !== 'throw') swing = {at: clock(), lane: g.lane};
+        swing = {at: clock(), lane: g.lane};
         const p = screenOf(g, event.entity);
         flashes.push({at: clock(), text: `+${event.points}`, x: p.x});
         // Each strike of a combo a semitone higher (up to an octave); a new multiplier is announced.
         const pitch = 2 ** (Math.min(12, event.combo - 1) / 12);
-        if (event.entity.kind === 'pot') { burst(p.x, p.y, ['#c96b3a', '#e08a52', '#8a4a26', '#f4c430'], 14, 260); sound('pot', pitch); }
+        if (event.entity.kind === 'pot') { burst(p.x, p.y, ['#c96b3a', '#e08a52', '#8a4a26', '#a8542a', '#f4c430'], 22, 320); burst(p.x, p.y, ['rgba(220,180,140,.8)'], 6, 90); sound('pot', pitch); }
         else { burst(p.x, p.y, ['#fff', '#e7d1ff', '#ffb3c8', '#ffe36b'], 12, 220); sound('strike', pitch); }
         if (event.multiplier > 1 && event.combo === (event.multiplier - 1) * BENNY_RUN.comboStep + 1) { flash(`Combo ×${event.multiplier} !`); sound('power'); }
         // A creature lands harder than a pot: a longer freeze, a bigger ring.
@@ -950,7 +949,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       paragraph('Glisse vers le haut pour sauter, sur le côté pour changer de couloir, vers le bas pour faire une roulade (en l’air : charge au sol).', 'benny-run-rules'),
       paragraph('Frappe les pots et les créatures avec ton bâton : de face avec une roulade, sur le côté en glissant vers leur couloir, vers le haut pour un petit monstre volant (il reste à ta hauteur). Une créature de chaque côté ? Ton bâton tournoie et frappe les deux. Une créature que tu dépasses sans la frapper t’attaque !', 'benny-run-rules'),
       paragraph('Au bord, glisse vers le mur (même en sautant) pour courir dessus. Pour descendre : saute depuis le mur, glisse vers l’autre côté pour frapper ce qui t’attend en bas, ou charge au sol pour faire une onde de choc. Passe sur un pouvoir pour l’utiliser tout de suite.', 'benny-run-rules'),
-      paragraph('Un pot frappé file droit devant et renverse tout dans son couloir. Au-dessus d’un grand gouffre, glisse vers l’autre mur pour bondir dessus.', 'benny-run-rules'),
+      paragraph('Au-dessus d’un grand gouffre, glisse vers l’autre mur pour bondir dessus.', 'benny-run-rules'),
       paragraph('Prototype en formes simples : les vrais dessins arrivent ensuite.', 'benny-run-rules'));
     showCard(paragraph('Cours cours Benny !', 'benny-run-title'),
       paragraph('Benny a chipé un peu du trésor de la Dragon : cours, frappe tout ce qui bouge, et ne te fais pas rattraper !', 'benny-run-rules'),

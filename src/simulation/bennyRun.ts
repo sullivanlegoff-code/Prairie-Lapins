@@ -36,7 +36,9 @@ export const BENNY_RUN = {
    * patterns `overtimeGap` m shorter, `overtimeMax` times at most (a new pace each time, announced). */
   overtimeMs: 75_000, overtimeSpeed: 1.5, overtimeGap: .4, overtimeMax: 4,
   /** A jump: its time and its height (m); a slide; a ground charge comes down in `poundMs` and breaks what is ahead within `poundReach`. */
-  jumpMs: 650, jumpHeight: 1.4, slideMs: 700, poundMs: 120, poundReach: 4,
+  jumpMs: 650, jumpHeight: 1.4, slideMs: 700,
+  /** Each pot or creature broken while rolling adds this much to the roll: a whole row in one roll. */
+  rollChainMs: 550, poundMs: 120, poundReach: 4,
   /** Height above which Benny clears a low thing (a barrier, a pot). */
   clearHeight: .5,
   /** Benny's height when running on a wall; a ground charge from `shockHeight` m or more sends a shock wave from `shockBehind` m
@@ -68,7 +70,6 @@ export const BENNY_RUN = {
   /** Gaps in the road: short ones (m) to jump, long ones to cross on the walls, leaping from one wall to the other. */
   holeShort: [3.5, 5], holeLong: [14, 34],
   /** A pot struck flies on along its lane, this much faster than Benny (m/s) and this far (m), and knocks over all it meets. */
-  throwSpeed: 18, throwRange: 30,
   /** Coins a pot spills. */
   potCoins: 3,
   /** The setting changes at random every 40 to 55 s. */
@@ -127,16 +128,16 @@ export const RUN_SETTINGS: readonly RunSetting[] = ['grotte', 'pont', 'montagne'
 export type RunPower = keyof typeof BENNY_RUN.powers;
 export const RUN_POWERS = Object.keys(BENNY_RUN.powers) as RunPower[];
 export type RunFoe = 'dragonnet' | 'chest' | 'ember' | 'flyer';
-export type RunKind = 'coin' | 'wallCoin' | 'power' | 'pot' | 'barrier' | 'beam' | 'pillar' | 'hole' | 'thrownPot' | 'fireball' | RunFoe;
+export type RunKind = 'coin' | 'wallCoin' | 'power' | 'pot' | 'barrier' | 'beam' | 'pillar' | 'hole' | 'fireball' | RunFoe;
 /** The creatures on the ground; the little flying monster (`flyer`) comes on top. */
 export const RUN_FOES: readonly RunFoe[] = ['dragonnet', 'chest', 'ember'];
 export type RunInput = 'left' | 'right' | 'up' | 'down';
 export type Side = 'left' | 'right';
-export type StrikeKind = 'lane' | 'spin' | 'slide' | 'jump' | 'pound' | 'shock' | 'throw' | 'dash' | 'wall';
+export type StrikeKind = 'lane' | 'spin' | 'slide' | 'jump' | 'pound' | 'shock' | 'dash' | 'wall';
 
 /** A thing on the road. `lane` is 0 to `lanes - 1`; a wall coin's lane is -1 (left wall) or `lanes` (right wall). */
 /** A thing on the road; `up` is how high a coin floats (a coin arc over a barrier), for the drawing only. */
-export interface RunEntity {id: number; kind: RunKind; lane: number; z: number; power?: RunPower; hopAt?: number; up?: number; beside?: boolean; flyTo?: number; cross?: -1 | 1; crossAt?: number; rock?: 'up' | 'down'; geyser?: 'idle' | 'up'; rolling?: boolean; snow?: boolean; cart?: boolean}
+export interface RunEntity {id: number; kind: RunKind; lane: number; z: number; power?: RunPower; hopAt?: number; up?: number; beside?: boolean; cross?: -1 | 1; crossAt?: number; rock?: 'up' | 'down'; geyser?: 'idle' | 'up'; rolling?: boolean; snow?: boolean; cart?: boolean}
 export interface WallSegment {side: Side; from: number; to: number; runnable: boolean}
 export type RunEvent =
   | {type: 'strike'; entity: RunEntity; points: number; combo: number; multiplier: number; by: StrikeKind}
@@ -593,11 +594,11 @@ function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
       return from + 4;
     }
     case 'skittles': {
-      // A pot with creatures (or more pots) lined up behind it in the same lane: strike the pot and it bowls them over.
+      // A pot with creatures (or more pots) lined up behind it in the same lane: break them one after the other, for a combo.
       const lane = any(), count = 2 + (random(g) < .3 + .4 * d ? 1 : 0);
       add(g, 'pot', lane, z);
-      for (let i = 1; i <= count; i++) add(g, random(g) < .6 ? pick(g, ['dragonnet', 'chest'] as const) : 'pot', lane, z + 6 + i * 4);
-      return z + 6 + count * 4;
+      for (let i = 1; i <= count; i++) add(g, random(g) < .6 ? pick(g, ['dragonnet', 'chest'] as const) : 'pot', lane, z + 2 + i * 6);
+      return z + 2 + count * 6;
     }
     case 'hole': {
       // A gap across the road. A short one is jumped (an arc of coins over it); a long one has both walls runnable over it, with
@@ -638,8 +639,6 @@ export const lanesAt = (g: BennyRun, z: number) => g.zones.some(w => w.from <= z
 function followLanes(g: BennyRun): void {
   const now = lanesAt(g, g.distance); if (now === g.lanes) return;
   const shift = (now - g.lanes) / 2; g.lanes = now; g.lane = Math.max(0, Math.min(now - 1, g.lane + shift));
-  // A pot still flying is lost at the edge.
-  g.entities = g.entities.filter(e => e.kind !== 'thrownPot');
   g.events.push({type: 'lanes', lanes: now, shift});
 }
 /** The gap Benny's feet are over (or the one at `z`), if any. */
@@ -709,17 +708,8 @@ function strike(g: BennyRun, e: RunEntity, by: StrikeKind): void {
     gainCoins(g, e, C.potCoins);
   } else { g.foes++; gainCoins(g, e, 2); }
   g.events.push({type: 'strike', entity: e, points, combo: g.combo, multiplier, by});
+  if (by === 'slide') g.slideUntil = Math.max(g.slideUntil, g.at) + C.rollChainMs;
   // A pot struck flies on along its lane (not one broken by a ground charge or its shock wave, nor one a flying pot knocks over).
-  if (e.kind === 'pot' && by !== 'pound' && by !== 'shock' && by !== 'throw' && by !== 'dash' && by !== 'wall') add(g, 'thrownPot', e.lane, Math.max(e.z, g.distance + .5), {flyTo: Math.max(e.z, g.distance) + C.throwRange});
-}
-/** The flying pots: like a bowling ball, each knocks over every pot and creature it reaches in its lane, then breaks at the end of its run. */
-function flyPots(g: BennyRun, dt: number): void {
-  for (const t of g.entities.filter(e => e.kind === 'thrownPot')) {
-    if (!g.entities.includes(t)) continue;
-    const from = t.z; t.z += (g.speed + C.throwSpeed) * dt;
-    for (const hit of g.entities.filter(e => e !== t && e.lane === t.lane && strikable(e) && e.z > from - .3 && e.z <= t.z + .5).sort((a, b) => a.z - b.z)) strike(g, hit, 'throw');
-    if (t.z >= (t.flyTo ?? 0)) { g.entities = g.entities.filter(e => e !== t); g.events.push({type: 'crash', entity: t}); }
-  }
 }
 function gainCoins(g: BennyRun, e: RunEntity, amount: number): void {
   const n = amount * (powerActive(g, 'double') ? 2 : 1); g.coins += n; g.events.push({type: 'coin', entity: e, amount: n});
@@ -791,7 +781,7 @@ function meet(g: BennyRun, e: RunEntity): void {
   }
   if (e.lane !== g.lane || g.wall || g.raised || powerActive(g, 'flight')) return;
   // Charging: pots and creatures struck, fences, logs and pillars smashed.
-  if (powerActive(g, 'dash') && e.kind !== 'thrownPot') {
+  if (powerActive(g, 'dash')) {
     if (e.kind === 'pot' || isFoe(e)) { strike(g, e, 'dash'); return; }
     g.entities = g.entities.filter(o => o !== e); g.score = Math.min(C.maxScore, g.score + C.dashSmash); g.events.push({type: 'cleared', entity: e, points: C.dashSmash}); return;
   }
@@ -847,7 +837,6 @@ function tick(g: BennyRun): void {
   if (g.over) return;
   // A jump asked for just before landing.
   if (g.queuedJumpUntil && !inAir(g) && !g.wall) { const fresh = g.at <= g.queuedJumpUntil; g.queuedJumpUntil = 0; if (fresh) runInput(g, g.at, 'up'); }
-  flyPots(g, dt);
   for (const e of g.entities) if (e.rock === 'up' && e.z - g.distance <= C.rockLand) { e.rock = 'down'; g.events.push({type: 'rockfall', entity: e}); }
   for (const e of g.entities) if (e.geyser === 'idle' && e.z - g.distance <= C.geyserAt) { e.geyser = 'up'; g.events.push({type: 'geyser', entity: e}); }
   for (const e of g.entities) if (e.cross && e.crossAt !== undefined && g.at >= e.crossAt) {

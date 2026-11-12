@@ -190,17 +190,19 @@ describe('Cours cours Benny ! rules', () => {
     g.holes.push({from: g.distance + 3, to: g.distance + 30}); run(g, 600);
     expect(types(g)).toContain('fall'); expect(g.wall?.side).toBe('right'); expect(g.over).toBe(false);
   });
-  it('sends a struck pot flying along its lane: it bowls over the creatures and pots it meets, and the combo grows', () => {
+  it('breaks a struck pot where it stands: nothing flies on, what stood behind it is still there', () => {
     const g = quiet();
-    place(g, 'pot', 0, 4); place(g, 'chest', 0, 14); place(g, 'pot', 0, 20); place(g, 'dragonnet', 2, 10);
-    runInput(g, g.at, 'left'); run(g, 900);
+    const pot = place(g, 'pot', 0, 4), chest = place(g, 'chest', 0, 14), next = place(g, 'pot', 0, 20);
+    runInput(g, g.at, 'left'); run(g, 50);
     const strikes = takeRunEvents(g).filter(e => e.type === 'strike');
-    expect(strikes.map(e => e.type === 'strike' && e.by)).toEqual(['lane', 'throw', 'throw']);
-    expect(g).toMatchObject({pots: 2, foes: 1, combo: 3});
-    expect(g.entities.some(e => e.kind === 'dragonnet')).toBe(true); // Only its own lane.
-    // A pot broken by a ground charge does not fly.
-    runInput(g, g.at, 'up'); place(g, 'pot', 0, 3); runInput(g, g.at, 'down'); run(g, 300);
-    expect(g.entities.some(e => e.kind === 'thrownPot')).toBe(false);
+    expect(strikes.map(e => e.type === 'strike' && e.by)).toEqual(['lane']); expect(g).toMatchObject({pots: 1, foes: 0, combo: 1});
+    expect(g.entities).not.toContain(pot); expect(g.entities).toContain(chest); expect(g.entities).toContain(next);
+    expect(g.entities.every(e => ['pot', 'chest'].includes(e.kind))).toBe(true);
+  });
+  it('rolls on through a row: each thing broken while rolling keeps the roll going', () => {
+    const g = quiet(); place(g, 'pot', 1, 2); place(g, 'chest', 1, 8); place(g, 'pot', 1, 14); place(g, 'dragonnet', 1, 20);
+    runInput(g, g.at, 'down'); run(g, 2000);
+    expect(g).toMatchObject({pots: 2, foes: 2, lastBumpAt: null}); expect(g.bestCombo).toBe(4);
   });
   it('changes the setting ahead of Benny: it comes into sight, then she runs into it', () => {
     const g = startBennyRun(0, 11); g.entities = []; g.nextSpawnZ = Infinity; g.lastBumpAt = null;
@@ -242,7 +244,7 @@ describe('Cours cours Benny ! rules', () => {
   it('teaches one gesture at a time on the first run, lays a missed step out again, and never lets the Dragon catch Benny meanwhile', () => {
     const g = startBennyRun(0, 7, 3, true); for (const w of g.walls) w.runnable = true;
     /** Runs until the step's thing is `at` m ahead (the nearest of them). */
-    const until = (at: number) => { for (let i = 0; i < 2000 && g.entities.filter(e => e.kind !== 'thrownPot').every(e => e.z - g.distance > at); i++) run(g, 10); };
+    const until = (at: number) => { for (let i = 0; i < 2000 && g.entities.every(e => e.z - g.distance > at); i++) run(g, 10); };
     expect(tutorialStep(g)).toBe('pot'); expect(g.entities).toHaveLength(1);
     until(-2); run(g, 200); // Missed: it comes back.
     expect(takeRunEvents(g).some(e => e.type === 'tutorial' && e.again)).toBe(true); expect(tutorialStep(g)).toBe('pot');
@@ -494,7 +496,7 @@ describe('Cours cours Benny ! rules', () => {
     run(g, 600);
     const strikes = takeRunEvents(g).filter(e => e.type === 'strike');
     expect(strikes.map(e => e.type === 'strike' && e.by)).toEqual(['wall']); expect(g.pots).toBe(1);
-    expect(g.entities.some(e => e.kind === 'thrownPot')).toBe(false); expect(g.lastBumpAt).toBeNull();
+    expect(g.lastBumpAt).toBeNull();
   });
   it('glides down at the end of a flight, onto a clear spot', () => {
     const g = quiet(); run(g, C.introMs); g.active = {power: 'flight', until: g.at + 300};
