@@ -114,6 +114,11 @@ describe('Cours cours Benny ! rules', () => {
     place(g, 'flyer', 2, 5); runInput(g, g.at, 'down'); expect(g.foes).toBe(3);
     expect(g.lastBumpAt).toBeNull();
   });
+  it('lets a flying monster hover over the road: running under it does nothing, only a jump through its height strikes it', () => {
+    const g = quiet(); run(g, C.introMs);
+    place(g, 'flyer', g.lane, 1); run(g, 400); expect(g).toMatchObject({lastBumpAt: null, foes: 0}); // Passed under, on the ground.
+    place(g, 'flyer', g.lane, 3); runInput(g, g.at, 'up'); run(g, C.jumpMs); expect(g.foes).toBe(1); // A jump strikes it (at the press, within reach).
+  });
   it('lets a flying monster reach Benny on a wall, from the edge lane, and swiping off the wall strikes it', () => {
     const g = quiet(); run(g, C.introMs); runInput(g, g.at, 'left'); runInput(g, g.at, 'left'); expect(g.wall?.side).toBe('left');
     place(g, 'chest', 0, 3); run(g, 500); expect(g.lastBumpAt).toBeNull(); // A creature on the ground does not reach the wall.

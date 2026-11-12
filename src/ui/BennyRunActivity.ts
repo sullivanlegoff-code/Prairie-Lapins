@@ -481,8 +481,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // A creature changing lanes (an ember hopping, a dragonnet crossing) slides over rather than jumps.
     let shown = shownLanes.get(e.id) ?? e.lane; shown += (e.lane - shown) * Math.min(1, frameDt * 12); if (Math.abs(e.lane - shown) < .01) shown = e.lane; shownLanes.set(e.id, shown);
     const n = lanesAt(g, e.z); let x = e.lane < 0 ? -wallXAt(g, ahead) + .4 : e.lane > n - 1 ? wallXAt(g, ahead) - .4 : (shown - (n - 1) / 2) * LANE_WIDTH;
-    // The little flying monster keeps to Benny's height, a little above her head.
-    let up = e.kind === 'flyer' ? bennyHeight(g) + .9 + Math.sin(g.at / 180 + e.id) * .08 : e.up ?? shape.up ?? 0;
+    // The little flying monster hovers at a jump's height over the road (it is struck only by jumping through it).
+    let up = e.kind === 'flyer' ? BENNY_RUN.flyerHeight + .5 + Math.sin(g.at / 180 + e.id) * .08 : e.up ?? shape.up ?? 0;
     // The magnet: the coins of the other lanes fly over to Benny in her last metres before them.
     if (e.kind === 'coin' && e.lane !== g.lane && powerActive(g, 'magnet') && ahead < MAGNET_PULL) {
       const pull = (1 - Math.max(0, ahead) / MAGNET_PULL) ** 2; x += (laneX(viewLane) - x) * pull; up += .5 * Math.sin(Math.PI * pull);
@@ -851,7 +851,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   /** Where a thing is drawn on screen now (for the shards). */
   const screenOf = (g: BennyRun, e: RunEntity) => { const n = lanesAt(g, e.z), ahead = e.z - g.distance, x = e.lane < 0 ? -wallXAt(g, ahead) + .4 : e.lane > n - 1 ? wallXAt(g, ahead) - .4 : (e.lane - (n - 1) / 2) * LANE_WIDTH;
-    return project(x, Math.max(.3, e.z - g.distance), e.kind === 'flyer' ? bennyHeight(g) + .9 : .5); };
+    return project(x, Math.max(.3, e.z - g.distance), e.kind === 'flyer' ? BENNY_RUN.flyerHeight + .5 : .5); };
   function react(): void {
     const g = game; if (!g) return;
     for (const event of takeRunEvents(g)) switch (event.type) {

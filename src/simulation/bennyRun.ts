@@ -102,6 +102,9 @@ export const BENNY_RUN = {
   dashSpeed: 1.4, dashSmash: 15,
   /** Share of the creatures that are little flying monsters, once the run is `flyerFrom` into its speed ramp. */
   flyerShare: .3, flyerFrom: .15,
+  /** A flying monster hovers at this height (m), a jump's height: it is struck only by jumping through it (owner: « un saut au-
+   * dessus de Benny »). Running under it does not hurt; on a wall it still reaches her. */
+  flyerHeight: 1.1,
   /** A mischievous ember hops to a neighbouring lane every `emberHopMs`, but only while farther than `emberStill` m. */
   emberHopMs: 1400, emberStill: 14,
   /** An awake dragonnet waddles across the road, one lane every `crossMs` (turning back at the edges), while farther than
@@ -864,7 +867,14 @@ function meet(g: BennyRun, e: RunEntity): void {
     case 'fireball': if (high && !e.cart) dodge(g, e); else bump(g, e); return;
     case 'beam': if (sliding(g) || (!inAir(g) && g.at < g.slideUntil + C.slideGraceMs)) dodge(g, e); else bump(g, e); return;
     // A creature: sliding into it strikes it; otherwise, even jumping over it, it strikes Benny as she passes.
-    case 'dragonnet': case 'chest': case 'ember': case 'flyer': if (sliding(g)) strike(g, e, 'slide'); else bump(g, e); return;
+    case 'dragonnet': case 'chest': case 'ember': if (sliding(g)) strike(g, e, 'slide'); else bump(g, e); return;
+    // A flying monster hovers over the road: jumping through its height strikes it; running under it does nothing; on a wall it
+    // reaches her, and a slide strikes it.
+    case 'flyer':
+      if (sliding(g)) strike(g, e, 'slide');
+      else if (g.wall) bump(g, e);
+      else if (inAir(g) && runHeight(g) >= C.flyerHeight) strike(g, e, 'jump');
+      return;
     case 'pillar': bump(g, e); return;
   }
 }
