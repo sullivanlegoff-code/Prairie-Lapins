@@ -138,6 +138,11 @@ describe('Cours cours Benny ! rules', () => {
       for (const lanes of rows.values()) { const s = [...new Set(lanes)].sort((a, b) => a - b); expect(s.every((l, i) => i === 0 || l - s[i - 1] <= 1)).toBe(true); }
     }
   });
+  it('swiping sideways in the air brings Benny down at once to strike the creature on the ground in the new lane', () => {
+    const g = quiet(); run(g, C.introMs); runInput(g, g.at, 'left'); runInput(g, g.at, 'up'); run(g, 200); expect(inAir(g)).toBe(true);
+    place(g, 'dragonnet', 1, 0.3); runInput(g, g.at, 'right');
+    expect(g).toMatchObject({lane: 1, foes: 1}); expect(inAir(g)).toBe(false);
+  });
   it('lets a flying monster hover over the road: running under it does nothing, only a jump through its height strikes it', () => {
     const g = quiet(); run(g, C.introMs);
     place(g, 'flyer', g.lane, 1); run(g, 400); expect(g).toMatchObject({lastBumpAt: null, foes: 0}); // Passed under, on the ground.
@@ -400,7 +405,7 @@ describe('Cours cours Benny ! rules', () => {
       for (let t = 0; t < 30_000; t += 500) { run(g, 500); for (const e of g.entities) if (e.kind === 'pillar' && !seen.has(Math.round(e.z))) { seen.add(Math.round(e.z)); n++; } }
       return n;
     };
-    const on = rows(true), off = rows(false); expect(on).toBeGreaterThanOrEqual(off + 4);
+    const on = rows(true), off = rows(false); expect(on).toBeGreaterThanOrEqual(off); // Fewer runnable walls now (owner: too easy to keep the combo on them): the challenge only adds rows where a wall is runnable.
   });
   it('widens the road to five lanes in a wide hall (the middle stays the middle), then narrows it back', () => {
     const g = quiet(); g.zones.push({from: g.distance + 10, to: g.distance + 40});

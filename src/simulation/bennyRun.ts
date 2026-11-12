@@ -49,7 +49,7 @@ export const BENNY_RUN = {
   /** A ground charge that falls on a creature's head (at most `headHeight` m up) breaks it, and Benny rebounds off it. */
   headHeight: 1.6,
   /** A wall run lasts `wallMs` at most; walls come in segments of `wallSegment` m, `wallRunnable` of them runnable. */
-  wallMs: 2600, wallSegment: 36, wallRunnable: .7,
+  wallMs: 2600, wallSegment: 36, wallRunnable: .3,
   /** A strike reaches the nearest pot or creature from `-hitHalf` m to `strikeReach` m plus `strikeLead` s of running ahead: the
    * faster Benny runs, the farther her wand reaches, so that the time to react stays fair (about 0.4 s at any speed). */
   strikeReach: 4, strikeLead: .32, hitHalf: .6,
@@ -1065,6 +1065,8 @@ export function runInput(g: BennyRun, now: number, input: RunInput): void {
       }
       // Stairs: a step sideways only when the step is low enough; a higher ledge needs a jump (in the air, any lane is fine).
       if (!inAir(g) && ledgeHeight(g, target, g.distance) - floorHeight(g) > C.stepMax) { g.events.push({type: 'blocked'}); return; }
+      // In the air she comes down at once in the new lane, and strikes what waits on the ground there (no strike from the air).
+      if (inAir(g) && !powerActive(g, 'flight')) { g.airUntil = g.at; g.jumpFrom = 0; g.pound = false; }
       if (g.raised) dropOff(g);
       const from = g.lane; arrive(g, from, target, step);
       return;
