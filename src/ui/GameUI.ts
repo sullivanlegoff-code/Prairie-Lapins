@@ -296,7 +296,7 @@ export class GameUI {
       // A setting's record beaten (once there was one to beat).
       const beaten = BENNY_RUN_SETTINGS.filter(k => (before[k] ?? 0) > 0 && summary.bySetting[k] > (before[k] ?? 0));
       return beaten.length ? `Record de décor battu : ${beaten.map(k => BENNY_RUN_SETTING_SHORT[k]).join(', ')} !` : undefined;
-    }, best: () => this.controller.getSnapshot().state?.bennyRun?.best ?? 0, sound: (kind, pitch) => this.sounds.run(kind, pitch), onExit: () => this.render()});
+    }, best: () => this.controller.getSnapshot().state?.bennyRun?.best ?? 0, bestMetres: () => this.controller.getSnapshot().state?.bennyRun?.metres ?? 0, sound: (kind, pitch) => this.sounds.run(kind, pitch), onExit: () => this.render()});
     this.moveBanner.id = 'rabbit-move-banner'; this.moveBanner.hidden = true;
     this.moveBanner.setAttribute('role', 'region'); this.moveBanner.setAttribute('aria-label', 'Déplacer un lapin');
     const moveLabel = node('span'); moveLabel.setAttribute('role', 'status'); this.moveBanner.append(moveLabel);

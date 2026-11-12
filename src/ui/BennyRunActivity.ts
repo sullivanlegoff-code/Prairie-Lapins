@@ -40,6 +40,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   onFinished?: (summary: RunSummary) => string | void;
   /** The best score kept by the game, read before each run. */
   best?: () => number;
+  /** The longest run kept by the game (m): a banner stands across the road there. */
+  bestMetres?: () => number;
   /** A short sound for an action (the game's Bruitages channel); silent when absent. */
   sound?: (kind: RunSound, pitch?: number) => void;
   onExit?: () => void; clock?: () => number; frame?: (step: () => void) => number;
@@ -134,7 +136,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     context?.setTransform(ratio, 0, 0, ratio, 0, 0);
   }
   /** The record when this run started, whether it is beaten yet, and the last 500 m reached. */
-  let runBest = 0, beaten = false, milestone = 0;
+  let runBest = 0, beaten = false, milestone = 0, metresBest = 0, metresBeaten = false;
   function hud(): void {
     const g = game; if (!g) return;
     const multiplier = g.at <= g.comboUntil ? comboMultiplier(g.combo) : 1;
@@ -148,6 +150,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const ch = g.challenge; challengeLine.textContent = ch ? `Défi · ${CHALLENGE_TEXT[ch.kind](ch.goal)} · ${ch.count}/${ch.goal}` : '';
     // Every 500 m.
     const reached = Math.floor(g.distance / 500) * 500;
+    if (metresBest > 0 && !metresBeaten && g.distance > metresBest) { metresBeaten = true; flash('Plus loin que jamais !'); sound('power', 1.2); }
     if (reached > milestone && !g.tutorial) { milestone = reached; flash(`${reached} m !`); sound('coin', 1.5); }
     // Hidden while the tutorial's advice is up (they would overlap).
     combo.textContent = coach.hidden && g.combo > 1 && g.at <= g.comboUntil ? `${g.combo} coups${multiplier > 1 ? ` · ×${multiplier}` : ''}` : '';
@@ -323,6 +326,15 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       const p = ((now / 600 + k * .37) % 1), y = height * (.3 + ((k * 53) % 50) / 100), len = width * (.12 + .1 * strength), x = w.dir > 0 ? -len + p * (width + len * 2) : width + len - p * (width + len * 2);
       c.lineWidth = 2 + 2 * strength; c.beginPath(); c.moveTo(x, y); c.quadraticCurveTo(x - w.dir * len * .5, y - 6, x - w.dir * len, y); c.stroke();
     }
+  }
+  /** A banner across the road at the longest run so far: two poles and a ribbon « Ton record · N m ». */
+  function recordBanner(c: CanvasRenderingContext2D, g: BennyRun): void {
+    const ahead = metresBest - g.distance; if (metresBest <= 0 || ahead < NEAR || ahead > FAR) return;
+    const half = wallXAt(g, ahead) - .2, top = 3.4, l = project(-half, ahead, 0), r = project(half, ahead, 0), lt = project(-half, ahead, top), rt = project(half, ahead, top), band = project(0, ahead, top - .7);
+    c.fillStyle = '#5c3e24'; for (const [a, b] of [[l, lt], [r, rt]]) c.fillRect(a.x - Math.max(1, a.s * .06), b.y, Math.max(2, a.s * .12), a.y - b.y);
+    c.fillStyle = '#d94a3a'; c.fillRect(lt.x, lt.y, rt.x - lt.x, band.y - lt.y);
+    c.fillStyle = '#fff'; c.font = `800 ${Math.round(Math.max(8, (band.y - lt.y) * .62))}px system-ui`; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(`Ton record · ${metresBest} m`, (lt.x + rt.x) / 2, (lt.y + band.y) / 2); c.textBaseline = 'alphabetic';
   }
   /** The last gust that blew (for the streaks to fade). */
   let gustAt: {at: number; dir: -1 | 1} | null = null;
@@ -573,6 +585,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     road(c, g, SETTING_COLOURS[g.setting]);
     speedLines(c, g, now);
     platforms(c, g);
+    recordBanner(c, g);
     wind(c, g, now);
     const ahead = [...g.entities].sort((a, b) => b.z - a.z);
     for (const e of ahead) if (e.z - g.distance > 0) thing(c, g, e);
@@ -791,7 +804,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // The first run (no record yet) starts with the tutorial; it can be asked for again from the start card.
     coach.hidden = true;
     slowLost = 0; slowUntil = 0; lastLoopAt = clock(); settingSince = -1e9; shownSetting = 'grotte';
-    runBest = best; beaten = false; milestone = 0; score.classList.remove('benny-run-beaten');
+    runBest = best; beaten = false; milestone = 0; metresBest = options.bestMetres?.() ?? 0; metresBeaten = false; score.classList.remove('benny-run-beaten');
     game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; camX = 0; camUp = 0; swing = null; shock = null; flashes = []; bits = []; rings = []; coinRun = 0; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
     holesAnnounced = 0; lastHoleSeen = -1;
     hud(); flash('Cours cours Benny !'); frame(loop);
