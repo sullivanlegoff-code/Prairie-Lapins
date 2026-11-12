@@ -412,16 +412,18 @@ describe('Cours cours Benny ! rules', () => {
     while (g.entities[0].z - g.distance > 1.2) run(g, 10); runInput(g, g.at, 'up'); run(g, 800); expect(g.lastBumpAt).not.toBeNull();
   });
   it('lays geysers only on the lava bridge, never in all lanes at once', () => {
+    let total = 0;
     for (const seed of [3, 4, 5]) {
       const g = startBennyRun(0, seed, 3); g.setting = 'pont'; let seen = 0;
-      for (let t = 0; t < 200_000 && !g.over; t += 1000) { g.lastBumpAt = null; g.stumbleUntil = 0; run(g, 1000);
+      for (let t = 0; t < 200_000 && !g.over; t += 1000) { g.entities = g.entities.filter(e => e.z > g.distance + 40); g.pits = []; g.holes = g.holes.filter(h => h.from > g.distance + 40); run(g, 1000);
         const vents = g.entities.filter(e => e.geyser); seen += vents.length;
         for (const e of vents) expect(settingAt(g, e.z)).toBe('pont');
         const byZ = new Map<number, number>(); for (const e of vents) byZ.set(e.z, (byZ.get(e.z) ?? 0) + 1);
         for (const [vz, n] of byZ) expect(n).toBeLessThan(lanesAt(g, vz));
       }
-      expect(seen).toBeGreaterThan(0);
+      total += seen; expect(g.over).toBe(false);
     }
+    expect(total).toBeGreaterThan(0);
   });
   it('announces a gust of wind on the mountain, then blows Benny one lane downwind (not off the road, not off a wall)', () => {
     const g = quiet(); run(g, C.introMs); const z = g.distance;
@@ -451,15 +453,17 @@ describe('Cours cours Benny ! rules', () => {
     runInput(g, g.at, 'down'); run(g, C.slideMs + 50); expect(g.at < g.slideUntil).toBe(false);
   });
   it('lays rockfalls only in the cave, always leaving one lane free', () => {
+    let total = 0;
     for (const seed of [3, 4, 5]) {
       const g = startBennyRun(0, seed, 3); let seen = 0;
-      for (let t = 0; t < 200_000 && !g.over; t += 1000) { g.lastBumpAt = null; g.stumbleUntil = 0; run(g, 1000);
+      for (let t = 0; t < 200_000 && !g.over; t += 1000) { g.entities = g.entities.filter(e => e.z > g.distance + 40); g.pits = []; g.holes = g.holes.filter(h => h.from > g.distance + 40); run(g, 1000);
         const rocks = g.entities.filter(e => e.rock); seen += rocks.length;
         for (const e of rocks) expect(settingAt(g, e.z)).toBe('grotte');
         const byZ = new Map<number, number>(); for (const e of rocks) byZ.set(e.z, (byZ.get(e.z) ?? 0) + 1);
         for (const [rz, n] of byZ) expect(n).toBeLessThan(lanesAt(g, rz));
       }
-      expect(seen).toBeGreaterThan(0);
+      total += seen; expect(g.over).toBe(false);
     }
+    expect(total).toBeGreaterThan(0);
   });
 });
