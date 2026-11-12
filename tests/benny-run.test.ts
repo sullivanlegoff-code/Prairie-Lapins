@@ -19,7 +19,7 @@ const types = (g: BennyRun) => takeRunEvents(g).map(e => e.type);
 describe('Cours cours Benny ! rules', () => {
   it('strikes every creature in the lane she moves into, within reach, in one move', () => {
     const g = quiet(); g.lane = 0;
-    place(g, 'dragonnet', 1, 2); place(g, 'chest', 1, 4);
+    place(g, 'dragonnet', 1, 2); place(g, 'dragonnet', 1, 4);
     runInput(g, g.at, 'right');
     expect(g).toMatchObject({lane: 1, foes: 2, combo: 2});
     expect(g.entities.filter(e => e.lane === 1 && e.z > g.distance)).toHaveLength(0);
@@ -30,7 +30,7 @@ describe('Cours cours Benny ! rules', () => {
     runInput(g, g.at, 'left');
     expect(g).toMatchObject({lane: 0, foes: 1, score: C.points.foe, combo: 1});
     expect(g.entities).toHaveLength(0);
-    place(g, 'chest', 0, 5); run(g, 1000);
+    place(g, 'dragonnet', 0, 5); run(g, 1000);
     expect(types(g)).toContain('bump');
     expect(g.lastBumpAt).not.toBeNull(); expect(g.foes).toBe(1);
   });
@@ -58,9 +58,9 @@ describe('Cours cours Benny ! rules', () => {
   });
   it('strikes with a slide (swipe down) only what touches the hit-box of Benny, and what it slides into', () => {
     const g = quiet(); run(g, C.introMs);
-    place(g, 'chest', 1, 5); runInput(g, g.at, 'down'); expect(g).toMatchObject({foes: 0}); // Ahead, out of her hit-box: no strike.
+    place(g, 'dragonnet', 1, 5); runInput(g, g.at, 'down'); expect(g).toMatchObject({foes: 0}); // Ahead, out of her hit-box: no strike.
     g.entities = [];
-    run(g, 800); place(g, 'chest', 1, 0.3); runInput(g, g.at, 'down');
+    run(g, 800); place(g, 'dragonnet', 1, 0.3); runInput(g, g.at, 'down');
     expect(g).toMatchObject({foes: 1, lastBumpAt: null});
     run(g, 800); place(g, 'ember', 1, 0.3); runInput(g, g.at, 'down'); run(g, 600);
     expect(g).toMatchObject({foes: 2, lastBumpAt: null});
@@ -71,7 +71,7 @@ describe('Cours cours Benny ! rules', () => {
     place(g, 'dragonnet', 1, 3); runInput(g, g.at, 'up'); run(g, 500);
     expect(takeRunEvents(g).map(e => e.type)).toContain('bump');
     run(g, C.dragonMs);
-    place(g, 'chest', 0, 4); run(g, 800);
+    place(g, 'dragonnet', 0, 4); run(g, 800);
     expect(types(g)).toEqual(['bump']);
     run(g, C.dragonMs);
     runInput(g, g.at, 'right'); place(g, 'ember', 0, 4); run(g, 800);
@@ -90,7 +90,7 @@ describe('Cours cours Benny ! rules', () => {
   });
   it('leaves a wall with a ground charge whose shock wave strikes every lane around her; a charge from a jump does not', () => {
     const g = quiet(); runInput(g, g.at, 'left'); runInput(g, g.at, 'left'); run(g, 300);
-    const near = [place(g, 'pot', 0, 3), place(g, 'dragonnet', 1, 4), place(g, 'chest', 2, 2)], far = place(g, 'pot', 2, 14);
+    const near = [place(g, 'pot', 0, 3), place(g, 'dragonnet', 1, 4), place(g, 'dragonnet', 2, 2)], far = place(g, 'pot', 2, 14);
     runInput(g, g.at, 'down'); run(g, 300);
     const events = takeRunEvents(g);
     expect(events.map(e => e.type)).toContain('shockwave');
@@ -102,7 +102,7 @@ describe('Cours cours Benny ! rules', () => {
   });
   it('spins and strikes both creatures when one waits on each side of her', () => {
     const g = quiet(); run(g, C.introMs);
-    place(g, 'chest', 0, 4); place(g, 'dragonnet', 2, 4.5); runInput(g, g.at, 'left');
+    place(g, 'dragonnet', 0, 4); place(g, 'dragonnet', 2, 4.5); runInput(g, g.at, 'left');
     const strikes = takeRunEvents(g).filter(e => e.type === 'strike').map(e => e.type === 'strike' && e.by);
     expect(strikes).toEqual(['lane', 'spin']); expect(g).toMatchObject({lane: 0, foes: 2}); expect(g.entities).toHaveLength(0);
     // Moving away from a lone creature does not strike it.
@@ -145,7 +145,7 @@ describe('Cours cours Benny ! rules', () => {
   });
   it('lets a flying monster reach Benny on a wall, from the edge lane, and swiping off the wall strikes it', () => {
     const g = quiet(); run(g, C.introMs); runInput(g, g.at, 'left'); runInput(g, g.at, 'left'); expect(g.wall?.side).toBe('left');
-    place(g, 'chest', 0, 3); run(g, 500); expect(g.lastBumpAt).toBeNull(); // A creature on the ground does not reach the wall.
+    place(g, 'dragonnet', 0, 3); run(g, 500); expect(g.lastBumpAt).toBeNull(); // A creature on the ground does not reach the wall.
     place(g, 'flyer', 0, 3); run(g, 500); expect(g.lastBumpAt).not.toBeNull();
     run(g, C.dragonMs); runInput(g, g.at, 'right'); runInput(g, g.at, 'left'); runInput(g, g.at, 'left'); expect(g.wall?.side).toBe('left');
     place(g, 'flyer', 1, 4); runInput(g, g.at, 'right');
@@ -171,18 +171,18 @@ describe('Cours cours Benny ! rules', () => {
   });
   it('swiping away from the wall comes down into the middle lane at once, and strikes what waits there', () => {
     const g = quiet(); run(g, C.introMs); runInput(g, g.at, 'right'); runInput(g, g.at, 'right'); expect(g.wall?.side).toBe('right');
-    place(g, 'chest', 1, 4); runInput(g, g.at, 'left');
+    place(g, 'dragonnet', 1, 4); runInput(g, g.at, 'left');
     expect(g).toMatchObject({wall: null, lane: 1, foes: 1}); run(g, 800); expect(g.lastBumpAt).toBeNull();
   });
   it('spares Benny from a creature she only comes beside at the last moment: she had no time to strike it', () => {
     const g = quiet();
-    runInput(g, g.at, 'left'); place(g, 'chest', 2, 6);
+    runInput(g, g.at, 'left'); place(g, 'dragonnet', 2, 6);
     // Two lanes away until it is almost level, then Benny steps next to it.
     run(g, Math.round((6 - 1.2) / g.speed * 1000));
     runInput(g, g.at, 'right'); run(g, 600);
     expect(g.lastBumpAt).toBeNull();
     // Beside it from afar, without striking: it strikes back.
-    place(g, 'chest', 2, 8); run(g, 1200);
+    place(g, 'dragonnet', 2, 8); run(g, 1200);
     expect(g.lastBumpAt).not.toBeNull();
   });
   it('ends a ground charge in a short roll, so a swipe down in the air still gets Benny under a beam', () => {
@@ -228,15 +228,15 @@ describe('Cours cours Benny ! rules', () => {
   });
   it('breaks a struck pot where it stands: nothing flies on, what stood behind it is still there', () => {
     const g = quiet();
-    const pot = place(g, 'pot', 0, 4), chest = place(g, 'chest', 0, 14), next = place(g, 'pot', 0, 20);
+    const pot = place(g, 'pot', 0, 4), chest = place(g, 'dragonnet', 0, 14), next = place(g, 'pot', 0, 20);
     runInput(g, g.at, 'left'); run(g, 50);
     const strikes = takeRunEvents(g).filter(e => e.type === 'strike');
     expect(strikes.map(e => e.type === 'strike' && e.by)).toEqual(['lane']); expect(g).toMatchObject({pots: 1, foes: 0, combo: 1});
     expect(g.entities).not.toContain(pot); expect(g.entities).toContain(chest); expect(g.entities).toContain(next);
-    expect(g.entities.every(e => ['pot', 'chest'].includes(e.kind))).toBe(true);
+    expect(g.entities.every(e => ['pot', 'dragonnet'].includes(e.kind))).toBe(true);
   });
   it('rolls on through a row: each thing broken while rolling keeps the roll going', () => {
-    const g = quiet(); place(g, 'pot', 1, 2); place(g, 'chest', 1, 8); place(g, 'pot', 1, 14); place(g, 'dragonnet', 1, 20);
+    const g = quiet(); place(g, 'pot', 1, 2); place(g, 'dragonnet', 1, 8); place(g, 'pot', 1, 14); place(g, 'dragonnet', 1, 20);
     runInput(g, g.at, 'down'); run(g, 2000);
     expect(g).toMatchObject({pots: 2, foes: 2, lastBumpAt: null}); expect(g.bestCombo).toBe(4);
     expect(takeRunEvents(g).flatMap(e => e.type === 'strike' ? [e.roll] : [])).toEqual([1, 2, 3, 4]);
@@ -259,7 +259,7 @@ describe('Cours cours Benny ! rules', () => {
   it('lets the wand reach farther as the speed rises, for the same time to react', () => {
     const g = quiet(); const slow = reach(g); expect(slow / g.speed).toBeGreaterThan(.6);
     run(g, C.speedRampMs); expect(reach(g)).toBeGreaterThan(slow + 3); expect(reach(g) / g.speed).toBeGreaterThan(.45);
-    place(g, 'chest', 0, reach(g) - .5); runInput(g, g.at, 'left'); expect(g.foes).toBe(1);
+    place(g, 'dragonnet', 0, reach(g) - .5); runInput(g, g.at, 'left'); expect(g.foes).toBe(1);
   });
   it('lays the road out in varied patterns: pot slaloms, rows of creatures, coin arcs over barriers, and always a way through', () => {
     const g = startBennyRun(0, 3), seen = new Map<number, RunEntity>(), width = new Map<number, number>(); let wide = false;
@@ -289,7 +289,8 @@ describe('Cours cours Benny ! rules', () => {
     until(3); runInput(g, g.at, 'up'); run(g, 500); expect(tutorialStep(g)).toBe('roll');
     until(4); runInput(g, g.at, 'down'); run(g, 500); expect(tutorialStep(g)).toBe('front');
     until(-1); run(g, 300); expect(g.over).toBe(false); expect(g.lastBumpAt).toBeNull(); expect(tutorialStep(g)).toBe('front'); // A bump: no Dragon.
-    until(5); const chest = g.entities.find(e => e.kind === 'chest')!; chest.z = g.distance + C.hitHalf * .5; // Rolled into, at the body.
+    until(5); const chest = g.entities.find(e => e.kind === 'chest')!; chest.z = g.distance + C.hitHalf * .5; // Rolled into, at the body: the first blow throws it on.
+    runInput(g, g.at, 'down'); run(g, 20); expect(tutorialStep(g)).toBe('front'); chest.z = g.distance + C.hitHalf * .5; // Rolled into again: the second blow breaks it.
     runInput(g, g.at, 'down'); run(g, 20); expect(tutorialStep(g)).toBe('flyer');
     until(5); const flyer = g.entities.find(e => e.kind === 'flyer')!; runInput(g, g.at, flyer.lane < g.lane ? 'left' : 'right'); run(g, 20);
     expect(tutorialStep(g)).toBe('wall');
@@ -424,7 +425,23 @@ describe('Cours cours Benny ! rules', () => {
     runInput(h, h.at, 'right'); expect(h.raised).toBeNull(); expect(h.lane).toBe(2); expect(inAir(h)).toBe(true);
     run(h, 800); expect(runHeight(h)).toBe(0);
     run(h, 3000); expect(h.platforms.every(p => p.to > h.distance - 10)).toBe(true); expect(h.raised).toBeNull();
-  });  it('never moves a creature sideways: a dragonnet, an ember or any other stays in its lane', () => {
+  });  it('a chest takes two blows: the first throws it on along the road, the second breaks it', () => {
+    const g = quiet(); run(g, C.introMs);
+    const c = place(g, 'chest', g.lane, 0.3); runInput(g, g.at, 'down');
+    expect(g.foes).toBe(0); expect(g.entities).toContain(c); expect(c.hp).toBe(1); expect(c.knock).toBeGreaterThan(0);
+    run(g, 300); expect(c.knock).toBeUndefined(); expect(g.entities).toContain(c); // Thrown on, and still there.
+    c.z = g.distance + 0.3; runInput(g, g.at, 'down');
+    expect(g.foes).toBe(1); expect(g.entities).not.toContain(c);
+  });
+  it('a thrown chest knocks down the creature it meets, and breaks against decor', () => {
+    const g = quiet(); run(g, C.introMs); const lane = g.lane;
+    const c = place(g, 'chest', lane, 0.5); runInput(g, g.at, 'down');
+    place(g, 'dragonnet', lane, 3.5); run(g, 400);
+    expect(g.foes).toBe(1); expect(g.entities.some(e => e.kind === 'dragonnet')).toBe(false); expect(g.entities).toContain(c);
+    place(g, 'pillar', lane, c.z - g.distance + 2); c.knock = C.chestKnock; run(g, 300);
+    expect(g.entities).not.toContain(c);
+  });
+  it('never moves a creature sideways: a dragonnet, an ember or any other stays in its lane', () => {
     const g = quiet(); const e = place(g, 'dragonnet', 1, 60); place(g, 'ember', 2, 30);
     run(g, 6000); expect(e.lane).toBe(1); expect(g.entities.filter(o => o.kind === 'ember').every(o => o.lane === 2)).toBe(true);
   });
@@ -538,7 +555,7 @@ describe('Cours cours Benny ! rules', () => {
   });
   it('bounces high off a springboard, over a row of pillars and a creature, and lands on the road', () => {
     const g = quiet(); g.lane = 1; for (const w of g.walls) w.runnable = false;
-    place(g, 'spring', 1, 2); for (const l of [0, 1, 2]) place(g, 'pillar', l, 8); place(g, 'chest', 1, 10);
+    place(g, 'spring', 1, 2); for (const l of [0, 1, 2]) place(g, 'pillar', l, 8); place(g, 'dragonnet', 1, 10);
     run(g, 600); expect(types(g)).toContain('bounce'); expect(runHeight(g)).toBeGreaterThan(C.overHeight);
     run(g, 1500); expect(g.lastBumpAt).toBeNull(); expect(inAir(g)).toBe(false); expect(g.entities.some(e => e.kind === 'pillar' && e.z > g.distance)).toBe(false);
   });
@@ -592,7 +609,7 @@ describe('Cours cours Benny ! rules', () => {
   it('charges with the « Ruée »: faster, smashing all in her lane, leaping gaps', () => {
     const g = quiet(); run(g, C.introMs); const plain = g.speed;
     place(g, 'power', 1, 2, {power: 'dash'}); run(g, 300); expect(g.active?.power).toBe('dash'); expect(g.speed).toBeCloseTo(plain * C.dashSpeed, 0);
-    place(g, 'pillar', 1, 4); place(g, 'chest', 1, 8); place(g, 'barrier', 1, 12); g.holes.push({from: g.distance + 16, to: g.distance + 19});
+    place(g, 'pillar', 1, 4); place(g, 'dragonnet', 1, 8); place(g, 'barrier', 1, 12); g.holes.push({from: g.distance + 16, to: g.distance + 19});
     const score = g.score; run(g, 1500);
     expect(g.lastBumpAt).toBeNull(); expect(g.foes).toBe(1); expect(g.score).toBeGreaterThan(score + 2 * C.dashSmash);
     run(g, C.powers.dash); expect(g.active).toBeNull();

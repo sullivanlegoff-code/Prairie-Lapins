@@ -842,7 +842,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     pot: 'Un pot à côté de toi : glisse vers lui pour le frapper avec ton bâton !',
     jump: 'Une barrière : glisse vers le haut pour sauter !',
     roll: 'Une poutre : glisse vers le bas pour passer dessous en roulade !',
-    front: 'Un coffre glouton droit devant : fais une roulade dedans pour le frapper !',
+    front: 'Un coffre glouton droit devant : roule dedans pour le frapper ; il faut deux coups !',
     flyer: 'Un petit monstre volant : glisse vers lui pour le frapper !',
     wall: 'Des piliers partout : glisse vers le mur pour courir dessus !',
   };

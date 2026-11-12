@@ -78,6 +78,8 @@ export const BENNY_RUN = {
   /** A pot struck flies on along its lane, this much faster than Benny (m/s) and this far (m), and knocks over all it meets. */
   /** Coins a pot spills. */
   potCoins: 3,
+  /** A chest takes two blows: the first throws it on along the road, `chestKnock` m at `chestFlyStep` m a tick, and the second breaks it. */
+  chestKnock: 7, chestFlyStep: .3,
   // One pot in `goldEvery` (picked from its number, so the run's draws stay the same) is golden: worth `goldPot` times the points.
   goldEvery: 20, goldPot: 5,
   /** The setting changes at random every 40 to 55 s. */
@@ -151,11 +153,11 @@ export type RunKind = 'coin' | 'wallCoin' | 'heart' | 'power' | 'pot' | 'barrier
 export const RUN_FOES: readonly RunFoe[] = ['dragonnet', 'chest', 'ember'];
 export type RunInput = 'left' | 'right' | 'up' | 'down';
 export type Side = 'left' | 'right';
-export type StrikeKind = 'lane' | 'spin' | 'slide' | 'jump' | 'pound' | 'shock' | 'dash' | 'wall';
+export type StrikeKind = 'lane' | 'spin' | 'slide' | 'jump' | 'pound' | 'shock' | 'dash' | 'wall' | 'chest';
 
 /** A thing on the road. `lane` is 0 to `lanes - 1`; a wall coin's lane is -1 (left wall) or `lanes` (right wall). */
 /** A thing on the road; `up` is how high a coin floats (a coin arc over a barrier), for the drawing only. */
-export interface RunEntity {id: number; kind: RunKind; lane: number; z: number; power?: RunPower; sky?: boolean; up?: number; beside?: boolean; rock?: 'up' | 'down'; geyser?: 'idle' | 'up'; rolling?: boolean; snow?: boolean; cart?: boolean; gold?: boolean}
+export interface RunEntity {id: number; kind: RunKind; lane: number; z: number; power?: RunPower; sky?: boolean; hp?: number; knock?: number; up?: number; beside?: boolean; rock?: 'up' | 'down'; geyser?: 'idle' | 'up'; rolling?: boolean; snow?: boolean; cart?: boolean; gold?: boolean}
 export interface WallSegment {side: Side; from: number; to: number; runnable: boolean}
 export type RunEvent =
   | {type: 'strike'; entity: RunEntity; points: number; combo: number; multiplier: number; by: StrikeKind; roll?: number}
@@ -422,6 +424,7 @@ export const isGoldenPot = (id: number) => Math.imul(id, 2654435761) >>> 0 < 2 *
 const add = (g: BennyRun, kind: RunKind, lane: number, z: number, extra: Partial<RunEntity> = {}) => {
   const e: RunEntity = {id: g.nextId++, kind, lane, z, ...extra};
   if (kind === 'pot' && isGoldenPot(e.id)) e.gold = true;
+  if (kind === 'chest') e.hp = 2;
   g.entities.push(e); return e;
 };
 const laneList = (g: BennyRun) => Array.from({length: g.lanes}, (_, i) => i);
@@ -764,10 +767,13 @@ const nearest = (g: BennyRun, lane: number, reach: number, which: (e: RunEntity)
 /** How far ahead the wand reaches at the present speed. */
 export const reach = (g: BennyRun) => C.strikeReach + C.strikeLead * g.speed;
 function strike(g: BennyRun, e: RunEntity, by: StrikeKind): void {
-  g.entities = g.entities.filter(o => o !== e);
+  // A chest takes two blows: the first throws it on along the road, the second breaks it.
+  const first = e.kind === 'chest' && (e.hp ?? 2) > 1;
+  if (first) e.hp = 1; else g.entities = g.entities.filter(o => o !== e);
   g.combo = g.at <= g.comboUntil ? g.combo + 1 : 1; g.comboUntil = g.at + C.comboMs; g.bestCombo = Math.max(g.bestCombo, g.combo);
-  const multiplier = comboMultiplier(g.combo), points = (e.kind === 'pot' ? C.points.pot * (e.gold ? C.goldPot : 1) : C.points.foe) * multiplier;
+  const multiplier = comboMultiplier(g.combo), points = first ? 0 : (e.kind === 'pot' ? C.points.pot * (e.gold ? C.goldPot : 1) : C.points.foe) * multiplier;
   g.score = Math.min(C.maxScore, g.score + points);
+  if (first) { e.knock = C.chestKnock; g.events.push({type: 'strike', entity: e, points, combo: g.combo, multiplier, by}); return; }
   if (e.kind === 'pot') {
     g.pots++; if (e.gold) g.goldPots++;
     gainCoins(g, e, C.potCoins);
@@ -894,7 +900,8 @@ function meet(g: BennyRun, e: RunEntity): void {
     case 'fireball': if (high && !e.cart) dodge(g, e); else bump(g, e); return;
     case 'beam': if (sliding(g) || (!inAir(g) && g.at < g.slideUntil + C.slideGraceMs)) dodge(g, e); else bump(g, e); return;
     // A creature: sliding into it strikes it; otherwise, even jumping over it, it strikes Benny as she passes.
-    case 'dragonnet': case 'chest': case 'ember': if (sliding(g)) strike(g, e, 'slide'); else bump(g, e); return;
+    // A chest thrown on by this roll is not struck again by it: it is struck again only by a new blow.
+    case 'dragonnet': case 'chest': case 'ember': if (e.knock) return; if (sliding(g)) strike(g, e, 'slide'); else bump(g, e); return;
     // A flying monster hovers over the road: jumping through its height strikes it; running under it does nothing; on a wall it
     // reaches her, and a slide strikes it.
     case 'flyer':
@@ -954,6 +961,15 @@ function tick(g: BennyRun): void {
   if (g.queuedJumpUntil && !inAir(g) && !g.wall) { const fresh = g.at <= g.queuedJumpUntil; g.queuedJumpUntil = 0; if (fresh) runInput(g, g.at, 'up'); }
   for (const e of g.entities) if (e.rock === 'up' && e.z - g.distance <= C.rockLand) { e.rock = 'down'; g.events.push({type: 'rockfall', entity: e}); }
   for (const e of g.entities) if (e.geyser === 'idle' && e.z - g.distance <= C.geyserAt) { e.geyser = 'up'; g.events.push({type: 'geyser', entity: e}); }
+  // A chest struck once is thrown on along the road: it knocks down the creatures and pots it meets, and breaks against decor or in a hole.
+  for (const e of [...g.entities]) if (e.kind === 'chest' && e.knock) {
+    const move = Math.min(e.knock, C.chestFlyStep), left = e.knock - move; e.z += move; e.knock = left > 1e-9 ? left : undefined;
+    const broken = () => { g.entities = g.entities.filter(o => o !== e); g.events.push({type: 'crash', entity: e}); };
+    if (holeAt(g, e.z) || g.pits.some(p => p.open && p.lane === e.lane && e.z >= p.from && e.z < p.to)) { broken(); continue; }
+    if (g.entities.some(o => o !== e && ['pillar', 'barrier', 'beam'].includes(o.kind) && o.lane === e.lane && Math.abs(o.z - e.z) < C.hitHalf)) { broken(); continue; }
+    const met = g.entities.find(o => o !== e && o.lane === e.lane && Math.abs(o.z - e.z) < C.hitHalf && (o.kind === 'pot' || (isFoe(o) && o.kind !== 'chest')));
+    if (met) strike(g, met, 'chest');
+  }
   // Fireballs roll towards Benny once she is near (their way this tick counts for the meeting below).
   const roll = (e: RunEntity) => e.rolling ? (e.cart ? C.cartSpeed : C.fireSpeed) * dt : 0;
   for (const e of g.entities) if (e.kind === 'fireball' && e.z - g.distance < C.fireFrom) { e.rolling = true; e.z -= roll(e); }
