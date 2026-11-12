@@ -22,11 +22,11 @@ const WING_BEAT = 120;
  * Played with the iPhone upright only (owner, 11 November 2026): turned sideways, the run pauses behind a « tourne ton iPhone » card.
  */
 const HORIZON = .21, LANE_WIDTH = 2.2, CAMERA_BACK = 12, WALL_HEIGHT = 4.5, BENNY_SIZE = 1.6, FAR = 90, NEAR = -(CAMERA_BACK - .6);
-const SETTING_COLOURS: Record<RunSetting, {sky: string; ground: string; lane: string; wall: string; wallOff: string; side: string; hole: string; holeEdge: string}> = {
-  grotte: {sky: '#3a2a1c', ground: '#9a7a52', lane: '#b8956a', wall: '#c9a26a', wallOff: '#5c4630', side: '#e2b450', hole: '#1c120b', holeEdge: '#5a3d22'},
-  pont: {sky: '#4a2420', ground: '#8d8378', lane: '#a39a8e', wall: '#b5aa9a', wallOff: '#55493f', side: '#f07a2a', hole: '#ff6a1a', holeEdge: '#ffd27a'},
-  montagne: {sky: '#f2a77a', ground: '#a88a66', lane: '#c2a37c', wall: '#cdb48e', wallOff: '#6b5844', side: '#c9d8e8', hole: '#5d7894', holeEdge: '#eef4fa'},
-};
+// The new decor (concept C, owner's pick): meadow and wooden planks over a cloud sky. All three settings share it for now; their
+// records stay as they are.
+const SKY_COLOURS = {sky: '#f6c9a2', ground: '#8fc25a', lane: '#c69a5e', wall: '#b8895a', wallOff: '#6e7480', side: '#f5cdb0', hole: '#8a5ba8', holeEdge: '#ffd6a8'};
+const SETTING_COLOURS: Record<RunSetting, typeof SKY_COLOURS> = {grotte: SKY_COLOURS, pont: SKY_COLOURS, montagne: SKY_COLOURS};
+
 export const BENNY_RUN_SETTING_SHORT: Record<RunSetting, string> = {grotte: 'Grotte', pont: 'Pont', montagne: 'Montagne'};
 const SETTING_NAMES: Record<RunSetting, string> = {grotte: 'La grotte dorée', pont: 'Le pont sur la lave', montagne: 'Le sentier de montagne'};
 /** A challenge said to the player (tutoiement). */
@@ -120,7 +120,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   // The paintings (owner's picks of 12 November 2026: Benny A seen from behind, the evolved Dragon A): drawn once loaded, the shapes
   // stand in until then (and in tests, where no picture loads).
   const art = Object.fromEntries(PAINTED.map(name => [name, {image: null, ready: false}])) as Record<PaintedName, {image: HTMLImageElement | null; ready: boolean}>;
+  // The painted sky of the new decor (the floating isles at sunset), shown above the horizon in every setting.
+  const skyPicture: {image: HTMLImageElement | null; ready: boolean} = {image: null, ready: false};
   function loadArt(): void {
+    if (!skyPicture.image) { const image = new Image(); image.decoding = 'async'; image.onload = () => { skyPicture.ready = true; }; image.src = `${import.meta.env.BASE_URL}assets/benny-run/fond-ciel.png`; skyPicture.image = image; }
     for (const name of PAINTED) {
       if (art[name].image) continue;
       const image = new Image(); image.decoding = 'async'; image.onload = () => { art[name].ready = true; };
@@ -326,6 +329,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
    * rising sparks; the mountain sky with two rows of snowy peaks and drifting clouds (shapes until the painted settings). */
   function backdrop(c: CanvasRenderingContext2D, setting: RunSetting): void {
     const horizon = project(0, FAR, 0).y, now = clock(), alpha = c.globalAlpha;
+    // The painted sky: its top part, at the right proportions, down to the horizon.
+    if (skyPicture.ready && skyPicture.image) { const img = skyPicture.image, h = horizon + 1; c.drawImage(img, 0, 0, img.width, Math.min(img.height, img.width * h / width), 0, 0, width, h); return; }
     const sky = (k: CanvasRenderingContext2D, top: string, bottom: string) => { const grad = k.createLinearGradient(0, 0, 0, horizon); grad.addColorStop(0, top); grad.addColorStop(1, bottom); k.fillStyle = grad; k.fillRect(0, 0, width, horizon + 1); };
     const glow = (k: CanvasRenderingContext2D, colour: string, r: number) => { const grad = k.createRadialGradient(width / 2, horizon, 0, width / 2, horizon, r); grad.addColorStop(0, colour); grad.addColorStop(1, 'rgba(0,0,0,0)'); k.fillStyle = grad; k.fillRect(0, 0, width, horizon + 1); };
     const ridge = (k: CanvasRenderingContext2D, colour: string, base: number, peaks: number, rise: number, seed: number, snow?: string) => {
