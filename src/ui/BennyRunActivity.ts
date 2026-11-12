@@ -27,6 +27,7 @@ const CHALLENGE_TEXT: Record<ChallengeKind, (goal: number) => string> = {
   leaps: n => `bondis ${n} fois d’un mur à l’autre`,
 };
 /** A hint the first time each newer obstacle comes into sight (once per device). */
+const FLASH_READ = 550;
 const HINTS = {
   rock: 'Éboulement ! Saute les rochers ou prends le couloir libre.', geyser: 'Geysers de lave : on ne les saute pas, contourne-les !',
   fire: 'Boules de feu : saute-les ou écarte-toi !', snow: 'Boules de neige : saute-les ou écarte-toi !', cart: 'Wagonnets fous : trop hauts, écarte-toi !',
@@ -137,7 +138,25 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   };
   const paragraph = (text: string, className: string) => { const p = document.createElement('p'); p.className = className; p.textContent = text; return p; };
   function showCard(...children: HTMLElement[]): void { card.replaceChildren(...children); card.hidden = false; }
-  function flash(text: string, big = false): void { pop.textContent = text; pop.classList.toggle('benny-run-count', big); pop.classList.remove('show'); void pop.offsetWidth; pop.classList.add('show'); clearTimeout(popTimer); popTimer = setTimeout(() => pop.classList.remove('show'), 900); }
+  /**
+   * Two messages at the same moment (a record and a kilometre, a leap and a challenge): the second waits for the first to be read,
+   * `FLASH_READ` ms (at most two waiting; the countdown's big numbers never wait). An `urgent` one (a record) shows at once,
+   * and the message it cut short comes back after it.
+   */
+  let flashFree = 0, flashWaiting = 0;
+  function flash(text: string, big = false, urgent = false): void {
+    const now = performance.now(), wait = flashFree - now;
+    if (urgent && wait > 0 && !big && pop.textContent && flashWaiting < 2) {
+      const cut = pop.textContent; flashWaiting++; setTimeout(() => { flashWaiting--; if (running) show(cut, false); }, FLASH_READ);
+      flashFree = now + 2 * FLASH_READ; show(text, false); return;
+    }
+    if (!big && !urgent && wait > 0) {
+      if (flashWaiting >= 2) return;
+      flashWaiting++; flashFree += FLASH_READ; setTimeout(() => { flashWaiting--; if (running || !card.hidden) show(text, false); }, wait); return;
+    }
+    flashFree = now + FLASH_READ; show(text, big);
+  }
+  function show(text: string, big: boolean): void { pop.textContent = text; pop.classList.toggle('benny-run-count', big); pop.classList.remove('show'); void pop.offsetWidth; pop.classList.add('show'); clearTimeout(popTimer); popTimer = setTimeout(() => pop.classList.remove('show'), 900); }
   /**
    * The canvas resolution, at most 2 pixels per point: on a device that cannot keep up (more than half the frames of the last
    * 120 slower than 50 per second), it steps down by a quarter, to 1.25 at the least: a little softer, but smooth.
@@ -179,14 +198,14 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     score.textContent = `${g.score}`;
     // Beating the record during the run: said at once, with confetti, and the score turns gold.
     if (!beaten && runBest > 0 && g.score > runBest && !g.tutorial) {
-      beaten = true; score.classList.add('benny-run-beaten'); flash('Nouveau record !'); sound('power');
+      beaten = true; score.classList.add('benny-run-beaten'); flash('Nouveau record !', false, true); sound('power');
       burst(width / 2, height * .3, ['#ff6b6b', '#ffb84d', '#ffe66b', '#7be08a', '#6bb8ff', '#b07bff'], 40, 420);
     }
     // The challenge under way and how far along it is.
     const ch = g.challenge; challengeLine.textContent = ch ? `Défi · ${CHALLENGE_TEXT[ch.kind](ch.goal)} · ${ch.count}/${ch.goal}` : '';
     // Every 500 m.
     const reached = Math.floor(g.distance / 500) * 500;
-    if (metresBest > 0 && !metresBeaten && g.distance > metresBest) { metresBeaten = true; flash('Plus loin que jamais !'); sound('power', 1.2); }
+    if (metresBest > 0 && !metresBeaten && g.distance > metresBest) { metresBeaten = true; flash('Plus loin que jamais !', false, true); sound('power', 1.2); }
     if (reached > milestone && !g.tutorial && reached % 1000) { milestone = reached; flash(`${reached} m !`); sound('coin', 1.5); }
     // Hidden while the tutorial's advice is up (they would overlap).
     combo.textContent = coach.hidden && g.combo > 1 && g.at <= g.comboUntil ? `${g.combo} coups${multiplier > 1 ? ` · ×${multiplier}` : ''}` : '';
