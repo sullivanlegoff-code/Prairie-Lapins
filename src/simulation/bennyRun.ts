@@ -60,7 +60,9 @@ export const BENNY_RUN = {
   stumbleMs: 900, stumbleSlow: .7, dragonMs: 10_000, introMs: 3000,
   /** Combo: strikes less than `comboMs` apart; the multiplier grows by one every `comboStep` strikes, up to `comboMax`. */
   comboMs: 2500, comboStep: 3, comboMax: 5,
-  points: {pot: 10, foe: 25, wallRun: 50, wallLeap: 25, dodge: 5},
+  points: {pot: 10, foe: 25, wallRun: 50, wallLeap: 25, dodge: 5, wallTrail: 10},
+  /** Coins picked up on one wall run for the « wall trail » bonus (`points.wallTrail` each). */
+  wallTrailMin: 6,
   /** Gaps in the road: short ones (m) to jump, long ones to cross on the walls, leaping from one wall to the other. */
   holeShort: [3.5, 5], holeLong: [14, 34],
   /** A pot struck flies on along its lane, this much faster than Benny (m/s) and this far (m), and knocks over all it meets. */
@@ -139,7 +141,7 @@ export type RunEvent =
   | {type: 'caught'; entity: RunEntity}
   | {type: 'power'; power: RunPower}
   | {type: 'wallStart'; side: Side}
-  | {type: 'wallEnd'; side: Side; points: number}
+  | {type: 'wallEnd'; side: Side; points: number; trail: number}
   /** From one wall to the other, over a gap in the road. */
   | {type: 'wallLeap'; side: Side; points: number; combo: number}
   /** Into a gap: a bump, then she catches a wall or hops out. */
@@ -191,7 +193,7 @@ export interface BennyRun {
    * from `poundFrom` m high. */
   airFrom: number; airUntil: number; jumpFrom: number; pound: boolean; poundFrom: number;
   slideUntil: number;
-  wall: {side: Side; until: number} | null;
+  wall: {side: Side; until: number; coins?: number} | null;
   entities: RunEntity[]; nextId: number; nextSpawnZ: number;
   walls: WallSegment[]; wallsTo: Record<Side, number>;
   /** Gaps in the road ahead, from `from` to `to` (m). */
@@ -709,19 +711,21 @@ function startPound(g: BennyRun, from = airHeight(g)): void {
   g.poundFrom = Math.max(from, .3); g.pound = true; g.airFrom = g.at; g.airUntil = g.at + C.poundMs * Math.max(1, Math.sqrt(g.poundFrom / C.jumpHeight)); g.slideUntil = 0;
 }
 function endWall(g: BennyRun): void {
-  const side = g.wall!.side; g.wall = null; g.lane = side === 'left' ? 0 : g.lanes - 1; g.laneChangedAt = g.at;
+  const side = g.wall!.side, trail = g.wall!.coins ?? 0; g.wall = null; g.lane = side === 'left' ? 0 : g.lanes - 1; g.laneChangedAt = g.at;
   // Down from the wall onto a platform along the edge lane: she lands on top of it.
   const p = platformAt(g, g.lane, g.distance); if (p && g.distance >= p.from) g.raised = p;
   g.wallRuns++;
   g.combo = g.at <= g.comboUntil ? g.combo + 1 : 1; g.comboUntil = g.at + C.comboMs; g.bestCombo = Math.max(g.bestCombo, g.combo);
-  const points = C.points.wallRun * comboMultiplier(g.combo); g.score = Math.min(C.maxScore, g.score + points);
-  g.events.push({type: 'wallEnd', side, points});
+  // A trail of coins picked up all along the wall: a bonus for each.
+  const bonus = trail >= C.wallTrailMin ? trail * C.points.wallTrail : 0;
+  const points = C.points.wallRun * comboMultiplier(g.combo) + bonus; g.score = Math.min(C.maxScore, g.score + points);
+  g.events.push({type: 'wallEnd', side, points, trail: bonus ? trail : 0});
 }
 
 /** What happens when a thing reaches Benny without having been struck. */
 function meet(g: BennyRun, e: RunEntity): void {
   if (e.kind === 'wallCoin') {
-    if (g.wall && wallLane(g, g.wall.side) === e.lane) { g.entities = g.entities.filter(o => o !== e); gainCoins(g, e, 1); }
+    if (g.wall && wallLane(g, g.wall.side) === e.lane) { g.entities = g.entities.filter(o => o !== e); gainCoins(g, e, 1); g.wall.coins = (g.wall.coins ?? 0) + 1; }
     return;
   }
   if (e.kind === 'power') {

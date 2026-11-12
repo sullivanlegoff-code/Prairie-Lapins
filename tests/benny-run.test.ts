@@ -478,6 +478,13 @@ describe('Cours cours Benny ! rules', () => {
     expect(g.entities.some(e => e.kind === 'pillar')).toBe(false); expect(g.entities.some(e => e.kind === 'coin')).toBe(true);
     run(g, 2000); expect(g.lastBumpAt).toBeNull(); expect(runHeight(g)).toBe(0);
   });
+  it('gives a bonus for a trail of coins picked up all along one wall run', () => {
+    const g = quiet(); run(g, C.introMs); runInput(g, g.at, 'left'); runInput(g, g.at, 'left'); expect(g.wall?.side).toBe('left');
+    for (let k = 0; k < 7; k++) place(g, 'wallCoin', -1, 2 + k * 2.5);
+    takeRunEvents(g); while (g.wall) run(g, 20);
+    const end = takeRunEvents(g).find(e => e.type === 'wallEnd');
+    expect(end).toMatchObject({trail: 7, points: C.points.wallRun + 7 * C.points.wallTrail});
+  });
   it('lays rockfalls only in the cave, always leaving one lane free', () => {
     let total = 0;
     for (const seed of [3, 4, 5]) {
