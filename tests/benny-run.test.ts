@@ -473,6 +473,16 @@ describe('Cours cours Benny ! rules', () => {
     while (g.entities.some(e => e.id === 72002) && g.entities[0].z - g.distance > 1.2) run(g, 10); runInput(g, g.at, 'up'); run(g, 700);
     expect(g.dodges).toBe(before + 1); expect(challengeGoal('dodges', 0)).toBe(4);
   });
+  it('gives a few points for stepping out of the way at the last moment', () => {
+    const g = quiet(); g.lane = 1; for (const w of g.walls) w.runnable = false;
+    g.entities.push({id: 73001, kind: 'pillar', lane: 1, z: g.distance + 3});
+    while (g.entities[0].z - g.distance > g.speed * .15) run(g, 10);
+    const score = g.score; takeRunEvents(g); runInput(g, g.at, 'left'); run(g, 400);
+    expect(types(g)).toContain('close'); expect(g.score).toBe(score + C.points.close); expect(g.lastBumpAt).toBeNull();
+    // Long before it: nothing.
+    g.entities.push({id: 73002, kind: 'pillar', lane: 0, z: g.distance + 12}); runInput(g, g.at, 'right'); run(g, 1200);
+    expect(types(g)).not.toContain('close');
+  });
   it('glides down at the end of a flight, onto a clear spot', () => {
     const g = quiet(); run(g, C.introMs); g.active = {power: 'flight', until: g.at + 300};
     run(g, 200); place(g, 'pillar', 1, 8); place(g, 'coin', 1, 9);

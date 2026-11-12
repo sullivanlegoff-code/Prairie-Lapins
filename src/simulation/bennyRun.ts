@@ -60,7 +60,9 @@ export const BENNY_RUN = {
   stumbleMs: 900, stumbleSlow: .7, dragonMs: 10_000, introMs: 3000,
   /** Combo: strikes less than `comboMs` apart; the multiplier grows by one every `comboStep` strikes, up to `comboMax`. */
   comboMs: 2500, comboStep: 3, comboMax: 5,
-  points: {pot: 10, foe: 25, wallRun: 50, wallLeap: 25, dodge: 5, wallTrail: 10, leapChain: 15},
+  points: {pot: 10, foe: 25, wallRun: 50, wallLeap: 25, dodge: 5, wallTrail: 10, leapChain: 15, close: 15},
+  /** « De justesse » : an obstacle passing in the lane Benny left less than `closeMs` ago. */
+  closeMs: 300,
   /** Coins picked up on one wall run for the « wall trail » bonus (`points.wallTrail` each). */
   wallTrailMin: 6,
   /** Gaps in the road: short ones (m) to jump, long ones to cross on the walls, leaping from one wall to the other. */
@@ -171,6 +173,8 @@ export type RunEvent =
   | {type: 'faster'; pace: number}
   /** The end of a flight: gliding down onto a clear spot. */
   | {type: 'landing'}
+  /** Out of the way of an obstacle at the last moment. */
+  | {type: 'close'; entity: RunEntity; points: number}
   /** A challenge given (`points` absent) or done. */
   | {type: 'challenge'; kind: ChallengeKind; goal: number; points?: number}
   | {type: 'tutorial'; step: TutorialStep | null; again?: boolean};
@@ -184,6 +188,8 @@ export interface BennyRun {
   distance: number; speed: number;
   /** How many lanes the road has (3 for now), and Benny's. */
   lanes: number; lane: number; laneChangedAt: number;
+  /** The lane she was in before her last lane change. */
+  laneFrom: number;
   /** The road's usual lanes, and the wide halls ahead (`wideLanes` lanes from `from` to `to` m). */
   baseLanes: number; zones: {from: number; to: number}[];
   /** Raised platforms ahead (one lane, from `from` to `to` m, their ramp before), and the one Benny is on. */
@@ -289,7 +295,7 @@ const pick = <T>(g: BennyRun, list: readonly T[]): T => list[Math.min(list.lengt
 
 export function startBennyRun(now: number, seed = Math.floor(Math.random() * 2147483647), lanes = 3, tutorial = false): BennyRun {
   const g: BennyRun = {
-    seed: (seed >>> 0) || 1, startedAt: now, at: now, distance: 0, speed: C.speedStart, lanes, lane: Math.floor(lanes / 2), laneChangedAt: -Infinity, baseLanes: lanes, zones: [], platforms: [], raised: null, pits: [], gusts: [], pace: 0, scoreBy: {grotte: 0, pont: 0, montagne: 0}, scored: 0,
+    seed: (seed >>> 0) || 1, startedAt: now, at: now, distance: 0, speed: C.speedStart, lanes, lane: Math.floor(lanes / 2), laneChangedAt: -Infinity, laneFrom: Math.floor(lanes / 2), baseLanes: lanes, zones: [], platforms: [], raised: null, pits: [], gusts: [], pace: 0, scoreBy: {grotte: 0, pont: 0, montagne: 0}, scored: 0,
     airFrom: 0, airUntil: 0, jumpFrom: 0, pound: false, poundFrom: 0, slideUntil: 0, wall: null,
     entities: [], nextId: 1, nextSpawnZ: C.firstAt, walls: [], wallsTo: {left: 0, right: 0}, holes: [],
     setting: 'grotte', nextSettingAt: 0, upcoming: null, stumbleUntil: 0, lastBumpAt: null,
@@ -772,6 +778,10 @@ function meet(g: BennyRun, e: RunEntity): void {
     if (e.lane === g.lane || powerActive(g, 'magnet')) { g.entities = g.entities.filter(o => o !== e); gainCoins(g, e, 1); }
     return;
   }
+  // Out of the way at the last moment: a few points.
+  if (e.lane !== g.lane && e.lane === g.laneFrom && g.at - g.laneChangedAt <= C.closeMs && !g.wall && !g.raised && ['pillar', 'fireball', 'barrier', 'beam'].includes(e.kind)) {
+    g.score = Math.min(C.maxScore, g.score + C.points.close); g.events.push({type: 'close', entity: e, points: C.points.close});
+  }
   if (e.lane !== g.lane || g.wall || g.raised || powerActive(g, 'flight')) return;
   // Charging: pots and creatures struck, fences, logs and pillars smashed.
   if (powerActive(g, 'dash') && e.kind !== 'thrownPot') {
@@ -928,7 +938,7 @@ export function runInput(g: BennyRun, now: number, input: RunInput): void {
       const side2 = platformAt(g, target, g.distance);
       if (side2 && !g.raised && g.distance >= side2.from - C.rampLen + 1.5) { g.events.push({type: 'blocked'}); return; }
       if (g.raised) dropOff(g);
-      const from = g.lane; g.lane = target; g.laneChangedAt = g.at;
+      const from = g.lane; g.lane = target; g.laneChangedAt = g.at; g.laneFrom = from;
       // The wand: changing lanes towards a pot or a creature strikes it; with a creature on her other side as well, she spins and
       // strikes both at once.
       const hit = nearest(g, target, reach(g)), behind = hit ? nearest(g, from - step, reach(g), isFoe) : undefined;
