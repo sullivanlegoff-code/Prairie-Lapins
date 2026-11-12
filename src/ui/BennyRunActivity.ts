@@ -388,7 +388,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       c.fillStyle = '#d93a3a'; c.beginPath(); c.arc(base.x, y, r, 0, Math.PI * 2); c.fill(); c.fillStyle = '#fff'; c.font = `900 ${Math.round(r * 1.5)}px system-ui`; c.textAlign = 'center'; c.fillText('!', base.x, y + r * .52); return; }
     // In a tunnel of logs, only the first one says « roulade ».
     const inTunnel = e.kind === 'beam' && g.entities.some(o => o.kind === 'beam' && o.lane === e.lane && o.z < e.z && e.z - o.z <= BENNY_RUN.burrowKeep);
-    if (shape.label && base.s > 18 && !inTunnel) { c.fillStyle = '#fff'; c.font = `700 ${Math.round(Math.max(10, base.s * .28))}px system-ui`; c.textAlign = 'center'; c.fillText(shape.label, base.x, base.y - h - 4); }
+    const label = e.cart ? 'écarte-toi' : shape.label;
+    if (label && base.s > 18 && !inTunnel) { c.fillStyle = '#fff'; c.font = `700 ${Math.round(Math.max(10, base.s * .28))}px system-ui`; c.textAlign = 'center'; c.fillText(label, base.x, base.y - h - 4); }
   }
   /** Shapes that say what each thing is, standing on (`x`, `y`), `w` × `h` px; false for those still drawn as a plain block. */
   function figure(c: CanvasRenderingContext2D, e: RunEntity, x: number, y: number, w: number, h: number, at: number): boolean {
@@ -499,6 +500,14 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'fireball': {
         const turn = at / 60 + e.id;
         // On the mountain, a snowball rolling down, a spray of snow behind it.
+        if (e.cart) {
+          // A wooden mine cart heaped with gold, its wheels turning.
+          c.fillStyle = '#3a2a1c'; for (const dx of [-.3, .3]) { c.beginPath(); c.arc(x + dx * w, y - h * .12, w * .12, 0, Math.PI * 2); c.fill(); }
+          c.fillStyle = '#7a5634'; c.beginPath(); c.moveTo(x - w * .5, y - h * 1.1); c.lineTo(x + w * .5, y - h * 1.1); c.lineTo(x + w * .4, y - h * .2); c.lineTo(x - w * .4, y - h * .2); c.fill();
+          c.fillStyle = '#5c3e24'; c.fillRect(x - w * .5, y - h * .75, w, h * .08);
+          ellipse(x, y - h * 1.1, w * .42, h * .2, '#f4c430'); ellipse(x - w * .15, y - h * 1.18, w * .12, h * .08, '#fff6c8');
+          return true;
+        }
         if (e.snow) {
           for (let k = 3; k > 0; k--) ellipse(x + Math.sin(turn + k) * w * .1, y - h * (.45 + k * .16), w * (.3 - k * .06), h * (.22 - k * .04), 'rgba(255,255,255,.75)');
           ellipse(x, y - h / 2, w / 2, h / 2, '#f4f8fc'); ellipse(x - w * .14, y - h * .62, w * .16, h * .14, '#ffffff'); ellipse(x + Math.cos(turn) * w * .18, y - h / 2 + Math.sin(turn) * h * .18, w * .1, h * .1, '#c9d6e6');

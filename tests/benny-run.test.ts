@@ -501,6 +501,14 @@ describe('Cours cours Benny ! rules', () => {
     while (ball.z - g.distance > 1.5) run(g, 10); runInput(g, g.at, 'up'); run(g, 800); expect(g.lastBumpAt).toBeNull();
     place(g, 'fireball', 1, 20); run(g, 1500); expect(g.lastBumpAt).not.toBeNull();
   });
+  it('rolls mine carts down the cave: too tall to jump, a step aside gets past', () => {
+    const g = quiet(); run(g, C.introMs);
+    const cart = place(g, 'fireball', 1, 30, {cart: true});
+    while (cart.z - g.distance > 1.5) run(g, 10); runInput(g, g.at, 'up'); run(g, 800); expect(g.lastBumpAt).not.toBeNull();
+    g.lastBumpAt = null; g.stumbleUntil = 0;
+    const next = place(g, 'fireball', 1, 30, {cart: true});
+    while (next.z - g.distance > 6) run(g, 10); runInput(g, g.at, 'left'); run(g, 1500); expect(g.lastBumpAt).toBeNull();
+  });
   it('lays rockfalls only in the cave, always leaving one lane free', () => {
     let total = 0;
     for (const seed of [3, 4, 5]) {
