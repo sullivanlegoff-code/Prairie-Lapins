@@ -636,7 +636,10 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         // « Cours cours Benny ! » keeps only the record for now: no pattes, no Hearts, no XP (owner: rewards « plus tard »).
         requireRule(s.buildings.some(b => b.kind === 'lair'), 'NOT_FOUND'); requireRule(hasBenny(s), 'BENNY_REQUIRED');
         requireRule([command.score, command.metres].every(n => Number.isSafeInteger(n) && n >= 0) && command.score <= BENNY_RUN.maxScore && command.metres <= BENNY_RUN_MAX_METRES, 'INVALID_CHOICE');
-        s.bennyRun = {best: Math.max(s.bennyRun?.best ?? 0, command.score), metres: Math.max(s.bennyRun?.metres ?? 0, command.metres)};
+        const by = command.bySetting ?? {}, kinds = ['grotte', 'pont', 'montagne'] as const;
+        requireRule(Object.keys(by).every(k => (kinds as readonly string[]).includes(k)) && Object.values(by).every(n => Number.isSafeInteger(n) && n! >= 0 && n! <= command.score), 'INVALID_CHOICE');
+        const settings = {...s.bennyRun?.settings}; for (const k of kinds) if ((by[k] ?? 0) > (settings[k] ?? 0)) settings[k] = by[k];
+        s.bennyRun = {best: Math.max(s.bennyRun?.best ?? 0, command.score), metres: Math.max(s.bennyRun?.metres ?? 0, command.metres), ...(Object.keys(settings).length ? {settings} : {})};
         value = command.score; break;
       }
       case 'rewardBennyFlight': {

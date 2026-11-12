@@ -42,6 +42,16 @@ describe('the Antre du dragon', () => {
     const raw = JSON.parse(encodeGame(s)); expect(raw.version).toBe(SAVE_VERSION);
     const decoded = decodeGame(encodeGame(s)); expect(decoded.ok && decoded.state.bennyRun).toEqual({best: 1200, metres: 1500});
   });
+  it('keeps the most points won in each setting, and saves them (older saves have none)', () => {
+    let s = placeLair(game()).state!;
+    s = run(s, {type: 'finishBennyRun', score: 1200, metres: 800, bySetting: {grotte: 700, pont: 500, montagne: 0}});
+    s = run(s, {type: 'finishBennyRun', score: 900, metres: 600, bySetting: {grotte: 100, pont: 0, montagne: 800}});
+    expect(s.bennyRun).toEqual({best: 1200, metres: 800, settings: {grotte: 700, pont: 500, montagne: 800}});
+    const decoded = decodeGame(encodeGame(s)); expect(decoded.ok && decoded.state.bennyRun).toEqual(s.bennyRun);
+    // More points in a setting than in the whole run, or an unknown setting: refused.
+    expect(act(s, {type: 'finishBennyRun', score: 10, metres: 10, bySetting: {grotte: 11}}, s.lastSimulatedAt)).toMatchObject({ok: false, reason: 'INVALID_CHOICE'});
+    expect(act(s, {type: 'finishBennyRun', score: 10, metres: 10, bySetting: {lune: 5} as never}, s.lastSimulatedAt)).toMatchObject({ok: false, reason: 'INVALID_CHOICE'});
+  });
   it('refuses a run without the lair, without Benny, or with impossible numbers', () => {
     expect(act(game(), {type: 'finishBennyRun', score: 10, metres: 10}, 0)).toMatchObject({ok: false, reason: 'NOT_FOUND'});
     const s = placeLair(game()).state!;

@@ -154,7 +154,9 @@ const current = z.object({
   debris: z.array(z.object({id: z.string().regex(/^debris-[1-9]\d*$/), kind: z.enum(['rocher', 'buisson', 'herbes']), x: integer, y: integer, price: integer.positive()}).strict()).max(512).optional(),
   bennyFlight: z.object({cycle: integer, rewarded: integer.max(BENNY_FLIGHT.rewardedGamesPerCycle), heart: z.literal(true).optional(), best: integer.max(BENNY_FLIGHT.maxColumns)}).strict().optional(),
   // v29: the record of « Cours cours Benny ! », played from the Antre du dragon.
-  bennyRun: z.object({best: integer.max(BENNY_RUN.maxScore), metres: integer.max(BENNY_RUN_MAX_METRES)}).strict().optional(),
+  bennyRun: z.object({best: integer.max(BENNY_RUN.maxScore), metres: integer.max(BENNY_RUN_MAX_METRES),
+    // The most points won in one setting during a run (added later: optional, older saves have none).
+    settings: z.object({grotte: integer.max(BENNY_RUN.maxScore).optional(), pont: integer.max(BENNY_RUN.maxScore).optional(), montagne: integer.max(BENNY_RUN.maxScore).optional()}).strict().optional()}).strict().optional(),
   affectionGifts: z.record(identity, integer).optional(),
   picnicCycle: integer.optional(),
   // The Terrain de corde à sauter (v23, optional): the last rewarded cycle, its rewarded games and Heart, and the record.

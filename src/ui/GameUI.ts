@@ -73,7 +73,8 @@ import {CHRISTMAS_MARKET_ART} from '../config/christmasMarketArt';
 import {availableChristmasRewards, candiesOf, christmasBonusClaimed, christmasBonusReady, christmasChallengesOf, christmasClaimable, christmasClaimed, christmasDecorationReason, christmasProgress, CHRISTMAS_RABBIT_IDS, christmasRabbitReason, skyGiftsDay, skyGiftsRabbitReason, snowmanQuote} from '../simulation/christmas';
 import {mountSkyGiftsActivity} from './SkyGiftsActivity';
 import {mountBennyFlightActivity} from './BennyFlightActivity';
-import {mountBennyRunActivity} from './BennyRunActivity';
+import {BENNY_RUN_SETTING_SHORT, mountBennyRunActivity} from './BennyRunActivity';
+import {RUN_SETTINGS as BENNY_RUN_SETTINGS} from '../simulation/bennyRun';
 import {LAIR_ART} from '../config/lairArt';
 import {bennyFlightDay, bennyFlightReason, hasBenny} from '../simulation/bennyFlight';
 import {DEBRIS_NAMES} from '../simulation/debris';
@@ -289,8 +290,12 @@ export class GameUI {
     }, quotaText: () => { const state = this.controller.getSnapshot().state; return state ? bennyFlightQuotaText(state, this.now()) : ''; },
     best: () => this.controller.getSnapshot().state?.bennyFlight?.best ?? 0, onExit: () => this.render()});
     this.bennyRun = mountBennyRunActivity(document.getElementById('app')!, {onFinished: summary => {
-      const saved = this.controller.perform({type: 'finishBennyRun', score: summary.score, metres: summary.metres});
-      return saved.ok ? undefined : `Record non enregistré : ${REFUSALS[saved.reason]}`;
+      const before = this.controller.getSnapshot().state?.bennyRun?.settings ?? {};
+      const saved = this.controller.perform({type: 'finishBennyRun', score: summary.score, metres: summary.metres, bySetting: summary.bySetting});
+      if (!saved.ok) return `Record non enregistré : ${REFUSALS[saved.reason]}`;
+      // A setting's record beaten (once there was one to beat).
+      const beaten = BENNY_RUN_SETTINGS.filter(k => (before[k] ?? 0) > 0 && summary.bySetting[k] > (before[k] ?? 0));
+      return beaten.length ? `Record de décor battu : ${beaten.map(k => BENNY_RUN_SETTING_SHORT[k]).join(', ')} !` : undefined;
     }, best: () => this.controller.getSnapshot().state?.bennyRun?.best ?? 0, sound: (kind, pitch) => this.sounds.run(kind, pitch), onExit: () => this.render()});
     this.moveBanner.id = 'rabbit-move-banner'; this.moveBanner.hidden = true;
     this.moveBanner.setAttribute('role', 'region'); this.moveBanner.setAttribute('aria-label', 'Déplacer un lapin');
@@ -1451,6 +1456,8 @@ export class GameUI {
     const reason = hasBenny(s) ? null : 'BENNY_REQUIRED' as const;
     this.content.append(node('p', 'Benny chipe le trésor de la Lapine Dragon… et la Dragon la poursuit !', 'badge'));
     if (s.bennyRun?.best) this.content.append(node('p', `Ton record : ${s.bennyRun.best} · ta plus longue course : ${s.bennyRun.metres} m`, 'small'));
+    const decors = BENNY_RUN_SETTINGS.filter(k => (s.bennyRun?.settings?.[k] ?? 0) > 0);
+    if (decors.length) this.content.append(node('p', `Records par décor : ${decors.map(k => `${BENNY_RUN_SETTING_SHORT[k]} ${s.bennyRun!.settings![k]}`).join(' · ')}`, 'small'));
     this.button(this.content, 'Jouer à Cours cours Benny !', () => { this.close(); this.bennyRun.open(); }, reason ? REFUSALS[reason] : null);
   }
   /** A rock, a bush or weeds on a parcel bought since the Christmas update: cleared for its price. */
