@@ -497,8 +497,14 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         return true;
       }
       case 'fireball': {
-        // A rolling ball of fire, flames trailing behind it (away from Benny).
         const turn = at / 60 + e.id;
+        // On the mountain, a snowball rolling down, a spray of snow behind it.
+        if (e.snow) {
+          for (let k = 3; k > 0; k--) ellipse(x + Math.sin(turn + k) * w * .1, y - h * (.45 + k * .16), w * (.3 - k * .06), h * (.22 - k * .04), 'rgba(255,255,255,.75)');
+          ellipse(x, y - h / 2, w / 2, h / 2, '#f4f8fc'); ellipse(x - w * .14, y - h * .62, w * .16, h * .14, '#ffffff'); ellipse(x + Math.cos(turn) * w * .18, y - h / 2 + Math.sin(turn) * h * .18, w * .1, h * .1, '#c9d6e6');
+          return true;
+        }
+        // A rolling ball of fire, flames trailing behind it (away from Benny).
         for (let k = 3; k > 0; k--) ellipse(x, y - h * (.5 + k * .18), w * (.32 - k * .06), h * (.3 - k * .05), k % 2 ? '#ffb03a' : '#ff6a1a');
         ellipse(x, y - h / 2, w / 2, h / 2, '#e8461a'); ellipse(x + Math.cos(turn) * w * .15, y - h / 2 + Math.sin(turn) * h * .15, w * .22, h * .22, '#ffd24a');
         return true;
