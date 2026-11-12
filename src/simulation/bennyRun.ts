@@ -130,6 +130,9 @@ export const BENNY_RUN = {
   /** The coins of a run are pattes (`pattesPerCoin` each), at most `maxPattes` a run, for the first `rewardedRunsPerCycle` runs of
    * the day (owner, 12 November 2026: « les pièces récoltées comptent pour les pièces du jeu principal »). Runs past that are for the record. */
   pattesPerCoin: 1, maxPattes: 150, rewardedRunsPerCycle: 3,
+  /** Hearts on the road, now and then (owner, 12 November 2026: « de temps en temps on peut récolter des cœurs »): one pattern in
+   * `heartEvery` may bring one, after `heartFrom` m. A run keeps at most `maxHeartsPerRun`; a day pays at most `heartsPerCycle`. */
+  heartFrom: 400, heartEvery: 30, maxHeartsPerRun: 2, heartsPerCycle: 2,
   /** The most coins a run can count (bounds what a save can claim). */
   maxCoins: 5000,
 } as const;
@@ -139,7 +142,7 @@ export const RUN_SETTINGS: readonly RunSetting[] = ['grotte', 'pont', 'montagne'
 export type RunPower = keyof typeof BENNY_RUN.powers;
 export const RUN_POWERS = Object.keys(BENNY_RUN.powers) as RunPower[];
 export type RunFoe = 'dragonnet' | 'chest' | 'ember' | 'flyer';
-export type RunKind = 'coin' | 'wallCoin' | 'power' | 'pot' | 'barrier' | 'beam' | 'pillar' | 'hole' | 'fireball' | 'spring' | RunFoe;
+export type RunKind = 'coin' | 'wallCoin' | 'heart' | 'power' | 'pot' | 'barrier' | 'beam' | 'pillar' | 'hole' | 'fireball' | 'spring' | RunFoe;
 /** The creatures on the ground; the little flying monster (`flyer`) comes on top. */
 export const RUN_FOES: readonly RunFoe[] = ['dragonnet', 'chest', 'ember'];
 export type RunInput = 'left' | 'right' | 'up' | 'down';
@@ -154,6 +157,8 @@ export type RunEvent =
   | {type: 'strike'; entity: RunEntity; points: number; combo: number; multiplier: number; by: StrikeKind; roll?: number}
   | {type: 'crash'; entity: RunEntity}
   | {type: 'coin'; entity: RunEntity; amount: number}
+  /** A Heart picked up on the road (`hearts` of the run now). */
+  | {type: 'heart'; entity: RunEntity}
   /** Passed over or under unharmed; `points` for a barrier jumped or a beam rolled under. */
   | {type: 'cleared'; entity: RunEntity; points?: number}
   | {type: 'bump'; entity: RunEntity}
@@ -240,7 +245,7 @@ export interface BennyRun {
   stumbleUntil: number; lastBumpAt: number | null;
   /** The power under way (a new one replaces it). */
   active: {power: RunPower; until: number} | null;
-  score: number; coins: number; pots: number; goldPots: number; foes: number; wallRuns: number;
+  score: number; coins: number; hearts: number; pots: number; goldPots: number; foes: number; wallRuns: number;
   /** Barriers jumped and beams rolled under. */
   dodges: number;
   /** Leaps from one wall to the other. */
@@ -323,7 +328,7 @@ export function startBennyRun(now: number, seed = Math.floor(Math.random() * 214
     airFrom: 0, airUntil: 0, bounceUntil: -1, jumpFrom: 0, pound: false, poundFrom: 0, slideUntil: 0, wall: null,
     entities: [], nextId: 1, nextSpawnZ: C.firstAt, walls: [], wallsTo: {left: 0, right: 0}, holes: [],
     setting: 'grotte', nextSettingAt: 0, upcoming: null, stumbleUntil: 0, lastBumpAt: null,
-    active: null, score: 0, coins: 0, pots: 0, goldPots: 0, foes: 0, wallRuns: 0, dodges: 0, leaps: 0, combo: 0, comboUntil: 0, bestCombo: 0,
+    active: null, score: 0, coins: 0, hearts: 0, pots: 0, goldPots: 0, foes: 0, wallRuns: 0, dodges: 0, leaps: 0, combo: 0, comboUntil: 0, bestCombo: 0,
     challenge: null, challengesDone: 0, nextChallengeAt: now + C.challengeFirstMs,
     over: false, events: [], queuedJumpUntil: 0, paceFrom: now, tutorial: tutorial ? {step: 0, ids: [], tries: 0, struck: 0} : null,
   };
@@ -663,6 +668,10 @@ function spawn(g: BennyRun): void {
     // Laid out with the lanes the road has there.
     const real = g.lanes; g.lanes = lanesAt(g, z);
     const end = layPattern(g, choosePattern(g, z), z), d = runDifficulty(g);
+    // Now and then a Heart rides the road just past the pattern, in a lane of the road there. Worked out from where the pattern
+    // ends, not drawn, so that the run's other draws (and the runs already tuned) stay the same.
+    const tick = Math.floor(end * 10);
+    if (z > C.heartFrom && tick % C.heartEvery === 0) add(g, 'heart', Math.floor(tick / C.heartEvery) % g.lanes, end + 1);
     g.lanes = real;
     const gap = C.gapStart - (C.gapStart - C.gapMin) * d - C.overtimeGap * runOvertime(g);
     g.nextSpawnZ = end + gap * (.85 + random(g) * .3);
@@ -813,6 +822,11 @@ function meet(g: BennyRun, e: RunEntity): void {
   if (e.kind === 'power') {
     // Picked up on the ground, in the air or flying, never from a wall; it works at once.
     if (e.lane === g.lane && !g.wall && e.power) { g.entities = g.entities.filter(o => o !== e); usePower(g, e.power); }
+    return;
+  }
+  if (e.kind === 'heart') {
+    // A Heart on the road: picked up in her lane on the ground or in the air, never from a wall.
+    if (e.lane === g.lane && !g.wall) { g.entities = g.entities.filter(o => o !== e); g.hearts++; g.events.push({type: 'heart', entity: e}); }
     return;
   }
   if (e.kind === 'coin') {
@@ -1032,6 +1046,6 @@ export function takeRunEvents(g: BennyRun): RunEvent[] { const e = g.events; g.e
 
 /** The longest distance a saved run may claim: an hour at full speed, far beyond any real run. */
 export const BENNY_RUN_MAX_METRES = 24 * 3600;
-export interface RunSummary {score: number; bySetting: Record<RunSetting, number>; metres: number; coins: number; pots: number; goldPots: number; foes: number; wallRuns: number; leaps: number; dodges: number; bestCombo: number; seconds: number; challenges: number}
-export const runSummary = (g: BennyRun): RunSummary => ({score: g.score, bySetting: (shareScore(g), {...g.scoreBy}), metres: Math.floor(g.distance), coins: g.coins, pots: g.pots, goldPots: g.goldPots, foes: g.foes,
+export interface RunSummary {score: number; bySetting: Record<RunSetting, number>; metres: number; coins: number; hearts: number; pots: number; goldPots: number; foes: number; wallRuns: number; leaps: number; dodges: number; bestCombo: number; seconds: number; challenges: number}
+export const runSummary = (g: BennyRun): RunSummary => ({score: g.score, bySetting: (shareScore(g), {...g.scoreBy}), metres: Math.floor(g.distance), coins: g.coins, hearts: g.hearts, pots: g.pots, goldPots: g.goldPots, foes: g.foes,
   wallRuns: g.wallRuns, leaps: g.leaps, dodges: g.dodges, bestCombo: g.bestCombo, seconds: Math.floor((g.at - g.startedAt) / 1000), challenges: g.challengesDone});

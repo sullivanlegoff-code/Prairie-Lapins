@@ -16,8 +16,8 @@ function game(): GameState {
   throw Error('no place for the lair');
 }
 /** One finished run paying `coins`, at `now`. */
-function finish(s: GameState, coins: number, now: number = s.lastSimulatedAt) {
-  const r = act(s, {type: 'finishBennyRun', score: 1000, metres: 500, coins}, now); if (!r.ok) throw Error(r.reason); return r;
+function finish(s: GameState, coins: number, now: number = s.lastSimulatedAt, hearts = 0) {
+  const r = act(s, {type: 'finishBennyRun', score: 1000, metres: 500, coins, hearts}, now); if (!r.ok) throw Error(r.reason); return r;
 }
 
 describe('the coins of « Cours cours Benny ! » are pattes', () => {
@@ -35,7 +35,7 @@ describe('the coins of « Cours cours Benny ! » are pattes', () => {
     for (let i = 0; i < BENNY_RUN.rewardedRunsPerCycle; i++) s = finish(s, 10).state;
     expect(s.pattes).toBe(start + 10 * BENNY_RUN.rewardedRunsPerCycle);
     const extra = finish(s, 100); expect(extra.state.pattes).toBe(s.pattes); expect(extra.value).toBe(0);
-    expect(extra.state.bennyRun?.best).toBe(1000); expect(extra.state.bennyRun?.day).toEqual({cycle: expect.any(Number), rewarded: BENNY_RUN.rewardedRunsPerCycle});
+    expect(extra.state.bennyRun?.best).toBe(1000); expect(extra.state.bennyRun?.day).toEqual({cycle: expect.any(Number), rewarded: BENNY_RUN.rewardedRunsPerCycle, hearts: 0});
   });
   it('starts again the next day', () => {
     let s = game();
@@ -64,9 +64,23 @@ describe('the coins of « Cours cours Benny ! » are pattes', () => {
     const future = JSON.parse(encodeGame(done)); future.bennyRun.day.cycle = 999999;
     expect(decodeGame(JSON.stringify(future)).ok).toBe(false);
   });
+  it('pays the Hearts won on the road, at most maxHeartsPerRun a run and heartsPerCycle a day', () => {
+    let s = game(); const hearts = s.hearts;
+    s = finish(s, 5, s.lastSimulatedAt, BENNY_RUN.maxHeartsPerRun).state;
+    expect(s.hearts).toBe(hearts + BENNY_RUN.maxHeartsPerRun);
+    // The day's Hearts are used up in the second run if it takes more than what is left.
+    s = finish(s, 5, s.lastSimulatedAt, BENNY_RUN.maxHeartsPerRun).state;
+    expect(s.hearts).toBe(hearts + BENNY_RUN.heartsPerCycle); expect(s.bennyRun?.day?.hearts).toBe(BENNY_RUN.heartsPerCycle);
+    s = finish(s, 5, s.lastSimulatedAt, 1).state;
+    expect(s.hearts).toBe(hearts + BENNY_RUN.heartsPerCycle);
+  });
+  it('refuses more Hearts in a run than the road can give', () => {
+    const s = game();
+    expect(act(s, {type: 'finishBennyRun', score: 1, metres: 1, hearts: BENNY_RUN.maxHeartsPerRun + 1}, s.lastSimulatedAt)).toMatchObject({ok: false, reason: 'INVALID_CHOICE'});
+  });
   it('counts whole coins only, from the rules', () => {
     const s = game();
-    expect(bennyRunReward(s, 12.9, s.lastSimulatedAt)).toEqual({pattes: 12, rewarded: true});
+    expect(bennyRunReward(s, 12.9, 0, s.lastSimulatedAt)).toEqual({pattes: 12, hearts: 0, rewarded: true});
     expect(BALANCE.buildings.lair.price).toBe(100_000);
   });
 });

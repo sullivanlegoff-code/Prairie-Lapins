@@ -158,7 +158,7 @@ const current = z.object({
     // The most points won in one setting during a run (added later: optional, older saves have none).
     settings: z.object({grotte: integer.max(BENNY_RUN.maxScore).optional(), pont: integer.max(BENNY_RUN.maxScore).optional(), montagne: integer.max(BENNY_RUN.maxScore).optional()}).strict().optional(),
     // The rewarded runs of one daily cycle (added with the run's rewards: optional, older saves have none).
-    day: z.object({cycle: integer, rewarded: integer.max(BENNY_RUN.rewardedRunsPerCycle)}).strict().optional()}).strict().optional(),
+    day: z.object({cycle: integer, rewarded: integer.max(BENNY_RUN.rewardedRunsPerCycle), hearts: integer.max(BENNY_RUN.heartsPerCycle).optional()}).strict().optional()}).strict().optional(),
   affectionGifts: z.record(identity, integer).optional(),
   picnicCycle: integer.optional(),
   // The Terrain de corde à sauter (v23, optional): the last rewarded cycle, its rewarded games and Heart, and the record.

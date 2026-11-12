@@ -636,16 +636,17 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       case 'finishBennyRun': {
         // « Cours cours Benny ! » pays its coins as pattes (within the daily limit) and keeps the record. No XP.
         requireRule(s.buildings.some(b => b.kind === 'lair'), 'NOT_FOUND'); requireRule(hasBenny(s), 'BENNY_REQUIRED');
-        const coins = command.coins ?? 0;
+        const coins = command.coins ?? 0, hearts = command.hearts ?? 0;
         requireRule(Number.isSafeInteger(coins) && coins >= 0 && coins <= BENNY_RUN.maxCoins, 'INVALID_CHOICE');
+        requireRule(Number.isSafeInteger(hearts) && hearts >= 0 && hearts <= BENNY_RUN.maxHeartsPerRun, 'INVALID_CHOICE');
         requireRule([command.score, command.metres].every(n => Number.isSafeInteger(n) && n >= 0) && command.score <= BENNY_RUN.maxScore && command.metres <= BENNY_RUN_MAX_METRES, 'INVALID_CHOICE');
         const by = command.bySetting ?? {}, kinds = ['grotte', 'pont', 'montagne'] as const;
         requireRule(Object.keys(by).every(k => (kinds as readonly string[]).includes(k)) && Object.values(by).every(n => Number.isSafeInteger(n) && n! >= 0 && n! <= command.score), 'INVALID_CHOICE');
         const settings = {...s.bennyRun?.settings}; for (const k of kinds) if ((by[k] ?? 0) > (settings[k] ?? 0)) settings[k] = by[k];
-        const paid = bennyRunReward(s, coins, time), cycle = giftCycle(s, time), previousDay = s.bennyRun?.day;
+        const paid = bennyRunReward(s, coins, hearts, time), cycle = giftCycle(s, time), previousDay = s.bennyRun?.day;
         const today = previousDay?.cycle === cycle ? previousDay : undefined;
-        credit('pattes', paid.pattes);
-        const day = paid.rewarded ? {cycle, rewarded: (today?.rewarded ?? 0) + 1} : today;
+        credit('pattes', paid.pattes); credit('hearts', paid.hearts);
+        const day = paid.rewarded ? {cycle, rewarded: (today?.rewarded ?? 0) + 1, hearts: (today?.hearts ?? 0) + paid.hearts} : today;
         s.bennyRun = {best: Math.max(s.bennyRun?.best ?? 0, command.score), metres: Math.max(s.bennyRun?.metres ?? 0, command.metres), ...(Object.keys(settings).length ? {settings} : {}), ...(day ? {day} : {})};
         value = paid.pattes; break;
       }

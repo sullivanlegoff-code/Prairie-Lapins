@@ -594,4 +594,11 @@ describe('golden pots', () => {
     place(g, 'pot', 1, 3, {gold: true}); runInput(g, g.at, 'down');
     expect(g.score).toBe(C.points.pot * C.goldPot); expect(g.pots).toBe(1); expect(runSummary(g).goldPots).toBe(1);
   });
+  it('picks up a Heart in its lane, and passes one in another lane', () => {
+    const g = quiet(); run(g, C.introMs);
+    place(g, 'heart', g.lane, 3); run(g, 500);
+    expect(g.hearts).toBe(1); expect(types(g)).toContain('heart'); expect(runSummary(g).hearts).toBe(1);
+    place(g, 'heart', g.lane === 0 ? 1 : 0, 3); run(g, 500);
+    expect(g.hearts).toBe(1);
+  });
 });

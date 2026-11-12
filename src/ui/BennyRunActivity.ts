@@ -662,6 +662,15 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         ellipse(x, y - h / 2, w / 2, h / 2, '#e8461a'); ellipse(x + Math.cos(turn) * w * .15, y - h / 2 + Math.sin(turn) * h * .15, w * .22, h * .22, '#ffd24a');
         return true;
       }
+      case 'heart': {
+        // A Heart floating above the road, bobbing: red, with a white shine.
+        const cy = y - h / 2 + Math.sin(at / 180 + e.id) * h * .08, r = w * .3;
+        c.beginPath(); c.moveTo(x, cy + r * 1.1);
+        c.bezierCurveTo(x - r * 2.2, cy + r * .2, x - r * 1.2, cy - r * 1.6, x, cy - r * .5);
+        c.bezierCurveTo(x + r * 1.2, cy - r * 1.6, x + r * 2.2, cy + r * .2, x, cy + r * 1.1);
+        c.closePath(); c.fillStyle = '#ff4d6d'; c.fill(); c.strokeStyle = '#7a0f2b'; c.lineWidth = Math.max(1, r * .18); c.stroke();
+        ellipse(x - r * .7, cy - r * .3, r * .28, r * .2, 'rgba(255,255,255,.85)'); return true;
+      }
       case 'coin': case 'wallCoin': {
         // While coins count double: a white halo that pulses around each one.
         if (game && powerActive(game, 'double')) { const k = .5 + .5 * Math.sin(at / 110 + e.id); ellipse(x, y - h / 2, w * (.62 + .1 * k), h * (.62 + .1 * k), `rgba(255,255,255,${.35 + .3 * k})`); }
@@ -869,6 +878,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'bump': cleared.set(event.entity.cart ? 'cart' : event.entity.kind, 0); if (event.entity.kind !== 'hole') flash('Aïe ! La Dragon arrive !'); hurtAt = clock(); shakeFor('bump'); sound('bump'); break;
       case 'shield': flash('La bulle te protège !'); burst(width / 2, height * .7, ['#e7d1ff', '#b07bff', '#fff'], 16, 260); sound('power'); break;
       case 'power': flash(`${POWER_NAMES[event.power]} !`); sound('power'); break;
+      case 'heart': flash('+1 Cœur !'); burst(width / 2, height * .7, ['#ff4d6d', '#ffd1dc', '#fff'], 14, 240); sound('power', 1.5); break;
       case 'wallStart': sound('wall', event.side === 'left' ? .94 : 1.06); break;
       case 'cleared': { const k = event.entity.cart ? 'cart' : event.entity.kind; cleared.set(k, (cleared.get(k) ?? 0) + 1); }
         if (event.points) { const p = screenOf(g, event.entity); flashes.push({at: clock(), text: `+${event.points}`, x: p.x}); burst(p.x, p.y - 10, ['#fff', '#ffe66b'], 6, 160); sound('dodge', .95 + Math.random() * .1); }
@@ -1032,7 +1042,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const again = button('Rejouer', () => start(), 'bennyRunAgain');
     // The score big, then the run's figures two by two.
     const stats = document.createElement('ul'); stats.className = 'benny-run-stats';
-    for (const line of [`${s.metres} m`, plural(s.coins, 'pièce'), plural(s.pots, 'pot') + (s.goldPots ? ` (${plural(s.goldPots, 'doré')})` : ''), plural(s.foes, 'créature'), plural(s.wallRuns, 'mur'), plural(s.leaps, 'bond'), plural(s.dodges, 'esquive'), plural(s.challenges, 'défi'),
+    for (const line of [`${s.metres} m`, plural(s.coins, 'pièce'), ...(s.hearts ? [plural(s.hearts, 'cœur')] : []), plural(s.pots, 'pot') + (s.goldPots ? ` (${plural(s.goldPots, 'doré')})` : ''), plural(s.foes, 'créature'), plural(s.wallRuns, 'mur'), plural(s.leaps, 'bond'), plural(s.dodges, 'esquive'), plural(s.challenges, 'défi'),
       `combo max ${s.bestCombo}`, `${Math.floor(s.seconds / 60)} min ${String(s.seconds % 60).padStart(2, '0')} s`]) { const li = document.createElement('li'); li.textContent = line; stats.append(li); }
     // The points won in each setting crossed (the best one first).
     const parts = (Object.keys(s.bySetting) as RunSetting[]).filter(k => s.bySetting[k] > 0).sort((a, b) => s.bySetting[b] - s.bySetting[a]);
