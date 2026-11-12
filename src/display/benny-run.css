@@ -13,6 +13,9 @@
 .benny-run-metres { flex: 1; text-align: right; }
 .benny-run-top button { pointer-events: auto; min-height: 44px; padding: 0 14px; border-radius: 14px; border: 2px solid #6b5a3a; background: #fff8e8; font-weight: 800; }
 .benny-run-power { color: #e7d1ff !important; order: 10; flex-basis: 100%; font-size: .95rem; }
+.benny-run-power.benny-run-ending { animation: benny-run-blink .3s steps(2, jump-none) infinite; }
+@keyframes benny-run-blink { 0% { opacity: 1; } 100% { opacity: .3; } }
+@media (prefers-reduced-motion: reduce) { .benny-run-power.benny-run-ending { animation: none; opacity: .6; } }
 .benny-run-canvas { flex: 1; width: 100%; min-height: 0; display: block; }
 .benny-run-pop { position: absolute; z-index: 5; left: 0; right: 0; top: 34%; margin: 0; text-align: center; font-size: 1.7rem; font-weight: 800; color: #fff; -webkit-text-stroke: 1px #3b2414; paint-order: stroke fill; opacity: 0; pointer-events: none; }
 .benny-run-pop.show { animation: benny-run-pop .9s ease-out; }

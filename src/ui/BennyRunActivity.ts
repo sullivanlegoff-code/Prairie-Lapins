@@ -28,6 +28,8 @@ const CHALLENGE_TEXT: Record<ChallengeKind, (goal: number) => string> = {
 };
 /** A hint the first time each newer obstacle comes into sight (once per device). */
 const FLASH_READ = 550;
+/** A power's last moments (ms): its line and its aura blink. */
+const POWER_ENDING = 1000;
 /** The obstacles' words (« saute », « roulade ») stay until she has got past that kind this many times in the run. */
 const LABEL_UNTIL = 3;
 const HINTS = {
@@ -218,6 +220,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     metres.textContent = `${Math.floor(g.distance)} m`; coins.textContent = `${g.coins}`; coins.setAttribute('aria-label', plural(g.coins, 'pièce'));
     const active = g.active && g.at < g.active.until ? g.active : null;
     powerLine.textContent = active ? `${POWER_NAMES[active.power]} · ${Math.ceil((active.until - g.at) / 1000)} s` : '';
+    // Its last second: the line blinks (and Benny's aura too), so its end is no surprise.
+    powerLine.classList.toggle('benny-run-ending', !!active && active.until - g.at < POWER_ENDING);
     // After a bump: how long the Dragon stays on Benny's tail (a second bump meanwhile ends the run).
     const left = g.lastBumpAt === null || g.tutorial ? 0 : BENNY_RUN.dragonMs - (g.at - g.lastBumpAt);
     danger.hidden = left <= 0 || g.over;
@@ -639,9 +643,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         c.fillStyle = '#f2b8a0'; c.beginPath(); c.ellipse(0, -.26 * s, w * .05, .22 * s, 0, 0, Math.PI * 2); c.fill(); c.restore(); }
     } else { c.fillStyle = '#7d6a5a'; c.fillRect(-w * .28, -h / 2 - .2 * s, w * .14, .25 * s); c.fillRect(w * .14, -h / 2 - .2 * s, w * .14, .25 * s); }
     c.fillStyle = '#fff8ee'; c.beginPath(); c.arc(0, h * .3, w * .14, 0, Math.PI * 2); c.fill();
+    const fading = g.active !== null && g.active.until - g.at < POWER_ENDING && Math.floor(now / 90) % 2 === 1;
     // Charging: a fiery aura that flickers.
-    if (powerActive(g, 'dash')) { c.strokeStyle = `rgba(255,${120 + Math.floor(Math.sin(now / 40) * 40)},40,.85)`; c.lineWidth = 5; c.beginPath(); c.ellipse(0, h * .1, w * .8, h * .7, 0, 0, Math.PI * 2); c.stroke(); }
-    if (powerActive(g, 'bubble')) { c.strokeStyle = 'rgba(180,140,255,.8)'; c.lineWidth = 4; c.beginPath(); c.arc(0, 0, w * .85, 0, Math.PI * 2); c.stroke(); }
+    if (powerActive(g, 'dash') && !fading) { c.strokeStyle = `rgba(255,${120 + Math.floor(Math.sin(now / 40) * 40)},40,.85)`; c.lineWidth = 5; c.beginPath(); c.ellipse(0, h * .1, w * .8, h * .7, 0, 0, Math.PI * 2); c.stroke(); }
+    if (powerActive(g, 'bubble') && !fading) { c.strokeStyle = 'rgba(180,140,255,.8)'; c.lineWidth = 4; c.beginPath(); c.arc(0, 0, w * .85, 0, Math.PI * 2); c.stroke(); }
     c.restore();
     if (!inAir(g) && !wall && !powerActive(g, 'flight')) { c.fillStyle = 'rgba(0,0,0,.18)'; c.beginPath(); c.ellipse(p.x, project(x, 0, floorHeight(g)).y, w * .55, s * .12, 0, 0, Math.PI * 2); c.fill(); }
     // The shock wave: a golden ring spreading on the road around her.
