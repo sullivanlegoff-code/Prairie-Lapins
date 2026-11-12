@@ -47,10 +47,13 @@ const SWIPE = 18, FLICK = 10;
 /** Without lifting the finger, the same swipe again needs this many times the swipe distance. */
 const SAME_AGAIN = 3;
 export type RunSound = 'strike' | 'pot' | 'coin' | 'bump' | 'jump' | 'roll' | 'shock' | 'wall' | 'power' | 'caught' | 'dodge' | 'rumble' | 'whoosh' | 'land' | 'sizzle';
-/** Feedback: a strike freezes the game for `HIT_STOP` ms; shakes last their `ms` with this many pixels at most. */
+/**
+ * Feedback: striking a creature freezes the game for `HIT_STOP` ms, at most once every `HIT_STOP_GAP` ms (a pot never: a roll through
+ * a row of them stays smooth); shakes last their `ms` with this many pixels at most.
+ */
 /** A big moment (shock wave, spin, a flying pot bowling a creature over) plays in slow motion at this rate for a moment. */
 const SLOW_RATE = .35;
-const HIT_STOP = 45, SHAKES = {strike: {ms: 90, px: 3}, bump: {ms: 260, px: 9}, shock: {ms: 320, px: 11}} as const;
+const HIT_STOP = 40, HIT_STOP_GAP = 400, SHAKES = {strike: {ms: 90, px: 3}, bump: {ms: 260, px: 9}, shock: {ms: 320, px: 11}} as const;
 const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? 's' : ''}`;
 
 export function mountBennyRunActivity(host: HTMLElement, options: {
@@ -96,8 +99,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (bits.length > 160) bits = bits.slice(-160);
   }
   /** A short freeze on a strike, so that the hit lands (the game clock stops, the drawing goes on). */
+  let lastStopAt = -1e9;
   function hitStop(ms = HIT_STOP): void {
-    if (!running) return;
+    if (!running || performance.now() - lastStopAt < HIT_STOP_GAP) return;
+    lastStopAt = performance.now();
     time.pause(); clearTimeout(stopTimer);
     stopTimer = setTimeout(() => { if (running) time.resume(); }, ms);
   }
@@ -784,7 +789,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         if (event.multiplier > 1 && event.combo === (event.multiplier - 1) * BENNY_RUN.comboStep + 1) { flash(`Combo ×${event.multiplier} !`); sound('power'); }
         // A creature lands harder than a pot: a longer freeze, a bigger ring.
         rings.push({x: p.x, y: p.y - p.s * .4, at: clock(), size: p.s * (event.entity.kind === 'pot' ? .9 : 1.4)});
-        shakeFor('strike'); hitStop(event.entity.kind === 'pot' ? HIT_STOP : HIT_STOP + 30); break;
+        shakeFor('strike'); if (event.entity.kind !== 'pot') hitStop(); break;
       }
       case 'crash': { const p = screenOf(g, event.entity); burst(p.x, p.y, ['#c96b3a', '#8a4a26'], 8, 180); sound('pot'); break; }
       case 'coin': if (clock() - lastCoinSound > 60) { coinRun = clock() - lastCoinSound < 450 ? Math.min(12, coinRun + 1) : 0; lastCoinSound = clock(); sound('coin', 2 ** (coinRun / 24)); } break;
