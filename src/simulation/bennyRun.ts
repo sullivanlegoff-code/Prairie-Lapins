@@ -132,7 +132,7 @@ export type RunKind = 'coin' | 'wallCoin' | 'power' | 'pot' | 'barrier' | 'beam'
 export const RUN_FOES: readonly RunFoe[] = ['dragonnet', 'chest', 'ember'];
 export type RunInput = 'left' | 'right' | 'up' | 'down';
 export type Side = 'left' | 'right';
-export type StrikeKind = 'lane' | 'spin' | 'slide' | 'jump' | 'pound' | 'shock' | 'throw' | 'dash';
+export type StrikeKind = 'lane' | 'spin' | 'slide' | 'jump' | 'pound' | 'shock' | 'throw' | 'dash' | 'wall';
 
 /** A thing on the road. `lane` is 0 to `lanes - 1`; a wall coin's lane is -1 (left wall) or `lanes` (right wall). */
 /** A thing on the road; `up` is how high a coin floats (a coin arc over a barrier), for the drawing only. */
@@ -481,7 +481,8 @@ function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
     case 'wallTrail': {
       // A long trail of coins up a wall, and below it a slalom of pots and barriers: the wall is the way for the coins.
       const side = trailSide(g, z)!, edge = side === 'left' ? 0 : g.lanes - 1;
-      for (let k = 0; k <= 27; k += 3) add(g, 'wallCoin', wallLane(g, side), z + k);
+      // Two pots hang on the wall among the coins: running along it breaks them, and the combo climbs up there too.
+      for (let k = 0; k <= 27; k += 3) add(g, k === 9 || k === 21 ? 'pot' : 'wallCoin', wallLane(g, side), z + k, k === 9 || k === 21 ? {up: 1.5} : {});
       for (let k = 6; k <= 24; k += 9) { add(g, 'pot', edge, z + k); for (const l of all) if (l !== edge && random(g) < .5) add(g, 'barrier', l, z + k + 4); }
       return z + 28;
     }
@@ -709,7 +710,7 @@ function strike(g: BennyRun, e: RunEntity, by: StrikeKind): void {
   } else { g.foes++; gainCoins(g, e, 2); }
   g.events.push({type: 'strike', entity: e, points, combo: g.combo, multiplier, by});
   // A pot struck flies on along its lane (not one broken by a ground charge or its shock wave, nor one a flying pot knocks over).
-  if (e.kind === 'pot' && by !== 'pound' && by !== 'shock' && by !== 'throw' && by !== 'dash') add(g, 'thrownPot', e.lane, Math.max(e.z, g.distance + .5), {flyTo: Math.max(e.z, g.distance) + C.throwRange});
+  if (e.kind === 'pot' && by !== 'pound' && by !== 'shock' && by !== 'throw' && by !== 'dash' && by !== 'wall') add(g, 'thrownPot', e.lane, Math.max(e.z, g.distance + .5), {flyTo: Math.max(e.z, g.distance) + C.throwRange});
 }
 /** The flying pots: like a bowling ball, each knocks over every pot and creature it reaches in its lane, then breaks at the end of its run. */
 function flyPots(g: BennyRun, dt: number): void {
@@ -768,6 +769,8 @@ function endWall(g: BennyRun): void {
 
 /** What happens when a thing reaches Benny without having been struck. */
 function meet(g: BennyRun, e: RunEntity): void {
+  // A pot on a wall: broken by running along that wall, otherwise left behind.
+  if (e.kind === 'pot' && (e.lane < 0 || e.lane >= g.lanes)) { if (g.wall && wallLane(g, g.wall.side) === e.lane) strike(g, e, 'wall'); return; }
   if (e.kind === 'wallCoin') {
     if (g.wall && wallLane(g, g.wall.side) === e.lane) { g.entities = g.entities.filter(o => o !== e); gainCoins(g, e, 1); g.wall.coins = (g.wall.coins ?? 0) + 1; }
     return;

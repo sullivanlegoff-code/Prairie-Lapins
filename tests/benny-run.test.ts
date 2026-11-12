@@ -488,6 +488,14 @@ describe('Cours cours Benny ! rules', () => {
     run(g, 500); expect(takeRunEvents(g).filter(e => e.type === 'km')).toEqual([{type: 'km', km: 1, points: C.points.km}]); expect(g.score).toBe(score + C.points.km);
     g.distance = 1999.5; run(g, 300); expect(g.kms).toBe(2); expect(g.score).toBe(score + 3 * C.points.km);
   });
+  it('breaks the pots hanging on a wall by running along it, and leaves them be from the road', () => {
+    const g = quiet(); runInput(g, g.at, 'left'); runInput(g, g.at, 'left'); expect(g.wall?.side).toBe('left');
+    place(g, 'pot', -1, 3, {up: 1.5}); place(g, 'pot', g.lanes, 3, {up: 1.5}); takeRunEvents(g);
+    run(g, 600);
+    const strikes = takeRunEvents(g).filter(e => e.type === 'strike');
+    expect(strikes.map(e => e.type === 'strike' && e.by)).toEqual(['wall']); expect(g.pots).toBe(1);
+    expect(g.entities.some(e => e.kind === 'thrownPot')).toBe(false); expect(g.lastBumpAt).toBeNull();
+  });
   it('glides down at the end of a flight, onto a clear spot', () => {
     const g = quiet(); run(g, C.introMs); g.active = {power: 'flight', until: g.at + 300};
     run(g, 200); place(g, 'pillar', 1, 8); place(g, 'coin', 1, 9);
