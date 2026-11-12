@@ -25,6 +25,14 @@ describe('« Cours cours Benny ! » screen', () => {
     key('ArrowLeft'); expect(g.lane).toBe(0);
     key('ArrowUp'); expect(sounds).toContain('jump');
   });
+  it('draws ahead of the last rule step but leaves the run itself on its steps', () => {
+    const {activity, step} = mount(50);
+    document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);
+    const g = activity.game!, steps = (g.at - g.startedAt) / (1000 / 120);
+    step(16 * 7);
+    const after = (g.at - g.startedAt) / (1000 / 120);
+    expect(Math.abs(after - Math.round(after))).toBeLessThan(1e-6); expect(Math.round(after - steps)).toBeGreaterThanOrEqual(13);
+  });
   it('shows the Dragon’s countdown after a bump, then a short scene a tap skips, then the score card', () => {
     const {activity, step, finished} = mount(50);
     document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);

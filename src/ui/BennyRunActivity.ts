@@ -845,8 +845,19 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (!running || !game) return;
     const now = clock();
     if (now < slowUntil) slowLost += Math.min(50, Math.max(0, now - lastLoopAt)) * (1 - SLOW_RATE);
-    lastLoopAt = now; watchFrames(now); advanceBennyRun(game, gameTime()); react(); announceHoles(game); hud(); draw(now);
+    lastLoopAt = now; watchFrames(now); advanceBennyRun(game, gameTime()); react(); announceHoles(game); hud(); drawAhead(now);
     if (running) frame(loop);
+  }
+  /**
+   * The rules move in steps of 1/120 s, the screen at its own pace: a frame drawn at the last step would move the road by one,
+   * two or three steps (a jolt of up to half the speed, every few frames, worse on a 120 Hz screen). So the picture is drawn
+   * where the run is at this very moment: the time and the road carried on by what is left over (under a step), then put back.
+   */
+  function drawAhead(now: number): void {
+    const g = game; if (!g) return;
+    const lead = g.over ? 0 : Math.min(BENNY_RUN.step, Math.max(0, gameTime() - g.at)), at = g.at, distance = g.distance;
+    g.at += lead; g.distance += g.speed * lead / 1000;
+    try { draw(now); } finally { g.at = at; g.distance = distance; }
   }
   function input(gesture: RunInput): void {
     if (!running || !game || sideways()) return;
