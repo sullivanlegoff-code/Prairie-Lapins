@@ -156,7 +156,9 @@ const current = z.object({
   // v29: the record of « Cours cours Benny ! », played from the Antre du dragon.
   bennyRun: z.object({best: integer.max(BENNY_RUN.maxScore), metres: integer.max(BENNY_RUN_MAX_METRES),
     // The most points won in one setting during a run (added later: optional, older saves have none).
-    settings: z.object({grotte: integer.max(BENNY_RUN.maxScore).optional(), pont: integer.max(BENNY_RUN.maxScore).optional(), montagne: integer.max(BENNY_RUN.maxScore).optional()}).strict().optional()}).strict().optional(),
+    settings: z.object({grotte: integer.max(BENNY_RUN.maxScore).optional(), pont: integer.max(BENNY_RUN.maxScore).optional(), montagne: integer.max(BENNY_RUN.maxScore).optional()}).strict().optional(),
+    // The rewarded runs of one daily cycle (added with the run's rewards: optional, older saves have none).
+    day: z.object({cycle: integer, rewarded: integer.max(BENNY_RUN.rewardedRunsPerCycle)}).strict().optional()}).strict().optional(),
   affectionGifts: z.record(identity, integer).optional(),
   picnicCycle: integer.optional(),
   // The Terrain de corde à sauter (v23, optional): the last rewarded cycle, its rewarded games and Heart, and the record.
@@ -203,6 +205,7 @@ const schema = current.superRefine((s, context) => {
     (d.bonusClaimed && d.claimed.length !== DAILY_PICK_COUNT) || (d.picked && d.claimed.some(id => !d.picked!.includes(id)))) issue('Daily claims');
   if (m.streak && m.streak.lastCycle > d.cycleIndex) issue('Future daily streak');
   if (s.salonHearts && s.salonHearts.cycle > d.cycleIndex) issue('Future salon cycle');
+  if (s.bennyRun?.day && s.bennyRun.day.cycle > d.cycleIndex) issue('Future run cycle');
   if (s.bennyFlight && s.bennyFlight.cycle > d.cycleIndex) issue('Future flight cycle');
   {
     const seen = new Set<string>();

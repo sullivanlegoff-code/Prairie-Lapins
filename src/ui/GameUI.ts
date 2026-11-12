@@ -74,7 +74,8 @@ import {availableChristmasRewards, candiesOf, christmasBonusClaimed, christmasBo
 import {mountSkyGiftsActivity} from './SkyGiftsActivity';
 import {mountBennyFlightActivity} from './BennyFlightActivity';
 import {BENNY_RUN_SETTING_SHORT, mountBennyRunActivity} from './BennyRunActivity';
-import {RUN_SETTINGS as BENNY_RUN_SETTINGS} from '../simulation/bennyRun';
+import {BENNY_RUN, RUN_SETTINGS as BENNY_RUN_SETTINGS} from '../simulation/bennyRun';
+import {bennyRunDay} from '../simulation/bennyRunRewards';
 import {LAIR_ART} from '../config/lairArt';
 import {bennyFlightDay, bennyFlightReason, hasBenny} from '../simulation/bennyFlight';
 import {DEBRIS_NAMES} from '../simulation/debris';
@@ -291,11 +292,13 @@ export class GameUI {
     best: () => this.controller.getSnapshot().state?.bennyFlight?.best ?? 0, onExit: () => this.render()});
     this.bennyRun = mountBennyRunActivity(document.getElementById('app')!, {onFinished: summary => {
       const before = this.controller.getSnapshot().state?.bennyRun?.settings ?? {};
-      const saved = this.controller.perform({type: 'finishBennyRun', score: summary.score, metres: summary.metres, bySetting: summary.bySetting});
+      const saved = this.controller.perform({type: 'finishBennyRun', score: summary.score, metres: summary.metres, bySetting: summary.bySetting, coins: summary.coins});
       if (!saved.ok) return `Record non enregistré : ${REFUSALS[saved.reason]}`;
-      // A setting's record beaten (once there was one to beat).
+      // The coins paid as pattes (none once today's rewarded runs are used), and a setting's record beaten (once there was one to beat).
+      const pattes = Number(saved.value) > 0 ? `+${saved.value} pattes` : summary.coins ? 'Course pour le plaisir : plus de pattes aujourd’hui' : '';
       const beaten = BENNY_RUN_SETTINGS.filter(k => (before[k] ?? 0) > 0 && summary.bySetting[k] > (before[k] ?? 0));
-      return beaten.length ? `Record de décor battu : ${beaten.map(k => BENNY_RUN_SETTING_SHORT[k]).join(', ')} !` : undefined;
+      const record = beaten.length ? `Record de décor battu : ${beaten.map(k => BENNY_RUN_SETTING_SHORT[k]).join(', ')} !` : '';
+      return [pattes, record].filter(Boolean).join(' · ') || undefined;
     }, best: () => this.controller.getSnapshot().state?.bennyRun?.best ?? 0, bestMetres: () => this.controller.getSnapshot().state?.bennyRun?.metres ?? 0, sound: (kind, pitch) => this.sounds.run(kind, pitch), onExit: () => this.render()});
     this.moveBanner.id = 'rabbit-move-banner'; this.moveBanner.hidden = true;
     this.moveBanner.setAttribute('role', 'region'); this.moveBanner.setAttribute('aria-label', 'Déplacer un lapin');
@@ -1451,10 +1454,11 @@ export class GameUI {
       this.heartsBeforeFlight = state.hearts; this.close(); this.bennyFlight.open(benny);
     }, reason ? REFUSALS[reason] : null);
   }
-  /** The Antre du dragon: the record, then « Cours cours Benny ! » (Benny only; no reward yet). */
+  /** The Antre du dragon: the record, then « Cours cours Benny ! » (Benny only; its coins are pattes, a few runs a day). */
   private renderLair(s: GameState): void {
     const reason = hasBenny(s) ? null : 'BENNY_REQUIRED' as const;
     this.content.append(node('p', 'Benny chipe le trésor de la Lapine Dragon… et la Dragon la poursuit !', 'badge'));
+    this.content.append(node('p', `Tes pièces de course deviennent des pattes : ${bennyRunDay(s, this.now()).rewardedLeft} course(s) récompensée(s) restante(s) aujourd’hui sur ${BENNY_RUN.rewardedRunsPerCycle}.`, 'small'));
     if (s.bennyRun?.best) this.content.append(node('p', `Ton record : ${s.bennyRun.best} · ta plus longue course : ${s.bennyRun.metres} m`, 'small'));
     const decors = BENNY_RUN_SETTINGS.filter(k => (s.bennyRun?.settings?.[k] ?? 0) > 0);
     if (decors.length) this.content.append(node('p', `Records par décor : ${decors.map(k => `${BENNY_RUN_SETTING_SHORT[k]} ${s.bennyRun!.settings![k]}`).join(' · ')}`, 'small'));

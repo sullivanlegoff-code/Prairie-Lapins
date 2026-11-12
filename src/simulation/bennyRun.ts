@@ -125,8 +125,13 @@ export const BENNY_RUN = {
   /** A long tunnel of logs: beams every `burrowStep` m; a roll under one goes on while another is within `burrowKeep` m
    * (one roll for the whole tunnel, a long slide). */
   burrowStep: 2.5, burrowKeep: 3,
-  /** A run never pays: this only bounds what a run can count. */
+  /** A run never pays points: this only bounds what a run can count. */
   maxScore: 9_999_999,
+  /** The coins of a run are pattes (`pattesPerCoin` each), at most `maxPattes` a run, for the first `rewardedRunsPerCycle` runs of
+   * the day (owner, 12 November 2026: « les pièces récoltées comptent pour les pièces du jeu principal »). Runs past that are for the record. */
+  pattesPerCoin: 1, maxPattes: 150, rewardedRunsPerCycle: 3,
+  /** The most coins a run can count (bounds what a save can claim). */
+  maxCoins: 5000,
 } as const;
 
 export type RunSetting = 'grotte' | 'pont' | 'montagne';
