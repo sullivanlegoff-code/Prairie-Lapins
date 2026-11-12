@@ -28,6 +28,8 @@ const CHALLENGE_TEXT: Record<ChallengeKind, (goal: number) => string> = {
 };
 /** A hint the first time each newer obstacle comes into sight (once per device). */
 const FLASH_READ = 550;
+/** The obstacles' words (« saute », « roulade ») stay until she has got past that kind this many times in the run. */
+const LABEL_UNTIL = 3;
 const HINTS = {
   rock: 'Éboulement ! Saute les rochers ou prends le couloir libre.', geyser: 'Geysers de lave : on ne les saute pas, contourne-les !',
   fire: 'Boules de feu : saute-les ou écarte-toi !', snow: 'Boules de neige : saute-les ou écarte-toi !', cart: 'Wagonnets fous : trop hauts, écarte-toi !',
@@ -177,6 +179,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     context?.setTransform(ratio, 0, 0, ratio, 0, 0);
   }
   /** The record when this run started, whether it is beaten yet, and the last 500 m reached. */
+  /** How many times each kind of obstacle has been got past this run. */
+  const cleared = new Map<string, number>();
   let runBest = 0, beaten = false, milestone = 0, metresBest = 0, metresBeaten = false;
   /** The hints already given on this device. */
   const hinted = (() => { try { return new Set<string>(JSON.parse(localStorage.getItem(HINTS_KEY) ?? '[]')); } catch { return new Set<string>(); } })();
@@ -444,8 +448,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       c.fillStyle = '#d93a3a'; c.beginPath(); c.arc(base.x, y, r, 0, Math.PI * 2); c.fill(); c.fillStyle = '#fff'; c.font = `900 ${Math.round(r * 1.5)}px system-ui`; c.textAlign = 'center'; c.fillText('!', base.x, y + r * .52); return; }
     // In a tunnel of logs, only the first one says « roulade ».
     const inTunnel = e.kind === 'beam' && g.entities.some(o => o.kind === 'beam' && o.lane === e.lane && o.z < e.z && e.z - o.z <= BENNY_RUN.burrowKeep);
-    const label = e.cart ? 'écarte-toi' : shape.label;
-    if (label && base.s > 18 && !inTunnel) { c.fillStyle = '#fff'; c.font = `700 ${Math.round(Math.max(10, base.s * .28))}px system-ui`; c.textAlign = 'center'; c.fillText(label, base.x, base.y - h - 4); }
+    // The word fades away once she has got past that obstacle a few times this run (it comes back after a bump on it).
+    const label = e.cart ? 'écarte-toi' : shape.label, passed = cleared.get(e.cart ? 'cart' : e.kind) ?? 0;
+    if (label && base.s > 18 && !inTunnel && passed < LABEL_UNTIL) { c.fillStyle = '#fff'; c.font = `700 ${Math.round(Math.max(10, base.s * .28))}px system-ui`; c.textAlign = 'center'; c.fillText(label, base.x, base.y - h - 4); }
   }
   /** Shapes that say what each thing is, standing on (`x`, `y`), `w` × `h` px; false for those still drawn as a plain block. */
   function figure(c: CanvasRenderingContext2D, e: RunEntity, x: number, y: number, w: number, h: number, at: number): boolean {
@@ -754,11 +759,11 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       }
       case 'crash': { const p = screenOf(g, event.entity); burst(p.x, p.y, ['#c96b3a', '#8a4a26'], 8, 180); sound('pot'); break; }
       case 'coin': if (clock() - lastCoinSound > 60) { coinRun = clock() - lastCoinSound < 450 ? Math.min(12, coinRun + 1) : 0; lastCoinSound = clock(); sound('coin', 2 ** (coinRun / 24)); } break;
-      case 'bump': if (event.entity.kind !== 'hole') flash('Aïe ! La Dragon arrive !'); hurtAt = clock(); shakeFor('bump'); sound('bump'); break;
+      case 'bump': cleared.set(event.entity.cart ? 'cart' : event.entity.kind, 0); if (event.entity.kind !== 'hole') flash('Aïe ! La Dragon arrive !'); hurtAt = clock(); shakeFor('bump'); sound('bump'); break;
       case 'shield': flash('La bulle te protège !'); burst(width / 2, height * .7, ['#e7d1ff', '#b07bff', '#fff'], 16, 260); sound('power'); break;
       case 'power': flash(`${POWER_NAMES[event.power]} !`); sound('power'); break;
       case 'wallStart': sound('wall', event.side === 'left' ? .94 : 1.06); break;
-      case 'cleared':
+      case 'cleared': { const k = event.entity.cart ? 'cart' : event.entity.kind; cleared.set(k, (cleared.get(k) ?? 0) + 1); }
         if (event.points) { const p = screenOf(g, event.entity); flashes.push({at: clock(), text: `+${event.points}`, x: p.x}); burst(p.x, p.y - 10, ['#fff', '#ffe66b'], 6, 160); sound('dodge', .95 + Math.random() * .1); }
         break;
       case 'wallEnd': flashes.push({at: clock(), text: `Mur +${event.points}`, x: width / 2}); if (event.trail) { flash(`Traînée parfaite : ${event.trail} pièces !`); sound('power', 1.1); } break;
@@ -916,7 +921,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     coach.hidden = true;
     slowLost = 0; slowUntil = 0; lastLoopAt = clock(); settingSince = -1e9; shownSetting = 'grotte';
     runBest = best; beaten = false; milestone = 0; metresBest = options.bestMetres?.() ?? 0; metresBeaten = false; score.classList.remove('benny-run-beaten');
-    game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; camX = 0; camUp = 0; landedAt = -1e9; wasUp = false; swing = null; shock = null; flashes = []; bits = []; rings = []; coinRun = 0; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
+    game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; camX = 0; camUp = 0; landedAt = -1e9; wasUp = false; swing = null; shock = null; cleared.clear(); flashes = []; bits = []; rings = []; coinRun = 0; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
     holesAnnounced = 0; lastHoleSeen = -1;
     hud(); flash('Cours cours Benny !'); frame(loop);
   }
