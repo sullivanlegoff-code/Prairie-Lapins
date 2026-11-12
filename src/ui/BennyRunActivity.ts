@@ -74,16 +74,19 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (bits.length > 160) bits = bits.slice(-160);
   }
   /** A short freeze on a strike, so that the hit lands (the game clock stops, the drawing goes on). */
-  function hitStop(): void {
+  function hitStop(ms = HIT_STOP): void {
     if (!running) return;
     time.pause(); clearTimeout(stopTimer);
-    stopTimer = setTimeout(() => { if (running) time.resume(); }, HIT_STOP);
+    stopTimer = setTimeout(() => { if (running) time.resume(); }, ms);
   }
   /** The game's own time: the clock, less what the slow motions have held back. */
   let slowLost = 0, slowUntil = 0, lastLoopAt = 0;
   const gameTime = () => clock() - slowLost;
   const slowMo = (ms: number) => { const now = clock(); if (now > slowUntil + 900) slowUntil = now + ms; };
   const shakeFor = (kind: keyof typeof SHAKES) => { const s = SHAKES[kind]; if (!shake || shake.px <= s.px || clock() - shake.at > shake.ms) shake = {at: clock(), ...s}; };
+  let rings: {x: number; y: number; at: number; size: number}[] = [];
+  /** Coins picked up close together climb in pitch (back down after a pause). */
+  let coinRun = 0;
   let swing: {at: number; lane: number} | null = null, shock: number | null = null, flashes: {at: number; text: string; x: number}[] = [];
   let width = 0, height = 0;
   /** The road's lanes (3 for now; zones of up to 5 later) and the walls' distance from its middle. */
@@ -576,6 +579,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     for (const e of ahead) if (e.z - g.distance <= 0) thing(c, g, e);
     if (!ending) dragon(c, g);
     // Shards and sparkles.
+    // Impact rings: a white circle that opens and fades where a strike lands.
+    rings = rings.filter(r => now - r.at < 260);
+    for (const r of rings) { const k = (now - r.at) / 260; c.strokeStyle = `rgba(255,255,255,${.9 * (1 - k)})`; c.lineWidth = 6 * (1 - k) + 1; c.beginPath(); c.arc(r.x, r.y, r.size * (.4 + k), 0, Math.PI * 2); c.stroke(); }
     bits = bits.filter(b => now - b.at < b.life);
     for (const b of bits) { const t = (now - b.at) / 1000; c.globalAlpha = 1 - (now - b.at) / b.life; c.fillStyle = b.colour;
       c.fillRect(b.x + b.vx * t - b.size / 2, b.y + b.vy * t + 900 * t * t - b.size / 2, b.size, b.size); }
@@ -620,10 +626,12 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         if (event.entity.kind === 'pot') { burst(p.x, p.y, ['#c96b3a', '#e08a52', '#8a4a26', '#f4c430'], 14, 260); sound('pot', pitch); }
         else { burst(p.x, p.y, ['#fff', '#e7d1ff', '#ffb3c8', '#ffe36b'], 12, 220); sound('strike', pitch); }
         if (event.multiplier > 1 && event.combo === (event.multiplier - 1) * BENNY_RUN.comboStep + 1) { flash(`Combo ×${event.multiplier} !`); sound('power'); }
-        shakeFor('strike'); hitStop(); break;
+        // A creature lands harder than a pot: a longer freeze, a bigger ring.
+        rings.push({x: p.x, y: p.y - p.s * .4, at: clock(), size: p.s * (event.entity.kind === 'pot' ? .9 : 1.4)});
+        shakeFor('strike'); hitStop(event.entity.kind === 'pot' ? HIT_STOP : HIT_STOP + 30); break;
       }
       case 'crash': { const p = screenOf(g, event.entity); burst(p.x, p.y, ['#c96b3a', '#8a4a26'], 8, 180); sound('pot'); break; }
-      case 'coin': if (clock() - lastCoinSound > 60) { lastCoinSound = clock(); sound('coin'); } break;
+      case 'coin': if (clock() - lastCoinSound > 60) { coinRun = clock() - lastCoinSound < 450 ? Math.min(12, coinRun + 1) : 0; lastCoinSound = clock(); sound('coin', 2 ** (coinRun / 24)); } break;
       case 'bump': if (event.entity.kind !== 'hole') flash('Aïe ! La Dragon arrive !'); hurtAt = clock(); shakeFor('bump'); sound('bump'); break;
       case 'shield': flash('La bulle te protège !'); burst(width / 2, height * .7, ['#e7d1ff', '#b07bff', '#fff'], 16, 260); sound('power'); break;
       case 'power': flash(`${POWER_NAMES[event.power]} !`); sound('power'); break;
@@ -779,7 +787,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     coach.hidden = true;
     slowLost = 0; slowUntil = 0; lastLoopAt = clock(); settingSince = -1e9; shownSetting = 'grotte';
     runBest = best; beaten = false; milestone = 0; score.classList.remove('benny-run-beaten');
-    game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; camX = 0; camUp = 0; swing = null; shock = null; flashes = []; bits = []; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
+    game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; camX = 0; camUp = 0; swing = null; shock = null; flashes = []; bits = []; rings = []; coinRun = 0; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
     holesAnnounced = 0; lastHoleSeen = -1;
     hud(); flash('Cours cours Benny !'); frame(loop);
   }
