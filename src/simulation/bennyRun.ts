@@ -509,8 +509,10 @@ function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
     }
     case 'barriers': {
       const count = Math.min(g.lanes, 1 + Math.floor(random(g) * (2 + d * 1.5)));
-      for (const lane of others(g, count)) add(g, 'barrier', lane, z);
-      if (count === g.lanes) for (let i = 0; i < 3; i++) add(g, 'coin', any(), z - 2 + i * 2, {up: 1.4});
+      const fenced = others(g, count);
+      for (const lane of fenced) add(g, 'barrier', lane, z);
+      // An arc of coins over one of the fences, along the jump: always when the whole road is fenced, else one time in two.
+      if (count === g.lanes || random(g) < .5) { const lane = pick(g, fenced); [.8, 1.3, 1.5, 1.3, .8].forEach((up, i) => add(g, 'coin', lane, z - 4 + i * 2, {up})); }
       return z;
     }
     case 'spring': {
