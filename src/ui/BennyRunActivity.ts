@@ -70,6 +70,8 @@ const FACE_TILE = 7;
 /** A tall wall is built of blocks (owner, 14 Nov., after the walls of lane runners): each 9 to 16 m long, `BLOCK_LOW` to `TALL_HEIGHT`
  * m high, a stone one set back by up to half a metre; vines hang from their tops (`VINE_TILE` m tile, `VINE_DROP` m of it), grass
  * and flowers grow at their feet (`TUFT_TILE` m tile, the bottom third of it) near Benny; far off, a warm haze. */
+/** The wand's streak to a thing struck more than `STREAK_FROM` m ahead lasts `STREAK_MS`. */
+const STREAK_FROM = 3, STREAK_MS = 180;
 const BLOCK_LOW = 13, VINE_TILE = 6, VINE_DROP = 3, TUFT_TILE = 3, TUFT_NEAR = 50, HAZE_FROM = 22, HAZE_SPAN = 70, HAZE_MAX = .55;
 const hash01 = (n: number) => { let t = Math.imul(n ^ 0x9e3779b9, 2654435761) >>> 0; t ^= t >>> 15; t = Math.imul(t, 2246822519) >>> 0; t ^= t >>> 13; return (t >>> 0) / 4294967296; };
 const hazeAt = (z: number) => Math.min(1, Math.max(0, (z - HAZE_FROM) / HAZE_SPAN)) * HAZE_MAX;
@@ -228,6 +230,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const slowMo = (ms: number) => { const now = clock(); if (now > slowUntil + 900) slowUntil = now + ms; };
   const shakeFor = (kind: keyof typeof SHAKES) => { const s = SHAKES[kind]; if (!shake || shake.px <= s.px || clock() - shake.at > shake.ms) shake = {at: clock(), ...s}; };
   let rings: {x: number; y: number; at: number; size: number; ground?: boolean}[] = [];
+  /** A strike that lands a few metres ahead: a rainbow streak from Benny's wand to what it strikes, so the blow reads as reaching it. */
+  let streaks: {x0: number; y0: number; x1: number; y1: number; at: number}[] = [];
   /** Coins picked up close together climb in pitch (back down after a pause). */
   let coinRun = 0;
   /** Creatures struck: each melts away in its own way where it was (a chest breaks open, see GHOST_MS). */
@@ -1260,6 +1264,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (!ending) fallCatch(c, g, now);
     // Shards and sparkles.
     // Impact rings: a white circle that opens and fades where a strike lands.
+    streaks = streaks.filter(s => now - s.at < STREAK_MS);
+    for (const s of streaks) { if (now < s.at) continue; const k = (now - s.at) / STREAK_MS, grad = c.createLinearGradient(s.x0, s.y0, s.x1, s.y1);
+      grad.addColorStop(0, 'rgba(255,255,255,0)'); grad.addColorStop(.35, `rgba(255,179,200,${.8 * (1 - k)})`); grad.addColorStop(.7, `rgba(231,209,255,${.9 * (1 - k)})`); grad.addColorStop(1, `rgba(255,255,255,${1 - k})`);
+      c.strokeStyle = grad; c.lineCap = 'round'; c.lineWidth = 9 * (1 - k) + 2; c.beginPath(); c.moveTo(s.x0 + (s.x1 - s.x0) * k * .6, s.y0 + (s.y1 - s.y0) * k * .6); c.lineTo(s.x1, s.y1); c.stroke(); c.lineCap = 'butt'; }
     rings = rings.filter(r => now - r.at < 260);
     for (const r of rings) { const k = (now - r.at) / 260; c.strokeStyle = r.ground ? `rgba(120,235,255,${.9 * (1 - k)})` : `rgba(255,255,255,${.9 * (1 - k)})`; c.lineWidth = 6 * (1 - k) + 1; c.beginPath();
       if (r.ground) c.ellipse(r.x, r.y, r.size * (.5 + k), r.size * (.5 + k) * .32, 0, 0, Math.PI * 2); else c.arc(r.x, r.y, r.size * (.4 + k), 0, Math.PI * 2); c.stroke(); }
@@ -1314,6 +1322,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         // Three things or more broken in one roll: it is said.
         if (event.roll && event.roll >= 3) flash(`Roulade en chaîne ×${event.roll} !`);
         const p = screenOf(g, event.entity);
+        // Struck from afar (more than a few metres ahead): the streak of the wand reaching it.
+        if (event.by !== 'shock' && event.by !== 'chest' && event.entity.z - g.distance > STREAK_FROM) { const b = project(laneX(viewLane), .3, bennyHeight(g) + .6); streaks.push({x0: b.x, y0: b.y, x1: p.x, y1: p.y - p.s * .4, at: clock() + delay}); }
         later(delay, () => {
         // The chest's first blow pays nothing yet (it is thrown on): « Bam ! » rather than « +0 ».
         // Two blows at once (a chest knocked then broken, a double strike): the second rises above the first instead of over it.
@@ -1529,7 +1539,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     coach.hidden = true;
     slowLost = 0; slowUntil = 0; lastLoopAt = clock(); settingSince = -1e9; shownSetting = 'grotte';
     runBest = best; beaten = false; milestone = 0; metresBest = options.bestMetres?.() ?? 0; metresBeaten = false; score.classList.remove('benny-run-beaten');
-    game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; camX = 0; camUp = 0; landedAt = -1e9; wasUp = false; swing = null; pending = []; wallTilt = 0; laneSpeed = 0; rollFrom = -1e9; wasFlat = false; shock = null; cleared.clear(); flashes = []; bits = []; rings = []; coinRun = 0; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
+    game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; camX = 0; camUp = 0; landedAt = -1e9; wasUp = false; swing = null; pending = []; wallTilt = 0; laneSpeed = 0; rollFrom = -1e9; wasFlat = false; shock = null; cleared.clear(); flashes = []; bits = []; rings = []; streaks = []; coinRun = 0; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
     holesAnnounced = 0; lastHoleSeen = -1;
     hud(); flash('Cours cours Benny !'); frame(loop);
   }
