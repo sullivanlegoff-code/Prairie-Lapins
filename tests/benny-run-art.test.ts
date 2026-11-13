@@ -27,4 +27,10 @@ describe('the run’s painted atlases', () => {
     for (const frame of ['dragonnet-hit', 'ember-smoke', 'flyer-hit', 'dragonnet-awake']) expect(atlases.creatures.frames[frame], frame).toBeDefined();
     expect(source).toContain("vanishing !== null ? 'flyer-hit'");
   });
+  it('paints the track with its five textures and the sky in WebP, all light', () => {
+    for (const name of ['decor-planches', 'decor-herbe', 'decor-mur-terre', 'decor-mur-pierre', 'decor-falaise', 'fond-ciel']) {
+      expect(files, name).toContain(`assets/benny-run/${name}.webp`);
+      expect(source).toContain(name.startsWith('decor') ? `'${name}'` : `${name}.webp`);
+    }
+  });
 });
