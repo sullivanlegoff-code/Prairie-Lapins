@@ -63,7 +63,7 @@ const GROUND_RATIO = 1;
 const PLANK_ACROSS = 3.3, PLANK_ALONG = 3, GRASS_TILE = 3.3, WALL_TILE = WALL_HEIGHT, CLIFF_TILE = 4, VERGE = .6, CLIFF_DEPTH = 4;
 /** The colours of the painted decor where shapes still stand: the clouds of the void, the isles' rock and grass lip, the tops
  *  and sides of platforms and stairs. */
-const PAINTED_LOOK = {cloudTop: '#f2c2c4', cloudBottom: '#fde4d6', rock: '#9c6c55', rockDark: '#6d4a4f', lip: '#5f8f2f', top: '#e8955a', side: '#995f52', joint: 'rgba(90,40,14,.55)', lane: 'rgba(70,40,18,.28)'};
+const PAINTED_LOOK = {cloudTop: '#f2c2c4', cloudBottom: '#fcc495', rock: '#9c6c55', rockDark: '#6d4a4f', lip: '#5f8f2f', top: '#e8955a', side: '#995f52', joint: 'rgba(90,40,14,.55)', lane: 'rgba(70,40,18,.28)'};
 
 export const BENNY_RUN_SETTING_SHORT: Record<RunSetting, string> = {grotte: 'Grotte', pont: 'Pont', montagne: 'Montagne'};
 const SETTING_NAMES: Record<RunSetting, string> = {grotte: 'La grotte dorée', pont: 'Le pont sur la lave', montagne: 'Le sentier de montagne'};
@@ -222,7 +222,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   let vanishing: number | null = null;
   /** How far ahead of Benny the thing being drawn is (m). */
   let thingAhead = 99;
-  let swing: {at: number; lane: number; hop: number; far?: boolean} | null = null, shock: number | null = null, flashes: {at: number; text: string; x: number; big?: boolean}[] = [];
+  let swing: {at: number; lane: number; hop: number; far?: boolean} | null = null, shock: number | null = null, flashes: {at: number; text: string; x: number; big?: boolean; row?: number}[] = [];
   let width = 0, height = 0;
   /** The road's lanes (3 for now; zones of up to 5 later) and the walls' distance from its middle. */
   let lanes = 3, viewLanes = 3, frameDt = 0;
@@ -286,7 +286,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     }
     // Deeper down, the isle fades into the clouds.
     const grad = c.createLinearGradient(0, top.y + CLIFF_DEPTH * s * .5, 0, top.y + CLIFF_DEPTH * s);
-    grad.addColorStop(0, 'rgba(253,228,214,0)'); grad.addColorStop(1, PAINTED_LOOK.cloudBottom);
+    grad.addColorStop(0, 'rgba(252,196,149,0)'); grad.addColorStop(1, PAINTED_LOOK.cloudBottom);
     c.fillStyle = grad; c.fillRect(width / 2 + (x0 - camX) * s, top.y + CLIFF_DEPTH * s * .5, (x1 - x0) * s, CLIFF_DEPTH * s * .5 + 1);
     c.restore();
   }
@@ -361,7 +361,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     }
     flashFree = now + FLASH_READ; show(text, big);
   }
-  function show(text: string, big: boolean): void { pop.textContent = text; pop.classList.toggle('benny-run-count', big); pop.classList.remove('show'); void pop.offsetWidth; pop.classList.add('show'); clearTimeout(popTimer); popTimer = setTimeout(() => pop.classList.remove('show'), 900); }
+  /** A long hint stays up long enough to be read (about 45 ms a letter, 0.9 s at least, 2.6 s at most). */
+  function show(text: string, big: boolean): void { const ms = big ? 900 : Math.min(2600, Math.max(900, text.length * 45));
+    pop.textContent = text; pop.classList.toggle('benny-run-count', big); pop.style.animationDuration = `${ms}ms`; pop.classList.remove('show'); void pop.offsetWidth; pop.classList.add('show'); clearTimeout(popTimer); popTimer = setTimeout(() => pop.classList.remove('show'), ms); }
   /**
    * The canvas resolution, at most 2 pixels per point: on a device that cannot keep up (more than half the frames of the last
    * 60 slower than 50 per second), it steps down by a quarter (by half when most were slower than 30 per second), to 1.25 at
@@ -552,6 +554,18 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     layerK.setTransform(ratio, 0, 0, ratio, 0, 0); return {el: layerEl, k: layerK};
   }
   /** The ground of the track under the sky: the floor, its stripes, the gaps and pits, the walls. */
+  /** Below the horizon, around the isle: the rest of the painted sky (the islands' feet, then the sea of clouds), at the same
+   *  scale as the sky above so the two meet, then its last warm tone down to the bottom of the screen. */
+  function voidSky(c: CanvasRenderingContext2D, horizon: number): void {
+    const img = skyPicture.ready ? skyPicture.image : null;
+    let to = horizon;
+    if (img) { const k = width / img.width, from = horizon / k, rest = img.height - from;
+      if (rest > 0) { const h = Math.min(rest * k, height - horizon + 1); c.drawImage(img, 0, from, img.width, h / k, 0, horizon, width, h); to = horizon + h; } }
+    if (to >= height) return;
+    // The picture's bottom edge blends into its last tone (a soft band, no seam).
+    const grad = c.createLinearGradient(0, to - 40, 0, height); grad.addColorStop(0, 'rgba(252,190,140,0)'); grad.addColorStop(.25, 'rgb(252,190,140)'); grad.addColorStop(1, PAINTED_LOOK.cloudBottom);
+    c.fillStyle = grad; c.fillRect(0, Math.max(horizon, to - 40), width, height - Math.max(horizon, to - 40));
+  }
   function ground(c: CanvasRenderingContext2D, g: BennyRun, colours: typeof SETTING_COLOURS[RunSetting]): void {
     const horizon = project(0, FAR, 0).y, edge = lanes / 2 * LANE_WIDTH;
     // The next setting, from its start onwards: drawn beyond a line across the whole ground.
@@ -559,8 +573,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // Painted (concept C): the isle's track over a sea of clouds; the textures stand in for the flat colours once loaded.
     const painted = decorReady();
     if (painted) {
-      const grad = c.createLinearGradient(0, horizon, 0, height); grad.addColorStop(0, PAINTED_LOOK.cloudTop); grad.addColorStop(1, PAINTED_LOOK.cloudBottom);
-      c.fillStyle = grad; c.fillRect(0, horizon, width, height - horizon);
+      voidSky(c, horizon);
       voidEdges(c, g); paintedFloor(c, g);
     } else {
       c.fillStyle = colours.side; c.fillRect(0, horizon, width, height - horizon);
@@ -1148,7 +1161,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     flashes = flashes.filter(f => now - f.at < 700);
     // Points spring out (a strike's big, popping in), outlined to read on any ground, and float up.
     c.textAlign = 'center'; c.lineJoin = 'round';
-    for (const f of flashes) { const k = (now - f.at) / 700, pop = 1 + .45 * Math.max(0, 1 - k * 6), y = height * (f.big ? .7 : .55) - (now - f.at) * .06;
+    for (const f of flashes) { const k = (now - f.at) / 700, pop = 1 + .45 * Math.max(0, 1 - k * 6), y = height * (f.big ? .7 : .55) - (now - f.at) * .06 - (f.row ?? 0) * 34;
       c.globalAlpha = 1 - k * k; c.font = `800 ${Math.round((f.big ? 30 : 22) * pop)}px system-ui`; c.lineWidth = 5; c.strokeStyle = 'rgba(59,36,20,.85)'; c.strokeText(f.text, f.x, y); c.fillStyle = f.big ? '#fff6c8' : '#fff'; c.fillText(f.text, f.x, y); }
     c.globalAlpha = 1;
   }
@@ -1186,7 +1199,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         if (event.roll && event.roll >= 3) flash(`Roulade en chaîne ×${event.roll} !`);
         const p = screenOf(g, event.entity);
         later(delay, () => {
-        flashes.push({at: clock(), text: `+${event.points}`, x: (p.x + width / 2) / 2, big: true});
+        // The chest's first blow pays nothing yet (it is thrown on): « Bam ! » rather than « +0 ».
+        // Two blows at once (a chest knocked then broken, a double strike): the second rises above the first instead of over it.
+        { const t = clock(), row = flashes.filter(f => f.big && t - f.at < 300).length;
+          flashes.push({at: t, text: event.points ? `+${event.points}` : 'Bam !', x: (p.x + width / 2) / 2, big: true, row}); }
         // A glowing ring opens on the ground under Benny with each strike.
         { const b = project(laneX(viewLane), 0, bennyHeight(g)); rings.push({x: b.x, y: b.y, at: clock(), size: b.s * 1.2, ground: true}); }
         // Each strike of a combo a semitone higher (up to an octave); a new multiplier is announced.
