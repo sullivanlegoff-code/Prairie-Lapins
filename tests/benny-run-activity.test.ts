@@ -89,6 +89,13 @@ describe('« Cours cours Benny ! » screen', () => {
     expect(score.classList.contains('benny-run-beaten')).toBe(true); expect(sounds).toContain('power');
     expect(document.querySelector('.benny-run-pop')?.textContent ?? '').toMatch(/Nouveau record/);
   });
+  it('pauses by itself when the window loses the focus (the control centre, a call)', () => {
+    const {activity, step} = mount(50);
+    document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);
+    const g = activity.game!; window.dispatchEvent(new Event('blur')); const at = g.at;
+    expect(activity.playing).toBe(false); expect(document.querySelector<HTMLElement>('[data-benny-run-card]')!.hidden).toBe(false);
+    step(500); expect(g.at).toBe(at);
+  });
   it('pauses on the button, then counts 3, 2, 1 before the run goes on', () => {
     const {activity, step} = mount(50);
     document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);

@@ -1618,6 +1618,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   $<HTMLButtonElement>('[data-benny-run-exit]').addEventListener('click', () => close(), {signal: abort.signal});
   $<HTMLButtonElement>('[data-benny-run-pause]').addEventListener('click', () => pause(), {signal: abort.signal});
   document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); }, {signal: abort.signal});
+  // The control centre or a call over the game (the page stays visible but loses the focus): paused too.
+  window.addEventListener('blur', () => pause(), {signal: abort.signal}); window.addEventListener('pagehide', () => pause(), {signal: abort.signal});
   function orientation(): void {
     if (layer.hidden) return;
     const wrong = sideways(); turn.hidden = !wrong;
