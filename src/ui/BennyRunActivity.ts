@@ -1004,7 +1004,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     return g.wall ? e.kind === 'flyer' && Math.abs(e.lane - across) === 1 : Math.abs(e.lane - across) <= 1;
   }
   /** Benny's landings: when she last touched down (a squash and a puff of dust), and whether she was in the air last frame. */
-  let landedAt = -1e9, wasUp = false;
+  let landedAt = -1e9, wasUp = false, saidBlocked = false;
   /** Running on a low wall: on its top, upright, not tipped onto its face. */
   const lowAt = (g: BennyRun, side: 'left' | 'right', z: number) => { const w = wallAt(g, side, z); return !!w && !w.void && wallLook(w) === 'low'; };
   const onLow = (g: BennyRun) => !!g.wall && lowAt(g, g.wall.side, g.distance);
@@ -1307,7 +1307,12 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'crumble': { const n = lanesAt(g, event.pit.from), x = (event.pit.lane - (n - 1) / 2) * LANE_WIDTH, p = project(x, event.pit.from - g.distance + 1, 0);
         burst(p.x, p.y, ['#5a3d22', '#8a6440', '#3a2a1c'], 10, 200); if (event.pit.from - g.distance < 30) sound('rumble', 1.3); break; }
       case 'platformUp': sound('jump', 1.2); break;
-      case 'blocked': sound('bump', .8); flash('Trop haut : monte les marches !'); break;
+      case 'blocked':
+        if (!event.side) { sound('bump', .8); flash('Trop haut : monte les marches !'); break; }
+        // Against a wall she cannot run on: a little bounce off it, towards it then back.
+        sound('bump', .6); laneSpeed += (event.side === 'left' ? -1 : 1) * 3.2;
+        if (!saidBlocked) { saidBlocked = true; flash('Pas sur la pierre ni la barrière : cours sur la terre et l’herbe !'); }
+        break;
       case 'lanes':
         viewLane += event.shift;
         if (event.shift > 0) flash('La salle s’élargit : cinq couloirs !');

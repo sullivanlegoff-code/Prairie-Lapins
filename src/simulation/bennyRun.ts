@@ -202,7 +202,7 @@ export type RunEvent =
   /** The road widens or narrows under Benny's feet: `lanes` now, her lane number moved by `shift`. */
   | {type: 'lanes'; lanes: number; shift: number}
   /** Up onto a platform (landing from a springboard); off a platform (its end, or a step aside). */
-  | {type: 'platformUp'} | {type: 'platformDown'} | {type: 'blocked'}
+  | {type: 'platformUp'} | {type: 'platformDown'} | {type: 'blocked'; side?: Side}
   /** Cracked slabs giving way ahead. */
   | {type: 'crumble'; pit: Pit}
   /** A rock fallen from the cave's ceiling onto the road. */
@@ -1135,6 +1135,9 @@ export function runInput(g: BennyRun, now: number, input: RunInput): void {
         } else if (!powerActive(g, 'flight') && voidAt(g, side)) {
           // The void at the side: in the air she goes out over it (owner: « au-dessus donc il ne perd pas »), on the ground she falls.
           if (inAir(g)) { g.overVoid = side; g.laneFrom = g.lane; g.laneChangedAt = g.at; g.events.push({type: 'overVoid', side}); } else plunge(g);
+        } else if (!powerActive(g, 'flight') && !g.overVoid) {
+          // A wall she cannot run on (stone, a fence): she bounces off it, and says so (no swipe lost without a sign).
+          g.events.push({type: 'blocked', side});
         }
         return;
       }

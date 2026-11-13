@@ -483,6 +483,10 @@ describe('Cours cours Benny ! rules', () => {
     g.pits.push({lane: g.lane, from: g.distance + 2, to: g.distance + 12, open: true}); run(g, 400);
     expect(types(g)).toContain('fall'); expect(g.over).toBe(false); run(g, C.fallMs + 50); expect(g.over).toBe(true);
   });
+  it('swiping into a wall she cannot run on says so (a blocked event), and she stays in her lane', () => {
+    const g = quiet(); run(g, C.introMs); g.lane = 0; for (const w of g.walls) w.runnable = false;
+    runInput(g, g.at, 'left'); expect(g.events.some(e => e.type === 'blocked' && e.side === 'left')).toBe(true); expect(g.wall).toBeNull(); expect(g.lane).toBe(0); expect(g.fallFrom).toBeNull();
+  });
   it('swiping off the road into a void side is a fall, not a wall', () => {
     const g = quiet(); run(g, C.introMs); g.lane = 0; const z = g.distance;
     for (const w of g.walls) w.runnable = false; // The quiet road has runnable walls: this side is the void only.
