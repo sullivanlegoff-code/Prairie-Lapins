@@ -87,6 +87,7 @@ const HINTS = {
   rock: 'Éboulement ! Saute les rochers ou prends le couloir libre.', geyser: 'Geysers de lave : on ne les saute pas, contourne-les !',
   fire: 'Boules de feu : saute-les ou écarte-toi !', snow: 'Boules de neige : saute-les ou écarte-toi !', cart: 'Wagonnets fous : trop hauts, écarte-toi !',
   pit: 'Le sol craque ! Saute la fosse ou change de couloir.', spring: 'Un tremplin ! Passe dessus pour bondir par-dessus les piliers.', gold: 'Un pot doré ! Frappe-le : il vaut cinq pots.', platform: 'Une plateforme : atterris dessus depuis le tremplin pour monter !',
+  edge: 'Plus de mur : ne glisse pas dans le vide ! En sautant, tu peux passer au-dessus.',
 } as const;
 type HintKind = keyof typeof HINTS;
 const HINTS_KEY = 'prairie-lapins:benny-run-hints';
@@ -402,6 +403,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     for (const e of g.entities) if (near(e.z)) kinds.push(...(e.rock ? ['rock'] : e.geyser ? ['geyser'] : e.cart ? ['cart'] : e.snow ? ['snow'] : e.kind === 'fireball' ? ['fire'] : e.kind === 'spring' ? ['spring'] : e.gold ? ['gold'] : []) as HintKind[]);
     if (g.pits.some(p => near(p.from))) kinds.push('pit');
     if (g.platforms.some(p => near(p.from))) kinds.push('platform');
+    // The first stretch with no wall (no pit in it): the void at the side.
+    if (g.walls.some(w => w.void && near(w.from)) && !g.pits.some(p => p.open && near(p.from))) kinds.push('edge');
     const kind = kinds.find(k => !hinted.has(k)); if (!kind) return;
     hinted.add(kind); flash(HINTS[kind]);
     try { localStorage.setItem(HINTS_KEY, JSON.stringify([...hinted])); } catch { /* Only for this session. */ }
