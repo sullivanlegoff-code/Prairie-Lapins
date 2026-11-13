@@ -76,6 +76,8 @@ const FACE_TILE = 7;
  * Benny; far off, a warm haze. */
 /** The wand's streak to a thing struck more than `STREAK_FROM` m ahead lasts `STREAK_MS`. */
 const STREAK_FROM = 3, STREAK_MS = 180;
+/** A gap in the road shows a shaded band at least `GAP_MIN_PX` px high, however far: it reads as a gap long before Benny is there. */
+const GAP_MIN_PX = 7, GAP_SHADE = 'rgba(52,26,62,.62)';
 const BLOCK_LOW = 13, VINE_TILE = 6, VINE_DROP = 3, TUFT_TILE = 4.5, TUFT_PART = 3 / 8, TUFT_NEAR = 50, HAZE_FROM = 22, HAZE_SPAN = 70, HAZE_MAX = .55;
 const hash01 = (n: number) => { let t = Math.imul(n ^ 0x9e3779b9, 2654435761) >>> 0; t ^= t >>> 15; t = Math.imul(t, 2246822519) >>> 0; t ^= t >>> 13; return (t >>> 0) / 4294967296; };
 const hazeAt = (z: number) => Math.min(1, Math.max(0, (z - HAZE_FROM) / HAZE_SPAN)) * HAZE_MAX;
@@ -716,8 +718,14 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       // Painted: the clouds far below, the next isle's cliff facing Benny, and a shadow under the lip she would fall from.
       if (painted) {
         const wide = (z: number) => halfAt(g, z) + VERGE;
-        cliffFace(c, to, -wide(to), wide(to), () => { c.beginPath(); const a = project(-wide(from), from, 0), b = project(wide(from), from, 0), e = project(wide(to), to, 0), f = project(-wide(to), to, 0); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.lineTo(e.x, e.y); c.lineTo(f.x, f.y); c.closePath(); });
-        if (from > NEAR) { strip(c, g, from - .35, from, 'rgba(60,36,20,.45)'); const a = project(-wide(from), from, 0), b = project(wide(from), from, 0); c.strokeStyle = PAINTED_LOOK.lip; c.lineWidth = Math.max(2, a.s * .14); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); }
+        const opening = () => { c.beginPath(); const a = project(-wide(from), from, 0), b = project(wide(from), from, 0), e = project(wide(to), to, 0), f = project(-wide(to), to, 0); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.lineTo(e.x, e.y); c.lineTo(f.x, f.y); c.closePath(); };
+        cliffFace(c, to, -wide(to), wide(to), opening);
+        // Read as a gap, not a step (a fall ends the run): the far cliff in shadow, at least a few pixels of it however far, a bright
+        // lip on both edges.
+        { const n = project(0, from, 0), f = project(0, to, 0), a = project(-wide(to), to, 0), b = project(wide(to), to, 0), deep = Math.max(GAP_MIN_PX, n.y - f.y);
+          c.save(); c.fillStyle = GAP_SHADE; c.fillRect(Math.min(a.x, b.x), f.y, Math.abs(b.x - a.x), deep); c.restore();
+          c.strokeStyle = PAINTED_LOOK.lip; c.lineWidth = Math.max(2, f.s * .12); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); }
+        if (from > NEAR) { strip(c, g, from - .35, from, 'rgba(60,36,20,.45)'); const a = project(-wide(from), from, 0), b = project(wide(from), from, 0); c.strokeStyle = PAINTED_LOOK.lip; c.lineWidth = Math.max(3, a.s * .18); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); }
         continue;
       }
       strip(c, g, from, to, look.hole);
