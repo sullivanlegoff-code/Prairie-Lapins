@@ -121,6 +121,9 @@ export const BENNY_RUN = {
   /** Falling into the void (a gap, an open pit, or the side of the road with no wall): a short fall of `fallMs` ms, `fallDepth` m deep, then
    * the Dragon catches her and the run is over. */
   fallMs: 700, fallDepth: 3,
+  /** A jump asked for at most `coyoteMs` after running into a gap or an open pit still counts: she jumps from its edge (night of 13 Nov.).
+   * Not off the side of the road into the void: that stays a fall (owner, 13 Nov.). */
+  coyoteMs: 110,
   /** Stretches with no wall at all on one side or both (owner, 13 Nov.: « parfois vraiment seul face au vide »), the three lanes
    * whole: one every `edgeEvery` s or so of running (a random share more), the first past `edgeFrom` m, `edgeBoth` of them on both
    * sides, from one wall segment long up to `edgeSegments` with the difficulty. */
@@ -203,6 +206,8 @@ export type RunEvent =
   | {type: 'lanes'; lanes: number; shift: number}
   /** Up onto a platform (landing from a springboard); off a platform (its end, or a step aside). */
   | {type: 'platformUp'} | {type: 'platformDown'} | {type: 'blocked'; side?: Side}
+  /** A jump just too late at a gap's edge, kept: she jumps instead of falling. */
+  | {type: 'saved'}
   /** Cracked slabs giving way ahead. */
   | {type: 'crumble'; pit: Pit}
   /** A rock fallen from the cave's ceiling onto the road. */
@@ -1116,6 +1121,7 @@ function arrive(g: BennyRun, from: number, target: number, step: number): void {
 }
 export function runInput(g: BennyRun, now: number, input: RunInput): void {
   advanceBennyRun(g, now);
+  if (!g.over && g.fallFrom !== null && input === 'up' && g.at - g.fallFrom <= C.coyoteMs && (holeAt(g) || pitAt(g))) { g.fallFrom = null; g.events.push({type: 'saved'}); }
   if (g.over || g.fallFrom !== null) return;
   switch (input) {
     case 'left': case 'right': {

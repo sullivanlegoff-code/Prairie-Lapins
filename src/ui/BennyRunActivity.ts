@@ -1288,6 +1288,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'wallLeap': flashes.push({at: clock(), text: `Saut de mur +${event.points}`, x: width / 2}); sound('wall', 1 + .06 * Math.min(6, event.chain - 1));
         shakeFor('strike'); break;
       case 'fall': flash('Oh non, le vide !'); sound('bump', .7); break;
+      case 'saved': flash('Ouf, de justesse !'); break;
       // Out over the void in a jump: back onto the road before landing!
       case 'overVoid': flash('Au-dessus du vide : reviens sur la piste !', false, true); sound('jump', .8); break;
       // The shock wave: a ring and a sound only, no slow motion and no shake (it must not slow the run down).

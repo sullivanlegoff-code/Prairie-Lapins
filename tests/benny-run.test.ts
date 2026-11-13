@@ -487,6 +487,13 @@ describe('Cours cours Benny ! rules', () => {
     const g = quiet(); run(g, C.introMs); g.lane = 0; for (const w of g.walls) w.runnable = false;
     runInput(g, g.at, 'left'); expect(g.events.some(e => e.type === 'blocked' && e.side === 'left')).toBe(true); expect(g.wall).toBeNull(); expect(g.lane).toBe(0); expect(g.fallFrom).toBeNull();
   });
+  it('a jump just too late at a gap edge still counts (coyote time); later, she falls', () => {
+    const g = quiet(); run(g, C.introMs); g.holes.push({from: g.distance + 1, to: g.distance + 4}); run(g, 200);
+    expect(g.fallFrom).not.toBeNull(); runInput(g, g.fallFrom! + C.coyoteMs - 20, 'up');
+    expect(g.fallFrom).toBeNull(); expect(types(g)).toContain('saved'); run(g, 1200); expect(g.over).toBe(false);
+    const h = quiet(); run(h, C.introMs); h.holes.push({from: h.distance + 1, to: h.distance + 4}); run(h, 200);
+    runInput(h, h.fallFrom! + C.coyoteMs + 60, 'up'); expect(h.fallFrom).not.toBeNull();
+  });
   it('swiping off the road into a void side is a fall, not a wall', () => {
     const g = quiet(); run(g, C.introMs); g.lane = 0; const z = g.distance;
     for (const w of g.walls) w.runnable = false; // The quiet road has runnable walls: this side is the void only.
