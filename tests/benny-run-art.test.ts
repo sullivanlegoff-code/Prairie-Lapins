@@ -18,8 +18,8 @@ describe('the run’s painted atlases', () => {
     expect(asked.length).toBeGreaterThan(8);
     for (const [name, frame] of asked) expect(atlases[name]?.frames[frame], `${name} ${frame}`).toBeDefined();
   });
-  it('gives the chest its three states, all drawn at the shut chest’s size', () => {
-    expect(Object.keys(atlases.chests.frames)).toEqual(['intact', 'knocked', 'broken']);
+  it('gives the chest its states (and its damaged look after a first blow), all drawn at the shut chest’s size', () => {
+    expect(Object.keys(atlases.chests.frames)).toEqual(['intact', 'knocked', 'broken', 'damaged']);
     const sizes = Object.values(atlases.chests.frames).map(f => f.slice(2).join());
     expect(new Set(sizes).size).toBe(1);
   });

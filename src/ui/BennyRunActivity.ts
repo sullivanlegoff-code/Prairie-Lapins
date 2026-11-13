@@ -222,7 +222,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   let vanishing: number | null = null;
   /** How far ahead of Benny the thing being drawn is (m). */
   let thingAhead = 99;
-  let swing: {at: number; lane: number; hop: number} | null = null, shock: number | null = null, flashes: {at: number; text: string; x: number; big?: boolean}[] = [];
+  let swing: {at: number; lane: number; hop: number; far?: boolean} | null = null, shock: number | null = null, flashes: {at: number; text: string; x: number; big?: boolean}[] = [];
   let width = 0, height = 0;
   /** The road's lanes (3 for now; zones of up to 5 later) and the walls' distance from its middle. */
   let lanes = 3, viewLanes = 3, frameDt = 0;
@@ -785,8 +785,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         // again (or against decor), broken open on its coins.
         if (art.chests.ready) {
           if (vanishing !== null) return fitted(c, 'chests', 'broken', x, y, w * 1.05);
-          const thrown = e.hp === 1, turn = thrown ? Math.sin(at / 70 + e.id) * .35 - .25 : Math.sin(at / 220 + e.id) * .06;
-          c.save(); c.translate(x, y - h * .45); c.rotate(turn); fitted(c, 'chests', thrown ? 'knocked' : 'intact', 0, h * .45, w * 1.05); c.restore(); return true;
+          // Struck once, it shows it until the second blow: cracked, bandaged, dizzy; tumbling while it flies, then swaying, dazed.
+          const hurt = e.hp === 1, turn = hurt ? (e.knock ? Math.sin(at / 60 + e.id) * .4 - .2 : Math.sin(at / 160 + e.id) * .14) : Math.sin(at / 220 + e.id) * .06;
+          c.save(); c.translate(x, y - h * .45); c.rotate(turn); fitted(c, 'chests', hurt ? 'damaged' : 'intact', 0, h * .45, w * 1.05); c.restore(); return true;
         }
         c.fillStyle = '#6e3b2e'; c.fillRect(x - w / 2, y - h * .55, w, h * .55);
         c.fillStyle = '#2a120c'; c.fillRect(x - w * .46, y - h * .55 - open, w * .92, open);
@@ -955,7 +956,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // A lane strike's hop: up and down over its whole length, carried past her lane by the blow, then back.
     const hopK = swing?.hop && !wall && !flat && !inAir(g) && now - swing.at < HOP_MS.land ? (now - swing.at) / HOP_MS.land : -1, hopDir = swing?.hop ?? 0;
     const hopUp = hopK < 0 ? 0 : HOP_HEIGHT * Math.sin(Math.PI * Math.max(0, (hopK - .1) / .9)) ** .8;
-    const carry = hopK < 0 ? 0 : hopDir * HOP_CARRY * LANE_WIDTH * Math.sin(Math.PI * Math.min(1, Math.max(0, (hopK - .2) / .8)));
+    const carry = hopK < 0 ? 0 : hopDir * HOP_CARRY * (swing?.far ? 4.5 : 1) * LANE_WIDTH * Math.sin(Math.PI * Math.min(1, Math.max(0, (hopK - .2) / .8)));
     const x = laneX(viewLane) + carry;
     const up = bennyHeight(g) + hopUp, p = project(x, 0, up), s = p.s * BENNY_SIZE;
     // Over the void she drops out of sight, faster and faster, smaller as she goes down (the Dragon dives after her).
@@ -1174,8 +1175,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         if (event.by === 'spin') { flash('Coup tournoyant !'); slowMo(260); }
         // A chest struck the first time is still on the road (thrown): only its last strike leaves it broken open.
         // A lane change strikes with a hop (to the side she moved to): the blow lands a moment later.
-        const hopping = (event.by === 'lane' || event.by === 'spin') && !g.wall && !inAir(g) && !sliding(g);
+        const hopping = (event.by === 'lane' || event.by === 'far' || event.by === 'spin') && !g.wall && !inAir(g) && !sliding(g);
         if (hopping && !(swing?.hop && clock() - swing.at < HOP_MS.bound)) swing = {at: clock(), lane: g.lane, hop: Math.sign(g.lane - g.laneFrom) || 1};
+        // The long blow, into the lane after hers: she lunges much further over, towards it, before she settles in her lane.
+        if (event.by === 'far' && swing) swing.far = true;
         else if (!hopping) swing = {at: clock(), lane: g.lane, hop: 0};
         const delay = hopping && swing ? Math.max(0, swing.at + HOP_MS.bound - clock()) : 0;
         if (event.entity.kind !== 'pot' && g.entities.every(o => o.id !== event.entity.id)) ghosts.push({e: {...event.entity}, at: clock() + delay, ahead: event.entity.z - g.distance});

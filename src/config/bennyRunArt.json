@@ -216,11 +216,17 @@
         0,
         0.811,
         0.692
+      ],
+      "damaged": [
+        660,
+        0,
+        0.811,
+        0.692
       ]
     },
     "anchor": "feet",
     "pockets": 0,
-    "bytes": 37362
+    "bytes": 49924
   },
   "objets": {
     "image": "assets/benny-run/objets.webp",

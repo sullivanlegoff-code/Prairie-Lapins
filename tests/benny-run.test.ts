@@ -100,6 +100,28 @@ describe('Cours cours Benny ! rules', () => {
     const h = quiet(); runInput(h, h.at, 'up'); run(h, 300); place(h, 'pot', 0, 2); place(h, 'pot', 1, 2.5); runInput(h, h.at, 'down'); run(h, 300);
     expect(types(h)).not.toContain('shockwave'); expect(h.pots).toBe(1);
   });
+  it('strikes with a long blow a creature in the lane after the one she moves into (owner, 13 Nov.)', () => {
+    // Nothing in the middle lane: the creature on the far right falls, and Benny ends in the middle.
+    const g = quiet(); run(g, C.introMs); g.lane = 0;
+    place(g, 'dragonnet', 2, 4); runInput(g, g.at, 'right');
+    expect(takeRunEvents(g).filter(e => e.type === 'strike').map(e => e.type === 'strike' && e.by)).toEqual(['far']);
+    expect(g).toMatchObject({lane: 1, foes: 1}); expect(g.entities).toHaveLength(0);
+    // One in the middle and one on the right, on the same line: both at once.
+    place(g, 'ember', 1, 4); place(g, 'flyer', 2, 4.8); g.lane = 0; runInput(g, g.at, 'right');
+    expect(takeRunEvents(g).filter(e => e.type === 'strike').map(e => e.type === 'strike' && e.by)).toEqual(['lane', 'far']);
+    expect(g).toMatchObject({lane: 1, foes: 3}); expect(g.entities).toHaveLength(0);
+    // Not on the same line: only the one in the middle.
+    place(g, 'dragonnet', 1, 3); const later = place(g, 'dragonnet', 2, 3 + C.farLine + 1); g.lane = 0; runInput(g, g.at, 'right');
+    expect(g.foes).toBe(4); expect(g.entities).toEqual([later]);
+    // A pot beyond is not struck from afar (only creatures).
+    const h = quiet(); run(h, C.introMs); h.lane = 0; const pot = place(h, 'pot', 2, 3); runInput(h, h.at, 'right');
+    expect(h.entities).toEqual([pot]);
+  });
+  it('throws a chest struck once four times as far as before (owner, 13 Nov.)', () => {
+    const g = quiet(); run(g, C.introMs); const c = place(g, 'chest', g.lane, .5), z = c.z;
+    runInput(g, g.at, 'down'); expect(c.knock).toBe(28); run(g, 3000);
+    expect(c.knock).toBeUndefined(); expect(c.z - z).toBeCloseTo(28, 5); expect(c.hp).toBe(1);
+  });
   it('spins and strikes both creatures when one waits on each side of her', () => {
     const g = quiet(); run(g, C.introMs);
     place(g, 'dragonnet', 0, 4); place(g, 'dragonnet', 2, 4.5); runInput(g, g.at, 'left');
@@ -435,7 +457,7 @@ describe('Cours cours Benny ! rules', () => {
     const g = quiet(); run(g, C.introMs);
     const c = place(g, 'chest', g.lane, 0.3); runInput(g, g.at, 'down');
     expect(g.foes).toBe(0); expect(g.entities).toContain(c); expect(c.hp).toBe(1); expect(c.knock).toBeGreaterThan(0);
-    run(g, 300); expect(c.knock).toBeUndefined(); expect(g.entities).toContain(c); // Thrown on, and still there.
+    run(g, 900); expect(c.knock).toBeUndefined(); expect(g.entities).toContain(c); // Thrown on (28 m, in about 0.8 s), and still there.
     c.z = g.distance + 0.3; runInput(g, g.at, 'down');
     expect(g.foes).toBe(1); expect(g.entities).not.toContain(c);
   });

@@ -47,7 +47,9 @@ export const CHARACTERS = {
   // (Its white pockets only from 6000 pixels: the whites of the eyes stay.)
   // The chest's three states (13 Nov.): one chest per cell of three equal cells, the pieces of a cell (sparkles, a lid knocked
   // off, loose coins) kept together as one drawing; all three in one same square, drawn at the shut chest's size.
-  chests: {sheet: 'sheet-chests.png', frames: ['intact', 'knocked', 'broken'], size: 220, columns: 3, fit: true, cells: 3, shared: true},
+  // A fourth cell (13 Nov., owner: « je veux que ce soit reconnaissable quand ils ont déjà été tapés une fois »): the chest after
+  // its first blow, cracked, bandaged, dizzy (spiral eyes, a bump, stars), painted from the approved chest and set at its size.
+  chests: {sheet: 'sheet-chests4.png', frames: ['intact', 'knocked', 'broken', 'damaged'], size: 220, columns: 4, fit: true, cells: 4, shared: true},
   objets: {sheet: 'sheet-objets.png', frames: ['pot', 'pot-gold', 'barrier', 'beam', 'pillar', 'rock', 'cart', 'coin'], size: 200, columns: 4, rows: 2, fit: true},
 };
 /** A blot smaller than this share of the biggest one is a speck (a stray stroke, a crumb), not a drawing. */

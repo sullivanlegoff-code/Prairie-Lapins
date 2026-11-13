@@ -79,7 +79,11 @@ export const BENNY_RUN = {
   /** Coins a pot spills. */
   potCoins: 3,
   /** A chest takes two blows: the first throws it on along the road, `chestKnock` m at `chestFlyStep` m a tick, and the second breaks it. */
-  chestKnock: 7, chestFlyStep: .3,
+  // (Thrown four times as far since 13 Nov., owner: « quadruple la distance d'éjection des coffres ».)
+  chestKnock: 28, chestFlyStep: .3,
+  /** The long blow (owner, 13 Nov.): a lane change also strikes a creature in the lane after the one she moves into, when that lane
+   *  has nothing to strike, or when what she strikes there stands on the same line as it (`farLine` m apart at most). */
+  farLine: 1.5,
   // One pot in `goldEvery` (picked from its number, so the run's draws stay the same) is golden: worth `goldPot` times the points.
   goldEvery: 20, goldPot: 5,
   /** The setting changes at random every 40 to 55 s. */
@@ -156,7 +160,7 @@ export type RunKind = 'coin' | 'wallCoin' | 'heart' | 'power' | 'pot' | 'barrier
 export const RUN_FOES: readonly RunFoe[] = ['dragonnet', 'chest', 'ember'];
 export type RunInput = 'left' | 'right' | 'up' | 'down';
 export type Side = 'left' | 'right';
-export type StrikeKind = 'lane' | 'spin' | 'slide' | 'jump' | 'pound' | 'shock' | 'dash' | 'wall' | 'chest';
+export type StrikeKind = 'lane' | 'far' | 'spin' | 'slide' | 'jump' | 'pound' | 'shock' | 'dash' | 'wall' | 'chest';
 
 /** A thing on the road. `lane` is 0 to `lanes - 1`; a wall coin's lane is -1 (left wall) or `lanes` (right wall). */
 /** A thing on the road; `up` is how high a coin floats (a coin arc over a barrier), for the drawing only. */
@@ -1047,7 +1051,13 @@ function shareScore(g: BennyRun): void {
 function arrive(g: BennyRun, from: number, target: number, step: number): void {
   g.lane = target; g.laneChangedAt = g.at; g.laneFrom = from;
   const first = nearest(g, target, reach(g)), behind = first ? nearest(g, from - step, reach(g), isFoe) : undefined;
+  // The long blow (owner: « Benny est tout à gauche, un ennemi tout à droite : glisser une fois vers la droite attaque l'ennemi et
+  // Benny se retrouve sur la voie du milieu » ; « un ennemi au milieu et un à droite : elle attaque les deux d'un coup, s'ils sont
+  // sur la même ligne »).
+  const beyond = target + step >= 0 && target + step < g.lanes ? nearest(g, target + step, reach(g), isFoe) : undefined;
+  const far = beyond && (!first || Math.abs(beyond.z - first.z) <= C.farLine) ? beyond : undefined;
   for (let hit = first; hit; hit = nearest(g, target, reach(g))) strike(g, hit, 'lane');
+  if (far) strike(g, far, 'far');
   if (behind && isFoe(first!)) strike(g, behind, 'spin');
 }
 export function runInput(g: BennyRun, now: number, input: RunInput): void {
