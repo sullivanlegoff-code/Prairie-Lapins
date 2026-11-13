@@ -560,6 +560,14 @@ describe('Cours cours Benny ! rules', () => {
     const frenzies = types(g).filter(t => t === 'frenzy').length;
     expect(g.combo).toBeGreaterThanOrEqual(top); expect(frenzies).toBe(1); expect(g.active?.power).toBe('magnet');
   });
+  it('lays slaloms of pillars with the way through one lane over at each row, a lane change apart', () => {
+    let rows = 0;
+    for (const seed of [21, 22, 23, 24, 25, 26]) { const g = startBennyRun(0, seed); g.tutorial = null; g.at = C.speedRampMs; g.speed = C.speedMax;
+      for (let i = 0; i < 400; i++) { g.lastBumpAt = null; g.fallFrom = null; g.over = false; g.distance += 3; advanceBennyRun(g, g.at + C.step); }
+      const byZ = new Map<number, number[]>(); for (const e of g.entities) if (e.kind === 'pillar') byZ.set(Math.round(e.z * 10), [...(byZ.get(Math.round(e.z * 10)) ?? []), e.lane]);
+      rows += [...byZ.values()].filter(l => l.length === 2).length; }
+    expect(rows).toBeGreaterThan(0);
+  });
   it('never moves a creature sideways: a dragonnet, an ember or any other stays in its lane', () => {
     const g = quiet(); const e = place(g, 'dragonnet', 1, 60); place(g, 'ember', 2, 30);
     run(g, 6000); expect(e.lane).toBe(1); expect(g.entities.filter(o => o.kind === 'ember').every(o => o.lane === 2)).toBe(true);
