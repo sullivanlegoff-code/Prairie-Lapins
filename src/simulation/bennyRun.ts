@@ -169,7 +169,14 @@ export type StrikeKind = 'lane' | 'far' | 'spin' | 'slide' | 'jump' | 'pound' | 
 /** A thing on the road. `lane` is 0 to `lanes - 1`; a wall coin's lane is -1 (left wall) or `lanes` (right wall). */
 /** A thing on the road; `up` is how high a coin floats (a coin arc over a barrier), for the drawing only. */
 export interface RunEntity {id: number; kind: RunKind; lane: number; z: number; power?: RunPower; sky?: boolean; hp?: number; knock?: number; up?: number; beside?: boolean; rock?: 'up' | 'down'; geyser?: 'idle' | 'up'; rolling?: boolean; snow?: boolean; cart?: boolean; gold?: boolean}
-export interface WallSegment {side: Side; from: number; to: number; runnable: boolean; void?: boolean}
+/** A wall's look (owner, 13 Nov., after Blade of Brim): `tall` rises past the top of the screen and hides the void (earth to run on,
+ * or grey stone); `low` is a low wall at a jump's height, one lane thick, run on like a wall, the void seen over it; `fence` is a
+ * wooden fence, not run on. `tall` on a segment says it is a tall one; otherwise runnable means low, and not runnable a fence. */
+export interface WallSegment {side: Side; from: number; to: number; runnable: boolean; void?: boolean; tall?: boolean}
+export type WallLook = 'tall' | 'low' | 'fence';
+export const wallLook = (w: WallSegment): WallLook => w.tall ? 'tall' : w.runnable ? 'low' : 'fence';
+/** About half the walls are tall: picked from the segment's place (not the run's dice, so the rest of the run is unchanged). */
+const tallAt = (side: Side, from: number) => ((Math.imul(Math.floor(from) + (side === 'left' ? 0 : 7919), 2654435761) >>> 16) & 1023) < 512;
 export type RunEvent =
   | {type: 'strike'; entity: RunEntity; points: number; combo: number; multiplier: number; by: StrikeKind; roll?: number}
   | {type: 'crash'; entity: RunEntity}
@@ -316,7 +323,7 @@ function placeTutorial(g: BennyRun): void {
     case 'wall': {
       // The nearer wall, made runnable all along the way to the pillars.
       const wallSide: Side = g.lane < g.lanes / 2 ? 'left' : 'right';
-      for (const w of g.walls) if (w.side === wallSide && w.to > g.distance && w.from < z + 10) w.runnable = true;
+      for (const w of g.walls) if (w.side === wallSide && w.to > g.distance && w.from < z + 10) { w.runnable = true; w.tall = true; }
       // Nearer than the other steps: climbing as soon as the advice shows, the wall run still lasts past the pillars.
       const pz = z - 8;
       for (const l of all) placed.push(add(g, 'pillar', l, pz));
@@ -441,7 +448,7 @@ function layWalls(g: BennyRun): void {
       g.nextEdgeZ = from + length + Math.max(C.speedStart, g.speed) * (C.edgeEvery + random(g) * C.edgeSpread);
     }
     const open = !!g.edge && from < g.edge.to && g.edge.sides.includes(side);
-    g.walls.push({side, from, to: from + C.wallSegment, runnable: !open && (from < C.firstAt + C.wallSegment || random(g) < C.wallRunnable), ...(open ? {void: true} : {})});
+    g.walls.push({side, from, to: from + C.wallSegment, runnable: !open && (from < C.firstAt + C.wallSegment || random(g) < C.wallRunnable), ...(open ? {void: true} : {}), ...(!open && tallAt(side, from) ? {tall: true} : {})});
     if (g.edge && side === 'right' && from + C.wallSegment >= g.edge.to) g.edge = null;
     g.wallsTo[side] = from + C.wallSegment;
   }
@@ -620,7 +627,7 @@ function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
       // Three pillars side by side: the way on is up the runnable wall, along its coins.
       const side = wallSide(g, z)!;
       // Both walls made runnable around the row, so the nearer wall is always a way on, whatever lane Benny comes from.
-      for (const w of g.walls) if (w.to > z - 25 && w.from <= z + 5) { w.runnable = true; w.void = false; }
+      for (const w of g.walls) if (w.to > z - 25 && w.from <= z + 5) { w.runnable = true; w.void = false; w.tall = true; }
       for (const lane of all) add(g, 'pillar', lane, z);
       for (let i = 0; i < 4; i++) add(g, 'wallCoin', wallLane(g, side), z - 6 + i * 3);
       return z + 4;
@@ -722,7 +729,7 @@ function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
       z += g.speed * .4;
       g.holes.push({from: z, to: z + len});
       if (long) {
-        for (const w of g.walls) if (w.to > z - 25 && w.from <= z + len + 5) { w.runnable = true; w.void = false; }
+        for (const w of g.walls) if (w.to > z - 25 && w.from <= z + len + 5) { w.runnable = true; w.void = false; w.tall = true; }
         let side = pick(g, ['left', 'right'] as const);
         for (let at = z - 4; at < z + len; at += 3) { add(g, 'wallCoin', wallLane(g, side), at); if (at > z + 4 && (at - z) % 9 < 3) side = side === 'left' ? 'right' : 'left'; }
       } else { const lane = any(); for (let i = 0; i < 4; i++) add(g, 'coin', lane, z - 1 + i * (len + 2) / 3, {up: .6 + Math.sin(Math.PI * i / 3) * 1.1}); }

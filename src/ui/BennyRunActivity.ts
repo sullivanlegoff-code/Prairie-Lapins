@@ -1,6 +1,6 @@
 import '../display/benny-run.css';
 import {FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
-import {advanceBennyRun, BENNY_RUN, floorHeight, ledgeHeight, platformAt, lanesAt, reach, settingAt, wallLane, dragonVisible, inAir, powerActive, runHeight, runInput, runSummary, sliding, startBennyRun, takeRunEvents,
+import {advanceBennyRun, BENNY_RUN, wallAt, wallLook, floorHeight, ledgeHeight, platformAt, lanesAt, reach, settingAt, wallLane, dragonVisible, inAir, powerActive, runHeight, runInput, runSummary, sliding, startBennyRun, takeRunEvents,
   type BennyRun, type ChallengeKind, type RunEntity, type RunInput, type RunPower, type RunSetting, type RunSummary, type TutorialStep} from '../simulation/bennyRun';
 import {pausableClock, settleCard} from './activityPause';
 import RUN_ART from '../config/bennyRunArt.json';
@@ -62,6 +62,9 @@ type DecorName = typeof DECOR[number];
 const GROUND_RATIO = 1;
 /** How far out the cliff's foot leans beyond the edge of the road (m). */
 const VOID_LIP = .5;
+/** Walls after Blade of Brim (owner, 13 Nov.): a tall one rises past the top of the screen, a low one stands at a jump's height
+ * (her height running on it), a fence a little lower; a wall is one lane thick. */
+const TALL_HEIGHT = 30, LOW_HEIGHT = 1.1, FENCE_HEIGHT = 1.15, WALL_THICK = LANE_WIDTH;
 const PLANK_ACROSS = 3.3, PLANK_ALONG = 3, GRASS_TILE = 3.3, WALL_TILE = WALL_HEIGHT, CLIFF_TILE = 4, VERGE = .6, CLIFF_DEPTH = 4;
 /** The colours of the painted decor where shapes still stand: the clouds of the void, the isles' rock and grass lip, the tops
  *  and sides of platforms and stairs. */
@@ -293,16 +296,17 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     c.fillStyle = grad; c.fillRect(width / 2 + (x0 - camX) * s, top.y + CLIFF_DEPTH * s * .5, (x1 - x0) * s, CLIFF_DEPTH * s * .5 + 1);
     c.restore();
   }
-  /** Where no wall stands, the isle's edge over the void: its grass lip, then its rock going down and away under it. */
+  /** Where no tall wall stands, the isle's edge over the void: its grass lip, then its rock going down and away under it (past a low
+   *  wall, from the wall's outer side; past a fence or nothing, from the verge). */
   function voidEdges(c: CanvasRenderingContext2D, g: BennyRun): void {
     for (const dir of [-1, 1]) {
-      const side = dir < 0 ? 'left' : 'right', covered = g.walls.filter(w => w.side === side && !w.void).map(w => [w.from - g.distance, w.to - g.distance]).sort((a, b) => a[0] - b[0]);
-      const open: [number, number][] = []; let at = NEAR;
-      for (const [a, b] of covered) { if (a > at) open.push([at, Math.min(a, FAR)]); at = Math.max(at, b); if (at >= FAR) break; }
-      if (at < FAR) open.push([at, FAR]);
-      for (const [from, to] of open) {
+      const side = dir < 0 ? 'left' : 'right', segs = g.walls.filter(w => w.side === side).map(w => ({a: w.from - g.distance, b: w.to - g.distance, look: w.void ? 'void' : wallLook(w)})).sort((x, y) => x.a - y.a);
+      const open: {from: number; to: number; low: boolean}[] = []; let at = NEAR;
+      for (const s of segs) { if (s.b <= at) continue; if (s.a > at) open.push({from: at, to: Math.min(s.a, FAR), low: false}); if (s.look !== 'tall') open.push({from: Math.max(at, s.a), to: Math.min(s.b, FAR), low: s.look === 'low'}); at = Math.max(at, s.b); if (at >= FAR) break; }
+      if (at < FAR) open.push({from: at, to: FAR, low: false});
+      for (const {from, to, low} of open) {
         if (to - from < .05) continue;
-        const zs = cuts(g, from, to), edge = (z: number) => dir * (halfAt(g, z) + VERGE);
+        const zs = cuts(g, from, to), edge = (z: number) => dir * (low ? wallXAt(g, z) + WALL_THICK : halfAt(g, z) + VERGE);
         c.beginPath(); zs.forEach((z, i) => { const p = project(edge(z), z, 0); if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); });
         // The isle's cliff drops nearly straight down from the edge and fades into the clouds: past it, only the void (owner, 13 Nov.).
         for (const z of [...zs].reverse()) { const p = project(edge(z) + dir * VOID_LIP, z, -CLIFF_DEPTH); c.lineTo(p.x, p.y); }
@@ -315,29 +319,67 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       }
     }
   }
-  /** The walls painted column by column (earth and grass to run on, grey stone otherwise), inside the wall's own outline. */
+  /** One face of a wall along the road (x = `dir` × its inner side), from the ground up to `top` m: its colour, then the painted
+   *  tile column by column, a tile high per tier (a low wall shows the top of one tile). */
+  function wallFace(c: CanvasRenderingContext2D, g: BennyRun, dir: number, from: number, to: number, top: number, runnable: boolean): void {
+    const x = (z: number) => dir * wallXAt(g, z), zs = cuts(g, from, to), t = decor[runnable ? 'decor-mur-terre' : 'decor-mur-pierre'];
+    c.save(); c.beginPath();
+    zs.forEach((z, i) => { const p = project(x(z), z, 0); if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); });
+    for (const z of [...zs].reverse()) { const p = project(x(z), z, top); c.lineTo(p.x, p.y); }
+    c.closePath();
+    // Higher up, the face darkens a little (the light comes from the road).
+    const z0 = Math.max(from, 0), g0 = project(x(z0), z0, 0), g1 = project(x(z0), z0, top);
+    const grad = c.createLinearGradient(0, g0.y, 0, g1.y); grad.addColorStop(0, runnable ? '#8a6a3c' : '#6e7480'); grad.addColorStop(1, runnable ? '#6a5030' : '#555a66');
+    c.fillStyle = grad; c.fill(); c.clip();
+    const tiers = Math.ceil(top / WALL_TILE - 1e-6);
+    for (let z = to; z > from;) {
+      const a = project(x(z), z, 0), probe = project(x(z - .1), z - .1, 0), perMetre = Math.abs(a.x - probe.x) / .1;
+      const z1 = Math.max(from, z - Math.min(3, Math.max(.03, 6 / Math.max(.001, perMetre)))), b = project(x(z1), z1, 0);
+      const far = z > 30, el = far ? t.far : t.near, side = far ? FAR_SIDE : NEAR_SIDE;
+      if (el) for (let k = 0; k < tiers; k++) {
+        const h0 = k * WALL_TILE, h1 = Math.min(top, h0 + WALL_TILE), ta = project(x(z), z, h1), tb = project(x(z1), z1, h1), ba = project(x(z), z, h0), bb = project(x(z1), z1, h0);
+        const yTop = Math.min(ta.y, tb.y), yBot = Math.max(ba.y, bb.y); if (yBot < 0) break;
+        c.drawImage(el, posmod(g.distance + z1, WALL_TILE) / WALL_TILE * side, 0, Math.max(.5, Math.min(side, (z - z1) / WALL_TILE * side)), side * (h1 - h0) / WALL_TILE, Math.min(a.x, b.x) - .5, yTop, Math.abs(a.x - b.x) + 1, yBot - yTop);
+      }
+      z = z1;
+    }
+    // The face's top edge, darker, so its height reads.
+    c.strokeStyle = runnable ? 'rgba(60,90,30,.8)' : 'rgba(40,44,56,.8)'; c.beginPath();
+    zs.forEach((z, i) => { const p = project(x(z), z, top); c.lineWidth = Math.max(1.5, p.s * .1); if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); }); c.stroke();
+    c.restore();
+  }
+  /** The walls (owner, 13 Nov., after Blade of Brim): tall ones up past the top of the screen, hiding the void; low ones a lane
+   *  thick, their grassy top seen and the void over them; wooden fences. Their end facing Benny shows their thickness: one lane. */
   function paintedWalls(c: CanvasRenderingContext2D, g: BennyRun): void {
-    for (const w of g.walls) {
+    for (const w of [...g.walls].sort((a, b) => b.from - a.from)) {
       if (w.void) continue;
       const from = Math.max(NEAR, w.from - g.distance), to = Math.min(FAR, w.to - g.distance); if (to <= from) continue;
-      const dir = w.side === 'left' ? -1 : 1, zs = cuts(g, from, to), t = decor[w.runnable ? 'decor-mur-terre' : 'decor-mur-pierre'];
-      c.save(); c.beginPath();
-      zs.forEach((z, i) => { const p = project(dir * wallXAt(g, z), z, 0); if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); });
-      for (const z of [...zs].reverse()) { const p = project(dir * wallXAt(g, z), z, WALL_HEIGHT); c.lineTo(p.x, p.y); }
-      c.closePath(); c.fillStyle = w.runnable ? '#8a6a3c' : '#6e7480'; c.fill(); c.clip();
-      for (let z = to; z > from;) {
-        const a = project(dir * wallXAt(g, z), z, 0), probe = project(dir * wallXAt(g, z - .1), z - .1, 0), perMetre = Math.abs(a.x - probe.x) / .1;
-        const z1 = Math.max(from, z - Math.min(3, Math.max(.03, 6 / Math.max(.001, perMetre)))), b = project(dir * wallXAt(g, z1), z1, 0);
-        const ta = project(dir * wallXAt(g, z), z, WALL_HEIGHT), tb = project(dir * wallXAt(g, z1), z1, WALL_HEIGHT);
-        const far = z > 30, el = far ? t.far : t.near, side = far ? FAR_SIDE : NEAR_SIDE;
-        if (el) { const x = Math.min(a.x, b.x), top = Math.min(ta.y, tb.y);
-          c.drawImage(el, posmod(g.distance + z1, WALL_TILE) / WALL_TILE * side, 0, Math.max(.5, Math.min(side, (z - z1) / WALL_TILE * side)), side, x - .5, top, Math.abs(a.x - b.x) + 1, Math.max(a.y, b.y) - top); }
-        z = z1;
+      const dir = w.side === 'left' ? -1 : 1, look = wallLook(w), x = (z: number) => dir * wallXAt(g, z);
+      if (look === 'fence') { fence(c, g, dir, from, to); continue; }
+      const top = look === 'tall' ? TALL_HEIGHT : LOW_HEIGHT;
+      // Its end facing Benny, when it begins ahead of her (after a tall wall it is hidden behind that one).
+      const before = g.walls.find(v => v.side === w.side && v.to === w.from), hidden = !!before && !before.void && wallLook(before) === 'tall';
+      if (from > 0 && from === w.from - g.distance && !hidden) quad(c, [project(x(from), from, 0), project(x(from) + dir * WALL_THICK, from, 0), project(x(from) + dir * WALL_THICK, from, top), project(x(from), from, top)], w.runnable ? '#5e4526' : '#4b505c');
+      if (look === 'low') {
+        const zs = cuts(g, from, to); c.beginPath();
+        zs.forEach((z, i) => { const p = project(x(z), z, top); if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); });
+        for (const z of [...zs].reverse()) { const p = project(x(z) + dir * WALL_THICK, z, top); c.lineTo(p.x, p.y); }
+        c.closePath(); const grass = decor['decor-herbe'].near, pattern = grass ? c.createPattern(grass, 'repeat') : null; c.fillStyle = pattern ?? '#7fae3e'; c.fill();
       }
-      // The wall's top edge, darker, so its height reads.
-      c.strokeStyle = w.runnable ? 'rgba(60,90,30,.8)' : 'rgba(40,44,56,.8)'; c.beginPath();
-      zs.forEach((z, i) => { const p = project(dir * wallXAt(g, z), z, WALL_HEIGHT); c.lineWidth = Math.max(1.5, p.s * .1); if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); }); c.stroke();
-      c.restore();
+      wallFace(c, g, dir, from, to, top, w.runnable);
+    }
+  }
+  /** A wooden fence along the road (not run on): posts every two metres and two rails, the void seen through it. */
+  function fence(c: CanvasRenderingContext2D, g: BennyRun, dir: number, from: number, to: number): void {
+    const x = (z: number) => dir * (halfAt(g, z) + .3), zs = cuts(g, from, to);
+    c.lineJoin = 'round'; c.lineCap = 'round';
+    for (const [h, colour] of [[.45, '#7a4a24'], [.95, '#a0683a']] as const) {
+      c.strokeStyle = colour; c.beginPath();
+      zs.forEach((z, i) => { const p = project(x(z), z, h); c.lineWidth = Math.max(2, p.s * .2); if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); }); c.stroke();
+    }
+    for (let k = Math.floor((g.distance + to) / 2) * 2; k >= g.distance + from; k -= 2) {
+      const z = k - g.distance, a = project(x(z), z, 0), b = project(x(z), z, FENCE_HEIGHT), w = Math.max(1.5, a.s * .18);
+      c.fillStyle = '#6b4223'; c.fillRect(a.x - w / 2, b.y, w, a.y - b.y); c.fillStyle = '#b97a45'; c.fillRect(a.x - w / 2, b.y, w, Math.max(1, w * .5));
     }
   }
 
@@ -727,10 +769,13 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     let shown = shownLanes.get(e.id) ?? e.lane; shown += (e.lane - shown) * Math.min(1, frameDt * 12); if (Math.abs(e.lane - shown) < .01) shown = e.lane; shownLanes.set(e.id, shown);
     // (A coin out over the void, beside the road, is a lane's width out: where Benny floats when she jumps out there.)
     const n = lanesAt(g, e.z); let x = e.kind === 'coin' || (e.lane >= 0 && e.lane <= n - 1) ? (shown - (n - 1) / 2) * LANE_WIDTH : e.lane < 0 ? -wallXAt(g, ahead) + .4 : wallXAt(g, ahead) - .4;
+    // On a low wall, things sit on its top, in its middle.
+    const lowSide = e.kind === 'coin' || (e.lane >= 0 && e.lane <= n - 1) ? null : e.lane < 0 ? 'left' as const : 'right' as const, low = !!lowSide && lowAt(g, lowSide, e.z);
+    if (low) x = (lowSide === 'left' ? -1 : 1) * (wallXAt(g, ahead) + WALL_THICK / 2);
     // The little flying monster hovers at a jump's height over the road (it is struck only by jumping through it).
     // Things on the road sit on its height here: stairs and a platform's top.
     const ground = e.kind === 'flyer' ? 0 : ledgeHeight(g, e.lane, e.z) + (platformAt(g, e.lane, e.z) ? BENNY_RUN.platformHeight : 0);
-    let up = e.kind === 'flyer' ? BENNY_RUN.flyerHeight + .5 + Math.sin(g.at / 180 + e.id) * .08 : ground + (e.up ?? shape.up ?? 0);
+    let up = e.kind === 'flyer' ? BENNY_RUN.flyerHeight + .5 + Math.sin(g.at / 180 + e.id) * .08 : low ? LOW_HEIGHT + (e.kind === 'wallCoin' ? .5 : 0) : ground + (e.up ?? shape.up ?? 0);
     // The magnet: the coins of the other lanes fly over to Benny in her last metres before them.
     if (e.kind === 'coin' && e.lane !== g.lane && powerActive(g, 'magnet') && ahead < MAGNET_PULL) {
       const pull = (1 - Math.max(0, ahead) / MAGNET_PULL) ** 2; x += (laneX(viewLane) - x) * pull; up += .5 * Math.sin(Math.PI * pull);
@@ -958,7 +1003,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   /** Benny's landings: when she last touched down (a squash and a puff of dust), and whether she was in the air last frame. */
   let landedAt = -1e9, wasUp = false;
-  const bennyHeight = (g: BennyRun) => g.wall ? BENNY_RUN.wallRunHeight + Math.sin(leapArc * Math.PI) * 1.4 : runHeight(g);
+  /** Running on a low wall: on its top, upright, not tipped onto its face. */
+  const lowAt = (g: BennyRun, side: 'left' | 'right', z: number) => { const w = wallAt(g, side, z); return !!w && !w.void && wallLook(w) === 'low'; };
+  const onLow = (g: BennyRun) => !!g.wall && lowAt(g, g.wall.side, g.distance);
+  const bennyHeight = (g: BennyRun) => onLow(g) ? LOW_HEIGHT : g.wall ? BENNY_RUN.wallRunHeight + Math.sin(leapArc * Math.PI) * 1.4 : runHeight(g);
   /** The void: Benny drops, and the Dragon rises from below in its catch pose, and she lands on its back. */
   function fallCatch(c: CanvasRenderingContext2D, g: BennyRun, now: number): void {
     if (g.fallFrom === null) return;
@@ -1119,12 +1167,12 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     lanes = g.lanes; viewLanes += (lanesDrawn(g, 8) - viewLanes) * Math.min(1, dt * 2.5);
     // Benny glides between lanes, and onto and off a wall (drawn just inside it), instead of jumping there.
     // (Her paws on the wall's face: she is drawn close against it, tipped over onto it.)
-    const onWall = (wallX() - (art.benny.ready ? .25 : .45) - laneX(lanes - 1)) / LANE_WIDTH, target = g.wall ? (g.wall.side === 'left' ? -onWall : lanes - 1 + onWall) : g.overVoid ? (g.overVoid === 'left' ? -1 : lanes) : g.lane;
+    const onWall = (wallX() - (art.benny.ready ? .25 : .45) - laneX(lanes - 1)) / LANE_WIDTH, lowTop = (wallX() + WALL_THICK / 2 - laneX(lanes - 1)) / LANE_WIDTH, target = g.wall ? (onLow(g) ? (g.wall.side === 'left' ? -lowTop : lanes - 1 + lowTop) : g.wall.side === 'left' ? -onWall : lanes - 1 + onWall) : g.overVoid ? (g.overVoid === 'left' ? -1 : lanes) : g.lane;
     // A spring: she is carried a little past her lane and settles; onto a wall, straight there (no swing through the wall).
     if (g.wall || Math.abs(target - viewLane) > lanes) { viewLane += (target - viewLane) * Math.min(1, dt * 24); laneSpeed = 0; }
     else { for (let left = dt; left > 0; left -= 1 / 240) { const h = Math.min(left, 1 / 240); laneSpeed += ((target - viewLane) * GLIDE.pull - laneSpeed * GLIDE.damp) * h; viewLane += laneSpeed * h; } }
     // On a wall, she tips over onto it and the world rolls (eased).
-    { const to = g.wall ? (g.wall.side === 'left' ? -1 : 1) : 0; wallTilt += (to - wallTilt) * Math.min(1, dt * 9); if (Math.abs(wallTilt) < .002 && !to) wallTilt = 0; }
+    { const to = g.wall && !onLow(g) ? (g.wall.side === 'left' ? -1 : 1) : 0; wallTilt += (to - wallTilt) * Math.min(1, dt * 9); if (Math.abs(wallTilt) < .002 && !to) wallTilt = 0; }
     // The blow's pending effects.
     if (pending.length) { const due = pending.filter(e => e.at <= now); pending = pending.filter(e => e.at > now); for (const e of due) e.run(); }
     { const side = g.wall ? (g.wall.side === 'left' ? -1 : 1) : 0, toX = side ? side * wallX() * .35 : laneX(viewLane) * .12, toUp = g.wall ? bennyHeight(g) * .45 : floorHeight(g) * .4;
