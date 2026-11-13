@@ -30,7 +30,7 @@
     },
     "anchor": "feet",
     "pockets": 0,
-    "bytes": 78364
+    "bytes": 80304
   },
   "benny-moves": {
     "image": "assets/benny-run/benny-moves.webp",
@@ -55,7 +55,7 @@
     },
     "anchor": "feet",
     "pockets": 0,
-    "bytes": 52028
+    "bytes": 53446
   },
   "dragon": {
     "image": "assets/benny-run/dragon.webp",

@@ -49,6 +49,35 @@ const SPECK = .04;
 
 const read = file => decodeRgbPng(readFileSync(file));
 
+/** The game's own Benny (her island picture): each pose of the run is matched to her outline and cream, pose by pose (13 Nov.:
+ *  measured against her, the run's outline was a lighter brown on every pose, and the landing's cream too white). */
+const GAME_BENNY = 'public/assets/rabbits/benny/benny-v1.png';
+const luma = (px, i) => .2126 * px[i] + .7152 * px[i + 1] + .0722 * px[i + 2];
+const chroma = (px, i) => Math.max(px[i], px[i + 1], px[i + 2]) - Math.min(px[i], px[i + 1], px[i + 2]);
+/** The median colour of the visible pixels picked by `pick`. */
+function median({pixels}, pick) {
+  const chosen = [[], [], []];
+  for (let i = 0; i < pixels.length; i += 4) if (pixels[i + 3] > 200 && pick(pixels, i)) for (let k = 0; k < 3; k++) chosen[k].push(pixels[i + k]);
+  return chosen.map(list => list.sort((a, b) => a - b)[list.length >> 1] ?? 0);
+}
+/** Its outline (the darkest 4 % of the visible pixels, and how dark they start) and its cream (light, nearly grey: tail, paws). */
+function marks(image) {
+  const lumas = []; for (let i = 0; i < image.pixels.length; i += 4) if (image.pixels[i + 3] > 200) lumas.push(luma(image.pixels, i));
+  lumas.sort((a, b) => a - b); const dark = lumas[Math.floor(lumas.length * .04)], soft = lumas[Math.floor(lumas.length * .08)];
+  return {dark, soft, line: median(image, (px, i) => luma(px, i) <= dark), cream: median(image, (px, i) => luma(px, i) > 205 && chroma(px, i) < 60)};
+}
+/** One pose matched to the game's Benny: its outline darkened (fading out over the next darkest pixels), its cream moved to hers. */
+function matchBenny(image, game) {
+  const own = marks(image), px = image.pixels, ratio = own.line.map((v, k) => v ? game.line[k] / v : 1), shift = own.cream.map((v, k) => game.cream[k] - v);
+  for (let i = 0; i < px.length; i += 4) {
+    if (!px[i + 3]) continue;
+    const y = luma(px, i), w = y <= own.dark ? 1 : y >= own.soft ? 0 : (own.soft - y) / (own.soft - own.dark);
+    if (w > 0) for (let k = 0; k < 3; k++) px[i + k] = Math.max(0, Math.min(255, Math.round(px[i + k] * (1 + w * (ratio[k] - 1)))));
+    else if (y > 205 && chroma(px, i) < 60) for (let k = 0; k < 3; k++) px[i + k] = Math.max(0, Math.min(255, Math.round(px[i + k] + shift[k])));
+  }
+  return image;
+}
+
 /** Pure white pockets the drawing closes in (between the legs, under an arm) become background too. */
 function clearPockets({width, height, pixels}, least = 250) {
   const seen = new Uint8Array(width * height), white = i => pixels[i * 4 + 3] === 255 && Math.min(pixels[i * 4], pixels[i * 4 + 1], pixels[i * 4 + 2]) >= 247
@@ -120,6 +149,7 @@ function bodyCentre(image, label, blot) {
 if (!existsSync(REFERENCE)) throw Error(`Missing ${REFERENCE}: give the approved A1 reference with --reference`);
 const reference = read(REFERENCE); cutOut(reference, 'light');
 const referenceStats = stats(reference);
+const gameMarks = marks(read(GAME_BENNY));
 mkdirSync(TARGET, {recursive: true});
 const config = {}, atlases = {};
 for (const [name, character] of Object.entries(CHARACTERS)) {
@@ -139,7 +169,8 @@ for (const [name, character] of Object.entries(CHARACTERS)) {
     else { const c = bodyCentre(sheet, label, blot); image = square(sheet, label, blot, s, s / 2, s / 2, c.x, c.y); }
     // A fitted drawing's width and height in its square (a pair takes its first picture's), to draw it at the thing's size.
     const ref = character.group ? list[first(k)] : character.shared ? list[0] : character.pairs ? list[k - k % 2] : blot, fit = character.fit ? [+((ref.x1 - ref.x0 + 1) / s).toFixed(3), +((ref.y1 - ref.y0 + 1) / s).toFixed(3)] : [];
-    return {name: character.frames[k], image: downscale(image, character.size), fit};
+    const small = downscale(image, character.size);
+    return {name: character.frames[k], image: name === 'benny' || name === 'benny-moves' ? matchBenny(small, gameMarks) : small, fit};
   });
   const columns = character.columns, rows = Math.ceil(frames.length / columns), S = character.size;
   const atlas = {width: columns * S, height: rows * S, pixels: Buffer.alloc(columns * S * rows * S * 4)};

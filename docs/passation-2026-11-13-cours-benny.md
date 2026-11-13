@@ -2,6 +2,8 @@
 
 Pour l'agent qui reprend le mini-jeu. Lire d'abord `AGENTS.md`, puis `docs/passation-2026-11-12-cours-benny.md` (règles, fichiers, commandes), puis ce fichier. Ce fichier remplace la section « Ce qui reste à faire » de la passation du 12 novembre.
 
+> **Mise à jour (lots 114 à 119)** : les trois objectifs sont faits ; voir la section 7, qui remplace la section 2 pour l'état actuel.
+
 ## 1. Où en est le chantier
 
 - **Branche** : `feature/cours-benny`, dernier commit `c1d7814` (lot 113). Arbre dédié : `.claude/worktrees/cours-benny`.
@@ -72,3 +74,44 @@ Pour l'agent qui reprend le mini-jeu. Lire d'abord `AGENTS.md`, puis `docs/passa
 3. Décor peint de la piste (textures, murs, bord du vide), contrôle de lisibilité.
 4. Retour sur Benny : vérification au ralenti de chaque transition, comparaison de fidélité pose par pose, réglage des durées.
 5. Interface et confort, puis tests de qualité complets.
+
+## 7. Suite du 13 novembre : lots 114 à 119
+
+### Objectif 1 — Benny (lots 115 et 119)
+- **Fidélité, pose par pose**, contre la Benny du jeu (`public/assets/rabbits/benny/benny-v1.png`). Écarts de couleur en ΔE (sous 5 : à peine visible).
+  - Avant : pelage fidèle (0,4 à 2,2), mais contour trop clair sur les dix poses (8,5 à 11,9 ; brun `#82512c` contre `#693f26`) et crème de l'atterrissage trop blanche (7,2).
+  - Correction dans `scripts/prepare-benny-run-art.mjs` (`matchBenny`) : chaque pose reprend le contour et la crème de la Benny du jeu.
+  - Après :
+
+| Pose | ΔE pelage | ΔE crème | ΔE contour |
+|---|---|---|---|
+| run-1 | 0,9 | 1,4 | 2,9 |
+| run-2 | 0,5 | 1,4 | 4,2 |
+| jump | 1,1 | 1,7 | 2,6 |
+| roll | 1,1 | 0,0 | 3,7 |
+| wall | 0,9 | 0,5 | 3,4 |
+| strike | 1,2 | 0,0 | 2,8 |
+| windup | 1,6 | 0,5 | 2,5 |
+| land | 3,0 | 0,9 | 2,7 |
+| fall | 1,2 | 0,5 | 3,7 |
+| push | 1,5 | 1,0 | 3,3 |
+
+- **Durées** (`POSE_MS` et `landHold` dans `src/ui/BennyRunActivity.ts`), relevées image par image à 60 images par seconde :
+  - frappe : préparation 40 ms (avant : 80 ms, alors que les points et l'arc-en-ciel étaient déjà là), coup jusqu'à 200 ms, comme l'arc (220 ms). Frise : `windup×2 strike×10` ;
+  - atterrissage : une demi-foulée (une foulée tous les 1,6 m), 50 ms au moins. Avant : environ 112 ms, soit plus de trois images de course figées à pleine vitesse. Frise : `land×5` à 11 m/s, `land×3` à 24 m/s ;
+  - poussée au départ d'un mur : 180 ms, pendant lesquelles Benny bascule peu à peu vers le mur. Frise : `push×10 wall×6`.
+- Chute : Benny descend et rapetisse au-dessus du vide ; la Dragon la rattrape (sa peinture la tient déjà, elle n'est plus dessinée deux fois).
+
+### Objectif 2 — Coffres et créatures (lots 114 et 116)
+- Atlas `chests` (une case par coffre, les morceaux d'une case gardés ensemble) : intact, projeté (il culbute), brisé.
+- Planche `sheet-foes.png` (3 × 3) : dragonnet endormi, réveillé (à 7 m de Benny), étourdi ; braise haute, basse, en fumée ; volant ailes levées, baissées, étourdi.
+- Disparition par type (`vanish`, `GHOST_MS`) : le coffre s'ouvre et saute, le dragonnet culbute, la braise part en fumée, le volant tournoie. Le monstre frappé reste devant Benny le temps de disparaître.
+
+### Objectif 3 — Piste peinte (lots 117 et 118)
+- Textures (`scripts/prepare-benny-run-decor.mjs`, sources dans `output/imagegen/course-decor-final-v1/`) : planches, herbe, mur de terre et d'herbe, mur de pierre, falaise. Le ciel passe en WebP (69 Ko).
+- Rendu : le sol en bandes de profondeur ; les murs en colonnes ; la falaise au bout des trous et des fosses ; une lèvre d'herbe et un flanc de roche là où il n'y a pas de mur (le vide). Le tout est dessiné sur un calque à un pixel par point.
+- Coût mesuré dans Chromium sans carte graphique : 14 ms par image d'abord, 10 ms avec le calque. En temps réel : 60 images par seconde, médiane 16,6 ms, sans retour aux couleurs plates. Si un appareil reste trop lent même en image adoucie, la piste revient d'elle-même aux couleurs plates.
+- Pas encore essayé sur iPhone.
+
+### Validation
+- `npx tsc --noEmit` sans erreur, tests de la course verts, suite complète verte (voir le dernier rapport).

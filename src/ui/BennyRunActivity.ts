@@ -11,6 +11,13 @@ const PAINTED: PaintedName[] = ['benny', 'benny-moves', 'dragon', 'creatures', '
 /** Painted Benny's square, in Benny's sizes (her shape was one size tall): the drawing, ears up, fills about four fifths of it. */
 const PAINTED_BENNY = 1.85;
 /** How long each struck creature takes to melt away (ms); a chest stays broken open a little longer. */
+/** How long Benny's passing poses last (ms), checked frame by frame in slow motion on 13 Nov.: the wind-up only just before the
+ *  swing (the strike's points and rainbow sweep are already there), the swing as long as its sweep (220 ms), the push off onto a
+ *  wall while she tips towards it. */
+const POSE_MS = {windup: 40, strike: 200, push: 180};
+/** The landing pose lasts half a stride (a stride every 1.6 m: 73 ms at the start, 33 at top speed), three frames at least, so her
+ *  paws never stop while the road runs on. */
+const landHold = (g: {speed: number}) => Math.max(50, .8 / Math.max(1, g.speed) * 1000);
 const GHOST_MS: Partial<Record<string, number>> = {chest: 520, dragonnet: 420, ember: 380, flyer: 400};
 /** A dragonnet wakes up this close to Benny (m). */
 const DRAGONNET_WAKES = 7;
@@ -944,12 +951,12 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // Painted: her pose for the moment (the wall pose leans onto a wall on her right, mirrored for the left one; the strike swings
     // her wand the way she moved), standing on her feet.
     if (art.benny.ready) {
-      const pose = flat ? 'roll' : wall ? 'wall' : inAir(g) || powerActive(g, 'flight') ? 'jump' : swing && now - swing.at < 180 ? 'strike' : Math.sin(stride) > 0 ? 'run-1' : 'run-2';
+      const pose = flat ? 'roll' : wall ? 'wall' : inAir(g) || powerActive(g, 'flight') ? 'jump' : swing && now - swing.at < POSE_MS.strike ? 'strike' : Math.sin(stride) > 0 ? 'run-1' : 'run-2';
       const mirror = wall ? wall.side === 'left' : pose === 'strike' && g.lane < g.laneFrom;
       // The wind-up of a strike, the landing and the fall have their own painted poses (sheet of 13 Nov.).
-      const moves: string | null = g.fallFrom !== null ? 'fall' : wall && g.at - (wall.since ?? g.at) < 180 ? 'push' : swing && now - swing.at < 80 && !wall && !flat && !inAir(g) ? 'windup' : land > .25 && !wall && !flat && !inAir(g) ? 'land' : null;
+      const moves: string | null = g.fallFrom !== null ? 'fall' : wall && g.at - (wall.since ?? g.at) < POSE_MS.push ? 'push' : swing && now - swing.at < POSE_MS.windup && !wall && !flat && !inAir(g) ? 'windup' : now - landedAt < landHold(g) && !wall && !flat && !inAir(g) ? 'land' : null;
       // Pushing off onto a wall she tips over towards it, into her wall-running lean.
-      if (moves === 'push' && wall) c.rotate((wall.side === 'left' ? -1 : 1) * .3 * Math.min(1, (g.at - (wall.since ?? g.at)) / 180));
+      if (moves === 'push' && wall) c.rotate((wall.side === 'left' ? -1 : 1) * .3 * Math.min(1, (g.at - (wall.since ?? g.at)) / POSE_MS.push));
       if (moves) paint(c, 'benny-moves', moves, 0, h / 2, s * PAINTED_BENNY, mirror);
       else paint(c, 'benny', pose, 0, flat ? h * .45 : h / 2, s * PAINTED_BENNY * (flat ? .8 : 1), mirror);
     } else {
