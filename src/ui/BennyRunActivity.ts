@@ -361,7 +361,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       const top = look === 'tall' ? TALL_HEIGHT : LOW_HEIGHT;
       // Its end facing Benny, when it begins ahead of her (after a tall wall it is hidden behind that one).
       const before = g.walls.find(v => v.side === w.side && v.to === w.from), hidden = !!before && !before.void && wallLook(before) === 'tall';
-      if (from > 0 && from === w.from - g.distance && !hidden) quad(c, [project(x(from), from, 0), project(x(from) + dir * WALL_THICK, from, 0), project(x(from) + dir * WALL_THICK, from, top), project(x(from), from, top)], w.runnable ? '#9a4f26' : '#7a5058');
+      if (from > 0 && from === w.from - g.distance && !hidden) endFace(c, x(from), x(from) + dir * WALL_THICK, from, top, w.runnable);
       if (look === 'low') {
         const zs = cuts(g, from, to); c.beginPath();
         zs.forEach((z, i) => { const p = project(x(z), z, top); if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); });
@@ -370,6 +370,17 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       }
       wallFace(c, g, dir, from, to, top, w.runnable);
     }
+  }
+  /** A wall's end facing Benny: square to the camera, so its painted tile is laid flat, a little shaded (the light comes from the road). */
+  function endFace(c: CanvasRenderingContext2D, x0: number, x1: number, z: number, top: number, runnable: boolean): void {
+    const a = project(x0, z, 0), b = project(x1, z, top), left = Math.min(a.x, b.x), right = Math.max(a.x, b.x), bottom = a.y, up = Math.max(0, b.y);
+    if (right < 0 || left > width || bottom <= up) return;
+    c.save(); c.beginPath(); c.rect(left, up, right - left, bottom - up); c.clip();
+    c.fillStyle = runnable ? '#c86a32' : '#a87a80'; c.fillRect(left, up, right - left, bottom - up);
+    const t = decor[runnable ? 'decor-mur-terre' : 'decor-mur-pierre'], el = z > 30 ? t.far : t.near, tile = Math.max(4, FACE_TILE * a.s);
+    if (el) for (let y = bottom - tile; y + tile > up; y -= tile) for (let xx = left; xx < right; xx += tile) c.drawImage(el, xx, y, tile, tile);
+    c.fillStyle = 'rgba(60,30,30,.22)'; c.fillRect(left, up, right - left, bottom - up);
+    c.restore();
   }
   /** A wooden fence along the road (not run on): posts every two metres and two rails, the void seen through it. */
   function fence(c: CanvasRenderingContext2D, g: BennyRun, dir: number, from: number, to: number): void {
