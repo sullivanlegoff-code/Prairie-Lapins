@@ -461,6 +461,11 @@ describe('Cours cours Benny ! rules', () => {
     c.z = g.distance + 0.3; runInput(g, g.at, 'down');
     expect(g.foes).toBe(1); expect(g.entities).not.toContain(c);
   });
+  it('a sideways move into a chest strikes it once: it is thrown on, not broken at once', () => {
+    const g = quiet(); run(g, C.introMs); g.lane = 1;
+    const c = place(g, 'chest', 0, 3); runInput(g, g.at, 'left');
+    expect(g.lane).toBe(0); expect(g.foes).toBe(0); expect(g.entities).toContain(c); expect(c.hp).toBe(1); expect(c.knock).toBeGreaterThan(0);
+  });
   it('a thrown chest knocks down the creature it meets, and breaks against decor', () => {
     const g = quiet(); run(g, C.introMs); const lane = g.lane;
     const c = place(g, 'chest', lane, 0.5); runInput(g, g.at, 'down');

@@ -1056,7 +1056,9 @@ function arrive(g: BennyRun, from: number, target: number, step: number): void {
   // sur la même ligne »).
   const beyond = target + step >= 0 && target + step < g.lanes ? nearest(g, target + step, reach(g), isFoe) : undefined;
   const far = beyond && (!first || Math.abs(beyond.z - first.z) <= C.farLine) ? beyond : undefined;
-  for (let hit = first; hit; hit = nearest(g, target, reach(g))) strike(g, hit, 'lane');
+  // Each thing is struck once per move: a chest knocked by this blow flies on and waits for the next one (it takes two).
+  const struck = new Set<number>();
+  for (let hit = first; hit; hit = nearest(g, target, reach(g), e => strikable(e) && !struck.has(e.id))) { struck.add(hit.id); strike(g, hit, 'lane'); }
   if (far) strike(g, far, 'far');
   if (behind && isFoe(first!)) strike(g, behind, 'spin');
 }
