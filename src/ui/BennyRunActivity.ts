@@ -79,6 +79,8 @@ const STREAK_FROM = 3, STREAK_MS = 180;
 /** A gap in the road shows a shaded band at least `GAP_MIN_PX` px high, however far: it reads as a gap long before Benny is there. */
 const GAP_MIN_PX = 7, GAP_SHADE = 'rgba(52,26,62,.62)';
 /** The close camera follows Benny across: `CAM_LANE` of the way to her lane, `CAM_WALL` of the way to a wall she runs on. */
+/** How far aside the far end of the road is drawn at the most, in metres. */
+const BEND = 9;
 const ROAD_FILL = 1.04, BENNY_AT = .76, CAM_LANE = .55, CAM_WALL = .78;
 const BLOCK_LOW = 13, VINE_TILE = 6, VINE_DROP = 3, TUFT_TILE = 4.5, TUFT_PART = 3 / 8, TUFT_NEAR = 50, HAZE_FROM = 22, HAZE_SPAN = 70, HAZE_MAX = .55;
 const hash01 = (n: number) => { let t = Math.imul(n ^ 0x9e3779b9, 2654435761) >>> 0; t ^= t >>> 15; t = Math.imul(t, 2246822519) >>> 0; t ^= t >>> 13; return (t >>> 0) / 4294967296; };
@@ -289,7 +291,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const row = (name: DecorName, x0: number, x1: number, a0: number, a1: number, across: number, along: number, y: number, s: number) => {
       const far = a0 > 30, t = decor[name], el = far ? t.far : t.near, side = far ? FAR_SIDE : NEAR_SIDE; if (!el) return;
       const sw = Math.min(side * 4, (x1 - x0) / across * side), sh = Math.max(.5, Math.min(side, (a0 - a1) / along * side));
-      c.drawImage(el, posmod(x0, across) / across * side, posmod(-(g.distance + a0), along) / along * side, sw, sh, width / 2 + (x0 - camX) * s, y, (x1 - x0) * s, BAND + .5);
+      c.drawImage(el, posmod(x0, across) / across * side, posmod(-(g.distance + a0), along) / along * side, sw, sh, width / 2 + (x0 + bendAt((a0 + a1) / 2) - camX) * s, y, (x1 - x0) * s, BAND + .5);
     };
     for (let y = Math.max(0, Math.floor(project(0, FAR, 0).y)); y < height; y += BAND) {
       const a0 = Math.min(FAR, aheadAt(y)), a1 = Math.max(NEAR, aheadAt(y + BAND)); if (a1 >= FAR || a0 <= NEAR) continue;
@@ -308,12 +310,12 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const top = project(x0, ahead, 0), s = top.s;
     for (let x = Math.floor(x0 / CLIFF_TILE) * CLIFF_TILE; x < x1; x += CLIFF_TILE) {
       const a = Math.max(x, x0), b = Math.min(x + CLIFF_TILE, x1);
-      c.drawImage(el, posmod(a, CLIFF_TILE) / CLIFF_TILE * side, 0, (b - a) / CLIFF_TILE * side, side, width / 2 + (a - camX) * s, top.y, (b - a) * s, CLIFF_DEPTH * s);
+      c.drawImage(el, posmod(a, CLIFF_TILE) / CLIFF_TILE * side, 0, (b - a) / CLIFF_TILE * side, side, width / 2 + (a + bendAt(ahead) - camX) * s, top.y, (b - a) * s, CLIFF_DEPTH * s);
     }
     // Deeper down, the isle fades into the clouds.
     const grad = c.createLinearGradient(0, top.y + CLIFF_DEPTH * s * .5, 0, top.y + CLIFF_DEPTH * s);
     grad.addColorStop(0, 'rgba(252,196,149,0)'); grad.addColorStop(1, PAINTED_LOOK.cloudBottom);
-    c.fillStyle = grad; c.fillRect(width / 2 + (x0 - camX) * s, top.y + CLIFF_DEPTH * s * .5, (x1 - x0) * s, CLIFF_DEPTH * s * .5 + 1);
+    c.fillStyle = grad; c.fillRect(width / 2 + (x0 + bendAt(ahead) - camX) * s, top.y + CLIFF_DEPTH * s * .5, (x1 - x0) * s, CLIFF_DEPTH * s * .5 + 1);
     c.restore();
   }
   /** Where no tall wall stands, the isle's edge over the void: its grass lip, then its rock going down and away under it (past a low
@@ -563,8 +565,12 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const cameraHeight = () => Math.min(24, Math.max(2.2, (height * BENNY_AT - height * HORIZON) / scale0()));
   const project = (x: number, ahead: number, up: number) => {
     const horizon = height * HORIZON, s = scale0() * CAMERA_BACK / (Math.max(-CAMERA_BACK + .5, ahead) + CAMERA_BACK);
-    return {x: width / 2 + (x - camX) * s, y: horizon + (cameraHeight() + camUp - up) * s, s};
+    return {x: width / 2 + (x + bendAt(ahead) - camX) * s, y: horizon + (cameraHeight() + camUp - up) * s, s};
   };
+  /** The road winds in the distance (drawing only: the lanes and the rules stay straight): everything `ahead` m away is drawn this
+   *  many metres aside, nothing at Benny's feet, `bend` m at the far end; the bends come and go with the distance run. */
+  let bend = 0;
+  const bendAt = (ahead: number) => { const k = Math.min(1, Math.max(0, ahead) / FAR); return bend * k * k; };
   /** The camera follows Benny a little: towards a wall she runs on (and up with her), up with her onto a platform. */
   let camX = 0, camUp = 0;
   const laneX = (lane: number) => (lane - (lanes - 1) / 2) * LANE_WIDTH;
@@ -1264,6 +1270,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // The blow's pending effects.
     if (pending.length) { const due = pending.filter(e => e.at <= now); pending = pending.filter(e => e.at > now); for (const e of due) e.run(); }
     { const side = g.wall ? (g.wall.side === 'left' ? -1 : 1) : 0, toX = side ? side * wallX() * CAM_WALL : laneX(viewLane) * CAM_LANE, toUp = g.wall ? bennyHeight(g) * .45 : floorHeight(g) * .4;
+      bend = BEND * (Math.sin(g.distance / 150) + .55 * Math.sin(g.distance / 67 + 1.3)) / 1.55;
       camX += (toX - camX) * Math.min(1, dt * 7); camUp += (toUp - camUp) * Math.min(1, dt * 4); }
     // Crossing from one wall to the other: a bound through the air.
     leapArc = g.wall ? Math.min(1, Math.abs(target - viewLane) / (lanes - 1 + 2 * onWall)) : 0;
@@ -1564,7 +1571,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     coach.hidden = true;
     slowLost = 0; slowUntil = 0; lastLoopAt = clock(); settingSince = -1e9; shownSetting = 'grotte';
     runBest = best; beaten = false; milestone = 0; metresBest = options.bestMetres?.() ?? 0; metresBeaten = false; score.classList.remove('benny-run-beaten');
-    game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; camX = 0; camUp = 0; landedAt = -1e9; wasUp = false; swing = null; pending = []; wallTilt = 0; laneSpeed = 0; rollFrom = -1e9; wasFlat = false; shock = null; cleared.clear(); flashes = []; bits = []; rings = []; streaks = []; coinRun = 0; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
+    game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; camX = 0; camUp = 0; landedAt = -1e9; wasUp = false; swing = null; pending = []; wallTilt = 0; laneSpeed = 0; rollFrom = -1e9; wasFlat = false; shock = null; cleared.clear(); flashes = []; bits = []; rings = []; streaks = []; bend = 0; coinRun = 0; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
     holesAnnounced = 0; lastHoleSeen = -1;
     hud(); flash('Cours cours Benny !'); frame(loop);
   }
