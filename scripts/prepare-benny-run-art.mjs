@@ -36,6 +36,9 @@ export const CHARACTERS = {
   // Two rows of four, each drawing fitted to its own square (they differ in size), standing on its bottom; the two pictures of
   // one creature share one square so it keeps its size from one picture to the next.
   creatures: {sheet: 'sheet-creatures.png', frames: ['dragonnet-sleep', 'dragonnet-awake', 'chest-shut', 'chest-open', 'ember-1', 'ember-2', 'flyer-1', 'flyer-2'], size: 200, columns: 4, rows: 2, fit: true, pairs: true},
+  // The chest's three states (13 Nov.): one chest per cell of three equal cells, the pieces of a cell (sparkles, a lid knocked
+  // off, loose coins) kept together as one drawing; all three in one same square, drawn at the shut chest's size.
+  chests: {sheet: 'sheet-chests.png', frames: ['intact', 'knocked', 'broken'], size: 220, columns: 3, fit: true, cells: 3, shared: true},
   objets: {sheet: 'sheet-objets.png', frames: ['pot', 'pot-gold', 'barrier', 'beam', 'pillar', 'rock', 'cart', 'coin'], size: 200, columns: 4, rows: 2, fit: true},
 };
 /** A blot smaller than this share of the biggest one is a speck (a stray stroke, a crumb), not a drawing. */
@@ -59,7 +62,7 @@ function clearPockets({width, height, pixels}) {
 }
 
 /** The sheet's separate drawings (8-connected blots of visible pixels), left to right, specks dropped. */
-function blots({width, height, pixels}, rows = 1) {
+function blots({width, height, pixels}, rows = 1, cells = 0) {
   const label = new Int32Array(width * height).fill(-1), found = [];
   for (let start = 0; start < width * height; start++) {
     if (label[start] >= 0 || pixels[start * 4 + 3] < 24) continue;
@@ -71,6 +74,15 @@ function blots({width, height, pixels}, rows = 1) {
     found.push({id, x0, y0, x1, y1, count});
   }
   const biggest = Math.max(...found.map(b => b.count));
+  // One drawing per cell of equal width: every piece in a cell (but dust) belongs to it.
+  if (cells) {
+    const list = Array.from({length: cells}, () => null);
+    for (const b of found) { if (b.count < biggest * .002) continue;
+      const k = Math.min(cells - 1, Math.floor((b.x0 + b.x1) / 2 / (width / cells))), m = list[k];
+      list[k] = m ? {id: -2, ids: new Set([...m.ids, b.id]), x0: Math.min(m.x0, b.x0), y0: Math.min(m.y0, b.y0), x1: Math.max(m.x1, b.x1), y1: Math.max(m.y1, b.y1), count: m.count + b.count}
+        : {...b, ids: new Set([b.id])}; }
+    return {label, list: list.filter(Boolean)};
+  }
   const kept = found.filter(b => b.count >= biggest * SPECK);
   // On a sheet of several rows: top row first (by the drawings' middle height), each row left to right.
   const byHeight = [...kept].sort((a, b) => (a.y0 + a.y1) - (b.y0 + b.y1)), per = Math.ceil(kept.length / rows), list = [];
@@ -82,7 +94,7 @@ function blots({width, height, pixels}, rows = 1) {
 function square(image, label, blot, side, ax, ay, anchorX, anchorY) {
   const out = {width: side, height: side, pixels: Buffer.alloc(side * side * 4)};
   for (let y = blot.y0; y <= blot.y1; y++) for (let x = blot.x0; x <= blot.x1; x++) {
-    const i = y * image.width + x; if (label[i] !== blot.id) continue;
+    const i = y * image.width + x; if (blot.ids ? !blot.ids.has(label[i]) : label[i] !== blot.id) continue;
     const tx = Math.round(x - anchorX + ax), ty = Math.round(y - anchorY + ay);
     if (tx < 0 || ty < 0 || tx >= side || ty >= side) throw Error('A drawing does not fit its square');
     image.pixels.copy(out.pixels, (ty * side + tx) * 4, i * 4, i * 4 + 4);
@@ -111,18 +123,18 @@ for (const [name, character] of Object.entries(CHARACTERS)) {
   const sheet = read(`${SOURCES}/${character.sheet}`);
   cutOut(sheet, 'light'); const pockets = clearPockets(sheet);
   if (name === 'benny' || name === 'benny-moves') recolour(sheet, referenceStats);
-  const {label, list} = blots(sheet, character.rows);
+  const {label, list} = blots(sheet, character.rows, character.cells);
   if (list.length !== character.frames.length) throw Error(`${character.sheet}: ${list.length} drawings found, ${character.frames.length} expected`);
   const extent = b => Math.max(b.x1 - b.x0, b.y1 - b.y0) + 1;
   // One square side per character, from its biggest drawing, with a margin; fitted sheets: per drawing (or per pair).
   const side = Math.ceil(Math.max(...list.map(extent)) * 1.08);
-  const sideOf = k => !character.fit ? side : Math.ceil((character.pairs ? Math.max(extent(list[k - k % 2]), extent(list[k - k % 2 + 1])) : extent(list[k])) * 1.04);
+  const sideOf = k => !character.fit ? side : character.shared ? Math.ceil(Math.max(...list.map(extent)) * 1.04) : Math.ceil((character.pairs ? Math.max(extent(list[k - k % 2]), extent(list[k - k % 2 + 1])) : extent(list[k])) * 1.04);
   const frames = list.map((blot, k) => {
     let image; const s = sideOf(k);
     if (character.standing || character.fit) image = square(sheet, label, blot, s, s / 2, s * (character.fit ? .98 : .97), (blot.x0 + blot.x1) / 2, blot.y1);
     else { const c = bodyCentre(sheet, label, blot); image = square(sheet, label, blot, s, s / 2, s / 2, c.x, c.y); }
     // A fitted drawing's width and height in its square (a pair takes its first picture's), to draw it at the thing's size.
-    const ref = character.pairs ? list[k - k % 2] : blot, fit = character.fit ? [+((ref.x1 - ref.x0 + 1) / s).toFixed(3), +((ref.y1 - ref.y0 + 1) / s).toFixed(3)] : [];
+    const ref = character.shared ? list[0] : character.pairs ? list[k - k % 2] : blot, fit = character.fit ? [+((ref.x1 - ref.x0 + 1) / s).toFixed(3), +((ref.y1 - ref.y0 + 1) / s).toFixed(3)] : [];
     return {name: character.frames[k], image: downscale(image, character.size), fit};
   });
   const columns = character.columns, rows = Math.ceil(frames.length / columns), S = character.size;

@@ -6,10 +6,12 @@ import {pausableClock, settleCard} from './activityPause';
 import RUN_ART from '../config/bennyRunArt.json';
 
 /** The paintings' frames (scripts/prepare-benny-run-art.mjs): Benny's square stands her on its bottom, the Dragon's is centred on her body. */
-type PaintedName = 'benny' | 'benny-moves' | 'dragon' | 'creatures' | 'objets';
-const PAINTED: PaintedName[] = ['benny', 'benny-moves', 'dragon', 'creatures', 'objets'];
+type PaintedName = 'benny' | 'benny-moves' | 'dragon' | 'creatures' | 'chests' | 'objets';
+const PAINTED: PaintedName[] = ['benny', 'benny-moves', 'dragon', 'creatures', 'chests', 'objets'];
 /** Painted Benny's square, in Benny's sizes (her shape was one size tall): the drawing, ears up, fills about four fifths of it. */
 const PAINTED_BENNY = 1.85;
+/** How long each struck creature takes to melt away (ms); a chest stays broken open a little longer. */
+const GHOST_MS: Partial<Record<string, number>> = {chest: 520, dragonnet: 320, ember: 260, flyer: 340};
 /** The Dragon's flight from behind: her two wing beats, each held this long. */
 const WING_BEAT = 120;
 
@@ -138,7 +140,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   /** One fitted drawing (a creature, an object) set on (x, bottom), `w` wide and `h` tall (its own proportions if `h` is left out);
    *  false while its painting has not loaded. */
-  function fitted(c: CanvasRenderingContext2D, name: 'creatures' | 'objets', frame: string, x: number, bottom: number, w: number, h?: number): boolean {
+  function fitted(c: CanvasRenderingContext2D, name: 'creatures' | 'chests' | 'objets', frame: string, x: number, bottom: number, w: number, h?: number): boolean {
     const image = art[name].image, at = (RUN_ART[name].frames as Record<string, number[]>)[frame], size = RUN_ART[name].size;
     if (!art[name].ready || !image || !at) return false;
     const sideX = w / at[2], sideY = h === undefined ? sideX : h / at[3];
@@ -149,7 +151,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   let rings: {x: number; y: number; at: number; size: number; ground?: boolean}[] = [];
   /** Coins picked up close together climb in pitch (back down after a pause). */
   let coinRun = 0;
-  let ghosts: {e: RunEntity; at: number}[] = [];
+  /** Creatures struck: each melts away in its own way where it was (a chest breaks open, see GHOST_MS). */
+  let ghosts: {e: RunEntity; at: number; ahead: number}[] = [];
+  /** While a struck creature's last moment is drawn: how far through it is (0 to 1), null otherwise. */
+  let vanishing: number | null = null;
   let swing: {at: number; lane: number} | null = null, shock: number | null = null, flashes: {at: number; text: string; x: number; big?: boolean}[] = [];
   let width = 0, height = 0;
   /** The road's lanes (3 for now; zones of up to 5 later) and the walls' distance from its middle. */
@@ -519,6 +524,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       if (shape.round) { c.beginPath(); c.ellipse(base.x, base.y - h / 2, w / 2, h / 2, 0, 0, Math.PI * 2); c.fill(); }
       else c.fillRect(base.x - w / 2, base.y - h, w, h);
     }
+    if (vanishing !== null) return; // A struck creature melting away: no warning, no word.
     if (e.kind === 'power' && e.power && base.s > 14) { c.fillStyle = '#fff'; c.font = `800 ${Math.round(Math.max(10, base.s * .3))}px system-ui`; c.textAlign = 'center'; c.fillText(POWER_NAMES[e.power], base.x, base.y - h - 4); }
     // A creature that will strike Benny unless she strikes it first (beside her or straight ahead, 1.4 s away at most): a red « ! ».
     if (threatening(g, e)) { const r = Math.max(9, base.s * .32) * (1 + .12 * Math.sin(g.at / 90)), y = base.y - h - r * 1.6;
@@ -528,6 +534,22 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // The word fades away once she has got past that obstacle a few times this run (it comes back after a bump on it).
     const label = e.cart ? 'écarte-toi' : shape.label, passed = cleared.get(e.cart ? 'cart' : e.kind) ?? 0;
     if (label && base.s > 18 && !inTunnel && passed < LABEL_UNTIL) { c.fillStyle = '#fff'; c.font = `700 ${Math.round(Math.max(10, base.s * .28))}px system-ui`; c.textAlign = 'center'; c.fillText(label, base.x, base.y - h - 4); }
+  }
+  /** A struck creature's last moment, `k` from 0 to 1 where it was: the chest breaks open and its lid hops, the dragonnet is
+   *  thrown up spinning and shrinks, the ember flares up tall and goes out, the flyer tumbles away upwards. */
+  function vanish(c: CanvasRenderingContext2D, g: BennyRun, e: RunEntity, k: number): void {
+    const p = screenOf(g, e), s = Math.max(.01, p.s);
+    const fade = e.kind === 'chest' ? 1 - Math.max(0, (k - .55) / .45) : 1 - k;
+    c.save(); c.globalAlpha = Math.max(0, Math.min(1, fade)); vanishing = k;
+    c.translate(p.x, p.y);
+    switch (e.kind) {
+      case 'chest': { const hop = Math.sin(Math.min(1, k * 2.2) * Math.PI) * s * .25; c.translate(0, -hop); c.scale(1 + .08 * Math.sin(k * Math.PI), 1 - .06 * Math.sin(k * Math.PI)); break; }
+      case 'dragonnet': c.translate(0, -k * s * 1.4); c.rotate(k * Math.PI * 1.5); c.scale(1 - k * .8, 1 - k * .8); break;
+      case 'ember': c.scale(1 - k * .5, 1 + k * .7); break;
+      case 'flyer': c.translate(k * s * .8, -k * s * 1.6); c.rotate(k * Math.PI * 2); c.scale(1 - k * .6, 1 - k * .6); break;
+    }
+    c.translate(-p.x, -p.y);
+    thing(c, g, e); vanishing = null; c.restore();
   }
   /** Shapes that say what each thing is, standing on (`x`, `y`), `w` × `h` px; false for those still drawn as a plain block. */
   function figure(c: CanvasRenderingContext2D, e: RunEntity, x: number, y: number, w: number, h: number, at: number, ground = y): boolean {
@@ -555,7 +577,13 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'chest': {
         // The greedy chest: its lid chomps, teeth and eyes in the gap.
         const open = (.15 + .25 * Math.abs(Math.sin(at / 160 + e.id))) * h, lid = h * .38;
-        // Painted: its lid shut, then snapping open.
+        // Painted (13 Nov.): whole and smiling, rocking on its feet; struck once, thrown along the road and tumbling over; struck
+        // again (or against decor), broken open on its coins.
+        if (art.chests.ready) {
+          if (vanishing !== null) return fitted(c, 'chests', 'broken', x, y, w * 1.05);
+          const thrown = e.hp === 1, turn = thrown ? Math.sin(at / 70 + e.id) * .35 - .25 : Math.sin(at / 220 + e.id) * .06;
+          c.save(); c.translate(x, y - h * .45); c.rotate(turn); fitted(c, 'chests', thrown ? 'knocked' : 'intact', 0, h * .45, w * 1.05); c.restore(); return true;
+        }
         if (fitted(c, 'creatures', Math.sin(at / 160 + e.id) > .2 ? 'chest-open' : 'chest-shut', x, y, w * 1.05)) return true;
         c.fillStyle = '#6e3b2e'; c.fillRect(x - w / 2, y - h * .55, w, h * .55);
         c.fillStyle = '#2a120c'; c.fillRect(x - w * .46, y - h * .55 - open, w * .92, open);
@@ -842,8 +870,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (!ending) benny(c, g, now);
     for (const e of ahead) if (e.z - g.distance <= 0) thing(c, g, e);
     // A creature struck melts away: its picture fades out where it was, over a short moment.
-    ghosts = ghosts.filter(gh => now - gh.at < 240);
-    for (const gh of ghosts) { c.globalAlpha = Math.max(0, 1 - (now - gh.at) / 240) * .9; thing(c, g, gh.e); }
+    ghosts = ghosts.filter(gh => now - gh.at < (GHOST_MS[gh.e.kind] ?? 240));
+    // Carried on by the blow, it keeps its distance in front of Benny while it goes.
+    for (const gh of ghosts) vanish(c, g, {...gh.e, z: g.distance + Math.max(.8, gh.ahead)}, (now - gh.at) / (GHOST_MS[gh.e.kind] ?? 240));
     c.globalAlpha = 1;
     if (!ending) dragon(c, g);
     if (!ending) fallCatch(c, g, now);
@@ -890,7 +919,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     for (const event of takeRunEvents(g)) switch (event.type) {
       case 'strike': {
         if (event.by === 'spin') { flash('Coup tournoyant !'); slowMo(260); }
-        if (event.entity.kind !== 'pot') ghosts.push({e: {...event.entity}, at: clock()});
+        // A chest struck the first time is still on the road (thrown): only its last strike leaves it broken open.
+        if (event.entity.kind !== 'pot' && g.entities.every(o => o.id !== event.entity.id)) ghosts.push({e: {...event.entity}, at: clock(), ahead: event.entity.z - g.distance});
         swing = {at: clock(), lane: g.lane};
         // Three things or more broken in one roll: it is said.
         if (event.roll && event.roll >= 3) flash(`Roulade en chaîne ×${event.roll} !`);
@@ -908,7 +938,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         // A shock wave's strikes ring and score but neither freeze nor shake the run.
         if (event.by !== 'shock') { shakeFor('strike'); if (event.entity.kind !== 'pot') hitStop(); } break;
       }
-      case 'crash': { const p = screenOf(g, event.entity); burst(p.x, p.y, ['#c96b3a', '#8a4a26'], 8, 180); sound('pot'); break; }
+      case 'crash': { if (event.entity.kind === 'chest') ghosts.push({e: {...event.entity}, at: clock(), ahead: event.entity.z - g.distance}); const p = screenOf(g, event.entity); burst(p.x, p.y, ['#c96b3a', '#8a4a26'], 8, 180); sound('pot'); break; }
       case 'coin': if (clock() - lastCoinSound > 60) { coinRun = clock() - lastCoinSound < 450 ? Math.min(12, coinRun + 1) : 0; lastCoinSound = clock(); sound('coin', 2 ** (coinRun / 24)); } break;
       case 'bump': cleared.set(event.entity.cart ? 'cart' : event.entity.kind, 0); if (event.entity.kind !== 'hole') flash('Aïe ! La Dragon arrive !'); hurtAt = clock(); shakeFor('bump'); sound('bump'); break;
       case 'shield': flash('La bulle te protège !'); burst(width / 2, height * .7, ['#e7d1ff', '#b07bff', '#fff'], 16, 260); sound('power'); break;
