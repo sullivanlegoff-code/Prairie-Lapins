@@ -52,6 +52,9 @@ const HORIZON = .21, LANE_WIDTH = 2.2, CAMERA_BACK = 12, WALL_HEIGHT = 4.5, BENN
 // records stay as they are.
 const SKY_COLOURS = {sky: '#f6c9a2', ground: '#8fc25a', lane: '#c69a5e', wall: '#b8895a', wallOff: '#6e7480', side: '#f5cdb0', hole: '#8a5ba8', holeEdge: '#ffd6a8'};
 const SETTING_COLOURS: Record<RunSetting, typeof SKY_COLOURS> = {grotte: SKY_COLOURS, pont: SKY_COLOURS, montagne: SKY_COLOURS};
+/** Until each setting has its own painting, a light wash over the painted world (not the characters) tells them apart: gold in the
+ *  cave, lava red on the bridge, cool blue on the mountain path; it fades from one to the next with the sky. */
+const SETTING_WASH: Record<RunSetting, [number, number, number, number]> = {grotte: [255, 196, 90, .14], pont: [255, 84, 40, .17], montagne: [120, 170, 255, .15]};
 /** The painted textures of the track (13 Nov., concept C): planks, grass, the earth-and-grass wall to run on, the grey stone
  *  wall, and the isles' cliff at the edge of the void (scripts/prepare-benny-run-decor.mjs). */
 const DECOR = ['decor-planches', 'decor-herbe', 'decor-mur-terre', 'decor-mur-pierre', 'decor-mur-racines', 'decor-falaise', 'decor-lianes', 'decor-touffes'] as const;
@@ -657,6 +660,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const layer = decorReady() ? groundLayer() : null;
     if (layer) { layer.k.clearRect(0, 0, width, height); ground(layer.k, g, colours); c.drawImage(layer.el, 0, 0, layer.el.width, layer.el.height, 0, 0, width, height); }
     else ground(c, g, colours);
+    // The setting's wash, blended from the last one's.
+    if (decorReady()) { const a = SETTING_WASH[fade < 1 ? settingBefore : g.setting], b = SETTING_WASH[g.setting], k = fade < 1 ? fade : 1, mix = (i: number) => a[i] + (b[i] - a[i]) * k;
+      c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = `rgba(${mix(0) | 0},${mix(1) | 0},${mix(2) | 0},${(mix(3) * 1.3).toFixed(3)})`; c.fillRect(0, 0, c.canvas.width, c.canvas.height); c.restore(); }
   }
   let layerEl: HTMLCanvasElement | null = null, layerK: CanvasRenderingContext2D | null = null;
   function groundLayer(): {el: HTMLCanvasElement; k: CanvasRenderingContext2D} | null {
