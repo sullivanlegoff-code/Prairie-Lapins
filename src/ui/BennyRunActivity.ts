@@ -29,6 +29,10 @@ const HOP_HEIGHT = .55, HOP_CARRY = .1;
 const ROLL_TURN = 300;
 /** Benny's glide between lanes: a spring a touch under-damped, so that she is carried a little past her lane and settles. */
 const GLIDE = {pull: 900, damp: 48};
+/** The wall run (owner, 13 Nov.: « améliore la course sur les murs »): the camera rolls towards the wall (rad), Benny's body tips
+ *  over until her paws are on it (rad) and she runs there stride after stride, earth flying from her paws. The roll turns the
+ *  ground about a point low on the screen, a little zoomed in so that its corners stay covered. */
+const WALL_ROLL = .22, WALL_TILT = 1.05, WALL_ZOOM = 1.12;
 const GHOST_MS: Partial<Record<string, number>> = {chest: 520, dragonnet: 420, ember: 380, flyer: 400};
 /** A dragonnet wakes up this close to Benny (m). */
 const DRAGONNET_WAKES = 7;
@@ -524,8 +528,15 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   function road(c: CanvasRenderingContext2D, g: BennyRun, colours: typeof SETTING_COLOURS[RunSetting]): void {
     // The sky fades from the last setting's over 800 ms.
     const fade = Math.min(1, (clock() - settingSince) / 800);
-    if (fade < 1) { backdrop(c, settingBefore); c.globalAlpha = fade; }
-    backdrop(c, g.setting); c.globalAlpha = 1;
+    // On a wall the whole world rolls towards it, sky included, a little zoomed in: everything after this is drawn rolled, until
+    // draw() restores. The sky is spread out from the horizon so that it still fills the screen's top corners.
+    let spread = 1;
+    if (wallTilt) { const k = Math.abs(wallTilt), cx = width / 2, cy = height * .72; { const horizon = project(0, FAR, 0).y, grad = c.createLinearGradient(0, horizon * .6, 0, height); grad.addColorStop(0, PAINTED_LOOK.cloudTop); grad.addColorStop(1, PAINTED_LOOK.cloudBottom); c.fillStyle = grad; c.fillRect(0, 0, width, height); }
+      c.translate(cx, cy); c.rotate(wallTilt * WALL_ROLL); c.scale(1 + (WALL_ZOOM - 1) * k, 1 + (WALL_ZOOM - 1) * k); c.translate(-cx, -cy); spread = 1 + .7 * k; }
+    const sky = (setting: RunSetting) => { if (spread === 1) { backdrop(c, setting); return; }
+      const horizon = project(0, FAR, 0).y; c.save(); c.translate(width / 2, horizon); c.scale(spread, spread); c.translate(-width / 2, -horizon); backdrop(c, setting); c.restore(); };
+    if (fade < 1) { sky(settingBefore); c.globalAlpha = fade; }
+    sky(g.setting); c.globalAlpha = 1;
     // Painted, the ground of the track (floor, walls, gaps) is drawn on its own layer at a softer resolution, then laid on the
     // screen in one go: the textures are soft anyway, and it is four times less to paint (the characters stay sharp).
     const layer = decorReady() ? groundLayer() : null;
@@ -915,6 +926,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       default: return false;
     }
   }
+  /** -1 on a wall to her left, 1 to her right, eased in and out (the roll and her tilt follow it). */
+  let wallTilt = 0, lastStride = 0;
   let leapArc = 0, laneSpeed = 0, rollFrom = -1e9, wasFlat = false;
   const FOES = new Set(['dragonnet', 'chest', 'ember', 'flyer']);
   function threatening(g: BennyRun, e: RunEntity): boolean {
@@ -952,6 +965,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (flat && !wasFlat) rollFrom = g.at;
     wasFlat = flat;
     const w = (flat ? .75 : .8) * s, h = (flat ? .75 : 1) * s;
+    // Each stride on a wall kicks a little earth and grass off it, from her paws (on the wall's side).
+    { const st = Math.sign(Math.sin(g.distance / 1.6 * Math.PI * 2)); if (wall && st !== lastStride && Math.abs(wallTilt) > .7 && !(leapArc > .06 && leapArc < .94)) {
+      const side = wall.side === 'left' ? -1 : 1; burst(p.x + side * h * .45, p.y - h * .35, ['rgba(150,100,60,.9)', 'rgba(110,160,60,.9)', 'rgba(200,170,120,.8)'], 4, 90); } lastStride = st; }
     // Running: a stride every 1.6 m, so the faster she runs the quicker her paws go; she bobs, her ears flop, she leans into a lane change.
     const stride = g.distance / 1.6 * Math.PI * 2, grounded = !flat && !inAir(g) && !powerActive(g, 'flight');
     // Her lean follows how fast she glides across (inertia: into the move, then back as she settles).
@@ -970,7 +986,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // The hop: she leans back on the spring, then into the blow, and comes back upright as she lands.
     // (A blow to her right is turned anticlockwise: the wand's tip comes up, ahead, onto the creature in front of her.)
     else if (hopMs >= 0) c.rotate(hopDir * (hopMs < HOP_MS.spring ? .1 : hopMs < HOP_MS.bound ? 0 : hopMs < HOP_MS.blow ? -.3 : -.3 * (1 - (hopMs - HOP_MS.blow) / (HOP_MS.land - HOP_MS.blow))));
-    else if (wall) { if (!art.benny.ready) c.rotate(wall.side === 'left' ? -1.1 : 1.1); }
+    // On a wall: tipped over until her paws are on it (eased in on the push off the ground, through upright on a bound across).
+    else if (wall || wallTilt) c.rotate(art.benny.ready ? -wallTilt * WALL_TILT : wall ? (wall.side === 'left' ? -1.1 : 1.1) : 0);
     // Off a springboard: a whole somersault at the top of the bounce (not once a ground charge has started).
     else if (inAir(g) && g.airUntil === g.bounceUntil && !g.pound) { const k = (g.at - g.airFrom) / (g.airUntil - g.airFrom); c.rotate(lean + Math.PI * 2 * Math.min(1, Math.max(0, (k - .15) / .6))); }
     else c.rotate(lean);
@@ -990,14 +1007,16 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       // (Getting up she is nearly standing: drawn nearly at her running size, so that the run goes on without a jump in size.)
       paint(c, 'benny-roll', `roll-${roll + 1}`, 0, h * .45 - hopRoll, s * PAINTED_BENNY * (roll === 3 ? .95 : .8));
     } else if (art.benny.ready) {
-      const pose = flat ? 'roll' : wall ? 'wall' : inAir(g) || powerActive(g, 'flight') ? 'jump' : swing && now - swing.at < POSE_MS.strike ? 'strike' : Math.sin(stride) > 0 ? 'run-1' : 'run-2';
-      const mirror = wall ? wall.side === 'left' : pose === 'strike' && g.lane < g.laneFrom;
+      // On a wall she runs stride after stride (her running poses, tipped over onto the wall); bounding across to the other wall,
+      // her jump.
+      const leaping = !!wall && leapArc > .06 && leapArc < .94;
+      const pose = flat ? 'roll' : wall ? (leaping ? 'jump' : Math.sin(stride) > 0 ? 'run-1' : 'run-2') : inAir(g) || powerActive(g, 'flight') ? 'jump' : swing && now - swing.at < POSE_MS.strike ? 'strike' : Math.sin(stride) > 0 ? 'run-1' : 'run-2';
+      const mirror = pose === 'strike' && !wall && g.lane < g.laneFrom;
       // The wind-up of a strike, the landing and the fall have their own painted poses (sheet of 13 Nov.).
       // On the way down from a plain jump (after its top), her falling pose: ears up, paws reaching for the ground.
       const coming = inAir(g) && !wall && !g.pound && g.airUntil !== g.bounceUntil && !powerActive(g, 'flight') && g.airUntil > g.airFrom && (g.at - g.airFrom) / (g.airUntil - g.airFrom) > .62;
       const moves: string | null = g.fallFrom !== null || coming ? 'fall' : wall && g.at - (wall.since ?? g.at) < POSE_MS.push ? 'push' : swing && now - swing.at < POSE_MS.windup && !wall && !flat && !inAir(g) ? 'windup' : now - landedAt < landHold(g) && !wall && !flat && !inAir(g) ? 'land' : null;
       // Pushing off onto a wall she tips over towards it, into her wall-running lean.
-      if (moves === 'push' && wall) c.rotate((wall.side === 'left' ? -1 : 1) * .3 * Math.min(1, (g.at - (wall.since ?? g.at)) / POSE_MS.push));
       if (moves) paint(c, 'benny-moves', moves, 0, h / 2, s * PAINTED_BENNY, mirror);
       else paint(c, 'benny', pose, 0, flat ? h * .45 : h / 2, s * PAINTED_BENNY * (flat ? .8 : 1), mirror);
     } else {
@@ -1078,10 +1097,13 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     frameDt = dt; if (shownLanes.size > 200) for (const id of shownLanes.keys()) if (!g.entities.some(e => e.id === id)) shownLanes.delete(id);
     lanes = g.lanes; viewLanes += (lanesDrawn(g, 8) - viewLanes) * Math.min(1, dt * 2.5);
     // Benny glides between lanes, and onto and off a wall (drawn just inside it), instead of jumping there.
-    const onWall = (wallX() - .45 - laneX(lanes - 1)) / LANE_WIDTH, target = g.wall ? (g.wall.side === 'left' ? -onWall : lanes - 1 + onWall) : g.lane;
+    // (Her paws on the wall's face: she is drawn close against it, tipped over onto it.)
+    const onWall = (wallX() - (art.benny.ready ? .25 : .45) - laneX(lanes - 1)) / LANE_WIDTH, target = g.wall ? (g.wall.side === 'left' ? -onWall : lanes - 1 + onWall) : g.lane;
     // A spring: she is carried a little past her lane and settles; onto a wall, straight there (no swing through the wall).
     if (g.wall || Math.abs(target - viewLane) > lanes) { viewLane += (target - viewLane) * Math.min(1, dt * 24); laneSpeed = 0; }
     else { for (let left = dt; left > 0; left -= 1 / 240) { const h = Math.min(left, 1 / 240); laneSpeed += ((target - viewLane) * GLIDE.pull - laneSpeed * GLIDE.damp) * h; viewLane += laneSpeed * h; } }
+    // On a wall, she tips over onto it and the world rolls (eased).
+    { const to = g.wall ? (g.wall.side === 'left' ? -1 : 1) : 0; wallTilt += (to - wallTilt) * Math.min(1, dt * 9); if (Math.abs(wallTilt) < .002 && !to) wallTilt = 0; }
     // The blow's pending effects.
     if (pending.length) { const due = pending.filter(e => e.at <= now); pending = pending.filter(e => e.at > now); for (const e of due) e.run(); }
     { const side = g.wall ? (g.wall.side === 'left' ? -1 : 1) : 0, toX = side ? side * wallX() * .35 : laneX(viewLane) * .12, toUp = g.wall ? bennyHeight(g) * .45 : floorHeight(g) * .4;
@@ -1364,7 +1386,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     coach.hidden = true;
     slowLost = 0; slowUntil = 0; lastLoopAt = clock(); settingSince = -1e9; shownSetting = 'grotte';
     runBest = best; beaten = false; milestone = 0; metresBest = options.bestMetres?.() ?? 0; metresBeaten = false; score.classList.remove('benny-run-beaten');
-    game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; camX = 0; camUp = 0; landedAt = -1e9; wasUp = false; swing = null; pending = []; laneSpeed = 0; rollFrom = -1e9; wasFlat = false; shock = null; cleared.clear(); flashes = []; bits = []; rings = []; coinRun = 0; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
+    game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; camX = 0; camUp = 0; landedAt = -1e9; wasUp = false; swing = null; pending = []; wallTilt = 0; laneSpeed = 0; rollFrom = -1e9; wasFlat = false; shock = null; cleared.clear(); flashes = []; bits = []; rings = []; coinRun = 0; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
     holesAnnounced = 0; lastHoleSeen = -1;
     hud(); flash('Cours cours Benny !'); frame(loop);
   }
