@@ -22,6 +22,7 @@ export const TEXTURES = {
   'decor-herbe': {source: 'herbe.png', size: 256},
   'decor-mur-terre': {source: 'mur-terre.png', size: 256},
   'decor-mur-pierre': {source: 'mur-pierre.png', size: 256},
+  'decor-mur-racines': {source: 'mur-racines.png', size: 256},
   'decor-falaise': {source: 'falaise.png', size: 256, top: 14},
 };
 

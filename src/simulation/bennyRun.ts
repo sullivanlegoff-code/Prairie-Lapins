@@ -127,7 +127,7 @@ export const BENNY_RUN = {
   /** Stretches with no wall at all on one side or both (owner, 13 Nov.: « parfois vraiment seul face au vide »), the three lanes
    * whole: one every `edgeEvery` s or so of running (a random share more), the first past `edgeFrom` m, `edgeBoth` of them on both
    * sides, from one wall segment long up to `edgeSegments` with the difficulty. */
-  edgeEvery: 20, edgeSpread: 10, edgeFrom: 160, edgeBoth: .45, edgeSegments: 3,
+  edgeEvery: 55, edgeSpread: 30, edgeFrom: 400, edgeBoth: .25, edgeSegments: 2,
   /** In the cave, rocks hang from the ceiling (their shadow on the road) and fall when Benny is `rockLand` m away: then a
    * boulder to jump over, like a fence. */
   rockLand: 24,
@@ -178,8 +178,16 @@ export interface RunEntity {id: number; kind: RunKind; lane: number; z: number; 
 export interface WallSegment {side: Side; from: number; to: number; runnable: boolean; void?: boolean; tall?: boolean}
 export type WallLook = 'tall' | 'low' | 'fence';
 export const wallLook = (w: WallSegment): WallLook => w.tall ? 'tall' : w.runnable ? 'low' : 'fence';
-/** About half the walls are tall: picked from the segment's place (not the run's dice, so the rest of the run is unchanged). */
-const tallAt = (side: Side, from: number) => ((Math.imul(Math.floor(from) + (side === 'left' ? 0 : 7919), 2654435761) >>> 16) & 1023) < 512;
+/** The four sides of the road, in turn (owner, 14 Nov.: « beaucoup de variation »): a low wall to run on, a fence over the void, a tall
+ * stone wall, a tall wall of earth and roots to run on. Never the same twice in a row on one side, nor the same on both sides at once. */
+const WALL_KINDS = [{runnable: true, tall: false}, {runnable: true, tall: true}, {runnable: false, tall: false}, {runnable: false, tall: true}] as const;
+const kindOf = (w: WallSegment) => w.void ? -1 : (w.runnable ? 0 : 2) + (w.tall ? 1 : 0);
+function wallKind(g: BennyRun, side: Side, from: number, dice: number, mustRun: boolean): number {
+  const prev = g.walls.filter(w => w.side === side && w.to === from).map(kindOf)[0] ?? -1, facing = g.walls.filter(w => w.side !== side && w.from === from).map(kindOf)[0] ?? -1;
+  const order = mustRun ? [0, 1] : [0, 1, 2, 3], start = Math.floor(dice * order.length);
+  for (let k = 0; k < order.length; k++) { const kind = order[(start + k) % order.length]; if (kind !== prev && kind !== facing) return kind; }
+  return order.find(kind => kind !== prev) ?? order[start];
+}
 export type RunEvent =
   | {type: 'strike'; entity: RunEntity; points: number; combo: number; multiplier: number; by: StrikeKind; roll?: number}
   | {type: 'crash'; entity: RunEntity}
@@ -453,7 +461,8 @@ function layWalls(g: BennyRun): void {
       g.nextEdgeZ = from + length + Math.max(C.speedStart, g.speed) * (C.edgeEvery + random(g) * C.edgeSpread);
     }
     const open = !!g.edge && from < g.edge.to && g.edge.sides.includes(side);
-    g.walls.push({side, from, to: from + C.wallSegment, runnable: !open && (from < C.firstAt + C.wallSegment || random(g) < C.wallRunnable), ...(open ? {void: true} : {}), ...(!open && tallAt(side, from) ? {tall: true} : {})});
+    const dice = random(g), kind = open ? null : WALL_KINDS[wallKind(g, side, from, dice, from < C.firstAt + C.wallSegment)];
+    g.walls.push({side, from, to: from + C.wallSegment, runnable: !!kind?.runnable, ...(open ? {void: true} : {}), ...(kind?.tall ? {tall: true} : {})});
     if (g.edge && side === 'right' && from + C.wallSegment >= g.edge.to) g.edge = null;
     g.wallsTo[side] = from + C.wallSegment;
   }

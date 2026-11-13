@@ -421,8 +421,10 @@ describe('Cours cours Benny ! rules', () => {
     const t = startBennyRun(0, 7, 3, true); run(t, 8000); expect(t.challenge).toBeNull();
   });
   it('brings rows of pillars (a wall to run on) while the « run on walls » challenge is on', () => {
-    const rows = (challenge: boolean) => {
-      const g = startBennyRun(0, 11); g.nextChallengeAt = Infinity; g.active = {power: 'flight', until: Infinity};
+    // Over several runs (one alone depends too much on how its walls happen to fall, since the four sides take turns).
+    const rows = (challenge: boolean) => [11, 12, 13, 14, 15, 16].reduce((sum, seed) => sum + rowsIn(challenge, seed), 0);
+    const rowsIn = (challenge: boolean, seed: number) => {
+      const g = startBennyRun(0, seed); g.nextChallengeAt = Infinity; g.active = {power: 'flight', until: Infinity};
       if (challenge) g.challenge = {kind: 'walls', goal: 99, from: 0, count: 0};
       const seen = new Set<number>(); let n = 0;
       for (let t = 0; t < 30_000; t += 500) { run(g, 500); for (const e of g.entities) if (e.kind === 'pillar' && !seen.has(Math.round(e.z))) { seen.add(Math.round(e.z)); n++; } }

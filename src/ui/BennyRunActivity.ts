@@ -54,7 +54,7 @@ const SKY_COLOURS = {sky: '#f6c9a2', ground: '#8fc25a', lane: '#c69a5e', wall: '
 const SETTING_COLOURS: Record<RunSetting, typeof SKY_COLOURS> = {grotte: SKY_COLOURS, pont: SKY_COLOURS, montagne: SKY_COLOURS};
 /** The painted textures of the track (13 Nov., concept C): planks, grass, the earth-and-grass wall to run on, the grey stone
  *  wall, and the isles' cliff at the edge of the void (scripts/prepare-benny-run-decor.mjs). */
-const DECOR = ['decor-planches', 'decor-herbe', 'decor-mur-terre', 'decor-mur-pierre', 'decor-falaise'] as const;
+const DECOR = ['decor-planches', 'decor-herbe', 'decor-mur-terre', 'decor-mur-pierre', 'decor-mur-racines', 'decor-falaise'] as const;
 type DecorName = typeof DECOR[number];
 /** How many metres one texture covers: planks across the road and along it, the grass both ways, a wall along it (its height is
  *  the wall's), the cliff across. The grass verge past the road's edge (m), the cliff's depth below it (m). */
@@ -324,7 +324,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   /** One face of a wall along the road (x = `dir` × its inner side), from the ground up to `top` m: its colour, then the painted
    *  tile column by column, a tile high per tier (a low wall shows the top of one tile). */
   function wallFace(c: CanvasRenderingContext2D, g: BennyRun, dir: number, from: number, to: number, top: number, runnable: boolean): void {
-    const x = (z: number) => dir * wallXAt(g, z), zs = cuts(g, from, to), t = decor[runnable ? 'decor-mur-terre' : 'decor-mur-pierre'];
+    const x = (z: number) => dir * wallXAt(g, z), zs = cuts(g, from, to), t = decor[wallTexture(runnable, top)];
     c.save(); c.beginPath();
     zs.forEach((z, i) => { const p = project(x(z), z, 0); if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); });
     for (const z of [...zs].reverse()) { const p = project(x(z), z, top); c.lineTo(p.x, p.y); }
@@ -371,13 +371,15 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       wallFace(c, g, dir, from, to, top, w.runnable);
     }
   }
+  /** A tall wall to run on is earth with roots; a low one, earth and flowers; one not to run on, stone. */
+  const wallTexture = (runnable: boolean, top: number): DecorName => !runnable ? 'decor-mur-pierre' : top > LOW_HEIGHT + .01 ? 'decor-mur-racines' : 'decor-mur-terre';
   /** A wall's end facing Benny: square to the camera, so its painted tile is laid flat, a little shaded (the light comes from the road). */
   function endFace(c: CanvasRenderingContext2D, x0: number, x1: number, z: number, top: number, runnable: boolean): void {
     const a = project(x0, z, 0), b = project(x1, z, top), left = Math.min(a.x, b.x), right = Math.max(a.x, b.x), bottom = a.y, up = Math.max(0, b.y);
     if (right < 0 || left > width || bottom <= up) return;
     c.save(); c.beginPath(); c.rect(left, up, right - left, bottom - up); c.clip();
     c.fillStyle = runnable ? '#c86a32' : '#a87a80'; c.fillRect(left, up, right - left, bottom - up);
-    const t = decor[runnable ? 'decor-mur-terre' : 'decor-mur-pierre'], el = z > 30 ? t.far : t.near, tile = Math.max(4, FACE_TILE * a.s);
+    const t = decor[wallTexture(runnable, top)], el = z > 30 ? t.far : t.near, tile = Math.max(4, FACE_TILE * a.s);
     if (el) for (let y = bottom - tile; y + tile > up; y -= tile) for (let xx = left; xx < right; xx += tile) c.drawImage(el, xx, y, tile, tile);
     c.fillStyle = 'rgba(60,30,30,.22)'; c.fillRect(left, up, right - left, bottom - up);
     c.restore();
