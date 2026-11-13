@@ -32,6 +32,12 @@ export const CHARACTERS = {
   benny: {sheet: 'sheet-benny.png', frames: ['run-1', 'run-2', 'jump', 'roll', 'wall', 'strike'], size: 320, columns: 3, standing: true},
   // Four more poses of Benny (owner's sheet of 13 Nov.): the wind-up of a strike, the landing, the fall, the push off the ground.
   'benny-moves': {sheet: 'sheet-benny-moves.png', frames: ['windup', 'land', 'fall', 'push'], size: 320, columns: 4, standing: true},
+  // Her lane strike as a little hop (13 Nov., owner: « un mini saut avec un peu d'inertie pour vraiment mettre un coup de bâton ») :
+  // the spring, the bound with the wand raised, the blow to her right, the landing (mirrored for a strike to her left); and a real
+  // forward roll in four quarters, the wand held over her head going round with her. `zoom` sets their square from the drawing's
+  // size so that Benny keeps the size of her run poses (measured on her tail).
+  'benny-strike': {sheet: 'sheet-benny-strike.png', frames: ['hop-1', 'hop-2', 'hop-3', 'hop-4'], size: 320, columns: 4, standing: true, zoom: 1.05},
+  'benny-roll': {sheet: 'sheet-benny-roll.png', frames: ['roll-1', 'roll-2', 'roll-3', 'roll-4'], size: 320, columns: 4, standing: true, zoom: 1.25},
   dragon: {sheet: 'sheet-dragon2.png', frames: ['fly-1', 'fly-2', 'face', 'catch'], size: 420, columns: 2, standing: false},
   // Two rows of four, each drawing fitted to its own square (they differ in size), standing on its bottom; the two pictures of
   // one creature share one square so it keeps its size from one picture to the next.
@@ -155,12 +161,12 @@ const config = {}, atlases = {};
 for (const [name, character] of Object.entries(CHARACTERS)) {
   const sheet = read(`${SOURCES}/${character.sheet}`);
   cutOut(sheet, 'light'); const pockets = clearPockets(sheet, character.pocket);
-  if (name === 'benny' || name === 'benny-moves') recolour(sheet, referenceStats);
+  if (name.startsWith('benny')) recolour(sheet, referenceStats);
   const {label, list} = blots(sheet, character.rows, character.cells);
   if (list.length !== character.frames.length) throw Error(`${character.sheet}: ${list.length} drawings found, ${character.frames.length} expected`);
   const extent = b => Math.max(b.x1 - b.x0, b.y1 - b.y0) + 1;
   // One square side per character, from its biggest drawing, with a margin; fitted sheets: per drawing (or per pair).
-  const side = Math.ceil(Math.max(...list.map(extent)) * 1.08);
+  const side = Math.ceil(Math.max(...list.map(extent)) * 1.08 * (character.zoom ?? 1));
   const first = k => character.group ? k - k % character.group : k;
   const sideOf = k => !character.fit ? side : character.group ? Math.ceil(Math.max(...list.slice(first(k), first(k) + character.group).map(extent)) * 1.04) : character.shared ? Math.ceil(Math.max(...list.map(extent)) * 1.04) : Math.ceil((character.pairs ? Math.max(extent(list[k - k % 2]), extent(list[k - k % 2 + 1])) : extent(list[k])) * 1.04);
   const frames = list.map((blot, k) => {
@@ -170,7 +176,7 @@ for (const [name, character] of Object.entries(CHARACTERS)) {
     // A fitted drawing's width and height in its square (a pair takes its first picture's), to draw it at the thing's size.
     const ref = character.group ? list[first(k)] : character.shared ? list[0] : character.pairs ? list[k - k % 2] : blot, fit = character.fit ? [+((ref.x1 - ref.x0 + 1) / s).toFixed(3), +((ref.y1 - ref.y0 + 1) / s).toFixed(3)] : [];
     const small = downscale(image, character.size);
-    return {name: character.frames[k], image: name === 'benny' || name === 'benny-moves' ? matchBenny(small, gameMarks) : small, fit};
+    return {name: character.frames[k], image: name.startsWith('benny') ? matchBenny(small, gameMarks) : small, fit};
   });
   const columns = character.columns, rows = Math.ceil(frames.length / columns), S = character.size;
   const atlas = {width: columns * S, height: rows * S, pixels: Buffer.alloc(columns * S * rows * S * 4)};

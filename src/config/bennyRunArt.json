@@ -57,6 +57,56 @@
     "pockets": 0,
     "bytes": 53446
   },
+  "benny-strike": {
+    "image": "assets/benny-run/benny-strike.webp",
+    "size": 320,
+    "frames": {
+      "hop-1": [
+        0,
+        0
+      ],
+      "hop-2": [
+        320,
+        0
+      ],
+      "hop-3": [
+        640,
+        0
+      ],
+      "hop-4": [
+        960,
+        0
+      ]
+    },
+    "anchor": "feet",
+    "pockets": 352,
+    "bytes": 53010
+  },
+  "benny-roll": {
+    "image": "assets/benny-run/benny-roll.webp",
+    "size": 320,
+    "frames": {
+      "roll-1": [
+        0,
+        0
+      ],
+      "roll-2": [
+        320,
+        0
+      ],
+      "roll-3": [
+        640,
+        0
+      ],
+      "roll-4": [
+        960,
+        0
+      ]
+    },
+    "anchor": "feet",
+    "pockets": 0,
+    "bytes": 38434
+  },
   "dragon": {
     "image": "assets/benny-run/dragon.webp",
     "size": 420,

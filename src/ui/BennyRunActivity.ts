@@ -6,8 +6,8 @@ import {pausableClock, settleCard} from './activityPause';
 import RUN_ART from '../config/bennyRunArt.json';
 
 /** The paintings' frames (scripts/prepare-benny-run-art.mjs): Benny's square stands her on its bottom, the Dragon's is centred on her body. */
-type PaintedName = 'benny' | 'benny-moves' | 'dragon' | 'creatures' | 'chests' | 'objets';
-const PAINTED: PaintedName[] = ['benny', 'benny-moves', 'dragon', 'creatures', 'chests', 'objets'];
+type PaintedName = 'benny' | 'benny-moves' | 'benny-strike' | 'benny-roll' | 'dragon' | 'creatures' | 'chests' | 'objets';
+const PAINTED: PaintedName[] = ['benny', 'benny-moves', 'benny-strike', 'benny-roll', 'dragon', 'creatures', 'chests', 'objets'];
 /** Painted Benny's square, in Benny's sizes (her shape was one size tall): the drawing, ears up, fills about four fifths of it. */
 const PAINTED_BENNY = 1.85;
 /** How long each struck creature takes to melt away (ms); a chest stays broken open a little longer. */
@@ -18,6 +18,17 @@ const POSE_MS = {windup: 40, strike: 200, push: 180};
 /** The landing pose lasts half a stride (a stride every 1.6 m: 73 ms at the start, 33 at top speed), three frames at least, so her
  *  paws never stop while the road runs on. */
 const landHold = (g: {speed: number}) => Math.max(50, .8 / Math.max(1, g.speed) * 1000);
+/** The lane strike as a little hop (owner, 13 Nov.: « un mini saut avec un peu d'inertie pour vraiment mettre un coup de bâton
+ *  au monstre »), each painted pose until (ms): the spring, the bound with the wand raised, the blow, the landing. The blow lands
+ *  on the creature at `HOP_MS.bound`: its shards, its ring and the freeze wait until then, and it starts to vanish only then. */
+const HOP_MS = {spring: 40, bound: 90, blow: 200, land: 320};
+/** How high the hop goes (m), and how far past her lane she is carried by the blow before she settles (lanes). */
+const HOP_HEIGHT = .55, HOP_CARRY = .1;
+/** A whole forward roll (about, ms): four painted quarters, the wand held over her head going round with her. A roll is a whole
+ *  number of turns (its turn stretched to fit), so that she always ends it getting up (the fourth quarter). */
+const ROLL_TURN = 300;
+/** Benny's glide between lanes: a spring a touch under-damped, so that she is carried a little past her lane and settles. */
+const GLIDE = {pull: 900, damp: 48};
 const GHOST_MS: Partial<Record<string, number>> = {chest: 520, dragonnet: 420, ember: 380, flyer: 400};
 /** A dragonnet wakes up this close to Benny (m). */
 const DRAGONNET_WAKES = 7;
@@ -129,6 +140,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       bits.push({x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - speed * .6, at, life: 380 + Math.random() * 260, colour: colours[i % colours.length], size: 3 + Math.random() * 4}); }
     if (bits.length > 160) bits = bits.slice(-160);
   }
+  /** Effects waiting for the blow of a hop to land (see HOP_MS). */
+  let pending: {at: number; run: () => void}[] = [];
+  const later = (ms: number, run: () => void) => { if (ms <= 0) run(); else pending.push({at: clock() + ms, run}); };
   /** A short freeze on a strike, so that the hit lands (the game clock stops, the drawing goes on). */
   let lastStopAt = -1e9;
   function hitStop(ms = HIT_STOP): void {
@@ -204,7 +218,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   let vanishing: number | null = null;
   /** How far ahead of Benny the thing being drawn is (m). */
   let thingAhead = 99;
-  let swing: {at: number; lane: number} | null = null, shock: number | null = null, flashes: {at: number; text: string; x: number; big?: boolean}[] = [];
+  let swing: {at: number; lane: number; hop: number} | null = null, shock: number | null = null, flashes: {at: number; text: string; x: number; big?: boolean}[] = [];
   let width = 0, height = 0;
   /** The road's lanes (3 for now; zones of up to 5 later) and the walls' distance from its middle. */
   let lanes = 3, viewLanes = 3, frameDt = 0;
@@ -901,7 +915,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       default: return false;
     }
   }
-  let leapArc = 0;
+  let leapArc = 0, laneSpeed = 0, rollFrom = -1e9, wasFlat = false;
   const FOES = new Set(['dragonnet', 'chest', 'ember', 'flyer']);
   function threatening(g: BennyRun, e: RunEntity): boolean {
     const ahead = e.z - g.distance, across = g.wall ? wallLane(g, g.wall.side) : g.lane;
@@ -924,24 +938,38 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   function benny(c: CanvasRenderingContext2D, g: BennyRun, now: number): void {
     // Falling into the void she is out of sight once the Dragon has her (see fallCatch).
     if (g.fallFrom !== null && (g.at - g.fallFrom) / BENNY_RUN.fallMs > .45) return;
-    const wall = g.wall, x = laneX(viewLane);
-    const up = bennyHeight(g), p = project(x, 0, up), s = p.s * BENNY_SIZE;
+    const wall = g.wall, flat = sliding(g);
+    // A lane strike's hop: up and down over its whole length, carried past her lane by the blow, then back.
+    const hopK = swing?.hop && !wall && !flat && !inAir(g) && now - swing.at < HOP_MS.land ? (now - swing.at) / HOP_MS.land : -1, hopDir = swing?.hop ?? 0;
+    const hopUp = hopK < 0 ? 0 : HOP_HEIGHT * Math.sin(Math.PI * Math.max(0, (hopK - .1) / .9)) ** .8;
+    const carry = hopK < 0 ? 0 : hopDir * HOP_CARRY * LANE_WIDTH * Math.sin(Math.PI * Math.min(1, Math.max(0, (hopK - .2) / .8)));
+    const x = laneX(viewLane) + carry;
+    const up = bennyHeight(g) + hopUp, p = project(x, 0, up), s = p.s * BENNY_SIZE;
     // Over the void she drops out of sight, faster and faster, smaller as she goes down (the Dragon dives after her).
     const drop = g.fallFrom === null ? 0 : Math.min(1, (g.at - g.fallFrom) / BENNY_RUN.fallMs / .45);
     if (drop > 0) { p.y += drop * drop * s * 1.6; c.save(); c.globalAlpha = 1 - drop * drop; c.translate(p.x, p.y); c.scale(1 - drop * .35, 1 - drop * .35); c.translate(-p.x, -p.y); }
     // Rolling, she curls up into a ball that turns.
-    const flat = sliding(g), w = (flat ? .75 : .8) * s, h = (flat ? .75 : 1) * s;
+    if (flat && !wasFlat) rollFrom = g.at;
+    wasFlat = flat;
+    const w = (flat ? .75 : .8) * s, h = (flat ? .75 : 1) * s;
     // Running: a stride every 1.6 m, so the faster she runs the quicker her paws go; she bobs, her ears flop, she leans into a lane change.
     const stride = g.distance / 1.6 * Math.PI * 2, grounded = !flat && !inAir(g) && !powerActive(g, 'flight');
-    const bob = grounded ? Math.abs(Math.sin(stride)) * .07 * s : 0, lean = Math.max(-.3, Math.min(.3, (g.lane - viewLane) * .35));
+    // Her lean follows how fast she glides across (inertia: into the move, then back as she settles).
+    const bob = grounded && hopK < 0 ? Math.abs(Math.sin(stride)) * .07 * s : 0, lean = Math.max(-.3, Math.min(.3, laneSpeed * .045));
     // Touching down: a squash for a moment and a puff of dust at her feet; taking off and rising: a stretch.
     const up2 = inAir(g) && !wall && !powerActive(g, 'flight');
     if (wasUp && !up2 && !wall && !flat) { landedAt = now; const ground = project(x, 0, floorHeight(g)); burst(ground.x, ground.y, ['rgba(230,215,190,.9)', 'rgba(200,180,150,.8)'], 7, 110); sound('land', .9 + Math.random() * .2); }
     wasUp = up2;
     const land = Math.max(0, 1 - (now - landedAt) / 150), rising = up2 && g.at - g.airFrom < 220 ? 1 - (g.at - g.airFrom) / 220 : 0;
-    const squash = 1 - .2 * land + .1 * rising;
+    // The hop: crouched on the spring, stretched on the bound, squashed on landing.
+    const hopMs = hopK < 0 ? -1 : now - swing!.at;
+    const hopSquash = hopMs < 0 ? 0 : hopMs < HOP_MS.spring ? -.12 : hopMs < HOP_MS.bound ? .08 : hopMs > HOP_MS.land - 70 ? -.1 * Math.sin(Math.PI * (hopMs - HOP_MS.land + 70) / 70) : 0;
+    const squash = 1 - .2 * land + .1 * rising + hopSquash;
     c.save(); c.translate(p.x, p.y - h / 2 - bob + h / 2 * (1 - squash));
-    if (flat) c.rotate((g.slideUntil - g.at) / 90);
+    if (flat) { if (!art['benny-roll'].ready) c.rotate((g.slideUntil - g.at) / 90); }
+    // The hop: she leans back on the spring, then into the blow, and comes back upright as she lands.
+    // (A blow to her right is turned anticlockwise: the wand's tip comes up, ahead, onto the creature in front of her.)
+    else if (hopMs >= 0) c.rotate(hopDir * (hopMs < HOP_MS.spring ? .1 : hopMs < HOP_MS.bound ? 0 : hopMs < HOP_MS.blow ? -.3 : -.3 * (1 - (hopMs - HOP_MS.blow) / (HOP_MS.land - HOP_MS.blow))));
     else if (wall) { if (!art.benny.ready) c.rotate(wall.side === 'left' ? -1.1 : 1.1); }
     // Off a springboard: a whole somersault at the top of the bounce (not once a ground charge has started).
     else if (inAir(g) && g.airUntil === g.bounceUntil && !g.pound) { const k = (g.at - g.airFrom) / (g.airUntil - g.airFrom); c.rotate(lean + Math.PI * 2 * Math.min(1, Math.max(0, (k - .15) / .6))); }
@@ -950,11 +978,24 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (g.at < g.stumbleUntil && Math.floor(now / 80) % 2) c.globalAlpha = .45;
     // Painted: her pose for the moment (the wall pose leans onto a wall on her right, mirrored for the left one; the strike swings
     // her wand the way she moved), standing on her feet.
-    if (art.benny.ready) {
+    // The lane strike's hop and the forward roll have their own painted poses (sheets of 13 Nov.): the blow drawn to her right,
+    // mirrored for a strike to her left; the roll's four quarters, the wand going round with her, a little bounce on each.
+    const turns = Math.max(1, Math.round((g.slideUntil - rollFrom) / ROLL_TURN)), rolled = flat ? Math.min(.999, (g.at - rollFrom) / (g.slideUntil - rollFrom)) * turns * 4 : 0;
+    const roll = flat && art['benny-roll'].ready ? Math.floor(rolled) % 4 : -1;
+    if (hopMs >= 0 && art['benny-strike'].ready) {
+      const frame = hopMs < HOP_MS.spring ? 'hop-1' : hopMs < HOP_MS.bound ? 'hop-2' : hopMs < HOP_MS.blow ? 'hop-3' : 'hop-4';
+      paint(c, 'benny-strike', frame, 0, h / 2, s * PAINTED_BENNY, hopDir < 0);
+    } else if (roll >= 0) {
+      const quarter = rolled % 1, hopRoll = Math.sin(Math.PI * quarter) * .06 * s;
+      // (Getting up she is nearly standing: drawn nearly at her running size, so that the run goes on without a jump in size.)
+      paint(c, 'benny-roll', `roll-${roll + 1}`, 0, h * .45 - hopRoll, s * PAINTED_BENNY * (roll === 3 ? .95 : .8));
+    } else if (art.benny.ready) {
       const pose = flat ? 'roll' : wall ? 'wall' : inAir(g) || powerActive(g, 'flight') ? 'jump' : swing && now - swing.at < POSE_MS.strike ? 'strike' : Math.sin(stride) > 0 ? 'run-1' : 'run-2';
       const mirror = wall ? wall.side === 'left' : pose === 'strike' && g.lane < g.laneFrom;
       // The wind-up of a strike, the landing and the fall have their own painted poses (sheet of 13 Nov.).
-      const moves: string | null = g.fallFrom !== null ? 'fall' : wall && g.at - (wall.since ?? g.at) < POSE_MS.push ? 'push' : swing && now - swing.at < POSE_MS.windup && !wall && !flat && !inAir(g) ? 'windup' : now - landedAt < landHold(g) && !wall && !flat && !inAir(g) ? 'land' : null;
+      // On the way down from a plain jump (after its top), her falling pose: ears up, paws reaching for the ground.
+      const coming = inAir(g) && !wall && !g.pound && g.airUntil !== g.bounceUntil && !powerActive(g, 'flight') && g.airUntil > g.airFrom && (g.at - g.airFrom) / (g.airUntil - g.airFrom) > .62;
+      const moves: string | null = g.fallFrom !== null || coming ? 'fall' : wall && g.at - (wall.since ?? g.at) < POSE_MS.push ? 'push' : swing && now - swing.at < POSE_MS.windup && !wall && !flat && !inAir(g) ? 'windup' : now - landedAt < landHold(g) && !wall && !flat && !inAir(g) ? 'land' : null;
       // Pushing off onto a wall she tips over towards it, into her wall-running lean.
       if (moves === 'push' && wall) c.rotate((wall.side === 'left' ? -1 : 1) * .3 * Math.min(1, (g.at - (wall.since ?? g.at)) / POSE_MS.push));
       if (moves) paint(c, 'benny-moves', moves, 0, h / 2, s * PAINTED_BENNY, mirror);
@@ -990,7 +1031,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (powerActive(g, 'dash') && !fading) { c.strokeStyle = `rgba(255,${120 + Math.floor(Math.sin(now / 40) * 40)},40,.85)`; c.lineWidth = 5; c.beginPath(); c.ellipse(0, h * .1, w * .8, h * .7, 0, 0, Math.PI * 2); c.stroke(); }
     if (powerActive(g, 'bubble') && !fading) { c.strokeStyle = 'rgba(180,140,255,.8)'; c.lineWidth = 4; c.beginPath(); c.arc(0, 0, w * .85, 0, Math.PI * 2); c.stroke(); }
     c.restore();
-    if (!inAir(g) && !wall && !powerActive(g, 'flight')) { c.fillStyle = 'rgba(0,0,0,.18)'; c.beginPath(); c.ellipse(p.x, project(x, 0, floorHeight(g)).y, w * .55, s * .12, 0, 0, Math.PI * 2); c.fill(); }
+    if (!inAir(g) && !wall && !powerActive(g, 'flight')) { const k = 1 - hopUp / HOP_HEIGHT * .35; c.fillStyle = `rgba(0,0,0,${.18 * k})`; c.beginPath(); c.ellipse(p.x, project(x, 0, floorHeight(g)).y, w * .55 * k, s * .12 * k, 0, 0, Math.PI * 2); c.fill(); }
     // The shock wave: a golden ring spreading on the road around her.
     if (shock !== null && now - shock < 450) {
       const k = Math.max(0, (now - shock) / 450), ground = project(x, 0, 0), r = (BENNY_RUN.shockReach * .9) * k;
@@ -998,8 +1039,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       c.beginPath(); c.ellipse(ground.x, ground.y, r * ground.s, r * ground.s * .35, 0, 0, Math.PI * 2); c.stroke(); c.restore();
     }
     // The wand's rainbow sweep for a moment after a strike.
-    if (swing && now - swing.at < 220) {
-      const k = (now - swing.at) / 220, colours = ['#ff6b6b', '#ffb84d', '#ffe66b', '#7be08a', '#6bb8ff', '#b07bff'];
+    const sweepAt = swing ? swing.at + (swing.hop ? HOP_MS.bound : 0) : 0;
+    if (swing && now >= sweepAt && now - sweepAt < 220) {
+      const k = (now - sweepAt) / 220, colours = ['#ff6b6b', '#ffb84d', '#ffe66b', '#7be08a', '#6bb8ff', '#b07bff'];
       colours.forEach((colour, i) => { c.strokeStyle = colour; c.globalAlpha = 1 - k; c.lineWidth = 3; c.beginPath(); c.arc(p.x, p.y - h * .6, s * (.9 + i * .07), Math.PI * (1.1 + k * .2), Math.PI * (1.9 + k * .2)); c.stroke(); });
       c.globalAlpha = 1;
     }
@@ -1037,7 +1079,11 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     lanes = g.lanes; viewLanes += (lanesDrawn(g, 8) - viewLanes) * Math.min(1, dt * 2.5);
     // Benny glides between lanes, and onto and off a wall (drawn just inside it), instead of jumping there.
     const onWall = (wallX() - .45 - laneX(lanes - 1)) / LANE_WIDTH, target = g.wall ? (g.wall.side === 'left' ? -onWall : lanes - 1 + onWall) : g.lane;
-    viewLane += (target - viewLane) * Math.min(1, dt * 24);
+    // A spring: she is carried a little past her lane and settles; onto a wall, straight there (no swing through the wall).
+    if (g.wall || Math.abs(target - viewLane) > lanes) { viewLane += (target - viewLane) * Math.min(1, dt * 24); laneSpeed = 0; }
+    else { for (let left = dt; left > 0; left -= 1 / 240) { const h = Math.min(left, 1 / 240); laneSpeed += ((target - viewLane) * GLIDE.pull - laneSpeed * GLIDE.damp) * h; viewLane += laneSpeed * h; } }
+    // The blow's pending effects.
+    if (pending.length) { const due = pending.filter(e => e.at <= now); pending = pending.filter(e => e.at > now); for (const e of due) e.run(); }
     { const side = g.wall ? (g.wall.side === 'left' ? -1 : 1) : 0, toX = side ? side * wallX() * .35 : laneX(viewLane) * .12, toUp = g.wall ? bennyHeight(g) * .45 : floorHeight(g) * .4;
       camX += (toX - camX) * Math.min(1, dt * 5); camUp += (toUp - camUp) * Math.min(1, dt * 4); }
     // Crossing from one wall to the other: a bound through the air.
@@ -1057,7 +1103,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // A creature struck melts away: its picture fades out where it was, over a short moment.
     ghosts = ghosts.filter(gh => now - gh.at < (GHOST_MS[gh.e.kind] ?? 240));
     // Carried on by the blow, it keeps its distance in front of Benny while it goes.
-    for (const gh of ghosts) vanish(c, g, {...gh.e, z: g.distance + Math.max(.8, gh.ahead)}, (now - gh.at) / (GHOST_MS[gh.e.kind] ?? 240));
+    for (const gh of ghosts) vanish(c, g, {...gh.e, z: g.distance + Math.max(.8, gh.ahead)}, Math.max(0, (now - gh.at) / (GHOST_MS[gh.e.kind] ?? 240)));
     c.globalAlpha = 1;
     if (!ending) dragon(c, g);
     if (!ending) fallCatch(c, g, now);
@@ -1105,11 +1151,16 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'strike': {
         if (event.by === 'spin') { flash('Coup tournoyant !'); slowMo(260); }
         // A chest struck the first time is still on the road (thrown): only its last strike leaves it broken open.
-        if (event.entity.kind !== 'pot' && g.entities.every(o => o.id !== event.entity.id)) ghosts.push({e: {...event.entity}, at: clock(), ahead: event.entity.z - g.distance});
-        swing = {at: clock(), lane: g.lane};
+        // A lane change strikes with a hop (to the side she moved to): the blow lands a moment later.
+        const hopping = (event.by === 'lane' || event.by === 'spin') && !g.wall && !inAir(g) && !sliding(g);
+        if (hopping && !(swing?.hop && clock() - swing.at < HOP_MS.bound)) swing = {at: clock(), lane: g.lane, hop: Math.sign(g.lane - g.laneFrom) || 1};
+        else if (!hopping) swing = {at: clock(), lane: g.lane, hop: 0};
+        const delay = hopping && swing ? Math.max(0, swing.at + HOP_MS.bound - clock()) : 0;
+        if (event.entity.kind !== 'pot' && g.entities.every(o => o.id !== event.entity.id)) ghosts.push({e: {...event.entity}, at: clock() + delay, ahead: event.entity.z - g.distance});
         // Three things or more broken in one roll: it is said.
         if (event.roll && event.roll >= 3) flash(`Roulade en chaîne ×${event.roll} !`);
         const p = screenOf(g, event.entity);
+        later(delay, () => {
         flashes.push({at: clock(), text: `+${event.points}`, x: (p.x + width / 2) / 2, big: true});
         // A glowing ring opens on the ground under Benny with each strike.
         { const b = project(laneX(viewLane), 0, bennyHeight(g)); rings.push({x: b.x, y: b.y, at: clock(), size: b.s * 1.2, ground: true}); }
@@ -1121,7 +1172,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         // A creature lands harder than a pot: a longer freeze, a bigger ring.
         rings.push({x: p.x, y: p.y - p.s * .4, at: clock(), size: p.s * (event.entity.kind === 'pot' ? .9 : 1.4)});
         // A shock wave's strikes ring and score but neither freeze nor shake the run.
-        if (event.by !== 'shock') { shakeFor('strike'); if (event.entity.kind !== 'pot') hitStop(); } break;
+        if (event.by !== 'shock') { shakeFor('strike'); if (event.entity.kind !== 'pot') hitStop(); }
+        }); break;
       }
       case 'crash': { if (event.entity.kind === 'chest') ghosts.push({e: {...event.entity}, at: clock(), ahead: event.entity.z - g.distance}); const p = screenOf(g, event.entity); burst(p.x, p.y, ['#c96b3a', '#8a4a26'], 8, 180); sound('pot'); break; }
       case 'coin': if (clock() - lastCoinSound > 60) { coinRun = clock() - lastCoinSound < 450 ? Math.min(12, coinRun + 1) : 0; lastCoinSound = clock(); sound('coin', 2 ** (coinRun / 24)); } break;
@@ -1312,7 +1364,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     coach.hidden = true;
     slowLost = 0; slowUntil = 0; lastLoopAt = clock(); settingSince = -1e9; shownSetting = 'grotte';
     runBest = best; beaten = false; milestone = 0; metresBest = options.bestMetres?.() ?? 0; metresBeaten = false; score.classList.remove('benny-run-beaten');
-    game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; camX = 0; camUp = 0; landedAt = -1e9; wasUp = false; swing = null; shock = null; cleared.clear(); flashes = []; bits = []; rings = []; coinRun = 0; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
+    game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; camX = 0; camUp = 0; landedAt = -1e9; wasUp = false; swing = null; pending = []; laneSpeed = 0; rollFrom = -1e9; wasFlat = false; shock = null; cleared.clear(); flashes = []; bits = []; rings = []; coinRun = 0; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
     holesAnnounced = 0; lastHoleSeen = -1;
     hud(); flash('Cours cours Benny !'); frame(loop);
   }
