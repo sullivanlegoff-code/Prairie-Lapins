@@ -1225,11 +1225,11 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   function dragon(c: CanvasRenderingContext2D, g: BennyRun): void {
     if (!dragonVisible(g)) return;
-    // Behind Benny (between her and the camera), on her outer side, low on the screen: she swoops in from below, then hovers.
+    // Behind Benny (between her and the camera), on her outer side, at the very bottom of the screen (the close camera: her head and wings rise into view, Benny stays in sight): she swoops in from below, then hovers.
     const since = g.lastBumpAt === null ? g.at - g.startedAt : g.at - g.lastBumpAt, left = g.lastBumpAt === null ? BENNY_RUN.introMs : BENNY_RUN.dragonMs;
     const out = Math.min(1, since / 450, Math.max(0, (left - since) / 450));
-    const side = viewLane > (lanes - 1) / 2 ? -1 : 1, x = laneX(viewLane) + side * 1.2, ahead = -3 - (1 - out) * 3;
-    const p = project(x, ahead, 2.2 + Math.sin(g.at / 260) * .15), size = .85 * p.s;
+    const side = viewLane > (lanes - 1) / 2 ? -1 : 1, x = laneX(viewLane) + side * 1.7, ahead = -4 - (1 - out) * 3;
+    const p = project(x, ahead, 1.1 + Math.sin(g.at / 260) * .15), size = .7 * p.s;
     c.save(); c.globalAlpha = out;
     // Painted: her flight seen from behind, wings up then down.
     if (art.dragon.ready) { paint(c, 'dragon', Math.floor(g.at / WING_BEAT) % 2 ? 'fly-2' : 'fly-1', p.x, p.y, size * 4.4); c.restore(); return; }
