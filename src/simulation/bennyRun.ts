@@ -639,6 +639,8 @@ function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
       // Pillars with a way through, where a pot or a creature may wait.
       const free = any();
       for (const lane of all) if (lane !== free && (Math.abs(lane - free) === 1 || random(g) < .5)) add(g, 'pillar', lane, z);
+      // Coins lead into the way through (the eye finds it sooner, and taking it pays): no draw, so the rest of the run is unchanged.
+      for (const k of [6, 4, 2, 0]) add(g, 'coin', free, z - k);
       if (random(g) < .3 + .4 * d) add(g, random(g) < .5 ? 'pot' : pick(g, RUN_FOES), free, z + 8);
       return z + 8;
     }
