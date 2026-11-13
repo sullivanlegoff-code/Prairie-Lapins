@@ -1401,7 +1401,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         if (!event.side) { sound('bump', .8); flash('Trop haut : monte les marches !'); break; }
         // Against a wall she cannot run on: a little bounce off it, towards it then back.
         sound('bump', .6); laneSpeed += (event.side === 'left' ? -1 : 1) * 3.2;
-        if (!saidBlocked) { saidBlocked = true; flash('Pas sur la pierre ni la barrière : cours sur la terre et l’herbe !'); }
+        if (!saidBlocked) { saidBlocked = true; flash('Pas sur la pierre ni la barrière : cours sur les murs de terre et de racines !'); }
         break;
       case 'lanes':
         viewLane += event.shift;
