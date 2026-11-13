@@ -11,7 +11,9 @@ const PAINTED: PaintedName[] = ['benny', 'benny-moves', 'dragon', 'creatures', '
 /** Painted Benny's square, in Benny's sizes (her shape was one size tall): the drawing, ears up, fills about four fifths of it. */
 const PAINTED_BENNY = 1.85;
 /** How long each struck creature takes to melt away (ms); a chest stays broken open a little longer. */
-const GHOST_MS: Partial<Record<string, number>> = {chest: 520, dragonnet: 320, ember: 260, flyer: 340};
+const GHOST_MS: Partial<Record<string, number>> = {chest: 520, dragonnet: 420, ember: 380, flyer: 400};
+/** A dragonnet wakes up this close to Benny (m). */
+const DRAGONNET_WAKES = 7;
 /** The Dragon's flight from behind: her two wing beats, each held this long. */
 const WING_BEAT = 120;
 
@@ -155,6 +157,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   let ghosts: {e: RunEntity; at: number; ahead: number}[] = [];
   /** While a struck creature's last moment is drawn: how far through it is (0 to 1), null otherwise. */
   let vanishing: number | null = null;
+  /** How far ahead of Benny the thing being drawn is (m). */
+  let thingAhead = 99;
   let swing: {at: number; lane: number} | null = null, shock: number | null = null, flashes: {at: number; text: string; x: number; big?: boolean}[] = [];
   let width = 0, height = 0;
   /** The road's lanes (3 for now; zones of up to 5 later) and the walls' distance from its middle. */
@@ -519,6 +523,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       up = 7 * drop * drop + (e.rock === 'up' ? Math.sin(g.at / 40 + e.id) * .05 : 0);
     }
     const base = project(x, ahead, up), w = shape.w * base.s, h = shape.h * base.s;
+    thingAhead = ahead;
     if (!figure(c, e, base.x, base.y, w, h, g.at, project(x, ahead, 0).y)) {
       c.fillStyle = shape.colour;
       if (shape.round) { c.beginPath(); c.ellipse(base.x, base.y - h / 2, w / 2, h / 2, 0, 0, Math.PI * 2); c.fill(); }
@@ -544,8 +549,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     c.translate(p.x, p.y);
     switch (e.kind) {
       case 'chest': { const hop = Math.sin(Math.min(1, k * 2.2) * Math.PI) * s * .25; c.translate(0, -hop); c.scale(1 + .08 * Math.sin(k * Math.PI), 1 - .06 * Math.sin(k * Math.PI)); break; }
-      case 'dragonnet': c.translate(0, -k * s * 1.4); c.rotate(k * Math.PI * 1.5); c.scale(1 - k * .8, 1 - k * .8); break;
-      case 'ember': c.scale(1 - k * .5, 1 + k * .7); break;
+      case 'dragonnet': c.translate(k * s * .5, -Math.sin(k * Math.PI) * s * .9 - k * s * .4); c.rotate(k * Math.PI * .8); c.scale(1 - k * .5, 1 - k * .5); break;
+      case 'ember': c.translate(0, -k * s * .7); c.scale(1 + k * .5, 1 + k * .5); break;
       case 'flyer': c.translate(k * s * .8, -k * s * 1.6); c.rotate(k * Math.PI * 2); c.scale(1 - k * .6, 1 - k * .6); break;
     }
     c.translate(-p.x, -p.y);
@@ -584,7 +589,6 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
           const thrown = e.hp === 1, turn = thrown ? Math.sin(at / 70 + e.id) * .35 - .25 : Math.sin(at / 220 + e.id) * .06;
           c.save(); c.translate(x, y - h * .45); c.rotate(turn); fitted(c, 'chests', thrown ? 'knocked' : 'intact', 0, h * .45, w * 1.05); c.restore(); return true;
         }
-        if (fitted(c, 'creatures', Math.sin(at / 160 + e.id) > .2 ? 'chest-open' : 'chest-shut', x, y, w * 1.05)) return true;
         c.fillStyle = '#6e3b2e'; c.fillRect(x - w / 2, y - h * .55, w, h * .55);
         c.fillStyle = '#2a120c'; c.fillRect(x - w * .46, y - h * .55 - open, w * .92, open);
         c.fillStyle = '#fff'; for (let i = 0; i < 5; i++) { const tx = x - w * .4 + i * w * .2; c.beginPath(); c.moveTo(tx - w * .07, y - h * .55); c.lineTo(tx + w * .07, y - h * .55); c.lineTo(tx, y - h * .55 - open * .5); c.fill(); }
@@ -595,8 +599,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'dragonnet': {
         // A little dragon asleep, curled up, with a Z floating up.
         // Painted: asleep on its coins (the creatures stay where they are).
+        // Struck, it tumbles dizzy; a few metres before Benny it wakes up with a start.
         if (art.creatures.ready) {
-          fitted(c, 'creatures', 'dragonnet-sleep', x, y, w * 1.15);
+          fitted(c, 'creatures', vanishing !== null ? 'dragonnet-hit' : thingAhead < DRAGONNET_WAKES ? 'dragonnet-awake' : 'dragonnet-sleep', x, y, w * 1.15);
+          if (vanishing !== null || thingAhead < DRAGONNET_WAKES) return true;
           const z = (at / 900 + e.id * .3) % 1; c.globalAlpha = 1 - z; c.fillStyle = '#fff'; c.font = `800 ${Math.round(Math.max(8, h * .4))}px system-ui`; c.textAlign = 'center'; c.fillText('z', x + w * .4, y - h * (1.1 + z * .6)); c.globalAlpha = 1;
           return true;
         }
@@ -609,14 +615,15 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'ember': {
         // A living flame that flickers.
         const f = 1 + .08 * Math.sin(at / 70 + e.id);
-        if (fitted(c, 'creatures', Math.floor(at / 110 + e.id) % 2 ? 'ember-2' : 'ember-1', x, y, w * 1.05)) return true;
+        // Struck, it goes out in a puff of smoke.
+        if (fitted(c, 'creatures', vanishing !== null ? 'ember-smoke' : Math.floor(at / 110 + e.id) % 2 ? 'ember-2' : 'ember-1', x, y, w * 1.05)) return true;
         c.fillStyle = '#ff6a1a'; c.beginPath(); c.moveTo(x, y - h * 1.15 * f); c.quadraticCurveTo(x + w * .6, y - h * .5, x, y); c.quadraticCurveTo(x - w * .6, y - h * .5, x, y - h * 1.15 * f); c.fill();
         c.fillStyle = '#ffd24a'; c.beginPath(); c.moveTo(x, y - h * .8 * f); c.quadraticCurveTo(x + w * .32, y - h * .3, x, y - h * .05); c.quadraticCurveTo(x - w * .32, y - h * .3, x, y - h * .8 * f); c.fill();
         eyes(x, y - h * .38, w * .12, Math.max(1, w * .07)); return true;
       }
       case 'flyer': {
         // Painted: wings up, wings down.
-        if (fitted(c, 'creatures', Math.floor(at / 90 + e.id) % 2 ? 'flyer-2' : 'flyer-1', x, y, w * 2)) return true;
+        if (fitted(c, 'creatures', vanishing !== null ? 'flyer-hit' : Math.floor(at / 90 + e.id) % 2 ? 'flyer-2' : 'flyer-1', x, y, w * 2)) return true;
         const flap = Math.abs(Math.sin(at / 90 + e.id)); c.fillStyle = '#b89af0';
         for (const dir of [-1, 1]) { c.beginPath(); c.moveTo(x + dir * w * .3, y - h * .6); c.lineTo(x + dir * w * 1.1, y - h * (.6 + .7 * flap)); c.lineTo(x + dir * w * .9, y - h * .2); c.fill(); }
         ellipse(x, y - h / 2, w / 2, h / 2, '#7b4fc9'); eyes(x, y - h * .55, w * .17, Math.max(1, w * .1));

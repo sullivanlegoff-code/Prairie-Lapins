@@ -23,4 +23,8 @@ describe('the run’s painted atlases', () => {
     const sizes = Object.values(atlases.chests.frames).map(f => f.slice(2).join());
     expect(new Set(sizes).size).toBe(1);
   });
+  it('gives each creature a picture for the moment it is struck', () => {
+    for (const frame of ['dragonnet-hit', 'ember-smoke', 'flyer-hit', 'dragonnet-awake']) expect(atlases.creatures.frames[frame], frame).toBeDefined();
+    expect(source).toContain("vanishing !== null ? 'flyer-hit'");
+  });
 });

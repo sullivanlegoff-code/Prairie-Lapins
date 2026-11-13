@@ -35,7 +35,10 @@ export const CHARACTERS = {
   dragon: {sheet: 'sheet-dragon2.png', frames: ['fly-1', 'fly-2', 'face', 'catch'], size: 420, columns: 2, standing: false},
   // Two rows of four, each drawing fitted to its own square (they differ in size), standing on its bottom; the two pictures of
   // one creature share one square so it keeps its size from one picture to the next.
-  creatures: {sheet: 'sheet-creatures.png', frames: ['dragonnet-sleep', 'dragonnet-awake', 'chest-shut', 'chest-open', 'ember-1', 'ember-2', 'flyer-1', 'flyer-2'], size: 200, columns: 4, rows: 2, fit: true, pairs: true},
+  // Repainted in the style of the floating isles (13 Nov.): a grid of three by three, one creature per row (dragonnet asleep,
+  // awake, struck; ember tall, low, gone out in smoke; flyer wings up, down, struck), the three pictures of a row in one square.
+  creatures: {sheet: 'sheet-foes.png', frames: ['dragonnet-sleep', 'dragonnet-awake', 'dragonnet-hit', 'ember-1', 'ember-2', 'ember-smoke', 'flyer-1', 'flyer-2', 'flyer-hit'], size: 200, columns: 3, fit: true, cells: 3, rows: 3, group: 3, pocket: 6000},
+  // (Its white pockets only from 6000 pixels: the whites of the eyes stay.)
   // The chest's three states (13 Nov.): one chest per cell of three equal cells, the pieces of a cell (sparkles, a lid knocked
   // off, loose coins) kept together as one drawing; all three in one same square, drawn at the shut chest's size.
   chests: {sheet: 'sheet-chests.png', frames: ['intact', 'knocked', 'broken'], size: 220, columns: 3, fit: true, cells: 3, shared: true},
@@ -47,7 +50,7 @@ const SPECK = .04;
 const read = file => decodeRgbPng(readFileSync(file));
 
 /** Pure white pockets the drawing closes in (between the legs, under an arm) become background too. */
-function clearPockets({width, height, pixels}) {
+function clearPockets({width, height, pixels}, least = 250) {
   const seen = new Uint8Array(width * height), white = i => pixels[i * 4 + 3] === 255 && Math.min(pixels[i * 4], pixels[i * 4 + 1], pixels[i * 4 + 2]) >= 247
     && Math.max(pixels[i * 4], pixels[i * 4 + 1], pixels[i * 4 + 2]) - Math.min(pixels[i * 4], pixels[i * 4 + 1], pixels[i * 4 + 2]) <= 5;
   let cleared = 0;
@@ -56,7 +59,7 @@ function clearPockets({width, height, pixels}) {
     const pocket = [start]; seen[start] = 1;
     for (let k = 0; k < pocket.length; k++) { const i = pocket[k], x = i % width;
       for (const j of [i - width, i + width, x ? i - 1 : -1, x < width - 1 ? i + 1 : -1]) if (j >= 0 && j < width * height && !seen[j] && white(j)) { seen[j] = 1; pocket.push(j); } }
-    if (pocket.length >= 250) { for (const i of pocket) pixels[i * 4 + 3] = 0; cleared += pocket.length; }
+    if (pocket.length >= least) { for (const i of pocket) pixels[i * 4 + 3] = 0; cleared += pocket.length; }
   }
   return cleared;
 }
@@ -76,9 +79,9 @@ function blots({width, height, pixels}, rows = 1, cells = 0) {
   const biggest = Math.max(...found.map(b => b.count));
   // One drawing per cell of equal width: every piece in a cell (but dust) belongs to it.
   if (cells) {
-    const list = Array.from({length: cells}, () => null);
+    const list = Array.from({length: cells * rows}, () => null);
     for (const b of found) { if (b.count < biggest * .002) continue;
-      const k = Math.min(cells - 1, Math.floor((b.x0 + b.x1) / 2 / (width / cells))), m = list[k];
+      const k = Math.min(cells - 1, Math.floor((b.x0 + b.x1) / 2 / (width / cells))) + cells * Math.min(rows - 1, Math.floor((b.y0 + b.y1) / 2 / (height / rows))), m = list[k];
       list[k] = m ? {id: -2, ids: new Set([...m.ids, b.id]), x0: Math.min(m.x0, b.x0), y0: Math.min(m.y0, b.y0), x1: Math.max(m.x1, b.x1), y1: Math.max(m.y1, b.y1), count: m.count + b.count}
         : {...b, ids: new Set([b.id])}; }
     return {label, list: list.filter(Boolean)};
@@ -121,20 +124,21 @@ mkdirSync(TARGET, {recursive: true});
 const config = {}, atlases = {};
 for (const [name, character] of Object.entries(CHARACTERS)) {
   const sheet = read(`${SOURCES}/${character.sheet}`);
-  cutOut(sheet, 'light'); const pockets = clearPockets(sheet);
+  cutOut(sheet, 'light'); const pockets = clearPockets(sheet, character.pocket);
   if (name === 'benny' || name === 'benny-moves') recolour(sheet, referenceStats);
   const {label, list} = blots(sheet, character.rows, character.cells);
   if (list.length !== character.frames.length) throw Error(`${character.sheet}: ${list.length} drawings found, ${character.frames.length} expected`);
   const extent = b => Math.max(b.x1 - b.x0, b.y1 - b.y0) + 1;
   // One square side per character, from its biggest drawing, with a margin; fitted sheets: per drawing (or per pair).
   const side = Math.ceil(Math.max(...list.map(extent)) * 1.08);
-  const sideOf = k => !character.fit ? side : character.shared ? Math.ceil(Math.max(...list.map(extent)) * 1.04) : Math.ceil((character.pairs ? Math.max(extent(list[k - k % 2]), extent(list[k - k % 2 + 1])) : extent(list[k])) * 1.04);
+  const first = k => character.group ? k - k % character.group : k;
+  const sideOf = k => !character.fit ? side : character.group ? Math.ceil(Math.max(...list.slice(first(k), first(k) + character.group).map(extent)) * 1.04) : character.shared ? Math.ceil(Math.max(...list.map(extent)) * 1.04) : Math.ceil((character.pairs ? Math.max(extent(list[k - k % 2]), extent(list[k - k % 2 + 1])) : extent(list[k])) * 1.04);
   const frames = list.map((blot, k) => {
     let image; const s = sideOf(k);
     if (character.standing || character.fit) image = square(sheet, label, blot, s, s / 2, s * (character.fit ? .98 : .97), (blot.x0 + blot.x1) / 2, blot.y1);
     else { const c = bodyCentre(sheet, label, blot); image = square(sheet, label, blot, s, s / 2, s / 2, c.x, c.y); }
     // A fitted drawing's width and height in its square (a pair takes its first picture's), to draw it at the thing's size.
-    const ref = character.shared ? list[0] : character.pairs ? list[k - k % 2] : blot, fit = character.fit ? [+((ref.x1 - ref.x0 + 1) / s).toFixed(3), +((ref.y1 - ref.y0 + 1) / s).toFixed(3)] : [];
+    const ref = character.group ? list[first(k)] : character.shared ? list[0] : character.pairs ? list[k - k % 2] : blot, fit = character.fit ? [+((ref.x1 - ref.x0 + 1) / s).toFixed(3), +((ref.y1 - ref.y0 + 1) / s).toFixed(3)] : [];
     return {name: character.frames[k], image: downscale(image, character.size), fit};
   });
   const columns = character.columns, rows = Math.ceil(frames.length / columns), S = character.size;
