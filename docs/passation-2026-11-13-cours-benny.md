@@ -122,5 +122,9 @@ Pour l'agent qui reprend le mini-jeu. Lire d'abord `AGENTS.md`, puis `docs/passa
 - Décor : planches et herbe peintes, mur de terre et d'herbe distinct du mur de pierre, falaise au bout des trous et des fosses, bord du vide lisible à 390 × 844.
 - Vitesse en temps réel (6 s, Chromium sans carte graphique), trois mesures : la première, pendant que la machine se chauffait, médiane 17,9 ms, p95 29,1 ms ; les deux suivantes médiane 16,8 puis 16,6 ms, p95 22,0 puis 18,3 ms. Sans décor : médiane 16,7 ms, p95 18,2 ms. Le décor peint ne ralentit donc plus la course.
 
+### Contre-vérification (même jour, version c6a45c3, écran 390 × 844 à densité 2, la taille d'un iPhone)
+- Toutes les transitions de Benny refaites au ralenti : frappe sautée `hop-1×2 hop-2×3 hop-3×7 hop-4×6` ; saut et atterrissage à 11 m/s `jump×23 fall×15 land×5` ; à 24 m/s `jump×24 fall×14 land×3` ; départ sur un mur `push×10 wall×6` ; roulade finie debout ; chute au-dessus du vide (elle descend, rapetisse et s'efface, la Dragon la rattrape).
+- Vitesse, six mesures de 6 s en alternant décor peint et sans décor : avec le décor, médiane 16,6 ms trois fois, p95 18,5 à 18,6 ms, 2 à 4 images sur 360 au-dessus de 20 ms ; sans décor, médiane 16,6 ms, p95 17,9 à 18,1 ms, 1 à 3 images. Le décor coûte moins d'une milliseconde au p95. La mesure plus lente de la première série n'est pas revenue.
+
 ### Validation
 - `npx tsc --noEmit` sans erreur ; suite complète verte : 2 246 tests, 1 ignoré (240 fichiers) ; `git diff --check` propre.
