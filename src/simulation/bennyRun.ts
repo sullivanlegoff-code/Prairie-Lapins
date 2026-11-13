@@ -121,6 +121,10 @@ export const BENNY_RUN = {
   /** Falling into the void (a gap, an open pit, or the side of the road with no wall): a short fall of `fallMs` ms, `fallDepth` m deep, then
    * the Dragon catches her and the run is over. */
   fallMs: 700, fallDepth: 3,
+  /** Stretches with no wall at all on one side or both (owner, 13 Nov.: « parfois vraiment seul face au vide »), the three lanes
+   * whole: one every `edgeEvery` s or so of running (a random share more), the first past `edgeFrom` m, `edgeBoth` of them on both
+   * sides, from one wall segment long up to `edgeSegments` with the difficulty. */
+  edgeEvery: 20, edgeSpread: 10, edgeFrom: 160, edgeBoth: .45, edgeSegments: 3,
   /** In the cave, rocks hang from the ceiling (their shadow on the road) and fall when Benny is `rockLand` m away: then a
    * boulder to jump over, like a fence. */
   rockLand: 24,
@@ -184,6 +188,7 @@ export type RunEvent =
   | {type: 'wallLeap'; side: Side; points: number; combo: number; chain: number}
   /** Into a gap: a bump, then she catches a wall or hops out. */
   | {type: 'fall'; onto: Side | null}
+  | {type: 'overVoid'; side: Side}
   | {type: 'pound'}
   | {type: 'shockwave'}
   | {type: 'setting'; setting: RunSetting}
@@ -258,6 +263,11 @@ export interface BennyRun {
   holes: {from: number; to: number}[];
   /** When Benny fell into the void (null while on the road). */
   fallFrom: number | null;
+  /** In the air over the void beside the road (she jumped, then swiped towards it): she falls unless she is back over the road when
+   * the jump ends. */
+  overVoid: Side | null;
+  /** Where the next stretch with no wall begins (m), and the one being laid: its end and its open sides. */
+  nextEdgeZ: number; edge: {to: number; sides: Side[]} | null;
   setting: RunSetting; nextSettingAt: number;
   /** The next setting, from `z` on, while Benny runs towards it. */
   upcoming: {setting: RunSetting; z: number} | null;
@@ -345,7 +355,7 @@ export function startBennyRun(now: number, seed = Math.floor(Math.random() * 214
   const g: BennyRun = {
     seed: (seed >>> 0) || 1, startedAt: now, at: now, distance: 0, speed: C.speedStart, lanes, lane: Math.floor(lanes / 2), laneChangedAt: -Infinity, laneFrom: Math.floor(lanes / 2), rollHits: 0, kms: 0, baseLanes: lanes, zones: [], platforms: [], raised: null, ledges: [], pits: [], gusts: [], pace: 0, scoreBy: {grotte: 0, pont: 0, montagne: 0}, scored: 0,
     airFrom: 0, airUntil: 0, bounceUntil: -1, landHeight: 0, jumpFrom: 0, pound: false, poundFrom: 0, slideUntil: 0, wall: null,
-    entities: [], nextId: 1, nextSpawnZ: C.firstAt, walls: [], wallsTo: {left: 0, right: 0}, holes: [], fallFrom: null,
+    entities: [], nextId: 1, nextSpawnZ: C.firstAt, walls: [], wallsTo: {left: 0, right: 0}, holes: [], fallFrom: null, overVoid: null, nextEdgeZ: C.edgeFrom, edge: null,
     setting: 'grotte', nextSettingAt: 0, upcoming: null, stumbleUntil: 0, lastBumpAt: null,
     active: null, score: 0, coins: 0, hearts: 0, pots: 0, goldPots: 0, foes: 0, wallRuns: 0, dodges: 0, leaps: 0, combo: 0, comboUntil: 0, bestCombo: 0,
     challenge: null, challengesDone: 0, nextChallengeAt: now + C.challengeFirstMs,
@@ -423,7 +433,16 @@ export const runnableAt = (g: BennyRun, side: Side, z: number) => !!wallAt(g, si
 function layWalls(g: BennyRun): void {
   for (const side of ['left', 'right'] as const) while (g.wallsTo[side] < g.distance + C.spawnAhead + C.wallSegment * 2) {
     const from = g.wallsTo[side];
-    g.walls.push({side, from, to: from + C.wallSegment, runnable: from < C.firstAt + C.wallSegment || random(g) < C.wallRunnable});
+    // A stretch with no wall begins (both sides' segments start at the same places): which sides, how long.
+    if (!g.edge && !g.tutorial && from >= g.nextEdgeZ) {
+      const sides: Side[] = random(g) < C.edgeBoth ? ['left', 'right'] : [random(g) < .5 ? 'left' : 'right'];
+      const length = C.wallSegment * Math.min(C.edgeSegments, 1 + Math.floor(runDifficulty(g) * (C.edgeSegments - 1) + random(g)));
+      g.edge = {to: from + length, sides};
+      g.nextEdgeZ = from + length + Math.max(C.speedStart, g.speed) * (C.edgeEvery + random(g) * C.edgeSpread);
+    }
+    const open = !!g.edge && from < g.edge.to && g.edge.sides.includes(side);
+    g.walls.push({side, from, to: from + C.wallSegment, runnable: !open && (from < C.firstAt + C.wallSegment || random(g) < C.wallRunnable), ...(open ? {void: true} : {})});
+    if (g.edge && side === 'right' && from + C.wallSegment >= g.edge.to) g.edge = null;
     g.wallsTo[side] = from + C.wallSegment;
   }
   g.walls = g.walls.filter(w => w.to > g.distance - 10);
@@ -855,6 +874,8 @@ function endWall(g: BennyRun): void {
 
 /** What happens when a thing reaches Benny without having been struck. */
 function meet(g: BennyRun, e: RunEntity): void {
+  // Over the void beside the road: nothing on the road reaches her.
+  if (g.overVoid) return;
   // A pot on a wall: broken by running along that wall, otherwise left behind.
   if (e.kind === 'pot' && (e.lane < 0 || e.lane >= g.lanes)) { if (g.wall && wallLane(g, g.wall.side) === e.lane) strike(g, e, 'wall'); return; }
   if (e.kind === 'wallCoin') {
@@ -958,6 +979,9 @@ function tick(g: BennyRun): void {
       for (const e of g.entities.filter(o => strikable(o) && o.z - g.distance >= -C.shockBehind && o.z - g.distance <= C.shockReach)) strike(g, e, 'shock');
     } else for (const e of g.entities.filter(o => o.lane === g.lane && lanesAt(g, o.z) === g.lanes && strikable(o) && o.z - g.distance >= -C.hitHalf && o.z - g.distance <= C.poundReach)) strike(g, e, 'pound');
   }
+  // Over the void beside the road when the jump ends: she falls, unless a wall has come back there (then she is back on the road).
+  // (She stays drawn out over the void as she falls.)
+  if (g.overVoid && !inAir(g)) { if (voidAt(g, g.overVoid)) plunge(g); else g.overVoid = null; }
   // Over a gap, the run on a wall does not run out.
   if (g.wall && ((g.at >= g.wall.until && !holeAt(g)) || !runnableAt(g, g.wall.side, g.distance))) endWall(g);
   if (!g.wall && !g.raised && !inAir(g) && !powerActive(g, 'flight') && !powerActive(g, 'dash') && holeAt(g)) plunge(g);
@@ -1048,6 +1072,14 @@ function shareScore(g: BennyRun): void {
 /** One of the player's gestures, at `now`. */
 /** Benny lands in lane `target` (from `from`, with a step `step`): the wand strikes every pot or creature within reach in that lane (owner:
  * two creatures in the lane, both fall at once); with a creature on her other side as well, she spins and strikes it. */
+/** The void beside the road on `side` where Benny is (no wall there). */
+const voidAt = (g: BennyRun, side: Side) => g.walls.some(w => w.side === side && w.void && g.distance >= w.from && g.distance < w.to);
+/** A lane change in the air (owner, 13 Nov.): she keeps her height, unless a creature or a pot waits in the new lane within reach:
+ *  then she dives on it, strikes it and is back on the ground. */
+function airMove(g: BennyRun, from: number, target: number, step: number): void {
+  if (nearest(g, target, reach(g))) { g.airUntil = g.at; g.jumpFrom = 0; g.pound = false; if (g.raised) dropOff(g); arrive(g, from, target, step); return; }
+  g.lane = target; g.laneChangedAt = g.at; g.laneFrom = from;
+}
 function arrive(g: BennyRun, from: number, target: number, step: number): void {
   g.lane = target; g.laneChangedAt = g.at; g.laneFrom = from;
   const first = nearest(g, target, reach(g)), behind = first ? nearest(g, from - step, reach(g), isFoe) : undefined;
@@ -1072,19 +1104,23 @@ export function runInput(g: BennyRun, now: number, input: RunInput): void {
       if (g.wall && holeAt(g)) { if (g.wall.side !== side) leap(g); return; }
       // Off the wall by swiping away from it: she comes down into the next lane at once, striking what is there.
       if (g.wall) { if (g.wall.side !== side) { const from = g.lane; endWall(g); if (g.lane + step >= 0 && g.lane + step <= g.lanes - 1) arrive(g, from, g.lane + step, step); } return; }
+      // Over the void: back towards the road, she is over her edge lane again (diving on what waits there); further out, nothing.
+      if (g.overVoid) { if (g.overVoid !== side) { g.overVoid = null; airMove(g, g.lane - step, g.lane, step); } return; }
       const target = g.lane + step;
       if (target < 0 || target > g.lanes - 1) {
         if (runnableAt(g, side, g.distance) && !powerActive(g, 'flight')) {
           // From the ground or in the middle of a jump.
           g.wall = {side, until: g.at + C.wallMs, since: g.at}; g.airUntil = 0; g.pound = false; g.slideUntil = 0;
           g.events.push({type: 'wallStart', side});
-        } else if (!powerActive(g, 'flight') && g.walls.some(w => w.side === side && w.void && g.distance >= w.from && g.distance < w.to)) plunge(g); // The void at the side.
+        } else if (!powerActive(g, 'flight') && voidAt(g, side)) {
+          // The void at the side: in the air she goes out over it (owner: « au-dessus donc il ne perd pas »), on the ground she falls.
+          if (inAir(g)) { g.overVoid = side; g.laneFrom = g.lane; g.laneChangedAt = g.at; g.events.push({type: 'overVoid', side}); } else plunge(g);
+        }
         return;
       }
       // Stairs: a step sideways only when the step is low enough; a higher ledge needs a jump (in the air, any lane is fine).
       if (!inAir(g) && ledgeHeight(g, target, g.distance) - floorHeight(g) > C.stepMax) { g.events.push({type: 'blocked'}); return; }
-      // In the air she comes down at once in the new lane, and strikes what waits on the ground there (no strike from the air).
-      if (inAir(g) && !powerActive(g, 'flight')) { g.airUntil = g.at; g.jumpFrom = 0; g.pound = false; }
+      if (inAir(g) && !powerActive(g, 'flight')) { airMove(g, g.lane, target, step); return; }
       if (g.raised) dropOff(g);
       const from = g.lane; arrive(g, from, target, step);
       return;

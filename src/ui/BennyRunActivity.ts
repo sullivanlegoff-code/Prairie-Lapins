@@ -60,6 +60,8 @@ type DecorName = typeof DECOR[number];
  *  the wall's), the cliff across. The grass verge past the road's edge (m), the cliff's depth below it (m). */
 /** Pixels per point of the painted ground's layer. */
 const GROUND_RATIO = 1;
+/** How far out the cliff's foot leans beyond the edge of the road (m). */
+const VOID_LIP = .5;
 const PLANK_ACROSS = 3.3, PLANK_ALONG = 3, GRASS_TILE = 3.3, WALL_TILE = WALL_HEIGHT, CLIFF_TILE = 4, VERGE = .6, CLIFF_DEPTH = 4;
 /** The colours of the painted decor where shapes still stand: the clouds of the void, the isles' rock and grass lip, the tops
  *  and sides of platforms and stairs. */
@@ -301,9 +303,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         if (to - from < .05) continue;
         const zs = cuts(g, from, to), edge = (z: number) => dir * (halfAt(g, z) + VERGE);
         c.beginPath(); zs.forEach((z, i) => { const p = project(edge(z), z, 0); if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); });
-        for (const z of [...zs].reverse()) { const p = project(edge(z) + dir * 3.2, z, -CLIFF_DEPTH * .6); c.lineTo(p.x, p.y); }
-        c.closePath(); const p0 = project(edge(from), Math.max(from, 0), 0), p1 = project(edge(from) + dir * 3.2, Math.max(from, 0), -CLIFF_DEPTH * .6);
-        const grad = c.createLinearGradient(p0.x, p0.y, p1.x, p1.y); grad.addColorStop(0, PAINTED_LOOK.rock); grad.addColorStop(1, PAINTED_LOOK.rockDark);
+        // The isle's cliff drops nearly straight down from the edge and fades into the clouds: past it, only the void (owner, 13 Nov.).
+        for (const z of [...zs].reverse()) { const p = project(edge(z) + dir * VOID_LIP, z, -CLIFF_DEPTH); c.lineTo(p.x, p.y); }
+        c.closePath(); const p0 = project(edge(from), Math.max(from, 0), 0), p1 = project(edge(from) + dir * VOID_LIP, Math.max(from, 0), -CLIFF_DEPTH);
+        const grad = c.createLinearGradient(p0.x, p0.y, p1.x, p1.y); grad.addColorStop(0, PAINTED_LOOK.rock); grad.addColorStop(.55, PAINTED_LOOK.rockDark); grad.addColorStop(1, 'rgba(109,74,79,0)');
         c.fillStyle = grad; c.fill();
         // The grass lip: a thick line along the edge, so the end of the ground reads on a small screen.
         c.strokeStyle = PAINTED_LOOK.lip; c.lineJoin = 'round'; c.beginPath();
@@ -1112,7 +1115,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     lanes = g.lanes; viewLanes += (lanesDrawn(g, 8) - viewLanes) * Math.min(1, dt * 2.5);
     // Benny glides between lanes, and onto and off a wall (drawn just inside it), instead of jumping there.
     // (Her paws on the wall's face: she is drawn close against it, tipped over onto it.)
-    const onWall = (wallX() - (art.benny.ready ? .25 : .45) - laneX(lanes - 1)) / LANE_WIDTH, target = g.wall ? (g.wall.side === 'left' ? -onWall : lanes - 1 + onWall) : g.lane;
+    const onWall = (wallX() - (art.benny.ready ? .25 : .45) - laneX(lanes - 1)) / LANE_WIDTH, target = g.wall ? (g.wall.side === 'left' ? -onWall : lanes - 1 + onWall) : g.overVoid ? (g.overVoid === 'left' ? -1 : lanes) : g.lane;
     // A spring: she is carried a little past her lane and settles; onto a wall, straight there (no swing through the wall).
     if (g.wall || Math.abs(target - viewLane) > lanes) { viewLane += (target - viewLane) * Math.min(1, dt * 24); laneSpeed = 0; }
     else { for (let left = dt; left > 0; left -= 1 / 240) { const h = Math.min(left, 1 / 240); laneSpeed += ((target - viewLane) * GLIDE.pull - laneSpeed * GLIDE.damp) * h; viewLane += laneSpeed * h; } }
@@ -1230,6 +1233,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'wallLeap': flashes.push({at: clock(), text: `Saut de mur +${event.points}`, x: width / 2}); sound('wall', 1 + .06 * Math.min(6, event.chain - 1));
         shakeFor('strike'); break;
       case 'fall': flash('Oh non, le vide !'); sound('bump', .7); break;
+      // Out over the void in a jump: back onto the road before landing!
+      case 'overVoid': flash('Au-dessus du vide : reviens sur la piste !', false, true); sound('jump', .8); break;
       // The shock wave: a ring and a sound only, no slow motion and no shake (it must not slow the run down).
       case 'shockwave': shock = clock(); flash('Onde de choc !'); sound('shock'); break;
       case 'challenge':

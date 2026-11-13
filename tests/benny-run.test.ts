@@ -154,7 +154,7 @@ describe('Cours cours Benny ! rules', () => {
     for (let seed = 1; seed <= 6; seed++) {
       const g = startBennyRun(0, seed * 104729); const rows = new Map<string, number[]>(); let t = 0;
       while (g.distance < 1500 && t < 1_000_000) {
-        t += 16; advanceBennyRun(g, t); if (g.over) g.over = false; // Measured on a run that goes on.
+        t += 16; advanceBennyRun(g, t); if (g.over) g.over = false; g.fallFrom = null; // Measured on a run that goes on (a fall into the void too).
         for (const e of g.entities) if (kinds.includes(e.kind)) rows.set(e.z.toFixed(1), [...(rows.get(e.z.toFixed(1)) ?? []), e.lane]);
       }
       for (const lanes of rows.values()) { const s = [...new Set(lanes)].sort((a, b) => a - b); expect(s.every((l, i) => i === 0 || l - s[i - 1] <= 1)).toBe(true); }
@@ -484,6 +484,43 @@ describe('Cours cours Benny ! rules', () => {
     for (const w of g.walls) w.runnable = false; // The quiet road has runnable walls: this side is the void only.
     g.walls.push({side: 'left', from: z - 5, to: z + 60, runnable: false, void: true});
     runInput(g, g.at, 'left'); expect(g.fallFrom).not.toBeNull(); expect(g.wall).toBeNull();
+  });
+  // Owner, 13 Nov.: alone before the void, and moves in the air.
+  const voidSide = (g: BennyRun, side: 'left' | 'right') => { for (const w of g.walls) w.runnable = false; g.walls.push({side, from: g.distance - 5, to: g.distance + 200, runnable: false, void: true}); };
+  it('a jump then a swipe towards the void takes Benny out over it; back over the road before landing, she runs on', () => {
+    const g = quiet(); run(g, C.introMs); g.lane = 0; voidSide(g, 'left');
+    runInput(g, g.at, 'up'); run(g, 100); runInput(g, g.at, 'left');
+    expect(g.overVoid).toBe('left'); expect(g.fallFrom).toBeNull(); expect(types(g)).toContain('overVoid');
+    runInput(g, g.at, 'left'); expect(g.overVoid).toBe('left'); // Further out: nothing.
+    runInput(g, g.at, 'right'); expect(g.overVoid).toBeNull(); expect(g.lane).toBe(0);
+    run(g, C.jumpMs * 2); expect(g.fallFrom).toBeNull(); expect(g.over).toBe(false);
+  });
+  it('still over the void when the jump ends: she falls, and the run is over', () => {
+    const g = quiet(); run(g, C.introMs); g.lane = 2; voidSide(g, 'right');
+    runInput(g, g.at, 'up'); run(g, 100); runInput(g, g.at, 'right'); expect(g.overVoid).toBe('right');
+    run(g, C.jumpMs * 2); expect(g.fallFrom).not.toBeNull(); run(g, C.fallMs + 50); expect(g.over).toBe(true);
+  });
+  it('nothing on the road reaches her out over the void', () => {
+    const g = quiet(); run(g, C.introMs); g.lane = 0; voidSide(g, 'left');
+    runInput(g, g.at, 'up'); run(g, 50); runInput(g, g.at, 'left'); place(g, 'flyer', 0, .5); run(g, 120);
+    expect(g.lastBumpAt).toBeNull(); expect(g.foes).toBe(0);
+  });
+  it('a lane change in the air keeps her height when the new lane is clear', () => {
+    const g = quiet(); run(g, C.introMs); runInput(g, g.at, 'up'); run(g, 150); const until = g.airUntil;
+    runInput(g, g.at, 'left'); expect(g.lane).toBe(0); expect(inAir(g)).toBe(true); expect(g.airUntil).toBe(until);
+    runInput(g, g.at, 'right'); runInput(g, g.at, 'right'); expect(g.lane).toBe(2); expect(inAir(g)).toBe(true);
+  });
+  it('a lane change in the air towards a pot dives on it: broken, and Benny back on the ground', () => {
+    const g = quiet(); run(g, C.introMs); runInput(g, g.at, 'up'); run(g, 150);
+    place(g, 'pot', 0, 1); runInput(g, g.at, 'left'); expect(g.pots).toBe(1); expect(inAir(g)).toBe(false);
+  });
+  it('lays stretches with no wall, on one side or both, the three lanes whole, every 20 to 30 s or so', () => {
+    const g = startBennyRun(0, 11); const seen: {side: string; from: number}[] = [];
+    for (let t = 0; t < 4000; t++) { g.lastBumpAt = null; g.fallFrom = null; g.over = false; g.overVoid = null; g.distance += 3; advanceBennyRun(g, g.at + C.step);
+      for (const w of g.walls) if (w.void && !seen.some(o => o.side === w.side && o.from === w.from)) seen.push({side: w.side, from: w.from}); }
+    const starts = [...new Set(seen.map(o => o.from))].sort((a, b) => a - b);
+    expect(starts.length).toBeGreaterThan(10); expect(starts[0]).toBeGreaterThanOrEqual(C.edgeFrom);
+    const both = starts.filter(z => seen.filter(o => o.from === z).length === 2).length; expect(both).toBeGreaterThan(0); expect(both).toBeLessThan(starts.length);
   });
   it('never moves a creature sideways: a dragonnet, an ember or any other stays in its lane', () => {
     const g = quiet(); const e = place(g, 'dragonnet', 1, 60); place(g, 'ember', 2, 30);
