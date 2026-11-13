@@ -1347,6 +1347,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'bump': cleared.set(event.entity.cart ? 'cart' : event.entity.kind, 0); if (event.entity.kind !== 'hole') flash('Aïe ! La Dragon arrive !'); hurtAt = clock(); shakeFor('bump'); sound('bump'); break;
       case 'shield': flash('La bulle te protège !'); burst(width / 2, height * .7, ['#e7d1ff', '#b07bff', '#fff'], 16, 260); sound('power'); break;
       case 'power': flash(`${POWER_NAMES[event.power]} !`); sound('power'); break;
+      case 'frenzy': flash('Frénésie ! Les pièces viennent à toi'); burst(width / 2, height * .62, ['#ffe36b', '#ffb3c8', '#e7d1ff', '#fff'], 24, 360); sound('power', 1.25); shakeFor('strike'); break;
       case 'heart': flash('+1 Cœur !'); burst(width / 2, height * .7, ['#ff4d6d', '#ffd1dc', '#fff'], 14, 240); sound('power', 1.5); break;
       case 'wallStart': sound('wall', event.side === 'left' ? .94 : 1.06); break;
       case 'cleared': { const k = event.entity.cart ? 'cart' : event.entity.kind; cleared.set(k, (cleared.get(k) ?? 0) + 1); }

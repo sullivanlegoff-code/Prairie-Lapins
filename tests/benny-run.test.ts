@@ -553,6 +553,13 @@ describe('Cours cours Benny ! rules', () => {
         for (const e of g.entities) if (e.kind === 'coin' && (e.lane < 0 || e.lane >= g.lanes)) { out++; e.lane = 1; } } }
     expect(out).toBeGreaterThan(5);
   });
+  it('sets off a frenzy (a coin magnet) when the combo reaches its top multiplier, once per chain', () => {
+    const g = quiet(); run(g, C.introMs);
+    const top = (C.comboMax - 1) * C.comboStep + 1;
+    for (let i = 0; i < top + 2; i++) { place(g, 'pot', g.lane, 1.5); run(g, 250); }
+    const frenzies = types(g).filter(t => t === 'frenzy').length;
+    expect(g.combo).toBeGreaterThanOrEqual(top); expect(frenzies).toBe(1); expect(g.active?.power).toBe('magnet');
+  });
   it('never moves a creature sideways: a dragonnet, an ember or any other stays in its lane', () => {
     const g = quiet(); const e = place(g, 'dragonnet', 1, 60); place(g, 'ember', 2, 30);
     run(g, 6000); expect(e.lane).toBe(1); expect(g.entities.filter(o => o.kind === 'ember').every(o => o.lane === 2)).toBe(true);

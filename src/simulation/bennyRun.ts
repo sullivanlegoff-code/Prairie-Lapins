@@ -66,6 +66,8 @@ export const BENNY_RUN = {
   stumbleMs: 900, stumbleSlow: .7, dragonMs: 10_000, introMs: 3000,
   /** Combo: strikes less than `comboMs` apart; the multiplier grows by one every `comboStep` strikes, up to `comboMax`. */
   comboMs: 2500, comboStep: 3, comboMax: 5,
+  /** Reaching the top multiplier sets off a frenzy: a coin magnet for `frenzyMs` (unless another power is on). */
+  frenzyMs: 5000,
   /** A series of at least `seriesMin` strikes that ends by itself (not by a bump) is banked: `seriesPoints` per strike. */
   seriesMin: 5, seriesPoints: 5,
   points: {pot: 10, foe: 25, wallPerSecond: 40, wallLeap: 25, dodge: 5, wallTrail: 10, leapChain: 15, close: 15, km: 100},
@@ -200,6 +202,8 @@ export type RunEvent =
   | {type: 'shield'; entity: RunEntity}
   | {type: 'caught'; entity: RunEntity}
   | {type: 'power'; power: RunPower}
+  /** The combo reached its top multiplier: a coin magnet for a few seconds. */
+  | {type: 'frenzy'}
   | {type: 'wallStart'; side: Side}
   | {type: 'wallEnd'; side: Side; points: number; trail: number}
   /** From one wall to the other, over a gap in the road. */
@@ -840,6 +844,10 @@ function strike(g: BennyRun, e: RunEntity, by: StrikeKind): void {
   } else { g.foes++; gainCoins(g, e, 2); }
   if (by === 'slide') { g.rollHits++; g.slideUntil = Math.max(g.slideUntil, g.at) + C.rollChainMs; }
   g.events.push({type: 'strike', entity: e, points, combo: g.combo, multiplier, by, ...(by === 'slide' ? {roll: g.rollHits} : {})});
+  // The top multiplier just reached: a frenzy (a chain rewarded, Blade-of-Brim-like).
+  if (multiplier === C.comboMax && comboMultiplier(g.combo - 1) < C.comboMax && (!g.active || g.at >= g.active.until || g.active.power === 'magnet')) {
+    g.active = {power: 'magnet', until: Math.max(g.active?.power === 'magnet' ? g.active.until : 0, g.at + C.frenzyMs)}; g.events.push({type: 'frenzy'});
+  }
 }
 function gainCoins(g: BennyRun, e: RunEntity, amount: number): void {
   const n = amount * (powerActive(g, 'double') ? 2 : 1); g.coins += n; g.events.push({type: 'coin', entity: e, amount: n});
