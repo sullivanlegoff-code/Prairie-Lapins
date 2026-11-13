@@ -722,7 +722,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const shape = SHAPES[e.kind], ahead = e.z - g.distance; if (!shape || ahead > FAR || ahead < -3) return;
     // A creature changing lanes (an ember hopping, a dragonnet crossing) slides over rather than jumps.
     let shown = shownLanes.get(e.id) ?? e.lane; shown += (e.lane - shown) * Math.min(1, frameDt * 12); if (Math.abs(e.lane - shown) < .01) shown = e.lane; shownLanes.set(e.id, shown);
-    const n = lanesAt(g, e.z); let x = e.lane < 0 ? -wallXAt(g, ahead) + .4 : e.lane > n - 1 ? wallXAt(g, ahead) - .4 : (shown - (n - 1) / 2) * LANE_WIDTH;
+    // (A coin out over the void, beside the road, is a lane's width out: where Benny floats when she jumps out there.)
+    const n = lanesAt(g, e.z); let x = e.kind === 'coin' || (e.lane >= 0 && e.lane <= n - 1) ? (shown - (n - 1) / 2) * LANE_WIDTH : e.lane < 0 ? -wallXAt(g, ahead) + .4 : wallXAt(g, ahead) - .4;
     // The little flying monster hovers at a jump's height over the road (it is struck only by jumping through it).
     // Things on the road sit on its height here: stairs and a platform's top.
     const ground = e.kind === 'flyer' ? 0 : ledgeHeight(g, e.lane, e.z) + (platformAt(g, e.lane, e.z) ? BENNY_RUN.platformHeight : 0);

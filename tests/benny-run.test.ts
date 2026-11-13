@@ -522,6 +522,18 @@ describe('Cours cours Benny ! rules', () => {
     expect(starts.length).toBeGreaterThan(10); expect(starts[0]).toBeGreaterThanOrEqual(C.edgeFrom);
     const both = starts.filter(z => seen.filter(o => o.from === z).length === 2).length; expect(both).toBeGreaterThan(0); expect(both).toBeLessThan(starts.length);
   });
+  it('out over the void, she picks up the coins laid out there', () => {
+    const g = quiet(); run(g, C.introMs); g.lane = 0; voidSide(g, 'left');
+    for (const k of [3, 4, 5]) place(g, 'coin', -1, k, {up: 1.2});
+    runInput(g, g.at, 'up'); run(g, 50); runInput(g, g.at, 'left'); run(g, 400); runInput(g, g.at, 'right');
+    expect(g.coins).toBe(3); run(g, C.jumpMs); expect(g.fallFrom).toBeNull();
+  });
+  it('lays coin arcs out over the void where a side has no wall', () => {
+    const g = startBennyRun(0, 11); let out = 0;
+    for (let t = 0; t < 6000; t++) { g.lastBumpAt = null; g.fallFrom = null; g.over = false; g.overVoid = null; g.distance += 2; advanceBennyRun(g, g.at + C.step);
+      for (const e of g.entities) if (e.kind === 'coin' && (e.lane < 0 || e.lane >= g.lanes)) { out++; e.lane = 1; } }
+    expect(out).toBeGreaterThan(5);
+  });
   it('never moves a creature sideways: a dragonnet, an ember or any other stays in its lane', () => {
     const g = quiet(); const e = place(g, 'dragonnet', 1, 60); place(g, 'ember', 2, 30);
     run(g, 6000); expect(e.lane).toBe(1); expect(g.entities.filter(o => o.kind === 'ember').every(o => o.lane === 2)).toBe(true);
