@@ -474,6 +474,10 @@ describe('Cours cours Benny ! rules', () => {
     place(g, 'pillar', lane, c.z - g.distance + 2); c.knock = C.chestKnock; run(g, 300);
     expect(g.entities).not.toContain(c);
   });
+  it('running into a chest struck once kicks it open, with no bump', () => {
+    const g = quiet(); run(g, C.introMs); const c = place(g, 'chest', g.lane, 3); c.hp = 1; run(g, 400);
+    expect(g.entities).not.toContain(c); expect(types(g)).not.toContain('bump'); expect(g.foes).toBe(1);
+  });
   it('a lane open to the void drops Benny into it: the Dragon catches her and the run is over', () => {
     const g = quiet(); run(g, C.introMs);
     g.pits.push({lane: g.lane, from: g.distance + 2, to: g.distance + 12, open: true}); run(g, 400);

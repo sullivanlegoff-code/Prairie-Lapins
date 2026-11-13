@@ -164,7 +164,7 @@ export type RunKind = 'coin' | 'wallCoin' | 'heart' | 'power' | 'pot' | 'barrier
 export const RUN_FOES: readonly RunFoe[] = ['dragonnet', 'chest', 'ember'];
 export type RunInput = 'left' | 'right' | 'up' | 'down';
 export type Side = 'left' | 'right';
-export type StrikeKind = 'lane' | 'far' | 'spin' | 'slide' | 'jump' | 'pound' | 'shock' | 'dash' | 'wall' | 'chest';
+export type StrikeKind = 'lane' | 'far' | 'spin' | 'slide' | 'jump' | 'pound' | 'shock' | 'dash' | 'wall' | 'chest' | 'kick';
 
 /** A thing on the road. `lane` is 0 to `lanes - 1`; a wall coin's lane is -1 (left wall) or `lanes` (right wall). */
 /** A thing on the road; `up` is how high a coin floats (a coin arc over a barrier), for the drawing only. */
@@ -948,7 +948,8 @@ function meet(g: BennyRun, e: RunEntity): void {
     case 'beam': if (sliding(g) || (!inAir(g) && g.at < g.slideUntil + C.slideGraceMs)) dodge(g, e); else bump(g, e); return;
     // A creature: sliding into it strikes it; otherwise, even jumping over it, it strikes Benny as she passes.
     // A chest thrown on by this roll is not struck again by it: it is struck again only by a new blow.
-    case 'dragonnet': case 'chest': case 'ember': if (e.knock) return; if (sliding(g)) strike(g, e, 'slide'); else bump(g, e); return;
+    // A chest already struck once (dazed, its lid ajar) is kicked open by running into it: no bump (our decision, 13 Nov. night).
+    case 'dragonnet': case 'chest': case 'ember': if (e.knock) return; if (sliding(g)) strike(g, e, 'slide'); else if (e.kind === 'chest' && e.hp === 1 && !inAir(g)) strike(g, e, 'kick'); else bump(g, e); return;
     // A flying monster hovers over the road: jumping through its height strikes it; running under it does nothing; on a wall it
     // reaches her, and a slide strikes it.
     case 'flyer':

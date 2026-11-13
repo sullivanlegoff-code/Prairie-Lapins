@@ -1241,6 +1241,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     for (const event of takeRunEvents(g)) switch (event.type) {
       case 'strike': {
         if (event.by === 'spin') { flash('Coup tournoyant !'); slowMo(260); }
+        if (event.by === 'kick') { flash('Coup de pied !'); slowMo(120); }
         // A chest struck the first time is still on the road (thrown): only its last strike leaves it broken open.
         // A lane change strikes with a hop (to the side she moved to): the blow lands a moment later.
         const hopping = (event.by === 'lane' || event.by === 'far' || event.by === 'spin') && !g.wall && !inAir(g) && !sliding(g);
