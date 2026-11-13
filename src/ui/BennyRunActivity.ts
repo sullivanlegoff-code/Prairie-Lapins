@@ -65,7 +65,9 @@ const VOID_LIP = .5;
 /** Walls after Blade of Brim (owner, 13 Nov.): a tall one rises past the top of the screen, a low one stands at a jump's height
  * (her height running on it), a fence a little lower; a wall is one lane thick. */
 const TALL_HEIGHT = 30, LOW_HEIGHT = 1.1, FENCE_HEIGHT = 1.15, WALL_THICK = LANE_WIDTH;
-const PLANK_ACROSS = 3.3, PLANK_ALONG = 3, GRASS_TILE = 3.3, WALL_TILE = WALL_HEIGHT, CLIFF_TILE = 4, VERGE = .6, CLIFF_DEPTH = 4;
+/** How big the painted wall tile is on a face (m): big enough that its stones and flowers read. */
+const FACE_TILE = 7;
+const PLANK_ACROSS = 3.3, PLANK_ALONG = 3, GRASS_TILE = 3.3, CLIFF_TILE = 4, VERGE = .6, CLIFF_DEPTH = 4;
 /** The colours of the painted decor where shapes still stand: the clouds of the void, the isles' rock and grass lip, the tops
  *  and sides of platforms and stairs. */
 const PAINTED_LOOK = {cloudTop: '#f2c2c4', cloudBottom: '#fcc495', rock: '#9c6c55', rockDark: '#6d4a4f', lip: '#5f8f2f', top: '#e8955a', side: '#995f52', joint: 'rgba(90,40,14,.55)', lane: 'rgba(70,40,18,.28)'};
@@ -329,22 +331,22 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     c.closePath();
     // Higher up, the face darkens a little (the light comes from the road).
     const z0 = Math.max(from, 0), g0 = project(x(z0), z0, 0), g1 = project(x(z0), z0, top);
-    const grad = c.createLinearGradient(0, g0.y, 0, g1.y); grad.addColorStop(0, runnable ? '#8a6a3c' : '#6e7480'); grad.addColorStop(1, runnable ? '#6a5030' : '#555a66');
+    const grad = c.createLinearGradient(0, g0.y, 0, g1.y); grad.addColorStop(0, runnable ? '#d97a3c' : '#b98488'); grad.addColorStop(1, runnable ? '#a85a2c' : '#8a6068');
     c.fillStyle = grad; c.fill(); c.clip();
-    const tiers = Math.ceil(top / WALL_TILE - 1e-6);
+    const tiers = Math.ceil(top / FACE_TILE - 1e-6);
     for (let z = to; z > from;) {
       const a = project(x(z), z, 0), probe = project(x(z - .1), z - .1, 0), perMetre = Math.abs(a.x - probe.x) / .1;
       const z1 = Math.max(from, z - Math.min(3, Math.max(.03, 6 / Math.max(.001, perMetre)))), b = project(x(z1), z1, 0);
       const far = z > 30, el = far ? t.far : t.near, side = far ? FAR_SIDE : NEAR_SIDE;
       if (el) for (let k = 0; k < tiers; k++) {
-        const h0 = k * WALL_TILE, h1 = Math.min(top, h0 + WALL_TILE), ta = project(x(z), z, h1), tb = project(x(z1), z1, h1), ba = project(x(z), z, h0), bb = project(x(z1), z1, h0);
+        const h0 = k * FACE_TILE, h1 = Math.min(top, h0 + FACE_TILE), ta = project(x(z), z, h1), tb = project(x(z1), z1, h1), ba = project(x(z), z, h0), bb = project(x(z1), z1, h0);
         const yTop = Math.min(ta.y, tb.y), yBot = Math.max(ba.y, bb.y); if (yBot < 0) break;
-        c.drawImage(el, posmod(g.distance + z1, WALL_TILE) / WALL_TILE * side, 0, Math.max(.5, Math.min(side, (z - z1) / WALL_TILE * side)), side * (h1 - h0) / WALL_TILE, Math.min(a.x, b.x) - .5, yTop, Math.abs(a.x - b.x) + 1, yBot - yTop);
+        c.drawImage(el, posmod(g.distance + z1, FACE_TILE) / FACE_TILE * side, 0, Math.max(.5, Math.min(side, (z - z1) / FACE_TILE * side)), side * (h1 - h0) / FACE_TILE, Math.min(a.x, b.x) - .5, yTop, Math.abs(a.x - b.x) + 1, yBot - yTop);
       }
       z = z1;
     }
     // The face's top edge, darker, so its height reads.
-    c.strokeStyle = runnable ? 'rgba(60,90,30,.8)' : 'rgba(40,44,56,.8)'; c.beginPath();
+    c.strokeStyle = runnable ? 'rgba(80,120,40,.85)' : 'rgba(90,50,60,.8)'; c.beginPath();
     zs.forEach((z, i) => { const p = project(x(z), z, top); c.lineWidth = Math.max(1.5, p.s * .1); if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); }); c.stroke();
     c.restore();
   }
@@ -359,7 +361,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       const top = look === 'tall' ? TALL_HEIGHT : LOW_HEIGHT;
       // Its end facing Benny, when it begins ahead of her (after a tall wall it is hidden behind that one).
       const before = g.walls.find(v => v.side === w.side && v.to === w.from), hidden = !!before && !before.void && wallLook(before) === 'tall';
-      if (from > 0 && from === w.from - g.distance && !hidden) quad(c, [project(x(from), from, 0), project(x(from) + dir * WALL_THICK, from, 0), project(x(from) + dir * WALL_THICK, from, top), project(x(from), from, top)], w.runnable ? '#5e4526' : '#4b505c');
+      if (from > 0 && from === w.from - g.distance && !hidden) quad(c, [project(x(from), from, 0), project(x(from) + dir * WALL_THICK, from, 0), project(x(from) + dir * WALL_THICK, from, top), project(x(from), from, top)], w.runnable ? '#9a4f26' : '#7a5058');
       if (look === 'low') {
         const zs = cuts(g, from, to); c.beginPath();
         zs.forEach((z, i) => { const p = project(x(z), z, top); if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); });
