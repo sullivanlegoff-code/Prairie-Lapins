@@ -69,10 +69,11 @@ const TALL_HEIGHT = 30, LOW_HEIGHT = 1.1, FENCE_HEIGHT = 1.15, WALL_THICK = LANE
 const FACE_TILE = 7;
 /** A tall wall is built of blocks (owner, 14 Nov., after the walls of lane runners): each 9 to 16 m long, `BLOCK_LOW` to `TALL_HEIGHT`
  * m high, a stone one set back by up to half a metre; vines hang from their tops (`VINE_TILE` m tile, `VINE_DROP` m of it), grass
- * and flowers grow at their feet (`TUFT_TILE` m tile, the bottom third of it) near Benny; far off, a warm haze. */
+ * and flowers grow at their feet (`TUFT_TILE` m tile, its painted bottom `TUFT_PART`, never above nine tenths of a low wall) near
+ * Benny; far off, a warm haze. */
 /** The wand's streak to a thing struck more than `STREAK_FROM` m ahead lasts `STREAK_MS`. */
 const STREAK_FROM = 3, STREAK_MS = 180;
-const BLOCK_LOW = 13, VINE_TILE = 6, VINE_DROP = 3, TUFT_TILE = 3, TUFT_NEAR = 50, HAZE_FROM = 22, HAZE_SPAN = 70, HAZE_MAX = .55;
+const BLOCK_LOW = 13, VINE_TILE = 6, VINE_DROP = 3, TUFT_TILE = 4.5, TUFT_PART = 3 / 8, TUFT_NEAR = 50, HAZE_FROM = 22, HAZE_SPAN = 70, HAZE_MAX = .55;
 const hash01 = (n: number) => { let t = Math.imul(n ^ 0x9e3779b9, 2654435761) >>> 0; t ^= t >>> 15; t = Math.imul(t, 2246822519) >>> 0; t ^= t >>> 13; return (t >>> 0) / 4294967296; };
 const hazeAt = (z: number) => Math.min(1, Math.max(0, (z - HAZE_FROM) / HAZE_SPAN)) * HAZE_MAX;
 const PLANK_ACROSS = 3.3, PLANK_ALONG = 3, GRASS_TILE = 3.3, CLIFF_TILE = 4, VERGE = .6, CLIFF_DEPTH = 4;
@@ -360,8 +361,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         if (y0 + h > 0) c.drawImage(vEl, posmod(g.distance + z1, VINE_TILE) / VINE_TILE * side, 0, Math.max(.5, Math.min(side, (z - z1) / VINE_TILE * side)), side * VINE_DROP / VINE_TILE, left, y0, across, h); }
       // Grass and flowers at its foot, near Benny.
       const tEl = far ? tuft.far : tuft.near;
-      if (tEl && z < TUFT_NEAR) { const ty = project(x(z), z, TUFT_TILE / 3).y, by = Math.max(a.y, b.y);
-        c.drawImage(tEl, posmod(g.distance + z1, TUFT_TILE) / TUFT_TILE * side, side * 2 / 3, Math.max(.5, Math.min(side, (z - z1) / TUFT_TILE * side)), side / 3, left, ty, across, by - ty); }
+      if (tEl && z < TUFT_NEAR) { const th = Math.min(top * .9, TUFT_TILE * TUFT_PART), part = th / TUFT_TILE, ty = project(x(z), z, th).y, by = Math.max(a.y, b.y);
+        c.drawImage(tEl, posmod(g.distance + z1, TUFT_TILE) / TUFT_TILE * side, side * (1 - part), Math.max(.5, Math.min(side, (z - z1) / TUFT_TILE * side)), side * part, left, ty, across, by - ty); }
       // Far off, the warm haze of the evening.
       const haze = hazeAt(z); if (haze > .02) { const ty = Math.max(0, project(x(z), z, top).y); c.fillStyle = `rgba(250,198,166,${haze.toFixed(3)})`; c.fillRect(left, ty, across, Math.max(a.y, b.y) - ty); }
       z = z1;
