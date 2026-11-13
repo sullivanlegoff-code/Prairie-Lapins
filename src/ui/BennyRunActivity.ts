@@ -47,7 +47,7 @@ const WING_BEAT = 120;
  * a power works as soon as Benny runs over it. The arrow keys do the same. The island's Phaser loop sleeps while the run is open.
  * Played with the iPhone upright only (owner, 11 November 2026): turned sideways, the run pauses behind a « tourne ton iPhone » card.
  */
-const HORIZON = .21, LANE_WIDTH = 2.2, CAMERA_BACK = 12, WALL_HEIGHT = 4.5, BENNY_SIZE = 1.6, FAR = 90, NEAR = -(CAMERA_BACK - .6);
+const HORIZON = .21, LANE_WIDTH = 2.2, CAMERA_BACK = 12, WALL_HEIGHT = 4.5, BENNY_SIZE = 2, FAR = 90, NEAR = -(CAMERA_BACK - .6);
 // The new decor (concept C, owner's pick): meadow and wooden planks over a cloud sky. All three settings share it for now; their
 // records stay as they are.
 const SKY_COLOURS = {sky: '#f6c9a2', ground: '#8fc25a', lane: '#c69a5e', wall: '#b8895a', wallOff: '#6e7480', side: '#f5cdb0', hole: '#8a5ba8', holeEdge: '#ffd6a8'};
@@ -78,6 +78,8 @@ const FACE_TILE = 7;
 const STREAK_FROM = 3, STREAK_MS = 180;
 /** A gap in the road shows a shaded band at least `GAP_MIN_PX` px high, however far: it reads as a gap long before Benny is there. */
 const GAP_MIN_PX = 7, GAP_SHADE = 'rgba(52,26,62,.62)';
+/** The close camera follows Benny across: `CAM_LANE` of the way to her lane, `CAM_WALL` of the way to a wall she runs on. */
+const ROAD_FILL = 1.04, BENNY_AT = .76, CAM_LANE = .55, CAM_WALL = .78;
 const BLOCK_LOW = 13, VINE_TILE = 6, VINE_DROP = 3, TUFT_TILE = 4.5, TUFT_PART = 3 / 8, TUFT_NEAR = 50, HAZE_FROM = 22, HAZE_SPAN = 70, HAZE_MAX = .55;
 const hash01 = (n: number) => { let t = Math.imul(n ^ 0x9e3779b9, 2654435761) >>> 0; t ^= t >>> 15; t = Math.imul(t, 2246822519) >>> 0; t ^= t >>> 13; return (t >>> 0) / 4294967296; };
 const hazeAt = (z: number) => Math.min(1, Math.max(0, (z - HAZE_FROM) / HAZE_SPAN)) * HAZE_MAX;
@@ -555,9 +557,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
 
   // Perspective: a point `x` metres across, `ahead` metres in front of Benny and `up` metres high.
-  // Upright screen: the three lanes and the walls fill the width, and the camera rises so that Benny runs low on the screen.
-  const scale0 = () => Math.min(width * .86, height * .62) / (viewLanes * LANE_WIDTH + 2.6);
-  const cameraHeight = () => Math.min(24, Math.max(2.2, (height * .78 - height * HORIZON) / scale0()));
+  // Upright screen, the camera close behind Benny (owner, 14 Nov.: like the lane runners he plays): at her feet the lanes alone are a
+  // little wider than the screen (`ROAD_FILL`), the walls beside her out of sight; she runs at `BENNY_AT` of the way down.
+  const scale0 = () => Math.min(width * ROAD_FILL, height * .8) / (viewLanes * LANE_WIDTH);
+  const cameraHeight = () => Math.min(24, Math.max(2.2, (height * BENNY_AT - height * HORIZON) / scale0()));
   const project = (x: number, ahead: number, up: number) => {
     const horizon = height * HORIZON, s = scale0() * CAMERA_BACK / (Math.max(-CAMERA_BACK + .5, ahead) + CAMERA_BACK);
     return {x: width / 2 + (x - camX) * s, y: horizon + (cameraHeight() + camUp - up) * s, s};
@@ -837,13 +840,14 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   /** When each rock hit the road (its fall is drawn over a moment). */
   const rocksDown = new Map<number, number>();
   const SHAPES: Record<string, {colour: string; w: number; h: number; up?: number; round?: boolean; label?: string}> = {
-    coin: {colour: '#f4c430', w: .45, h: .45, up: .5, round: true}, power: {colour: '#b07bff', w: 1.25, h: 1.25, up: .5, round: true}, wallCoin: {colour: '#f4c430', w: .45, h: .45, up: 1.6, round: true},
-    pot: {colour: '#c96b3a', w: .9, h: .9, round: true}, barrier: {colour: '#7a5a3a', w: 2, h: .6, label: 'saute'},
+    // (Bigger since 14 Nov., with the close camera: creatures and pots stand up to Benny, as in the lane runners the owner plays.)
+    coin: {colour: '#f4c430', w: .6, h: .6, up: .5, round: true}, power: {colour: '#b07bff', w: 1.25, h: 1.25, up: .5, round: true}, wallCoin: {colour: '#f4c430', w: .6, h: .6, up: 1.6, round: true},
+    pot: {colour: '#c96b3a', w: 1.3, h: 1.3, round: true}, barrier: {colour: '#7a5a3a', w: 2, h: .6, label: 'saute'},
     spring: {colour: '#4fb06a', w: 1.4, h: .3, label: 'tremplin'},
-    beam: {colour: '#7a5a3a', w: 2, h: .45, up: 1.1, label: 'roulade'}, pillar: {colour: '#8a8a8a', w: 1.6, h: 3},
-    dragonnet: {colour: '#8e3a5a', w: 1.1, h: .8, round: true}, chest: {colour: '#6e3b2e', w: 1.3, h: .9},
-    ember: {colour: '#ff9a2a', w: .9, h: .9, up: .4, round: true},
-    flyer: {colour: '#7b4fc9', w: .8, h: .7, round: true},
+    beam: {colour: '#7a5a3a', w: 2, h: .45, up: 1.1, label: 'roulade'}, pillar: {colour: '#8a8a8a', w: 1.9, h: 3.6},
+    dragonnet: {colour: '#8e3a5a', w: 1.75, h: 1.3, round: true}, chest: {colour: '#6e3b2e', w: 1.8, h: 1.25},
+    ember: {colour: '#ff9a2a', w: 1.4, h: 1.4, up: .4, round: true},
+    flyer: {colour: '#7b4fc9', w: 1.35, h: 1.2, round: true},
     fireball: {colour: '#ff6a1a', w: 1.3, h: 1.3, up: .1, round: true, label: 'saute'},
   };
   function thing(c: CanvasRenderingContext2D, g: BennyRun, e: RunEntity): void {
@@ -1259,8 +1263,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     { const to = g.wall && !onLow(g) ? (g.wall.side === 'left' ? -1 : 1) : 0; wallTilt += (to - wallTilt) * Math.min(1, dt * 9); if (Math.abs(wallTilt) < .002 && !to) wallTilt = 0; }
     // The blow's pending effects.
     if (pending.length) { const due = pending.filter(e => e.at <= now); pending = pending.filter(e => e.at > now); for (const e of due) e.run(); }
-    { const side = g.wall ? (g.wall.side === 'left' ? -1 : 1) : 0, toX = side ? side * wallX() * .35 : laneX(viewLane) * .12, toUp = g.wall ? bennyHeight(g) * .45 : floorHeight(g) * .4;
-      camX += (toX - camX) * Math.min(1, dt * 5); camUp += (toUp - camUp) * Math.min(1, dt * 4); }
+    { const side = g.wall ? (g.wall.side === 'left' ? -1 : 1) : 0, toX = side ? side * wallX() * CAM_WALL : laneX(viewLane) * CAM_LANE, toUp = g.wall ? bennyHeight(g) * .45 : floorHeight(g) * .4;
+      camX += (toX - camX) * Math.min(1, dt * 7); camUp += (toUp - camUp) * Math.min(1, dt * 4); }
     // Crossing from one wall to the other: a bound through the air.
     leapArc = g.wall ? Math.min(1, Math.abs(target - viewLane) / (lanes - 1 + 2 * onWall)) : 0;
     c.save();

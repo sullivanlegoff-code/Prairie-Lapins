@@ -18,7 +18,7 @@
 @media (prefers-reduced-motion: reduce) { .benny-run-power.benny-run-ending { animation: none; opacity: .6; } }
 .benny-run-canvas { flex: 1; width: 100%; min-height: 0; display: block; }
 /* A hint or a cheer on a dark rounded label, so it reads on the bright sky and the planks alike (13 Nov.). */
-.benny-run-pop { position: absolute; z-index: 5; left: 50%; top: 15%; width: max-content; max-width: calc(100% - 40px); box-sizing: border-box; margin: 0; padding: 6px 14px; border-radius: 14px;
+.benny-run-pop { position: absolute; z-index: 5; left: 50%; top: 19%; width: max-content; max-width: calc(100% - 40px); box-sizing: border-box; margin: 0; padding: 6px 14px; border-radius: 14px;
   background: rgba(59,36,20,.78); box-shadow: 0 3px 10px rgba(0,0,0,.25); text-align: center; font-size: 1.35rem; line-height: 1.25; font-weight: 800; color: #fff6e0; opacity: 0; pointer-events: none; transform: translateX(-50%); }
 /* In the sky, above the road ahead (it hid a gap 30 m away); below the tutorial's advice while that one shows. */
 *:has(> .benny-run-coach:not([hidden])) > .benny-run-pop { top: 34%; }
