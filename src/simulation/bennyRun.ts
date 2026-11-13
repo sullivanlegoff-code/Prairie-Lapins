@@ -107,8 +107,9 @@ export const BENNY_RUN = {
   /** Stairs up and down along one lane: a step is `stairRise` m high and `stairTread` m long, the top is `stairTop` m (more with the
    * difficulty). Benny walks them, without a jump, and takes a step sideways only when it is at most `stepMax` m high. */
   stairRise: .4, stairTread: 1.4, stairTop: 1.2, stepMax: .5,
-  /** Things are laid out to `spawnAhead` m ahead, the first at `firstAt` m, then every `gapStart` m down to `gapMin` m. */
-  spawnAhead: 90, firstAt: 24, gapStart: 16, gapMin: 10,
+  /** Things are laid out to `spawnAhead` m ahead (past the 90 m drawn, by a wall segment and the 25 m a pattern may make runnable before
+   *  it: a wall never changes once in sight), the first at `firstAt` m, then every `gapStart` m down to `gapMin` m. */
+  spawnAhead: 155, firstAt: 24, gapStart: 16, gapMin: 10,
   /** Share of coin lines carrying a power, and how long each power lasts once picked up (the bubble lasts until a bump, at most this). */
   powerChance: .25, powers: {magnet: 8000, bubble: 20_000, double: 10_000, flight: 6000, dash: 3500},
   /** The « Ruée »: Benny charges this much faster and smashes all in her lane (gaps leapt), a pillar or a fence worth `dashSmash` points. */
