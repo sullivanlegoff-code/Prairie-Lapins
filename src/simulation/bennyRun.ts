@@ -16,7 +16,7 @@
  * in the lane on her other side, the wand spins and strikes both at once (owner: « quand il y a deux ennemis sur des voies à droite
  * ou à gauche, ça attaque les deux en même temps »). A little flying monster keeps to Benny's height, so that she can always strike it
  * by swiping towards it (sideways, up, or with a slide); it is the one creature that reaches her on a wall. A pot met straight on just
- * breaks, for no points and no bump (our decision). The road has three lanes for now; the rules take any number (owner: zones of up
+ * is kicked open, for its points and the combo, with no bump (night of 13 Nov.). The road has three lanes for now; the rules take any number (owner: zones of up
  * to 5 lanes later).
  * First bump: Benny stumbles and the Dragon swoops in; a second bump within `dragonMs` and she is caught (the run ends); otherwise
  * the Dragon flies off again. The creatures are cosy, never hurt: a sleeping dragonnet wakes and flies off, a greedy chest snaps shut
@@ -941,7 +941,8 @@ function meet(g: BennyRun, e: RunEntity): void {
     case 'pot':
       if (sliding(g)) { strike(g, e, 'slide'); return; }
       if (high) { g.events.push({type: 'cleared', entity: e}); return; }
-      g.entities = g.entities.filter(o => o !== e); g.events.push({type: 'crash', entity: e}); return;
+      // Met straight on, a pot is kicked open: its points and the combo, like a blow (night of 13 Nov., after Blade of Brim's kicks).
+      strike(g, e, 'kick'); return;
     case 'barrier': if (high) dodge(g, e); else bump(g, e); return;
     // A mine cart is too tall to jump: only stepping aside (or a charge) gets past it.
     case 'fireball': if (high && !e.cart) dodge(g, e); else bump(g, e); return;

@@ -44,9 +44,9 @@ describe('Cours cours Benny ! rules', () => {
     place(g, 'ember', 1, 3); run(g, 1000);
     expect(g.over).toBe(true); expect(takeRunEvents(g).at(-1)?.type).toBe('caught');
   });
-  it('breaks a pot met straight on for no points and no bump', () => {
+  it('kicks open a pot met straight on: its points and the combo, no bump', () => {
     const g = quiet(); place(g, 'pot', 1, 3); run(g, 1000);
-    expect(types(g)).toEqual(['crash']); expect(g).toMatchObject({score: 0, pots: 0, lastBumpAt: null});
+    expect(types(g)).toContain('strike'); expect(types(g)).not.toContain('bump'); expect(g.score).toBeGreaterThanOrEqual(C.points.pot); expect(g).toMatchObject({pots: 1, combo: 1, lastBumpAt: null}); // (its coins spill out too)
   });
   it('clears a barrier by jumping, a beam by sliding (a few points each, the combo untouched), and bumps into them otherwise', () => {
     const g = quiet(); run(g, C.introMs);
