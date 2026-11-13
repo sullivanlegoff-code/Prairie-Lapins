@@ -113,5 +113,14 @@ Pour l'agent qui reprend le mini-jeu. Lire d'abord `AGENTS.md`, puis `docs/passa
 - Coût mesuré dans Chromium sans carte graphique : 14 ms par image d'abord, 10 ms avec le calque. En temps réel : 60 images par seconde, médiane 16,6 ms, sans retour aux couleurs plates. Si un appareil reste trop lent même en image adoucie, la piste revient d'elle-même aux couleurs plates.
 - Pas encore essayé sur iPhone.
 
+### Lot 120 — attaque sautée et vraie roulade
+- Deux planches peintes (`benny-strike` : élan, bond, coup, retombée ; `benny-roll` : quatre quarts d'une roulade avant, le bâton au-dessus de la tête qui tourne avec elle), à la taille des poses de course (mesurée sur le pompon).
+- Frise relevée dans Chromium à 60 images par seconde : coup sauté `hop-1×2 hop-2×3 hop-3×7 hop-4×7` (le coup porte à 90 ms : éclats, points et disparition attendent ce moment) ; roulade `roll-1 … roll-4` deux fois, finie debout ; saut `jump×24 fall×14 land×5`.
+
+### Contrôle final dans Chromium (après le lot 120)
+- Coffre : projeté au premier coup, puis brisé (il s'ouvre et saute, les pièces volent, il s'efface). Dragonnet : étourdi puis culbute et s'efface. Braise : part en fumée. Volant : tournoie et s'efface.
+- Décor : planches et herbe peintes, mur de terre et d'herbe distinct du mur de pierre, falaise au bout des trous et des fosses, bord du vide lisible à 390 × 844.
+- Vitesse en temps réel (6 s, Chromium sans carte graphique), trois mesures : la première, pendant que la machine se chauffait, médiane 17,9 ms, p95 29,1 ms ; les deux suivantes médiane 16,8 puis 16,6 ms, p95 22,0 puis 18,3 ms. Sans décor : médiane 16,7 ms, p95 18,2 ms. Le décor peint ne ralentit donc plus la course.
+
 ### Validation
-- `npx tsc --noEmit` sans erreur, tests de la course verts, suite complète verte (voir le dernier rapport).
+- `npx tsc --noEmit` sans erreur ; suite complète verte : 2 246 tests, 1 ignoré (240 fichiers) ; `git diff --check` propre.
