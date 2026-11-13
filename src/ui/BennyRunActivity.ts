@@ -741,7 +741,11 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         const opening = [project(x0, from, 0), project(x1, from, 0), project(x1, to, 0), project(x0, to, 0)];
         quad(c, opening, PAINTED_LOOK.cloudTop);
         cliffFace(c, to, x0, x1, () => { c.beginPath(); c.moveTo(opening[0].x, opening[0].y); for (const q of opening.slice(1)) c.lineTo(q.x, q.y); c.closePath(); });
-        if (from > NEAR) { const a = project(x0, from, 0), b = project(x1, from, 0); c.strokeStyle = PAINTED_LOOK.lip; c.lineWidth = Math.max(2, a.s * .14); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); }
+        // Like a gap across the road: a shaded band however far, a bright lip at both ends.
+        { const f0 = project(x0, to, 0), f1 = project(x1, to, 0), deep = Math.max(GAP_MIN_PX, opening[0].y - f0.y);
+          c.fillStyle = GAP_SHADE; c.fillRect(Math.min(f0.x, f1.x), f0.y, Math.abs(f1.x - f0.x), deep);
+          c.strokeStyle = PAINTED_LOOK.lip; c.lineWidth = Math.max(2, f0.s * .12); c.beginPath(); c.moveTo(f0.x, f0.y); c.lineTo(f1.x, f1.y); c.stroke(); }
+        if (from > NEAR) { const a = project(x0, from, 0), b = project(x1, from, 0); c.strokeStyle = PAINTED_LOOK.lip; c.lineWidth = Math.max(3, a.s * .18); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); }
       } else if (p.open) { quad(c, [project(x0, from, 0), project(x1, from, 0), project(x1, to, 0), project(x0, to, 0)], look.hole);
         for (const z of [from, to]) if (z > NEAR) quad(c, [project(x0, z - .2, 0), project(x1, z - .2, 0), project(x1, z + .2, 0), project(x0, z + .2, 0)], look.holeEdge); }
       else {
