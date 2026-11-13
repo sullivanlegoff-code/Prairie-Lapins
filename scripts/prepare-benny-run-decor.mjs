@@ -23,6 +23,9 @@ export const TEXTURES = {
   'decor-mur-terre': {source: 'mur-terre.png', size: 256},
   'decor-mur-pierre': {source: 'mur-pierre.png', size: 256},
   'decor-mur-racines': {source: 'mur-racines.png', size: 256},
+  // Cut out (transparent): vines hanging from a wall's top, grass and flowers at its foot.
+  'decor-lianes': {source: 'lianes.png', size: 256},
+  'decor-touffes': {source: 'touffes.png', size: 256},
   'decor-falaise': {source: 'falaise.png', size: 256, top: 14},
 };
 

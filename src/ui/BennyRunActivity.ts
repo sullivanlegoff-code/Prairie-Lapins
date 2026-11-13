@@ -54,7 +54,7 @@ const SKY_COLOURS = {sky: '#f6c9a2', ground: '#8fc25a', lane: '#c69a5e', wall: '
 const SETTING_COLOURS: Record<RunSetting, typeof SKY_COLOURS> = {grotte: SKY_COLOURS, pont: SKY_COLOURS, montagne: SKY_COLOURS};
 /** The painted textures of the track (13 Nov., concept C): planks, grass, the earth-and-grass wall to run on, the grey stone
  *  wall, and the isles' cliff at the edge of the void (scripts/prepare-benny-run-decor.mjs). */
-const DECOR = ['decor-planches', 'decor-herbe', 'decor-mur-terre', 'decor-mur-pierre', 'decor-mur-racines', 'decor-falaise'] as const;
+const DECOR = ['decor-planches', 'decor-herbe', 'decor-mur-terre', 'decor-mur-pierre', 'decor-mur-racines', 'decor-falaise', 'decor-lianes', 'decor-touffes'] as const;
 type DecorName = typeof DECOR[number];
 /** How many metres one texture covers: planks across the road and along it, the grass both ways, a wall along it (its height is
  *  the wall's), the cliff across. The grass verge past the road's edge (m), the cliff's depth below it (m). */
@@ -67,6 +67,12 @@ const VOID_LIP = .5;
 const TALL_HEIGHT = 30, LOW_HEIGHT = 1.1, FENCE_HEIGHT = 1.15, WALL_THICK = LANE_WIDTH;
 /** How big the painted wall tile is on a face (m): big enough that its stones and flowers read. */
 const FACE_TILE = 7;
+/** A tall wall is built of blocks (owner, 14 Nov., after the walls of lane runners): each 9 to 16 m long, `BLOCK_LOW` to `TALL_HEIGHT`
+ * m high, a stone one set back by up to half a metre; vines hang from their tops (`VINE_TILE` m tile, `VINE_DROP` m of it), grass
+ * and flowers grow at their feet (`TUFT_TILE` m tile, the bottom third of it) near Benny; far off, a warm haze. */
+const BLOCK_LOW = 13, VINE_TILE = 6, VINE_DROP = 3, TUFT_TILE = 3, TUFT_NEAR = 50, HAZE_FROM = 22, HAZE_SPAN = 70, HAZE_MAX = .55;
+const hash01 = (n: number) => { let t = Math.imul(n ^ 0x9e3779b9, 2654435761) >>> 0; t ^= t >>> 15; t = Math.imul(t, 2246822519) >>> 0; t ^= t >>> 13; return (t >>> 0) / 4294967296; };
+const hazeAt = (z: number) => Math.min(1, Math.max(0, (z - HAZE_FROM) / HAZE_SPAN)) * HAZE_MAX;
 const PLANK_ACROSS = 3.3, PLANK_ALONG = 3, GRASS_TILE = 3.3, CLIFF_TILE = 4, VERGE = .6, CLIFF_DEPTH = 4;
 /** The colours of the painted decor where shapes still stand: the clouds of the void, the isles' rock and grass lip, the tops
  *  and sides of platforms and stairs. */
@@ -323,8 +329,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   /** One face of a wall along the road (x = `dir` × its inner side), from the ground up to `top` m: its colour, then the painted
    *  tile column by column, a tile high per tier (a low wall shows the top of one tile). */
-  function wallFace(c: CanvasRenderingContext2D, g: BennyRun, dir: number, from: number, to: number, top: number, runnable: boolean): void {
-    const x = (z: number) => dir * wallXAt(g, z), zs = cuts(g, from, to), t = decor[wallTexture(runnable, top)];
+  function wallFace(c: CanvasRenderingContext2D, g: BennyRun, dir: number, from: number, to: number, top: number, runnable: boolean, out = 0, vines = false): void {
+    const x = (z: number) => dir * (wallXAt(g, z) + out), zs = cuts(g, from, to), t = decor[wallTexture(runnable, top)], vine = decor['decor-lianes'], tuft = decor['decor-touffes'];
     c.save(); c.beginPath();
     zs.forEach((z, i) => { const p = project(x(z), z, 0); if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); });
     for (const z of [...zs].reverse()) { const p = project(x(z), z, top); c.lineTo(p.x, p.y); }
@@ -343,6 +349,17 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         const yTop = Math.min(ta.y, tb.y), yBot = Math.max(ba.y, bb.y); if (yBot < 0) break;
         c.drawImage(el, posmod(g.distance + z1, FACE_TILE) / FACE_TILE * side, 0, Math.max(.5, Math.min(side, (z - z1) / FACE_TILE * side)), side * (h1 - h0) / FACE_TILE, Math.min(a.x, b.x) - .5, yTop, Math.abs(a.x - b.x) + 1, yBot - yTop);
       }
+      const left = Math.min(a.x, b.x) - .5, across = Math.abs(a.x - b.x) + 1;
+      // Vines hanging from the top of a tall block.
+      const vEl = far ? vine.far : vine.near;
+      if (vines && vEl) { const ta = project(x(z), z, top), tb = project(x(z1), z1, top), va = project(x(z), z, top - VINE_DROP), y0 = Math.min(ta.y, tb.y), h = va.y - ta.y;
+        if (y0 + h > 0) c.drawImage(vEl, posmod(g.distance + z1, VINE_TILE) / VINE_TILE * side, 0, Math.max(.5, Math.min(side, (z - z1) / VINE_TILE * side)), side * VINE_DROP / VINE_TILE, left, y0, across, h); }
+      // Grass and flowers at its foot, near Benny.
+      const tEl = far ? tuft.far : tuft.near;
+      if (tEl && z < TUFT_NEAR) { const ty = project(x(z), z, TUFT_TILE / 3).y, by = Math.max(a.y, b.y);
+        c.drawImage(tEl, posmod(g.distance + z1, TUFT_TILE) / TUFT_TILE * side, side * 2 / 3, Math.max(.5, Math.min(side, (z - z1) / TUFT_TILE * side)), side / 3, left, ty, across, by - ty); }
+      // Far off, the warm haze of the evening.
+      const haze = hazeAt(z); if (haze > .02) { const ty = Math.max(0, project(x(z), z, top).y); c.fillStyle = `rgba(250,198,166,${haze.toFixed(3)})`; c.fillRect(left, ty, across, Math.max(a.y, b.y) - ty); }
       z = z1;
     }
     // The face's top edge, darker, so its height reads.
@@ -358,7 +375,16 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       const from = Math.max(NEAR, w.from - g.distance), to = Math.min(FAR, w.to - g.distance); if (to <= from) continue;
       const dir = w.side === 'left' ? -1 : 1, look = wallLook(w), x = (z: number) => dir * wallXAt(g, z);
       if (look === 'fence') { fence(c, g, dir, from, to); continue; }
-      const top = look === 'tall' ? TALL_HEIGHT : LOW_HEIGHT;
+      footShadow(c, g, dir, from, to);
+      if (look === 'tall') {
+        for (const b of blocksOf(w).reverse()) {
+          const bf = Math.max(NEAR, b.from - g.distance), bt = Math.min(FAR, b.to - g.distance); if (bt <= bf) continue;
+          if (bf > 0 && bf === b.from - g.distance) endFace(c, x(bf) + dir * b.out, x(bf) + dir * (b.out + WALL_THICK), bf, b.top, w.runnable);
+          wallFace(c, g, dir, bf, bt, b.top, w.runnable, b.out, true);
+        }
+        continue;
+      }
+      const top = LOW_HEIGHT;
       // Its end facing Benny, when it begins ahead of her (after a tall wall it is hidden behind that one).
       const before = g.walls.find(v => v.side === w.side && v.to === w.from), hidden = !!before && !before.void && wallLook(before) === 'tall';
       if (from > 0 && from === w.from - g.distance && !hidden) endFace(c, x(from), x(from) + dir * WALL_THICK, from, top, w.runnable);
@@ -371,6 +397,24 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       wallFace(c, g, dir, from, to, top, w.runnable);
     }
   }
+  /** A tall wall's blocks, from its start: lengths, heights and how far a stone one is set back, the same every time it is drawn.
+   *  (A wall to run on stays flush: Benny runs against it.) */
+  function blocksOf(w: {side: string; from: number; to: number; runnable: boolean}): {from: number; to: number; top: number; out: number}[] {
+    const seed = Math.floor(w.from) * 2 + (w.side === 'left' ? 0 : 1), list: {from: number; to: number; top: number; out: number}[] = [];
+    for (let at = w.from, k = 0; at < w.to - .01; k++) {
+      let len = 9 + hash01(seed * 7 + k) * 7; if (w.to - at - len < 5) len = w.to - at;
+      list.push({from: at, to: at + len, top: BLOCK_LOW + hash01(seed * 7 + k + 101) * (TALL_HEIGHT - BLOCK_LOW), out: w.runnable ? 0 : hash01(seed * 7 + k + 211) * .5});
+      at += len;
+    }
+    return list;
+  }
+  /** The shadow at a wall's foot on the ground: it sits the wall on the road. */
+  function footShadow(c: CanvasRenderingContext2D, g: BennyRun, dir: number, from: number, to: number): void {
+    const zs = cuts(g, from, to), x = (z: number) => dir * wallXAt(g, z); c.beginPath();
+    zs.forEach((z, i) => { const p = project(x(z), z, 0); if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); });
+    for (const z of [...zs].reverse()) { const p = project(x(z) - dir * .9, z, 0); c.lineTo(p.x, p.y); }
+    c.closePath(); c.fillStyle = 'rgba(70,30,20,.2)'; c.fill();
+  }
   /** A tall wall to run on is earth with roots; a low one, earth and flowers; one not to run on, stone. */
   const wallTexture = (runnable: boolean, top: number): DecorName => !runnable ? 'decor-mur-pierre' : top > LOW_HEIGHT + .01 ? 'decor-mur-racines' : 'decor-mur-terre';
   /** A wall's end facing Benny: square to the camera, so its painted tile is laid flat, a little shaded (the light comes from the road). */
@@ -382,6 +426,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const t = decor[wallTexture(runnable, top)], el = z > 30 ? t.far : t.near, tile = Math.max(4, FACE_TILE * a.s);
     if (el) for (let y = bottom - tile; y + tile > up; y -= tile) for (let xx = left; xx < right; xx += tile) c.drawImage(el, xx, y, tile, tile);
     c.fillStyle = 'rgba(60,30,30,.22)'; c.fillRect(left, up, right - left, bottom - up);
+    const haze = hazeAt(z); if (haze > .02) { c.fillStyle = `rgba(250,198,166,${haze.toFixed(3)})`; c.fillRect(left, up, right - left, bottom - up); }
     c.restore();
   }
   /** A wooden fence along the road (not run on): posts every two metres and two rails, the void seen through it. */

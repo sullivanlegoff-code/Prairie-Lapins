@@ -523,7 +523,8 @@ function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
   switch (pattern) {
     case 'coins': {
       const side = pick(g, ['left', 'right'] as const);
-      if (random(g) < .3 && runnableAt(g, side, z) && runnableAt(g, side, z + 10)) { for (let i = 0; i < 6; i++) add(g, 'wallCoin', wallLane(g, side), z + i * 2); return z + 10; }
+      // A line of coins along a wall to run on, more often (owner, 14 Nov.): it shows the way up there.
+      if (random(g) < .55 && runnableAt(g, side, z) && runnableAt(g, side, z + 10)) { for (let i = 0; i < 6; i++) add(g, 'wallCoin', wallLane(g, side), z + i * 2); return z + 10; }
       // A line that drifts to the next lane halfway, sometimes with a power in the middle.
       const lane = any(), next = random(g) < .5 ? neighbour(lane) : lane, power = random(g) < C.powerChance ? pick(g, RUN_POWERS) : null;
       for (let i = 0; i < 6; i++) if (power && i === 2) add(g, 'power', lane, z + i * 2, {power}); else add(g, 'coin', i < 3 ? lane : next, z + i * 2);
