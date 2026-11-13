@@ -36,6 +36,8 @@ const DECOR = ['decor-planches', 'decor-herbe', 'decor-mur-terre', 'decor-mur-pi
 type DecorName = typeof DECOR[number];
 /** How many metres one texture covers: planks across the road and along it, the grass both ways, a wall along it (its height is
  *  the wall's), the cliff across. The grass verge past the road's edge (m), the cliff's depth below it (m). */
+/** Pixels per point of the painted ground's layer. */
+const GROUND_RATIO = 1;
 const PLANK_ACROSS = 3.3, PLANK_ALONG = 3, GRASS_TILE = 3.3, WALL_TILE = WALL_HEIGHT, CLIFF_TILE = 4, VERGE = .6, CLIFF_DEPTH = 4;
 /** The colours of the painted decor where shapes still stand: the clouds of the void, the isles' rock and grass lip, the tops
  *  and sides of platforms and stairs. */
@@ -231,7 +233,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   /** The painted ground, row by row of the screen (each row is one depth): the grass of the isle, the planks of the road over it;
    *  nothing over a gap (the clouds of the void show). */
   function paintedFloor(c: CanvasRenderingContext2D, g: BennyRun): void {
-    const horizon = height * HORIZON, H = cameraHeight() + camUp, k = scale0() * CAMERA_BACK, BAND = 3;
+    const horizon = height * HORIZON, H = cameraHeight() + camUp, k = scale0() * CAMERA_BACK, BAND = 4;
     const aheadAt = (y: number) => k * H / Math.max(.01, y - horizon) - CAMERA_BACK;
     const row = (name: DecorName, x0: number, x1: number, a0: number, a1: number, across: number, along: number, y: number, s: number) => {
       const far = a0 > 30, t = decor[name], el = far ? t.far : t.near, side = far ? FAR_SIDE : NEAR_SIDE; if (!el) return;
@@ -296,7 +298,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       c.closePath(); c.fillStyle = w.runnable ? '#8a6a3c' : '#6e7480'; c.fill(); c.clip();
       for (let z = to; z > from;) {
         const a = project(dir * wallXAt(g, z), z, 0), probe = project(dir * wallXAt(g, z - .1), z - .1, 0), perMetre = Math.abs(a.x - probe.x) / .1;
-        const z1 = Math.max(from, z - Math.min(3, Math.max(.03, 4 / Math.max(.001, perMetre)))), b = project(dir * wallXAt(g, z1), z1, 0);
+        const z1 = Math.max(from, z - Math.min(3, Math.max(.03, 6 / Math.max(.001, perMetre)))), b = project(dir * wallXAt(g, z1), z1, 0);
         const ta = project(dir * wallXAt(g, z), z, WALL_HEIGHT), tb = project(dir * wallXAt(g, z1), z1, WALL_HEIGHT);
         const far = z > 30, el = far ? t.far : t.near, side = far ? FAR_SIDE : NEAR_SIDE;
         if (el) { const x = Math.min(a.x, b.x), top = Math.min(ta.y, tb.y);
@@ -503,6 +505,22 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const fade = Math.min(1, (clock() - settingSince) / 800);
     if (fade < 1) { backdrop(c, settingBefore); c.globalAlpha = fade; }
     backdrop(c, g.setting); c.globalAlpha = 1;
+    // Painted, the ground of the track (floor, walls, gaps) is drawn on its own layer at a softer resolution, then laid on the
+    // screen in one go: the textures are soft anyway, and it is four times less to paint (the characters stay sharp).
+    const layer = decorReady() ? groundLayer() : null;
+    if (layer) { layer.k.clearRect(0, 0, width, height); ground(layer.k, g, colours); c.drawImage(layer.el, 0, 0, layer.el.width, layer.el.height, 0, 0, width, height); }
+    else ground(c, g, colours);
+  }
+  let layerEl: HTMLCanvasElement | null = null, layerK: CanvasRenderingContext2D | null = null;
+  function groundLayer(): {el: HTMLCanvasElement; k: CanvasRenderingContext2D} | null {
+    if (!layerEl) { layerEl = document.createElement('canvas'); layerK = layerEl.getContext('2d'); }
+    if (!layerK) return null;
+    const ratio = Math.min(GROUND_RATIO, ratioCap, window.devicePixelRatio || 1), w = Math.max(1, Math.round(width * ratio)), h = Math.max(1, Math.round(height * ratio));
+    if (layerEl.width !== w || layerEl.height !== h) { layerEl.width = w; layerEl.height = h; }
+    layerK.setTransform(ratio, 0, 0, ratio, 0, 0); return {el: layerEl, k: layerK};
+  }
+  /** The ground of the track under the sky: the floor, its stripes, the gaps and pits, the walls. */
+  function ground(c: CanvasRenderingContext2D, g: BennyRun, colours: typeof SETTING_COLOURS[RunSetting]): void {
     const horizon = project(0, FAR, 0).y, edge = lanes / 2 * LANE_WIDTH;
     // The next setting, from its start onwards: drawn beyond a line across the whole ground.
     const border = g.upcoming ? Math.max(NEAR, Math.min(FAR, g.upcoming.z - g.distance)) : FAR, next = g.upcoming ? SETTING_COLOURS[g.upcoming.setting] : colours;
