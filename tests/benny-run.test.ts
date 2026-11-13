@@ -546,9 +546,11 @@ describe('Cours cours Benny ! rules', () => {
     expect(g.coins).toBe(3); run(g, C.jumpMs); expect(g.fallFrom).toBeNull();
   });
   it('lays coin arcs out over the void where a side has no wall', () => {
-    const g = startBennyRun(0, 11); let out = 0;
-    for (let t = 0; t < 6000; t++) { g.lastBumpAt = null; g.fallFrom = null; g.over = false; g.overVoid = null; g.distance += 2; advanceBennyRun(g, g.at + C.step);
-      for (const e of g.entities) if (e.kind === 'coin' && (e.lane < 0 || e.lane >= g.lanes)) { out++; e.lane = 1; } }
+    // Void stretches are rare (lot 135): several runs together.
+    let out = 0;
+    for (const seed of [11, 12, 13, 14]) { const g = startBennyRun(0, seed);
+      for (let t = 0; t < 6000; t++) { g.lastBumpAt = null; g.fallFrom = null; g.over = false; g.overVoid = null; g.distance += 2; advanceBennyRun(g, g.at + C.step);
+        for (const e of g.entities) if (e.kind === 'coin' && (e.lane < 0 || e.lane >= g.lanes)) { out++; e.lane = 1; } } }
     expect(out).toBeGreaterThan(5);
   });
   it('never moves a creature sideways: a dragonnet, an ember or any other stays in its lane', () => {
