@@ -737,9 +737,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // The Dragon swoops up from below the screen, then holds her.
     const rise = Math.min(1, t / .6), x = width / 2, feet = height * (1.22 - .42 * rise);
     if (art.dragon.ready) paint(c, 'dragon', 'catch', x, feet, side);
-    // Benny lands on its back, sitting: she shows once she is there.
-    const on = Math.max(0, Math.min(1, (t - .45) / .3));
-    if (art.benny.ready && on > 0) { c.save(); c.globalAlpha = on; paint(c, 'benny', 'roll', x, feet - side * .42, side * .42); c.restore(); }
+    // Its painting holds Benny already (in its arms): she is not drawn a second time.
     void now;
   }
   function benny(c: CanvasRenderingContext2D, g: BennyRun, now: number): void {
@@ -747,6 +745,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (g.fallFrom !== null && (g.at - g.fallFrom) / BENNY_RUN.fallMs > .45) return;
     const wall = g.wall, x = laneX(viewLane);
     const up = bennyHeight(g), p = project(x, 0, up), s = p.s * BENNY_SIZE;
+    // Over the void she drops out of sight, faster and faster, smaller as she goes down (the Dragon dives after her).
+    const drop = g.fallFrom === null ? 0 : Math.min(1, (g.at - g.fallFrom) / BENNY_RUN.fallMs / .45);
+    if (drop > 0) { p.y += drop * drop * s * 1.6; c.save(); c.globalAlpha = 1 - drop * drop; c.translate(p.x, p.y); c.scale(1 - drop * .35, 1 - drop * .35); c.translate(-p.x, -p.y); }
     // Rolling, she curls up into a ball that turns.
     const flat = sliding(g), w = (flat ? .75 : .8) * s, h = (flat ? .75 : 1) * s;
     // Running: a stride every 1.6 m, so the faster she runs the quicker her paws go; she bobs, her ears flop, she leans into a lane change.
@@ -773,6 +774,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       const mirror = wall ? wall.side === 'left' : pose === 'strike' && g.lane < g.laneFrom;
       // The wind-up of a strike, the landing and the fall have their own painted poses (sheet of 13 Nov.).
       const moves: string | null = g.fallFrom !== null ? 'fall' : wall && g.at - (wall.since ?? g.at) < 180 ? 'push' : swing && now - swing.at < 80 && !wall && !flat && !inAir(g) ? 'windup' : land > .25 && !wall && !flat && !inAir(g) ? 'land' : null;
+      // Pushing off onto a wall she tips over towards it, into her wall-running lean.
+      if (moves === 'push' && wall) c.rotate((wall.side === 'left' ? -1 : 1) * .3 * Math.min(1, (g.at - (wall.since ?? g.at)) / 180));
       if (moves) paint(c, 'benny-moves', moves, 0, h / 2, s * PAINTED_BENNY, mirror);
       else paint(c, 'benny', pose, 0, flat ? h * .45 : h / 2, s * PAINTED_BENNY * (flat ? .8 : 1), mirror);
     } else {
@@ -819,6 +822,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       colours.forEach((colour, i) => { c.strokeStyle = colour; c.globalAlpha = 1 - k; c.lineWidth = 3; c.beginPath(); c.arc(p.x, p.y - h * .6, s * (.9 + i * .07), Math.PI * (1.1 + k * .2), Math.PI * (1.9 + k * .2)); c.stroke(); });
       c.globalAlpha = 1;
     }
+    if (drop > 0) c.restore();
   }
   function dragon(c: CanvasRenderingContext2D, g: BennyRun): void {
     if (!dragonVisible(g)) return;
