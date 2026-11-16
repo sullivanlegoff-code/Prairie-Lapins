@@ -19,6 +19,10 @@ const TARGET = 'public/assets/benny-run';
 /** Each texture: its painting, the rows of white left at its top to drop, and its side once reduced (px). */
 export const TEXTURES = {
   'decor-planches': {source: 'planches.png', size: 256},
+  // The road itself (14 Nov.): a meadow path of big pale slabs; the planks stay for stairs and platforms.
+  'decor-dalles': {source: 'dalles.png', size: 384},
+  // Cut out: nine things standing beside the road, in a grid of 3 × 3.
+  'decor-bord': {source: 'bord.png', size: 768},
   'decor-herbe': {source: 'herbe.png', size: 256},
   'decor-mur-terre': {source: 'mur-terre.png', size: 256},
   'decor-mur-pierre': {source: 'mur-pierre.png', size: 256},

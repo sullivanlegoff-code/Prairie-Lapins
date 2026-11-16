@@ -28,7 +28,7 @@ describe('the run’s painted atlases', () => {
     expect(source).toContain("vanishing !== null ? 'flyer-hit'");
   });
   it('paints the track with its five textures and the sky in WebP, all light', () => {
-    for (const name of ['decor-planches', 'decor-herbe', 'decor-mur-terre', 'decor-mur-pierre', 'decor-mur-racines', 'decor-falaise', 'decor-lianes', 'decor-touffes', 'fond-ciel']) {
+    for (const name of ['decor-planches', 'decor-herbe', 'decor-mur-terre', 'decor-mur-pierre', 'decor-mur-racines', 'decor-falaise', 'decor-lianes', 'decor-touffes', 'decor-dalles', 'decor-bord', 'fond-ciel']) {
       expect(files, name).toContain(`assets/benny-run/${name}.webp`);
       expect(source).toContain(name.startsWith('decor') ? `'${name}'` : `${name}.webp`);
     }

@@ -57,7 +57,7 @@ const SETTING_COLOURS: Record<RunSetting, typeof SKY_COLOURS> = {grotte: SKY_COL
 const SETTING_WASH: Record<RunSetting, [number, number, number, number]> = {grotte: [255, 196, 90, .14], pont: [255, 84, 40, .17], montagne: [120, 170, 255, .15]};
 /** The painted textures of the track (13 Nov., concept C): planks, grass, the earth-and-grass wall to run on, the grey stone
  *  wall, and the isles' cliff at the edge of the void (scripts/prepare-benny-run-decor.mjs). */
-const DECOR = ['decor-planches', 'decor-herbe', 'decor-mur-terre', 'decor-mur-pierre', 'decor-mur-racines', 'decor-falaise', 'decor-lianes', 'decor-touffes'] as const;
+const DECOR = ['decor-planches', 'decor-herbe', 'decor-mur-terre', 'decor-mur-pierre', 'decor-mur-racines', 'decor-falaise', 'decor-lianes', 'decor-touffes', 'decor-dalles', 'decor-bord'] as const;
 type DecorName = typeof DECOR[number];
 /** How many metres one texture covers: planks across the road and along it, the grass both ways, a wall along it (its height is
  *  the wall's), the cliff across. The grass verge past the road's edge (m), the cliff's depth below it (m). */
@@ -81,14 +81,18 @@ const GAP_MIN_PX = 7, GAP_SHADE = 'rgba(52,26,62,.62)';
 /** The close camera follows Benny across: `CAM_LANE` of the way to her lane, `CAM_WALL` of the way to a wall she runs on. */
 /** How far aside the far end of the road is drawn at the most, in metres. */
 const BEND = 9;
+/** The road's slabs: one painted tile is `SLAB_TILE` m. Things stand beside the road every `PROP_EVERY` m or so on each side (not along
+ *  a wall Benny can run on): [column, row] in the painted grid, height in metres. */
+const SLAB_TILE = 6.6, PROP_EVERY = 9;
+const PROPS: readonly [number, number, number][] = [[0, 0, 1.7], [1, 0, 1.9], [2, 0, 1.6], [0, 1, 2.3], [1, 1, 3.2], [2, 1, 3.3], [0, 2, 1.8], [1, 2, 3.8], [2, 2, 1.6]];
 const ROAD_FILL = 1.04, BENNY_AT = .76, CAM_LANE = .55, CAM_WALL = .78;
 const BLOCK_LOW = 13, VINE_TILE = 6, VINE_DROP = 3, TUFT_TILE = 4.5, TUFT_PART = 3 / 8, TUFT_NEAR = 50, HAZE_FROM = 22, HAZE_SPAN = 70, HAZE_MAX = .55;
 const hash01 = (n: number) => { let t = Math.imul(n ^ 0x9e3779b9, 2654435761) >>> 0; t ^= t >>> 15; t = Math.imul(t, 2246822519) >>> 0; t ^= t >>> 13; return (t >>> 0) / 4294967296; };
 const hazeAt = (z: number) => Math.min(1, Math.max(0, (z - HAZE_FROM) / HAZE_SPAN)) * HAZE_MAX;
-const PLANK_ACROSS = 3.3, PLANK_ALONG = 3, GRASS_TILE = 3.3, CLIFF_TILE = 4, VERGE = .6, CLIFF_DEPTH = 4;
+const PLANK_ALONG = 3, GRASS_TILE = 3.3, CLIFF_TILE = 4, VERGE = .6, CLIFF_DEPTH = 4;
 /** The colours of the painted decor where shapes still stand: the clouds of the void, the isles' rock and grass lip, the tops
  *  and sides of platforms and stairs. */
-const PAINTED_LOOK = {cloudTop: '#f2c2c4', cloudBottom: '#fcc495', rock: '#9c6c55', rockDark: '#6d4a4f', lip: '#5f8f2f', top: '#e8955a', side: '#995f52', joint: 'rgba(90,40,14,.55)', lane: 'rgba(70,40,18,.28)'};
+const PAINTED_LOOK = {cloudTop: '#f2c2c4', cloudBottom: '#fcc495', rock: '#9c6c55', rockDark: '#6d4a4f', lip: '#5f8f2f', top: '#e8955a', side: '#995f52', joint: 'rgba(90,40,14,.55)', lane: 'rgba(255,255,255,.2)'};
 
 export const BENNY_RUN_SETTING_SHORT: Record<RunSetting, string> = {grotte: 'Grotte', pont: 'Pont', montagne: 'Montagne'};
 const SETTING_NAMES: Record<RunSetting, string> = {grotte: 'La grotte dorée', pont: 'Le pont sur la lave', montagne: 'Le sentier de montagne'};
@@ -300,7 +304,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       // The grass only on the verges (the planks cover the rest): half as much to paint.
       row('decor-herbe', -half - VERGE, -half + .05, a0, a1, GRASS_TILE, GRASS_TILE, y, s);
       row('decor-herbe', half - .05, half + VERGE, a0, a1, GRASS_TILE, GRASS_TILE, y, s);
-      row('decor-planches', -half, half, a0, a1, PLANK_ACROSS, PLANK_ALONG, y, s);
+      row('decor-dalles', -half, half, a0, a1, SLAB_TILE, SLAB_TILE, y, s);
     }
   }
   /** The cliff of an isle facing Benny, `ahead` m in front, from `x0` to `x1` m across, seen only inside the opening `hole` (a path). */
@@ -839,6 +843,21 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     c.fillStyle = '#fff'; c.font = `800 ${Math.round(Math.max(8, (band.y - lt.y) * .62))}px system-ui`; c.textAlign = 'center'; c.textBaseline = 'middle';
     c.fillText(`Ton record · ${metresBest} m`, (lt.x + rt.x) / 2, (lt.y + band.y) / 2); c.textBaseline = 'alphabetic';
   }
+  /** Painted things beside the road, far to near: on the verge where the side is open or fenced, against a stone wall; none along a
+   *  wall to run on, none over a gap in the road. Each spot's thing, place and size are drawn from its number (the same every frame). */
+  function roadside(c: CanvasRenderingContext2D, g: BennyRun): void {
+    const image = decor['decor-bord'].image; if (!image) return;
+    const cell = image.width / 3, first = Math.floor((g.distance + NEAR) / PROP_EVERY), last = Math.floor((g.distance + FAR) / PROP_EVERY);
+    for (let k = last; k >= first; k--) for (const dir of [-1, 1] as const) {
+      const n = k * 2 + (dir > 0 ? 1 : 0), z = k * PROP_EVERY + hash01(n) * (PROP_EVERY - 2), ahead = z - g.distance; if (ahead < NEAR + 1 || ahead > FAR || hash01(n + 977) < .25) continue;
+      const w = wallAt(g, dir < 0 ? 'left' : 'right', z); if (!w || (!w.void && w.runnable) || g.holes.some(h => z > h.from - 1 && z < h.to + 1)) continue;
+      const [col, rw, tall] = PROPS[Math.floor(hash01(n + 31) * PROPS.length) % PROPS.length], size = tall * (.85 + hash01(n + 59) * .3) / .82;
+      const p = project(dir * (halfAt(g, ahead) + VERGE + .15 + (w.void ? 0 : .1)), ahead, 0), px = size * p.s;
+      // Fading in from afar, and out as it comes level with Benny (it would pass in front of her).
+      c.globalAlpha = Math.max(0, Math.min(1, (FAR - ahead) / 12, (ahead + 1.5) / 2.5)); c.drawImage(image, col * cell, rw * cell, cell, cell, p.x - px / 2, p.y - px * .93, px, px);
+    }
+    c.globalAlpha = 1;
+  }
   /** The last gust that blew (for the streaks to fade). */
   let gustAt: {at: number; dir: -1 | 1} | null = null;
   /** When each geyser burst out (it rises over a moment). */
@@ -1277,6 +1296,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     c.save();
     if (shake) { const k = (now - shake.at) / shake.ms; if (k >= 1) shake = null; else { const a = shake.px * (1 - k); c.translate((Math.random() * 2 - 1) * a, (Math.random() * 2 - 1) * a); } }
     road(c, g, SETTING_COLOURS[g.setting]);
+    if (decorReady()) roadside(c, g);
     speedLines(c, g, now);
     platforms(c, g); ledges(c, g);
     recordBanner(c, g);
