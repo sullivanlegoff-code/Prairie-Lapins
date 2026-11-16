@@ -253,6 +253,11 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (bits.length > 160) bits = bits.slice(-160);
     return true;
   }
+  /** Painted puffs of dust on the ground at (x, y), `size` px, blown out sideways (`dir`), `count` of them; `faint` > 1 makes them
+   *  lighter (their opacity peaks at 1 / faint). */
+  function dust(x: number, y: number, size: number, dir: number, count: number, faint = 1): boolean {
+    return pieces(x + dir * size * .3, y - size * .25, ['dust-big', 'dust-small'], count, 110, size, {dir: dir * 2.3, spread: .08, up: .1, fall: -40, grow: .8, life: 420, spin: .8, fade: faint});
+  }
   /** The star of an impact where a blow lands: painted, it opens quickly and fades (`s` the thing's scale, px per metre). */
   function impactStar(x: number, y: number, s: number): boolean {
     if (!art.eclats.ready) return false;
@@ -1353,7 +1358,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     }
   }
   /** -1 on a wall to her left, 1 to her right, eased in and out (the roll and her tilt follow it). */
-  let wallTilt = 0, lastStride = 0;
+  let wallTilt = 0, lastStride = 0, lastDustStride = 0;
   let leapArc = 0, laneSpeed = 0, rollFrom = -1e9, wasFlat = false;
   const FOES = new Set(['dragonnet', 'chest', 'ember', 'flyer']);
   function threatening(g: BennyRun, e: RunEntity): boolean {
@@ -1396,14 +1401,18 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const w = (flat ? .75 : .8) * s, h = (flat ? .75 : 1) * s;
     // Each stride on a wall kicks a little earth and grass off it, from her paws (on the wall's side).
     { const st = Math.sign(Math.sin(g.distance / 1.6 * Math.PI * 2)); if (wall && st !== lastStride && Math.abs(wallTilt) > .7 && !(leapArc > .06 && leapArc < .94)) {
-      const side = wall.side === 'left' ? -1 : 1; burst(p.x + side * h * .45, p.y - h * .35, ['rgba(150,100,60,.9)', 'rgba(110,160,60,.9)', 'rgba(200,170,120,.8)'], 4, 90); } lastStride = st; }
+      const side = wall.side === 'left' ? -1 : 1; burst(p.x + side * h * .45, p.y - h * .35, ['rgba(150,100,60,.9)', 'rgba(110,160,60,.9)', 'rgba(200,170,120,.8)'], 4, 90); dust(p.x + side * h * .45, p.y - h * .3, s * .25, -side, 1, 1.6); } lastStride = st; }
     // Running: a stride every 1.6 m, so the faster she runs the quicker her paws go; she bobs, her ears flop, she leans into a lane change.
     const stride = g.distance / 1.6 * Math.PI * 2, grounded = !flat && !inAir(g) && !powerActive(g, 'flight');
     // Her lean follows how fast she glides across (inertia: into the move, then back as she settles).
     const bob = grounded && hopK < 0 ? Math.abs(Math.sin(stride)) * .07 * s : 0, lean = Math.max(-.3, Math.min(.3, laneSpeed * .045));
     // Touching down: a squash for a moment and a puff of dust at her feet; taking off and rising: a stretch.
     const up2 = inAir(g) && !wall && !powerActive(g, 'flight');
-    if (wasUp && !up2 && !wall && !flat) { landedAt = now; const ground = project(x, 0, floorHeight(g)); burst(ground.x, ground.y, ['rgba(230,215,190,.9)', 'rgba(200,180,150,.8)'], 7, 110); sound('land', .9 + Math.random() * .2); }
+    // (Painted puffs of dust since 16 Nov., blown out to both sides of her paws.)
+    if (wasUp && !up2 && !wall && !flat) { landedAt = now; const ground = project(x, 0, floorHeight(g)); sound('land', .9 + Math.random() * .2);
+      if (!(dust(ground.x, ground.y, s * .42, -1, 2) && dust(ground.x, ground.y, s * .42, 1, 2))) burst(ground.x, ground.y, ['rgba(230,215,190,.9)', 'rgba(200,180,150,.8)'], 7, 110); }
+    // Running: a little puff behind a paw now and then (every other stride), faint.
+    { const st = Math.floor(g.distance / 1.6); if (grounded && hopK < 0 && !wall && st !== lastDustStride && st % 2 === 0) { const ground = project(x + (st % 4 ? .25 : -.25), 0, floorHeight(g)); dust(ground.x, ground.y, s * .22, st % 4 ? 1 : -1, 1, 2.4); } lastDustStride = st; }
     wasUp = up2;
     const land = Math.max(0, 1 - (now - landedAt) / 150), rising = up2 && g.at - g.airFrom < 220 ? 1 - (g.at - g.airFrom) / 220 : 0;
     // The hop: crouched on the spring, stretched on the bound, squashed on landing.
@@ -1695,7 +1704,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         if (event.by !== 'shock') { shakeFor('strike'); if (event.entity.kind !== 'pot') hitStop(); }
         }); break;
       }
-      case 'crash': { if (event.entity.kind === 'chest') ghosts.push({e: {...event.entity}, at: clock(), ahead: event.entity.z - g.distance}); const p = screenOf(g, event.entity); burst(p.x, p.y, ['#c96b3a', '#8a4a26'], 8, 180); sound('pot'); break; }
+      case 'crash': { if (event.entity.kind === 'chest') ghosts.push({e: {...event.entity}, at: clock(), ahead: event.entity.z - g.distance}); const p = screenOf(g, event.entity); if (!pieces(p.x, p.y - p.s * .3, ['wood', 'wood', 'spark'], 6, 380, Math.max(14, p.s * .5))) burst(p.x, p.y, ['#c96b3a', '#8a4a26'], 8, 180); sound('pot'); break; }
       case 'coin': { const t = clock(); tally = t - tally.last < TALLY_GAP ? {count: tally.count + 1, last: t} : {count: 1, last: t};
         if (coinFlights.length < COIN_FLIGHTS) { const b = project(laneX(viewLane), .6, bennyHeight(g) + .8); coinFlights.push({at: t, x: b.x, y: b.y}); } }
         if (clock() - lastCoinSound > 60) { coinRun = clock() - lastCoinSound < 450 ? Math.min(12, coinRun + 1) : 0; lastCoinSound = clock(); sound('coin', 2 ** (coinRun / 24)); } break;
@@ -1706,7 +1715,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'heart': word('+1 Cœur !'); burst(width / 2, height * .7, ['#ff4d6d', '#ffd1dc', '#fff'], 14, 240); sound('power', 1.5); break;
       case 'wallStart': sound('wall', event.side === 'left' ? .94 : 1.06); break;
       case 'cleared': { const k = event.entity.cart ? 'cart' : event.entity.kind; cleared.set(k, (cleared.get(k) ?? 0) + 1); }
-        if (event.points) { const p = screenOf(g, event.entity); flashes.push({at: clock(), text: `+${event.points}`, x: p.x}); burst(p.x, p.y - 10, ['#fff', '#ffe66b'], 6, 160); sound('dodge', .95 + Math.random() * .1); }
+        if (event.points) { const p = screenOf(g, event.entity); flashes.push({at: clock(), text: `+${event.points}`, x: p.x}); if (!pieces(p.x, p.y - 10, ['spark'], 3, 160, Math.max(12, p.s * .3), {fall: 200, life: 380, spread: 1, spin: 4})) burst(p.x, p.y - 10, ['#fff', '#ffe66b'], 6, 160); sound('dodge', .95 + Math.random() * .1); }
         break;
       case 'wallEnd': flashes.push({at: clock(), text: `Mur +${event.points}`, x: width / 2}); if (event.trail) { word('Traînée parfaite !', WORD.cheer, `${event.trail} pièces`); sound('power', 1.1); } break;
       case 'wallLeap': flashes.push({at: clock(), text: `Saut de mur +${event.points}`, x: width / 2}); sound('wall', 1 + .06 * Math.min(6, event.chain - 1));
@@ -1727,10 +1736,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         break;
       case 'geyser': { geysersUp.set(event.entity.id, clock()); const p = screenOf(g, event.entity); burst(p.x, p.y, ['#ff6a1a', '#ffb03a', '#ffe36b'], 8, 220);
         if (Math.abs(event.entity.lane - g.lane) <= 1) sound('sizzle', .9 + Math.random() * .2); break; }
-      case 'rockfall': { rocksDown.set(event.entity.id, clock()); { const p = screenOf(g, event.entity); burst(p.x, p.y, ['#6f6258', '#8d8075', '#4a3f37'], 6, 160); }
+      case 'rockfall': { rocksDown.set(event.entity.id, clock()); { const p = screenOf(g, event.entity); if (!(pieces(p.x, p.y, ['stone'], 5, 260, Math.max(10, p.s * .3)) && dust(p.x, p.y + p.s * .4, p.s * .9, -1, 1) && dust(p.x, p.y + p.s * .4, p.s * .9, 1, 1))) burst(p.x, p.y, ['#6f6258', '#8d8075', '#4a3f37'], 6, 160); }
         if (event.entity.lane === g.lane || Math.abs(event.entity.lane - g.lane) === 1) { sound('rumble'); shakeFor('strike'); } break; }
       case 'crumble': { const n = lanesAt(g, event.pit.from), x = (event.pit.lane - (n - 1) / 2) * LANE_WIDTH, p = project(x, event.pit.from - g.distance + 1, 0);
-        burst(p.x, p.y, ['#5a3d22', '#8a6440', '#3a2a1c'], 10, 200); if (event.pit.from - g.distance < 30) sound('rumble', 1.3); break; }
+        if (!(pieces(p.x, p.y, ['stone'], 6, 240, Math.max(10, p.s * .3)) && dust(p.x, p.y, p.s * .8, 1, 1))) burst(p.x, p.y, ['#5a3d22', '#8a6440', '#3a2a1c'], 10, 200); if (event.pit.from - g.distance < 30) sound('rumble', 1.3); break; }
       case 'platformUp': sound('jump', 1.2); break;
       case 'blocked':
         if (!event.side) { sound('bump', .8); tip('Trop haut : monte les marches !', true); break; }
@@ -1744,7 +1753,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         break;
       case 'close': flashes.push({at: clock(), text: `De justesse ! +${event.points}`, x: width / 2}); sound('dodge', 1.3); break;
       case 'km': milestone = event.km * 1000; word(`${event.km} km !`, WORD.big, `+${event.points}`); sound('power', 1.15); break;
-      case 'bounce': { sound('jump', 1.4); shakeFor('strike'); const ground = project(laneX(viewLane), .5, 0); burst(ground.x, ground.y, ['#7be08a', '#4fb06a', '#fff'], 10, 200);
+      case 'bounce': { sound('jump', 1.4); shakeFor('strike'); const ground = project(laneX(viewLane), .5, 0); if (!(dust(ground.x, ground.y, ground.s * .8, -1, 1) && dust(ground.x, ground.y, ground.s * .8, 1, 1))) burst(ground.x, ground.y, ['#7be08a', '#4fb06a', '#fff'], 10, 200);
         flashes.push({at: clock(), text: 'Boing !', x: width / 2}); break; }
       case 'series': word(`Série de ${event.length} !`, WORD.cheer, `+${event.points}`); sound('power', 1.05); break;
       case 'landing': word('Atterrissage en douceur !'); sound('land'); break;
@@ -1943,10 +1952,11 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       paragraph('Au bord, glisse vers le mur (même en sautant) pour courir dessus. Pour descendre : saute depuis le mur, glisse vers l’autre côté pour frapper ce qui t’attend en bas, ou charge au sol pour faire une onde de choc. Passe sur un pouvoir pour l’utiliser tout de suite.', 'benny-run-rules'),
       paragraph('Au-dessus d’un grand gouffre, glisse vers l’autre mur pour bondir dessus.', 'benny-run-rules'),
       paragraph('Prototype en formes simples : les vrais dessins arrivent ensuite.', 'benny-run-rules'));
+    const go = button('C’est parti !', () => start(), 'bennyRunStart'); go.classList.add('benny-run-again'); learn.classList.add('secondary'); how.classList.add('secondary');
     showCard(paragraph('Cours cours Benny !', 'benny-run-title'),
       paragraph('Benny a chipé un peu du trésor de la Dragon : cours, frappe tout ce qui bouge, et ne te fais pas rattraper !', 'benny-run-rules'),
       ...(record > 0 ? [paragraph(`Ton record : ${record}`, 'benny-run-record')] : []),
-      button('C’est parti !', () => start(), 'bennyRunStart'), ...(record > 0 ? [learn] : []), how, rules);
+      go, ...(record > 0 ? [learn] : []), how, rules);
   }
   function close(): void {
     if (layer.hidden) return;
@@ -1961,9 +1971,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (!running && !countdown) return;
     if (countdown) { clearTimeout(countdown); countdown = undefined; } else time.pause();
     running = false; layer.classList.remove('benny-run-chased'); notices();
-    const ch = game?.challenge;
+    const ch = game?.challenge, again = button('Reprendre', resume, 'bennyRunResume'), quit = button('Quitter', close, 'bennyRunQuit'); again.classList.add('benny-run-again'); quit.classList.add('secondary');
     showCard(paragraph('Partie en pause', 'benny-run-title'), ...(ch ? [paragraph(`Défi : ${CHALLENGE_TEXT[ch.kind](ch.goal)} (${ch.count}/${ch.goal})`, 'benny-run-rules')] : []),
-      button('Reprendre', resume, 'bennyRunResume'), button('Quitter', close, 'bennyRunQuit'));
+      again, quit);
   }
   function resume(): void {
     if (sideways() || running || countdown || !game) return;
