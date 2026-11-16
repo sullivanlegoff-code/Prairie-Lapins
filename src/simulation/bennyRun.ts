@@ -187,7 +187,8 @@ const WALL_KINDS = [{runnable: true, tall: false}, {runnable: true, tall: true},
 const kindOf = (w: WallSegment) => w.void ? -1 : (w.runnable ? 0 : 2) + (w.tall ? 1 : 0);
 function wallKind(g: BennyRun, side: Side, from: number, dice: number, mustRun: boolean): number {
   const prev = g.walls.filter(w => w.side === side && w.to === from).map(kindOf)[0] ?? -1, facing = g.walls.filter(w => w.side !== side && w.from === from).map(kindOf)[0] ?? -1;
-  const order = mustRun ? [0, 1] : [0, 1, 2, 3], start = Math.floor(dice * order.length);
+  // (No low wall to run on any more, owner, 16 Nov.: « de la verticalité sur les voies mais pas sur les voies des murs ».)
+  const order = mustRun ? [1] : [1, 2, 3], start = Math.floor(dice * order.length);
   for (let k = 0; k < order.length; k++) { const kind = order[(start + k) % order.length]; if (kind !== prev && kind !== facing) return kind; }
   return order.find(kind => kind !== prev) ?? order[start];
 }

@@ -132,7 +132,7 @@ const ROAD_FILL = 1.04, BENNY_AT = .76, CAM_LANE = .55, CAM_LOW = .62;
 /** The meadow's walls are built in tiers (owner, 16 Nov.: « 3 ou 4 tranches », the sky above them): a base `BASE_TOP` m high (light
  *  blue: Benny can run on it, the only sign of it; raspberry with arches, or bare rock: she cannot), a body of cream blocks or ochre
  *  rock, a grassy ledge with vines, an upper tier set back `TIER_BACK` m, and a jagged crest of rocks and bushes against the sky. */
-const BASE_TOP = 4.6, BASE_TILE = 8, TIER_BACK = .7, CREST_TILE = 10, CREST_UP = 2.6, CREST_DOWN = 1.3, FENCE_TILE = 9, FENCE_TOP = 2.1;
+const BASE_TOP = 4.6, BASE_TILE = 8, TIER_BACK = 1.5, CREST_TILE = 10, CREST_UP = 2.6, CREST_DOWN = 1.3, FENCE_TILE = 9, FENCE_TOP = 2.1;
 /** The tiers of each world (owner, 16 Nov., the meadow first, then the lava and the snow): the base Benny runs on (the same light
  *  blue in every world: the only sign of it), the base she cannot run on, the body of blocks and of rock, the crest against the sky,
  *  the colour of the ledge between the tiers, and whether vines hang under it and grass grows at the foot (the meadow only). */
@@ -286,7 +286,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const skyPictures = Object.fromEntries(RUN_SETTINGS.map(s => [s, {image: null, ready: false}])) as Record<RunSetting, {image: HTMLImageElement | null; ready: boolean}>;
   // The textures, repeated into a strip of five by two (so a row of the road never wraps round), sharp near and softened far off.
   const decor = Object.fromEntries(DECOR.map(name => [name, {image: null, near: null, far: null}])) as Record<DecorName, {image: HTMLImageElement | null; near: CanvasImageSource | null; far: CanvasImageSource | null}>;
-  const NEAR_SIDE = 256, FAR_SIDE = 32;
+  const NEAR_SIDE = 256, FAR_SIDE = 64;
   function tiled(image: CanvasImageSource, side: number): HTMLCanvasElement | null {
     const el = document.createElement('canvas'); el.width = side * 5; el.height = side * 2; const k = el.getContext('2d'); if (!k) return null;
     k.imageSmoothingQuality = 'high';
@@ -495,10 +495,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
    *  thick, their grassy top seen and the void over them; wooden fences. Their end facing Benny shows their thickness: one lane. */
   function paintedWalls(c: CanvasRenderingContext2D, g: BennyRun): void {
     for (const w of [...g.walls].sort((a, b) => b.from - a.from)) {
-      if (w.void) continue;
+      if (w.void) { roadside(c, g, w.side === 'left' ? -1 : 1, w.from, w.to, true); continue; }
       const from = Math.max(NEAR, w.from - g.distance), to = Math.min(FAR, w.to - g.distance); if (to <= from) continue;
       const dir = w.side === 'left' ? -1 : 1, look = wallLook(w), x = (z: number) => dir * wallXAt(g, z);
-      if (look === 'fence') { fence(c, g, dir, from, to); continue; }
+      if (look === 'fence') { roadside(c, g, dir, w.from, w.to, false); fence(c, g, dir, from, to); continue; }
       footShadow(c, g, dir, from, to);
       if (look === 'tall') {
         for (const b of blocksOf(w).reverse()) {
@@ -536,14 +536,20 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     for (let z = to; z > from;) {
       const a = project(at(z), z, h0), probe = project(at(z - .1), z - .1, h0), perMetre = Math.abs(a.x - probe.x) / .1;
       const z1 = Math.max(from, z - Math.min(3, Math.max(.03, 6 / Math.max(.001, perMetre)))), b = project(at(z1), z1, h0);
-      const far = z > 30, el = far ? t.far : t.near, side = far ? FAR_SIDE : NEAR_SIDE, left = Math.min(a.x, b.x) - .5, across = Math.abs(a.x - b.x) + 1;
-      const sx = posmod(g.distance + z1, tile) / tile * side, sw = Math.max(.5, Math.min(side, (z - z1) / tile * side)), bottom = Math.max(a.y, b.y);
-      const ta = project(at(z), z, h1), tb = project(at(z1), z1, h1), up = Math.min(ta.y, tb.y);
-      if (el && bottom > 0 && up < height + 40 && left < width + 40 && left + across > -40) {
-        if (fit) c.drawImage(el, sx, side * fit[0], sw, side * (fit[1] - fit[0]), left, up, across, bottom - up);
-        else for (let h = h0; h < h1 - 1e-6; h += FACE_TILE) { const hh = Math.min(h1, h + FACE_TILE), y0 = Math.min(project(at(z), z, hh).y, project(at(z1), z1, hh).y), y1 = Math.max(project(at(z), z, h).y, project(at(z1), z1, h).y);
-          c.drawImage(el, sx, 0, sw, side * (hh - h) / FACE_TILE, left, y0, across, y1 - y0); }
-        if (solid) { const haze = hazeAt(z); if (haze > .02) { c.fillStyle = `rgba(250,198,166,${haze.toFixed(3)})`; c.fillRect(left, up, across, bottom - up); } }
+      const far = z > 30, el = far ? t.far : t.near, side = far ? FAR_SIDE : NEAR_SIDE, left = Math.min(a.x, b.x), dx = Math.abs(a.x - b.x), across = dx + 1;
+      const sx = posmod(g.distance + z1, tile) / tile * side, sw = Math.max(.5, Math.min(side, (z - z1) / tile * side));
+      // The column leans with the wall (owner, 16 Nov.: upright slices made stair steps that crawled as the walls went by): sheared
+      // along the mean slope of its top and bottom edges, each edge then set at its middle height.
+      const zl = a.x <= b.x ? z : z1, zr = a.x <= b.x ? z1 : z, yl = (h: number) => project(at(zl), zl, h).y, yr = (h: number) => project(at(zr), zr, h).y;
+      const b0 = yl(h0), b1 = yr(h0), t0 = yl(h1), t1 = yr(h1), ky = dx > .01 ? ((b1 - b0) + (t1 - t0)) / 2 / dx : 0, lean = ky * dx / 2;
+      if (el && Math.max(b0, b1) > 0 && Math.min(t0, t1) < height + 40 && left < width + 40 && left + across > -40) {
+        c.save(); c.transform(1, ky, 0, 1, 0, -ky * left);
+        const edge = (h: number) => (yl(h) + yr(h)) / 2 - lean, top = edge(h1), bottom = edge(h0);
+        if (fit) c.drawImage(el, sx, side * fit[0], sw, side * (fit[1] - fit[0]), left - .5, top, across, bottom - top + .5);
+        else for (let h = h0; h < h1 - 1e-6; h += FACE_TILE) { const hh = Math.min(h1, h + FACE_TILE), y0 = edge(hh), y1 = edge(h);
+          c.drawImage(el, sx, 0, sw, side * (hh - h) / FACE_TILE, left - .5, y0, across, y1 - y0 + .5); }
+        if (solid) { const haze = hazeAt(z); if (haze > .02) { c.fillStyle = `rgba(250,198,166,${haze.toFixed(3)})`; c.fillRect(left - .5, top, across, bottom - top + .5); } }
+        c.restore();
       }
       z = z1;
     }
@@ -558,6 +564,11 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     wallBand(c, g, at(b.upper ? TIER_BACK : 0), from, to, top - CREST_DOWN, top + CREST_UP, look.crest, [.55, 1], CREST_TILE, false);
     // The ledge between the tiers: grass (in the meadow), embers' glow (lava) or snow, seen from below as a bright lip.
     if (b.upper) face(c, g, dir, from, to, b.top, b.top, 0, look.ledge, TIER_BACK);
+    // Things growing on that terrace (a tree, a bush, a mushroom…), set into the wall: the body's top edge and its vines pass in front
+    // of their feet. The same every time: drawn from the block's place.
+    const len = b.to - b.from, seed = Math.floor(b.from) * 4 + (dir > 0 ? 1 : 0), world = worldAhead((from + to) / 2);
+    const inBlock = (k: number, share: number) => { const ahead = b.from + len * share - g.distance; return ahead > from && ahead < to && hash01(seed + k * 131) < .8 ? ahead : null; };
+    if (b.upper) for (const [k, share] of [[1, .28], [2, .72]] as const) { const ahead = inBlock(k, share + (hash01(seed + k) - .5) * .2); if (ahead !== null) prop(c, seed + k, world, dir * (wallXAt(g, ahead) + TIER_BACK * .5), ahead, b.top - .15, .8); }
     // Its end facing Benny, tier by tier.
     if (end) { const x0 = at(0)(from), x1 = at(WALL_THICK)(from);
       if (b.upper) endFace(c, at(TIER_BACK)(from), x1, from, b.upper, false, upper, b.top);
@@ -567,6 +578,21 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (look.green) wallBand(c, g, at(0), from, to, b.top - 1.5, b.top + .2, 'decor-lianes', [0, .42], VINE_TILE * 1.6, false);
     if (base) { face(c, g, dir, from, to, 0, BASE_TOP, 0, runnable ? look.flat.run : look.flat.base); wallBand(c, g, at(0), from, to, 0, BASE_TOP, base, [0, 1], BASE_TILE); }
     else if (look.green && from < TUFT_NEAR) wallBand(c, g, at(0), from, Math.min(to, TUFT_NEAR), 0, TUFT_TILE * TUFT_PART, 'decor-touffes', [1 - TUFT_PART, 1], TUFT_TILE, false);
+    // Grass along the terrace's lip, in front of what grows there.
+    if (b.upper && look.green) wallBand(c, g, at(0), from, to, b.top - .1, b.top + .75, 'decor-touffes', [1 - TUFT_PART, 1], TUFT_TILE, false);
+    // At the foot of a wall Benny does not run on: one thing against it, its shadow on the ground, grass in front of its foot.
+    if (!runnable) { const ahead = inBlock(3, .5 + (hash01(seed + 3) - .5) * .3); if (ahead !== null) {
+      const x = dir * (wallXAt(g, ahead) - .45), p = project(x, ahead, 0); c.fillStyle = 'rgba(50,28,20,.25)'; c.beginPath(); c.ellipse(p.x, p.y, p.s * 1.1, p.s * .22, 0, 0, Math.PI * 2); c.fill();
+      prop(c, seed + 3, world, x, ahead, 0, PROP_GROW * .8);
+      if (look.green) wallBand(c, g, at(-.95), Math.max(from, ahead - 2.2), Math.min(to, ahead + 2.2), 0, .75, 'decor-touffes', [1 - TUFT_PART, 1], TUFT_TILE, false); } }
+  }
+  /** One painted thing of a world's sheet, standing at `x` m across, `ahead` m away, `up` m high; which one and its size are drawn from
+   *  `n` (the same every frame). It fades in from afar. */
+  function prop(c: CanvasRenderingContext2D, n: number, world: RunSetting, x: number, ahead: number, up: number, scale: number): void {
+    const image = decor[PROP_SHEET[world]].image, props = PROPS[world]; if (!image || ahead > FAR) return;
+    const cell = image.width / 3, [col, rw, tall] = props[Math.floor(hash01(n + 31) * props.length) % props.length], size = scale * tall * (.85 + hash01(n + 59) * .3) / .82;
+    const p = project(x, ahead, up), px = size * p.s;
+    c.globalAlpha = Math.max(0, Math.min(1, (FAR - ahead) / 12)); c.drawImage(image, col * cell, rw * cell, cell, cell, p.x - px / 2, p.y - px * .93, px, px); c.globalAlpha = 1;
   }
   type WallBlock = {from: number; to: number; top: number; upper: number; rock: boolean; out: number};
   /** A tall wall's blocks, from its start: lengths, heights and how far a stone one is set back, the same every time it is drawn.
@@ -1070,18 +1096,16 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   /** Painted things beside the road, far to near: on the verge where the side is open or fenced, against a stone wall; none along a
    *  wall to run on, none over a gap in the road. Each spot's thing, place and size are drawn from its number (the same every frame). */
-  function roadside(c: CanvasRenderingContext2D, g: BennyRun): void {
-    const first = Math.floor((g.distance + NEAR) / PROP_EVERY), last = Math.floor((g.distance + FAR) / PROP_EVERY);
-    for (let k = last; k >= first; k--) for (const dir of [-1, 1] as const) {
-      const n = k * 2 + (dir > 0 ? 1 : 0), z = k * PROP_EVERY + hash01(n) * (PROP_EVERY - 2), ahead = z - g.distance; if (ahead < NEAR + 1 || ahead > FAR || hash01(n + 977) < .25) continue;
-      const w = wallAt(g, dir < 0 ? 'left' : 'right', z); if (!w || (!w.void && w.runnable) || g.holes.some(h => z > h.from - 1 && z < h.to + 1)) continue;
-      const world = settingAt(g, z), image = decor[PROP_SHEET[world]].image, props = PROPS[world]; if (!image) continue;
-      const cell = image.width / 3, [col, rw, tall] = props[Math.floor(hash01(n + 31) * props.length) % props.length], size = PROP_GROW * tall * (.85 + hash01(n + 59) * .3) / .82;
-      const p = project(dir * (halfAt(g, ahead) + VERGE + .15 + (w.void ? 0 : .1)), ahead, 0), px = size * p.s;
-      // Fading in from afar; near, it goes on by beside her, past the camera (drawn before her, it never hides her).
-      c.globalAlpha = Math.max(0, Math.min(1, (FAR - ahead) / 12)); c.drawImage(image, col * cell, rw * cell, cell, cell, p.x - px / 2, p.y - px * .93, px, px);
+  function roadside(c: CanvasRenderingContext2D, g: BennyRun, dir: -1 | 1, fromZ: number, toZ: number, open: boolean): void {
+    // (With the walls, from the back to the front, since 16 Nov.: a wall nearer than a thing passes in front of it, a fence too.)
+    const first = Math.floor(Math.max(fromZ, g.distance + NEAR) / PROP_EVERY), last = Math.floor(Math.min(toZ, g.distance + FAR) / PROP_EVERY);
+    for (let k = last; k >= first; k--) {
+      const n = k * 2 + (dir > 0 ? 1 : 0), z = k * PROP_EVERY + hash01(n) * (PROP_EVERY - 2), ahead = z - g.distance; if (z < fromZ || z >= toZ || ahead < NEAR + 1 || ahead > FAR || hash01(n + 977) < .25) continue;
+      if (g.holes.some(h => z > h.from - 1 && z < h.to + 1)) continue;
+      const x = dir * (halfAt(g, ahead) + VERGE + .15 + (open ? 0 : .1)), p = project(x, ahead, 0);
+      c.fillStyle = 'rgba(50,28,20,.22)'; c.beginPath(); c.ellipse(p.x, p.y, p.s * 1.1, p.s * .2, 0, 0, Math.PI * 2); c.fill();
+      prop(c, n, settingAt(g, z), x, ahead, 0, PROP_GROW);
     }
-    c.globalAlpha = 1;
   }
   /** The last gust that blew (for the streaks to fade). */
   let gustAt: {at: number; dir: -1 | 1} | null = null;
@@ -1573,7 +1597,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     c.save();
     if (shake) { const k = (now - shake.at) / shake.ms; if (k >= 1) shake = null; else { const a = shake.px * (1 - k); c.translate((Math.random() * 2 - 1) * a, (Math.random() * 2 - 1) * a); } }
     road(c, g, SETTING_COLOURS[g.setting]);
-    if (decorReady()) { roadside(c, g); weather(c, g, now); }
+    if (decorReady()) weather(c, g, now);
     speedLines(c, g, now);
     platforms(c, g); ledges(c, g);
     recordBanner(c, g);
