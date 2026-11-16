@@ -568,6 +568,13 @@ describe('Cours cours Benny ! rules', () => {
       rows += [...byZ.values()].filter(l => l.length === 2).length; }
     expect(rows).toBeGreaterThan(0);
   });
+  it('lays a long low wall along the middle lane of a wide hall, coins on top, never on the usual three lanes', () => {
+    let wide = 0, narrow = 0;
+    for (const seed of [31, 32, 33, 34, 35, 36]) { const g = startBennyRun(0, seed); g.tutorial = null; g.at = C.speedRampMs; g.speed = C.speedMax; const seen = new Set<number>();
+      for (let i = 0; i < 900; i++) { g.lastBumpAt = null; g.fallFrom = null; g.over = false; g.distance += 3; advanceBennyRun(g, g.at + C.step);
+        for (const l of g.ledges) if (l.to - l.from > 30 && !seen.has(l.from)) { seen.add(l.from); if (lanesAt(g, l.from) === C.wideLanes && lanesAt(g, l.to) === C.wideLanes && l.lane === 2) wide++; else narrow++; } } }
+    expect(wide).toBeGreaterThan(0); expect(narrow).toBe(0);
+  });
   it('never moves a creature sideways: a dragonnet, an ember or any other stays in its lane', () => {
     const g = quiet(); const e = place(g, 'dragonnet', 1, 60); place(g, 'ember', 2, 30);
     run(g, 6000); expect(e.lane).toBe(1); expect(g.entities.filter(o => o.kind === 'ember').every(o => o.lane === 2)).toBe(true);
