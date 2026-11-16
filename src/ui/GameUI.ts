@@ -294,12 +294,12 @@ export class GameUI {
       const before = this.controller.getSnapshot().state?.bennyRun?.settings ?? {}, heartsBefore = this.controller.getSnapshot().state?.hearts ?? 0;
       const saved = this.controller.perform({type: 'finishBennyRun', score: summary.score, metres: summary.metres, bySetting: summary.bySetting, coins: summary.coins, hearts: summary.hearts});
       if (!saved.ok) return `Record non enregistré : ${REFUSALS[saved.reason]}`;
-      // The coins paid as pattes (none once today's rewarded runs are used), and a setting's record beaten (once there was one to beat).
-      const won = saved.state.hearts - heartsBefore, heartsWon = won > 0 ? `+${won} Cœur` : '';
-      const pattes = Number(saved.value) > 0 ? `+${saved.value} pattes` : summary.coins ? 'Course pour le plaisir : plus de récompense aujourd’hui' : '';
+      // The coins paid as pattes (none once today's rewarded runs are used), the Hearts, the rewarded runs left today, and a
+      // setting's record beaten (once there was one to beat): the end card counts them.
+      const hearts = Math.max(0, saved.state.hearts - heartsBefore), pattes = Math.max(0, Number(saved.value) || 0);
       const beaten = BENNY_RUN_SETTINGS.filter(k => (before[k] ?? 0) > 0 && summary.bySetting[k] > (before[k] ?? 0));
-      const record = beaten.length ? `Record de décor battu : ${beaten.map(k => BENNY_RUN_SETTING_SHORT[k]).join(', ')} !` : '';
-      return [pattes, heartsWon, record].filter(Boolean).join(' · ') || undefined;
+      const notes = [...(!pattes && summary.coins ? ['Course pour le plaisir : plus de récompense aujourd’hui'] : []), ...(beaten.length ? [`Record de décor battu : ${beaten.map(k => BENNY_RUN_SETTING_SHORT[k]).join(', ')} !`] : [])];
+      return {pattes, hearts, notes, rewardedLeft: bennyRunDay(saved.state, this.now()).rewardedLeft, rewardedPerDay: BENNY_RUN.rewardedRunsPerCycle};
     }, best: () => this.controller.getSnapshot().state?.bennyRun?.best ?? 0, bestMetres: () => this.controller.getSnapshot().state?.bennyRun?.metres ?? 0, sound: (kind, pitch) => this.sounds.run(kind, pitch), onExit: () => this.render()});
     this.moveBanner.id = 'rabbit-move-banner'; this.moveBanner.hidden = true;
     this.moveBanner.setAttribute('role', 'region'); this.moveBanner.setAttribute('aria-label', 'Déplacer un lapin');

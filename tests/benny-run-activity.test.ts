@@ -50,6 +50,27 @@ describe('« Cours cours Benny ! » screen', () => {
     document.querySelector('canvas')!.dispatchEvent(new PointerEvent('pointerdown', {bubbles: true}));
     expect(card.hidden).toBe(false); expect(card.textContent).toMatch(/La Dragon a rattrapé Benny/); expect(finished).toHaveLength(1);
   });
+  it('counts the score and the loot up on the end card, shows only the figures that are not zero and the rewarded runs left', () => {
+    let now = 1000; const frames: (() => void)[] = [];
+    const activity = mountBennyRunActivity(document.body, {clock: () => now, frame: step => frames.push(step), best: () => 50,
+      onFinished: () => ({pattes: 40, hearts: 1, notes: ['Record de décor battu : Grotte !'], rewardedLeft: 2, rewardedPerDay: 3})});
+    activity.open();
+    const step = (ms: number) => { for (let t = 0; t < ms; t += 16) { now += 16; vi.advanceTimersByTime(16); for (const f of frames.splice(0)) f(); } };
+    document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);
+    const g = activity.game!; g.score = 300; g.coins = 40; g.pots = 4;
+    g.entities = [{id: 9001, kind: 'pillar', lane: g.lane, z: g.distance + 2}]; step(400);
+    g.entities = [{id: 9002, kind: 'pillar', lane: g.lane, z: g.distance + 2}]; step(400);
+    document.querySelector('canvas')!.dispatchEvent(new PointerEvent('pointerdown', {bubbles: true}));
+    const card = document.querySelector<HTMLElement>('[data-benny-run-card]')!, big = card.querySelector('.benny-run-big')!;
+    expect(Number(big.textContent)).toBeLessThan(g.score);
+    step(1200);
+    expect(big.textContent).toBe(`${g.score}`);
+    expect(card.textContent).toMatch(/40pattes/); expect(card.textContent).toMatch(/1Cœur/); expect(card.textContent).toMatch(/4 pots/);
+    expect(card.textContent).not.toMatch(/0 mur|0 défi|0 bond/);
+    expect(card.textContent).toMatch(/Encore 2 courses récompensées aujourd’hui sur 3/); expect(card.textContent).toMatch(/Record de décor battu/);
+    expect(card.querySelector('.benny-run-record')!.classList.contains('show')).toBe(true);
+    expect(card.querySelector('button')!.textContent).toBe('Rejouer');
+  });
   it('plays a shock wave at full pace: no slow motion, and its strikes freeze nothing', () => {
     const {activity, step, key} = mount(50);
     document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);

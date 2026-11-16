@@ -162,9 +162,12 @@ const SLOW_RATE = .35;
 const HIT_STOP = 40, HIT_STOP_GAP = 400, SHAKES = {strike: {ms: 90, px: 3}, bump: {ms: 260, px: 9}, shock: {ms: 320, px: 11}} as const;
 const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? 's' : ''}`;
 
+/** What a run won, said on the end card: pattes (its coins paid, none once the day's rewarded runs are used), Hearts, the
+ *  rewarded runs left today, and other lines (a setting's record beaten, a run for the fun of it, a save refused). */
+export interface RunReward {pattes: number; hearts: number; rewardedLeft?: number; rewardedPerDay?: number; notes: string[]}
 export function mountBennyRunActivity(host: HTMLElement, options: {
-  /** Records a finished run (the record); returns a line for the end card, if any. */
-  onFinished?: (summary: RunSummary) => string | void;
+  /** Records a finished run (the record); returns what it won for the end card (or a line), if anything. */
+  onFinished?: (summary: RunSummary) => RunReward | string | void;
   /** The best score kept by the game, read before each run. */
   best?: () => number;
   /** The longest run kept by the game (m): a banner stands across the road there. */
@@ -558,7 +561,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     element.addEventListener('click', event => { event.stopPropagation(); action(); }); return element;
   };
   const paragraph = (text: string, className: string) => { const p = document.createElement('p'); p.className = className; p.textContent = text; return p; };
-  function showCard(...children: HTMLElement[]): void { card.replaceChildren(...children); card.hidden = false; }
+  function showCard(...children: HTMLElement[]): void { counting = null; card.classList.remove('benny-run-end'); card.replaceChildren(...children); card.hidden = false; }
   /**
    * The words of the run, kept off the middle of the road (see bennyRunNotices): `tip` for a sentence (one at a time on the label
    * under the top bar, the others wait), `word` for a short big word that does not last; the danger is shown, not written
@@ -1690,27 +1693,59 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   function finish(): void {
     if (!game) return;
     clearTimeout(stopTimer); time.resume(); sound('caught');
-    running = false; tips.clear(); words.clear(); layer.classList.remove('benny-run-chased'); notices();
+    running = false; tips.clear(); words.clear(); coinFlights = []; tally = {count: 0, last: -1e9}; layer.classList.remove('benny-run-chased'); notices();
     ending = {at: performance.now(), done: showEnd}; frame(endLoop);
   }
+  /**
+   * The end card, in the game's window (owner's look B): the score counts up, then the record springs; the loot (coins, pattes,
+   * Hearts) counts too; only the figures that are not zero; « Rejouer » big and first.
+   */
+  let counting: {at: number; items: {el: HTMLElement; to: number; from: number; suffix: string}[]; then: () => void} | null = null;
+  const COUNT_MS = 900;
+  function countLoop(): void {
+    const k = counting ? Math.min(1, (clock() - counting.at) / COUNT_MS) : 1, e = 1 - (1 - k) ** 3;
+    if (!counting) return;
+    for (const it of counting.items) it.el.textContent = `${Math.round(it.from + (it.to - it.from) * e)}${it.suffix}`;
+    if (k >= 1) { const then = counting.then; counting = null; then(); return; }
+    frame(countLoop);
+  }
+  const chip = (text: string, className = '') => { const li = document.createElement('li'); li.textContent = text; if (className) li.className = className; return li; };
   function showEnd(): void {
     if (!game) return;
     const s = runSummary(game), record = s.score > best && s.score > 0, previous = best; best = Math.max(best, s.score);
-    const line = options.onFinished?.(s);
+    const won = options.onFinished?.(s), reward: RunReward = typeof won === 'object' && won ? won : {pattes: 0, hearts: 0, notes: won ? [won] : []};
     hud(); draw(clock()); // The run as it stood, without the scene's words.
-    const again = button('Rejouer', () => start(), 'bennyRunAgain');
-    // The score big, then the run's figures two by two.
+    const again = button('Rejouer', () => start(), 'bennyRunAgain'); again.classList.add('benny-run-again');
+    const quit = button('Quitter', close, 'bennyRunQuit'); quit.classList.add('secondary');
+    const title = paragraph('La Dragon a rattrapé Benny !', 'benny-run-title');
+    // The score, counted up from 0; the record springs once it is reached.
+    const big = paragraph('0', 'benny-run-big'), points = document.createElement('div'); points.className = 'benny-run-points'; points.append(big, paragraph('points', 'benny-run-unit'));
+    const recordLine = record ? paragraph(previous ? 'Nouveau record !' : 'Ton premier record !', 'benny-run-record') : best ? paragraph(`Ton record : ${best}`, 'benny-run-best') : null;
+    const formerLine = record && previous ? paragraph(`L’ancien était de ${previous}.`, 'benny-run-best') : null;
+    // The loot: the run's coins, and what they became.
+    const loot = document.createElement('ul'); loot.className = 'benny-run-loot';
+    const counted: {el: HTMLElement; to: number; from: number; suffix: string}[] = [{el: big, to: s.score, from: 0, suffix: ''}];
+    const lootItem = (to: number, suffix: string, icon: string, label: string) => {
+      const li = document.createElement('li'); li.className = `benny-run-prize benny-run-${icon}`; const n = document.createElement('strong'); n.textContent = '0';
+      li.append(n, paragraph(label, 'benny-run-prize-label')); loot.append(li); counted.push({el: n, to, from: 0, suffix});
+    };
+    if (s.coins) lootItem(s.coins, '', 'coin', s.coins > 1 ? 'pièces' : 'pièce');
+    if (reward.pattes > 0) lootItem(reward.pattes, '', 'pattes', 'pattes');
+    if (reward.hearts > 0) lootItem(reward.hearts, '', 'heart', reward.hearts > 1 ? 'Cœurs' : 'Cœur');
+    // The run's figures: only those that are not zero.
     const stats = document.createElement('ul'); stats.className = 'benny-run-stats';
-    for (const line of [`${s.metres} m`, plural(s.coins, 'pièce'), ...(s.hearts ? [plural(s.hearts, 'cœur')] : []), plural(s.pots, 'pot') + (s.goldPots ? ` (${plural(s.goldPots, 'doré')})` : ''), plural(s.foes, 'créature'), plural(s.wallRuns, 'mur'), plural(s.leaps, 'bond'), plural(s.dodges, 'esquive'), plural(s.challenges, 'défi'),
-      `combo max ${s.bestCombo}`, `${Math.floor(s.seconds / 60)} min ${String(s.seconds % 60).padStart(2, '0')} s`]) { const li = document.createElement('li'); li.textContent = line; stats.append(li); }
+    stats.append(chip(`${s.metres} m`), chip(`${Math.floor(s.seconds / 60)} min ${String(s.seconds % 60).padStart(2, '0')} s`));
+    for (const [n, text] of [[s.pots, plural(s.pots, 'pot') + (s.goldPots ? ` (${plural(s.goldPots, 'doré')})` : '')], [s.foes, plural(s.foes, 'créature')], [s.wallRuns, plural(s.wallRuns, 'mur')], [s.leaps, plural(s.leaps, 'bond')],
+      [s.dodges, plural(s.dodges, 'esquive')], [s.challenges, plural(s.challenges, 'défi')], [s.bestCombo > 1 ? s.bestCombo : 0, `combo max ${s.bestCombo}`]] as const) if (n) stats.append(chip(text));
     // The points won in each setting crossed (the best one first).
     const parts = (Object.keys(s.bySetting) as RunSetting[]).filter(k => s.bySetting[k] > 0).sort((a, b) => s.bySetting[b] - s.bySetting[a]);
-    const bySetting = parts.length > 1 ? [paragraph(parts.map(k => `${BENNY_RUN_SETTING_SHORT[k]} ${s.bySetting[k]}`).join(' · '), 'benny-run-rules')] : [];
-    showCard(paragraph('La Dragon a rattrapé Benny !', 'benny-run-title'), paragraph(`${s.score} points`, 'benny-run-big'), stats, ...bySetting,
-      ...(record ? [paragraph(previous ? `Nouveau record ! L’ancien était de ${previous}.` : 'Ton premier record !', 'benny-run-record')] : best ? [paragraph(`Ton record : ${best}`, 'benny-run-rules')] : []),
-      ...(line ? [paragraph(line, 'benny-run-rules')] : []),
-      again, button('Quitter', close, 'bennyRunQuit'));
+    const notes = [...(parts.length > 1 ? [parts.map(k => `${BENNY_RUN_SETTING_SHORT[k]} ${s.bySetting[k]}`).join(' · ')] : []), ...reward.notes,
+      ...(reward.rewardedLeft === undefined ? [] : reward.rewardedLeft > 0 ? [`Encore ${reward.rewardedLeft} ${reward.rewardedLeft > 1 ? 'courses récompensées' : 'course récompensée'} aujourd’hui${reward.rewardedPerDay ? ` sur ${reward.rewardedPerDay}` : ''}.`] : reward.pattes > 0 ? ['C’était ta dernière course récompensée aujourd’hui : reviens demain !'] : [])];
+    showCard(title, points, ...(recordLine ? [recordLine] : []), ...(formerLine ? [formerLine] : []), ...(loot.childElementCount ? [loot] : []), stats, ...notes.map(n => paragraph(n, 'benny-run-rules')), again, quit);
+    card.classList.add('benny-run-end');
     settleCard(card); again.focus();
+    counting = {at: clock(), items: counted, then: () => { if (recordLine) recordLine.classList.add('show'); if (record) { sound('power'); } }};
+    frame(countLoop);
   }
   function start(withTutorial = false): void {
     if (sideways()) { orientation(); return; }
@@ -1720,7 +1755,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     tips.clear(); words.clear(); comboShown = 0; livesLost = false; multShown = 1;
     slowLost = 0; slowUntil = 0; lastLoopAt = clock(); settingSince = -1e9; shownSetting = 'grotte';
     runBest = best; beaten = false; milestone = 0; metresBest = options.bestMetres?.() ?? 0; metresBeaten = false; score.classList.remove('benny-run-beaten');
-    game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; camX = 0; camUp = 0; landedAt = -1e9; wasUp = false; swing = null; pending = []; wallTilt = 0; laneSpeed = 0; rollFrom = -1e9; wasFlat = false; shock = null; cleared.clear(); flashes = []; coinFlights = []; tally = {count: 0, last: -1e9}; bits = []; rings = []; streaks = []; bend = 0; coinRun = 0; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
+    game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; camX = 0; camUp = 0; landedAt = -1e9; wasUp = false; swing = null; pending = []; wallTilt = 0; laneSpeed = 0; rollFrom = -1e9; wasFlat = false; shock = null; cleared.clear(); flashes = []; coinFlights = []; tally = {count: 0, last: -1e9}; bits = []; rings = []; streaks = []; bend = 0; coinRun = 0; shake = null; hurtAt = null; running = true; card.hidden = true; counting = null; lastDrawAt = clock();
     holesAnnounced = 0; lastHoleSeen = -1;
     hud(); word('Cours cours Benny !', WORD.big); frame(loop);
   }
@@ -1743,7 +1778,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   function close(): void {
     if (layer.hidden) return;
-    ending = null;
+    ending = null; counting = null;
     clearTimeout(stopTimer); clearTimeout(countdown); countdown = undefined;
     running = false; time.resume(); game = null; layer.hidden = true; tips.clear(); words.clear(); layer.classList.remove('benny-run-chased'); notices();
     window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: false})); options.onExit?.();
