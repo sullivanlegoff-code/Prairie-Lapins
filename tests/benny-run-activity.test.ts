@@ -21,7 +21,8 @@ describe('« Cours cours Benny ! » screen', () => {
     document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);
     const g = activity.game!;
     expect(g.tutorial).not.toBeNull();
-    expect(document.querySelector<HTMLElement>('.benny-run-coach')!.hidden).toBe(false);
+    // The tutorial's advice holds the tip label under the top bar.
+    expect(document.querySelector<HTMLElement>('.benny-run-tip')!.hidden).toBe(false);
     key('ArrowLeft'); expect(g.lane).toBe(0);
     key('ArrowUp'); expect(sounds).toContain('jump');
   });
@@ -39,8 +40,8 @@ describe('« Cours cours Benny ! » screen', () => {
     const g = activity.game!;
     expect(g.tutorial).toBeNull();
     g.entities = [{id: 9001, kind: 'pillar', lane: g.lane, z: g.distance + 2}]; step(400);
-    const danger = document.querySelector<HTMLElement>('.benny-run-danger')!;
-    expect(danger.hidden).toBe(false); expect(danger.textContent).toMatch(/La Dragon te talonne/);
+    // The danger is shown, not written: the screen's edges beat red while the Dragon is on Benny's tail.
+    expect(activity.element.classList.contains('benny-run-chased')).toBe(true);
     g.entities = [{id: 9002, kind: 'pillar', lane: g.lane, z: g.distance + 2}]; step(400);
     expect(g.over).toBe(true);
     // The scene plays first: no card yet; a tap skips it.

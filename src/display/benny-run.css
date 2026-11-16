@@ -8,8 +8,6 @@
 .benny-run-top { position: absolute; z-index: 6; top: env(safe-area-inset-top); left: env(safe-area-inset-left); right: env(safe-area-inset-right); display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 8px 12px; pointer-events: none; }
 .benny-run-top p { margin: 0; white-space: nowrap; font-weight: 800; color: #fff; -webkit-text-stroke: 1px #3b2414; paint-order: stroke fill; text-shadow: 0 1px 4px rgba(40,20,8,.75); }
 .benny-run-score { font-size: 1.6rem; min-width: 4ch; }
-/* The strikes in a row, big in the middle under the top bar. */
-.benny-run-combo { position: absolute; left: 0; right: 0; top: calc(100% + 4px); text-align: center; font-size: 2.4rem; letter-spacing: .02em; text-transform: uppercase; color: #ffe36b !important; -webkit-text-stroke: 2px #3b2414 !important; }
 .benny-run-metres { flex: 1; text-align: right; }
 .benny-run-top button { pointer-events: auto; min-height: 44px; padding: 0 14px; border-radius: 14px; border: 2px solid #6b5a3a; background: #fff8e8; font-weight: 800; }
 .benny-run-power { color: #e7d1ff !important; order: 10; flex-basis: 100%; font-size: .95rem; }
@@ -17,13 +15,6 @@
 @keyframes benny-run-blink { 0% { opacity: 1; } 100% { opacity: .3; } }
 @media (prefers-reduced-motion: reduce) { .benny-run-power.benny-run-ending { animation: none; opacity: .6; } }
 .benny-run-canvas { flex: 1; width: 100%; min-height: 0; display: block; }
-/* A hint or a cheer on a dark rounded label, so it reads on the bright sky and the planks alike (13 Nov.). */
-.benny-run-pop { position: absolute; z-index: 5; left: 50%; top: 19%; width: max-content; max-width: calc(100% - 40px); box-sizing: border-box; margin: 0; padding: 6px 14px; border-radius: 14px;
-  background: rgba(59,36,20,.78); box-shadow: 0 3px 10px rgba(0,0,0,.25); text-align: center; font-size: 1.35rem; line-height: 1.25; font-weight: 800; color: #fff6e0; opacity: 0; pointer-events: none; transform: translateX(-50%); }
-/* In the sky, above the road ahead (it hid a gap 30 m away); below the tutorial's advice while that one shows. */
-*:has(> .benny-run-coach:not([hidden])) > .benny-run-pop { top: 34%; }
-.benny-run-pop.show { animation: benny-run-pop .9s ease-out; }
-@keyframes benny-run-pop { 0% { opacity: 0; transform: translateX(-50%) scale(.8); } 12% { opacity: 1; transform: translateX(-50%) scale(1.05); } 20% { transform: translateX(-50%) scale(1); } 80% { opacity: 1; transform: translateX(-50%); } 100% { opacity: 0; transform: translateX(-50%) translateY(-12px); } }
 .benny-run-card { position: absolute; z-index: 8; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(560px, calc(100% - 32px)); max-height: calc(100% - 24px); overflow: auto;
   display: flex; flex-direction: column; gap: 10px; padding: 18px; border-radius: 18px; background: #fff8e8; border: 3px solid #6b5a3a; box-shadow: 0 10px 30px rgba(0,0,0,.35); text-align: center; }
 .benny-run-card[hidden] { display: none; }
@@ -39,13 +30,6 @@
 .benny-run-phone { width: 46px; height: 80px; border: 5px solid #fff8e8; border-radius: 10px; animation: benny-run-phone 1.6s ease-in-out infinite; }
 @keyframes benny-run-phone { 0%, 20% { transform: rotate(-90deg); } 60%, 100% { transform: rotate(0deg); } }
 @media (prefers-reduced-motion: reduce) { .benny-run-phone { animation: none; } }
-/* The tutorial's advice, big and readable above Benny. */
-.benny-run-coach { position: absolute; z-index: 5; left: 16px; right: 16px; top: 12%; margin: 0; padding: 10px 14px; border-radius: 14px; text-align: center;
-  font-size: 1.15rem; font-weight: 800; color: #3b3326; background: rgba(255,248,232,.92); border: 2px solid #6b5a3a; pointer-events: none; }
-.benny-run-coach[hidden] { display: none; }
-/* After a bump: the Dragon's countdown, its own line under the top bar. */
-.benny-run-danger { order: 11; flex-basis: 100%; margin: 0; font-size: .95rem; font-weight: 800; color: #ffe0d8 !important; text-shadow: 0 1px 2px #3b2414, 0 0 4px #3b2414, 0 0 6px rgba(59,36,20,.8); }
-.benny-run-danger[hidden] { display: none; }
 /* End card: the score big, the figures two by two. Start card: the rules folded away. */
 .benny-run-big { font-size: 2.4rem; font-weight: 800; color: #b0582a; line-height: 1.1; }
 .benny-run-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; margin: 0; padding: 0; list-style: none; font-weight: 700; }
@@ -63,8 +47,6 @@
 .benny-run-challenge { margin: 0 0 6px; text-align: center; font-weight: 800; font-size: 1.05rem; color: #fff; }
 .benny-run-quest-bar { height: 12px; border-radius: 6px; background: rgba(0,0,0,.55); overflow: hidden; }
 .benny-run-quest-bar span { display: block; height: 100%; width: 0; border-radius: 6px; background: linear-gradient(#8ef07a, #3fae3a); transition: width .25s ease-out; }
-/* The 3, 2, 1 after a pause. */
-.benny-run-pop.benny-run-count { top: 34%; font-size: 4.5rem; background: none; box-shadow: none; color: #fff; -webkit-text-stroke: 2px #3b2414; paint-order: stroke fill; }
 /* One row whatever the numbers: the figures shrink a little on a narrow screen rather than push the buttons down. */
 .benny-run-top { column-gap: 8px; }
 .benny-run-top .benny-run-score { font-size: clamp(1.15rem, 6.4vw, 1.6rem); min-width: 0; }
@@ -75,3 +57,31 @@
 .benny-run-top .benny-run-coins::before { content: ''; width: .9em; height: .9em; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff6c8 0 18%, #f4c430 20% 62%, #d99a1e 64%); box-shadow: 0 0 0 1px #3b2414; }
 .benny-run-top .benny-run-hearts { font-size: clamp(.8rem, 3.9vw, 1.05rem); color: #ff4d6d; font-weight: 800; text-shadow: 0 1px 0 #3b2414; }
 .benny-run-top .benny-run-hearts::before { content: '♥ '; }
+
+/* ── The words of the run (16 Nov., like the lane runners the owner plays): the middle of the screen stays free. ───────── */
+.benny-run-activity { --benny-run-bar: 62px; }
+/* A tip: one at a time, on a full parchment label right under the top bar (the others wait their turn). */
+.benny-run-tip { position: absolute; z-index: 6; left: calc(14px + env(safe-area-inset-left)); right: calc(14px + env(safe-area-inset-right)); top: calc(env(safe-area-inset-top) + var(--benny-run-bar) + 6px);
+  width: fit-content; max-width: calc(100% - 28px); box-sizing: border-box; margin: 0 auto; padding: 4px 12px; pointer-events: none;
+  border: 9px solid transparent; border-image: url('/assets/ui/kit/label.webp') 30 50 fill / 9px 16px / 0 stretch; filter: drop-shadow(0 3px 3px rgba(40,22,10,.45));
+  text-align: center; font-size: 1.02rem; line-height: 1.25; font-weight: 800; color: #3b2a1a; }
+.benny-run-tip[hidden] { display: none; }
+.benny-run-tip.show { animation: benny-run-tip .22s ease-out; }
+@keyframes benny-run-tip { 0% { opacity: 0; transform: translateY(-8px) scale(.96); } 100% { opacity: 1; transform: none; } }
+/* A word: big, outlined, brief (« 3 coups », « Frénésie ! »), high in the sky above the far road. */
+.benny-run-pop { position: absolute; z-index: 5; left: 50%; top: 24%; width: max-content; max-width: calc(100% - 32px); margin: 0; pointer-events: none; opacity: 0;
+  transform: translateX(-50%); text-align: center; font-family: var(--kit-font, 'Lilita One', sans-serif); font-weight: 400; font-size: 2.5rem; line-height: 1.05;
+  color: #fff3c2; -webkit-text-stroke: 7px #3b1f0c; paint-order: stroke fill; text-shadow: 0 4px 0 #3b1f0c, 0 6px 12px rgba(0,0,0,.35); }
+.benny-run-pop small { display: block; margin-top: 2px; font-size: 1.15rem; color: #fff; -webkit-text-stroke-width: 5px; }
+.benny-run-pop.benny-run-small { font-size: 2.1rem; color: #ffd23a; text-transform: uppercase; letter-spacing: .02em; }
+.benny-run-pop.benny-run-count { top: 34%; font-size: 5rem; color: #fff; }
+.benny-run-pop.show { animation: benny-run-pop 1s ease-out both; }
+@keyframes benny-run-pop { 0% { opacity: 0; transform: translateX(-50%) scale(.5); } 10% { opacity: 1; transform: translateX(-50%) scale(1.22); } 20% { transform: translateX(-50%) scale(.96); }
+  28% { transform: translateX(-50%) scale(1); } 78% { opacity: 1; transform: translateX(-50%); } 100% { opacity: 0; transform: translateX(-50%) translateY(-14px) scale(.96); } }
+/* The danger, shown rather than written: while the Dragon is on Benny's tail, the screen's edges beat red. */
+.benny-run-alarm { position: absolute; inset: 0; z-index: 4; pointer-events: none; opacity: 0;
+  background: radial-gradient(ellipse 80% 66% at 50% 52%, rgba(220,20,30,0) 52%, rgba(220,20,30,.55) 82%, rgba(170,0,15,.9) 100%);
+  box-shadow: inset 0 0 46px 14px rgba(225,15,30,.85); }
+.benny-run-chased .benny-run-alarm { animation: benny-run-beat .9s ease-in-out infinite; }
+@keyframes benny-run-beat { 0%, 100% { opacity: .45; } 14% { opacity: 1; } 28% { opacity: .6; } 42% { opacity: .95; } 60% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .benny-run-chased .benny-run-alarm { animation: none; opacity: .6; } .benny-run-pop.show, .benny-run-tip.show { animation-name: none; opacity: 1; } }
