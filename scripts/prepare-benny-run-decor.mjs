@@ -24,6 +24,13 @@ export const TEXTURES = {
   // The same path in the other two worlds: basalt over lava (the bridge), stone in the snow (the mountain path).
   'decor-dalles-lave': {source: 'dalles-lave.png', size: 384},
   'decor-dalles-neige': {source: 'dalles-neige.png', size: 384},
+  // The walls and the verges of those two worlds: roots to run on, smooth stone or ice not to, ash or snow underfoot.
+  'decor-lave-racines': {source: 'lave-racines.png', size: 256},
+  'decor-lave-pierre': {source: 'lave-pierre.png', size: 256},
+  'decor-lave-sol': {source: 'lave-sol.png', size: 256},
+  'decor-neige-racines': {source: 'neige-racines.png', size: 256},
+  'decor-neige-pierre': {source: 'neige-pierre.png', size: 256},
+  'decor-neige-sol': {source: 'neige-sol.png', size: 256},
   // Cut out: nine things standing beside the road, in a grid of 3 × 3.
   'decor-bord': {source: 'bord.png', size: 768},
   'decor-herbe': {source: 'herbe.png', size: 256},

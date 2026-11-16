@@ -57,7 +57,7 @@ const SETTING_COLOURS: Record<RunSetting, typeof SKY_COLOURS> = {grotte: SKY_COL
 const SETTING_WASH: Record<RunSetting, [number, number, number, number]> = {grotte: [255, 196, 90, .14], pont: [255, 84, 40, .17], montagne: [120, 170, 255, .15]};
 /** The painted textures of the track (13 Nov., concept C): planks, grass, the earth-and-grass wall to run on, the grey stone
  *  wall, and the isles' cliff at the edge of the void (scripts/prepare-benny-run-decor.mjs). */
-const DECOR = ['decor-planches', 'decor-herbe', 'decor-mur-terre', 'decor-mur-pierre', 'decor-mur-racines', 'decor-falaise', 'decor-lianes', 'decor-touffes', 'decor-dalles', 'decor-dalles-lave', 'decor-dalles-neige', 'decor-bord'] as const;
+const DECOR = ['decor-planches', 'decor-herbe', 'decor-mur-terre', 'decor-mur-pierre', 'decor-mur-racines', 'decor-falaise', 'decor-lianes', 'decor-touffes', 'decor-dalles', 'decor-dalles-lave', 'decor-dalles-neige', 'decor-lave-racines', 'decor-lave-pierre', 'decor-lave-sol', 'decor-neige-racines', 'decor-neige-pierre', 'decor-neige-sol', 'decor-bord'] as const;
 type DecorName = typeof DECOR[number];
 /** How many metres one texture covers: planks across the road and along it, the grass both ways, a wall along it (its height is
  *  the wall's), the cliff across. The grass verge past the road's edge (m), the cliff's depth below it (m). */
@@ -87,6 +87,9 @@ const HILL = 1.5;
  *  a wall Benny can run on): [column, row] in the painted grid, height in metres. */
 const SLAB_TILE = 6.6, PROP_EVERY = 9;
 const ROAD_GROUND = {grotte: 'decor-dalles', pont: 'decor-dalles-lave', montagne: 'decor-dalles-neige'} as const;
+/** Each world's walls and verge: [earth to run on (low), roots to run on (tall), stone not to run on, verge and wall tops]. */
+const WORLD_WALLS = {grotte: ['decor-mur-terre', 'decor-mur-racines', 'decor-mur-pierre', 'decor-herbe'], pont: ['decor-lave-racines', 'decor-lave-racines', 'decor-lave-pierre', 'decor-lave-sol'],
+  montagne: ['decor-neige-racines', 'decor-neige-racines', 'decor-neige-pierre', 'decor-neige-sol']} as const;
 const PROPS: readonly [number, number, number][] = [[0, 0, 1.7], [1, 0, 1.9], [2, 0, 1.6], [0, 1, 2.3], [1, 1, 3.2], [2, 1, 3.3], [0, 2, 1.8], [1, 2, 3.8], [2, 2, 1.6]];
 const ROAD_FILL = 1.04, BENNY_AT = .76, CAM_LANE = .55, CAM_WALL = .78;
 const BLOCK_LOW = 13, VINE_TILE = 6, VINE_DROP = 3, TUFT_TILE = 4.5, TUFT_PART = 3 / 8, TUFT_NEAR = 50, HAZE_FROM = 22, HAZE_SPAN = 70, HAZE_MAX = .55;
@@ -309,7 +312,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       // Each world has its ground (the meadow's verges are grass; the lava's and the snow's go on to the edge).
       const set = settingAt(g, z), slabs = ROAD_GROUND[set];
       if (set === 'grotte') { row('decor-herbe', -half - VERGE, -half + .05, a0, a1, GRASS_TILE, GRASS_TILE, top, s, deep); row('decor-herbe', half - .05, half + VERGE, a0, a1, GRASS_TILE, GRASS_TILE, top, s, deep); row(slabs, -half, half, a0, a1, SLAB_TILE, SLAB_TILE, top, s, deep); }
-      else row(slabs, -half - VERGE, half + VERGE, a0, a1, SLAB_TILE, SLAB_TILE, top, s, deep);
+      else { const verge = WORLD_WALLS[set][3]; row(verge, -half - VERGE, -half + .05, a0, a1, GRASS_TILE, GRASS_TILE, top, s, deep); row(verge, half - .05, half + VERGE, a0, a1, GRASS_TILE, GRASS_TILE, top, s, deep); row(slabs, -half, half, a0, a1, SLAB_TILE, SLAB_TILE, top, s, deep); }
     }
   }
   /** The cliff of an isle facing Benny, `ahead` m in front, from `x0` to `x1` m across, seen only inside the opening `hole` (a path). */
@@ -353,7 +356,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   /** One face of a wall along the road (x = `dir` × its inner side), from the ground up to `top` m: its colour, then the painted
    *  tile column by column, a tile high per tier (a low wall shows the top of one tile). */
   function wallFace(c: CanvasRenderingContext2D, g: BennyRun, dir: number, from: number, to: number, top: number, runnable: boolean, out = 0, vines = false): void {
-    const x = (z: number) => dir * (wallXAt(g, z) + out), zs = cuts(g, from, to), t = decor[wallTexture(runnable, top)], vine = decor['decor-lianes'], tuft = decor['decor-touffes'];
+    const x = (z: number) => dir * (wallXAt(g, z) + out), zs = cuts(g, from, to), t = decor[wallTexture(runnable, top, (from + to) / 2)], meadow = worldAhead((from + to) / 2) === 'grotte', vine = decor['decor-lianes'], tuft = decor['decor-touffes'];
     c.save(); c.beginPath();
     zs.forEach((z, i) => { const p = project(x(z), z, 0); if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); });
     for (const z of [...zs].reverse()) { const p = project(x(z), z, top); c.lineTo(p.x, p.y); }
@@ -375,11 +378,11 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       const left = Math.min(a.x, b.x) - .5, across = Math.abs(a.x - b.x) + 1;
       // Vines hanging from the top of a tall block.
       const vEl = far ? vine.far : vine.near;
-      if (vines && vEl) { const ta = project(x(z), z, top), tb = project(x(z1), z1, top), va = project(x(z), z, top - VINE_DROP), y0 = Math.min(ta.y, tb.y), h = va.y - ta.y;
+      if (vines && vEl && meadow) { const ta = project(x(z), z, top), tb = project(x(z1), z1, top), va = project(x(z), z, top - VINE_DROP), y0 = Math.min(ta.y, tb.y), h = va.y - ta.y;
         if (y0 + h > 0) c.drawImage(vEl, posmod(g.distance + z1, VINE_TILE) / VINE_TILE * side, 0, Math.max(.5, Math.min(side, (z - z1) / VINE_TILE * side)), side * VINE_DROP / VINE_TILE, left, y0, across, h); }
       // Grass and flowers at its foot, near Benny.
       const tEl = far ? tuft.far : tuft.near;
-      if (tEl && z < TUFT_NEAR) { const th = Math.min(top * .9, TUFT_TILE * TUFT_PART), part = th / TUFT_TILE, ty = project(x(z), z, th).y, by = Math.max(a.y, b.y);
+      if (tEl && meadow && z < TUFT_NEAR) { const th = Math.min(top * .9, TUFT_TILE * TUFT_PART), part = th / TUFT_TILE, ty = project(x(z), z, th).y, by = Math.max(a.y, b.y);
         c.drawImage(tEl, posmod(g.distance + z1, TUFT_TILE) / TUFT_TILE * side, side * (1 - part), Math.max(.5, Math.min(side, (z - z1) / TUFT_TILE * side)), side * part, left, ty, across, by - ty); }
       // Far off, the warm haze of the evening.
       const haze = hazeAt(z); if (haze > .02) { const ty = Math.max(0, project(x(z), z, top).y); c.fillStyle = `rgba(250,198,166,${haze.toFixed(3)})`; c.fillRect(left, ty, across, Math.max(a.y, b.y) - ty); }
@@ -415,7 +418,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         const zs = cuts(g, from, to); c.beginPath();
         zs.forEach((z, i) => { const p = project(x(z), z, top); if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); });
         for (const z of [...zs].reverse()) { const p = project(x(z) + dir * WALL_THICK, z, top); c.lineTo(p.x, p.y); }
-        c.closePath(); const grass = decor['decor-herbe'].near, pattern = grass ? c.createPattern(grass, 'repeat') : null; c.fillStyle = pattern ?? '#7fae3e'; c.fill();
+        c.closePath(); const grass = decor[WORLD_WALLS[worldAhead((from + to) / 2)][3]].near, pattern = grass ? c.createPattern(grass, 'repeat') : null; c.fillStyle = pattern ?? '#7fae3e'; c.fill();
       }
       wallFace(c, g, dir, from, to, top, w.runnable);
     }
@@ -439,14 +442,15 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     c.closePath(); c.fillStyle = 'rgba(70,30,20,.2)'; c.fill();
   }
   /** A tall wall to run on is earth with roots; a low one, earth and flowers; one not to run on, stone. */
-  const wallTexture = (runnable: boolean, top: number): DecorName => !runnable ? 'decor-mur-pierre' : top > LOW_HEIGHT + .01 ? 'decor-mur-racines' : 'decor-mur-terre';
+  const worldAhead = (ahead: number): RunSetting => game ? settingAt(game, game.distance + ahead) : 'grotte';
+  const wallTexture = (runnable: boolean, top: number, ahead = 0): DecorName => WORLD_WALLS[worldAhead(ahead)][!runnable ? 2 : top > LOW_HEIGHT + .01 ? 1 : 0];
   /** A wall's end facing Benny: square to the camera, so its painted tile is laid flat, a little shaded (the light comes from the road). */
   function endFace(c: CanvasRenderingContext2D, x0: number, x1: number, z: number, top: number, runnable: boolean): void {
     const a = project(x0, z, 0), b = project(x1, z, top), left = Math.min(a.x, b.x), right = Math.max(a.x, b.x), bottom = a.y, up = Math.max(0, b.y);
     if (right < 0 || left > width || bottom <= up) return;
     c.save(); c.beginPath(); c.rect(left, up, right - left, bottom - up); c.clip();
     c.fillStyle = runnable ? '#c86a32' : '#a87a80'; c.fillRect(left, up, right - left, bottom - up);
-    const t = decor[wallTexture(runnable, top)], el = z > 30 ? t.far : t.near, tile = Math.max(4, FACE_TILE * a.s);
+    const t = decor[wallTexture(runnable, top, z)], el = z > 30 ? t.far : t.near, tile = Math.max(4, FACE_TILE * a.s);
     if (el) for (let y = bottom - tile; y + tile > up; y -= tile) for (let xx = left; xx < right; xx += tile) c.drawImage(el, xx, y, tile, tile);
     c.fillStyle = 'rgba(60,30,30,.22)'; c.fillRect(left, up, right - left, bottom - up);
     const haze = hazeAt(z); if (haze > .02) { c.fillStyle = `rgba(250,198,166,${haze.toFixed(3)})`; c.fillRect(left, up, right - left, bottom - up); }
