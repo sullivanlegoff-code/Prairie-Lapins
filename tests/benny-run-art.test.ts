@@ -28,7 +28,7 @@ describe('the run’s painted atlases', () => {
     expect(source).toContain("vanishing !== null ? 'flyer-hit'");
   });
   it('paints the track with its five textures and the sky in WebP, all light', () => {
-    for (const name of ['decor-planches', 'decor-herbe', 'decor-mur-terre', 'decor-mur-pierre', 'decor-mur-racines', 'decor-falaise', 'decor-lianes', 'decor-touffes', 'decor-dalles', 'decor-dalles-lave', 'decor-dalles-neige', 'decor-lave-racines', 'decor-lave-pierre', 'decor-lave-sol', 'decor-neige-racines', 'decor-neige-pierre', 'decor-neige-sol', 'decor-bord', 'fond-ciel']) {
+    for (const name of ['decor-planches', 'decor-herbe', 'decor-mur-terre', 'decor-mur-pierre', 'decor-mur-racines', 'decor-falaise', 'decor-lianes', 'decor-touffes', 'decor-dalles', 'decor-dalles-lave', 'decor-dalles-neige', 'decor-socle-bleu', 'decor-socle-framboise', 'decor-corps-creme', 'decor-corps-ocre', 'decor-crete', 'decor-barriere', 'decor-lave-racines', 'decor-lave-pierre', 'decor-lave-sol', 'decor-neige-racines', 'decor-neige-pierre', 'decor-neige-sol', 'decor-bord', 'fond-ciel']) {
       expect(files, name).toContain(`assets/benny-run/${name}.webp`);
       expect(source).toContain(name.startsWith('decor') ? `'${name}'` : `${name}.webp`);
     }

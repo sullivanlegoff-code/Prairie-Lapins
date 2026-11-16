@@ -24,6 +24,14 @@ export const TEXTURES = {
   // The same path in the other two worlds: basalt over lava (the bridge), stone in the snow (the mountain path).
   'decor-dalles-lave': {source: 'dalles-lave.png', size: 384},
   'decor-dalles-neige': {source: 'dalles-neige.png', size: 384},
+  // The meadow's walls in tiers (owner, 16 Nov.): a light blue base to run on, a raspberry one with arches not to, cream blocks or
+  // ochre rock above, and, cut out, the jagged crest and the honey fence.
+  'decor-socle-bleu': {source: 'socle-bleu.png', size: 384},
+  'decor-socle-framboise': {source: 'socle-framboise.png', size: 384},
+  'decor-corps-creme': {source: 'corps-creme.png', size: 384},
+  'decor-corps-ocre': {source: 'corps-ocre.png', size: 384},
+  'decor-crete': {source: 'crete.png', size: 384},
+  'decor-barriere': {source: 'barriere.png', size: 384},
   // The walls and the verges of those two worlds: roots to run on, smooth stone or ice not to, ash or snow underfoot.
   'decor-lave-racines': {source: 'lave-racines.png', size: 256},
   'decor-lave-pierre': {source: 'lave-pierre.png', size: 256},
