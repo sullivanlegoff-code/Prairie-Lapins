@@ -29,10 +29,10 @@ const HOP_HEIGHT = .55, HOP_CARRY = .1;
 const ROLL_TURN = 300;
 /** Benny's glide between lanes: a spring a touch under-damped, so that she is carried a little past her lane and settles. */
 const GLIDE = {pull: 900, damp: 48};
-/** The wall run (owner, 13 Nov.: « améliore la course sur les murs »): the camera rolls towards the wall (rad), Benny's body tips
- *  over until her paws are on it (rad) and she runs there stride after stride, earth flying from her paws. The roll turns the
- *  ground about a point low on the screen, a little zoomed in so that its corners stay covered. */
-const WALL_ROLL = .22, WALL_TILT = 1.05, WALL_ZOOM = 1.12;
+/** The wall run: Benny's body tips over (rad, about the lean of a lane runner's hero on a wall) until her paws are on the wall's
+ *  light blue base, and she runs there stride after stride, earth flying from her paws. The camera does not move for it: no roll,
+ *  no shift towards the wall (owner, 16 Nov.), so the wall's face stays wide open and she is seen on it. */
+const WALL_TILT = .6;
 const GHOST_MS: Partial<Record<string, number>> = {chest: 520, dragonnet: 420, ember: 380, flyer: 400};
 /** A dragonnet wakes up this close to Benny (m). */
 const DRAGONNET_WAKES = 7;
@@ -78,7 +78,8 @@ const FACE_TILE = 7;
 const STREAK_FROM = 3, STREAK_MS = 180;
 /** A gap in the road shows a shaded band at least `GAP_MIN_PX` px high, however far: it reads as a gap long before Benny is there. */
 const GAP_MIN_PX = 7, GAP_SHADE = 'rgba(52,26,62,.62)';
-/** The close camera follows Benny across: `CAM_LANE` of the way to her lane, `CAM_WALL` of the way to a wall she runs on. */
+/** The close camera follows Benny across: `CAM_LANE` of the way to her lane (on a tall wall, it stays where the edge lane
+ *  put it; on top of a low wall, further out than the road, `CAM_LOW` of the way to it, or she would run off the screen). */
 /** How far aside the far end of the road is drawn at the most, in metres. */
 const BEND = 9;
 /** The hills' height (m): the road rolls up and down by a little more than this. */
@@ -91,12 +92,12 @@ const ROAD_GROUND = {grotte: 'decor-dalles', pont: 'decor-dalles-lave', montagne
 const WORLD_WALLS = {grotte: ['decor-socle-bleu', 'decor-socle-bleu', 'decor-corps-creme', 'decor-herbe'], pont: ['decor-lave-racines', 'decor-lave-racines', 'decor-lave-pierre', 'decor-lave-sol'],
   montagne: ['decor-neige-racines', 'decor-neige-racines', 'decor-neige-pierre', 'decor-neige-sol']} as const;
 const PROPS: readonly [number, number, number][] = [[0, 0, 1.7], [1, 0, 1.9], [2, 0, 1.6], [0, 1, 2.3], [1, 1, 3.2], [2, 1, 3.3], [0, 2, 1.8], [1, 2, 3.8], [2, 2, 1.6]];
-const ROAD_FILL = 1.04, BENNY_AT = .76, CAM_LANE = .55, CAM_WALL = .78;
+const ROAD_FILL = 1.04, BENNY_AT = .76, CAM_LANE = .55, CAM_LOW = .62;
 /** The meadow's walls are built in tiers (owner, 16 Nov.: « 3 ou 4 tranches », the sky above them): a base `BASE_TOP` m high (light
  *  blue: Benny can run on it, the only sign of it; raspberry with arches, or bare rock: she cannot), a body of cream blocks or ochre
  *  rock, a grassy ledge with vines, an upper tier set back `TIER_BACK` m, and a jagged crest of rocks and bushes against the sky. */
-const BASE_TOP = 3, BASE_TILE = 8, TIER_BACK = .7, CREST_TILE = 10, CREST_UP = 2.6, CREST_DOWN = 1.3, FENCE_TILE = 9, FENCE_TOP = 2.1;
-const BLOCK_LOW = 5, VINE_TILE = 6, VINE_DROP = 3, TUFT_TILE = 4.5, TUFT_PART = 3 / 8, TUFT_NEAR = 50, HAZE_FROM = 22, HAZE_SPAN = 70, HAZE_MAX = .55;
+const BASE_TOP = 4.6, BASE_TILE = 8, TIER_BACK = .7, CREST_TILE = 10, CREST_UP = 2.6, CREST_DOWN = 1.3, FENCE_TILE = 9, FENCE_TOP = 2.1;
+const BLOCK_LOW = 6.5, VINE_TILE = 6, VINE_DROP = 3, TUFT_TILE = 4.5, TUFT_PART = 3 / 8, TUFT_NEAR = 50, HAZE_FROM = 22, HAZE_SPAN = 70, HAZE_MAX = .55;
 const hash01 = (n: number) => { let t = Math.imul(n ^ 0x9e3779b9, 2654435761) >>> 0; t ^= t >>> 15; t = Math.imul(t, 2246822519) >>> 0; t ^= t >>> 13; return (t >>> 0) / 4294967296; };
 const hazeAt = (z: number) => Math.min(1, Math.max(0, (z - HAZE_FROM) / HAZE_SPAN)) * HAZE_MAX;
 const PLANK_ALONG = 3, GRASS_TILE = 3.3, CLIFF_TILE = 4, VERGE = .6, CLIFF_DEPTH = 4;
@@ -734,13 +735,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   function road(c: CanvasRenderingContext2D, g: BennyRun, colours: typeof SETTING_COLOURS[RunSetting]): void {
     // The sky fades from the last setting's over 800 ms.
     const fade = Math.min(1, (clock() - settingSince) / 800);
-    // On a wall the whole world rolls towards it, sky included, a little zoomed in: everything after this is drawn rolled, until
-    // draw() restores. The sky is spread out from the horizon so that it still fills the screen's top corners.
-    let spread = 1;
-    if (wallTilt) { const k = Math.abs(wallTilt), cx = width / 2, cy = height * .72; { const horizon = project(0, FAR, 0).y, grad = c.createLinearGradient(0, horizon * .6, 0, height); grad.addColorStop(0, PAINTED_LOOK.cloudTop); grad.addColorStop(1, PAINTED_LOOK.cloudBottom); c.fillStyle = grad; c.fillRect(0, 0, width, height); }
-      c.translate(cx, cy); c.rotate(wallTilt * WALL_ROLL); c.scale(1 + (WALL_ZOOM - 1) * k, 1 + (WALL_ZOOM - 1) * k); c.translate(-cx, -cy); spread = 1 + .7 * k; }
-    const sky = (setting: RunSetting) => { if (spread === 1) { backdrop(c, setting); return; }
-      const horizon = project(0, FAR, 0).y; c.save(); c.translate(width / 2, horizon); c.scale(spread, spread); c.translate(-width / 2, -horizon); backdrop(c, setting); c.restore(); };
+    // (No roll of the camera on a wall: owner, 16 Nov., « je ne veux pas que la caméra fasse de rotation, elle doit rester la même ».)
+    const sky = (setting: RunSetting) => backdrop(c, setting);
     if (fade < 1) { sky(settingBefore); c.globalAlpha = fade; }
     sky(g.setting); c.globalAlpha = 1;
     // Painted, the ground of the track (floor, walls, gaps) is drawn on its own layer at a softer resolution, then laid on the
@@ -1353,15 +1349,15 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     lanes = g.lanes; viewLanes += (lanesDrawn(g, 8) - viewLanes) * Math.min(1, dt * 2.5);
     // Benny glides between lanes, and onto and off a wall (drawn just inside it), instead of jumping there.
     // (Her paws on the wall's face: she is drawn close against it, tipped over onto it.)
-    const onWall = (wallX() - (art.benny.ready ? .25 : .45) - laneX(lanes - 1)) / LANE_WIDTH, lowTop = (wallX() + WALL_THICK / 2 - laneX(lanes - 1)) / LANE_WIDTH, target = g.wall ? (onLow(g) ? (g.wall.side === 'left' ? -lowTop : lanes - 1 + lowTop) : g.wall.side === 'left' ? -onWall : lanes - 1 + onWall) : g.overVoid ? (g.overVoid === 'left' ? -1 : lanes) : g.lane;
+    const onWall = (wallX() - .45 - laneX(lanes - 1)) / LANE_WIDTH, lowTop = (wallX() + .45 - laneX(lanes - 1)) / LANE_WIDTH, target = g.wall ? (onLow(g) ? (g.wall.side === 'left' ? -lowTop : lanes - 1 + lowTop) : g.wall.side === 'left' ? -onWall : lanes - 1 + onWall) : g.overVoid ? (g.overVoid === 'left' ? -1 : lanes) : g.lane;
     // A spring: she is carried a little past her lane and settles; onto a wall, straight there (no swing through the wall).
     if (g.wall || Math.abs(target - viewLane) > lanes) { viewLane += (target - viewLane) * Math.min(1, dt * 24); laneSpeed = 0; }
     else { for (let left = dt; left > 0; left -= 1 / 240) { const h = Math.min(left, 1 / 240); laneSpeed += ((target - viewLane) * GLIDE.pull - laneSpeed * GLIDE.damp) * h; viewLane += laneSpeed * h; } }
-    // On a wall, she tips over onto it and the world rolls (eased).
+    // On a wall, she tips over onto it (eased).
     { const to = g.wall && !onLow(g) ? (g.wall.side === 'left' ? -1 : 1) : 0; wallTilt += (to - wallTilt) * Math.min(1, dt * 9); if (Math.abs(wallTilt) < .002 && !to) wallTilt = 0; }
     // The blow's pending effects.
     if (pending.length) { const due = pending.filter(e => e.at <= now); pending = pending.filter(e => e.at > now); for (const e of due) e.run(); }
-    { const side = g.wall ? (g.wall.side === 'left' ? -1 : 1) : 0, toX = side ? side * wallX() * CAM_WALL : laneX(viewLane) * CAM_LANE, toUp = g.wall ? bennyHeight(g) * .45 : floorHeight(g) * .4;
+    { const side = g.wall ? (g.wall.side === 'left' ? -1 : 1) : 0, toX = side ? (onLow(g) ? side * wallX() * CAM_LOW : laneX(side < 0 ? 0 : lanes - 1) * CAM_LANE) : laneX(viewLane) * CAM_LANE, toUp = floorHeight(g) * .4;
       hillFrom = g.distance; hillBase = hill(g.distance);
       bend = BEND * (Math.sin(g.distance / 150) + .55 * Math.sin(g.distance / 67 + 1.3)) / 1.55;
       camX += (toX - camX) * Math.min(1, dt * 7); camUp += (toUp - camUp) * Math.min(1, dt * 4); }
