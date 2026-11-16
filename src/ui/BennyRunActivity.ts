@@ -133,6 +133,9 @@ const CHALLENGE_TEXT: Record<ChallengeKind, (goal: number) => string> = {
 };
 /** How far ahead (m) the magnet starts pulling the coins of the other lanes towards Benny. */
 const MAGNET_PULL = 10;
+/** The points shown on a strike or a dodge last `FLASH_MS`; a coin flies to the counter in `COIN_FLIGHT` ms (at most `COIN_FLIGHTS`
+ *  at once); coins less than `TALLY_GAP` ms apart are a series, its tally stays `TALLY_MS` after the last. */
+const FLASH_MS = 820, COIN_FLIGHT = 380, COIN_FLIGHTS = 14, TALLY_GAP = 500, TALLY_MS = 900;
 /** A power's last moments (ms): its line and its aura blink. */
 const POWER_ENDING = 1000;
 /** The obstacles' words (« saute », « roulade ») stay until she has got past that kind this many times in the run. */
@@ -279,6 +282,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   let streaks: {x0: number; y0: number; x1: number; y1: number; at: number}[] = [];
   /** Coins picked up close together climb in pitch (back down after a pause). */
   let coinRun = 0;
+  /** Coins flying from Benny to the counter (it counts each one as it lands), and the coins of the series under way. */
+  let coinFlights: {at: number; x: number; y: number}[] = [], tally = {count: 0, last: -1e9};
   /** Creatures struck: each melts away in its own way where it was (a chest breaks open, see GHOST_MS). */
   let ghosts: {e: RunEntity; at: number; ahead: number}[] = [];
   /** While a struck creature's last moment is drawn: how far through it is (0 to 1), null otherwise. */
@@ -635,7 +640,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (reached > milestone && !g.tutorial && reached % 1000) { milestone = reached; word(`${reached} m !`, WORD.big); sound('coin', 1.5); }
     // A combo shows only its count of hits (owner: no bar, nothing else): a big word at each new hit, brief.
     if (g.combo !== comboShown) { if (g.combo > 1 && g.at <= g.comboUntil && !tips.held) word(`${g.combo} coups`, WORD.combo); comboShown = g.combo; }
-    metres.textContent = `${Math.floor(g.distance)} m`; coins.textContent = `${g.coins}`; coins.setAttribute('aria-label', plural(g.coins, 'pièce'));
+    metres.textContent = `${Math.floor(g.distance)} m`; { const landed = Math.max(0, g.coins - coinFlights.filter(f => clock() - f.at < COIN_FLIGHT).length); if (`${landed}` !== coins.textContent) { if (landed > Number(coins.textContent)) { coins.classList.remove('benny-run-got'); void coins.offsetWidth; coins.classList.add('benny-run-got'); } coins.textContent = `${landed}`; } } coins.setAttribute('aria-label', plural(g.coins, 'pièce'));
     // The Hearts won so far in this run, shown once there is one.
     hearts.hidden = g.hearts === 0; hearts.textContent = `${g.hearts}`; hearts.setAttribute('aria-label', plural(g.hearts, 'cœur'));
     const active = g.active && g.at < g.active.until ? g.active : null;
@@ -1370,6 +1375,17 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     c.fillStyle = '#b23a48'; c.beginPath(); c.ellipse(p.x, head, size * .38, size * .3, 0, 0, Math.PI * 2); c.fill();
     c.restore();
   }
+  /** A number in the game's lettering: gold, outlined in dark brown. */
+  function goldText(c: CanvasRenderingContext2D, text: string, x: number, y: number, px: number): void {
+    c.font = `${px}px 'Lilita One', 'Trebuchet MS', system-ui`; c.lineWidth = Math.max(4, px * .2); c.strokeStyle = '#3b1f0c'; c.strokeText(text, x, y + px * .06); c.strokeText(text, x, y);
+    const grad = c.createLinearGradient(0, y - px * .8, 0, y); grad.addColorStop(0, '#fffbe0'); grad.addColorStop(.45, '#ffe36b'); grad.addColorStop(1, '#f29a12');
+    c.fillStyle = grad; c.fillText(text, x, y);
+  }
+  /** Where the coin counter of the top bar is, in the canvas's points. */
+  function coinTarget(): {x: number; y: number} {
+    const a = coins.getBoundingClientRect(), b = canvas.getBoundingClientRect();
+    return a.width ? {x: a.left + 16 - b.left, y: a.top + a.height / 2 - b.top} : {x: width / 2, y: 40};
+  }
   function draw(now: number): void {
     const c = context, g = game; if (!c || !g) return;
     const dt = Math.min(.05, Math.max(0, (now - lastDrawAt) / 1000)); lastDrawAt = now;
@@ -1431,11 +1447,23 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       const k = 1 - (now - hurtAt) / 400, grad = c.createRadialGradient(width / 2, height / 2, Math.min(width, height) * .3, width / 2, height / 2, Math.max(width, height) * .7);
       grad.addColorStop(0, 'rgba(200,40,40,0)'); grad.addColorStop(1, `rgba(200,40,40,${.45 * k})`); c.fillStyle = grad; c.fillRect(0, 0, width, height);
     }
-    flashes = flashes.filter(f => now - f.at < 700);
-    // Points spring out (a strike's big, popping in), outlined to read on any ground, and float up.
+    flashes = flashes.filter(f => now - f.at < FLASH_MS);
+    // Points spring out gold and outlined (a strike's bigger), jump, then float up and fade.
     c.textAlign = 'center'; c.lineJoin = 'round';
-    for (const f of flashes) { const k = (now - f.at) / 700, pop = 1 + .45 * Math.max(0, 1 - k * 6), y = height * (f.big ? .7 : .55) - (now - f.at) * .06 - (f.row ?? 0) * 34;
-      c.globalAlpha = 1 - k * k; c.font = `800 ${Math.round((f.big ? 30 : 22) * pop)}px system-ui`; c.lineWidth = 5; c.strokeStyle = 'rgba(59,36,20,.85)'; c.strokeText(f.text, f.x, y); c.fillStyle = f.big ? '#fff6c8' : '#fff'; c.fillText(f.text, f.x, y); }
+    for (const f of flashes) {
+      const age = now - f.at, size = f.big ? 44 : 30, pop = age < 90 ? .45 + .95 * age / 90 : age < 210 ? 1.4 - .4 * (age - 90) / 120 : 1;
+      const y = height * (f.big ? .62 : .52) - Math.sin(Math.min(1, age / 210) * Math.PI) * 22 - Math.max(0, age - 210) * .08 - (f.row ?? 0) * 46, px = Math.round(size * pop);
+      c.globalAlpha = age > FLASH_MS * .7 ? Math.max(0, 1 - (age - FLASH_MS * .7) / (FLASH_MS * .3)) : 1;
+      goldText(c, f.text, f.x, y, px);
+    }
+    c.globalAlpha = 1;
+    // The coins picked up fly to the counter in the top bar; a series is tallied under it.
+    coinFlights = coinFlights.filter(f => now - f.at < COIN_FLIGHT);
+    const to = coinTarget();
+    for (const f of coinFlights) { const k = (now - f.at) / COIN_FLIGHT, e = k * k, x = f.x + (to.x - f.x) * e, y = f.y + (to.y - f.y) * e - Math.sin(k * Math.PI) * 60, r = 14 - 5 * k;
+      c.fillStyle = '#3b2414'; c.beginPath(); c.arc(x, y, r + 1.5, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#f4c430'; c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill(); c.fillStyle = '#fff6c8'; c.beginPath(); c.arc(x - r * .3, y - r * .3, r * .32, 0, Math.PI * 2); c.fill(); }
+    if (tally.count > 1 && now - tally.last < TALLY_MS) { c.globalAlpha = Math.min(1, (TALLY_MS - (now - tally.last)) / 200); goldText(c, `+${tally.count}`, to.x, to.y + 40 + Math.max(0, 1 - (now - tally.last) / 120) * -6, 24); c.globalAlpha = 1; }
     c.globalAlpha = 1;
   }
   /** The tutorial's advice, one per step (tutoiement). */
@@ -1493,7 +1521,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         }); break;
       }
       case 'crash': { if (event.entity.kind === 'chest') ghosts.push({e: {...event.entity}, at: clock(), ahead: event.entity.z - g.distance}); const p = screenOf(g, event.entity); burst(p.x, p.y, ['#c96b3a', '#8a4a26'], 8, 180); sound('pot'); break; }
-      case 'coin': if (clock() - lastCoinSound > 60) { coinRun = clock() - lastCoinSound < 450 ? Math.min(12, coinRun + 1) : 0; lastCoinSound = clock(); sound('coin', 2 ** (coinRun / 24)); } break;
+      case 'coin': { const t = clock(); tally = t - tally.last < TALLY_GAP ? {count: tally.count + 1, last: t} : {count: 1, last: t};
+        if (coinFlights.length < COIN_FLIGHTS) { const b = project(laneX(viewLane), .6, bennyHeight(g) + .8); coinFlights.push({at: t, x: b.x, y: b.y}); } }
+        if (clock() - lastCoinSound > 60) { coinRun = clock() - lastCoinSound < 450 ? Math.min(12, coinRun + 1) : 0; lastCoinSound = clock(); sound('coin', 2 ** (coinRun / 24)); } break;
       case 'bump': cleared.set(event.entity.cart ? 'cart' : event.entity.kind, 0); hurtAt = clock(); shakeFor('bump'); sound('bump'); break;
       case 'shield': word('La bulle te protège !'); burst(width / 2, height * .7, ['#e7d1ff', '#b07bff', '#fff'], 16, 260); sound('power'); break;
       case 'power': word(`${POWER_NAMES[event.power]} !`); sound('power'); break;
@@ -1690,7 +1720,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     tips.clear(); words.clear(); comboShown = 0; livesLost = false; multShown = 1;
     slowLost = 0; slowUntil = 0; lastLoopAt = clock(); settingSince = -1e9; shownSetting = 'grotte';
     runBest = best; beaten = false; milestone = 0; metresBest = options.bestMetres?.() ?? 0; metresBeaten = false; score.classList.remove('benny-run-beaten');
-    game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; camX = 0; camUp = 0; landedAt = -1e9; wasUp = false; swing = null; pending = []; wallTilt = 0; laneSpeed = 0; rollFrom = -1e9; wasFlat = false; shock = null; cleared.clear(); flashes = []; bits = []; rings = []; streaks = []; bend = 0; coinRun = 0; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
+    game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; camX = 0; camUp = 0; landedAt = -1e9; wasUp = false; swing = null; pending = []; wallTilt = 0; laneSpeed = 0; rollFrom = -1e9; wasFlat = false; shock = null; cleared.clear(); flashes = []; coinFlights = []; tally = {count: 0, last: -1e9}; bits = []; rings = []; streaks = []; bend = 0; coinRun = 0; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
     holesAnnounced = 0; lastHoleSeen = -1;
     hud(); word('Cours cours Benny !', WORD.big); frame(loop);
   }
@@ -1789,7 +1819,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     get game() { return game; },
     element: layer,
     open() {
-      layer.hidden = false; window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: true})); loadArt();
+      layer.hidden = false; window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: true})); loadArt(); void document.fonts?.load("40px 'Lilita One'").catch(() => undefined);
       intro(); orientation(); $<HTMLButtonElement>('[data-benny-run-start]').focus();
     },
     close, input,

@@ -108,3 +108,6 @@
 .benny-run-power.benny-run-ending { animation: benny-run-blink .3s steps(2, jump-none) infinite; }
 @keyframes benny-run-blink { 0% { opacity: 1; } 100% { opacity: .3; } }
 @media (prefers-reduced-motion: reduce) { .benny-run-power.benny-run-ending { animation: none; opacity: .6; } .benny-run-life.benny-run-broke, .benny-run-mult.show { animation: none; } }
+/* A coin landing on the counter: it bumps. */
+.benny-run-row .benny-run-coins.benny-run-got { animation: benny-run-got .18s ease-out; }
+@keyframes benny-run-got { 0% { transform: scale(1.18); } 100% { transform: none; } }
