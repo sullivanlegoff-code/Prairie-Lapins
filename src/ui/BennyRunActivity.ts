@@ -1,6 +1,6 @@
 import '../display/benny-run.css';
 import {FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
-import {advanceBennyRun, BENNY_RUN, wallAt, wallLook, floorHeight, ledgeHeight, platformAt, lanesAt, reach, settingAt, wallLane, dragonVisible, inAir, powerActive, runHeight, runInput, runSummary, sliding, startBennyRun, takeRunEvents,
+import {advanceBennyRun, BENNY_RUN, comboMultiplier, wallAt, wallLook, floorHeight, ledgeHeight, platformAt, lanesAt, reach, settingAt, wallLane, dragonVisible, inAir, powerActive, runHeight, runInput, runSummary, sliding, startBennyRun, takeRunEvents,
   type BennyRun, type ChallengeKind, type RunEntity, type RunInput, type RunPower, type RunSetting, type RunSummary, type TutorialStep} from '../simulation/bennyRun';
 import {pausableClock, settleCard} from './activityPause';
 import {RunTips, RunWords, WORD, type RunWord, type WordRank} from './bennyRunNotices';
@@ -173,8 +173,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const time = pausableClock(options.clock ?? (() => performance.now())), clock = time.now, frame = options.frame ?? (step => requestAnimationFrame(step));
   const layer = document.createElement('div'); layer.className = 'benny-run-activity'; layer.hidden = true;
   layer.setAttribute('role', 'dialog'); layer.setAttribute('aria-modal', 'true'); layer.setAttribute('aria-label', 'Cours cours Benny !');
-  layer.innerHTML = `<div class="benny-run-top"><p class="benny-run-score" aria-live="polite"></p><p class="benny-run-metres"></p><p class="benny-run-coins"></p><p class="benny-run-hearts" hidden></p>
-<p class="benny-run-power"></p><button type="button" data-benny-run-pause aria-label="Pause">❚❚</button><button type="button" data-benny-run-exit aria-label="Quitter">✕</button></div>
+  layer.innerHTML = `<div class="benny-run-top"><div class="benny-run-lives" role="img"><span class="benny-run-life"></span><span class="benny-run-life"><i></i></span></div>
+<div class="benny-run-plaque"><p class="benny-run-score" aria-live="polite"></p><p class="benny-run-mult" hidden></p></div>
+<button type="button" class="benny-run-round" data-benny-run-pause aria-label="Pause">❚❚</button><button type="button" class="kit-close" data-benny-run-exit aria-label="Quitter">✕</button>
+<div class="benny-run-row"><p class="benny-run-metres"></p><p class="benny-run-coins"></p><p class="benny-run-hearts" hidden></p><p class="benny-run-power"></p></div></div>
 <div class="benny-run-quest" hidden><p class="benny-run-challenge"></p><div class="benny-run-quest-bar" aria-hidden="true"><span></span></div></div>
 <canvas class="benny-run-canvas" data-benny-run-canvas></canvas>
 <div class="benny-run-alarm" aria-hidden="true"></div>
@@ -187,7 +189,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const canvas = $<HTMLCanvasElement>('[data-benny-run-canvas]'), card = $<HTMLElement>('[data-benny-run-card]'), pop = $<HTMLElement>('.benny-run-pop');
   const score = $<HTMLElement>('.benny-run-score'), metres = $<HTMLElement>('.benny-run-metres'), coins = $<HTMLElement>('.benny-run-coins'), hearts = $<HTMLElement>('.benny-run-hearts');
   const challengeLine = $<HTMLElement>('.benny-run-challenge'), quest = $<HTMLElement>('.benny-run-quest'), questFill = $<HTMLElement>('.benny-run-quest-bar span');
-  const tipLine = $<HTMLElement>('.benny-run-tip');
+  const tipLine = $<HTMLElement>('.benny-run-tip'), lives = $<HTMLElement>('.benny-run-lives'), lastLife = $<HTMLElement>('.benny-run-life:last-child'), mult = $<HTMLElement>('.benny-run-mult');
   const powerLine = $<HTMLElement>('.benny-run-power'), turn = $<HTMLElement>('[data-benny-run-turn]');
   const sideways = () => window.innerWidth > window.innerHeight;
   const context = canvas.getContext('2d');
@@ -598,7 +600,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   /** The record when this run started, whether it is beaten yet, and the last 500 m reached. */
   /** How many times each kind of obstacle has been got past this run. */
   const cleared = new Map<string, number>();
-  let comboShown = 0, runBest = 0, beaten = false, milestone = 0, metresBest = 0, metresBeaten = false;
+  let comboShown = 0, livesLost = false, multShown = 1, runBest = 0, beaten = false, milestone = 0, metresBest = 0, metresBeaten = false;
   /** The hints already given on this device. */
   const hinted = (() => { try { return new Set<string>(JSON.parse(localStorage.getItem(HINTS_KEY) ?? '[]')); } catch { return new Set<string>(); } })();
   function hints(g: BennyRun): void {
@@ -643,6 +645,15 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // After a bump: how long the Dragon stays on Benny's tail (a second bump meanwhile ends the run).
     const left = g.lastBumpAt === null || g.tutorial ? 0 : BENNY_RUN.dragonMs - (g.at - g.lastBumpAt);
     layer.classList.toggle('benny-run-chased', left > 0 && !g.over && running);
+    // The bumps before the Dragon catches Benny, as two hearts (the rule unchanged: a second bump while she is on Benny's tail ends
+    // the run): the second one lost after a bump fills back up over `dragonMs`, and is whole again when the Dragon flies off.
+    const lost = left > 0 || g.over;
+    lastLife.classList.toggle('benny-run-lost', lost); lastLife.style.setProperty('--fill', lost && !g.over ? `${(1 - left / BENNY_RUN.dragonMs) * 100}%` : '0%');
+    if (lost !== livesLost) { livesLost = lost; if (lost) { lastLife.classList.remove('benny-run-broke'); void lastLife.offsetWidth; lastLife.classList.add('benny-run-broke'); } }
+    lives.setAttribute('aria-label', g.over ? 'Plus de cœur' : left > 0 ? `Encore un choc et la Dragon t’attrape (${Math.ceil(left / 1000)} s)` : 'Deux chocs avant que la Dragon t’attrape');
+    // The combo's multiplier beside the score, while the combo lasts; it springs at each new step.
+    const times = g.combo > 1 && g.at <= g.comboUntil ? comboMultiplier(g.combo) : 1;
+    if (times !== multShown) { multShown = times; mult.hidden = times < 2; mult.textContent = `×${times}`; if (times > 1) { mult.classList.remove('show'); void mult.offsetWidth; mult.classList.add('show'); } }
     notices();
   }
 
@@ -1676,7 +1687,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     clearTimeout(stopTimer); time.resume();
     best = Math.max(best, options.best?.() ?? 0);
     // The first run (no record yet) starts with the tutorial; it can be asked for again from the start card.
-    tips.clear(); words.clear(); comboShown = 0;
+    tips.clear(); words.clear(); comboShown = 0; livesLost = false; multShown = 1;
     slowLost = 0; slowUntil = 0; lastLoopAt = clock(); settingSince = -1e9; shownSetting = 'grotte';
     runBest = best; beaten = false; milestone = 0; metresBest = options.bestMetres?.() ?? 0; metresBeaten = false; score.classList.remove('benny-run-beaten');
     game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; camX = 0; camUp = 0; landedAt = -1e9; wasUp = false; swing = null; pending = []; wallTilt = 0; laneSpeed = 0; rollFrom = -1e9; wasFlat = false; shock = null; cleared.clear(); flashes = []; bits = []; rings = []; streaks = []; bend = 0; coinRun = 0; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
