@@ -56,6 +56,10 @@ export const TEXTURES = {
   // The same for the lava bridge and the mountain path (16 Nov.): basalt, crystals, embers; snowy rocks, pines, a lantern.
   'decor-bord-lave': {source: 'bord-lave.png', size: 768},
   'decor-bord-neige': {source: 'bord-neige.png', size: 768},
+  // Cut out: the arch across the road where a new world starts (16 Nov.), its panel left blank for the world's name.
+  'decor-arche-prairie': {source: 'arche-prairie.png', size: 768},
+  'decor-arche-lave': {source: 'arche-lave.png', size: 768},
+  'decor-arche-neige': {source: 'arche-neige.png', size: 768},
   'decor-herbe': {source: 'herbe.png', size: 256},
   'decor-mur-terre': {source: 'mur-terre.png', size: 256},
   'decor-mur-pierre': {source: 'mur-pierre.png', size: 256},
@@ -63,6 +67,11 @@ export const TEXTURES = {
   // Cut out (transparent): vines hanging from a wall's top, grass and flowers at its foot.
   'decor-lianes': {source: 'lianes.png', size: 256},
   'decor-touffes': {source: 'touffes.png', size: 256},
+  // The same at the walls of the lava (crystals and embers hanging, ash and small flames underfoot) and of the snow (icicles, drifts).
+  'decor-lianes-lave': {source: 'lianes-lave.png', size: 256},
+  'decor-touffes-lave': {source: 'touffes-lave.png', size: 256},
+  'decor-lianes-neige': {source: 'lianes-neige.png', size: 256},
+  'decor-touffes-neige': {source: 'touffes-neige.png', size: 256},
   'decor-falaise': {source: 'falaise.png', size: 256, top: 14},
 };
 

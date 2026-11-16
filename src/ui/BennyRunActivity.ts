@@ -54,10 +54,14 @@ const SKY_COLOURS = {sky: '#f6c9a2', ground: '#8fc25a', lane: '#c69a5e', wall: '
 const SETTING_COLOURS: Record<RunSetting, typeof SKY_COLOURS> = {grotte: SKY_COLOURS, pont: SKY_COLOURS, montagne: SKY_COLOURS};
 /** Until each setting has its own painting, a light wash over the painted world (not the characters) tells them apart: gold in the
  *  cave, lava red on the bridge, cool blue on the mountain path; it fades from one to the next with the sky. */
-const SETTING_WASH: Record<RunSetting, [number, number, number, number]> = {grotte: [255, 196, 90, .14], pont: [255, 84, 40, .17], montagne: [120, 170, 255, .15]};
+// (16 Nov.: each world has its painted sky, ground, walls and things now; only a breath of it is left, to tie the characters in.)
+const SETTING_WASH: Record<RunSetting, [number, number, number, number]> = {grotte: [255, 196, 90, .05], pont: [255, 84, 40, .06], montagne: [120, 170, 255, .05]};
+/** The weather of each world, drawn over the track (not over the characters): embers rising over the lava, light snowflakes on the
+ *  mountain path, `WEATHER` of them. */
+const WEATHER = {pont: 22, montagne: 46} as const;
 /** The painted textures of the track (13 Nov., concept C): planks, grass, the earth-and-grass wall to run on, the grey stone
  *  wall, and the isles' cliff at the edge of the void (scripts/prepare-benny-run-decor.mjs). */
-const DECOR = ['decor-planches', 'decor-herbe', 'decor-mur-terre', 'decor-mur-pierre', 'decor-mur-racines', 'decor-falaise', 'decor-lianes', 'decor-touffes', 'decor-dalles', 'decor-dalles-lave', 'decor-dalles-neige', 'decor-socle-bleu', 'decor-socle-framboise', 'decor-corps-creme', 'decor-corps-ocre', 'decor-crete', 'decor-barriere', 'decor-lave-racines', 'decor-lave-pierre', 'decor-lave-sol', 'decor-neige-racines', 'decor-neige-pierre', 'decor-neige-sol', 'decor-lave-socle-bleu', 'decor-lave-socle-sombre', 'decor-lave-corps-basalte', 'decor-lave-corps-roche', 'decor-lave-crete', 'decor-neige-socle-bleu', 'decor-neige-socle-bois', 'decor-neige-corps-pierre', 'decor-neige-corps-roche', 'decor-neige-crete', 'decor-bord', 'decor-bord-lave', 'decor-bord-neige'] as const;
+const DECOR = ['decor-planches', 'decor-herbe', 'decor-mur-terre', 'decor-mur-pierre', 'decor-mur-racines', 'decor-falaise', 'decor-lianes', 'decor-touffes', 'decor-dalles', 'decor-dalles-lave', 'decor-dalles-neige', 'decor-socle-bleu', 'decor-socle-framboise', 'decor-corps-creme', 'decor-corps-ocre', 'decor-crete', 'decor-barriere', 'decor-lave-racines', 'decor-lave-pierre', 'decor-lave-sol', 'decor-neige-racines', 'decor-neige-pierre', 'decor-neige-sol', 'decor-lave-socle-bleu', 'decor-lave-socle-sombre', 'decor-lave-corps-basalte', 'decor-lave-corps-roche', 'decor-lave-crete', 'decor-neige-socle-bleu', 'decor-neige-socle-bois', 'decor-neige-corps-pierre', 'decor-neige-corps-roche', 'decor-neige-crete', 'decor-bord', 'decor-bord-lave', 'decor-bord-neige', 'decor-arche-prairie', 'decor-arche-lave', 'decor-arche-neige'] as const;
 type DecorName = typeof DECOR[number];
 /** How many metres one texture covers: planks across the road and along it, the grass both ways, a wall along it (its height is
  *  the wall's), the cliff across. The grass verge past the road's edge (m), the cliff's depth below it (m). */
@@ -97,6 +101,16 @@ const PROP_GROW = 1.6;
 const GHOST_AHEAD = 2;
 /** Each world's painted sky (scripts/prepare-benny-run-decor.mjs), and the last tone at its foot, down to the bottom of the screen. */
 const SKY_FILES = {grotte: 'fond-ciel', pont: 'fond-ciel-lave', montagne: 'fond-ciel-neige'} as const;
+/** The gate into a new world (16 Nov., after Blade of Brim: a real scene instead of a fade): a painted arch across the road where the
+ *  next world starts, its name on its panel, a short bridge of planks `GATE_BRIDGE` m long before it, and a flash of light as Benny
+ *  runs under it (`GATE_FLASH` ms). Each arch: its file, its width (m, the pillars just outside the verges), and its panel (shares of
+ *  the picture: left, top, right, bottom). */
+const GATES: Record<RunSetting, {name: DecorName; wide: number; panel: [number, number, number, number]}> = {
+  grotte: {name: 'decor-arche-prairie', wide: 16.8, panel: [.3, .11, .7, .24]},
+  pont: {name: 'decor-arche-lave', wide: 15, panel: [.3, .13, .7, .27]},
+  montagne: {name: 'decor-arche-neige', wide: 14.5, panel: [.26, .22, .74, .35]},
+};
+const GATE_BRIDGE = 12, GATE_FLASH = 650;
 /** How long one world's sky takes to fade into the next (ms). */
 const SKY_FADE = 1400;
 const SKY_FOOT: Record<RunSetting, string> = {grotte: '252,190,140', pont: '198,85,86', montagne: '205,222,252'};
@@ -346,8 +360,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       // Where that strip of ground really is on the screen, hills included (far to near: a crest hides what lies behind it).
       const top = project(0, a0, 0).y, deep = project(0, a1, 0).y - top + .8; if (deep <= .8) continue;
       // Each world has its ground (the meadow's verges are grass; the lava's and the snow's go on to the edge).
-      const set = settingAt(g, z), slabs = ROAD_GROUND[set];
-      if (set === 'grotte') { row('decor-herbe', -half - VERGE, -half + .05, a0, a1, GRASS_TILE, GRASS_TILE, top, s, deep); row('decor-herbe', half - .05, half + VERGE, a0, a1, GRASS_TILE, GRASS_TILE, top, s, deep); row(slabs, -half, half, a0, a1, SLAB_TILE, SLAB_TILE, top, s, deep); }
+      const set = settingAt(g, z), slabs = ROAD_GROUND[set], bridge = gate && z >= gate.z - GATE_BRIDGE && z < gate.z;
+      if (bridge) row('decor-planches', -half - VERGE, half + VERGE, a0, a1, PLANK_ALONG * 2, PLANK_ALONG, top, s, deep);
+      else if (set === 'grotte') { row('decor-herbe', -half - VERGE, -half + .05, a0, a1, GRASS_TILE, GRASS_TILE, top, s, deep); row('decor-herbe', half - .05, half + VERGE, a0, a1, GRASS_TILE, GRASS_TILE, top, s, deep); row(slabs, -half, half, a0, a1, SLAB_TILE, SLAB_TILE, top, s, deep); }
       else { const verge = WORLD_WALLS[set][3]; row(verge, -half - VERGE, -half + .05, a0, a1, GRASS_TILE, GRASS_TILE, top, s, deep); row(verge, half - .05, half + VERGE, a0, a1, GRASS_TILE, GRASS_TILE, top, s, deep); row(slabs, -half, half, a0, a1, SLAB_TILE, SLAB_TILE, top, s, deep); }
     }
   }
@@ -686,6 +701,20 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   /** When the setting last changed under Benny's feet (the sky fades over), and what it was before. */
   let settingSince = -1e9, settingBefore: RunSetting = 'grotte', shownSetting: RunSetting = 'grotte';
+  /** The last gate seen ahead (it stays drawn until it has passed the camera). */
+  let gate: {z: number; setting: RunSetting} | null = null;
+  const gateNow = (g: BennyRun) => { if (g.upcoming) gate = {z: g.upcoming.z, setting: g.upcoming.setting}; return gate && gate.z - g.distance > NEAR && gate.z - g.distance < FAR ? gate : null; };
+  /** The arch across the road at the gate, with the new world's name on its panel. */
+  function drawGate(c: CanvasRenderingContext2D, g: BennyRun, at: {z: number; setting: RunSetting}): void {
+    const look = GATES[at.setting], image = decor[look.name].image, ahead = at.z - g.distance; if (!image || !image.complete || !image.naturalWidth) return;
+    const p = project(0, ahead, 0), w = look.wide * p.s, h = w * image.naturalHeight / image.naturalWidth;
+    c.globalAlpha = Math.max(0, Math.min(1, (FAR - ahead) / 12)); c.drawImage(image, p.x - w / 2, p.y - h * .985, w, h);
+    const [l, t, r, b] = look.panel, px = p.x - w / 2 + l * w, py = p.y - h * .985 + t * h, pw = (r - l) * w, ph = (b - t) * h;
+    if (ph > 6) { const text = SETTING_NAMES[at.setting]; c.textAlign = 'center'; c.textBaseline = 'middle';
+      let size = ph * .5; c.font = `800 ${size}px system-ui`; const fit = c.measureText(text).width; if (fit > pw * .9) { size *= pw * .9 / fit; c.font = `800 ${size}px system-ui`; }
+      c.fillStyle = '#5a3418'; c.fillText(text, px + pw / 2, py + ph / 2 + size * .05); c.textBaseline = 'alphabetic'; }
+    c.globalAlpha = 1;
+  }
   /** The scenery beside the road, every few metres beyond the walls: gold heaps and crystals in the cave, lava bubbles and chain
    * posts on the bridge, pines and snowy rocks on the mountain path. Shapes for now, until the painted settings. */
   function scenery(c: CanvasRenderingContext2D, g: BennyRun): void {
@@ -761,6 +790,23 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         still('-peaks', k => { ridge(k, '#9fb0cc', horizon - horizon * .05, 4, horizon * .55, 5, '#f4f8fc'); ridge(k, '#7d93b2', horizon, 6, horizon * .3, 11, '#e6eef6'); }, .35);
         break;
     }
+  }
+  /** Embers rising over the lava, snowflakes drifting down on the mountain (screen-space, the same paths every time: cheap). */
+  function weather(c: CanvasRenderingContext2D, g: BennyRun, now: number): void {
+    const fade = Math.min(1, (clock() - settingSince) / SKY_FADE);
+    for (const [setting, alpha] of [[settingBefore, 1 - fade], [g.setting, fade]] as const) {
+      if (alpha <= .01 || (setting !== 'pont' && setting !== 'montagne')) continue;
+      const n = WEATHER[setting], snow = setting === 'montagne';
+      for (let i = 0; i < n; i++) {
+        const speed = snow ? 40 + hash01(i * 7 + 1) * 50 : 60 + hash01(i * 7 + 1) * 90, size = snow ? 1.5 + hash01(i * 7 + 2) * 2.8 : 1.2 + hash01(i * 7 + 2) * 2.2;
+        const span = height + 40, run = ((now / 1000) * speed + hash01(i * 7 + 3) * span) % span, y = snow ? run - 20 : height + 20 - run;
+        const x = hash01(i * 7 + 4) * width + Math.sin(now / (snow ? 900 : 600) + i) * (snow ? 14 : 8);
+        c.globalAlpha = alpha * (snow ? .85 : Math.max(0, Math.min(1, (height - run) / height)) * .9);
+        c.fillStyle = snow ? '#ffffff' : i % 3 ? '#ffb04a' : '#ffe27a';
+        c.beginPath(); c.arc(x, y, size, 0, Math.PI * 2); c.fill();
+      }
+    }
+    c.globalAlpha = 1;
   }
   function road(c: CanvasRenderingContext2D, g: BennyRun, colours: typeof SETTING_COLOURS[RunSetting]): void {
     // The sky fades from the last setting's over 800 ms.
@@ -1402,13 +1448,16 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     c.save();
     if (shake) { const k = (now - shake.at) / shake.ms; if (k >= 1) shake = null; else { const a = shake.px * (1 - k); c.translate((Math.random() * 2 - 1) * a, (Math.random() * 2 - 1) * a); } }
     road(c, g, SETTING_COLOURS[g.setting]);
-    if (decorReady()) roadside(c, g);
+    if (decorReady()) { roadside(c, g); weather(c, g, now); }
     speedLines(c, g, now);
     platforms(c, g); ledges(c, g);
     recordBanner(c, g);
     wind(c, g, now);
-    const ahead = [...g.entities].sort((a, b) => b.z - a.z);
-    for (const e of ahead) if (e.z - g.distance > 0) thing(c, g, e);
+    const ahead = [...g.entities].sort((a, b) => b.z - a.z), arch = decorReady() ? gateNow(g) : null;
+    // (The gate between two worlds stands among the things: those past it are drawn first.)
+    for (const e of ahead) if (e.z - g.distance > 0 && (!arch || e.z >= arch.z)) thing(c, g, e);
+    if (arch && arch.z - g.distance > 0) drawGate(c, g, arch);
+    if (arch) for (const e of ahead) if (e.z - g.distance > 0 && e.z < arch.z) thing(c, g, e);
     // A creature struck melts away: its picture fades out where it was, over a short moment.
     ghosts = ghosts.filter(gh => now - gh.at < (GHOST_MS[gh.e.kind] ?? 240));
     // Carried on by the blow, it keeps its distance in front of Benny while it goes (drawn before her: it is ahead of her).
@@ -1417,6 +1466,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (!ending) benny(c, g, now);
     for (const e of ahead) if (e.z - g.distance <= 0) thing(c, g, e);
     c.globalAlpha = 1;
+    // Under the gate: its pillars go by on both sides, then a flash of the new world's light.
+    if (arch && arch.z - g.distance <= 0) drawGate(c, g, arch);
     if (!ending) dragon(c, g);
     if (!ending) fallCatch(c, g, now);
     // Shards and sparkles.
@@ -1433,6 +1484,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       c.fillRect(b.x + b.vx * t - b.size / 2, b.y + b.vy * t + 900 * t * t - b.size / 2, b.size, b.size); }
     c.globalAlpha = 1;
     c.restore();
+    // Through the gate: the new world's light washes over the screen and fades.
+    if (now - settingSince < GATE_FLASH) { const k = 1 - (now - settingSince) / GATE_FLASH, tone = SKY_FOOT[g.setting];
+      c.fillStyle = `rgba(${g.setting === 'grotte' ? '255,236,190' : tone},${(.55 * k * k).toFixed(3)})`; c.fillRect(0, 0, width, height); }
     // A bump: the screen's edges flush red for a moment.
     if (hurtAt !== null && now - hurtAt < 400) {
       const k = 1 - (now - hurtAt) / 400, grad = c.createRadialGradient(width / 2, height / 2, Math.min(width, height) * .3, width / 2, height / 2, Math.max(width, height) * .7);
@@ -1695,7 +1749,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     best = Math.max(best, options.best?.() ?? 0);
     // The first run (no record yet) starts with the tutorial; it can be asked for again from the start card.
     coach.hidden = true;
-    slowLost = 0; slowUntil = 0; lastLoopAt = clock(); settingSince = -1e9; shownSetting = 'grotte';
+    slowLost = 0; slowUntil = 0; lastLoopAt = clock(); settingSince = -1e9; shownSetting = 'grotte'; gate = null;
     runBest = best; beaten = false; milestone = 0; metresBest = options.bestMetres?.() ?? 0; metresBeaten = false; score.classList.remove('benny-run-beaten');
     game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; camX = 0; camUp = 0; landedAt = -1e9; wasUp = false; swing = null; pending = []; wallTilt = 0; laneSpeed = 0; rollFrom = -1e9; wasFlat = false; shock = null; cleared.clear(); flashes = []; bits = []; rings = []; streaks = []; bend = 0; coinRun = 0; shake = null; hurtAt = null; running = true; card.hidden = true; lastDrawAt = clock();
     holesAnnounced = 0; lastHoleSeen = -1;
