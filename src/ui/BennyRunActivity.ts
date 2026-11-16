@@ -270,6 +270,13 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const sideX = w / at[2], sideY = h === undefined ? sideX : h / at[3];
     c.drawImage(image, at[0], at[1], size, size, x - sideX / 2, bottom - sideY * .98, sideX, sideY); return true;
   }
+  /** One fitted drawing (an arrow, a shard) centred on (x, y), `w` wide, turned by `turn` (rad); false while it has not loaded. */
+  function sprite(c: CanvasRenderingContext2D, name: 'obstacles' | 'eclats', frame: string, x: number, y: number, w: number, turn = 0): boolean {
+    const image = art[name].image, at = (RUN_ART[name].frames as Record<string, number[]>)[frame], size = RUN_ART[name].size;
+    if (!art[name].ready || !image || !at) return false;
+    const side = w / at[2]; c.save(); c.translate(x, y); if (turn) c.rotate(turn);
+    c.drawImage(image, at[0], at[1], size, size, -side / 2, -side * (.98 - at[3] / 2), side, side); c.restore(); return true;
+  }
   const slowMo = (ms: number) => { const now = clock(); if (now > slowUntil + 900) slowUntil = now + ms; };
   const shakeFor = (kind: keyof typeof SHAKES) => { const s = SHAKES[kind]; if (!shake || shake.px <= s.px || clock() - shake.at > shake.ms) shake = {at: clock(), ...s}; };
   let rings: {x: number; y: number; at: number; size: number; ground?: boolean}[] = [];
@@ -1026,11 +1033,20 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // Over a chest struck once, higher: its dizzy stars show beneath.
     if (threatening(g, e)) { const r = Math.max(9, base.s * .32) * (1 + .12 * Math.sin(g.at / 90)), y = base.y - h * (e.kind === 'dragonnet' ? 1.3 : 1) - r * (e.kind === 'chest' && e.hp === 1 ? 3 : 1.6);
       c.fillStyle = '#d93a3a'; c.beginPath(); c.arc(base.x, y, r, 0, Math.PI * 2); c.fill(); c.fillStyle = '#fff'; c.font = `900 ${Math.round(r * 1.5)}px system-ui`; c.textAlign = 'center'; c.fillText('!', base.x, y + r * .52); return; }
-    // In a tunnel of logs, only the first one says « roulade ».
+    // In a tunnel of logs, only the first one shows its arrow.
     const inTunnel = e.kind === 'beam' && g.entities.some(o => o.kind === 'beam' && o.lane === e.lane && o.z < e.z && e.z - o.z <= BENNY_RUN.burrowKeep);
-    // The word fades away once she has got past that obstacle a few times this run (it comes back after a bump on it).
+    // The sign fades away once she has got past that obstacle a few times this run (it comes back after a bump on it). No more words
+    // over the road (16 Nov.): a painted arrow, up to jump, down to roll under, two side ones to get out of a cart's way, bobbing over
+    // it (the springboard has its own arrow painted on it). The word only while the arrows have not loaded.
     const label = e.cart ? 'écarte-toi' : shape.label, passed = cleared.get(e.cart ? 'cart' : e.kind) ?? 0;
-    if (label && base.s > 18 && !inTunnel && passed < LABEL_UNTIL) { c.fillStyle = '#fff'; c.font = `700 ${Math.round(Math.max(10, base.s * .28))}px system-ui`; c.textAlign = 'center'; c.fillText(label, base.x, base.y - h - 4); }
+    if (label && base.s > 18 && !inTunnel && passed < LABEL_UNTIL) {
+      const arrow = e.cart ? 'side' : e.kind === 'beam' ? 'arrow-down' : e.kind === 'spring' ? null : 'arrow-up';
+      const size = Math.min(96, Math.max(30, base.s * 1.1)), bob = Math.sin(g.at / 160 + e.id) * size * .12, top = base.y - h - size * .6 - bob;
+      if (!arrow) {}
+      else if (arrow === 'side') { if (sprite(c, 'obstacles', 'arrow-up', base.x - size * .5, top - size * .2, size * .75, -Math.PI / 2)) sprite(c, 'obstacles', 'arrow-up', base.x + size * .5, top - size * .2, size * .75, Math.PI / 2);
+        else { c.fillStyle = '#fff'; c.font = `700 ${Math.round(Math.max(10, base.s * .28))}px system-ui`; c.textAlign = 'center'; c.fillText(label, base.x, base.y - h - 4); } }
+      else if (!sprite(c, 'obstacles', arrow, base.x, top, size)) { c.fillStyle = '#fff'; c.font = `700 ${Math.round(Math.max(10, base.s * .28))}px system-ui`; c.textAlign = 'center'; c.fillText(label, base.x, base.y - h - 4); }
+    }
   }
   /** A struck creature's last moment, `k` from 0 to 1 where it was: the chest breaks open and its lid hops, the dragonnet is
    *  thrown up spinning and shrinks, the ember flares up tall and goes out, the flyer tumbles away upwards. */
