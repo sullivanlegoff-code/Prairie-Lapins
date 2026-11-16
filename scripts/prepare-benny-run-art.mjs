@@ -8,7 +8,8 @@
 // - sheet-benny.png: six poses left to right (run 1, run 2, jump, roll, wall, strike);
 // - sheet-dragon2.png (redone from the game's evolved Dragon itself at the owner's request): four pictures left to right (flight from behind wings up, wings down, face, the end scene).
 // - sheet-creatures.png and sheet-objets.png: two rows of four (dragonnet asleep/awake, chest shut/open, ember x2, flyer x2;
-//   pot, golden pot, barrier, beam, pillar, rock, mine cart, coin), each fitted to its own square, its size in it noted.
+//   pot, golden pot, barrier, beam, pillar, rock, mine cart, coin), each fitted to its own square, its size in it noted;
+//   sheet-obstacles.png (two rows of three) and sheet-eclats.png (three rows of four): one drawing per cell.
 // 1. Each sheet is cut out of its white background (flood fill from the border, then white pockets closed in by the drawing).
 // 2. Benny's sheet is recoloured onto the approved A1 reference as a whole (one same correction for every pose: no flicker).
 // 3. The drawings are the sheet's big separate blots, left to right (specks dropped); each goes into a square: Benny standing on
@@ -51,6 +52,14 @@ export const CHARACTERS = {
   // its first blow, cracked, bandaged, dizzy (spiral eyes, a bump, stars), painted from the approved chest and set at its size.
   chests: {sheet: 'sheet-chests4.png', frames: ['intact', 'knocked', 'broken', 'damaged'], size: 220, columns: 4, fit: true, cells: 4, shared: true},
   objets: {sheet: 'sheet-objets.png', frames: ['pot', 'pot-gold', 'barrier', 'beam', 'pillar', 'rock', 'cart', 'coin'], size: 200, columns: 4, rows: 2, fit: true},
+  // The obstacles redone in volume (16 Nov., to read from 40 m without a word): the springboard on its golden spring, a round
+  // boulder and a wide one for the rockfalls, the mine cart seen from the front (it comes at Benny), and the two arrows shown over
+  // an obstacle the first times it is met (jump, roll). One drawing per cell of a grid of three by two, each fitted to its square.
+  obstacles: {sheet: 'sheet-obstacles.png', frames: ['spring', 'rock-round', 'cart-front', 'arrow-up', 'arrow-down', 'rock-wide'], size: 200, columns: 3, rows: 2, fit: true, cells: 3, pocket: 6000},
+  // The painted effects (16 Nov.), thrown about the screen instead of the coloured dots: four shards of the clay pot, two of the
+  // golden one, a wood splinter, a stone chip; a big and a small puff of dust, a four-point spark, an eight-point impact star.
+  // (No white pocket cleared: the sparks' hearts are nearly white.)
+  eclats: {sheet: 'sheet-eclats.png', frames: ['pot-1', 'pot-2', 'pot-3', 'pot-4', 'gold-1', 'gold-2', 'wood', 'stone', 'dust-big', 'dust-small', 'spark', 'star'], size: 128, columns: 4, rows: 3, fit: true, cells: 4, pocket: 1e9},
 };
 /** A blot smaller than this share of the biggest one is a speck (a stray stroke, a crumb), not a drawing. */
 const SPECK = .04;

@@ -6,8 +6,8 @@ import {pausableClock, settleCard} from './activityPause';
 import RUN_ART from '../config/bennyRunArt.json';
 
 /** The paintings' frames (scripts/prepare-benny-run-art.mjs): Benny's square stands her on its bottom, the Dragon's is centred on her body. */
-type PaintedName = 'benny' | 'benny-moves' | 'benny-strike' | 'benny-roll' | 'dragon' | 'creatures' | 'chests' | 'objets';
-const PAINTED: PaintedName[] = ['benny', 'benny-moves', 'benny-strike', 'benny-roll', 'dragon', 'creatures', 'chests', 'objets'];
+type PaintedName = 'benny' | 'benny-moves' | 'benny-strike' | 'benny-roll' | 'dragon' | 'creatures' | 'chests' | 'objets' | 'obstacles' | 'eclats';
+const PAINTED: PaintedName[] = ['benny', 'benny-moves', 'benny-strike', 'benny-roll', 'dragon', 'creatures', 'chests', 'objets', 'obstacles', 'eclats'];
 /** Painted Benny's square, in Benny's sizes (her shape was one size tall): the drawing, ears up, fills about four fifths of it. */
 const PAINTED_BENNY = 1.85;
 /** How long each struck creature takes to melt away (ms); a chest stays broken open a little longer. */
@@ -90,8 +90,9 @@ const SLAB_TILE = 6.6, PROP_EVERY = 9;
 /** Sizes after Blade of Brim (owner, 16 Nov.: « ils paraissent trop petits et pas adaptés à la caméra »): there a jar beside the hero
  *  stands about as tall as she is, a monster a head taller, a coin as wide as her head, and the things beside the path pass close by
  *  the lens, big and cut by the screen's edge. Each thing is drawn this much bigger than its old size (the rules keep theirs);
- *  the things beside the road `PROP_GROW` bigger, and they go on until they pass the camera. */
-const GROW: Partial<Record<string, number>> = {pot: 1.6, coin: 1.7, wallCoin: 1.7, dragonnet: 1.55, ember: 1.6, flyer: 1.35, chest: 1.5, power: 1.3};
+ *  the things beside the road `PROP_GROW` bigger, and they go on until they pass the camera. The barrier, the beam and the
+ *  springboard a fifth bigger (16 Nov.), a little over their lane, still under the top of a jump. */
+const GROW: Partial<Record<string, number>> = {pot: 1.6, coin: 1.7, wallCoin: 1.7, dragonnet: 1.55, ember: 1.6, flyer: 1.35, chest: 1.5, power: 1.3, barrier: 1.2, beam: 1.2, spring: 1.3};
 const PROP_GROW = 1.6;
 /** A struck thing melts away at least this far ahead of her (m), shrinking back to its old size, so that it does not hide her. */
 const GHOST_AHEAD = 2;
@@ -263,7 +264,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   /** One fitted drawing (a creature, an object) set on (x, bottom), `w` wide and `h` tall (its own proportions if `h` is left out);
    *  false while its painting has not loaded. */
-  function fitted(c: CanvasRenderingContext2D, name: 'creatures' | 'chests' | 'objets', frame: string, x: number, bottom: number, w: number, h?: number): boolean {
+  function fitted(c: CanvasRenderingContext2D, name: 'creatures' | 'chests' | 'objets' | 'obstacles', frame: string, x: number, bottom: number, w: number, h?: number): boolean {
     const image = art[name].image, at = (RUN_ART[name].frames as Record<string, number[]>)[frame], size = RUN_ART[name].size;
     if (!art[name].ready || !image || !at) return false;
     const sideX = w / at[2], sideY = h === undefined ? sideX : h / at[3];
@@ -871,41 +872,63 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   /** The raised platforms: stone sides, a lighter top with a path, the ramp up to it (shapes until the painted settings). */
   /** The stairs: a raised stretch of road along one lane, its top drawn step by step up and back down (shapes, like the platforms). */
+  /** One painted face of a step or a platform: the quad `points` filled with its flat colour, then with a part of a texture (`sx`, `sy`,
+   *  `sw`, `sh` as shares of the tile) stretched over it, clipped to it; a little of the far haze. (B, 16 Nov.: stairs and
+   *  platforms in planks and stone like the decor, no more flat colours.) */
+  function paintedQuad(c: CanvasRenderingContext2D, points: {x: number; y: number}[], fill: string, name: DecorName, ahead: number, sx: number, sy: number, sw: number, sh: number, shade = 0): void {
+    quad(c, points, fill);
+    const t = decor[name], far = ahead > 30, el = far ? t.far : t.near, side = far ? FAR_SIDE : NEAR_SIDE; if (!el || !decorReady()) return;
+    const xs = points.map(p => p.x), ys = points.map(p => p.y), left = Math.min(...xs), top = Math.min(...ys), w = Math.max(...xs) - left, h = Math.max(...ys) - top;
+    if (w < .5 || h < .5) return;
+    c.save(); c.beginPath(); c.moveTo(points[0].x, points[0].y); for (const p of points.slice(1)) c.lineTo(p.x, p.y); c.closePath(); c.clip();
+    c.drawImage(el, posmod(sx, 1) * side, posmod(sy, 1) * side, Math.max(.5, Math.min(side * 4, sw * side)), Math.max(.5, Math.min(side, sh * side)), left - .5, top - .5, w + 1, h + 1);
+    if (shade > 0) { c.fillStyle = `rgba(60,30,20,${shade})`; c.fillRect(left - 1, top - 1, w + 2, h + 2); }
+    const haze = hazeAt(ahead); if (haze > .02) { c.fillStyle = `rgba(250,198,166,${haze.toFixed(3)})`; c.fillRect(left - 1, top - 1, w + 2, h + 2); }
+    c.restore();
+  }
+  /** The stone of a platform's or a step's sides in each world. */
+  const STEP_SIDE = {grotte: 'decor-corps-creme', pont: 'decor-lave-pierre', montagne: 'decor-neige-pierre'} as const satisfies Record<RunSetting, DecorName>;
+  /** How many metres one plank texture and one stone texture cover on a step or a platform. */
+  const DECK_TILE = PLANK_ALONG, STEP_TILE = 2.4;
   function ledges(c: CanvasRenderingContext2D, g: BennyRun): void {
     for (const l of [...g.ledges].sort((a, b) => b.from - a.from)) {
       const from = Math.max(NEAR, l.from - g.distance), to = Math.min(FAR, l.to - g.distance); if (to <= from) continue;
       const n = lanesAt(g, l.from), x = (l.lane - (n - 1) / 2) * LANE_WIDTH, x0 = x - LANE_WIDTH * .47, x1 = x + LANE_WIDTH * .47;
-      const look = paintedLook(settingAt(g, l.from));
-      for (let z = from; z < to; z += 1) {
-        const z1 = Math.min(to, z + 1), h = ledgeHeight(g, l.lane, g.distance + z), h1 = ledgeHeight(g, l.lane, g.distance + z1);
-        quad(c, [project(x0, z, h), project(x1, z, h), project(x1, z1, h1), project(x0, z1, h1)], look.wall);
-        // Painted: one plank per step, its joint drawn.
-        if (decorReady()) { const a = project(x0, z, h), b = project(x1, z, h); c.strokeStyle = PAINTED_LOOK.joint; c.lineWidth = Math.max(1, a.s * .05); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); }
-        quad(c, [project(x0, z, 0), project(x0, z1, 0), project(x0, z1, h1), project(x0, z, h)], look.wallOff);
-        quad(c, [project(x1, z, 0), project(x1, z1, 0), project(x1, z1, h1), project(x1, z, h)], look.wallOff);
+      const look = paintedLook(settingAt(g, l.from)), stone = STEP_SIDE[settingAt(g, l.from)], across = (x1 - x0) / DECK_TILE;
+      // Far to near: each step's planks on top, its riser of stone facing Benny, its stone sides.
+      const zs: number[] = []; for (let z = from; z < to; z += z < 25 ? .5 : 1.5) zs.push(z); zs.push(to);
+      for (let i = zs.length - 2; i >= 0; i--) {
+        const z = zs[i], z1 = zs[i + 1], h = ledgeHeight(g, l.lane, g.distance + z), h1 = ledgeHeight(g, l.lane, g.distance + z1), world = g.distance + z;
+        for (const [sx, dx] of [[x0, -1], [x1, 1]] as const) if (dx * (sx + bendAt(z) - camX) < 0)
+          paintedQuad(c, [project(sx, z, 0), project(sx, z1, 0), project(sx, z1, h1), project(sx, z, h)], look.wallOff, stone, z, world / STEP_TILE, 0, (z1 - z) / STEP_TILE, Math.max(h, h1) / STEP_TILE, .12);
+        paintedQuad(c, [project(x0, z, h), project(x1, z, h), project(x1, z1, h1), project(x0, z1, h1)], look.wall, 'decor-planches', z, 0, world / DECK_TILE, across, (z1 - z) / DECK_TILE);
+        // The riser where a step goes up (seen from in front): stone.
+        const below = ledgeHeight(g, l.lane, world - .01);
+        if (h > below + .05) paintedQuad(c, [project(x0, z, below), project(x1, z, below), project(x1, z, h), project(x0, z, h)], look.wallOff, stone, z, 0, 0, (x1 - x0) / STEP_TILE, (h - below) / STEP_TILE);
+        if (decorReady() && h > below + .05) { const a = project(x0, z, h), b = project(x1, z, h); c.strokeStyle = 'rgba(40,24,12,.7)'; c.lineWidth = Math.max(1, a.s * .05); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); }
       }
     }
   }
   function platforms(c: CanvasRenderingContext2D, g: BennyRun): void {
     const top = BENNY_RUN.platformHeight;
     for (const p of [...g.platforms].sort((a, b) => b.from - a.from)) {
-      const start = Math.max(NEAR, p.from - g.distance), from = Math.max(NEAR, p.from - g.distance), to = Math.min(FAR, p.to - g.distance); if (to <= start) continue;
+      const from = Math.max(NEAR, p.from - g.distance), to = Math.min(FAR, p.to - g.distance); if (to <= from) continue;
       const n = lanesAt(g, p.from), x = (p.lane - (n - 1) / 2) * LANE_WIDTH, x0 = x - LANE_WIDTH * .47, x1 = x + LANE_WIDTH * .47;
-      const look = paintedLook(settingAt(g, p.from)), height = (_z: number) => top;
-      // Its shadow on the road beside it, the two sides (the one facing the middle shows), then the ramp and the top.
+      const look = paintedLook(settingAt(g, p.from)), stone = STEP_SIDE[settingAt(g, p.from)], across = (x1 - x0) / DECK_TILE;
+      // Its shadow on the road beside it, then far to near: its stone sides (the one facing the middle shows) and its deck of planks.
       for (const [sx, dx] of [[x0, -.5], [x1, .5]] as const) quad(c, [project(sx, from, 0), project(sx + dx, from, 0), project(sx + dx, to, 0), project(sx, to, 0)], 'rgba(0,0,0,.22)');
-      for (const sx of [x0, x1]) { c.fillStyle = look.wallOff; c.beginPath(); c.moveTo(project(sx, start, 0).x, project(sx, start, 0).y);
-        for (const z of [from, to]) { const q = project(sx, z, height(z)); c.lineTo(q.x, q.y); } const e = project(sx, to, 0); c.lineTo(e.x, e.y); c.closePath(); c.fill(); }
-      quad(c, [project(x0, start, height(start)), project(x1, start, height(start)), project(x1, from, top), project(x0, from, top)], look.wall);
-      if (to > from) { quad(c, [project(x0, from, top), project(x1, from, top), project(x1, to, top), project(x0, to, top)], look.wall);
-        // Painted: planks like the road's, their joints every half metre; otherwise a lighter top.
-        if (decorReady()) { c.strokeStyle = PAINTED_LOOK.joint;
-          for (let z = from + posmod(-(g.distance + from), PLANK_ALONG / 6); z < to; z += PLANK_ALONG / 6) { const a = project(x0, z, top), b = project(x1, z, top); c.lineWidth = Math.max(1, a.s * .05); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); } }
-        else quad(c, [project(x0, from, top), project(x1, from, top), project(x1, to, top), project(x0, to, top)], 'rgba(255,255,255,.22)'); }
-      // Dark edges along the top and the ramp, so its height reads from behind.
+      const zs: number[] = []; for (let z = from; z < to; z += z < 25 ? 1 : 3) zs.push(z); zs.push(to);
+      for (let i = zs.length - 2; i >= 0; i--) {
+        const z = zs[i], z1 = zs[i + 1], world = g.distance + z;
+        for (const [sx, dx] of [[x0, -1], [x1, 1]] as const) if (dx * (sx + bendAt(z) - camX) < 0)
+          paintedQuad(c, [project(sx, z, 0), project(sx, z1, 0), project(sx, z1, top), project(sx, z, top)], look.wallOff, stone, z, world / STEP_TILE, 0, (z1 - z) / STEP_TILE, top / STEP_TILE, .12);
+        paintedQuad(c, [project(x0, z, top), project(x1, z, top), project(x1, z1, top), project(x0, z1, top)], look.wall, 'decor-planches', z, 0, world / DECK_TILE, across, (z1 - z) / DECK_TILE);
+      }
+      // Its front facing Benny: stone, then dark edges along the top so its height reads from behind.
+      if (p.from - g.distance > NEAR) paintedQuad(c, [project(x0, from, 0), project(x1, from, 0), project(x1, from, top), project(x0, from, top)], look.wallOff, stone, from, 0, 0, (x1 - x0) / STEP_TILE, top / STEP_TILE);
       c.strokeStyle = 'rgba(40,24,12,.75)';
-      for (const sx of [x0, x1]) { const a = project(sx, start, height(start)), b = project(sx, from, top), e = project(sx, to, top); c.lineWidth = Math.max(1.5, b.s * .09); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.lineTo(e.x, e.y); c.stroke(); }
-      if (to > from) { const a = project(x, from, top), b = project(x, to, top); c.strokeStyle = 'rgba(255,255,255,.25)'; c.lineWidth = Math.max(1, a.s * .1); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); }
+      for (const sx of [x0, x1]) { const a = project(sx, from, top), e = project(sx, to, top); c.lineWidth = Math.max(1.5, a.s * .09); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(e.x, e.y); c.stroke(); }
+      { const a = project(x0, from, top), b = project(x1, from, top); c.lineWidth = Math.max(1.5, a.s * .09); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); }
     }
   }
   /** The wind as a gust comes and blows: white streaks across the path, the way it blows. */
@@ -951,14 +974,19 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const SHAPES: Record<string, {colour: string; w: number; h: number; up?: number; round?: boolean; label?: string}> = {
     // (Bigger since 14 Nov., with the close camera: creatures and pots stand up to Benny, as in the lane runners the owner plays.)
     coin: {colour: '#f4c430', w: .6, h: .6, up: .5, round: true}, power: {colour: '#b07bff', w: 1.25, h: 1.25, up: .5, round: true}, wallCoin: {colour: '#f4c430', w: .6, h: .6, up: 1.6, round: true},
-    pot: {colour: '#c96b3a', w: 1.3, h: 1.3, round: true}, barrier: {colour: '#7a5a3a', w: 2, h: .6, label: 'saute'},
-    spring: {colour: '#4fb06a', w: 1.4, h: .3, label: 'tremplin'},
-    beam: {colour: '#7a5a3a', w: 2, h: .45, up: 1.1, label: 'roulade'}, pillar: {colour: '#8a8a8a', w: 1.9, h: 3.6},
+    // (16 Nov., obstacles in volume, read from 40 m: as wide as a lane, the barrier and the boulders up to Benny's knees and more, under
+    // a jump's top (1.4 m); the beam a thick log whose underside stays where it stops her (1.1 m up); the springboard a board on its
+    // spring. Only their drawing: the rules keep their sizes in bennyRun.ts.)
+    pot: {colour: '#c96b3a', w: 1.3, h: 1.3, round: true}, barrier: {colour: '#7a5a3a', w: 2.1, h: 1, label: 'saute'},
+    spring: {colour: '#4fb06a', w: 1.7, h: 1, label: 'tremplin'},
+    beam: {colour: '#7a5a3a', w: 2.1, h: .6, up: 1.1, label: 'roulade'}, pillar: {colour: '#8a8a8a', w: 1.9, h: 3.6},
     dragonnet: {colour: '#8e3a5a', w: 1.75, h: 1.3, round: true}, chest: {colour: '#6e3b2e', w: 1.8, h: 1.25},
     ember: {colour: '#ff9a2a', w: 1.4, h: 1.4, up: .4, round: true},
     flyer: {colour: '#7b4fc9', w: 1.35, h: 1.2, round: true},
     fireball: {colour: '#ff6a1a', w: 1.3, h: 1.3, up: .1, round: true, label: 'saute'},
   };
+  /** Obstacles standing on the road, with a shadow at their foot that sets them down on it (like the pots and the creatures). */
+  const SET_DOWN = new Set(['barrier', 'pillar', 'spring', 'fireball']);
   function thing(c: CanvasRenderingContext2D, g: BennyRun, e: RunEntity): void {
     const shape = SHAPES[e.kind], ahead = e.z - g.distance; if (!shape || ahead > FAR || ahead < -3) return;
     // A creature changing lanes (an ember hopping, a dragonnet crossing) slides over rather than jumps.
@@ -985,7 +1013,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const grow = 1 + ((GROW[e.kind] ?? 1) - 1) * (vanishing === null ? 1 : 1 - vanishing), base = project(x, ahead, up), w = shape.w * grow * base.s, h = shape.h * grow * base.s;
     thingAhead = ahead;
     // Its shadow on the ground (things standing on the road; the coins and the flyer over it, fainter): it sits them on the road.
-    if (vanishing === null && (GROW[e.kind] ?? 1) > 1 && !e.rock) { const g0 = project(x, ahead, ground), off = up - ground > .2 ? .5 : 1;
+    if (vanishing === null && ((GROW[e.kind] ?? 1) > 1 || SET_DOWN.has(e.kind)) && !e.rock) { const g0 = project(x, ahead, ground), off = up - ground > .2 ? .5 : 1;
       c.fillStyle = `rgba(40,20,10,${(.22 * off).toFixed(2)})`; c.beginPath(); c.ellipse(g0.x, g0.y, w * .42, Math.max(1, w * .1), 0, 0, Math.PI * 2); c.fill(); }
     if (!figure(c, e, base.x, base.y, w, h, g.at, project(x, ahead, 0).y)) {
       c.fillStyle = shape.colour;
@@ -1096,8 +1124,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         return true;
       }
       case 'barrier': if (e.rock) {
-        // A boulder: grey-brown, a lighter side, a crack.
-        if (fitted(c, 'objets', 'rock', x, y, w * .78)) return true;
+        // A boulder: grey-brown, a lighter side, a crack. Painted in volume (16 Nov.): a round one or a wide one (one in two), moss on
+        // top, as wide as the lane and under a jump's top.
+        if (e.id % 2 ? fitted(c, 'obstacles', 'rock-round', x, y, w * .55) : fitted(c, 'obstacles', 'rock-wide', x, y, w * .9)) return true;
         ellipse(x, y - h * 1.05, w * .36, h * 1.1, '#6f6258'); ellipse(x - w * .1, y - h * 1.4, w * .18, h * .5, '#8d8075');
         c.strokeStyle = '#4a3f37'; c.lineWidth = Math.max(1, w * .03); c.beginPath(); c.moveTo(x + w * .08, y - h * 1.7); c.lineTo(x + w * .16, y - h * 1.1); c.lineTo(x + w * .06, y - h * .6); c.stroke(); return true;
       } else {
@@ -1105,6 +1134,11 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         if (fitted(c, 'objets', 'barrier', x, y, w, h * 1.15)) return true;
         c.fillStyle = '#5c3e24'; c.fillRect(x - w * .45, y - h, w * .08, h); c.fillRect(x + w * .37, y - h, w * .08, h);
         c.fillStyle = '#8a6440'; c.fillRect(x - w / 2, y - h * .9, w, h * .3); c.fillRect(x - w / 2, y - h * .45, w, h * .3); return true;
+      }
+      case 'spring': {
+        // The springboard (16 Nov.): a board on a golden spring, a green arrow painted on it, pressed a little lower to the road.
+        if (fitted(c, 'obstacles', 'spring', x, y, w, h * 1.05)) return true;
+        return false;
       }
       case 'beam': {
         // A log held up across the lane on two posts: roll under it. Painted: the log's top where the log is, its posts on the road.
@@ -1124,7 +1158,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         for (let k = 0; k < 3; k++) { const a = at / 120 + k * 2.1 + e.id; ellipse(x + Math.sin(a) * half * 1.2, top - Math.abs(Math.cos(a)) * h * .15, half * .35, half * .35, k ? '#ff6a1a' : '#ffe36b'); }
         return true;
       } else {
-        if (fitted(c, 'objets', 'pillar', x, y, w * .85, h)) return true;
+        if (fitted(c, 'objets', 'pillar', x, y, w * .95, h)) return true;
         c.fillStyle = '#8a8a8a'; c.fillRect(x - w * .4, y - h, w * .8, h);
         c.fillStyle = '#a4a4a4'; for (const k of [-.2, .1]) c.fillRect(x + k * w, y - h, w * .08, h);
         c.fillStyle = '#6e6e6e'; c.fillRect(x - w / 2, y - h, w, h * .08); c.fillRect(x - w / 2, y - h * .08, w, h * .08); return true;
@@ -1155,8 +1189,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         const turn = at / 60 + e.id;
         // On the mountain, a snowball rolling down, a spray of snow behind it.
         if (e.cart) {
-          // A wooden mine cart heaped with gold, its wheels turning.
-          if (fitted(c, 'objets', 'cart', x, y, w * 1.05)) return true;
+          // A wooden mine cart heaped with gold, seen from the front as it comes at Benny (16 Nov.), as wide as the lane, rocking a little.
+          { c.save(); c.translate(x, y); c.rotate(Math.sin(at / 70 + e.id) * .03); const ok = fitted(c, 'obstacles', 'cart-front', 0, 0, w * 1.45); c.restore(); if (ok) return true; }
           c.fillStyle = '#3a2a1c'; for (const dx of [-.3, .3]) { c.beginPath(); c.arc(x + dx * w, y - h * .12, w * .12, 0, Math.PI * 2); c.fill(); }
           c.fillStyle = '#7a5634'; c.beginPath(); c.moveTo(x - w * .5, y - h * 1.1); c.lineTo(x + w * .5, y - h * 1.1); c.lineTo(x + w * .4, y - h * .2); c.lineTo(x - w * .4, y - h * .2); c.fill();
           c.fillStyle = '#5c3e24'; c.fillRect(x - w * .5, y - h * .75, w, h * .08);
