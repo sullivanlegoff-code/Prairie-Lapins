@@ -1,6 +1,6 @@
 // « Cours cours Benny ! »: the painted decor of the track (13 November 2026, concept C, the floating isles): the textures of the
 // planks, the grass, the two kinds of wall (earth and grass to run on, grey stone) and the isles' cliff at the edge of the void,
-// and the painted sky, reduced and encoded in WebP with an installed Playwright (like scripts/prepare-benny-run-art.mjs).
+// and the painted skies, reduced and encoded in WebP with an installed Playwright (like scripts/prepare-benny-run-art.mjs).
 //
 //   PLAYWRIGHT_MODULE=<installed playwright module> node scripts/prepare-benny-run-decor.mjs [--sources <folder>] [--sky <png>] (default: fond-ciel.png in the sources)
 //
@@ -53,6 +53,9 @@ export const TEXTURES = {
   'decor-neige-crete': {source: 'neige-crete.png', size: 384},
   // Cut out: nine things standing beside the road, in a grid of 3 × 3.
   'decor-bord': {source: 'bord.png', size: 768},
+  // The same for the lava bridge and the mountain path (16 Nov.): basalt, crystals, embers; snowy rocks, pines, a lantern.
+  'decor-bord-lave': {source: 'bord-lave.png', size: 768},
+  'decor-bord-neige': {source: 'bord-neige.png', size: 768},
   'decor-herbe': {source: 'herbe.png', size: 256},
   'decor-mur-terre': {source: 'mur-terre.png', size: 256},
   'decor-mur-pierre': {source: 'mur-pierre.png', size: 256},
@@ -86,8 +89,10 @@ try {
     const webp = Buffer.from(await encode(readFileSync(`${SOURCES}/${t.source}`).toString('base64'), {top: t.top ?? 0, width: t.size, height: t.size, quality: .86}), 'base64');
     writeFileSync(`${TARGET}/${name}.webp`, webp); sizes[name] = webp.length;
   }
-  // The sky keeps its painted size (1024 × 1536), only in WebP.
-  const sky = Buffer.from(await encode(readFileSync(SKY).toString('base64'), {quality: .84}), 'base64');
-  writeFileSync(`${TARGET}/fond-ciel.webp`, sky); sizes['fond-ciel'] = sky.length;
+  // The skies keep their painted size (1024 × 1536), only in WebP: the meadow's, the lava's (smoke, a red glow), the snow's (cold).
+  for (const [name, source] of [['fond-ciel', SKY], ['fond-ciel-lave', `${SOURCES}/fond-ciel-lave.png`], ['fond-ciel-neige', `${SOURCES}/fond-ciel-neige.png`]]) {
+    const sky = Buffer.from(await encode(readFileSync(source).toString('base64'), {quality: .84}), 'base64');
+    writeFileSync(`${TARGET}/${name}.webp`, sky); sizes[name] = sky.length;
+  }
 } finally { await browser.close(); }
 console.log(JSON.stringify(sizes));
