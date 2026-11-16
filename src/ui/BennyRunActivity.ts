@@ -57,7 +57,7 @@ const SETTING_COLOURS: Record<RunSetting, typeof SKY_COLOURS> = {grotte: SKY_COL
 const SETTING_WASH: Record<RunSetting, [number, number, number, number]> = {grotte: [255, 196, 90, .14], pont: [255, 84, 40, .17], montagne: [120, 170, 255, .15]};
 /** The painted textures of the track (13 Nov., concept C): planks, grass, the earth-and-grass wall to run on, the grey stone
  *  wall, and the isles' cliff at the edge of the void (scripts/prepare-benny-run-decor.mjs). */
-const DECOR = ['decor-planches', 'decor-herbe', 'decor-mur-terre', 'decor-mur-pierre', 'decor-mur-racines', 'decor-falaise', 'decor-lianes', 'decor-touffes', 'decor-dalles', 'decor-dalles-lave', 'decor-dalles-neige', 'decor-socle-bleu', 'decor-socle-framboise', 'decor-corps-creme', 'decor-corps-ocre', 'decor-crete', 'decor-barriere', 'decor-lave-racines', 'decor-lave-pierre', 'decor-lave-sol', 'decor-neige-racines', 'decor-neige-pierre', 'decor-neige-sol', 'decor-bord'] as const;
+const DECOR = ['decor-planches', 'decor-herbe', 'decor-mur-terre', 'decor-mur-pierre', 'decor-mur-racines', 'decor-falaise', 'decor-lianes', 'decor-touffes', 'decor-dalles', 'decor-dalles-lave', 'decor-dalles-neige', 'decor-socle-bleu', 'decor-socle-framboise', 'decor-corps-creme', 'decor-corps-ocre', 'decor-crete', 'decor-barriere', 'decor-lave-racines', 'decor-lave-pierre', 'decor-lave-sol', 'decor-neige-racines', 'decor-neige-pierre', 'decor-neige-sol', 'decor-lave-socle-bleu', 'decor-lave-socle-sombre', 'decor-lave-corps-basalte', 'decor-lave-corps-roche', 'decor-lave-crete', 'decor-neige-socle-bleu', 'decor-neige-socle-bois', 'decor-neige-corps-pierre', 'decor-neige-corps-roche', 'decor-neige-crete', 'decor-bord'] as const;
 type DecorName = typeof DECOR[number];
 /** How many metres one texture covers: planks across the road and along it, the grass both ways, a wall along it (its height is
  *  the wall's), the cliff across. The grass verge past the road's edge (m), the cliff's depth below it (m). */
@@ -97,6 +97,15 @@ const ROAD_FILL = 1.04, BENNY_AT = .76, CAM_LANE = .55, CAM_LOW = .62;
  *  blue: Benny can run on it, the only sign of it; raspberry with arches, or bare rock: she cannot), a body of cream blocks or ochre
  *  rock, a grassy ledge with vines, an upper tier set back `TIER_BACK` m, and a jagged crest of rocks and bushes against the sky. */
 const BASE_TOP = 4.6, BASE_TILE = 8, TIER_BACK = .7, CREST_TILE = 10, CREST_UP = 2.6, CREST_DOWN = 1.3, FENCE_TILE = 9, FENCE_TOP = 2.1;
+/** The tiers of each world (owner, 16 Nov., the meadow first, then the lava and the snow): the base Benny runs on (the same light
+ *  blue in every world: the only sign of it), the base she cannot run on, the body of blocks and of rock, the crest against the sky,
+ *  the colour of the ledge between the tiers, and whether vines hang under it and grass grows at the foot (the meadow only). */
+type TierLook = {run: DecorName; base: DecorName; blocks: DecorName; rock: DecorName; crest: DecorName; flat: {run: string; base: string; blocks: string; rock: string}; ledge: string; green: boolean};
+const TIER_LOOK: Record<RunSetting, TierLook> = {
+  grotte: {run: 'decor-socle-bleu', base: 'decor-socle-framboise', blocks: 'decor-corps-creme', rock: 'decor-corps-ocre', crest: 'decor-crete', flat: {run: '#a9d3ee', base: '#c8475f', blocks: '#e8d3a6', rock: '#c98a52'}, ledge: '#8cc152', green: true},
+  pont: {run: 'decor-lave-socle-bleu', base: 'decor-lave-socle-sombre', blocks: 'decor-lave-corps-basalte', rock: 'decor-lave-corps-roche', crest: 'decor-lave-crete', flat: {run: '#a9d3ee', base: '#4a3040', blocks: '#7a6460', rock: '#9a4c3a'}, ledge: '#ff9a4a', green: false},
+  montagne: {run: 'decor-neige-socle-bleu', base: 'decor-neige-socle-bois', blocks: 'decor-neige-corps-pierre', rock: 'decor-neige-corps-roche', crest: 'decor-neige-crete', flat: {run: '#a9d3ee', base: '#7a4434', blocks: '#b8c4d4', rock: '#8a8098'}, ledge: '#f4f8ff', green: false},
+};
 const BLOCK_LOW = 6.5, VINE_TILE = 6, VINE_DROP = 3, TUFT_TILE = 4.5, TUFT_PART = 3 / 8, TUFT_NEAR = 50, HAZE_FROM = 22, HAZE_SPAN = 70, HAZE_MAX = .55;
 const hash01 = (n: number) => { let t = Math.imul(n ^ 0x9e3779b9, 2654435761) >>> 0; t ^= t >>> 15; t = Math.imul(t, 2246822519) >>> 0; t ^= t >>> 13; return (t >>> 0) / 4294967296; };
 const hazeAt = (z: number) => Math.min(1, Math.max(0, (z - HAZE_FROM) / HAZE_SPAN)) * HAZE_MAX;
@@ -410,10 +419,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       if (look === 'tall') {
         for (const b of blocksOf(w).reverse()) {
           const bf = Math.max(NEAR, b.from - g.distance), bt = Math.min(FAR, b.to - g.distance); if (bt <= bf) continue;
-          if (worldAhead((bf + bt) / 2) === 'grotte') { tiers(c, g, dir, bf, bt, b, w.runnable, bf > 0 && bf === b.from - g.distance); continue; }
-          const high = b.upper || b.top;
-          if (bf > 0 && bf === b.from - g.distance) endFace(c, x(bf) + dir * b.out, x(bf) + dir * (b.out + WALL_THICK), bf, high, w.runnable);
-          wallFace(c, g, dir, bf, bt, high, w.runnable, b.out, true);
+          tiers(c, g, dir, bf, bt, b, w.runnable, bf > 0 && bf === b.from - g.distance, TIER_LOOK[worldAhead((bf + bt) / 2)]);
         }
         continue;
       }
@@ -427,7 +433,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         for (const z of [...zs].reverse()) { const p = project(x(z) + dir * WALL_THICK, z, top); c.lineTo(p.x, p.y); }
         c.closePath(); const grass = decor[WORLD_WALLS[worldAhead((from + to) / 2)][3]].near, pattern = grass ? c.createPattern(grass, 'repeat') : null; c.fillStyle = pattern ?? '#7fae3e'; c.fill();
       }
-      if (w.runnable && worldAhead((from + to) / 2) === 'grotte') { face(c, g, dir, from, to, 0, top, 0, '#a9d3ee'); wallBand(c, g, z => dir * wallXAt(g, z), from, to, 0, top, 'decor-socle-bleu', [0, .4], BASE_TILE); }
+      if (w.runnable) { face(c, g, dir, from, to, 0, top, 0, '#a9d3ee'); wallBand(c, g, z => dir * wallXAt(g, z), from, to, 0, top, TIER_LOOK[worldAhead((from + to) / 2)].run, [0, .4], BASE_TILE); }
       else wallFace(c, g, dir, from, to, top, w.runnable);
     }
   }
@@ -458,24 +464,25 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       z = z1;
     }
   }
-  /** One block of a meadow wall, in its tiers, from the back to the front. */
-  function tiers(c: CanvasRenderingContext2D, g: BennyRun, dir: number, from: number, to: number, b: WallBlock, runnable: boolean, end: boolean): void {
-    const at = (out: number) => (z: number) => dir * (wallXAt(g, z) + out), body = b.rock ? 'decor-corps-ocre' : 'decor-corps-creme', upper = b.rock ? 'decor-corps-creme' : 'decor-corps-ocre';
-    const base: DecorName | null = runnable ? 'decor-socle-bleu' : b.rock ? null : 'decor-socle-framboise', top = b.upper || b.top;
+  /** One block of a wall, in its tiers, from the back to the front, in its world's look. */
+  function tiers(c: CanvasRenderingContext2D, g: BennyRun, dir: number, from: number, to: number, b: WallBlock, runnable: boolean, end: boolean, look: TierLook): void {
+    const at = (out: number) => (z: number) => dir * (wallXAt(g, z) + out), body = b.rock ? look.rock : look.blocks, upper = b.rock ? look.blocks : look.rock;
+    const bodyFlat = b.rock ? look.flat.rock : look.flat.blocks, upperFlat = b.rock ? look.flat.blocks : look.flat.rock;
+    const base: DecorName | null = runnable ? look.run : b.rock ? null : look.base, top = b.upper || b.top;
     // The upper tier, set back, and the crest against the sky.
-    if (b.upper) { face(c, g, dir, from, to, b.top, b.upper, TIER_BACK, b.rock ? '#e8d3a6' : '#c98a52'); wallBand(c, g, at(TIER_BACK), from, to, b.top, b.upper, upper, null, FACE_TILE); face(c, g, dir, from, to, b.top, b.upper, TIER_BACK, 'rgba(60,34,44,.16)'); }
-    wallBand(c, g, at(b.upper ? TIER_BACK : 0), from, to, top - CREST_DOWN, top + CREST_UP, 'decor-crete', [.55, 1], CREST_TILE, false);
-    // The ledge between the tiers: grass, seen from below as a bright lip.
-    if (b.upper) face(c, g, dir, from, to, b.top, b.top, 0, '#8cc152', TIER_BACK);
+    if (b.upper) { face(c, g, dir, from, to, b.top, b.upper, TIER_BACK, upperFlat); wallBand(c, g, at(TIER_BACK), from, to, b.top, b.upper, upper, null, FACE_TILE); face(c, g, dir, from, to, b.top, b.upper, TIER_BACK, 'rgba(60,34,44,.16)'); }
+    wallBand(c, g, at(b.upper ? TIER_BACK : 0), from, to, top - CREST_DOWN, top + CREST_UP, look.crest, [.55, 1], CREST_TILE, false);
+    // The ledge between the tiers: grass (in the meadow), embers' glow (lava) or snow, seen from below as a bright lip.
+    if (b.upper) face(c, g, dir, from, to, b.top, b.top, 0, look.ledge, TIER_BACK);
     // Its end facing Benny, tier by tier.
     if (end) { const x0 = at(0)(from), x1 = at(WALL_THICK)(from);
       if (b.upper) endFace(c, at(TIER_BACK)(from), x1, from, b.upper, false, upper, b.top);
       endFace(c, x0, x1, from, b.top, false, body, base ? BASE_TOP : 0); if (base) endFace(c, x0, x1, from, BASE_TOP, runnable, base, 0, [0, 1]); }
     // The body, the shadow under the ledge's vines, the base.
-    face(c, g, dir, from, to, base ? BASE_TOP : 0, b.top, 0, b.rock ? '#c98a52' : '#e8d3a6'); wallBand(c, g, at(0), from, to, base ? BASE_TOP : 0, b.top, body, null, FACE_TILE);
-    wallBand(c, g, at(0), from, to, b.top - 1.5, b.top + .2, 'decor-lianes', [0, .42], VINE_TILE * 1.6, false);
-    if (base) { face(c, g, dir, from, to, 0, BASE_TOP, 0, runnable ? '#a9d3ee' : '#c8475f'); wallBand(c, g, at(0), from, to, 0, BASE_TOP, base, [0, 1], BASE_TILE); }
-    else if (from < TUFT_NEAR) wallBand(c, g, at(0), from, Math.min(to, TUFT_NEAR), 0, TUFT_TILE * TUFT_PART, 'decor-touffes', [1 - TUFT_PART, 1], TUFT_TILE, false);
+    face(c, g, dir, from, to, base ? BASE_TOP : 0, b.top, 0, bodyFlat); wallBand(c, g, at(0), from, to, base ? BASE_TOP : 0, b.top, body, null, FACE_TILE);
+    if (look.green) wallBand(c, g, at(0), from, to, b.top - 1.5, b.top + .2, 'decor-lianes', [0, .42], VINE_TILE * 1.6, false);
+    if (base) { face(c, g, dir, from, to, 0, BASE_TOP, 0, runnable ? look.flat.run : look.flat.base); wallBand(c, g, at(0), from, to, 0, BASE_TOP, base, [0, 1], BASE_TILE); }
+    else if (look.green && from < TUFT_NEAR) wallBand(c, g, at(0), from, Math.min(to, TUFT_NEAR), 0, TUFT_TILE * TUFT_PART, 'decor-touffes', [1 - TUFT_PART, 1], TUFT_TILE, false);
   }
   type WallBlock = {from: number; to: number; top: number; upper: number; rock: boolean; out: number};
   /** A tall wall's blocks, from its start: lengths, heights and how far a stone one is set back, the same every time it is drawn.

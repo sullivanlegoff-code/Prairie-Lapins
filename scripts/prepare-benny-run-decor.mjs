@@ -39,6 +39,18 @@ export const TEXTURES = {
   'decor-neige-racines': {source: 'neige-racines.png', size: 256},
   'decor-neige-pierre': {source: 'neige-pierre.png', size: 256},
   'decor-neige-sol': {source: 'neige-sol.png', size: 256},
+  // The same tiers on the lava bridge and on the mountain path (16 Nov.): the base to run on keeps the meadow's light blue; the other
+  // base, dark basalt with glowing arches or chalet wood; basalt blocks or volcanic rock, grey-blue stone or snowy rock; a crest each.
+  'decor-lave-socle-bleu': {source: 'lave-socle-bleu.png', size: 384},
+  'decor-lave-socle-sombre': {source: 'lave-socle-sombre.png', size: 384},
+  'decor-lave-corps-basalte': {source: 'lave-corps-basalte.png', size: 384},
+  'decor-lave-corps-roche': {source: 'lave-corps-roche.png', size: 384},
+  'decor-lave-crete': {source: 'lave-crete.png', size: 384},
+  'decor-neige-socle-bleu': {source: 'neige-socle-bleu.png', size: 384},
+  'decor-neige-socle-bois': {source: 'neige-socle-bois.png', size: 384},
+  'decor-neige-corps-pierre': {source: 'neige-corps-pierre.png', size: 384},
+  'decor-neige-corps-roche': {source: 'neige-corps-roche.png', size: 384},
+  'decor-neige-crete': {source: 'neige-crete.png', size: 384},
   // Cut out: nine things standing beside the road, in a grid of 3 × 3.
   'decor-bord': {source: 'bord.png', size: 768},
   'decor-herbe': {source: 'herbe.png', size: 256},
