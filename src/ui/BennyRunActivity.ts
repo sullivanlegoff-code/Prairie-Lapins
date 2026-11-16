@@ -87,6 +87,14 @@ const HILL = 1.5;
 /** The road's slabs: one painted tile is `SLAB_TILE` m. Things stand beside the road every `PROP_EVERY` m or so on each side (not along
  *  a wall Benny can run on): [column, row] in the painted grid, height in metres. */
 const SLAB_TILE = 6.6, PROP_EVERY = 9;
+/** Sizes after Blade of Brim (owner, 16 Nov.: « ils paraissent trop petits et pas adaptés à la caméra »): there a jar beside the hero
+ *  stands about as tall as she is, a monster a head taller, a coin as wide as her head, and the things beside the path pass close by
+ *  the lens, big and cut by the screen's edge. Each thing is drawn this much bigger than its old size (the rules keep theirs);
+ *  the things beside the road `PROP_GROW` bigger, and they go on until they pass the camera. */
+const GROW: Partial<Record<string, number>> = {pot: 1.6, coin: 1.7, wallCoin: 1.7, dragonnet: 1.55, ember: 1.6, flyer: 1.35, chest: 1.5, power: 1.3};
+const PROP_GROW = 1.6;
+/** A struck thing melts away at least this far ahead of her (m), shrinking back to its old size, so that it does not hide her. */
+const GHOST_AHEAD = 2;
 const ROAD_GROUND = {grotte: 'decor-dalles', pont: 'decor-dalles-lave', montagne: 'decor-dalles-neige'} as const;
 /** Each world's walls and verge: [earth to run on (low), roots to run on (tall), stone not to run on, verge and wall tops]. */
 const WORLD_WALLS = {grotte: ['decor-socle-bleu', 'decor-socle-bleu', 'decor-corps-creme', 'decor-herbe'], pont: ['decor-lave-racines', 'decor-lave-racines', 'decor-lave-pierre', 'decor-lave-sol'],
@@ -927,10 +935,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     for (let k = last; k >= first; k--) for (const dir of [-1, 1] as const) {
       const n = k * 2 + (dir > 0 ? 1 : 0), z = k * PROP_EVERY + hash01(n) * (PROP_EVERY - 2), ahead = z - g.distance; if (ahead < NEAR + 1 || ahead > FAR || hash01(n + 977) < .25) continue;
       const w = wallAt(g, dir < 0 ? 'left' : 'right', z); if (!w || (!w.void && w.runnable) || g.holes.some(h => z > h.from - 1 && z < h.to + 1)) continue;
-      const [col, rw, tall] = PROPS[Math.floor(hash01(n + 31) * PROPS.length) % PROPS.length], size = tall * (.85 + hash01(n + 59) * .3) / .82;
+      const [col, rw, tall] = PROPS[Math.floor(hash01(n + 31) * PROPS.length) % PROPS.length], size = PROP_GROW * tall * (.85 + hash01(n + 59) * .3) / .82;
       const p = project(dir * (halfAt(g, ahead) + VERGE + .15 + (w.void ? 0 : .1)), ahead, 0), px = size * p.s;
-      // Fading in from afar, and out as it comes level with Benny (it would pass in front of her).
-      c.globalAlpha = Math.max(0, Math.min(1, (FAR - ahead) / 12, (ahead + 1.5) / 2.5)); c.drawImage(image, col * cell, rw * cell, cell, cell, p.x - px / 2, p.y - px * .93, px, px);
+      // Fading in from afar; near, it goes on by beside her, past the camera (drawn before her, it never hides her).
+      c.globalAlpha = Math.max(0, Math.min(1, (FAR - ahead) / 12)); c.drawImage(image, col * cell, rw * cell, cell, cell, p.x - px / 2, p.y - px * .93, px, px);
     }
     c.globalAlpha = 1;
   }
@@ -974,8 +982,11 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       if (drop > 0) { const g0 = project(x, ahead, 0), r = BENNY_RUN.rockLand / Math.max(BENNY_RUN.rockLand, ahead); c.fillStyle = `rgba(0,0,0,${.12 + .25 * r})`; c.beginPath(); c.ellipse(g0.x, g0.y, g0.s * .9 * r, g0.s * .25 * r, 0, 0, Math.PI * 2); c.fill(); }
       up = 7 * drop * drop + (e.rock === 'up' ? Math.sin(g.at / 40 + e.id) * .05 : 0);
     }
-    const base = project(x, ahead, up), w = shape.w * base.s, h = shape.h * base.s;
+    const grow = 1 + ((GROW[e.kind] ?? 1) - 1) * (vanishing === null ? 1 : 1 - vanishing), base = project(x, ahead, up), w = shape.w * grow * base.s, h = shape.h * grow * base.s;
     thingAhead = ahead;
+    // Its shadow on the ground (things standing on the road; the coins and the flyer over it, fainter): it sits them on the road.
+    if (vanishing === null && (GROW[e.kind] ?? 1) > 1 && !e.rock) { const g0 = project(x, ahead, ground), off = up - ground > .2 ? .5 : 1;
+      c.fillStyle = `rgba(40,20,10,${(.22 * off).toFixed(2)})`; c.beginPath(); c.ellipse(g0.x, g0.y, w * .42, Math.max(1, w * .1), 0, 0, Math.PI * 2); c.fill(); }
     if (!figure(c, e, base.x, base.y, w, h, g.at, project(x, ahead, 0).y)) {
       c.fillStyle = shape.colour;
       if (shape.round) { c.beginPath(); c.ellipse(base.x, base.y - h / 2, w / 2, h / 2, 0, 0, Math.PI * 2); c.fill(); }
@@ -985,7 +996,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (e.kind === 'power' && e.power && base.s > 14) { c.fillStyle = '#fff'; c.font = `800 ${Math.round(Math.max(10, base.s * .3))}px system-ui`; c.textAlign = 'center'; c.fillText(POWER_NAMES[e.power], base.x, base.y - h - 4); }
     // A creature that will strike Benny unless she strikes it first (beside her or straight ahead, 1.4 s away at most): a red « ! ».
     // Over a chest struck once, higher: its dizzy stars show beneath.
-    if (threatening(g, e)) { const r = Math.max(9, base.s * .32) * (1 + .12 * Math.sin(g.at / 90)), y = base.y - h - r * (e.kind === 'chest' && e.hp === 1 ? 3 : 1.6);
+    if (threatening(g, e)) { const r = Math.max(9, base.s * .32) * (1 + .12 * Math.sin(g.at / 90)), y = base.y - h * (e.kind === 'dragonnet' ? 1.3 : 1) - r * (e.kind === 'chest' && e.hp === 1 ? 3 : 1.6);
       c.fillStyle = '#d93a3a'; c.beginPath(); c.arc(base.x, y, r, 0, Math.PI * 2); c.fill(); c.fillStyle = '#fff'; c.font = `900 ${Math.round(r * 1.5)}px system-ui`; c.textAlign = 'center'; c.fillText('!', base.x, y + r * .52); return; }
     // In a tunnel of logs, only the first one says « roulade ».
     const inTunnel = e.kind === 'beam' && g.entities.some(o => o.kind === 'beam' && o.lane === e.lane && o.z < e.z && e.z - o.z <= BENNY_RUN.burrowKeep);
@@ -1380,13 +1391,13 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     wind(c, g, now);
     const ahead = [...g.entities].sort((a, b) => b.z - a.z);
     for (const e of ahead) if (e.z - g.distance > 0) thing(c, g, e);
+    // A creature struck melts away: its picture fades out where it was, over a short moment.
+    ghosts = ghosts.filter(gh => now - gh.at < (GHOST_MS[gh.e.kind] ?? 240));
+    // Carried on by the blow, it keeps its distance in front of Benny while it goes (drawn before her: it is ahead of her).
+    for (const gh of ghosts) vanish(c, g, {...gh.e, z: g.distance + Math.max(GHOST_AHEAD, gh.ahead)}, Math.max(0, (now - gh.at) / (GHOST_MS[gh.e.kind] ?? 240)));
     // During the end scene, Benny and the Dragon are in the scene, not on the road.
     if (!ending) benny(c, g, now);
     for (const e of ahead) if (e.z - g.distance <= 0) thing(c, g, e);
-    // A creature struck melts away: its picture fades out where it was, over a short moment.
-    ghosts = ghosts.filter(gh => now - gh.at < (GHOST_MS[gh.e.kind] ?? 240));
-    // Carried on by the blow, it keeps its distance in front of Benny while it goes.
-    for (const gh of ghosts) vanish(c, g, {...gh.e, z: g.distance + Math.max(.8, gh.ahead)}, Math.max(0, (now - gh.at) / (GHOST_MS[gh.e.kind] ?? 240)));
     c.globalAlpha = 1;
     if (!ending) dragon(c, g);
     if (!ending) fallCatch(c, g, now);
