@@ -194,7 +194,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const abort = new AbortController();
   let game: BennyRun | null = null, running = false, best = 0, viewLane = 1, lastDrawAt = 0, popTimer: ReturnType<typeof setTimeout> | undefined;
   /** Screen-space bits flying out of a pot or a creature, coin sparkles, and the present shake. */
-  let bits: {x: number; y: number; vx: number; vy: number; at: number; life: number; colour: string; size: number}[] = [];
+  let bits: {x: number; y: number; vx: number; vy: number; at: number; life: number; colour: string; size: number; frame?: string; turn?: number; spin?: number; fall?: number; grow?: number; fade?: number}[] = [];
   let shake: {at: number; ms: number; px: number} | null = null, hurtAt: number | null = null, lastCoinSound = 0, stopTimer: ReturnType<typeof setTimeout> | undefined;
   const sound = (kind: RunSound, pitch = 1) => { try { options.sound?.(kind, pitch); } catch { /* Sound is optional. */ } };
   function burst(x: number, y: number, colours: readonly string[], count: number, speed: number): void {
@@ -202,6 +202,27 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     for (let i = 0; i < count; i++) { const a = Math.random() * Math.PI * 2, v = speed * (.4 + Math.random() * .8);
       bits.push({x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - speed * .6, at, life: 380 + Math.random() * 260, colour: colours[i % colours.length], size: 3 + Math.random() * 4}); }
     if (bits.length > 160) bits = bits.slice(-160);
+  }
+  /** Painted pieces (16 Nov., instead of coloured dots where they show most): shards of a pot, splinters, chips, sparks, puffs of
+   *  dust, frames of the `eclats` atlas thrown out from (x, y), `size` px wide, turning as they fly; `fall` their gravity (px/s²),
+   *  `grow` how much they swell over their life, `fade` the share of it they fade over (at its end). */
+  function pieces(x: number, y: number, frames: readonly string[], count: number, speed: number, size: number, o: {fall?: number; grow?: number; life?: number; up?: number; spin?: number; spread?: number; dir?: number; fade?: number} = {}): boolean {
+    if (!art.eclats.ready) return false;
+    const at = clock();
+    for (let i = 0; i < count; i++) {
+      // Thrown up and out (`dir` leans them to one side, `spread` narrows the fan), each its own size and turn.
+      const a = -Math.PI / 2 + (o.dir ?? 0) * .6 + (Math.random() * 2 - 1) * Math.PI * (o.spread ?? .5), v = speed * (.5 + Math.random() * .7);
+      bits.push({x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - speed * (o.up ?? .3), at, life: (o.life ?? 520) * (.8 + Math.random() * .4), colour: '', size: size * (.7 + Math.random() * .5),
+        frame: frames[i % frames.length], turn: Math.random() * Math.PI * 2, spin: (Math.random() * 2 - 1) * (o.spin ?? 14), fall: o.fall ?? 1400, grow: o.grow ?? 0, fade: o.fade ?? .4});
+    }
+    if (bits.length > 160) bits = bits.slice(-160);
+    return true;
+  }
+  /** The star of an impact where a blow lands: painted, it opens quickly and fades (`s` the thing's scale, px per metre). */
+  function impactStar(x: number, y: number, s: number): boolean {
+    if (!art.eclats.ready) return false;
+    bits.push({x, y, vx: 0, vy: 0, at: clock(), life: 170, colour: '', size: Math.max(30, s * 1.1), frame: 'star', turn: Math.random() * .6, spin: 0, fall: 0, grow: .6, fade: .7});
+    return true;
   }
   /** Effects waiting for the blow of a hop to land (see HOP_MS). */
   let pending: {at: number; run: () => void}[] = [];
@@ -285,7 +306,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   /** Coins picked up close together climb in pitch (back down after a pause). */
   let coinRun = 0;
   /** Creatures struck: each melts away in its own way where it was (a chest breaks open, see GHOST_MS). */
-  let ghosts: {e: RunEntity; at: number; ahead: number}[] = [];
+  let ghosts: {e: RunEntity; at: number; ahead: number; dir?: number}[] = [];
+  /** A struck creature flashes white for this long when the blow lands (ms). */
+  const FLASH_MS = 90;
   /** While a struck creature's last moment is drawn: how far through it is (0 to 1), null otherwise. */
   let vanishing: number | null = null;
   /** How far ahead of Benny the thing being drawn is (m). */
@@ -1050,19 +1073,23 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   /** A struck creature's last moment, `k` from 0 to 1 where it was: the chest breaks open and its lid hops, the dragonnet is
    *  thrown up spinning and shrinks, the ember flares up tall and goes out, the flyer tumbles away upwards. */
-  function vanish(c: CanvasRenderingContext2D, g: BennyRun, e: RunEntity, k: number): void {
-    const p = screenOf(g, e), s = Math.max(.01, p.s);
+  function vanish(c: CanvasRenderingContext2D, g: BennyRun, e: RunEntity, k: number, dir = 1, flash = 0): void {
+    const p = screenOf(g, e), s = Math.max(.01, p.s), d = dir < 0 ? -1 : 1;
     const fade = e.kind === 'chest' ? 1 - Math.max(0, (k - .55) / .45) : 1 - k;
     c.save(); c.globalAlpha = Math.max(0, Math.min(1, fade)); vanishing = k;
     c.translate(p.x, p.y);
     switch (e.kind) {
       case 'chest': { const hop = Math.sin(Math.min(1, k * 2.2) * Math.PI) * s * .25; c.translate(0, -hop); c.scale(1 + .08 * Math.sin(k * Math.PI), 1 - .06 * Math.sin(k * Math.PI)); break; }
-      case 'dragonnet': c.translate(k * s * .5, -Math.sin(k * Math.PI) * s * .9 - k * s * .4); c.rotate(k * Math.PI * .8); c.scale(1 - k * .5, 1 - k * .5); break;
-      case 'ember': c.translate(0, -k * s * .7); c.scale(1 + k * .5, 1 + k * .5); break;
-      case 'flyer': c.translate(k * s * .8, -k * s * 1.6); c.rotate(k * Math.PI * 2); c.scale(1 - k * .6, 1 - k * .6); break;
+      // (16 Nov., an impact like Blade of Brim's: thrown away from the blow, in a high arc, spinning over.)
+      case 'dragonnet': c.translate(d * k * s * 1.8, -Math.sin(k * Math.PI) * s * 1.5 - k * s * .5); c.rotate(d * k * Math.PI * 1.6); c.scale(1 - k * .45, 1 - k * .45); break;
+      case 'ember': c.translate(d * k * s * .5, -k * s * .9); c.scale(1 + k * .5, 1 + k * .5); break;
+      case 'flyer': c.translate(d * k * s * 1.8, -k * s * 2.4); c.rotate(d * k * Math.PI * 2.5); c.scale(1 - k * .55, 1 - k * .55); break;
     }
     c.translate(-p.x, -p.y);
-    thing(c, g, e); vanishing = null; c.restore();
+    thing(c, g, e);
+    // The blow landing: the creature flashes white for a moment (drawn again over itself, added: cheap on every browser).
+    if (flash > 0) { c.globalCompositeOperation = 'lighter'; c.globalAlpha = Math.max(0, Math.min(1, fade)) * flash; thing(c, g, e); thing(c, g, e); c.globalCompositeOperation = 'source-over'; }
+    vanishing = null; c.restore();
   }
   /** Shapes that say what each thing is, standing on (`x`, `y`), `w` × `h` px; false for those still drawn as a plain block. */
   function figure(c: CanvasRenderingContext2D, e: RunEntity, x: number, y: number, w: number, h: number, at: number, ground = y): boolean {
@@ -1378,10 +1405,19 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     }
     // The wand's rainbow sweep for a moment after a strike.
     const sweepAt = swing ? swing.at + (swing.hop ? HOP_MS.bound : 0) : 0;
-    if (swing && now >= sweepAt && now - sweepAt < 220) {
-      const k = (now - sweepAt) / 220, colours = ['#ff6b6b', '#ffb84d', '#ffe66b', '#7be08a', '#6bb8ff', '#b07bff'];
-      colours.forEach((colour, i) => { c.strokeStyle = colour; c.globalAlpha = 1 - k; c.lineWidth = 3; c.beginPath(); c.arc(p.x, p.y - h * .6, s * (.9 + i * .07), Math.PI * (1.1 + k * .2), Math.PI * (1.9 + k * .2)); c.stroke(); });
-      c.globalAlpha = 1;
+    // (16 Nov.: a crisp crescent, white at its heart, edged with the rainbow, sweeping the way she strikes, out beyond her ears so that
+    // it never hides her; it grows from the wand's start to its end over the first half, then thins away.)
+    if (swing && now >= sweepAt && now - sweepAt < 200) {
+      const k = (now - sweepAt) / 200, d = swing.hop < 0 || (!swing.hop && g.lane < g.laneFrom) ? -1 : 1, cx = p.x, cy = p.y - h * .55, r0 = s * 1.02, r1 = s * 1.22;
+      // From over her head down to her side, the way of the blow (mirrored for the left).
+      const a0 = -Math.PI * .62, a1 = -Math.PI * .02, head = a0 + (a1 - a0) * Math.min(1, k * 2.2), tail = a0 + (a1 - a0) * Math.max(0, k * 1.6 - .6);
+      const arc = (r: number, from: number, to: number, back = false) => { if (d > 0) c.arc(cx, cy, r, from, to, back); else c.arc(cx, cy, r, Math.PI - from, Math.PI - to, !back); };
+      if (head > tail + .02) {
+        c.save(); c.globalAlpha = 1 - k * k;
+        const grad = c.createRadialGradient(cx, cy, r0, cx, cy, r1); grad.addColorStop(0, 'rgba(255,107,107,.9)'); grad.addColorStop(.2, 'rgba(255,230,107,.95)'); grad.addColorStop(.45, '#ffffff'); grad.addColorStop(.75, 'rgba(123,224,138,.9)'); grad.addColorStop(1, 'rgba(176,123,255,.85)');
+        c.beginPath(); arc(r1, tail, head); arc(r0, head, tail, true); c.closePath(); c.fillStyle = grad; c.fill();
+        c.strokeStyle = 'rgba(90,50,30,.55)'; c.lineWidth = 1.5; c.stroke(); c.restore();
+      }
     }
     if (drop > 0) c.restore();
   }
@@ -1444,8 +1480,13 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // A creature struck melts away: its picture fades out where it was, over a short moment.
     ghosts = ghosts.filter(gh => now - gh.at < (GHOST_MS[gh.e.kind] ?? 240));
     // Carried on by the blow, it keeps its distance in front of Benny while it goes (drawn before her: it is ahead of her).
-    for (const gh of ghosts) vanish(c, g, {...gh.e, z: g.distance + Math.max(GHOST_AHEAD, gh.ahead)}, Math.max(0, (now - gh.at) / (GHOST_MS[gh.e.kind] ?? 240)));
+    for (const gh of ghosts) vanish(c, g, {...gh.e, z: g.distance + Math.max(GHOST_AHEAD, gh.ahead)}, Math.max(0, (now - gh.at) / (GHOST_MS[gh.e.kind] ?? 240)), gh.dir, now >= gh.at && now - gh.at < FLASH_MS ? 1 - (now - gh.at) / FLASH_MS : 0);
     // During the end scene, Benny and the Dragon are in the scene, not on the road.
+    // The painted pieces (shards, sparks, dust) fly where the blow lands, in front of her: drawn before Benny, they never hide her.
+    bits = bits.filter(b => now - b.at < b.life);
+    for (const b of bits) { if (!b.frame) continue; const t = (now - b.at) / 1000, k = (now - b.at) / b.life; c.globalAlpha = Math.min(1, (1 - k) / (b.fade ?? .4));
+      sprite(c, 'eclats', b.frame, b.x + b.vx * t, b.y + b.vy * t + (b.fall ?? 0) / 2 * t * t, b.size * (1 + (b.grow ?? 0) * k), (b.turn ?? 0) + (b.spin ?? 0) * t); }
+    c.globalAlpha = 1;
     if (!ending) benny(c, g, now);
     for (const e of ahead) if (e.z - g.distance <= 0) thing(c, g, e);
     c.globalAlpha = 1;
@@ -1461,7 +1502,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     for (const r of rings) { const k = (now - r.at) / 260; c.strokeStyle = r.ground ? `rgba(120,235,255,${.9 * (1 - k)})` : `rgba(255,255,255,${.9 * (1 - k)})`; c.lineWidth = 6 * (1 - k) + 1; c.beginPath();
       if (r.ground) c.ellipse(r.x, r.y, r.size * (.5 + k), r.size * (.5 + k) * .32, 0, 0, Math.PI * 2); else c.arc(r.x, r.y, r.size * (.4 + k), 0, Math.PI * 2); c.stroke(); }
     bits = bits.filter(b => now - b.at < b.life);
-    for (const b of bits) { const t = (now - b.at) / 1000; c.globalAlpha = 1 - (now - b.at) / b.life; c.fillStyle = b.colour;
+    for (const b of bits) { if (b.frame) continue; const t = (now - b.at) / 1000, k = (now - b.at) / b.life;
+      c.globalAlpha = 1 - k; c.fillStyle = b.colour || '#fff';
       c.fillRect(b.x + b.vx * t - b.size / 2, b.y + b.vy * t + 900 * t * t - b.size / 2, b.size, b.size); }
     c.globalAlpha = 1;
     c.restore();
@@ -1507,7 +1549,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         if (event.by === 'far' && swing) swing.far = true;
         else if (!hopping) swing = {at: clock(), lane: g.lane, hop: 0};
         const delay = hopping && swing ? Math.max(0, swing.at + HOP_MS.bound - clock()) : 0;
-        if (event.entity.kind !== 'pot' && g.entities.every(o => o.id !== event.entity.id)) ghosts.push({e: {...event.entity}, at: clock() + delay, ahead: event.entity.z - g.distance});
+        if (event.entity.kind !== 'pot' && g.entities.every(o => o.id !== event.entity.id)) ghosts.push({e: {...event.entity}, at: clock() + delay, ahead: event.entity.z - g.distance, dir: Math.sign(event.entity.lane - g.laneFrom) || swing?.hop || (event.entity.id % 2 ? 1 : -1)});
         // Three things or more broken in one roll: it is said.
         if (event.roll && event.roll >= 3) flash(`Roulade en chaîne ×${event.roll} !`);
         const p = screenOf(g, event.entity);
@@ -1522,9 +1564,17 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         { const b = project(laneX(viewLane), 0, bennyHeight(g)); rings.push({x: b.x, y: b.y, at: clock(), size: b.s * 1.2, ground: true}); }
         // Each strike of a combo a semitone higher (up to an octave); a new multiplier is announced.
         const pitch = 2 ** (Math.min(12, event.combo - 1) / 12);
-        if (event.entity.gold) { burst(p.x, p.y, ['#fff3a0', '#f4c430', '#ffffff'], 26, 380); flash(`Pot doré ! +${event.points}`); }
-        if (event.entity.kind === 'pot') { burst(p.x, p.y, ['#c96b3a', '#e08a52', '#8a4a26', '#a8542a', '#f4c430'], 22, 320); burst(p.x, p.y, ['rgba(220,180,140,.8)'], 6, 90); sound('pot', pitch); }
-        else { burst(p.x, p.y, ['#fff', '#e7d1ff', '#ffb3c8', '#ffe36b'], 12, 220); sound('strike', pitch); }
+        // The pot bursts into painted shards (its gold ones for a golden pot) and a puff of dust; a creature struck, a star of
+        // impact and the wand's sparks (16 Nov.). The coloured dots only while the paintings have not loaded.
+        const piece = Math.max(18, p.s * .75), away = Math.sign(event.entity.lane - g.laneFrom);
+        if (event.entity.gold) { pieces(p.x, p.y - p.s * .5, ['gold-1', 'gold-2', 'spark'], 9, 560, piece, {dir: away, spread: .4, up: .5}); burst(p.x, p.y, ['#fff3a0', '#f4c430', '#ffffff'], 12, 380); flash(`Pot doré ! +${event.points}`); }
+        if (event.entity.kind === 'pot') {
+          if (!event.entity.gold && !pieces(p.x, p.y - p.s * .5, ['pot-1', 'pot-2', 'pot-3', 'pot-4'], 8, 560, piece, {dir: away, spread: .4, up: .5})) burst(p.x, p.y, ['#c96b3a', '#e08a52', '#8a4a26', '#a8542a', '#f4c430'], 22, 320);
+          if (!pieces(p.x + away * p.s * .3, p.y + p.s * .4, ['dust-big', 'dust-small'], 2, 60, piece * 1.1, {fall: -60, grow: .7, life: 480, spread: .45, spin: 1, fade: .8})) burst(p.x, p.y, ['rgba(220,180,140,.8)'], 6, 90);
+          sound('pot', pitch);
+        }
+        else { if (!impactStar(p.x, p.y - p.s * .55, p.s)) burst(p.x, p.y, ['#fff', '#e7d1ff', '#ffb3c8', '#ffe36b'], 12, 220);
+          pieces(p.x, p.y - p.s * .55, ['spark'], 5, 330, Math.max(12, p.s * .35), {fall: 300, life: 380, spread: 1, spin: 6, dir: away}); sound('strike', pitch); }
         // A creature lands harder than a pot: a longer freeze, a bigger ring.
         rings.push({x: p.x, y: p.y - p.s * .4, at: clock(), size: p.s * (event.entity.kind === 'pot' ? .9 : 1.4)});
         // A shock wave's strikes ring and score but neither freeze nor shake the run.
