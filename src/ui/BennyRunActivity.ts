@@ -81,6 +81,8 @@ const GAP_MIN_PX = 7, GAP_SHADE = 'rgba(52,26,62,.62)';
 /** The close camera follows Benny across: `CAM_LANE` of the way to her lane, `CAM_WALL` of the way to a wall she runs on. */
 /** How far aside the far end of the road is drawn at the most, in metres. */
 const BEND = 9;
+/** The hills' height (m): the road rolls up and down by a little more than this. */
+const HILL = 1.5;
 /** The road's slabs: one painted tile is `SLAB_TILE` m. Things stand beside the road every `PROP_EVERY` m or so on each side (not along
  *  a wall Benny can run on): [column, row] in the painted grid, height in metres. */
 const SLAB_TILE = 6.6, PROP_EVERY = 9;
@@ -293,19 +295,21 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   function paintedFloor(c: CanvasRenderingContext2D, g: BennyRun): void {
     const horizon = height * HORIZON, H = cameraHeight() + camUp, k = scale0() * CAMERA_BACK, BAND = 4;
     const aheadAt = (y: number) => k * H / Math.max(.01, y - horizon) - CAMERA_BACK;
-    const row = (name: DecorName, x0: number, x1: number, a0: number, a1: number, across: number, along: number, y: number, s: number) => {
+    const row = (name: DecorName, x0: number, x1: number, a0: number, a1: number, across: number, along: number, y: number, s: number, deep = BAND + .5) => {
       const far = a0 > 30, t = decor[name], el = far ? t.far : t.near, side = far ? FAR_SIDE : NEAR_SIDE; if (!el) return;
       const sw = Math.min(side * 4, (x1 - x0) / across * side), sh = Math.max(.5, Math.min(side, (a0 - a1) / along * side));
-      c.drawImage(el, posmod(x0, across) / across * side, posmod(-(g.distance + a0), along) / along * side, sw, sh, width / 2 + (x0 + bendAt((a0 + a1) / 2) - camX) * s, y, (x1 - x0) * s, BAND + .5);
+      c.drawImage(el, posmod(x0, across) / across * side, posmod(-(g.distance + a0), along) / along * side, sw, sh, width / 2 + (x0 + bendAt((a0 + a1) / 2) - camX) * s, y, (x1 - x0) * s, deep);
     };
-    for (let y = Math.max(0, Math.floor(project(0, FAR, 0).y)); y < height; y += BAND) {
+    for (let y = Math.max(0, Math.floor(horizon)); y < height + 60; y += BAND) {
       const a0 = Math.min(FAR, aheadAt(y)), a1 = Math.max(NEAR, aheadAt(y + BAND)); if (a1 >= FAR || a0 <= NEAR) continue;
       const mid = (a0 + a1) / 2, z = g.distance + mid; if (g.holes.some(h => z >= h.from && z < h.to)) continue;
       const half = halfAt(g, mid), s = project(0, mid, 0).s;
+      // Where that strip of ground really is on the screen, hills included (far to near: a crest hides what lies behind it).
+      const top = project(0, a0, 0).y, deep = project(0, a1, 0).y - top + .8; if (deep <= .8) continue;
       // Each world has its ground (the meadow's verges are grass; the lava's and the snow's go on to the edge).
       const set = settingAt(g, z), slabs = ROAD_GROUND[set];
-      if (set === 'grotte') { row('decor-herbe', -half - VERGE, -half + .05, a0, a1, GRASS_TILE, GRASS_TILE, y, s); row('decor-herbe', half - .05, half + VERGE, a0, a1, GRASS_TILE, GRASS_TILE, y, s); row(slabs, -half, half, a0, a1, SLAB_TILE, SLAB_TILE, y, s); }
-      else row(slabs, -half - VERGE, half + VERGE, a0, a1, SLAB_TILE, SLAB_TILE, y, s);
+      if (set === 'grotte') { row('decor-herbe', -half - VERGE, -half + .05, a0, a1, GRASS_TILE, GRASS_TILE, top, s, deep); row('decor-herbe', half - .05, half + VERGE, a0, a1, GRASS_TILE, GRASS_TILE, top, s, deep); row(slabs, -half, half, a0, a1, SLAB_TILE, SLAB_TILE, top, s, deep); }
+      else row(slabs, -half - VERGE, half + VERGE, a0, a1, SLAB_TILE, SLAB_TILE, top, s, deep);
     }
   }
   /** The cliff of an isle facing Benny, `ahead` m in front, from `x0` to `x1` m across, seen only inside the opening `hole` (a path). */
@@ -570,8 +574,13 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const cameraHeight = () => Math.min(24, Math.max(2.2, (height * BENNY_AT - height * HORIZON) / scale0()));
   const project = (x: number, ahead: number, up: number) => {
     const horizon = height * HORIZON, s = scale0() * CAMERA_BACK / (Math.max(-CAMERA_BACK + .5, ahead) + CAMERA_BACK);
-    return {x: width / 2 + (x + bendAt(ahead) - camX) * s, y: horizon + (cameraHeight() + camUp - up) * s, s};
+    return {x: width / 2 + (x + bendAt(ahead) - camX) * s, y: horizon + (cameraHeight() + camUp - up - hillAt(ahead)) * s, s};
   };
+  /** The road rises and falls (drawing only, like its bends): the ground `ahead` m away stands this many metres above the ground at
+   *  Benny's feet. Gentle rolling hills, the same place always the same height; nothing behind her. */
+  let hillBase = 0, hillFrom = 0;
+  const hill = (z: number) => HILL * (Math.sin(z / 46) + .4 * Math.sin(z / 21 + 1));
+  const hillAt = (ahead: number) => ahead <= 0 ? 0 : hill(hillFrom + ahead) - hillBase;
   /** The road winds in the distance (drawing only: the lanes and the rules stay straight): everything `ahead` m away is drawn this
    *  many metres aside, nothing at Benny's feet, `bend` m at the far end; the bends come and go with the distance run. */
   let bend = 0;
@@ -1290,6 +1299,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // The blow's pending effects.
     if (pending.length) { const due = pending.filter(e => e.at <= now); pending = pending.filter(e => e.at > now); for (const e of due) e.run(); }
     { const side = g.wall ? (g.wall.side === 'left' ? -1 : 1) : 0, toX = side ? side * wallX() * CAM_WALL : laneX(viewLane) * CAM_LANE, toUp = g.wall ? bennyHeight(g) * .45 : floorHeight(g) * .4;
+      hillFrom = g.distance; hillBase = hill(g.distance);
       bend = BEND * (Math.sin(g.distance / 150) + .55 * Math.sin(g.distance / 67 + 1.3)) / 1.55;
       camX += (toX - camX) * Math.min(1, dt * 7); camUp += (toUp - camUp) * Math.min(1, dt * 4); }
     // Crossing from one wall to the other: a bound through the air.
