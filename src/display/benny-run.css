@@ -5,25 +5,7 @@
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 .benny-run-activity[hidden] { display: none; }
-.benny-run-top { position: absolute; z-index: 6; top: env(safe-area-inset-top); left: env(safe-area-inset-left); right: env(safe-area-inset-right); display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 8px 12px; pointer-events: none; }
-.benny-run-top p { margin: 0; white-space: nowrap; font-weight: 800; color: #fff; -webkit-text-stroke: 1px #3b2414; paint-order: stroke fill; text-shadow: 0 1px 4px rgba(40,20,8,.75); }
-.benny-run-score { font-size: 1.6rem; min-width: 4ch; }
-/* The strikes in a row, big in the middle under the top bar. */
-.benny-run-combo { position: absolute; left: 0; right: 0; top: calc(100% + 4px); text-align: center; font-size: 2.4rem; letter-spacing: .02em; text-transform: uppercase; color: #ffe36b !important; -webkit-text-stroke: 2px #3b2414 !important; }
-.benny-run-metres { flex: 1; text-align: right; }
-.benny-run-top button { pointer-events: auto; min-height: 44px; padding: 0 14px; border-radius: 14px; border: 2px solid #6b5a3a; background: #fff8e8; font-weight: 800; }
-.benny-run-power { color: #e7d1ff !important; order: 10; flex-basis: 100%; font-size: .95rem; }
-.benny-run-power.benny-run-ending { animation: benny-run-blink .3s steps(2, jump-none) infinite; }
-@keyframes benny-run-blink { 0% { opacity: 1; } 100% { opacity: .3; } }
-@media (prefers-reduced-motion: reduce) { .benny-run-power.benny-run-ending { animation: none; opacity: .6; } }
 .benny-run-canvas { flex: 1; width: 100%; min-height: 0; display: block; }
-/* A hint or a cheer on a dark rounded label, so it reads on the bright sky and the planks alike (13 Nov.). */
-.benny-run-pop { position: absolute; z-index: 5; left: 50%; top: 19%; width: max-content; max-width: calc(100% - 40px); box-sizing: border-box; margin: 0; padding: 6px 14px; border-radius: 14px;
-  background: rgba(59,36,20,.78); box-shadow: 0 3px 10px rgba(0,0,0,.25); text-align: center; font-size: 1.35rem; line-height: 1.25; font-weight: 800; color: #fff6e0; opacity: 0; pointer-events: none; transform: translateX(-50%); }
-/* In the sky, above the road ahead (it hid a gap 30 m away); below the tutorial's advice while that one shows. */
-*:has(> .benny-run-coach:not([hidden])) > .benny-run-pop { top: 34%; }
-.benny-run-pop.show { animation: benny-run-pop .9s ease-out; }
-@keyframes benny-run-pop { 0% { opacity: 0; transform: translateX(-50%) scale(.8); } 12% { opacity: 1; transform: translateX(-50%) scale(1.05); } 20% { transform: translateX(-50%) scale(1); } 80% { opacity: 1; transform: translateX(-50%); } 100% { opacity: 0; transform: translateX(-50%) translateY(-12px); } }
 .benny-run-card { position: absolute; z-index: 8; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(560px, calc(100% - 32px)); max-height: calc(100% - 24px); overflow: auto;
   display: flex; flex-direction: column; gap: 10px; padding: 18px; border-radius: 18px; background: #fff8e8; border: 3px solid #6b5a3a; box-shadow: 0 10px 30px rgba(0,0,0,.35); text-align: center; }
 .benny-run-card[hidden] { display: none; }
@@ -39,23 +21,11 @@
 .benny-run-phone { width: 46px; height: 80px; border: 5px solid #fff8e8; border-radius: 10px; animation: benny-run-phone 1.6s ease-in-out infinite; }
 @keyframes benny-run-phone { 0%, 20% { transform: rotate(-90deg); } 60%, 100% { transform: rotate(0deg); } }
 @media (prefers-reduced-motion: reduce) { .benny-run-phone { animation: none; } }
-/* The tutorial's advice, big and readable above Benny. */
-.benny-run-coach { position: absolute; z-index: 5; left: 16px; right: 16px; top: 12%; margin: 0; padding: 10px 14px; border-radius: 14px; text-align: center;
-  font-size: 1.15rem; font-weight: 800; color: #3b3326; background: rgba(255,248,232,.92); border: 2px solid #6b5a3a; pointer-events: none; }
-.benny-run-coach[hidden] { display: none; }
-/* After a bump: the Dragon's countdown, its own line under the top bar. */
-.benny-run-danger { order: 11; flex-basis: 100%; margin: 0; font-size: .95rem; font-weight: 800; color: #ffe0d8 !important; text-shadow: 0 1px 2px #3b2414, 0 0 4px #3b2414, 0 0 6px rgba(59,36,20,.8); }
-.benny-run-danger[hidden] { display: none; }
 /* End card: the score big, the figures two by two. Start card: the rules folded away. */
 .benny-run-big { font-size: 2.4rem; font-weight: 800; color: #b0582a; line-height: 1.1; }
 .benny-run-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; margin: 0; padding: 0; list-style: none; font-weight: 700; }
 .benny-run-how { display: grid; gap: 10px; }
 .benny-run-how[hidden] { display: none; }
-/* The combo's time left, a bar under its count; the pause button beside Quitter. */
-.benny-run-top [data-benny-run-pause] { margin-left: auto; min-width: 44px; padding: 0 10px; }
-.benny-run-top [data-benny-run-exit] { min-width: 44px; padding: 0 10px; }
-/* The score once the record is beaten during the run. */
-.benny-run-score.benny-run-beaten { color: #ffe36b; }
 /* The challenge under way, its own line under the top bar. */
 /* The challenge under way: a panel at the bottom, its words and a bar that fills. */
 .benny-run-quest { position: absolute; z-index: 6; left: calc(12px + env(safe-area-inset-left)); right: calc(12px + env(safe-area-inset-right)); bottom: calc(14px + env(safe-area-inset-bottom)); padding: 8px 14px 10px; border-radius: 16px; background: rgba(46,30,22,.82); border: 2px solid rgba(255,236,200,.35); pointer-events: none; }
@@ -63,15 +33,119 @@
 .benny-run-challenge { margin: 0 0 6px; text-align: center; font-weight: 800; font-size: 1.05rem; color: #fff; }
 .benny-run-quest-bar { height: 12px; border-radius: 6px; background: rgba(0,0,0,.55); overflow: hidden; }
 .benny-run-quest-bar span { display: block; height: 100%; width: 0; border-radius: 6px; background: linear-gradient(#8ef07a, #3fae3a); transition: width .25s ease-out; }
-/* The 3, 2, 1 after a pause. */
-.benny-run-pop.benny-run-count { top: 34%; font-size: 4.5rem; background: none; box-shadow: none; color: #fff; -webkit-text-stroke: 2px #3b2414; paint-order: stroke fill; }
-/* One row whatever the numbers: the figures shrink a little on a narrow screen rather than push the buttons down. */
-.benny-run-top { column-gap: 8px; }
-.benny-run-top .benny-run-score { font-size: clamp(1.15rem, 6.4vw, 1.6rem); min-width: 0; }
-.benny-run-top .benny-run-metres, .benny-run-top .benny-run-coins { font-size: clamp(.8rem, 3.9vw, 1.05rem); }
-.benny-run-top button { flex: none; }
-/* The coins as a gold coin and a number: room for big scores on one row. */
-.benny-run-top .benny-run-coins { display: inline-flex; align-items: center; gap: 4px; }
-.benny-run-top .benny-run-coins::before { content: ''; width: .9em; height: .9em; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff6c8 0 18%, #f4c430 20% 62%, #d99a1e 64%); box-shadow: 0 0 0 1px #3b2414; }
-.benny-run-top .benny-run-hearts { font-size: clamp(.8rem, 3.9vw, 1.05rem); color: #ff4d6d; font-weight: 800; text-shadow: 0 1px 0 #3b2414; }
-.benny-run-top .benny-run-hearts::before { content: '♥ '; }
+
+/* ── The words of the run (16 Nov., like the lane runners the owner plays): the middle of the screen stays free. ───────── */
+/* A tip: one at a time, on a full parchment label right under the top bar (the others wait their turn). */
+.benny-run-tip { position: absolute; z-index: 6; left: calc(14px + env(safe-area-inset-left)); right: calc(14px + env(safe-area-inset-right)); top: calc(env(safe-area-inset-top) + var(--benny-run-bar) + 6px);
+  width: fit-content; max-width: calc(100% - 28px); box-sizing: border-box; margin: 0 auto; padding: 4px 12px; pointer-events: none;
+  border: 9px solid transparent; border-image: url('/assets/ui/kit/label.webp') 30 50 fill / 9px 16px / 0 stretch; filter: drop-shadow(0 3px 3px rgba(40,22,10,.45));
+  text-align: center; font-size: 1.02rem; line-height: 1.25; font-weight: 800; color: #3b2a1a; }
+.benny-run-tip[hidden] { display: none; }
+.benny-run-tip.show { animation: benny-run-tip .22s ease-out; }
+@keyframes benny-run-tip { 0% { opacity: 0; transform: translateY(-8px) scale(.96); } 100% { opacity: 1; transform: none; } }
+/* A word: big, outlined, brief (« 3 coups », « Frénésie ! »), high in the sky above the far road. */
+.benny-run-pop { position: absolute; z-index: 5; left: 50%; top: 24%; width: max-content; max-width: calc(100% - 32px); margin: 0; pointer-events: none; opacity: 0;
+  transform: translateX(-50%); text-align: center; font-family: var(--kit-font, 'Lilita One', sans-serif); font-weight: 400; font-size: 2.5rem; line-height: 1.05;
+  color: #fff3c2; -webkit-text-stroke: 7px #3b1f0c; paint-order: stroke fill; text-shadow: 0 4px 0 #3b1f0c, 0 6px 12px rgba(0,0,0,.35); }
+.benny-run-pop small { display: block; margin-top: 2px; font-size: 1.15rem; color: #fff; -webkit-text-stroke-width: 5px; }
+.benny-run-pop.benny-run-small { font-size: 2.1rem; color: #ffd23a; text-transform: uppercase; letter-spacing: .02em; }
+.benny-run-pop.benny-run-count { top: 34%; font-size: 5rem; color: #fff; }
+.benny-run-pop.show { animation: benny-run-pop 1s ease-out both; }
+@keyframes benny-run-pop { 0% { opacity: 0; transform: translateX(-50%) scale(.5); } 10% { opacity: 1; transform: translateX(-50%) scale(1.22); } 20% { transform: translateX(-50%) scale(.96); }
+  28% { transform: translateX(-50%) scale(1); } 78% { opacity: 1; transform: translateX(-50%); } 100% { opacity: 0; transform: translateX(-50%) translateY(-14px) scale(.96); } }
+/* The danger, shown rather than written: while the Dragon is on Benny's tail, the screen's edges beat red. */
+.benny-run-alarm { position: absolute; inset: 0; z-index: 4; pointer-events: none; opacity: 0;
+  background: radial-gradient(ellipse 80% 66% at 50% 52%, rgba(220,20,30,0) 52%, rgba(220,20,30,.55) 82%, rgba(170,0,15,.9) 100%);
+  box-shadow: inset 0 0 46px 14px rgba(225,15,30,.85); }
+.benny-run-chased .benny-run-alarm { animation: benny-run-beat .9s ease-in-out infinite; }
+@keyframes benny-run-beat { 0%, 100% { opacity: .45; } 14% { opacity: 1; } 28% { opacity: .6; } 42% { opacity: .95; } 60% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .benny-run-chased .benny-run-alarm { animation: none; opacity: .6; } .benny-run-pop.show, .benny-run-tip.show { animation-name: none; opacity: 1; } }
+
+/* ── The top bar (16 Nov.), in the game's own look (« Pierre et parchemin », Lilita One): the bumps left as two hearts on the left,
+   the score on a stone counter in the middle with the combo's multiplier, pause and quit as round stones on the right; under them
+   the metres, the coins, the Hearts won and the power on small counters. ─────────────────────────────────────────────────── */
+.benny-run-activity { --benny-run-bar: 98px; }
+.benny-run-top { position: absolute; z-index: 6; top: env(safe-area-inset-top); left: env(safe-area-inset-left); right: env(safe-area-inset-right);
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 6px 6px; padding: 6px 10px 0; pointer-events: none;
+  font-family: var(--kit-font, 'Lilita One', sans-serif); background: linear-gradient(rgba(30,18,10,.42), rgba(30,18,10,0)); }
+.benny-run-top p { margin: 0; white-space: nowrap; font-weight: 400; color: #fff; -webkit-text-stroke: 4px #1d1a16; paint-order: stroke fill; }
+/* The hearts: the second one lost after a bump fills back up while the Dragon is on Benny's tail. */
+.benny-run-lives { display: flex; gap: 2px; justify-self: start; }
+.benny-run-life { position: relative; width: 36px; height: 36px; background: url('/assets/currency/heart.png') center / contain no-repeat; filter: drop-shadow(0 2px 1px rgba(0,0,0,.55)); }
+.benny-run-life i { position: absolute; inset: 0; background: inherit; display: none; }
+.benny-run-life.benny-run-lost { background-image: none; }
+.benny-run-life.benny-run-lost::before { content: ''; position: absolute; inset: 0; background: url('/assets/currency/heart.png') center / contain no-repeat; filter: grayscale(1) brightness(.75); opacity: .55; }
+.benny-run-life.benny-run-lost i { display: block; background: url('/assets/currency/heart.png') center / contain no-repeat; clip-path: inset(calc(100% - var(--fill, 0%)) 0 0 0); opacity: .9; }
+.benny-run-life.benny-run-broke { animation: benny-run-broke .5s ease-out; }
+@keyframes benny-run-broke { 0% { transform: scale(1.5) rotate(-12deg); } 30% { transform: scale(.8) rotate(10deg); } 55% { transform: scale(1.1) rotate(-5deg); } 100% { transform: none; } }
+/* The score, on a stone counter. */
+.benny-run-plaque { position: relative; display: flex; align-items: center; justify-content: center; min-width: 128px; height: 48px; padding: 0 18px; box-sizing: border-box;
+  border: 13px solid transparent; border-width: 0 !important; border-image: url('/assets/ui/kit/counter.webp') 34 44 fill / 13px 17px / 0 stretch; }
+.benny-run-top .benny-run-score { font-size: 1.75rem; line-height: 1; min-width: 0; }
+.benny-run-score.benny-run-beaten { color: #ffe36b; }
+/* The multiplier, a gold badge at the counter's corner. */
+.benny-run-mult { position: absolute; right: -16px; top: -8px; padding: 2px 7px; border-radius: 999px; background: linear-gradient(#ffe57a, #f0a81c); border: 2px solid #5a2e08;
+  font-size: 1.05rem; line-height: 1.1; color: #fff !important; -webkit-text-stroke: 3px #6b3208 !important; box-shadow: 0 2px 3px rgba(0,0,0,.45); }
+.benny-run-mult[hidden] { display: none; }
+.benny-run-mult.show { animation: benny-run-mult .35s ease-out; }
+@keyframes benny-run-mult { 0% { transform: scale(1.8); } 60% { transform: scale(.9); } 100% { transform: none; } }
+/* Pause and quit: round stones, 46 px (finger size). */
+.benny-run-top > button { pointer-events: auto; flex: none; }
+.benny-run-top [data-benny-run-pause] { grid-column: 3; grid-row: 1; justify-self: end; margin-right: 52px; }
+.benny-run-top [data-benny-run-exit] { grid-column: 3; grid-row: 1; justify-self: end; }
+.benny-run-top .benny-run-round, .benny-run-top .kit-close { width: 46px !important; min-width: 46px !important; height: 46px !important; min-height: 46px !important; padding: 0 !important; }
+.benny-run-top .benny-run-round { font-size: 17px; letter-spacing: -2px; color: #fff; -webkit-text-stroke: 3px #0b2a63; }
+.benny-run-top .benny-run-round::before { inset: 0 !important; border: 0 !important; border-image: none !important; background: url('/assets/ui/kit/round-blue.webp') center / contain no-repeat !important; }
+/* The second row: small counters. */
+.benny-run-row { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 6px; }
+.benny-run-row > p { display: inline-flex; align-items: center; gap: 4px; height: 30px; padding: 0 12px; box-sizing: border-box; font-size: 15px;
+  border: 9px solid transparent; border-width: 0 !important; border-image: url('/assets/ui/kit/counter.webp') 34 44 fill / 9px 12px / 0 stretch; }
+.benny-run-row > p:empty { display: none; }
+.benny-run-row > p[hidden] { display: none; }
+.benny-run-row .benny-run-coins::before { content: ''; width: 17px; height: 17px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff6c8 0 18%, #f4c430 20% 62%, #d99a1e 64%); box-shadow: 0 0 0 1.5px #3b2414; }
+.benny-run-row .benny-run-hearts::before { content: ''; width: 18px; height: 18px; background: url('/assets/currency/heart.png') center / contain no-repeat; }
+.benny-run-row .benny-run-power { color: #f0e2ff !important; -webkit-text-stroke-color: #3a1a5a; }
+.benny-run-power.benny-run-ending { animation: benny-run-blink .3s steps(2, jump-none) infinite; }
+@keyframes benny-run-blink { 0% { opacity: 1; } 100% { opacity: .3; } }
+@media (prefers-reduced-motion: reduce) { .benny-run-power.benny-run-ending { animation: none; opacity: .6; } .benny-run-life.benny-run-broke, .benny-run-mult.show { animation: none; } }
+/* A coin landing on the counter: it bumps. */
+.benny-run-row .benny-run-coins.benny-run-got { animation: benny-run-got .18s ease-out; }
+@keyframes benny-run-got { 0% { transform: scale(1.18); } 100% { transform: none; } }
+
+/* ── The cards (start, pause, end), in the game's window (16 Nov.): the carved stone frame on parchment, the title on the
+   nailed plank, the Lilita One lettering; on the end card the score and the loot count up and « Rejouer » comes first. ─── */
+.benny-run-card { width: min(440px, calc(100% - 28px)); gap: 10px; padding: 8px 14px 14px; color: #3b2a1a;
+  border: 18px solid transparent; border-image: url('/assets/ui/kit/frame.webp') 100 / 30px / 4px stretch; border-radius: 34px;
+  background: #f6e7c4 url('/assets/ui/kit/parchment.webp') 0 0 / 256px 256px; background-clip: padding-box; box-shadow: 0 10px 24px rgba(11,18,14,.5); }
+.benny-run-card .benny-run-title { align-self: center; width: fit-content; max-width: 100%; box-sizing: border-box; margin: -2px auto 2px; padding: 8px 26px 11px;
+  border: 0 solid transparent; border-image: url('/assets/ui/kit/plank.webp') 0 90 fill / 0 30px / 0 stretch;
+  font-family: var(--kit-font, 'Lilita One', sans-serif); font-weight: 400; font-size: 1.25rem; line-height: 1.1; color: #fbf3e2; -webkit-text-stroke: 3px #3a1408; paint-order: stroke fill; text-shadow: 0 2px 0 #3a1408; }
+.benny-run-card .benny-run-rules { color: #5e4a33; font-size: .95rem; line-height: 1.3; }
+.benny-run-card .benny-run-best { margin-top: -4px; font-size: .95rem !important; }
+.benny-run-card .benny-run-record, .benny-run-card .benny-run-best { font-family: var(--kit-font, 'Lilita One', sans-serif); font-weight: 400; font-size: 1.1rem; color: #b0582a; }
+.benny-run-card button { min-height: 46px; font-size: 1.05rem; }
+/* The score, big, counted up. */
+.benny-run-points { display: flex; align-items: baseline; justify-content: center; gap: 8px; }
+.benny-run-card .benny-run-big { font-family: var(--kit-font, 'Lilita One', sans-serif); font-weight: 400; font-size: 3.2rem; line-height: 1; color: #ffd23a; -webkit-text-stroke: 6px #5a2e08; paint-order: stroke fill; text-shadow: 0 3px 0 #5a2e08; font-variant-numeric: tabular-nums; }
+.benny-run-unit { font-family: var(--kit-font, 'Lilita One', sans-serif); font-size: 1.2rem; color: #6b3d1c; }
+/* The record springs in once the score is counted. */
+.benny-run-end .benny-run-record { opacity: 0; transform: scale(.6); }
+.benny-run-end .benny-run-record.show { animation: benny-run-stamp .45s cubic-bezier(.2, 1.6, .4, 1) forwards; }
+@keyframes benny-run-stamp { 0% { opacity: 0; transform: scale(1.8) rotate(-6deg); } 100% { opacity: 1; transform: rotate(-2deg); } }
+.benny-run-end .benny-run-record { align-self: center; padding: 4px 14px 6px; border-radius: 999px; background: linear-gradient(#ffe57a, #f0a81c); border: 2px solid #5a2e08; color: #fff !important; -webkit-text-stroke: 3px #6b3208; paint-order: stroke fill; }
+/* The loot: what the run won, on dark counters. */
+.benny-run-loot { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.benny-run-prize { display: flex; align-items: center; gap: 6px; min-width: 96px; height: 42px; padding: 0 12px 0 10px; box-sizing: border-box;
+  border-image: url('/assets/ui/kit/counter.webp') 34 44 fill / 12px 16px / 0 stretch; font-family: var(--kit-font, 'Lilita One', sans-serif); }
+.benny-run-prize strong { font-weight: 400; font-size: 1.3rem; color: #fff; -webkit-text-stroke: 4px #1d1a16; paint-order: stroke fill; font-variant-numeric: tabular-nums; }
+.benny-run-card .benny-run-prize-label { font-size: .85rem; color: #f4efe4; }
+.benny-run-prize::before { content: ''; flex: none; width: 24px; height: 24px; }
+.benny-run-coin::before { border-radius: 50%; width: 20px; height: 20px; background: radial-gradient(circle at 35% 35%, #fff6c8 0 18%, #f4c430 20% 62%, #d99a1e 64%); box-shadow: 0 0 0 1.5px #3b2414; }
+.benny-run-pattes::before { background: url('/assets/currency/coin.png') center / contain no-repeat; }
+.benny-run-heart::before { background: url('/assets/currency/heart.png') center / contain no-repeat; }
+/* The run's figures: small parchment pills, only those that are not zero. */
+.benny-run-card .benny-run-stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; font-weight: 700; font-size: .92rem; color: #4a2c12; }
+.benny-run-stats li { padding: 3px 10px; border-radius: 999px; background: rgba(255,250,235,.75); border: 1.5px solid rgba(107,74,42,.45); }
+/* « Rejouer » first and big. */
+.benny-run-card .benny-run-again { min-height: 60px !important; font-size: 1.45rem !important; margin-top: 4px; }
+@media (prefers-reduced-motion: reduce) { .benny-run-end .benny-run-record, .benny-run-end .benny-run-record.show { animation: none; opacity: 1; transform: none; } }
