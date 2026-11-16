@@ -21,6 +21,9 @@ export const TEXTURES = {
   'decor-planches': {source: 'planches.png', size: 256},
   // The road itself (14 Nov.): a meadow path of big pale slabs; the planks stay for stairs and platforms.
   'decor-dalles': {source: 'dalles.png', size: 384},
+  // The same path in the other two worlds: basalt over lava (the bridge), stone in the snow (the mountain path).
+  'decor-dalles-lave': {source: 'dalles-lave.png', size: 384},
+  'decor-dalles-neige': {source: 'dalles-neige.png', size: 384},
   // Cut out: nine things standing beside the road, in a grid of 3 × 3.
   'decor-bord': {source: 'bord.png', size: 768},
   'decor-herbe': {source: 'herbe.png', size: 256},

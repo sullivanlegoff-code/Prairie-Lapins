@@ -57,7 +57,7 @@ const SETTING_COLOURS: Record<RunSetting, typeof SKY_COLOURS> = {grotte: SKY_COL
 const SETTING_WASH: Record<RunSetting, [number, number, number, number]> = {grotte: [255, 196, 90, .14], pont: [255, 84, 40, .17], montagne: [120, 170, 255, .15]};
 /** The painted textures of the track (13 Nov., concept C): planks, grass, the earth-and-grass wall to run on, the grey stone
  *  wall, and the isles' cliff at the edge of the void (scripts/prepare-benny-run-decor.mjs). */
-const DECOR = ['decor-planches', 'decor-herbe', 'decor-mur-terre', 'decor-mur-pierre', 'decor-mur-racines', 'decor-falaise', 'decor-lianes', 'decor-touffes', 'decor-dalles', 'decor-bord'] as const;
+const DECOR = ['decor-planches', 'decor-herbe', 'decor-mur-terre', 'decor-mur-pierre', 'decor-mur-racines', 'decor-falaise', 'decor-lianes', 'decor-touffes', 'decor-dalles', 'decor-dalles-lave', 'decor-dalles-neige', 'decor-bord'] as const;
 type DecorName = typeof DECOR[number];
 /** How many metres one texture covers: planks across the road and along it, the grass both ways, a wall along it (its height is
  *  the wall's), the cliff across. The grass verge past the road's edge (m), the cliff's depth below it (m). */
@@ -84,6 +84,7 @@ const BEND = 9;
 /** The road's slabs: one painted tile is `SLAB_TILE` m. Things stand beside the road every `PROP_EVERY` m or so on each side (not along
  *  a wall Benny can run on): [column, row] in the painted grid, height in metres. */
 const SLAB_TILE = 6.6, PROP_EVERY = 9;
+const ROAD_GROUND = {grotte: 'decor-dalles', pont: 'decor-dalles-lave', montagne: 'decor-dalles-neige'} as const;
 const PROPS: readonly [number, number, number][] = [[0, 0, 1.7], [1, 0, 1.9], [2, 0, 1.6], [0, 1, 2.3], [1, 1, 3.2], [2, 1, 3.3], [0, 2, 1.8], [1, 2, 3.8], [2, 2, 1.6]];
 const ROAD_FILL = 1.04, BENNY_AT = .76, CAM_LANE = .55, CAM_WALL = .78;
 const BLOCK_LOW = 13, VINE_TILE = 6, VINE_DROP = 3, TUFT_TILE = 4.5, TUFT_PART = 3 / 8, TUFT_NEAR = 50, HAZE_FROM = 22, HAZE_SPAN = 70, HAZE_MAX = .55;
@@ -301,10 +302,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       const a0 = Math.min(FAR, aheadAt(y)), a1 = Math.max(NEAR, aheadAt(y + BAND)); if (a1 >= FAR || a0 <= NEAR) continue;
       const mid = (a0 + a1) / 2, z = g.distance + mid; if (g.holes.some(h => z >= h.from && z < h.to)) continue;
       const half = halfAt(g, mid), s = project(0, mid, 0).s;
-      // The grass only on the verges (the planks cover the rest): half as much to paint.
-      row('decor-herbe', -half - VERGE, -half + .05, a0, a1, GRASS_TILE, GRASS_TILE, y, s);
-      row('decor-herbe', half - .05, half + VERGE, a0, a1, GRASS_TILE, GRASS_TILE, y, s);
-      row('decor-dalles', -half, half, a0, a1, SLAB_TILE, SLAB_TILE, y, s);
+      // Each world has its ground (the meadow's verges are grass; the lava's and the snow's go on to the edge).
+      const set = settingAt(g, z), slabs = ROAD_GROUND[set];
+      if (set === 'grotte') { row('decor-herbe', -half - VERGE, -half + .05, a0, a1, GRASS_TILE, GRASS_TILE, y, s); row('decor-herbe', half - .05, half + VERGE, a0, a1, GRASS_TILE, GRASS_TILE, y, s); row(slabs, -half, half, a0, a1, SLAB_TILE, SLAB_TILE, y, s); }
+      else row(slabs, -half - VERGE, half + VERGE, a0, a1, SLAB_TILE, SLAB_TILE, y, s);
     }
   }
   /** The cliff of an isle facing Benny, `ahead` m in front, from `x0` to `x1` m across, seen only inside the opening `hole` (a path). */
