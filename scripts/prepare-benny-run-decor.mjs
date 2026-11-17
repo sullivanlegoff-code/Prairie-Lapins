@@ -53,6 +53,13 @@ export const TEXTURES = {
   'decor-neige-crete': {source: 'neige-crete.png', size: 384},
   // Cut out: nine things standing beside the road, in a grid of 3 × 3.
   'decor-bord': {source: 'bord.png', size: 768},
+  // The meadow walls' relief (17 Nov.), cut out, 3 × 3 each: rocks jutting out, niches with what lives in them, plants growing out of
+  // the wall (fixed by their left edge), big plants passing right before the camera, and what crowns a block's top.
+  'decor-relief-rochers': {source: 'relief-rochers.png', size: 1024},
+  'decor-relief-niches': {source: 'relief-niches.png', size: 1024},
+  'decor-relief-plantes': {source: 'relief-plantes.png', size: 768},
+  'decor-relief-premier': {source: 'relief-premier.png', size: 1536},
+  'decor-relief-cimes': {source: 'relief-cimes.png', size: 1024},
   // The same for the lava bridge and the mountain path (16 Nov.): basalt, crystals, embers; snowy rocks, pines, a lantern.
   'decor-bord-lave': {source: 'bord-lave.png', size: 768},
   'decor-bord-neige': {source: 'bord-neige.png', size: 768},
