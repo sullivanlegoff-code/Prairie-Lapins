@@ -44,7 +44,8 @@ export const CHARACTERS = {
   'benny-strike': {sheet: 'sheet-benny-strike.png', frames: ['hop-1', 'hop-2', 'hop-3', 'hop-4'], size: 320, columns: 4, standing: true, zoom: 1.05},
   'benny-roll': {sheet: 'sheet-benny-roll.png', frames: ['roll-1', 'roll-2', 'roll-3', 'roll-4'], size: 320, columns: 4, standing: true, zoom: 1.25},
   // Her detailed animation (owner, 17 Nov.: « anime en détail toutes les actions de Benny », the run and the wall-run above all):
-  // a four-picture gallop (push off one paw, both paws gathered, flight, landing), the wall-run's eight pictures
+  // an eight-picture gallop (two sheets: push off one paw, paws gathered, flight, landing, then the other paw, the stretch, the
+  // long flight, the tuck), a plain jump (crouch, take-off, top, way down), the wall-run's eight pictures
   // (four strides along a wall on her left, then the climb, the bound across, the landing on the wall, the way down), four leans
   // into a lane change (two to the left, two to the right), and the pound, impact, dash (two strides), springboard, bump, fall
   // into the void and big landing. One drawing per cell of four, all at one same scale (`side: 'run'`: the square's side in sheet
@@ -52,6 +53,8 @@ export const CHARACTERS = {
   // where Codex painted her a little smaller (measured on her tail); `room` widens the square of a sheet with a tall drawing, the
   // game drawing that atlas as much bigger (src/config/bennyRunArt.json keeps it), so that her size stays the same.
   'benny-course-a': {sheet: 'sheet-course-a.png', frames: ['gallop-1', 'gallop-2', 'gallop-3', 'gallop-4'], size: 320, columns: 4, standing: true, cells: 4, side: 'run'},
+  'benny-course-b': {sheet: 'sheet-course-c.png', frames: ['gallop-5', 'gallop-6', 'gallop-7', 'gallop-8'], size: 320, columns: 4, standing: true, cells: 4, side: 'run', zoom: .9, room: 1.15},
+  'benny-saut': {sheet: 'sheet-saut.png', frames: ['takeoff', 'rise', 'top', 'drop'], size: 320, columns: 4, standing: true, cells: 4, side: 'run'},
   'benny-mur-a': {sheet: 'sheet-mur-a.png', frames: ['wall-1', 'wall-2', 'wall-3', 'wall-4'], size: 320, columns: 4, standing: true, cells: 4, side: 'run', zoom: .92},
   'benny-mur-b': {sheet: 'sheet-mur-b.png', frames: ['climb', 'bound', 'catch', 'down'], size: 320, columns: 4, standing: true, cells: 4, side: 'run', zoom: .92},
   'benny-virage': {sheet: 'sheet-virage.png', frames: ['left-1', 'left-2', 'right-1', 'right-2'], size: 320, columns: 4, standing: true, cells: 4, side: 'run', zoom: .92},

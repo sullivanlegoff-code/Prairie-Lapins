@@ -11,8 +11,8 @@ import {flightBody} from '../display/bennyFlight';
 /** The paintings' frames (scripts/prepare-benny-run-art.mjs): Benny's square stands her on its bottom, the Dragon's is centred on her body. */
 type PaintedName = 'benny' | 'benny-moves' | 'benny-strike' | 'benny-roll' | AnimSheet | 'dragon' | 'creatures' | 'creatures-lave' | 'creatures-neige' | 'attaques' | 'chests' | 'objets' | 'obstacles' | 'eclats';
 /** Benny's detailed animation (17 Nov.): her gallop, her wall-run, her leans, her actions (see scripts/prepare-benny-run-art.mjs). */
-type AnimSheet = 'benny-course-a' | 'benny-mur-a' | 'benny-mur-b' | 'benny-virage' | 'benny-actions' | 'benny-actions2';
-const ANIM: AnimSheet[] = ['benny-course-a', 'benny-mur-a', 'benny-mur-b', 'benny-virage', 'benny-actions', 'benny-actions2'];
+type AnimSheet = 'benny-course-a' | 'benny-course-b' | 'benny-saut' | 'benny-mur-a' | 'benny-mur-b' | 'benny-virage' | 'benny-actions' | 'benny-actions2';
+const ANIM: AnimSheet[] = ['benny-course-a', 'benny-course-b', 'benny-saut', 'benny-mur-a', 'benny-mur-b', 'benny-virage', 'benny-actions', 'benny-actions2'];
 const PAINTED: PaintedName[] = [...ANIM, 'benny', 'benny-moves', 'benny-strike', 'benny-roll', 'dragon', 'creatures', 'creatures-lave', 'creatures-neige', 'attaques', 'chests', 'objets', 'obstacles', 'eclats'];
 /** Each world's creatures (17 Nov.): the same dragonnet, ember and flyer, in basalt and magma on the lava, in ice and snow on the mountain. */
 const FOE_SHEETS = {grotte: 'creatures', pont: 'creatures-lave', montagne: 'creatures-neige'} as const satisfies Record<RunSetting, PaintedName>;
@@ -43,7 +43,8 @@ const GLIDE = {pull: 900, damp: 48};
 const WALL_TILT = .6;
 /** Her wings in flight: beats a second (as on the island) and how long they take to open out or fold away. */
 const WING_FPS = 11, WING_CHANGE_MS = 520;
-/** Her gallop: four pictures (push off a paw, paws gathered, flight, landing) every `GALLOP_M` metres run, so her paws go quicker
+/** Her gallop: eight pictures (push off a paw, paws gathered, flight, landing, then off the other paw, the stretch, the long
+ *  flight, the tuck), four every `GALLOP_M` metres run, so her paws go quicker
  *  as she speeds up; on a wall, four strides every `WALL_STRIDE_M`. Her wall pictures are painted already lying onto the wall:
  *  only a little more tilt (`WALL_TILT_PAINTED`). A lane change leans her in (`TURN_SPEED`: lanes a second for the first and the
  *  strong lean). How long the climb onto a wall, the landing on the wall after a bound, the jump off a wall, the impact of a
@@ -1622,11 +1623,14 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (inAir(g) && g.airUntil === g.bounceUntil) return (g.at - g.airFrom) / (g.airUntil - g.airFrom) < .75 ? pick('benny-actions2', 'spring') : pick('benny-moves', 'fall');
     if (g.at < g.stumbleUntil && g.at - (g.stumbleUntil - BENNY_RUN.stumbleMs) < ANIM_MS.bump) return pick('benny-actions2', 'bump');
     if (!inAir(g) && bigAir && now - landedAt < Math.max(ANIM_MS.crouch, landHold(g))) return pick('benny-actions2', 'crouch');
+    // A plain jump: the crouch of the take-off, rising, curled up at the top, reaching for the ground on the way down.
+    if (inAir(g) && !g.pound && g.airUntil > g.airFrom) { const k = (g.at - g.airFrom) / (g.airUntil - g.airFrom); return pick('benny-saut', k < .1 ? 'takeoff' : k < .38 ? 'rise' : k < .62 ? 'top' : 'drop'); }
     if (moves) return null;
     if (powerActive(g, 'dash') && !inAir(g)) return pick('benny-actions', `dash-${cycleFrame(g.distance, GALLOP_M, 2)}`);
     if (pose !== 'run-1' && pose !== 'run-2') return null;
     if (turning) return pick('benny-virage', `${laneSpeed > 0 ? 'right' : 'left'}-${Math.abs(laneSpeed) > TURN_SPEED[1] ? 2 : 1}`);
-    return pick('benny-course-a', `gallop-${cycleFrame(g.distance, GALLOP_M)}`);
+    const step = cycleFrame(g.distance, GALLOP_M * 2, 8);
+    return pick(step <= 4 ? 'benny-course-a' : 'benny-course-b', `gallop-${step}`);
   }
   function benny(c: CanvasRenderingContext2D, g: BennyRun, now: number): void {
     // Falling into the void she is out of sight once the Dragon has her (see fallCatch).
@@ -1696,6 +1700,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const turns = Math.max(1, Math.round((g.slideUntil - rollFrom) / ROLL_TURN)), rolled = flat ? Math.min(.999, (g.at - rollFrom) / (g.slideUntil - rollFrom)) * turns * 4 : 0;
     const roll = flat && art['benny-roll'].ready ? Math.floor(rolled) % 4 : -1;
     if (powerActive(g, 'flight') && flying(c, g, now, s * PAINTED_BENNY, h / 2)) { /* her wings */ }
+    // A ground charge striking the ground: the impact, wand planted, before she rolls on.
+    else if (animated && now - poundAt < ANIM_MS.impact) paint(c, 'benny-actions', 'impact', 0, s / 2, s * PAINTED_BENNY);
     else if (hopMs >= 0 && art['benny-strike'].ready) {
       const frame = hopMs < HOP_MS.spring ? 'hop-1' : hopMs < HOP_MS.bound ? 'hop-2' : hopMs < HOP_MS.blow ? 'hop-3' : 'hop-4';
       paint(c, 'benny-strike', frame, 0, h / 2, s * PAINTED_BENNY, hopDir < 0);
@@ -1819,7 +1825,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // (Her paws on the wall's face: she is drawn close against it, tipped over onto it.)
     const onWall = (wallX() - .45 - laneX(lanes - 1)) / LANE_WIDTH, lowTop = (wallX() + .45 - laneX(lanes - 1)) / LANE_WIDTH, target = g.wall ? (onLow(g) ? (g.wall.side === 'left' ? -lowTop : lanes - 1 + lowTop) : g.wall.side === 'left' ? -onWall : lanes - 1 + onWall) : g.overVoid ? (g.overVoid === 'left' ? -1 : lanes) : g.lane;
     // A spring: she is carried a little past her lane and settles; onto a wall, straight there (no swing through the wall).
-    if (g.wall || Math.abs(target - viewLane) > lanes) { viewLane += (target - viewLane) * Math.min(1, dt * 24); laneSpeed = 0; }
+    // (A bound from one wall to the other takes its time, so that she is seen flying across: about a third of a second.)
+    if (g.wall || Math.abs(target - viewLane) > lanes) { viewLane += (target - viewLane) * Math.min(1, dt * (g.wall && Math.abs(target - viewLane) > 1.5 ? 9 : 24)); laneSpeed = 0; }
     else { for (let left = dt; left > 0; left -= 1 / 240) { const h = Math.min(left, 1 / 240); laneSpeed += ((target - viewLane) * GLIDE.pull - laneSpeed * GLIDE.damp) * h; viewLane += laneSpeed * h; } }
     // On a wall, she tips over onto it (eased).
     { const to = g.wall && !onLow(g) ? (g.wall.side === 'left' ? -1 : 1) : 0; wallTilt += (to - wallTilt) * Math.min(1, dt * 9); if (Math.abs(wallTilt) < .002 && !to) wallTilt = 0; }

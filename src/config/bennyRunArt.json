@@ -750,5 +750,56 @@
     "pockets": 2013,
     "room": 1.08,
     "bytes": 46112
+  },
+  "benny-course-b": {
+    "image": "assets/benny-run/benny-course-b.webp",
+    "size": 320,
+    "frames": {
+      "gallop-5": [
+        0,
+        0
+      ],
+      "gallop-6": [
+        320,
+        0
+      ],
+      "gallop-7": [
+        640,
+        0
+      ],
+      "gallop-8": [
+        960,
+        0
+      ]
+    },
+    "anchor": "feet",
+    "pockets": 0,
+    "room": 1.15,
+    "bytes": 49270
+  },
+  "benny-saut": {
+    "image": "assets/benny-run/benny-saut.webp",
+    "size": 320,
+    "frames": {
+      "takeoff": [
+        0,
+        0
+      ],
+      "rise": [
+        320,
+        0
+      ],
+      "top": [
+        640,
+        0
+      ],
+      "drop": [
+        960,
+        0
+      ]
+    },
+    "anchor": "feet",
+    "pockets": 314,
+    "bytes": 46818
   }
 }
