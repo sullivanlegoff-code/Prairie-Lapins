@@ -32,7 +32,7 @@ export const NURSERY = {initialCapacity: 1, maxCapacity: 4, unlockHearts: {1: 30
  */
 export const BENNY_FLIGHT = {rewardedGamesPerCycle: 3, pattesPerColumn: 3, maxPattes: 60, heartColumns: 20, maxColumns: 500} as const;
 /**
- * The Antre du dragon (owner, 11 November 2026), the building of « Cours cours Benny ! » (src/simulation/bennyRun.ts): sold for
+ * The Antre du dragon (owner, 11 November 2026), the building of « Benny Rampage » (src/simulation/bennyRun.ts): sold for
  * BALANCE.buildings.lair pattes from player level `unlockLevel`, with Benny on the island (she is the one who runs); owning the
  * Lapin Dragon is not needed. It keeps the best score; the rewards come later (owner: « on verra plus tard »).
  */
@@ -94,7 +94,7 @@ export const BALANCE = {
     salon: {price: 5000, maximum: 1}, // The Salon de soins: see SALON.
     forest: {price: 10000, maximum: 1}, // The Forêt de Brocéliande: see FOREST.
     perch: {price: 50000, maximum: 1}, // Benny's perch, for « Le vol de Benny »: see BENNY_FLIGHT.
-    lair: {price: 100000, maximum: 1}, // The Antre du dragon, for « Cours cours Benny ! »: see BENNY_LAIR.
+    lair: {price: 100000, maximum: 1}, // The Antre du dragon, for « Benny Rampage »: see BENNY_LAIR.
   } satisfies Record<BuildingKind, {price: number; currency?: 'hearts'; maximum: number | null}>,
 };
 /**

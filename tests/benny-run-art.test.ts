@@ -2,7 +2,7 @@ import {describe, expect, it} from 'vitest';
 import source from '../src/ui/BennyRunActivity.ts?raw';
 import RUN_ART from '../src/config/bennyRunArt.json';
 
-/** « Cours cours Benny ! »: every painting the run's renderer asks for is in its atlas, and each atlas file is there. */
+/** « Benny Rampage »: every painting the run's renderer asks for is in its atlas, and each atlas file is there. */
 const files = Object.keys(import.meta.glob('../public/assets/benny-run/*.webp')).map(path => path.replace('../public/', ''));
 const atlases = RUN_ART as Record<string, {image: string; size: number; frames: Record<string, number[]>}>;
 

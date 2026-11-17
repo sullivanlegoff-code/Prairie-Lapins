@@ -1,4 +1,4 @@
-/* « Cours cours Benny ! » (src/ui/BennyRunActivity.ts): the grey prototype's full-screen layer, like « Le vol de Benny ». */
+/* « Benny Rampage » (src/ui/BennyRunActivity.ts): the grey prototype's full-screen layer, like « Le vol de Benny ». */
 .benny-run-activity {
   position: fixed; inset: 0; z-index: 140; display: flex; flex-direction: column; background: #3a2a1c;
   font-family: inherit; color: #3b3326; touch-action: none; user-select: none; -webkit-user-select: none;
@@ -102,7 +102,7 @@
   border: 9px solid transparent; border-width: 0 !important; border-image: url('/assets/ui/kit/counter.webp') 34 44 fill / 9px 12px / 0 stretch; }
 .benny-run-row > p:empty { display: none; }
 .benny-run-row > p[hidden] { display: none; }
-.benny-run-row .benny-run-coins::before { content: ''; width: 17px; height: 17px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff6c8 0 18%, #f4c430 20% 62%, #d99a1e 64%); box-shadow: 0 0 0 1.5px #3b2414; }
+.benny-run-row .benny-run-coins::before { content: ''; width: 19px; height: 19px; background: url('/assets/currency/coin.webp') center / contain no-repeat; }
 .benny-run-row .benny-run-hearts::before { content: ''; width: 18px; height: 18px; background: url('/assets/currency/heart.png') center / contain no-repeat; }
 .benny-run-row .benny-run-power { color: #f0e2ff !important; -webkit-text-stroke-color: #3a1a5a; }
 .benny-run-power.benny-run-ending { animation: benny-run-blink .3s steps(2, jump-none) infinite; }
@@ -140,7 +140,7 @@
 .benny-run-prize strong { font-weight: 400; font-size: 1.3rem; color: #fff; -webkit-text-stroke: 4px #1d1a16; paint-order: stroke fill; font-variant-numeric: tabular-nums; }
 .benny-run-card .benny-run-prize-label { font-size: .85rem; color: #f4efe4; }
 .benny-run-prize::before { content: ''; flex: none; width: 24px; height: 24px; }
-.benny-run-coin::before { border-radius: 50%; width: 20px; height: 20px; background: radial-gradient(circle at 35% 35%, #fff6c8 0 18%, #f4c430 20% 62%, #d99a1e 64%); box-shadow: 0 0 0 1.5px #3b2414; }
+.benny-run-coin::before { width: 22px; height: 22px; background: url('/assets/currency/coin.webp') center / contain no-repeat; }
 .benny-run-pattes::before { background: url('/assets/currency/coin.png') center / contain no-repeat; }
 .benny-run-heart::before { background: url('/assets/currency/heart.png') center / contain no-repeat; }
 /* The run's figures: small parchment pills, only those that are not zero. */

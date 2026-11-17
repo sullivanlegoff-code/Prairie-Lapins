@@ -9,11 +9,15 @@ import {BENNY_FLIGHT, BENNY_FLIGHT_ATLAS} from '../config/bennyFlightArt';
 import {flightBody} from '../display/bennyFlight';
 
 /** The paintings' frames (scripts/prepare-benny-run-art.mjs): Benny's square stands her on its bottom, the Dragon's is centred on her body. */
-type PaintedName = 'benny' | 'benny-moves' | 'benny-strike' | 'benny-roll' | AnimSheet | 'dragon' | 'creatures' | 'creatures-lave' | 'creatures-neige' | 'attaques' | 'chests' | 'objets' | 'obstacles' | 'eclats';
+type PaintedName = 'benny' | 'benny-moves' | 'benny-strike' | 'benny-roll' | AnimSheet | 'dragon' | 'creatures' | 'creatures-lave' | 'creatures-neige' | 'attaques' | 'chests' | 'objets' | 'pieces' | 'obstacles' | 'eclats';
 /** Benny's detailed animation (17 Nov.): her gallop, her wall-run, her leans, her actions (see scripts/prepare-benny-run-art.mjs). */
 type AnimSheet = 'benny-galop' | 'benny-saut' | 'benny-coup' | 'benny-mur-a' | 'benny-mur-b' | 'benny-actions' | 'benny-actions2';
 const ANIM: AnimSheet[] = ['benny-galop', 'benny-saut', 'benny-coup', 'benny-mur-a', 'benny-mur-b', 'benny-actions', 'benny-actions2'];
-const PAINTED: PaintedName[] = [...ANIM, 'benny', 'benny-moves', 'benny-strike', 'benny-roll', 'dragon', 'creatures', 'creatures-lave', 'creatures-neige', 'attaques', 'chests', 'objets', 'obstacles', 'eclats'];
+const PAINTED: PaintedName[] = [...ANIM, 'benny', 'benny-moves', 'benny-strike', 'benny-roll', 'dragon', 'creatures', 'creatures-lave', 'creatures-neige', 'attaques', 'chests', 'objets', 'pieces', 'obstacles', 'eclats'];
+/** The run's coin (owner, 17 Nov.: « similaire à celle du jeu de lapin mais adapté »): the game's paw coin, turning once every
+ *  `COIN_SPIN_MS`, each coin at its own point of the turn. */
+const COIN_SPIN_MS = 760;
+const coinFrame = (at: number, id: number) => `spin-${Math.floor(((at / COIN_SPIN_MS + id * .37) % 1 + 1) % 1 * 8) + 1}`;
 /** Each world's creatures (17 Nov.): the same dragonnet, ember and flyer, in basalt and magma on the lava, in ice and snow on the mountain. */
 const FOE_SHEETS = {grotte: 'creatures', pont: 'creatures-lave', montagne: 'creatures-neige'} as const satisfies Record<RunSetting, PaintedName>;
 /** Painted Benny's square, in Benny's sizes (her shape was one size tall): the drawing, ears up, fills about four fifths of it. */
@@ -66,7 +70,7 @@ const POUNCE_MS = 340;
 const WING_BEAT = 120;
 
 /**
- * « Cours cours Benny ! » (src/simulation/bennyRun.ts holds the rules): a full-screen layer like « Le vol de Benny ». This is the
+ * « Benny Rampage » (src/simulation/bennyRun.ts holds the rules): a full-screen layer like « Le vol de Benny ». This is the
  * grey prototype the owner tunes the feel with (11 November 2026): plain shapes on a canvas, the road seen from behind Benny in
  * perspective, until the painted art he chose (Benny seen from behind, the « conte doré » settings, the rainbow-ribbon wand, the
  * dragonnets, greedy chests and embers) replaces them. Swipes: up jump, down slide (it strikes) or ground charge, sideways lane or wall;
@@ -237,7 +241,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
 } = {}) {
   const time = pausableClock(options.clock ?? (() => performance.now())), clock = time.now, frame = options.frame ?? (step => requestAnimationFrame(step));
   const layer = document.createElement('div'); layer.className = 'benny-run-activity'; layer.hidden = true;
-  layer.setAttribute('role', 'dialog'); layer.setAttribute('aria-modal', 'true'); layer.setAttribute('aria-label', 'Cours cours Benny !');
+  layer.setAttribute('role', 'dialog'); layer.setAttribute('aria-modal', 'true'); layer.setAttribute('aria-label', 'Benny Rampage');
   layer.innerHTML = `<div class="benny-run-top"><div class="benny-run-lives" role="img"><span class="benny-run-life"></span><span class="benny-run-life"><i></i></span></div>
 <div class="benny-run-plaque"><p class="benny-run-score" aria-live="polite"></p><p class="benny-run-mult" hidden></p></div>
 <button type="button" class="benny-run-round" data-benny-run-pause aria-label="Pause">❚❚</button><button type="button" class="kit-close" data-benny-run-exit aria-label="Quitter">✕</button>
@@ -248,7 +252,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
 <p class="benny-run-tip" aria-live="polite" hidden></p>
 <p class="benny-run-pop" aria-hidden="true"></p>
 <div class="benny-run-card" data-benny-run-card></div>
-<div class="benny-run-turn" data-benny-run-turn hidden><div class="benny-run-phone" aria-hidden="true"></div><p>Tourne ton iPhone à la verticale pour jouer à Cours cours Benny !</p></div>`;
+<div class="benny-run-turn" data-benny-run-turn hidden><div class="benny-run-phone" aria-hidden="true"></div><p>Tourne ton iPhone à la verticale pour jouer à Benny Rampage</p></div>`;
   host.append(layer);
   const $ = <T extends Element>(selector: string) => layer.querySelector<T>(selector)!;
   const canvas = $<HTMLCanvasElement>('[data-benny-run-canvas]'), card = $<HTMLElement>('[data-benny-run-card]'), pop = $<HTMLElement>('.benny-run-pop');
@@ -451,7 +455,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   /** One fitted drawing (a creature, an object) set on (x, bottom), `w` wide and `h` tall (its own proportions if `h` is left out);
    *  false while its painting has not loaded. */
-  function fitted(c: CanvasRenderingContext2D, wanted: 'creatures' | 'attaques' | 'chests' | 'objets' | 'obstacles', frame: string, x: number, bottom: number, w: number, h?: number): boolean {
+  function fitted(c: CanvasRenderingContext2D, wanted: 'creatures' | 'attaques' | 'chests' | 'objets' | 'pieces' | 'obstacles', frame: string, x: number, bottom: number, w: number, h?: number): boolean {
     // A creature in its world's colours (the meadow's while that sheet loads).
     const name: PaintedName = wanted === 'creatures' && art[foeSheet].ready ? foeSheet : wanted;
     const image = art[name].image, at = (RUN_ART[name].frames as Record<string, number[]>)[frame], size = RUN_ART[name].size;
@@ -1589,7 +1593,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'coin': case 'wallCoin': {
         // While coins count double: a white halo that pulses around each one.
         if (game && powerActive(game, 'double')) { const k = .5 + .5 * Math.sin(at / 110 + e.id); ellipse(x, y - h / 2, w * (.62 + .1 * k), h * (.62 + .1 * k), `rgba(255,255,255,${.35 + .3 * k})`); }
-        if (fitted(c, 'objets', 'coin', x, y, w)) return true;
+        if (fitted(c, 'pieces', coinFrame(at, e.id), x, y, w) || fitted(c, 'objets', 'coin', x, y, w)) return true;
         ellipse(x, y - h / 2, w / 2, h / 2, '#f4c430'); ellipse(x, y - h / 2, w * .32, h * .32, '#e0a81e'); ellipse(x - w * .14, y - h * .66, w * .1, h * .1, '#fff6c8'); return true;
       }
       default: return false;
@@ -1935,6 +1939,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     coinFlights = coinFlights.filter(f => now - f.at < COIN_FLIGHT);
     const to = coinTarget();
     for (const f of coinFlights) { const k = (now - f.at) / COIN_FLIGHT, e = k * k, x = f.x + (to.x - f.x) * e, y = f.y + (to.y - f.y) * e - Math.sin(k * Math.PI) * 60, r = 14 - 5 * k;
+      // (The painted coin, spinning quicker as it flies to the counter.)
+      if (fitted(c, 'pieces', coinFrame(now * 2, f.at), x, y + r, r * 2)) continue;
       c.fillStyle = '#3b2414'; c.beginPath(); c.arc(x, y, r + 1.5, 0, Math.PI * 2); c.fill();
       c.fillStyle = '#f4c430'; c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill(); c.fillStyle = '#fff6c8'; c.beginPath(); c.arc(x - r * .3, y - r * .3, r * .32, 0, Math.PI * 2); c.fill(); }
     if (tally.count > 1 && now - tally.last < TALLY_MS) { c.globalAlpha = Math.min(1, (TALLY_MS - (now - tally.last)) / 200); goldText(c, `+${tally.count}`, to.x, to.y + 40 + Math.max(0, 1 - (now - tally.last) / 120) * -6, 24); c.globalAlpha = 1; }
@@ -2243,7 +2249,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     runBest = best; beaten = false; milestone = 0; metresBest = options.bestMetres?.() ?? 0; metresBeaten = false; score.classList.remove('benny-run-beaten');
     game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; camX = 0; camUp = 0; landedAt = -1e9; wasUp = false; swing = null; pending = []; wallTilt = 0; laneSpeed = 0; rollFrom = -1e9; wasFlat = false; shock = null; cleared.clear(); flashes = []; coinFlights = []; tally = {count: 0, last: -1e9}; bits = []; rings = []; streaks = []; bend = 0; coinRun = 0; shake = null; hurtAt = null; running = true; card.hidden = true; counting = null; lastDrawAt = clock();
     holesAnnounced = 0; lastHoleSeen = -1;
-    hud(); word('Cours cours Benny !', WORD.big); frame(loop);
+    hud(); word('Benny Rampage', WORD.big); frame(loop);
   }
   function intro(): void {
     game = startBennyRun(clock()); lanes = game.lanes; viewLane = game.lane; running = false; measure(); hud(); draw(clock());
@@ -2258,7 +2264,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       paragraph('Au-dessus d’un grand gouffre, glisse vers l’autre mur pour bondir dessus.', 'benny-run-rules'),
       paragraph('Prototype en formes simples : les vrais dessins arrivent ensuite.', 'benny-run-rules'));
     const go = button('C’est parti !', () => start(), 'bennyRunStart'); go.classList.add('benny-run-again'); learn.classList.add('secondary'); how.classList.add('secondary');
-    showCard(paragraph('Cours cours Benny !', 'benny-run-title'),
+    showCard(paragraph('Benny Rampage', 'benny-run-title'),
       paragraph('Benny a chipé un peu du trésor de la Dragon : cours, frappe tout ce qui bouge, et ne te fais pas rattraper !', 'benny-run-rules'),
       ...(record > 0 ? [paragraph(`Ton record : ${record}`, 'benny-run-record')] : []),
       go, ...(record > 0 ? [learn] : []), how, rules);

@@ -15,8 +15,8 @@ const place = (g: BennyRun, kind: RunKind, lane: number, ahead: number, extra: P
 const run = (g: BennyRun, ms: number) => advanceBennyRun(g, g.at + ms);
 const types = (g: BennyRun) => takeRunEvents(g).map(e => e.type);
 
-/** « Cours cours Benny ! » (owner, 11 November 2026). */
-describe('Cours cours Benny ! rules', () => {
+/** « Benny Rampage » (owner, 11 November 2026). */
+describe('Benny Rampage rules', () => {
   it('strikes every creature in the lane she moves into, within reach, in one move', () => {
     const g = quiet(); g.lane = 0;
     place(g, 'dragonnet', 1, 2); place(g, 'dragonnet', 1, 4);

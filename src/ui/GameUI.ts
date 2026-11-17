@@ -239,7 +239,7 @@ export class GameUI {
   /** Christmas: « Les cadeaux du ciel », and whether the market shows its rabbit choice for it. */
   private skyGifts: ReturnType<typeof mountSkyGiftsActivity>;
   private bennyFlight: ReturnType<typeof mountBennyFlightActivity>;
-  /** « Cours cours Benny ! », loaded only when the Antre du dragon is opened (its code and pictures stay out of the island's start). */
+  /** « Benny Rampage », loaded only when the Antre du dragon is opened (its code and pictures stay out of the island's start). */
   private bennyRun: {readonly active: boolean; prepare(): void; open(): void; close(): void; dispose(): void};
   private heartsBeforeFlight: number | null = null;
   /** Whether the full-screen shop or market currently covers the island (its Phaser loop sleeps meanwhile). */
@@ -986,7 +986,7 @@ export class GameUI {
     if (tab === 'decorations') { this.renderDecorationShop(s); return; }
     if (tab === 'habitats' || tab === 'buildings') {
       const basic = habitatLevel('universal', 1);
-      const utility: Record<BuildingKind, string> = {enclosure: `${basic.capacity} places · tous les types · stocke ${basic.cap} pattes`, farm: `Ferme niveau 1 : 5 cultures \u00b7 maximum ${farmLimit(playerLevel(s))} actuellement \u00b7 3 au niveau 12, 4 au niveau 15`, kitchen: 'Cuisine - maximum 1', statue: `Ouvre l’affection ${AFFECTION_STATUE.cap + 1} à ${SECOND_AFFECTION_STATUE.cap}, puis ${SECOND_AFFECTION_STATUE.cap + 1} à ${BALANCE.maxAffection} avec la deuxième · maximum 2`, agency: 'Fait voyager tes lapins · des cœurs au retour · maximum 1', salon: 'Bain, brossage ou massage · +1 d’affection au retour · maximum 1', forest: 'Change gratuitement le dessin des lapins déjà évolués · maximum 1', nest: 'Deux parents · maximum 1', nursery: 'Une place pour grandir · maximum 1', perch: 'Le vol de Benny · maximum 1', lair: 'Cours cours Benny ! · maximum 1'};
+      const utility: Record<BuildingKind, string> = {enclosure: `${basic.capacity} places · tous les types · stocke ${basic.cap} pattes`, farm: `Ferme niveau 1 : 5 cultures \u00b7 maximum ${farmLimit(playerLevel(s))} actuellement \u00b7 3 au niveau 12, 4 au niveau 15`, kitchen: 'Cuisine - maximum 1', statue: `Ouvre l’affection ${AFFECTION_STATUE.cap + 1} à ${SECOND_AFFECTION_STATUE.cap}, puis ${SECOND_AFFECTION_STATUE.cap + 1} à ${BALANCE.maxAffection} avec la deuxième · maximum 2`, agency: 'Fait voyager tes lapins · des cœurs au retour · maximum 1', salon: 'Bain, brossage ou massage · +1 d’affection au retour · maximum 1', forest: 'Change gratuitement le dessin des lapins déjà évolués · maximum 1', nest: 'Deux parents · maximum 1', nursery: 'Une place pour grandir · maximum 1', perch: 'Le vol de Benny · maximum 1', lair: 'Benny Rampage · maximum 1'};
       if (tab === 'habitats') {
       const universal = this.card(HABITATS.universal.name, `${utility.enclosure} · empreinte 4 × 4`); universal.prepend(habitatThumbnail('universal'));
       if(!this.shopHabitatSpecies || stateLevelAccess(s,{family:'habitatPurchase',id:'universal'}).accessible) {
@@ -1010,7 +1010,7 @@ export class GameUI {
         if (kind === 'forest') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(forestThumbnail()); card.append(node('p', `Dès le niveau ${FOREST.unlockLevel}, choisis pour chaque lapin déjà évolué entre son nouveau dessin et l’ancien. C’est gratuit, et chaque changement prend 7 heures.`, 'small')); }
         if (kind === 'statue') { card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(statueThumbnail(affectionStatueCount(s) >= 1)); card.append(node('p', affectionStatueCount(s) === 0 ? `La Statue de l’Affection récompense tes soins : sans elle, l’affection s’arrête à ${AFFECTION_STATUE.cap}. Avec elle, chaque lapin peut atteindre ${SECOND_AFFECTION_STATUE.cap}. Une deuxième statue, dès le niveau ${SECOND_AFFECTION_STATUE.level}, ouvre l’affection ${SECOND_AFFECTION_STATUE.cap + 1} à ${BALANCE.maxAffection} à tes lapins évolués.` : `Ta deuxième Statue de l’Affection ouvre l’affection ${SECOND_AFFECTION_STATUE.cap + 1} à ${BALANCE.maxAffection} à tes lapins évolués. Dès le niveau ${SECOND_AFFECTION_STATUE.level}.`, 'small')); }
         if (kind === 'perch') { card.classList.add('statue-offer'); const image = node('img'); image.src = PERCH_ART.url; image.alt = ''; image.className = 'statue-thumbnail'; image.width = 72; image.height = 72; card.querySelector('.card-heading')!.prepend(image); card.append(node('p', `Avec Benny sur ton île, joue au vol de Benny : touche le ciel pour qu’elle batte des ailes et passe entre les colonnes de bottes de foin. Tes ${BENNY_FLIGHT.rewardedGamesPerCycle} premières parties du jour rapportent des pattes, et la toute première un cœur si Benny franchit ${BENNY_FLIGHT.heartColumns} colonnes.`, 'small')); }
-        if (kind === 'lair') { card.classList.add('statue-offer'); const image = node('img'); image.src = LAIR_ART.url; image.alt = ''; image.className = 'statue-thumbnail'; image.width = 72; image.height = 72; card.querySelector('.card-heading')!.prepend(image); card.append(node('p', `Dès le niveau ${BENNY_LAIR.unlockLevel}, avec Benny sur ton île, joue à Cours cours Benny ! Benny chipe le trésor de la Lapine Dragon et file à toute allure : change de voie pour frapper les pots avec sa baguette, saute, glisse et cours sur les murs.`, 'small')); }
+        if (kind === 'lair') { card.classList.add('statue-offer'); const image = node('img'); image.src = LAIR_ART.url; image.alt = ''; image.className = 'statue-thumbnail'; image.width = 72; image.height = 72; card.querySelector('.card-heading')!.prepend(image); card.append(node('p', `Dès le niveau ${BENNY_LAIR.unlockLevel}, avec Benny sur ton île, joue à Benny Rampage Benny chipe le trésor de la Lapine Dragon et file à toute allure : change de voie pour frapper les pots avec sa baguette, saute, glisse et cours sur les murs.`, 'small')); }
         if (kind === 'statue') card.append(node('p', `Ton solde : ${heartAmount(s.hearts)}. Économise tes cœurs pour la construire.`, 'small'));
         const price = kind === 'statue' ? heartAmount((nextAffectionStatue(s) ?? SECOND_AFFECTION_STATUE).heartPrice) : `${BALANCE.buildings[kind].price} pattes`;
         this.button(card, `Placer · ${price}`, () => this.beginPlacement(kind), buildingReason(s, kind, true)); this.content.append(card);
@@ -1461,7 +1461,7 @@ export class GameUI {
       this.heartsBeforeFlight = state.hearts; this.close(); this.bennyFlight.open(benny);
     }, reason ? REFUSALS[reason] : null);
   }
-  /** The Antre du dragon: the record, then « Cours cours Benny ! » (Benny only; its coins are pattes, a few runs a day). */
+  /** The Antre du dragon: the record, then « Benny Rampage » (Benny only; its coins are pattes, a few runs a day). */
   private renderLair(s: GameState): void {
     const reason = hasBenny(s) ? null : 'BENNY_REQUIRED' as const;
     if (!reason) this.bennyRun.prepare();
@@ -1470,7 +1470,7 @@ export class GameUI {
     if (s.bennyRun?.best) this.content.append(node('p', `Ton record : ${s.bennyRun.best} · ta plus longue course : ${s.bennyRun.metres} m`, 'small'));
     const decors = BENNY_RUN_SETTINGS.filter(k => (s.bennyRun?.settings?.[k] ?? 0) > 0);
     if (decors.length) this.content.append(node('p', `Records par décor : ${decors.map(k => `${BENNY_RUN_SETTING_SHORT[k]} ${s.bennyRun!.settings![k]}`).join(' · ')}`, 'small'));
-    this.button(this.content, 'Jouer à Cours cours Benny !', () => { this.close(); this.bennyRun.open(); }, reason ? REFUSALS[reason] : null);
+    this.button(this.content, 'Jouer à Benny Rampage', () => { this.close(); this.bennyRun.open(); }, reason ? REFUSALS[reason] : null);
   }
   /** A rock, a bush or weeds on a parcel bought since the Christmas update: cleared for its price. */
   private renderDebris(s: GameState, id: string): void {

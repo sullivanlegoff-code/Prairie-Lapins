@@ -36,7 +36,7 @@ const MILESTONE_MISSIONS = {
   // Shown once the jump-rope islet is bought (owner, 4 November 2026).
   'first-jump-rope': {title: 'Premiers sauts', description: 'Joue ta première partie de corde à sauter sur ta petite île.', condition: {kind: 'jumpRopeGame'}},
   // Shown once the Antre du dragon is built (owner, 12 November 2026: the runs are part of the main missions).
-  'first-benny-run': {title: 'Premier cours', description: 'Fais ta première course de « Cours cours Benny ! » à l’Antre du dragon.', condition: {kind: 'bennyRunGame'}},
+  'first-benny-run': {title: 'Premier cours', description: 'Fais ta première course de « Benny Rampage » à l’Antre du dragon.', condition: {kind: 'bennyRunGame'}},
   'first-paid-recipe': {title: 'Une recette dans ton carnet', description: 'Ajoute une recette de la boutique à ton carnet. Une recette déjà enregistrée compte aussi.', condition: {kind: 'paidRecipe'}},
 } as const satisfies Record<string, Omit<MainDefinition, 'reward'>>;
 export const MILESTONE_MISSION_IDS = Object.keys(MILESTONE_MISSIONS) as (keyof typeof MILESTONE_MISSIONS)[];
@@ -121,7 +121,7 @@ export const DAILY_MISSIONS: Record<DailyMissionId, {title: string; description:
   'short-trip': {title: 'Un petit voyage', description: 'Envoie un lapin en voyage depuis l’agence.', event: 'startTrip', category: 'outing', target: 1, reward: {resource: 'grass', amount: 30}, place: 'agency'},
   'picnic': {title: 'Un pique-nique', description: 'Fais un pique-nique dans un habitat.', event: 'picnic', category: 'outing', target: 1, reward: {resource: 'pattes', amount: 40}, place: 'enclosure'},
   'jump-rope': {title: 'Corde à sauter', description: 'Joue une manche de corde à sauter sur ta petite île.', event: 'rewardJumpRope', category: 'activity', target: 1, reward: {resource: 'pattes', amount: 30}, place: 'jumpIsland'},
-  'benny-run': {title: 'Cours cours Benny !', description: 'Fais une course à l’Antre du dragon.', event: 'bennyRun', category: 'run', target: 1, reward: {resource: 'pattes', amount: 40}, place: 'lair'},
+  'benny-run': {title: 'Benny Rampage', description: 'Fais une course à l’Antre du dragon.', event: 'bennyRun', category: 'run', target: 1, reward: {resource: 'pattes', amount: 40}, place: 'lair'},
   'benny-coins': {title: 'Pièces de course', description: 'Ramasse 60 pièces pendant les courses de Benny.', event: 'bennyCoins', category: 'run', target: 60, reward: {resource: 'pattes', amount: 50}, place: 'lair'},
   'forest-walk': {title: 'Promenade en forêt', description: 'À la Forêt de Brocéliande, change le dessin d’un lapin évolué.', event: 'toggleClassicLook', category: 'decor', target: 1, reward: {resource: 'pattes', amount: 30}, place: 'forest'},
   'pet-rabbits': {title: 'Des caresses', description: 'Caresse 3 lapins différents : frotte doucement leur portrait dans leur fiche.', event: 'petRabbit', category: 'care', target: 3, reward: {resource: 'pattes', amount: 30}, place: 'pet'},

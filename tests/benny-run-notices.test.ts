@@ -1,7 +1,7 @@
 import {describe, expect, it} from 'vitest';
 import {RunTips, RunWords, TIP_GAP, TIP_QUEUE, TIP_STALE, WORD, tipMs, wordMs} from '../src/ui/bennyRunNotices';
 
-describe('« Cours cours Benny ! » words on screen', () => {
+describe('« Benny Rampage » words on screen', () => {
   it('shows one tip at a time: the next waits until the first has been read', () => {
     const tips = new RunTips();
     tips.say('Un trou : saute par-dessus !', 0); tips.say('Défi : frappe 6 pots', 0);

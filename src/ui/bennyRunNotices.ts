@@ -1,5 +1,5 @@
 /**
- * What « Cours cours Benny ! » says to the player, kept off the middle of the screen (like the lane runners the owner plays: the
+ * What « Benny Rampage » says to the player, kept off the middle of the screen (like the lane runners the owner plays: the
  * road stays clear). Two channels:
  * - tips: one sentence at a time, on a full label under the top bar; the others wait their turn in a short queue (a tip that
  *   waited too long is dropped: the obstacle it spoke of is gone). The tutorial's advice holds the label until its step is done.

@@ -49,7 +49,7 @@ export class Sounds {
     } catch { /* Sound is optional. */ }
   }
   /**
-   * « Cours cours Benny ! »: one short synthesised effect per action, on the Bruitages channel (its switch and volume apply).
+   * « Benny Rampage »: one short synthesised effect per action, on the Bruitages channel (its switch and volume apply).
    * Tones only: a sweep from `from` to `to` Hz over `length` s, sometimes two in a row.
    */
   /** `pitch` raises the notes (1 = as written): the strikes of a combo climb a semitone each. */

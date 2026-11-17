@@ -634,7 +634,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         pay(debris.price); s.debris = s.debris!.filter(d => d.id !== debris.id); value = debris.price; break;
       }
       case 'finishBennyRun': {
-        // « Cours cours Benny ! » pays its coins as pattes (within the daily limit) and keeps the record. No XP.
+        // « Benny Rampage » pays its coins as pattes (within the daily limit) and keeps the record. No XP.
         requireRule(s.buildings.some(b => b.kind === 'lair'), 'NOT_FOUND'); requireRule(hasBenny(s), 'BENNY_REQUIRED');
         const coins = command.coins ?? 0, hearts = command.hearts ?? 0;
         requireRule(Number.isSafeInteger(coins) && coins >= 0 && coins <= BENNY_RUN.maxCoins, 'INVALID_CHOICE');

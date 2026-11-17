@@ -15,7 +15,7 @@ const upright = (width: number, height: number) => { Object.defineProperty(windo
 beforeEach(() => { upright(390, 844); vi.useFakeTimers({toFake: ['setTimeout', 'clearTimeout']}); });
 afterEach(() => { document.body.innerHTML = ''; vi.useRealTimers(); });
 
-describe('« Cours cours Benny ! » screen', () => {
+describe('« Benny Rampage » screen', () => {
   it('starts the first run with the tutorial, answers the arrow keys at once, and plays a sound for a jump', () => {
     const {activity, step, sounds, key} = mount();
     document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);

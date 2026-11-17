@@ -6,7 +6,7 @@ import {cumulativeLevelXp} from '../src/simulation/progression';
 import {SAVE_VERSION} from '../src/persistence/json';
 import type {Command, GameState} from '../src/state/types';
 
-/** The Antre du dragon and the record of « Cours cours Benny ! » (owner, 11 November 2026): level 25, Benny on the island, 100 000 pattes. */
+/** The Antre du dragon and the record of « Benny Rampage » (owner, 11 November 2026): level 25, Benny on the island, 100 000 pattes. */
 function game(level: number = BENNY_LAIR.unlockLevel, benny = true): GameState {
   const s = createGame(0); s.progression = {totalXp: cumulativeLevelXp(level), rewardedThroughLevel: level}; s.pattes = 100_000;
   if (benny) { s.rabbits.push({id: `rabbit-${s.nextId++}`, species: 'benny', affection: 5, enclosureId: s.buildings.find(b => b.kind === 'enclosure')!.id}); s.discovered.push('benny'); }

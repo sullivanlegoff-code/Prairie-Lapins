@@ -9,7 +9,7 @@ import {cumulativeLevelXp} from '../src/simulation/progression';
 import {SAVE_VERSION} from '../src/persistence/json';
 import type {GameState} from '../src/state/types';
 
-/** A player who may play « Cours cours Benny ! »: the Antre du dragon built, Benny on the island. */
+/** A player who may play « Benny Rampage »: the Antre du dragon built, Benny on the island. */
 function game(): GameState {
   const s = createGame(0); s.progression = {totalXp: cumulativeLevelXp(BENNY_LAIR.unlockLevel), rewardedThroughLevel: BENNY_LAIR.unlockLevel}; s.pattes = 100_000;
   s.rabbits.push({id: `rabbit-${s.nextId++}`, species: 'benny', affection: 5, enclosureId: s.buildings.find(b => b.kind === 'enclosure')!.id}); s.discovered.push('benny');
@@ -21,7 +21,7 @@ function finish(s: GameState, coins: number, now: number = s.lastSimulatedAt, he
   const r = act(s, {type: 'finishBennyRun', score: 1000, metres: 500, coins, hearts}, now); if (!r.ok) throw Error(r.reason); return r;
 }
 
-describe('the coins of « Cours cours Benny ! » are pattes', () => {
+describe('the coins of « Benny Rampage » are pattes', () => {
   it('pays one patte per coin of the run', () => {
     const s = game(); const before = s.pattes; const r = finish(s, 40);
     expect(r.state.pattes).toBe(before + 40); expect(r.value).toBe(40);

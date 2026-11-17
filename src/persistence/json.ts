@@ -28,7 +28,7 @@ import {EVOLUTION_CHALLENGES, EVOLUTION_CHALLENGE_IDS, evolutionChallengeTarget,
 import {EVOLUTION_AFFECTION, hasEvolvedArt} from '../config/evolvedArt';
 
 /**
- * The current format is v29 (the Antre du dragon and the record of « Cours cours Benny ! », optional; nothing to convert, see
+ * The current format is v29 (the Antre du dragon and the record of « Benny Rampage », optional; nothing to convert, see
  * `migrateV28`), after v28 (the Salon de soins becomes a 6 × 6 spa: a salon built before keeps 4 × 4 until it has room, see
  * `migrateV27`), after v27 (the Christmas update's economy: Paille's counter removed, the nursery back to 2 cushions at
  * most, 1 to 5 Hearts a trip and the Salon's Hearts, see `migrateV26`), after v26 (the Christmas event: the sucres d'orge, the Christmas challenges of the cycle, the snowman of the
@@ -153,7 +153,7 @@ const current = z.object({
   // v27: the debris of the parcels bought since the Christmas update, and « Le vol de Benny ».
   debris: z.array(z.object({id: z.string().regex(/^debris-[1-9]\d*$/), kind: z.enum(['rocher', 'buisson', 'herbes']), x: integer, y: integer, price: integer.positive()}).strict()).max(512).optional(),
   bennyFlight: z.object({cycle: integer, rewarded: integer.max(BENNY_FLIGHT.rewardedGamesPerCycle), heart: z.literal(true).optional(), best: integer.max(BENNY_FLIGHT.maxColumns)}).strict().optional(),
-  // v29: the record of « Cours cours Benny ! », played from the Antre du dragon.
+  // v29: the record of « Benny Rampage », played from the Antre du dragon.
   bennyRun: z.object({best: integer.max(BENNY_RUN.maxScore), metres: integer.max(BENNY_RUN_MAX_METRES),
     // The most points won in one setting during a run (added later: optional, older saves have none).
     settings: z.object({grotte: integer.max(BENNY_RUN.maxScore).optional(), pont: integer.max(BENNY_RUN.maxScore).optional(), montagne: integer.max(BENNY_RUN.maxScore).optional()}).strict().optional(),
@@ -503,7 +503,7 @@ function migrateV27(raw: object): void {
 }
 
 /**
- * v28 → v29, the Antre du dragon and « Cours cours Benny ! » (owner, 11 November 2026): a new building kind and an optional
+ * v28 → v29, the Antre du dragon and « Benny Rampage » (owner, 11 November 2026): a new building kind and an optional
  * record. Nothing to convert; the version moves so that an older client refuses the lair instead of reading it as invalid.
  */
 function migrateV28(raw: object): void {

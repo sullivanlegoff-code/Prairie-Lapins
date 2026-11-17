@@ -81,7 +81,7 @@ export interface Initiation {
 }
 export interface SavedProgression {totalXp: number; rewardedThroughLevel: number}
 export interface ProgressionGain {xpGained: number; rewardedLevels: number[]; heartsGranted: number}
-/** Points won in each setting of « Cours cours Benny ! » (the cave, the lava bridge, the mountain path). */
+/** Points won in each setting of « Benny Rampage » (the cave, the lava bridge, the mountain path). */
 export type BennyRunSettingRecords = Partial<Record<'grotte' | 'pont' | 'montagne', number>>;
 export interface GameState {
   /** Last successfully launched pair; independent from the UI's draft selection. */
@@ -130,7 +130,7 @@ export interface GameState {
   debris?: Debris[];
   /** « Le vol de Benny » (v27): the daily cycle of the last rewarded game, the rewarded games of that cycle, whether its Heart was won, and the record. */
   bennyFlight?: {cycle: number; rewarded: number; heart?: true; best: number};
-  /** « Cours cours Benny ! »: the best score and the longest run (metres), and the most points won in one setting during a
+  /** « Benny Rampage »: the best score and the longest run (metres), and the most points won in one setting during a
    * run (absent until one is known). `day`: the rewarded runs of the daily cycle `cycle`, so far `rewarded`, and the Hearts won in them (`hearts`). */
   bennyRun?: {best: number; metres: number; settings?: BennyRunSettingRecords; day?: {cycle: number; rewarded: number; hearts?: number}};
   /** Daily cycle of each rabbit's last affection gift (a care or a picnic), keyed by rabbit ID. Absent until the first gift. */

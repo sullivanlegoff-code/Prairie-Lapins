@@ -79,6 +79,8 @@ export const CHARACTERS = {
   // A fourth cell (13 Nov., owner: « je veux que ce soit reconnaissable quand ils ont déjà été tapés une fois »): the chest after
   // its first blow, cracked, bandaged, dizzy (spiral eyes, a bump, stars), painted from the approved chest and set at its size.
   chests: {sheet: 'sheet-chests4.png', frames: ['intact', 'knocked', 'broken', 'damaged'], size: 220, columns: 4, fit: true, cells: 4, shared: true},
+  // The run's coin (17 Nov., owner: like the game's coin, made for the run): the game's paw coin turning, eight pictures.
+  pieces: {sheet: 'sheet-pieces.png', frames: ['spin-1', 'spin-2', 'spin-3', 'spin-4', 'spin-5', 'spin-6', 'spin-7', 'spin-8'], size: 160, columns: 4, rows: 2, fit: true, cells: 4, shared: true},
   objets: {sheet: 'sheet-objets.png', frames: ['pot', 'pot-gold', 'barrier', 'beam', 'pillar', 'rock', 'cart', 'coin'], size: 200, columns: 4, rows: 2, fit: true},
   // The obstacles redone in volume (16 Nov., to read from 40 m without a word): the springboard on its golden spring, a round
   // boulder and a wide one for the rockfalls, the mine cart seen from the front (it comes at Benny), and the two arrows shown over

@@ -1,5 +1,5 @@
 /**
- * « Cours cours Benny ! » (owner, 11 November 2026): Benny has pinched some of the Lapine Dragon's treasure and runs away down an
+ * « Benny Rampage » (owner, 11 November 2026): Benny has pinched some of the Lapine Dragon's treasure and runs away down an
  * endless road of three lanes, seen from behind, that keeps speeding up. Only the Dragon chases her, flying behind: she shows at the
  * start and after a bump. Original game: the owner borrowed only gameplay ideas from lane runners (running on walls, breaking things).
  *
