@@ -70,7 +70,7 @@ const SETTING_WASH: Record<RunSetting, [number, number, number, number]> = {grot
 const WEATHER = {pont: 22, montagne: 46} as const;
 /** The painted textures of the track (13 Nov., concept C): planks, grass, the earth-and-grass wall to run on, the grey stone
  *  wall, and the isles' cliff at the edge of the void (scripts/prepare-benny-run-decor.mjs). */
-const DECOR = ['decor-planches', 'decor-herbe', 'decor-mur-terre', 'decor-mur-pierre', 'decor-mur-racines', 'decor-falaise', 'decor-lianes', 'decor-touffes', 'decor-lianes-lave', 'decor-touffes-lave', 'decor-lianes-neige', 'decor-touffes-neige', 'decor-dalles', 'decor-dalles-lave', 'decor-dalles-neige', 'decor-socle-bleu', 'decor-socle-framboise', 'decor-corps-creme', 'decor-corps-ocre', 'decor-crete', 'decor-barriere', 'decor-lave-racines', 'decor-lave-pierre', 'decor-lave-sol', 'decor-neige-racines', 'decor-neige-pierre', 'decor-neige-sol', 'decor-lave-socle-bleu', 'decor-lave-socle-sombre', 'decor-lave-corps-basalte', 'decor-lave-corps-roche', 'decor-lave-crete', 'decor-neige-socle-bleu', 'decor-neige-socle-bois', 'decor-neige-corps-pierre', 'decor-neige-corps-roche', 'decor-neige-crete', 'decor-bord', 'decor-relief-rochers', 'decor-relief-niches', 'decor-relief-plantes', 'decor-relief-premier', 'decor-relief-cimes', 'decor-bord-lave', 'decor-bord-neige', 'decor-arche-prairie', 'decor-arche-lave', 'decor-arche-neige'] as const;
+const DECOR = ['decor-planches', 'decor-herbe', 'decor-mur-terre', 'decor-mur-pierre', 'decor-mur-racines', 'decor-falaise', 'decor-lianes', 'decor-touffes', 'decor-lianes-lave', 'decor-touffes-lave', 'decor-lianes-neige', 'decor-touffes-neige', 'decor-dalles', 'decor-dalles-lave', 'decor-dalles-neige', 'decor-socle-bleu', 'decor-socle-framboise', 'decor-corps-creme', 'decor-corps-ocre', 'decor-crete', 'decor-barriere', 'decor-lave-racines', 'decor-lave-pierre', 'decor-lave-sol', 'decor-neige-racines', 'decor-neige-pierre', 'decor-neige-sol', 'decor-lave-socle-bleu', 'decor-lave-socle-sombre', 'decor-lave-corps-basalte', 'decor-lave-corps-roche', 'decor-lave-crete', 'decor-neige-socle-bleu', 'decor-neige-socle-bois', 'decor-neige-corps-pierre', 'decor-neige-corps-roche', 'decor-neige-crete', 'decor-bord', 'decor-bord-lave', 'decor-bord-neige', 'decor-arche-prairie', 'decor-arche-lave', 'decor-arche-neige'] as const;
 type DecorName = typeof DECOR[number];
 /** How many metres one texture covers: planks across the road and along it, the grass both ways, a wall along it (its height is
  *  the wall's), the cliff across. The grass verge past the road's edge (m), the cliff's depth below it (m). */
@@ -524,10 +524,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       if (look === 'fence') { roadside(c, g, dir, w.from, w.to, false); fence(c, g, dir, from, to); continue; }
       footShadow(c, g, dir, from, to);
       if (look === 'tall') {
-        const blocks = blocksOf(w);
-        for (let i = blocks.length - 1; i >= 0; i--) {
-          const b = blocks[i], bf = Math.max(NEAR, b.from - g.distance), bt = Math.min(FAR, b.to - g.distance); if (bt <= bf) continue;
-          tiers(c, g, dir, bf, bt, b, w.runnable, bf > 0 && bf === b.from - g.distance, TIER_LOOK[worldAhead((bf + bt) / 2)], i ? blocks[i - 1] : null);
+        for (const b of blocksOf(w).reverse()) {
+          const bf = Math.max(NEAR, b.from - g.distance), bt = Math.min(FAR, b.to - g.distance); if (bt <= bf) continue;
+          tiers(c, g, dir, bf, bt, b, w.runnable, bf > 0 && bf === b.from - g.distance, TIER_LOOK[worldAhead((bf + bt) / 2)]);
         }
         continue;
       }
@@ -546,7 +545,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     }
   }
   /** A flat colour over a wall's face from `h0` to `h1` m (`out` m back from the road's edge). */
-  function face(c: CanvasRenderingContext2D, g: BennyRun, dir: number, from: number, to: number, h0: number, h1: number, out: number, style: string | CanvasPattern, out1 = out): void {
+  function face(c: CanvasRenderingContext2D, g: BennyRun, dir: number, from: number, to: number, h0: number, h1: number, out: number, style: string, out1 = out): void {
     const zs = cuts(g, from, to); c.beginPath();
     zs.forEach((z, i) => { const p = project(dir * (wallXAt(g, z) + out), z, h0); if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); });
     for (const z of [...zs].reverse()) { const p = project(dir * (wallXAt(g, z) + out1), z, h1); c.lineTo(p.x, p.y); }
@@ -579,93 +578,36 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     }
   }
   /** One block of a wall, in its tiers, from the back to the front, in its world's look. */
-  function tiers(c: CanvasRenderingContext2D, g: BennyRun, dir: number, from: number, to: number, b: WallBlock, runnable: boolean, end: boolean, look: TierLook, before: WallBlock | null): void {
-    // (17 Nov., owner: « des murs qui font un peu plus vivant et en relief ; les seuls murs toujours parfaitement droits sont ceux où
-    // Benny peut courir ». In the meadow, a block not run on stands at its own depth, set back from the road: `o` m.)
-    const deep = look === TIER_LOOK.grotte && !runnable, o = deep ? b.out : 0, ob = deep && before ? before.out : WALL_THICK;
-    // The ground before a block set back: grass up to its foot.
-    if (o > .05) { const grass = decor['decor-herbe'].near, pattern = grass ? c.createPattern(grass, 'repeat') : null;
-      face(c, g, dir, from, to, 0, 0, -.4, pattern ?? look.ledge, o); face(c, g, dir, from, to, 0, 0, o * .45, 'rgba(46,58,24,.32)', o); }
-    const at = (out: number) => (z: number) => dir * (wallXAt(g, z) + o + out), body = b.rock ? look.rock : look.blocks, upper = b.rock ? look.blocks : look.rock;
+  function tiers(c: CanvasRenderingContext2D, g: BennyRun, dir: number, from: number, to: number, b: WallBlock, runnable: boolean, end: boolean, look: TierLook): void {
+    const at = (out: number) => (z: number) => dir * (wallXAt(g, z) + out), body = b.rock ? look.rock : look.blocks, upper = b.rock ? look.blocks : look.rock;
     const bodyFlat = b.rock ? look.flat.rock : look.flat.blocks, upperFlat = b.rock ? look.flat.blocks : look.flat.rock;
     const base: DecorName | null = runnable ? look.run : b.rock ? null : look.base, top = b.upper || b.top;
     // The upper tier, set back, and the crest against the sky.
-    if (b.upper) { face(c, g, dir, from, to, b.top, b.upper, o + TIER_BACK, upperFlat); wallBand(c, g, at(TIER_BACK), from, to, b.top, b.upper, upper, null, FACE_TILE); face(c, g, dir, from, to, b.top, b.upper, o + TIER_BACK, 'rgba(60,34,44,.16)'); }
+    if (b.upper) { face(c, g, dir, from, to, b.top, b.upper, TIER_BACK, upperFlat); wallBand(c, g, at(TIER_BACK), from, to, b.top, b.upper, upper, null, FACE_TILE); face(c, g, dir, from, to, b.top, b.upper, TIER_BACK, 'rgba(60,34,44,.16)'); }
     wallBand(c, g, at(b.upper ? TIER_BACK : 0), from, to, top - CREST_DOWN, top + CREST_UP, look.crest, [.55, 1], CREST_TILE, false);
     // The ledge between the tiers: grass (in the meadow), embers' glow (lava) or snow, seen from below as a bright lip.
-    if (b.upper) face(c, g, dir, from, to, b.top, b.top, o, look.ledge, o + TIER_BACK);
+    if (b.upper) face(c, g, dir, from, to, b.top, b.top, 0, look.ledge, TIER_BACK);
     // Things growing on that terrace (a tree, a bush, a mushroom…), set into the wall: the body's top edge and its vines pass in front
     // of their feet. The same every time: drawn from the block's place.
     const len = b.to - b.from, seed = Math.floor(b.from) * 4 + (dir > 0 ? 1 : 0), world = worldAhead((from + to) / 2);
     const inBlock = (k: number, share: number) => { const ahead = b.from + len * share - g.distance; return ahead > from && ahead < to && hash01(seed + k * 131) < .8 ? ahead : null; };
-    if (b.upper) for (const [k, share] of [[1, .28], [2, .72]] as const) { const ahead = inBlock(k, share + (hash01(seed + k) - .5) * .2); if (ahead !== null) prop(c, seed + k, world, dir * (wallXAt(g, ahead) + o + TIER_BACK * .5), ahead, b.top - .15, .8); }
+    if (b.upper) for (const [k, share] of [[1, .28], [2, .72]] as const) { const ahead = inBlock(k, share + (hash01(seed + k) - .5) * .2); if (ahead !== null) prop(c, seed + k, world, dir * (wallXAt(g, ahead) + TIER_BACK * .5), ahead, b.top - .15, .8); }
     // Its end facing Benny, tier by tier.
-    if (end && ob > o + .05) { const x0 = at(0)(from), x1 = dir * (wallXAt(g, from) + ob);
+    if (end) { const x0 = at(0)(from), x1 = at(WALL_THICK)(from);
       if (b.upper) endFace(c, at(TIER_BACK)(from), x1, from, b.upper, false, upper, b.top);
       endFace(c, x0, x1, from, b.top, false, body, base ? BASE_TOP : 0); if (base) endFace(c, x0, x1, from, BASE_TOP, runnable, base, 0, [0, 1]); }
     // The body, the shadow under the ledge's vines, the base.
-    face(c, g, dir, from, to, base ? BASE_TOP : 0, b.top, o, bodyFlat); wallBand(c, g, at(0), from, to, base ? BASE_TOP : 0, b.top, body, null, FACE_TILE);
+    face(c, g, dir, from, to, base ? BASE_TOP : 0, b.top, 0, bodyFlat); wallBand(c, g, at(0), from, to, base ? BASE_TOP : 0, b.top, body, null, FACE_TILE);
     wallBand(c, g, at(0), from, to, b.top - 1.5, b.top + .2, look.vine, [0, .42], VINE_TILE * 1.6, false);
-    if (base) { face(c, g, dir, from, to, 0, BASE_TOP, o, runnable ? look.flat.run : look.flat.base); wallBand(c, g, at(0), from, to, 0, BASE_TOP, base, [0, 1], BASE_TILE); }
+    if (base) { face(c, g, dir, from, to, 0, BASE_TOP, 0, runnable ? look.flat.run : look.flat.base); wallBand(c, g, at(0), from, to, 0, BASE_TOP, base, [0, 1], BASE_TILE); }
     else if (from < TUFT_NEAR) wallBand(c, g, at(0), from, Math.min(to, TUFT_NEAR), 0, TUFT_TILE * TUFT_PART, look.tuft, [1 - TUFT_PART, 1], TUFT_TILE, false);
     // Grass along the terrace's lip, in front of what grows there.
     if (b.upper) wallBand(c, g, at(0), from, to, b.top - .1, b.top + .75, look.tuft, [1 - TUFT_PART, 1], TUFT_TILE, false);
-    if (deep) relief(c, g, dir, from, to, b, o, ob, seed);
     // At the foot of a wall Benny does not run on: one thing against it, its shadow on the ground, grass in front of its foot.
-    else if (!runnable) { const ahead = inBlock(3, .5 + (hash01(seed + 3) - .5) * .3); if (ahead !== null) {
-      const x = dir * (wallXAt(g, ahead) + o - .45), p = project(x, ahead, 0); c.fillStyle = 'rgba(50,28,20,.25)'; c.beginPath(); c.ellipse(p.x, p.y, p.s * 1.1, p.s * .22, 0, 0, Math.PI * 2); c.fill();
+    if (!runnable) { const ahead = inBlock(3, .5 + (hash01(seed + 3) - .5) * .3); if (ahead !== null) {
+      const x = dir * (wallXAt(g, ahead) - .45), p = project(x, ahead, 0); c.fillStyle = 'rgba(50,28,20,.25)'; c.beginPath(); c.ellipse(p.x, p.y, p.s * 1.1, p.s * .22, 0, 0, Math.PI * 2); c.fill();
       prop(c, seed + 3, world, x, ahead, 0, PROP_GROW * .8);
       wallBand(c, g, at(-.95), Math.max(from, ahead - 2.2), Math.min(to, ahead + 2.2), 0, .75, look.tuft, [1 - TUFT_PART, 1], TUFT_TILE, false); } }
-  }
-  /** One cell (0 to 8, row by row) of a 3 × 3 relief sheet, `size` m wide, its bottom middle at (`x`, `ahead`, `up`) — or, `side`, its
-   *  left edge's middle (a plant fixed to the wall); mirrored (`flip`) for the other side. It fades in from afar. */
-  function cell(c: CanvasRenderingContext2D, name: DecorName, k: number, x: number, ahead: number, up: number, size: number, flip: boolean, side = false): void {
-    const image = decor[name].image; if (!image || ahead > FAR || ahead < .4) return;
-    const n = image.width / 3, p = project(x, ahead, up), px = size * p.s; if (px < 2) return;
-    c.save(); c.globalAlpha = Math.max(0, Math.min(1, (FAR - ahead) / 12)); c.translate(p.x, p.y); if (flip) c.scale(-1, 1);
-    c.drawImage(image, (k % 3) * n, Math.floor(k / 3) * n, n, n, side ? 0 : -px / 2, side ? -px / 2 : -px * .97, px, px); c.restore();
-  }
-  /** A meadow block's relief (17 Nov., owner: « des murs avec du relief où ces éléments peuvent venir s'incruster », « ça ne va pas
-   *  au-dessus de la route, mais ça peut s'étaler sur les côtés », « sois très original »): a rock jutting out or a niche at the
-   *  corner where it steps out, plants growing out of its face where it is set back (never reaching over the road), and its top
-   *  crowned by something of its own. All drawn from the block's place: the same every time. */
-  function relief(c: CanvasRenderingContext2D, g: BennyRun, dir: number, from: number, to: number, b: WallBlock, o: number, ob: number, seed: number): void {
-    const len = b.to - b.from, flip = dir > 0, at = (share: number) => b.from + len * share - g.distance, inside = (ahead: number) => ahead > from && ahead < to;
-    const edge = (ahead: number) => wallXAt(g, ahead), roadEdge = (ahead: number) => halfAt(g, ahead) + .05;
-    // Its top: a cottage, a windmill, mushrooms, a rabbit-shaped hedge… (on its upper tier when it has one).
-    const top = b.upper || b.top, crown = at(.35 + hash01(seed + 17) * .3);
-    if (hash01(seed + 23) < .7 && inside(crown)) cell(c, 'decor-relief-cimes', Math.floor(hash01(seed + 29) * 9), dir * (edge(crown) + o + (b.upper ? TIER_BACK : 0) + 1.4), crown, top - .55, 3.2 + hash01(seed + 31) * 1.2, flip);
-    // Plants out of its face, where it is set back far enough for them not to reach over the road.
-    for (const [k, share] of [[1, .3], [2, .7]] as const) {
-      const ahead = at(share + (hash01(seed + k * 41) - .5) * .2), size = Math.min(2.6, (o + .3) / .8); if (size < 1 || !inside(ahead) || hash01(seed + k * 43) < .25) continue;
-      const up = BASE_TOP + .8 + hash01(seed + k * 47) * Math.max(.5, b.top - BASE_TOP - 2.6);
-      cell(c, 'decor-relief-plantes', Math.floor(hash01(seed + k * 53) * 9), dir * (edge(ahead) + o), ahead, up, size, flip, true);
-    }
-    // At the corner where it steps out towards the road: a rock jutting out, or a niche with what lives in it; its shadow, grass at its foot.
-    const corner = at(.04), stepped = ob > o + .3 || b.from - g.distance === from;
-    if (stepped && inside(corner + .5)) {
-      const niche = hash01(seed + 61) < .45, size = 4 + hash01(seed + 67) * 2, x = Math.max(edge(corner) + o + .15, roadEdge(corner) + size * .3), ahead = corner + .6, p = project(dir * x, ahead, 0);
-      c.fillStyle = 'rgba(50,28,20,.28)'; c.beginPath(); c.ellipse(p.x, p.y, p.s * size * .42, p.s * .3, 0, 0, Math.PI * 2); c.fill();
-      cell(c, niche ? 'decor-relief-niches' : 'decor-relief-rochers', Math.floor(hash01(seed + 71) * 9), dir * x, ahead, 0, size, flip);
-    }
-    // Further along a long block, another rock against its face.
-    const mid = at(.55 + (hash01(seed + 73) - .5) * .2);
-    if (len > 11 && inside(mid) && hash01(seed + 79) < .6) { const size = 3.4 + hash01(seed + 83) * 1.8, x = Math.max(edge(mid) + o + .2, roadEdge(mid) + size * .3), p = project(dir * x, mid, 0);
-      c.fillStyle = 'rgba(50,28,20,.25)'; c.beginPath(); c.ellipse(p.x, p.y, p.s * size * .38, p.s * .26, 0, 0, Math.PI * 2); c.fill();
-      cell(c, hash01(seed + 89) < .35 ? 'decor-relief-niches' : 'decor-relief-rochers', Math.floor(hash01(seed + 97) * 9), dir * x, mid, 0, size, flip); }
-  }
-  /** Big plants passing right before the camera beside the road (17 Nov., like the lane runners): in the meadow, beside walls not
-   *  run on (the blue walls stay clear), out over the road's side, never over the road. Drawn last, over everything but the screen. */
-  function foreground(c: CanvasRenderingContext2D, g: BennyRun): void {
-    if (!decor['decor-relief-premier'].image) return;
-    const EVERY = 19;
-    for (let k = Math.floor((g.distance + 14) / EVERY); k >= Math.floor((g.distance - 2) / EVERY); k--) {
-      const n = k * 7 + 3, z = k * EVERY + hash01(n) * 8, ahead = z - g.distance, dir = hash01(n + 1) < .5 ? -1 : 1, side = dir < 0 ? 'left' as const : 'right' as const;
-      if (ahead < 1.1 || ahead > 14 || hash01(n + 2) < .3 || settingAt(g, z) !== 'grotte') continue;
-      const w = wallAt(g, side, z); if (!w || w.void || w.runnable || wallLook(w) !== 'tall') continue;
-      const size = 2.4 + hash01(n + 3) * 1.2, x = dir * (halfAt(g, ahead) + size * .42);
-      cell(c, 'decor-relief-premier', Math.floor(hash01(n + 4) * 9), x, ahead, 0, size, dir > 0);
-    }
   }
   /** One painted thing of a world's sheet, standing at `x` m across, `ahead` m away, `up` m high; which one and its size are drawn from
    *  `n` (the same every frame). It fades in from afar. */
@@ -684,7 +626,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       let len = 9 + hash01(seed * 7 + k) * 7; if (w.to - at - len < 5) len = w.to - at;
       // (Meadow tiers: the body's top, an upper tier on two blocks in three, bare rock for one wall in three that is not run on.)
       const top = BLOCK_LOW + hash01(seed * 7 + k + 101) * 3.5, more = hash01(seed * 7 + k + 307) < .66;
-      list.push({from: at, to: at + len, top, upper: more ? Math.min(TALL_HEIGHT, top + 2.2 + hash01(seed * 7 + k + 401) * 3) : 0, rock: !w.runnable && hash01(seed * 7 + k + 503) < .4, out: w.runnable ? 0 : hash01(seed * 7 + k + 211) * 1.8});
+      list.push({from: at, to: at + len, top, upper: more ? Math.min(TALL_HEIGHT, top + 2.2 + hash01(seed * 7 + k + 401) * 3) : 0, rock: !w.runnable && hash01(seed * 7 + k + 503) < .4, out: w.runnable ? 0 : hash01(seed * 7 + k + 211) * .5});
       at += len;
     }
     return list;
@@ -1751,7 +1693,6 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     c.globalAlpha = 1;
     if (!ending) benny(c, g, now);
     for (const e of ahead) if (e.z - g.distance <= 0) thing(c, g, e);
-    if (!ending && decorReady()) foreground(c, g);
     c.globalAlpha = 1;
     // Under the gate: its pillars go by on both sides, then a flash of the new world's light.
     if (arch && arch.z - g.distance <= 0) drawGate(c, g, arch);
