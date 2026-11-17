@@ -257,7 +257,8 @@ export type RunEvent =
 
 export interface Platform {lane: number; from: number; to: number}
 /** A stretch of stairs along one lane: up to `top` m, a flat top, and back down. */
-export interface Ledge {lane: number; from: number; to: number; top: number}
+/** `wall`: the long wall in the middle of a wide hall (drawn as a wall of the world, not as wooden stairs). */
+export interface Ledge {lane: number; from: number; to: number; top: number; wall?: true}
 /** A pit in one lane where cracked slabs gave way (`open`), or are about to. */
 export interface Pit {lane: number; from: number; to: number; open: boolean}
 export type ChallengeKind = 'pots' | 'coins' | 'foes' | 'walls' | 'combo' | 'clean' | 'dodges' | 'leaps';
@@ -748,7 +749,7 @@ function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
       // wall along the middle lane, steps up at its start and down at its end, a line of coins on top and a pot to kick halfway; beside
       // it, halfway, pillars in the two lanes next to it (the outer lanes stay free): up there is the easy way, and it pays.
       const lane = Math.floor(g.lanes / 2), top = C.stairTop + .4, steps = Math.round(top / C.stairRise) * C.stairTread, flat = 34 + 16 * d, from = z, to = from + 2 * steps + flat;
-      g.ledges.push({lane, from, to, top});
+      g.ledges.push({lane, from, to, top, wall: true});
       for (let k = from + steps + 1; k < to - steps - 1; k += 3) add(g, 'coin', lane, k, {up: top + .5});
       for (const l of [lane - 1, lane + 1]) add(g, 'pillar', l, from + steps + flat / 2);
       for (const l of [0, g.lanes - 1]) add(g, 'pot', l, from + steps + flat / 2 + 6);

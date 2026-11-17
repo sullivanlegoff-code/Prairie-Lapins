@@ -1039,10 +1039,13 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const STEP_SIDE = {grotte: 'decor-corps-creme', pont: 'decor-lave-pierre', montagne: 'decor-neige-pierre'} as const satisfies Record<RunSetting, DecorName>;
   /** How many metres one plank texture and one stone texture cover on a step or a platform. */
   const DECK_TILE = PLANK_ALONG, STEP_TILE = 2.4;
+  /** The top of the wall in the middle of a wide hall, in each world: the walls' rough stone, warm and unlike the road's slabs. */
+  const MID_TOP = {grotte: 'decor-corps-ocre', pont: 'decor-lave-corps-roche', montagne: 'decor-neige-corps-roche'} as const satisfies Record<RunSetting, DecorName>;
   function ledges(c: CanvasRenderingContext2D, g: BennyRun): void {
     for (const l of [...g.ledges].sort((a, b) => b.from - a.from)) {
       const from = Math.max(NEAR, l.from - g.distance), to = Math.min(FAR, l.to - g.distance); if (to <= from) continue;
       const n = lanesAt(g, l.from), x = (l.lane - (n - 1) / 2) * LANE_WIDTH, x0 = x - LANE_WIDTH * .47, x1 = x + LANE_WIDTH * .47;
+      if (l.wall) { midWall(c, g, l, from, to, x0, x1); continue; }
       const look = paintedLook(settingAt(g, l.from)), stone = STEP_SIDE[settingAt(g, l.from)], across = (x1 - x0) / DECK_TILE;
       // Far to near: each step's planks on top, its riser of stone facing Benny, its stone sides.
       const zs: number[] = []; for (let z = from; z < to; z += z < 25 ? .5 : 1.5) zs.push(z); zs.push(to);
@@ -1055,6 +1058,29 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         const below = ledgeHeight(g, l.lane, world - .01);
         if (h > below + .05) paintedQuad(c, [project(x0, z, below), project(x1, z, below), project(x1, z, h), project(x0, z, h)], look.wallOff, stone, z, 0, 0, (x1 - x0) / STEP_TILE, (h - below) / STEP_TILE);
         if (decorReady() && h > below + .05) { const a = project(x0, z, h), b = project(x1, z, h); c.strokeStyle = 'rgba(40,24,12,.7)'; c.lineWidth = Math.max(1, a.s * .05); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); }
+      }
+    }
+  }
+  /** The long wall in the middle of a wide hall (17 Nov.): built like the walls of its world, seen from behind and from the side — its
+   *  shadow on the road, the body's stones, the coloured band with its arches at the foot, a paved top with a pale lip, the body again
+   *  on the end that faces Benny. Wooden stairs read as a footbridge, not as a wall. */
+  function midWall(c: CanvasRenderingContext2D, g: BennyRun, l: {lane: number; from: number; to: number}, from: number, to: number, x0: number, x1: number): void {
+    const setting = settingAt(g, l.from), look = TIER_LOOK[setting], across = (x1 - x0) / STEP_TILE, band = .9;
+    for (const [sx, dx] of [[x0, -.45], [x1, .45]] as const) quad(c, [project(sx, from, 0), project(sx + dx, from, 0), project(sx + dx, to, 0), project(sx, to, 0)], 'rgba(0,0,0,.24)');
+    const zs: number[] = []; for (let z = from; z < to; z += z < 25 ? .5 : 1.5) zs.push(z); zs.push(to);
+    for (let i = zs.length - 2; i >= 0; i--) {
+      const z = zs[i], z1 = zs[i + 1], h = ledgeHeight(g, l.lane, g.distance + z), h1 = ledgeHeight(g, l.lane, g.distance + z1), world = g.distance + z;
+      for (const [sx, dx] of [[x0, -1], [x1, 1]] as const) if (dx * (sx + bendAt(z) - camX) < 0) {
+        paintedQuad(c, [project(sx, z, 0), project(sx, z1, 0), project(sx, z1, h1), project(sx, z, h)], look.flat.blocks, look.blocks, z, world / STEP_TILE, 0, (z1 - z) / STEP_TILE, Math.max(h, h1) / STEP_TILE, .1);
+        const b = Math.min(band, h), b1 = Math.min(band, h1);
+        if (b > .05) paintedQuad(c, [project(sx, z, 0), project(sx, z1, 0), project(sx, z1, b1), project(sx, z, b)], look.flat.base, look.base, z, world / (BASE_TILE * 1.2), 0, (z1 - z) / (BASE_TILE * 1.2), 1);
+      }
+      paintedQuad(c, [project(x0, z, h), project(x1, z, h), project(x1, z1, h1), project(x0, z1, h1)], look.flat.rock, MID_TOP[setting], z, 0, world / STEP_TILE, across, (z1 - z) / STEP_TILE);
+      if (decorReady()) for (const sx of [x0, x1]) { const a = project(sx, z, h), b = project(sx, z1, h1); c.strokeStyle = 'rgba(255,240,205,.95)'; c.lineWidth = Math.max(1.5, a.s * .12); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); }
+      const below = ledgeHeight(g, l.lane, world - .01);
+      if (h > below + .05) {
+        paintedQuad(c, [project(x0, z, below), project(x1, z, below), project(x1, z, h), project(x0, z, h)], look.flat.blocks, look.blocks, z, 0, 0, across, (h - below) / STEP_TILE);
+        if (decorReady()) { const a = project(x0, z, h), b = project(x1, z, h); c.strokeStyle = 'rgba(255,240,205,.95)'; c.lineWidth = Math.max(1.5, a.s * .12); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); }
       }
     }
   }
