@@ -803,3 +803,57 @@ describe('golden pots', () => {
     expect(g.hearts).toBe(1);
   });
 });
+
+/** Reads the road of a run without playing it: Benny cannot be hurt, and every thing laid ahead is noted once. */
+function readRoad(seed: number, ms: number, every = 50) {
+  const g = startBennyRun(0, seed); const seen = new Map<number, RunEntity>(), moments = new Map<number, {kind: string; from: number; to: number; at: number}>();
+  for (let t = every; t <= ms; t += every) {
+    g.over = false; g.fallFrom = null; g.lastBumpAt = null; advanceBennyRun(g, t); takeRunEvents(g);
+    for (const e of g.entities) if (!seen.has(e.id) && !e.knock && !e.rolling) seen.set(e.id, {...e});
+    for (const m of g.moments) if (!moments.has(m.from)) moments.set(m.from, {...m, at: g.at});
+  }
+  return {g, things: [...seen.values()], moments: [...moments.values()], pits: g.pits};
+}
+
+describe('big moments and spacing (16 Nov.)', () => {
+  it('lays a big moment every 30 to 45 s, the first a rain of coins after the gentle start, never the same twice running', () => {
+    for (const seed of [11, 12, 13]) {
+      const {moments} = readRoad(seed * 7919, 200_000, 100);
+      expect(moments.length, `seed ${seed}`).toBeGreaterThanOrEqual(4);
+      expect(moments[0].kind).toBe('coinRain'); expect(moments[0].at).toBeGreaterThanOrEqual(C.momentFirstMs);
+      for (let i = 1; i < moments.length; i++) {
+        const gap = moments[i].at - moments[i - 1].at;
+        expect(gap).toBeGreaterThanOrEqual(C.momentMs[0] - 200); expect(gap).toBeLessThan(C.momentMs[1] + 15_000);
+        expect(moments[i].kind).not.toBe(moments[i - 1].kind);
+      }
+    }
+  });
+  it('makes each big moment out of the existing things: a bridge over the void, dragonnets, coins on blue walls, pots all the way down', () => {
+    const kinds = new Set<string>();
+    for (const seed of [21, 22, 23, 24]) {
+      const {g, things, moments, pits} = readRoad(seed * 7919, 240_000, 100);
+      for (const m of moments) {
+        kinds.add(m.kind);
+        const inside = things.filter(e => e.z >= m.from - 6 && e.z <= m.to);
+        if (m.kind === 'corridor') expect(inside.filter(e => e.kind === 'dragonnet').length).toBeGreaterThanOrEqual(5);
+        if (m.kind === 'coinRain') { expect(inside.filter(e => e.kind === 'pillar')).toHaveLength(3); expect(inside.filter(e => e.kind === 'wallCoin').length).toBeGreaterThanOrEqual(20); }
+        if (m.kind === 'descent') expect(inside.filter(e => e.kind === 'pot').length).toBeGreaterThanOrEqual(5);
+        if (m.kind === 'bridge') {
+          // Only the middle lane goes on: the void under the other two and at both sides; nothing in the open lanes.
+          const open = pits.filter(p => p.open && p.from > m.from && p.to <= m.to);
+          if (m.to > g.distance) { expect(open.map(p => p.lane).sort()).toEqual([0, 2]); expect(inside.filter(e => e.lane !== 1 && e.z > open[0].from && e.z < open[0].to)).toHaveLength(0); }
+          expect(inside.filter(e => e.kind === 'pot' && e.lane === 1)).toHaveLength(2);
+        }
+      }
+    }
+    expect([...kinds].sort()).toEqual(['bridge', 'coinRain', 'corridor', 'descent']);
+  });
+  it('never lays two pots, chests or creatures closer than `laneGap` in one lane (no more piles on the screen)', () => {
+    const ground = new Set<RunKind>(['pot', 'chest', 'dragonnet', 'ember', 'flyer']);
+    for (const seed of [31, 32, 33, 34, 35]) {
+      const list = readRoad(seed * 7919, 200_000).things.filter(e => ground.has(e.kind)).sort((a, b) => a.z - b.z);
+      for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length && list[j].z - list[i].z < C.laneGap - 1e-6; j++)
+        expect(list[j].lane === list[i].lane, `seed ${seed}: ${list[i].kind} ${list[j].kind} at ${list[i].z.toFixed(1)}`).toBe(false);
+    }
+  });
+});

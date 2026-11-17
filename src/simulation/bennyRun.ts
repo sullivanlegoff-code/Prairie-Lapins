@@ -158,9 +158,18 @@ export const BENNY_RUN = {
   heartFrom: 400, heartEvery: 40, maxHeartsPerRun: 8, heartsPerCycle: 20,
   /** The most coins a run can count (bounds what a save can claim). */
   maxCoins: 5000,
+  /** Big moments (16 Nov., after Blade of Brim: « des grands moments réguliers »): a marked sequence of the existing rules every
+   *  `momentMs` (30 to 45 s), the first once the run is `momentFirstMs` into its ramp (Benny meets it some 10 s later). */
+  momentFirstMs: 22_000, momentMs: [30_000, 45_000],
+  /** Two things on the ground in one lane (pots, chests, creatures) stand at least `laneGap` m apart, so that they never pile up on the
+   *  screen (16 Nov., the audit's stacked chests). */
+  laneGap: 8,
 } as const;
 
 export type RunSetting = 'grotte' | 'pont' | 'montagne';
+/** The big moments: a narrow bridge over the void, a corridor of dragonnets to chain, a rain of coins on a blue wall, a long descent. */
+export type RunMoment = 'bridge' | 'corridor' | 'coinRain' | 'descent';
+export const RUN_MOMENTS: readonly RunMoment[] = ['coinRain', 'corridor', 'bridge', 'descent'];
 export const RUN_SETTINGS: readonly RunSetting[] = ['grotte', 'pont', 'montagne'];
 export type RunPower = keyof typeof BENNY_RUN.powers;
 export const RUN_POWERS = Object.keys(BENNY_RUN.powers) as RunPower[];
@@ -295,6 +304,8 @@ export interface BennyRun {
   /** Where the next stretch with no wall begins (m), and the one being laid: its end and its open sides. */
   nextEdgeZ: number; edge: {to: number; sides: Side[]} | null;
   setting: RunSetting; nextSettingAt: number;
+  /** The big moments laid ahead (and just behind), for the drawing (a descent tilts the road), when the next is due, and the last. */
+  moments: {kind: RunMoment; from: number; to: number}[]; nextMomentAt: number; lastMoment: RunMoment | null;
   /** The next setting, from `z` on, while Benny runs towards it. */
   upcoming: {setting: RunSetting; z: number} | null;
   stumbleUntil: number; lastBumpAt: number | null;
@@ -382,7 +393,7 @@ export function startBennyRun(now: number, seed = Math.floor(Math.random() * 214
     seed: (seed >>> 0) || 1, startedAt: now, at: now, distance: 0, speed: C.speedStart, lanes, lane: Math.floor(lanes / 2), laneChangedAt: -Infinity, laneFrom: Math.floor(lanes / 2), rollHits: 0, kms: 0, baseLanes: lanes, zones: [], platforms: [], raised: null, ledges: [], pits: [], gusts: [], pace: 0, scoreBy: {grotte: 0, pont: 0, montagne: 0}, scored: 0,
     airFrom: 0, airUntil: 0, bounceUntil: -1, landHeight: 0, jumpFrom: 0, pound: false, poundFrom: 0, slideUntil: 0, wall: null,
     entities: [], nextId: 1, nextSpawnZ: C.firstAt, walls: [], wallsTo: {left: 0, right: 0}, holes: [], fallFrom: null, overVoid: null, nextEdgeZ: C.edgeFrom, edge: null,
-    setting: 'grotte', nextSettingAt: 0, upcoming: null, stumbleUntil: 0, lastBumpAt: null,
+    setting: 'grotte', nextSettingAt: 0, moments: [], nextMomentAt: 0, lastMoment: null, upcoming: null, stumbleUntil: 0, lastBumpAt: null,
     active: null, score: 0, coins: 0, hearts: 0, pots: 0, goldPots: 0, foes: 0, wallRuns: 0, dodges: 0, leaps: 0, combo: 0, comboUntil: 0, bestCombo: 0,
     challenge: null, challengesDone: 0, nextChallengeAt: now + C.challengeFirstMs,
     over: false, events: [], queuedJumpUntil: 0, paceFrom: now, tutorial: tutorial ? {step: 0, ids: [], tries: 0, struck: 0} : null,
@@ -652,7 +663,7 @@ function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
       for (let k = 1; k < 8; k++) { const p = k / 8; add(g, 'coin', lane, z + len * p, {up: 4 * C.springHeight * p * (1 - p) + .3}); }
       // Often, pots across the road under the end of the bounce (she passes over them): a ground charge from up there breaks them all
       // with its shock wave.
-      if (random(g) < .5 + .4 * d) for (const l of all) add(g, 'pot', l, z + len * .8);
+      if (random(g) < .5 + .4 * d) for (const l of all) add(g, 'pot', l, z + Math.min(len * .95, Math.max(len * .8, len / 2 + C.laneGap)));
       return z + len + 4;
     }
     case 'pillars': {
@@ -770,8 +781,9 @@ function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
       // A pot with creatures (or more pots) lined up behind it in the same lane: break them one after the other, for a combo.
       const lane = any(), count = 2 + (random(g) < .3 + .4 * d ? 1 : 0);
       add(g, 'pot', lane, z);
-      for (let i = 1; i <= count; i++) add(g, random(g) < .6 ? pick(g, ['dragonnet', 'chest'] as const) : 'pot', lane, z + 2 + i * 6);
-      return z + 2 + count * 6;
+      // (`laneGap` apart: a row of chests 6 m apart looked piled up.)
+      for (let i = 1; i <= count; i++) add(g, random(g) < .6 ? pick(g, ['dragonnet', 'chest'] as const) : 'pot', lane, z + i * C.laneGap);
+      return z + count * C.laneGap;
     }
     case 'hole': {
       // A gap across the road. A short one is jumped (an arc of coins over it); a long one has both walls runnable over it, with
@@ -789,6 +801,67 @@ function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
     }
   }
 }
+/** Whether a big moment can be laid from `z`: clear of gaps, pits and rows of pillars (which need their walls) where it opens the
+ *  void or changes the walls. */
+function momentFits(g: BennyRun, kind: RunMoment, z: number): boolean {
+  const near = (from: number, to: number) => g.holes.some(h => h.to > from && h.from < to) || g.pits.some(p => p.to > from && p.from < to) || g.entities.some(e => e.kind === 'pillar' && e.z > from && e.z < to);
+  switch (kind) {
+    case 'bridge': return !near(z - 25, z + 90);
+    // (A row of pillars just before would bring Benny down off her wall right in front of this one.)
+    case 'coinRain': return !near(z - 45, z + 30);
+    default: return true;
+  }
+}
+/** The big moment to lay from `z`, if one is due (then the next is set 30 to 45 s on): on the usual three lanes, clear of a wide hall;
+ *  the first is a rain of coins, the others drawn, never the same twice running. */
+function momentDue(g: BennyRun, z: number): RunMoment | null {
+  if (g.tutorial || g.at - g.paceFrom < C.momentFirstMs || g.at < g.nextMomentAt || g.lanes !== 3 || g.baseLanes !== 3 || g.zones.some(w => w.to > z - 20 && w.from < z + 120)) return null;
+  const list = (g.lastMoment ? RUN_MOMENTS.filter(m => m !== g.lastMoment) : RUN_MOMENTS.slice(0, 1)).filter(m => momentFits(g, m, z));
+  if (!list.length) return null;
+  const kind = g.lastMoment ? pick(g, list) : list[0];
+  g.lastMoment = kind; g.nextMomentAt = g.at + C.momentMs[0] + random(g) * (C.momentMs[1] - C.momentMs[0]);
+  return kind;
+}
+/** Lays out one big moment from `z` (only the existing rules) and returns where it ends. */
+function layMoment(g: BennyRun, kind: RunMoment, z: number): number {
+  const d = runDifficulty(g), all = laneList(g), neighbour = (lane: number) => pick(g, all.filter(l => Math.abs(l - lane) === 1));
+  let end = z;
+  switch (kind) {
+    case 'bridge': {
+      // A narrow bridge over the void: the middle lane alone goes on, the void on both sides and under the other two (a step aside is
+      // a fall). Coins lead onto it, two pots on it to kick open straight on.
+      const lane = 1, from = z + Math.max(12, g.speed * 1.2), len = 30 + 20 * d, to = from + len, pots = [from + len / 3, from + 2 * len / 3];
+      for (let k = z; k < from - 1; k += 2) add(g, 'coin', lane, k);
+      for (const l of all) if (l !== lane) g.pits.push({lane: l, from, to, open: true});
+      for (const w of g.walls) if (w.to > from - 6 && w.from < to + 6) { w.void = true; w.runnable = false; w.tall = false; }
+      for (let k = from + 2; k < to - 1; k += 3) if (pots.every(p => Math.abs(k - p) > 2)) add(g, 'coin', lane, k);
+      for (const p of pots) add(g, 'pot', lane, p);
+      end = to + 4; break;
+    }
+    case 'corridor': {
+      // A corridor of dragonnets, one lane then the next: each lane change strikes one, for a long combo; coins after each.
+      const count = 5 + Math.round(2 * d), gap = Math.max(C.laneGap + 2, g.speed * .62); let lane = pick(g, all);
+      for (let i = 0; i < count; i++) { add(g, 'dragonnet', lane, z + i * gap); if (i < count - 1) for (const k of [.35, .6]) add(g, 'coin', lane, z + i * gap + k * gap); lane = neighbour(lane); }
+      end = z + (count - 1) * gap; break;
+    }
+    case 'coinRain': {
+      // A rain of coins on the blue walls: both walls tall and blue around it, a row of pillars across the road (the way on is up a
+      // wall), and a long trail of coins on each wall, taken on either.
+      for (const w of g.walls) if (w.to > z - 25 && w.from <= z + 24) { w.runnable = true; w.void = false; w.tall = true; }
+      for (const l of all) add(g, 'pillar', l, z);
+      for (const side of ['left', 'right'] as const) for (let k = -10; k <= 16; k += 2) add(g, 'wallCoin', wallLane(g, side), z + k);
+      end = z + 16; break;
+    }
+    case 'descent': {
+      // A long descent (the road drawn going down): a slalom of pots from one lane to the next, coins between them, all the way down.
+      const len = 60 + 30 * d, count = 5 + Math.round(2 * d), step = len / count; let lane = pick(g, all);
+      for (let i = 0; i < count; i++) { add(g, 'pot', lane, z + 6 + i * step); add(g, 'coin', lane, z + 6 + i * step + step * .4); lane = neighbour(lane); }
+      end = z + len; break;
+    }
+  }
+  g.moments = g.moments.filter(m => m.to > g.distance - 40); g.moments.push({kind, from: z, to: end});
+  return end;
+}
 /** Lays out what comes next on the road, from the seeded draw: patterns, then a gap that shrinks as the run speeds up. */
 function spawn(g: BennyRun): void {
   layWalls(g);
@@ -799,14 +872,15 @@ function spawn(g: BennyRun): void {
     if (edge !== undefined) { g.nextSpawnZ = edge + 6; continue; }
     // Laid out with the lanes the road has there.
     const real = g.lanes; g.lanes = lanesAt(g, z);
-    const end = layPattern(g, choosePattern(g, z), z), d = runDifficulty(g);
+    const moment = momentDue(g, z), end = moment ? layMoment(g, moment, z) : layPattern(g, choosePattern(g, z), z), d = runDifficulty(g);
+    // (Never closer than `laneGap` from one pattern to the next.)
+    const gap = Math.max(C.laneGap, (C.gapStart - (C.gapStart - C.gapMin) * d - C.overtimeGap * runOvertime(g)) * (.85 + random(g) * .3));
     // Now and then a Heart rides the road just past the pattern, in a lane of the road there. Worked out from where the pattern
-    // ends, not drawn, so that the run's other draws (and the runs already tuned) stay the same.
+    // ends, not drawn, so that the run's other draws (and the runs already tuned) stay the same. Halfway to the next pattern: clear of both.
     const tick = Math.floor(end * 10);
-    if (z > C.heartFrom && tick % C.heartEvery === 0) add(g, 'heart', Math.floor(tick / C.heartEvery) % g.lanes, end + 1);
+    if (z > C.heartFrom && tick % C.heartEvery === 0) add(g, 'heart', Math.floor(tick / C.heartEvery) % g.lanes, end + gap / 2);
     g.lanes = real;
-    const gap = C.gapStart - (C.gapStart - C.gapMin) * d - C.overtimeGap * runOvertime(g);
-    g.nextSpawnZ = end + gap * (.85 + random(g) * .3);
+    g.nextSpawnZ = end + gap;
   }
 }
 

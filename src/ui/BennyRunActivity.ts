@@ -99,6 +99,8 @@ const SLAB_TILE = 6.6, PROP_EVERY = 9;
  *  springboard a fifth bigger (16 Nov.), a little over their lane, still under the top of a jump. */
 const GROW: Partial<Record<string, number>> = {pot: 1.6, coin: 1.7, wallCoin: 1.7, dragonnet: 1.55, ember: 1.6, flyer: 1.35, chest: 1.5, power: 1.3, barrier: 1.2, beam: 1.2, spring: 1.3};
 const PROP_GROW = 1.6;
+/** How steeply a long descent goes down (m per m, on average). */
+const DESCENT = .11;
 /** A struck thing melts away at least this far ahead of her (m), shrinking back to its old size, so that it does not hide her. */
 const GHOST_AHEAD = 2;
 /** Each world's painted sky (scripts/prepare-benny-run-decor.mjs), and the last tone at its foot, down to the bottom of the screen. */
@@ -768,7 +770,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   /** The road rises and falls (drawing only, like its bends): the ground `ahead` m away stands this many metres above the ground at
    *  Benny's feet. Gentle rolling hills, the same place always the same height; nothing behind her. */
   let hillBase = 0, hillFrom = 0;
-  const hill = (z: number) => HILL * (Math.sin(z / 46) + .4 * Math.sin(z / 21 + 1));
+  // (A big moment « longue descente », 16 Nov.: along it the road goes down `DESCENT` m per metre on average, eased in and out.)
+  const hill = (z: number) => { let h = HILL * (Math.sin(z / 46) + .4 * Math.sin(z / 21 + 1));
+    for (const m of game?.moments ?? []) if (m.kind === 'descent' && z > m.from) { const len = m.to - m.from, t = Math.min(1, (z - m.from) / len); h -= DESCENT * len * t * t * (3 - 2 * t); }
+    return h; };
   const hillAt = (ahead: number) => ahead <= 0 ? 0 : hill(hillFrom + ahead) - hillBase;
   /** The road winds in the distance (drawing only: the lanes and the rules stay straight): everything `ahead` m away is drawn this
    *  many metres aside, nothing at Benny's feet, `bend` m at the far end; the bends come and go with the distance run. */
