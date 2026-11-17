@@ -143,6 +143,13 @@ const PROPS: Record<RunSetting, readonly [number, number, number][]> = {
  *  high from the ground (its top cut out against the sky) and repeats end to end. */
 const BIG_WALLS = Array.from({length: 30}, (_, i) => `grand-mur-${String(i + 1).padStart(2, '0')}`);
 const BIG_WALL_RUN = 100, BIG_WALL_HIGH = 12;
+/** The meadow's walls in volumes (17 Nov., owner: « Regarde comment sont faits les murs de Blade of Brim »): in front, blocks,
+ *  pillars and low walls the game builds, each face in its own light (the top brightest, the end facing Benny darker), set back by
+ *  various amounts and of various heights; `VOLUME_BACK` m behind the wall's line, the big painted wall, `VOLUME_HIGH` m high, rising
+ *  above them and going by more slowly. */
+const VOLUME_BACK = 3, VOLUME_HIGH = 14;
+/** The volumes' colours in the meadow: cream stone, a raspberry plinth, honey cornices and caps, ochre rock, the grass on top. */
+const VOLUME_COLOURS = {stone: '#f2dcae', light: '#fbecc8', plinth: '#c8475f', cap: '#e3a45c', rock: '#d9975a', grass: '#8cc152'};
 const ROAD_FILL = 1.04, BENNY_AT = .76, CAM_LANE = .55, CAM_LOW = .62;
 /** The meadow's walls are built in tiers (owner, 16 Nov.: « 3 ou 4 tranches », the sky above them): a base `BASE_TOP` m high (light
  *  blue: Benny can run on it, the only sign of it; raspberry with arches, or bare rock: she cannot), a body of cream blocks or ochre
@@ -557,10 +564,20 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       const stretches: number[] = [];
       for (let k = Math.floor((g.distance + to) / BIG_WALL_RUN); k * BIG_WALL_RUN > g.distance + from - BIG_WALL_RUN; k--) stretches.push(k);
       if (look === 'tall' && !w.runnable && worldAhead((from + to) / 2) === 'grotte' && stretches.every(k => bigWalls.get(bigWallOf(k))?.near)) {
-        if (from > 0 && from === w.from - g.distance) endFace(c, x(from), x(from) + dir * WALL_THICK, from, BLOCK_LOW + 2, false, 'decor-corps-creme');
+        const back = (z: number) => dir * (wallXAt(g, z) + VOLUME_BACK);
+        // The ground between the road's verge and the painted wall, seen where the volumes stand back.
+        const grass = decor['decor-herbe'].near, zs = cuts(g, from, to); c.beginPath();
+        zs.forEach((z, i) => { const p = project(dir * (halfAt(g, z) + VERGE - .05), z, 0); if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); });
+        for (const z of [...zs].reverse()) { const p = project(back(z), z, 0); c.lineTo(p.x, p.y); }
+        c.closePath(); c.fillStyle = (grass && c.createPattern(grass, 'repeat')) || VOLUME_COLOURS.grass; c.fill();
+        if (from > 0 && from === w.from - g.distance) endFace(c, back(from), back(from) + dir * WALL_THICK, from, VOLUME_HIGH * .75, false, 'decor-corps-creme');
         for (const k of stretches) {
           const a = Math.max(from, k * BIG_WALL_RUN - g.distance), b = Math.min(to, (k + 1) * BIG_WALL_RUN - g.distance);
-          if (b > a) bigWall(c, g, x, a, b, bigWallOf(k));
+          if (b > a) bigWall(c, g, back, a, b, bigWallOf(k), VOLUME_HIGH);
+        }
+        for (const v of volumesOf(w).reverse()) {
+          const a = Math.max(NEAR, v.from - g.distance), b = Math.min(FAR, v.to - g.distance);
+          if (b > a) volume(c, g, dir, v, a, b, a === v.from - g.distance);
         }
         continue;
       }
@@ -620,9 +637,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   /** A big painted wall along the road at `at(z)` m across, from `from` to `to` m ahead: column by column, each sheared along the
    *  wall's slope (like `wallBand`), the picture repeating every so many metres (its width for `BIG_WALL_HIGH` m of height). */
-  function bigWall(c: CanvasRenderingContext2D, g: BennyRun, at: (z: number) => number, from: number, to: number, name: string): void {
+  function bigWall(c: CanvasRenderingContext2D, g: BennyRun, at: (z: number) => number, from: number, to: number, name: string, high = BIG_WALL_HIGH): void {
     const pic = bigWalls.get(name); if (!pic?.near || !pic.far) return;
-    const tile = BIG_WALL_HIGH * pic.w / pic.h;
+    const tile = high * pic.w / pic.h;
     for (let z = to; z > from;) {
       const a = project(at(z), z, 0), probe = project(at(z - .1), z - .1, 0), perMetre = Math.abs(a.x - probe.x) / .1;
       const z1 = Math.max(from, z - Math.min(3, Math.max(.03, 6 / Math.max(.001, perMetre)))), b = project(at(z1), z1, 0);
@@ -630,15 +647,102 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       const left = Math.min(a.x, b.x), dx = Math.abs(a.x - b.x), across = dx + 1;
       const sx = posmod(g.distance + z1, tile) / tile * pw, sw = Math.max(.5, Math.min(pw - sx, (z - z1) / tile * pw));
       const zl = a.x <= b.x ? z : z1, zr = a.x <= b.x ? z1 : z, yl = (h: number) => project(at(zl), zl, h).y, yr = (h: number) => project(at(zr), zr, h).y;
-      const b0 = yl(0), b1 = yr(0), t0 = yl(BIG_WALL_HIGH), t1 = yr(BIG_WALL_HIGH), ky = dx > .01 ? ((b1 - b0) + (t1 - t0)) / 2 / dx : 0, lean = ky * dx / 2;
+      const b0 = yl(0), b1 = yr(0), t0 = yl(high), t1 = yr(high), ky = dx > .01 ? ((b1 - b0) + (t1 - t0)) / 2 / dx : 0, lean = ky * dx / 2;
       if (Math.max(b0, b1) > 0 && left < width + 40 && left + across > -40) {
         c.save(); c.transform(1, ky, 0, 1, 0, -ky * left);
-        const edge = (h: number) => (yl(h) + yr(h)) / 2 - lean, top = edge(BIG_WALL_HIGH), bottom = edge(0);
+        const edge = (h: number) => (yl(h) + yr(h)) / 2 - lean, top = edge(high), bottom = edge(0);
         c.drawImage(el, sx, 0, sw, ph, left - .5, top, across, bottom - top + .5);
+        // Far off, the warm haze of the evening (the picture is cut out: only over the wall's lower half, which is solid).
+        const haze = hazeAt(z); if (haze > .02) { c.fillStyle = `rgba(250,198,166,${haze.toFixed(3)})`; const mid = edge(high * .45); c.fillRect(left - .5, mid, across, bottom - mid + .5); }
         c.restore();
       }
       z = z1;
     }
+  }
+  type Volume = {from: number; to: number; kind: 'bloc' | 'pilier' | 'muret'; out: number; top: number; n: number};
+  /** A meadow wall's volumes, from its start (the same every time it is drawn): a pillar between two pieces, most of the time; the
+   *  pieces are blocks (3.6 to 7 m high, a raspberry plinth, a honey cornice) or low walls of rock with grass on top, set back. */
+  function volumesOf(w: {side: string; from: number; to: number}): Volume[] {
+    const seed = Math.floor(w.from) * 2 + (w.side === 'left' ? 0 : 1), list: Volume[] = [];
+    for (let at = w.from, k = 0; at < w.to - .01; k++) {
+      const r = (m: number) => hash01(seed * 13 + k * 7 + m), n = seed * 13 + k * 7;
+      let v: Omit<Volume, 'from' | 'to' | 'n'>, len: number;
+      if (k % 2 === 1 && r(6) < .5) { v = {kind: 'pilier', out: 0, top: 6.2 + r(2) * 2.4}; len = 1.8 + r(1) * .8; }
+      else if (r(3) < .45) { v = {kind: 'muret', out: .4 + r(2) * 1, top: 1.2 + r(4) * 1.2}; len = 4 + r(1) * 5; }
+      else { v = {kind: 'bloc', out: r(2) * .8, top: 2.8 + r(4) * 2.8}; len = 5 + r(1) * 6; }
+      if (w.to - at - len < 1.5) len = w.to - at;
+      list.push({...v, from: at, to: at + len, n}); at += len;
+    }
+    return list;
+  }
+  /** A colour in a face's light (`k`: 1 for a face along the road), in the haze `ahead` m away. */
+  function lit(hex: string, k: number, ahead: number): string {
+    const v = parseInt(hex.slice(1), 16), haze = hazeAt(ahead);
+    const ch = (s: number, to: number) => Math.round(Math.min(255, ((v >> s) & 255) * k) * (1 - haze) + to * haze);
+    return `rgb(${ch(16, 250)},${ch(8, 198)},${ch(0, 166)})`;
+  }
+  /** One box of a volume, from `a` to `b` m ahead, its face along the road `o` m back from the wall's line, from `h0` to `h1` m high,
+   *  running back to the painted wall: its top (when Benny sees it from above), its face along the road, its end facing her. */
+  function box(c: CanvasRenderingContext2D, g: BennyRun, dir: number, a: number, b: number, o: number, h0: number, h1: number, hex: string, end: boolean, topHex = hex, tex?: DecorName, fit?: readonly [number, number]): void {
+    const X = (z: number, off: number) => dir * (wallXAt(g, z) + off), zs = cuts(g, a, b), mid = (a + b) / 2;
+    const path = (p0: (z: number) => {x: number; y: number}, p1: (z: number) => {x: number; y: number}) => {
+      c.beginPath(); zs.forEach((z, i) => { const p = p0(z); if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); });
+      for (const z of [...zs].reverse()) { const p = p1(z); c.lineTo(p.x, p.y); } c.closePath();
+    };
+    // Its top, lit by the sky.
+    if (h1 < cameraHeight() + camUp) {
+      path(z => project(X(z, o), z, h1), z => project(X(z, VOLUME_BACK), z, h1)); c.fillStyle = lit(topHex, 1.12, mid); c.fill();
+      // A grassy top in the painted grass of the verges, lit a little.
+      const grass = topHex === VOLUME_COLOURS.grass ? decor['decor-herbe'].near : null, pattern = grass && c.createPattern(grass, 'repeat');
+      if (pattern) { c.fillStyle = pattern; c.fill(); c.fillStyle = `rgba(255,240,200,${(.12 + hazeAt(mid) * .9).toFixed(3)})`; c.fill(); }
+    }
+    // Its face along the road, painted stone, darker towards the ground.
+    path(z => project(X(z, o), z, h0), z => project(X(z, o), z, h1)); c.fillStyle = lit(hex, 1, mid); c.fill();
+    if (tex && decor[tex].near) wallBand(c, g, z => X(z, o), a, b, h0, h1, tex, fit ?? null, fit ? BASE_TILE : FACE_TILE);
+    face(c, g, dir, a, b, h0, Math.min(h1, h0 + 1.6), o, 'rgba(70,32,24,.16)'); face(c, g, dir, a, b, h0, Math.min(h1, h0 + .6), o, 'rgba(70,32,24,.14)');
+    const edge = Math.max(1, project(0, a, 0).s * .035);
+    c.strokeStyle = 'rgba(255,246,220,.7)'; c.lineWidth = edge * 1.4; c.beginPath();
+    zs.forEach((z, i) => { const p = project(X(z, o), z, h1); if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); }); c.stroke();
+    // Its end facing Benny, in the shade.
+    if (end && a > NEAR + .5) {
+      const p = [project(X(a, o), a, h0), project(X(a, VOLUME_BACK), a, h0), project(X(a, VOLUME_BACK), a, h1), project(X(a, o), a, h1)];
+      const quadPath = () => { c.beginPath(); c.moveTo(p[0].x, p[0].y); for (const q of p.slice(1)) c.lineTo(q.x, q.y); c.closePath(); };
+      quadPath(); c.fillStyle = lit(hex, .8, a); c.fill();
+      const t = tex ? decor[tex] : null, el = t ? (a > 30 ? t.far : t.near) : null;
+      if (el) {
+        c.save(); quadPath(); c.clip();
+        const left = Math.min(...p.map(q => q.x)), right = Math.max(...p.map(q => q.x)), up = Math.min(...p.map(q => q.y)), bottom = Math.max(...p.map(q => q.y));
+        const side = a > 30 ? FAR_SIDE : NEAR_SIDE, tile = Math.max(4, (fit ? BASE_TILE : FACE_TILE) * p[0].s);
+        if (fit) c.drawImage(el, 0, side * fit[0], side * Math.min(1, (right - left) / Math.max(1, tile)), side * (fit[1] - fit[0]), left, up, right - left, bottom - up);
+        else for (let y = bottom - tile; y + tile > up; y -= tile) for (let xx = left; xx < right; xx += tile) c.drawImage(el, xx, y, tile, tile);
+        const haze = hazeAt(a); if (haze > .02) { c.fillStyle = `rgba(250,198,166,${haze.toFixed(3)})`; c.fillRect(left, up, right - left, bottom - up); }
+        c.restore();
+      }
+      quadPath(); c.fillStyle = 'rgba(70,34,40,.32)'; c.fill(); c.strokeStyle = 'rgba(80,40,36,.55)'; c.lineWidth = edge; c.stroke();
+    }
+  }
+  /** One volume of a meadow wall, from `from` to `to` m ahead (`end`: its end facing Benny is in sight). */
+  function volume(c: CanvasRenderingContext2D, g: BennyRun, dir: number, v: Volume, from: number, to: number, end: boolean): void {
+    const C = VOLUME_COLOURS, at = (out: number) => (z: number) => dir * (wallXAt(g, z) + out), shadow = 'rgba(70,32,24,.2)';
+    if (v.kind === 'pilier') {
+      box(c, g, dir, from, to, v.out - .12, 0, .9, C.cap, end, C.cap, 'decor-corps-ocre');
+      box(c, g, dir, from, to, v.out, .9, v.top - .7, C.stone, end, C.stone, 'decor-corps-creme');
+      box(c, g, dir, from, to, v.out - .22, v.top - .7, v.top, C.cap, end, C.cap, 'decor-corps-ocre');
+      face(c, g, dir, from, to, v.top - 1.2, v.top - .7, v.out, shadow);
+    } else if (v.kind === 'muret') {
+      box(c, g, dir, from, to, v.out, 0, v.top, C.rock, end, C.grass, 'decor-corps-ocre');
+    } else {
+      box(c, g, dir, from, to, v.out, 0, 1.4, C.plinth, end, C.plinth, 'decor-socle-framboise', [.55, 1]);
+      box(c, g, dir, from, to, v.out, 1.4, v.top - .45, C.stone, end, C.stone, 'decor-corps-creme');
+      face(c, g, dir, from, to, 1.4, 2.1, v.out, shadow);
+      box(c, g, dir, from, to, v.out - .18, v.top - .45, v.top, C.light, end, C.grass, 'decor-corps-creme');
+      face(c, g, dir, from, to, v.top - .95, v.top - .45, v.out, shadow);
+      if (hash01(v.n + 11) < .55) wallBand(c, g, at(v.out - .18), from, to, v.top - 1.5, v.top + .2, 'decor-lianes', [0, .42], VINE_TILE * 1.6, false);
+    }
+    if (v.kind !== 'pilier' && from < TUFT_NEAR) wallBand(c, g, at(v.out - .05), from, Math.min(to, TUFT_NEAR), 0, TUFT_TILE * TUFT_PART, 'decor-touffes', [1 - TUFT_PART, 1], TUFT_TILE, false);
+    // Something growing on top of a low wall or a block (a tree, a bush…): near Benny, it rises past the edge of the screen.
+    const ahead = (v.from + v.to) / 2 - g.distance;
+    if (v.kind !== 'pilier' && ahead > from && ahead < to && hash01(v.n + 23) < .6) prop(c, v.n, 'grotte', dir * (wallXAt(g, ahead) + (v.out + VOLUME_BACK) / 2), ahead, v.top, PROP_GROW * (v.kind === 'muret' ? 1.1 : .9));
   }
   /** One block of a wall, in its tiers, from the back to the front, in its world's look. */
   function tiers(c: CanvasRenderingContext2D, g: BennyRun, dir: number, from: number, to: number, b: WallBlock, runnable: boolean, end: boolean, look: TierLook): void {
