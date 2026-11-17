@@ -53,8 +53,10 @@ export const CHARACTERS = {
   // where Codex painted her a little smaller (measured on her tail); `room` widens the square of a sheet with a tall drawing, the
   // game drawing that atlas as much bigger (src/config/bennyRunArt.json keeps it), so that her size stays the same.
   'benny-course-a': {sheet: 'sheet-course-a.png', frames: ['gallop-1', 'gallop-2', 'gallop-3', 'gallop-4'], size: 320, columns: 4, standing: true, cells: 4, side: 'run'},
-  'benny-course-b': {sheet: 'sheet-course-c.png', frames: ['gallop-5', 'gallop-6', 'gallop-7', 'gallop-8'], size: 320, columns: 4, standing: true, cells: 4, side: 'run', zoom: .9, room: 1.15},
+  'benny-course-b': {sheet: 'sheet-course-c.png', frames: ['gallop-5', 'gallop-6', 'gallop-7', 'gallop-8'], size: 320, columns: 4, standing: true, cells: 4, side: 'run', zoom: .9, room: 1.15, match: 'benny-course-a'},
   'benny-saut': {sheet: 'sheet-saut.png', frames: ['takeoff', 'rise', 'top', 'drop'], size: 320, columns: 4, standing: true, cells: 4, side: 'run'},
+  // Her wand strike at a creature ahead: wand raised in both paws, the swing over her head, the blow ahead to her right, back.
+  'benny-coup': {sheet: 'sheet-coup.png', frames: ['raise', 'swing', 'hit', 'back'], size: 320, columns: 4, standing: true, cells: 4, side: 'run', room: 1.1},
   'benny-mur-a': {sheet: 'sheet-mur-a.png', frames: ['wall-1', 'wall-2', 'wall-3', 'wall-4'], size: 320, columns: 4, standing: true, cells: 4, side: 'run', zoom: .92},
   'benny-mur-b': {sheet: 'sheet-mur-b.png', frames: ['climb', 'bound', 'catch', 'down'], size: 320, columns: 4, standing: true, cells: 4, side: 'run', zoom: .92},
   'benny-virage': {sheet: 'sheet-virage.png', frames: ['left-1', 'left-2', 'right-1', 'right-2'], size: 320, columns: 4, standing: true, cells: 4, side: 'run', zoom: .92},
@@ -194,12 +196,16 @@ const reference = read(REFERENCE); cutOut(reference, 'light');
 const referenceStats = stats(reference);
 const gameMarks = marks(read(GAME_BENNY));
 mkdirSync(TARGET, {recursive: true});
-const config = {}, atlases = {};
+const config = {}, atlases = {}, recoloured = {};
 for (const [name, character] of Object.entries(CHARACTERS)) {
   if (ONLY && !ONLY.includes(name)) continue;
   const sheet = read(`${SOURCES}/${character.sheet}`);
   cutOut(sheet, 'light'); const pockets = clearPockets(sheet, character.pocket);
   if (name.startsWith('benny')) recolour(sheet, referenceStats);
+  // A sheet painted a little lighter than its other half (the gallop's second half): its fur brought onto that half's, after both
+  // were matched to A1, so that the gallop does not flicker from one half to the other.
+  if (character.match) { if (!recoloured[character.match]) throw Error(`${name}: encode ${character.match} with it`); recolour(sheet, stats(recoloured[character.match])); }
+  recoloured[name] = sheet;
   const {label, list} = blots(sheet, character.rows, character.cells);
   if (list.length !== character.frames.length) throw Error(`${character.sheet}: ${list.length} drawings found, ${character.frames.length} expected`);
   const extent = b => Math.max(b.x1 - b.x0, b.y1 - b.y0) + 1;

@@ -11,8 +11,8 @@ import {flightBody} from '../display/bennyFlight';
 /** The paintings' frames (scripts/prepare-benny-run-art.mjs): Benny's square stands her on its bottom, the Dragon's is centred on her body. */
 type PaintedName = 'benny' | 'benny-moves' | 'benny-strike' | 'benny-roll' | AnimSheet | 'dragon' | 'creatures' | 'creatures-lave' | 'creatures-neige' | 'attaques' | 'chests' | 'objets' | 'obstacles' | 'eclats';
 /** Benny's detailed animation (17 Nov.): her gallop, her wall-run, her leans, her actions (see scripts/prepare-benny-run-art.mjs). */
-type AnimSheet = 'benny-course-a' | 'benny-course-b' | 'benny-saut' | 'benny-mur-a' | 'benny-mur-b' | 'benny-virage' | 'benny-actions' | 'benny-actions2';
-const ANIM: AnimSheet[] = ['benny-course-a', 'benny-course-b', 'benny-saut', 'benny-mur-a', 'benny-mur-b', 'benny-virage', 'benny-actions', 'benny-actions2'];
+type AnimSheet = 'benny-course-a' | 'benny-course-b' | 'benny-saut' | 'benny-coup' | 'benny-mur-a' | 'benny-mur-b' | 'benny-virage' | 'benny-actions' | 'benny-actions2';
+const ANIM: AnimSheet[] = ['benny-course-a', 'benny-course-b', 'benny-saut', 'benny-coup', 'benny-mur-a', 'benny-mur-b', 'benny-virage', 'benny-actions', 'benny-actions2'];
 const PAINTED: PaintedName[] = [...ANIM, 'benny', 'benny-moves', 'benny-strike', 'benny-roll', 'dragon', 'creatures', 'creatures-lave', 'creatures-neige', 'attaques', 'chests', 'objets', 'obstacles', 'eclats'];
 /** Each world's creatures (17 Nov.): the same dragonnet, ember and flyer, in basalt and magma on the lava, in ice and snow on the mountain. */
 const FOE_SHEETS = {grotte: 'creatures', pont: 'creatures-lave', montagne: 'creatures-neige'} as const satisfies Record<RunSetting, PaintedName>;
@@ -1623,6 +1623,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (inAir(g) && g.airUntil === g.bounceUntil) return (g.at - g.airFrom) / (g.airUntil - g.airFrom) < .75 ? pick('benny-actions2', 'spring') : pick('benny-moves', 'fall');
     if (g.at < g.stumbleUntil && g.at - (g.stumbleUntil - BENNY_RUN.stumbleMs) < ANIM_MS.bump) return pick('benny-actions2', 'bump');
     if (!inAir(g) && bigAir && now - landedAt < Math.max(ANIM_MS.crouch, landHold(g))) return pick('benny-actions2', 'crouch');
+    // Her wand strike at what is ahead: raised in both paws, swung over her head, brought down ahead to her right (mirrored for a
+    // strike to her left), then back in her mouth.
+    if (swing && now - swing.at < POSE_MS.strike && !inAir(g) && !powerActive(g, 'dash')) { const t = now - swing.at;
+      return pick('benny-coup', t < POSE_MS.windup ? 'raise' : t < 85 ? 'swing' : t < 165 ? 'hit' : 'back', g.lane < g.laneFrom); }
     // A plain jump: the crouch of the take-off, rising, curled up at the top, reaching for the ground on the way down.
     if (inAir(g) && !g.pound && g.airUntil > g.airFrom) { const k = (g.at - g.airFrom) / (g.airUntil - g.airFrom); return pick('benny-saut', k < .1 ? 'takeoff' : k < .38 ? 'rise' : k < .62 ? 'top' : 'drop'); }
     if (moves) return null;

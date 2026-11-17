@@ -775,7 +775,7 @@
     "anchor": "feet",
     "pockets": 0,
     "room": 1.15,
-    "bytes": 49270
+    "bytes": 49368
   },
   "benny-saut": {
     "image": "assets/benny-run/benny-saut.webp",
@@ -801,5 +801,31 @@
     "anchor": "feet",
     "pockets": 314,
     "bytes": 46818
+  },
+  "benny-coup": {
+    "image": "assets/benny-run/benny-coup.webp",
+    "size": 320,
+    "frames": {
+      "raise": [
+        0,
+        0
+      ],
+      "swing": [
+        320,
+        0
+      ],
+      "hit": [
+        640,
+        0
+      ],
+      "back": [
+        960,
+        0
+      ]
+    },
+    "anchor": "feet",
+    "pockets": 531,
+    "room": 1.1,
+    "bytes": 43192
   }
 }
