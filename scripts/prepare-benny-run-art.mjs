@@ -21,7 +21,7 @@ import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
 import {decodeRgbPng, cutOut} from './prepare-rabbit-masters.mjs';
 import {downscale, encodePng} from './derive-nursery-overlays.mjs';
-import {lab, rgb, recolour, stats} from './benny-colour.mjs';
+import {recolour, stats} from './benny-colour.mjs';
 
 process.chdir(fileURLToPath(new URL('..', import.meta.url)));
 const argument = name => { const at = process.argv.indexOf(name); return at > 0 ? process.argv[at + 1] : undefined; };
@@ -44,22 +44,22 @@ export const CHARACTERS = {
   'benny-strike': {sheet: 'sheet-benny-strike.png', frames: ['hop-1', 'hop-2', 'hop-3', 'hop-4'], size: 320, columns: 4, standing: true, zoom: 1.05},
   'benny-roll': {sheet: 'sheet-benny-roll.png', frames: ['roll-1', 'roll-2', 'roll-3', 'roll-4'], size: 320, columns: 4, standing: true, zoom: 1.25},
   // Her detailed animation (owner, 17 Nov.: « anime en détail toutes les actions de Benny », the run and the wall-run above all):
-  // an eight-picture gallop (two sheets: push off one paw, paws gathered, flight, landing, then the other paw, the stretch, the
-  // long flight, the tuck), a plain jump (crouch, take-off, top, way down), the wall-run's eight pictures
-  // (four strides along a wall on her left, then the climb, the bound across, the landing on the wall, the way down), four leans
-  // into a lane change (two to the left, two to the right), and the pound, impact, dash (two strides), springboard, bump, fall
+  // a plain jump (crouch, take-off, top, way down), the wall-run's eight pictures
+  // (four strides along a wall on her left, then the climb, the bound across, the landing on the wall, the way down), and the pound, impact, dash (two strides), springboard, bump, fall
   // into the void and big landing. One drawing per cell of four, all at one same scale (`side: 'run'`: the square's side in sheet
   // pixels, the same for every sheet, so that one picture follows another without a jump in size). `zoom` makes up for a sheet
   // where Codex painted her a little smaller (measured on her tail); `room` widens the square of a sheet with a tall drawing, the
   // game drawing that atlas as much bigger (src/config/bennyRunArt.json keeps it), so that her size stays the same.
-  'benny-course-a': {sheet: 'sheet-course-a.png', frames: ['gallop-1', 'gallop-2', 'gallop-3', 'gallop-4'], size: 320, columns: 4, standing: true, cells: 4, side: 'run'},
-  'benny-course-b': {sheet: 'sheet-course-c.png', frames: ['gallop-5', 'gallop-6', 'gallop-7', 'gallop-8'], size: 320, columns: 4, standing: true, cells: 4, side: 'run', zoom: .9, room: 1.15, match: 'benny-course-a', ears: [10.4, -5.1, -2.5]},
+  // Her run redone (owner, 17 Nov.: « elle bouge trop et le skin change… on dirait qu'elle bug »): one cycle of eight pictures
+  // painted on ONE sheet (two rows of four) from her own run pictures, so that her coat never changes from one picture to the
+  // next; `lock` sets every picture by the middle of her drawing (not by her paws), so that her body stays still while her
+  // paws, tail and ears move.
+  'benny-galop': {sheet: 'sheet-galop.png', frames: ['run-1', 'run-2', 'run-3', 'run-4', 'run-5', 'run-6', 'run-7', 'run-8'], size: 320, columns: 4, rows: 2, standing: true, cells: 4, side: 'run', lock: true, zoom: .82},
   'benny-saut': {sheet: 'sheet-saut.png', frames: ['takeoff', 'rise', 'top', 'drop'], size: 320, columns: 4, standing: true, cells: 4, side: 'run'},
   // Her wand strike at a creature ahead: wand raised in both paws, the swing over her head, the blow ahead to her right, back.
   'benny-coup': {sheet: 'sheet-coup.png', frames: ['raise', 'swing', 'hit', 'back'], size: 320, columns: 4, standing: true, cells: 4, side: 'run', room: 1.1},
   'benny-mur-a': {sheet: 'sheet-mur-a.png', frames: ['wall-1', 'wall-2', 'wall-3', 'wall-4'], size: 320, columns: 4, standing: true, cells: 4, side: 'run', zoom: .92},
   'benny-mur-b': {sheet: 'sheet-mur-b.png', frames: ['climb', 'bound', 'catch', 'down'], size: 320, columns: 4, standing: true, cells: 4, side: 'run', zoom: .92},
-  'benny-virage': {sheet: 'sheet-virage.png', frames: ['left-1', 'left-2', 'right-1', 'right-2'], size: 320, columns: 4, standing: true, cells: 4, side: 'run', zoom: .92},
   'benny-actions': {sheet: 'sheet-actions.png', frames: ['dive', 'impact', 'dash-1', 'dash-2'], size: 320, columns: 4, standing: true, cells: 4, side: 'run', zoom: .92},
   'benny-actions2': {sheet: 'sheet-actions2.png', frames: ['spring', 'bump', 'void', 'crouch'], size: 320, columns: 4, standing: true, cells: 4, side: 'run', room: 1.08},
   dragon: {sheet: 'sheet-dragon2.png', frames: ['fly-1', 'fly-2', 'face', 'catch'], size: 420, columns: 2, standing: false},
@@ -184,6 +184,12 @@ function square(image, label, blot, side, ax, ay, anchorX, anchorY) {
   }
   return out;
 }
+/** The middle of a drawing: the mean place of all its pixels. */
+function centroid(image, label, blot) {
+  let sx = 0, sy = 0, n = 0;
+  for (let y = blot.y0; y <= blot.y1; y++) for (let x = blot.x0; x <= blot.x1; x++) { const id = label[y * image.width + x]; if (blot.ids ? blot.ids.has(id) : id === blot.id) { sx += x; sy += y; n++; } }
+  return {x: sx / n, y: sy / n};
+}
 /** The middle of the body: the mean column of the visible pixels in the lower 45 % of the blot (wings stay above it). */
 function bodyCentre(image, label, blot) {
   let sx = 0, sy = 0, n = 0; const from = blot.y0 + (blot.y1 - blot.y0) * .3, to = blot.y0 + (blot.y1 - blot.y0) * .75;
@@ -191,31 +197,17 @@ function bodyCentre(image, label, blot) {
   return {x: sx / n, y: sy / n};
 }
 
-/** The dark saturated brown of her ears, painted darker on the gallop's second half: moved by `shift` (L, a, b), the gap measured
- *  in the atlases between the ears of the two halves (17 Nov.: 48/22/33 against 58/16/31), smoothly by how dark and brown each
- *  pixel is; the rest of the drawing keeps its colours. */
-const darkWeight = (L, C) => Math.max(0, Math.min(1, (62 - L) / 10)) * Math.max(0, Math.min(1, (C - 18) / 8)) * Math.max(0, Math.min(1, (L - 18) / 6));
-function liftEars({pixels}, shift) {
-  for (let i = 0; i < pixels.length; i += 4) { if (!pixels[i + 3]) continue;
-    const [L, A, B] = lab(pixels[i], pixels[i + 1], pixels[i + 2]), w = darkWeight(L, Math.hypot(A, B)); if (!w) continue;
-    const out = rgb(L + w * shift[0], A + w * shift[1], B + w * shift[2]); pixels[i] = out[0]; pixels[i + 1] = out[1]; pixels[i + 2] = out[2]; }
-}
 if (!existsSync(REFERENCE)) throw Error(`Missing ${REFERENCE}: give the approved A1 reference with --reference`);
 const reference = read(REFERENCE); cutOut(reference, 'light');
 const referenceStats = stats(reference);
 const gameMarks = marks(read(GAME_BENNY));
 mkdirSync(TARGET, {recursive: true});
-const config = {}, atlases = {}, recoloured = {};
+const config = {}, atlases = {};
 for (const [name, character] of Object.entries(CHARACTERS)) {
   if (ONLY && !ONLY.includes(name)) continue;
   const sheet = read(`${SOURCES}/${character.sheet}`);
   cutOut(sheet, 'light'); const pockets = clearPockets(sheet, character.pocket);
   if (name.startsWith('benny')) recolour(sheet, referenceStats);
-  // A sheet painted a little lighter than its other half (the gallop's second half): its fur brought onto that half's, after both
-  // were matched to A1, so that the gallop does not flicker from one half to the other.
-  if (character.match) { if (!recoloured[character.match]) throw Error(`${name}: encode ${character.match} with it`); recolour(sheet, stats(recoloured[character.match])); }
-  if (character.ears) liftEars(sheet, character.ears);
-  recoloured[name] = sheet;
   const {label, list} = blots(sheet, character.rows, character.cells);
   if (list.length !== character.frames.length) throw Error(`${character.sheet}: ${list.length} drawings found, ${character.frames.length} expected`);
   const extent = b => Math.max(b.x1 - b.x0, b.y1 - b.y0) + 1;
@@ -225,9 +217,12 @@ for (const [name, character] of Object.entries(CHARACTERS)) {
   if (character.side === 'run' && Math.max(...list.map(extent)) > side) console.warn(`${name}: a drawing is bigger than its square (${Math.max(...list.map(extent))} > ${side})`);
   const first = k => character.group ? k - k % character.group : k;
   const sideOf = k => !character.fit ? side : character.group ? Math.ceil(Math.max(...list.slice(first(k), first(k) + character.group).map(extent)) * 1.04) : character.shared ? Math.ceil(Math.max(...list.map(extent)) * 1.04) : Math.ceil((character.pairs ? Math.max(extent(list[k - k % 2]), extent(list[k - k % 2 + 1])) : extent(list[k])) * 1.04);
+  // Locked pictures: the middle of each drawing at one same place, her paws on average on the square's bottom.
+  const lockDrop = character.lock ? (() => { const d = list.map(b => b.y1 - centroid(sheet, label, b).y).sort((a, b) => a - b); return d[Math.floor(d.length / 2)]; })() : 0;
   const frames = list.map((blot, k) => {
     let image; const s = sideOf(k);
-    if (character.standing || character.fit) image = square(sheet, label, blot, s, s / 2, s * (character.fit ? .98 : .97), (blot.x0 + blot.x1) / 2, blot.y1);
+    if (character.lock) { const c = centroid(sheet, label, list[k]); image = square(sheet, label, blot, s, s / 2, s * .97 - lockDrop, c.x, c.y); }
+    else if (character.standing || character.fit) image = square(sheet, label, blot, s, s / 2, s * (character.fit ? .98 : .97), (blot.x0 + blot.x1) / 2, blot.y1);
     else { const c = bodyCentre(sheet, label, blot); image = square(sheet, label, blot, s, s / 2, s / 2, c.x, c.y); }
     // A fitted drawing's width and height in its square (a pair takes its first picture's), to draw it at the thing's size.
     const ref = character.group ? list[first(k)] : character.shared ? list[0] : character.pairs ? list[k - k % 2] : blot, fit = character.fit ? [+((ref.x1 - ref.x0 + 1) / s).toFixed(3), +((ref.y1 - ref.y0 + 1) / s).toFixed(3)] : [];
