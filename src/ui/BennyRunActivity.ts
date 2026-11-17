@@ -1271,9 +1271,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       up = 7 * drop * drop + (e.rock === 'up' ? Math.sin(g.at / 40 + e.id) * .05 : 0);
     }
     // A creature that sees her coming goes for her: awake and hopping, leaning towards her lane, then pouncing (struck first, it is a
-    // ghost: no more aiming). On a wall, only a flyer reaches her.
+    // ghost: no more aiming). On a wall, none reaches her (the flyer is a creature like the others, 17 Nov.).
     pose = 'idle'; aimSide = e.id % 2 ? 1 : -1;
-    if (vanishing === null && FOES.has(e.kind) && !e.knock && !(e.kind === 'chest' && e.hp === 1) && (!g.wall || e.kind === 'flyer') && !powerActive(g, 'flight') && !powerActive(g, 'dash')) {
+    if (vanishing === null && FOES.has(e.kind) && !e.knock && !(e.kind === 'chest' && e.hp === 1) && !g.wall && !powerActive(g, 'flight') && !powerActive(g, 'dash')) {
       const off = laneX(viewLane) - x;
       if (ahead > -2 && ahead < AIM_FROM && Math.abs(off) < LANE_WIDTH * 1.5) {
         const k = Math.min(1, 1 - ahead / AIM_FROM), lunge = Math.max(0, Math.min(1, 1 - ahead / LUNGE_FROM));
@@ -1524,7 +1524,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   function threatening(g: BennyRun, e: RunEntity): boolean {
     const ahead = e.z - g.distance, across = g.wall ? wallLane(g, g.wall.side) : g.lane;
     if (!FOES.has(e.kind) || ahead <= 0 || ahead > Math.max(reach(g), g.speed * 1.4) || powerActive(g, 'flight') || powerActive(g, 'dash')) return false;
-    return g.wall ? e.kind === 'flyer' && Math.abs(e.lane - across) === 1 : Math.abs(e.lane - across) <= 1;
+    return !g.wall && Math.abs(e.lane - across) <= 1;
   }
   /** Benny's landings: when she last touched down (a squash and a puff of dust), and whether she was in the air last frame. */
   let landedAt = -1e9, wasUp = false, saidBlocked = false;
@@ -2118,7 +2118,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const how = button('Comment jouer ?', () => { rules.hidden = !rules.hidden; how.textContent = rules.hidden ? 'Comment jouer ?' : 'Cacher les règles'; }, 'bennyRunHow');
     rules.append(
       paragraph('Glisse vers le haut pour sauter, sur le côté pour changer de couloir, vers le bas pour faire une roulade (en l’air : charge au sol).', 'benny-run-rules'),
-      paragraph('Frappe les pots et les créatures avec ton bâton : de face avec une roulade, sur le côté en glissant vers leur couloir, vers le haut pour un petit monstre volant (il reste à ta hauteur). Une créature de chaque côté ? Ton bâton tournoie et frappe les deux. Une créature que tu dépasses sans la frapper t’attaque !', 'benny-run-rules'),
+      paragraph('Frappe les pots et les créatures avec ton bâton : de face avec une roulade, sur le côté en glissant vers leur couloir. Une créature de chaque côté ? Ton bâton tournoie et frappe les deux. Une créature que tu dépasses sans la frapper t’attaque !', 'benny-run-rules'),
       paragraph('Au bord, glisse vers le mur (même en sautant) pour courir dessus. Pour descendre : saute depuis le mur, glisse vers l’autre côté pour frapper ce qui t’attend en bas, ou charge au sol pour faire une onde de choc. Passe sur un pouvoir pour l’utiliser tout de suite.', 'benny-run-rules'),
       paragraph('Au-dessus d’un grand gouffre, glisse vers l’autre mur pour bondir dessus.', 'benny-run-rules'),
       paragraph('Prototype en formes simples : les vrais dessins arrivent ensuite.', 'benny-run-rules'));

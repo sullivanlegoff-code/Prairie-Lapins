@@ -14,8 +14,8 @@
  * on a wall or flying is she out of its reach. A ground charge from high up (from a wall for now; « plus tard plus de verticalité »)
  * sends a shock wave around her that strikes everything near, in every lane. When a lane change strikes a creature while another waits
  * in the lane on her other side, the wand spins and strikes both at once (owner: « quand il y a deux ennemis sur des voies à droite
- * ou à gauche, ça attaque les deux en même temps »). A little flying monster keeps to Benny's height, so that she can always strike it
- * by swiping towards it (sideways, up, or with a slide); it is the one creature that reaches her on a wall. A pot met straight on just
+ * ou à gauche, ça attaque les deux en même temps »). The little flying monster flies only in the drawing: in play it is a creature
+ * like the others (owner, 17 Nov.). A pot met straight on just
  * is kicked open, for its points and the combo, with no bump (night of 13 Nov.). The road has three lanes for now; the rules take any number (owner: zones of up
  * to 5 lanes later).
  * First bump: Benny stumbles and the Dragon swoops in; a second bump within `dragonMs` and she is caught (the run ends); otherwise
@@ -116,8 +116,7 @@ export const BENNY_RUN = {
   dashSpeed: 1.4, dashSmash: 15,
   /** Share of the creatures that are little flying monsters, once the run is `flyerFrom` into its speed ramp. */
   flyerShare: .3, flyerFrom: .15,
-  /** A flying monster hovers at this height (m), a jump's height: it is struck only by jumping through it (owner: « un saut au-
-   * dessus de Benny »). Running under it does not hurt; on a wall it still reaches her. */
+  /** A flying monster is drawn hovering at this height (m); in play it is a creature like the others (owner, 17 Nov.). */
   flyerHeight: 1.1,
   /** Cracked slabs in one lane give way when Benny is `crumbleAt` m from them: a pit to jump or to go round. */
   crumbleAt: 16, pitLen: [3.5, 5],
@@ -686,7 +685,7 @@ function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
       return z + 4;
     }
     case 'flyers': {
-      // Flying monsters keep to Benny's height: swipe towards them.
+      // Flying monsters, in a zigzag: struck like the others (a swipe towards them, a roll).
       const count = 1 + Math.round(d), lane = any();
       for (let i = 0; i < count; i++) add(g, 'flyer', i % 2 ? neighbour(lane) : lane, z + i * (step + 3));
       return z + (count - 1) * (step + 3);
@@ -1081,14 +1080,9 @@ function meet(g: BennyRun, e: RunEntity): void {
     // A creature: sliding into it strikes it; otherwise, even jumping over it, it strikes Benny as she passes.
     // A chest thrown on by this roll is not struck again by it: it is struck again only by a new blow.
     // A chest already struck once (dazed, its lid ajar) is kicked open by running into it: no bump (our decision, 13 Nov. night).
-    case 'dragonnet': case 'chest': case 'ember': if (e.knock) return; if (sliding(g)) strike(g, e, 'slide'); else if (e.kind === 'chest' && e.hp === 1 && !inAir(g)) strike(g, e, 'kick'); else bump(g, e); return;
-    // A flying monster hovers over the road: jumping through its height strikes it; running under it does nothing; on a wall it
-    // reaches her, and a slide strikes it.
-    case 'flyer':
-      if (sliding(g)) strike(g, e, 'slide');
-      else if (g.wall) bump(g, e);
-      else if (inAir(g) && runHeight(g) >= C.flyerHeight) { strike(g, e, 'jump'); rebound(g); }
-      return;
+    // The little flying monster is one of them (owner, 17 Nov.: « Je veux que le monstre volant se comporte exactement comme les autres
+    // monstres. Il vole mais on n'en tient pas vraiment compte dans le gameplay »): its flight is only drawn.
+    case 'dragonnet': case 'chest': case 'ember': case 'flyer': if (e.knock) return; if (sliding(g)) strike(g, e, 'slide'); else if (e.kind === 'chest' && e.hp === 1 && !inAir(g)) strike(g, e, 'kick'); else bump(g, e); return;
     case 'pillar': bump(g, e); return;
   }
 }
@@ -1162,12 +1156,11 @@ function tick(g: BennyRun): void {
     if (g.over) break;
     if (e.z + roll(e) - before > C.hitHalf - 1e-9 && e.z - g.distance <= C.hitHalf) meet(g, e);
   }
-  // A creature in the next lane that Benny has just passed without striking it strikes her (not flying). On a wall, only a flying
-  // monster reaches her, from the edge lane: it keeps to her height.
+  // A creature in the next lane that Benny has just passed without striking it strikes her (not flying, nor on a wall).
   for (const e of g.entities) if (isFoe(e) && lanesAt(g, e.z) === g.lanes && Math.abs(e.lane - across(g)) === 1 && e.z - g.distance >= Math.max(C.besideFrom, g.speed * C.besideMs / 1000) && e.z - g.distance <= reach(g)) e.beside = true;
   for (const e of [...g.entities]) {
     if (g.over) break;
-    if (isFoe(e) && e.beside && Math.abs(e.lane - across(g)) === 1 && ((!g.wall && !g.raised) || e.kind === 'flyer') && e.z - before > -C.hitHalf - 1e-9 && e.z - g.distance <= -C.hitHalf && !powerActive(g, 'flight') && airHeight(g) <= C.overHeight) bump(g, e);
+    if (isFoe(e) && e.beside && Math.abs(e.lane - across(g)) === 1 && !g.wall && !g.raised && e.z - before > -C.hitHalf - 1e-9 && e.z - g.distance <= -C.hitHalf && !powerActive(g, 'flight') && airHeight(g) <= C.overHeight) bump(g, e);
   }
   if (g.tutorial) followTutorial(g, g.events.slice(eventsBefore)); else followChallenge(g);
   g.entities = g.entities.filter(e => e.z > g.distance - 5);
@@ -1289,8 +1282,6 @@ export function runInput(g: BennyRun, now: number, input: RunInput): void {
       // A jump, also off a wall: then it starts at the wall's height, lasts a little longer, and she lands in the edge lane.
       { const from = g.wall ? C.wallRunHeight : 0; if (g.wall) endWall(g);
         g.jumpFrom = from; g.airFrom = g.at; g.airUntil = g.at + C.jumpMs * (1 + from / (2 * C.jumpHeight)); g.pound = false; g.slideUntil = 0; }
-      // A jump towards a flying monster just ahead strikes it: it keeps to her height.
-      { const flyer = nearest(g, g.lane, reach(g), e => e.kind === 'flyer'); if (flyer) strike(g, flyer, 'jump'); }
       return;
     case 'down': {
       if (powerActive(g, 'flight')) return;

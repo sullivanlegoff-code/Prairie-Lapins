@@ -130,13 +130,12 @@ describe('Cours cours Benny ! rules', () => {
     // Moving away from a lone creature does not strike it.
     place(g, 'ember', 0, 6); runInput(g, g.at, 'right'); expect(g).toMatchObject({lane: 1, foes: 2});
   });
-  it('strikes a little flying monster by swiping towards it: sideways, up or with a slide', () => {
+  it('strikes a little flying monster like the other creatures: swiping towards it or rolling into it, not by jumping', () => {
     const g = quiet(); run(g, C.introMs);
     place(g, 'flyer', 2, 5); runInput(g, g.at, 'right'); expect(g.foes).toBe(1);
-    place(g, 'flyer', 2, 5); runInput(g, g.at, 'up'); expect(g.foes).toBe(2);
-    run(g, C.jumpMs + 50);
-    place(g, 'flyer', 2, 0.3); runInput(g, g.at, 'down'); expect(g.foes).toBe(3);
-    expect(g.lastBumpAt).toBeNull();
+    place(g, 'flyer', 2, 5); runInput(g, g.at, 'up'); expect(g.foes).toBe(1); // A jump no longer strikes it.
+    run(g, C.jumpMs * 2 + 200); g.lastBumpAt = null; run(g, C.dragonMs);
+    place(g, 'flyer', 2, 0.3); runInput(g, g.at, 'down'); expect(g.foes).toBe(2);
   });
   it('walks up stairs without a jump, and steps sideways only onto a low step', () => {
     const g = quiet(); run(g, C.introMs); const z = g.distance;
@@ -165,18 +164,19 @@ describe('Cours cours Benny ! rules', () => {
     place(g, 'dragonnet', 1, 0.3); runInput(g, g.at, 'right');
     expect(g).toMatchObject({lane: 1, foes: 1}); expect(inAir(g)).toBe(false);
   });
-  it('lets a flying monster hover over the road: running under it does nothing, only a jump through its height strikes it', () => {
+  it('a flying monster met straight on bumps Benny like a creature on the ground, and one beside her strikes as she passes', () => {
     const g = quiet(); run(g, C.introMs);
-    place(g, 'flyer', g.lane, 1); run(g, 400); expect(g).toMatchObject({lastBumpAt: null, foes: 0}); // Passed under, on the ground.
-    place(g, 'flyer', g.lane, 3); runInput(g, g.at, 'up'); run(g, C.jumpMs); expect(g.foes).toBe(1); // A jump strikes it (at the press, within reach).
+    place(g, 'flyer', g.lane, 1); run(g, 400); expect(g.lastBumpAt).not.toBeNull(); // Not passed under any more.
+    const h = quiet(); run(h, C.introMs);
+    place(h, 'flyer', h.lane + 1, 6); run(h, 900); expect(h.lastBumpAt).not.toBeNull(); // Passed beside without striking it.
   });
-  it('lets a flying monster reach Benny on a wall, from the edge lane, and swiping off the wall strikes it', () => {
+  it('a flying monster does not reach Benny on a wall, like the others, and swiping off the wall strikes it', () => {
     const g = quiet(); run(g, C.introMs); runInput(g, g.at, 'left'); runInput(g, g.at, 'left'); expect(g.wall?.side).toBe('left');
     place(g, 'dragonnet', 0, 3); run(g, 500); expect(g.lastBumpAt).toBeNull(); // A creature on the ground does not reach the wall.
-    place(g, 'flyer', 0, 3); run(g, 500); expect(g.lastBumpAt).not.toBeNull();
-    run(g, C.dragonMs); runInput(g, g.at, 'right'); runInput(g, g.at, 'left'); runInput(g, g.at, 'left'); expect(g.wall?.side).toBe('left');
-    place(g, 'flyer', 1, 4); runInput(g, g.at, 'right');
-    expect(g).toMatchObject({wall: null, lane: 1}); expect(g.entities.some(e => e.kind === 'flyer')).toBe(false);
+    place(g, 'flyer', 0, 3); run(g, 500); expect(g.lastBumpAt).toBeNull(); // Nor does a flying one.
+    runInput(g, g.at, 'right'); runInput(g, g.at, 'left'); runInput(g, g.at, 'left'); expect(g.wall?.side).toBe('left');
+    const foes = g.foes; place(g, 'flyer', 1, 4); runInput(g, g.at, 'right');
+    expect(g).toMatchObject({wall: null, lane: 1, foes: foes + 1});
   });
   it('takes any number of lanes: five lanes, Benny in the middle, walls past the edges', () => {
     const g = quiet(7, 5); expect(g).toMatchObject({lanes: 5, lane: 2});
