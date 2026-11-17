@@ -45,6 +45,11 @@ export const CHARACTERS = {
   // Repainted in the style of the floating isles (13 Nov.): a grid of three by three, one creature per row (dragonnet asleep,
   // awake, struck; ember tall, low, gone out in smoke; flyer wings up, down, struck), the three pictures of a row in one square.
   creatures: {sheet: 'sheet-foes.png', frames: ['dragonnet-sleep', 'dragonnet-awake', 'dragonnet-hit', 'ember-1', 'ember-2', 'ember-smoke', 'flyer-1', 'flyer-2', 'flyer-hit'], size: 200, columns: 3, fit: true, cells: 3, rows: 3, group: 3, pocket: 6000},
+  // The same creatures in the lava's and the snow's colours (17 Nov.), painted from the approved sheet, cut the same way.
+  'creatures-lave': {sheet: 'sheet-foes-lave.png', frames: ['dragonnet-sleep', 'dragonnet-awake', 'dragonnet-hit', 'ember-1', 'ember-2', 'ember-smoke', 'flyer-1', 'flyer-2', 'flyer-hit'], size: 200, columns: 3, fit: true, cells: 3, rows: 3, group: 3, pocket: 6000},
+  // Their attack poses (17 Nov., owner: the creatures go for Benny), painted turned to the left: a row per world.
+  attaques: {sheet: 'sheet-attaques.png', frames: ['dragonnet-grotte', 'ember-grotte', 'flyer-grotte', 'dragonnet-pont', 'ember-pont', 'flyer-pont', 'dragonnet-montagne', 'ember-montagne', 'flyer-montagne'], size: 200, columns: 3, fit: true, cells: 3, rows: 3, pocket: 1e9},
+  'creatures-neige': {sheet: 'sheet-foes-neige.png', frames: ['dragonnet-sleep', 'dragonnet-awake', 'dragonnet-hit', 'ember-1', 'ember-2', 'ember-smoke', 'flyer-1', 'flyer-2', 'flyer-hit'], size: 200, columns: 3, fit: true, cells: 3, rows: 3, group: 3, pocket: 1e9},
   // (Its white pockets only from 6000 pixels: the whites of the eyes stay.)
   // The chest's three states (13 Nov.): one chest per cell of three equal cells, the pieces of a cell (sparkles, a lid knocked
   // off, loose coins) kept together as one drawing; all three in one same square, drawn at the shut chest's size.

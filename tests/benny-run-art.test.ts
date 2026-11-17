@@ -25,6 +25,7 @@ describe('the run’s painted atlases', () => {
   });
   it('gives each creature a picture for the moment it is struck', () => {
     for (const frame of ['dragonnet-hit', 'ember-smoke', 'flyer-hit', 'dragonnet-awake']) expect(atlases.creatures.frames[frame], frame).toBeDefined();
+    for (const world of ['creatures-lave', 'creatures-neige'] as const) expect(Object.keys(atlases[world].frames), world).toEqual(Object.keys(atlases.creatures.frames));
     expect(source).toContain("vanishing !== null ? 'flyer-hit'");
   });
   it('paints the obstacles in volume (springboard, two boulders, the cart from the front, the two arrows) and the effects', () => {

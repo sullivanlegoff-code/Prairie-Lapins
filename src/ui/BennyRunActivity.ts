@@ -7,8 +7,10 @@ import {RunTips, RunWords, WORD, type RunWord, type WordRank} from './bennyRunNo
 import RUN_ART from '../config/bennyRunArt.json';
 
 /** The paintings' frames (scripts/prepare-benny-run-art.mjs): Benny's square stands her on its bottom, the Dragon's is centred on her body. */
-type PaintedName = 'benny' | 'benny-moves' | 'benny-strike' | 'benny-roll' | 'dragon' | 'creatures' | 'chests' | 'objets' | 'obstacles' | 'eclats';
-const PAINTED: PaintedName[] = ['benny', 'benny-moves', 'benny-strike', 'benny-roll', 'dragon', 'creatures', 'chests', 'objets', 'obstacles', 'eclats'];
+type PaintedName = 'benny' | 'benny-moves' | 'benny-strike' | 'benny-roll' | 'dragon' | 'creatures' | 'creatures-lave' | 'creatures-neige' | 'attaques' | 'chests' | 'objets' | 'obstacles' | 'eclats';
+const PAINTED: PaintedName[] = ['benny', 'benny-moves', 'benny-strike', 'benny-roll', 'dragon', 'creatures', 'creatures-lave', 'creatures-neige', 'attaques', 'chests', 'objets', 'obstacles', 'eclats'];
+/** Each world's creatures (17 Nov.): the same dragonnet, ember and flyer, in basalt and magma on the lava, in ice and snow on the mountain. */
+const FOE_SHEETS = {grotte: 'creatures', pont: 'creatures-lave', montagne: 'creatures-neige'} as const satisfies Record<RunSetting, PaintedName>;
 /** Painted Benny's square, in Benny's sizes (her shape was one size tall): the drawing, ears up, fills about four fifths of it. */
 const PAINTED_BENNY = 1.85;
 /** How long each struck creature takes to melt away (ms); a chest stays broken open a little longer. */
@@ -37,6 +39,12 @@ const WALL_TILT = .6;
 const GHOST_MS: Partial<Record<string, number>> = {chest: 520, dragonnet: 420, ember: 380, flyer: 400};
 /** A dragonnet wakes up this close to Benny (m). */
 const DRAGONNET_WAKES = 7;
+/** The creatures go for Benny (17 Nov., owner: « les ennemis doivent bouger et attaquer Benny sauf si Benny les attaque avant ou qu'ils
+ *  sont trop loin »): in her lane or the next, from `AIM_FROM` m they wake, hop and lean towards her; from `LUNGE_FROM` m they pounce
+ *  (their attack pose), and one she passed without striking it lands on her (the rules' bump beside her). Two lanes away: too far. */
+const AIM_FROM = 16, LUNGE_FROM = 4.5;
+/** How long a creature that struck Benny stays on her, pouncing, ms. */
+const POUNCE_MS = 340;
 /** The Dragon's flight from behind: her two wing beats, each held this long. */
 const WING_BEAT = 120;
 
@@ -282,6 +290,17 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const gameTime = () => clock() - slowLost;
   // The paintings (owner's picks of 12 November 2026: Benny A seen from behind, the evolved Dragon A): drawn once loaded, the shapes
   // stand in until then (and in tests, where no picture loads).
+  /** The creatures' sheet of the world the thing being drawn stands in, and that world. */
+  let foeSheet: PaintedName = 'creatures', foeWorld: RunSetting = 'grotte';
+  /** What the creature being drawn is doing: asleep or waiting, aiming at Benny, or pouncing on her; and on which side she is. */
+  let pose: 'idle' | 'aim' | 'attack' = 'idle', aimSide = 1;
+  /** The creatures that just struck Benny, drawn on her for a moment; the run whose « it struck you in passing » was said. */
+  let pounces: {e: RunEntity; at: number}[] = [], saidPounce: BennyRun | null = null;
+  /** A creature's attack pose (painted turned to the left: mirrored when Benny is on its right); its awake picture until it loads. */
+  function pounce(c: CanvasRenderingContext2D, kind: 'dragonnet' | 'ember' | 'flyer', awake: string, x: number, y: number, w: number): boolean {
+    if (!art.attaques.ready) return fitted(c, 'creatures', awake, x, y, w);
+    c.save(); c.translate(x, 0); if (aimSide > 0) c.scale(-1, 1); const done = fitted(c, 'attaques', `${kind}-${foeWorld}`, 0, y, w * 1.1); c.restore(); return done;
+  }
   const art = Object.fromEntries(PAINTED.map(name => [name, {image: null, ready: false}])) as Record<PaintedName, {image: HTMLImageElement | null; ready: boolean}>;
   // The painted sky of the new decor (the floating isles at sunset), shown above the horizon in every setting.
   // Each world its own (16 Nov.): smoke and a red glow over the lava, a cold sky over the snow.
@@ -329,7 +348,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   /** One fitted drawing (a creature, an object) set on (x, bottom), `w` wide and `h` tall (its own proportions if `h` is left out);
    *  false while its painting has not loaded. */
-  function fitted(c: CanvasRenderingContext2D, name: 'creatures' | 'chests' | 'objets' | 'obstacles', frame: string, x: number, bottom: number, w: number, h?: number): boolean {
+  function fitted(c: CanvasRenderingContext2D, wanted: 'creatures' | 'attaques' | 'chests' | 'objets' | 'obstacles', frame: string, x: number, bottom: number, w: number, h?: number): boolean {
+    // A creature in its world's colours (the meadow's while that sheet loads).
+    const name: PaintedName = wanted === 'creatures' && art[foeSheet].ready ? foeSheet : wanted;
     const image = art[name].image, at = (RUN_ART[name].frames as Record<string, number[]>)[frame], size = RUN_ART[name].size;
     if (!art[name].ready || !image || !at) return false;
     const sideX = w / at[2], sideY = h === undefined ? sideX : h / at[3];
@@ -1162,6 +1183,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const SET_DOWN = new Set(['barrier', 'pillar', 'spring', 'fireball']);
   function thing(c: CanvasRenderingContext2D, g: BennyRun, e: RunEntity): void {
     const shape = SHAPES[e.kind], ahead = e.z - g.distance; if (!shape || ahead > FAR || ahead < -3) return;
+    foeWorld = settingAt(g, e.z); foeSheet = FOE_SHEETS[foeWorld];
     // A creature changing lanes (an ember hopping, a dragonnet crossing) slides over rather than jumps.
     let shown = shownLanes.get(e.id) ?? e.lane; shown += (e.lane - shown) * Math.min(1, frameDt * 12); if (Math.abs(e.lane - shown) < .01) shown = e.lane; shownLanes.set(e.id, shown);
     // (A coin out over the void, beside the road, is a lane's width out: where Benny floats when she jumps out there.)
@@ -1182,6 +1204,20 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       const fell = rocksDown.get(e.id), drop = e.rock === 'up' ? 1 : fell === undefined ? 0 : Math.max(0, 1 - (clock() - fell) / 160);
       if (drop > 0) { const g0 = project(x, ahead, 0), r = BENNY_RUN.rockLand / Math.max(BENNY_RUN.rockLand, ahead); c.fillStyle = `rgba(0,0,0,${.12 + .25 * r})`; c.beginPath(); c.ellipse(g0.x, g0.y, g0.s * .9 * r, g0.s * .25 * r, 0, 0, Math.PI * 2); c.fill(); }
       up = 7 * drop * drop + (e.rock === 'up' ? Math.sin(g.at / 40 + e.id) * .05 : 0);
+    }
+    // A creature that sees her coming goes for her: awake and hopping, leaning towards her lane, then pouncing (struck first, it is a
+    // ghost: no more aiming). On a wall, only a flyer reaches her.
+    pose = 'idle'; aimSide = e.id % 2 ? 1 : -1;
+    if (vanishing === null && FOES.has(e.kind) && !e.knock && !(e.kind === 'chest' && e.hp === 1) && (!g.wall || e.kind === 'flyer') && !powerActive(g, 'flight') && !powerActive(g, 'dash')) {
+      const off = laneX(viewLane) - x;
+      if (ahead > -2 && ahead < AIM_FROM && Math.abs(off) < LANE_WIDTH * 1.5) {
+        const k = Math.min(1, 1 - ahead / AIM_FROM), lunge = Math.max(0, Math.min(1, 1 - ahead / LUNGE_FROM));
+        if (Math.abs(off) > .05) aimSide = off > 0 ? 1 : -1;
+        pose = lunge > 0 ? 'attack' : 'aim';
+        x += off * (.1 * k + .42 * lunge);
+        if (e.kind === 'flyer') up += (bennyHeight(g) + .7 - up) * .6 * lunge;
+        else up += Math.abs(Math.sin(g.at / 120 + e.id)) * .28 * k * (1 - lunge) + .55 * Math.sin(Math.min(1, lunge * 1.4) * Math.PI);
+      }
     }
     const grow = 1 + ((GROW[e.kind] ?? 1) - 1) * (vanishing === null ? 1 : 1 - vanishing), base = project(x, ahead, up), w = shape.w * grow * base.s, h = shape.h * grow * base.s;
     thingAhead = ahead;
@@ -1280,8 +1316,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         // Painted: asleep on its coins (the creatures stay where they are).
         // Struck, it tumbles dizzy; a few metres before Benny it wakes up with a start.
         if (art.creatures.ready) {
-          fitted(c, 'creatures', vanishing !== null ? 'dragonnet-hit' : thingAhead < DRAGONNET_WAKES ? 'dragonnet-awake' : 'dragonnet-sleep', x, y, w * 1.15);
-          if (vanishing !== null || thingAhead < DRAGONNET_WAKES) return true;
+          if (pose === 'attack') return pounce(c, 'dragonnet', 'dragonnet-awake', x, y, w * 1.15);
+          const awake = pose === 'aim' || thingAhead < DRAGONNET_WAKES;
+          fitted(c, 'creatures', vanishing !== null ? 'dragonnet-hit' : awake ? 'dragonnet-awake' : 'dragonnet-sleep', x, y, w * 1.15);
+          if (vanishing !== null || awake) return true;
           const z = (at / 900 + e.id * .3) % 1; c.globalAlpha = 1 - z; c.fillStyle = '#fff'; c.font = `800 ${Math.round(Math.max(8, h * .4))}px system-ui`; c.textAlign = 'center'; c.fillText('z', x + w * .4, y - h * (1.1 + z * .6)); c.globalAlpha = 1;
           return true;
         }
@@ -1295,14 +1333,16 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         // A living flame that flickers.
         const f = 1 + .08 * Math.sin(at / 70 + e.id);
         // Struck, it goes out in a puff of smoke.
-        if (fitted(c, 'creatures', vanishing !== null ? 'ember-smoke' : Math.floor(at / 110 + e.id) % 2 ? 'ember-2' : 'ember-1', x, y, w * 1.05)) return true;
+        if (pose === 'attack' && pounce(c, 'ember', 'ember-1', x, y, w * 1.05)) return true;
+        if (fitted(c, 'creatures', vanishing !== null ? 'ember-smoke' : Math.floor(at / (pose === 'aim' ? 70 : 110) + e.id) % 2 ? 'ember-2' : 'ember-1', x, y, w * 1.05)) return true;
         c.fillStyle = '#ff6a1a'; c.beginPath(); c.moveTo(x, y - h * 1.15 * f); c.quadraticCurveTo(x + w * .6, y - h * .5, x, y); c.quadraticCurveTo(x - w * .6, y - h * .5, x, y - h * 1.15 * f); c.fill();
         c.fillStyle = '#ffd24a'; c.beginPath(); c.moveTo(x, y - h * .8 * f); c.quadraticCurveTo(x + w * .32, y - h * .3, x, y - h * .05); c.quadraticCurveTo(x - w * .32, y - h * .3, x, y - h * .8 * f); c.fill();
         eyes(x, y - h * .38, w * .12, Math.max(1, w * .07)); return true;
       }
       case 'flyer': {
         // Painted: wings up, wings down.
-        if (fitted(c, 'creatures', vanishing !== null ? 'flyer-hit' : Math.floor(at / 90 + e.id) % 2 ? 'flyer-2' : 'flyer-1', x, y, w * 2)) return true;
+        if (pose === 'attack' && pounce(c, 'flyer', 'flyer-1', x, y, w * 2)) return true;
+        if (fitted(c, 'creatures', vanishing !== null ? 'flyer-hit' : Math.floor(at / (pose === 'aim' ? 60 : 90) + e.id) % 2 ? 'flyer-2' : 'flyer-1', x, y, w * 2)) return true;
         const flap = Math.abs(Math.sin(at / 90 + e.id)); c.fillStyle = '#b89af0';
         for (const dir of [-1, 1]) { c.beginPath(); c.moveTo(x + dir * w * .3, y - h * .6); c.lineTo(x + dir * w * 1.1, y - h * (.6 + .7 * flap)); c.lineTo(x + dir * w * .9, y - h * .2); c.fill(); }
         ellipse(x, y - h / 2, w / 2, h / 2, '#7b4fc9'); eyes(x, y - h * .55, w * .17, Math.max(1, w * .1));
@@ -1641,6 +1681,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // A creature struck melts away: its picture fades out where it was, over a short moment.
     ghosts = ghosts.filter(gh => now - gh.at < (GHOST_MS[gh.e.kind] ?? 240));
     // Carried on by the blow, it keeps its distance in front of Benny while it goes (drawn before her: it is ahead of her).
+    // The creature that struck her, pouncing on her for a moment.
+    pounces = pounces.filter(p => now - p.at < POUNCE_MS);
+    for (const p of pounces) { const k = (now - p.at) / POUNCE_MS; c.save(); c.globalAlpha = Math.min(1, (1 - k) * 2.5); thing(c, g, {...p.e, z: g.distance + .9 - .5 * k}); c.restore(); }
     for (const gh of ghosts) vanish(c, g, {...gh.e, z: g.distance + Math.max(GHOST_AHEAD, gh.ahead)}, Math.max(0, (now - gh.at) / (GHOST_MS[gh.e.kind] ?? 240)), gh.dir, now >= gh.at && now - gh.at < HIT_FLASH_MS ? 1 - (now - gh.at) / HIT_FLASH_MS : 0);
     // During the end scene, Benny and the Dragon are in the scene, not on the road.
     // The painted pieces (shards, sparks, dust) fly where the blow lands, in front of her: drawn before Benny, they never hide her.
@@ -1763,7 +1806,14 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'coin': { const t = clock(); tally = t - tally.last < TALLY_GAP ? {count: tally.count + 1, last: t} : {count: 1, last: t};
         if (coinFlights.length < COIN_FLIGHTS) { const b = project(laneX(viewLane), .6, bennyHeight(g) + .8); coinFlights.push({at: t, x: b.x, y: b.y}); } }
         if (clock() - lastCoinSound > 60) { coinRun = clock() - lastCoinSound < 450 ? Math.min(12, coinRun + 1) : 0; lastCoinSound = clock(); sound('coin', 2 ** (coinRun / 24)); } break;
-      case 'bump': cleared.set(event.entity.cart ? 'cart' : event.entity.kind, 0); hurtAt = clock(); shakeFor('bump'); sound('bump'); break;
+      case 'bump': cleared.set(event.entity.cart ? 'cart' : event.entity.kind, 0); hurtAt = clock(); shakeFor('bump'); sound('bump');
+        // A creature that struck her: it pounces on her, a star where it lands; the first one of a run that got her in passing says why.
+        if (FOES.has(event.entity.kind)) {
+          pounces.push({e: {...event.entity}, at: clock()});
+          const b = project(laneX(viewLane), .6, bennyHeight(g) + .9); pieces(b.x, b.y, ['star'], 1, 40, Math.max(40, b.s * 1.2), {life: 320, grow: .6, fade: .5});
+          if (event.entity.lane !== g.lane && saidPounce !== g) { saidPounce = g; tip('Aïe ! Un ennemi à côté de toi t’attaque si tu passes sans le frapper. Change de voie vers lui pour le frapper !', true); }
+        }
+        break;
       case 'shield': word('La bulle te protège !'); burst(width / 2, height * .7, ['#e7d1ff', '#b07bff', '#fff'], 16, 260); sound('power'); break;
       case 'power': word(`${POWER_NAMES[event.power]} !`); sound('power'); break;
       case 'frenzy': word('Frénésie !', WORD.big, 'Les pièces viennent à toi'); burst(width / 2, height * .62, ['#ffe36b', '#ffb3c8', '#e7d1ff', '#fff'], 24, 360); sound('power', 1.25); shakeFor('strike'); break;

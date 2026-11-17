@@ -195,6 +195,195 @@
     "pockets": 0,
     "bytes": 70568
   },
+  "creatures-lave": {
+    "image": "assets/benny-run/creatures-lave.webp",
+    "size": 200,
+    "frames": {
+      "dragonnet-sleep": [
+        0,
+        0,
+        0.822,
+        0.606
+      ],
+      "dragonnet-awake": [
+        200,
+        0,
+        0.822,
+        0.606
+      ],
+      "dragonnet-hit": [
+        400,
+        0,
+        0.822,
+        0.606
+      ],
+      "ember-1": [
+        0,
+        200,
+        0.768,
+        0.961
+      ],
+      "ember-2": [
+        200,
+        200,
+        0.768,
+        0.961
+      ],
+      "ember-smoke": [
+        400,
+        200,
+        0.768,
+        0.961
+      ],
+      "flyer-1": [
+        0,
+        400,
+        0.96,
+        0.635
+      ],
+      "flyer-2": [
+        200,
+        400,
+        0.96,
+        0.635
+      ],
+      "flyer-hit": [
+        400,
+        400,
+        0.96,
+        0.635
+      ]
+    },
+    "anchor": "feet",
+    "pockets": 0,
+    "bytes": 76652
+  },
+  "attaques": {
+    "image": "assets/benny-run/attaques.webp",
+    "size": 200,
+    "frames": {
+      "dragonnet-grotte": [
+        0,
+        0,
+        0.96,
+        0.769
+      ],
+      "ember-grotte": [
+        200,
+        0,
+        0.96,
+        0.907
+      ],
+      "flyer-grotte": [
+        400,
+        0,
+        0.96,
+        0.69
+      ],
+      "dragonnet-pont": [
+        0,
+        200,
+        0.96,
+        0.795
+      ],
+      "ember-pont": [
+        200,
+        200,
+        0.936,
+        0.96
+      ],
+      "flyer-pont": [
+        400,
+        200,
+        0.959,
+        0.702
+      ],
+      "dragonnet-montagne": [
+        0,
+        400,
+        0.961,
+        0.798
+      ],
+      "ember-montagne": [
+        200,
+        400,
+        0.95,
+        0.961
+      ],
+      "flyer-montagne": [
+        400,
+        400,
+        0.959,
+        0.71
+      ]
+    },
+    "anchor": "feet",
+    "pockets": 0,
+    "bytes": 85920
+  },
+  "creatures-neige": {
+    "image": "assets/benny-run/creatures-neige.webp",
+    "size": 200,
+    "frames": {
+      "dragonnet-sleep": [
+        0,
+        0,
+        0.838,
+        0.708
+      ],
+      "dragonnet-awake": [
+        200,
+        0,
+        0.838,
+        0.708
+      ],
+      "dragonnet-hit": [
+        400,
+        0,
+        0.838,
+        0.708
+      ],
+      "ember-1": [
+        0,
+        200,
+        0.823,
+        0.961
+      ],
+      "ember-2": [
+        200,
+        200,
+        0.823,
+        0.961
+      ],
+      "ember-smoke": [
+        400,
+        200,
+        0.823,
+        0.961
+      ],
+      "flyer-1": [
+        0,
+        400,
+        0.96,
+        0.68
+      ],
+      "flyer-2": [
+        200,
+        400,
+        0.96,
+        0.68
+      ],
+      "flyer-hit": [
+        400,
+        400,
+        0.96,
+        0.68
+      ]
+    },
+    "anchor": "feet",
+    "pockets": 0,
+    "bytes": 81286
+  },
   "chests": {
     "image": "assets/benny-run/chests.webp",
     "size": 220,
