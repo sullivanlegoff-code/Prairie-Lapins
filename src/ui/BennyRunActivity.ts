@@ -97,6 +97,10 @@ type DecorName = typeof DECOR[number];
  *  the wall's), the cliff across. The grass verge past the road's edge (m), the cliff's depth below it (m). */
 /** Pixels per point of the painted ground's layer. */
 const GROUND_RATIO = 1;
+/** The detail of the painted track, finest first (a device that cannot keep up steps down, see watchFrames): how wide (screen
+ *  points) a painted wall's column is, and how high a row of the ground is at the horizon and how much more at the bottom of the
+ *  screen (near, the ground's perspective hardly changes across a row: taller rows there do not show). */
+const DETAIL = [{column: 10, band: 4, grow: 6}, {column: 14, band: 5, grow: 9}, {column: 20, band: 6, grow: 12}] as const;
 /** How far out the cliff's foot leans beyond the edge of the road (m). */
 const VOID_LIP = .5;
 /** Walls after Blade of Brim (owner, 13 Nov.): a tall one rises past the top of the screen, a low one stands at a jump's height
@@ -363,17 +367,22 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     for (const name of wanted) {
       if (bigWalls.has(name)) continue;
       const image = new Image(), pic: BigWallPicture = {image, near: null, far: null, w: 0, h: 0}; image.decoding = 'async';
-      image.onload = () => {
+      // (Decoded off the main thread before it is first drawn: a picture of that size decoded while drawing stalls the run.)
+      image.onload = () => { void (image.decode?.() ?? Promise.resolve()).catch(() => undefined).then(() => {
+        if (bigWalls.get(name) !== pic) return;
         const far = document.createElement('canvas'); far.width = Math.round(image.width / 4); far.height = Math.round(image.height / 4);
         const k = far.getContext('2d'); if (k) { k.imageSmoothingQuality = 'high'; k.drawImage(image, 0, 0, far.width, far.height); }
         Object.assign(pic, {near: image, far, w: image.width, h: image.height});
-      };
+      }); };
       image.src = `${import.meta.env.BASE_URL}assets/benny-run/${name}.webp`; bigWalls.set(name, pic);
     }
   }
   /** Set on a device too slow for the painted track, even at its softest picture (see watchFrames). */
-  let plainGround = false;
-  const decorReady = () => !plainGround && DECOR.every(name => decor[name].near && decor[name].far);
+  /** How wide (screen points) a column of a painted wall is: wider is fewer pictures to draw a frame (a device that cannot keep up
+   *  gets wider ones, see watchFrames). The track never goes back to flat colours (owner, 17 Nov.: the walls and the road turned
+   *  green after a while on the iPhone). */
+  let detail = 0, columnPx: number = DETAIL[0].column;
+  const decorReady = () => DECOR.every(name => decor[name].near && decor[name].far);
   /** Counts the times the run's pictures were let go (`releaseArt`): a picture still loading from before is then dropped. */
   let artRound = 0;
   function loadArt(): void {
@@ -523,15 +532,16 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   /** The painted ground, row by row of the screen (each row is one depth): the grass of the isle, the planks of the road over it;
    *  nothing over a gap (the clouds of the void show). */
   function paintedFloor(c: CanvasRenderingContext2D, g: BennyRun): void {
-    const horizon = height * HORIZON, H = cameraHeight() + camUp, k = scale0() * CAMERA_BACK, BAND = 4;
+    const horizon = height * HORIZON, H = cameraHeight() + camUp, k = scale0() * CAMERA_BACK, {band: BAND, grow} = DETAIL[detail];
     const aheadAt = (y: number) => k * H / Math.max(.01, y - horizon) - CAMERA_BACK;
     const row = (name: DecorName, x0: number, x1: number, a0: number, a1: number, across: number, along: number, y: number, s: number, deep = BAND + .5) => {
       const far = a0 > 30, t = decor[name], el = far ? t.far : t.near, side = far ? FAR_SIDE : NEAR_SIDE; if (!el) return;
       const sw = Math.min(side * 4, (x1 - x0) / across * side), sh = Math.max(.5, Math.min(side, (a0 - a1) / along * side));
       c.drawImage(el, posmod(x0, across) / across * side, posmod(-(g.distance + a0), along) / along * side, sw, sh, width / 2 + (x0 + bendAt((a0 + a1) / 2) - camX) * s, y, (x1 - x0) * s, deep);
     };
-    for (let y = Math.max(0, Math.floor(horizon)); y < height + 60; y += BAND) {
-      const a0 = Math.min(FAR, aheadAt(y)), a1 = Math.max(NEAR, aheadAt(y + BAND)); if (a1 >= FAR || a0 <= NEAR) continue;
+    for (let y = Math.max(0, Math.floor(horizon)), step: number = BAND; y < height + 60; y += step) {
+      step = Math.round(BAND + grow * Math.max(0, Math.min(1, (y - horizon) / Math.max(1, height - horizon))));
+      const a0 = Math.min(FAR, aheadAt(y)), a1 = Math.max(NEAR, aheadAt(y + step)); if (a1 >= FAR || a0 <= NEAR) continue;
       const mid = (a0 + a1) / 2, z = g.distance + mid; if (g.holes.some(h => z >= h.from && z < h.to)) continue;
       const half = halfAt(g, mid), s = project(0, mid, 0).s;
       // Where that strip of ground really is on the screen, hills included (far to near: a crest hides what lies behind it).
@@ -596,7 +606,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const tiers = Math.ceil(top / FACE_TILE - 1e-6);
     for (let z = to; z > from;) {
       const a = project(x(z), z, 0), probe = project(x(z - .1), z - .1, 0), perMetre = Math.abs(a.x - probe.x) / .1;
-      const z1 = Math.max(from, z - Math.min(3, Math.max(.03, 6 / Math.max(.001, perMetre)))), b = project(x(z1), z1, 0);
+      const z1 = Math.max(from, z - Math.min(3, Math.max(.03, columnPx / Math.max(.001, perMetre)))), b = project(x(z1), z1, 0);
       const far = z > 30, el = far ? t.far : t.near, side = far ? FAR_SIDE : NEAR_SIDE;
       if (el) for (let k = 0; k < tiers; k++) {
         const h0 = k * FACE_TILE, h1 = Math.min(top, h0 + FACE_TILE), ta = project(x(z), z, h1), tb = project(x(z1), z1, h1), ba = project(x(z), z, h0), bb = project(x(z1), z1, h0);
@@ -678,7 +688,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const t = decor[name];
     for (let z = to; z > from;) {
       const a = project(at(z), z, h0), probe = project(at(z - .1), z - .1, h0), perMetre = Math.abs(a.x - probe.x) / .1;
-      const z1 = Math.max(from, z - Math.min(3, Math.max(.03, 6 / Math.max(.001, perMetre)))), b = project(at(z1), z1, h0);
+      const z1 = Math.max(from, z - Math.min(3, Math.max(.03, columnPx / Math.max(.001, perMetre)))), b = project(at(z1), z1, h0);
       const far = z > 30, el = far ? t.far : t.near, side = far ? FAR_SIDE : NEAR_SIDE, left = Math.min(a.x, b.x), dx = Math.abs(a.x - b.x), across = dx + 1;
       const sx = posmod(g.distance + z1, tile) / tile * side, sw = Math.max(.5, Math.min(side, (z - z1) / tile * side));
       // The column leans with the wall (owner, 16 Nov.: upright slices made stair steps that crawled as the walls went by): sheared
@@ -704,7 +714,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const tile = BIG_WALL_HIGH * pic.w / pic.h;
     for (let z = to; z > from;) {
       const a = project(at(z), z, 0), probe = project(at(z - .1), z - .1, 0), perMetre = Math.abs(a.x - probe.x) / .1;
-      const z1 = Math.max(from, z - Math.min(3, Math.max(.03, 6 / Math.max(.001, perMetre)))), b = project(at(z1), z1, 0);
+      const z1 = Math.max(from, z - Math.min(3, Math.max(.03, columnPx / Math.max(.001, perMetre)))), b = project(at(z1), z1, 0);
       const far = z > 30, el = far ? pic.far : pic.near, pw = far ? pic.w / 4 : pic.w, ph = far ? pic.h / 4 : pic.h;
       const left = Math.min(a.x, b.x), dx = Math.abs(a.x - b.x), across = dx + 1;
       const sx = posmod(g.distance + z1, tile) / tile * pw, sw = Math.max(.5, Math.min(pw - sx, (z - z1) / tile * pw));
@@ -843,8 +853,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   /**
    * The canvas resolution, at most 2 pixels per point: on a device that cannot keep up (more than half the frames of the last
-   * 60 slower than 50 per second), it steps down by a quarter (by half when most were slower than 30 per second), to 1.25 at
-   * the least: a little softer, but smooth.
+   * 60 slower than 50 per second), it steps down by a quarter (by half when most were slower than 30 per second), to 1 at
+   * the least, after its walls are drawn in wider columns: a little softer, but smooth, and always painted.
    */
   /** (Read from the page at most twice a second: asking where the counter is every frame makes the browser lay the page out.) */
   let coinSpot = {x: 0, y: 0}, coinSpotAt = -1e9;
@@ -852,11 +862,15 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   function watchFrames(now: number): void {
     const gap = now - lastFrameAt; lastFrameAt = now;
     if (gap <= 0 || gap > 200) return; // A pause or a hidden tab: not a measure.
-    sampled++; if (gap > 20) slowSampled++; if (gap > 33) verySlow++;
+    // (A steady 30 a second is a screen held to 30, an iPhone saving its battery: not a device that cannot keep up. Slow is
+    //  missing 60 without being held to 30, or stalling.)
+    sampled++; if ((gap > 20 && gap < 29) || gap > 40) slowSampled++; if (gap > 40) verySlow++;
     if (sampled < 60) return;
-    if (slowSampled > sampled / 2 && ratioCap > 1.25 && (window.devicePixelRatio || 1) > 1.25) { ratioCap = Math.max(1.25, ratioCap - (verySlow > sampled / 2 ? .5 : .25)); measure(); }
-    // Still too slow at the softest picture: the track goes back to flat colours (smooth before pretty).
-    else if (slowSampled > sampled / 2) plainGround = true;
+    // Too slow: first wider wall columns (fewer pictures, the same look), then a softer picture, down to one pixel a point.
+    if (slowSampled > sampled / 2) {
+      if (detail < DETAIL.length - 1) { detail++; columnPx = DETAIL[detail].column; }
+      else if (ratioCap > 1 && (window.devicePixelRatio || 1) > 1) { ratioCap = Math.max(1, ratioCap - (verySlow > sampled / 2 ? .5 : .25)); measure(); }
+    }
     sampled = 0; slowSampled = 0; verySlow = 0;
   }
   function measure(): void {
