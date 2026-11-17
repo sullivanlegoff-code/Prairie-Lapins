@@ -73,8 +73,8 @@ import {CHRISTMAS_MARKET_ART} from '../config/christmasMarketArt';
 import {availableChristmasRewards, candiesOf, christmasBonusClaimed, christmasBonusReady, christmasChallengesOf, christmasClaimable, christmasClaimed, christmasDecorationReason, christmasProgress, CHRISTMAS_RABBIT_IDS, christmasRabbitReason, skyGiftsDay, skyGiftsRabbitReason, snowmanQuote} from '../simulation/christmas';
 import {mountSkyGiftsActivity} from './SkyGiftsActivity';
 import {mountBennyFlightActivity} from './BennyFlightActivity';
-import {BENNY_RUN_SETTING_SHORT, mountBennyRunActivity} from './BennyRunActivity';
-import {BENNY_RUN, RUN_SETTINGS as BENNY_RUN_SETTINGS} from '../simulation/bennyRun';
+import type {mountBennyRunActivity} from './BennyRunActivity';
+import {BENNY_RUN, BENNY_RUN_SETTING_SHORT, RUN_SETTINGS as BENNY_RUN_SETTINGS} from '../simulation/bennyRun';
 import {bennyRunDay} from '../simulation/bennyRunRewards';
 import {LAIR_ART} from '../config/lairArt';
 import {bennyFlightDay, bennyFlightReason, hasBenny} from '../simulation/bennyFlight';
@@ -239,8 +239,8 @@ export class GameUI {
   /** Christmas: « Les cadeaux du ciel », and whether the market shows its rabbit choice for it. */
   private skyGifts: ReturnType<typeof mountSkyGiftsActivity>;
   private bennyFlight: ReturnType<typeof mountBennyFlightActivity>;
-  /** « Cours cours Benny ! », played from the Antre du dragon (record only for now). */
-  private bennyRun: ReturnType<typeof mountBennyRunActivity>;
+  /** « Cours cours Benny ! », loaded only when the Antre du dragon is opened (its code and pictures stay out of the island's start). */
+  private bennyRun: {readonly active: boolean; prepare(): void; open(): void; close(): void; dispose(): void};
   private heartsBeforeFlight: number | null = null;
   /** Whether the full-screen shop or market currently covers the island (its Phaser loop sleeps meanwhile). */
   private shopCovering = false;
@@ -290,7 +290,7 @@ export class GameUI {
       return parts.length ? parts.join(' · ') : passed ? 'Partie pour le plaisir : plus de récompense aujourd’hui' : '';
     }, quotaText: () => { const state = this.controller.getSnapshot().state; return state ? bennyFlightQuotaText(state, this.now()) : ''; },
     best: () => this.controller.getSnapshot().state?.bennyFlight?.best ?? 0, onExit: () => this.render()});
-    this.bennyRun = mountBennyRunActivity(document.getElementById('app')!, {onFinished: summary => {
+    const runOptions: Parameters<typeof mountBennyRunActivity>[1] = {onFinished: summary => {
       const before = this.controller.getSnapshot().state?.bennyRun?.settings ?? {}, heartsBefore = this.controller.getSnapshot().state?.hearts ?? 0;
       const saved = this.controller.perform({type: 'finishBennyRun', score: summary.score, metres: summary.metres, bySetting: summary.bySetting, coins: summary.coins, hearts: summary.hearts});
       if (!saved.ok) return `Record non enregistré : ${REFUSALS[saved.reason]}`;
@@ -300,7 +300,13 @@ export class GameUI {
       const beaten = BENNY_RUN_SETTINGS.filter(k => (before[k] ?? 0) > 0 && summary.bySetting[k] > (before[k] ?? 0));
       const notes = [...(!pattes && summary.coins ? ['Course pour le plaisir : plus de récompense aujourd’hui'] : []), ...(beaten.length ? [`Record de décor battu : ${beaten.map(k => BENNY_RUN_SETTING_SHORT[k]).join(', ')} !`] : [])];
       return {pattes, hearts, notes, rewardedLeft: bennyRunDay(saved.state, this.now()).rewardedLeft, rewardedPerDay: BENNY_RUN.rewardedRunsPerCycle};
-    }, best: () => this.controller.getSnapshot().state?.bennyRun?.best ?? 0, bestMetres: () => this.controller.getSnapshot().state?.bennyRun?.metres ?? 0, sound: (kind, pitch) => this.sounds.run(kind, pitch), onExit: () => this.render()});
+    }, best: () => this.controller.getSnapshot().state?.bennyRun?.best ?? 0, bestMetres: () => this.controller.getSnapshot().state?.bennyRun?.metres ?? 0, sound: (kind, pitch) => this.sounds.run(kind, pitch), onExit: () => this.render()};
+    {
+      let run: ReturnType<typeof mountBennyRunActivity> | null = null, loading: Promise<void> | null = null, disposed = false;
+      const load = () => loading ??= import('./BennyRunActivity').then(m => { if (!disposed) run = m.mountBennyRunActivity(document.getElementById('app')!, runOptions); }, () => { loading = null; });
+      this.bennyRun = {get active() { return run?.active ?? false; }, prepare: () => { void load(); }, open: () => { void load().then(() => run?.open()); },
+        close: () => run?.close(), dispose: () => { disposed = true; run?.dispose(); }};
+    }
     this.moveBanner.id = 'rabbit-move-banner'; this.moveBanner.hidden = true;
     this.moveBanner.setAttribute('role', 'region'); this.moveBanner.setAttribute('aria-label', 'Déplacer un lapin');
     const moveLabel = node('span'); moveLabel.setAttribute('role', 'status'); this.moveBanner.append(moveLabel);
@@ -1458,6 +1464,7 @@ export class GameUI {
   /** The Antre du dragon: the record, then « Cours cours Benny ! » (Benny only; its coins are pattes, a few runs a day). */
   private renderLair(s: GameState): void {
     const reason = hasBenny(s) ? null : 'BENNY_REQUIRED' as const;
+    if (!reason) this.bennyRun.prepare();
     this.content.append(node('p', 'Benny chipe le trésor de la Lapine Dragon… et la Dragon la poursuit !', 'badge'));
     this.content.append(node('p', `Tes pièces de course deviennent des pattes : ${bennyRunDay(s, this.now()).rewardedLeft} course(s) récompensée(s) restante(s) aujourd’hui sur ${BENNY_RUN.rewardedRunsPerCycle}.`, 'small'));
     if (s.bennyRun?.best) this.content.append(node('p', `Ton record : ${s.bennyRun.best} · ta plus longue course : ${s.bennyRun.metres} m`, 'small'));

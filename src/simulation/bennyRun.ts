@@ -170,6 +170,8 @@ export type RunSetting = 'grotte' | 'pont' | 'montagne';
 export type RunMoment = 'bridge' | 'corridor' | 'coinRain' | 'descent';
 export const RUN_MOMENTS: readonly RunMoment[] = ['coinRain', 'corridor', 'bridge', 'descent'];
 export const RUN_SETTINGS: readonly RunSetting[] = ['grotte', 'pont', 'montagne'];
+/** A setting's short name, for the records (also read by the Antre du dragon's menu, without loading the run itself). */
+export const BENNY_RUN_SETTING_SHORT: Record<RunSetting, string> = {grotte: 'Grotte', pont: 'Pont', montagne: 'Montagne'};
 export type RunPower = keyof typeof BENNY_RUN.powers;
 export const RUN_POWERS = Object.keys(BENNY_RUN.powers) as RunPower[];
 export type RunFoe = 'dragonnet' | 'chest' | 'ember' | 'flyer';

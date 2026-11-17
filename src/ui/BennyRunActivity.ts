@@ -1,6 +1,6 @@
 import '../display/benny-run.css';
 import {FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
-import {advanceBennyRun, BENNY_RUN, comboMultiplier, wallAt, wallLook, floorHeight, ledgeHeight, platformAt, lanesAt, reach, settingAt, wallLane, dragonVisible, inAir, powerActive, runHeight, runInput, runSummary, sliding, startBennyRun, takeRunEvents, RUN_SETTINGS,
+import {advanceBennyRun, BENNY_RUN, BENNY_RUN_SETTING_SHORT, comboMultiplier, wallAt, wallLook, floorHeight, ledgeHeight, platformAt, lanesAt, reach, settingAt, wallLane, dragonVisible, inAir, powerActive, runHeight, runInput, runSummary, sliding, startBennyRun, takeRunEvents, RUN_SETTINGS,
   type BennyRun, type ChallengeKind, type RunEntity, type RunInput, type RunPower, type RunSetting, type RunSummary, type TutorialStep} from '../simulation/bennyRun';
 import {pausableClock, settleCard} from './activityPause';
 import {RunTips, RunWords, WORD, type RunWord, type WordRank} from './bennyRunNotices';
@@ -182,7 +182,7 @@ const PLANK_ALONG = 3, GRASS_TILE = 3.3, CLIFF_TILE = 4, VERGE = .6, CLIFF_DEPTH
  *  and sides of platforms and stairs. */
 const PAINTED_LOOK = {cloudTop: '#f2c2c4', cloudBottom: '#fcc495', rock: '#9c6c55', rockDark: '#6d4a4f', lip: '#5f8f2f', top: '#e8955a', side: '#995f52', joint: 'rgba(90,40,14,.55)', lane: 'rgba(255,255,255,.2)'};
 
-export const BENNY_RUN_SETTING_SHORT: Record<RunSetting, string> = {grotte: 'Grotte', pont: 'Pont', montagne: 'Montagne'};
+export {BENNY_RUN_SETTING_SHORT};
 const SETTING_NAMES: Record<RunSetting, string> = {grotte: 'La grotte dorée', pont: 'Le pont sur la lave', montagne: 'Le sentier de montagne'};
 /** A challenge said to the player (tutoiement). */
 const CHALLENGE_TEXT: Record<ChallengeKind, (goal: number) => string> = {
@@ -370,29 +370,47 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   /** Set on a device too slow for the painted track, even at its softest picture (see watchFrames). */
   let plainGround = false;
   const decorReady = () => !plainGround && DECOR.every(name => decor[name].near && decor[name].far);
+  /** Counts the times the run's pictures were let go (`releaseArt`): a picture still loading from before is then dropped. */
+  let artRound = 0;
   function loadArt(): void {
+    const round = artRound, current = () => round === artRound;
     for (const s of RUN_SETTINGS) { const sky = skyPictures[s]; if (sky.image) continue;
-      const image = new Image(); image.decoding = 'async'; image.onload = () => { sky.ready = true; }; image.src = `${import.meta.env.BASE_URL}assets/benny-run/${SKY_FILES[s]}.webp`; sky.image = image; }
+      const image = new Image(); image.decoding = 'async'; image.onload = () => { if (current()) sky.ready = true; }; image.src = `${import.meta.env.BASE_URL}assets/benny-run/${SKY_FILES[s]}.webp`; sky.image = image; }
     for (const name of DECOR) {
       if (decor[name].image) continue;
       const image = new Image(); image.decoding = 'async'; image.onload = () => {
+        if (!current()) return;
         // As bitmaps where the browser has them: drawn from many times a frame, they stay ready on the graphics card.
         const near = tiled(image, NEAR_SIDE), far = softened(image);
         if (typeof createImageBitmap !== 'function' || !near || !far) { decor[name].near = near; decor[name].far = far; return; }
-        void Promise.all([createImageBitmap(near), createImageBitmap(far)]).then(([n, f]) => { decor[name].near = n; decor[name].far = f; }, () => { decor[name].near = near; decor[name].far = far; });
+        void Promise.all([createImageBitmap(near), createImageBitmap(far)]).then(([n, f]) => { if (current()) { decor[name].near = n; decor[name].far = f; } else { n.close(); f.close(); } }, () => { if (current()) { decor[name].near = near; decor[name].far = far; } });
       };
       image.src = `${import.meta.env.BASE_URL}assets/benny-run/${name}.webp`; decor[name].image = image;
     }
     if (!wingArt.image) {
       const image = new Image(); image.decoding = 'async'; wingArt.image = image;
       const loaded = new Promise<void>(done => { image.onload = () => done(); }); image.src = BENNY_FLIGHT_ATLAS.url;
-      void fetch(BENNY_FLIGHT_ATLAS.atlas).then(r => r.json() as Promise<{frames: Record<string, FlightFrameRect>}>).then(async atlas => { await loaded; wingArt.frames = atlas.frames; wingArt.ready = true; }, () => undefined);
+      void fetch(BENNY_FLIGHT_ATLAS.atlas).then(r => r.json() as Promise<{frames: Record<string, FlightFrameRect>}>).then(async atlas => { await loaded; if (!current()) return; wingArt.frames = atlas.frames; wingArt.ready = true; }, () => undefined);
     }
     for (const name of PAINTED) {
       if (art[name].image) continue;
-      const image = new Image(); image.decoding = 'async'; image.onload = () => { art[name].ready = true; };
+      const image = new Image(); image.decoding = 'async'; image.onload = () => { if (current()) art[name].ready = true; };
       image.src = `${import.meta.env.BASE_URL}${RUN_ART[name].image}`; art[name].image = image;
     }
+  }
+  /** Lets go of the run's pictures once it is closed (about a hundred megabytes decoded on a phone, which the island needs back):
+   *  the next run loads them again, from the browser's cache. */
+  function releaseArt(): void {
+    artRound++;
+    const drop = (image: HTMLImageElement | null) => { if (image) { image.onload = null; image.src = ''; } };
+    const free = (bitmap: CanvasImageSource | null) => { if (typeof ImageBitmap !== 'undefined' && bitmap instanceof ImageBitmap) bitmap.close(); else if (bitmap instanceof HTMLCanvasElement) bitmap.width = bitmap.height = 0; };
+    for (const s of RUN_SETTINGS) { drop(skyPictures[s].image); skyPictures[s] = {image: null, ready: false}; }
+    for (const name of DECOR) { const d = decor[name]; drop(d.image); free(d.near); free(d.far); decor[name] = {image: null, near: null, far: null}; }
+    for (const name of PAINTED) { drop(art[name].image); art[name] = {image: null, ready: false}; }
+    drop(wingArt.image); Object.assign(wingArt, {image: null, frames: null, ready: false});
+    for (const pic of bigWalls.values()) { drop(pic.image); free(pic.far); } bigWalls.clear();
+    for (const el of layers.values()) if (el) el.width = el.height = 0; layers.clear();
+    if (layerEl) layerEl.width = layerEl.height = 0;
   }
   /** One frame of a painting, its anchor (Benny's feet, the Dragon's body) at (x, y), `side` wide, mirrored if asked. */
   function paint(c: CanvasRenderingContext2D, name: PaintedName, frame: string, x: number, y: number, side: number, mirror = false): void {
@@ -824,6 +842,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
    * 60 slower than 50 per second), it steps down by a quarter (by half when most were slower than 30 per second), to 1.25 at
    * the least: a little softer, but smooth.
    */
+  /** (Read from the page at most twice a second: asking where the counter is every frame makes the browser lay the page out.) */
+  let coinSpot = {x: 0, y: 0}, coinSpotAt = -1e9;
   let ratioCap = 2, sampled = 0, slowSampled = 0, verySlow = 0, lastFrameAt = 0;
   function watchFrames(now: number): void {
     const gap = now - lastFrameAt; lastFrameAt = now;
@@ -838,6 +858,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   function measure(): void {
     const ratio = Math.min(ratioCap, window.devicePixelRatio || 1), box = canvas.getBoundingClientRect();
     width = Math.max(1, box.width); height = Math.max(1, box.height);
+    coinSpotAt = -1e9;
     canvas.width = Math.round(width * ratio); canvas.height = Math.round(height * ratio);
     context?.setTransform(ratio, 0, 0, ratio, 0, 0);
   }
@@ -1817,8 +1838,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   /** Where the coin counter of the top bar is, in the canvas's points. */
   function coinTarget(): {x: number; y: number} {
-    const a = coins.getBoundingClientRect(), b = canvas.getBoundingClientRect();
-    return a.width ? {x: a.left + 16 - b.left, y: a.top + a.height / 2 - b.top} : {x: width / 2, y: 40};
+    const now = performance.now(); if (now - coinSpotAt < 500) return coinSpot;
+    const a = coins.getBoundingClientRect(), b = canvas.getBoundingClientRect(); coinSpotAt = now;
+    return coinSpot = a.width ? {x: a.left + 16 - b.left, y: a.top + a.height / 2 - b.top} : {x: width / 2, y: 40};
   }
   function draw(now: number): void {
     const c = context, g = game; if (!c || !g) return;
@@ -2246,7 +2268,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     ending = null; counting = null;
     clearTimeout(stopTimer); clearTimeout(countdown); countdown = undefined;
     running = false; time.resume(); game = null; layer.hidden = true; tips.clear(); words.clear(); layer.classList.remove('benny-run-chased'); notices();
-    window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: false})); options.onExit?.();
+    window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: false})); releaseArt(); options.onExit?.();
   }
   /** The 3, 2, 1 before the run goes on after a pause. */
   let countdown: ReturnType<typeof setTimeout> | undefined;
