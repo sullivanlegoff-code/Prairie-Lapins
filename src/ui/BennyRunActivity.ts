@@ -327,8 +327,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
    *  are kept (thirty at once would weigh too much on a phone): see `keepBigWalls`. */
   type BigWallPicture = {image: HTMLImageElement; near: CanvasImageSource | null; far: CanvasImageSource | null; w: number; h: number};
   const bigWalls = new Map<string, BigWallPicture>();
-  /** Where runs start in the list of big walls: for now on the first two, repainted in volume (17 Nov., examples for the owner). */
-  const bigWallStart = 0;
+  /** Where this run starts in the list of big walls, so each run does not open on the same one. */
+  const bigWallStart = Math.floor(Math.random() * BIG_WALLS.length);
   const bigWallOf = (k: number) => BIG_WALLS[posmod(k + bigWallStart, BIG_WALLS.length)];
   /** Loads the big walls of the stretches from Benny to the horizon and the one after, and lets go of the others. */
   function keepBigWalls(g: BennyRun): void {
