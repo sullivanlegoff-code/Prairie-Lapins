@@ -5,10 +5,15 @@ import {advanceBennyRun, BENNY_RUN, comboMultiplier, wallAt, wallLook, floorHeig
 import {pausableClock, settleCard} from './activityPause';
 import {RunTips, RunWords, WORD, type RunWord, type WordRank} from './bennyRunNotices';
 import RUN_ART from '../config/bennyRunArt.json';
+import {BENNY_FLIGHT, BENNY_FLIGHT_ATLAS} from '../config/bennyFlightArt';
+import {flightBody} from '../display/bennyFlight';
 
 /** The paintings' frames (scripts/prepare-benny-run-art.mjs): Benny's square stands her on its bottom, the Dragon's is centred on her body. */
-type PaintedName = 'benny' | 'benny-moves' | 'benny-strike' | 'benny-roll' | 'dragon' | 'creatures' | 'creatures-lave' | 'creatures-neige' | 'attaques' | 'chests' | 'objets' | 'obstacles' | 'eclats';
-const PAINTED: PaintedName[] = ['benny', 'benny-moves', 'benny-strike', 'benny-roll', 'dragon', 'creatures', 'creatures-lave', 'creatures-neige', 'attaques', 'chests', 'objets', 'obstacles', 'eclats'];
+type PaintedName = 'benny' | 'benny-moves' | 'benny-strike' | 'benny-roll' | AnimSheet | 'dragon' | 'creatures' | 'creatures-lave' | 'creatures-neige' | 'attaques' | 'chests' | 'objets' | 'obstacles' | 'eclats';
+/** Benny's detailed animation (17 Nov.): her gallop, her wall-run, her leans, her actions (see scripts/prepare-benny-run-art.mjs). */
+type AnimSheet = 'benny-course-a' | 'benny-mur-a' | 'benny-mur-b' | 'benny-virage' | 'benny-actions' | 'benny-actions2';
+const ANIM: AnimSheet[] = ['benny-course-a', 'benny-mur-a', 'benny-mur-b', 'benny-virage', 'benny-actions', 'benny-actions2'];
+const PAINTED: PaintedName[] = [...ANIM, 'benny', 'benny-moves', 'benny-strike', 'benny-roll', 'dragon', 'creatures', 'creatures-lave', 'creatures-neige', 'attaques', 'chests', 'objets', 'obstacles', 'eclats'];
 /** Each world's creatures (17 Nov.): the same dragonnet, ember and flyer, in basalt and magma on the lava, in ice and snow on the mountain. */
 const FOE_SHEETS = {grotte: 'creatures', pont: 'creatures-lave', montagne: 'creatures-neige'} as const satisfies Record<RunSetting, PaintedName>;
 /** Painted Benny's square, in Benny's sizes (her shape was one size tall): the drawing, ears up, fills about four fifths of it. */
@@ -36,6 +41,17 @@ const GLIDE = {pull: 900, damp: 48};
  *  light blue base, and she runs there stride after stride, earth flying from her paws. The camera does not move for it: no roll,
  *  no shift towards the wall (owner, 16 Nov.), so the wall's face stays wide open and she is seen on it. */
 const WALL_TILT = .6;
+/** Her wings in flight: beats a second (as on the island) and how long they take to open out or fold away. */
+const WING_FPS = 11, WING_CHANGE_MS = 520;
+/** Her gallop: four pictures (push off a paw, paws gathered, flight, landing) every `GALLOP_M` metres run, so her paws go quicker
+ *  as she speeds up; on a wall, four strides every `WALL_STRIDE_M`. Her wall pictures are painted already lying onto the wall:
+ *  only a little more tilt (`WALL_TILT_PAINTED`). A lane change leans her in (`TURN_SPEED`: lanes a second for the first and the
+ *  strong lean). How long the climb onto a wall, the landing on the wall after a bound, the jump off a wall, the impact of a
+ *  ground charge, the bump and a big landing are shown (ms). */
+const GALLOP_M = 2.4, WALL_STRIDE_M = 2, WALL_TILT_PAINTED = .12, TURN_SPEED = [2.2, 7];
+const ANIM_MS = {climb: 230, catch: 150, down: 260, impact: 200, bump: 280, crouch: 170};
+/** Which of four pictures of a cycle `length` metres long she is in, `distance` metres into her run (1 to 4). */
+const cycleFrame = (distance: number, length: number, count = 4) => Math.floor(((distance / length) % 1 + 1) % 1 * count) + 1;
 const GHOST_MS: Partial<Record<string, number>> = {chest: 520, dragonnet: 420, ember: 380, flyer: 400};
 /** A dragonnet wakes up this close to Benny (m). */
 const DRAGONNET_WAKES = 7;
@@ -307,6 +323,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     c.save(); c.translate(x, 0); if (aimSide > 0) c.scale(-1, 1); const done = fitted(c, 'attaques', `${kind}-${foeWorld}`, 0, y, w * 1.1); c.restore(); return done;
   }
   const art = Object.fromEntries(PAINTED.map(name => [name, {image: null, ready: false}])) as Record<PaintedName, {image: HTMLImageElement | null; ready: boolean}>;
+  // Her flight power with her own wings (owner, 17 Nov.: « les mêmes ailes que dans le jeu original »): the island's rig seen from
+  // behind, its wingless back bodies and its two back wings at the shoulders, appearing and folding away as on the island.
+  type FlightFrameRect = {frame: {x: number; y: number; w: number; h: number}; spriteSourceSize: {x: number; y: number}; sourceSize: {w: number; h: number}};
+  const wingArt: {image: HTMLImageElement | null; frames: Record<string, FlightFrameRect> | null; ready: boolean} = {image: null, frames: null, ready: false};
   // The painted sky of the new decor (the floating isles at sunset), shown above the horizon in every setting.
   // Each world its own (16 Nov.): smoke and a red glow over the lava, a cold sky over the snow.
   const skyPictures = Object.fromEntries(RUN_SETTINGS.map(s => [s, {image: null, ready: false}])) as Record<RunSetting, {image: HTMLImageElement | null; ready: boolean}>;
@@ -362,6 +382,11 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       };
       image.src = `${import.meta.env.BASE_URL}assets/benny-run/${name}.webp`; decor[name].image = image;
     }
+    if (!wingArt.image) {
+      const image = new Image(); image.decoding = 'async'; wingArt.image = image;
+      const loaded = new Promise<void>(done => { image.onload = () => done(); }); image.src = BENNY_FLIGHT_ATLAS.url;
+      void fetch(BENNY_FLIGHT_ATLAS.atlas).then(r => r.json() as Promise<{frames: Record<string, FlightFrameRect>}>).then(async atlas => { await loaded; wingArt.frames = atlas.frames; wingArt.ready = true; }, () => undefined);
+    }
     for (const name of PAINTED) {
       if (art[name].image) continue;
       const image = new Image(); image.decoding = 'async'; image.onload = () => { art[name].ready = true; };
@@ -371,8 +396,39 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   /** One frame of a painting, its anchor (Benny's feet, the Dragon's body) at (x, y), `side` wide, mirrored if asked. */
   function paint(c: CanvasRenderingContext2D, name: PaintedName, frame: string, x: number, y: number, side: number, mirror = false): void {
     const image = art[name].image, at = (RUN_ART[name].frames as Record<string, number[]>)[frame], size = RUN_ART[name].size; if (!image || !at) return;
+    // (An atlas with a wider square for a tall drawing is drawn as much bigger: Benny keeps her size.)
+    side *= (RUN_ART[name] as {room?: number}).room ?? 1;
     c.save(); c.translate(x, y); if (mirror) c.scale(-1, 1);
     c.drawImage(image, at[0], at[1], size, size, -side / 2, RUN_ART[name].anchor === 'feet' ? -side * .97 : -side / 2, side, side); c.restore();
+  }
+  /** One frame of the flight atlas, its square cell (trimmed in the atlas) centred on (x, y), `scale` screen pixels per atlas pixel. */
+  function flightFrame(c: CanvasRenderingContext2D, name: string, x: number, y: number, scale: number, mirror = false): void {
+    const f = wingArt.frames?.[name]; if (!f || !wingArt.image) return;
+    c.save(); c.translate(x, y); if (mirror) c.scale(-1, 1);
+    c.drawImage(wingArt.image, f.frame.x, f.frame.y, f.frame.w, f.frame.h, (f.spriteSourceSize.x - f.sourceSize.w / 2) * scale, (f.spriteSourceSize.y - f.sourceSize.h / 2) * scale, f.frame.w * scale, f.frame.h * scale);
+    c.restore();
+  }
+  /** Benny flying (her power), seen from behind as on the island: body, then both wings at her shoulders, beating about 11 times a
+   *  second; at the start of the power they open out of her shoulders, at its end they fold away. `side` is her running painting's
+   *  side, `feet` where her paws would be; false until the atlas has loaded. */
+  function flying(c: CanvasRenderingContext2D, g: BennyRun, now: number, side: number, feet: number): boolean {
+    if (!wingArt.ready || !g.active) return false;
+    const rig = BENNY_FLIGHT.views.dos, since = g.at - (g.active.until - BENNY_RUN.powers.flight), left = g.active.until - g.at;
+    // Her body painted at her running size (measured on her tail in Chromium: the island's back body is slimmer than her run's).
+    const bodySide = side * 1.1, scale = bodySide / BENNY_FLIGHT.body.size, k = BENNY_FLIGHT.scale;
+    const beat = Math.floor(now / 1000 * WING_FPS) % BENNY_FLIGHT.beats + 1;
+    const opening = since < WING_CHANGE_MS ? Math.min(8, 1 + Math.floor(since / WING_CHANGE_MS * 8)) : 0;
+    const closing = !opening && left < WING_CHANGE_MS ? Math.min(8, 1 + Math.floor((1 - left / WING_CHANGE_MS) * 8)) : 0;
+    // Hovering: she rises and sinks a little with each beat (down on the downstroke).
+    const cy = feet - bodySide * .5 + (opening || closing ? 0 : Math.sin(now / 1000 * WING_FPS / BENNY_FLIGHT.beats * Math.PI * 2) * bodySide * .03);
+    flightFrame(c, rig.bodies[(opening || closing ? 1 : flightBody(beat, 'dos')) - 1], 0, cy, scale);
+    for (const wing of rig.wings) {
+      const sx = (wing.shoulder[0] - BENNY_FLIGHT.body.source / 2) * k * scale, sy = cy + (wing.shoulder[1] - BENNY_FLIGHT.body.source / 2) * k * scale;
+      const name = opening ? `${BENNY_FLIGHT.transition.appear}-${opening}` : closing ? `${BENNY_FLIGHT.transition.disappear}-${closing}` : `${wing.series}-${beat}`;
+      // (The opening and folding are painted as one wing in profile: mirrored for her right shoulder, as the beating wing is.)
+      flightFrame(c, name, sx, sy, scale, wing.mirror);
+    }
+    return true;
   }
   /** One fitted drawing (a creature, an object) set on (x, bottom), `w` wide and `h` tall (its own proportions if `h` is left out);
    *  false while its painting has not loaded. */
@@ -1520,6 +1576,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   /** -1 on a wall to her left, 1 to her right, eased in and out (the roll and her tilt follow it). */
   let wallTilt = 0, lastStride = 0, lastDustStride = 0;
   let leapArc = 0, laneSpeed = 0, rollFrom = -1e9, wasFlat = false;
+  /** For her detailed animation: when a ground charge struck the ground, when she left a wall (and which), when a bound across
+   *  ended, whether she was in a ground charge, on a wall, bounding, and whether her last time in the air was a big one. */
+  let poundAt = -1e9, wasPound = false, wallOffAt = -1e9, wallOffSide: 'left' | 'right' = 'left', hadWall = false, leapEndAt = -1e9, wasLeaping = false, bigAir = false;
   const FOES = new Set(['dragonnet', 'chest', 'ember', 'flyer']);
   function threatening(g: BennyRun, e: RunEntity): boolean {
     const ahead = e.z - g.distance, across = g.wall ? wallLane(g, g.wall.side) : g.lane;
@@ -1541,6 +1600,33 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (art.dragon.ready) paint(c, 'dragon', 'catch', x, feet, side);
     // Its painting holds Benny already (in its arms): she is not drawn a second time.
     void now;
+  }
+  /** Her detailed animation (17 Nov., owner: « anime en détail toutes les actions de Benny », the run and the wall-run above all):
+   *  which of her own pictures shows her now, or null to keep her older pose (the strike, a plain jump, the landing).
+   *  Her wall pictures are painted on a wall on her left (mirrored for the right one), her bound across going to the right. */
+  function animPose(g: BennyRun, now: number, wall: BennyRun['wall'], leaping: boolean, moves: string | null, pose: string, turning: boolean): {sheet: PaintedName; frame: string; mirror: boolean} | null {
+    const pick = (sheet: PaintedName, frame: string, mirror = false) => ({sheet, frame, mirror});
+    if (g.fallFrom !== null) return pick('benny-actions2', 'void');
+    if (wall && !onLow(g)) {
+      const right = wall.side === 'right';
+      // Bounding across: stretched out towards the other wall, then her paws catching it.
+      if (leaping) return pick('benny-mur-b', 1 - leapArc < .78 ? 'bound' : 'catch', !right);
+      if (g.at - (wall.since ?? g.at) < ANIM_MS.climb) return pick('benny-mur-b', 'climb', right);
+      if (now - leapEndAt < ANIM_MS.catch) return pick('benny-mur-b', 'catch', right);
+      return pick('benny-mur-a', `wall-${cycleFrame(g.distance, WALL_STRIDE_M)}`, right);
+    }
+    if (now - wallOffAt < ANIM_MS.down && inAir(g)) return pick('benny-mur-b', 'down', wallOffSide === 'right');
+    if (g.pound && inAir(g)) return pick('benny-actions', 'dive');
+    if (now - poundAt < ANIM_MS.impact && !inAir(g)) return pick('benny-actions', 'impact');
+    // Off a springboard: stretched up on the way up (turning over at its top), her falling pose on the way down.
+    if (inAir(g) && g.airUntil === g.bounceUntil) return (g.at - g.airFrom) / (g.airUntil - g.airFrom) < .75 ? pick('benny-actions2', 'spring') : pick('benny-moves', 'fall');
+    if (g.at < g.stumbleUntil && g.at - (g.stumbleUntil - BENNY_RUN.stumbleMs) < ANIM_MS.bump) return pick('benny-actions2', 'bump');
+    if (!inAir(g) && bigAir && now - landedAt < Math.max(ANIM_MS.crouch, landHold(g))) return pick('benny-actions2', 'crouch');
+    if (moves) return null;
+    if (powerActive(g, 'dash') && !inAir(g)) return pick('benny-actions', `dash-${cycleFrame(g.distance, GALLOP_M, 2)}`);
+    if (pose !== 'run-1' && pose !== 'run-2') return null;
+    if (turning) return pick('benny-virage', `${laneSpeed > 0 ? 'right' : 'left'}-${Math.abs(laneSpeed) > TURN_SPEED[1] ? 2 : 1}`);
+    return pick('benny-course-a', `gallop-${cycleFrame(g.distance, GALLOP_M)}`);
   }
   function benny(c: CanvasRenderingContext2D, g: BennyRun, now: number): void {
     // Falling into the void she is out of sight once the Dragon has her (see fallCatch).
@@ -1565,10 +1651,21 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // Running: a stride every 1.6 m, so the faster she runs the quicker her paws go; she bobs, her ears flop, she leans into a lane change.
     const stride = g.distance / 1.6 * Math.PI * 2, grounded = !flat && !inAir(g) && !powerActive(g, 'flight');
     // Her lean follows how fast she glides across (inertia: into the move, then back as she settles).
-    const bob = grounded && hopK < 0 ? Math.abs(Math.sin(stride)) * .07 * s : 0, lean = Math.max(-.3, Math.min(.3, laneSpeed * .045));
+    const animated = ANIM.every(name => art[name].ready), phase = ((g.distance / GALLOP_M) % 1 + 1) % 1;
+    // (Galloping, she is highest in the flight picture, lowest on the push and the landing.)
+    const bob = grounded && hopK < 0 ? (animated && !wall ? Math.max(0, Math.sin(Math.PI * 2 * (phase - .25))) * .06 : Math.abs(Math.sin(stride)) * .07) * s : 0, lean = Math.max(-.3, Math.min(.3, laneSpeed * .045));
+    // Gliding to another lane she leans into it with her own pictures (only a little turned on top of them).
+    const turning = animated && grounded && hopK < 0 && !wall && Math.abs(laneSpeed) > TURN_SPEED[0] && !(swing && now - swing.at < POSE_MS.strike);
     // Touching down: a squash for a moment and a puff of dust at her feet; taking off and rising: a stretch.
     const up2 = inAir(g) && !wall && !powerActive(g, 'flight');
     // (Painted puffs of dust since 16 Nov., blown out to both sides of her paws.)
+    if (up2) bigAir = g.airUntil === g.bounceUntil || g.airUntil - g.airFrom > 900;
+    if (wasPound && !g.pound && !inAir(g)) poundAt = now;
+    wasPound = g.pound && inAir(g);
+    if (hadWall && !wall) wallOffAt = now;
+    if (wall) wallOffSide = wall.side;
+    hadWall = !!wall;
+    { const leaping = !!wall && leapArc > .06 && leapArc < .94; if (wasLeaping && !leaping) leapEndAt = now; wasLeaping = leaping; }
     if (wasUp && !up2 && !wall && !flat) { landedAt = now; const ground = project(x, 0, floorHeight(g)); sound('land', .9 + Math.random() * .2);
       if (!(dust(ground.x, ground.y, s * .42, -1, 2) && dust(ground.x, ground.y, s * .42, 1, 2))) burst(ground.x, ground.y, ['rgba(230,215,190,.9)', 'rgba(200,180,150,.8)'], 7, 110); }
     // Running: a little puff behind a paw now and then (every other stride), faint.
@@ -1585,10 +1682,11 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // (A blow to her right is turned anticlockwise: the wand's tip comes up, ahead, onto the creature in front of her.)
     else if (hopMs >= 0) c.rotate(hopDir * (hopMs < HOP_MS.spring ? .1 : hopMs < HOP_MS.bound ? 0 : hopMs < HOP_MS.blow ? -.3 : -.3 * (1 - (hopMs - HOP_MS.blow) / (HOP_MS.land - HOP_MS.blow))));
     // On a wall: tipped over until her paws are on it (eased in on the push off the ground, through upright on a bound across).
-    else if (wall || wallTilt) c.rotate(art.benny.ready ? -wallTilt * WALL_TILT : wall ? (wall.side === 'left' ? -1.1 : 1.1) : 0);
+    // (Her own wall pictures already lie onto the wall: a little more tilt, none on a bound across.)
+    else if (wall || wallTilt) c.rotate(animated ? (wall && leapArc > .06 && leapArc < .94 ? 0 : -wallTilt * WALL_TILT_PAINTED) : art.benny.ready ? -wallTilt * WALL_TILT : wall ? (wall.side === 'left' ? -1.1 : 1.1) : 0);
     // Off a springboard: a whole somersault at the top of the bounce (not once a ground charge has started).
     else if (inAir(g) && g.airUntil === g.bounceUntil && !g.pound) { const k = (g.at - g.airFrom) / (g.airUntil - g.airFrom); c.rotate(lean + Math.PI * 2 * Math.min(1, Math.max(0, (k - .15) / .6))); }
-    else c.rotate(lean);
+    else c.rotate(turning ? lean * .4 : lean);
     if (!flat) c.scale(1 / Math.sqrt(squash), squash);
     if (g.at < g.stumbleUntil && Math.floor(now / 80) % 2) c.globalAlpha = .45;
     // Painted: her pose for the moment (the wall pose leans onto a wall on her right, mirrored for the left one; the strike swings
@@ -1597,7 +1695,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // mirrored for a strike to her left; the roll's four quarters, the wand going round with her, a little bounce on each.
     const turns = Math.max(1, Math.round((g.slideUntil - rollFrom) / ROLL_TURN)), rolled = flat ? Math.min(.999, (g.at - rollFrom) / (g.slideUntil - rollFrom)) * turns * 4 : 0;
     const roll = flat && art['benny-roll'].ready ? Math.floor(rolled) % 4 : -1;
-    if (hopMs >= 0 && art['benny-strike'].ready) {
+    if (powerActive(g, 'flight') && flying(c, g, now, s * PAINTED_BENNY, h / 2)) { /* her wings */ }
+    else if (hopMs >= 0 && art['benny-strike'].ready) {
       const frame = hopMs < HOP_MS.spring ? 'hop-1' : hopMs < HOP_MS.bound ? 'hop-2' : hopMs < HOP_MS.blow ? 'hop-3' : 'hop-4';
       paint(c, 'benny-strike', frame, 0, h / 2, s * PAINTED_BENNY, hopDir < 0);
     } else if (roll >= 0) {
@@ -1615,7 +1714,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       const coming = inAir(g) && !wall && !g.pound && g.airUntil !== g.bounceUntil && !powerActive(g, 'flight') && g.airUntil > g.airFrom && (g.at - g.airFrom) / (g.airUntil - g.airFrom) > .62;
       const moves: string | null = g.fallFrom !== null || coming ? 'fall' : wall && g.at - (wall.since ?? g.at) < POSE_MS.push ? 'push' : swing && now - swing.at < POSE_MS.windup && !wall && !flat && !inAir(g) ? 'windup' : now - landedAt < landHold(g) && !wall && !flat && !inAir(g) ? 'land' : null;
       // Pushing off onto a wall she tips over towards it, into her wall-running lean.
-      if (moves) paint(c, 'benny-moves', moves, 0, h / 2, s * PAINTED_BENNY, mirror);
+      const own = animated ? animPose(g, now, wall, leaping, moves, pose, turning) : null;
+      if (own) paint(c, own.sheet, own.frame, 0, h / 2, s * PAINTED_BENNY, own.mirror);
+      else if (moves) paint(c, 'benny-moves', moves, 0, h / 2, s * PAINTED_BENNY, mirror);
       else paint(c, 'benny', pose, 0, flat ? h * .45 : h / 2, s * PAINTED_BENNY * (flat ? .8 : 1), mirror);
     } else {
     if (!flat) {

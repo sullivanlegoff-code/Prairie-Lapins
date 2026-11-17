@@ -28,6 +28,10 @@ const argument = name => { const at = process.argv.indexOf(name); return at > 0 
 const SOURCES = argument('--sources') ?? 'output/imagegen/course-benny-final-v1';
 const REFERENCE = argument('--reference') ?? 'output/imagegen/benny-enclos-final-v1/A1-reference.png';
 const TARGET = 'public/assets/benny-run', CONFIG = 'src/config/bennyRunArt.json';
+// --only a,b: encode only these characters and keep the others' atlases and config as they are.
+const ONLY = argument('--only')?.split(',');
+// --run-side n: the square side in sheet pixels of the animation sheets of 17 Nov. (the same for all of them, see `side: 'run'`).
+const RUN_SIDE = Number(argument('--run-side') ?? 600);
 
 export const CHARACTERS = {
   benny: {sheet: 'sheet-benny.png', frames: ['run-1', 'run-2', 'jump', 'roll', 'wall', 'strike'], size: 320, columns: 3, standing: true},
@@ -39,6 +43,20 @@ export const CHARACTERS = {
   // size so that Benny keeps the size of her run poses (measured on her tail).
   'benny-strike': {sheet: 'sheet-benny-strike.png', frames: ['hop-1', 'hop-2', 'hop-3', 'hop-4'], size: 320, columns: 4, standing: true, zoom: 1.05},
   'benny-roll': {sheet: 'sheet-benny-roll.png', frames: ['roll-1', 'roll-2', 'roll-3', 'roll-4'], size: 320, columns: 4, standing: true, zoom: 1.25},
+  // Her detailed animation (owner, 17 Nov.: « anime en détail toutes les actions de Benny », the run and the wall-run above all):
+  // a four-picture gallop (push off one paw, both paws gathered, flight, landing), the wall-run's eight pictures
+  // (four strides along a wall on her left, then the climb, the bound across, the landing on the wall, the way down), four leans
+  // into a lane change (two to the left, two to the right), and the pound, impact, dash (two strides), springboard, bump, fall
+  // into the void and big landing. One drawing per cell of four, all at one same scale (`side: 'run'`: the square's side in sheet
+  // pixels, the same for every sheet, so that one picture follows another without a jump in size). `zoom` makes up for a sheet
+  // where Codex painted her a little smaller (measured on her tail); `room` widens the square of a sheet with a tall drawing, the
+  // game drawing that atlas as much bigger (src/config/bennyRunArt.json keeps it), so that her size stays the same.
+  'benny-course-a': {sheet: 'sheet-course-a.png', frames: ['gallop-1', 'gallop-2', 'gallop-3', 'gallop-4'], size: 320, columns: 4, standing: true, cells: 4, side: 'run'},
+  'benny-mur-a': {sheet: 'sheet-mur-a.png', frames: ['wall-1', 'wall-2', 'wall-3', 'wall-4'], size: 320, columns: 4, standing: true, cells: 4, side: 'run', zoom: .92},
+  'benny-mur-b': {sheet: 'sheet-mur-b.png', frames: ['climb', 'bound', 'catch', 'down'], size: 320, columns: 4, standing: true, cells: 4, side: 'run', zoom: .92},
+  'benny-virage': {sheet: 'sheet-virage.png', frames: ['left-1', 'left-2', 'right-1', 'right-2'], size: 320, columns: 4, standing: true, cells: 4, side: 'run', zoom: .92},
+  'benny-actions': {sheet: 'sheet-actions.png', frames: ['dive', 'impact', 'dash-1', 'dash-2'], size: 320, columns: 4, standing: true, cells: 4, side: 'run', zoom: .92},
+  'benny-actions2': {sheet: 'sheet-actions2.png', frames: ['spring', 'bump', 'void', 'crouch'], size: 320, columns: 4, standing: true, cells: 4, side: 'run', room: 1.08},
   dragon: {sheet: 'sheet-dragon2.png', frames: ['fly-1', 'fly-2', 'face', 'catch'], size: 420, columns: 2, standing: false},
   // Two rows of four, each drawing fitted to its own square (they differ in size), standing on its bottom; the two pictures of
   // one creature share one square so it keeps its size from one picture to the next.
@@ -175,6 +193,7 @@ const gameMarks = marks(read(GAME_BENNY));
 mkdirSync(TARGET, {recursive: true});
 const config = {}, atlases = {};
 for (const [name, character] of Object.entries(CHARACTERS)) {
+  if (ONLY && !ONLY.includes(name)) continue;
   const sheet = read(`${SOURCES}/${character.sheet}`);
   cutOut(sheet, 'light'); const pockets = clearPockets(sheet, character.pocket);
   if (name.startsWith('benny')) recolour(sheet, referenceStats);
@@ -182,7 +201,9 @@ for (const [name, character] of Object.entries(CHARACTERS)) {
   if (list.length !== character.frames.length) throw Error(`${character.sheet}: ${list.length} drawings found, ${character.frames.length} expected`);
   const extent = b => Math.max(b.x1 - b.x0, b.y1 - b.y0) + 1;
   // One square side per character, from its biggest drawing, with a margin; fitted sheets: per drawing (or per pair).
-  const side = Math.ceil(Math.max(...list.map(extent)) * 1.08 * (character.zoom ?? 1));
+  const side = character.side === 'run' ? Math.round(RUN_SIDE * (character.zoom ?? 1) * (character.room ?? 1)) : Math.ceil(Math.max(...list.map(extent)) * 1.08 * (character.zoom ?? 1));
+  console.log(name, 'square', side, 'drawings', list.map(b => `${b.x1 - b.x0 + 1}x${b.y1 - b.y0 + 1}`).join(' '));
+  if (character.side === 'run' && Math.max(...list.map(extent)) > side) console.warn(`${name}: a drawing is bigger than its square (${Math.max(...list.map(extent))} > ${side})`);
   const first = k => character.group ? k - k % character.group : k;
   const sideOf = k => !character.fit ? side : character.group ? Math.ceil(Math.max(...list.slice(first(k), first(k) + character.group).map(extent)) * 1.04) : character.shared ? Math.ceil(Math.max(...list.map(extent)) * 1.04) : Math.ceil((character.pairs ? Math.max(extent(list[k - k % 2]), extent(list[k - k % 2 + 1])) : extent(list[k])) * 1.04);
   const frames = list.map((blot, k) => {
@@ -201,7 +222,7 @@ for (const [name, character] of Object.entries(CHARACTERS)) {
   for (let i = 3; i < atlas.pixels.length; i += 4) if (!atlas.pixels[i]) atlas.pixels[i - 3] = atlas.pixels[i - 2] = atlas.pixels[i - 1] = 0;
   atlases[name] = atlas;
   config[name] = {image: `assets/benny-run/${name}.webp`, size: S, frames: Object.fromEntries(frames.map((f, k) => [f.name, [(k % columns) * S, Math.floor(k / columns) * S, ...f.fit]])),
-    anchor: character.standing || character.fit ? 'feet' : 'body', pockets};
+    anchor: character.standing || character.fit ? 'feet' : 'body', pockets, ...character.room ? {room: character.room} : {}};
 }
 
 const {chromium} = createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE || 'playwright');
@@ -237,5 +258,5 @@ try {
   }, {encoded, config});
   writeFileSync(`${SOURCES}/planche-atlas-course.png`, Buffer.from(board, 'base64'));
 } finally { await browser.close(); }
-writeFileSync(CONFIG, JSON.stringify(config, null, 2) + '\n');
+writeFileSync(CONFIG, JSON.stringify(ONLY ? {...JSON.parse(readFileSync(CONFIG, 'utf8')), ...config} : config, null, 2) + '\n');
 console.log(JSON.stringify(Object.fromEntries(Object.entries(config).map(([k, v]) => [k, {bytes: v.bytes, pockets: v.pockets, frames: Object.keys(v.frames).length}]))));

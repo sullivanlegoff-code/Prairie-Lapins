@@ -599,5 +599,156 @@
     "anchor": "feet",
     "pockets": 0,
     "bytes": 50894
+  },
+  "benny-course-a": {
+    "image": "assets/benny-run/benny-course-a.webp",
+    "size": 320,
+    "frames": {
+      "gallop-1": [
+        0,
+        0
+      ],
+      "gallop-2": [
+        320,
+        0
+      ],
+      "gallop-3": [
+        640,
+        0
+      ],
+      "gallop-4": [
+        960,
+        0
+      ]
+    },
+    "anchor": "feet",
+    "pockets": 0,
+    "bytes": 50152
+  },
+  "benny-mur-a": {
+    "image": "assets/benny-run/benny-mur-a.webp",
+    "size": 320,
+    "frames": {
+      "wall-1": [
+        0,
+        0
+      ],
+      "wall-2": [
+        320,
+        0
+      ],
+      "wall-3": [
+        640,
+        0
+      ],
+      "wall-4": [
+        960,
+        0
+      ]
+    },
+    "anchor": "feet",
+    "pockets": 0,
+    "bytes": 48714
+  },
+  "benny-mur-b": {
+    "image": "assets/benny-run/benny-mur-b.webp",
+    "size": 320,
+    "frames": {
+      "climb": [
+        0,
+        0
+      ],
+      "bound": [
+        320,
+        0
+      ],
+      "catch": [
+        640,
+        0
+      ],
+      "down": [
+        960,
+        0
+      ]
+    },
+    "anchor": "feet",
+    "pockets": 0,
+    "bytes": 45264
+  },
+  "benny-virage": {
+    "image": "assets/benny-run/benny-virage.webp",
+    "size": 320,
+    "frames": {
+      "left-1": [
+        0,
+        0
+      ],
+      "left-2": [
+        320,
+        0
+      ],
+      "right-1": [
+        640,
+        0
+      ],
+      "right-2": [
+        960,
+        0
+      ]
+    },
+    "anchor": "feet",
+    "pockets": 0,
+    "bytes": 43208
+  },
+  "benny-actions": {
+    "image": "assets/benny-run/benny-actions.webp",
+    "size": 320,
+    "frames": {
+      "dive": [
+        0,
+        0
+      ],
+      "impact": [
+        320,
+        0
+      ],
+      "dash-1": [
+        640,
+        0
+      ],
+      "dash-2": [
+        960,
+        0
+      ]
+    },
+    "anchor": "feet",
+    "pockets": 0,
+    "bytes": 44180
+  },
+  "benny-actions2": {
+    "image": "assets/benny-run/benny-actions2.webp",
+    "size": 320,
+    "frames": {
+      "spring": [
+        0,
+        0
+      ],
+      "bump": [
+        320,
+        0
+      ],
+      "void": [
+        640,
+        0
+      ],
+      "crouch": [
+        960,
+        0
+      ]
+    },
+    "anchor": "feet",
+    "pockets": 2013,
+    "room": 1.08,
+    "bytes": 46112
   }
 }
