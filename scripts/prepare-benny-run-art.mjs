@@ -21,7 +21,7 @@ import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
 import {decodeRgbPng, cutOut} from './prepare-rabbit-masters.mjs';
 import {downscale, encodePng} from './derive-nursery-overlays.mjs';
-import {recolour, stats} from './benny-colour.mjs';
+import {lab, rgb, recolour, stats} from './benny-colour.mjs';
 
 process.chdir(fileURLToPath(new URL('..', import.meta.url)));
 const argument = name => { const at = process.argv.indexOf(name); return at > 0 ? process.argv[at + 1] : undefined; };
@@ -53,7 +53,7 @@ export const CHARACTERS = {
   // where Codex painted her a little smaller (measured on her tail); `room` widens the square of a sheet with a tall drawing, the
   // game drawing that atlas as much bigger (src/config/bennyRunArt.json keeps it), so that her size stays the same.
   'benny-course-a': {sheet: 'sheet-course-a.png', frames: ['gallop-1', 'gallop-2', 'gallop-3', 'gallop-4'], size: 320, columns: 4, standing: true, cells: 4, side: 'run'},
-  'benny-course-b': {sheet: 'sheet-course-c.png', frames: ['gallop-5', 'gallop-6', 'gallop-7', 'gallop-8'], size: 320, columns: 4, standing: true, cells: 4, side: 'run', zoom: .9, room: 1.15, match: 'benny-course-a'},
+  'benny-course-b': {sheet: 'sheet-course-c.png', frames: ['gallop-5', 'gallop-6', 'gallop-7', 'gallop-8'], size: 320, columns: 4, standing: true, cells: 4, side: 'run', zoom: .9, room: 1.15, match: 'benny-course-a', ears: [10.4, -5.1, -2.5]},
   'benny-saut': {sheet: 'sheet-saut.png', frames: ['takeoff', 'rise', 'top', 'drop'], size: 320, columns: 4, standing: true, cells: 4, side: 'run'},
   // Her wand strike at a creature ahead: wand raised in both paws, the swing over her head, the blow ahead to her right, back.
   'benny-coup': {sheet: 'sheet-coup.png', frames: ['raise', 'swing', 'hit', 'back'], size: 320, columns: 4, standing: true, cells: 4, side: 'run', room: 1.1},
@@ -191,6 +191,15 @@ function bodyCentre(image, label, blot) {
   return {x: sx / n, y: sy / n};
 }
 
+/** The dark saturated brown of her ears, painted darker on the gallop's second half: moved by `shift` (L, a, b), the gap measured
+ *  in the atlases between the ears of the two halves (17 Nov.: 48/22/33 against 58/16/31), smoothly by how dark and brown each
+ *  pixel is; the rest of the drawing keeps its colours. */
+const darkWeight = (L, C) => Math.max(0, Math.min(1, (62 - L) / 10)) * Math.max(0, Math.min(1, (C - 18) / 8)) * Math.max(0, Math.min(1, (L - 18) / 6));
+function liftEars({pixels}, shift) {
+  for (let i = 0; i < pixels.length; i += 4) { if (!pixels[i + 3]) continue;
+    const [L, A, B] = lab(pixels[i], pixels[i + 1], pixels[i + 2]), w = darkWeight(L, Math.hypot(A, B)); if (!w) continue;
+    const out = rgb(L + w * shift[0], A + w * shift[1], B + w * shift[2]); pixels[i] = out[0]; pixels[i + 1] = out[1]; pixels[i + 2] = out[2]; }
+}
 if (!existsSync(REFERENCE)) throw Error(`Missing ${REFERENCE}: give the approved A1 reference with --reference`);
 const reference = read(REFERENCE); cutOut(reference, 'light');
 const referenceStats = stats(reference);
@@ -205,6 +214,7 @@ for (const [name, character] of Object.entries(CHARACTERS)) {
   // A sheet painted a little lighter than its other half (the gallop's second half): its fur brought onto that half's, after both
   // were matched to A1, so that the gallop does not flicker from one half to the other.
   if (character.match) { if (!recoloured[character.match]) throw Error(`${name}: encode ${character.match} with it`); recolour(sheet, stats(recoloured[character.match])); }
+  if (character.ears) liftEars(sheet, character.ears);
   recoloured[name] = sheet;
   const {label, list} = blots(sheet, character.rows, character.cells);
   if (list.length !== character.frames.length) throw Error(`${character.sheet}: ${list.length} drawings found, ${character.frames.length} expected`);

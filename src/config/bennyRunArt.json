@@ -775,7 +775,7 @@
     "anchor": "feet",
     "pockets": 0,
     "room": 1.15,
-    "bytes": 49368
+    "bytes": 49040
   },
   "benny-saut": {
     "image": "assets/benny-run/benny-saut.webp",
