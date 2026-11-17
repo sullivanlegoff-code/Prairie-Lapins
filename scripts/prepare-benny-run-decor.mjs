@@ -76,7 +76,7 @@ export const TEXTURES = {
 };
 
 /** The meadow's big painted walls, each one along 100 m of road (17 Nov., owner: « des grands murs tous cohérents sur 100 mètres »). */
-export const BIG_WALLS = [['grand-mur-01', 'grand-mur-a.png'], ['grand-mur-02', 'grand-mur-b.png']];
+export const BIG_WALLS = Array.from({length: 30}, (_, i) => { const n = String(i + 1).padStart(2, '0'); return [`grand-mur-${n}`, `grand-mur-${n}.png`]; });
 
 const {chromium} = createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const browser = await chromium.launch();

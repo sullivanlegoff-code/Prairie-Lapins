@@ -141,7 +141,7 @@ const PROPS: Record<RunSetting, readonly [number, number, number][]> = {
 /** The meadow's big painted walls (17 Nov., owner: « des grands murs tous cohérents sur 100 mètres », « 30 murs différents qui
  *  alterneront »): a wall not run on shows one of them along each `BIG_WALL_RUN` m of road; the picture stands `BIG_WALL_HIGH` m
  *  high from the ground (its top cut out against the sky) and repeats end to end. */
-const BIG_WALLS = ['grand-mur-01', 'grand-mur-02'] as const;
+const BIG_WALLS = Array.from({length: 30}, (_, i) => `grand-mur-${String(i + 1).padStart(2, '0')}`);
 const BIG_WALL_RUN = 100, BIG_WALL_HIGH = 12;
 const ROAD_FILL = 1.04, BENNY_AT = .76, CAM_LANE = .55, CAM_LOW = .62;
 /** The meadow's walls are built in tiers (owner, 16 Nov.: « 3 ou 4 tranches », the sky above them): a base `BASE_TOP` m high (light
@@ -323,8 +323,29 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const half = document.createElement('canvas'); half.width = half.height = 96; const k = half.getContext('2d'); if (!k) return null;
     k.imageSmoothingQuality = 'high'; k.drawImage(image, 0, 0, 96, 96); return tiled(half, FAR_SIDE);
   }
-  /** The big walls' pictures: whole near, a quarter of their size far off. */
-  const bigWalls = Object.fromEntries(BIG_WALLS.map(name => [name, {near: null, far: null, w: 0, h: 0}])) as Record<(typeof BIG_WALLS)[number], {near: CanvasImageSource | null; far: CanvasImageSource | null; w: number; h: number}>;
+  /** The big walls' pictures: whole near, a quarter of their size far off. Only the ones of the stretches in sight and the next
+   *  are kept (thirty at once would weigh too much on a phone): see `keepBigWalls`. */
+  type BigWallPicture = {image: HTMLImageElement; near: CanvasImageSource | null; far: CanvasImageSource | null; w: number; h: number};
+  const bigWalls = new Map<string, BigWallPicture>();
+  /** Where this run starts in the list of big walls, so each run does not open on the same one. */
+  const bigWallStart = Math.floor(Math.random() * BIG_WALLS.length);
+  const bigWallOf = (k: number) => BIG_WALLS[posmod(k + bigWallStart, BIG_WALLS.length)];
+  /** Loads the big walls of the stretches from Benny to the horizon and the one after, and lets go of the others. */
+  function keepBigWalls(g: BennyRun): void {
+    const first = Math.floor((g.distance + NEAR) / BIG_WALL_RUN), last = Math.floor((g.distance + FAR) / BIG_WALL_RUN) + 1, wanted = new Set<string>();
+    for (let k = first; k <= last; k++) wanted.add(bigWallOf(k));
+    for (const [name, pic] of bigWalls) if (!wanted.has(name)) { pic.image.onload = null; pic.image.src = ''; bigWalls.delete(name); }
+    for (const name of wanted) {
+      if (bigWalls.has(name)) continue;
+      const image = new Image(), pic: BigWallPicture = {image, near: null, far: null, w: 0, h: 0}; image.decoding = 'async';
+      image.onload = () => {
+        const far = document.createElement('canvas'); far.width = Math.round(image.width / 4); far.height = Math.round(image.height / 4);
+        const k = far.getContext('2d'); if (k) { k.imageSmoothingQuality = 'high'; k.drawImage(image, 0, 0, far.width, far.height); }
+        Object.assign(pic, {near: image, far, w: image.width, h: image.height});
+      };
+      image.src = `${import.meta.env.BASE_URL}assets/benny-run/${name}.webp`; bigWalls.set(name, pic);
+    }
+  }
   /** Set on a device too slow for the painted track, even at its softest picture (see watchFrames). */
   let plainGround = false;
   const decorReady = () => !plainGround && DECOR.every(name => decor[name].near && decor[name].far);
@@ -340,15 +361,6 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         void Promise.all([createImageBitmap(near), createImageBitmap(far)]).then(([n, f]) => { decor[name].near = n; decor[name].far = f; }, () => { decor[name].near = near; decor[name].far = far; });
       };
       image.src = `${import.meta.env.BASE_URL}assets/benny-run/${name}.webp`; decor[name].image = image;
-    }
-    for (const name of BIG_WALLS) {
-      if (bigWalls[name].near) continue;
-      const image = new Image(); image.decoding = 'async'; image.onload = () => {
-        const far = document.createElement('canvas'); far.width = Math.round(image.width / 4); far.height = Math.round(image.height / 4);
-        const k = far.getContext('2d'); if (k) { k.imageSmoothingQuality = 'high'; k.drawImage(image, 0, 0, far.width, far.height); }
-        bigWalls[name] = {near: image, far, w: image.width, h: image.height};
-      };
-      image.src = `${import.meta.env.BASE_URL}assets/benny-run/${name}.webp`;
     }
     for (const name of PAINTED) {
       if (art[name].image) continue;
@@ -533,6 +545,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   /** The walls (owner, 13 Nov., after Blade of Brim): tall ones up past the top of the screen, hiding the void; low ones a lane
    *  thick, their grassy top seen and the void over them; wooden fences. Their end facing Benny shows their thickness: one lane. */
   function paintedWalls(c: CanvasRenderingContext2D, g: BennyRun): void {
+    keepBigWalls(g);
     for (const w of [...g.walls].sort((a, b) => b.from - a.from)) {
       if (w.void) { roadside(c, g, w.side === 'left' ? -1 : 1, w.from, w.to, true); continue; }
       const from = Math.max(NEAR, w.from - g.distance), to = Math.min(FAR, w.to - g.distance); if (to <= from) continue;
@@ -540,11 +553,14 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       if (look === 'fence') { roadside(c, g, dir, w.from, w.to, false); fence(c, g, dir, from, to); continue; }
       footShadow(c, g, dir, from, to);
       // In the meadow, a tall wall not run on is one big painted wall per stretch of road.
-      if (look === 'tall' && !w.runnable && worldAhead((from + to) / 2) === 'grotte' && BIG_WALLS.every(name => bigWalls[name].near)) {
+      // (Until the pictures of its stretches have arrived, it keeps its tiers.)
+      const stretches: number[] = [];
+      for (let k = Math.floor((g.distance + to) / BIG_WALL_RUN); k * BIG_WALL_RUN > g.distance + from - BIG_WALL_RUN; k--) stretches.push(k);
+      if (look === 'tall' && !w.runnable && worldAhead((from + to) / 2) === 'grotte' && stretches.every(k => bigWalls.get(bigWallOf(k))?.near)) {
         if (from > 0 && from === w.from - g.distance) endFace(c, x(from), x(from) + dir * WALL_THICK, from, BLOCK_LOW + 2, false, 'decor-corps-creme');
-        for (let k = Math.floor((g.distance + to) / BIG_WALL_RUN); k * BIG_WALL_RUN > g.distance + from - BIG_WALL_RUN; k--) {
+        for (const k of stretches) {
           const a = Math.max(from, k * BIG_WALL_RUN - g.distance), b = Math.min(to, (k + 1) * BIG_WALL_RUN - g.distance);
-          if (b > a) bigWall(c, g, x, a, b, BIG_WALLS[posmod(k, BIG_WALLS.length)]);
+          if (b > a) bigWall(c, g, x, a, b, bigWallOf(k));
         }
         continue;
       }
@@ -604,8 +620,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   /** A big painted wall along the road at `at(z)` m across, from `from` to `to` m ahead: column by column, each sheared along the
    *  wall's slope (like `wallBand`), the picture repeating every so many metres (its width for `BIG_WALL_HIGH` m of height). */
-  function bigWall(c: CanvasRenderingContext2D, g: BennyRun, at: (z: number) => number, from: number, to: number, name: (typeof BIG_WALLS)[number]): void {
-    const pic = bigWalls[name]; if (!pic.near || !pic.far) return;
+  function bigWall(c: CanvasRenderingContext2D, g: BennyRun, at: (z: number) => number, from: number, to: number, name: string): void {
+    const pic = bigWalls.get(name); if (!pic?.near || !pic.far) return;
     const tile = BIG_WALL_HIGH * pic.w / pic.h;
     for (let z = to; z > from;) {
       const a = project(at(z), z, 0), probe = project(at(z - .1), z - .1, 0), perMetre = Math.abs(a.x - probe.x) / .1;
