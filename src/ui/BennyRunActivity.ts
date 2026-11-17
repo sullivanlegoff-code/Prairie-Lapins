@@ -100,7 +100,7 @@ const GROUND_RATIO = 1;
 /** The detail of the painted track, finest first (a device that cannot keep up steps down, see watchFrames): how wide (screen
  *  points) a painted wall's column is, and how high a row of the ground is at the horizon and how much more at the bottom of the
  *  screen (near, the ground's perspective hardly changes across a row: taller rows there do not show). */
-const DETAIL = [{column: 10, band: 4, grow: 6}, {column: 14, band: 5, grow: 9}, {column: 20, band: 6, grow: 12}] as const;
+const DETAIL = [{column: 16, band: 5, grow: 10}, {column: 24, band: 6, grow: 14}, {column: 32, band: 8, grow: 18}] as const;
 /** How far out the cliff's foot leans beyond the edge of the road (m). */
 const VOID_LIP = .5;
 /** Walls after Blade of Brim (owner, 13 Nov.): a tall one rises past the top of the screen, a low one stands at a jump's height
@@ -684,8 +684,12 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   /** A painted band along the road at `at(z)` m across, from `h0` to `h1` m up, column by column: `fit` lays that part of the tile's
    *  height (0 its top, 1 its bottom) over the whole band, else the tile repeats upwards; `tile` m is its width. A solid band takes the
    *  far haze; a cut-out one (a crest, a fence, vines) does not. */
+  /** Sets the transform to `base` sheared by `ky` around x = `left` (what save, transform and restore did, in one order). */
+  function shear(c: CanvasRenderingContext2D, base: DOMMatrix, ky: number, left: number): void {
+    c.setTransform(base.a + base.c * ky, base.b + base.d * ky, base.c, base.d, base.e - base.c * ky * left, base.f - base.d * ky * left);
+  }
   function wallBand(c: CanvasRenderingContext2D, g: BennyRun, at: (z: number) => number, from: number, to: number, h0: number, h1: number, name: DecorName, fit: readonly [number, number] | null, tile: number, solid = true): void {
-    const t = decor[name];
+    const t = decor[name], base = c.getTransform(); let sheared = false;
     for (let z = to; z > from;) {
       const a = project(at(z), z, h0), probe = project(at(z - .1), z - .1, h0), perMetre = Math.abs(a.x - probe.x) / .1;
       const z1 = Math.max(from, z - Math.min(3, Math.max(.03, columnPx / Math.max(.001, perMetre)))), b = project(at(z1), z1, h0);
@@ -696,22 +700,22 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       const zl = a.x <= b.x ? z : z1, zr = a.x <= b.x ? z1 : z, yl = (h: number) => project(at(zl), zl, h).y, yr = (h: number) => project(at(zr), zr, h).y;
       const b0 = yl(h0), b1 = yr(h0), t0 = yl(h1), t1 = yr(h1), ky = dx > .01 ? ((b1 - b0) + (t1 - t0)) / 2 / dx : 0, lean = ky * dx / 2;
       if (el && Math.max(b0, b1) > 0 && Math.min(t0, t1) < height + 40 && left < width + 40 && left + across > -40) {
-        c.save(); c.transform(1, ky, 0, 1, 0, -ky * left);
+        shear(c, base, ky, left); sheared = true;
         const edge = (h: number) => (yl(h) + yr(h)) / 2 - lean, top = edge(h1), bottom = edge(h0);
         if (fit) c.drawImage(el, sx, side * fit[0], sw, side * (fit[1] - fit[0]), left - .5, top, across, bottom - top + .5);
         else for (let h = h0; h < h1 - 1e-6; h += FACE_TILE) { const hh = Math.min(h1, h + FACE_TILE), y0 = edge(hh), y1 = edge(h);
           c.drawImage(el, sx, 0, sw, side * (hh - h) / FACE_TILE, left - .5, y0, across, y1 - y0 + .5); }
         if (solid) { const haze = hazeAt(z); if (haze > .02) { c.fillStyle = `rgba(250,198,166,${haze.toFixed(3)})`; c.fillRect(left - .5, top, across, bottom - top + .5); } }
-        c.restore();
       }
       z = z1;
     }
+    if (sheared) c.setTransform(base);
   }
   /** A big painted wall along the road at `at(z)` m across, from `from` to `to` m ahead: column by column, each sheared along the
    *  wall's slope (like `wallBand`), the picture repeating every so many metres (its width for `BIG_WALL_HIGH` m of height). */
   function bigWall(c: CanvasRenderingContext2D, g: BennyRun, at: (z: number) => number, from: number, to: number, name: string): void {
     const pic = bigWalls.get(name); if (!pic?.near || !pic.far) return;
-    const tile = BIG_WALL_HIGH * pic.w / pic.h;
+    const tile = BIG_WALL_HIGH * pic.w / pic.h, base = c.getTransform(); let sheared = false;
     for (let z = to; z > from;) {
       const a = project(at(z), z, 0), probe = project(at(z - .1), z - .1, 0), perMetre = Math.abs(a.x - probe.x) / .1;
       const z1 = Math.max(from, z - Math.min(3, Math.max(.03, columnPx / Math.max(.001, perMetre)))), b = project(at(z1), z1, 0);
@@ -721,15 +725,15 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       const zl = a.x <= b.x ? z : z1, zr = a.x <= b.x ? z1 : z, yl = (h: number) => project(at(zl), zl, h).y, yr = (h: number) => project(at(zr), zr, h).y;
       const b0 = yl(0), b1 = yr(0), t0 = yl(BIG_WALL_HIGH), t1 = yr(BIG_WALL_HIGH), ky = dx > .01 ? ((b1 - b0) + (t1 - t0)) / 2 / dx : 0, lean = ky * dx / 2;
       if (Math.max(b0, b1) > 0 && left < width + 40 && left + across > -40) {
-        c.save(); c.transform(1, ky, 0, 1, 0, -ky * left);
+        shear(c, base, ky, left); sheared = true;
         const edge = (h: number) => (yl(h) + yr(h)) / 2 - lean, top = edge(BIG_WALL_HIGH), bottom = edge(0);
         c.drawImage(el, sx, 0, sw, ph, left - .5, top, across, bottom - top + .5);
         // Far off, the warm haze of the evening (the picture is cut out: only over the wall's lower half, which is solid).
         const haze = hazeAt(z); if (haze > .02) { c.fillStyle = `rgba(250,198,166,${haze.toFixed(3)})`; const mid = edge(BIG_WALL_HIGH * .45); c.fillRect(left - .5, mid, across, bottom - mid + .5); }
-        c.restore();
       }
       z = z1;
     }
+    if (sheared) c.setTransform(base);
   }
   /** One block of a wall, in its tiers, from the back to the front, in its world's look. */
   function tiers(c: CanvasRenderingContext2D, g: BennyRun, dir: number, from: number, to: number, b: WallBlock, runnable: boolean, end: boolean, look: TierLook): void {
@@ -899,10 +903,16 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     hinted.add(kind); tip(HINTS[kind]);
     try { localStorage.setItem(HINTS_KEY, JSON.stringify([...hinted])); } catch { /* Only for this session. */ }
   }
+  /** The counters change a frame only where their text or look really changed (owner, 17 Nov.: « très laggy » on the iPhone;
+   *  rewriting a counter each frame made the browser lay the page out and refresh what VoiceOver reads, every frame). */
+  const put = (el: HTMLElement, text: string) => { if (el.textContent !== text) el.textContent = text; };
+  const hide = (el: HTMLElement, hidden: boolean) => { if (el.hidden !== hidden) el.hidden = hidden; };
+  const label = (el: HTMLElement, text: string) => { if (el.getAttribute('aria-label') !== text) el.setAttribute('aria-label', text); };
+  const style = (el: HTMLElement, prop: string, value: string) => { if (el.style.getPropertyValue(prop) !== value) el.style.setProperty(prop, value); };
   function hud(): void {
     const g = game; if (!g) return;
     hints(g);
-    score.textContent = `${g.score}`;
+    put(score, `${g.score}`);
     // Beating the record during the run: said at once, with confetti, and the score turns gold.
     if (!beaten && runBest > 0 && g.score > runBest && !g.tutorial) {
       beaten = true; score.classList.add('benny-run-beaten'); word('Nouveau record !', WORD.record); sound('power');
@@ -910,19 +920,19 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     }
     // The challenge under way and how far along it is.
     // The challenge under way, in a panel at the bottom with its progress bar.
-    const ch = g.challenge; challengeLine.textContent = ch ? `Défi : ${CHALLENGE_TEXT[ch.kind](ch.goal)} · ${ch.count}/${ch.goal}` : '';
-    quest.hidden = !ch || tips.held || !running; if (ch) questFill.style.width = `${Math.min(1, ch.count / ch.goal) * 100}%`;
+    const ch = g.challenge; put(challengeLine, ch ? `Défi : ${CHALLENGE_TEXT[ch.kind](ch.goal)} · ${ch.count}/${ch.goal}` : '');
+    hide(quest, !ch || tips.held || !running); if (ch) style(questFill, 'width', `${Math.round(Math.min(1, ch.count / ch.goal) * 100)}%`);
     // Every 500 m.
     const reached = Math.floor(g.distance / 500) * 500;
     if (metresBest > 0 && !metresBeaten && g.distance > metresBest) { metresBeaten = true; word('Plus loin que jamais !', WORD.big); sound('power', 1.2); }
     if (reached > milestone && !g.tutorial && reached % 1000) { milestone = reached; word(`${reached} m !`, WORD.big); sound('coin', 1.5); }
     // A combo shows only its count of hits (owner: no bar, nothing else): a big word at each new hit, brief.
     if (g.combo !== comboShown) { if (g.combo > 1 && g.at <= g.comboUntil && !tips.held) word(`${g.combo} coups`, WORD.combo); comboShown = g.combo; }
-    metres.textContent = `${Math.floor(g.distance)} m`; { const landed = Math.max(0, g.coins - coinFlights.filter(f => clock() - f.at < COIN_FLIGHT).length); if (`${landed}` !== coins.textContent) { if (landed > Number(coins.textContent)) { coins.classList.remove('benny-run-got'); void coins.offsetWidth; coins.classList.add('benny-run-got'); } coins.textContent = `${landed}`; } } coins.setAttribute('aria-label', plural(g.coins, 'pièce'));
+    put(metres, `${Math.floor(g.distance)} m`); { const landed = Math.max(0, g.coins - coinFlights.filter(f => clock() - f.at < COIN_FLIGHT).length); if (`${landed}` !== coins.textContent) { if (landed > Number(coins.textContent)) { coins.classList.remove('benny-run-got'); void coins.offsetWidth; coins.classList.add('benny-run-got'); } coins.textContent = `${landed}`; } } label(coins, plural(g.coins, 'pièce'));
     // The Hearts won so far in this run, shown once there is one.
-    hearts.hidden = g.hearts === 0; hearts.textContent = `${g.hearts}`; hearts.setAttribute('aria-label', plural(g.hearts, 'cœur'));
+    hide(hearts, g.hearts === 0); put(hearts, `${g.hearts}`); label(hearts, plural(g.hearts, 'cœur'));
     const active = g.active && g.at < g.active.until ? g.active : null;
-    powerLine.textContent = active ? `${POWER_NAMES[active.power]} · ${Math.ceil((active.until - g.at) / 1000)} s` : '';
+    put(powerLine, active ? `${POWER_NAMES[active.power]} · ${Math.ceil((active.until - g.at) / 1000)} s` : '');
     // Its last second: the line blinks (and Benny's aura too), so its end is no surprise.
     powerLine.classList.toggle('benny-run-ending', !!active && active.until - g.at < POWER_ENDING);
     // After a bump: how long the Dragon stays on Benny's tail (a second bump meanwhile ends the run).
@@ -931,9 +941,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // The bumps before the Dragon catches Benny, as two hearts (the rule unchanged: a second bump while she is on Benny's tail ends
     // the run): the second one lost after a bump fills back up over `dragonMs`, and is whole again when the Dragon flies off.
     const lost = left > 0 || g.over;
-    lastLife.classList.toggle('benny-run-lost', lost); lastLife.style.setProperty('--fill', lost && !g.over ? `${(1 - left / BENNY_RUN.dragonMs) * 100}%` : '0%');
+    lastLife.classList.toggle('benny-run-lost', lost); style(lastLife, '--fill', lost && !g.over ? `${Math.round((1 - left / BENNY_RUN.dragonMs) * 100)}%` : '0%');
     if (lost !== livesLost) { livesLost = lost; if (lost) { lastLife.classList.remove('benny-run-broke'); void lastLife.offsetWidth; lastLife.classList.add('benny-run-broke'); } }
-    lives.setAttribute('aria-label', g.over ? 'Plus de cœur' : left > 0 ? `Encore un choc et la Dragon t’attrape (${Math.ceil(left / 1000)} s)` : 'Deux chocs avant que la Dragon t’attrape');
+    label(lives, g.over ? 'Plus de cœur' : left > 0 ? `Encore un choc et la Dragon t’attrape (${Math.ceil(left / 1000)} s)` : 'Deux chocs avant que la Dragon t’attrape');
     // The combo's multiplier beside the score, while the combo lasts; it springs at each new step.
     const times = g.combo > 1 && g.at <= g.comboUntil ? comboMultiplier(g.combo) : 1;
     if (times !== multShown) { multShown = times; mult.hidden = times < 2; mult.textContent = `×${times}`; if (times > 1) { mult.classList.remove('show'); void mult.offsetWidth; mult.classList.add('show'); } }
@@ -1065,13 +1075,19 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     for (const [setting, alpha] of [[settingBefore, 1 - fade], [g.setting, fade]] as const) {
       if (alpha <= .01 || (setting !== 'pont' && setting !== 'montagne')) continue;
       const n = WEATHER[setting], snow = setting === 'montagne';
+      // (Grouped by colour and by a few steps of fading: one order fills a group, not one a flake.)
+      const groups = new Map<string, number[]>();
       for (let i = 0; i < n; i++) {
         const speed = snow ? 40 + hash01(i * 7 + 1) * 50 : 60 + hash01(i * 7 + 1) * 90, size = snow ? 1.5 + hash01(i * 7 + 2) * 2.8 : 1.2 + hash01(i * 7 + 2) * 2.2;
         const span = height + 40, run = ((now / 1000) * speed + hash01(i * 7 + 3) * span) % span, y = snow ? run - 20 : height + 20 - run;
         const x = hash01(i * 7 + 4) * width + Math.sin(now / (snow ? 900 : 600) + i) * (snow ? 14 : 8);
-        c.globalAlpha = alpha * (snow ? .85 : Math.max(0, Math.min(1, (height - run) / height)) * .9);
-        c.fillStyle = snow ? '#ffffff' : i % 3 ? '#ffb04a' : '#ffe27a';
-        c.beginPath(); c.arc(x, y, size, 0, Math.PI * 2); c.fill();
+        const fade = snow ? .85 : Math.round(Math.max(0, Math.min(1, (height - run) / height)) * 5) / 5 * .9; if (fade <= 0) continue;
+        const key = `${snow ? '#ffffff' : i % 3 ? '#ffb04a' : '#ffe27a'}|${fade}`, list = groups.get(key) ?? []; list.push(x, y, size); groups.set(key, list);
+      }
+      for (const [key, list] of groups) {
+        const [fill, fade] = key.split('|'); c.globalAlpha = alpha * Number(fade); c.fillStyle = fill; c.beginPath();
+        for (let k = 0; k < list.length; k += 3) { c.moveTo(list[k] + list[k + 2], list[k + 1]); c.arc(list[k], list[k + 1], list[k + 2], 0, Math.PI * 2); }
+        c.fill();
       }
     }
     c.globalAlpha = 1;
@@ -1133,12 +1149,20 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       if (border < FAR) strip(c, g, border, FAR, next.ground);
     }
     // Lane stripes that scroll with the distance, so the speed reads.
+    // (All the stripes of one colour in one shape: one order to fill them, not one each.)
+    const stripes = new Map<string, {x: number; y: number}[][]>();
     for (let k = 0; k < 40; k++) {
       const z0 = NEAR + k * 4 - (g.distance % 4), z1 = z0 + 2;
       if (z0 > FAR) break;
       // The stripes of the lanes there (none where the road is opening or closing).
       const n0 = lanesDrawn(g, z0), n1 = lanesDrawn(g, z1); if (n0 !== n1 || n0 % 1) continue;
-      for (const x of Array.from({length: n0 - 1}, (_, i) => (i + 1 - n0 / 2) * LANE_WIDTH)) quad(c, [project(x - .06, z0, 0), project(x + .06, z0, 0), project(x + .06, z1, 0), project(x - .06, z1, 0)], painted ? PAINTED_LOOK.lane : z0 < border ? colours.lane : next.lane);
+      const fill = painted ? PAINTED_LOOK.lane : z0 < border ? colours.lane : next.lane, list = stripes.get(fill) ?? [];
+      for (let i = 1; i < n0; i++) { const x = (i - n0 / 2) * LANE_WIDTH; list.push([project(x - .06, z0, 0), project(x + .06, z0, 0), project(x + .06, z1, 0), project(x - .06, z1, 0)]); }
+      stripes.set(fill, list);
+    }
+    for (const [fill, list] of stripes) {
+      c.beginPath(); for (const q of list) { c.moveTo(q[0].x, q[0].y); for (let i = 1; i < 4; i++) c.lineTo(q[i].x, q[i].y); c.closePath(); }
+      c.fillStyle = fill; c.fill();
     }
     // Gaps in the road: a chasm (lava on the bridge), with a bright lip on its near and far edges.
     for (const h of g.holes) {
