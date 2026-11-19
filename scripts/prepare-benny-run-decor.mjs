@@ -75,8 +75,7 @@ export const TEXTURES = {
   'decor-falaise': {source: 'falaise.png', size: 256, top: 14},
 };
 
-/** The meadow's big painted walls, each one along 100 m of road (17 Nov., owner: « des grands murs tous cohérents sur 100 mètres »). */
-export const BIG_WALLS = Array.from({length: 30}, (_, i) => { const n = String(i + 1).padStart(2, '0'); return [`grand-mur-${n}`, `grand-mur-${n}.png`]; });
+// (The meadow's thirty big painted walls, 17 Nov., left the run on 19 Nov.: fences and tall grass line the road now.)
 
 const {chromium} = createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const browser = await chromium.launch();
@@ -99,12 +98,6 @@ try {
   }, {png, crop});
   for (const [name, t] of Object.entries(TEXTURES)) {
     const webp = Buffer.from(await encode(readFileSync(`${SOURCES}/${t.source}`).toString('base64'), {top: t.top ?? 0, width: t.size, height: t.size, quality: .86}), 'base64');
-    writeFileSync(`${TARGET}/${name}.webp`, webp); sizes[name] = webp.length;
-  }
-  // The meadow's big painted walls (17 Nov.): long pictures that repeat end to end, the sky above them cut out; 2048 px wide.
-  for (const [name, source] of BIG_WALLS) {
-    const png = readFileSync(`${SOURCES}/${source}`), height = Math.round(2048 * png.readUInt32BE(20) / png.readUInt32BE(16));
-    const webp = Buffer.from(await encode(png.toString('base64'), {width: 2048, height, quality: .86}), 'base64');
     writeFileSync(`${TARGET}/${name}.webp`, webp); sizes[name] = webp.length;
   }
   // The skies keep their painted size (1024 × 1536), only in WebP: the meadow's, the lava's (smoke, a red glow), the snow's (cold).

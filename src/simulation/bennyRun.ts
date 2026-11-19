@@ -48,7 +48,7 @@ export const BENNY_RUN = {
   wallRunHeight: 1.8, shockHeight: 1.6, shockBehind: 1.5, shockReach: 6,
   /** A ground charge that falls on a creature's head (at most `headHeight` m up) breaks it, and Benny rebounds off it. */
   headHeight: 1.6,
-  /** A wall run lasts `wallMs` at most; walls come in segments of `wallSegment` m, `wallRunnable` of them runnable. */
+  /** A wall run lasts `wallMs` at most; walls come in segments of `wallSegment` m, `wallRunnable` of the draws a wall to run on (the others fences, see wallRuns). */
   wallMs: 2600, wallSegment: 36, wallRunnable: .3,
   /** A strike reaches the nearest pot or creature from `-hitHalf` m to `strikeReach` m plus `strikeLead` s of running ahead: the
    * faster Benny runs, the farther her wand reaches, so that the time to react stays fair (about 0.4 s at any speed). */
@@ -185,22 +185,18 @@ export type StrikeKind = 'lane' | 'far' | 'spin' | 'slide' | 'jump' | 'pound' | 
 /** A thing on the road. `lane` is 0 to `lanes - 1`; a wall coin's lane is -1 (left wall) or `lanes` (right wall). */
 /** A thing on the road; `up` is how high a coin floats (a coin arc over a barrier), for the drawing only. */
 export interface RunEntity {id: number; kind: RunKind; lane: number; z: number; power?: RunPower; sky?: boolean; hp?: number; knock?: number; up?: number; beside?: boolean; rock?: 'up' | 'down'; geyser?: 'idle' | 'up'; rolling?: boolean; snow?: boolean; cart?: boolean; gold?: boolean}
-/** A wall's look (owner, 13 Nov., after Blade of Brim): `tall` rises past the top of the screen and hides the void (earth to run on,
- * or grey stone); `low` is a low wall at a jump's height, one lane thick, run on like a wall, the void seen over it; `fence` is a
- * wooden fence, not run on. `tall` on a segment says it is a tall one; otherwise runnable means low, and not runnable a fence. */
-export interface WallSegment {side: Side; from: number; to: number; runnable: boolean; void?: boolean; tall?: boolean}
-export type WallLook = 'tall' | 'low' | 'fence';
-export const wallLook = (w: WallSegment): WallLook => w.tall ? 'tall' : w.runnable ? 'low' : 'fence';
-/** The four sides of the road, in turn (owner, 14 Nov.: « beaucoup de variation »): a low wall to run on, a fence over the void, a tall
- * stone wall, a tall wall of earth and roots to run on. Never the same twice in a row on one side, nor the same on both sides at once. */
-const WALL_KINDS = [{runnable: true, tall: false}, {runnable: true, tall: true}, {runnable: false, tall: false}, {runnable: false, tall: true}] as const;
-const kindOf = (w: WallSegment) => w.void ? -1 : (w.runnable ? 0 : 2) + (w.tall ? 1 : 0);
-function wallKind(g: BennyRun, side: Side, from: number, dice: number, mustRun: boolean): number {
-  const prev = g.walls.filter(w => w.side === side && w.to === from).map(kindOf)[0] ?? -1, facing = g.walls.filter(w => w.side !== side && w.from === from).map(kindOf)[0] ?? -1;
-  // (No low wall to run on any more, owner, 16 Nov.: « de la verticalité sur les voies mais pas sur les voies des murs ».)
-  const order = mustRun ? [1] : [1, 2, 3], start = Math.floor(dice * order.length);
-  for (let k = 0; k < order.length; k++) { const kind = order[(start + k) % order.length]; if (kind !== prev && kind !== facing) return kind; }
-  return order.find(kind => kind !== prev) ?? order[start];
+/** The sides of the road (owner, 19 Nov.: « des barrières le long de la piste, à gauche et à droite, et de temps en temps un mur où
+ * il peut courir », the tall walls gone): a fence, not run on, or now and then a wall to run on. A `void` segment is neither: the
+ * open side over the void. */
+export interface WallSegment {side: Side; from: number; to: number; runnable: boolean; void?: boolean}
+export type WallLook = 'wall' | 'fence';
+export const wallLook = (w: WallSegment): WallLook => w.runnable ? 'wall' : 'fence';
+/** Whether a new segment is a wall to run on: `wallRunnable` of the draws, never twice in a row on one side nor on both sides at
+ *  once (the patterns that need a wall, rows of pillars and long gaps, make theirs runnable over that). */
+function wallRuns(g: BennyRun, side: Side, from: number, dice: number): boolean {
+  if (dice >= C.wallRunnable) return false;
+  const near = (w: WallSegment) => !w.void && w.runnable;
+  return !g.walls.some(w => near(w) && ((w.side === side && w.to === from) || (w.side !== side && w.from === from)));
 }
 export type RunEvent =
   | {type: 'strike'; entity: RunEntity; points: number; combo: number; multiplier: number; by: StrikeKind; roll?: number}
@@ -355,7 +351,7 @@ function placeTutorial(g: BennyRun): void {
     case 'wall': {
       // The nearer wall, made runnable all along the way to the pillars.
       const wallSide: Side = g.lane < g.lanes / 2 ? 'left' : 'right';
-      for (const w of g.walls) if (w.side === wallSide && w.to > g.distance && w.from < z + 10) { w.runnable = true; w.tall = true; }
+      for (const w of g.walls) if (w.side === wallSide && w.to > g.distance && w.from < z + 10) w.runnable = true;
       // Nearer than the other steps: climbing as soon as the advice shows, the wall run still lasts past the pillars.
       const pz = z - 8;
       for (const l of all) placed.push(add(g, 'pillar', l, pz));
@@ -469,8 +465,8 @@ export const comboMultiplier = (combo: number) => Math.min(C.comboMax, 1 + Math.
 export const wallAt = (g: BennyRun, side: Side, z: number) => g.walls.find(w => w.side === side && w.from <= z && z < w.to);
 export const runnableAt = (g: BennyRun, side: Side, z: number) => !!wallAt(g, side, z)?.runnable;
 
-function layWalls(g: BennyRun): void {
-  for (const side of ['left', 'right'] as const) while (g.wallsTo[side] < g.distance + C.spawnAhead + C.wallSegment * 2) {
+function layWalls(g: BennyRun, until = g.distance + C.spawnAhead + C.wallSegment * 2): void {
+  for (const side of ['left', 'right'] as const) while (g.wallsTo[side] < until) {
     const from = g.wallsTo[side];
     // A stretch with no wall begins (both sides' segments start at the same places): which sides, how long.
     if (!g.edge && !g.tutorial && from >= g.nextEdgeZ) {
@@ -480,8 +476,8 @@ function layWalls(g: BennyRun): void {
       g.nextEdgeZ = from + length + Math.max(C.speedStart, g.speed) * (C.edgeEvery + random(g) * C.edgeSpread);
     }
     const open = !!g.edge && from < g.edge.to && g.edge.sides.includes(side);
-    const dice = random(g), kind = open ? null : WALL_KINDS[wallKind(g, side, from, dice, from < C.firstAt + C.wallSegment)];
-    g.walls.push({side, from, to: from + C.wallSegment, runnable: !!kind?.runnable, ...(open ? {void: true} : {}), ...(kind?.tall ? {tall: true} : {})});
+    const dice = random(g), runnable = !open && wallRuns(g, side, from, dice);
+    g.walls.push({side, from, to: from + C.wallSegment, runnable, ...(open ? {void: true} : {})});
     if (g.edge && side === 'right' && from + C.wallSegment >= g.edge.to) g.edge = null;
     g.wallsTo[side] = from + C.wallSegment;
   }
@@ -681,7 +677,7 @@ function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
       // Three pillars side by side: the way on is up the runnable wall, along its coins.
       const side = wallSide(g, z)!;
       // Both walls made runnable around the row, so the nearer wall is always a way on, whatever lane Benny comes from.
-      for (const w of g.walls) if (w.to > z - 25 && w.from <= z + 5) { w.runnable = true; w.void = false; w.tall = true; }
+      for (const w of g.walls) if (w.to > z - 25 && w.from <= z + 5) { w.runnable = true; w.void = false; }
       for (const lane of all) add(g, 'pillar', lane, z);
       for (let i = 0; i < 4; i++) add(g, 'wallCoin', wallLane(g, side), z - 6 + i * 3);
       return z + 4;
@@ -738,10 +734,12 @@ function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
     case 'void': {
       // A stretch with a lane open to the void (no road: a fall) and no wall at the sides; the road goes on in the other lanes.
       // Not beside pillars: a row of them needs its walls to run on (the way past), and the void would take them away.
-      if (g.entities.some(e => e.kind === 'pillar' && e.z > z - 25 && e.z < z + 40) || g.holes.some(h => h.to > z - 25 && h.from < z + 40)) return z + 2;
-      const lane = any(), from = z, to = from + 30 + d * 20;
+      // (Whole wall segments are made the void: none of them beside a row of pillars, from 25 m before it to 5 m past it.)
+      const from = z, to = from + 30 + d * 20, sides = g.walls.filter(w => w.to > from && w.from < to);
+      if (g.entities.some(e => e.kind === 'pillar' && ((e.z > z - 25 && e.z < z + 40) || sides.some(w => w.to > e.z - 25 && w.from <= e.z + 5))) || g.holes.some(h => h.to > z - 25 && h.from < z + 40)) return z + 2;
+      const lane = any();
       g.pits.push({lane, from, to, open: true});
-      for (const w of g.walls) if (w.to > from && w.from < to) { w.void = true; w.runnable = false; }
+      for (const w of sides) { w.void = true; w.runnable = false; }
       for (let k = from + 2; k < to - 2; k += 4) add(g, 'coin', pick(g, all.filter(l => l !== lane)), k);
       return to + 4;
     }
@@ -795,7 +793,7 @@ function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
       z += g.speed * .4;
       g.holes.push({from: z, to: z + len});
       if (long) {
-        for (const w of g.walls) if (w.to > z - 25 && w.from <= z + len + 5) { w.runnable = true; w.void = false; w.tall = true; }
+        for (const w of g.walls) if (w.to > z - 25 && w.from <= z + len + 5) { w.runnable = true; w.void = false; }
         let side = pick(g, ['left', 'right'] as const);
         for (let at = z - 4; at < z + len; at += 3) { add(g, 'wallCoin', wallLane(g, side), at); if (at > z + 4 && (at - z) % 9 < 3) side = side === 'left' ? 'right' : 'left'; }
       } else { const lane = any(); for (let i = 0; i < 4; i++) add(g, 'coin', lane, z - 1 + i * (len + 2) / 3, {up: .6 + Math.sin(Math.PI * i / 3) * 1.1}); }
@@ -832,10 +830,14 @@ function layMoment(g: BennyRun, kind: RunMoment, z: number): number {
     case 'bridge': {
       // A narrow bridge over the void: the middle lane alone goes on, the void on both sides and under the other two (a step aside is
       // a fall). Coins lead onto it, two pots on it to kick open straight on.
-      const lane = 1, from = z + Math.max(12, g.speed * 1.2), len = 30 + 20 * d, to = from + len, pots = [from + len / 3, from + 2 * len / 3];
+      // (It starts past a wall to run on at its start: a row of pillars just before may need that wall as its way on.)
+      let from = z + Math.max(12, g.speed * 1.2);
+      for (const w of [...g.walls].sort((a, b) => a.from - b.from)) if (w.runnable && w.to > from - 6 && w.from < from + 6) from = w.to + 6;
+      const lane = 1, len = 30 + 20 * d, to = from + len, pots = [from + len / 3, from + 2 * len / 3];
+      layWalls(g, to + 6 + C.wallSegment); // (Its sides laid already, to be made the void.)
       for (let k = z; k < from - 1; k += 2) add(g, 'coin', lane, k);
       for (const l of all) if (l !== lane) g.pits.push({lane: l, from, to, open: true});
-      for (const w of g.walls) if (w.to > from - 6 && w.from < to + 6) { w.void = true; w.runnable = false; w.tall = false; }
+      for (const w of g.walls) if (w.to > from - 6 && w.from < to + 6) { w.void = true; w.runnable = false; }
       for (let k = from + 2; k < to - 1; k += 3) if (pots.every(p => Math.abs(k - p) > 2)) add(g, 'coin', lane, k);
       for (const p of pots) add(g, 'pot', lane, p);
       end = to + 4; break;
@@ -847,9 +849,9 @@ function layMoment(g: BennyRun, kind: RunMoment, z: number): number {
       end = z + (count - 1) * gap; break;
     }
     case 'coinRain': {
-      // A rain of coins on the blue walls: both walls tall and blue around it, a row of pillars across the road (the way on is up a
+      // A rain of coins on the blue walls: both walls runnable around it, a row of pillars across the road (the way on is up a
       // wall), and a long trail of coins on each wall, taken on either.
-      for (const w of g.walls) if (w.to > z - 25 && w.from <= z + 24) { w.runnable = true; w.void = false; w.tall = true; }
+      for (const w of g.walls) if (w.to > z - 25 && w.from <= z + 24) { w.runnable = true; w.void = false; }
       for (const l of all) add(g, 'pillar', l, z);
       for (const side of ['left', 'right'] as const) for (let k = -10; k <= 16; k += 2) add(g, 'wallCoin', wallLane(g, side), z + k);
       end = z + 16; break;
