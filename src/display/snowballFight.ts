@@ -11,6 +11,10 @@ import {endRabbitActivity, motionZone, startRabbitActivity, type Box, type Rabbi
  * Each throw has a wind-up; a snowball may hit (the target is knocked back, with a puff), miss (it lands in the snow, with a
  * puff on the ground) or be dodged (the target hops over it). At the end, the camp that hit most hops for joy.
  * Never in reduced motion, never saved.
+ * Much more often since 20 November 2026 (owner: « des batailles générales dans un enclos au moins toutes les minutes et des batailles
+ * en duel dans un enclos toutes les minutes aussi »): besides each enclosure's own clock, the island keeps one clock per kind; when a
+ * kind has not started anywhere for its gap, it starts in the free enclosure that fought least recently. Both kinds stay under a
+ * minute apart as long as an enclosure can hold them (awake, free, seen rabbits); the two clocks are staggered.
  */
 export const SNOWBALL_EVENT = 'prairie-snowball-test';
 export const SNOWBALL_BATTLE_EVENT = 'prairie-snowball-battle-test';
@@ -18,6 +22,14 @@ export const SNOWBALL_GAP: readonly [number, number] = [45_000, 100_000];
 /** Time between two general battles of one enclosure (ms), and how many free rabbits one needs. */
 export const SNOWBALL_BATTLE_GAP: readonly [number, number] = [150_000, 300_000];
 export const SNOWBALL_BATTLE_MIN = 3;
+/** The island's guarantee: the longest wait between two starts of one kind anywhere (ms), and the gaps drawn under it. */
+export const SNOWBALL_ISLAND_MAX = 60_000;
+export const SNOWBALL_ISLAND_DUEL_GAP: readonly [number, number] = [22_000, 34_000];
+export const SNOWBALL_ISLAND_BATTLE_GAP: readonly [number, number] = [26_000, 38_000];
+/** When the island's first duel and first battle come once the event's island shows (staggered). */
+export const SNOWBALL_ISLAND_FIRST: {duel: readonly [number, number]; battle: readonly [number, number]} = {duel: [5_000, 12_000], battle: [16_000, 26_000]};
+/** How long a fight of each kind holds its enclosure at most (ms): the other kind goes first when it would be late otherwise. */
+export const SNOWBALL_HOLD = {duel: 22_000, battle: 30_000} as const;
 /** Distance kept from the fence (enclosure units) and the widest gap between two duelling rabbits. */
 export const SNOWBALL_MARGIN = 10, SNOWBALL_SPACING_MAX = 96, SNOWBALL_SPACING_MIN = 60;
 /** Running speed towards the throwing places (units per second) and the longest wait before throwing anyway. */
@@ -43,6 +55,7 @@ export interface SnowballThrower {id: string; group: string; motion: RabbitMotio
  * `miss`: it ends in the snow (`end` is beside the target), otherwise it ends on the target's body.
  */
 export interface Snowball {id: number; group: string; from: string; to: string; u: number; flight: number; start: Point; end: Point; arc: number; miss: boolean; dodge: boolean}
+type Kind = 'duel' | 'battle';
 type Act = {kind: 'windup' | 'recoil' | 'dodge' | 'cheer'; t: number; length: number; target?: string};
 interface Member {id: string; team: 0 | 1; place: Point; cooldown: number; act: Act | null; hits: number}
 interface Fight {group: string; kind: 'duel' | 'battle'; members: Member[]; elapsed: number; length: number; throws: number; thrown: number; balls: Snowball[]; cheer: number; seed: number}
@@ -86,6 +99,15 @@ export function snowballActPose(act: Act, facing: 1 | -1): SnowballPose {
 
 export class SnowballFights {
   private clocks = new Map<string, {seed: number; remaining: number; battle: number}>();
+  /** The island's clocks: time since the last start of each kind, the gap drawn for the next one, when each enclosure last fought. */
+  private island = {seed: 0x2f6e2b1, time: 0, since: {duel: 0, battle: 0}, gap: {duel: 0, battle: 0}, last: new Map<string, number>()};
+  /** The latest starts (enclosure, kind, island time in ms): the laboratory and the tests read them. */
+  readonly starts: {group: string; kind: 'duel' | 'battle'; at: number}[] = [];
+  constructor() {
+    const i = this.island;
+    // Before the first one, the gap counts as if the last start was a while ago: the first one comes after its own short wait.
+    for (const kind of ['duel', 'battle'] as const) { i.gap[kind] = SNOWBALL_ISLAND_MAX; i.since[kind] = SNOWBALL_ISLAND_MAX - this.between(i, SNOWBALL_ISLAND_FIRST[kind]); }
+  }
   readonly active = new Map<string, Fight>();
   /** Snowballs that landed during the last step: the display shows a puff on the target, or on the snow for a miss. */
   readonly hits: Snowball[] = [];
@@ -106,13 +128,14 @@ export class SnowballFights {
     this.hits.length = 0;
     const ms = lifeActive && Number.isFinite(dt) && dt >= 0 && dt <= 1000 ? dt : 0, byId = new Map(throwers.map(r => [r.id, r]));
     for (const fight of [...this.active.values()]) this.advance(fight, ms, byId, enabled && !reduced);
-    if (!enabled) return;
+    if (!enabled || reduced) return;
+    const step = Math.max(0, Math.min(ms, 1000)), island = this.island;
+    island.time += step; island.since.duel += step; island.since.battle += step;
     const groups = new Map<string, SnowballThrower[]>();
     for (const r of throwers) if (!this.active.has(r.group)) groups.set(r.group, [...(groups.get(r.group) ?? []), r]);
     for (const [group, members] of groups) {
       const clock = this.clock(group), eligible = members.filter(free);
-      if (reduced || eligible.length < 2) continue;
-      const step = Math.max(0, Math.min(ms, 1000));
+      if (eligible.length < 2) continue;
       if (forceBattle) clock.battle = 0; else clock.battle -= step;
       if (force) clock.remaining = 0; else clock.remaining -= step;
       if (clock.battle <= 0 && eligible.length >= SNOWBALL_BATTLE_MIN) {
@@ -125,6 +148,38 @@ export class SnowballFights {
         this.startDuel(group, eligible, clock);
       }
     }
+    this.islandStep(groups);
+  }
+  /**
+   * The island's guarantee: a kind whose gap has run out starts in the free enclosure that fought least recently. The kind nearer
+   * its minute is looked at first; a kind also starts early when the other one, started now in the last free enclosure, would
+   * hold it past its minute; and it leaves that last enclosure to the other kind when the other one could not wait.
+   */
+  private islandStep(groups: ReadonlyMap<string, SnowballThrower[]>): void {
+    const island = this.island;
+    const candidates = (kind: Kind) => [...groups].filter(([group, members]) => !this.active.has(group) &&
+      members.filter(free).length >= (kind === 'battle' ? SNOWBALL_BATTLE_MIN : 2)).map(([group]) => group);
+    const due = (kind: Kind) => island.since[kind] >= island.gap[kind];
+    /** True when `kind` would pass its minute if `other` took the enclosure now. */
+    const late = (kind: Kind, other: Kind) => island.since[kind] + SNOWBALL_HOLD[other] >= SNOWBALL_ISLAND_MAX - 2_000;
+    const order: Kind[] = island.since.battle >= island.since.duel ? ['battle', 'duel'] : ['duel', 'battle'];
+    for (const kind of order) {
+      const other: Kind = kind === 'duel' ? 'battle' : 'duel';
+      if (!due(kind) && !(late(kind, other) && due(other))) continue;
+      const open = candidates(kind);
+      if (!open.length) continue;
+      if (open.length === 1 && candidates(other).includes(open[0]) && !late(kind, other) && late(other, kind) && due(other)) continue;
+      const group = open.sort((a, b) => (island.last.get(a) ?? -Infinity) - (island.last.get(b) ?? -Infinity) || a.localeCompare(b))[0];
+      const eligible = groups.get(group)!.filter(free), clock = this.clock(group);
+      if (kind === 'battle') this.startBattle(group, eligible, clock); else this.startDuel(group, eligible, clock);
+    }
+  }
+  /** Notes a start for the island's clocks. */
+  private started(group: string, kind: Kind): void {
+    const island = this.island;
+    island.since[kind] = 0; island.gap[kind] = this.between(island, kind === 'duel' ? SNOWBALL_ISLAND_DUEL_GAP : SNOWBALL_ISLAND_BATTLE_GAP);
+    island.last.set(group, island.time); this.starts.push({group, kind, at: island.time});
+    if (this.starts.length > 200) this.starts.splice(0, this.starts.length - 200);
   }
   private run(motion: RabbitMotion, place: Point): void {
     startRabbitActivity(motion, 'meet', place);
@@ -138,6 +193,7 @@ export class SnowballFights {
     pb.y = clamp(pb.y + (this.random(clock) * 2 - 1) * 6, motionZone(b.motion).minY, motionZone(b.motion).maxY);
     this.run(a.motion, pa); this.run(b.motion, pb);
     const members: Member[] = [{id: a.id, team: 0, place: pa, cooldown: 300, act: null, hits: 0}, {id: b.id, team: 1, place: pb, cooldown: 300 + 700, act: null, hits: 0}];
+    this.started(group, 'duel');
     this.active.set(group, {group, kind: 'duel', members, elapsed: 0, length: Infinity, throws: Math.round(this.between(clock, SNOWBALL_THROWS)), thrown: 0, balls: [], cheer: 0, seed: clock.seed});
   }
   private startBattle(group: string, eligible: SnowballThrower[], clock: {seed: number}): void {
@@ -152,6 +208,7 @@ export class SnowballFights {
       const order = [...camp].sort((p, q) => p.motion.local.y - q.motion.local.y);
       order.forEach((r, i) => { this.run(r.motion, places[i]); members.push({id: r.id, team: team as 0 | 1, place: places[i], cooldown: this.between(clock, [400, 1800]), act: null, hits: 0}); });
     });
+    this.started(group, 'battle');
     this.active.set(group, {group, kind: 'battle', members, elapsed: 0, length: this.between(clock, SNOWBALL_BATTLE_LENGTH), throws: Infinity, thrown: 0, balls: [], cheer: 0, seed: clock.seed});
   }
 
