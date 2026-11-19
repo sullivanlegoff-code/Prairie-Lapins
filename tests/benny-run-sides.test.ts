@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest';
 import {advanceBennyRun, BENNY_RUN as C, holeAt, runInput, startBennyRun, takeRunEvents, wallLook, type WallSegment} from '../src/simulation/bennyRun';
-import {RUN_SIDES} from '../src/config/bennyRunSides';
+import {RUN_SIDE_FILES, RUN_SIDES, type RunSidePicture} from '../src/config/bennyRunSides';
 import {BENNY_RUN_DECOR} from '../src/ui/BennyRunActivity';
 
 /** « Benny Rampage », the sides of the road (owner, 19 Nov. 2026): tall grass left and right, the old walls gone, fences along the
@@ -56,10 +56,19 @@ describe('Benny Rampage: the sides of the road', () => {
 
 describe('Benny Rampage: the pictures of the sides', () => {
   const files = Object.keys(import.meta.glob('../public/assets/benny-run/*.webp')).map(path => path.replace('../public/assets/benny-run/', '').replace('.webp', ''));
-  it('draws the tall grass, the fence and the wall to run on from painted decor tiles of the run', () => {
-    const strips = [RUN_SIDES.grass, RUN_SIDES.fence, ...(RUN_SIDES.wall ? [RUN_SIDES.wall] : [])];
-    for (const strip of strips) for (const name of Object.values(strip.name)) { expect(BENNY_RUN_DECOR).toContain(name); expect(files).toContain(name); }
-    for (const strip of strips) { expect(strip.fit[0]).toBeGreaterThanOrEqual(0); expect(strip.fit[1]).toBeLessThanOrEqual(1); expect(strip.fit[0]).toBeLessThan(strip.fit[1]); }
+  it('draws the tall grass, the fence and the wall to run on from the painted strips the owner chose (20 Nov.)', () => {
+    for (const side of [RUN_SIDES.grass, RUN_SIDES.fence, RUN_SIDES.wall]) for (const picture of Object.values(side.picture) as RunSidePicture[]) {
+      expect(files).toContain(picture.file); expect(RUN_SIDE_FILES).toContain(picture.file);
+      if (picture.crop) { expect(picture.crop[0]).toBeGreaterThanOrEqual(0); expect(picture.crop[1]).toBeLessThanOrEqual(1); expect(picture.crop[0]).toBeLessThan(picture.crop[1]); }
+    }
+    expect(RUN_SIDES.grass.picture.grotte.file).toBe('cotes-herbe');
+    for (const world of ['grotte', 'pont', 'montagne'] as const) { expect(RUN_SIDES.fence.picture[world].file).toBe('cotes-barriere'); expect(RUN_SIDES.wall.picture[world].file).toBe('cotes-mur'); }
+    // The old stand-ins are gone from the run and its files.
+    for (const old of ['decor-socle-bleu', 'decor-mur-terre', 'decor-barriere', 'decor-crete', 'decor-lianes', 'decor-touffes']) { expect(BENNY_RUN_DECOR).not.toContain(old); expect(files).not.toContain(old); }
+  });
+  it('keeps its tracked masters for the strips', () => {
+    const masters = Object.keys(import.meta.glob('../assets-source/benny-run/*.png')).map(path => path.replace('../assets-source/benny-run/', '').replace('.png', ''));
+    for (const file of RUN_SIDE_FILES.filter(f => f.startsWith('cotes-'))) expect(masters).toContain(file);
   });
   it('stands the grass past the fence, farthest row first, on its ground', () => {
     const outs = RUN_SIDES.grass.rows.map(r => r.out);
