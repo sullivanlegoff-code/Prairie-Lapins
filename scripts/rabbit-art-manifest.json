@@ -534,12 +534,12 @@
     "displayScale": 1.15,
     "file": "assets/rabbits/egiiipte/egiiipte-v2.png",
     "worldWidth": 52.9,
-    "sourceSha1": "878db2ae6ec62f5de4aa6f3a6fb2f1a6e432e430",
+    "sourceSha1": "899452d38a33bca4a276725684ffcb9f26276d2a",
     "sourceWidth": 1171,
     "sourceHeight": 1078,
     "width": 461,
     "height": 424,
-    "derivedSha1": "78a7a6268aadb11ecba4af04f3d2b30ce12eb0c1"
+    "derivedSha1": "05de0aaf49885745f8f03c80e71da1a808f34b9f"
   },
   "fluffy-evolution": {
     "species": "fluffy",

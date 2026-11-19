@@ -1177,7 +1177,7 @@
   },
   "egiiipte-evolution": {
     "sprite": "assets/rabbits/egiiipte/egiiipte-v2.png",
-    "spriteSha1": "78a7a6268aadb11ecba4af04f3d2b30ce12eb0c1",
+    "spriteSha1": "05de0aaf49885745f8f03c80e71da1a808f34b9f",
     "spriteWidth": 461,
     "spriteHeight": 424,
     "eyes-closed": {
@@ -1187,8 +1187,8 @@
       "width": 78,
       "height": 70,
       "source": "assets-source/rabbits/egiiipte/evolution-eyes-closed.png",
-      "sourceSha1": "68f81d61421a11382007afd69a2ed26680ac6f1a",
-      "derivedSha1": "37a9ef91c5a0179965c24f361ce0a9cc252d2746"
+      "sourceSha1": "ead86729f7fb610c39cf605d302acb84383174ba",
+      "derivedSha1": "105daf9bff86a97509f76fe1ce77bb81014189a5"
     },
     "nose-twitch": {
       "file": "assets/rabbits/egiiipte/egiiipte-evolution-nose-twitch.png",
@@ -1197,8 +1197,8 @@
       "width": 33,
       "height": 30,
       "source": "assets-source/rabbits/egiiipte/evolution-nose-twitch.png",
-      "sourceSha1": "a51f391529d8bc6c15aed617ea3904bf88fa04d4",
-      "derivedSha1": "50e5e66bdb2f3682044da512224648ff98896185"
+      "sourceSha1": "8d767f58be074118b3a86478ab8dfc569e834250",
+      "derivedSha1": "3a077042ddd3cd6154915c2a242d9d83156e7adb"
     }
   },
   "piment": {
