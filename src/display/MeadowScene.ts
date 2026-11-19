@@ -1,4 +1,4 @@
-import {ARDENT_FRAMES, ardentFrame} from './ardentFlames';
+import {ARDENT_FRAMES, ardentFrame, ardentSway} from './ardentFlames';
 import {elementUrl} from './rabbitPresentation';
 import {islandOutline, organicLoop, parcelSetKey} from './islandOutline';
 import {nestForParent} from '../simulation/breeding';
@@ -109,6 +109,8 @@ export interface DecorationGhost {id: string; catalogId?: DecorationId; location
 interface VisualRabbit {id: string; object: Phaser.GameObjects.Container; body: Phaser.GameObjects.Container; ears: Phaser.GameObjects.Ellipse[]; sprite?: Phaser.GameObjects.Image; art?: RabbitArt; base: Point; phase: number; fedUntil: number;
   /** Ardent's first drawing: its painted frames take turns on the sprite. */
   ardent?: boolean;
+  /** Ardent, either drawing: his body moves with his fire (ardentSway). */
+  fiery?: boolean;
   /** The golden crown of an ultimate rabbit (affection 50) that wears it, on its head in the body. */
   crown?: Phaser.GameObjects.Image;
   face?: {seed: number; eyes?: Phaser.GameObjects.Image; nose?: Phaser.GameObjects.Image};
@@ -1294,7 +1296,7 @@ export class MeadowScene extends Phaser.Scene {
           const dadi = rabbit.species === 'dadi' && art.evolved ? new DadiStageView(this, rabbit.id, sprite, art) : undefined;
           if (crown) body.bringToTop(crown); // Above a legendary's open snout or part.
           this.animals.add(object);
-          this.rabbitViews.push({id: rabbit.id, ears: [], sprite, art, face, ardent, crown, legendary, benny, magicien, dadi, ...view});
+          this.rabbitViews.push({id: rabbit.id, ears: [], sprite, art, face, ardent, fiery: rabbit.species === 'ardent', crown, legendary, benny, magicien, dadi, ...view});
           return;
         }
         const coat = proceduralCoat(SPECIES[rabbit.species].art), color = Phaser.Display.Color.HexStringToColor(coat.body).color, patch = Phaser.Display.Color.HexStringToColor(coat.patch).color;
@@ -1822,6 +1824,10 @@ export class MeadowScene extends Phaser.Scene {
       rabbit.dadi?.update(dt, lifeActive && visibleResidents.has(rabbit.id) && rabbit.motion?.mode !== 'sleep', this.dadiSinging);
       rabbit.lift = lift;
       if (rabbit.object.depth !== previousDepth) depthChanged = true;
+      if (rabbit.fiery && !reducedMotion) {
+        const sway = ardentSway(t, rabbit.motion?.mode === 'sleep');
+        squashX *= sway.squashX; squashY *= sway.squashY; rotation += sway.rotation * facing; lift += sway.lift;
+      }
       this.poseBody(rabbit, {lift, squashX, squashY, facing, rotation, nuzzle});
       if (rabbit.ardent && rabbit.sprite) {
         const frame = ARDENT_FRAMES[ardentFrame(rabbit.id, time, reducedMotion)].texture;

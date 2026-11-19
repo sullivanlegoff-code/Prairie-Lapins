@@ -1,12 +1,12 @@
 // Ardent's living flames (owner, 7 November 2026: « 4 ou 5 frames avec du mouvement pour ses flammes », and a pose that does
 // not always stay the same), for his first drawing only; his evolution stays like the other rabbits'.
-// Input: one painted sheet of five frames on a row, flat magenta background (output/imagegen/ardent-v1/planche.png, ignored).
+// Input: one painted sheet of eight frames on a row (five until 19 November 2026), flat magenta background (output/imagegen/ardent-v1/planche.png, ignored).
 // Each frame is keyed, then all are scaled by one factor so that the first frame is as wide as the served sprite, and placed on
 // one shared canvas, bottom-aligned on the paws and centred on the body's lower part (the rabbit stays lying in place).
 // The canvas keeps the served sprite's bottom centre, so the game swaps textures with the same origin and scale.
 // Writes assets-source/rabbits/ardent/frames/frame-<n>.png (masters) and public/assets/rabbits/ardent/ardent-frame-<n>.png,
 // and prints the canvas size for src/config/ardentFrames.ts.
-//   node scripts/prepare-ardent-frames.mjs "<sheet.png>"
+//   node scripts/prepare-ardent-frames.mjs "<sheet.png>" [frames, default 8]
 import {mkdirSync, readFileSync, writeFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {decodeRgbPng} from './prepare-rabbit-masters.mjs';
@@ -14,7 +14,7 @@ import {encodePng} from './derive-nursery-overlays.mjs';
 import {keyMagenta, resize} from './prepare-noel-art.mjs';
 process.chdir(fileURLToPath(new URL('..', import.meta.url)));
 
-const FRAMES = 5;
+const FRAMES = Number(process.argv[3] ?? 8);
 const sheetPath = process.argv[2];
 if (!sheetPath) throw Error('Usage: node scripts/prepare-ardent-frames.mjs "<sheet.png>"');
 const sheet = keyMagenta(decodeRgbPng(readFileSync(sheetPath))), sprite = decodeRgbPng(readFileSync('public/assets/rabbits/ardent/ardent-v1.png'));

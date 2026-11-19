@@ -31,16 +31,16 @@ describe('rabbit presentation', () => {
   });
 });
 
-// 7 November 2026: five painted frames instead of a glow derived from the sprite.
+// 7 November 2026: painted frames instead of a glow derived from the sprite; 19 November 2026: eight frames in a loop.
 describe('Ardent’s flames', () => {
-  it('goes back and forth through its five painted frames, about seven a second', () => {
-    expect(ARDENT_FRAMES.map(f => f.url)).toEqual([1, 2, 3, 4, 5].map(n => `assets/rabbits/ardent/ardent-frame-${n}.png`));
-    const seen = Array.from({length: 16}, (_, i) => ardentFrame('rabbit-7', i * 140 + 1));
-    expect(new Set(seen).size).toBe(5);
-    for (let i = 1; i < seen.length; i++) expect(Math.abs(seen[i] - seen[i - 1])).toBeLessThanOrEqual(1);
+  it('loops through its eight painted frames, ten a second', () => {
+    expect(ARDENT_FRAMES.map(f => f.url)).toEqual([1, 2, 3, 4, 5, 6, 7, 8].map(n => `assets/rabbits/ardent/ardent-frame-${n}.png`));
+    const seen = Array.from({length: 16}, (_, i) => ardentFrame('rabbit-7', i * 100 + 1));
+    expect(new Set(seen).size).toBe(8);
+    for (let i = 1; i < seen.length; i++) expect((seen[i] - seen[i - 1] + 8) % 8).toBe(1);
   });
   it('has its own phase per rabbit and stays on the first frame with reduced motion', () => {
-    const run = (id: string) => Array.from({length: 8}, (_, i) => ardentFrame(id, i * 140)).join();
+    const run = (id: string) => Array.from({length: 8}, (_, i) => ardentFrame(id, i * 100)).join();
     expect(new Set(['rabbit-7', 'rabbit-8', 'rabbit-9', 'rabbit-10'].map(run)).size).toBeGreaterThan(1);
     expect(ardentFrame('rabbit-7', 1000, true)).toBe(0); expect(ardentFrame('rabbit-7', 9000, true)).toBe(0);
   });
