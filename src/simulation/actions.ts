@@ -10,6 +10,8 @@ import {jobKey, initiationAvailable, settleInitiation} from './initiation';
 import {buildingPlacementReason, buildingFootprint, decorationsInFootprint, upgradeFootprintReason} from './placement';
 import {parcelDebris} from './debris';
 import {bennyFlightReason, bennyFlightReward, hasBenny} from './bennyFlight';
+import {BENNY_RUN, BENNY_RUN_MAX_METRES} from './bennyRun';
+import {bennyRunReward} from './bennyRunRewards';
 import {normalizeRabbitName} from './rabbitNames';
 import {acquiredCell, PARCEL_IDS, extensionPrice, purchasableParcels} from '../config/land';
 import {HABITAT_TYPES, habitatLevel, habitatPrice, type HabitatLevel} from '../config/habitats';
@@ -24,7 +26,7 @@ import {canEvolve, hasEvolvedArt} from '../config/evolvedArt';
 import {evolutionChallengesComplete, type EvolutionChallenge} from '../config/evolutionChallenges';
 import {jumpIslandReason, jumpRopeReward, jumpRopeTeamReason} from './jumpRope';
 import {dailyBonusReady, dailyClaimable, dailyCycleStart, dailyMissionsOf, recordMissionAction} from './missions';
-import {AGENCY_UPGRADE_HEARTS, DAILY_HEART_SOURCES, farmLimit, farmDuration, FARM_UPGRADES, orderFarmLevel, BALANCE, HEARTS, HOUR, TRAVEL, SALON, FOREST, JUMP_ROPE, EPIC_ISLET, BENNY_FLIGHT, ULTRA_SNOW, CARE_KINDS, carePrice, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
+import {AGENCY_UPGRADE_HEARTS, DAILY_HEART_SOURCES, farmLimit, farmDuration, FARM_UPGRADES, orderFarmLevel, BALANCE, HEARTS, HOUR, TRAVEL, SALON, FOREST, JUMP_ROPE, EPIC_ISLET, BENNY_FLIGHT, BENNY_LAIR, ULTRA_SNOW, CARE_KINDS, carePrice, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
 import {emptyBuilding} from '../state/initial';
 import {epicIsletReason} from './epicIslet';
 import {babyInNursery, findNurseryBaby, firstFreeNurserySlot, nurseryBuilding, nurseryUnlockQuote, settleNestTransfers} from './nursery';
@@ -405,6 +407,8 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         requireRule(command.kind!=='salon' || playerLevel(s)>=SALON.unlockLevel,'LEVEL_REQUIRED');
         requireRule(command.kind!=='forest' || playerLevel(s)>=FOREST.unlockLevel,'LEVEL_REQUIRED');
         requireRule(command.kind!=='perch' || hasBenny(s),'BENNY_REQUIRED');
+        requireRule(command.kind!=='lair' || playerLevel(s)>=BENNY_LAIR.unlockLevel,'LEVEL_REQUIRED');
+        requireRule(command.kind!=='lair' || hasBenny(s),'BENNY_REQUIRED');
         // The Ultra neige habitat: a snow enclosure of the Christmas market, paid in sucres d'orge only.
         requireRule(!command.ultra || command.kind === 'enclosure' && habitatType === 'neige', 'INVALID_CHOICE');
         if (command.ultra) requireRule(christmasEventActive(), 'EVENT_OVER');
@@ -628,6 +632,25 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       case 'clearDebris': {
         const debris = (s.debris ?? []).find(d => d.id === command.id); requireRule(debris, 'NOT_FOUND');
         pay(debris.price); s.debris = s.debris!.filter(d => d.id !== debris.id); value = debris.price; break;
+      }
+      case 'finishBennyRun': {
+        // « Benny Rampage » pays its coins as pattes (within the daily limit) and keeps the record. No XP.
+        requireRule(s.buildings.some(b => b.kind === 'lair'), 'NOT_FOUND'); requireRule(hasBenny(s), 'BENNY_REQUIRED');
+        const coins = command.coins ?? 0, hearts = command.hearts ?? 0;
+        requireRule(Number.isSafeInteger(coins) && coins >= 0 && coins <= BENNY_RUN.maxCoins, 'INVALID_CHOICE');
+        requireRule(Number.isSafeInteger(hearts) && hearts >= 0 && hearts <= BENNY_RUN.maxHeartsPerRun, 'INVALID_CHOICE');
+        requireRule([command.score, command.metres].every(n => Number.isSafeInteger(n) && n >= 0) && command.score <= BENNY_RUN.maxScore && command.metres <= BENNY_RUN_MAX_METRES, 'INVALID_CHOICE');
+        const by = command.bySetting ?? {}, kinds = ['grotte', 'pont', 'montagne'] as const;
+        requireRule(Object.keys(by).every(k => (kinds as readonly string[]).includes(k)) && Object.values(by).every(n => Number.isSafeInteger(n) && n! >= 0 && n! <= command.score), 'INVALID_CHOICE');
+        const settings = {...s.bennyRun?.settings}; for (const k of kinds) if ((by[k] ?? 0) > (settings[k] ?? 0)) settings[k] = by[k];
+        const paid = bennyRunReward(s, coins, hearts, time), cycle = giftCycle(s, time), previousDay = s.bennyRun?.day;
+        const today = previousDay?.cycle === cycle ? previousDay : undefined;
+        credit('pattes', paid.pattes); credit('hearts', paid.hearts);
+        const day = paid.rewarded ? {cycle, rewarded: (today?.rewarded ?? 0) + 1, hearts: (today?.hearts ?? 0) + paid.hearts} : today;
+        s.bennyRun = {best: Math.max(s.bennyRun?.best ?? 0, command.score), metres: Math.max(s.bennyRun?.metres ?? 0, command.metres), ...(Object.keys(settings).length ? {settings} : {}), ...(day ? {day} : {})};
+        // The daily missions and the main mission « Premier cours » count the run and its coins (a run is a run, rewarded or not).
+        requireRule(recordMissionAction(s, 'bennyRun', 1) && recordMissionAction(s, 'bennyCoins', coins), 'RESOURCE_LIMIT');
+        value = paid.pattes; break;
       }
       case 'rewardBennyFlight': {
         const reason = bennyFlightReason(s); requireRule(!reason, reason ?? 'INVALID_CHOICE');

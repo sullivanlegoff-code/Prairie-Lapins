@@ -90,7 +90,7 @@ describe('Christmas update save (v27)', () => {
     old.buildings.find((b: {id: string}) => b.id === nursery.id).nursery.capacity = 4;
     const decoded = decodeGame(JSON.stringify(old));
     expect(decoded.ok).toBe(true); if (!decoded.ok) return;
-    expect(decoded.state.version).toBe(28);
+    expect(decoded.state.version).toBe(29);
     expect('market' in decoded.state).toBe(false);
     expect(decoded.state.buildings.find(b => b.id === nursery.id)!.nursery!.capacity).toBe(2);
   });

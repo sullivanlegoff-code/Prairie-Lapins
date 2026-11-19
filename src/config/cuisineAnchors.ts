@@ -55,11 +55,11 @@ export const CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>> = {
   // Provisional A1 drawing (1 November 2026), checked with its toque and bib on a capture (6 November 2026).
   benny: a([.58, .22, .36, 6], [.7, .56, .3], [.66, .37, .3]),
   // The Christmas update's rabbits (5 November 2026), read on 10 % grids of their v1 sprites, checked on captures (6 November 2026).
-  vantablack: a([.68, .24, .34, 6], [.72, .5, .3], [.73, .37, .3]),
+  vantablack: a([.4, .23, .44, -6], [.27, .49, .42], [.28, .38, .45]), // 19 Nov. 2026: redrawn upright like Paille, looking left.
   'gigi-rarafe': a([.7, .12, .3, 8], [.68, .5, .26], [.72, .24, .24]),
   yetiti: a([.62, .08, .36, 4], [.68, .34, .28], [.66, .2, .26]),
   rennes: a([.66, .28, .3, 4], [.7, .56, .28], [.7, .43, .26]),
-  susucre: a([.72, .3, .34, 6], [.78, .56, .3], [.79, .43, .28]),
+  susucre: a([.7, .31, .36, 6], [.78, .6, .3], [.73, .44, .32]), // 19 Nov. 2026: redrawn on four paws like Neige.
   arkoko: a([.68, .2, .38, 6], [.76, .54, .32], [.79, .4, .3]),
   // The second wave (6 November 2026), read on 10 % grids of their v1 sprites, checked on captures (6 November 2026).
   fantome: a([.55, .1, .36, 2], [.55, .45, .3], [.56, .3, .3]),
@@ -67,7 +67,7 @@ export const CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>> = {
   nuage: a([.62, .12, .36, 4], [.64, .48, .3], [.66, .32, .3]),
   champignon: a([.62, .24, .3, 8], [.77, .58, .28], [.77, .47, .26]),
   'lapin-de-sulli': a([.5, .12, .4, 0], [.5, .6, .34], [.52, .4, .34]),
-  'pain-epice': a([.74, .3, .26, 6], [.76, .62, .26], [.8, .41, .24]),
+  'pain-epice': a([.76, .27, .3, 6], [.8, .53, .28], [.8, .4, .28]), // 19 Nov. 2026: drawn in 3/4 front view.
   'flocon-cristal': a([.62, .14, .34, 4], [.64, .45, .28], [.66, .3, .28]),
 };
 /** A right-facing rabbit with its head at the top right of its picture; mirrored for a left-facing one. */
@@ -100,7 +100,7 @@ export const EVOLVED_CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>>
   'pic-pic': a([.5, .33, .32, 0], [.5, .57, .28], [.5, .46, .28]),
   piment: a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
   plume: a([.74, .37, .3, 6], [.8, .64, .26], [.76, .5, .24]),
-  'princesse-neige': a([.56, .12, .28, 2], [.6, .36, .24], [.6, .26, .24]),
+  'princesse-neige': a([.58, .21, .32, 4], [.63, .42, .26], [.62, .33, .26]), // 19 Nov. 2026: bigger head, no neck.
   roukette: a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
   snk: a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
   tunini: a([.65, .3, .26, 4], [.7, .54, .24], [.66, .43, .22]),

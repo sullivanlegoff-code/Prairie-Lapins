@@ -65,7 +65,7 @@ export const EVOLVED_ART: readonly EvolvedSprite[] = [
   // Plume Ailé.
   {id: 'plume', name: 'Ailé', file: 'assets/rabbits/plume/plume-v2.png', texture: 'rabbit-plume-evolved-v2', width: 418, height: 428, worldWidth: 49.1, groundY: 12.5},
   // Princesse Neige Reine des Glaces.
-  {id: 'princesse-neige', name: 'Reine des Glaces', file: 'assets/rabbits/princesse-neige/princesse-neige-v2.png', texture: 'rabbit-princesse-neige-evolved-v2', width: 435, height: 429, worldWidth: 51.3, groundY: 13.5},
+  {id: 'princesse-neige', name: 'Reine des Glaces', file: 'assets/rabbits/princesse-neige/princesse-neige-v2.png', texture: 'rabbit-princesse-neige-evolved-v2', width: 435, height: 434, worldWidth: 51.3, groundY: 13.5},
   // Roukette Star du Rock.
   {id: 'roukette', name: 'Star du Rock', file: 'assets/rabbits/roukette/roukette-v2.png', texture: 'rabbit-roukette-evolved-v2', width: 441, height: 532, worldWidth: 52, groundY: 12},
   // SNK Vétéran.

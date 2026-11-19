@@ -30,7 +30,8 @@ function advanced() {
   return s;
 }
 // Without the jump-rope islet, its discovery mission stays hidden (it appears once the islet is bought).
-const withoutIsland = NEW_MAIN_MISSION_IDS.filter(id => id !== 'first-jump-rope');
+// The jump-rope and the Antre's first-run missions only appear once their building or islet is there.
+const withoutIsland = NEW_MAIN_MISSION_IDS.filter(id => id !== 'first-jump-rope' && id !== 'first-benny-run');
 describe('economy B durable goals', () => {
   it('loads an existing game without awarding resources or XP, then claims each durable reward once in the full catalogue', () => {
     const old = advanced(); delete old.missions.nightOrderStarted;

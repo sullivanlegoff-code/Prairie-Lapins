@@ -3,7 +3,7 @@ import {habitatPrice, type HabitatType} from './habitats';
 import {DECORATIONS, DECORATION_IDS, type DecorationId} from './decorations';
 
 export type Reward = {resource: 'pattes' | 'grass' | 'hearts'; amount: number} | {resource: 'none'; amount: 0};
-export type MainCondition = {kind: 'building'; building: BuildingKind; habitatType?: HabitatType; target?: number} | {kind: 'discoveries' | 'affection' | 'evolutions'; target: number} | {kind: 'extension' | 'rare'} | {kind: 'level' | 'extensions' | 'habitatLevel'; target: number} | {kind: 'ordinaryRares' | 'nightOrder' | 'paidRecipe' | 'jumpRopeGame'} | {kind: 'species'; species: SpeciesId} | {kind: 'decoration'; model: DecorationId} | {kind: 'buildingLevel'; building: 'farm' | 'agency' | 'nursery'; target: number} | {kind: 'parents'; target: number} | {kind: 'event'; event: MainEvent; target: number};
+export type MainCondition = {kind: 'building'; building: BuildingKind; habitatType?: HabitatType; target?: number} | {kind: 'discoveries' | 'affection' | 'evolutions'; target: number} | {kind: 'extension' | 'rare'} | {kind: 'level' | 'extensions' | 'habitatLevel'; target: number} | {kind: 'ordinaryRares' | 'nightOrder' | 'paidRecipe' | 'jumpRopeGame' | 'bennyRunGame'} | {kind: 'species'; species: SpeciesId} | {kind: 'decoration'; model: DecorationId} | {kind: 'buildingLevel'; building: 'farm' | 'agency' | 'nursery'; target: number} | {kind: 'parents'; target: number} | {kind: 'event'; event: MainEvent; target: number};
 export type MainDefinition = {title: string; description: string; condition: MainCondition; reward: Reward; extraRewards?: readonly Reward[]; claimXp?: number};
 export const MAIN_EVENT_IDS = ['collectOrder', 'breed', 'transferBirth', 'welcome', 'placeDecoration'] as const;
 export type MainEvent = typeof MAIN_EVENT_IDS[number];
@@ -35,6 +35,8 @@ const MILESTONE_MISSIONS = {
   'island-complete': {title: 'Toute l’île pour tes lapins', description: 'Achète les huit extensions de l’île.', condition: {kind: 'extensions', target: 8}},
   // Shown once the jump-rope islet is bought (owner, 4 November 2026).
   'first-jump-rope': {title: 'Premiers sauts', description: 'Joue ta première partie de corde à sauter sur ta petite île.', condition: {kind: 'jumpRopeGame'}},
+  // Shown once the Antre du dragon is built (owner, 12 November 2026: the runs are part of the main missions).
+  'first-benny-run': {title: 'Premier cours', description: 'Fais ta première course de « Benny Rampage » à l’Antre du dragon.', condition: {kind: 'bennyRunGame'}},
   'first-paid-recipe': {title: 'Une recette dans ton carnet', description: 'Ajoute une recette de la boutique à ton carnet. Une recette déjà enregistrée compte aussi.', condition: {kind: 'paidRecipe'}},
 } as const satisfies Record<string, Omit<MainDefinition, 'reward'>>;
 export const MILESTONE_MISSION_IDS = Object.keys(MILESTONE_MISSIONS) as (keyof typeof MILESTONE_MISSIONS)[];
@@ -94,14 +96,15 @@ export const mainMissionRewards = (mission: MainDefinition): readonly Reward[] =
  * the start of the cycle among the missions the player can do then, and stay the same all cycle long (see `dailyMissionsFor`,
  * `pickDailyMissions`). `gain-affection` keeps its id from the first version; it is the breeding mission.
  */
-export const DAILY_MISSION_IDS = ['collect-pattes', 'collect-grass', 'feed-rabbit', 'gain-affection', 'welcome-baby', 'decorate', 'cook-recipe', 'offer-care', 'short-trip', 'picnic', 'jump-rope', 'forest-walk', 'pet-rabbits'] as const;
+export const DAILY_MISSION_IDS = ['collect-pattes', 'collect-grass', 'feed-rabbit', 'gain-affection', 'welcome-baby', 'decorate', 'cook-recipe', 'offer-care', 'short-trip', 'picnic', 'jump-rope', 'forest-walk', 'pet-rabbits', 'benny-run', 'benny-coins'] as const;
 export type DailyMissionId = typeof DAILY_MISSION_IDS[number];
 /** The pool of the first six missions: what a cycle drawn before v25 showed (kept for saves written then). */
 export const LEGACY_DAILY_MISSION_IDS = ['collect-pattes', 'collect-grass', 'feed-rabbit', 'gain-affection', 'welcome-baby', 'decorate'] as const satisfies readonly DailyMissionId[];
 /** How many daily missions are shown and must be claimed before the cycle bonus. */
 export const DAILY_PICK_COUNT = 3;
-export type MissionEvent = 'collectIncome' | 'collectOrder' | 'feed' | 'breed' | 'welcome' | 'placeDecoration' | 'rewardCuisine' | 'startCare' | 'startTrip' | 'picnic' | 'rewardJumpRope' | 'toggleClassicLook' | 'petRabbit';
-export type DailyCategory = 'collect' | 'care' | 'breed' | 'nursery' | 'decor' | 'activity' | 'outing';
+export type MissionEvent = 'collectIncome' | 'collectOrder' | 'feed' | 'breed' | 'welcome' | 'placeDecoration' | 'rewardCuisine' | 'startCare' | 'startTrip' | 'picnic' | 'rewardJumpRope' | 'bennyRun' | 'bennyCoins' | 'toggleClassicLook' | 'petRabbit';
+/** One mission of each category a day: the runs of Benny have their own, so they do not take the place of the other games. */
+export type DailyCategory = 'collect' | 'care' | 'breed' | 'nursery' | 'decor' | 'activity' | 'outing' | 'run';
 /** Where the shortcut button leads: a building, the collection, the meadow layout, the jump-rope islet or a rabbit to pet. */
 export type DailyPlace = BuildingKind | 'collection' | 'arrange' | 'jumpIsland' | 'pet';
 /** `place` is where the shortcut button leads; `category` keeps the three shown missions varied (one per category). */
@@ -118,6 +121,8 @@ export const DAILY_MISSIONS: Record<DailyMissionId, {title: string; description:
   'short-trip': {title: 'Un petit voyage', description: 'Envoie un lapin en voyage depuis l’agence.', event: 'startTrip', category: 'outing', target: 1, reward: {resource: 'grass', amount: 30}, place: 'agency'},
   'picnic': {title: 'Un pique-nique', description: 'Fais un pique-nique dans un habitat.', event: 'picnic', category: 'outing', target: 1, reward: {resource: 'pattes', amount: 40}, place: 'enclosure'},
   'jump-rope': {title: 'Corde à sauter', description: 'Joue une manche de corde à sauter sur ta petite île.', event: 'rewardJumpRope', category: 'activity', target: 1, reward: {resource: 'pattes', amount: 30}, place: 'jumpIsland'},
+  'benny-run': {title: 'Benny Rampage', description: 'Fais une course à l’Antre du dragon.', event: 'bennyRun', category: 'run', target: 1, reward: {resource: 'pattes', amount: 40}, place: 'lair'},
+  'benny-coins': {title: 'Pièces de course', description: 'Ramasse 60 pièces pendant les courses de Benny.', event: 'bennyCoins', category: 'run', target: 60, reward: {resource: 'pattes', amount: 50}, place: 'lair'},
   'forest-walk': {title: 'Promenade en forêt', description: 'À la Forêt de Brocéliande, change le dessin d’un lapin évolué.', event: 'toggleClassicLook', category: 'decor', target: 1, reward: {resource: 'pattes', amount: 30}, place: 'forest'},
   'pet-rabbits': {title: 'Des caresses', description: 'Caresse 3 lapins différents : frotte doucement leur portrait dans leur fiche.', event: 'petRabbit', category: 'care', target: 3, reward: {resource: 'pattes', amount: 30}, place: 'pet'},
 };

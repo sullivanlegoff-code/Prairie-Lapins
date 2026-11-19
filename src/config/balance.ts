@@ -32,13 +32,22 @@ export const NURSERY = {initialCapacity: 1, maxCapacity: 4, unlockHearts: {1: 30
  */
 export const BENNY_FLIGHT = {rewardedGamesPerCycle: 3, pattesPerColumn: 3, maxPattes: 60, heartColumns: 20, maxColumns: 500} as const;
 /**
+ * The Antre du dragon (owner, 11 November 2026), the building of « Benny Rampage » (src/simulation/bennyRun.ts): sold for
+ * BALANCE.buildings.lair pattes from player level `unlockLevel`, with Benny on the island (she is the one who runs); owning the
+ * Lapin Dragon is not needed. It keeps the best score; the rewards come later (owner: « on verra plus tard »).
+ */
+export const BENNY_LAIR = {unlockLevel: 25} as const;
+/**
  * The Ultra neige habitat (owner, 6 November 2026: « un tout nouvel habitat neige […] s'acheter niveau 1 et […] s'améliorer jusqu'au
  * niveau 3 en payant en sucre d'orge »): a snow enclosure of its own, sold at the Christmas market at level 1, then upgraded to levels
  * 2 and 3, every step paid in sucres d'orge only (no pattes, no Hearts, no XP). It keeps the snow habitat's places and footprints, and
  * stays after Christmas. In all 500 sucres d'orge, about twenty days of Christmas challenges.
  */
 export const ULTRA_SNOW = {candies: {1: 100, 2: 150, 3: 250}} as const;
-export const EPIC_ISLET = {unlockLevel: 18, hearts: 200, /* 8 November 2026 (400 before) */ bonus: 1.1, cell: {x: 6, y: 70}} as const;
+export const EPIC_ISLET = {unlockLevel: 18, hearts: 200, /* 8 November 2026 (400 before) */ bonus: 1.1,
+  /** Fine cell of its nest: on the left of the start island, just under the jump-rope islet, with the other islets (owner,
+   *  19 November 2026: « à gauche avec les autres îles, pas tout au nord » ; {x: 6, y: 70} before). */
+  cell: {x: -14, y: 54}} as const;
 /** Paille's free gift: 3 Hearts every 24 h (2 before the Hearts / pattes balance of 3 November 2026), three gifts kept at most. */
 /** Hearts from daily activities that are not tied to one building's config: the first Cuisine dish of each daily cycle. */
 export const DAILY_HEART_SOURCES = {cuisine: 3} as const; // 8 November 2026 (1 before).
@@ -50,9 +59,9 @@ export const HEARTS = {
 // The species registry lives in ./species; the public names stay available from here.
 export {SPECIES, SPECIES_IDS, LEGACY_SPECIES_IDS};
 export type {SpeciesId, RabbitType, Rarity};
-export type BuildingKind = 'enclosure' | 'farm' | 'nest' | 'nursery' | 'kitchen' | 'statue' | 'agency' | 'salon' | 'forest' | 'perch';
+export type BuildingKind = 'enclosure' | 'farm' | 'nest' | 'nursery' | 'kitchen' | 'statue' | 'agency' | 'salon' | 'forest' | 'perch' | 'lair';
 /** Every building kind, in the order the save validates them. */
-export const BUILDING_KINDS = ['enclosure', 'farm', 'nest', 'nursery', 'kitchen', 'statue', 'agency', 'salon', 'forest', 'perch'] as const satisfies readonly BuildingKind[];
+export const BUILDING_KINDS = ['enclosure', 'farm', 'nest', 'nursery', 'kitchen', 'statue', 'agency', 'salon', 'forest', 'perch', 'lair'] as const satisfies readonly BuildingKind[];
 export const BREEDING_WEIGHTS = {common: 30, recipe: 30};
 /** Exact element unions only; additional elements retain the historical pool.
  * Eligibility comes from catalogue recipes, never a fixed list of results. */
@@ -88,6 +97,7 @@ export const BALANCE = {
     salon: {price: 5000, maximum: 1}, // The Salon de soins: see SALON.
     forest: {price: 10000, maximum: 1}, // The Forêt de Brocéliande: see FOREST.
     perch: {price: 50000, maximum: 1}, // Benny's perch, for « Le vol de Benny »: see BENNY_FLIGHT.
+    lair: {price: 100000, maximum: 1}, // The Antre du dragon, for « Benny Rampage »: see BENNY_LAIR.
   } satisfies Record<BuildingKind, {price: number; currency?: 'hearts'; maximum: number | null}>,
 };
 /**

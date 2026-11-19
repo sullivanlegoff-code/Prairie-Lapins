@@ -24,10 +24,11 @@ function reload(s: GameState): GameState {
 }
 
 describe('full main mission catalogue from level seven', () => {
-  it('contains one stable identifier per current species and decoration, and exactly twenty-one new milestones', () => {
+  it('contains one stable identifier per current species and decoration, and exactly twenty-two new milestones', () => {
     expect(DISCOVERY_MISSION_IDS).toEqual(SPECIES_IDS.map(id => `discover-${id}`)); expect(DISCOVERY_MISSION_IDS).toHaveLength(49);
     expect(DECORATION_MISSION_IDS).toEqual(DECORATION_IDS.map(id => `decorate-${id}`)); expect(DECORATION_MISSION_IDS).toHaveLength(22);
-    expect(MILESTONE_MISSION_IDS).toHaveLength(21); expect(MAIN_MISSION_IDS).toHaveLength(125); expect(new Set(MAIN_MISSION_IDS).size).toBe(125);
+    // Twenty-two milestones: « Premier cours » (the Antre du dragon's first run) was added on 12 November 2026.
+    expect(MILESTONE_MISSION_IDS).toHaveLength(22); expect(MAIN_MISSION_IDS).toHaveLength(126); expect(new Set(MAIN_MISSION_IDS).size).toBe(126);
     for (const id of ['discover-terre', 'discover-mottelin', 'discover-geant', 'discover-brumelin']) expect(Object.hasOwn(MAIN_MISSIONS, id)).toBe(false);
   });
   it('keeps the original sequential start below seven, then exposes all objectives even with an unfinished guide', () => {
@@ -86,7 +87,7 @@ describe('full main mission catalogue from level seven', () => {
     const loaded = advance(reload(s), 0);
     expect(loaded.missions.completed).toEqual(expect.arrayContaining(['discover-dadi', 'decorate-bush']));
     expect({pattes: loaded.pattes, grass: loaded.grass, hearts: loaded.hearts, progression: loaded.progression}).toEqual(before);
-    expect(loaded.missions.claimed).toEqual(s.missions.claimed); expect(loaded.version).toBe(28);
+    expect(loaded.missions.claimed).toEqual(s.missions.claimed); expect(loaded.version).toBe(29);
   });
   it('recovers historical placement markers, but an explicitly unplaced inventory copy does not complete its mission', () => {
     const s = atLevel(); delete s.rewardedDecorationModels;
@@ -118,15 +119,18 @@ describe('full main mission catalogue from level seven', () => {
     s = reload(s); expect(s.progression.totalXp - xp).toBe(20);
     expect(act(s, {type: 'claimMainMission', id: 'decorate-bush'}, 0)).toMatchObject({ok: false, reason: 'ALREADY_CLAIMED'});
   });
-  it('observes all twenty-one milestones from their real saved state, credits twenty XP per claim and retains acquired conditions', () => {
+  it('observes all twenty-two milestones from their real saved state, credits twenty XP per claim and retains acquired conditions', () => {
     let s = completeLaboratory(0); s.missions.completed = s.missions.completed.filter(id => !MILESTONE_MISSION_IDS.includes(id as typeof MILESTONE_MISSION_IDS[number]));
     s.jumpIsland = true; s.jumpRope = {cycle: 0, rewarded: 1, best: 3}; // one game played on the jump-rope islet
+    s.bennyRun = {best: 1000, metres: 500}; // one run in the Antre du dragon (its milestone needs the building too)
+    for (let y = 0; y < 48 && !s.buildings.some(b => b.kind === 'lair'); y++) for (let x = 0; x < 48; x++) { const r = act(s, {type: 'buyBuilding', kind: 'lair', x, y}, 0); if (r.ok) { s = r.state; break; } }
+    expect(s.buildings.some(b => b.kind === 'lair')).toBe(true);
     s = advance(s, 0); const xp = s.progression.totalXp;
     for (const id of MILESTONE_MISSION_IDS) {
       const p = mainProgress(s, id); expect(p.value, id).toBeGreaterThanOrEqual(p.target); expect(missionClaimXp('main', id), id).toBe(20);
       s = run(s, {type: 'claimMainMission', id});
     }
-    expect(s.progression.totalXp - xp).toBe(420);
+    expect(s.progression.totalXp - xp).toBe(440); // twenty-two milestones at twenty XP each
     s.rabbits.forEach(r => {r.affection = 2;}); s.buildings = s.buildings.filter(b => b.kind !== 'kitchen');
     expect(s.missions.completed).toContain('affection-twenty'); expect(s.missions.completed).toContain('build-kitchen');
   });
