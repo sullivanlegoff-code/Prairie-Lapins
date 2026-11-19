@@ -660,12 +660,12 @@
     "displayScale": 1.15,
     "file": "assets/rabbits/princesse-neige/princesse-neige-v2.png",
     "worldWidth": 51.3,
-    "sourceSha1": "d3330d23daf70e6fa9ab0ce151151a5e41f686b1",
-    "sourceWidth": 1182,
-    "sourceHeight": 1166,
+    "sourceSha1": "5d4473e6edb1f6a8725704ff992a0d341df9c919",
+    "sourceWidth": 1241,
+    "sourceHeight": 1239,
     "width": 435,
-    "height": 429,
-    "derivedSha1": "b2c3860f483784d27b7622e2a9812175f47ef425"
+    "height": 434,
+    "derivedSha1": "c1a70442ac821f66f911668c29d0e56ec315763c"
   },
   "roukette-evolution": {
     "species": "roukette",
@@ -851,13 +851,13 @@
   },
   "vantablack": {
     "file": "assets/rabbits/vantablack/vantablack-v1.png",
-    "worldWidth": 46,
-    "sourceSha1": "96cf004faadc47ed231f199c0f240c17a53567c4",
-    "sourceWidth": 876,
-    "sourceHeight": 1202,
-    "width": 339,
-    "height": 465,
-    "derivedSha1": "bcf1f57b873b53ce482c09748448232bcfd6b011"
+    "worldWidth": 43.4,
+    "sourceSha1": "a26024cbaac56aae0436f0ac096e5676544e5517",
+    "sourceWidth": 947,
+    "sourceHeight": 1459,
+    "width": 320,
+    "height": 493,
+    "derivedSha1": "3cad4da364fe57adbeaa17ff08be3563c9c58a0a"
   },
   "gigi-rarafe": {
     "file": "assets/rabbits/gigi-rarafe/gigi-rarafe-v1.png",
@@ -891,13 +891,13 @@
   },
   "susucre": {
     "file": "assets/rabbits/susucre/susucre-v1.png",
-    "worldWidth": 50,
-    "sourceSha1": "cb88deb2586ec7f726c853e63789456451f22156",
-    "sourceWidth": 831,
-    "sourceHeight": 1097,
-    "width": 369,
-    "height": 487,
-    "derivedSha1": "9adccd7a7440d38f75adb64d7bcd202200aaa877"
+    "worldWidth": 57.4,
+    "sourceSha1": "3f5deea95bbd7a232d4ef4cf9af514519d99aab1",
+    "sourceWidth": 1160,
+    "sourceHeight": 1161,
+    "width": 428,
+    "height": 428,
+    "derivedSha1": "9fd6f7bf532c9fea739d076b8a501246c1ca8218"
   },
   "arkoko": {
     "file": "assets/rabbits/arkoko/arkoko-v1.png",
@@ -961,13 +961,13 @@
   },
   "pain-epice": {
     "file": "assets/rabbits/pain-epice/pain-epice-v1.png",
-    "worldWidth": 50.7,
-    "sourceSha1": "e89f88899eebab82a069d866d9072fc708058519",
-    "sourceWidth": 1088,
-    "sourceHeight": 1153,
-    "width": 404,
+    "worldWidth": 49.6,
+    "sourceSha1": "f80bed46dd3713efd5819eaecea3cfe6277ee8e7",
+    "sourceWidth": 1095,
+    "sourceHeight": 1214,
+    "width": 386,
     "height": 428,
-    "derivedSha1": "2bd065e62d15b694929305190aaaa7a2a87e3457"
+    "derivedSha1": "50341a1a548172db42062a6233b10be13ac5bb8f"
   },
   "flocon-cristal": {
     "file": "assets/rabbits/flocon-cristal/flocon-cristal-v1.png",
