@@ -2379,7 +2379,7 @@
   },
   "arkoko": {
     "sprite": "assets/rabbits/arkoko/arkoko-v1.png",
-    "spriteSha1": "2397eb50dee9df065671b1e5facedc92bfabb4ab",
+    "spriteSha1": "27613e333cce135c920b3679d5f873be895d041c",
     "spriteWidth": 325,
     "spriteHeight": 566,
     "eyes-closed": {
@@ -2389,8 +2389,8 @@
       "width": 116,
       "height": 53,
       "source": "assets-source/rabbits/arkoko/eyes-closed.png",
-      "sourceSha1": "e9799a120a118856886f8ed0cceff9b6801008c2",
-      "derivedSha1": "3ceb72fa3a5f1d469ef447b46396035f4a7b0e29"
+      "sourceSha1": "c1913549e672e5eba956b25336a4a2fc54aa4c00",
+      "derivedSha1": "7b6b6ab096a749e9b7e9a2d02dba3f3cfc552a85"
     },
     "nose-twitch": {
       "file": "assets/rabbits/arkoko/arkoko-nose-twitch.png",
@@ -2399,8 +2399,8 @@
       "width": 38,
       "height": 35,
       "source": "assets-source/rabbits/arkoko/nose-twitch.png",
-      "sourceSha1": "25c3d067468709514fa68443c44d5f243029fa4a",
-      "derivedSha1": "fe5455ee13724eaed738e64e717805630b5d87c9"
+      "sourceSha1": "3c1a40963db7d2dd5e7975bcbe34ee3cd752ce36",
+      "derivedSha1": "aec02dc9ccde85a9fe59a521dc882409acda9087"
     }
   },
   "arkoko-evolution": {

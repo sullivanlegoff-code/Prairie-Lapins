@@ -101,9 +101,10 @@ import {mountPhotoControls} from './photoControls';
 import {guidedStep, type GuideStep} from './guidance';
 import {BUILDING_NAMES, CARE_NAMES, REFUSALS, RARITY_NAMES, busyReason, TYPE_NAMES, typeNames, recipeBook, recipePairs, buildingReason, collectionSpeciesView, collectionView, incomeWhole, moneyReason, nurseryView, occupants, oddsView, placementReason, rabbitAvailability, parentBusy, releaseReason, timeLeft, type Placement, type CollectionFilter} from './models';
 
-/** One show button per legendary sheet: Anky's tail strike, the Dragon's fire breath, the Requin's surf. */
+/** One show button per legendary sheet: Anky's tail strike, the Dragon's fire breath, the Requin's surf, Arkoko's crystal flare. */
 const LEGENDARY_SHOW_BUTTONS: Partial<Record<SpeciesId, {label: string; act: LegendaryAct}>> = {
   ankylosaure: {label: 'Coup de queue', act: 'slam'}, dragon: {label: 'Souffle de feu', act: 'tap'}, requin: {label: 'Surf', act: 'surf'},
+  arkoko: {label: 'Éclat du cristal', act: 'flare'},
 };
 type ShopTab = 'home' | 'recipes' | 'rabbits' | 'habitats' | 'buildings' | 'decorations';
 type View = {kind:'album'|'decorationGroup'} | {kind: 'welcomeBaby'; birthId: string} | {kind:'levelRequirement';target:LevelAccessTarget} | {kind: 'missions'; tab: 'main' | 'daily'} | {kind: 'shop'; tab: ShopTab} | {kind: 'building' | 'rabbit' | 'moveRabbit' | 'decoration' | 'debris'; id: string} | {kind: 'jumpIsland'} | {kind: 'christmasMarket'; tab?: ChristmasMarketTab} |

@@ -9,15 +9,19 @@ import {LEGENDARY_IDLE_GAP_MS, type LegendaryShow} from '../config/legendaryArt'
  * only its fin circles (`dive`); now and then: a two-second surf on a board and a little wave, bubbles, a splash.
  * Ankylosaure: touched, it raises its club tail and slams the ground, which cracks and throws stones (`slam`); now and
  * then: a rumble with hopping pebbles, a little dig, a puff of dust.
+ * Arkoko (owner, 19 November 2026): touched, the crystal on its forehead lights up strongly all at once, with a burst of rainbow light,
+ * then goes back to normal (`flare`); now and then: stars twinkling around it, a small rainbow drawing itself above its head, a
+ * rainbow trail of stardust flying around it.
  */
-export type LegendaryAct = 'tap' | 'smoke' | 'hiccup' | 'embers' | 'dive' | 'surf' | 'bubbles' | 'splash' | 'slam' | 'rumble' | 'dig' | 'dust';
+export type LegendaryAct = 'tap' | 'smoke' | 'hiccup' | 'embers' | 'dive' | 'surf' | 'bubbles' | 'splash' | 'slam' | 'rumble' | 'dig' | 'dust'
+  | 'flare' | 'stars' | 'rainbow' | 'trail';
 export const ACT_MS: Record<LegendaryAct, number> = {tap: 1900, smoke: 1700, hiccup: 1000, embers: 2000, dive: 2300, surf: 2600, bubbles: 2200, splash: 1000,
-  slam: 2000, rumble: 1600, dig: 2200, dust: 1400};
-export const TAP_ACT: Record<LegendaryShow, LegendaryAct> = {dragon: 'tap', requin: 'dive', ankylosaure: 'slam'};
+  slam: 2000, rumble: 1600, dig: 2200, dust: 1400, flare: 1700, stars: 2200, rainbow: 2800, trail: 2200};
+export const TAP_ACT: Record<LegendaryShow, LegendaryAct> = {dragon: 'tap', requin: 'dive', ankylosaure: 'slam', arkoko: 'flare'};
 export const IDLE_ACTS: Record<LegendaryShow, readonly LegendaryAct[]> = {dragon: ['smoke', 'hiccup', 'embers', 'smoke'], requin: ['surf', 'bubbles', 'surf', 'splash'],
-  ankylosaure: ['rumble', 'dig', 'dust', 'rumble']};
-/** Asleep, only soft shows: smoke rings from the Dragon, bubbles from the Requin, a puff of dust from the Ankylosaure. */
-export const SLEEP_ACTS: Record<LegendaryShow, LegendaryAct> = {dragon: 'smoke', requin: 'bubbles', ankylosaure: 'dust'};
+  ankylosaure: ['rumble', 'dig', 'dust', 'rumble'], arkoko: ['stars', 'rainbow', 'trail']};
+/** Asleep, only soft shows: smoke rings from the Dragon, bubbles from the Requin, a puff of dust from the Ankylosaure, a few stars around Arkoko. */
+export const SLEEP_ACTS: Record<LegendaryShow, LegendaryAct> = {dragon: 'smoke', requin: 'bubbles', ankylosaure: 'dust', arkoko: 'stars'};
 /** Milliseconds between two spontaneous shows of one legendary; the first comes sooner, to be seen (src/config/legendaryArt.ts). */
 export const IDLE_GAP = LEGENDARY_IDLE_GAP_MS;
 /** The surf belongs to the surfboard's 2 seconds of slide; the board appears and leaves around it. */
@@ -90,7 +94,7 @@ export function breathFrame(ms: number, duration: number): number {
  * a stronger beat during a show. Zero when motion is reduced.
  */
 export function partAngle(species: LegendaryShow, timeMs: number, phase: number, act: ActState | null, reduced: boolean): number {
-  if (reduced) return 0;
+  if (reduced || species === 'arkoko') return 0;
   if (species === 'ankylosaure') return reduced ? 0 : tailAngle(timeMs / 1000 + phase, act);
   const t = timeMs / 1000 + phase, amplitude = species === 'dragon' ? 1 : .55;
   let angle = Math.sin(t * 1.3) * .035;
@@ -126,3 +130,23 @@ export function tailAngle(t: number, act: ActState | null): number {
 }
 /** Stone thrown at `impact`: a parabola, from 0 at the strike to 1 when it lands again. */
 export const arc = (u: number) => 4 * u * (1 - u);
+
+/**
+ * Arkoko's crystal flare (owner, 19 November 2026: « la pierre s'allume fortement d'un coup, puis revient à la normale »): the crystal's
+ * original glow comes back at once and grows past it (`glow`, `scale`), the crystal itself shines as added light (`light`) and a burst of
+ * rainbow light opens and fades around it (`burst`, `burstScale`); it holds a breath, then calms down to the toned-down drawing by `calm`.
+ */
+export const FLARE = {peak: 110, hold: 420, calm: 1500} as const;
+export function crystalFlare(ms: number): {glow: number; light: number; scale: number; burst: number; burstScale: number} {
+  if (ms <= 0 || ms >= FLARE.calm) return {glow: 0, light: 0, scale: 1, burst: 0, burstScale: .3};
+  const up = smooth(ms / FLARE.peak), down = ms < FLARE.hold ? 1 : 1 - smooth((ms - FLARE.hold) / (FLARE.calm - FLARE.hold));
+  const strength = Math.min(up, down);
+  const light = Math.min(up, ms < FLARE.hold ? 1 : 1 - smooth((ms - FLARE.hold) / 500));
+  const burst = Math.min(up, 1 - smooth((ms - FLARE.peak) / 600));
+  return {glow: strength, light, scale: 1 + .2 * strength, burst, burstScale: .3 + .9 * smooth(ms / 700)};
+}
+/** Rainbow over the head: which of the 8 painted steps shows (drawing itself, then at rest) and its opacity. */
+export function rainbowStep(ms: number, duration = ACT_MS.rainbow): {frame: number; alpha: number} {
+  const drawn = Math.min(7, Math.floor(ms / 110));
+  return {frame: drawn, alpha: Math.min(smooth(ms / 200), 1 - smooth((ms - (duration - 600)) / 600))};
+}

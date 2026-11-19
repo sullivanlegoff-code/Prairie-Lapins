@@ -1,11 +1,13 @@
-import {LEGENDARY_EFFECTS as FX, type LegendaryShow} from '../config/legendaryArt';
+import {ARKOKO_CRYSTAL, LEGENDARY_EFFECTS as FX, crystalCentre, type LegendaryShow} from '../config/legendaryArt';
 import {rabbitArt} from '../config/rabbitArt';
 
 /**
  * First appearance of a legendary (owner's requests of 31 October and 1 November 2026): the Dragon sets the whole screen
  * on fire, the Requin arrives on a huge wave, the Ankylosaure comes with a great earthquake (the screen shakes, the ground
- * splits open, rocks fall and dust rises); when it calms, the rabbit appears before its golden halo. A tap skips to the end; with
- * reduced motion the end is shown at once. Purely visual: the dialog is created here and removed when it closes.
+ * splits open, rocks fall and dust rises); Arkoko (19 November 2026) comes in a starry pastel night where a great rainbow draws
+ * itself, bursts of rainbow light open and rainbow trails fly across, then a flash of crystal light; when it calms, the rabbit appears
+ * before its golden halo, and Arkoko's crystal lights up strongly, then calms down (again now and then while
+ * the appearance stays open). A tap skips to the end; with reduced motion the end is shown at once. Purely visual: the dialog is created here and removed when it closes.
  */
 export interface RevealText {
   title: string; name: string; details: string;
@@ -82,8 +84,34 @@ function ankylosaureEffects(): HTMLElement[] {
   return [layer('lr-rift', [image(FX.rift.url, 'lr-rift-image')]), layer('lr-dustwall', [image(FX.dustwall.url, 'lr-dustwall-image')]),
     layer('lr-rocks', rocks), layer('lr-dustflash')];
 }
-const EFFECTS: Record<LegendaryShow, () => HTMLElement[]> = {dragon: dragonEffects, requin: requinEffects, ankylosaure: ankylosaureEffects};
-const SPARK_SEED: Record<LegendaryShow, number> = {dragon: 71, requin: 83, ankylosaure: 97};
+/** Arkoko: Benny's approved rainbow paintings (the same rainbow type), never a new picture. */
+function arkokoEffects(): HTMLElement[] {
+  const rainbow = layer('lr-rainbow', FX.rainbow.map((art, k) => { const step = image(art.url, 'lr-rainbow-step'); step.style.setProperty('--k', String(k)); return step; }));
+  const trails = layer('lr-trails', [image(FX.trail.url, 'lr-trail'), image(FX.trail.url, 'lr-trail lr-trail-two')]);
+  return [layer('lr-stars', scatter(FX.star.url, 'lr-star', 10, 141).concat(scatter(FX.starFive.url, 'lr-star', 8, 151), scatter(FX.twinkle.url, 'lr-star lr-twinkle', 6, 163))),
+    rainbow, layer('lr-prisms', scatter(FX.prism.url, 'lr-prism', 6, 171)), trails, layer('lr-crystalflash')];
+}
+const EFFECTS: Record<LegendaryShow, () => HTMLElement[]> = {dragon: dragonEffects, requin: requinEffects, ankylosaure: ankylosaureEffects, arkoko: arkokoEffects};
+const SPARK_SEED: Record<LegendaryShow, number> = {dragon: 71, requin: 83, ankylosaure: 97, arkoko: 109};
+/**
+ * Arkoko's portrait: its drawing with its crystal's original glow and the crystal itself over it, placed in the drawing's own pixels,
+ * so the crystal can flare (lr-crystal-flare in the CSS) and calm back to the toned-down drawing.
+ */
+function arkokoFigure(rabbit: HTMLImageElement): HTMLElement {
+  const art = rabbitArt('arkoko')!, figure = document.createElement('div'), percent = (v: number, of: number) => `${(v / of * 100).toFixed(3)}%`;
+  figure.className = 'lr-figure'; figure.style.aspectRatio = `${art.width} / ${art.height}`;
+  const place = (piece: HTMLImageElement, at: {x: number; y: number; width: number}) => {
+    piece.style.left = percent(at.x, art.width); piece.style.top = percent(at.y, art.height); piece.style.width = percent(at.width, art.width); return piece;
+  };
+  const {glow, crystal} = ARKOKO_CRYSTAL, centre = crystalCentre(ARKOKO_CRYSTAL), burstSize = art.width * .7;
+  const burst = place(image(FX.prism.url, 'lr-crystal-burst'), {x: centre.x - burstSize / 2, y: centre.y - burstSize / 2, width: burstSize});
+  const glowImage = place(image(glow!.url, 'lr-crystal-glow'), glow!);
+  glowImage.style.transformOrigin = `${percent(centre.x - glow!.x, glow!.width)} ${percent(centre.y - glow!.y, glow!.height)}`;
+  const light = place(image(crystal.url, 'lr-crystal-light'), crystal);
+  for (const piece of [glowImage, light, burst]) piece.setAttribute('aria-hidden', 'true');
+  figure.append(rabbit, glowImage, light, burst);
+  return figure;
+}
 
 /** Opens the appearance; `onClose` runs once when the player closes it (button or Escape). */
 export function showLegendaryReveal(species: LegendaryShow, text: RevealText, onClose: () => void = () => {}): HTMLDialogElement {
@@ -93,7 +121,7 @@ export function showLegendaryReveal(species: LegendaryShow, text: RevealText, on
   const effects = layer('lr-fx', EFFECTS[species]());
   const sparks = layer('lr-sparks', scatter(FX.spark.url, 'lr-spark', 7, SPARK_SEED[species]));
   const hero = layer('lr-hero', [image(FX.halo.url, 'lr-halo'), sparks]);
-  const rabbit = image(rabbitArt(species)?.url ?? '', 'lr-rabbit'); rabbit.alt = text.name; hero.append(rabbit); hero.removeAttribute('aria-hidden');
+  const rabbit = image(rabbitArt(species)?.url ?? '', 'lr-rabbit'); rabbit.alt = text.name; hero.append(species === 'arkoko' ? arkokoFigure(rabbit) : rabbit); hero.removeAttribute('aria-hidden');
   const words = document.createElement('div'); words.className = 'lr-text';
   const title = document.createElement('h2'); title.id = 'legendary-reveal-title'; title.textContent = text.title;
   const name = document.createElement('h3'); name.textContent = text.name;
