@@ -2,7 +2,7 @@
 // planks, the grass, the two kinds of wall (earth and grass to run on, grey stone) and the isles' cliff at the edge of the void,
 // and the painted skies, reduced and encoded in WebP with an installed Playwright (like scripts/prepare-benny-run-art.mjs).
 //
-//   PLAYWRIGHT_MODULE=<installed playwright module> node scripts/prepare-benny-run-decor.mjs [--sources <folder>] [--sky <png>] (default: fond-ciel.png in the sources)
+//   PLAYWRIGHT_MODULE=<installed playwright module> node scripts/prepare-benny-run-decor.mjs [--sources <folder>] [--sky <png>] (default: fond-ciel.png in the sources) [--only-sides]
 //
 // The sources (default output/imagegen/course-decor-final-v1, ignored by Git) are square paintings that tile from left to right
 // (and from top to bottom for the planks and the grass).
@@ -24,33 +24,23 @@ export const TEXTURES = {
   // The same path in the other two worlds: basalt over lava (the bridge), stone in the snow (the mountain path).
   'decor-dalles-lave': {source: 'dalles-lave.png', size: 384},
   'decor-dalles-neige': {source: 'dalles-neige.png', size: 384},
-  // The meadow's walls in tiers (owner, 16 Nov.): a light blue base to run on, a raspberry one with arches not to, cream blocks or
-  // ochre rock above, and, cut out, the jagged crest and the honey fence.
-  'decor-socle-bleu': {source: 'socle-bleu.png', size: 384},
+  // The stones of the walls in the middle of the road and of the stairs (16 Nov.): a raspberry base with arches, cream blocks, ochre rock.
   'decor-socle-framboise': {source: 'socle-framboise.png', size: 384},
   'decor-corps-creme': {source: 'corps-creme.png', size: 384},
   'decor-corps-ocre': {source: 'corps-ocre.png', size: 384},
-  'decor-crete': {source: 'crete.png', size: 384},
-  'decor-barriere': {source: 'barriere.png', size: 384},
-  // The walls and the verges of those two worlds: roots to run on, smooth stone or ice not to, ash or snow underfoot.
-  'decor-lave-racines': {source: 'lave-racines.png', size: 256},
+  // The stone and the verges of those two worlds: smooth stone or ice, ash or snow underfoot.
   'decor-lave-pierre': {source: 'lave-pierre.png', size: 256},
   'decor-lave-sol': {source: 'lave-sol.png', size: 256},
-  'decor-neige-racines': {source: 'neige-racines.png', size: 256},
   'decor-neige-pierre': {source: 'neige-pierre.png', size: 256},
   'decor-neige-sol': {source: 'neige-sol.png', size: 256},
-  // The same tiers on the lava bridge and on the mountain path (16 Nov.): the base to run on keeps the meadow's light blue; the other
-  // base, dark basalt with glowing arches or chalet wood; basalt blocks or volcanic rock, grey-blue stone or snowy rock; a crest each.
-  'decor-lave-socle-bleu': {source: 'lave-socle-bleu.png', size: 384},
+  // The same on the lava bridge and on the mountain path (16 Nov.): dark basalt with glowing arches or chalet wood; basalt blocks or
+  // volcanic rock, grey-blue stone or snowy rock.
   'decor-lave-socle-sombre': {source: 'lave-socle-sombre.png', size: 384},
   'decor-lave-corps-basalte': {source: 'lave-corps-basalte.png', size: 384},
   'decor-lave-corps-roche': {source: 'lave-corps-roche.png', size: 384},
-  'decor-lave-crete': {source: 'lave-crete.png', size: 384},
-  'decor-neige-socle-bleu': {source: 'neige-socle-bleu.png', size: 384},
   'decor-neige-socle-bois': {source: 'neige-socle-bois.png', size: 384},
   'decor-neige-corps-pierre': {source: 'neige-corps-pierre.png', size: 384},
   'decor-neige-corps-roche': {source: 'neige-corps-roche.png', size: 384},
-  'decor-neige-crete': {source: 'neige-crete.png', size: 384},
   // Cut out: nine things standing beside the road, in a grid of 3 × 3.
   'decor-bord': {source: 'bord.png', size: 768},
   // The same for the lava bridge and the mountain path (16 Nov.): basalt, crystals, embers; snowy rocks, pines, a lantern.
@@ -61,21 +51,19 @@ export const TEXTURES = {
   'decor-arche-lave': {source: 'arche-lave.png', size: 768},
   'decor-arche-neige': {source: 'arche-neige.png', size: 768},
   'decor-herbe': {source: 'herbe.png', size: 256},
-  'decor-mur-terre': {source: 'mur-terre.png', size: 256},
-  'decor-mur-pierre': {source: 'mur-pierre.png', size: 256},
-  'decor-mur-racines': {source: 'mur-racines.png', size: 256},
-  // Cut out (transparent): vines hanging from a wall's top, grass and flowers at its foot.
-  'decor-lianes': {source: 'lianes.png', size: 256},
-  'decor-touffes': {source: 'touffes.png', size: 256},
-  // The same at the walls of the lava (crystals and embers hanging, ash and small flames underfoot) and of the snow (icicles, drifts).
-  'decor-lianes-lave': {source: 'lianes-lave.png', size: 256},
+  // Cut out (transparent): ash and small flames, snow drifts, the tall grass of the lava bridge and of the mountain path.
   'decor-touffes-lave': {source: 'touffes-lave.png', size: 256},
-  'decor-lianes-neige': {source: 'lianes-neige.png', size: 256},
   'decor-touffes-neige': {source: 'touffes-neige.png', size: 256},
   'decor-falaise': {source: 'falaise.png', size: 256, top: 14},
 };
 
 // (The meadow's thirty big painted walls, 17 Nov., left the run on 19 Nov.: fences and tall grass line the road now.)
+
+/** The painted strips of the sides of the road (owner's picks, 20 Nov.: the green meadow of tall grass, the honey-wood fence, the
+ *  wall of cream stones on light blue slabs), cut out of their paintings into tracked masters (assets-source/benny-run/<name>.png,
+ *  which repeat end to end), and their width once encoded (px; the height keeps the proportions). `--only-sides` encodes only them. */
+export const SIDE_STRIPS = {'cotes-herbe': 1024, 'cotes-barriere': 890, 'cotes-mur': 1184};
+const ONLY_SIDES = process.argv.includes('--only-sides');
 
 const {chromium} = createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const browser = await chromium.launch();
@@ -96,12 +84,17 @@ try {
     for (let i = 0; i < buffer.length; i += 0x8000) text += String.fromCharCode(...buffer.subarray(i, i + 0x8000));
     return btoa(text);
   }, {png, crop});
-  for (const [name, t] of Object.entries(TEXTURES)) {
+  for (const [name, width] of Object.entries(SIDE_STRIPS)) {
+    const png = readFileSync(`assets-source/benny-run/${name}.png`), height = Math.round(width * png.readUInt32BE(20) / png.readUInt32BE(16));
+    const webp = Buffer.from(await encode(png.toString('base64'), {width, height, quality: .88}), 'base64');
+    writeFileSync(`${TARGET}/${name}.webp`, webp); sizes[name] = webp.length;
+  }
+  for (const [name, t] of ONLY_SIDES ? [] : Object.entries(TEXTURES)) {
     const webp = Buffer.from(await encode(readFileSync(`${SOURCES}/${t.source}`).toString('base64'), {top: t.top ?? 0, width: t.size, height: t.size, quality: .86}), 'base64');
     writeFileSync(`${TARGET}/${name}.webp`, webp); sizes[name] = webp.length;
   }
   // The skies keep their painted size (1024 × 1536), only in WebP: the meadow's, the lava's (smoke, a red glow), the snow's (cold).
-  for (const [name, source] of [['fond-ciel', SKY], ['fond-ciel-lave', `${SOURCES}/fond-ciel-lave.png`], ['fond-ciel-neige', `${SOURCES}/fond-ciel-neige.png`]]) {
+  for (const [name, source] of ONLY_SIDES ? [] : [['fond-ciel', SKY], ['fond-ciel-lave', `${SOURCES}/fond-ciel-lave.png`], ['fond-ciel-neige', `${SOURCES}/fond-ciel-neige.png`]]) {
     const sky = Buffer.from(await encode(readFileSync(source).toString('base64'), {quality: .84}), 'base64');
     writeFileSync(`${TARGET}/${name}.webp`, sky); sizes[name] = sky.length;
   }
