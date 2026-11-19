@@ -57,6 +57,12 @@ describe('the rabbits’ descriptions (owner, 5 November 2026)', () => {
     expect(document.getElementById('panel-content')!.textContent).not.toContain(RABBIT_STORIES.paille!);
   });
 
+  it('shows Gigi-rarafe’s description, as the owner wrote it (20 November 2026)', () => {
+    expect(RABBIT_STORIES['gigi-rarafe']).toBe('Le long cou de Gigi-rarafe lui permet d’atteindre les cerises de cristal. Sa grande taille lui a permis de défiler pour les plus grands créateurs. Quand elle a percé, elle a fait fermer Devernois. C’est une vraie star.');
+    const {ui, rabbit} = mount('gigi-rarafe');
+    ui.open({kind: 'rabbit', id: rabbit.id});
+    expect(document.querySelector<HTMLElement>('[data-rabbit-story="gigi-rarafe"]')?.textContent).toBe(RABBIT_STORIES['gigi-rarafe']);
+  });
   it('lets the browser lay out each description in its own direction (Tunini’s Arabic right to left)', () => {
     const {ui, rabbit} = mount('paille');
     ui.open({kind: 'rabbit', id: rabbit.id});
