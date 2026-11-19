@@ -41,4 +41,6 @@ export const RABBIT_STORIES: Partial<Record<SpeciesId, string>> = {
   dinenette: 'Le cœur au bout de sa queue est source de vitalité. Elle est indépendante, c’est une chasseuse hors pair !',
   ankylosaure: 'Fan d’ankylosaures et de glaces Häagen-Dazs. Ses pouvoirs sont immenses. Il est capable de faire trembler le sol.',
   calinou: 'Experte en câlins et en réconfort. Elle est capable de transformer sa fourrure en barbe à papa !',
+  // Owner's text of 20 November 2026, spelling corrected.
+  'gigi-rarafe': 'Le long cou de Gigi-rarafe lui permet d’atteindre les cerises de cristal. Sa grande taille lui a permis de défiler pour les plus grands créateurs. Quand elle a percé, elle a fait fermer Devernois. C’est une vraie star.',
 };

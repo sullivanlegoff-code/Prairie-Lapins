@@ -24,7 +24,7 @@ const STARS = 28, FEATHERS = 10, DUST = 12, COMET_TRAIN = 5, SPARKS = 16, MOTES 
  * Her story, in her meadow poses, in seconds (from, until): asleep and floating down, her head lifting, her eyes opening; her ears up
  * as she lands; the hop of joy. The rest picture takes over when the last one ends (br-hidden in the CSS); `soft` poses fade in over the one before.
  */
-type Pose = keyof typeof BENNY_REVEAL_POSES.poses;
+export type Pose = keyof typeof BENNY_REVEAL_POSES.poses;
 const SHOW: readonly (readonly [Pose, number, number, 'soft'?])[] = [
   ['groom-3', 3.6, 5.45, 'soft'], ['groom-5', 5.3, 6.25, 'soft'], ['groom-6', 6.1, 7, 'soft'], ['ears-3', 7, 7.55],
   ['hop-1', 7.55, 7.64], ['hop-2', 7.64, 7.73], ['hop-3', 7.73, 7.82], ['hop-4', 7.82, 7.91], ['hop-5', 7.91, 8], ['hop-6', 8, 8.08], ['hop-7', 8.08, 8.15],
@@ -61,7 +61,7 @@ function scatter(urls: readonly string[], className: string, count: number, seed
 }
 
 /** One pose of her atlas, placed exactly over her rest sprite in `.br-body`. */
-function pose(name: Pose, className: string): HTMLSpanElement {
+export function pose(name: Pose, className: string): HTMLSpanElement {
   const {atlas, poses} = BENNY_REVEAL_POSES, {frame, at} = poses[name], {sprite} = BENNY_FRAMES, piece = document.createElement('span');
   const percent = (value: number) => `${(value * 100).toFixed(3)}%`;
   // The sprite box is the parent, so the frame's position in the atlas canvas is counted from the sprite's corner.
