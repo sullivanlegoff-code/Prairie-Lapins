@@ -28,6 +28,7 @@ import {FULLSCREEN_ACTIVITY_EVENT, ISLAND_COVER_EVENT, type IslandCover} from '.
 import {DADI_SONG_EVENT, type DadiSongDetail} from './config/dadiStageArt';
 import './display/christmas-market.css';
 import './display/benny-reveal.css';
+import './display/benny-caress.css';
 import './display/update-news.css';
 import './display/reception.css';
 import './display/loading-screen.css';
