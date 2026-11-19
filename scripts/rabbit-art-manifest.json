@@ -921,13 +921,13 @@
   },
   "bouyoyo": {
     "file": "assets/rabbits/bouyoyo/bouyoyo-v1.png",
-    "worldWidth": 44,
-    "sourceSha1": "dac29e6b0f89d8a4220c1bc11c3269fa08ae9abc",
-    "sourceWidth": 870,
-    "sourceHeight": 1248,
-    "width": 325,
-    "height": 466,
-    "derivedSha1": "ea1b482988c0b9774b7ca5f0a77d81f2be8fa91e"
+    "worldWidth": 48.1,
+    "sourceSha1": "ae692c8ee69ede352da9f6b8b9d8f5c39f38cda0",
+    "sourceWidth": 1006,
+    "sourceHeight": 1207,
+    "width": 357,
+    "height": 428,
+    "derivedSha1": "d82612dbb3b0778ee92edaf36b05c082ec766427"
   },
   "nuage": {
     "file": "assets/rabbits/nuage/nuage-v1.png",
@@ -1083,13 +1083,13 @@
     "registry": "src/config/evolvedArt.ts",
     "displayScale": 1.15,
     "file": "assets/rabbits/bouyoyo/bouyoyo-v2.png",
-    "worldWidth": 50.5,
-    "sourceSha1": "624931565d7d6b5738e50abbaf5d605a7d458c42",
-    "sourceWidth": 1090,
-    "sourceHeight": 1186,
-    "width": 428,
-    "height": 466,
-    "derivedSha1": "90d4b85d960105a2217e3414af4acbdc505b62e3"
+    "worldWidth": 53.3,
+    "sourceSha1": "c32257b2e2d00586e81b71ec051787b531d4120e",
+    "sourceWidth": 1231,
+    "sourceHeight": 1203,
+    "width": 452,
+    "height": 442,
+    "derivedSha1": "04c86195040bdd9a7943c06c262cfd6f7d806b52"
   },
   "lapin-de-sulli-evolution": {
     "species": "lapin-de-sulli",

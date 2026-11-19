@@ -1453,54 +1453,54 @@
   },
   "bouyoyo": {
     "sprite": "assets/rabbits/bouyoyo/bouyoyo-v1.png",
-    "spriteSha1": "ea1b482988c0b9774b7ca5f0a77d81f2be8fa91e",
-    "spriteWidth": 325,
-    "spriteHeight": 466,
+    "spriteSha1": "d82612dbb3b0778ee92edaf36b05c082ec766427",
+    "spriteWidth": 357,
+    "spriteHeight": 428,
     "eyes-closed": {
       "file": "assets/rabbits/bouyoyo/bouyoyo-eyes-closed.png",
-      "x": 141,
-      "y": 145,
-      "width": 137,
-      "height": 76,
+      "x": 140,
+      "y": 148,
+      "width": 164,
+      "height": 60,
       "source": "assets-source/rabbits/bouyoyo/eyes-closed.png",
-      "sourceSha1": "e6b9e56ee7248e40db367f73e502f4bb475edce4",
-      "derivedSha1": "5bf363005ee62b3dd3e98a49c261a13193ac5b1e"
+      "sourceSha1": "e2d2ace8dc140a67e349cabe11bb54ae3a3c7bbf",
+      "derivedSha1": "6516600c10918998f463c711ec8dd98009163e0d"
     },
     "nose-twitch": {
       "file": "assets/rabbits/bouyoyo/bouyoyo-nose-twitch.png",
-      "x": 231,
-      "y": 166,
-      "width": 31,
-      "height": 29,
+      "x": 225,
+      "y": 172,
+      "width": 52,
+      "height": 53,
       "source": "assets-source/rabbits/bouyoyo/nose-twitch.png",
-      "sourceSha1": "3d8aedfe1a9f8fc5cea14bfb72135b841973dab1",
-      "derivedSha1": "e2b1a584fbc12f38b18cc558da7cfc01da00103c"
+      "sourceSha1": "25d168c8581070e78d89ba31c64ff18904d23205",
+      "derivedSha1": "7fada765de5962f874d3551c00eaa19446026b68"
     }
   },
   "bouyoyo-evolution": {
     "sprite": "assets/rabbits/bouyoyo/bouyoyo-v2.png",
-    "spriteSha1": "90d4b85d960105a2217e3414af4acbdc505b62e3",
-    "spriteWidth": 428,
-    "spriteHeight": 466,
+    "spriteSha1": "04c86195040bdd9a7943c06c262cfd6f7d806b52",
+    "spriteWidth": 452,
+    "spriteHeight": 442,
     "eyes-closed": {
       "file": "assets/rabbits/bouyoyo/bouyoyo-evolution-eyes-closed.png",
-      "x": 316,
-      "y": 173,
-      "width": 97,
-      "height": 58,
+      "x": 217,
+      "y": 151,
+      "width": 143,
+      "height": 55,
       "source": "assets-source/rabbits/bouyoyo/evolution-eyes-closed.png",
-      "sourceSha1": "ff3b9757b16fa658d9a32383a1e674f37f370bd9",
-      "derivedSha1": "74925b5e17574277941ae912a91661f49d4c1b6d"
+      "sourceSha1": "ea17ff81f61e51c6fb0898dcb3d027326c70c604",
+      "derivedSha1": "0aa39a7445388305e26d364af824ebb6148a1519"
     },
     "nose-twitch": {
       "file": "assets/rabbits/bouyoyo/bouyoyo-evolution-nose-twitch.png",
-      "x": 376,
-      "y": 201,
-      "width": 31,
-      "height": 29,
+      "x": 310,
+      "y": 177,
+      "width": 46,
+      "height": 46,
       "source": "assets-source/rabbits/bouyoyo/evolution-nose-twitch.png",
-      "sourceSha1": "dfc0351d695d231a6df8ca28a24e5ed80b0829e8",
-      "derivedSha1": "e0ba2382253ce141dcdaa7a19b6c8d4188ea1ea6"
+      "sourceSha1": "f6e7bd6a7a8e549e2b3dd076a7552682c734707a",
+      "derivedSha1": "9ac0a582780454daecd3ce36f94d7e76e56b5237"
     }
   },
   "nuage": {
