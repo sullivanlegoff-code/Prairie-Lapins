@@ -546,6 +546,7 @@ export function decodeGame(json: string): DecodeResult {
   }
   migrateRetiredSpecies(raw);
   moveKioskToIsland(raw);
+  moveIsletNest(raw);
   // Paille's counter is removed at v27 (owner, 5 November 2026): its daily record is dropped from every older save.
   if (raw && typeof raw === 'object' && 'version' in raw && (raw.version as number) < 27) delete (raw as {market?: unknown}).market;
   // Only a v27 or later save may say the era of its enclosure sizes: an older one had the sizes of its own time, whatever it carries.
@@ -613,6 +614,19 @@ function moveKioskToIsland(raw: unknown): void {
   const kept = raw.buildings.filter(b => !b || typeof b !== 'object' || (b as {kind?: unknown}).kind !== 'jumprope');
   if (kept.length === raw.buildings.length) return;
   raw.buildings = kept; (raw as {jumpIsland?: true}).jumpIsland = true;
+}
+/**
+ * The islet of the Epics is never moved by the player: its nest always stands at EPIC_ISLET.cell. When that place changes (owner,
+ * 19 November 2026: the islet moved to the left, with the other islets), a save keeps its nest, its breeding and its egg, at the
+ * new place (only from a place it really had: a nest anywhere else is still refused).
+ */
+const FORMER_ISLET_CELLS = [{x: 6, y: 70}] as const;
+function moveIsletNest(raw: unknown): void {
+  if (!raw || typeof raw !== 'object' || !('buildings' in raw) || !Array.isArray(raw.buildings)) return;
+  for (const b of raw.buildings) {
+    const nest = b as {islet?: unknown; kind?: unknown; x?: unknown; y?: unknown};
+    if (nest && typeof nest === 'object' && nest.islet === true && nest.kind === 'nest' && FORMER_ISLET_CELLS.some(c => c.x === nest.x && c.y === nest.y)) Object.assign(nest, EPIC_ISLET.cell);
+  }
 }
 export function encodeGame(state: GameState, presentationId?: string): string {
   const parsed = schema.parse({...state, enclosureSizes: ENCLOSURE_SIZE_ERA, ...(presentationId ? {presentationId} : {})});

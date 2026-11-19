@@ -53,6 +53,13 @@ describe('the islet of the Epics', () => {
     expect(boosted.yetiti! / boosted.frisket!).toBeCloseTo(plain.yetiti! / plain.frisket! * 1.1, 10);
     expect(boosted.icy! / boosted.frisket!).toBeCloseTo(plain.icy! / plain.frisket!, 10);
   });
+  it('moves the nest of an older save to the islet’s new place, on the left (owner, 19 November 2026)', () => {
+    const s = run(game(), {type: 'buyEpicIslet'}), raw = JSON.parse(encodeGame(s));
+    Object.assign(raw.buildings.find((b: {islet?: true}) => b.islet), {x: 6, y: 70});
+    const decoded = decodeGame(JSON.stringify(raw));
+    expect(decoded.ok && epicIsletNest(decoded.state)).toMatchObject({x: EPIC_ISLET.cell.x, y: EPIC_ISLET.cell.y});
+    expect(EPIC_ISLET.cell.x).toBeLessThan(0);
+  });
   it('refuses a save with a second islet or an islet nest elsewhere', () => {
     const s = run(game(), {type: 'buyEpicIslet'}), raw = JSON.parse(encodeGame(s));
     raw.buildings.find((b: {islet?: true}) => b.islet).x = 3;

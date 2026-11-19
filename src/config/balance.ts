@@ -44,7 +44,10 @@ export const BENNY_LAIR = {unlockLevel: 25} as const;
  * stays after Christmas. In all 500 sucres d'orge, about twenty days of Christmas challenges.
  */
 export const ULTRA_SNOW = {candies: {1: 100, 2: 150, 3: 250}} as const;
-export const EPIC_ISLET = {unlockLevel: 18, hearts: 200, /* 8 November 2026 (400 before) */ bonus: 1.1, cell: {x: 6, y: 70}} as const;
+export const EPIC_ISLET = {unlockLevel: 18, hearts: 200, /* 8 November 2026 (400 before) */ bonus: 1.1,
+  /** Fine cell of its nest: on the left of the start island, just under the jump-rope islet, with the other islets (owner,
+   *  19 November 2026: « à gauche avec les autres îles, pas tout au nord » ; {x: 6, y: 70} before). */
+  cell: {x: -14, y: 54}} as const;
 /** Paille's free gift: 3 Hearts every 24 h (2 before the Hearts / pattes balance of 3 November 2026), three gifts kept at most. */
 /** Hearts from daily activities that are not tied to one building's config: the first Cuisine dish of each daily cycle. */
 export const DAILY_HEART_SOURCES = {cuisine: 3} as const; // 8 November 2026 (1 before).
