@@ -11,12 +11,13 @@ export function bennyFlightReason(s: Pick<GameState, 'rabbits' | 'buildings'>): 
   if (!perchBuilding(s)) return 'NOT_FOUND';
   return hasBenny(s) ? null : 'BENNY_REQUIRED';
 }
-/** Today's rewarded games left, whether the day's Heart is still to win (first game only), and the record. */
+/** Today's rewarded games left, whether the day's Heart is still to win (the first game of the day that reaches `heartColumns`;
+ * owner, 19 November 2026: before, only the very first game of the day could win it), and the record. */
 export function bennyFlightDay(s: Pick<GameState, 'bennyFlight' | 'missions'>, now: number): {rewardedLeft: number; heartLeft: boolean; best: number} {
   const g = s.bennyFlight, day = g && g.cycle === giftCycle(s, now) ? g : null;
-  return {rewardedLeft: Math.max(0, BENNY_FLIGHT.rewardedGamesPerCycle - (day?.rewarded ?? 0)), heartLeft: !day, best: g?.best ?? 0};
+  return {rewardedLeft: Math.max(0, BENNY_FLIGHT.rewardedGamesPerCycle - (day?.rewarded ?? 0)), heartLeft: !day?.heart, best: g?.best ?? 0};
 }
-/** What a finished game with `passed` columns pays now: pattes within the daily limit, a Heart on the first game of the day at `heartColumns`. */
+/** What a finished game with `passed` columns pays now: pattes within the daily limit, a Heart on the day's first game at `heartColumns`. */
 export function bennyFlightReward(s: Pick<GameState, 'bennyFlight' | 'missions'>, passed: number, now: number): {pattes: number; hearts: number; rewarded: boolean} {
   const day = bennyFlightDay(s, now), count = Math.max(0, Math.floor(passed)), rewarded = count >= 1 && day.rewardedLeft > 0;
   return {pattes: rewarded ? Math.min(BENNY_FLIGHT.maxPattes, count * BENNY_FLIGHT.pattesPerColumn) : 0, hearts: day.heartLeft && count >= BENNY_FLIGHT.heartColumns ? 1 : 0, rewarded};

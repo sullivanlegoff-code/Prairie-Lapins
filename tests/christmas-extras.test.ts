@@ -94,10 +94,14 @@ describe('Benny’s perch and « Le vol de Benny »', () => {
     const decoded = decodeGame(encodeGame(s));
     expect(decoded.ok && decoded.state.bennyFlight).toEqual(s.bennyFlight);
   });
-  it('gives no Heart when the first game of the day stops before 20 columns', () => {
+  // Owner, 19 November 2026: the Heart goes to the first game of the day that reaches 20 columns, not only to the very first game.
+  it('gives the Heart to a later game when the first one of the day stops before 20 columns, once a day', () => {
     let s = game(); s.rabbits.push({id: `rabbit-${s.nextId++}`, species: 'benny', affection: 5, enclosureId: s.buildings.find(b => b.kind === 'enclosure')!.id}); s.discovered.push('benny');
     s = placePerch(s); const hearts = s.hearts;
-    s = run(s, {type: 'rewardBennyFlight', passed: 5}); s = run(s, {type: 'rewardBennyFlight', passed: 25});
-    expect(s.hearts).toBe(hearts);
+    s = run(s, {type: 'rewardBennyFlight', passed: 5}); expect(s.hearts).toBe(hearts);
+    expect(bennyFlightDay(s, s.lastSimulatedAt).heartLeft).toBe(true);
+    s = run(s, {type: 'rewardBennyFlight', passed: 25}); expect(s.hearts).toBe(hearts + 1);
+    s = run(s, {type: 'rewardBennyFlight', passed: 30}); expect(s.hearts).toBe(hearts + 1);
+    expect(bennyFlightDay(s, s.lastSimulatedAt).heartLeft).toBe(false);
   });
 });

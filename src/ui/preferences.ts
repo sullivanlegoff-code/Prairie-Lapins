@@ -53,7 +53,7 @@ export class Sounds {
    * Tones only: a sweep from `from` to `to` Hz over `length` s, sometimes two in a row.
    */
   /** `pitch` raises the notes (1 = as written): the strikes of a combo climb a semitone each. */
-  run(kind: 'strike' | 'pot' | 'coin' | 'bump' | 'jump' | 'roll' | 'shock' | 'wall' | 'power' | 'caught' | 'dodge' | 'rumble' | 'whoosh' | 'land' | 'sizzle', pitch = 1): void {
+  run(kind: 'strike' | 'pot' | 'coin' | 'bump' | 'jump' | 'roll' | 'shock' | 'wall' | 'power' | 'caught' | 'dodge' | 'rumble' | 'whoosh' | 'land' | 'sizzle' | 'flap', pitch = 1): void {
     this.sync();
     const output = this.engine.effectsOutput(); if (!output) return;
     const tones: Record<typeof kind, [OscillatorType, number, number, number, number, number?][]> = {
@@ -66,6 +66,8 @@ export class Sounds {
       dodge: [['sine', 760, 1150, .06, .02]], rumble: [['sawtooth', 90, 45, .32, .035], ['triangle', 160, 60, .25, .025, .05]],
       whoosh: [['triangle', 180, 520, .22, .015], ['sine', 520, 220, .18, .012, .14]], land: [['triangle', 200, 110, .08, .03]],
       sizzle: [['sawtooth', 1400, 600, .14, .012], ['triangle', 300, 520, .2, .02, .03]],
+      // « Le vol de Benny »: a soft, short wing beat (19 November 2026).
+      flap: [['triangle', 280, 460, .06, .014]],
     };
     try {
       const {context, node} = output, now = context.currentTime;

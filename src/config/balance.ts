@@ -28,9 +28,11 @@ export const NURSERY = {initialCapacity: 1, maxCapacity: 4, unlockHearts: {1: 30
 /**
  * « Le vol de Benny » (owner, 5 November 2026: Benny only, from a building of the main island, rewards of my choice): the
  * perch needs Benny on the island. The first `rewardedGamesPerCycle` games of a day pay `pattesPerColumn` per hay column
- * passed (at most `maxPattes`); the very first one also gives a Heart at `heartColumns` columns. Never XP.
+ * passed (at most `maxPattes`); the day's first game that reaches `heartColumns` columns also gives a Heart. Never XP.
+ * 19 November 2026 (owner): the game speeds up after 15 columns, so the pattes go on up to 50 columns (60 pattes at most
+ * before, reached at 20), and the Heart no longer goes only to the very first game of the day.
  */
-export const BENNY_FLIGHT = {rewardedGamesPerCycle: 3, pattesPerColumn: 3, maxPattes: 60, heartColumns: 20, maxColumns: 500} as const;
+export const BENNY_FLIGHT = {rewardedGamesPerCycle: 3, pattesPerColumn: 3, maxPattes: 150, heartColumns: 20, maxColumns: 500} as const;
 /**
  * The Antre du dragon (owner, 11 November 2026), the building of « Benny Rampage » (src/simulation/bennyRun.ts): sold for
  * BALANCE.buildings.lair pattes from player level `unlockLevel`, with Benny on the island (she is the one who runs); owning the

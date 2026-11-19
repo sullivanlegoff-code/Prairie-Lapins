@@ -2,6 +2,7 @@ import {setCurrencyText} from '../display/currency';
 import {BENNY_FLIGHT_ART, BENNY_FLAPPY, BENNY_FLIGHT_FRIEND_ART, FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
 import {bennyFlightFriend} from '../simulation/bennyFlightFriends';
 import {advanceBennyFlight, flapBennyFlight, startBennyFlight, BENNY_FLIGHT_GAME, type BennyFlightGame} from '../simulation/bennyFlightGame';
+import {BENNY_FLIGHT_FRIENDS} from '../simulation/bennyFlightFriends';
 import type {Rabbit} from '../state/types';
 import {pausableClock, settleCard} from './activityPause';
 
@@ -15,11 +16,17 @@ import {pausableClock, settleCard} from './activityPause';
  * Smooth on a phone (owner, 6 November 2026: « le jeu est laggy »): everything moves by `transform` only (no layout, no repaint of
  * the sky), the column pictures are sized once, and the island's Phaser loop sleeps while the game is open.
  */
+export type BennyFlightSound = 'flap' | 'pass' | 'ten' | 'fall' | 'record' | 'faster';
+/** How long Benny is seen falling into the clouds before the end card (owner, 19 November 2026: the end came all at once). */
+export const BENNY_FLIGHT_FALL_MS = 700;
 export function mountBennyFlightActivity(host: HTMLElement, options: {
   onFinished: (passed: number) => string;
   quotaText?: () => string;
   best?: () => number;
   onExit?: () => void;
+  /** A short sound (the game's Bruitages channel; owner, 19 November 2026): a wing beat, a column passed (`pitch` climbs), the
+   *  fall, a record or the game speeding up. Silent when absent. */
+  sound?: (kind: BennyFlightSound, pitch?: number) => void;
   clock?: () => number;
   frame?: (step: () => void) => number;
 }) {
@@ -42,6 +49,9 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
   const score = $<HTMLElement>('.benny-flight-score'), quota = $<HTMLElement>('.benny-flight-quota'), benny = $<HTMLElement>('.benny-flight-benny'), pop = $<HTMLElement>('.benny-flight-pop'), sky = $<HTMLElement>('.benny-flight-sky'), friend = $<HTMLElement>('.benny-flight-friend');
   const abort = new AbortController(), views = new Map<number, HTMLElement>();
   let game: BennyFlightGame | null = null, running = false, previousBest = 0, popTimer: ReturnType<typeof setTimeout> | undefined;
+  const sound = (kind: BennyFlightSound, pitch = 1) => { try { options.sound?.(kind, pitch); } catch { /* Sound is optional. */ } };
+  // After the touch that ends the game: since when Benny falls, and how fast (stage heights a second).
+  let fallingAt: number | null = null, fallSpeed = 0, fallDrawnAt = 0;
   // Stage size in CSS pixels, the sky picture's width at the stage's height, Benny's box; measured on open and on resize.
   let width = 1, height = 1, tile = 1, bennyWidth = 0, bennyHeight = 0, skyAspect = 1;
   const skyPicture = new Image(); skyPicture.onload = () => { skyAspect = skyPicture.naturalWidth / Math.max(1, skyPicture.naturalHeight); measure(); }; skyPicture.src = art.background;
@@ -80,7 +90,7 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
     const beat = Math.floor(wingPhase);
     if (beat !== shownBeat) { shownBeat = beat; benny.style.backgroundPositionX = `${beat / (BENNY_FLAPPY.frames - 1) * 100}%`; }
     // The sky scrolls with the columns, slower (a little depth): one picture wide, then it starts again.
-    const skyShift = (((now - game.startedAt) / 1000) * g.speed * .4 * width) % tile;
+    const skyShift = (game.distance * .4 * width) % tile;
     sky.style.transform = `translate3d(${-skyShift}px, 0, 0)`;
     const seen = new Set<number>();
     for (const c of game.columns) {
@@ -109,31 +119,43 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
     if (friend.hidden) friend.hidden = false;
     const wing = Math.floor(now / BENNY_FLIGHT_FRIEND_ART.beat) % 2;
     if (wing !== shownFriendFrame) { shownFriendFrame = wing; friend.style.backgroundPositionX = wing ? '100%' : '0%'; }
-    friend.style.transform = `translate3d(${mate.x * width - w / 2}px, ${mate.y * height - h / 2}px, 0)`;
+    // On a narrow stage the whole flight moves right so the friend is never cut by the left edge while it flies along.
+    const shift = Math.max(0, w / 2 + 6 - BENNY_FLIGHT_FRIENDS.x * width);
+    friend.style.transform = `translate3d(${mate.x * width + shift - w / 2}px, ${mate.y * height - h / 2}px, 0)`;
   }
   let shownPassed = 0;
   function update(): void {
     if (!game) return;
+    if (fallingAt !== null) { fall(); return; }
     advanceBennyFlight(game, clock());
     if (game.passed > shownPassed) {
       shownPassed = game.passed;
-      if (previousBest > 0 && game.passed === previousBest + 1) flash('Nouveau record !', 'record');
-      else if (game.passed % 10 === 0) flash(`${bales(game.passed)} !`, 'pass');
+      if (previousBest > 0 && game.passed === previousBest + 1) { flash('Nouveau record !', 'record'); sound('record'); }
+      else if (game.passed === BENNY_FLIGHT_GAME.easyColumns) { flash('Ça accélère !', 'pass'); sound('faster'); }
+      else if (game.passed % 10 === 0) { flash(`${bales(game.passed)} !`, 'pass'); sound('ten'); }
+      else sound('pass', 1 + (game.passed % 10) * .04);
     }
     draw(); hud();
-    if (game.over && running) finish();
+    if (game.over && running) { fallingAt = fallDrawnAt = clock(); fallSpeed = Math.max(.35, game.vy); flash('Pouf !', 'bump'); sound('fall'); }
+  }
+  /** Benny tumbles into the sea of clouds, then the end card comes. */
+  function fall(): void {
+    const now = clock(), dt = Math.max(0, now - fallDrawnAt) / 1000; fallDrawnAt = now;
+    fallSpeed = Math.min(2, fallSpeed + 3 * dt); shownY = Math.min(1.2, shownY + fallSpeed * dt);
+    shownTilt += (70 - shownTilt) * (1 - Math.exp(-dt * 1000 / 160));
+    benny.style.transform = `translate3d(${BENNY_FLIGHT_GAME.x * width - bennyWidth / 2}px, ${shownY * height - bennyHeight / 2}px, 0) rotate(${shownTilt}deg)`;
+    if (now - fallingAt! >= BENNY_FLIGHT_FALL_MS && running) { fallingAt = null; finish(); }
   }
   let scheduled = false;
   function schedule(): void { if (scheduled) return; scheduled = true; frame(() => { scheduled = false; loop(); }); }
   function loop(): void { if (!running) return; update(); if (running) schedule(); }
   function flap(): void {
-    if (!game || !running) return;
-    const now = clock(); flapBennyFlight(game, now);
+    if (!game || !running || game.over) return;
+    const now = clock(); flapBennyFlight(game, now); sound('flap', .94 + Math.random() * .12);
     quickUntil = now + BENNY_FLAPPY.quickBeat * BENNY_FLAPPY.frames;
   }
   function finish(): void {
     running = false; const final = game!.passed, record = final > previousBest && final > 0;
-    flash('Pouf !', 'bump');
     const reward = options.onFinished(final);
     const chips = document.createElement('p'); chips.className = 'benny-flight-rewards';
     for (const part of reward ? reward.split(' · ') : []) { const chip = document.createElement('span'); chip.className = 'cuisine-reward-chip'; setCurrencyText(chip, part); chips.append(chip); }
@@ -145,7 +167,7 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
     settleCard(card); again.focus();
   }
   function start(): void {
-    previousBest = options.best?.() ?? 0; shownPassed = 0;
+    previousBest = options.best?.() ?? 0; shownPassed = 0; fallingAt = null;
     for (const view of views.values()) view.remove(); views.clear();
     game = startBennyFlight(clock()); running = true; card.hidden = true; settleView();
     hud(); draw(); flash('Touche pour voler !', 'ready'); schedule();
@@ -153,12 +175,12 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
   function intro(): void {
     game = startBennyFlight(clock()); running = false; previousBest = options.best?.() ?? 0; settleView(); draw(); hud();
     showCard(paragraph('Le vol de Benny', 'benny-flight-title'),
-      paragraph('Touche le ciel pour que Benny batte des ailes, et passe entre les colonnes de bottes de foin. Une colonne touchée, le haut du ciel ou la mer de nuages, et Benny se pose. Rejoue autant que tu veux !', 'benny-flight-rules'),
+      paragraph('Touche le ciel pour que Benny batte des ailes, et passe entre les colonnes de bottes de foin. Une colonne touchée ou la mer de nuages, et Benny se pose. Plus tu vas loin, plus ça va vite. Rejoue autant que tu veux !', 'benny-flight-rules'),
       button('C’est parti !', start, 'bennyFlightStart'));
   }
   function close(): void {
     if (layer.hidden) return;
-    running = false; time.resume(); game = null; layer.hidden = true; clearTimeout(popTimer);
+    running = false; time.resume(); game = null; fallingAt = null; layer.hidden = true; clearTimeout(popTimer);
     window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: false})); options.onExit?.();
   }
   /** The phone locked or another app opened: the game waits, frozen, instead of being lost to the time gone by. */
@@ -167,7 +189,7 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
     time.pause(); running = false;
     showCard(paragraph('Partie en pause', 'benny-flight-title'), button('Reprendre', resume, 'bennyFlightResume'), button('Quitter', close, 'bennyFlightQuit'));
   }
-  function resume(): void { time.resume(); running = true; card.hidden = true; schedule(); }
+  function resume(): void { time.resume(); running = true; card.hidden = true; if (fallingAt !== null) fallDrawnAt = clock(); schedule(); }
   document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); }, {signal: abort.signal});
   window.addEventListener('resize', () => { if (!layer.hidden) measure(); }, {signal: abort.signal});
   stage.addEventListener('pointerdown', event => { event.preventDefault(); flap(); }, {signal: abort.signal});
