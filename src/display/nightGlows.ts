@@ -57,9 +57,12 @@ export class NightGlows {
   private paint(occluders: readonly GlowOccluder[]): void {
     if (!this.glows.size) { this.layer?.setVisible(false); return; }
     const camera = this.scene.cameras.main, w = Math.max(1, Math.ceil(camera.width)), h = Math.max(1, Math.ceil(camera.height)), z = camera.zoom;
+    // A new screen size (the iPhone turned, Safari's bars shown or hidden): a new picture of the new size, made like the first
+    // one. Resizing the old one left its drawing camera and its picture out of step with the screen, and every glow slid off its
+    // building into the void (owner, 20 November 2026).
+    if (this.layer && (this.layer.width !== w || this.layer.height !== h)) { this.layer.destroy(); this.layer = null; }
     if (!this.layer) this.layer = this.scene.add.renderTexture(0, 0, w, h).setOrigin(0, 0).setScrollFactor(0).setDepth(NIGHT_GLOW_DEPTH).setBlendMode(Phaser.BlendModes.ADD);
     const layer = this.layer.setVisible(true);
-    if (layer.width !== w || layer.height !== h) layer.setSize(w, h);
     // Under the main camera's zoom, this screen-space picture covers the screen pixel for pixel; it draws with the same view.
     layer.setPosition(w / 2 - w / 2 / z, h / 2 - h / 2 / z).setScale(1 / z);
     layer.camera.setScroll(camera.scrollX, camera.scrollY).setZoom(z);
