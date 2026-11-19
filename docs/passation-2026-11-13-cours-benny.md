@@ -48,7 +48,7 @@ Pour l'agent qui reprend le mini-jeu. Lire d'abord `AGENTS.md`, puis `docs/passa
 - **Pas de mise en production**, pas de fusion dans `main`, pas de `push`.
 - **Interface et confort, et tests de qualité** : à faire dans le jeu, puis test complet.
 - **Atlas** : la commande de l'atlas se lance depuis le worktree avec les chemins de la passation du 12 novembre :
-  `PLAYWRIGHT_MODULE="C:/Users/sulli/Documents/Project-L/prairie-lapins-prototype/node_modules/playwright/index.js" node scripts/prepare-benny-run-art.mjs --sources ../../../output/imagegen/course-benny-final-v1 --reference ../../../output/imagegen/benny-enclos-final-v1/A1-reference.png`
+  `PLAYWRIGHT_MODULE="<chemin vers playwright>/index.js" node scripts/prepare-benny-run-art.mjs --sources ../../../output/imagegen/course-benny-final-v1 --reference ../../../output/imagegen/benny-enclos-final-v1/A1-reference.png`
   Le script exige exactement autant de dessins que de poses dans la planche.
 - **Chromium** : serveur de dev sur `127.0.0.1:5199` (`node node_modules/vite/bin/vite.js --port 5199 --strictPort --host 127.0.0.1`), puis Playwright ; arrêter seulement son propre processus. Aperçu iPhone : `npm run build:netlify -- --configLoader runner`, puis le serveur de prévisualisation sur le port 5175 (le 5174 est occupé par un autre processus : ne pas le toucher).
 
