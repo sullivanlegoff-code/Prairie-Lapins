@@ -1,9 +1,9 @@
 {
-  "spriteSha1": "cf022ec027c21000375960e3f686b30be5b39414",
+  "spriteSha1": "2a0a7f82f5d434dadb7d12b4e04a68a6ab2e3fd7",
   "eyes-closed": {
     "x": 373,
     "y": 362,
-    "sourceSha1": "e9799a120a118856886f8ed0cceff9b6801008c2"
+    "sourceSha1": "c1913549e672e5eba956b25336a4a2fc54aa4c00"
   },
   "evolution": {
     "spriteSha1": "90563de50764a00cdf1ae5219aede6cdb0880778",
@@ -21,6 +21,6 @@
   "nose-twitch": {
     "x": 504,
     "y": 430,
-    "sourceSha1": "25c3d067468709514fa68443c44d5f243029fa4a"
+    "sourceSha1": "3c1a40963db7d2dd5e7975bcbe34ee3cd752ce36"
   }
 }

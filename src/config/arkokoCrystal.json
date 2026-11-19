@@ -1,0 +1,32 @@
+{
+  "glow": {
+    "file": "assets/rabbits/arkoko/arkoko-v1-crystal-glow.png",
+    "x": 169,
+    "y": 62,
+    "width": 153,
+    "height": 180,
+    "spriteWidth": 325,
+    "spriteHeight": 566,
+    "sha1": "cdd12dbd349139a48dce465a3c2933aca7b20559"
+  },
+  "crystal": {
+    "file": "assets/rabbits/arkoko/arkoko-v1-crystal.png",
+    "x": 241,
+    "y": 136,
+    "width": 44,
+    "height": 59,
+    "spriteWidth": 325,
+    "spriteHeight": 566,
+    "sha1": "becbbc71d3dcf61730fcac5f3c67bc13e86dbb24"
+  },
+  "evolutionCrystal": {
+    "file": "assets/rabbits/arkoko/arkoko-v2-crystal.png",
+    "x": 372,
+    "y": 146,
+    "width": 38,
+    "height": 45,
+    "spriteWidth": 456,
+    "spriteHeight": 531,
+    "sha1": "69c30e99d78a8e2a7de9bdc84ba63c1709ae84a1"
+  }
+}
