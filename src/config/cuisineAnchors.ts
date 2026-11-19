@@ -63,7 +63,7 @@ export const CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>> = {
   arkoko: a([.68, .2, .38, 6], [.76, .54, .32], [.79, .4, .3]),
   // The second wave (6 November 2026), read on 10 % grids of their v1 sprites, checked on captures (6 November 2026).
   fantome: a([.55, .1, .36, 2], [.55, .45, .3], [.56, .3, .3]),
-  bouyoyo: a([.6, .12, .36, 4], [.6, .48, .3], [.62, .32, .3]),
+  bouyoyo: a([.56, .27, .4, 4], [.65, .55, .3], [.65, .41, .35]), // 19 Nov. 2026: the owner's new drawing.
   nuage: a([.62, .12, .36, 4], [.64, .48, .3], [.66, .32, .3]),
   champignon: a([.62, .24, .3, 8], [.77, .58, .28], [.77, .47, .26]),
   'lapin-de-sulli': a([.5, .12, .4, 0], [.5, .6, .34], [.52, .4, .34]),
@@ -116,7 +116,7 @@ export const EVOLVED_CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>>
   requin: a([0.72, 0.12, .36, 4], [.74, 0.58, .3], [.74, 0.31, .3]),
   // The Christmas update's evolutions (6 November 2026): read on the v2 sprites, checked on captures.
   fantome: a([.45, .19, .28, -2], [.42, .34, .26], [.42, .24, .26]),
-  bouyoyo: a([.76, .31, .22, 6], [.85, .55, .2], [.87, .405, .18]),
+  bouyoyo: a([.6, .33, .3, 6], [.7, .52, .26], [.69, .4, .22]), // 19 Nov. 2026: the owner's new evolution.
   nuage: a([.3, .2, .3, -4], [.3, .4, .3], [.28, .29, .24]),
   champignon: a([.73, .19, .26, 6], [.8, .5, .24], [.78, .375, .22]),
   'lapin-de-sulli': a([.42, .16, .34, -2], [.38, .4, .34], [.3, .28, .3]),
