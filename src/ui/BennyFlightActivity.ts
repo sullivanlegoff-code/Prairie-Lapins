@@ -1,8 +1,8 @@
 import {setCurrencyText} from '../display/currency';
 import {BENNY_FLIGHT_ART, BENNY_FLAPPY, BENNY_FLIGHT_FRIEND_ART, FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
-import {bennyFlightFriend} from '../simulation/bennyFlightFriends';
+import {preferWebp} from '../display/webpTwins';
+import {BENNY_FLIGHT_FRIENDS, bennyFlightFriend, bennyFlightFriendLeft, type BennyFlightFriendKind} from '../simulation/bennyFlightFriends';
 import {advanceBennyFlight, flapBennyFlight, startBennyFlight, BENNY_FLIGHT_GAME, type BennyFlightGame} from '../simulation/bennyFlightGame';
-import {BENNY_FLIGHT_FRIENDS} from '../simulation/bennyFlightFriends';
 import type {Rabbit} from '../state/types';
 import {pausableClock, settleCard} from './activityPause';
 
@@ -15,6 +15,9 @@ import {pausableClock, settleCard} from './activityPause';
  * smooth »): the wing beat gives her a new speed at once, but her height and her tilt follow it softly and her wings never skip.
  * Smooth on a phone (owner, 6 November 2026: « le jeu est laggy »): everything moves by `transform` only (no layout, no repaint of
  * the sky), the column pictures are sized once, and the island's Phaser loop sleeps while the game is open.
+ * Still laggy (owner, 19 November 2026), measured in Chromium: the top line asked the game for today's rewarded games every frame,
+ * and that copied the whole saved game 60 times a second. The line is now written only when its text changes (the score) or
+ * when a game starts or ends (today's rewards). The sky and the friends use their light WebP pictures, decoded on opening.
  */
 export type BennyFlightSound = 'flap' | 'pass' | 'ten' | 'fall' | 'record' | 'faster';
 /** How long Benny is seen falling into the clouds before the end card (owner, 19 November 2026: the end came all at once). */
@@ -31,7 +34,17 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
   frame?: (step: () => void) => number;
 }) {
   const time = pausableClock(options.clock ?? (() => performance.now())), clock = time.now, frame = options.frame ?? (step => requestAnimationFrame(step));
-  const art = BENNY_FLIGHT_ART;
+  const art = {background: preferWebp(BENNY_FLIGHT_ART.background), column: BENNY_FLIGHT_ART.column};
+  const friendUrl = (kind: BennyFlightFriendKind) => preferWebp(BENNY_FLIGHT_FRIEND_ART[kind].url);
+  // The friends' pictures are decoded when the game opens, not on their first visit (a hitch, and a picture popping in late).
+  const friendPictures: HTMLImageElement[] = [];
+  function preloadFriends(): void {
+    if (friendPictures.length) return;
+    for (const kind of BENNY_FLIGHT_FRIENDS.kinds) { const picture = new Image(); picture.src = friendUrl(kind); void picture.decode?.().catch(() => undefined); friendPictures.push(picture); }
+  }
+  /** Less motion asked for: the friends fade in and out in their place instead of flying in. */
+  const still = () => !!globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  let stillFriends = false;
   const layer = document.createElement('div'); layer.className = 'benny-flight-activity'; layer.hidden = true;
   layer.setAttribute('role', 'dialog'); layer.setAttribute('aria-modal', 'true'); layer.setAttribute('aria-label', 'Le vol de Benny');
   layer.innerHTML = `<div class="benny-flight-top"><p class="benny-flight-score" aria-live="polite"></p><p class="benny-flight-quota"></p><button type="button" data-benny-flight-exit>Quitter</button></div>
@@ -62,7 +75,10 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
     for (const view of views.values()) view.style.width = `${BENNY_FLIGHT_GAME.columnWidth * width}px`;
   }
   // What is drawn: a soft height and tilt, and a wing phase that only speeds up or slows down, never jumps back.
-  let shownFriend = '', shownFriendFrame = -1;
+  let shownFriend = '', shownFriendFrame = -1, shownFriendOpacity = '';
+  // The friends' visits follow the seed the game started with: the game's own seed moves on with every column it draws, and
+  // reading it would move a visit while it is under way (a friend popping up or vanishing mid-flight).
+  let friendSeed = 0;
   let shownY = 0, shownTilt = 0, wingPhase = 0, wingRate = 1 / BENNY_FLAPPY.calmBeat, quickUntil = 0, shownBeat = -1, drawnAt = 0;
   function settleView(): void { shownY = game?.y ?? 0; shownTilt = 0; wingRate = 1 / BENNY_FLAPPY.calmBeat; quickUntil = 0; drawnAt = game?.at ?? 0; }
   const bales = (n: number) => `${n} colonne${n > 1 ? 's' : ''}`;
@@ -72,7 +88,12 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
   };
   const paragraph = (text: string, className: string) => { const p = document.createElement('p'); p.className = className; p.textContent = text; return p; };
   function showCard(...children: HTMLElement[]): void { card.replaceChildren(...children); card.hidden = false; }
-  function hud(): void { score.textContent = bales(game?.passed ?? 0); quota.textContent = options.quotaText?.() ?? ''; }
+  // The top line is written only when its text changes; today's rewards (`quotaText` reads the saved game) only when asked.
+  let shownScore: string | null = null, shownQuota: string | null = null;
+  function hud(rewards = false): void {
+    const text = bales(game?.passed ?? 0); if (text !== shownScore) score.textContent = shownScore = text;
+    if (rewards) { const line = options.quotaText?.() ?? ''; if (line !== shownQuota) quota.textContent = shownQuota = line; }
+  }
   function flash(text: string, kind: 'pass' | 'record' | 'ready' | 'bump'): void {
     pop.textContent = text; pop.dataset.kind = kind; pop.classList.remove('shown'); void pop.offsetWidth; pop.classList.add('shown');
     clearTimeout(popTimer); popTimer = setTimeout(() => pop.classList.remove('shown'), kind === 'ready' ? 900 : 520);
@@ -109,19 +130,20 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
     }
     for (const [id, view] of views) if (!seen.has(id)) { view.remove(); views.delete(id); }
     // The friend who flies behind Benny now and then (behind the columns too: it is further away).
-    const mate = game.started ? bennyFlightFriend(game.seed, now - game.startedAt, shownY) : null;
-    if (!mate) { if (!friend.hidden) friend.hidden = true; return; }
+    // It comes in from beyond the left edge and fades in, and drops back out the same way (bennyFlightFriendLeft).
+    const mate = game.started ? bennyFlightFriend(friendSeed, now - game.startedAt, shownY, stillFriends) : null;
+    if (!mate || mate.opacity <= 0) { if (!friend.hidden) { friend.hidden = true; shownFriendOpacity = ''; } return; }
     const look = BENNY_FLIGHT_FRIEND_ART[mate.kind], h = bennyHeight * look.size, w = h * look.aspect;
     if (shownFriend !== mate.kind) {
       shownFriend = mate.kind; shownFriendFrame = -1;
-      friend.style.backgroundImage = `url('${look.url}')`; friend.style.height = `${h}px`; friend.style.width = `${w}px`;
+      friend.style.backgroundImage = `url('${friendUrl(mate.kind)}')`; friend.style.height = `${h}px`; friend.style.width = `${w}px`;
     }
-    if (friend.hidden) friend.hidden = false;
+    const opacity = mate.opacity >= 1 ? '1' : mate.opacity.toFixed(2);
+    if (opacity !== shownFriendOpacity) { shownFriendOpacity = opacity; friend.style.opacity = opacity; }
     const wing = Math.floor(now / BENNY_FLIGHT_FRIEND_ART.beat) % 2;
     if (wing !== shownFriendFrame) { shownFriendFrame = wing; friend.style.backgroundPositionX = wing ? '100%' : '0%'; }
-    // On a narrow stage the whole flight moves right so the friend is never cut by the left edge while it flies along.
-    const shift = Math.max(0, w / 2 + 6 - BENNY_FLIGHT_FRIENDS.x * width);
-    friend.style.transform = `translate3d(${mate.x * width + shift - w / 2}px, ${mate.y * height - h / 2}px, 0)`;
+    friend.style.transform = `translate3d(${bennyFlightFriendLeft(mate, width, w)}px, ${mate.y * height - h / 2}px, 0)`;
+    if (friend.hidden) friend.hidden = false;
   }
   let shownPassed = 0;
   function update(): void {
@@ -159,7 +181,7 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
     const reward = options.onFinished(final);
     const chips = document.createElement('p'); chips.className = 'benny-flight-rewards';
     for (const part of reward ? reward.split(' · ') : []) { const chip = document.createElement('span'); chip.className = 'cuisine-reward-chip'; setCurrencyText(chip, part); chips.append(chip); }
-    hud();
+    hud(true);
     const again = button('Rejouer', start, 'bennyFlightAgain');
     showCard(paragraph(final ? `Benny a franchi ${bales(final)} !` : 'Benny s’est posée un peu trop tôt.', 'benny-flight-title'),
       ...(record ? [paragraph(previousBest ? `Nouveau record ! L’ancien était de ${previousBest}.` : 'Ton premier record !', 'benny-flight-record')] : previousBest ? [paragraph(`Ton record : ${bales(previousBest)}`, 'benny-flight-rules')] : []),
@@ -169,11 +191,11 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
   function start(): void {
     previousBest = options.best?.() ?? 0; shownPassed = 0; fallingAt = null;
     for (const view of views.values()) view.remove(); views.clear();
-    game = startBennyFlight(clock()); running = true; card.hidden = true; settleView();
-    hud(); draw(); flash('Touche pour voler !', 'ready'); schedule();
+    game = startBennyFlight(clock()); friendSeed = game.seed; running = true; card.hidden = true; settleView();
+    hud(true); draw(); flash('Touche pour voler !', 'ready'); schedule();
   }
   function intro(): void {
-    game = startBennyFlight(clock()); running = false; previousBest = options.best?.() ?? 0; settleView(); draw(); hud();
+    game = startBennyFlight(clock()); friendSeed = game.seed; running = false; previousBest = options.best?.() ?? 0; settleView(); draw(); hud(true);
     showCard(paragraph('Le vol de Benny', 'benny-flight-title'),
       paragraph('Touche le ciel pour que Benny batte des ailes, et passe entre les colonnes de bottes de foin. Une colonne touchée ou la mer de nuages, et Benny se pose. Plus tu vas loin, plus ça va vite. Rejoue autant que tu veux !', 'benny-flight-rules'),
       button('C’est parti !', start, 'bennyFlightStart'));
@@ -207,7 +229,7 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
     open(chosen: Rabbit) {
       void chosen; // Only Benny plays: her flapping sprite is the same for every Benny.
       layer.hidden = false; window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: true}));
-      measure(); intro(); $<HTMLButtonElement>('[data-benny-flight-start]').focus();
+      stillFriends = still(); preloadFriends(); measure(); intro(); $<HTMLButtonElement>('[data-benny-flight-start]').focus();
     },
     close, update, flap,
     dispose() { close(); abort.abort(); layer.remove(); },
