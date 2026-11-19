@@ -103,8 +103,8 @@ export const EVOLVED_CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>>
   'princesse-neige': a([.58, .21, .32, 4], [.63, .42, .26], [.62, .33, .26]), // 19 Nov. 2026: bigger head, no neck.
   roukette: a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
   snk: a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
-  tunini: a([.65, .3, .26, 4], [.7, .54, .24], [.66, .43, .22]),
-  virvoletant: a([.72, .3, .3, 4], [.74, .68, .26], [.75, .55, .28]),
+  tunini: a([.6, .34, .24, 6], [.7, .56, .22], [.66, .42, .22]), // 19 Nov. 2026: redrawn without the fez.
+  virvoletant: a([.52, .18, .42, 2], [.58, .46, .3], [.57, .36, .4]), // 19 Nov. 2026: redrawn as a real cowboy.
   'wat-wat': a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
   calinou: a([0.7, 0.18, .36, 4], [.74, 0.55, .3], [.74, 0.34, .3]),
   dadi: a([0.72, 0.1, .36, 4], [.74, 0.56, .3], [.74, 0.3, .3]),
@@ -120,13 +120,13 @@ export const EVOLVED_CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>>
   nuage: a([.3, .2, .3, -4], [.3, .4, .3], [.28, .29, .24]),
   champignon: a([.73, .19, .26, 6], [.8, .5, .24], [.78, .375, .22]),
   'lapin-de-sulli': a([.42, .16, .34, -2], [.38, .4, .34], [.3, .28, .3]),
-  'pain-epice': a([.81, .3, .26, 2], [.84, .535, .22], [.86, .405, .18]),
+  'pain-epice': a([.72, .17, .34, 12], [.72, .46, .28], [.7, .33, .22]), // 19 Nov. 2026: evolution redrawn from the 3/4 base.
   'flocon-cristal': a([.62, .14, .34, 4], [.64, .45, .28], [.66, .3, .28]),
-  vantablack: a([.745, .3, .2, 4], [.865, .57, .2], [.86, .385, .18]),
+  vantablack: a([.43, .21, .44, -6], [.3, .51, .36], [.27, .37, .4]), // 19 Nov. 2026: evolution redrawn upright, looking left.
   'gigi-rarafe': a([.79, .12, .26, 8], [.73, .43, .22], [.81, .185, .22]),
   yetiti: a([.38, .1, .3, -4], [.4, .33, .3], [.4, .2, .24]),
   rennes: a([.72, .255, .28, 4], [.79, .45, .24], [.79, .35, .22]),
-  susucre: a([.7, .28, .34, 6], [.74, .58, .3], [.76, .44, .28]),
+  susucre: a([.72, .27, .38, 6], [.75, .57, .3], [.75, .42, .3]), // 19 Nov. 2026: evolution redrawn on four paws.
   arkoko: a([.826, .233, .22, 4], [.85, .56, .22], [.863, .38, .18]),
 };
 /** `evolved`: the anchors of the species' evolved drawing (a rabbit showing it), else those of its v1. */

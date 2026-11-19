@@ -1,19 +1,20 @@
 /**
  * « Le vol de Benny » (owner, 5 November 2026: a game on the principle of Flappy Bird, with our own name and obstacles, Benny
  * only, played from Benny's perch): Benny flies right through the sky; each touch gives her a wing beat, gravity pulls her
- * down, and columns of hay bales come from both edges with a gap to fly through. One touch of a column, the sky's top or the
- * sea of clouds ends the game. Pure rules: positions are fractions of the stage (x of its width, y of its height), the clock
+ * down, and columns of hay bales come from both edges with a gap to fly through. One touch of a column or of the sea of clouds
+ * ends the game; the sky's top only stops her climb (owner, 19 November 2026: « beaucoup plus simple »). Pure rules: positions are fractions of the stage (x of its width, y of its height), the clock
  * is in milliseconds and the game advances in fixed steps, so a game replays the same from the same touches.
  */
 export const BENNY_FLIGHT_GAME = {
-  /** Benny's place across the stage, and her half box (stage fractions). */
-  x: .26, halfWidth: .045, halfHeight: .06,
-  /** Per second: gravity, the speed a wing beat gives upward, the fastest fall. */
-  gravity: 2.1, flap: .72, maxFall: 1.15,
-  /** Columns: width, horizontal speed per second, delay between two, first one after `firstDelay`. */
-  columnWidth: .11, speed: .3, every: 1750, firstDelay: 1300,
-  /** The gap starts at `gap` and narrows by `narrowing` per column passed, down to `minGap`; its middle stays within the margins. */
-  gap: .36, narrowing: .004, minGap: .26, margin: .14,
+  /** Benny's place across the stage, and her half box (stage fractions; a little smaller than her picture: a brush is forgiven). */
+  x: .26, halfWidth: .036, halfHeight: .048,
+  /** Per second: gravity, the speed a wing beat gives upward, the fastest fall (19 November 2026: softer, 2.1, .72 and 1.15 before). */
+  gravity: 1.4, flap: .58, maxFall: .8,
+  /** Columns: width, horizontal speed per second, delay between two, first one after `firstDelay` (.3 and 1 750 ms before). */
+  columnWidth: .11, speed: .25, every: 2200, firstDelay: 1600,
+  /** The gap starts at `gap` and narrows by `narrowing` per column passed, down to `minGap`; its middle stays within the margins
+   *  (19 November 2026: .36, .004 and .26 before). */
+  gap: .5, narrowing: .002, minGap: .4, margin: .16,
   step: 1000 / 120,
 } as const;
 
@@ -60,6 +61,8 @@ export function advanceBennyFlight(game: BennyFlightGame, now: number): void {
       if (!c.passed && c.x + g.columnWidth < g.x - g.halfWidth) { c.passed = true; game.passed++; }
     }
     game.columns = game.columns.filter(c => c.x + g.columnWidth > -.05);
-    if (game.y - g.halfHeight < 0 || game.y + g.halfHeight > 1 || game.columns.some(c => hits(game, c))) game.over = true;
+    // The sky's top holds her (she glides along it); the clouds below and the columns end the game.
+    if (game.y - g.halfHeight < 0) { game.y = g.halfHeight; game.vy = Math.max(0, game.vy); }
+    if (game.y + g.halfHeight > 1 || game.columns.some(c => hits(game, c))) game.over = true;
   }
 }

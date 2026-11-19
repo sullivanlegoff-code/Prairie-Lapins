@@ -14,6 +14,8 @@
 .benny-flight-stage { position: relative; flex: 1; min-height: 0; overflow: hidden; cursor: pointer; background: #8fc3ee; container-type: size; }
 /* The sky is one wide layer moved by transform (no repaint): wider than the stage by one picture, it starts again each picture. */
 .benny-flight-sky { position: absolute; top: 0; bottom: 0; left: 0; background: 0 0 / auto 100% repeat-x; will-change: transform; }
+.benny-flight-friend { position: absolute; z-index: 0; left: 0; top: 0; background: 0 0 / 200% 100% no-repeat; pointer-events: none; will-change: transform; }
+.benny-flight-friend[hidden] { display: none; }
 .benny-flight-columns { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
 .benny-flight-column { position: absolute; top: 0; bottom: 0; left: 0; will-change: transform; }
 .benny-flight-column img { position: absolute; left: 0; width: 100%; object-fit: cover; }

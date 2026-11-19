@@ -71,9 +71,9 @@ export const EVOLVED_ART: readonly EvolvedSprite[] = [
   // SNK Vétéran.
   {id: 'snk', name: 'Vétéran', file: 'assets/rabbits/snk/snk-v2.png', texture: 'rabbit-snk-evolved-v2', width: 471, height: 384, worldWidth: 55.5, groundY: 15.5},
   // Tunini Séraphique.
-  {id: 'tunini', name: 'Séraphique', file: 'assets/rabbits/tunini/tunini-v2.png', texture: 'rabbit-tunini-evolved-v2', width: 472, height: 482, worldWidth: 55.7, groundY: 12},
+  {id: 'tunini', name: 'Séraphique', file: 'assets/rabbits/tunini/tunini-v2.png', texture: 'rabbit-tunini-evolved-v2', width: 472, height: 482, worldWidth: 55.6, groundY: 12},
   // Virvoletant Cow-boy du Désert.
-  {id: 'virvoletant', name: 'Cow-boy du Désert', file: 'assets/rabbits/virvoletant/virvoletant-v2.png', texture: 'rabbit-virvoletant-evolved-v2', width: 376, height: 518, worldWidth: 44.3, groundY: 12.5},
+  {id: 'virvoletant', name: 'Cow-boy du Désert', file: 'assets/rabbits/virvoletant/virvoletant-v2.png', texture: 'rabbit-virvoletant-evolved-v2', width: 354, height: 550, worldWidth: 41.7, groundY: 12.5},
   // Wat Wat Vague Céleste.
   {id: 'wat-wat', name: 'Vague Céleste', file: 'assets/rabbits/wat-wat/wat-wat-v2.png', texture: 'rabbit-wat-wat-evolved-v2', width: 469, height: 415, worldWidth: 55.3, groundY: 15},
   // Câlinou Nuage Câlineur.
@@ -93,16 +93,16 @@ export const EVOLVED_ART: readonly EvolvedSprite[] = [
   // Lapin Requin Roi des Océans.
   {id: 'requin', name: 'Roi des Océans', file: 'assets/rabbits/requin/requin-v2.png', texture: 'rabbit-requin-evolved-v2', width: 465, height: 484, worldWidth: 54.8, groundY: 12},
   // The Christmas update's thirteen rabbits (5 and 6 November 2026), painted in the same pose as their first drawing.
-  {id: 'vantablack', name: 'Braise d’encre', file: 'assets/rabbits/vantablack/vantablack-v2.png', texture: 'rabbit-vantablack-evolved-v2', width: 434, height: 482, worldWidth: 51.2, groundY: 12},
+  {id: 'vantablack', name: 'Braise d’encre', file: 'assets/rabbits/vantablack/vantablack-v2.png', texture: 'rabbit-vantablack-evolved-v2', width: 364, height: 574, worldWidth: 42.9, groundY: 12, facing: 'left'},
   {id: 'gigi-rarafe', name: 'Reine de la savane', file: 'assets/rabbits/gigi-rarafe/gigi-rarafe-v2.png', texture: 'rabbit-gigi-rarafe-evolved-v2', width: 429, height: 554, worldWidth: 50.6, groundY: 12},
   {id: 'yetiti', name: 'Gardien des neiges', file: 'assets/rabbits/yetiti/yetiti-v2.png', texture: 'rabbit-yetiti-evolved-v2', width: 538, height: 785, worldWidth: 63.4, groundY: 12, facing: 'left'},
   {id: 'rennes', name: 'Chef de l’attelage', file: 'assets/rabbits/rennes/rennes-v2.png', texture: 'rabbit-rennes-evolved-v2', width: 444, height: 552, worldWidth: 52.3, groundY: 12},
-  {id: 'susucre', name: 'Sucre glacé', file: 'assets/rabbits/susucre/susucre-v2.png', texture: 'rabbit-susucre-evolved-v2', width: 444, height: 533, worldWidth: 52.4, groundY: 12},
+  {id: 'susucre', name: 'Sucre glacé', file: 'assets/rabbits/susucre/susucre-v2.png', texture: 'rabbit-susucre-evolved-v2', width: 485, height: 489, worldWidth: 57.2, groundY: 12},
   {id: 'arkoko', name: 'Cape arc-en-ciel', file: 'assets/rabbits/arkoko/arkoko-v2.png', texture: 'rabbit-arkoko-evolved-v2', width: 456, height: 531, worldWidth: 53.8, groundY: 12},
   {id: 'fantome', name: 'Drap de soie', file: 'assets/rabbits/fantome/fantome-v2.png', texture: 'rabbit-fantome-evolved-v2', width: 358, height: 641, worldWidth: 42.2, groundY: 12, facing: 'left'},
   {id: 'bouyoyo', name: 'Bouillotte de luxe', file: 'assets/rabbits/bouyoyo/bouyoyo-v2.png', texture: 'rabbit-bouyoyo-evolved-v2', width: 428, height: 466, worldWidth: 50.5, groundY: 12},
   {id: 'lapin-de-sulli', name: 'Grand manteau', file: 'assets/rabbits/lapin-de-sulli/lapin-de-sulli-v2.png', texture: 'rabbit-lapin-de-sulli-evolved-v2', width: 361, height: 575, worldWidth: 42.6, groundY: 12, facing: 'left'},
-  {id: 'pain-epice', name: 'Chef pâtissier', file: 'assets/rabbits/pain-epice/pain-epice-v2.png', texture: 'rabbit-pain-epice-evolved-v2', width: 391, height: 503, worldWidth: 46.1, groundY: 12},
+  {id: 'pain-epice', name: 'Chef pâtissier', file: 'assets/rabbits/pain-epice/pain-epice-v2.png', texture: 'rabbit-pain-epice-evolved-v2', width: 426, height: 462, worldWidth: 50.2, groundY: 12},
   {id: 'flocon-cristal', name: 'Couronne de givre', file: 'assets/rabbits/flocon-cristal/flocon-cristal-v2.png', texture: 'rabbit-flocon-cristal-evolved-v2', width: 356, height: 531, worldWidth: 42, groundY: 12},
   {id: 'nuage', name: 'Nuage d’arc-en-ciel', file: 'assets/rabbits/nuage/nuage-v2.png', texture: 'rabbit-nuage-evolved-v2', width: 405, height: 575, worldWidth: 47.7, groundY: 12, facing: 'left'},
   {id: 'champignon', name: 'Roi des sous-bois', file: 'assets/rabbits/champignon/champignon-v2.png', texture: 'rabbit-champignon-evolved-v2', width: 488, height: 477, worldWidth: 57.6, groundY: 12},

@@ -45,6 +45,17 @@ export const BENNY_FLAPPY = {
   // Her tilt (degrees, nose up / nose down, for her speed) and how softly her tilt and her height follow the rules (time constants, ms).
   tiltUp: 15, tiltDown: 26, tiltPerSpeed: 22, tiltGlide: 130, heightGlide: 42,
 } as const;
+/**
+ * The friends who fly behind Benny now and then (owner, 19 November 2026; src/simulation/bennyFlightFriends.ts): the dragon
+ * rabbit and the flying rabbit seen from the side, flying right, painted by the image model as two wing beats side by side
+ * (scripts/prepare-benny-flight-friends.mjs). `aspect` is one frame's width over its height; `size` their height next to Benny's.
+ */
+export const BENNY_FLIGHT_FRIEND_ART = {
+  dragon: {url: import.meta.env.BASE_URL + 'assets/benny-envol/ami-dragon.png', aspect: 1.44, size: .95},
+  volant: {url: import.meta.env.BASE_URL + 'assets/benny-envol/ami-volant.png', aspect: 1.2, size: .85},
+  /** One wing frame lasts this long (ms). */
+  beat: 130,
+} as const;
 /** Window event of a full-screen activity opening (`detail` true) or closing: the island's Phaser loop sleeps meanwhile. */
 export const FULLSCREEN_ACTIVITY_EVENT = 'prairie-fullscreen-activity';
 /**

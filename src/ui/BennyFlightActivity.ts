@@ -1,5 +1,6 @@
 import {setCurrencyText} from '../display/currency';
-import {BENNY_FLIGHT_ART, BENNY_FLAPPY, FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
+import {BENNY_FLIGHT_ART, BENNY_FLAPPY, BENNY_FLIGHT_FRIEND_ART, FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
+import {bennyFlightFriend} from '../simulation/bennyFlightFriends';
 import {advanceBennyFlight, flapBennyFlight, startBennyFlight, BENNY_FLIGHT_GAME, type BennyFlightGame} from '../simulation/bennyFlightGame';
 import type {Rabbit} from '../state/types';
 import {pausableClock, settleCard} from './activityPause';
@@ -29,6 +30,7 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
   layer.innerHTML = `<div class="benny-flight-top"><p class="benny-flight-score" aria-live="polite"></p><p class="benny-flight-quota"></p><button type="button" data-benny-flight-exit>Quitter</button></div>
 <div class="benny-flight-stage" data-benny-flight-stage>
 <div class="benny-flight-sky" aria-hidden="true" style="background-image:url('${art.background}')"></div>
+<span class="benny-flight-friend" aria-hidden="true" hidden></span>
 <div class="benny-flight-columns" aria-hidden="true"></div>
 <span class="benny-flight-benny" aria-hidden="true" style="background-image:url('${BENNY_FLAPPY.url}')"></span>
 <p class="benny-flight-pop" aria-hidden="true"></p>
@@ -37,7 +39,7 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
   host.append(layer);
   const $ = <T extends Element>(selector: string) => layer.querySelector<T>(selector)!;
   const stage = $<HTMLElement>('[data-benny-flight-stage]'), card = $<HTMLElement>('[data-benny-flight-card]'), columns = $<HTMLElement>('.benny-flight-columns');
-  const score = $<HTMLElement>('.benny-flight-score'), quota = $<HTMLElement>('.benny-flight-quota'), benny = $<HTMLElement>('.benny-flight-benny'), pop = $<HTMLElement>('.benny-flight-pop'), sky = $<HTMLElement>('.benny-flight-sky');
+  const score = $<HTMLElement>('.benny-flight-score'), quota = $<HTMLElement>('.benny-flight-quota'), benny = $<HTMLElement>('.benny-flight-benny'), pop = $<HTMLElement>('.benny-flight-pop'), sky = $<HTMLElement>('.benny-flight-sky'), friend = $<HTMLElement>('.benny-flight-friend');
   const abort = new AbortController(), views = new Map<number, HTMLElement>();
   let game: BennyFlightGame | null = null, running = false, previousBest = 0, popTimer: ReturnType<typeof setTimeout> | undefined;
   // Stage size in CSS pixels, the sky picture's width at the stage's height, Benny's box; measured on open and on resize.
@@ -46,10 +48,11 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
   function measure(): void {
     const box = stage.getBoundingClientRect(); width = Math.max(1, box.width); height = Math.max(1, box.height);
     tile = Math.max(1, height * skyAspect); sky.style.width = `${Math.ceil(width + tile + 2)}px`;
-    bennyWidth = benny.offsetWidth; bennyHeight = benny.offsetHeight;
+    bennyWidth = benny.offsetWidth; bennyHeight = benny.offsetHeight; shownFriend = '';
     for (const view of views.values()) view.style.width = `${BENNY_FLIGHT_GAME.columnWidth * width}px`;
   }
   // What is drawn: a soft height and tilt, and a wing phase that only speeds up or slows down, never jumps back.
+  let shownFriend = '', shownFriendFrame = -1;
   let shownY = 0, shownTilt = 0, wingPhase = 0, wingRate = 1 / BENNY_FLAPPY.calmBeat, quickUntil = 0, shownBeat = -1, drawnAt = 0;
   function settleView(): void { shownY = game?.y ?? 0; shownTilt = 0; wingRate = 1 / BENNY_FLAPPY.calmBeat; quickUntil = 0; drawnAt = game?.at ?? 0; }
   const bales = (n: number) => `${n} colonne${n > 1 ? 's' : ''}`;
@@ -95,6 +98,18 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
       view.style.transform = `translate3d(${c.x * width}px, 0, 0)`;
     }
     for (const [id, view] of views) if (!seen.has(id)) { view.remove(); views.delete(id); }
+    // The friend who flies behind Benny now and then (behind the columns too: it is further away).
+    const mate = game.started ? bennyFlightFriend(game.seed, now - game.startedAt, shownY) : null;
+    if (!mate) { if (!friend.hidden) friend.hidden = true; return; }
+    const look = BENNY_FLIGHT_FRIEND_ART[mate.kind], h = bennyHeight * look.size, w = h * look.aspect;
+    if (shownFriend !== mate.kind) {
+      shownFriend = mate.kind; shownFriendFrame = -1;
+      friend.style.backgroundImage = `url('${look.url}')`; friend.style.height = `${h}px`; friend.style.width = `${w}px`;
+    }
+    if (friend.hidden) friend.hidden = false;
+    const wing = Math.floor(now / BENNY_FLIGHT_FRIEND_ART.beat) % 2;
+    if (wing !== shownFriendFrame) { shownFriendFrame = wing; friend.style.backgroundPositionX = wing ? '100%' : '0%'; }
+    friend.style.transform = `translate3d(${mate.x * width - w / 2}px, ${mate.y * height - h / 2}px, 0)`;
   }
   let shownPassed = 0;
   function update(): void {
