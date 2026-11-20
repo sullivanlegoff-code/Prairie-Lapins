@@ -88,8 +88,9 @@ export const BENNY_RUN = {
   farLine: 1.5,
   // One pot in `goldEvery` (picked from its number, so the run's draws stay the same) is golden: worth `goldPot` times the points.
   goldEvery: 20, goldPot: 5,
-  /** The setting changes at random every 40 to 55 s. */
-  settingMs: [40_000, 55_000],
+  /** The setting changes at random every 40 to 55 s, when `worldsChange` (owner, 20 Nov. 2026: « Je veux que le jeu se passe dans
+   *  une prairie »: the whole run in the meadow, the lava bridge and the mountain path left aside for now). */
+  settingMs: [40_000, 55_000], worldsChange: false,
   /** A new setting starts this far ahead (m): it comes into sight and Benny runs into it. */
   settingAhead: 80,
   /** Short challenges during the run, one after the other, in this order: the first after `challengeFirstMs`, the next
@@ -130,6 +131,9 @@ export const BENNY_RUN = {
    * whole: one every `edgeEvery` s or so of running (a random share more), the first past `edgeFrom` m, `edgeBoth` of them on both
    * sides, from one wall segment long up to `edgeSegments` with the difficulty. */
   edgeEvery: 55, edgeSpread: 30, edgeFrom: 400, edgeBoth: .25, edgeSegments: 2,
+  /** Whether the sides of the road ever open onto the void (owner, 20 Nov. 2026: a huge meadow left and right and to the horizon,
+   *  fences along the road and now and then a wall to run on): no more, the void stays only in the gaps and pits of the road. */
+  openSides: false,
   /** In the cave, rocks hang from the ceiling (their shadow on the road) and fall when Benny is `rockLand` m away: then a
    * boulder to jump over, like a fence. */
   rockLand: 24,
@@ -396,7 +400,7 @@ export function startBennyRun(now: number, seed = Math.floor(Math.random() * 214
     challenge: null, challengesDone: 0, nextChallengeAt: now + C.challengeFirstMs,
     over: false, events: [], queuedJumpUntil: 0, paceFrom: now, tutorial: tutorial ? {step: 0, ids: [], tries: 0, struck: 0} : null,
   };
-  g.nextSettingAt = now + settingDelay(g);
+  g.nextSettingAt = now + settingDelay(g); if (!C.worldsChange) g.nextSettingAt = Infinity;
   layWalls(g);
   if (g.tutorial) { g.nextSpawnZ = Infinity; placeTutorial(g); g.events.push({type: 'tutorial', step: TUTORIAL[0]}); } else spawn(g);
   return g;
@@ -469,7 +473,7 @@ function layWalls(g: BennyRun, until = g.distance + C.spawnAhead + C.wallSegment
   for (const side of ['left', 'right'] as const) while (g.wallsTo[side] < until) {
     const from = g.wallsTo[side];
     // A stretch with no wall begins (both sides' segments start at the same places): which sides, how long.
-    if (!g.edge && !g.tutorial && from >= g.nextEdgeZ) {
+    if (C.openSides && !g.edge && !g.tutorial && from >= g.nextEdgeZ) {
       const sides: Side[] = random(g) < C.edgeBoth ? ['left', 'right'] : [random(g) < .5 ? 'left' : 'right'];
       const length = C.wallSegment * Math.min(C.edgeSegments, 1 + Math.floor(runDifficulty(g) * (C.edgeSegments - 1) + random(g)));
       g.edge = {to: from + length, sides};
@@ -739,7 +743,8 @@ function layPattern(g: BennyRun, pattern: RunPattern, z: number): number {
       if (g.entities.some(e => e.kind === 'pillar' && ((e.z > z - 25 && e.z < z + 40) || sides.some(w => w.to > e.z - 25 && w.from <= e.z + 5))) || g.holes.some(h => h.to > z - 25 && h.from < z + 40)) return z + 2;
       const lane = any();
       g.pits.push({lane, from, to, open: true});
-      for (const w of sides) { w.void = true; w.runnable = false; }
+      // (In the meadow the sides stay: fences, no wall to run on beside the open lane.)
+      for (const w of sides) { if (C.openSides) w.void = true; w.runnable = false; }
       for (let k = from + 2; k < to - 2; k += 4) add(g, 'coin', pick(g, all.filter(l => l !== lane)), k);
       return to + 4;
     }
@@ -837,7 +842,7 @@ function layMoment(g: BennyRun, kind: RunMoment, z: number): number {
       layWalls(g, to + 6 + C.wallSegment); // (Its sides laid already, to be made the void.)
       for (let k = z; k < from - 1; k += 2) add(g, 'coin', lane, k);
       for (const l of all) if (l !== lane) g.pits.push({lane: l, from, to, open: true});
-      for (const w of g.walls) if (w.to > from - 6 && w.from < to + 6) { w.void = true; w.runnable = false; }
+      for (const w of g.walls) if (w.to > from - 6 && w.from < to + 6) { if (C.openSides) w.void = true; w.runnable = false; }
       for (let k = from + 2; k < to - 1; k += 3) if (pots.every(p => Math.abs(k - p) > 2)) add(g, 'coin', lane, k);
       for (const p of pots) add(g, 'pot', lane, p);
       end = to + 4; break;

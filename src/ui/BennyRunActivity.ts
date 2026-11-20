@@ -1,6 +1,6 @@
 import '../display/benny-run.css';
 import {FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
-import {advanceBennyRun, BENNY_RUN, BENNY_RUN_SETTING_SHORT, comboMultiplier, wallAt, floorHeight, ledgeHeight, platformAt, lanesAt, reach, settingAt, wallLane, dragonVisible, inAir, powerActive, runHeight, runInput, runSummary, sliding, startBennyRun, takeRunEvents, RUN_SETTINGS,
+import {advanceBennyRun, BENNY_RUN, BENNY_RUN_SETTING_SHORT, comboMultiplier, floorHeight, ledgeHeight, platformAt, lanesAt, reach, settingAt, wallLane, dragonVisible, inAir, powerActive, runHeight, runInput, runSummary, sliding, startBennyRun, takeRunEvents, RUN_SETTINGS,
   type BennyRun, type ChallengeKind, type RunEntity, type RunInput, type RunPower, type RunSetting, type RunSummary, type TutorialStep, type WallSegment} from '../simulation/bennyRun';
 import {RUN_SIDES, type RunSidePicture} from '../config/bennyRunSides';
 import {pausableClock, settleCard} from './activityPause';
@@ -93,6 +93,8 @@ const WEATHER = {pont: 22, montagne: 46} as const;
 /** The painted square textures of the track (scripts/prepare-benny-run-decor.mjs): planks, slabs, the verges, the isles' cliff at the
  *  edge of the void, the stones of the stairs and of the walls in the middle of the road, the lava's and the snow's grass tufts, the
  *  things beside the road and the gates. */
+/** The pictures the painted floor needs (the rest is drawn from its own picture when it has loaded). */
+const FLOOR_DECOR = ['decor-herbe', 'decor-dalles'] as const;
 const DECOR = ['decor-planches', 'decor-herbe', 'decor-falaise', 'decor-dalles', 'decor-dalles-lave', 'decor-dalles-neige', 'decor-socle-framboise', 'decor-corps-creme', 'decor-corps-ocre', 'decor-lave-pierre', 'decor-lave-sol', 'decor-neige-pierre', 'decor-neige-sol', 'decor-lave-socle-sombre', 'decor-lave-corps-basalte', 'decor-lave-corps-roche', 'decor-neige-socle-bois', 'decor-neige-corps-pierre', 'decor-neige-corps-roche', 'decor-bord', 'decor-bord-lave', 'decor-bord-neige', 'decor-arche-prairie', 'decor-arche-lave', 'decor-arche-neige'] as const;
 type DecorName = typeof DECOR[number];
 /** The run's decor tiles (for the tests). */
@@ -103,7 +105,7 @@ type StripLevel = {el: CanvasImageSource; w: number; h: number};
 type StripPicture = StripLevel[];
 const STRIP_LEVELS = 4;
 const stripKey = (p: RunSidePicture) => `${p.file}:${p.crop ?? ''}`;
-const SIDE_PICTURES = [...new Map([RUN_SIDES.grass, RUN_SIDES.fence, RUN_SIDES.wall].flatMap(s => Object.values(s.picture) as RunSidePicture[]).map(p => [stripKey(p), p])).values()];
+const SIDE_PICTURES = [...new Map([RUN_SIDES.fence, RUN_SIDES.wall].flatMap(s => Object.values(s.picture) as RunSidePicture[]).map(p => [stripKey(p), p])).values()];
 /** The near copy of a strip is at most this many pixels high (a wall is never drawn much taller on a phone). */
 const STRIP_HIGH = 480;
 /** How many metres one texture covers: planks across the road and along it, the grass both ways, a wall along it (its height is
@@ -113,9 +115,9 @@ const GROUND_RATIO = 1;
 /** The detail of the painted track, finest first (a device that cannot keep up steps down, see watchFrames): how wide (screen
  *  points) a painted wall's column is, and how high a row of the ground is at the horizon and how much more at the bottom of the
  *  screen (near, the ground's perspective hardly changes across a row: taller rows there do not show). */
+/** A frame that takes longer than this to draw (ms) counts as slow (see watchFrames). */
+const SLOW_DRAW_MS = 11;
 const DETAIL = [{column: 16, band: 5, grow: 10}, {column: 24, band: 6, grow: 14}, {column: 32, band: 8, grow: 18}] as const;
-/** How far out the cliff's foot leans beyond the edge of the road (m). */
-const VOID_LIP = .5;
 /** A wall to run on (owner, 13 Nov., after Blade of Brim) is one lane thick. */
 const WALL_THICK = LANE_WIDTH;
 /** The wand's streak to a thing struck more than `STREAK_FROM` m ahead lasts `STREAK_MS`. */
@@ -160,6 +162,14 @@ const SKY_FOOT: Record<RunSetting, string> = {grotte: '252,190,140', pont: '198,
 const ROAD_GROUND = {grotte: 'decor-dalles', pont: 'decor-dalles-lave', montagne: 'decor-dalles-neige'} as const;
 /** Each world's ground past the road's edge. */
 const VERGE_GROUND = {grotte: 'decor-herbe', pont: 'decor-lave-sol', montagne: 'decor-neige-sol'} as const;
+/** The meadow all around the road (owner, 20 Nov. 2026): its painted grass, how many metres one tile covers, its flat green while it
+ *  loads, and the dark of a hole in the road. */
+const MEADOW = VERGE_GROUND.grotte, MEADOW_TILE = 3.3, MEADOW_GREEN = '#6fa83e', HOLE_DARK = '#2e1c12';
+/** The meadow's things in three bands out from the road's edge (m): one spot every `every` m on each side, `keep` of them used,
+ *  `grow` times the size of the things beside the road. */
+const MEADOW_BANDS = [{out: [3, 7], every: 8, keep: .55, grow: 1}, {out: [9, 17], every: 11, keep: .5, grow: 1.25}, {out: [20, 34], every: 15, keep: .5, grow: 1.6}] as const;
+/** How far past the outer lanes' edge the road's slabs go (m): under the fence. */
+const ROAD_EDGE = .25;
 /** Each world's sheet of things beside the road (16 Nov.: the meadow's roses and pumpkins, the lava's basalt, crystals and brazier,
  *  the snow's rocks, pines and lantern), and their heights. */
 const PROP_SHEET = {grotte: 'decor-bord', pont: 'decor-bord-lave', montagne: 'decor-bord-neige'} as const;
@@ -182,9 +192,7 @@ const MID_LOOK: Record<RunSetting, MidLook> = {
 const HAZE_FROM = 22, HAZE_SPAN = 70, HAZE_MAX = .55;
 const hash01 = (n: number) => { let t = Math.imul(n ^ 0x9e3779b9, 2654435761) >>> 0; t ^= t >>> 15; t = Math.imul(t, 2246822519) >>> 0; t ^= t >>> 13; return (t >>> 0) / 4294967296; };
 const hazeAt = (z: number) => Math.min(1, Math.max(0, (z - HAZE_FROM) / HAZE_SPAN)) * HAZE_MAX;
-const PLANK_ALONG = 3, GRASS_TILE = 3.3, CLIFF_TILE = 4, VERGE = .6, CLIFF_DEPTH = 4;
-/** How far the slabs of a row of the ground go past the road's edge, under the verge (m): no gap between them where the row leans. */
-const EDGE_SPARE = .4;
+const PLANK_ALONG = 3, CLIFF_TILE = 4, VERGE = .6, CLIFF_DEPTH = 4;
 /** The colours of the painted decor where shapes still stand: the clouds of the void, the isles' rock and grass lip, the tops
  *  and sides of platforms and stairs. */
 const PAINTED_LOOK = {cloudTop: '#f2c2c4', cloudBottom: '#fcc495', rock: '#9c6c55', rockDark: '#6d4a4f', lip: '#5f8f2f', top: '#e8955a', side: '#995f52', joint: 'rgba(90,40,14,.55)', lane: 'rgba(255,255,255,.2)'};
@@ -225,6 +233,8 @@ export type RunSound = 'strike' | 'pot' | 'coin' | 'bump' | 'jump' | 'roll' | 's
  */
 /** A big moment (shock wave, spin, a flying pot bowling a creature over) plays in slow motion at this rate for a moment. */
 const SLOW_RATE = .35;
+/** The longest stretch of the run's time one frame may catch up (ms): past it, a stall of the page is let go. */
+const CATCH_UP_MS = 100;
 const HIT_STOP = 40, HIT_STOP_GAP = 400, SHAKES = {strike: {ms: 90, px: 3}, bump: {ms: 260, px: 9}, shock: {ms: 320, px: 11}} as const;
 const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? 's' : ''}`;
 
@@ -241,12 +251,14 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   /** A short sound for an action (the game's Bruitages channel); silent when absent. */
   sound?: (kind: RunSound, pitch?: number) => void;
   onExit?: () => void; clock?: () => number; frame?: (step: () => void) => number;
+  /** How long « C'est parti ! » may wait for the pictures to be loaded and decoded (ms); none when absent. */
+  waitForArt?: number;
 } = {}) {
   const time = pausableClock(options.clock ?? (() => performance.now())), clock = time.now, frame = options.frame ?? (step => requestAnimationFrame(step));
   const layer = document.createElement('div'); layer.className = 'benny-run-activity'; layer.hidden = true;
   layer.setAttribute('role', 'dialog'); layer.setAttribute('aria-modal', 'true'); layer.setAttribute('aria-label', 'Benny Rampage');
   layer.innerHTML = `<div class="benny-run-top"><div class="benny-run-lives" role="img"><span class="benny-run-life"></span><span class="benny-run-life"><i></i></span></div>
-<div class="benny-run-plaque"><p class="benny-run-score" aria-live="polite"></p><p class="benny-run-mult" hidden></p></div>
+<div class="benny-run-plaque"><p class="benny-run-score"></p><p class="benny-run-mult" hidden></p></div>
 <button type="button" class="benny-run-round" data-benny-run-pause aria-label="Pause">❚❚</button><button type="button" class="kit-close" data-benny-run-exit aria-label="Quitter">✕</button>
 <div class="benny-run-row"><p class="benny-run-metres"></p><p class="benny-run-coins"></p><p class="benny-run-hearts" hidden></p><p class="benny-run-power"></p></div></div>
 <div class="benny-run-quest" hidden><p class="benny-run-challenge"></p><div class="benny-run-quest-bar" aria-hidden="true"><span></span></div></div>
@@ -368,13 +380,16 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     for (let i = 0; i < 3; i++) k.drawImage(image, 0, sy, image.naturalWidth, sh, i * w, 0, w, h);
     return el;
   }
-  const decorReady = () => DECOR.every(name => decor[name].near && decor[name].far) && [...strips.values()].every(s => s.pic);
+  const decorReady = () => FLOOR_DECOR.every(name => decor[name].near && decor[name].far);
+  /** Everything a run needs to look right from its first metre: the floor, the sides, Benny's gallop and the creatures. */
+  const artReady = () => decorReady() && [...strips.values()].every(s => s.pic) && (['benny', 'benny-galop', 'creatures', 'objets', 'pieces', 'obstacles'] as const).every(n => art[n].ready) && skyPictures.grotte.ready;
   /** Counts the times the run's pictures were let go (`releaseArt`): a picture still loading from before is then dropped. */
   let artRound = 0;
+  const decoded = (image: HTMLImageElement) => (typeof image.decode === 'function' ? image.decode() : Promise.resolve()).catch(() => undefined);
   function loadArt(): void {
     const round = artRound, current = () => round === artRound;
     for (const s of RUN_SETTINGS) { const sky = skyPictures[s]; if (sky.image) continue;
-      const image = new Image(); image.decoding = 'async'; image.onload = () => { if (current()) sky.ready = true; }; image.src = `${import.meta.env.BASE_URL}assets/benny-run/${SKY_FILES[s]}.webp`; sky.image = image; }
+      const image = new Image(); image.decoding = 'async'; image.onload = () => { void decoded(image).then(() => { if (current()) sky.ready = true; }); }; image.src = `${import.meta.env.BASE_URL}assets/benny-run/${SKY_FILES[s]}.webp`; sky.image = image; }
     for (const name of DECOR) {
       if (decor[name].image) continue;
       const image = new Image(); image.decoding = 'async'; image.onload = () => {
@@ -405,7 +420,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     }
     for (const name of PAINTED) {
       if (art[name].image) continue;
-      const image = new Image(); image.decoding = 'async'; image.onload = () => { if (current()) art[name].ready = true; };
+      const image = new Image(); image.decoding = 'async'; image.onload = () => { void decoded(image).then(() => { if (current()) art[name].ready = true; }); };
       image.src = `${import.meta.env.BASE_URL}${RUN_ART[name].image}`; art[name].image = image;
     }
   }
@@ -527,43 +542,70 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   /** A setting's colours, the tops and sides of stairs and platforms in wood and rock once the decor is painted. */
   const paintedLook = (setting: RunSetting) => decorReady() ? {...SETTING_COLOURS[setting], wall: PAINTED_LOOK.top, wallOff: PAINTED_LOOK.side} : SETTING_COLOURS[setting];
   const posmod = (a: number, m: number) => ((a % m) + m) % m;
-  /** The painted ground, row by row of the screen (each row is one depth): the grass of the isle, the planks of the road over it;
-   *  nothing over a gap (the clouds of the void show). */
+  /** The meadow's grass (owner, 20 Nov. 2026: « à droite et à gauche et sur l'horizon c'est une prairie énorme »), as a pattern of
+   *  its painted tile: one fill a row of the screen, across the whole width (near and far tiles, per drawing context). */
+  const meadow = {k: null as CanvasRenderingContext2D | null, near: null as CanvasPattern | null, far: null as CanvasPattern | null, from: null as CanvasImageSource | null};
+  const meadowMatrix = typeof DOMMatrix === 'function' ? new DOMMatrix() : null;
+  function meadowPattern(c: CanvasRenderingContext2D, far: boolean): CanvasPattern | null {
+    const t = decor[MEADOW], src = t.near;
+    if (!src || !t.far || !meadowMatrix) return null;
+    if (meadow.k !== c || meadow.from !== src) { meadow.k = c; meadow.from = src; meadow.near = c.createPattern(src, 'repeat'); meadow.far = c.createPattern(t.far, 'repeat'); }
+    return far ? meadow.far : meadow.near;
+  }
+  /**
+   * The painted ground, row by row of the screen (each row is one depth): the meadow across the whole width, out to the horizon, then
+   * the road's slabs over it, cut to the road's edges (no stair steps along them); over a gap, the dark of the hole instead of the slabs.
+   */
   function paintedFloor(c: CanvasRenderingContext2D, g: BennyRun): void {
     const horizon = height * HORIZON, H = cameraHeight() + camUp, k = scale0() * CAMERA_BACK, {band: BAND, grow} = DETAIL[detail];
     const aheadAt = (y: number) => k * H / Math.max(.01, y - horizon) - CAMERA_BACK;
-    const row = (name: DecorName, x0: number, x1: number, a0: number, a1: number, across: number, along: number, y: number, s: number, deep = BAND + .5) => {
+    const row = (name: DecorName, x0: number, x1: number, a0: number, a1: number, across: number, along: number, y: number, s: number, deep: number) => {
       const far = a0 > 30, t = decor[name], el = far ? t.far : t.near, side = far ? FAR_SIDE : NEAR_SIDE; if (!el) return;
       const sw = Math.min(side * 4, (x1 - x0) / across * side), sh = Math.max(.5, Math.min(side, (a0 - a1) / along * side));
       c.drawImage(el, posmod(x0, across) / across * side, posmod(-(g.distance + a0), along) / along * side, sw, sh, width / 2 + (x0 + bendAt((a0 + a1) / 2) - camX) * s, y, (x1 - x0) * s, deep);
     };
+    // The rows, far to near, measured once: where each lies on the screen (hills included) and what is under it.
+    const rows: {a0: number; a1: number; top: number; deep: number; s: number; mid: number; hole: boolean}[] = [];
     for (let y = Math.max(0, Math.floor(horizon)), step: number = BAND; y < height + 60; y += step) {
       step = Math.round(BAND + grow * Math.max(0, Math.min(1, (y - horizon) / Math.max(1, height - horizon))));
       const a0 = Math.min(FAR, aheadAt(y)), a1 = Math.max(NEAR, aheadAt(y + step)); if (a1 >= FAR || a0 <= NEAR) continue;
-      const mid = (a0 + a1) / 2, z = g.distance + mid; if (g.holes.some(h => z >= h.from && z < h.to)) continue;
-      const half = halfAt(g, mid), s = project(0, mid, 0).s;
-      // Where that strip of ground really is on the screen, hills included (far to near: a crest hides what lies behind it).
-      const top = project(0, a0, 0).y, deep = project(0, a1, 0).y - top + .8; if (deep <= .8) continue;
-      // Each world has its ground (the meadow's verges are grass; the lava's and the snow's go on to the edge), out to the tall grass
-      // past the fences, or only a verge over an open side.
-      const set = settingAt(g, z), slabs = ROAD_GROUND[set], bridge = gate && z >= gate.z - GATE_BRIDGE && z < gate.z;
-      if (bridge) { row('decor-planches', -half - VERGE, half + VERGE, a0, a1, PLANK_ALONG * 2, PLANK_ALONG, top, s, deep); continue; }
-      // The slabs a little wider than the road, then the verges over their edges, each row leaning along the road's edge (owner, 20 Nov.:
-      // upright rows made stair steps along it).
-      const verge = VERGE_GROUND[set], left = sideGround(g, 'left', z), right = sideGround(g, 'right', z);
-      row(slabs, -half - EDGE_SPARE, half + EDGE_SPARE, a0, a1, SLAB_TILE, SLAB_TILE, top, s, deep);
-      for (const [dir, out] of [[-1, left], [1, right]] as const) {
-        const xt = project(dir * halfAt(g, a0), a0, 0).x, xb = project(dir * halfAt(g, a1), a1, 0).x, kx = (xb - xt) / Math.max(1, deep - .8);
-        const edge = (xt - width / 2) / s - bendAt(mid) + camX, base = c.getTransform();
-        c.setTransform(base.a, base.b, base.c + base.a * kx, base.d + base.b * kx, base.e - base.a * kx * top, base.f - base.b * kx * top);
-        if (dir < 0) row(verge, edge - out, edge, a0, a1, GRASS_TILE, GRASS_TILE, top, s, deep); else row(verge, edge, edge + out, a0, a1, GRASS_TILE, GRASS_TILE, top, s, deep);
-        c.setTransform(base);
-      }
+      const mid = (a0 + a1) / 2, z = g.distance + mid, top = project(0, a0, 0).y, deep = project(0, a1, 0).y - top + .8; if (deep <= .8) continue;
+      rows.push({a0, a1, top, deep, s: project(0, mid, 0).s, mid, hole: g.holes.some(h => z >= h.from && z < h.to)});
     }
+    // The meadow: its flat green under everything (no seam can show), then its painted grass, a row at a time.
+    const farY = project(0, FAR, 0).y;
+    c.fillStyle = MEADOW_GREEN; c.fillRect(0, farY, width, height - farY);
+    for (const r of rows) {
+      const pattern = meadowPattern(c, r.a0 > 30); if (!pattern || !meadowMatrix) break;
+      const side = r.a0 > 30 ? FAR_SIDE : NEAR_SIDE, scaleX = r.s * MEADOW_TILE / side, along = (r.a0 - r.a1) / MEADOW_TILE * side, scaleY = r.deep / Math.max(.5, along);
+      const v0 = posmod(-(g.distance + r.a0), MEADOW_TILE) / MEADOW_TILE * side;
+      meadowMatrix.a = scaleX; meadowMatrix.b = 0; meadowMatrix.c = 0; meadowMatrix.d = scaleY;
+      meadowMatrix.e = width / 2 + (bendAt(r.mid) - camX) * r.s; meadowMatrix.f = r.top - v0 * scaleY;
+      pattern.setTransform(meadowMatrix); c.fillStyle = pattern; c.fillRect(0, r.top, width, r.deep);
+    }
+    // The road: cut to its edges, its slabs row by row; a gap's rows are the dark of the hole (its far cliff is drawn by `ground`).
+    const zs = cuts(g, NEAR, FAR), edge = (z: number) => halfAt(g, z) + ROAD_EDGE;
+    c.save(); c.beginPath();
+    zs.forEach((z, i) => { const p = project(-edge(z), z, 0); if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); });
+    for (let i = zs.length - 1; i >= 0; i--) { const p = project(edge(zs[i]), zs[i], 0); c.lineTo(p.x, p.y); }
+    c.closePath(); c.clip();
+    for (const r of rows) {
+      const half = halfAt(g, r.mid) + ROAD_EDGE + .3;
+      if (r.hole) { c.fillStyle = HOLE_DARK; c.fillRect(0, r.top, width, r.deep); continue; }
+      const bridge = gate && g.distance + r.mid >= gate.z - GATE_BRIDGE && g.distance + r.mid < gate.z;
+      if (bridge) row('decor-planches', -half, half, r.a0, r.a1, PLANK_ALONG * 2, PLANK_ALONG, r.top, r.s, r.deep);
+      else row(ROAD_GROUND[settingAt(g, g.distance + r.mid)], -half, half, r.a0, r.a1, SLAB_TILE, SLAB_TILE, r.top, r.s, r.deep);
+    }
+    c.restore();
+    // Far off, the meadow fades into the warm light of the horizon.
+    const hazeTo = farY + (height - farY) * .22, grad = c.createLinearGradient(0, farY, 0, hazeTo);
+    grad.addColorStop(0, 'rgba(248,206,160,.85)'); grad.addColorStop(.35, 'rgba(236,206,150,.35)'); grad.addColorStop(1, 'rgba(236,206,150,0)');
+    c.fillStyle = grad; c.fillRect(0, farY - 1, width, hazeTo - farY + 1);
+    // (And a little above it, over the sky's foot: no hard line where the meadow meets the sky.)
+    const hazeFrom = farY - height * .035, up = c.createLinearGradient(0, hazeFrom, 0, farY);
+    up.addColorStop(0, 'rgba(248,206,160,0)'); up.addColorStop(1, 'rgba(248,206,160,.85)');
+    c.fillStyle = up; c.fillRect(0, hazeFrom, width, farY - hazeFrom);
   }
-  /** How far the ground goes past the road's edge at `z` m (along the road) on one side: out past the tall grass, or a verge over an
-   *  open side. */
-  const sideGround = (g: BennyRun, side: 'left' | 'right', z: number) => wallAt(g, side, z)?.void ? VERGE : RUN_SIDES.grass.ground;
   /** The cliff of an isle facing Benny, `ahead` m in front, from `x0` to `x1` m across, seen only inside the opening `hole` (a path). */
   function cliffFace(c: CanvasRenderingContext2D, ahead: number, x0: number, x1: number, hole: () => void): void {
     const t = decor['decor-falaise'], el = ahead > 30 ? t.far : t.near, side = ahead > 30 ? FAR_SIDE : NEAR_SIDE; if (!el || ahead >= FAR) return;
@@ -575,68 +617,52 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     }
     // Deeper down, the isle fades into the clouds.
     const grad = c.createLinearGradient(0, top.y + CLIFF_DEPTH * s * .5, 0, top.y + CLIFF_DEPTH * s);
-    grad.addColorStop(0, 'rgba(252,196,149,0)'); grad.addColorStop(1, PAINTED_LOOK.cloudBottom);
+    grad.addColorStop(0, 'rgba(46,28,18,0)'); grad.addColorStop(1, HOLE_DARK);
     c.fillStyle = grad; c.fillRect(width / 2 + (x0 + bendAt(ahead) - camX) * s, top.y + CLIFF_DEPTH * s * .5, (x1 - x0) * s, CLIFF_DEPTH * s * .5 + 1);
     c.restore();
-  }
-  /** The isle's edge over the void: its grass lip, then its rock going down and away under it, past the tall grass (beside a fence or
-   *  a painted wall to run on) or past the verge (an open side); a tiered wall to run on hides it. */
-  function voidEdges(c: CanvasRenderingContext2D, g: BennyRun): void {
-    for (const dir of [-1, 1]) {
-      const side = dir < 0 ? 'left' : 'right', segs = g.walls.filter(w => w.side === side).map(w => ({a: w.from - g.distance, b: w.to - g.distance, out: w.void ? VERGE : RUN_SIDES.grass.ground})).sort((x, y) => x.a - y.a);
-      const open: {from: number; to: number; out: number}[] = []; let at = NEAR;
-      for (const s of segs) { if (s.b <= at) continue; if (s.a > at) open.push({from: at, to: Math.min(s.a, FAR), out: VERGE}); open.push({from: Math.max(at, s.a), to: Math.min(s.b, FAR), out: s.out}); at = Math.max(at, s.b); if (at >= FAR) break; }
-      if (at < FAR) open.push({from: at, to: FAR, out: VERGE});
-      for (const {from, to, out} of open) {
-        if (to - from < .05) continue;
-        const zs = cuts(g, from, to), edge = (z: number) => dir * (halfAt(g, z) + out);
-        c.beginPath(); zs.forEach((z, i) => { const p = project(edge(z), z, 0); if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); });
-        // The isle's cliff drops nearly straight down from the edge and fades into the clouds: past it, only the void (owner, 13 Nov.).
-        for (const z of [...zs].reverse()) { const p = project(edge(z) + dir * VOID_LIP, z, -CLIFF_DEPTH); c.lineTo(p.x, p.y); }
-        c.closePath(); const p0 = project(edge(from), Math.max(from, 0), 0), p1 = project(edge(from) + dir * VOID_LIP, Math.max(from, 0), -CLIFF_DEPTH);
-        const grad = c.createLinearGradient(p0.x, p0.y, p1.x, p1.y); grad.addColorStop(0, PAINTED_LOOK.rock); grad.addColorStop(.55, PAINTED_LOOK.rockDark); grad.addColorStop(1, 'rgba(109,74,79,0)');
-        c.fillStyle = grad; c.fill();
-        // The grass lip: a thick line along the edge, so the end of the ground reads on a small screen.
-        c.strokeStyle = PAINTED_LOOK.lip; c.lineJoin = 'round'; c.beginPath();
-        zs.forEach((z, i) => { const p = project(edge(z), z, 0); c.lineWidth = Math.max(2, p.s * .14); if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); }); c.stroke();
-      }
-    }
   }
   /** The sides of the road (owner, 19 Nov.: the old walls of the scenery gone): tall grass past a fence on both sides, now and then
    *  a wall Benny runs on; over an open side, only the verge and the void. From the farthest to the nearest: a nearer thing passes in
    *  front. Their pictures: RUN_SIDES (src/config/bennyRunSides.ts). */
   function paintedWalls(c: CanvasRenderingContext2D, g: BennyRun): void {
+    meadowThings(c, g);
     for (const w of [...g.walls].sort((a, b) => b.from - a.from)) {
       const dir = w.side === 'left' ? -1 : 1;
       if (w.void) { roadside(c, g, dir, w.from, w.to, true); continue; }
       const from = Math.max(NEAR, w.from - g.distance), to = Math.min(FAR, w.to - g.distance); if (to <= from) continue;
       const world = worldAhead((from + to) / 2);
-      tallGrass(c, g, dir, from, to, world);
       if (w.runnable) { runWall(c, g, w, dir, from, to, world); continue; }
       roadside(c, g, dir, w.from, w.to, false); fence(c, g, dir, from, to, world);
     }
   }
-  /** The tall grass past the fence, row by row from the farthest, not over a gap in the road (the ground is not there). Each row
-   *  starts at its own place along the picture, so the rows do not line up. */
-  function tallGrass(c: CanvasRenderingContext2D, g: BennyRun, dir: number, from: number, to: number, world: RunSetting): void {
-    const grass = RUN_SIDES.grass, pic = stripOf(grass.picture[world]); if (!pic) return;
-    for (const [a, b] of solidStretches(g, from, to)) grass.rows.forEach((row, i) =>
-      stripBand(c, g, z => dir * (halfAt(g, z) + row.out), a, b, row.high, pic, i * .37 + (dir > 0 ? .5 : 0)));
+  /** The meadow's painted things (rocks, roses, stumps, mushrooms, ferns, blossoming trees, pumpkins…) scattered out in the grass on
+   *  both sides, in three bands farther and farther from the road, sparser and bigger away from it; all drawn from the farthest (they
+   *  stand beyond the fences, so a fence or a wall nearer the road always passes in front). The same spots every run. */
+  function meadowThings(c: CanvasRenderingContext2D, g: BennyRun): void {
+    const list: {x: number; ahead: number; n: number; scale: number}[] = [];
+    MEADOW_BANDS.forEach((band, b) => {
+      const first = Math.floor((g.distance + NEAR + 1) / band.every), last = Math.floor((g.distance + FAR) / band.every);
+      for (let k = first; k <= last; k++) for (const dir of [-1, 1]) {
+        const n = 7919 * (b + 1) + k * 2 + (dir > 0 ? 1 : 0); if (hash01(n + 401) > band.keep) continue;
+        const z = k * band.every + hash01(n) * band.every * .8, ahead = z - g.distance; if (ahead < NEAR + 1 || ahead > FAR) continue;
+        list.push({x: dir * (halfAt(g, ahead) + band.out[0] + hash01(n + 13) * (band.out[1] - band.out[0])), ahead, n, scale: PROP_GROW * band.grow});
+      }
+    });
+    list.sort((a, b) => b.ahead - a.ahead);
+    for (const t of list) prop(c, t.n, 'grotte', t.x, t.ahead, 0, t.scale);
   }
-  /** The stretches from `from` to `to` m ahead that are not over a gap across the road. */
-  function solidStretches(g: BennyRun, from: number, to: number): [number, number][] {
-    const out: [number, number][] = []; let at = from;
-    for (const h of g.holes.map(h => [h.from - g.distance, h.to - g.distance] as const).filter(([a, b]) => b > from && a < to).sort((x, y) => x[0] - y[0])) {
-      if (h[0] > at) out.push([at, h[0]]); at = Math.max(at, h[1]);
-    }
-    if (to > at) out.push([at, to]);
-    return out;
+  /** A fence or a wall in flat colours, while its painting has not loaded (or if it never does): never an invisible wall. */
+  function flatBand(c: CanvasRenderingContext2D, g: BennyRun, at: (z: number) => number, from: number, to: number, high: number, colour: string): void {
+    const zs = cuts(g, from, to); c.fillStyle = colour; c.beginPath();
+    zs.forEach((z, i) => { const p = project(at(z), z, 0); if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); });
+    for (let i = zs.length - 1; i >= 0; i--) { const p = project(at(zs[i]), zs[i], high); c.lineTo(p.x, p.y); }
+    c.closePath(); c.fill();
   }
   /** A wall Benny can run on: its painted strip along the road, its shadow at its foot, and its end facing Benny when it begins ahead
    *  of her (one lane thick, the start of the same picture laid flat, a little shaded). */
   function runWall(c: CanvasRenderingContext2D, g: BennyRun, w: WallSegment, dir: number, from: number, to: number, world: RunSetting): void {
-    const wall = RUN_SIDES.wall, pic = stripOf(wall.picture[world]); if (!pic) return;
-    const x = (z: number) => dir * (wallXAt(g, z) + wall.out);
+    const wall = RUN_SIDES.wall, pic = stripOf(wall.picture[world]), x = (z: number) => dir * (wallXAt(g, z) + wall.out);
+    if (!pic) { flatBand(c, g, x, from, to, wall.high, '#e8d3a6'); flatBand(c, g, x, from, to, wall.high * .22, '#8fd0ee'); return; }
     footShadow(c, g, dir, from, to);
     stripBand(c, g, x, from, to, wall.high, pic, 0, true);
     if (from > 0 && from === w.from - g.distance) {
@@ -672,7 +698,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         const along = (z - z1) / tile, level = stripLevel(pic, Math.min((b0 + b1 - t0 - t1) / 2 / pic[0].h, 2 * across / Math.max(1, along * pic[0].w)));
         const sx = posmod((g.distance + z1) / tile + shift, 1) * level.w, sw = Math.max(.5, along * level.w);
         // How far the top and the foot of the column part from one shear: as many slices as it takes to keep that under two pixels.
-        const slices = dx > .01 ? Math.min(6, Math.max(1, Math.ceil(Math.abs((t1 - t0) - (b1 - b0)) / 2))) : 1;
+        const slices = dx > .01 ? Math.min(3, Math.max(1, Math.ceil(Math.abs((t1 - t0) - (b1 - b0)) / 3))) : 1;
         for (let i = 0; i < slices; i++) {
           const h0 = high * i / slices, h1 = high * (i + 1) / slices, ky = dx > .01 ? ((yr(h0) - yl(h0)) + (yr(h1) - yl(h1))) / 2 / dx : 0, lean = ky * dx / 2;
           shear(c, base, ky, left); sheared = true;
@@ -690,9 +716,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   /** One painted thing of a world's sheet, standing at `x` m across, `ahead` m away, `up` m high; which one and its size are drawn from
    *  `n` (the same every frame). It fades in from afar. */
   function prop(c: CanvasRenderingContext2D, n: number, world: RunSetting, x: number, ahead: number, up: number, scale: number): void {
-    const image = decor[PROP_SHEET[world]].image, props = PROPS[world]; if (!image || ahead > FAR) return;
+    const image = decor[PROP_SHEET[world]].image, props = PROPS[world]; if (!image || !image.complete || !image.naturalWidth || ahead > FAR) return;
     const cell = image.width / 3, [col, rw, tall] = props[Math.floor(hash01(n + 31) * props.length) % props.length], size = scale * tall * (.85 + hash01(n + 59) * .3) / .82;
-    const p = project(x, ahead, up), px = size * p.s;
+    const p = project(x, ahead, up), px = size * p.s; if (p.x + px / 2 < 0 || p.x - px / 2 > width || px < 1) return;
     c.globalAlpha = Math.max(0, Math.min(1, (FAR - ahead) / 12)); c.drawImage(image, col * cell, rw * cell, cell, cell, p.x - px / 2, p.y - px * .93, px, px); c.globalAlpha = 1;
   }
   /** The shadow at a wall's foot on the ground: it sits the wall on the road. */
@@ -705,7 +731,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const worldAhead = (ahead: number): RunSetting => game ? settingAt(game, game.distance + ahead) : 'grotte';
   /** A fence along the road (not run on), in its painted picture (RUN_SIDES.fence). */
   function fence(c: CanvasRenderingContext2D, g: BennyRun, dir: number, from: number, to: number, world: RunSetting): void {
-    const f = RUN_SIDES.fence, pic = stripOf(f.picture[world]); if (!pic) return;
+    const f = RUN_SIDES.fence, pic = stripOf(f.picture[world]);
+    if (!pic) { flatBand(c, g, z => dir * (halfAt(g, z) + f.out), from, to, f.high, '#b07a3c'); return; }
     stripBand(c, g, z => dir * (halfAt(g, z) + f.out), from, to, f.high, pic, dir > 0 ? .5 : 0);
   }
 
@@ -743,13 +770,14 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
    */
   /** (Read from the page at most twice a second: asking where the counter is every frame makes the browser lay the page out.) */
   let coinSpot = {x: 0, y: 0}, coinSpotAt = -1e9;
-  let ratioCap = 2, sampled = 0, slowSampled = 0, verySlow = 0, lastFrameAt = 0;
+  let ratioCap = 2, sampled = 0, slowSampled = 0, verySlow = 0, lastFrameAt = 0, drawMs = 0;
   function watchFrames(now: number): void {
     const gap = now - lastFrameAt; lastFrameAt = now;
     if (gap <= 0 || gap > 200) return; // A pause or a hidden tab: not a measure.
     // (A steady 30 a second is a screen held to 30, an iPhone saving its battery: not a device that cannot keep up. Slow is
     //  missing 60 without being held to 30, or stalling.)
-    sampled++; if ((gap > 20 && gap < 29) || gap > 40) slowSampled++; if (gap > 40) verySlow++;
+    // (Or a frame that takes most of a 60th of a second to draw, whatever the screen's pace.)
+    sampled++; if ((gap > 20 && gap < 29) || gap > 40 || drawMs > SLOW_DRAW_MS) slowSampled++; if (gap > 40) verySlow++;
     if (sampled < 60) return;
     // Too slow: first wider wall columns (fewer pictures, the same look), then a softer picture, down to one pixel a point.
     if (slowSampled > sampled / 2) {
@@ -997,19 +1025,6 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (layerEl.width !== w || layerEl.height !== h) { layerEl.width = w; layerEl.height = h; }
     layerK.setTransform(ratio, 0, 0, ratio, 0, 0); return {el: layerEl, k: layerK};
   }
-  /** The ground of the track under the sky: the floor, its stripes, the gaps and pits, the walls. */
-  /** Below the horizon, around the isle: the rest of the painted sky (the islands' feet, then the sea of clouds), at the same
-   *  scale as the sky above so the two meet, then its last warm tone down to the bottom of the screen. */
-  function voidSky(c: CanvasRenderingContext2D, horizon: number, setting: RunSetting): void {
-    const img = skyPictures[setting].ready ? skyPictures[setting].image : null;
-    let to = horizon;
-    if (img) { const k = width / img.width, from = horizon / k, rest = img.height - from;
-      if (rest > 0) { const h = Math.min(rest * k, height - horizon + 1); c.drawImage(img, 0, from, img.width, h / k, 0, horizon, width, h); to = horizon + h; } }
-    if (to >= height) return;
-    // The picture's bottom edge blends into its last tone (a soft band, no seam).
-    const grad = c.createLinearGradient(0, to - 40, 0, height); grad.addColorStop(0, `rgba(${SKY_FOOT[setting]},0)`); grad.addColorStop(.25, `rgb(${SKY_FOOT[setting]})`); grad.addColorStop(1, setting === 'grotte' ? PAINTED_LOOK.cloudBottom : `rgb(${SKY_FOOT[setting]})`);
-    c.fillStyle = grad; c.fillRect(0, Math.max(horizon, to - 40), width, height - Math.max(horizon, to - 40));
-  }
   function ground(c: CanvasRenderingContext2D, g: BennyRun, colours: typeof SETTING_COLOURS[RunSetting]): void {
     const horizon = project(0, FAR, 0).y, edge = lanes / 2 * LANE_WIDTH;
     // The next setting, from its start onwards: drawn beyond a line across the whole ground.
@@ -1017,11 +1032,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // Painted (concept C): the isle's track over a sea of clouds; the textures stand in for the flat colours once loaded.
     const painted = decorReady();
     if (painted) {
-      // (Fading from the last world's, like the sky above.)
-      const fade = Math.min(1, (clock() - settingSince) / SKY_FADE);
-      if (fade < 1) { voidSky(c, horizon, settingBefore); c.globalAlpha = fade; }
-      voidSky(c, horizon, g.setting); c.globalAlpha = 1;
-      voidEdges(c, g); paintedFloor(c, g);
+      paintedFloor(c, g);
     } else {
       c.fillStyle = colours.side; c.fillRect(0, horizon, width, height - horizon);
       if (border < FAR) { const b = project(0, border, 0).y; c.fillStyle = next.side; c.fillRect(0, horizon, width, Math.max(0, b - horizon)); }
@@ -1073,7 +1084,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       if (p.open && painted) {
         // Painted: the clouds through the open lane, the cliff at its far end, the grass lip at its near end.
         const opening = [project(x0, from, 0), project(x1, from, 0), project(x1, to, 0), project(x0, to, 0)];
-        quad(c, opening, PAINTED_LOOK.cloudTop);
+        quad(c, opening, HOLE_DARK);
         cliffFace(c, to, x0, x1, () => { c.beginPath(); c.moveTo(opening[0].x, opening[0].y); for (const q of opening.slice(1)) c.lineTo(q.x, q.y); c.closePath(); });
         // Like a gap across the road: a shaded band however far, a bright lip at both ends.
         { const f0 = project(x0, to, 0), f1 = project(x1, to, 0), deep = Math.max(GAP_MIN_PX, opening[0].y - f0.y);
@@ -1945,7 +1956,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'wallEnd': flashes.push({at: clock(), text: `Mur +${event.points}`, x: width / 2}); if (event.trail) { word('Traînée parfaite !', WORD.cheer, `${event.trail} pièces`); sound('power', 1.1); } break;
       case 'wallLeap': flashes.push({at: clock(), text: `Saut de mur +${event.points}`, x: width / 2}); sound('wall', 1 + .06 * Math.min(6, event.chain - 1));
         shakeFor('strike'); break;
-      case 'fall': word('Oh non, le vide !', WORD.big); sound('bump', .7); break;
+      case 'fall': word('Oh non, un trou !', WORD.big); sound('bump', .7); break;
       case 'saved': word('Ouf, de justesse !'); break;
       // Out over the void in a jump: back onto the road before landing!
       case 'overVoid': tip('Au-dessus du vide : reviens sur la piste !', true); sound('jump', .8); break;
@@ -2001,7 +2012,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (!running || !game) return;
     const now = clock();
     if (now < slowUntil) slowLost += Math.min(50, Math.max(0, now - lastLoopAt)) * (1 - SLOW_RATE);
-    lastLoopAt = now; watchFrames(now); advanceBennyRun(game, gameTime()); react(); announceHoles(game); hud(); drawAhead(now);
+    { const behind = gameTime() - game.at; if (behind > CATCH_UP_MS) slowLost += behind - CATCH_UP_MS; }
+    lastLoopAt = now; watchFrames(now); advanceBennyRun(game, gameTime()); react(); announceHoles(game); hud();
+    const t0 = performance.now(); drawAhead(now); drawMs = performance.now() - t0;
     if (running) frame(loop);
   }
   /**
@@ -2162,12 +2175,26 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     slowLost = 0; slowUntil = 0; lastLoopAt = clock(); settingSince = -1e9; shownSetting = 'grotte'; gate = null;
     runBest = best; beaten = false; milestone = 0; metresBest = options.bestMetres?.() ?? 0; metresBeaten = false; score.classList.remove('benny-run-beaten');
     game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; camX = 0; camUp = 0; landedAt = -1e9; wasUp = false; swing = null; pending = []; wallTilt = 0; laneSpeed = 0; rollFrom = -1e9; wasFlat = false; shock = null; cleared.clear(); flashes = []; coinFlights = []; tally = {count: 0, last: -1e9}; bits = []; rings = []; streaks = []; bend = 0; coinRun = 0; shake = null; hurtAt = null; running = true; card.hidden = true; counting = null; lastDrawAt = clock();
-    holesAnnounced = 0; lastHoleSeen = -1;
+    holesAnnounced = 0; lastHoleSeen = -1; geysersUp.clear(); rocksDown.clear(); ghosts = []; pounces = []; gustAt = null;
     hud(); word('Benny Rampage', WORD.big); frame(loop);
+  }
+  /** Starts at once when the pictures are ready (or when nothing is to wait for); otherwise says « Chargement… » on the button and
+   *  starts as soon as they are, or after `waitForArt` ms at most. */
+  let artWait: ReturnType<typeof setTimeout> | undefined;
+  function startWhenReady(el: HTMLButtonElement, go: () => void): void {
+    const until = clock() + (options.waitForArt ?? 0);
+    if (artWait !== undefined) return;
+    const check = () => {
+      artWait = undefined;
+      if (layer.hidden) return;
+      if (artReady() || clock() >= until) { el.disabled = false; go(); return; }
+      el.disabled = true; el.textContent = 'Chargement…'; artWait = setTimeout(check, 120);
+    };
+    check();
   }
   function intro(): void {
     game = startBennyRun(clock()); lanes = game.lanes; viewLane = game.lane; running = false; measure(); hud(); draw(clock());
-    const learn = button('Revoir le tutoriel', () => start(true), 'bennyRunTutorial'), record = Math.max(best, options.best?.() ?? 0);
+    const learn = button('Revoir le tutoriel', () => startWhenReady(learn, () => start(true)), 'bennyRunTutorial'), record = Math.max(best, options.best?.() ?? 0);
     // Short: the tutorial teaches the gestures on the first run; the full rules wait behind « Comment jouer ? ».
     const rules = document.createElement('div'); rules.className = 'benny-run-how'; rules.hidden = true;
     const how = button('Comment jouer ?', () => { rules.hidden = !rules.hidden; how.textContent = rules.hidden ? 'Comment jouer ?' : 'Cacher les règles'; }, 'bennyRunHow');
@@ -2175,9 +2202,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       paragraph('Glisse vers le haut pour sauter, sur le côté pour changer de couloir, vers le bas pour faire une roulade (en l’air : charge au sol).', 'benny-run-rules'),
       paragraph('Frappe les pots et les créatures avec ton bâton : de face avec une roulade, sur le côté en glissant vers leur couloir. Une créature de chaque côté ? Ton bâton tournoie et frappe les deux. Une créature que tu dépasses sans la frapper t’attaque !', 'benny-run-rules'),
       paragraph('Au bord, glisse vers le mur (même en sautant) pour courir dessus. Pour descendre : saute depuis le mur, glisse vers l’autre côté pour frapper ce qui t’attend en bas, ou charge au sol pour faire une onde de choc. Passe sur un pouvoir pour l’utiliser tout de suite.', 'benny-run-rules'),
-      paragraph('Au-dessus d’un grand gouffre, glisse vers l’autre mur pour bondir dessus.', 'benny-run-rules'),
-      paragraph('Prototype en formes simples : les vrais dessins arrivent ensuite.', 'benny-run-rules'));
-    const go = button('C’est parti !', () => start(), 'bennyRunStart'); go.classList.add('benny-run-again'); learn.classList.add('secondary'); how.classList.add('secondary');
+      paragraph('Au-dessus d’un grand gouffre, glisse vers l’autre mur pour bondir dessus.', 'benny-run-rules'));
+    const go = button('C’est parti !', () => startWhenReady(go, () => start()), 'bennyRunStart'); go.classList.add('benny-run-again'); learn.classList.add('secondary'); how.classList.add('secondary');
     showCard(paragraph('Benny Rampage', 'benny-run-title'),
       paragraph('Benny a chipé un peu du trésor de la Dragon : cours, frappe tout ce qui bouge, et ne te fais pas rattraper !', 'benny-run-rules'),
       ...(record > 0 ? [paragraph(`Ton record : ${record}`, 'benny-run-record')] : []),
@@ -2186,7 +2212,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   function close(): void {
     if (layer.hidden) return;
     ending = null; counting = null;
-    clearTimeout(stopTimer); clearTimeout(countdown); countdown = undefined;
+    clearTimeout(stopTimer); clearTimeout(countdown); countdown = undefined; clearTimeout(artWait); artWait = undefined;
     running = false; time.resume(); game = null; layer.hidden = true; tips.clear(); words.clear(); layer.classList.remove('benny-run-chased'); notices();
     window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: false})); releaseArt(); options.onExit?.();
   }
