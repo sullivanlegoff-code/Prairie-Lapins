@@ -902,12 +902,12 @@
   "arkoko": {
     "file": "assets/rabbits/arkoko/arkoko-v1.png",
     "worldWidth": 44,
-    "sourceSha1": "cf022ec027c21000375960e3f686b30be5b39414",
+    "sourceSha1": "2a0a7f82f5d434dadb7d12b4e04a68a6ab2e3fd7",
     "sourceWidth": 614,
     "sourceHeight": 1070,
     "width": 325,
     "height": 566,
-    "derivedSha1": "2397eb50dee9df065671b1e5facedc92bfabb4ab"
+    "derivedSha1": "27613e333cce135c920b3679d5f873be895d041c"
   },
   "fantome": {
     "file": "assets/rabbits/fantome/fantome-v1.png",

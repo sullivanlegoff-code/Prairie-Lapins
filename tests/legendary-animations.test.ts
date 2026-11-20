@@ -3,7 +3,12 @@
 import {existsSync, readFileSync} from 'node:fs';
 import {afterEach, describe, expect, it} from 'vitest';
 import {itAll} from './cases';
-import {LEGENDARY_EFFECTS, LEGENDARY_IDLE_GAP_MS, LEGENDARY_PARTS, LEGENDARY_EVOLVED_PARTS, legendaryMeadowArt} from '../src/config/legendaryArt';
+import {ARKOKO_CRYSTAL, ARKOKO_EVOLVED_CRYSTAL, LEGENDARY_EFFECTS, LEGENDARY_IDLE_GAP_MS, LEGENDARY_PARTS, LEGENDARY_EVOLVED_PARTS, LEGENDARY_SHOWS, crystalCentre,
+  legendaryMeadowArt, legendaryPartsForArt} from '../src/config/legendaryArt';
+import {SPECIES, SPECIES_IDS} from '../src/config/species';
+import {evolvedRabbitArt, rabbitArt} from '../src/config/rabbitArt';
+import {decorateLegendaryCard} from '../src/ui/legendaryCard';
+import {FLARE, SLEEP_ACTS, TAP_ACT, crystalFlare, rainbowStep} from '../src/display/legendaryTimeline';
 import {VISUAL} from '../src/config/visual';
 import {ACT_MS, DIVE, IDLE_GAP, LegendaryClock, SLAM, SURF_ENTRY_MS, SURF_SLIDE_MS, TAP_COOLDOWN_MS, breathFrame, diveFin, partAngle, speciesActs, surfPose} from '../src/display/legendaryTimeline';
 import {createRabbitMotion, motionZone, startSurf, stepRabbitMotion} from '../src/display/rabbitMotion';
@@ -120,7 +125,7 @@ describe('legendary clock', () => {
     // Owner's requests of 3 November 2026 ("toutes les animations possibles et toutes les 10 à 20 secondes pas plus") and of
     // 4 November 2026 (a little more often, seen without a touch): 6 to 12 seconds.
     expect(IDLE_GAP.first[1]).toBeLessThanOrEqual(8_000); expect(IDLE_GAP.next[1]).toBeLessThanOrEqual(12_000);
-    for (const species of ['dragon', 'requin', 'ankylosaure'] as const) {
+    for (const species of ['dragon', 'requin', 'ankylosaure', 'arkoko'] as const) {
       const clock = new LegendaryClock(species, 'rabbit-7'), seen = new Set<string>();
       for (let t = 0; t < 1_800_000; t += 100) { const s = clock.step(100, true); if (s) seen.add(s.act); }
       expect([...seen].sort()).toEqual([...speciesActs(species)].sort());
@@ -235,5 +240,73 @@ describe('legendary first appearance', () => {
     expect(dialog.querySelector('.lr-wall, .lr-wave')).toBeNull();
     expect(dialog.querySelector<HTMLImageElement>('.lr-rabbit')!.alt).toBe('Anky');
     dialog.dispatchEvent(new Event('cancel', {cancelable: true})); expect(document.querySelector('dialog.legendary-reveal')).toBeNull();
+  });
+  it('brings Arkoko in a starry night with a rainbow drawing itself and bursts of light, then its crystal flares on its drawing', () => {
+    const dialog = showLegendaryReveal('arkoko', {...text, name: 'Arkoko'});
+    expect(dialog.classList.contains('legendary-reveal-arkoko')).toBe(true);
+    expect(dialog.querySelectorAll('.lr-rainbow-step')).toHaveLength(8);
+    expect(dialog.querySelectorAll('.lr-prism').length).toBeGreaterThanOrEqual(4); expect(dialog.querySelectorAll('.lr-trail')).toHaveLength(2);
+    expect(dialog.querySelector('.lr-wall, .lr-wave, .lr-rift-image')).toBeNull();
+    const figure = dialog.querySelector<HTMLElement>('.lr-hero .lr-figure')!;
+    expect(figure.querySelector<HTMLImageElement>('.lr-rabbit')!.alt).toBe('Arkoko');
+    expect(figure.querySelector<HTMLImageElement>('.lr-crystal-glow')!.src).toContain('arkoko-v1-crystal-glow');
+    for (const piece of figure.querySelectorAll('.lr-crystal-glow, .lr-crystal-light, .lr-crystal-burst')) expect(piece.getAttribute('aria-hidden')).toBe('true');
+    dialog.dispatchEvent(new Event('cancel', {cancelable: true})); expect(document.querySelector('dialog.legendary-reveal')).toBeNull();
+  });
+});
+
+describe('Arkoko, the rainbow legendary', () => {
+  it('is the fourth legendary with its own shows, its crystal flare at a touch and soft stars asleep', () => {
+    expect(SPECIES_IDS.filter(id => SPECIES[id].rarity === 'legendary').every(id => (LEGENDARY_SHOWS as readonly string[]).includes(id))).toBe(true);
+    expect(TAP_ACT.arkoko).toBe('flare'); expect(speciesActs('arkoko').sort()).toEqual(['flare', 'rainbow', 'stars', 'trail']); expect(SLEEP_ACTS.arkoko).toBe('stars');
+    const clock = new LegendaryClock('arkoko', 'arkoko-1');
+    expect(clock.tap()?.act).toBe('flare'); expect(clock.play('surf')).toBeNull();
+    expect(partAngle('arkoko', 1234, 0, null, false)).toBe(0);
+    expect(legendaryPartsForArt('arkoko', {})).toBeNull();
+  });
+  it('lights its crystal up strongly at once, holds a breath, then goes back to its toned-down drawing', () => {
+    expect(crystalFlare(0).glow).toBe(0);
+    const peak = crystalFlare(FLARE.peak);
+    expect(peak.glow).toBeGreaterThan(.99); expect(peak.light).toBeGreaterThan(.99); expect(peak.scale).toBeGreaterThan(1.15);
+    expect(crystalFlare(FLARE.peak / 2).glow).toBeGreaterThan(.4); // « d'un coup »: half way up in 55 ms
+    expect(crystalFlare(FLARE.hold - 10).glow).toBeGreaterThan(.99);
+    let last = 1;
+    for (let ms = FLARE.hold; ms <= FLARE.calm; ms += 50) { const g = crystalFlare(ms).glow; expect(g).toBeLessThanOrEqual(last + 1e-9); last = g; }
+    expect(crystalFlare(FLARE.calm)).toEqual({glow: 0, light: 0, scale: 1, burst: 0, burstScale: .3});
+    expect(ACT_MS.flare).toBeGreaterThan(FLARE.calm);
+    expect(rainbowStep(0).frame).toBe(0); expect(rainbowStep(1200).frame).toBe(7); expect(rainbowStep(ACT_MS.rainbow).alpha).toBeLessThan(.01);
+  });
+  it('keeps the original glow of its crystal as a patch over the toned-down drawing, and its crystals inside both drawings', () => {
+    const v1 = rabbitArt('arkoko')!, v2 = evolvedRabbitArt('arkoko')!;
+    for (const [crystal, art] of [[ARKOKO_CRYSTAL, v1], [ARKOKO_EVOLVED_CRYSTAL, v2]] as const) {
+      for (const piece of [crystal.crystal, ...(crystal.glow ? [crystal.glow] : [])]) {
+        expect(pngSize(readFileSync(publicFile(piece.url)))).toEqual([piece.width, piece.height]);
+        expect(piece.x).toBeGreaterThanOrEqual(0); expect(piece.y).toBeGreaterThanOrEqual(0);
+        expect(piece.x + piece.width).toBeLessThanOrEqual(art.width); expect(piece.y + piece.height).toBeLessThanOrEqual(art.height);
+      }
+      const centre = crystalCentre(crystal); expect(centre.y).toBeLessThan(art.height * .4); // on the forehead
+    }
+    expect(ARKOKO_EVOLVED_CRYSTAL.glow).toBeUndefined();
+    // At rest the drawing under the patch is darker than the patch: the light taken away is the light the flare brings back.
+    const glow = ARKOKO_CRYSTAL.glow!, patch = decode(readFileSync(publicFile(glow.url))), sprite = decode(readFileSync(publicFile(v1.url)));
+    let weight = 0, patchLight = 0, restLight = 0;
+    for (let y = 0; y < patch.height; y++) for (let x = 0; x < patch.width; x++) {
+      const i = (y * patch.width + x) * 4, a = patch.rgba[i + 3] / 255, j = ((glow.y + y) * sprite.width + glow.x + x) * 4;
+      if (a < .2 || sprite.rgba[j + 3] < 250) continue;
+      weight += a; patchLight += a * (patch.rgba[i] + patch.rgba[i + 1] + patch.rgba[i + 2]); restLight += a * (sprite.rgba[j] + sprite.rgba[j + 1] + sprite.rgba[j + 2]);
+    }
+    expect(weight).toBeGreaterThan(200); expect(patchLight / weight).toBeGreaterThan(restLight / weight + 20);
+  });
+  it('loads only its crystal and its rainbow pictures in the meadow, never a halo nor another legendary\'s', () => {
+    const all = legendaryMeadowArt('arkoko').map(a => a.texture), evolved = legendaryMeadowArt('arkoko', {evolved: true}).map(a => a.texture);
+    expect(all).toEqual(expect.arrayContaining(['rabbit-arkoko-v1-crystal-glow', 'rabbit-arkoko-v1-crystal', 'rabbit-arkoko-v2-crystal', 'legendary-arkoko-prism', 'legendary-arkoko-rainbow-8']));
+    expect(evolved).toContain('rabbit-arkoko-v2-crystal'); expect(evolved).not.toContain('rabbit-arkoko-v1-crystal-glow');
+    expect(all.some(t => /^legendary-(halo|breath|surfboard|crack|firewall)/.test(t))).toBe(false);
+  });
+  it('themes its card with a rainbow banner and drifting stars', () => {
+    const panel = document.createElement('div');
+    expect(decorateLegendaryCard(panel, 'arkoko')).toBe(true);
+    expect(panel.dataset.legendary).toBe('arkoko'); expect(panel.style.getPropertyValue('--legendary-banner')).toContain('rainbow-8');
+    expect(panel.querySelectorAll('.legendary-mote').length).toBeGreaterThan(0);
   });
 });

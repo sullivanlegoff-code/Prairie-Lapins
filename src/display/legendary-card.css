@@ -96,3 +96,20 @@
 .mythic-portrait-ring { position: absolute; z-index: 0; left: 50%; bottom: -4px; width: 170px; margin-left: -85px; opacity: .85; pointer-events: none; }
 @keyframes mythic-breathe { 0%, 100% { opacity: .75; transform: scale(.94); } 50% { opacity: 1; transform: scale(1.04); } }
 @media (prefers-reduced-motion: reduce) { .mythic-portrait .legendary-portrait-halo { animation: none; } }
+
+/* Arkoko, the rainbow legendary (19 November 2026): the gold of the legendaries, a rainbow over a starry lilac banner (Benny's approved
+   painting, the same rainbow type), a page tinted with its pink hood and its blue crystal, and stars drifting up the sides. */
+#game-panel[data-legendary="arkoko"] {
+  --menu-ink: #3a2a52; --menu-muted: #62507c; background-color: #f6eaf6;
+  box-shadow: 0 0 0 2px #e9c463, 0 0 22px #7fc8ff8c, 0 0 32px #f6a8d866, 0 10px 0 #1a201c40, 0 22px 48px #0b120e80;
+  background-image: radial-gradient(ellipse at 50% 112%, #7fc8ff60, transparent 58%), radial-gradient(ellipse at 50% -6%, #ffffffc0, transparent 55%),
+    linear-gradient(180deg, #fff6fb, #f6dcef 70%, #e4dcf8);
+  background-size: 100% 100%;
+}
+#game-panel[data-legendary="arkoko"] .panel-header {
+  border-bottom-color: #e9c463;
+  background: linear-gradient(90deg, #2a1f5ec0, #2a1f5e1a 45%, #2a1f5ec0), var(--legendary-banner) center 58% / 72% auto no-repeat,
+    radial-gradient(ellipse at 50% 120%, #9a7bd8, transparent 70%), linear-gradient(180deg, #2a2266, #4a3c9a);
+}
+#game-panel[data-legendary="arkoko"] .panel-header h2 { text-shadow: 0 0 14px #9ad8ff, 0 0 22px #f6a8d8, 0 2px #202720; }
+#game-panel[data-legendary="arkoko"] .legendary-mote { width: calc(15px * var(--s)); }

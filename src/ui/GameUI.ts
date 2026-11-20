@@ -7,6 +7,7 @@ import {translatedDecorations} from '../simulation/cozyActivities';
 import {rabbitDropTargets} from './rabbitDropTargets';
 import {showLegendaryReveal, type RevealText} from './legendaryReveal';
 import {showBennyReveal} from './bennyReveal';
+import {BENNY_CARESS_CUES, BENNY_CARESS_MS, BENNY_CARESS_REDUCED_MS, clearBennyCaress, isBenny, playBennyCaress, warmBennyCaress} from './bennyCaress';
 import {clearLegendaryCard, decorateLegendaryCard, legendaryPortrait} from './legendaryCard';
 import {clearUltimateCard, crownPortrait, decorateUltimateCard} from './ultimateCard';
 import {isLegendaryShow} from '../config/legendaryArt';
@@ -101,9 +102,10 @@ import {mountPhotoControls} from './photoControls';
 import {guidedStep, type GuideStep} from './guidance';
 import {BUILDING_NAMES, CARE_NAMES, REFUSALS, RARITY_NAMES, busyReason, TYPE_NAMES, typeNames, recipeBook, recipePairs, buildingReason, collectionSpeciesView, collectionView, incomeWhole, moneyReason, nurseryView, occupants, oddsView, placementReason, rabbitAvailability, parentBusy, releaseReason, timeLeft, type Placement, type CollectionFilter} from './models';
 
-/** One show button per legendary sheet: Anky's tail strike, the Dragon's fire breath, the Requin's surf. */
+/** One show button per legendary sheet: Anky's tail strike, the Dragon's fire breath, the Requin's surf, Arkoko's crystal flare. */
 const LEGENDARY_SHOW_BUTTONS: Partial<Record<SpeciesId, {label: string; act: LegendaryAct}>> = {
   ankylosaure: {label: 'Coup de queue', act: 'slam'}, dragon: {label: 'Souffle de feu', act: 'tap'}, requin: {label: 'Surf', act: 'surf'},
+  arkoko: {label: 'Éclat du cristal', act: 'flare'},
 };
 type ShopTab = 'home' | 'recipes' | 'rabbits' | 'habitats' | 'buildings' | 'decorations';
 type View = {kind:'album'|'decorationGroup'} | {kind: 'welcomeBaby'; birthId: string} | {kind:'levelRequirement';target:LevelAccessTarget} | {kind: 'missions'; tab: 'main' | 'daily'} | {kind: 'shop'; tab: ShopTab} | {kind: 'building' | 'rabbit' | 'moveRabbit' | 'decoration' | 'debris'; id: string} | {kind: 'jumpIsland'} | {kind: 'christmasMarket'; tab?: ChristmasMarketTab} |
@@ -219,6 +221,8 @@ export class GameUI {
   /** A caress under way on a rabbit's portrait: the sheet is not rebuilt until it ends, so the animation is never cut. */
   private petting = false;
   private petTimer = 0;
+  /** The sounds of Benny’s caress show, cancelled with it. */
+  private petSounds: number[] = [];
   private petCooldownUntil = -Infinity;
   /** The name being typed in a rabbit's sheet: kept here, not in the DOM, so a refresh never loses the text, the caret or the focus. */
   private rename: {id: string; text: string; caret: number; error: string | null} | null = null;
@@ -481,6 +485,7 @@ export class GameUI {
   private attachCaress(portraitElement: HTMLElement, rabbit: Rabbit): void {
     portraitElement.classList.add('pettable'); portraitElement.dataset.petRabbit = rabbit.id;
     portraitElement.title = 'Frotte doucement pour caresser';
+    if (isBenny(rabbit.species)) warmBennyCaress();
     let rub: {pointer: number; x: number; y: number; distance: number; reversals: number; direction: string} | null = null;
     portraitElement.addEventListener('pointerdown', event => {
       rub = {pointer: event.pointerId, x: event.clientX, y: event.clientY, distance: 0, reversals: 0, direction: ''};
@@ -503,12 +508,14 @@ export class GameUI {
   }
   private caress(portraitElement: HTMLElement, rabbit: Rabbit): void {
     const now = performance.now(); if (now < this.petCooldownUntil) return;
-    this.petCooldownUntil = now + 1500;
+    const reduced = !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches, benny = isBenny(rabbit.species);
+    // Benny's show is longer (owner, 20 November 2026): rubbing on never cuts it.
+    this.petCooldownUntil = now + (benny ? Math.max(1500, reduced ? BENNY_CARESS_REDUCED_MS : BENNY_CARESS_MS) : 1500);
     // Nothing to win and nothing to refuse: a stale sheet simply shows its caress.
     this.controller.perform({type: 'petRabbit', rabbitId: rabbit.id});
     this.sounds.ping();
-    const reduced = !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     this.endCaress(portraitElement);
+    if (benny) { this.caressBenny(portraitElement, rabbit, reduced); return; }
     this.petting = true; portraitElement.dataset.petting = reduced ? 'still' : 'wiggle';
     // Closed eyes: the « eyes-closed » patch over the drawing shown, the first one or the evolved one (each has its own eyelids).
     const picture = portraitElement.querySelector<HTMLImageElement>('img[data-rabbit-art]'), evolved = !!picture?.hasAttribute('data-evolved');
@@ -529,10 +536,29 @@ export class GameUI {
     portraitElement.append(hearts);
     this.petTimer = window.setTimeout(() => { this.endCaress(portraitElement); requestAnimationFrame(() => this.flushRender()); }, 1400);
   }
+  /**
+   * Benny's caress (owner, 20 November 2026): a kiss to the player, then a big moment of joy, in her own paintings (src/ui/bennyCaress.ts).
+   * Same command and same counting as every other rabbit; only the show differs.
+   */
+  private caressBenny(portraitElement: HTMLElement, rabbit: Rabbit, reduced: boolean): void {
+    this.petting = true; portraitElement.dataset.petting = reduced ? 'benny-still' : 'benny';
+    const picture = portraitElement.querySelector<HTMLImageElement>('img[data-rabbit-art]'), art = rabbitArt(rabbit.species);
+    let figure: HTMLElement | null = picture?.parentElement?.classList.contains('ultimate-figure') || picture?.parentElement?.classList.contains('pet-figure') ? picture.parentElement : null;
+    if (picture && !figure && art) {
+      figure = node('span', '', 'pet-figure'); figure.style.setProperty('--ratio', String(art.width / art.height));
+      picture.replaceWith(figure); figure.append(picture); portraitElement.dataset.petFigure = '';
+    }
+    const duration = playBennyCaress(portraitElement, figure ?? portraitElement, reduced);
+    if (!reduced) this.petSounds = BENNY_CARESS_CUES.map(([at, cue]) => window.setTimeout(() => {
+      if (cue === 'kiss') this.sounds.bubbles(2); else this.sounds.run(cue);
+    }, at * 1000));
+    this.petTimer = window.setTimeout(() => { this.endCaress(portraitElement); requestAnimationFrame(() => this.flushRender()); }, duration);
+  }
   private endCaress(portraitElement?: HTMLElement): void {
     window.clearTimeout(this.petTimer); this.petTimer = 0; this.petting = false;
+    this.petSounds.splice(0).forEach(timer => window.clearTimeout(timer));
     if (!portraitElement) return;
-    delete portraitElement.dataset.petting;
+    delete portraitElement.dataset.petting; clearBennyCaress(portraitElement);
     portraitElement.querySelectorAll('.pet-eyelid, .pet-hearts').forEach(element => element.remove());
   }
   /** A short painted reveal shown only after the explicit evolution action has been saved. */

@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
-import {LEGENDARY_EFFECTS as FX, legendaryPartsForArt, type EffectArt, type LegendaryShow} from '../config/legendaryArt';
+import {LEGENDARY_EFFECTS as FX, arkokoCrystalForArt, crystalCentre, legendaryPartsForArt, type EffectArt, type LegendaryShow} from '../config/legendaryArt';
 import type {RabbitArt} from '../config/rabbitArt';
 import type {Point} from '../ui/gestures';
 import {motionZone, startSurf, type RabbitMotion} from './rabbitMotion';
-import {ACT_MS, DIVE, LegendaryClock, SLAM, SURF_ENTRY_MS, SURF_SLIDE_MS, arc, breathFrame, diveFin, envelope, loopFrame, partAngle, smooth, surfPose,
+import {ACT_MS, DIVE, LegendaryClock, SLAM, SURF_ENTRY_MS, SURF_SLIDE_MS, arc, breathFrame, crystalFlare, diveFin, envelope, loopFrame, partAngle, rainbowStep, smooth, surfPose,
   type ActState, type LegendaryAct} from './legendaryTimeline';
 
 /** What the meadow gives each legendary: its ground container, its posed body and the approved sprite inside it. */
@@ -14,7 +14,7 @@ const GROUND_Y = 10;
 const rand = (seed: number) => { const x = Math.sin(seed * 127.1) * 43758.5453; return x - Math.floor(x); };
 
 /**
- * The visible show of one legendary (Lapin Dragon, Lapin Requin, Ankylosaure) in the meadow, rebuilt with its body; its clock lives on in
+ * The visible show of one legendary (Lapin Dragon, Lapin Requin, Ankylosaure, Arkoko) in the meadow, rebuilt with its body; its clock lives on in
  * the scene so a rebuild never cuts a show short. Everything is decoration: no state, no input, no random generator.
  */
 export class LegendaryView {
@@ -23,8 +23,12 @@ export class LegendaryView {
   /** The mouth is open (the nose-twitch patch must hide) or the body is under water (the face patches too). */
   mouthOpen = false; submerged = false;
   private readonly scale: number;
-  private readonly part: Phaser.GameObjects.Image;
+  private readonly part: Phaser.GameObjects.Image | null = null;
   private readonly mouth: Phaser.GameObjects.Image | null = null;
+  /** Arkoko: its crystal's original glow and the crystal as added light, over the drawing, hidden at rest. */
+  private readonly glow: Phaser.GameObjects.Image | null = null;
+  private readonly light: Phaser.GameObjects.Image | null = null;
+  private readonly crystal: Point = {x: 0, y: 0};
   private readonly back: Phaser.GameObjects.Container;
   private readonly front: Phaser.GameObjects.Container;
   private readonly fx: Phaser.GameObjects.Container;
@@ -39,13 +43,23 @@ export class LegendaryView {
     const {art, body, sprite, object} = host, parts = legendaryPartsForArt(species, art);
     this.scale = art.worldWidth / art.width;
     let h = 0; for (const c of id) h = (h * 31 + c.charCodeAt(0)) % 1000; this.phase = h / 100;
-    // The body is the approved picture without its part; the part, behind it, turns about its hidden root.
-    sprite.setTexture(parts.body.texture);
-    const anchor = this.point(parts.pivot.x, parts.pivot.y);
-    this.part = scene.add.image(anchor.x, anchor.y, parts.part.texture).setOrigin(parts.pivot.x / art.width, parts.pivot.y / art.height).setScale(this.scale);
-    // No golden halo in the meadow (owner, 31 October 2026): the shine belongs to the appearance and the rabbit's card.
-    body.addAt(this.part, 0);
-    if (parts.mouth) {
+    if (!parts) {
+      // Arkoko keeps its whole drawing; the crystal's glow and light sit just over it, under the eyelids, and scale about the crystal.
+      const crystal = arkokoCrystalForArt(art), centre = crystalCentre(crystal), at = this.point(centre.x, centre.y);
+      this.crystal = at;
+      const over = (piece: {texture: string; x: number; y: number; width: number; height: number}) => scene.add.image(at.x, at.y, piece.texture)
+        .setOrigin((centre.x - piece.x) / piece.width, (centre.y - piece.y) / piece.height).setScale(this.scale).setVisible(false).setAlpha(0);
+      if (crystal.glow) { this.glow = over(crystal.glow); body.addAt(this.glow, body.getIndex(sprite) + 1); }
+      this.light = over(crystal.crystal).setBlendMode(Phaser.BlendModes.ADD); body.addAt(this.light, body.getIndex(this.glow ?? sprite) + 1);
+    } else {
+      // The body is the approved picture without its part; the part, behind it, turns about its hidden root.
+      sprite.setTexture(parts.body.texture);
+      const anchor = this.point(parts.pivot.x, parts.pivot.y);
+      this.part = scene.add.image(anchor.x, anchor.y, parts.part.texture).setOrigin(parts.pivot.x / art.width, parts.pivot.y / art.height).setScale(this.scale);
+      // No golden halo in the meadow (owner, 31 October 2026): the shine belongs to the appearance and the rabbit's card.
+      body.addAt(this.part, 0);
+    }
+    if (parts?.mouth) {
       // Same left edge and scale as the sprite; only its right side is wider, for the open snout.
       this.mouth = scene.add.image(0, art.groundY, parts.mouth.texture).setOrigin(art.width / 2 / parts.mouth.width, 1).setScale(this.scale).setVisible(false);
       body.addAt(this.mouth, body.getIndex(sprite) + 1);
@@ -80,10 +94,16 @@ export class LegendaryView {
       const target = this.surfTarget(motion); if (target) startSurf(motion, target, SURF_ENTRY_MS, SURF_SLIDE_MS);
     }
     if (act !== this.playing) { this.clear(); this.playing = act; if (act) this.build(act); }
-    this.part.setRotation(partAngle(this.species, time, this.phase, act, reduced));
+    this.part?.setRotation(partAngle(this.species, time, this.phase, act, reduced));
+    this.shine(0, 0, 1);
     if (act) this.animate(act);
     this.host.sprite.setVisible(!this.mouthOpen && !this.submerged); this.mouth?.setVisible(this.mouthOpen && !this.submerged);
-    this.part.setVisible(!this.submerged);
+    this.part?.setVisible(!this.submerged);
+  }
+  /** Arkoko's crystal: its original glow (0 = the toned-down drawing), the crystal's added light, and the glow's size about the crystal. */
+  private shine(glow: number, light: number, scale: number): void {
+    this.glow?.setAlpha(glow).setVisible(glow > .004).setScale(this.scale * scale);
+    this.light?.setAlpha(light).setVisible(light > .004);
   }
   /** The surf goes 28 to 40 units sideways, towards the side with more room; none when the fence zone is too narrow. */
   private surfTarget(m: RabbitMotion): Point | null {
@@ -131,6 +151,20 @@ export class LegendaryView {
       this.add(this.back, FX.mound, w * .62, [.5, 1]);
       for (let k = 0; k < 6; k++) this.add(this.front, k % 2 ? FX.clod : FX.gravel, w * (k % 2 ? .13 : .1));
     } else if (act === 'dust') for (let k = 0; k < 4; k++) this.add(this.front, FX.dust, w * .34);
+    else if (act === 'flare') {
+      // A burst of rainbow light opens on the crystal, and a few stars fly out of it.
+      this.add(this.fx, FX.prism, w * .7, [.5, .5], true);
+      for (let k = 0; k < 6; k++) this.add(this.fx, k % 2 ? FX.star : FX.starFive, w * (.14 + rand(k + 110) * .07), [.5, .5], true);
+    } else if (act === 'stars') {
+      for (let k = 0; k < 8; k++) this.add(k % 3 ? this.front : this.back, [FX.twinkle, FX.star, FX.starFive][k % 3], w * (k % 3 ? .17 : .34), [.5, .5], true);
+    } else if (act === 'rainbow') {
+      this.add(this.fx, FX.rainbow[0], w * 1.45, [.5, 1]);
+      for (let k = 0; k < 4; k++) this.add(this.fx, k % 2 ? FX.star : FX.starFive, w * .14, [.5, .5], true);
+    } else if (act === 'trail') {
+      // The trail flies once around the rabbit: behind it on the far side, in front on the near side; stardust follows.
+      this.add(this.back, FX.trail, w * 1.15); this.add(this.front, FX.trail, w * 1.15);
+      for (let k = 0; k < 2; k++) this.add(k ? this.front : this.back, FX.stardust, w * .45, [.5, .5], true);
+    }
   }
 
   private animate({act, elapsed: ms, duration}: ActState): void {
@@ -207,6 +241,7 @@ export class LegendaryView {
         bubble.setPosition(x + Math.sin(t * 9 + k) * 3, GROUND_Y - 8 - t * w * .9).setAlpha(t > 0 && t < .97 ? .9 : 0);
       });
     } else if (act === 'slam') this.slam(ms, w, f);
+    else if (act === 'flare' || act === 'stars' || act === 'rainbow' || act === 'trail') this.arkoko(act, ms, u, w);
     else if (act === 'rumble') {
       const shake = envelope(u, .1, .2), [dustA, dustB, ...stones] = p;
       this.lean = f * Math.sin(ms / 28) * .025 * shake; this.lift = Math.abs(Math.sin(ms / 45)) * 1.2 * shake;
@@ -231,6 +266,43 @@ export class LegendaryView {
       });
     }
   }
+  /** Arkoko's shows: the crystal's flare, twinkling stars, a small rainbow over its head, a rainbow trail flying around it. */
+  private arkoko(act: LegendaryAct, ms: number, u: number, w: number): void {
+    const p = this.pieces, c = this.crystal;
+    if (act === 'flare') {
+      const flare = crystalFlare(ms), [burst, ...stars] = p;
+      this.shine(flare.glow, flare.light, flare.scale);
+      this.lift = Math.sin(Math.min(1, ms / 500) * Math.PI) * 2.5;
+      burst.setPosition(c.x, c.y).setScale(w * .7 / FX.prism.width * flare.burstScale).setAlpha(flare.burst * .9).setRotation(ms / 1400);
+      stars.forEach((star, k) => {
+        const t = Math.max(0, Math.min(1, (ms - 60 - k * 35) / 800)), angle = -Math.PI / 2 + (k / (stars.length - 1) - .5) * Math.PI * 1.3, far = w * (.35 + rand(k + 120) * .25);
+        star.setPosition(c.x + Math.cos(angle) * far * smooth(t), c.y + Math.sin(angle) * far * smooth(t)).setAlpha(t > 0 && t < 1 ? Math.sin(t * Math.PI) : 0).setRotation(t * 3);
+      });
+    } else if (act === 'stars') {
+      // A soft glimmer of the crystal while the stars twinkle in turn around the rabbit.
+      const soft = envelope(u, .2, .3); this.shine(.3 * soft * (.6 + .4 * Math.sin(ms / 180)), .25 * soft, 1);
+      p.forEach((star, k) => {
+        const t = (u * 1.5 + rand(k + 130)) % 1, x = (rand(k + 140) * 2 - 1) * w * .62, y = GROUND_Y - 8 - rand(k + 150) * w * .9;
+        star.setPosition(x, y - t * 6).setAlpha(soft * Math.sin(t * Math.PI)).setRotation(t * 1.6);
+      });
+    } else if (act === 'rainbow') {
+      const step = rainbowStep(ms), [rainbow, ...stars] = p, top = this.point(this.host.art.width / 2, 0);
+      this.lift = ms < 360 ? Math.sin(ms / 360 * Math.PI) * 4 : 0;
+      rainbow.setTexture(FX.rainbow[step.frame].texture).setPosition(top.x, top.y + w * .18).setAlpha(step.alpha);
+      stars.forEach((star, k) => {
+        const t = Math.max(0, Math.min(1, (ms - 800 - k * 260) / 900)), x = (k / 3 - .5) * w * 1.2;
+        star.setPosition(top.x + x, top.y - w * .25 - Math.sin(t * Math.PI) * 5).setAlpha(step.alpha * Math.sin(t * Math.PI));
+      });
+    } else {
+      const [back, front, dustBack, dustFront] = p, fade = envelope(u, .12, .2), rx = w * .62, ry = w * .2, size = w * 1.15 / FX.trail.width;
+      const orbit = (v: number) => { const angle = Math.PI + v * Math.PI * 2.2; return {x: Math.cos(angle) * rx, y: GROUND_Y - w * .55 + Math.sin(angle) * ry, near: Math.sin(angle) > 0, angle}; };
+      const head = orbit(u), tail = orbit(u - .06);
+      for (const [image, shown] of [[back, !head.near], [front, head.near]] as const)
+        image.setPosition(head.x, head.y).setScale(size * (Math.sin(head.angle) <= 0 ? 1 : -1), size).setRotation(Math.cos(head.angle) * .25).setAlpha(shown ? fade : 0);
+      for (const [image, shown] of [[dustBack, !tail.near], [dustFront, tail.near]] as const) image.setPosition(tail.x, tail.y).setAlpha(shown ? fade * .8 : 0);
+      this.shine(.2 * fade, .2 * fade, 1);
+    }
+  }
   /** The club tail strikes at `SLAM.impact`: the ground cracks, a ring of dust spreads, stones fly and the meadow shakes a little. */
   private slam(ms: number, w: number, f: 1 | -1): void {
     const [crack, ring, ...rest] = this.pieces, puffs = rest.slice(0, 3), stones = rest.slice(3), t = ms - SLAM.impact;
@@ -250,5 +322,5 @@ export class LegendaryView {
       stone.setPosition(x + side * (8 + rand(n + 80) * w * .5) * v, GROUND_Y + 1 - arc(v) * (14 + rand(n + 90) * 16)).setRotation(v * side * 4).setAlpha(v < 1 ? 1 : 0);
     });
   }
-  destroy(): void { this.clear(); for (const o of [this.part, this.mouth, this.back, this.front, this.fx]) o?.destroy(); }
+  destroy(): void { this.clear(); for (const o of [this.part, this.mouth, this.glow, this.light, this.back, this.front, this.fx]) o?.destroy(); }
 }

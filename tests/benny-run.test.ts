@@ -808,7 +808,7 @@ describe('golden pots', () => {
 function readRoad(seed: number, ms: number, every = 50) {
   const g = startBennyRun(0, seed); const seen = new Map<number, RunEntity>(), moments = new Map<number, {kind: string; from: number; to: number; at: number}>();
   for (let t = every; t <= ms; t += every) {
-    g.over = false; g.fallFrom = null; g.lastBumpAt = null; advanceBennyRun(g, t); takeRunEvents(g);
+    g.over = false; g.fallFrom = null; g.lastBumpAt = null; advanceBennyRun(g, t); takeRunEvents(g); const gap = holeAt(g); if (gap) g.distance = gap.to; // (Carried past a gap: stuck falling in it, the run's clock would go on without the road.)
     for (const e of g.entities) if (!seen.has(e.id) && !e.knock && !e.rolling) seen.set(e.id, {...e});
     for (const m of g.moments) if (!moments.has(m.from)) moments.set(m.from, {...m, at: g.at});
   }

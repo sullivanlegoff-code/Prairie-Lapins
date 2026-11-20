@@ -23,7 +23,7 @@ function setup() {
   const glows = new NightGlows(scene, () => true);
   const house = {active: true, visible: true, alpha: 1, depth: 1, x: 100, y: 75, originX: .5, originY: .5, scaleX: 1, scaleY: 1, flipX: false, texture: {key: 'h'}} as unknown as Phaser.GameObjects.Image;
   const rabbit = (depth: number, x: number) => ({active: true, visible: true, alpha: 1, depth, x, y: 100, getBounds: () => ({left: x - 20, right: x + 20, top: 80, bottom: 120, x: x - 20, y: 80, width: 40, height: 40})}) as unknown as Phaser.GameObjects.Container;
-  return {glows, layer, house, rabbit};
+  return {glows, layer, house, rabbit, scene};
 }
 const url = 'https://x/assets/noel/buildings/farm-level-1.png';
 describe('the Christmas night glows and the rabbits', () => {
@@ -40,5 +40,20 @@ describe('the Christmas night glows and the rabbits', () => {
     const {glows, layer, house, rabbit} = setup();
     glows.update(0, [{image: house, url}], [rabbit(2, 100)]);
     expect(layer.draw).not.toHaveBeenCalled(); expect(layer.erase).not.toHaveBeenCalled();
+  });
+  // Owner (20 November 2026): sometimes at night the lights left their buildings and floated in the void. When the screen
+  // changed size, only the shown size of the glow picture changed, not the picture nor its camera.
+  it('makes a new glow picture of the new size when the screen changes size, never one per frame', () => {
+    const {glows, layer, house, scene} = setup();
+    const add = (scene as unknown as {add: {renderTexture: ReturnType<typeof vi.fn>}}).add.renderTexture;
+    glows.update(1, [{image: house, url}]);
+    expect(add).toHaveBeenLastCalledWith(0, 0, 844, 390);
+    const camera = (scene as unknown as {cameras: {main: {width: number; height: number}}}).cameras.main;
+    camera.width = 390; camera.height = 663; layer.width = 844; layer.height = 390;
+    glows.update(1, [{image: house, url}]);
+    expect(layer.destroy).toHaveBeenCalledOnce();
+    expect(add).toHaveBeenLastCalledWith(0, 0, 390, 663);
+    layer.width = 390; layer.height = 663; glows.update(1, [{image: house, url}]);
+    expect(add).toHaveBeenCalledTimes(2);
   });
 });
