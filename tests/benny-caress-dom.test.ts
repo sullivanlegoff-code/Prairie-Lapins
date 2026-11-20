@@ -10,10 +10,11 @@ import {createGame, encodeGame} from '../src/simulation';
 import {SAVE_KEY} from '../src/persistence/storage';
 import type {GameState} from '../src/state/types';
 import type {MeadowScene} from '../src/display/MeadowScene';
-import {BENNY_CARESS_LANDINGS, BENNY_CARESS_MS, BENNY_CARESS_POSES, BENNY_CARESS_POSES_END, BENNY_CARESS_REDUCED_MS, resetBennyCaressAtlas} from '../src/ui/bennyCaress';
+import {BENNY_CARESS_IDLE_MS, BENNY_CARESS_MOVES, BENNY_CARESS_ORDER, BENNY_CARESS_SETTLE_MS, resetBennyCaressAtlas} from '../src/ui/bennyCaress';
 import {BENNY_REVEAL_POSES} from '../src/config/bennyArt';
 
-// Benny's caress in her sheet (owner, 20 November 2026): a kiss, then a big moment of joy; every other rabbit keeps its caress.
+// Benny's caress in her sheet (owner, 20 November 2026): several moments of joy that go on while the finger rubs and stop when it
+// stops; every other rabbit keeps its caress.
 const cleanups: (() => void)[] = [];
 let clock = 0;
 beforeEach(() => {
@@ -44,76 +45,100 @@ function sheet(species: 'benny' | 'paille') {
 const pointer = (target: Element, type: string, x: number) => target.dispatchEvent(new PointerEvent(type, {pointerId: 1, clientX: x, clientY: 20, bubbles: true, cancelable: true}));
 const rub = (portrait: HTMLElement) => { pointer(portrait, 'pointerdown', 20); pointer(portrait, 'pointermove', 45); pointer(portrait, 'pointermove', 22); };
 
-it('caressing Benny plays her kiss and her joy, in her paintings, and counts like any caress', () => {
+/** Time goes by for the page clock and the timers together, in small steps. */
+function advance(ms: number) { for (let t = 0; t < ms; t += 10) { clock += 10; vi.advanceTimersByTime(10); } }
+/** Keeps rubbing sideways for `ms`, one move every 60 ms, and notes the moments she plays. */
+function keepRubbing(portrait: HTMLElement, ms: number, seen: string[] = []) {
+  let x = 22;
+  for (let t = 0; t < ms; t += 60) {
+    x = x === 22 ? 60 : 22; pointer(portrait, 'pointermove', x); advance(60);
+    const now = portrait.dataset.bennyCaress; if (now && seen.at(-1) !== now) seen.push(now);
+  }
+  return seen;
+}
+
+it('caressing Benny goes on as long as the finger rubs, through several different moments of joy, never twice the same in a row', () => {
   vi.useFakeTimers({toFake: ['setTimeout', 'clearTimeout']}); reducedMotion(false);
   const {controller, portrait, id} = sheet('benny'); const perform = vi.spyOn(controller, 'perform');
   rub(portrait);
-  expect(perform).toHaveBeenCalledWith({type: 'petRabbit', rabbitId: id});
-  expect(portrait.dataset.petting).toBe('benny'); expect(portrait.dataset.bennyCaress).toBe('show');
-  // Not the short caress of the others.
+  expect(portrait.dataset.petting).toBe('benny'); expect(portrait.dataset.bennyCaress).toBe('kiss');
+  expect(perform).toHaveBeenCalledWith({type: 'petRabbit', rabbitId: id}); expect(perform).toHaveBeenCalledTimes(1);
   expect(portrait.querySelector('.pet-hearts')).toBeNull();
-  // The kiss: her paw at her mouth, eyes closed, then a big painted heart that flies at the player.
-  const poses = [...portrait.querySelectorAll<HTMLElement>('.bc-poses .bc-pose')].map(p => p.dataset.pose);
-  expect(poses).toEqual(BENNY_CARESS_POSES.map(([name]) => name));
-  expect(poses).toContain('groom-5'); expect(poses.filter(p => p === 'hop-4')).toHaveLength(2); expect(poses).toContain('flop-1');
+  // The kiss: her paw at her mouth, then a big painted heart flying at the player.
+  expect([...portrait.querySelectorAll<HTMLElement>('.bc-poses .bc-pose')].map(p => p.dataset.pose)).toEqual(BENNY_CARESS_MOVES.kiss.poses.map(([name]) => name));
   expect(portrait.querySelector('.bc-kiss-heart')?.getAttribute('src')).toContain('assets/effects/spa/coeur');
-  // Her joy: rainbow, prisms, glow, swirl, hearts, stars at each landing, rings, twinkles, feathers.
-  expect(portrait.querySelectorAll('.bc-rainbow-frame')).toHaveLength(8);
-  expect(portrait.querySelectorAll('.bc-prism')).toHaveLength(2);
-  expect(portrait.querySelectorAll('.bc-heart').length).toBeGreaterThanOrEqual(10);
-  expect(portrait.querySelectorAll('.bc-ring')).toHaveLength(BENNY_CARESS_LANDINGS.length);
-  expect(portrait.querySelectorAll('.bc-spark').length).toBeGreaterThanOrEqual(12);
-  for (const selector of ['.bc-glow', '.bc-swirl', '.bc-trail', '.bc-stardust', '.bc-twinkle', '.bc-feather']) expect(portrait.querySelector(selector), selector).not.toBeNull();
-  // Painted pictures only: every image is one of the game's painted files, no canvas, no SVG.
-  for (const img of portrait.querySelectorAll<HTMLImageElement>('.bc-back img, .bc-front img')) expect(img.getAttribute('src')).toMatch(/assets\/(effects\/(benny|spa)|currency)\//);
+  const seen = keepRubbing(portrait, 9000, ['kiss']);
+  expect(new Set(seen).size).toBeGreaterThanOrEqual(4);
+  for (let k = 1; k < seen.length; k++) expect(seen[k]).not.toBe(seen[k - 1]);
+  expect(seen.slice(0, 4)).toEqual(BENNY_CARESS_ORDER.slice(0, 4));
+  expect(portrait.dataset.petting).toBe('benny');
+  // Counted like a caress: at the start, then again every few seconds while it goes on.
+  expect(perform.mock.calls.length).toBeGreaterThanOrEqual(3); expect(perform.mock.calls.length).toBeLessThanOrEqual(4);
+  // Hearts rise where the finger rubs.
+  expect(portrait.querySelectorAll('.bc-fingers .bc-finger-heart').length).toBeGreaterThan(0);
+  // Painted pictures only.
+  for (const img of portrait.querySelectorAll<HTMLImageElement>('.bc-back img, .bc-front img, .bc-fingers img')) expect(img.getAttribute('src')).toMatch(/assets\/(effects\/(benny|spa)|currency)\//);
   expect(portrait.querySelector('canvas, svg')).toBeNull();
-  // Long enough to be a real show, and rubbing on does not cut it.
-  expect(BENNY_CARESS_MS).toBeGreaterThanOrEqual(2500);
-  clock += 2000; pointer(portrait, 'pointermove', 70); pointer(portrait, 'pointermove', 10);
-  expect(perform).toHaveBeenCalledTimes(1);
-  vi.advanceTimersByTime(BENNY_CARESS_MS - 10);
-  expect(portrait.dataset.bennyCaress).toBe('show');
-  vi.advanceTimersByTime(20);
+  pointer(portrait, 'pointerup', 22);
+});
+
+it('her caress stops when the finger stops rubbing, and when it lifts; she settles back softly', () => {
+  vi.useFakeTimers({toFake: ['setTimeout', 'clearTimeout']}); reducedMotion(false);
+  const {portrait} = sheet('benny');
+  rub(portrait); keepRubbing(portrait, 2500);
+  expect(portrait.dataset.bennyCaress).not.toBe('settle');
+  // The finger rests on her without moving: the moment stops.
+  advance(BENNY_CARESS_IDLE_MS + 20);
+  expect(portrait.dataset.bennyCaress).toBe('settle');
+  advance(BENNY_CARESS_SETTLE_MS + 20);
   expect(portrait.dataset.bennyCaress).toBeUndefined(); expect(portrait.dataset.petting).toBeUndefined();
-  expect(portrait.querySelector('.bc-back, .bc-front, .bc-poses')).toBeNull();
-  pointer(portrait, 'pointerup', 10);
+  expect(portrait.querySelector('.bc-back, .bc-front, .bc-poses, .bc-fingers')).toBeNull();
+  // Rubbing again starts a new caress, with her kiss; lifting the finger stops it at once.
+  pointer(portrait, 'pointermove', 70); pointer(portrait, 'pointermove', 20);
+  expect(portrait.dataset.bennyCaress).toBe('kiss');
+  keepRubbing(portrait, 600);
+  pointer(portrait, 'pointerup', 20);
+  expect(portrait.dataset.bennyCaress).toBe('settle');
+  advance(BENNY_CARESS_SETTLE_MS + 20);
+  expect(portrait.dataset.bennyCaress).toBeUndefined();
 });
 
-it('her poses follow one another without a gap and stop before the end; they exist in her atlas', () => {
-  for (let k = 1; k < BENNY_CARESS_POSES.length; k++) expect(BENNY_CARESS_POSES[k]![1]).toBeCloseTo(BENNY_CARESS_POSES[k - 1]![2], 5);
-  expect(BENNY_CARESS_POSES[0]![1]).toBe(0);
-  expect(BENNY_CARESS_POSES.at(-1)![2]).toBeCloseTo(BENNY_CARESS_POSES_END, 5);
-  expect(BENNY_CARESS_POSES_END * 1000).toBeLessThan(BENNY_CARESS_MS);
-  for (const [name] of BENNY_CARESS_POSES) expect(BENNY_REVEAL_POSES.poses[name]).toBeDefined();
+it('her moments are long enough, their poses fit inside them and exist in her atlas; each has its own dance', () => {
   const css = readFileSync('src/display/benny-caress.css', 'utf8') as string;
-  expect(css).toContain(`bc-hidden ${BENNY_CARESS_POSES_END}s`);
-  for (const name of ['bc-dance', 'bc-kiss', 'bc-heart', 'bc-spark', 'bc-ring', 'bc-prism']) expect(css).toContain(`@keyframes ${name} `);
+  for (const move of Object.values(BENNY_CARESS_MOVES)) {
+    expect(move.ms).toBeGreaterThanOrEqual(1200);
+    for (const [name, from, until] of move.poses) { expect(BENNY_REVEAL_POSES.poses[name]).toBeDefined(); expect(from).toBeLessThan(until); expect(until * 1000).toBeLessThanOrEqual(move.ms); }
+    for (const [at] of move.cues) expect(at * 1000).toBeLessThan(move.ms);
+    expect(css).toContain(`@keyframes bc-dance-${move.name} `);
+  }
+  expect(BENNY_CARESS_ORDER[0]).toBe('kiss');
+  for (let k = 0; k < BENNY_CARESS_ORDER.length; k++) expect(BENNY_CARESS_ORDER[k]).not.toBe(BENNY_CARESS_ORDER[(k + 1) % BENNY_CARESS_ORDER.length]);
+  expect(new Set(BENNY_CARESS_ORDER).size).toBe(Object.keys(BENNY_CARESS_MOVES).length);
 });
 
-it('without her atlas yet, Benny still plays her show with her rest picture (no empty pose over her)', () => {
+it('without her atlas yet, Benny still plays her moments with her rest picture (no empty pose over her)', () => {
   vi.useFakeTimers({toFake: ['setTimeout', 'clearTimeout']}); reducedMotion(false); resetBennyCaressAtlas(false);
   const {portrait} = sheet('benny');
   rub(portrait);
-  expect(portrait.dataset.bennyCaress).toBe('show');
+  expect(portrait.dataset.bennyCaress).toBe('kiss');
   expect(portrait.querySelectorAll('.bc-pose')).toHaveLength(0);
   expect(portrait.querySelector('.bc-has-poses')).toBeNull();
   expect(portrait.querySelector('.bc-kiss-heart')).not.toBeNull();
   pointer(portrait, 'pointerup', 22);
 });
 
-it('with reduced motion, Benny only shows her kiss pose, a heart and the rainbow, briefly', () => {
+it('with reduced motion, Benny shows her kiss pose, a heart and the rainbow while she is caressed, nothing moving', () => {
   vi.useFakeTimers({toFake: ['setTimeout', 'clearTimeout']}); reducedMotion(true);
   const {portrait} = sheet('benny');
   rub(portrait);
   expect(portrait.dataset.petting).toBe('benny-still'); expect(portrait.dataset.bennyCaress).toBe('still');
   expect([...portrait.querySelectorAll<HTMLElement>('.bc-pose')].map(p => p.className)).toEqual(['br-pose bc-pose bc-pose-still']);
-  expect(portrait.querySelector('.bc-kiss-heart')).not.toBeNull();
   expect(portrait.querySelectorAll('.bc-rainbow-frame')).toHaveLength(1);
-  expect(portrait.querySelector('.bc-heart, .bc-spark, .bc-ring, .bc-swirl, .bc-feather')).toBeNull();
-  expect(BENNY_CARESS_REDUCED_MS).toBeLessThan(BENNY_CARESS_MS);
-  vi.advanceTimersByTime(BENNY_CARESS_REDUCED_MS + 10);
+  keepRubbing(portrait, 3000);
+  expect(portrait.dataset.bennyCaress).toBe('still');
+  expect(portrait.querySelector('.bc-heart, .bc-spark, .bc-ring, .bc-swirl, .bc-feather, .bc-finger-heart')).toBeNull();
+  pointer(portrait, 'pointerup', 22); advance(BENNY_CARESS_SETTLE_MS + 20);
   expect(portrait.dataset.bennyCaress).toBeUndefined();
-  pointer(portrait, 'pointerup', 22);
 });
 
 it('every other rabbit keeps exactly its short caress', () => {

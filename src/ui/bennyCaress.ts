@@ -5,33 +5,57 @@ import {heartIcon} from '../display/currency';
 import {pose, type Pose} from './bennyReveal';
 
 /**
- * Caressing Benny in her sheet (owner, 20 November 2026: « je veux qu'elle fasse un bisous et qu'elle fasse une super animation où
- * elle est super heureuse »). Benny only: every other rabbit keeps its short wiggle and its five hearts (GameUI.caress).
- * Her story, in her approved meadow paintings: her ears go up, she sits up and puts a paw to her mouth, eyes closed, and leans
- * towards the player for a kiss; a big painted heart leaves her mouth and flies at the player in a flash of light. Then she is
- * overjoyed: two hops of joy (the second one with a twirl), a pastel rainbow drawing itself behind her with prisms at both ends,
- * hearts and stars bursting, rings of light where she lands, feathers and stardust; she ends with a happy squint and a nose twitch.
- * Painted pictures only (her atlas, her Mythic effects, the spa's heart and the heart of the game); the code only moves them.
- * With reduced motion: the kiss pose, a heart and the rainbow fade in and out, nothing moves, and it is short.
+ * Caressing Benny in her sheet. Owner, 20 November 2026: « je veux qu'elle fasse un bisous et qu'elle fasse une super animation où
+ * elle est super heureuse », then the same evening: « elle doit avoir plusieurs animations de caresses différentes. Je veux que
+ * l'animation s'arrête quand on arrête de caresser et qu'elle continue tant que l'on caresse ».
+ * So a caress is a session: it starts with her kiss, then, as long as the finger keeps rubbing, her moments of joy follow one
+ * another (never the same one twice in a row): hops of joy under a rainbow, a cuddle where she leans into the hand, a twirl, a
+ * roll on her back, and the kiss again now and then. Hearts rise where the finger rubs. As soon as the finger stops or lifts, the
+ * moment stops and she softly comes back to rest. Benny only: every other rabbit keeps its short wiggle (GameUI.caress).
+ * Painted pictures only (her meadow atlas, her Mythic effects, the spa's heart and the heart of the game); the code only moves them.
+ * With reduced motion: her kiss pose, a heart and the rainbow fade in while she is caressed, and fade out when it stops.
  */
-export const BENNY_CARESS_MS = 3900;
-export const BENNY_CARESS_REDUCED_MS = 1600;
-/** Her poses (from, until) in seconds; the rest picture is hidden under them (bc-hidden) and comes back at the end. */
-export const BENNY_CARESS_POSES: readonly (readonly [Pose, number, number])[] = (() => {
-  const steps: [Pose, number, number][] = [['ears-3', 0, .22], ['groom-1', .22, .42], ['groom-4', .42, .62], ['groom-5', .62, 1.05], ['groom-6', 1.05, 1.35]];
-  const hop = (from: number) => (['hop-1', 'hop-2', 'hop-3', 'hop-4', 'hop-5', 'hop-6', 'hop-7'] as const).forEach((name, k) => steps.push([name, +(from + k * .09).toFixed(2), +(from + (k + 1) * .09).toFixed(2)]));
-  hop(1.35); hop(1.98);
-  steps.push(['flop-1', 2.61, 3.15], ['nose-1', 3.15, 3.3], ['nose-2', 3.3, 3.45], ['nose-3', 3.45, 3.6]);
-  return steps;
-})();
-/** The end of her poses: her rest picture is back from here. */
-export const BENNY_CARESS_POSES_END = 3.6;
-/** When she lands after each hop (seconds): rings of light and sheaves of stars. */
-export const BENNY_CARESS_LANDINGS = [1.98, 2.61] as const;
-/** Sounds of the show (seconds): the kiss, then each jump of joy. */
-export const BENNY_CARESS_CUES: readonly (readonly [number, 'kiss' | 'jump' | 'land'])[] = [[.95, 'kiss'], [1.5, 'jump'], [1.98, 'land'], [2.13, 'jump'], [2.61, 'land']];
+export type BennyCaressCue = 'kiss' | 'jump' | 'land' | 'purr';
+export type BennyMoveName = 'kiss' | 'hops' | 'cuddle' | 'twirl' | 'roll';
+export interface BennyMove {
+  name: BennyMoveName;
+  /** How long it lasts (ms). */
+  ms: number;
+  /** Her poses (from, until) in seconds; her rest picture hides under them while they last. */
+  poses: readonly (readonly [Pose, number, number])[];
+  /** Sounds (seconds from the start of the moment). */
+  cues: readonly (readonly [number, BennyCaressCue])[];
+}
+const run = (names: readonly Pose[], from: number, step: number): [Pose, number, number][] =>
+  names.map((name, k) => [name, +(from + k * step).toFixed(2), +(from + (k + 1) * step).toFixed(2)]);
+const HOP: readonly Pose[] = ['hop-1', 'hop-2', 'hop-3', 'hop-4', 'hop-5', 'hop-6', 'hop-7'];
+export const BENNY_CARESS_MOVES: Readonly<Record<BennyMoveName, BennyMove>> = {
+  // The kiss: ears up, paw to her mouth, eyes closed, she leans to the player and a big heart flies out at the player.
+  kiss: {name: 'kiss', ms: 1700, poses: [['ears-3', 0, .2], ['groom-1', .2, .4], ['groom-4', .4, .6], ['groom-5', .6, 1.05], ['groom-6', 1.05, 1.35], ['blink-2', 1.35, 1.55]],
+    cues: [[.9, 'kiss']]},
+  // Two hops of joy, a rainbow drawing itself behind her, rings of light and stars where she lands.
+  hops: {name: 'hops', ms: 1500, poses: [...run(HOP, 0, .09), ...run(HOP, .66, .09), ['ears-3', 1.29, 1.45]],
+    cues: [[.12, 'jump'], [.63, 'land'], [.78, 'jump'], [1.29, 'land']]},
+  // The cuddle: eyes closed with happiness, she leans into the hand from one side to the other, a soft light breathing.
+  cuddle: {name: 'cuddle', ms: 1900, poses: [['blink-1', 0, .15], ['blink-2', .15, .75], ['ears-1', .75, .9], ['blink-2', .9, 1.55], ['nose-1', 1.55, 1.68], ['nose-2', 1.68, 1.8]],
+    cues: [[.1, 'purr'], [1, 'purr']]},
+  // The twirl: a hop turning on herself, a trail and a swirl of stardust, feathers floating down.
+  twirl: {name: 'twirl', ms: 1300, poses: [['ears-3', 0, .12], ...run(HOP, .12, .1), ['nose-3', .82, 1]], cues: [[.2, 'jump'], [.82, 'land']]},
+  // The roll: she flops onto her back for a tummy rub, wriggles happily, then twitches her nose.
+  roll: {name: 'roll', ms: 1800, poses: [['flop-1', 0, 1.25], ['nose-1', 1.25, 1.4], ['nose-2', 1.4, 1.55], ['nose-3', 1.55, 1.7]], cues: [[.05, 'purr'], [.7, 'purr']]},
+};
+/** The order her moments come in while the caress goes on: the kiss first, then joy, the kiss coming back now and then. */
+export const BENNY_CARESS_ORDER: readonly BennyMoveName[] = ['kiss', 'hops', 'cuddle', 'twirl', 'kiss', 'roll', 'hops', 'cuddle', 'kiss', 'twirl', 'roll'];
+/** The finger has stopped once it has not rubbed for this long (ms): the moment stops. */
+export const BENNY_CARESS_IDLE_MS = 600;
+/** How long she takes to come back to rest after the caress (ms). */
+export const BENNY_CARESS_SETTLE_MS = 320;
+/** One « caress » counted for the missions at the start, then one more every this long while it goes on (ms). */
+export const BENNY_CARESS_COUNT_MS = 3900;
+/** A heart rises where the finger rubs, at most this often (ms), and at most this many at once. */
+export const BENNY_CARESS_FINGER_MS = 140;
+const FINGER_HEARTS = 10, HEARTS = 9, TWINKLES = 5, FEATHERS = 4, STARS_PER_LANDING = 7;
 const REDUCED_POSE: Pose = 'groom-5';
-const HEARTS = 12, STARS_PER_LANDING = 8, TWINKLES = 6, FEATHERS = 4;
 /** Her atlas, decoded once her sheet is open; while it is not ready a caress moves her rest picture only. */
 let atlasImage: HTMLImageElement | null = null;
 let atlasReady = false;
@@ -58,19 +82,17 @@ function layer(className: string, children: Element[] = []): HTMLSpanElement {
 const time = (element: HTMLElement, name: string, seconds: number) => element.style.setProperty(name, `${seconds.toFixed(2)}s`);
 const spaHeart = () => preferWebp(SPA_PIECES.heart.url);
 
-/** The hearts rising all around her once she is happy: the spa's painted heart and the game's heart, in turn. */
-function heartShower(): HTMLElement[] {
-  return Array.from({length: HEARTS}, (_, k) => {
+function hearts(seed: number, from: number, every: number, count = HEARTS): HTMLElement[] {
+  return Array.from({length: count}, (_, k) => {
     const heart = k % 2 ? heartIcon() : picture(spaHeart(), 'bc-heart-art'); heart.classList.add('bc-heart'); heart.setAttribute('aria-hidden', 'true');
-    const r = (n: number) => rand(k * 13 + n);
+    const r = (n: number) => rand(seed + k * 13 + n);
     heart.style.setProperty('--x', `${(8 + r(1) * 84).toFixed(1)}%`); heart.style.setProperty('--y', `${(46 + r(2) * 40).toFixed(1)}%`);
-    heart.style.setProperty('--dx', `${((r(3) * 2 - 1) * 34).toFixed(0)}px`); heart.style.setProperty('--rise', `${(70 + r(4) * 60).toFixed(0)}px`);
+    heart.style.setProperty('--dx', `${((r(3) * 2 - 1) * 34).toFixed(0)}px`); heart.style.setProperty('--rise', `${(60 + r(4) * 60).toFixed(0)}px`);
     heart.style.setProperty('--s', (.7 + r(5) * .8).toFixed(2)); heart.style.setProperty('--r', `${Math.round((r(6) * 2 - 1) * 30)}deg`);
-    time(heart, '--at', 1.3 + k * .17); time(heart, '--t', 1.1 + r(7) * .5);
+    time(heart, '--at', from + k * every); time(heart, '--t', .9 + r(7) * .5);
     return heart;
   });
 }
-/** The sheaf of stars thrown up at a landing. */
 function landingStars(at: number, seed: number): HTMLElement[] {
   return Array.from({length: STARS_PER_LANDING}, (_, k) => {
     const star = picture(k % 3 ? FX.star.url : FX.starFive.url, 'bc-spark'), angle = Math.PI * (1.05 + k / (STARS_PER_LANDING - 1) * .9), far = 46 + rand(seed + k) * 40;
@@ -79,67 +101,165 @@ function landingStars(at: number, seed: number): HTMLElement[] {
     return star;
   });
 }
-function twinkles(): HTMLElement[] {
+function twinkles(seed: number, from: number, every: number): HTMLElement[] {
   return Array.from({length: TWINKLES}, (_, k) => {
     const piece = picture(k % 2 ? FX.twinkle.url : FX.starFive.url, 'bc-twinkle');
-    piece.style.setProperty('--x', `${(rand(k + 40) * 100).toFixed(1)}%`); piece.style.setProperty('--y', `${(rand(k + 50) * 80).toFixed(1)}%`);
-    piece.style.setProperty('--s', (.6 + rand(k + 60) * .8).toFixed(2)); time(piece, '--at', .9 + k * .42);
+    piece.style.setProperty('--x', `${(rand(seed + k + 40) * 100).toFixed(1)}%`); piece.style.setProperty('--y', `${(rand(seed + k + 50) * 80).toFixed(1)}%`);
+    piece.style.setProperty('--s', (.6 + rand(seed + k + 60) * .8).toFixed(2)); time(piece, '--at', from + k * every);
     return piece;
   });
 }
-function feathers(): HTMLElement[] {
+function feathers(seed: number, from: number): HTMLElement[] {
   return Array.from({length: FEATHERS}, (_, k) => {
     const piece = picture(FX.feather[(k + 1) % FX.feather.length].url, 'bc-feather');
-    piece.style.setProperty('--x', `${(10 + k * 25 + rand(k + 70) * 10).toFixed(1)}%`); piece.style.setProperty('--dx', `${((rand(k + 80) * 2 - 1) * 26).toFixed(0)}px`);
-    piece.style.setProperty('--r', `${Math.round((rand(k + 90) * 2 - 1) * 60)}deg`); time(piece, '--at', 1.6 + k * .4);
+    piece.style.setProperty('--x', `${(10 + k * 25 + rand(seed + k + 70) * 10).toFixed(1)}%`); piece.style.setProperty('--dx', `${((rand(seed + k + 80) * 2 - 1) * 26).toFixed(0)}px`);
+    piece.style.setProperty('--r', `${Math.round((rand(seed + k + 90) * 2 - 1) * 60)}deg`); time(piece, '--at', from + k * .25);
     return piece;
   });
 }
-/** The rainbow drawing itself behind her (her own painted rainbow, frame after frame), with a prism bursting at each end. */
-function rainbow(reduced: boolean): HTMLElement {
-  if (reduced) return layer('bc-rainbow', [picture(FX.rainbow[7].url, 'bc-rainbow-frame bc-rainbow-still')]);
+function rainbow(from: number, prisms: number | null): HTMLElement {
   const frames = FX.rainbow.map((art, k) => {
     const frame = picture(art.url, `bc-rainbow-frame${k === FX.rainbow.length - 1 ? ' bc-rainbow-last' : ''}`);
-    time(frame, '--at', 1.2 + k * .12); return frame;
+    time(frame, '--at', from + k * .08); return frame;
   });
-  return layer('bc-rainbow', [...frames, picture(FX.prism.url, 'bc-prism bc-prism-left'), picture(FX.prism.url, 'bc-prism bc-prism-right')]);
+  const box = layer('bc-rainbow', frames);
+  if (prisms !== null) for (const side of ['left', 'right']) { const prism = picture(FX.prism.url, `bc-prism bc-prism-${side}`); time(prism, '--at', prisms); box.append(prism); }
+  return box;
+}
+function rings(landings: readonly number[]): HTMLElement {
+  return layer('bc-ground', landings.map(at => { const ring = picture(FX.ring.url, 'bc-ring'); time(ring, '--at', at - .04); return ring; }));
+}
+/** What surrounds her during one moment: behind her (`back`) and in front of her (`front`). */
+function scenery(name: BennyMoveName, seed: number): {back: Element[]; front: Element[]} {
+  const glow = picture(FX.glow.url, 'bc-glow');
+  switch (name) {
+  case 'kiss': return {back: [glow], front: [layer('bc-kiss', [picture(FX.burst.url, 'bc-kiss-flash'), picture(spaHeart(), 'bc-kiss-heart')]),
+    layer('bc-hearts', hearts(seed, 1, .08, 5)), layer('bc-twinkles', twinkles(seed, .3, .2))]};
+  case 'hops': return {back: [glow, rainbow(0, .66), rings([.63, 1.29])], front: [layer('bc-hearts', hearts(seed, .1, .14)),
+    layer('bc-sparks', [...landingStars(.63, seed), ...landingStars(1.29, seed + 30)])]};
+  case 'cuddle': return {back: [glow], front: [layer('bc-hearts', hearts(seed, .05, .19)), layer('bc-twinkles', twinkles(seed, .2, .3))]};
+  case 'twirl': return {back: [glow, picture(FX.swirl.url, 'bc-swirl'), rings([.82])], front: [picture(FX.trail.url, 'bc-trail'),
+    picture(FX.stardust.url, 'bc-stardust'), layer('bc-feathers', feathers(seed, .2)), layer('bc-sparks', landingStars(.82, seed))]};
+  case 'roll': return {back: [glow, rainbow(.1, null)], front: [layer('bc-hearts', hearts(seed, .1, .17)), layer('bc-feathers', feathers(seed, .3)),
+    layer('bc-twinkles', twinkles(seed, .4, .25))]};
+  }
 }
 
+export interface BennyCaressSession {
+  /** The finger rubbed again, at (x, y) in the page: the caress goes on. */
+  rub(x?: number, y?: number): void;
+  /** The finger lifted: the moment stops and she settles back. */
+  stop(): void;
+  /** Takes everything away at once (the sheet changes). */
+  dispose(): void;
+  readonly active: boolean;
+  /** The moments played so far, in order. */
+  readonly played: readonly BennyMoveName[];
+}
+export interface BennyCaressOptions {
+  reduced: boolean;
+  /** A sound of a moment. */
+  sound?: (cue: BennyCaressCue) => void;
+  /** One caress counted for the missions (at the start, then every BENNY_CARESS_COUNT_MS while it goes on). */
+  count?: () => void;
+  /** Everything is over and gone. */
+  ended?: () => void;
+  now?: () => number;
+}
 /**
- * Plays the show on her portrait. `figure` is the box of her picture (its size is the sprite's), `portrait` the sheet's portrait.
- * Returns how long it lasts, in milliseconds; `clearBennyCaress` takes everything away.
+ * Starts a caress session on her portrait. `figure` is the box of her picture (its size is the sprite's). The moment playing is
+ * `portrait.dataset.bennyCaress` (its name, « still » with reduced motion, « settle » while she comes back to rest).
  */
-export function playBennyCaress(portrait: HTMLElement, figure: HTMLElement, reduced: boolean): number {
+export function startBennyCaress(portrait: HTMLElement, figure: HTMLElement, options: BennyCaressOptions): BennyCaressSession {
   clearBennyCaress(portrait);
-  const poses = atlasReady;
-  portrait.dataset.bennyCaress = reduced ? 'still' : 'show';
+  const now = options.now ?? (() => performance.now()), reduced = options.reduced, played: BennyMoveName[] = [];
+  let active = true, lastRub = now(), lastFinger = -Infinity, nextCount = now() + BENNY_CARESS_COUNT_MS, step = 0;
+  let moveTimer = 0, idleTimer = 0, settleTimer = 0; const cueTimers: number[] = [];
   figure.classList.add('bc-figure'); figure.style.setProperty('--atlas', `url('${BENNY_ATLAS.url}')`);
-  if (poses) figure.classList.add('bc-has-poses');
-  const back = layer('bc-back', [picture(FX.glow.url, 'bc-glow'), rainbow(reduced)]);
-  if (!reduced) back.append(picture(FX.swirl.url, 'bc-swirl'));
-  const front = layer('bc-front');
-  // The kiss: a big painted heart born at her mouth, flying at the player.
-  const kiss = layer('bc-kiss', [picture(FX.burst.url, 'bc-kiss-flash'), picture(spaHeart(), 'bc-kiss-heart')]);
-  front.append(kiss);
-  if (!reduced) {
-    front.append(layer('bc-hearts', heartShower()), layer('bc-sparks', BENNY_CARESS_LANDINGS.flatMap((at, k) => landingStars(at, 20 + k * 30))),
-      layer('bc-twinkles', twinkles()), layer('bc-feathers', feathers()), picture(FX.trail.url, 'bc-trail'), picture(FX.stardust.url, 'bc-stardust'));
-    const ground = layer('bc-ground', BENNY_CARESS_LANDINGS.map(at => { const ring = picture(FX.ring.url, 'bc-ring'); time(ring, '--at', at - .04); return ring; }));
-    back.append(ground);
-  }
-  const posesLayer = layer('bc-poses');
-  if (poses) {
-    if (reduced) { const piece = pose(REDUCED_POSE, 'bc-pose bc-pose-still'); posesLayer.append(piece); }
-    else for (const [name, from, until] of BENNY_CARESS_POSES) {
-      const piece = pose(name, 'bc-pose bc-pose-cut'); piece.dataset.pose = name; time(piece, '--at', from); time(piece, '--for', until - from); posesLayer.append(piece);
+  if (atlasReady) figure.classList.add('bc-has-poses');
+  const fingers = layer('bc-fingers'); portrait.append(fingers);
+  const clearMoment = () => {
+    cueTimers.splice(0).forEach(timer => window.clearTimeout(timer));
+    portrait.querySelectorAll(':scope > .bc-back, :scope > .bc-front').forEach(element => element.remove());
+    figure.querySelectorAll('.bc-poses').forEach(element => element.remove());
+  };
+  const play = (name: BennyMoveName) => {
+    clearMoment(); played.push(name);
+    const move = BENNY_CARESS_MOVES[name], seed = played.length * 17;
+    portrait.dataset.bennyCaress = name; figure.style.setProperty('--move', `${move.ms / 1000}s`);
+    const {back, front} = scenery(name, seed);
+    portrait.prepend(layer('bc-back', back)); fingers.before(layer('bc-front', front));
+    const poses = layer('bc-poses');
+    const rest = figure.querySelector<HTMLImageElement>('img[data-rabbit-art]')?.getAttribute('src');
+    if (atlasReady) for (const [pose_, from, until] of move.poses) {
+      // A blink is only her closed eyes: it lies over her whole rest picture, shown with it.
+      if (pose_.startsWith('blink') && rest) { const whole = picture(rest, 'bc-pose-rest bc-pose-cut'); time(whole, '--at', from); time(whole, '--for', until - from); poses.append(whole); }
+      const piece = pose(pose_, 'bc-pose bc-pose-cut'); piece.dataset.pose = pose_; time(piece, '--at', from); time(piece, '--for', until - from); poses.append(piece);
     }
-  }
-  figure.append(posesLayer);
-  portrait.prepend(back); portrait.append(front);
-  return reduced ? BENNY_CARESS_REDUCED_MS : BENNY_CARESS_MS;
+    figure.append(poses);
+    figure.style.setProperty('--hide', `${atlasReady && move.poses.length ? move.poses[move.poses.length - 1]![2] : 0}s`);
+    // Restart her body's dance for this moment (the same class twice would not restart it).
+    figure.classList.remove('bc-moving'); void figure.offsetWidth; figure.classList.add('bc-moving');
+    for (const [at, cue] of move.cues) cueTimers.push(window.setTimeout(() => options.sound?.(cue), at * 1000));
+    moveTimer = window.setTimeout(next, move.ms);
+  };
+  const next = () => {
+    if (!active) return;
+    step++; play(BENNY_CARESS_ORDER[step % BENNY_CARESS_ORDER.length]!);
+  };
+  const playStill = () => {
+    portrait.dataset.bennyCaress = 'still'; played.push('kiss');
+    const back = layer('bc-back', [picture(FX.glow.url, 'bc-glow'), layer('bc-rainbow', [picture(FX.rainbow[7].url, 'bc-rainbow-frame bc-rainbow-still')])]);
+    const front = layer('bc-front', [layer('bc-kiss', [picture(spaHeart(), 'bc-kiss-heart')])]);
+    portrait.prepend(back); fingers.before(front);
+    if (atlasReady) { const poses = layer('bc-poses', [pose(REDUCED_POSE, 'bc-pose bc-pose-still')]); figure.append(poses); }
+  };
+  const watchIdle = () => {
+    window.clearTimeout(idleTimer);
+    idleTimer = window.setTimeout(() => { if (now() - lastRub >= BENNY_CARESS_IDLE_MS - 5) session.stop(); else watchIdle(); }, BENNY_CARESS_IDLE_MS);
+  };
+  const finish = () => {
+    window.clearTimeout(moveTimer); window.clearTimeout(idleTimer); window.clearTimeout(settleTimer); clearMoment();
+    clearBennyCaress(portrait); options.ended?.();
+  };
+  const session: BennyCaressSession = {
+    get active() { return active; },
+    played,
+    rub(x, y) {
+      if (!active) return;
+      const t = now(); lastRub = t; watchIdle();
+      if (t >= nextCount) { nextCount = t + BENNY_CARESS_COUNT_MS; options.count?.(); }
+      // A heart rises where the finger rubs (not with reduced motion: nothing moves).
+      if (reduced || x === undefined || y === undefined || t - lastFinger < BENNY_CARESS_FINGER_MS) return;
+      lastFinger = t;
+      const box = portrait.getBoundingClientRect(), heart = picture(spaHeart(), 'bc-finger-heart');
+      heart.style.left = `${(x - box.left).toFixed(0)}px`; heart.style.top = `${(y - box.top).toFixed(0)}px`;
+      heart.style.setProperty('--dx', `${((rand(t) * 2 - 1) * 18).toFixed(0)}px`); heart.style.setProperty('--s', (.7 + rand(t + 1) * .6).toFixed(2));
+      heart.addEventListener('animationend', () => heart.remove(), {once: true});
+      fingers.append(heart);
+      while (fingers.childElementCount > FINGER_HEARTS) fingers.firstElementChild?.remove();
+    },
+    stop() {
+      if (!active) return;
+      active = false; window.clearTimeout(moveTimer); window.clearTimeout(idleTimer); cueTimers.splice(0).forEach(timer => window.clearTimeout(timer));
+      // She comes back to rest from wherever her dance had taken her: her pose of the moment is kept, and everything fades.
+      const transform = getComputedStyle(figure).transform;
+      figure.classList.remove('bc-moving'); figure.style.transform = transform && transform !== 'none' ? transform : '';
+      void figure.offsetWidth; figure.style.transform = '';
+      portrait.dataset.bennyCaress = 'settle';
+      settleTimer = window.setTimeout(finish, BENNY_CARESS_SETTLE_MS);
+    },
+    dispose() { active = false; finish(); },
+  };
+  options.count?.();
+  if (reduced) playStill(); else play(BENNY_CARESS_ORDER[0]!);
+  watchIdle();
+  return session;
 }
 export function clearBennyCaress(portrait: HTMLElement): void {
   delete portrait.dataset.bennyCaress;
-  portrait.querySelectorAll('.bc-back, .bc-front, .bc-poses').forEach(element => element.remove());
-  portrait.querySelectorAll<HTMLElement>('.bc-figure').forEach(figure => { figure.classList.remove('bc-figure', 'bc-has-poses'); figure.style.removeProperty('--atlas'); });
+  portrait.querySelectorAll('.bc-back, .bc-front, .bc-poses, .bc-fingers').forEach(element => element.remove());
+  portrait.querySelectorAll<HTMLElement>('.bc-figure').forEach(figure => {
+    figure.classList.remove('bc-figure', 'bc-has-poses', 'bc-moving'); figure.style.removeProperty('--atlas'); figure.style.removeProperty('--move'); figure.style.removeProperty('--hide'); figure.style.transform = '';
+  });
 }
