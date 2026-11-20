@@ -65,7 +65,7 @@ export const EVOLVED_ART: readonly EvolvedSprite[] = [
   // Plume Ailé.
   {id: 'plume', name: 'Ailé', file: 'assets/rabbits/plume/plume-v2.png', texture: 'rabbit-plume-evolved-v2', width: 418, height: 428, worldWidth: 49.1, groundY: 12.5},
   // Princesse Neige Reine des Glaces.
-  {id: 'princesse-neige', name: 'Reines Des Neiges', file: 'assets/rabbits/princesse-neige/princesse-neige-v2.png', texture: 'rabbit-princesse-neige-evolved-v2', width: 435, height: 434, worldWidth: 51.3, groundY: 13.5},
+  {id: 'princesse-neige', name: 'Reine des Neiges', file: 'assets/rabbits/princesse-neige/princesse-neige-v2.png', texture: 'rabbit-princesse-neige-evolved-v2', width: 435, height: 434, worldWidth: 51.3, groundY: 13.5},
   // Roukette Star du Rock.
   {id: 'roukette', name: 'Star Roukette', file: 'assets/rabbits/roukette/roukette-v2.png', texture: 'rabbit-roukette-evolved-v2', width: 441, height: 532, worldWidth: 52, groundY: 12},
   // SNK Vétéran.
@@ -81,7 +81,7 @@ export const EVOLVED_ART: readonly EvolvedSprite[] = [
   // Dadi Superstar.
   {id: 'dadi', name: 'Dadi Bah Ouais', file: 'assets/rabbits/dadi/dadi-v2.png', texture: 'rabbit-dadi-evolved-v2', width: 334, height: 528, worldWidth: 39.4, groundY: 13},
   // Archimage Étoilé.
-  {id: 'magicien', name: 'Mâge', file: 'assets/rabbits/magicien/magicien-v2.png', texture: 'rabbit-magicien-evolved-v2', width: 448, height: 487, worldWidth: 52.8, groundY: 12},
+  {id: 'magicien', name: 'Mage', file: 'assets/rabbits/magicien/magicien-v2.png', texture: 'rabbit-magicien-evolved-v2', width: 448, height: 487, worldWidth: 52.8, groundY: 12},
   // Maxou des Abysses.
   {id: 'maxou', name: 'Maxoulo', file: 'assets/rabbits/maxou/maxou-v2.png', texture: 'rabbit-maxou-evolved-v2', width: 455, height: 445, worldWidth: 53.7, groundY: 12},
   // Orange Créatrice de Mode.
@@ -93,10 +93,10 @@ export const EVOLVED_ART: readonly EvolvedSprite[] = [
   // Lapin Requin Roi des Océans.
   {id: 'requin', name: 'Roi des Océans', file: 'assets/rabbits/requin/requin-v2.png', texture: 'rabbit-requin-evolved-v2', width: 465, height: 484, worldWidth: 54.8, groundY: 12},
   // The Christmas update's thirteen rabbits (5 and 6 November 2026), painted in the same pose as their first drawing.
-  {id: 'vantablack', name: 'Noir suprème', file: 'assets/rabbits/vantablack/vantablack-v2.png', texture: 'rabbit-vantablack-evolved-v2', width: 364, height: 574, worldWidth: 42.9, groundY: 12, facing: 'left'},
+  {id: 'vantablack', name: 'Noir suprême', file: 'assets/rabbits/vantablack/vantablack-v2.png', texture: 'rabbit-vantablack-evolved-v2', width: 364, height: 574, worldWidth: 42.9, groundY: 12, facing: 'left'},
   {id: 'gigi-rarafe', name: 'Modèle Gigi', file: 'assets/rabbits/gigi-rarafe/gigi-rarafe-v2.png', texture: 'rabbit-gigi-rarafe-evolved-v2', width: 429, height: 554, worldWidth: 50.6, groundY: 12},
   {id: 'yetiti', name: 'Yetiti Aura', file: 'assets/rabbits/yetiti/yetiti-v2.png', texture: 'rabbit-yetiti-evolved-v2', width: 538, height: 785, worldWidth: 63.4, groundY: 12, facing: 'left'},
-  {id: 'rennes', name: 'Rennes du père noel', file: 'assets/rabbits/rennes/rennes-v2.png', texture: 'rabbit-rennes-evolved-v2', width: 444, height: 552, worldWidth: 52.3, groundY: 12},
+  {id: 'rennes', name: 'Rennes du Père Noël', file: 'assets/rabbits/rennes/rennes-v2.png', texture: 'rabbit-rennes-evolved-v2', width: 444, height: 552, worldWidth: 52.3, groundY: 12},
   {id: 'susucre', name: 'Susucre au sucre', file: 'assets/rabbits/susucre/susucre-v2.png', texture: 'rabbit-susucre-evolved-v2', width: 485, height: 489, worldWidth: 57.2, groundY: 12},
   {id: 'arkoko', name: 'Kokostume', file: 'assets/rabbits/arkoko/arkoko-v2.png', texture: 'rabbit-arkoko-evolved-v2', width: 352, height: 682, worldWidth: 41.5, groundY: 12},
   {id: 'fantome', name: 'Star ghost', file: 'assets/rabbits/fantome/fantome-v2.png', texture: 'rabbit-fantome-evolved-v2', width: 358, height: 641, worldWidth: 42.2, groundY: 12, facing: 'left'},
