@@ -7,8 +7,15 @@ import {BENNY_RUN_DECOR} from '../src/ui/BennyRunActivity';
  *  track and now and then a wall Benny can run on. */
 function road(seed: number, ms = 180_000) {
   const g = startBennyRun(0, seed), first = new Map<string, WallSegment>(), last = new Map<string, WallSegment>();
+  // Each wall as it is laid (before a pattern makes the walls it needs runnable): its list is replaced now and then, each new one
+  // watched as it comes.
+  const key = (w: WallSegment) => `${w.side}:${w.from}`;
+  for (const w of g.walls) first.set(key(w), {...w});
+  const watch = (list: WallSegment[]) => { const push = list.push.bind(list); list.push = (...ws: WallSegment[]) => { for (const w of ws) if (!first.has(key(w))) first.set(key(w), {...w}); return push(...ws); }; return list; };
+  let walls = watch(g.walls);
+  Object.defineProperty(g, 'walls', {get: () => walls, set: (list: WallSegment[]) => { walls = watch(list); }, configurable: true});
   for (let t = 0; t < ms; t += 250) {
-    for (const w of g.walls) { const key = `${w.side}:${w.from}`; if (!first.has(key)) first.set(key, {...w}); last.set(key, {...w}); }
+    for (const w of g.walls) last.set(key(w), {...w});
     g.entities = g.entities.filter(e => e.z > g.distance + 20);
     advanceBennyRun(g, t); takeRunEvents(g); g.lastBumpAt = null; g.fallFrom = null; g.over = false; g.pits = g.pits.filter(p => !p.open);
     const gap = holeAt(g); if (gap) g.distance = gap.to;

@@ -269,8 +269,13 @@ describe('Benny Rampage rules', () => {
     expect(g).toMatchObject({pots: 2, foes: 2, lastBumpAt: null}); expect(g.bestCombo).toBe(4);
     expect(takeRunEvents(g).flatMap(e => e.type === 'strike' ? [e.roll] : [])).toEqual([1, 2, 3, 4]);
   });
-  it('changes the setting ahead of Benny: it comes into sight, then she runs into it', () => {
-    const g = startBennyRun(0, 11); g.entities = []; g.nextSpawnZ = Infinity; g.lastBumpAt = null;
+  it('stays in the meadow all the run (owner, 20 Nov. 2026): no other world comes', () => {
+    const g = startBennyRun(0, 11); g.entities = []; g.nextSpawnZ = Infinity;
+    for (let i = 0; i < 40; i++) { g.lastBumpAt = null; g.over = false; g.fallFrom = null; run(g, 5000); }
+    expect(g.setting).toBe('grotte'); expect(g.upcoming).toBeNull(); expect(takeRunEvents(g).some(e => e.type === 'setting')).toBe(false);
+  });
+  it('changes the setting ahead of Benny when one is due (kept for later): it comes into sight, then she runs into it', () => {
+    const g = startBennyRun(0, 11); g.entities = []; g.nextSpawnZ = Infinity; g.lastBumpAt = null; g.nextSettingAt = g.at + 1000;
     run(g, g.nextSettingAt - g.at + 10);
     const next = g.upcoming!; expect(next.setting).not.toBe(g.setting); expect(next.z - g.distance).toBeCloseTo(C.settingAhead, 0);
     expect(settingAt(g, g.distance + 10)).toBe(g.setting); expect(settingAt(g, next.z + 1)).toBe(next.setting);
@@ -531,7 +536,12 @@ describe('Benny Rampage rules', () => {
     const g = quiet(); run(g, C.introMs); runInput(g, g.at, 'up'); run(g, 150);
     place(g, 'pot', 0, 1); runInput(g, g.at, 'left'); expect(g.pots).toBe(1); expect(inAir(g)).toBe(false);
   });
-  it('lays stretches with no wall, on one side or both, the three lanes whole, every 20 to 30 s or so', () => {
+  it('never opens the sides of the road onto the void any more (owner, 20 Nov. 2026: a meadow on both sides)', () => {
+    for (const seed of [11, 12, 13]) { const g = startBennyRun(0, seed); let open = 0;
+      for (let t = 0; t < 4000; t++) { g.lastBumpAt = null; g.fallFrom = null; g.over = false; g.overVoid = null; g.distance += 3; advanceBennyRun(g, g.at + C.step); open += g.walls.filter(w => w.void).length; }
+      expect(open).toBe(0); }
+  });
+  it.skipIf(!C.openSides)('lays stretches with no wall, on one side or both, the three lanes whole, every 20 to 30 s or so', () => {
     const g = startBennyRun(0, 11); const seen: {side: string; from: number}[] = [];
     for (let t = 0; t < 4000; t++) { g.lastBumpAt = null; g.fallFrom = null; g.over = false; g.overVoid = null; g.distance += 3; advanceBennyRun(g, g.at + C.step);
       for (const w of g.walls) if (w.void && !seen.some(o => o.side === w.side && o.from === w.from)) seen.push({side: w.side, from: w.from}); }
@@ -545,7 +555,7 @@ describe('Benny Rampage rules', () => {
     runInput(g, g.at, 'up'); run(g, 50); runInput(g, g.at, 'left'); run(g, 400); runInput(g, g.at, 'right');
     expect(g.coins).toBe(3); run(g, C.jumpMs); expect(g.fallFrom).toBeNull();
   });
-  it('lays coin arcs out over the void where a side has no wall', () => {
+  it.skipIf(!C.openSides)('lays coin arcs out over the void where a side has no wall', () => {
     // Void stretches are rare (lot 135): several runs together.
     let out = 0;
     for (const seed of [11, 12, 13, 14]) { const g = startBennyRun(0, seed);
