@@ -7,7 +7,7 @@ import {translatedDecorations} from '../simulation/cozyActivities';
 import {rabbitDropTargets} from './rabbitDropTargets';
 import {showLegendaryReveal, type RevealText} from './legendaryReveal';
 import {showBennyReveal} from './bennyReveal';
-import {BENNY_CARESS_CUES, BENNY_CARESS_MS, BENNY_CARESS_REDUCED_MS, clearBennyCaress, isBenny, playBennyCaress, warmBennyCaress} from './bennyCaress';
+import {clearBennyCaress, isBenny, startBennyCaress, warmBennyCaress, type BennyCaressSession} from './bennyCaress';
 import {clearLegendaryCard, decorateLegendaryCard, legendaryPortrait} from './legendaryCard';
 import {clearUltimateCard, crownPortrait, decorateUltimateCard} from './ultimateCard';
 import {isLegendaryShow} from '../config/legendaryArt';
@@ -224,6 +224,8 @@ export class GameUI {
   /** The sounds of Benny’s caress show, cancelled with it. */
   private petSounds: number[] = [];
   private petCooldownUntil = -Infinity;
+  /** Benny's caress going on (owner, 20 November 2026): it lasts as long as the finger rubs. */
+  private bennySession: BennyCaressSession | null = null;
   /** The name being typed in a rabbit's sheet: kept here, not in the DOM, so a refresh never loses the text, the caret or the focus. */
   private rename: {id: string; text: string; caret: number; error: string | null} | null = null;
   /** Which bubble of Coco's first welcome is shown (interface only: the welcome itself is saved once finished). */
@@ -501,21 +503,23 @@ export class GameUI {
       const direction = `x${Math.sign(dx)}`;
       if (rub.direction && rub.direction !== direction) rub.reversals++;
       rub.direction = direction; event.preventDefault();
-      if (rub.distance >= 40 || (rub.reversals >= 3 && rub.distance >= 12)) { rub.distance = 0; rub.reversals = 0; this.caress(portraitElement, rabbit); }
+      // Benny's caress goes on while the finger keeps rubbing (owner, 20 November 2026).
+      if (this.bennySession?.active) { this.bennySession.rub(event.clientX, event.clientY); return; }
+      if (rub.distance >= 40 || (rub.reversals >= 3 && rub.distance >= 12)) { rub.distance = 0; rub.reversals = 0; this.caress(portraitElement, rabbit); this.bennySession?.rub(event.clientX, event.clientY); }
     });
-    const stop = (event: PointerEvent) => { if (rub?.pointer === event.pointerId) rub = null; };
+    // The finger lifts: Benny's caress stops there.
+    const stop = (event: PointerEvent) => { if (rub?.pointer === event.pointerId) { rub = null; this.bennySession?.stop(); } };
     for (const type of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) portraitElement.addEventListener(type, stop);
   }
   private caress(portraitElement: HTMLElement, rabbit: Rabbit): void {
+    const reduced = !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (isBenny(rabbit.species)) { this.caressBenny(portraitElement, rabbit, reduced); return; }
     const now = performance.now(); if (now < this.petCooldownUntil) return;
-    const reduced = !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches, benny = isBenny(rabbit.species);
-    // Benny's show is longer (owner, 20 November 2026): rubbing on never cuts it.
-    this.petCooldownUntil = now + (benny ? Math.max(1500, reduced ? BENNY_CARESS_REDUCED_MS : BENNY_CARESS_MS) : 1500);
+    this.petCooldownUntil = now + 1500;
     // Nothing to win and nothing to refuse: a stale sheet simply shows its caress.
     this.controller.perform({type: 'petRabbit', rabbitId: rabbit.id});
     this.sounds.ping();
     this.endCaress(portraitElement);
-    if (benny) { this.caressBenny(portraitElement, rabbit, reduced); return; }
     this.petting = true; portraitElement.dataset.petting = reduced ? 'still' : 'wiggle';
     // Closed eyes: the « eyes-closed » patch over the drawing shown, the first one or the evolved one (each has its own eyelids).
     const picture = portraitElement.querySelector<HTMLImageElement>('img[data-rabbit-art]'), evolved = !!picture?.hasAttribute('data-evolved');
@@ -537,10 +541,12 @@ export class GameUI {
     this.petTimer = window.setTimeout(() => { this.endCaress(portraitElement); requestAnimationFrame(() => this.flushRender()); }, 1400);
   }
   /**
-   * Benny's caress (owner, 20 November 2026): a kiss to the player, then a big moment of joy, in her own paintings (src/ui/bennyCaress.ts).
-   * Same command and same counting as every other rabbit; only the show differs.
+   * Benny's caress (owner, 20 November 2026): her moments of joy follow one another as long as the finger rubs, and stop when it
+   * stops (src/ui/bennyCaress.ts). Counted like any caress: once at the start, once more every few seconds while it goes on.
    */
   private caressBenny(portraitElement: HTMLElement, rabbit: Rabbit, reduced: boolean): void {
+    if (this.bennySession?.active) return;
+    this.endCaress(portraitElement); this.sounds.ping();
     this.petting = true; portraitElement.dataset.petting = reduced ? 'benny-still' : 'benny';
     const picture = portraitElement.querySelector<HTMLImageElement>('img[data-rabbit-art]'), art = rabbitArt(rabbit.species);
     let figure: HTMLElement | null = picture?.parentElement?.classList.contains('ultimate-figure') || picture?.parentElement?.classList.contains('pet-figure') ? picture.parentElement : null;
@@ -548,14 +554,21 @@ export class GameUI {
       figure = node('span', '', 'pet-figure'); figure.style.setProperty('--ratio', String(art.width / art.height));
       picture.replaceWith(figure); figure.append(picture); portraitElement.dataset.petFigure = '';
     }
-    const duration = playBennyCaress(portraitElement, figure ?? portraitElement, reduced);
-    if (!reduced) this.petSounds = BENNY_CARESS_CUES.map(([at, cue]) => window.setTimeout(() => {
-      if (cue === 'kiss') this.sounds.bubbles(2); else this.sounds.run(cue);
-    }, at * 1000));
-    this.petTimer = window.setTimeout(() => { this.endCaress(portraitElement); requestAnimationFrame(() => this.flushRender()); }, duration);
+    const session = startBennyCaress(portraitElement, figure ?? portraitElement, {
+      reduced,
+      // Nothing to win and nothing to refuse; at most one caress counted every 1.5 s.
+      count: () => { const now = performance.now(); if (now < this.petCooldownUntil) return; this.petCooldownUntil = now + 1500; this.controller.perform({type: 'petRabbit', rabbitId: rabbit.id}); },
+      sound: cue => { if (cue === 'kiss') this.sounds.bubbles(2); else if (cue === 'purr') this.sounds.bubbles(1); else this.sounds.run(cue); },
+      ended: () => {
+        if (this.bennySession !== session) return;
+        this.bennySession = null; this.petting = false; delete portraitElement.dataset.petting; requestAnimationFrame(() => this.flushRender());
+      },
+    });
+    this.bennySession = session;
   }
   private endCaress(portraitElement?: HTMLElement): void {
     window.clearTimeout(this.petTimer); this.petTimer = 0; this.petting = false;
+    const session = this.bennySession; this.bennySession = null; session?.dispose();
     this.petSounds.splice(0).forEach(timer => window.clearTimeout(timer));
     if (!portraitElement) return;
     delete portraitElement.dataset.petting; clearBennyCaress(portraitElement);
