@@ -27,8 +27,11 @@ export const RUN_SIDES = {
   },
   /** The fence along the road, on both sides wherever there is no wall to run on, `out` m past the road's edge. */
   fence: {picture: same({file: 'cotes-barriere'}), high: 1.3, out: .3},
-  /** The wall Benny runs on, now and then, at the road's edge (`out` m further). */
-  wall: {picture: same({file: 'cotes-mur'}), high: 4.6, out: 0},
+  /** The wall Benny runs on, now and then, at the road's edge (`out` m further). In volume (owner, 20 Nov.: « Pour le mur je veux
+   *  qu'il soit en volume »): one lane thick, its painted face along the road, its end facing Benny, and its top seen from above,
+   *  a coping of the painted cream stones (`top`, a decor tile `tile` m square, lit a little by the sky), laid at `topAt` of the
+   *  face's height, where the painting's grass cap is solid: its blades stick up over the coping's edge. */
+  wall: {picture: same({file: 'cotes-mur'}), high: 4.6, out: 0, top: {file: 'decor-corps-creme', tile: 5.4, topAt: .917}},
 };
 
 /** Every picture file the sides use. */
