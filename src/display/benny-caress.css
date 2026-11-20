@@ -1,8 +1,10 @@
 /*
  * Benny caressed in her sheet (owner, 20 November 2026; src/ui/bennyCaress.ts): while the finger rubs, her moments follow one
- * another (data-benny-caress: kiss, hops, cuddle, twirl, roll); when it stops she settles back (settle). Her approved paintings
+ * another (data-benny-caress: kiss, hops, cuddle, twirl, roll, bounce, ears, rays, cloud, groom; picked at random); when it stops she settles back (settle). Her approved paintings
  * only; the CSS moves, scales and fades them. Times are in seconds from the start of the moment.
  */
+/* Her whole portrait takes the finger: a round or up-and-down rub never scrolls the sheet away (owner: « hitbox mieux »). */
+.portrait.pettable[data-pet-benny] { touch-action: none; }
 .portrait[data-benny-caress] { overflow: visible; }
 .portrait[data-benny-caress] > :is(.pet-figure, .ultimate-figure) { position: relative; z-index: 1; }
 .bc-back, .bc-front, .bc-fingers { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
@@ -27,6 +29,11 @@
 .portrait[data-benny-caress="cuddle"] .bc-figure.bc-moving { animation: bc-dance-cuddle var(--move) ease-in-out; }
 .portrait[data-benny-caress="twirl"] .bc-figure.bc-moving { animation: bc-dance-twirl var(--move) ease-in-out; }
 .portrait[data-benny-caress="roll"] .bc-figure.bc-moving { animation: bc-dance-roll var(--move) ease-in-out; }
+.portrait[data-benny-caress="bounce"] .bc-figure.bc-moving { animation: bc-dance-bounce var(--move) ease-in-out; }
+.portrait[data-benny-caress="ears"] .bc-figure.bc-moving { animation: bc-dance-ears var(--move) ease-in-out; }
+.portrait[data-benny-caress="rays"] .bc-figure.bc-moving { animation: bc-dance-rays var(--move) ease-in-out; }
+.portrait[data-benny-caress="cloud"] .bc-figure.bc-moving { animation: bc-dance-cloud var(--move) ease-in-out; }
+.portrait[data-benny-caress="groom"] .bc-figure.bc-moving { animation: bc-dance-groom var(--move) ease-in-out; }
 
 /* Settling back: everything fades out, her poses go at once (her rest picture is back). */
 .portrait[data-benny-caress="settle"] :is(.bc-back, .bc-front) { opacity: 0; transition: opacity .3s ease-out; }
@@ -69,6 +76,21 @@
 .portrait[data-benny-caress] .bc-feather { animation: bc-feather 1.5s var(--at) ease-in both; }
 .bc-trail { left: -46%; top: 16%; width: 92%; }
 .portrait[data-benny-caress] .bc-trail { animation: bc-trail .8s .3s ease-out both; }
+/* Rays above her, a cloud cushion behind her: painted frames shown one after the other, the last one lingers then fades. */
+.bc-rays, .bc-cloud { position: absolute; left: 50%; translate: -50% 0; pointer-events: none; }
+.bc-rays { top: -42%; width: 190%; aspect-ratio: 1; }
+.bc-cloud { bottom: -14%; width: 210%; aspect-ratio: 2 / 1; }
+.bc-rays .bc-frame, .bc-cloud .bc-frame { left: 0; top: 0; width: 100%; }
+.portrait[data-benny-caress] .bc-frame { animation: bc-pose var(--for) var(--at) step-end; }
+.portrait[data-benny-caress] .bc-frame-last { animation: bc-rainbow-last 1.1s var(--at) ease-in-out both; }
+.bc-starfall { width: 20px; }
+.bc-front .bc-bubble { width: 24px; height: 24px; }
+/* The little hand: its fingertips follow the finger, it leans the way it strokes, then fades when she settles. */
+.bc-fingers .bc-hand { width: 44px; translate: var(--tip-x, -15%) var(--tip-y, -20%); rotate: var(--lean, 0deg); transform-origin: 15% 20%;
+  transition: opacity .18s ease-out, rotate .2s ease-out; filter: drop-shadow(0 2px 2px rgba(60, 30, 10, .25)); }
+.bc-fingers .bc-hand.bc-hand-on { opacity: 1; animation: bc-hand-stroke .5s ease-in-out infinite alternate; }
+.portrait[data-benny-caress="settle"] .bc-fingers .bc-hand { opacity: 0; animation: none; }
+.portrait[data-benny-caress="still"] .bc-fingers .bc-hand { animation: none; transition: none; }
 .bc-stardust { left: 10%; top: -8%; width: 80%; }
 .portrait[data-benny-caress] .bc-stardust { animation: bc-stardust 1s .45s ease-out both; }
 
@@ -161,3 +183,41 @@
 @keyframes bc-trail { 0% { opacity: 0; transform: translateX(30px) scaleX(.5); } 35% { opacity: .95; } 100% { opacity: 0; transform: translateX(-24px) scaleX(1.1); } }
 @keyframes bc-stardust { 0% { opacity: 0; transform: translateY(10px) scale(.8); } 30% { opacity: .9; } 100% { opacity: 0; transform: translateY(-26px) scale(1.15); } }
 @keyframes bc-finger { 0% { opacity: 0; transform: translate(0, 0) scale(calc(var(--s) * .4)); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--dx), -54px) scale(var(--s)); } }
+@keyframes bc-hand-stroke { from { scale: 1 1; } to { scale: 1.04 .95; } }
+/* Hops on the spot four times (owner: « une où elle sautille »), crouching before each jump and squashing as she lands. */
+@keyframes bc-dance-bounce {
+  0% { transform: translateY(0) scale(1, 1); }
+  3%, 26%, 49%, 73% { transform: translateY(2%) scale(1.08, .9); }
+  14%, 37%, 60.5%, 84% { transform: translateY(-14%) scale(.95, 1.07); }
+  22%, 45%, 68.5%, 92% { transform: translateY(1.5%) scale(1.07, .92); }
+  24.5%, 47.5%, 71% { transform: translateY(0) scale(1, 1); }
+  100% { transform: translateY(0) scale(1, 1); }
+}
+/* Listens: her head sways from side to side. */
+@keyframes bc-dance-ears {
+  0%, 100% { transform: rotate(0deg); }
+  15% { transform: rotate(-5deg); } 35% { transform: rotate(5deg); } 55% { transform: rotate(-5deg); } 75% { transform: rotate(4deg); } 90% { transform: rotate(-1deg); }
+}
+/* Proud: she stretches up into the light rays. */
+@keyframes bc-dance-rays {
+  0% { transform: translateY(0) scale(1, 1); }
+  12% { transform: translateY(1%) scale(1.05, .95); }
+  32%, 70% { transform: translateY(-3%) scale(.97, 1.08); }
+  85% { transform: translateY(0) scale(1.03, .98); }
+  100% { transform: translateY(0) scale(1, 1); }
+}
+/* Floats on her cloud, up and down. */
+@keyframes bc-dance-cloud {
+  0% { transform: translateY(0) rotate(0deg); }
+  20% { transform: translateY(-9%) rotate(-3deg); }
+  45% { transform: translateY(-5%) rotate(3deg); }
+  70% { transform: translateY(-9%) rotate(-2deg); }
+  90% { transform: translateY(-1%) rotate(0deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+/* Washes herself in the bubbles: a little wiggle. */
+@keyframes bc-dance-groom {
+  0%, 100% { transform: rotate(0deg) scale(1, 1); }
+  10% { transform: rotate(-3deg) scale(1.03, .97); } 22% { transform: rotate(3deg) scale(1.03, .97); } 34% { transform: rotate(-3deg) scale(1.03, .97); }
+  46% { transform: rotate(3deg) scale(1.03, .97); } 58% { transform: rotate(-2deg) scale(1.02, .98); } 70% { transform: rotate(0deg) scale(1, 1); }
+}

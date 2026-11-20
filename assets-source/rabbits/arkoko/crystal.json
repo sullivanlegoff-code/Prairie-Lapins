@@ -1,6 +1,21 @@
 {
   "about": "Arkoko's crystal (owner, 19 November 2026): the glow of the approved drawing, toned down in sprite.png, is kept whole in crystal-glow.png; crystal.png and evolution-crystal.png are the crystals alone, cut from the two approved masters. Offsets are master pixels.",
-  "glow": {"master": "sprite.png", "file": "crystal-glow.png", "x": 321, "y": 119},
-  "crystal": {"master": "sprite.png", "file": "crystal.png", "x": 456, "y": 258},
-  "evolutionCrystal": {"master": "arkoko-evolution-sprite.png", "file": "evolution-crystal.png", "x": 849, "y": 335}
+  "glow": {
+    "master": "sprite.png",
+    "file": "crystal-glow.png",
+    "x": 321,
+    "y": 119
+  },
+  "crystal": {
+    "master": "sprite.png",
+    "file": "crystal.png",
+    "x": 456,
+    "y": 258
+  },
+  "evolutionCrystal": {
+    "master": "arkoko-evolution-sprite.png",
+    "file": "evolution-crystal.png",
+    "x": 407,
+    "y": 276
+  }
 }

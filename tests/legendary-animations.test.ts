@@ -8,7 +8,7 @@ import {ARKOKO_CRYSTAL, ARKOKO_EVOLVED_CRYSTAL, LEGENDARY_EFFECTS, LEGENDARY_IDL
 import {SPECIES, SPECIES_IDS} from '../src/config/species';
 import {evolvedRabbitArt, rabbitArt} from '../src/config/rabbitArt';
 import {decorateLegendaryCard} from '../src/ui/legendaryCard';
-import {FLARE, SLEEP_ACTS, TAP_ACT, crystalFlare, rainbowStep} from '../src/display/legendaryTimeline';
+import {FLARE, SLEEP_ACTS, TAP_ACT, arkokoHop, crystalFlare, rainbowStep} from '../src/display/legendaryTimeline';
 import {VISUAL} from '../src/config/visual';
 import {ACT_MS, DIVE, IDLE_GAP, LegendaryClock, SLAM, SURF_ENTRY_MS, SURF_SLIDE_MS, TAP_COOLDOWN_MS, breathFrame, diveFin, partAngle, speciesActs, surfPose} from '../src/display/legendaryTimeline';
 import {createRabbitMotion, motionZone, startSurf, stepRabbitMotion} from '../src/display/rabbitMotion';
@@ -302,6 +302,35 @@ describe('Arkoko, the rainbow legendary', () => {
     expect(all).toEqual(expect.arrayContaining(['rabbit-arkoko-v1-crystal-glow', 'rabbit-arkoko-v1-crystal', 'rabbit-arkoko-v2-crystal', 'legendary-arkoko-prism', 'legendary-arkoko-rainbow-8']));
     expect(evolved).toContain('rabbit-arkoko-v2-crystal'); expect(evolved).not.toContain('rabbit-arkoko-v1-crystal-glow');
     expect(all.some(t => /^legendary-(halo|breath|surfboard|crack|firewall)/.test(t))).toBe(false);
+  });
+  it('moves in its shows: its hops crouch, rise and land with a squash, and all fit inside their show (20 November 2026)', () => {
+    expect(arkokoHop(-1000, 0, 400, 6)).toEqual({on: false, lift: 0, squashX: 1, squashY: 1});
+    const crouch = arkokoHop(-10, 0, 400, 6), top = arkokoHop(200, 0, 400, 6), land = arkokoHop(460, 0, 400, 6);
+    expect(crouch.on).toBe(true); expect(crouch.lift).toBe(0); expect(crouch.squashY).toBeLessThan(.95);
+    expect(top.lift).toBeCloseTo(6, 5);
+    expect(land.lift).toBe(0); expect(land.squashY).toBeLessThan(.95); expect(land.squashX).toBeGreaterThan(1.05);
+    expect(arkokoHop(400 * 1.31, 0, 400, 6).on).toBe(false);
+    // The flare's jump and the three hops under the rainbow end before their show does (as built in legendaryEffects.ts).
+    expect(60 + 520 * 1.3).toBeLessThan(ACT_MS.flare); expect(1350 + 520 * 1.3).toBeLessThan(ACT_MS.rainbow);
+    const effects = readFileSync('src/display/legendaryEffects.ts', 'utf8') as string, scene = readFileSync('src/display/MeadowScene.ts', 'utf8') as string;
+    expect(effects).toContain('arkokoHop(ms, 60, 520, 7)'); expect(effects).toContain('arkokoHop(ms, 1350, 520, 9)');
+    expect(effects).toMatch(/this\.squashX = Math\.cos\(spin \* Math\.PI \* 2\)/);
+    expect(scene).toContain('squashX *= show.squashX; squashY *= show.squashY;');
+  });
+  it('flies in along its rainbow on a trail of stardust, lands with a bounce, and keeps its rainbow over it at the end', () => {
+    const dialog = showLegendaryReveal('arkoko', {title: 'Nouvelle découverte !', name: 'Arkoko', details: 'Arc-en-ciel · Légendaire', button: 'Fermer'});
+    const trail = dialog.querySelector<HTMLImageElement>('.lr-figure > .lr-arrival-trail')!, arch = dialog.querySelector<HTMLImageElement>('.lr-hero > .lr-hero-rainbow')!;
+    expect(trail.getAttribute('src')).toBe(LEGENDARY_EFFECTS.trail.url); expect(arch.getAttribute('src')).toBe(LEGENDARY_EFFECTS.rainbow[7].url);
+    expect(dialog.querySelector('.lr-hero')!.firstElementChild).toBe(arch);
+    dialog.remove();
+    const other = showLegendaryReveal('dragon', {title: 'Nouvelle découverte !', name: 'Dragon', details: 'Feu', button: 'Fermer'});
+    expect(other.querySelector('.lr-hero-rainbow, .lr-arrival-trail')).toBeNull(); other.remove();
+    const css = readFileSync('src/display/styles.css', 'utf8') as string;
+    for (const rule of ['.legendary-reveal-arkoko.is-playing .lr-figure { animation: lr-arkoko-arrive', '@keyframes lr-arkoko-arrive', '.legendary-reveal-arkoko.is-final .lr-arrival-trail { animation: none; opacity: 0; }',
+      '.legendary-reveal-arkoko.is-final .lr-hero-rainbow { animation: none; opacity: .85; }', '.legendary-reveal-arkoko.is-final .lr-halo { animation: lr-spin 26s linear infinite;'])
+      expect(css).toContain(rule);
+    // The details line stays light on the night (the parchment's ink colour for dialog paragraphs made it dark).
+    expect(css).toContain('.legendary-reveal .lr-text .lr-details { margin: 6px 0 10px; color: #fff3d6;');
   });
   it('themes its card with a rainbow banner and drifting stars', () => {
     const panel = document.createElement('div');

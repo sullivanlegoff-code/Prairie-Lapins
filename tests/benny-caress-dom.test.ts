@@ -10,11 +10,11 @@ import {createGame, encodeGame} from '../src/simulation';
 import {SAVE_KEY} from '../src/persistence/storage';
 import type {GameState} from '../src/state/types';
 import type {MeadowScene} from '../src/display/MeadowScene';
-import {BENNY_CARESS_IDLE_MS, BENNY_CARESS_MOVES, BENNY_CARESS_ORDER, BENNY_CARESS_SETTLE_MS, resetBennyCaressAtlas} from '../src/ui/bennyCaress';
+import {BENNY_CARESS_IDLE_MS, BENNY_CARESS_HAND, BENNY_CARESS_MOVES, BENNY_CARESS_NAMES, BENNY_CARESS_SETTLE_MS, nextBennyMove, resetBennyCaressAtlas, type BennyMoveName} from '../src/ui/bennyCaress';
 import {BENNY_REVEAL_POSES} from '../src/config/bennyArt';
 
 // Benny's caress in her sheet (owner, 20 November 2026): several moments of joy that go on while the finger rubs and stop when it
-// stops; every other rabbit keeps its caress.
+// stops, picked at random one after the other (never one of the last two again); every other rabbit keeps its caress.
 const cleanups: (() => void)[] = [];
 let clock = 0;
 beforeEach(() => {
@@ -23,6 +23,8 @@ beforeEach(() => {
   localStorage.clear(); vi.stubGlobal('requestAnimationFrame', () => 0); vi.stubGlobal('cancelAnimationFrame', () => {});
   HTMLDialogElement.prototype.showModal = function () { this.open = true; }; HTMLDialogElement.prototype.close = function () { this.open = false; };
   resetBennyCaressAtlas(true);
+  // The first draw picks her kiss (the first of her moments), so the checks below know where she starts.
+  vi.spyOn(Math, 'random').mockReturnValue(0);
 });
 afterEach(() => { cleanups.splice(0).reverse().forEach(f => f()); vi.unstubAllGlobals(); vi.restoreAllMocks(); vi.useRealTimers(); resetBennyCaressAtlas(); });
 function reducedMotion(on: boolean) {
@@ -42,7 +44,9 @@ function sheet(species: 'benny' | 'paille') {
   const portrait = document.querySelector<HTMLElement>(`#panel-content [data-pet-rabbit="${id}"]`)!;
   return {controller, portrait, id};
 }
-const pointer = (target: Element, type: string, x: number) => target.dispatchEvent(new PointerEvent(type, {pointerId: 1, clientX: x, clientY: 20, bubbles: true, cancelable: true}));
+const pointer = (target: Element, type: string, x: number, y = 20) => target.dispatchEvent(new PointerEvent(type, {pointerId: 1, clientX: x, clientY: y, bubbles: true, cancelable: true}));
+/** A small random-number sequence that always gives the same draws. */
+function seeded(seed: number) { let v = seed; return () => { v = (v * 16807) % 2147483647; return (v - 1) / 2147483646; }; }
 const rub = (portrait: HTMLElement) => { pointer(portrait, 'pointerdown', 20); pointer(portrait, 'pointermove', 45); pointer(portrait, 'pointermove', 22); };
 
 /** Time goes by for the page clock and the timers together, in small steps. */
@@ -59,6 +63,8 @@ function keepRubbing(portrait: HTMLElement, ms: number, seen: string[] = []) {
 
 it('caressing Benny goes on as long as the finger rubs, through several different moments of joy, never twice the same in a row', () => {
   vi.useFakeTimers({toFake: ['setTimeout', 'clearTimeout']}); reducedMotion(false);
+  const draw = seeded(7); let first = true;
+  vi.spyOn(Math, 'random').mockImplementation(() => { if (first) { first = false; return 0; } return draw(); });
   const {controller, portrait, id} = sheet('benny'); const perform = vi.spyOn(controller, 'perform');
   rub(portrait);
   expect(portrait.dataset.petting).toBe('benny'); expect(portrait.dataset.bennyCaress).toBe('kiss');
@@ -69,8 +75,7 @@ it('caressing Benny goes on as long as the finger rubs, through several differen
   expect(portrait.querySelector('.bc-kiss-heart')?.getAttribute('src')).toContain('assets/effects/spa/coeur');
   const seen = keepRubbing(portrait, 9000, ['kiss']);
   expect(new Set(seen).size).toBeGreaterThanOrEqual(4);
-  for (let k = 1; k < seen.length; k++) expect(seen[k]).not.toBe(seen[k - 1]);
-  expect(seen.slice(0, 4)).toEqual(BENNY_CARESS_ORDER.slice(0, 4));
+  for (let k = 1; k < seen.length; k++) { expect(seen[k]).not.toBe(seen[k - 1]); expect(seen[k]).not.toBe(seen[k - 2]); }
   expect(portrait.dataset.petting).toBe('benny');
   // Counted like a caress: at the start, then again every few seconds while it goes on.
   expect(perform.mock.calls.length).toBeGreaterThanOrEqual(3); expect(perform.mock.calls.length).toBeLessThanOrEqual(4);
@@ -110,10 +115,65 @@ it('her moments are long enough, their poses fit inside them and exist in her at
     for (const [name, from, until] of move.poses) { expect(BENNY_REVEAL_POSES.poses[name]).toBeDefined(); expect(from).toBeLessThan(until); expect(until * 1000).toBeLessThanOrEqual(move.ms); }
     for (const [at] of move.cues) expect(at * 1000).toBeLessThan(move.ms);
     expect(css).toContain(`@keyframes bc-dance-${move.name} `);
+    expect(css).toContain(`.portrait[data-benny-caress="${move.name}"] .bc-figure.bc-moving { animation: bc-dance-${move.name} `);
   }
-  expect(BENNY_CARESS_ORDER[0]).toBe('kiss');
-  for (let k = 0; k < BENNY_CARESS_ORDER.length; k++) expect(BENNY_CARESS_ORDER[k]).not.toBe(BENNY_CARESS_ORDER[(k + 1) % BENNY_CARESS_ORDER.length]);
-  expect(new Set(BENNY_CARESS_ORDER).size).toBe(Object.keys(BENNY_CARESS_MOVES).length);
+  // Ten moments: the five first ones and the five new ones of 20 November 2026, one of them hopping on the spot.
+  expect(BENNY_CARESS_NAMES).toHaveLength(10);
+  expect(BENNY_CARESS_NAMES).toEqual(expect.arrayContaining(['kiss', 'hops', 'cuddle', 'twirl', 'roll', 'bounce', 'ears', 'rays', 'cloud', 'groom']));
+  expect(BENNY_CARESS_MOVES.bounce.cues.filter(([, cue]) => cue === 'jump')).toHaveLength(4);
+});
+
+it('her next moment is drawn at random, never one of the last two, and every moment comes up', () => {
+  const draw = seeded(11), played: BennyMoveName[] = [], counts = new Map<BennyMoveName, number>();
+  for (let k = 0; k < 3000; k++) {
+    const next = nextBennyMove(played, draw);
+    expect(played.slice(-2)).not.toContain(next);
+    played.push(next); counts.set(next, (counts.get(next) ?? 0) + 1);
+  }
+  for (const name of BENNY_CARESS_NAMES) expect(counts.get(name)!).toBeGreaterThan(200);
+  // Not always the same order: two caresses with other draws start differently.
+  const order = (seed: number) => { const d = seeded(seed), list: BennyMoveName[] = []; for (let k = 0; k < 6; k++) list.push(nextBennyMove(list, d)); return list.join(); };
+  expect(new Set([1, 2, 3, 4, 5].map(order)).size).toBeGreaterThan(1);
+  // Its edges stay inside the list.
+  expect(BENNY_CARESS_NAMES).toContain(nextBennyMove([], () => .9999999));
+  expect(nextBennyMove([], () => 0)).toBe('kiss');
+});
+
+it('Benny is easier to caress: rubbing up and down or slantwise works too, and the page does not scroll under the finger', () => {
+  vi.useFakeTimers({toFake: ['setTimeout', 'clearTimeout']}); reducedMotion(false);
+  const {portrait} = sheet('benny');
+  expect(portrait.dataset.petBenny).toBe('');
+  expect(readFileSync('src/display/benny-caress.css', 'utf8') as string).toContain('.portrait.pettable[data-pet-benny] { touch-action: none; }');
+  // A short stroke straight down is enough.
+  pointer(portrait, 'pointerdown', 30, 20); pointer(portrait, 'pointermove', 30, 48);
+  expect(portrait.dataset.bennyCaress).toBe('kiss');
+  // Going on up and down keeps her moments going.
+  for (let k = 0; k < 30; k++) { pointer(portrait, 'pointermove', 30 + (k % 2) * 8, k % 2 ? 20 : 50); advance(60); }
+  expect(portrait.dataset.bennyCaress).not.toBe('settle'); expect(portrait.dataset.bennyCaress).toBeDefined();
+  // A little painted glove strokes her where the finger is, leaning the way it goes.
+  const hand = portrait.querySelector<HTMLImageElement>('.bc-fingers .bc-hand')!;
+  expect(hand.getAttribute('src')).toBe(BENNY_CARESS_HAND!.url); expect(hand.getAttribute('src')).toContain('assets/effects/benny/hand.webp');
+  expect(hand.classList.contains('bc-hand-on')).toBe(true);
+  const box = portrait.getBoundingClientRect();
+  pointer(portrait, 'pointermove', 52, 33);
+  expect(hand.style.left).toBe(`${(52 - box.left).toFixed(0)}px`); expect(hand.style.top).toBe(`${(33 - box.top).toFixed(0)}px`);
+  expect(hand.style.getPropertyValue('--lean')).toMatch(/^\d+deg$/);
+  pointer(portrait, 'pointermove', 30, 33); expect(hand.style.getPropertyValue('--lean')).toMatch(/^-\d+deg$/);
+  // Many finger hearts never push the hand out.
+  keepRubbing(portrait, 3000); expect(portrait.querySelectorAll('.bc-hand')).toHaveLength(1);
+  pointer(portrait, 'pointerup', 30, 20);
+  // It fades with her settling, and goes with the caress.
+  expect(readFileSync('src/display/benny-caress.css', 'utf8') as string).toContain('.portrait[data-benny-caress="settle"] .bc-fingers .bc-hand { opacity: 0;');
+  advance(BENNY_CARESS_SETTLE_MS + 20); expect(portrait.querySelector('.bc-hand')).toBeNull();
+});
+
+it('other rabbits still need a sideways stroke', () => {
+  vi.useFakeTimers({toFake: ['setTimeout', 'clearTimeout']}); reducedMotion(false);
+  const {portrait} = sheet('paille');
+  expect(portrait.dataset.petBenny).toBeUndefined();
+  pointer(portrait, 'pointerdown', 30, 20); pointer(portrait, 'pointermove', 30, 70); pointer(portrait, 'pointermove', 31, 20);
+  expect(portrait.dataset.petting).toBeUndefined();
+  pointer(portrait, 'pointerup', 31, 20);
 });
 
 it('without her atlas yet, Benny still plays her moments with her rest picture (no empty pose over her)', () => {
