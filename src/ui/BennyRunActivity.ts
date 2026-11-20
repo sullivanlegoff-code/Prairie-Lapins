@@ -658,12 +658,14 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     for (let i = zs.length - 1; i >= 0; i--) { const p = project(at(zs[i]), zs[i], high); c.lineTo(p.x, p.y); }
     c.closePath(); c.fill();
   }
-  /** A wall Benny can run on: its painted strip along the road, its shadow at its foot, and its end facing Benny when it begins ahead
-   *  of her (one lane thick, the start of the same picture laid flat, a little shaded). */
+  /** A wall Benny can run on, in volume (owner, 20 Nov.): its shadow at its foot, its top seen from above (wallTop), its painted strip
+   *  along the road, whose grass cap sticks up over the top's edge, and its end facing Benny when it begins ahead of her (one lane
+   *  thick, the start of the same picture laid flat, a little shaded). */
   function runWall(c: CanvasRenderingContext2D, g: BennyRun, w: WallSegment, dir: number, from: number, to: number, world: RunSetting): void {
     const wall = RUN_SIDES.wall, pic = stripOf(wall.picture[world]), x = (z: number) => dir * (wallXAt(g, z) + wall.out);
     if (!pic) { flatBand(c, g, x, from, to, wall.high, '#e8d3a6'); flatBand(c, g, x, from, to, wall.high * .22, '#8fd0ee'); return; }
     footShadow(c, g, dir, from, to);
+    wallTop(c, g, x, dir, from, to, wall.high * wall.top.topAt);
     stripBand(c, g, x, from, to, wall.high, pic, 0, true);
     if (from > 0 && from === w.from - g.distance) {
       const a = project(x(from), from, 0), b = project(x(from) + dir * WALL_THICK, from, wall.high), left = Math.min(a.x, b.x), right = Math.max(a.x, b.x);
@@ -674,6 +676,50 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         const haze = hazeAt(from); if (haze > .02) { c.fillStyle = `rgba(250,198,166,${haze.toFixed(3)})`; c.fillRect(left, b.y, right - left, a.y - b.y); }
       }
     }
+  }
+  /** The painted cream stones of a wall's top, as patterns of its decor tile (near and far copies, per drawing context). */
+  const topFill = {k: null as CanvasRenderingContext2D | null, from: null as CanvasImageSource | null, near: null as CanvasPattern | null, far: null as CanvasPattern | null};
+  function topPattern(c: CanvasRenderingContext2D, far: boolean): CanvasPattern | null {
+    const t = decor[RUN_SIDES.wall.top.file as DecorName], src = t?.near;
+    if (!src || !t.far || !meadowMatrix) return null;
+    if (topFill.k !== c || topFill.from !== src) { topFill.k = c; topFill.from = src; topFill.near = c.createPattern(src, 'repeat'); topFill.far = c.createPattern(t.far, 'repeat'); }
+    return far ? topFill.far : topFill.near;
+  }
+  /**
+   * The top of a wall to run on, seen from above (owner, 20 Nov.: « en volume »): one lane wide from its face at `at(z)` m across
+   * outwards (`dir`), `up` m high, from `from` to `to` m ahead, its painted stones laid flat, in slices from the farthest, each about
+   * a column high on the screen and filled with the stones' pattern set to that slice's perspective (no seam where the tile repeats);
+   * then, over the whole of it at once, the sky's light and a darker rim along its outer edge.
+   */
+  function wallTop(c: CanvasRenderingContext2D, g: BennyRun, at: (z: number) => number, dir: number, from: number, to: number, up: number): void {
+    const T = RUN_SIDES.wall.top.tile, rowPx = columnPx * 1.6, outer = (z: number) => at(z) + dir * WALL_THICK;
+    const m = meadowMatrix; if (!topPattern(c, false) || !m) return;
+    for (let z = to; z > from;) {
+      // The slice from `z1` (near, A) to `z` (far, B): about `rowPx` high on the screen, never more than 12 m long.
+      const B = project(at(z), z, up), probe = Math.max(from, z - .1), perMetre = (project(at(probe), probe, up).y - B.y) / Math.max(.001, z - probe);
+      const z1 = Math.max(from, z - Math.min(12, Math.max(.05, rowPx / Math.max(.001, perMetre)))), A = project(at(z1), z1, up);
+      const far = z, near = z1; z = z1;
+      if (A.y < -2 || B.y > height + 2 || A.y - B.y < .05) continue;
+      const An = project(outer(near), near, up), Bn = project(outer(far), far, up);
+      if (Math.max(A.x, An.x, B.x, Bn.x) < 0 || Math.min(A.x, An.x, B.x, Bn.x) > width) continue;
+      const pattern = topPattern(c, far > 30), side = far > 30 ? FAR_SIDE : NEAR_SIDE; if (!pattern) return;
+      // The pattern: across its tile from the face outwards, along it with the road (the slice's own slant and foreshortening).
+      const perV = T / side / (far - near), s = (A.s + B.s) / 2, v0 = posmod((g.distance + near) / T, 1) * side;
+      m.a = dir * s * T / side; m.b = 0; m.c = (B.x - A.x) * perV; m.d = (B.y - A.y) * perV; m.e = A.x - m.c * v0; m.f = A.y - m.d * v0;
+      pattern.setTransform(m);
+      // (Half a pixel more on its far side: no hairline between two slices.)
+      c.beginPath(); c.moveTo(A.x, A.y); c.lineTo(An.x, An.y); c.lineTo(Bn.x, Bn.y - .5); c.lineTo(B.x, B.y - .5); c.closePath();
+      c.fillStyle = pattern; c.fill();
+      const haze = hazeAt(far); if (haze > .02) { c.fillStyle = `rgba(250,198,166,${haze.toFixed(3)})`; c.fill(); }
+    }
+    // The sky's light on the whole top, then its outer rim a little darker (where it turns down out of sight).
+    const zs = cuts(g, from, to), band = (x0: (z: number) => number, x1: (z: number) => number, fill: string) => {
+      c.beginPath(); zs.forEach((z, i) => { const p = project(x0(z), z, up); if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); });
+      for (let i = zs.length - 1; i >= 0; i--) { const p = project(x1(zs[i]), zs[i], up); c.lineTo(p.x, p.y); }
+      c.closePath(); c.fillStyle = fill; c.fill();
+    };
+    band(at, outer, 'rgba(255,240,218,.18)');
+    band(z => outer(z) - dir * .16, outer, 'rgba(120,72,52,.32)');
   }
   /** Sets the transform to `base` sheared by `ky` around x = `left` (what save, transform and restore did, in one order). */
   function shear(c: CanvasRenderingContext2D, base: DOMMatrix, ky: number, left: number): void {
