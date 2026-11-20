@@ -487,22 +487,29 @@ export class GameUI {
   private attachCaress(portraitElement: HTMLElement, rabbit: Rabbit): void {
     portraitElement.classList.add('pettable'); portraitElement.dataset.petRabbit = rabbit.id;
     portraitElement.title = 'Frotte doucement pour caresser';
-    if (isBenny(rabbit.species)) warmBennyCaress();
+    const benny = isBenny(rabbit.species);
+    // Benny (owner, 20 November 2026: « je veux que la hitbox de caresse soit mieux »): her whole portrait takes the finger
+    // (touch-action: none, so a round or up-and-down rub never turns into a scroll that cancels the caress), any direction
+    // caresses, and a shorter rub starts it.
+    if (benny) { warmBennyCaress(); portraitElement.dataset.petBenny = ''; }
     let rub: {pointer: number; x: number; y: number; distance: number; reversals: number; direction: string} | null = null;
     portraitElement.addEventListener('pointerdown', event => {
       rub = {pointer: event.pointerId, x: event.clientX, y: event.clientY, distance: 0, reversals: 0, direction: ''};
       try { portraitElement.setPointerCapture?.(event.pointerId); } catch { /* Capture is a comfort only. */ }
+      if (benny) this.bennySession?.rub(event.clientX, event.clientY);
     });
     portraitElement.addEventListener('pointermove', event => {
       if (!rub || event.pointerId !== rub.pointer) return;
       const dx = event.clientX - rub.x, dy = event.clientY - rub.y; if (!dx && !dy) return;
       rub.x = event.clientX; rub.y = event.clientY;
-      // Only a sideways rub caresses (audit, 4 November 2026): an up or down slide scrolls the sheet (touch-action: pan-y).
-      if (Math.abs(dx) <= Math.abs(dy)) return;
-      rub.distance += Math.abs(dx);
-      const direction = `x${Math.sign(dx)}`;
+      // Only a sideways rub caresses the others (audit, 4 November 2026): an up or down slide scrolls the sheet (touch-action: pan-y).
+      if (!benny && Math.abs(dx) <= Math.abs(dy)) return;
+      const along = benny ? Math.hypot(dx, dy) : Math.abs(dx), sideways = Math.abs(dx) >= Math.abs(dy);
+      rub.distance += along;
+      const direction = sideways ? `x${Math.sign(dx)}` : `y${Math.sign(dy)}`;
       if (rub.direction && rub.direction !== direction) rub.reversals++;
       rub.direction = direction; event.preventDefault();
+      if (benny && !this.bennySession?.active && (rub.distance >= 24 || (rub.reversals >= 2 && rub.distance >= 10))) { rub.distance = 0; rub.reversals = 0; this.caress(portraitElement, rabbit); this.bennySession?.rub(event.clientX, event.clientY); return; }
       // Benny's caress goes on while the finger keeps rubbing (owner, 20 November 2026).
       if (this.bennySession?.active) { this.bennySession.rub(event.clientX, event.clientY); return; }
       if (rub.distance >= 40 || (rub.reversals >= 3 && rub.distance >= 12)) { rub.distance = 0; rub.reversals = 0; this.caress(portraitElement, rabbit); this.bennySession?.rub(event.clientX, event.clientY); }
