@@ -1359,7 +1359,7 @@
   },
   "vantablack": {
     "sprite": "assets/rabbits/vantablack/vantablack-v1.png",
-    "spriteSha1": "3cad4da364fe57adbeaa17ff08be3563c9c58a0a",
+    "spriteSha1": "e1d82c2d31d53cfd5b6cf1c21664b6cd8efd8f64",
     "spriteWidth": 320,
     "spriteHeight": 493,
     "eyes-closed": {
@@ -1369,8 +1369,8 @@
       "width": 143,
       "height": 89,
       "source": "assets-source/rabbits/vantablack/eyes-closed.png",
-      "sourceSha1": "5dbe8047a18ed0d4ca38a7ba150b448f42d7bcba",
-      "derivedSha1": "a359367ad92b63a61cd6bed36d6ab3b67a4ca071"
+      "sourceSha1": "441d86622ed0c6b2d6a0cb7bc36e1dd546811ead",
+      "derivedSha1": "1b1ec6fd42d12ccf6ca93ff5a86e715a1662cc81"
     },
     "nose-twitch": {
       "file": "assets/rabbits/vantablack/vantablack-nose-twitch.png",
@@ -1379,13 +1379,13 @@
       "width": 51,
       "height": 44,
       "source": "assets-source/rabbits/vantablack/nose-twitch.png",
-      "sourceSha1": "b1fda14a68a802310b78a19876d431cdfb7d00f2",
-      "derivedSha1": "e778e44831f61757b7330848d2977fbd8fc860ca"
+      "sourceSha1": "038ca3c91b8373be6305c23b7414ea3f94b62b37",
+      "derivedSha1": "addb6395b9666bf0f7446d81183089db471c1c63"
     }
   },
   "vantablack-evolution": {
     "sprite": "assets/rabbits/vantablack/vantablack-v2.png",
-    "spriteSha1": "6d186deb9eddfe23f1763e7b307a814c6ad8d586",
+    "spriteSha1": "7e85206e5098529c32c05b09dd2a90c1eaea8657",
     "spriteWidth": 364,
     "spriteHeight": 574,
     "eyes-closed": {
@@ -1395,8 +1395,8 @@
       "width": 155,
       "height": 82,
       "source": "assets-source/rabbits/vantablack/evolution-eyes-closed.png",
-      "sourceSha1": "7357f16feb7f6ac8fb76fccfe04aaaf715cf3bf8",
-      "derivedSha1": "ed957fde88a7035efe03b4e034a6185a855192b0"
+      "sourceSha1": "793b254814c11dd7d006c7cf55c478a5e39e5013",
+      "derivedSha1": "baa41fc23c7b43a4ceeffb9f7abf81b5ed1ed5f4"
     },
     "nose-twitch": {
       "file": "assets/rabbits/vantablack/vantablack-evolution-nose-twitch.png",
@@ -1405,8 +1405,8 @@
       "width": 55,
       "height": 52,
       "source": "assets-source/rabbits/vantablack/evolution-nose-twitch.png",
-      "sourceSha1": "84bea23d086088413413f40021b837f42456846f",
-      "derivedSha1": "b4b4c8377b85f0cdbad1b3b36fa6c50d0ee54cef"
+      "sourceSha1": "115f266ebd8c48a6ddeb2139be3edcbc880b0cab",
+      "derivedSha1": "f3250e08caa321d8cbe44206970020efa3bc5733"
     }
   },
   "fantome": {
