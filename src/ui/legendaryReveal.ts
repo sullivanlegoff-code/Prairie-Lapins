@@ -5,8 +5,9 @@ import {rabbitArt} from '../config/rabbitArt';
  * First appearance of a legendary (owner's requests of 31 October and 1 November 2026): the Dragon sets the whole screen
  * on fire, the Requin arrives on a huge wave, the Ankylosaure comes with a great earthquake (the screen shakes, the ground
  * splits open, rocks fall and dust rises); Arkoko (19 November 2026) comes in a starry pastel night where a great rainbow draws
- * itself, bursts of rainbow light open and rainbow trails fly across, then a flash of crystal light; when it calms, the rabbit appears
- * before its golden halo, and Arkoko's crystal lights up strongly, then calms down (again now and then while
+ * itself, bursts of rainbow light open and rainbow trails fly across; then Arkoko itself flies in along the rainbow on a trail of
+ * stardust and lands with a bounce in a flash of crystal light (20 November 2026: « soigne son apparition »), the rainbow staying
+ * arched over it before its golden halo; it floats gently, and its crystal lights up strongly, then calms down (again now and then while
  * the appearance stays open). A tap skips to the end; with reduced motion the end is shown at once. Purely visual: the dialog is created here and removed when it closes.
  */
 export interface RevealText {
@@ -109,7 +110,9 @@ function arkokoFigure(rabbit: HTMLImageElement): HTMLElement {
   glowImage.style.transformOrigin = `${percent(centre.x - glow!.x, glow!.width)} ${percent(centre.y - glow!.y, glow!.height)}`;
   const light = place(image(crystal.url, 'lr-crystal-light'), crystal);
   for (const piece of [glowImage, light, burst]) piece.setAttribute('aria-hidden', 'true');
-  figure.append(rabbit, glowImage, light, burst);
+  // Its flight in: a rainbow trail of stardust behind it, gone once it has landed.
+  const trail = image(FX.trail.url, 'lr-arrival-trail'); trail.setAttribute('aria-hidden', 'true');
+  figure.append(trail, rabbit, glowImage, light, burst);
   return figure;
 }
 
@@ -120,7 +123,7 @@ export function showLegendaryReveal(species: LegendaryShow, text: RevealText, on
   dialog.setAttribute('aria-labelledby', 'legendary-reveal-title');
   const effects = layer('lr-fx', EFFECTS[species]());
   const sparks = layer('lr-sparks', scatter(FX.spark.url, 'lr-spark', 7, SPARK_SEED[species]));
-  const hero = layer('lr-hero', [image(FX.halo.url, 'lr-halo'), sparks]);
+  const hero = layer('lr-hero', [...(species === 'arkoko' ? [image(FX.rainbow[7].url, 'lr-hero-rainbow')] : []), image(FX.halo.url, 'lr-halo'), sparks]);
   const rabbit = image(rabbitArt(species)?.url ?? '', 'lr-rabbit'); rabbit.alt = text.name; hero.append(species === 'arkoko' ? arkokoFigure(rabbit) : rabbit); hero.removeAttribute('aria-hidden');
   const words = document.createElement('div'); words.className = 'lr-text';
   const title = document.createElement('h2'); title.id = 'legendary-reveal-title'; title.textContent = text.title;

@@ -11,7 +11,8 @@ import {LEGENDARY_IDLE_GAP_MS, type LegendaryShow} from '../config/legendaryArt'
  * then: a rumble with hopping pebbles, a little dig, a puff of dust.
  * Arkoko (owner, 19 November 2026): touched, the crystal on its forehead lights up strongly all at once, with a burst of rainbow light,
  * then goes back to normal (`flare`); now and then: stars twinkling around it, a small rainbow drawing itself above its head, a
- * rainbow trail of stardust flying around it.
+ * rainbow trail of stardust flying around it. Since 20 November 2026 (« soigne les animations d'Arkoko ») it moves too: a jump at the
+ * flare, three hops under its rainbow, a twirl about itself while its trail flies around it, a sway looking up at its stars.
  */
 export type LegendaryAct = 'tap' | 'smoke' | 'hiccup' | 'embers' | 'dive' | 'surf' | 'bubbles' | 'splash' | 'slam' | 'rumble' | 'dig' | 'dust'
   | 'flare' | 'stars' | 'rainbow' | 'trail';
@@ -149,4 +150,16 @@ export function crystalFlare(ms: number): {glow: number; light: number; scale: n
 export function rainbowStep(ms: number, duration = ACT_MS.rainbow): {frame: number; alpha: number} {
   const drawn = Math.min(7, Math.floor(ms / 110));
   return {frame: drawn, alpha: Math.min(smooth(ms / 200), 1 - smooth((ms - (duration - 600)) / 600))};
+}
+
+/**
+ * One of Arkoko's little hops: it crouches just before ms reaches start, springs height units up for most of length, then lands with
+ * a squash that settles. on while it lasts.
+ */
+export function arkokoHop(ms: number, start: number, length: number, height: number): {on: boolean; lift: number; squashX: number; squashY: number} {
+  const t = (ms - start) / length;
+  if (t < -.25 || t > 1.3) return {on: false, lift: 0, squashX: 1, squashY: 1};
+  if (t < 0) { const crouch = Math.sin((t + .25) / .25 * Math.PI / 2); return {on: true, lift: 0, squashX: 1 + .08 * crouch, squashY: 1 - .1 * crouch}; }
+  if (t <= 1) { const stretch = Math.max(0, 1 - t * 2.5); return {on: true, lift: arc(t) * height, squashX: 1 - .05 * stretch, squashY: 1 + .08 * stretch}; }
+  const land = Math.sin((t - 1) / .3 * Math.PI); return {on: true, lift: 0, squashX: 1 + .1 * land, squashY: 1 - .12 * land};
 }

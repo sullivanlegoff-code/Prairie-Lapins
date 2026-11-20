@@ -1814,7 +1814,7 @@ export class MeadowScene extends Phaser.Scene {
       if (rabbit.legendary) {
         const show = rabbit.legendary;
         show.update({time, dt, active: lifeActive && visibleResidents.has(rabbit.id), reduced: reducedMotion, asleep: rabbit.motion?.mode === 'sleep'});
-        lift += show.lift; rotation += show.lean;
+        lift += show.lift; rotation += show.lean; squashX *= show.squashX; squashY *= show.squashY;
       }
       rabbit.magicien?.update(dt,lifeActive && visibleResidents.has(rabbit.id) && magicienFree(rabbit.motion?.mode,
         this.gathered(rabbit.id) || this.cozyInteraction.active?.id === rabbit.id || this.chases.isChasing(rabbit.id) || this.snowballs.isFighting(rabbit.id)),reducedMotion,

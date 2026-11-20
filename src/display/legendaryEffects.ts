@@ -3,7 +3,7 @@ import {LEGENDARY_EFFECTS as FX, arkokoCrystalForArt, crystalCentre, legendaryPa
 import type {RabbitArt} from '../config/rabbitArt';
 import type {Point} from '../ui/gestures';
 import {motionZone, startSurf, type RabbitMotion} from './rabbitMotion';
-import {ACT_MS, DIVE, LegendaryClock, SLAM, SURF_ENTRY_MS, SURF_SLIDE_MS, arc, breathFrame, crystalFlare, diveFin, envelope, loopFrame, partAngle, rainbowStep, smooth, surfPose,
+import {ACT_MS, DIVE, LegendaryClock, SLAM, SURF_ENTRY_MS, SURF_SLIDE_MS, arc, arkokoHop, breathFrame, crystalFlare, diveFin, envelope, loopFrame, partAngle, rainbowStep, smooth, surfPose,
   type ActState, type LegendaryAct} from './legendaryTimeline';
 
 /** What the meadow gives each legendary: its ground container, its posed body and the approved sprite inside it. */
@@ -20,6 +20,8 @@ const rand = (seed: number) => { const x = Math.sin(seed * 127.1) * 43758.5453; 
 export class LegendaryView {
   /** Height added to the body's pose and lean (radians, already in the facing direction) for the current show. */
   lift = 0; lean = 0;
+  /** Arkoko's body squash for its little hops and its twirl (a negative width shows it turning about itself); 1 at rest. */
+  squashX = 1; squashY = 1;
   /** The mouth is open (the nose-twitch patch must hide) or the body is under water (the face patches too). */
   mouthOpen = false; submerged = false;
   private readonly scale: number;
@@ -76,7 +78,7 @@ export class LegendaryView {
     if (additive) image.setBlendMode(Phaser.BlendModes.ADD);
     layer.add(image); this.pieces.push(image); return image;
   }
-  private clear(): void { for (const piece of this.pieces) piece.destroy(); this.pieces = []; this.mouthOpen = this.submerged = this.shaken = false; this.lift = this.lean = 0; }
+  private clear(): void { for (const piece of this.pieces) piece.destroy(); this.pieces = []; this.mouthOpen = this.submerged = this.shaken = false; this.lift = this.lean = 0; this.squashX = this.squashY = 1; }
 
   tap(): void { this.clock.tap(); }
   play(act: LegendaryAct): void { this.clock.play(act); }
@@ -153,17 +155,19 @@ export class LegendaryView {
     } else if (act === 'dust') for (let k = 0; k < 4; k++) this.add(this.front, FX.dust, w * .34);
     else if (act === 'flare') {
       // A burst of rainbow light opens on the crystal, and a few stars fly out of it.
-      this.add(this.fx, FX.prism, w * .7, [.5, .5], true);
-      for (let k = 0; k < 6; k++) this.add(this.fx, k % 2 ? FX.star : FX.starFive, w * (.14 + rand(k + 110) * .07), [.5, .5], true);
+      this.add(this.fx, FX.prism, w * 1.05, [.5, .5], true);
+      for (let k = 0; k < 10; k++) this.add(this.fx, k % 2 ? FX.star : FX.starFive, w * (.17 + rand(k + 110) * .08), [.5, .5], true);
     } else if (act === 'stars') {
-      for (let k = 0; k < 8; k++) this.add(k % 3 ? this.front : this.back, [FX.twinkle, FX.star, FX.starFive][k % 3], w * (k % 3 ? .17 : .34), [.5, .5], true);
+      for (let k = 0; k < 12; k++) this.add(k % 3 ? this.front : this.back, [FX.twinkle, FX.star, FX.starFive][k % 3], w * (k % 3 ? .22 : .42), [.5, .5], true);
     } else if (act === 'rainbow') {
-      this.add(this.fx, FX.rainbow[0], w * 1.45, [.5, 1]);
-      for (let k = 0; k < 4; k++) this.add(this.fx, k % 2 ? FX.star : FX.starFive, w * .14, [.5, .5], true);
+      // Big enough to arch over the whole rabbit; it stays put (in the ground container) while the rabbit hops under it.
+      this.add(this.back, FX.rainbow[0], w * 2.3, [.5, 1]);
+      for (let k = 0; k < 6; k++) this.add(this.front, k % 2 ? FX.star : FX.starFive, w * .18, [.5, .5], true);
     } else if (act === 'trail') {
       // The trail flies once around the rabbit: behind it on the far side, in front on the near side; stardust follows.
-      this.add(this.back, FX.trail, w * 1.15); this.add(this.front, FX.trail, w * 1.15);
-      for (let k = 0; k < 2; k++) this.add(k ? this.front : this.back, FX.stardust, w * .45, [.5, .5], true);
+      this.add(this.back, FX.trail, w * 1.5); this.add(this.front, FX.trail, w * 1.5);
+      for (let k = 0; k < 2; k++) this.add(k ? this.front : this.back, FX.stardust, w * .6, [.5, .5], true);
+      for (let k = 0; k < 6; k++) this.add(this.front, k % 2 ? FX.twinkle : FX.star, w * .16, [.5, .5], true);
     }
   }
 
@@ -268,39 +272,57 @@ export class LegendaryView {
   }
   /** Arkoko's shows: the crystal's flare, twinkling stars, a small rainbow over its head, a rainbow trail flying around it. */
   private arkoko(act: LegendaryAct, ms: number, u: number, w: number): void {
-    const p = this.pieces, c = this.crystal;
+    const p = this.pieces, c = this.crystal, still = this.reduced;
     if (act === 'flare') {
+      // A happy jump as the crystal lights up: it crouches, springs up while the light bursts out, and lands with a little squash.
       const flare = crystalFlare(ms), [burst, ...stars] = p;
       this.shine(flare.glow, flare.light, flare.scale);
-      this.lift = Math.sin(Math.min(1, ms / 500) * Math.PI) * 2.5;
-      burst.setPosition(c.x, c.y).setScale(w * .7 / FX.prism.width * flare.burstScale).setAlpha(flare.burst * .9).setRotation(ms / 1400);
+      if (!still) { const hop = arkokoHop(ms, 60, 520, 7); this.lift = hop.lift; this.squashX = hop.squashX; this.squashY = hop.squashY; }
+      burst.setPosition(c.x, c.y).setScale(w * 1.05 / FX.prism.width * flare.burstScale).setAlpha(flare.burst).setRotation(ms / 1400);
       stars.forEach((star, k) => {
-        const t = Math.max(0, Math.min(1, (ms - 60 - k * 35) / 800)), angle = -Math.PI / 2 + (k / (stars.length - 1) - .5) * Math.PI * 1.3, far = w * (.35 + rand(k + 120) * .25);
-        star.setPosition(c.x + Math.cos(angle) * far * smooth(t), c.y + Math.sin(angle) * far * smooth(t)).setAlpha(t > 0 && t < 1 ? Math.sin(t * Math.PI) : 0).setRotation(t * 3);
+        const t = Math.max(0, Math.min(1, (ms - 60 - k * 30) / 850)), angle = -Math.PI / 2 + (k / (stars.length - 1) - .5) * Math.PI * 1.5, far = w * (.45 + rand(k + 120) * .35);
+        star.setPosition(c.x + Math.cos(angle) * far * smooth(t), c.y + Math.sin(angle) * far * smooth(t) + t * t * 6).setAlpha(t > 0 && t < 1 ? Math.sin(t * Math.PI) : 0).setRotation(t * 3);
       });
     } else if (act === 'stars') {
-      // A soft glimmer of the crystal while the stars twinkle in turn around the rabbit.
-      const soft = envelope(u, .2, .3); this.shine(.3 * soft * (.6 + .4 * Math.sin(ms / 180)), .25 * soft, 1);
+      // The crystal glimmers while stars light up in turn around the rabbit; it looks up at them, swaying a little.
+      const soft = envelope(u, .2, .3); this.shine(.35 * soft * (.6 + .4 * Math.sin(ms / 180)), .3 * soft, 1);
+      if (!still) { this.lean = -this.facing * .06 * soft * Math.sin(ms / 420); this.lift = 1.2 * soft * (1 + Math.sin(ms / 300)); }
       p.forEach((star, k) => {
-        const t = (u * 1.5 + rand(k + 130)) % 1, x = (rand(k + 140) * 2 - 1) * w * .62, y = GROUND_Y - 8 - rand(k + 150) * w * .9;
-        star.setPosition(x, y - t * 6).setAlpha(soft * Math.sin(t * Math.PI)).setRotation(t * 1.6);
+        const t = (u * 1.5 + rand(k + 130)) % 1, x = (rand(k + 140) * 2 - 1) * w * .7, y = GROUND_Y - 6 - rand(k + 150) * w * 1.05;
+        star.setPosition(x, y - t * 8).setAlpha(soft * Math.sin(t * Math.PI)).setScale(w * (k % 3 ? .22 : .42) / FX.star.width * (.6 + .6 * Math.sin(t * Math.PI))).setRotation(t * 1.6);
       });
     } else if (act === 'rainbow') {
-      const step = rainbowStep(ms), [rainbow, ...stars] = p, top = this.point(this.host.art.width / 2, 0);
-      this.lift = ms < 360 ? Math.sin(ms / 360 * Math.PI) * 4 : 0;
-      rainbow.setTexture(FX.rainbow[step.frame].texture).setPosition(top.x, top.y + w * .18).setAlpha(step.alpha);
+      // The rainbow draws itself over the rabbit, which hops three times under it for joy; stars twinkle along its arch.
+      const step = rainbowStep(ms), [rainbow, ...stars] = p;
+      if (!still) {
+        const hop = [arkokoHop(ms, 250, 460, 6), arkokoHop(ms, 800, 460, 7), arkokoHop(ms, 1350, 520, 9)].find(h => h.on) ?? arkokoHop(-1e4, 0, 1, 0);
+        this.lift = hop.lift; this.squashX = hop.squashX; this.squashY = hop.squashY;
+      }
+      rainbow.setTexture(FX.rainbow[step.frame].texture).setPosition(0, GROUND_Y - 2).setAlpha(step.alpha * .95);
       stars.forEach((star, k) => {
-        const t = Math.max(0, Math.min(1, (ms - 800 - k * 260) / 900)), x = (k / 3 - .5) * w * 1.2;
-        star.setPosition(top.x + x, top.y - w * .25 - Math.sin(t * Math.PI) * 5).setAlpha(step.alpha * Math.sin(t * Math.PI));
+        const t = Math.max(0, Math.min(1, (ms - 500 - k * 230) / 800)), x = (k / (stars.length - 1) - .5) * w * 1.9;
+        star.setPosition(x, GROUND_Y - w * (.9 + .5 * Math.sin((k / (stars.length - 1)) * Math.PI)) - Math.sin(t * Math.PI) * 6).setAlpha(step.alpha * Math.sin(t * Math.PI));
       });
     } else {
-      const [back, front, dustBack, dustFront] = p, fade = envelope(u, .12, .2), rx = w * .62, ry = w * .2, size = w * 1.15 / FX.trail.width;
+      // The trail flies once around the rabbit (behind it on the far side, in front on the near side); halfway it twirls once
+      // about itself, its cape flying out, then lands; stardust and sparkles follow the trail.
+      const [back, front, dustBack, dustFront, ...sparkles] = p, fade = envelope(u, .12, .2), rx = w * .72, ry = w * .24, size = w * 1.5 / FX.trail.width;
       const orbit = (v: number) => { const angle = Math.PI + v * Math.PI * 2.2; return {x: Math.cos(angle) * rx, y: GROUND_Y - w * .55 + Math.sin(angle) * ry, near: Math.sin(angle) > 0, angle}; };
       const head = orbit(u), tail = orbit(u - .06);
       for (const [image, shown] of [[back, !head.near], [front, head.near]] as const)
         image.setPosition(head.x, head.y).setScale(size * (Math.sin(head.angle) <= 0 ? 1 : -1), size).setRotation(Math.cos(head.angle) * .25).setAlpha(shown ? fade : 0);
-      for (const [image, shown] of [[dustBack, !tail.near], [dustFront, tail.near]] as const) image.setPosition(tail.x, tail.y).setAlpha(shown ? fade * .8 : 0);
-      this.shine(.2 * fade, .2 * fade, 1);
+      for (const [image, shown] of [[dustBack, !tail.near], [dustFront, tail.near]] as const) image.setPosition(tail.x, tail.y).setAlpha(shown ? fade * .85 : 0);
+      sparkles.forEach((sparkle, k) => {
+        const at = orbit(u - .04 - k * .025), t = (ms / 400 + k / sparkles.length) % 1;
+        sparkle.setPosition(at.x, at.y + t * 6).setAlpha(at.near ? fade * (1 - t) : 0).setRotation(t * 2);
+      });
+      if (!still) {
+        const spin = smooth(Math.max(0, Math.min(1, (u - .3) / .4)));
+        this.squashX = Math.cos(spin * Math.PI * 2); this.lift = Math.sin(spin * Math.PI) * 6;
+        // Never edge-on: it keeps a quarter of its width, so it reads as turning rather than as a thin line.
+        if (Math.abs(this.squashX) < .25) this.squashX = this.squashX < 0 ? -.25 : .25;
+      }
+      this.shine(.25 * fade, .25 * fade, 1);
     }
   }
   /** The club tail strikes at `SLAM.impact`: the ground cracks, a ring of dust spreads, stones fly and the meadow shakes a little. */
