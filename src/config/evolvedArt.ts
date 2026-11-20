@@ -98,7 +98,7 @@ export const EVOLVED_ART: readonly EvolvedSprite[] = [
   {id: 'yetiti', name: 'Gardien des neiges', file: 'assets/rabbits/yetiti/yetiti-v2.png', texture: 'rabbit-yetiti-evolved-v2', width: 538, height: 785, worldWidth: 63.4, groundY: 12, facing: 'left'},
   {id: 'rennes', name: 'Chef de l’attelage', file: 'assets/rabbits/rennes/rennes-v2.png', texture: 'rabbit-rennes-evolved-v2', width: 444, height: 552, worldWidth: 52.3, groundY: 12},
   {id: 'susucre', name: 'Sucre glacé', file: 'assets/rabbits/susucre/susucre-v2.png', texture: 'rabbit-susucre-evolved-v2', width: 485, height: 489, worldWidth: 57.2, groundY: 12},
-  {id: 'arkoko', name: 'Cape arc-en-ciel', file: 'assets/rabbits/arkoko/arkoko-v2.png', texture: 'rabbit-arkoko-evolved-v2', width: 456, height: 531, worldWidth: 53.8, groundY: 12},
+  {id: 'arkoko', name: 'Cape arc-en-ciel', file: 'assets/rabbits/arkoko/arkoko-v2.png', texture: 'rabbit-arkoko-evolved-v2', width: 352, height: 682, worldWidth: 41.5, groundY: 12},
   {id: 'fantome', name: 'Drap de soie', file: 'assets/rabbits/fantome/fantome-v2.png', texture: 'rabbit-fantome-evolved-v2', width: 358, height: 641, worldWidth: 42.2, groundY: 12, facing: 'left'},
   {id: 'bouyoyo', name: 'Bouillotte de luxe', file: 'assets/rabbits/bouyoyo/bouyoyo-v2.png', texture: 'rabbit-bouyoyo-evolved-v2', width: 452, height: 442, worldWidth: 53.3, groundY: 12},
   {id: 'lapin-de-sulli', name: 'Grand manteau', file: 'assets/rabbits/lapin-de-sulli/lapin-de-sulli-v2.png', texture: 'rabbit-lapin-de-sulli-evolved-v2', width: 361, height: 575, worldWidth: 42.6, groundY: 12, facing: 'left'},

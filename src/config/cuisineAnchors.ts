@@ -127,7 +127,7 @@ export const EVOLVED_CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>>
   yetiti: a([.38, .1, .3, -4], [.4, .33, .3], [.4, .2, .24]),
   rennes: a([.72, .255, .28, 4], [.79, .45, .24], [.79, .35, .22]),
   susucre: a([.72, .27, .38, 6], [.75, .57, .3], [.75, .42, .3]), // 19 Nov. 2026: evolution redrawn on four paws.
-  arkoko: a([.826, .233, .22, 4], [.85, .56, .22], [.863, .38, .18]),
+  arkoko: a([.57, .18, .38, 6], [.63, .49, .34], [.67, .37, .4]), // 20 Nov. 2026: the owner's new evolution, upright with rainbow glasses.
 };
 /** `evolved`: the anchors of the species' evolved drawing (a rabbit showing it), else those of its v1. */
 export function cuisineAnchors(species: SpeciesId, facing: 1 | -1 = 1, evolved = false): CuisineAnchors {

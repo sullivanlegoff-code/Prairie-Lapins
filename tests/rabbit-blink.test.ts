@@ -68,7 +68,7 @@ describe('rabbit patch adapter and body coordinates', () => {
     for (const species of SPECIES_ENTRIES) {
       if (species.art.kind !== 'static-sprite') continue;
       const art = rabbitBlinkArt(species.id), evolved = rabbitBlinkArt(species.id, true);
-      const kinds = species.id === 'bouee' ? ['nose-twitch'] : PATCH_KINDS, evolvedKinds = ['bouee', 'dadi', 'fantome'].includes(species.id) ? ['nose-twitch'] : PATCH_KINDS;
+      const kinds = species.id === 'bouee' ? ['nose-twitch'] : PATCH_KINDS, evolvedKinds = ['bouee', 'dadi', 'fantome', 'arkoko'].includes(species.id) ? ['nose-twitch'] : PATCH_KINDS;
       if (species.id === 'ardent' || species.id === 'benny') expect(art).toBeUndefined();
       else {
         expect(art?.patches.map(patch => patch.kind)).toEqual(kinds);

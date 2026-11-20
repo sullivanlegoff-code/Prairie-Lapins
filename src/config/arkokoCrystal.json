@@ -21,12 +21,12 @@
   },
   "evolutionCrystal": {
     "file": "assets/rabbits/arkoko/arkoko-v2-crystal.png",
-    "x": 372,
-    "y": 146,
-    "width": 38,
-    "height": 45,
-    "spriteWidth": 456,
-    "spriteHeight": 531,
-    "sha1": "69c30e99d78a8e2a7de9bdc84ba63c1709ae84a1"
+    "x": 228,
+    "y": 155,
+    "width": 44,
+    "height": 55,
+    "spriteWidth": 352,
+    "spriteHeight": 682,
+    "sha1": "f7dc237cbf1739b1bc42bb77ca7af62edb1c9c52"
   }
 }

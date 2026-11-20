@@ -1055,13 +1055,13 @@
     "registry": "src/config/evolvedArt.ts",
     "displayScale": 1.15,
     "file": "assets/rabbits/arkoko/arkoko-v2.png",
-    "worldWidth": 53.8,
-    "sourceSha1": "90563de50764a00cdf1ae5219aede6cdb0880778",
-    "sourceWidth": 1039,
-    "sourceHeight": 1211,
-    "width": 456,
-    "height": 531,
-    "derivedSha1": "0e80c378c6db0832378ef1d5baf96094b40a78f4"
+    "worldWidth": 41.5,
+    "sourceSha1": "5a1b9551d891cfb1a3d65242dd49a3f2c43ccc6e",
+    "sourceWidth": 626,
+    "sourceHeight": 1213,
+    "width": 352,
+    "height": 682,
+    "derivedSha1": "5770f3da7a5e16e2c3f9d44d09363f2a295a2180"
   },
   "fantome-evolution": {
     "species": "fantome",
