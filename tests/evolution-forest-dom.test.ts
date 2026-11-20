@@ -64,7 +64,7 @@ it('shows the required challenge progress and keeps evolution disabled until it 
   // Owner, 4 November 2026: the evolution is a surprise, neither its drawing nor its name before a paille has evolved.
   expect(section.querySelector('[data-evolution-secret]')).not.toBeNull();
   expect([...section.querySelectorAll('img')].some(image => image.src.includes('paille-v2'))).toBe(false);
-  expect(section.textContent).not.toContain('Cœur des moissons');
+  expect(section.textContent).not.toContain('a évolué');
 });
 
 it('the sheet requires explicit evolution; the scene plays and the forest then switches drawings both ways', () => {
@@ -75,7 +75,7 @@ it('the sheet requires explicit evolution; the scene plays and the forest then s
   expect(panel().querySelector('.collection-evolution-count')?.textContent).toBe('0 / 48 évolutions');
   expect(panel().querySelector('[data-collection-evolution="paille"]')?.classList.contains('is-locked')).toBe(true);
   expect(panel().querySelector('[data-collection-evolution="paille"] img')).toBeNull(); // No silhouette either.
-  expect(panel().querySelector('[data-collection-evolution="paille"]')?.textContent).not.toContain('Cœur des moissons');
+  expect(panel().querySelector('[data-collection-evolution="paille"]')?.textContent).not.toContain('Paille');
   expect(panel().querySelector('[data-collection-evolution="feu"]')).toBeNull(); // An undiscovered species does not reveal its evolution's shape.
   ui.select({kind: 'rabbit', id: 'rabbit-104'});
   expect(panel().querySelector<HTMLImageElement>('.portrait.large img')!.src).toMatch(/paille-v1\.(png|webp)/);
@@ -88,7 +88,7 @@ it('the sheet requires explicit evolution; the scene plays and the forest then s
   document.querySelector<HTMLButtonElement>('.evolution-moment-close')!.click();
   expect(document.querySelector('.evolution-moment')).toBeNull();
   ui.select({kind: 'rabbit', id: 'rabbit-104'}); // Evolved: the sheet now shows the evolution, drawing and name.
-  expect(panel().querySelector('[data-evolution-secret]')).toBeNull(); expect(panel().querySelector('[data-rabbit-evolution]')?.textContent).toContain('Cœur des moissons');
+  expect(panel().querySelector('[data-evolution-secret]')).toBeNull(); expect(panel().querySelector('[data-rabbit-evolution]')?.textContent).toContain('a évolué : Paille.');
   ui.select({kind: 'building', id: 'building-100'});
   expect(document.getElementById('panel-title')?.textContent ?? panel().textContent).toContain('Forêt de Brocéliande');
   const cards = [...panel().querySelectorAll<HTMLElement>('[data-forest-rabbit]')];
@@ -121,7 +121,7 @@ it('the sheet requires explicit evolution; the scene plays and the forest then s
   (ui as unknown as {open(view: unknown): void}).open({kind: 'collection'});
   expect(panel().querySelector('.collection-evolution-count')?.textContent).toBe('1 / 48 évolutions');
   expect(panel().querySelector('[data-collection-evolution="paille"]')?.classList.contains('is-unlocked')).toBe(true);
-  expect(panel().querySelector('[data-collection-evolution="paille"]')?.textContent).toContain('Cœur des moissons');
+  expect(panel().querySelector('[data-collection-evolution="paille"]')?.textContent).toContain('Évolution · Paille');
 });
 
 it('the shop sells the forest from level 25 for 10 000 pattes', () => {
