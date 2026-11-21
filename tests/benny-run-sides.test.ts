@@ -77,11 +77,9 @@ describe('Benny Rampage: the pictures of the sides', () => {
     const masters = Object.keys(import.meta.glob('../assets-source/benny-run/*.png')).map(path => path.replace('../assets-source/benny-run/', '').replace('.png', ''));
     for (const file of RUN_SIDE_FILES.filter(f => f.startsWith('cotes-'))) expect(masters).toContain(file);
   });
-  it('stands the grass past the fence, farthest row first, on its ground', () => {
-    const outs = RUN_SIDES.grass.rows.map(r => r.out);
-    expect(outs).toEqual([...outs].sort((a, b) => b - a));
-    expect(Math.min(...outs)).toBeGreaterThan(RUN_SIDES.fence.out);
-    expect(Math.max(...outs)).toBeLessThan(RUN_SIDES.grass.ground);
+  it('stands the tall grass past the fence, taller than Benny (2 m) by half again (owner, 21 Nov. 2026)', () => {
+    expect(RUN_SIDES.grass.out).toBeGreaterThan(RUN_SIDES.fence.out);
+    expect(RUN_SIDES.grass.high).toBeGreaterThanOrEqual(3);
   });
   it('no longer ships the big painted walls of the old scenery', () => {
     expect(files.filter(f => f.startsWith('grand-mur'))).toEqual([]);

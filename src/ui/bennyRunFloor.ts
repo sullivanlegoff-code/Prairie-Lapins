@@ -28,12 +28,20 @@ export interface RunFloorView {
   holes: readonly (readonly [number, number])[]; bridge: readonly [number, number] | null;
   /** The fog's colour and the dark of a hole (0 to 1); where the fog starts and where it is all white (m ahead). */
   haze: readonly [number, number, number]; hole: readonly [number, number, number]; fogFrom: number; fogTo: number;
+  /** The field of tall grass on both sides (owner, 21 Nov. 2026: « un énorme champ d'herbe qui s'étend à perte de vue »): its top,
+   *  `high` m above the ground, from `out` m past the road's half-width out to the fog; its tile (m), how far through a tile the road
+   *  is at Benny's feet, and the phase of the wind's waves over it (radians). Null: no field (the meadow's grass is flat). */
+  field: {high: number; out: number; tile: number; shift: number; wave: number} | null;
+  /** The rows of tall blades standing in it, one behind the other (owner, 21 Nov.: « de l'herbe sur les côtés droite et gauche qui
+   *  s'étend à perte de vue et qui est grande »): the first along the field's edge, from the ground; `rows` of them `gap` m apart, each
+   *  `high` m tall, its painting (seen side on, cut out) `length` m long; how far through it the road is at Benny's feet. */
+  blades: {rows: number; gap: number; high: number; length: number; shift: number} | null;
 }
 
 export interface RunFloor {
   readonly canvas: HTMLCanvasElement;
   /** Takes the meadow's, the slabs' and the planks' paintings (again after they were let go). */
-  setPictures(pictures: {meadow: TexImageSource; slabs: TexImageSource; planks: TexImageSource}): void;
+  setPictures(pictures: {meadow: TexImageSource; slabs: TexImageSource; planks: TexImageSource; field: TexImageSource; blades: TexImageSource}): void;
   /** Whether it has its pictures and can draw. */
   ready(): boolean;
   /** Draws the ground of this frame (false if it cannot: no pictures, the context lost). */
@@ -44,7 +52,7 @@ export interface RunFloor {
   destroy(): void;
 }
 
-const MAX_HOLES = 8, MAX_HALLS = 4;
+const MAX_HOLES = 8, MAX_HALLS = 4, MAX_ROWS = 16;
 /** The side of the pictures on the card: a power of two, repeated and with smaller copies for the distance (mipmaps). */
 const PICTURE_SIDE = 512;
 
@@ -53,11 +61,22 @@ const FRAGMENT = `
 precision highp float;
 uniform vec2 uSize; uniform float uRatio; uniform vec2 uShift;
 uniform float uHorizon, uK, uCamH, uCamBack, uCamX, uBend, uBendFar;
-uniform sampler2D uMeadow, uSlab, uPlank;
+uniform sampler2D uMeadow, uSlab, uPlank, uField, uBlade;
+uniform float uFieldOn, uFieldH, uFieldOut, uFieldTile, uFieldShift, uWave;
+uniform float uRows, uRowGap, uRowH, uRowLen, uRowShift;
 uniform float uMeadowTile, uMeadowShift, uSlabTile, uSlabShift, uPlankAcross, uPlankAlong, uPlankShift;
 uniform float uLane, uLanes, uWide, uEdge;
 uniform vec2 uHalls[${MAX_HALLS}]; uniform vec2 uHoles[${MAX_HOLES}]; uniform vec2 uBridge;
 uniform vec3 uHaze, uHole; uniform float uFogFrom, uFogTo;
+// The road's half-width a m ahead: wider in a hall (it opens over 6 m and closes over 6 m past its end).
+float halfAt(float a) {
+  float wide = 0.0;
+  for (int i = 0; i < ${MAX_HALLS}; i++) {
+    vec2 h = uHalls[i];
+    wide = max(wide, (a >= h.x && a < h.y) ? min(1.0, (a - h.x) / 6.0) : (a >= h.y ? max(0.0, 1.0 - (a - h.y) / 6.0) : 0.0));
+  }
+  return (uLanes + (uWide - uLanes) * wide) * 0.5 * uLane;
+}
 void main() {
   vec2 p = vec2(gl_FragCoord.x, uSize.y * uRatio - gl_FragCoord.y) / uRatio - uShift;
   float dy = p.y - uHorizon;
@@ -66,16 +85,56 @@ void main() {
   float s = dy / uCamH, a = uK / s - uCamBack;
   float k = clamp(max(a, 0.0) / uBendFar, 0.0, 1.0);
   float x = (p.x - uSize.x * 0.5) / s - uBend * k * k + uCamX;
+  // The field of tall grass on both sides: the rows of blades standing in it (the first along its edge, from the ground) and, between
+  // their tips, its top; whatever the ray from the eye meets first is what is seen. Over the road, nothing of it.
+  if (uFieldOn > 0.5 && abs(x) > halfAt(max(a, 0.0)) + uFieldOut * 0.5) {
+    float side = x > 0.0 ? 1.0 : -1.0, dx = p.x - uSize.x * 0.5;
+    float best = 1e9; vec4 seen = vec4(0.0);
+    // Its top, uFieldH m up.
+    float sf = dy / (uCamH - uFieldH), af = uK / sf - uCamBack;
+    float kf = clamp(max(af, 0.0) / uBendFar, 0.0, 1.0);
+    float xf = dx / sf - uBend * kf * kf + uCamX;
+    if (sf > 0.0 && abs(xf) > halfAt(max(af, 0.0)) + uFieldOut) {
+      vec3 top = texture2D(uField, vec2(xf / uFieldTile, -(af / uFieldTile + uFieldShift))).rgb;
+      top *= 0.97 + 0.08 * sin(xf * 0.31 + af * 0.22 + uWave) * sin(xf * 0.13 - af * 0.07 + uWave * 0.6);
+      best = af; seen = vec4(top, 1.0);
+    }
+    // The rows, nearest first: where the ray crosses each one's upright plane (the road's bend found again in three steps), how high.
+    for (int i = 0; i < ${MAX_ROWS}; i++) {
+      if (float(i) >= uRows) break;
+      float ar = a, sr = s;
+      for (int j = 0; j < 3; j++) {
+        float kr = clamp(max(ar, 0.0) / uBendFar, 0.0, 1.0);
+        // (Each row winds a little, its own way: no straight furrows.)
+        float wind = i == 0 ? 0.0 : uRowGap * 0.45 * sin(ar * 0.23 + float(i) * 2.17) * sin(ar * 0.071 + float(i) * 0.9);
+        float d = side * (halfAt(max(ar, 0.0)) + uFieldOut + float(i) * uRowGap + wind) + uBend * kr * kr - uCamX;
+        sr = dx / d; ar = uK / sr - uCamBack;
+      }
+      // (Past 45 m, the field's top alone: the blades there would only shimmer.)
+      if (sr <= 0.0 || ar < -uCamBack + 0.5 || ar >= best || ar > 45.0) continue;
+      float h = uCamH - dy / sr;
+      // (Each row its own height, the first the tallest.)
+      float rowH = uRowH * (i == 0 ? 1.0 : 0.82 + 0.18 * fract(sin(float(i) * 12.9898) * 43758.5453));
+      if (h < 0.0 || h > rowH) continue;
+      float up = h / rowH;
+      // The tips bow in the wind, the base does not move.
+      float along = (ar / uRowLen + uRowShift) * side + float(i) * 0.37 + up * up * 0.05 * sin(uWave * 1.4 + ar * 0.45 + float(i) * 1.7) / uRowLen * 3.0;
+      vec4 blade = texture2D(uBlade, vec2(along, 1.0 - up));
+      if (blade.a < 0.5) continue;
+      // Farther rows a little lighter (the light through the field), the base of each a little darker.
+      vec3 c = blade.rgb * mix(0.94, 1.0, smoothstep(0.0, 0.5, up));
+      best = ar; seen = vec4(c, 1.0);
+    }
+    if (seen.a > 0.0) {
+      vec3 col = seen.rgb;
+      gl_FragColor = vec4(mix(col, uHaze, smoothstep(uFogFrom, uFogTo, best)), 1.0);
+      return;
+    }
+  }
   // In the white of the fog: nothing more to look up (the horizon is gone).
   if (a >= uFogTo) { gl_FragColor = vec4(uHaze, 1.0); return; }
   float ac = a;
-  // The road's half-width there: wider in a hall (it opens over 6 m and closes over 6 m past its end).
-  float wide = 0.0;
-  for (int i = 0; i < ${MAX_HALLS}; i++) {
-    vec2 h = uHalls[i];
-    wide = max(wide, (a >= h.x && a < h.y) ? min(1.0, (a - h.x) / 6.0) : (a >= h.y ? max(0.0, 1.0 - (a - h.y) / 6.0) : 0.0));
-  }
-  float halfW = (uLanes + (uWide - uLanes) * wide) * 0.5 * uLane, edge = halfW + uEdge;
+  float halfW = halfAt(a), edge = halfW + uEdge;
   // The three paintings, every pixel (their smaller copies picked the same way everywhere: no seam at the road's edge).
   vec3 meadow = texture2D(uMeadow, vec2(x / uMeadowTile, -(ac / uMeadowTile + uMeadowShift))).rgb;
   vec3 slab = texture2D(uSlab, vec2(x / uSlabTile, -(ac / uSlabTile + uSlabShift))).rgb;
@@ -118,18 +177,19 @@ export function createRunFloor(): RunFloor | null {
   const u = (name: string) => G.getUniformLocation(program, name);
   const U = Object.fromEntries(['uSize', 'uRatio', 'uShift', 'uHorizon', 'uK', 'uCamH', 'uCamBack', 'uCamX', 'uBend', 'uBendFar', 'uMeadow', 'uSlab', 'uPlank',
     'uMeadowTile', 'uMeadowShift', 'uSlabTile', 'uSlabShift', 'uPlankAcross', 'uPlankAlong', 'uPlankShift', 'uLane', 'uLanes', 'uWide', 'uEdge',
-    'uHalls', 'uHoles', 'uBridge', 'uHaze', 'uHole', 'uFogFrom', 'uFogTo'].map(n => [n, u(n)])) as Record<string, WebGLUniformLocation | null>;
-  G.uniform1i(U.uMeadow, 0); G.uniform1i(U.uSlab, 1); G.uniform1i(U.uPlank, 2);
+    'uHalls', 'uHoles', 'uBridge', 'uHaze', 'uHole', 'uFogFrom', 'uFogTo', 'uField', 'uFieldOn', 'uFieldH', 'uFieldOut', 'uFieldTile', 'uFieldShift', 'uWave', 'uBlade', 'uRows', 'uRowGap', 'uRowH', 'uRowLen', 'uRowShift'].map(n => [n, u(n)])) as Record<string, WebGLUniformLocation | null>;
+  G.uniform1i(U.uMeadow, 0); G.uniform1i(U.uSlab, 1); G.uniform1i(U.uPlank, 2); G.uniform1i(U.uField, 3); G.uniform1i(U.uBlade, 4);
   const aniso = G.getExtension('EXT_texture_filter_anisotropic') ?? G.getExtension('WEBKIT_EXT_texture_filter_anisotropic');
   const anisoMax = aniso ? Math.min(8, G.getParameter(aniso.MAX_TEXTURE_MAX_ANISOTROPY_EXT) as number) : 0;
   let textures: WebGLTexture[] = [], lost = false;
   canvas.addEventListener('webglcontextlost', event => { event.preventDefault(); lost = true; textures = []; });
   const square = document.createElement('canvas'); square.width = square.height = PICTURE_SIDE;
   const squareK = square.getContext('2d');
-  function texture(unit: number, source: TexImageSource): WebGLTexture | null {
+  function texture(unit: number, source: TexImageSource, wide = PICTURE_SIDE, high = PICTURE_SIDE): WebGLTexture | null {
     const t = G.createTexture(); if (!t || !squareK) return null;
-    // (Squared to a power of two first: a texture that repeats and has smaller copies must be.)
-    squareK.imageSmoothingQuality = 'high'; squareK.clearRect(0, 0, PICTURE_SIDE, PICTURE_SIDE); squareK.drawImage(source as CanvasImageSource, 0, 0, PICTURE_SIDE, PICTURE_SIDE);
+    // (Sized to powers of two first: a texture that repeats and has smaller copies must be.)
+    if (square.width !== wide || square.height !== high) { square.width = wide; square.height = high; }
+    squareK.imageSmoothingQuality = 'high'; squareK.clearRect(0, 0, wide, high); squareK.drawImage(source as CanvasImageSource, 0, 0, wide, high);
     G.activeTexture(G.TEXTURE0 + unit); G.bindTexture(G.TEXTURE_2D, t);
     G.texImage2D(G.TEXTURE_2D, 0, G.RGBA, G.RGBA, G.UNSIGNED_BYTE, square);
     G.texParameteri(G.TEXTURE_2D, G.TEXTURE_WRAP_S, G.REPEAT); G.texParameteri(G.TEXTURE_2D, G.TEXTURE_WRAP_T, G.REPEAT);
@@ -144,11 +204,11 @@ export function createRunFloor(): RunFloor | null {
     setPictures(p) {
       if (lost) return;
       floor.release();
-      const list = [texture(0, p.meadow), texture(1, p.slabs), texture(2, p.planks)];
+      const list = [texture(0, p.meadow), texture(1, p.slabs), texture(2, p.planks), texture(3, p.field), texture(4, p.blades, PICTURE_SIDE * 2, PICTURE_SIDE)];
       textures = list.every(t => t) ? list as WebGLTexture[] : [];
-      squareK?.clearRect(0, 0, PICTURE_SIDE, PICTURE_SIDE);
+      square.width = square.height = 1;
     },
-    ready: () => !lost && textures.length === 3,
+    ready: () => !lost && textures.length === 5,
     draw(v) {
       if (!floor.ready()) return false;
       const w = Math.max(1, Math.round(v.width * v.ratio)), h = Math.max(1, Math.round(v.height * v.ratio));
@@ -166,6 +226,12 @@ export function createRunFloor(): RunFloor | null {
       holes.fill(-1e6); v.holes.slice(0, MAX_HOLES).forEach(([a, b], i) => { holes[i * 2] = a; holes[i * 2 + 1] = b; }); G.uniform2fv(U.uHoles, holes);
       G.uniform2f(U.uBridge, v.bridge?.[0] ?? -1e6, v.bridge?.[1] ?? -1e6);
       G.uniform3f(U.uHaze, v.haze[0], v.haze[1], v.haze[2]); G.uniform3f(U.uHole, v.hole[0], v.hole[1], v.hole[2]); G.uniform1f(U.uFogFrom, v.fogFrom); G.uniform1f(U.uFogTo, v.fogTo);
+      const f = v.field && v.field.high < v.cameraHeight - .5 ? v.field : null;
+      G.uniform1f(U.uFieldOn, f ? 1 : 0);
+      if (f) { G.uniform1f(U.uFieldH, f.high); G.uniform1f(U.uFieldOut, f.out); G.uniform1f(U.uFieldTile, f.tile); G.uniform1f(U.uFieldShift, f.shift); G.uniform1f(U.uWave, f.wave); }
+      const r = f ? v.blades : null;
+      G.uniform1f(U.uRows, r ? Math.min(MAX_ROWS, r.rows) : 0);
+      if (r) { G.uniform1f(U.uRowGap, r.gap); G.uniform1f(U.uRowH, r.high); G.uniform1f(U.uRowLen, r.length); G.uniform1f(U.uRowShift, r.shift); }
       G.drawArrays(G.TRIANGLE_STRIP, 0, 4);
       return true;
     },

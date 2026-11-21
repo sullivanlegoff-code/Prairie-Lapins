@@ -96,9 +96,14 @@ const WEATHER = {pont: 22, montagne: 46} as const;
  *  things beside the road and the gates. */
 /** The pictures the painted floor needs (the rest is drawn from its own picture when it has loaded). */
 const FLOOR_DECOR = ['decor-herbe', 'decor-dalles'] as const;
+/** The field of tall grass on both sides (RUN_SIDES.grass.field). */
+const FIELD = RUN_SIDES.grass.field, BLADES = RUN_SIDES.grass.blades, FLOOR_RATIO = 1.5;
+/** The things along the road's sides (the painted things on the verges, the fences): set aside for now (owner, 21 Nov. 2026: « supprime
+ *  pour le moment tous les objets à droite à gauche, on les remettra ensuite »; the fence came back in volume). True brings them back. */
+const SIDE_THINGS = false;
 /** The paintings of the ground drawn by the graphics card: the meadow, the road's slabs, a bridge's planks. */
-const FLOOR_PICTURES: readonly DecorName[] = ['decor-herbe', 'decor-dalles', 'decor-planches'];
-const DECOR = ['decor-planches', 'decor-herbe', 'decor-falaise', 'decor-dalles', 'decor-dalles-lave', 'decor-dalles-neige', 'decor-socle-framboise', 'decor-corps-creme', 'decor-corps-ocre', 'decor-lave-pierre', 'decor-lave-sol', 'decor-neige-pierre', 'decor-neige-sol', 'decor-lave-socle-sombre', 'decor-lave-corps-basalte', 'decor-lave-corps-roche', 'decor-neige-socle-bois', 'decor-neige-corps-pierre', 'decor-neige-corps-roche', 'decor-bord', 'decor-bord-lave', 'decor-bord-neige', 'decor-arche-prairie', 'decor-arche-lave', 'decor-arche-neige'] as const;
+const FLOOR_PICTURES: readonly DecorName[] = ['decor-herbe', 'decor-dalles', 'decor-planches', 'decor-champ', 'decor-brins'];
+const DECOR = ['decor-planches', 'decor-herbe', 'decor-falaise', 'decor-dalles', 'decor-dalles-lave', 'decor-dalles-neige', 'decor-socle-framboise', 'decor-corps-creme', 'decor-corps-ocre', 'decor-lave-pierre', 'decor-lave-sol', 'decor-neige-pierre', 'decor-neige-sol', 'decor-lave-socle-sombre', 'decor-lave-corps-basalte', 'decor-lave-corps-roche', 'decor-neige-socle-bois', 'decor-neige-corps-pierre', 'decor-neige-corps-roche', 'decor-bord', 'decor-bord-lave', 'decor-bord-neige', 'decor-arche-prairie', 'decor-arche-lave', 'decor-arche-neige', 'decor-champ', 'decor-brins'] as const;
 type DecorName = typeof DECOR[number];
 /** The run's decor tiles (for the tests). */
 export const BENNY_RUN_DECOR: readonly string[] = DECOR;
@@ -108,7 +113,7 @@ type StripLevel = {el: CanvasImageSource; w: number; h: number};
 type StripPicture = StripLevel[];
 const STRIP_LEVELS = 4;
 const stripKey = (p: RunSidePicture) => `${p.file}:${p.crop ?? ''}`;
-const SIDE_PICTURES = [...new Map([RUN_SIDES.fence, RUN_SIDES.wall].flatMap(s => Object.values(s.picture) as RunSidePicture[]).map(p => [stripKey(p), p])).values()];
+const SIDE_PICTURES = [...new Map([RUN_SIDES.grass, RUN_SIDES.fence, RUN_SIDES.wall].flatMap(s => Object.values(s.picture) as RunSidePicture[]).map(p => [stripKey(p), p])).values()];
 /** The near copy of a strip is at most this many pixels high (a wall is never drawn much taller on a phone). */
 const STRIP_HIGH = 480;
 /** How many metres one texture covers: planks across the road and along it, the grass both ways, a wall along it (its height is
@@ -168,7 +173,7 @@ const VERGE_GROUND = {grotte: 'decor-herbe', pont: 'decor-lave-sol', montagne: '
 const MEADOW = VERGE_GROUND.grotte, MEADOW_TILE = 3.3, MEADOW_GREEN = '#6fa83e', HOLE_DARK = '#2e1c12', HOLE_RGB = [46 / 255, 28 / 255, 18 / 255] as const;
 /** The meadow's things in three bands out from the road's edge (m): one spot every `every` m on each side, `keep` of them used,
  *  `grow` times the size of the things beside the road. */
-const MEADOW_BANDS = [{out: [3, 7], every: 8, keep: .55, grow: 1}, {out: [9, 17], every: 11, keep: .5, grow: 1.25}, {out: [20, 34], every: 15, keep: .5, grow: 1.6}, {out: [40, 70], every: 18, keep: .6, grow: 2.2}] as const;
+const MEADOW_BANDS = [{out: [9, 17], every: 11, keep: .5, grow: 1.25}, {out: [20, 34], every: 15, keep: .5, grow: 1.6}, {out: [40, 70], every: 18, keep: .6, grow: 2.2}] as const;
 /** How far past the outer lanes' edge the road's slabs go (m): under the fence. */
 const ROAD_EDGE = .25;
 /** Each world's sheet of things beside the road (16 Nov.: the meadow's roses and pumpkins, the lava's basalt, crystals and brazier,
@@ -393,9 +398,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   /** Hands the floor its paintings once the meadow's, the slabs' and the planks' are loaded. */
   function floorPictures(): void {
     if (!floor || floor.ready()) return;
-    const [meadow, slabs, planks] = FLOOR_PICTURES.map(name => decor[name].image);
-    if (![meadow, slabs, planks].every(i => i && i.complete && i.naturalWidth)) return;
-    try { floor.setPictures({meadow: meadow!, slabs: slabs!, planks: planks!}); } catch { /* The canvas paints the ground. */ }
+    const [meadow, slabs, planks, field, blades] = FLOOR_PICTURES.map(name => decor[name].image);
+    if (![meadow, slabs, planks, field, blades].every(i => i && i.complete && i.naturalWidth)) return;
+    try { floor.setPictures({meadow: meadow!, slabs: slabs!, planks: planks!, field: field!, blades: blades!}); } catch { /* The canvas paints the ground. */ }
   }
   /** Whether the ground is drawn by the floor this frame. */
   const floorOn = () => !!floor && floor.ready() && decorReady();
@@ -645,14 +650,16 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
    *  a wall Benny runs on; over an open side, only the verge and the void. From the farthest to the nearest: a nearer thing passes in
    *  front. Their pictures: RUN_SIDES (src/config/bennyRunSides.ts). */
   function paintedWalls(c: CanvasRenderingContext2D, g: BennyRun): void {
-    meadowThings(c, g);
+    if (!floorOn() && SIDE_THINGS) meadowThings(c, g);
     for (const w of [...g.walls].sort((a, b) => b.from - a.from)) {
       const dir = w.side === 'left' ? -1 : 1;
-      if (w.void) { roadside(c, g, dir, w.from, w.to, true); continue; }
+      if (w.void) { if (SIDE_THINGS) roadside(c, g, dir, w.from, w.to, true); continue; }
       const from = Math.max(NEAR, w.from - g.distance), to = Math.min(FAR, w.to - g.distance); if (to <= from) continue;
       const world = worldAhead((from + to) / 2);
       if (w.runnable) { runWall(c, g, w, dir, from, to, world); continue; }
-      roadside(c, g, dir, w.from, w.to, false); fence(c, g, dir, from, to, world);
+      if (!floorOn()) tallGrass(c, g, dir, from, to, world);
+      if (SIDE_THINGS) roadside(c, g, dir, w.from, w.to, false);
+      fence(c, g, dir, from, to, world);
     }
   }
   /** The meadow's painted things (rocks, roses, stumps, mushrooms, ferns, blossoming trees, pumpkins…) scattered out in the grass on
@@ -799,11 +806,59 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     c.closePath(); c.fillStyle = 'rgba(70,30,20,.2)'; c.fill();
   }
   const worldAhead = (ahead: number): RunSetting => game ? settingAt(game, game.distance + ahead) : 'grotte';
+  /** The tall grass behind a fence, taller than Benny (RUN_SIDES.grass), coming out of the fog like the rest. */
+  function tallGrass(c: CanvasRenderingContext2D, g: BennyRun, dir: number, from: number, to: number, world: RunSetting): void {
+    const t = RUN_SIDES.grass, pic = stripOf(t.picture[world]);
+    if (!pic) { flatBand(c, g, z => dir * (halfAt(g, z) + t.out), from, to, t.high * .8, '#5f9a3a'); return; }
+    stripBand(c, g, z => dir * (halfAt(g, z) + t.out), from, to, t.high, pic, dir > 0 ? .37 : 0);
+  }
   /** A fence along the road (not run on), in its painted picture (RUN_SIDES.fence). */
   function fence(c: CanvasRenderingContext2D, g: BennyRun, dir: number, from: number, to: number, world: RunSetting): void {
-    const f = RUN_SIDES.fence, pic = stripOf(f.picture[world]);
-    if (!pic) { flatBand(c, g, z => dir * (halfAt(g, z) + f.out), from, to, f.high, '#b07a3c'); return; }
-    stripBand(c, g, z => dir * (halfAt(g, z) + f.out), from, to, f.high, pic, dir > 0 ? .5 : 0);
+    const f = RUN_SIDES.fence, pic = stripOf(f.picture[world]), at = (z: number) => dir * (halfAt(g, z) + f.out);
+    if (!pic) { flatBand(c, g, at, from, to, f.high, '#b07a3c'); return; }
+    // In volume, beam by beam (owner, 21 Nov.: « que ça fasse barrière par poutre »): its face behind, the top of each rail seen from
+    // above, its face along the road.
+    const back = (z: number) => at(z) + dir * f.thick, shift = dir > 0 ? .5 : 0, zs = cuts(g, from, to);
+    stripBand(c, g, back, from, to, f.high, pic, shift);
+    for (const rail of railsOf(pic)) {
+      const up = f.high * (1 - rail.at);
+      c.fillStyle = rail.colour;
+      for (let i = 1; i < zs.length; i++) {
+        const z0 = zs[i - 1], z1 = zs[i], seen = 1 - hazeAt(Math.max(z0, z1)); if (seen < .02) continue;
+        const A = project(at(z0), z0, up), B = project(back(z0), z0, up), D = project(back(z1), z1, up), E = project(at(z1), z1, up);
+        if (Math.max(A.y, E.y) < 0 || Math.min(A.y, E.y) > height) continue;
+        c.globalAlpha = seen; c.beginPath(); c.moveTo(A.x, A.y); c.lineTo(B.x, B.y); c.lineTo(D.x, D.y - .5); c.lineTo(E.x, E.y - .5); c.closePath(); c.fill();
+      }
+      c.globalAlpha = 1;
+    }
+    stripBand(c, g, at, from, to, f.high, pic, shift);
+  }
+  /** A fence painting's rails (where each one's top is, a share of the height from the top: rows solid nearly all along) and the
+   *  colour of each one's top in the light (a little lighter than its face), read once from the painting. */
+  const rails = new WeakMap<StripPicture, {at: number; colour: string}[]>();
+  function railsOf(pic: StripPicture): {at: number; colour: string}[] {
+    const known = rails.get(pic); if (known) return known;
+    const found: {at: number; colour: string}[] = [];
+    try {
+      const level = pic[pic.length - 1], w = Math.max(1, Math.round(level.w)), h = Math.max(1, Math.round(level.h));
+      const k = document.createElement('canvas'); k.width = w; k.height = h; const x = k.getContext('2d', {willReadFrequently: true});
+      if (x) {
+        x.drawImage(level.el, 0, 0, w, h, 0, 0, w, h); const data = x.getImageData(0, 0, w, h).data;
+        const solid = (y: number) => { let n = 0; for (let i = 0; i < w; i++) if (data[(y * w + i) * 4 + 3] > 200) n++; return n >= w * .85; };
+        for (let y = 0; y < h; y++) {
+          if (!solid(y)) continue;
+          let end = y; while (end < h && solid(end)) end++;
+          if (end - y >= Math.max(2, h * .04)) {
+            let r = 0, gr = 0, b = 0, n = 0;
+            for (let yy = y; yy < Math.min(end, y + Math.max(2, Math.round(h * .04))); yy++) for (let i = 0; i < w; i++) { const o = (yy * w + i) * 4; if (data[o + 3] > 200) { r += data[o]; gr += data[o + 1]; b += data[o + 2]; n++; } }
+            const lit = (v: number) => Math.min(255, Math.round(v / Math.max(1, n) * 1.12 + 8));
+            found.push({at: y / h, colour: `rgb(${lit(r)},${lit(gr)},${lit(b)})`});
+          }
+          y = end;
+        }
+      }
+    } catch { found.length = 0; }
+    rails.set(pic, found); return found;
   }
 
   const button = (label: string, action: () => void, key: string) => {
@@ -1105,12 +1160,15 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   /** What the floor drawn by the graphics card needs this frame (see bennyRunFloor). */
   function floorView(g: BennyRun): RunFloorView {
     const d = g.distance, ahead = (list: readonly {from: number; to: number}[]) => list.map(r => [r.from - d, r.to - d] as const).filter(([a, b]) => b > NEAR && a < 2000);
-    return {width, height, ratio: Math.min(ratioCap, window.devicePixelRatio || 1), shiftX: shakeX, shiftY: shakeY,
+    // (The ground and the field are soft paintings: drawn at 1.5 pixels a point at most, a quarter of the graphics card's work on a phone.)
+    return {width, height, ratio: Math.min(ratioCap, FLOOR_RATIO, window.devicePixelRatio || 1), shiftX: shakeX, shiftY: shakeY,
       horizon: height * HORIZON, scale: scale0(), cameraHeight: cameraHeight() + camUp, cameraBack: CAMERA_BACK, cameraX: camX, bend, bendFar: FAR,
       meadowTile: MEADOW_TILE, meadowShift: posmod(d, MEADOW_TILE) / MEADOW_TILE, slabTile: SLAB_TILE, slabShift: posmod(d, SLAB_TILE) / SLAB_TILE,
       plankAcross: PLANK_ALONG * 2, plankAlong: PLANK_ALONG, plankShift: posmod(d, PLANK_ALONG) / PLANK_ALONG,
       laneWidth: LANE_WIDTH, lanes: g.baseLanes, wideLanes: BENNY_RUN.wideLanes, halls: ahead(g.zones), edge: ROAD_EDGE,
-      holes: ahead(g.holes), bridge: gate ? [gate.z - GATE_BRIDGE - d, gate.z - d] : null, haze, hole: HOLE_RGB, fogFrom: FOG_FROM, fogTo: FOG_TO};
+      holes: ahead(g.holes), bridge: gate ? [gate.z - GATE_BRIDGE - d, gate.z - d] : null, haze, hole: HOLE_RGB, fogFrom: FOG_FROM, fogTo: FOG_TO,
+      field: {high: FIELD.high, out: RUN_SIDES.grass.out, tile: FIELD.tile, shift: posmod(d, FIELD.tile) / FIELD.tile, wave: (clock() / 1000 * 1.6) % (Math.PI * 20)},
+      blades: {rows: BLADES.rows, gap: BLADES.gap, high: BLADES.high, length: BLADES.length, shift: posmod(d, BLADES.length) / BLADES.length}};
   }
   function ground(c: CanvasRenderingContext2D, g: BennyRun, colours: typeof SETTING_COLOURS[RunSetting], gpu = false): void {
     const horizon = project(0, FAR, 0).y, edge = lanes / 2 * LANE_WIDTH;
