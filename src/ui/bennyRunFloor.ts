@@ -2,6 +2,7 @@
  * The ground of « Benny Rampage » drawn by the graphics card (owner, 21 Nov. 2026: « le sol fait buguer le jeu […] le but est que le
  * jeu soit parfaitement smooth »): one picture a frame for the whole meadow, out to the horizon on both sides (« une prairie à perte
  * de vue »), the road's slabs down its middle, the planks of a bridge and the dark of a hole, each pixel at its own true depth.
+ * Far off it melts into a white morning fog (owner, 21 Nov.: « comme Blade of Brim »): past it, nothing is drawn.
  * Before, the canvas painted the ground row by row (a hundred and more pictures a frame), with seams and shimmer far off.
  *
  * It is a canvas of its own, under the run's canvas (which leaves the ground clear for it); the run's canvas draws everything
@@ -25,8 +26,8 @@ export interface RunFloorView {
   laneWidth: number; lanes: number; wideLanes: number; halls: readonly (readonly [number, number])[]; edge: number;
   /** The holes across the road and the bridge's planks (from, to). */
   holes: readonly (readonly [number, number])[]; bridge: readonly [number, number] | null;
-  /** The haze far off and the dark of a hole (0 to 1). */
-  haze: readonly [number, number, number]; hole: readonly [number, number, number];
+  /** The fog's colour and the dark of a hole (0 to 1); where the fog starts and where it is all white (m ahead). */
+  haze: readonly [number, number, number]; hole: readonly [number, number, number]; fogFrom: number; fogTo: number;
 }
 
 export interface RunFloor {
@@ -56,7 +57,7 @@ uniform sampler2D uMeadow, uSlab, uPlank;
 uniform float uMeadowTile, uMeadowShift, uSlabTile, uSlabShift, uPlankAcross, uPlankAlong, uPlankShift;
 uniform float uLane, uLanes, uWide, uEdge;
 uniform vec2 uHalls[${MAX_HALLS}]; uniform vec2 uHoles[${MAX_HOLES}]; uniform vec2 uBridge;
-uniform vec3 uHaze, uHole;
+uniform vec3 uHaze, uHole; uniform float uFogFrom, uFogTo;
 void main() {
   vec2 p = vec2(gl_FragCoord.x, uSize.y * uRatio - gl_FragCoord.y) / uRatio - uShift;
   float dy = p.y - uHorizon;
@@ -65,7 +66,9 @@ void main() {
   float s = dy / uCamH, a = uK / s - uCamBack;
   float k = clamp(max(a, 0.0) / uBendFar, 0.0, 1.0);
   float x = (p.x - uSize.x * 0.5) / s - uBend * k * k + uCamX;
-  float ac = min(a, 4000.0);
+  // In the white of the fog: nothing more to look up (the horizon is gone).
+  if (a >= uFogTo) { gl_FragColor = vec4(uHaze, 1.0); return; }
+  float ac = a;
   // The road's half-width there: wider in a hall (it opens over 6 m and closes over 6 m past its end).
   float wide = 0.0;
   for (int i = 0; i < ${MAX_HALLS}; i++) {
@@ -86,12 +89,8 @@ void main() {
   // The road's edge, smooth over a pixel.
   float inside = clamp((edge - abs(x)) * s * uRatio + 0.5, 0.0, 1.0);
   vec3 colour = mix(meadow, road, inside);
-  // Far off, the grass turns a soft light green (a little up to 90 m, like the things standing on the road, then more and more), and
-  // only right at the horizon into the sky's colour: a meadow as far as the eye can see, no grey band.
-  float far = a < 92.0 ? clamp((a - 22.0) / 70.0, 0.0, 1.0) * 0.3 : mix(0.3, 0.8, clamp((a - 92.0) / 400.0, 0.0, 1.0));
-  colour = mix(colour, vec3(0.74, 0.84, 0.55), far);
-  float sky = 1.0 - smoothstep(0.0, 7.0, dy);
-  gl_FragColor = vec4(mix(colour, uHaze, sky), 1.0);
+  // The morning fog, thicker and thicker away from Benny (the same as over the things standing on the ground).
+  gl_FragColor = vec4(mix(colour, uHaze, smoothstep(uFogFrom, uFogTo, a)), 1.0);
 }`;
 
 export function createRunFloor(): RunFloor | null {
@@ -119,7 +118,7 @@ export function createRunFloor(): RunFloor | null {
   const u = (name: string) => G.getUniformLocation(program, name);
   const U = Object.fromEntries(['uSize', 'uRatio', 'uShift', 'uHorizon', 'uK', 'uCamH', 'uCamBack', 'uCamX', 'uBend', 'uBendFar', 'uMeadow', 'uSlab', 'uPlank',
     'uMeadowTile', 'uMeadowShift', 'uSlabTile', 'uSlabShift', 'uPlankAcross', 'uPlankAlong', 'uPlankShift', 'uLane', 'uLanes', 'uWide', 'uEdge',
-    'uHalls', 'uHoles', 'uBridge', 'uHaze', 'uHole'].map(n => [n, u(n)])) as Record<string, WebGLUniformLocation | null>;
+    'uHalls', 'uHoles', 'uBridge', 'uHaze', 'uHole', 'uFogFrom', 'uFogTo'].map(n => [n, u(n)])) as Record<string, WebGLUniformLocation | null>;
   G.uniform1i(U.uMeadow, 0); G.uniform1i(U.uSlab, 1); G.uniform1i(U.uPlank, 2);
   const aniso = G.getExtension('EXT_texture_filter_anisotropic') ?? G.getExtension('WEBKIT_EXT_texture_filter_anisotropic');
   const anisoMax = aniso ? Math.min(8, G.getParameter(aniso.MAX_TEXTURE_MAX_ANISOTROPY_EXT) as number) : 0;
@@ -166,7 +165,7 @@ export function createRunFloor(): RunFloor | null {
       halls.fill(-1e6); v.halls.slice(0, MAX_HALLS).forEach(([a, b], i) => { halls[i * 2] = a; halls[i * 2 + 1] = b; }); G.uniform2fv(U.uHalls, halls);
       holes.fill(-1e6); v.holes.slice(0, MAX_HOLES).forEach(([a, b], i) => { holes[i * 2] = a; holes[i * 2 + 1] = b; }); G.uniform2fv(U.uHoles, holes);
       G.uniform2f(U.uBridge, v.bridge?.[0] ?? -1e6, v.bridge?.[1] ?? -1e6);
-      G.uniform3f(U.uHaze, v.haze[0], v.haze[1], v.haze[2]); G.uniform3f(U.uHole, v.hole[0], v.hole[1], v.hole[2]);
+      G.uniform3f(U.uHaze, v.haze[0], v.haze[1], v.haze[2]); G.uniform3f(U.uHole, v.hole[0], v.hole[1], v.hole[2]); G.uniform1f(U.uFogFrom, v.fogFrom); G.uniform1f(U.uFogTo, v.fogTo);
       G.drawArrays(G.TRIANGLE_STRIP, 0, 4);
       return true;
     },

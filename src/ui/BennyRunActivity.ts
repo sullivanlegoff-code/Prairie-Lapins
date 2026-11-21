@@ -147,8 +147,6 @@ const GHOST_AHEAD = 2;
 /** The skies (owner, 21 Nov. 2026: « je veux plus qu'on soit dans le ciel »): over the meadow, the painted day sky of « Le vol de
  *  Benny », its top part only (`crop`: down to the share of its height above its sea of clouds), its foot on the horizon. */
 const SKY_FILES = {grotte: {url: 'assets/benny-envol/fond-envol.webp', crop: .575}, pont: {url: 'assets/benny-run/fond-ciel-lave.webp', crop: 0}, montagne: {url: 'assets/benny-run/fond-ciel-neige.webp', crop: 0}} as const;
-/** The haze far off over the meadow until the sky's own colour at its foot is read (0 to 255). */
-const MEADOW_HAZE: [number, number, number] = [236, 214, 214];
 /** The gate into a new world (16 Nov., after Blade of Brim: a real scene instead of a fade): a painted arch across the road where the
  *  next world starts, its name on its panel, a short bridge of planks `GATE_BRIDGE` m long before it, and a flash of light as Benny
  *  runs under it (`GATE_FLASH` ms). Each arch: its file, its width (m, the pillars just outside the verges), and its panel (shares of
@@ -191,10 +189,14 @@ const MID_LOOK: Record<RunSetting, MidLook> = {
   pont: {base: 'decor-lave-socle-sombre', blocks: 'decor-lave-corps-basalte', flat: {base: '#4a3040', blocks: '#7a6460', rock: '#9a4c3a'}},
   montagne: {base: 'decor-neige-socle-bois', blocks: 'decor-neige-corps-pierre', flat: {base: '#7a4434', blocks: '#b8c4d4', rock: '#8a8098'}},
 };
-/** Far off, a warm haze over the walls. */
-const HAZE_FROM = 22, HAZE_SPAN = 70, HAZE_MAX = .55;
+/** The morning fog (owner, 21 Nov. 2026: « une brume blanche laiteuse de matin », like Blade of Brim's): clear up to `FOG_FROM` m, then
+ *  thicker and thicker, white from `FOG_TO` m on. The things of the run come out of it from 90 m (FAR), faint, and are clear by about
+ *  60 m; past them the ground melts into it and the horizon is gone: nothing far to draw. */
+export const FOG_FROM = 40, FOG_TO = 115, FOG_RGB = [240, 243, 240] as const;
+const FOG = `${FOG_RGB[0]},${FOG_RGB[1]},${FOG_RGB[2]}`;
 const hash01 = (n: number) => { let t = Math.imul(n ^ 0x9e3779b9, 2654435761) >>> 0; t ^= t >>> 15; t = Math.imul(t, 2246822519) >>> 0; t ^= t >>> 13; return (t >>> 0) / 4294967296; };
-const hazeAt = (z: number) => Math.min(1, Math.max(0, (z - HAZE_FROM) / HAZE_SPAN)) * HAZE_MAX;
+/** How thick the fog is `z` m ahead (0 to 1). */
+export const hazeAt = (z: number) => { const t = Math.min(1, Math.max(0, (z - FOG_FROM) / (FOG_TO - FOG_FROM))); return t * t * (3 - 2 * t); };
 const PLANK_ALONG = 3, CLIFF_TILE = 4, VERGE = .6, CLIFF_DEPTH = 4;
 /** The colours of the painted decor where shapes still stand: the clouds of the void, the isles' rock and grass lip, the tops
  *  and sides of platforms and stairs. */
@@ -397,18 +399,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   /** Whether the ground is drawn by the floor this frame. */
   const floorOn = () => !!floor && floor.ready() && decorReady();
-  /** The colour of the sky at its foot (0 to 1), which the meadow fades into far off. */
-  let haze: [number, number, number] = [MEADOW_HAZE[0] / 255, MEADOW_HAZE[1] / 255, MEADOW_HAZE[2] / 255];
-  function readHaze(image: HTMLImageElement): void {
-    try {
-      const el = document.createElement('canvas'); el.width = 32; el.height = 4; const k = el.getContext('2d', {willReadFrequently: true}); if (!k) return;
-      const foot = image.naturalHeight * SKY_FILES.grotte.crop; k.drawImage(image, 0, foot - 12, image.naturalWidth, 10, 0, 0, 32, 4);
-      const d = k.getImageData(0, 0, 32, 4).data; let r = 0, gr = 0, b = 0;
-      for (let i = 0; i < d.length; i += 4) { r += d[i]; gr += d[i + 1]; b += d[i + 2]; }
-      const count = d.length / 4; if (count) haze = [r / count / 255, gr / count / 255, b / count / 255];
-    } catch { /* The default haze. */ }
-  }
-  const hazeRgb = (a: number) => `rgba(${Math.round(haze[0] * 255)},${Math.round(haze[1] * 255)},${Math.round(haze[2] * 255)},${a})`;
+  /** The fog's colour (0 to 1), for the floor drawn by the graphics card. */
+  const haze: [number, number, number] = [FOG_RGB[0] / 255, FOG_RGB[1] / 255, FOG_RGB[2] / 255];
+  const hazeRgb = (a: number) => `rgba(${FOG},${a})`;
   /** Everything a run needs to look right from its first metre: the floor, the sides, Benny's gallop and the creatures. */
   const artReady = () => decorReady() && [...strips.values()].every(s => s.pic) && (['benny', 'benny-galop', 'creatures', 'objets', 'pieces', 'obstacles'] as const).every(n => art[n].ready) && skyPictures.grotte.ready;
   /** Counts the times the run's pictures were let go (`releaseArt`): a picture still loading from before is then dropped. */
@@ -417,7 +410,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   function loadArt(): void {
     const round = artRound, current = () => round === artRound;
     for (const s of RUN_SETTINGS) { const sky = skyPictures[s]; if (sky.image) continue;
-      const image = new Image(); image.decoding = 'async'; image.onload = () => { void decoded(image).then(() => { if (!current()) return; sky.ready = true; if (s === 'grotte') readHaze(image); }); }; image.src = `${import.meta.env.BASE_URL}${SKY_FILES[s].url}`; sky.image = image; }
+      const image = new Image(); image.decoding = 'async'; image.onload = () => { void decoded(image).then(() => { if (!current()) return; sky.ready = true; }); }; image.src = `${import.meta.env.BASE_URL}${SKY_FILES[s].url}`; sky.image = image; }
     for (const name of DECOR) {
       if (decor[name].image) continue;
       const image = new Image(); image.decoding = 'async'; image.onload = () => {
@@ -603,7 +596,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       rows.push({a0, a1, top, deep, s: project(0, mid, 0).s, mid, hole: g.holes.some(h => z >= h.from && z < h.to)});
     }
     // The meadow: its flat green under everything (no seam can show), then its painted grass, a row at a time.
-    const farY = project(0, FAR, 0).y, trueHorizon = height * HORIZON;
+    const trueHorizon = height * HORIZON;
     c.fillStyle = MEADOW_GREEN; c.fillRect(0, trueHorizon, width, height - trueHorizon);
     for (const r of rows) {
       const pattern = meadowPattern(c, r.a0 > 30); if (!pattern || !meadowMatrix) break;
@@ -628,9 +621,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     }
     c.restore();
     // Far off, the meadow fades into the warm light of the horizon.
-    const hazeTo = farY + (height - farY) * .22, grad = c.createLinearGradient(0, trueHorizon, 0, hazeTo);
-    grad.addColorStop(0, hazeRgb(1)); grad.addColorStop((farY - trueHorizon) / Math.max(1, hazeTo - trueHorizon), hazeRgb(.6)); grad.addColorStop(1, hazeRgb(0));
-    c.fillStyle = grad; c.fillRect(0, trueHorizon, width, hazeTo - trueHorizon);
+    // The morning fog: all white past FOG_TO m, thinning to nothing at FOG_FROM m.
+    const fogTop = project(0, FOG_TO, 0).y, fogMid = project(0, (FOG_FROM + FOG_TO) / 2, 0).y, fogEnd = project(0, FOG_FROM, 0).y, grad = c.createLinearGradient(0, fogTop, 0, fogEnd);
+    grad.addColorStop(0, hazeRgb(1)); grad.addColorStop((fogMid - fogTop) / Math.max(1, fogEnd - fogTop), hazeRgb(.5)); grad.addColorStop(1, hazeRgb(0));
+    c.fillStyle = hazeRgb(1); c.fillRect(0, trueHorizon, width, fogTop - trueHorizon); c.fillStyle = grad; c.fillRect(0, fogTop, width, fogEnd - fogTop);
   }
   /** The cliff of an isle facing Benny, `ahead` m in front, from `x0` to `x1` m across, seen only inside the opening `hole` (a path). */
   function cliffFace(c: CanvasRenderingContext2D, ahead: number, x0: number, x1: number, hole: () => void): void {
@@ -699,7 +693,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         const level = stripLevel(pic, (a.y - b.y) / pic[0].h), part = Math.min(1, WALL_THICK / (wall.high * pic[0].w / pic[0].h));
         c.drawImage(level.el, 0, 0, level.w * part, level.h, left, b.y, right - left, a.y - b.y);
         c.fillStyle = 'rgba(60,30,30,.22)'; c.fillRect(left, b.y, right - left, a.y - b.y);
-        const haze = hazeAt(from); if (haze > .02) { c.fillStyle = `rgba(250,198,166,${haze.toFixed(3)})`; c.fillRect(left, b.y, right - left, a.y - b.y); }
+        const haze = hazeAt(from); if (haze > .02) { c.fillStyle = `rgba(${FOG},${haze.toFixed(3)})`; c.fillRect(left, b.y, right - left, a.y - b.y); }
       }
     }
   }
@@ -736,7 +730,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       // (Half a pixel more on its far side: no hairline between two slices.)
       c.beginPath(); c.moveTo(A.x, A.y); c.lineTo(An.x, An.y); c.lineTo(Bn.x, Bn.y - .5); c.lineTo(B.x, B.y - .5); c.closePath();
       c.fillStyle = pattern; c.fill();
-      const haze = hazeAt(far); if (haze > .02) { c.fillStyle = `rgba(250,198,166,${haze.toFixed(3)})`; c.fill(); }
+      const haze = hazeAt(far); if (haze > .02) { c.fillStyle = `rgba(${FOG},${haze.toFixed(3)})`; c.fill(); }
     }
     // The sky's light on the whole top, then its outer rim a little darker (where it turns down out of sight).
     const zs = cuts(g, from, to), band = (x0: (z: number) => number, x1: (z: number) => number, fill: string) => {
@@ -765,7 +759,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       const left = Math.min(a.x, b.x), dx = Math.abs(a.x - b.x), across = dx + 1;
       const zl = a.x <= b.x ? z : z1, zr = a.x <= b.x ? z1 : z, yl = (h: number) => project(at(zl), zl, h).y, yr = (h: number) => project(at(zr), zr, h).y;
       const b0 = yl(0), b1 = yr(0), t0 = yl(high), t1 = yr(high);
-      if (Math.max(b0, b1) > 0 && Math.min(t0, t1) < height + 40 && left < width + 40 && left + across > -40) {
+      const seen = solid ? 1 : 1 - hazeAt(z);
+      if (seen > .02 && Math.max(b0, b1) > 0 && Math.min(t0, t1) < height + 40 && left < width + 40 && left + across > -40) {
         // The copy nearest the column's size: as tall as it is on the screen, or squeezed along the road at most two to one.
         const along = (z - z1) / tile, level = stripLevel(pic, Math.min((b0 + b1 - t0 - t1) / 2 / pic[0].h, 2 * across / Math.max(1, along * pic[0].w)));
         const sx = posmod((g.distance + z1) / tile + shift, 1) * level.w, sw = Math.max(.5, along * level.w);
@@ -775,13 +770,15 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
           const h0 = high * i / slices, h1 = high * (i + 1) / slices, ky = dx > .01 ? ((yr(h0) - yl(h0)) + (yr(h1) - yl(h1))) / 2 / dx : 0, lean = ky * dx / 2;
           shear(c, base, ky, left); sheared = true;
           const top = (yl(h1) + yr(h1)) / 2 - lean, bottom = (yl(h0) + yr(h0)) / 2 - lean, sy = level.h * (1 - h1 / high), sh = level.h / slices;
+          if (!solid) c.globalAlpha = seen;
           c.drawImage(level.el, sx, sy, sw, sh, left - .5, top - (i < slices - 1 ? .6 : 0), across, bottom - top + (i < slices - 1 ? .6 : 0) + .5);
-          if (solid) { const haze = hazeAt(z); if (haze > .02) { c.fillStyle = `rgba(250,198,166,${haze.toFixed(3)})`; c.fillRect(left - .5, top, across, bottom - top + .5); } }
+          if (solid) { const haze = hazeAt(z); if (haze > .02) { c.fillStyle = `rgba(${FOG},${haze.toFixed(3)})`; c.fillRect(left - .5, top, across, bottom - top + .5); } }
         }
       }
       z = z1;
     }
     if (sheared) c.setTransform(base);
+    if (!solid) c.globalAlpha = 1;
   }
   /** The copy of a strip for a drawing `share` of its full size. */
   const stripLevel = (pic: StripPicture, share: number): StripLevel => pic[Math.max(0, Math.min(pic.length - 1, Math.floor(-Math.log2(Math.max(1e-6, share)))))];
@@ -791,7 +788,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     const image = decor[PROP_SHEET[world]].image, props = PROPS[world]; if (!image || !image.complete || !image.naturalWidth || ahead > FAR) return;
     const cell = image.width / 3, [col, rw, tall] = props[Math.floor(hash01(n + 31) * props.length) % props.length], size = scale * tall * (.85 + hash01(n + 59) * .3) / .82;
     const p = project(x, ahead, up), px = size * p.s; if (p.x + px / 2 < 0 || p.x - px / 2 > width || px < 1) return;
-    c.globalAlpha = Math.max(0, Math.min(1, (FAR - ahead) / 12)); c.drawImage(image, col * cell, rw * cell, cell, cell, p.x - px / 2, p.y - px * .93, px, px); c.globalAlpha = 1;
+    const seen = Math.max(0, Math.min(1, (FAR - ahead) / 12)) * (1 - hazeAt(ahead)); if (seen < .02) return;
+    c.globalAlpha = seen; c.drawImage(image, col * cell, rw * cell, cell, cell, p.x - px / 2, p.y - px * .93, px, px); c.globalAlpha = 1;
   }
   /** The shadow at a wall's foot on the ground: it sits the wall on the road. */
   function footShadow(c: CanvasRenderingContext2D, g: BennyRun, dir: number, from: number, to: number): void {
@@ -961,7 +959,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   function drawGate(c: CanvasRenderingContext2D, g: BennyRun, at: {z: number; setting: RunSetting}): void {
     const look = GATES[at.setting], image = decor[look.name].image, ahead = at.z - g.distance; if (!image || !image.complete || !image.naturalWidth) return;
     const p = project(0, ahead, 0), w = look.wide * p.s, h = w * image.naturalHeight / image.naturalWidth;
-    c.globalAlpha = Math.max(0, Math.min(1, (FAR - ahead) / 12)); c.drawImage(image, p.x - w / 2, p.y - h * .985, w, h);
+    c.globalAlpha = Math.max(0, Math.min(1, (FAR - ahead) / 12)) * (1 - hazeAt(ahead)); c.drawImage(image, p.x - w / 2, p.y - h * .985, w, h);
     const [l, t, r, b] = look.panel, px = p.x - w / 2 + l * w, py = p.y - h * .985 + t * h, pw = (r - l) * w, ph = (b - t) * h;
     if (ph > 6) { const text = SETTING_NAMES[at.setting]; c.textAlign = 'center'; c.textBaseline = 'middle';
       let size = ph * .5; c.font = `800 ${size}px system-ui`; const fit = c.measureText(text).width; if (fit > pw * .9) { size *= pw * .9 / fit; c.font = `800 ${size}px system-ui`; }
@@ -1012,7 +1010,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (painted.ready && painted.image && crop) {
       const img = painted.image, foot = height * HORIZON + 1, ih = img.naturalHeight * crop, k = Math.max(width / img.naturalWidth, foot / ih), sw = width / k, sh = foot / k;
       c.drawImage(img, (img.naturalWidth - sw) / 2, ih - sh, sw, sh, 0, 0, width, foot);
-      const from = foot - height * .03, grad = c.createLinearGradient(0, from, 0, foot); grad.addColorStop(0, hazeRgb(0)); grad.addColorStop(1, hazeRgb(1));
+      const from = foot * .35, grad = c.createLinearGradient(0, from, 0, foot); grad.addColorStop(0, hazeRgb(0)); grad.addColorStop(.6, hazeRgb(.55)); grad.addColorStop(1, hazeRgb(1));
       c.fillStyle = grad; c.fillRect(0, from, width, foot - from);
       return;
     }
@@ -1112,7 +1110,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       meadowTile: MEADOW_TILE, meadowShift: posmod(d, MEADOW_TILE) / MEADOW_TILE, slabTile: SLAB_TILE, slabShift: posmod(d, SLAB_TILE) / SLAB_TILE,
       plankAcross: PLANK_ALONG * 2, plankAlong: PLANK_ALONG, plankShift: posmod(d, PLANK_ALONG) / PLANK_ALONG,
       laneWidth: LANE_WIDTH, lanes: g.baseLanes, wideLanes: BENNY_RUN.wideLanes, halls: ahead(g.zones), edge: ROAD_EDGE,
-      holes: ahead(g.holes), bridge: gate ? [gate.z - GATE_BRIDGE - d, gate.z - d] : null, haze, hole: HOLE_RGB};
+      holes: ahead(g.holes), bridge: gate ? [gate.z - GATE_BRIDGE - d, gate.z - d] : null, haze, hole: HOLE_RGB, fogFrom: FOG_FROM, fogTo: FOG_TO};
   }
   function ground(c: CanvasRenderingContext2D, g: BennyRun, colours: typeof SETTING_COLOURS[RunSetting], gpu = false): void {
     const horizon = project(0, FAR, 0).y, edge = lanes / 2 * LANE_WIDTH;
@@ -1219,7 +1217,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     c.save(); c.beginPath(); c.moveTo(points[0].x, points[0].y); for (const p of points.slice(1)) c.lineTo(p.x, p.y); c.closePath(); c.clip();
     c.drawImage(el, posmod(sx, 1) * side, posmod(sy, 1) * side, Math.max(.5, Math.min(side * 4, sw * side)), Math.max(.5, Math.min(side, sh * side)), left - .5, top - .5, w + 1, h + 1);
     if (shade > 0) { c.fillStyle = `rgba(60,30,20,${shade})`; c.fillRect(left - 1, top - 1, w + 2, h + 2); }
-    const haze = hazeAt(ahead); if (haze > .02) { c.fillStyle = `rgba(250,198,166,${haze.toFixed(3)})`; c.fillRect(left - 1, top - 1, w + 2, h + 2); }
+    const haze = hazeAt(ahead); if (haze > .02) { c.fillStyle = `rgba(${FOG},${haze.toFixed(3)})`; c.fillRect(left - 1, top - 1, w + 2, h + 2); }
     c.restore();
   }
   /** The stone of a platform's or a step's sides in each world. */
@@ -1349,6 +1347,12 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const SET_DOWN = new Set(['barrier', 'pillar', 'spring', 'fireball']);
   function thing(c: CanvasRenderingContext2D, g: BennyRun, e: RunEntity): void {
     const shape = SHAPES[e.kind], ahead = e.z - g.distance; if (!shape || ahead > FAR || ahead < -3) return;
+    // Out of the fog: faint at 90 m, clear by about 60 m (and in from nothing over its first 8 m: nothing pops up).
+    const seen = Math.min(1, (FAR - ahead) / 8) * (1 - hazeAt(ahead));
+    if (seen < .98) { if (seen < .02) return; c.save(); c.globalAlpha *= seen; try { drawThing(c, g, e, shape, ahead); } finally { c.restore(); } return; }
+    drawThing(c, g, e, shape, ahead);
+  }
+  function drawThing(c: CanvasRenderingContext2D, g: BennyRun, e: RunEntity, shape: NonNullable<typeof SHAPES[RunEntity['kind']]>, ahead: number): void {
     foeWorld = settingAt(g, e.z); foeSheet = FOE_SHEETS[foeWorld];
     // A creature changing lanes (an ember hopping, a dragonnet crossing) slides over rather than jumps.
     let shown = shownLanes.get(e.id) ?? e.lane; shown += (e.lane - shown) * Math.min(1, frameDt * 12); if (Math.abs(e.lane - shown) < .01) shown = e.lane; shownLanes.set(e.id, shown);
@@ -1445,7 +1449,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         // A clay jar.
         c.save(); c.translate(x, y - h * .5);
         // A golden one shines: a halo, a gold body, a glint.
-        if (e.gold) { c.globalAlpha = .35 + .2 * Math.sin(at / 120 + e.id); ellipse(0, 0, w * .8, h * .7, '#fff3a0'); c.globalAlpha = 1; }
+        if (e.gold) { const a0 = c.globalAlpha; c.globalAlpha = a0 * (.35 + .2 * Math.sin(at / 120 + e.id)); ellipse(0, 0, w * .8, h * .7, '#fff3a0'); c.globalAlpha = a0; }
         // Painted: the clay pot or the golden one (owner-approved objects board), standing on the road.
         if (fitted(c, 'objets', e.gold ? 'pot-gold' : 'pot', 0, h * .5, w * .95)) {} else {
         ellipse(0, h * .06, w * .5, h * .42, e.gold ? '#e8b923' : '#c96b3a'); c.fillStyle = e.gold ? '#c9961a' : '#a8542a'; c.fillRect(-w * .22, -h * .5, w * .44, h * .2);
@@ -1483,13 +1487,13 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
           const awake = pose === 'aim' || thingAhead < DRAGONNET_WAKES;
           fitted(c, 'creatures', vanishing !== null ? 'dragonnet-hit' : awake ? 'dragonnet-awake' : 'dragonnet-sleep', x, y, w * 1.15);
           if (vanishing !== null || awake) return true;
-          const z = (at / 900 + e.id * .3) % 1; c.globalAlpha = 1 - z; c.fillStyle = '#fff'; c.font = `800 ${Math.round(Math.max(8, h * .4))}px system-ui`; c.textAlign = 'center'; c.fillText('z', x + w * .4, y - h * (1.1 + z * .6)); c.globalAlpha = 1;
+          const z = (at / 900 + e.id * .3) % 1, a0 = c.globalAlpha; c.globalAlpha = a0 * (1 - z); c.fillStyle = '#fff'; c.font = `800 ${Math.round(Math.max(8, h * .4))}px system-ui`; c.textAlign = 'center'; c.fillText('z', x + w * .4, y - h * (1.1 + z * .6)); c.globalAlpha = a0;
           return true;
         }
         for (const dir of [-1, 1]) { c.fillStyle = '#c47a9a'; c.beginPath(); c.moveTo(x + dir * w * .1, y - h * .7); c.lineTo(x + dir * w * .5, y - h * 1.05); c.lineTo(x + dir * w * .35, y - h * .55); c.fill(); }
         ellipse(x, y - h * .4, w * .5, h * .4, '#8e3a5a'); ellipse(x, y - h * .62, w * .26, h * .24, '#a3476a');
         eyes(x, y - h * .62, w * .1, Math.max(1, w * .05), true);
-        const z = (at / 900 + e.id * .3) % 1; c.globalAlpha = 1 - z; c.fillStyle = '#fff'; c.font = `800 ${Math.round(Math.max(8, h * .4))}px system-ui`; c.textAlign = 'center'; c.fillText('z', x + w * .35, y - h * (1 + z * .6)); c.globalAlpha = 1;
+        const z = (at / 900 + e.id * .3) % 1, a0 = c.globalAlpha; c.globalAlpha = a0 * (1 - z); c.fillStyle = '#fff'; c.font = `800 ${Math.round(Math.max(8, h * .4))}px system-ui`; c.textAlign = 'center'; c.fillText('z', x + w * .35, y - h * (1 + z * .6)); c.globalAlpha = a0;
         return true;
       }
       case 'ember': {
