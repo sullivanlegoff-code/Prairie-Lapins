@@ -307,7 +307,7 @@ export class GameUI {
       const beaten = BENNY_RUN_SETTINGS.filter(k => (before[k] ?? 0) > 0 && summary.bySetting[k] > (before[k] ?? 0));
       const notes = [...(!pattes && summary.coins ? ['Course pour le plaisir : plus de récompense aujourd’hui'] : []), ...(beaten.length ? [`Record de décor battu : ${beaten.map(k => BENNY_RUN_SETTING_SHORT[k]).join(', ')} !`] : [])];
       return {pattes, hearts, notes, rewardedLeft: bennyRunDay(saved.state, this.now()).rewardedLeft, rewardedPerDay: BENNY_RUN.rewardedRunsPerCycle};
-    }, best: () => this.controller.getSnapshot().state?.bennyRun?.best ?? 0, bestMetres: () => this.controller.getSnapshot().state?.bennyRun?.metres ?? 0, sound: (kind, pitch) => this.sounds.run(kind, pitch), onExit: () => this.render()};
+    }, best: () => this.controller.getSnapshot().state?.bennyRun?.best ?? 0, bestMetres: () => this.controller.getSnapshot().state?.bennyRun?.metres ?? 0, sound: (kind, pitch) => this.sounds.run(kind, pitch), waitForArt: 15000, onExit: () => this.render()};
     {
       let run: ReturnType<typeof mountBennyRunActivity> | null = null, loading: Promise<void> | null = null, disposed = false;
       const load = () => loading ??= import('./BennyRunActivity').then(m => { if (!disposed) run = m.mountBennyRunActivity(document.getElementById('app')!, runOptions); }, () => { loading = null; });

@@ -34,9 +34,17 @@ describe('the run’s painted atlases', () => {
     for (const name of ['obstacles', 'eclats']) for (const frame of Object.values(atlases[name].frames)) expect(frame.length, name).toBe(4);
   });
   it('paints the track with its five textures and the sky in WebP, all light', () => {
-    for (const name of ['decor-planches', 'decor-herbe', 'decor-falaise', 'decor-dalles', 'decor-dalles-lave', 'decor-dalles-neige', 'decor-socle-framboise', 'decor-corps-creme', 'decor-corps-ocre', 'decor-lave-pierre', 'decor-lave-sol', 'decor-neige-pierre', 'decor-neige-sol', 'decor-lave-socle-sombre', 'decor-lave-corps-basalte', 'decor-lave-corps-roche', 'decor-neige-socle-bois', 'decor-neige-corps-pierre', 'decor-neige-corps-roche', 'decor-bord', 'decor-bord-lave', 'decor-bord-neige', 'decor-arche-prairie', 'decor-arche-lave', 'decor-arche-neige', 'fond-ciel', 'fond-ciel-lave', 'fond-ciel-neige']) {
+    for (const name of ['decor-planches', 'decor-herbe', 'decor-falaise', 'decor-dalles', 'decor-dalles-lave', 'decor-dalles-neige', 'decor-socle-framboise', 'decor-corps-creme', 'decor-corps-ocre', 'decor-lave-pierre', 'decor-lave-sol', 'decor-neige-pierre', 'decor-neige-sol', 'decor-lave-socle-sombre', 'decor-lave-corps-basalte', 'decor-lave-corps-roche', 'decor-neige-socle-bois', 'decor-neige-corps-pierre', 'decor-neige-corps-roche', 'decor-bord', 'decor-bord-lave', 'decor-bord-neige', 'decor-arche-prairie', 'decor-arche-lave', 'decor-arche-neige']) {
       expect(files, name).toContain(`assets/benny-run/${name}.webp`);
       expect(source).toContain(`'${name}'`);
     }
+    for (const name of ['fond-ciel-lave', 'fond-ciel-neige']) {
+      expect(files, name).toContain(`assets/benny-run/${name}.webp`);
+      expect(source).toContain(`assets/benny-run/${name}.webp`);
+    }
+  });
+  it('runs under the day sky of « Le vol de Benny » over the meadow, no more among the floating isles (owner, 21 Nov. 2026)', () => {
+    expect(source).toContain('assets/benny-envol/fond-envol.webp');
+    expect(source).not.toContain("'fond-ciel'");
   });
 });

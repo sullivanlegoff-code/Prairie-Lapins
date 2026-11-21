@@ -7,8 +7,15 @@ import {BENNY_RUN_DECOR} from '../src/ui/BennyRunActivity';
  *  track and now and then a wall Benny can run on. */
 function road(seed: number, ms = 180_000) {
   const g = startBennyRun(0, seed), first = new Map<string, WallSegment>(), last = new Map<string, WallSegment>();
+  // Each wall as it is laid (before a pattern makes the walls it needs runnable): its list is replaced now and then, each new one
+  // watched as it comes.
+  const key = (w: WallSegment) => `${w.side}:${w.from}`;
+  for (const w of g.walls) first.set(key(w), {...w});
+  const watch = (list: WallSegment[]) => { const push = list.push.bind(list); list.push = (...ws: WallSegment[]) => { for (const w of ws) if (!first.has(key(w))) first.set(key(w), {...w}); return push(...ws); }; return list; };
+  let walls = watch(g.walls);
+  Object.defineProperty(g, 'walls', {get: () => walls, set: (list: WallSegment[]) => { walls = watch(list); }, configurable: true});
   for (let t = 0; t < ms; t += 250) {
-    for (const w of g.walls) { const key = `${w.side}:${w.from}`; if (!first.has(key)) first.set(key, {...w}); last.set(key, {...w}); }
+    for (const w of g.walls) last.set(key(w), {...w});
     g.entities = g.entities.filter(e => e.z > g.distance + 20);
     advanceBennyRun(g, t); takeRunEvents(g); g.lastBumpAt = null; g.fallFrom = null; g.over = false; g.pits = g.pits.filter(p => !p.open);
     const gap = holeAt(g); if (gap) g.distance = gap.to;
@@ -70,11 +77,9 @@ describe('Benny Rampage: the pictures of the sides', () => {
     const masters = Object.keys(import.meta.glob('../assets-source/benny-run/*.png')).map(path => path.replace('../assets-source/benny-run/', '').replace('.png', ''));
     for (const file of RUN_SIDE_FILES.filter(f => f.startsWith('cotes-'))) expect(masters).toContain(file);
   });
-  it('stands the grass past the fence, farthest row first, on its ground', () => {
-    const outs = RUN_SIDES.grass.rows.map(r => r.out);
-    expect(outs).toEqual([...outs].sort((a, b) => b - a));
-    expect(Math.min(...outs)).toBeGreaterThan(RUN_SIDES.fence.out);
-    expect(Math.max(...outs)).toBeLessThan(RUN_SIDES.grass.ground);
+  it('stands the tall grass past the fence, taller than Benny (2 m) by half again (owner, 21 Nov. 2026)', () => {
+    expect(RUN_SIDES.grass.out).toBeGreaterThan(RUN_SIDES.fence.out);
+    expect(RUN_SIDES.grass.high).toBeGreaterThanOrEqual(3);
   });
   it('no longer ships the big painted walls of the old scenery', () => {
     expect(files.filter(f => f.startsWith('grand-mur'))).toEqual([]);
