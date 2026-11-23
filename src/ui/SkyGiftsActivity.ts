@@ -52,11 +52,15 @@ export function mountSkyGiftsActivity(host: HTMLElement, options: {
   };
   const paragraph = (text: string, className: string) => { const p = document.createElement('p'); p.className = className; p.textContent = text; return p; };
   function showCard(...children: HTMLElement[]): void { card.replaceChildren(...children); card.hidden = false; }
-  function hud(): void {
-    score.textContent = gifts(game?.caught ?? 0);
-    const left = SKY_GIFTS_GAME.misses - (game?.missed ?? 0); lives.textContent = '❄'.repeat(Math.max(0, left));
-    timeLeft.textContent = game ? `${skyGiftsLeft(game)} s` : '';
-    quota.textContent = options.quotaText?.() ?? '';
+  // The top line is written only when its text changes; today's rewards (`quotaText` reads the saved game) only when asked:
+  // reading them every frame copied the whole game 60 times a second (plan 3.1, as in the flight).
+  const shown = new Map<HTMLElement, string>();
+  const write = (element: HTMLElement, text: string) => { if (shown.get(element) !== text) { element.textContent = text; shown.set(element, text); } };
+  function hud(rewards = false): void {
+    write(score, gifts(game?.caught ?? 0));
+    const left = SKY_GIFTS_GAME.misses - (game?.missed ?? 0); write(lives, '❄'.repeat(Math.max(0, left)));
+    write(timeLeft, game ? `${skyGiftsLeft(game)} s` : '');
+    if (rewards) write(quota, options.quotaText?.() ?? '');
   }
   function flash(text: string, kind: 'catch' | 'miss' | 'record' | 'ready' | 'trap'): void {
     pop.textContent = text; pop.dataset.kind = kind; pop.classList.remove('shown'); void pop.offsetWidth; pop.classList.add('shown');
@@ -115,7 +119,7 @@ export function mountSkyGiftsActivity(host: HTMLElement, options: {
     const reward = options.onFinished(who, final);
     const chips = document.createElement('p'); chips.className = 'sky-gifts-rewards';
     for (const part of reward ? reward.split(' · ') : []) { const chip = document.createElement('span'); chip.className = 'cuisine-reward-chip'; setCurrencyText(chip, part); chips.append(chip); }
-    hud();
+    hud(true);
     const again = button('Rejouer', start, 'skyGiftsAgain');
     const blown = game!.exploded;
     showCard(paragraph(final ? `${nameOf(who)} a attrapé ${gifts(final)} !` : `${nameOf(who)} n’a rien attrapé cette fois.`, 'sky-gifts-title'),
@@ -128,11 +132,11 @@ export function mountSkyGiftsActivity(host: HTMLElement, options: {
     previousBest = options.best?.() ?? 0; recordShown = false;
     for (const view of views.values()) view.remove(); views.clear(); blasts.replaceChildren(); rabbitBox.classList.remove('hurt'); layer.classList.remove('exploded');
     game = startSkyGifts(clock()); running = true; card.hidden = true;
-    hud(); draw(game.now); flash('Prêt ?', 'ready'); schedule();
+    hud(true); draw(game.now); flash('Prêt ?', 'ready'); schedule();
   }
   function intro(): void {
     layer.classList.remove('exploded'); rabbitBox.classList.remove('hurt');
-    game = startSkyGifts(clock()); running = false; previousBest = options.best?.() ?? 0; draw(game.now); hud(); timeLeft.textContent = '';
+    game = startSkyGifts(clock()); running = false; previousBest = options.best?.() ?? 0; draw(game.now); hud(true); write(timeLeft, '');
     showCard(paragraph(`${nameOf(rabbit!)} attrape les cadeaux du ciel !`, 'sky-gifts-title'),
       paragraph(`Le traîneau passe dans le ciel et lâche des cadeaux. Fais glisser ton doigt pour déplacer ${nameOf(rabbit!)} et sa hotte. ${SKY_GIFTS_GAME.ms / 1000} secondes. Attention aux pièges : un cadeau empoisonné t’enlève ${SKY_GIFTS_GAME.poisonGifts} cadeaux, et une bombe explose et arrête la partie ! Trois cadeaux tombés dans la neige arrêtent aussi la partie. Rejoue autant que tu veux !`, 'sky-gifts-rules'),
       button('C’est parti !', start, 'skyGiftsStart'));
