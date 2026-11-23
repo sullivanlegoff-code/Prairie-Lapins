@@ -49,10 +49,10 @@ describe('permanent heart spending', () => {
   it('migrates v18 farms and the old traveller without changing their jobs or rewards', () => {
     let s = setup('farm'); const farm = s.buildings.at(-1)!; farm.farmLevel = 2;
     s = run(s, {type: 'startOrder', id: farm.id, recipe: 'banane'});
-    const raw = JSON.parse(encodeGame(s)); raw.version = 18; delete raw.buildings.at(-1).farmLevel;
+    const raw = JSON.parse(encodeGame(s)); raw.version = 18; delete raw.missions.daily.endsAt; delete raw.buildings.at(-1).farmLevel;
     const decoded = decodeGame(JSON.stringify(raw)); expect(decoded).toEqual({ok: true, state: {...s, progression: {...s.progression, totalXp: xpAfterSlowdown(s.progression.totalXp)}}}); // An older save's XP is on the curve without the slow-down.
     let a = setup('agency'); a = run(a, {type: 'startTrip', rabbitId: a.rabbits[0].id});
-    const old = JSON.parse(encodeGame(a)); old.version = 18; old.travel = {welcomed: false, trip: old.travel.trips[0]};
+    const old = JSON.parse(encodeGame(a)); old.version = 18; delete old.missions.daily.endsAt; old.travel = {welcomed: false, trip: old.travel.trips[0]};
     // A save older than v27 was written before 8 November 2026: its trip keeps the Hearts of that time's table.
     const legacyTravel = {...a.travel!, trips: a.travel!.trips.map(trip => ({...trip, hearts: tripHeartsBefore20261108((trip.endsAt - trip.startedAt) / HOUR)}))};
     expect(decodeGame(JSON.stringify(old))).toEqual({ok: true, state: {...a, travel: legacyTravel, progression: {...a.progression, totalXp: xpAfterSlowdown(a.progression.totalXp)}}});
