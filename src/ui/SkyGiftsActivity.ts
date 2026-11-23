@@ -5,8 +5,8 @@ import {setCurrencyText} from '../display/currency';
 import type {CuisineRabbit} from './CuisineActivity';
 import {portrait} from './portraits';
 import {SKY_GIFTS_ART} from '../config/winterArt';
-import {FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
-import {pausableClock, pauseWhenLeft, settleCard} from './activityPause';
+import {pausableClock, settleCard} from './activityPause';
+import {arcadeShell} from './arcadeShell';
 import {advanceSkyGifts, aimSkyGifts, skyGiftsLeft, sleighAt, startSkyGifts, SKY_GIFTS_GAME, type SkyGiftsGame} from '../simulation/skyGiftsGame';
 
 /**
@@ -48,12 +48,11 @@ export function mountSkyGiftsActivity(host: HTMLElement, options: {
   let rabbit: CuisineRabbit | null = null, game: SkyGiftsGame | null = null, running = false, previousBest = 0, recordShown = false, popTimer: ReturnType<typeof setTimeout> | undefined;
   const nameOf = (r: CuisineRabbit) => r.name || SPECIES[r.species].name;
   const gifts = (n: number) => `${n} cadeau${n > 1 ? 'x' : ''}`;
-  const button = (label: string, action: () => void, key: string) => {
-    const element = document.createElement('button'); element.type = 'button'; element.textContent = label; element.dataset[key] = '';
-    element.addEventListener('click', event => { event.stopPropagation(); action(); }); return element;
-  };
-  const paragraph = (text: string, className: string) => { const p = document.createElement('p'); p.className = className; p.textContent = text; return p; };
-  function showCard(...children: HTMLElement[]): void { card.replaceChildren(...children); card.hidden = false; }
+  // Cards, loop, pause, resume and leaving: shared with the other arcade games (plan 3.9).
+  const {button, paragraph, showCard, schedule, show, close} = arcadeShell({layer, card, signal: abort.signal, time, frame,
+    running: {get: () => running, set: value => { running = value; }},
+    names: {title: 'sky-gifts-title', resume: 'skyGiftsResume', quit: 'skyGiftsQuit'},
+    update: () => update(), onClose: () => { game = null; rabbit = null; clearTimeout(popTimer); }, onExit: () => options.onExit?.()});
   // The top line is written only when its text changes; today's rewards (`quotaText` reads the saved game) only when asked:
   // reading them every frame copied the whole game 60 times a second (plan 3.1, as in the flight).
   const shown = new Map<HTMLElement, string>();
@@ -110,9 +109,6 @@ export function mountSkyGiftsActivity(host: HTMLElement, options: {
     draw(now); hud();
     if (game.over && running) finish();
   }
-  let scheduled = false;
-  function schedule(): void { if (scheduled) return; scheduled = true; frame(() => { scheduled = false; loop(); }); }
-  function loop(): void { if (!running) return; update(); if (running) schedule(); }
   /** The rabbit follows the finger anywhere on the stage. */
   function aim(event: PointerEvent): void {
     if (!game || !running) return;
@@ -146,19 +142,6 @@ export function mountSkyGiftsActivity(host: HTMLElement, options: {
       paragraph(`Le traîneau passe dans le ciel et lâche des cadeaux. Fais glisser ton doigt pour déplacer ${nameOf(rabbit!)} et sa hotte. ${SKY_GIFTS_GAME.ms / 1000} secondes. Attention aux pièges : un cadeau empoisonné t’enlève ${SKY_GIFTS_GAME.poisonGifts} cadeaux, et une bombe explose et arrête la partie ! Trois cadeaux tombés dans la neige arrêtent aussi la partie. Rejoue autant que tu veux !`, 'sky-gifts-rules'),
       button('C’est parti !', start, 'skyGiftsStart'));
   }
-  function close(): void {
-    if (layer.hidden) return;
-    running = false; time.resume(); game = null; rabbit = null; layer.hidden = true; clearTimeout(popTimer);
-    window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: false})); options.onExit?.();
-  }
-  /** The phone locked or another app opened: the game waits, frozen, instead of being lost to the time gone by. */
-  function pause(): void {
-    if (!running) return;
-    time.pause(); running = false;
-    showCard(paragraph('Partie en pause', 'sky-gifts-title'), button('Reprendre', resume, 'skyGiftsResume'), button('Quitter', close, 'skyGiftsQuit'));
-  }
-  function resume(): void { time.resume(); running = true; card.hidden = true; schedule(); }
-  pauseWhenLeft(pause, abort.signal);
   stage.addEventListener('pointerdown', event => { event.preventDefault(); aim(event); }, {signal: abort.signal});
   stage.addEventListener('pointermove', event => { if (event.pointerType !== 'mouse' || event.buttons || running) aim(event); }, {signal: abort.signal});
   $<HTMLButtonElement>('[data-sky-gifts-exit]').addEventListener('click', () => close(), {signal: abort.signal});
@@ -176,7 +159,7 @@ export function mountSkyGiftsActivity(host: HTMLElement, options: {
       rabbit = chosen;
       const look = chosen.affection === undefined ? rabbitArt(chosen.species) : artForRabbit({species: chosen.species, affection: chosen.affection, classicLook: chosen.classicLook, evolution: chosen.evolution});
       figure.innerHTML = portrait(chosen.species, look);
-      layer.hidden = false; window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: true}));
+      show();
       intro(); $<HTMLButtonElement>('[data-sky-gifts-start]').focus();
     },
     close, update,

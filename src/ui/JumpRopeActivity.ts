@@ -8,8 +8,8 @@ import {portrait} from './portraits';
 import {JUMP_ROPE_ISLAND_URL, JUMP_ROPE_KIOSK_URL} from '../display/agency';
 import {drawJumpRopeSky} from '../display/jumpRopeSky';
 import {JUMP_ROPE_PIECES} from '../config/jumpRopeArt';
-import {FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
-import {pausableClock, pauseWhenLeft, settleCard} from './activityPause';
+import {pausableClock, settleCard} from './activityPause';
+import {arcadeShell} from './arcadeShell';
 
 /** Two carriers turn the rope, the athlete jumps (looks only). */
 export interface JumpRopeTrio {carriers: [CuisineRabbit, CuisineRabbit]; athlete: CuisineRabbit}
@@ -77,12 +77,11 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
   const nameOf = (r: CuisineRabbit) => r.name || SPECIES[r.species].name;
   const name = () => team ? nameOf(team.athlete) : '';
   const jumps = (n: number) => `${n} saut${n > 1 ? 's' : ''}`;
-  const button = (label: string, action: () => void, key: string) => {
-    const element = document.createElement('button'); element.type = 'button'; element.textContent = label; element.dataset[key] = '';
-    element.addEventListener('click', event => { event.stopPropagation(); action(); }); return element;
-  };
-  const paragraph = (text: string, className: string) => { const p = document.createElement('p'); p.className = className; p.textContent = text; return p; };
-  function showCard(...children: HTMLElement[]): void { card.replaceChildren(...children); card.hidden = false; }
+  // Cards, loop, pause, resume and leaving: shared with the other arcade games (plan 3.9).
+  const {button, paragraph, showCard, schedule, show, close} = arcadeShell({layer, card, signal: abort.signal, time, frame,
+    running: {get: () => running, set: value => { running = value; }},
+    names: {title: 'jump-rope-title', resume: 'jumpRopeResume', quit: 'jumpRopeQuit'},
+    update: () => update(), onClose: () => { game = null; team = null; clearTimeout(popTimer); }, onExit: () => options.onExit?.()});
   // The top line is written only when its text changes; today's rewards (`quotaText` reads the saved game) only when asked:
   // reading them every frame copied the whole game 60 times a second (plan 3.1, as in the flight).
   let shownScore: string | null = null, shownBest: string | null = null, shownQuota: string | null = null;
@@ -173,9 +172,6 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
     hud();
     if (game.over && running) finish();
   }
-  let scheduled = false;
-  function schedule(): void { if (scheduled) return; scheduled = true; frame(() => { scheduled = false; loop(); }); }
-  function loop(): void { if (!running) return; update(); if (running) schedule(); }
   function tap(): void {
     if (!game || !running) return;
     // A pass the rope already made without a jump is a miss, shown even when a late tap is what notices it.
@@ -219,19 +215,6 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
       ...(challenge ? [paragraph(challenge, 'jump-rope-challenge')] : []),
       button('C’est parti !', start, 'jumpRopeStart'));
   }
-  function close(): void {
-    if (layer.hidden) return;
-    running = false; time.resume(); game = null; team = null; layer.hidden = true; clearTimeout(popTimer);
-    window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: false})); options.onExit?.();
-  }
-  /** The phone locked or another app opened: the game waits, frozen, instead of being lost to the time gone by. */
-  function pause(): void {
-    if (!running) return;
-    time.pause(); running = false;
-    showCard(paragraph('Partie en pause', 'jump-rope-title'), button('Reprendre', resume, 'jumpRopeResume'), button('Quitter', close, 'jumpRopeQuit'));
-  }
-  function resume(): void { time.resume(); running = true; card.hidden = true; schedule(); }
-  pauseWhenLeft(pause, abort.signal);
   stage.addEventListener('pointerdown', event => { event.preventDefault(); tap(); }, {signal: abort.signal});
   $<HTMLButtonElement>('[data-jump-rope-exit]').addEventListener('click', () => close(), {signal: abort.signal});
   document.addEventListener('keydown', event => {
@@ -249,7 +232,7 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
       paint(figure, chosen.athlete, 1);
       paint(carriers[0].querySelector('.jump-rope-figure')!, chosen.carriers[0], 1);
       paint(carriers[1].querySelector('.jump-rope-figure')!, chosen.carriers[1], -1);
-      layer.hidden = false; window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: true}));
+      show();
       boxes.delete(back); boxes.delete(front); drawJumpRopeSky(sky); intro(); $<HTMLButtonElement>('[data-jump-rope-start]').focus();
     },
     close, update, tap,

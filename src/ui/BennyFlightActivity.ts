@@ -1,10 +1,11 @@
 import {setCurrencyText} from '../display/currency';
-import {BENNY_FLIGHT_ART, BENNY_FLAPPY, BENNY_FLIGHT_FRIEND_ART, FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
+import {BENNY_FLIGHT_ART, BENNY_FLAPPY, BENNY_FLIGHT_FRIEND_ART} from '../config/bennyFlightGameArt';
 import {preferWebp} from '../display/webpTwins';
 import {BENNY_FLIGHT_FRIENDS, bennyFlightFriend, bennyFlightFriendLeft, type BennyFlightFriendKind} from '../simulation/bennyFlightFriends';
 import {advanceBennyFlight, flapBennyFlight, startBennyFlight, BENNY_FLIGHT_GAME, type BennyFlightGame} from '../simulation/bennyFlightGame';
 import type {Rabbit} from '../state/types';
-import {pausableClock, pauseWhenLeft, settleCard} from './activityPause';
+import {pausableClock, settleCard} from './activityPause';
+import {arcadeShell} from './arcadeShell';
 import {prefersReducedMotion} from '../display/reducedMotion';
 
 /**
@@ -83,12 +84,11 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
   let shownY = 0, shownTilt = 0, wingPhase = 0, wingRate = 1 / BENNY_FLAPPY.calmBeat, quickUntil = 0, shownBeat = -1, drawnAt = 0;
   function settleView(): void { shownY = game?.y ?? 0; shownTilt = 0; wingRate = 1 / BENNY_FLAPPY.calmBeat; quickUntil = 0; drawnAt = game?.at ?? 0; }
   const bales = (n: number) => `${n} colonne${n > 1 ? 's' : ''}`;
-  const button = (label: string, action: () => void, key: string) => {
-    const element = document.createElement('button'); element.type = 'button'; element.textContent = label; element.dataset[key] = '';
-    element.addEventListener('click', event => { event.stopPropagation(); action(); }); return element;
-  };
-  const paragraph = (text: string, className: string) => { const p = document.createElement('p'); p.className = className; p.textContent = text; return p; };
-  function showCard(...children: HTMLElement[]): void { card.replaceChildren(...children); card.hidden = false; }
+  // Cards, loop, pause, resume and leaving: shared with the other arcade games (plan 3.9).
+  const {button, paragraph, showCard, schedule, show, close} = arcadeShell({layer, card, signal: abort.signal, time, frame,
+    running: {get: () => running, set: value => { running = value; }},
+    names: {title: 'benny-flight-title', resume: 'bennyFlightResume', quit: 'bennyFlightQuit'},
+    update: () => update(), onClose: () => { game = null; fallingAt = null; clearTimeout(popTimer); }, onResume: () => { if (fallingAt !== null) fallDrawnAt = clock(); }, onExit: () => options.onExit?.()});
   // The top line is written only when its text changes; today's rewards (`quotaText` reads the saved game) only when asked.
   let shownScore: string | null = null, shownQuota: string | null = null;
   function hud(rewards = false): void {
@@ -169,9 +169,6 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
     benny.style.transform = `translate3d(${BENNY_FLIGHT_GAME.x * width - bennyWidth / 2}px, ${shownY * height - bennyHeight / 2}px, 0) rotate(${shownTilt}deg)`;
     if (now - fallingAt! >= BENNY_FLIGHT_FALL_MS && running) { fallingAt = null; finish(); }
   }
-  let scheduled = false;
-  function schedule(): void { if (scheduled) return; scheduled = true; frame(() => { scheduled = false; loop(); }); }
-  function loop(): void { if (!running) return; update(); if (running) schedule(); }
   function flap(): void {
     if (!game || !running || game.over) return;
     const now = clock(); flapBennyFlight(game, now); sound('flap', .94 + Math.random() * .12);
@@ -202,19 +199,6 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
       paragraph('Touche le ciel pour que Benny batte des ailes, et passe entre les colonnes de bottes de foin. Une colonne touchée ou la mer de nuages, et Benny se pose. Plus tu vas loin, plus ça va vite. Rejoue autant que tu veux !', 'benny-flight-rules'),
       button('C’est parti !', start, 'bennyFlightStart'));
   }
-  function close(): void {
-    if (layer.hidden) return;
-    running = false; time.resume(); game = null; fallingAt = null; layer.hidden = true; clearTimeout(popTimer);
-    window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: false})); options.onExit?.();
-  }
-  /** The phone locked or another app opened: the game waits, frozen, instead of being lost to the time gone by. */
-  function pause(): void {
-    if (!running) return;
-    time.pause(); running = false;
-    showCard(paragraph('Partie en pause', 'benny-flight-title'), button('Reprendre', resume, 'bennyFlightResume'), button('Quitter', close, 'bennyFlightQuit'));
-  }
-  function resume(): void { time.resume(); running = true; card.hidden = true; if (fallingAt !== null) fallDrawnAt = clock(); schedule(); }
-  pauseWhenLeft(pause, abort.signal);
   window.addEventListener('resize', () => { if (!layer.hidden) measure(); }, {signal: abort.signal});
   stage.addEventListener('pointerdown', event => { event.preventDefault(); flap(); }, {signal: abort.signal});
   $<HTMLButtonElement>('[data-benny-flight-exit]').addEventListener('click', () => close(), {signal: abort.signal});
@@ -230,7 +214,7 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
     element: layer,
     open(chosen: Rabbit) {
       void chosen; // Only Benny plays: her flapping sprite is the same for every Benny.
-      layer.hidden = false; window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: true}));
+      show();
       stillFriends = still(); preloadFriends(); measure(); intro(); $<HTMLButtonElement>('[data-benny-flight-start]').focus();
     },
     close, update, flap,
