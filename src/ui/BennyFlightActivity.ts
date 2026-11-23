@@ -4,7 +4,7 @@ import {preferWebp} from '../display/webpTwins';
 import {BENNY_FLIGHT_FRIENDS, bennyFlightFriend, bennyFlightFriendLeft, type BennyFlightFriendKind} from '../simulation/bennyFlightFriends';
 import {advanceBennyFlight, flapBennyFlight, startBennyFlight, BENNY_FLIGHT_GAME, type BennyFlightGame} from '../simulation/bennyFlightGame';
 import type {Rabbit} from '../state/types';
-import {pausableClock, settleCard} from './activityPause';
+import {pausableClock, pauseWhenLeft, settleCard} from './activityPause';
 
 /**
  * « Le vol de Benny » (src/simulation/bennyFlightGame.ts holds the rules): a full-screen layer like « Les cadeaux du ciel ».
@@ -213,7 +213,7 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
     showCard(paragraph('Partie en pause', 'benny-flight-title'), button('Reprendre', resume, 'bennyFlightResume'), button('Quitter', close, 'bennyFlightQuit'));
   }
   function resume(): void { time.resume(); running = true; card.hidden = true; if (fallingAt !== null) fallDrawnAt = clock(); schedule(); }
-  document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); }, {signal: abort.signal});
+  pauseWhenLeft(pause, abort.signal);
   window.addEventListener('resize', () => { if (!layer.hidden) measure(); }, {signal: abort.signal});
   stage.addEventListener('pointerdown', event => { event.preventDefault(); flap(); }, {signal: abort.signal});
   $<HTMLButtonElement>('[data-benny-flight-exit]').addEventListener('click', () => close(), {signal: abort.signal});

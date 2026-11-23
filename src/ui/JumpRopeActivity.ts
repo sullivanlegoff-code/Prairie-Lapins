@@ -9,7 +9,7 @@ import {JUMP_ROPE_ISLAND_URL, JUMP_ROPE_KIOSK_URL} from '../display/agency';
 import {drawJumpRopeSky} from '../display/jumpRopeSky';
 import {JUMP_ROPE_PIECES} from '../config/jumpRopeArt';
 import {FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
-import {pausableClock, settleCard} from './activityPause';
+import {pausableClock, pauseWhenLeft, settleCard} from './activityPause';
 
 /** Two carriers turn the rope, the athlete jumps (looks only). */
 export interface JumpRopeTrio {carriers: [CuisineRabbit, CuisineRabbit]; athlete: CuisineRabbit}
@@ -231,7 +231,7 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
     showCard(paragraph('Partie en pause', 'jump-rope-title'), button('Reprendre', resume, 'jumpRopeResume'), button('Quitter', close, 'jumpRopeQuit'));
   }
   function resume(): void { time.resume(); running = true; card.hidden = true; schedule(); }
-  document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); }, {signal: abort.signal});
+  pauseWhenLeft(pause, abort.signal);
   stage.addEventListener('pointerdown', event => { event.preventDefault(); tap(); }, {signal: abort.signal});
   $<HTMLButtonElement>('[data-jump-rope-exit]').addEventListener('click', () => close(), {signal: abort.signal});
   document.addEventListener('keydown', event => {

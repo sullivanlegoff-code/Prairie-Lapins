@@ -32,3 +32,20 @@ it('sounds a caught present, one lost in the snow, a poisoned present and a bomb
   drop('bomb', g.basketX, c.catchTop - .001); at(64); activity.update(); expect(sound).toHaveBeenLastCalledWith('bomb');
   expect(sound).toHaveBeenCalledTimes(4);
 });
+it('the three arcade games pause when Safari puts the page away (pagehide), not only when it is hidden (plan 3.9)', async () => {
+  const {mountJumpRopeActivity} = await import('../src/ui/JumpRopeActivity');
+  const {mountBennyFlightActivity} = await import('../src/ui/BennyFlightActivity');
+  const sky = mount().activity;
+  const host = document.createElement('div'); document.body.append(host);
+  const rope = mountJumpRopeActivity(host, {onFinished: () => '', clock: () => 0, frame: () => 0}); cleanups.push(() => rope.dispose());
+  const r = {id: 'rabbit-1', species: 'paille' as const, affection: 3};
+  rope.open({carriers: [{...r, id: 'rabbit-2'}, {...r, id: 'rabbit-3'}], athlete: r});
+  rope.element.querySelector<HTMLButtonElement>('[data-jump-rope-start]')!.click();
+  const flight = mountBennyFlightActivity(host, {onFinished: () => '', clock: () => 0, frame: () => 0}); cleanups.push(() => flight.dispose());
+  flight.open({id: 'rabbit-9', species: 'benny', affection: 3, enclosureId: 'building-1'}); flight.element.querySelector<HTMLButtonElement>('[data-benny-flight-start]')!.click();
+  const before = {sky: sky.playing, rope: rope.playing, flight: flight.playing};
+  window.dispatchEvent(new Event('pagehide'));
+  expect(before).toEqual({sky: true, rope: true, flight: true});
+  expect(sky.playing).toBe(false); expect(rope.playing).toBe(false); expect(flight.playing).toBe(false);
+  expect(sky.element.textContent).toContain('Partie en pause'); expect(rope.element.textContent).toContain('Partie en pause');
+});

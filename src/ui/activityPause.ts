@@ -15,3 +15,11 @@ export function settleCard(card: HTMLElement, ms = 400): void {
   card.style.pointerEvents = 'none';
   setTimeout(() => { card.style.pointerEvents = ''; }, ms);
 }
+/**
+ * Pauses a game whenever the player leaves the page: another app or tab (`visibilitychange`), or the page put away by Safari
+ * (`pagehide`, which iOS may send without a visibility change). Shared by the arcade games (plan 3.9).
+ */
+export function pauseWhenLeft(pause: () => void, signal: AbortSignal): void {
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); }, {signal});
+  window.addEventListener('pagehide', () => pause(), {signal});
+}

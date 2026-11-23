@@ -6,7 +6,7 @@ import type {CuisineRabbit} from './CuisineActivity';
 import {portrait} from './portraits';
 import {SKY_GIFTS_ART} from '../config/winterArt';
 import {FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
-import {pausableClock, settleCard} from './activityPause';
+import {pausableClock, pauseWhenLeft, settleCard} from './activityPause';
 import {advanceSkyGifts, aimSkyGifts, skyGiftsLeft, sleighAt, startSkyGifts, SKY_GIFTS_GAME, type SkyGiftsGame} from '../simulation/skyGiftsGame';
 
 /**
@@ -158,7 +158,7 @@ export function mountSkyGiftsActivity(host: HTMLElement, options: {
     showCard(paragraph('Partie en pause', 'sky-gifts-title'), button('Reprendre', resume, 'skyGiftsResume'), button('Quitter', close, 'skyGiftsQuit'));
   }
   function resume(): void { time.resume(); running = true; card.hidden = true; schedule(); }
-  document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); }, {signal: abort.signal});
+  pauseWhenLeft(pause, abort.signal);
   stage.addEventListener('pointerdown', event => { event.preventDefault(); aim(event); }, {signal: abort.signal});
   stage.addEventListener('pointermove', event => { if (event.pointerType !== 'mouse' || event.buttons || running) aim(event); }, {signal: abort.signal});
   $<HTMLButtonElement>('[data-sky-gifts-exit]').addEventListener('click', () => close(), {signal: abort.signal});
