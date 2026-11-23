@@ -75,6 +75,12 @@ async function boot(): Promise<() => void> {
   const controller = new GameController(storage, clock);
   // Ask the browser to keep the save (Safari may otherwise clear it after a week without a visit). Not in test builds.
   if (!testMode) void requestPersistentStorage();
+  // The published game keeps its pictures with a service worker (plan 5.5, scripts/service-worker.js). Never in the laboratory,
+  // the decorations preview or the development server; a build without sw.js (a local preview) simply has none.
+  if (!testMode && import.meta.env.PROD && 'serviceWorker' in navigator) {
+    const register = () => { navigator.serviceWorker.register(import.meta.env.BASE_URL + 'sw.js').catch(() => {}); };
+    if (document.readyState === 'complete') register(); else window.addEventListener('load', register, {once: true});
+  }
   const status = controller.getSnapshot().status;
   // A game started again because the old save predates the catalogue boundary is a new start: it gets the new-game guidance.
   if (controller.getSnapshot().catalogReset) preferences.initializeGuidance(true);

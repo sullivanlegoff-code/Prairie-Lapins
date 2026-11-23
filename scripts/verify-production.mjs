@@ -9,6 +9,12 @@ const laboratory = process.argv[4] === 'laboratory';
 assert.ok(base.startsWith('/') && base.endsWith('/'), 'Base must be an absolute URL path');
 const html = readFileSync(join(root, 'index.html'), 'utf8');
 const manifestLink = html.match(/<link rel="manifest" href="([^"]+)"/);
+// The service worker (plan 5.5) belongs to the game only, with its own cache name for the build.
+if (laboratory) assert.throws(() => statSync(join(root, 'sw.js')), 'Laboratory must not ship a service worker');
+else {
+  const worker = readFileSync(join(root, 'sw.js'), 'utf8');
+  assert.ok(!worker.includes('__REVISION__') && /const CACHE = 'prairie-lapins-[A-Za-z0-9-]+';/.test(worker), 'Service worker cache named after the build');
+}
 if (laboratory) {
   assert.equal(manifestLink, null, 'Laboratory must not advertise the game manifest');
   assert.ok(!html.includes('apple-mobile-web-app-capable'), 'Laboratory must not advertise standalone capability');
@@ -66,7 +72,7 @@ for (const match of html.matchAll(/(?:src|href)="([^"]+)"/g)) {
 let scripts = '';
 for (const path of files) {
   const name = relative(root, path).replaceAll('\\', '/');
-  assert.ok(name === 'index.html' || name === 'build-revision.txt' || name === '.nojekyll' || name.startsWith('assets/'), `Unexpected published file: ${name}`);
+  assert.ok(name === 'index.html' || name === 'build-revision.txt' || name === '.nojekyll' || name === 'sw.js' && !laboratory || name.startsWith('assets/'), `Unexpected published file: ${name}`);
   if (!/\.(html|js|css)$/.test(path)) continue;
   const text = readFileSync(path, 'utf8');
   // The Supabase SDK ships GoTrue's unused default URL; the game always passes its project URL.

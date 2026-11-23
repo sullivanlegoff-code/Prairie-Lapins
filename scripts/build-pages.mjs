@@ -28,6 +28,8 @@ run('node', ['scripts/verify-webp-twins.mjs']);
 npm(['run', 'build', '--', '--base=' + base, '--outDir', root, '--emptyOutDir']);
 writeFileSync(join(root, 'build-revision.txt'), revision + '\n');
 writeFileSync(join(root, '.nojekyll'), '');
+// The game's service worker (plan 5.5): its own cache for each publication. Never in the laboratory (dev/).
+writeFileSync(join(root, 'sw.js'), readFileSync('scripts/service-worker.js', 'utf8').replaceAll('__REVISION__', revision.replace(/[^A-Za-z0-9-]/g, '')));
 npm(['run', 'build:lab', '--', '--base=' + base + 'dev/', '--outDir', join(root, 'dev'), '--emptyOutDir']);
 writeFileSync(join(root, 'dev', 'build-revision.txt'), revision + '\n');
 // Vite copies public/ into both outputs. Remove only byte-identical music copies from the lab.
