@@ -6,6 +6,7 @@ import {mountArtStatus} from './display/artStatus';
 import {GameController} from './application/GameController';
 import {bindLifecycle} from './application/lifecycle';
 import {browserStorage} from './persistence/browserStorage';
+import {requestPersistentStorage} from './persistence/persistentStorage';
 import {browserLifecycle} from './display/browserLifecycle';
 import {bindAppViewport} from './display/appViewport';
 import {requestMobileFullscreen} from './display/fullscreen';
@@ -71,6 +72,8 @@ async function boot(): Promise<() => void> {
   const preferences = new PreferenceStore(preferenceKey); preferences.initializeGuidance(fresh);
   // Partie: the save is read synchronously by the controller.
   const controller = new GameController(storage, clock);
+  // Ask the browser to keep the save (Safari may otherwise clear it after a week without a visit). Not in test builds.
+  if (!testMode) void requestPersistentStorage();
   const status = controller.getSnapshot().status;
   // A game started again because the old save predates the catalogue boundary is a new start: it gets the new-game guidance.
   if (controller.getSnapshot().catalogReset) preferences.initializeGuidance(true);

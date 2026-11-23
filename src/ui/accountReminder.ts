@@ -1,4 +1,5 @@
 import type {PreferenceStore} from './preferences';
+import {inIosSafariTab} from '../persistence/persistentStorage';
 
 /** One pending invitation, displayed only when the other dialogs have closed. */
 export class AccountReminder {
@@ -12,6 +13,7 @@ export class AccountReminder {
     this.dialog.setAttribute('aria-modal', 'true');
     this.dialog.innerHTML = `<h2 id="account-reminder-title">Garde ta prairie en sécurité</h2>
       <p id="account-reminder-text">Ta prairie grandit ! Associe ta partie à ton adresse e-mail : tu la retrouveras sur un autre appareil, même si ton navigateur l'efface.</p>
+      ${inIosSafariTab() ? `<p id="account-reminder-home">Sur iPhone, tu peux aussi ajouter le jeu à l'écran d'accueil (bouton Partager, puis « Sur l'écran d'accueil ») : Safari ne l'effacera plus.</p>` : ''}
       <div class="actions"><button type="button">Associer mon e-mail</button><button type="button" class="secondary">Plus tard</button></div>`;
     const [associate, later] = this.dialog.querySelectorAll('button');
     associate.onclick = () => { this.dialog.close(); openAccount(); };
