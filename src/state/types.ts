@@ -1,3 +1,4 @@
+import type {SAVE_VERSION} from './saveVersion';
 import type {HistoricalLevelRight} from '../simulation/levelAccess';
 import type {PurchaseUnlockId} from '../config/purchaseUnlocks';
 import type {IslandStart, ParcelId} from '../config/land';
@@ -108,7 +109,7 @@ export interface GameState {
   startCourse?: 'paille-solo';
   purchaseUnlocks?: PurchaseUnlockId[];
   initiation?: Initiation;
-  version: 29;
+  version: typeof SAVE_VERSION;
   /** The Christmas event (v26, optional; absent until its first use): see `ChristmasState`. */
   christmas?: ChristmasState;
   /** Benny, the Mythic (v22): when her power is usable again, and whether she is flying in the sky. Absent until first used. */
