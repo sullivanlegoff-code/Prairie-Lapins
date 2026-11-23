@@ -184,3 +184,22 @@ it('an evolved rabbit jumps and turns the rope with its evolved drawing (audit 4
   const carriers = [...layer().querySelectorAll<HTMLImageElement>('.jump-rope-carrier .jump-rope-figure img')].map(img => img.src);
   expect(carriers.length).toBe(2); expect(carriers.some(src => src.includes('paille-v2'))).toBe(false);
 });
+
+it('reads today’s rewards only at the start and the end of a game, never every frame (plan 3.1)', async () => {
+  const {mountJumpRopeActivity} = await import('../src/ui/JumpRopeActivity');
+  let t = 0; const host = document.createElement('div'); document.body.append(host);
+  const quotaText = vi.fn(() => 'Encore 3 parties récompensées aujourd’hui');
+  const activity = mountJumpRopeActivity(host, {onFinished: () => '', best: () => 0, quotaText, clock: () => t, frame: () => 0});
+  cleanups.push(() => activity.dispose());
+  const r = {id: 'rabbit-1', species: 'paille' as const, affection: 3};
+  activity.open({carriers: [{...r, id: 'rabbit-2'}, {...r, id: 'rabbit-3'}], athlete: r});
+  activity.element.querySelector<HTMLButtonElement>('[data-jump-rope-start]')!.click();
+  const quota = activity.element.querySelector('.jump-rope-quota')!, score = activity.element.querySelector('.jump-rope-score')!;
+  const calls = quotaText.mock.calls.length; let writes = 0;
+  new MutationObserver(m => { writes += m.length; }).observe(score, {childList: true, characterData: true, subtree: true});
+  for (let i = 0; i < 120; i++) { t = i * 5; activity.update(); } // Two seconds of frames during the count-in.
+  await Promise.resolve();
+  expect(quotaText.mock.calls.length).toBe(calls); expect(writes).toBe(0); expect(quota.textContent).toBe('Encore 3 parties récompensées aujourd’hui');
+  t = JUMP_ROPE.leadIn + JUMP_ROPE.startPeriod; activity.update(); // The rope passes under still feet: the game ends.
+  expect(quotaText.mock.calls.length).toBe(calls + 1);
+});

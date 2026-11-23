@@ -77,10 +77,13 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
   };
   const paragraph = (text: string, className: string) => { const p = document.createElement('p'); p.className = className; p.textContent = text; return p; };
   function showCard(...children: HTMLElement[]): void { card.replaceChildren(...children); card.hidden = false; }
-  function hud(): void {
-    score.textContent = jumps(game?.score ?? 0);
-    const best = Math.max(previousBest, game?.score ?? 0); bestLine.textContent = best ? `Record : ${best}` : '';
-    quota.textContent = options.quotaText?.() ?? '';
+  // The top line is written only when its text changes; today's rewards (`quotaText` reads the saved game) only when asked:
+  // reading them every frame copied the whole game 60 times a second (plan 3.1, as in the flight).
+  let shownScore: string | null = null, shownBest: string | null = null, shownQuota: string | null = null;
+  function hud(rewards = false): void {
+    const text = jumps(game?.score ?? 0); if (text !== shownScore) score.textContent = shownScore = text;
+    const best = Math.max(previousBest, game?.score ?? 0), line = best ? `Record : ${best}` : ''; if (line !== shownBest) bestLine.textContent = shownBest = line;
+    if (rewards) { const today = options.quotaText?.() ?? ''; if (today !== shownQuota) quota.textContent = shownQuota = today; }
   }
   /** Draws one rabbit's portrait, turned toward `facing` (1 right, -1 left). */
   function paint(target: HTMLElement, rabbit: CuisineRabbit, facing: 1 | -1): void {
@@ -186,7 +189,7 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
     const reward = options.onFinished(who, final);
     const chips = document.createElement('p'); chips.className = 'jump-rope-rewards';
     for (const part of reward ? reward.split(' · ') : []) { const chip = document.createElement('span'); chip.className = 'cuisine-reward-chip'; setCurrencyText(chip, part); chips.append(chip); }
-    combo.classList.remove('shown'); hud();
+    combo.classList.remove('shown'); hud(true);
     react(record ? 'applaud' : 'console', record ? 'Bravo !' : final >= 5 ? 'C’était super !' : 'Courage, on recommence !');
     const again = button('Rejouer', start, 'jumpRopeAgain');
     showCard(paragraph(final ? `${name()} a fait ${jumps(final)} !` : `${name()} s’est emmêlé les pattes !`, 'jump-rope-title'),
@@ -197,10 +200,10 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
   function start(): void {
     previousBest = options.best?.() ?? 0; recordShown = false;
     game = startJumpRope(clock()); running = true; tickedAt = -Infinity; card.hidden = true; rabbitBox.classList.remove('stumble'); combo.classList.remove('shown'); react(null);
-    hud(); flash('Prêt ?', 'ready'); schedule();
+    hud(true); flash('Prêt ?', 'ready'); schedule();
   }
   function intro(): void {
-    game = null; running = false; previousBest = options.best?.() ?? 0; drawRope(0.5); hud(); react(null);
+    game = null; running = false; previousBest = options.best?.() ?? 0; drawRope(0.5); hud(true); react(null);
     const challenge = options.challengeText?.() ?? '';
     const [left, right] = team!.carriers;
     showCard(paragraph(`${name()} saute à la corde !`, 'jump-rope-title'),
