@@ -1,7 +1,7 @@
 import type {GameController} from '../application/GameController';
 import type {SaveStorage} from '../persistence/storage';
 import {SAVE_KEY} from '../persistence/storage';
-import {decodeGame, encodeGame} from '../persistence/json';
+import {decodeGame, encodeGame, SAVE_VERSION} from '../persistence/json';
 import type {GameState} from '../state/types';
 import type {Adjustment} from '../simulation/adjustments';
 import {CloudError, OUTDATED, type CloudGateway, type CommitRequest, type RemoteSave} from './gateway';
@@ -132,6 +132,19 @@ export class CloudSync {
       return r;
     } catch { throw new InvalidLink(); }
   }
+  /**
+   * An envoi left pending by an older version of the game (its save format is not today's) cannot be replayed as it was: today's
+   * encoding refuses that format. It is sent again converted to today's format, under a new operation (the server ties an operation
+   * to its exact content), and stored first so that a lost reply replays this new request. Returns null for today's format.
+   */
+  private upgradePending(p: CommitRequest): CommitRequest | null {
+    if ((p.state as {version?: unknown}).version === SAVE_VERSION) return null;
+    const d = decodeGame(JSON.stringify(p.state));
+    if (!d.ok) throw new InvalidLink();
+    const upgraded = {...p, operation: this.clock.uuid(), state: d.state};
+    this.persist({...this.link!, pending: upgraded});
+    return upgraded;
+  }
   /** Archive before clearing a broken link; neither game nor replacement backup is touched. */
   async repairLink(confirmed: boolean): Promise<void> {
     if (!confirmed || !this.owner || this.view.status !== 'recovery') return;
@@ -166,9 +179,13 @@ export class CloudSync {
       // A lost reply is resolved with the identical operation before reconciliation.
       if (this.link?.pending) {
         if (this.controller.getSnapshot().status !== 'saved') { this.show('local-error'); return; }
-        const result = await this.gateway.commit(this.link.pending);
+        const sent = this.link.pending, upgraded = this.upgradePending(sent);
+        const result = await this.gateway.commit(upgraded ?? sent);
         if (gen !== this.generation) return;
-        if (result.status === 'ok') this.accept(result.revision, result.savedAt, this.link.pending.state);
+        if (result.status === 'ok') this.accept(result.revision, result.savedAt, (upgraded ?? sent).state);
+        // The envoi written before the update had arrived after all: the remote save is that very progress.
+        else if (upgraded && result.remote && result.remote.operation === sent.operation && result.remote.revision === sent.expected + 1)
+          this.accept(result.remote.revision, result.remote.savedAt, result.remote.state);
         else { this.view.remote = result.remote; this.show('conflict'); return; }
         remote = await this.gateway.read(owner);
         if (gen !== this.generation) return;

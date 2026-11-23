@@ -1,6 +1,8 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {BACKUP_KEY, CLOUD_KEY, fingerprint, LINK_BACKUP_PREFIX} from '../src/cloud/sync';
-import {CloudError, remoteSave, type CommitResult} from '../src/cloud/gateway';
+import {CloudError, remoteSave, type CommitRequest, type CommitResult} from '../src/cloud/gateway';
+import {decodeGame, encodeGame, SAVE_VERSION} from '../src/persistence/json';
+import type {GameState} from '../src/state/types';
 import {SAVE_KEY} from '../src/persistence/storage';
 import {createGame, advance} from '../src/simulation';
 import {SCENARIOS, scenarioState} from '../src/dev/scenarios';
@@ -92,6 +94,25 @@ describe('synchronisation automatique, sans réseau', () => {
     const next = setup('normal', f.gateway, f.data); await next.sync.connect('player-a');
     expect(f.gateway.calls.at(-1)!.operation).toBe(pending.operation); expect(f.gateway.remote!.revision).toBe(2);
     expect(next.sync.getView().status).toBe('saved'); expect(JSON.parse(f.data.get(CLOUD_KEY)!).pending).toBeNull();
+  });
+  it('renvoie, converti au format du jour, un envoi en attente écrit par une ancienne version (plan 1.4)', async () => {
+    // A gateway that encodes like the real one: an older save format is refused by today's encoding.
+    class EncodingCloud extends MemoryCloud { override async commit(request: CommitRequest) { encodeGame(request.state); return super.commit(request); } }
+    for (const arrived of [false, true]) {
+      const gateway = new EncodingCloud(), f = setup('normal', gateway); await link(f); f.rename('Avant la mise à jour');
+      gateway.offline = true; await f.sync.flush(); gateway.offline = false; f.sync.disconnect();
+      // The pending envoi as an older version wrote it (v28).
+      const stored = JSON.parse(f.data.get(CLOUD_KEY)!), old = structuredClone(stored.pending);
+      old.state = JSON.parse(encodeGame(old.state)); old.state.version = 28; stored.pending = old; f.data.set(CLOUD_KEY, JSON.stringify(stored));
+      expect(() => encodeGame(old.state)).toThrow(); // What blocked the sync before.
+      if (arrived) gateway.remote = {owner: 'player-a', revision: old.expected + 1, savedAt: new Date(1_790_000_000_000).toISOString(), operation: old.operation, state: (decodeGame(JSON.stringify(old.state)) as {state: GameState}).state};
+      const next = setup('normal', gateway, f.data); await next.sync.connect('player-a');
+      expect(next.sync.getView().status, arrived ? 'déjà arrivé' : 'jamais arrivé').toBe('saved');
+      expect(gateway.remote!.revision).toBe(old.expected + 1); expect(gateway.remote!.state.version).toBe(SAVE_VERSION);
+      expect(gateway.remote!.state.rabbits[0].name).toBe('Avant la mise à jour');
+      expect(JSON.parse(f.data.get(CLOUD_KEY)!)).toMatchObject({pending: null, revision: old.expected + 1});
+      if (!arrived) expect(gateway.calls.at(-1)!.operation).not.toBe(old.operation);
+    }
   });
   it('réessaie hors ligne à 5/10/20/40/60 secondes et conserve la requête', async () => {
     const f = setup(); await link(f); f.gateway.offline = true; f.rename('Hors ligne'); await f.sync.flush();
