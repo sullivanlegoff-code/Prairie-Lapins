@@ -109,6 +109,12 @@ export class SnowballFights {
     for (const kind of ['duel', 'battle'] as const) { i.gap[kind] = SNOWBALL_ISLAND_MAX; i.since[kind] = SNOWBALL_ISLAND_MAX - this.between(i, SNOWBALL_ISLAND_FIRST[kind]); }
   }
   readonly active = new Map<string, Fight>();
+  /** Each fighting rabbit's fight and place in it, rebuilt only after a fight starts, ends or loses a member (plan 3.5). */
+  private index: Map<string, {fight: Fight; member: Member}> | null = null;
+  private fighter(id: string): {fight: Fight; member: Member} | undefined {
+    if (!this.index) { this.index = new Map(); for (const fight of this.active.values()) for (const member of fight.members) this.index.set(member.id, {fight, member}); }
+    return this.index.get(id);
+  }
   /** Snowballs that landed during the last step: the display shows a puff on the target, or on the snow for a miss. */
   readonly hits: Snowball[] = [];
   private nextBall = 1;
@@ -125,14 +131,14 @@ export class SnowballFights {
 
   /** `enabled`: the Christmas event is on. `force` starts a duel, `forceBattle` a general battle, wherever one may start. */
   step(dt: number, throwers: readonly SnowballThrower[], lifeActive: boolean, reduced: boolean, enabled: boolean, force = false, forceBattle = false): void {
-    this.hits.length = 0;
+    this.hits.length = 0; this.index = null;
     const ms = lifeActive && Number.isFinite(dt) && dt >= 0 && dt <= 1000 ? dt : 0, byId = new Map(throwers.map(r => [r.id, r]));
     for (const fight of [...this.active.values()]) this.advance(fight, ms, byId, enabled && !reduced);
     if (!enabled || reduced) return;
     const step = Math.max(0, Math.min(ms, 1000)), island = this.island;
     island.time += step; island.since.duel += step; island.since.battle += step;
     const groups = new Map<string, SnowballThrower[]>();
-    for (const r of throwers) if (!this.active.has(r.group)) groups.set(r.group, [...(groups.get(r.group) ?? []), r]);
+    for (const r of throwers) if (!this.active.has(r.group)) { const members = groups.get(r.group); if (members) members.push(r); else groups.set(r.group, [r]); }
     for (const [group, members] of groups) {
       const clock = this.clock(group), eligible = members.filter(free);
       if (eligible.length < 2) continue;
@@ -194,7 +200,7 @@ export class SnowballFights {
     this.run(a.motion, pa); this.run(b.motion, pb);
     const members: Member[] = [{id: a.id, team: 0, place: pa, cooldown: 300, act: null, hits: 0}, {id: b.id, team: 1, place: pb, cooldown: 300 + 700, act: null, hits: 0}];
     this.started(group, 'duel');
-    this.active.set(group, {group, kind: 'duel', members, elapsed: 0, length: Infinity, throws: Math.round(this.between(clock, SNOWBALL_THROWS)), thrown: 0, balls: [], cheer: 0, seed: clock.seed});
+    this.index = null; this.active.set(group, {group, kind: 'duel', members, elapsed: 0, length: Infinity, throws: Math.round(this.between(clock, SNOWBALL_THROWS)), thrown: 0, balls: [], cheer: 0, seed: clock.seed});
   }
   private startBattle(group: string, eligible: SnowballThrower[], clock: {seed: number}): void {
     // The rabbits on the left join the left camp: nobody crosses the whole enclosure.
@@ -209,7 +215,7 @@ export class SnowballFights {
       order.forEach((r, i) => { this.run(r.motion, places[i]); members.push({id: r.id, team: team as 0 | 1, place: places[i], cooldown: this.between(clock, [400, 1800]), act: null, hits: 0}); });
     });
     this.started(group, 'battle');
-    this.active.set(group, {group, kind: 'battle', members, elapsed: 0, length: this.between(clock, SNOWBALL_BATTLE_LENGTH), throws: Infinity, thrown: 0, balls: [], cheer: 0, seed: clock.seed});
+    this.index = null; this.active.set(group, {group, kind: 'battle', members, elapsed: 0, length: this.between(clock, SNOWBALL_BATTLE_LENGTH), throws: Infinity, thrown: 0, balls: [], cheer: 0, seed: clock.seed});
   }
 
   private advance(fight: Fight, ms: number, byId: ReadonlyMap<string, SnowballThrower>, allowed: boolean): void {
@@ -217,7 +223,7 @@ export class SnowballFights {
     for (const member of [...fight.members]) {
       const r = byId.get(member.id);
       if (allowed && r && r.available && r.motion.mode === 'meet') continue;
-      fight.members = fight.members.filter(m => m !== member);
+      fight.members = fight.members.filter(m => m !== member); this.index = null;
       fight.balls = fight.balls.filter(b => b.from !== member.id && b.to !== member.id);
       if (r?.motion.mode === 'meet') endRabbitActivity(r.motion);
     }
@@ -296,17 +302,16 @@ export class SnowballFights {
 
   /** The snowballs in the air now. */
   balls(): Snowball[] { return [...this.active.values()].flatMap(f => f.balls); }
-  isFighting(id: string): boolean { return [...this.active.values()].some(f => f.members.some(m => m.id === id)); }
+  isFighting(id: string): boolean { return !!this.fighter(id); }
   /** The kind of fight a rabbit is in, if any. */
-  fightOf(id: string): 'duel' | 'battle' | null { for (const f of this.active.values()) if (f.members.some(m => m.id === id)) return f.kind; return null; }
+  fightOf(id: string): 'duel' | 'battle' | null { return this.fighter(id)?.fight.kind ?? null; }
   /** The extra pose of a thrower now (wind-up, recoil, dodge, cheer), or null. */
   pose(id: string, facing: 1 | -1): SnowballPose | null {
-    for (const f of this.active.values()) { const m = f.members.find(x => x.id === id); if (m?.act) return snowballActPose(m.act, facing); }
-    return null;
+    const act = this.fighter(id)?.member.act; return act ? snowballActPose(act, facing) : null;
   }
   private end(fight: Fight, byId: ReadonlyMap<string, SnowballThrower | undefined>): void {
     for (const m of fight.members) { const r = byId.get(m.id); if (r?.motion.mode === 'meet') endRabbitActivity(r.motion); }
-    this.active.delete(fight.group);
+    this.active.delete(fight.group); this.index = null;
   }
   reset(throwers: readonly SnowballThrower[] = []): void {
     const byId = new Map(throwers.map(r => [r.id, r]));
