@@ -44,7 +44,9 @@ export class NightGlows {
       const {glow, pool: halo} = entry;
       if (glow.texture.key !== glowArt.texture) glow.setTexture(glowArt.texture);
       // Same place, anchor, size and mirror as the picture (its glow picture has the same pixels).
-      glow.setPosition(image.x, image.y).setOrigin(image.originX, image.originY).setScale(image.scaleX, image.scaleY).setFlipX(image.flipX)
+      // Its own pixels may differ from the picture's (a smaller copy, plan 5.1): its scale gives it the same size.
+      const iw = image.frame?.realWidth, gw = glow.frame?.realWidth, k = iw && gw ? iw / gw : 1;
+      glow.setPosition(image.x, image.y).setOrigin(image.originX, image.originY).setScale(image.scaleX * k, image.scaleY * k).setFlipX(image.flipX)
         .setAlpha(level * NIGHT_GLOW_STRENGTH);
       if (halo && pool) {
         const width = image.displayWidth * pool;
