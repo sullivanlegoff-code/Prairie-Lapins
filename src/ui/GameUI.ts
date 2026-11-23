@@ -21,7 +21,8 @@ import {heartIcon} from '../display/currency';
 import {cuisineQuotaText, heartGift, recipeHint, orderReadyText} from './economyFeedback';
 import type {AudioEngine} from '../audio/audioEngine';
 import {mountCuisineActivity} from './CuisineActivity';
-import {mountJumpRopeActivity} from './JumpRopeActivity';
+import type {mountJumpRopeActivity} from './JumpRopeActivity';
+import {lazyActivity, type LazyActivity} from './lazyActivity';
 import {jumpIslandReason, jumpRopeChallenge, jumpRopeDay, jumpRopeMedals, jumpRopeRabbitReason, rememberedJumpRopeTeam} from '../simulation/jumpRope';
 import type {RecipeCompletion} from '../../cooktap-prototype/main';
 import {missionClaimXp} from '../simulation/progression';
@@ -72,8 +73,8 @@ import {CANDY_ICON_URL, SKY_GIFTS_ART} from '../config/winterArt';
 import {SKY_GIFTS_GAME} from '../simulation/skyGiftsGame';
 import {CHRISTMAS_MARKET_ART} from '../config/christmasMarketArt';
 import {availableChristmasRewards, candiesOf, christmasBonusClaimed, christmasBonusReady, christmasChallengesOf, christmasClaimable, christmasClaimed, christmasDecorationReason, christmasProgress, CHRISTMAS_RABBIT_IDS, christmasRabbitReason, skyGiftsDay, skyGiftsRabbitReason, snowmanQuote} from '../simulation/christmas';
-import {mountSkyGiftsActivity} from './SkyGiftsActivity';
-import {mountBennyFlightActivity} from './BennyFlightActivity';
+import type {mountSkyGiftsActivity} from './SkyGiftsActivity';
+import type {mountBennyFlightActivity} from './BennyFlightActivity';
 import type {mountBennyRunActivity} from './BennyRunActivity';
 import {BENNY_RUN, BENNY_RUN_SETTING_SHORT, RUN_SETTINGS as BENNY_RUN_SETTINGS} from '../simulation/bennyRun';
 import {bennyRunDay} from '../simulation/bennyRunRewards';
@@ -241,10 +242,10 @@ export class GameUI {
   private decorationDraft: {id: string; catalogId?: DecorationId; location: DecorationLocation | null; rotation: 0 | 1;} | null = null;
   private photo = false;
   private cuisine: ReturnType<typeof mountCuisineActivity>;
-  private jumpRope: ReturnType<typeof mountJumpRopeActivity>;
+  private jumpRope: LazyActivity<Parameters<ReturnType<typeof mountJumpRopeActivity>['open']>>;
   /** Christmas: « Les cadeaux du ciel », and whether the market shows its rabbit choice for it. */
-  private skyGifts: ReturnType<typeof mountSkyGiftsActivity>;
-  private bennyFlight: ReturnType<typeof mountBennyFlightActivity>;
+  private skyGifts: LazyActivity<Parameters<ReturnType<typeof mountSkyGiftsActivity>['open']>>;
+  private bennyFlight: LazyActivity<Parameters<ReturnType<typeof mountBennyFlightActivity>['open']>>;
   /** « Benny Rampage », loaded only when the Antre du dragon is opened (its code and pictures stay out of the island's start). */
   private bennyRun: {readonly active: boolean; prepare(): void; open(): void; close(): void; dispose(): void};
   /** Whether the full-screen shop or market currently covers the island (its Phaser loop sleeps meanwhile). */
@@ -271,15 +272,15 @@ export class GameUI {
       if (taster) this.cuisine.showAffection(reward.affectionRabbitId);
       return `+${reward.pattes} pattes · +${reward.grass} nourriture${reward.affectionGranted ? ` · +1 Affection${luckyName}` : reward.affectionAtCap ? ` · Affection maximale${luckyName}` : reward.affectionEvolutionRequired ? ` · Fais évoluer ${lucky ? (lucky.name || SPECIES[lucky.species].name) : 'ce lapin'} pour dépasser 30.` : reward.affectionStatueRequired ? (affectionStatueCount(granted.state) === 0 ? ` · La Statue de l’Affection permet de dépasser ${AFFECTION_STATUE.cap}.` : ` · Une deuxième Statue de l’Affection permet de dépasser ${SECOND_AFFECTION_STATUE.cap}.`) : ' · Affection du jour déjà gagnée en cuisine'}${reward.heartGranted ? ` · +${DAILY_HEART_SOURCES.cuisine} Cœur${DAILY_HEART_SOURCES.cuisine > 1 ? 's' : ''}` : ''}`;
     }, quotaText: () => { const state = this.controller.getSnapshot().state; return state ? cuisineQuotaText(state, this.now()) : ''; }, onExit: () => this.render(), onActiveChange: activityOptions.onCuisineActive});
-    this.jumpRope = mountJumpRopeActivity(document.getElementById('app')!, {onFinished: (team, score) => {
+    this.jumpRope = lazyActivity(() => import('./JumpRopeActivity').then(m => m.mountJumpRopeActivity(document.getElementById('app')!, {onFinished: (team, score) => {
       const granted = this.controller.perform({type: 'rewardJumpRope', team: {carriers: [team.carriers[0].id, team.carriers[1].id], athlete: team.athlete.id}, score});
       if (!granted.ok) return `Récompense non enregistrée : ${REFUSALS[granted.reason]}`;
       const reward = granted.jumpRopeReward!, parts = [...(reward.challenge ? ['Défi du jour réussi !'] : []), ...(reward.pattes ? [`+${reward.pattes} pattes`] : []), ...(reward.hearts ? [`+${reward.hearts} Cœur${reward.hearts > 1 ? 's' : ''}`] : [])];
       return parts.length ? parts.join(' · ') : score ? 'Partie pour le plaisir : plus de récompense aujourd’hui' : '';
     }, quotaText: () => { const state = this.controller.getSnapshot().state; return state ? jumpRopeQuotaText(state, this.now()) : ''; },
     best: () => this.controller.getSnapshot().state?.jumpRope?.best ?? 0, cheer: () => this.sounds.ping(), tick: () => this.sounds.tick(), miss: () => this.sounds.run('bump'),
-    challengeText: () => { const state = this.controller.getSnapshot().state; return state ? jumpRopeChallengeText(state, this.now()) : ''; }, onExit: () => this.render()});
-    this.skyGifts = mountSkyGiftsActivity(document.getElementById('app')!, {onFinished: (rabbit, caught) => {
+    challengeText: () => { const state = this.controller.getSnapshot().state; return state ? jumpRopeChallengeText(state, this.now()) : ''; }, onExit: () => this.render()})));
+    this.skyGifts = lazyActivity(() => import('./SkyGiftsActivity').then(m => m.mountSkyGiftsActivity(document.getElementById('app')!, {onFinished: (rabbit, caught) => {
       const before = this.controller.getSnapshot().state, granted = this.controller.perform({type: 'rewardSkyGifts', rabbitId: rabbit.id, caught});
       if (!granted.ok) return `Récompense non enregistrée : ${REFUSALS[granted.reason]}`;
       const candies = before ? candiesOf(granted.state) - candiesOf(before) : 0;
@@ -287,8 +288,8 @@ export class GameUI {
       return parts.length ? parts.join(' · ') : caught ? 'Partie pour le plaisir : plus de récompense aujourd’hui' : '';
     }, quotaText: () => { const state = this.controller.getSnapshot().state; return state ? skyGiftsQuotaText(state, this.now()) : ''; },
     best: () => this.controller.getSnapshot().state?.christmas?.skyGifts?.best ?? 0, cheer: () => this.sounds.ping(),
-    sound: kind => this.sounds.run(({catch: 'coin', miss: 'whoosh', poison: 'shock', bomb: 'rumble'} as const)[kind], kind === 'catch' ? 1.2 : 1), onExit: () => this.render()});
-    this.bennyFlight = mountBennyFlightActivity(document.getElementById('app')!, {onFinished: passed => {
+    sound: kind => this.sounds.run(({catch: 'coin', miss: 'whoosh', poison: 'shock', bomb: 'rumble'} as const)[kind], kind === 'catch' ? 1.2 : 1), onExit: () => this.render()})));
+    this.bennyFlight = lazyActivity(() => import('./BennyFlightActivity').then(m => m.mountBennyFlightActivity(document.getElementById('app')!, {onFinished: passed => {
       const granted = this.controller.perform({type: 'rewardBennyFlight', passed});
       if (!granted.ok) return `Récompense non enregistrée : ${REFUSALS[granted.reason]}`;
       const won = granted.flightHearts ?? 0; // Paid by this game: never a difference with the Hearts counted earlier (a cloud sync can change them).
@@ -296,7 +297,7 @@ export class GameUI {
       return parts.length ? parts.join(' · ') : passed ? 'Partie pour le plaisir : plus de récompense aujourd’hui' : '';
     }, quotaText: () => { const state = this.controller.getSnapshot().state; return state ? bennyFlightQuotaText(state, this.now()) : ''; },
     best: () => this.controller.getSnapshot().state?.bennyFlight?.best ?? 0, onExit: () => this.render(),
-    sound: (kind, pitch) => this.sounds.run(({flap: 'flap', pass: 'dodge', ten: 'coin', fall: 'bump', record: 'power', faster: 'whoosh'} as const)[kind], kind === 'ten' ? 1.3 : pitch)});
+    sound: (kind, pitch) => this.sounds.run(({flap: 'flap', pass: 'dodge', ten: 'coin', fall: 'bump', record: 'power', faster: 'whoosh'} as const)[kind], kind === 'ten' ? 1.3 : pitch)})));
     const runOptions: Parameters<typeof mountBennyRunActivity>[1] = {onFinished: summary => {
       const before = this.controller.getSnapshot().state?.bennyRun?.settings ?? {}, heartsBefore = this.controller.getSnapshot().state?.hearts ?? 0;
       const saved = this.controller.perform({type: 'finishBennyRun', score: summary.score, metres: summary.metres, bySetting: summary.bySetting, coins: summary.coins, hearts: summary.hearts});
@@ -1503,6 +1504,7 @@ export class GameUI {
     const day = bennyFlightDay(s, this.now()), reason = bennyFlightReason(s);
     this.content.append(node('p', bennyFlightQuotaText(s, this.now()), 'badge'));
     if (day.best) this.content.append(node('p', `Ton record : ${day.best} colonne${day.best > 1 ? 's' : ''}`, 'small'));
+    this.bennyFlight.prepare(); // Downloaded while the perch is read (plan 5.4).
     this.button(this.content, 'Jouer avec Benny', () => {
       const state = this.controller.getSnapshot().state, benny = state?.rabbits.find(r => r.species === 'benny'); if (!state || !benny) return;
       this.close(); this.bennyFlight.open(benny);
@@ -1583,6 +1585,7 @@ export class GameUI {
     });
     const ready = slots.every(Boolean), rabbits = slots.map(id => s.rabbits.find(r => r.id === id)!);
     const toActivity = (r: Rabbit) => ({id: r.id, species: r.species, name: r.name, affection: r.affection, classicLook: r.classicLook, evolution: r.evolution});
+    this.jumpRope.prepare(); // Downloaded while the islet is read (plan 5.4).
     this.button(this.content, 'Jouer', () => this.jumpRope.open({carriers: [toActivity(rabbits[0]), toActivity(rabbits[1])], athlete: toActivity(rabbits[2])}),
       ready ? null : 'Il te faut trois lapins à la maison : deux porteurs et un athlète.').dataset.jumpRopePlay = '';
   }
@@ -1679,7 +1682,7 @@ export class GameUI {
         node('p', `Le traîneau lâche des cadeaux : attrape-les avec la hotte de ton lapin, mais laisse tomber les cadeaux empoisonnés et les bombes ! Tes ${SKY_GIFTS.rewardedGamesPerCycle} premières parties du jour rapportent des pattes et des sucres d’orge (1 tous les ${SKY_GIFTS.giftsPerCandy} cadeaux).`),
         traps, node('p', skyGiftsQuotaText(s, now), 'badge'));
       if (day.best) game.append(node('p', `Ton record : ${day.best} cadeau${day.best > 1 ? 'x' : ''}`, 'small'));
-      this.button(game, 'Jouer aux cadeaux du ciel', () => { this.skyGiftsPick = true; this.render(); }, s.rabbits.length ? null : 'Il te faut un lapin pour porter la hotte.').dataset.skyGiftsPlay = '';
+      this.button(game, 'Jouer aux cadeaux du ciel', () => { this.skyGiftsPick = true; this.skyGifts.prepare(); this.render(); }, s.rabbits.length ? null : 'Il te faut un lapin pour porter la hotte.').dataset.skyGiftsPlay = '';
       add(game);
       return;
     }

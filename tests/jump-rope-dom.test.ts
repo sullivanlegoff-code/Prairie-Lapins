@@ -65,7 +65,7 @@ it('below level 20, the islet card says the level it needs', () => {
   expect(card.querySelector<HTMLButtonElement>('button')!.disabled).toBe(true); expect(card.textContent).toContain('Niveau 20 requis');
 });
 
-it('the islet picks a trio, plays one life with Rejouer, pays the jumps and remembers the trio', () => {
+it('the islet picks a trio, plays one life with Rejouer, pays the jumps and remembers the trio', async () => {
   const {ui, controller} = mount(game()); ui.open({kind: 'jumpIsland'});
   expect(panel().textContent).toContain('Encore 3 parties récompensées aujourd’hui');
   // By default the most affectionate rabbit jumps and the next two turn the rope.
@@ -74,7 +74,7 @@ it('the islet picks a trio, plays one life with Rejouer, pays the jumps and reme
   panel().querySelector<HTMLButtonElement>('[data-jump-rope-slot="2"] button')!.click();
   panel().querySelector<HTMLButtonElement>('[data-jump-rope-rabbit="rabbit-103"] button')!.click();
   expect(slotText(2)).toContain('Athlète : Caramel'); expect(slotText(1)).toContain('Porteur : Noisette');
-  panel().querySelector<HTMLButtonElement>('[data-jump-rope-play]')!.click();
+  panel().querySelector<HTMLButtonElement>('[data-jump-rope-play]')!.click(); await vi.dynamicImportSettled(); // The game is downloaded at its first opening (plan 5.4).
   expect(layer().hidden).toBe(false); expect(layer().textContent).toContain('Caramel saute à la corde !');
   expect(layer().textContent).toContain('Pompon et Noisette font tourner la corde');
   expect(layer().querySelectorAll('.jump-rope-carrier img').length).toBe(2); expect(layer().querySelector('.jump-rope-post')).toBeNull();
@@ -103,7 +103,7 @@ it('the islet picks a trio, plays one life with Rejouer, pays the jumps and reme
   expect(layer().hidden).toBe(true); expect(panel().textContent).toContain('Ton record : 5 sauts');
 });
 
-it('the remembered trio comes back, a rabbit on a trip cannot be chosen, and the space bar jumps too', () => {
+it('the remembered trio comes back, a rabbit on a trip cannot be chosen, and the space bar jumps too', async () => {
   const s = game(); s.jumpRope = {cycle: 0, rewarded: 0, best: 3, team: {carriers: ['rabbit-101', 'rabbit-103'], athlete: 'rabbit-102'}};
   const free = (kind?: 'enclosure') => { for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y, undefined, kind)) return {x, y}; throw Error('No space'); };
   // The starting parcel has no room left for a second 6 × 5 enclosure: the south parcel is owned too.
@@ -119,7 +119,7 @@ it('the remembered trio comes back, a rabbit on a trip cannot be chosen, and the
   expect(panel().querySelector<HTMLButtonElement>('[data-jump-rope-rabbit="rabbit-101"] button')!.disabled).toBe(true); // Already there.
   panel().querySelector<HTMLButtonElement>('[data-jump-rope-rabbit="rabbit-103"] button')!.click();
   expect(slotText(0)).toContain('Porteur : Caramel'); expect(slotText(1)).toContain('Porteur : Noisette');
-  panel().querySelector<HTMLButtonElement>('[data-jump-rope-play]')!.click();
+  panel().querySelector<HTMLButtonElement>('[data-jump-rope-play]')!.click(); await vi.dynamicImportSettled(); // The game is downloaded at its first opening (plan 5.4).
   layer().querySelector<HTMLButtonElement>('[data-jump-rope-start]')!.click();
   clock = JUMP_ROPE.leadIn; document.dispatchEvent(new KeyboardEvent('keydown', {key: ' '}));
   expect(layer().querySelector('.jump-rope-score')!.textContent).toBe('1 saut');
@@ -171,14 +171,14 @@ it('a « tac » marks each pass of the rope, the carriers console a miss and app
   expect(activity.element.querySelector('.jump-rope-cheer')!.textContent).toBe('Courage, on recommence !');
 });
 
-it('an evolved rabbit jumps and turns the rope with its evolved drawing (audit 4 November 2026)', () => {
+it('an evolved rabbit jumps and turns the rope with its evolved drawing (audit 4 November 2026)', async () => {
   const s = game();
   const [noisette, pompon, caramel] = ['rabbit-101', 'rabbit-102', 'rabbit-103'].map(id => s.rabbits.find(r => r.id === id)!);
   noisette.affection = 32; pompon.affection = 30; caramel.affection = 29;
   noisette.evolution = {done: true, challenges: {voyage: 1}};
   const {ui} = mount(s); ui.open({kind: 'jumpIsland'});
   expect(slotText(2)).toContain('Athlète : Noisette');
-  panel().querySelector<HTMLButtonElement>('[data-jump-rope-play]')!.click();
+  panel().querySelector<HTMLButtonElement>('[data-jump-rope-play]')!.click(); await vi.dynamicImportSettled(); // The game is downloaded at its first opening (plan 5.4).
   // Noisette (evolved) jumps with the new drawing; Pompon and Caramel have not evolved.
   expect(layer().querySelector<HTMLImageElement>('.jump-rope-rabbit .jump-rope-figure img')!.src).toContain('paille-v2');
   const carriers = [...layer().querySelectorAll<HTMLImageElement>('.jump-rope-carrier .jump-rope-figure img')].map(img => img.src);

@@ -151,13 +151,13 @@ describe('Christmas market view', () => {
     expect(card.dataset.missionStatus).toBe('pending'); expect(card.querySelector('button')).toBeNull();
     expect(card.textContent).toContain(`0 / ${target}`); expect(card.querySelector('.christmas-mission-reward')?.textContent).toContain(`+${CHRISTMAS_CHALLENGES[picked[0]].candies}`);
   });
-  it('opens « Les cadeaux du ciel » with one chosen rabbit and shows today’s rewarded games', () => {
+  it('opens « Les cadeaux du ciel » with one chosen rabbit and shows today’s rewarded games', async () => {
     const {ui} = mount(game()); ui.open({kind: 'christmasMarket', tab: 'gifts'});
     expect(panel().textContent).toContain('Parties récompensées : 0/3');
     expect(panel().textContent).toContain('laisse tomber les cadeaux empoisonnés et les bombes');
     panel().querySelector<HTMLButtonElement>('[data-sky-gifts-play]')!.click();
     const choice = panel().querySelector<HTMLElement>('[data-sky-gifts-rabbit="rabbit-2"]')!;
-    buttonIn(choice, 'Choisir')!.click();
+    buttonIn(choice, 'Choisir')!.click(); await vi.dynamicImportSettled(); // Downloaded at its first opening (plan 5.4).
     expect(document.querySelector<HTMLElement>('.sky-gifts-activity')!.hidden).toBe(false);
   });
   it('closes when the event is off', () => {
