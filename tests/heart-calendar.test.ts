@@ -1,6 +1,7 @@
 import {describe, expect, it} from 'vitest';
-import {HEART_CALENDAR_DAYS, heartCalendar, heartShoppingList, simulatedLevel} from '../src/simulation/heartCalendar';
-import {AGENCY_UPGRADE_HEARTS, EPIC_ISLET, HEARTS, NURSERY, tripHearts} from '../src/config/balance';
+import {HEART_CALENDAR_DAYS, heartCalendar, heartShoppingList, rampageHeartsPerDay, simulatedLevel} from '../src/simulation/heartCalendar';
+import {BENNY_RUN} from '../src/simulation/bennyRun';
+import {AGENCY_UPGRADE_HEARTS, BENNY_LAIR, EPIC_ISLET, HEARTS, NURSERY, tripHearts} from '../src/config/balance';
 import {DAILY_BONUS} from '../src/config/missions';
 import {PROGRESSION} from '../src/config/progression';
 
@@ -27,5 +28,13 @@ describe('Hearts calendar', () => {
     expect(Object.keys(sources).sort()).toEqual(['bonus du jour', 'cadeau', 'cuisine', 'initial', 'missions', 'niveaux', 'voyages']);
     expect(simulatedLevel(HEART_CALENDAR_DAYS)).toBeLessThan(15);
     expect(calendar.findIndex(d => (d.bySource.voyages ?? 0) > 0)).toBeGreaterThan(0);
+  });
+
+  it('counts « Benny Rampage » from level 25, within its daily limit, and nothing of it by day 15 (decision D7)', () => {
+    expect(calendar.at(-1)!.bySource['Benny Rampage']).toBeUndefined();
+    const long = heartCalendar(90), opens = long.findIndex(d => (d.bySource['Benny Rampage'] ?? 0) > 0);
+    expect(opens).toBeGreaterThan(HEART_CALENDAR_DAYS); expect(long[opens].level).toBeGreaterThanOrEqual(BENNY_LAIR.unlockLevel);
+    const perDay = (long.at(-1)!.bySource['Benny Rampage'] ?? 0) - (long.at(-2)!.bySource['Benny Rampage'] ?? 0);
+    expect(perDay).toBe(rampageHeartsPerDay()); expect(perDay).toBeLessThanOrEqual(BENNY_RUN.heartsPerCycle); expect(perDay).toBe(12);
   });
 });

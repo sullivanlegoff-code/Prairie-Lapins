@@ -10,9 +10,13 @@
  *   session, the lengths taking turns from 3 to 10 hours (the average of the random draw); a trip is welcomed at the first
  *   session after it ends;
  * - the main missions counted are only those the simulated player always reaches by day 15 (levels 5 and 10, 5 species,
- *   affection 5); salon, jump rope and Benny's flight open later and are not counted.
+ *   affection 5); salon, jump rope and Benny's flight open later and are not counted;
+ * - « Benny Rampage » (decision D7, 23 November 2026) from level 25 (the Antre du dragon), Benny assumed on the island: its
+ *   rewarded runs of the day, each with the Hearts a good five-minute run picks up, within the day's limit. It opens long after
+ *   day 15, so it adds nothing to the 15-day rule; longer calendars count it.
  */
-import {AFFECTION_STATUES, AGENCY_UPGRADE_HEARTS, DAILY_HEART_SOURCES, EPIC_ISLET, FARM_UPGRADES, HEARTS, NURSERY, TRAVEL, tripHearts} from '../config/balance';
+import {BENNY_RUN} from './bennyRun';
+import {AFFECTION_STATUES, AGENCY_UPGRADE_HEARTS, BENNY_LAIR, DAILY_HEART_SOURCES, EPIC_ISLET, FARM_UPGRADES, HEARTS, NURSERY, TRAVEL, tripHearts} from '../config/balance';
 import {DECORATIONS, DECORATION_IDS} from '../config/decorations';
 import {HABITAT_TYPES, habitatLevel} from '../config/habitats';
 import {DAILY_BONUS, MAIN_MISSIONS, type MainMissionId} from '../config/missions';
@@ -21,6 +25,10 @@ import {PROGRESSION} from '../config/progression';
 /** Day (from the first session) when the progression simulation reaches each level (8 November 2026 run). */
 export const SIMULATED_LEVEL_DAYS: readonly (readonly [day: number, level: number])[] = [[0, 5], [7.5, 10], [19.5, 15], [35.2, 20], [42.2, 22], [62, 25]];
 export const HEART_CALENDAR_DAYS = 15;
+/** Hearts a good run of about five minutes picks up on the road (measured, see BENNY_RUN). */
+export const RAMPAGE_HEARTS_PER_RUN = 4;
+/** Rampage Hearts of a day: its rewarded runs, within the day's limit. */
+export const rampageHeartsPerDay = (): number => Math.min(BENNY_RUN.heartsPerCycle, BENNY_RUN.rewardedRunsPerCycle * Math.min(BENNY_RUN.maxHeartsPerRun, RAMPAGE_HEARTS_PER_RUN));
 const COUNTED_MISSIONS: readonly [MainMissionId, (level: number, day: number) => boolean][] = [
   ['level-five', level => level >= 5], ['level-ten', level => level >= 10],
   ['growing-collection', (_level, day) => day >= 10], ['strong-bonds', (_level, day) => day >= 3],
@@ -67,6 +75,7 @@ export function heartCalendar(days = HEART_CALENDAR_DAYS): HeartDay[] {
       let gifts = 0; while (nextGift <= t && gifts < HEARTS.maximumGifts) { gifts++; nextGift += 24 * H; }
       if (gifts) add('cadeau', gifts * HEARTS.gift);
       if (hour === 8 && day >= 2) { add('bonus du jour', dailyBonus); add('cuisine', DAILY_HEART_SOURCES.cuisine); }
+      if (hour === 20 && level >= BENNY_LAIR.unlockLevel) add('Benny Rampage', rampageHeartsPerDay());
       for (const trip of trips.filter(trip => trip.endsAt <= t)) { add('voyages', trip.hearts); trips.splice(trips.indexOf(trip), 1); }
       if (!agency && level >= TRAVEL.unlockLevel) agency = 1;
       while (agency && agency < 3 && balance >= AGENCY_UPGRADE_HEARTS[agency as 1 | 2]) { balance -= AGENCY_UPGRADE_HEARTS[agency as 1 | 2]; agency++; }
