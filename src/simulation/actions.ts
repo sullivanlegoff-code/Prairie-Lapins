@@ -25,6 +25,7 @@ import {recordDailyStreak, recordEvolutionChallenge, recordJumpRopeScore} from '
 import {canEvolve, hasEvolvedArt} from '../config/evolvedArt';
 import {evolutionChallengesComplete, type EvolutionChallenge} from '../config/evolutionChallenges';
 import {jumpIslandReason, jumpRopeReward, jumpRopeTeamReason} from './jumpRope';
+import {growFormerEnclosures} from './enclosureGrowth';
 import {dailyBonusReady, dailyClaimable, dailyCycleStart, dailyMissionsOf, recordMissionAction} from './missions';
 import {AGENCY_UPGRADE_HEARTS, DAILY_HEART_SOURCES, farmLimit, farmDuration, FARM_UPGRADES, orderFarmLevel, BALANCE, HEARTS, HOUR, TRAVEL, SALON, FOREST, JUMP_ROPE, EPIC_ISLET, BENNY_FLIGHT, BENNY_LAIR, ULTRA_SNOW, CARE_KINDS, carePrice, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
 import {emptyBuilding} from '../state/initial';
@@ -756,6 +757,8 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
     const christmasEvents: readonly string[] = ['feed', 'breed', 'collectIncome', 'collectOrder', 'petRabbit'];
     const counts: [ChristmasEventName, number][] = christmasCounts ?? (christmasEvents.includes(command.type) ? [[command.type as ChristmasEventName, amount]] : []);
     for (const [event, count] of counts) requireRule(recordChristmasAction(s, event, count), 'RESOURCE_LIMIT');
+    // An enclosure (or salon) that kept a former size grows as soon as an action frees its room, not only at the next load (plan 4.2).
+    if (s.buildings.some(b => b.formerFootprint)) growFormerEnclosures(s);
     // In particular, a welcome frees the nursery at this action's timestamp.
     return {ok: true, state: advance(s, time), ...(value === undefined ? {} : {value}), ...(progressionGain ? {progressionGain} : {}), ...(cuisineReward ? {cuisineReward} : {}), ...(jumpRopeResult ? {jumpRopeReward: jumpRopeResult} : {}), ...(flightHearts === undefined ? {} : {flightHearts})};
   } catch (error) {

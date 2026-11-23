@@ -218,6 +218,21 @@ describe('a v23 save loads without loss', () => {
     expect(current.formerFootprint).toBeUndefined(); expect(buildingFootprint(current)).toMatchObject({width: 6, height: 5}); expectNoOverlap(last);
   });
 
+  it('grows at once when the player puts away what blocked it, without waiting for the next load (plan 4.2)', () => {
+    const s = crowded(); s.buildings = s.buildings.filter(b => b.kind !== 'enclosure');
+    enclosureAt(s, 'building-10', 6, 40); s.rabbits = s.rabbits.map(r => ({...r, enclosureId: 'building-10'})); s.nextId = 20;
+    const bushes = [[5, 40], [10, 40], [5, 43], [10, 43], [6, 44], [9, 44]];
+    s.decorations = bushes.map(([x, y], i) => ({id: `decoration-${100 + i}`, catalogId: 'bush', location: {kind: 'outside', x, y, rotation: 0}}));
+    s.nextId = 200;
+    let state = load(asV23Json(s));
+    expect(buildingFootprint(state.buildings.find(b => b.id === 'building-10')!)).toMatchObject({width: 4, height: 4});
+    for (const d of state.decorations) {
+      const r = act(state, {type: 'placeDecoration', id: d.id, location: {kind: 'inventory'}}, state.lastSimulatedAt); expect(r.ok).toBe(true); if (r.ok) state = r.state;
+    }
+    const grown = state.buildings.find(b => b.id === 'building-10')!;
+    expect(grown.formerFootprint).toBeUndefined(); expect(buildingFootprint(grown)).toMatchObject({width: 6, height: 5}); expectNoOverlap(state);
+    expect(load(encodeGame(state)).buildings).toEqual(state.buildings); // Saved as it is now: nothing left to grow at the next load.
+  });
   it('upgrades an enclosure that kept its former size straight to the enlarged footprint of the next level', () => {
     const s = crowded(); s.buildings = s.buildings.filter(b => b.kind !== 'enclosure');
     const level = requiredHabitatUpgradeLevel('universal', 2); s.progression = {totalXp: cumulativeLevelXp(level), rewardedThroughLevel: level};
