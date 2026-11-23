@@ -71,6 +71,27 @@ describe('« Benny Rampage » screen', () => {
     expect(card.querySelector('.benny-run-record')!.classList.contains('show')).toBe(true);
     expect(card.querySelector('button')!.textContent).toBe('Rejouer');
   });
+  it('pays the run when « Quitter » is pressed from the pause, then shows its end card (D2)', () => {
+    const {activity, step, finished} = mount(50);
+    document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);
+    const g = activity.game!; g.coins = 12; step(200);
+    document.querySelector<HTMLElement>('[data-benny-run-pause]')!.click();
+    document.querySelector<HTMLElement>('[data-benny-run-quit]')!.click();
+    expect(finished).toHaveLength(1); expect((finished[0] as {coins: number}).coins).toBe(12);
+    const card = document.querySelector<HTMLElement>('[data-benny-run-card]')!;
+    expect(activity.active).toBe(true); expect(card.hidden).toBe(false); expect(card.textContent).toMatch(/Course arrêtée : tu gardes tes gains/);
+    // Quitter on the end card closes the screen, without paying twice.
+    card.querySelector<HTMLElement>('[data-benny-run-quit]')!.click();
+    expect(activity.active).toBe(false); expect(finished).toHaveLength(1);
+  });
+  it('pays the run too when the cross is pressed during it, but closes at once from the start card', () => {
+    const {activity, step, finished} = mount(50);
+    document.querySelector<HTMLElement>('[data-benny-run-exit]')!.click();
+    expect(activity.active).toBe(false); expect(finished).toHaveLength(0);
+    activity.open(); document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);
+    document.querySelector<HTMLElement>('[data-benny-run-exit]')!.click();
+    expect(finished).toHaveLength(1); expect(activity.active).toBe(true);
+  });
   it('plays a shock wave at full pace: no slow motion, and its strikes freeze nothing', () => {
     const {activity, step, key} = mount(50);
     document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);

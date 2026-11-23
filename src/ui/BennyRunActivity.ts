@@ -2280,14 +2280,27 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     frame(countLoop);
   }
   const chip = (text: string, className = '') => { const li = document.createElement('li'); li.textContent = text; if (className) li.className = className; return li; };
+  /** Whether a run is under way (started, its end card not shown yet), and whether the player stopped it (« Quitter »). */
+  let inRun = false, stopped = false;
+  /**
+   * « Quitter » during a run, from the pause, the cross or Escape (owner, 23 Nov. 2026, D2): the run is paid as if it had ended
+   * (coins, Hearts, record, within the day's rewarded runs), then its end card is shown. Anywhere else, the screen closes.
+   */
+  function quitRun(): void {
+    if (!game || !inRun || ending) { close(); return; }
+    clearTimeout(countdown); countdown = undefined; clearTimeout(stopTimer); time.resume();
+    running = false; tips.clear(); words.clear(); coinFlights = []; tally = {count: 0, last: -1e9}; layer.classList.remove('benny-run-chased'); notices();
+    stopped = true; showEnd();
+  }
   function showEnd(): void {
     if (!game) return;
+    inRun = false;
     const s = runSummary(game), record = s.score > best && s.score > 0, previous = best; best = Math.max(best, s.score);
     const won = options.onFinished?.(s), reward: RunReward = typeof won === 'object' && won ? won : {pattes: 0, hearts: 0, notes: won ? [won] : []};
     hud(); draw(clock()); // The run as it stood, without the scene's words.
     const again = button('Rejouer', () => start(), 'bennyRunAgain'); again.classList.add('benny-run-again');
     const quit = button('Quitter', close, 'bennyRunQuit'); quit.classList.add('secondary');
-    const title = paragraph('La Dragon a rattrapé Benny !', 'benny-run-title');
+    const title = paragraph(stopped ? 'Course arrêtée : tu gardes tes gains !' : 'La Dragon a rattrapé Benny !', 'benny-run-title');
     // The score, counted up from 0; the record springs once it is reached.
     const big = paragraph('0', 'benny-run-big'), points = document.createElement('div'); points.className = 'benny-run-points'; points.append(big, paragraph('points', 'benny-run-unit'));
     const recordLine = record ? paragraph(previous ? 'Nouveau record !' : 'Ton premier record !', 'benny-run-record') : best ? paragraph(`Ton record : ${best}`, 'benny-run-best') : null;
@@ -2327,6 +2340,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     runBest = best; beaten = false; milestone = 0; metresBest = options.bestMetres?.() ?? 0; metresBeaten = false; score.classList.remove('benny-run-beaten');
     game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; camX = 0; camUp = 0; landedAt = -1e9; wasUp = false; swing = null; pending = []; wallTilt = 0; laneSpeed = 0; rollFrom = -1e9; wasFlat = false; shock = null; cleared.clear(); flashes = []; coinFlights = []; tally = {count: 0, last: -1e9}; bits = []; rings = []; streaks = []; bend = 0; coinRun = 0; shake = null; hurtAt = null; running = true; card.hidden = true; counting = null; lastDrawAt = clock();
     holesAnnounced = 0; lastHoleSeen = -1; geysersUp.clear(); rocksDown.clear(); ghosts = []; pounces = []; gustAt = null;
+    inRun = true; stopped = false;
     hud(); word('Benny Rampage', WORD.big); frame(loop);
   }
   /** Starts at once when the pictures are ready (or when nothing is to wait for); otherwise says « Chargement… » on the button and
@@ -2380,7 +2394,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (layer.hidden) return;
     ending = null; counting = null;
     clearTimeout(stopTimer); clearTimeout(countdown); countdown = undefined; clearTimeout(artWait); artWait = undefined;
-    running = false; time.resume(); game = null; layer.hidden = true; tips.clear(); words.clear(); layer.classList.remove('benny-run-chased'); notices();
+    running = false; inRun = false; time.resume(); game = null; layer.hidden = true; tips.clear(); words.clear(); layer.classList.remove('benny-run-chased'); notices();
     window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: false})); releaseArt(); options.onExit?.();
   }
   /** The 3, 2, 1 before the run goes on after a pause. */
@@ -2389,7 +2403,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (!running && !countdown) return;
     if (countdown) { clearTimeout(countdown); countdown = undefined; } else time.pause();
     running = false; layer.classList.remove('benny-run-chased'); notices();
-    const ch = game?.challenge, again = button('Reprendre', resume, 'bennyRunResume'), quit = button('Quitter', close, 'bennyRunQuit'); again.classList.add('benny-run-again'); quit.classList.add('secondary');
+    const ch = game?.challenge, again = button('Reprendre', resume, 'bennyRunResume'), quit = button('Quitter', quitRun, 'bennyRunQuit'); again.classList.add('benny-run-again'); quit.classList.add('secondary');
     showCard(paragraph('Partie en pause', 'benny-run-title'), ...(ch ? [paragraph(`Défi : ${CHALLENGE_TEXT[ch.kind](ch.goal)} (${ch.count}/${ch.goal})`, 'benny-run-rules')] : []),
       again, quit);
   }
@@ -2429,7 +2443,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     touch = null;
   }, {signal: abort.signal});
   canvas.addEventListener('pointercancel', () => { touch = null; }, {signal: abort.signal});
-  $<HTMLButtonElement>('[data-benny-run-exit]').addEventListener('click', () => close(), {signal: abort.signal});
+  $<HTMLButtonElement>('[data-benny-run-exit]').addEventListener('click', () => quitRun(), {signal: abort.signal});
   $<HTMLButtonElement>('[data-benny-run-pause]').addEventListener('click', () => pause(), {signal: abort.signal});
   document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); }, {signal: abort.signal});
   // The control centre or a call over the game (the page stays visible but loses the focus): paused too.
@@ -2444,7 +2458,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const keys: Record<string, RunInput> = {ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down'};
   document.addEventListener('keydown', event => {
     if (layer.hidden) return;
-    if (event.key === 'Escape') { event.preventDefault(); close(); return; }
+    if (event.key === 'Escape') { event.preventDefault(); quitRun(); return; }
     const gesture = keys[event.key]; if (gesture && running) { event.preventDefault(); input(gesture); }
   }, {signal: abort.signal});
 
