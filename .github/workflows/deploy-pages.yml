@@ -22,7 +22,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # Sans assets-source/ (environ 600 Mo de peintures sources) : la construction ne lit que public/, src/ et scripts/ (plan 6.5).
       - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/assets-source/
       - uses: actions/setup-node@v4
         with:
           node-version: 24
