@@ -96,6 +96,7 @@ import {CHASE_EVENT, RabbitChases, type ChaseRunner} from './rabbitChase';
 import {SNOWBALL_BATTLE_EVENT, SNOWBALL_EVENT, SnowballFights, snowballPoint, type SnowballThrower} from './snowballFight';
 import {LIGHT_POOLS, NightGlows, type GlowSource} from './nightGlows';
 import {TextureBudget, budgetWidth, shrinkSize} from './textureBudget';
+import {grassTileLayout} from './grassTiles';
 import {NIGHT_GLOW_PREFIX, nightGlowOf} from '../config/nightLights';
 import {CHRISTMAS_MARKET_ART, christmasMarketFrame, christmasMarketPoint} from '../config/christmasMarketArt';
 import {CANDY_ICON_URL, CANDY_TEXTURE, COIN_BASKET_ART, COIN_BUBBLE_FRAME, SNOWBALL_ART, SNOWMAN_ART} from '../config/winterArt';
@@ -1147,12 +1148,14 @@ export class MeadowScene extends Phaser.Scene {
       this.floatingIslandLayer.request(ids);
       this.maskIsland(ids);
     }
-    const grass = grassTile(stage), scale = grass.worldUnits / grass.size;
+    const grass = grassTile(stage);
     for (const id of ids) {
       const parcel = PARCELS[id], x = VISUAL.grid.originX + parcel.x * VISUAL.grid.width, y = VISUAL.grid.originY + parcel.y * VISUAL.grid.depth;
-      // Anchored on the world origin: neighbouring parcels continue the same pattern without a seam.
-      this.ground.add(this.add.tileSprite(x, y, ISLAND.parcelWidth / scale, ISLAND.parcelDepth / scale, grass.texture)
-        .setOrigin(0).setScale(scale).setTilePosition(x / scale, y / scale));
+      // Anchored on the world origin: neighbouring parcels continue the same pattern without a seam. The sprite is the parcel's
+      // own size (its canvas, never drawn in WebGL, stays small: src/display/grassTiles.ts).
+      const tile = grassTileLayout(x, y, ISLAND.parcelWidth, ISLAND.parcelDepth, grass);
+      this.ground.add(this.add.tileSprite(x, y, tile.width, tile.height, grass.texture)
+        .setOrigin(0).setTileScale(tile.tileScale).setTilePosition(tile.tileX, tile.tileY));
     }
   }
   /** Rounded plateau outline for the generated relief only. */
