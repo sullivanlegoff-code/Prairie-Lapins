@@ -279,6 +279,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   onExit?: () => void; clock?: () => number; frame?: (step: () => void) => number;
   /** How long « C'est parti ! » may wait for the pictures to be loaded and decoded (ms); none when absent. */
   waitForArt?: number;
+  /** The rewarded runs left today and how many a day (said on the start card); nothing said when absent. */
+  rewardedLeft?: () => {left: number; perDay: number} | null;
 } = {}) {
   const time = pausableClock(options.clock ?? (() => performance.now())), clock = time.now, frame = options.frame ?? (step => requestAnimationFrame(step));
   const layer = document.createElement('div'); layer.className = 'benny-run-activity'; layer.hidden = true;
@@ -2139,6 +2141,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
       case 'heart': word('+1 Cœur !'); burst(width / 2, height * .7, ['#ff4d6d', '#ffd1dc', '#fff'], 14, 240); sound('power', 1.5); break;
       case 'wallStart': sound('wall', event.side === 'left' ? .94 : 1.06); break;
       case 'cleared': { const k = event.entity.cart ? 'cart' : event.entity.kind; cleared.set(k, (cleared.get(k) ?? 0) + 1); }
+        // (The first three dodges of a run are named, lot 2.7: the player learns what jumping or rolling past a thing does.)
+        if (event.points && g.dodges <= 3) word('Esquive !');
         if (event.points) { const p = screenOf(g, event.entity); flashes.push({at: clock(), text: `+${event.points}`, x: p.x}); if (!pieces(p.x, p.y - 10, ['spark'], 3, 160, Math.max(12, p.s * .3), {fall: 200, life: 380, spread: 1, spin: 4})) burst(p.x, p.y - 10, ['#fff', '#ffe66b'], 6, 160); sound('dodge', .95 + Math.random() * .1); }
         break;
       case 'wallEnd': flashes.push({at: clock(), text: `Mur +${event.points}`, x: width / 2}); if (event.trail) { word('Traînée parfaite !', WORD.cheer, `${event.trail} pièces`); sound('power', 1.1); } break;
@@ -2427,7 +2431,14 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     showCard(paragraph('Benny Rampage', 'benny-run-title'),
       paragraph('Benny a chipé un peu du trésor de la Dragon : cours, frappe tout ce qui bouge, et ne te fais pas rattraper !', 'benny-run-rules'),
       ...(record > 0 ? [paragraph(`Ton record : ${record}`, 'benny-run-record')] : []),
+      ...rewardedLine(),
       go, ...(record > 0 ? [learn] : []), how, rules);
+  }
+  /** The rewarded runs left today, on the start card (lot 2.7). */
+  function rewardedLine(): HTMLElement[] {
+    const day = options.rewardedLeft?.(); if (!day) return [];
+    return [paragraph(day.left > 0 ? `Encore ${day.left} ${day.left > 1 ? 'courses récompensées' : 'course récompensée'} aujourd’hui sur ${day.perDay}.`
+      : 'Plus de course récompensée aujourd’hui : tu cours pour le plaisir.', 'benny-run-rules')];
   }
   function close(): void {
     if (layer.hidden) return;
@@ -2443,7 +2454,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (countdown) { clearTimeout(countdown); countdown = undefined; } else time.pause();
     running = false; layer.classList.remove('benny-run-chased'); notices();
     const ch = game?.challenge, again = button('Reprendre', resume, 'bennyRunResume'), quit = button('Quitter', quitRun, 'bennyRunQuit'); again.classList.add('benny-run-again'); quit.classList.add('secondary');
-    showCard(paragraph('Partie en pause', 'benny-run-title'), ...(ch ? [paragraph(`Défi : ${CHALLENGE_TEXT[ch.kind](ch.goal)} (${ch.count}/${ch.goal})`, 'benny-run-rules')] : []),
+    // What the run has won so far (lot 2.7): « Quitter » keeps it.
+    const won = game ? [plural(game.coins, 'pièce'), ...(game.hearts ? [plural(game.hearts, 'Cœur')] : [])].join(' et ') : '';
+    showCard(paragraph('Partie en pause', 'benny-run-title'), ...(won ? [paragraph(`Tu as gagné ${won} pendant cette course.`, 'benny-run-rules')] : []),
+      ...(ch ? [paragraph(`Défi : ${CHALLENGE_TEXT[ch.kind](ch.goal)} (${ch.count}/${ch.goal})`, 'benny-run-rules')] : []),
       again, quit);
   }
   function resume(): void {

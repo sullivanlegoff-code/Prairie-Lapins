@@ -131,6 +131,26 @@ describe('« Benny Rampage » screen', () => {
     for (let t = 0; t < 2500; t += 120) { now += 120; vi.advanceTimersByTime(120); frames.splice(0); }
     expect(go.textContent).toBe(label); expect(go.disabled).toBe(false); expect(activity.playing).toBe(false);
   });
+  it('names the first three dodges, shows the run’s winnings on the pause card and the rewarded runs left on the start card (lot 2.7)', () => {
+    let now = 1000; const frames: (() => void)[] = [];
+    const activity = mountBennyRunActivity(document.body, {clock: () => now, frame: f => frames.push(f), best: () => 50, rewardedLeft: () => ({left: 2, perDay: 3})});
+    activity.open();
+    expect(document.querySelector('[data-benny-run-card]')!.textContent).toMatch(/Encore 2 courses récompensées aujourd’hui sur 3\./);
+    const step = (ms: number) => { for (let t = 0; t < ms; t += 16) { now += 16; vi.advanceTimersByTime(16); for (const f of frames.splice(0)) f(); } };
+    document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);
+    const g = activity.game!, pop = document.querySelector<HTMLElement>('.benny-run-pop')!;
+    g.entities = []; g.nextSpawnZ = Infinity; step(3000);
+    // A barrier jumped over: « Esquive ! ».
+    g.entities.push({id: 9500, kind: 'barrier', lane: g.lane, z: g.distance + 4}); document.dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowUp', bubbles: true})); step(900);
+    expect(g.dodges).toBe(1); expect(pop.textContent).toMatch(/Esquive !/);
+    g.coins = 7; g.hearts = 1;
+    document.querySelector<HTMLElement>('[data-benny-run-pause]')!.click();
+    expect(document.querySelector('[data-benny-run-card]')!.textContent).toMatch(/Tu as gagné 7 pièces et 1 Cœur pendant cette course\./);
+  });
+  it('says on the start card when no rewarded run is left today', () => {
+    mountBennyRunActivity(document.body, {clock: () => 0, frame: () => 1, rewardedLeft: () => ({left: 0, perDay: 3})}).open();
+    expect(document.querySelector('[data-benny-run-card]')!.textContent).toMatch(/Plus de course récompensée aujourd’hui : tu cours pour le plaisir\./);
+  });
   it('plays a shock wave at full pace: no slow motion, and its strikes freeze nothing', () => {
     const {activity, step, key} = mount(50);
     document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);
