@@ -295,8 +295,10 @@ export function startBennyCaress(portrait: HTMLElement, figure: HTMLElement, opt
     rub(x, y) {
       if (!active) return;
       const t = now(); lastRub = t; watchIdle();
+      // One measure per move, taken before any write: a second read after moving the hand forced a new layout (plan 3.7).
+      let measured: DOMRect | undefined; const frame = () => measured ??= portrait.getBoundingClientRect();
       if (hand && x !== undefined && y !== undefined) {
-        const box = portrait.getBoundingClientRect(), dx = x - (handAt?.[0] ?? x);
+        const box = frame(), dx = x - (handAt?.[0] ?? x);
         hand.style.left = `${(x - box.left).toFixed(0)}px`; hand.style.top = `${(y - box.top).toFixed(0)}px`;
         // It leans the way it strokes.
         if (Math.abs(dx) > 1) hand.style.setProperty('--lean', `${Math.max(-14, Math.min(14, dx * .9)).toFixed(0)}deg`);
@@ -306,7 +308,7 @@ export function startBennyCaress(portrait: HTMLElement, figure: HTMLElement, opt
       // A heart rises where the finger rubs (not with reduced motion: nothing moves).
       if (reduced || x === undefined || y === undefined || t - lastFinger < BENNY_CARESS_FINGER_MS) return;
       lastFinger = t;
-      const box = portrait.getBoundingClientRect(), heart = picture(spaHeart(), 'bc-finger-heart');
+      const box = frame(), heart = picture(spaHeart(), 'bc-finger-heart');
       heart.style.left = `${(x - box.left).toFixed(0)}px`; heart.style.top = `${(y - box.top).toFixed(0)}px`;
       heart.style.setProperty('--dx', `${((rand(t) * 2 - 1) * 18).toFixed(0)}px`); heart.style.setProperty('--s', (.7 + rand(t + 1) * .6).toFixed(2));
       heart.addEventListener('animationend', () => heart.remove(), {once: true});

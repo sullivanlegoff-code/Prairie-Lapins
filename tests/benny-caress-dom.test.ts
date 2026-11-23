@@ -215,3 +215,11 @@ it('every other rabbit keeps exactly its short caress', () => {
   expect(portrait.dataset.petting).toBeUndefined();
   pointer(portrait, 'pointerup', 70);
 });
+
+it('measures her portrait once per finger move, even when a heart rises (plan 3.7)', () => {
+  vi.useFakeTimers({toFake: ['setTimeout', 'clearTimeout']}); reducedMotion(false);
+  const {portrait} = sheet('benny'); rub(portrait);
+  const measure = vi.spyOn(portrait, 'getBoundingClientRect');
+  for (let i = 0; i < 20; i++) { advance(200); measure.mockClear(); pointer(portrait, 'pointermove', i % 2 ? 22 : 60); expect(measure.mock.calls.length).toBeLessThanOrEqual(1); }
+  expect(portrait.querySelectorAll('.bc-finger-heart').length).toBeGreaterThan(0); // The heart branch did run.
+});
