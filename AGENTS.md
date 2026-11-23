@@ -62,7 +62,7 @@ Règles pour les agents :
 - Aperçu pour l'iPhone du propriétaire (même réseau Wi-Fi) : `node node_modules/vite/bin/vite.js preview --outDir netlify-site --port 5174 --strictPort --host 0.0.0.0`, puis `http://<IP locale du PC>:5174/` (dernière IP connue : 192.168.1.13).
 - Contrôle Chromium : Playwright est installé dans le dépôt voisin `../Project-L/prairie-lapins-prototype/node_modules/playwright`. Passe ce chemin absolu dans la variable `PLAYWRIGHT_MODULE`. Sers `dist/` sur `127.0.0.1:5199` avec `vite preview` ; n'arrête ensuite que ce serveur, par son PID (jamais tous les processus `node`).
 - Partie jouée automatiquement : `docs/playthrough-check.cjs` (voir son en-tête) joue une nouvelle partie en suivant Paille et le guide, avec une capture par étape.
-- Les anciens scripts `docs/*-browser-check.cjs` / `*-public-check.cjs` datent d'anciennes versions (libellés « herbes », etc.) : ne les considère pas comme des références à jour.
+- Les anciens scripts `docs/history/*-browser-check.cjs` / `*-public-check.cjs` (rangés là le 23 novembre 2026) datent d'anciennes versions (libellés « herbes », etc.) : ne les considère pas comme des références à jour.
 
 **N'affirme jamais** un test, un build, un contrôle navigateur ou un essai iPhone que tu n'as pas fait. Un contrôle Chromium n'est **pas** un essai iPhone.
 

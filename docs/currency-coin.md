@@ -12,7 +12,7 @@ Le compteur, les prix, revenus, stocks, missions, confirmations, notifications, 
 
 - `npm test` : tests de simulation existants et deux contrôles de présentation (groupement/signes/stocks/accessibilité, texte importé sûr et remplacement sans duplication).
 - `npm run typecheck` ; `npm run build:pages` : normal et laboratoire.
-- `docs/coin-public-check.cjs` : commandes réelles sur builds ou site public, 667 × 375 et 390 × 844, compteur/prix/missions, vente annulée, confirmation mixte pièces/cœurs, montants regroupés, images chargées, groupes insécables et absence de l’ancien nom visible.
+- `docs/history/coin-public-check.cjs` : commandes réelles sur builds ou site public, 667 × 375 et 390 × 844, compteur/prix/missions, vente annulée, confirmation mixte pièces/cœurs, montants regroupés, images chargées, groupes insécables et absence de l’ancien nom visible.
 - Les parcours navigateur existants utilisent désormais les noms accessibles « pièces ». Leurs clés et les données de test restent inchangées.
 - Les contrôles de publication exécutent également les autres parcours et les builds des deux prévisualisations figées.
 

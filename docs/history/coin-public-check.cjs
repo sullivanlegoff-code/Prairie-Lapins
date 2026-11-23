@@ -1,5 +1,5 @@
 // Real compiled/public controls; read-only save inspection, existing lab fixtures only.
-const enterGame=require('./check-camera.cjs').enter; // loading screen: press « Jouer » after each page load
+const enterGame=require('../check-camera.cjs').enter; // loading screen: press « Jouer » after each page load
 const {chromium}=require('playwright'),fs=require('node:fs'),assert=require('node:assert/strict');
 (async()=>{
  const root=new URL(process.argv[2]),revision=process.argv[3]?.slice(0,7),out=process.env.PRAIRIE_CAPTURE_DIR||'/tmp/coin-proof';fs.mkdirSync(out,{recursive:true});

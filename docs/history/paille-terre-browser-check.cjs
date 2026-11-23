@@ -1,5 +1,5 @@
 // Hooks are added only to intercepted local source, never shipped to the game.
-const enterGame=require('./check-camera.cjs').enter; // loading screen: press « Jouer » after each page load
+const enterGame=require('../check-camera.cjs').enter; // loading screen: press « Jouer » after each page load
 const {chromium}=require('playwright'), fs=require('node:fs'), assert=require('node:assert/strict');
 const url=process.env.PRAIRIE_TEST_URL||'http://127.0.0.1:5192/Project-L/?dev=1';
 const out=process.env.PRAIRIE_CAPTURE_DIR||'/tmp/paille-terre-proof';

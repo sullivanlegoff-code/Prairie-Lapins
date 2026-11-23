@@ -1,5 +1,5 @@
 // Real cross-tab storage events, production UI and isolated lab; no game hooks or save injection.
-const enterGame=require('./check-camera.cjs').enter; // loading screen: press « Jouer » after each page load
+const enterGame=require('../check-camera.cjs').enter; // loading screen: press « Jouer » after each page load
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');

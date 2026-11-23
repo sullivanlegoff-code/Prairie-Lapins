@@ -12,7 +12,7 @@ async function run() {
   const phase = process.argv[2] || 'after';
   const output = process.env.PRAIRIE_CAPTURE_DIR || '/workspace/artifacts/prairie-visual';
   fs.mkdirSync(output, {recursive: true});
-  const fixture = JSON.parse(fs.readFileSync(path.join(__dirname, 'test-saves/habitats-ready-v4.json')));
+  const fixture = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'test-saves/habitats-ready-v4.json')));
   const universal = fixture.buildings.find(b => b.id === 'building-1');
   universal.x = 2; universal.y = 1; universal.habitat.level = 3;
   for (const [index, species] of ['neige', 'terre', 'feu', 'belier-gris', 'volant', 'perroquet'].entries()) {

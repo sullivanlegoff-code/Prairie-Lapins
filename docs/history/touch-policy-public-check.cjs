@@ -1,8 +1,8 @@
 // Mobile WebKit regression on built/public routes. Real taps and native controls only.
-const enterGame=require('./check-camera.cjs').enter; // loading screen: press « Jouer » after each page load
+const enterGame=require('../check-camera.cjs').enter; // loading screen: press « Jouer » after each page load
 // Linux WebKit emulation does not reproduce the iOS browser UI or OS app switching.
 // Multi-touch Phaser regressions remain covered by camera-overview-public-check (Chromium).
-const camera=require('./check-camera.cjs'),{webkit,devices}=require('playwright');
+const camera=require('../check-camera.cjs'),{webkit,devices}=require('playwright');
 const fs=require('node:fs'),assert=require('node:assert/strict');
 (async()=>{
  const root=new URL(process.argv[2]),expected=process.argv[3]?.slice(0,7);

@@ -1,5 +1,5 @@
 // Source-only geometry probes. No hooks are included in either shipped build.
-const enterGame=require('./check-camera.cjs').enter; // loading screen: press « Jouer » after each page load
+const enterGame=require('../check-camera.cjs').enter; // loading screen: press « Jouer » after each page load
 const {chromium}=require('playwright'),fs=require('node:fs'),assert=require('node:assert/strict');
 (async()=>{
  const out=process.env.PRAIRIE_CAPTURE_DIR||'/tmp/overview-source';fs.mkdirSync(out,{recursive:true});const browser=await chromium.launch({executablePath:process.env.PRAIRIE_CHROMIUM||'/usr/bin/chromium',args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader']});

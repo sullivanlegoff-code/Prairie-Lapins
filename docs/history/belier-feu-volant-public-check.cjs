@@ -1,5 +1,5 @@
 // Built/public routes only: no intercepted source, injected saves, or app hooks.
-const enterGame=require('./check-camera.cjs').enter; // loading screen: press « Jouer » after each page load
+const enterGame=require('../check-camera.cjs').enter; // loading screen: press « Jouer » after each page load
 // Uses the existing collection scenario through the real UI in the isolated lab.
 const {chromium}=require('playwright'),fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 (async()=>{

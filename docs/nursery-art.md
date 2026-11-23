@@ -56,7 +56,7 @@ Définis dans `src/dev/scenarios.ts`, chargés dans la partie de test séparée 
 
 ### Principaux contrôles
 - **Tests :** `tests/nursery-v13.test.ts` (état et migration), `nursery-multi.test.ts` (slots, Nid, accueil, accélération, aide gratuite), `nursery-unlock.test.ts` (déblocages), `nursery-overlays.test.ts` (états, géométrie, dérivés), `nursery-scenarios.test.ts` (scénarios).
-- **Navigateur (Playwright) :** `docs/nursery-overlays-browser-check.cjs` (overlays réels et fantôme ; nécessite un serveur Vite de développement, voir l'en-tête du script), `docs/nursery-scenarios-browser-check.cjs` (scénarios par le vrai sélecteur et l'interface), `docs/nursery-art-browser-check.cjs` (parcours Nurserie sur le jeu compilé, via `scripts/replay-land-checks.sh`).
+- **Navigateur (Playwright) :** `docs/history/nursery-overlays-browser-check.cjs` (overlays réels et fantôme ; nécessite un serveur Vite de développement, voir l'en-tête du script), `docs/history/nursery-scenarios-browser-check.cjs` (scénarios par le vrai sélecteur et l'interface), `docs/history/nursery-art-browser-check.cjs` (parcours Nurserie sur le jeu compilé, via `scripts/replay-land-checks.sh`).
 - **Production :** `scripts/verify-production.mjs` (lancé par `npm run build:netlify` / `build:pages`) vérifie la base, les trois sources, les trois dérivés (signature, dimensions, alpha, empreintes) et l'isolation des scénarios.
 
 ### État de validation

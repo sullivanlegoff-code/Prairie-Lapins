@@ -1,10 +1,10 @@
 // Disposable real-browser check of BOTH routes on ONE origin, without app hooks.
-const enterGame=require('./check-camera.cjs').enter; // loading screen: press « Jouer » after each page load
+const enterGame=require('../check-camera.cjs').enter; // loading screen: press « Jouer » after each page load
 // node docs/laboratory-browser-check.cjs <normal-url> [expected-revision]
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const camera = require('./check-camera.cjs');
+const camera = require('../check-camera.cjs');
 const {chromium} = require('playwright');
 async function run() {
   const normal = new URL(process.argv[2]); normal.search = '';

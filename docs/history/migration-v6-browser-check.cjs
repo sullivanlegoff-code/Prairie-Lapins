@@ -1,5 +1,5 @@
 // Disposable browser profile; legacy fixtures never touch a player's browser storage.
-const enterGame=require('./check-camera.cjs').enter; // loading screen: press « Jouer » after each page load
+const enterGame=require('../check-camera.cjs').enter; // loading screen: press « Jouer » after each page load
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs');
 const url=process.env.PRAIRIE_TEST_URL||'http://127.0.0.1:5183/Project-L/?dev=1',out=process.env.PRAIRIE_CAPTURE_DIR||'/workspace/work/migration-v6-browser';
 (async()=>{

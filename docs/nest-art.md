@@ -19,7 +19,7 @@ Les builds et les pages publiques comparent les octets du nouveau nid et ceux de
 
 ## Vérification ciblée et preuves
 
-`node docs/nest-art-browser-check.cjs <racine construite> <révision>`, depuis le projet après installation de Playwright/Chromium. Le contrôle utilise les vrais boutons et gestes, le scénario existant Bâtiments décalés, une lecture seule des sauvegardes et le modèle pur de caméra compilé depuis ses sources inchangées. Aucun hook ni écriture directe de partie.
+`node docs/history/nest-art-browser-check.cjs <racine construite> <révision>`, depuis le projet après installation de Playwright/Chromium. Le contrôle utilise les vrais boutons et gestes, le scénario existant Bâtiments décalés, une lecture seule des sauvegardes et le modèle pur de caméra compilé depuis ses sources inchangées. Aucun hook ni écriture directe de partie.
 
 [Revue ciblée réussie 38922597480](https://github.com/sullivanlegoff-code/Project-L/actions/runs/38922597480), candidat `3eb93fe` : 157 tests concernés, TypeScript, builds normal/laboratoire, parcours visuel et parcours public existant de reproduction. Nid vide, reproduction Bélier Gris/Volant, parents séparément sélectionnables et verrouillés au nid, trois zooms (0,4 / 1,05 / 1,65), paysage 852 × 393 et portrait 390 × 844, déplacement annulé puis confirmé sans perte du travail, rechargement, résultat prêt toujours au nid, action de transfert manuelle et double pression, retour aux habitats, nid à nouveau vide, ferme et production préservées, isolation normal/laboratoire et texture partagée.
 

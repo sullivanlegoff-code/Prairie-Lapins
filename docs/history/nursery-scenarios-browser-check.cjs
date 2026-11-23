@@ -1,7 +1,7 @@
 // The two Nursery laboratory scenarios, loaded through the real laboratory selector and played with the real interface, on the source
 // laboratory (Vite dev server). Source-only scene hook (window.__scene), intercepted in a disposable profile and never shipped.
 // usage: node docs/nursery-scenarios-browser-check.cjs [normal-url] [lab-url]   (PRAIRIE_VIEWPORT=667x375, PRAIRIE_CAPTURE_DIR)
-const enterGame = require('./check-camera.cjs').enter;
+const enterGame = require('../check-camera.cjs').enter;
 const {chromium} = require('playwright'), fs = require('node:fs'), path = require('node:path'), os = require('node:os'), assert = require('node:assert/strict');
 const normalUrl = process.argv[2] || 'http://127.0.0.1:5183/Project-L/', labUrl = process.argv[3] || normalUrl + '?dev=1', out = process.env.PRAIRIE_CAPTURE_DIR || path.join(os.tmpdir(), 'nursery-scenarios-proof');
 const [vw, vh] = (process.env.PRAIRIE_VIEWPORT || '844x390').split('x').map(Number), NORMAL_KEY = 'prairie-lapins.save.v1', LAB_KEY = 'prairie-lapins.development.prairie-lapins.save.v1';

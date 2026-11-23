@@ -1,5 +1,5 @@
 // Source-only hooks for precise zoom/occupant checks; built/public portraits checked separately.
-const enterGame=require('./check-camera.cjs').enter; // loading screen: press « Jouer » after each page load
+const enterGame=require('../check-camera.cjs').enter; // loading screen: press « Jouer » after each page load
 const {chromium}=require('playwright'),fs=require('node:fs'),assert=require('node:assert/strict');
 const url=process.env.PRAIRIE_TEST_URL||'http://127.0.0.1:5190/Project-L/?dev=1';
 const out=process.env.PRAIRIE_CAPTURE_DIR||'/tmp/snow-proof';

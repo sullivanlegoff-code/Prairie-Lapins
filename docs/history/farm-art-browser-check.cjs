@@ -1,12 +1,12 @@
 // Compiled game only. Real controls, existing laboratory fixture and read-only saves.
-const enterGame=require('./check-camera.cjs').enter; // loading screen: press « Jouer » after each page load
+const enterGame=require('../check-camera.cjs').enter; // loading screen: press « Jouer » after each page load
 // The camera model is bundled from the unchanged pure production module; no app hooks.
 const {chromium}=require('playwright'),fs=require('node:fs'),path=require('node:path'),os=require('node:os'),assert=require('node:assert/strict');
 (async()=>{
  const root=new URL(process.argv[2]),expected=process.argv[3]?.slice(0,7),out=process.env.PRAIRIE_CAPTURE_DIR||'/tmp/farm-proof';fs.mkdirSync(out,{recursive:true});
  const temp=fs.mkdtempSync(path.join(os.tmpdir(),'farm-model-')),bundle=path.join(temp,'model.cjs');
  require('esbuild').buildSync({stdin:{contents:"export {MeadowCamera} from './src/ui/gestures'; export {buildingCenter,finePoint} from './docs/screen-points'; export {visibleColumns} from './src/simulation/habitats'; export {VISUAL} from './src/config/visual'; export {FARM_ART} from './src/config/farmArt'; export {recenterCamera} from './src/display/recenter';",resolveDir:process.cwd(),loader:'ts'},bundle:true,platform:'node',format:'cjs',outfile:bundle,define:{'import.meta.env.BASE_URL':JSON.stringify('/Project-L/')}});
- const {MeadowCamera,buildingCenter,finePoint,visibleColumns,VISUAL,FARM_ART,recenterCamera}=require(bundle),camera=require('./check-camera.cjs');
+ const {MeadowCamera,buildingCenter,finePoint,visibleColumns,VISUAL,FARM_ART,recenterCamera}=require(bundle),camera=require('../check-camera.cjs');
  // Selected palette file (src/config/farmArt.ts), e.g. /assets/buildings/farm-windmill-nest.png.
  const farmFile=FARM_ART.url.slice(FARM_ART.url.indexOf('/assets/'));
  const browser=await chromium.launch({args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
@@ -110,7 +110,7 @@ const {chromium}=require('playwright'),fs=require('node:fs'),path=require('node:
   const requests=await textureLoads();assert.equal(requests,1,'one cached texture load for both farms');
   report.checks.push('Transparent PNG, normal placement cancellation, laboratory work-preserving move cancelled/confirmed, second adjacent farm bought through real controls, free/running/ready states, exact price/time/XP/harvest, three zooms in landscape/portrait, each horizontal neighbour selected by its own state, north-front-edge selection next to a ready south farm, reload and normal/laboratory isolation, single texture image load.');
   const comparison=await browser.newPage({viewport:{width:1100,height:700}});
-  const original=fs.readFileSync(path.join(__dirname,'references/farm/Ferme-original.png')).toString('base64'),adapted=fs.readFileSync('public/assets/buildings/farm-windmill.png').toString('base64');
+  const original=fs.readFileSync(path.join(__dirname,'..','references/farm/Ferme-original.png')).toString('base64'),adapted=fs.readFileSync('public/assets/buildings/farm-windmill.png').toString('base64');
   await comparison.setContent('<style>body{margin:0;padding:24px;font:18px Arial;background:#fffaf0;color:#35472f}main{display:flex;gap:24px}figure{margin:0;width:514px}figcaption{height:50px;font-weight:bold}.frame{height:540px;display:flex;align-items:center;justify-content:center;background:repeating-conic-gradient(#edf0e6 0% 25%,#fffaf0 0% 50%) 50%/24px 24px;border-radius:18px}img{max-width:100%;max-height:100%;object-fit:contain}p{font-size:15px}</style><h2>Ferme — référence et adaptation intégrée</h2><main><figure><figcaption>Original conservé · Ferme.png</figcaption><div class=frame><img src="data:image/png;base64,'+original+'"></div></figure><figure><figcaption>Adaptation · texture transparente, moulin statique</figcaption><div class=frame><img src="data:image/png;base64,'+adapted+'"></div></figure></main>');
   await comparison.locator('img').evaluateAll(imgs=>Promise.all(imgs.map(i=>i.decode())));await comparison.screenshot({path:path.join(out,'farm-reference-comparison.png')});await comparison.close();report.captures.push('farm-reference-comparison.png');
   assert.deepEqual(report.errors,[]);report.passed=true;

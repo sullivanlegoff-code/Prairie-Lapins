@@ -1,12 +1,12 @@
 // Real production UI validation in a disposable Chromium context.
-const enterGame=require('./check-camera.cjs').enter; // loading screen: press « Jouer » after each page load
+const enterGame=require('../check-camera.cjs').enter; // loading screen: press « Jouer » after each page load
 // Usage: node docs/production-browser-check.cjs <URL> [expected-build-revision]
 // Requires Playwright and Chromium; optional PRAIRIE_CHROMIUM/PRAIRIE_CAPTURE_DIR.
 // No seeded save, application hook, network interception, or development tools.
 const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
-const camera = require('./check-camera.cjs');
+const camera = require('../check-camera.cjs');
 const {chromium} = require('playwright');
 
 async function run() {

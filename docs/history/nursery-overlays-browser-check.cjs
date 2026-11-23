@@ -1,7 +1,7 @@
 // Nursery v2 cushion overlays on the source laboratory (Vite dev server): real UI for purchase, move and time, real commands
 // for welcome/transfer, fixtures only for states that are slow to reach. Source-only scene hook (window.__scene), intercepted in a
 // disposable profile and never shipped. usage: node docs/nursery-overlays-browser-check.cjs [url]   (PRAIRIE_CAPTURE_DIR for captures)
-const enterGame = require('./check-camera.cjs').enter, camera = require('./check-camera.cjs');
+const enterGame = require('../check-camera.cjs').enter, camera = require('../check-camera.cjs');
 const {chromium} = require('playwright'), fs = require('node:fs'), path = require('node:path'), os = require('node:os'), assert = require('node:assert/strict');
 const url = process.argv[2] || process.env.PRAIRIE_TEST_URL || 'http://127.0.0.1:5183/Project-L/?dev=1', out = process.env.PRAIRIE_CAPTURE_DIR || path.join(os.tmpdir(), 'nursery-overlays-proof');
 const KEY = 'prairie-lapins.development.prairie-lapins.save.v1';

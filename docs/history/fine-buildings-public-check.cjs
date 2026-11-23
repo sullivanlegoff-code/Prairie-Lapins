@@ -1,7 +1,7 @@
 // Built and published routes only: real controls and read-only inspection of the saved state.
-const enterGame=require('./check-camera.cjs').enter; // loading screen: press « Jouer » after each page load
+const enterGame=require('../check-camera.cjs').enter; // loading screen: press « Jouer » after each page load
 // No application hooks, intercepted source, or direct storage mutation.
-const camera=require('./check-camera.cjs'),{chromium}=require('playwright'),fs=require('node:fs'),assert=require('node:assert/strict');
+const camera=require('../check-camera.cjs'),{chromium}=require('playwright'),fs=require('node:fs'),assert=require('node:assert/strict');
 (async()=>{
  const root=new URL(process.argv[2]),expected=process.argv[3]?.slice(0,7),out=process.env.PRAIRIE_CAPTURE_DIR||'/tmp/fine-buildings-public';fs.mkdirSync(out,{recursive:true});
  const browser=await chromium.launch({executablePath:process.env.PRAIRIE_CHROMIUM==='playwright'?undefined:process.env.PRAIRIE_CHROMIUM||'/usr/bin/chromium',args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader']});

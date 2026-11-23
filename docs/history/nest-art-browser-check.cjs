@@ -58,7 +58,7 @@ const {chromium}=require('playwright'),fs=require('node:fs'),path=require('node:
  const nest=()=>read().then(s=>s.buildings.find(b=>b.kind==='nest'));
  const homeMap=s=>s.rabbits.map(r=>[r.id,r.enclosureId]);
  const openNest=async()=>{const b=await nest(),target={x:buildingCenter(b).x,y:buildingCenter(b).y+58};await reset(target,1.05,{x:220,y:245});await worldTap(target);assert.equal(await page.locator('#panel-title').innerText(),'Nid');};
- const {crossParents}=require('./check-camera.cjs');
+ const {crossParents}=require('../check-camera.cjs');
  const parentTap=async(index,name)=>{
   const n=await nest(),p=buildingCenter(n),offset=NEST_ART.parentOffsets[index];
   await worldTap({x:p.x+offset.x,y:p.y+offset.y-7*VISUAL.rabbit.scale});
@@ -127,7 +127,7 @@ const {chromium}=require('playwright'),fs=require('node:fs'),path=require('node:
   const normalAgain=await page.evaluate(()=>{const s=JSON.parse(localStorage.getItem('prairie-lapins.save.v1'));const {lastSimulatedAt,...rest}=s;return {...rest,buildings:s.buildings.map(({incomeUnits,...b})=>b)};});assert.deepEqual(normalAgain,normal);
   report.checks.push('Empty/running/ready/manual-transfer/empty, Volant and Bélier Gris separately selectable and locked until transfer then returned to original habitat, unchanged exact parents/birth/time/cost/XP and farm production, 4 × 4 move cancelled/confirmed preserving work, reload before and after transfer, three zooms in landscape/portrait, transfer bubble within own parcel, normal/lab isolation and one texture request.');
   const comparison=await browser.newPage({viewport:{width:1100,height:700}});
-  const original=fs.readFileSync(path.join(__dirname,'references/nest/Nid-original.png')).toString('base64'),adapted=fs.readFileSync('public/assets/buildings/nest-heart-cave.png').toString('base64');
+  const original=fs.readFileSync(path.join(__dirname,'..','references/nest/Nid-original.png')).toString('base64'),adapted=fs.readFileSync('public/assets/buildings/nest-heart-cave.png').toString('base64');
   await comparison.setContent('<style>body{margin:0;padding:24px;font:18px Arial;background:#fffaf0;color:#35472f}main{display:flex;gap:24px}figure{margin:0;width:514px}figcaption{height:50px;font-weight:bold}.frame{height:540px;display:flex;align-items:center;justify-content:center;background:repeating-conic-gradient(#edf0e6 0% 25%,#fffaf0 0% 50%) 50%/24px 24px;border-radius:18px}img{max-width:100%;max-height:100%;object-fit:contain}</style><h2>Nid — référence et adaptation intégrée</h2><main><figure><figcaption>Original conservé · Nid.png</figcaption><div class=frame><img src="data:image/png;base64,'+original+'"></div></figure><figure><figcaption>Adaptation · texture transparente, parents séparés</figcaption><div class=frame><img src="data:image/png;base64,'+adapted+'"></div></figure></main>');
   await comparison.locator('img').evaluateAll(imgs=>Promise.all(imgs.map(i=>i.decode())));await comparison.screenshot({path:path.join(out,'nest-reference-comparison.png')});await comparison.close();report.captures.push('nest-reference-comparison.png');
   assert.deepEqual(report.errors,[]);report.passed=true;

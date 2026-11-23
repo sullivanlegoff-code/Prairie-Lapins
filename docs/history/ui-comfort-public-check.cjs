@@ -1,7 +1,7 @@
 // Compiled/public UI regression: actual buttons, touch/wheel gestures and read-only save inspection.
-const enterGame=require('./check-camera.cjs').enter; // loading screen: press « Jouer » after each page load
+const enterGame=require('../check-camera.cjs').enter; // loading screen: press « Jouer » after each page load
 // Fixtures are loaded explicitly through laboratory controls; no hooks, storage writes, RNG override or resource grants.
-const camera=require('./check-camera.cjs'),{chromium}=require('playwright'),fs=require('node:fs'),assert=require('node:assert/strict');
+const camera=require('../check-camera.cjs'),{chromium}=require('playwright'),fs=require('node:fs'),assert=require('node:assert/strict');
 (async()=>{
  const root=new URL(process.argv[2]),expected=process.argv[3]?.slice(0,7),out=process.env.PRAIRIE_CAPTURE_DIR||'/tmp/ui-comfort-proof';fs.mkdirSync(out,{recursive:true});
  const browser=await chromium.launch({executablePath:process.env.PRAIRIE_CHROMIUM==='playwright'?undefined:process.env.PRAIRIE_CHROMIUM||'/usr/bin/chromium',args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader']});

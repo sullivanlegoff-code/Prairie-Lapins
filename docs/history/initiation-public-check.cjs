@@ -1,6 +1,6 @@
 // Built/public touch journey. No source hooks, storage writes, resource grants or controlled random draws.
-const enterGame=require('./check-camera.cjs').enter; // loading screen: press « Jouer » after each page load
-const camera=require('./check-camera.cjs'),{chromium}=require('playwright'),fs=require('node:fs'),assert=require('node:assert/strict');
+const enterGame=require('../check-camera.cjs').enter; // loading screen: press « Jouer » after each page load
+const camera=require('../check-camera.cjs'),{chromium}=require('playwright'),fs=require('node:fs'),assert=require('node:assert/strict');
 /** v13 nursery: the baby in the lowest slot (the only one at capacity 1), or null. */
 const babyOf=b=>[...(b?.nursery?.babies??[])].sort((x,y)=>x.slot-y.slot)[0]??null;
 (async()=>{
