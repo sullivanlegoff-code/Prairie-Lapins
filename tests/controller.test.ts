@@ -5,7 +5,7 @@ import {describe, expect, it} from 'vitest';
 import {itAll} from './cases';
 import {GameController, PASSIVE_SAVE_MS} from '../src/application/GameController';
 import {bindLifecycle, type LifecycleHost} from '../src/application/lifecycle';
-import {SAVE_KEY, type SaveStorage} from '../src/persistence/storage';
+import {PREVIOUS_SAVE_KEY, SAVE_KEY, UNREADABLE_SAVE_KEY, type SaveStorage} from '../src/persistence/storage';
 import {act, advance,  decodeGame, encodeGame, pendingDiscoveries} from '../src/simulation';
 import {HOUR, MINUTE} from '../src/config/balance';
 import {cumulativeLevelXp} from '../src/simulation/progression';
@@ -58,9 +58,15 @@ describe('targeted passive change detection', () => {
 
 class MemoryStorage implements SaveStorage {
   value: string | null = null; reads = 0; writes = 0; failRead = false; failWrite = false;
-  getItem(key: string): string | null { expect(key).toBe(SAVE_KEY); this.reads++; if (this.failRead) throw new Error('read denied'); return this.value; }
+  /** The other keys (the previous good copy, an unreadable save kept aside), apart from the save's counters. */
+  others = new Map<string, string>();
+  getItem(key: string): string | null {
+    if (key !== SAVE_KEY) { expect([PREVIOUS_SAVE_KEY, UNREADABLE_SAVE_KEY]).toContain(key); return this.others.get(key) ?? null; }
+    this.reads++; if (this.failRead) throw new Error('read denied'); return this.value;
+  }
   setItem(key: string, value: string): void {
-    expect(key).toBe(SAVE_KEY); if (this.failWrite) throw new Error('quota'); this.writes++; this.value = value;
+    if (key !== SAVE_KEY) { expect([PREVIOUS_SAVE_KEY, UNREADABLE_SAVE_KEY]).toContain(key); this.others.set(key, value); return; }
+    if (this.failWrite) throw new Error('quota'); this.writes++; this.value = value;
   }
 }
 function fixture(raw: string | null = null, now = 0) {
@@ -303,5 +309,29 @@ describe('lifecycle subscriptions', () => {
     visible = true; events.get('pageshow')!(); expect(refreshes).toBe(3);
     lifecycle.stop(); lifecycle.stop(); timer(); expect(refreshes).toBe(3); expect(events.size).toBe(0); expect(timers.size).toBe(0);
     lifecycle.start(); expect(timers.size).toBe(1); lifecycle.stop();
+  });
+});
+
+describe('previous good copy (plan 1.7)', () => {
+  it('keeps the save read at start aside, and offers it back, with confirmation, when the save becomes unreadable', () => {
+    const start = 1_790_000_000_000, good = encodeGame(createGame(start));
+    const first = fixture(good, start);
+    expect(first.store.others.get(PREVIOUS_SAVE_KEY)).toBe(good); expect(first.controller.previousSave()).toBeNull(); // Readable: nothing to offer.
+    first.controller.dispose();
+    // The save is damaged later: the next start shows the unreadable save and the copy.
+    const broken = '{"version": 29, "abîmée": true', next = fixture(broken, start + HOUR); next.store.others = first.store.others;
+    const reopened = new GameController(next.store, () => next.clock.now, () => 0.9);
+    expect(reopened.getSnapshot().status).toBe('invalid-save'); expect(reopened.previousSave()).toBe(good);
+    const prepared = reopened.prepareImport(reopened.previousSave()!); expect(prepared.ok).toBe(true);
+    expect(reopened.confirmImport((prepared as {token: number}).token, true)).toEqual({ok: true});
+    expect(reopened.getSnapshot().status).toBe('saved'); expect(state(reopened).rabbits).toHaveLength(createGame(start).rabbits.length);
+    expect(next.store.others.get(UNREADABLE_SAVE_KEY)).toBe(broken); // The damaged save is kept as it was.
+    reopened.dispose(); next.controller.dispose();
+  });
+  it('offers nothing without a readable copy', () => {
+    const {store, controller} = fixture('pas une sauvegarde', 0);
+    expect(controller.getSnapshot().status).toBe('invalid-save'); expect(controller.previousSave()).toBeNull();
+    store.others.set(PREVIOUS_SAVE_KEY, 'abîmée aussi'); expect(controller.previousSave()).toBeNull();
+    controller.dispose();
   });
 });
