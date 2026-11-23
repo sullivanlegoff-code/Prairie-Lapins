@@ -16,7 +16,7 @@ import {accountKnown} from '../cloud/accountState';
 import {cloudConfig} from '../cloud/config';
 import {AccountReminder} from './accountReminder';
 import {UpdateNews} from './updateNews';
-import {decorateRabbitText, rabbitTheme, clearRabbitTheme} from '../display/rabbitPresentation';
+import {rabbitTheme, clearRabbitTheme} from '../display/rabbitPresentation';
 import {heartIcon} from '../display/currency';
 import {cuisineQuotaText, heartGift, recipeHint, orderReadyText} from './economyFeedback';
 import type {AudioEngine} from '../audio/audioEngine';
@@ -26,7 +26,6 @@ import {lazyActivity, type LazyActivity} from './lazyActivity';
 import {jumpIslandReason, jumpRopeChallenge, jumpRopeDay, jumpRopeMedals, jumpRopeRabbitReason, rememberedJumpRopeTeam} from '../simulation/jumpRope';
 import type {RecipeCompletion} from '../../cooktap-prototype/main';
 import {missionClaimXp} from '../simulation/progression';
-import {PROGRESSION} from '../config/progression';
 import {RABBIT_STORIES} from '../config/rabbitStories';
 import {recipeKnown, recipePrice} from '../simulation/recipes';
 import {stateLevelAccess} from '../simulation/levelRights';
@@ -53,8 +52,8 @@ import {NURSERY_ART} from '../config/nurseryArt';
 import {KITCHEN_ART} from '../config/kitchenArt';
 import {hasRoomFor, upgradeFootprintReason} from '../simulation/placement';
 import {habitatStats, habitatName, habitatEntryReason, habitatAccepts, welcomeDestinations, removeHabitatReason} from '../simulation/habitats';
-import {MAIN_MISSIONS, DAILY_MISSIONS, DAILY_BONUS, DAILY_PICK_COUNT, type Reward} from '../config/missions';
-import {initialMissionIds, activeMainMissions, visibleMainMissions, mainCatalogueUnlocked, availableMissionRewards, mainProgress, dailyCycleStart, dailyCycleEnd, cycleIndexAt, dailyBonusReady, dailyClaimable, dailyMissionsOf, dailyProgress} from '../simulation/missions';
+import {MAIN_MISSIONS} from '../config/missions';
+import {activeMainMissions, mainCatalogueUnlocked, availableMissionRewards, dailyCycleStart, cycleIndexAt} from '../simulation/missions';
 import type {GameController, Snapshot} from '../application/GameController';
 import {AFFECTION_STATUE, BALANCE, CARE_KINDS, FARM_UPGRADES, PICNIC, SALON, FOREST, JUMP_ROPE, carePrice, isAffectionWall, orderFarmLevel, SECOND_AFFECTION_STATUE, NURSERY, ORDERS, RARE_BIRTH_BONUS, TRAVEL, feedCost, type Destination, SPECIES, SPECIES_IDS, SHOP_SPECIES, growthDuration, type BuildingKind, type SpeciesId, type RabbitType} from '../config/balance';
 import {JUMP_MEDAL_ART} from '../config/jumpIslandArt';
@@ -103,6 +102,8 @@ import {mountPhotoControls} from './photoControls';
 import {guidedStep, type GuideStep} from './guidance';
 import {BUILDING_NAMES, CARE_NAMES, REFUSALS, RARITY_NAMES, busyReason, TYPE_NAMES, typeNames, recipeBook, recipePairs, buildingReason, collectionSpeciesView, collectionView, incomeWhole, moneyReason, nurseryView, occupants, oddsView, placementReason, rabbitAvailability, parentBusy, releaseReason, timeLeft, type Placement, type CollectionFilter} from './models';
 import {prefersReducedMotion} from '../display/reducedMotion';
+import {renderMissions} from './missionsView';
+import {node, rewardLabel} from './viewHelpers';
 
 /** One show button per legendary sheet: Anky's tail strike, the Dragon's fire breath, the Requin's surf, Arkoko's crystal flare. */
 const LEGENDARY_SHOW_BUTTONS: Partial<Record<SpeciesId, {label: string; act: LegendaryAct}>> = {
@@ -110,7 +111,7 @@ const LEGENDARY_SHOW_BUTTONS: Partial<Record<SpeciesId, {label: string; act: Leg
   arkoko: {label: 'Éclat du cristal', act: 'flare'},
 };
 type ShopTab = 'home' | 'recipes' | 'rabbits' | 'habitats' | 'buildings' | 'decorations';
-type View = {kind:'album'|'decorationGroup'} | {kind: 'welcomeBaby'; birthId: string} | {kind:'levelRequirement';target:LevelAccessTarget} | {kind: 'missions'; tab: 'main' | 'daily'} | {kind: 'shop'; tab: ShopTab} | {kind: 'building' | 'rabbit' | 'moveRabbit' | 'decoration' | 'debris'; id: string} | {kind: 'jumpIsland'} | {kind: 'christmasMarket'; tab?: ChristmasMarketTab} |
+export type View = {kind:'album'|'decorationGroup'} | {kind: 'welcomeBaby'; birthId: string} | {kind:'levelRequirement';target:LevelAccessTarget} | {kind: 'missions'; tab: 'main' | 'daily'} | {kind: 'shop'; tab: ShopTab} | {kind: 'building' | 'rabbit' | 'moveRabbit' | 'decoration' | 'debris'; id: string} | {kind: 'jumpIsland'} | {kind: 'christmasMarket'; tab?: ChristmasMarketTab} |
   {kind: 'buyRabbit' | 'species'; species: SpeciesId; candies?: true} | {kind:'extension';parcelId?:ParcelId} | {kind: 'cuisineRabbit'; commis?: string} | {kind: 'collection' | 'settings' | 'placement' | 'hearts' | 'recipes' | 'arrange' | 'decorationPlacement'} | null;
 /** Views drawn as a centred card over the dimmed meadow. Placement, purchase, extension and arrangement views keep the side sheet: they need the island visible. */
 /** The three tabs of the full-screen Christmas market (owner, 5 November 2026). */
@@ -119,10 +120,6 @@ const CHRISTMAS_MARKET_TABS: readonly [ChristmasMarketTab, string, string][] = [
   ['missions', 'Missions de Noël', CANDY_ICON_URL], ['rewards', 'Récompenses spéciales', decorationUrl('christmas-tree')], ['gifts', 'Récupérer les cadeaux', SKY_GIFTS_ART.gifts[0]],
 ];
 const CENTER_CARD_VIEWS: readonly NonNullable<View>['kind'][] = ['album','decorationGroup','rabbit', 'moveRabbit', 'welcomeBaby', 'building', 'jumpIsland', 'missions', 'collection', 'recipes', 'hearts', 'species', 'levelRequirement'];
-function node<K extends keyof HTMLElementTagNameMap>(tag: K, text = '', className = ''): HTMLElementTagNameMap[K] {
-  const element = document.createElement(tag); setCurrencyText(element, text); decorateRabbitText(element); element.className = className; return element;
-}
-const rewardLabel = (r: Reward) => r.resource==='none' ? 'Objectif de collection accompli' : `${r.amount} ${{pattes: 'pattes', grass: 'nourriture', hearts: r.amount === 1 ? 'cœur' : 'cœurs'}[r.resource]}`;
 const heartAmount = (n: number) => `${n} ${n === 1 ? 'cœur' : 'cœurs'}`;
 /** The rare birth steps, lowest first: « … l’affection 10 : ×1,15 · 15 : ×1,3 · 30 : ×1,5 · 50 : ×2. » */
 /** A wall meal (14 → 15, 29 → 30, 49 → 50) costs more than the meals on either side. */
@@ -130,7 +127,7 @@ const heartAmount = (n: number) => `${n} ${n === 1 ? 'cœur' : 'cœurs'}`;
 function heartEmblem(): HTMLImageElement { return heartIcon(); }
 
 /** A species shows its own drawing (catalogue, shop); one rabbit shows its evolution only after the explicit action. */
-type Subject = SpeciesId | LookRabbit;
+export type Subject = SpeciesId | LookRabbit;
 const subjectSpecies = (subject?: Subject): SpeciesId | undefined => typeof subject === 'object' ? subject.species : subject;
 function avatar(subject?: Subject, large = false): HTMLElement {
   const species = subjectSpecies(subject);
@@ -2585,142 +2582,16 @@ export class GameUI {
     this.button(this.content,'Annuler l’agrandissement',()=>this.close(),null,true);
   }
   private renderMissions(s: GameState, tab: 'main' | 'daily'): void {
-    this.title.textContent = 'Missions';
-    const tabs = node('div', '', 'tabs');
-    for (const [key, label] of [['main', 'Principales'], ['daily', 'Quotidiennes']] as const) {
-      const b = this.button(tabs, label, () => this.open({kind: 'missions', tab: key}, 'tab'), null, tab !== key);
-      b.setAttribute('aria-pressed', String(tab === key));
-    }
-    if (tab === 'main' && s.missions.claimed.includes('first-birth')) this.button(tabs, 'Consulter le carnet', () => this.open({kind: 'recipes'}), null, true);
-    tabs.classList.add('mission-tabs');
-    this.content.append(tabs);
-    const claim = (card: HTMLElement, command: Command, reward: Reward, ready: boolean, claimed: boolean, extraRewards: readonly Reward[] = []) => {
-      const stage = claimed ? 'Réclamée' : ready ? 'À réclamer' : 'En cours';
-      const xp = command.type === 'claimMainMission' ? missionClaimXp('main',command.id) : command.type === 'claimDailyMission' ? missionClaimXp('daily',command.id) : PROGRESSION.xp.claims.dailyBonus;
-      const resources = [reward, ...extraRewards].filter(r => r.resource !== 'none' && r.amount > 0);
-      const resourceText = resources.map(rewardLabel).join(' · + ');
-      const xpOnly = command.type === 'claimMainMission' && MAIN_MISSIONS[command.id].claimXp !== undefined && !resources.length && xp > 0;
-      const message = resources.length ? `Récompense reçue · + ${resourceText}${xp > 0 ? ` · + ${xp} XP` : ''}` : xpOnly ? `Récompense reçue · + ${xp} XP` : 'Objectif validé.';
-      card.append(node('p', (resources.length ? `Gratuit · Récompense : + ${resourceText}` : xp > 0 ? 'Récompense :' : 'Objectif de collection · sans récompense supplémentaire') + (xp > 0 ? ` ${resources.length ? '· ' : ''}${xp} XP` : ''), 'small'), node('p', stage, 'badge'));
-      const generation = this.confirmationGeneration;
-      const button = this.button(card, claimed ? 'Récompense réclamée' : xpOnly ? `Réclamer · ${xp} XP` : resources.length ? `Réclamer · + ${resourceText}` : 'Valider l’objectif', () => {
-        if (!button.isConnected || generation !== this.confirmationGeneration) return;
-        this.execute(command, message, () => {
-          if (command.type === 'claimMainMission' && !mainCatalogueUnlocked(this.snapshot.state!) && (initialMissionIds(this.snapshot.state!) as readonly string[]).includes(command.id)) this.content.scrollTop = 0;
-          void this.toast.offsetWidth; this.toast.classList.add('mission-reward');
-        });
-      }, claimed ? 'Déjà réclamée.' : !ready ? 'Objectif à compléter.' : null);
-      button.classList.add('mission-claim');
-      button.dataset.focus = `mission-claim-${'id' in command ? command.id : 'daily-bonus'}`;
-    };
-    const progress = (card: HTMLElement, value: number, target: number) => {
-      const bar = node('progress'); bar.max = target; bar.value = Math.min(value, target); bar.setAttribute('aria-label', `Progression : ${value} sur ${target}`);
-      card.append(node('p', `Progression : ${value} / ${target}`), bar);
-    };
-    const shortcut = (card: HTMLElement, kind: BuildingKind | 'collection' | 'affection' | 'extension' | 'arrange' | 'jumpIsland' | 'pet') => {
-      if (kind === 'jumpIsland') { this.button(card, 'Aller sur ta petite île', () => this.open({kind: 'jumpIsland'}), null, true); return; }
-      if (kind === 'pet') {
-        // The first rabbit not caressed yet in this cycle: its sheet opens on the portrait to rub.
-        const petted = s.missions.daily.petted ?? [], rabbit = s.rabbits.find(r => !petted.includes(r.id)) ?? s.rabbits[0];
-        if (rabbit) this.button(card, 'Caresser un lapin', () => this.open({kind: 'rabbit', id: rabbit.id}), null, true);
-        return;
-      }
-      if(kind==='extension' && s.acquiredParcels.length<PARCEL_IDS.length){const access=stateLevelAccess(s,{family:'extension',rank:s.acquiredParcels.length});if(access.locked)card.append(node('p',`Extension ${s.acquiredParcels.length} · Niveau ${access.requiredLevel} requis`,'reason'));}
-      this.button(card, kind === 'collection' ? 'Voir la collection' : kind === 'affection' ? 'Voir un lapin' : kind === 'extension' ? 'Voir l’extension' : kind === 'arrange' ? 'Aménager la prairie' : 'Voir le bâtiment ou la boutique', () => {
-        if (kind === 'arrange') this.open({kind:'arrange'});
-        else if (kind === 'extension') { this.open({kind:'shop',tab:'home'}, 'root'); this.open({kind:'extension'}); }
-        else if (kind === 'collection') this.open({kind});
-        else if (kind === 'affection') {
-          const rabbit = [...s.rabbits].filter(r => r.affection < BALANCE.maxAffection).sort((a, b) => b.affection - a.affection)[0] ?? s.rabbits[0];
-          if (rabbit) this.open({kind: 'rabbit', id: rabbit.id});
-        } else {
-          const b = s.buildings.find(b => b.kind === kind);
-          this.open(b ? {kind: 'building', id: b.id} : {kind: 'shop', tab: kind === 'enclosure' ? 'habitats' : 'buildings'});
-        }
-      }, null, true);
-    };
-    if (tab === 'main') {
-      const unlocked = mainCatalogueUnlocked(s);
-      this.content.append(node('p', unlocked ? 'Tes récompenses et objectifs en progression passent en premier.' : s.missions.claimed.includes('first-birth') ? 'Choisis librement tes objectifs. Toutes les missions seront visibles au niveau 7.' : 'Réclame pour continuer. Les actions anticipées comptent.', 'small mission-intro'));
-      const catalogue = !unlocked && this.onboardingActive && onboardingTask(s,this.preferences.value,this.now()).step.id === 'snowReward' ? ['welcome-snow'] as const : visibleMainMissions(s);
-      const status = (id: typeof catalogue[number]) => s.missions.claimed.includes(id) ? 'claimed' : s.missions.completed.includes(id) ? 'ready' : 'pending';
-      if (unlocked) {
-        const filters = node('div', '', 'mission-filters'); filters.setAttribute('aria-label', 'Filtrer les missions principales');
-        for (const [filter, label] of [['all', 'Toutes'], ['ready', 'À réclamer'], ['pending', 'En cours'], ['claimed', 'Terminées']] as const) {
-          const count = filter === 'all' ? catalogue.length : catalogue.filter(id => status(id) === filter).length;
-          const b = this.button(filters, `${label} (${count})`, () => { this.missionFilter = filter; this.render(); }, null, filter !== this.missionFilter);
-          b.dataset.missionFilter = filter; b.dataset.focus = `mission-filter-${filter}`; b.setAttribute('aria-pressed', String(filter === this.missionFilter));
-        }
-        this.content.append(filters);
-      }
-      const active = [...(unlocked && this.missionFilter !== 'all' ? catalogue.filter(id => status(id) === this.missionFilter) : catalogue)];
-      if (unlocked) {
-        const rank = (id: typeof catalogue[number]) => status(id) === 'ready' ? 0 : status(id) === 'claimed' ? 3 : mainProgress(s, id).value > 0 ? 1 : 2;
-        active.sort((a, b) => rank(a) - rank(b));
-      }
-      if (!active.length) this.content.append(node('p', unlocked ? 'Aucune mission dans cette sélection.' : 'Toutes les missions principales ont été récompensées. Profite de ta prairie.', 'small'));
-      for (const id of active) {
-        const mission = MAIN_MISSIONS[id], acquired = s.missions.completed.includes(id), claimed = s.missions.claimed.includes(id);
-        const p = mainProgress(s, id), card = this.card(mission.title, mission.description); card.dataset.mission = id;
-        card.dataset.missionStatus = status(id);
-        card.classList.add('compact-list-card');
-        if (unlocked && !acquired && !claimed && mainProgress(s, id).value > 0) card.classList.add('mission-progressing');
-        progress(card, acquired ? p.target : Math.min(p.value, p.target), p.target);
-        if (acquired) card.append(node('p', 'Condition acquise', 'small'));
-        claim(card, {type: 'claimMainMission', id}, mission.reward, acquired, claimed, mission.extraRewards);
-        if (!acquired) {
-          const c = mission.condition;
-          if (id === 'snow-habitat') this.button(card,'Voir les habitats Neige',()=>{this.shopHabitatSpecies='neige';this.open({kind:'shop',tab:'habitats'});},null,true);
-          else if (id === 'welcome-snow') this.button(card,'Voir Neige',()=>this.open({kind:'shop',tab:'rabbits'}),null,true);
-          else if (c.kind === 'event' && c.event === 'placeDecoration') this.button(card, 'Voir les décorations', () => this.open({kind:'shop',tab:'decorations'}), null, true);
-          else if (c.kind === 'parents') {
-            const parent = s.rabbits.find(r => r.affection < 2);
-            this.button(card, parent ? 'Voir le parent à nourrir' : 'Voir les lapins', () => this.open(parent ? {kind:'rabbit',id:parent.id} : {kind:'shop',tab:'rabbits'}), null, true);
-          }
-          else if (c.kind === 'level') card.append(node('p', 'Prends soin de tes lapins et explore la prairie.'));
-          else if (c.kind === 'nightOrder') shortcut(card, 'farm');
-          else if (c.kind === 'jumpRopeGame') this.button(card, 'Aller sur ta petite île', () => this.open({kind: 'jumpIsland'}), null, true);
-          else if (c.kind === 'habitatLevel') shortcut(card, 'enclosure');
-          else if (c.kind === 'extensions') shortcut(card, 'extension');
-          else if (c.kind === 'ordinaryRares') shortcut(card, 'collection');
-          else if (c.kind === 'decoration') this.button(card, 'Voir les décorations', () => this.open({kind: 'shop', tab: 'decorations'}), null, true);
-          else if (c.kind === 'buildingLevel') shortcut(card, c.building);
-          else if (c.kind === 'paidRecipe') this.button(card, 'Voir les recettes de la boutique', () => this.open({kind: 'shop', tab: 'recipes'}), null, true);
-          else if (c.kind === 'evolutions') shortcut(card, 'collection');
-          else if (c.kind === 'bennyRunGame') shortcut(card, 'lair');
-          else shortcut(card, c.kind === 'building' ? c.building : c.kind === 'event' ? c.event === 'collectOrder' ? 'farm' : c.event === 'breed' ? 'nest' : 'nursery' : c.kind === 'discoveries' || c.kind === 'rare' || c.kind === 'species' ? 'collection' : c.kind);
-        }
-        this.content.append(card);
-      }
-    } else {
-      const daily = s.missions.daily, cycleStart = dailyCycleStart(s), shown = dailyMissionsOf(s), done = shown.filter(id => daily.claimed.includes(id)).length;
-      // Three missions, all open from the start, to do in any order. The cycle bonus follows the three claims.
-      const intro = node('section', '', 'mission-day-intro');
-      intro.append(node('p', 'Trois missions aujourd’hui, dans l’ordre que tu veux.', 'mission-day-lead'), node('p', 'Renouvellement dans :', 'small'));
-      const timer = node('p', '', 'timer'); timer.dataset.end = String(dailyCycleEnd(s)); intro.append(timer);
-      intro.append(node('p', 'À réclamer avant le renouvellement.', 'small'));
-      this.content.append(intro);
-      for (const id of shown) {
-        const mission = DAILY_MISSIONS[id], value = dailyProgress(s, id), claimed = daily.claimed.includes(id), ready = dailyClaimable(s, id);
-        const card = this.card(mission.title, mission.description); card.dataset.mission = id; card.dataset.missionStatus = claimed ? 'claimed' : ready ? 'ready' : 'pending';
-        card.classList.add('mission-day-card');
-        progress(card, Math.min(value, mission.target), mission.target);
-        claim(card, {type: 'claimDailyMission', id, cycleStart}, mission.reward, ready, claimed);
-        if (!claimed && !ready) shortcut(card, mission.place);
-        this.content.append(card);
-      }
-      const bonus = this.card('Bonus du cycle', 'Réclame les trois missions pour recevoir ce bonus.'); bonus.dataset.mission = 'daily-bonus'; bonus.classList.add('mission-day-card', 'mission-bonus');
-      progress(bonus, done, DAILY_PICK_COUNT);
-      claim(bonus, {type: 'claimDailyBonus', cycleStart}, DAILY_BONUS[0], dailyBonusReady(s), daily.bonusClaimed, DAILY_BONUS.slice(1));
-      this.content.append(bonus);
-      // Christmas: the challenges and their sucres d'orge are at the market (they count in the Missions badge).
-      if (christmasActive()) {
-        const waiting = availableChristmasRewards(s), noel = this.card('Défis de Noël', waiting ? `${waiting} récompense${waiting > 1 ? 's' : ''} de Noël à réclamer au marché.` : 'Trois défis de Noël chaque jour, au Marché de Noël.');
-        noel.dataset.mission = 'christmas'; noel.classList.add('mission-day-card');
-        this.button(noel, 'Aller au Marché de Noël', () => this.open({kind: 'christmasMarket'}), null, true); this.content.append(noel);
-      }
-
-    }
+    // The menu itself is in missionsView.ts (plan 6.4); it reaches the interface through this host.
+    const ui = this;
+    renderMissions({
+      get content() { return ui.content; }, get title() { return ui.title; }, get toast() { return ui.toast; }, get snapshot() { return ui.snapshot; },
+      get confirmationGeneration() { return ui.confirmationGeneration; }, get onboardingActive() { return ui.onboardingActive; }, get preferences() { return ui.preferences; },
+      get missionFilter() { return ui.missionFilter; }, set missionFilter(filter) { ui.missionFilter = filter; },
+      get shopHabitatSpecies() { return ui.shopHabitatSpecies; }, set shopHabitatSpecies(species) { ui.shopHabitatSpecies = species; },
+      open: (view, navigation) => ui.open(view, navigation), button: (...args) => ui.button(...args), card: (...args) => ui.card(...args),
+      render: passive => ui.render(passive), now: () => ui.now(), execute: (...args) => ui.execute(...args),
+    }, s, tab);
   }
   private renderHearts(s: GameState): void {
     this.title.textContent = 'Les cœurs';
