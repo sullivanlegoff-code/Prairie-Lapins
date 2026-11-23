@@ -307,7 +307,23 @@ export class CloudSync {
     if (!this.ready) { await this.connect(this.owner); return; }
     const owner = this.owner, gen = this.generation, corrections = await this.loadCorrections(owner);
     if (gen !== this.generation) return;
-    this.corrections = corrections; this.changed();
+    this.corrections = corrections;
+    // Back on this device (foreground, network): progress made on another device since is taken, when nothing changed here.
+    if (await this.pullNewer(gen)) return;
+    this.changed();
     await this.flush();
+  }
+  /** Reads the remote save and takes it when it is newer and this device has not played since its last sync. */
+  private async pullNewer(gen: number): Promise<boolean> {
+    if (!this.owner || !this.link || this.link.pending || this.flight !== null) return false;
+    const snap = this.controller.getSnapshot();
+    if (snap.status !== 'saved' || !snap.state || fingerprint(snap.state) !== this.link.baseline) return false;
+    try {
+      const remote = await this.gateway.read(this.owner);
+      if (gen !== this.generation || !remote || !this.link || remote.revision <= this.link.revision || this.link.pending) return false;
+      const now = this.controller.getSnapshot();
+      if (now.status !== 'saved' || !now.state || fingerprint(now.state) !== this.link.baseline) return false; // Played meanwhile.
+      this.view.remote = remote; this.replace(remote); return true;
+    } catch (e) { if (gen === this.generation) this.failed(e); return true; }
   }
 }

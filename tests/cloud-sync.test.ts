@@ -114,6 +114,22 @@ describe('synchronisation automatique, sans réseau', () => {
       if (!arrived) expect(gateway.calls.at(-1)!.operation).not.toBe(old.operation);
     }
   });
+  it('au retour au premier plan, reprend la partie jouée ailleurs si rien n’a changé ici (plan 1.5)', async () => {
+    const f = setup(); await link(f); f.rename('Sur le PC'); await f.sync.flush();
+    // Another device plays and sends the next revision.
+    const elsewhere = structuredClone(f.gateway.remote!.state), revision = f.gateway.remote!.revision + 1; elsewhere.rabbits[0].name = 'Sur l’iPhone';
+    f.gateway.remote = {...f.gateway.remote!, revision, operation: crypto.randomUUID(), state: elsewhere};
+    const calls = f.gateway.calls.length;
+    await f.sync.retry();
+    expect(f.controller.getSnapshot().state!.rabbits[0].name).toBe('Sur l’iPhone'); expect(f.replacement).toHaveBeenCalledOnce();
+    expect(f.sync.getView().status).toBe('saved'); expect(f.gateway.calls).toHaveLength(calls); expect(JSON.parse(f.data.get(CLOUD_KEY)!).revision).toBe(revision);
+    // Played here too since: nothing is replaced, the envoi meets the conflict as before.
+    const other = structuredClone(elsewhere); other.rabbits[0].name = 'Encore ailleurs';
+    f.gateway.remote = {...f.gateway.remote!, revision: revision + 1, operation: crypto.randomUUID(), state: other};
+    f.rename('Ici aussi'); await f.sync.retry();
+    expect(f.controller.getSnapshot().state!.rabbits[0].name).toBe('Ici aussi'); expect(f.replacement).toHaveBeenCalledOnce();
+    expect(f.sync.getView().status).toBe('conflict');
+  });
   it('réessaie hors ligne à 5/10/20/40/60 secondes et conserve la requête', async () => {
     const f = setup(); await link(f); f.gateway.offline = true; f.rename('Hors ligne'); await f.sync.flush();
     const operation = f.gateway.calls.at(-1)!.operation;
