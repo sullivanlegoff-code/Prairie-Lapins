@@ -2,6 +2,7 @@ import {BENNY_ATLAS, BENNY_EFFECTS as FX, BENNY_FRAMES, BENNY_ID, BENNY_REVEAL_P
 import {rabbitArt} from '../config/rabbitArt';
 import {revealEnd, type RevealText} from './legendaryReveal';
 import {preferWebp} from '../display/webpTwins';
+import {prefersReducedMotion} from '../display/reducedMotion';
 
 /**
  * Benny's first appearance, the Mythic rabbit (owner's request of 1 November 2026: « un vrai phénomène pour le joueur », with
@@ -142,7 +143,7 @@ export function showBennyReveal(text: RevealText, onClose: () => void = () => {}
     atlasReady = true; if (dialog.classList.contains('is-final')) dialog.classList.add('has-poses');
   }, () => {});
   const finish = () => { dialog.classList.add('is-final'); if (atlasReady) dialog.classList.add('has-poses'); window.clearTimeout(timer); };
-  const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduced = prefersReducedMotion();
   const timer = window.setTimeout(finish, END_MS);
   let closed = false;
   const close = () => { if (closed) return; closed = true; window.clearTimeout(timer); if (dialog.open) dialog.close(); dialog.remove(); onClose(); };

@@ -2,6 +2,7 @@ import {christmasActive} from '../config/christmas';
 import {NEWS_PAGES, UPDATE_NEWS_ID, type NewsPage} from '../config/updateNews';
 import type {PreferenceStore} from './preferences';
 import {preferWebp} from '../display/webpTwins';
+import {prefersReducedMotion} from '../display/reducedMotion';
 
 /**
  * The page of the Christmas update's news (owner, 8 November 2026): « quand le joueur arrive sur le jeu il doit être accueilli
@@ -72,7 +73,7 @@ export class UpdateNews {
   private show(index: number, smooth = true): void {
     const target = Math.max(0, Math.min(index, this.pages.length - 1));
     const left = target * this.track.clientWidth;
-    if (typeof this.track.scrollTo === 'function') this.track.scrollTo({left, behavior: smooth && !matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'smooth' : 'auto'});
+    if (typeof this.track.scrollTo === 'function') this.track.scrollTo({left, behavior: smooth && !prefersReducedMotion() ? 'smooth' : 'auto'});
     else this.track.scrollLeft = left;
     this.mark(target);
   }

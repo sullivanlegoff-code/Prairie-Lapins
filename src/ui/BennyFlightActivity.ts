@@ -5,6 +5,7 @@ import {BENNY_FLIGHT_FRIENDS, bennyFlightFriend, bennyFlightFriendLeft, type Ben
 import {advanceBennyFlight, flapBennyFlight, startBennyFlight, BENNY_FLIGHT_GAME, type BennyFlightGame} from '../simulation/bennyFlightGame';
 import type {Rabbit} from '../state/types';
 import {pausableClock, pauseWhenLeft, settleCard} from './activityPause';
+import {prefersReducedMotion} from '../display/reducedMotion';
 
 /**
  * « Le vol de Benny » (src/simulation/bennyFlightGame.ts holds the rules): a full-screen layer like « Les cadeaux du ciel ».
@@ -43,7 +44,7 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
     for (const kind of BENNY_FLIGHT_FRIENDS.kinds) { const picture = new Image(); picture.src = friendUrl(kind); void picture.decode?.().catch(() => undefined); friendPictures.push(picture); }
   }
   /** Less motion asked for: the friends fade in and out in their place instead of flying in. */
-  const still = () => !!globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  const still = prefersReducedMotion;
   let stillFriends = false;
   const layer = document.createElement('div'); layer.className = 'benny-flight-activity'; layer.hidden = true;
   layer.setAttribute('role', 'dialog'); layer.setAttribute('aria-modal', 'true'); layer.setAttribute('aria-label', 'Le vol de Benny');

@@ -1,5 +1,6 @@
 import type {Point} from '../ui/gestures';
 import {endRabbitActivity, motionZone, startRabbitActivity, type Box, type RabbitMotion} from './rabbitMotion';
+import {clamp} from '../util/clamp';
 
 /**
  * The Christmas snowball fights (owner, 4 November 2026: « je veux que les lapins fassent de mini batailles de boules de neige »;
@@ -47,7 +48,6 @@ export const SNOWBALL_MISS = .25, SNOWBALL_DODGE_CHANCE = .15;
 /** Height of the snowball's arc above the straight line (enclosure units), for the shortest throw. */
 export const SNOWBALL_ARC = 12;
 const hash = (id: string) => { let h = 2166136261; for (const c of id) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
-const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 
 export interface SnowballThrower {id: string; group: string; motion: RabbitMotion; available: boolean}
 /**

@@ -1,3 +1,4 @@
+import {clamp} from '../util/clamp';
 /**
  * The Christmas mini-game « Les cadeaux du ciel » (concept noel-v1 B, owner's choice of 4 November 2026): the sleigh crosses the
  * night sky and drops presents; the player slides their rabbit and its basket to catch them. A game lasts SKY_GIFTS_GAME.ms or
@@ -43,7 +44,6 @@ export interface SkyGiftsGame {
 }
 
 const random = (g: SkyGiftsGame) => { g.seed = (g.seed + 0x6D2B79F5) >>> 0; let t = g.seed; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 
 export function startSkyGifts(now: number, seed = Math.floor(now) >>> 0): SkyGiftsGame {
   const c = SKY_GIFTS_GAME;

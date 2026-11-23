@@ -102,6 +102,7 @@ import {PailleDialogue} from './PailleDialogue';
 import {mountPhotoControls} from './photoControls';
 import {guidedStep, type GuideStep} from './guidance';
 import {BUILDING_NAMES, CARE_NAMES, REFUSALS, RARITY_NAMES, busyReason, TYPE_NAMES, typeNames, recipeBook, recipePairs, buildingReason, collectionSpeciesView, collectionView, incomeWhole, moneyReason, nurseryView, occupants, oddsView, placementReason, rabbitAvailability, parentBusy, releaseReason, timeLeft, type Placement, type CollectionFilter} from './models';
+import {prefersReducedMotion} from '../display/reducedMotion';
 
 /** One show button per legendary sheet: Anky's tail strike, the Dragon's fire breath, the Requin's surf, Arkoko's crystal flare. */
 const LEGENDARY_SHOW_BUTTONS: Partial<Record<SpeciesId, {label: string; act: LegendaryAct}>> = {
@@ -520,7 +521,7 @@ export class GameUI {
     for (const type of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) portraitElement.addEventListener(type, stop);
   }
   private caress(portraitElement: HTMLElement, rabbit: Rabbit): void {
-    const reduced = !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const reduced = prefersReducedMotion();
     if (isBenny(rabbit.species)) { this.caressBenny(portraitElement, rabbit, reduced); return; }
     const now = performance.now(); if (now < this.petCooldownUntil) return;
     this.petCooldownUntil = now + 1500;
@@ -588,7 +589,7 @@ export class GameUI {
     const art = EVOLVED_ART.find(entry => entry.id === rabbit.species);
     const oldArt = rabbitArt(rabbit.species), newArt = evolvedRabbitArt(rabbit.species);
     if (!art || !oldArt || !newArt) return;
-    const reduced = !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const reduced = prefersReducedMotion();
     const root = node('div', '', 'evolution-moment'); root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true');
     root.setAttribute('aria-label', `Évolution : ${art.name}`); root.dataset.reducedMotion = String(reduced);
     root.style.setProperty('--evolution-background', `url("${preferWebp(`${import.meta.env.BASE_URL}assets/effects/evolution/evolution-background.png`)}")`);

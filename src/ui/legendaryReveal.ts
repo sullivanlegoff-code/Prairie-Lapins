@@ -1,5 +1,6 @@
 import {ARKOKO_CRYSTAL, LEGENDARY_EFFECTS as FX, crystalCentre, type LegendaryShow} from '../config/legendaryArt';
 import {rabbitArt} from '../config/rabbitArt';
+import {prefersReducedMotion} from '../display/reducedMotion';
 
 /**
  * First appearance of a legendary (owner's requests of 31 October and 1 November 2026): the Dragon sets the whole screen
@@ -134,7 +135,7 @@ export function showLegendaryReveal(species: LegendaryShow, text: RevealText, on
   dialog.append(layer('lr-backdrop'), effects, hero, words);
 
   const finish = () => { dialog.classList.add('is-final'); window.clearTimeout(timer); };
-  const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduced = prefersReducedMotion();
   const timer = window.setTimeout(finish, SKIP_MS + 900);
   let closed = false;
   const close = () => { if (closed) return; closed = true; window.clearTimeout(timer); if (dialog.open) dialog.close(); dialog.remove(); onClose(); };
