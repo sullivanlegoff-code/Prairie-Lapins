@@ -95,7 +95,7 @@ import {MagicienClock, magicienFree, type MagicienAct} from './magicienTimeline'
 import {CHASE_EVENT, RabbitChases, type ChaseRunner} from './rabbitChase';
 import {SNOWBALL_BATTLE_EVENT, SNOWBALL_EVENT, SnowballFights, snowballPoint, type SnowballThrower} from './snowballFight';
 import {LIGHT_POOLS, NightGlows, type GlowSource} from './nightGlows';
-import {TextureBudget} from './textureBudget';
+import {TextureBudget, budgetWidth, shrinkSize} from './textureBudget';
 import {NIGHT_GLOW_PREFIX, nightGlowOf} from '../config/nightLights';
 import {CHRISTMAS_MARKET_ART, christmasMarketFrame, christmasMarketPoint} from '../config/christmasMarketArt';
 import {CANDY_ICON_URL, CANDY_TEXTURE, COIN_BASKET_ART, COIN_BUBBLE_FRAME, SNOWBALL_ART, SNOWMAN_ART} from '../config/winterArt';
@@ -899,9 +899,14 @@ export class MeadowScene extends Phaser.Scene {
     for (const rabbit of state?.rabbits ?? []) {
       // The drawing this rabbit shows (its evolved one only after explicit evolution), with that drawing's own blink and nose.
       const shown = artForRabbit(rabbit); add(shown);
+      // Its drawing, kept at twice its largest size on screen (plan 5.1; the body is drawn VISUAL.rabbit.scale bigger).
+      if (shown) this.budget?.want(shown.texture, shown.worldWidth * VISUAL.rabbit.scale);
       for (const patch of rabbitBlinkArt(rabbit.species, !!shown?.evolved)?.patches ?? []) add(patch);
       if (isLegendaryShow(rabbit.species)) for (const art of legendaryMeadowArt(rabbit.species)) add(art);
       if (rabbit.species === BENNY_ID) for (const art of [...bennyMeadowArt(), ...bennyFlightArt()]) add(art);
+      // Her frames are aligned pixel for pixel with her drawing: the atlas is shrunk by the same ratio (her flight atlas already fits).
+      const bennyShrink = rabbit.species === BENNY_ID && shown ? shrinkSize(shown.width, shown.height, budgetWidth(shown.worldWidth * VISUAL.rabbit.scale)) : null;
+      if (bennyShrink) this.budget?.wantAtlas(BENNY_ATLAS.texture, bennyShrink.ratio);
       if (wearsCrown(rabbit)) add(CROWN_ART);
       // His magic shows' poses and effects, only for an evolved Magicien (audit, 4 November 2026; shows of 10 November 2026).
       if (rabbit.species === 'magicien' && shown?.evolved) for (const art of magicienShowArt()) add(art);
@@ -1043,6 +1048,8 @@ export class MeadowScene extends Phaser.Scene {
     if (!this.budget) return;
     const keep = new Set<string>();
     for (const image of [...this.buildingViews.values(), this.buildingGhost, this.jumpIslandImage]) if (image?.active) keep.add(image.texture.key);
+    // The rabbits' drawings, and Benny's atlas while she is in the meadow.
+    for (const r of this.rabbitViews) { if (r.art) keep.add(r.art.texture); if (r.benny) keep.add(BENNY_ATLAS.texture); }
     // Most refreshes have nothing to free: the list of needed pictures is only made when a loaded one is not shown.
     if (this.budget.loaded().every(key => keep.has(key) || key.startsWith(NIGHT_GLOW_PREFIX))) return;
     for (const art of this.requiredArt(this.current)) keep.add(art.texture);
@@ -1281,7 +1288,12 @@ export class MeadowScene extends Phaser.Scene {
         const view = {object, body, center, group: enclosure.id, motion, nest: enclosure.kind === 'nest', lift: 0, pivot: art ? this.spritePivot(art) : {x: 0, y: -3}, native: art ? art.facing : 1 as const, base, phase: index * 2 + Number(rabbit.id.split('-')[1]), fedUntil: 0};
         if (art) {
           const sprite = this.add.image(0, art.groundY, art.texture).setOrigin(.5, 1);
-          sprite.setScale(art.worldWidth / art.width); // Uniform scale preserves the original proportions.
+          // Uniform scale preserves the original proportions. A drawing redrawn smaller (plan 5.1) has fewer pixels: the scale follows
+          // the texture shown, also when an effect swaps it (Ardent's frames, the Magicien's poses, Dadi, the legendaries' bodies).
+          const fit = () => sprite.setScale(art.worldWidth / art.width * this.textureRatio(sprite));
+          const setTexture = sprite.setTexture.bind(sprite);
+          sprite.setTexture = (key, frame) => { setTexture(key, frame); fit(); return sprite; };
+          fit();
           body.add(sprite);
           // Ardent's first drawing moves through its painted frames; each one is loaded on demand and never blocks the meadow.
           const ardent = rabbit.species === 'ardent' && !art.evolved;
@@ -1678,8 +1690,11 @@ export class MeadowScene extends Phaser.Scene {
         // Reference images use their own alpha silhouette, avoiding rectangular hits on adjacent residents.
         const world = this.view.world(screen);
         const local = r.sprite.getWorldTransformMatrix().applyInverse(world.x, world.y);
-        const x = Math.floor(local.x + r.art.width / 2), y = Math.floor(local.y + r.art.height);
-        if (x < 0 || y < 0 || x >= r.art.width || y >= r.art.height ||
+        // In the pixels of its drawing's texture, which a smaller copy (plan 5.1) has fewer of, from those of the texture shown.
+        const own = this.budget?.ratio(r.art.texture) ?? 1, k = this.textureRatio(r.sprite) / own;
+        const w = Math.round(r.art.width / own), h = Math.round(r.art.height / own);
+        const x = Math.floor(local.x * k + w / 2), y = Math.floor(local.y * k + h);
+        if (x < 0 || y < 0 || x >= w || y >= h ||
             this.textures.getPixelAlpha(x, y, r.art.texture) < 32) return [];
       }
       return [{id: r.id, point: this.view.screen(this.bodyPoint(r, 0, -7)), depth: r.object.y,

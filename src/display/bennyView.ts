@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import {BENNY_ATLAS, BENNY_FRAMES, BENNY_ORIGIN, type BennyFrameName} from '../config/bennyArt';
+import {textureRatio} from './textureBudget';
 import type {RabbitArt} from '../config/rabbitArt';
 import type {Point} from '../ui/gestures';
 import {endPerform, motionZone, startPerform, type RabbitMotion} from './rabbitMotion';
@@ -30,7 +31,8 @@ export class BennyView {
   private queued: {act: BennyAct; hops: number} | null = null;
 
   constructor(scene: Phaser.Scene, readonly id: string, private host: BennyHost, readonly clock: BennyClock) {
-    const {art, body, sprite, shadow} = host, scale = art.worldWidth / art.width;
+    // Her atlas may be shrunk with her drawing (plan 5.1): its ratio keeps every frame on the drawing.
+    const {art, body, sprite, shadow} = host, scale = art.worldWidth / art.width * textureRatio(scene.textures, BENNY_ATLAS.texture);
     const make = () => scene.add.image(0, art.groundY, BENNY_ATLAS.texture, 'hop-1').setOrigin(BENNY_ORIGIN.x, BENNY_ORIGIN.y).setScale(scale).setVisible(false);
     this.pose = make(); this.patch = make();
     body.addAt(this.pose, body.getIndex(sprite) + 1); body.addAt(this.patch, body.getIndex(this.pose) + 1);

@@ -1,5 +1,7 @@
 import {describe, expect, it} from 'vitest';
-import {TextureBudget, budgetWidth, shrinkSize, type BudgetTextures} from '../src/display/textureBudget';
+import {TextureBudget, budgetWidth, shrinkAtlas, shrinkSize, type AtlasData, type BudgetTextures} from '../src/display/textureBudget';
+import {RABBIT_ART, rabbitArt} from '../src/config/rabbitArt';
+import bennyAtlas from '../public/assets/rabbits/benny/frames/benny-frames.json';
 import {FARM_ART, FARM_LEVEL_3_ART} from '../src/config/farmArt';
 import {NEST_ART} from '../src/config/nestArt';
 import {NURSERY_ART} from '../src/config/nurseryArt';
@@ -10,13 +12,15 @@ import {VISUAL} from '../src/config/visual';
 /** Phaser's texture manager, reduced to what the budget uses: textures are plain sized sources. */
 function fakeTextures() {
   const map = new Map<string, {source: {width: number; height: number}; customData: Record<string, unknown>}>();
-  const textures: BudgetTextures & {load(key: string, width: number, height: number): void; size(key: string): {width: number; height: number} | undefined; images: string[]} = {
+  const textures: BudgetTextures & {load(key: string, width: number, height: number): void; size(key: string): {width: number; height: number} | undefined; images: string[]; atlases: Map<string, {source: {width: number; height: number}; data: object}>} = {
     images: [],
     exists: key => map.has(key),
     get: key => map.get(key)!,
     remove: key => map.delete(key),
     addImage(key, source) { this.images.push(key); const t = {source, customData: {}}; map.set(key, t); return t; },
     addCanvas: (key, canvas) => { const t = {source: canvas, customData: {}}; map.set(key, t); return t; },
+    atlases: new Map<string, {source: {width: number; height: number}; data: object}>(),
+    addAtlas(key, source, data) { const t = {source, customData: {}}; map.set(key, t); this.atlases.set(key, {source, data}); return t; },
     // What Phaser's loader does with a decoded picture.
     load(key, width, height) { this.addImage(key, {width, height} as HTMLImageElement); },
     size: key => map.get(key)?.source,
@@ -98,5 +102,46 @@ describe('meadow pictures kept at twice their largest size on screen (plan 5.1)'
     const textures = fakeTextures(), budget = new TextureBudget(textures, fakeCanvas([]));
     budget.want(FARM_ART.texture, FARM_ART.worldWidth); budget.dispose();
     textures.load(FARM_ART.texture, 1254, 1254); expect(textures.size(FARM_ART.texture)?.width).toBe(1254);
+  });
+  it('gives every rabbit drawing a budget of twice its size on screen, Benny at 275 px instead of 354', () => {
+    for (const art of RABBIT_ART) {
+      const budget = budgetWidth(art.worldWidth * VISUAL.rabbit.scale), size = shrinkSize(art.width, art.height, budget);
+      // Never below twice the screen size at the closest zoom.
+      expect((size?.width ?? art.width) / (art.worldWidth * VISUAL.rabbit.scale * VISUAL.camera.maxZoom)).toBeGreaterThanOrEqual(2 - 1e-9);
+    }
+    const benny = rabbitArt('benny')!;
+    expect(shrinkSize(benny.width, benny.height, budgetWidth(benny.worldWidth * VISUAL.rabbit.scale))).toMatchObject({width: 275, height: 338});
+  });
+  it("repacks Benny's atlas smaller without any frame touching another, each frame kept in its place", () => {
+    const data = bennyAtlas as unknown as AtlasData, ratio = 354 / 275;
+    const packed = shrinkAtlas(data, 2035, ratio);
+    const rects = Object.values(packed.data.frames).map(f => f.frame);
+    expect(Object.keys(packed.data.frames)).toEqual(Object.keys(data.frames));
+    for (const r of rects) { expect(r.x).toBeGreaterThanOrEqual(2); expect(r.y).toBeGreaterThanOrEqual(2); expect(r.x + r.w).toBeLessThanOrEqual(packed.width - 2); expect(r.y + r.h).toBeLessThanOrEqual(packed.height - 2); }
+    for (let i = 0; i < rects.length; i++) for (let j = i + 1; j < rects.length; j++) {
+      const a = rects[i], b = rects[j], gap = Math.max(b.x - (a.x + a.w), a.x - (b.x + b.w), b.y - (a.y + a.h), a.y - (b.y + b.h));
+      expect(gap).toBeGreaterThanOrEqual(2);
+    }
+    for (const [name, f] of Object.entries(data.frames)) {
+      const g = packed.data.frames[name];
+      // Same place in the full frame, in the smaller pixels: once drawn `ratio` times bigger, within half a painted pixel.
+      expect(g.spriteSourceSize!.x * ratio).toBeCloseTo(f.spriteSourceSize!.x, 9);
+      expect(g.spriteSourceSize!.y * ratio).toBeCloseTo(f.spriteSourceSize!.y, 9);
+      expect(g.sourceSize!.w * ratio).toBeCloseTo(f.sourceSize!.w, 9);
+      expect(Math.abs(g.frame.w * ratio - f.frame.w)).toBeLessThanOrEqual(ratio / 2 + 1e-9);
+      expect(packed.place.find(p => p.to === g.frame)?.from).toEqual(f.frame);
+    }
+    // 2035 × 2786 before; the repacked sheet is about 40 % lighter.
+    expect(packed.width * packed.height).toBeLessThan(2035 * 2786 * .7);
+  });
+  it('hands a listed atlas to Phaser repacked, with its ratio, and leaves the others alone', () => {
+    const textures = fakeTextures(), drawn: number[][] = [], budget = new TextureBudget(textures, fakeCanvas(drawn));
+    budget.wantAtlas('benny-frames', 354 / 275);
+    textures.addAtlas('benny-frames', {width: 2035, height: 2786} as HTMLImageElement, bennyAtlas);
+    textures.addAtlas('other', {width: 2035, height: 2786} as HTMLImageElement, bennyAtlas);
+    expect(budget.ratio('benny-frames')).toBeCloseTo(354 / 275, 10);
+    expect(textures.atlases.get('benny-frames')!.source.width).toBe(Math.ceil(2035 * 275 / 354));
+    expect(drawn).toHaveLength(Object.keys(bennyAtlas.frames).length);
+    expect(textures.atlases.get('other')!.data).toBe(bennyAtlas); expect(budget.ratio('other')).toBe(1);
   });
 });
