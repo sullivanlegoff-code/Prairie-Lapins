@@ -60,5 +60,13 @@ it('sorts the whole layer when a neighbor crosses a stationary rabbit, then skip
   scene.update(116); expect(scene.animals.sort).toHaveBeenCalledTimes(1);
  } finally { step.mockRestore(); }
 });
-
-
+it('reads the HUD position at most once a second, not on every frame (plan 5.2)', () => {
+ const read = vi.fn(() => ({bottom: 64}));
+ vi.stubGlobal('document', {hidden: false, getElementById: id => id === 'hud' ? {getBoundingClientRect: read} : null, querySelector: () => null});
+ const scene = new MeadowScene({}, () => {}, () => false);
+ scene.time = {now: 0}; scene.scale = {width: 800, height: 600};
+ scene.rabbitViews = []; scene.animals = {list: [], sort() {}};
+ for (let frame = 0; frame < 60; frame++) { scene.time.now = 100 + frame * 16; scene.update(100 + frame * 16); }
+ expect(read).toHaveBeenCalledTimes(1);
+ scene.update(1200); expect(read).toHaveBeenCalledTimes(2);
+});

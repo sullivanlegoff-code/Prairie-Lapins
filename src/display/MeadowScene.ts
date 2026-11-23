@@ -523,7 +523,7 @@ export class MeadowScene extends Phaser.Scene {
     const fade=(low:number,high:number)=>Phaser.Math.Clamp((this.view.zoom-low)/(high-low),0,1);
     this.bubbles?.setAlpha(fade(.45,.7)).setVisible(!this.photo && this.view.zoom>.45);
   }
-  private resize(): void { this.view.setInsets(this.framingInsets()); this.view.resize(this.scale.width, this.scale.height); this.applyCamera(); }
+  private resize(): void { this.hudBottomAt = null; this.view.setInsets(this.framingInsets()); this.view.resize(this.scale.width, this.scale.height); this.applyCamera(); }
   private applyCamera(): void { this.cameras.main.setZoom(this.view.zoom).centerOn(this.view.x, this.view.y); this.drawDecorationSelection(); this.updateDetails(); }
   setExpansion(active:boolean, parcelId?:ParcelId):void {
     const was=this.expanding;this.expanding=active;this.expansionParcelId=active?parcelId:undefined;
@@ -1717,6 +1717,14 @@ export class MeadowScene extends Phaser.Scene {
     this.progressViews?.sync(progressBars(s, {photo: this.photo, movingId: this.placement?.movingId}, now), s?.buildings.map(b => b.id) ?? []);
     this.progressUpdatedAt = this.time.now;
   }
+  /** The bottom of the HUD in CSS pixels, read at most once a second and after a resize (plan 5.2: it was read twice a frame,
+   * which makes the browser lay the page out again whenever anything in it changed). */
+  private hudBottomAt: {time: number; value: number} | null = null;
+  private hudBottom(time: number): number {
+    if (!this.hudBottomAt || time - this.hudBottomAt.time >= 1000 || time < this.hudBottomAt.time)
+      this.hudBottomAt = {time, value: document.getElementById('hud')?.getBoundingClientRect().bottom ?? 0};
+    return this.hudBottomAt.value;
+  }
   update(time: number): void {
     this.drawRabbitDrops(time);
     this.placeTutorialHand(time);
@@ -1726,7 +1734,7 @@ export class MeadowScene extends Phaser.Scene {
     // Scene time since the last frame; a long gap (inactive tab) is cut short inside the motion step: no jump.
     const dt = this.motionClock === null ? 0 : time - this.motionClock; this.motionClock = time;
     let dadi: ReturnType<DadiReactions['step']> = {speech: null, started: null}, dadiObscured = false;
-    const dadiBounds = this.dadiSpeech ? {width: this.scale.width, height: this.scale.height, top: document.getElementById('hud')?.getBoundingClientRect().bottom ?? 0} : null;
+    const dadiBounds = this.dadiSpeech ? {width: this.scale.width, height: this.scale.height, top: this.hudBottom(time)} : null;
     if (this.dadiSpeech) {
       const active = !this.photo && !document.hidden && document.getElementById('loading-screen')?.hidden !== false;
       dadiObscured = document.getElementById('game-panel')?.hidden === false || !!document.querySelector('dialog[open]');
@@ -1752,7 +1760,7 @@ export class MeadowScene extends Phaser.Scene {
     this.nightGlows?.update(night, night > .001 ? this.glowSources() : [], night > .001 ? this.rabbitViews.map(r => r.object) : []);
     const lifeActive = !this.photo && !document.hidden && document.getElementById('loading-screen')?.hidden !== false &&
       document.getElementById('game-panel')?.hidden !== false && !document.querySelector('dialog[open]') && !this.placement && !this.arrangement;
-    const bounds = {width: this.scale.width, height: this.scale.height, top: document.getElementById('hud')?.getBoundingClientRect().bottom ?? 0};
+    const bounds = {width: this.scale.width, height: this.scale.height, top: this.hudBottom(time)};
     // Benny up in the air has no speech nor sleep bubble over her empty place.
     const visibleResidents = new Set(this.rabbitViews.filter(r => r.motion && r.id !== this.bennyAway && dadiHeadVisible(this.dadiHead(r), bounds)).map(r => r.id));
     const visitor=this.cozyInteraction.active;
