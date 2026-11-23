@@ -11,6 +11,8 @@ import {xpAfterSlowdown} from '../simulation/progression';
 export {CLOUD_KEY} from './accountState';
 export const BACKUP_KEY = 'prairie-lapins.cloud.backup.v1';
 export const LINK_BACKUP_PREFIX = 'prairie-lapins.cloud.link-backup.v1.';
+/** The one copy of a damaged link (plan 5.8): each repair replaces the last one. Before, each repair added a key of its own. */
+export const LINK_BACKUP_KEY = LINK_BACKUP_PREFIX + 'last';
 class InvalidLink extends Error {}
 interface Link {owner: string; revision: number; baseline: string; syncedAt: string | null; pending: CommitRequest | null; format?: number}
 /** Version of the fingerprint below. A link written with another one (none: before v25) compares with `sameCore`. */
@@ -156,9 +158,7 @@ export class CloudSync {
       if (!broken) { await this.connect(owner); return; }
       const raw = this.storage.getItem(CLOUD_KEY);
       if (raw) {
-        const key = LINK_BACKUP_PREFIX + this.clock.uuid();
-        if (this.storage.getItem(key) !== null) throw new Error('backup collision');
-        this.storage.setItem(key, raw);
+        this.storage.setItem(LINK_BACKUP_KEY, raw);
       }
       this.storage.setItem(CLOUD_KEY, '');
     } catch { this.show('recovery', 'La copie de la liaison a échoué. Aucun remplacement de partie n’a été effectué. Libère un peu d’espace et réessaie.'); return; }

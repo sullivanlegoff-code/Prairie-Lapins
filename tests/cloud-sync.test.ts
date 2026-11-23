@@ -27,6 +27,11 @@ describe('synchronisation automatique, sans réseau', () => {
     expect(f.data.get(SAVE_KEY)).toBe(before); expect(f.data.get(BACKUP_KEY)).toBe('secours précédent');
     expect(f.sync.getView().status).toBe('choice'); expect(f.gateway.calls).toHaveLength(0); expect(f.replacement).not.toHaveBeenCalled();
   });
+  it('ne garde qu’une copie de la liaison abîmée, la dernière, quel que soit le nombre de réparations (plan 5.8)', async () => {
+    const f = setup(); f.gateway.remote = remote();
+    for (const raw of ['cassé une fois', 'cassé deux fois']) { f.data.set(CLOUD_KEY, raw); await f.sync.connect('player-a'); await f.sync.repairLink(true); }
+    expect([...f.data].filter(([key]) => key.startsWith(LINK_BACKUP_PREFIX)).map(([, value]) => value)).toEqual(['cassé deux fois']);
+  });
   it('ne supprime pas une liaison réparée entre-temps par un autre onglet', async () => {
     const f = setup(); f.data.set(CLOUD_KEY, 'cassé'); await f.sync.connect('player-a');
     const valid = JSON.stringify({owner: 'player-a', revision: 0, baseline: '', syncedAt: null, pending: null});
