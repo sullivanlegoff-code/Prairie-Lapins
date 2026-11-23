@@ -45,8 +45,8 @@ export class SalonSpaView {
   private readonly layer: Phaser.GameObjects.Container;
   private view: CareView | null = null;
   private glows = new Map<string, GlowView>();
-  /** The rabbit that was at the salon in the last state seen, and whether its care was over. */
-  private last: {rabbitId: string; ready: boolean} | null = null;
+  /** The rabbit that was at the salon in the last state seen, and when its care ends. */
+  private last: {rabbitId: string; endsAt: number} | null = null;
   constructor(private readonly scene: Phaser.Scene) {
     // Above the residents (depth 2), below the bubbles (3) and the night's lights.
     this.layer = scene.add.container(0, 0).setDepth(2.05);
@@ -54,9 +54,10 @@ export class SalonSpaView {
   /** Rebuilds the rabbit in care when the salon, the rabbit, its care or its picture changes; notices a rabbit welcomed back. */
   sync(state: GameState | null, now: number): void {
     const care = state?.care, salon = state?.buildings.find(b => b.kind === 'salon');
-    // A rabbit that leaves the salon after its care, and is still on the island, shines in its enclosure.
-    if (this.last && this.last.ready && care?.rabbitId !== this.last.rabbitId && state?.rabbits.some(r => r.id === this.last!.rabbitId)) this.welcome(this.last.rabbitId, now);
-    this.last = care ? {rabbitId: care.rabbitId, ready: care.endsAt <= now} : null;
+    // A rabbit that leaves the salon after its care, and is still on the island, shines in its enclosure. The end of the care is
+    // checked now, when it leaves: the last state seen may date from before that end (plan 3.8).
+    if (this.last && this.last.endsAt <= now && care?.rabbitId !== this.last.rabbitId && state?.rabbits.some(r => r.id === this.last!.rabbitId)) this.welcome(this.last.rabbitId, now);
+    this.last = care ? {rabbitId: care.rabbitId, endsAt: care.endsAt} : null;
     const rabbit = care && salon ? state!.rabbits.find(r => r.id === care.rabbitId) : undefined, art = rabbit ? artForRabbit(rabbit) : undefined;
     const ready = !!art && [art.texture, SALON_ART.tub.texture, ...Object.values(SPA_PIECES).map(p => p.texture)].every(t => this.scene.textures.exists(t));
     const key = ready ? JSON.stringify([salon!.id, salon!.x, salon!.y, salon!.formerFootprint ?? 0, rabbit!.id, care!.care, art!.texture]) : '';
