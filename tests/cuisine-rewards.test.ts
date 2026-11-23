@@ -3,7 +3,7 @@ import {itAll} from './cases';
 import {act,createGame,decodeGame,encodeGame} from '../src/simulation';
 import {CUISINE_REWARDS,CUISINE_TIP,CUISINE_FULL_REWARDS_PER_CYCLE} from '../src/config/balance';
 import {MISSION_CYCLE_DURATION} from '../src/config/missions';
-import {dailyCycleStart} from '../src/simulation/missions';
+import {dailyCycleEnd} from '../src/simulation/missions';
 import type {Command,GameState} from '../src/state/types';
 import {withKitchen} from './kitchen-fixture';
 import {evolveAbove30} from './evolved';
@@ -26,7 +26,7 @@ describe('Cuisine reward command',()=>{
     expect(same.cuisineReward!.heartGranted).toBe(false);expect(same.state.hearts).toBe(initial.hearts+CUISINE_HEART);
     expect(other.cuisineReward).toMatchObject({heartGranted:false,affectionGranted:false}); // One affection a day for the whole Cuisine (5 November 2026).expect(other.state.hearts).toBe(initial.hearts+CUISINE_HEART);
     expect(other.state.pattes).toBe(initial.pattes+3*TOAST.pattes);expect(other.state.grass).toBe(initial.grass+3*TOAST.grass);
-    const boundary=dailyCycleStart(other.state)+MISSION_CYCLE_DURATION;
+    const boundary=dailyCycleEnd(other.state);
     const early=reward(other.state,'birth-102',boundary-1);expect(early.cuisineReward!.heartGranted).toBe(false);
     const next=reward(early.state,'birth-102',boundary);
     expect(next.cuisineReward!.heartGranted).toBe(true);expect(next.state.hearts).toBe(initial.hearts+2*CUISINE_HEART);expect(next.state.cuisine.heartCycle).toBe(1);
@@ -59,7 +59,7 @@ describe('Cuisine reward command',()=>{
     expect(released.ok).toBe(true);if(!released.ok)return;
     const loaded=decodeGame(encodeGame(released.state));expect(loaded.ok).toBe(true);if(!loaded.ok)return;
     for(const s of [released.state,loaded.state]){const other=reward(s,'birth-102');expect(other.cuisineReward!.affectionGranted).toBe(false);expect(other.state.rabbits[0].affection).toBe(a.affection);}
-    const boundary=dailyCycleStart(loaded.state)+MISSION_CYCLE_DURATION,next=reward(loaded.state,'birth-102',boundary);
+    const boundary=dailyCycleEnd(loaded.state),next=reward(loaded.state,'birth-102',boundary);
     expect(next.cuisineReward!.affectionGranted).toBe(true);
     const reloaded=decodeGame(encodeGame(next.state));expect(reloaded.ok).toBe(true);if(reloaded.ok)expect(reloaded.state.cuisine.affectionCycles).toEqual({'birth-102':1});
   });
@@ -71,7 +71,7 @@ describe('Cuisine reward command',()=>{
     expect(second.state.rabbits[0].affection).toBe(2);
     const other=reward(second.state,'birth-102');expect(other.state.rabbits.map(r=>r.affection)).toEqual([2,1]); // The day's affection is already used.
     expect(other.state.cuisine.affectionCycles).toEqual({'birth-101':0});
-    const boundary=dailyCycleStart(other.state)+MISSION_CYCLE_DURATION;
+    const boundary=dailyCycleEnd(other.state);
     const early=reward(other.state,a.id,boundary-1);expect(early.cuisineReward!.affectionGranted).toBe(false);
     const next=reward(early.state,a.id,boundary);expect(next.cuisineReward!.affectionGranted).toBe(true);
     expect(next.state.rabbits[0].affection).toBe(3);expect(next.state.cuisine.affectionCycles[a.id]).toBe(1);
@@ -218,7 +218,7 @@ describe('full-reward quota: five per cycle, shared by every recipe',()=>{
   });
   it('renews the five slots with the canonical daily cycle, and not before',()=>{
     let s=fresh();for(let n=0;n<FULL+2;n++)s=cook(s,'avocado-toast').state;
-    const boundary=dailyCycleStart(s)+MISSION_CYCLE_DURATION;
+    const boundary=dailyCycleEnd(s);
     const before=cook(s,'chicken',s.rabbits[0].id,boundary-1);
     expect(before.cuisineReward).toMatchObject({pattes:5,fullReward:false});expect(before.state.cuisine.fullRuns).toEqual({cycle:0,used:FULL});
     let next=cook(before.state,'chicken',s.rabbits[0].id,boundary).state;

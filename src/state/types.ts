@@ -71,8 +71,9 @@ export interface MissionState {
   /**
    * daily.picked (v25): the three missions drawn at the start of the cycle among what the player could do then; absent, the
    * draw among the base missions (`dailyMissionsOf`). daily.petted (v25): the rabbits caressed in this cycle, at most three.
+   * daily.endsAt (v30): when this cycle ends, the first 4 a.m. after it began (or later for the cycle a v29 save was in).
    */
-  daily: {referenceAt: number; cycleIndex: number; progress: Record<DailyMissionId, number>; claimed: DailyMissionId[]; bonusClaimed: boolean; nextAt?: number; picked?: DailyMissionId[]; petted?: string[]};
+  daily: {referenceAt: number; cycleIndex: number; endsAt: number; progress: Record<DailyMissionId, number>; claimed: DailyMissionId[]; bonusClaimed: boolean; nextAt?: number; picked?: DailyMissionId[]; petted?: string[]};
   /** v25: the daily cycles in a row ending with the bonus claimed, and the last one (the `quotidien` evolution challenge). */
   streak?: {count: number; lastCycle: number};
 }

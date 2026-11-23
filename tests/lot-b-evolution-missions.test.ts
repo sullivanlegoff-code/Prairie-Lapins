@@ -118,7 +118,7 @@ describe('save v24 → v25', () => {
   it('keeps a Cuisine progress as commis when the new list has it, forgets it otherwise, and keeps evolved rabbits evolved', () => {
     const s = game(['feu', 'icy', 'snk', 'boudinet', 'paille'], ['kitchen']);
     const raw = JSON.parse(encodeGame(s));
-    expect(raw.version).toBe(29);
+    expect(raw.version).toBe(30);
     raw.version = 24; delete raw.missions.daily.picked;
     raw.rabbits[1].evolution = {challenges: {'cuisine:chicken': 1}}; // Feu: commis:chicken now.
     raw.rabbits[2].evolution = {challenges: {'cuisine:moelleux': 1, soin: 1}}; // Icy: its moelleux is a taster challenge now.
@@ -128,7 +128,7 @@ describe('save v24 → v25', () => {
     const decoded = decodeGame(JSON.stringify(raw));
     if (!decoded.ok) throw Error(decoded.reason);
     const loaded = decoded.state;
-    expect(loaded.version).toBe(29);
+    expect(loaded.version).toBe(30);
     expect(rabbit(loaded, 'rabbit-110').evolution).toEqual({challenges: {'commis:chicken': 1}});
     expect(rabbit(loaded, 'rabbit-111').evolution).toEqual({challenges: {soin: 1}});
     expect(rabbit(loaded, 'rabbit-112').evolution).toEqual({done: true, challenges: {voyage: 1, quotidien: 1}});

@@ -4,7 +4,7 @@ import {cycleIndexAt} from '../simulation/missions';
 import {giftCycle} from '../simulation/care';
 
 export function cuisineRemaining(s: GameState, now: number): number {
-  const used = s.cuisine.fullRuns?.cycle === cycleIndexAt(s.missions.daily.referenceAt, now) ? s.cuisine.fullRuns.used : 0;
+  const used = s.cuisine.fullRuns?.cycle === cycleIndexAt(s.missions.daily, now) ? s.cuisine.fullRuns.used : 0;
   return Math.max(0, CUISINE_FULL_REWARDS_PER_CYCLE - used);
 }
 export function cuisineQuotaText(s: GameState, now: number): string {

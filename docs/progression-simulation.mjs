@@ -1,4 +1,7 @@
 import './node-typescript-loader.mjs';
+// The day changes at 4 a.m. local time (decision D4, 23 November 2026): time 0 is 08:00 in this zone (UTC+8, no summer time),
+// so the simulated player's nights hold the change of day, as on the owner's clock.
+process.env.TZ='Asia/Shanghai';
 const sim=await import('../src/simulation/index.ts'), prog=await import('../src/simulation/progression.ts'), missions=await import('../src/simulation/missions.ts'), land=await import('../src/config/land.ts'), placement=await import('../src/simulation/placement.ts'), hab=await import('../src/simulation/habitats.ts'), balance=await import('../src/config/balance.ts'), breeding=await import('../src/simulation/breeding.ts'), rights=await import('../src/simulation/levelRights.ts'), dec=await import('../src/config/decorations.ts'); const affection=await import('../src/simulation/affection.ts'); const care=await import('../src/simulation/care.ts'); const challenges=await import('../src/config/evolutionChallenges.ts'); const missionConfig=await import('../src/config/missions.ts'); const travel=await import('../src/simulation/travel.ts');
 const {writeFileSync}=await import('node:fs');
 const H=3600000, MIN=60000;

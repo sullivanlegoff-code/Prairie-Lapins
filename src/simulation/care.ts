@@ -26,7 +26,7 @@ export function rabbitAwayReason(s: GameState, rabbitId: string): 'TRAVELING' | 
 export const salonHeartCaresLeft = (s: Pick<GameState, 'missions' | 'salonHearts'>, now: number): number =>
   Math.max(0, SALON.heartCaresPerCycle - (s.salonHearts?.cycle === giftCycle(s, now) ? s.salonHearts.cares : 0));
 export const giftCycle = (s: Pick<GameState, 'missions'>, now: number): number =>
-  Math.max(s.missions.daily.cycleIndex, cycleIndexAt(s.missions.daily.referenceAt, now));
+  Math.max(s.missions.daily.cycleIndex, cycleIndexAt(s.missions.daily, now));
 /** Why +1 affection from a gift would be refused, whatever the day: the maximum, a statue, or a wall. */
 export function giftAffectionReason(s: Pick<GameState, 'buildings'>, rabbit: number | CappedRabbit): Exclude<GiftRefusal, 'GIFT_TODAY'> | null {
   const affection = typeof rabbit === 'number' ? rabbit : rabbit.affection;

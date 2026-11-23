@@ -2792,7 +2792,7 @@ export class GameUI {
     heartsButton.classList.toggle('has-heart-gift', hasGift);
     heartsButton.setAttribute('aria-label', hasGift ? 'Cœurs · cadeau disponible' : 'Cœurs');
     const due = (end: number) => !!state && state.lastSimulatedAt < end && end <= this.now();
-    if (state && (cycleIndexAt(state.missions.daily.referenceAt, this.now()) > state.missions.daily.cycleIndex ||
+    if (state && (cycleIndexAt(state.missions.daily, this.now()) > state.missions.daily.cycleIndex ||
       due(state.nextHeartGiftAt) || (state.travel?.trips.some(t => due(t.endsAt)) ?? false) || state.rabbits.some(r => !!r.lookChange && due(r.lookChange.endsAt)) || state.buildings.some(b =>
         !!b.order && due(b.order.endsAt) || !!b.breeding && due(b.breeding.endsAt) || b.nursery?.babies.some(baby => due(baby.readyAt))))) {
       this.controller.refresh(); return;
