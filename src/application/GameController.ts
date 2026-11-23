@@ -163,6 +163,8 @@ export class GameController {
       const visible = settlementChanged || birthPlacementChanged || next.lastSimulatedAt < previous.lastSimulatedAt || crossed(previous.nextHeartGiftAt) ||
         previous.travel?.trips.some(trip => crossed(trip.endsAt)) || !!previous.care && crossed(previous.care.endsAt) ||
         previous.missions.daily.nextAt !== undefined && crossed(previous.missions.daily.nextAt) ||
+        // The Forêt de Brocéliande's change of drawing, and Benny's power coming back (plan 4.1).
+        previous.rabbits.some(r => !!r.lookChange && crossed(r.lookChange.endsAt)) || !!previous.benny && crossed(previous.benny.powerReadyAt) ||
         next.buildings.some((b, i) => Math.floor(b.incomeUnits / 3_600_000) !== Math.floor(previous.buildings[i].incomeUnits / 3_600_000) ||
           !!b.order && crossed(b.order.endsAt) || !!b.breeding && crossed(b.breeding.endsAt) ||
           b.nursery?.babies.some(baby => crossed(baby.readyAt)));

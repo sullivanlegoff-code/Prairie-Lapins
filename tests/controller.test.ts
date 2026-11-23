@@ -12,6 +12,10 @@ import {cumulativeLevelXp} from '../src/simulation/progression';
 import type {Command, GameState} from '../src/state/types';
 import {SCENARIOS, scenarioState} from '../src/dev/scenarios';
 import {jobKey} from '../src/simulation/initiation';
+import {habitatStats} from '../src/simulation/habitats';
+import {classicLookReason} from '../src/simulation/forest';
+import {emptyBuilding} from '../src/state/initial';
+import {EVOLUTION_CHALLENGES, evolutionChallengeTarget} from '../src/config/evolutionChallenges';
 
 describe('targeted passive change detection', () => {
   it('adopts and persists exactly advance across all fixtures, deadlines, daily renewals and clock rebases', () => {
@@ -332,6 +336,32 @@ describe('previous good copy (plan 1.7)', () => {
     const {store, controller} = fixture('pas une sauvegarde', 0);
     expect(controller.getSnapshot().status).toBe('invalid-save'); expect(controller.previousSave()).toBeNull();
     store.others.set(PREVIOUS_SAVE_KEY, 'abîmée aussi'); expect(controller.previousSave()).toBeNull();
+    controller.dispose();
+  });
+});
+
+describe('timers that change the screen (plan 4.1)', () => {
+  it('redraws when the forest’s change of drawing ends and when Benny’s power comes back', () => {
+    // A late game: the forest stands, evolved rabbits may change their drawing, Benny lives on the island.
+    const start = 1_790_000_000_000, s = scenarioState('completeGame', start);
+    if (!s.buildings.some(b => b.kind === 'forest')) s.buildings.push({...emptyBuilding('building-990', 'forest', 0, 32)});
+    const changing = s.rabbits.find(r => r.species === 'paille')!, id = changing.id; // Evolved: affection 30 and its challenges met.
+    const challenges = Object.fromEntries([...new Set(EVOLUTION_CHALLENGES.paille ?? [])].map(c => [c, evolutionChallengeTarget('paille', c)]));
+    Object.assign(changing, {affection: 30, evolution: {done: true, challenges}}); expect(classicLookReason(s, changing)).toBeNull();
+    for (const r of s.rabbits) delete r.lookChange;
+    changing.lookChange = {endsAt: start + 10 * MINUTE};
+    expect(s.rabbits.some(r => r.species === 'benny')).toBe(true);
+    s.benny = {powerReadyAt: start + 30 * MINUTE, inSky: false};
+    for (const b of s.buildings) if (b.kind === 'enclosure') b.incomeUnits = habitatStats(b).cap * HOUR; // Full: no coin changes the screen meanwhile.
+    const {controller, clock} = fixture(encodeGame(s), start);
+    const revision = () => controller.getSnapshot().viewRevision;
+    expect(controller.getSnapshot().status).toBe('saved'); expect(state(controller).rabbits.find(r => r.id === id)!.lookChange).toBeDefined();
+    clock.now = start + 10 * MINUTE - 1000; controller.refresh(false);
+    let before = revision(); clock.now = start + 10 * MINUTE + 1000; controller.refresh(false);
+    expect(revision()).toBeGreaterThan(before); expect(state(controller).rabbits.find(r => r.id === id)!.lookChange).toBeUndefined();
+    clock.now = start + 30 * MINUTE - 1000; controller.refresh(false);
+    before = revision(); clock.now = start + 30 * MINUTE + 1000; controller.refresh(false);
+    expect(revision()).toBeGreaterThan(before);
     controller.dispose();
   });
 });
