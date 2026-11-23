@@ -203,3 +203,24 @@ it('reads today’s rewards only at the start and the end of a game, never every
   t = JUMP_ROPE.leadIn + JUMP_ROPE.startPeriod; activity.update(); // The rope passes under still feet: the game ends.
   expect(quotaText.mock.calls.length).toBe(calls + 1);
 });
+
+it('measures the rope canvases once, not at every frame (plan 3.2)', async () => {
+  const {mountJumpRopeActivity} = await import('../src/ui/JumpRopeActivity');
+  let reads = 0; const observers: (() => void)[] = [];
+  vi.stubGlobal('ResizeObserver', class { constructor(private f: () => void) { observers.push(() => this.f()); } observe() {} disconnect() {} });
+  Object.defineProperty(HTMLCanvasElement.prototype, 'clientWidth', {configurable: true, get() { reads++; return 400; }});
+  Object.defineProperty(HTMLCanvasElement.prototype, 'clientHeight', {configurable: true, get() { reads++; return 200; }});
+  cleanups.push(() => { delete (HTMLCanvasElement.prototype as {clientWidth?: number}).clientWidth; delete (HTMLCanvasElement.prototype as {clientHeight?: number}).clientHeight; });
+  let t = 0; const host = document.createElement('div'); document.body.append(host);
+  const activity = mountJumpRopeActivity(host, {onFinished: () => '', best: () => 0, clock: () => t, frame: () => 0});
+  cleanups.push(() => activity.dispose());
+  const r = {id: 'rabbit-1', species: 'paille' as const, affection: 3};
+  activity.open({carriers: [{...r, id: 'rabbit-2'}, {...r, id: 'rabbit-3'}], athlete: r});
+  activity.element.querySelector<HTMLButtonElement>('[data-jump-rope-start]')!.click();
+  for (let i = 0; i < 120; i++) { t = i * 5; activity.update(); } // Each canvas is measured the first time the rope is on it.
+  const before = reads;
+  for (let i = 120; i < 240; i++) { t = i * 5; activity.update(); }
+  expect(reads - before).toBe(0);
+  observers.forEach(f => f()); activity.update(); // The stage changed size: measured again, once.
+  expect(reads - before).toBeGreaterThan(0); const again = reads; activity.update(); expect(reads).toBe(again);
+});

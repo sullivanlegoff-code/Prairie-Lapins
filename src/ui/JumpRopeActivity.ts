@@ -22,6 +22,8 @@ export interface JumpRopeTrio {carriers: [CuisineRabbit, CuisineRabbit]; athlete
  * rope passes under the athlete's feet; `challengeText` describes the challenge of the day. The carriers console the athlete
  * after a miss and applaud a new record.
  */
+/** The rope is laid in this many slices along its curve: smooth at phone size, half the former 48 drawing calls (plan 3.2). */
+const ROPE_SLICES = 24;
 export function mountJumpRopeActivity(host: HTMLElement, options: {
   onFinished: (team: JumpRopeTrio, score: number) => string;
   quotaText?: () => string;
@@ -64,7 +66,9 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
   const tile = new Image(); tile.decoding = 'async'; tile.src = JUMP_ROPE_PIECES.tile.url;
   for (const handle of layer.querySelectorAll<HTMLElement>('.jump-rope-handle')) handle.style.backgroundImage = `url("${JUMP_ROPE_PIECES.handle.url}")`;
   const sky = $<HTMLCanvasElement>('.jump-rope-sky'), abort = new AbortController();
-  const resize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => { if (!layer.hidden) drawJumpRopeSky(sky); });
+  // The rope canvases' box, measured once and again only when the stage changes size (not every frame: plan 3.2).
+  const boxes = new WeakMap<HTMLCanvasElement, {width: number; height: number}>();
+  const resize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => { boxes.delete(back); boxes.delete(front); if (!layer.hidden) drawJumpRopeSky(sky); });
   resize?.observe(stage);
   let team: JumpRopeTrio | null = null, game: JumpRopeGame | null = null, running = false, popTimer: ReturnType<typeof setTimeout> | undefined;
   let previousBest = 0, recordShown = false, tickedAt = -Infinity;
@@ -104,7 +108,9 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
   }
   /** The canvas matches its box (in device pixels); false while it has no size yet (hidden layer, tests). */
   function fit(canvas: HTMLCanvasElement): boolean {
-    const ratio = Math.min(3, window.devicePixelRatio || 1), width = Math.round(canvas.clientWidth * ratio), height = Math.round(canvas.clientHeight * ratio);
+    let box = boxes.get(canvas);
+    if (!box) { box = {width: canvas.clientWidth, height: canvas.clientHeight}; if (box.width && box.height && resize) boxes.set(canvas, box); }
+    const ratio = Math.min(3, window.devicePixelRatio || 1), width = Math.round(box.width * ratio), height = Math.round(box.height * ratio);
     if (!width || !height) return false;
     if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
     return true;
@@ -119,13 +125,13 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
     const context = canvas.getContext('2d'); if (!context) return;
     context.clearRect(0, 0, canvas.width, canvas.height);
     if (!tile.complete || !tile.naturalWidth) return;
-    const ratio = canvas.width / Math.max(1, canvas.clientWidth), thickness = JUMP_ROPE_PIECES.thickness * ratio;
+    const ratio = canvas.width / Math.max(1, boxes.get(canvas)?.width ?? canvas.clientWidth), thickness = JUMP_ROPE_PIECES.thickness * ratio;
     const point = (t: number) => ({x: canvas.width * ((1 - t) ** 2 * 8 + 2 * (1 - t) * t * 50 + t * t * 92) / 100,
       y: canvas.height * ((1 - t) ** 2 * end + 2 * (1 - t) * t * control + t * t * end) / 100});
     const tileWidth = tile.naturalWidth, perPixel = tile.naturalHeight / thickness;
     let along = 0, previous = point(0);
-    for (let i = 1; i <= 48; i++) {
-      const next = point(i / 48), length = Math.hypot(next.x - previous.x, next.y - previous.y);
+    for (let i = 1; i <= ROPE_SLICES; i++) {
+      const next = point(i / ROPE_SLICES), length = Math.hypot(next.x - previous.x, next.y - previous.y);
       context.save(); context.translate(previous.x, previous.y); context.rotate(Math.atan2(next.y - previous.y, next.x - previous.x));
       // The slice of tile for this piece of rope, wrapping round the tile's end.
       let drawn = 0;
@@ -242,7 +248,7 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
       paint(carriers[0].querySelector('.jump-rope-figure')!, chosen.carriers[0], 1);
       paint(carriers[1].querySelector('.jump-rope-figure')!, chosen.carriers[1], -1);
       layer.hidden = false; window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: true}));
-      drawJumpRopeSky(sky); intro(); $<HTMLButtonElement>('[data-jump-rope-start]').focus();
+      boxes.delete(back); boxes.delete(front); drawJumpRopeSky(sky); intro(); $<HTMLButtonElement>('[data-jump-rope-start]').focus();
     },
     close, update, tap,
     dispose() { close(); abort.abort(); resize?.disconnect(); layer.remove(); },
