@@ -110,6 +110,17 @@ describe('« Benny Rampage » screen', () => {
     expect(canvas.width).toBe(780);
     Object.defineProperty(window, 'devicePixelRatio', {value: 1, configurable: true});
   });
+  it('bumps the coin counter in Web Animations, without making the page lay itself out (lot 2.5)', () => {
+    const animate = vi.fn(), read = vi.fn(() => 0);
+    Object.defineProperty(HTMLElement.prototype, 'animate', {value: animate, configurable: true});
+    const {activity, step} = mount(50);
+    document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);
+    const counter = document.querySelector<HTMLElement>('.benny-run-coins')!;
+    Object.defineProperty(counter, 'offsetWidth', {get: read, configurable: true});
+    activity.game!.coins += 3; step(100);
+    expect(animate).toHaveBeenCalled(); expect(read).not.toHaveBeenCalled();
+    delete (HTMLElement.prototype as {animate?: unknown}).animate;
+  });
   it('plays a shock wave at full pace: no slow motion, and its strikes freeze nothing', () => {
     const {activity, step, key} = mount(50);
     document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);

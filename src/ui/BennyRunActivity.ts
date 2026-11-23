@@ -98,6 +98,8 @@ const WEATHER = {pont: 22, montagne: 46} as const;
 const FLOOR_DECOR = ['decor-herbe', 'decor-dalles'] as const;
 /** The field of tall grass on both sides (RUN_SIDES.grass.field). */
 const FIELD = RUN_SIDES.grass.field, BLADES = RUN_SIDES.grass.blades, FLOOR_RATIO = 1.5;
+/** How far ahead the fence's back face is drawn (m): farther, too thin on the screen to be seen behind its front. */
+const FENCE_BACK_NEAR = 25;
 /** The things along the road's sides (the painted things on the verges, the fences): set aside for now (owner, 21 Nov. 2026: « supprime
  *  pour le moment tous les objets à droite à gauche, on les remettra ensuite »; the fence came back in volume). True brings them back. */
 const SIDE_THINGS = false;
@@ -776,12 +778,14 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
    */
   function stripBand(c: CanvasRenderingContext2D, g: BennyRun, at: (z: number) => number, from: number, to: number, high: number, pic: StripPicture, shift = 0, solid = false): void {
     const tile = high * pic[0].w / pic[0].h, base = c.getTransform(); let sheared = false;
+    const horizon = height * HORIZON, eye = cameraHeight() + camUp;
     for (let z = to; z > from;) {
-      const a = project(at(z), z, 0), probe = project(at(z - .1), z - .1, 0), perMetre = Math.abs(a.x - probe.x) / .1;
-      const z1 = Math.max(from, z - Math.min(tile * .9, Math.max(.03, columnPx / Math.max(.001, perMetre)))), b = project(at(z1), z1, 0);
-      const left = Math.min(a.x, b.x), dx = Math.abs(a.x - b.x), across = dx + 1;
-      const zl = a.x <= b.x ? z : z1, zr = a.x <= b.x ? z1 : z, yl = (h: number) => project(at(zl), zl, h).y, yr = (h: number) => project(at(zr), zr, h).y;
-      const b0 = yl(0), b1 = yr(0), t0 = yl(high), t1 = yr(high);
+      const ax = screenX(at(z), z), perMetre = Math.abs(ax - screenX(at(z - .1), z - .1)) / .1;
+      const z1 = Math.max(from, z - Math.min(tile * .9, Math.max(.03, columnPx / Math.max(.001, perMetre)))), bx = screenX(at(z1), z1);
+      const left = Math.min(ax, bx), dx = Math.abs(ax - bx), across = dx + 1;
+      // (Each side's height on the screen: horizon + (eye - h) × its scale.)
+      const sl = scaleAt(ax <= bx ? z : z1), sr = scaleAt(ax <= bx ? z1 : z);
+      const b0 = horizon + eye * sl, b1 = horizon + eye * sr, t0 = horizon + (eye - high) * sl, t1 = horizon + (eye - high) * sr;
       const seen = solid ? 1 : 1 - hazeAt(z);
       if (seen > .02 && Math.max(b0, b1) > 0 && Math.min(t0, t1) < height + 40 && left < width + 40 && left + across > -40) {
         // The copy nearest the column's size: as tall as it is on the screen, or squeezed along the road at most two to one.
@@ -790,9 +794,11 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
         // How far the top and the foot of the column part from one shear: as many slices as it takes to keep that under two pixels.
         const slices = dx > .01 ? Math.min(3, Math.max(1, Math.ceil(Math.abs((t1 - t0) - (b1 - b0)) / 3))) : 1;
         for (let i = 0; i < slices; i++) {
-          const h0 = high * i / slices, h1 = high * (i + 1) / slices, ky = dx > .01 ? ((yr(h0) - yl(h0)) + (yr(h1) - yl(h1))) / 2 / dx : 0, lean = ky * dx / 2;
+          const h0 = high * i / slices, h1 = high * (i + 1) / slices;
+          const l0 = horizon + (eye - h0) * sl, r0 = horizon + (eye - h0) * sr, l1 = horizon + (eye - h1) * sl, r1 = horizon + (eye - h1) * sr;
+          const ky = dx > .01 ? ((r0 - l0) + (r1 - l1)) / 2 / dx : 0, lean = ky * dx / 2;
           shear(c, base, ky, left); sheared = true;
-          const top = (yl(h1) + yr(h1)) / 2 - lean, bottom = (yl(h0) + yr(h0)) / 2 - lean, sy = level.h * (1 - h1 / high), sh = level.h / slices;
+          const top = (l1 + r1) / 2 - lean, bottom = (l0 + r0) / 2 - lean, sy = level.h * (1 - h1 / high), sh = level.h / slices;
           if (!solid) c.globalAlpha = seen;
           c.drawImage(level.el, sx, sy, sw, sh, left - .5, top - (i < slices - 1 ? .6 : 0), across, bottom - top + (i < slices - 1 ? .6 : 0) + .5);
           if (solid) { const haze = hazeAt(z); if (haze > .02) { c.fillStyle = `rgba(${FOG},${haze.toFixed(3)})`; c.fillRect(left - .5, top, across, bottom - top + .5); } }
@@ -835,7 +841,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     // In volume, beam by beam (owner, 21 Nov.: « que ça fasse barrière par poutre »): its face behind, the top of each rail seen from
     // above, its face along the road.
     const back = (z: number) => at(z) + dir * f.thick, shift = dir > 0 ? .5 : 0, zs = cuts(g, from, to);
-    stripBand(c, g, back, from, to, f.high, pic, shift);
+    if (from < FENCE_BACK_NEAR) stripBand(c, g, back, from, Math.min(to, FENCE_BACK_NEAR), f.high, pic, shift);
     for (const rail of railsOf(pic)) {
       const up = f.high * (1 - rail.at);
       c.fillStyle = rail.colour;
@@ -939,6 +945,13 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     context?.setTransform(ratio, 0, 0, ratio, 0, 0);
     if (floor) { const f = floor.canvas.style; f.left = `${canvas.offsetLeft}px`; f.top = `${canvas.offsetTop}px`; f.width = `${width}px`; f.height = `${height}px`; }
   }
+  /** A coin landing on the counter: it bumps, in Web Animations (lot 2.5: restarting a CSS animation made the page lay itself out). */
+  const still = typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : null;
+  function bump(el: HTMLElement): void {
+    if (still?.matches) return;
+    if (typeof el.animate === 'function') { el.animate([{transform: 'scale(1.18)'}, {transform: 'none'}], {duration: 180, easing: 'ease-out'}); return; }
+    el.classList.remove('benny-run-got'); void el.offsetWidth; el.classList.add('benny-run-got');
+  }
   /** The record when this run started, whether it is beaten yet, and the last 500 m reached. */
   /** How many times each kind of obstacle has been got past this run. */
   const cleared = new Map<string, number>();
@@ -983,7 +996,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (reached > milestone && !g.tutorial && reached % 1000) { milestone = reached; word(`${reached} m !`, WORD.big); sound('coin', 1.5); }
     // A combo shows only its count of hits (owner: no bar, nothing else): a big word at each new hit, brief.
     if (g.combo !== comboShown) { if (g.combo > 1 && g.at <= g.comboUntil && !tips.held) word(`${g.combo} coups`, WORD.combo); comboShown = g.combo; }
-    put(metres, `${Math.floor(g.distance)} m`); { const landed = Math.max(0, g.coins - coinFlights.filter(f => clock() - f.at < COIN_FLIGHT).length); if (`${landed}` !== coins.textContent) { if (landed > Number(coins.textContent)) { coins.classList.remove('benny-run-got'); void coins.offsetWidth; coins.classList.add('benny-run-got'); } coins.textContent = `${landed}`; } } label(coins, plural(g.coins, 'pièce'));
+    put(metres, `${Math.floor(g.distance)} m`); { let flying = 0; const now = clock(); for (const f of coinFlights) if (now - f.at < COIN_FLIGHT) flying++;
+      const landed = Math.max(0, g.coins - flying); if (`${landed}` !== coins.textContent) { if (landed > Number(coins.textContent)) bump(coins); coins.textContent = `${landed}`; } } label(coins, plural(g.coins, 'pièce'));
     // The Hearts won so far in this run, shown once there is one.
     hide(hearts, g.hearts === 0); put(hearts, `${g.hearts}`); label(hearts, plural(g.hearts, 'cœur'));
     const active = g.active && g.at < g.active.until ? g.active : null;
@@ -1010,6 +1024,9 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   // little wider than the screen (`ROAD_FILL`), the walls beside her out of sight; she runs at `BENNY_AT` of the way down.
   const scale0 = () => Math.min(width * ROAD_FILL, height * .8) / (viewLanes * LANE_WIDTH);
   const cameraHeight = () => Math.min(24, Math.max(2.2, (height * BENNY_AT - height * HORIZON) / scale0()));
+  /** The same projection, one figure at a time, creating nothing (lot 2.5: for the loops drawn thousands of times a frame). */
+  const scaleAt = (ahead: number) => scale0() * CAMERA_BACK / (Math.max(-CAMERA_BACK + .5, ahead) + CAMERA_BACK);
+  const screenX = (x: number, ahead: number) => width / 2 + (x + bendAt(ahead) - camX) * scaleAt(ahead);
   const project = (x: number, ahead: number, up: number) => {
     const horizon = height * HORIZON, s = scale0() * CAMERA_BACK / (Math.max(-CAMERA_BACK + .5, ahead) + CAMERA_BACK);
     return {x: width / 2 + (x + bendAt(ahead) - camX) * s, y: horizon + (cameraHeight() + camUp - up) * s, s};
