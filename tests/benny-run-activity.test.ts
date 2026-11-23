@@ -71,6 +71,86 @@ describe('« Benny Rampage » screen', () => {
     expect(card.querySelector('.benny-run-record')!.classList.contains('show')).toBe(true);
     expect(card.querySelector('button')!.textContent).toBe('Rejouer');
   });
+  it('pays the run when « Quitter » is pressed from the pause, then shows its end card (D2)', () => {
+    const {activity, step, finished} = mount(50);
+    document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);
+    const g = activity.game!; g.coins = 12; step(200);
+    document.querySelector<HTMLElement>('[data-benny-run-pause]')!.click();
+    document.querySelector<HTMLElement>('[data-benny-run-quit]')!.click();
+    expect(finished).toHaveLength(1); expect((finished[0] as {coins: number}).coins).toBe(12);
+    const card = document.querySelector<HTMLElement>('[data-benny-run-card]')!;
+    expect(activity.active).toBe(true); expect(card.hidden).toBe(false); expect(card.textContent).toMatch(/Course arrêtée : tu gardes tes gains/);
+    // Quitter on the end card closes the screen, without paying twice.
+    card.querySelector<HTMLElement>('[data-benny-run-quit]')!.click();
+    expect(activity.active).toBe(false); expect(finished).toHaveLength(1);
+  });
+  it('pays the run too when the cross is pressed during it, but closes at once from the start card', () => {
+    const {activity, step, finished} = mount(50);
+    document.querySelector<HTMLElement>('[data-benny-run-exit]')!.click();
+    expect(activity.active).toBe(false); expect(finished).toHaveLength(0);
+    activity.open(); document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);
+    document.querySelector<HTMLElement>('[data-benny-run-exit]')!.click();
+    expect(finished).toHaveLength(1); expect(activity.active).toBe(true);
+  });
+  it('starts every run at full quality, even after a slow run softened the picture (lot 2.2)', () => {
+    Object.defineProperty(window, 'devicePixelRatio', {value: 2, configurable: true});
+    let now = 1000; const frames: (() => void)[] = [];
+    const activity = mountBennyRunActivity(document.body, {clock: () => now, frame: f => frames.push(f), best: () => 50});
+    const canvas = document.querySelector<HTMLCanvasElement>('[data-benny-run-canvas]')!;
+    canvas.getBoundingClientRect = () => ({x: 0, y: 0, left: 0, top: 0, right: 390, bottom: 844, width: 390, height: 844, toJSON: () => ({})});
+    activity.open();
+    const step = (ms: number, gap: number) => { for (let t = 0; t < ms; t += gap) { now += gap; vi.advanceTimersByTime(gap); for (const f of frames.splice(0)) f(); } };
+    document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100, 16);
+    expect(canvas.width).toBe(780);
+    // Every frame 45 ms apart for long enough: the walls go wider, then the picture softer.
+    for (let i = 0; i < 8; i++) { const g = activity.game!; g.entities = []; g.nextSpawnZ = Infinity; g.holes = []; g.pits = []; step(45 * 60, 45); }
+    expect(canvas.width).toBeLessThan(780);
+    document.querySelector<HTMLElement>('[data-benny-run-pause]')!.click(); document.querySelector<HTMLElement>('[data-benny-run-quit]')!.click();
+    document.querySelector<HTMLElement>('[data-benny-run-again]')!.click();
+    expect(canvas.width).toBe(780);
+    Object.defineProperty(window, 'devicePixelRatio', {value: 1, configurable: true});
+  });
+  it('bumps the coin counter in Web Animations, without making the page lay itself out (lot 2.5)', () => {
+    const animate = vi.fn(), read = vi.fn(() => 0);
+    Object.defineProperty(HTMLElement.prototype, 'animate', {value: animate, configurable: true});
+    const {activity, step} = mount(50);
+    document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);
+    const counter = document.querySelector<HTMLElement>('.benny-run-coins')!;
+    Object.defineProperty(counter, 'offsetWidth', {get: read, configurable: true});
+    activity.game!.coins += 3; step(100);
+    expect(animate).toHaveBeenCalled(); expect(read).not.toHaveBeenCalled();
+    delete (HTMLElement.prototype as {animate?: unknown}).animate;
+  });
+  it('puts the start button’s words back when the phone was turned sideways while loading (lot 2.6)', () => {
+    let now = 1000; const frames: (() => void)[] = [];
+    const activity = mountBennyRunActivity(document.body, {clock: () => now, frame: f => frames.push(f), best: () => 50, waitForArt: 2000});
+    activity.open();
+    const go = document.querySelector<HTMLButtonElement>('[data-benny-run-start]')!, label = go.textContent;
+    go.click(); expect(go.textContent).toBe('Chargement…'); expect(go.disabled).toBe(true);
+    upright(844, 390);
+    for (let t = 0; t < 2500; t += 120) { now += 120; vi.advanceTimersByTime(120); frames.splice(0); }
+    expect(go.textContent).toBe(label); expect(go.disabled).toBe(false); expect(activity.playing).toBe(false);
+  });
+  it('names the first three dodges, shows the run’s winnings on the pause card and the rewarded runs left on the start card (lot 2.7)', () => {
+    let now = 1000; const frames: (() => void)[] = [];
+    const activity = mountBennyRunActivity(document.body, {clock: () => now, frame: f => frames.push(f), best: () => 50, rewardedLeft: () => ({left: 2, perDay: 3})});
+    activity.open();
+    expect(document.querySelector('[data-benny-run-card]')!.textContent).toMatch(/Encore 2 courses récompensées aujourd’hui sur 3\./);
+    const step = (ms: number) => { for (let t = 0; t < ms; t += 16) { now += 16; vi.advanceTimersByTime(16); for (const f of frames.splice(0)) f(); } };
+    document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);
+    const g = activity.game!, pop = document.querySelector<HTMLElement>('.benny-run-pop')!;
+    g.entities = []; g.nextSpawnZ = Infinity; step(3000);
+    // A barrier jumped over: « Esquive ! ».
+    g.entities.push({id: 9500, kind: 'barrier', lane: g.lane, z: g.distance + 4}); document.dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowUp', bubbles: true})); step(900);
+    expect(g.dodges).toBe(1); expect(pop.textContent).toMatch(/Esquive !/);
+    g.coins = 7; g.hearts = 1;
+    document.querySelector<HTMLElement>('[data-benny-run-pause]')!.click();
+    expect(document.querySelector('[data-benny-run-card]')!.textContent).toMatch(/Tu as gagné 7 pièces et 1 Cœur pendant cette course\./);
+  });
+  it('says on the start card when no rewarded run is left today', () => {
+    mountBennyRunActivity(document.body, {clock: () => 0, frame: () => 1, rewardedLeft: () => ({left: 0, perDay: 3})}).open();
+    expect(document.querySelector('[data-benny-run-card]')!.textContent).toMatch(/Plus de course récompensée aujourd’hui : tu cours pour le plaisir\./);
+  });
   it('plays a shock wave at full pace: no slow motion, and its strikes freeze nothing', () => {
     const {activity, step, key} = mount(50);
     document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);

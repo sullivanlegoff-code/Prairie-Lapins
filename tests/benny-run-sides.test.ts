@@ -1,7 +1,7 @@
 import {describe, expect, it} from 'vitest';
 import {advanceBennyRun, BENNY_RUN as C, holeAt, runInput, startBennyRun, takeRunEvents, wallLook, type WallSegment} from '../src/simulation/bennyRun';
 import {RUN_SIDE_FILES, RUN_SIDES, type RunSidePicture} from '../src/config/bennyRunSides';
-import {BENNY_RUN_DECOR} from '../src/ui/BennyRunActivity';
+import {BENNY_RUN_DECOR, decorLoaded, decorTiled, stripsPrepared} from '../src/ui/BennyRunActivity';
 
 /** « Benny Rampage », the sides of the road (owner, 19 Nov. 2026): tall grass left and right, the old walls gone, fences along the
  *  track and now and then a wall Benny can run on. */
@@ -83,5 +83,13 @@ describe('Benny Rampage: the pictures of the sides', () => {
   });
   it('no longer ships the big painted walls of the old scenery', () => {
     expect(files.filter(f => f.startsWith('grand-mur'))).toEqual([]);
+  });
+  it('prepares only what is drawn (lot 2.4): no tiles of a picture drawn whole, no tall-grass strips under the graphics card', () => {
+    for (const whole of ['decor-arche-prairie', 'decor-champ', 'decor-brins']) { expect(decorLoaded(whole)).toBe(true); expect(decorTiled(whole)).toBe(false); }
+    // The things on the verges are set aside for now: their sheets are not loaded at all.
+    expect(decorLoaded('decor-bord')).toBe(false);
+    for (const tile of ['decor-herbe', 'decor-dalles', 'decor-planches', 'decor-falaise', 'decor-corps-creme']) expect(decorTiled(tile)).toBe(true);
+    expect(stripsPrepared(true)).not.toContain('cotes-herbe:'); expect(stripsPrepared(false)).toContain('cotes-herbe:');
+    for (const k of ['cotes-barriere:', 'cotes-mur:']) expect(stripsPrepared(true)).toContain(k);
   });
 });
