@@ -38,6 +38,9 @@ for (const name of readdirSync(join(root, 'assets/audio/music'))) {
 }
 run('node', ['scripts/verify-production.mjs', root, base]);
 run('node', ['scripts/verify-production.mjs', join(root, 'dev'), base + 'dev/', 'laboratory']);
+// The PNG pictures that have a WebP twin are never downloaded (plan 5.6): they stay in public/, not in the published site.
+run('node', ['scripts/prune-png-twins.mjs', root]);
+run('node', ['scripts/prune-png-twins.mjs', join(root, 'dev')]);
 // Dedicated standalone entry/public directory; the game reuses the mount without its bootstrap.
 npm(['run', 'build', '--', '--mode=cooking-prototype', '--base=' + base + 'cooktap-prototype/', '--outDir', join(root, 'cooktap-prototype'), '--emptyOutDir']);
 run('node', ['scripts/verify-cooking-prototype.mjs', join(root, 'cooktap-prototype'), base + 'cooktap-prototype/']);
