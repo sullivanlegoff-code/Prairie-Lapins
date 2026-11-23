@@ -911,6 +911,10 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     }
     sampled = 0; slowSampled = 0; verySlow = 0;
   }
+  /** Full quality again (lot 2.2): a slow stretch of one run (the pictures still loading at its start) does not soften the next. */
+  function fullQuality(): void {
+    detail = 0; columnPx = DETAIL[0].column; ratioCap = 2; sampled = 0; slowSampled = 0; verySlow = 0; lastFrameAt = 0; drawMs = 0; measure();
+  }
   function measure(): void {
     const ratio = Math.min(ratioCap, window.devicePixelRatio || 1), box = canvas.getBoundingClientRect();
     width = Math.max(1, box.width); height = Math.max(1, box.height);
@@ -2332,7 +2336,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   function start(withTutorial = false): void {
     if (sideways()) { orientation(); return; }
-    clearTimeout(stopTimer); time.resume();
+    clearTimeout(stopTimer); time.resume(); fullQuality();
     best = Math.max(best, options.best?.() ?? 0);
     // The first run (no record yet) starts with the tutorial; it can be asked for again from the start card.
     tips.clear(); words.clear(); comboShown = 0; livesLost = false; multShown = 1;

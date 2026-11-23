@@ -92,6 +92,24 @@ describe('« Benny Rampage » screen', () => {
     document.querySelector<HTMLElement>('[data-benny-run-exit]')!.click();
     expect(finished).toHaveLength(1); expect(activity.active).toBe(true);
   });
+  it('starts every run at full quality, even after a slow run softened the picture (lot 2.2)', () => {
+    Object.defineProperty(window, 'devicePixelRatio', {value: 2, configurable: true});
+    let now = 1000; const frames: (() => void)[] = [];
+    const activity = mountBennyRunActivity(document.body, {clock: () => now, frame: f => frames.push(f), best: () => 50});
+    const canvas = document.querySelector<HTMLCanvasElement>('[data-benny-run-canvas]')!;
+    canvas.getBoundingClientRect = () => ({x: 0, y: 0, left: 0, top: 0, right: 390, bottom: 844, width: 390, height: 844, toJSON: () => ({})});
+    activity.open();
+    const step = (ms: number, gap: number) => { for (let t = 0; t < ms; t += gap) { now += gap; vi.advanceTimersByTime(gap); for (const f of frames.splice(0)) f(); } };
+    document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100, 16);
+    expect(canvas.width).toBe(780);
+    // Every frame 45 ms apart for long enough: the walls go wider, then the picture softer.
+    for (let i = 0; i < 8; i++) { const g = activity.game!; g.entities = []; g.nextSpawnZ = Infinity; g.holes = []; g.pits = []; step(45 * 60, 45); }
+    expect(canvas.width).toBeLessThan(780);
+    document.querySelector<HTMLElement>('[data-benny-run-pause]')!.click(); document.querySelector<HTMLElement>('[data-benny-run-quit]')!.click();
+    document.querySelector<HTMLElement>('[data-benny-run-again]')!.click();
+    expect(canvas.width).toBe(780);
+    Object.defineProperty(window, 'devicePixelRatio', {value: 1, configurable: true});
+  });
   it('plays a shock wave at full pace: no slow motion, and its strikes freeze nothing', () => {
     const {activity, step, key} = mount(50);
     document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);
