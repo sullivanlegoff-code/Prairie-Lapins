@@ -37,7 +37,7 @@ function commands(s: any): any[] {
   const job = b.find((x: any) => x.order || x.breeding); if (job) out.push({type: 'accelerate', id: job.id, stage: job.order ? 'order' : 'breeding', jobKey: 'x', maxHearts: 99});
   if (p1 && rnd() < 0.05) out.push({type: 'release', id: p1});
   // The recent actions too (plan 4.3): care, picnic, snowman, debris, evolution, forest, Benny, the mini-games, Christmas, moves.
-  const p3 = pick(r), e1 = pick(enc), any = pick(b) as any;
+  const p3 = pick(r), e1 = pick(enc) as string | undefined, any = pick(b) as any;
   if (p1) { out.push({type: 'startCare', rabbitId: p1, care: pick(['bath', 'brush', 'massage'])}); out.push({type: 'claimCare', rabbitId: p1}); out.push({type: 'petRabbit', rabbitId: p1});
     out.push({type: 'evolveRabbit', rabbitId: p1}); out.push({type: 'toggleClassicLook', rabbitId: p1}); out.push({type: 'toggleCrown', rabbitId: p1});
     out.push({type: 'rewardSkyGifts', rabbitId: p1, caught: Math.floor(rnd() * 40)}); }
