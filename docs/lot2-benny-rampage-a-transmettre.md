@@ -1,8 +1,8 @@
 # Lot 2 — corrections de Benny Rampage à transmettre (23 novembre 2026)
 
 Ces corrections viennent du plan `docs/plan-amelioration-2026-11-23.md`. Elles concernent seulement les fichiers de Benny Rampage
-(`src/ui/BennyRunActivity.ts`, `src/ui/bennyRun*.ts`, `src/simulation/bennyRun*.ts`, `src/display/benny-run.css`). Une autre conversation y travaille :
-cette branche (`feature/vol-audit`) n'y a pas touché. Les numéros de ligne datent de l'audit du 23 novembre et ont pu bouger.
+(`src/ui/BennyRunActivity.ts`, `src/ui/bennyRun*.ts`, `src/simulation/bennyRun*.ts`, `src/display/benny-run.css`). Le lot 2 a été fait par l'autre conversation et fusionné dans `main` en local (e5a0cbc), puis repris dans `feature/vol-audit` (d2955ae).
+À la demande du propriétaire, 1.2 et 1.3 ont ensuite été faits sur `feature/vol-audit`. Les numéros de ligne datent de l'audit du 23 novembre et ont pu bouger.
 
 Pour chaque correction : un test qui la prouve, puis les tests ciblés ; `npx tsc --noEmit` et les deux builds ; un contrôle dans
 Chromium ; un commit en français par correction. Ni dessin, ni dialogue de Paille, ni économie ne changent.
@@ -17,8 +17,8 @@ Chromium ; un commit en français par correction. Ni dessin, ni dialogue de Pail
 | 2.6 | Le bouton peut rester sur « Chargement… » si le téléphone est tourné en portrait pendant le chargement. | Remettre le libellé normal dans tous les cas. |
 | 2.7 | Petites aides qui manquent. | « Esquive ! » les 3 premières fois ; pièces et cœurs gagnés affichés dans la fenêtre de pause ; « Encore N courses récompensées aujourd'hui » au départ. Textes au tutoiement. |
 | 2.8 | Fichier de 2 460 lignes difficile à modifier. | Le découper par étapes, sans changer le comportement : caméra, images, effets, piste, personnages, affichage. À faire en dernier. |
-| 1.2 (lot 1) | Une course avec 9 cœurs ou plus (ou plus de 5 000 pièces) était refusée en entier : record, pièces et mission perdus. **Côté action, c'est fait sur `feature/vol-audit`** (commit 648bf9e) : `actions.ts` plafonne au lieu de refuser. | Reste côté course : ne plus faire apparaître de cœur sur la piste après 8 (le joueur voit un cœur qui ne sera pas payé). |
-| 1.3 (lot 1) | Quitter pendant la scène de fin (environ 3,4 s) fait perdre la course : elle n'est enregistrée qu'à l'ouverture de la fenêtre de fin (`BennyRunActivity.ts`, vers les lignes 2263-2286 et 2379). | Enregistrer la course dès qu'elle se termine ; la fenêtre de fin ne fait plus que l'afficher. Un test qui ferme le jeu pendant la scène de fin. |
+| 1.2 (lot 1) | Une course avec plus de 8 cœurs (ou plus de 5 000 pièces) était refusée en entier. | **Fait sur `feature/vol-audit`** : l'action plafonne au lieu de refuser (648bf9e), et la piste ne pose plus de cœur au-delà de 8 (51c8473). |
+| 1.3 (lot 1) | Quitter pendant la scène de fin faisait perdre la course. | **Fait sur `feature/vol-audit`** (009b93b) : la course est enregistrée dès qu'elle se termine ; la fenêtre de fin ne fait que l'afficher. |
 
 Déjà fait sur `feature/vol-audit`, utile pour Rampage :
 - `pauseWhenLeft(pause, signal)` dans `src/ui/activityPause.ts` met un mini-jeu en pause quand Safari range la page
