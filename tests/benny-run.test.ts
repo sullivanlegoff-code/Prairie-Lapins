@@ -812,6 +812,24 @@ describe('golden pots', () => {
     place(g, 'heart', g.lane === 0 ? 1 : 0, 3); run(g, 500);
     expect(g.hearts).toBe(1);
   });
+  it('lays no Heart on the road once the run holds as many as it can keep (plan 1.2)', () => {
+    // Hearts seen on the road during a long run (Benny kept clear of everything: only the road's layout matters here).
+    const seen = (already: number) => {
+      const g = startBennyRun(0, 4242); g.hearts = already; const ids = new Set<number>();
+      for (let t = 0; t < 240; t++) {
+        g.entities = g.entities.filter(e => { if (e.kind === 'heart') ids.add(e.id); return e.kind === 'heart' || e.kind === 'coin' || e.kind === 'wallCoin'; });
+        run(g, 1000); if (g.over) break;
+        for (const e of g.entities) if (e.kind === 'heart') ids.add(e.id);
+      }
+      return {ids: ids.size, picked: g.hearts - already, over: g.over};
+    };
+    const free = seen(0);
+    expect(free.ids).toBeGreaterThan(0);
+    // Seven already: at most one more on the road.
+    expect(seen(C.maxHeartsPerRun - 1).ids).toBeLessThanOrEqual(1);
+    // As many as a run keeps: none any more.
+    expect(seen(C.maxHeartsPerRun).ids).toBe(0);
+  });
 });
 
 /** Reads the road of a run without playing it: Benny cannot be hurt, and every thing laid ahead is noted once. */

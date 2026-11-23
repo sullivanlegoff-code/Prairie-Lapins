@@ -887,7 +887,10 @@ function spawn(g: BennyRun): void {
     // Now and then a Heart rides the road just past the pattern, in a lane of the road there. Worked out from where the pattern
     // ends, not drawn, so that the run's other draws (and the runs already tuned) stay the same. Halfway to the next pattern: clear of both.
     const tick = Math.floor(end * 10);
-    if (z > C.heartFrom && tick % C.heartEvery === 0) add(g, 'heart', Math.floor(tick / C.heartEvery) % g.lanes, end + gap / 2);
+    // Never more Hearts than a run can keep (plan 1.2): once those picked up and those still on the road make `maxHeartsPerRun`,
+    // no other comes (the player never chases a Heart that would not be paid).
+    const heartsSoFar = g.hearts + g.entities.reduce((n, e) => n + (e.kind === 'heart' ? 1 : 0), 0);
+    if (z > C.heartFrom && tick % C.heartEvery === 0 && heartsSoFar < C.maxHeartsPerRun) add(g, 'heart', Math.floor(tick / C.heartEvery) % g.lanes, end + gap / 2);
     g.lanes = real;
     g.nextSpawnZ = end + gap;
   }
