@@ -638,9 +638,10 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       case 'finishBennyRun': {
         // « Benny Rampage » pays its coins as pattes (within the daily limit) and keeps the record. No XP.
         requireRule(s.buildings.some(b => b.kind === 'lair'), 'NOT_FOUND'); requireRule(hasBenny(s), 'BENNY_REQUIRED');
-        const coins = command.coins ?? 0, hearts = command.hearts ?? 0;
-        requireRule(Number.isSafeInteger(coins) && coins >= 0 && coins <= BENNY_RUN.maxCoins, 'INVALID_CHOICE');
-        requireRule(Number.isSafeInteger(hearts) && hearts >= 0 && hearts <= BENNY_RUN.maxHeartsPerRun, 'INVALID_CHOICE');
+        // Too many coins or Hearts are capped, not refused (plan 1.2): a refused run lost its record, its pattes and its missions.
+        const rawCoins = command.coins ?? 0, rawHearts = command.hearts ?? 0;
+        requireRule(Number.isSafeInteger(rawCoins) && rawCoins >= 0 && Number.isSafeInteger(rawHearts) && rawHearts >= 0, 'INVALID_CHOICE');
+        const coins = Math.min(rawCoins, BENNY_RUN.maxCoins), hearts = Math.min(rawHearts, BENNY_RUN.maxHeartsPerRun);
         requireRule([command.score, command.metres].every(n => Number.isSafeInteger(n) && n >= 0) && command.score <= BENNY_RUN.maxScore && command.metres <= BENNY_RUN_MAX_METRES, 'INVALID_CHOICE');
         const by = command.bySetting ?? {}, kinds = ['grotte', 'pont', 'montagne'] as const;
         requireRule(Object.keys(by).every(k => (kinds as readonly string[]).includes(k)) && Object.values(by).every(n => Number.isSafeInteger(n) && n! >= 0 && n! <= command.score), 'INVALID_CHOICE');
