@@ -55,6 +55,7 @@ Règles pour les agents :
 ## 5. Commandes et vérifications
 
 - Tests : `npx vitest run --configLoader runner --maxWorkers 1 --testTimeout 30000` (environ 10 minutes, un peu plus de 2 000 tests ; pour un tableau de cas sans état à remettre à zéro, `itAll` de `tests/cases.ts` compte pour un seul test).
+- Tests rapides du travail courant : `npm run test:quick` (la même suite sans le test au hasard des sauvegardes, la base de données, ni les vérifications de fichiers d’images et de musique ; plan 6.1). La suite complète reste obligatoire avant une publication.
 - Types : `npx tsc --noEmit`.
 - Builds : `npm run build -- --configLoader runner` (jeu) et `npm run build:lab -- --configLoader runner` (laboratoire). Les deux écrivent dans `dist/` : le dernier lancé écrase l'autre.
 - Site complet : `npm run build:netlify` construit `netlify-site/` (jeu, `/dev/`, prototype cuisine) et lance `scripts/verify-production.mjs`.
