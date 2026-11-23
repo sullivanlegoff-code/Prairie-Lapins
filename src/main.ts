@@ -41,6 +41,7 @@ import {MusicPlayer} from './audio/musicPlayer';
 import {MusicDirector} from './audio/musicDirector';
 import {KITCHEN_TRACKS, MEADOW_TRACKS, RABBIT_THEMES} from './config/music';
 import {LoadingTracker, renderLoading, startLoadingMessages} from './display/loadingScreen';
+import {slowWhenIdle} from './display/idleFrameRate';
 
 async function boot(): Promise<() => void> {
   document.getElementById('loading-screen')!.dataset.booted = 'true';
@@ -97,14 +98,17 @@ async function boot(): Promise<() => void> {
     type: Phaser.AUTO, parent: 'game', backgroundColor: '#fffdf5', transparent: true,
     scale: {mode: Phaser.Scale.RESIZE, width: '100%', height: '100%'}, scene: [scene],
     render: {antialias: true}, input: {activePointers: 3},
+    // A frame limit, so that the loop can draw at 30 images a second while nothing is touched (plan 5.3, `slowWhenIdle`).
+    fps: {limit: 60},
   });
+  const wakeFrameRate = slowWhenIdle(game.loop as unknown as {_limitRate: number}, window);
   // A full-screen activity (« Le vol de Benny ») hides the island: its loop sleeps meanwhile, so the game keeps the phone's power.
   // The island sleeps while a full-screen activity or an opaque screen (shop, Christmas market, Cuisine) hides it.
   const covers = new Set<string>();
   const coverIsland = (source: string, covered: boolean) => {
     const before = covers.size > 0; if (covered) covers.add(source); else covers.delete(source);
     if (!game.isBooted || before === covers.size > 0) return;
-    if (covers.size) game.loop.sleep(); else game.loop.wake();
+    if (covers.size) game.loop.sleep(); else { game.loop.wake(); wakeFrameRate(); }
   };
   window.addEventListener(FULLSCREEN_ACTIVITY_EVENT, event => coverIsland('activity', !!(event as CustomEvent<boolean>).detail));
   window.addEventListener(ISLAND_COVER_EVENT, event => { const {source, covered} = (event as CustomEvent<IslandCover>).detail; coverIsland(source, covered); });
