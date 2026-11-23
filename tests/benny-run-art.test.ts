@@ -1,5 +1,10 @@
 import {describe, expect, it} from 'vitest';
-import source from '../src/ui/BennyRunActivity.ts?raw';
+import screen from '../src/ui/BennyRunActivity.ts?raw';
+import look from '../src/ui/bennyRunLook.ts?raw';
+
+// The screen and its tables (split on 23 Nov. 2026, lot 2.8): read as one.
+const source = `${screen}
+${look}`;
 import RUN_ART from '../src/config/bennyRunArt.json';
 
 /** « Benny Rampage »: every painting the run's renderer asks for is in its atlas, and each atlas file is there. */
