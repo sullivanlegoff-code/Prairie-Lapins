@@ -121,6 +121,16 @@ describe('« Benny Rampage » screen', () => {
     expect(animate).toHaveBeenCalled(); expect(read).not.toHaveBeenCalled();
     delete (HTMLElement.prototype as {animate?: unknown}).animate;
   });
+  it('puts the start button’s words back when the phone was turned sideways while loading (lot 2.6)', () => {
+    let now = 1000; const frames: (() => void)[] = [];
+    const activity = mountBennyRunActivity(document.body, {clock: () => now, frame: f => frames.push(f), best: () => 50, waitForArt: 2000});
+    activity.open();
+    const go = document.querySelector<HTMLButtonElement>('[data-benny-run-start]')!, label = go.textContent;
+    go.click(); expect(go.textContent).toBe('Chargement…'); expect(go.disabled).toBe(true);
+    upright(844, 390);
+    for (let t = 0; t < 2500; t += 120) { now += 120; vi.advanceTimersByTime(120); frames.splice(0); }
+    expect(go.textContent).toBe(label); expect(go.disabled).toBe(false); expect(activity.playing).toBe(false);
+  });
   it('plays a shock wave at full pace: no slow motion, and its strikes freeze nothing', () => {
     const {activity, step, key} = mount(50);
     document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);

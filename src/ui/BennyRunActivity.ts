@@ -2386,11 +2386,13 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   function startWhenReady(el: HTMLButtonElement, go: () => void): void {
     const until = clock() + (options.waitForArt ?? 0);
     if (artWait !== undefined) return;
+    // (Its own words back in every case, lot 2.6: the phone turned sideways while loading left it on « Chargement… ».)
+    const label = el.textContent, done = () => { el.textContent = label; el.disabled = false; };
     const check = () => {
       artWait = undefined;
-      if (layer.hidden) return;
+      if (layer.hidden) { done(); return; }
       // (Ready: every picture is drawn once, so that none is first prepared in the middle of the run.)
-      if ((artReady() && (!floor || floor.ready())) || clock() >= until) { warm(); el.disabled = false; go(); return; }
+      if ((artReady() && (!floor || floor.ready())) || clock() >= until) { warm(); done(); go(); return; }
       el.disabled = true; el.textContent = 'Chargement…'; artWait = setTimeout(check, 120);
     };
     check();
