@@ -166,23 +166,35 @@ export function createRunFloor(): RunFloor | null {
   const shader = (type: number, source: string) => { const s = G.createShader(type); if (!s) return null; G.shaderSource(s, source); G.compileShader(s);
     if (G.getShaderParameter(s, G.COMPILE_STATUS)) return s;
     console.warn('Benny Rampage : sol sans carte graphique', G.getShaderInfoLog(s)); return null; };
+  let U: Record<string, WebGLUniformLocation | null> = {}, aniso: EXT_texture_filter_anisotropic | null = null, anisoMax = 0;
+  /** Compiles the shader and sets the card up (again after the context came back): false if it cannot. */
+  function setup(): boolean {
   const vs = shader(G.VERTEX_SHADER, VERTEX), fs = shader(G.FRAGMENT_SHADER, FRAGMENT), program = G.createProgram();
-  if (!vs || !fs || !program) return null;
+  if (!vs || !fs || !program) return false;
   G.attachShader(program, vs); G.attachShader(program, fs); G.linkProgram(program);
-  if (!G.getProgramParameter(program, G.LINK_STATUS)) return null;
+  if (!G.getProgramParameter(program, G.LINK_STATUS)) return false;
   G.useProgram(program);
   const buffer = G.createBuffer(); G.bindBuffer(G.ARRAY_BUFFER, buffer);
   G.bufferData(G.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), G.STATIC_DRAW);
   const at = G.getAttribLocation(program, 'a'); G.enableVertexAttribArray(at); G.vertexAttribPointer(at, 2, G.FLOAT, false, 0, 0);
   const u = (name: string) => G.getUniformLocation(program, name);
-  const U = Object.fromEntries(['uSize', 'uRatio', 'uShift', 'uHorizon', 'uK', 'uCamH', 'uCamBack', 'uCamX', 'uBend', 'uBendFar', 'uMeadow', 'uSlab', 'uPlank',
+  U = Object.fromEntries(['uSize', 'uRatio', 'uShift', 'uHorizon', 'uK', 'uCamH', 'uCamBack', 'uCamX', 'uBend', 'uBendFar', 'uMeadow', 'uSlab', 'uPlank',
     'uMeadowTile', 'uMeadowShift', 'uSlabTile', 'uSlabShift', 'uPlankAcross', 'uPlankAlong', 'uPlankShift', 'uLane', 'uLanes', 'uWide', 'uEdge',
     'uHalls', 'uHoles', 'uBridge', 'uHaze', 'uHole', 'uFogFrom', 'uFogTo', 'uField', 'uFieldOn', 'uFieldH', 'uFieldOut', 'uFieldTile', 'uFieldShift', 'uWave', 'uBlade', 'uRows', 'uRowGap', 'uRowH', 'uRowLen', 'uRowShift'].map(n => [n, u(n)])) as Record<string, WebGLUniformLocation | null>;
   G.uniform1i(U.uMeadow, 0); G.uniform1i(U.uSlab, 1); G.uniform1i(U.uPlank, 2); G.uniform1i(U.uField, 3); G.uniform1i(U.uBlade, 4);
-  const aniso = G.getExtension('EXT_texture_filter_anisotropic') ?? G.getExtension('WEBKIT_EXT_texture_filter_anisotropic');
-  const anisoMax = aniso ? Math.min(8, G.getParameter(aniso.MAX_TEXTURE_MAX_ANISOTROPY_EXT) as number) : 0;
-  let textures: WebGLTexture[] = [], lost = false;
+  aniso = G.getExtension('EXT_texture_filter_anisotropic') ?? G.getExtension('WEBKIT_EXT_texture_filter_anisotropic');
+  anisoMax = aniso ? Math.min(8, G.getParameter(aniso.MAX_TEXTURE_MAX_ANISOTROPY_EXT) as number) : 0;
+  return true;
+  }
+  if (!setup()) return null;
+  let textures: WebGLTexture[] = [], lost = false, asked = false, wanted: Parameters<RunFloor['setPictures']>[0] | null = null;
+  // (Lost — often on an iPhone after the page went to the background — then given back: set up again, the pictures sent again.)
   canvas.addEventListener('webglcontextlost', event => { event.preventDefault(); lost = true; textures = []; });
+  canvas.addEventListener('webglcontextrestored', () => {
+    textures = [];
+    if (!setup()) return;
+    lost = false; asked = false; if (wanted) floor.setPictures(wanted);
+  });
   const square = document.createElement('canvas'); square.width = square.height = PICTURE_SIDE;
   const squareK = square.getContext('2d');
   function texture(unit: number, source: TexImageSource, wide = PICTURE_SIDE, high = PICTURE_SIDE): WebGLTexture | null {
@@ -198,12 +210,15 @@ export function createRunFloor(): RunFloor | null {
     G.generateMipmap(G.TEXTURE_2D);
     return t;
   }
+  function drop(): void { if (!lost) for (const t of textures) G.deleteTexture(t); textures = []; }
   const halls = new Float32Array(MAX_HALLS * 2), holes = new Float32Array(MAX_HOLES * 2);
   const floor: RunFloor = {
     canvas,
     setPictures(p) {
-      if (lost) return;
-      floor.release();
+      wanted = p;
+      // (Let go on purpose when the run closed: asked back; the pictures are sent once it is.)
+      if (lost) { if (!asked) { asked = true; G.getExtension('WEBGL_lose_context')?.restoreContext(); } return; }
+      drop();
       const list = [texture(0, p.meadow), texture(1, p.slabs), texture(2, p.planks), texture(3, p.field), texture(4, p.blades, PICTURE_SIDE * 2, PICTURE_SIDE)];
       textures = list.every(t => t) ? list as WebGLTexture[] : [];
       square.width = square.height = 1;
@@ -235,8 +250,9 @@ export function createRunFloor(): RunFloor | null {
       G.drawArrays(G.TRIANGLE_STRIP, 0, 4);
       return true;
     },
-    release() { if (!lost) for (const t of textures) G.deleteTexture(t); textures = []; },
-    destroy() { floor.release(); G.getExtension('WEBGL_lose_context')?.loseContext(); canvas.remove(); },
+    // (The run closed: its pictures let go, the canvas one pixel, its context lost on purpose; the memory goes back to the phone.)
+    release() { drop(); wanted = null; canvas.width = canvas.height = 1; const lose = lost ? null : G.getExtension('WEBGL_lose_context'); if (lose) { lose.loseContext(); lost = true; } },
+    destroy() { floor.release(); canvas.remove(); },
   };
   return floor;
 }
