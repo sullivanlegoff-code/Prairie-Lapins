@@ -590,7 +590,7 @@ export class GameUI {
     const reduced = !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     const root = node('div', '', 'evolution-moment'); root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true');
     root.setAttribute('aria-label', `Évolution : ${art.name}`); root.dataset.reducedMotion = String(reduced);
-    root.style.setProperty('--evolution-background', `url("${import.meta.env.BASE_URL}assets/effects/evolution/evolution-background.png")`);
+    root.style.setProperty('--evolution-background', `url("${preferWebp(`${import.meta.env.BASE_URL}assets/effects/evolution/evolution-background.png`)}")`);
     const artBox = node('div', '', 'evolution-moment-art');
     const before = document.createElement('img'); before.src = oldArt.url; before.alt = ''; before.className = 'evolution-before'; before.draggable = false;
     const after = document.createElement('img'); after.src = newArt.url; after.alt = ''; after.className = 'evolution-after'; after.draggable = false;
@@ -1670,7 +1670,7 @@ export class GameUI {
       }
       // « Les cadeaux du ciel »: one rabbit carries the basket; poisoned presents and bombs must be let fall.
       const day = skyGiftsDay(s, now), game = node('article', '', 'card christmas-game');
-      game.style.setProperty('--christmas-game-art', `url('${SKY_GIFTS_ART.background}')`);
+      game.style.setProperty('--christmas-game-art', `url('${preferWebp(SKY_GIFTS_ART.background)}')`);
       const traps = node('div', '', 'christmas-traps');
       for (const [url, text] of [[SKY_GIFTS_ART.gifts[1], 'À attraper'], [SKY_GIFTS_ART.traps.poison, `Empoisonné : −${SKY_GIFTS_GAME.poisonGifts} cadeaux`], [SKY_GIFTS_ART.traps.bomb, 'Bombe : fin de partie']] as const) {
         const item = node('span', text), img = document.createElement('img'); img.src = url; img.alt = ''; img.width = 44; img.height = 44; img.onerror = () => { img.hidden = true; }; item.prepend(img); traps.append(item);
@@ -2032,7 +2032,7 @@ export class GameUI {
     card.replaceChildren(); clearRabbitTheme(card); rabbitTheme(card, species);
     card.className = `reception-card reception-type-${type}`; card.dataset.type = type; card.dataset.birthId = birthId;
     const art = receptionFrame(type);
-    if (art) { preloadReceptionFrame(type); card.style.setProperty('--reception-frame', `url("${art.url}")`); card.style.setProperty('--reception-ratio', (art.width / art.height).toFixed(4)); }
+    if (art) { preloadReceptionFrame(type); card.style.setProperty('--reception-frame', `url("${preferWebp(art.url)}")`); card.style.setProperty('--reception-ratio', (art.width / art.height).toFixed(4)); }
     else { card.style.removeProperty('--reception-frame'); card.style.removeProperty('--reception-ratio'); }
     const sheet = node('div', '', 'reception-sheet'), frame = node('div', '', 'reception-frame'); frame.setAttribute('aria-hidden', 'true');
     const close = node('button', '×', 'reception-close'); close.type = 'button'; close.setAttribute('aria-label', 'Fermer'); close.onclick = () => this.closeReception();

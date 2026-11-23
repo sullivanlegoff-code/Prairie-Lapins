@@ -1,6 +1,7 @@
 import {BENNY_ATLAS, BENNY_EFFECTS as FX, BENNY_FRAMES, BENNY_ID, BENNY_REVEAL_POSES} from '../config/bennyArt';
 import {rabbitArt} from '../config/rabbitArt';
 import {revealEnd, type RevealText} from './legendaryReveal';
+import {preferWebp} from '../display/webpTwins';
 
 /**
  * Benny's first appearance, the Mythic rabbit (owner's request of 1 November 2026: « un vrai phénomène pour le joueur », with
@@ -120,7 +121,7 @@ export function showBennyReveal(text: RevealText, onClose: () => void = () => {}
   const dialog = document.createElement('dialog');
   dialog.className = 'benny-reveal'; dialog.dataset.species = BENNY_ID; dialog.dataset.rarity = 'mythic';
   dialog.setAttribute('aria-labelledby', 'benny-reveal-title');
-  dialog.style.setProperty('--atlas', `url('${BENNY_ATLAS.url}')`);
+  dialog.style.setProperty('--atlas', `url('${preferWebp(BENNY_ATLAS.url)}')`);
   const stars = layer('br-stars', [...scatter([FX.star.url, FX.twinkle.url, FX.starFive.url, FX.star.url], 'br-star', STARS, 7), ...comet('br-comet-one'), ...comet('br-comet-two')]);
   const fall = layer('br-fall', [...scatter(FX.feather.map(f => f.url), 'br-feather', FEATHERS, 41), ...scatter([FX.stardust.url, FX.starBig.url, FX.star.url], 'br-dust', DUST, 59)]);
   const words = document.createElement('div'); words.className = 'br-text';

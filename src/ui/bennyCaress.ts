@@ -236,7 +236,7 @@ export function startBennyCaress(portrait: HTMLElement, figure: HTMLElement, opt
   let active = true, lastRub = now(), lastFinger = -Infinity, nextCount = now() + BENNY_CARESS_COUNT_MS;
   const random = options.random ?? Math.random;
   let moveTimer = 0, idleTimer = 0, settleTimer = 0; const cueTimers: number[] = [];
-  figure.classList.add('bc-figure'); figure.style.setProperty('--atlas', `url('${BENNY_ATLAS.url}')`);
+  figure.classList.add('bc-figure'); figure.style.setProperty('--atlas', `url('${preferWebp(BENNY_ATLAS.url)}')`);
   if (atlasReady) figure.classList.add('bc-has-poses');
   const fingers = layer('bc-fingers'); portrait.append(fingers);
   let handAt: [number, number] | null = null;

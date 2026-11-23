@@ -66,7 +66,7 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
   const carriers = [...layer.querySelectorAll<HTMLElement>('.jump-rope-carrier')];
   const back = $<HTMLCanvasElement>('[data-layer="back"]'), front = $<HTMLCanvasElement>('[data-layer="front"]');
   const tile = new Image(); tile.decoding = 'async'; tile.src = JUMP_ROPE_PIECES.tile.url;
-  for (const handle of layer.querySelectorAll<HTMLElement>('.jump-rope-handle')) handle.style.backgroundImage = `url("${JUMP_ROPE_PIECES.handle.url}")`;
+  for (const handle of layer.querySelectorAll<HTMLElement>('.jump-rope-handle')) handle.style.backgroundImage = `url("${preferWebp(JUMP_ROPE_PIECES.handle.url)}")`;
   const sky = $<HTMLCanvasElement>('.jump-rope-sky'), abort = new AbortController();
   // The rope canvases' box, measured once and again only when the stage changes size (not every frame: plan 3.2).
   const boxes = new WeakMap<HTMLCanvasElement, {width: number; height: number}>();

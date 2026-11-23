@@ -49,10 +49,10 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
   layer.setAttribute('role', 'dialog'); layer.setAttribute('aria-modal', 'true'); layer.setAttribute('aria-label', 'Le vol de Benny');
   layer.innerHTML = `<div class="benny-flight-top"><p class="benny-flight-score" aria-live="polite"></p><p class="benny-flight-quota"></p><button type="button" data-benny-flight-exit>Quitter</button></div>
 <div class="benny-flight-stage" data-benny-flight-stage>
-<div class="benny-flight-sky" aria-hidden="true" style="background-image:url('${art.background}')"></div>
+<div class="benny-flight-sky" aria-hidden="true" style="background-image:url('${preferWebp(art.background)}')"></div>
 <span class="benny-flight-friend" aria-hidden="true" hidden></span>
 <div class="benny-flight-columns" aria-hidden="true"></div>
-<span class="benny-flight-benny" aria-hidden="true" style="background-image:url('${BENNY_FLAPPY.url}')"></span>
+<span class="benny-flight-benny" aria-hidden="true" style="background-image:url('${preferWebp(BENNY_FLAPPY.url)}')"></span>
 <p class="benny-flight-pop" aria-hidden="true"></p>
 </div>
 <div class="benny-flight-card" data-benny-flight-card></div>`;
@@ -136,7 +136,7 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
     const look = BENNY_FLIGHT_FRIEND_ART[mate.kind], h = bennyHeight * look.size, w = h * look.aspect;
     if (shownFriend !== mate.kind) {
       shownFriend = mate.kind; shownFriendFrame = -1;
-      friend.style.backgroundImage = `url('${friendUrl(mate.kind)}')`; friend.style.height = `${h}px`; friend.style.width = `${w}px`;
+      friend.style.backgroundImage = `url('${preferWebp(friendUrl(mate.kind))}')`; friend.style.height = `${h}px`; friend.style.width = `${w}px`;
     }
     const opacity = mate.opacity >= 1 ? '1' : mate.opacity.toFixed(2);
     if (opacity !== shownFriendOpacity) { shownFriendOpacity = opacity; friend.style.opacity = opacity; }

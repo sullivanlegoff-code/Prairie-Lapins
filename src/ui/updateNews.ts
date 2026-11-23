@@ -1,6 +1,7 @@
 import {christmasActive} from '../config/christmas';
 import {NEWS_PAGES, UPDATE_NEWS_ID, type NewsPage} from '../config/updateNews';
 import type {PreferenceStore} from './preferences';
+import {preferWebp} from '../display/webpTwins';
 
 /**
  * The page of the Christmas update's news (owner, 8 November 2026): « quand le joueur arrive sur le jeu il doit être accueilli
@@ -10,7 +11,7 @@ import type {PreferenceStore} from './preferences';
  */
 const escape = (text: string) => text.replace(/[&<>"]/g, char => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'})[char]!);
 const slide = (page: NewsPage, index: number, count: number) => `<section class="un-slide un-${page.id}" aria-roledescription="affiche" aria-label="${index + 1} sur ${count}">
-  <img class="un-poster" src="${page.poster}" alt="" draggable="false" decoding="async">
+  <img class="un-poster" src="${preferWebp(page.poster)}" alt="" draggable="false" decoding="async">
   <div class="un-card"><h2>${escape(page.title)}</h2><ul>${page.lines.map(line => `<li>${escape(line)}</li>`).join('')}</ul></div>
 </section>`;
 
