@@ -5,7 +5,11 @@ import {act, advance, encodeGame, decodeGame} from '../src/simulation';
 import {scenarioState, SCENARIOS} from '../src/dev/scenarios';
 import {DAILY_MISSION_IDS, MAIN_MISSION_IDS} from '../src/config/missions';
 import {DECORATION_IDS} from '../src/config/decorations';
-import {SPECIES_IDS} from '../src/config/balance';
+import {BUILDING_KINDS, SPECIES_IDS} from '../src/config/balance';
+import {CHRISTMAS_CHALLENGE_IDS} from '../src/config/christmasEvent';
+import {picnicQuote} from '../src/simulation/care';
+import {PARCEL_IDS, extensionPrice} from '../src/config/land';
+import {playerLevel} from '../src/simulation/affection';
 let seed = 12345; const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
 const pick = <T,>(a: readonly T[]): T | undefined => a.length ? a[Math.floor(rnd() * a.length)] : undefined;
 const failures = new Map<string, string>(); const okCount: Record<string, number> = {}; const refused: Record<string, Record<string, number>> = {};
@@ -32,6 +36,26 @@ function commands(s: any): any[] {
   if (p1) out.push({type: 'rewardCuisine', rabbitId: p1, recipeId: pick(['avocado-toast','moelleux','chicken'])});
   const job = b.find((x: any) => x.order || x.breeding); if (job) out.push({type: 'accelerate', id: job.id, stage: job.order ? 'order' : 'breeding', jobKey: 'x', maxHearts: 99});
   if (p1 && rnd() < 0.05) out.push({type: 'release', id: p1});
+  // The recent actions too (plan 4.3): care, picnic, snowman, debris, evolution, forest, Benny, the mini-games, Christmas, moves.
+  const p3 = pick(r), e1 = pick(enc), any = pick(b) as any;
+  if (p1) { out.push({type: 'startCare', rabbitId: p1, care: pick(['bath', 'brush', 'massage'])}); out.push({type: 'claimCare', rabbitId: p1}); out.push({type: 'petRabbit', rabbitId: p1});
+    out.push({type: 'evolveRabbit', rabbitId: p1}); out.push({type: 'toggleClassicLook', rabbitId: p1}); out.push({type: 'toggleCrown', rabbitId: p1});
+    out.push({type: 'rewardSkyGifts', rabbitId: p1, caught: Math.floor(rnd() * 40)}); }
+  if (s.care) out.push({type: 'claimCare', rabbitId: s.care.rabbitId});
+  if (e1) { out.push({type: 'picnic', enclosureId: e1, expectedCost: picnicQuote(s, e1, s.lastSimulatedAt, playerLevel(s)).price}); out.push({type: 'buildSnowman', enclosureId: e1}); out.push({type: 'upgradeHabitat', id: e1, fromLevel: pick([1, 2])}); }
+  if (rnd() < .1) out.push({type: 'expand', parcelId: pick(PARCEL_IDS.filter(id => !s.acquiredParcels.includes(id))), expectedCost: extensionPrice(s)}); // New land brings debris.
+  for (const debris of s.debris ?? []) if (rnd() < .3) out.push({type: 'clearDebris', id: debris.id});
+  if (p1 && p2 && p3) out.push({type: 'rewardJumpRope', team: {carriers: [p1, p2], athlete: p3}, score: Math.floor(rnd() * 60)});
+  out.push({type: 'rewardBennyFlight', passed: Math.floor(rnd() * 60)});
+  out.push({type: 'finishBennyRun', score: Math.floor(rnd() * 500), metres: Math.floor(rnd() * 900)});
+  out.push({type: 'bennyPower'}); out.push({type: 'bennySky', inSky: rnd() < .5});
+  out.push({type: 'claimChristmasChallenge', id: pick(CHRISTMAS_CHALLENGE_IDS), cycleStart: s.missions.daily.referenceAt});
+  out.push({type: 'claimChristmasBonus', cycleStart: s.missions.daily.referenceAt});
+  out.push({type: 'buyChristmasDecoration', catalogId: pick(DECORATION_IDS)});
+  out.push({type: 'buyJumpIsland'}); out.push({type: 'buyEpicIslet'}); out.push({type: 'welcomeAgency'});
+  if (any) out.push({type: 'moveBuilding', id: any.id, x: any.x + Math.floor(rnd() * 9) - 4, y: any.y + Math.floor(rnd() * 9) - 4});
+  out.push({type: 'buyBuilding', kind: pick(BUILDING_KINDS), x: Math.floor(rnd() * 40), y: Math.floor(rnd() * 56)});
+  out.push({type: 'storeDecorationsInCell', x: Math.floor(rnd() * 12), y: Math.floor(rnd() * 14)});
   return out;
 }
 it('every accepted action produces a save that encodes and decodes', () => {
@@ -56,4 +80,7 @@ for (const id of scenarios) {
 }
 expect([...failures.entries()]).toEqual([]);
 expect(Object.values(okCount).reduce((a, b) => a + b, 0)).toBeGreaterThan(1000);
-}, 120_000);
+// The recent actions are really played, not only refused.
+for (const type of ['startCare', 'claimCare', 'picnic', 'buildSnowman', 'petRabbit', 'rewardJumpRope', 'rewardSkyGifts', 'rewardBennyFlight', 'finishBennyRun', 'moveBuilding', 'buyBuilding', 'clearDebris', 'evolveRabbit', 'bennySky', 'expand'])
+  expect(okCount[type] ?? 0, type).toBeGreaterThan(0);
+}, 300_000);
