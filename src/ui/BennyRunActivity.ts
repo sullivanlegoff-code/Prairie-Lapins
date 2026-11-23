@@ -114,6 +114,20 @@ type StripPicture = StripLevel[];
 const STRIP_LEVELS = 4;
 const stripKey = (p: RunSidePicture) => `${p.file}:${p.crop ?? ''}`;
 const SIDE_PICTURES = [...new Map([RUN_SIDES.grass, RUN_SIDES.fence, RUN_SIDES.wall].flatMap(s => Object.values(s.picture) as RunSidePicture[]).map(p => [stripKey(p), p])).values()];
+/**
+ * What is prepared for a run (lot 2.4, 23 Nov. 2026: about 100 MB prepared, much of it never drawn): a decor picture drawn whole (the
+ * arches, the sheets of the things on the verges, the field's top and blades, which only the graphics card draws) gets no tiled near
+ * and far copies; the sheets of the things on the verges are not even loaded while those are set aside (SIDE_THINGS); the strips of
+ * tall grass are not prepared where the graphics card draws the field.
+ */
+const WHOLE_DECOR: ReadonlySet<string> = new Set(['decor-bord', 'decor-bord-lave', 'decor-bord-neige', 'decor-arche-prairie', 'decor-arche-lave', 'decor-arche-neige', 'decor-champ', 'decor-brins']);
+const VERGE_SHEETS: ReadonlySet<string> = new Set(['decor-bord', 'decor-bord-lave', 'decor-bord-neige']);
+const GRASS_STRIPS: ReadonlySet<string> = new Set((Object.values(RUN_SIDES.grass.picture) as RunSidePicture[]).map(stripKey));
+/** Whether a decor picture is loaded for a run, and whether it gets tiled copies. */
+export const decorLoaded = (name: string): boolean => SIDE_THINGS || !VERGE_SHEETS.has(name);
+export const decorTiled = (name: string): boolean => decorLoaded(name) && !WHOLE_DECOR.has(name);
+/** The side strips prepared for a run: all of them, but the tall grass's where the graphics card draws the field. */
+export const stripsPrepared = (withFloor: boolean): string[] => SIDE_PICTURES.map(stripKey).filter(k => !withFloor || !GRASS_STRIPS.has(k));
 /** The near copy of a strip is at most this many pixels high (a wall is never drawn much taller on a phone). */
 const STRIP_HIGH = 480;
 /** How many metres one texture covers: planks across the road and along it, the grass both ways, a wall along it (its height is
@@ -408,7 +422,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const haze: [number, number, number] = [FOG_RGB[0] / 255, FOG_RGB[1] / 255, FOG_RGB[2] / 255];
   const hazeRgb = (a: number) => `rgba(${FOG},${a})`;
   /** Everything a run needs to look right from its first metre: the floor, the sides, Benny's gallop and the creatures. */
-  const artReady = () => decorReady() && [...strips.values()].every(s => s.pic) && (['benny', 'benny-galop', 'creatures', 'objets', 'pieces', 'obstacles'] as const).every(n => art[n].ready) && skyPictures.grotte.ready;
+  const artReady = () => decorReady() && stripsPrepared(!!floor).every(k => strips.get(k)?.pic) && (['benny', 'benny-galop', 'creatures', 'objets', 'pieces', 'obstacles'] as const).every(n => art[n].ready) && skyPictures.grotte.ready;
   /** Counts the times the run's pictures were let go (`releaseArt`): a picture still loading from before is then dropped. */
   let artRound = 0;
   const decoded = (image: HTMLImageElement) => (typeof image.decode === 'function' ? image.decode() : Promise.resolve()).catch(() => undefined);
@@ -417,19 +431,21 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     for (const s of RUN_SETTINGS) { const sky = skyPictures[s]; if (sky.image) continue;
       const image = new Image(); image.decoding = 'async'; image.onload = () => { void decoded(image).then(() => { if (!current()) return; sky.ready = true; }); }; image.src = `${import.meta.env.BASE_URL}${SKY_FILES[s].url}`; sky.image = image; }
     for (const name of DECOR) {
-      if (decor[name].image) continue;
+      if (decor[name].image || !decorLoaded(name)) continue;
       const image = new Image(); image.decoding = 'async'; image.onload = () => {
         if (!current()) return;
         // As bitmaps where the browser has them: drawn from many times a frame, they stay ready on the graphics card.
         if (FLOOR_PICTURES.includes(name)) floorPictures();
+        if (!decorTiled(name)) return;
         const near = tiled(image, NEAR_SIDE), far = softened(image);
         if (typeof createImageBitmap !== 'function' || !near || !far) { decor[name].near = near; decor[name].far = far; return; }
         void Promise.all([createImageBitmap(near), createImageBitmap(far)]).then(([n, f]) => { if (current()) { decor[name].near = n; decor[name].far = f; } else { n.close(); f.close(); } }, () => { if (current()) { decor[name].near = near; decor[name].far = far; } });
       };
       image.src = `${import.meta.env.BASE_URL}assets/benny-run/${name}.webp`; decor[name].image = image;
     }
+    const prepared = new Set(stripsPrepared(!!floor));
     for (const p of SIDE_PICTURES) {
-      const s = strips.get(stripKey(p)); if (!s || s.image) continue;
+      const s = strips.get(stripKey(p)); if (!s || s.image || !prepared.has(stripKey(p))) continue;
       const image = new Image(); image.decoding = 'async'; image.onload = () => {
         if (!current()) return;
         const scale = Math.min(1, STRIP_HIGH / image.naturalHeight), copies: HTMLCanvasElement[] = [];
