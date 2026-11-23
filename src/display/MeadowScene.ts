@@ -679,7 +679,7 @@ export class MeadowScene extends Phaser.Scene {
     const b = this.current?.buildings.find(x => x.id === enclosureId); if (!b) return;
     const reduced = prefersReducedMotion();
     this.focusBuilding(enclosureId);
-    this.snowballs.reset(this.snowballThrowers(new Set()));
+    this.snowballs.stopGroup(enclosureId, this.snowballThrowers(new Set())); // Only this enclosure's fight stops (plan 3.6).
     const guests = this.rabbitViews.filter(r => r.group === enclosureId && r.motion && !r.nest && !r.benny && !r.legendary?.clock.act && !r.magicien?.busy &&
       ['rest', 'walk', 'hop', 'sleep', 'zoom', 'meet', 'kiss'].includes(r.motion.mode));
     const first = this.rabbitViews.find(r => r.group === enclosureId && r.motion && !r.nest);
@@ -769,8 +769,8 @@ export class MeadowScene extends Phaser.Scene {
     for (const step of SNOWMAN_ART.steps) this.optionalArt(step.texture, step.url);
     const spot = this.snowmanSpot(b), zone = this.enclosureZone(b);
     if (reduced) { this.snowmanBuild = null; this.syncSnowman(); return; }
-    // A snowball fight under way stops: its rabbits join the others.
-    this.snowballs.reset(this.snowballThrowers(new Set()));
+    // A snowball fight under way in this enclosure stops: its rabbits join the others. Other enclosures go on (plan 3.6).
+    this.snowballs.stopGroup(enclosureId, this.snowballThrowers(new Set()));
     const guests = this.rabbitViews.filter(r => r.group === enclosureId && r.motion && !r.nest && !r.benny && !r.legendary?.clock.act && !r.magicien?.busy &&
       !this.picnicParty?.ids.includes(r.id) && !this.chases.isChasing(r.id) && ['rest', 'walk', 'hop', 'sleep', 'zoom', 'meet', 'kiss'].includes(r.motion.mode));
     // A half circle in front of the snowman, inside the fence.

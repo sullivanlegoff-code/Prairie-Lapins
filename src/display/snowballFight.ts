@@ -313,6 +313,12 @@ export class SnowballFights {
     for (const m of fight.members) { const r = byId.get(m.id); if (r?.motion.mode === 'meet') endRabbitActivity(r.motion); }
     this.active.delete(fight.group); this.index = null;
   }
+  /** Ends the fight of one enclosure only (a snowman or a picnic there), its rabbits free again; the others go on. */
+  stopGroup(group: string, throwers: readonly SnowballThrower[] = []): void {
+    const fight = this.active.get(group); if (!fight) return;
+    this.end(fight, new Map(throwers.map(r => [r.id, r])));
+    for (let i = this.hits.length - 1; i >= 0; i--) if (this.hits[i].group === group) this.hits.splice(i, 1);
+  }
   reset(throwers: readonly SnowballThrower[] = []): void {
     const byId = new Map(throwers.map(r => [r.id, r]));
     for (const fight of [...this.active.values()]) this.end(fight, byId);
