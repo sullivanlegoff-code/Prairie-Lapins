@@ -104,4 +104,12 @@ describe('Benny’s perch and « Le vol de Benny »', () => {
     s = run(s, {type: 'rewardBennyFlight', passed: 30}); expect(s.hearts).toBe(hearts + 1);
     expect(bennyFlightDay(s, s.lastSimulatedAt).heartLeft).toBe(false);
   });
+  // Audit, 23 November 2026: the end card shows the Hearts the game paid, never a difference with the Hearts counted at opening.
+  it('reports the Hearts each flight paid', () => {
+    let s = game(); s.rabbits.push({id: `rabbit-${s.nextId++}`, species: 'benny', affection: 5, enclosureId: s.buildings.find(b => b.kind === 'enclosure')!.id}); s.discovered.push('benny');
+    s = placePerch(s);
+    const short = act(s, {type: 'rewardBennyFlight', passed: 5}, s.lastSimulatedAt); expect(short.ok && short.flightHearts).toBe(0);
+    const long = act(short.ok ? short.state : s, {type: 'rewardBennyFlight', passed: 25}, s.lastSimulatedAt); expect(long.ok && long.flightHearts).toBe(1);
+    const again = act(long.ok ? long.state : s, {type: 'rewardBennyFlight', passed: 30}, s.lastSimulatedAt); expect(again.ok && again.flightHearts).toBe(0);
+  });
 });

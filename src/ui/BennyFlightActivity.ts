@@ -186,7 +186,8 @@ export function mountBennyFlightActivity(host: HTMLElement, options: {
     showCard(paragraph(final ? `Benny a franchi ${bales(final)} !` : 'Benny s’est posée un peu trop tôt.', 'benny-flight-title'),
       ...(record ? [paragraph(previousBest ? `Nouveau record ! L’ancien était de ${previousBest}.` : 'Ton premier record !', 'benny-flight-record')] : previousBest ? [paragraph(`Ton record : ${bales(previousBest)}`, 'benny-flight-rules')] : []),
       chips, again, button('Quitter', close, 'bennyFlightQuit'));
-    settleCard(card); again.focus();
+    // Focus only once the card has settled: a Space still held from flapping would otherwise press « Rejouer » at once.
+    settleCard(card); setTimeout(() => { if (card.isConnected) again.focus(); }, 400);
   }
   function start(): void {
     previousBest = options.best?.() ?? 0; shownPassed = 0; fallingAt = null;

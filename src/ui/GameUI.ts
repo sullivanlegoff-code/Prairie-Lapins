@@ -247,7 +247,6 @@ export class GameUI {
   private bennyFlight: ReturnType<typeof mountBennyFlightActivity>;
   /** « Benny Rampage », loaded only when the Antre du dragon is opened (its code and pictures stay out of the island's start). */
   private bennyRun: {readonly active: boolean; prepare(): void; open(): void; close(): void; dispose(): void};
-  private heartsBeforeFlight: number | null = null;
   /** Whether the full-screen shop or market currently covers the island (its Phaser loop sleeps meanwhile). */
   private shopCovering = false;
   private skyGiftsPick = false;
@@ -291,7 +290,7 @@ export class GameUI {
     this.bennyFlight = mountBennyFlightActivity(document.getElementById('app')!, {onFinished: passed => {
       const granted = this.controller.perform({type: 'rewardBennyFlight', passed});
       if (!granted.ok) return `Récompense non enregistrée : ${REFUSALS[granted.reason]}`;
-      const won = granted.state.hearts - (this.heartsBeforeFlight ?? granted.state.hearts); this.heartsBeforeFlight = granted.state.hearts;
+      const won = granted.flightHearts ?? 0; // Paid by this game: never a difference with the Hearts counted earlier (a cloud sync can change them).
       const parts = [...(Number(granted.value) > 0 ? [`+${granted.value} pattes`] : []), ...(won > 0 ? [`+${won} Cœur`] : [])];
       return parts.length ? parts.join(' · ') : passed ? 'Partie pour le plaisir : plus de récompense aujourd’hui' : '';
     }, quotaText: () => { const state = this.controller.getSnapshot().state; return state ? bennyFlightQuotaText(state, this.now()) : ''; },
@@ -1505,7 +1504,7 @@ export class GameUI {
     if (day.best) this.content.append(node('p', `Ton record : ${day.best} colonne${day.best > 1 ? 's' : ''}`, 'small'));
     this.button(this.content, 'Jouer avec Benny', () => {
       const state = this.controller.getSnapshot().state, benny = state?.rabbits.find(r => r.species === 'benny'); if (!state || !benny) return;
-      this.heartsBeforeFlight = state.hearts; this.close(); this.bennyFlight.open(benny);
+      this.close(); this.bennyFlight.open(benny);
     }, reason ? REFUSALS[reason] : null);
   }
   /** The Antre du dragon: the record, then « Benny Rampage » (Benny only; its coins are pattes, a few runs a day). */

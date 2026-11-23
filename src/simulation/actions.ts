@@ -106,6 +106,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
   let progressionGain: ProgressionGain | undefined;
   let cuisineReward: import('../state/types').CuisineReward | undefined;
   let jumpRopeResult: import('./jumpRope').JumpRopeReward | undefined;
+  let flightHearts: number | undefined; // The Hearts this Benny flight paid, shown on its end card.
   let missionAmount: number | undefined;
   /** The Christmas challenges' own events of this action (the snowman, a rewarded mini-game), when it has some. */
   let christmasCounts: [ChristmasEventName, number][] | undefined;
@@ -660,7 +661,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         const today = previous?.cycle === cycle ? previous : null;
         credit('pattes', paid.pattes); credit('hearts', paid.hearts);
         s.bennyFlight = {cycle, rewarded: (today?.rewarded ?? 0) + (paid.rewarded ? 1 : 0), ...(today?.heart || paid.hearts ? {heart: true as const} : {}), best: Math.max(previous?.best ?? 0, command.passed)};
-        value = paid.pattes; break;
+        flightHearts = paid.hearts; value = paid.pattes; break;
       }
       case 'release': {
         const rabbit = s.rabbits.find(r => r.id === command.id); requireRule(rabbit, 'NOT_FOUND');
@@ -756,7 +757,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
     const counts: [ChristmasEventName, number][] = christmasCounts ?? (christmasEvents.includes(command.type) ? [[command.type as ChristmasEventName, amount]] : []);
     for (const [event, count] of counts) requireRule(recordChristmasAction(s, event, count), 'RESOURCE_LIMIT');
     // In particular, a welcome frees the nursery at this action's timestamp.
-    return {ok: true, state: advance(s, time), ...(value === undefined ? {} : {value}), ...(progressionGain ? {progressionGain} : {}), ...(cuisineReward ? {cuisineReward} : {}), ...(jumpRopeResult ? {jumpRopeReward: jumpRopeResult} : {})};
+    return {ok: true, state: advance(s, time), ...(value === undefined ? {} : {value}), ...(progressionGain ? {progressionGain} : {}), ...(cuisineReward ? {cuisineReward} : {}), ...(jumpRopeResult ? {jumpRopeReward: jumpRopeResult} : {}), ...(flightHearts === undefined ? {} : {flightHearts})};
   } catch (error) {
     if (error instanceof Quoted) return {ok: true, state, value: error.price};
     if (error instanceof Denied) return {ok: false, state, reason: error.reason};
