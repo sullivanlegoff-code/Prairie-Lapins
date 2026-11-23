@@ -167,6 +167,8 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
   function loop(): void { if (!running) return; update(); if (running) schedule(); }
   function tap(): void {
     if (!game || !running) return;
+    // A pass the rope already made without a jump is a miss, shown even when a late tap is what notices it.
+    if (advanceJumpRope(game, clock())) { flash('Oups !', 'miss'); stumble(); }
     const result = tapJumpRope(game, clock());
     if (result === 'miss') { flash('Oups !', 'miss'); stumble(); }
     else if (result === 'jump' || result === 'perfect') {

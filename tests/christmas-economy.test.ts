@@ -70,13 +70,17 @@ describe('Christmas update economy: Hearts', () => {
     expect(again.care!.hearts).toBe(1);
     const decoded = decodeGame(encodeGame(again)); expect(decoded.ok && decoded.state.care).toEqual(again.care);
   });
-  it('gives the jump-rope Hearts on the first game of the day only', () => {
+  it('gives the jump-rope Heart to the first game of the day that wins it (owner, 23 November 2026)', () => {
     const s = atLevel(createGame(0), 20);
     expect(jumpRopeDay(s, 0)).toMatchObject({heartLeft: true, challengeLeft: true});
     expect(jumpRopeReward(s, JUMP_ROPE.heartJumps, 0).hearts).toBe(1);
-    // A first game, even without a jump, uses the day's Hearts.
-    s.jumpRope = {cycle: s.missions.daily.cycleIndex, rewarded: 0, best: 0};
-    expect(jumpRopeDay(s, 0)).toMatchObject({heartLeft: false, challengeLeft: false, rewardedLeft: JUMP_ROPE.rewardedGamesPerCycle});
+    // A game played without the Heart keeps it for the day.
+    s.jumpRope = {cycle: s.missions.daily.cycleIndex, rewarded: 1, best: 4};
+    expect(jumpRopeDay(s, 0)).toMatchObject({heartLeft: true, challengeLeft: true, rewardedLeft: JUMP_ROPE.rewardedGamesPerCycle - 1});
+    expect(jumpRopeReward(s, 40, 0).hearts).toBeGreaterThanOrEqual(1);
+    // Once paid, it is gone until the next day.
+    s.jumpRope = {cycle: s.missions.daily.cycleIndex, rewarded: 1, best: 40, heart: true, challenge: true};
+    expect(jumpRopeDay(s, 0)).toMatchObject({heartLeft: false, challengeLeft: false});
     expect(jumpRopeReward(s, 40, 0)).toMatchObject({hearts: 0, rewarded: true});
   });
 });

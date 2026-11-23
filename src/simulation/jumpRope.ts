@@ -42,7 +42,10 @@ export function tapJumpRope(game: JumpRopeGame, now: number): JumpRopeTap {
   advanceJumpRope(game, now);
   if (game.over) return 'ignored';
   if (game.lastJumpAt !== null && now - game.lastJumpAt < airTime(game.period)) return 'ignored'; // Still in the air: a double tap costs nothing.
-  const gap = Math.abs(now - game.nextPassAt), window = halfWindow(game.period), jumped = gap <= window, perfect = jumped && gap <= window * JUMP_ROPE.perfectShare;
+  const window = halfWindow(game.period);
+  // Before the rope's first pass (the count-in), a tap too early is a false start: it costs nothing.
+  if (game.score === 0 && game.misses === 0 && now < game.nextPassAt - window) return 'ignored';
+  const gap = Math.abs(now - game.nextPassAt), jumped = gap <= window, perfect = jumped && gap <= window * JUMP_ROPE.perfectShare;
   if (jumped) { game.lastJumpAt = now; game.combo = perfect ? game.combo + 1 : 0; }
   pass(game, jumped);
   return perfect ? 'perfect' : jumped ? 'jump' : 'miss';
@@ -61,11 +64,12 @@ export function jumpIslandReason(s: GameState): Refusal | null {
 }
 /**
  * Rewarded games already played in the daily cycle at `now`, and whether its Heart and its challenge are still to win.
- * Hearts come from the first game of the day only (owner, 5 November 2026): once a game is recorded in the cycle, both are gone.
+ * The Heart and the challenge go to the first game of the day that wins them (owner, 23 November 2026, like the flight):
+ * each is gone once paid in the cycle.
  */
 export function jumpRopeDay(s: Pick<GameState, 'missions' | 'jumpRope'>, now: number): {rewardedLeft: number; heartLeft: boolean; challengeLeft: boolean} {
   const cycle = giftCycle(s, now), day = s.jumpRope?.cycle === cycle ? s.jumpRope : null;
-  return {rewardedLeft: Math.max(0, JUMP_ROPE.rewardedGamesPerCycle - (day?.rewarded ?? 0)), heartLeft: !day, challengeLeft: !day};
+  return {rewardedLeft: Math.max(0, JUMP_ROPE.rewardedGamesPerCycle - (day?.rewarded ?? 0)), heartLeft: !day?.heart, challengeLeft: !day?.challenge};
 }
 /** The challenge of the day: `jumps` jumps, with an athlete of `type` when it is not null. */
 export interface JumpRopeChallenge {jumps: number; type: RabbitType | null}

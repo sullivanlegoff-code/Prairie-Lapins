@@ -95,7 +95,8 @@ it('the islet picks a trio, plays one life with Rejouer, pays the jumps and reme
   // Rejouer starts the next game at once; a miss on the first pass scores nothing and keeps the record.
   card.querySelector<HTMLButtonElement>('[data-jump-rope-again]')!.click();
   expect(card.hidden).toBe(true); expect(layer().querySelector('.jump-rope-best')!.textContent).toBe('Record : 5');
-  const start = clock; tapAt(start + 10);
+  const start = clock; tapAt(start + 10); expect(card.hidden).toBe(true); // A false start during the count-in costs nothing.
+  tapAt(start + JUMP_ROPE.leadIn + JUMP_ROPE.startPeriod / 2); // The rope passed under feet that stayed down.
   expect(card.hidden).toBe(false); expect(card.textContent).toContain('Caramel s’est emmêlé les pattes'); expect(card.textContent).toContain('Ton record : 5 sauts');
   s = controller.getSnapshot().state!; expect(s.jumpRope).toMatchObject({rewarded: 1, best: 5});
   card.querySelector<HTMLButtonElement>('[data-jump-rope-quit]')!.click();
@@ -133,9 +134,10 @@ it('needs three rabbits at home to play', () => {
 });
 
 it('the islet menu shows the challenge of the day and the medals still to win', () => {
-  const s = game(); s.jumpRope = {cycle: 0, rewarded: 0, best: 26};
+  const s = game(); s.jumpRope = {cycle: 0, rewarded: 1, best: 26};
   const {ui} = mount(s); ui.open({kind: 'jumpIsland'});
-  expect(panel().textContent).toContain('Le défi se tente à la première partie du jour'); // A game was played today.
+  expect(panel().textContent).toContain('Défi du jour : '); // A game was played today without the challenge: it is still to win.
+  expect(panel().textContent).toContain(`un cœur à ${JUMP_ROPE.heartJumps} sauts`);
   expect(panel().textContent).toContain('Médailles sur le kiosque : 10, 25 sauts. Prochaine médaille à 50 sauts.');
   expect([...panel().querySelectorAll<HTMLImageElement>('[data-jump-rope-medal]')].map(img => img.dataset.jumpRopeMedal)).toEqual(['10', '25']);
 });
@@ -164,7 +166,7 @@ it('a « tac » marks each pass of the rope, the carriers console a miss and app
   t = pass + period / 2; activity.tap();
   expect(activity.element.querySelector('[data-jump-rope-card]')!.textContent).toContain('Nouveau record');
   // Next game, no record: a first-pass miss is consoled.
-  best = 3; activity.element.querySelector<HTMLButtonElement>('[data-jump-rope-again]')!.click(); t += 10; activity.tap();
+  best = 3; activity.element.querySelector<HTMLButtonElement>('[data-jump-rope-again]')!.click(); t += JUMP_ROPE.leadIn + JUMP_ROPE.startPeriod / 2; activity.tap();
   expect(carriers.every(c => c.classList.contains('console'))).toBe(true);
   expect(activity.element.querySelector('.jump-rope-cheer')!.textContent).toBe('Courage, on recommence !');
 });

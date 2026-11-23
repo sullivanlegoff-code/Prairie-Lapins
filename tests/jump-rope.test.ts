@@ -61,12 +61,20 @@ describe('Jump-rope islet: the game', () => {
     expect(tapJumpRope(game, game.nextPassAt + halfWindow(game.period) - 1)).toBe('jump'); expect(game.combo).toBe(0); expect(game.score).toBe(3);
   });
   it('ends the game at the first miss: a tap far from the rope, or a pass with no tap', () => {
-    const early = startJumpRope(0);
-    expect(tapJumpRope(early, 10)).toBe('miss'); expect(early.misses).toBe(1); expect(early.over).toBe(true);
-    expect(tapJumpRope(early, early.nextPassAt)).toBe('ignored'); expect(early.score).toBe(0);
+    const early = startJumpRope(0); tapJumpRope(early, early.nextPassAt);
+    expect(tapJumpRope(early, early.nextPassAt - early.period / 2)).toBe('miss'); expect(early.misses).toBe(1); expect(early.over).toBe(true);
+    expect(tapJumpRope(early, early.nextPassAt)).toBe('ignored'); expect(early.score).toBe(1);
     const late = startJumpRope(0); tapJumpRope(late, late.nextPassAt);
     expect(advanceJumpRope(late, late.nextPassAt + halfWindow(late.period) + 1)).toBe(1);
     expect(late.over).toBe(true); expect(late.score).toBe(1);
+  });
+  it('ignores a false start: a tap during the count-in, before the rope first comes, costs nothing (plan 1.1)', () => {
+    const game = startJumpRope(0), first = game.nextPassAt, window = halfWindow(game.period);
+    expect(tapJumpRope(game, 10)).toBe('ignored'); expect(tapJumpRope(game, first - window - 1)).toBe('ignored');
+    expect(game).toMatchObject({misses: 0, over: false, score: 0});
+    expect(tapJumpRope(game, first - window + 1)).toBe('jump'); expect(game.score).toBe(1);
+    // Once the game is under way, a tap too early is a miss again.
+    expect(tapJumpRope(game, game.nextPassAt - window - 1)).toBe('miss'); expect(game.over).toBe(true);
   });
   it('ignores a double tap while the rabbit is still in the air', () => {
     const game = startJumpRope(0), at = game.nextPassAt;
@@ -96,15 +104,18 @@ describe('Jump-rope islet: rewards, the daily limit and the trio', () => {
     const tomorrow = s.lastSimulatedAt + MISSION_CYCLE_DURATION, next = run(s, {type: 'rewardJumpRope', team, score: 8}, tomorrow);
     expect(next.state.pattes - s.pattes).toBe(16); expect(next.state.jumpRope).toMatchObject({cycle: next.state.missions.daily.cycleIndex, rewarded: 1, best: 100, team}); expect(next.state.jumpRope?.heart).toBeUndefined();
   });
-  it('gives the Hearts on the first game of the day only (owner, 5 November 2026): one at 30 jumps, plus the challenge', () => {
+  it('gives the Heart to the first game of the day that reaches 30 jumps (owner, 23 November 2026), plus the challenge', () => {
     const {s, team} = setup(), hearts = s.hearts;
     const first = run(s, {type: 'rewardJumpRope', team, score: JUMP_ROPE.heartJumps}); // 30 jumps also win the challenge of the day.
     expect(first.jumpRopeReward).toMatchObject({hearts: 1 + JUMP_ROPE.challenge.hearts, challenge: true});
     const second = run(first.state, {type: 'rewardJumpRope', team, score: 50});
     expect(second.jumpRopeReward!.hearts).toBe(0); expect(second.state.hearts).toBe(hearts + 1 + JUMP_ROPE.challenge.hearts);
-    // A first game below 30 jumps uses the day's Hearts: a later game of 30 jumps gives none.
+    // A first game below 30 jumps keeps the day's Heart: the next game that reaches 30 jumps wins it, and only that one.
     const short = run(s, {type: 'rewardJumpRope', team, score: 5});
-    expect(run(short.state, {type: 'rewardJumpRope', team, score: JUMP_ROPE.heartJumps}).jumpRopeReward!.hearts).toBe(0);
+    expect(short.jumpRopeReward!.hearts).toBe(0); expect(jumpRopeDay(short.state, s.lastSimulatedAt).heartLeft).toBe(true);
+    const late = run(short.state, {type: 'rewardJumpRope', team, score: JUMP_ROPE.heartJumps});
+    expect(late.jumpRopeReward!.hearts).toBeGreaterThanOrEqual(1); expect(late.state.jumpRope?.heart).toBe(true);
+    expect(run(late.state, {type: 'rewardJumpRope', team, score: 60}).jumpRopeReward!.hearts).toBe(0);
     const tomorrow = s.lastSimulatedAt + MISSION_CYCLE_DURATION;
     expect(run(second.state, {type: 'rewardJumpRope', team, score: JUMP_ROPE.heartJumps}, tomorrow).jumpRopeReward!.hearts).toBeGreaterThanOrEqual(1);
   });
@@ -148,13 +159,14 @@ describe('Jump-rope islet: challenge of the day, medals, athlete records and the
   it('pays the challenge Hearts once a day, on top of the other rewards, only when the athlete meets it', () => {
     let {s, team} = setup(); const c = jumpRopeChallenge(s, s.lastSimulatedAt), hearts = s.hearts;
     expect(meetsJumpRopeChallenge(s, c, team.athlete, c.jumps - 1)).toBe(false);
-    // Only the first game of the day may meet it (owner, 5 November 2026): a missed first game ends the day's challenge.
+    // A missed first game keeps the day's challenge (owner, 23 November 2026): the next game that meets it wins it.
     const missed = run(s, {type: 'rewardJumpRope', team, score: c.jumps - 1});
     expect(missed.jumpRopeReward?.challenge).toBeUndefined(); expect(missed.state.hearts).toBe(hearts);
-    expect(run(missed.state, {type: 'rewardJumpRope', team, score: c.jumps}).jumpRopeReward?.challenge).toBeUndefined();
+    expect(jumpRopeDay(missed.state, s.lastSimulatedAt).challengeLeft).toBe(true);
+    expect(run(missed.state, {type: 'rewardJumpRope', team, score: c.jumps}).jumpRopeReward?.challenge).toBe(true);
     const won = run(s, {type: 'rewardJumpRope', team, score: c.jumps});
     expect(won.jumpRopeReward).toMatchObject({challenge: true, hearts: JUMP_ROPE.challenge.hearts}); expect(won.state.hearts).toBe(hearts + JUMP_ROPE.challenge.hearts);
-    expect(jumpRopeDay(won.state, s.lastSimulatedAt).challengeLeft).toBe(false); expect(jumpRopeDay(won.state, s.lastSimulatedAt).heartLeft).toBe(false);
+    expect(jumpRopeDay(won.state, s.lastSimulatedAt).challengeLeft).toBe(false); expect(jumpRopeDay(won.state, s.lastSimulatedAt).heartLeft).toBe(c.jumps < JUMP_ROPE.heartJumps);
     const again = run(won.state, {type: 'rewardJumpRope', team, score: c.jumps});
     expect(again.state.hearts).toBe(won.state.hearts);
     const tomorrow = s.lastSimulatedAt + MISSION_CYCLE_DURATION, next = jumpRopeChallenge(again.state, tomorrow);

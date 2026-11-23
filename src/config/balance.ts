@@ -231,8 +231,8 @@ export const FOREST = {unlockLevel: 25, changeMs: 7 * 3_600_000} as const;
  * turn the rope and the athlete jumps (looks only: no effect on difficulty or rewards). Tap when the rope passes under the athlete's
  * feet; the rope turns faster at every jump; one miss ends the game (`lives`), and the player may replay at will. The first
  * `rewardedGamesPerCycle` games of a daily cycle with at least one jump pay `pattesPerJump` pattes per jump, `maxPattes` at most,
- * and the first game of the cycle, only it (owner, 5 November 2026), gives one Heart if it reaches `heartJumps` jumps and the
- * challenge's Hearts if it meets the challenge. No XP, no affection. Later games beat the record.
+ * the first game of the cycle that reaches `heartJumps` jumps gives one Heart, and the first that meets the challenge gives its
+ * Hearts (owner, 23 November 2026, like the flight; before, only the very first game of the day could). No XP, no affection. Later games beat the record.
  * A precise tap (within `perfectShare` of the window) is « Parfait ! »: looks and sound only.
  */
 export const JUMP_ROPE = {

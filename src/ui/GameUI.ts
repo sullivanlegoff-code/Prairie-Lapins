@@ -1492,7 +1492,7 @@ export class GameUI {
   private jumpIslandOffer(s: GameState): HTMLElement {
     const card = this.card(JUMP_ISLAND_NAME, 'Une petite île à côté de la tienne · maximum 1'); card.dataset.jumpIslandOffer = '';
     card.classList.add('statue-offer'); card.querySelector('.card-heading')!.prepend(jumpRopeThumbnail());
-    card.append(node('p', `Dès le niveau ${JUMP_ROPE.unlockLevel}, une petite île avec le kiosque flotte à gauche de la tienne. Deux de tes lapins font tourner la corde et un troisième saute : un raté et la partie s’arrête, rejoue autant que tu veux. Tes ${JUMP_ROPE.rewardedGamesPerCycle} premières parties du jour rapportent des pattes ; la toute première donne un cœur si tu atteins ${JUMP_ROPE.heartJumps} sauts, et deux de plus si elle réussit le défi du jour.`, 'small'));
+    card.append(node('p', `Dès le niveau ${JUMP_ROPE.unlockLevel}, une petite île avec le kiosque flotte à gauche de la tienne. Deux de tes lapins font tourner la corde et un troisième saute : un raté et la partie s’arrête, rejoue autant que tu veux. Tes ${JUMP_ROPE.rewardedGamesPerCycle} premières parties du jour rapportent des pattes ; la première qui atteint ${JUMP_ROPE.heartJumps} sauts donne un cœur, et la première qui réussit le défi du jour en donne deux de plus.`, 'small'));
     const reason = jumpIslandReason(s), text = reason === 'LEVEL_REQUIRED' ? `Niveau ${JUMP_ROPE.unlockLevel} requis` : reason === 'BUILDING_LIMIT' ? 'Tu as déjà l’île : touche-la dans la prairie.' : reason ? REFUSALS[reason] : null;
     this.button(card, `Acheter · ${JUMP_ROPE.price} pattes`, () => this.execute({type: 'buyJumpIsland'}, 'L’île de la corde à sauter flotte à côté de la tienne !', () => { this.open({kind: 'jumpIsland'}, 'root'); }), text);
     return card;
@@ -2995,9 +2995,9 @@ export class GameUI {
 const JUMP_ISLAND_NAME = 'Île de la corde à sauter';
 /** The challenge of the day at the jump-rope islet, or that it is won. */
 function jumpRopeChallengeText(s: GameState, now: number): string {
-  if (!jumpRopeDay(s, now).challengeLeft) return s.jumpRope?.challenge ? 'Défi du jour réussi : reviens demain pour le suivant.' : 'Le défi se tente à la première partie du jour : reviens demain pour le suivant.';
+  if (!jumpRopeDay(s, now).challengeLeft) return 'Défi du jour réussi : reviens demain pour le suivant.';
   const c = jumpRopeChallenge(s, now);
-  return `Défi du jour, à ta première partie : ${c.jumps} sauts${c.type ? ` avec un lapin ${TYPE_NAMES[c.type]} comme athlète` : ''} · +${JUMP_ROPE.challenge.hearts} cœurs`;
+  return `Défi du jour : ${c.jumps} sauts${c.type ? ` avec un lapin ${TYPE_NAMES[c.type]} comme athlète` : ''} · +${JUMP_ROPE.challenge.hearts} cœurs`;
 }
 /** « 12 sucres d’orge », « 1 sucre d’orge » (the Christmas market's currency). */
 const candyAmount = (n: number) => `${n} sucre${n > 1 ? 's' : ''} d’orge`;
@@ -3015,5 +3015,5 @@ function bennyFlightQuotaText(s: GameState, now: number): string {
 function jumpRopeQuotaText(s: GameState, now: number): string {
   const day = jumpRopeDay(s, now), games = day.rewardedLeft;
   const rewards = games ? `Encore ${games} partie${games > 1 ? 's' : ''} récompensée${games > 1 ? 's' : ''} aujourd’hui` : 'Parties récompensées finies pour aujourd’hui : reviens demain';
-  return `${rewards}${day.heartLeft ? ` · première partie : un cœur à ${JUMP_ROPE.heartJumps} sauts` : ''}`;
+  return `${rewards}${day.heartLeft ? ` · un cœur à ${JUMP_ROPE.heartJumps} sauts` : ''}`;
 }
