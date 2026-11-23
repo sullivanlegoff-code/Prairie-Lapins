@@ -277,7 +277,7 @@ export class GameUI {
       const reward = granted.jumpRopeReward!, parts = [...(reward.challenge ? ['Défi du jour réussi !'] : []), ...(reward.pattes ? [`+${reward.pattes} pattes`] : []), ...(reward.hearts ? [`+${reward.hearts} Cœur${reward.hearts > 1 ? 's' : ''}`] : [])];
       return parts.length ? parts.join(' · ') : score ? 'Partie pour le plaisir : plus de récompense aujourd’hui' : '';
     }, quotaText: () => { const state = this.controller.getSnapshot().state; return state ? jumpRopeQuotaText(state, this.now()) : ''; },
-    best: () => this.controller.getSnapshot().state?.jumpRope?.best ?? 0, cheer: () => this.sounds.ping(), tick: () => this.sounds.tick(),
+    best: () => this.controller.getSnapshot().state?.jumpRope?.best ?? 0, cheer: () => this.sounds.ping(), tick: () => this.sounds.tick(), miss: () => this.sounds.run('bump'),
     challengeText: () => { const state = this.controller.getSnapshot().state; return state ? jumpRopeChallengeText(state, this.now()) : ''; }, onExit: () => this.render()});
     this.skyGifts = mountSkyGiftsActivity(document.getElementById('app')!, {onFinished: (rabbit, caught) => {
       const before = this.controller.getSnapshot().state, granted = this.controller.perform({type: 'rewardSkyGifts', rabbitId: rabbit.id, caught});
@@ -286,7 +286,8 @@ export class GameUI {
       const parts = [...(Number(granted.value) > 0 ? [`+${granted.value} pattes`] : []), ...(candies > 0 ? [`+${candyAmount(candies)}`] : [])];
       return parts.length ? parts.join(' · ') : caught ? 'Partie pour le plaisir : plus de récompense aujourd’hui' : '';
     }, quotaText: () => { const state = this.controller.getSnapshot().state; return state ? skyGiftsQuotaText(state, this.now()) : ''; },
-    best: () => this.controller.getSnapshot().state?.christmas?.skyGifts?.best ?? 0, cheer: () => this.sounds.ping(), onExit: () => this.render()});
+    best: () => this.controller.getSnapshot().state?.christmas?.skyGifts?.best ?? 0, cheer: () => this.sounds.ping(),
+    sound: kind => this.sounds.run(({catch: 'coin', miss: 'whoosh', poison: 'shock', bomb: 'rumble'} as const)[kind], kind === 'catch' ? 1.2 : 1), onExit: () => this.render()});
     this.bennyFlight = mountBennyFlightActivity(document.getElementById('app')!, {onFinished: passed => {
       const granted = this.controller.perform({type: 'rewardBennyFlight', passed});
       if (!granted.ok) return `Récompense non enregistrée : ${REFUSALS[granted.reason]}`;

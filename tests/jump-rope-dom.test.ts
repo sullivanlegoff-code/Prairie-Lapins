@@ -224,3 +224,15 @@ it('measures the rope canvases once, not at every frame (plan 3.2)', async () =>
   observers.forEach(f => f()); activity.update(); // The stage changed size: measured again, once.
   expect(reads - before).toBeGreaterThan(0); const again = reads; activity.update(); expect(reads).toBe(again);
 });
+
+it('a miss makes its own sound (plan 3.3)', async () => {
+  const {mountJumpRopeActivity} = await import('../src/ui/JumpRopeActivity');
+  let t = 0; const host = document.createElement('div'); document.body.append(host); const miss = vi.fn();
+  const activity = mountJumpRopeActivity(host, {onFinished: () => '', best: () => 0, miss, clock: () => t, frame: () => 0});
+  cleanups.push(() => activity.dispose());
+  const r = {id: 'rabbit-1', species: 'paille' as const, affection: 3};
+  activity.open({carriers: [{...r, id: 'rabbit-2'}, {...r, id: 'rabbit-3'}], athlete: r});
+  activity.element.querySelector<HTMLButtonElement>('[data-jump-rope-start]')!.click();
+  t = JUMP_ROPE.leadIn; activity.tap(); expect(miss).not.toHaveBeenCalled(); // A jump.
+  t = JUMP_ROPE.leadIn + JUMP_ROPE.startPeriod * 3; activity.update(); expect(miss).toHaveBeenCalledOnce();
+});

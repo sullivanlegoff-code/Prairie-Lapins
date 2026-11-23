@@ -19,6 +19,8 @@ export function mountSkyGiftsActivity(host: HTMLElement, options: {
   quotaText?: () => string;
   best?: () => number;
   cheer?: () => void;
+  /** A short effect: a present caught, one fallen in the snow, a poisoned present or a bomb in the basket. */
+  sound?: (kind: 'catch' | 'miss' | 'poison' | 'bomb') => void;
   onExit?: () => void;
   clock?: () => number;
   frame?: (step: () => void) => number;
@@ -87,6 +89,8 @@ export function mountSkyGiftsActivity(host: HTMLElement, options: {
   function update(): void {
     if (!game) return;
     const now = clock(); advanceSkyGifts(game, now);
+    if (game.events.caught.length) options.sound?.('catch');
+    if (game.events.missed.length) options.sound?.('miss');
     if (game.events.caught.length) { rabbitBox.classList.remove('catch'); void rabbitBox.offsetWidth; rabbitBox.classList.add('catch');
       const n = game.caught;
       if (previousBest > 0 && n === previousBest + 1 && !recordShown) { recordShown = true; flash('Nouveau record !', 'record'); options.cheer?.(); }
@@ -101,6 +105,7 @@ export function mountSkyGiftsActivity(host: HTMLElement, options: {
       rabbitBox.classList.remove('hurt'); void rabbitBox.offsetWidth; rabbitBox.classList.add('hurt');
       flash(trap.kind === 'bomb' ? 'Boum !' : `Beurk ! −${SKY_GIFTS_GAME.poisonGifts} cadeaux`, 'trap');
       if (trap.kind === 'bomb') layer.classList.add('exploded');
+      options.sound?.(trap.kind);
     }
     draw(now); hud();
     if (game.over && running) finish();

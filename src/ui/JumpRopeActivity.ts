@@ -30,6 +30,8 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
   best?: () => number;
   cheer?: () => void;
   tick?: () => void;
+  /** A short effect when the rabbit misses the rope. */
+  miss?: () => void;
   challengeText?: () => string;
   onExit?: () => void;
   /** Milliseconds, monotonic; performance.now() by default. Tests drive it and call `update()` themselves. */
@@ -148,7 +150,7 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
     clearTimeout(popTimer); popTimer = setTimeout(() => pop.classList.remove('shown'), kind === 'ready' ? 900 : 520);
   }
   function celebrate(): void { burst.classList.remove('shown'); void burst.offsetWidth; burst.classList.add('shown'); }
-  function stumble(): void { rabbitBox.classList.remove('stumble'); void rabbitBox.offsetWidth; rabbitBox.classList.add('stumble'); }
+  function stumble(): void { options.miss?.(); rabbitBox.classList.remove('stumble'); void rabbitBox.offsetWidth; rabbitBox.classList.add('stumble'); }
   /** The carriers react: they lean in to console the athlete, or hop and clap for a record. */
   function react(kind: 'console' | 'applaud' | null, line = ''): void {
     for (const carrier of carriers) { carrier.classList.remove('console', 'applaud'); if (kind) { void carrier.offsetWidth; carrier.classList.add(kind); } }
