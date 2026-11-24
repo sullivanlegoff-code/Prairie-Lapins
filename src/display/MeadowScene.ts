@@ -66,7 +66,7 @@ import {ISLAND_ART} from '../config/islandArt';
 import {grassTile, islandStage, stageArt, STAGE_PX_PER_UNIT, WINTER_STAGE_ART_LIST} from '../config/islandStages';
 import {IslandStageLayer, queueStage} from './islandStageLayer';
 import {SkyLayer, SKY_COLOR} from './skyLayer';
-import {WinterLayer, WinterLights} from './winterLayer';
+import {LIGHTS_DEPTH, WinterLayer, WinterLights} from './winterLayer';
 import WINTER_LIGHTS from '../config/islandStageLightsWinter.json';
 import {WINTER_ART, winterUrl} from '../config/winterArt';
 import {christmasActive, localHour} from '../config/christmas';
@@ -122,6 +122,8 @@ interface VisualRabbit {id: string; object: Phaser.GameObjects.Container; body: 
   lit?: Phaser.GameObjects.Image;
   /** Its lights alone, added over it (ADD) under the Christmas night shade, so that the shade does not dim them. */
   litBoost?: Phaser.GameObjects.Image;
+  /** Its LEDs: a little yellow light on each one (its place on the drawing, `at`), lit at night and twinkling. */
+  leds?: {image: Phaser.GameObjects.Image; at: {x: number; y: number}; scale: number}[];
   face?: {seed: number; eyes?: Phaser.GameObjects.Image; nose?: Phaser.GameObjects.Image};
   /** Lapin Dragon and Lapin Requin: halo, moving wing or fin, and their shows. */
   legendary?: LegendaryView;
@@ -135,6 +137,8 @@ interface VisualRabbit {id: string; object: Phaser.GameObjects.Container; body: 
   pivot: Point; /** Mirror sign of the picture's native direction: -1 for art that looks left. */ native: 1 | -1}
 /** Local y of the ground contact the body is compressed against, so its feet stay put. */
 const BODY_PIVOT = 10;
+/** A lit rabbit's LED halo: its picture's size, and its width in the drawing's pixels (plus `extra` for the strongest LEDs). */
+const LED_HALO = {texture: 32, size: 11, extra: 5, alpha: .75} as const;
 /** The player's « reduce motion » setting, through one cached media query (it was queried anew on every frame). */
 let reducedMotionQuery: MediaQueryList | null = null;
 function prefersReducedMotion(): boolean {
@@ -1052,6 +1056,18 @@ export class MeadowScene extends Phaser.Scene {
     return false;
   }
   /** Painted pixels for one pixel of this image's texture: more than 1 for a picture redrawn smaller (plan 5.1). */
+  /** The LED halo picture, in the yellow of the enclosures' night lights (assets/noel/nuit/), drawn once. */
+  private ledHaloTexture(): string {
+    const key = 'led-halo', size = LED_HALO.texture;
+    if (this.textures.exists(key)) return key;
+    const texture = this.textures.createCanvas(key, size, size);
+    if (texture) {
+      const ctx = texture.context, g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+      g.addColorStop(0, 'rgba(255,255,163,1)'); g.addColorStop(.22, 'rgba(245,208,86,.92)'); g.addColorStop(.5, 'rgba(245,200,80,.3)'); g.addColorStop(1, 'rgba(245,190,70,0)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, size, size); texture.refresh();
+    }
+    return key;
+  }
   private textureRatio(image: Phaser.GameObjects.Image): number { return this.budget?.ratio(image.texture.key) ?? 1; }
   /**
    * Frees the large building pictures no longer shown (plan 5.1): a farm's former level, a moved ghost's picture, a building
@@ -1315,6 +1331,15 @@ export class MeadowScene extends Phaser.Scene {
           if (lit) { lit.setScale(art.worldWidth / art.width * this.textureRatio(lit)); body.add(lit); }
           const litBoost = lit && litArt && this.textures.exists(litArt.glow.texture) ? this.add.image(0, art.groundY, litArt.glow.texture).setOrigin(.5, 1).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0).setVisible(false) : undefined;
           if (litBoost) { litBoost.setScale(art.worldWidth / art.width * this.textureRatio(litBoost)); body.add(litBoost); }
+          // Its LEDs, each a little light in the yellow of the enclosures' lights, placed on the drawing like its eyelids. Like
+          // those lights they sit above the Christmas night shade (which would turn them grey-blue), so they follow the rabbit
+          // each frame from the scene (update) and leave with it.
+          const leds = lit && litArt?.leds.length ? litArt.leds.map(([x, y, strength]) => {
+            const place = rabbitPatchPlacement(art, {x, y});
+            const image = this.add.image(0, 0, this.ledHaloTexture()).setDepth(LIGHTS_DEPTH).setAlpha(0).setVisible(false);
+            return {image, at: {x: place.x, y: place.y}, scale: place.scale * (LED_HALO.size + LED_HALO.extra * strength) / LED_HALO.texture};
+          }) : undefined;
+          if (leds) object.once(Phaser.GameObjects.Events.DESTROY, () => { for (const led of leds) led.image.destroy(); });
           // Ardent's first drawing moves through its painted frames; each one is loaded on demand and never blocks the meadow.
           const ardent = rabbit.species === 'ardent' && !art.evolved;
           if (ardent) for (const frame of ARDENT_FRAMES) this.optionalArt(frame.texture, frame.url);
@@ -1355,7 +1380,7 @@ export class MeadowScene extends Phaser.Scene {
           const dadi = rabbit.species === 'dadi' && art.evolved ? new DadiStageView(this, rabbit.id, sprite, art) : undefined;
           if (crown) body.bringToTop(crown); // Above a legendary's open snout or part.
           this.animals.add(object);
-          this.rabbitViews.push({id: rabbit.id, ears: [], sprite, art, face, ardent, fiery: rabbit.species === 'ardent', crown, legendary, benny, magicien, dadi, lit, litBoost, ...view});
+          this.rabbitViews.push({id: rabbit.id, ears: [], sprite, art, face, ardent, fiery: rabbit.species === 'ardent', crown, legendary, benny, magicien, dadi, lit, litBoost, leds, ...view});
           return;
         }
         const coat = proceduralCoat(SPECIES[rabbit.species].art), color = Phaser.Display.Color.HexStringToColor(coat.body).color, patch = Phaser.Display.Color.HexStringToColor(coat.patch).color;
@@ -1911,6 +1936,16 @@ export class MeadowScene extends Phaser.Scene {
         rabbit.lit.setAlpha(lights).setVisible(on);
         // Christmas: the night shade darkens the whole meadow; its lights shine through it as the garlands do.
         rabbit.litBoost?.setAlpha(lights * night * .6).setVisible(on && night > .004);
+        // Each LED follows its place on the moving body and twinkles at its own pace (steady when motion is reduced).
+        const shown = on && rabbit.object.visible && rabbit.body.visible, matrix = shown && rabbit.leds ? rabbit.body.getWorldTransformMatrix() : null;
+        const size = matrix ? Math.sqrt(Math.abs(matrix.a * matrix.d - matrix.b * matrix.c)) : 0;
+        rabbit.leds?.forEach((led, i) => {
+          led.image.setVisible(shown);
+          if (!matrix) return;
+          const point = matrix.transformPoint(led.at.x, led.at.y);
+          led.image.setPosition(point.x, point.y).setScale(led.scale * size)
+            .setAlpha(lights * LED_HALO.alpha * (reducedMotion ? .85 : .6 + .4 * Math.sin(time / (520 + (i * 97) % 480) + i * 2.3) ** 2));
+        });
       }
       if (rabbit.ardent && rabbit.sprite) {
         const frame = ARDENT_FRAMES[ardentFrame(rabbit.id, time, reducedMotion)].texture;

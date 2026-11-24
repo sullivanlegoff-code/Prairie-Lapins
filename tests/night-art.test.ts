@@ -30,4 +30,19 @@ describe('rabbits that light up at night', () => {
       expect(size(lit.glow.url)).toEqual({width: art.width, height: art.height});
     }
   });
+
+  it('have real LEDs that light up: many little points spread over the drawing, inside it', () => {
+    for (const art of [rabbitArt('fusion-nucleaire')!, evolvedRabbitArt('fusion-nucleaire')!]) {
+      const leds = nightArtFor(art)!.leds;
+      expect(leds.length).toBeGreaterThanOrEqual(30);
+      for (const [x, y, strength] of leds) {
+        expect(x).toBeGreaterThan(0); expect(x).toBeLessThan(art.width);
+        expect(y).toBeGreaterThan(0); expect(y).toBeLessThan(art.height);
+        expect(strength).toBeGreaterThan(0); expect(strength).toBeLessThanOrEqual(1);
+      }
+      // From the ears to the paws, not bunched in one place.
+      const ys = leds.map(([, y]) => y);
+      expect(Math.max(...ys) - Math.min(...ys)).toBeGreaterThan(art.height * .6);
+    }
+  });
 });
