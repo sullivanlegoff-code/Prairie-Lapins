@@ -982,12 +982,12 @@
   "flocon-cristal": {
     "file": "assets/rabbits/flocon-cristal/flocon-cristal-v1.png",
     "worldWidth": 38.7,
-    "sourceSha1": "ade39ab85be7fc2a95deeedd7e9e5e2701d9dded",
-    "sourceWidth": 756,
-    "sourceHeight": 1329,
+    "sourceSha1": "8a8fa3597a747c5c98ec56d5fc8b75bbb446f26b",
+    "sourceWidth": 757,
+    "sourceHeight": 1330,
     "width": 286,
-    "height": 503,
-    "derivedSha1": "c3c47a525aa6e1289785e7fc52de17b1286050ad"
+    "height": 502,
+    "derivedSha1": "204dd4a76238ff44ae1a2ef3f04a7c428cbc2b12"
   },
   "vantablack-evolution": {
     "species": "vantablack",

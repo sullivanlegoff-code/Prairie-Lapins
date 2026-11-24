@@ -57,9 +57,10 @@ export const DESIGNS = [
   {id: 'bouyoyo', source: 'output/imagegen/nouveaux-lapins-v3/bouyoyo-v2.png', background: 'light'},
   {id: 'lapin-de-sulli', source: 'output/imagegen/nouveaux-lapins-v3/lapin-de-sulli-B.png', background: 'light'},
   {id: 'pain-epice', source: 'output/imagegen/nouveaux-lapins-v4/pain-epice-B.png', background: 'light'},
-  // 24 November 2026: Flocon de cristal redone from scratch as « Porcelaine bleue » (concept 1 « porcelaine soignée », no wings),
-  // painted on flat magenta and already cut out (output/imagegen/flocon-v1/cut.py).
-  {id: 'flocon-cristal', source: 'output/imagegen/flocon-v1/flocon-E1-cut.png'},
+  // 24 November 2026: Flocon de cristal redone from scratch as « Porcelaine bleue » (porcelain figurine, no wings), its body painted
+  // with a panorama of the Amsterdam canals (owner's pick « Grand panorama »); painted on flat magenta and already cut out
+  // (output/imagegen/flocon-v1/cut.py).
+  {id: 'flocon-cristal', source: 'output/imagegen/flocon-v1/flocon-canaux-3-cut.png'},
   {id: 'nuage', source: 'output/imagegen/nouveaux-lapins-v3/nuage-A.png', background: 'light'},
   // Peintre, the legendary of Fantôme and Boudinet: the owner's own drawings (24 November 2026, both stages on a white sheet). Its
   // evolution, Peintre Aguerri, is its peintre-evolution-source.png, below.

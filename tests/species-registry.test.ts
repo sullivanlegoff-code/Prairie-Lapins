@@ -41,7 +41,7 @@ const SPECIAL_DESCRIPTIONS: Record<string, string> = {
   'fusion-nucleaire': 'Un lapin de verre nacré rose et blanc, parcouru de petites lumières qui s’allument à la nuit tombée.',
   'lapin-de-sulli': 'Un lapin boudeur en doudoune rouge, avec des moufles jaunes et un bonnet turquoise à pompon jaune.',
   'pain-epice': 'Un lapin biscuit de pain d’épice, aux glaçages blancs, aux boutons en bonbons et au petit nœud rouge.',
-  'flocon-cristal': 'Un lapin en porcelaine blanche, peint de flocons, de brins de sapin et de vent d’hiver bleu cobalt, au bout des oreilles doré.', // 24 Nov. 2026: redone as « Porcelaine bleue ».
+  'flocon-cristal': 'Un lapin en porcelaine blanche, peint en bleu cobalt d’un panorama des canaux d’Amsterdam, au bout des oreilles doré.', // 24 Nov. 2026: redone as « Porcelaine bleue ».
   orange: 'Une petite lapine blanche à la robe orange.', requin: 'Un lapin bélier gris aux rayures de requin, avec un aileron bleu et un sourire pointu.',
 };
 
