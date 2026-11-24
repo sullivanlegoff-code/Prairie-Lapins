@@ -11,11 +11,11 @@
     "sourceSha1": "ca32617aa66e1ca8a1036b339cc176b1b8426a06"
   },
   "evolution": {
-    "spriteSha1": "a93654197fe3e491dd41ca3e28bf3a6f494923ba",
+    "spriteSha1": "cc9a83c778bb6e2aa787cfb8848731ae7e58a828",
     "nose-twitch": {
-      "x": 213,
-      "y": 295,
-      "sourceSha1": "ce7a0f1b897f8e0c2f8dee6807f2560afb2521a2"
+      "x": 626,
+      "y": 593,
+      "sourceSha1": "214d83fad6083dc0009ddcae4c162064a04dc15b"
     }
   }
 }

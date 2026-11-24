@@ -32,14 +32,14 @@ export const EVOLVED_ART: readonly EvolvedSprite[] = [
   {id: 'belier-gris', name: 'Steal & Style', file: 'assets/rabbits/belier-gris/belier-gris-v2.png', texture: 'rabbit-belier-gris-evolved-v2', width: 445, height: 428, worldWidth: 47, groundY: 12},
   // Volant A1 « Zéphyr céleste ».
   {id: 'volant', name: 'Zéphyr Céleste', file: 'assets/rabbits/volant/volant-v2.png', texture: 'rabbit-volant-evolved-v2', width: 450, height: 489, worldWidth: 53, groundY: 12},
-  // Dinono « armure jade ».
-  {id: 'dinono', name: 'Général Armée de Jade', file: 'assets/rabbits/dinono/dinono-v2.png', texture: 'rabbit-dinono-evolved-v2', width: 450, height: 430, worldWidth: 53, groundY: 12},
+  // Dinono « armure jade », repainted matte from its first drawing (24 November 2026).
+  {id: 'dinono', name: 'Général Armée de Jade', file: 'assets/rabbits/dinono/dinono-v2.png', texture: 'rabbit-dinono-evolved-v2', width: 446, height: 428, worldWidth: 52.4, groundY: 12},
   // Dinenette « pendentif cœur ».
   {id: 'dinenette', name: 'Dinenette Heart', file: 'assets/rabbits/dinenette/dinenette-v2.png', texture: 'rabbit-dinenette-evolved-v2', width: 458, height: 453, worldWidth: 54, groundY: 12},
   // Améthyste Cristal.
   {id: 'amethyste', name: 'Toudur', file: 'assets/rabbits/amethyste/amethyste-v2.png', texture: 'rabbit-amethyste-evolved-v2', width: 441, height: 452, worldWidth: 52, groundY: 14.5},
-  // Ardent Brasier.
-  {id: 'ardent', name: 'Fé très chaud', file: 'assets/rabbits/ardent/ardent-v2.png', texture: 'rabbit-ardent-evolved-v2', width: 432, height: 428, worldWidth: 49.9, groundY: 13},
+  // Ardent Brasier, repainted as dark embers standing upright (C, 24 November 2026).
+  {id: 'ardent', name: 'Fé très chaud', file: 'assets/rabbits/ardent/ardent-v2.png', texture: 'rabbit-ardent-evolved-v2', width: 318, height: 558, worldWidth: 37.5, groundY: 13, facing: 'left'},
   // Boudinet Gourmand.
   {id: 'boudinet', name: 'Gourmand', file: 'assets/rabbits/boudinet/boudinet-v2.png', texture: 'rabbit-boudinet-evolved-v2', width: 402, height: 457, worldWidth: 47.4, groundY: 12},
   // Bouée Vacancière.
@@ -60,8 +60,8 @@ export const EVOLVED_ART: readonly EvolvedSprite[] = [
   {id: 'phoenix', name: 'Phoenix de ces bois', file: 'assets/rabbits/phoenix/phoenix-v2.png', texture: 'rabbit-phoenix-evolved-v2', width: 453, height: 463, worldWidth: 53.4, groundY: 14.5},
   // Pic Pic Armure de Cristal.
   {id: 'pic-pic', name: 'Pique Pique', file: 'assets/rabbits/pic-pic/pic-pic-v2.png', texture: 'rabbit-pic-pic-evolved-v2', width: 414, height: 507, worldWidth: 48.8, groundY: 12.5},
-  // Piment Fiesta.
-  {id: 'piment', name: 'Fiesta', file: 'assets/rabbits/piment/piment-v2.png', texture: 'rabbit-piment-evolved-v2', width: 443, height: 431, worldWidth: 52.2, groundY: 12},
+  // Piment Fiesta, repainted with its first drawing's head under the sombrero (24 November 2026).
+  {id: 'piment', name: 'Fiesta', file: 'assets/rabbits/piment/piment-v2.png', texture: 'rabbit-piment-evolved-v2', width: 482, height: 396, worldWidth: 56.8, groundY: 12},
   // Plume Ailé.
   {id: 'plume', name: 'Ailé', file: 'assets/rabbits/plume/plume-v2.png', texture: 'rabbit-plume-evolved-v2', width: 418, height: 428, worldWidth: 49.1, groundY: 12.5},
   // Princesse Neige Reine des Glaces.
@@ -92,17 +92,19 @@ export const EVOLVED_ART: readonly EvolvedSprite[] = [
   {id: 'dragon', name: 'Reine Dragonne', file: 'assets/rabbits/dragon/dragon-v2.png', texture: 'rabbit-dragon-evolved-v2', width: 477, height: 449, worldWidth: 56.3, groundY: 12},
   // Lapin Requin Roi des Océans.
   {id: 'requin', name: 'Roi des Océans', file: 'assets/rabbits/requin/requin-v2.png', texture: 'rabbit-requin-evolved-v2', width: 465, height: 484, worldWidth: 54.8, groundY: 12},
-  // The Christmas update's thirteen rabbits (5 and 6 November 2026), painted in the same pose as their first drawing.
+  // The Christmas update's thirteen rabbits (5 and 6 November 2026), painted in the same pose as their first drawing. Repainted
+  // from their first drawing and chosen by the owner on 24 November 2026: Gigi-rarafe A (model), Rennes A (Santa's coat),
+  // Fantôme B (rounder), Pain d'épice A (icing).
   {id: 'vantablack', name: 'Noir suprême', file: 'assets/rabbits/vantablack/vantablack-v2.png', texture: 'rabbit-vantablack-evolved-v2', width: 364, height: 574, worldWidth: 42.9, groundY: 12, facing: 'left'},
-  {id: 'gigi-rarafe', name: 'Modèle Gigi', file: 'assets/rabbits/gigi-rarafe/gigi-rarafe-v2.png', texture: 'rabbit-gigi-rarafe-evolved-v2', width: 429, height: 554, worldWidth: 50.6, groundY: 12},
+  {id: 'gigi-rarafe', name: 'Modèle Gigi', file: 'assets/rabbits/gigi-rarafe/gigi-rarafe-v2.png', texture: 'rabbit-gigi-rarafe-evolved-v2', width: 439, height: 543, worldWidth: 51.8, groundY: 12},
   {id: 'yetiti', name: 'Yetiti Aura', file: 'assets/rabbits/yetiti/yetiti-v2.png', texture: 'rabbit-yetiti-evolved-v2', width: 538, height: 785, worldWidth: 63.4, groundY: 12, facing: 'left'},
-  {id: 'rennes', name: 'Rennes du Père Noël', file: 'assets/rabbits/rennes/rennes-v2.png', texture: 'rabbit-rennes-evolved-v2', width: 444, height: 552, worldWidth: 52.3, groundY: 12},
+  {id: 'rennes', name: 'Rennes du Père Noël', file: 'assets/rabbits/rennes/rennes-v2.png', texture: 'rabbit-rennes-evolved-v2', width: 440, height: 557, worldWidth: 51.9, groundY: 12},
   {id: 'susucre', name: 'Susucre au sucre', file: 'assets/rabbits/susucre/susucre-v2.png', texture: 'rabbit-susucre-evolved-v2', width: 485, height: 489, worldWidth: 57.2, groundY: 12},
   {id: 'arkoko', name: 'Kokostume', file: 'assets/rabbits/arkoko/arkoko-v2.png', texture: 'rabbit-arkoko-evolved-v2', width: 352, height: 682, worldWidth: 41.5, groundY: 12},
-  {id: 'fantome', name: 'Star ghost', file: 'assets/rabbits/fantome/fantome-v2.png', texture: 'rabbit-fantome-evolved-v2', width: 358, height: 641, worldWidth: 42.2, groundY: 12, facing: 'left'},
+  {id: 'fantome', name: 'Star ghost', file: 'assets/rabbits/fantome/fantome-v2.png', texture: 'rabbit-fantome-evolved-v2', width: 393, height: 584, worldWidth: 46.3, groundY: 12},
   {id: 'bouyoyo', name: 'Boyoyoyoyoyo', file: 'assets/rabbits/bouyoyo/bouyoyo-v2.png', texture: 'rabbit-bouyoyo-evolved-v2', width: 452, height: 442, worldWidth: 53.3, groundY: 12},
   {id: 'lapin-de-sulli', name: 'Wtf', file: 'assets/rabbits/lapin-de-sulli/lapin-de-sulli-v2.png', texture: 'rabbit-lapin-de-sulli-evolved-v2', width: 361, height: 575, worldWidth: 42.6, groundY: 12, facing: 'left'},
-  {id: 'pain-epice', name: 'Pâtissier', file: 'assets/rabbits/pain-epice/pain-epice-v2.png', texture: 'rabbit-pain-epice-evolved-v2', width: 426, height: 462, worldWidth: 50.2, groundY: 12},
+  {id: 'pain-epice', name: 'Pâtissier', file: 'assets/rabbits/pain-epice/pain-epice-v2.png', texture: 'rabbit-pain-epice-evolved-v2', width: 419, height: 468, worldWidth: 49.4, groundY: 12},
   {id: 'flocon-cristal', name: 'Floco', file: 'assets/rabbits/flocon-cristal/flocon-cristal-v2.png', texture: 'rabbit-flocon-cristal-evolved-v2', width: 356, height: 531, worldWidth: 42, groundY: 12},
   {id: 'nuage', name: 'Smooth Cloud', file: 'assets/rabbits/nuage/nuage-v2.png', texture: 'rabbit-nuage-evolved-v2', width: 405, height: 575, worldWidth: 47.7, groundY: 12, facing: 'left'},
   // Peintre Aguerri (owner, 24 November 2026): his own drawing, with a starry beret, a scarf, a brush and a satchel of brushes.

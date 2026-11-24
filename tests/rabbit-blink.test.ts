@@ -62,13 +62,13 @@ describe('deterministic rabbit expressions', () => {
 
 describe('rabbit patch adapter and body coordinates', () => {
   // 7 November 2026: every drawing blinks and twitches its nose, first drawings and evolutions alike, except Ardent's first
-  // drawing (painted frames instead), sunglasses (Bouée's two drawings, Dadi's and Fantôme's evolutions: a nose, no eyelids) and Benny (her own painted blink and nose).
+  // drawing (painted frames instead), sunglasses (Bouée's two drawings, Dadi's, Fantôme's and, since 24 November 2026, Gigi-rarafe's evolutions: a nose, no eyelids) and Benny (her own painted blink and nose).
   it('covers every first drawing and every evolution, with their own textures', () => {
     expect(RABBIT_BLINK_ART).toHaveLength(SPECIES_ENTRIES.filter(entry => entry.art.kind === 'static-sprite').length - 2 + EVOLVED_ART.length);
     for (const species of SPECIES_ENTRIES) {
       if (species.art.kind !== 'static-sprite') continue;
       const art = rabbitBlinkArt(species.id), evolved = rabbitBlinkArt(species.id, true);
-      const kinds = species.id === 'bouee' ? ['nose-twitch'] : PATCH_KINDS, evolvedKinds = ['bouee', 'dadi', 'fantome', 'arkoko'].includes(species.id) ? ['nose-twitch'] : PATCH_KINDS;
+      const kinds = species.id === 'bouee' ? ['nose-twitch'] : PATCH_KINDS, evolvedKinds = ['bouee', 'dadi', 'fantome', 'arkoko', 'gigi-rarafe'].includes(species.id) ? ['nose-twitch'] : PATCH_KINDS;
       if (species.id === 'ardent' || species.id === 'benny') expect(art).toBeUndefined();
       else {
         expect(art?.patches.map(patch => patch.kind)).toEqual(kinds);
