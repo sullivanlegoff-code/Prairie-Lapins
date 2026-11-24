@@ -1184,5 +1184,29 @@
     "sourceHeight": 856,
     "width": 488,
     "height": 477
+  },
+  "fusion-nucleaire": {
+    "file": "assets/rabbits/fusion-nucleaire/fusion-nucleaire-v1.png",
+    "worldWidth": 40,
+    "sourceSha1": "a71f9fd26cfc3bd77697e783aa99813f0bffa4d0",
+    "sourceWidth": 788,
+    "sourceHeight": 1290,
+    "width": 295,
+    "height": 483,
+    "derivedSha1": "41fd980a5e26c29ed467bb718a857f73d495181d"
+  },
+  "fusion-nucleaire-evolution": {
+    "species": "fusion-nucleaire",
+    "master": "assets-source/rabbits/fusion-nucleaire/fusion-nucleaire-evolution-sprite.png",
+    "registry": "src/config/evolvedArt.ts",
+    "displayScale": 1.15,
+    "file": "assets/rabbits/fusion-nucleaire/fusion-nucleaire-v2.png",
+    "worldWidth": 40.4,
+    "sourceSha1": "d43d56566ce378330de1cab7170e19958d49367a",
+    "sourceWidth": 619,
+    "sourceHeight": 991,
+    "width": 343,
+    "height": 549,
+    "derivedSha1": "7266ebc3745af0c8ec3e863730c6b7aba9b2d6a5"
   }
 }

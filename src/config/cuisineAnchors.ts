@@ -61,6 +61,7 @@ export const CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>> = {
   rennes: a([.66, .28, .3, 4], [.7, .56, .28], [.7, .43, .26]),
   susucre: a([.7, .31, .36, 6], [.78, .6, .3], [.73, .44, .32]), // 19 Nov. 2026: redrawn on four paws like Neige.
   arkoko: a([.68, .2, .38, 6], [.76, .54, .32], [.79, .4, .3]), peintre: a([.7, .07, .36, 6], [.78, .45, .3], [.74, .23, .3]),
+  'fusion-nucleaire': a([.66, .27, .38, 4], [.68, .56, .32], [.75, .39, .3]),
   // The second wave (6 November 2026), read on 10 % grids of their v1 sprites, checked on captures (6 November 2026).
   fantome: a([.55, .1, .36, 2], [.55, .45, .3], [.56, .3, .3]),
   bouyoyo: a([.56, .27, .4, 4], [.65, .55, .3], [.65, .41, .35]), // 19 Nov. 2026: the owner's new drawing.
@@ -127,7 +128,7 @@ export const EVOLVED_CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>>
   yetiti: a([.38, .1, .3, -4], [.4, .33, .3], [.4, .2, .24]),
   rennes: a([.72, .255, .28, 4], [.79, .45, .24], [.79, .35, .22]),
   susucre: a([.72, .27, .38, 6], [.75, .57, .3], [.75, .42, .3]), // 19 Nov. 2026: evolution redrawn on four paws.
-  arkoko: a([.57, .18, .38, 6], [.63, .49, .34], [.67, .37, .4]), peintre: a([.46, .05, .4, -6], [.71, .48, .3], [.66, .26, .3]), // 20 Nov. 2026: the owner's new evolution, upright with rainbow glasses.
+  arkoko: a([.57, .18, .38, 6], [.63, .49, .34], [.67, .37, .4]), peintre: a([.46, .05, .4, -6], [.71, .48, .3], [.66, .26, .3]), 'fusion-nucleaire': a([.68, .25, .38, 4], [.66, .52, .32], [.77, .37, .3]), // 20 Nov. 2026: the owner's new evolution, upright with rainbow glasses.
 };
 /** `evolved`: the anchors of the species' evolved drawing (a rabbit showing it), else those of its v1. */
 export function cuisineAnchors(species: SpeciesId, facing: 1 | -1 = 1, evolved = false): CuisineAnchors {

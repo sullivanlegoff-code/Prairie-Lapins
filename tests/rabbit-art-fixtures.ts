@@ -89,6 +89,8 @@ export const NEW_SPECIALS: readonly SpecialSheet[] = [
   {id: 'arkoko', name: 'Arkoko', types: ['arc-en-ciel'], rarity: 'legendary', recipe: {parents: ['calinou', 'orange'], minAffection: 10, probability: 10, knowledgePrice: 900}, unlockLevel: 14, art: sprite('arkoko', 325, 566, 44, 12, 42), foot: 1062, sourceSha256: '1330096f727f640681ec2f4f40a27cee29fed64bac5ea31e9d942ab4e30d96aa'},
   // The owner's own drawing (24 November 2026): Peintre, born of Fantôme × Boudinet.
   {id: 'peintre', name: 'Peintre', types: ['paille', 'vol'], rarity: 'legendary', recipe: {parents: ['fantome', 'boudinet'], minAffection: 10, probability: 10, knowledgePrice: 900}, unlockLevel: 14, art: sprite('peintre', 413, 428, 54, 12, 50), foot: 1147, sourceSha256: '44384f0ace07ca04299cc63147d5ebb9210b826b1eb56ace2955de28fb048a38'},
+  // The owner's own drawing (24 November 2026): Fusion Nucléaire, Neige and Feu; lit at night by its twin (src/config/nightArt.ts).
+  {id: 'fusion-nucleaire', name: 'Fusion Nucléaire', types: ['neige', 'feu'], rarity: 'epic', recipe: {requiredTypes: ['neige', 'feu'], minAffection: 6, probability: 10, knowledgePrice: 450}, unlockLevel: 11, art: sprite('fusion-nucleaire', 295, 483, 40, 12, 51), foot: 1281, sourceSha256: '7c5953d4261938bf555568033bd33c36e299c80e6ed0a15e33cf3bc3b5e4ba32'},
   // The one Mythic (1 November 2026), inspired by a real rabbit: born of any two Legendaries, never sold; design A1 approved by the owner.
   {id: 'benny', name: 'Benny', types: ['arc-en-ciel'], rarity: 'mythic', recipe: {parentRarity: 'legendary', minAffection: 10, probability: 10}, unlockLevel: 14, art: sprite('benny', 354, 435, 48, 12, 36), foot: 563, sourceSha256: '183d24ba7a6d39dc93ed35d941175f988ddbe87af20f66db780dcaee3f2b2ad8'},
 ];

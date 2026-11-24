@@ -72,7 +72,7 @@ it('the sheet requires explicit evolution; the scene plays and the forest then s
   let time = 0;
   const {ui, controller} = mount(s, () => time);
   (ui as unknown as {open(view: unknown): void}).open({kind: 'collection'});
-  expect(panel().querySelector('.collection-evolution-count')?.textContent).toBe('0 / 49 évolutions');
+  expect(panel().querySelector('.collection-evolution-count')?.textContent).toBe('0 / 50 évolutions');
   expect(panel().querySelector('[data-collection-evolution="paille"]')?.classList.contains('is-locked')).toBe(true);
   expect(panel().querySelector('[data-collection-evolution="paille"] img')).toBeNull(); // No silhouette either.
   expect(panel().querySelector('[data-collection-evolution="paille"]')?.textContent).not.toContain('Paille');
@@ -119,7 +119,7 @@ it('the sheet requires explicit evolution; the scene plays and the forest then s
   state = controller.getSnapshot().state!;
   expect('classicLook' in state.rabbits.find(r => r.id === 'rabbit-104')!).toBe(false);
   (ui as unknown as {open(view: unknown): void}).open({kind: 'collection'});
-  expect(panel().querySelector('.collection-evolution-count')?.textContent).toBe('1 / 49 évolutions');
+  expect(panel().querySelector('.collection-evolution-count')?.textContent).toBe('1 / 50 évolutions');
   expect(panel().querySelector('[data-collection-evolution="paille"]')?.classList.contains('is-unlocked')).toBe(true);
   expect(panel().querySelector('[data-collection-evolution="paille"]')?.textContent).toContain('Évolution · Paille');
 });

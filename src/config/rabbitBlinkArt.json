@@ -2470,5 +2470,57 @@
       "sourceSha1": "73d44fffaa0156e92da2f82aa85bb82ce1d7a6c7",
       "derivedSha1": "273ad30c49bb2c25b1cbbdc03dc5cc620342d330"
     }
+  },
+  "fusion-nucleaire": {
+    "sprite": "assets/rabbits/fusion-nucleaire/fusion-nucleaire-v1.png",
+    "spriteSha1": "41fd980a5e26c29ed467bb718a857f73d495181d",
+    "spriteWidth": 295,
+    "spriteHeight": 483,
+    "eyes-closed": {
+      "file": "assets/rabbits/fusion-nucleaire/fusion-nucleaire-eyes-closed.png",
+      "x": 184,
+      "y": 177,
+      "width": 48,
+      "height": 40,
+      "source": "assets-source/rabbits/fusion-nucleaire/eyes-closed.png",
+      "sourceSha1": "695ab8d140937a54dca5ad4529cf92b9bcd427a6",
+      "derivedSha1": "05d112b0a00503613f5fd55a5ed04c46c59d4b7f"
+    },
+    "nose-twitch": {
+      "file": "assets/rabbits/fusion-nucleaire/fusion-nucleaire-nose-twitch.png",
+      "x": 251,
+      "y": 194,
+      "width": 44,
+      "height": 39,
+      "source": "assets-source/rabbits/fusion-nucleaire/nose-twitch.png",
+      "sourceSha1": "915cec4623512993346df56027684661ed0cbfd2",
+      "derivedSha1": "2c4548310bedd87394b9283436ef9140a8a49ddd"
+    }
+  },
+  "fusion-nucleaire-evolution": {
+    "sprite": "assets/rabbits/fusion-nucleaire/fusion-nucleaire-v2.png",
+    "spriteSha1": "7266ebc3745af0c8ec3e863730c6b7aba9b2d6a5",
+    "spriteWidth": 343,
+    "spriteHeight": 549,
+    "eyes-closed": {
+      "file": "assets/rabbits/fusion-nucleaire/fusion-nucleaire-evolution-eyes-closed.png",
+      "x": 218,
+      "y": 188,
+      "width": 111,
+      "height": 48,
+      "source": "assets-source/rabbits/fusion-nucleaire/evolution-eyes-closed.png",
+      "sourceSha1": "9b272bba645dfecbbc1fa472044e87f9b0b7ba3f",
+      "derivedSha1": "4d38c64d2255fbf577de48768433702be4058d1c"
+    },
+    "nose-twitch": {
+      "file": "assets/rabbits/fusion-nucleaire/fusion-nucleaire-evolution-nose-twitch.png",
+      "x": 289,
+      "y": 186,
+      "width": 50,
+      "height": 61,
+      "source": "assets-source/rabbits/fusion-nucleaire/evolution-nose-twitch.png",
+      "sourceSha1": "88cdac57b53b6513c90cfeba7d1ad4265f031e1c",
+      "derivedSha1": "41a7a71bd7dfc66d948c867583f29824104ff1ab"
+    }
   }
 }

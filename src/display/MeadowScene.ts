@@ -10,6 +10,7 @@ import {LegendaryView} from './legendaryEffects';
 import {LegendaryClock, type LegendaryAct} from './legendaryTimeline';
 import {LEGENDARY_TEST_EVENT, isLegendaryShow, legendaryMeadowArt, shouldShowLegendaryView} from '../config/legendaryArt';
 import {PEINTRE_POSES, peintreVersion} from '../config/peintreArt';
+import {nightArtFor} from '../config/nightArt';
 import {BennyView} from './bennyView';
 import {BennyClock, type BennyAct} from './bennyTimeline';
 import {BENNY_ATLAS, BENNY_ID, BENNY_TEST_EVENT, bennyMeadowArt} from '../config/bennyArt';
@@ -102,7 +103,7 @@ import {NIGHT_GLOW_PREFIX, nightGlowOf} from '../config/nightLights';
 import {CHRISTMAS_MARKET_ART, christmasMarketFrame, christmasMarketPoint} from '../config/christmasMarketArt';
 import {CANDY_ICON_URL, CANDY_TEXTURE, COIN_BASKET_ART, COIN_BUBBLE_FRAME, SNOWBALL_ART, SNOWMAN_ART} from '../config/winterArt';
 import {formatCoinAmount} from './currency';
-import {garlandLevel} from './winterClock';
+import {garlandLevel, nightLevel} from './winterClock';
 import {isChristmasDecoration} from '../config/decorations';
 import {snowmanToday} from '../simulation/christmas';
 
@@ -117,6 +118,10 @@ interface VisualRabbit {id: string; object: Phaser.GameObjects.Container; body: 
   fiery?: boolean;
   /** The golden crown of an ultimate rabbit (affection 50) that wears it, on its head in the body. */
   crown?: Phaser.GameObjects.Image;
+  /** Fusion Nucléaire's lit drawing, exactly over its day drawing, faded in at night (src/config/nightArt.ts). */
+  lit?: Phaser.GameObjects.Image;
+  /** Its lights alone, added over it (ADD) under the Christmas night shade, so that the shade does not dim them. */
+  litBoost?: Phaser.GameObjects.Image;
   face?: {seed: number; eyes?: Phaser.GameObjects.Image; nose?: Phaser.GameObjects.Image};
   /** Lapin Dragon and Lapin Requin: halo, moving wing or fin, and their shows. */
   legendary?: LegendaryView;
@@ -903,6 +908,9 @@ export class MeadowScene extends Phaser.Scene {
       const shown = artForRabbit(rabbit); add(shown);
       // Its drawing, kept at twice its largest size on screen (plan 5.1; the body is drawn VISUAL.rabbit.scale bigger).
       if (shown) this.budget?.want(shown.texture, shown.worldWidth * VISUAL.rabbit.scale);
+      // Its lit twin and its lights alone (same size, same budget) for the night, when it has them.
+      const lit = shown ? nightArtFor(shown) : null;
+      if (shown && lit) for (const twin of [lit, lit.glow]) { add(twin); this.budget?.want(twin.texture, shown.worldWidth * VISUAL.rabbit.scale); }
       for (const patch of rabbitBlinkArt(rabbit.species, !!shown?.evolved)?.patches ?? []) add(patch);
       if (isLegendaryShow(rabbit.species)) for (const art of legendaryMeadowArt(rabbit.species, rabbit.species === 'peintre' ? shown ?? undefined : undefined)) add(art);
       // The Peintre's painted poses share his drawing's pixels: kept within the same budget (the sprite's scale follows each texture).
@@ -1302,6 +1310,11 @@ export class MeadowScene extends Phaser.Scene {
           sprite.setTexture = (key, frame) => { setTexture(key, frame); fit(); return sprite; };
           fit();
           body.add(sprite);
+          // At night, its lit drawing over the day one (under its eyelids and nose), faded in by update().
+          const litArt = nightArtFor(art), lit = litArt && this.textures.exists(litArt.texture) ? this.add.image(0, art.groundY, litArt.texture).setOrigin(.5, 1).setAlpha(0).setVisible(false) : undefined;
+          if (lit) { lit.setScale(art.worldWidth / art.width * this.textureRatio(lit)); body.add(lit); }
+          const litBoost = lit && litArt && this.textures.exists(litArt.glow.texture) ? this.add.image(0, art.groundY, litArt.glow.texture).setOrigin(.5, 1).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0).setVisible(false) : undefined;
+          if (litBoost) { litBoost.setScale(art.worldWidth / art.width * this.textureRatio(litBoost)); body.add(litBoost); }
           // Ardent's first drawing moves through its painted frames; each one is loaded on demand and never blocks the meadow.
           const ardent = rabbit.species === 'ardent' && !art.evolved;
           if (ardent) for (const frame of ARDENT_FRAMES) this.optionalArt(frame.texture, frame.url);
@@ -1342,7 +1355,7 @@ export class MeadowScene extends Phaser.Scene {
           const dadi = rabbit.species === 'dadi' && art.evolved ? new DadiStageView(this, rabbit.id, sprite, art) : undefined;
           if (crown) body.bringToTop(crown); // Above a legendary's open snout or part.
           this.animals.add(object);
-          this.rabbitViews.push({id: rabbit.id, ears: [], sprite, art, face, ardent, fiery: rabbit.species === 'ardent', crown, legendary, benny, magicien, dadi, ...view});
+          this.rabbitViews.push({id: rabbit.id, ears: [], sprite, art, face, ardent, fiery: rabbit.species === 'ardent', crown, legendary, benny, magicien, dadi, lit, litBoost, ...view});
           return;
         }
         const coat = proceduralCoat(SPECIES[rabbit.species].art), color = Phaser.Display.Color.HexStringToColor(coat.body).color, patch = Phaser.Display.Color.HexStringToColor(coat.patch).color;
@@ -1803,6 +1816,8 @@ export class MeadowScene extends Phaser.Scene {
     this.salonSpa?.update(time, this.simulationNow(), reducedMotion, this.rabbitViews);
     // Christmas: evening and night over the meadow and its sky, and the snow (it keeps falling in a photo).
     const winterNow = new Date(), christmas = christmasActive();
+    // Every night of the year (not only at Christmas): the rabbits that light up (src/config/nightArt.ts).
+    const lights = nightLevel(localHour(winterNow));
     this.winter?.update(dt, winterNow, christmas && !document.hidden, reducedMotion);
     this.winterLights?.update(christmas ? garlandLevel(localHour(winterNow)) : 0, reducedMotion ? 0 : time);
     this.sky?.setNight(christmas ? this.winter?.nightNow(winterNow) ?? 0 : 0);
@@ -1890,6 +1905,13 @@ export class MeadowScene extends Phaser.Scene {
         squashX *= sway.squashX; squashY *= sway.squashY; rotation += sway.rotation * facing; lift += sway.lift;
       }
       this.poseBody(rabbit, {lift, squashX, squashY, facing, rotation, nuzzle});
+      // Its LEDs light up at night, only over its own day drawing (never over another picture swapped onto the sprite).
+      if (rabbit.lit && rabbit.sprite) {
+        const on = lights > .004 && rabbit.sprite.visible && rabbit.sprite.texture.key === rabbit.art?.texture;
+        rabbit.lit.setAlpha(lights).setVisible(on);
+        // Christmas: the night shade darkens the whole meadow; its lights shine through it as the garlands do.
+        rabbit.litBoost?.setAlpha(lights * night * .6).setVisible(on && night > .004);
+      }
       if (rabbit.ardent && rabbit.sprite) {
         const frame = ARDENT_FRAMES[ardentFrame(rabbit.id, time, reducedMotion)].texture;
         if (rabbit.sprite.texture.key !== frame && this.textures.exists(frame)) rabbit.sprite.setTexture(frame);

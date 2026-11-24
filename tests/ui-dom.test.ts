@@ -1017,9 +1017,9 @@ describe('new collection and exact-species recipe UI', () => {
   };
   it('composes filters, keeps them across refresh and shows an actionable empty result', () => {
     const {controller, ui} = setup(scenarioState('collection', 0)); ui.open({kind: 'collection'});
-    change('Rareté', 'epic'); expect(panel().querySelectorAll('article')).toHaveLength(14);
+    change('Rareté', 'epic'); expect(panel().querySelectorAll('article')).toHaveLength(15);
     expect(panel().textContent).not.toContain('Lapin Géant'); expect(panel().textContent).toContain('Lapin Magicien');
-    change('Type', 'feu'); expect(panel().querySelectorAll('article')).toHaveLength(6); expect(panel().textContent).toContain('Lapin de Sulli'); expect(panel().textContent).toContain('Pain d’épice'); expect(panel().textContent).toContain('Gigi-rarafe'); expect(panel().textContent).toContain('Susucre'); expect(panel().textContent).toContain('Dinono'); expect(panel().textContent).toContain('Dadi');
+    change('Type', 'feu'); expect(panel().querySelectorAll('article')).toHaveLength(7); expect(panel().textContent).toContain('Lapin de Sulli'); expect(panel().textContent).toContain('Pain d’épice'); expect(panel().textContent).toContain('Gigi-rarafe'); expect(panel().textContent).toContain('Susucre'); expect(panel().textContent).toContain('Dinono'); expect(panel().textContent).toContain('Dadi'); expect(panel().textContent).toContain('Fusion Nucléaire');
     change('Découverte', 'unknown'); expect(panel().querySelectorAll('article')).toHaveLength(0);
     expect(panel().textContent).toContain('Aucune espèce'); controller.refresh();
     expect(panel().querySelector<HTMLSelectElement>('select[aria-label="Rareté"]')!.value).toBe('epic');

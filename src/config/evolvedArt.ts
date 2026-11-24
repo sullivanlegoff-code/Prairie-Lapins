@@ -108,6 +108,7 @@ export const EVOLVED_ART: readonly EvolvedSprite[] = [
   // Peintre Aguerri (owner, 24 November 2026): his own drawing, with a starry beret, a scarf, a brush and a satchel of brushes.
   {id: 'champignon', name: 'Roi des sous-bois', file: 'assets/rabbits/champignon/champignon-v2.png', texture: 'rabbit-champignon-evolved-v2', width: 488, height: 477, worldWidth: 57.6, groundY: 12},
   {id: 'peintre', name: 'Peintre Aguerri', file: 'assets/rabbits/peintre/peintre-v2.png', texture: 'rabbit-peintre-evolved-v2', width: 425, height: 513, worldWidth: 50.1, groundY: 12},
+  {id: 'fusion-nucleaire', name: 'Rose Bomb', file: 'assets/rabbits/fusion-nucleaire/fusion-nucleaire-v2.png', texture: 'rabbit-fusion-nucleaire-evolved-v2', width: 343, height: 549, worldWidth: 40.4, groundY: 12},
 ];
 export const evolvedSprite = (species: SpeciesId): EvolvedSprite | undefined => EVOLVED_ART.find(art => art.id === species);
 export const hasEvolvedArt = (species: SpeciesId): boolean => !!evolvedSprite(species);

@@ -61,6 +61,12 @@ export const DESIGNS = [
   // Peintre, the legendary of Fantôme and Boudinet: the owner's own drawings (24 November 2026, both stages on a white sheet). Its
   // evolution, Peintre Aguerri, is its peintre-evolution-source.png, below.
   {id: 'peintre', source: 'assets-source/rabbits/peintre/Peintre.png', background: 'light'},
+  // Fusion Nucléaire (owner, 24 November 2026): his own drawings, LEDs off by day (already transparent) and lit at night; the lit
+  // first stage came with a painted checkerboard, the lit evolution with its own transparency. The night masters are aligned on the
+  // day ones by scripts/prepare-fusion-night.mjs.
+  {id: 'fusion-nucleaire', source: 'assets-source/rabbits/fusion-nucleaire/fusion-nucleaire-source.png'},
+  {id: 'fusion-nucleaire-night', source: 'assets-source/rabbits/fusion-nucleaire/night-source.png', background: 'checker', master: 'assets-source/rabbits/fusion-nucleaire/night-sprite.png'},
+  {id: 'fusion-nucleaire-evolution-night', source: 'assets-source/rabbits/fusion-nucleaire/evolution-night-source.png', master: 'assets-source/rabbits/fusion-nucleaire/evolution-night-sprite.png'},
   // Champignon replaced by the owner's own drawing (7 November 2026, « lapin champignon enchanté », both stages on one black sheet,
   // cut in two at its empty middle, champignon-v3); the evolution half is its champignon-evolution-source.png, below.
   {id: 'champignon', source: 'output/imagegen/champignon-v3/champignon-stade1.png', background: 'corner', tolerance: 40},
@@ -82,9 +88,9 @@ export const DESIGNS = [
   // Affection 30 evolutions of the Christmas update's thirteen rabbits (painted 5 and 6 November 2026 on a white backdrop, same
   // pose as the approved first drawing; Arkoko keeps the head of the owner's stage 1).
   ...['vantablack', 'gigi-rarafe', 'yetiti', 'rennes', 'susucre', 'arkoko', 'fantome', 'bouyoyo', 'lapin-de-sulli', 'pain-epice',
-    'flocon-cristal', 'nuage', 'champignon', 'peintre'].map(id => ({id: `${id}-evolution`, source: `assets-source/rabbits/${id}/${id}-evolution-source.png`,
+    'flocon-cristal', 'nuage', 'champignon', 'peintre', 'fusion-nucleaire'].map(id => ({id: `${id}-evolution`, source: `assets-source/rabbits/${id}/${id}-evolution-source.png`,
     // The white sheet of Fantôme, the white fur of Nuage and Flocon de cristal: only the near-pure white of the backdrop goes.
-    master: `assets-source/rabbits/${id}/${id}-evolution-sprite.png`, ...['fantome', 'nuage'].includes(id) ? {background: 'corner', tolerance: 10} : id === 'champignon' ? {background: 'corner', tolerance: 40} : id === 'gigi-rarafe' ? {} : {background: 'light'}})),
+    master: `assets-source/rabbits/${id}/${id}-evolution-sprite.png`, ...['fantome', 'nuage'].includes(id) ? {background: 'corner', tolerance: 10} : id === 'champignon' ? {background: 'corner', tolerance: 40} : ['gigi-rarafe', 'fusion-nucleaire'].includes(id) ? {} : {background: 'light'}})),
 ];
 // Bouee's left ear encloses a pocket of background: seed only that pocket, preserving the ring's white dots. Dinenette's evolved
 // tail curl encloses another one, between the heart and the back.

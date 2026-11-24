@@ -24,7 +24,7 @@ const EVOLVED: SpeciesId[] = ['paille', 'neige', 'feu', 'belier-gris', 'volant',
   'pic-pic', 'piment', 'plume', 'princesse-neige', 'roukette', 'snk', 'tunini', 'virvoletant', 'wat-wat', 'calinou', 'dadi',
   'magicien', 'maxou', 'orange', 'ankylosaure', 'dragon', 'requin',
   // The Christmas update (5 and 6 November 2026).
-  'vantablack', 'gigi-rarafe', 'yetiti', 'rennes', 'susucre', 'arkoko', 'fantome', 'bouyoyo', 'lapin-de-sulli', 'pain-epice', 'flocon-cristal', 'nuage', 'champignon', 'peintre'];
+  'vantablack', 'gigi-rarafe', 'yetiti', 'rennes', 'susucre', 'arkoko', 'fantome', 'bouyoyo', 'lapin-de-sulli', 'pain-epice', 'flocon-cristal', 'nuage', 'champignon', 'peintre', 'fusion-nucleaire'];
 function run(s: GameState, command: Command, now = s.lastSimulatedAt) {
   const r = act(s, command, now, () => 0); if (!r.ok) throw Error(r.reason); return r.state;
 }
@@ -60,7 +60,7 @@ function markEvolved(s: GameState, id: string) {
 describe('Evolved drawings at affection 30', () => {
   it('the 48 approved species have an evolved drawing, Benny and the other species keep their v1', () => {
     expect(EVOLUTION_AFFECTION).toBe(30);
-    expect(EVOLVED).toHaveLength(49); // 5 commons + Dinono/Dinenette + 28 newly approved drawings + 13 for the Christmas update + Peintre Aguerri (24 November 2026).
+    expect(EVOLVED).toHaveLength(50); // 5 commons + Dinono/Dinenette + 28 newly approved drawings + 13 for the Christmas update + Peintre Aguerri and Rose Bomb (24 November 2026).
     expect(EVOLVED_ART.map(art => art.id)).toEqual(EVOLVED);
     for (const species of SPECIES_IDS) expect(hasEvolvedArt(species)).toBe(EVOLVED.includes(species));
     expect(artForRabbit({species: 'benny', affection: 50})).toBe(rabbitArt('benny'));
