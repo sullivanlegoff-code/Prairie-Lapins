@@ -8,10 +8,10 @@ import {decodePng} from '../scripts/derive-nursery-overlays.mjs';
 import {EVOLVED_ART} from '../src/config/evolvedArt';
 
 // 7 November 2026: every first drawing and every evolution has its painted eyelids and nose, except Ardent's first drawing
-// (painted frames), sunglasses (Bouée's two drawings, Dadi's, Fantôme's and, since 20 November 2026, Arkoko's evolutions: a nose only)
+// (painted frames), sunglasses (Bouée's two drawings, Dadi's, Fantôme's and, since 20 November 2026, Arkoko's and, since 24 November 2026, Gigi-rarafe's evolutions: a nose only)
 // and Benny (her own painted blink and nose).
 const FIRST = SPECIES_ENTRIES.filter(entry => entry.art.kind === 'static-sprite' && !['ardent', 'benny'].includes(entry.id)).map(entry => entry.id);
-const GLASSES = ['bouee', 'bouee-evolution', 'dadi-evolution', 'fantome-evolution', 'arkoko-evolution'];
+const GLASSES = ['bouee', 'bouee-evolution', 'dadi-evolution', 'fantome-evolution', 'arkoko-evolution', 'gigi-rarafe-evolution'];
 const kinds = key => GLASSES.includes(key) ? ['nose-twitch'] : ['eyes-closed', 'nose-twitch'];
 // The October 2026 masters of the first 18 species were cut on the patch's own alpha: they are checked by the derivation only.
 const LEGACY = new Set(['amethyste eyes-closed', 'feu eyes-closed', 'phoenix eyes-closed', 'roukette nose-twitch', 'wat-wat eyes-closed',

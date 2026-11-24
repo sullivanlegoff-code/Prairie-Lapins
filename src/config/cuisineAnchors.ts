@@ -84,11 +84,11 @@ export const EVOLVED_CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>>
   'belier-gris': a([.74, .05, .34, 6], [.78, .42, .32], [.8, .22, .3]),
   volant: a([.7, .07, .36, 4], [.74, .36, .36], [.76, .19, .38]),
   // Read the same way on the v2 of Dinono and Dinenette (3 November 2026): checked on a capture (6 November 2026).
-  dinono: a([.74, .17, .34, 6], [.76, .5, .3], [.76, .33, .28]),
+  dinono: a([.7, .15, .34, 6], [.82, .47, .28], [.8, .3, .28]), // 24 Nov. 2026: matte armour, the base head.
   dinenette: a([.76, .14, .34, 6], [.76, .47, .3], [.75, .3, .28]),
   // Read on the v2 drawings; checked on captures (6 November 2026), the misplaced ones re-read on a 5 % grid.
   amethyste: a([.7, .3, .32, 4], [.78, .58, .26], [.74, .43, .24]),
-  ardent: a([.8, .35, .3, 6], [.82, .6, .28], [.82, .46, .24]),
+  ardent: a([.38, .19, .5, -6], [.3, .45, .5], [.27, .33, .45]), // 24 Nov. 2026: redrawn upright in dark embers, looking left.
   boudinet: a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
   bouee: a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
   bretonette: a([0.72, 0.1, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
@@ -99,7 +99,7 @@ export const EVOLVED_CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>>
   icy: a([.56, .3, .36, 2], [.6, .6, .3], [.62, .46, .32]),
   phoenix: a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
   'pic-pic': a([.5, .33, .32, 0], [.5, .57, .28], [.5, .46, .28]),
-  piment: a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
+  piment: a([.79, .2, .3, 4], [.78, .6, .28], [.78, .45, .26]), // 24 Nov. 2026: the base head under the sombrero.
   plume: a([.74, .37, .3, 6], [.8, .64, .26], [.76, .5, .24]),
   'princesse-neige': a([.58, .21, .32, 4], [.63, .42, .26], [.62, .33, .26]), // 19 Nov. 2026: bigger head, no neck.
   roukette: a([0.72, 0.12, .36, 4], [.74, 0.5, .3], [.74, 0.3, .3]),
@@ -116,17 +116,17 @@ export const EVOLVED_CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>>
   dragon: a([.74, .18, .3, 4], [.8, .5, .28], [.78, .33, .24]),
   requin: a([0.72, 0.12, .36, 4], [.74, 0.58, .3], [.74, 0.31, .3]),
   // The Christmas update's evolutions (6 November 2026): read on the v2 sprites, checked on captures.
-  fantome: a([.45, .19, .28, -2], [.42, .34, .26], [.42, .24, .26]),
+  fantome: a([.52, .27, .4, 2], [.55, .52, .36], [.53, .41, .45]), // 24 Nov. 2026: rounder, looking right.
   bouyoyo: a([.6, .33, .3, 6], [.7, .52, .26], [.69, .4, .22]), // 19 Nov. 2026: the owner's new evolution.
   nuage: a([.3, .2, .3, -4], [.3, .4, .3], [.28, .29, .24]),
   champignon: a([.73, .19, .26, 6], [.8, .5, .24], [.78, .375, .22]),
   'lapin-de-sulli': a([.42, .16, .34, -2], [.38, .4, .34], [.3, .28, .3]),
-  'pain-epice': a([.72, .17, .34, 12], [.72, .46, .28], [.7, .33, .22]), // 19 Nov. 2026: evolution redrawn from the 3/4 base.
+  'pain-epice': a([.81, .3, .3, 6], [.82, .55, .3], [.84, .4, .26]), // 24 Nov. 2026: icing, sitting like the base.
   'flocon-cristal': a([.62, .14, .34, 4], [.64, .45, .28], [.66, .3, .28]),
   vantablack: a([.43, .21, .44, -6], [.3, .51, .36], [.27, .37, .4]), // 19 Nov. 2026: evolution redrawn upright, looking left.
-  'gigi-rarafe': a([.79, .12, .26, 8], [.73, .43, .22], [.81, .185, .22]),
+  'gigi-rarafe': a([.64, .14, .26, 8], [.68, .4, .22], [.7, .23, .26]), // 24 Nov. 2026: fashion model.
   yetiti: a([.38, .1, .3, -4], [.4, .33, .3], [.4, .2, .24]),
-  rennes: a([.72, .255, .28, 4], [.79, .45, .24], [.79, .35, .22]),
+  rennes: a([.65, .27, .32, 4], [.7, .53, .3], [.69, .42, .32]), // 24 Nov. 2026: Santa's rabbit, sitting.
   susucre: a([.72, .27, .38, 6], [.75, .57, .3], [.75, .42, .3]), // 19 Nov. 2026: evolution redrawn on four paws.
   arkoko: a([.57, .18, .38, 6], [.63, .49, .34], [.67, .37, .4]), peintre: a([.46, .05, .4, -6], [.71, .48, .3], [.66, .26, .3]), 'fusion-nucleaire': a([.68, .25, .38, 4], [.66, .52, .32], [.77, .37, .3]), // 20 Nov. 2026: the owner's new evolution, upright with rainbow glasses.
 };
