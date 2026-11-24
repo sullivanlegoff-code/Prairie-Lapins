@@ -1,0 +1,87 @@
+{
+  "versions": {
+    "v1": {
+      "canvas": {
+        "width": 764,
+        "height": 575
+      },
+      "tips": {
+        "swing": {
+          "x": 663,
+          "y": 0
+        },
+        "paint": {
+          "x": 720,
+          "y": 227
+        }
+      }
+    },
+    "v2": {
+      "canvas": {
+        "width": 782,
+        "height": 568
+      },
+      "tips": {
+        "swing": {
+          "x": 645,
+          "y": 12
+        },
+        "paint": {
+          "x": 715,
+          "y": 148
+        }
+      }
+    }
+  },
+  "effects": {
+    "stroke": {
+      "width": 256,
+      "height": 218
+    },
+    "star": {
+      "width": 96,
+      "height": 91
+    },
+    "swirl": {
+      "width": 96,
+      "height": 90
+    },
+    "sunflower": {
+      "width": 128,
+      "height": 151
+    },
+    "bud": {
+      "width": 64,
+      "height": 97
+    },
+    "splat-yellow": {
+      "width": 96,
+      "height": 88
+    },
+    "splat-blue": {
+      "width": 96,
+      "height": 91
+    },
+    "drop": {
+      "width": 32,
+      "height": 32
+    },
+    "easel": {
+      "width": 256,
+      "height": 433
+    },
+    "frame": {
+      "width": 640,
+      "height": 806
+    },
+    "sky": {
+      "width": 1280,
+      "height": 853
+    },
+    "canvas": {
+      "width": 320,
+      "height": 213,
+      "steps": 6
+    }
+  }
+}

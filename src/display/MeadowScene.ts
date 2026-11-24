@@ -9,6 +9,8 @@ import {DadiReactions} from './dadiReactions';
 import {LegendaryView} from './legendaryEffects';
 import {LegendaryClock, type LegendaryAct} from './legendaryTimeline';
 import {LEGENDARY_TEST_EVENT, isLegendaryShow, legendaryMeadowArt, shouldShowLegendaryView} from '../config/legendaryArt';
+import {PEINTRE_POSES, peintreVersion} from '../config/peintreArt';
+import {nightArtFor} from '../config/nightArt';
 import {BennyView} from './bennyView';
 import {BennyClock, type BennyAct} from './bennyTimeline';
 import {BENNY_ATLAS, BENNY_ID, BENNY_TEST_EVENT, bennyMeadowArt} from '../config/bennyArt';
@@ -64,7 +66,7 @@ import {ISLAND_ART} from '../config/islandArt';
 import {grassTile, islandStage, stageArt, STAGE_PX_PER_UNIT, WINTER_STAGE_ART_LIST} from '../config/islandStages';
 import {IslandStageLayer, queueStage} from './islandStageLayer';
 import {SkyLayer, SKY_COLOR} from './skyLayer';
-import {WinterLayer, WinterLights} from './winterLayer';
+import {LIGHTS_DEPTH, WinterLayer, WinterLights} from './winterLayer';
 import WINTER_LIGHTS from '../config/islandStageLightsWinter.json';
 import {WINTER_ART, winterUrl} from '../config/winterArt';
 import {christmasActive, localHour} from '../config/christmas';
@@ -101,7 +103,7 @@ import {NIGHT_GLOW_PREFIX, nightGlowOf} from '../config/nightLights';
 import {CHRISTMAS_MARKET_ART, christmasMarketFrame, christmasMarketPoint} from '../config/christmasMarketArt';
 import {CANDY_ICON_URL, CANDY_TEXTURE, COIN_BASKET_ART, COIN_BUBBLE_FRAME, SNOWBALL_ART, SNOWMAN_ART} from '../config/winterArt';
 import {formatCoinAmount} from './currency';
-import {garlandLevel} from './winterClock';
+import {garlandLevel, nightLevel} from './winterClock';
 import {isChristmasDecoration} from '../config/decorations';
 import {snowmanToday} from '../simulation/christmas';
 
@@ -116,6 +118,12 @@ interface VisualRabbit {id: string; object: Phaser.GameObjects.Container; body: 
   fiery?: boolean;
   /** The golden crown of an ultimate rabbit (affection 50) that wears it, on its head in the body. */
   crown?: Phaser.GameObjects.Image;
+  /** Fusion Nucléaire's lit drawing, exactly over its day drawing, faded in at night (src/config/nightArt.ts). */
+  lit?: Phaser.GameObjects.Image;
+  /** Its lights alone, added over it (ADD) under the Christmas night shade, so that the shade does not dim them. */
+  litBoost?: Phaser.GameObjects.Image;
+  /** Its LEDs: a little yellow light on each one (its place on the drawing, `at`), lit at night and twinkling. */
+  leds?: {image: Phaser.GameObjects.Image; at: {x: number; y: number}; scale: number}[];
   face?: {seed: number; eyes?: Phaser.GameObjects.Image; nose?: Phaser.GameObjects.Image};
   /** Lapin Dragon and Lapin Requin: halo, moving wing or fin, and their shows. */
   legendary?: LegendaryView;
@@ -129,6 +137,11 @@ interface VisualRabbit {id: string; object: Phaser.GameObjects.Container; body: 
   pivot: Point; /** Mirror sign of the picture's native direction: -1 for art that looks left. */ native: 1 | -1}
 /** Local y of the ground contact the body is compressed against, so its feet stay put. */
 const BODY_PIVOT = 10;
+/**
+ * A lit rabbit's LED halo: its picture's size; its width in the drawing's pixels (plus `extra` for the strongest LEDs); its
+ * opacity; the radius of its bright heart and the opacity of its yellow glow around it (fractions of the halo).
+ */
+const LED_HALO = {texture: 64, size: 60, extra: 20, alpha: .9, core: .05, glow: .24} as const;
 /** The player's « reduce motion » setting, through one cached media query (it was queried anew on every frame). */
 let reducedMotionQuery: MediaQueryList | null = null;
 function prefersReducedMotion(): boolean {
@@ -902,8 +915,14 @@ export class MeadowScene extends Phaser.Scene {
       const shown = artForRabbit(rabbit); add(shown);
       // Its drawing, kept at twice its largest size on screen (plan 5.1; the body is drawn VISUAL.rabbit.scale bigger).
       if (shown) this.budget?.want(shown.texture, shown.worldWidth * VISUAL.rabbit.scale);
+      // Its lit twin and its lights alone (same size, same budget) for the night, when it has them.
+      const lit = shown ? nightArtFor(shown) : null;
+      if (shown && lit) for (const twin of [lit, lit.glow]) { add(twin); this.budget?.want(twin.texture, shown.worldWidth * VISUAL.rabbit.scale); }
       for (const patch of rabbitBlinkArt(rabbit.species, !!shown?.evolved)?.patches ?? []) add(patch);
-      if (isLegendaryShow(rabbit.species)) for (const art of legendaryMeadowArt(rabbit.species)) add(art);
+      if (isLegendaryShow(rabbit.species)) for (const art of legendaryMeadowArt(rabbit.species, rabbit.species === 'peintre' ? shown ?? undefined : undefined)) add(art);
+      // The Peintre's painted poses share his drawing's pixels: kept within the same budget (the sprite's scale follows each texture).
+      if (rabbit.species === 'peintre' && shown) { const {canvas, poses} = PEINTRE_POSES[peintreVersion(shown)];
+        for (const pose of Object.values(poses)) this.budget?.want(pose.texture, canvas.width * shown.worldWidth / shown.width * VISUAL.rabbit.scale); }
       if (rabbit.species === BENNY_ID) for (const art of [...bennyMeadowArt(), ...bennyFlightArt()]) add(art);
       // Her frames are aligned pixel for pixel with her drawing: the atlas is shrunk by the same ratio (her flight atlas already fits).
       const bennyShrink = rabbit.species === BENNY_ID && shown ? shrinkSize(shown.width, shown.height, budgetWidth(shown.worldWidth * VISUAL.rabbit.scale)) : null;
@@ -1040,6 +1059,19 @@ export class MeadowScene extends Phaser.Scene {
     return false;
   }
   /** Painted pixels for one pixel of this image's texture: more than 1 for a picture redrawn smaller (plan 5.1). */
+  /** The LED halo picture, in the yellow of the enclosures' night lights (assets/noel/nuit/), drawn once. */
+  private ledHaloTexture(): string {
+    const key = 'led-halo', size = LED_HALO.texture;
+    if (this.textures.exists(key)) return key;
+    const texture = this.textures.createCanvas(key, size, size);
+    if (texture) {
+      const ctx = texture.context, g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+      g.addColorStop(0, 'rgba(255,255,163,1)'); g.addColorStop(LED_HALO.core, 'rgba(245,208,86,.92)');
+      g.addColorStop(Math.min(.9, LED_HALO.core * 2.4), `rgba(245,200,80,${LED_HALO.glow})`); g.addColorStop(1, 'rgba(245,190,70,0)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, size, size); texture.refresh();
+    }
+    return key;
+  }
   private textureRatio(image: Phaser.GameObjects.Image): number { return this.budget?.ratio(image.texture.key) ?? 1; }
   /**
    * Frees the large building pictures no longer shown (plan 5.1): a farm's former level, a moved ghost's picture, a building
@@ -1298,6 +1330,20 @@ export class MeadowScene extends Phaser.Scene {
           sprite.setTexture = (key, frame) => { setTexture(key, frame); fit(); return sprite; };
           fit();
           body.add(sprite);
+          // At night, its lit drawing over the day one (under its eyelids and nose), faded in by update().
+          const litArt = nightArtFor(art), lit = litArt && this.textures.exists(litArt.texture) ? this.add.image(0, art.groundY, litArt.texture).setOrigin(.5, 1).setAlpha(0).setVisible(false) : undefined;
+          if (lit) { lit.setScale(art.worldWidth / art.width * this.textureRatio(lit)); body.add(lit); }
+          const litBoost = lit && litArt && this.textures.exists(litArt.glow.texture) ? this.add.image(0, art.groundY, litArt.glow.texture).setOrigin(.5, 1).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0).setVisible(false) : undefined;
+          if (litBoost) { litBoost.setScale(art.worldWidth / art.width * this.textureRatio(litBoost)); body.add(litBoost); }
+          // Its LEDs, each a little light in the yellow of the enclosures' lights, placed on the drawing like its eyelids. Like
+          // those lights they sit above the Christmas night shade (which would turn them grey-blue), so they follow the rabbit
+          // each frame from the scene (update) and leave with it.
+          const leds = lit && litArt?.leds.length ? litArt.leds.map(([x, y, strength]) => {
+            const place = rabbitPatchPlacement(art, {x, y});
+            const image = this.add.image(0, 0, this.ledHaloTexture()).setDepth(LIGHTS_DEPTH).setAlpha(0).setVisible(false);
+            return {image, at: {x: place.x, y: place.y}, scale: place.scale * (LED_HALO.size + LED_HALO.extra * strength) / LED_HALO.texture};
+          }) : undefined;
+          if (leds) object.once(Phaser.GameObjects.Events.DESTROY, () => { for (const led of leds) led.image.destroy(); });
           // Ardent's first drawing moves through its painted frames; each one is loaded on demand and never blocks the meadow.
           const ardent = rabbit.species === 'ardent' && !art.evolved;
           if (ardent) for (const frame of ARDENT_FRAMES) this.optionalArt(frame.texture, frame.url);
@@ -1338,7 +1384,7 @@ export class MeadowScene extends Phaser.Scene {
           const dadi = rabbit.species === 'dadi' && art.evolved ? new DadiStageView(this, rabbit.id, sprite, art) : undefined;
           if (crown) body.bringToTop(crown); // Above a legendary's open snout or part.
           this.animals.add(object);
-          this.rabbitViews.push({id: rabbit.id, ears: [], sprite, art, face, ardent, fiery: rabbit.species === 'ardent', crown, legendary, benny, magicien, dadi, ...view});
+          this.rabbitViews.push({id: rabbit.id, ears: [], sprite, art, face, ardent, fiery: rabbit.species === 'ardent', crown, legendary, benny, magicien, dadi, lit, litBoost, leds, ...view});
           return;
         }
         const coat = proceduralCoat(SPECIES[rabbit.species].art), color = Phaser.Display.Color.HexStringToColor(coat.body).color, patch = Phaser.Display.Color.HexStringToColor(coat.patch).color;
@@ -1799,6 +1845,8 @@ export class MeadowScene extends Phaser.Scene {
     this.salonSpa?.update(time, this.simulationNow(), reducedMotion, this.rabbitViews);
     // Christmas: evening and night over the meadow and its sky, and the snow (it keeps falling in a photo).
     const winterNow = new Date(), christmas = christmasActive();
+    // Every night of the year (not only at Christmas): the rabbits that light up (src/config/nightArt.ts).
+    const lights = nightLevel(localHour(winterNow));
     this.winter?.update(dt, winterNow, christmas && !document.hidden, reducedMotion);
     this.winterLights?.update(christmas ? garlandLevel(localHour(winterNow)) : 0, reducedMotion ? 0 : time);
     this.sky?.setNight(christmas ? this.winter?.nightNow(winterNow) ?? 0 : 0);
@@ -1845,7 +1893,7 @@ export class MeadowScene extends Phaser.Scene {
         }
         const activity = ['sleep', 'zoom', 'meet', 'kiss'].includes(motion.mode), dancing = this.dances(rabbit);
         // The Magicien stays where he is during his trick, and so does the friend he enchants.
-        const spellbound = !!rabbit.magicien?.busy || this.enchantedLift(rabbit.id) > 0;
+        const spellbound = !!rabbit.magicien?.busy || !!rabbit.legendary?.still || this.enchantedLift(rabbit.id) > 0;
         if (dancing || spellbound) { /* stands where it is while it dances, does magic or is enchanted */ } else if (rabbit.nest ? lifeActive && visibleResidents.has(rabbit.id) && motion.mode !== 'rest' && (!reducedMotion || motion.mode === 'walk' || motion.mode === 'salto' || motion.mode === 'fed') :
           !activity || lifeActive && visibleResidents.has(rabbit.id)) stepRabbitMotion(motion, dt, others);
         // Benny's act may take over the motion (or carry her along her hops) before the pose is read.
@@ -1886,6 +1934,23 @@ export class MeadowScene extends Phaser.Scene {
         squashX *= sway.squashX; squashY *= sway.squashY; rotation += sway.rotation * facing; lift += sway.lift;
       }
       this.poseBody(rabbit, {lift, squashX, squashY, facing, rotation, nuzzle});
+      // Its LEDs light up at night, only over its own day drawing (never over another picture swapped onto the sprite).
+      if (rabbit.lit && rabbit.sprite) {
+        const on = lights > .004 && rabbit.sprite.visible && rabbit.sprite.texture.key === rabbit.art?.texture;
+        rabbit.lit.setAlpha(lights).setVisible(on);
+        // Christmas: the night shade darkens the whole meadow; its lights alone shine through it, warming its body (owner's pick D).
+        rabbit.litBoost?.setAlpha(lights * night).setVisible(on && night > .004);
+        // Each LED follows its place on the moving body and twinkles at its own pace (steady when motion is reduced).
+        const shown = on && rabbit.object.visible && rabbit.body.visible, matrix = shown && rabbit.leds ? rabbit.body.getWorldTransformMatrix() : null;
+        const size = matrix ? Math.sqrt(Math.abs(matrix.a * matrix.d - matrix.b * matrix.c)) : 0;
+        rabbit.leds?.forEach((led, i) => {
+          led.image.setVisible(shown);
+          if (!matrix) return;
+          const point = matrix.transformPoint(led.at.x, led.at.y);
+          led.image.setPosition(point.x, point.y).setScale(led.scale * size)
+            .setAlpha(lights * LED_HALO.alpha * (reducedMotion ? .85 : .6 + .4 * Math.sin(time / (520 + (i * 97) % 480) + i * 2.3) ** 2));
+        });
+      }
       if (rabbit.ardent && rabbit.sprite) {
         const frame = ARDENT_FRAMES[ardentFrame(rabbit.id, time, reducedMotion)].texture;
         if (rabbit.sprite.texture.key !== frame && this.textures.exists(frame)) rabbit.sprite.setTexture(frame);
@@ -1897,10 +1962,10 @@ export class MeadowScene extends Phaser.Scene {
         rabbit.face.eyes?.setVisible(asleep || kissing || (state & 1) !== 0);
         rabbit.face.nose?.setVisible(!asleep && !kissing && (state & 2) !== 0);
         if (rabbit.legendary?.mouthOpen) rabbit.face.nose?.setVisible(false);
-        if (rabbit.legendary?.submerged || rabbit.dadi?.posing || rabbit.magicien?.posing) { rabbit.face.eyes?.setVisible(false); rabbit.face.nose?.setVisible(false); }
+        if (rabbit.legendary?.submerged || rabbit.legendary?.posing || rabbit.dadi?.posing || rabbit.magicien?.posing) { rabbit.face.eyes?.setVisible(false); rabbit.face.nose?.setVisible(false); }
       }
       // The crown never floats: hidden whenever the head is not the sprite's (a dive, one of Benny's painted acts).
-      if (rabbit.crown && rabbit.sprite) rabbit.crown.setVisible((rabbit.sprite.visible || !!rabbit.legendary?.mouthOpen) && !rabbit.legendary?.submerged && !rabbit.magicien?.posing);
+      if (rabbit.crown && rabbit.sprite) rabbit.crown.setVisible((rabbit.sprite.visible || !!rabbit.legendary?.mouthOpen) && !rabbit.legendary?.submerged && !rabbit.magicien?.posing && !rabbit.legendary?.posing);
       rabbit.ears.forEach((ear, index) => { ear.rotation = rabbit.motion?.mode === 'sleep' ? 0 : Math.sin(t * 1.4 + index) * .13; });
       if (lifeActive && visibleResidents.has(rabbit.id) && (rabbit.motion?.mode === 'sleep' || rabbit.motion?.mode === 'kiss')) {
         const head = this.dadiHead(rabbit), world = this.view.world(head);

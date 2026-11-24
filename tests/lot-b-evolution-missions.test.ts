@@ -41,7 +41,7 @@ describe('evolution challenges, owner distribution of 4 November 2026', () => {
       vantablack: ['voyage', 'corde:10'], fantome: ['piquenique', 'quotidien'], bouyoyo: ['soin', 'gouteur:moelleux'], nuage: ['voyage', 'soin'],
       champignon: ['piquenique', 'commis:moelleux'], 'gigi-rarafe': ['voyage', 'piquenique', 'corde:20'], yetiti: ['soin', 'piquenique', 'parent'],
       rennes: ['voyage', 'corde:20', 'quotidien'], susucre: ['commis:moelleux', 'gouteur:moelleux', 'soin'], 'lapin-de-sulli': ['gouteur:chicken', 'voyage', 'quotidien'],
-      'pain-epice': ['commis:moelleux', 'gouteur:avocado-toast', 'piquenique'], 'flocon-cristal': ['soin', 'corde:20', 'parent'], arkoko: ['parent', 'voyage', 'quotidien'],
+      'pain-epice': ['commis:moelleux', 'gouteur:avocado-toast', 'piquenique'], 'flocon-cristal': ['soin', 'corde:20', 'parent'], arkoko: ['parent', 'voyage', 'quotidien'], peintre: ['voyage', 'piquenique', 'quotidien'], 'fusion-nucleaire': ['soin', 'voyage', 'piquenique'],
     });
     const byRarity: Record<string, number> = {};
     for (const species of SPECIES_IDS) {
@@ -49,7 +49,7 @@ describe('evolution challenges, owner distribution of 4 November 2026', () => {
       expect(list).toHaveLength(expectedEvolutionChallengeCount(SPECIES[species].rarity)!);
       byRarity[SPECIES[species].rarity] = (byRarity[SPECIES[species].rarity] ?? 0) + 1;
     }
-    expect(byRarity).toEqual({common: 5, rare: 25, epic: 14, legendary: 4});
+    expect(byRarity).toEqual({common: 5, rare: 25, epic: 15, legendary: 5});
     expect(Object.values(EVOLUTION_CHALLENGES).flat().some(item => item?.startsWith('cuisine:'))).toBe(false);
   });
   it('labels the new challenges in the second person', () => {

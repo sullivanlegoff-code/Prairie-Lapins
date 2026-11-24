@@ -1,6 +1,8 @@
 import {ARKOKO_CRYSTAL, LEGENDARY_EFFECTS as FX, crystalCentre, type LegendaryShow} from '../config/legendaryArt';
 import {rabbitArt} from '../config/rabbitArt';
+import {PEINTRE_FX as PFX} from '../config/peintreArt';
 import {prefersReducedMotion} from '../display/reducedMotion';
+import {preferWebp} from '../display/webpTwins';
 
 /**
  * First appearance of a legendary (owner's requests of 31 October and 1 November 2026): the Dragon sets the whole screen
@@ -9,7 +11,9 @@ import {prefersReducedMotion} from '../display/reducedMotion';
  * itself, bursts of rainbow light open and rainbow trails fly across; then Arkoko itself flies in along the rainbow on a trail of
  * stardust and lands with a bounce in a flash of crystal light (20 November 2026: « soigne son apparition »), the rainbow staying
  * arched over it before its golden halo; it floats gently, and its crystal lights up strongly, then calms down (again now and then while
- * the appearance stays open). A tap skips to the end; with reduced motion the end is shown at once. Purely visual: the dialog is created here and removed when it closes.
+ * the appearance stays open). The Peintre (24 November 2026: « une animation autour de la peinture ») comes as a painting: great brush
+ * strokes sweep the screen and leave a starry night behind them, stars and spirals of wind turn, paint splashes, sunflowers rise
+ * at the edges, and a gilded frame closes around him. A tap skips to the end; with reduced motion the end is shown at once. Purely visual: the dialog is created here and removed when it closes.
  */
 export interface RevealText {
   title: string; name: string; details: string;
@@ -93,8 +97,18 @@ function arkokoEffects(): HTMLElement[] {
   return [layer('lr-stars', scatter(FX.star.url, 'lr-star', 10, 141).concat(scatter(FX.starFive.url, 'lr-star', 8, 151), scatter(FX.twinkle.url, 'lr-star lr-twinkle', 6, 163))),
     rainbow, layer('lr-prisms', scatter(FX.prism.url, 'lr-prism', 6, 171)), trails, layer('lr-crystalflash')];
 }
-const EFFECTS: Record<LegendaryShow, () => HTMLElement[]> = {dragon: dragonEffects, requin: requinEffects, ankylosaure: ankylosaureEffects, arkoko: arkokoEffects};
-const SPARK_SEED: Record<LegendaryShow, number> = {dragon: 71, requin: 83, ankylosaure: 97, arkoko: 109};
+/** The Peintre: his starry sky painted in five sweeping strokes, then stars, spirals, splashes of paint and two sunflowers. */
+function peintreEffects(): HTMLElement[] {
+  const sky = `url("${preferWebp(PFX.sky.url)}")`, url = (art: {url: string}) => preferWebp(art.url);
+  const bands = layer('lr-bands', Array.from({length: 5}, (_, k) => { const band = layer('lr-band'); band.style.setProperty('--k', String(k)); band.style.backgroundImage = sky; return band; }));
+  const brushes = layer('lr-brushes', Array.from({length: 5}, (_, k) => { const brush = image(url(PFX.stroke), 'lr-brush'); brush.style.setProperty('--k', String(k)); return brush; }));
+  const sunflowers = layer('lr-sunflowers', [0, 1].map(k => { const flower = image(url(PFX.sunflower), 'lr-sunflower'); flower.style.setProperty('--k', String(k)); return flower; }));
+  return [bands, brushes, layer('lr-stars', scatter(url(PFX.star), 'lr-star lr-pstar', 8, 181).concat(scatter(url(PFX.swirl), 'lr-star lr-pswirl', 6, 187))),
+    layer('lr-splats', scatter(url(PFX.splatYellow), 'lr-splat', 5, 191).concat(scatter(url(PFX.splatBlue), 'lr-splat', 5, 197), scatter(url(PFX.drop), 'lr-splat lr-pdrop', 6, 203))),
+    sunflowers, layer('lr-paintflash')];
+}
+const EFFECTS: Record<LegendaryShow, () => HTMLElement[]> = {dragon: dragonEffects, requin: requinEffects, ankylosaure: ankylosaureEffects, arkoko: arkokoEffects, peintre: peintreEffects};
+const SPARK_SEED: Record<LegendaryShow, number> = {dragon: 71, requin: 83, ankylosaure: 97, arkoko: 109, peintre: 211};
 /**
  * Arkoko's portrait: its drawing with its crystal's original glow and the crystal itself over it, placed in the drawing's own pixels,
  * so the crystal can flare (lr-crystal-flare in the CSS) and calm back to the toned-down drawing.
@@ -124,7 +138,10 @@ export function showLegendaryReveal(species: LegendaryShow, text: RevealText, on
   dialog.setAttribute('aria-labelledby', 'legendary-reveal-title');
   const effects = layer('lr-fx', EFFECTS[species]());
   const sparks = layer('lr-sparks', scatter(FX.spark.url, 'lr-spark', 7, SPARK_SEED[species]));
-  const hero = layer('lr-hero', [...(species === 'arkoko' ? [image(FX.rainbow[7].url, 'lr-hero-rainbow')] : []), image(FX.halo.url, 'lr-halo'), sparks]);
+  const hero = layer('lr-hero', [...(species === 'arkoko' ? [image(FX.rainbow[7].url, 'lr-hero-rainbow')] : []), image(FX.halo.url, 'lr-halo'),
+    ...(species === 'peintre' ? [image(preferWebp(PFX.frame.url), 'lr-frame')] : []), sparks]);
+  // The Peintre's night stays behind him once painted (darkened), where the others keep their tinted backdrop.
+  if (species === 'peintre') dialog.style.setProperty('--peintre-sky', `url("${preferWebp(PFX.sky.url)}")`);
   const rabbit = image(rabbitArt(species)?.url ?? '', 'lr-rabbit'); rabbit.alt = text.name; hero.append(species === 'arkoko' ? arkokoFigure(rabbit) : rabbit); hero.removeAttribute('aria-hidden');
   const words = document.createElement('div'); words.className = 'lr-text';
   const title = document.createElement('h2'); title.id = 'legendary-reveal-title'; title.textContent = text.title;

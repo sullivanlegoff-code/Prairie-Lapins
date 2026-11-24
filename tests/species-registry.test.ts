@@ -37,6 +37,8 @@ const SPECIAL_DESCRIPTIONS: Record<string, string> = {
   'rennes': 'Un lapin renne aux grands bois, au nez rouge, avec son harnais à grelots pour tirer le traîneau.',
   'susucre': 'Un lapin sucre d’orge rayé rouge et vert menthe, avec un nœud doré et une oreille en crosse.',
   'arkoko': 'Un lapin brun dans une combinaison rose à capuche, avec une cape arc-en-ciel et un cristal bleu sur le front.',
+  'peintre': 'Un lapin bélier doré peint à grands coups de pinceau tourbillonnants, comme un tableau de maître.',
+  'fusion-nucleaire': 'Un lapin de verre nacré rose et blanc, parcouru de petites lumières qui s’allument à la nuit tombée.',
   'lapin-de-sulli': 'Un lapin boudeur en doudoune rouge, avec des moufles jaunes et un bonnet turquoise à pompon jaune.',
   'pain-epice': 'Un lapin biscuit de pain d’épice, aux glaçages blancs, aux boutons en bonbons et au petit nœud rouge.',
   'flocon-cristal': 'Un lapin blanc bleuté au pelage givré, aux oreilles terminées par des flocons et à la collerette de cristaux de glace.',

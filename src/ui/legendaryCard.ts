@@ -1,21 +1,22 @@
 import {LEGENDARY_EFFECTS as FX, isLegendaryShow, type LegendaryShow} from '../config/legendaryArt';
 import {BENNY_EFFECTS, BENNY_ID} from '../config/bennyArt';
 import type {SpeciesId} from '../config/species';
+import {PEINTRE_FX} from '../config/peintreArt';
 import {preferWebp} from '../display/webpTwins';
 
 /**
  * The cards of the legendaries (owner, 31 October and 1 November 2026): their shine lives only here and in their first
- * appearance, never in the meadow. Fire for the Dragon, water for the Requin, earth for the Ankylosaure, a rainbow for Arkoko: a painted banner
+ * appearance, never in the meadow. Fire for the Dragon, water for the Requin, earth for the Ankylosaure, a rainbow for Arkoko, a starry night for the Peintre: a painted banner
  * behind the title, a tinted page, embers, bubbles or dust drifting up the sides, and a turning golden halo behind the large portrait.
  * Benny, the Mythic rabbit, gets the colours of her appearance: a pastel sky with its rainbow, stars and feathers, a soft light behind her.
  * Decoration only: every added element is hidden from assistive technology and ignores the pointer.
  */
 type CardShow = LegendaryShow | typeof BENNY_ID;
 const AMBIENT_COUNT = 9;
-const BANNER: Record<CardShow, string> = {dragon: FX.firewall[0].url, requin: FX.wave[1].url, ankylosaure: FX.strata.url, arkoko: FX.rainbow[7].url, benny: BENNY_EFFECTS.rainbow[5].url};
+const BANNER: Record<CardShow, string> = {dragon: FX.firewall[0].url, requin: FX.wave[1].url, ankylosaure: FX.strata.url, arkoko: FX.rainbow[7].url, peintre: PEINTRE_FX.sky.url, benny: BENNY_EFFECTS.rainbow[5].url};
 /** What drifts up the margins: embers, bubbles, dust and grit for the Ankylosaure, stars and feathers for Benny. */
 const MOTES: Record<CardShow, string[]> = {dragon: [FX.ember.url], requin: [FX.bubble.url], ankylosaure: [FX.dust.url, FX.gravel.url, FX.dust.url],
-  arkoko: [FX.star.url, FX.starFive.url, FX.twinkle.url],
+  arkoko: [FX.star.url, FX.starFive.url, FX.twinkle.url], peintre: [PEINTRE_FX.star.url, PEINTRE_FX.swirl.url, PEINTRE_FX.drop.url],
   benny: [BENNY_EFFECTS.star.url, BENNY_EFFECTS.feather[2].url, BENNY_EFFECTS.starFive.url, BENNY_EFFECTS.feather[1].url]};
 const rand = (seed: number) => { const x = Math.sin(seed * 57.3 + 1.7) * 43758.5453; return x - Math.floor(x); };
 const isCardShow = (species: SpeciesId): species is CardShow => isLegendaryShow(species) || species === BENNY_ID;

@@ -909,6 +909,16 @@
     "height": 566,
     "derivedSha1": "27613e333cce135c920b3679d5f873be895d041c"
   },
+  "peintre": {
+    "file": "assets/rabbits/peintre/peintre-v1.png",
+    "worldWidth": 54,
+    "sourceSha1": "2d9d2114fbd2faa7d21f6ca9649e7424ee247d1f",
+    "sourceWidth": 1116,
+    "sourceHeight": 1156,
+    "width": 413,
+    "height": 428,
+    "derivedSha1": "bf1b4c850603e694d1aa7eec51da2d35f498daf3"
+  },
   "fantome": {
     "file": "assets/rabbits/fantome/fantome-v1.png",
     "worldWidth": 51,
@@ -1063,6 +1073,20 @@
     "height": 682,
     "derivedSha1": "5770f3da7a5e16e2c3f9d44d09363f2a295a2180"
   },
+  "peintre-evolution": {
+    "species": "peintre",
+    "master": "assets-source/rabbits/peintre/peintre-evolution-sprite.png",
+    "registry": "src/config/evolvedArt.ts",
+    "displayScale": 1.15,
+    "file": "assets/rabbits/peintre/peintre-v2.png",
+    "worldWidth": 50.1,
+    "sourceSha1": "c4ffa0f32e1183f44fb37e915c9e2c937bc46aa6",
+    "sourceWidth": 1025,
+    "sourceHeight": 1237,
+    "width": 425,
+    "height": 513,
+    "derivedSha1": "f5d0389a5a173893a2ce4a9aaee33c363173f388"
+  },
   "fantome-evolution": {
     "species": "fantome",
     "master": "assets-source/rabbits/fantome/fantome-evolution-sprite.png",
@@ -1160,5 +1184,29 @@
     "sourceHeight": 856,
     "width": 488,
     "height": 477
+  },
+  "fusion-nucleaire": {
+    "file": "assets/rabbits/fusion-nucleaire/fusion-nucleaire-v1.png",
+    "worldWidth": 40,
+    "sourceSha1": "a71f9fd26cfc3bd77697e783aa99813f0bffa4d0",
+    "sourceWidth": 788,
+    "sourceHeight": 1290,
+    "width": 295,
+    "height": 483,
+    "derivedSha1": "41fd980a5e26c29ed467bb718a857f73d495181d"
+  },
+  "fusion-nucleaire-evolution": {
+    "species": "fusion-nucleaire",
+    "master": "assets-source/rabbits/fusion-nucleaire/fusion-nucleaire-evolution-sprite.png",
+    "registry": "src/config/evolvedArt.ts",
+    "displayScale": 1.15,
+    "file": "assets/rabbits/fusion-nucleaire/fusion-nucleaire-v2.png",
+    "worldWidth": 40.4,
+    "sourceSha1": "d43d56566ce378330de1cab7170e19958d49367a",
+    "sourceWidth": 619,
+    "sourceHeight": 991,
+    "width": 343,
+    "height": 549,
+    "derivedSha1": "7266ebc3745af0c8ec3e863730c6b7aba9b2d6a5"
   }
 }

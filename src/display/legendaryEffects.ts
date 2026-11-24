@@ -1,10 +1,11 @@
 import Phaser from 'phaser';
 import {LEGENDARY_EFFECTS as FX, arkokoCrystalForArt, crystalCentre, legendaryPartsForArt, type EffectArt, type LegendaryShow} from '../config/legendaryArt';
+import {EASEL_REST, PEINTRE_FX as PFX, PEINTRE_POSES, peintreVersion, type PeintrePoses} from '../config/peintreArt';
 import type {RabbitArt} from '../config/rabbitArt';
 import type {Point} from '../ui/gestures';
 import {motionZone, startSurf, type RabbitMotion} from './rabbitMotion';
-import {ACT_MS, DIVE, LegendaryClock, SLAM, SURF_ENTRY_MS, SURF_SLIDE_MS, arc, arkokoHop, breathFrame, crystalFlare, diveFin, envelope, loopFrame, partAngle, rainbowStep, smooth, surfPose,
-  type ActState, type LegendaryAct} from './legendaryTimeline';
+import {ACT_MS, DIVE, EASEL, LegendaryClock, SLAM, SURF_ENTRY_MS, SURF_SLIDE_MS, arc, arkokoHop, breathFrame, brushWork, canvasProgress, crystalFlare, diveFin, easelPresence, envelope,
+  loopFrame, partAngle, peintrePose, rainbowStep, smooth, stillAct, surfPose, type ActState, type LegendaryAct, type PeintrePose} from './legendaryTimeline';
 
 /** What the meadow gives each legendary: its ground container, its posed body and the approved sprite inside it. */
 export interface LegendaryHost {object: Phaser.GameObjects.Container; body: Phaser.GameObjects.Container; sprite: Phaser.GameObjects.Image; art: RabbitArt; pivot: Point; motion?: RabbitMotion}
@@ -24,6 +25,11 @@ export class LegendaryView {
   squashX = 1; squashY = 1;
   /** The mouth is open (the nose-twitch patch must hide) or the body is under water (the face patches too). */
   mouthOpen = false; submerged = false;
+  /** The Peintre shows one of his painted poses (his drawing's face patches and crown must hide). */
+  posing: PeintrePose | null = null;
+  /** The Peintre paints, plants or flicks his brush where he stands: the meadow keeps him in place. */
+  get still(): boolean { return this.species === 'peintre' && stillAct(this.clock.act?.act); }
+  private readonly poses: PeintrePoses | null = null;
   private readonly scale: number;
   private readonly part: Phaser.GameObjects.Image | null = null;
   private readonly mouth: Phaser.GameObjects.Image | null = null;
@@ -45,7 +51,8 @@ export class LegendaryView {
     const {art, body, sprite, object} = host, parts = legendaryPartsForArt(species, art);
     this.scale = art.worldWidth / art.width;
     let h = 0; for (const c of id) h = (h * 31 + c.charCodeAt(0)) % 1000; this.phase = h / 100;
-    if (!parts) {
+    if (species === 'peintre') this.poses = PEINTRE_POSES[peintreVersion(art)];
+    else if (!parts) {
       // Arkoko keeps its whole drawing; the crystal's glow and light sit just over it, under the eyelids, and scale about the crystal.
       const crystal = arkokoCrystalForArt(art), centre = crystalCentre(crystal), at = this.point(centre.x, centre.y);
       this.crystal = at;
@@ -88,17 +95,24 @@ export class LegendaryView {
   update(frame: LegendaryFrame): void {
     const {time, dt, active, reduced, asleep} = frame, motion = this.host.motion; this.reduced = reduced;
     const room = !!motion && motion.mode === 'rest' && this.surfTarget(motion) !== null;
-    const idle = active && !reduced && !!motion && ['rest', 'walk', 'sleep'].includes(motion.mode);
+    // The Peintre starts a show only once he has stopped (his shows keep him in place).
+    const idle = active && !reduced && !!motion && (this.species === 'peintre' ? ['rest', 'sleep'] : ['rest', 'walk', 'sleep']).includes(motion.mode);
     this.clock.step(dt, idle, asleep, room);
     const act = this.clock.act;
     // A surf that just began (spontaneous or from the laboratory) moves the rabbit along with its board.
     if (act?.act === 'surf' && act !== this.playing && motion && motion.mode !== 'surf') {
       const target = this.surfTarget(motion); if (target) startSurf(motion, target, SURF_ENTRY_MS, SURF_SLIDE_MS);
     }
+    // The Peintre sets his easel up on the side of the enclosure with more room (never against the fence).
+    if (act?.act === 'easel' && act !== this.playing && motion) {
+      const zone = motionZone(motion), left = motion.local.x - zone.minX, right = zone.maxX - motion.local.x;
+      motion.facing = right >= left ? 1 : -1;
+    }
     if (act !== this.playing) { this.clear(); this.playing = act; if (act) this.build(act); }
     this.part?.setRotation(partAngle(this.species, time, this.phase, act, reduced));
     this.shine(0, 0, 1);
     if (act) this.animate(act);
+    if (this.poses) this.pose(act ? peintrePose(act.act, act.elapsed) : null);
     this.host.sprite.setVisible(!this.mouthOpen && !this.submerged); this.mouth?.setVisible(this.mouthOpen && !this.submerged);
     this.part?.setVisible(!this.submerged);
   }
@@ -163,6 +177,24 @@ export class LegendaryView {
       // Big enough to arch over the whole rabbit; it stays put (in the ground container) while the rabbit hops under it.
       this.add(this.back, FX.rainbow[0], w * 2.3, [.5, 1]);
       for (let k = 0; k < 6; k++) this.add(this.front, k % 2 ? FX.star : FX.starFive, w * .18, [.5, .5], true);
+    } else if (act === 'stroke') {
+      // A great crescent of paint drawn by his brush, and drops thrown off its end.
+      this.add(this.fx, PFX.stroke, w * .8);
+      for (let k = 0; k < 6; k++) this.add(this.fx, PFX.drop, w * (.07 + rand(k + 200) * .04));
+      for (let k = 0; k < 3; k++) this.add(this.fx, k % 2 ? PFX.splatBlue : PFX.splatYellow, w * .22);
+    } else if (act === 'splatter') {
+      for (let k = 0; k < 10; k++) this.add(this.fx, PFX.drop, w * (.06 + rand(k + 300) * .05));
+      for (let k = 0; k < 10; k++) this.add(this.fx, k % 2 ? PFX.splatBlue : PFX.splatYellow, w * (.2 + rand(k + 310) * .12));
+    } else if (act === 'sunflowers') {
+      // Five sunflowers around him: three behind, two in front at his sides; each one a bud first, then the flower.
+      for (let k = 0; k < 5; k++) { const layer = k < 3 ? this.back : this.front; this.add(layer, PFX.bud, w * .26, [.5, 1]); this.add(layer, PFX.sunflower, w * .5, [.5, 1]); }
+    } else if (act === 'starry') {
+      for (let k = 0; k < 5; k++) this.add(this.back, k % 2 ? PFX.swirl : PFX.star, w * (k % 2 ? .34 : .4));
+    } else if (act === 'easel') {
+      // The easel stands behind him, on the side he faces; the canvas rests on it, in two layers (a step and the next one fading in).
+      this.add(this.back, PFX.easel, w * .8, [.5, 1]);
+      for (let k = 0; k < 2; k++) this.add(this.back, PFX.canvas[0], w * .8 * EASEL_REST.width, [.5, 1]);
+      for (let k = 0; k < 4; k++) this.add(this.back, PFX.star, w * .2);
     } else if (act === 'trail') {
       // The trail flies once around the rabbit: behind it on the far side, in front on the near side; stardust follows.
       this.add(this.back, FX.trail, w * 1.5); this.add(this.front, FX.trail, w * 1.5);
@@ -246,6 +278,7 @@ export class LegendaryView {
       });
     } else if (act === 'slam') this.slam(ms, w, f);
     else if (act === 'flare' || act === 'stars' || act === 'rainbow' || act === 'trail') this.arkoko(act, ms, u, w);
+    else if (act === 'stroke' || act === 'splatter' || act === 'sunflowers' || act === 'starry' || act === 'easel') this.peintre(act, ms, u, w);
     else if (act === 'rumble') {
       const shake = envelope(u, .1, .2), [dustA, dustB, ...stones] = p;
       this.lean = f * Math.sin(ms / 28) * .025 * shake; this.lift = Math.abs(Math.sin(ms / 45)) * 1.2 * shake;
@@ -324,6 +357,97 @@ export class LegendaryView {
       }
       this.shine(.25 * fade, .25 * fade, 1);
     }
+  }
+  /** The Peintre's painted pose of the moment, in place of his drawing (same origin and scale); null gives his drawing back. */
+  private pose(pose: PeintrePose | null): void {
+    const texture = pose ? this.poses!.poses[pose].texture : this.host.art.texture;
+    if (this.host.sprite.texture.key !== texture && this.scene.textures.exists(texture)) this.host.sprite.setTexture(texture);
+    this.posing = pose && this.host.sprite.texture.key === texture ? pose : null;
+  }
+  /** A pixel of one of his pose canvases, in body space (the canvas shares the drawing's ground, centre and scale). */
+  private posePoint(at: Point): Point { const c = this.poses!.canvas; return {x: (at.x - c.width / 2) * this.scale, y: this.host.art.groundY - (c.height - at.y) * this.scale}; }
+  /** The brush's tip in a pose (body space), or a point beside his head when the painting gave none. */
+  private tip(pose: PeintrePose): Point {
+    const at = this.poses?.poses[pose].tip;
+    return at ? this.posePoint(at) : {x: this.host.art.worldWidth * .35, y: this.host.art.groundY - this.host.art.worldWidth * 1.1};
+  }
+  /**
+   * The Peintre's shows: the great brush stroke, the flick that spatters paint, the sunflowers, the starry sky over his head and the
+   * easel where he paints the Almond Blossom (src/display/legendaryTimeline.ts says when each pose and piece comes).
+   */
+  private peintre(act: LegendaryAct, ms: number, u: number, w: number): void {
+    const p = this.pieces, f = this.facing, still = this.reduced, ground = this.host.art.groundY;
+    if (act === 'stroke') {
+      // A crouch, then a hop as he swings: the stroke opens from the brush's tip and turns with it, drops fly off and land as splats.
+      if (!still) { const hop = arkokoHop(ms, 120, 620, 5); this.lift = hop.lift; this.squashX = hop.squashX; this.squashY = hop.squashY; }
+      const tip = this.tip('swing'), [stroke, ...rest] = p, drops = rest.slice(0, 6), splats = rest.slice(6);
+      const open = smooth((ms - 220) / 520), fade = 1 - smooth((ms - 1350) / 600);
+      stroke.setPosition(tip.x - w * .3, tip.y + w * .1).setScale(w * .8 / PFX.stroke.width * (.35 + .65 * open)).setRotation(-.6 + .6 * open).setAlpha(ms < 220 ? 0 : open * fade);
+      drops.forEach((drop, k) => {
+        const t = Math.max(0, Math.min(1, (ms - 420 - k * 60) / 700)), dx = w * (.25 + rand(k + 210) * .55);
+        drop.setPosition(tip.x + dx * t, tip.y + (ground - tip.y) * t * t - Math.sin(t * Math.PI) * w * .25).setAlpha(t > 0 && t < 1 ? 1 : 0).setRotation(t * 4);
+      });
+      splats.forEach((splat, k) => {
+        const landed = ms - (1120 + k * 120), size = w * .22 / PFX.splatYellow.width * smooth(landed / 160);
+        splat.setPosition(tip.x + w * (.25 + rand(k * 2 + 210) * .55), ground - 1).setScale(size, size * .45).setAlpha(landed < 0 ? 0 : 1 - smooth((landed - 500) / 400));
+      });
+    } else if (act === 'splatter') {
+      // A flick of the brush: drops burst out of its tip on all sides, fall and spread into splats around him, which then fade.
+      if (!still) this.lean = -f * .08 * envelope(ms / 1100, .2, .4);
+      const tip = this.tip('swing'), drops = p.slice(0, 10), splats = p.slice(10);
+      drops.forEach((drop, k) => {
+        const flight = 520 + rand(k + 320) * 300, t = Math.max(0, Math.min(1, (ms - 330) / flight)), landX = (rand(k + 330) * 2 - 1) * w * .95;
+        drop.setPosition(tip.x + (landX - tip.x) * t, tip.y + (ground - tip.y) * t * t - Math.sin(t * Math.PI) * w * (.3 + rand(k) * .3)).setAlpha(t > 0 && t < 1 ? 1 : 0).setRotation(t * 5);
+        const landed = ms - 330 - flight, size = w * (.2 + rand(k + 310) * .12) / PFX.splatYellow.width * smooth(landed / 140);
+        splats[k].setPosition(landX, ground - 1 + rand(k + 340) * 3).setScale(size, size * .45).setAlpha(landed < 0 ? 0 : 1 - smooth((ms - 1500) / 450));
+      });
+    } else if (act === 'sunflowers') {
+      // Three little hops, a touch of the brush each: a bud pushes out of the ground, opens into a sunflower that sways; at the end he
+      // admires them and they shrink back into the grass.
+      if (!still) {
+        const hop = [arkokoHop(ms, 150, 380, 4), arkokoHop(ms, 650, 380, 4), arkokoHop(ms, 1150, 380, 5)].find(h => h.on);
+        if (hop) { this.lift = hop.lift; this.squashX = hop.squashX; this.squashY = hop.squashY; } else { this.lift = 0; this.squashX = this.squashY = 1; }
+      }
+      const spots = [[-.85, -5], [-.25, -9], [.5, -7], [-.7, 6], [.8, 5]] as const, gone = 1 - smooth((ms - 2550) / 450);
+      spots.forEach(([sx, sy], k) => {
+        const bud = p[k * 2], flower = p[k * 2 + 1], born = ms - (250 + k * 260), x = sx * w * f, y = GROUND_Y + sy;
+        const grow = smooth(born / 380), open = smooth((born - 380) / 260), sway = Math.sin(ms / 340 + k) * .08;
+        bud.setPosition(x, y).setScale(w * .26 / PFX.bud.width * grow * (1 - open)).setAlpha(born < 0 ? 0 : (1 - open) * gone).setRotation(sway);
+        const pop = open < 1 ? 1 + Math.sin(open * Math.PI) * .2 : 1;
+        flower.setPosition(x, y).setScale(w * .5 / PFX.sunflower.width * open * pop * gone).setAlpha(open * gone).setRotation(sway);
+      });
+    } else if (act === 'starry') {
+      // He looks up at a starry night turning slowly over his head: stars and little spirals of wind, glowing as they pass.
+      const soft = envelope(u, .2, .3);
+      if (!still) { this.lean = -f * .07 * soft; this.lift = 1.5 * soft * (1 + Math.sin(ms / 320)); }
+      p.forEach((piece, k) => {
+        const angle = Math.PI + (k / p.length) * Math.PI + ms / 1400, x = Math.cos(angle) * w * .8, y = GROUND_Y - w * 1.3 + Math.sin(angle) * w * .22;
+        const size = (k % 2 ? .34 : .4) * w / (k % 2 ? PFX.swirl.width : PFX.star.width), pulse = 1 + .12 * Math.sin(ms / 220 + k * 1.7);
+        piece.setPosition(x, y).setScale(size * pulse * (.6 + .4 * soft)).setRotation(ms / (k % 2 ? -500 : 900) + k).setAlpha(soft);
+      });
+    } else this.easel(ms, w, f);
+  }
+  /** The ten-second painting: the easel rises, he lifts the canvas onto it, paints it step by step, admires it, and all fades away. */
+  private easel(ms: number, w: number, f: 1 | -1): void {
+    const [easel, lower, upper, ...twinkles] = this.pieces, presence = easelPresence(ms), tip = this.tip('paint');
+    const easelWidth = w * .8, canvasWidth = easelWidth * EASEL_REST.width, scale = easelWidth / PFX.easel.width, easelHeight = PFX.easel.height * scale;
+    // The canvas's near edge comes just past the brush's tip, so he paints on it.
+    const x = f * (tip.x + canvasWidth / 2 - w * .06), y = GROUND_Y - 1 + (1 - presence) * 5;
+    easel.setPosition(x, y).setScale(scale, scale * (.9 + .1 * presence)).setAlpha(presence);
+    const rest = {x: x + f * (EASEL_REST.x - .5) * easelWidth, y: y - easelHeight * (1 - EASEL_REST.y)}, placed = smooth((ms - EASEL.place) / 180) * presence;
+    const progress = canvasProgress(ms) * (PFX.canvas.length - 1), step = Math.min(PFX.canvas.length - 2, Math.floor(progress)), part = progress - step;
+    const canvasScale = canvasWidth / PFX.canvas[0].width;
+    lower.setTexture(PFX.canvas[step].texture).setPosition(rest.x, rest.y).setScale(canvasScale).setAlpha(placed);
+    upper.setTexture(PFX.canvas[step + 1].texture).setPosition(rest.x, rest.y).setScale(canvasScale).setAlpha(placed * part);
+    if (!this.reduced) this.lean = f * .035 * brushWork(ms);
+    // Admiring it: a few stars twinkle around the finished painting.
+    const admire = ms > EASEL.admire ? envelope((ms - EASEL.admire) / (EASEL.fade - EASEL.admire + 500), .2, .3) * presence : 0;
+    const canvasHeight = PFX.canvas[0].height * canvasScale;
+    twinkles.forEach((star, k) => {
+      const angle = k / twinkles.length * Math.PI * 2 + ms / 900;
+      star.setPosition(rest.x + Math.cos(angle) * canvasWidth * .62, rest.y - canvasHeight / 2 + Math.sin(angle) * canvasHeight * .7)
+        .setScale(w * .2 / PFX.star.width * (.7 + .3 * Math.sin(ms / 180 + k))).setAlpha(admire).setRotation(ms / 600 + k);
+    });
   }
   /** The club tail strikes at `SLAM.impact`: the ground cracks, a ring of dust spreads, stones fly and the meadow shakes a little. */
   private slam(ms: number, w: number, f: 1 | -1): void {

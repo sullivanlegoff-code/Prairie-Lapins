@@ -24,7 +24,7 @@ export const EVOLUTION_CHALLENGES: Readonly<Partial<Record<SpeciesId, readonly E
   vantablack: ['voyage', 'corde:10'], fantome: ['piquenique', 'quotidien'], bouyoyo: ['soin', 'gouteur:moelleux'], nuage: ['voyage', 'soin'],
   champignon: ['piquenique', 'commis:moelleux'], 'gigi-rarafe': ['voyage', 'piquenique', 'corde:20'], yetiti: ['soin', 'piquenique', 'parent'],
   rennes: ['voyage', 'corde:20', 'quotidien'], susucre: ['commis:moelleux', 'gouteur:moelleux', 'soin'], 'lapin-de-sulli': ['gouteur:chicken', 'voyage', 'quotidien'],
-  'pain-epice': ['commis:moelleux', 'gouteur:avocado-toast', 'piquenique'], 'flocon-cristal': ['soin', 'corde:20', 'parent'], arkoko: ['parent', 'voyage', 'quotidien'],
+  'pain-epice': ['commis:moelleux', 'gouteur:avocado-toast', 'piquenique'], 'flocon-cristal': ['soin', 'corde:20', 'parent'], arkoko: ['parent', 'voyage', 'quotidien'], peintre: ['voyage', 'piquenique', 'quotidien'], 'fusion-nucleaire': ['soin', 'voyage', 'piquenique'],
 };
 export const EVOLUTION_CHALLENGE_IDS = [...new Set(Object.values(EVOLUTION_CHALLENGES).flatMap(challenges => challenges ?? []))] as readonly EvolutionChallenge[];
 /** How many daily cycles in a row must end with the cycle bonus claimed for the `quotidien` challenge. */

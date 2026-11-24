@@ -14,16 +14,24 @@ import {clamp} from '../util/clamp';
  * then goes back to normal (`flare`); now and then: stars twinkling around it, a small rainbow drawing itself above its head, a
  * rainbow trail of stardust flying around it. Since 20 November 2026 (« soigne les animations d'Arkoko ») it moves too: a jump at the
  * flare, three hops under its rainbow, a twirl about itself while its trail flies around it, a sway looking up at its stars.
+ * Peintre (owner, 24 November 2026: five shows, « un grand coup de pinceau », and a ten-second one where he sets a canvas on an
+ * easel and paints Van Gogh's Almond Blossom): touched, a great brush stroke swirls through the air (`stroke`); now and then: the
+ * easel and its painting (`easel`), sunflowers sprouting where his brush touches the ground (`sunflowers`), swirling stars of a
+ * starry night above his head (`starry`, also asleep), a flick of his brush spattering paint around him (`splatter`). He stands
+ * still while he paints (`stillAct`), in painted poses (src/config/peintreArt.ts).
  */
 export type LegendaryAct = 'tap' | 'smoke' | 'hiccup' | 'embers' | 'dive' | 'surf' | 'bubbles' | 'splash' | 'slam' | 'rumble' | 'dig' | 'dust'
-  | 'flare' | 'stars' | 'rainbow' | 'trail';
+  | 'flare' | 'stars' | 'rainbow' | 'trail' | 'stroke' | 'easel' | 'sunflowers' | 'starry' | 'splatter';
 export const ACT_MS: Record<LegendaryAct, number> = {tap: 1900, smoke: 1700, hiccup: 1000, embers: 2000, dive: 2300, surf: 2600, bubbles: 2200, splash: 1000,
-  slam: 2000, rumble: 1600, dig: 2200, dust: 1400, flare: 1700, stars: 2200, rainbow: 2800, trail: 2200};
-export const TAP_ACT: Record<LegendaryShow, LegendaryAct> = {dragon: 'tap', requin: 'dive', ankylosaure: 'slam', arkoko: 'flare'};
+  slam: 2000, rumble: 1600, dig: 2200, dust: 1400, flare: 1700, stars: 2200, rainbow: 2800, trail: 2200,
+  stroke: 2200, easel: 10_000, sunflowers: 3000, starry: 2800, splatter: 2000};
+export const TAP_ACT: Record<LegendaryShow, LegendaryAct> = {dragon: 'tap', requin: 'dive', ankylosaure: 'slam', arkoko: 'flare', peintre: 'stroke'};
 export const IDLE_ACTS: Record<LegendaryShow, readonly LegendaryAct[]> = {dragon: ['smoke', 'hiccup', 'embers', 'smoke'], requin: ['surf', 'bubbles', 'surf', 'splash'],
-  ankylosaure: ['rumble', 'dig', 'dust', 'rumble'], arkoko: ['stars', 'rainbow', 'trail']};
+  ankylosaure: ['rumble', 'dig', 'dust', 'rumble'], arkoko: ['stars', 'rainbow', 'trail'], peintre: ['easel', 'sunflowers', 'starry', 'splatter', 'easel']};
 /** Asleep, only soft shows: smoke rings from the Dragon, bubbles from the Requin, a puff of dust from the Ankylosaure, a few stars around Arkoko. */
-export const SLEEP_ACTS: Record<LegendaryShow, LegendaryAct> = {dragon: 'smoke', requin: 'bubbles', ankylosaure: 'dust', arkoko: 'stars'};
+export const SLEEP_ACTS: Record<LegendaryShow, LegendaryAct> = {dragon: 'smoke', requin: 'bubbles', ankylosaure: 'dust', arkoko: 'stars', peintre: 'starry'};
+/** The Peintre's shows keep him in place (he paints, plants or flicks his brush where he stands). */
+export const stillAct = (act: LegendaryAct | undefined): boolean => act === 'stroke' || act === 'easel' || act === 'sunflowers' || act === 'starry' || act === 'splatter';
 /** Milliseconds between two spontaneous shows of one legendary; the first comes sooner, to be seen (src/config/legendaryArt.ts). */
 export const IDLE_GAP = LEGENDARY_IDLE_GAP_MS;
 /** The surf belongs to the surfboard's 2 seconds of slide; the board appears and leaves around it. */
@@ -95,7 +103,7 @@ export function breathFrame(ms: number, duration: number): number {
  * a stronger beat during a show. Zero when motion is reduced.
  */
 export function partAngle(species: LegendaryShow, timeMs: number, phase: number, act: ActState | null, reduced: boolean): number {
-  if (reduced || species === 'arkoko') return 0;
+  if (reduced || species === 'arkoko' || species === 'peintre') return 0;
   if (species === 'ankylosaure') return reduced ? 0 : tailAngle(timeMs / 1000 + phase, act);
   const t = timeMs / 1000 + phase, amplitude = species === 'dragon' ? 1 : .55;
   let angle = Math.sin(t * 1.3) * .035;
@@ -163,3 +171,30 @@ export function arkokoHop(ms: number, start: number, length: number, height: num
   if (t <= 1) { const stretch = Math.max(0, 1 - t * 2.5); return {on: true, lift: arc(t) * height, squashX: 1 - .05 * stretch, squashY: 1 + .08 * stretch}; }
   const land = Math.sin((t - 1) / .3 * Math.PI); return {on: true, lift: 0, squashX: 1 + .1 * land, squashY: 1 - .12 * land};
 }
+
+
+/**
+ * The Peintre's painted poses through his shows (null: his own drawing). The easel: he sets the easel up, lifts his canvas onto it
+ * (`carry`), paints it stroke by stroke (`paint`), then steps back to admire it (`admire`) before it fades away.
+ */
+export const EASEL = {appear: 600, carry: 700, place: 1900, paint: 2100, done: 8300, admire: 8400, fade: 9300} as const;
+export type PeintrePose = 'swing' | 'carry' | 'paint' | 'admire';
+export function peintrePose(act: LegendaryAct, ms: number): PeintrePose | null {
+  if (act === 'stroke') return ms >= 120 && ms < 1250 ? 'swing' : null;
+  if (act === 'splatter') return ms >= 100 && ms < 1100 ? 'swing' : null;
+  if (act === 'sunflowers') return ms >= 2200 && ms < 2900 ? 'admire' : null;
+  if (act !== 'easel') return null;
+  if (ms < EASEL.carry || ms >= EASEL.fade) return null;
+  if (ms < EASEL.place) return 'carry';
+  if (ms < EASEL.done) return 'paint';
+  return ms >= EASEL.admire ? 'admire' : 'paint';
+}
+/** How much of the painting is done (0 blank, 1 finished): a few strokes at a time, with short pauses between them. */
+export function canvasProgress(ms: number): number {
+  const u = clamp((ms - EASEL.paint) / (EASEL.done - EASEL.paint)), steps = 12, k = u * steps, whole = Math.floor(k), part = k - whole;
+  return clamp((whole + smooth(Math.min(1, part * 1.6))) / steps);
+}
+/** The easel's presence (0 → 1 → 0): it rises out of the ground at the start and fades away at the end. */
+export const easelPresence = (ms: number) => Math.min(smooth(ms / EASEL.appear), 1 - smooth((ms - EASEL.fade) / (ACT_MS.easel - EASEL.fade)));
+/** The painter's arm at work: a small back-and-forth of his body while each stroke is laid. */
+export const brushWork = (ms: number) => ms < EASEL.paint || ms > EASEL.done ? 0 : Math.sin((ms - EASEL.paint) / 130) * Math.abs(Math.sin((ms - EASEL.paint) / 520));

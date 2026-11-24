@@ -1,16 +1,18 @@
 import type {SpeciesId} from './species';
 import {BENNY_EFFECTS} from './bennyArt';
 import crystal from './arkokoCrystal.json';
+import {peintreMeadowArt} from './peintreArt';
 
 /**
  * Painted effects of the legendaries (owner's requests of 31 October and 1 November 2026, ChatGPT paintings, free hand given to the assistant).
  * Pictures: scripts/prepare-legendary-effects.mjs (effects) and scripts/prepare-legendary-parts.mjs (wing, fin, tail, open mouth).
  * Their designs never change: the body pictures are the approved sprite minus the moving part, which is drawn behind it.
  */
-export const LEGENDARY_SHOWS = ['dragon', 'requin', 'ankylosaure', 'arkoko'] as const;
+export const LEGENDARY_SHOWS = ['dragon', 'requin', 'ankylosaure', 'arkoko', 'peintre'] as const;
 export type LegendaryShow = typeof LEGENDARY_SHOWS[number];
-/** The legendaries with a moving part cut from their drawing (wing, fin, tail); Arkoko has none: its crystal shines instead. */
-export type PartedShow = Exclude<LegendaryShow, 'arkoko'>;
+/** The legendaries with a moving part cut from their drawing (wing, fin, tail); Arkoko has none (its crystal shines instead), nor
+ * the Peintre (he takes painted poses: src/config/peintreArt.ts). */
+export type PartedShow = Exclude<LegendaryShow, 'arkoko' | 'peintre'>;
 export const isLegendaryShow = (species: SpeciesId | string): species is LegendaryShow => (LEGENDARY_SHOWS as readonly string[]).includes(species);
 /** Legendary animations are available for both approved drawings. */
 export const shouldShowLegendaryView = (species: SpeciesId | string, _art: {evolved?: true}): boolean => isLegendaryShow(species);
@@ -92,7 +94,7 @@ export const LEGENDARY_EVOLVED_PARTS: Record<PartedShow, LegendaryParts> = {
 export function legendaryPartsForArt(species: PartedShow, art: {evolved?: true}): LegendaryParts;
 export function legendaryPartsForArt(species: LegendaryShow, art: {evolved?: true}): LegendaryParts | null;
 export function legendaryPartsForArt(species: LegendaryShow, art: {evolved?: true}): LegendaryParts | null {
-  if (species === 'arkoko') return null;
+  if (species === 'arkoko' || species === 'peintre') return null;
   return art.evolved ? LEGENDARY_EVOLVED_PARTS[species] : LEGENDARY_PARTS[species];
 }
 
@@ -115,6 +117,7 @@ export const crystalCentre = (c: ArkokoCrystal) => ({x: c.crystal.x + c.crystal.
 /** Every picture a meadow with this legendary needs, for the scene loader. */
 export function legendaryMeadowArt(species: LegendaryShow, art?: {evolved?: true}): {texture: string; url: string}[] {
   const e = LEGENDARY_EFFECTS;
+  if (species === 'peintre') return peintreMeadowArt(art);
   if (species === 'arkoko') {
     const versions = art ? [arkokoCrystalForArt(art)] : [ARKOKO_CRYSTAL, ARKOKO_EVOLVED_CRYSTAL];
     return [...versions.flatMap(c => [c.crystal, ...(c.glow ? [c.glow] : [])]), e.prism, e.twinkle, e.star, e.starFive, e.trail, e.stardust, ...e.rainbow];

@@ -33,4 +33,6 @@ export const NEWS_PAGES: readonly NewsPage[] = [
     'Des enclos plus grands, l’enclos Ultra neige et le perchoir de Benny pour son jeu du vol.',
   ]},
 ];
-export const NEWS_SPECIES_COUNT_BEFORE = SPECIES_IDS.length - NEW_SPECIES.length;
+/** Species added after this news (the Peintre and Fusion Nucléaire, 24 November 2026): never counted in the game it describes. */
+const SPECIES_SINCE_NEWS: readonly string[] = ['peintre', 'fusion-nucleaire'];
+export const NEWS_SPECIES_COUNT_BEFORE = SPECIES_IDS.filter(id => !SPECIES_SINCE_NEWS.includes(id)).length - NEW_SPECIES.length;
