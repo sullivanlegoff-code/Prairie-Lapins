@@ -66,6 +66,6 @@ Depuis le 3 novembre 2026, les 35 espèces listées dans `src/config/evolvedArt.
 2. ajouter une ligne à `EVOLVED_ART` (largeur et hauteur à 0, largeur monde qui garde la surface du v1) et une entrée `<id>-evolution` à `scripts/rabbit-art-manifest.json` (`species`, `master`, `registry`, `displayScale`, `file`, `worldWidth`), puis `node scripts/derive-rabbit-art.mjs <id>-evolution` ;
 3. lire les ancrages de la toque et de la couronne sur le v2 (`EVOLVED_CUISINE_ANCHORS`, `src/config/cuisineAnchors.ts`).
 
-Le 24 novembre 2026, sept évolutions ont été repeintes à partir du premier dessin de leur lapin (Ardent, Rennes, Pain d'épice, Gigi-rarafe, Dinono, Piment, Fantôme), sur fond magenta uni. Leurs sources `<id>-evolution-source.png` sont déjà détourées (transparentes) : `prepare-rabbit-masters.mjs` les recadre seulement.
+Le 24 novembre 2026, sept évolutions ont été repeintes à partir du premier dessin de leur lapin (Ardent, Rennes, Pain d'épice, Gigi-rarafe, Dinono, Piment, Fantôme), puis Flocon de cristal (« Moulins et tulipes » : porcelaine bleu cobalt peinte en blanc), sur fond magenta uni. Leurs sources `<id>-evolution-source.png` sont déjà détourées (transparentes) : `prepare-rabbit-masters.mjs` les recadre seulement.
 
 Chaque évolution a ses propres paupières et sa propre truffe (7 novembre 2026), choisies d'après le dessin affiché ; pendant les poses peintes de Dadi évolué, elles sont cachées. La Forêt de Brocéliande (10 000 pièces, niveau 20) permet ensuite de remettre l'ancien dessin, lapin par lapin (`classicLook` dans la sauvegarde v23).

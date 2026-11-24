@@ -21,7 +21,7 @@ import {affectionCap, capReason, isUltimate, nextAffectionStatue, playerLevel, r
 import {agencyBuilding, travelling} from './travel';
 import {atSalon, giftAffectionReason, giftCycle, giftReason, picnicQuote, salonBuilding} from './care';
 import {classicLookReason, lookChanging} from './forest';
-import {recordDailyStreak, recordEvolutionChallenge, recordJumpRopeScore} from './evolution';
+import {recordDailyStreak, recordEvolutionAmount, recordEvolutionChallenge, recordJumpRopeScore} from './evolution';
 import {canEvolve, hasEvolvedArt} from '../config/evolvedArt';
 import {evolutionChallengesComplete, type EvolutionChallenge} from '../config/evolutionChallenges';
 import {jumpIslandReason, jumpRopeReward, jumpRopeTeamReason} from './jumpRope';
@@ -653,6 +653,8 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         s.bennyRun = {best: Math.max(s.bennyRun?.best ?? 0, command.score), metres: Math.max(s.bennyRun?.metres ?? 0, command.metres), ...(Object.keys(settings).length ? {settings} : {}), ...(day ? {day} : {})};
         // The daily missions and the main mission « Premier cours » count the run and its coins (a run is a run, rewarded or not).
         requireRule(recordMissionAction(s, 'bennyRun', 1) && recordMissionAction(s, 'bennyCoins', coins), 'RESOURCE_LIMIT');
+        // Every coin collected counts for « Récolter 1000 pièces en jouant à Benny Rampage » (Peintre), paid or past the daily limit.
+        recordEvolutionAmount(s, 'rampage', coins);
         value = paid.pattes; break;
       }
       case 'rewardBennyFlight': {
@@ -663,6 +665,8 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         const today = previous?.cycle === cycle ? previous : null;
         credit('pattes', paid.pattes); credit('hearts', paid.hearts);
         s.bennyFlight = {cycle, rewarded: (today?.rewarded ?? 0) + (paid.rewarded ? 1 : 0), ...(today?.heart || paid.hearts ? {heart: true as const} : {}), best: Math.max(previous?.best ?? 0, command.passed)};
+        // Every column passed counts for « Faire 50 colonnes dans le perchoir de Benny » (Flocon de cristal), rewarded game or not.
+        recordEvolutionAmount(s, 'perchoir', command.passed);
         flightHearts = paid.hearts; value = paid.pattes; break;
       }
       case 'release': {

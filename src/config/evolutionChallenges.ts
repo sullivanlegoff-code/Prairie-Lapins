@@ -7,7 +7,11 @@ export type ChallengeRecipe = 'chicken' | 'moelleux' | 'avocado-toast';
  * `commis:<recette>` counts only for the commis (the rabbit that cooks), `gouteur:<recette>` only for the taster (owner,
  * 4 November 2026). `quotidien`: the daily missions succeeded three days in a row (see `recordDailyStreak`).
  */
-export type EvolutionChallenge = 'voyage' | 'soin' | 'piquenique' | 'parent' | 'quotidien' | `commis:${ChallengeRecipe}` | `gouteur:${ChallengeRecipe}` | 'corde:10' | 'corde:20';
+export type EvolutionChallenge = 'voyage' | 'soin' | 'piquenique' | 'parent' | 'quotidien' | `commis:${ChallengeRecipe}` | `gouteur:${ChallengeRecipe}` | 'corde:10' | 'corde:20'
+  // Amounts added up game after game (owner, 24 November 2026): coins collected in « Benny Rampage », columns passed at the Perchoir de Benny.
+  | 'rampage:1000' | 'perchoir:50';
+/** The challenges counted as an amount: the progress is the amount gathered so far, the target is the number after the colon. */
+export const isAmountChallenge = (challenge: EvolutionChallenge): challenge is 'rampage:1000' | 'perchoir:50' => challenge.startsWith('rampage:') || challenge.startsWith('perchoir:');
 /** The owner's distribution (4 November 2026): one challenge for a Common, two for a Rare, three for an Epic or a Legendary. */
 export const EVOLUTION_CHALLENGES: Readonly<Partial<Record<SpeciesId, readonly EvolutionChallenge[]>>> = {
   paille: ['voyage'], neige: ['soin'], feu: ['commis:chicken'], 'belier-gris': ['piquenique'], volant: ['quotidien'],
@@ -24,14 +28,16 @@ export const EVOLUTION_CHALLENGES: Readonly<Partial<Record<SpeciesId, readonly E
   vantablack: ['voyage', 'corde:10'], fantome: ['piquenique', 'quotidien'], bouyoyo: ['soin', 'gouteur:moelleux'], nuage: ['voyage', 'soin'],
   champignon: ['piquenique', 'commis:moelleux'], 'gigi-rarafe': ['voyage', 'piquenique', 'corde:20'], yetiti: ['soin', 'piquenique', 'parent'],
   rennes: ['voyage', 'corde:20', 'quotidien'], susucre: ['commis:moelleux', 'gouteur:moelleux', 'soin'], 'lapin-de-sulli': ['gouteur:chicken', 'voyage', 'quotidien'],
-  'pain-epice': ['commis:moelleux', 'gouteur:avocado-toast', 'piquenique'], 'flocon-cristal': ['soin', 'corde:20', 'parent'], arkoko: ['parent', 'voyage', 'quotidien'], peintre: ['voyage', 'piquenique', 'quotidien'], 'fusion-nucleaire': ['soin', 'voyage', 'piquenique'],
+  'pain-epice': ['commis:moelleux', 'gouteur:avocado-toast', 'piquenique'], 'flocon-cristal': ['soin', 'perchoir:50', 'parent'], arkoko: ['parent', 'voyage', 'quotidien'], peintre: ['voyage', 'piquenique', 'rampage:1000'], 'fusion-nucleaire': ['soin', 'voyage', 'piquenique'],
 };
+/** The challenges replaced on 24 November 2026 (Peintre: « quotidien » → Benny Rampage; Flocon de cristal: « corde:20 » → Perchoir). */
+export const RETIRED_EVOLUTION_CHALLENGES: Readonly<Partial<Record<SpeciesId, readonly string[]>>> = {peintre: ['quotidien'], 'flocon-cristal': ['corde:20']};
 export const EVOLUTION_CHALLENGE_IDS = [...new Set(Object.values(EVOLUTION_CHALLENGES).flatMap(challenges => challenges ?? []))] as readonly EvolutionChallenge[];
 /** How many daily cycles in a row must end with the cycle bonus claimed for the `quotidien` challenge. */
 export const DAILY_STREAK_TARGET = 3;
 
 export const evolutionChallengeTarget = (species: SpeciesId, challenge: EvolutionChallenge): number =>
-  Math.max(1, EVOLUTION_CHALLENGES[species]?.filter(item => item === challenge).length ?? 0);
+  isAmountChallenge(challenge) ? Number(challenge.slice(challenge.indexOf(':') + 1)) : Math.max(1, EVOLUTION_CHALLENGES[species]?.filter(item => item === challenge).length ?? 0);
 /** The recipe as the sheet names it. */
 export const CHALLENGE_RECIPE_NAMES: Readonly<Record<ChallengeRecipe, string>> = {chicken: 'le poulet', moelleux: 'le moelleux', 'avocado-toast': 'l’avocado toast'};
 export const evolutionChallengeLabel = (challenge: EvolutionChallenge): string => {
@@ -42,6 +48,8 @@ export const evolutionChallengeLabel = (challenge: EvolutionChallenge): string =
   if (challenge === 'quotidien') return `Réussir les missions du jour ${DAILY_STREAK_TARGET} jours de suite`;
   if (challenge.startsWith('commis:')) return `Commis : cuisiner ${CHALLENGE_RECIPE_NAMES[challenge.slice('commis:'.length) as ChallengeRecipe]}`;
   if (challenge.startsWith('gouteur:')) return `Goûteur : goûter ${CHALLENGE_RECIPE_NAMES[challenge.slice('gouteur:'.length) as ChallengeRecipe]}`;
+  if (challenge.startsWith('rampage:')) return `Récolter ${challenge.slice('rampage:'.length)} pièces en jouant à Benny Rampage`;
+  if (challenge.startsWith('perchoir:')) return `Faire ${challenge.slice('perchoir:'.length)} colonnes dans le perchoir de Benny`;
   if (challenge.startsWith('corde:')) return `sauts à la corde (minimum ${challenge.slice('corde:'.length)})`;
   return challenge;
 };

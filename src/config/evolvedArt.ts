@@ -105,7 +105,7 @@ export const EVOLVED_ART: readonly EvolvedSprite[] = [
   {id: 'bouyoyo', name: 'Boyoyoyoyoyo', file: 'assets/rabbits/bouyoyo/bouyoyo-v2.png', texture: 'rabbit-bouyoyo-evolved-v2', width: 452, height: 442, worldWidth: 53.3, groundY: 12},
   {id: 'lapin-de-sulli', name: 'Wtf', file: 'assets/rabbits/lapin-de-sulli/lapin-de-sulli-v2.png', texture: 'rabbit-lapin-de-sulli-evolved-v2', width: 361, height: 575, worldWidth: 42.6, groundY: 12, facing: 'left'},
   {id: 'pain-epice', name: 'Pâtissier', file: 'assets/rabbits/pain-epice/pain-epice-v2.png', texture: 'rabbit-pain-epice-evolved-v2', width: 419, height: 468, worldWidth: 49.4, groundY: 12},
-  {id: 'flocon-cristal', name: 'Floco', file: 'assets/rabbits/flocon-cristal/flocon-cristal-v2.png', texture: 'rabbit-flocon-cristal-evolved-v2', width: 356, height: 531, worldWidth: 42, groundY: 12},
+  {id: 'flocon-cristal', name: 'Floco', file: 'assets/rabbits/flocon-cristal/flocon-cristal-v2.png', texture: 'rabbit-flocon-cristal-evolved-v2', width: 322, height: 588, worldWidth: 38, groundY: 12},
   {id: 'nuage', name: 'Smooth Cloud', file: 'assets/rabbits/nuage/nuage-v2.png', texture: 'rabbit-nuage-evolved-v2', width: 405, height: 575, worldWidth: 47.7, groundY: 12, facing: 'left'},
   // Peintre Aguerri (owner, 24 November 2026): his own drawing, with a starry beret, a scarf, a brush and a satchel of brushes.
   {id: 'champignon', name: 'Roi des sous-bois', file: 'assets/rabbits/champignon/champignon-v2.png', texture: 'rabbit-champignon-evolved-v2', width: 488, height: 477, worldWidth: 57.6, groundY: 12},

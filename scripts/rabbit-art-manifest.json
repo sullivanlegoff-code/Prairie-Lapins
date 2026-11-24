@@ -981,13 +981,13 @@
   },
   "flocon-cristal": {
     "file": "assets/rabbits/flocon-cristal/flocon-cristal-v1.png",
-    "worldWidth": 42,
-    "sourceSha1": "9ab23755446a61afcd3f1fbec11dd9a3f3f87768",
-    "sourceWidth": 809,
-    "sourceHeight": 1207,
-    "width": 310,
-    "height": 463,
-    "derivedSha1": "d4bd59bd8344255fad8e700b2202fba3c785621c"
+    "worldWidth": 38.7,
+    "sourceSha1": "8a8fa3597a747c5c98ec56d5fc8b75bbb446f26b",
+    "sourceWidth": 757,
+    "sourceHeight": 1330,
+    "width": 286,
+    "height": 502,
+    "derivedSha1": "204dd4a76238ff44ae1a2ef3f04a7c428cbc2b12"
   },
   "vantablack-evolution": {
     "species": "vantablack",
@@ -1149,13 +1149,13 @@
     "registry": "src/config/evolvedArt.ts",
     "displayScale": 1.15,
     "file": "assets/rabbits/flocon-cristal/flocon-cristal-v2.png",
-    "worldWidth": 42,
-    "sourceSha1": "f2da0f44f404deaa1acdb23dd728cb4abb521ea1",
-    "sourceWidth": 822,
-    "sourceHeight": 1227,
-    "width": 356,
-    "height": 531,
-    "derivedSha1": "b4478634b6335b06e39af5210cc46f32a5cf12f4"
+    "worldWidth": 38,
+    "sourceSha1": "915a8e540b64d014af250bf7ec286cb40c6fc841",
+    "sourceWidth": 811,
+    "sourceHeight": 1480,
+    "width": 322,
+    "height": 588,
+    "derivedSha1": "666207e77e1524ec370fb45ce1515589a2ce2153"
   },
   "nuage-evolution": {
     "species": "nuage",
