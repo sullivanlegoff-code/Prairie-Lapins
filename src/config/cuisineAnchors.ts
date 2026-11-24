@@ -122,7 +122,7 @@ export const EVOLVED_CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>>
   champignon: a([.73, .19, .26, 6], [.8, .5, .24], [.78, .375, .22]),
   'lapin-de-sulli': a([.42, .16, .34, -2], [.38, .4, .34], [.3, .28, .3]),
   'pain-epice': a([.81, .3, .3, 6], [.82, .55, .3], [.84, .4, .26]), // 24 Nov. 2026: icing, sitting like the base.
-  'flocon-cristal': a([.62, .14, .34, 4], [.64, .45, .28], [.66, .3, .28]),
+  'flocon-cristal': a([.6, .23, .44, 2], [.6, .5, .44], [.6, .36, .46]), // 24 Nov. 2026: « Moulins et tulipes ».
   vantablack: a([.43, .21, .44, -6], [.3, .51, .36], [.27, .37, .4]), // 19 Nov. 2026: evolution redrawn upright, looking left.
   'gigi-rarafe': a([.64, .14, .26, 8], [.68, .4, .22], [.7, .23, .26]), // 24 Nov. 2026: fashion model.
   yetiti: a([.38, .1, .3, -4], [.4, .33, .3], [.4, .2, .24]),

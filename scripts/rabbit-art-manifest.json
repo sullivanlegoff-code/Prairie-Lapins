@@ -1149,13 +1149,13 @@
     "registry": "src/config/evolvedArt.ts",
     "displayScale": 1.15,
     "file": "assets/rabbits/flocon-cristal/flocon-cristal-v2.png",
-    "worldWidth": 42,
-    "sourceSha1": "f2da0f44f404deaa1acdb23dd728cb4abb521ea1",
-    "sourceWidth": 822,
-    "sourceHeight": 1227,
-    "width": 356,
-    "height": 531,
-    "derivedSha1": "b4478634b6335b06e39af5210cc46f32a5cf12f4"
+    "worldWidth": 38,
+    "sourceSha1": "915a8e540b64d014af250bf7ec286cb40c6fc841",
+    "sourceWidth": 811,
+    "sourceHeight": 1480,
+    "width": 322,
+    "height": 588,
+    "derivedSha1": "666207e77e1524ec370fb45ce1515589a2ce2153"
   },
   "nuage-evolution": {
     "species": "nuage",

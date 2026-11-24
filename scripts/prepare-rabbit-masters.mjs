@@ -11,7 +11,7 @@ import {encodePng} from './derive-nursery-overlays.mjs';
 process.chdir(fileURLToPath(new URL('..', import.meta.url)));
 /** `light`: white background; `checker`: a transparency checkerboard printed into the picture (two neutral greys);
  * `corner`: a flat colour sampled on the border (`tolerance`, optional, replaces its default colour distance); absent: already transparent. */
-const REPAINTED_24_NOVEMBER = ['ardent', 'rennes', 'pain-epice', 'gigi-rarafe', 'dinono', 'piment', 'fantome'].map(id => `${id}-evolution`);
+const REPAINTED_24_NOVEMBER = ['ardent', 'rennes', 'pain-epice', 'gigi-rarafe', 'dinono', 'piment', 'fantome', 'flocon-cristal'].map(id => `${id}-evolution`);
 export const DESIGNS = [
   {id: 'boudinet', file: 'Rare/Boudinet/Boudinet.png', background: 'light'},
   {id: 'dinono', file: 'Rare/Dinono/Dinono.png'},
@@ -96,7 +96,8 @@ export const DESIGNS = [
     // The white sheet of Fantôme, the white fur of Nuage and Flocon de cristal: only the near-pure white of the backdrop goes.
     master: `assets-source/rabbits/${id}/${id}-evolution-sprite.png`, ...['fantome', 'nuage'].includes(id) ? {background: 'corner', tolerance: 10} : id === 'champignon' ? {background: 'corner', tolerance: 40} : ['gigi-rarafe', 'fusion-nucleaire'].includes(id) ? {} : {background: 'light'}})),
 // Seven evolutions repainted from their first drawing and chosen by the owner on 24 November 2026 (Ardent C « braise sombre »,
-// Rennes A in its base fur colour, Pain d'épice A, Gigi-rarafe A, Dinono A « armure mate », Piment A, Fantôme B): painted on flat
+// Rennes A in its base fur colour, Pain d'épice A, Gigi-rarafe A, Dinono A « armure mate », Piment A, Fantôme B), then Flocon de cristal « Moulins et tulipes » (cobalt porcelain
+// painted in white, sitting): painted on flat
 // magenta, their sources are already cut out (transparent), so they are only cropped.
 ].map(design => REPAINTED_24_NOVEMBER.includes(design.id) ? {id: design.id, source: design.source, master: design.master} : design);
 // Bouee's left ear encloses a pocket of background: seed only that pocket, preserving the ring's white dots. Dinenette's evolved
