@@ -11,9 +11,9 @@ describe('evolution challenge catalogue', () => {
     expect(MAIN_MISSIONS['evolve-first'].reward).toEqual({resource: 'hearts', amount: 3});
     expect(MAIN_MISSIONS['evolve-five'].reward).toEqual({resource: 'hearts', amount: 10});
   });
-  it('covers exactly the 48 evolved species with 1, 2 or 3 challenges for each rarity', () => {
+  it('covers exactly the 49 evolved species with 1, 2 or 3 challenges for each rarity', () => {
     const evolved = EVOLVED_ART.map(entry => entry.id).sort();
-    expect(evolved).toHaveLength(48);
+    expect(evolved).toHaveLength(49);
     expect(EVOLVED_ART.every(entry => entry.name.trim().length > 0)).toBe(true);
     expect(Object.keys(EVOLUTION_CHALLENGES).sort()).toEqual(evolved);
     for (const species of SPECIES_IDS) {

@@ -909,6 +909,16 @@
     "height": 566,
     "derivedSha1": "27613e333cce135c920b3679d5f873be895d041c"
   },
+  "peintre": {
+    "file": "assets/rabbits/peintre/peintre-v1.png",
+    "worldWidth": 54,
+    "sourceSha1": "2d9d2114fbd2faa7d21f6ca9649e7424ee247d1f",
+    "sourceWidth": 1116,
+    "sourceHeight": 1156,
+    "width": 413,
+    "height": 428,
+    "derivedSha1": "bf1b4c850603e694d1aa7eec51da2d35f498daf3"
+  },
   "fantome": {
     "file": "assets/rabbits/fantome/fantome-v1.png",
     "worldWidth": 51,
@@ -1062,6 +1072,20 @@
     "width": 352,
     "height": 682,
     "derivedSha1": "5770f3da7a5e16e2c3f9d44d09363f2a295a2180"
+  },
+  "peintre-evolution": {
+    "species": "peintre",
+    "master": "assets-source/rabbits/peintre/peintre-evolution-sprite.png",
+    "registry": "src/config/evolvedArt.ts",
+    "displayScale": 1.15,
+    "file": "assets/rabbits/peintre/peintre-v2.png",
+    "worldWidth": 50.1,
+    "sourceSha1": "c4ffa0f32e1183f44fb37e915c9e2c937bc46aa6",
+    "sourceWidth": 1025,
+    "sourceHeight": 1237,
+    "width": 425,
+    "height": 513,
+    "derivedSha1": "f5d0389a5a173893a2ce4a9aaee33c363173f388"
   },
   "fantome-evolution": {
     "species": "fantome",

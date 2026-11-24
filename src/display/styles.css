@@ -785,6 +785,38 @@ dialog.legendary-reveal-arkoko { background: #1a1238; }
 .legendary-reveal-arkoko.is-final .lr-figure { animation: lr-arkoko-float 3.2s ease-in-out infinite; }
 .legendary-reveal-arkoko.is-final .lr-hero-rainbow { animation: none; opacity: .85; }
 .legendary-reveal-arkoko.is-final .lr-halo { animation: lr-spin 26s linear infinite; opacity: .7; transform: none; }
+/* The Peintre (24 November 2026): his starry night painted in five strokes, stars and spirals, paint splashes, sunflowers, a gilded frame. */
+dialog.legendary-reveal-peintre { background: #0e1a3c; }
+.legendary-reveal-peintre .lr-backdrop { background: linear-gradient(#0a1230a8, #0a1230c8), var(--peintre-sky, none) center / cover, #13245a; }
+.legendary-reveal-peintre .lr-text h3 { text-shadow: 0 0 18px #ffd34a, 0 0 30px #4a7cff, 0 2px 6px #000a; }
+.lr-band { position: absolute; inset: 0; background: center / cover no-repeat; clip-path: inset(calc(var(--k) * 20%) 100% calc(80% - var(--k) * 20%) 0); }
+.lr-brush { position: absolute; left: 0; top: calc(var(--k) * 20% - 4%); width: 34vw; min-width: 160px; opacity: 0; transform: translateX(-40vw) rotate(-6deg); filter: drop-shadow(0 4px 6px #0006); }
+.lr-pstar { width: calc(34px * var(--s)); mix-blend-mode: normal; }
+.lr-star.lr-pswirl { width: calc(40px * var(--s)); mix-blend-mode: normal; }
+.lr-splat { position: absolute; left: var(--x); top: calc(40% + var(--y) * .55); width: calc(46px * var(--s)); opacity: 0; transform: scale(.2); }
+.lr-splat.lr-pdrop { width: calc(14px * var(--s)); top: var(--y); }
+.lr-sunflower { position: absolute; bottom: -4%; left: -3%; width: min(30vw, 34dvh); opacity: 0; transform-origin: 50% 100%; transform: translateY(60%) scale(.4); }
+.lr-sunflower:last-child { left: auto; right: -3%; scale: -1 1; }
+.lr-paintflash { background: radial-gradient(circle at 50% 42%, #ffe9a0 0%, #ffd34a70 35%, transparent 70%); opacity: 0; }
+.lr-frame { position: absolute; left: -20%; top: -30%; width: 140%; height: 150%; object-fit: fill; opacity: 0; transform: scale(1.4); filter: drop-shadow(0 8px 16px #000a); }
+.legendary-reveal-peintre.is-playing .lr-band { animation: lr-band-paint .55s calc(.15s + var(--k) * .26s) cubic-bezier(.4,.1,.3,1) forwards; }
+.legendary-reveal-peintre.is-playing .lr-brush { animation: lr-brush-sweep .55s calc(.15s + var(--k) * .26s) cubic-bezier(.4,.1,.3,1) forwards; }
+.legendary-reveal-peintre.is-playing .lr-bands { animation: lr-fade-out .6s 2.2s ease-in forwards; }
+.legendary-reveal-peintre.is-playing .lr-star { animation: lr-twinkle var(--t) calc(1.2s + var(--d)) ease-in-out infinite; }
+.legendary-reveal-peintre.is-playing .lr-splat { animation: lr-splat .5s calc(1.4s + var(--d) * .6) cubic-bezier(.3,1.6,.5,1) forwards, lr-fade-out .8s calc(2.6s + var(--d) * .3) ease-in forwards; }
+.legendary-reveal-peintre.is-playing .lr-pdrop { animation: lr-paint-drop calc(var(--t) * .7) calc(1.3s + var(--d) * .5) ease-in forwards; }
+.legendary-reveal-peintre.is-playing .lr-sunflower { animation: lr-sunflower-rise .9s calc(1.9s + var(--k) * .2s) cubic-bezier(.3,1.4,.5,1) forwards; }
+.legendary-reveal-peintre.is-playing .lr-paintflash { animation: lr-flash 1s 2.3s ease-out forwards; }
+.legendary-reveal-peintre.is-playing .lr-frame { animation: lr-frame-in .8s 2.5s cubic-bezier(.2,.9,.3,1.15) forwards; }
+.legendary-reveal-peintre.is-playing .lr-halo { animation: lr-arkoko-halo-in 1s 2.6s cubic-bezier(.2,.9,.3,1.2) forwards, lr-spin 26s 2.6s linear infinite; }
+.legendary-reveal-peintre.is-final .lr-frame { animation: none; opacity: 1; transform: none; }
+.legendary-reveal-peintre.is-final .lr-halo { animation: lr-spin 26s linear infinite; opacity: .7; transform: none; }
+@keyframes lr-band-paint { to { clip-path: inset(calc(var(--k) * 20%) 0 calc(80% - var(--k) * 20%) 0); } }
+@keyframes lr-brush-sweep { 0% { opacity: 0; transform: translateX(-40vw) rotate(-6deg); } 15% { opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; transform: translateX(100vw) rotate(4deg); } }
+@keyframes lr-splat { to { opacity: .95; transform: scale(1); } }
+@keyframes lr-paint-drop { 0% { opacity: 0; transform: translateY(-8dvh); } 15% { opacity: 1; } 100% { opacity: 0; transform: translateY(30dvh) rotate(120deg); } }
+@keyframes lr-sunflower-rise { to { opacity: 1; transform: none; } }
+@keyframes lr-frame-in { 0% { opacity: 0; transform: scale(1.4) rotate(-4deg); } 100% { opacity: 1; transform: none; } }
 .legendary-reveal-arkoko.is-final .lr-arrival-trail { animation: none; opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .legendary-reveal-arkoko.is-final .lr-figure { animation: none; } }
 @keyframes lr-arkoko-arrive {

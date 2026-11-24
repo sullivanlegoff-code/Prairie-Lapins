@@ -58,6 +58,9 @@ export const DESIGNS = [
   {id: 'pain-epice', source: 'output/imagegen/nouveaux-lapins-v4/pain-epice-B.png', background: 'light'},
   {id: 'flocon-cristal', source: 'output/imagegen/nouveaux-lapins-v3/flocon-cristal-A.png', background: 'corner', tolerance: 10},
   {id: 'nuage', source: 'output/imagegen/nouveaux-lapins-v3/nuage-A.png', background: 'light'},
+  // Peintre, the legendary of Fantôme and Boudinet: the owner's own drawings (24 November 2026, both stages on a white sheet). Its
+  // evolution, Peintre Aguerri, is its peintre-evolution-source.png, below.
+  {id: 'peintre', source: 'assets-source/rabbits/peintre/Peintre.png', background: 'light'},
   // Champignon replaced by the owner's own drawing (7 November 2026, « lapin champignon enchanté », both stages on one black sheet,
   // cut in two at its empty middle, champignon-v3); the evolution half is its champignon-evolution-source.png, below.
   {id: 'champignon', source: 'output/imagegen/champignon-v3/champignon-stade1.png', background: 'corner', tolerance: 40},
@@ -79,7 +82,7 @@ export const DESIGNS = [
   // Affection 30 evolutions of the Christmas update's thirteen rabbits (painted 5 and 6 November 2026 on a white backdrop, same
   // pose as the approved first drawing; Arkoko keeps the head of the owner's stage 1).
   ...['vantablack', 'gigi-rarafe', 'yetiti', 'rennes', 'susucre', 'arkoko', 'fantome', 'bouyoyo', 'lapin-de-sulli', 'pain-epice',
-    'flocon-cristal', 'nuage', 'champignon'].map(id => ({id: `${id}-evolution`, source: `assets-source/rabbits/${id}/${id}-evolution-source.png`,
+    'flocon-cristal', 'nuage', 'champignon', 'peintre'].map(id => ({id: `${id}-evolution`, source: `assets-source/rabbits/${id}/${id}-evolution-source.png`,
     // The white sheet of Fantôme, the white fur of Nuage and Flocon de cristal: only the near-pure white of the backdrop goes.
     master: `assets-source/rabbits/${id}/${id}-evolution-sprite.png`, ...['fantome', 'nuage'].includes(id) ? {background: 'corner', tolerance: 10} : id === 'champignon' ? {background: 'corner', tolerance: 40} : id === 'gigi-rarafe' ? {} : {background: 'light'}})),
 ];

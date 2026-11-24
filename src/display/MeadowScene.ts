@@ -9,6 +9,7 @@ import {DadiReactions} from './dadiReactions';
 import {LegendaryView} from './legendaryEffects';
 import {LegendaryClock, type LegendaryAct} from './legendaryTimeline';
 import {LEGENDARY_TEST_EVENT, isLegendaryShow, legendaryMeadowArt, shouldShowLegendaryView} from '../config/legendaryArt';
+import {PEINTRE_POSES, peintreVersion} from '../config/peintreArt';
 import {BennyView} from './bennyView';
 import {BennyClock, type BennyAct} from './bennyTimeline';
 import {BENNY_ATLAS, BENNY_ID, BENNY_TEST_EVENT, bennyMeadowArt} from '../config/bennyArt';
@@ -903,7 +904,10 @@ export class MeadowScene extends Phaser.Scene {
       // Its drawing, kept at twice its largest size on screen (plan 5.1; the body is drawn VISUAL.rabbit.scale bigger).
       if (shown) this.budget?.want(shown.texture, shown.worldWidth * VISUAL.rabbit.scale);
       for (const patch of rabbitBlinkArt(rabbit.species, !!shown?.evolved)?.patches ?? []) add(patch);
-      if (isLegendaryShow(rabbit.species)) for (const art of legendaryMeadowArt(rabbit.species)) add(art);
+      if (isLegendaryShow(rabbit.species)) for (const art of legendaryMeadowArt(rabbit.species, rabbit.species === 'peintre' ? shown ?? undefined : undefined)) add(art);
+      // The Peintre's painted poses share his drawing's pixels: kept within the same budget (the sprite's scale follows each texture).
+      if (rabbit.species === 'peintre' && shown) { const {canvas, poses} = PEINTRE_POSES[peintreVersion(shown)];
+        for (const pose of Object.values(poses)) this.budget?.want(pose.texture, canvas.width * shown.worldWidth / shown.width * VISUAL.rabbit.scale); }
       if (rabbit.species === BENNY_ID) for (const art of [...bennyMeadowArt(), ...bennyFlightArt()]) add(art);
       // Her frames are aligned pixel for pixel with her drawing: the atlas is shrunk by the same ratio (her flight atlas already fits).
       const bennyShrink = rabbit.species === BENNY_ID && shown ? shrinkSize(shown.width, shown.height, budgetWidth(shown.worldWidth * VISUAL.rabbit.scale)) : null;
@@ -1845,7 +1849,7 @@ export class MeadowScene extends Phaser.Scene {
         }
         const activity = ['sleep', 'zoom', 'meet', 'kiss'].includes(motion.mode), dancing = this.dances(rabbit);
         // The Magicien stays where he is during his trick, and so does the friend he enchants.
-        const spellbound = !!rabbit.magicien?.busy || this.enchantedLift(rabbit.id) > 0;
+        const spellbound = !!rabbit.magicien?.busy || !!rabbit.legendary?.still || this.enchantedLift(rabbit.id) > 0;
         if (dancing || spellbound) { /* stands where it is while it dances, does magic or is enchanted */ } else if (rabbit.nest ? lifeActive && visibleResidents.has(rabbit.id) && motion.mode !== 'rest' && (!reducedMotion || motion.mode === 'walk' || motion.mode === 'salto' || motion.mode === 'fed') :
           !activity || lifeActive && visibleResidents.has(rabbit.id)) stepRabbitMotion(motion, dt, others);
         // Benny's act may take over the motion (or carry her along her hops) before the pose is read.
@@ -1897,10 +1901,10 @@ export class MeadowScene extends Phaser.Scene {
         rabbit.face.eyes?.setVisible(asleep || kissing || (state & 1) !== 0);
         rabbit.face.nose?.setVisible(!asleep && !kissing && (state & 2) !== 0);
         if (rabbit.legendary?.mouthOpen) rabbit.face.nose?.setVisible(false);
-        if (rabbit.legendary?.submerged || rabbit.dadi?.posing || rabbit.magicien?.posing) { rabbit.face.eyes?.setVisible(false); rabbit.face.nose?.setVisible(false); }
+        if (rabbit.legendary?.submerged || rabbit.legendary?.posing || rabbit.dadi?.posing || rabbit.magicien?.posing) { rabbit.face.eyes?.setVisible(false); rabbit.face.nose?.setVisible(false); }
       }
       // The crown never floats: hidden whenever the head is not the sprite's (a dive, one of Benny's painted acts).
-      if (rabbit.crown && rabbit.sprite) rabbit.crown.setVisible((rabbit.sprite.visible || !!rabbit.legendary?.mouthOpen) && !rabbit.legendary?.submerged && !rabbit.magicien?.posing);
+      if (rabbit.crown && rabbit.sprite) rabbit.crown.setVisible((rabbit.sprite.visible || !!rabbit.legendary?.mouthOpen) && !rabbit.legendary?.submerged && !rabbit.magicien?.posing && !rabbit.legendary?.posing);
       rabbit.ears.forEach((ear, index) => { ear.rotation = rabbit.motion?.mode === 'sleep' ? 0 : Math.sin(t * 1.4 + index) * .13; });
       if (lifeActive && visibleResidents.has(rabbit.id) && (rabbit.motion?.mode === 'sleep' || rabbit.motion?.mode === 'kiss')) {
         const head = this.dadiHead(rabbit), world = this.view.world(head);

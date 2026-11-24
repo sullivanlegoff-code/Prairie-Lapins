@@ -31,6 +31,7 @@ const SPECIALS: {id: SpeciesId; probability: number; affection: number; types?: 
   {id: 'flocon-cristal', probability: 10, affection: 6, types: ['neige', 'vol']},
   {id: 'requin', probability: 10, affection: 10, parents: ['maxou', 'wat-wat']},
   {id: 'ankylosaure', probability: 10, affection: 10, parents: ['dinono', 'dinenette']}, {id: 'arkoko', probability: 10, affection: 10, parents: ['calinou', 'orange']},
+  {id: 'peintre', probability: 10, affection: 10, parents: ['fantome', 'boudinet']},
   // Benny, the Mythic (1 November 2026): any two Legendaries, a fixed chance reserved like a Legendary's.
   {id: 'benny', probability: 10, affection: 10, parentRarity: 'legendary'},
 ];

@@ -2418,5 +2418,57 @@
       "sourceSha1": "706975a6ed3986cee1a068c36950fcbd4a811479",
       "derivedSha1": "565d1cbda717b7cc18dd578477a8b8a7022357b1"
     }
+  },
+  "peintre": {
+    "sprite": "assets/rabbits/peintre/peintre-v1.png",
+    "spriteSha1": "bf1b4c850603e694d1aa7eec51da2d35f498daf3",
+    "spriteWidth": 413,
+    "spriteHeight": 428,
+    "eyes-closed": {
+      "file": "assets/rabbits/peintre/peintre-eyes-closed.png",
+      "x": 228,
+      "y": 73,
+      "width": 139,
+      "height": 48,
+      "source": "assets-source/rabbits/peintre/eyes-closed.png",
+      "sourceSha1": "bef8659011e14ed9f6c59e4af20c3ec907bdcf31",
+      "derivedSha1": "4e073a2e84f072b28723ff9962ea8b4cb1b3e0bf"
+    },
+    "nose-twitch": {
+      "file": "assets/rabbits/peintre/peintre-nose-twitch.png",
+      "x": 300,
+      "y": 109,
+      "width": 58,
+      "height": 46,
+      "source": "assets-source/rabbits/peintre/nose-twitch.png",
+      "sourceSha1": "ba491d4e66c435f51ebf8b804434fbe7656c8ab8",
+      "derivedSha1": "608f8f911c110aba9c1d94655c0181a1aaf23732"
+    }
+  },
+  "peintre-evolution": {
+    "sprite": "assets/rabbits/peintre/peintre-v2.png",
+    "spriteSha1": "f5d0389a5a173893a2ce4a9aaee33c363173f388",
+    "spriteWidth": 425,
+    "spriteHeight": 513,
+    "eyes-closed": {
+      "file": "assets/rabbits/peintre/peintre-evolution-eyes-closed.png",
+      "x": 202,
+      "y": 109,
+      "width": 143,
+      "height": 57,
+      "source": "assets-source/rabbits/peintre/evolution-eyes-closed.png",
+      "sourceSha1": "2210c26173f8f462cae95e83296616071ad780d9",
+      "derivedSha1": "cbbb9304066dc8e1f8a84b380385f06a3d862a82"
+    },
+    "nose-twitch": {
+      "file": "assets/rabbits/peintre/peintre-evolution-nose-twitch.png",
+      "x": 277,
+      "y": 138,
+      "width": 64,
+      "height": 56,
+      "source": "assets-source/rabbits/peintre/evolution-nose-twitch.png",
+      "sourceSha1": "73d44fffaa0156e92da2f82aa85bb82ce1d7a6c7",
+      "derivedSha1": "273ad30c49bb2c25b1cbbdc03dc5cc620342d330"
+    }
   }
 }

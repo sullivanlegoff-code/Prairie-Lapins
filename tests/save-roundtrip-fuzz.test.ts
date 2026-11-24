@@ -10,6 +10,7 @@ import {CHRISTMAS_CHALLENGE_IDS} from '../src/config/christmasEvent';
 import {picnicQuote} from '../src/simulation/care';
 import {PARCEL_IDS, extensionPrice} from '../src/config/land';
 import {playerLevel} from '../src/simulation/affection';
+import {EVOLUTION_CHALLENGES, evolutionChallengeTarget} from '../src/config/evolutionChallenges';
 let seed = 12345; const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
 const pick = <T,>(a: readonly T[]): T | undefined => a.length ? a[Math.floor(rnd() * a.length)] : undefined;
 const failures = new Map<string, string>(); const okCount: Record<string, number> = {}; const refused: Record<string, Record<string, number>> = {};
@@ -63,6 +64,11 @@ const scenarios = Object.keys(SCENARIOS) as any[];
 for (const id of scenarios) {
   let now = 1_790_000_000_000; let s: any;
   try { s = scenarioState(id, now); } catch (e) { failures.set('scenario:' + id, String(e)); continue; }
+  // A few rabbits of the complete game ready to evolve (affection 30, their challenges met), so the evolution is really played
+  // whatever the random draws (adding a species, 24 November 2026, moved them away from the rare natural case).
+  if (id === 'completeGame') for (const r of s.rabbits.filter((r: any) => EVOLUTION_CHALLENGES[r.species as keyof typeof EVOLUTION_CHALLENGES]).slice(0, 6)) {
+    r.affection = 30; r.evolution = {challenges: Object.fromEntries(EVOLUTION_CHALLENGES[r.species as keyof typeof EVOLUTION_CHALLENGES]!.map(c => [c, evolutionChallengeTarget(r.species, c)]))};
+  }
   for (let step = 0; step < 120; step++) {
     now += Math.floor(rnd() * rnd() * 3 * 3600_000);
     try { s = advance(s, now); } catch (e) { failures.set('advance:' + id, String((e as Error).stack).slice(0, 400)); break; }

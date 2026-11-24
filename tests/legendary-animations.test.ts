@@ -8,7 +8,8 @@ import {ARKOKO_CRYSTAL, ARKOKO_EVOLVED_CRYSTAL, LEGENDARY_EFFECTS, LEGENDARY_IDL
 import {SPECIES, SPECIES_IDS} from '../src/config/species';
 import {evolvedRabbitArt, rabbitArt} from '../src/config/rabbitArt';
 import {decorateLegendaryCard} from '../src/ui/legendaryCard';
-import {FLARE, SLEEP_ACTS, TAP_ACT, arkokoHop, crystalFlare, rainbowStep} from '../src/display/legendaryTimeline';
+import {EASEL, FLARE, SLEEP_ACTS, TAP_ACT, arkokoHop, canvasProgress, crystalFlare, easelPresence, peintrePose, rainbowStep, stillAct} from '../src/display/legendaryTimeline';
+import {PEINTRE_FX, PEINTRE_POSES} from '../src/config/peintreArt';
 import {VISUAL} from '../src/config/visual';
 import {ACT_MS, DIVE, IDLE_GAP, LegendaryClock, SLAM, SURF_ENTRY_MS, SURF_SLIDE_MS, TAP_COOLDOWN_MS, breathFrame, diveFin, partAngle, speciesActs, surfPose} from '../src/display/legendaryTimeline';
 import {createRabbitMotion, motionZone, startSurf, stepRabbitMotion} from '../src/display/rabbitMotion';
@@ -125,7 +126,7 @@ describe('legendary clock', () => {
     // Owner's requests of 3 November 2026 ("toutes les animations possibles et toutes les 10 à 20 secondes pas plus") and of
     // 4 November 2026 (a little more often, seen without a touch): 6 to 12 seconds.
     expect(IDLE_GAP.first[1]).toBeLessThanOrEqual(8_000); expect(IDLE_GAP.next[1]).toBeLessThanOrEqual(12_000);
-    for (const species of ['dragon', 'requin', 'ankylosaure', 'arkoko'] as const) {
+    for (const species of ['dragon', 'requin', 'ankylosaure', 'arkoko', 'peintre'] as const) {
       const clock = new LegendaryClock(species, 'rabbit-7'), seen = new Set<string>();
       for (let t = 0; t < 1_800_000; t += 100) { const s = clock.step(100, true); if (s) seen.add(s.act); }
       expect([...seen].sort()).toEqual([...speciesActs(species)].sort());
@@ -337,5 +338,60 @@ describe('Arkoko, the rainbow legendary', () => {
     expect(decorateLegendaryCard(panel, 'arkoko')).toBe(true);
     expect(panel.dataset.legendary).toBe('arkoko'); expect(panel.style.getPropertyValue('--legendary-banner')).toContain('rainbow-8');
     expect(panel.querySelectorAll('.legendary-mote').length).toBeGreaterThan(0);
+  });
+});
+
+describe('The Peintre, the painter legendary (24 November 2026)', () => {
+  it('has five shows of his own: a great brush stroke at a touch, the ten-second easel, sunflowers, a starry night and splashes', () => {
+    expect(TAP_ACT.peintre).toBe('stroke');
+    expect(speciesActs('peintre').sort()).toEqual(['easel', 'splatter', 'starry', 'stroke', 'sunflowers']);
+    expect(ACT_MS.easel).toBe(10_000); expect(SLEEP_ACTS.peintre).toBe('starry');
+    expect(legendaryPartsForArt('peintre', {})).toBeNull(); expect(partAngle('peintre', 1234, 0, null, false)).toBe(0);
+    for (const act of speciesActs('peintre')) expect(stillAct(act)).toBe(true);
+    expect(stillAct('flare')).toBe(false);
+  });
+  it('sets the easel up, places the canvas, paints the Almond Blossom step by step, admires it, then all fades', () => {
+    expect(peintrePose('easel', 300)).toBeNull(); expect(peintrePose('easel', EASEL.carry + 10)).toBe('carry');
+    expect(peintrePose('easel', EASEL.paint + 100)).toBe('paint'); expect(peintrePose('easel', EASEL.admire + 100)).toBe('admire');
+    expect(peintrePose('easel', EASEL.fade + 10)).toBeNull(); expect(peintrePose('stroke', 500)).toBe('swing');
+    expect(canvasProgress(EASEL.paint - 1)).toBe(0); expect(canvasProgress(EASEL.done)).toBe(1);
+    let last = 0; for (let ms = EASEL.paint; ms <= EASEL.done; ms += 50) { const p = canvasProgress(ms); expect(p).toBeGreaterThanOrEqual(last - 1e-9); last = p; }
+    expect(easelPresence(0)).toBe(0); expect(easelPresence(5000)).toBe(1); expect(easelPresence(ACT_MS.easel)).toBeLessThan(.01);
+    expect(EASEL.fade).toBeLessThan(ACT_MS.easel);
+  });
+  it('has his painted poses on canvases that share his drawings\' ground, and every picture of his shows on disk', () => {
+    for (const version of ['v1', 'v2'] as const) {
+      const {canvas, poses} = PEINTRE_POSES[version];
+      for (const pose of Object.values(poses)) {
+        expect(pngSize(readFileSync(publicFile(pose.url)))).toEqual([canvas.width, canvas.height]);
+        expect(existsSync(publicFile(pose.url).replace(/\.png$/, '.webp'))).toBe(true);
+      }
+      expect(poses.swing.tip).toBeDefined(); expect(poses.paint.tip).toBeDefined();
+    }
+    for (const art of [PEINTRE_FX.stroke, PEINTRE_FX.star, PEINTRE_FX.swirl, PEINTRE_FX.sunflower, PEINTRE_FX.bud, PEINTRE_FX.splatYellow, PEINTRE_FX.splatBlue, PEINTRE_FX.drop,
+      PEINTRE_FX.easel, PEINTRE_FX.sky, PEINTRE_FX.frame, ...PEINTRE_FX.canvas]) expect(pngSize(readFileSync(publicFile(art.url)))).toEqual([art.width, art.height]);
+    expect(PEINTRE_FX.canvas.length).toBeGreaterThan(4);
+  });
+  it('loads only his own poses and pieces in the meadow, the evolved poses for the Peintre Aguerri', () => {
+    const base = legendaryMeadowArt('peintre', {}).map(a => a.texture), evolved = legendaryMeadowArt('peintre', {evolved: true}).map(a => a.texture);
+    expect(base).toEqual(expect.arrayContaining(['rabbit-peintre-v1-pose-swing', 'peintre-easel', 'peintre-canvas-0', 'peintre-sunflower']));
+    expect(base.some(t => t.includes('-v2-'))).toBe(false); expect(evolved).toContain('rabbit-peintre-v2-pose-paint');
+    expect(base.some(t => /^legendary-/.test(t))).toBe(false);
+  });
+  it('appears in a painting: strokes paint a starry night, splashes and sunflowers, and a gilded frame closes around him', () => {
+    const dialog = showLegendaryReveal('peintre', {title: 'Nouvelle découverte !', name: 'Peintre', details: 'Légendaire', button: 'Fermer'});
+    expect(dialog.querySelectorAll('.lr-band').length).toBe(5); expect(dialog.querySelectorAll('.lr-brush').length).toBe(5);
+    expect(dialog.querySelectorAll('.lr-sunflower').length).toBe(2); expect(dialog.querySelector('.lr-hero > .lr-frame')).not.toBeNull();
+    expect(dialog.style.getPropertyValue('--peintre-sky')).toContain('sky');
+    dialog.remove();
+    const panel = document.createElement('div');
+    expect(decorateLegendaryCard(panel, 'peintre')).toBe(true); expect(panel.style.getPropertyValue('--legendary-banner')).toContain('peintre/sky');
+    const css = readFileSync('src/display/styles.css', 'utf8') as string;
+    for (const rule of ['@keyframes lr-band-paint', '.legendary-reveal-peintre.is-final .lr-frame { animation: none; opacity: 1;']) expect(css).toContain(rule);
+  });
+  it('stands still in the meadow while he shows, his drawing\'s face and crown hidden in a painted pose', () => {
+    const scene = readFileSync('src/display/MeadowScene.ts', 'utf8') as string;
+    expect(scene).toContain('!!rabbit.legendary?.still'); expect(scene).toContain('rabbit.legendary?.posing || rabbit.dadi?.posing');
+    expect(scene).toContain('!rabbit.legendary?.posing);');
   });
 });

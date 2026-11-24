@@ -87,6 +87,8 @@ export const NEW_SPECIALS: readonly SpecialSheet[] = [
   {id: 'ankylosaure', name: 'Anky', types: ['paille', 'metal'], rarity: 'legendary', recipe: {parents: ['dinono', 'dinenette'], minAffection: 10, probability: 10, knowledgePrice: 900}, unlockLevel: 14, art: sprite('ankylosaure', 461, 382, 58, 12, 35), foot: 1115, sourceSha256: '2d67498fd7e3db7dc6744b689e2f340241bce58b23c05fe0dfc602801f9be824'},
   // The owner's own drawing (stage 1, 5 November 2026): rainbow, born of Câlinou géant × Orange.
   {id: 'arkoko', name: 'Arkoko', types: ['arc-en-ciel'], rarity: 'legendary', recipe: {parents: ['calinou', 'orange'], minAffection: 10, probability: 10, knowledgePrice: 900}, unlockLevel: 14, art: sprite('arkoko', 325, 566, 44, 12, 42), foot: 1062, sourceSha256: '1330096f727f640681ec2f4f40a27cee29fed64bac5ea31e9d942ab4e30d96aa'},
+  // The owner's own drawing (24 November 2026): Peintre, born of Fantôme × Boudinet.
+  {id: 'peintre', name: 'Peintre', types: ['paille', 'vol'], rarity: 'legendary', recipe: {parents: ['fantome', 'boudinet'], minAffection: 10, probability: 10, knowledgePrice: 900}, unlockLevel: 14, art: sprite('peintre', 413, 428, 54, 12, 50), foot: 1147, sourceSha256: '44384f0ace07ca04299cc63147d5ebb9210b826b1eb56ace2955de28fb048a38'},
   // The one Mythic (1 November 2026), inspired by a real rabbit: born of any two Legendaries, never sold; design A1 approved by the owner.
   {id: 'benny', name: 'Benny', types: ['arc-en-ciel'], rarity: 'mythic', recipe: {parentRarity: 'legendary', minAffection: 10, probability: 10}, unlockLevel: 14, art: sprite('benny', 354, 435, 48, 12, 36), foot: 563, sourceSha256: '183d24ba7a6d39dc93ed35d941175f988ddbe87af20f66db780dcaee3f2b2ad8'},
 ];
