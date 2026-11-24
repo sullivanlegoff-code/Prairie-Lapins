@@ -41,7 +41,7 @@ describe('evolution challenges, owner distribution of 4 November 2026', () => {
       vantablack: ['voyage', 'corde:10'], fantome: ['piquenique', 'quotidien'], bouyoyo: ['soin', 'gouteur:moelleux'], nuage: ['voyage', 'soin'],
       champignon: ['piquenique', 'commis:moelleux'], 'gigi-rarafe': ['voyage', 'piquenique', 'corde:20'], yetiti: ['soin', 'piquenique', 'parent'],
       rennes: ['voyage', 'corde:20', 'quotidien'], susucre: ['commis:moelleux', 'gouteur:moelleux', 'soin'], 'lapin-de-sulli': ['gouteur:chicken', 'voyage', 'quotidien'],
-      'pain-epice': ['commis:moelleux', 'gouteur:avocado-toast', 'piquenique'], 'flocon-cristal': ['soin', 'corde:20', 'parent'], arkoko: ['parent', 'voyage', 'quotidien'], peintre: ['voyage', 'piquenique', 'quotidien'], 'fusion-nucleaire': ['soin', 'voyage', 'piquenique'],
+      'pain-epice': ['commis:moelleux', 'gouteur:avocado-toast', 'piquenique'], 'flocon-cristal': ['soin', 'perchoir:50', 'parent'], arkoko: ['parent', 'voyage', 'quotidien'], peintre: ['voyage', 'piquenique', 'rampage:1000'], 'fusion-nucleaire': ['soin', 'voyage', 'piquenique'],
     });
     const byRarity: Record<string, number> = {};
     for (const species of SPECIES_IDS) {

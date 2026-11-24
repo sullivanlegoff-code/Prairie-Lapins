@@ -1827,9 +1827,10 @@ export class GameUI {
           // The streak still alive: its last claimed bonus is this cycle's or the previous one's.
           const streak = s.missions.streak, alive = streak && streak.lastCycle >= s.missions.daily.cycleIndex - 1 ? streak.count : 0;
           label = `${evolutionChallengeLabel(challenge)} \u00b7 ${value} / ${target}${value >= target ? '' : ` (série : ${Math.min(alive, DAILY_STREAK_TARGET)} / ${DAILY_STREAK_TARGET})`}`;
-        } else if (challenge.startsWith('corde:')) label = `${target === 1 ? 'manche' : 'manches'} de corde à sauter (au moins ${challenge.slice(6)} sauts)`;
+        } else if (challenge.startsWith('rampage:') || challenge.startsWith('perchoir:')) label = `${evolutionChallengeLabel(challenge)} \u00b7 ${value} / ${target}`;
+        else if (challenge.startsWith('corde:')) label = `${target === 1 ? 'manche' : 'manches'} de corde à sauter (au moins ${challenge.slice(6)} sauts)`;
         const li = node('li', '', value >= target ? 'is-complete' : ''); li.dataset.challenge = challenge;
-        const full = challenge === 'parent' || challenge === 'quotidien' || challenge.startsWith('commis:') || challenge.startsWith('gouteur:');
+        const full = challenge === 'parent' || challenge === 'quotidien' || challenge.startsWith('commis:') || challenge.startsWith('gouteur:') || challenge.startsWith('rampage:') || challenge.startsWith('perchoir:');
         li.append(node('span', full ? label : `${value} / ${target} ${label}`));
         list.append(li);
       }

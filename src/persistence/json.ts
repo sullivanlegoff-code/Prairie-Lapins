@@ -25,7 +25,7 @@ import {ALL_DECORATION_IDS, DECORATIONS, DECORATION_IDS, RETIRED_DECORATION_IDS,
 import {CHRISTMAS_CHALLENGES, CHRISTMAS_CHALLENGE_IDS, CHRISTMAS_PICK_COUNT, COIN_BUBBLE_CANDIES, MAX_CANDIES, SKY_GIFTS} from '../config/christmasEvent';
 import {decorationPlacementReason} from '../simulation/decorations';
 import {ISLAND} from '../config/islandGeometry';
-import {EVOLUTION_CHALLENGES, EVOLUTION_CHALLENGE_IDS, evolutionChallengeTarget, evolutionChallengesComplete, type EvolutionChallenge} from '../config/evolutionChallenges';
+import {EVOLUTION_CHALLENGES, EVOLUTION_CHALLENGE_IDS, RETIRED_EVOLUTION_CHALLENGES, evolutionChallengeTarget, evolutionChallengesComplete, type EvolutionChallenge} from '../config/evolutionChallenges';
 import {EVOLUTION_AFFECTION, hasEvolvedArt} from '../config/evolvedArt';
 
 /**
@@ -69,7 +69,7 @@ const building = z.object({
 // A rabbit may carry the personal name its owner gave it: canonical text (trimmed, at most 32 characters, no control
 // character), absent when unnamed. Names are individual: they are never inherited and never belong to the species.
 const rabbitName = z.string().refine(name => name !== '' && normalizeRabbitName(name) === name, 'Invalid rabbit name');
-const evolution = z.object({done: z.literal(true).optional(), challenges: z.record(z.enum(EVOLUTION_CHALLENGE_IDS as [typeof EVOLUTION_CHALLENGE_IDS[number], ...typeof EVOLUTION_CHALLENGE_IDS[number][]]), integer.max(2)).optional()}).strict().optional();
+const evolution = z.object({done: z.literal(true).optional(), challenges: z.record(z.enum(EVOLUTION_CHALLENGE_IDS as [typeof EVOLUTION_CHALLENGE_IDS[number], ...typeof EVOLUTION_CHALLENGE_IDS[number][]]), integer.max(1000)).optional()}).strict().optional();
 const rabbit = z.object({incomeRoll: z.number().int().min(0).max(10000).optional(), id: identity, species, affection: z.number().int().min(BALANCE.minAffection).max(BALANCE.maxAffection), enclosureId: identity, name: rabbitName.optional(), crownHidden: z.literal(true).optional(), classicLook: z.literal(true).optional(), lookChange: z.object({endsAt: timestamp}).strict().optional(), evolution}).strict().superRefine((value, context) => {
   const challenges = EVOLUTION_CHALLENGES[value.species] ?? [];
   for (const [key, progress] of Object.entries(value.evolution?.challenges ?? {})) {
@@ -413,6 +413,21 @@ const FORMER_TYPED_CAPS: Record<1 | 2, Record<HabitatType, number>> = {
   1: {paille: 1300, neige: 1500, feu: 1800, universal: 2100, metal: 2500, vol: 2900},
   2: {paille: 2600, neige: 3000, feu: 3400, universal: 3800, metal: 4300, vol: 4800},
 };
+/**
+ * The evolution challenges replaced on 24 November 2026 (`RETIRED_EVOLUTION_CHALLENGES`): their progress is dropped, and a rabbit
+ * that has already evolved keeps its evolution, its new challenges counted as done. Nothing else in the save changes.
+ */
+function replaceRetiredChallenges(raw: unknown): void {
+  if (!raw || typeof raw !== 'object' || !('rabbits' in raw) || !Array.isArray(raw.rabbits)) return;
+  for (const rabbit of raw.rabbits as {species?: unknown; evolution?: {done?: unknown; challenges?: Record<string, unknown>}}[]) {
+    const retired = rabbit && typeof rabbit.species === 'string' ? RETIRED_EVOLUTION_CHALLENGES[rabbit.species as SpeciesId] : undefined;
+    if (!retired || !rabbit.evolution || typeof rabbit.evolution !== 'object') continue;
+    const species = rabbit.species as SpeciesId, challenges = rabbit.evolution.challenges && typeof rabbit.evolution.challenges === 'object' ? {...rabbit.evolution.challenges} : {};
+    for (const id of retired) delete challenges[id];
+    if (rabbit.evolution.done === true) for (const challenge of EVOLUTION_CHALLENGES[species] ?? []) challenges[challenge] = evolutionChallengeTarget(species, challenge);
+    if (Object.keys(challenges).length) rabbit.evolution.challenges = challenges; else delete rabbit.evolution.challenges;
+  }
+}
 function settleStorageCaps(raw: unknown): void {
   if (!raw || typeof raw !== 'object' || !('buildings' in raw) || !Array.isArray(raw.buildings) || !('pattes' in raw) || !Number.isSafeInteger(raw.pattes)) return;
   const save = raw as {pattes: number; buildings: unknown[]};
@@ -592,6 +607,7 @@ export function decodeGame(json: string): DecodeResult {
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 27) migrateV27(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 28) migrateV28(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 29) migrateV29(raw);
+  replaceRetiredChallenges(raw);
   settleStorageCaps(raw);
   const parsed = schema.safeParse(raw);
   if (!parsed.success) return {ok: false, reason: 'INVALID_STATE'};
