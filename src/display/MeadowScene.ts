@@ -66,7 +66,8 @@ import {ISLAND_ART} from '../config/islandArt';
 import {grassTile, islandStage, stageArt, STAGE_PX_PER_UNIT, WINTER_STAGE_ART_LIST} from '../config/islandStages';
 import {IslandStageLayer, queueStage} from './islandStageLayer';
 import {SkyLayer, SKY_COLOR} from './skyLayer';
-import {LIGHTS_DEPTH, WinterLayer, WinterLights} from './winterLayer';
+import {WinterLayer, WinterLights} from './winterLayer';
+import {LedLights} from './ledLights';
 import WINTER_LIGHTS from '../config/islandStageLightsWinter.json';
 import {WINTER_ART, winterUrl} from '../config/winterArt';
 import {christmasActive, localHour} from '../config/christmas';
@@ -213,6 +214,8 @@ export class MeadowScene extends Phaser.Scene {
   private winterLights?: WinterLights;
   /** Christmas nights: the lit windows of the buildings and habitats, and the lights of the Christmas decorations. */
   private nightGlows?: NightGlows;
+  /** Fusion Nucléaire's LEDs, above the night shade, erased where a rabbit stands in front of it (src/display/ledLights.ts). */
+  private ledLights?: LedLights;
   /** The large building pictures kept at twice their largest size on screen (plan 5.1). */
   private budget?: TextureBudget;
   /** The URL each picture was loaded from (its glow picture is found from it). */
@@ -307,7 +310,7 @@ export class MeadowScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(SKY_COLOR);
     // Owns its shutdown cleanup; independent of parcel ownership and ground projection.
     this.sky = new SkyLayer(this, toScreen(gridPoint(ISLAND.focus, ISLAND.focus)));
-    this.winter = new WinterLayer(this); this.winterLights = new WinterLights(this); this.nightGlows = new NightGlows(this, (texture, url) => this.optionalArt(texture, url));
+    this.winter = new WinterLayer(this); this.winterLights = new WinterLights(this); this.nightGlows = new NightGlows(this, (texture, url) => this.optionalArt(texture, url)); this.ledLights = new LedLights(this);
     // Christmas: the tiny snowflakes, loaded after start (a missing picture only means no snow, never a blocked meadow).
     if (christmasActive()) for (const flake of WINTER_ART.flakes) this.optionalArt(flake.texture, flake.url);
     // Christmas: the coin bubble's basket and the sucre d'orge of its reward (the plain coin meanwhile, or if one is missing).
@@ -1336,11 +1339,11 @@ export class MeadowScene extends Phaser.Scene {
           const litBoost = lit && litArt && this.textures.exists(litArt.glow.texture) ? this.add.image(0, art.groundY, litArt.glow.texture).setOrigin(.5, 1).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0).setVisible(false) : undefined;
           if (litBoost) { litBoost.setScale(art.worldWidth / art.width * this.textureRatio(litBoost)); body.add(litBoost); }
           // Its LEDs, each a little light in the yellow of the enclosures' lights, placed on the drawing like its eyelids. Like
-          // those lights they sit above the Christmas night shade (which would turn them grey-blue), so they follow the rabbit
-          // each frame from the scene (update) and leave with it.
+          // those lights they sit above the Christmas night shade (which would turn them grey-blue): they follow the rabbit each
+          // frame (update), are drawn by this.ledLights without the rabbits in front of it, and leave with it.
           const leds = lit && litArt?.leds.length ? litArt.leds.map(([x, y, strength]) => {
             const place = rabbitPatchPlacement(art, {x, y});
-            const image = this.add.image(0, 0, this.ledHaloTexture()).setDepth(LIGHTS_DEPTH).setAlpha(0).setVisible(false);
+            const image = this.make.image({x: 0, y: 0, key: this.ledHaloTexture()}, false).setAlpha(0).setVisible(false);
             return {image, at: {x: place.x, y: place.y}, scale: place.scale * (LED_HALO.size + LED_HALO.extra * strength) / LED_HALO.texture};
           }) : undefined;
           if (leds) object.once(Phaser.GameObjects.Events.DESTROY, () => { for (const led of leds) led.image.destroy(); });
@@ -1972,6 +1975,8 @@ export class MeadowScene extends Phaser.Scene {
         this.lifeViews?.show(rabbit.id, rabbit.motion.mode, world.x, world.y, rabbit.motion.elapsed, this.view.zoom);
       }
     }
+    // The LEDs, drawn above the night shade without the rabbits standing in front of their rabbit.
+    this.ledLights?.update(this.rabbitViews.flatMap(r => r.leds ? [{object: r.object, leds: r.leds.map(led => led.image)}] : []), this.rabbitViews.map(r => r.object));
     if (depthChanged) this.animals?.sort('depth');
     this.stepBennyFlight(dt, reducedMotion);
     const speaker = dadi.speech && this.rabbitViews.find(r => r.id === dadi.speech!.id);
