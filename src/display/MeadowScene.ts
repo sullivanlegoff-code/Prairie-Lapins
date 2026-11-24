@@ -137,8 +137,11 @@ interface VisualRabbit {id: string; object: Phaser.GameObjects.Container; body: 
   pivot: Point; /** Mirror sign of the picture's native direction: -1 for art that looks left. */ native: 1 | -1}
 /** Local y of the ground contact the body is compressed against, so its feet stay put. */
 const BODY_PIVOT = 10;
-/** A lit rabbit's LED halo: its picture's size, and its width in the drawing's pixels (plus `extra` for the strongest LEDs). */
-const LED_HALO = {texture: 32, size: 11, extra: 5, alpha: .75} as const;
+/**
+ * A lit rabbit's LED halo: its picture's size; its width in the drawing's pixels (plus `extra` for the strongest LEDs); its
+ * opacity; the radius of its bright heart and the opacity of its yellow glow around it (fractions of the halo).
+ */
+const LED_HALO = {texture: 64, size: 60, extra: 20, alpha: .9, core: .05, glow: .24} as const;
 /** The player's « reduce motion » setting, through one cached media query (it was queried anew on every frame). */
 let reducedMotionQuery: MediaQueryList | null = null;
 function prefersReducedMotion(): boolean {
@@ -1063,7 +1066,8 @@ export class MeadowScene extends Phaser.Scene {
     const texture = this.textures.createCanvas(key, size, size);
     if (texture) {
       const ctx = texture.context, g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-      g.addColorStop(0, 'rgba(255,255,163,1)'); g.addColorStop(.22, 'rgba(245,208,86,.92)'); g.addColorStop(.5, 'rgba(245,200,80,.3)'); g.addColorStop(1, 'rgba(245,190,70,0)');
+      g.addColorStop(0, 'rgba(255,255,163,1)'); g.addColorStop(LED_HALO.core, 'rgba(245,208,86,.92)');
+      g.addColorStop(Math.min(.9, LED_HALO.core * 2.4), `rgba(245,200,80,${LED_HALO.glow})`); g.addColorStop(1, 'rgba(245,190,70,0)');
       ctx.fillStyle = g; ctx.fillRect(0, 0, size, size); texture.refresh();
     }
     return key;
@@ -1934,8 +1938,8 @@ export class MeadowScene extends Phaser.Scene {
       if (rabbit.lit && rabbit.sprite) {
         const on = lights > .004 && rabbit.sprite.visible && rabbit.sprite.texture.key === rabbit.art?.texture;
         rabbit.lit.setAlpha(lights).setVisible(on);
-        // Christmas: the night shade darkens the whole meadow; its lights shine through it as the garlands do.
-        rabbit.litBoost?.setAlpha(lights * night * .6).setVisible(on && night > .004);
+        // Christmas: the night shade darkens the whole meadow; its lights alone shine through it, warming its body (owner's pick D).
+        rabbit.litBoost?.setAlpha(lights * night).setVisible(on && night > .004);
         // Each LED follows its place on the moving body and twinkles at its own pace (steady when motion is reduced).
         const shown = on && rabbit.object.visible && rabbit.body.visible, matrix = shown && rabbit.leds ? rabbit.body.getWorldTransformMatrix() : null;
         const size = matrix ? Math.sqrt(Math.abs(matrix.a * matrix.d - matrix.b * matrix.c)) : 0;
