@@ -69,7 +69,7 @@ export const CUISINE_ANCHORS: Partial<Record<SpeciesId, CuisineAnchors>> = {
   champignon: a([.62, .24, .3, 8], [.77, .58, .28], [.77, .47, .26]),
   'lapin-de-sulli': a([.5, .12, .4, 0], [.5, .6, .34], [.52, .4, .34]),
   'pain-epice': a([.76, .27, .3, 6], [.8, .53, .28], [.8, .4, .28]), // 19 Nov. 2026: drawn in 3/4 front view.
-  'flocon-cristal': a([.62, .14, .34, 4], [.64, .45, .28], [.66, .3, .28]),
+  'flocon-cristal': a([.62, .29, .44, 2], [.62, .57, .44], [.66, .42, .5]), // 24 Nov. 2026: redone as « Porcelaine bleue ».
 };
 /** A right-facing rabbit with its head at the top right of its picture; mirrored for a left-facing one. */
 export const DEFAULT_ANCHORS: CuisineAnchors = a([.7, .15, .36, 6], [.72, .48, .3], [.75, .3, .3]);

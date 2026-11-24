@@ -2213,28 +2213,28 @@
   },
   "flocon-cristal": {
     "sprite": "assets/rabbits/flocon-cristal/flocon-cristal-v1.png",
-    "spriteSha1": "d4bd59bd8344255fad8e700b2202fba3c785621c",
-    "spriteWidth": 310,
-    "spriteHeight": 463,
+    "spriteSha1": "c3c47a525aa6e1289785e7fc52de17b1286050ad",
+    "spriteWidth": 286,
+    "spriteHeight": 503,
     "eyes-closed": {
       "file": "assets/rabbits/flocon-cristal/flocon-cristal-eyes-closed.png",
-      "x": 175,
-      "y": 148,
-      "width": 100,
-      "height": 61,
+      "x": 115,
+      "y": 178,
+      "width": 150,
+      "height": 64,
       "source": "assets-source/rabbits/flocon-cristal/eyes-closed.png",
-      "sourceSha1": "43824a1466986ab72b039d98e58c43602fad497a",
-      "derivedSha1": "5d6a8e002b29dc1284ace7dbcfa0af4a7ea6ffd7"
+      "sourceSha1": "7310cbe1e704748747e0abfcbb00bd4be986909c",
+      "derivedSha1": "1ede2d8c3a1c80b23f0aef5e6faf03f12d9b0ba7"
     },
     "nose-twitch": {
       "file": "assets/rabbits/flocon-cristal/flocon-cristal-nose-twitch.png",
-      "x": 244,
-      "y": 180,
-      "width": 30,
-      "height": 28,
+      "x": 181,
+      "y": 201,
+      "width": 51,
+      "height": 44,
       "source": "assets-source/rabbits/flocon-cristal/nose-twitch.png",
-      "sourceSha1": "455468603d5ac4d5e87450802f41586c18a2088b",
-      "derivedSha1": "b752242079c42dcb16850e3fe1d58eb3f5279cdd"
+      "sourceSha1": "963fbae9183193e91a5f7b46f86c79b81e2b004e",
+      "derivedSha1": "1e7f61375a7735afc3d0c56bf431abcf07253ddc"
     }
   },
   "flocon-cristal-evolution": {
