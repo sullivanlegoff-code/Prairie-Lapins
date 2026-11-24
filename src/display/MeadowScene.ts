@@ -95,6 +95,9 @@ import {MagicienClock, magicienFree, type MagicienAct} from './magicienTimeline'
 import {CHASE_EVENT, RabbitChases, type ChaseRunner} from './rabbitChase';
 import {SNOWBALL_BATTLE_EVENT, SNOWBALL_EVENT, SnowballFights, snowballPoint, type SnowballThrower} from './snowballFight';
 import {LIGHT_POOLS, NightGlows, type GlowSource} from './nightGlows';
+import {TextureBudget, budgetWidth, shrinkSize} from './textureBudget';
+import {grassTileLayout} from './grassTiles';
+import {NIGHT_GLOW_PREFIX, nightGlowOf} from '../config/nightLights';
 import {CHRISTMAS_MARKET_ART, christmasMarketFrame, christmasMarketPoint} from '../config/christmasMarketArt';
 import {CANDY_ICON_URL, CANDY_TEXTURE, COIN_BASKET_ART, COIN_BUBBLE_FRAME, SNOWBALL_ART, SNOWMAN_ART} from '../config/winterArt';
 import {formatCoinAmount} from './currency';
@@ -197,6 +200,8 @@ export class MeadowScene extends Phaser.Scene {
   private winterLights?: WinterLights;
   /** Christmas nights: the lit windows of the buildings and habitats, and the lights of the Christmas decorations. */
   private nightGlows?: NightGlows;
+  /** The large building pictures kept at twice their largest size on screen (plan 5.1). */
+  private budget?: TextureBudget;
   /** The URL each picture was loaded from (its glow picture is found from it). */
   private artUrls = new Map<string, string>();
   private picnicPieces = new Set<Phaser.GameObjects.Image | Phaser.GameObjects.Text>();
@@ -256,6 +261,8 @@ export class MeadowScene extends Phaser.Scene {
     private loading?: {progress(fraction: number): void; error(file: string): void; ready(): void; runtime?(status: 'loading' | 'failed' | 'ready', retry: () => void): void}) { super('Meadow'); }
   preload(): void {
     this.sceneReady = false;
+    // Before the first files: the large building pictures are kept within their budget as they arrive (plan 5.1).
+    if (!this.budget) { this.budget = new TextureBudget(this.textures); this.events.once('shutdown', () => { this.budget?.dispose(); this.budget = undefined; }); }
     if (this.loading) {
       const l = this.loading;
       const progress = (v: number) => { if (!this.sceneReady) l.progress(v); };
@@ -523,7 +530,7 @@ export class MeadowScene extends Phaser.Scene {
     const fade=(low:number,high:number)=>Phaser.Math.Clamp((this.view.zoom-low)/(high-low),0,1);
     this.bubbles?.setAlpha(fade(.45,.7)).setVisible(!this.photo && this.view.zoom>.45);
   }
-  private resize(): void { this.view.setInsets(this.framingInsets()); this.view.resize(this.scale.width, this.scale.height); this.applyCamera(); }
+  private resize(): void { this.hudBottomAt = null; this.view.setInsets(this.framingInsets()); this.view.resize(this.scale.width, this.scale.height); this.applyCamera(); }
   private applyCamera(): void { this.cameras.main.setZoom(this.view.zoom).centerOn(this.view.x, this.view.y); this.drawDecorationSelection(); this.updateDetails(); }
   setExpansion(active:boolean, parcelId?:ParcelId):void {
     const was=this.expanding;this.expanding=active;this.expansionParcelId=active?parcelId:undefined;
@@ -679,7 +686,7 @@ export class MeadowScene extends Phaser.Scene {
     const b = this.current?.buildings.find(x => x.id === enclosureId); if (!b) return;
     const reduced = prefersReducedMotion();
     this.focusBuilding(enclosureId);
-    this.snowballs.reset(this.snowballThrowers(new Set()));
+    this.snowballs.stopGroup(enclosureId, this.snowballThrowers(new Set())); // Only this enclosure's fight stops (plan 3.6).
     const guests = this.rabbitViews.filter(r => r.group === enclosureId && r.motion && !r.nest && !r.benny && !r.legendary?.clock.act && !r.magicien?.busy &&
       ['rest', 'walk', 'hop', 'sleep', 'zoom', 'meet', 'kiss'].includes(r.motion.mode));
     const first = this.rabbitViews.find(r => r.group === enclosureId && r.motion && !r.nest);
@@ -769,8 +776,8 @@ export class MeadowScene extends Phaser.Scene {
     for (const step of SNOWMAN_ART.steps) this.optionalArt(step.texture, step.url);
     const spot = this.snowmanSpot(b), zone = this.enclosureZone(b);
     if (reduced) { this.snowmanBuild = null; this.syncSnowman(); return; }
-    // A snowball fight under way stops: its rabbits join the others.
-    this.snowballs.reset(this.snowballThrowers(new Set()));
+    // A snowball fight under way in this enclosure stops: its rabbits join the others. Other enclosures go on (plan 3.6).
+    this.snowballs.stopGroup(enclosureId, this.snowballThrowers(new Set()));
     const guests = this.rabbitViews.filter(r => r.group === enclosureId && r.motion && !r.nest && !r.benny && !r.legendary?.clock.act && !r.magicien?.busy &&
       !this.picnicParty?.ids.includes(r.id) && !this.chases.isChasing(r.id) && ['rest', 'walk', 'hop', 'sleep', 'zoom', 'meet', 'kiss'].includes(r.motion.mode));
     // A half circle in front of the snowman, inside the fence.
@@ -893,31 +900,38 @@ export class MeadowScene extends Phaser.Scene {
     for (const rabbit of state?.rabbits ?? []) {
       // The drawing this rabbit shows (its evolved one only after explicit evolution), with that drawing's own blink and nose.
       const shown = artForRabbit(rabbit); add(shown);
+      // Its drawing, kept at twice its largest size on screen (plan 5.1; the body is drawn VISUAL.rabbit.scale bigger).
+      if (shown) this.budget?.want(shown.texture, shown.worldWidth * VISUAL.rabbit.scale);
       for (const patch of rabbitBlinkArt(rabbit.species, !!shown?.evolved)?.patches ?? []) add(patch);
       if (isLegendaryShow(rabbit.species)) for (const art of legendaryMeadowArt(rabbit.species)) add(art);
       if (rabbit.species === BENNY_ID) for (const art of [...bennyMeadowArt(), ...bennyFlightArt()]) add(art);
+      // Her frames are aligned pixel for pixel with her drawing: the atlas is shrunk by the same ratio (her flight atlas already fits).
+      const bennyShrink = rabbit.species === BENNY_ID && shown ? shrinkSize(shown.width, shown.height, budgetWidth(shown.worldWidth * VISUAL.rabbit.scale)) : null;
+      if (bennyShrink) this.budget?.wantAtlas(BENNY_ATLAS.texture, bennyShrink.ratio);
       if (wearsCrown(rabbit)) add(CROWN_ART);
       // His magic shows' poses and effects, only for an evolved Magicien (audit, 4 November 2026; shows of 10 November 2026).
       if (rabbit.species === 'magicien' && shown?.evolved) for (const art of magicienShowArt()) add(art);
       if (rabbit.species === 'dadi' && shown?.evolved) for (const frame of [...DADI_STAGE.poses, ...(DADI_STAGE.micro ? [DADI_STAGE.micro] : [])]) add(frame);
     }
-    const buildingArt = (building: Pick<Building, 'kind' | 'habitat' | 'footprintTier' | 'farmLevel'> & {id?: string}) => {
-      if (building.kind === 'enclosure') add(habitatArtFor(building.habitat ?? undefined, building.footprintTier)); // Same texture at every scale.
-      else if (building.kind === 'farm') {
-        add(farmArtFor(building.farmLevel));
+    // A building's own picture, kept within its budget (plan 5.1). The habitats are already small enough for their largest size.
+    const building = (art: {texture: string; url: string; worldWidth: number}) => { add(art); this.budget?.want(art.texture, art.worldWidth); };
+    const buildingArt = (b: Pick<Building, 'kind' | 'habitat' | 'footprintTier' | 'farmLevel'> & {id?: string}) => {
+      if (b.kind === 'enclosure') add(habitatArtFor(b.habitat ?? undefined, b.footprintTier)); // Same texture at every scale.
+      else if (b.kind === 'farm') {
+        building(farmArtFor(b.farmLevel));
         add({texture: SPROUT_TEXTURE, url: SPROUT_URL});
         for (const id of CROP_IDS) add({texture: CROP_TEXTURE(id), url: CROP_URL(id)});
-      } else if (building.kind === 'nursery') {
-        add(NURSERY_ART); add(NURSERY_OVERLAY_ART.baby); add(NURSERY_OVERLAY_ART.veil); add(NURSERY_OVERLAY_ART.lock);
-      } else if (building.kind === 'statue') add(statueArtFor(state?.buildings ?? [], building.id));
-      else if (building.kind === 'nest' && 'islet' in building && building.islet) add(EPIC_ISLET_ART);
-      else add(({nest: NEST_ART, kitchen: KITCHEN_ART, agency: AGENCY_ART, salon: SALON_ART, forest: FOREST_ART, perch: PERCH_ART, lair: LAIR_ART})[building.kind]);
+      } else if (b.kind === 'nursery') {
+        building(NURSERY_ART); add(NURSERY_OVERLAY_ART.baby); add(NURSERY_OVERLAY_ART.veil); add(NURSERY_OVERLAY_ART.lock);
+      } else if (b.kind === 'statue') building(statueArtFor(state?.buildings ?? [], b.id));
+      else if (b.kind === 'nest' && 'islet' in b && b.islet) building(EPIC_ISLET_ART);
+      else building(({nest: NEST_ART, kitchen: KITCHEN_ART, agency: AGENCY_ART, salon: SALON_ART, forest: FOREST_ART, perch: PERCH_ART, lair: LAIR_ART})[b.kind]);
       // The spa's tub front and small pieces, for the rabbit in care (src/display/salonSpa.ts).
-      if (building.kind === 'salon') for (const art of salonSpaArt()) add(art);
+      if (b.kind === 'salon') for (const art of salonSpaArt()) add(art);
     };
     for (const building of state?.buildings ?? []) buildingArt(building);
     for (const kind of new Set((state?.debris ?? []).map(d => d.kind))) add({texture: DEBRIS_ART.texture(kind), url: DEBRIS_ART.url(kind)});
-    if (state?.jumpIsland) { add(JUMP_ISLAND_ART); for (const step of jumpRopeMedals(state)) add({texture: JUMP_MEDAL_ART.texture(step), url: JUMP_MEDAL_ART.url(step)}); }
+    if (state?.jumpIsland) { building(JUMP_ISLAND_ART); for (const step of jumpRopeMedals(state)) add({texture: JUMP_MEDAL_ART.texture(step), url: JUMP_MEDAL_ART.url(step)}); }
     if (this.placement) {
       const moving = state?.buildings.find(b => b.id === this.placement?.movingId);
       buildingArt(moving ?? {kind: this.placement.kind, habitat: this.placement.kind === 'enclosure' ? {type: this.placement.habitatType ?? 'universal', level: 1} : null});
@@ -993,6 +1007,8 @@ export class MeadowScene extends Phaser.Scene {
   private glowSources(): GlowSource[] {
     const sources: GlowSource[] = [];
     for (const image of this.buildingViews.values()) sources.push({image, url: this.artUrls.get(image.texture.key)});
+    // A building's night glow keeps the same pixels as its building (plan 5.1).
+    for (const {image, url} of sources) { const glow = nightGlowOf(url); if (glow) this.budget?.wantLike(glow.texture, image.texture.key); }
     // The jump-rope islet's lanterns too (6 November 2026: every building lights up on Christmas nights).
     if (this.jumpIslandImage) sources.push({image: this.jumpIslandImage, url: this.artUrls.get(this.jumpIslandImage.texture.key)});
     for (const image of this.decorationViews.values()) {
@@ -1023,6 +1039,23 @@ export class MeadowScene extends Phaser.Scene {
     }
     return false;
   }
+  /** Painted pixels for one pixel of this image's texture: more than 1 for a picture redrawn smaller (plan 5.1). */
+  private textureRatio(image: Phaser.GameObjects.Image): number { return this.budget?.ratio(image.texture.key) ?? 1; }
+  /**
+   * Frees the large building pictures no longer shown (plan 5.1): a farm's former level, a moved ghost's picture, a building
+   * that was sold. The night glows are freed by day. A later need loads them again, from the browser's cache.
+   */
+  private releaseArt(): void {
+    if (!this.budget) return;
+    const keep = new Set<string>();
+    for (const image of [...this.buildingViews.values(), this.buildingGhost, this.jumpIslandImage]) if (image?.active) keep.add(image.texture.key);
+    // The rabbits' drawings, and Benny's atlas while she is in the meadow.
+    for (const r of this.rabbitViews) { if (r.art) keep.add(r.art.texture); if (r.benny) keep.add(BENNY_ATLAS.texture); }
+    // Most refreshes have nothing to free: the list of needed pictures is only made when a loaded one is not shown.
+    if (this.budget.loaded().every(key => keep.has(key) || key.startsWith(NIGHT_GLOW_PREFIX))) return;
+    for (const art of this.requiredArt(this.current)) keep.add(art.texture);
+    for (const key of this.budget.release(keep, key => !key.startsWith(NIGHT_GLOW_PREFIX))) this.artUrls.delete(key);
+  }
   private retryArt(): void {
     if (this.artLoading || !this.sceneReady) return;
     this.failedArt.clear(); this.renderState();
@@ -1039,6 +1072,7 @@ export class MeadowScene extends Phaser.Scene {
     this.salonSpa?.sync(s, this.simulationNow());
     this.syncProgressBars();
     this.drawDecorations(); this.drawDebris(); this.drawBubbles(); this.drawGrid(); this.drawGhost(); this.updateDetails();
+    this.releaseArt();
   }
   private decorationPoint(location: DecorationLocation, catalogId: DecorationId): Point | null {
     if (location.kind === 'inventory') return null;
@@ -1114,12 +1148,14 @@ export class MeadowScene extends Phaser.Scene {
       this.floatingIslandLayer.request(ids);
       this.maskIsland(ids);
     }
-    const grass = grassTile(stage), scale = grass.worldUnits / grass.size;
+    const grass = grassTile(stage);
     for (const id of ids) {
       const parcel = PARCELS[id], x = VISUAL.grid.originX + parcel.x * VISUAL.grid.width, y = VISUAL.grid.originY + parcel.y * VISUAL.grid.depth;
-      // Anchored on the world origin: neighbouring parcels continue the same pattern without a seam.
-      this.ground.add(this.add.tileSprite(x, y, ISLAND.parcelWidth / scale, ISLAND.parcelDepth / scale, grass.texture)
-        .setOrigin(0).setScale(scale).setTilePosition(x / scale, y / scale));
+      // Anchored on the world origin: neighbouring parcels continue the same pattern without a seam. The sprite is the parcel's
+      // own size (its canvas, never drawn in WebGL, stays small: src/display/grassTiles.ts).
+      const tile = grassTileLayout(x, y, ISLAND.parcelWidth, ISLAND.parcelDepth, grass);
+      this.ground.add(this.add.tileSprite(x, y, tile.width, tile.height, grass.texture)
+        .setOrigin(0).setTileScale(tile.tileScale).setTilePosition(tile.tileX, tile.tileY));
     }
   }
   /** Rounded plateau outline for the generated relief only. */
@@ -1180,8 +1216,9 @@ export class MeadowScene extends Phaser.Scene {
     if (illustrated) { image.setPosition(x, y).setOrigin(illustrated.anchor.x / illustrated.width, illustrated.anchor.y / illustrated.height).setScale(enlarged * illustrated.worldWidth / illustrated.width); return; }
     const art = kind === 'farm' ? farmArtFor(this.current?.buildings.find(b => b.id === id)?.farmLevel) : kind === 'nest' ? NEST_ART : kind === 'nursery' ? NURSERY_ART : kind === 'kitchen' ? KITCHEN_ART : kind === 'statue' ? statueArtFor(this.current?.buildings ?? [], id) : kind === 'agency' ? AGENCY_ART : kind === 'salon' ? SALON_ART : kind === 'forest' ? FOREST_ART : kind === 'perch' ? PERCH_ART : kind === 'lair' ? LAIR_ART : null;
     // `enlarged` also shrinks a Salon de soins that keeps the former 4 × 4 (`salonScale`).
+    // A picture redrawn smaller (plan 5.1) has fewer pixels: its ratio keeps its size in the world.
     image.setPosition(x, y).setOrigin(.5, art ? art.originY : .5)
-      .setScale(art ? art.worldWidth / art.width * (kind === 'salon' ? enlarged : 1) : .5 * enlarged);
+      .setScale(art ? art.worldWidth / art.width * (kind === 'salon' ? enlarged : 1) * this.textureRatio(image) : .5 * enlarged);
   }
   private drawBuildings(): void {
     const present = new Set<string>();
@@ -1190,14 +1227,14 @@ export class MeadowScene extends Phaser.Scene {
       let image=this.buildingViews.get(b.id);
       if(!image){image=this.add.image(x,y,this.buildingTexture(b));this.buildingsLayer.add(image);this.buildingViews.set(b.id,image);}
       image.setTexture(this.buildingTexture(b)).setDepth(y);
-      if (b.islet) { image.setPosition(x, y).setOrigin(EPIC_ISLET_ART.originX, EPIC_ISLET_ART.originY).setScale(EPIC_ISLET_ART.worldWidth / EPIC_ISLET_ART.width); continue; }
+      if (b.islet) { image.setPosition(x, y).setOrigin(EPIC_ISLET_ART.originX, EPIC_ISLET_ART.originY).setScale(EPIC_ISLET_ART.worldWidth / EPIC_ISLET_ART.width * this.textureRatio(image)); continue; }
       this.positionBuildingArt(image, x, y, b.kind, b.kind === 'enclosure' ? habitatArtFor(b.habitat ?? undefined, b.footprintTier) : null, b.kind === 'enclosure' ? enclosureScale(b) : b.kind === 'salon' ? salonScale(b) : 1, b.id);
     }
     for(const [id,image] of this.buildingViews)if(!present.has(id)){image.destroy();this.buildingViews.delete(id);}
     if (this.current?.jumpIsland) {
       const p = jumpIslandPoint(), art = JUMP_ISLAND_ART;
       if (!this.jumpIslandImage) { this.jumpIslandImage = this.add.image(p.x, p.y, art.texture); this.buildingsLayer.add(this.jumpIslandImage); }
-      this.jumpIslandImage.setPosition(p.x, p.y).setOrigin(art.originX, art.originY).setScale(art.worldWidth / art.width).setDepth(p.y);
+      this.jumpIslandImage.setPosition(p.x, p.y).setOrigin(art.originX, art.originY).setScale(art.worldWidth / art.width * this.textureRatio(this.jumpIslandImage)).setDepth(p.y);
     } else { this.jumpIslandImage?.destroy(); this.jumpIslandImage = null; }
     const medals = this.current?.jumpIsland ? jumpRopeMedals(this.current) : [];
     while (this.jumpIslandMedals.length > medals.length) this.jumpIslandMedals.pop()!.destroy();
@@ -1254,7 +1291,12 @@ export class MeadowScene extends Phaser.Scene {
         const view = {object, body, center, group: enclosure.id, motion, nest: enclosure.kind === 'nest', lift: 0, pivot: art ? this.spritePivot(art) : {x: 0, y: -3}, native: art ? art.facing : 1 as const, base, phase: index * 2 + Number(rabbit.id.split('-')[1]), fedUntil: 0};
         if (art) {
           const sprite = this.add.image(0, art.groundY, art.texture).setOrigin(.5, 1);
-          sprite.setScale(art.worldWidth / art.width); // Uniform scale preserves the original proportions.
+          // Uniform scale preserves the original proportions. A drawing redrawn smaller (plan 5.1) has fewer pixels: the scale follows
+          // the texture shown, also when an effect swaps it (Ardent's frames, the Magicien's poses, Dadi, the legendaries' bodies).
+          const fit = () => sprite.setScale(art.worldWidth / art.width * this.textureRatio(sprite));
+          const setTexture = sprite.setTexture.bind(sprite);
+          sprite.setTexture = (key, frame) => { setTexture(key, frame); fit(); return sprite; };
+          fit();
           body.add(sprite);
           // Ardent's first drawing moves through its painted frames; each one is loaded on demand and never blocks the meadow.
           const ardent = rabbit.species === 'ardent' && !art.evolved;
@@ -1651,8 +1693,11 @@ export class MeadowScene extends Phaser.Scene {
         // Reference images use their own alpha silhouette, avoiding rectangular hits on adjacent residents.
         const world = this.view.world(screen);
         const local = r.sprite.getWorldTransformMatrix().applyInverse(world.x, world.y);
-        const x = Math.floor(local.x + r.art.width / 2), y = Math.floor(local.y + r.art.height);
-        if (x < 0 || y < 0 || x >= r.art.width || y >= r.art.height ||
+        // In the pixels of its drawing's texture, which a smaller copy (plan 5.1) has fewer of, from those of the texture shown.
+        const own = this.budget?.ratio(r.art.texture) ?? 1, k = this.textureRatio(r.sprite) / own;
+        const w = Math.round(r.art.width / own), h = Math.round(r.art.height / own);
+        const x = Math.floor(local.x * k + w / 2), y = Math.floor(local.y * k + h);
+        if (x < 0 || y < 0 || x >= w || y >= h ||
             this.textures.getPixelAlpha(x, y, r.art.texture) < 32) return [];
       }
       return [{id: r.id, point: this.view.screen(this.bodyPoint(r, 0, -7)), depth: r.object.y,
@@ -1681,16 +1726,18 @@ export class MeadowScene extends Phaser.Scene {
     const image = this.buildingViews.get(id), f = epicIsletFrame(), art = EPIC_ISLET_ART; if (!image) return false;
     if (world.x < f.left || world.x > f.right || world.y < f.top || world.y > f.bottom) return false;
     const local = image.getWorldTransformMatrix().applyInverse(world.x, world.y);
-    const x = Math.floor(local.x + art.width * art.originX), y = Math.floor(local.y + art.height * art.originY);
-    return x < 0 || y < 0 || x >= art.width || y >= art.height || !this.textures.exists(art.texture) ? true : this.textures.getPixelAlpha(x, y, art.texture) >= 16;
+    // In the texture's own pixels, which a smaller copy (plan 5.1) has fewer of.
+    const w = image.frame.realWidth, h = image.frame.realHeight, x = Math.floor(local.x + w * art.originX), y = Math.floor(local.y + h * art.originY);
+    return x < 0 || y < 0 || x >= w || y >= h || !this.textures.exists(art.texture) ? true : this.textures.getPixelAlpha(x, y, art.texture) >= 16;
   }
   /** The islet's picture, by its painted silhouette (a little margin on small zooms). */
   private jumpIslandHit(world: Point): boolean {
     const image = this.jumpIslandImage, f = jumpIslandFrame(); if (!image) return false;
     if (world.x < f.left || world.x > f.right || world.y < f.top || world.y > f.bottom) return false;
     const local = image.getWorldTransformMatrix().applyInverse(world.x, world.y), art = JUMP_ISLAND_ART;
-    const x = Math.floor(local.x + art.width * art.originX), y = Math.floor(local.y + art.height * art.originY);
-    return x < 0 || y < 0 || x >= art.width || y >= art.height || !this.textures.exists(art.texture) ? true : this.textures.getPixelAlpha(x, y, art.texture) >= 16;
+    // In the texture's own pixels, which a smaller copy (plan 5.1) has fewer of.
+    const w = image.frame.realWidth, h = image.frame.realHeight, x = Math.floor(local.x + w * art.originX), y = Math.floor(local.y + h * art.originY);
+    return x < 0 || y < 0 || x >= w || y >= h || !this.textures.exists(art.texture) ? true : this.textures.getPixelAlpha(x, y, art.texture) >= 16;
   }
   /** The Christmas market's picture, by its painted silhouette (only while it is drawn). */
   private marketHit(world: Point): boolean {
@@ -1717,6 +1764,14 @@ export class MeadowScene extends Phaser.Scene {
     this.progressViews?.sync(progressBars(s, {photo: this.photo, movingId: this.placement?.movingId}, now), s?.buildings.map(b => b.id) ?? []);
     this.progressUpdatedAt = this.time.now;
   }
+  /** The bottom of the HUD in CSS pixels, read at most once a second and after a resize (plan 5.2: it was read twice a frame,
+   * which makes the browser lay the page out again whenever anything in it changed). */
+  private hudBottomAt: {time: number; value: number} | null = null;
+  private hudBottom(time: number): number {
+    if (!this.hudBottomAt || time - this.hudBottomAt.time >= 1000 || time < this.hudBottomAt.time)
+      this.hudBottomAt = {time, value: document.getElementById('hud')?.getBoundingClientRect().bottom ?? 0};
+    return this.hudBottomAt.value;
+  }
   update(time: number): void {
     this.drawRabbitDrops(time);
     this.placeTutorialHand(time);
@@ -1726,7 +1781,7 @@ export class MeadowScene extends Phaser.Scene {
     // Scene time since the last frame; a long gap (inactive tab) is cut short inside the motion step: no jump.
     const dt = this.motionClock === null ? 0 : time - this.motionClock; this.motionClock = time;
     let dadi: ReturnType<DadiReactions['step']> = {speech: null, started: null}, dadiObscured = false;
-    const dadiBounds = this.dadiSpeech ? {width: this.scale.width, height: this.scale.height, top: document.getElementById('hud')?.getBoundingClientRect().bottom ?? 0} : null;
+    const dadiBounds = this.dadiSpeech ? {width: this.scale.width, height: this.scale.height, top: this.hudBottom(time)} : null;
     if (this.dadiSpeech) {
       const active = !this.photo && !document.hidden && document.getElementById('loading-screen')?.hidden !== false;
       dadiObscured = document.getElementById('game-panel')?.hidden === false || !!document.querySelector('dialog[open]');
@@ -1750,9 +1805,11 @@ export class MeadowScene extends Phaser.Scene {
     // The glow sources are gathered only at night (the glows are cleared by day anyway).
     const night = christmas ? this.winter?.nightNow(winterNow) ?? 0 : 0;
     this.nightGlows?.update(night, night > .001 ? this.glowSources() : [], night > .001 ? this.rabbitViews.map(r => r.object) : []);
+    // By day, the buildings' night glows are freed (plan 5.1); they load again at nightfall.
+    if (night <= .001 && this.budget?.loaded().some(key => key.startsWith(NIGHT_GLOW_PREFIX))) this.budget.release(new Set(), key => key.startsWith(NIGHT_GLOW_PREFIX));
     const lifeActive = !this.photo && !document.hidden && document.getElementById('loading-screen')?.hidden !== false &&
       document.getElementById('game-panel')?.hidden !== false && !document.querySelector('dialog[open]') && !this.placement && !this.arrangement;
-    const bounds = {width: this.scale.width, height: this.scale.height, top: document.getElementById('hud')?.getBoundingClientRect().bottom ?? 0};
+    const bounds = {width: this.scale.width, height: this.scale.height, top: this.hudBottom(time)};
     // Benny up in the air has no speech nor sleep bubble over her empty place.
     const visibleResidents = new Set(this.rabbitViews.filter(r => r.motion && r.id !== this.bennyAway && dadiHeadVisible(this.dadiHead(r), bounds)).map(r => r.id));
     const visitor=this.cozyInteraction.active;

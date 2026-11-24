@@ -27,7 +27,7 @@ describe('catalogue v20', () => {
     expect(mainProgress(s, 'first-rare')).toEqual({value: 1, target: 1});
   });
   itAll([16, 17, 18, 19])('converts retired species before validating the v%i migration chain', version => {
-    const raw = JSON.parse(encodeGame(createGame(HOUR))); raw.version = version;
+    const raw = JSON.parse(encodeGame(createGame(HOUR))); raw.version = version; delete raw.missions.daily.endsAt; // An old daily cycle stored no end (v30).
     if (version === 16) delete raw.rewardedDecorationModels;
     raw.rabbits[0].species = 'lunettes'; raw.discovered = ['lunettes']; raw.recipeBook = ['lunettes'];
     const result = decodeGame(JSON.stringify(raw));

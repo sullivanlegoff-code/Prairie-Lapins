@@ -22,7 +22,7 @@ Le contrôle des builds et celui des pages publiques comparent les octets du PNG
 
 ## Contrôle ciblé reproductible
 
-`node docs/farm-art-browser-check.cjs <racine construite> <révision>`, depuis le projet après installation de Playwright/Chromium. Le modèle de cadrage de test est compilé depuis le module pur de caméra existant ; aucun hook dans le jeu, aucune écriture directe de sauvegarde ou ajout de ressources. La fixture du laboratoire est choisie par ses commandes existantes.
+`node docs/history/farm-art-browser-check.cjs <racine construite> <révision>`, depuis le projet après installation de Playwright/Chromium. Le modèle de cadrage de test est compilé depuis le module pur de caméra existant ; aucun hook dans le jeu, aucune écriture directe de sauvegarde ou ajout de ressources. La fixture du laboratoire est choisie par ses commandes existantes.
 
 Le parcours vérifie le PNG transparent (53,94 % de pixels totalement transparents, aucun pixel opaque sur le bord), l'annulation d'un placement normal, le déplacement d'une ferme en production annulé puis confirmé, une deuxième ferme voisine, les états libre/en production/prêt, le coût de construction 60 et ses 20 XP, une commande à 10 pièces pour 20 herbes en 5 minutes, zéro XP au lancement/à la récolte, les sélections distinctes avec voisinage horizontal et vertical (y compris le bord avant d'une ferme au nord d'une récolte prête), le rechargement et l'isolation normal/laboratoire. Seul le temps du laboratoire est avancé, par son bouton existant. Une requête de texture pour les deux fermes est exigée avant puis après rechargement.
 

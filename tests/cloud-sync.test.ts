@@ -1,6 +1,8 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {BACKUP_KEY, CLOUD_KEY, fingerprint, LINK_BACKUP_PREFIX} from '../src/cloud/sync';
-import {CloudError, remoteSave, type CommitResult} from '../src/cloud/gateway';
+import {CloudError, remoteSave, type CommitRequest, type CommitResult} from '../src/cloud/gateway';
+import {decodeGame, encodeGame, SAVE_VERSION} from '../src/persistence/json';
+import type {GameState} from '../src/state/types';
 import {SAVE_KEY} from '../src/persistence/storage';
 import {createGame, advance} from '../src/simulation';
 import {SCENARIOS, scenarioState} from '../src/dev/scenarios';
@@ -24,6 +26,11 @@ describe('synchronisation automatique, sans réseau', () => {
     expect([...f.data].filter(([key]) => key.startsWith(LINK_BACKUP_PREFIX)).map(([, value]) => value)).toEqual([raw]);
     expect(f.data.get(SAVE_KEY)).toBe(before); expect(f.data.get(BACKUP_KEY)).toBe('secours précédent');
     expect(f.sync.getView().status).toBe('choice'); expect(f.gateway.calls).toHaveLength(0); expect(f.replacement).not.toHaveBeenCalled();
+  });
+  it('ne garde qu’une copie de la liaison abîmée, la dernière, quel que soit le nombre de réparations (plan 5.8)', async () => {
+    const f = setup(); f.gateway.remote = remote();
+    for (const raw of ['cassé une fois', 'cassé deux fois']) { f.data.set(CLOUD_KEY, raw); await f.sync.connect('player-a'); await f.sync.repairLink(true); }
+    expect([...f.data].filter(([key]) => key.startsWith(LINK_BACKUP_PREFIX)).map(([, value]) => value)).toEqual(['cassé deux fois']);
   });
   it('ne supprime pas une liaison réparée entre-temps par un autre onglet', async () => {
     const f = setup(); f.data.set(CLOUD_KEY, 'cassé'); await f.sync.connect('player-a');
@@ -93,6 +100,41 @@ describe('synchronisation automatique, sans réseau', () => {
     expect(f.gateway.calls.at(-1)!.operation).toBe(pending.operation); expect(f.gateway.remote!.revision).toBe(2);
     expect(next.sync.getView().status).toBe('saved'); expect(JSON.parse(f.data.get(CLOUD_KEY)!).pending).toBeNull();
   });
+  it('renvoie, converti au format du jour, un envoi en attente écrit par une ancienne version (plan 1.4)', async () => {
+    // A gateway that encodes like the real one: an older save format is refused by today's encoding.
+    class EncodingCloud extends MemoryCloud { override async commit(request: CommitRequest) { encodeGame(request.state); return super.commit(request); } }
+    for (const arrived of [false, true]) {
+      const gateway = new EncodingCloud(), f = setup('normal', gateway); await link(f); f.rename('Avant la mise à jour');
+      gateway.offline = true; await f.sync.flush(); gateway.offline = false; f.sync.disconnect();
+      // The pending envoi as an older version wrote it (v28).
+      const stored = JSON.parse(f.data.get(CLOUD_KEY)!), old = structuredClone(stored.pending);
+      old.state = JSON.parse(encodeGame(old.state)); old.state.version = 28; stored.pending = old; f.data.set(CLOUD_KEY, JSON.stringify(stored));
+      expect(() => encodeGame(old.state)).toThrow(); // What blocked the sync before.
+      if (arrived) gateway.remote = {owner: 'player-a', revision: old.expected + 1, savedAt: new Date(1_790_000_000_000).toISOString(), operation: old.operation, state: (decodeGame(JSON.stringify(old.state)) as {state: GameState}).state};
+      const next = setup('normal', gateway, f.data); await next.sync.connect('player-a');
+      expect(next.sync.getView().status, arrived ? 'déjà arrivé' : 'jamais arrivé').toBe('saved');
+      expect(gateway.remote!.revision).toBe(old.expected + 1); expect(gateway.remote!.state.version).toBe(SAVE_VERSION);
+      expect(gateway.remote!.state.rabbits[0].name).toBe('Avant la mise à jour');
+      expect(JSON.parse(f.data.get(CLOUD_KEY)!)).toMatchObject({pending: null, revision: old.expected + 1});
+      if (!arrived) expect(gateway.calls.at(-1)!.operation).not.toBe(old.operation);
+    }
+  });
+  it('au retour au premier plan, reprend la partie jouée ailleurs si rien n’a changé ici (plan 1.5)', async () => {
+    const f = setup(); await link(f); f.rename('Sur le PC'); await f.sync.flush();
+    // Another device plays and sends the next revision.
+    const elsewhere = structuredClone(f.gateway.remote!.state), revision = f.gateway.remote!.revision + 1; elsewhere.rabbits[0].name = 'Sur l’iPhone';
+    f.gateway.remote = {...f.gateway.remote!, revision, operation: crypto.randomUUID(), state: elsewhere};
+    const calls = f.gateway.calls.length;
+    await f.sync.retry();
+    expect(f.controller.getSnapshot().state!.rabbits[0].name).toBe('Sur l’iPhone'); expect(f.replacement).toHaveBeenCalledOnce();
+    expect(f.sync.getView().status).toBe('saved'); expect(f.gateway.calls).toHaveLength(calls); expect(JSON.parse(f.data.get(CLOUD_KEY)!).revision).toBe(revision);
+    // Played here too since: nothing is replaced, the envoi meets the conflict as before.
+    const other = structuredClone(elsewhere); other.rabbits[0].name = 'Encore ailleurs';
+    f.gateway.remote = {...f.gateway.remote!, revision: revision + 1, operation: crypto.randomUUID(), state: other};
+    f.rename('Ici aussi'); await f.sync.retry();
+    expect(f.controller.getSnapshot().state!.rabbits[0].name).toBe('Ici aussi'); expect(f.replacement).toHaveBeenCalledOnce();
+    expect(f.sync.getView().status).toBe('conflict');
+  });
   it('réessaie hors ligne à 5/10/20/40/60 secondes et conserve la requête', async () => {
     const f = setup(); await link(f); f.gateway.offline = true; f.rename('Hors ligne'); await f.sync.flush();
     const operation = f.gateway.calls.at(-1)!.operation;
@@ -105,10 +147,10 @@ describe('synchronisation automatique, sans réseau', () => {
   });
   it('refuse une version distante future et ne fait aucune écriture', async () => {
     const f = setup(); f.gateway.remote = remote();
-    Object.assign(f.gateway.remote.state, {version: 30}); await f.sync.connect('player-a');
+    Object.assign(f.gateway.remote.state, {version: 31}); await f.sync.connect('player-a');
     expect(f.sync.getView().status).toBe('outdated'); await f.sync.choose('local', true); await f.sync.retry();
     expect(f.gateway.calls).toHaveLength(0); expect(f.data.has(BACKUP_KEY)).toBe(false);
-    expect(() => remoteSave({state: {version: 30}}, 'player-a')).toThrow(/version plus récente/);
+    expect(() => remoteSave({state: {version: 31}}, 'player-a')).toThrow(/version plus récente/);
   });
   it('ignore la réponse tardive après déconnexion et changement de compte', async () => {
     const f = setup(); await link(f); f.rename('En cours'); let resolve!: (r: CommitResult) => void;

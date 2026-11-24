@@ -35,6 +35,7 @@ function rebaseClock(s: GameState, offset: number): void {
   s.lastSimulatedAt += offset;
   s.nextHeartGiftAt += offset;
   s.missions.daily.referenceAt += offset;
+  s.missions.daily.endsAt += offset;
   if (s.missions.daily.nextAt !== undefined) s.missions.daily.nextAt += offset;
   for (const trip of s.travel?.trips ?? []) { trip.startedAt += offset; trip.endsAt += offset; }
   if (s.care) { s.care.startedAt += offset; s.care.endsAt += offset; }

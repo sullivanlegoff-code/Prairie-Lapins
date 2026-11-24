@@ -1,3 +1,4 @@
+import type {SAVE_VERSION} from './saveVersion';
 import type {HistoricalLevelRight} from '../simulation/levelAccess';
 import type {PurchaseUnlockId} from '../config/purchaseUnlocks';
 import type {IslandStart, ParcelId} from '../config/land';
@@ -70,8 +71,9 @@ export interface MissionState {
   /**
    * daily.picked (v25): the three missions drawn at the start of the cycle among what the player could do then; absent, the
    * draw among the base missions (`dailyMissionsOf`). daily.petted (v25): the rabbits caressed in this cycle, at most three.
+   * daily.endsAt (v30): when this cycle ends, the first 4 a.m. after it began (or later for the cycle a v29 save was in).
    */
-  daily: {referenceAt: number; cycleIndex: number; progress: Record<DailyMissionId, number>; claimed: DailyMissionId[]; bonusClaimed: boolean; nextAt?: number; picked?: DailyMissionId[]; petted?: string[]};
+  daily: {referenceAt: number; cycleIndex: number; endsAt: number; progress: Record<DailyMissionId, number>; claimed: DailyMissionId[]; bonusClaimed: boolean; nextAt?: number; picked?: DailyMissionId[]; petted?: string[]};
   /** v25: the daily cycles in a row ending with the bonus claimed, and the last one (the `quotidien` evolution challenge). */
   streak?: {count: number; lastCycle: number};
 }
@@ -108,7 +110,7 @@ export interface GameState {
   startCourse?: 'paille-solo';
   purchaseUnlocks?: PurchaseUnlockId[];
   initiation?: Initiation;
-  version: 29;
+  version: typeof SAVE_VERSION;
   /** The Christmas event (v26, optional; absent until its first use): see `ChristmasState`. */
   christmas?: ChristmasState;
   /** Benny, the Mythic (v22): when her power is usable again, and whether she is flying in the sky. Absent until first used. */
@@ -182,7 +184,7 @@ export type Refusal = 'LEVEL_REQUIRED' | 'NO_BREEDING_RESULT' | 'PURCHASE_LOCKED
   'NO_EVOLVED_ART' | 'EVOLUTION_AFFECTION' | 'EVOLUTION_CHALLENGES' | 'EVOLUTION_REQUIRED' |
   'EVENT_OVER' | 'SNOWMAN_TODAY' | 'NOT_ENOUGH_CANDIES' | 'DEBRIS_IN_THE_WAY' | 'BENNY_REQUIRED';
 export interface CuisineReward {pattes: number; grass: number; /** True for one of the cycle's full-reward slots, false for a tip. */ fullReward: boolean; affectionGranted: boolean; affectionAtCap: boolean; affectionStatueRequired: boolean; /** The rabbit stops at 30 until it evolves (owner, 4 November 2026). */ affectionEvolutionRequired?: boolean; heartGranted: boolean; /** The rabbit the affection reward was drawn for. */ affectionRabbitId: string}
-export type ActionResult = {ok: true; state: GameState; value?: string | number; progressionGain?: ProgressionGain; cuisineReward?: CuisineReward; jumpRopeReward?: import('../simulation/jumpRope').JumpRopeReward} |
+export type ActionResult = {ok: true; state: GameState; value?: string | number; progressionGain?: ProgressionGain; cuisineReward?: CuisineReward; jumpRopeReward?: import('../simulation/jumpRope').JumpRopeReward; flightHearts?: number} |
   {ok: false; state: GameState; reason: Refusal};
 export type BaseCommand =
   /** `ultra`: the Ultra neige habitat (a snow enclosure, `habitatType` 'neige'), paid in sucres d'orge at the Christmas market. */

@@ -1,6 +1,7 @@
 import {LEGENDARY_EFFECTS as FX, isLegendaryShow, type LegendaryShow} from '../config/legendaryArt';
 import {BENNY_EFFECTS, BENNY_ID} from '../config/bennyArt';
 import type {SpeciesId} from '../config/species';
+import {preferWebp} from '../display/webpTwins';
 
 /**
  * The cards of the legendaries (owner, 31 October and 1 November 2026): their shine lives only here and in their first
@@ -30,7 +31,7 @@ export function decorateLegendaryCard(panel: HTMLElement, species: SpeciesId): b
   clearLegendaryCard(panel);
   if (!isCardShow(species)) return false;
   panel.dataset.legendary = species;
-  panel.style.setProperty('--legendary-banner', `url("${BANNER[species]}")`);
+  panel.style.setProperty('--legendary-banner', `url("${preferWebp(BANNER[species])}")`);
   const ambient = decor('div', 'legendary-ambient');
   for (let k = 0; k < AMBIENT_COUNT; k++) {
     const motes = MOTES[species], piece = image(motes[k % motes.length], 'legendary-mote');

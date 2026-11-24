@@ -3,6 +3,7 @@ import type {LookRabbit} from '../config/evolvedArt';
 import {CROWN_ART, ULTIMATE_FRAME, crownAnchor, preloadUltimateArt} from '../config/ultimateArt';
 import {isUltimate} from '../simulation/affection';
 import type {Rabbit} from '../state/types';
+import {preferWebp} from '../display/webpTwins';
 
 /**
  * The card of a lapin ultime (affection 50, owner, 2 November 2026: « quand on ouvre sa fiche elle est adaptée au fait que ce soit
@@ -14,7 +15,7 @@ export function decorateUltimateCard(panel: HTMLElement, rabbit: Pick<Rabbit, 'a
   if (!isUltimate(rabbit)) return false;
   preloadUltimateArt();
   panel.dataset.ultimate = '';
-  panel.style.setProperty('--ultimate-frame', `url("${ULTIMATE_FRAME.url}")`);
+  panel.style.setProperty('--ultimate-frame', `url("${preferWebp(ULTIMATE_FRAME.url)}")`);
   const frame = document.createElement('div'); frame.className = 'ultimate-frame'; frame.setAttribute('aria-hidden', 'true');
   const crown = document.createElement('img'); crown.className = 'ultimate-frame-crown'; crown.alt = ''; crown.draggable = false; crown.decoding = 'async';
   crown.src = ULTIMATE_FRAME.piece.url; frame.append(crown); panel.append(frame);

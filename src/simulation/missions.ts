@@ -7,6 +7,7 @@ import type {GameState, MissionState} from '../state/types';
 import {hasEvolvedArt} from '../config/evolvedArt';
 import {rollChristmasCycle} from './christmas';
 import {seasonAllows} from './season';
+import {gameDay, nextDayStart} from './dayBoundary';
 
 type ObservableState = Pick<GameState, 'rabbits' | 'discovered'> & Partial<Pick<GameState, 'progression' | 'decorations' | 'rewardedDecorationModels' | 'recipeBook' | 'jumpRope' | 'bennyRun'>> & {acquiredParcels?: GameState['acquiredParcels']; expanded?: boolean} & Pick<GameState, 'startCourse'> & {missions?: Pick<MissionState, 'events' | 'nightOrderStarted'>} & {buildings: (Pick<GameState['buildings'][number], 'kind'> & Partial<Pick<GameState['buildings'][number], 'habitat' | 'farmLevel' | 'agencyLevel' | 'nursery'>>)[]};
 export function mainProgress(state: ObservableState, id: MainMissionId): {value: number; target: number} {
@@ -38,19 +39,26 @@ export function emptyDailyProgress(): MissionState['daily']['progress'] {
 }
 export function createMissions(state: ObservableState, referenceAt: number): MissionState {
   return {events: emptyMainEvents(), completed: MAIN_MISSION_IDS.filter(id => { if ((DURABLE_MISSION_IDS as readonly string[]).includes(id) || (NEW_MAIN_MISSION_IDS as readonly string[]).includes(id)) return false; if ((id === 'snow-habitat' || id === 'welcome-snow') && state.startCourse !== 'paille-solo') return false; const p = mainProgress({...state, missions: undefined}, id); return p.value >= p.target; }), claimed: [],
-    daily: {referenceAt, cycleIndex: 0, progress: emptyDailyProgress(), claimed: [], bonusClaimed: false}};
+    daily: {referenceAt, cycleIndex: 0, endsAt: nextDayStart(referenceAt), progress: emptyDailyProgress(), claimed: [], bonusClaimed: false}};
 }
-export const cycleIndexAt = (referenceAt: number, now: number) => Math.floor(Math.max(0, now - referenceAt) / MISSION_CYCLE_DURATION);
-export const dailyCycleStart = (s: GameState) => s.missions.daily.referenceAt + s.missions.daily.cycleIndex * MISSION_CYCLE_DURATION;
-export const dailyCycleEnd = (s: GameState) => dailyCycleStart(s) + MISSION_CYCLE_DURATION;
+/**
+ * The daily cycle at `now`. A cycle ends at `endsAt`, the first 4 a.m. after it began (owner, decision D4); each further 4 a.m.
+ * passed starts one more. Before 23 November 2026 a cycle lasted 24 hours from the start of the game (see `migrateV29`).
+ */
+export const cycleIndexAt = (daily: Pick<MissionState['daily'], 'cycleIndex' | 'endsAt'>, now: number): number =>
+  now < daily.endsAt ? daily.cycleIndex : daily.cycleIndex + 1 + Math.max(0, gameDay(now) - gameDay(daily.endsAt));
+/** A stable mark of the current cycle, sent back with its claims (a claim made for an older cycle is refused): the start of the
+ * game for the first cycle, then a day before its end. */
+export const dailyCycleStart = (s: GameState) => s.missions.daily.cycleIndex === 0 ? s.missions.daily.referenceAt : s.missions.daily.endsAt - MISSION_CYCLE_DURATION;
+export const dailyCycleEnd = (s: GameState) => s.missions.daily.endsAt;
 /** Mutates only the transaction/advance copy; never reconstructs absent action history. */
 export function updateMissions(state: GameState, now: number): void {
   const m = state.missions, d = m.daily;
   // The « longer crop » mission: any crop of an hour or more (formerly the night production).
   if (state.buildings.some(b => b.order && (b.order.duration ?? ORDERS[b.order.recipe].duration) >= HOUR)) m.nightOrderStarted = true;
-  const cycle = cycleIndexAt(d.referenceAt, now);
+  const cycle = cycleIndexAt(d, now);
   if (cycle > d.cycleIndex) {
-    d.cycleIndex = cycle; d.progress = emptyDailyProgress(); d.claimed = []; d.bonusClaimed = false; delete d.nextAt; delete d.petted;
+    d.cycleIndex = cycle; d.endsAt = nextDayStart(now); d.progress = emptyDailyProgress(); d.claimed = []; d.bonusClaimed = false; delete d.nextAt; delete d.petted;
     // The three missions are drawn now, among what the player can do at the start of the cycle, and stay all cycle long.
     d.picked = pickDailyMissions(state, cycle);
     // The Christmas challenges follow the same cycle, drawn at the same moment (while the event is on).

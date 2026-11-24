@@ -65,7 +65,7 @@ it('below level 20, the islet card says the level it needs', () => {
   expect(card.querySelector<HTMLButtonElement>('button')!.disabled).toBe(true); expect(card.textContent).toContain('Niveau 20 requis');
 });
 
-it('the islet picks a trio, plays one life with Rejouer, pays the jumps and remembers the trio', () => {
+it('the islet picks a trio, plays one life with Rejouer, pays the jumps and remembers the trio', async () => {
   const {ui, controller} = mount(game()); ui.open({kind: 'jumpIsland'});
   expect(panel().textContent).toContain('Encore 3 parties récompensées aujourd’hui');
   // By default the most affectionate rabbit jumps and the next two turn the rope.
@@ -74,7 +74,7 @@ it('the islet picks a trio, plays one life with Rejouer, pays the jumps and reme
   panel().querySelector<HTMLButtonElement>('[data-jump-rope-slot="2"] button')!.click();
   panel().querySelector<HTMLButtonElement>('[data-jump-rope-rabbit="rabbit-103"] button')!.click();
   expect(slotText(2)).toContain('Athlète : Caramel'); expect(slotText(1)).toContain('Porteur : Noisette');
-  panel().querySelector<HTMLButtonElement>('[data-jump-rope-play]')!.click();
+  panel().querySelector<HTMLButtonElement>('[data-jump-rope-play]')!.click(); await vi.dynamicImportSettled(); // The game is downloaded at its first opening (plan 5.4).
   expect(layer().hidden).toBe(false); expect(layer().textContent).toContain('Caramel saute à la corde !');
   expect(layer().textContent).toContain('Pompon et Noisette font tourner la corde');
   expect(layer().querySelectorAll('.jump-rope-carrier img').length).toBe(2); expect(layer().querySelector('.jump-rope-post')).toBeNull();
@@ -95,14 +95,15 @@ it('the islet picks a trio, plays one life with Rejouer, pays the jumps and reme
   // Rejouer starts the next game at once; a miss on the first pass scores nothing and keeps the record.
   card.querySelector<HTMLButtonElement>('[data-jump-rope-again]')!.click();
   expect(card.hidden).toBe(true); expect(layer().querySelector('.jump-rope-best')!.textContent).toBe('Record : 5');
-  const start = clock; tapAt(start + 10);
+  const start = clock; tapAt(start + 10); expect(card.hidden).toBe(true); // A false start during the count-in costs nothing.
+  tapAt(start + JUMP_ROPE.leadIn + JUMP_ROPE.startPeriod / 2); // The rope passed under feet that stayed down.
   expect(card.hidden).toBe(false); expect(card.textContent).toContain('Caramel s’est emmêlé les pattes'); expect(card.textContent).toContain('Ton record : 5 sauts');
   s = controller.getSnapshot().state!; expect(s.jumpRope).toMatchObject({rewarded: 1, best: 5});
   card.querySelector<HTMLButtonElement>('[data-jump-rope-quit]')!.click();
   expect(layer().hidden).toBe(true); expect(panel().textContent).toContain('Ton record : 5 sauts');
 });
 
-it('the remembered trio comes back, a rabbit on a trip cannot be chosen, and the space bar jumps too', () => {
+it('the remembered trio comes back, a rabbit on a trip cannot be chosen, and the space bar jumps too', async () => {
   const s = game(); s.jumpRope = {cycle: 0, rewarded: 0, best: 3, team: {carriers: ['rabbit-101', 'rabbit-103'], athlete: 'rabbit-102'}};
   const free = (kind?: 'enclosure') => { for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!buildingPlacementReason(s, x, y, undefined, kind)) return {x, y}; throw Error('No space'); };
   // The starting parcel has no room left for a second 6 × 5 enclosure: the south parcel is owned too.
@@ -118,7 +119,7 @@ it('the remembered trio comes back, a rabbit on a trip cannot be chosen, and the
   expect(panel().querySelector<HTMLButtonElement>('[data-jump-rope-rabbit="rabbit-101"] button')!.disabled).toBe(true); // Already there.
   panel().querySelector<HTMLButtonElement>('[data-jump-rope-rabbit="rabbit-103"] button')!.click();
   expect(slotText(0)).toContain('Porteur : Caramel'); expect(slotText(1)).toContain('Porteur : Noisette');
-  panel().querySelector<HTMLButtonElement>('[data-jump-rope-play]')!.click();
+  panel().querySelector<HTMLButtonElement>('[data-jump-rope-play]')!.click(); await vi.dynamicImportSettled(); // The game is downloaded at its first opening (plan 5.4).
   layer().querySelector<HTMLButtonElement>('[data-jump-rope-start]')!.click();
   clock = JUMP_ROPE.leadIn; document.dispatchEvent(new KeyboardEvent('keydown', {key: ' '}));
   expect(layer().querySelector('.jump-rope-score')!.textContent).toBe('1 saut');
@@ -133,9 +134,10 @@ it('needs three rabbits at home to play', () => {
 });
 
 it('the islet menu shows the challenge of the day and the medals still to win', () => {
-  const s = game(); s.jumpRope = {cycle: 0, rewarded: 0, best: 26};
+  const s = game(); s.jumpRope = {cycle: 0, rewarded: 1, best: 26};
   const {ui} = mount(s); ui.open({kind: 'jumpIsland'});
-  expect(panel().textContent).toContain('Le défi se tente à la première partie du jour'); // A game was played today.
+  expect(panel().textContent).toContain('Défi du jour : '); // A game was played today without the challenge: it is still to win.
+  expect(panel().textContent).toContain(`un cœur à ${JUMP_ROPE.heartJumps} sauts`);
   expect(panel().textContent).toContain('Médailles sur le kiosque : 10, 25 sauts. Prochaine médaille à 50 sauts.');
   expect([...panel().querySelectorAll<HTMLImageElement>('[data-jump-rope-medal]')].map(img => img.dataset.jumpRopeMedal)).toEqual(['10', '25']);
 });
@@ -164,21 +166,73 @@ it('a « tac » marks each pass of the rope, the carriers console a miss and app
   t = pass + period / 2; activity.tap();
   expect(activity.element.querySelector('[data-jump-rope-card]')!.textContent).toContain('Nouveau record');
   // Next game, no record: a first-pass miss is consoled.
-  best = 3; activity.element.querySelector<HTMLButtonElement>('[data-jump-rope-again]')!.click(); t += 10; activity.tap();
+  best = 3; activity.element.querySelector<HTMLButtonElement>('[data-jump-rope-again]')!.click(); t += JUMP_ROPE.leadIn + JUMP_ROPE.startPeriod / 2; activity.tap();
   expect(carriers.every(c => c.classList.contains('console'))).toBe(true);
   expect(activity.element.querySelector('.jump-rope-cheer')!.textContent).toBe('Courage, on recommence !');
 });
 
-it('an evolved rabbit jumps and turns the rope with its evolved drawing (audit 4 November 2026)', () => {
+it('an evolved rabbit jumps and turns the rope with its evolved drawing (audit 4 November 2026)', async () => {
   const s = game();
   const [noisette, pompon, caramel] = ['rabbit-101', 'rabbit-102', 'rabbit-103'].map(id => s.rabbits.find(r => r.id === id)!);
   noisette.affection = 32; pompon.affection = 30; caramel.affection = 29;
   noisette.evolution = {done: true, challenges: {voyage: 1}};
   const {ui} = mount(s); ui.open({kind: 'jumpIsland'});
   expect(slotText(2)).toContain('Athlète : Noisette');
-  panel().querySelector<HTMLButtonElement>('[data-jump-rope-play]')!.click();
+  panel().querySelector<HTMLButtonElement>('[data-jump-rope-play]')!.click(); await vi.dynamicImportSettled(); // The game is downloaded at its first opening (plan 5.4).
   // Noisette (evolved) jumps with the new drawing; Pompon and Caramel have not evolved.
   expect(layer().querySelector<HTMLImageElement>('.jump-rope-rabbit .jump-rope-figure img')!.src).toContain('paille-v2');
   const carriers = [...layer().querySelectorAll<HTMLImageElement>('.jump-rope-carrier .jump-rope-figure img')].map(img => img.src);
   expect(carriers.length).toBe(2); expect(carriers.some(src => src.includes('paille-v2'))).toBe(false);
+});
+
+it('reads today’s rewards only at the start and the end of a game, never every frame (plan 3.1)', async () => {
+  const {mountJumpRopeActivity} = await import('../src/ui/JumpRopeActivity');
+  let t = 0; const host = document.createElement('div'); document.body.append(host);
+  const quotaText = vi.fn(() => 'Encore 3 parties récompensées aujourd’hui');
+  const activity = mountJumpRopeActivity(host, {onFinished: () => '', best: () => 0, quotaText, clock: () => t, frame: () => 0});
+  cleanups.push(() => activity.dispose());
+  const r = {id: 'rabbit-1', species: 'paille' as const, affection: 3};
+  activity.open({carriers: [{...r, id: 'rabbit-2'}, {...r, id: 'rabbit-3'}], athlete: r});
+  activity.element.querySelector<HTMLButtonElement>('[data-jump-rope-start]')!.click();
+  const quota = activity.element.querySelector('.jump-rope-quota')!, score = activity.element.querySelector('.jump-rope-score')!;
+  const calls = quotaText.mock.calls.length; let writes = 0;
+  new MutationObserver(m => { writes += m.length; }).observe(score, {childList: true, characterData: true, subtree: true});
+  for (let i = 0; i < 120; i++) { t = i * 5; activity.update(); } // Two seconds of frames during the count-in.
+  await Promise.resolve();
+  expect(quotaText.mock.calls.length).toBe(calls); expect(writes).toBe(0); expect(quota.textContent).toBe('Encore 3 parties récompensées aujourd’hui');
+  t = JUMP_ROPE.leadIn + JUMP_ROPE.startPeriod; activity.update(); // The rope passes under still feet: the game ends.
+  expect(quotaText.mock.calls.length).toBe(calls + 1);
+});
+
+it('measures the rope canvases once, not at every frame (plan 3.2)', async () => {
+  const {mountJumpRopeActivity} = await import('../src/ui/JumpRopeActivity');
+  let reads = 0; const observers: (() => void)[] = [];
+  vi.stubGlobal('ResizeObserver', class { constructor(private f: () => void) { observers.push(() => this.f()); } observe() {} disconnect() {} });
+  Object.defineProperty(HTMLCanvasElement.prototype, 'clientWidth', {configurable: true, get() { reads++; return 400; }});
+  Object.defineProperty(HTMLCanvasElement.prototype, 'clientHeight', {configurable: true, get() { reads++; return 200; }});
+  cleanups.push(() => { delete (HTMLCanvasElement.prototype as {clientWidth?: number}).clientWidth; delete (HTMLCanvasElement.prototype as {clientHeight?: number}).clientHeight; });
+  let t = 0; const host = document.createElement('div'); document.body.append(host);
+  const activity = mountJumpRopeActivity(host, {onFinished: () => '', best: () => 0, clock: () => t, frame: () => 0});
+  cleanups.push(() => activity.dispose());
+  const r = {id: 'rabbit-1', species: 'paille' as const, affection: 3};
+  activity.open({carriers: [{...r, id: 'rabbit-2'}, {...r, id: 'rabbit-3'}], athlete: r});
+  activity.element.querySelector<HTMLButtonElement>('[data-jump-rope-start]')!.click();
+  for (let i = 0; i < 120; i++) { t = i * 5; activity.update(); } // Each canvas is measured the first time the rope is on it.
+  const before = reads;
+  for (let i = 120; i < 240; i++) { t = i * 5; activity.update(); }
+  expect(reads - before).toBe(0);
+  observers.forEach(f => f()); activity.update(); // The stage changed size: measured again, once.
+  expect(reads - before).toBeGreaterThan(0); const again = reads; activity.update(); expect(reads).toBe(again);
+});
+
+it('a miss makes its own sound (plan 3.3)', async () => {
+  const {mountJumpRopeActivity} = await import('../src/ui/JumpRopeActivity');
+  let t = 0; const host = document.createElement('div'); document.body.append(host); const miss = vi.fn();
+  const activity = mountJumpRopeActivity(host, {onFinished: () => '', best: () => 0, miss, clock: () => t, frame: () => 0});
+  cleanups.push(() => activity.dispose());
+  const r = {id: 'rabbit-1', species: 'paille' as const, affection: 3};
+  activity.open({carriers: [{...r, id: 'rabbit-2'}, {...r, id: 'rabbit-3'}], athlete: r});
+  activity.element.querySelector<HTMLButtonElement>('[data-jump-rope-start]')!.click();
+  t = JUMP_ROPE.leadIn; activity.tap(); expect(miss).not.toHaveBeenCalled(); // A jump.
+  t = JUMP_ROPE.leadIn + JUMP_ROPE.startPeriod * 3; activity.update(); expect(miss).toHaveBeenCalledOnce();
 });

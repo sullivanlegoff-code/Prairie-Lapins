@@ -29,6 +29,7 @@ export function mountSavePanel(controller: GameController, onReplacement: (fresh
   const status = get('save-status'), savedAt = get('saved-at'), notice = get('save-notice');
   const exportButton = get<HTMLButtonElement>('export-game'), importButton = get<HTMLButtonElement>('import-game');
   const retry = get<HTMLButtonElement>('retry-save'), restart = get<HTMLButtonElement>('restart-game');
+  const previous = get<HTMLButtonElement>('restore-previous');
   const backup = get<HTMLButtonElement>('export-unreadable'), fallback = get<HTMLButtonElement>('download-fallback');
   const input = get<HTMLInputElement>('import-file');
   const dialog = get<HTMLDialogElement>('import-dialog'), summary = get('import-summary'), importError = get('import-error');
@@ -95,6 +96,7 @@ export function mountSavePanel(controller: GameController, onReplacement: (fresh
     retry.hidden = !['write-error', 'read-error'].includes(snapshot.status);
     restart.hidden = false;
     backup.hidden = !snapshot.hasUnreadableBackup;
+    previous.hidden = snapshot.status !== 'invalid-save' || controller.previousSave() === null;
   });
   async function exportCurrent() {
     const result = controller.exportGame();
@@ -129,13 +131,19 @@ export function mountSavePanel(controller: GameController, onReplacement: (fresh
     try { json = await file.text(); }
     catch { if (alive && sequence === readSequence) say('Impossible de lire ce fichier. La partie actuelle est conservée.'); return; }
     if (!alive || sequence !== readSequence) return;
-    const prepared = controller.prepareImport(json, file.size);
+    offerImport(json, file.size);
+  })(); }, options);
+  /** Shows what an import would bring back, and waits for the player's confirmation. */
+  function offerImport(json: string, size?: number): void {
+    const prepared = controller.prepareImport(json, size);
     if (!prepared.ok) { say(ERROR_MESSAGES[prepared.reason]); return; }
     importToken = prepared.token;
     const s = prepared.summary;
     setCurrencyText(summary, `${s.pattes} pattes · ${s.grass} nourriture · ${s.hearts} cœurs · ${s.rabbits} ${s.rabbits===1?'lapin':'lapins'}. Espèces découvertes : ${s.discovered.map(id => SPECIES[id].name).join(', ') || 'aucune'}.`);
     importError.textContent = ''; dialog.showModal();
-  })(); }, options);
+  }
+  // The save could not be read: the copy kept at the last start that read it is offered back, with the same confirmation.
+  previous.addEventListener('click', () => { closeImport(); const raw = controller.previousSave(); if (raw === null) say('Aucune copie de secours lisible.'); else offerImport(raw); }, options);
   confirm.addEventListener('click', () => {
     if (importToken === null) return;
     const result = controller.confirmImport(importToken, true);

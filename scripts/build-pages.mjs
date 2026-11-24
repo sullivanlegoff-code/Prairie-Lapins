@@ -28,6 +28,8 @@ run('node', ['scripts/verify-webp-twins.mjs']);
 npm(['run', 'build', '--', '--base=' + base, '--outDir', root, '--emptyOutDir']);
 writeFileSync(join(root, 'build-revision.txt'), revision + '\n');
 writeFileSync(join(root, '.nojekyll'), '');
+// The game's service worker (plan 5.5): its own cache for each build, even one without a revision. Never in the laboratory (dev/).
+writeFileSync(join(root, 'sw.js'), readFileSync('scripts/service-worker.js', 'utf8').replaceAll('__REVISION__', revision.replace(/[^A-Za-z0-9-]/g, '') + '-' + Date.now().toString(36)));
 npm(['run', 'build:lab', '--', '--base=' + base + 'dev/', '--outDir', join(root, 'dev'), '--emptyOutDir']);
 writeFileSync(join(root, 'dev', 'build-revision.txt'), revision + '\n');
 // Vite copies public/ into both outputs. Remove only byte-identical music copies from the lab.
@@ -38,6 +40,9 @@ for (const name of readdirSync(join(root, 'assets/audio/music'))) {
 }
 run('node', ['scripts/verify-production.mjs', root, base]);
 run('node', ['scripts/verify-production.mjs', join(root, 'dev'), base + 'dev/', 'laboratory']);
+// The PNG pictures that have a WebP twin are never downloaded (plan 5.6): they stay in public/, not in the published site.
+run('node', ['scripts/prune-png-twins.mjs', root]);
+run('node', ['scripts/prune-png-twins.mjs', join(root, 'dev')]);
 // Dedicated standalone entry/public directory; the game reuses the mount without its bootstrap.
 npm(['run', 'build', '--', '--mode=cooking-prototype', '--base=' + base + 'cooktap-prototype/', '--outDir', join(root, 'cooktap-prototype'), '--emptyOutDir']);
 run('node', ['scripts/verify-cooking-prototype.mjs', join(root, 'cooktap-prototype'), base + 'cooktap-prototype/']);

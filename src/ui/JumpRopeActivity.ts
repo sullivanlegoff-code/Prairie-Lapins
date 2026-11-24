@@ -8,8 +8,8 @@ import {portrait} from './portraits';
 import {JUMP_ROPE_ISLAND_URL, JUMP_ROPE_KIOSK_URL} from '../display/agency';
 import {drawJumpRopeSky} from '../display/jumpRopeSky';
 import {JUMP_ROPE_PIECES} from '../config/jumpRopeArt';
-import {FULLSCREEN_ACTIVITY_EVENT} from '../config/bennyFlightGameArt';
 import {pausableClock, settleCard} from './activityPause';
+import {arcadeShell} from './arcadeShell';
 
 /** Two carriers turn the rope, the athlete jumps (looks only). */
 export interface JumpRopeTrio {carriers: [CuisineRabbit, CuisineRabbit]; athlete: CuisineRabbit}
@@ -22,12 +22,16 @@ export interface JumpRopeTrio {carriers: [CuisineRabbit, CuisineRabbit]; athlete
  * rope passes under the athlete's feet; `challengeText` describes the challenge of the day. The carriers console the athlete
  * after a miss and applaud a new record.
  */
+/** The rope is laid in this many slices along its curve: smooth at phone size, half the former 48 drawing calls (plan 3.2). */
+const ROPE_SLICES = 24;
 export function mountJumpRopeActivity(host: HTMLElement, options: {
   onFinished: (team: JumpRopeTrio, score: number) => string;
   quotaText?: () => string;
   best?: () => number;
   cheer?: () => void;
   tick?: () => void;
+  /** A short effect when the rabbit misses the rope. */
+  miss?: () => void;
   challengeText?: () => string;
   onExit?: () => void;
   /** Milliseconds, monotonic; performance.now() by default. Tests drive it and call `update()` themselves. */
@@ -62,25 +66,29 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
   const carriers = [...layer.querySelectorAll<HTMLElement>('.jump-rope-carrier')];
   const back = $<HTMLCanvasElement>('[data-layer="back"]'), front = $<HTMLCanvasElement>('[data-layer="front"]');
   const tile = new Image(); tile.decoding = 'async'; tile.src = JUMP_ROPE_PIECES.tile.url;
-  for (const handle of layer.querySelectorAll<HTMLElement>('.jump-rope-handle')) handle.style.backgroundImage = `url("${JUMP_ROPE_PIECES.handle.url}")`;
+  for (const handle of layer.querySelectorAll<HTMLElement>('.jump-rope-handle')) handle.style.backgroundImage = `url("${preferWebp(JUMP_ROPE_PIECES.handle.url)}")`;
   const sky = $<HTMLCanvasElement>('.jump-rope-sky'), abort = new AbortController();
-  const resize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => { if (!layer.hidden) drawJumpRopeSky(sky); });
+  // The rope canvases' box, measured once and again only when the stage changes size (not every frame: plan 3.2).
+  const boxes = new WeakMap<HTMLCanvasElement, {width: number; height: number}>();
+  const resize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => { boxes.delete(back); boxes.delete(front); if (!layer.hidden) drawJumpRopeSky(sky); });
   resize?.observe(stage);
   let team: JumpRopeTrio | null = null, game: JumpRopeGame | null = null, running = false, popTimer: ReturnType<typeof setTimeout> | undefined;
   let previousBest = 0, recordShown = false, tickedAt = -Infinity;
   const nameOf = (r: CuisineRabbit) => r.name || SPECIES[r.species].name;
   const name = () => team ? nameOf(team.athlete) : '';
   const jumps = (n: number) => `${n} saut${n > 1 ? 's' : ''}`;
-  const button = (label: string, action: () => void, key: string) => {
-    const element = document.createElement('button'); element.type = 'button'; element.textContent = label; element.dataset[key] = '';
-    element.addEventListener('click', event => { event.stopPropagation(); action(); }); return element;
-  };
-  const paragraph = (text: string, className: string) => { const p = document.createElement('p'); p.className = className; p.textContent = text; return p; };
-  function showCard(...children: HTMLElement[]): void { card.replaceChildren(...children); card.hidden = false; }
-  function hud(): void {
-    score.textContent = jumps(game?.score ?? 0);
-    const best = Math.max(previousBest, game?.score ?? 0); bestLine.textContent = best ? `Record : ${best}` : '';
-    quota.textContent = options.quotaText?.() ?? '';
+  // Cards, loop, pause, resume and leaving: shared with the other arcade games (plan 3.9).
+  const {button, paragraph, showCard, schedule, show, close} = arcadeShell({layer, card, signal: abort.signal, time, frame,
+    running: {get: () => running, set: value => { running = value; }},
+    names: {title: 'jump-rope-title', resume: 'jumpRopeResume', quit: 'jumpRopeQuit'},
+    update: () => update(), onClose: () => { game = null; team = null; clearTimeout(popTimer); }, onExit: () => options.onExit?.()});
+  // The top line is written only when its text changes; today's rewards (`quotaText` reads the saved game) only when asked:
+  // reading them every frame copied the whole game 60 times a second (plan 3.1, as in the flight).
+  let shownScore: string | null = null, shownBest: string | null = null, shownQuota: string | null = null;
+  function hud(rewards = false): void {
+    const text = jumps(game?.score ?? 0); if (text !== shownScore) score.textContent = shownScore = text;
+    const best = Math.max(previousBest, game?.score ?? 0), line = best ? `Record : ${best}` : ''; if (line !== shownBest) bestLine.textContent = shownBest = line;
+    if (rewards) { const today = options.quotaText?.() ?? ''; if (today !== shownQuota) quota.textContent = shownQuota = today; }
   }
   /** Draws one rabbit's portrait, turned toward `facing` (1 right, -1 left). */
   function paint(target: HTMLElement, rabbit: CuisineRabbit, facing: 1 | -1): void {
@@ -101,7 +109,9 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
   }
   /** The canvas matches its box (in device pixels); false while it has no size yet (hidden layer, tests). */
   function fit(canvas: HTMLCanvasElement): boolean {
-    const ratio = Math.min(3, window.devicePixelRatio || 1), width = Math.round(canvas.clientWidth * ratio), height = Math.round(canvas.clientHeight * ratio);
+    let box = boxes.get(canvas);
+    if (!box) { box = {width: canvas.clientWidth, height: canvas.clientHeight}; if (box.width && box.height && resize) boxes.set(canvas, box); }
+    const ratio = Math.min(3, window.devicePixelRatio || 1), width = Math.round(box.width * ratio), height = Math.round(box.height * ratio);
     if (!width || !height) return false;
     if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
     return true;
@@ -116,13 +126,13 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
     const context = canvas.getContext('2d'); if (!context) return;
     context.clearRect(0, 0, canvas.width, canvas.height);
     if (!tile.complete || !tile.naturalWidth) return;
-    const ratio = canvas.width / Math.max(1, canvas.clientWidth), thickness = JUMP_ROPE_PIECES.thickness * ratio;
+    const ratio = canvas.width / Math.max(1, boxes.get(canvas)?.width ?? canvas.clientWidth), thickness = JUMP_ROPE_PIECES.thickness * ratio;
     const point = (t: number) => ({x: canvas.width * ((1 - t) ** 2 * 8 + 2 * (1 - t) * t * 50 + t * t * 92) / 100,
       y: canvas.height * ((1 - t) ** 2 * end + 2 * (1 - t) * t * control + t * t * end) / 100});
     const tileWidth = tile.naturalWidth, perPixel = tile.naturalHeight / thickness;
     let along = 0, previous = point(0);
-    for (let i = 1; i <= 48; i++) {
-      const next = point(i / 48), length = Math.hypot(next.x - previous.x, next.y - previous.y);
+    for (let i = 1; i <= ROPE_SLICES; i++) {
+      const next = point(i / ROPE_SLICES), length = Math.hypot(next.x - previous.x, next.y - previous.y);
       context.save(); context.translate(previous.x, previous.y); context.rotate(Math.atan2(next.y - previous.y, next.x - previous.x));
       // The slice of tile for this piece of rope, wrapping round the tile's end.
       let drawn = 0;
@@ -139,7 +149,7 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
     clearTimeout(popTimer); popTimer = setTimeout(() => pop.classList.remove('shown'), kind === 'ready' ? 900 : 520);
   }
   function celebrate(): void { burst.classList.remove('shown'); void burst.offsetWidth; burst.classList.add('shown'); }
-  function stumble(): void { rabbitBox.classList.remove('stumble'); void rabbitBox.offsetWidth; rabbitBox.classList.add('stumble'); }
+  function stumble(): void { options.miss?.(); rabbitBox.classList.remove('stumble'); void rabbitBox.offsetWidth; rabbitBox.classList.add('stumble'); }
   /** The carriers react: they lean in to console the athlete, or hop and clap for a record. */
   function react(kind: 'console' | 'applaud' | null, line = ''): void {
     for (const carrier of carriers) { carrier.classList.remove('console', 'applaud'); if (kind) { void carrier.offsetWidth; carrier.classList.add(kind); } }
@@ -162,11 +172,10 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
     hud();
     if (game.over && running) finish();
   }
-  let scheduled = false;
-  function schedule(): void { if (scheduled) return; scheduled = true; frame(() => { scheduled = false; loop(); }); }
-  function loop(): void { if (!running) return; update(); if (running) schedule(); }
   function tap(): void {
     if (!game || !running) return;
+    // A pass the rope already made without a jump is a miss, shown even when a late tap is what notices it.
+    if (advanceJumpRope(game, clock())) { flash('Oups !', 'miss'); stumble(); }
     const result = tapJumpRope(game, clock());
     if (result === 'miss') { flash('Oups !', 'miss'); stumble(); }
     else if (result === 'jump' || result === 'perfect') {
@@ -184,7 +193,7 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
     const reward = options.onFinished(who, final);
     const chips = document.createElement('p'); chips.className = 'jump-rope-rewards';
     for (const part of reward ? reward.split(' · ') : []) { const chip = document.createElement('span'); chip.className = 'cuisine-reward-chip'; setCurrencyText(chip, part); chips.append(chip); }
-    combo.classList.remove('shown'); hud();
+    combo.classList.remove('shown'); hud(true);
     react(record ? 'applaud' : 'console', record ? 'Bravo !' : final >= 5 ? 'C’était super !' : 'Courage, on recommence !');
     const again = button('Rejouer', start, 'jumpRopeAgain');
     showCard(paragraph(final ? `${name()} a fait ${jumps(final)} !` : `${name()} s’est emmêlé les pattes !`, 'jump-rope-title'),
@@ -195,10 +204,10 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
   function start(): void {
     previousBest = options.best?.() ?? 0; recordShown = false;
     game = startJumpRope(clock()); running = true; tickedAt = -Infinity; card.hidden = true; rabbitBox.classList.remove('stumble'); combo.classList.remove('shown'); react(null);
-    hud(); flash('Prêt ?', 'ready'); schedule();
+    hud(true); flash('Prêt ?', 'ready'); schedule();
   }
   function intro(): void {
-    game = null; running = false; previousBest = options.best?.() ?? 0; drawRope(0.5); hud(); react(null);
+    game = null; running = false; previousBest = options.best?.() ?? 0; drawRope(0.5); hud(true); react(null);
     const challenge = options.challengeText?.() ?? '';
     const [left, right] = team!.carriers;
     showCard(paragraph(`${name()} saute à la corde !`, 'jump-rope-title'),
@@ -206,19 +215,6 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
       ...(challenge ? [paragraph(challenge, 'jump-rope-challenge')] : []),
       button('C’est parti !', start, 'jumpRopeStart'));
   }
-  function close(): void {
-    if (layer.hidden) return;
-    running = false; time.resume(); game = null; team = null; layer.hidden = true; clearTimeout(popTimer);
-    window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: false})); options.onExit?.();
-  }
-  /** The phone locked or another app opened: the game waits, frozen, instead of being lost to the time gone by. */
-  function pause(): void {
-    if (!running) return;
-    time.pause(); running = false;
-    showCard(paragraph('Partie en pause', 'jump-rope-title'), button('Reprendre', resume, 'jumpRopeResume'), button('Quitter', close, 'jumpRopeQuit'));
-  }
-  function resume(): void { time.resume(); running = true; card.hidden = true; schedule(); }
-  document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); }, {signal: abort.signal});
   stage.addEventListener('pointerdown', event => { event.preventDefault(); tap(); }, {signal: abort.signal});
   $<HTMLButtonElement>('[data-jump-rope-exit]').addEventListener('click', () => close(), {signal: abort.signal});
   document.addEventListener('keydown', event => {
@@ -236,8 +232,8 @@ export function mountJumpRopeActivity(host: HTMLElement, options: {
       paint(figure, chosen.athlete, 1);
       paint(carriers[0].querySelector('.jump-rope-figure')!, chosen.carriers[0], 1);
       paint(carriers[1].querySelector('.jump-rope-figure')!, chosen.carriers[1], -1);
-      layer.hidden = false; window.dispatchEvent(new CustomEvent(FULLSCREEN_ACTIVITY_EVENT, {detail: true}));
-      drawJumpRopeSky(sky); intro(); $<HTMLButtonElement>('[data-jump-rope-start]').focus();
+      show();
+      boxes.delete(back); boxes.delete(front); drawJumpRopeSky(sky); intro(); $<HTMLButtonElement>('[data-jump-rope-start]').focus();
     },
     close, update, tap,
     dispose() { close(); abort.abort(); resize?.disconnect(); layer.remove(); },

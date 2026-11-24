@@ -16,6 +16,7 @@ import {PARCEL_IDS, startParcel} from '../config/land';
 import {type HabitatType, HABITAT_TYPES, HABITAT_LEVELS, habitatLevel} from '../config/habitats';
 import {MAIN_MISSION_IDS, DAILY_MISSION_IDS, DAILY_MISSIONS, DAILY_PICK_COUNT} from '../config/missions';
 import {cycleIndexAt} from '../simulation/missions';
+import {gameDay, gameDayStart, nextDayStart} from '../simulation/dayBoundary';
 import {z} from 'zod';
 import {BENNY_RUN, BENNY_RUN_MAX_METRES} from '../simulation/bennyRun';
 import {BALANCE, FOREST, BUILDING_KINDS, CARE_KINDS, SALON, JUMP_ROPE, LEGACY_BREEDING_DURATION, EPIC_ISLET, BENNY_FLIGHT, CUISINE_FULL_REWARDS_PER_CYCLE, HOUR, LEGACY_ORDER_CROPS, TRAVEL, tripHearts, tripHeartsBefore20261108, NURSERY, ORDERS, type OrderId, SHOP_SPECIES, SPECIES, SPECIES_IDS, GUARANTEE_SPECIES, growthDuration, orderFarmLevel, type SpeciesId} from '../config/balance';
@@ -28,7 +29,7 @@ import {EVOLUTION_CHALLENGES, EVOLUTION_CHALLENGE_IDS, evolutionChallengeTarget,
 import {EVOLUTION_AFFECTION, hasEvolvedArt} from '../config/evolvedArt';
 
 /**
- * The current format is v29 (the Antre du dragon and the record of « Benny Rampage », optional; nothing to convert, see
+ * The current format is v30 (the day changes at 4 a.m.: each daily cycle says when it ends, see `migrateV29`), after v29 (the Antre du dragon and the record of « Benny Rampage », optional; nothing to convert, see
  * `migrateV28`), after v28 (the Salon de soins becomes a 6 × 6 spa: a salon built before keeps 4 × 4 until it has room, see
  * `migrateV27`), after v27 (the Christmas update's economy: Paille's counter removed, the nursery back to 2 cushions at
  * most, 1 to 5 Hearts a trip and the Salon's Hearts, see `migrateV26`), after v26 (the Christmas event: the sucres d'orge, the Christmas challenges of the cycle, the snowman of the
@@ -37,7 +38,8 @@ import {EVOLUTION_AFFECTION, hasEvolvedArt} from '../config/evolvedArt';
  * Brumelin and the Terre habitat were removed, and saves before that catalogue boundary are not converted. Versions 1 to 15 are refused as incompatible
  * (the controller then starts a new game); they are never read, migrated or restored.
  */
-export const SAVE_VERSION = 29;
+import {SAVE_VERSION} from '../state/saveVersion';
+export {SAVE_VERSION};
 /** Types a species had before the owner changed them: a rabbit already housed under its old types may stay where it is. */
 const LEGACY_TYPES: Partial<Record<SpeciesId, readonly HabitatType[]>> = {magicien: ['metal', 'vol'], bouee: ['paille', 'feu'], dadi: ['neige', 'vol']};
 const integer = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
@@ -82,7 +84,7 @@ const missions = z.object({
   events: z.object({collectOrder: integer.max(20), breed: integer.max(1), transferBirth: integer.max(1), welcome: integer.max(1), placeDecoration: integer.max(1)}).strict(),
   completed: z.array(z.enum(MAIN_MISSION_IDS)).max(MAIN_MISSION_IDS.length),
   claimed: z.array(z.enum(MAIN_MISSION_IDS)).max(MAIN_MISSION_IDS.length),
-  daily: z.object({referenceAt: timestamp, cycleIndex: integer,
+  daily: z.object({referenceAt: timestamp, cycleIndex: integer, endsAt: timestamp,
     // Saves from before the pool of six read missing keys as 0.
     // The missions added in v25 read as 0 too.
     progress: z.object(Object.fromEntries(DAILY_MISSION_IDS.map(id => [id, integer.default(0)])) as Record<typeof DAILY_MISSION_IDS[number], z.ZodDefault<typeof integer>>).strict(),
@@ -200,7 +202,10 @@ const schema = current.superRefine((s, context) => {
   const m = s.missions, d = m.daily;
   if (new Set(m.completed).size !== m.completed.length || new Set(m.claimed).size !== m.claimed.length ||
     m.claimed.some(id => !m.completed.includes(id))) issue('Main mission claims');
-  if (d.cycleIndex !== cycleIndexAt(d.referenceAt, s.lastSimulatedAt)) issue('Daily cycle');
+  // The cycle runs at the last simulated moment and ends within two days (the longer cycle of `migrateV29`, plus a summer-time hour).
+  // Never more cycles than mornings since the start of the game (one more after the clock was moved back, see `rebaseClock`).
+  if (d.cycleIndex !== cycleIndexAt(d, s.lastSimulatedAt) || d.endsAt > s.lastSimulatedAt + 49 * HOUR ||
+    d.cycleIndex > gameDay(s.lastSimulatedAt) - gameDay(d.referenceAt) + 1) issue('Daily cycle');
   if (new Set(d.claimed).size !== d.claimed.length || d.claimed.some(id => d.progress[id] < DAILY_MISSIONS[id].target) ||
     (d.bonusClaimed && d.claimed.length !== DAILY_PICK_COUNT) || (d.picked && d.claimed.some(id => !d.picked!.includes(id)))) issue('Daily claims');
   if (m.streak && m.streak.lastCycle > d.cycleIndex) issue('Future daily streak');
@@ -317,7 +322,9 @@ const schema = current.superRefine((s, context) => {
 const LEGACY_ORDERS = {small: {grass: 20, duration: 300000}, medium: {grass: 40, duration: 900000}, large: {grass: 100, duration: 3600000}} as const;
 const legacyOrder = z.object({recipe: z.enum(['small', 'medium', 'large']), startedAt: timestamp, endsAt: timestamp}).strict().nullable();
 const oldTravel = z.object({welcomed: z.boolean(), trip: z.object({rabbitId: identity, destination: z.enum(TRAVEL.destinations), startedAt: timestamp, endsAt: timestamp, hearts: integer}).strict().nullable()}).strict().optional();
-const legacySchema = current.omit({rewardedDecorationModels: true}).extend({version: z.literal(16), travel: oldTravel, pityFailures: integer.max(9), buildings: z.array(building.extend({order: legacyOrder})).max(ISLAND.maxArea)});
+/** The missions before v30: the daily cycle did not store its end (`migrateV29` gives it one). */
+const missionsBeforeV30 = missions.extend({daily: missions.shape.daily.omit({endsAt: true})});
+const legacySchema = current.omit({rewardedDecorationModels: true}).extend({version: z.literal(16), missions: missionsBeforeV30, travel: oldTravel, pityFailures: integer.max(9), buildings: z.array(building.extend({order: legacyOrder})).max(ISLAND.maxArea)});
 /** Only v16 crosses the economy boundary. No action, clock advancement or random draw is performed. */
 function migrateV16(raw: unknown): unknown {
   const parsed = legacySchema.safeParse(raw);
@@ -338,7 +345,7 @@ function migrateV16(raw: unknown): unknown {
 /** The four productions of v17, before the ten crops: what a job launched then still yields, and how long it lasts. */
 const V17_ORDERS = {small: {grass: 20, duration: 300000}, medium: {grass: 60, duration: 1800000}, large: {grass: 180, duration: 4 * HOUR}, night: {grass: 360, duration: 10 * HOUR}} as const;
 const v17Order = z.object({recipe: z.enum(['small', 'medium', 'large', 'night']), startedAt: timestamp, endsAt: timestamp, grass: integer.optional(), duration: integer.positive().optional()}).strict().nullable();
-const v17Schema = current.extend({version: z.literal(17), travel: oldTravel, buildings: z.array(building.extend({kind: z.enum(['enclosure', 'farm', 'nest', 'nursery', 'kitchen']), order: v17Order})).max(ISLAND.maxArea)});
+const v17Schema = current.extend({version: z.literal(17), missions: missionsBeforeV30, travel: oldTravel, buildings: z.array(building.extend({kind: z.enum(['enclosure', 'farm', 'nest', 'nursery', 'kitchen']), order: v17Order})).max(ISLAND.maxArea)});
 /** v17 → v18: a running production becomes the crop that shows it, its yield and duration frozen as launched. */
 function migrateV17(raw: unknown): unknown {
   const parsed = v17Schema.safeParse(raw);
@@ -348,7 +355,7 @@ function migrateV17(raw: unknown): unknown {
     grass: b.order.grass ?? V17_ORDERS[b.order.recipe].grass, duration: b.order.duration ?? V17_ORDERS[b.order.recipe].duration} : null}))};
 }
 
-const v18Schema = current.extend({version: z.literal(18), travel: oldTravel, buildings: z.array(building.omit({farmLevel: true, agencyLevel: true})).max(ISLAND.maxArea)});
+const v18Schema = current.extend({version: z.literal(18), missions: missionsBeforeV30, travel: oldTravel, buildings: z.array(building.omit({farmLevel: true, agencyLevel: true})).max(ISLAND.maxArea)});
 function migrateV18(raw: unknown): unknown {
   const parsed = v18Schema.safeParse(raw); if (!parsed.success) return raw;
   const old = parsed.data;
@@ -507,7 +514,27 @@ function migrateV27(raw: object): void {
  * record. Nothing to convert; the version moves so that an older client refuses the lair instead of reading it as invalid.
  */
 function migrateV28(raw: object): void {
-  (raw as {version: number}).version = SAVE_VERSION;
+  (raw as {version: number}).version = 29;
+}
+
+/**
+ * v29 → v30, the day changes at 4 a.m. (owner, 23 November 2026, decision D4: « sans faire perdre le jour en cours »). Before, a
+ * cycle lasted 24 hours from the start of the game, at any hour. The cycle the save is in keeps its number and its progress, and
+ * ends at the first 4 a.m. that is not earlier than its old end: it is never cut short, at most it lasts up to a day longer.
+ * A v29 save whose cycle did not match its clock stays without an end, and is refused as before. A save already carrying an end
+ * (only a newer one relabelled, as the tests do) keeps it.
+ */
+function migrateV29(raw: object): void {
+  const save = raw as {version: number; lastSimulatedAt?: unknown; missions?: {daily?: {referenceAt?: unknown; cycleIndex?: unknown; endsAt?: unknown}}};
+  const d = save.missions?.daily, now = save.lastSimulatedAt;
+  if (d && typeof d.endsAt !== 'number' && Number.isSafeInteger(now) && Number.isSafeInteger(d.referenceAt) && Number.isSafeInteger(d.cycleIndex)) {
+    const reference = d.referenceAt as number, cycle = d.cycleIndex as number;
+    if (cycle === Math.floor(Math.max(0, (now as number) - reference) / (24 * HOUR))) {
+      const oldEnd = reference + (cycle + 1) * 24 * HOUR, next = nextDayStart(now as number);
+      d.endsAt = next >= oldEnd ? next : gameDayStart(gameDay(next) + 1);
+    }
+  }
+  save.version = SAVE_VERSION;
 }
 
 /**
@@ -537,7 +564,7 @@ export function decodeGame(json: string): DecodeResult {
   if (json.length > MAX_JSON_LENGTH) return {ok: false, reason: 'FILE_TOO_LARGE'};
   let raw: unknown;
   try { raw = JSON.parse(json); } catch { return {ok: false, reason: 'INVALID_JSON'}; }
-  if (raw && typeof raw === 'object' && 'version' in raw && raw.version !== SAVE_VERSION && raw.version !== 28 && raw.version !== 27 && raw.version !== 26 && raw.version !== 25 && raw.version !== 24 && raw.version !== 23 && raw.version !== 22 && raw.version !== 21 && raw.version !== 20 && raw.version !== 19 && raw.version !== 18 && raw.version !== 17 && raw.version !== 16)
+  if (raw && typeof raw === 'object' && 'version' in raw && raw.version !== SAVE_VERSION && raw.version !== 29 && raw.version !== 28 && raw.version !== 27 && raw.version !== 26 && raw.version !== 25 && raw.version !== 24 && raw.version !== 23 && raw.version !== 22 && raw.version !== 21 && raw.version !== 20 && raw.version !== 19 && raw.version !== 18 && raw.version !== 17 && raw.version !== 16)
     return {ok: false, reason: Number.isInteger(raw.version) && (raw.version as number) >= 1 && (raw.version as number) <= 15 ? 'INCOMPATIBLE_CATALOG' : 'UNSUPPORTED_VERSION'};
   // Only the explicitly retired catalogue entries are removed; unknown IDs still fail validation.
   if (raw && typeof raw === 'object' && 'decorations' in raw && Array.isArray(raw.decorations)) {
@@ -564,6 +591,7 @@ export function decodeGame(json: string): DecodeResult {
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 27 && !('enclosureSizes' in raw)) migrateEnclosureSizes(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 27) migrateV27(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 28) migrateV28(raw);
+  if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 29) migrateV29(raw);
   settleStorageCaps(raw);
   const parsed = schema.safeParse(raw);
   if (!parsed.success) return {ok: false, reason: 'INVALID_STATE'};
@@ -635,6 +663,6 @@ export function encodeGame(state: GameState, presentationId?: string): string {
 
 /** Optional presentation metadata, separate from simulation state. Call after validating the save. */
 export function readPresentationId(json: string): string | undefined {
-  try { const raw = JSON.parse(json); const id = z.string().uuid().safeParse(raw.presentationId); return [SAVE_VERSION, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16].includes(raw.version) && id.success ? id.data : undefined; }
+  try { const raw = JSON.parse(json); const id = z.string().uuid().safeParse(raw.presentationId); return [SAVE_VERSION, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16].includes(raw.version) && id.success ? id.data : undefined; }
   catch { return undefined; }
 }

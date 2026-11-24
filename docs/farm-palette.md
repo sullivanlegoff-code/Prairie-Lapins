@@ -57,7 +57,7 @@ Une ligne, `src/config/farmArt.ts:2` :
 export const FARM_PALETTE: 'original' | 'light' | 'nest' = 'nest';
 ```
 
-`original` recharge `farm-windmill.png` intact. Seule la variante choisie est chargée. `scripts/verify-production.mjs` continue de vérifier le blob de l'original (toujours copié dans le build). `docs/farm-art-browser-check.cjs` suit désormais le fichier sélectionné.
+`original` recharge `farm-windmill.png` intact. Seule la variante choisie est chargée. `scripts/verify-production.mjs` continue de vérifier le blob de l'original (toujours copié dans le build). `docs/history/farm-art-browser-check.cjs` suit désormais le fichier sélectionné.
 
 ## Comparaisons locales
 

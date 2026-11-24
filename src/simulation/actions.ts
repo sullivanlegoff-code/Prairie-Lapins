@@ -25,6 +25,7 @@ import {recordDailyStreak, recordEvolutionChallenge, recordJumpRopeScore} from '
 import {canEvolve, hasEvolvedArt} from '../config/evolvedArt';
 import {evolutionChallengesComplete, type EvolutionChallenge} from '../config/evolutionChallenges';
 import {jumpIslandReason, jumpRopeReward, jumpRopeTeamReason} from './jumpRope';
+import {growFormerEnclosures} from './enclosureGrowth';
 import {dailyBonusReady, dailyClaimable, dailyCycleStart, dailyMissionsOf, recordMissionAction} from './missions';
 import {AGENCY_UPGRADE_HEARTS, DAILY_HEART_SOURCES, farmLimit, farmDuration, FARM_UPGRADES, orderFarmLevel, BALANCE, HEARTS, HOUR, TRAVEL, SALON, FOREST, JUMP_ROPE, EPIC_ISLET, BENNY_FLIGHT, BENNY_LAIR, ULTRA_SNOW, CARE_KINDS, carePrice, drawTrip, tripHearts, feedCost, growthDuration, ORDERS, SPECIES, GUARANTEE_SPECIES, type BuildingKind, type SpeciesId} from '../config/balance';
 import {emptyBuilding} from '../state/initial';
@@ -106,6 +107,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
   let progressionGain: ProgressionGain | undefined;
   let cuisineReward: import('../state/types').CuisineReward | undefined;
   let jumpRopeResult: import('./jumpRope').JumpRopeReward | undefined;
+  let flightHearts: number | undefined; // The Hearts this Benny flight paid, shown on its end card.
   let missionAmount: number | undefined;
   /** The Christmas challenges' own events of this action (the snowman, a rewarded mini-game), when it has some. */
   let christmasCounts: [ChristmasEventName, number][] | undefined;
@@ -636,9 +638,10 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
       case 'finishBennyRun': {
         // « Benny Rampage » pays its coins as pattes (within the daily limit) and keeps the record. No XP.
         requireRule(s.buildings.some(b => b.kind === 'lair'), 'NOT_FOUND'); requireRule(hasBenny(s), 'BENNY_REQUIRED');
-        const coins = command.coins ?? 0, hearts = command.hearts ?? 0;
-        requireRule(Number.isSafeInteger(coins) && coins >= 0 && coins <= BENNY_RUN.maxCoins, 'INVALID_CHOICE');
-        requireRule(Number.isSafeInteger(hearts) && hearts >= 0 && hearts <= BENNY_RUN.maxHeartsPerRun, 'INVALID_CHOICE');
+        // Too many coins or Hearts are capped, not refused (plan 1.2): a refused run lost its record, its pattes and its missions.
+        const rawCoins = command.coins ?? 0, rawHearts = command.hearts ?? 0;
+        requireRule(Number.isSafeInteger(rawCoins) && rawCoins >= 0 && Number.isSafeInteger(rawHearts) && rawHearts >= 0, 'INVALID_CHOICE');
+        const coins = Math.min(rawCoins, BENNY_RUN.maxCoins), hearts = Math.min(rawHearts, BENNY_RUN.maxHeartsPerRun);
         requireRule([command.score, command.metres].every(n => Number.isSafeInteger(n) && n >= 0) && command.score <= BENNY_RUN.maxScore && command.metres <= BENNY_RUN_MAX_METRES, 'INVALID_CHOICE');
         const by = command.bySetting ?? {}, kinds = ['grotte', 'pont', 'montagne'] as const;
         requireRule(Object.keys(by).every(k => (kinds as readonly string[]).includes(k)) && Object.values(by).every(n => Number.isSafeInteger(n) && n! >= 0 && n! <= command.score), 'INVALID_CHOICE');
@@ -660,7 +663,7 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         const today = previous?.cycle === cycle ? previous : null;
         credit('pattes', paid.pattes); credit('hearts', paid.hearts);
         s.bennyFlight = {cycle, rewarded: (today?.rewarded ?? 0) + (paid.rewarded ? 1 : 0), ...(today?.heart || paid.hearts ? {heart: true as const} : {}), best: Math.max(previous?.best ?? 0, command.passed)};
-        value = paid.pattes; break;
+        flightHearts = paid.hearts; value = paid.pattes; break;
       }
       case 'release': {
         const rabbit = s.rabbits.find(r => r.id === command.id); requireRule(rabbit, 'NOT_FOUND');
@@ -755,8 +758,10 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
     const christmasEvents: readonly string[] = ['feed', 'breed', 'collectIncome', 'collectOrder', 'petRabbit'];
     const counts: [ChristmasEventName, number][] = christmasCounts ?? (christmasEvents.includes(command.type) ? [[command.type as ChristmasEventName, amount]] : []);
     for (const [event, count] of counts) requireRule(recordChristmasAction(s, event, count), 'RESOURCE_LIMIT');
+    // An enclosure (or salon) that kept a former size grows as soon as an action frees its room, not only at the next load (plan 4.2).
+    if (s.buildings.some(b => b.formerFootprint)) growFormerEnclosures(s);
     // In particular, a welcome frees the nursery at this action's timestamp.
-    return {ok: true, state: advance(s, time), ...(value === undefined ? {} : {value}), ...(progressionGain ? {progressionGain} : {}), ...(cuisineReward ? {cuisineReward} : {}), ...(jumpRopeResult ? {jumpRopeReward: jumpRopeResult} : {})};
+    return {ok: true, state: advance(s, time), ...(value === undefined ? {} : {value}), ...(progressionGain ? {progressionGain} : {}), ...(cuisineReward ? {cuisineReward} : {}), ...(jumpRopeResult ? {jumpRopeReward: jumpRopeResult} : {}), ...(flightHearts === undefined ? {} : {flightHearts})};
   } catch (error) {
     if (error instanceof Quoted) return {ok: true, state, value: error.price};
     if (error instanceof Denied) return {ok: false, state, reason: error.reason};

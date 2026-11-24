@@ -38,7 +38,7 @@
 .cuisine-root .kitchen-object{position:absolute;left:0;top:0;border:0;padding:0;background:none;color:var(--ink);font:inherit;touch-action:pinch-zoom;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;transform-origin:center;border-radius:18px;transition:none}
 .cuisine-root button.kitchen-object{cursor:grab}
 .cuisine-root button.kitchen-object:disabled{cursor:default}
-.cuisine-root .object-art{position:absolute;left:50%;top:50%;width:var(--art-width);height:var(--art-height);transform:translate(-50%,-50%);pointer-events:none;transition:transform .18s cubic-bezier(.2,.7,.2,1),filter .18s}
+.cuisine-root .object-art{position:absolute;left:50%;top:50%;width:var(--art-width);height:var(--art-height);transform:translate(-50%,-50%);pointer-events:none;transition:transform .18s cubic-bezier(.2,.7,.2,1)}
 .cuisine-root .art-img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 5px 3px #5a3a2a33)}
 .cuisine-root .object-shadow{position:absolute;left:50%;top:calc(50% + var(--art-height) * .38);width:calc(var(--art-width) * .78);height:calc(var(--art-height) * .2);transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(ellipse,#5a3a2a40,#5a3a2a00 70%);pointer-events:none}
 .cuisine-root .kitchen-object.fixture .object-shadow{display:none}
@@ -49,8 +49,10 @@
 .cuisine-root .object-label:empty{display:none}
 .cuisine-root .kitchen-object.grabbed .object-label{opacity:0}
 .cuisine-root .kitchen-object.grabbed{cursor:grabbing}
-.cuisine-root .grabbed .object-art{transform:translate(-50%,-58%) scale(1.1) rotate(-3deg);filter:drop-shadow(0 16px 8px #4b2f2244)}
-.cuisine-root .grabbed .object-shadow{opacity:.4}
+/* Lifted: the soft painted ground shadow grows below it. No drop-shadow filter while dragging: iPhone redrew it at every move (plan 3.10). */
+.cuisine-root .kitchen-object.grabbed{will-change:transform}
+.cuisine-root .grabbed .object-art{transform:translate(-50%,-58%) scale(1.1) rotate(-3deg)}
+.cuisine-root .grabbed .object-shadow{opacity:.75;transform:translate(-50%,-30%) scale(1.25)}
 .cuisine-root .kitchen-object[data-feedback]:not(.grabbed){transition:transform .22s cubic-bezier(.2,.7,.2,1)}
 .cuisine-root .snapping .kitchen-object{transition:none!important}
 /* Guidance: the object to move bobs with a golden glow, its destination breathes with a soft ring. */

@@ -111,13 +111,14 @@
           "welcome": 0,
           "claimDailyBonus": 2,
           "claimDailyMission": 0,
-          "claimCare": 2
+          "claimCare": 2,
+          "rewardJumpRope": 0
         },
         "spendPerDay": {
           "upgradeHabitat": 4,
           "buyBuilding:statue": 10
         },
-        "netPerDay": 13
+        "netPerDay": 14
       },
       "grass": {
         "gainPerDay": {
@@ -150,8 +151,8 @@
         "netPerDay": 641
       },
       "stock": {
-        "heartsAverage": 168,
-        "heartsEnd": 242,
+        "heartsAverage": 169,
+        "heartsEnd": 244,
         "pattesAverage": 69966,
         "grassAverage": 1941
       }
@@ -219,8 +220,8 @@
         "netPerDay": 606
       },
       "stock": {
-        "heartsAverage": 418,
-        "heartsEnd": 582,
+        "heartsAverage": 420,
+        "heartsEnd": 584,
         "pattesAverage": 618019,
         "grassAverage": 13087
       }
@@ -289,8 +290,8 @@
         "netPerDay": 585
       },
       "stock": {
-        "heartsAverage": 792,
-        "heartsEnd": 987,
+        "heartsAverage": 794,
+        "heartsEnd": 989,
         "pattesAverage": 1599242,
         "grassAverage": 4627
       }
@@ -357,8 +358,8 @@
         "netPerDay": 639
       },
       "stock": {
-        "heartsAverage": 1197,
-        "heartsEnd": 1386,
+        "heartsAverage": 1199,
+        "heartsEnd": 1388,
         "pattesAverage": 3027974,
         "grassAverage": 31058
       }
@@ -411,8 +412,8 @@
         "netPerDay": 627
       },
       "stock": {
-        "heartsAverage": 1477,
-        "heartsEnd": 1556,
+        "heartsAverage": 1479,
+        "heartsEnd": 1558,
         "pattesAverage": 4300506,
         "grassAverage": 10298
       }
@@ -432,6 +433,7 @@
   "salonDay": 14.208,
   "agencyDay": 1.5,
   "jumpIslandDay": 16.208,
+  "lairDay": null,
   "evolved": [
     "paille",
     "neige",
@@ -460,7 +462,7 @@
     "finalAffection": 50
   },
   "fastest20to50": 2,
-  "method": "Seed 20261025; real act/advance; 3 sessions/day at 08/13/20, <=45 commands and <=8 meals/session; two farms, each sowing the best-liked unlocked crop ripe by the next visit; each farm goes to level 3 (fancy crops) from player level 20 once 63 000 pattes are in hand, then to level 4 from player level 25 once 103 000 pattes are in hand; pattes saved for the next coin goal (salon, next extension allowed by the level, farm level 3); save Hearts two levels ahead for each statue (60 Hearts at level 15, 100 at level 22) plus six in reserve; food kept for the most loved rabbit waiting at a wall (29 -> 30, 49 -> 50); collection-first parent pairs; no paid recipes; daily routine: the harvest and breeding missions claimed when shown and done; while a rabbit needs the 3-day streak, every shown mission once done and the cycle bonus; caresses on three rabbits when that mission is shown; the travel agency at level 8 with 1 500 pattes, a trip for each rabbit that still needs one (no other trip); one Cuisine recipe for a commis or taster that still needs it; the jump-rope islet once a rabbit needs a « corde » challenge and 75 000 pattes plus the coin goal are in hand (25 jumps); every rabbit evolved as soon as it can; Salon de soins bought at level 12 with 5 500 pattes in hand, one care per session for the most loved rabbit that may receive a gift (massage with 3 000 pattes left in hand, else bath), one picnic a day in the enclosure where the most rabbits gain (500 pattes kept); Hearts for permanent farm, agency and habitat upgrades after the statue reserve. No Paille counter (removed on 5 November 2026); `--sessions=5` replays five sessions of 10 minutes a day (90 commands, 12 meals). Tutorial is the first session.",
+  "method": "Seed 20261025; real act/advance; 3 sessions/day at 08/13/20, <=45 commands and <=8 meals/session; two farms, each sowing the best-liked unlocked crop ripe by the next visit; each farm goes to level 3 (fancy crops) from player level 20 once 63 000 pattes are in hand, then to level 4 from player level 25 once 103 000 pattes are in hand; pattes saved for the next coin goal (salon, next extension allowed by the level, farm level 3); save Hearts two levels ahead for each statue (60 Hearts at level 15, 100 at level 22) plus six in reserve; food kept for the most loved rabbit waiting at a wall (29 -> 30, 49 -> 50); collection-first parent pairs; no paid recipes; daily routine: the harvest and breeding missions claimed when shown and done; while a rabbit needs the 3-day streak, every shown mission once done and the cycle bonus; caresses on three rabbits when that mission is shown; the travel agency at level 8 with 1 500 pattes, a trip for each rabbit that still needs one (no other trip); one Cuisine recipe for a commis or taster that still needs it; the jump-rope islet once a rabbit needs a « corde » challenge and 75 000 pattes plus the coin goal are in hand (25 jumps); every rabbit evolved as soon as it can; Salon de soins bought at level 12 with 5 500 pattes in hand, one care per session for the most loved rabbit that may receive a gift (massage with 3 000 pattes left in hand, else bath), one picnic a day in the enclosure where the most rabbits gain (500 pattes kept); Hearts for permanent farm, agency and habitat upgrades after the statue reserve; « Benny Rampage » once Benny is on the island (the Antre du dragon at level 25 with 100 000 pattes plus the coin goal, then one run a session paying 150 coins and 4 Hearts). No Paille counter (removed on 5 November 2026); `--sessions=5` replays five sessions of 10 minutes a day (90 commands, 12 meals). Tutorial is the first session.",
   "curve": {
     "initialLevel": 1,
     "maximumLevel": 30,
@@ -992,7 +994,7 @@
       },
       "pattes": 242145,
       "grass": 3468,
-      "hearts": 242,
+      "hearts": 244,
       "level": 23,
       "species": 36,
       "affection": {
@@ -1222,7 +1224,7 @@
       },
       "pattes": 882773,
       "grass": 1606,
-      "hearts": 582,
+      "hearts": 584,
       "level": 25,
       "species": 39,
       "affection": {
@@ -1476,7 +1478,7 @@
       },
       "pattes": 2753197,
       "grass": 78703,
-      "hearts": 1142,
+      "hearts": 1144,
       "level": 28,
       "species": 43,
       "affection": {
@@ -1739,7 +1741,7 @@
       },
       "pattes": 3767485,
       "grass": 11374,
-      "hearts": 1386,
+      "hearts": 1388,
       "level": 30,
       "species": 45,
       "affection": {

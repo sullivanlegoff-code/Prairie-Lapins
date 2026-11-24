@@ -110,7 +110,7 @@ Le cache GitHub Pages et les assets Vite hashés restent utilisés sans service 
 
 ## Vérification reproductible
 
-`docs/laboratory-browser-check.cjs <URL normale> <révision>` ouvre les deux pages sur une même origine, en contexte Chromium jetable. Il teste la nourriture normale, le lien, les commandes, la comparaison octet par octet de toutes les clés hors espace de test, la copie par export/import avec annulation, le reset avec annulation/confirmation, les scénarios, les rechargements, le retour normal, les deux révisions et l'absence des outils sur `?dev=1` normal. Le parcours normal historique reste dans `docs/production-browser-check.cjs`.
+`docs/history/laboratory-browser-check.cjs <URL normale> <révision>` ouvre les deux pages sur une même origine, en contexte Chromium jetable. Il teste la nourriture normale, le lien, les commandes, la comparaison octet par octet de toutes les clés hors espace de test, la copie par export/import avec annulation, le reset avec annulation/confirmation, les scénarios, les rechargements, le retour normal, les deux révisions et l'absence des outils sur `?dev=1` normal. Le parcours normal historique reste dans `docs/history/production-browser-check.cjs`.
 
 Les tests unitaires couvrent aussi les backups de migration, préférences, erreurs d'écriture, overflow et contrôleur normal transmis par erreur. Le contexte de test n'utilise jamais la sauvegarde du joueur. Les essais automatisés Chromium (paysage 852×393 et portrait 390×844) ne constituent pas un essai physique Safari. Le certificat du proxy cloud est limité temporairement au certificat du site pour ce navigateur jetable ; les deux accès HTTPS réussissent également avec la validation TLS système active, sans modification du magasin de confiance.
 

@@ -50,12 +50,12 @@ function playDailySessions(s: GameState) {
 const state=(c:GameController)=>c.getSnapshot().state!;
 
 describe('main missions and unique rewards',()=>{
-  it('starts eight unclaimed visible objectives and a fresh 24-hour cycle without changing initial resources',()=>{
+  it('starts eight unclaimed visible objectives and a first cycle until 4 a.m. without changing initial resources',()=>{
     const s=createGame(123);
     // The 123 active missions include the two evolution goals, the jump-rope one and « Premier cours » (the Antre du dragon); the three retired identifiers stay readable in MAIN_MISSION_IDS.
-    expect(ACTIVE_MAIN_MISSION_IDS).toHaveLength(123);expect(MAIN_MISSION_IDS).toEqual(expect.arrayContaining([...ACTIVE_MAIN_MISSION_IDS]));expect(s).toMatchObject({version: 29,pattes:350,grass:10,hearts:12});
-    expect(s.missions).toEqual({events:emptyMainEvents(),completed:[],claimed:[],daily:{referenceAt:123,cycleIndex:0,progress:emptyDailyProgress(),claimed:[],bonusClaimed:false}});
-    expect(dailyCycleEnd(s)).toBe(123+DAY);
+    expect(ACTIVE_MAIN_MISSION_IDS).toHaveLength(123);expect(MAIN_MISSION_IDS).toEqual(expect.arrayContaining([...ACTIVE_MAIN_MISSION_IDS]));expect(s).toMatchObject({version: 30,pattes:350,grass:10,hearts:12});
+    expect(s.missions).toEqual({events:emptyMainEvents(),completed:[],claimed:[],daily:{referenceAt:123,cycleIndex:0,endsAt:DAY,progress:emptyDailyProgress(),claimed:[],bonusClaimed:false}});
+    expect(dailyCycleEnd(s)).toBe(DAY);
   });
   it('recognizes affection and rare discovery from current state, never from a pending birth',()=>{
     let s=prepared();s.rabbits[0].affection=5;s.discovered.push('boudinet');
@@ -127,11 +127,12 @@ describe('daily event accounting and fixed cycles',()=>{
     s=run(s,{type:'collectOrder',id:'building-4'},k*DAY+1);
     expect(s.missions.daily.cycleIndex).toBe(k);expect(s.missions.daily.progress['collect-grass']).toBe(20);
   });
-  it('assigns actions to the new cycle at the exact 24-hour boundary, not midnight',()=>{
+  // The tests run at UTC+4 (vite.config.ts): time 0, and every DAY after it, is 4 a.m. there (decision D4).
+  it('assigns actions to the new cycle at 4 a.m., not 24 hours after the start of the game',()=>{
     let s=createGame(12345);s.grass=100;
-    s=run(s,{type:'feed',id:'rabbit-2'},12345+DAY-1);expect(s.missions.daily.progress['gain-affection']).toBe(0);
-    s=run(s,{type:'feed',id:'rabbit-2'},12345+DAY);expect(s.missions.daily.progress['gain-affection']).toBe(0);
-    expect(s.missions.daily).toMatchObject({referenceAt:12345,cycleIndex:1});expect(dailyCycleEnd(s)).toBe(12345+2*DAY);
+    s=run(s,{type:'feed',id:'rabbit-2'},DAY-1);expect(s.missions.daily.progress['gain-affection']).toBe(0);expect(s.missions.daily.cycleIndex).toBe(0);
+    s=run(s,{type:'feed',id:'rabbit-2'},DAY);expect(s.missions.daily.progress['gain-affection']).toBe(0);
+    expect(s.missions.daily).toMatchObject({referenceAt:12345,cycleIndex:1,endsAt:2*DAY});expect(dailyCycleEnd(s)).toBe(2*DAY);
   });
   it('expires unclaimed rewards and the unclaimed bonus and rejects a stale-cycle claim',()=>{
     let s=dailyReady();const claim:Command={type:'claimDailyMission',id:'feed-rabbit',cycleStart:0};
@@ -150,7 +151,7 @@ describe('daily event accounting and fixed cycles',()=>{
   });
   it('never reopens an old cycle when the clock moves backwards',()=>{
     const s=run(advance(prepared(),DAY),{type:'feed',id:'rabbit-2'},DAY);
-    expect(advance(s,0).missions.daily).toEqual({...s.missions.daily,referenceAt:-DAY});expect(run(s,{type:'feed',id:'rabbit-3'},0).missions.daily).toMatchObject({"cycleIndex":1,"progress":{"gain-affection":0}});
+    expect(advance(s,0).missions.daily).toEqual({...s.missions.daily,referenceAt:-DAY,endsAt:s.missions.daily.endsAt-DAY});expect(run(s,{type:'feed',id:'rabbit-3'},0).missions.daily).toMatchObject({"cycleIndex":1,"progress":{"gain-affection":0}});
     expect(act(s,{type:'claimDailyBonus',cycleStart:DAY},0)).toMatchObject({ok:false,reason:'CYCLE_EXPIRED'});
   });
   it('requires all three shown rewards claimed before a single bonus, without counting any rewards',()=>{
@@ -196,7 +197,7 @@ describe('mission persistence and controller',()=>{
     if(kind==='duplicate')raw.missions.completed=['first-farm','first-farm'];
     if(kind==='unearned')raw.missions.daily.claimed=['collect-pattes'];
     if(kind==='bonus')raw.missions.daily.bonusClaimed=true;
-    if(kind==='cycle')raw.missions.daily.cycleIndex=1;
+    if(kind==='cycle')raw.missions.daily.cycleIndex=2;
     if(kind==='future'){raw.missions.daily.referenceAt=DAY;raw.missions.daily.progress['gain-affection']=1;}
     expect(decodeGame(JSON.stringify(raw))).toEqual({ok:false,reason:'INVALID_STATE'});
   });

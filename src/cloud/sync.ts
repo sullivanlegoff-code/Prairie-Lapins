@@ -1,7 +1,7 @@
 import type {GameController} from '../application/GameController';
 import type {SaveStorage} from '../persistence/storage';
 import {SAVE_KEY} from '../persistence/storage';
-import {decodeGame, encodeGame} from '../persistence/json';
+import {decodeGame, encodeGame, SAVE_VERSION} from '../persistence/json';
 import type {GameState} from '../state/types';
 import type {Adjustment} from '../simulation/adjustments';
 import {CloudError, OUTDATED, type CloudGateway, type CommitRequest, type RemoteSave} from './gateway';
@@ -11,6 +11,8 @@ import {xpAfterSlowdown} from '../simulation/progression';
 export {CLOUD_KEY} from './accountState';
 export const BACKUP_KEY = 'prairie-lapins.cloud.backup.v1';
 export const LINK_BACKUP_PREFIX = 'prairie-lapins.cloud.link-backup.v1.';
+/** The one copy of a damaged link (plan 5.8): each repair replaces the last one. Before, each repair added a key of its own. */
+export const LINK_BACKUP_KEY = LINK_BACKUP_PREFIX + 'last';
 class InvalidLink extends Error {}
 interface Link {owner: string; revision: number; baseline: string; syncedAt: string | null; pending: CommitRequest | null; format?: number}
 /** Version of the fingerprint below. A link written with another one (none: before v25) compares with `sameCore`. */
@@ -132,6 +134,19 @@ export class CloudSync {
       return r;
     } catch { throw new InvalidLink(); }
   }
+  /**
+   * An envoi left pending by an older version of the game (its save format is not today's) cannot be replayed as it was: today's
+   * encoding refuses that format. It is sent again converted to today's format, under a new operation (the server ties an operation
+   * to its exact content), and stored first so that a lost reply replays this new request. Returns null for today's format.
+   */
+  private upgradePending(p: CommitRequest): CommitRequest | null {
+    if ((p.state as {version?: unknown}).version === SAVE_VERSION) return null;
+    const d = decodeGame(JSON.stringify(p.state));
+    if (!d.ok) throw new InvalidLink();
+    const upgraded = {...p, operation: this.clock.uuid(), state: d.state};
+    this.persist({...this.link!, pending: upgraded});
+    return upgraded;
+  }
   /** Archive before clearing a broken link; neither game nor replacement backup is touched. */
   async repairLink(confirmed: boolean): Promise<void> {
     if (!confirmed || !this.owner || this.view.status !== 'recovery') return;
@@ -143,9 +158,7 @@ export class CloudSync {
       if (!broken) { await this.connect(owner); return; }
       const raw = this.storage.getItem(CLOUD_KEY);
       if (raw) {
-        const key = LINK_BACKUP_PREFIX + this.clock.uuid();
-        if (this.storage.getItem(key) !== null) throw new Error('backup collision');
-        this.storage.setItem(key, raw);
+        this.storage.setItem(LINK_BACKUP_KEY, raw);
       }
       this.storage.setItem(CLOUD_KEY, '');
     } catch { this.show('recovery', 'La copie de la liaison a échoué. Aucun remplacement de partie n’a été effectué. Libère un peu d’espace et réessaie.'); return; }
@@ -166,9 +179,13 @@ export class CloudSync {
       // A lost reply is resolved with the identical operation before reconciliation.
       if (this.link?.pending) {
         if (this.controller.getSnapshot().status !== 'saved') { this.show('local-error'); return; }
-        const result = await this.gateway.commit(this.link.pending);
+        const sent = this.link.pending, upgraded = this.upgradePending(sent);
+        const result = await this.gateway.commit(upgraded ?? sent);
         if (gen !== this.generation) return;
-        if (result.status === 'ok') this.accept(result.revision, result.savedAt, this.link.pending.state);
+        if (result.status === 'ok') this.accept(result.revision, result.savedAt, (upgraded ?? sent).state);
+        // The envoi written before the update had arrived after all: the remote save is that very progress.
+        else if (upgraded && result.remote && result.remote.operation === sent.operation && result.remote.revision === sent.expected + 1)
+          this.accept(result.remote.revision, result.remote.savedAt, result.remote.state);
         else { this.view.remote = result.remote; this.show('conflict'); return; }
         remote = await this.gateway.read(owner);
         if (gen !== this.generation) return;
@@ -290,7 +307,23 @@ export class CloudSync {
     if (!this.ready) { await this.connect(this.owner); return; }
     const owner = this.owner, gen = this.generation, corrections = await this.loadCorrections(owner);
     if (gen !== this.generation) return;
-    this.corrections = corrections; this.changed();
+    this.corrections = corrections;
+    // Back on this device (foreground, network): progress made on another device since is taken, when nothing changed here.
+    if (await this.pullNewer(gen)) return;
+    this.changed();
     await this.flush();
+  }
+  /** Reads the remote save and takes it when it is newer and this device has not played since its last sync. */
+  private async pullNewer(gen: number): Promise<boolean> {
+    if (!this.owner || !this.link || this.link.pending || this.flight !== null) return false;
+    const snap = this.controller.getSnapshot();
+    if (snap.status !== 'saved' || !snap.state || fingerprint(snap.state) !== this.link.baseline) return false;
+    try {
+      const remote = await this.gateway.read(this.owner);
+      if (gen !== this.generation || !remote || !this.link || remote.revision <= this.link.revision || this.link.pending) return false;
+      const now = this.controller.getSnapshot();
+      if (now.status !== 'saved' || !now.state || fingerprint(now.state) !== this.link.baseline) return false; // Played meanwhile.
+      this.view.remote = remote; this.replace(remote); return true;
+    } catch (e) { if (gen === this.generation) this.failed(e); return true; }
   }
 }

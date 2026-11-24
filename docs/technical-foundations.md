@@ -31,7 +31,7 @@ Les erreurs de lecture/écriture restent visibles. Toute commande réussie écri
 
 `npm test` inclut les régressions et trois traces de 180 commandes avec graines 17, 104729 et 20261009 : achats, nourriture, reproduction, accélération, agrandissement, pose/rangement/vente, récompenses et refus. Après chaque étape : intégrité de l’entrée, validation v6, aller-retour de sauvegarde, nombre de tirages et équivalence d’une avance longue avec deux avances sans action. Une erreur imprime la graine et la trace. Ces tests utilisent une horloge injectée, sans attente réelle.
 
-`docs/foundations-browser-check.cjs <url> [révision]` contrôle les événements réels entre deux onglets, le refus d’achat depuis l’onglet obsolète, son export, les ouvertures répétées de panneaux, la rotation du viewport, les événements de cycle de vie et l’isolation du laboratoire. La CI exécute également les parcours existants de migration, gestes, production et laboratoire. Le cache graphique du terrain est conservé ; aucun changement de rendu ne justifie une nouvelle campagne de mesures.
+`docs/history/foundations-browser-check.cjs <url> [révision]` contrôle les événements réels entre deux onglets, le refus d’achat depuis l’onglet obsolète, son export, les ouvertures répétées de panneaux, la rotation du viewport, les événements de cycle de vie et l’isolation du laboratoire. La CI exécute également les parcours existants de migration, gestes, production et laboratoire. Le cache graphique du terrain est conservé ; aucun changement de rendu ne justifie une nouvelle campagne de mesures.
 
 Ces essais Chromium ne remplacent pas un essai Safari sur iPhone. Parcours manuel :
 

@@ -50,7 +50,6 @@ describe('the coins of « Benny Rampage » are pattes', () => {
   });
   it('refuses coins a run cannot have', () => {
     const s = game();
-    expect(act(s, {type: 'finishBennyRun', score: 1, metres: 1, coins: BENNY_RUN.maxCoins + 1}, s.lastSimulatedAt)).toMatchObject({ok: false, reason: 'INVALID_CHOICE'});
     expect(act(s, {type: 'finishBennyRun', score: 1, metres: 1, coins: -1}, s.lastSimulatedAt)).toMatchObject({ok: false, reason: 'INVALID_CHOICE'});
     expect(act(s, {type: 'finishBennyRun', score: 1, metres: 1, coins: 1.5}, s.lastSimulatedAt)).toMatchObject({ok: false, reason: 'INVALID_CHOICE'});
   });
@@ -76,9 +75,18 @@ describe('the coins of « Benny Rampage » are pattes', () => {
     s = finish(s, 5, s.lastSimulatedAt, 1).state;
     expect(s.hearts).toBe(hearts + Math.min(BENNY_RUN.heartsPerCycle, BENNY_RUN.rewardedRunsPerCycle * BENNY_RUN.maxHeartsPerRun));
   });
-  it('refuses more Hearts in a run than the road can give', () => {
-    const s = game();
-    expect(act(s, {type: 'finishBennyRun', score: 1, metres: 1, hearts: BENNY_RUN.maxHeartsPerRun + 1}, s.lastSimulatedAt)).toMatchObject({ok: false, reason: 'INVALID_CHOICE'});
+  it('keeps a run with more Hearts or coins than allowed, capped (plan 1.2): record, pattes and missions are not lost', () => {
+    const s = game(); s.missions.daily.picked = ['benny-run', 'benny-coins', 'collect-pattes'];
+    const many = act(s, {type: 'finishBennyRun', score: 900, metres: 400, coins: BENNY_RUN.maxCoins + 40, hearts: 12}, s.lastSimulatedAt);
+    expect(many.ok).toBe(true); if (!many.ok) return;
+    // The same as a run with exactly the most a run can give.
+    const most = act(s, {type: 'finishBennyRun', score: 900, metres: 400, coins: BENNY_RUN.maxCoins, hearts: BENNY_RUN.maxHeartsPerRun}, s.lastSimulatedAt);
+    expect(most.ok && many.state).toEqual(most.ok && most.state);
+    expect(many.state.bennyRun?.best).toBe(900);
+    expect(many.state.hearts).toBe(s.hearts + BENNY_RUN.maxHeartsPerRun);
+    // Negative or broken numbers are still refused.
+    expect(act(s, {type: 'finishBennyRun', score: 1, metres: 1, hearts: -1}, s.lastSimulatedAt)).toMatchObject({ok: false, reason: 'INVALID_CHOICE'});
+    expect(act(s, {type: 'finishBennyRun', score: 1, metres: 1, hearts: 1.5}, s.lastSimulatedAt)).toMatchObject({ok: false, reason: 'INVALID_CHOICE'});
   });
   it('counts the run and its coins for the daily missions, and the first run for the main mission', () => {
     let s = game(); s.missions.daily.picked = ['benny-run', 'benny-coins', 'collect-pattes'];

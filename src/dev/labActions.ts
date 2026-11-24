@@ -4,7 +4,8 @@ import {HABITAT_TYPES, habitatLevel, type HabitatLevel, type HabitatType} from '
 import {DECORATION_IDS, MAX_DECORATIONS} from '../config/decorations';
 import {PARCEL_IDS, purchasableParcels} from '../config/land';
 import {ISLAND} from '../config/islandGeometry';
-import {DAILY_MISSIONS, DAILY_MISSION_IDS, MAIN_MISSION_IDS, MISSION_CYCLE_DURATION} from '../config/missions';
+import {DAILY_MISSIONS, DAILY_MISSION_IDS, MAIN_MISSION_IDS} from '../config/missions';
+import {nextDayStart} from '../simulation/dayBoundary';
 import {GIFTED_RECIPES, RECIPE_BOOK_SPECIES} from '../config/recipes';
 import {emptyBuilding, createGame} from '../state/initial';
 import type {Building, GameState, NurseryCapacity} from '../state/types';
@@ -153,7 +154,7 @@ export function labAction(state: GameState, action: LabAction): GameState {
       break;
     case 'dailyCycle': {
       const d = s.missions.daily;
-      d.cycleIndex++; d.referenceAt = s.lastSimulatedAt - d.cycleIndex * MISSION_CYCLE_DURATION;
+      d.cycleIndex++; d.endsAt = nextDayStart(s.lastSimulatedAt);
       d.progress = emptyDailyProgress(); d.claimed = []; d.bonusClaimed = false; delete d.nextAt; delete d.petted;
       d.picked = pickDailyMissions(s, d.cycleIndex); break;
     }

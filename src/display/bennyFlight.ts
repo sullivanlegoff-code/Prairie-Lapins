@@ -1,4 +1,5 @@
 import type {Point} from '../ui/gestures';
+import {clamp} from '../util/clamp';
 
 /**
  * Benny's flight over the island (owner, 1 November 2026), apart from Phaser so it can be tested: a pure clock and trajectory.
@@ -80,7 +81,6 @@ export const BACK_LEAN = 20 * Math.PI / 180;
 /** Margin of a view's sector before it changes (radians). */
 export const VIEW_MARGIN = 8 * Math.PI / 180;
 
-const clamp = (v: number, low = 0, high = 1) => Math.max(low, Math.min(high, v));
 const ease = (u: number) => { u = clamp(u); return u * u * (3 - 2 * u); };
 const lerp = (a: number, b: number, u: number) => a + (b - a) * u;
 

@@ -3,7 +3,7 @@ import {applyProgressionGain} from '../simulation/progressionRewards';
 import {applyAdjustments, pendingAdjustments, type Adjustment} from '../simulation/adjustments';
 import {act, advance, createGame, decodeGame, encodeGame} from '../simulation';
 import {MAX_JSON_LENGTH, readPresentationId, type DecodeResult} from '../persistence/json';
-import {SAVE_KEY, type SaveStorage} from '../persistence/storage';
+import {PREVIOUS_SAVE_KEY, SAVE_KEY, UNREADABLE_SAVE_KEY, type SaveStorage} from '../persistence/storage';
 import type {ActionResult, Command, GameState, ProgressionGain} from '../state/types';
 
 type DecodeFailure = Extract<DecodeResult, {ok: false}>['reason'];
@@ -91,7 +91,11 @@ export class GameController {
     else if (decoded && !decoded.ok) {
       this.status = 'invalid-save'; this.issue = decoded.reason; this.emit(); return;
     }
-    if (decoded?.ok && raw !== null) this.presentationId = readPresentationId(raw) ?? this.presentationId;
+    if (decoded?.ok && raw !== null) {
+      this.presentationId = readPresentationId(raw) ?? this.presentationId;
+      // The save that worked at this start, kept aside: offered back if a later save cannot be read. Best effort.
+      try { if (this.storage.getItem(PREVIOUS_SAVE_KEY) !== raw) this.storage.setItem(PREVIOUS_SAVE_KEY, raw); } catch { /* No room: the game goes on. */ }
+    }
     this.state = decoded?.ok ? advance(decoded.state, now) : createGame(now);
     this.dirty = true;
     this.saveCurrent(now); this.emit();
@@ -159,6 +163,8 @@ export class GameController {
       const visible = settlementChanged || birthPlacementChanged || next.lastSimulatedAt < previous.lastSimulatedAt || crossed(previous.nextHeartGiftAt) ||
         previous.travel?.trips.some(trip => crossed(trip.endsAt)) || !!previous.care && crossed(previous.care.endsAt) ||
         previous.missions.daily.nextAt !== undefined && crossed(previous.missions.daily.nextAt) ||
+        // The Forêt de Brocéliande's change of drawing, and Benny's power coming back (plan 4.1).
+        previous.rabbits.some(r => !!r.lookChange && crossed(r.lookChange.endsAt)) || !!previous.benny && crossed(previous.benny.powerReadyAt) ||
         next.buildings.some((b, i) => Math.floor(b.incomeUnits / 3_600_000) !== Math.floor(previous.buildings[i].incomeUnits / 3_600_000) ||
           !!b.order && crossed(b.order.endsAt) || !!b.breeding && crossed(b.breeding.endsAt) ||
           b.nursery?.babies.some(baby => crossed(baby.readyAt)));
@@ -258,6 +264,13 @@ export class GameController {
     } catch { return {ok: false, reason: 'ENCODING_FAILED'}; }
   }
   unreadableBackup(): string | null { return this.status === 'invalid-save' ? this.storedRaw : null; }
+  /** While the save is unreadable: the copy kept at the last start that read it, when it can be read; otherwise null. */
+  previousSave(): string | null {
+    if (this.status !== 'invalid-save') return null;
+    let raw: string | null;
+    try { raw = this.storage.getItem(PREVIOUS_SAVE_KEY); } catch { return null; }
+    return raw !== null && raw !== this.storedRaw && decodeGame(raw).ok ? raw : null;
+  }
   prepareImport(json: string, fileSize?: number): PreparedImport {
     this.cancelImport();
     if (this.disposed) return {ok: false, reason: 'DISPOSED'};
@@ -279,6 +292,10 @@ export class GameController {
     const candidate = advance(this.pendingImport.state, now);
     // Persist first. Failure cannot replace the current game or change its save status.
     const presentationId = crypto.randomUUID();
+    // An unreadable save is kept aside, as it was, before an import replaces it.
+    if (this.status === 'invalid-save' && this.storedRaw !== null) {
+      try { this.storage.setItem(UNREADABLE_SAVE_KEY, this.storedRaw); } catch { return {ok: false, reason: 'WRITE_FAILED'}; }
+    }
     const result = this.write(candidate, now, presentationId);
     if (!result.ok) return result;
     this.presentationId = presentationId; this.generation++;

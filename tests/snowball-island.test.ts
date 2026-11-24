@@ -72,3 +72,34 @@ describe('snowball fights on the whole island', () => {
     expect(play(enclosure('enclos-3', 5), 3, {enabled: false})).toHaveLength(0);
   });
 });
+
+describe('the fighters’ index (plan 3.5)', () => {
+  it('always agrees with the fights themselves, through starts, departures and ends', () => {
+    const list = [...enclosure('a', 5), ...enclosure('b', 2)], fights = new SnowballFights();
+    const truth = (id: string) => [...fights.active.values()].find(f => f.members.some(m => m.id === id))?.kind ?? null;
+    let checks = 0, fought = 0;
+    for (let t = 0; t < 4 * 60_000; t += 50) {
+      if (t % 7_000 === 0) list[t / 7_000 % list.length].available = !list[t / 7_000 % list.length].available; // Rabbits called away and back.
+      for (const r of list) stepRabbitMotion(r.motion, 50);
+      fights.step(50, list, true, false, true);
+      for (const r of list) { expect(fights.fightOf(r.id)).toBe(truth(r.id)); expect(fights.isFighting(r.id)).toBe(truth(r.id) !== null); checks++; if (truth(r.id)) fought++; }
+    }
+    expect(checks).toBeGreaterThan(30_000); expect(fought).toBeGreaterThan(1_000);
+    fights.reset(list); for (const r of list) expect(fights.isFighting(r.id)).toBe(false);
+  });
+});
+
+describe('a snowman or a picnic in one enclosure (plan 3.6)', () => {
+  it('stops only that enclosure’s fight', () => {
+    const a = enclosure('a', 5), b = enclosure('b', 5), list = [...a, ...b], fights = new SnowballFights();
+    for (let t = 0; t < 10 * 60_000 && !(fights.active.has('a') && fights.active.has('b')); t += 50) {
+      for (const r of list) stepRabbitMotion(r.motion, 50);
+      fights.step(50, list, true, false, true);
+    }
+    expect(fights.active.has('a') && fights.active.has('b')).toBe(true);
+    fights.stopGroup('a', list);
+    expect(fights.active.has('a')).toBe(false); expect(fights.active.has('b')).toBe(true);
+    expect(a.some(r => fights.isFighting(r.id))).toBe(false); expect(b.some(r => fights.isFighting(r.id))).toBe(true);
+    expect(fights.balls().every(ball => ball.group === 'b')).toBe(true);
+  });
+});

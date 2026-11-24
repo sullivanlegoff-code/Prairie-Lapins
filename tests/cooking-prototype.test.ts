@@ -406,3 +406,14 @@ describe('DOM, Pointer Events and UI', () => {
     expect(k.root.querySelector<HTMLElement>('#recipe-screen')!.hidden).toBe(false); expect(k.engine.snapshot().recipe).toBeNull();
   });
 });
+
+describe('the kitchen stays light while an object is dragged (plan 3.10)', () => {
+  it('no drop-shadow filter on the grabbed object, nor a filter transition: its soft ground shadow grows instead', () => {
+    const rules = [...kitchenCSS.matchAll(/([^{}]+)\{([^}]*)\}/g)].map(m => ({selector: m[1].trim(), body: m[2]}));
+    const grabbed = rules.filter(r => r.selector.includes('.grabbed') && !r.selector.includes(':not(.grabbed)'));
+    expect(grabbed.length).toBeGreaterThan(0);
+    for (const r of grabbed) expect(r.body, r.selector).not.toMatch(/filter/);
+    expect(rules.find(r => r.selector === '.cuisine-root .object-art')!.body).not.toMatch(/transition:[^;]*filter/);
+    expect(rules.find(r => r.selector === '.cuisine-root .grabbed .object-shadow')!.body).toMatch(/opacity/);
+  });
+});

@@ -1,3 +1,4 @@
+import {clamp} from '../util/clamp';
 /**
  * The evolved Magicien's magic shows on the meadow (owner, 10 November 2026: « plus animé et capable de faire de la magie », full
  * freedom). Pure clock and curves, apart from Phaser so they can be tested; purely visual, nothing is saved.
@@ -25,7 +26,6 @@ export const MAGICIEN_GAP = {first: [5_000, 12_000], next: [9_000, 18_000]} as c
 export const TWINKLE_GAP = [2_200, 4_500] as const, TWINKLE_MS = 700;
 export interface MagicienActState {act: MagicienAct; elapsed: number; duration: number}
 const hash = (id: string) => { let h = 2166136261; for (const c of id) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
-const clamp = (v: number, low = 0, high = 1) => Math.max(low, Math.min(high, v));
 const ease = (u: number) => { u = clamp(u); return u * u * (3 - 2 * u); };
 /** 0 → 1 between `a` and `b` ms. */
 const span = (t: number, a: number, b: number) => clamp((t - a) / (b - a));

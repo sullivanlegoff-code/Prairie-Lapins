@@ -7,7 +7,7 @@ Ce fichier est lu à chaque session. Il fixe le rôle, les règles du propriéta
 Prairie Lapins est un jeu mobile cosy de collection et d'élevage de lapins, inspiré de DragonVale. Il se joue dans le navigateur et surtout sur iPhone (Safari et écran d'accueil), en paysage de préférence.
 
 - Pile : Phaser 3.90, TypeScript, Vite 7, vitest + happy-dom, zod. Supabase (`@supabase/supabase-js`) pour la sauvegarde en ligne facultative.
-- Format de sauvegarde actuel : **v24** (`src/persistence/json.ts`), migrations depuis v16, dont v20 vers v21 pour les amitiés et souvenirs, v21 vers v22 pour l’état de Benny (pouvoir et mode ciel), et v23 vers v24 pour les enclos agrandis (un enclos sans place garde son ancienne taille, `formerFootprint`, et grandit au chargement dès qu’il y a la place : `src/simulation/enclosureGrowth.ts`). Les versions 1 à 15 sont refusées.
+- Format de sauvegarde actuel : **v30** (`SAVE_VERSION` dans `src/state/saveVersion.ts`, lecture et écriture dans `src/persistence/json.ts`), migrations depuis v16, dont v20 vers v21 pour les amitiés et souvenirs, v21 vers v22 pour l’état de Benny (pouvoir et mode ciel), v23 vers v24 pour les enclos agrandis (un enclos sans place garde son ancienne taille, `formerFootprint`, et grandit dès qu’il y a la place, au chargement ou après une action : `src/simulation/enclosureGrowth.ts`), v27 vers v28 pour le Salon de soins agrandi et v28 vers v29 pour l’Antre du dragon et Benny Rampage. Les versions 1 à 15 sont refusées, et v29 vers v30 pour le jour qui change à 4 h du matin (chaque journée garde son heure de fin, `src/simulation/dayBoundary.ts` ; la journée en cours n’est jamais raccourcie).
 - Hébergement : GitHub Pages, `https://sullivanlegoff-code.github.io/Prairie-Lapins/` (laboratoire à `/dev/`). Chaque `git push` sur `main` publie le jeu pour tous les joueurs (workflow `.github/workflows/deploy-pages.yml`, voir `docs/deployment.md`). L'ancien site Netlify est désactivé depuis le 30 octobre 2026.
 - Le dépôt est **public**.
 
@@ -55,6 +55,7 @@ Règles pour les agents :
 ## 5. Commandes et vérifications
 
 - Tests : `npx vitest run --configLoader runner --maxWorkers 1 --testTimeout 30000` (environ 10 minutes, un peu plus de 2 000 tests ; pour un tableau de cas sans état à remettre à zéro, `itAll` de `tests/cases.ts` compte pour un seul test).
+- Tests rapides du travail courant : `npm run test:quick` (la même suite sans le test au hasard des sauvegardes, la base de données, ni les vérifications de fichiers d’images et de musique ; plan 6.1). La suite complète reste obligatoire avant une publication.
 - Types : `npx tsc --noEmit`.
 - Builds : `npm run build -- --configLoader runner` (jeu) et `npm run build:lab -- --configLoader runner` (laboratoire). Les deux écrivent dans `dist/` : le dernier lancé écrase l'autre.
 - Site complet : `npm run build:netlify` construit `netlify-site/` (jeu, `/dev/`, prototype cuisine) et lance `scripts/verify-production.mjs`.
@@ -62,7 +63,7 @@ Règles pour les agents :
 - Aperçu pour l'iPhone du propriétaire (même réseau Wi-Fi) : `node node_modules/vite/bin/vite.js preview --outDir netlify-site --port 5174 --strictPort --host 0.0.0.0`, puis `http://<IP locale du PC>:5174/` (dernière IP connue : 192.168.1.13).
 - Contrôle Chromium : Playwright est installé dans le dépôt voisin `../Project-L/prairie-lapins-prototype/node_modules/playwright`. Passe ce chemin absolu dans la variable `PLAYWRIGHT_MODULE`. Sers `dist/` sur `127.0.0.1:5199` avec `vite preview` ; n'arrête ensuite que ce serveur, par son PID (jamais tous les processus `node`).
 - Partie jouée automatiquement : `docs/playthrough-check.cjs` (voir son en-tête) joue une nouvelle partie en suivant Paille et le guide, avec une capture par étape.
-- Les anciens scripts `docs/*-browser-check.cjs` / `*-public-check.cjs` datent d'anciennes versions (libellés « herbes », etc.) : ne les considère pas comme des références à jour.
+- Les anciens scripts `docs/history/*-browser-check.cjs` / `*-public-check.cjs` (rangés là le 23 novembre 2026) datent d'anciennes versions (libellés « herbes », etc.) : ne les considère pas comme des références à jour.
 
 **N'affirme jamais** un test, un build, un contrôle navigateur ou un essai iPhone que tu n'as pas fait. Un contrôle Chromium n'est **pas** un essai iPhone.
 

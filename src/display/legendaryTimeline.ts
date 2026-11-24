@@ -1,4 +1,5 @@
 import {LEGENDARY_IDLE_GAP_MS, type LegendaryShow} from '../config/legendaryArt';
+import {clamp} from '../util/clamp';
 
 /**
  * Timing of the legendaries' meadow shows, apart from Phaser so it can be tested. Purely visual and session-only:
@@ -78,7 +79,6 @@ export class LegendaryClock {
   }
 }
 
-const clamp = (v: number, low = 0, high = 1) => Math.min(high, Math.max(low, v));
 export const smooth = (u: number) => { const v = clamp(u); return v * v * (3 - 2 * v); };
 /** 0 → 1 → 0 envelope: up during `rise`, held, down during the last `fall` (fractions of the show). */
 export function envelope(u: number, rise = .15, fall = .2): number { return smooth(Math.min(u / rise, (1 - u) / fall, 1)); }

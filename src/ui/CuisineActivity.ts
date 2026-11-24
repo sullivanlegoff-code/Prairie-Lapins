@@ -8,6 +8,7 @@ import {portrait} from './portraits';
 import type {RabbitArt} from '../config/rabbitArt';
 import {SPECIES} from '../config/balance';
 import {setCurrencyText} from '../display/currency';
+import {prefersReducedMotion} from '../display/reducedMotion';
 
 /** `evolution.done` and `classicLook` choose the drawing the rabbit currently shows; absent evolution data, use its species' own. */
 export type CuisineRabbit = Readonly<Pick<Rabbit, 'id' | 'species'> & {name?: string; affection?: number; classicLook?: true; evolution?: Rabbit['evolution']}>;
@@ -142,7 +143,7 @@ export function mountCuisineActivity(background: HTMLElement, options: {
     const meal = (phase: 'serve' | 'eating' | 'miam') => { layer.dataset.meal = phase; eater.dataset.meal = phase; };
     const commis = chef;
     const miam = () => { bitten(food, BITES.length, fromLeft); meal('miam'); if (taster) { delete commis.dataset.cheering; void commis.offsetWidth; commis.dataset.cheering = ''; } };
-    if (globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+    if (prefersReducedMotion()) {
       layer.dataset.calm = ''; meal('serve'); later(CALM_MEAL.miamMs, miam); later(CALM_MEAL.endMs, stopTasting); return;
     }
     meal('serve');

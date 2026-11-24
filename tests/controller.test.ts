@@ -5,13 +5,17 @@ import {describe, expect, it} from 'vitest';
 import {itAll} from './cases';
 import {GameController, PASSIVE_SAVE_MS} from '../src/application/GameController';
 import {bindLifecycle, type LifecycleHost} from '../src/application/lifecycle';
-import {SAVE_KEY, type SaveStorage} from '../src/persistence/storage';
+import {PREVIOUS_SAVE_KEY, SAVE_KEY, UNREADABLE_SAVE_KEY, type SaveStorage} from '../src/persistence/storage';
 import {act, advance,  decodeGame, encodeGame, pendingDiscoveries} from '../src/simulation';
 import {HOUR, MINUTE} from '../src/config/balance';
 import {cumulativeLevelXp} from '../src/simulation/progression';
 import type {Command, GameState} from '../src/state/types';
 import {SCENARIOS, scenarioState} from '../src/dev/scenarios';
 import {jobKey} from '../src/simulation/initiation';
+import {habitatStats} from '../src/simulation/habitats';
+import {classicLookReason} from '../src/simulation/forest';
+import {emptyBuilding} from '../src/state/initial';
+import {EVOLUTION_CHALLENGES, evolutionChallengeTarget} from '../src/config/evolutionChallenges';
 
 describe('targeted passive change detection', () => {
   it('adopts and persists exactly advance across all fixtures, deadlines, daily renewals and clock rebases', () => {
@@ -58,9 +62,15 @@ describe('targeted passive change detection', () => {
 
 class MemoryStorage implements SaveStorage {
   value: string | null = null; reads = 0; writes = 0; failRead = false; failWrite = false;
-  getItem(key: string): string | null { expect(key).toBe(SAVE_KEY); this.reads++; if (this.failRead) throw new Error('read denied'); return this.value; }
+  /** The other keys (the previous good copy, an unreadable save kept aside), apart from the save's counters. */
+  others = new Map<string, string>();
+  getItem(key: string): string | null {
+    if (key !== SAVE_KEY) { expect([PREVIOUS_SAVE_KEY, UNREADABLE_SAVE_KEY]).toContain(key); return this.others.get(key) ?? null; }
+    this.reads++; if (this.failRead) throw new Error('read denied'); return this.value;
+  }
   setItem(key: string, value: string): void {
-    expect(key).toBe(SAVE_KEY); if (this.failWrite) throw new Error('quota'); this.writes++; this.value = value;
+    if (key !== SAVE_KEY) { expect([PREVIOUS_SAVE_KEY, UNREADABLE_SAVE_KEY]).toContain(key); this.others.set(key, value); return; }
+    if (this.failWrite) throw new Error('quota'); this.writes++; this.value = value;
   }
 }
 function fixture(raw: string | null = null, now = 0) {
@@ -211,7 +221,7 @@ describe('transactional imports', () => {
     expect(controller.confirmImport(prepared.token, true)).toEqual({ok: false, reason: 'STALE_IMPORT'});
   });
   itAll([
-    ['{', 'INVALID_JSON'], ['{"version":30}', 'UNSUPPORTED_VERSION'], ['{"version":16}', 'INVALID_STATE'], ['{"version":1}', 'INCOMPATIBLE_CATALOG'], ['{"version":15}', 'INCOMPATIBLE_CATALOG'],
+    ['{', 'INVALID_JSON'], ['{"version":31}', 'UNSUPPORTED_VERSION'], ['{"version":16}', 'INVALID_STATE'], ['{"version":1}', 'INCOMPATIBLE_CATALOG'], ['{"version":15}', 'INCOMPATIBLE_CATALOG'],
     [' '.repeat(1_000_001), 'FILE_TOO_LARGE'],
   ])('rejects a bad import with %s', (json, reason) => {
     const {controller, store} = fixture(); const previous = controller.getSnapshot(), raw = store.value;
@@ -303,5 +313,55 @@ describe('lifecycle subscriptions', () => {
     visible = true; events.get('pageshow')!(); expect(refreshes).toBe(3);
     lifecycle.stop(); lifecycle.stop(); timer(); expect(refreshes).toBe(3); expect(events.size).toBe(0); expect(timers.size).toBe(0);
     lifecycle.start(); expect(timers.size).toBe(1); lifecycle.stop();
+  });
+});
+
+describe('previous good copy (plan 1.7)', () => {
+  it('keeps the save read at start aside, and offers it back, with confirmation, when the save becomes unreadable', () => {
+    const start = 1_790_000_000_000, good = encodeGame(createGame(start));
+    const first = fixture(good, start);
+    expect(first.store.others.get(PREVIOUS_SAVE_KEY)).toBe(good); expect(first.controller.previousSave()).toBeNull(); // Readable: nothing to offer.
+    first.controller.dispose();
+    // The save is damaged later: the next start shows the unreadable save and the copy.
+    const broken = '{"version": 29, "abîmée": true', next = fixture(broken, start + HOUR); next.store.others = first.store.others;
+    const reopened = new GameController(next.store, () => next.clock.now, () => 0.9);
+    expect(reopened.getSnapshot().status).toBe('invalid-save'); expect(reopened.previousSave()).toBe(good);
+    const prepared = reopened.prepareImport(reopened.previousSave()!); expect(prepared.ok).toBe(true);
+    expect(reopened.confirmImport((prepared as {token: number}).token, true)).toEqual({ok: true});
+    expect(reopened.getSnapshot().status).toBe('saved'); expect(state(reopened).rabbits).toHaveLength(createGame(start).rabbits.length);
+    expect(next.store.others.get(UNREADABLE_SAVE_KEY)).toBe(broken); // The damaged save is kept as it was.
+    reopened.dispose(); next.controller.dispose();
+  });
+  it('offers nothing without a readable copy', () => {
+    const {store, controller} = fixture('pas une sauvegarde', 0);
+    expect(controller.getSnapshot().status).toBe('invalid-save'); expect(controller.previousSave()).toBeNull();
+    store.others.set(PREVIOUS_SAVE_KEY, 'abîmée aussi'); expect(controller.previousSave()).toBeNull();
+    controller.dispose();
+  });
+});
+
+describe('timers that change the screen (plan 4.1)', () => {
+  it('redraws when the forest’s change of drawing ends and when Benny’s power comes back', () => {
+    // A late game: the forest stands, evolved rabbits may change their drawing, Benny lives on the island.
+    const start = 1_790_000_000_000, s = scenarioState('completeGame', start);
+    if (!s.buildings.some(b => b.kind === 'forest')) s.buildings.push({...emptyBuilding('building-990', 'forest', 0, 32)});
+    const changing = s.rabbits.find(r => r.species === 'paille')!, id = changing.id; // Evolved: affection 30 and its challenges met.
+    const challenges = Object.fromEntries([...new Set(EVOLUTION_CHALLENGES.paille ?? [])].map(c => [c, evolutionChallengeTarget('paille', c)]));
+    Object.assign(changing, {affection: 30, evolution: {done: true, challenges}}); expect(classicLookReason(s, changing)).toBeNull();
+    for (const r of s.rabbits) delete r.lookChange;
+    changing.lookChange = {endsAt: start + 10 * MINUTE};
+    expect(s.rabbits.some(r => r.species === 'benny')).toBe(true);
+    s.benny = {powerReadyAt: start + 30 * MINUTE, inSky: false};
+    for (const b of s.buildings) if (b.kind === 'enclosure') b.incomeUnits = habitatStats(b).cap * HOUR; // Full: no coin changes the screen meanwhile.
+    const {controller, clock} = fixture(encodeGame(s), start);
+    const revision = () => controller.getSnapshot().viewRevision;
+    expect(controller.getSnapshot().status).toBe('saved'); expect(state(controller).rabbits.find(r => r.id === id)!.lookChange).toBeDefined();
+    clock.now = start + 10 * MINUTE - 1000; controller.refresh(false);
+    let before = revision(); clock.now = start + 10 * MINUTE + 1000; controller.refresh(false);
+    expect(revision()).toBeGreaterThan(before); expect(state(controller).rabbits.find(r => r.id === id)!.lookChange).toBeUndefined();
+    clock.now = start + 30 * MINUTE - 1000; controller.refresh(false);
+    before = revision(); clock.now = start + 30 * MINUTE + 1000; controller.refresh(false);
+    expect(revision()).toBeGreaterThan(before);
+    controller.dispose();
   });
 });

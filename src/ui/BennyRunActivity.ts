@@ -2064,6 +2064,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     if (!game) return;
     clearTimeout(stopTimer); time.resume(); sound('caught');
     running = false; tips.clear(); words.clear(); coinFlights = []; tally = {count: 0, last: -1e9}; layer.classList.remove('benny-run-chased'); notices();
+    // Recorded now, before the scene (plan 1.3): leaving during the scene no longer loses the run; the card only shows it.
+    settle();
     ending = {at: performance.now(), done: showEnd}; frame(endLoop);
   }
   /**
@@ -2082,6 +2084,15 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   const chip = (text: string, className = '') => { const li = document.createElement('li'); li.textContent = text; if (className) li.className = className; return li; };
   /** Whether a run is under way (started, its end card not shown yet), and whether the player stopped it (« Quitter »). */
   let inRun = false, stopped = false;
+  /** The run once recorded (paid, record kept): done once, as soon as it ends; the end card reads it (plan 1.3). */
+  let settled: {s: RunSummary; reward: RunReward; record: boolean; previous: number} | null = null;
+  function settle(): void {
+    if (!game || settled) return;
+    inRun = false;
+    const s = runSummary(game), record = s.score > best && s.score > 0, previous = best; best = Math.max(best, s.score);
+    const won = options.onFinished?.(s), reward: RunReward = typeof won === 'object' && won ? won : {pattes: 0, hearts: 0, notes: won ? [won] : []};
+    settled = {s, reward, record, previous};
+  }
   /**
    * « Quitter » during a run, from the pause, the cross or Escape (owner, 23 Nov. 2026, D2): the run is paid as if it had ended
    * (coins, Hearts, record, within the day's rewarded runs), then its end card is shown. Anywhere else, the screen closes.
@@ -2094,9 +2105,8 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
   }
   function showEnd(): void {
     if (!game) return;
-    inRun = false;
-    const s = runSummary(game), record = s.score > best && s.score > 0, previous = best; best = Math.max(best, s.score);
-    const won = options.onFinished?.(s), reward: RunReward = typeof won === 'object' && won ? won : {pattes: 0, hearts: 0, notes: won ? [won] : []};
+    settle(); if (!settled) return;
+    const {s, reward, record, previous} = settled;
     hud(); draw(clock()); // The run as it stood, without the scene's words.
     const again = button('Rejouer', () => start(), 'bennyRunAgain'); again.classList.add('benny-run-again');
     const quit = button('Quitter', close, 'bennyRunQuit'); quit.classList.add('secondary');
@@ -2138,7 +2148,7 @@ export function mountBennyRunActivity(host: HTMLElement, options: {
     tips.clear(); words.clear(); comboShown = 0; livesLost = false; multShown = 1;
     slowLost = 0; slowUntil = 0; lastLoopAt = clock(); settingSince = -1e9; shownSetting = 'grotte'; gate = null;
     runBest = best; beaten = false; milestone = 0; metresBest = options.bestMetres?.() ?? 0; metresBeaten = false; score.classList.remove('benny-run-beaten');
-    game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; camX = 0; camUp = 0; landedAt = -1e9; wasUp = false; swing = null; pending = []; wallTilt = 0; laneSpeed = 0; rollFrom = -1e9; wasFlat = false; shock = null; cleared.clear(); flashes = []; coinFlights = []; tally = {count: 0, last: -1e9}; bits = []; rings = []; streaks = []; bend = 0; coinRun = 0; shake = null; hurtAt = null; running = true; card.hidden = true; counting = null; lastDrawAt = clock();
+    settled = null; game = startBennyRun(gameTime(), undefined, 3, withTutorial || best === 0); lanes = game.lanes; viewLanes = lanes; viewLane = game.lane; camX = 0; camUp = 0; landedAt = -1e9; wasUp = false; swing = null; pending = []; wallTilt = 0; laneSpeed = 0; rollFrom = -1e9; wasFlat = false; shock = null; cleared.clear(); flashes = []; coinFlights = []; tally = {count: 0, last: -1e9}; bits = []; rings = []; streaks = []; bend = 0; coinRun = 0; shake = null; hurtAt = null; running = true; card.hidden = true; counting = null; lastDrawAt = clock();
     holesAnnounced = 0; lastHoleSeen = -1; geysersUp.clear(); rocksDown.clear(); ghosts = []; pounces = []; gustAt = null;
     inRun = true; stopped = false;
     hud(); word('Benny Rampage', WORD.big); frame(loop);

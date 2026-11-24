@@ -36,7 +36,7 @@ Les quatre scénarios précédents restent accessibles : départ ordinaire, dém
 
 `npm test` : **474 tests / 12 fichiers réussis**. Les trois scénarios sont couverts par les tests existants de validation v5, sérialisation et isolation ; leur visibilité et leur confirmation sont vérifiées dans le DOM. TypeScript, build Décorations et contrôle de son préfixe/outillage/absence du client de comptes réussis. Lockfile inchangé.
 
-`docs/island-browser-check.cjs` vérifie le véritable rendu Chromium tactile : trois tailles × trois zooms, douze poses/sélections aux coins, déplacement avec ancien placement conservé, annulation exacte puis validation, vente annulée puis double confirmation ne créditant qu’une fois, rangement gratuit, conservation au rechargement et bâtiment sur la case d’extrémité libérée. Récolte, photo/retour au jeu, vues 852 × 393 et 667 × 375, clés des autres routes préservées et absence de requête Supabase. Les hooks sont interceptés dans le profil de test ; ils ne sont pas ajoutés aux sources du jeu.
+`docs/history/island-browser-check.cjs` vérifie le véritable rendu Chromium tactile : trois tailles × trois zooms, douze poses/sélections aux coins, déplacement avec ancien placement conservé, annulation exacte puis validation, vente annulée puis double confirmation ne créditant qu’une fois, rangement gratuit, conservation au rechargement et bâtiment sur la case d’extrémité libérée. Récolte, photo/retour au jeu, vues 852 × 393 et 667 × 375, clés des autres routes préservées et absence de requête Supabase. Les hooks sont interceptés dans le profil de test ; ils ne sont pas ajoutés aux sources du jeu.
 
 Les trois parcours existants vérifient les douze références en jeu normal/Aménagement, les priorités d’interaction, le drag/pinch, la rotation, l’inventaire, l’export v5, les sept lapins aux trois zooms et le stress 512 exemplaires. La CI Décorations exécute désormais aussi le parcours d’île et conserve ses rapports/captures 30 jours.
 
@@ -46,7 +46,7 @@ Pour comparer localement avec une copie du point de départ au même cadrage :
 PRAIRIE_TEST_URL=http://127.0.0.1:5178/Project-L/preview/decorations/ \
 PRAIRIE_BEFORE_URL=http://127.0.0.1:5179/Project-L/preview/decorations/ \
 PRAIRIE_CAPTURE_DIR=/tmp/prairie-island-captures \
-node docs/island-browser-check.cjs
+node docs/history/island-browser-check.cjs
 ```
 
 Captures durables dans [images/island-2026-10-09](images/island-2026-10-09/) : [avant](images/island-2026-10-09/before-furnished-wide.png), [après au même cadrage](images/island-2026-10-09/after-furnished-wide.png), [île initiale presque vide](images/island-2026-10-09/island-3-zoom-0.8.png), [île entièrement agrandie](images/island-2026-10-09/island-9-zoom-0.8.png), [mobile aménagé](images/island-2026-10-09/after-furnished-mobile.png), [sept lapins](images/island-2026-10-09/seven-mobile.png), [photo](images/island-2026-10-09/photo-mobile.png). Rapports JSON du rendu et des parcours conservés au même endroit. Les captures avant proviennent des sources vérifiées `a64bb0e`, sans écraser le chantier ; les valeurs de caméra sont identiques entre avant/après.

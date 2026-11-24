@@ -44,11 +44,30 @@ describe('« Benny Rampage » screen', () => {
     expect(activity.element.classList.contains('benny-run-chased')).toBe(true);
     g.entities = [{id: 9002, kind: 'pillar', lane: g.lane, z: g.distance + 2}]; step(400);
     expect(g.over).toBe(true);
-    // The scene plays first: no card yet; a tap skips it.
+    // The scene plays first: no card yet, but the run is already recorded (plan 1.3); a tap skips the scene.
     const card = document.querySelector<HTMLElement>('[data-benny-run-card]')!;
-    expect(card.hidden).toBe(true); expect(finished).toHaveLength(0);
+    expect(card.hidden).toBe(true); expect(finished).toHaveLength(1);
     document.querySelector('canvas')!.dispatchEvent(new PointerEvent('pointerdown', {bubbles: true}));
     expect(card.hidden).toBe(false); expect(card.textContent).toMatch(/La Dragon a rattrapé Benny/); expect(finished).toHaveLength(1);
+  });
+  it('keeps a run left during its end scene, recorded once (plan 1.3)', () => {
+    const {activity, step, finished, key} = mount(50);
+    document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);
+    const g = activity.game!; g.score = 120;
+    g.entities = [{id: 9001, kind: 'pillar', lane: g.lane, z: g.distance + 2}]; step(400);
+    g.entities = [{id: 9002, kind: 'pillar', lane: g.lane, z: g.distance + 2}]; step(400);
+    expect(g.over).toBe(true); expect(finished).toHaveLength(1);
+    // The cross during the scene: the screen closes, the run stays recorded, never twice.
+    document.querySelector<HTMLElement>('[data-benny-run-exit]')!.click();
+    expect(activity.element.hidden).toBe(true); expect(finished).toHaveLength(1);
+    expect((finished[0] as {score: number}).score).toBeGreaterThanOrEqual(120);
+    // A new run is recorded on its own.
+    activity.open(); document.querySelector<HTMLElement>('[data-benny-run-start]')!.click(); step(100);
+    const h = activity.game!; h.entities = [{id: 9003, kind: 'pillar', lane: h.lane, z: h.distance + 2}]; step(400);
+    h.entities = [{id: 9004, kind: 'pillar', lane: h.lane, z: h.distance + 2}]; step(400);
+    expect(finished).toHaveLength(2);
+    // Skipping the scene shows the card without recording the run again.
+    key(' '); expect(finished).toHaveLength(2);
   });
   it('counts the score and the loot up on the end card, shows only the figures that are not zero and the rewarded runs left', () => {
     let now = 1000; const frames: (() => void)[] = [];
