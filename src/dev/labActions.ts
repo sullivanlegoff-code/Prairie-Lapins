@@ -42,7 +42,7 @@ function integer(value: number, min: number, max: number): number {
 /** Find a free rectangle, buying only the extensions needed. Never move existing objects. */
 function place(s: GameState, b: Building): void {
   for (;;) {
-    for (let y = 0; y < ISLAND.mapFine; y++) for (let x = 0; x < ISLAND.mapFine; x++) {
+    for (let y = ISLAND.fineBounds.top; y < ISLAND.fineBounds.bottom; y++) for (let x = ISLAND.fineBounds.left; x < ISLAND.fineBounds.right; x++) {
       if (!footprintPlacementReason(s, buildingFootprint({...b, x, y}), {buildingId: b.id})) { b.x = x; b.y = y; return; }
     }
     const parcel = purchasableParcels(s)[0];

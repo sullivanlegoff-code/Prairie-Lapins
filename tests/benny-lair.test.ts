@@ -62,7 +62,7 @@ describe('the Antre du dragon', () => {
   });
   it('moves a v28 save to v29 unchanged, and refuses a saved record out of bounds', () => {
     const s = game(), raw = JSON.parse(encodeGame(s)); raw.version = 28;
-    const migrated = decodeGame(JSON.stringify(raw)); expect(migrated).toEqual(decodeGame(encodeGame(s))); expect(migrated.ok && migrated.state.version).toBe(30);
+    const migrated = decodeGame(JSON.stringify(raw)); expect(migrated).toEqual(decodeGame(encodeGame(s))); expect(migrated.ok && migrated.state.version).toBe(31);
     const bad = JSON.parse(encodeGame(s)); bad.bennyRun = {best: BENNY_RUN.maxScore + 1, metres: 0};
     expect(decodeGame(JSON.stringify(bad)).ok).toBe(false);
   });

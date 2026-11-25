@@ -37,7 +37,7 @@ function book(c,before){const band=bandOf();if(!band)return;const e=ledger[band]
 // the Salon de soins, the next island extension his level allows, then each farm's level 3.
 function pattesGoal(){const lv=level();
  if(!noCare&&lv>=balance.SALON.unlockLevel&&!s.buildings.some(b=>b.kind==='salon'))return balance.BALANCE.buildings.salon.price+500;
- const rank=s.acquiredParcels.length;if(rank<=8&&lv>=prog.requiredExtensionLevel(rank))return land.extensionPrice(s)+800;
+ const rank=s.acquiredParcels.length;if(rank<land.PARCEL_IDS.length&&lv>=prog.requiredExtensionLevel(rank))return land.extensionPrice(s)+800;
  if(lv>=balance.FARM_UPGRADES[3].level&&s.buildings.some(b=>b.kind==='farm'&&b.farmLevel===2))return balance.FARM_UPGRADES[3].pattes+3000;
  if(lv>=balance.FARM_UPGRADES[4].level&&s.buildings.some(b=>b.kind==='farm'&&b.farmLevel===3))return balance.FARM_UPGRADES[4].pattes+3000;
  return 0;}
@@ -76,7 +76,7 @@ run({type:'initiationAid',id:'building-4',stage:'breeding',jobKey:s.initiation.b
 run({type:'initiationAid',id:'building-5',stage:'growth',jobKey:s.initiation.growth,birthId:s.initiation.birthId},true);const baby=s.buildings.find(b=>b.kind==='nursery').nursery.babies[0];run({type:'welcome',birthId:baby.birth.id,enclosureId:room(baby.birth.species).id},true);claim();
 const tutorial={pattes:s.pattes,grass:s.grass,hearts:s.hearts,level:level(),xp:s.progression.totalXp};
 if(normalTutorial){console.log(JSON.stringify({course:'normal',tutorialFinalMission,tutorial},null,2));process.exit(0);}
-function remaining(){return {commons:balance.SHOP_SPECIES.filter(id=>!s.discovered.includes(id)),extensions:8-(s.acquiredParcels.length-1),extensionCost:land.EXTENSION_PRICES.slice(s.acquiredParcels.length-1).reduce((a,b)=>a+b,0),farms:2-s.buildings.filter(b=>b.kind==='farm').length,kitchen:!s.buildings.some(b=>b.kind==='kitchen'),habitatUpgrades:s.buildings.filter(b=>b.habitat&&b.habitat.level<3).length,paidRecipes:balance.SPECIES_IDS.filter(id=>balance.SPECIES[id].acquisition.some(a=>a.kind==='recipe'&&a.knowledgePrice!==undefined)&&!s.recipeBook.includes(id)&&!s.discovered.includes(id))};}
+function remaining(){return {commons:balance.SHOP_SPECIES.filter(id=>!s.discovered.includes(id)),extensions:land.PARCEL_IDS.length-s.acquiredParcels.length,extensionCost:land.EXTENSION_PRICES.slice(s.acquiredParcels.length-1).reduce((a,b)=>a+b,0),farms:2-s.buildings.filter(b=>b.kind==='farm').length,kitchen:!s.buildings.some(b=>b.kind==='kitchen'),habitatUpgrades:s.buildings.filter(b=>b.habitat&&b.habitat.level<3).length,paidRecipes:balance.SPECIES_IDS.filter(id=>balance.SPECIES[id].acquisition.some(a=>a.kind==='recipe'&&a.knowledgePrice!==undefined)&&!s.recipeBook.includes(id)&&!s.discovered.includes(id))};}
 function decorationBudget(){const missing=dec.DECORATION_IDS.filter(id=>!s.decorations.some(d=>d.catalogId===id));return {models:missing.length,pattes:missing.reduce((sum,id)=>sum+(dec.DECORATIONS[id].heartPrice?0:dec.DECORATIONS[id].price),0),hearts:missing.reduce((sum,id)=>sum+(dec.DECORATIONS[id].heartPrice??0),0)};}
 const affectionSpread=v=>({'≥10':v.rabbits.filter(r=>r.affection>=10).length,'≥15':v.rabbits.filter(r=>r.affection>=15).length,'≥30':v.rabbits.filter(r=>r.affection>=30).length,max:Math.max(...v.rabbits.map(r=>r.affection)),rabbits:v.rabbits.length});
 function snapshot(label,t){const v=sim.advance(s,t);rows.push({step:label,affectionById:Object.fromEntries(v.rabbits.map(r=>[r.id,r.affection])),pattes:v.pattes,grass:v.grass,hearts:v.hearts,level:level(),species:v.discovered.length,affection:affectionSpread(v),speciesIds:[...v.discovered],storedPattes:Math.floor(v.buildings.reduce((a,b)=>a+b.incomeUnits,0)/H),remaining:remaining(),decorationBudget:decorationBudget(),mainMissionsClaimed:[...s.missions.claimed]});}
@@ -119,7 +119,7 @@ for(let day=0;day<70;day++){
  if(shown('pet-rabbits'))for(const r of s.rabbits.slice(0,missionConfig.DAILY_MISSIONS['pet-rabbits'].target))run({type:'petRabbit',rabbitId:r.id});
  for(const b of s.buildings.filter(b=>b.nursery))for(const baby of [...b.nursery.babies].filter(b=>b.readyAt<=now)){const dest=home(baby.birth.species);if(dest)run({type:'welcome',birthId:baby.birth.id,enclosureId:dest.id});}
  const nest=s.buildings.find(b=>b.kind==='nest');if(nest.breeding?.endsAt<=now)run({type:'transferBirth',id:nest.id,birthId:nest.breeding.birth.id});claim();
- if(s.acquiredParcels.length<9&&s.pattes>=land.extensionPrice(s)+(wantLand?100:800)&&run({type:'expand',parcelId:land.purchasableParcels(s)[0],expectedCost:land.extensionPrice(s)}))wantLand=false;
+ if(s.acquiredParcels.length<land.PARCEL_IDS.length&&s.pattes>=land.extensionPrice(s)+(wantLand?100:800)&&run({type:'expand',parcelId:land.purchasableParcels(s)[0],expectedCost:land.extensionPrice(s)}))wantLand=false;
  for(const species of balance.SHOP_SPECIES.filter(id=>!s.discovered.includes(id)&&rights.stateLevelAccess(s,{family:'species',id,action:'purchase'}).accessible)){if(s.pattes<balance.SPECIES[species].price+500)continue;const dest=home(species);if(dest)run({type:'buyRabbit',species,enclosureId:dest.id});}
  if(s.buildings.filter(b=>b.kind==='farm').length<2&&s.pattes>200)build('farm');
  if(day>=1&&!s.buildings.some(b=>b.kind==='kitchen')&&s.pattes>1000)build('kitchen');

@@ -61,7 +61,8 @@ export function upgradeFootprintReason(s: PlacementState, buildingId: string, ti
 }
 /** Whether a new building of this kind fits anywhere on the land owned today. */
 export function hasRoomFor(s: PlacementState, kind: BuildingKind, geometry: IslandGeometry = ISLAND): boolean {
-  for (let y = 0; y < geometry.mapFine; y++) for (let x = 0; x < geometry.mapFine; x++) if (buildingPlacementReason(s, x, y, undefined, kind, geometry) === null) return true;
+  const b = geometry.fineBounds;
+  for (let y = b.top; y < b.bottom; y++) for (let x = b.left; x < b.right; x++) if (buildingPlacementReason(s, x, y, undefined, kind, geometry) === null) return true;
   return false;
 }
 export function buildingAt(s: Pick<GameState, 'buildings'>, p: {x: number; y: number}) {

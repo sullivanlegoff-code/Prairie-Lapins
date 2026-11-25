@@ -1,5 +1,7 @@
 # Agrandissement de l'île (+30 % demandé) — étape 1 : état des lieux et plan
 
+> Suite (24 novembre 2026) : l'île peut désormais grandir jusqu'à dix-huit parcelles, vers l'est et le nord (`docs/island-stages.md`, section « Île agrandie à dix-huit parcelles »). Ce plan décrit l'agrandissement d'octobre et reste un historique.
+
 **Décision du propriétaire (2026-10-17, transmise par l'agent de pilotage) : plan validé tel quel** (`877b587`) — parcelles 4 × 4 (+33,3 % par axe, île maximale 12 × 12), cases 176 × 148 inchangées, bâtiments de départ aux positions proposées, prix et niveaux des extensions inchangés, sauvegarde v11 avec la migration décrite (copie `before-v11`, décorations invalides en inventaire, refus sans écriture si un bâtiment restait invalide), découpage A, B, C accepté.
 
 **Étape A réalisée** (`12404f9`) : source unique `src/config/islandGeometry.ts`. **Étape B réalisée** (`72d8240` géométrie et positions, `cc78052` sauvegarde v11, `7eafcea` laboratoire, `13ca1f6` caméra, `a134144` tests) : parcelles 4 × 4, `LEGACY_ISLAND` figée pour v1–v10, migration v11 et copie `before-v11` ; détails dans la Passation de `progress.md`. **Étape C réalisée** (jointure, mémoire, Recentrer, grille, contrôles navigateur ; voir la Passation de `progress.md`). **Chantier terminé**, en attente de l'essai iPhone du propriétaire.

@@ -51,7 +51,7 @@ describe('the day changes at 4 a.m.', () => {
     later.missions.daily.progress = progress;
     const a = decodeGame(JSON.stringify(later));
     if (!a.ok) throw Error(a.reason);
-    expect(a.state.version).toBe(30);
+    expect(a.state.version).toBe(31);
     expect(a.state.missions.daily.cycleIndex).toBe(1);
     expect(a.state.missions.daily.progress).toEqual(progress);
     expect(dailyCycleEnd(a.state)).toBe(at(26, 4));

@@ -29,7 +29,8 @@ import {EVOLUTION_CHALLENGES, EVOLUTION_CHALLENGE_IDS, RETIRED_EVOLUTION_CHALLEN
 import {EVOLUTION_AFFECTION, hasEvolvedArt} from '../config/evolvedArt';
 
 /**
- * The current format is v30 (the day changes at 4 a.m.: each daily cycle says when it ends, see `migrateV29`), after v29 (the Antre du dragon and the record of « Benny Rampage », optional; nothing to convert, see
+ * The current format is v31 (the grown island: nine more parcels to the east and north, the north row at negative y; nothing to
+ * convert, see `migrateV30`), after v30 (the day changes at 4 a.m.: each daily cycle says when it ends, see `migrateV29`), after v29 (the Antre du dragon and the record of « Benny Rampage », optional; nothing to convert, see
  * `migrateV28`), after v28 (the Salon de soins becomes a 6 × 6 spa: a salon built before keeps 4 × 4 until it has room, see
  * `migrateV27`), after v27 (the Christmas update's economy: Paille's counter removed, the nursery back to 2 cushions at
  * most, 1 to 5 Hearts a trip and the Salon's Hearts, see `migrateV26`), after v26 (the Christmas event: the sucres d'orge, the Christmas challenges of the cycle, the snowman of the
@@ -44,6 +45,8 @@ export {SAVE_VERSION};
 const LEGACY_TYPES: Partial<Record<SpeciesId, readonly HabitatType[]>> = {magicien: ['metal', 'vol'], bouee: ['paille', 'feu'], dadi: ['neige', 'vol']};
 const integer = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
 const offGridCell = z.number().int().min(-64).max(Number.MAX_SAFE_INTEGER);
+/** A row of the land grid in fine cells: the north row of the grown island lies above row 0 (placement rules check the rest). */
+const landCell = z.number().int().min(ISLAND.fineBounds.top).max(Number.MAX_SAFE_INTEGER);
 // Rebasing a clock may move historical dates before the Unix epoch. Resources stay nonnegative.
 const timestamp = z.number().int().min(Number.MIN_SAFE_INTEGER).max(Number.MAX_SAFE_INTEGER);
 const identity = z.string().regex(/^(building|rabbit|birth)-[1-9]\d*$/);
@@ -99,7 +102,7 @@ const missions = z.object({
 const decoration = z.object({paidHearts: integer.positive().optional(), paidPrice: integer.optional(), paidCandies: integer.positive().max(MAX_CANDIES).optional(), id: z.string().regex(/^decoration-[1-9]\d*$/), catalogId: z.enum(ALL_DECORATION_IDS), placementXpProcessed: z.boolean().optional(),
   location: z.discriminatedUnion('kind', [
     z.object({kind: z.literal('inventory')}).strict(),
-    z.object({kind: z.literal('outside'), x: integer, y: integer, rotation: z.union([z.literal(0), z.literal(1)])}).strict(),
+    z.object({kind: z.literal('outside'), x: integer, y: landCell, rotation: z.union([z.literal(0), z.literal(1)])}).strict(),
   ])}).strict();
 const aidStage = z.enum(['order', 'breeding', 'growth']);
 // The Christmas event (v26, optional): the sucres d'orge, the challenges of `cycle`, today's snowman and the mini-game.
@@ -153,7 +156,7 @@ const current = z.object({
   // v27: the cares that brought Hearts in the cycle.
   salonHearts: z.object({cycle: integer, cares: integer.positive().max(SALON.heartCaresPerCycle)}).strict().optional(),
   // v27: the debris of the parcels bought since the Christmas update, and « Le vol de Benny ».
-  debris: z.array(z.object({id: z.string().regex(/^debris-[1-9]\d*$/), kind: z.enum(['rocher', 'buisson', 'herbes']), x: integer, y: integer, price: integer.positive()}).strict()).max(512).optional(),
+  debris: z.array(z.object({id: z.string().regex(/^debris-[1-9]\d*$/), kind: z.enum(['rocher', 'buisson', 'herbes']), x: integer, y: landCell, price: integer.positive()}).strict()).max(512).optional(),
   bennyFlight: z.object({cycle: integer, rewarded: integer.max(BENNY_FLIGHT.rewardedGamesPerCycle), heart: z.literal(true).optional(), best: integer.max(BENNY_FLIGHT.maxColumns)}).strict().optional(),
   // v29: the record of « Benny Rampage », played from the Antre du dragon.
   bennyRun: z.object({best: integer.max(BENNY_RUN.maxScore), metres: integer.max(BENNY_RUN_MAX_METRES),
@@ -171,7 +174,7 @@ const current = z.object({
   christmas: christmas.optional(),
   missions, decorations: z.array(decoration).max(MAX_DECORATIONS),
   rewardedDecorationModels: z.array(z.enum(DECORATION_IDS)).max(DECORATION_IDS.length).refine(ids => new Set(ids).size === ids.length).optional(),
-  acquiredParcels: z.array(z.enum(PARCEL_IDS)).min(1).max(9),
+  acquiredParcels: z.array(z.enum(PARCEL_IDS)).min(1).max(PARCEL_IDS.length),
   islandStart: z.literal('southwest').optional(),
   startCourse: z.literal('paille-solo').optional(),
   purchaseUnlocks: z.array(z.enum(PURCHASE_UNLOCK_IDS)).max(PURCHASE_UNLOCK_IDS.length).refine(ids => new Set(ids).size === ids.length).optional(),
@@ -549,7 +552,16 @@ function migrateV29(raw: object): void {
       d.endsAt = next >= oldEnd ? next : gameDayStart(gameDay(next) + 1);
     }
   }
-  save.version = SAVE_VERSION;
+  save.version = 30;
+}
+
+/**
+ * v30 → v31, the grown island (owner, 24 November 2026): nine more parcels, two columns to the east and a row to the north whose
+ * cells have negative y. Nothing to convert (every place keeps its coordinates); the version moves so that an older client refuses
+ * a save holding a new parcel instead of reading it as invalid.
+ */
+function migrateV30(raw: object): void {
+  (raw as {version: number}).version = SAVE_VERSION;
 }
 
 /**
@@ -607,6 +619,7 @@ export function decodeGame(json: string): DecodeResult {
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 27) migrateV27(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 28) migrateV28(raw);
   if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 29) migrateV29(raw);
+  if (raw && typeof raw === 'object' && 'version' in raw && raw.version === 30) migrateV30(raw);
   replaceRetiredChallenges(raw);
   settleStorageCaps(raw);
   const parsed = schema.safeParse(raw);

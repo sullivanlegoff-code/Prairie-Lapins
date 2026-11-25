@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {PARCEL_IDS, PARCELS, type ParcelId} from '../src/config/land';
+import {FIRST_PARCEL_IDS, PARCEL_IDS, PARCELS, type ParcelId} from '../src/config/land';
 import {ISLAND} from '../src/config/islandGeometry';
 import {islandOutline, organicLoop, signedArea, type OutlinePoint} from '../src/display/islandOutline';
 
@@ -13,7 +13,9 @@ describe('oriented union of parcel plateaux', () => {
   it('merges a rectangle and never retains its internal shared edges', () => {
     expect(islandOutline(['southwest'])[0].loops[0].edges).toHaveLength(4);
     expect(islandOutline(['southwest', 'south'])[0].loops[0].edges).toHaveLength(4);
-    expect(islandOutline(PARCEL_IDS)[0].loops[0].edges).toHaveLength(4);
+    expect(islandOutline(FIRST_PARCEL_IDS)[0].loops[0].edges).toHaveLength(4);
+    // The grown island (18 parcels): the 5 × 4 rectangle without its two north-east corners.
+    expect(islandOutline(PARCEL_IDS)[0].loops[0].edges).toHaveLength(6);
   });
   it('represents an L with three squares and six exposed runs', () => {
     const c = islandOutline(['southwest', 'south', 'west']);

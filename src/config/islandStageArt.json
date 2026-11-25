@@ -37,66 +37,66 @@
       "tiles": [
         {
           "file": "stage-1-0-0.webp",
-          "x": 0,
-          "y": 0,
-          "width": 500,
-          "height": 500
+          "x": 88,
+          "y": 84,
+          "width": 412,
+          "height": 416
         },
         {
           "file": "stage-1-0-1.webp",
           "x": 500,
-          "y": 0,
+          "y": 92,
           "width": 500,
-          "height": 500
+          "height": 112
         },
         {
           "file": "stage-1-0-2.webp",
           "x": 1000,
-          "y": 0,
-          "width": 344,
-          "height": 500
+          "y": 81,
+          "width": 260,
+          "height": 419
         },
         {
           "file": "stage-1-1-0.webp",
-          "x": 0,
+          "x": 74,
           "y": 500,
-          "width": 500,
+          "width": 426,
           "height": 500
         },
         {
           "file": "stage-1-1-1.webp",
           "x": 500,
-          "y": 500,
+          "y": 777,
           "width": 500,
-          "height": 500
+          "height": 223
         },
         {
           "file": "stage-1-1-2.webp",
           "x": 1000,
           "y": 500,
-          "width": 344,
+          "width": 265,
           "height": 500
         },
         {
           "file": "stage-1-2-0.webp",
-          "x": 0,
+          "x": 128,
           "y": 1000,
-          "width": 500,
-          "height": 500
+          "width": 372,
+          "height": 274
         },
         {
           "file": "stage-1-2-1.webp",
           "x": 500,
           "y": 1000,
           "width": 500,
-          "height": 500
+          "height": 329
         },
         {
           "file": "stage-1-2-2.webp",
           "x": 1000,
           "y": 1000,
-          "width": 344,
-          "height": 500
+          "width": 224,
+          "height": 267
         }
       ]
     },
@@ -120,108 +120,108 @@
       "tiles": [
         {
           "file": "stage-2-0-0.webp",
-          "x": 0,
-          "y": 0,
-          "width": 500,
-          "height": 500
+          "x": 89,
+          "y": 85,
+          "width": 411,
+          "height": 415
         },
         {
           "file": "stage-2-0-1.webp",
           "x": 500,
-          "y": 0,
+          "y": 91,
           "width": 500,
-          "height": 500
+          "height": 118
         },
         {
           "file": "stage-2-0-2.webp",
           "x": 1000,
-          "y": 0,
+          "y": 96,
           "width": 500,
-          "height": 500
+          "height": 120
         },
         {
           "file": "stage-2-0-3.webp",
           "x": 1500,
-          "y": 0,
+          "y": 95,
           "width": 500,
-          "height": 500
+          "height": 119
         },
         {
           "file": "stage-2-0-4.webp",
           "x": 2000,
-          "y": 0,
-          "width": 400,
-          "height": 500
+          "y": 89,
+          "width": 336,
+          "height": 411
         },
         {
           "file": "stage-2-1-0.webp",
-          "x": 0,
+          "x": 74,
           "y": 500,
-          "width": 500,
+          "width": 426,
           "height": 500
         },
         {
           "file": "stage-2-1-1.webp",
           "x": 500,
-          "y": 500,
+          "y": 777,
           "width": 500,
-          "height": 500
+          "height": 223
         },
         {
           "file": "stage-2-1-2.webp",
           "x": 1000,
-          "y": 500,
+          "y": 777,
           "width": 500,
-          "height": 500
+          "height": 223
         },
         {
           "file": "stage-2-1-3.webp",
           "x": 1500,
-          "y": 500,
+          "y": 777,
           "width": 500,
-          "height": 500
+          "height": 223
         },
         {
           "file": "stage-2-1-4.webp",
           "x": 2000,
           "y": 500,
-          "width": 400,
+          "width": 385,
           "height": 500
         },
         {
           "file": "stage-2-2-0.webp",
-          "x": 0,
+          "x": 128,
           "y": 1000,
-          "width": 500,
-          "height": 500
+          "width": 372,
+          "height": 274
         },
         {
           "file": "stage-2-2-1.webp",
           "x": 500,
           "y": 1000,
           "width": 500,
-          "height": 500
+          "height": 328
         },
         {
           "file": "stage-2-2-2.webp",
           "x": 1000,
           "y": 1000,
           "width": 500,
-          "height": 500
+          "height": 369
         },
         {
           "file": "stage-2-2-3.webp",
           "x": 1500,
           "y": 1000,
           "width": 500,
-          "height": 500
+          "height": 444
         },
         {
           "file": "stage-2-2-4.webp",
           "x": 2000,
           "y": 1000,
-          "width": 400,
-          "height": 500
+          "width": 340,
+          "height": 319
         }
       ]
     },
@@ -246,94 +246,94 @@
       "tiles": [
         {
           "file": "stage-3-0-0.webp",
-          "x": 0,
-          "y": 0,
-          "width": 500,
-          "height": 500
+          "x": 93,
+          "y": 96,
+          "width": 407,
+          "height": 404
         },
         {
           "file": "stage-3-0-1.webp",
           "x": 500,
-          "y": 0,
+          "y": 105,
           "width": 500,
-          "height": 500
+          "height": 109
         },
         {
           "file": "stage-3-0-2.webp",
           "x": 1000,
-          "y": 0,
-          "width": 500,
-          "height": 500
+          "y": 104,
+          "width": 228,
+          "height": 396
         },
         {
           "file": "stage-3-1-0.webp",
-          "x": 0,
+          "x": 64,
           "y": 500,
-          "width": 500,
+          "width": 151,
           "height": 500
         },
         {
           "file": "stage-3-1-2.webp",
-          "x": 1000,
+          "x": 1129,
           "y": 500,
-          "width": 500,
-          "height": 500
+          "width": 371,
+          "height": 408
         },
         {
           "file": "stage-3-1-3.webp",
           "x": 1500,
-          "y": 500,
+          "y": 788,
           "width": 500,
-          "height": 500
+          "height": 119
         },
         {
           "file": "stage-3-1-4.webp",
           "x": 2000,
-          "y": 500,
-          "width": 400,
-          "height": 500
+          "y": 781,
+          "width": 311,
+          "height": 219
         },
         {
           "file": "stage-3-2-0.webp",
-          "x": 0,
+          "x": 70,
           "y": 1000,
-          "width": 500,
+          "width": 430,
           "height": 500
         },
         {
           "file": "stage-3-2-1.webp",
           "x": 500,
-          "y": 1000,
+          "y": 1469,
           "width": 500,
-          "height": 500
+          "height": 31
         },
         {
           "file": "stage-3-2-2.webp",
           "x": 1000,
-          "y": 1000,
+          "y": 1469,
           "width": 500,
-          "height": 500
+          "height": 31
         },
         {
           "file": "stage-3-2-3.webp",
           "x": 1500,
-          "y": 1000,
+          "y": 1469,
           "width": 500,
-          "height": 500
+          "height": 31
         },
         {
           "file": "stage-3-2-4.webp",
           "x": 2000,
           "y": 1000,
-          "width": 400,
+          "width": 385,
           "height": 500
         },
         {
           "file": "stage-3-3-0.webp",
-          "x": 0,
+          "x": 86,
           "y": 1500,
-          "width": 500,
-          "height": 500
+          "width": 414,
+          "height": 467
         },
         {
           "file": "stage-3-3-1.webp",
@@ -360,36 +360,36 @@
           "file": "stage-3-3-4.webp",
           "x": 2000,
           "y": 1500,
-          "width": 400,
+          "width": 381,
           "height": 500
         },
         {
           "file": "stage-3-4-1.webp",
-          "x": 500,
+          "x": 846,
           "y": 2000,
-          "width": 500,
-          "height": 400
+          "width": 47,
+          "height": 21
         },
         {
           "file": "stage-3-4-2.webp",
-          "x": 1000,
+          "x": 1020,
           "y": 2000,
-          "width": 500,
-          "height": 400
+          "width": 480,
+          "height": 62
         },
         {
           "file": "stage-3-4-3.webp",
           "x": 1500,
           "y": 2000,
-          "width": 500,
-          "height": 400
+          "width": 495,
+          "height": 137
         },
         {
           "file": "stage-3-4-4.webp",
-          "x": 2000,
+          "x": 2099,
           "y": 2000,
-          "width": 400,
-          "height": 400
+          "width": 9,
+          "height": 12
         }
       ]
     },
@@ -415,94 +415,94 @@
       "tiles": [
         {
           "file": "stage-4-0-0.webp",
-          "x": 0,
-          "y": 0,
-          "width": 500,
-          "height": 500
+          "x": 93,
+          "y": 96,
+          "width": 407,
+          "height": 404
         },
         {
           "file": "stage-4-0-1.webp",
           "x": 500,
-          "y": 0,
+          "y": 105,
           "width": 500,
-          "height": 500
+          "height": 109
         },
         {
           "file": "stage-4-0-2.webp",
           "x": 1000,
-          "y": 0,
+          "y": 103,
           "width": 500,
-          "height": 500
+          "height": 111
         },
         {
           "file": "stage-4-0-3.webp",
           "x": 1500,
-          "y": 0,
+          "y": 106,
           "width": 500,
-          "height": 500
+          "height": 109
         },
         {
           "file": "stage-4-0-4.webp",
           "x": 2000,
-          "y": 0,
-          "width": 400,
-          "height": 500
+          "y": 98,
+          "width": 298,
+          "height": 402
         },
         {
           "file": "stage-4-1-0.webp",
-          "x": 0,
+          "x": 65,
           "y": 500,
-          "width": 500,
+          "width": 150,
           "height": 500
         },
         {
           "file": "stage-4-1-4.webp",
-          "x": 2000,
+          "x": 2185,
           "y": 500,
-          "width": 400,
+          "width": 140,
           "height": 500
         },
         {
           "file": "stage-4-2-0.webp",
-          "x": 0,
+          "x": 68,
           "y": 1000,
-          "width": 500,
+          "width": 432,
           "height": 500
         },
         {
           "file": "stage-4-2-1.webp",
           "x": 500,
-          "y": 1000,
+          "y": 1469,
           "width": 500,
-          "height": 500
+          "height": 31
         },
         {
           "file": "stage-4-2-2.webp",
           "x": 1000,
-          "y": 1000,
+          "y": 1469,
           "width": 500,
-          "height": 500
+          "height": 31
         },
         {
           "file": "stage-4-2-3.webp",
           "x": 1500,
-          "y": 1000,
+          "y": 1469,
           "width": 500,
-          "height": 500
+          "height": 31
         },
         {
           "file": "stage-4-2-4.webp",
           "x": 2000,
           "y": 1000,
-          "width": 400,
+          "width": 385,
           "height": 500
         },
         {
           "file": "stage-4-3-0.webp",
-          "x": 0,
+          "x": 86,
           "y": 1500,
-          "width": 500,
-          "height": 500
+          "width": 414,
+          "height": 467
         },
         {
           "file": "stage-4-3-1.webp",
@@ -529,36 +529,36 @@
           "file": "stage-4-3-4.webp",
           "x": 2000,
           "y": 1500,
-          "width": 400,
+          "width": 381,
           "height": 500
         },
         {
           "file": "stage-4-4-1.webp",
-          "x": 500,
+          "x": 846,
           "y": 2000,
-          "width": 500,
-          "height": 400
+          "width": 47,
+          "height": 21
         },
         {
           "file": "stage-4-4-2.webp",
-          "x": 1000,
+          "x": 1020,
           "y": 2000,
-          "width": 500,
-          "height": 400
+          "width": 480,
+          "height": 62
         },
         {
           "file": "stage-4-4-3.webp",
           "x": 1500,
           "y": 2000,
-          "width": 500,
-          "height": 400
+          "width": 495,
+          "height": 137
         },
         {
           "file": "stage-4-4-4.webp",
-          "x": 2000,
+          "x": 2099,
           "y": 2000,
-          "width": 400,
-          "height": 400
+          "width": 9,
+          "height": 12
         }
       ]
     },
@@ -585,122 +585,122 @@
       "tiles": [
         {
           "file": "stage-5-0-0.webp",
-          "x": 0,
-          "y": 0,
-          "width": 500,
-          "height": 500
+          "x": 93,
+          "y": 96,
+          "width": 407,
+          "height": 404
         },
         {
           "file": "stage-5-0-1.webp",
           "x": 500,
-          "y": 0,
+          "y": 105,
           "width": 500,
-          "height": 500
+          "height": 109
         },
         {
           "file": "stage-5-0-2.webp",
           "x": 1000,
-          "y": 0,
+          "y": 103,
           "width": 500,
-          "height": 500
+          "height": 111
         },
         {
           "file": "stage-5-0-3.webp",
           "x": 1500,
-          "y": 0,
+          "y": 106,
           "width": 500,
-          "height": 500
+          "height": 109
         },
         {
           "file": "stage-5-0-4.webp",
           "x": 2000,
-          "y": 0,
-          "width": 500,
-          "height": 500
+          "y": 98,
+          "width": 337,
+          "height": 402
         },
         {
           "file": "stage-5-1-0.webp",
-          "x": 0,
+          "x": 65,
           "y": 500,
-          "width": 500,
+          "width": 150,
           "height": 500
         },
         {
           "file": "stage-5-1-4.webp",
-          "x": 2000,
+          "x": 2185,
           "y": 500,
-          "width": 500,
-          "height": 500
+          "width": 315,
+          "height": 397
         },
         {
           "file": "stage-5-1-5.webp",
           "x": 2500,
-          "y": 500,
+          "y": 719,
           "width": 500,
-          "height": 500
+          "height": 178
         },
         {
           "file": "stage-5-1-6.webp",
           "x": 3000,
-          "y": 500,
-          "width": 456,
-          "height": 500
+          "y": 699,
+          "width": 382,
+          "height": 301
         },
         {
           "file": "stage-5-2-0.webp",
-          "x": 0,
+          "x": 68,
           "y": 1000,
-          "width": 500,
+          "width": 432,
           "height": 500
         },
         {
           "file": "stage-5-2-1.webp",
           "x": 500,
-          "y": 1000,
+          "y": 1469,
           "width": 500,
-          "height": 500
+          "height": 31
         },
         {
           "file": "stage-5-2-2.webp",
           "x": 1000,
-          "y": 1000,
+          "y": 1469,
           "width": 500,
-          "height": 500
+          "height": 31
         },
         {
           "file": "stage-5-2-3.webp",
           "x": 1500,
-          "y": 1000,
+          "y": 1469,
           "width": 500,
-          "height": 500
+          "height": 31
         },
         {
           "file": "stage-5-2-4.webp",
           "x": 2000,
-          "y": 1000,
+          "y": 1469,
           "width": 500,
-          "height": 500
+          "height": 31
         },
         {
           "file": "stage-5-2-5.webp",
           "x": 2500,
-          "y": 1000,
+          "y": 1469,
           "width": 500,
-          "height": 500
+          "height": 31
         },
         {
           "file": "stage-5-2-6.webp",
           "x": 3000,
           "y": 1000,
-          "width": 456,
+          "width": 417,
           "height": 500
         },
         {
           "file": "stage-5-3-0.webp",
-          "x": 0,
+          "x": 86,
           "y": 1500,
-          "width": 500,
-          "height": 500
+          "width": 414,
+          "height": 467
         },
         {
           "file": "stage-5-3-1.webp",
@@ -741,50 +741,50 @@
           "file": "stage-5-3-6.webp",
           "x": 3000,
           "y": 1500,
-          "width": 456,
+          "width": 414,
           "height": 500
         },
         {
           "file": "stage-5-4-1.webp",
-          "x": 500,
+          "x": 846,
           "y": 2000,
-          "width": 500,
-          "height": 400
+          "width": 47,
+          "height": 21
         },
         {
           "file": "stage-5-4-2.webp",
-          "x": 1000,
+          "x": 1020,
           "y": 2000,
-          "width": 500,
-          "height": 400
+          "width": 480,
+          "height": 62
         },
         {
           "file": "stage-5-4-3.webp",
           "x": 1500,
           "y": 2000,
-          "width": 500,
-          "height": 400
+          "width": 498,
+          "height": 134
         },
         {
           "file": "stage-5-4-4.webp",
-          "x": 2000,
+          "x": 2023,
           "y": 2000,
-          "width": 500,
-          "height": 400
+          "width": 477,
+          "height": 171
         },
         {
           "file": "stage-5-4-5.webp",
           "x": 2500,
           "y": 2000,
           "width": 500,
-          "height": 400
+          "height": 176
         },
         {
           "file": "stage-5-4-6.webp",
           "x": 3000,
           "y": 2000,
-          "width": 456,
-          "height": 400
+          "width": 143,
+          "height": 213
         }
       ]
     },
@@ -812,122 +812,122 @@
       "tiles": [
         {
           "file": "stage-6-0-0.webp",
-          "x": 0,
-          "y": 0,
-          "width": 500,
-          "height": 500
+          "x": 93,
+          "y": 95,
+          "width": 407,
+          "height": 405
         },
         {
           "file": "stage-6-0-1.webp",
           "x": 500,
-          "y": 0,
+          "y": 105,
           "width": 500,
-          "height": 500
+          "height": 109
         },
         {
           "file": "stage-6-0-2.webp",
           "x": 1000,
-          "y": 0,
+          "y": 103,
           "width": 500,
-          "height": 500
+          "height": 111
         },
         {
           "file": "stage-6-0-3.webp",
           "x": 1500,
-          "y": 0,
+          "y": 106,
           "width": 500,
-          "height": 500
+          "height": 109
         },
         {
           "file": "stage-6-0-4.webp",
           "x": 2000,
-          "y": 0,
+          "y": 92,
           "width": 500,
-          "height": 500
+          "height": 123
         },
         {
           "file": "stage-6-0-5.webp",
           "x": 2500,
-          "y": 0,
+          "y": 94,
           "width": 500,
-          "height": 500
+          "height": 110
         },
         {
           "file": "stage-6-0-6.webp",
           "x": 3000,
-          "y": 0,
-          "width": 456,
-          "height": 500
+          "y": 93,
+          "width": 360,
+          "height": 407
         },
         {
           "file": "stage-6-1-0.webp",
-          "x": 0,
+          "x": 65,
           "y": 500,
-          "width": 500,
+          "width": 150,
           "height": 500
         },
         {
           "file": "stage-6-1-6.webp",
-          "x": 3000,
+          "x": 3242,
           "y": 500,
-          "width": 456,
+          "width": 148,
           "height": 500
         },
         {
           "file": "stage-6-2-0.webp",
-          "x": 0,
+          "x": 68,
           "y": 1000,
-          "width": 500,
+          "width": 432,
           "height": 500
         },
         {
           "file": "stage-6-2-1.webp",
           "x": 500,
-          "y": 1000,
+          "y": 1469,
           "width": 500,
-          "height": 500
+          "height": 31
         },
         {
           "file": "stage-6-2-2.webp",
           "x": 1000,
-          "y": 1000,
+          "y": 1469,
           "width": 500,
-          "height": 500
+          "height": 31
         },
         {
           "file": "stage-6-2-3.webp",
           "x": 1500,
-          "y": 1000,
+          "y": 1469,
           "width": 500,
-          "height": 500
+          "height": 31
         },
         {
           "file": "stage-6-2-4.webp",
           "x": 2000,
-          "y": 1000,
+          "y": 1469,
           "width": 500,
-          "height": 500
+          "height": 31
         },
         {
           "file": "stage-6-2-5.webp",
           "x": 2500,
-          "y": 1000,
+          "y": 1469,
           "width": 500,
-          "height": 500
+          "height": 31
         },
         {
           "file": "stage-6-2-6.webp",
           "x": 3000,
           "y": 1000,
-          "width": 456,
+          "width": 417,
           "height": 500
         },
         {
           "file": "stage-6-3-0.webp",
-          "x": 0,
+          "x": 86,
           "y": 1500,
-          "width": 500,
-          "height": 500
+          "width": 414,
+          "height": 467
         },
         {
           "file": "stage-6-3-1.webp",
@@ -968,50 +968,50 @@
           "file": "stage-6-3-6.webp",
           "x": 3000,
           "y": 1500,
-          "width": 456,
+          "width": 414,
           "height": 500
         },
         {
           "file": "stage-6-4-1.webp",
-          "x": 500,
+          "x": 846,
           "y": 2000,
-          "width": 500,
-          "height": 400
+          "width": 47,
+          "height": 21
         },
         {
           "file": "stage-6-4-2.webp",
-          "x": 1000,
+          "x": 1020,
           "y": 2000,
-          "width": 500,
-          "height": 400
+          "width": 480,
+          "height": 62
         },
         {
           "file": "stage-6-4-3.webp",
           "x": 1500,
           "y": 2000,
-          "width": 500,
-          "height": 400
+          "width": 498,
+          "height": 134
         },
         {
           "file": "stage-6-4-4.webp",
-          "x": 2000,
+          "x": 2023,
           "y": 2000,
-          "width": 500,
-          "height": 400
+          "width": 477,
+          "height": 171
         },
         {
           "file": "stage-6-4-5.webp",
           "x": 2500,
           "y": 2000,
           "width": 500,
-          "height": 400
+          "height": 176
         },
         {
           "file": "stage-6-4-6.webp",
           "x": 3000,
           "y": 2000,
-          "width": 456,
-          "height": 400
+          "width": 143,
+          "height": 213
         }
       ]
     },
@@ -1040,192 +1040,192 @@
       "tiles": [
         {
           "file": "stage-7-0-0.webp",
-          "x": 0,
-          "y": 0,
-          "width": 500,
-          "height": 500
+          "x": 80,
+          "y": 84,
+          "width": 420,
+          "height": 416
         },
         {
           "file": "stage-7-0-1.webp",
           "x": 500,
-          "y": 0,
+          "y": 96,
           "width": 500,
-          "height": 500
+          "height": 111
         },
         {
           "file": "stage-7-0-2.webp",
           "x": 1000,
-          "y": 0,
-          "width": 500,
-          "height": 500
+          "y": 98,
+          "width": 287,
+          "height": 402
         },
         {
           "file": "stage-7-1-0.webp",
-          "x": 0,
+          "x": 65,
           "y": 500,
-          "width": 500,
+          "width": 150,
           "height": 500
         },
         {
           "file": "stage-7-1-2.webp",
-          "x": 1000,
+          "x": 1140,
           "y": 500,
-          "width": 500,
-          "height": 500
+          "width": 360,
+          "height": 397
         },
         {
           "file": "stage-7-1-3.webp",
           "x": 1500,
-          "y": 500,
+          "y": 799,
           "width": 500,
-          "height": 500
+          "height": 109
         },
         {
           "file": "stage-7-1-4.webp",
           "x": 2000,
-          "y": 500,
+          "y": 785,
           "width": 500,
-          "height": 500
+          "height": 123
         },
         {
           "file": "stage-7-1-5.webp",
           "x": 2500,
-          "y": 500,
+          "y": 787,
           "width": 500,
-          "height": 500
+          "height": 110
         },
         {
           "file": "stage-7-1-6.webp",
           "x": 3000,
-          "y": 500,
-          "width": 456,
-          "height": 500
+          "y": 787,
+          "width": 348,
+          "height": 213
         },
         {
           "file": "stage-7-2-0.webp",
-          "x": 0,
+          "x": 71,
           "y": 1000,
-          "width": 500,
+          "width": 144,
           "height": 500
         },
         {
           "file": "stage-7-2-6.webp",
-          "x": 3000,
+          "x": 3240,
           "y": 1000,
-          "width": 456,
+          "width": 136,
           "height": 500
         },
         {
           "file": "stage-7-3-0.webp",
-          "x": 0,
+          "x": 64,
           "y": 1500,
-          "width": 500,
+          "width": 151,
           "height": 500
         },
         {
           "file": "stage-7-3-6.webp",
-          "x": 3000,
+          "x": 3241,
           "y": 1500,
-          "width": 456,
+          "width": 165,
           "height": 500
         },
         {
           "file": "stage-7-4-0.webp",
-          "x": 0,
+          "x": 74,
           "y": 2000,
-          "width": 500,
+          "width": 426,
           "height": 500
         },
         {
           "file": "stage-7-4-1.webp",
           "x": 500,
-          "y": 2000,
+          "y": 2162,
           "width": 500,
-          "height": 500
+          "height": 338
         },
         {
           "file": "stage-7-4-2.webp",
           "x": 1000,
-          "y": 2000,
+          "y": 2162,
           "width": 500,
-          "height": 500
+          "height": 338
         },
         {
           "file": "stage-7-4-3.webp",
           "x": 1500,
-          "y": 2000,
+          "y": 2162,
           "width": 500,
-          "height": 500
+          "height": 338
         },
         {
           "file": "stage-7-4-4.webp",
           "x": 2000,
-          "y": 2000,
+          "y": 2162,
           "width": 500,
-          "height": 500
+          "height": 338
         },
         {
           "file": "stage-7-4-5.webp",
           "x": 2500,
-          "y": 2000,
+          "y": 2162,
           "width": 500,
-          "height": 500
+          "height": 338
         },
         {
           "file": "stage-7-4-6.webp",
           "x": 3000,
           "y": 2000,
-          "width": 456,
+          "width": 417,
           "height": 500
         },
         {
           "file": "stage-7-5-0.webp",
-          "x": 0,
+          "x": 246,
           "y": 2500,
-          "width": 500,
-          "height": 500
+          "width": 254,
+          "height": 160
         },
         {
           "file": "stage-7-5-1.webp",
           "x": 500,
           "y": 2500,
           "width": 500,
-          "height": 500
+          "height": 214
         },
         {
           "file": "stage-7-5-2.webp",
           "x": 1000,
           "y": 2500,
           "width": 500,
-          "height": 500
+          "height": 255
         },
         {
           "file": "stage-7-5-3.webp",
           "x": 1500,
           "y": 2500,
           "width": 500,
-          "height": 500
+          "height": 327
         },
         {
           "file": "stage-7-5-4.webp",
           "x": 2000,
           "y": 2500,
           "width": 500,
-          "height": 500
+          "height": 364
         },
         {
           "file": "stage-7-5-5.webp",
           "x": 2500,
           "y": 2500,
           "width": 500,
-          "height": 500
+          "height": 369
         },
         {
           "file": "stage-7-5-6.webp",
           "x": 3000,
           "y": 2500,
-          "width": 456,
-          "height": 500
+          "width": 313,
+          "height": 406
         }
       ]
     },
@@ -1255,192 +1255,192 @@
       "tiles": [
         {
           "file": "stage-8-0-0.webp",
-          "x": 0,
-          "y": 0,
-          "width": 500,
-          "height": 500
+          "x": 79,
+          "y": 83,
+          "width": 421,
+          "height": 417
         },
         {
           "file": "stage-8-0-1.webp",
           "x": 500,
-          "y": 0,
+          "y": 96,
           "width": 500,
-          "height": 500
+          "height": 111
         },
         {
           "file": "stage-8-0-2.webp",
           "x": 1000,
-          "y": 0,
+          "y": 105,
           "width": 500,
-          "height": 500
+          "height": 109
         },
         {
           "file": "stage-8-0-3.webp",
           "x": 1500,
-          "y": 0,
+          "y": 107,
           "width": 500,
-          "height": 500
+          "height": 102
         },
         {
           "file": "stage-8-0-4.webp",
           "x": 2000,
-          "y": 0,
-          "width": 500,
-          "height": 500
+          "y": 100,
+          "width": 345,
+          "height": 400
         },
         {
           "file": "stage-8-1-0.webp",
-          "x": 0,
+          "x": 66,
           "y": 500,
-          "width": 500,
+          "width": 149,
           "height": 500
         },
         {
           "file": "stage-8-1-4.webp",
-          "x": 2000,
+          "x": 2185,
           "y": 500,
-          "width": 500,
-          "height": 500
+          "width": 315,
+          "height": 408
         },
         {
           "file": "stage-8-1-5.webp",
           "x": 2500,
-          "y": 500,
+          "y": 787,
           "width": 500,
-          "height": 500
+          "height": 110
         },
         {
           "file": "stage-8-1-6.webp",
           "x": 3000,
-          "y": 500,
-          "width": 456,
-          "height": 500
+          "y": 787,
+          "width": 348,
+          "height": 213
         },
         {
           "file": "stage-8-2-0.webp",
-          "x": 0,
+          "x": 69,
           "y": 1000,
-          "width": 500,
+          "width": 146,
           "height": 500
         },
         {
           "file": "stage-8-2-6.webp",
-          "x": 3000,
+          "x": 3240,
           "y": 1000,
-          "width": 456,
+          "width": 135,
           "height": 500
         },
         {
           "file": "stage-8-3-0.webp",
-          "x": 0,
+          "x": 65,
           "y": 1500,
-          "width": 500,
+          "width": 150,
           "height": 500
         },
         {
           "file": "stage-8-3-6.webp",
-          "x": 3000,
+          "x": 3241,
           "y": 1500,
-          "width": 456,
+          "width": 165,
           "height": 500
         },
         {
           "file": "stage-8-4-0.webp",
-          "x": 0,
+          "x": 74,
           "y": 2000,
-          "width": 500,
+          "width": 426,
           "height": 500
         },
         {
           "file": "stage-8-4-1.webp",
           "x": 500,
-          "y": 2000,
+          "y": 2162,
           "width": 500,
-          "height": 500
+          "height": 338
         },
         {
           "file": "stage-8-4-2.webp",
           "x": 1000,
-          "y": 2000,
+          "y": 2162,
           "width": 500,
-          "height": 500
+          "height": 338
         },
         {
           "file": "stage-8-4-3.webp",
           "x": 1500,
-          "y": 2000,
+          "y": 2162,
           "width": 500,
-          "height": 500
+          "height": 338
         },
         {
           "file": "stage-8-4-4.webp",
           "x": 2000,
-          "y": 2000,
+          "y": 2162,
           "width": 500,
-          "height": 500
+          "height": 338
         },
         {
           "file": "stage-8-4-5.webp",
           "x": 2500,
-          "y": 2000,
+          "y": 2162,
           "width": 500,
-          "height": 500
+          "height": 338
         },
         {
           "file": "stage-8-4-6.webp",
           "x": 3000,
           "y": 2000,
-          "width": 456,
+          "width": 417,
           "height": 500
         },
         {
           "file": "stage-8-5-0.webp",
-          "x": 0,
+          "x": 246,
           "y": 2500,
-          "width": 500,
-          "height": 500
+          "width": 254,
+          "height": 160
         },
         {
           "file": "stage-8-5-1.webp",
           "x": 500,
           "y": 2500,
           "width": 500,
-          "height": 500
+          "height": 214
         },
         {
           "file": "stage-8-5-2.webp",
           "x": 1000,
           "y": 2500,
           "width": 500,
-          "height": 500
+          "height": 255
         },
         {
           "file": "stage-8-5-3.webp",
           "x": 1500,
           "y": 2500,
           "width": 500,
-          "height": 500
+          "height": 327
         },
         {
           "file": "stage-8-5-4.webp",
           "x": 2000,
           "y": 2500,
           "width": 500,
-          "height": 500
+          "height": 364
         },
         {
           "file": "stage-8-5-5.webp",
           "x": 2500,
           "y": 2500,
           "width": 500,
-          "height": 500
+          "height": 369
         },
         {
           "file": "stage-8-5-6.webp",
           "x": 3000,
           "y": 2500,
-          "width": 456,
-          "height": 500
+          "width": 313,
+          "height": 406
         }
       ]
     },
@@ -1471,402 +1471,3674 @@
       "tiles": [
         {
           "file": "stage-9-0-0.webp",
-          "x": 0,
-          "y": 0,
-          "width": 500,
-          "height": 500
+          "x": 79,
+          "y": 83,
+          "width": 421,
+          "height": 417
         },
         {
           "file": "stage-9-0-1.webp",
           "x": 500,
-          "y": 0,
+          "y": 96,
           "width": 500,
-          "height": 500
+          "height": 111
         },
         {
           "file": "stage-9-0-2.webp",
           "x": 1000,
-          "y": 0,
+          "y": 105,
           "width": 500,
-          "height": 500
+          "height": 109
         },
         {
           "file": "stage-9-0-3.webp",
           "x": 1500,
-          "y": 0,
+          "y": 107,
           "width": 500,
-          "height": 500
+          "height": 102
         },
         {
           "file": "stage-9-0-4.webp",
           "x": 2000,
-          "y": 0,
+          "y": 112,
           "width": 500,
-          "height": 500
+          "height": 103
         },
         {
           "file": "stage-9-0-5.webp",
           "x": 2500,
-          "y": 0,
+          "y": 110,
           "width": 500,
-          "height": 500
+          "height": 106
         },
         {
           "file": "stage-9-0-6.webp",
           "x": 3000,
-          "y": 0,
-          "width": 456,
-          "height": 500
+          "y": 81,
+          "width": 375,
+          "height": 419
         },
         {
           "file": "stage-9-1-0.webp",
-          "x": 0,
+          "x": 66,
           "y": 500,
-          "width": 500,
+          "width": 149,
           "height": 500
         },
         {
           "file": "stage-9-1-6.webp",
-          "x": 3000,
+          "x": 3239,
           "y": 500,
-          "width": 456,
+          "width": 152,
           "height": 500
         },
         {
           "file": "stage-9-2-0.webp",
-          "x": 0,
+          "x": 70,
           "y": 1000,
-          "width": 500,
+          "width": 145,
           "height": 500
         },
         {
           "file": "stage-9-2-6.webp",
-          "x": 3000,
+          "x": 3240,
           "y": 1000,
-          "width": 456,
+          "width": 150,
           "height": 500
         },
         {
           "file": "stage-9-3-0.webp",
-          "x": 0,
+          "x": 64,
           "y": 1500,
-          "width": 500,
+          "width": 151,
           "height": 500
         },
         {
           "file": "stage-9-3-6.webp",
-          "x": 3000,
+          "x": 3241,
           "y": 1500,
-          "width": 456,
+          "width": 165,
           "height": 500
         },
         {
           "file": "stage-9-4-0.webp",
-          "x": 0,
+          "x": 74,
           "y": 2000,
-          "width": 500,
+          "width": 426,
           "height": 500
         },
         {
           "file": "stage-9-4-1.webp",
           "x": 500,
-          "y": 2000,
+          "y": 2162,
           "width": 500,
-          "height": 500
+          "height": 338
         },
         {
           "file": "stage-9-4-2.webp",
           "x": 1000,
-          "y": 2000,
+          "y": 2162,
           "width": 500,
-          "height": 500
+          "height": 338
         },
         {
           "file": "stage-9-4-3.webp",
           "x": 1500,
-          "y": 2000,
+          "y": 2162,
           "width": 500,
-          "height": 500
+          "height": 338
         },
         {
           "file": "stage-9-4-4.webp",
           "x": 2000,
-          "y": 2000,
+          "y": 2162,
           "width": 500,
-          "height": 500
+          "height": 338
         },
         {
           "file": "stage-9-4-5.webp",
           "x": 2500,
-          "y": 2000,
+          "y": 2162,
           "width": 500,
-          "height": 500
+          "height": 338
         },
         {
           "file": "stage-9-4-6.webp",
           "x": 3000,
           "y": 2000,
-          "width": 456,
+          "width": 417,
           "height": 500
         },
         {
           "file": "stage-9-5-0.webp",
-          "x": 0,
+          "x": 246,
           "y": 2500,
-          "width": 500,
-          "height": 500
+          "width": 254,
+          "height": 160
         },
         {
           "file": "stage-9-5-1.webp",
           "x": 500,
           "y": 2500,
           "width": 500,
-          "height": 500
+          "height": 214
         },
         {
           "file": "stage-9-5-2.webp",
           "x": 1000,
           "y": 2500,
           "width": 500,
-          "height": 500
+          "height": 255
         },
         {
           "file": "stage-9-5-3.webp",
           "x": 1500,
           "y": 2500,
           "width": 500,
-          "height": 500
+          "height": 327
         },
         {
           "file": "stage-9-5-4.webp",
           "x": 2000,
           "y": 2500,
           "width": 500,
-          "height": 500
+          "height": 364
         },
         {
           "file": "stage-9-5-5.webp",
           "x": 2500,
           "y": 2500,
           "width": 500,
-          "height": 500
+          "height": 369
         },
         {
           "file": "stage-9-5-6.webp",
           "x": 3000,
           "y": 2500,
-          "width": 456,
+          "width": 313,
+          "height": 406
+        }
+      ]
+    },
+    {
+      "stage": 10,
+      "parcels": [
+        "southwest",
+        "south",
+        "west",
+        "center",
+        "southeast",
+        "east",
+        "northwest",
+        "north",
+        "northeast",
+        "east-south"
+      ],
+      "canvas": {
+        "left": 24,
+        "top": 219.36,
+        "width": 3008,
+        "height": 2061.28
+      },
+      "size": [
+        4512,
+        3092
+      ],
+      "source": "bd39ace06af4f44a03dfbd95f4a4cabb323724c0",
+      "tiles": [
+        {
+          "file": "stage-10-0-0.webp",
+          "x": 79,
+          "y": 83,
+          "width": 421,
+          "height": 417
+        },
+        {
+          "file": "stage-10-0-1.webp",
+          "x": 500,
+          "y": 96,
+          "width": 500,
+          "height": 111
+        },
+        {
+          "file": "stage-10-0-2.webp",
+          "x": 1000,
+          "y": 105,
+          "width": 500,
+          "height": 109
+        },
+        {
+          "file": "stage-10-0-3.webp",
+          "x": 1500,
+          "y": 107,
+          "width": 500,
+          "height": 102
+        },
+        {
+          "file": "stage-10-0-4.webp",
+          "x": 2000,
+          "y": 112,
+          "width": 500,
+          "height": 103
+        },
+        {
+          "file": "stage-10-0-5.webp",
+          "x": 2500,
+          "y": 110,
+          "width": 500,
+          "height": 106
+        },
+        {
+          "file": "stage-10-0-6.webp",
+          "x": 3000,
+          "y": 81,
+          "width": 375,
+          "height": 419
+        },
+        {
+          "file": "stage-10-1-0.webp",
+          "x": 66,
+          "y": 500,
+          "width": 149,
           "height": 500
+        },
+        {
+          "file": "stage-10-1-6.webp",
+          "x": 3239,
+          "y": 500,
+          "width": 152,
+          "height": 500
+        },
+        {
+          "file": "stage-10-2-0.webp",
+          "x": 70,
+          "y": 1000,
+          "width": 145,
+          "height": 500
+        },
+        {
+          "file": "stage-10-2-6.webp",
+          "x": 3240,
+          "y": 1000,
+          "width": 260,
+          "height": 500
+        },
+        {
+          "file": "stage-10-2-7.webp",
+          "x": 3500,
+          "y": 1411,
+          "width": 500,
+          "height": 89
+        },
+        {
+          "file": "stage-10-2-8.webp",
+          "x": 4000,
+          "y": 1391,
+          "width": 394,
+          "height": 109
+        },
+        {
+          "file": "stage-10-3-0.webp",
+          "x": 64,
+          "y": 1500,
+          "width": 151,
+          "height": 500
+        },
+        {
+          "file": "stage-10-3-6.webp",
+          "x": 3252,
+          "y": 1500,
+          "width": 248,
+          "height": 89
+        },
+        {
+          "file": "stage-10-3-7.webp",
+          "x": 3500,
+          "y": 1500,
+          "width": 500,
+          "height": 89
+        },
+        {
+          "file": "stage-10-3-8.webp",
+          "x": 4000,
+          "y": 1500,
+          "width": 462,
+          "height": 500
+        },
+        {
+          "file": "stage-10-4-0.webp",
+          "x": 74,
+          "y": 2000,
+          "width": 426,
+          "height": 500
+        },
+        {
+          "file": "stage-10-4-1.webp",
+          "x": 500,
+          "y": 2162,
+          "width": 500,
+          "height": 338
+        },
+        {
+          "file": "stage-10-4-2.webp",
+          "x": 1000,
+          "y": 2162,
+          "width": 500,
+          "height": 338
+        },
+        {
+          "file": "stage-10-4-3.webp",
+          "x": 1500,
+          "y": 2162,
+          "width": 500,
+          "height": 338
+        },
+        {
+          "file": "stage-10-4-4.webp",
+          "x": 2000,
+          "y": 2162,
+          "width": 500,
+          "height": 338
+        },
+        {
+          "file": "stage-10-4-5.webp",
+          "x": 2500,
+          "y": 2162,
+          "width": 500,
+          "height": 338
+        },
+        {
+          "file": "stage-10-4-6.webp",
+          "x": 3000,
+          "y": 2162,
+          "width": 500,
+          "height": 338
+        },
+        {
+          "file": "stage-10-4-7.webp",
+          "x": 3500,
+          "y": 2162,
+          "width": 500,
+          "height": 338
+        },
+        {
+          "file": "stage-10-4-8.webp",
+          "x": 4000,
+          "y": 2000,
+          "width": 473,
+          "height": 500
+        },
+        {
+          "file": "stage-10-5-0.webp",
+          "x": 246,
+          "y": 2500,
+          "width": 254,
+          "height": 160
+        },
+        {
+          "file": "stage-10-5-1.webp",
+          "x": 500,
+          "y": 2500,
+          "width": 500,
+          "height": 214
+        },
+        {
+          "file": "stage-10-5-2.webp",
+          "x": 1000,
+          "y": 2500,
+          "width": 500,
+          "height": 255
+        },
+        {
+          "file": "stage-10-5-3.webp",
+          "x": 1500,
+          "y": 2500,
+          "width": 500,
+          "height": 327
+        },
+        {
+          "file": "stage-10-5-4.webp",
+          "x": 2000,
+          "y": 2500,
+          "width": 500,
+          "height": 300
+        },
+        {
+          "file": "stage-10-5-5.webp",
+          "x": 2500,
+          "y": 2500,
+          "width": 500,
+          "height": 327
+        },
+        {
+          "file": "stage-10-5-6.webp",
+          "x": 3000,
+          "y": 2500,
+          "width": 500,
+          "height": 353
+        },
+        {
+          "file": "stage-10-5-7.webp",
+          "x": 3500,
+          "y": 2500,
+          "width": 500,
+          "height": 368
+        },
+        {
+          "file": "stage-10-5-8.webp",
+          "x": 4000,
+          "y": 2500,
+          "width": 368,
+          "height": 405
+        }
+      ]
+    },
+    {
+      "stage": 11,
+      "parcels": [
+        "southwest",
+        "south",
+        "west",
+        "center",
+        "southeast",
+        "east",
+        "northwest",
+        "north",
+        "northeast",
+        "east-south",
+        "east-center"
+      ],
+      "canvas": {
+        "left": 24,
+        "top": 219.36,
+        "width": 3008,
+        "height": 2061.28
+      },
+      "size": [
+        4512,
+        3092
+      ],
+      "source": "3d585c650dcf6950a9dba59e3b672f45d347362d",
+      "tiles": [
+        {
+          "file": "stage-11-0-0.webp",
+          "x": 79,
+          "y": 83,
+          "width": 421,
+          "height": 417
+        },
+        {
+          "file": "stage-11-0-1.webp",
+          "x": 500,
+          "y": 96,
+          "width": 500,
+          "height": 111
+        },
+        {
+          "file": "stage-11-0-2.webp",
+          "x": 1000,
+          "y": 105,
+          "width": 500,
+          "height": 109
+        },
+        {
+          "file": "stage-11-0-3.webp",
+          "x": 1500,
+          "y": 107,
+          "width": 500,
+          "height": 102
+        },
+        {
+          "file": "stage-11-0-4.webp",
+          "x": 2000,
+          "y": 112,
+          "width": 500,
+          "height": 103
+        },
+        {
+          "file": "stage-11-0-5.webp",
+          "x": 2500,
+          "y": 110,
+          "width": 500,
+          "height": 106
+        },
+        {
+          "file": "stage-11-0-6.webp",
+          "x": 3000,
+          "y": 81,
+          "width": 375,
+          "height": 419
+        },
+        {
+          "file": "stage-11-1-0.webp",
+          "x": 66,
+          "y": 500,
+          "width": 149,
+          "height": 500
+        },
+        {
+          "file": "stage-11-1-6.webp",
+          "x": 3241,
+          "y": 500,
+          "width": 259,
+          "height": 408
+        },
+        {
+          "file": "stage-11-1-7.webp",
+          "x": 3500,
+          "y": 787,
+          "width": 500,
+          "height": 121
+        },
+        {
+          "file": "stage-11-1-8.webp",
+          "x": 4000,
+          "y": 787,
+          "width": 404,
+          "height": 213
+        },
+        {
+          "file": "stage-11-2-0.webp",
+          "x": 70,
+          "y": 1000,
+          "width": 145,
+          "height": 500
+        },
+        {
+          "file": "stage-11-2-8.webp",
+          "x": 4296,
+          "y": 1000,
+          "width": 136,
+          "height": 500
+        },
+        {
+          "file": "stage-11-3-0.webp",
+          "x": 64,
+          "y": 1500,
+          "width": 151,
+          "height": 500
+        },
+        {
+          "file": "stage-11-3-8.webp",
+          "x": 4297,
+          "y": 1500,
+          "width": 165,
+          "height": 500
+        },
+        {
+          "file": "stage-11-4-0.webp",
+          "x": 74,
+          "y": 2000,
+          "width": 426,
+          "height": 500
+        },
+        {
+          "file": "stage-11-4-1.webp",
+          "x": 500,
+          "y": 2162,
+          "width": 500,
+          "height": 338
+        },
+        {
+          "file": "stage-11-4-2.webp",
+          "x": 1000,
+          "y": 2162,
+          "width": 500,
+          "height": 338
+        },
+        {
+          "file": "stage-11-4-3.webp",
+          "x": 1500,
+          "y": 2162,
+          "width": 500,
+          "height": 338
+        },
+        {
+          "file": "stage-11-4-4.webp",
+          "x": 2000,
+          "y": 2162,
+          "width": 500,
+          "height": 338
+        },
+        {
+          "file": "stage-11-4-5.webp",
+          "x": 2500,
+          "y": 2162,
+          "width": 500,
+          "height": 338
+        },
+        {
+          "file": "stage-11-4-6.webp",
+          "x": 3000,
+          "y": 2162,
+          "width": 500,
+          "height": 338
+        },
+        {
+          "file": "stage-11-4-7.webp",
+          "x": 3500,
+          "y": 2162,
+          "width": 500,
+          "height": 338
+        },
+        {
+          "file": "stage-11-4-8.webp",
+          "x": 4000,
+          "y": 2000,
+          "width": 473,
+          "height": 500
+        },
+        {
+          "file": "stage-11-5-0.webp",
+          "x": 246,
+          "y": 2500,
+          "width": 254,
+          "height": 160
+        },
+        {
+          "file": "stage-11-5-1.webp",
+          "x": 500,
+          "y": 2500,
+          "width": 500,
+          "height": 214
+        },
+        {
+          "file": "stage-11-5-2.webp",
+          "x": 1000,
+          "y": 2500,
+          "width": 500,
+          "height": 255
+        },
+        {
+          "file": "stage-11-5-3.webp",
+          "x": 1500,
+          "y": 2500,
+          "width": 500,
+          "height": 327
+        },
+        {
+          "file": "stage-11-5-4.webp",
+          "x": 2000,
+          "y": 2500,
+          "width": 500,
+          "height": 300
+        },
+        {
+          "file": "stage-11-5-5.webp",
+          "x": 2500,
+          "y": 2500,
+          "width": 500,
+          "height": 327
+        },
+        {
+          "file": "stage-11-5-6.webp",
+          "x": 3000,
+          "y": 2500,
+          "width": 500,
+          "height": 354
+        },
+        {
+          "file": "stage-11-5-7.webp",
+          "x": 3500,
+          "y": 2500,
+          "width": 500,
+          "height": 369
+        },
+        {
+          "file": "stage-11-5-8.webp",
+          "x": 4000,
+          "y": 2500,
+          "width": 369,
+          "height": 406
+        }
+      ]
+    },
+    {
+      "stage": 12,
+      "parcels": [
+        "southwest",
+        "south",
+        "west",
+        "center",
+        "southeast",
+        "east",
+        "northwest",
+        "north",
+        "northeast",
+        "east-south",
+        "east-center",
+        "east-north"
+      ],
+      "canvas": {
+        "left": 24,
+        "top": 219.36,
+        "width": 3008,
+        "height": 2061.28
+      },
+      "size": [
+        4512,
+        3092
+      ],
+      "source": "f236b354907613da10c1daa7351c5403ccbb0992",
+      "tiles": [
+        {
+          "file": "stage-12-0-0.webp",
+          "x": 79,
+          "y": 83,
+          "width": 421,
+          "height": 417
+        },
+        {
+          "file": "stage-12-0-1.webp",
+          "x": 500,
+          "y": 96,
+          "width": 500,
+          "height": 111
+        },
+        {
+          "file": "stage-12-0-2.webp",
+          "x": 1000,
+          "y": 105,
+          "width": 500,
+          "height": 109
+        },
+        {
+          "file": "stage-12-0-3.webp",
+          "x": 1500,
+          "y": 107,
+          "width": 500,
+          "height": 102
+        },
+        {
+          "file": "stage-12-0-4.webp",
+          "x": 2000,
+          "y": 119,
+          "width": 500,
+          "height": 96
+        },
+        {
+          "file": "stage-12-0-5.webp",
+          "x": 2500,
+          "y": 105,
+          "width": 500,
+          "height": 104
+        },
+        {
+          "file": "stage-12-0-6.webp",
+          "x": 3000,
+          "y": 117,
+          "width": 500,
+          "height": 98
+        },
+        {
+          "file": "stage-12-0-7.webp",
+          "x": 3500,
+          "y": 110,
+          "width": 500,
+          "height": 106
+        },
+        {
+          "file": "stage-12-0-8.webp",
+          "x": 4000,
+          "y": 81,
+          "width": 431,
+          "height": 419
+        },
+        {
+          "file": "stage-12-1-0.webp",
+          "x": 66,
+          "y": 500,
+          "width": 149,
+          "height": 500
+        },
+        {
+          "file": "stage-12-1-8.webp",
+          "x": 4295,
+          "y": 500,
+          "width": 152,
+          "height": 500
+        },
+        {
+          "file": "stage-12-2-0.webp",
+          "x": 70,
+          "y": 1000,
+          "width": 145,
+          "height": 500
+        },
+        {
+          "file": "stage-12-2-8.webp",
+          "x": 4296,
+          "y": 1000,
+          "width": 150,
+          "height": 500
+        },
+        {
+          "file": "stage-12-3-0.webp",
+          "x": 64,
+          "y": 1500,
+          "width": 151,
+          "height": 500
+        },
+        {
+          "file": "stage-12-3-8.webp",
+          "x": 4297,
+          "y": 1500,
+          "width": 165,
+          "height": 500
+        },
+        {
+          "file": "stage-12-4-0.webp",
+          "x": 74,
+          "y": 2000,
+          "width": 426,
+          "height": 500
+        },
+        {
+          "file": "stage-12-4-1.webp",
+          "x": 500,
+          "y": 2162,
+          "width": 500,
+          "height": 338
+        },
+        {
+          "file": "stage-12-4-2.webp",
+          "x": 1000,
+          "y": 2162,
+          "width": 500,
+          "height": 338
+        },
+        {
+          "file": "stage-12-4-3.webp",
+          "x": 1500,
+          "y": 2162,
+          "width": 500,
+          "height": 338
+        },
+        {
+          "file": "stage-12-4-4.webp",
+          "x": 2000,
+          "y": 2162,
+          "width": 500,
+          "height": 338
+        },
+        {
+          "file": "stage-12-4-5.webp",
+          "x": 2500,
+          "y": 2162,
+          "width": 500,
+          "height": 338
+        },
+        {
+          "file": "stage-12-4-6.webp",
+          "x": 3000,
+          "y": 2162,
+          "width": 500,
+          "height": 338
+        },
+        {
+          "file": "stage-12-4-7.webp",
+          "x": 3500,
+          "y": 2162,
+          "width": 500,
+          "height": 338
+        },
+        {
+          "file": "stage-12-4-8.webp",
+          "x": 4000,
+          "y": 2000,
+          "width": 473,
+          "height": 500
+        },
+        {
+          "file": "stage-12-5-0.webp",
+          "x": 246,
+          "y": 2500,
+          "width": 254,
+          "height": 160
+        },
+        {
+          "file": "stage-12-5-1.webp",
+          "x": 500,
+          "y": 2500,
+          "width": 500,
+          "height": 214
+        },
+        {
+          "file": "stage-12-5-2.webp",
+          "x": 1000,
+          "y": 2500,
+          "width": 500,
+          "height": 255
+        },
+        {
+          "file": "stage-12-5-3.webp",
+          "x": 1500,
+          "y": 2500,
+          "width": 500,
+          "height": 327
+        },
+        {
+          "file": "stage-12-5-4.webp",
+          "x": 2000,
+          "y": 2500,
+          "width": 500,
+          "height": 300
+        },
+        {
+          "file": "stage-12-5-5.webp",
+          "x": 2500,
+          "y": 2500,
+          "width": 500,
+          "height": 327
+        },
+        {
+          "file": "stage-12-5-6.webp",
+          "x": 3000,
+          "y": 2500,
+          "width": 500,
+          "height": 354
+        },
+        {
+          "file": "stage-12-5-7.webp",
+          "x": 3500,
+          "y": 2500,
+          "width": 500,
+          "height": 369
+        },
+        {
+          "file": "stage-12-5-8.webp",
+          "x": 4000,
+          "y": 2500,
+          "width": 369,
+          "height": 406
+        }
+      ]
+    },
+    {
+      "stage": 13,
+      "parcels": [
+        "southwest",
+        "south",
+        "west",
+        "center",
+        "southeast",
+        "east",
+        "northwest",
+        "north",
+        "northeast",
+        "east-south",
+        "east-center",
+        "east-north",
+        "far-northwest"
+      ],
+      "canvas": {
+        "left": 24,
+        "top": -242.4,
+        "width": 3008,
+        "height": 2523.04
+      },
+      "size": [
+        4512,
+        3785
+      ],
+      "source": "683afa6249922cd4940d86b3e5b0a6a0c7cdc198",
+      "tiles": [
+        {
+          "file": "stage-13-0-0.webp",
+          "x": 80,
+          "y": 84,
+          "width": 420,
+          "height": 416
+        },
+        {
+          "file": "stage-13-0-1.webp",
+          "x": 500,
+          "y": 96,
+          "width": 500,
+          "height": 111
+        },
+        {
+          "file": "stage-13-0-2.webp",
+          "x": 1000,
+          "y": 98,
+          "width": 287,
+          "height": 402
+        },
+        {
+          "file": "stage-13-1-0.webp",
+          "x": 65,
+          "y": 500,
+          "width": 150,
+          "height": 500
+        },
+        {
+          "file": "stage-13-1-2.webp",
+          "x": 1140,
+          "y": 500,
+          "width": 360,
+          "height": 397
+        },
+        {
+          "file": "stage-13-1-3.webp",
+          "x": 1500,
+          "y": 799,
+          "width": 500,
+          "height": 109
+        },
+        {
+          "file": "stage-13-1-4.webp",
+          "x": 2000,
+          "y": 785,
+          "width": 500,
+          "height": 122
+        },
+        {
+          "file": "stage-13-1-5.webp",
+          "x": 2500,
+          "y": 798,
+          "width": 500,
+          "height": 104
+        },
+        {
+          "file": "stage-13-1-6.webp",
+          "x": 3000,
+          "y": 810,
+          "width": 500,
+          "height": 98
+        },
+        {
+          "file": "stage-13-1-7.webp",
+          "x": 3500,
+          "y": 803,
+          "width": 500,
+          "height": 106
+        },
+        {
+          "file": "stage-13-1-8.webp",
+          "x": 4000,
+          "y": 774,
+          "width": 413,
+          "height": 226
+        },
+        {
+          "file": "stage-13-2-0.webp",
+          "x": 71,
+          "y": 1000,
+          "width": 144,
+          "height": 500
+        },
+        {
+          "file": "stage-13-2-8.webp",
+          "x": 4297,
+          "y": 1000,
+          "width": 142,
+          "height": 500
+        },
+        {
+          "file": "stage-13-3-0.webp",
+          "x": 66,
+          "y": 1500,
+          "width": 149,
+          "height": 500
+        },
+        {
+          "file": "stage-13-3-8.webp",
+          "x": 4295,
+          "y": 1500,
+          "width": 152,
+          "height": 500
+        },
+        {
+          "file": "stage-13-4-0.webp",
+          "x": 64,
+          "y": 2000,
+          "width": 151,
+          "height": 500
+        },
+        {
+          "file": "stage-13-4-8.webp",
+          "x": 4297,
+          "y": 2000,
+          "width": 149,
+          "height": 500
+        },
+        {
+          "file": "stage-13-5-0.webp",
+          "x": 74,
+          "y": 2500,
+          "width": 426,
+          "height": 500
+        },
+        {
+          "file": "stage-13-5-1.webp",
+          "x": 500,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-13-5-2.webp",
+          "x": 1000,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-13-5-3.webp",
+          "x": 1500,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-13-5-4.webp",
+          "x": 2000,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-13-5-5.webp",
+          "x": 2500,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-13-5-6.webp",
+          "x": 3000,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-13-5-7.webp",
+          "x": 3500,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-13-5-8.webp",
+          "x": 4000,
+          "y": 2500,
+          "width": 473,
+          "height": 500
+        },
+        {
+          "file": "stage-13-6-0.webp",
+          "x": 109,
+          "y": 3000,
+          "width": 391,
+          "height": 353
+        },
+        {
+          "file": "stage-13-6-1.webp",
+          "x": 500,
+          "y": 3000,
+          "width": 500,
+          "height": 407
+        },
+        {
+          "file": "stage-13-6-2.webp",
+          "x": 1000,
+          "y": 3000,
+          "width": 500,
+          "height": 448
+        },
+        {
+          "file": "stage-13-6-3.webp",
+          "x": 1500,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-13-6-4.webp",
+          "x": 2000,
+          "y": 3000,
+          "width": 500,
+          "height": 493
+        },
+        {
+          "file": "stage-13-6-5.webp",
+          "x": 2500,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-13-6-6.webp",
+          "x": 3000,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-13-6-7.webp",
+          "x": 3500,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-13-6-8.webp",
+          "x": 4000,
+          "y": 3000,
+          "width": 453,
+          "height": 500
+        },
+        {
+          "file": "stage-13-7-3.webp",
+          "x": 1855,
+          "y": 3500,
+          "width": 47,
+          "height": 20
+        },
+        {
+          "file": "stage-13-7-5.webp",
+          "x": 2911,
+          "y": 3500,
+          "width": 47,
+          "height": 20
+        },
+        {
+          "file": "stage-13-7-6.webp",
+          "x": 3491,
+          "y": 3500,
+          "width": 9,
+          "height": 47
+        },
+        {
+          "file": "stage-13-7-7.webp",
+          "x": 3500,
+          "y": 3500,
+          "width": 390,
+          "height": 62
+        },
+        {
+          "file": "stage-13-7-8.webp",
+          "x": 4057,
+          "y": 3500,
+          "width": 84,
+          "height": 99
+        }
+      ]
+    },
+    {
+      "stage": 14,
+      "parcels": [
+        "southwest",
+        "south",
+        "west",
+        "center",
+        "southeast",
+        "east",
+        "northwest",
+        "north",
+        "northeast",
+        "east-south",
+        "east-center",
+        "east-north",
+        "far-northwest",
+        "far-north"
+      ],
+      "canvas": {
+        "left": 24,
+        "top": -242.4,
+        "width": 3008,
+        "height": 2523.04
+      },
+      "size": [
+        4512,
+        3785
+      ],
+      "source": "8f3109b22f06b0ee7744efe76a5fbdb6f6d0e3d9",
+      "tiles": [
+        {
+          "file": "stage-14-0-0.webp",
+          "x": 79,
+          "y": 83,
+          "width": 421,
+          "height": 417
+        },
+        {
+          "file": "stage-14-0-1.webp",
+          "x": 500,
+          "y": 96,
+          "width": 500,
+          "height": 111
+        },
+        {
+          "file": "stage-14-0-2.webp",
+          "x": 1000,
+          "y": 110,
+          "width": 500,
+          "height": 104
+        },
+        {
+          "file": "stage-14-0-3.webp",
+          "x": 1500,
+          "y": 108,
+          "width": 500,
+          "height": 108
+        },
+        {
+          "file": "stage-14-0-4.webp",
+          "x": 2000,
+          "y": 81,
+          "width": 319,
+          "height": 419
+        },
+        {
+          "file": "stage-14-1-0.webp",
+          "x": 66,
+          "y": 500,
+          "width": 149,
+          "height": 500
+        },
+        {
+          "file": "stage-14-1-4.webp",
+          "x": 2189,
+          "y": 500,
+          "width": 311,
+          "height": 397
+        },
+        {
+          "file": "stage-14-1-5.webp",
+          "x": 2500,
+          "y": 799,
+          "width": 500,
+          "height": 109
+        },
+        {
+          "file": "stage-14-1-6.webp",
+          "x": 3000,
+          "y": 785,
+          "width": 500,
+          "height": 123
+        },
+        {
+          "file": "stage-14-1-7.webp",
+          "x": 3500,
+          "y": 787,
+          "width": 500,
+          "height": 121
+        },
+        {
+          "file": "stage-14-1-8.webp",
+          "x": 4000,
+          "y": 787,
+          "width": 404,
+          "height": 213
+        },
+        {
+          "file": "stage-14-2-0.webp",
+          "x": 70,
+          "y": 1000,
+          "width": 145,
+          "height": 500
+        },
+        {
+          "file": "stage-14-2-8.webp",
+          "x": 4296,
+          "y": 1000,
+          "width": 140,
+          "height": 500
+        },
+        {
+          "file": "stage-14-3-0.webp",
+          "x": 66,
+          "y": 1500,
+          "width": 149,
+          "height": 500
+        },
+        {
+          "file": "stage-14-3-8.webp",
+          "x": 4295,
+          "y": 1500,
+          "width": 152,
+          "height": 500
+        },
+        {
+          "file": "stage-14-4-0.webp",
+          "x": 64,
+          "y": 2000,
+          "width": 151,
+          "height": 500
+        },
+        {
+          "file": "stage-14-4-8.webp",
+          "x": 4297,
+          "y": 2000,
+          "width": 149,
+          "height": 500
+        },
+        {
+          "file": "stage-14-5-0.webp",
+          "x": 74,
+          "y": 2500,
+          "width": 426,
+          "height": 500
+        },
+        {
+          "file": "stage-14-5-1.webp",
+          "x": 500,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-14-5-2.webp",
+          "x": 1000,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-14-5-3.webp",
+          "x": 1500,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-14-5-4.webp",
+          "x": 2000,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-14-5-5.webp",
+          "x": 2500,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-14-5-6.webp",
+          "x": 3000,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-14-5-7.webp",
+          "x": 3500,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-14-5-8.webp",
+          "x": 4000,
+          "y": 2500,
+          "width": 473,
+          "height": 500
+        },
+        {
+          "file": "stage-14-6-0.webp",
+          "x": 109,
+          "y": 3000,
+          "width": 391,
+          "height": 353
+        },
+        {
+          "file": "stage-14-6-1.webp",
+          "x": 500,
+          "y": 3000,
+          "width": 500,
+          "height": 407
+        },
+        {
+          "file": "stage-14-6-2.webp",
+          "x": 1000,
+          "y": 3000,
+          "width": 500,
+          "height": 448
+        },
+        {
+          "file": "stage-14-6-3.webp",
+          "x": 1500,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-14-6-4.webp",
+          "x": 2000,
+          "y": 3000,
+          "width": 500,
+          "height": 493
+        },
+        {
+          "file": "stage-14-6-5.webp",
+          "x": 2500,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-14-6-6.webp",
+          "x": 3000,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-14-6-7.webp",
+          "x": 3500,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-14-6-8.webp",
+          "x": 4000,
+          "y": 3000,
+          "width": 453,
+          "height": 500
+        },
+        {
+          "file": "stage-14-7-3.webp",
+          "x": 1855,
+          "y": 3500,
+          "width": 47,
+          "height": 20
+        },
+        {
+          "file": "stage-14-7-5.webp",
+          "x": 2911,
+          "y": 3500,
+          "width": 47,
+          "height": 20
+        },
+        {
+          "file": "stage-14-7-6.webp",
+          "x": 3491,
+          "y": 3500,
+          "width": 9,
+          "height": 47
+        },
+        {
+          "file": "stage-14-7-7.webp",
+          "x": 3500,
+          "y": 3500,
+          "width": 390,
+          "height": 62
+        },
+        {
+          "file": "stage-14-7-8.webp",
+          "x": 4057,
+          "y": 3500,
+          "width": 84,
+          "height": 99
+        }
+      ]
+    },
+    {
+      "stage": 15,
+      "parcels": [
+        "southwest",
+        "south",
+        "west",
+        "center",
+        "southeast",
+        "east",
+        "northwest",
+        "north",
+        "northeast",
+        "east-south",
+        "east-center",
+        "east-north",
+        "far-northwest",
+        "far-north",
+        "far-northeast"
+      ],
+      "canvas": {
+        "left": 24,
+        "top": -242.4,
+        "width": 3008,
+        "height": 2523.04
+      },
+      "size": [
+        4512,
+        3785
+      ],
+      "source": "48d9052b9245697426d723f2859ce76e062cfc40",
+      "tiles": [
+        {
+          "file": "stage-15-0-0.webp",
+          "x": 79,
+          "y": 83,
+          "width": 421,
+          "height": 417
+        },
+        {
+          "file": "stage-15-0-1.webp",
+          "x": 500,
+          "y": 96,
+          "width": 500,
+          "height": 111
+        },
+        {
+          "file": "stage-15-0-2.webp",
+          "x": 1000,
+          "y": 105,
+          "width": 500,
+          "height": 109
+        },
+        {
+          "file": "stage-15-0-3.webp",
+          "x": 1500,
+          "y": 107,
+          "width": 500,
+          "height": 102
+        },
+        {
+          "file": "stage-15-0-4.webp",
+          "x": 2000,
+          "y": 112,
+          "width": 500,
+          "height": 103
+        },
+        {
+          "file": "stage-15-0-5.webp",
+          "x": 2500,
+          "y": 110,
+          "width": 500,
+          "height": 106
+        },
+        {
+          "file": "stage-15-0-6.webp",
+          "x": 3000,
+          "y": 81,
+          "width": 375,
+          "height": 419
+        },
+        {
+          "file": "stage-15-1-0.webp",
+          "x": 66,
+          "y": 500,
+          "width": 149,
+          "height": 500
+        },
+        {
+          "file": "stage-15-1-6.webp",
+          "x": 3241,
+          "y": 500,
+          "width": 259,
+          "height": 408
+        },
+        {
+          "file": "stage-15-1-7.webp",
+          "x": 3500,
+          "y": 787,
+          "width": 500,
+          "height": 121
+        },
+        {
+          "file": "stage-15-1-8.webp",
+          "x": 4000,
+          "y": 787,
+          "width": 404,
+          "height": 213
+        },
+        {
+          "file": "stage-15-2-0.webp",
+          "x": 70,
+          "y": 1000,
+          "width": 145,
+          "height": 500
+        },
+        {
+          "file": "stage-15-2-8.webp",
+          "x": 4296,
+          "y": 1000,
+          "width": 140,
+          "height": 500
+        },
+        {
+          "file": "stage-15-3-0.webp",
+          "x": 66,
+          "y": 1500,
+          "width": 149,
+          "height": 500
+        },
+        {
+          "file": "stage-15-3-8.webp",
+          "x": 4295,
+          "y": 1500,
+          "width": 152,
+          "height": 500
+        },
+        {
+          "file": "stage-15-4-0.webp",
+          "x": 64,
+          "y": 2000,
+          "width": 151,
+          "height": 500
+        },
+        {
+          "file": "stage-15-4-8.webp",
+          "x": 4297,
+          "y": 2000,
+          "width": 149,
+          "height": 500
+        },
+        {
+          "file": "stage-15-5-0.webp",
+          "x": 74,
+          "y": 2500,
+          "width": 426,
+          "height": 500
+        },
+        {
+          "file": "stage-15-5-1.webp",
+          "x": 500,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-15-5-2.webp",
+          "x": 1000,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-15-5-3.webp",
+          "x": 1500,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-15-5-4.webp",
+          "x": 2000,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-15-5-5.webp",
+          "x": 2500,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-15-5-6.webp",
+          "x": 3000,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-15-5-7.webp",
+          "x": 3500,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-15-5-8.webp",
+          "x": 4000,
+          "y": 2500,
+          "width": 473,
+          "height": 500
+        },
+        {
+          "file": "stage-15-6-0.webp",
+          "x": 109,
+          "y": 3000,
+          "width": 391,
+          "height": 353
+        },
+        {
+          "file": "stage-15-6-1.webp",
+          "x": 500,
+          "y": 3000,
+          "width": 500,
+          "height": 407
+        },
+        {
+          "file": "stage-15-6-2.webp",
+          "x": 1000,
+          "y": 3000,
+          "width": 500,
+          "height": 448
+        },
+        {
+          "file": "stage-15-6-3.webp",
+          "x": 1500,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-15-6-4.webp",
+          "x": 2000,
+          "y": 3000,
+          "width": 500,
+          "height": 493
+        },
+        {
+          "file": "stage-15-6-5.webp",
+          "x": 2500,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-15-6-6.webp",
+          "x": 3000,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-15-6-7.webp",
+          "x": 3500,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-15-6-8.webp",
+          "x": 4000,
+          "y": 3000,
+          "width": 453,
+          "height": 500
+        },
+        {
+          "file": "stage-15-7-3.webp",
+          "x": 1855,
+          "y": 3500,
+          "width": 47,
+          "height": 20
+        },
+        {
+          "file": "stage-15-7-5.webp",
+          "x": 2911,
+          "y": 3500,
+          "width": 47,
+          "height": 20
+        },
+        {
+          "file": "stage-15-7-6.webp",
+          "x": 3491,
+          "y": 3500,
+          "width": 9,
+          "height": 47
+        },
+        {
+          "file": "stage-15-7-7.webp",
+          "x": 3500,
+          "y": 3500,
+          "width": 390,
+          "height": 62
+        },
+        {
+          "file": "stage-15-7-8.webp",
+          "x": 4057,
+          "y": 3500,
+          "width": 84,
+          "height": 99
+        }
+      ]
+    },
+    {
+      "stage": 16,
+      "parcels": [
+        "southwest",
+        "south",
+        "west",
+        "center",
+        "southeast",
+        "east",
+        "northwest",
+        "north",
+        "northeast",
+        "east-south",
+        "east-center",
+        "east-north",
+        "far-northwest",
+        "far-north",
+        "far-northeast",
+        "far-east-south"
+      ],
+      "canvas": {
+        "left": 24,
+        "top": -242.4,
+        "width": 3712,
+        "height": 2523.04
+      },
+      "size": [
+        5568,
+        3785
+      ],
+      "source": "3412e0e6a1942e473faf2aa38aedafd4da7bd003",
+      "tiles": [
+        {
+          "file": "stage-16-0-0.webp",
+          "x": 79,
+          "y": 83,
+          "width": 421,
+          "height": 417
+        },
+        {
+          "file": "stage-16-0-1.webp",
+          "x": 500,
+          "y": 96,
+          "width": 500,
+          "height": 111
+        },
+        {
+          "file": "stage-16-0-2.webp",
+          "x": 1000,
+          "y": 105,
+          "width": 500,
+          "height": 109
+        },
+        {
+          "file": "stage-16-0-3.webp",
+          "x": 1500,
+          "y": 107,
+          "width": 500,
+          "height": 102
+        },
+        {
+          "file": "stage-16-0-4.webp",
+          "x": 2000,
+          "y": 112,
+          "width": 500,
+          "height": 103
+        },
+        {
+          "file": "stage-16-0-5.webp",
+          "x": 2500,
+          "y": 110,
+          "width": 500,
+          "height": 106
+        },
+        {
+          "file": "stage-16-0-6.webp",
+          "x": 3000,
+          "y": 81,
+          "width": 375,
+          "height": 419
+        },
+        {
+          "file": "stage-16-1-0.webp",
+          "x": 66,
+          "y": 500,
+          "width": 149,
+          "height": 500
+        },
+        {
+          "file": "stage-16-1-6.webp",
+          "x": 3241,
+          "y": 500,
+          "width": 259,
+          "height": 408
+        },
+        {
+          "file": "stage-16-1-7.webp",
+          "x": 3500,
+          "y": 787,
+          "width": 500,
+          "height": 121
+        },
+        {
+          "file": "stage-16-1-8.webp",
+          "x": 4000,
+          "y": 787,
+          "width": 404,
+          "height": 213
+        },
+        {
+          "file": "stage-16-2-0.webp",
+          "x": 70,
+          "y": 1000,
+          "width": 145,
+          "height": 500
+        },
+        {
+          "file": "stage-16-2-8.webp",
+          "x": 4296,
+          "y": 1000,
+          "width": 140,
+          "height": 500
+        },
+        {
+          "file": "stage-16-3-0.webp",
+          "x": 66,
+          "y": 1500,
+          "width": 149,
+          "height": 500
+        },
+        {
+          "file": "stage-16-3-8.webp",
+          "x": 4295,
+          "y": 1500,
+          "width": 156,
+          "height": 500
+        },
+        {
+          "file": "stage-16-4-0.webp",
+          "x": 64,
+          "y": 2000,
+          "width": 151,
+          "height": 500
+        },
+        {
+          "file": "stage-16-4-8.webp",
+          "x": 4300,
+          "y": 2000,
+          "width": 200,
+          "height": 282
+        },
+        {
+          "file": "stage-16-4-9.webp",
+          "x": 4500,
+          "y": 2087,
+          "width": 500,
+          "height": 195
+        },
+        {
+          "file": "stage-16-4-10.webp",
+          "x": 5000,
+          "y": 2084,
+          "width": 500,
+          "height": 416
+        },
+        {
+          "file": "stage-16-5-0.webp",
+          "x": 74,
+          "y": 2500,
+          "width": 426,
+          "height": 500
+        },
+        {
+          "file": "stage-16-5-1.webp",
+          "x": 500,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-16-5-2.webp",
+          "x": 1000,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-16-5-3.webp",
+          "x": 1500,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-16-5-4.webp",
+          "x": 2000,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-16-5-5.webp",
+          "x": 2500,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-16-5-6.webp",
+          "x": 3000,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-16-5-7.webp",
+          "x": 3500,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-16-5-8.webp",
+          "x": 4000,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-16-5-9.webp",
+          "x": 4500,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-16-5-10.webp",
+          "x": 5000,
+          "y": 2500,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-16-5-11.webp",
+          "x": 5500,
+          "y": 2600,
+          "width": 29,
+          "height": 400
+        },
+        {
+          "file": "stage-16-6-0.webp",
+          "x": 109,
+          "y": 3000,
+          "width": 391,
+          "height": 353
+        },
+        {
+          "file": "stage-16-6-1.webp",
+          "x": 500,
+          "y": 3000,
+          "width": 500,
+          "height": 407
+        },
+        {
+          "file": "stage-16-6-2.webp",
+          "x": 1000,
+          "y": 3000,
+          "width": 500,
+          "height": 448
+        },
+        {
+          "file": "stage-16-6-3.webp",
+          "x": 1500,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-16-6-4.webp",
+          "x": 2000,
+          "y": 3000,
+          "width": 500,
+          "height": 493
+        },
+        {
+          "file": "stage-16-6-5.webp",
+          "x": 2500,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-16-6-6.webp",
+          "x": 3000,
+          "y": 3000,
+          "width": 500,
+          "height": 493
+        },
+        {
+          "file": "stage-16-6-7.webp",
+          "x": 3500,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-16-6-8.webp",
+          "x": 4000,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-16-6-9.webp",
+          "x": 4500,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-16-6-10.webp",
+          "x": 5000,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-16-6-11.webp",
+          "x": 5500,
+          "y": 3000,
+          "width": 9,
+          "height": 40
+        },
+        {
+          "file": "stage-16-7-3.webp",
+          "x": 1855,
+          "y": 3500,
+          "width": 47,
+          "height": 20
+        },
+        {
+          "file": "stage-16-7-5.webp",
+          "x": 2911,
+          "y": 3500,
+          "width": 47,
+          "height": 20
+        },
+        {
+          "file": "stage-16-7-7.webp",
+          "x": 3967,
+          "y": 3500,
+          "width": 33,
+          "height": 20
+        },
+        {
+          "file": "stage-16-7-8.webp",
+          "x": 4000,
+          "y": 3500,
+          "width": 14,
+          "height": 13
+        },
+        {
+          "file": "stage-16-7-9.webp",
+          "x": 4547,
+          "y": 3500,
+          "width": 399,
+          "height": 61
+        },
+        {
+          "file": "stage-16-7-10.webp",
+          "x": 5114,
+          "y": 3500,
+          "width": 83,
+          "height": 98
+        }
+      ]
+    },
+    {
+      "stage": 17,
+      "parcels": [
+        "southwest",
+        "south",
+        "west",
+        "center",
+        "southeast",
+        "east",
+        "northwest",
+        "north",
+        "northeast",
+        "east-south",
+        "east-center",
+        "east-north",
+        "far-northwest",
+        "far-north",
+        "far-northeast",
+        "far-east-south",
+        "far-east-center"
+      ],
+      "canvas": {
+        "left": 24,
+        "top": -242.4,
+        "width": 3712,
+        "height": 2523.04
+      },
+      "size": [
+        5568,
+        3785
+      ],
+      "source": "dc9786539f2771b339c2be30df157b339827bc20",
+      "tiles": [
+        {
+          "file": "stage-17-0-0.webp",
+          "x": 79,
+          "y": 83,
+          "width": 421,
+          "height": 417
+        },
+        {
+          "file": "stage-17-0-1.webp",
+          "x": 500,
+          "y": 96,
+          "width": 500,
+          "height": 111
+        },
+        {
+          "file": "stage-17-0-2.webp",
+          "x": 1000,
+          "y": 105,
+          "width": 500,
+          "height": 109
+        },
+        {
+          "file": "stage-17-0-3.webp",
+          "x": 1500,
+          "y": 107,
+          "width": 500,
+          "height": 102
+        },
+        {
+          "file": "stage-17-0-4.webp",
+          "x": 2000,
+          "y": 112,
+          "width": 500,
+          "height": 103
+        },
+        {
+          "file": "stage-17-0-5.webp",
+          "x": 2500,
+          "y": 110,
+          "width": 500,
+          "height": 106
+        },
+        {
+          "file": "stage-17-0-6.webp",
+          "x": 3000,
+          "y": 81,
+          "width": 375,
+          "height": 419
+        },
+        {
+          "file": "stage-17-1-0.webp",
+          "x": 66,
+          "y": 500,
+          "width": 149,
+          "height": 500
+        },
+        {
+          "file": "stage-17-1-6.webp",
+          "x": 3241,
+          "y": 500,
+          "width": 259,
+          "height": 408
+        },
+        {
+          "file": "stage-17-1-7.webp",
+          "x": 3500,
+          "y": 787,
+          "width": 500,
+          "height": 121
+        },
+        {
+          "file": "stage-17-1-8.webp",
+          "x": 4000,
+          "y": 787,
+          "width": 404,
+          "height": 213
+        },
+        {
+          "file": "stage-17-2-0.webp",
+          "x": 70,
+          "y": 1000,
+          "width": 145,
+          "height": 500
+        },
+        {
+          "file": "stage-17-2-8.webp",
+          "x": 4296,
+          "y": 1000,
+          "width": 204,
+          "height": 500
+        },
+        {
+          "file": "stage-17-2-9.webp",
+          "x": 4500,
+          "y": 1430,
+          "width": 500,
+          "height": 70
+        },
+        {
+          "file": "stage-17-2-10.webp",
+          "x": 5000,
+          "y": 1479,
+          "width": 393,
+          "height": 21
+        },
+        {
+          "file": "stage-17-3-0.webp",
+          "x": 66,
+          "y": 1500,
+          "width": 149,
+          "height": 500
+        },
+        {
+          "file": "stage-17-3-8.webp",
+          "x": 4297,
+          "y": 1500,
+          "width": 203,
+          "height": 89
+        },
+        {
+          "file": "stage-17-3-9.webp",
+          "x": 4500,
+          "y": 1500,
+          "width": 500,
+          "height": 100
+        },
+        {
+          "file": "stage-17-3-10.webp",
+          "x": 5000,
+          "y": 1500,
+          "width": 473,
+          "height": 500
+        },
+        {
+          "file": "stage-17-4-0.webp",
+          "x": 64,
+          "y": 2000,
+          "width": 151,
+          "height": 500
+        },
+        {
+          "file": "stage-17-4-10.webp",
+          "x": 5353,
+          "y": 2000,
+          "width": 147,
+          "height": 500
+        },
+        {
+          "file": "stage-17-4-11.webp",
+          "x": 5500,
+          "y": 2363,
+          "width": 2,
+          "height": 3
+        },
+        {
+          "file": "stage-17-5-0.webp",
+          "x": 74,
+          "y": 2500,
+          "width": 426,
+          "height": 500
+        },
+        {
+          "file": "stage-17-5-1.webp",
+          "x": 500,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-17-5-2.webp",
+          "x": 1000,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-17-5-3.webp",
+          "x": 1500,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-17-5-4.webp",
+          "x": 2000,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-17-5-5.webp",
+          "x": 2500,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-17-5-6.webp",
+          "x": 3000,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-17-5-7.webp",
+          "x": 3500,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-17-5-8.webp",
+          "x": 4000,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-17-5-9.webp",
+          "x": 4500,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-17-5-10.webp",
+          "x": 5000,
+          "y": 2500,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-17-5-11.webp",
+          "x": 5500,
+          "y": 2601,
+          "width": 29,
+          "height": 399
+        },
+        {
+          "file": "stage-17-6-0.webp",
+          "x": 109,
+          "y": 3000,
+          "width": 391,
+          "height": 353
+        },
+        {
+          "file": "stage-17-6-1.webp",
+          "x": 500,
+          "y": 3000,
+          "width": 500,
+          "height": 407
+        },
+        {
+          "file": "stage-17-6-2.webp",
+          "x": 1000,
+          "y": 3000,
+          "width": 500,
+          "height": 448
+        },
+        {
+          "file": "stage-17-6-3.webp",
+          "x": 1500,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-17-6-4.webp",
+          "x": 2000,
+          "y": 3000,
+          "width": 500,
+          "height": 493
+        },
+        {
+          "file": "stage-17-6-5.webp",
+          "x": 2500,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-17-6-6.webp",
+          "x": 3000,
+          "y": 3000,
+          "width": 500,
+          "height": 493
+        },
+        {
+          "file": "stage-17-6-7.webp",
+          "x": 3500,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-17-6-8.webp",
+          "x": 4000,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-17-6-9.webp",
+          "x": 4500,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-17-6-10.webp",
+          "x": 5000,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-17-6-11.webp",
+          "x": 5500,
+          "y": 3000,
+          "width": 9,
+          "height": 41
+        },
+        {
+          "file": "stage-17-7-3.webp",
+          "x": 1855,
+          "y": 3500,
+          "width": 47,
+          "height": 20
+        },
+        {
+          "file": "stage-17-7-5.webp",
+          "x": 2911,
+          "y": 3500,
+          "width": 47,
+          "height": 20
+        },
+        {
+          "file": "stage-17-7-7.webp",
+          "x": 3967,
+          "y": 3500,
+          "width": 33,
+          "height": 20
+        },
+        {
+          "file": "stage-17-7-8.webp",
+          "x": 4000,
+          "y": 3500,
+          "width": 14,
+          "height": 13
+        },
+        {
+          "file": "stage-17-7-9.webp",
+          "x": 4547,
+          "y": 3500,
+          "width": 399,
+          "height": 62
+        },
+        {
+          "file": "stage-17-7-10.webp",
+          "x": 5113,
+          "y": 3500,
+          "width": 84,
+          "height": 99
+        }
+      ]
+    },
+    {
+      "stage": 18,
+      "parcels": [
+        "southwest",
+        "south",
+        "west",
+        "center",
+        "southeast",
+        "east",
+        "northwest",
+        "north",
+        "northeast",
+        "east-south",
+        "east-center",
+        "east-north",
+        "far-northwest",
+        "far-north",
+        "far-northeast",
+        "far-east-south",
+        "far-east-center",
+        "far-east-north"
+      ],
+      "canvas": {
+        "left": 24,
+        "top": -242.4,
+        "width": 3712,
+        "height": 2523.04
+      },
+      "size": [
+        5568,
+        3785
+      ],
+      "source": "ce4047ccf60b18c00197a52562670bceb3cf03e8",
+      "tiles": [
+        {
+          "file": "stage-18-0-0.webp",
+          "x": 79,
+          "y": 83,
+          "width": 421,
+          "height": 417
+        },
+        {
+          "file": "stage-18-0-1.webp",
+          "x": 500,
+          "y": 96,
+          "width": 500,
+          "height": 111
+        },
+        {
+          "file": "stage-18-0-2.webp",
+          "x": 1000,
+          "y": 105,
+          "width": 500,
+          "height": 109
+        },
+        {
+          "file": "stage-18-0-3.webp",
+          "x": 1500,
+          "y": 107,
+          "width": 500,
+          "height": 102
+        },
+        {
+          "file": "stage-18-0-4.webp",
+          "x": 2000,
+          "y": 112,
+          "width": 500,
+          "height": 103
+        },
+        {
+          "file": "stage-18-0-5.webp",
+          "x": 2500,
+          "y": 110,
+          "width": 500,
+          "height": 106
+        },
+        {
+          "file": "stage-18-0-6.webp",
+          "x": 3000,
+          "y": 81,
+          "width": 375,
+          "height": 419
+        },
+        {
+          "file": "stage-18-1-0.webp",
+          "x": 66,
+          "y": 500,
+          "width": 149,
+          "height": 500
+        },
+        {
+          "file": "stage-18-1-6.webp",
+          "x": 3245,
+          "y": 500,
+          "width": 255,
+          "height": 397
+        },
+        {
+          "file": "stage-18-1-7.webp",
+          "x": 3500,
+          "y": 798,
+          "width": 500,
+          "height": 110
+        },
+        {
+          "file": "stage-18-1-8.webp",
+          "x": 4000,
+          "y": 785,
+          "width": 500,
+          "height": 112
+        },
+        {
+          "file": "stage-18-1-9.webp",
+          "x": 4500,
+          "y": 787,
+          "width": 500,
+          "height": 121
+        },
+        {
+          "file": "stage-18-1-10.webp",
+          "x": 5000,
+          "y": 787,
+          "width": 460,
+          "height": 213
+        },
+        {
+          "file": "stage-18-2-0.webp",
+          "x": 70,
+          "y": 1000,
+          "width": 145,
+          "height": 500
+        },
+        {
+          "file": "stage-18-2-10.webp",
+          "x": 5352,
+          "y": 1000,
+          "width": 140,
+          "height": 500
+        },
+        {
+          "file": "stage-18-3-0.webp",
+          "x": 66,
+          "y": 1500,
+          "width": 149,
+          "height": 500
+        },
+        {
+          "file": "stage-18-3-10.webp",
+          "x": 5351,
+          "y": 1500,
+          "width": 149,
+          "height": 500
+        },
+        {
+          "file": "stage-18-3-11.webp",
+          "x": 5500,
+          "y": 1638,
+          "width": 3,
+          "height": 62
+        },
+        {
+          "file": "stage-18-4-0.webp",
+          "x": 64,
+          "y": 2000,
+          "width": 151,
+          "height": 500
+        },
+        {
+          "file": "stage-18-4-10.webp",
+          "x": 5353,
+          "y": 2000,
+          "width": 147,
+          "height": 500
+        },
+        {
+          "file": "stage-18-4-11.webp",
+          "x": 5500,
+          "y": 2363,
+          "width": 2,
+          "height": 3
+        },
+        {
+          "file": "stage-18-5-0.webp",
+          "x": 74,
+          "y": 2500,
+          "width": 426,
+          "height": 500
+        },
+        {
+          "file": "stage-18-5-1.webp",
+          "x": 500,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-18-5-2.webp",
+          "x": 1000,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-18-5-3.webp",
+          "x": 1500,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-18-5-4.webp",
+          "x": 2000,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-18-5-5.webp",
+          "x": 2500,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-18-5-6.webp",
+          "x": 3000,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-18-5-7.webp",
+          "x": 3500,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-18-5-8.webp",
+          "x": 4000,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-18-5-9.webp",
+          "x": 4500,
+          "y": 2855,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "file": "stage-18-5-10.webp",
+          "x": 5000,
+          "y": 2500,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-18-5-11.webp",
+          "x": 5500,
+          "y": 2601,
+          "width": 29,
+          "height": 399
+        },
+        {
+          "file": "stage-18-6-0.webp",
+          "x": 109,
+          "y": 3000,
+          "width": 391,
+          "height": 353
+        },
+        {
+          "file": "stage-18-6-1.webp",
+          "x": 500,
+          "y": 3000,
+          "width": 500,
+          "height": 407
+        },
+        {
+          "file": "stage-18-6-2.webp",
+          "x": 1000,
+          "y": 3000,
+          "width": 500,
+          "height": 448
+        },
+        {
+          "file": "stage-18-6-3.webp",
+          "x": 1500,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-18-6-4.webp",
+          "x": 2000,
+          "y": 3000,
+          "width": 500,
+          "height": 493
+        },
+        {
+          "file": "stage-18-6-5.webp",
+          "x": 2500,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-18-6-6.webp",
+          "x": 3000,
+          "y": 3000,
+          "width": 500,
+          "height": 493
+        },
+        {
+          "file": "stage-18-6-7.webp",
+          "x": 3500,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-18-6-8.webp",
+          "x": 4000,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-18-6-9.webp",
+          "x": 4500,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-18-6-10.webp",
+          "x": 5000,
+          "y": 3000,
+          "width": 500,
+          "height": 500
+        },
+        {
+          "file": "stage-18-6-11.webp",
+          "x": 5500,
+          "y": 3000,
+          "width": 9,
+          "height": 41
+        },
+        {
+          "file": "stage-18-7-3.webp",
+          "x": 1855,
+          "y": 3500,
+          "width": 47,
+          "height": 20
+        },
+        {
+          "file": "stage-18-7-5.webp",
+          "x": 2911,
+          "y": 3500,
+          "width": 47,
+          "height": 20
+        },
+        {
+          "file": "stage-18-7-7.webp",
+          "x": 3967,
+          "y": 3500,
+          "width": 33,
+          "height": 20
+        },
+        {
+          "file": "stage-18-7-8.webp",
+          "x": 4000,
+          "y": 3500,
+          "width": 14,
+          "height": 13
+        },
+        {
+          "file": "stage-18-7-9.webp",
+          "x": 4547,
+          "y": 3500,
+          "width": 399,
+          "height": 62
+        },
+        {
+          "file": "stage-18-7-10.webp",
+          "x": 5113,
+          "y": 3500,
+          "width": 84,
+          "height": 99
         }
       ]
     }
   ],
   "files": {
     "grass-tile.webp": "87ec763b98da44afd92d12b187555b1ceb4f96e3",
-    "stage-1-0-0.webp": "99eb028ab516c444d6d53a152c30e07237cd571b",
-    "stage-1-0-1.webp": "cee608194f422b63c24ba228ae548833ed190539",
-    "stage-1-0-2.webp": "6eff76277f9e3d12d4c347a00dfc8cfbda0a20d1",
-    "stage-1-1-0.webp": "aa98b980b14ac79db543d698e3fa6f866c54493a",
-    "stage-1-1-1.webp": "7ead9404acd296c81234f08f1a0cc5a4e1b8e6c3",
-    "stage-1-1-2.webp": "8e69a5400ba273cc4ecf11b88d968d62c24b9fa0",
-    "stage-1-2-0.webp": "f4d69829297f4c2ed0bf3e26163179dcec844ecb",
-    "stage-1-2-1.webp": "581d94fed61c82826fad8df0da2d8414be85c031",
-    "stage-1-2-2.webp": "e9fc6ec40ab8531eb5b263cda5933abba0cb2fb7",
-    "stage-2-0-0.webp": "3d26f46d48fb9c8e2f259e95709f63e216f774f7",
-    "stage-2-0-1.webp": "69162c99c2196b07cdd6395bfbe6aa140c7e71b0",
-    "stage-2-0-2.webp": "add82348fcee2da62ac98ec5cc5943d8e642c9a4",
-    "stage-2-0-3.webp": "82e20b69e7500a5024817ea5a7decdcf15fa1194",
-    "stage-2-0-4.webp": "248795736e9d631672416528a3a0292c0dfb776f",
-    "stage-2-1-0.webp": "45298f0efd6929d3abf64ed10b9da7ef99289b4a",
-    "stage-2-1-1.webp": "6cd63968352c14dcb479f2f6b82850a41959de5b",
-    "stage-2-1-2.webp": "c1a30328f49e5b543393018e1a866cce6bc7e12c",
-    "stage-2-1-3.webp": "cbb25a5f89d29516e2ef56ba46684958f351939c",
-    "stage-2-1-4.webp": "869ae0e8c44807c3d0b2dfe03214e0cc5a54f2e9",
-    "stage-2-2-0.webp": "f4d69829297f4c2ed0bf3e26163179dcec844ecb",
-    "stage-2-2-1.webp": "9951779d769dd52e17821ccba2c1b312920e209d",
-    "stage-2-2-2.webp": "a30670953709ba1097dfdbd5b65af3f4c0af373d",
-    "stage-2-2-3.webp": "3d8e151ffc12e897bbef45c847e515108849474e",
-    "stage-2-2-4.webp": "a2d324c9dee90d2ad6ba62cd054c9fbefedc11b0",
-    "stage-3-0-0.webp": "8e4f7a695d26043f5bd80b224834320e74c8ec2b",
-    "stage-3-0-1.webp": "eefbf9a2ad3eb9c508eaa13735d545d635ff54b6",
-    "stage-3-0-2.webp": "b2fc69ffb21e0d062de881ada6c732d6b2fe4c8c",
-    "stage-3-1-0.webp": "670003f98edb598d535754761cdd8ec46fc34d25",
-    "stage-3-1-2.webp": "5bc203d7e965fae33f00c3b15bc7d8d943f5c29c",
-    "stage-3-1-3.webp": "af9d7d46db3bba21898639b7be189c5288ca02ec",
-    "stage-3-1-4.webp": "84b370b465e341175763b064432d7abecd5c6030",
-    "stage-3-2-0.webp": "36d8036525c16c159ec7d4b49e5f2f48993d1c1c",
-    "stage-3-2-1.webp": "e95a0be88512bd27b88b72b4c2919517b547fc39",
-    "stage-3-2-2.webp": "66a0be512fa78558cfe0d2d308a50d51a5499c6d",
-    "stage-3-2-3.webp": "a577bacadb1acd726c004cfe3455ceac8e5f222d",
-    "stage-3-2-4.webp": "6ce90e74384efcd13f636969c34b8d0ad7c403da",
-    "stage-3-3-0.webp": "3f1e90a921528fd46eab634895c8a3d05e87db85",
+    "stage-1-0-0.webp": "c55252a28b7cac481eb87e8ec0ceef569a52910c",
+    "stage-1-0-1.webp": "ec1d6912ffa60b3c2820812de04bcf318765261b",
+    "stage-1-0-2.webp": "974647c86c0570d784a6021f6cc30931e4e7a4a9",
+    "stage-1-1-0.webp": "c6eb096aba520b97177eccd3cec95a4edb42f1aa",
+    "stage-1-1-1.webp": "bbbf2af4832697150076d09fdc57ee09d78581ff",
+    "stage-1-1-2.webp": "fb566dcef43a5324d4fc031b2435184635d010a7",
+    "stage-1-2-0.webp": "358918b7cf43e59412a7910abbdf8f6deca2914f",
+    "stage-1-2-1.webp": "b479fa8cf9737d3e0f8a9e82a60103a61ad8cc6f",
+    "stage-1-2-2.webp": "dbaeacefea690899581132d52132d66d8b1aca4a",
+    "stage-2-0-0.webp": "6897a7eb450215640ba466cf16f9f021a497e657",
+    "stage-2-0-1.webp": "ba967744837c05c50cf450f30852448021fafda5",
+    "stage-2-0-2.webp": "4b98b218b7e944f65fe044e074c37195a4e001b8",
+    "stage-2-0-3.webp": "215815cfa95bdbe4376a2b6c587280a37c74409a",
+    "stage-2-0-4.webp": "0ee406019124fa9fab4725a56d782d2d4101a469",
+    "stage-2-1-0.webp": "02fea162c9f3c3883a4ebc2f5c48b53317081e3b",
+    "stage-2-1-1.webp": "c93604df211bb5d15d8130a856cd303b3e727de3",
+    "stage-2-1-2.webp": "9f387f6505da7e64d46815ddc3b0f262396c082e",
+    "stage-2-1-3.webp": "d42e022cce7054c754adf7ef0a5b75696e3d2ab7",
+    "stage-2-1-4.webp": "d561017566ea036a8fdc40bd571fa15b88a67f06",
+    "stage-2-2-0.webp": "358918b7cf43e59412a7910abbdf8f6deca2914f",
+    "stage-2-2-1.webp": "34ae90627bc3f68fb789e6d882f4f09fa4d7a4dc",
+    "stage-2-2-2.webp": "b50bb514545c1a404f885e63a35bd2a0959532e2",
+    "stage-2-2-3.webp": "3e9650a623c78079707cbdd6da2e6f48dad5d396",
+    "stage-2-2-4.webp": "745a0f512cd5109d419e8d3bca4fae37cbcc1777",
+    "stage-3-0-0.webp": "0fa3937ce18e0573eff5c0ee321fcec36fe86cd3",
+    "stage-3-0-1.webp": "e0982bb594b125eb64f2f3b87a838a0fb518728f",
+    "stage-3-0-2.webp": "e6a1b4d2706bd6e74484533519b7e317f63b97f0",
+    "stage-3-1-0.webp": "c11d7fba6cefb8d2b34b4f6ad18d9d4f4f206f04",
+    "stage-3-1-2.webp": "4b0012438657c0b98324a02c7e0b1f121548d8d7",
+    "stage-3-1-3.webp": "b0175a1794062c2f3117245a1b982117cb366b99",
+    "stage-3-1-4.webp": "8ed750405bdecf6699f97323f4a33ee98d5f7705",
+    "stage-3-2-0.webp": "1be55e525dab4ccb9e1687308e5c31d4bf9f7f7c",
+    "stage-3-2-1.webp": "8f6a988caf7e485966cbc9ccfbb9722db49333be",
+    "stage-3-2-2.webp": "e994406b55c929a54cad849b98e7f65694db27a8",
+    "stage-3-2-3.webp": "829b6e696a3ea54bb5cab07e64716d7ce7ef03fc",
+    "stage-3-2-4.webp": "d34b80b07c82dd403e744008ba97f4642bec138f",
+    "stage-3-3-0.webp": "d30f70d4b6951913910031efcfaed059dc1a5825",
     "stage-3-3-1.webp": "05a8cf4af4961d74c54f97cda662ce2050c1efbf",
     "stage-3-3-2.webp": "3c91b22838d78de29834e5980a7b446d38225c25",
     "stage-3-3-3.webp": "32e3ace036d0b63274f9074cdfdfa39f6c4f3bfa",
-    "stage-3-3-4.webp": "9e0f2b7799b2809cbb4d2c316387fb4f2c7d3554",
-    "stage-3-4-1.webp": "60d6f763415f165824f5f348bd855d73b97c660e",
-    "stage-3-4-2.webp": "42161518abb26da3deeafafde837f4743b33fc11",
-    "stage-3-4-3.webp": "d2601b33b92f2546998067d220bceaaa556c4ff6",
-    "stage-3-4-4.webp": "1cbad73235e1657281d496ad6d8d893a6bfeb10b",
-    "stage-4-0-0.webp": "31d94fce98c92659872eeb2724116edc6145db9c",
-    "stage-4-0-1.webp": "11c196db84d3943d92a0925855386c1a4d48d9fc",
-    "stage-4-0-2.webp": "0a6849ce19535fee5b4266310e1c31a4254c229b",
-    "stage-4-0-3.webp": "a34453b7abb80d5da6ae50f48e020c4d620a7636",
-    "stage-4-0-4.webp": "c66d09fa94f43bf646213ce57a2653c321031bd5",
-    "stage-4-1-0.webp": "c08a172a37ef90c2804b0b0ee337950cec51c356",
-    "stage-4-1-4.webp": "81391b46b9f032da9b274f310e5ffce8848b8193",
-    "stage-4-2-0.webp": "f6f7395d534d1b3e1cc31582b6dfe1c8b6369f63",
-    "stage-4-2-1.webp": "e95a0be88512bd27b88b72b4c2919517b547fc39",
-    "stage-4-2-2.webp": "66a0be512fa78558cfe0d2d308a50d51a5499c6d",
-    "stage-4-2-3.webp": "a577bacadb1acd726c004cfe3455ceac8e5f222d",
-    "stage-4-2-4.webp": "55ae6ef46ee8d6258fe0bd6372b5fd38decac83f",
-    "stage-4-3-0.webp": "3f1e90a921528fd46eab634895c8a3d05e87db85",
+    "stage-3-3-4.webp": "f58f94cb3604637c2cb5237b6a65b09fdaaf2a55",
+    "stage-3-4-1.webp": "60f4faa3d622c2537cf785bb41b723a429d78f95",
+    "stage-3-4-2.webp": "d2f481b3a41b3922ee17e4bf1b6612e088b932dd",
+    "stage-3-4-3.webp": "e1409e67c09e35a3940fee392e73b9953cf9d9e1",
+    "stage-3-4-4.webp": "76e9623a3a93f87d2722600843cc937f06861bc8",
+    "stage-4-0-0.webp": "eadc1b7e6ed45e33eb6ca27c9129ecf481e0c0c0",
+    "stage-4-0-1.webp": "f400948b580b393c17cddc17293b055f18eaff22",
+    "stage-4-0-2.webp": "71f46b811913444d9bff7e4f73a22d40e91b71d0",
+    "stage-4-0-3.webp": "d964b16ace420c3a94bb913b70bc09034b42d4ba",
+    "stage-4-0-4.webp": "377f617bc28ffab7b6e41c4a82f88dcf1f7a8059",
+    "stage-4-1-0.webp": "2122993e8bd0079f5736393621001a525ef1b2dc",
+    "stage-4-1-4.webp": "056f7ae18dcbfcc4a94ac52ec821a90c39c98dde",
+    "stage-4-2-0.webp": "0ed2563e0e4722e9e3746f80ae63d4e3cb511098",
+    "stage-4-2-1.webp": "8f6a988caf7e485966cbc9ccfbb9722db49333be",
+    "stage-4-2-2.webp": "e994406b55c929a54cad849b98e7f65694db27a8",
+    "stage-4-2-3.webp": "829b6e696a3ea54bb5cab07e64716d7ce7ef03fc",
+    "stage-4-2-4.webp": "bc3572fc6572e0f6d963a9fd1ead5d9462b8b423",
+    "stage-4-3-0.webp": "51c7254de69f19c5c18f3a8ce76a03ff4b4795b0",
     "stage-4-3-1.webp": "05a8cf4af4961d74c54f97cda662ce2050c1efbf",
     "stage-4-3-2.webp": "3c91b22838d78de29834e5980a7b446d38225c25",
     "stage-4-3-3.webp": "32e3ace036d0b63274f9074cdfdfa39f6c4f3bfa",
-    "stage-4-3-4.webp": "1676f092551ee42ee5c53bd558d546ee89511366",
-    "stage-4-4-1.webp": "60d6f763415f165824f5f348bd855d73b97c660e",
-    "stage-4-4-2.webp": "42161518abb26da3deeafafde837f4743b33fc11",
-    "stage-4-4-3.webp": "d2601b33b92f2546998067d220bceaaa556c4ff6",
-    "stage-4-4-4.webp": "1cbad73235e1657281d496ad6d8d893a6bfeb10b",
-    "stage-5-0-0.webp": "7038542d37a9121fb3cc90e446a44f7b81d340e8",
-    "stage-5-0-1.webp": "b3846d91cd90c033ee060d1b32587a3f5db32c5e",
-    "stage-5-0-2.webp": "60832585f2be835afd8e97c7e1040466c2ada5e9",
-    "stage-5-0-3.webp": "c364c197ed5d517a2c16dfeb589e5182c08c9950",
-    "stage-5-0-4.webp": "6cd98c8269392412d193c851d69cc9cff8060264",
-    "stage-5-1-0.webp": "6ebd05b7efe5e8a05e7166996445203d0a01baf8",
-    "stage-5-1-4.webp": "8ae0701f4e94a522e88d4537224ce09a63c33a69",
-    "stage-5-1-5.webp": "b758cc07486ef70778cccf2b98f9ec4d9705be94",
-    "stage-5-1-6.webp": "ca0ef319a1ffdbd89b8950401b8e542cd046916e",
-    "stage-5-2-0.webp": "ba6f2288ebef1447f1089157beffe0e88f41da1f",
-    "stage-5-2-1.webp": "e95a0be88512bd27b88b72b4c2919517b547fc39",
-    "stage-5-2-2.webp": "66a0be512fa78558cfe0d2d308a50d51a5499c6d",
-    "stage-5-2-3.webp": "a577bacadb1acd726c004cfe3455ceac8e5f222d",
-    "stage-5-2-4.webp": "5c74e28be064f8f48c035eee24e129a7051597fe",
-    "stage-5-2-5.webp": "35ea9009adc1c6df39bcfb949de394f16250d0b0",
-    "stage-5-2-6.webp": "9eb65f85798deea64872e77f629164936f530941",
-    "stage-5-3-0.webp": "b11b8b13c42908cf02021b845822f082a464a9dc",
+    "stage-4-3-4.webp": "8eaa9c473f035db18ef104aaa7954db2ad7f2cde",
+    "stage-4-4-1.webp": "60f4faa3d622c2537cf785bb41b723a429d78f95",
+    "stage-4-4-2.webp": "d2f481b3a41b3922ee17e4bf1b6612e088b932dd",
+    "stage-4-4-3.webp": "e1409e67c09e35a3940fee392e73b9953cf9d9e1",
+    "stage-4-4-4.webp": "76e9623a3a93f87d2722600843cc937f06861bc8",
+    "stage-5-0-0.webp": "503c6a28db495b3968f38bfe5df2738c089c874f",
+    "stage-5-0-1.webp": "27540bcb35be31e9ac96f857d8ded66c89551db0",
+    "stage-5-0-2.webp": "588c5b7ff2e27e72cd0a2f7e719045866d3fdb85",
+    "stage-5-0-3.webp": "24278ef96eabcb234a861f0fe3875e8eb04001bf",
+    "stage-5-0-4.webp": "0efc1f602ef832291ffc2bc16d7bab805a7c41ac",
+    "stage-5-1-0.webp": "dcc1ea355081f41d623b835f12c383684c1c5f23",
+    "stage-5-1-4.webp": "f9fd8d0d8b45add1f216cc2b499d48a29ac5e5ed",
+    "stage-5-1-5.webp": "e4948e6501ad567fec8b8f8a4004adbaa2c496b6",
+    "stage-5-1-6.webp": "c5d1b5705b90b086cc9f9366c4f4e1d1293bef26",
+    "stage-5-2-0.webp": "e1344eb33b4fcc5d8b0d7f52ab3e81eafecc1766",
+    "stage-5-2-1.webp": "8f6a988caf7e485966cbc9ccfbb9722db49333be",
+    "stage-5-2-2.webp": "e994406b55c929a54cad849b98e7f65694db27a8",
+    "stage-5-2-3.webp": "829b6e696a3ea54bb5cab07e64716d7ce7ef03fc",
+    "stage-5-2-4.webp": "abd1bc5817b03a1f08dc7bf3d7b52850145c0aa0",
+    "stage-5-2-5.webp": "232c9a3d03bf2b39819c3e2db4653fa547f55c42",
+    "stage-5-2-6.webp": "c1a961a6b17be1cb3e57cb0b1295c678b991feb5",
+    "stage-5-3-0.webp": "a75c359ecf8d3c36ddd5ab79d0549fc46ddc634a",
     "stage-5-3-1.webp": "05a8cf4af4961d74c54f97cda662ce2050c1efbf",
     "stage-5-3-2.webp": "3c91b22838d78de29834e5980a7b446d38225c25",
     "stage-5-3-3.webp": "98a299203783f91bd39de6156dbee8bc11b3c865",
     "stage-5-3-4.webp": "81ea559a2d7499a65ebec2203a4c55a6072b1557",
     "stage-5-3-5.webp": "cc589505f92bc9edf7677d84391f4c52bf9846e7",
-    "stage-5-3-6.webp": "e59e6b1980cc4f020c0b88e1c39c6275278d5420",
-    "stage-5-4-1.webp": "60d6f763415f165824f5f348bd855d73b97c660e",
-    "stage-5-4-2.webp": "42161518abb26da3deeafafde837f4743b33fc11",
-    "stage-5-4-3.webp": "5f0475d9be6c80afb6548ed81e545d21b961d754",
-    "stage-5-4-4.webp": "18f969790e77cbf95b47755066d4f770adb364b4",
-    "stage-5-4-5.webp": "84e84cb4069cb8347d79031d1e76027436083cb7",
-    "stage-5-4-6.webp": "bdd34dd2f8dd2541e6dbedebf113b73f86b90dd3",
-    "stage-6-0-0.webp": "f9c5dae4215fea3c688d43340d451e37efa7662d",
-    "stage-6-0-1.webp": "7660d3a88f61caab61b2690832e25c270ee3f63a",
-    "stage-6-0-2.webp": "8b9b10e03bf212b49d7edc1f47a3a818d103208d",
-    "stage-6-0-3.webp": "0e70686d3046871ae7865a1d3580af66250ceec6",
-    "stage-6-0-4.webp": "10e48e0a65a2468c7889cdffff000898892ea8f6",
-    "stage-6-0-5.webp": "7a5cc098baa8167126fdd247933516806c114176",
-    "stage-6-0-6.webp": "facde2a83cb5ae44718cc137def4d349a7df2856",
-    "stage-6-1-0.webp": "25d039958b3a6f292763dc5bd1a63b8443cc6e2d",
-    "stage-6-1-6.webp": "8e15fe86093dbf85acc6f8fcccf4ea5778cf0a66",
-    "stage-6-2-0.webp": "c4ba7126986f512e0d82b66e298697d0ad27eb8a",
-    "stage-6-2-1.webp": "e95a0be88512bd27b88b72b4c2919517b547fc39",
-    "stage-6-2-2.webp": "66a0be512fa78558cfe0d2d308a50d51a5499c6d",
-    "stage-6-2-3.webp": "a577bacadb1acd726c004cfe3455ceac8e5f222d",
-    "stage-6-2-4.webp": "5c74e28be064f8f48c035eee24e129a7051597fe",
-    "stage-6-2-5.webp": "35ea9009adc1c6df39bcfb949de394f16250d0b0",
-    "stage-6-2-6.webp": "54f46a4b0d535d3742fc4836bff80a22a738d399",
-    "stage-6-3-0.webp": "b11b8b13c42908cf02021b845822f082a464a9dc",
+    "stage-5-3-6.webp": "1dfc3fdf15ce155c26b1edbeaecd10b1498ead69",
+    "stage-5-4-1.webp": "60f4faa3d622c2537cf785bb41b723a429d78f95",
+    "stage-5-4-2.webp": "d2f481b3a41b3922ee17e4bf1b6612e088b932dd",
+    "stage-5-4-3.webp": "87eaa7fdac8be1bf060bbf6e312fc1df6f15a468",
+    "stage-5-4-4.webp": "5e0c6ae966f9c334494aaecc0513af3d942c0717",
+    "stage-5-4-5.webp": "cc1fed15d41bbd83cd2fedb18a473825ddbd143e",
+    "stage-5-4-6.webp": "779818d2512fc059e58e1d7e487df34b8aed6140",
+    "stage-6-0-0.webp": "a24c86febdb95e93498ebd3db23ae3d4b5119ab6",
+    "stage-6-0-1.webp": "3f5f4f70390d31841c81464c55c94e41c422036e",
+    "stage-6-0-2.webp": "1ed0ced95d7188ce96eceab5059ec1da0224a90b",
+    "stage-6-0-3.webp": "8464660250c99cbd7e9440c097614944c99990c8",
+    "stage-6-0-4.webp": "fe45b577d71ca7e3f0b4f01c2d238a950762107e",
+    "stage-6-0-5.webp": "c1da16d056e20c8d628a10ee757851c1fd23ceb3",
+    "stage-6-0-6.webp": "57a062ac9e4c916e412b0e947295701ef79c2536",
+    "stage-6-1-0.webp": "a99b689d1c0666f12118f9b085a6fc88568cb265",
+    "stage-6-1-6.webp": "b792f4aa2c8281fd4c51ff7c126b0b121080be8c",
+    "stage-6-2-0.webp": "989d7e8ea89794735fc50b44b6f5c45493c9d62e",
+    "stage-6-2-1.webp": "8f6a988caf7e485966cbc9ccfbb9722db49333be",
+    "stage-6-2-2.webp": "e994406b55c929a54cad849b98e7f65694db27a8",
+    "stage-6-2-3.webp": "829b6e696a3ea54bb5cab07e64716d7ce7ef03fc",
+    "stage-6-2-4.webp": "abd1bc5817b03a1f08dc7bf3d7b52850145c0aa0",
+    "stage-6-2-5.webp": "232c9a3d03bf2b39819c3e2db4653fa547f55c42",
+    "stage-6-2-6.webp": "8767c4690c1deb37e91331edb94c8a6a8be29eca",
+    "stage-6-3-0.webp": "a75c359ecf8d3c36ddd5ab79d0549fc46ddc634a",
     "stage-6-3-1.webp": "05a8cf4af4961d74c54f97cda662ce2050c1efbf",
     "stage-6-3-2.webp": "3c91b22838d78de29834e5980a7b446d38225c25",
     "stage-6-3-3.webp": "98a299203783f91bd39de6156dbee8bc11b3c865",
     "stage-6-3-4.webp": "81ea559a2d7499a65ebec2203a4c55a6072b1557",
     "stage-6-3-5.webp": "cc589505f92bc9edf7677d84391f4c52bf9846e7",
-    "stage-6-3-6.webp": "e59e6b1980cc4f020c0b88e1c39c6275278d5420",
-    "stage-6-4-1.webp": "60d6f763415f165824f5f348bd855d73b97c660e",
-    "stage-6-4-2.webp": "42161518abb26da3deeafafde837f4743b33fc11",
-    "stage-6-4-3.webp": "5f0475d9be6c80afb6548ed81e545d21b961d754",
-    "stage-6-4-4.webp": "18f969790e77cbf95b47755066d4f770adb364b4",
-    "stage-6-4-5.webp": "84e84cb4069cb8347d79031d1e76027436083cb7",
-    "stage-6-4-6.webp": "bdd34dd2f8dd2541e6dbedebf113b73f86b90dd3",
-    "stage-7-0-0.webp": "b1b9f07f1c578b03503f16dbf013c88e5eb96973",
-    "stage-7-0-1.webp": "f79493fa5e8944ea1281cdf3674361e18c6c1380",
-    "stage-7-0-2.webp": "6383c6040553e7691e55ce137214ce3bb62d261f",
-    "stage-7-1-0.webp": "7b5127e75d5f98bdd868631f687d98f8684a2b02",
-    "stage-7-1-2.webp": "4dc789f05f5fba5236476f861ebbffb173edbc9a",
-    "stage-7-1-3.webp": "db0586e13ab95c169459239e97bddf4f85477b4e",
-    "stage-7-1-4.webp": "303aed79317cfa94c35683dd03e2ba8862334cbd",
-    "stage-7-1-5.webp": "b29b4f378447ac6142133e2b0d32ef6e7a6a0b2c",
-    "stage-7-1-6.webp": "b70c1f1ec5bc7852cf8050f985cce784f338c7b3",
-    "stage-7-2-0.webp": "35e4c5af81717d016c00a94f426855b86971878d",
-    "stage-7-2-6.webp": "ec09e0d4432beaef3a1dcb41a7020de9ea6e9ec2",
-    "stage-7-3-0.webp": "9b163fecf4f9990b025567177af45f8cbca4161f",
-    "stage-7-3-6.webp": "01b85b50c4b3a08ed517b6df32ff5be262dfc682",
-    "stage-7-4-0.webp": "fe8bb72955532e2536c64cd98ae0184968841723",
-    "stage-7-4-1.webp": "2d64ef9e7be224a5b052b1055270808d1f0e953e",
-    "stage-7-4-2.webp": "36ead735fb2d4cf205ae451559e8969ca275118c",
-    "stage-7-4-3.webp": "1c912391fbe3535b75f6ffd0c288c0a03ecb076f",
-    "stage-7-4-4.webp": "e150feeaf48998fcbda7fa61c5587d2e3d367987",
-    "stage-7-4-5.webp": "3ab7f649cb0ad4d2c5dbee40d7ff88da12482417",
-    "stage-7-4-6.webp": "08441ddc3a8a7e59715f769430910e5b8c591b5f",
-    "stage-7-5-0.webp": "22f0587f2dd8dc6d04ee07a47a6d811bd6bf777a",
-    "stage-7-5-1.webp": "2ed4eddb4660acff12214b49931416cadc6cf78b",
-    "stage-7-5-2.webp": "b1a6b60c3476de5dc4b57d236f01417c64d1807c",
-    "stage-7-5-3.webp": "0aca8b228d5325147c179ecd70ef02d7b0ef5e86",
-    "stage-7-5-4.webp": "5317736aed85039c1a23b5e4ea731c54b18e59a4",
-    "stage-7-5-5.webp": "edb15b27bee6b5886603dd0de473e1450289dd71",
-    "stage-7-5-6.webp": "e74b3aec5b858eecb0ba0b49c68686680bddecb4",
-    "stage-8-0-0.webp": "67477cb539cd02bd50713a9fac344b28fb91ae2e",
-    "stage-8-0-1.webp": "5b4c033c6e5ea7375f7801f69a94acfc03619fac",
-    "stage-8-0-2.webp": "2596f35523b2e48fb9ada4b5478e3ffa614c0f61",
-    "stage-8-0-3.webp": "865817b4046300d2ccc1198792284b19e0b94761",
-    "stage-8-0-4.webp": "4bfcf62a0168d2ebaf6fc37e875d70a526dd7661",
-    "stage-8-1-0.webp": "4807968e20f5d413aab8664ae100b1c35dcece27",
-    "stage-8-1-4.webp": "61977cee2216ddc11f112056a8c52257777ea818",
-    "stage-8-1-5.webp": "337065088e82cdd864a07cb8c027f4df066ec4dd",
-    "stage-8-1-6.webp": "49d2425052b47b6cdf007f0c32b4ade3530bc1ee",
-    "stage-8-2-0.webp": "a816eca80f3955832c713b6970980f2f49f97d6d",
-    "stage-8-2-6.webp": "72827962fe9c409230f58767f9a475d62f3ac6f6",
-    "stage-8-3-0.webp": "ba49700dbaaf79c92ee985611ff518a6d975b88d",
-    "stage-8-3-6.webp": "70c95bfa4f0dee6faaca5cb3672d384c42ce51e9",
-    "stage-8-4-0.webp": "8ded7640308556c7cb72ec5455b6e6bb218960b1",
-    "stage-8-4-1.webp": "4b04dec3b80f63f4e1dd7a53c373b9ab1d93749f",
-    "stage-8-4-2.webp": "78a74576437e72f4ee52bfc1385891c58796c825",
-    "stage-8-4-3.webp": "1f7b472dab9265a53b3221560373c0573a4b6b34",
-    "stage-8-4-4.webp": "4b77ef53e985114c0a6dd8d4a1f64cde5152ff14",
-    "stage-8-4-5.webp": "3e5299700fd0dc2558604ba75b7ccd9713241d72",
-    "stage-8-4-6.webp": "8e7f315a5ba61a011390e727797f57c6ba16cbbf",
-    "stage-8-5-0.webp": "22f0587f2dd8dc6d04ee07a47a6d811bd6bf777a",
-    "stage-8-5-1.webp": "2ed4eddb4660acff12214b49931416cadc6cf78b",
-    "stage-8-5-2.webp": "b1a6b60c3476de5dc4b57d236f01417c64d1807c",
-    "stage-8-5-3.webp": "0aca8b228d5325147c179ecd70ef02d7b0ef5e86",
-    "stage-8-5-4.webp": "5317736aed85039c1a23b5e4ea731c54b18e59a4",
-    "stage-8-5-5.webp": "edb15b27bee6b5886603dd0de473e1450289dd71",
-    "stage-8-5-6.webp": "e74b3aec5b858eecb0ba0b49c68686680bddecb4",
-    "stage-9-0-0.webp": "f1281b9d37fdc8361fe751767484a6d44182e091",
-    "stage-9-0-1.webp": "0388f42e5acd92da52e20a15be535bdc8c64a2a0",
-    "stage-9-0-2.webp": "7c50bc0e2238fb52a9f2d9dbcc30d9bb68b8b524",
-    "stage-9-0-3.webp": "b41afad57fc430e49e9622684fea743452f26f19",
-    "stage-9-0-4.webp": "a7cecc2938c447774c1e11c62f76624a1b92b1e9",
-    "stage-9-0-5.webp": "a507dcf6c620d597a10030335a5a5d2ff4af6331",
-    "stage-9-0-6.webp": "ce23402d10fa2b30cdec9bd01b3e78c775e184aa",
-    "stage-9-1-0.webp": "4469204c81a6eb7a4d3a5686a62bc79b324000c1",
-    "stage-9-1-6.webp": "a00f8ab1ddc6fe17cef668f6dc1f73bf63f6ae9f",
-    "stage-9-2-0.webp": "741bf92ee6cf482af4295bd87894d0d1375ea9d9",
-    "stage-9-2-6.webp": "649bc156c3c9152a22f3820ea1c6a5eca7005181",
-    "stage-9-3-0.webp": "282dd8b89739b2ce22d0b19eec19329d6407e9a8",
-    "stage-9-3-6.webp": "d48f543f54617f8d95644e0a8035de743fdbb19f",
-    "stage-9-4-0.webp": "0daf782ca057a890fc2c61b4095410eb65e91bd7",
-    "stage-9-4-1.webp": "9871bb9309987369178548e369a3a33ca887dbbc",
-    "stage-9-4-2.webp": "715f9e8df387e8ed4fc44dfdb21a8c6941bedd21",
-    "stage-9-4-3.webp": "3513d507108593ee91f4e95c6d0298ea326f630f",
-    "stage-9-4-4.webp": "27333bee761b0971c3d18422420ba3de6cf6bb4f",
-    "stage-9-4-5.webp": "5d7e2ea751c22bebde166c41fbd064d4abb2ead1",
-    "stage-9-4-6.webp": "a3211e9b6c5214c14364eba0398db5588525aa9b",
-    "stage-9-5-0.webp": "22f0587f2dd8dc6d04ee07a47a6d811bd6bf777a",
-    "stage-9-5-1.webp": "2ed4eddb4660acff12214b49931416cadc6cf78b",
-    "stage-9-5-2.webp": "b1a6b60c3476de5dc4b57d236f01417c64d1807c",
-    "stage-9-5-3.webp": "0aca8b228d5325147c179ecd70ef02d7b0ef5e86",
-    "stage-9-5-4.webp": "5317736aed85039c1a23b5e4ea731c54b18e59a4",
-    "stage-9-5-5.webp": "edb15b27bee6b5886603dd0de473e1450289dd71",
-    "stage-9-5-6.webp": "e74b3aec5b858eecb0ba0b49c68686680bddecb4"
+    "stage-6-3-6.webp": "1dfc3fdf15ce155c26b1edbeaecd10b1498ead69",
+    "stage-6-4-1.webp": "60f4faa3d622c2537cf785bb41b723a429d78f95",
+    "stage-6-4-2.webp": "d2f481b3a41b3922ee17e4bf1b6612e088b932dd",
+    "stage-6-4-3.webp": "87eaa7fdac8be1bf060bbf6e312fc1df6f15a468",
+    "stage-6-4-4.webp": "5e0c6ae966f9c334494aaecc0513af3d942c0717",
+    "stage-6-4-5.webp": "cc1fed15d41bbd83cd2fedb18a473825ddbd143e",
+    "stage-6-4-6.webp": "779818d2512fc059e58e1d7e487df34b8aed6140",
+    "stage-7-0-0.webp": "a67c739d2b5913363cd0a53f512e6e799555bbe0",
+    "stage-7-0-1.webp": "ce7e7984e0bbb89bfa093451cc3038acd6d27578",
+    "stage-7-0-2.webp": "813421c891849d139d612b4042b323fc96acee4c",
+    "stage-7-1-0.webp": "170f9cb4f8b539f61b1019a7774859b3b77f063d",
+    "stage-7-1-2.webp": "022e8cf462de226d1f3caf1207ae848e102eae6f",
+    "stage-7-1-3.webp": "fcfd7b4275eb2287d0549f577cd72c194dad3db2",
+    "stage-7-1-4.webp": "baaf04e692924d3b4d20c7b0ba3b8881c41d1d75",
+    "stage-7-1-5.webp": "33744409c21517e419378d8317b29142ffde4196",
+    "stage-7-1-6.webp": "7e2320bd230ae77e6dc80bc21b6b6edc7f20e23d",
+    "stage-7-2-0.webp": "01463ea1b3f1792af75d0acdc45ac0eed9874922",
+    "stage-7-2-6.webp": "654326d1264909d632ea72c51d22dadb081e5521",
+    "stage-7-3-0.webp": "294ed93bcd4cb505c7ba8f1585a6c9ec796abef9",
+    "stage-7-3-6.webp": "f5902ac7fc8a3f9bfb7c854055c4a6e7e6d08965",
+    "stage-7-4-0.webp": "a8cbc36d68d6651bf838c36ae609728ef6fcdf3b",
+    "stage-7-4-1.webp": "b8217ec30b894b70429b081f1e8126760e08ecd2",
+    "stage-7-4-2.webp": "92f23fdd7ec9175e90d36f24526096db2a70e2af",
+    "stage-7-4-3.webp": "fb082f7fa91be588d134af3d02fe611b587748f1",
+    "stage-7-4-4.webp": "07473aec83a71ce0ccd2949d11b524bfa0896d38",
+    "stage-7-4-5.webp": "ce67d9b90201af040c8d072dd1fbf43934abcd7d",
+    "stage-7-4-6.webp": "450a40ae71780d93df3c169c603b8a51af128942",
+    "stage-7-5-0.webp": "d1c7ad3716eed64ebf385c1933e43794861e2742",
+    "stage-7-5-1.webp": "2634833379f7571f0cfc109bf8688b3645101f26",
+    "stage-7-5-2.webp": "2f4af0f86f7eb0272ead46c886af541598b10713",
+    "stage-7-5-3.webp": "dbdc6e33d4309ed2eca00ec74bac71932051437d",
+    "stage-7-5-4.webp": "a69b7a42b92d4ce1befcb71a8bc1c338242c8894",
+    "stage-7-5-5.webp": "0decc4ed73660bdfc9b4bf770f4b9fdc684b7c52",
+    "stage-7-5-6.webp": "edcadb93879d76ae5ee526f07777029410370b7d",
+    "stage-8-0-0.webp": "b5dad5eb149dd0239de40ae4f69494b37e800fe2",
+    "stage-8-0-1.webp": "22a2a19685981d3a71471179de92af640504a36d",
+    "stage-8-0-2.webp": "f5586d35dd48d057371adacc6b230775d82dad34",
+    "stage-8-0-3.webp": "13a4d483b5daca00e825b3679f93f27dc6baa275",
+    "stage-8-0-4.webp": "b0f28a2d18f7a2206749bc984ec1362fc2daa3f4",
+    "stage-8-1-0.webp": "361b3966399ad348464bd012affbbd6958796ee7",
+    "stage-8-1-4.webp": "548179a76d88d9d4164c6f62287c3a3189d61f4a",
+    "stage-8-1-5.webp": "9e55ed612feb249fa8a0eb8f125f58b7621b6041",
+    "stage-8-1-6.webp": "4ce5696f56e86b670119bfa21d4ef9f0ca937a59",
+    "stage-8-2-0.webp": "b60f89a5c20abe06c55f8b2430a6da33cf19fc2d",
+    "stage-8-2-6.webp": "53cb08c1676b9ce053eafb95c4965b4d4de50fc8",
+    "stage-8-3-0.webp": "beaca4a785eac51de0be596be36e746f17cc8800",
+    "stage-8-3-6.webp": "c98cf5568a2871f9ec5147bb6a3005df82a6b171",
+    "stage-8-4-0.webp": "8ee43e27ab8cddb01146d0a3e7207898d7df8c6b",
+    "stage-8-4-1.webp": "2cb8fc4f52a36e3a8d7d68493e0a93f35abb7dca",
+    "stage-8-4-2.webp": "de60f488a3c2f1c8790bf3ed5e6cbe33fa449d33",
+    "stage-8-4-3.webp": "cee911e252253a83181b5cb98b8bea2dd9272bb4",
+    "stage-8-4-4.webp": "96c0e89e423a23874fa6c530d32ee8b13cf52f49",
+    "stage-8-4-5.webp": "b618996d9038628a321322c2e3683ce889de5175",
+    "stage-8-4-6.webp": "6c51447554a5c84d4a852266c985455d0880546c",
+    "stage-8-5-0.webp": "d1c7ad3716eed64ebf385c1933e43794861e2742",
+    "stage-8-5-1.webp": "2634833379f7571f0cfc109bf8688b3645101f26",
+    "stage-8-5-2.webp": "2f4af0f86f7eb0272ead46c886af541598b10713",
+    "stage-8-5-3.webp": "dbdc6e33d4309ed2eca00ec74bac71932051437d",
+    "stage-8-5-4.webp": "a69b7a42b92d4ce1befcb71a8bc1c338242c8894",
+    "stage-8-5-5.webp": "0decc4ed73660bdfc9b4bf770f4b9fdc684b7c52",
+    "stage-8-5-6.webp": "edcadb93879d76ae5ee526f07777029410370b7d",
+    "stage-9-0-0.webp": "cd4177c1304540409f46ab677c5fabe362f9f4b8",
+    "stage-9-0-1.webp": "263d83e36c0f85b196ce2508e8a002736fb6a3ff",
+    "stage-9-0-2.webp": "70fba6f5895f0ec3fec4d802061e357fc9f1d0d5",
+    "stage-9-0-3.webp": "d9ff2511f3919101fde38f43ee2f6504cf5dc32f",
+    "stage-9-0-4.webp": "5ea13282f858c354439250ca68634e0fe66abcb8",
+    "stage-9-0-5.webp": "bd6c31402500d8471877fe3a9c1eb50a2d934326",
+    "stage-9-0-6.webp": "cbb52e7053fc01b83f5bde534f8abf0681143295",
+    "stage-9-1-0.webp": "dfd05934c3a34bde6fe803603fa4d6a7d682e9f8",
+    "stage-9-1-6.webp": "6f5c2e55ac57876eb645aaf61a77cc5b9eda30d2",
+    "stage-9-2-0.webp": "00d6a4e4db385e118ceaf90789bd1480172172e2",
+    "stage-9-2-6.webp": "4c5aa1a0cf8ab902a4f66c69ac27bfaaf3f12934",
+    "stage-9-3-0.webp": "07d6909398bde598f903d59cdea7af63501bcd76",
+    "stage-9-3-6.webp": "97db361d658c3b8d6cb70a53b54521eb335c1fb3",
+    "stage-9-4-0.webp": "da9bf8d8712a4e0c58cffe664742ddd7217f1397",
+    "stage-9-4-1.webp": "e83720d6257512c3251c46ee9e0204aef404beb0",
+    "stage-9-4-2.webp": "0db345c840b99be24cc85ca9329a86a281f129e8",
+    "stage-9-4-3.webp": "ebeac3c1f5d969f60a396cde33a8003edf1e5d59",
+    "stage-9-4-4.webp": "b54f5573107e56f7f0351fe119f68562d54fb052",
+    "stage-9-4-5.webp": "ce67d9b90201af040c8d072dd1fbf43934abcd7d",
+    "stage-9-4-6.webp": "4629730fbaafbb2c94fdcef36e8859b684cca214",
+    "stage-9-5-0.webp": "d1c7ad3716eed64ebf385c1933e43794861e2742",
+    "stage-9-5-1.webp": "2634833379f7571f0cfc109bf8688b3645101f26",
+    "stage-9-5-2.webp": "2f4af0f86f7eb0272ead46c886af541598b10713",
+    "stage-9-5-3.webp": "dbdc6e33d4309ed2eca00ec74bac71932051437d",
+    "stage-9-5-4.webp": "a69b7a42b92d4ce1befcb71a8bc1c338242c8894",
+    "stage-9-5-5.webp": "0decc4ed73660bdfc9b4bf770f4b9fdc684b7c52",
+    "stage-9-5-6.webp": "edcadb93879d76ae5ee526f07777029410370b7d",
+    "stage-10-0-0.webp": "cd4177c1304540409f46ab677c5fabe362f9f4b8",
+    "stage-10-0-1.webp": "263d83e36c0f85b196ce2508e8a002736fb6a3ff",
+    "stage-10-0-2.webp": "70fba6f5895f0ec3fec4d802061e357fc9f1d0d5",
+    "stage-10-0-3.webp": "d9ff2511f3919101fde38f43ee2f6504cf5dc32f",
+    "stage-10-0-4.webp": "5ea13282f858c354439250ca68634e0fe66abcb8",
+    "stage-10-0-5.webp": "bd6c31402500d8471877fe3a9c1eb50a2d934326",
+    "stage-10-0-6.webp": "cbb52e7053fc01b83f5bde534f8abf0681143295",
+    "stage-10-1-0.webp": "dfd05934c3a34bde6fe803603fa4d6a7d682e9f8",
+    "stage-10-1-6.webp": "6f5c2e55ac57876eb645aaf61a77cc5b9eda30d2",
+    "stage-10-2-0.webp": "00d6a4e4db385e118ceaf90789bd1480172172e2",
+    "stage-10-2-6.webp": "f6d2a75af269ce5ce73d5dad1e2185c4e37dcb75",
+    "stage-10-2-7.webp": "944dfabe90832c84fca4086b9a9cea1d2c9a5dac",
+    "stage-10-2-8.webp": "c724a19be91cb77cc5da01889b145442156fdcbc",
+    "stage-10-3-0.webp": "07d6909398bde598f903d59cdea7af63501bcd76",
+    "stage-10-3-6.webp": "a20ab29c8a185fdcf609355c083154f20d6865c9",
+    "stage-10-3-7.webp": "c6a5f89f15efa900d705d31eb513637ac50e7d69",
+    "stage-10-3-8.webp": "4b856370d2b56cc112bd83b05cdc95e020a7b19c",
+    "stage-10-4-0.webp": "da9bf8d8712a4e0c58cffe664742ddd7217f1397",
+    "stage-10-4-1.webp": "e83720d6257512c3251c46ee9e0204aef404beb0",
+    "stage-10-4-2.webp": "0db345c840b99be24cc85ca9329a86a281f129e8",
+    "stage-10-4-3.webp": "ebeac3c1f5d969f60a396cde33a8003edf1e5d59",
+    "stage-10-4-4.webp": "85a3b560eb439b3bb37c959bf7a7ed4e90763c60",
+    "stage-10-4-5.webp": "d9b0305345c8fe52387eb70f3b20a78ecf9b1634",
+    "stage-10-4-6.webp": "19e35ce0ce6b975cc0527f739510ee14f98d0261",
+    "stage-10-4-7.webp": "2c34df8e1cbb47989969373fc31f18eb66581d47",
+    "stage-10-4-8.webp": "e9878a03324761426d6fcb5ddfefe77d8ecd8263",
+    "stage-10-5-0.webp": "d1c7ad3716eed64ebf385c1933e43794861e2742",
+    "stage-10-5-1.webp": "2634833379f7571f0cfc109bf8688b3645101f26",
+    "stage-10-5-2.webp": "2f4af0f86f7eb0272ead46c886af541598b10713",
+    "stage-10-5-3.webp": "dbdc6e33d4309ed2eca00ec74bac71932051437d",
+    "stage-10-5-4.webp": "dc05ff22ee53cdbd960bd555cc524fee408e02b3",
+    "stage-10-5-5.webp": "10c3e0caaaffbbfbbdfa422534f5279c95c4af59",
+    "stage-10-5-6.webp": "b81a86868c989ed50eb4565478031e1c94c2f849",
+    "stage-10-5-7.webp": "75f5f993355bdec3b1347ad9face6862a7462f8e",
+    "stage-10-5-8.webp": "4fea73ac2d7195001837e0cbd99b6a62a19c511f",
+    "stage-11-0-0.webp": "cd4177c1304540409f46ab677c5fabe362f9f4b8",
+    "stage-11-0-1.webp": "263d83e36c0f85b196ce2508e8a002736fb6a3ff",
+    "stage-11-0-2.webp": "70fba6f5895f0ec3fec4d802061e357fc9f1d0d5",
+    "stage-11-0-3.webp": "d9ff2511f3919101fde38f43ee2f6504cf5dc32f",
+    "stage-11-0-4.webp": "5ea13282f858c354439250ca68634e0fe66abcb8",
+    "stage-11-0-5.webp": "bd6c31402500d8471877fe3a9c1eb50a2d934326",
+    "stage-11-0-6.webp": "cbb52e7053fc01b83f5bde534f8abf0681143295",
+    "stage-11-1-0.webp": "dfd05934c3a34bde6fe803603fa4d6a7d682e9f8",
+    "stage-11-1-6.webp": "15df169036acebe01688ba11cd3d703de59170fc",
+    "stage-11-1-7.webp": "104cabc61053cc55f1dfe660c4754744c0b313b8",
+    "stage-11-1-8.webp": "90496c2aada009bc7d0004715fa3abd99eb441a0",
+    "stage-11-2-0.webp": "00d6a4e4db385e118ceaf90789bd1480172172e2",
+    "stage-11-2-8.webp": "f11e142f2cf4874b77fae792eca6055d929b66f5",
+    "stage-11-3-0.webp": "07d6909398bde598f903d59cdea7af63501bcd76",
+    "stage-11-3-8.webp": "61f175f06bb129c23258f4bc3288bed990921b2f",
+    "stage-11-4-0.webp": "da9bf8d8712a4e0c58cffe664742ddd7217f1397",
+    "stage-11-4-1.webp": "e83720d6257512c3251c46ee9e0204aef404beb0",
+    "stage-11-4-2.webp": "0db345c840b99be24cc85ca9329a86a281f129e8",
+    "stage-11-4-3.webp": "ebeac3c1f5d969f60a396cde33a8003edf1e5d59",
+    "stage-11-4-4.webp": "85a3b560eb439b3bb37c959bf7a7ed4e90763c60",
+    "stage-11-4-5.webp": "d9b0305345c8fe52387eb70f3b20a78ecf9b1634",
+    "stage-11-4-6.webp": "f854cd52718850f5b57dde8b0773130979f351de",
+    "stage-11-4-7.webp": "f39b30ff984f663934f7c13173bc30c5d585a10f",
+    "stage-11-4-8.webp": "a4c389b46d62ab56c3b29d56f231c1cc1f2de59c",
+    "stage-11-5-0.webp": "d1c7ad3716eed64ebf385c1933e43794861e2742",
+    "stage-11-5-1.webp": "2634833379f7571f0cfc109bf8688b3645101f26",
+    "stage-11-5-2.webp": "2f4af0f86f7eb0272ead46c886af541598b10713",
+    "stage-11-5-3.webp": "dbdc6e33d4309ed2eca00ec74bac71932051437d",
+    "stage-11-5-4.webp": "dc05ff22ee53cdbd960bd555cc524fee408e02b3",
+    "stage-11-5-5.webp": "10c3e0caaaffbbfbbdfa422534f5279c95c4af59",
+    "stage-11-5-6.webp": "96f07592e96ed69cd3d33f4bd12f8523122f1c32",
+    "stage-11-5-7.webp": "1806ac2e99e02c5b42ca1a24f067cfc848602627",
+    "stage-11-5-8.webp": "e5bf0d98b8c122f349d2beac71417c0451740273",
+    "stage-12-0-0.webp": "cd4177c1304540409f46ab677c5fabe362f9f4b8",
+    "stage-12-0-1.webp": "263d83e36c0f85b196ce2508e8a002736fb6a3ff",
+    "stage-12-0-2.webp": "70fba6f5895f0ec3fec4d802061e357fc9f1d0d5",
+    "stage-12-0-3.webp": "d9ff2511f3919101fde38f43ee2f6504cf5dc32f",
+    "stage-12-0-4.webp": "19edb42453aa50cd3a5efead9ccb293ba975c953",
+    "stage-12-0-5.webp": "b664501fa79b221cb29527238b01c25ca062c5d6",
+    "stage-12-0-6.webp": "c750d10aea78eec1f1db2c50d6a6594567704eab",
+    "stage-12-0-7.webp": "e2a1803589785046274360d10c8d9f9441049462",
+    "stage-12-0-8.webp": "aee2515f708bbed1fe8a9b12b847eb416b4cf745",
+    "stage-12-1-0.webp": "dfd05934c3a34bde6fe803603fa4d6a7d682e9f8",
+    "stage-12-1-8.webp": "6f5c2e55ac57876eb645aaf61a77cc5b9eda30d2",
+    "stage-12-2-0.webp": "00d6a4e4db385e118ceaf90789bd1480172172e2",
+    "stage-12-2-8.webp": "4c5aa1a0cf8ab902a4f66c69ac27bfaaf3f12934",
+    "stage-12-3-0.webp": "07d6909398bde598f903d59cdea7af63501bcd76",
+    "stage-12-3-8.webp": "97db361d658c3b8d6cb70a53b54521eb335c1fb3",
+    "stage-12-4-0.webp": "da9bf8d8712a4e0c58cffe664742ddd7217f1397",
+    "stage-12-4-1.webp": "e83720d6257512c3251c46ee9e0204aef404beb0",
+    "stage-12-4-2.webp": "0db345c840b99be24cc85ca9329a86a281f129e8",
+    "stage-12-4-3.webp": "ebeac3c1f5d969f60a396cde33a8003edf1e5d59",
+    "stage-12-4-4.webp": "85a3b560eb439b3bb37c959bf7a7ed4e90763c60",
+    "stage-12-4-5.webp": "d9b0305345c8fe52387eb70f3b20a78ecf9b1634",
+    "stage-12-4-6.webp": "f854cd52718850f5b57dde8b0773130979f351de",
+    "stage-12-4-7.webp": "f39b30ff984f663934f7c13173bc30c5d585a10f",
+    "stage-12-4-8.webp": "a4c389b46d62ab56c3b29d56f231c1cc1f2de59c",
+    "stage-12-5-0.webp": "d1c7ad3716eed64ebf385c1933e43794861e2742",
+    "stage-12-5-1.webp": "2634833379f7571f0cfc109bf8688b3645101f26",
+    "stage-12-5-2.webp": "2f4af0f86f7eb0272ead46c886af541598b10713",
+    "stage-12-5-3.webp": "dbdc6e33d4309ed2eca00ec74bac71932051437d",
+    "stage-12-5-4.webp": "dc05ff22ee53cdbd960bd555cc524fee408e02b3",
+    "stage-12-5-5.webp": "10c3e0caaaffbbfbbdfa422534f5279c95c4af59",
+    "stage-12-5-6.webp": "96f07592e96ed69cd3d33f4bd12f8523122f1c32",
+    "stage-12-5-7.webp": "1806ac2e99e02c5b42ca1a24f067cfc848602627",
+    "stage-12-5-8.webp": "e5bf0d98b8c122f349d2beac71417c0451740273",
+    "stage-13-0-0.webp": "a67c739d2b5913363cd0a53f512e6e799555bbe0",
+    "stage-13-0-1.webp": "ce7e7984e0bbb89bfa093451cc3038acd6d27578",
+    "stage-13-0-2.webp": "813421c891849d139d612b4042b323fc96acee4c",
+    "stage-13-1-0.webp": "170f9cb4f8b539f61b1019a7774859b3b77f063d",
+    "stage-13-1-2.webp": "022e8cf462de226d1f3caf1207ae848e102eae6f",
+    "stage-13-1-3.webp": "fcfd7b4275eb2287d0549f577cd72c194dad3db2",
+    "stage-13-1-4.webp": "0af272caddec388df3fe8defd63e155e67832511",
+    "stage-13-1-5.webp": "b664501fa79b221cb29527238b01c25ca062c5d6",
+    "stage-13-1-6.webp": "c750d10aea78eec1f1db2c50d6a6594567704eab",
+    "stage-13-1-7.webp": "e2a1803589785046274360d10c8d9f9441049462",
+    "stage-13-1-8.webp": "68696750ae91de8892895fcbd39a9363a51f4a79",
+    "stage-13-2-0.webp": "77f23ea2c97a6c9c75da5d1eb482df09b52a9593",
+    "stage-13-2-8.webp": "75446fb2d1380d7436cd9437e884a1d05f79abec",
+    "stage-13-3-0.webp": "a3ef3672f065dd3f0c144808b77b974547d04750",
+    "stage-13-3-8.webp": "3022b2c5fbd8b97840f990f598adbb4707e6f1bd",
+    "stage-13-4-0.webp": "00e015e4dbb71935b5d88b24ef09b8c19e74103f",
+    "stage-13-4-8.webp": "3b6d377cf2c3df2a80a817c8da7efd2b3386b8bf",
+    "stage-13-5-0.webp": "a3c78ac769df9ceb26d313bbf5d1c05963408207",
+    "stage-13-5-1.webp": "bba09779e94f0d744f274b6435da93bdc28fd77e",
+    "stage-13-5-2.webp": "e608b9b4f121bdc0a37afb2e173a5435f827d116",
+    "stage-13-5-3.webp": "e1eab156abd0d31de99cdb3d8cb61f50ecedf61b",
+    "stage-13-5-4.webp": "c68c6f5f079cecce89fcfb02890652cbf4c6963f",
+    "stage-13-5-5.webp": "d8f826b4b6570bc83192a6f5f958527f90268596",
+    "stage-13-5-6.webp": "c3e52e7f46fc6276ba4621d09005b7bb261a00e6",
+    "stage-13-5-7.webp": "b086d85de6aa8854af36036c9fc503d60cc93927",
+    "stage-13-5-8.webp": "afdfa558232365d3d95bd01b5bf976594b9613ef",
+    "stage-13-6-0.webp": "cba3dc4d31e274d3821a3a7c06660a06b3d27baa",
+    "stage-13-6-1.webp": "1bd3d40d66d8349345644142f311b0887e4171d9",
+    "stage-13-6-2.webp": "c1259b48bf393f7bdbfc42d88c1141f34f37670c",
+    "stage-13-6-3.webp": "9d78713c4c465b64852ecf16d0b1528db483e8d6",
+    "stage-13-6-4.webp": "b546c0604decd63b2035e2fe8d8cd87bb5bf2365",
+    "stage-13-6-5.webp": "8923a9861838c424d5f86bcf28c740a6acfafb87",
+    "stage-13-6-6.webp": "ef5cf9f8093523c96c103fe49a60086e4c9bd746",
+    "stage-13-6-7.webp": "3da11be51bb6a4571a518924910525dec49e9988",
+    "stage-13-6-8.webp": "d26acf459c9928fd37bc585d39479f76a01810ca",
+    "stage-13-7-3.webp": "4f6db940467d6df8b4a48df51ecd1a77fcc1dd68",
+    "stage-13-7-5.webp": "4f6db940467d6df8b4a48df51ecd1a77fcc1dd68",
+    "stage-13-7-6.webp": "91d7b41b7fefd029157e3c57e55dd490cc071028",
+    "stage-13-7-7.webp": "593717168ad9785bf50f5e5540f6b1ec4e157af8",
+    "stage-13-7-8.webp": "af80ec41923b1d1d60cefe25b08f54c0038876cd",
+    "stage-14-0-0.webp": "cd4177c1304540409f46ab677c5fabe362f9f4b8",
+    "stage-14-0-1.webp": "263d83e36c0f85b196ce2508e8a002736fb6a3ff",
+    "stage-14-0-2.webp": "95a99232225f4fc7d308985e583061d4d3b270fb",
+    "stage-14-0-3.webp": "09c185b1b368371b13f02e7e5cdc8c1a32d77cd0",
+    "stage-14-0-4.webp": "329558532e6488ba60e3bddbb9d18306475e208d",
+    "stage-14-1-0.webp": "dfd05934c3a34bde6fe803603fa4d6a7d682e9f8",
+    "stage-14-1-4.webp": "74ae997588c5df418a332cb63551a52e37322070",
+    "stage-14-1-5.webp": "8a5e329cda7a4ef7eed09b0b497b86ce032132dd",
+    "stage-14-1-6.webp": "cfa0b7ff7b7e40b27e47de28ce6b74876fd82364",
+    "stage-14-1-7.webp": "4daa23954120281120efc97f9efe4d3156664d24",
+    "stage-14-1-8.webp": "107bb5f4e0f076ccdb63a8523d8e191b059eb335",
+    "stage-14-2-0.webp": "aed39b938b1941c94d79b117a210fd3beb39b279",
+    "stage-14-2-8.webp": "f44e35f088bf6c9009977af34f40b80cf96986ca",
+    "stage-14-3-0.webp": "a3ef3672f065dd3f0c144808b77b974547d04750",
+    "stage-14-3-8.webp": "f02f6a691eb515856dc9db1aaecb26426449701b",
+    "stage-14-4-0.webp": "00e015e4dbb71935b5d88b24ef09b8c19e74103f",
+    "stage-14-4-8.webp": "3b6d377cf2c3df2a80a817c8da7efd2b3386b8bf",
+    "stage-14-5-0.webp": "a3c78ac769df9ceb26d313bbf5d1c05963408207",
+    "stage-14-5-1.webp": "bba09779e94f0d744f274b6435da93bdc28fd77e",
+    "stage-14-5-2.webp": "e608b9b4f121bdc0a37afb2e173a5435f827d116",
+    "stage-14-5-3.webp": "e1eab156abd0d31de99cdb3d8cb61f50ecedf61b",
+    "stage-14-5-4.webp": "c68c6f5f079cecce89fcfb02890652cbf4c6963f",
+    "stage-14-5-5.webp": "d8f826b4b6570bc83192a6f5f958527f90268596",
+    "stage-14-5-6.webp": "c3e52e7f46fc6276ba4621d09005b7bb261a00e6",
+    "stage-14-5-7.webp": "b086d85de6aa8854af36036c9fc503d60cc93927",
+    "stage-14-5-8.webp": "afdfa558232365d3d95bd01b5bf976594b9613ef",
+    "stage-14-6-0.webp": "cba3dc4d31e274d3821a3a7c06660a06b3d27baa",
+    "stage-14-6-1.webp": "1bd3d40d66d8349345644142f311b0887e4171d9",
+    "stage-14-6-2.webp": "c1259b48bf393f7bdbfc42d88c1141f34f37670c",
+    "stage-14-6-3.webp": "9d78713c4c465b64852ecf16d0b1528db483e8d6",
+    "stage-14-6-4.webp": "b546c0604decd63b2035e2fe8d8cd87bb5bf2365",
+    "stage-14-6-5.webp": "8923a9861838c424d5f86bcf28c740a6acfafb87",
+    "stage-14-6-6.webp": "ef5cf9f8093523c96c103fe49a60086e4c9bd746",
+    "stage-14-6-7.webp": "3da11be51bb6a4571a518924910525dec49e9988",
+    "stage-14-6-8.webp": "d26acf459c9928fd37bc585d39479f76a01810ca",
+    "stage-14-7-3.webp": "4f6db940467d6df8b4a48df51ecd1a77fcc1dd68",
+    "stage-14-7-5.webp": "4f6db940467d6df8b4a48df51ecd1a77fcc1dd68",
+    "stage-14-7-6.webp": "91d7b41b7fefd029157e3c57e55dd490cc071028",
+    "stage-14-7-7.webp": "593717168ad9785bf50f5e5540f6b1ec4e157af8",
+    "stage-14-7-8.webp": "af80ec41923b1d1d60cefe25b08f54c0038876cd",
+    "stage-15-0-0.webp": "cd4177c1304540409f46ab677c5fabe362f9f4b8",
+    "stage-15-0-1.webp": "263d83e36c0f85b196ce2508e8a002736fb6a3ff",
+    "stage-15-0-2.webp": "70fba6f5895f0ec3fec4d802061e357fc9f1d0d5",
+    "stage-15-0-3.webp": "d9ff2511f3919101fde38f43ee2f6504cf5dc32f",
+    "stage-15-0-4.webp": "5ea13282f858c354439250ca68634e0fe66abcb8",
+    "stage-15-0-5.webp": "bd6c31402500d8471877fe3a9c1eb50a2d934326",
+    "stage-15-0-6.webp": "cbb52e7053fc01b83f5bde534f8abf0681143295",
+    "stage-15-1-0.webp": "dfd05934c3a34bde6fe803603fa4d6a7d682e9f8",
+    "stage-15-1-6.webp": "15df169036acebe01688ba11cd3d703de59170fc",
+    "stage-15-1-7.webp": "104cabc61053cc55f1dfe660c4754744c0b313b8",
+    "stage-15-1-8.webp": "90496c2aada009bc7d0004715fa3abd99eb441a0",
+    "stage-15-2-0.webp": "aed39b938b1941c94d79b117a210fd3beb39b279",
+    "stage-15-2-8.webp": "2d9317bc377d02cb104fcfe23926bd5048f511e3",
+    "stage-15-3-0.webp": "a3ef3672f065dd3f0c144808b77b974547d04750",
+    "stage-15-3-8.webp": "f02f6a691eb515856dc9db1aaecb26426449701b",
+    "stage-15-4-0.webp": "00e015e4dbb71935b5d88b24ef09b8c19e74103f",
+    "stage-15-4-8.webp": "3b6d377cf2c3df2a80a817c8da7efd2b3386b8bf",
+    "stage-15-5-0.webp": "a3c78ac769df9ceb26d313bbf5d1c05963408207",
+    "stage-15-5-1.webp": "bba09779e94f0d744f274b6435da93bdc28fd77e",
+    "stage-15-5-2.webp": "e608b9b4f121bdc0a37afb2e173a5435f827d116",
+    "stage-15-5-3.webp": "e1eab156abd0d31de99cdb3d8cb61f50ecedf61b",
+    "stage-15-5-4.webp": "c68c6f5f079cecce89fcfb02890652cbf4c6963f",
+    "stage-15-5-5.webp": "d8f826b4b6570bc83192a6f5f958527f90268596",
+    "stage-15-5-6.webp": "c3e52e7f46fc6276ba4621d09005b7bb261a00e6",
+    "stage-15-5-7.webp": "b086d85de6aa8854af36036c9fc503d60cc93927",
+    "stage-15-5-8.webp": "afdfa558232365d3d95bd01b5bf976594b9613ef",
+    "stage-15-6-0.webp": "cba3dc4d31e274d3821a3a7c06660a06b3d27baa",
+    "stage-15-6-1.webp": "1bd3d40d66d8349345644142f311b0887e4171d9",
+    "stage-15-6-2.webp": "c1259b48bf393f7bdbfc42d88c1141f34f37670c",
+    "stage-15-6-3.webp": "9d78713c4c465b64852ecf16d0b1528db483e8d6",
+    "stage-15-6-4.webp": "b546c0604decd63b2035e2fe8d8cd87bb5bf2365",
+    "stage-15-6-5.webp": "8923a9861838c424d5f86bcf28c740a6acfafb87",
+    "stage-15-6-6.webp": "ef5cf9f8093523c96c103fe49a60086e4c9bd746",
+    "stage-15-6-7.webp": "3da11be51bb6a4571a518924910525dec49e9988",
+    "stage-15-6-8.webp": "d26acf459c9928fd37bc585d39479f76a01810ca",
+    "stage-15-7-3.webp": "4f6db940467d6df8b4a48df51ecd1a77fcc1dd68",
+    "stage-15-7-5.webp": "4f6db940467d6df8b4a48df51ecd1a77fcc1dd68",
+    "stage-15-7-6.webp": "91d7b41b7fefd029157e3c57e55dd490cc071028",
+    "stage-15-7-7.webp": "593717168ad9785bf50f5e5540f6b1ec4e157af8",
+    "stage-15-7-8.webp": "af80ec41923b1d1d60cefe25b08f54c0038876cd",
+    "stage-16-0-0.webp": "cd4177c1304540409f46ab677c5fabe362f9f4b8",
+    "stage-16-0-1.webp": "263d83e36c0f85b196ce2508e8a002736fb6a3ff",
+    "stage-16-0-2.webp": "70fba6f5895f0ec3fec4d802061e357fc9f1d0d5",
+    "stage-16-0-3.webp": "d9ff2511f3919101fde38f43ee2f6504cf5dc32f",
+    "stage-16-0-4.webp": "5ea13282f858c354439250ca68634e0fe66abcb8",
+    "stage-16-0-5.webp": "bd6c31402500d8471877fe3a9c1eb50a2d934326",
+    "stage-16-0-6.webp": "cbb52e7053fc01b83f5bde534f8abf0681143295",
+    "stage-16-1-0.webp": "dfd05934c3a34bde6fe803603fa4d6a7d682e9f8",
+    "stage-16-1-6.webp": "15df169036acebe01688ba11cd3d703de59170fc",
+    "stage-16-1-7.webp": "104cabc61053cc55f1dfe660c4754744c0b313b8",
+    "stage-16-1-8.webp": "90496c2aada009bc7d0004715fa3abd99eb441a0",
+    "stage-16-2-0.webp": "aed39b938b1941c94d79b117a210fd3beb39b279",
+    "stage-16-2-8.webp": "2d9317bc377d02cb104fcfe23926bd5048f511e3",
+    "stage-16-3-0.webp": "a3ef3672f065dd3f0c144808b77b974547d04750",
+    "stage-16-3-8.webp": "7163ffb9494cb793869ecfebc1ae42ffe34405bf",
+    "stage-16-4-0.webp": "00e015e4dbb71935b5d88b24ef09b8c19e74103f",
+    "stage-16-4-8.webp": "cfcd11e532aa32f6aa7dd8b4a51a7a563b34c9c3",
+    "stage-16-4-9.webp": "b42085ce8a6734ea69c7e7f46230cff01c190362",
+    "stage-16-4-10.webp": "315d9d78065e0b9a63c38d5ba5662b35a74abbf7",
+    "stage-16-5-0.webp": "a3c78ac769df9ceb26d313bbf5d1c05963408207",
+    "stage-16-5-1.webp": "bba09779e94f0d744f274b6435da93bdc28fd77e",
+    "stage-16-5-2.webp": "e608b9b4f121bdc0a37afb2e173a5435f827d116",
+    "stage-16-5-3.webp": "e1eab156abd0d31de99cdb3d8cb61f50ecedf61b",
+    "stage-16-5-4.webp": "c68c6f5f079cecce89fcfb02890652cbf4c6963f",
+    "stage-16-5-5.webp": "d8f826b4b6570bc83192a6f5f958527f90268596",
+    "stage-16-5-6.webp": "f52a2f0da51e5c2984354764eaac68392e7e97f4",
+    "stage-16-5-7.webp": "e90d2106882c177908852b8253978e93336a147e",
+    "stage-16-5-8.webp": "805603874a93f628a1f7924c7160939ef0752ed8",
+    "stage-16-5-9.webp": "2f5fccaa5de51ec42b15ac34b1b0260f2ca29ca0",
+    "stage-16-5-10.webp": "ac92448303eb6ca6ffea7fa96c51d526b4febfed",
+    "stage-16-5-11.webp": "0bad1ed774a7d86b1372404ba31cf2d11234ccd5",
+    "stage-16-6-0.webp": "cba3dc4d31e274d3821a3a7c06660a06b3d27baa",
+    "stage-16-6-1.webp": "1bd3d40d66d8349345644142f311b0887e4171d9",
+    "stage-16-6-2.webp": "c1259b48bf393f7bdbfc42d88c1141f34f37670c",
+    "stage-16-6-3.webp": "9d78713c4c465b64852ecf16d0b1528db483e8d6",
+    "stage-16-6-4.webp": "b546c0604decd63b2035e2fe8d8cd87bb5bf2365",
+    "stage-16-6-5.webp": "8923a9861838c424d5f86bcf28c740a6acfafb87",
+    "stage-16-6-6.webp": "1b26dbb3348c7ad1da39daf470470b792c8d6823",
+    "stage-16-6-7.webp": "4f2859d3bec0ca8f95a7522a3eeb4f58b404e272",
+    "stage-16-6-8.webp": "ce45319e135306b074577775b09447db6e7ab337",
+    "stage-16-6-9.webp": "38cd01081e4641b73ad3a2b2db29110569241b17",
+    "stage-16-6-10.webp": "d1f36078e5cd2542fb34f9914ad48239b83f0578",
+    "stage-16-6-11.webp": "4203f75a26a97618c5293514920cd75f092b25c2",
+    "stage-16-7-3.webp": "4f6db940467d6df8b4a48df51ecd1a77fcc1dd68",
+    "stage-16-7-5.webp": "4f6db940467d6df8b4a48df51ecd1a77fcc1dd68",
+    "stage-16-7-7.webp": "940f753805e240b473ab0db515207742eadb4dec",
+    "stage-16-7-8.webp": "46e0b61013213f2653e88f6ddc83ed3ac04c1250",
+    "stage-16-7-9.webp": "26e9f24c0610ec1a1e663099aa5cfeef9f7439ba",
+    "stage-16-7-10.webp": "c613c234b54b6c20775f3a0674974816728b2c5c",
+    "stage-17-0-0.webp": "cd4177c1304540409f46ab677c5fabe362f9f4b8",
+    "stage-17-0-1.webp": "263d83e36c0f85b196ce2508e8a002736fb6a3ff",
+    "stage-17-0-2.webp": "70fba6f5895f0ec3fec4d802061e357fc9f1d0d5",
+    "stage-17-0-3.webp": "d9ff2511f3919101fde38f43ee2f6504cf5dc32f",
+    "stage-17-0-4.webp": "5ea13282f858c354439250ca68634e0fe66abcb8",
+    "stage-17-0-5.webp": "bd6c31402500d8471877fe3a9c1eb50a2d934326",
+    "stage-17-0-6.webp": "cbb52e7053fc01b83f5bde534f8abf0681143295",
+    "stage-17-1-0.webp": "dfd05934c3a34bde6fe803603fa4d6a7d682e9f8",
+    "stage-17-1-6.webp": "15df169036acebe01688ba11cd3d703de59170fc",
+    "stage-17-1-7.webp": "104cabc61053cc55f1dfe660c4754744c0b313b8",
+    "stage-17-1-8.webp": "90496c2aada009bc7d0004715fa3abd99eb441a0",
+    "stage-17-2-0.webp": "aed39b938b1941c94d79b117a210fd3beb39b279",
+    "stage-17-2-8.webp": "3d0491feb24014bb4f0fb926c2629026b0893689",
+    "stage-17-2-9.webp": "0d1650ccc06bea198759e58a1584fc6459d71c26",
+    "stage-17-2-10.webp": "65647a9601e63e44c9eff6a20f84aeb73121b098",
+    "stage-17-3-0.webp": "a3ef3672f065dd3f0c144808b77b974547d04750",
+    "stage-17-3-8.webp": "1bb2d3d53f3cea4e5f582e9de3095ebb3a1080c5",
+    "stage-17-3-9.webp": "70d50c17572d743747f6a24486947655b934abae",
+    "stage-17-3-10.webp": "64246820117cf8f5deffbc02209febf1594ca1fd",
+    "stage-17-4-0.webp": "00e015e4dbb71935b5d88b24ef09b8c19e74103f",
+    "stage-17-4-10.webp": "2d4d4e8e3843a3f0f96b094ba28c643ca4ff0493",
+    "stage-17-4-11.webp": "b073d36d17ba301a65fb3a0f6a10784e6fcc216d",
+    "stage-17-5-0.webp": "a3c78ac769df9ceb26d313bbf5d1c05963408207",
+    "stage-17-5-1.webp": "bba09779e94f0d744f274b6435da93bdc28fd77e",
+    "stage-17-5-2.webp": "e608b9b4f121bdc0a37afb2e173a5435f827d116",
+    "stage-17-5-3.webp": "e1eab156abd0d31de99cdb3d8cb61f50ecedf61b",
+    "stage-17-5-4.webp": "c68c6f5f079cecce89fcfb02890652cbf4c6963f",
+    "stage-17-5-5.webp": "d8f826b4b6570bc83192a6f5f958527f90268596",
+    "stage-17-5-6.webp": "f52a2f0da51e5c2984354764eaac68392e7e97f4",
+    "stage-17-5-7.webp": "e90d2106882c177908852b8253978e93336a147e",
+    "stage-17-5-8.webp": "25c51444469e67b389b5d66f62a1a864fc4ff4e5",
+    "stage-17-5-9.webp": "ef9f36a996cb617f516abfb429f8732aa5708637",
+    "stage-17-5-10.webp": "6d6231092e51a8daf6c2329d41656171f20dd850",
+    "stage-17-5-11.webp": "241c53b82c7d9746b3e53cb262c8f4262ba46e24",
+    "stage-17-6-0.webp": "cba3dc4d31e274d3821a3a7c06660a06b3d27baa",
+    "stage-17-6-1.webp": "1bd3d40d66d8349345644142f311b0887e4171d9",
+    "stage-17-6-2.webp": "c1259b48bf393f7bdbfc42d88c1141f34f37670c",
+    "stage-17-6-3.webp": "9d78713c4c465b64852ecf16d0b1528db483e8d6",
+    "stage-17-6-4.webp": "b546c0604decd63b2035e2fe8d8cd87bb5bf2365",
+    "stage-17-6-5.webp": "8923a9861838c424d5f86bcf28c740a6acfafb87",
+    "stage-17-6-6.webp": "1b26dbb3348c7ad1da39daf470470b792c8d6823",
+    "stage-17-6-7.webp": "4f2859d3bec0ca8f95a7522a3eeb4f58b404e272",
+    "stage-17-6-8.webp": "20f36ec34b1e72139f82d147d52f3649e1c91a88",
+    "stage-17-6-9.webp": "732dae972b0c5b9d960880964cbd2f9084482cba",
+    "stage-17-6-10.webp": "8ce4599176a01c22cf2d5474e5e01d7888e3e35e",
+    "stage-17-6-11.webp": "cd4a240824d2f40d388ea6894601abc762548588",
+    "stage-17-7-3.webp": "4f6db940467d6df8b4a48df51ecd1a77fcc1dd68",
+    "stage-17-7-5.webp": "4f6db940467d6df8b4a48df51ecd1a77fcc1dd68",
+    "stage-17-7-7.webp": "940f753805e240b473ab0db515207742eadb4dec",
+    "stage-17-7-8.webp": "46e0b61013213f2653e88f6ddc83ed3ac04c1250",
+    "stage-17-7-9.webp": "9c28b6daee41bfbbeab9d8b76a493bdff520d66e",
+    "stage-17-7-10.webp": "af80ec41923b1d1d60cefe25b08f54c0038876cd",
+    "stage-18-0-0.webp": "cd4177c1304540409f46ab677c5fabe362f9f4b8",
+    "stage-18-0-1.webp": "263d83e36c0f85b196ce2508e8a002736fb6a3ff",
+    "stage-18-0-2.webp": "70fba6f5895f0ec3fec4d802061e357fc9f1d0d5",
+    "stage-18-0-3.webp": "d9ff2511f3919101fde38f43ee2f6504cf5dc32f",
+    "stage-18-0-4.webp": "5ea13282f858c354439250ca68634e0fe66abcb8",
+    "stage-18-0-5.webp": "bd6c31402500d8471877fe3a9c1eb50a2d934326",
+    "stage-18-0-6.webp": "cbb52e7053fc01b83f5bde534f8abf0681143295",
+    "stage-18-1-0.webp": "dfd05934c3a34bde6fe803603fa4d6a7d682e9f8",
+    "stage-18-1-6.webp": "f4f6eed68a5a8b4d64867d12efc138b6c1cdab12",
+    "stage-18-1-7.webp": "e2cf18cf2bc2d50c6f8b8ec8dbf059c893fe5dd7",
+    "stage-18-1-8.webp": "f72d251fbc3284550ad65f0180c0de5879e51a7f",
+    "stage-18-1-9.webp": "1ff342d0b6f8ac2ce56a72a6474d27423b39011f",
+    "stage-18-1-10.webp": "2da259b215fe5d29516366f37eb23d4040a90137",
+    "stage-18-2-0.webp": "aed39b938b1941c94d79b117a210fd3beb39b279",
+    "stage-18-2-10.webp": "f44e35f088bf6c9009977af34f40b80cf96986ca",
+    "stage-18-3-0.webp": "a3ef3672f065dd3f0c144808b77b974547d04750",
+    "stage-18-3-10.webp": "8069d48d5faf2d8d162a3e079f0df3cff1a357b3",
+    "stage-18-3-11.webp": "c90a04d6101bf06e81b56caa44053144d478732a",
+    "stage-18-4-0.webp": "00e015e4dbb71935b5d88b24ef09b8c19e74103f",
+    "stage-18-4-10.webp": "f06211823ae17b4106c05c10480e431e1abb90e9",
+    "stage-18-4-11.webp": "b073d36d17ba301a65fb3a0f6a10784e6fcc216d",
+    "stage-18-5-0.webp": "a3c78ac769df9ceb26d313bbf5d1c05963408207",
+    "stage-18-5-1.webp": "bba09779e94f0d744f274b6435da93bdc28fd77e",
+    "stage-18-5-2.webp": "e608b9b4f121bdc0a37afb2e173a5435f827d116",
+    "stage-18-5-3.webp": "e1eab156abd0d31de99cdb3d8cb61f50ecedf61b",
+    "stage-18-5-4.webp": "c68c6f5f079cecce89fcfb02890652cbf4c6963f",
+    "stage-18-5-5.webp": "d8f826b4b6570bc83192a6f5f958527f90268596",
+    "stage-18-5-6.webp": "f52a2f0da51e5c2984354764eaac68392e7e97f4",
+    "stage-18-5-7.webp": "e90d2106882c177908852b8253978e93336a147e",
+    "stage-18-5-8.webp": "25c51444469e67b389b5d66f62a1a864fc4ff4e5",
+    "stage-18-5-9.webp": "ef9f36a996cb617f516abfb429f8732aa5708637",
+    "stage-18-5-10.webp": "6d6231092e51a8daf6c2329d41656171f20dd850",
+    "stage-18-5-11.webp": "241c53b82c7d9746b3e53cb262c8f4262ba46e24",
+    "stage-18-6-0.webp": "cba3dc4d31e274d3821a3a7c06660a06b3d27baa",
+    "stage-18-6-1.webp": "1bd3d40d66d8349345644142f311b0887e4171d9",
+    "stage-18-6-2.webp": "c1259b48bf393f7bdbfc42d88c1141f34f37670c",
+    "stage-18-6-3.webp": "9d78713c4c465b64852ecf16d0b1528db483e8d6",
+    "stage-18-6-4.webp": "b546c0604decd63b2035e2fe8d8cd87bb5bf2365",
+    "stage-18-6-5.webp": "8923a9861838c424d5f86bcf28c740a6acfafb87",
+    "stage-18-6-6.webp": "1b26dbb3348c7ad1da39daf470470b792c8d6823",
+    "stage-18-6-7.webp": "4f2859d3bec0ca8f95a7522a3eeb4f58b404e272",
+    "stage-18-6-8.webp": "20f36ec34b1e72139f82d147d52f3649e1c91a88",
+    "stage-18-6-9.webp": "732dae972b0c5b9d960880964cbd2f9084482cba",
+    "stage-18-6-10.webp": "8ce4599176a01c22cf2d5474e5e01d7888e3e35e",
+    "stage-18-6-11.webp": "cd4a240824d2f40d388ea6894601abc762548588",
+    "stage-18-7-3.webp": "4f6db940467d6df8b4a48df51ecd1a77fcc1dd68",
+    "stage-18-7-5.webp": "4f6db940467d6df8b4a48df51ecd1a77fcc1dd68",
+    "stage-18-7-7.webp": "940f753805e240b473ab0db515207742eadb4dec",
+    "stage-18-7-8.webp": "46e0b61013213f2653e88f6ddc83ed3ac04c1250",
+    "stage-18-7-9.webp": "9c28b6daee41bfbbeab9d8b76a493bdff520d66e",
+    "stage-18-7-10.webp": "af80ec41923b1d1d60cefe25b08f54c0038876cd"
   }
 }

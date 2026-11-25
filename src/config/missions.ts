@@ -32,7 +32,8 @@ const MILESTONE_MISSIONS = {
   'level-twenty-two': {title: 'Atteindre le niveau 22', description: 'Atteins le niveau 22.', condition: {kind: 'level', target: 22}},
   'level-twenty-five': {title: 'Atteindre le niveau 25', description: 'Atteins le niveau 25.', condition: {kind: 'level', target: 25}},
   'level-thirty': {title: 'Atteindre le niveau 30', description: 'Atteins le niveau 30.', condition: {kind: 'level', target: 30}},
-  'island-complete': {title: 'Toute l’île pour tes lapins', description: 'Achète les huit extensions de l’île.', condition: {kind: 'extensions', target: 8}},
+  // Still eight purchases since the island grew to 18 parcels (24 November 2026): a mission already reached stays reached.
+  'island-complete': {title: 'Une grande île pour tes lapins', description: 'Achète huit extensions de l’île.', condition: {kind: 'extensions', target: 8}},
   // Shown once the jump-rope islet is bought (owner, 4 November 2026).
   'first-jump-rope': {title: 'Premiers sauts', description: 'Joue ta première partie de corde à sauter sur ta petite île.', condition: {kind: 'jumpRopeGame'}},
   // Shown once the Antre du dragon is built (owner, 12 November 2026: the runs are part of the main missions).

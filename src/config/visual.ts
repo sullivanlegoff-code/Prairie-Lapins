@@ -3,7 +3,9 @@ import {ISLAND} from './islandGeometry';
 export const INCOME_BUBBLE_THRESHOLD = 200;
 /** Presentation only. Never persisted; logical cells and economy remain unchanged. */
 export const VISUAL = {
-  grid: {originX: ISLAND.originX, originY: ISLAND.originY, width: ISLAND.cellWidth, depth: ISLAND.cellDepth, columns: ISLAND.mapCells, rows: ISLAND.mapCells},
+  // `columns` × `rows` cells from row `top` (negative: the north row of the grown island); `pivot`: the centre of the first
+  // 12 × 12 island, where the projection pivots (it never moves, so the painted stages and islets keep their places).
+  grid: {originX: ISLAND.originX, originY: ISLAND.originY, width: ISLAND.cellWidth, depth: ISLAND.cellDepth, columns: ISLAND.bounds.right - ISLAND.bounds.left, rows: ISLAND.bounds.bottom - ISLAND.bounds.top, top: ISLAND.bounds.top, pivot: ISLAND.mapCells / 2},
   rabbit: {
     scale: 1.3, hitRadius: 27, motion: {x: 3, y: 1.5, hop: 5},
     // Residents of an enclosure rest, take a short walk near their slot, stop, and now and then hop in place.

@@ -20,5 +20,6 @@ export function habitatEntryReason(s: GameState, b: Building, species: SpeciesId
 }
 /** Enclosures that would accept this species right now (type and capacity): the destinations `welcome` allows. */
 export const welcomeDestinations = (s: GameState, species: SpeciesId): Building[] => s.buildings.filter(b => !habitatEntryReason(s, b, species));
-export const terrainWidth = (_s?: unknown) => ISLAND.mapCells;
-export const visibleColumns = (_s?: unknown) => ISLAND.mapCells;
+/** Width of the land grid in cells (the grown island: five parcel columns). */
+export const terrainWidth = (_s?: unknown) => ISLAND.bounds.right - ISLAND.bounds.left;
+export const visibleColumns = (_s?: unknown) => ISLAND.bounds.right - ISLAND.bounds.left;

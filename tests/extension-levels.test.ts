@@ -11,11 +11,11 @@ import {quoteComplement} from '../src/simulation/actions';
 import {GameController} from '../src/application/GameController';
 import {SAVE_KEY} from '../src/persistence/storage';
 import {ProgressionNotices} from '../src/ui/progressionNotices';
-function state(rank:number,level:number){const s=createCentreStartGame(0);s.acquiredParcels=PARCEL_IDS.slice(0,rank);s.pattes=5000000;s.hearts=10000;s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level};return s;}
+function state(rank:number,level:number){const s=createCentreStartGame(0);s.acquiredParcels=PARCEL_IDS.slice(0,rank);s.pattes=5000000;s.hearts=100000;s.progression={totalXp:cumulativeLevelXp(level),rewardedThroughLevel:level};return s;}
 describe('rank-based extension level gates',()=>{
  it('activates all five central families',()=>expect(Object.values(PROGRESSION.activeLevelFamilies)).toEqual([true,true,true,true,true]));
- itAll([1,2,3,4,5,6,7,8])('rank %i revalidates level before normal/hearts payment',rank=>{
-  const level=requiredExtensionLevel(rank);expect(level).toBe([4,6,8,10,12,15,18,22][rank-1]);
+ itAll([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17])('rank %i revalidates level before normal/hearts payment',rank=>{
+  const level=requiredExtensionLevel(rank);expect(level).toBe([4,6,8,10,12,15,18,22,23,24,25,26,27,28,29,30,30][rank-1]);
   const s=state(rank,level-1),command={type:'expand',parcelId:PARCEL_IDS[rank],expectedCost:extensionPrice(s)} as const,before=structuredClone(s);
   expect(act(s,command,0)).toEqual({ok:false,state:before,reason:'LEVEL_REQUIRED'});expect(s).toEqual(before);
   const poor={...s,pattes:0};expect(quoteComplement(poor,command,0)).toEqual({ok:false,reason:'LEVEL_REQUIRED'});expect(act(poor,{type:'payWithHearts',action:command,maxPattes:0,maxHearts:10000},0)).toMatchObject({ok:false,reason:'LEVEL_REQUIRED',state:poor});
@@ -33,10 +33,10 @@ describe('rank-based extension level gates',()=>{
   expect(act(state(1,1),{type:'expand',parcelId:'bad' as never,expectedCost:600},0)).toMatchObject({ok:false,reason:'INVALID_CHOICE'});
  });
  it('keeps old partial/full terrain without invented rights and filters owned announcements',()=>{
-  const partial=state(4,1);expect(levelUnlockContents(partial,1,30).filter(t=>t.family==='extension')).toEqual([4,5,6,7,8].map(rank=>({family:'extension',rank})));
+  const partial=state(4,1);expect(levelUnlockContents(partial,1,30).filter(t=>t.family==='extension')).toEqual([4,5,6,7,8,9,10,11,12,13,14,15,16,17].map(rank=>({family:'extension',rank})));
   expect(act(partial,{type:'expand',parcelId:'west',expectedCost:12000},0)).toMatchObject({ok:false,reason:'LEVEL_REQUIRED'});
-  const full=state(9,1);const loaded=decodeGame(encodeGame(full));expect(loaded).toMatchObject({ok:true,state:{acquiredParcels:full.acquiredParcels,buildings:full.buildings,progression:full.progression}});expect(levelUnlockContents(full,1,30).some(t=>t.family==='extension')).toBe(false);
-  const notices=new ProgressionNotices('extension-notices','test');notices.add({fromLevel:1,toLevel:30,heartsGranted:0,unlocks:levelUnlockContents(partial,1,30)});expect(new ProgressionNotices('extension-notices','test').take()?.unlocks?.filter(t=>t.family==='extension')).toHaveLength(5);
+  const full=state(18,1);const loaded=decodeGame(encodeGame(full));expect(loaded).toMatchObject({ok:true,state:{acquiredParcels:full.acquiredParcels,buildings:full.buildings,progression:full.progression}});expect(levelUnlockContents(full,1,30).some(t=>t.family==='extension')).toBe(false);
+  const notices=new ProgressionNotices('extension-notices','test');notices.add({fromLevel:1,toLevel:30,heartsGranted:0,unlocks:levelUnlockContents(partial,1,30)});expect(new ProgressionNotices('extension-notices','test').take()?.unlocks?.filter(t=>t.family==='extension')).toHaveLength(14);
  });
  itAll([false,true])('write failure rejects parcel and payment, then one retry succeeds (hearts=%s)',hearts=>{
   const s=state(1,4);if(hearts)s.pattes=0;let raw=encodeGame(s),fail=false;const storage={getItem:(k:string)=>k===SAVE_KEY?raw:null,setItem:(k:string,v:string)=>{if(fail)throw Error('quota');if(k===SAVE_KEY)raw=v;}};

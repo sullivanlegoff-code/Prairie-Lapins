@@ -59,7 +59,8 @@ export const PROGRESSION: ProgressionConfig = {
     habitatCommons: {paille: 'paille', neige: 'neige', feu: 'feu', metal: 'belier-gris', vol: 'volant'},
     universalHabitat: 6, habitatUpgradeOffsets: {2: 2, 3: 5},
     decorations: [{minimumPrice: 0, level: 1}, {minimumPrice: 60, level: 3}, {minimumPrice: 100, level: 5}],
-    extensions: [4, 6, 8, 10, 12, 15, 18, 22],
+    // The grown island's nine parcels (owner, 24 November 2026: all of them by level 32; the game stops at level 30, so by 30).
+    extensions: [4, 6, 8, 10, 12, 15, 18, 22, 23, 24, 25, 26, 27, 28, 29, 30, 30],
     buildings: {farm: 1, nest: 1, nursery: 1},
   },
 };

@@ -3,7 +3,8 @@ import {MeadowCamera,gridPoint,type WorldBounds} from '../src/ui/gestures';
 import {screenBounds} from '../src/ui/projection';
 import {VISUAL} from '../src/config/visual';
 // The scene frames projected land (MeadowScene.overview): the same ground rectangles, through the game projection.
-const full:WorldBounds=screenBounds({left:120,right:2232,top:120,bottom:1896});
+// The whole land grid of the grown island (24 November 2026): 20 cells wide, from row -4 to row 12.
+const full:WorldBounds=screenBounds({left:120,right:120+20*176,top:120-4*148,bottom:1896});
 const center:WorldBounds=screenBounds({left:824,right:1528,top:712,bottom:1304});
 const partial:WorldBounds=screenBounds({left:824,right:2232,top:120,bottom:1304});
 describe('overview camera, presentation only',()=>{
@@ -18,7 +19,8 @@ describe('overview camera, presentation only',()=>{
   });
  }
  it('retains .4 baseline on large screens; adapts minimum on compact screens',()=>{
-  const c=new MeadowCamera();c.resize(2000,1200);expect(c.minimumZoom).toBe(.4);
+  // The grown island (18 parcels, 24 November 2026) is wider: a very large screen keeps the .4 baseline.
+  const c=new MeadowCamera();c.resize(2600,1600);expect(c.minimumZoom).toBe(.4);
   c.resize(852,393);expect(c.minimumZoom).toBeCloseTo(Math.min(820/(full.right-full.left+160+80+16+2*VISUAL.ground.floatingRim),299/(full.bottom-full.top+160+16+128+VISUAL.ground.floatingDepth+2*VISUAL.ground.floatingRim)));c.scale(.001,{x:426,y:220});expect(c.zoom).toBe(c.minimumZoom);
   c.scale(1000,{x:426,y:220});expect(c.zoom).toBe(2.2);
  });
@@ -44,7 +46,7 @@ describe('overview camera, presentation only',()=>{
  });
  it('does not zoom in when zooming out after an orientation change',()=>{
   // The front view has a shorter projected map: use a short enough landscape to cross the portrait minimum.
-  const c=new MeadowCamera();c.resize(852,300);c.overview(full);const old=c.zoom;
+  const c=new MeadowCamera();c.resize(852,150);c.overview(full);const old=c.zoom;
   c.resize(390,844);expect(c.minimumZoom).toBeGreaterThan(old);c.scale(.9,{x:195,y:400});expect(c.zoom).toBe(old);
  });
  it('defers orientation and framing changes until fingers lift',()=>{

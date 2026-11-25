@@ -45,7 +45,7 @@ export function createProjection(thetaDegrees: number, q: number, pivot: Point):
 }
 
 const grid = VISUAL.grid;
-/** The game's projection, pivoting on the centre of the full 12 × 12 map. */
+/** The game's projection, pivoting on the centre of the first 12 × 12 island (it stays there as the island grows). */
 export const PROJECTION = createProjection(VISUAL.projection.theta, VISUAL.projection.q,
-  {x: grid.originX + grid.columns * grid.width / 2, y: grid.originY + grid.rows * grid.depth / 2});
+  {x: grid.originX + grid.pivot * grid.width, y: grid.originY + grid.pivot * grid.depth});
 export const {toScreen, toGround, screenBounds, groundBounds, groundTransform} = PROJECTION;

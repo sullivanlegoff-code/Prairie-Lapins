@@ -47,8 +47,8 @@ describe('pure player progression v17',()=>{
   expect(HABITAT_TYPES.map(type=>requiredHabitatLevel(type))).toEqual([6,1,1,5,7,9]);
   expect(requiredHabitatUpgradeLevel('neige',2)).toBe(3);expect(requiredHabitatUpgradeLevel('metal',3)).toBe(12);expect(requiredHabitatUpgradeLevel('universal',3)).toBe(11);
   expect(DECORATION_IDS.map(id=>requiredDecorationLevel(id))).toEqual([1,1,1,2,3,5,6,8,10,12,14,4,22,14,6,8,4,10,3,15,16,5]);
-  expect(Array.from({length:8},(_,i)=>requiredExtensionLevel(i+1))).toEqual([4,6,8,10,12,15,18,22]);
-  for(const rank of [0,9,1.5,NaN])expect(()=>requiredExtensionLevel(rank)).toThrow(RangeError);
+  expect(Array.from({length:17},(_,i)=>requiredExtensionLevel(i+1))).toEqual([4,6,8,10,12,15,18,22,23,24,25,26,27,28,29,30,30]);
+  for(const rank of [0,18,1.5,NaN])expect(()=>requiredExtensionLevel(rank)).toThrow(RangeError);
  });
  it('holds the full requested gain schedule with ID exceptions and catalogue-derived decoration gains',()=>{
   expect(PROGRESSION.xp.commonPurchase).toBe(10);expect(PROGRESSION.xp.construction).toEqual({specializedHabitat:30,universalHabitat:40,farm:20});
@@ -65,7 +65,7 @@ describe('pure player progression v17',()=>{
    configure({requirements:{...r,species:{...r.species,dragon:31}}}),configure({requirements:{...r,universalHabitat:0}}),
    configure({requirements:{...r,habitatCommons:{...r.habitatCommons,metal:'volant'}}}),
    configure({requirements:{...r,habitatUpgradeOffsets:{2:2,3:30}}}),configure({requirements:{...r,extensions:[4]}}),
-   configure({requirements:{...r,extensions:[4,6,8,10,12,15,18,31]}}),
+   configure({requirements:{...r,extensions:[4,6,8,10,12,15,18,22,23,24,25,26,27,28,29,30,31]}}),
    configure({requirements:{...r,decorations:[{minimumPrice:0,level:1},{minimumPrice:0,level:3}]}}),
    configure({requirements:{...r,buildings:{...r.buildings,farm:31}}}),
    configure({xp:{...x,commonPurchase:.5}}),configure({xp:{...x,foodMultiplier:Number.MAX_SAFE_INTEGER}}),

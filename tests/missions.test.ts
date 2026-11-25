@@ -53,7 +53,7 @@ describe('main missions and unique rewards',()=>{
   it('starts eight unclaimed visible objectives and a first cycle until 4 a.m. without changing initial resources',()=>{
     const s=createGame(123);
     // The 123 active missions include the two evolution goals, the jump-rope one and « Premier cours » (the Antre du dragon); the three retired identifiers stay readable in MAIN_MISSION_IDS.
-    expect(ACTIVE_MAIN_MISSION_IDS).toHaveLength(125);expect(MAIN_MISSION_IDS).toEqual(expect.arrayContaining([...ACTIVE_MAIN_MISSION_IDS]));expect(s).toMatchObject({version: 30,pattes:350,grass:10,hearts:12});
+    expect(ACTIVE_MAIN_MISSION_IDS).toHaveLength(125);expect(MAIN_MISSION_IDS).toEqual(expect.arrayContaining([...ACTIVE_MAIN_MISSION_IDS]));expect(s).toMatchObject({version: 31,pattes:350,grass:10,hearts:12});
     expect(s.missions).toEqual({events:emptyMainEvents(),completed:[],claimed:[],daily:{referenceAt:123,cycleIndex:0,endsAt:DAY,progress:emptyDailyProgress(),claimed:[],bonusClaimed:false}});
     expect(dailyCycleEnd(s)).toBe(DAY);
   });
