@@ -107,7 +107,7 @@ describe('pure laboratory transactions', () => {
       }
     }
     for (const capacity of [1, 2, 3, 4] as const) { s = run(s, {type: 'nursery', capacity}); expect(s.buildings.find(b => b.nursery)!.nursery!.capacity).toBe(capacity); }
-    s = run(s, {type: 'extensions'}); expect(s.acquiredParcels).toHaveLength(9); expect(s.pattes).toBe(money);
+    s = run(s, {type: 'extensions'}); expect(s.acquiredParcels).toHaveLength(18); expect(s.pattes).toBe(money);
     // Fill the farms up to the configured maximum; one more must then be refused.
     while (s.buildings.filter(b => b.kind === 'farm').length < BALANCE.buildings.farm.maximum) s = run(s, {type: 'build', kind: 'farm'});
     expect(() => labAction(s, {type: 'build', kind: 'farm'})).toThrow();
@@ -162,7 +162,7 @@ describe('pure laboratory transactions', () => {
   });
   itAll([0, now])('provides a valid complete endgame and a fresh tutorial scenario at %s', clock => {
     const s = roundTrip(scenarioState('completeGame', clock)); expect(s.rabbits).toHaveLength(51); expect(s.discovered).toHaveLength(51);
-    expect(s.progression.totalXp).toBe(cumulativeLevelXp(30)); expect(s.acquiredParcels).toHaveLength(9);
+    expect(s.progression.totalXp).toBe(cumulativeLevelXp(30)); expect(s.acquiredParcels).toHaveLength(18);
     expect(s.buildings.filter(b => b.farmLevel === 2)).toHaveLength(2);
     expect(s.buildings.filter(b => b.order && b.order.endsAt <= clock)).toHaveLength(1);
     expect(s.buildings.filter(b => b.order && b.order.endsAt > clock)).toHaveLength(1);

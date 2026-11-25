@@ -20,7 +20,7 @@ describe('ground ↔ screen projection', () => {
     expect(toScreen(pivot)).toEqual(pivot);
     for (const p of [gridPoint(0, 8), finePoint(13, 41)]) { const back = toGround(toScreen(p)); expect(back.x).toBeCloseTo(p.x, 9); expect(back.y).toBeCloseTo(p.y, 9); }
     // The camera envelope is the projected map with its outer margins.
-    const map = screenBounds(cellsBounds(0, 0, 12, 12));
+    const map = screenBounds(cellsBounds(0, -4, 20, 12)); // The grown island: 20 columns, rows -4 to 12.
     expect(new MeadowCamera().bounds).toEqual({left: map.left - 300, right: map.right + 300, top: map.top - 200, bottom: map.bottom + 200});
   });
   it('round-trips and keeps fine cells exact for the active front view (θ = 0°, q = .78)', () => {

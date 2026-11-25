@@ -7,7 +7,10 @@ import {christmasActive} from './christmas';
  * Fixed growth of southwest-start islands: every player owns the same nine shapes, in this order, each drawn by one
  * painted illustration (assets-source/island/stages, derived by scripts/derive-island-stages.mjs).
  */
-export const ISLAND_ORDER: readonly ParcelId[] = ['southwest', 'south', 'west', 'center', 'southeast', 'east', 'northwest', 'north', 'northeast'];
+export const ISLAND_ORDER: readonly ParcelId[] = ['southwest', 'south', 'west', 'center', 'southeast', 'east', 'northwest', 'north', 'northeast',
+  // The grown island (owner, 24 November 2026): the first east column, the north row, then the second east column. Every shape
+  // keeps a flat south cliff and a west wall, so its painting is assembled from the nine painted stages (docs/island-stages.md).
+  'east-south', 'east-center', 'east-north', 'far-northwest', 'far-north', 'far-northeast', 'far-east-south', 'far-east-center', 'far-east-north'];
 
 export interface StageTile {readonly key: string; readonly url: string; readonly x: number; readonly y: number; readonly width: number; readonly height: number}
 export interface StageArt {
@@ -17,7 +20,7 @@ export interface StageArt {
   readonly tiles: readonly StageTile[];
 }
 
-/** Stage number (1 to 9) when the owned parcels are exactly the first parcels of ISLAND_ORDER, otherwise null. */
+/** Stage number (1 to 18) when the owned parcels are exactly the first parcels of ISLAND_ORDER, otherwise null. */
 export function islandStage(ids: readonly ParcelId[]): number | null {
   const owned = new Set(ids);
   if (owned.size === 0 || owned.size !== ids.length) return null;

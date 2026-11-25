@@ -1,7 +1,7 @@
-// Node built-ins only. Derives the nine painted island stages and the grass tile.
+// Node built-ins only. Derives the eighteen painted island stages and the grass tile.
 // Each master (assets-source/island/stages/stage-<n>.png, 1.5 px per screen-world unit, aligned on the stage canvas)
 // keeps its rim, cliff and underside; inside the playable grass its alpha fades from 8 to 40 units in, so the
-// painted lawn melts into the game's grass tile. Results are cut into 500 px tiles (not a power of two: clamped,
+// painted lawn melts into the game's grass tile. Results are cut into 500 px tiles, each cropped to its visible pixels (not a power of two: clamped,
 // never wrapped, so no seam); fully transparent tiles are dropped.
 // --check re-derives everything in memory and fails on any missing or different byte.
 import {readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, rmSync} from 'node:fs';
@@ -51,8 +51,13 @@ const ORIGIN = 120, PARCEL_W = 704, PARCEL_D = 592, Q = .78, PIVOT_Y = ORIGIN + 
 export const PX_PER_UNIT = 1.5, TILE = 500, FADE = {opaque: 8, clear: 40}, MARGIN = {left: 96, right: 96, top: 96, bottom: 580};
 export const GRASS = {source: 'grass-tile.png', file: 'grass-tile.webp', size: 1024, worldUnits: 352};
 const WEBP_QUALITY = .86;
-export const ORDER = ['southwest', 'south', 'west', 'center', 'southeast', 'east', 'northwest', 'north', 'northeast'];
-const CELL = {northwest: [0, 0], north: [1, 0], northeast: [2, 0], west: [0, 1], center: [1, 1], east: [2, 1], southwest: [0, 2], south: [1, 2], southeast: [2, 2]};
+export const ORDER = ['southwest', 'south', 'west', 'center', 'southeast', 'east', 'northwest', 'north', 'northeast',
+  'east-south', 'east-center', 'east-north', 'far-northwest', 'far-north', 'far-northeast', 'far-east-south', 'far-east-center', 'far-east-north'];
+// Stages 10 to 18 (the grown island, 24 November 2026): two columns to the east, a row to the north (row -1). Their masters are
+// assembled from the painted stages 1 to 9 (docs/island-stages.md); the pivot stays the centre of the first 12 × 12 island.
+const CELL = {northwest: [0, 0], north: [1, 0], northeast: [2, 0], west: [0, 1], center: [1, 1], east: [2, 1], southwest: [0, 2], south: [1, 2], southeast: [2, 2],
+  'east-south': [3, 2], 'east-center': [3, 1], 'east-north': [3, 0], 'far-east-south': [4, 2], 'far-east-center': [4, 1], 'far-east-north': [4, 0],
+  'far-northwest': [0, -1], 'far-north': [1, -1], 'far-northeast': [2, -1]};
 const sy = y => PIVOT_Y + Q * (y - PIVOT_Y);
 const sha1 = buffer => createHash('sha1').update(buffer).digest('hex');
 const round = v => Math.round(v * 1000) / 1000;
@@ -139,13 +144,19 @@ function deriveStage(n, winter = false) {
     pixels[i * 4 + 3] = Math.round(pixels[i * 4 + 3] * keep);
   }
   const tiles = [], outputs = [];
-  for (let ty = 0; ty < h; ty += TILE) for (let tx = 0; tx < w; tx += TILE) {
-    const tw = Math.min(TILE, w - tx), th = Math.min(TILE, h - ty), tile = Buffer.alloc(tw * th * 4);
-    let any = false;
-    for (let y = 0; y < th; y++) { pixels.copy(tile, y * tw * 4, ((ty + y) * w + tx) * 4, ((ty + y) * w + tx + tw) * 4);
-      if (!any) for (let x = 0; x < tw; x++) if (tile[(y * tw + x) * 4 + 3]) { any = true; break; } }
-    if (!any) continue;
-    const name = `stage-${n}-${ty / TILE}-${tx / TILE}.webp`;
+  for (let gy = 0; gy < h; gy += TILE) for (let gx = 0; gx < w; gx += TILE) {
+    // Each tile keeps only the rectangle of its visible pixels, plus one transparent pixel where it was cut (24 November 2026:
+    // the eighteen-parcel island stays within the mobile texture budget; the clamped edge stays transparent, as before).
+    const cw = Math.min(TILE, w - gx), ch = Math.min(TILE, h - gy);
+    let x0 = cw, y0 = ch, x1 = -1, y1 = -1;
+    for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) if (pixels[((gy + y) * w + gx + x) * 4 + 3]) {
+      if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+    }
+    if (x1 < 0) continue;
+    x0 = Math.max(0, x0 - 1); y0 = Math.max(0, y0 - 1); x1 = Math.min(cw - 1, x1 + 1); y1 = Math.min(ch - 1, y1 + 1);
+    const tx = gx + x0, ty = gy + y0, tw = x1 - x0 + 1, th = y1 - y0 + 1, tile = Buffer.alloc(tw * th * 4);
+    for (let y = 0; y < th; y++) pixels.copy(tile, y * tw * 4, ((ty + y) * w + tx) * 4, ((ty + y) * w + tx + tw) * 4);
+    const name = `stage-${n}-${gy / TILE}-${gx / TILE}.webp`;
     outputs.push({name, width: tw, height: th, pixels: tile});
     tiles.push({file: name, x: tx, y: ty, width: tw, height: th});
   }

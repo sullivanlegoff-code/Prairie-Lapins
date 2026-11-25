@@ -52,7 +52,7 @@ export interface WorldBounds {left: number; right: number; top: number; bottom: 
 export const cellsBounds = (x0: number, y0: number, x1: number, y1: number): WorldBounds =>
   ({left: gridPoint(x0, 0).x, right: gridPoint(x1, 0).x, top: gridPoint(0, y0).y, bottom: gridPoint(0, y1).y});
 /** Projected full map of `columns` × all rows, as the camera sees it. */
-const islandScreen = (columns: number): WorldBounds => screenBounds(cellsBounds(0, 0, columns, grid.rows));
+const islandScreen = (columns: number): WorldBounds => screenBounds(cellsBounds(0, grid.top, columns, grid.top + grid.rows));
 const envelope = (r: WorldBounds): WorldBounds => ({left: r.left - camera.marginX, right: r.right + camera.marginX, top: r.top - camera.marginY, bottom: r.bottom + camera.marginY});
 export interface ViewInsets {left: number; right: number; top: number; bottom: number}
 export class MeadowCamera {

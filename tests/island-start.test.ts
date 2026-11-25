@@ -1,7 +1,7 @@
 import {describe, it, expect} from 'vitest';
 import {act, createGame, decodeGame, encodeGame} from '../src/simulation';
 import {createCentreStartGame} from '../src/state/initial';
-import {PARCEL_IDS, PARCELS, acquiredCell, acquiredFootprint, expansionTarget, extensionPrice, purchasableParcels, type ParcelId} from '../src/config/land';
+import {EXTENSION_PRICES, FIRST_PARCEL_IDS, PARCEL_IDS, PARCELS, acquiredCell, acquiredFootprint, expansionTarget, extensionPrice, purchasableParcels, type ParcelId} from '../src/config/land';
 import {FINE_GRID} from '../src/config/decorations';
 import {buildingPlacementReason} from '../src/simulation/placement';
 import {cumulativeLevelXp, requiredExtensionLevel} from '../src/simulation/progression';
@@ -9,7 +9,7 @@ import type {GameState} from '../src/state/types';
 import meadowSource from '../src/display/MeadowScene.ts?raw';
 
 /** Every extension rank unlocked and enough coins: only the island rule decides. */
-const rich = (s: GameState) => {const level = requiredExtensionLevel(8); s.progression = {totalXp: cumulativeLevelXp(level), rewardedThroughLevel: level}; s.pattes = 500_000; return s;};
+const rich = (s: GameState) => {const level = requiredExtensionLevel(17); s.progression = {totalXp: cumulativeLevelXp(level), rewardedThroughLevel: level}; s.pattes = 5_000_000; return s;};
 const expand = (s: GameState, parcelId: ParcelId) => act(s, {type: 'expand', parcelId, expectedCost: extensionPrice(s)}, 0);
 const buy = (s: GameState, parcelId: ParcelId) => {const r = expand(s, parcelId); if (!r.ok) throw Error(`${parcelId}: ${r.reason}`); return r.state;};
 const start = PARCELS.southwest;
@@ -48,12 +48,14 @@ describe('southwest start for new games', () => {
     let s = rich(createGame(0)), rank = 0;
     while (purchasableParcels(s).length) {
       for (const id of purchasableParcels(s)) expect(PARCELS[id].x >= start.x && PARCELS[id].y <= start.y).toBe(true);
-      expect(extensionPrice(s)).toBe([600,2000,6000,12000,25000,45000,75000,100000][rank++]);
+      expect(extensionPrice(s)).toBe(EXTENSION_PRICES[rank++]);
       s = buy(s, purchasableParcels(s).at(-1)!);
     }
+    expect(rank).toBe(17); expect(EXTENSION_PRICES.slice(8)).toEqual([120000, 140000, 160000, 190000, 220000, 255000, 295000, 345000, 400000]);
     expect([...s.acquiredParcels].sort()).toEqual([...PARCEL_IDS].sort());
-    for (let y = 0; y < 12; y++) expect(acquiredCell(s, -1, y)).toBe(false);
-    for (let x = 0; x < 12; x++) expect(acquiredCell(s, x, 12)).toBe(false);
+    for (let y = -4; y < 12; y++) expect(acquiredCell(s, -1, y)).toBe(false);
+    for (let x = 0; x < 20; x++) expect(acquiredCell(s, x, 12)).toBe(false);
+    for (let x = 12; x < 20; x++) expect(acquiredCell(s, x, -1)).toBe(false); // The north-east corners stay sky.
   });
   it('still applies the existing level gate to a valid neighbour', () => {
     const s = createGame(0); s.pattes = 5_000;
@@ -65,7 +67,7 @@ describe('legacy centre-start islands', () => {
   it('keep the former any-direction purchases, including detached parcels', () => {
     const s = rich(createCentreStartGame(0));
     expect(s.islandStart).toBeUndefined();
-    expect(purchasableParcels(s)).toEqual(PARCEL_IDS.filter(id => id !== 'center'));
+    expect(purchasableParcels(s)).toEqual(FIRST_PARCEL_IDS.filter(id => id !== 'center'));
     const detached = buy(buy(s, 'northwest'), 'southeast');
     expect(detached.acquiredParcels).toEqual(['center', 'northwest', 'southeast']);
     expect(buy(s, 'west').acquiredParcels).toEqual(['center', 'west']);

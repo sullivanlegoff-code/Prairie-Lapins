@@ -79,7 +79,7 @@ export function validateProgressionConfig(c: ProgressionConfig = PROGRESSION): v
   if(!r.decorations.length || r.decorations[0].minimumPrice!==0)throw new RangeError('Decoration tiers must start at zero');
   let previous=-1;
   for(const tier of r.decorations){integer(tier.minimumPrice,'Decoration tier');if(tier.minimumPrice<=previous)throw new RangeError('Decoration tiers must increase');previous=tier.minimumPrice;required(tier.level);}
-  if(r.extensions.length!==PARCEL_IDS.length-1)throw new RangeError('Extension requirements must cover all eight purchases');
+  if(r.extensions.length!==PARCEL_IDS.length-1)throw new RangeError('Extension requirements must cover every purchase');
   r.extensions.forEach(required);
   for(const id of DECORATION_IDS) if(DECORATIONS[id].level !== undefined) required(DECORATIONS[id].level!);
   for(const id of DECORATION_IDS) integer(Math.max(x.firstDecorationPlacement.minimum,Math.round(DECORATIONS[id].price/x.firstDecorationPlacement.priceDivisor)),'Decoration XP');

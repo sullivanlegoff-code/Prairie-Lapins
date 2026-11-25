@@ -1,7 +1,7 @@
 import {describe, it, expect} from 'vitest';
 import {itAll} from './cases';
 import {createGame} from '../src/simulation';
-import {PARCEL_IDS, type ParcelId} from '../src/config/land';
+import {FIRST_PARCEL_IDS, PARCEL_IDS, type ParcelId} from '../src/config/land';
 import {ISLAND} from '../src/config/islandGeometry';
 import {plateauRect, type EdgePoint} from '../src/display/terrainEdges';
 import {floatingIslandArt} from '../src/display/floatingIslandArt';
@@ -13,9 +13,9 @@ type Rect = {left: number; top: number; right: number; bottom: number};
 const inside = (p: EdgePoint, r: Rect) => p.x >= r.left - 1e-6 && p.x <= r.right + 1e-6 && p.y >= r.top - 1e-6 && p.y <= r.bottom + 1e-6;
 const fixtures: [string, ParcelId[]][] = [
   ['southwest', ['southwest']], ['two north', ['southwest', 'west']], ['two east', ['southwest', 'south']],
-  ['L', ['southwest', 'west', 'south']], ['2×2', ['southwest', 'west', 'south', 'center']], ['3×3', [...PARCEL_IDS]],
+  ['L', ['southwest', 'west', 'south']], ['2×2', ['southwest', 'west', 'south', 'center']], ['3×3', [...FIRST_PARCEL_IDS]], ['grown island', [...PARCEL_IDS]],
   ['legacy centre', ['center']], ['legacy detached', ['southwest', 'northeast']], ['legacy diagonal', ['southwest', 'center']],
-  ['internal hole', PARCEL_IDS.filter(id => id !== 'center')],
+  ['internal hole', FIRST_PARCEL_IDS.filter(id => id !== 'center')],
 ];
 
 describe('parcel tops and floating island bounds', () => {
@@ -29,7 +29,7 @@ describe('parcel tops and floating island bounds', () => {
       expect(edges).toHaveLength(4);
       expect(edges.some(e => horizontal ? e.a.x === a.right && e.b.x === a.right : e.a.y === a.bottom && e.b.y === a.bottom)).toBe(false);
     }
-    const edges = islandOutline(PARCEL_IDS)[0].loops[0].edges;
+    const edges = islandOutline(FIRST_PARCEL_IDS)[0].loops[0].edges;
     expect(edges).toHaveLength(4);
     expect(edges.filter(e => e.b.x < e.a.x).map(e => e.a.x - e.b.x)).toEqual([ISLAND.mapWidth]);
   });

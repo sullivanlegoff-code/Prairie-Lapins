@@ -1,15 +1,16 @@
 import {describe, expect, it} from 'vitest';
 import {ISLAND_ORDER, ISLAND_STAGE_ART, STAGE_PX_PER_UNIT, islandStage, GRASS_TILE} from '../src/config/islandStages';
-import {PARCELS, PARCEL_IDS, purchasableParcels, type ParcelId} from '../src/config/land';
+import {FIRST_PARCEL_IDS, PARCELS, PARCEL_IDS, purchasableParcels, type ParcelId} from '../src/config/land';
 import {ISLAND} from '../src/config/islandGeometry';
 import {toScreen} from '../src/ui/projection';
 import STAGE_ART from '../src/config/islandStageArt.json';
 
 
 describe('fixed island growth', () => {
-  it('orders all nine parcels once, starting south-west', () => {
+  it('orders all eighteen parcels once, starting south-west, the first nine first', () => {
     expect(new Set(ISLAND_ORDER)).toEqual(new Set(PARCEL_IDS));
-    expect(ISLAND_ORDER).toHaveLength(9);
+    expect(ISLAND_ORDER).toHaveLength(18);
+    expect(new Set(ISLAND_ORDER.slice(0, 9))).toEqual(new Set(FIRST_PARCEL_IDS));
     expect(ISLAND_ORDER[0]).toBe('southwest');
   });
   it('offers exactly the next parcel of the order to south-west islands', () => {

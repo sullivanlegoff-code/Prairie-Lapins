@@ -54,7 +54,7 @@ describe('target-level habitat upgrades',()=>{
   fail=true;expect(c.perform(command)).toMatchObject({ok:false,reason:'ACTION_NOT_SAVED'});expect(c.getSnapshot().state).toEqual(s);fail=false;expect(c.perform(command).ok).toBe(true);expect(events).toHaveLength(0);expect(c.getSnapshot().state?.progression).toEqual(s.progression);c.dispose();
  });
  it('announces each type/target once and never extensions, independent of owned exemplars',()=>{
-  const s=createGame(0),contents=levelUnlockContents(s,1,30),upgrades=contents.filter(t=>t.family==='habitatUpgrade');expect(upgrades).toHaveLength(HABITAT_TYPES.length*2);expect(new Set(upgrades.map(t=>JSON.stringify(t))).size).toBe(upgrades.length);expect(contents.filter(t=>t.family==='extension')).toHaveLength(8);
+  const s=createGame(0),contents=levelUnlockContents(s,1,30),upgrades=contents.filter(t=>t.family==='habitatUpgrade');expect(upgrades).toHaveLength(HABITAT_TYPES.length*2);expect(new Set(upgrades.map(t=>JSON.stringify(t))).size).toBe(upgrades.length);expect(contents.filter(t=>t.family==='extension')).toHaveLength(17); // 18 parcels since 24 November 2026.
   for(const {type,to} of rows){const level=requiredHabitatUpgradeLevel(type,to);expect(levelUnlockContents(s,level-1,level)).toContainEqual({family:'habitatUpgrade',id:type,toLevel:to});}
  });
 });

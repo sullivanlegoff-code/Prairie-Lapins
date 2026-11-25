@@ -12,13 +12,13 @@ const targets: LevelAccessTarget[] = [
   ...SPECIES_IDS.map(id => ({family:'species', id, action:'purchase'} as const)),
   ...HABITAT_TYPES.flatMap(id => [{family:'habitatPurchase', id} as const, ...([2,3] as const).map(toLevel => ({family:'habitatUpgrade', id, toLevel} as const))]),
   ...DECORATION_IDS.map(id => ({family:'decoration',id} as const)),
-  ...Array.from({length:8},(_,i) => ({family:'extension', rank:i+1} as const)),
+  ...Array.from({length:17},(_,i) => ({family:'extension', rank:i+1} as const)),
 ];
 describe('level requirements without active gameplay restrictions', () => {
   itAll(targets)('checks before/at/after $family', target => {
     const required = checkLevelAccess(0,target,[],active).requiredLevel;
     if(required>1) expect(checkLevelAccess(cumulativeLevelXp(required-1),target,[],active).locked).toBe(true);
-    for(const level of [required,required+1]) expect(checkLevelAccess(cumulativeLevelXp(level),target,[],active).accessible).toBe(true);
+    for(const level of [required,Math.min(30,required+1)]) expect(checkLevelAccess(cumulativeLevelXp(level),target,[],active).accessible).toBe(true);
     expect(checkLevelAccess(0,target,[],inactive).accessible).toBe(true);
     expect(checkLevelAccess(0,target,[],inactive).activated).toBe(false);
   });
@@ -48,7 +48,7 @@ describe('level requirements without active gameplay restrictions', () => {
   itAll([
     {family:'species',id:'missing',action:'purchase'}, {family:'species',id:'feu',action:'unknown'},
     {family:'habitatPurchase',id:'missing'}, {family:'habitatUpgrade',id:'universal',toLevel:1},
-    {family:'decoration',id:'missing'}, ...[0,9,1.5,NaN].map(rank=>({family:'extension',rank})), {family:'unknown'},
+    {family:'decoration',id:'missing'}, ...[0,18,1.5,NaN].map(rank=>({family:'extension',rank})), {family:'unknown'},
   ])('rejects invalid targets even with inactive family: %j', target => {
     expect(()=>checkLevelAccess(0,target as LevelAccessTarget)).toThrow(RangeError);
   });

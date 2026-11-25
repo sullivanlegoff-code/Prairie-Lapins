@@ -31,7 +31,7 @@ export function findBulbs({width: w, height: h, pixels: p}, {min = 6, max = 400,
 
 export function deriveLights() {
   const out = {};
-  for (let n = 1; n <= 9; n++) {
+  for (let n = 1; n <= 18; n++) {
     const file = `assets-source/noel/island/stage-${n}.png`;
     if (existsSync(file)) out[n] = findBulbs(decodeRgbPng(readFileSync(file)));
   }
