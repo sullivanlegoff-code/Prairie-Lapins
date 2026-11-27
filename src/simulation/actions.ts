@@ -578,9 +578,10 @@ function runAction(state: GameState, requested: Command, now: number, rng: () =>
         const roll = rng(); requireRule(Number.isFinite(roll) && roll >= 0 && roll < 1, 'INVALID_RANDOM');
         let result = chooseBirth(s, a, b, roll, parents[0].affection, parents[1].affection, islet);
         // Owner's planned birth (see simulation/adjustments.ts): the first pair fulfilling its recipe gets it, once; never a second Benny.
-        if (s.plannedBirth && bennyAllows(s, s.plannedBirth) && seasonAllows(s.plannedBirth) && recipeMatches(s.plannedBirth, a, b)) {
+        // A gift « whatever the parents » (plannedBirthAnyParents) goes to the very next breeding.
+        if (s.plannedBirth && bennyAllows(s, s.plannedBirth) && seasonAllows(s.plannedBirth) && (s.plannedBirthAnyParents || recipeMatches(s.plannedBirth, a, b))) {
           result = {...result, species: s.plannedBirth, guaranteed: false, reservedDiscovery: false};
-          delete s.plannedBirth;
+          delete s.plannedBirth; delete s.plannedBirthAnyParents;
         }
         s.pityFailures = result.pityFailures;
         value = id('birth');

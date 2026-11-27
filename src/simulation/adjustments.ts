@@ -6,8 +6,11 @@ import type {SpeciesId} from '../config/balance';
  * Each identifier is remembered in the save, so a correction is applied exactly once per save. */
 export const ADJUSTMENT_KINDS = ['set_pattes', 'add_pattes', 'add_hearts', 'add_grass', 'plan_birth'] as const;
 export type AdjustmentKind = typeof ADJUSTMENT_KINDS[number];
-/** `plan_birth`: the next breeding that fulfils `species`' recipe gives that species, once (amount unused). */
-export interface Adjustment {id: string; kind: AdjustmentKind; amount: number; species?: SpeciesId}
+/**
+ * `plan_birth`: the next breeding that fulfils `species`' recipe gives that species, once. With `amount` 1 (`anyParents`, owner's
+ * one-off gift of 27 November 2026), the very next breeding gives it, whatever the parents; any other amount keeps the recipe rule.
+ */
+export interface Adjustment {id: string; kind: AdjustmentKind; amount: number; species?: SpeciesId; anyParents?: boolean}
 export const MAX_APPLIED_ADJUSTMENTS = 200;
 export const ADJUSTMENT_LIMIT = 1_000_000_000;
 
@@ -25,7 +28,9 @@ export function applyAdjustments(state: GameState, list: readonly Adjustment[]):
     if (a.kind === 'set_pattes') s.pattes = clamp(a.amount);
     else if (a.kind === 'add_pattes') s.pattes = clamp(s.pattes + a.amount);
     else if (a.kind === 'add_hearts') s.hearts = clamp(s.hearts + a.amount);
-    else if (a.kind === 'plan_birth') { if (a.species) s.plannedBirth = a.species; }
+    else if (a.kind === 'plan_birth') {
+      if (a.species) { s.plannedBirth = a.species; if (a.anyParents) s.plannedBirthAnyParents = true; else delete s.plannedBirthAnyParents; }
+    }
     else s.grass = clamp(s.grass + a.amount);
   }
   s.appliedAdjustments = [...(s.appliedAdjustments ?? []), ...pending.map(a => a.id)].slice(-MAX_APPLIED_ADJUSTMENTS);
