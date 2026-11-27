@@ -138,6 +138,7 @@ const current = z.object({
   lastBreedingParents: z.tuple([identity, identity]).refine(([a, b]) => a !== b && [a, b].every(id => /^(rabbit|birth)-/.test(id))).optional(),
   appliedAdjustments: z.array(z.string().uuid()).max(MAX_APPLIED_ADJUSTMENTS).optional(),
   plannedBirth: species.optional(),
+  plannedBirthAnyParents: z.literal(true).optional(),
   evolvedSpecies: z.array(species).max(SPECIES_IDS.length).optional(),
   cozy: z.object({
     bonds: z.array(z.object({a: identity,b: identity,duration: integer.max(6*HOUR),celebrated:z.boolean()}).strict()).max(512),

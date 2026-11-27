@@ -90,6 +90,15 @@ select * from prairie_private.player_status('adresse@du-joueur');
 select prairie_private.plan_birth('adresse@du-joueur', 'dadi');
 ```
 
+**Cadeau unique, quels que soient les parents** (27 novembre 2026) : le tout prochain croisement du joueur donne l'espèce, même si les parents ne remplissent pas sa recette. C'est une naissance programmée avec le montant 1 :
+
+```sql
+insert into public.prairie_adjustments (owner_id, kind, amount, species)
+select id, 'plan_birth', 1, 'yetiti' from auth.users where lower(email) = lower('adresse@du-joueur');
+```
+
+Le jeu le garde (`plannedBirthAnyParents`) jusqu'au croisement suivant, puis l'efface. Il faut que le jeu publié le connaisse (depuis le 27 novembre 2026) ; l'espèce doit être disponible (saison de Noël pour Yetiti, jamais un deuxième Benny).
+
 Le jeu garde le plan dans la partie (`plannedBirth`) sans rien afficher : les chances du carnet restent les mêmes. Au premier croisement qui remplit la recette de l'espèce (types ou parents exacts, quels que soient l'affection et le tirage), le lapereau est cette espèce et le plan disparaît. Un croisement qui ne remplit pas la recette ne le consomme pas. Un nouveau plan remplace l'ancien s'il n'a pas encore servi. Ne pas écrire de note révélatrice : le joueur peut lire ses propres lignes de corrections.
 
 Le jeu lit la correction à la connexion ou au retour dans l'application, l'applique une seule fois à la partie en cours (y compris une partie récupérée plus tard ou un fichier importé), puis l'envoie normalement. Les autres progrès du joueur sont conservés. Une correction ne s'efface pas : pour l'annuler, en ajouter une autre.

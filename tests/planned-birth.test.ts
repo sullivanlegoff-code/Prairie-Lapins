@@ -59,3 +59,30 @@ describe('naissance programmée par le propriétaire', () => {
     ], 'p')).toEqual([PLAN]);
   });
 });
+
+// Owner, 27 November 2026, for one player only: « son prochain essai lui donne Yetiti à coup sûr, qu'importe les parents ».
+describe('cadeau unique : le prochain croisement, quels que soient les parents', () => {
+  const GIFT: Adjustment = {id: '77777777-7777-4777-8777-777777777777', kind: 'plan_birth', amount: 1, species: 'yetiti', anyParents: true};
+  it('se lit depuis Supabase avec le montant 1, et seulement avec lui', () => {
+    expect(adjustmentRows([{id: GIFT.id, owner_id: 'p', kind: 'plan_birth', amount: 1, species: 'yetiti'}], 'p')).toEqual([GIFT]);
+    expect(adjustmentRows([{id: GIFT.id, owner_id: 'p', kind: 'plan_birth', amount: 0, species: 'yetiti'}], 'p')).toEqual([{id: GIFT.id, kind: 'plan_birth', amount: 0, species: 'yetiti'}]);
+  });
+  it('donne Yetiti au tout prochain croisement, même sans Neige ni Paille, une seule fois', () => {
+    const {state, parents} = pair('feu', 'belier-gris');
+    expect(breedingOdds('feu', 'belier-gris', 10, 10).yetiti).toBeUndefined();
+    const gifted = applyAdjustments(state, [GIFT]);
+    expect([gifted.plannedBirth, gifted.plannedBirthAnyParents]).toEqual(['yetiti', true]);
+    const saved = decodeGame(encodeGame(gifted)); expect(saved.ok && saved.state.plannedBirthAnyParents).toBe(true);
+    const first = breed(gifted, parents, 0);
+    expect(first.species).toBe('yetiti');
+    expect([first.state.plannedBirth, first.state.plannedBirthAnyParents]).toEqual([undefined, undefined]);
+    expect(applyAdjustments(first.state, [GIFT])).toBe(first.state);
+    expect(decodeGame(encodeGame(first.state)).ok).toBe(true);
+  });
+  it('un plan ordinaire posé après le cadeau reprend la règle de la recette', () => {
+    const {state, parents} = pair('paille', 'neige');
+    const replaced = applyAdjustments(state, [GIFT, PLAN]);
+    expect([replaced.plannedBirth, replaced.plannedBirthAnyParents]).toEqual(['dadi', undefined]);
+    expect(breed(replaced, parents, 0).species).not.toBe('dadi');
+  });
+});

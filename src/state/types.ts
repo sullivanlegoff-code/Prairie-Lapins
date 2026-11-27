@@ -92,6 +92,8 @@ export interface GameState {
   appliedAdjustments?: string[];
   /** Owner's planned birth: the next breeding that fulfils this species' recipe gives it, then the field is removed. */
   plannedBirth?: import('../config/balance').SpeciesId;
+  /** With `plannedBirth`: the very next breeding gives it, whatever the parents (owner's one-off gift, 27 November 2026). */
+  plannedBirthAnyParents?: true;
   /** Species of which one of the player's rabbits has evolved, kept even once that rabbit is released (optional, v25). */
   evolvedSpecies?: import('../config/balance').SpeciesId[];
   cozy?: import('../simulation/cozy').CozyState;

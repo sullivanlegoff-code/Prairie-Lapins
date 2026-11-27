@@ -30,7 +30,7 @@ export function adjustmentRows(rows: unknown, owner: string): Adjustment[] {
     if (kind !== 'plan_birth') return [{id, kind, amount}];
     // A planned birth names a species with a recipe; anything else is ignored.
     const species = r.species as SpeciesId;
-    return typeof species === 'string' && Object.hasOwn(SPECIES, species) && SPECIES[species].recipe ? [{id, kind, amount, species}] : [];
+    return typeof species === 'string' && Object.hasOwn(SPECIES, species) && SPECIES[species].recipe ? [{id, kind, amount, species, ...(amount === 1 ? {anyParents: true} : {})}] : [];
   }).reverse(); // Oldest first: corrections apply in the order the owner wrote them.
 }
 export function remoteSave(value: unknown, owner: string): RemoteSave {
